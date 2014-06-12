@@ -170,6 +170,7 @@ namespace MueLu {
 
     validParamList->set< std::string >           ("mode",                 "pressure", "Mode");
     validParamList->set< bool >                  ("phase2",                     true, "Use extra phase to improve pattern");
+    validParamList->set< bool >                  ("dump status",               false, "Output status");
 
     return validParamList;
   }
@@ -397,6 +398,9 @@ namespace MueLu {
     }
     std::vector<SC> coordDist(n, 10000*big);
 
+    const ParameterList& pL = GetParameterList();
+    const bool doStatusOutput = pL.get<bool>("dump status");
+
     // Set all Dirichlet points as Fpoints
     // However, if a Dirichlet point is in userCpts, it will be added to the
     // Cpt list later
@@ -428,7 +432,8 @@ namespace MueLu {
 
     // Determine CPOINTs
     int dumpCount = 0;
-    DumpStatus(status, st + i2s(dumpCount++));
+    if (doStatusOutput)
+      DumpStatus(status, st + i2s(dumpCount++));
 
     int i = 0;
     while (i < n) {
@@ -450,7 +455,9 @@ namespace MueLu {
         if (status[candidateList[numCandidates-1]] <= CANDIDATE) {
           newCpt         = candidateList[numCandidates-1];
           status[newCpt] = CPOINT;
-          DumpStatus(status, st + i2s(dumpCount++));
+
+          if (doStatusOutput)
+            DumpStatus(status, st + i2s(dumpCount++));
         }
         numCandidates--;
       }
@@ -460,7 +467,9 @@ namespace MueLu {
         if (status[i] == UNASSIGNED) {
           newCpt         = i;
           status[newCpt] = CPOINT;
-          DumpStatus(status, st + i2s(dumpCount++));
+
+          if (doStatusOutput)
+            DumpStatus(status, st + i2s(dumpCount++));
         }
         i++;
       }
@@ -489,7 +498,7 @@ namespace MueLu {
             dumpStatus = true;
           }
         }
-        if (dumpStatus)
+        if (dumpStatus && doStatusOutput)
           DumpStatus(status, st + i2s(dumpCount++));
 
         // Update myCpts() to reflect dependence of neighbors on newCpt
@@ -550,7 +559,7 @@ namespace MueLu {
           }
         }
         dist4.resize(numNewCandidates);
-        if (dumpStatus)
+        if (dumpStatus && doStatusOutput)
           DumpStatus(status, st + i2s(dumpCount++));
 
         // Now remove all TWOTIMERs from the old candidate list
@@ -564,7 +573,7 @@ namespace MueLu {
             dumpStatus = true;
           }
         }
-        if (dumpStatus)
+        if (dumpStatus && doStatusOutput)
           DumpStatus(status, st + i2s(dumpCount++));
 
         // Sort the candidates based on distances (breaking ties via degrees,
