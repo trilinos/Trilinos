@@ -212,6 +212,12 @@ int main(int argc, char *argv[]) {
   RCP<MultiVector> coordsVel  = BuildCoords(partMaps[0], NDim);
   RCP<MultiVector> coordsPres = BuildCoords(partMaps[1], NDim);
 
+  // Step 4: construct pressure to 1st velocity mapping
+  Array<LO> p2vMap(n*n);
+  for (int j = 0; j < n; j++)
+    for (int i = 0; i < n; i++)
+      p2vMap[j*n+i] = 2*(2*j*(2*n-1) + 2*i);
+
   // =========================================================================
   // Preconditioner construction - I (block)
   // =========================================================================
@@ -242,9 +248,11 @@ int main(int argc, char *argv[]) {
 
   std::vector<RCP<Hierarchy> > H(compare+1);
   H[0] = rcp(new Hierarchy);
-  H[0]->GetLevel(0)->Set("A", rcp_dynamic_cast<Matrix>(fA));
-  H[0]->GetLevel(0)->Set("CoordinatesVelocity", coordsVel);
-  H[0]->GetLevel(0)->Set("CoordinatesPressure", coordsPres);
+  RCP<Level> finestLevel = H[0]->GetLevel(0);
+  finestLevel->Set("A",                     rcp_dynamic_cast<Matrix>(fA));
+  finestLevel->Set("p2vMap",                p2vMap);
+  finestLevel->Set("CoordinatesVelocity",   coordsVel);
+  finestLevel->Set("CoordinatesPressure",   coordsPres);
   H[0]->SetMaxCoarseSize(1);
 
   // The first invocation of Setup() builds the hierarchy using the filtered

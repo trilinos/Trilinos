@@ -112,8 +112,9 @@ namespace MueLu {
       UNASSIGNED  = '0',
       CANDIDATE   = '1',
       FPOINT      = '2',
-      CPOINT      = '3',
-      TWOTIMER    = '4'
+      TWOTIMER    = '3',
+      CPOINT      = '4',
+      CPOINT_U    = '5'
     };
 
   public:
@@ -153,20 +154,22 @@ namespace MueLu {
     void CreateCrsPointers (const Matrix& A, ArrayRCP<const size_t>& ia, ArrayRCP<const LO>& ja) const;
     void CptDepends2Pattern(const Matrix& A, const MyCptList& myCpts, RCP<Matrix>& P) const;
 
-    void PrintStatus(const std::vector<char>& status) const;
-    void DumpStatus (const std::vector<char>& status, const std::string& filename) const;
+    void DumpStatus(const std::vector<char>& status, const std::string& filename) const;
   };
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<const ParameterList> Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set< RCP<const FactoryBase> >("A",                   null, "Generating factory of the matrix A");
-    validParamList->set< RCP<const FactoryBase> >("CoordinatesVelocity", null, "Generating factory of the coordinates");
-    validParamList->set< RCP<const FactoryBase> >("CoordinatesPressure", null, "Generating factory of the coordinates");
+    validParamList->set< RCP<const FactoryBase> >("A",                          null, "Generating factory of the matrix A");
 
-    validParamList->set< std::string >           ("mode",          "pressure", "Mode");
-    validParamList->set< bool >                  ("phase2",              true, "Use extra phase to improve pattern");
+    RCP<const FactoryBase> rcpThis = rcpFromRef(*this);
+    validParamList->set< RCP<const FactoryBase> >("CoordinatesVelocity",     rcpThis, "Generating factory of the coordinates");
+    validParamList->set< RCP<const FactoryBase> >("CoordinatesPressure",     rcpThis, "Generating factory of the coordinates");
+    validParamList->set< RCP<const FactoryBase> >("p2vMap",                  rcpThis, "Mapping of pressure coords to u-velocity coords");
+
+    validParamList->set< std::string >           ("mode",                 "pressure", "Mode");
+    validParamList->set< bool >                  ("phase2",                     true, "Use extra phase to improve pattern");
 
     return validParamList;
   }
@@ -175,11 +178,17 @@ namespace MueLu {
   void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
     Input(fineLevel, "A");
 
-    const ParameterList& pL = GetParameterList();
-    if (pL.get<std::string>("mode") == "pressure")
-      Input(fineLevel, "CoordinatesPressure");
-    else
-      Input(fineLevel, "CoordinatesVelocity");
+    if (fineLevel.GetLevelID()) {
+      const ParameterList& pL = GetParameterList();
+      if (pL.get<std::string>("mode") == "pressure") {
+        Input(fineLevel, "CoordinatesPressure");
+
+      } else {
+        Input(fineLevel, "CoordinatesVelocity");
+        if (fineLevel.GetLevelID() == 0)
+          Input(fineLevel, "p2vMap");
+      }
+    }
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -197,23 +206,16 @@ namespace MueLu {
 
     const ParameterList& pL = GetParameterList();
     bool pressureMode = (pL.get<std::string>("mode") == "pressure");
-    if (pressureMode) {
-      // pressure mode
-      GetOStream(Runtime0) << "Pressure mode" << std::endl;
-
-      n = sqrt(N);
-      TEUCHOS_TEST_FOR_EXCEPTION(N != n*n, Exceptions::RuntimeError, "Incorrect size for pressure: " << N);
-
-    } else {
-      GetOStream(Runtime0) << "Velocity mode" << std::endl;
-
-      n = sqrt(N/2);
-      TEUCHOS_TEST_FOR_EXCEPTION(N != 2*n*n, Exceptions::RuntimeError, "Incorrect size for velocity: " << N);
-    }
+    GetOStream(Runtime0) << (pressureMode ? "Pressure" : "Velocity") << " mode" << std::endl;
 
     RCP<MultiVector> coords;
-    if (pressureMode) coords = Get< RCP<MultiVector> >(fineLevel, "CoordinatesPressure");
-    else              coords = Get< RCP<MultiVector> >(fineLevel, "CoordinatesVelocity");
+    if (pressureMode) {
+      if (fineLevel.GetLevelID() == 0) coords = fineLevel.Get< RCP<MultiVector> >("CoordinatesPressure", NoFactory::get());
+      else                             coords = Get< RCP<MultiVector> >(fineLevel, "CoordinatesPressure");
+    } else {
+      if (fineLevel.GetLevelID() == 0) coords = fineLevel.Get< RCP<MultiVector> >("CoordinatesVelocity", NoFactory::get());
+      else                             coords = Get< RCP<MultiVector> >(fineLevel, "CoordinatesVelocity");
+    }
     const int NDim = coords->getNumVectors();
 
     Array<LO> userCpts;
@@ -227,12 +229,21 @@ namespace MueLu {
       // Unamalgamate
       int p = userCpts.size();
       userCpts.resize(2*p);
-      int pn = (n+1)/2;
-      for (int k = p-1; k >= 0; k--) {
-        int i = userCpts[k] % pn;
-        int j = userCpts[k] / pn;
-        userCpts[2*k+0] = 2*(2*j*n + 2*i);
-        userCpts[2*k+1] = userCpts[2*k+0] + 1;
+      if (fineLevel.GetLevelID() == 0){
+        Array<LO> p2vMap = fineLevel.Get< Array<LO> >("p2vMap", NoFactory::get());
+
+        for (int k = p-1; k >= 0; k--) {
+          userCpts[2*k+0] = p2vMap[userCpts[k]];
+          userCpts[2*k+1] = userCpts[2*k+0] + 1;
+        }
+
+      } else {
+        // For coarse level, by construction first 2q velocity points
+        // correspond to q pressure points
+        for (int k = p-1; k >= 0; k--) {
+          userCpts[2*k+0] = 2*userCpts[k];
+          userCpts[2*k+1] = userCpts[2*k+0] + 1;
+        }
       }
     }
 
@@ -394,11 +405,15 @@ namespace MueLu {
         status[i] = FPOINT;
 
     // userCpts have already been fixed to be Cpoints so we want to first mark
-    // them appropriately, but still go through loops below to update distances
-    // and Fpoints.  Initialization is done here so that these points do not
-    // end up with more than 1 nnz in the associated sparsity pattern row.
-    for (int i = 0; i < userCpts.size(); i++)
-      status[userCpts[i]] = CPOINT;
+    // them appropriately, and put them first in the CPOINT list, but still go
+    // through loops below to update distances and FPOINTs. Initialization is
+    // done here so that these points do not end up with more than 1 nnz in the
+    // associated sparsity pattern row.
+    Array<LO>& Cptlist = myCpts.getCList();
+    for (int i = 0; i < userCpts.size(); i++) {
+      status[userCpts[i]] = CPOINT_U;
+      Cptlist.push_back(userCpts[i]);
+    }
 
     std::vector<char> distIncrement(n, 0);
     std::vector<int>  cumGraphDist (n, 0);
@@ -460,7 +475,7 @@ namespace MueLu {
         int numDist3 = 0;
         for (int k = 0; k < dist3.size(); k++) {
           LO j = dist3[k];
-          if ((status[j] != CPOINT) || (j == newCpt))
+          if ((status[j] < CPOINT) || (j == newCpt))
             dist3[numDist3++] = j;
         }
         dist3.resize(numDist3);
@@ -582,7 +597,7 @@ namespace MueLu {
 
       std::vector<int> candidates;
       for (i = 0; i < n; i++)
-        if (status[i] != CPOINT && numCpts[i] == numCDepends) {
+        if (status[i] < CPOINT && numCpts[i] == numCDepends) {
           candidates.push_back(i);
           numCandidates++;
         }
@@ -662,7 +677,7 @@ namespace MueLu {
             int numDist3 = 0;
             for (int k = 0; k < dist3.size(); k++) {
               LO j = dist3[k];
-              if (status[j] != CPOINT || j == newCpt)
+              if (status[j] < CPOINT || j == newCpt)
                 dist3[numDist3++] = j;
             }
             dist3.resize(numDist3);
@@ -692,7 +707,6 @@ namespace MueLu {
     }
 
     // Build up the CPOINT list
-    Array<LO>& Cptlist = myCpts.getCList();
     for (i = 0; i < n; i++)
       if (status[i] == CPOINT)
         Cptlist.push_back(i);
@@ -1194,22 +1208,6 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
-  PrintStatus(const std::vector<char>& status) const {
-    for (int i = 0; i < status.size(); i++) {
-      std::cout << i << ": ";
-      switch (status[i]) {
-        case UNASSIGNED  : std::cout << "UNASSIGNED"; break;
-        case CANDIDATE   : std::cout << "CANDIDATE"; break;
-        case FPOINT      : std::cout << "FPOINT"; break;
-        case CPOINT      : std::cout << "CPOINT"; break;
-        case TWOTIMER    : std::cout << "TWOTIMER"; break;
-      }
-      std::cout << std::endl;
-    }
-  }
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
   DumpStatus(const std::vector<char>& status, const std::string& filename) const {
     int N = status.size(), n = sqrt(N);
 
@@ -1261,7 +1259,7 @@ namespace MueLu {
               if (dlist[j] > dlist[j - 1]) j = j + 1;
 
             if (dlist[j - 1] > dK) {
-              dlist[i - 1] = dlist[ j - 1];
+              dlist[i - 1] = dlist[j - 1];
               list2[i - 1] = list2[j - 1];
             }
             else {
@@ -1310,7 +1308,7 @@ namespace MueLu {
             }
           }
         }
-        dlist[ i - 1] = dRR;
+        dlist[i - 1] = dRR;
         if (l == 1) {
           dRR = dlist[r];
           dK  = dlist[r];
@@ -1361,7 +1359,7 @@ namespace MueLu {
               if (list[j] > list[j - 1]) j = j + 1;
 
             if (list[j - 1] > K) {
-              list[ i - 1] = list[ j - 1];
+              list [i - 1] = list [j - 1];
               list2[i - 1] = list2[j - 1];
               list3[i - 1] = list3[j - 1];
             }
@@ -1371,7 +1369,7 @@ namespace MueLu {
           }
         }
 
-        list[ i - 1] = RR;
+        list [i - 1] = RR;
         list2[i - 1] = RR2;
         list3[i - 1] = RR3;
 
@@ -1388,14 +1386,14 @@ namespace MueLu {
         }
         else {
           l   = l - 1;
-          RR  = list[ l - 1];
+          RR  = list [l - 1];
           RR2 = list2[l - 1];
           RR3 = list3[l - 1];
-          K   = list[l - 1];
+          K   = list [l - 1];
         }
       }
 
-      list[ 0] = RR;
+      list [0] = RR;
       list2[0] = RR2;
       list3[0] = RR3;
     }
@@ -1416,7 +1414,7 @@ namespace MueLu {
               if (list[j] > list[j - 1]) j = j + 1;
 
             if (list[j - 1] > K) {
-              list[ i - 1] = list[ j - 1];
+              list [i - 1] = list [j - 1];
               list2[i - 1] = list2[j - 1];
             }
             else {
@@ -1425,7 +1423,7 @@ namespace MueLu {
           }
         }
 
-        list[ i - 1] = RR;
+        list [i - 1] = RR;
         list2[i - 1] = RR2;
 
         if (l == 1) {
@@ -1439,13 +1437,13 @@ namespace MueLu {
         }
         else {
           l   = l - 1;
-          RR  = list[ l - 1];
+          RR  = list [l - 1];
           RR2 = list2[l - 1];
-          K   = list[l - 1];
+          K   = list [l - 1];
         }
       }
 
-      list[ 0] = RR;
+      list [0] = RR;
       list2[0] = RR2;
     }
     else if (list3 != NULL) {
@@ -1465,7 +1463,7 @@ namespace MueLu {
               if (list[j] > list[j - 1]) j = j + 1;
 
             if (list[j - 1] > K) {
-              list[ i - 1] = list[ j - 1];
+              list [i - 1] = list [j - 1];
               list3[i - 1] = list3[j - 1];
             }
             else {
@@ -1474,7 +1472,7 @@ namespace MueLu {
           }
         }
 
-        list[ i - 1] = RR;
+        list [i - 1] = RR;
         list3[i - 1] = RR3;
 
         if (l == 1) {
@@ -1488,13 +1486,13 @@ namespace MueLu {
         }
         else {
           l   = l - 1;
-          RR  = list[ l - 1];
+          RR  = list [l - 1];
           RR3 = list3[l - 1];
-          K   = list[l - 1];
+          K   = list [l - 1];
         }
       }
 
-      list[ 0] = RR;
+      list [0] = RR;
       list3[0] = RR3;
 
     }
@@ -1514,7 +1512,7 @@ namespace MueLu {
               if (list[j] > list[j - 1]) j = j + 1;
 
             if (list[j - 1] > K) {
-              list[ i - 1] = list[ j - 1];
+              list[i - 1] = list[j - 1];
             }
             else {
               flag = 0;
@@ -1522,7 +1520,7 @@ namespace MueLu {
           }
         }
 
-        list[ i - 1] = RR;
+        list[i - 1] = RR;
 
         if (l == 1) {
           RR  = list [r];
@@ -1533,12 +1531,12 @@ namespace MueLu {
         }
         else {
           l   = l - 1;
-          RR  = list[ l - 1];
+          RR  = list[l - 1];
           K   = list[l - 1];
         }
       }
 
-      list[ 0] = RR;
+      list[0] = RR;
     }
   }
 
