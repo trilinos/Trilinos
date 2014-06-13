@@ -903,16 +903,17 @@ namespace MueLu {
           for (int j = 0; j < numNearbyCs; j++)
             dists[j] /= mDist;
 
-          const double distWeight = 0.3;
-          int mComposite = -10000;
-          int maxIndex = -1;
+          const double distWeight   =  0.3;
+          double       maxComposite = -10000;
+          double       maxIndex     = -1;
           for (int j = 0; j < numNearbyCs; j++) {
             // The formula is
             //     if (score[j] - distWeight*dists[j] > mComposite)
             // It was modified to match Matlab
-            if (score[j] - distWeight*dists[j] + 1.0e-7*(nearbyCs[j]-1) > mComposite) {
-              mComposite = score[j] - distWeight*dists[j] + 1.0e-7*(nearbyCs[j]-1);
-              maxIndex   = j;
+            double composite = score[j] - distWeight*dists[j] + 1.0e-7*(nearbyCs[j]-1);
+            if (maxComposite < composite) {
+              maxComposite = composite;
+              maxIndex     = j;
             }
           }
 
