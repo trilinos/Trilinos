@@ -146,16 +146,20 @@ int directory_test_1(Epetra_Comm& Comm)
   if (proc >= numProcs) proc = 0;
 
   int procNumIDs = 3+proc;
-  long long procFirstID = (proc+1)*(proc+1);
+  long long procFirstID = (long long)(proc+1)*(proc+1);
   long long procLastID = procFirstID+procNumIDs - 1;
 
   int queryProc1 = -1;
   int queryProc2 = -1;
 
-  int err = directory->GetDirectoryEntries(blkmap, 1, &procFirstID,
-					   &queryProc1, NULL, NULL);
-  err += directory->GetDirectoryEntries(blkmap, 1, &procLastID,
-					&queryProc2, NULL, NULL);
+  int err = directory->GetDirectoryEntries(
+      blkmap, 1, &procFirstID,
+      &queryProc1, NULL, NULL
+      );
+  err += directory->GetDirectoryEntries(
+      blkmap, 1, &procLastID,
+      &queryProc2, NULL, NULL
+      );
   delete directory;
   delete [] myIDs;
 
@@ -196,16 +200,16 @@ int directory_test_2(Epetra_Comm& Comm)
   if (proc >= numProcs) proc = 0;
 
   int procNumIDs = 3;
-  long long procFirstID = (numProcs-proc)*(numProcs-proc);
+  long long procFirstID = (long long)(numProcs-proc)*(numProcs-proc);
   long long procLastID = procFirstID+procNumIDs - 1;
 
   int queryProc1 = -1;
   int queryProc2 = -1;
 
   int err = directory->GetDirectoryEntries(blkmap, 1, &procFirstID,
-					   &queryProc1, NULL, NULL);
+      &queryProc1, NULL, NULL);
   err += directory->GetDirectoryEntries(blkmap, 1, &procLastID,
-					&queryProc2, NULL, NULL);
+      &queryProc2, NULL, NULL);
   delete directory;
   delete [] myIDs;
 
