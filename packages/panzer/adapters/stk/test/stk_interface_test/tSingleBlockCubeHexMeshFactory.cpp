@@ -63,7 +63,7 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcpFromRef;
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 void test1(Teuchos::FancyOStream &out, bool &success, MPI_Comm & comm);
 void test2(Teuchos::FancyOStream &out, bool &success, MPI_Comm & comm);

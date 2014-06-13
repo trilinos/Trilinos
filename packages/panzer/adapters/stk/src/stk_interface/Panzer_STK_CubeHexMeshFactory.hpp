@@ -47,7 +47,7 @@
 #include <Panzer_STK_MeshFactory.hpp>
 #include <Panzer_STK_Interface.hpp>
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 class STK_Interface;
 

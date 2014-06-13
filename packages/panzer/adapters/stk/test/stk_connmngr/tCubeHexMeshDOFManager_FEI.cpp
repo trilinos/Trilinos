@@ -69,7 +69,7 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcpFromRef;
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 Teuchos::RCP<panzer_stk_classic::STK_Interface> buildQuadMesh(stk_classic::ParallelMachine comm,int xelmts,int yelmts,int zelmts,
                                                                                     int xblocks,int yblocks,int zblocks)

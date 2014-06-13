@@ -46,7 +46,7 @@
 #include <string>
 #include "Panzer_STK_ConfigDefs.hpp"
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
   
   std::string version();
 

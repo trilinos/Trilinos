@@ -31,6 +31,7 @@ def main():
   # env arguments
   p.add_option('-p',                  dest="pv",   action="store_const", const='p', default='p')
   p.add_option('-v',                  dest="pv",   action="store_const", const='v')
+  p.add_option('-d', '--data',        dest="data", default="status")
   p.add_option('-l', '--level',       dest="L",    default=0, type='int')
   p.add_option('-i', '--interactive', dest="ui",   action="store_true", default=True)
   p.add_option('-b', '--batch',       dest="ui",   action="store_false")
@@ -43,6 +44,7 @@ def main():
   L    = options.L
   ui   = options.ui
   skip = options.skip
+  data = options.data
 
   coords = np.loadtxt("coord-l" + str(L) + "-" + V)
   if V == 'p':
@@ -62,7 +64,7 @@ def main():
   max_color = len(cvals)-1
 
   k = 0
-  for file in sort_nicely(glob.glob("status-l" + str(L) + "-" + V + "-*" + ("" if V == 'p' else ".1"))):
+  for file in sort_nicely(glob.glob(data + "-l" + str(L) + "-" + V + "-*" + ("" if V == 'p' else ".1"))):
     k = k+1
     if k <= skip:
       continue

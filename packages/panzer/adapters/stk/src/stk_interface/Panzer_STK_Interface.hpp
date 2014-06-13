@@ -65,7 +65,7 @@
 #include <stk_io/MeshReadWriteUtils.hpp>
 #endif
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 class PeriodicBC_MatcherBase;
 

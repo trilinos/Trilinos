@@ -252,13 +252,57 @@ namespace MueLu {
     GetOStream(Runtime1) << "# user C-points: " << userCpts.size() << std::endl;
 
     RCP<MyCptList>    myCpts = rcp(new MyCptList(N, 30));
+
     std::vector<char> status(N, UNASSIGNED);
 
     FindDist4Cpts(*A, *coords, userCpts, status, *myCpts, fineLevel.GetLevelID());
 
+    const bool doStatusOutput = pL.get<bool>("dump status");
+    if (doStatusOutput) {
+      const Array<LO>&    Cptlist = myCpts->getCList();
+      std::vector<short>& numCpts = myCpts->getNumCpts();
+
+      std::string depPrefix = std::string("dep0-l") + toString(fineLevel.GetLevelID()) + (pressureMode ? "-p-" : "-v-");
+
+      std::vector<char> depStatus(N);
+      for (int k = 0; k < Cptlist.size(); k++) {
+
+        for (int i = 0; i < N; i++) {
+          bool isPresent = false;
+          for (int j = 0; j < numCpts[i]; j++)
+            if ((*myCpts)(i)[j] == Cptlist[k])
+              isPresent = true;
+          depStatus[i] = (isPresent ? CPOINT : UNASSIGNED);
+        }
+
+        DumpStatus(depStatus, pressureMode, depPrefix + toString(k));
+      }
+    }
+
     // Beef up any pattern which seems pretty limited
     if (pL.get<bool>("phase2"))
       PhaseTwoPattern(*A, *coords, status, *myCpts);
+
+    if (doStatusOutput) {
+      const Array<LO>&    Cptlist = myCpts->getCList();
+      std::vector<short>& numCpts = myCpts->getNumCpts();
+
+      std::string depPrefix = std::string("dep1-l") + toString(fineLevel.GetLevelID()) + (pressureMode ? "-p-" : "-v-");
+
+      std::vector<char> depStatus(N);
+      for (int k = 0; k < Cptlist.size(); k++) {
+
+        for (int i = 0; i < N; i++) {
+          bool isPresent = false;
+          for (int j = 0; j < numCpts[i]; j++)
+            if ((*myCpts)(i)[j] == Cptlist[k])
+              isPresent = true;
+          depStatus[i] = (isPresent ? CPOINT : UNASSIGNED);
+        }
+
+        DumpStatus(depStatus, pressureMode, depPrefix + toString(k));
+      }
+    }
 
     RCP<Matrix> P;
     CptDepends2Pattern(*A, *myCpts, P);
@@ -450,7 +494,7 @@ namespace MueLu {
       // and look to see if further CPOINTs can be added once we have finished
       // all of the userCpts
       if (userCcount < userCpts.size())
-        newCpt         = userCpts[userCcount++];
+        newCpt = userCpts[userCcount++];
 
       // Check for possible CPOINT on candidate list
       while ((newCpt == -1) && (numCandidates > 0)) {
@@ -859,16 +903,17 @@ namespace MueLu {
           for (int j = 0; j < numNearbyCs; j++)
             dists[j] /= mDist;
 
-          const double distWeight = 0.3;
-          int mComposite = -10000;
-          int maxIndex = -1;
+          const double distWeight   =  0.3;
+          double       maxComposite = -10000;
+          double       maxIndex     = -1;
           for (int j = 0; j < numNearbyCs; j++) {
             // The formula is
             //     if (score[j] - distWeight*dists[j] > mComposite)
             // It was modified to match Matlab
-            if (score[j] - distWeight*dists[j] + 1.0e-7*(nearbyCs[j]-1) > mComposite) {
-              mComposite = score[j] - distWeight*dists[j] + 1.0e-7*(nearbyCs[j]-1);
-              maxIndex   = j;
+            double composite = score[j] - distWeight*dists[j] + 1.0e-7*(nearbyCs[j]-1);
+            if (maxComposite < composite) {
+              maxComposite = composite;
+              maxIndex     = j;
             }
           }
 

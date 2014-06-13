@@ -50,7 +50,7 @@
 #include <string>
 #include <vector>
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
   class STK_Interface;
   

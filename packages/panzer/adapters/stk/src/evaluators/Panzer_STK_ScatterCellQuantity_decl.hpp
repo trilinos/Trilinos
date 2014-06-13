@@ -54,7 +54,7 @@
 
 #include "Panzer_STK_Interface.hpp"
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 /** This class is a scatter operation to the mesh. It
   * takes a set of field names on cells and

@@ -60,7 +60,7 @@
    #include "Epetra_SerialComm.h"
 #endif
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, defaults)
 {

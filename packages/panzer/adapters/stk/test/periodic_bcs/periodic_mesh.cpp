@@ -97,7 +97,7 @@ namespace panzer {
   {
     using Teuchos::RCP;
     using Teuchos::rcp_dynamic_cast;
-    using namespace panzer_stk;
+    using namespace panzer_stk_classic;
 
     panzer_stk_classic::PeriodicBC_Parser parser;
 

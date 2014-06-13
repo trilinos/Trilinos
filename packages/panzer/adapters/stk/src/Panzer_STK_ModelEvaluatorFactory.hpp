@@ -94,7 +94,7 @@ namespace panzer {
   template <typename> class ConnManagerBase;
 }
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
   template <typename GO> class STKConnManager;
   class NOXObserverFactory;

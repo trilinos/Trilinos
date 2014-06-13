@@ -57,7 +57,7 @@
 
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 STK_ExodusReaderFactory::STK_ExodusReaderFactory()
    : fileName_(""), restartIndex_(0), useLowerCase_(false)
