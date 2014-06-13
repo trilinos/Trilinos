@@ -209,7 +209,8 @@ public:
    *
    * \param axis [in] the axis to which this slice applies
    *
-   * \param slice [in] the slice describing the sub-vector
+   * \param slice [in] a slice of global ordinals describing the
+   *        sub-vector
    *
    * \param bndryPad [in] the boundary padding along the altered axis
    *        of the new sub-vector.  This may include indexes from the
