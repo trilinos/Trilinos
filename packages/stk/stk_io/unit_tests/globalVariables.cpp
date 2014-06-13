@@ -20,6 +20,7 @@
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_util/parallel/Parallel.hpp"
 namespace Ioss { class DatabaseIO; }
 
 namespace {
@@ -352,6 +353,10 @@ TEST(GlobalVariablesTest, GlobalDoubleWithFieldMultipleTimeSteps)
     std::vector<double> globalVarValuesOverTime;
     const int numTimeSteps = 5;
     MPI_Comm communicator = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(communicator);
+    if (numProcs != 1) {
+      return;
+    }
     {
         stk::io::StkMeshIoBroker stkIo(communicator);
 	const std::string exodusFileName = "generated:1x1x8";
@@ -452,6 +457,11 @@ TEST(GlobalVariablesTest, OneGlobalDoubleWithFieldRestart)
     std::vector<double> globalVarValuesOverTime;
     const int numTimeSteps = 5;
     MPI_Comm communicator = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(communicator);
+    if (numProcs != 1) {
+      return;
+    }
+
     {
         stk::io::StkMeshIoBroker stkIo(communicator);
 	const std::string exodusFileName = "generated:1x1x8";

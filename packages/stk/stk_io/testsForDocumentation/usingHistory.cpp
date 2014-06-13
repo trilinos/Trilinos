@@ -6,6 +6,7 @@
 #include <ostream>                      // for basic_ostream::operator<<
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker, etc
 #include <stk_util/util/ParameterList.hpp>  // for ParameterList, etc
+#include <stk_util/parallel/Parallel.hpp>
 #include <string>                       // for string
 #include <utility>                      // for pair
 #include <vector>                       // for vector
@@ -24,6 +25,10 @@ namespace
 
     const std::string file_name = "History.e";
     MPI_Comm communicator = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(communicator);
+    if (numProcs != 1) {
+      return;
+    }
 
     stk::util::ParameterList params;
     

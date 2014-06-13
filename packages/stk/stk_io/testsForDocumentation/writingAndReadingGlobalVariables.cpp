@@ -8,6 +8,7 @@
 #include <vector>                       // for vector
 #include "Ioss_Field.h"                 // for Field, etc
 #include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH, etc
+#include "stk_util/parallel/Parallel.hpp"
 
 namespace
 {
@@ -18,6 +19,10 @@ TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalVariables)
     const double timeStepSize = 1e-6;
     const double currentTime = 1.0;
     MPI_Comm communicator = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(communicator);
+    if (numProcs != 1) {
+      return;
+    }
 
     //+ Write restart file with time step size as a global variable
     {

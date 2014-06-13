@@ -11,6 +11,7 @@
 #include <vector>                       // for vector
 #include "Ioss_Property.h"              // for Property
 #include "Ioss_PropertyManager.h"       // for PropertyManager
+#include "stk_util/parallel/Parallel.hpp"
 
 namespace
 {
@@ -19,8 +20,11 @@ namespace
 
     const std::string file_name = "Heartbeat-CSV.txt";
     MPI_Comm communicator = MPI_COMM_WORLD;
-    int my_processor = 0;
-    MPI_Comm_rank(communicator, &my_processor);
+    int num_procs = stk::parallel_machine_size(communicator);
+    if (num_procs != 1) {
+      return;
+    }
+    int my_processor = stk::parallel_machine_rank(communicator);
     
     stk::util::ParameterList params;
     
