@@ -358,20 +358,25 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, SliceHi, Sca )
   for (int axis = 0; axis < numDims; ++axis)
     commDims[axis] = mdComm->getCommDim(axis);
 
-  // Construct global dimensions and strides
+  // Construct global dimensions and strides.  This test will have
+  // both boundary and communication padding, set to the same size to
+  // keep things simple(r).
   dim_type localDim = 10;
+  int padSize = 2;
   Array< dim_type > dims(numDims);
   Array< dim_type > strides(numDims);
+  Array< int >      padding(numDims);
   for (int axis = 0; axis < numDims; ++axis)
   {
     dims[axis] = localDim * mdComm->getCommDim(axis);
     if (axis == 0) strides[0] = 1;
-    else strides[axis] = strides[axis-1] * dims[axis-1];
+    else strides[axis] = strides[axis-1] * (dims[axis-1] + 2*padSize);
+    padding[axis] = padSize;
   }
 
   // Construct an MDMap and MDVector
   typedef Teuchos::RCP< MDMap<> > MDMapRCP;
-  MDMapRCP mdMap = rcp(new MDMap<>(mdComm, dims()));
+  MDMapRCP mdMap = rcp(new MDMap<>(mdComm, dims(), padding(), padding()));
   MDVector< Sca > mdVector(mdMap);
   assignGlobalIDsToMDVector(mdVector);
 
@@ -380,8 +385,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, SliceHi, Sca )
   for (int axis = 0; axis < numDims; ++axis)
   {
     // Construct the sub-vector
-    Slice slice(dims[axis]-width, dims[axis]);
-    MDVector< Sca > subVector(mdVector, axis, slice);
+    Slice slice(padSize+dims[axis]-width, padSize+dims[axis]);
+    Slice fullSlice(dims[axis]-width, dims[axis]+2*padSize);
+    MDVector< Sca > subVector(mdVector, axis, slice, padSize);
 
     // Check whether on-processor or not
     if (commDims[axis] > 1 &&
@@ -393,20 +399,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, SliceHi, Sca )
     {
       // Compute the sub-vector statistics
       bool contig = (axis == numDims-1);
-      Slice local(0, width);
+      Slice local(padSize, width+padSize);
       Sca  begin  = 0;
       Sca  end    = 0;
       for (int myAxis = 0; myAxis < numDims; ++myAxis)
       {
         if (myAxis == axis)
         {
-          begin += (dims[axis]-width) * strides[axis];
-          end   += (dims[axis]-1    ) * strides[myAxis];
+          begin += (dims[axis]-width      ) * strides[myAxis];
+          end   += (2*padSize+dims[axis]-1) * strides[myAxis];
         }
         else
         {
           dim_type min =  mdMap->getCommIndex(myAxis)    * localDim;
-          dim_type max = (mdMap->getCommIndex(myAxis)+1) * localDim;
+          dim_type max = (mdMap->getCommIndex(myAxis)+1) * localDim + 2*padSize;
           begin +=  min    * strides[myAxis];
           end   += (max-1) * strides[myAxis];
         }
@@ -415,19 +421,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, SliceHi, Sca )
 
       // Perform the unit tests
       TEST_ASSERT(subVector.onSubcommunicator());
-      TEST_EQUALITY(subVector.isContiguous()           , contig );
-      TEST_EQUALITY(subVector.numDims()                , numDims);
-      TEST_EQUALITY(subVector.getGlobalDim(axis)       , width  );
-      TEST_EQUALITY(subVector.getGlobalBounds(axis)    , slice  );
-      TEST_EQUALITY(subVector.getGlobalRankBounds(axis), slice  );
-      TEST_EQUALITY(subVector.getLocalDim(axis)        , width  );
-      TEST_EQUALITY(subVector.getLocalBounds(axis)     , local  );
-      TEST_EQUALITY(subVector.getLowerPadSize(axis)    , 0      );
-      TEST_EQUALITY(subVector.getUpperPadSize(axis)    , 0      );
-      TEST_EQUALITY(subVector.getCommPadSize(axis)     , 0      );
-      TEST_EQUALITY(subVector.getLowerBndryPad(axis)   , 0      );
-      TEST_EQUALITY(subVector.getUpperBndryPad(axis)   , 0      );
-      TEST_EQUALITY(subVector.getBndryPadSize(axis)    , 0      );
+      TEST_EQUALITY(subVector.isContiguous()                , contig         );
+      TEST_EQUALITY(subVector.numDims()                     , numDims        );
+      TEST_EQUALITY(subVector.getGlobalDim(axis)            , width          );
+      TEST_EQUALITY(subVector.getGlobalDim(axis,true)       , width+2*padSize);
+      TEST_EQUALITY(subVector.getGlobalBounds(axis)         , slice          );
+      TEST_EQUALITY(subVector.getGlobalBounds(axis,true)    , fullSlice      );
+      TEST_EQUALITY(subVector.getGlobalRankBounds(axis)     , slice          );
+      TEST_EQUALITY(subVector.getGlobalRankBounds(axis,true), fullSlice      );
+      TEST_EQUALITY(subVector.getLocalDim(axis)             , width          );
+      TEST_EQUALITY(subVector.getLocalBounds(axis)          , local          );
+      TEST_EQUALITY(subVector.getLowerPadSize(axis)         , padSize        );
+      TEST_EQUALITY(subVector.getUpperPadSize(axis)         , padSize        );
+      TEST_EQUALITY(subVector.getCommPadSize(axis)          , padSize        );
+      TEST_EQUALITY(subVector.getLowerBndryPad(axis)        , padSize        );
+      TEST_EQUALITY(subVector.getUpperBndryPad(axis)        , padSize        );
+      TEST_EQUALITY(subVector.getBndryPadSize(axis)         , padSize        );
       TEST_EQUALITY(*(subArray.begin() ), begin);
       TEST_EQUALITY(*(subArray.rbegin()), end  );
     }
