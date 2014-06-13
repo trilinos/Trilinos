@@ -53,7 +53,7 @@
 #include "Panzer_Traits.hpp"
 #include "Panzer_STK_Interface.hpp"
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 /** This class is a gather operation from the mesh. It
   * takes a set of field names and basis objects and

@@ -47,7 +47,7 @@
 
 #include <stk_mesh/base/FieldData.hpp>
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 static void gather_in_block(const std::string & blockId, const panzer::UniqueGlobalIndexer<int,int> & dofMngr,
                             const Epetra_Vector & x,const std::vector<std::size_t> & localCellIds,

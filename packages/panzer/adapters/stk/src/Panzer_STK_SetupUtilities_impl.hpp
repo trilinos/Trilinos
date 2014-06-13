@@ -43,7 +43,7 @@
 #ifndef PANZER_STK_SETUP_UTILITIES_IMPL_HPP
 #define PANZER_STK_SETUP_UTILITIES_IMPL_HPP
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 namespace workset_utils {
 
 template<typename ArrayT>

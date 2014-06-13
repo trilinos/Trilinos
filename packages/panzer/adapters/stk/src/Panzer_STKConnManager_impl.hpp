@@ -59,7 +59,7 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 // Object describing how to sort a vector of elements using
 // local ID as the key

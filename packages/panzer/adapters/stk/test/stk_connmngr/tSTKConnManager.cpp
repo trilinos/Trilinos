@@ -69,7 +69,7 @@ using Teuchos::rcp;
 
 typedef Intrepid::FieldContainer<double> FieldContainer;
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 typedef shards::Quadrilateral<4> QuadTopo;
 

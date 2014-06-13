@@ -130,7 +130,7 @@
 #include <Thyra_Ifpack2PreconditionerFactory.hpp>
 #endif
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
   template<typename ScalarT>
   void ModelEvaluatorFactory<ScalarT>::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)

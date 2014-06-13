@@ -61,7 +61,7 @@ using Teuchos::rcp;
 
 typedef Intrepid::FieldContainer<double> FieldContainer;
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 RCP<STK_Interface> buildMesh(int xElements,int yElements);
 RCP<STK_Interface> buildMesh_cells(int xElements,int yElements);

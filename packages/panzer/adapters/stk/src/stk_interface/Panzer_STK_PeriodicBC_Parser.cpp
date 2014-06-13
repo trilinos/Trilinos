@@ -46,7 +46,7 @@
 
 #include "Teuchos_ParameterListExceptions.hpp"
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 PeriodicBC_Parser::PeriodicBC_Parser()
    : countStr_("Count")

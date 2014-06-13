@@ -66,7 +66,7 @@
 
 typedef stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian>  VectorField;
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 TEUCHOS_UNIT_TEST(tPointLocationSearch, basic)
 {

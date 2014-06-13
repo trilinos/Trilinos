@@ -64,7 +64,7 @@
 #include "stk_mesh/base/Selector.hpp"
 #include <stk_rebalance/ZoltanPartition.hpp>
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 inline bool XOR(bool A,bool B)
 { return ! ( (A && B) || ( !A && !B)); }

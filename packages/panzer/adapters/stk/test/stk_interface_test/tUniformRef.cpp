@@ -83,7 +83,7 @@
 
 #include <stk_mesh/fixtures/HexFixture.hpp>
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 /*
 TEUCHOS_UNIT_TEST(tUniformRef, stk_fixture)

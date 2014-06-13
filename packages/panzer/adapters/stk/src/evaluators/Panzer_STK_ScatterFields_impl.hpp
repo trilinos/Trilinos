@@ -56,7 +56,7 @@
 
 #include "Teuchos_FancyOStream.hpp"
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 template <typename EvalT,typename TraitsT>
 ScatterFields<EvalT,TraitsT>::

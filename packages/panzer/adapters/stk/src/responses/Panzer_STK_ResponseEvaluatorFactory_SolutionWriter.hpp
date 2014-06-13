@@ -17,7 +17,7 @@
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 /** This class defines a response based solution writer.
   */

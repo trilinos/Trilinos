@@ -50,7 +50,7 @@
 #include "Panzer_STK_IOClosureModel_Factory.hpp"
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
   template <typename TraitsT>
   class IOClosureModelFactory_TemplateBuilder {
