@@ -62,7 +62,7 @@
 
 #ifdef HAVE_IOSS
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 TEUCHOS_UNIT_TEST(tExodusReaderFactory, basic_test)
 {

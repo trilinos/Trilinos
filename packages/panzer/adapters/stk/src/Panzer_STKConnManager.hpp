@@ -54,7 +54,7 @@
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 template <typename GO>
 class STKConnManager : public panzer::ConnManager<int,GO> {

@@ -53,7 +53,7 @@ namespace panzer {
    template <typename LO,typename GO> class DOFManagerFEI;
 }
 
-namespace panzer_stk { 
+namespace panzer_stk_classic { 
 
 /** Write a vector to the cell data of a STK mesh. This will look up
   * the cell field <code>prefix+fieldName+postfix</code>, which is assumed
@@ -91,7 +91,7 @@ void sorted_permutation(const RAContainer & cont,std::vector<std::size_t> & perm
 
 }
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 // utility class used by the sorted permutation objects
 template <typename RAContainer,typename Compare>
 struct PermFunctor {

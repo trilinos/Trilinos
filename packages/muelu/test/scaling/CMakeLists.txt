@@ -291,14 +291,6 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
     )
 
   TRIBITS_ADD_TEST(
-    ScalingTestParamList
-    NAME "ScalingTestParamListTpetra"
-    ARGS "--linAlgebra=Tpetra"
-    NUM_MPI_PROCS 4
-    COMM mpi # HAVE_MPI required
-    )
-
-  TRIBITS_ADD_TEST(
     ReadMatrix
     NAME "ReadMatrixTpetra"
     ARGS "--linAlgebra=Tpetra --xml=simple.xml"

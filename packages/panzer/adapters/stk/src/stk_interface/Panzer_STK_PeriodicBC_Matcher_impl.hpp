@@ -52,7 +52,7 @@
 
 #include <set>
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 namespace periodic_helpers {
 
 template <typename Matcher>
