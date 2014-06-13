@@ -170,7 +170,7 @@ namespace MueLu {
       std::string verbosityLevel = paramList.get<std::string>("verbosity");
       TEUCHOS_TEST_FOR_EXCEPTION(verbMap.count(verbosityLevel) == 0, Exceptions::RuntimeError, "Invalid verbosity level: \"" << verbosityLevel << "\"");
       this->verbosity_ = verbMap[verbosityLevel];
-      SetVerbLevel(this->verbosity_);
+      this->SetVerbLevel(this->verbosity_);
     }
 
     // Detect if we need to transfer coordinates to coarse levels. We do that iff
