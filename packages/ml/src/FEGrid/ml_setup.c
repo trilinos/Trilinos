@@ -1414,7 +1414,9 @@ void ML_get_basis_functions_coef(ML_CommInfoAGX *com, void *c_grid,
    int    j, m, length, mcnt, ncnt, index, nodecnt, cur_proc;
    int    cur_coef_leng, ndim, ncelmnts, *coef_ptr;
    ml_big_int celenum, gelenum, *ev_list;
-   int    cur_leng, *track_array=NULL, track_leng, prev_track_leng;
+   int    cur_leng, *track_array=NULL;
+   int    track_leng = 0;
+   int    prev_track_leng;
    int    MAX_VERT_PER_ELE;
    double *coord, *coefs, *coefs2;
 
