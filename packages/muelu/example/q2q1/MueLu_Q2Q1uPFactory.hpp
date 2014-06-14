@@ -807,18 +807,12 @@ namespace MueLu {
     std::vector<int>  candidates(n);
 
     for (int numCDepends = 1; numCDepends <= 2; numCDepends++) {
-      for (int i = 0; i < n; i++)
-        candidates[i] = 0;
-
       int numCandidates = 0;
       for (int i = 0; i < n; i++)
-        if (status[i] != CPOINT && numCpts[i] == numCDepends)
+        if (status[i] < CPOINT && numCpts[i] == numCDepends)
           candidates[numCandidates++] = i;
 
       for (int p = 0; p < numCandidates; p++) {
-        const LO* neighs = &ja[ia[candidates[p]]];
-        int numNeighbors = ia[candidates[p]+1] - ia[candidates[p]];
-
         // Mark already existing CPOINT dependencies
         LO* cpts = myCpts(candidates[p]);
         for (int k = 0; k < numCpts[candidates[p]]; k++)
@@ -826,7 +820,9 @@ namespace MueLu {
 
         // Make a list of my neighbors' CPOINT dependencies, excluding all
         // already existing CPOINT dependencies for candidates[p]
-        int numNearbyCs = 0;
+        const LO* neighs = &ja[ia[candidates[p]]];
+        int numNeighbors = ia[candidates[p]+1] - ia[candidates[p]];
+        int numNearbyCs  = 0;
         for (int k = 0; k < numNeighbors; k++) {
           LO        curNeigh = neighs[k];
           const LO* neighCs  = myCpts(curNeigh);
@@ -883,32 +879,34 @@ namespace MueLu {
               newVec[k] = coords1D[k][nearbyCs[j]] - coords1D[k][candidates[p]];
               norm += newVec[k]*newVec[k];
             }
-            norm  = sqrt(norm);
+            norm = sqrt(norm);
             for (int k = 0; k < NDim; k++)
               newVec[k] /= norm;
 
             score[j] = 0;
             for (int k = 0; k < NDim; k++)
               score[j] += newVec[k]*(vec1[k] + vec2[k]);
+            // Why??
             score[j] /= 2;
 
             dists[j] = norm;
           }
 
-          double mDist = 0.;
+          // Normalize distances
+          double maxDist = 0.;
           for (int j = 0; j < numNearbyCs; j++)
-            if (mDist < dists[j])
-              mDist = dists[j];
+            if (maxDist < dists[j])
+              maxDist = dists[j];
 
           for (int j = 0; j < numNearbyCs; j++)
-            dists[j] /= mDist;
+            dists[j] /= maxDist;
 
           const double distWeight   =  0.3;
           double       maxComposite = -10000;
           double       maxIndex     = -1;
           for (int j = 0; j < numNearbyCs; j++) {
             // The formula is
-            //     if (score[j] - distWeight*dists[j] > mComposite)
+            //     if (score[j] - distWeight*dists[j] > maxComposite)
             // It was modified to match Matlab
             double composite = score[j] - distWeight*dists[j] + 1.0e-7*(nearbyCs[j]-1);
             if (maxComposite < composite) {
@@ -917,7 +915,7 @@ namespace MueLu {
             }
           }
 
-          if (score[maxIndex] - numCDepends*0.2 > -0.3) {
+          if (score[maxIndex] - 0.2*numCDepends > -0.3) {
             TEUCHOS_TEST_FOR_EXCEPTION(numCpts[candidates[p]] >= myCpts.getNnzPerRow(), Exceptions::RuntimeError, "Increase max number of C points per row");
             myCpts(candidates[p])[numCpts[candidates[p]]++] = nearbyCs[maxIndex];
           }

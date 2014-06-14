@@ -259,7 +259,7 @@ bool Brusselator::evaluate(FillType fType,
   double term1, term2;
   double jac11, jac12, jac21, jac22;
   double xx[2];
-  double uu[2*NUMSPECIES]; // Use of the anonymous enum is needed for SGI builds
+  double uu[2*NUMSPECIES] = {0.0}; // Use of the anonymous enum is needed for SGI builds
   Basis basis(NumSpecies);
 
 

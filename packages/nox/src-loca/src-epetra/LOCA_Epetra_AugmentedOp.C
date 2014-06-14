@@ -483,8 +483,9 @@ LOCA::Epetra::AugmentedOp::blockMap2PointMap(const Epetra_BlockMap& BlockMap,
 
   int MaxElementSize = BlockMap.MaxElementSize();
   int PtNumMyElements = BlockMap.NumMyPoints();
-  int * PtMyGlobalElements = 0;
-  if (PtNumMyElements>0) PtMyGlobalElements = new int[PtNumMyElements];
+
+  TEUCHOS_ASSERT_INEQUALITY(PtNumMyElements, >, 0);
+  int * PtMyGlobalElements = new int[PtNumMyElements];
 
   int NumMyElements = BlockMap.NumMyElements();
 
@@ -500,6 +501,8 @@ LOCA::Epetra::AugmentedOp::blockMap2PointMap(const Epetra_BlockMap& BlockMap,
 
   if (PtNumMyElements>0) delete [] PtMyGlobalElements;
 
-  if (!BlockMap.PointSameAs(*PointMap)) {EPETRA_CHK_ERR(-1);} // Maps not compatible
+  // Maps not compatible?
+  TEUCHOS_TEST_FOR_EXCEPT(!BlockMap.PointSameAs(*PointMap));
+
   return(0);
 }
