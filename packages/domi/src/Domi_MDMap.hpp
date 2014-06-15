@@ -1265,12 +1265,12 @@ MDMap(const MDMap< Node > & parent,
       "axis = " << axis  << " is invalid for communicator with " <<
         numDims << " dimensions");
 
+    Slice globalBounds = parent.getGlobalBounds(axis,true);
     TEUCHOS_TEST_FOR_EXCEPTION(
-      ((index < parent.getGlobalBounds(axis,true).start()) ||
-       (index >= parent.getGlobalBounds(axis,true).stop())),
+      ((index < globalBounds.start()) || (index >= globalBounds.stop())),
       RangeError,
       "index = " << index  << " is invalid for MDMap axis " <<
-      axis << " with bounds " << parent.getGlobalBounds(axis,true));
+      axis << " with bounds " << globalBounds);
 
     // Determine the axis rank for the processor on which the index
     // lives, and construct the MDComm
