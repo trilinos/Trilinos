@@ -317,18 +317,18 @@ bool MOERTEL::Solver::Solve_MLAztec(Teuchos::ParameterList& mlparams,
   b_->Update(-1.0,xtmp2,1.0);
 
   if (preconditioner=="AZ_user_precond")
-    if (mlprec_==Teuchos::null || matrixisnew_);
-  {
+    if (mlprec_==Teuchos::null || matrixisnew_)
+    {
 #if 1
-    mlprec_ = Teuchos::rcp(new MOERTEL::Mortar_ML_Preconditioner(matrix_,
-          origmatrix_,
-          WT_,B_,
-          Annmap_,
-          mlparams));
+      mlprec_ = Teuchos::rcp(new MOERTEL::Mortar_ML_Preconditioner(matrix_,
+            origmatrix_,
+            WT_,B_,
+            Annmap_,
+            mlparams));
 #else // change mlprec_ in mrtr_solver.H as well to test black box ML
-    mlprec_ = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*matrix_,mlparams,true));
+      mlprec_ = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*matrix_,mlparams,true));
 #endif
-  }
+    }
 
   // create the Aztec solver
   aztecsolver_ = Teuchos::rcp(new AztecOO());
