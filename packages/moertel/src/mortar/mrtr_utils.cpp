@@ -253,7 +253,7 @@ bool MOERTEL::solve33(const double A[][3], double* x, const double* b)
   }
   for (int i=0; i<3; ++i)
     x[i] = XX(i,0);
-  
+
   return true;
 }
 
@@ -264,7 +264,7 @@ int MOERTEL::digit_ten(int number)
 {
   number = abs(number);
   if (number<10) return 0;
-  number /= 10; 
+  number /= 10;
   number = number%10;
   return number;
 }
@@ -417,7 +417,7 @@ int MOERTEL::MatrixMatrixAdd(const Epetra_CrsMatrix& A, bool transposeA,double s
           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
 	  throw ReportError(oss);
   }
-  
+
   //explicit tranpose A formed as necessary
   Epetra_CrsMatrix* Aprime = 0;
   EpetraExt::RowMatrix_Transpose* Atrans = 0;
@@ -428,9 +428,9 @@ int MOERTEL::MatrixMatrixAdd(const Epetra_CrsMatrix& A, bool transposeA,double s
   }
   else
     Aprime = const_cast<Epetra_CrsMatrix*>(&A);
-    
+
   B.Scale(scalarB);
-  
+
   //Loop over Aprime's rows and sum into
   int MaxNumEntries = EPETRA_MAX( Aprime->MaxNumEntries(), B.MaxNumEntries() );
   int NumEntries;
@@ -480,7 +480,7 @@ int MOERTEL::MatrixMatrixAdd(const Epetra_CrsMatrix& A, bool transposeA,double s
 /*----------------------------------------------------------------------*
  | Multiply matrices A*B                                     mwgee 01/06|
  *----------------------------------------------------------------------*/
-Epetra_CrsMatrix* MOERTEL::MatMatMult(Epetra_CrsMatrix& A, bool transA, 
+Epetra_CrsMatrix* MOERTEL::MatMatMult(Epetra_CrsMatrix& A, bool transA,
                                       Epetra_CrsMatrix& B, bool transB)
 {
   // transpose A if indicated
@@ -497,8 +497,8 @@ Epetra_CrsMatrix* MOERTEL::MatMatMult(Epetra_CrsMatrix& A, bool transA,
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return NULL;
     }
-  }  
-  
+  }
+
   // transpose B if indicated
   Epetra_CrsMatrix* Btrans = &B;
   EpetraExt::RowMatrix_Transpose* transposerB = NULL;
@@ -514,23 +514,23 @@ Epetra_CrsMatrix* MOERTEL::MatMatMult(Epetra_CrsMatrix& A, bool transA,
       return NULL;
     }
   }
-  
+
   // make sure FillComplete was called on the matrices
-  if (!Atrans->Filled()) 
+  if (!Atrans->Filled())
   {
     std::cout << "***ERR*** MOERTEL::MatMatMult:\n"
          << "***ERR*** FillComplete() was not called on matrix A\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return NULL;
   }
-  if (!Btrans->Filled()) 
+  if (!Btrans->Filled())
   {
     std::cout << "***ERR*** MOERTEL::MatMatMult:\n"
          << "***ERR*** FillComplete() was not called on matrix B\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return NULL;
   }
-  
+
   // create an ML communicator
   ML_Comm* ml_comm;
   ML_Comm_Create(&ml_comm);
@@ -552,22 +552,22 @@ Epetra_CrsMatrix* MOERTEL::MatMatMult(Epetra_CrsMatrix& A, bool transA,
   MPI_Comm_size(mpicomm,&(ml_comm->ML_nprocs));
   MPI_Comm_rank(mpicomm,&(ml_comm->ML_mypid));
 #endif
-#endif  
+#endif
   // create ml operators from the matrices and one for the output
   ML_Operator* mlA = ML_Operator_Create(ml_comm);
   ML_Operator* mlB = ML_Operator_Create(ml_comm);
   ML_Operator* mlC = ML_Operator_Create(ml_comm);
-  
-  
+
+
   // wrap the input matrices as ML_Operator
   ML_Operator_WrapEpetraMatrix((Epetra_RowMatrix*)Atrans,mlA);
   ML_Operator_WrapEpetraMatrix((Epetra_RowMatrix*)Btrans,mlB);
   //ML_Operator_Print(mlA,"mlA");
   //ML_Operator_Print(mlB,"mlB");
-  
+
   // make the multiply
   ML_2matmult(mlA,mlB,mlC,ML_EpetraCRS_MATRIX);
-  
+
   // Extract the epetra stuff from mlC and blow the rest
   Epetra_CrsMatrix* result = static_cast<Epetra_CrsMatrix*>(mlC->data);
   if (!result->Filled())
@@ -577,13 +577,13 @@ Epetra_CrsMatrix* MOERTEL::MatMatMult(Epetra_CrsMatrix& A, bool transA,
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
   }
   result->OptimizeStorage();
-  
+
   // tidy up
-  ML_Operator_Destroy(&mlA);  
-  ML_Operator_Destroy(&mlB);  
-  ML_Operator_Destroy(&mlC);  
+  ML_Operator_Destroy(&mlA);
+  ML_Operator_Destroy(&mlB);
+  ML_Operator_Destroy(&mlC);
   ML_Comm_Destroy(&ml_comm);
-  
+
   if (transA)
     delete transposerA;
   if (transB)
@@ -596,33 +596,33 @@ Epetra_CrsMatrix* MOERTEL::MatMatMult(Epetra_CrsMatrix& A, bool transA,
 /*----------------------------------------------------------------------*
  | Multiply matrices A*B                                     mwgee 01/06|
  *----------------------------------------------------------------------*/
-Epetra_CrsMatrix* MOERTEL::MatMatMult(const Epetra_CrsMatrix& A, bool transA, 
+Epetra_CrsMatrix* MOERTEL::MatMatMult(const Epetra_CrsMatrix& A, bool transA,
                                       const Epetra_CrsMatrix& B, bool transB,
                                       int outlevel)
 {
   // make sure FillComplete was called on the matrices
-  if (!A.Filled()) 
+  if (!A.Filled())
   {
     std::cout << "***ERR*** MOERTEL::MatMatMult:\n"
          << "***ERR*** FillComplete() was not called on matrix A\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return NULL;
   }
-  if (!B.Filled()) 
+  if (!B.Filled())
   {
     std::cout << "***ERR*** MOERTEL::MatMatMult:\n"
          << "***ERR*** FillComplete() was not called on matrix B\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return NULL;
   }
-  
+
   // create resultmatrix with correct rowmap
   Epetra_CrsMatrix* C = NULL;
   if (!transA)
     C = new Epetra_CrsMatrix(Copy,A.OperatorRangeMap(),20,false);
   else
     C = new Epetra_CrsMatrix(Copy,A.OperatorDomainMap(),20,false);
-  
+
   // make the multiply
   Epetra_Time time(A.Comm());
   if (outlevel>9)
@@ -659,7 +659,7 @@ Epetra_CrsMatrix* MOERTEL::PaddedMatrix(const Epetra_Map rowmap, double val, con
       delete tmp;
       return NULL;
     }
-  }                                                              
+  }
   return tmp;
 }
 
@@ -671,9 +671,9 @@ Epetra_CrsMatrix* MOERTEL::StripZeros(Epetra_CrsMatrix& A, double eps)
   Epetra_CrsMatrix* out = new Epetra_CrsMatrix(Copy,A.RowMap(),10,false);
   for (int lrow=0; lrow<A.NumMyRows(); ++lrow)
   {
-    int grow = A.GRID(lrow); 
-    if (grow<0) 
-    { 
+    int grow = A.GRID(lrow);
+    if (grow<0)
+    {
       std::cout << "***ERR*** MOERTEL::StripZeros:\n"
            << "***ERR*** Cannot gind global row indes from local row index\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -684,8 +684,8 @@ Epetra_CrsMatrix* MOERTEL::StripZeros(Epetra_CrsMatrix& A, double eps)
     int* lindices;
     double* values;
     int err  = A.ExtractMyRowView(lrow,numentries,values,lindices);
-    if (err) 
-    { 
+    if (err)
+    {
       std::cout << "***ERR*** MOERTEL::StripZeros:\n"
            << "***ERR*** A.ExtractMyRowView returned " << err << std::endl
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -694,18 +694,18 @@ Epetra_CrsMatrix* MOERTEL::StripZeros(Epetra_CrsMatrix& A, double eps)
     }
     for (int j=0; j<numentries; ++j)
     {
-      int lcol = lindices[j];  
-      int gcol = A.GCID(lcol); 
-      if (gcol<0) { 
+      int lcol = lindices[j];
+      int gcol = A.GCID(lcol);
+      if (gcol<0) {
 			std::stringstream oss;
-		  oss << "ERROR: gcol<0 \n"; 
+		  oss << "ERROR: gcol<0 \n";
 		throw ReportError(oss);
 	  }
       if (abs(values[j])<eps)
         continue;
       int err = out->InsertGlobalValues(grow,1,&values[j],&gcol);
-      if (err != 0 && err != 1) 
-      { 
+      if (err != 0 && err != 1)
+      {
         std::cout << "***ERR*** MOERTEL::StripZeros:\n"
              << "***ERR*** out->InsertGlobalValues returned " << err << std::endl
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -735,14 +735,14 @@ bool MOERTEL::Print_Matrix(std::string name, Epetra_CrsMatrix& A, int ibase)
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
-  
+
   // write global and local dimensions of this operator
   fprintf(out,"%d %d 0\n",A.RangeMap().NumGlobalElements(),A.DomainMap().NumGlobalElements());
   for (int lrow=0; lrow<A.NumMyRows(); ++lrow)
   {
-    int grow = A.GRID(lrow); 
-    if (grow<0) 
-    { 
+    int grow = A.GRID(lrow);
+    if (grow<0)
+    {
       std::cout << "***ERR*** MOERTEL::Print_Matrix:\n"
            << "***ERR*** Cannot gind global row index from local row index\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -752,21 +752,21 @@ bool MOERTEL::Print_Matrix(std::string name, Epetra_CrsMatrix& A, int ibase)
     int* lindices;
     double* values;
     int err  = A.ExtractMyRowView(lrow,numentries,values,lindices);
-    if (err) 
-    { 
+    if (err)
+    {
       std::cout << "***ERR*** MOERTEL::Print_Matrix:\n"
            << "***ERR*** A.ExtractMyRowView returned " << err << std::endl
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      delete out;
+      fclose(out);
       return false;
     }
     for (int j=0; j<numentries; ++j)
     {
-      int lcol = lindices[j];  
-      int gcol = A.GCID(lcol); 
-      if (gcol<0) { 
+      int lcol = lindices[j];
+      int gcol = A.GCID(lcol);
+      if (gcol<0) {
 			std::stringstream oss;
-		  oss << "ERROR: gcol<0 \n"; 
+		  oss << "ERROR: gcol<0 \n";
 		throw ReportError(oss);
 	  }
       fprintf(out," %d   %d   %20.10e\n",grow+ibase,gcol+ibase,values[j]);
@@ -800,9 +800,9 @@ bool MOERTEL::Print_Vector(std::string name, Epetra_Vector& v, int ibase)
   //fprintf(out,"%d %d\n",v.GlobalLength(),v.MyLength());
   for (int lrow=0; lrow<v.MyLength(); ++lrow)
   {
-    int grow = v.Map().GID(lrow); 
-    if (grow<0) 
-    { 
+    int grow = v.Map().GID(lrow);
+    if (grow<0)
+    {
       std::cout << "***ERR*** MOERTEL::Print_Vector:\n"
            << "***ERR*** Cannot gind global row index from local row index\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -836,14 +836,14 @@ bool MOERTEL::Print_Graph(std::string name, Epetra_CrsGraph& A, int ibase)
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
-  
+
   // write global and local dimensions of this operator
   fprintf(out,"%d %d 0\n",A.RangeMap().NumGlobalElements(),A.DomainMap().NumGlobalElements());
   for (int lrow=0; lrow<A.NumMyRows(); ++lrow)
   {
-    int grow = A.GRID(lrow); 
-    if (grow<0) 
-    { 
+    int grow = A.GRID(lrow);
+    if (grow<0)
+    {
       std::cout << "***ERR*** MOERTEL::Print_Graph:\n"
            << "***ERR*** Cannot gind global row index from local row index\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -852,21 +852,21 @@ bool MOERTEL::Print_Graph(std::string name, Epetra_CrsGraph& A, int ibase)
     int numentries;
     int* lindices;
     int err  = A.ExtractMyRowView(lrow,numentries,lindices);
-    if (err) 
-    { 
+    if (err)
+    {
       std::cout << "***ERR*** MOERTEL::Print_Graph:\n"
            << "***ERR*** A.ExtractMyRowView returned " << err << std::endl
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      delete out;
+      fclose(out);
       return false;
     }
     for (int j=0; j<numentries; ++j)
     {
-      int lcol = lindices[j];  
-      int gcol = A.GCID(lcol); 
-      if (gcol<0) { 
+      int lcol = lindices[j];
+      int gcol = A.GCID(lcol);
+      if (gcol<0) {
 			std::stringstream oss;
-		  oss << "ERROR: gcol<0 \n"; 
+		  oss << "ERROR: gcol<0 \n";
 		throw ReportError(oss);
 	  }
       fprintf(out," %d   %d   %20.10e\n",grow+ibase,gcol+ibase,1.0);
@@ -915,7 +915,7 @@ bool MOERTEL::SplitMatrix2x2(Teuchos::RCP<Epetra_CrsMatrix> A,
   const Epetra_Comm& Comm   = A->Comm();
   const Epetra_Map&  A22map = *(A22rowmap.get());
   const Epetra_Map&  A11map = *(A11rowmap.get());
-  
+
   //----------------------------- create a parallel redundant map of A22map
   std::map<int,int> a22gmap;
   {
@@ -949,7 +949,7 @@ bool MOERTEL::SplitMatrix2x2(Teuchos::RCP<Epetra_CrsMatrix> A,
       a22gmap[a22global[i]] = 1;
     a22global.clear();
   }
-  
+
   //--------------------------------------------------- create matrix A22
   A22 = Teuchos::rcp(new Epetra_CrsMatrix(Copy,A22map,100));
   {
@@ -1004,7 +1004,7 @@ bool MOERTEL::SplitMatrix2x2(Teuchos::RCP<Epetra_CrsMatrix> A,
     } //for (int i=0; i<A->NumMyRows(); ++i)
     a22gcindices.clear();
     a22values.clear();
-  }  
+  }
   A22->FillComplete();
   A22->OptimizeStorage();
 
@@ -1060,7 +1060,7 @@ bool MOERTEL::SplitMatrix2x2(Teuchos::RCP<Epetra_CrsMatrix> A,
   }
   A11->FillComplete();
   A11->OptimizeStorage();
-  
+
   //---------------------------------------------------- create matrix A12
   A12 = Teuchos::rcp(new Epetra_CrsMatrix(Copy,A11map,100));
   {
@@ -1114,7 +1114,7 @@ bool MOERTEL::SplitMatrix2x2(Teuchos::RCP<Epetra_CrsMatrix> A,
   A12->FillComplete(A22map,A11map);
   A12->OptimizeStorage();
 
-  //----------------------------------------------------------- create A21  
+  //----------------------------------------------------------- create A21
   A21 = Teuchos::rcp(new Epetra_CrsMatrix(Copy,A22map,100));
   {
 	std::vector<int>    a21gcindices(100);
@@ -1166,11 +1166,11 @@ bool MOERTEL::SplitMatrix2x2(Teuchos::RCP<Epetra_CrsMatrix> A,
   }
   A21->FillComplete(A11map,A22map);
   A21->OptimizeStorage();
-  
+
   //-------------------------------------------------------------- tidy up
   a22gmap.clear();
   return true;
-}                                          
+}
 
 
 /*----------------------------------------------------------------------*
@@ -1181,7 +1181,7 @@ Epetra_Map* MOERTEL::SplitMap(const Epetra_Map& Amap,
 {
   const Epetra_Comm& Comm = Amap.Comm();
   const Epetra_Map&  Ag = Agiven;
-  
+
   int count=0;
   std::vector<int> myaugids(Amap.NumMyElements());
   for (int i=0; i<Amap.NumMyElements(); ++i)
@@ -1197,7 +1197,7 @@ Epetra_Map* MOERTEL::SplitMap(const Epetra_Map& Amap,
   Epetra_Map* Aunknown = new Epetra_Map(gcount,count,&myaugids[0],0,Comm);
   myaugids.clear();
   return Aunknown;
-}                                          
+}
 
 /*----------------------------------------------------------------------*
  | split a vector into 2 pieces with given submaps                 06/06|
@@ -1214,7 +1214,7 @@ bool MOERTEL::SplitVector(const Epetra_Vector& x,
   //use an exporter or importer object
   Epetra_Export exporter_x1(x.Map(),x1map);
   Epetra_Export exporter_x2(x.Map(),x2map);
-  
+
   int err = x1->Export(x,exporter_x1,Insert);
   if (err)
   {
@@ -1224,7 +1224,7 @@ bool MOERTEL::SplitVector(const Epetra_Vector& x,
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
 	throw ReportError(oss);
   }
-  
+
   err = x2->Export(x,exporter_x2,Insert);
   if (err)
   {
@@ -1234,9 +1234,9 @@ bool MOERTEL::SplitVector(const Epetra_Vector& x,
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
 	throw ReportError(oss);
   }
-  
+
   return true;
-}                                          
+}
 
 /*----------------------------------------------------------------------*
  | merge content of 2 vectors into one (assumes matching submaps)  06/06|
@@ -1248,7 +1248,7 @@ bool MOERTEL::MergeVector(const Epetra_Vector& x1,
   //use an exporter or importer object
   Epetra_Export exporter_x1(x1.Map(),xresult.Map());
   Epetra_Export exporter_x2(x2.Map(),xresult.Map());
-  
+
   int err = xresult.Export(x1,exporter_x1,Insert);
   if (err)
   {
@@ -1259,7 +1259,7 @@ bool MOERTEL::MergeVector(const Epetra_Vector& x1,
 	throw ReportError(oss);
   }
 
-  err = xresult.Export(x2,exporter_x2,Insert); 
+  err = xresult.Export(x2,exporter_x2,Insert);
   if (err)
   {
 	std::stringstream oss;
@@ -1270,7 +1270,7 @@ bool MOERTEL::MergeVector(const Epetra_Vector& x1,
   }
 
   return true;
-}                                          
+}
 
 /*----------------------------------------------------------------------*
  | Report errors to std::cerr											|
