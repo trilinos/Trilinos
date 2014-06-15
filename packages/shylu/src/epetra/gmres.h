@@ -58,7 +58,7 @@ void GeneratePlaneRotation(const Scalar &dx, const Scalar &dy, Scalar &cs,
 }
 
 //! Apply i-th Given rotation Gi. Note Qn= G0 * ... * Gn
-//! Gi = \left( \begin{array}[ccc] I 0 0 
+//! Gi = \left( \begin{array}[ccc] I 0 0
 template <typename Scalar>
 void ApplyPlaneRotation(Scalar &dx, Scalar &dy, const Scalar &cs,
                         const Scalar &sn)
@@ -72,7 +72,7 @@ void ApplyPlaneRotation(Scalar &dx, Scalar &dy, const Scalar &cs,
 //! solving R_{k+1} y_{k+1} = bp and setting x = x + Q_{k+1} y_{k+1}
 template < typename LocalMatrix, typename LocalVector, typename MultiVector >
 void Update(MultiVector &x, const int k, const LocalMatrix &h,
-            const LocalVector &s, const MultiVector v)
+            const LocalVector &s, const MultiVector &v)
 {
     LocalVector y(s);
 
@@ -150,16 +150,16 @@ int GMRES(const Operator &A, MultiVector &x, const MultiVector &b,
             }
             w.Norm2(&(G.H[i + 1][i]));
             MultiVector* vi1 = (*G.v)(i + 1);
-	    // Set (*G.v)(i + 1) to w/||w|| 
+            // Set (*G.v)(i + 1) to w/||w||
             vi1->Scale(1.0 / G.H[i + 1][i], w);
 
             for (k = 0; k < i; k++) {
                 ApplyPlaneRotation(G.H[k][i], G.H[k + 1][i], G.cs[k], G.sn[k]);
             }
 
-	    // Generate i-th Given rotation Gi. Note Qn= G0 * ... * Gn
+      // Generate i-th Given rotation Gi. Note Qn= G0 * ... * Gn
             GeneratePlaneRotation(G.H[i][i], G.H[i + 1][i], G.cs[i], G.sn[i]);
-	    // Apply Gi
+      // Apply Gi
             ApplyPlaneRotation(G.H[i][i], G.H[i + 1][i], G.cs[i], G.sn[i]);
             ApplyPlaneRotation(s[i], s[i + 1], G.cs[i], G.sn[i]);
 
