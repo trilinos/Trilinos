@@ -222,13 +222,12 @@ public:
            const Slice & slice,
            int bndryPad = 0);
 
-  /** \brief Create a cloned MDVector for a different node type
+  /** \brief Assignment operator
    *
-   * \param node2 [in] the new node
+   * \param source [in] source MDVector to be copied
    */
-  template< class Node2 >
-  Teuchos::RCP< MDVector< Scalar, Node2 > >
-  clone(const Teuchos::RCP< Node2 > & node2) const;
+  MDVector< Scalar, Node > &
+  operator=(const MDVector< Scalar, Node > & source);
 
   /** \brief Destructor 
    */
@@ -939,7 +938,7 @@ private:
   // The Teuchos communicator.  Note that this is always a reference
   // to the communicator of the _mdMap, and is stored only for
   // convenience
-  const TeuchosCommRCP _teuchosComm;
+  TeuchosCommRCP _teuchosComm;
 
   // The MDMap that describes the domain decomposition of this
   // MDVector
@@ -1234,7 +1233,7 @@ MDVector(const MDVector< Scalar, Node > & parent,
   setObjectLabel("Domi::MDVector");
 
   // Obtain the parent MDMap
-  Teuchos::RCP< const MDMap< Node > > parentMdMap = parent->getMDMap();
+  Teuchos::RCP< const MDMap< Node > > parentMdMap = parent.getMDMap();
 
   // Obtain the new, sliced MDMap
   _mdMap = Teuchos::rcp(new MDMap< Node >(*parentMdMap,
@@ -1298,10 +1297,14 @@ MDVector(const MDVector< Scalar, Node > & parent,
                                           axis,
                                           slice,
                                           bndryPad));
+  _teuchosComm = _mdMap->getTeuchosComm();
 
   // Check that we are on the new sub-communicator
   if (_mdMap->onSubcommunicator())
   {
+    // Get the concrete bounds
+    Slice bounds = slice.bounds(parentMdMap->getGlobalDim(axis,true));
+
     // Convert the given Slice start index from global to local.  We
     // start by determining the starting global index on this
     // processor along the given axis, ignoring the boundary padding.
@@ -1315,14 +1318,14 @@ MDVector(const MDVector< Scalar, Node > & parent,
     // this processor minus the given boundary pad.  If this is less
     // than zero, then the start is on a lower processor, so set the
     // local start to zero.
-    dim_type start = std::max(0, slice.start() - origin - bndryPad);
+    dim_type start = std::max(0, bounds.start() - origin - bndryPad);
 
     // Now get the stop index of the local slice.  This will be the
     // stop of the given slice minus the starting global index on this
     // processor plus the given boundary pad.  If this is larger than
     // the local dimension, then set the local stop to the local
     // dimension.
-    dim_type stop = std::min(slice.stop() - origin + bndryPad,
+    dim_type stop = std::min(bounds.stop() - origin + bndryPad,
                              parentMdMap->getLocalDim(axis,true));
 
     // Obtain the new MDArrayView using the local slice
@@ -1336,6 +1339,25 @@ MDVector(const MDVector< Scalar, Node > & parent,
     _mdArrayRcp.clear();
     _mdArrayView = MDArrayView< Scalar >();
   }
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class Node >
+MDVector< Scalar, Node > &
+MDVector< Scalar, Node >::
+operator=(const MDVector< Scalar, Node > & source)
+{
+  _teuchosComm  = source._teuchosComm;
+  _mdMap        = source._mdMap;
+  _mdArrayRcp   = source._mdArrayRcp;
+  _mdArrayView  = source._mdArrayView;
+  _nextAxis     = source._nextAxis;
+  _sendMessages = source._sendMessages;
+  _recvMessages = source._recvMessages;
+  _requests     = source._requests;
+  return *this;
 }
 
 ////////////////////////////////////////////////////////////////////////
