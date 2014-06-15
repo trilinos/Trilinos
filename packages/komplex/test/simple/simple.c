@@ -109,6 +109,14 @@ int main(int argc, char *argv[])
   }
   N_local = atoi(argv[1]);
 
+  const int N_local_max = 1000000;
+  if (N_local > N_local_max) {
+    if (myPID==0)
+      printf("No more than %d local equation allowed\n", N_local_max);
+    exit(1);
+  }
+
+
   /* Need N_local+1 elements for val/bindx arrays */
   val_real = malloc((N_local+1)*sizeof(double));
   val_imag = malloc((N_local+1)*sizeof(double));

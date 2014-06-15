@@ -144,10 +144,10 @@ void AZK_create_matrix_c2k(int options[], double params[], int proc_config[],
   int n_complex_nonzeros = 0, mat_type;
   int *bindx_complex, *bpntr_complex, *indx_complex, *rpntr_complex;
   double *val_complex;
-  int *rpntr, *cpntr, *bpntr, *indx, *bindx;
+  int *rpntr, *cpntr = NULL, *bpntr, *indx, *bindx;
   double *val;
   int *data_org_complex, *data_org;
-  int *external, *update_index, *extern_index;
+  int *external, *update_index = NULL, *extern_index = NULL;
   int *update_complex, *global_bindx_complex;
 
 #ifdef DEBUG
@@ -1081,10 +1081,10 @@ void AZK_create_matrix_ri2k(int options[], double params[], int proc_config[],
   int n_real_nonzeros = 0, mat_type;
   int *bindx_real, *bpntr_real, *indx_real, *rpntr_real;
   double *val_real;
-  int *rpntr, *cpntr, *bpntr, *indx, *bindx;
+  int *rpntr, *cpntr = NULL, *bpntr, *indx, *bindx;
   double *val;
   int *data_org_real, *data_org;
-  int *external, *update_index, *extern_index;
+  int *external, *update_index = NULL, *extern_index = NULL;
   int *update_real, *global_bindx_real;
 
 #ifdef DEBUG
