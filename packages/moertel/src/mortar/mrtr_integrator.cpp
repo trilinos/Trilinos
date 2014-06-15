@@ -1120,9 +1120,9 @@ bool MOERTEL::Integrator::Integrate(Teuchos::RCP<MOERTEL::Segment> actseg,
 
       // interpolate shape function 0 from sseg
       // interpolate shape function 1 from sseg
-      double val_sfunc0[20];
-      double val_sfunc1[20];
-      double val_mfunc0[20];
+      double val_sfunc0[20] = {0.0};
+      double val_sfunc1[20] = {0.0};
+      double val_mfunc0[20] = {0.0};
       for (int i=0; i<np; ++i)
       {
         val_sfunc0[i] = 0.0;
@@ -1187,7 +1187,7 @@ bool MOERTEL::Integrator::Integrate(Teuchos::RCP<MOERTEL::Segment> actseg,
       //std::cout << "psxi[" << i << "] = " << psxi[i][0] << " / " << psxi[i][1] << std::endl;
     }
     // create a node to use for projection
-    double x[3];
+    double x[3] = {0.0};
     double n[3];
     int dof[3]; dof[0] = dof[1] = dof[2] = -1;
     Teuchos::RCP<MOERTEL::Node> gpnode = Teuchos::rcp(new MOERTEL::Node(-2,x,3,dof,false,OutLevel()));

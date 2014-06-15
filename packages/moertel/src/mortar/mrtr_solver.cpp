@@ -67,7 +67,8 @@ MOERTEL::Solver::Solver(Epetra_Comm& comm, int outlevel) :
   origmatrix_(Teuchos::null),
   WT_(Teuchos::null),
   B_(Teuchos::null),
-  I_(Teuchos::null)
+  I_(Teuchos::null),
+  params_(NULL)
 {
 }
 

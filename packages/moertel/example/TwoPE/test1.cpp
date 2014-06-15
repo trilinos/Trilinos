@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
 {
 
 #ifdef HAVE_MPI
-  int i, MyPID, NumProc, nedge, side=0, nnode, ScanSum;
+  int i, MyPID, NumProc, nedge=0, side=0, nnode, ScanSum;
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
   MyPID = Comm.MyPID();
@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
   if (NumProc != 2)
   {
     std::cout << "test1.exe needs to be run on 2 processors\n";
-	return 1;
+  return 1;
   }
   // ------------------------------------------------------------- //
   // create an empty MOERTEL::Interface, in this example just one
@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
   double L = 1/double(nedge);
   double coord[3];
   coord[0] = 1;
-  coord[2] = 0; 
+  coord[2] = 0;
   //
   // nodes on interface
   //
@@ -100,9 +100,9 @@ int main(int argc, char *argv[])
     nodeid[i] = ScanSum - nnode + i;
     MOERTEL::Node node(nodeid[i], coord, 1, &nodeid[i], false, printlevel);
     if(!interface.AddNode(node, side)){
-    	std::cout << "interface AddNode returned false\n";
-    	return 1;
-	}
+      std::cout << "interface AddNode returned false\n";
+      return 1;
+  }
   }
   //
   // segments on interface
@@ -124,19 +124,19 @@ int main(int argc, char *argv[])
     seg_id = ScanSum - nedge + i + 1;
     MOERTEL::Segment_Linear1D segment(seg_id, 2, econ, printlevel);
     if(!interface.AddSegment(segment, side)){
-    	std::cout << "interface AddSegment returned false\n";
-		return 1;
-	}
+      std::cout << "interface AddSegment returned false\n";
+    return 1;
+  }
   }
   //
   // mortar (master) side is 0
   //
   interface.SetMortarSide(0);
   interface.SetFunctionTypes(MOERTEL::Function::func_Linear1D,       // primal trace space
-			     MOERTEL::Function::func_DualLinear1D);  // dual mortar space (recommended)
+           MOERTEL::Function::func_DualLinear1D);  // dual mortar space (recommended)
   if (!interface.Complete()) {
     std::cout << "Interface completion returned false\n";
-	return -1;
+  return -1;
   }
   // ------------------------------------------------------------- //
   // create an empty MOERTEL::Manager for 2D problems
@@ -148,10 +148,10 @@ int main(int argc, char *argv[])
   // Add the interface to the manager
   // ------------------------------------------------------------- //
   manager.AddInterface(interface);
-  
+
   // ------------------------------------------------------------- //
   // we have to supply a rowmap of the whole problem so Moertel knows
-  // how the system of equations looks like. Constraint equations will 
+  // how the system of equations looks like. Constraint equations will
   // have rows n to n + nlm-1 where n is the number of degrees of freedom
   // and nlm is the number of lagrange multipliers
   // ------------------------------------------------------------- //
@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
   Comm.SumAll(&nnode, &gnnode, 1);
   Epetra_Map map(gnnode,nnode,nodeid,0,Comm);
   manager.SetProblemMap(&map);
-  
+
   // ============================================================= //
   // choose integration parameters
   // ============================================================= //
@@ -177,12 +177,12 @@ int main(int argc, char *argv[])
   // (Note we have not yet evaluated the PDE at all!)
   // ============================================================= //
   manager.Mortar_Integrate();
-    
+
   // print interface information
   // (Manager, Interface, Segment, Node implement the << operator)
   if (printlevel) std::cout << manager;
-  
-  
+
+
   // get the 2 pieces of the constraint equation
   const Epetra_CrsMatrix* D = manager.D();
   const Epetra_CrsMatrix* M = manager.M();
@@ -194,7 +194,7 @@ int main(int argc, char *argv[])
   constraints.FillComplete(D->DomainMap(),D->RangeMap());
   constraints.OptimizeStorage();
   std::cout << constraints;
-        
+
   MPI_Finalize();
 
   std::cout << "\nTest passed!" << std::endl;
