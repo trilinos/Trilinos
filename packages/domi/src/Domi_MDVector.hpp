@@ -467,6 +467,24 @@ public:
    */
   int getBndryPadSize(int axis) const;
 
+  /** \brief Assign all elements of the lower pad a constant value
+   *
+   * \param axis [in] the axis along which the lower padding is chosen
+   *
+   * \param value [in] the value to be assigned to all elements of the
+   *        lower padding
+   */
+  void setLowerPad(int axis, const Scalar value);
+
+  /** \brief Assign all elements of the upper pad a constant value
+   *
+   * \param axis [in] the axis along which the upper padding is chosen
+   *
+   * \param value [in] the value to be assigned to all elements of the
+   *        upper padding
+   */
+  void setUpperPad(int axis, const Scalar value);
+
   /** \brief Get the storage order
    */
   Layout getLayout() const;
@@ -1598,6 +1616,32 @@ MDVector< Scalar, Node >::
 getBndryPadSize(int axis) const
 {
   return _mdMap->getBndryPadSize(axis);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class Node >
+void
+MDVector< Scalar, Node >::
+setLowerPad(int axis,
+            const Scalar value)
+{
+  MDArrayView< Scalar > lowerPad = getLowerPadDataNonConst(axis);
+  lowerPad.assign(value);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class Node >
+void
+MDVector< Scalar, Node >::
+setUpperPad(int axis,
+            const Scalar value)
+{
+  MDArrayView< Scalar > upperPad = getUpperPadDataNonConst(axis);
+  upperPad.assign(value);
 }
 
 ////////////////////////////////////////////////////////////////////////
