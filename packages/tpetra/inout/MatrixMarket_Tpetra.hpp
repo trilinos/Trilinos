@@ -4439,7 +4439,8 @@ namespace Tpetra {
         return readMap (in, comm, node, err, tolerant, debug);
       }
 
-      /// \brief Read Map (as a MultiVector) from the given input stream, with optional debugging output stream.
+      /// \brief Read Map (as a MultiVector) from the given input
+      ///   stream, with optional debugging output stream.
       ///
       /// \warning We make no promises about backwards compatibility
       ///   for this method.  It may disappear or its interface may
@@ -4472,7 +4473,7 @@ namespace Tpetra {
                const bool tolerant=false,
                const bool debug=false)
       {
-        using Tpetra::global_size_t;
+        using Teuchos::arcp;
         using Teuchos::Array;
         using Teuchos::ArrayRCP;
         using Teuchos::as;
@@ -4480,17 +4481,22 @@ namespace Tpetra {
         using Teuchos::Comm;
         using Teuchos::CommRequest;
         using Teuchos::inOutArg;
+        using Teuchos::ireceive;
         using Teuchos::outArg;
+        using Teuchos::receive;
         using Teuchos::reduceAll;
         using Teuchos::REDUCE_MIN;
+        using Teuchos::isend;
         using Teuchos::SerialComm;
         using Teuchos::toString;
+        using Teuchos::wait;
         using std::endl;
+        typedef Tpetra::global_size_t GST;
         typedef ptrdiff_t int_type; // Can hold int and GO
         typedef local_ordinal_type LO;
         typedef global_ordinal_type GO;
         typedef node_type NT;
-        typedef Tpetra::MultiVector<int_type, LO, GO, NT> MV;
+        typedef Tpetra::MultiVector<GO, LO, GO, NT> MV;
 
         const int numProcs = comm->getSize ();
         const int myRank = comm->getRank ();
@@ -4499,10 +4505,34 @@ namespace Tpetra {
           err->pushTab ();
         }
         if (debug) {
-          *err << myRank << ": readMap: " << endl;
+          std::ostringstream os;
+          os << myRank << ": readMap: " << endl;
+          *err << os.str ();
         }
         if (err.is_null ()) {
           err->pushTab ();
+        }
+
+        // Tag for receive-size / send-size messages.  writeMap used
+        // tags 1337 and 1338; we count up from there.
+        const int sizeTag = 1339;
+        // Tag for receive-data / send-data messages.
+        const int dataTag = 1340;
+
+        // These are for sends on Process 0, and for receives on all
+        // other processes.  sizeReq is for the {receive,send}-size
+        // message, and dataReq is for the message containing the
+        // actual GIDs to belong to the receiving process.
+        RCP<CommRequest<int> > sizeReq;
+        RCP<CommRequest<int> > dataReq;
+
+        // Each process will have to receive the number of GIDs to
+        // expect.  Thus, we can post the receives now, and cancel
+        // them if something should go wrong in the meantime.
+        ArrayRCP<int_type> numGidsToRecv (1);
+        numGidsToRecv[0] = 0;
+        if (myRank != 0) {
+          sizeReq = ireceive<int, int_type> (numGidsToRecv, 0, sizeTag, *comm);
         }
 
         int readSuccess = 1;
@@ -4518,292 +4548,246 @@ namespace Tpetra {
           RCP<const Comm<int> > proc0Comm (new SerialComm<int> ());
           try {
             RCP<const map_type> dataMap;
-            // This is currently the only place where we use
-            // 'tolerant' and 'debug'.  Later, if we want to be
-            // clever, we could have tolerant mode allow PIDs out of
-            // order.
-            data = readDenseImpl<int_type> (in, proc0Comm, node, dataMap,
-                                            err, tolerant, debug);
+            // This is currently the only place where we use the
+            // 'tolerant' argument.  Later, if we want to be clever,
+            // we could have tolerant mode allow PIDs out of order.
+            data = readDenseImpl<GO> (in, proc0Comm, node, dataMap,
+                                      err, tolerant, debug);
             (void) dataMap; // Silence "unused" warnings
+            if (data.is_null ()) {
+              readSuccess = 0;
+              exMsg << "readDenseImpl() returned null." << endl;
+            }
           } catch (std::exception& e) {
             readSuccess = 0;
-            exMsg << e.what ();
+            exMsg << e.what () << endl;
           }
         }
-        broadcast<int, int> (*comm, 0, inOutArg (readSuccess));
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          readSuccess == 0, std::runtime_error,
-          "Tpetra::MatrixMarket::readMap: "
-          "Reading the Map failed with the following exception message: "
-          << exMsg.str ());
 
-        if (debug) {
-          *err << myRank << ": readMap: Successfully read data" << endl;
-        }
+        // Map from PID to all the GIDs for that PID.
+        // Only populated on Process 0.
+        std::map<int, Array<GO> > pid2gids;
 
-        ArrayRCP<const GO> myGids;
-        GO indexBase = 0; // must be global min GID
+        // The index base must be the global minimum GID.
+        // We will compute this on Process 0 and broadcast,
+        // so that all processes can set up the Map.
+        int_type globalNumGIDs = 0;
 
-        ArrayRCP<size_type> gidsPerProcess;
-        ArrayRCP<const int_type> GIDs, PIDs;
-        ArrayRCP<size_type> startIndices;
-        if (myRank == 0) {
-          try {
-            // Assume that the Map's data are ordered by PID (2nd column).
-            GIDs = data->getData (0);
-            PIDs = data->getData (1);
-            TEUCHOS_TEST_FOR_EXCEPTION(
-              GIDs.size () != PIDs.size (), std::logic_error,
-              "GIDs.size() = " << GIDs.size() << " != PIDs.size() = "
-              << PIDs.size() << ".  This should never happen.  "
-              "Please report this bug to the Tpetra developers.");
-            // Count of data in each process.
-            const size_type globalNumGIDs = GIDs.size ();
-            gidsPerProcess = arcp<size_type> (numProcs);
-            std::fill (gidsPerProcess.begin (), gidsPerProcess.end (), 0);
+        // The index base must be the global minimum GID.
+        // We will compute this on Process 0 and broadcast,
+        // so that all processes can set up the Map.
+        GO indexBase = 0;
 
-            // Error conditions.  If any are nonzero, there was an
-            // error.  We use int, not bool, because bool doesn't have
-            // an MPI_Datatype.
-            int numNegPids = 0;
-            int numTooBigPids = 0;
-            int pidsOutOfOrder = 0;
-            Array<size_type> badRows;
-            startIndices = arcp<size_type> (numProcs+1);
-            std::fill (startIndices.begin (), startIndices.end (), 0);
-            //startIndices[0] = 0;
-            int lastPid = 0;
-            for (size_type k = 0; k < globalNumGIDs; ++k) {
-              const GO gid = as<GO> (GIDs[k]);
-              const int pid = as<int> (PIDs[k]);
-              if (debug) {
-                std::ostringstream os;
-                os << "0: readMap: "
-                   << "{k: " << k
-                   << ", gid: " << gid
-                   << ", pid: " << pid
-                   << ", lastPid: " << lastPid << "}" << endl;
-                *err << os.str ();
+        // Process 0: If the above read of the MultiVector succeeded,
+        // extract the GIDs and PIDs into pid2gids, and find the
+        // global min GID.
+        if (myRank == 0 && readSuccess == 1) {
+          if (data->getNumVectors () == 2) { // Map format 1.0
+            ArrayRCP<const GO> GIDs = data->getData (0);
+            ArrayRCP<const GO> PIDs = data->getData (1); // convert to int
+            globalNumGIDs = GIDs.size ();
+
+            // Start computing the global min GID, while collecting
+            // the GIDs for each PID.
+            if (globalNumGIDs > 0) {
+              const int pid = static_cast<int> (PIDs[0]);
+
+              if (pid < 0 || pid >= numProcs) {
+                readSuccess = 0;
+                exMsg << "Tpetra::MatrixMarket::readMap: "
+                      << "Encountered invalid PID " << pid << "." << endl;
               }
-              if (pid < 0) {
-                ++numNegPids;
-                badRows.push_back (k);
+              else {
+                const GO gid = GIDs[0];
+                pid2gids[pid].push_back (gid);
+                indexBase = gid; // the current min GID
               }
-              else if (pid >= numProcs) {
-                ++numTooBigPids;
-                badRows.push_back (k);
-              }
-              else if (pid < lastPid) {
-                // Did the PID occur out of order?
-                // We allow PIDs to have zero GIDs.
-                ++pidsOutOfOrder;
-                badRows.push_back (k);
-              }
-              else { // We know now that pid is valid.
-                ++gidsPerProcess[pid];
-                if (k == 0 || GIDs[k] < indexBase) {
-                  indexBase = GIDs[k]; // indexBase must be the global min GID
+            }
+            if (readSuccess == 1) {
+              // Collect the rest of the GIDs for each PID, and compute
+              // the global min GID.
+              for (size_type k = 1; k < globalNumGIDs; ++k) {
+                const int pid = static_cast<int> (PIDs[k]);
+                if (pid < 0 || pid >= numProcs) {
+                  readSuccess = 0;
+                  exMsg << "Tpetra::MatrixMarket::readMap: "
+                        << "Encountered invalid PID " << pid << "." << endl;
                 }
-                // It could be that Proc 0 owns no GIDs.  In that case,
-                // PID[0] will be > 0 and the code below will fill in
-                // startIndices[p] = 0 for p = 1, 2, ..., PIDs[0].
-                if (pid > lastPid) {
-                  // startIndices is analogous to the 'ptr' array in CSR.
-                  // Fill in offsets for processes with no GIDs.
-                  for (int p = lastPid+1; p <= pid; ++p) {
-                    startIndices[p] = k;
+                else {
+                  const int_type gid = GIDs[k];
+                  pid2gids[pid].push_back (gid);
+                  if (gid < indexBase) {
+                    indexBase = gid; // the current min GID
                   }
                 }
-                lastPid = PIDs[k];
               }
-            } // for each GID
-            startIndices[numProcs] = globalNumGIDs;
+            }
+          }
+          else if (data->getNumVectors () == 1) { // Map format 2.0
+            if (data->getGlobalLength () % 2 != static_cast<GST> (0)) {
+              readSuccess = 0;
+              exMsg << "Tpetra::MatrixMarket::readMap: Input data has the "
+                "wrong format (for Map format 2.0).  The global number of rows "
+                "in the MultiVector must be even (divisible by 2)." << endl;
+            }
+            else {
+              ArrayRCP<const GO> theData = data->getData (0);
+              globalNumGIDs = static_cast<GO> (data->getGlobalLength ()) /
+                static_cast<GO> (2);
 
-            readSuccess =
-              (numNegPids == 0 && numTooBigPids == 0 && pidsOutOfOrder == 0) ?
-              1 : 0;
-            if (debug) {
-              if (readSuccess) {
-                *err << "0: readMap: The Map's data are valid" << endl;
-              } else {
-                *err << "0: readMap: The Map's data are INVALID" << endl;
+              // Start computing the global min GID, while
+              // collecting the GIDs for each PID.
+              if (globalNumGIDs > 0) {
+                const int pid = static_cast<int> (theData[1]);
+                if (pid < 0 || pid >= numProcs) {
+                  readSuccess = 0;
+                  exMsg << "Tpetra::MatrixMarket::readMap: "
+                        << "Encountered invalid PID " << pid << "." << endl;
+                }
+                else {
+                  const GO gid = theData[0];
+                  pid2gids[pid].push_back (gid);
+                  indexBase = gid; // the current min GID
+                }
               }
-              Teuchos::OSTab tab (err);
-              std::ostringstream os;
-              os << "startIndices: " << toString (startIndices) << endl
-                 << "gidsPerProcess: " << toString (gidsPerProcess ()) << endl;
-              *err << os.str ();
-            }
-            if (readSuccess == 0) {
-              // Construct an informative error message and throw.
-              exMsg << "We found the following errors in the Map's data:" << endl;
-              if (numNegPids > 0) {
-                exMsg << "  - There were " << numNegPids << " negative process "
-                  "ranks (PIDs)" << endl;
-              }
-              if (numTooBigPids > 0) {
-                exMsg << "  - There were " << numTooBigPids << " PIDs that "
-                      << "were out of the valid range [0, " << (numProcs-1)
-                      << "].  This probably means that the communicator with "
-                      << "which you saved the Map had a different number of "
-                      << "processes than the communicator with which you are "
-                      << "reading in the Map." << endl;
-              }
-              if (pidsOutOfOrder > 0) {
-                exMsg << "  - There were " << pidsOutOfOrder << " PIDs that "
-                  "occurred out of order.  We require that PIDs occur in "
-                  "consecutive increasing order in the file or input stream."
-                      << endl;
-              }
-              exMsg << "List of bad lines in the file or input stream:" << endl;
-              if (badRows.size () > 50) {
-                exMsg << "  - (Over 50 bad lines, so not showing all; first is "
-                      << badRows[0] << ")" << endl;
-              } else {
-                exMsg << "  - " << toString (badRows) << endl;
-              }
-              TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, exMsg.str ());
-            }
-
-            // convert GIDs from int_type to GO.
-            //
-            // We read in GIDs as int_type, which may differ from GO.
-            // (For example, on 64-bit Mac or Linux, int_type is long;
-            // GO might be int or long, or even an unsigned integer
-            // type.)  If GO == int_type, we can just make myGids a
-            // view of the relevant section of GIDs.  However, the
-            // code still has to compile when GO != int_type.  Since
-            // we know that GIDs will be valid until the end of this
-            // method, we can use a raw pointer in that case to avoid
-            // the copy.
-            if (typeid (GO) == typeid (int_type)) {
-              ArrayRCP<const int_type> myGidsAsIntType =
-                GIDs.persistingView (startIndices[0], gidsPerProcess[0]);
-              const int_type* myGidsRaw = myGidsAsIntType.getRawPtr ();
-              myGids = arcp<const GO> (reinterpret_cast<const GO*> (myGidsRaw),
-                                       0, gidsPerProcess[0], false);
-            } else {
-              ArrayRCP<const int_type> myGidsAsIntType =
-                GIDs.persistingView (startIndices[0], gidsPerProcess[0]);
-              ArrayRCP<GO> myGidsAsGO (myGidsAsIntType.size ());
-              for (size_type k = 0; k < myGidsAsIntType.size (); ++k) {
-                myGidsAsGO[k] = as<GO> (myGidsAsIntType[k]);
-              }
-              myGids = myGidsAsGO.getConst ();
-            }
-          } catch (std::exception& e) {
+              // Collect the rest of the GIDs for each PID, and
+              // compute the global min GID.
+              for (int_type k = 1; k < globalNumGIDs; ++k) {
+                const int pid = static_cast<int> (theData[2*k + 1]);
+                if (pid < 0 || pid >= numProcs) {
+                  readSuccess = 0;
+                  exMsg << "Tpetra::MatrixMarket::readMap: "
+                        << "Encountered invalid PID " << pid << "." << endl;
+                }
+                else {
+                  const GO gid = theData[2*k];
+                  pid2gids[pid].push_back (gid);
+                  if (gid < indexBase) {
+                    indexBase = gid; // the current min GID
+                  }
+                }
+              } // for each GID
+            } // if the amount of data is correct
+          }
+          else {
             readSuccess = 0;
-            exMsg << e.what ();
+            exMsg << "Tpetra::MatrixMarket::readMap: Input data must have "
+              "either 1 column (for the new Map format 2.0) or 2 columns (for "
+              "the old Map format 1.0).";
           }
-        } // if myRank == 0
+        } // myRank is zero
 
-        broadcast<int, int> (*comm, 0, inOutArg (readSuccess));
+        // Broadcast the indexBase, the global number of GIDs, and the
+        // current success status.  Use int_type for all of these.
+        {
+          int_type readResults[3];
+          readResults[0] = static_cast<int_type> (indexBase);
+          readResults[1] = static_cast<int_type> (globalNumGIDs);
+          readResults[2] = static_cast<int_type> (readSuccess);
+          broadcast<int, int_type> (*comm, 0, 3, readResults);
+
+          indexBase = static_cast<GO> (readResults[0]);
+          globalNumGIDs = static_cast<int_type> (readResults[1]);
+          readSuccess = static_cast<int> (readResults[2]);
+        }
+
+        // Unwinding the stack will invoke sizeReq's destructor, which
+        // will cancel the receive-size request on all processes that
+        // posted it.
         TEUCHOS_TEST_FOR_EXCEPTION(
-          readSuccess == 0, std::runtime_error,
-          "Tpetra::MatrixMarket::readMap: The Map's data were invalid: "
-          << exMsg.str ());
+          readSuccess != 1, std::runtime_error,
+          "Tpetra::MatrixMarket::readMap: Reading the Map failed with the "
+          "following exception message: " << exMsg.str ());
 
-        // If we get this far, every process knows that the read-in
-        // data are valid.  That means we can distribute them without
-        // any more fuss for error conditions.
         if (myRank == 0) {
-          // Distribute the GIDs from Process 0 to the processes to
-          // which they belong.  Also tell the GIDs the index base
-          // while we're at it, so we don't have to do an all-reduce
-          // to compute it later.
-          //
-          // MPI guarantees ordering of messages, so we can use
-          // nonblocking sends for both (count, indexBase) and the
-          // content (the GIDs).  We don't send the GIDs if that
-          // process will own zero of them.
-          //
-          // We could avoid the broadcast above by using a count of -1
-          // as a flag that something went wrong while reading.
-          // However, broadcasts are generally inexpensive compared
-          // with this data redistribution.
-          Array<RCP<CommRequest<int> > > countRequests (numProcs-1);
+          // Proc 0: Send each process' number of GIDs to that process.
           for (int p = 1; p < numProcs; ++p) {
-            ArrayRCP<size_type> sendBuf (2);
-            sendBuf[0] = gidsPerProcess[p];
-            sendBuf[1] = as<size_type> (indexBase);
-            countRequests[p-1] = isend (*comm, sendBuf.getConst (), p);
-          }
+            ArrayRCP<int_type> numGidsToSend (1);
 
-          Array<RCP<CommRequest<int> > > dataRequests;
-          ArrayRCP<GO> gidsToSend;
-          for (int p = 1; p < numProcs; ++p) {
-            if (gidsPerProcess[p] > 0) {
-              gidsToSend.resize (gidsPerProcess[p]);
-              for (size_type k = 0; k < gidsPerProcess[p]; ++k) {
-                gidsToSend[k] = as<GO> (GIDs[startIndices[p] + k]);
-              }
-              dataRequests.push_back (isend (*comm, gidsToSend.getConst (), p));
+            typename std::map<int, Array<GO> >::const_iterator it = pid2gids.find (p);
+            if (it == pid2gids.end ()) {
+              numGidsToSend[0] = 0;
+            } else {
+              numGidsToSend[0] = it->second.size ();
             }
+            sizeReq = isend<int, int_type> (numGidsToSend, p, sizeTag, *comm);
+            wait<int> (*comm, outArg (sizeReq));
           }
-
-          if (debug) {
-            *err << "0: readMap: waiting on count sends" << endl;
-          }
-          waitAll (*comm, countRequests ());
-
-          if (debug) {
-            *err << "0: readMap: waiting on GID sends" << endl;
-          }
-          waitAll (*comm, dataRequests ());
         }
-        else { // if (myRank != 0)
-          const int rootRank = 0;
-          if (debug) {
-            *err << myRank <<": readMap: receiving GID count" << endl;
-          }
+        else {
+          // Wait on the receive-size message to finish.
+          wait<int> (*comm, outArg (sizeReq));
+        }
 
-          // Receive the count of GIDs to receive.  If 0, don't do a
-          // second receive.  We use blocking receives here because
-          // there's nothing we can do in the meantime while waiting.
-          Tuple<size_type, 2> gidCountAndMinAllGid;
-          gidCountAndMinAllGid[0] = 0; // gidCount
-          receive (*comm, rootRank, 2, gidCountAndMinAllGid.getRawPtr ());
-          indexBase = as<GO> (gidCountAndMinAllGid[1]);
-          const size_type gidCount = gidCountAndMinAllGid[0];
-          indexBase = as<GO> (gidCountAndMinAllGid[1]);
-          if (gidCount > 0) { // there are actual data to receive
-            if (debug) {
-              *err << myRank << ": readMap: receiving GID list" << endl;
-            }
-            ArrayRCP<GO> myGidsCopy (gidCount);
-            receive (*comm, rootRank, as<int> (gidCount), myGidsCopy.getRawPtr ());
-            myGids = myGidsCopy.getConst ();
+        // Allocate / get the array for my GIDs.
+        // Only Process 0 will have its actual GIDs at this point.
+        ArrayRCP<GO> myGids;
+        int_type myNumGids = 0;
+        if (myRank == 0) {
+          GO* myGidsRaw = NULL;
+
+          typename std::map<int, Array<GO> >::iterator it = pid2gids.find (0);
+          if (it != pid2gids.end ()) {
+            myGidsRaw = it->second.getRawPtr ();
+            myNumGids = it->second.size ();
+            // Nonowning ArrayRCP just views the Array.
+            myGids = arcp<GO> (myGidsRaw, 0, myNumGids, false);
           }
-        } // if myRank == 0
+        }
+        else { // myRank != 0
+          myNumGids = numGidsToRecv[0];
+          myGids = arcp<GO> (myNumGids);
+        }
+
+        if (myRank != 0) {
+          // Post receive for data, now that we know how much data we
+          // will receive.  Only post receive if my process actually
+          // has nonzero GIDs.
+          if (myNumGids > 0) {
+            dataReq = ireceive<int, GO> (myGids, 0, dataTag, *comm);
+          }
+        }
+
+        for (int p = 1; p < numProcs; ++p) {
+          if (myRank == 0) {
+            ArrayRCP<GO> sendGids; // to send to Process p
+            GO* sendGidsRaw = NULL;
+            int_type numSendGids = 0;
+
+            typename std::map<int, Array<GO> >::iterator it = pid2gids.find (p);
+            if (it != pid2gids.end ()) {
+              numSendGids = it->second.size ();
+              sendGidsRaw = it->second.getRawPtr ();
+              sendGids = arcp<GO> (sendGidsRaw, 0, numSendGids, false);
+            }
+            // Only send if that process actually has nonzero GIDs.
+            if (numSendGids > 0) {
+              dataReq = isend<int, GO> (sendGids, p, dataTag, *comm);
+            }
+            wait<int> (*comm, outArg (dataReq));
+          }
+          else if (myRank == p) {
+            // Wait on my receive of GIDs to finish.
+            wait<int> (*comm, outArg (dataReq));
+          }
+        } // for each process rank p in 1, 2, ..., numProcs-1
 
         if (debug) {
-          *err << myRank << ": readMap: Done distributing GID list" << endl;
-          Teuchos::OSTab tab (err);
-          comm->barrier (); // let output finish
-          for (int p = 0; p < numProcs; ++p) {
-            if (myRank == p) {
-              std::ostringstream os;
-              os << "Proc " << myRank << ": GIDs: " << toString (myGids ())
-                 << endl;
-              *err << os.str ();
-            }
-            comm->barrier (); // let output finish
-            comm->barrier ();
-            comm->barrier ();
-          }
+          std::ostringstream os;
+          os << myRank << ": readMap: creating Map" << endl;
+          *err << os.str ();
         }
-
-        if (debug) {
-          *err << myRank << ": readMap: creating Map" << endl;
-        }
-        const global_size_t INVALID = Teuchos::OrdinalTraits<global_size_t>::invalid ();
-        RCP<const map_type> newMap (new map_type (INVALID, myGids (), indexBase, comm, node));
+        const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+        RCP<const map_type> newMap =
+          rcp (new map_type (INVALID, myGids (), indexBase, comm, node));
 
         if (err.is_null ()) {
           err->popTab ();
         }
         if (debug) {
-          *err << myRank << ": readMap: done" << endl;
+          std::ostringstream os;
+          os << myRank << ": readMap: done" << endl;
+          *err << os.str ();
         }
         if (err.is_null ()) {
           err->popTab ();
@@ -5442,7 +5426,25 @@ namespace Tpetra {
         writeDense (out, X, "", "");
       }
 
-      //! Print the Map to the given output stream.
+      /// \brief Print the Map to the given output stream.
+      ///
+      /// \param out [out] Output stream to which to print.  This only
+      ///   needs to be accessible on Process 0 in the Map's
+      ///   communicator; no other process will do anything with it.
+      ///
+      /// \param map [in] The Map to print.
+      ///
+      /// \param debug [in] Whether to print copious debugging output
+      ///   to stderr on <i>all</i> processes in the Map's
+      ///   communicator.
+      ///
+      /// We print the Map in Matrix Market format as a dense
+      /// nonsymmetric integer matrix with two columns.  The first
+      /// column holds global indices (GIDs), and the second column
+      /// holds process ranks (PIDs).  In any row of the matrix, the
+      /// first entry is a GID, and the second is a PID that owns the
+      /// GID.  Multiple PIDs may own the same GID, and the order of
+      /// rows with respect to a given PID is significant.
       static void
       writeMap (std::ostream& out, const map_type& map, const bool debug=false)
       {
@@ -5467,89 +5469,485 @@ namespace Tpetra {
       {
         using Teuchos::ArrayRCP;
         using Teuchos::ArrayView;
-        using Teuchos::as;
-        using Teuchos::rcp_const_cast;
-        using Teuchos::rcpFromRef;
+        using Teuchos::CommRequest;
+        using Teuchos::ireceive;
+        using Teuchos::isend;
+        using Teuchos::RCP;
         using Teuchos::TypeNameTraits;
-        using std::cerr;
+        using Teuchos::wait;
         using std::endl;
         typedef local_ordinal_type LO;
         typedef global_ordinal_type GO;
-        typedef node_type NT;
         typedef int pid_type;
 
-        // ptrdiff_t should be the biggest signed built-in integer
-        // type that can hold any GO or pid_type (= int) quantity
-        // without overflow.  Nevertheless, we'll test this.
+        // Treat the Map as a 1-column "multivector."  This differs
+        // from the previous two-column format, in which column 0 held
+        // the GIDs, and column 1 held the corresponding PIDs.  It
+        // differs because printing that format requires knowing the
+        // entire first column -- that is, all the GIDs -- in advance.
+        // Sending messages from each process one at a time saves
+        // memory, but it means that Process 0 doesn't ever have all
+        // the GIDs at once.
+        //
+        // We pack the entries as ptrdiff_t, since this should be the
+        // biggest signed built-in integer type that can hold any GO
+        // or pid_type (= int) quantity without overflow.  Test this
+        // assumption at run time.
         typedef ptrdiff_t int_type;
         TEUCHOS_TEST_FOR_EXCEPTION(
-          sizeof(GO) > sizeof(int_type), std::logic_error,
+          sizeof (GO) > sizeof (int_type), std::logic_error,
           "The global ordinal type GO=" << TypeNameTraits<GO>::name ()
           << " is too big for ptrdiff_t.  sizeof(GO) = " << sizeof (GO)
           << " > sizeof(ptrdiff_t) = " << sizeof (ptrdiff_t) << ".");
         TEUCHOS_TEST_FOR_EXCEPTION(
-          sizeof(pid_type) > sizeof(int_type), std::logic_error,
-          "The process rank type pid_type=" << TypeNameTraits<pid_type>::name ()
-          << " is too big for ptrdiff_t.  sizeof(pid_type) = " << sizeof (pid_type)
-          << " > sizeof(ptrdiff_t) = " << sizeof (ptrdiff_t) << ".");
+          sizeof (pid_type) > sizeof (int_type), std::logic_error,
+          "The (MPI) process rank type pid_type=" <<
+          TypeNameTraits<pid_type>::name () << " is too big for ptrdiff_t.  "
+          "sizeof(pid_type) = " << sizeof (pid_type) << " > sizeof(ptrdiff_t)"
+          " = " << sizeof (ptrdiff_t) << ".");
 
-        const int myRank = map.getComm ()->getRank ();
+        const Comm<int>& comm = * (map.getComm ());
+        const int myRank = comm.getRank ();
+        const int numProcs = comm.getSize ();
 
         if (! err.is_null ()) {
           err->pushTab ();
         }
         if (debug) {
-          *err << myRank << ": writeMap" << endl;
+          std::ostringstream os;
+          os << myRank << ": writeMap" << endl;
+          *err << os.str ();
         }
         if (! err.is_null ()) {
           err->pushTab ();
         }
 
-        // We pack the Map into a 2-column MultiVector.  Column 0
-        // holds the GIDs, and Column 1 holds the PIDs.
-        typedef Tpetra::MultiVector<int_type, LO, GO, NT> MV;
-        MV data (rcpFromRef (map), 2);
+        const size_t myNumRows = map.getNodeNumElements ();
+        // Use a different tag for the "size" messages than for the
+        // "data" messages, in order to help us debug any mix-ups.
+        const int sizeTag = 1337;
+        const int dataTag = 1338;
 
-        // Column 0: GIDs for each process in sequence (by their
-        // process ranks), in their original order on that process.
-        // We put the GIDs first because the ordering of GIDs defines
-        // the permutation that the Map represents, no matter how the
-        // GIDs are distributed over processes.
-        ArrayView<const GO> gidList = map.getNodeElementList ();
-        {
-          ArrayRCP<int_type> V0 = data.getDataNonConst (0);
-          for (int_type k = 0; k < gidList.size (); ++k) {
-            V0[k] = as<int_type> (gidList[k]);
+        // Process 0 pipelines nonblocking receives with file output.
+        //
+        // Constraints:
+        //   - Process 0 can't post a receive for another process'
+        //     actual data, until it posts and waits on the receive
+        //     from that process with the amount of data to receive.
+        //     (We could just post receives with a max data size, but
+        //     I feel uncomfortable about that.)
+        //   - The C++ standard library doesn't allow nonblocking
+        //     output to an std::ostream.
+        //
+        // Process 0: Post receive-size receives from Processes 1 and 2.
+        // Process 1: Post send-size send to Process 0.
+        // Process 2: Post send-size send to Process 0.
+        //
+        // All processes: Pack my GIDs and PIDs.
+        //
+        // Process 1:
+        //   - Post send-data send to Process 0.
+        //   - Wait on my send-size send to Process 0.
+        //
+        // Process 0:
+        //   - Print MatrixMarket header.
+        //   - Print my GIDs and PIDs.
+        //   - Wait on receive-size receive from Process 1.
+        //   - Post receive-data receive from Process 1.
+        //
+        // For each process p = 1, 2, ... numProcs-1:
+        //   If I am Process 0:
+        //     - Post receive-size receive from Process p + 2
+        //     - Wait on receive-size receive from Process p + 1
+        //     - Post receive-data receive from Process p + 1
+        //     - Wait on receive-data receive from Process p
+        //     - Write data from Process p.
+        //   Else if I am Process p:
+        //     - Wait on my send-data send.
+        //   Else if I am Process p+1:
+        //     - Post send-data send to Process 0.
+        //     - Wait on my send-size send.
+        //   Else if I am Process p+2:
+        //     - Post send-size send to Process 0.
+        //
+        // Pipelining has three goals here:
+        //   1. Overlap communication (the receives) with file I/O
+        //   2. Give Process 0 a chance to prepost some receives,
+        //      before sends show up, by packing local data before
+        //      posting sends
+        //   3. Don't post _all_ receives or _all_ sends, because that
+        //      wouldn't be memory scalable.  (Just because we can't
+        //      see how much memory MPI consumes, doesn't mean that it
+        //      doesn't consume any!)
+
+        // These are used on every process.  sendReqSize[0] holds the
+        // number of rows on this process, and sendReqBuf holds this
+        // process' data.  Process 0 packs into sendReqBuf, but
+        // doesn't send; it only uses that for printing.  All other
+        // processes send both of these to Process 0.
+        RCP<CommRequest<int> > sendReqSize, sendReqData;
+
+        // These are used only on Process 0, for received data.  Keep
+        // 3 of each, and treat the arrays as circular buffers.  When
+        // receiving from Process p, the corresponding array index
+        // here is p % 3.
+        Array<ArrayRCP<int_type> > recvSizeBufs (3);
+        Array<ArrayRCP<int_type> > recvDataBufs (3);
+        Array<RCP<CommRequest<int> > > recvSizeReqs (3);
+        Array<RCP<CommRequest<int> > > recvDataReqs (3);
+
+        // Buffer for nonblocking send of the "send size."
+        ArrayRCP<int_type> sendDataSize (1);
+        sendDataSize[0] = myNumRows;
+
+        if (myRank == 0) {
+          if (debug) {
+            std::ostringstream os;
+            os << myRank << ": Post receive-size receives from "
+              "Procs 1 and 2: tag = " << sizeTag << endl;
+            *err << os.str ();
+          }
+          // Process 0: Post receive-size receives from Processes 1 and 2.
+          recvSizeBufs[0].resize (1);
+          (recvSizeBufs[0])[0] = -1; // error flag
+          recvSizeBufs[1].resize (1);
+          (recvSizeBufs[1])[0] = -1; // error flag
+          recvSizeBufs[2].resize (1);
+          (recvSizeBufs[2])[0] = -1; // error flag
+          if (numProcs > 1) {
+            recvSizeReqs[1] =
+              ireceive<int, int_type> (recvSizeBufs[1], 1, sizeTag, comm);
+          }
+          if (numProcs > 2) {
+            recvSizeReqs[2] =
+              ireceive<int, int_type> (recvSizeBufs[2], 2, sizeTag, comm);
+          }
+        }
+        else if (myRank == 1 || myRank == 2) {
+          if (debug) {
+            std::ostringstream os;
+            os << myRank << ": Post send-size send: size = "
+               << sendDataSize[0] << ", tag = " << sizeTag << endl;
+            *err << os.str ();
+          }
+          // Prime the pipeline by having Processes 1 and 2 start
+          // their send-size sends.  We don't want _all_ the processes
+          // to start their send-size sends, because that wouldn't be
+          // memory scalable.
+          sendReqSize = isend<int, int_type> (sendDataSize, 0, sizeTag, comm);
+        }
+        else {
+          if (debug) {
+            std::ostringstream os;
+            os << myRank << ": Not posting my send-size send yet" << endl;
+            *err << os.str ();
+          }
+        }
+
+        //
+        // Pack my GIDs and PIDs.  Each (GID,PID) pair gets packed
+        // consecutively, for better locality.
+        //
+
+        if (debug) {
+          std::ostringstream os;
+          os << myRank << ": Pack my GIDs and PIDs" << endl;
+          *err << os.str ();
+        }
+
+        ArrayRCP<int_type> sendDataBuf (myNumRows * 2);
+
+        if (map.isContiguous ()) {
+          const int_type myMinGblIdx =
+            static_cast<int_type> (map.getMinGlobalIndex ());
+          for (size_t k = 0; k < myNumRows; ++k) {
+            const int_type gid = myMinGblIdx + static_cast<int_type> (k);
+            const int_type pid = static_cast<int_type> (myRank);
+            sendDataBuf[2*k] = gid;
+            sendDataBuf[2*k+1] = pid;
+          }
+        }
+        else {
+          ArrayView<const GO> myGblInds = map.getNodeElementList ();
+          for (size_t k = 0; k < myNumRows; ++k) {
+            const int_type gid = static_cast<int_type> (myGblInds[k]);
+            const int_type pid = static_cast<int_type> (myRank);
+            sendDataBuf[2*k] = gid;
+            sendDataBuf[2*k+1] = pid;
           }
         }
 
         if (debug) {
-          *err << myRank << ": writeMap: Done with column 0" << endl;
+          std::ostringstream os;
+          os << myRank << ": Done packing my GIDs and PIDs" << endl;
+          *err << os.str ();
         }
 
-        // Column 1: PID (process rank) that owns the GID in the same
-        // row.  The same GID might be owned by multiple processes; in
-        // that case, it will appear multiple times in the first
-        // column, with a different PID each time.
-        {
-          ArrayRCP<int_type> V1 = data.getDataNonConst (1);
-          for (int_type k = 0; k < gidList.size (); ++k) {
-            V1[k] = as<int_type> (myRank);
+        if (myRank == 1) {
+          // Process 1: post send-data send to Process 0.
+          if (debug) {
+            *err << myRank << ": Post send-data send: tag = " << dataTag
+                 << endl;
+          }
+          sendReqData = isend<int, int_type> (sendDataBuf, 0, dataTag, comm);
+        }
+
+        if (myRank == 0) {
+          if (debug) {
+            *err << myRank << ": Write MatrixMarket header" << endl;
+          }
+
+          // Process 0: Write the MatrixMarket header.
+          // Description section explains each column.
+          std::ostringstream hdr;
+
+          // Print the Matrix Market header.  MultiVector stores data
+          // nonsymmetrically, hence "general" in the banner line.
+          hdr << "%%MatrixMarket matrix array integer general" << endl
+              << "% Format: Version 2.0" << endl
+              << "%" << endl
+              << "% This file encodes a Tpetra::Map." << endl
+              << "% It is stored as a dense vector, with twice as many " << endl
+              << "% entries as the global number of GIDs (global indices)." << endl
+              << "% (GID, PID) pairs are stored contiguously, where the PID " << endl
+              << "% is the rank of the process owning that GID." << endl
+              << (2 * map.getGlobalNumElements ()) << " " << 1 << endl;
+          out << hdr.str ();
+
+          if (debug) {
+            std::ostringstream os;
+            os << myRank << ": Write my GIDs and PIDs" << endl;
+            *err << os.str ();
+          }
+
+          // Write Process 0's data to the output stream.
+          // Matrix Market prints dense matrices in column-major order.
+          const int_type printNumRows = myNumRows;
+          ArrayView<const int_type> printData = sendDataBuf ();
+          for (int_type k = 0; k < printNumRows; ++k) {
+            const int_type gid = printData[2*k];
+            const int_type pid = printData[2*k+1];
+            out << gid << endl << pid << endl;
           }
         }
 
-        if (debug) {
-          *err << myRank << ": writeMap: Done with column 1" << endl;
+        if (myRank == 0) {
+          // Wait on receive-size receive from Process 1.
+          const int recvRank = 1;
+          const int circBufInd = recvRank % 3;
+          if (debug) {
+            std::ostringstream os;
+            os << myRank << ": Wait on receive-size receive from Process "
+               << recvRank << endl;
+            *err << os.str ();
+          }
+          if (numProcs > 1) {
+            wait<int> (comm, outArg (recvSizeReqs[circBufInd]));
+
+            // We received the number of rows of data.  (The data
+            // come in two columns.)
+            const int_type recvNumRows = (recvSizeBufs[circBufInd])[0];
+            if (debug && recvNumRows == -1) {
+              std::ostringstream os;
+              os << myRank << ": Result of receive-size receive from Process "
+                 << recvRank << " is -1.  This should never happen, and "
+                "suggests that the receive never got posted.  Please report "
+                "this bug to the Tpetra developers." << endl;
+              *err << os.str ();
+            }
+
+            // Post receive-data receive from Process 1.
+            recvDataBufs[circBufInd].resize (recvNumRows * 2);
+            if (debug) {
+              std::ostringstream os;
+              os << myRank << ": Post receive-data receive from Process "
+                 << recvRank << ": tag = " << dataTag << ", buffer size = "
+                 << recvDataBufs[circBufInd].size () << endl;
+              *err << os.str ();
+            }
+            if (! recvSizeReqs[circBufInd].is_null ()) {
+              std::ostringstream os;
+              os << myRank << ": recvSizeReqs[" << circBufInd << "] is not "
+                "null, before posting the receive-data receive from Process "
+                 << recvRank << ".  This should never happen.  Please report "
+                "this bug to the Tpetra developers." << endl;
+              *err << os.str ();
+            }
+            recvDataReqs[circBufInd] =
+              ireceive<int, int_type> (recvDataBufs[circBufInd],
+                                       recvRank, dataTag, comm);
+          } // numProcs > 1
+        }
+        else if (myRank == 1) {
+          // Wait on my send-size send.
+          if (debug) {
+            std::ostringstream os;
+            os << myRank << ": Wait on my send-size send" << endl;
+            *err << os.str ();
+          }
+          wait<int> (comm, outArg (sendReqSize));
         }
 
-        // Map description explains each column.
-        std::ostringstream desc;
-        desc << "This file encodes a Tpetra::Map." << endl
-             << "It is stored as a dense matrix with 2 columns:" << endl
-             << "  - Column 1: GID (global index)" << endl
-             << "  - Column 2: PID (rank) of process owning that GID" << endl;
-        writeDenseImpl<int_type> (out, data, map.getObjectLabel (),
-                                  desc.str (), err, debug);
+        //
+        // Pipeline loop
+        //
+        for (int p = 1; p < numProcs; ++p) {
+          if (myRank == 0) {
+            if (p + 2 < numProcs) {
+              // Post receive-size receive from Process p + 2.
+              const int recvRank = p + 2;
+              const int circBufInd = recvRank % 3;
+              if (debug) {
+                std::ostringstream os;
+                os << myRank << ": Post receive-size receive from Process "
+                   << recvRank << ": tag = " << sizeTag << endl;
+                *err << os.str ();
+              }
+              if (! recvSizeReqs[circBufInd].is_null ()) {
+                std::ostringstream os;
+                os << myRank << ": recvSizeReqs[" << circBufInd << "] is not "
+                   << "null, for the receive-size receive from Process "
+                   << recvRank << "!  This may mean that this process never "
+                   << "finished waiting for the receive from Process "
+                   << (recvRank - 3) << "." << endl;
+                *err << os.str ();
+              }
+              recvSizeReqs[circBufInd] =
+                ireceive<int, int_type> (recvSizeBufs[circBufInd],
+                                         recvRank, sizeTag, comm);
+            }
+
+            if (p + 1 < numProcs) {
+              const int recvRank = p + 1;
+              const int circBufInd = recvRank % 3;
+
+              // Wait on receive-size receive from Process p + 1.
+              if (debug) {
+                std::ostringstream os;
+                os << myRank << ": Wait on receive-size receive from Process "
+                   << recvRank << endl;
+                *err << os.str ();
+              }
+              wait<int> (comm, outArg (recvSizeReqs[circBufInd]));
+
+              // We received the number of rows of data.  (The data
+              // come in two columns.)
+              const int_type recvNumRows = (recvSizeBufs[circBufInd])[0];
+              if (debug && recvNumRows == -1) {
+                std::ostringstream os;
+                os << myRank << ": Result of receive-size receive from Process "
+                   << recvRank << " is -1.  This should never happen, and "
+                  "suggests that the receive never got posted.  Please report "
+                  "this bug to the Tpetra developers." << endl;
+                *err << os.str ();
+              }
+
+              // Post receive-data receive from Process p + 1.
+              recvDataBufs[circBufInd].resize (recvNumRows * 2);
+              if (debug) {
+                std::ostringstream os;
+                os << myRank << ": Post receive-data receive from Process "
+                   << recvRank << ": tag = " << dataTag << ", buffer size = "
+                   << recvDataBufs[circBufInd].size () << endl;
+                *err << os.str ();
+              }
+              if (! recvDataReqs[circBufInd].is_null ()) {
+                std::ostringstream os;
+                os << myRank << ": recvDataReqs[" << circBufInd << "] is not "
+                   << "null, for the receive-data receive from Process "
+                   << recvRank << "!  This may mean that this process never "
+                   << "finished waiting for the receive from Process "
+                   << (recvRank - 3) << "." << endl;
+                *err << os.str ();
+              }
+              recvDataReqs[circBufInd] =
+                ireceive<int, int_type> (recvDataBufs[circBufInd],
+                                         recvRank, dataTag, comm);
+            }
+
+            // Wait on receive-data receive from Process p.
+            const int recvRank = p;
+            const int circBufInd = recvRank % 3;
+            if (debug) {
+              std::ostringstream os;
+              os << myRank << ": Wait on receive-data receive from Process "
+                 << recvRank << endl;
+              *err << os.str ();
+            }
+            wait<int> (comm, outArg (recvDataReqs[circBufInd]));
+
+            // Write Process p's data.  Number of rows lives in
+            // recvSizeBufs[circBufInd], and the actual data live in
+            // recvDataBufs[circBufInd].  Do this after posting receives,
+            // in order to expose overlap of comm. with file I/O.
+            if (debug) {
+              std::ostringstream os;
+              os << myRank << ": Write GIDs and PIDs from Process "
+                 << recvRank << endl;
+              *err << os.str () << endl;
+            }
+            const int_type printNumRows = (recvSizeBufs[circBufInd])[0];
+            if (debug && printNumRows == -1) {
+              std::ostringstream os;
+              os << myRank << ": Result of receive-size receive from Process "
+                 << recvRank << " was -1.  This should never happen, and "
+                "suggests that its receive-size receive was never posted.  "
+                "Please report this bug to the Tpetra developers." << endl;
+              *err << os.str ();
+            }
+            if (debug && printNumRows > 0 && recvDataBufs[circBufInd].is_null ()) {
+              std::ostringstream os;
+              os << myRank << ": Result of receive-size receive from Proc "
+                 << recvRank << " was " << printNumRows << " > 0, but "
+                "recvDataBufs[" << circBufInd << "] is null.  This should "
+                "never happen.  Please report this bug to the Tpetra "
+                "developers." << endl;
+              *err << os.str ();
+            }
+            ArrayView<const int_type> printData = (recvDataBufs[circBufInd]) ();
+            for (int_type k = 0; k < printNumRows; ++k) {
+              const int_type gid = printData[2*k];
+              const int_type pid = printData[2*k+1];
+              out << gid << endl << pid << endl;
+            }
+          }
+          else if (myRank == p) { // Process p
+            // Wait on my send-data send.
+            if (debug) {
+              std::ostringstream os;
+              os << myRank << ": Wait on my send-data send" << endl;
+              *err << os.str ();
+            }
+            wait<int> (comm, outArg (sendReqData));
+          }
+          else if (myRank == p + 1) { // Process p + 1
+            // Post send-data send to Process 0.
+            if (debug) {
+              std::ostringstream os;
+              os << myRank << ": Post send-data send: tag = " << dataTag
+                 << endl;
+              *err << os.str ();
+            }
+            sendReqData = isend<int, int_type> (sendDataBuf, 0, dataTag, comm);
+            // Wait on my send-size send.
+            if (debug) {
+              std::ostringstream os;
+              os << myRank << ": Wait on my send-size send" << endl;
+              *err << os.str ();
+            }
+            wait<int> (comm, outArg (sendReqSize));
+          }
+          else if (myRank == p + 2) { // Process p + 2
+            // Post send-size send to Process 0.
+            if (debug) {
+              std::ostringstream os;
+              os << myRank << ": Post send-size send: size = "
+                 << sendDataSize[0] << ", tag = " << sizeTag << endl;
+              *err << os.str ();
+            }
+            sendReqSize = isend<int, int_type> (sendDataSize, 0, sizeTag, comm);
+          }
+        }
 
         if (! err.is_null ()) {
           err->popTab ();
