@@ -650,7 +650,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, CompoundSlice, Sca )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDVector, CompoundSlice, Sca )
 
 UNIT_TEST_GROUP(double)
-#if 0
+#if 1
 UNIT_TEST_GROUP(float)
 UNIT_TEST_GROUP(int)
 UNIT_TEST_GROUP(long)
