@@ -161,6 +161,9 @@ CudaSpace::size_type * cuda_internal_scratch_unified( const CudaSpace::size_type
 #if defined( __CUDACC__ )
 
 /** \brief  Access to constant memory on the device */
+#ifdef KOKKOS_CUDA_USE_RELOCATABLE_DEVICE_CODE
+extern
+#endif
 __device__ __constant__
 Kokkos::Impl::CudaTraits::ConstantGlobalBufferType
 kokkos_impl_cuda_constant_memory_buffer ;

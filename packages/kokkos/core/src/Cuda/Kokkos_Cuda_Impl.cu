@@ -58,6 +58,12 @@
 #include <sstream>
 #include <string>
 
+#ifdef KOKKOS_CUDA_USE_RELOCATABLE_DEVICE_CODE
+__device__ __constant__
+Kokkos::Impl::CudaTraits::ConstantGlobalBufferType
+kokkos_impl_cuda_constant_memory_buffer ;
+#endif
+
 /*--------------------------------------------------------------------------*/
 
 namespace Kokkos {
