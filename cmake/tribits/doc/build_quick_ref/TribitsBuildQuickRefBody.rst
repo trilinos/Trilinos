@@ -526,11 +526,20 @@ g) Enable and disable shadowing warnings for all <Project> packages:
 
 h) Removing warnings as errors for CLEANED packages:
 
-  To remove the -Werror flag (or some other flag that is set) from being
+  To remove the ``-Werror`` flag (or some other flag that is set) from being
   applied to compile CLEANED packages like Teuchos, set the following when
   configuring::
 
     -D <Project>_WARNINGS_AS_ERRORS_FLAGS:STRING=""
+
+i) Adding debug symbols to the build:
+
+  To get the compiler to add debug symbols to the build, configure with::
+
+    -D <Project>_ENABLE_DEBUG_SYMBOLS:BOOL=ON
+
+  This will add ``-g`` on most compilers.  NOTE: One does **not** generally
+  need to create a fully debug build to get debug symbols on most compilers.
 
 
 Enabling support for C++11
@@ -539,13 +548,18 @@ Enabling support for C++11
 To enable support for C++11 in packages that support C++11 (either optionally
 or required), configure with::
 
-  -D <Project>_ENABLE_CXX11:BOOL=ON \
-  -D CMAKE_CXX_FLAGS:STRING=-std=c++11
+  -D <Project>_ENABLE_CXX11:BOOL=ON
 
-where the C++ flags passed in may depend on the compiler you are using.  This
-will be followed by a set of configure-time tests to see if several C++11
-features are actually supported by the configured C++ compiler and support
-will be disabled if all of these features are not supported.
+By default, the system will try to automatically find compiler flags that will
+enable C++11 features.  If it finds flags that allow a test C++11 program to
+compile, then it will an additional set of configure-time tests to see if
+several C++11 features are actually supported by the configured C++ compiler
+and support will be disabled if all of these features are not supported.
+
+In order to pre-set and/or override the C++11 compiler flags used, set the
+cache variable::
+
+  -D <Project>_CXX11_FLAGS:STRING="<compiler flags>"
 
 
 Disabling the Fortran compiler and all Fortran code

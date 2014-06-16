@@ -562,9 +562,9 @@ units are:
 .. _TriBITS Projects:
 
 * `TriBITS Project`_: A collection of `TriBITS Repositories`_ and `TriBITS
-  Packages`_ that defines a CMake ``PROJECT`` defining software which can be
+  Packages`_ that defines a complete CMake ``PROJECT`` defining software which can be
   directly configured with ``cmake`` and then be built, tested, installed,
-  etc..
+  etc.
 
 .. _TriBITS Meta-Project:
 .. _TriBITS Meta-Projects:
@@ -6389,6 +6389,9 @@ The global project-level TriBITS options for which defaults can be provided by
 a given TriBITS project are:
 
 * `${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES`_
+* `${PROJECT_NAME}_ENABLE_C`_
+* `${PROJECT_NAME}_ENABLE_CXX`_
+* `${PROJECT_NAME}_ENABLE_CXX11`_
 * `${PROJECT_NAME}_ENABLE_Fortran`_
 * `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_
 * `${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES`_
@@ -6417,16 +6420,59 @@ These options are described below.
   conflict`_.  A project can define a different default value by setting::
   
     SET(${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES_DEFAULT FALSE)
+
+.. _${PROJECT_NAME}_ENABLE_C:
+  
+**${PROJECT_NAME}_ENABLE_C**
+  
+  If ``${PROJECT_NAME}_ENABLE_C`` is ``ON``, then C language support for the
+  project will be enabled and the C compiler must be found.  By default,
+  TriBITS sets this to ``ON`` for all systems.  A project never requires C can
+  set this to off by default by setting:
+  
+    SET(${PROJECT_NAME}_ENABLE_C_DEFAULT FALSE)
+  
+  If a project does not have any native C code a good default would be::
+  
+    SET(${PROJECT_NAME}_ENABLE_C_DEFAULT FALSE)
+  
+  NOTE: It is usually not a good idea to always force off C, or any compiler,
+  because extra repositories and packages might be added by someone that might
+  require the compiler and we don't want to unnecessarily limit the generality
+  of a given TriBITS build.  Setting the default for all platforms should be
+  sufficient.
+
+.. _${PROJECT_NAME}_ENABLE_CXX:
+  
+**${PROJECT_NAME}_ENABLE_CXX**
+  
+  If ``${PROJECT_NAME}_ENABLE_CXX`` is ``ON``, then C++ language support for
+  the project will be enabled and the C++ compiler must be found.  By default,
+  TriBITS sets this to ``ON`` for all systems.  A project never requires C++
+  can set this to off by default by setting:
+  
+    SET(${PROJECT_NAME}_ENABLE_CXX_DEFAULT FALSE)
+
+.. _${PROJECT_NAME}_ENABLE_CXX11:
+  
+**${PROJECT_NAME}_ENABLE_CXX11**
+  
+  If ``${PROJECT_NAME}_ENABLE_CXX11`` is ``ON``, then C++ compiler options
+  that turn on C++11 support will be searched for.  By default, TriBITS sets
+  this to ``OFF`` for all systems.  However, if project requires C++11 support
+  by default, then the project should set the default:
+  
+    SET(${PROJECT_NAME}_ENABLE_CXX11_DEFAULT TRUE)
  
 .. _${PROJECT_NAME}_ENABLE_Fortran:
   
 **${PROJECT_NAME}_ENABLE_Fortran**
   
-  If ``${PROJECT_NAME}_ENABLE_Fortran`` is ``ON``, then Fortran support for the
-  project will be enabled and the Fortran compiler(s) must be found.  By
+  If ``${PROJECT_NAME}_ENABLE_Fortran`` is ``ON``, then Fortran support for
+  the project will be enabled and the Fortran compiler(s) must be found.  By
   default, TriBITS sets this to ``ON`` for non-Windows systems (i.e. ``WIN32``
-  is not set by CMake) but is ``OFF`` for a Windows system.  A project always
-  requires Fortran, for example, it can set the default::
+  is not set by CMake) but is ``OFF`` for a Windows system.  A project that
+  always requires Fortran, for example, it can set the default::
   
     SET(${PROJECT_NAME}_ENABLE_Fortran_DEFAULT TRUE)
   

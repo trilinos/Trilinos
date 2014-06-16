@@ -924,12 +924,23 @@ package.</p>
 <li>Removing warnings as errors for CLEANED packages:</li>
 </ol>
 <blockquote>
-<p>To remove the -Werror flag (or some other flag that is set) from being
+<p>To remove the <tt class="docutils literal"><span class="pre">-Werror</span></tt> flag (or some other flag that is set) from being
 applied to compile CLEANED packages like Teuchos, set the following when
 configuring:</p>
 <pre class="literal-block">
 -D &lt;Project&gt;_WARNINGS_AS_ERRORS_FLAGS:STRING=&quot;&quot;
 </pre>
+</blockquote>
+<ol class="lowerroman simple">
+<li>Adding debug symbols to the build:</li>
+</ol>
+<blockquote>
+<p>To get the compiler to add debug symbols to the build, configure with:</p>
+<pre class="literal-block">
+-D &lt;Project&gt;_ENABLE_DEBUG_SYMBOLS:BOOL=ON
+</pre>
+<p>This will add <tt class="docutils literal"><span class="pre">-g</span></tt> on most compilers.  NOTE: One does <strong>not</strong> generally
+need to create a fully debug build to get debug symbols on most compilers.</p>
 </blockquote>
 </div>
 <div class="section" id="enabling-support-for-c-11">
@@ -937,13 +948,18 @@ configuring:</p>
 <p>To enable support for C++11 in packages that support C++11 (either optionally
 or required), configure with:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_ENABLE_CXX11:BOOL=ON \
--D CMAKE_CXX_FLAGS:STRING=-std=c++11
+-D &lt;Project&gt;_ENABLE_CXX11:BOOL=ON
 </pre>
-<p>where the C++ flags passed in may depend on the compiler you are using.  This
-will be followed by a set of configure-time tests to see if several C++11
-features are actually supported by the configured C++ compiler and support
-will be disabled if all of these features are not supported.</p>
+<p>By default, the system will try to automatically find compiler flags that will
+enable C++11 features.  If it finds flags that allow a test C++11 program to
+compile, then it will an additional set of configure-time tests to see if
+several C++11 features are actually supported by the configured C++ compiler
+and support will be disabled if all of these features are not supported.</p>
+<p>In order to pre-set and/or override the C++11 compiler flags used, set the
+cache variable:</p>
+<pre class="literal-block">
+-D &lt;Project&gt;_CXX11_FLAGS:STRING=&quot;&lt;compiler flags&gt;&quot;
+</pre>
 </div>
 <div class="section" id="disabling-the-fortran-compiler-and-all-fortran-code">
 <h2><a class="toc-backref" href="#id21">4.6&nbsp;&nbsp;&nbsp;Disabling the Fortran compiler and all Fortran code</a></h2>

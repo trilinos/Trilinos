@@ -308,7 +308,7 @@ Common Use Cases (examples):
   changed because every package does not follow a set pattern for
   tests and test code.
 
-(*) Run the the most important default (e.g. MPI_DEBUG) build/test only:
+(*) Run the most important default (e.g. MPI_DEBUG) build/test only:
 
   ../checkin-test.py --do-all --default-builds=MPI_DEBUG
 
@@ -403,6 +403,15 @@ Common Use Cases (examples):
   NOTE: Each of the last local commits in each of the changed repos will get
   amended with the appended summary of what was enabled in the build/test (if
   --append-test-results is set).
+
+(*) Avoid changing any of the local commit SHA1s:
+
+  If you are pushing commits from a shared branch, it is critical that you
+  don't not change any of the SHA1s of the commits.  To change the SHA1s for
+  any of the commits will mess up various multi-repo, multi-branch workflows.
+  To avoid changing any of the SHA1s of the local commits, one must run with:
+
+    ../checkin-test.py --no-rebase --no-append-test-results [options]
 
 (*) Performing a remote test/push:
 
@@ -599,6 +608,7 @@ Options:
                         Do not check the versions of eg and git, just trust
                         they are okay.
   --src-dir=SRCDIR      The source base directory for code to be tested.
+                        Default assumes is <tribitsDir>/../..
   --trilinos-src-dir=SRCDIR
                         [DEPRECATED] Use --src-dir instead. This argument is
                         for backwards compatibility only.
@@ -796,7 +806,10 @@ Options:
                         Do not amend the last local commit with test results.
                         NOTE: If you have uncommitted local changes that you
                         do not want this script to commit then you must select
-                        this option to avoid this last amending commit.
+                        this option to avoid this last amending commit.  Also,
+                        if you are pushing commits from a shared branch and
+                        don't want to change any of the SHA1s for the commits,
+                        then you must set this option!
   --extra-pull-from=EXTRAPULLFROM
                         Optional extra git pull '<repository>:<branch>' to
                         merge in changes from after pulling in changes from

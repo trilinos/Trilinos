@@ -379,7 +379,7 @@ Common Use Cases (examples):
   changed because every package does not follow a set pattern for
   tests and test code.
 
-(*) Run the the most important default (e.g. MPI_DEBUG) build/test only:
+(*) Run the most important default (e.g. MPI_DEBUG) build/test only:
 
   ../checkin-test.py --do-all --default-builds=MPI_DEBUG
 
@@ -474,6 +474,15 @@ Common Use Cases (examples):
   NOTE: Each of the last local commits in each of the changed repos will get
   amended with the appended summary of what was enabled in the build/test (if
   --append-test-results is set).
+
+(*) Avoid changing any of the local commit SHA1s:
+
+  If you are pushing commits from a shared branch, it is critical that you
+  don't not change any of the SHA1s of the commits.  To change the SHA1s for
+  any of the commits will mess up various multi-repo, multi-branch workflows.
+  To avoid changing any of the SHA1s of the local commits, one must run with:
+
+    ../checkin-test.py --no-rebase --no-append-test-results [options]
 
 (*) Performing a remote test/push:
 
@@ -690,7 +699,7 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
   clp.add_option(
     '--src-dir', dest="srcDir", type="string",
     default=srcDirDefault,
-    help="The source base directory for code to be tested." )
+    help="The source base directory for code to be tested.  Default assumes is <tribitsDir>/../.." )
 
   clp.add_option(
     '--trilinos-src-dir', dest="srcDir", type="string",
@@ -962,7 +971,9 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     "--no-append-test-results", dest="appendTestResults", action="store_false",
     help="Do not amend the last local commit with test results.  NOTE: If you have" \
     +" uncommitted local changes that you do not want this script to commit then you" \
-    +" must select this option to avoid this last amending commit.",
+    +" must select this option to avoid this last amending commit.  Also, if you are" \
+    +" pushing commits from a shared branch and don't want to change any of the SHA1s" \
+    +" for the commits, then you must set this option!",
     default=True )
 
   clp.add_option(

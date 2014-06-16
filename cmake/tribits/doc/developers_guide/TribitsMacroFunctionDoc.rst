@@ -31,6 +31,7 @@ Usage::
     [FINAL_PASS_REGULAR_EXPRESSION <regex> |
       FINAL_FAIL_REGULAR_EXPRESSION <regex>]
     [ENVIRONMENT <var1>=<value1> <var2>=<value2> ...]
+    [TIMEOUT <maxSeconds>]
     )
 
 This function allows one to add a single CTest test that is actually a
@@ -103,10 +104,12 @@ Ordering (TRIBITS_ADD_ADVANCED_TEST())`_).
     ``${PACKAGE_NAME}_<testName>``.  If the directory
     ``<overallWorkingDir>`` exists before the test runs, it will be deleted
     and created again.  Therefore, if one wants to preserve the contents of
-    this directory between test runs one needs to copy the files it
-    somewhere else.  This is a good option to use if the commands create
-    intermediate files and one wants to make sure they get deleted before
-    the test cases are run again.
+    this directory between test runs then one needs to copy the files it
+    contains somewhere else.  This is a good option to use if the commands
+    create intermediate files and one wants to make sure they get deleted
+    before the test cases are run again.  This is also a very useful option
+    to use if multiple tests are defined in the same ``CMakeLists.txt`` file
+    that read/write files with the same name.
 
   ``FAIL_FAST``
 
@@ -173,6 +176,12 @@ Ordering (TRIBITS_ADD_ADVANCED_TEST())`_).
     If passed in, the listed environment variables will be set before
     calling the test.  This is set using the built-in CTest test property
     ``ENVIRONMENT``.
+
+  ``TIMEOUT <maxSeconds>``
+
+    If passed in, gives maximum number of seconds the test will be allowed
+    to run before being timed-out (see `TRIBITS_ADD_TEST()`_).  This is for
+    the full CTest test, not individual ``TEST_<idx>`` commands!
 
 .. _TEST_<idx> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST()):
 

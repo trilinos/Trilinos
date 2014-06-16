@@ -7059,6 +7059,9 @@ be documented in <a class="reference external" href="../build_quick_ref/TribitsB
 a given TriBITS project are:</p>
 <ul class="simple">
 <li><a class="reference internal" href="#project-name-disable-enabled-forward-dep-packages">${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES</a></li>
+<li><a class="reference internal" href="#project-name-enable-c">${PROJECT_NAME}_ENABLE_C</a></li>
+<li><a class="reference internal" href="#project-name-enable-cxx">${PROJECT_NAME}_ENABLE_CXX</a></li>
+<li><a class="reference internal" href="#project-name-enable-cxx11">${PROJECT_NAME}_ENABLE_CXX11</a></li>
 <li><a class="reference internal" href="#project-name-enable-fortran">${PROJECT_NAME}_ENABLE_Fortran</a></li>
 <li><a class="reference internal" href="#project-name-install-libraries-and-headers">${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS</a></li>
 <li><a class="reference internal" href="#project-name-enable-export-makefiles">${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES</a></li>
@@ -7086,13 +7089,49 @@ conflict</a>.  A project can define a different default value by setting:</p>
 SET(${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES_DEFAULT FALSE)
 </pre>
 </blockquote>
+<p id="project-name-enable-c"><strong>${PROJECT_NAME}_ENABLE_C</strong></p>
+<blockquote>
+<p>If <tt class="docutils literal">${PROJECT_NAME}_ENABLE_C</tt> is <tt class="docutils literal">ON</tt>, then C language support for the
+project will be enabled and the C compiler must be found.  By default,
+TriBITS sets this to <tt class="docutils literal">ON</tt> for all systems.  A project never requires C can
+set this to off by default by setting:</p>
+<blockquote>
+SET(${PROJECT_NAME}_ENABLE_C_DEFAULT FALSE)</blockquote>
+<p>If a project does not have any native C code a good default would be:</p>
+<pre class="literal-block">
+SET(${PROJECT_NAME}_ENABLE_C_DEFAULT FALSE)
+</pre>
+<p>NOTE: It is usually not a good idea to always force off C, or any compiler,
+because extra repositories and packages might be added by someone that might
+require the compiler and we don't want to unnecessarily limit the generality
+of a given TriBITS build.  Setting the default for all platforms should be
+sufficient.</p>
+</blockquote>
+<p id="project-name-enable-cxx"><strong>${PROJECT_NAME}_ENABLE_CXX</strong></p>
+<blockquote>
+<p>If <tt class="docutils literal">${PROJECT_NAME}_ENABLE_CXX</tt> is <tt class="docutils literal">ON</tt>, then C++ language support for
+the project will be enabled and the C++ compiler must be found.  By default,
+TriBITS sets this to <tt class="docutils literal">ON</tt> for all systems.  A project never requires C++
+can set this to off by default by setting:</p>
+<blockquote>
+SET(${PROJECT_NAME}_ENABLE_CXX_DEFAULT FALSE)</blockquote>
+</blockquote>
+<p id="project-name-enable-cxx11"><strong>${PROJECT_NAME}_ENABLE_CXX11</strong></p>
+<blockquote>
+<p>If <tt class="docutils literal">${PROJECT_NAME}_ENABLE_CXX11</tt> is <tt class="docutils literal">ON</tt>, then C++ compiler options
+that turn on C++11 support will be searched for.  By default, TriBITS sets
+this to <tt class="docutils literal">OFF</tt> for all systems.  However, if project requires C++11 support
+by default, then the project should set the default:</p>
+<blockquote>
+SET(${PROJECT_NAME}_ENABLE_CXX11_DEFAULT TRUE)</blockquote>
+</blockquote>
 <p id="project-name-enable-fortran"><strong>${PROJECT_NAME}_ENABLE_Fortran</strong></p>
 <blockquote>
-<p>If <tt class="docutils literal">${PROJECT_NAME}_ENABLE_Fortran</tt> is <tt class="docutils literal">ON</tt>, then Fortran support for the
-project will be enabled and the Fortran compiler(s) must be found.  By
+<p>If <tt class="docutils literal">${PROJECT_NAME}_ENABLE_Fortran</tt> is <tt class="docutils literal">ON</tt>, then Fortran support for
+the project will be enabled and the Fortran compiler(s) must be found.  By
 default, TriBITS sets this to <tt class="docutils literal">ON</tt> for non-Windows systems (i.e. <tt class="docutils literal">WIN32</tt>
-is not set by CMake) but is <tt class="docutils literal">OFF</tt> for a Windows system.  A project always
-requires Fortran, for example, it can set the default:</p>
+is not set by CMake) but is <tt class="docutils literal">OFF</tt> for a Windows system.  A project that
+always requires Fortran, for example, it can set the default:</p>
 <pre class="literal-block">
 SET(${PROJECT_NAME}_ENABLE_Fortran_DEFAULT TRUE)
 </pre>
@@ -7327,6 +7366,7 @@ TRIBITS_ADD_ADVANCED_TEST(
   [FINAL_PASS_REGULAR_EXPRESSION &lt;regex&gt; |
     FINAL_FAIL_REGULAR_EXPRESSION &lt;regex&gt;]
   [ENVIRONMENT &lt;var1&gt;=&lt;value1&gt; &lt;var2&gt;=&lt;value2&gt; ...]
+  [TIMEOUT &lt;maxSeconds&gt;]
   )
 </pre>
 <p>This function allows one to add a single CTest test that is actually a
@@ -7393,10 +7433,12 @@ given, then the working directory will be given the name
 <tt class="docutils literal">${PACKAGE_NAME}_&lt;testName&gt;</tt>.  If the directory
 <tt class="docutils literal">&lt;overallWorkingDir&gt;</tt> exists before the test runs, it will be deleted
 and created again.  Therefore, if one wants to preserve the contents of
-this directory between test runs one needs to copy the files it
-somewhere else.  This is a good option to use if the commands create
-intermediate files and one wants to make sure they get deleted before
-the test cases are run again.</blockquote>
+this directory between test runs then one needs to copy the files it
+contains somewhere else.  This is a good option to use if the commands
+create intermediate files and one wants to make sure they get deleted
+before the test cases are run again.  This is also a very useful option
+to use if multiple tests are defined in the same <tt class="docutils literal">CMakeLists.txt</tt> file
+that read/write files with the same name.</blockquote>
 <p><tt class="docutils literal">FAIL_FAST</tt></p>
 <blockquote>
 If specified, then the remaining test commands will be aborted when any
@@ -7453,6 +7495,11 @@ The list of host types for which <strong>not</strong> to enable the test (see
 If passed in, the listed environment variables will be set before
 calling the test.  This is set using the built-in CTest test property
 <tt class="docutils literal">ENVIRONMENT</tt>.</blockquote>
+<p><tt class="docutils literal">TIMEOUT &lt;maxSeconds&gt;</tt></p>
+<blockquote>
+If passed in, gives maximum number of seconds the test will be allowed
+to run before being timed-out (see <a class="reference internal" href="#tribits-add-test">TRIBITS_ADD_TEST()</a>).  This is for
+the full CTest test, not individual <tt class="docutils literal">TEST_&lt;idx&gt;</tt> commands!</blockquote>
 </blockquote>
 <p id="test-idx-test-blocks-and-arguments-tribits-add-advanced-test"><strong>TEST_&lt;idx&gt; Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())</strong></p>
 <p>Each test command block <tt class="docutils literal">TEST_&lt;idx&gt;</tt> runs either a package-built test
@@ -10821,7 +10868,7 @@ Common Use Cases (examples):
   changed because every package does not follow a set pattern for
   tests and test code.
 
-(*) Run the the most important default (e.g. MPI_DEBUG) build/test only:
+(*) Run the most important default (e.g. MPI_DEBUG) build/test only:
 
   ../checkin-test.py --do-all --default-builds=MPI_DEBUG
 
@@ -10916,6 +10963,15 @@ Common Use Cases (examples):
   NOTE: Each of the last local commits in each of the changed repos will get
   amended with the appended summary of what was enabled in the build/test (if
   --append-test-results is set).
+
+(*) Avoid changing any of the local commit SHA1s:
+
+  If you are pushing commits from a shared branch, it is critical that you
+  don't not change any of the SHA1s of the commits.  To change the SHA1s for
+  any of the commits will mess up various multi-repo, multi-branch workflows.
+  To avoid changing any of the SHA1s of the local commits, one must run with:
+
+    ../checkin-test.py --no-rebase --no-append-test-results [options]
 
 (*) Performing a remote test/push:
 
@@ -11112,6 +11168,7 @@ Options:
                         Do not check the versions of eg and git, just trust
                         they are okay.
   --src-dir=SRCDIR      The source base directory for code to be tested.
+                        Default assumes is &lt;tribitsDir&gt;/../..
   --trilinos-src-dir=SRCDIR
                         [DEPRECATED] Use --src-dir instead. This argument is
                         for backwards compatibility only.
@@ -11309,7 +11366,10 @@ Options:
                         Do not amend the last local commit with test results.
                         NOTE: If you have uncommitted local changes that you
                         do not want this script to commit then you must select
-                        this option to avoid this last amending commit.
+                        this option to avoid this last amending commit.  Also,
+                        if you are pushing commits from a shared branch and
+                        don't want to change any of the SHA1s for the commits,
+                        then you must set this option!
   --extra-pull-from=EXTRAPULLFROM
                         Optional extra git pull '&lt;repository&gt;:&lt;branch&gt;' to
                         merge in changes from after pulling in changes from
