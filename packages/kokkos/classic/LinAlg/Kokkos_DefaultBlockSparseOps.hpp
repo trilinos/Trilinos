@@ -60,332 +60,334 @@ namespace KokkosClassic {
 
   // default implementation
   template <class Scalar, class Ordinal, class Node = DefaultNode::DefaultNodeType>
-    /*! \class DefaultBlockSparseOps
-      \brief DefaultBlockSparseOps
-      */
-    class DefaultBlockSparseOps {
-      public:
-        typedef Scalar  ScalarType;
-        typedef Ordinal OrdinalType;
-        typedef Node    NodeType;
+  /*! \class DefaultBlockSparseOps
+    \brief DefaultBlockSparseOps
+  */
+  class DefaultBlockSparseOps {
+  public:
+    typedef Scalar  ScalarType;
+    typedef Ordinal OrdinalType;
+    typedef Node    NodeType;
 
-        //! @name Constructors/Destructor
+    //! @name Constructors/Destructor
 
-        //@{
+    //@{
 
-        //! DefaultBlockSparseOps constuctor with variable number of indices per row.
-        DefaultBlockSparseOps(const RCP<Node> &node = DefaultNode::getDefaultNode());
+    //! DefaultBlockSparseOps constuctor with variable number of indices per row.
+    DefaultBlockSparseOps(const RCP<Node> &node = DefaultNode::getDefaultNode());
 
-        //! DefaultBlockSparseOps Destructor
-        ~DefaultBlockSparseOps();
+    //! DefaultBlockSparseOps Destructor
+    ~DefaultBlockSparseOps();
 
-        //@}
+    //@}
 
-        //! @name Accessor routines.
-        //@{
+    //! @name Accessor routines.
+    //@{
 
-        //! Node accessor.
-        RCP<Node> getNode() const;
+    //! Node accessor.
+    RCP<Node> getNode() const;
 
-        //@}
+    //@}
 
-        //! @name Initialization of structure
+    //! @name Initialization of structure
 
-        //@{
+    //@{
 
-        //! Initialize values of matrix, using VbrMatrix
-        void initializeValues(const VbrMatrix<Scalar,Ordinal,Node> &matrix);
+    //! Initialize values of matrix, using VbrMatrix
+    void initializeValues(const VbrMatrix<Scalar,Ordinal,Node> &matrix);
 
-        //! Clear all matrix structure and values.
-        void clear();
+    //! Clear all matrix structure and values.
+    void clear();
 
-        //@}
+    //@}
 
-        //! @name Computational methods
+    //! @name Computational methods
 
-        //@{
+    //@{
 
-        //! Applies the matrix to a MultiVector, overwriting Y.
-        template <class DomainScalar, class RangeScalar>
-          void multiply(Teuchos::ETransp trans, RangeScalar alpha, const MultiVector<DomainScalar,Node> &X, MultiVector<RangeScalar,Node> &Y) const;
+    //! Applies the matrix to a MultiVector, overwriting Y.
+    template <class DomainScalar, class RangeScalar>
+    void multiply(Teuchos::ETransp trans, RangeScalar alpha, const MultiVector<DomainScalar,Node> &X, MultiVector<RangeScalar,Node> &Y) const;
 
-        //! Applies the matrix to a MultiVector, accumulating into Y.
-        template <class DomainScalar, class RangeScalar>
-          void multiply(Teuchos::ETransp trans,
-              RangeScalar alpha, const MultiVector<DomainScalar,Node> &X, RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const;
+    //! Applies the matrix to a MultiVector, accumulating into Y.
+    template <class DomainScalar, class RangeScalar>
+    void multiply(Teuchos::ETransp trans,
+                  RangeScalar alpha, const MultiVector<DomainScalar,Node> &X, RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const;
 
-        //! Triangular solve: find x such that A*x=y, only if A is triangular.
-        template <class DomainScalar, class RangeScalar>
-          void solve(Teuchos::ETransp trans, Teuchos::EUplo triang, Teuchos::EDiag diag,
-              const MultiVector<DomainScalar,Node>& Y, MultiVector<RangeScalar,Node>& X) const;
-        //@}
+    //! Triangular solve: find x such that A*x=y, only if A is triangular.
+    template <class DomainScalar, class RangeScalar>
+    void solve(Teuchos::ETransp trans, Teuchos::EUplo triang, Teuchos::EDiag diag,
+               const MultiVector<DomainScalar,Node>& Y, MultiVector<RangeScalar,Node>& X) const;
+    //@}
 
-      protected:
-        //! Copy constructor (protected and unimplemented)
-        DefaultBlockSparseOps(const DefaultBlockSparseOps& source);
+  protected:
+    //! Copy constructor (protected and unimplemented)
+    DefaultBlockSparseOps(const DefaultBlockSparseOps& source);
 
-        RCP<Node> node_;
+    RCP<Node> node_;
 
-        ArrayRCP<const Ordinal> pbuf_rptr_;
-        ArrayRCP<const Ordinal> pbuf_cptr_;
-        ArrayRCP<const size_t> pbuf_bptr_;
-        ArrayRCP<const Ordinal> pbuf_bindx_;
-        ArrayRCP<const Ordinal> pbuf_indx_;
-        ArrayRCP<const Scalar>  pbuf_vals1D_;
+    ArrayRCP<const Ordinal> pbuf_rptr_;
+    ArrayRCP<const Ordinal> pbuf_cptr_;
+    ArrayRCP<const size_t> pbuf_bptr_;
+    ArrayRCP<const Ordinal> pbuf_bindx_;
+    ArrayRCP<const Ordinal> pbuf_indx_;
+    ArrayRCP<const Scalar>  pbuf_vals1D_;
 
-        size_t numBlockRows_;
-        bool valsInit_, isPacked_, isEmpty_;
-    };
+    size_t numBlockRows_;
+    bool valsInit_, isPacked_, isEmpty_;
+  };
 
   template<class Scalar, class Ordinal, class Node>
-    DefaultBlockSparseOps<Scalar,Ordinal,Node>::DefaultBlockSparseOps(const RCP<Node> &node)
+  DefaultBlockSparseOps<Scalar,Ordinal,Node>::
+  DefaultBlockSparseOps (const RCP<Node> &node)
     : node_(node)
-      , valsInit_(false)
-      , isPacked_(false)
-      , isEmpty_(false)
-      , numBlockRows_(0)
-      {
-      }
+    , numBlockRows_(0)
+    , valsInit_(false)
+    , isPacked_(false)
+    , isEmpty_(false)
+  {}
 
   template<class Scalar, class Ordinal, class Node>
-    DefaultBlockSparseOps<Scalar,Ordinal,Node>::~DefaultBlockSparseOps() {
-    }
+  DefaultBlockSparseOps<Scalar,Ordinal,Node>::~DefaultBlockSparseOps() {
+  }
 
   template <class Scalar, class Ordinal, class Node>
-    void DefaultBlockSparseOps<Scalar,Ordinal,Node>::initializeValues(const VbrMatrix<Scalar,Ordinal,Node> &matrix) {
-      isEmpty_ = false;
-      pbuf_vals1D_ = matrix.get_values();
-      pbuf_rptr_ = matrix.get_rptr();
-      pbuf_cptr_ = matrix.get_cptr();
-      pbuf_bptr_ = matrix.get_bptr();
-      pbuf_bindx_ = matrix.get_bindx();
-      pbuf_indx_ = matrix.get_indx();
-      numBlockRows_ = matrix.getNumBlockRows();
-      valsInit_ = true;
-      isPacked_ = true;
-    }
-
-
-  template <class Scalar, class Ordinal, class Node>
-    RCP<Node> DefaultBlockSparseOps<Scalar,Ordinal,Node>::getNode() const {
-      return node_;
-    }
+  void DefaultBlockSparseOps<Scalar,Ordinal,Node>::
+  initializeValues (const VbrMatrix<Scalar,Ordinal,Node> &matrix)
+  {
+    isEmpty_ = false;
+    pbuf_vals1D_ = matrix.get_values();
+    pbuf_rptr_ = matrix.get_rptr();
+    pbuf_cptr_ = matrix.get_cptr();
+    pbuf_bptr_ = matrix.get_bptr();
+    pbuf_bindx_ = matrix.get_bindx();
+    pbuf_indx_ = matrix.get_indx();
+    numBlockRows_ = matrix.getNumBlockRows();
+    valsInit_ = true;
+    isPacked_ = true;
+  }
 
 
   template <class Scalar, class Ordinal, class Node>
-    void DefaultBlockSparseOps<Scalar,Ordinal,Node>::clear() {
-      pbuf_vals1D_  = null;
-      pbuf_rptr_    = null;
-      pbuf_cptr_    = null;
-      pbuf_bptr_    = null;
-      pbuf_bindx_   = null;
-      pbuf_indx_    = null;
-      valsInit_ = false;
-      isPacked_ = false;
-      isEmpty_  = false;
-    }
+  RCP<Node> DefaultBlockSparseOps<Scalar,Ordinal,Node>::getNode() const {
+    return node_;
+  }
+
 
   template <class Scalar, class Ordinal, class Node>
-    template <class DomainScalar, class RangeScalar>
-    void DefaultBlockSparseOps<Scalar,Ordinal,Node>::multiply(
-        Teuchos::ETransp trans,
-        RangeScalar alpha,
-        const MultiVector<DomainScalar,Node> &X,
-        MultiVector<RangeScalar,Node> &Y) const {
-      typedef DefaultBlockSparseMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  Op1;
-      typedef DefaultBlockSparseMultiplyOp1Transpose<Scalar,Ordinal,DomainScalar,RangeScalar>  Op1T;
-      TEUCHOS_TEST_FOR_EXCEPTION(valsInit_ == false, std::runtime_error,
-          Teuchos::typeName(*this) << "::multiply(): operation not fully initialized.");
-      TEUCHOS_TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
-      ReadyBufferHelper<Node> rbh(node_);
-      if (isEmpty_ == true) {
-        // Y <= 0 * X
-        //   <= 0
+  void DefaultBlockSparseOps<Scalar,Ordinal,Node>::clear() {
+    pbuf_vals1D_  = null;
+    pbuf_rptr_    = null;
+    pbuf_cptr_    = null;
+    pbuf_bptr_    = null;
+    pbuf_bindx_   = null;
+    pbuf_indx_    = null;
+    valsInit_ = false;
+    isPacked_ = false;
+    isEmpty_  = false;
+  }
+
+  template <class Scalar, class Ordinal, class Node>
+  template <class DomainScalar, class RangeScalar>
+  void DefaultBlockSparseOps<Scalar,Ordinal,Node>::multiply(
+                                                            Teuchos::ETransp trans,
+                                                            RangeScalar alpha,
+                                                            const MultiVector<DomainScalar,Node> &X,
+                                                            MultiVector<RangeScalar,Node> &Y) const {
+    typedef DefaultBlockSparseMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  Op1;
+    typedef DefaultBlockSparseMultiplyOp1Transpose<Scalar,Ordinal,DomainScalar,RangeScalar>  Op1T;
+    TEUCHOS_TEST_FOR_EXCEPTION(valsInit_ == false, std::runtime_error,
+                               Teuchos::typeName(*this) << "::multiply(): operation not fully initialized.");
+    TEUCHOS_TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
+    ReadyBufferHelper<Node> rbh(node_);
+    if (isEmpty_ == true) {
+      // Y <= 0 * X
+      //   <= 0
+      DefaultArithmetic<MultiVector<RangeScalar,Node> >::Init(Y,Teuchos::ScalarTraits<RangeScalar>::zero());
+    }
+    else if (isPacked_ == true) {
+      if (trans == Teuchos::NO_TRANS) {
+        Op1 wdp;
+        rbh.begin();
+        wdp.alpha   = alpha;
+        wdp.beta    = Teuchos::ScalarTraits<RangeScalar>::zero(); // not used
+        wdp.numBlockRows = numBlockRows_;
+        wdp.vals = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
+        wdp.rptr = rbh.template addConstBuffer<Ordinal>(pbuf_rptr_);
+        wdp.cptr = rbh.template addConstBuffer<Ordinal>(pbuf_cptr_);
+        wdp.bptr = rbh.template addConstBuffer<size_t>(pbuf_bptr_);
+        wdp.bindx= rbh.template addConstBuffer<Ordinal>(pbuf_bindx_);
+        wdp.indx = rbh.template addConstBuffer<Ordinal>(pbuf_indx_);
+        wdp.y    = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
+        wdp.x    = rbh.template addConstBuffer<DomainScalar>(X.getValues());
+        wdp.xstride = X.getStride();
+        wdp.ystride = Y.getStride();
+        rbh.end();
+        const size_t numRHS = X.getNumCols();
+        node_->template parallel_for<Op1>(0,numBlockRows_*numRHS,wdp);
+      }
+      else {
+        //start by initializing Y = beta*Y
         DefaultArithmetic<MultiVector<RangeScalar,Node> >::Init(Y,Teuchos::ScalarTraits<RangeScalar>::zero());
+        Op1T wdp;
+        rbh.begin();
+        wdp.alpha   = alpha;
+        wdp.numBlockRows = numBlockRows_;
+        wdp.vals = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
+        wdp.rptr = rbh.template addConstBuffer<Ordinal>(pbuf_rptr_);
+        wdp.cptr = rbh.template addConstBuffer<Ordinal>(pbuf_cptr_);
+        wdp.bptr = rbh.template addConstBuffer<size_t>(pbuf_bptr_);
+        wdp.bindx= rbh.template addConstBuffer<Ordinal>(pbuf_bindx_);
+        wdp.indx = rbh.template addConstBuffer<Ordinal>(pbuf_indx_);
+        wdp.y    = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
+        wdp.x    = rbh.template addConstBuffer<DomainScalar>(X.getValues());
+        wdp.xstride = X.getStride();
+        wdp.ystride = Y.getStride();
+        rbh.end();
+        const size_t numRHS = X.getNumCols();
+        node_->template parallel_for<Op1T>(0,numRHS,wdp);
       }
-      else if (isPacked_ == true) {
-        if (trans == Teuchos::NO_TRANS) {
-          Op1 wdp;
-          rbh.begin();
-          wdp.alpha   = alpha;
-          wdp.beta    = Teuchos::ScalarTraits<RangeScalar>::zero(); // not used
-          wdp.numBlockRows = numBlockRows_;
-          wdp.vals = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
-          wdp.rptr = rbh.template addConstBuffer<Ordinal>(pbuf_rptr_);
-          wdp.cptr = rbh.template addConstBuffer<Ordinal>(pbuf_cptr_);
-          wdp.bptr = rbh.template addConstBuffer<size_t>(pbuf_bptr_);
-          wdp.bindx= rbh.template addConstBuffer<Ordinal>(pbuf_bindx_);
-          wdp.indx = rbh.template addConstBuffer<Ordinal>(pbuf_indx_);
-          wdp.y    = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
-          wdp.x    = rbh.template addConstBuffer<DomainScalar>(X.getValues());
-          wdp.xstride = X.getStride();
-          wdp.ystride = Y.getStride();
-          rbh.end();
-          const size_t numRHS = X.getNumCols();
-          node_->template parallel_for<Op1>(0,numBlockRows_*numRHS,wdp);
-        }
-        else {
-          //start by initializing Y = beta*Y
+    }
+    else {
+      throw std::runtime_error("DefaultBlockSparseOps ERROR, not implemented for non-packed '2D' storage.");
+    }
+  }
+
+
+  template <class Scalar, class Ordinal, class Node>
+  template <class DomainScalar, class RangeScalar>
+  void DefaultBlockSparseOps<Scalar,Ordinal,Node>::multiply(
+                                                            Teuchos::ETransp trans,
+                                                            RangeScalar alpha, const MultiVector<DomainScalar,Node> &X,
+                                                            RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const {
+    typedef DefaultBlockSparseMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  Op1;
+    typedef DefaultBlockSparseMultiplyOp1Transpose<Scalar,Ordinal,DomainScalar,RangeScalar>  Op1T;
+    TEUCHOS_TEST_FOR_EXCEPTION(valsInit_ == false, std::runtime_error,
+                               Teuchos::typeName(*this) << "::multiply(): operation not fully initialized.");
+    TEUCHOS_TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
+    ReadyBufferHelper<Node> rbh(node_);
+    if (isEmpty_ == true) {
+      // Y <= 0 * X
+      //   <= 0
+      DefaultArithmetic<MultiVector<RangeScalar,Node> >::Scale(Y,beta);
+    }
+    else if (isPacked_ == true) {
+      if (trans == Teuchos::NO_TRANS) {
+        Op1 wdp;
+        rbh.begin();
+        wdp.alpha   = alpha;
+        wdp.beta    = beta;
+        wdp.numBlockRows = numBlockRows_;
+        wdp.vals = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
+        wdp.rptr = rbh.template addConstBuffer<Ordinal>(pbuf_rptr_);
+        wdp.cptr = rbh.template addConstBuffer<Ordinal>(pbuf_cptr_);
+        wdp.bptr = rbh.template addConstBuffer<size_t>(pbuf_bptr_);
+        wdp.bindx= rbh.template addConstBuffer<Ordinal>(pbuf_bindx_);
+        wdp.indx = rbh.template addConstBuffer<Ordinal>(pbuf_indx_);
+        wdp.y    = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
+        wdp.x    = rbh.template addConstBuffer<DomainScalar>(X.getValues());
+        wdp.xstride = X.getStride();
+        wdp.ystride = Y.getStride();
+        rbh.end();
+        const size_t numRHS = X.getNumCols();
+        node_->template parallel_for<Op1>(0,numBlockRows_*numRHS,wdp);
+      }
+      else {
+        //start by initializing Y = beta*Y
+        if (beta == Teuchos::ScalarTraits<RangeScalar>::zero()) {
           DefaultArithmetic<MultiVector<RangeScalar,Node> >::Init(Y,Teuchos::ScalarTraits<RangeScalar>::zero());
-          Op1T wdp;
-          rbh.begin();
-          wdp.alpha   = alpha;
-          wdp.numBlockRows = numBlockRows_;
-          wdp.vals = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
-          wdp.rptr = rbh.template addConstBuffer<Ordinal>(pbuf_rptr_);
-          wdp.cptr = rbh.template addConstBuffer<Ordinal>(pbuf_cptr_);
-          wdp.bptr = rbh.template addConstBuffer<size_t>(pbuf_bptr_);
-          wdp.bindx= rbh.template addConstBuffer<Ordinal>(pbuf_bindx_);
-          wdp.indx = rbh.template addConstBuffer<Ordinal>(pbuf_indx_);
-          wdp.y    = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
-          wdp.x    = rbh.template addConstBuffer<DomainScalar>(X.getValues());
-          wdp.xstride = X.getStride();
-          wdp.ystride = Y.getStride();
-          rbh.end();
-          const size_t numRHS = X.getNumCols();
-          node_->template parallel_for<Op1T>(0,numRHS,wdp);
-        }
-      }
-      else {
-        throw std::runtime_error("DefaultBlockSparseOps ERROR, not implemented for non-packed '2D' storage.");
-      }
-    }
-
-
-  template <class Scalar, class Ordinal, class Node>
-    template <class DomainScalar, class RangeScalar>
-    void DefaultBlockSparseOps<Scalar,Ordinal,Node>::multiply(
-        Teuchos::ETransp trans,
-        RangeScalar alpha, const MultiVector<DomainScalar,Node> &X,
-        RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const {
-      typedef DefaultBlockSparseMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  Op1;
-      typedef DefaultBlockSparseMultiplyOp1Transpose<Scalar,Ordinal,DomainScalar,RangeScalar>  Op1T;
-      TEUCHOS_TEST_FOR_EXCEPTION(valsInit_ == false, std::runtime_error,
-          Teuchos::typeName(*this) << "::multiply(): operation not fully initialized.");
-      TEUCHOS_TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
-      ReadyBufferHelper<Node> rbh(node_);
-      if (isEmpty_ == true) {
-        // Y <= 0 * X
-        //   <= 0
-        DefaultArithmetic<MultiVector<RangeScalar,Node> >::Scale(Y,beta);
-      }
-      else if (isPacked_ == true) {
-        if (trans == Teuchos::NO_TRANS) {
-          Op1 wdp;
-          rbh.begin();
-          wdp.alpha   = alpha;
-          wdp.beta    = beta;
-          wdp.numBlockRows = numBlockRows_;
-          wdp.vals = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
-          wdp.rptr = rbh.template addConstBuffer<Ordinal>(pbuf_rptr_);
-          wdp.cptr = rbh.template addConstBuffer<Ordinal>(pbuf_cptr_);
-          wdp.bptr = rbh.template addConstBuffer<size_t>(pbuf_bptr_);
-          wdp.bindx= rbh.template addConstBuffer<Ordinal>(pbuf_bindx_);
-          wdp.indx = rbh.template addConstBuffer<Ordinal>(pbuf_indx_);
-          wdp.y    = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
-          wdp.x    = rbh.template addConstBuffer<DomainScalar>(X.getValues());
-          wdp.xstride = X.getStride();
-          wdp.ystride = Y.getStride();
-          rbh.end();
-          const size_t numRHS = X.getNumCols();
-          node_->template parallel_for<Op1>(0,numBlockRows_*numRHS,wdp);
         }
         else {
-          //start by initializing Y = beta*Y
-          if (beta == Teuchos::ScalarTraits<RangeScalar>::zero()) {
-            DefaultArithmetic<MultiVector<RangeScalar,Node> >::Init(Y,Teuchos::ScalarTraits<RangeScalar>::zero());
-          }
-          else {
-            DefaultArithmetic<MultiVector<RangeScalar,Node> >::Scale(Y,beta,Y);
-          }
-          Op1T wdp;
-          rbh.begin();
-          wdp.alpha   = alpha;
-          wdp.numBlockRows = numBlockRows_;
-          wdp.vals = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
-          wdp.rptr = rbh.template addConstBuffer<Ordinal>(pbuf_rptr_);
-          wdp.cptr = rbh.template addConstBuffer<Ordinal>(pbuf_cptr_);
-          wdp.bptr = rbh.template addConstBuffer<size_t>(pbuf_bptr_);
-          wdp.bindx= rbh.template addConstBuffer<Ordinal>(pbuf_bindx_);
-          wdp.indx = rbh.template addConstBuffer<Ordinal>(pbuf_indx_);
-          wdp.y    = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
-          wdp.x    = rbh.template addConstBuffer<DomainScalar>(X.getValues());
-          wdp.xstride = X.getStride();
-          wdp.ystride = Y.getStride();
-          rbh.end();
-          const size_t numRHS = X.getNumCols();
-          node_->template parallel_for<Op1T>(0,numRHS,wdp);
+          DefaultArithmetic<MultiVector<RangeScalar,Node> >::Scale(Y,beta,Y);
         }
-      }
-      else {
-        throw std::runtime_error("DefaultBlockSparseOps::Multiply ERROR, not implemented for non-packed '2D' storage.");
+        Op1T wdp;
+        rbh.begin();
+        wdp.alpha   = alpha;
+        wdp.numBlockRows = numBlockRows_;
+        wdp.vals = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
+        wdp.rptr = rbh.template addConstBuffer<Ordinal>(pbuf_rptr_);
+        wdp.cptr = rbh.template addConstBuffer<Ordinal>(pbuf_cptr_);
+        wdp.bptr = rbh.template addConstBuffer<size_t>(pbuf_bptr_);
+        wdp.bindx= rbh.template addConstBuffer<Ordinal>(pbuf_bindx_);
+        wdp.indx = rbh.template addConstBuffer<Ordinal>(pbuf_indx_);
+        wdp.y    = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
+        wdp.x    = rbh.template addConstBuffer<DomainScalar>(X.getValues());
+        wdp.xstride = X.getStride();
+        wdp.ystride = Y.getStride();
+        rbh.end();
+        const size_t numRHS = X.getNumCols();
+        node_->template parallel_for<Op1T>(0,numRHS,wdp);
       }
     }
+    else {
+      throw std::runtime_error("DefaultBlockSparseOps::Multiply ERROR, not implemented for non-packed '2D' storage.");
+    }
+  }
 
   template <class Scalar, class Ordinal, class Node>
-    template <class DomainScalar, class RangeScalar>
-    void DefaultBlockSparseOps<Scalar,Ordinal,Node>::solve(
-        Teuchos::ETransp trans,
-        Teuchos::EUplo triang,
-        Teuchos::EDiag diag,
-        const MultiVector<DomainScalar,Node> &Y,
-        MultiVector<RangeScalar,Node> &X) const {
-      typedef DefaultBlockSparseSolveOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  Op;
-      typedef DefaultBlockSparseTransposeSolveOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  OpT;
-      TEUCHOS_TEST_FOR_EXCEPTION(valsInit_ == false, std::runtime_error,
-          Teuchos::typeName(*this) << "::solve(): operation not fully initialized.");
-      TEUCHOS_TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
-      ReadyBufferHelper<Node> rbh(node_);
-      if (isEmpty_ == true) {
-        // X <= Y
-        DefaultArithmetic<MultiVector<RangeScalar,Node> >::Assign(X,Y);
-      }
-      else if (isPacked_ == true) {
-        if (trans == Teuchos::NO_TRANS) {
-          Op wdp;
-          rbh.begin();
-          wdp.upper   = (triang == Teuchos::UPPER_TRI);
-          wdp.unitDiag = (diag == Teuchos::UNIT_DIAG);
-          wdp.numBlockRows = numBlockRows_;
-          wdp.vals = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
-          wdp.rptr = rbh.template addConstBuffer<Ordinal>(pbuf_rptr_);
-          wdp.cptr = rbh.template addConstBuffer<Ordinal>(pbuf_cptr_);
-          wdp.bptr = rbh.template addConstBuffer<size_t>(pbuf_bptr_);
-          wdp.bindx= rbh.template addConstBuffer<Ordinal>(pbuf_bindx_);
-          wdp.indx = rbh.template addConstBuffer<Ordinal>(pbuf_indx_);
-          wdp.x    = rbh.template addNonConstBuffer<DomainScalar>(X.getValuesNonConst());
-          wdp.y    = rbh.template addConstBuffer<RangeScalar>(Y.getValues());
-          wdp.xstride = X.getStride();
-          wdp.ystride = Y.getStride();
-          rbh.end();
-          const size_t numRHS = X.getNumCols();
-          node_->template parallel_for<Op>(0,numRHS,wdp);
-        }
-        else {
-          OpT wdp;
-          rbh.begin();
-          wdp.upper   = (triang == Teuchos::UPPER_TRI);
-          wdp.unitDiag = (diag == Teuchos::UNIT_DIAG);
-          wdp.numBlockRows = numBlockRows_;
-          wdp.vals = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
-          wdp.rptr = rbh.template addConstBuffer<Ordinal>(pbuf_rptr_);
-          wdp.cptr = rbh.template addConstBuffer<Ordinal>(pbuf_cptr_);
-          wdp.bptr = rbh.template addConstBuffer<size_t>(pbuf_bptr_);
-          wdp.bindx= rbh.template addConstBuffer<Ordinal>(pbuf_bindx_);
-          wdp.indx = rbh.template addConstBuffer<Ordinal>(pbuf_indx_);
-          wdp.x    = rbh.template addNonConstBuffer<DomainScalar>(X.getValuesNonConst());
-          wdp.y    = rbh.template addConstBuffer<RangeScalar>(Y.getValues());
-          wdp.xstride = X.getStride();
-          wdp.ystride = Y.getStride();
-          rbh.end();
-          const size_t numRHS = X.getNumCols();
-          node_->template parallel_for<OpT>(0,numRHS,wdp);
-        }
+  template <class DomainScalar, class RangeScalar>
+  void DefaultBlockSparseOps<Scalar,Ordinal,Node>::solve(
+                                                         Teuchos::ETransp trans,
+                                                         Teuchos::EUplo triang,
+                                                         Teuchos::EDiag diag,
+                                                         const MultiVector<DomainScalar,Node> &Y,
+                                                         MultiVector<RangeScalar,Node> &X) const {
+    typedef DefaultBlockSparseSolveOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  Op;
+    typedef DefaultBlockSparseTransposeSolveOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  OpT;
+    TEUCHOS_TEST_FOR_EXCEPTION(valsInit_ == false, std::runtime_error,
+                               Teuchos::typeName(*this) << "::solve(): operation not fully initialized.");
+    TEUCHOS_TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
+    ReadyBufferHelper<Node> rbh(node_);
+    if (isEmpty_ == true) {
+      // X <= Y
+      DefaultArithmetic<MultiVector<RangeScalar,Node> >::Assign(X,Y);
+    }
+    else if (isPacked_ == true) {
+      if (trans == Teuchos::NO_TRANS) {
+        Op wdp;
+        rbh.begin();
+        wdp.upper   = (triang == Teuchos::UPPER_TRI);
+        wdp.unitDiag = (diag == Teuchos::UNIT_DIAG);
+        wdp.numBlockRows = numBlockRows_;
+        wdp.vals = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
+        wdp.rptr = rbh.template addConstBuffer<Ordinal>(pbuf_rptr_);
+        wdp.cptr = rbh.template addConstBuffer<Ordinal>(pbuf_cptr_);
+        wdp.bptr = rbh.template addConstBuffer<size_t>(pbuf_bptr_);
+        wdp.bindx= rbh.template addConstBuffer<Ordinal>(pbuf_bindx_);
+        wdp.indx = rbh.template addConstBuffer<Ordinal>(pbuf_indx_);
+        wdp.x    = rbh.template addNonConstBuffer<DomainScalar>(X.getValuesNonConst());
+        wdp.y    = rbh.template addConstBuffer<RangeScalar>(Y.getValues());
+        wdp.xstride = X.getStride();
+        wdp.ystride = Y.getStride();
+        rbh.end();
+        const size_t numRHS = X.getNumCols();
+        node_->template parallel_for<Op>(0,numRHS,wdp);
       }
       else {
-        throw std::runtime_error("DefaultBlockSparseOps::solve ERROR, not implemented for non-packed '2D' storage.");
+        OpT wdp;
+        rbh.begin();
+        wdp.upper   = (triang == Teuchos::UPPER_TRI);
+        wdp.unitDiag = (diag == Teuchos::UNIT_DIAG);
+        wdp.numBlockRows = numBlockRows_;
+        wdp.vals = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
+        wdp.rptr = rbh.template addConstBuffer<Ordinal>(pbuf_rptr_);
+        wdp.cptr = rbh.template addConstBuffer<Ordinal>(pbuf_cptr_);
+        wdp.bptr = rbh.template addConstBuffer<size_t>(pbuf_bptr_);
+        wdp.bindx= rbh.template addConstBuffer<Ordinal>(pbuf_bindx_);
+        wdp.indx = rbh.template addConstBuffer<Ordinal>(pbuf_indx_);
+        wdp.x    = rbh.template addNonConstBuffer<DomainScalar>(X.getValuesNonConst());
+        wdp.y    = rbh.template addConstBuffer<RangeScalar>(Y.getValues());
+        wdp.xstride = X.getStride();
+        wdp.ystride = Y.getStride();
+        rbh.end();
+        const size_t numRHS = X.getNumCols();
+        node_->template parallel_for<OpT>(0,numRHS,wdp);
       }
     }
+    else {
+      throw std::runtime_error("DefaultBlockSparseOps::solve ERROR, not implemented for non-packed '2D' storage.");
+    }
+  }
 
 } // namespace KokkosClassic
 
