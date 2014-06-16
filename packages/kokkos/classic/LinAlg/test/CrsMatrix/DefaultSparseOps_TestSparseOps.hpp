@@ -151,6 +151,7 @@ private:
     // output throws an exception, we can restore the original flags
     // before rethrowing.
     std::ios_base::fmtflags flags = out.flags ();
+    std::streamsize p = out.precision();
     try {
       out << std::scientific;
       out.precision (2); // Low precision, just for error checking
@@ -172,6 +173,7 @@ private:
       throw;
     }
     out << "]";
+    out.precision (p);
   }
 
   void

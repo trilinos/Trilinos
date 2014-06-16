@@ -93,6 +93,7 @@ lowerTriSolveCscColMajor (
       }
     } // for each entry A_rc in the current column c
     for (Ordinal j = 0; j < numVecs; ++j) {
+      TEUCHOS_ASSERT_INEQUALITY(fabs(A_cc), >, STS::zero());
       X[c + j*colStrideX] /= A_cc;
     }
   } // for each column c
@@ -393,6 +394,7 @@ upperTriSolveCscColMajor (
       }
     } // for each entry A_rc in the current column c
     for (Ordinal j = 0; j < numVecs; ++j) {
+      TEUCHOS_ASSERT_INEQUALITY(fabs(A_cc), >, STS::zero());
       X[c + j*colStrideX] /= A_cc;
     }
   } // for each column c
@@ -947,6 +949,7 @@ lowerTriSolveCscColMajorConj (
       }
     } // for each entry A_rc in the current column c
     for (Ordinal j = 0; j < numVecs; ++j) {
+      TEUCHOS_ASSERT_INEQUALITY(fabs(A_cc), >, STS::zero());
       X[c + j*colStrideX] /= A_cc;
     }
   } // for each column c
@@ -1257,6 +1260,7 @@ upperTriSolveCscColMajorConj (
       }
     } // for each entry A_rc in the current column c
     for (Ordinal j = 0; j < numVecs; ++j) {
+      TEUCHOS_ASSERT_INEQUALITY(fabs(A_cc), >, STS::zero());
       X[c + j*colStrideX] /= A_cc;
     }
   } // for each column c

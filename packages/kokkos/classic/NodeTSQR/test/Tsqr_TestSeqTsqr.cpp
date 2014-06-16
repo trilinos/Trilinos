@@ -48,6 +48,7 @@
 #endif // HAVE_MPI
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_DefaultComm.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 #include "Tsqr_SeqTest.hpp"
 
 #ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
@@ -327,21 +328,27 @@ main (int argc, char *argv[])
   if (printedHelp)
     return 0;
 
-  if (performingTests)
-  {
-    using std::endl;
+  bool success = false;
+  bool verbose = false;
+  try {
+    if (performingTests)
+    {
+      using std::endl;
 
-    if (params.benchmark)
-      TSQR::Trilinos::Test::benchmark (out, params);
+      if (params.benchmark)
+        TSQR::Trilinos::Test::benchmark (out, params);
 
-    // We allow the same run to do both benchmark and verify.
-    if (params.verify)
-      TSQR::Trilinos::Test::verify (out, params);
+      // We allow the same run to do both benchmark and verify.
+      if (params.verify)
+        TSQR::Trilinos::Test::verify (out, params);
 
-    if (params.printTrilinosTestStuff)
-      // The Trilinos test framework expects a message like this.
-      out << "\nEnd Result: TEST PASSED" << endl;
+      success = true;
+
+      if (params.printTrilinosTestStuff)
+        // The Trilinos test framework expects a message like this.
+        out << "\nEnd Result: TEST PASSED" << endl;
+    }
   }
-
-  return 0;
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }

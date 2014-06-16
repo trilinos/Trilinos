@@ -205,6 +205,8 @@ namespace KokkosClassic {
     : CrsGraphBase<Ordinal,Node>(numRows,numCols,node,params)
       , isInitialized_(false)
       , isEmpty_(false)
+      , tri_uplo_(Teuchos::UNDEF_TRI)
+      , unit_diag_(Teuchos::NON_UNIT_DIAG)
   {
     // Make sure that users only specialize for Kokkos Node types that are host Nodes (vs. device Nodes, such as GPU Nodes)
     Teuchos::CompileTimeAssert<Node::isHostNode == false> cta; (void)cta;
@@ -1012,6 +1014,8 @@ namespace KokkosClassic {
       , numCols_(0)
       , isInitialized_(false)
       , isEmpty_(false)
+      , tri_uplo_(Teuchos::UNDEF_TRI)
+      , unit_diag_(Teuchos::NON_UNIT_DIAG)
   {
     // Make sure that users only specialize DefaultHostSparseOps for
     // Kokkos Node types that are host Nodes (vs. device Nodes, such
@@ -1027,6 +1031,8 @@ namespace KokkosClassic {
       , numCols_(0)
       , isInitialized_(false)
       , isEmpty_(false)
+      , tri_uplo_(Teuchos::UNDEF_TRI)
+      , unit_diag_(Teuchos::NON_UNIT_DIAG)
   {
     (void) params; // Not using this yet.
 

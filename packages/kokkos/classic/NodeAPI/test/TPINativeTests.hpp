@@ -117,7 +117,7 @@ namespace {
         TPI_Run_threads( &TPIInit<float>::work, &data, 0 );
       }
     }
-    float sum;
+    float sum = 0.0f;
     {
       Teuchos::TimeMonitor localTimer(sTime);
       for (int t=0; t < numIters; ++t) {
@@ -148,7 +148,7 @@ namespace {
         TPI_Run_threads( &TPIInit<int>::work, &data, 0 );
       }
     }
-    int sum;
+    int sum = 0;
     {
       Teuchos::TimeMonitor localTimer(sTime);
       for (int t=0; t < numIters; ++t) {

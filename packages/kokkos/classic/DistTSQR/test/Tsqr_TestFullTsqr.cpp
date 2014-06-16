@@ -47,6 +47,7 @@
 #endif // HAVE_MPI
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_DefaultComm.hpp>
+#include <Teuchos_StandardCatchMacros.hpp>
 
 #ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
 #  include <complex>
@@ -310,7 +311,7 @@ namespace {
 } // namespace (anonymous)
 
 
-  int
+int
 main (int argc, char* argv[])
 {
   using TSQR::Test::NullCons;
@@ -345,14 +346,19 @@ main (int argc, char* argv[])
   std::ostream& err = std::cerr;
 #endif // HAVE_MPI
 
-  RCP<ParameterList> nodeParams =
-    TSQR::Test::getValidNodeParameters<KokkosClassic::SerialNode> ();
-  RCP<KokkosClassic::SerialNode> node =
-    TSQR::Test::getNode<KokkosClassic::SerialNode> (nodeParams);
+  bool success = false;
+  bool verbose = false;
+  try {
+    RCP<ParameterList> nodeParams =
+      TSQR::Test::getValidNodeParameters<KokkosClassic::SerialNode> ();
+    RCP<KokkosClassic::SerialNode> node =
+      TSQR::Test::getNode<KokkosClassic::SerialNode> (nodeParams);
 
-  const bool success = test (argc, argv, comm, node, allowedToPrint);
-  if (allowedToPrint && success)
-    // The Trilinos test framework expects a message like this.
-    out << "\nEnd Result: TEST PASSED" << endl;
-  return 0;
+    success = test (argc, argv, comm, node, allowedToPrint);
+    if (allowedToPrint && success)
+      // The Trilinos test framework expects a message like this.
+      out << "\nEnd Result: TEST PASSED" << endl;
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }

@@ -142,7 +142,9 @@ namespace KokkosClassic {
     : node_(node)
       , valsInit_(false)
       , isPacked_(false)
-      , isEmpty_(false) {
+      , isEmpty_(false)
+      , numBlockRows_(0)
+      {
       }
 
   template<class Scalar, class Ordinal, class Node>
