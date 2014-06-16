@@ -17,7 +17,7 @@ SET(HEADERS "")
 SET(SOURCES "")
 
 
-FILE(GLOB HEADERS *.hpp)
+FILE(GLOB HEADERS *.hpp *.tcc)
 FILE(GLOB SOURCES *.cpp)
 
 INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR})
@@ -26,6 +26,7 @@ INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR})
 # Core headers
 #
 
+FILE(GLOB DETAIL_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/topology_detail/*.hpp)
 
 #
 # C) Define the targets for package's library(s)
@@ -34,9 +35,12 @@ INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR})
 TRIBITS_ADD_LIBRARY(
   stk_topology
   NOINSTALLHEADERS ${HEADERS}
-  DEPLIBS stk_util_env 
+  DEPLIBS stk_util_env
   SOURCES ${SOURCES}
   )
 
 INSTALL(FILES ${HEADERS} DESTINATION
     ${CMAKE_INSTALL_PREFIX}/include/stk_topology/)
+
+INSTALL(FILES ${DETAIL_HEADERS} DESTINATION
+    ${CMAKE_INSTALL_PREFIX}/include/stk_topology/topology_detail)
