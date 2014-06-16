@@ -13,6 +13,10 @@
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 
+// For vtune
+#include <sys/types.h>
+#include <unistd.h>
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 // Command line processing:
@@ -41,6 +45,7 @@ enum { CMD_USE_THREADS = 0
        , CMD_USE_UQ_DIM
        , CMD_USE_UQ_ORDER
        , CMD_USE_SPARSE
+       , CMD_VTUNE
        , CMD_PRINT
        , CMD_SUMMARIZE
        , CMD_ECHO
@@ -104,6 +109,9 @@ void print_cmdline( std::ostream & s , const int cmd[] )
   }
   if ( cmd[ CMD_USE_MUELU ] ) {
     s << " MUELU" ;
+  }
+  if ( cmd[ CMD_VTUNE ] ) {
+    s << " VTUNE" ;
   }
   if ( cmd[ CMD_PRINT ] ) {
     s << " PRINT" ;
@@ -284,6 +292,8 @@ clp_return_type parse_cmdline( int argc , char ** argv, int cmdline[],
 
   bool useMueLu = false;              clp.setOption("muelu", "no-muelu",        &useMueLu,  "use MueLu preconditioner");
 
+  bool doVtune = false;               clp.setOption("vtune", "no-vtune",        &doVtune,  "connect to vtune");
+
   bool doPrint = false;               clp.setOption("print", "no-print",        &doPrint,  "print detailed test output");
 
   bool doSummarize = false;               clp.setOption("summarize", "no-summarize",        &doSummarize,  "summarize Teuchos timers at end of run");
@@ -310,6 +320,7 @@ clp_return_type parse_cmdline( int argc , char ** argv, int cmdline[],
   if (useMueLu)
     useBelos = true;
   cmdline[CMD_USE_BELOS]             = useBelos;
+  cmdline[CMD_VTUNE]                 = doVtune;
   cmdline[CMD_PRINT]                 = doPrint;
   cmdline[CMD_SUMMARIZE]             = doSummarize;
   sscanf( fixtureSpec.c_str() , "%dx%dx%d" ,
@@ -334,4 +345,19 @@ clp_return_type parse_cmdline( int argc , char ** argv, int cmdline[],
 
   return CLP_OK;
 
+}
+
+void connect_vtune(const int p_rank) {
+  std::stringstream cmd;
+  pid_t my_os_pid=getpid();
+  const std::string vtune_loc =
+    "/usr/local/intel/vtune_amplifier_xe_2013/bin64/amplxe-cl";
+  const std::string output_dir = "./vtune/vtune.";
+  cmd << vtune_loc
+      << " -collect hotspots -result-dir " << output_dir << p_rank
+      << " -target-pid " << my_os_pid << " &";
+  if (p_rank == 0)
+    std::cout << cmd.str() << std::endl;
+  system(cmd.str().c_str());
+  system("sleep 10");
 }

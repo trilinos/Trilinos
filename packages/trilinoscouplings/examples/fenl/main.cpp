@@ -157,6 +157,10 @@ int main( int argc , char ** argv )
   else if (rv==CLP_ERROR)
     return(EXIT_FAILURE);
 
+  if ( cmdline[ CMD_VTUNE ] ) {
+    connect_vtune(comm->getRank());
+  }
+
   if ( ! cmdline[ CMD_ERROR ] && ! cmdline[ CMD_ECHO ] ) {
 
 #if defined( KOKKOS_HAVE_PTHREAD )

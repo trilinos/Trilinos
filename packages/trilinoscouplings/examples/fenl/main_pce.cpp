@@ -198,6 +198,10 @@ int main( int argc , char ** argv )
   if ( ! cmdline[ CMD_USE_UQ_DIM ] ) cmdline[ CMD_USE_UQ_DIM ] = 3 ;
   if ( ! cmdline[ CMD_USE_UQ_ORDER ] ) cmdline[ CMD_USE_UQ_ORDER ] = 2 ;
 
+  if ( cmdline[ CMD_VTUNE ] ) {
+    connect_vtune(comm->getRank());
+  }
+
   if ( ! cmdline[ CMD_ERROR ] && ! cmdline[ CMD_ECHO ] ) {
 
 #if defined( KOKKOS_HAVE_PTHREAD )
