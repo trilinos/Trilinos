@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
   int stridedBlockId = -1;
 
   Array<GO> elementList(numElements);
-  for (LO i = 0; i < numElements; i++)
+  for (Xpetra::global_size_t i = 0; i < numElements; i++)
     elementList[i] = i;
   RCP<Map> fullMap = StridedMapFactory::Build(lib, numElements, elementList(), indexBase, stridingInfo, comm);
 

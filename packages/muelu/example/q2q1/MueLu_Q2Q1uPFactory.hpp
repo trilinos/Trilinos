@@ -204,7 +204,7 @@ namespace MueLu {
 
     RCP<Matrix> A = Get< RCP<Matrix> >(fineLevel, "A");
 
-    Xpetra::global_size_t N = A->getRowMap()->getGlobalNumElements(), n;
+    Xpetra::global_size_t N = A->getRowMap()->getGlobalNumElements();
 
     const ParameterList& pL = GetParameterList();
     bool pressureMode = (pL.get<std::string>("mode") == "pressure");
@@ -1267,7 +1267,7 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
   DumpStatus(const std::vector<char>& status, bool pressureMode, const std::string& filename) const {
-    int N = status.size(), n = sqrt(N);
+    int N = status.size();
 
     if (pressureMode) {
       std::ofstream ofs(filename.c_str());
