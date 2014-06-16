@@ -124,7 +124,7 @@ namespace MueLu {
 
     // If we are doing "user" partitioning, we assume that what the user
     // really wants to do is make tiny little subdomains with one row
-    // asssigned to each subdomain. The rows used for these little 
+    // asssigned to each subdomain. The rows used for these little
     // subdomains correspond to those in the 2nd block row.  Then,
     // if we overlap these mini-subdomains, we will do something that
     // looks like Vanka (grabbing all velocities associated with each
@@ -153,14 +153,14 @@ namespace MueLu {
             size_t NumPres = bA->getMatrix(1,0)->getNodeNumRows();
 
             for (size_t rowOfB = NumVels; rowOfB < NumVels+NumPres; ++rowOfB)
-              blockSeeds[rowOfB] = rowOfB - NumVels; 
+              blockSeeds[rowOfB] = rowOfB - NumVels;
             RCP<BlockedCrsMatrix> bA2 = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
                TEUCHOS_TEST_FOR_EXCEPTION( bA2.is_null(), Exceptions::BadCast,
                "Matrix A must be of type BlockedCrsMatrix.");
             Teuchos::RCP<CrsMatrix>  mergedMat = bA2->Merge();
             merged2Mat = rcp(new CrsMatrixWrap(mergedMat));
 
-            // Add Dir. rows to the list of seeds 
+            // Add Dir. rows to the list of seeds
 
             ArrayRCP<const bool > boundaryNodes;
             boundaryNodes = MueLu::Utils<SC,LO,GO,NO,LMO>::DetectDirichletRows(*merged2Mat, 0.0);
@@ -170,7 +170,7 @@ namespace MueLu {
             subparamList.set("partitioner: map", blockSeeds);
             subparamList.set("partitioner: local parts",  (int) NumPres);
           } // if (PartitionType == "user")
-        } // if (subparamList.isParameter(partition)) 
+        } // if (subparamList.isParameter(partition))
       } // if (paramList.isParameter(subsolveparms))
     } // if (type_ == "SCHWARZ")
 
