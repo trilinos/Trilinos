@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -40,48 +40,6 @@
 #
 # Tribits platform-independent test driver.
 #
-# To understand this script, one must understand that it gets run in several
-# different modes:
-#
-# Mode 1: Existing source and binary directories (CTEST_DASHBOARD_ROOT empty).
-# The script is run on an existing source and binary tree.  In this case,
-# there is one project source tree.  In this case, CTEST_SOURCE_DIRECTORY and
-# CTEST_BINARY_DIRECTORY must be set before calling this script.
-
-# Mode 2: A new binary directory is created and new sources are cloned (or
-# updated) in a driver directory (CTEST_DASHBOARD_ROOT is *not* empty).  In
-# this case, there are always two (partial) project source tree's, i) a
-# "driver" skeleton source tree (typically embedded with TriBITS directory)
-# that bootstraps the testing process, and ii) a true full "source" that is
-# (optionally) cloned and/or updated.
-#
-# There are a few different directory locations are significant for this
-# script:
-#
-# TRIBITS_PROJECT_ROOT: The root directory to an existing source tree where
-# the project's ProjectName.cmake (defining PROJECT_NAME variable) and
-# Version.cmake file's can be found.
-#
-# ${PROJECT_NAME}_TRIBITS_DIR: The base directory for the TriBITS system's
-# various CMake modules, python scripts, and other files.  By default this is
-# assumed to be in the source tree under ${TRIBITS_PROJECT_ROOT} (see below)
-# but it can be overridden to point to any location.
-#
-# CTEST_DASHBOARD_ROOT: If set, this is the base directory where this script
-# runs that clones the sources for the project.  If this directory does not
-# exist, it will be created.  If empty, then has no effect on the script.
-#
-# CTEST_SOURCE_DIRECTORY: Determines the location of the sources that are used
-# to define packages, dependencies and configure and build the software.  This
-# is a varaible that CTest directly reads and must therefore be set. This
-# is used to set PROJECT_SOURCE_DIR which is used by the TriBITS system.  If
-# CTEST_DASHBOARD_ROOT is set, then this is hard-coded to
-# ${CTEST_DASHBOARD_ROOT}/${CTEST_SOURCE_NAME}.
-#
-# CTEST_BINARY_DIRECTORY: Determines the location of the binary tree where
-# output from CMake/CTest is put.  This is used to set to PROJECT_BINARY_DIR which
-# is used by the TriBITS system.  If CTEST_DASHBOARD_ROOT is set, then this is
-# hard-coded to ${CTEST_DASHBOARD_ROOT}/BUILD.
 #
 
 MESSAGE("")
@@ -94,7 +52,7 @@ MESSAGE("")
 CMAKE_MINIMUM_REQUIRED(VERSION 2.7.0 FATAL_ERROR)
 
 #
-# Get the basic varaibles that define the project and the build
+# Get the basic variables that define the project and the build
 #
 
 #
@@ -269,7 +227,8 @@ FUNCTION(CLONE_OR_UPDATE_EXTRAREPO  EXTRAREPO_NAME_IN  EXTRAREPO_DIR_IN
 
   IF (NOT EXISTS "${EXTRAREPO_SRC_DIR}")
 
-    MESSAGE("\n${EXTRAREPO_NAME_IN}: Doing initial ${EXTRAREPO_REPOTYPE_IN} clone/checkout from URL '${EXTRAREPO_REPOURL_IN}' to dir '${EXTRAREPO_DIR_IN}' ...")
+    MESSAGE("\n${EXTRAREPO_NAME_IN}: Doing initial ${EXTRAREPO_REPOTYPE_IN}"
+      " clone/checkout from URL '${EXTRAREPO_REPOURL_IN}' to dir '${EXTRAREPO_DIR_IN}' ...")
 
     # Determine the commands to clone/update and find the version
     IF (${EXTRAREPO_REPOTYPE_IN} STREQUAL GIT)
@@ -289,7 +248,8 @@ FUNCTION(CLONE_OR_UPDATE_EXTRAREPO  EXTRAREPO_NAME_IN  EXTRAREPO_DIR_IN
         OUTPUT_FILE "${EXTRAREPO_UPDATE_OUT_FILE}" )
       SET(CLONE_VERSION_CMND_ARGS "echo") # ToDo: Define this for SVN
     ELSE()
-      MESSAGE(SEND_ERROR "Error, Invalid EXTRAREPO_REPOTYPE_IN='${EXTRAREPO_REPOTYPE_IN}'!")
+      MESSAGE(SEND_ERROR
+	"Error, Invalid EXTRAREPO_REPOTYPE_IN='${EXTRAREPO_REPOTYPE_IN}'!")
     ENDIF()
 
     # Do the clone/update
@@ -305,7 +265,8 @@ FUNCTION(CLONE_OR_UPDATE_EXTRAREPO  EXTRAREPO_NAME_IN  EXTRAREPO_DIR_IN
 
   ELSE()
 
-    MESSAGE("\n${EXTRAREPO_NAME_IN}: Doing ${EXTRAREPO_REPOTYPE_IN} update from URL '${EXTRAREPO_REPOURL_IN}' to dir '${EXTRAREPO_SRC_DIR}' ...")
+    MESSAGE("\n${EXTRAREPO_NAME_IN}: Doing ${EXTRAREPO_REPOTYPE_IN} update"
+      " from URL '${EXTRAREPO_REPOURL_IN}' to dir '${EXTRAREPO_SRC_DIR}' ...")
 
     # Pull/update changes
     IF (${EXTRAREPO_REPOTYPE_IN} STREQUAL GIT)
@@ -333,7 +294,8 @@ FUNCTION(CLONE_OR_UPDATE_EXTRAREPO  EXTRAREPO_NAME_IN  EXTRAREPO_DIR_IN
         OUTPUT_FILE "${EXTRAREPO_UPDATE_OUT_FILE}" )
       SET(PULL_DIFF_CMND_ARGS "echo") # ToDo: Determine this for SVN
     ELSE()
-      MESSAGE(SEND_ERROR "Error, Invalid EXTRAREPO_REPOTYPE_IN='${EXTRAREPO_REPOTYPE_IN}'!")
+      MESSAGE(SEND_ERROR
+	"Error, Invalid EXTRAREPO_REPOTYPE_IN='${EXTRAREPO_REPOTYPE_IN}'!")
     ENDIF()
 
     # Reset the working directory in case it is dirty
@@ -395,7 +357,8 @@ MACRO(TRIBITS_SETUP_EXTRAREPOS)
     SET(${PROJECT_NAME}_CHECK_EXTRAREPOS_EXIST FALSE)
     TRIBITS_GET_AND_PROCESS_EXTRA_REPOSITORIES_LISTS()
   ELSE()
-    MESSAGE("${${PROJECT_NAME}_EXTRAREPOS_FILE} does not exist, skipping extra repositories.")
+    MESSAGE("${${PROJECT_NAME}_EXTRAREPOS_FILE} does not exist,"
+       " skipping extra repositories.")
   ENDIF()
 
 ENDMACRO()
@@ -435,8 +398,7 @@ MACRO(TRIBITS_SETUP_PACKAGES)
   SET_DEFAULT_AND_FROM_ENV(${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES FALSE)
 
   TRIBITS_READ_IN_NATIVE_REPOSITORIES()
-  SET(${PROJECT_NAME}_ALL_REPOSITORIES ${${PROJECT_NAME}_NATIVE_REPOSITORIES}
-    ${${PROJECT_NAME}_EXTRA_REPOSITORIES})
+  TRIBITS_COMBINE_NATIVE_AND_EXTRA_REPOS()
   TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()
 
   # When we get here, we will have the basic dependency structure set up
@@ -454,7 +416,8 @@ ENDMACRO()
 
 MACRO(ENABLE_USER_SELECTED_PACKAGES)
 
-  # 1) Set the enables for packages already set with ${PROJECT_NAME}_PACKAGES_USER_SELECTED
+  # 1) Set the enables for packages already set with
+  # ${PROJECT_NAME}_PACKAGES_USER_SELECTED
 
   IF (NOT ${PROJECT_NAME}_PACKAGES_USER_SELECTED)
     SET(${PROJECT_NAME}_ENABLE_ALL_PACKAGES ON)
@@ -516,8 +479,10 @@ MACRO(ENABLE_ONLY_MODIFIED_PACKAGES)
   SET(EXTRAREPO_IDX 0)
   FOREACH(EXTRAREPO_NAME ${${PROJECT_NAME}_EXTRA_REPOSITORIES})
 
-    LIST(GET ${PROJECT_NAME}_EXTRA_REPOSITORIES_DIRS ${EXTRAREPO_IDX} EXTRAREPO_DIR )
-    LIST(GET ${PROJECT_NAME}_EXTRA_REPOSITORIES_PACKSTATS ${EXTRAREPO_IDX} EXTRAREPO_PACKSTAT )
+    LIST(GET ${PROJECT_NAME}_EXTRA_REPOSITORIES_DIRS
+       ${EXTRAREPO_IDX} EXTRAREPO_DIR )
+    LIST(GET ${PROJECT_NAME}_EXTRA_REPOSITORIES_PACKSTATS
+      ${EXTRAREPO_IDX} EXTRAREPO_PACKSTAT )
  
     # For now, only look for changes if it has packages.  Later, we need to
     # generalize this for the general extra repo case with deeper directory
@@ -529,7 +494,8 @@ MACRO(ENABLE_ONLY_MODIFIED_PACKAGES)
       SET(EXTRAREPO_MODIFIED_FILES_FILE_NAME
         "${CTEST_BINARY_DIRECTORY}/modifiedFiles.${EXTRAREPO_NAME}.txt")
   
-      TRIBITS_GET_MODIFIED_FILES("${EXTRAREPO_SRC_DIR}" "${EXTRAREPO_MODIFIED_FILES_FILE_NAME}")
+      TRIBITS_GET_MODIFIED_FILES("${EXTRAREPO_SRC_DIR}"
+        "${EXTRAREPO_MODIFIED_FILES_FILE_NAME}")
   
       FILE(STRINGS ${EXTRAREPO_MODIFIED_FILES_FILE_NAME} EXTRAREPO_MODIFIED_FILES_STR)
       SET(EXTRAREPO_FILES_STR "")
@@ -547,7 +513,8 @@ MACRO(ENABLE_ONLY_MODIFIED_PACKAGES)
   # A.3) Get the names of the modified packages
 
   IF (NOT PYTHON_EXECUTABLE)
-    MESSAGE(FATAL_ERROR "Error, Python must be enabled to map from modified files to packages!")
+    MESSAGE(FATAL_ERROR "Error, Python must be enabled to map from modified"
+      " files to packages!")
   ENDIF()
 
   IF (EXISTS "${MODIFIED_FILES_FILE_NAME}")
@@ -602,7 +569,8 @@ MACRO(ENABLE_ONLY_MODIFIED_PACKAGES)
       MESSAGE("Enabling previously failing package: ${TRIBITS_PACKAGE}")
       SET(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE} ON)
     ELSE()
-      MESSAGE("Not enabling explicitly disabled previously failing package: ${TRIBITS_PACKAGE}")
+      MESSAGE("Not enabling explicitly disabled previously"
+        " failing package: ${TRIBITS_PACKAGE}")
     ENDIF()
   ENDFOREACH()
 
@@ -733,16 +701,92 @@ MACRO(CTEST_UPDATE_WRAPPER)
   ENDIF()
 ENDMACRO()
 
+
 #
-# This is the core extended ctest driver script code that is platform
-# independent.  This script drives the testing process by doing an update and
-# then configuring and building the packages one at a time.
+# @FUNCTION: TRIBITS_CTEST_DRIVER()
+#
+# Platform-independent package-by-package CTest/CDash driver (run by ``ctest``
+# **NOT** ``cmake``).
+#
+# Usage::
+#
+#   TRIBITS_CTEST_DRIVER()
+#
+# This driver code that is platform independent.  This script drives the
+# testing process by doing a version control (VC) source update on all of the
+# VC repos and then configuring and building the top-level TriBITS packages
+# one at a time, in order.  This function gets called from inside of a
+# platform and build-specific ``ctest -S`` driver script.
+#
+# To understand this script, one must understand that it gets run in several
+# different modes:
+#
+# **Mode 1**: Run where there are already existing source and binary
+# directories (``CTEST_DASHBOARD_ROOT`` is set empty before call).  This is
+# for when the ctest driver script is run on an existing source and binary
+# tree.  In this case, there is one project source tree and
+# ``CTEST_SOURCE_DIRECTORY`` and ``CTEST_BINARY_DIRECTORY`` must be set by the
+# user before calling this function.  This is used to test a local build and
+# post to CDash.
+#
+# **Mode 2**: A new binary directory is created and new sources are cloned (or
+# updated) in a driver directory (``CTEST_DASHBOARD_ROOT`` is set before
+# call).  In this case, there are always two (partial) project source tree's,
+# i) a "driver" skeleton source tree (typically embedded with TriBITS
+# directory) that bootstraps the testing process, and ii) a true full "source"
+# that is (optionally) cloned and/or updated.
+#
+# There are a few different directory locations are significant for this
+# script:
+#
+#   ``TRIBITS_PROJECT_ROOT``
+#
+#     The root directory to an existing source tree where the project's
+#     `<projectDir>/ProjectName.cmake`_ (defining ``PROJECT_NAME`` variable)
+#     and ``Version.cmake`` file's can be found.
+#
+#   ``${PROJECT_NAME}_TRIBITS_DIR``
+#
+#     The base directory for the TriBITS system's various CMake modules,
+#     python scripts, and other files.  By default this is assumed to be in
+#     the source tree under ``${TRIBITS_PROJECT_ROOT}`` (see below) but it can
+#     be overridden to point to any location.
+#
+#   ``CTEST_DASHBOARD_ROOT``
+#
+#     If set, this is the base directory where this script runs that clones
+#     the sources for the project.  If this directory does not exist, it will
+#     be created.  If empty, then has no effect on the script.
+#
+#   ``CTEST_SOURCE_DIRECTORY``
+#
+#     Determines the location of the sources that are used to define packages,
+#     dependencies and configure and build the software.  This is a variable
+#     that CTest directly reads and must therefore be set. This is used to set
+#     `PROJECT_SOURCE_DIR`_ which is used by the TriBITS system.  If
+#     ``CTEST_DASHBOARD_ROOT`` is set, then this is hard-coded internally to
+#     ``${CTEST_DASHBOARD_ROOT}/${CTEST_SOURCE_NAME}``.
+#
+#   ``CTEST_BINARY_DIRECTORY``
+#
+#     Determines the location of the binary tree where output from CMake/CTest
+#     is put.  This is used to set to `PROJECT_BINARY_DIR`_ which is used by
+#     the TriBITS system.  If ``CTEST_DASHBOARD_ROOT`` is set, then this is
+#     hard-coded internally to ``${CTEST_DASHBOARD_ROOT}/BUILD``.
+#
+# ToDo: Document input variables that have defaults, to be set before, and can
+# be overridden from the env.
 #
 # ToDo: Finish Documentation!
 #
-
 FUNCTION(TRIBITS_CTEST_DRIVER)
 
+  MESSAGE("")
+  MESSAGE("******************************")
+  MESSAGE("*** TRIBITS_CTEST_DRIVER() ***") 
+  MESSAGE("******************************")
+  MESSAGE("")
+  
   INITIALIZE_ERROR_QUEUE()
 
   # The name of the source directory. Defaults to project name, but
@@ -852,11 +896,14 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_MEMORY_TESTING FALSE )
 
   # Command used to perform the memory testing (i.e. valgrind)
-  SET_DEFAULT_AND_FROM_ENV( CTEST_MEMORYCHECK_COMMAND valgrind )
+  SET_DEFAULT_AND_FROM_ENV( CTEST_MEMORYCHECK_COMMAND "" )
   
   # Submit the results to the dashboard or not
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_SUBMIT TRUE )
 
+  SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE OFF )
+
+  # ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE is deprecated!
   SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE OFF )
 
   # List of additional packges that will be enabled over the current set
@@ -1146,8 +1193,10 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
       ENDIF()
 
       IF(NOT "${GIT_CHECKOUT_RETURN_VAL}" EQUAL "0")
-        MESSAGE("Switch to branch ${${PROJECT_NAME}_BRANCH} failed with error code ${GIT_CHECKOUT_RETURN_VAL}")
-        QUEUE_ERROR("Switch to branch ${${PROJECT_NAME}_BRANCH} failed with error code ${GIT_CHECKOUT_RETURN_VAL}")
+        MESSAGE("Switch to branch ${${PROJECT_NAME}_BRANCH} failed with"
+          " error code ${GIT_CHECKOUT_RETURN_VAL}")
+        QUEUE_ERROR("Switch to branch ${${PROJECT_NAME}_BRANCH} failed with"
+          " error code ${GIT_CHECKOUT_RETURN_VAL}")
       ENDIF()
       #Apparently the successful branch switch is also written to stderr.
       MESSAGE("${BRANCH_ERROR}")
@@ -1203,7 +1252,8 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
 
   MESSAGE(
     "\n***"
-    "\n*** Adjust the package dependencies to enable upstream and (optionally) downstream packages ..."
+    "\n*** Adjust the package dependencies to enable upstream and"
+    " (optionally) downstream packages ..."
     "\n***"
     )
 
@@ -1215,7 +1265,8 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
 
   MESSAGE(
     "\n***"
-    "\n*** Disabling packages to be excluded from being implicitly enabled on a repository basis ..."
+    "\n*** Disabling packages to be excluded from being implicitly enabled on"
+    " a repository basis ..."
     "\n***"
     )
 
@@ -1265,7 +1316,8 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
     )
 
   IF (EXISTS ${CTEST_BINARY_DIRECTORY}/Updates.txt)
-    SET(CTEST_NOTES_FILES_WO_CACHE "${CTEST_BINARY_DIRECTORY}/Updates.txt;${CTEST_NOTES_FILES}")
+    SET(CTEST_NOTES_FILES_WO_CACHE
+      "${CTEST_BINARY_DIRECTORY}/Updates.txt;${CTEST_NOTES_FILES}")
   ELSE()
     SET(CTEST_NOTES_FILES_WO_CACHE "${CTEST_NOTES_FILES}")
   ENDIF()
@@ -1304,10 +1356,13 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGES})
 
     MESSAGE("")
-    MESSAGE("${PACKAGE_IDX}) Processing current package ${TRIBITS_PACKAGE}: libs='${${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE}}', tests='${${TRIBITS_PACKAGE}_ENABLE_TESTS}'")
+    MESSAGE("${PACKAGE_IDX}) Processing current package ${TRIBITS_PACKAGE}:"
+      " libs='${${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE}}',"
+      " tests='${${TRIBITS_PACKAGE}_ENABLE_TESTS}'")
     MESSAGE("")
 
-    IF (${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE} AND NOT ${TRIBITS_PACKAGE}_ENABLE_TESTS AND
+    IF (${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE} AND
+     NOT ${TRIBITS_PACKAGE}_ENABLE_TESTS AND
      NOT CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES
      )
 
@@ -1338,6 +1393,11 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
         LIST(APPEND CONFIGURE_OPTIONS
         "-D${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE:FILEPATH=")
       ENDIF()
+      IF (${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE)
+        LIST(APPEND CONFIGURE_OPTIONS
+          "-D${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE:BOOL=ON")
+      ENDIF()
+      # ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE is deprecated!
       IF (${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE)
         LIST(APPEND CONFIGURE_OPTIONS
           "-D${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON")
@@ -1431,7 +1491,9 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
       # to the next package.
       #
     
-      IF ("${CONFIGURE_RETURN_VAL}" EQUAL "0" AND NOT CTEST_DEPENDENCY_HANDLING_UNIT_TESTING)
+      IF ("${CONFIGURE_RETURN_VAL}" EQUAL "0" AND
+        NOT CTEST_DEPENDENCY_HANDLING_UNIT_TESTING
+        )
     
         # Start by trying to build just the libraries for the current package
     
@@ -1449,13 +1511,15 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
         # Determine if the build failed or not.
     
         SET(BUILD_LIBS_SUCCESS FALSE)
-        IF ("${BUILD_LIBS_NUM_ERRORS}" EQUAL "0" AND "${BUILD_LIBS_RETURN_VAL}" EQUAL "0")
+        IF ("${BUILD_LIBS_NUM_ERRORS}" EQUAL "0" AND
+          "${BUILD_LIBS_RETURN_VAL}" EQUAL "0"
+          )
           SET(BUILD_LIBS_SUCCESS TRUE)
         ENDIF()
         # Above: Since make -i is used BUILD_LIBS_RETURN_VAL might be 0, but
-        # if there are errors the build should fail, so
-        # both BUILD_LIBS_RETURN_VAL and BUILD_LIBS_NUM_ERRORS should be 0 for a good build
-        # and for the all target to be built.
+        # if there are errors the build should fail, so both
+        # BUILD_LIBS_RETURN_VAL and BUILD_LIBS_NUM_ERRORS should be 0 for a
+        # good build and for the all target to be built.
     
         # Submit the library build results to the dashboard
     
@@ -1482,7 +1546,9 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
           MESSAGE("Build all: BUILD_ALL_NUM_ERRORS='${BUILD_ALL_NUM_ERRORS}',"
             "BUILD_ALL_RETURN_VAL='${BUILD_ALL_RETURN_VAL}'" )
     
-          IF (NOT "${BUILD_LIBS_NUM_ERRORS}" EQUAL "0" OR NOT "${BUILD_LIBS_RETURN_VAL}" EQUAL "0")
+          IF (NOT "${BUILD_LIBS_NUM_ERRORS}" EQUAL "0" OR
+            NOT "${BUILD_LIBS_RETURN_VAL}" EQUAL "0"
+            )
             SET(BUILD_OR_TEST_FAILED TRUE)
           ENDIF()
   
@@ -1538,6 +1604,9 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
    
           IF (CTEST_DO_MEMORY_TESTING)
             MESSAGE("\nRunning memory testing for package '${TRIBITS_PACKAGE}' ...\n")
+            PRINT_VAR(CTEST_MEMORYCHECK_COMMAND)
+	    PRINT_VAR(CTEST_MEMORYCHECK_COMMAND_OPTIONS)
+            PRINT_VAR(CTEST_MEMORYCHECK_SUPPRESSIONS_FILE)
             CTEST_MEMCHECK(
               BUILD "${CTEST_BINARY_DIRECTORY}"
               PARALLEL_LEVEL "${CTEST_PARALLEL_LEVEL}"

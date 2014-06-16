@@ -69,7 +69,7 @@ SET(Trilinos_TRACK ${Trilinos_TESTING_TRACK})
 
 SET(Trilinos_BRANCH ${Trilinos_REPOSITORY_BRANCH})
 
-SET( EXTRA_EXCLUDE_PACKAGES TrilinosFramework Stokhos Piro FEApp)
+SET( EXTRA_EXCLUDE_PACKAGES TriBITS Stokhos Piro FEApp)
 
 #
 # Set the rest of the system-specific options and run the dashboard build/test

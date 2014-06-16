@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -42,6 +42,11 @@ INCLUDE(TribitsAddExecutable)
 INCLUDE(TribitsAddTest)
 
 
+#
+# Helper Macros
+#
+
+
 MACRO(TRIBITS_FWD_PARSE_ARG  VAR_TO_SET_OUT  ARGNAME)
   IF (PARSE_${ARGNAME})
     SET(${VAR_TO_SET_OUT} ${${VAR_TO_SET_OUT}} ${ARGNAME} ${PARSE_${ARGNAME}}) 
@@ -74,57 +79,68 @@ FUNCTION(TRIBITS_ADD_TEST_WRAPPER)
 ENDFUNCTION()
 
 #
-# Add an executable and a test at the same time.
+# @FUNCTION: TRIBITS_ADD_EXECUTABLE_AND_TEST()
 #
-# TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#   <execName>
-#   SOURCES <src1> <src2> ...
-#   [NAME <testName> | NAME_POSTFIX <testNamePostfix>]
-#   [CATEGORIES <category1>  <category2> ...]
-#   [HOST <host1> <host2> ...]
-#   [XHOST <host1> <host2> ...]
-#   [HOSTTYPE <hosttype1> <hosttype2> ...]
-#   [XHOSTTYPE <hosttype1> <hosttype2> ...]
-#   [NOEXEPREFIX ]
-#   [NOEXESUFFIX ]
-#   [DIRECTORY <dir> ]
-#   [DEPLIBS <lib1> <lib2> ... ]
-#   [COMM [serial] [mpi] ]
-#   [NUM_MPI_PROCS <numProcs>]
-#   [LINKER_LANGUAGE [C|CXX|Fortran] ]
-#   [ADD_DIR_TO_NAME ]
-#   [DEFINES <-DSOMEDEFINE>]
-#   [KEYWORDS <keyword1> <keyword2> ...]
-#   [STANDARD_PASS_OUTPUT
-#     | PASS_REGULAR_EXPRESSION "<regex1>;<regex2>;..."]
-#   [FAIL_REGULAR_EXPRESSION "<regex1>;<regex2>;..."]
-#   [WILL_FAIL]
-#   [ENVIRONMENT <var1>=<value1> <var2>=<value2> ...]
-#   [INSTALLABLE]
-#   )
+# Add an executable and a test (or several tests) all in one shot (just calls
+# `TRIBITS_ADD_EXECUTABLE()`_ followed by `TRIBITS_ADD_TEST()`_).
+#
+# Usage::
+#
+#   TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#     <exeRootName>  [NOEXEPREFIX]  [NOEXESUFFIX]  [ADD_DIR_TO_NAME]
+#     SOURCES <src0> <src1> ...
+#     [NAME <testName> | NAME_POSTFIX <testNamePostfix>]
+#     [CATEGORIES <category0>  <category1> ...]
+#     [HOST <host0> <host1> ...]
+#     [XHOST <xhost0> <xhost1> ...]
+#     [XHOST_TEST <xhost0> <xhost1> ...]
+#     [HOSTTYPE <hosttype0> <hosttype1> ...]
+#     [XHOSTTYPE <xhosttype0> <xhosttype1> ...]
+#     [XHOSTTYPE_TEST <xhosttype0> <xhosttype1> ...]
+#     [DIRECTORY <dir>]
+#     [DEFINES -DS<someDefine>]
+#     [DEPLIBS <lib0> <lib1> ... ]
+#     [COMM [serial] [mpi]]
+#     [ARGS "<arg0> <arg1> ..." "<arg2> <arg3> ..." ...]
+#     [NUM_MPI_PROCS <numProcs>]
+#     [LINKER_LANGUAGE (C|CXX|Fortran)]
+#     [STANDARD_PASS_OUTPUT
+#       | PASS_REGULAR_EXPRESSION "<regex0>;<regex1>;..."]
+#     [FAIL_REGULAR_EXPRESSION "<regex0>;<regex1>;..."]
+#     [WILL_FAIL]
+#     [ENVIRONMENT <var0>=<value0> <var1>=<value1> ...]
+#     [INSTALLABLE]
+#     [TIMEOUT <maxSeconds>]
+#     )
 #
 # This function takes a fairly common set of arguments to
-# TRIBITS_ADD_EXECUTABLE(...) and PACAKGE_ADD_TEST(...) but not the full set
-# passed to PACAKGE_ADD_TEST(...).  See the documentation for
-# TRIBITS_ADD_EXECUTABLE(...) and TRIBITS_ADD_TEST(...) to see which arguments
-# are accpeted by which functions.
+# `TRIBITS_ADD_EXECUTABLE()`_ and `TRIBITS_ADD_TEST()`_ but not the full set
+# passed to ``TRIBITS_ADD_TEST()``.  See the documentation for
+# `TRIBITS_ADD_EXECUTABLE()`_ and `TRIBITS_ADD_TEST()`_ to see which arguments
+# are accepted by which functions.
 #
-
-# Arguments that are specific to this function and not contained in
-# TRIBITS_ADD_EXECUTABLE(...) or PACAKGE_ADD_TEST(...):
+# Arguments that are specific to this function and not directly passed on to
+# ``TRIBITS_ADD_EXECUTABLE()`` or ``TRIBITS_ADD_TEST()`` include:
 #
-#   XHOST_TEST <host1> <host2> ...
+#   ``XHOST_TEST <xhost0> <xhost1> ...``
 #
 #     When specified, this disables just running the tests for the named hosts
-#     <host1>, <host2> etc. but still builds the executables for the test.
+#     ``<xhost0>``, ``<xhost0>`` etc. but still builds the executable for the
+#     test.  These are just passed in through the ``XHOST`` argument to
+#     ``TRIBITS_ADD_TEST()``.
 #
-#   XHOSTTYPE_TEST <hosttype1> <hosttype2> ...
+#   ``XHOSTTYPE_TEST <xhosttype0> <hosttype1> ...``
 #
 #     When specified, this disables just running the tests for the named host
-#     types <hosttype1>, <hosttype2> etc. but still builds the executables for
-#     the test.
+#     types ``<hosttype0>``, ``<hosttype0>``, ..., but still builds the
+#     executable for the test.  These are just passed in through the
+#     ``XHOSTTYPE`` argument to ``TRIBITS_ADD_TEST()``.
 #
-
+# This is the function to use for simple test executables that you want to run
+# that either takes no arguments or just a simple set of arguments passed in
+# through ``ARGS``.  For more flexibility, just use
+# ``TRIBITS_ADD_EXECUTABLE()`` followed by ``TRIBITS_ADD_TEST()``.
+#
 FUNCTION(TRIBITS_ADD_EXECUTABLE_AND_TEST EXE_NAME)
    
   #

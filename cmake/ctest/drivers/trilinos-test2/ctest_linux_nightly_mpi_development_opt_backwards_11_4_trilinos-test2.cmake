@@ -81,7 +81,7 @@ SET(Trilinos_BRANCH "trilinos-release-11-4-branch")
 
 SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE OFF)
 
-SET(EXTRA_EXCLUDE_PACKAGES Mesquite RBGen TrilinosFramework)
+SET(EXTRA_EXCLUDE_PACKAGES Mesquite RBGen TriBITS)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_INSTALLATION_DIR=${INSTALLATION_DIR}"
@@ -97,7 +97,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DHDF5_LIBRARY_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/phdf5-1.8.6/lib"
   "-DTrilinos_ENABLE_Mesquite=OFF"
   "-DTrilinos_ENABLE_RBGen=OFF"
-  "-DTrilinos_ENABLE_TrilinosFramework=OFF"
+  "-DTrilinos_ENABLE_TriBITS=OFF"
   "-DTPL_ENABLE_SuperLU=OFF"
   )
 

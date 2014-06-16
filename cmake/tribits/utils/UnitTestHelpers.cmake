@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -42,11 +42,21 @@ INCLUDE(GlobalSet)
 
 
 #
-# Perform a single equality check and update overall test statistics
+# @FUNCTION: UNITTEST_COMPARE_CONST()
 #
-# UNITTEST_COMPARE_CONST( <varName> <constValue> )
+# Perform a single unit test equality check and update overall test statistics
 #
-
+# Usage::
+#
+#   UNITTEST_COMPARE_CONST(<varName> <expectedValue>)
+#
+# If ``${<varName>} == <expectedValue>``, then the check passes, otherwise it
+# fails.  This prints the variable name and values and shows the test result.
+#
+# This updates the global variables ``UNITTEST_OVERALL_NUMRUN``,
+# ``UNITTEST_OVERALL_NUMPASSED``, and ``UNITTEST_OVERALL_PASS`` which are used
+# by the unit test harness system to assess overall pass/fail.
+#
 FUNCTION(UNITTEST_COMPARE_CONST VAR_NAME CONST_VAL)
 
   MATH( EXPR NUMRUN ${UNITTEST_OVERALL_NUMRUN}+1 )
@@ -73,14 +83,24 @@ ENDFUNCTION()
 
 
 #
-# Perform a series regex of given strings and update overall test statistics
+# @FUNCTION: UNITTEST_STRING_REGEX()
 #
-# UNITTEST_STRING_REGEX(
-#   <inputString>
-#   REGEX_STRINGS <str1> <str2> ...
-#   )
+# Perform a series regexes of given strings and update overall test statistics.
 #
-
+# Usage::
+#
+#   UNITTEST_STRING_REGEX(
+#     <inputString>
+#     REGEX_STRINGS "<str0>" "<str1>" ...
+#     )
+#
+# If the ``<inputString>`` matches all of the of the regexs ``"<str0>"``,
+# ``"<str1>"``, ..., then the test passes.  Otherwise it fails.
+#
+# This updates the global variables ``UNITTEST_OVERALL_NUMRUN``,
+# ``UNITTEST_OVERALL_NUMPASSED``, and ``UNITTEST_OVERALL_PASS`` which are used
+# by the unit test harness system to assess overall pass/fail.
+#
 FUNCTION(UNITTEST_STRING_REGEX INPUT_STRING)
 
   PARSE_ARGUMENTS(
@@ -115,14 +135,20 @@ ENDFUNCTION()
 
 
 #
-# Perform a series regex of given strings and update overall test statistics
+# @FUNCTION: UNITTEST_FILE_REGEX()
 #
-# UNITTEST_FILE_REGEX(
-#   <inputFileName>
-#   REGEX_STRINGS <str1> <str2> ...
-#   )
+# Perform a series regexes of given strings and update overall test statistics.
+#
+# Usage::
+#
+#   UNITTEST_FILE_REGEX(
+#     <inputFileName>
+#     REGEX_STRINGS "<str1>" "<str2>" ...
+#     )
 # 
-
+# The contents of ``<inputFileName>`` are read into a string and then passed
+# to `UNITTEST_STRING_REGEX()`_ to assess pass/fail.
+#
 FUNCTION(UNITTEST_FILE_REGEX  INPUT_FILE)
   MESSAGE("\nRegexing for strings in the file '${INPUT_FILE}':\n")
   FILE(READ "${INPUT_FILE}" INPUT_FILE_STRING)
@@ -131,16 +157,41 @@ ENDFUNCTION()
 
 
 #
-# Print final statstics from all tests and assert final pass/fail
+# @FUNCTION: UNITTEST_FINAL_RESULT()
 #
-
+# Print final statistics from all tests and assert final pass/fail
+#
+# Usage::
+#
+#   UNITTEST_FINAL_RESULT(<expectedNumPassed>)
+#
+# If ``${UNITTEST_OVERALL_PASS}==TRUE`` and ``${UNITTEST_OVERALL_NUMPASSED} ==
+# <expectedNumPassed>``, then the overall test program is determined to have
+# passed and string::
+#
+#  "Final UnitTests Result: PASSED"
+#
+# is printed.  Otherwise, the overall test program is determined to have
+# failed, the string::
+#
+#  "Final UnitTests Result: FAILED"
+#
+# is printed, and ``MESSAGE(SEND_ERROR "FAIL")`` is called.
+#
+# The reason that we require passing in the expected number of passed tests is
+# as an extra precaution to make sure that important unit tests are not left
+# out.  CMake is a very loosely typed language and it pays to be a little
+# paranoid.
+#
 FUNCTION(UNITTEST_FINAL_RESULT  EXPECTED_NUMPASSED)
    MESSAGE("\nFinal UnitTests Result: num_run = ${UNITTEST_OVERALL_NUMRUN}\n")
   IF (UNITTEST_OVERALL_PASS)
     IF (UNITTEST_OVERALL_NUMPASSED EQUAL ${EXPECTED_NUMPASSED})  
-      MESSAGE("Final UnitTests Result: PASSED (num_passed = ${UNITTEST_OVERALL_NUMPASSED})")
+      MESSAGE("Final UnitTests Result: PASSED"
+        " (num_passed = ${UNITTEST_OVERALL_NUMPASSED})")
     ELSE()
-      MESSAGE("\nError: num_passed = ${UNITTEST_OVERALL_NUMPASSED} != num_expected = ${EXPECTED_NUMPASSED}")
+      MESSAGE("\nError: num_passed = ${UNITTEST_OVERALL_NUMPASSED}"
+        " != num_expected = ${EXPECTED_NUMPASSED}")
       MESSAGE("\nFinal UnitTests Result: FAILED\n")
       MESSAGE(SEND_ERROR "FAIL")
     ENDIF()

@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -58,8 +58,7 @@ IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
   MESSAGE("CMAKE_MODULE_PATH='${CMAKE_MODULE_PATH}'")
 ENDIF() 
 
-# Overrides that we have for CMake functions
-INCLUDE(CMakeOverrides)
+INCLUDE(TribitsIncludeDirectories)
 
 INCLUDE(TribitsConstants)
 INCLUDE(TribitsGlobalMacros)
@@ -85,22 +84,26 @@ MACRO(TRIBITS_PROJECT_IMPL)
   MESSAGE("Configuring ${PROJECT_NAME} build directory")
   MESSAGE("")
  
-  TRIBITS_ASSERT_AND_SETUP_PROJECT_BINARY_DIR_AND_VARS()
+  # A.1) Set some basic system vars and info you can't change
+  TRIBITS_ASSERT_AND_SETUP_PROJECT_AND_STATIC_SYSTEM_VARS()
+
+  # A.2) Read user provided options from specified files.  It is important to
+  # process these files *very* early on so that they have the same basic
+  # effect of setting these variables directly in the cache.
   TRIBITS_READ_IN_OPTIONS_FROM_FILE()
-  
-  #
-  # A.2) Set up other stuff
-  #
-  
+
+  # A.3) Get some other basic system info that is useful early on in
+  # configuration
+  TRIBITS_SETUP_BASIC_SYSTEM_VARS()
   TRIBITS_FIND_PYTHON_INTERP()
   
   #
-  # A.3) Read in the Project's version file
+  # A.4) Read in the Project's version file
   #
   # NOTE: The file Version.cmake must be read *before* the global options are
-  # read!
+  # read because the variables defined in Version.cmake provide defaults for
+  # many of these options.
   #
-
   TRIBITS_PROJECT_READ_VERSION_FILE(${PROJECT_SOURCE_DIR})
   
   # Since the version header file is now configured the root build
@@ -117,23 +120,17 @@ MACRO(TRIBITS_PROJECT_IMPL)
   
   TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS()
   
-  # Have to start timing after we read in the major options.
+  # Have to start timing after we read in the major options since that
+  # determines the timing option var.
   IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
-    # Start the global timer
     TIMER_GET_RAW_SECONDS(GLOBAL_TIME_START_SECONDS)
   ENDIF()
 
   TRIBITS_READ_IN_NATIVE_REPOSITORIES()
 
   TRIBITS_COMBINE_NATIVE_AND_EXTRA_REPOS()
-  
-  ADVANCED_OPTION(${PROJECT_NAME}_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING
-    "Shortcircut after dependency handling is complete"
-    OFF )
-  
-  ADVANCED_OPTION(${PROJECT_NAME}_SKIP_FORTRANCINTERFACE_VERIFY_TEST
-    "Skip the Fortran/C++ compatibility test"
-    OFF )
+
+  TRIBITS_PROCESS_EXTRA_REPOS_OPTIONS_FILES()
   
   INCLUDE(TribitsInstallationTestingMacros)
   TRIBITS_FIND_PROJECT_INSTALL()
@@ -184,8 +181,13 @@ MACRO(TRIBITS_PROJECT_IMPL)
   MESSAGE("Probing the environment ...")
   MESSAGE("")
   
-  TRIBITS_SETUP_ENV()
-  
+  IF (NOT ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY)
+    TRIBITS_SETUP_ENV()
+  ELSE()
+    MESSAGE("-- Skipping env setup due to"
+      " ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY=ON")
+  ENDIF() 
+ 
   #
   # G) Go get the information for all enabled TPLS
   #
@@ -196,12 +198,6 @@ MACRO(TRIBITS_PROJECT_IMPL)
   
   TRIBITS_PROCESS_ENABLED_TPLS()
   
-  # OpenMP is similar to a TPL in some respects, but requires only compiler
-  # flags to enable
-  
-  OPTION(${PROJECT_NAME}_ENABLE_OpenMP
-    "Build with OpenMP support." OFF)
-  
   #
   # H) Set up for testing with CTest and ${PROJECT_NAME} test harness
   #
@@ -210,9 +206,13 @@ MACRO(TRIBITS_PROJECT_IMPL)
   MESSAGE("Setting up testing support ...")
   MESSAGE("")
   
-  INCLUDE(CTest)
-
-  TRIBITS_CONFIGURE_CTEST_CUSTOM(${${PROJECT_NAME}_BINARY_DIR})
+  IF (NOT ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY)
+    INCLUDE(CTest)
+    TRIBITS_CONFIGURE_CTEST_CUSTOM(${${PROJECT_NAME}_BINARY_DIR})
+  ELSE()
+    MESSAGE("-- Skipping testing support setup due to"
+      " ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY=ON")
+  ENDIF()
   
   #
   # I) Add the 'dashboard' target
@@ -220,7 +220,9 @@ MACRO(TRIBITS_PROJECT_IMPL)
   # NOTE: Must come after setting up for testing
   #
   
-  TRIBITS_ADD_DASHBOARD_TARGET()
+  IF (NOT ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY)
+    TRIBITS_ADD_DASHBOARD_TARGET()
+  ENDIF()
   
   #
   # J) Configure individual packages
@@ -230,8 +232,10 @@ MACRO(TRIBITS_PROJECT_IMPL)
   MESSAGE("Configuring individual enabled ${PROJECT_NAME} packages ...")
   MESSAGE("")
 
-  TRIBITS_REPOSITORY_CONFIGURE_ALL_VERSION_HEADER_FILES(
-    ${${PROJECT_NAME}_ALL_REPOSITORIES})
+  IF (NOT ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY)
+    TRIBITS_REPOSITORY_CONFIGURE_ALL_VERSION_HEADER_FILES(
+      ${${PROJECT_NAME}_ALL_REPOSITORIES})
+  ENDIF()
   
   TRIBITS_CONFIGURE_ENABLED_PACKAGES()
   
@@ -243,10 +247,16 @@ MACRO(TRIBITS_PROJECT_IMPL)
     MESSAGE("")
     MESSAGE("Set up for creating a distribution ...")
     MESSAGE("")
-    TRIBITS_SETUP_PACKAGING_AND_DISTRIBUTION()
+    IF (NOT ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY)
+      TRIBITS_SETUP_PACKAGING_AND_DISTRIBUTION()
+    ELSE()
+      MESSAGE("-- Skipping distribution setup due to"
+        " ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY=ON")
+    ENDIF()
   ELSE()
     MESSAGE("")
-    MESSAGE("Skipping setup for distribution ...")
+    MESSAGE("Skipping setup for distribution because"
+      " ${PROJECT_NAME}_ENABLE_CPACK_PACKAGING=OFF")
     MESSAGE("")
   ENDIF()
  
@@ -254,7 +264,9 @@ MACRO(TRIBITS_PROJECT_IMPL)
   # L) Set up for installation
   #
   
-  TRIBITS_SETUP_FOR_INSTALLATION()  
+  IF (NOT ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY)
+    TRIBITS_SETUP_FOR_INSTALLATION()
+  ENDIF()
   
   #
   # M) Show final timing and end

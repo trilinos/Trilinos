@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -70,7 +70,9 @@ INCLUDE(TribitsGlobalMacros)
 SET(${PROJECT_NAME}_ASSERT_MISSING_PACKAGES FALSE)
 SET(${PROJECT_NAME}_IGNORE_PACKAGE_EXISTS_CHECK TRUE)
 SET(${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES FALSE)
+IF (NOT ${PROJECT_NAME}_EXTRA_REPOSITORIES) # Make sure is defined!
+  SET(${PROJECT_NAME}_EXTRA_REPOSITORIES "")
+ENDIF()
 TRIBITS_READ_IN_NATIVE_REPOSITORIES()
-  SET(${PROJECT_NAME}_ALL_REPOSITORIES ${${PROJECT_NAME}_NATIVE_REPOSITORIES}
-    ${${PROJECT_NAME}_EXTRA_REPOSITORIES})
+TRIBITS_COMBINE_NATIVE_AND_EXTRA_REPOS()
 TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()

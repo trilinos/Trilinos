@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -79,9 +79,9 @@ import time
 # For external repositories, for the same argument as above, we don't want to
 # enable all packages just because these files get modified.
 #
-# cmake/TPLs/*.cmake: Any FileTPLSOMETHING.cmake file that is not for BLAS,
-# LAPACK, or MPI is not needed for Primary Stable code and therefore does not
-# need to trigger a global rebulid.
+# cmake/TPLs/*.cmake: Any FileTPLSOMETHING.cmake file is assumed not to be
+# needed for Primary Tested code and therefore does not need to trigger a
+# global rebulid.
 #
 
 def isGlobalBuildFileRequiringGlobalRebuild(modifiedFileFullPath):

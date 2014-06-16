@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -38,7 +38,51 @@
 # @HEADER
 
 
-
+#
+# @FUNCTION: JOIN()
+#
+# Join a set of strings into a single string using a join string.
+#
+# Usage::
+#
+#   JOIN(<outputStrVar> "<sepStr>" <quoteElements> 
+#     "<string0>" "<string1>" ...)
+#
+# Arguments:
+#
+#   ``<outputStrVar>``
+#
+#     The name of a variable that will hold the output string.
+#
+#   ``"<sepStr>"``
+#
+#     A string to use to join the list of strings.
+#
+#   ``<quoteElements>``
+#
+#     If ``TRUE``, then each ``<stringi>`` is quoted using an escaped quote
+#      char ``\"``.  If ``FALSE`` then no escaped quote is used.
+#
+#   ``"<string0>" "<string1>" ...``
+#
+#     Zero or more string arguments to be joined.
+#
+# On output, the variable ``<outputStrVar>`` is set to::
+#
+#   "<string0><sepStr><string1><sepStr>..."
+#
+# If ``<quoteElements>=TRUE``, then ``<outputStrVar>`` is set to::
+#
+#   "\"<string0>\"<sepStr>\"<string1>\"<sepStr>..."
+#
+# For example, the latter can be used to set up a set of command-line
+# arguments given a CMake array like::
+#
+#   JOIN(CMND_LINE_ARGS " " TRUE ${CMND_LINE_ARRAY})
+#
+# WARNING: Be careful to quote string arguments that have spaces because CMake
+# interprets those as array boundaries.
+#
 FUNCTION(JOIN  OUTPUT_STRING_VAR  SEP_STR  QUOTE_ELEMENTS)
   SET(QUOTE_CHAR)
   IF (QUOTE_ELEMENTS)

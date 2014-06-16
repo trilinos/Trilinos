@@ -3,7 +3,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -47,20 +47,21 @@
 usageHelp = r"""dump-package-deps-table.py [OPTIONS]
 
 Tool that dumps an XML file that can be read by CTest/CDash to specify the
-Trilinos package dependenices in a way that is independent of Trilinos.  In
-CTest/CDash terminology, a Trilinos package is a "Subproject".
+TriBITS project package dependenices in a way that is independent of TriBITS.
+In CTest/CDash terminology, a TriBITS package is a "Subproject".
 
 By default, if you just run:
 
-   $ SOME_DIR/dump-cdash-deps-xml-file.py
+   $ <thisDir>/dump-cdash-deps-xml-file.py \
+       --input-xml-deps-file=<Project>PackageDependencies.xml \
+       --output-cdash-deps-xml-file=CDashSubprojectDependencies.xml
 
-then the XML file will get written into the main Trilinos source directory
-where it can be checked in on the next checkin.
+then the XML file CDashSubprojectDependencies.xml will get written.
 
 You can also change what XML input file is used and what XML file is written.
 This is maily to facilitate unit testing of this script.
 
-Have fun looking through all of the Trilinos dependencies!
+Have fun looking through all of the TriBITS package dependencies!
 
 """
 
@@ -70,11 +71,12 @@ clp = OptionParser(usage=usageHelp)
 
 clp.add_option(
   "--input-xml-deps-file", dest="inputXmlDepsFile", type="string",
-  help="Input XML file giving the Trilinos dependencies.")
+  help="Input XML file giving the TriBITS Project Package dependencies.")
 
 clp.add_option(
   "--output-cdash-deps-xml-file", dest="outputCDashDepsXmlFile", type="string",
-  help="Output XML file giving the TriBITS project dependices in XML form that CDash understands.")
+  help="Output XML file giving the TriBITS project dependices in XML form" \
+  + " that CDash understands.")
 
 (options, args) = clp.parse_args()
 

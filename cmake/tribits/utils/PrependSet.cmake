@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -39,6 +39,21 @@
 
 INCLUDE(AssertDefined)
 
+#
+# @MACRO: PREPEND_SET()
+#
+# Utility macro to prepend elements to a varible (reduces boiler-plate code).
+#
+# Usage::
+#
+#   PREPEND_SET(<varName> <arg0> <arg1> ...)
+#
+# Just calls::
+#
+#   SET(<varName> <arg0> <arg1> ... ${<varName>})
+#
+# NOTE: Prepending is not as efficient as appending so prefer `APPEND_SET()`_.
+#
 MACRO(PREPEND_SET VARNAME)
   ASSERT_DEFINED(${VARNAME})
   SET(${VARNAME} ${ARGN} ${${VARNAME}})

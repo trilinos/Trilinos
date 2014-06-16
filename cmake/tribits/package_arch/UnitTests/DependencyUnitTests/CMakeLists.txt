@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -42,15 +42,17 @@ INCLUDE(TribitsAddAdvancedTest)
 
 INCLUDE(ParseVariableArguments)
 
-# The mock test project 
+# MockTrilinos project
 SET(MOCK_PROJECT_NAME Trilinos)
+SET(MOCK_TRILINOS_DIR
+  ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_MOCK_TRILINOS_DIR})
 
-SET(MOCK_TRILINOS_DIR ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_MOCK_TRILINOS_DIR})
 
-
+#####################################################################
 #
 # Unit tests for just creating the depencency XML files
 #
+#####################################################################
 
 
 FUNCTION(CREATE_DEPENDENCY_XML_DUMP_TEST_CASE TEST_NAME)
@@ -74,7 +76,7 @@ FUNCTION(CREATE_DEPENDENCY_XML_DUMP_TEST_CASE TEST_NAME)
   TRIBITS_ADD_ADVANCED_TEST( ${EXTENDED_TEST_NAME}
     OVERALL_WORKING_DIRECTORY ${TEST_OUTPUT_REL_DIR}
     OVERALL_NUM_MPI_PROCS 1
-    TEST_0 CMND ${CMAKE_COMMAND}
+    TEST_0 CMND "${CMAKE_COMMAND}"
       ARGS
         -DPROJECT_SOURCE_DIR:PATH=${MOCK_TRILINOS_DIR}
         -D${MOCK_PROJECT_NAME}_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}
@@ -85,11 +87,12 @@ FUNCTION(CREATE_DEPENDENCY_XML_DUMP_TEST_CASE TEST_NAME)
         ${PARSE_ARGS}
         -P ${${PROJECT_NAME}_TRIBITS_DIR}/package_arch/TribitsDumpDepsXmlScript.cmake
       PASS_REGULAR_EXPRESSION_ALL ${PARSE_PASS_REGULAR_EXPRESSION_ALL}
-    TEST_1 CMND ${CMAKE_COMMAND}
+    TEST_1 CMND "${CMAKE_COMMAND}"
       ARGS
         -E compare_files
         ${TEST_OUTPUT_DIR}/${MOCK_PROJECT_NAME}PackageDependencies.xml
         ${${PROJECT_NAME}_TRIBITS_DIR}/python/UnitTests/${PARSE_COMPARE_XML_FILE}
+    XHOSTTYPE Windows
     )
 
 ENDFUNCTION()
@@ -141,9 +144,286 @@ CREATE_DEPENDENCY_XML_DUMP_TEST_CASE(
   )
 
 
+#####################################################################
 #
-# Unit tests for full dependency handling
+# Unit tests for dependency handling for reduced set of packages
 #
+#####################################################################
+
+# Reduced MockTrilinos project
+SET(REDUCED_MOCK_PROJECT_NAME Trilinos)
+SET(REDUCED_MOCK_TRILINOS_DIR
+  ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_REDUCED_MOCK_TRILINOS_DIR})
+
+# Expected output files directory
+SET(REDUCED_MOCK_TRILINOS_OUTPUT_DIR
+  "${${PROJECT_NAME}_TRIBITS_DIR}/doc/developers_guide/ReducedMockTrilinosOutput")
+
+#
+# NOTE: These tests compare against expected output stored in files under the
+# in the developers_guide/ReducedMockTrilinosOuptut/ directory and are used in
+# the TribitsDevelopersGuide.rst document.  Therefore, if the behavior of
+# TriBITS changes in such a way as to break these tests, then if any of the
+# contents of the files under this directory need to change, then one must
+# also look at the TribitsDevelopersGuilde.rst document and update it for the
+# new behvior of TriBITs!
+#
+
+
+FUNCTION(CREATE_REDUCED_DEPENDENCY_HANDLING_TEST_CASE TEST_NAME)
+
+  PARSE_ARGUMENTS(
+     #prefix
+     PARSE
+     #lists
+     "ARGS;PASS_REGULAR_EXPRESSION_ALL"
+     #options
+     ""
+     ${ARGN}
+     )
+
+  TRIBITS_ADD_ADVANCED_TEST( DepTestsReduced_${TEST_NAME}
+    OVERALL_WORKING_DIRECTORY TEST_NAME
+    OVERALL_NUM_MPI_PROCS 1
+    TEST_0 CMND "${CMAKE_COMMAND}"
+      ARGS
+        ${PARSE_ARGS}
+        ${REDUCED_MOCK_TRILINOS_DIR}
+      PASS_REGULAR_EXPRESSION_ALL ${PARSE_PASS_REGULAR_EXPRESSION_ALL}
+    )
+
+ENDFUNCTION()
+
+
+#
+# Read in an expected output file and create a REGEX array to be used in
+# checking test results.
+#
+
+FUNCTION(READ_EXPECTED_OUTPUT_FILE_INTO_REGEX_ARRAY  EXPECTED_OUTPUT_FILE
+  EXPECTED_OUTPUT_REGEX_ARRAY_OUT
+  )
+  FILE(READ ${EXPECTED_OUTPUT_FILE} EXPECTED_RAW_STR_ALL)
+  #PRINT_VAR(EXPECTED_RAW_STR_ALL)
+  SPLIT("${EXPECTED_RAW_STR_ALL}" "\n" EXPECTED_RAW_STR_ARRAY)
+  #PRINT_VAR(EXPECTED_RAW_STR_ARRAY)
+  SET(EXPECTED_REGEX_ARRAY)
+  FOREACH(EXPECTED_RAW_STR ${EXPECTED_RAW_STR_ARRAY})
+    #PRINT_VAR(EXPECTED_RAW_STR)
+    IF (NOT "${EXPECTED_RAW_STR}" STREQUAL "")
+      SET(EXPECTED_REGEX_STR "${EXPECTED_RAW_STR}")
+      STRING(REPLACE "(" "." EXPECTED_REGEX_STR "${EXPECTED_REGEX_STR}") 
+      STRING(REPLACE ")" "." EXPECTED_REGEX_STR "${EXPECTED_REGEX_STR}") 
+      STRING(REPLACE "[" "." EXPECTED_REGEX_STR "${EXPECTED_REGEX_STR}") 
+      STRING(REPLACE "]" "." EXPECTED_REGEX_STR "${EXPECTED_REGEX_STR}") 
+      STRING(REPLACE "*" "." EXPECTED_REGEX_STR "${EXPECTED_REGEX_STR}") 
+      LIST(APPEND EXPECTED_REGEX_ARRAY "${EXPECTED_REGEX_STR}")
+      #PRINT_VAR(EXPECTED_REGEX_ARRAY)
+    ENDIF()
+  ENDFOREACH()
+  SET(${EXPECTED_OUTPUT_REGEX_ARRAY_OUT} ${EXPECTED_REGEX_ARRAY} PARENT_SCOPE)
+ENDFUNCTION()
+
+
+
+#
+# NoEnables
+#
+
+READ_EXPECTED_OUTPUT_FILE_INTO_REGEX_ARRAY(
+  "${REDUCED_MOCK_TRILINOS_OUTPUT_DIR}/NoEnables.txt"
+  RMT_NoEnables_REGEX_ARRAY
+  )
+#PRINT_VAR(REDUCED_EXPECTED_DEPENDENICES_REGEX_ARRAY)
+
+
+CREATE_REDUCED_DEPENDENCY_HANDLING_TEST_CASE(
+  NoEnables
+  ARGS
+  PASS_REGULAR_EXPRESSION_ALL
+    ${RMT_NoEnables_REGEX_ARRAY}
+  )
+
+
+#
+# EnableThyra_EnableTests
+#
+
+READ_EXPECTED_OUTPUT_FILE_INTO_REGEX_ARRAY(
+  "${REDUCED_MOCK_TRILINOS_OUTPUT_DIR}/EnableThyra_EnableTests.txt"
+  EnableThyra_EnableTests_REGEX_ARRAY
+  )
+
+CREATE_REDUCED_DEPENDENCY_HANDLING_TEST_CASE(
+  EnableThyra_EnableTests
+  ARGS
+    -DTrilinos_ENABLE_Thyra:BOOL=ON
+    -DTrilinos_ENABLE_TESTS:BOOL=ON
+  PASS_REGULAR_EXPRESSION_ALL
+    ${EnableThyra_EnableTests_REGEX_ARRAY}
+  )
+
+
+#
+# EnableThyra_EnableTests_EnableBoost_ST
+#
+
+READ_EXPECTED_OUTPUT_FILE_INTO_REGEX_ARRAY(
+  "${REDUCED_MOCK_TRILINOS_OUTPUT_DIR}/EnableThyra_EnableTests_EnableBoost_ST.txt"
+  EnableThyra_EnableTests_EnableBoost_ST_REGEX_ARRAY
+  )
+
+CREATE_REDUCED_DEPENDENCY_HANDLING_TEST_CASE(
+  EnableThyra_EnableTests_EnableBoost_ST
+  ARGS
+    -DTPL_ENABLE_Boost:BOOL=ON
+    -DTrilinos_ENABLE_Thyra:BOOL=ON
+    -DTrilinos_ENABLE_TESTS:BOOL=ON
+    -DTrilinos_ENABLE_SECONDARY_TESTED_CODE:BOOL=ON
+  PASS_REGULAR_EXPRESSION_ALL
+    ${EnableThyra_EnableTests_EnableBoost_ST_REGEX_ARRAY}
+  )
+
+
+#
+# EnableThyra_EnableTests_EnableBoost_ST_RequiredOnly
+#
+
+READ_EXPECTED_OUTPUT_FILE_INTO_REGEX_ARRAY(
+  "${REDUCED_MOCK_TRILINOS_OUTPUT_DIR}/EnableThyra_EnableTests_EnableBoost_ST_RequiredOnly.txt"
+  EnableThyra_EnableTests_EnableBoost_ST_RequiredOnly_REGEX_ARRAY
+  )
+
+CREATE_REDUCED_DEPENDENCY_HANDLING_TEST_CASE(
+  EnableThyra_EnableTests_EnableBoost_ST_RequiredOnly
+  ARGS
+    -DTPL_ENABLE_Boost:BOOL=ON
+    -DTrilinos_ENABLE_Thyra:BOOL=ON
+    -DTrilinos_ENABLE_TESTS:BOOL=ON
+    -DTrilinos_ENABLE_SECONDARY_TESTED_CODE:BOOL=ON
+    -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF
+  PASS_REGULAR_EXPRESSION_ALL
+    ${EnableThyra_EnableTests_EnableBoost_ST_RequiredOnly_REGEX_ARRAY}
+  )
+
+
+#
+# EnableThyra_DisableEpetra_EnableTests
+#
+
+READ_EXPECTED_OUTPUT_FILE_INTO_REGEX_ARRAY(
+  "${REDUCED_MOCK_TRILINOS_OUTPUT_DIR}/EnableThyra_DisableEpetra_EnableTests.txt"
+  EnableThyra_DisableEpetra_EnableTests_REGEX_ARRAY
+  )
+
+CREATE_REDUCED_DEPENDENCY_HANDLING_TEST_CASE(
+  EnableThyra_DisableEpetra_EnableTests
+  ARGS
+    -DTrilinos_ENABLE_Thyra:BOOL=ON
+    -DTrilinos_ENABLE_Epetra:BOOL=OFF
+    -DTrilinos_ENABLE_TESTS:BOOL=ON
+  PASS_REGULAR_EXPRESSION_ALL
+    ${EnableThyra_DisableEpetra_EnableTests_REGEX_ARRAY}
+  )
+
+#
+# EnableEpetra_EnableRTOp_DisableTeuchos
+#
+
+SET(TEST_NAME "EnableEpetra_EnableRTOp_DisableTeuchos")
+
+READ_EXPECTED_OUTPUT_FILE_INTO_REGEX_ARRAY(
+  "${REDUCED_MOCK_TRILINOS_OUTPUT_DIR}/${TEST_NAME}.txt"
+  ${TEST_NAME}_REGEX_ARRAY
+  )
+
+CREATE_REDUCED_DEPENDENCY_HANDLING_TEST_CASE(
+  ${TEST_NAME}
+  ARGS
+    -DTrilinos_ENABLE_Epetra:BOOL=ON
+    -DTrilinos_ENABLE_RTOp:BOOL=ON
+    -DTrilinos_ENABLE_Teuchos:BOOL=OFF
+   PASS_REGULAR_EXPRESSION_ALL
+    ${${TEST_NAME}_REGEX_ARRAY}
+  )
+
+
+#
+# EnableEpetra_EnableRTOp_DisableTeuchos_DisableEnabledFwdDepPackages
+#
+
+SET(TEST_NAME "EnableEpetra_EnableRTOp_DisableTeuchos_DisableEnabledFwdDepPackages")
+
+READ_EXPECTED_OUTPUT_FILE_INTO_REGEX_ARRAY(
+  "${REDUCED_MOCK_TRILINOS_OUTPUT_DIR}/${TEST_NAME}.txt"
+  ${TEST_NAME}_REGEX_ARRAY
+  )
+
+CREATE_REDUCED_DEPENDENCY_HANDLING_TEST_CASE(
+  ${TEST_NAME}
+  ARGS
+    -DTrilinos_ENABLE_Epetra:BOOL=ON
+    -DTrilinos_ENABLE_RTOp:BOOL=ON
+    -DTrilinos_ENABLE_Teuchos:BOOL=OFF
+    -DTrilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON
+   PASS_REGULAR_EXPRESSION_ALL
+    ${${TEST_NAME}_REGEX_ARRAY}
+  )
+
+
+#
+# EnableAllPackages_DumpDependencies
+#
+
+READ_EXPECTED_OUTPUT_FILE_INTO_REGEX_ARRAY(
+  "${REDUCED_MOCK_TRILINOS_OUTPUT_DIR}/ExpectedDependencies.txt"
+  REDUCED_EXPECTED_DEPENDENICES_REGEX_ARRAY
+  )
+#PRINT_VAR(REDUCED_EXPECTED_DEPENDENICES_REGEX_ARRAY)
+
+READ_EXPECTED_OUTPUT_FILE_INTO_REGEX_ARRAY(
+  "${REDUCED_MOCK_TRILINOS_OUTPUT_DIR}/EnableAllPackages.txt"
+  REDUCED_EnableAllPackages_REGEX_ARRAY
+  )
+#PRINT_VAR(REDUCED_EnableAllPackages_REGEX_ARRAY)
+
+CREATE_REDUCED_DEPENDENCY_HANDLING_TEST_CASE(
+  EnableAllPackages_DumpDependencies
+  ARGS
+    -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON
+    -DTrilinos_DUMP_PACKAGE_DEPENDENCIES:BOOL=ON
+  PASS_REGULAR_EXPRESSION_ALL
+    ${REDUCED_EXPECTED_DEPENDENICES_REGEX_ARRAY}
+    ${REDUCED_EnableAllPackages_REGEX_ARRAY}
+    "Final set of enabled packages:  Teuchos RTOp Epetra Thyra 4"
+    "Final set of enabled SE packages:  Teuchos RTOp Epetra ThyraCoreLibs ThyraEpetra Thyra 6"
+    "Final set of non-enabled packages:  Triutils EpetraExt 2"
+    "Final set of non-enabled SE packages:  Triutils EpetraExt ThyraGoodStuff ThyraCrazyStuff ThyraEpetraExt 5"
+  )
+
+
+#
+# EnableAllPackages_RequiredOnly
+#
+
+CREATE_REDUCED_DEPENDENCY_HANDLING_TEST_CASE(
+  EnableAllPackages_RequiredOnly
+  ARGS
+    -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON
+    -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF
+  PASS_REGULAR_EXPRESSION_ALL
+    "Final set of enabled packages:  Teuchos RTOp Epetra Thyra 4"
+    "Final set of enabled SE packages:  Teuchos RTOp Epetra ThyraCoreLibs ThyraEpetra Thyra 6"
+    "Final set of non-enabled packages:  Triutils EpetraExt 2"
+    "Final set of non-enabled SE packages:  Triutils EpetraExt ThyraGoodStuff ThyraCrazyStuff ThyraEpetraExt "
+  )
+
+
+#####################################################################
+#
+# Unit tests for dependency handling for full set of packages
+#
+#####################################################################
 
 
 FUNCTION(CREATE_DEPENDENCY_HANDLING_TEST_CASE TEST_NAME)
@@ -161,7 +441,7 @@ FUNCTION(CREATE_DEPENDENCY_HANDLING_TEST_CASE TEST_NAME)
   TRIBITS_ADD_ADVANCED_TEST( DepTests_${TEST_NAME}
     OVERALL_WORKING_DIRECTORY TEST_NAME
     OVERALL_NUM_MPI_PROCS 1
-    TEST_0 CMND ${CMAKE_COMMAND}
+    TEST_0 CMND "${CMAKE_COMMAND}"
       ARGS
         -D${MOCK_PROJECT_NAME}_TRIBITS_DIR:FILEPATH=${${PROJECT_NAME}_TRIBITS_DIR}
         -D${MOCK_PROJECT_NAME}_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING:BOOL=ON
@@ -264,8 +544,8 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
   ARGS -DTrilinos_ENABLE_EpetraExt:BOOL=ON -DTrilinos_ENABLE_AztecOO:BOOL=OFF
     -DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON
   PASS_REGULAR_EXPRESSION_ALL
-    "WARNING: Not Setting Trilinos_ENABLE_Belos=ON even though Stratimikos has an optional dependence on Belos because Trilinos_ENABLE_SECONDARY_STABLE_CODE=OFF"
-    "WARNING: Not Setting Trilinos_ENABLE_Sacado=ON even though Intrepid has an optional dependence on Sacado because Trilinos_ENABLE_SECONDARY_STABLE_CODE=OFF"
+    "WARNING: Not Setting Trilinos_ENABLE_Belos=ON even though Stratimikos has an optional dependence on Belos because Trilinos_ENABLE_SECONDARY_TESTED_CODE=OFF"
+    "WARNING: Not Setting Trilinos_ENABLE_Sacado=ON even though Intrepid has an optional dependence on Sacado because Trilinos_ENABLE_SECONDARY_TESTED_CODE=OFF"
     "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Thyra Isorropia Galeri Amesos Intrepid Ifpack ML Stratimikos RBGen 17"
   )
 
@@ -296,7 +576,7 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
   ARGS -DTrilinos_ENABLE_Thyra:BOOL=ON -DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON
   PASS_REGULAR_EXPRESSION_ALL
     "Explicitly enabled packages on input .by user.:  Thyra 1"
-    "Enabling or disabling subpackages for hard enables/disables of parent packages Trilinos_ENABLE_<PARENT_PACKAGE>=ON/OFF ..."
+    "Enabling subpackages for hard enables of parent packages due to Trilinos_ENABLE_<PARENT_PACKAGE>=ON ..."
     "Setting subpackage enable Trilinos_ENABLE_ThyraCoreLibs=ON because parent package Trilinos_ENABLE_Thyra=ON"
     "Setting subpackage enable Trilinos_ENABLE_ThyraEpetra=ON because parent package Trilinos_ENABLE_Thyra=ON"
     "Setting subpackage enable Trilinos_ENABLE_ThyraEpetraExt=ON because parent package Trilinos_ENABLE_Thyra=ON"
@@ -331,9 +611,9 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
   PASS_REGULAR_EXPRESSION_ALL
     "Explicitly enabled packages on input .by user.:  0"
     "Explicitly enabled SE packages on input .by user.:  ThyraEpetraExt 1"
-    "Setting Trilinos_ENABLE_ThyraEpetra=ON because ThyraEpetraExt has an optional dependence on ThyraEpetra"
-    "Setting Trilinos_ENABLE_ThyraCoreLibs=ON because ThyraEpetra has an optional dependence on ThyraCoreLibs"
-    "Setting Trilinos_ENABLE_Teuchos=ON because ThyraCoreLibs has an optional dependence on Teuchos"
+    "Setting Trilinos_ENABLE_ThyraEpetra=ON because ThyraEpetraExt has a required dependence on ThyraEpetra"
+    "Setting Trilinos_ENABLE_ThyraCoreLibs=ON because ThyraEpetra has a required dependence on ThyraCoreLibs"
+    "Setting Trilinos_ENABLE_Teuchos=ON because ThyraCoreLibs has a required dependence on Teuchos"
     "Setting Trilinos_ENABLE_Thyra=ON because Trilinos_ENABLE_ThyraCoreLibs=ON"
     "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils EpetraExt Thyra 7"
     "Final set of non-enabled SE packages:  .+ ThyraGoodStuff ThyraCrazyStuff ThyraTpetra .+"
@@ -375,7 +655,7 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
     "Explicitly enabled packages on input .by user.:  Thyra 1"
     "Explicitly enabled SE packages on input .by user.:  ThyraEpetraExt Thyra 2"
     "Explicitly disabled packages on input .by user or by default.:  Epetra"
-    "Setting subpackage enable Trilinos_ENABLE_ThyraEpetra=ON because parent package Trilinos_ENABLE_Thyra=ON"
+    "Setting Trilinos_ENABLE_ThyraEpetra=OFF because ThyraEpetra has a required library dependence on disabled package Epetra"
     "WARNING: Setting Trilinos_ENABLE_ThyraEpetraExt=OFF which was 'ON' because ThyraEpetraExt has a required library dependence on disabled package EpetraExt but Trilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON!"
     "Final set of enabled packages:  Teuchos RTOp Tpetra Thyra 4"
     "Final set of enabled SE packages:  Teuchos RTOp Tpetra ThyraCoreLibs ThyraTpetra Thyra 6"
@@ -518,11 +798,33 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
 
 
 CREATE_DEPENDENCY_HANDLING_TEST_CASE(
-  EnableAllPackages_EnableSecondaryStableCode_EnableAllOptionalPackges
-  ARGS  -DTrilinos_ENABLE_ALL_PACKAGES=ON -DTrilinos_ENABLE_SECONDARY_STABLE_CODE=ON
+  EnableAllPackages_EnableSecondaryTestedCode_EnableAllOptionalPackges
+  ARGS  -DTrilinos_ENABLE_ALL_PACKAGES=ON -DTrilinos_ENABLE_SECONDARY_TESTED_CODE=ON
   PASS_REGULAR_EXPRESSION_ALL
     "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx 22"
     "Final set of enabled TPLs:  BLAS LAPACK Boost DUMMY 4"
+  )
+
+
+# Deprecated ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE!
+CREATE_DEPENDENCY_HANDLING_TEST_CASE(
+  EnableAllPackages_EnableSecondaryStableCode_EnableAllOptionalPackges_BackwardCompatible
+  ARGS  -DTrilinos_ENABLE_ALL_PACKAGES=ON -DTrilinos_ENABLE_SECONDARY_STABLE_CODE=ON
+  PASS_REGULAR_EXPRESSION_ALL
+    "WARNING: Set var Trilinos_ENABLE_SECONDARY_STABLE_CODE is deprecated!  Use Trilinos_ENABLE_SECONDARY_TESTED_CODE instead!"
+    "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx 22"
+    "Final set of enabled TPLs:  BLAS LAPACK Boost DUMMY 4"
+  )
+
+
+# Test that deprecated Trilinos_ENABLE_SECONDARY_STABLE_CODE is not set when
+# Trilinos_ENABLE_SECONDARY_TESTED_CODE is also being set.
+CREATE_DEPENDENCY_HANDLING_TEST_CASE(
+  EnableAllPackages_EnableSecondaryTestedCode_EnableSecondaryStableCode_EnableAllOptionalPackges
+  ARGS  -DTrilinos_ENABLE_ALL_PACKAGES=ON  -DTrilinos_ENABLE_SECONDARY_TESTED_CODE=ON
+    -DTrilinos_ENABLE_SECONDARY_STABLE_CODE=ON
+  PASS_REGULAR_EXPRESSION_ALL
+    "WARNING: Set deprecated Trilinos_ENABLE_SECONDARY_STABLE_CODE and"
   )
 
 
@@ -574,9 +876,9 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
     "Trilinos_NUM_TPLS='20'"
     "Explicitly enabled packages on input .* Teko 1"
     "Explicitly disabled packages on input .* Stokhos Stalix 2"
-    "Setting Trilinos_ENABLE_Teuchos=ON because Teko has an optional dependence on Teuchos"
-    "Setting Trilinos_ENABLE_Epetra=ON because Teko has an optional dependence on Epetra"
-    "Setting Trilinos_ENABLE_Thyra=ON because Teko has an optional dependence on Thyra"
+    "Setting Trilinos_ENABLE_Teuchos=ON because Teko has a required dependence on Teuchos"
+    "Setting Trilinos_ENABLE_Epetra=ON because Teko has a required dependence on Epetra"
+    "Setting Trilinos_ENABLE_Thyra=ON because Teko has a required dependence on Thyra"
     "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils Tpetra EpetraExt Thyra Isorropia AztecOO Galeri Amesos Ifpack ML Stratimikos Teko 16"
     "Final set of non-enabled packages:  TrilinosFramework Shards Stokhos Sacado Intrepid Belos RBGen Phalanx Panzer Stalix 10"
     "Final set of enabled TPLs:  BLAS LAPACK TekoDepTPL 3"
@@ -588,6 +890,7 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
   ARGS -DTrilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos
     -DTrilinos_EXTRAREPOS_FILE=${CMAKE_CURRENT_SOURCE_DIR}/NoPackagesExtraReposFile.cmake
     -DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly
+    -DTrilinos_IGNORE_MISSING_EXTRA_REPOSITORIES=ON
     #-DTrilinos_VERBOSE_CONFIGURE=ON
     #-DTRIBITS_PROCESS_EXTRAREPOS_LISTS_DEBUG=ON
     -DTrilinos_ENABLE_Teko=ON
@@ -599,15 +902,49 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
 
 
 CREATE_DEPENDENCY_HANDLING_TEST_CASE(
+  DefaultExtraReposFile_EnableAllPackages_TraceFileProcessing
+  ARGS 
+    -DTrilinos_EXTRAREPOS_FILE=${MOCK_TRILINOS_DIR}/cmake/ExtraRepositoriesList.cmake
+    -DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly
+    -DTrilinos_IGNORE_MISSING_EXTRA_REPOSITORIES=TRUE
+    -DTrilinos_TRACE_FILE_PROCESSING=ON
+    -DTrilinos_ENABLE_ALL_PACKAGES=ON
+  PASS_REGULAR_EXPRESSION_ALL
+    "-- File Trace: PROJECT    INCLUDE    .*/MockTrilinos/Version.cmake"
+    "-- File Trace: REPOSITORY INCLUDE    .*/MockTrilinos/cmake/CallbackSetupExtraOptions.cmake"
+    "-- File Trace: REPOSITORY INCLUDE    .*/MockTrilinos/PackagesList.cmake"
+    "-- File Trace: REPOSITORY INCLUDE    .*/MockTrilinos/TPLsList.cmake"
+    "-- File Trace: REPOSITORY INCLUDE    .*/MockTrilinos/preCopyrightTrilinos/PackagesList.cmake"
+    "-- File Trace: REPOSITORY INCLUDE    .*/MockTrilinos/preCopyrightTrilinos/TPLsList.cmake"
+    "-- File Trace: REPOSITORY INCLUDE    .*/MockTrilinos/extraTrilinosRepo/PackagesList.cmake"
+    "-- File Trace: REPOSITORY INCLUDE    .*/MockTrilinos/extraTrilinosRepo/TPLsList.cmake"
+    "-- File Trace: REPOSITORY INCLUDE    .*/MockTrilinos/cmake/RepositoryDependenciesSetup.cmake"
+    "-- File Trace: PROJECT    INCLUDE    .*/MockTrilinos/cmake/ProjectDependenciesSetup.cmake"
+    "-- File Trace: PACKAGE    INCLUDE    .*/MockTrilinos/cmake/cmake/Dependencies.cmake"
+    "-- File Trace: PACKAGE    INCLUDE    .*/MockTrilinos/packages/teuchos/cmake/Dependencies.cmake"
+    "-- File Trace: PACKAGE    INCLUDE    .*/MockTrilinos/packages/thyra/cmake/Dependencies.cmake"
+    "-- File Trace: PACKAGE    INCLUDE    .*/MockTrilinos/packages/thyra/src/cmake/Dependencies.cmake"
+    "-- File Trace: PACKAGE    INCLUDE    .*/MockTrilinos/packages/thyra/src/good_stuff/cmake/Dependencies.cmake"
+    "-- File Trace: PACKAGE    INCLUDE    .*/MockTrilinos/packages/thyra/src/crazy_stuff/cmake/Dependencies.cmake"
+    "-- File Trace: PACKAGE    INCLUDE    .*/MockTrilinos/packages/thyra/adapters/epetra/cmake/Dependencies.cmake"
+    "-- File Trace: PACKAGE    INCLUDE    .*/MockTrilinos/packages/thyra/adapters/epetraext/cmake/Dependencies.cmake"
+    "-- File Trace: PACKAGE    INCLUDE    .*/MockTrilinos/packages/thyra/adapters/tpetra/cmake/Dependencies.cmake"
+    "-- File Trace: PACKAGE    INCLUDE    .*/MockTrilinos/preCopyrightTrilinos/teko/cmake/Dependencies.cmake"
+    "-- File Trace: PACKAGE    INCLUDE    .*/MockTrilinos/preCopyrightTrilinos/stalix/cmake/Dependencies.cmake"
+    "-- File Trace: PACKAGE    INCLUDE    .*/MockTrilinos/extraTrilinosRepo/extrapack/cmake/Dependencies.cmake"
+  )
+
+
+CREATE_DEPENDENCY_HANDLING_TEST_CASE(
   preCopyrightTrilinos_EnableStalix
   ARGS -DTrilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos
     -DTrilinos_ENABLE_Stalix=ON
   PASS_REGULAR_EXPRESSION_ALL
     "Explicitly enabled packages on input .* Stalix 1"
     "Explicitly disabled packages on input .* Stokhos 1"
-    "WARNING: Not Setting Trilinos_ENABLE_Sacado=ON even though Stalix has an optional dependence on Sacado because Trilinos_ENABLE_SECONDARY_STABLE_CODE=OFF"
-    "Setting Trilinos_ENABLE_Tpetra=ON because Stalix has an optional dependence on Tpetra"
-    "Setting Trilinos_ENABLE_Thyra=ON because Stalix has an optional dependence on Thyra"
+    "WARNING: Not Setting Trilinos_ENABLE_ThyraGoodStuff=ON even though Thyra has an optional dependence on ThyraGoodStuff because Trilinos_ENABLE_SECONDARY_TESTED_CODE=OFF"
+    "Setting Trilinos_ENABLE_Tpetra=ON because Stalix has a required dependence on Tpetra"
+    "Setting Trilinos_ENABLE_Thyra=ON because Stalix has a required dependence on Thyra"
     "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils Tpetra EpetraExt Sacado Thyra Stalix 10"
     "Final set of non-enabled packages:  TrilinosFramework Shards Stokhos Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Panzer Teko 16"
   )
@@ -683,10 +1020,11 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
     "Trilinos_NUM_TPLS='22'"
     "Explicitly enabled packages on input .* ExtraPack 1"
     "Explicitly disabled packages on input .* Stokhos Stalix 2"
-    "Setting Trilinos_ENABLE_Teuchos=ON because ExtraPack has an optional dependence on Teuchos"
-    "Setting Trilinos_ENABLE_Teko=ON because Trilinos_ENABLE_ExtraPack=ON"
-    "Final set of enabled packages:  Teuchos RTOp Epetra Triutils EpetraExt Thyra AztecOO Amesos Ifpack ML Stratimikos Teko ExtraPack 13"
-    "Final set of non-enabled packages:  TrilinosFramework Zoltan Shards Tpetra Stokhos Sacado Isorropia Galeri Intrepid Belos RBGen Phalanx Panzer Stalix 14"
+    "Setting Trilinos_ENABLE_Teuchos=ON because ExtraPack has a required dependence on Teuchos"
+    "Setting Trilinos_ENABLE_Teko=ON because ExtraPack has a required dependence on Teko"
+    "WARNING: Not Setting Trilinos_ENABLE_Sacado=ON even though ExtraPack has an optional dependence on Sacado because Trilinos_ENABLE_SECONDARY_TESTED_CODE=OFF"
+    "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils Tpetra EpetraExt Thyra Isorropia AztecOO Galeri Amesos Ifpack ML Stratimikos Teko ExtraPack 17"
+    "Final set of non-enabled packages:  TrilinosFramework Shards Stokhos Sacado Intrepid Belos RBGen Phalanx Panzer Stalix 10"
     "Final set of enabled TPLs:  BLAS LAPACK TekoDepTPL ExtraTPL2 4"
   )
 
@@ -716,13 +1054,14 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
 CREATE_DEPENDENCY_HANDLING_TEST_CASE(
   ENABLE_KNOWN_EXTERNAL_REPOS_TYPE_CI_EnableTeko
   ARGS -DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=Continuous
-    -DTrilinos_ENABLE_Teko=ON
+   -DTrilinos_IGNORE_MISSING_EXTRA_REPOSITORIES=ON
+   -DTrilinos_ENABLE_Teko=ON
   PASS_REGULAR_EXPRESSION_ALL
     "Explicitly enabled packages on input .* Teko 1"
     "Explicitly disabled packages on input .* Stokhos Stalix 2"
-    "Setting Trilinos_ENABLE_Teuchos=ON because Teko has an optional dependence on Teuchos"
-    "Setting Trilinos_ENABLE_Epetra=ON because Teko has an optional dependence on Epetra"
-    "Setting Trilinos_ENABLE_Thyra=ON because Teko has an optional dependence on Thyra"
+    "Setting Trilinos_ENABLE_Teuchos=ON because Teko has a required dependence on Teuchos"
+    "Setting Trilinos_ENABLE_Epetra=ON because Teko has a required dependence on Epetra"
+    "Setting Trilinos_ENABLE_Thyra=ON because Teko has a required dependence on Thyra"
     "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils Tpetra EpetraExt Thyra Isorropia AztecOO Galeri Amesos Ifpack ML Stratimikos Teko 16"
     "Final set of non-enabled packages:  TrilinosFramework Shards Stokhos Sacado Intrepid Belos RBGen Phalanx Panzer Stalix 10"
   )
@@ -731,12 +1070,13 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
 CREATE_DEPENDENCY_HANDLING_TEST_CASE(
   ENABLE_KNOWN_EXTERNAL_REPOS_TYPE_Nightly_EnableExtraPack
   ARGS  -DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=Nightly
+    -DTrilinos_IGNORE_MISSING_EXTRA_REPOSITORIES=ON
     -DTrilinos_ENABLE_ExtraPack=ON
   PASS_REGULAR_EXPRESSION_ALL
     "Explicitly enabled packages on input .* ExtraPack 1"
     "Explicitly disabled packages on input .* Stokhos Stalix 2"
-    "Setting Trilinos_ENABLE_Teuchos=ON because ExtraPack has an optional dependence on Teuchos"
-    "Setting Trilinos_ENABLE_Teko=ON because Trilinos_ENABLE_ExtraPack=ON"
-    "Final set of enabled packages:  Teuchos RTOp Epetra Triutils EpetraExt Thyra AztecOO Amesos Ifpack ML Stratimikos Teko ExtraPack 13"
-    "Final set of non-enabled packages:  TrilinosFramework Zoltan Shards Tpetra Stokhos Sacado Isorropia Galeri Intrepid Belos RBGen Phalanx Panzer Stalix 14"
+    "Setting Trilinos_ENABLE_Teuchos=ON because ExtraPack has a required dependence on Teuchos"
+    "Setting Trilinos_ENABLE_Teko=ON because ExtraPack has a required dependence on Teko"
+    "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils Tpetra EpetraExt Thyra Isorropia AztecOO Galeri Amesos Ifpack ML Stratimikos Teko ExtraPack 17"
+    "Final set of non-enabled packages:  TrilinosFramework Shards Stokhos Sacado Intrepid Belos RBGen Phalanx Panzer Stalix 10"
   )

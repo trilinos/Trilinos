@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -37,9 +37,23 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(AssertDefined)
 
+#
+# @FUNCTION: PRINT_VAR()
+#
+# Unconditionally print a variable giving its name then value.
+#
+# Usage::
+#
+#   PRINT_VAR(<varName>)
+#
+# This prints::
+#
+#   MESSAGE("-- " "${VARIBLE_NAME}='${${VARIBLE_NAME}}'")
+#
+# The variable ``<varName>`` can be defined or undefined or empty.  This uses
+# an explicit "-- " line prefix so that it prints nice even on Windows CMake.
+#
 FUNCTION(PRINT_VAR VARIBLE_NAME)
-  #ASSERT_DEFINED(VARIBLE_NAME)
   MESSAGE("-- " "${VARIBLE_NAME}='${${VARIBLE_NAME}}'")
 ENDFUNCTION()
