@@ -1139,7 +1139,6 @@ ComputePreconditioner(const bool CheckPreconditioner)
 #endif
   }
 
-
   // Creates new list with level-specific smoother, level-specific
   // aggregation, and coarse options now in sublists.
   ParameterList newList;
@@ -1180,6 +1179,36 @@ ComputePreconditioner(const bool CheckPreconditioner)
 #endif
   profileIterations_ = List_.get("profile: operator iterations", 0);
   ML_Operator_Profile_SetIterations(profileIterations_);
+
+  // CHECK IF x-coordinates WAS SET TO NULL AND REPARTITONTING IS USED. This could cause ML to hang
+  // during repartitioning. The basic issue is that the coordinate pointers are checked to see if
+  // they are null or not. If they are null, it is assumed that the user did not supply coordinates
+  // and so the logic is a bit different. However, an empty processor might decided to set these
+  // to null because it has no data. In this case, some proessors are viewed as supplying coordinates
+  // while others are not. This messes up ML ... so we require that either all processors supply
+  // non-null coordinate ptrs or none of them supply coordinates. For empty procs, one could simple
+  // allocate length 1 vectors for the coordinates.
+
+  int NumNullCoord = 0;
+  if ( List_.isParameter("x-coordinates") ) {
+    if ( (List_.get("x-coordinates",(double *) 0) == NULL) && (List_.get("repartition: enable",0)))
+      NumNullCoord = 1;
+  }
+  NumNullCoord = ML_gsum_int(NumNullCoord, ml_comm_);
+  if ( (NumNullCoord != Comm().NumProc()) && (NumNullCoord != 0)) {
+    if (Comm_->MyPID() == 0) {
+      std::cout<<"ERROR: ML's Teuchos::ParameterList should not have x-coordinates set to NULL even "<<std::endl;
+      std::cout<<"ERROR: if a processor has no matrix rows. Either a nonzero pointer must be given "<<std::endl;
+      std::cout<<"ERROR: (even for empty processors) or if the user does not wish to supply coordinates, " <<std::endl;
+      std::cout<<"ERROR: then ALL processors should simply not invoke list.set(\"x-coordinates\",...)." << std::endl;
+      std::cout<<"ERROR: Otherwise ML is confused on some nodes as to whether or not a user supplied coordinates" << std::endl;
+    }
+#   ifdef HAVE_MPI
+    MPI_Finalize();
+#   endif
+    exit(EXIT_FAILURE);
+  }
+
 
   SetEigenScheme();
 
