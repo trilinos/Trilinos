@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -84,7 +84,7 @@ namespace {
       testComplex (false),
 #endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
       testReal (false) // default is not to test _anything_
-    {}
+      {}
 
     size_t cacheSizeHint;
     ordinal_type numRowsLocal;
@@ -122,89 +122,89 @@ namespace {
     //
     // \return Whether help was printed.
     bool
-    read (int argc, 
-	  char* argv[], 
-	  const Teuchos::RCP<const Teuchos::ParameterList>& defaultParams,
-	  const bool allowedToPrint)
-    {
-      using std::cerr;
-      using std::endl;
+      read (int argc,
+          char* argv[],
+          const Teuchos::RCP<const Teuchos::ParameterList>& defaultParams,
+          const bool allowedToPrint)
+      {
+        using std::cerr;
+        using std::endl;
 
-      try {
-	Teuchos::CommandLineProcessor cmdLineProc (/* throwExceptions=*/ true, 
-						   /* recognizeAllOptions=*/ true);
-	cmdLineProc.setDocString (docString);
-	cmdLineProc.setOption ("testReal",
-			       "noTestReal",
-			       &testReal,
-			       "Test real Scalar types");
+        try {
+          Teuchos::CommandLineProcessor cmdLineProc (/* throwExceptions=*/ true,
+              /* recognizeAllOptions=*/ true);
+          cmdLineProc.setDocString (docString);
+          cmdLineProc.setOption ("testReal",
+              "noTestReal",
+              &testReal,
+              "Test real Scalar types");
 #ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
-	cmdLineProc.setOption ("testComplex",
-			       "noTestComplex",
-			       &testComplex,
-			       "Test complex Scalar types");
+          cmdLineProc.setOption ("testComplex",
+              "noTestComplex",
+              &testComplex,
+              "Test complex Scalar types");
 #endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
-	// CommandLineProcessor takes int arguments, but not size_t
-	// arguments, so we have to read in the argument as an int and
-	// convert back to size_t later.
-	int cacheSizeHintAsInt = cacheSizeHint;
-	cmdLineProc.setOption ("cacheSizeHint",
-			       &cacheSizeHintAsInt,
-			       defaultParams->getEntry("cacheSizeHint").docString().c_str());
-	cmdLineProc.setOption ("numRowsLocal",
-			       &numRowsLocal,
-			       defaultParams->getEntry("numRowsLocal").docString().c_str());
-	cmdLineProc.setOption ("numCols",
-			       &numCols,
-			       defaultParams->getEntry("numCols").docString().c_str());
-	cmdLineProc.setOption ("contiguousCacheBlocks",
-			       "noContiguousCacheBlocks",
-			       &contiguousCacheBlocks,
-			       defaultParams->getEntry("contiguousCacheBlocks").docString().c_str());
-	cmdLineProc.setOption ("testFactorExplicit",
-			       "noTestFactorExplicit",
-			       &testFactorExplicit,
-			       defaultParams->getEntry("testFactorExplicit").docString().c_str());
-	cmdLineProc.setOption ("testRankRevealing",
-			       "noTestRankRevealing",
-			       &testRankRevealing,
-			       defaultParams->getEntry("testRankRevealing").docString().c_str());
-	cmdLineProc.setOption ("printFieldNames",
-			       "noPrintFieldNames",
-			       &printFieldNames,
-			       defaultParams->getEntry("printFieldNames").docString().c_str());
-	cmdLineProc.setOption ("printResults",
-			       "noPrintResults",
-			       &printResults,
-			       defaultParams->getEntry("printResults").docString().c_str());
-	cmdLineProc.setOption ("failIfInaccurate",
-			       "noFailIfInaccurate",
-			       &failIfInaccurate,
-			       defaultParams->getEntry("failIfInaccurate").docString().c_str());
-	cmdLineProc.setOption ("debug", 
-			       "nodebug", 
-			       &debug, 
-			       defaultParams->getEntry("debug").docString().c_str());
-	cmdLineProc.parse (argc, argv);
-	cacheSizeHint = static_cast<size_t> (cacheSizeHintAsInt);
-      } 
-      catch (Teuchos::CommandLineProcessor::UnrecognizedOption& e) { 
-	if (allowedToPrint)
-	  cerr << "Unrecognized command-line option: " << e.what() << endl;
-	throw e;
-      }
-      catch (Teuchos::CommandLineProcessor::HelpPrinted& e) { 
-	return true;
-      } 
+          // CommandLineProcessor takes int arguments, but not size_t
+          // arguments, so we have to read in the argument as an int and
+          // convert back to size_t later.
+          int cacheSizeHintAsInt = cacheSizeHint;
+          cmdLineProc.setOption ("cacheSizeHint",
+              &cacheSizeHintAsInt,
+              defaultParams->getEntry("cacheSizeHint").docString().c_str());
+          cmdLineProc.setOption ("numRowsLocal",
+              &numRowsLocal,
+              defaultParams->getEntry("numRowsLocal").docString().c_str());
+          cmdLineProc.setOption ("numCols",
+              &numCols,
+              defaultParams->getEntry("numCols").docString().c_str());
+          cmdLineProc.setOption ("contiguousCacheBlocks",
+              "noContiguousCacheBlocks",
+              &contiguousCacheBlocks,
+              defaultParams->getEntry("contiguousCacheBlocks").docString().c_str());
+          cmdLineProc.setOption ("testFactorExplicit",
+              "noTestFactorExplicit",
+              &testFactorExplicit,
+              defaultParams->getEntry("testFactorExplicit").docString().c_str());
+          cmdLineProc.setOption ("testRankRevealing",
+              "noTestRankRevealing",
+              &testRankRevealing,
+              defaultParams->getEntry("testRankRevealing").docString().c_str());
+          cmdLineProc.setOption ("printFieldNames",
+              "noPrintFieldNames",
+              &printFieldNames,
+              defaultParams->getEntry("printFieldNames").docString().c_str());
+          cmdLineProc.setOption ("printResults",
+              "noPrintResults",
+              &printResults,
+              defaultParams->getEntry("printResults").docString().c_str());
+          cmdLineProc.setOption ("failIfInaccurate",
+              "noFailIfInaccurate",
+              &failIfInaccurate,
+              defaultParams->getEntry("failIfInaccurate").docString().c_str());
+          cmdLineProc.setOption ("debug",
+              "nodebug",
+              &debug,
+              defaultParams->getEntry("debug").docString().c_str());
+          cmdLineProc.parse (argc, argv);
+          cacheSizeHint = static_cast<size_t> (cacheSizeHintAsInt);
+        }
+        catch (Teuchos::CommandLineProcessor::UnrecognizedOption& e) {
+          if (allowedToPrint)
+            cerr << "Unrecognized command-line option: " << e.what() << endl;
+          throw e;
+        }
+        catch (Teuchos::CommandLineProcessor::HelpPrinted& e) {
+          return true;
+        }
 
-      // Validate command-line options.  We provide default values
-      // for unset options, so we don't have to validate those.
-      TEUCHOS_TEST_FOR_EXCEPTION(numRowsLocal <= 0, std::invalid_argument,
-			 "Number of rows per process must be positive.");
-      TEUCHOS_TEST_FOR_EXCEPTION(numCols <= 0, std::invalid_argument,
-			 "Number of columns must be positive.");
-      return false; // Did not print help
-    }
+        // Validate command-line options.  We provide default values
+        // for unset options, so we don't have to validate those.
+        TEUCHOS_TEST_FOR_EXCEPTION(numRowsLocal <= 0, std::invalid_argument,
+            "Number of rows per process must be positive.");
+        TEUCHOS_TEST_FOR_EXCEPTION(numCols <= 0, std::invalid_argument,
+            "Number of columns must be positive.");
+        return false; // Did not print help
+      }
   };
 
   //
@@ -213,104 +213,104 @@ namespace {
   // the command line), return a parameter list describing the test.
   //
   Teuchos::RCP<Teuchos::ParameterList>
-  testParameters (const Teuchos::RCP<const Teuchos::ParameterList>& validParams,
-		  const CmdLineOptions& options)
-  {
-    using Teuchos::ParameterList;
-    using Teuchos::parameterList;
-    using Teuchos::RCP;
+    testParameters (const Teuchos::RCP<const Teuchos::ParameterList>& validParams,
+        const CmdLineOptions& options)
+    {
+      using Teuchos::ParameterList;
+      using Teuchos::parameterList;
+      using Teuchos::RCP;
 
-    RCP<ParameterList> testParams = parameterList ("FullTsqrVerifier");
-    testParams->set ("cacheSizeHint", options.cacheSizeHint);
-    testParams->set ("numRowsLocal", options.numRowsLocal);
-    testParams->set ("numCols", options.numCols);
-    testParams->set ("testFactorExplicit", options.testFactorExplicit);
-    testParams->set ("testRankRevealing", options.testRankRevealing);
-    testParams->set ("contiguousCacheBlocks", options.contiguousCacheBlocks);
-    testParams->set ("printFieldNames", options.printFieldNames);
-    testParams->set ("printResults", options.printResults);
-    testParams->set ("failIfInaccurate", options.failIfInaccurate);
-    testParams->set ("debug", options.debug);
+      RCP<ParameterList> testParams = parameterList ("FullTsqrVerifier");
+      testParams->set ("cacheSizeHint", options.cacheSizeHint);
+      testParams->set ("numRowsLocal", options.numRowsLocal);
+      testParams->set ("numCols", options.numCols);
+      testParams->set ("testFactorExplicit", options.testFactorExplicit);
+      testParams->set ("testRankRevealing", options.testRankRevealing);
+      testParams->set ("contiguousCacheBlocks", options.contiguousCacheBlocks);
+      testParams->set ("printFieldNames", options.printFieldNames);
+      testParams->set ("printResults", options.printResults);
+      testParams->set ("failIfInaccurate", options.failIfInaccurate);
+      testParams->set ("debug", options.debug);
 
-    testParams->validateParametersAndSetDefaults (*validParams);
-    return testParams;
-  }
+      testParams->validateParametersAndSetDefaults (*validParams);
+      return testParams;
+    }
 
   //
   // Return true if all tests were successful, else false.
   //
   bool
-  test (int argc,
-	char* argv[],
-	const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-	const Teuchos::RCP<KokkosClassic::SerialNode>& node,
-	const bool allowedToPrint)
-  {
-    using TSQR::Test::NullCons;
-    using TSQR::Test::Cons;
-    using Teuchos::null;
-    using Teuchos::ParameterList;
-    using Teuchos::parameterList;
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-    //
-    // Get a default random seed, and set up the Caller (that iterates
-    // the test over all Scalar types of interest).
-    //
-    typedef TSQR::Test::FullTsqrVerifierCaller caller_type;
-    std::vector<int> randomSeed = caller_type::defaultRandomSeed ();
-    caller_type caller (comm, node, randomSeed);
+    test (int argc,
+        char* argv[],
+        const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+        const Teuchos::RCP<KokkosClassic::SerialNode>& node,
+        const bool allowedToPrint)
+    {
+      using TSQR::Test::NullCons;
+      using TSQR::Test::Cons;
+      using Teuchos::null;
+      using Teuchos::ParameterList;
+      using Teuchos::parameterList;
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+      //
+      // Get a default random seed, and set up the Caller (that iterates
+      // the test over all Scalar types of interest).
+      //
+      typedef TSQR::Test::FullTsqrVerifierCaller caller_type;
+      std::vector<int> randomSeed = caller_type::defaultRandomSeed ();
+      caller_type caller (comm, node, randomSeed);
 
-    //
-    // Read command-line options
-    //
-    RCP<const ParameterList> defaultParams = caller.getValidParameterList();
-    CmdLineOptions cmdLineOpts (defaultParams);
-    const bool printedHelp = cmdLineOpts.read (argc, argv, defaultParams, allowedToPrint);
-    // Don't run the tests (and do succeed) if help was printed.
-    if (printedHelp)
-      return true; 
+      //
+      // Read command-line options
+      //
+      RCP<const ParameterList> defaultParams = caller.getValidParameterList();
+      CmdLineOptions cmdLineOpts (defaultParams);
+      const bool printedHelp = cmdLineOpts.read (argc, argv, defaultParams, allowedToPrint);
+      // Don't run the tests (and do succeed) if help was printed.
+      if (printedHelp)
+        return true;
 
-    //
-    // Use read-in command-line options to set up test parameters.
-    //
-    RCP<ParameterList> testParams = testParameters (defaultParams, cmdLineOpts);
-    defaultParams = null; // save a little space 
+      //
+      // Use read-in command-line options to set up test parameters.
+      //
+      RCP<ParameterList> testParams = testParameters (defaultParams, cmdLineOpts);
+      defaultParams = null; // save a little space
 
-    //
-    // Define lists of Scalar types to test.  We keep separate lists
-    // for real and complex types, since callers can control whether
-    // each of these is tested independently on the command line.
-    //
-    typedef Cons<float, Cons<double, NullCons> > real_type_list;
+      //
+      // Define lists of Scalar types to test.  We keep separate lists
+      // for real and complex types, since callers can control whether
+      // each of these is tested independently on the command line.
+      //
+      typedef Cons<float, Cons<double, NullCons> > real_type_list;
 #ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
-    typedef Cons<std::complex<float>, Cons<std::complex<double>, NullCons> > complex_type_list;
+      typedef Cons<std::complex<float>, Cons<std::complex<double>, NullCons> > complex_type_list;
 #endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
 
-    //
-    // Run the tests.  If the tests are set up to fail on
-    // insufficiently inaccurate results, run() will throw an
-    // exception in that case.  Otherwise, the tests return nothing,
-    // and "succeed" if they don't crash or throw an exception.
-    //
-    // The testReal and testComplex options are read in at the command
-    // line, but since they do not apply to all Scalar types, they
-    // don't belong in testParams.
-    //
-    if (cmdLineOpts.testReal)
-      caller.run<real_type_list> (testParams);
+      //
+      // Run the tests.  If the tests are set up to fail on
+      // insufficiently inaccurate results, run() will throw an
+      // exception in that case.  Otherwise, the tests return nothing,
+      // and "succeed" if they don't crash or throw an exception.
+      //
+      // The testReal and testComplex options are read in at the command
+      // line, but since they do not apply to all Scalar types, they
+      // don't belong in testParams.
+      //
+      if (cmdLineOpts.testReal)
+        caller.run<real_type_list> (testParams);
 #ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
-    if (cmdLineOpts.testComplex)
-      caller.run<complex_type_list> (testParams);
+      if (cmdLineOpts.testComplex)
+        caller.run<complex_type_list> (testParams);
 #endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
 
-    return true; // for success
-  }
+      return true; // for success
+    }
 
 } // namespace (anonymous)
 
 
-int 
+  int
 main (int argc, char* argv[])
 {
   using TSQR::Test::NullCons;
@@ -345,7 +345,7 @@ main (int argc, char* argv[])
   std::ostream& err = std::cerr;
 #endif // HAVE_MPI
 
-  RCP<ParameterList> nodeParams = 
+  RCP<ParameterList> nodeParams =
     TSQR::Test::getValidNodeParameters<KokkosClassic::SerialNode> ();
   RCP<KokkosClassic::SerialNode> node =
     TSQR::Test::getNode<KokkosClassic::SerialNode> (nodeParams);
@@ -356,5 +356,3 @@ main (int argc, char* argv[])
     out << "\nEnd Result: TEST PASSED" << endl;
   return 0;
 }
-
-

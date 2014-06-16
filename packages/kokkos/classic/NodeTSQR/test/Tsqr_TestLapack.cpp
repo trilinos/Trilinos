@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -59,8 +59,8 @@
 #include <vector>
 
 
-namespace TSQR { 
-  namespace Trilinos { 
+namespace TSQR {
+  namespace Trilinos {
     namespace Test {
 
       const char docString[] = "This program compares LAPACK\'s QR factorization"
@@ -77,7 +77,7 @@ namespace TSQR {
 	  verify (false),
 	  benchmark (false),
 	  numRows (1000),
-	  numCols (10),  
+	  numCols (10),
 	  numTrials (10),
 #ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
 	  testComplex (true),
@@ -108,11 +108,11 @@ namespace TSQR {
 #endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
 
 	using TSQR::Test::benchmarkLapack;
-	benchmarkLapack (out, 
+	benchmarkLapack (out,
 			 params.numRows,
-			 params.numCols, 
-			 params.numTrials, 
-			 testComplex, 
+			 params.numCols,
+			 params.numTrials,
+			 testComplex,
 			 params.additionalFieldNames,
 			 params.additionalData,
 			 params.printFieldNames,
@@ -120,7 +120,7 @@ namespace TSQR {
       }
 
       static void
-      verify (std::ostream& out, 
+      verify (std::ostream& out,
 	      const LapackTestParameters& params)
       {
 #ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
@@ -130,14 +130,14 @@ namespace TSQR {
 #endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
 
 	using TSQR::Test::verifyLapack;
-	verifyLapack (out, 
-		      params.numRows, 
-		      params.numCols, 
+	verifyLapack (out,
+		      params.numRows,
+		      params.numCols,
 		      testComplex,
 		      params.additionalFieldNames,
 		      params.additionalData,
-		      params.printFieldNames, 
-		      params.humanReadable, 
+		      params.printFieldNames,
+		      params.humanReadable,
 		      params.debug);
       }
 
@@ -150,11 +150,11 @@ namespace TSQR {
       /// \param printedHelp [out] Whether this (MPI) process printed the
       ///   "help" display (summary of command-line options)
       ///
-      /// \return Encapsulation of command-line options 
+      /// \return Encapsulation of command-line options
       static LapackTestParameters
-      parseOptions (int argc, 
-		    char* argv[], 
-		    const bool allowedToPrint, 
+      parseOptions (int argc,
+		    char* argv[],
+		    const bool allowedToPrint,
 		    bool& printedHelp)
       {
 	using std::cerr;
@@ -168,7 +168,7 @@ namespace TSQR {
 	try {
 	  using Teuchos::CommandLineProcessor;
 
-	  CommandLineProcessor cmdLineProc (/* throwExceptions=*/ true, 
+	  CommandLineProcessor cmdLineProc (/* throwExceptions=*/ true,
 					    /* recognizeAllOptions=*/ true);
 	  cmdLineProc.setDocString (docString);
 	  cmdLineProc.setOption ("verify",
@@ -179,22 +179,22 @@ namespace TSQR {
 				 "nobenchmark",
 				 &params.benchmark,
 				 "Test performance");
-	  cmdLineProc.setOption ("nrows", 
-				 &params.numRows, 
+	  cmdLineProc.setOption ("nrows",
+				 &params.numRows,
 				 "Number of rows in the test matrix");
-	  cmdLineProc.setOption ("ncols", 
-				 &params.numCols, 
+	  cmdLineProc.setOption ("ncols",
+				 &params.numCols,
 				 "Number of columns in the test matrix");
-	  cmdLineProc.setOption ("ntrials", 
-				 &params.numTrials, 
+	  cmdLineProc.setOption ("ntrials",
+				 &params.numTrials,
 				 "Number of trials (only used when \"--benchmark\"");
 #ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
-	  cmdLineProc.setOption ("complex", 
+	  cmdLineProc.setOption ("complex",
 				 "nocomplex",
 				 &params.testComplex,
 				 "Test complex arithmetic, as well as real");
 #endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
-	  cmdLineProc.setOption ("field-names", 
+	  cmdLineProc.setOption ("field-names",
 				 &params.additionalFieldNames,
 				 "Any additional field name(s) (comma-delimited "
 				 "string) to add to the benchmark output.  Empty "
@@ -202,18 +202,18 @@ namespace TSQR {
 				 "the benchmark executable, but not (easily) known "
 				 "inside the benchmark -- e.g., environment "
 				 "variables.");
-	  cmdLineProc.setOption ("output-data", 
+	  cmdLineProc.setOption ("output-data",
 				 &params.additionalData,
 				 "Any additional data to add to the output, "
 				 "corresponding to the above field name(s). "
 				 "Empty by default.");
-	  cmdLineProc.setOption ("print-field-names", 
-				 "no-print-field-names", 
-				 &params.printFieldNames, 
+	  cmdLineProc.setOption ("print-field-names",
+				 "no-print-field-names",
+				 &params.printFieldNames,
 				 "Print field names for benchmark output (including "
 				 "any arguments to --field-names).");
-	  cmdLineProc.setOption ("print-trilinos-test-stuff", 
-				 "no-print-trilinos-test-stuff", 
+	  cmdLineProc.setOption ("print-trilinos-test-stuff",
+				 "no-print-trilinos-test-stuff",
 				 &params.printTrilinosTestStuff,
 				 "Print output that makes the Trilinos test "
 				 "framework happy (but makes benchmark results "
@@ -223,21 +223,21 @@ namespace TSQR {
 				 &params.humanReadable,
 				 "If set, make output easy to read by humans "
 				 "(but hard to parse)");
-	  cmdLineProc.setOption ("debug", 
-				 "nodebug", 
-				 &params.debug, 
+	  cmdLineProc.setOption ("debug",
+				 "nodebug",
+				 &params.debug,
 				 "Print debugging information");
 	  cmdLineProc.parse (argc, argv);
-	} 
-	catch (Teuchos::CommandLineProcessor::UnrecognizedOption& e) { 
+	}
+	catch (Teuchos::CommandLineProcessor::UnrecognizedOption& e) {
 	  if (allowedToPrint)
 	    cerr << "Unrecognized command-line option: " << e.what() << endl;
 	  throw e;
 	}
-	catch (Teuchos::CommandLineProcessor::HelpPrinted& e) { 
-	  printedHelp = true; 
+	catch (Teuchos::CommandLineProcessor::HelpPrinted& e) {
+	  printedHelp = true;
 	  return params; // Don't verify parameters in this case
-	} 
+	}
 
 	// Validate command-line options.  We provide default values
 	// for unset options, so we don't have to validate those.
@@ -260,8 +260,8 @@ namespace TSQR {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-int 
-main (int argc, char *argv[]) 
+int
+main (int argc, char *argv[])
 {
   using Teuchos::RCP;
   using TSQR::Trilinos::Test::LapackTestParameters;
@@ -292,7 +292,7 @@ main (int argc, char *argv[])
 
   // Fetch command-line parameters.
   bool printedHelp = false;
-  LapackTestParameters params = 
+  LapackTestParameters params =
     parseOptions (argc, argv, allowedToPrint, printedHelp);
   if (printedHelp)
     return 0;

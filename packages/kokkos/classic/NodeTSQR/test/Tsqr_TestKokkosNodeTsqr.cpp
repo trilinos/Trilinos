@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -57,7 +57,7 @@
 
 
 namespace {
-  // 
+  //
   // Return valid parameter list with default values, corresponding to
   // the given NodeType (Kokkos Node type).
   //
@@ -70,12 +70,12 @@ namespace {
 
 #ifdef HAVE_KOKKOSCLASSIC_TBB
   //
-  // Specialization for TBBNode: 
+  // Specialization for TBBNode:
   // - "Num Threads" (int) option, defaults to -1 for late init.
   //
   template<>
-  Teuchos::RCP<Teuchos::ParameterList> 
-  getValidNodeParameters<KokkosClassic::TBBNode> () 
+  Teuchos::RCP<Teuchos::ParameterList>
+  getValidNodeParameters<KokkosClassic::TBBNode> ()
   {
     using Teuchos::ParameterList;
     using Teuchos::parameterList;
@@ -89,7 +89,7 @@ namespace {
 
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
   //
-  // Specialization for TPINode: 
+  // Specialization for TPINode:
   // - "Num Threads" (int) option, defaults to 0.  This number
   //   seems to be taken more seriously than TBBNode's input.
   //
@@ -97,8 +97,8 @@ namespace {
   //   threads; defaults to 0.
   //
   template<>
-  Teuchos::RCP<Teuchos::ParameterList> 
-  getValidNodeParameters<KokkosClassic::TPINode> () 
+  Teuchos::RCP<Teuchos::ParameterList>
+  getValidNodeParameters<KokkosClassic::TPINode> ()
   {
     using Teuchos::ParameterList;
     using Teuchos::parameterList;
@@ -120,8 +120,8 @@ namespace {
   // Specialization for SerialNode, which takes no parameters.
   //
   template<>
-  Teuchos::RCP<Teuchos::ParameterList> 
-  getValidNodeParameters<KokkosClassic::SerialNode> () 
+  Teuchos::RCP<Teuchos::ParameterList>
+  getValidNodeParameters<KokkosClassic::SerialNode> ()
   {
     using Teuchos::ParameterList;
     using Teuchos::parameterList;
@@ -137,12 +137,12 @@ namespace {
   //
   template<class NodeType>
   Teuchos::RCP<NodeType>
-  getNode (const Teuchos::RCP<Teuchos::ParameterList>& plist, 
-	   const bool debug) 
+  getNode (const Teuchos::RCP<Teuchos::ParameterList>& plist,
+     const bool debug)
   {
     if (debug) {
-      std::cerr << "Instantiating a Kokkos Node of type " 
-		<< Teuchos::TypeNameTraits<NodeType>::name() << std::endl;
+      std::cerr << "Instantiating a Kokkos Node of type "
+    << Teuchos::TypeNameTraits<NodeType>::name() << std::endl;
     }
     return Teuchos::rcp (new NodeType (*plist));
   }
@@ -166,7 +166,7 @@ namespace {
       benchmark (false),
       numPartitions (1),
       numRows (1000),
-      numCols (10),  
+      numCols (10),
       numTrials (10),
       testReal (true),
 #ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
@@ -184,7 +184,7 @@ namespace {
       benchmark (false),
       numPartitions (1),
       numRows (1000),
-      numCols (10),  
+      numCols (10),
       numTrials (10),
       testReal (true),
 #ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
@@ -196,7 +196,7 @@ namespace {
       humanReadable (false),
       debug (false)
     {}
-    
+
     bool verify, benchmark;
     int numPartitions, numRows, numCols, numTrials;
     bool testReal;
@@ -218,43 +218,43 @@ namespace {
     typedef T dispatch_type;
     typedef NodeType node_type;
 
-    static void 
+    static void
     benchmark (const Teuchos::RCP<NodeType>& node,
-	       std::vector<int>&,
-	       const TestParameters& params,
-	       bool& printFieldNames)
+         std::vector<int>&,
+         const TestParameters& params,
+         bool& printFieldNames)
     {
       using TSQR::Test::benchmarkKokkosNodeTsqr;
       benchmarkKokkosNodeTsqr<int, T> (node,
-				       params.numTrials, 
-				       params.numRows, 
-				       params.numCols, 
-				       params.numPartitions,
-				       params.cacheSizeHint,
-				       params.contiguousCacheBlocks,
-				       printFieldNames,
-				       params.humanReadable);
+               params.numTrials,
+               params.numRows,
+               params.numCols,
+               params.numPartitions,
+               params.cacheSizeHint,
+               params.contiguousCacheBlocks,
+               printFieldNames,
+               params.humanReadable);
       printFieldNames = false;
     }
 
-    static void 
+    static void
     verify (const Teuchos::RCP<NodeType>& node,
-	    std::vector<int>& seed,
-	    const TestParameters& params,
-	    bool& printFieldNames)
+      std::vector<int>& seed,
+      const TestParameters& params,
+      bool& printFieldNames)
     {
       TSQR::Random::NormalGenerator<int, T> gen (seed);
       using TSQR::Test::verifyKokkosNodeTsqr;
       verifyKokkosNodeTsqr<int, T> (node,
-				    gen,
-				    params.numRows, 
-				    params.numCols, 
-				    params.numPartitions, 
-				    params.cacheSizeHint,
-				    params.contiguousCacheBlocks,
-				    printFieldNames,
-				    params.humanReadable,
-				    params.debug);
+            gen,
+            params.numRows,
+            params.numCols,
+            params.numPartitions,
+            params.cacheSizeHint,
+            params.contiguousCacheBlocks,
+            printFieldNames,
+            params.humanReadable,
+            params.debug);
       printFieldNames = false;
       // Save the seed for next time, since we can't use the same
       // NormalGenerator for a different Scalar type T.
@@ -277,21 +277,21 @@ namespace {
     // typos.
     typedef typename CdrType::node_type node_type;
 
-    static void 
+    static void
     verify (const Teuchos::RCP<node_type>& node,
-	    std::vector<int>& seed,
-	    const TestParameters& params,
-	    bool& printFieldNames)
+      std::vector<int>& seed,
+      const TestParameters& params,
+      bool& printFieldNames)
     {
       Dispatcher<CarType, node_type>::verify (node, seed, params, printFieldNames);
       CdrType::verify (node, seed, params, printFieldNames);
     }
 
-    static void 
+    static void
     benchmark (const Teuchos::RCP<node_type>& node,
-	       std::vector<int>& seed,
-	       const TestParameters& params,
-	       bool& printFieldNames)
+         std::vector<int>& seed,
+         const TestParameters& params,
+         bool& printFieldNames)
     {
       Dispatcher<CarType, node_type>::benchmark (node, seed, params, printFieldNames);
       CdrType::benchmark (node, seed, params, printFieldNames);
@@ -308,27 +308,27 @@ namespace {
   public:
     typedef NodeType node_type;
 
-    static void 
+    static void
     verify (const Teuchos::RCP<NodeType>& node,
-	    std::vector<int>&,
-	    const TestParameters&,
-	    bool& printFieldNames) {}
+      std::vector<int>&,
+      const TestParameters&,
+      bool& printFieldNames) {}
 
-    static void 
+    static void
     benchmark (const Teuchos::RCP<NodeType>& node,
-	       std::vector<int>&,
-	       const TestParameters&,
-	       bool& printFieldNames) {}
+         std::vector<int>&,
+         const TestParameters&,
+         bool& printFieldNames) {}
   };
 
-  // 
+  //
   // Run the tests for all types of interest.
   // This routine will modify TestParameters.
   //
   template<class NodeType>
   void
   runTests (const Teuchos::RCP<NodeType>& node,
-	    const TestParameters& params)
+      const TestParameters& params)
   {
     // This screams for syntactic sugar, but welcome to C++, the land
     // of verbose obscurity.  NullCons gets to define NodeType for all
@@ -352,11 +352,11 @@ namespace {
     bool printFieldNames = params.printFieldNames;
     if (params.verify) {
       if (params.testReal) {
-	real_tests::verify (node, seed, params, printFieldNames);
+  real_tests::verify (node, seed, params, printFieldNames);
       }
 #ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
       if (params.testComplex) {
-	complex_tests::verify (node, seed, params, printFieldNames);
+  complex_tests::verify (node, seed, params, printFieldNames);
       }
 #endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
     }
@@ -364,11 +364,11 @@ namespace {
     printFieldNames = params.printFieldNames;
     if (params.benchmark) {
       if (params.testReal) {
-	real_tests::benchmark (node, seed, params, printFieldNames);
+  real_tests::benchmark (node, seed, params, printFieldNames);
       }
 #ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
       if (params.testComplex) {
-	complex_tests::benchmark (node, seed, params, printFieldNames);
+  complex_tests::benchmark (node, seed, params, printFieldNames);
       }
 #endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
     }
@@ -388,10 +388,10 @@ namespace {
   //
   // Return an encapsulation of the command-line options.
   TestParameters
-  parseOptions (int argc, 
-		char* argv[], 
-		const bool allowedToPrint, 
-		bool& printedHelp)
+  parseOptions (int argc,
+    char* argv[],
+    const bool allowedToPrint,
+    bool& printedHelp)
   {
     using std::cerr;
     using std::endl;
@@ -411,70 +411,70 @@ namespace {
     try {
       using Teuchos::CommandLineProcessor;
 
-      CommandLineProcessor cmdLineProc (/* throwExceptions=*/ true, 
-					/* recognizeAllOptions=*/ true);
+      CommandLineProcessor cmdLineProc (/* throwExceptions=*/ true,
+          /* recognizeAllOptions=*/ true);
       cmdLineProc.setDocString (docString);
       cmdLineProc.setOption ("verify",
-			     "noverify",
-			     &params.verify,
-			     "Test accuracy");
+           "noverify",
+           &params.verify,
+           "Test accuracy");
       cmdLineProc.setOption ("benchmark",
-			     "nobenchmark",
-			     &params.benchmark,
-			     "Test performance");
-      cmdLineProc.setOption ("numRows", 
-			     &params.numRows, 
-			     "Number of rows in the test matrix");
-      cmdLineProc.setOption ("numCols", 
-			     &params.numCols, 
-			     "Number of columns in the test matrix");
-      cmdLineProc.setOption ("numTrials", 
-			     &params.numTrials, 
-			     "Number of trials (only used when \"--benchmark\"");
-      cmdLineProc.setOption ("testReal", 
-			     "noTestReal",
-			     &params.testReal,
-			     "Test real arithmetic");
+           "nobenchmark",
+           &params.benchmark,
+           "Test performance");
+      cmdLineProc.setOption ("numRows",
+           &params.numRows,
+           "Number of rows in the test matrix");
+      cmdLineProc.setOption ("numCols",
+           &params.numCols,
+           "Number of columns in the test matrix");
+      cmdLineProc.setOption ("numTrials",
+           &params.numTrials,
+           "Number of trials (only used when \"--benchmark\"");
+      cmdLineProc.setOption ("testReal",
+           "noTestReal",
+           &params.testReal,
+           "Test real arithmetic");
 #ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
-      cmdLineProc.setOption ("testComplex", 
-			     "noTestComplex",
-			     &params.testComplex,
-			     "Test complex arithmetic");
+      cmdLineProc.setOption ("testComplex",
+           "noTestComplex",
+           &params.testComplex,
+           "Test complex arithmetic");
 #endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
-      cmdLineProc.setOption ("numPartitions", 
-			     &params.numPartitions,
-			     "Number of partitions to use (max available parallelism)");
-      cmdLineProc.setOption ("cacheSizeHint", 
-			     &cacheSizeHintAsInt, 
-			     "Cache size hint in bytes (0 means pick a reasonable default)");
+      cmdLineProc.setOption ("numPartitions",
+           &params.numPartitions,
+           "Number of partitions to use (max available parallelism)");
+      cmdLineProc.setOption ("cacheSizeHint",
+           &cacheSizeHintAsInt,
+           "Cache size hint in bytes (0 means pick a reasonable default)");
       cmdLineProc.setOption ("contiguousCacheBlocks",
-			     "noncontiguousCacheBlocks",
-			     &params.contiguousCacheBlocks,
-			     "Whether cache blocks should be stored contiguously");
+           "noncontiguousCacheBlocks",
+           &params.contiguousCacheBlocks,
+           "Whether cache blocks should be stored contiguously");
       cmdLineProc.setOption ("printFieldNames",
-			     "noPrintFieldNames",
-			     &params.printFieldNames,
-			     "Print field names (for machine-readable output only)");
+           "noPrintFieldNames",
+           &params.printFieldNames,
+           "Print field names (for machine-readable output only)");
       cmdLineProc.setOption ("humanReadable",
-			     "machineReadable",
-			     &params.humanReadable,
-			     "If set, make output easy to read by humans "
-			     "(but hard to parse)");
-      cmdLineProc.setOption ("debug", 
-			     "noDebug", 
-			     &params.debug, 
-			     "Print debugging information");
+           "machineReadable",
+           &params.humanReadable,
+           "If set, make output easy to read by humans "
+           "(but hard to parse)");
+      cmdLineProc.setOption ("debug",
+           "noDebug",
+           &params.debug,
+           "Print debugging information");
       cmdLineProc.parse (argc, argv);
-    } 
-    catch (Teuchos::CommandLineProcessor::UnrecognizedOption& e) { 
+    }
+    catch (Teuchos::CommandLineProcessor::UnrecognizedOption& e) {
       if (allowedToPrint)
-	cerr << "Unrecognized command-line option: " << e.what() << endl;
+  cerr << "Unrecognized command-line option: " << e.what() << endl;
       throw e;
     }
-    catch (Teuchos::CommandLineProcessor::HelpPrinted& e) { 
-      printedHelp = true; 
+    catch (Teuchos::CommandLineProcessor::HelpPrinted& e) {
+      printedHelp = true;
       return params; // Don't verify parameters in this case
-    } 
+    }
 
     // Validate command-line options.  We provide default values
     // for unset options, so we don't have to validate those.
@@ -490,9 +490,9 @@ namespace {
       throw std::invalid_argument ("\"--numPartitions\" option must be >= 1");
     } else {
       if (cacheSizeHintAsInt < 0) {
-	throw std::invalid_argument ("Cache size hint must be nonnegative");
+  throw std::invalid_argument ("Cache size hint must be nonnegative");
       } else {
-	params.cacheSizeHint = static_cast<size_t> (cacheSizeHintAsInt);
+  params.cacheSizeHint = static_cast<size_t> (cacheSizeHintAsInt);
       }
     }
     return params;
@@ -503,8 +503,8 @@ namespace {
 //
 // The "main" test driver.
 //
-int 
-main (int argc, char *argv[]) 
+int
+main (int argc, char *argv[])
 {
 #ifdef HAVE_MPI
   using Teuchos::Comm;
@@ -541,7 +541,7 @@ main (int argc, char *argv[])
 
   // Fetch command-line parameters.
   bool printedHelp = false;
-  TestParameters params = 
+  TestParameters params =
     parseOptions (argc, argv, allowedToPrint, printedHelp);
   if (printedHelp) {
     return EXIT_SUCCESS;
