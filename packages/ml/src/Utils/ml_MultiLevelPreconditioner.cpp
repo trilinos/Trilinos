@@ -314,9 +314,9 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
 // ================================================ ====== ==== ==== == =
 
 ML_Epetra::MultiLevelPreconditioner::
-MultiLevelPreconditioner(const Epetra_RowMatrix & RowMatrix,
+MultiLevelPreconditioner(const Epetra_RowMatrix & inRowMatrix,
              const bool ComputePrec) :
-  RowMatrix_(&RowMatrix),
+  RowMatrix_(&inRowMatrix),
   RowMatrixAllocated_(0),
   AllocatedRowMatrix_(false)
 {
@@ -335,9 +335,9 @@ MultiLevelPreconditioner(const Epetra_RowMatrix & RowMatrix,
 // ================================================ ====== ==== ==== == =
 
 ML_Epetra::MultiLevelPreconditioner::
-MultiLevelPreconditioner( const Epetra_RowMatrix & RowMatrix,
+MultiLevelPreconditioner( const Epetra_RowMatrix & inRowMatrix,
              const ParameterList & List, const bool ComputePrec) :
-  RowMatrix_(&RowMatrix),
+  RowMatrix_(&inRowMatrix),
   RowMatrixAllocated_(0),
   AllocatedRowMatrix_(false)
 {
@@ -898,9 +898,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetFinestLevelMatrix()
 #endif
     RowMatrix_ = EdgeMatrix_;
   }
-    int NumMyRows;
-    NumMyRows = RowMatrix_->NumMyRows();
-    int N_ghost = RowMatrix_->NumMyCols() - NumMyRows;
+    int numMyRows;
+    numMyRows = RowMatrix_->NumMyRows();
+    int N_ghost = RowMatrix_->NumMyCols() - numMyRows;
 
     if (N_ghost < 0) N_ghost = 0;  // A->NumMyCols() = 0 for an empty matrix
 
@@ -922,15 +922,15 @@ int ML_Epetra::MultiLevelPreconditioner::SetFinestLevelMatrix()
       ml_->Amat[LevelID_[0]].type = -666;
     }
     else if (Avbr) {
-      ML_Init_Amatrix(ml_,LevelID_[0],NumMyRows, NumMyRows, (void *) Avbr);
+      ML_Init_Amatrix(ml_,LevelID_[0],numMyRows, numMyRows, (void *) Avbr);
       ml_->Amat[LevelID_[0]].type = ML_TYPE_VBR_MATRIX;
     }
     else if (Acrs) {
-      ML_Init_Amatrix(ml_,LevelID_[0],NumMyRows, NumMyRows, (void *) Acrs);
+      ML_Init_Amatrix(ml_,LevelID_[0],numMyRows, numMyRows, (void *) Acrs);
       ml_->Amat[LevelID_[0]].type = ML_TYPE_CRS_MATRIX;
     }
     else {
-      ML_Init_Amatrix(ml_,LevelID_[0],NumMyRows, NumMyRows,(void *) RowMatrix_);
+      ML_Init_Amatrix(ml_,LevelID_[0],numMyRows, numMyRows,(void *) RowMatrix_);
       ml_->Amat[LevelID_[0]].type = ML_TYPE_ROW_MATRIX;
     }
     ml_->Amat[LevelID_[0]].N_nonzeros = RowMatrix_->NumMyNonzeros();
@@ -943,7 +943,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetFinestLevelMatrix()
       List_.set("filter: equations", NumPDEEqns_);
       ML_Set_Filter(List_);
       ML_Set_Amatrix_Getrow(ml_, LevelID_[0], ML_Epetra_getrow_Filter,
-                            ML_Epetra_comm_wrapper, NumMyRows+N_ghost);
+                            ML_Epetra_comm_wrapper, numMyRows+N_ghost);
       ML_Set_Amatrix_Matvec(ml_, LevelID_[0], ML_Epetra_matvec_Filter);
     }
     else {
@@ -958,20 +958,20 @@ int ML_Epetra::MultiLevelPreconditioner::SetFinestLevelMatrix()
         }
         ML_Set_Amatrix_Getrow(ml_, LevelID_[0], ML_Epetra_VbrMatrix_getrow,
                               ML_Epetra_VbrMatrix_comm_wrapper,
-                              NumMyRows+N_ghost);
+                              numMyRows+N_ghost);
 
         ML_Set_Amatrix_Matvec(ml_, LevelID_[0], ML_Epetra_VbrMatrix_matvec);
       }
       else if (Acrs) {
         ML_Set_Amatrix_Getrow(ml_, LevelID_[0], ML_Epetra_CrsMatrix_getrow,
                               ML_Epetra_CrsMatrix_comm_wrapper,
-                              NumMyRows+N_ghost);
+                              numMyRows+N_ghost);
 
         ML_Set_Amatrix_Matvec(ml_, LevelID_[0], ML_Epetra_CrsMatrix_matvec);
       }
       else {
         ML_Set_Amatrix_Getrow(ml_, LevelID_[0], ML_Epetra_RowMatrix_getrow,
-                              ML_Epetra_comm_wrapper, NumMyRows+N_ghost);
+                              ML_Epetra_comm_wrapper, numMyRows+N_ghost);
 
         ML_Set_Amatrix_Matvec(ml_, LevelID_[0], ML_Epetra_matvec);
       }
@@ -1169,6 +1169,11 @@ ComputePreconditioner(const bool CheckPreconditioner)
   int MaxCreationLevels = NumLevels_;
 
   ML_Comm_Create(&ml_comm_);
+#ifdef ML_MPI
+  const Epetra_MpiComm *epcomm = dynamic_cast<const Epetra_MpiComm*>(&(RowMatrix_->Comm()));
+  // Get the MPI communicator, as it may not be MPI_COMM_W0RLD, and update the ML comm object
+  if (epcomm) ML_Comm_Set_UsrComm(ml_comm_,epcomm->Comm());
+#endif
   ML_Create(&ml_,MaxCreationLevels);
   ml_->output_level = OutputLevel;
   ml_->comm->ML_nprocs = Comm().NumProc();
@@ -1240,29 +1245,29 @@ ComputePreconditioner(const bool CheckPreconditioner)
     // ====================================================================== //
 
     ML_Create(&ml_nodes_,MaxCreationLevels);
-    ML_Set_Label(ml_nodes_, "nodes");
+    ML_Set_Label(ml_nodes_, const_cast<char*>("nodes"));
 #ifdef HAVE_ML_EPETRAEXT
     NodeMatrix_ = ModifyEpetraMatrixColMap(*NodeMatrix_,
                                            NodeMatrixColMapTrans_,"Node");
 #endif
-    int NumMyRows = NodeMatrix_->NumMyRows();
-    int N_ghost   = NodeMatrix_->NumMyCols() - NumMyRows;
+    int numMyRows = NodeMatrix_->NumMyRows();
+    int N_ghost   = NodeMatrix_->NumMyCols() - numMyRows;
     if (N_ghost < 0) N_ghost = 0;  // A->NumMyCols() = 0 for an empty matrix
 
     const Epetra_CrsMatrix *Acrs=dynamic_cast<const Epetra_CrsMatrix*>(NodeMatrix_);
     if (Acrs != 0) {
-      ML_Init_Amatrix(ml_nodes_,LevelID_[0],NumMyRows,NumMyRows,
+      ML_Init_Amatrix(ml_nodes_,LevelID_[0],numMyRows,numMyRows,
                       (void *) (const_cast<Epetra_CrsMatrix*>(Acrs)));
       ML_Set_Amatrix_Getrow(ml_nodes_, LevelID_[0], ML_Epetra_CrsMatrix_getrow,
-                ML_Epetra_CrsMatrix_comm_wrapper, NumMyRows+N_ghost);
+                ML_Epetra_CrsMatrix_comm_wrapper, numMyRows+N_ghost);
       ML_Set_Amatrix_Matvec(ml_nodes_, LevelID_[0], ML_Epetra_CrsMatrix_matvec);
       ml_nodes_->Amat[LevelID_[0]].type = ML_TYPE_CRS_MATRIX;
     }
     else {
-      ML_Init_Amatrix(ml_nodes_,LevelID_[0],NumMyRows, NumMyRows,
+      ML_Init_Amatrix(ml_nodes_,LevelID_[0],numMyRows, numMyRows,
                       (void *) NodeMatrix_);
       ML_Set_Amatrix_Getrow(ml_nodes_, LevelID_[0], ML_Epetra_getrow,
-                ML_Epetra_comm_wrapper, NumMyRows+N_ghost);
+                ML_Epetra_comm_wrapper, numMyRows+N_ghost);
       ML_Set_Amatrix_Matvec(ml_nodes_, LevelID_[0], ML_Epetra_matvec);
       ml_nodes_->Amat[LevelID_[0]].type = ML_TYPE_ROW_MATRIX;
     }
