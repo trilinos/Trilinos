@@ -62,8 +62,8 @@ public:
   virtual ~Objective() {}
 
   /** \brief Update objective function.  
-                x is a control, 
-                flag = true if control is changed,
+                x is an iterate, 
+                flag = true if the iterate has changed,
                 iter is the outer algorithm iterations count.
   */
   virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {}

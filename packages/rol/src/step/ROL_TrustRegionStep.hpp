@@ -84,6 +84,30 @@ private:
   Real              alpha_init_; // Initial Line Search Parameter for Projected Methods
   int               max_fval_;   // Maximum Function Evaluations for Line Search              
 
+  void updateGradient( Vector<Real> &x, Objective<Real> &obj, Constraints<Real> &con, 
+                       AlgorithmState<Real> &algo_state ) {
+    Teuchos::RCP<StepState<Real> >& state = Step<Real>::get_state();
+    if ( this->useInexact_[1] ) {
+      Real scale0 = 1.e-3;
+      Real scale1 = 2.0;
+      Real gtol1  = scale0*(state->searchSize);
+      Real gtol0  = scale1*gtol1 + 1.0;
+      while ( gtol0 > gtol1*scale1 ) {
+        obj.gradient(*(state->gradientVec),x,gtol1);
+        algo_state.gnorm = this->computeCriticalityMeasure(*(state->gradientVec),x,con);
+        gtol0 = gtol1;
+        gtol1 = scale0*std::min(algo_state.gnorm,state->searchSize);
+      }
+      algo_state.ngrad++;
+    }
+    else {
+      Real gtol = std::sqrt(ROL_EPSILON);
+      obj.gradient(*(state->gradientVec),x,gtol);
+      algo_state.ngrad++;
+      algo_state.gnorm = this->computeCriticalityMeasure(*(state->gradientVec),x,con);
+    }
+  }
+
   Real computeCriticalityMeasure( const Vector<Real> &g, const Vector<Real> &x, Constraints<Real> &con ) {
     if ( con.isActivated() ) {
       Teuchos::RCP<Vector<Real> > xnew = x.clone();
@@ -165,13 +189,13 @@ public:
   */
   void initialize( Vector<Real> &x, Objective<Real> &obj, Constraints<Real> &con, 
                    AlgorithmState<Real> &algo_state ) {
+    Teuchos::RCP<StepState<Real> >& state = Step<Real>::get_state();
+
     algo_state.nfval = 0;
     algo_state.ngrad = 0;
 
     Real ftol = std::sqrt(ROL_EPSILON);
     Real htol = std::sqrt(ROL_EPSILON);
-
-    Teuchos::RCP<StepState<Real> >& state = Step<Real>::get_state();
 
     state->descentVec  = x.clone();
     state->gradientVec = x.clone();
@@ -180,29 +204,15 @@ public:
       con.project(x);
     }
 
+    // Update approximate gradient and evaluate the objective function.
     obj.update(x,true,algo_state.iter);    
-    if ( this->useInexact_[1] ) {
-      Real gtol = 2.0*Step<Real>::state_->searchSize;
-      algo_state.gnorm = Step<Real>::state_->searchSize;
-      while ( gtol > std::min(algo_state.gnorm,Step<Real>::state_->searchSize) ) {
-        gtol = std::min(algo_state.gnorm,Step<Real>::state_->searchSize);
-        obj.gradient(*(state->gradientVec),x,gtol);
-        algo_state.ngrad++;
-        algo_state.gnorm = this->computeCriticalityMeasure(*(state->gradientVec),x,con);
-      }  
-    }
-    else {
-      Real gtol = std::sqrt(ROL_EPSILON);
-      obj.gradient(*(state->gradientVec),x,gtol);
-      algo_state.ngrad++;
-      algo_state.gnorm = this->computeCriticalityMeasure(*(state->gradientVec),x,con);
-    }
+    this->updateGradient(x,obj,con,algo_state);
     algo_state.snorm = 1.e10;
-    algo_state.value = obj.value(x,ftol);
+    algo_state.value = obj.value(x,ftol); // MUST DO SOMETHING HERE WITH FTOL
     algo_state.nfval++;
 
     // Evaluate Objective Function at Cauchy Point
-    if ( Step<Real>::state_->searchSize <= 0.0 ) {
+    if ( state->searchSize <= 0.0 ) {
       Teuchos::RCP<Vector<Real> > Bg = x.clone();
       if ( this->useSecantHessVec_ ) {
         this->secant_->applyB(*Bg,*(state->gradientVec),x);
@@ -219,11 +229,11 @@ public:
       cp->set(*(state->gradientVec)); 
       cp->scale(-alpha);
       obj.update(*cp);
-      Real fnew = obj.value(*cp,ftol);
+      Real fnew = obj.value(*cp,ftol); // MUST DO SOMETHING HERE WITH FTOL
       algo_state.nfval++;
       // Perform Quadratic Interpolation to Determine Initial Trust Region Radius
       Real gs    = (state->gradientVec)->dot(*cp);
-      Step<Real>::state_->searchSize = -gs/(fnew - algo_state.value - gs)*alpha*algo_state.gnorm;
+      state->searchSize = -gs/(fnew - algo_state.value - gs)*alpha*algo_state.gnorm;
     }
   }
 
@@ -231,23 +241,28 @@ public:
   */
   void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, Constraints<Real> &con, 
                 AlgorithmState<Real> &algo_state ) {
+    Teuchos::RCP<StepState<Real> >& state = Step<Real>::get_state();
+
     Real eps = 0.0;
     if ( con.isActivated() ) {
       eps = algo_state.gnorm;
     }
     ProjectedObjective<Real> pObj(obj,con,this->secant_,this->useSecantPrecond_,this->useSecantHessVec_,eps);
-    //ProjectedObjective<Real> pObj(obj,con,*this->secant_,this->useSecantPrecond_,this->useSecantHessVec_);
+
     this->CGflag_ = 0;
     this->CGiter_ = 0;
-    this->trustRegion_->run(s,algo_state.snorm,Step<Real>::state_->searchSize,this->CGflag_,this->CGiter_,
-                            x,*(Step<Real>::state_->gradientVec),algo_state.gnorm,pObj);
+    this->trustRegion_->run(s,algo_state.snorm,state->searchSize,this->CGflag_,this->CGiter_,
+                            x,*(state->gradientVec),algo_state.gnorm,pObj);
   }
 
   /** \brief Update step, if successful.
   */
   void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, Constraints<Real> &con, 
                AlgorithmState<Real> &algo_state ) {
+    Teuchos::RCP<StepState<Real> >& state = Step<Real>::get_state();
+
     Real tol = std::sqrt(ROL_EPSILON);
+
     Real eps = 0.0;
     if ( con.isActivated() ) {
       eps = algo_state.gnorm;
@@ -267,8 +282,8 @@ public:
     this->TR_ngrad_ = 0;
     Real fold = algo_state.value;
     Real fnew = 0.0;
-    this->trustRegion_->update(x,fnew,Step<Real>::state_->searchSize,this->TR_nfval_,this->TR_ngrad_,this->TRflag_,
-                              s,algo_state.snorm,fold,*(Step<Real>::state_->gradientVec),pObj);
+    this->trustRegion_->update(x,fnew,state->searchSize,this->TR_nfval_,this->TR_ngrad_,this->TRflag_,
+                               s,algo_state.snorm,fold,*(state->gradientVec),pObj);
     algo_state.value = fnew;
     algo_state.nfval += this->TR_nfval_;
     algo_state.ngrad += this->TR_ngrad_;
@@ -281,7 +296,7 @@ public:
       if ( con.isActivated() ) {
         // Compute new gradient
         gp = x.clone(); 
-        obj.gradient(*gp,x,tol);
+        obj.gradient(*gp,x,tol); // MUST DO SOMETHING HERE WITH TOL
         algo_state.ngrad++;
         // Compute smoothed step
         Real alpha = 1.0;
@@ -290,7 +305,7 @@ public:
         xnew->axpy(-alpha*this->alpha_init_,*gp);
         con.project(*xnew);
         // Compute new objective value
-        Real ftmp = obj.value(*xnew,tol);
+        Real ftmp = obj.value(*xnew,tol); // MUST DO SOMETHING HERE WITH TOL
         algo_state.nfval++;
         // Perform smoothing
         int cnt = 0;
@@ -299,7 +314,7 @@ public:
           xnew->set(x);
           xnew->axpy(-alpha*this->alpha_init_,*gp);
           con.project(*xnew);
-          ftmp = obj.value(*xnew,tol);
+          ftmp = obj.value(*xnew,tol); // MUST DO SOMETHING HERE WITH TOL
           algo_state.nfval++;
           if ( cnt >= this->max_fval_ ) {
             break;
@@ -311,51 +326,33 @@ public:
         fnew = ftmp;
         x.set(*xnew);
       }
-      // Update Objective Function
-      obj.update(x,true,algo_state.iter);
+
       // Store previous gradient for secant update
       if ( this->secant_ != Teuchos::null ) {
         gp = x.clone();
-        gp->set(*(Step<Real>::state_->gradientVec));
+        gp->set(*(state->gradientVec));
       }
-      // Compute new gradient
-      obj.gradient(*(Step<Real>::state_->gradientVec),x,tol);
-      algo_state.ngrad++;
+
+      // Update objective function and approximate model
+      obj.update(x,true,algo_state.iter);
+      this->updateGradient(x,obj,con,algo_state);
+
       // Update secant information
       if ( this->secant_ != Teuchos::null ) {
         if ( con.isActivated() ) { // Compute new constrained step
           Teuchos::RCP<Vector<Real> > st;
           st->set(x);
           st->axpy(-1.0,*xold);
-          secant_->update(*(Step<Real>::state_->gradientVec),*gp,*st,algo_state.snorm,algo_state.iter+1);
+          secant_->update(*(state->gradientVec),*gp,*st,algo_state.snorm,algo_state.iter+1);
         }
         else {
-          secant_->update(*(Step<Real>::state_->gradientVec),*gp,s,algo_state.snorm,algo_state.iter+1);
+          secant_->update(*(state->gradientVec),*gp,s,algo_state.snorm,algo_state.iter+1);
         }
       }
     }    
   
     // Update algorithm state
     (algo_state.iterateVec)->set(x);
-    if ( con.isActivated() ) {
-      if ( this->useProjectedGrad_ ) {
-        Teuchos::RCP<Vector<Real> > pg = x.clone();
-        pg->set(*(Step<Real>::state_->gradientVec));
-        con.computeProjectedGradient( *pg, x );
-        algo_state.gnorm = pg->norm();
-      }
-      else {
-        Teuchos::RCP<Vector<Real> > xnew = x.clone();
-        xnew->set(x);
-        xnew->axpy(-1.0,*(Step<Real>::state_->gradientVec));
-        con.project(*xnew);
-        xnew->axpy(-1.0,x);
-        algo_state.gnorm = xnew->norm();
-      }
-    }
-    else {
-      algo_state.gnorm = (Step<Real>::state_->gradientVec)->norm();
-    }
   }
 
   /** \brief Print iterate header.
@@ -402,6 +399,8 @@ public:
   /** \brief Print iterate status.
   */
   std::string print( AlgorithmState<Real> & algo_state, bool printHeader = false ) const  {
+    //Teuchos::RCP<StepState<Real> >& state = Step<Real>::get_state();
+
     std::stringstream hist;
     hist << std::scientific << std::setprecision(6);
     if ( algo_state.iter == 0 ) {

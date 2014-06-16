@@ -74,6 +74,9 @@ private:
   Real gamma1_;
   Real gamma2_; 
 
+  int cnt_;
+  Real force_;
+
   Real pRed_;
 
   Real TRsafe_;
@@ -81,12 +84,16 @@ private:
 
   Real alpha_;
 
+  std::vector<bool> useInexact_;
+
+  Real ftol_old_;
+
 public:
 
   virtual ~TrustRegion() {}
 
   // Constructor
-  TrustRegion( Teuchos::ParameterList & parlist ) {
+  TrustRegion( Teuchos::ParameterList & parlist ) : cnt_(0), force_(1.0), ftol_old_(1.0) {
     // Unravel Parameter List
     // Enumerations
     etr_ = StringToETrustRegion( parlist.get("Trust-Region Subproblem Solver Type",  "Cauchy Point"));
@@ -108,6 +115,12 @@ public:
     }
     eps_    = TRsafe_*ROL_EPSILON;
     alpha_  = -1.0;
+
+    // Inexactness Information
+    useInexact_.clear();
+    useInexact_.push_back(parlist.get("Use Inexact Objective Function", false));
+    useInexact_.push_back(parlist.get("Use Inexact Gradient", false));
+    useInexact_.push_back(parlist.get("Use Inexact Hessian-Times-A-Vector", false));
   }
 
   void update( Vector<Real> &x, Real &fnew, Real &del, 
@@ -121,12 +134,35 @@ public:
     Teuchos::RCP<Vector<Real> > xnew = x.clone();
     xnew->set(x);
     xnew->axpy(1.0,s);
-    pObj.update(*xnew);
-    fnew = pObj.value(*xnew,tol);
+    /***************************************************************************************************/
+    // BEGIN INEXACT OBJECTIVE FUNCTION COMPUTATION
+    /***************************************************************************************************/
+    Real fold1 = fold;
+    if ( this->useInexact_[0] ) {
+      if ( !(this->cnt_%10) && (this->cnt_ != 0) ) {
+        this->force_ *= 0.1;
+      }
+      Real scale = 1.e-3; 
+      Real ftol  = scale*std::min(std::max(this->pRed_,0.0),this->force_);
+      if ( this->ftol_old_ > ftol || this->cnt_ == 0 ) {
+        this->ftol_old_ = ftol;
+        fold1 = pObj.value(x,this->ftol_old_);
+      }
+      pObj.update(*xnew,true);
+      fnew = pObj.value(*xnew,ftol);
+      this->cnt_++;
+    }
+    else {
+      pObj.update(*xnew);
+      fnew = pObj.value(*xnew,tol);
+    }
     nfval = 1;   
+    Real aRed = fold1 - fnew;
+    /***************************************************************************************************/
+    // FINISH INEXACT OBJECTIVE FUNCTION COMPUTATION
+    /***************************************************************************************************/
 
     // Compute Ratio of Actual and Predicted Reduction
-    Real aRed = fold - fnew;
     Real rho  = 0.0; 
     if ((std::abs(aRed) < this->eps_) && (std::abs(this->pRed_) < this->eps_)) {
       rho = 1.0; 

@@ -365,7 +365,10 @@ public:
       fvalp  = fval;
 
       if ( alpha1 <= 0.1*alpha ) {
-        alpha = 0.1*alpha;
+        alpha *= 0.1;
+      }
+      else if ( alpha1 >= 0.5*alpha ) {
+        alpha *= 0.5;
       }
       else {
         alpha = alpha1;
