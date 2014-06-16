@@ -124,7 +124,8 @@ namespace {
     // order must be the same as in the original Map.
     {
       ArrayView<const GO> gblMeshInds = meshMap.getNodeElementList ();
-      TEST_EQUALITY( gblMeshInds.size (), meshMap.getNodeNumElements () );
+      TEST_EQUALITY( static_cast<size_t> (gblMeshInds.size ()),
+                     static_cast<size_t> (meshMap.getNodeNumElements ()) );
       Array<GO> gblPointIndsIdeal (gblMeshInds.size () * static_cast<size_type> (blockSize));
       for (size_type m = 0; m < gblMeshInds.size (); ++m) {
         const size_type offset = m * static_cast<size_type> (blockSize);
@@ -135,10 +136,12 @@ namespace {
         }
       }
 
-      TEST_EQUALITY( gblPointIndsIdeal.size (), pointMap.getNodeNumElements () );
+      TEST_EQUALITY( static_cast<size_t> (gblPointIndsIdeal.size ()),
+                     static_cast<size_t> (pointMap.getNodeNumElements ()) );
       ArrayView<const GO> gblPointIndsActual = pointMap.getNodeElementList ();
       TEST_EQUALITY( gblPointIndsIdeal.size (), gblPointIndsActual.size () );
-      if (gblPointIndsIdeal.size () == pointMap.getNodeNumElements ()) {
+      if (static_cast<size_t> (gblPointIndsIdeal.size ()) ==
+          static_cast<size_t> (pointMap.getNodeNumElements ())) {
         TEST_COMPARE_ARRAYS( gblPointIndsIdeal, gblPointIndsActual );
       }
     }
@@ -169,10 +172,10 @@ namespace {
 
     // Check that the point Map has the right numbers of global and
     // local indices.
-    TEST_EQUALITY( ovrlpngPointMap.getGlobalNumElements (),
-                   ovrlpngMeshMap.getGlobalNumElements () * static_cast<GST> (blockSize) );
-    TEST_EQUALITY( ovrlpngPointMap.getNodeNumElements (),
-                   ovrlpngMeshMap.getNodeNumElements () * static_cast<GST> (blockSize) );
+    TEST_EQUALITY( static_cast<GST> (ovrlpngPointMap.getGlobalNumElements ()),
+                   static_cast<GST> (ovrlpngMeshMap.getGlobalNumElements ()) * static_cast<GST> (blockSize) );
+    TEST_EQUALITY( static_cast<size_t> (ovrlpngPointMap.getNodeNumElements ()),
+                   static_cast<size_t> (ovrlpngMeshMap.getNodeNumElements ()) * static_cast<size_t> (blockSize) );
 
     // If a GID g_mesh is in the input mesh Map on a process, and if
     // the block size is b, then the GID g_point := g_mesh * b must be
@@ -180,7 +183,8 @@ namespace {
     // order must be the same as in the original Map.
     {
       ArrayView<const GO> gblMeshInds = ovrlpngMeshMap.getNodeElementList ();
-      TEST_EQUALITY( gblMeshInds.size (), ovrlpngMeshMap.getNodeNumElements () );
+      TEST_EQUALITY( static_cast<size_t> (gblMeshInds.size ()),
+                     static_cast<size_t> (ovrlpngMeshMap.getNodeNumElements ()) );
       Array<GO> gblPointIndsIdeal (gblMeshInds.size () * static_cast<size_type> (blockSize));
       for (size_type m = 0; m < gblMeshInds.size (); ++m) {
         const size_type offset = m * static_cast<size_type> (blockSize);
@@ -191,10 +195,12 @@ namespace {
         }
       }
 
-      TEST_EQUALITY( gblPointIndsIdeal.size (), ovrlpngPointMap.getNodeNumElements () );
+      TEST_EQUALITY( static_cast<size_t> (gblPointIndsIdeal.size ()),
+                     static_cast<size_t> (ovrlpngPointMap.getNodeNumElements ()) );
       ArrayView<const GO> gblPointIndsActual = ovrlpngPointMap.getNodeElementList ();
       TEST_EQUALITY( gblPointIndsIdeal.size (), gblPointIndsActual.size () );
-      if (gblPointIndsIdeal.size () == ovrlpngPointMap.getNodeNumElements ()) {
+      if (static_cast<size_t> (gblPointIndsIdeal.size ()) ==
+          static_cast<size_t> (ovrlpngPointMap.getNodeNumElements ())) {
         TEST_COMPARE_ARRAYS( gblPointIndsIdeal, gblPointIndsActual );
       }
     }

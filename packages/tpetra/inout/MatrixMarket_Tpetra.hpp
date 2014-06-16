@@ -5476,7 +5476,6 @@ namespace Tpetra {
         using Teuchos::TypeNameTraits;
         using Teuchos::wait;
         using std::endl;
-        typedef local_ordinal_type LO;
         typedef global_ordinal_type GO;
         typedef int pid_type;
 
