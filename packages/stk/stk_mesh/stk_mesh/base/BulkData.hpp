@@ -772,6 +772,18 @@ public:
     return m_entity_sync_counts[entity.local_offset()];
   }
 
+  enum edgeSharing { NOT_KNOWN=0, POSSIBLY_SHARED=1, IS_SHARED=2 };
+
+  void markEdge(Entity entity, edgeSharing sharedType)
+  {
+      m_mark_edge[entity.local_offset()] = static_cast<int>(sharedType);
+  }
+
+  edgeSharing isEdgeMarked(Entity entity) const
+  {
+      return static_cast<edgeSharing>(m_mark_edge[entity.local_offset()]);
+  }
+
   Bucket & bucket(Entity entity) const
   {
     entity_getter_debug_check(entity);
@@ -893,6 +905,7 @@ public:
     entity_setter_debug_check(entity);
 
     m_entity_states[entity.local_offset()] = static_cast<uint16_t>(entity_state);
+    m_mark_edge[entity.local_offset()] = 0;
   }
 
   bool set_parallel_owner_rank(Entity entity, int in_owner_rank)
@@ -1205,6 +1218,7 @@ private:
 
   std::vector<EntityKey>   m_entity_keys;
   std::vector<uint16_t>    m_entity_states;
+  std::vector<int>         m_mark_edge;
   std::vector<uint16_t>    m_closure_count;
   std::vector<size_t>      m_entity_sync_counts;
   std::vector<unsigned>    m_local_ids;

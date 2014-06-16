@@ -67,6 +67,197 @@ std::vector<DynConnData> DynConnMetrics::m_data;
 #endif
 }
 
+struct shared_edge_type
+{
+  stk::topology::topology_t topology;
+  EntityKey                 nodes[4];
+  EntityKey                 local_key;
+  EntityKey                 global_key;
+  std::vector<int>          sharing_procs;
+
+  friend inline bool operator < (shared_edge_type const& l, shared_edge_type const& r)
+  {
+    if (l.topology < r.topology)   return true;
+    if (l.topology > r.topology)   return false;
+    if ( l.nodes[0] < r.nodes[0] ) return true;
+    if ( l.nodes[0] > r.nodes[0] ) return false;
+
+    return l.nodes[1] < r.nodes[1];
+  }
+
+  friend inline bool operator == (shared_edge_type const& l, shared_edge_type const& r)
+  {
+
+    bool sameTopologyAndNodes =  (l.topology == r.topology)
+           && (l.nodes[0] == r.nodes[0])
+           && (l.nodes[1] == r.nodes[1]);
+//    bool sameKey = ( l.local_key == r.local_key );
+//    return sameTopologyAndNodes || sameKey;
+    return sameTopologyAndNodes;
+  }
+};
+
+
+void update_shared_edges_global_ids( BulkData & mesh, std::vector<shared_edge_type> & shared_edge_map)
+{
+  //sort the edges for ease of lookup
+  std::sort(shared_edge_map.begin(), shared_edge_map.end());
+
+  std::vector< std::vector<shared_edge_type> >  shared_edges(mesh.parallel_size());
+
+  for (std::vector<shared_edge_type>::const_iterator itr = shared_edge_map.begin(),
+                                            end = shared_edge_map.end();
+                                            itr != end;
+                                            ++itr )
+  {
+    //find process that share this edge;
+
+    PairIterEntityComm left_shared = mesh.entity_comm_sharing( itr->nodes[0] );
+    PairIterEntityComm right_shared = mesh.entity_comm_sharing( itr->nodes[1] );
+
+    EntityCommInfoVector shared_processes;
+
+    std::set_intersection( left_shared.first, left_shared.second,
+                           right_shared.first, right_shared.second,
+                           std::back_inserter(shared_processes)
+                         );
+
+    for (EntityCommInfoVector::const_iterator comm_itr = shared_processes.begin(),
+                                        comm_end = shared_processes.end();
+                                        comm_itr != comm_end;
+                                        ++comm_itr )
+    {
+      if (comm_itr->proc != mesh.parallel_rank())
+        shared_edges[comm_itr->proc].push_back(*itr);
+    }
+  }
+
+  CommAll comm( mesh.parallel() );
+
+  //pack send buffers
+  for (int allocation_pass=0; allocation_pass<2; ++allocation_pass) {
+    if (allocation_pass==1) {
+     comm.allocate_buffers( mesh.parallel_size() /4, 0);
+    }
+
+    for (int proc=0, parallel_size = mesh.parallel_size(); proc<parallel_size; ++proc) {
+      if (proc == mesh.parallel_rank())
+      {
+          continue;
+      }
+      for (size_t e=0, num_shared = shared_edges[proc].size(); e < num_shared; ++e) {
+        shared_edge_type const & sedge = shared_edges[proc][e];
+        comm.send_buffer(proc).pack<stk::topology::topology_t>(sedge.topology)
+        .pack<EntityKey>(sedge.nodes[0])
+        .pack<EntityKey>(sedge.nodes[1])
+        .pack<EntityKey>(sedge.local_key);
+      }
+    }
+  }
+
+  comm.communicate();
+
+  for(int ip = mesh.parallel_size()-1; ip >= 0; --ip)
+  {
+      if(ip == mesh.parallel_rank())
+          continue;
+
+      CommBuffer & buf = comm.recv_buffer(ip);
+      while(buf.remaining())
+      {
+          shared_edge_type sedge;
+
+          buf.unpack<stk::topology::topology_t>(sedge.topology)
+                  .unpack<EntityKey>(sedge.nodes[0])
+                  .unpack<EntityKey>(sedge.nodes[1])
+                  .unpack<EntityKey>(sedge.global_key);
+
+          std::vector<shared_edge_type>::iterator shared_itr = std::lower_bound(shared_edge_map.begin(), shared_edge_map.end(), sedge);
+
+          //update the global global_key
+          if(shared_itr != shared_edge_map.end() && *shared_itr == sedge)
+          {
+              Entity entity = mesh.get_entity(shared_itr->local_key);
+              shared_itr->sharing_procs.push_back(ip);
+              if(ip < mesh.parallel_rank())
+              {
+                  shared_itr->global_key = sedge.global_key;
+              }
+              mesh.markEdge(entity, BulkData::IS_SHARED);
+          }
+      }
+  }
+
+  const unsigned commIdOfSharedEntities = 0;
+  //update the entity keys
+
+  for (size_t i=0, e=shared_edge_map.size(); i<e; ++i) {
+    Entity edge = mesh.get_entity(shared_edge_map[i].local_key);
+    if (shared_edge_map[i].global_key != shared_edge_map[i].local_key) {
+      mesh.internal_change_entity_key(shared_edge_map[i].local_key, shared_edge_map[i].global_key, edge);
+    }
+    for(size_t j=0; j<shared_edge_map[i].sharing_procs.size(); j++)
+    {
+        mesh.entity_comm_insert(edge, EntityCommInfo(commIdOfSharedEntities, shared_edge_map[i].sharing_procs[j]));
+    }
+  }
+}
+
+void markEdgesForResolvingSharingInfoUsingNodes(stk::mesh::BulkData &mesh, stk::mesh::EntityRank entityRank, std::vector<shared_edge_type>& shared_edges)
+{
+    const stk::mesh::BucketVector& buckets = mesh.buckets(entityRank);
+
+    for(size_t bucketIndex = 0; bucketIndex < buckets.size(); bucketIndex++)
+    {
+        const stk::mesh::Bucket& bucket = *buckets[bucketIndex];
+        stk::topology topology = bucket.topology();
+        for(size_t i = 0; i < bucket.size(); i++)
+        {
+            Entity entity = bucket[i];
+            const unsigned num_nodes = bucket.num_nodes(i);
+
+            if ( num_nodes != 0 )
+            {
+                if(stk::mesh::in_owned_closure(mesh, entity, mesh.parallel_rank()))
+                {
+                    EntityVector edge_nodes(num_nodes);
+
+                    Entity const * nodes = bucket.begin_nodes(i);
+                    edge_nodes.assign(nodes, nodes+num_nodes);
+
+                    //sort edge nodes into lexicographical smallest permutation
+                    if(EntityLess(mesh)(edge_nodes[1], edge_nodes[0]))
+                    {
+                        std::swap(edge_nodes[0], edge_nodes[1]);
+                    }
+
+                    bool shared_edge = true;
+                    for(size_t n = 0; n < num_nodes; ++n)
+                    {
+                        Entity node = edge_nodes[n];
+                        shared_edge = shared_edge && mesh.bucket(node).shared();
+                    }
+
+                    if(shared_edge)
+                    {
+                        shared_edge_type sedge;
+                        sedge.topology = topology;
+                        for(size_t n = 0; n < num_nodes; ++n)
+                        {
+                            sedge.nodes[n] = mesh.entity_key(edge_nodes[n]);
+                        }
+                        const EntityKey &edge_key = mesh.entity_key(entity);
+                        sedge.local_key = edge_key;
+                        sedge.global_key = edge_key;
+                        shared_edges.push_back(sedge);
+                        mesh.markEdge(entity, BulkData::POSSIBLY_SHARED);
+                    }
+                }
+            }
+        }
+    }
+}
+
 parallel::DistributedIndex::KeySpanVector
 convert_entity_keys_to_spans( const MetaData & meta )
 {
@@ -132,6 +323,7 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
     m_mesh_indexes(),
     m_entity_keys(),
     m_entity_states(),
+    m_mark_edge(),
     m_closure_count(),
     m_entity_sync_counts(),
     m_local_ids(),
@@ -706,6 +898,7 @@ size_t BulkData::generate_next_local_offset(size_t preferred_offset)
     m_mesh_indexes.push_back(mesh_index);
     m_entity_keys.push_back(invalid_key);
     m_entity_states.push_back(Created);
+    m_mark_edge.push_back(0);
     m_closure_count.push_back(static_cast<uint16_t>(0));
     m_entity_sync_counts.push_back(0);
     m_local_ids.push_back(stk::mesh::GetInvalidLocalId());
@@ -724,6 +917,7 @@ size_t BulkData::generate_next_local_offset(size_t preferred_offset)
 
     m_mesh_indexes[new_local_offset] = mesh_index;
     m_entity_keys[new_local_offset] = invalid_key;
+    m_mark_edge[new_local_offset] = 0;
     m_entity_states[new_local_offset] = Created;
     m_closure_count[new_local_offset] = static_cast<uint16_t>(0);
     m_entity_sync_counts[new_local_offset] = 0;
@@ -758,6 +952,7 @@ void BulkData::initialize_arrays()
   m_entity_keys.push_back(invalid_key);
 
   m_entity_states.push_back(Deleted);
+  m_mark_edge.push_back(0);
   m_closure_count.push_back(static_cast<uint16_t>(0));
   m_entity_sync_counts.push_back(0);
   m_local_ids.push_back(stk::mesh::GetInvalidLocalId());
@@ -950,6 +1145,7 @@ bool BulkData::destroy_entity( Entity entity, bool was_ghost )
   bucket(entity).getPartition()->remove(entity);
   m_entity_repo.destroy_entity(key, entity );
   m_entity_states[entity.local_offset()] = Deleted;
+  m_mark_edge[entity.local_offset()] = 0;
   m_closure_count[entity.local_offset()] = static_cast<uint16_t>(0u);
   if ( !ghost ) {
     m_deleted_entities_current_modification_cycle.push_front(entity.local_offset());
@@ -4322,25 +4518,32 @@ void communicate_entity_modification( const BulkData & mesh ,
 //  * Comm lists for shared entities are up-to-date.
 //  * shared_new contains all entities that were modified/created on a
 //    different process
+
 void BulkData::internal_update_distributed_index(
   std::vector<Entity> & shared_new )
 {
   Trace_("stk::mesh::BulkData::internal_update_distributed_index");
   BABBLE_STK_PARALLEL_COMM(m_parallel_machine, "      entered internal_update_distributed_index");
 
-  parallel::DistributedIndex::KeyTypeVector
-    local_created_or_modified ; // only store locally owned/shared entities
+  std::vector<EntityKey> entity_keys;
+
+  parallel::DistributedIndex::KeyTypeVector local_created_or_modified ; // only store locally owned/shared entities
+
+  std::vector<shared_edge_type> shared_edges;
+  markEdgesForResolvingSharingInfoUsingNodes(*this, stk::topology::EDGE_RANK, shared_edges);
 
   // Iterate over all entities known to this process, putting
   // modified shared/owned entities in local_created_or_modified.
   size_t num_created_or_modified = 0;
-  for ( impl::EntityRepository::const_iterator
-        i = m_entity_repo.begin() ; i != m_entity_repo.end() ; ++i ) {
 
+  for ( impl::EntityRepository::const_iterator
+        i = m_entity_repo.begin() ; i != m_entity_repo.end() ; ++i )
+  {
     Entity entity = i->second ;
 
-    if ( state(entity) != Unchanged &&
-         in_owned_closure( *this, entity , m_parallel_rank ) ) {
+    if ( state(entity) != Unchanged &&  isEdgeMarked(entity)==BulkData::NOT_KNOWN &&
+         in_owned_closure( *this, entity , m_parallel_rank ) )
+    {
       // Has been changed and is in owned closure, may be shared
       ++num_created_or_modified;
     }
@@ -4349,12 +4552,13 @@ void BulkData::internal_update_distributed_index(
   local_created_or_modified.reserve(num_created_or_modified);
 
   for ( impl::EntityRepository::const_iterator
-        i = m_entity_repo.begin() ; i != m_entity_repo.end() ; ++i ) {
-
+        i = m_entity_repo.begin() ; i != m_entity_repo.end() ; ++i )
+  {
     Entity entity = i->second ;
 
-    if ( state(entity) != Unchanged &&
-         in_owned_closure(*this, entity , m_parallel_rank ) ) {
+    if ( state(entity) != Unchanged &&  isEdgeMarked(entity)==BulkData::NOT_KNOWN &&
+         in_owned_closure(*this, entity , m_parallel_rank ) )
+    {
       // Has been changed and is in owned closure, may be shared
       local_created_or_modified.push_back( entity_key(entity) );
     }
@@ -4368,7 +4572,8 @@ void BulkData::internal_update_distributed_index(
     m_entities_index.update_keys( begin, end );
   }
 
-  if (parallel_size() > 1) {
+  if (parallel_size() > 1)
+  {
     // Retrieve data regarding which processes use the local_created_or_modified
     // including this process.
     parallel::DistributedIndex::KeyProcVector global_created_or_modified ;
@@ -4383,6 +4588,7 @@ void BulkData::internal_update_distributed_index(
       // Iterate over all global modifications to this entity, this vector is
       // sorted, so we're guaranteed that all modifications to a particular
       // entities will be adjacent in this vector.
+
       for ( parallel::DistributedIndex::KeyProcVector::iterator
               i =  global_created_or_modified.begin() ;
             i != global_created_or_modified.end() ; ++i ) {
@@ -4392,13 +4598,11 @@ void BulkData::internal_update_distributed_index(
 
         if ( m_parallel_rank != modifying_proc ) {
           // Another process also created or updated this entity.
-
           // Only want to look up entities at most once
           if ( !is_valid(entity) || entity_key(entity) != key ) {
             // Have not looked this entity up by key
             entity = get_entity( key );
-
-            shared_new.push_back( entity );
+            entity_keys.push_back(key);
           }
 
           // Add the other_process to the entity's sharing info.
@@ -4407,7 +4611,28 @@ void BulkData::internal_update_distributed_index(
       }
     }
   }
-  // BABBLE_STK_PARALLEL_COMM(m_parallel_machine, "      exiting internal_update_distributed_index");
+
+  update_shared_edges_global_ids( *this, shared_edges );
+
+  for (size_t i=0; i<shared_edges.size();i++)
+  {
+      Entity entity = get_entity(shared_edges[i].global_key);
+      if ( isEdgeMarked(entity) == BulkData::IS_SHARED )
+      {
+          entity_keys.push_back(shared_edges[i].global_key);
+      }
+  }
+
+  std::fill(m_mark_edge.begin(), m_mark_edge.end(), static_cast<int>(BulkData::NOT_KNOWN));
+
+  std::sort(entity_keys.begin(), entity_keys.end());
+
+  shared_new.clear();
+  shared_new.resize(entity_keys.size());
+  for (size_t i=0;i<entity_keys.size();i++)
+  {
+      shared_new[i] = get_entity(entity_keys[i]);
+  }
 }
 
 //----------------------------------------------------------------------
