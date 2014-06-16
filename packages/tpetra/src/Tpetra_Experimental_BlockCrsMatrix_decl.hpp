@@ -372,7 +372,7 @@ public:
   /// as the target, we clear this flag.  (Note to developers: we
   /// clear it at the beginning of checkSizes().)
   bool localError () const {
-    return localError_;
+    return *localError_;
   }
 
   /// \brief The current stream of error messages.
@@ -390,7 +390,7 @@ public:
   /// output stream you use.  On some MPI implementations, you may
   /// need to send the string to Process 0 for printing.
   std::string errorMessages () const {
-    return errs_.is_null () ? std::string ("") : errs_->str ();
+    return (*errs_).is_null () ? std::string ("") : (*errs_)->str ();
   }
 
 protected:
@@ -527,10 +527,24 @@ private:
   /// \brief Whether this object on the calling process is in an error state.
   ///
   /// See the documentation of localError() for details.
-  bool localError_;
+  ///
+  /// The outer pointer is always nonnull.  Using a pointer rather
+  /// than a \c bool value here ensures that all views of this object
+  /// have access to the error state, because all views have the same
+  /// (nonnull at construction) pointer.
+  ///
+  /// FIXME (mfh 16 Jun 2014) Use a Kokkos::View<bool, DeviceType>
+  /// here, so that read access to localError_ will be thread safe.
+  Teuchos::RCP<bool> localError_;
 
-  //! Stream of error messages.  This is null if localError is false.
-  Teuchos::RCP<std::ostringstream> errs_;
+  /// \brief Stream of error messages.
+  ///
+  /// The outer pointer is always nonnull, but the inner pointer is
+  /// only nonnull if localError_ is true.  Using a pointer to a
+  /// pointer ensures that all views of this object have access to the
+  /// error stream, because all views have the same (nonnull at
+  /// construction) outer pointer.
+  Teuchos::RCP<Teuchos::RCP<std::ostringstream> > errs_;
 
   /// \brief Global sparse matrix-vector multiply for the transpose or
   ///   conjugate transpose cases.

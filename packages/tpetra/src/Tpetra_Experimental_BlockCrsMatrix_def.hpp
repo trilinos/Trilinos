@@ -64,7 +64,8 @@ namespace Experimental {
     Y_rowMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
     columnPadding_ (0), // no padding by default
     rowMajor_ (true), // row major blocks by default
-    localError_ (false)
+    localError_ (new bool (false)),
+    errs_ (new Teuchos::RCP<std::ostringstream> ()) // ptr to a null ptr
   {}
 
   template<class Scalar, class LO, class GO, class Node>
@@ -82,7 +83,8 @@ namespace Experimental {
     Y_rowMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
     columnPadding_ (0), // no padding by default
     rowMajor_ (true), // row major blocks by default
-    localError_ (false)
+    localError_ (new bool (false)),
+    errs_ (new Teuchos::RCP<std::ostringstream> ()) // ptr to a null ptr
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! graph_.isSorted (), std::invalid_argument, "Tpetra::Experimental::"
@@ -126,7 +128,8 @@ namespace Experimental {
     Y_rowMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
     columnPadding_ (0), // no padding by default
     rowMajor_ (true), // row major blocks by default
-    localError_ (false)
+    localError_ (new bool (false)),
+    errs_ (new Teuchos::RCP<std::ostringstream> ()) // ptr to a null ptr
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! graph_.isSorted (), std::invalid_argument, "Tpetra::Experimental::"
@@ -905,8 +908,8 @@ namespace Experimental {
     const this_type* src = dynamic_cast<const this_type* > (&source);
 
     // Clear out the current local error state.
-    const_cast<this_type*> (this)->localError_ = false;
-    errs_ = Teuchos::null;
+    * (const_cast<this_type*> (this)->localError_) = false;
+    *errs_ = Teuchos::null;
 
     // We don't allow block sizes to be inconsistent across processes,
     // but it's possible due to user error.  It costs an all-reduce to
@@ -917,14 +920,14 @@ namespace Experimental {
         ! this->graph_.isFillComplete () ||
         src->graph_.getColMap ().is_null () ||
         this->graph_.getColMap ().is_null ()) {
-      localError_ = true;
-      if (errs_.is_null ()) {
-        errs_ = Teuchos::rcp (new std::ostringstream ());
+      *localError_ = true;
+      if ((*errs_).is_null ()) {
+        *errs_ = Teuchos::rcp (new std::ostringstream ());
       }
     }
 
     if (src == NULL) {
-      *errs_ << "checkSizes: The source object of the Import or Export "
+      **errs_ << "checkSizes: The source object of the Import or Export "
         "must be a BlockCrsMatrix with the same template parameters as the "
         "target object." << std::endl;
     }
@@ -932,28 +935,28 @@ namespace Experimental {
       // Use a string of ifs, not if-elseifs, because we want to know
       // all the errors.
       if (src->getBlockSize () != this->getBlockSize ()) {
-        *errs_ << "checkSizes: The source and target objects of the Import or "
+        **errs_ << "checkSizes: The source and target objects of the Import or "
                << "Export must have the same block sizes.  The source's block "
                << "size = " << src->getBlockSize () << " != the target's block "
                << "size = " << this->getBlockSize () << "." << std::endl;
       }
       if (! src->graph_.isFillComplete ()) {
-        *errs_ << "checkSizes: The source object of the Import or Export is "
+        **errs_ << "checkSizes: The source object of the Import or Export is "
           "not fill complete.  Both source and target objects must be fill "
           "complete." << std::endl;
       }
       if (! this->graph_.isFillComplete ()) {
-        *errs_ << "checkSizes: The target object of the Import or Export is "
+        **errs_ << "checkSizes: The target object of the Import or Export is "
           "not fill complete.  Both source and target objects must be fill "
           "complete." << std::endl;
       }
       if (src->graph_.getColMap ().is_null ()) {
-        *errs_ << "checkSizes: The source object of the Import or Export does "
+        **errs_ << "checkSizes: The source object of the Import or Export does "
           "not have a column Map.  Both source and target objects must have "
           "column Maps." << std::endl;
       }
       if (this->graph_.getColMap ().is_null ()) {
-        *errs_ << "checkSizes: The target object of the Import or Export does "
+        **errs_ << "checkSizes: The target object of the Import or Export does "
           "not have a column Map.  Both source and target objects must have "
           "column Maps." << std::endl;
       }
@@ -978,11 +981,11 @@ namespace Experimental {
     typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
     const this_type* src = dynamic_cast<const this_type* > (&source);
     if (src == NULL) {
-      this->localError_ = true;
-      if (errs_.is_null ()) {
-        errs_ = Teuchos::rcp (new std::ostringstream ());
+      * (this->localError_) = true;
+      if ((*errs_).is_null ()) {
+        *errs_ = Teuchos::rcp (new std::ostringstream ());
       }
-      *errs_ << "copyAndPermute: The source object of the Import or Export is "
+      **errs_ << "copyAndPermute: The source object of the Import or Export is "
         "either not a BlockCrsMatrix, or does not have the right template "
         "parameters.  checkSizes() should have caught this.  "
         "Please report this bug to the Tpetra developers." << std::endl;
@@ -1041,11 +1044,11 @@ namespace Experimental {
     // allowed, but possible due to user error.)
 
     if (srcInvalidRow || dstInvalidCol) {
-      this->localError_ = true;
-      if (errs_.is_null ()) {
-        errs_ = Teuchos::rcp (new std::ostringstream ());
+      * (this->localError_) = true;
+      if ((*errs_).is_null ()) {
+        *errs_ = Teuchos::rcp (new std::ostringstream ());
       }
-      *errs_ << "copyAndPermute: The graph structure of the source of the "
+      **errs_ << "copyAndPermute: The graph structure of the source of the "
         "Import or Export must be a subset of the graph structure of the "
         "target." << std::endl;
     }
@@ -1122,7 +1125,7 @@ namespace Experimental {
       // local error flag.
       if (numEnt == Teuchos::OrdinalTraits<size_t>::invalid ()) {
         numPacketsPerLID[localRow] = static_cast<size_t> (0);
-        this->localError_ = true;
+        * (this->localError_) = true;
       } else {
         numPacketsPerLID[localRow] = numEnt;
       }
@@ -1199,7 +1202,7 @@ namespace Experimental {
       LO numEnt;
       const int err = src->getLocalRowView (lclRowInd, lclColInds, vals, numEnt);
       if (err != 0) {
-        localError_ = true;
+        * (localError_) = true;
         // TODO (mfh 20 May 2014) Report the local error, without
         // printing a line for each bad LID.  It might help to collect
         // all the bad LIDs, but don't print them all if there are too
@@ -1245,7 +1248,7 @@ namespace Experimental {
           // course, the actual block size could be zero.  That would
           // be silly, but why shouldn't it be legal?  That's why we
           // check whether the actual block size is different.
-          localError_ = true;
+          * (localError_) = true;
           // Pack a block of zeros.  It might make sense to pack NaNs,
           // if Scalar implements a NaN value.
           tempBlock.fill (STS::zero ());
@@ -1281,12 +1284,12 @@ namespace Experimental {
                     Tpetra::CombineMode CM)
   {
     if (CM == ADD && CM != INSERT && CM != REPLACE && CM != ABSMAX && CM != ZERO) {
-      this->localError_ = true;
-      if (errs_.is_null ()) {
-        errs_ = Teuchos::rcp (new std::ostringstream ());
-        *errs_ << "unpackAndCombine: Invalid CombineMode value " << CM << ".  "
-               << "Valid values include ADD, INSERT, REPLACE, ABSMAX, and ZERO."
-               << std::endl;
+      * (this->localError_) = true;
+      if ((*errs_).is_null ()) {
+        *errs_ = Teuchos::rcp (new std::ostringstream ());
+        **errs_ << "unpackAndCombine: Invalid CombineMode value " << CM << ".  "
+                << "Valid values include ADD, INSERT, REPLACE, ABSMAX, and ZERO."
+                << std::endl;
         // It won't cause deadlock to return here, since this method
         // does not communicate.
         return;
@@ -1394,7 +1397,7 @@ namespace Experimental {
       // We've already checked that CM is valid.
 
       if (static_cast<size_t> (successCount) != numEnt) {
-        localError_ = true;
+        * (localError_) = true;
       }
     }
   }
