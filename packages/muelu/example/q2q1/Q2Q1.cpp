@@ -289,7 +289,9 @@ int main(int argc, char *argv[]) {
   M.SetFactory("Smoother",     rcp(new SmootherFactory(smootherPrototype)));
   M.SetFactory("CoarseSolver", rcp(new SmootherFactory(smootherPrototype)));
 
+#ifdef HAVE_MUELU_DEBUG
   M.ResetDebugData();
+#endif
   H[0]->GetLevel(0)->Set("A", rcp_dynamic_cast<Matrix>(A));
   H[0]->Setup(M, 0, H[0]->GetNumLevels());
 
