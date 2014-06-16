@@ -43,13 +43,6 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * MueLu_UncoupledAggregationFactory_def.hpp
- *
- *  Created on: Sep 17, 2012
- *      Author: Tobias Wiesner
- */
-
 #ifndef MUELU_UNCOUPLEDAGGREGATIONFACTORY_DEF_HPP_
 #define MUELU_UNCOUPLEDAGGREGATIONFACTORY_DEF_HPP_
 
@@ -62,11 +55,14 @@
 #include "MueLu_OnePtAggregationAlgorithm.hpp"
 #include "MueLu_SmallAggregationAlgorithm.hpp"
 #include "MueLu_PreserveDirichletAggregationAlgorithm.hpp"
-#include "MueLu_AggregationPhase1Algorithm.hpp"
-#include "MueLu_AggregationPhase2aAlgorithm.hpp"
 #include "MueLu_MaxLinkAggregationAlgorithm.hpp"
 #include "MueLu_IsolatedNodeAggregationAlgorithm.hpp"
 #include "MueLu_EmergencyAggregationAlgorithm.hpp"
+
+#include "MueLu_AggregationPhase1Algorithm.hpp"
+#include "MueLu_AggregationPhase2aAlgorithm.hpp"
+#include "MueLu_AggregationPhase2bAlgorithm.hpp"
+#include "MueLu_AggregationPhase3Algorithm.hpp"
 
 #include "MueLu_Level.hpp"
 #include "MueLu_GraphBase.hpp"
@@ -90,6 +86,8 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("Graph",       null, "Generating factory of the graph");
     validParamList->set< RCP<const FactoryBase> >("DofsPerNode", null, "Generating factory for variable \'DofsPerNode\', usually the same as for \'Graph\'");
 
+    validParamList->set< std::string >           ("mode",       "old", "Old/new mode");
+
     typedef Teuchos::OrdinalTraits<LO> OTS;
 
     // Aggregation parameters (used in aggregation algorithms)
@@ -112,6 +110,11 @@ namespace MueLu {
                                "nodes during aggregation process. (default = on)");
     validParamList->set<bool> ("UseEmergencyAggregationAlgorithm",          true, "Turn on/off Emergency aggregation algorithm. Puts all left over nodes "
                                "into aggregates (including very small aggregates or one-point aggregates). (default = on)");
+
+    validParamList->set<bool> ("aggregation: enable phase 1",               true, "Enable phase 1 of aggregation");
+    validParamList->set<bool> ("aggregation: enable phase 2a",              true, "Enable phase 2a of aggregation");
+    validParamList->set<bool> ("aggregation: enable phase 2b",              true, "Enable phase 2b of aggregation");
+    validParamList->set<bool> ("aggregation: enable phase 3",               true, "Enable phase 3 of aggregation");
 
     validParamList->set< std::string >           ("OnePt aggregate map name",         "", "Name of input map for single node aggregates. (default='')");
     validParamList->set< RCP<const FactoryBase> >("OnePt aggregate map factory",    null, "Generating factory of (DOF) map for single node aggregates.");
@@ -146,27 +149,26 @@ namespace MueLu {
     const ParameterList& pL = GetParameterList();
     bDefinitionPhase_ = false;  // definition phase is finished, now all aggregation algorithm information is fixed
 
-    bool bUseOnePtAggregationAlgorithm             = pL.get<bool>("UseOnePtAggregationAlgorithm");
-    bool bUseSmallAggregationAlgorithm             = pL.get<bool>("UseSmallAggregatesAggregationAlgorithm");
-    bool bUsePreserveDirichletAggregationAlgorithm = pL.get<bool>("UsePreserveDirichletAggregationAlgorithm");
-    bool bUseUncoupledAggregationAglorithm         = pL.get<bool>("UseUncoupledAggregationAlgorithm");
-    bool bUseMaxLinkAggregationAlgorithm           = pL.get<bool>("UseMaxLinkAggregationAlgorithm");
-    bool bUseIsolatedNodeAggregationAglorithm      = pL.get<bool>("UseIsolatedNodeAggregationAlgorithm");
-    bool bUseEmergencyAggregationAlgorithm         = pL.get<bool>("UseEmergencyAggregationAlgorithm");
-
     // define aggregation algorithms
     RCP<const FactoryBase> graphFact = GetFactory("Graph");
 
     // TODO Can we keep different aggregation algorithms over more Build calls?
     algos_.clear();
-    if (bUseOnePtAggregationAlgorithm)             algos_.push_back(rcp(new OnePtAggregationAlgorithm             (graphFact)));
-    if (bUseSmallAggregationAlgorithm)             algos_.push_back(rcp(new SmallAggregationAlgorithm             (graphFact)));
-    if (bUseUncoupledAggregationAglorithm)         algos_.push_back(rcp(new AggregationPhase1Algorithm            (graphFact)));
-    if (bUseMaxLinkAggregationAlgorithm)           algos_.push_back(rcp(new MaxLinkAggregationAlgorithm           (graphFact)));
-    if (bUsePreserveDirichletAggregationAlgorithm) algos_.push_back(rcp(new PreserveDirichletAggregationAlgorithm (graphFact)));
-    if (bUseIsolatedNodeAggregationAglorithm)      algos_.push_back(rcp(new IsolatedNodeAggregationAlgorithm      (graphFact)));
-    if (bUseEmergencyAggregationAlgorithm)         algos_.push_back(rcp(new EmergencyAggregationAlgorithm         (graphFact)));
+    if (pL.get<std::string>("mode") == "old") {
+      if (pL.get<bool>("UseOnePtAggregationAlgorithm")             == true)   algos_.push_back(rcp(new OnePtAggregationAlgorithm             (graphFact)));
+      if (pL.get<bool>("UseSmallAggregatesAggregationAlgorithm")   == true)   algos_.push_back(rcp(new SmallAggregationAlgorithm             (graphFact)));
+      if (pL.get<bool>("UsePreserveDirichletAggregationAlgorithm") == true)   algos_.push_back(rcp(new PreserveDirichletAggregationAlgorithm (graphFact)));
+      if (pL.get<bool>("UseUncoupledAggregationAlgorithm")         == true)   algos_.push_back(rcp(new AggregationPhase1Algorithm            (graphFact)));
+      if (pL.get<bool>("UseMaxLinkAggregationAlgorithm")           == true)   algos_.push_back(rcp(new MaxLinkAggregationAlgorithm           (graphFact)));
+      if (pL.get<bool>("UseIsolatedNodeAggregationAlgorithm")      == true)   algos_.push_back(rcp(new IsolatedNodeAggregationAlgorithm      (graphFact)));
+      if (pL.get<bool>("UseEmergencyAggregationAlgorithm")         == true)   algos_.push_back(rcp(new EmergencyAggregationAlgorithm         (graphFact)));
 
+    } else {
+      if (pL.get<bool>("aggregation: enable phase 1" )             == true)   algos_.push_back(rcp(new AggregationPhase1Algorithm            (graphFact)));
+      if (pL.get<bool>("aggregation: enable phase 2a")             == true)   algos_.push_back(rcp(new AggregationPhase2aAlgorithm           (graphFact)));
+      if (pL.get<bool>("aggregation: enable phase 2b")             == true)   algos_.push_back(rcp(new AggregationPhase2bAlgorithm           (graphFact)));
+      if (pL.get<bool>("aggregation: enable phase 3" )             == true)   algos_.push_back(rcp(new AggregationPhase3Algorithm            (graphFact)));
+    }
 
     std::string mapOnePtName = pL.get<std::string>("OnePt aggregate map name"), mapSmallAggName = pL.get<std::string>("SmallAgg aggregate map name");
     RCP<const Map> OnePtMap, SmallAggMap;
@@ -185,14 +187,14 @@ namespace MueLu {
     RCP<Aggregates> aggregates = rcp(new Aggregates(*graph));
     aggregates->setObjectLabel("UC");
 
-    const LO nRows = graph->GetNodeNumVertices();
+    const LO numRows = graph->GetNodeNumVertices();
 
     // construct aggStat information
-    std::vector<unsigned> aggStat(nRows, READY);
+    std::vector<unsigned> aggStat(numRows, READY);
 
     ArrayRCP<const bool> dirichletBoundaryMap = graph->GetBoundaryNodeMap();
     if (dirichletBoundaryMap != Teuchos::null) {
-      for (LO i = 0; i < nRows; i++)
+      for (LO i = 0; i < numRows; i++)
         if (dirichletBoundaryMap[i] == true)
           aggStat[i] = BOUNDARY;
     }
@@ -200,7 +202,7 @@ namespace MueLu {
     LO nDofsPerNode = Get<LO>(currentLevel, "DofsPerNode");
     GO indexBase = graph->GetDomainMap()->getIndexBase();
     if (SmallAggMap != Teuchos::null || OnePtMap != Teuchos::null) {
-      for (LO i = 0; i < nRows; i++) {
+      for (LO i = 0; i < numRows; i++) {
         // reconstruct global row id (FIXME only works for contiguous maps)
         GO grid = (graph->GetDomainMap()->getGlobalElement(i)-indexBase) * nDofsPerNode + indexBase;
 
@@ -224,9 +226,9 @@ namespace MueLu {
     const RCP<const Teuchos::Comm<int> > comm = graph->GetComm();
     GO numGlobalRows = 0;
     if (IsPrint(Statistics1))
-      sumAll(comm, as<GO>(nRows), numGlobalRows);
+      sumAll(comm, as<GO>(numRows), numGlobalRows);
 
-    LO numNonAggregatedNodes = nRows;
+    LO numNonAggregatedNodes = numRows;
     GO numGlobalAggregatedPrev = 0, numGlobalAggsPrev = 0;
     for (size_t a = 0; a < algos_.size(); a++) {
       std::string phase = algos_[a]->description();
@@ -236,8 +238,8 @@ namespace MueLu {
 
       if (IsPrint(Statistics1)) {
 
-        GO numLocalAggregated = nRows - numNonAggregatedNodes,  numGlobalAggregated = 0;
-        GO numLocalAggs       = aggregates->GetNumAggregates(), numGlobalAggs = 0;
+        GO numLocalAggregated = numRows - numNonAggregatedNodes, numGlobalAggregated = 0;
+        GO numLocalAggs       = aggregates->GetNumAggregates(),  numGlobalAggs = 0;
         sumAll(comm, numLocalAggregated, numGlobalAggregated);
         sumAll(comm, numLocalAggs,       numGlobalAggs);
 

@@ -43,14 +43,6 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
-
- * MueLu_UncoupledAggregationFactory_decl.hpp
- *
- *  Created on: Sep 17, 2012
- *      Author: Tobias Wiesner
- */
-
 #ifndef MUELU_UNCOUPLEDAGGREGATIONFACTORY_DECL_HPP_
 #define MUELU_UNCOUPLEDAGGREGATIONFACTORY_DECL_HPP_
 
@@ -67,10 +59,14 @@
 #include "MueLu_OnePtAggregationAlgorithm_fwd.hpp"
 #include "MueLu_SmallAggregationAlgorithm_fwd.hpp"
 #include "MueLu_PreserveDirichletAggregationAlgorithm_fwd.hpp"
-#include "MueLu_AggregationPhase1Algorithm_fwd.hpp"
 #include "MueLu_MaxLinkAggregationAlgorithm_fwd.hpp"
 #include "MueLu_IsolatedNodeAggregationAlgorithm_fwd.hpp"
 #include "MueLu_EmergencyAggregationAlgorithm_fwd.hpp"
+
+#include "MueLu_AggregationPhase1Algorithm_fwd.hpp"
+#include "MueLu_AggregationPhase2aAlgorithm_fwd.hpp"
+#include "MueLu_AggregationPhase2bAlgorithm_fwd.hpp"
+#include "MueLu_AggregationPhase3Algorithm_fwd.hpp"
 
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_AmalgamationInfo_fwd.hpp"
