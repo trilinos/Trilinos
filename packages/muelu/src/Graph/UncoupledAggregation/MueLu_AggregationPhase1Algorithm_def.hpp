@@ -180,16 +180,6 @@ namespace MueLu {
           aggStat     [aggList[k]] = AGGREGATED;
           vertex2AggId[aggList[k]] = aggIndex;
           procWinner  [aggList[k]] = myRank;
-
-          if (ordering == GRAPH) {
-            ArrayView<const LO> neighOfJNode = graph.getNeighborVertices(aggList[k]);
-            for (int j = 0; j < neighOfJNode.size(); j++) {
-              LO neigh = neighOfJNode[j];
-
-              if (graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == READY)
-                graphOrderQueue.push(neigh);
-            }
-          }
         }
 
         numNonAggregatedNodes -= aggSize;
@@ -198,11 +188,21 @@ namespace MueLu {
         // Aggregate is not accepted
         aggStat[rootCandidate] = NOTSEL;
 
-        if (ordering == GRAPH) {
-          // Even though the aggregate around rootCandidate is not perfect, we want to try
-          // the neighbor nodes of rootCandidate
-          for (int j = 0; j < neighOfINode.size(); j++) {
-            LO neigh = neighOfINode[j];
+        // Need this for the GRAPH ordering below
+        // The original candidate is always aggList[0]
+        aggSize = 1;
+      }
+
+      if (ordering == GRAPH) {
+        // Add candidates to the list of nodes
+        // NOTE: the code have slightly different meanings depending on context:
+        //  - if aggregate was accepted, we add neighbors of neighbors of the original candidate
+        //  - if aggregate was not accepted, we add neighbors of the original candidate
+        for (size_t k = 0; k < aggSize; k++) {
+          ArrayView<const LO> neighOfJNode = graph.getNeighborVertices(aggList[k]);
+
+          for (int j = 0; j < neighOfJNode.size(); j++) {
+            LO neigh = neighOfJNode[j];
 
             if (graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == READY)
               graphOrderQueue.push(neigh);
