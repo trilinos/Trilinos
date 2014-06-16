@@ -64,6 +64,7 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A used for filtering");
     validParamList->set< RCP<const FactoryBase> >("Graph",          Teuchos::null, "Generating fatory for coalesced filtered graph");
     validParamList->set< bool >                  ("lumping",                 true, "Use lumping for dropped values");
+    validParamList->set< bool > ("filtered matrix: reuse graph",             true, "Use zero values instead of constructing a new graph");
     validParamList->set< bool > ("filtered matrix: reuse eigenvalue",        true, "Reuse eigenvalue from non-filtered matrix");
 
     return validParamList;
@@ -77,15 +78,6 @@ namespace MueLu {
     currentLevel.DeclareInput("Filtering", currentLevel.GetFactoryManager()->GetFactory("Filtering").get());
   }
 
-// Epetra's API allows direct access to row array.
-// Tpetra's API does not, providing only ArrayView<const .>
-// But in most situations we are currently interested in, it is safe to assume
-// that the view is to the actual data. So this macro directs the code to do
-// const_cast, and modify the entries directly. This allows us to avoid
-// replaceLocalValues() call which is quite expensive due to all the searches.
-#define ASSUME_DIRECT_ACCESS_TO_ROW
-
-  // TODO: rewrite the function using AmalgamationInfo
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& currentLevel) const {
     FactoryMonitor m(*this, "Matrix filtering", currentLevel);
@@ -96,7 +88,6 @@ namespace MueLu {
       Set(currentLevel, "A", A);
       return;
     }
-    size_t blkSize = A->GetFixedBlockSize();
 
     const ParameterList& pL = GetParameterList();
     bool lumping = pL.get<bool>("lumping");
@@ -105,18 +96,60 @@ namespace MueLu {
 
     RCP<GraphBase> G = Get< RCP<GraphBase> >(currentLevel, "Graph");
 
+    RCP<ParameterList> fillCompleteParams(new ParameterList);
+    fillCompleteParams->set("No Nonlocal Changes", true);
+
+    RCP<Matrix> filteredA;
+    if (pL.get<bool>("filtered matrix: reuse graph")) {
+      filteredA = MatrixFactory::Build(A->getCrsGraph());
+      filteredA->resumeFill();
+
+      BuildReuse(*A, *G, lumping, *filteredA);
+
+      filteredA->fillComplete(fillCompleteParams);
+
+    } else {
+      filteredA = MatrixFactory::Build(A->getRowMap(), A->getColMap(), A->getNodeMaxNumRowEntries(), Xpetra::StaticProfile);
+
+      BuildNew(*A, *G, lumping, *filteredA);
+
+      filteredA->fillComplete(A->getDomainMap(), A->getRangeMap(), fillCompleteParams);
+    }
+
+    filteredA->SetFixedBlockSize(A->GetFixedBlockSize());
+
+    if (pL.get<bool>("filtered matrix: reuse eigenvalue")) {
+      // Reuse max eigenvalue from A
+      // It is unclear what eigenvalue is the best for the smoothing, but we already may have
+      // the D^{-1}A estimate in A, may as well use it.
+      // NOTE: ML does that too
+      filteredA->SetMaxEigenvalueEstimate(A->GetMaxEigenvalueEstimate());
+    }
+
+    Set(currentLevel, "A", filteredA);
+  }
+
+// Epetra's API allows direct access to row array.
+// Tpetra's API does not, providing only ArrayView<const .>
+// But in most situations we are currently interested in, it is safe to assume
+// that the view is to the actual data. So this macro directs the code to do
+// const_cast, and modify the entries directly. This allows us to avoid
+// replaceLocalValues() call which is quite expensive due to all the searches.
+#define ASSUME_DIRECT_ACCESS_TO_ROW
+
+  // Both Epetra and Tpetra matrix-matrix multiply use the following trick:
+  // if an entry of the left matrix is zero, it does not compute or store the
+  // zero value.
+  //
+  // This trick allows us to bypass constructing a new matrix. Instead, we
+  // make a deep copy of the original one, and fill it in with zeros, which
+  // are ignored during the prolongator smoothing.
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  BuildReuse(const Matrix& A, const GraphBase& G, const bool lumping, Matrix& filteredA) const {
     SC zero = Teuchos::ScalarTraits<SC>::zero();
 
-    // Both Epetra and Tpetra matrix-matrix multiply use the following trick:
-    // if an entry of the left matrix is zero, it does not compute or store the
-    // zero value.
-    //
-    // This trick allows us to bypass constructing a new matrix. Instead, we
-    // make a deep copy of the original one, and fill it in with zeros, which
-    // are ignored during the prolongator smoothing.
-    RCP<Matrix> filteredA = MatrixFactory::Build(A->getCrsGraph());
-
-    filteredA->resumeFill();
+    size_t blkSize = A.GetFixedBlockSize();
 
     ArrayView<const LO> inds;
     ArrayView<const SC> valsA;
@@ -125,12 +158,13 @@ namespace MueLu {
 #else
     Array<SC>           vals;
 #endif
-    Array<char> filter(blkSize * G->GetImportMap()->getNodeNumElements(), 0);
 
-    size_t numGRows = G->GetNodeNumVertices();
+    Array<char> filter(blkSize * G.GetImportMap()->getNodeNumElements(), 0);
+
+    size_t numGRows = G.GetNodeNumVertices();
     for (size_t i = 0; i < numGRows; i++) {
       // Set up filtering array
-      ArrayView<const LO> indsG = G->getNeighborVertices(i);
+      ArrayView<const LO> indsG = G.getNeighborVertices(i);
       for (size_t j = 0; j < as<size_t>(indsG.size()); j++)
         for (size_t k = 0; k < blkSize; k++)
           filter[indsG[j]*blkSize+k] = 1;
@@ -138,7 +172,7 @@ namespace MueLu {
       for (size_t k = 0; k < blkSize; k++) {
         LO row = i*blkSize + k;
 
-        A->getLocalRowView(row, inds, valsA);
+        A.getLocalRowView(row, inds, valsA);
 
         size_t nnz = inds.size();
         if (nnz == 0)
@@ -147,7 +181,7 @@ namespace MueLu {
 #ifdef ASSUME_DIRECT_ACCESS_TO_ROW
         // Transform ArrayView<const SC> into ArrayView<SC>
         ArrayView<const SC> vals1;
-        filteredA->getLocalRowView(row, inds, vals1);
+        filteredA.getLocalRowView(row, inds, vals1);
         vals = ArrayView<SC>(const_cast<SC*>(vals1.getRawPtr()), nnz);
 
         memcpy(vals.getRawPtr(), valsA.getRawPtr(), nnz*sizeof(SC));
@@ -189,7 +223,7 @@ namespace MueLu {
 #ifndef ASSUME_DIRECT_ACCESS_TO_ROW
         // Because we used a column map in the construction of the matrix
         // we can just use insertLocalValues here instead of insertGlobalValues
-        filteredA->replaceLocalValues(row, inds, vals);
+        filteredA.replaceLocalValues(row, inds, vals);
 #endif
       }
 
@@ -198,22 +232,91 @@ namespace MueLu {
         for (size_t k = 0; k < blkSize; k++)
           filter[indsG[j]*blkSize+k] = 0;
     }
+  }
 
-    RCP<ParameterList> fillCompleteParams(new ParameterList);
-    fillCompleteParams->set("No Nonlocal Changes", true);
-    filteredA->fillComplete(fillCompleteParams);
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  BuildNew(const Matrix& A, const GraphBase& G, const bool lumping, Matrix& filteredA) const {
+    SC zero = Teuchos::ScalarTraits<SC>::zero();
 
-    filteredA->SetFixedBlockSize(blkSize);
+    size_t blkSize = A.GetFixedBlockSize();
 
-    if (pL.get<bool>("filtered matrix: reuse eigenvalue")) {
-      // Reuse max eigenvalue from A
-      // It is unclear what eigenvalue is the best for the smoothing, but we already may have
-      // the D^{-1}A estimate in A, may as well use it.
-      // NOTE: ML does that too
-      filteredA->SetMaxEigenvalueEstimate(A->GetMaxEigenvalueEstimate());
+    ArrayView<const LO> indsA;
+    ArrayView<const SC> valsA;
+    Array<LO>           inds;
+    Array<SC>           vals;
+
+    Array<char> filter(blkSize * G.GetImportMap()->getNodeNumElements(), 0);
+
+    size_t numGRows = G.GetNodeNumVertices();
+    for (size_t i = 0; i < numGRows; i++) {
+      // Set up filtering array
+      ArrayView<const LO> indsG = G.getNeighborVertices(i);
+      for (size_t j = 0; j < as<size_t>(indsG.size()); j++)
+        for (size_t k = 0; k < blkSize; k++)
+          filter[indsG[j]*blkSize+k] = 1;
+
+      for (size_t k = 0; k < blkSize; k++) {
+        LO row = i*blkSize + k;
+
+        A.getLocalRowView(row, indsA, valsA);
+
+        size_t nnz = indsA.size();
+        if (nnz == 0)
+          continue;
+
+        inds.resize(indsA.size());
+        vals.resize(valsA.size());
+
+        size_t numInds = 0;
+        if (lumping == false) {
+          for (size_t j = 0; j < nnz; j++)
+            if (filter[indsA[j]]) {
+              inds[numInds] = indsA[j];
+              vals[numInds] = valsA[j];
+              numInds++;
+            }
+
+        } else {
+          LO diagIndex = -1;
+          SC diagExtra = zero;
+
+          for (size_t j = 0; j < nnz; j++) {
+            if (filter[indsA[j]]) {
+              inds[numInds] = indsA[j];
+              vals[numInds] = valsA[j];
+
+              // Remember diagonal position
+              if (inds[numInds] == row)
+                diagIndex = numInds;
+
+              numInds++;
+
+            } else {
+              diagExtra += valsA[j];
+            }
+          }
+
+          // Lump dropped entries
+          // NOTE
+          //  * Does it make sense to lump for elasticity?
+          //  * Is it different for diffusion and elasticity?
+          if (diagIndex != -1)
+            vals[diagIndex] += diagExtra;
+        }
+        inds.resize(numInds);
+        vals.resize(numInds);
+
+        // Because we used a column map in the construction of the matrix
+        // we can just use insertLocalValues here instead of insertGlobalValues
+        filteredA.insertLocalValues(row, inds, vals);
+      }
+
+      // Reset filtering array
+      for (size_t j = 0; j < as<size_t> (indsG.size()); j++)
+        for (size_t k = 0; k < blkSize; k++)
+          filter[indsG[j]*blkSize+k] = 0;
     }
-
-    Set(currentLevel, "A", filteredA);
   }
 
 } //namespace MueLu

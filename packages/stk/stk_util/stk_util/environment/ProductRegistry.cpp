@@ -8,6 +8,7 @@
 
 #include <stk_util/environment/product_registry.h>
 #include <stk_util/environment/ProductRegistry.hpp>
+#include <iostream>
 #ifdef STK_BUILT_IN_SIERRA
 #include <stk_util/environment/stk_version.hpp>
 #else
@@ -115,6 +116,7 @@ ProductRegistry::addProduct(const std::string &	name)
   ProductMap::iterator it = iit.first;
   if (iit.second) {
     (*it).second[NAME] = name.c_str();
+    (*it).second[VERSION] = ProductRegistry::version();
   }
 
   return (*it).second;

@@ -50,7 +50,7 @@
 #include "Panzer_STK_IOClosureModel_Factory.hpp"
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
   template <typename TraitsT>
   class IOClosureModelFactory_TemplateBuilder {
@@ -64,7 +64,7 @@ namespace panzer_stk {
     template <typename EvalT>
     Teuchos::RCP<panzer::ClosureModelFactoryBase> build() const {
       return Teuchos::rcp( static_cast<panzer::ClosureModelFactoryBase*>
-			   (new panzer_stk::IOClosureModelFactory<EvalT>(cmf_tm_.template getAsObject<EvalT>(),mesh_,outputList_)) );
+			   (new panzer_stk_classic::IOClosureModelFactory<EvalT>(cmf_tm_.template getAsObject<EvalT>(),mesh_,outputList_)) );
     }
     
   private:

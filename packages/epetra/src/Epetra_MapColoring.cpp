@@ -434,13 +434,21 @@ int Epetra_MapColoring::CheckSizes(const Epetra_SrcDistObject& Source) {
 
 //=========================================================================
 int Epetra_MapColoring::CopyAndPermute(const Epetra_SrcDistObject& Source,
-                                       int NumSameIDs,
+               int NumSameIDs,
                int NumPermuteIDs,
-                                       int * PermuteToLIDs,
+               int * PermuteToLIDs,
                int *PermuteFromLIDs,
-                                       const Epetra_OffsetIndex * Indexor)
+               const Epetra_OffsetIndex * Indexor,
+               Epetra_CombineMode CombineMode)
 {
   (void)Indexor;
+
+  if(    CombineMode != Add
+      && CombineMode != Zero
+      && CombineMode != Insert
+      && CombineMode != AbsMax )
+    EPETRA_CHK_ERR(-1); //Unsupported CombinedMode, will default to Zero
+
   const Epetra_MapColoring & A = dynamic_cast<const Epetra_MapColoring &>(Source);
 
   int * From = A.ElementColors();
@@ -449,13 +457,24 @@ int Epetra_MapColoring::CopyAndPermute(const Epetra_SrcDistObject& Source,
   // Do copy first
   if (NumSameIDs>0)
     if (To!=From) {
-      for (int j=0; j<NumSameIDs; j++)
-  To[j] = From[j];
+  if (CombineMode==Add)
+    for (int j=0; j<NumSameIDs; j++) To[j] += From[j]; // Add to existing value
+  else if(CombineMode==Insert)
+    for (int j=0; j<NumSameIDs; j++) To[j] = From[j];
+  else if(CombineMode==AbsMax) {
+    for (int j=0; j<NumSameIDs; j++)  To[j] = EPETRA_MAX( To[j],std::abs(From[j]));
+  }
     }
   // Do local permutation next
-  if (NumPermuteIDs>0)
-    for (int j=0; j<NumPermuteIDs; j++)
-      To[PermuteToLIDs[j]] = From[PermuteFromLIDs[j]];
+  if (NumPermuteIDs>0) {
+    if (CombineMode==Add)
+      for (int j=0; j<NumPermuteIDs; j++) To[PermuteToLIDs[j]] += From[PermuteFromLIDs[j]]; // Add to existing value
+    else if(CombineMode==Insert || CombineMode == Zero)
+      for (int j=0; j<NumPermuteIDs; j++) To[PermuteToLIDs[j]] = From[PermuteFromLIDs[j]];
+    else if(CombineMode==AbsMax) {
+      for (int j=0; j<NumPermuteIDs; j++)  To[PermuteToLIDs[j]] = EPETRA_MAX( To[PermuteToLIDs[j]],std::abs(From[PermuteFromLIDs[j]]));
+    }
+  }
 
   return(0);
 }

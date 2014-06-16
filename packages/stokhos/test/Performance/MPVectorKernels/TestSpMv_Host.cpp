@@ -54,7 +54,7 @@ void mainHost(int nGrid, int nIter, Kokkos::DeviceConfig dev_config) {
   const int entry_step = 8;
 #else
   const int entry_min = 4;
-  const int entry_max = 24;
+  const int entry_max = 32;
   const int entry_step = 4;
 #endif
 
@@ -64,4 +64,8 @@ void mainHost(int nGrid, int nIter, Kokkos::DeviceConfig dev_config) {
 
 #ifdef KOKKOS_HAVE_PTHREAD
 template void mainHost< Stokhos::StaticFixedStorage<int,double,1,Kokkos::Threads> >(int nGrid, int nIter, Kokkos::DeviceConfig dev_config);
+#endif
+
+#ifdef KOKKOS_HAVE_OPENMP
+template void mainHost< Stokhos::StaticFixedStorage<int,double,1,Kokkos::OpenMP> >(int nGrid, int nIter, Kokkos::DeviceConfig dev_config);
 #endif

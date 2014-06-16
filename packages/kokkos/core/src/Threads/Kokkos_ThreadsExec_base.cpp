@@ -46,7 +46,7 @@
 #include <iostream>
 #include <stdexcept>
 
-#include <KokkosCore_config.h>
+#include <Kokkos_Macros.hpp>
 #include <Kokkos_Threads.hpp>
 
 /*--------------------------------------------------------------------------*/

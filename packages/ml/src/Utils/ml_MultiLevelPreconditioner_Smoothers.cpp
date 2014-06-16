@@ -744,13 +744,13 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
        if (ml_->Amat[currentLevel].NumZDir != -1) {
           MyNumVerticalNodes = ml_->Amat[currentLevel].NumZDir;
           if     (ml_->Amat[currentLevel].Zorientation== 1) MyMeshNumbering= "vertical";
-          else if(ml_->Amat[currentLevel].Zorientation== 1) MyMeshNumbering= "horizontal";
+          else if(ml_->Amat[currentLevel].Zorientation== 2) MyMeshNumbering= "horizontal";
           else MyMeshNumbering = "use coordinates";
        }
        if (ml_->Pmat[currentLevel].NumZDir != -1) {
           MyNumVerticalNodes = ml_->Pmat[currentLevel].NumZDir;
           if     (ml_->Pmat[currentLevel].Zorientation== 1) MyMeshNumbering= "vertical";
-          else if(ml_->Pmat[currentLevel].Zorientation== 1) MyMeshNumbering= "horizontal";
+          else if(ml_->Pmat[currentLevel].Zorientation== 2) MyMeshNumbering= "horizontal";
           else MyMeshNumbering = "use coordinates";
        }
        if (ml_->Pmat[currentLevel].NumZDir == -7) {

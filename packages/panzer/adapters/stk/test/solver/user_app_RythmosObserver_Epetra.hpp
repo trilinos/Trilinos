@@ -64,7 +64,7 @@ namespace user_app {
 
   public:
     
-    RythmosObserver_Epetra(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
+    RythmosObserver_Epetra(const Teuchos::RCP<panzer_stk_classic::STK_Interface>& mesh,
 			   const RCP<panzer::UniqueGlobalIndexer<int,int> >& dof_manager,
 			   const Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> >& lof) :
       m_mesh(mesh),
@@ -97,14 +97,14 @@ namespace user_app {
       ghosted_solution.PutScalar(0.0);
       ghosted_solution.Import(*ep_solution,*importer,Insert);
 
-      panzer_stk::write_solution_data(*m_dof_manager,*m_mesh,ghosted_solution);
+      panzer_stk_classic::write_solution_data(*m_dof_manager,*m_mesh,ghosted_solution);
       
       m_mesh->writeToExodus(stepper.getStepStatus().time);
     }
     
   protected:
 
-    Teuchos::RCP<panzer_stk::STK_Interface> m_mesh;
+    Teuchos::RCP<panzer_stk_classic::STK_Interface> m_mesh;
     Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > m_dof_manager;
     Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > m_lof;
 

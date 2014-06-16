@@ -6,18 +6,19 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <map>
-
 #include <stk_util/environment/LogControl.hpp>
+#include <functional>                   // for less
+#include <map>                          // for map, map<>::value_compare
+
 
 namespace stk {
 
 namespace {
 
-typedef std::map<std::ostream *, LogControl *> OStreamLogControlMap;
+typedef std::map<std::ostream *, LogControl *, std::less<std::ostream*> > OStreamLogControlMap;
 
 OStreamLogControlMap &
-get_ostream_log_control_map() 
+get_ostream_log_control_map()
 {
   static OStreamLogControlMap s_ostreamLogControlMap;
 
@@ -28,7 +29,7 @@ get_ostream_log_control_map()
 
 
 LogControlRuleInterval::LogControlRuleInterval(
-  int           interval) 
+  int           interval)
   : m_interval(interval),
     m_count(-1)
 {}
@@ -38,15 +39,15 @@ bool
 LogControlRuleInterval::next()
 {
   ++m_count;
-    
+
   if (m_count < 0) {
     return false;
   }
-    
+
   else if (m_count == 0) {
     return true;
   }
-    
+
   else {
     return m_count%m_interval == 0 ? true : false;
   }
@@ -130,12 +131,12 @@ void
 LogControl::next()
 {
   m_cacheStream.str("");
-  
+
   if (m_parent && m_parent->m_state == CACHE)
     m_state = CACHE;
-  else 
+  else
     m_state = !m_rule || m_rule->next() ? ON : CACHE;
-  
+
   if (m_state != CACHE) {
     if (m_logStream.rdbuf() != m_logStreambuf) {
       m_logStream.rdbuf(m_logStreambuf);

@@ -318,20 +318,17 @@ public:
    * @brief Destroys a <b>RuntimeWarning</b> instance.
    *
    * The message is displayed by calling the add_deferred_message() function.
-   *
    */
   ~RuntimeWarningDeferred();
 
 private:
   /**
-   * @briefMake copy of <b>RuntimeWarningDeferred</b> invalid.
-   *
+   * @brief Make copy of <b>RuntimeWarningDeferred</b> invalid.
    */
   RuntimeWarningDeferred(const RuntimeWarningDeferred &);
 
   /**
    * @brief Make assignment of <b>RuntimeWarningDeferred</b> invalid.
-   *
    */
   RuntimeWarningDeferred &operator=(const RuntimeWarningDeferred &);
 

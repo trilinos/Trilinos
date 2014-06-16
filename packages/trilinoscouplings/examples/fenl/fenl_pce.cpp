@@ -44,6 +44,7 @@
 #include "Stokhos_MueLu_UQ_PCE.hpp"
 
 #include <Kokkos_Threads.hpp>
+#include <Kokkos_OpenMP.hpp>
 #include <HexElement.hpp>
 #include <fenl_functors_pce.hpp>
 #include <fenl_impl.hpp>
@@ -79,8 +80,8 @@ INST_KL( double , double , Threads )
 
 typedef Stokhos::DynamicStorage<int,double,OpenMP> Storage_OpenMP;
 typedef Sacado::UQ::PCE<Storage_OpenMP> Scalar_OpenMP;
-typedef ElementComputationKLCoefficient<Scalar_OpenMP,double,Threads> KL_Vector_OpenMP;
-typedef ElementComputationKLCoefficient<double,double,Threads> KL_Scalar_OpenMP;
+typedef ElementComputationKLCoefficient<Scalar_OpenMP,double,OpenMP> KL_Vector_OpenMP;
+typedef ElementComputationKLCoefficient<double,double,OpenMP> KL_Scalar_OpenMP;
 
 INST_FENL( Scalar_OpenMP , OpenMP , BoxElemPart::ElemLinear ,
            KL_Vector_OpenMP , TrivialManufacturedSolution )

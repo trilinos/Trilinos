@@ -152,7 +152,7 @@ TEST_F( defaultdevicetype , atomics )
   ASSERT_TRUE( ( TestAtomic::Loop<float,Kokkos::Impl::DefaultDeviceType>(100,3) ) );
 }
 
-TEST_F( defaultdevicetype , view_remap )
+/*TEST_F( defaultdevicetype , view_remap )
 {
   enum { N0 = 3 , N1 = 2 , N2 = 8 , N3 = 9 };
 
@@ -191,7 +191,7 @@ TEST_F( defaultdevicetype , view_remap )
     ++value ;
     ASSERT_EQ( value , ((int) output(i0,i1,i2,i3) ) );
   }}}}
-}
+}*/
 
 //----------------------------------------------------------------------------
 

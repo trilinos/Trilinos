@@ -7,17 +7,13 @@
  *    ------------------------------------------------------------
  */
 
-#include <iostream>
-#include <iomanip>
-#include <sstream>
-#include <stdexcept>
-
 #include <stk_util/diag/String.hpp>
+#include <cctype>                       // for isspace
+#include <cstddef>                      // for size_t, NULL
+#include <iostream>                     // for operator<<
+#include <stdexcept>                    // for runtime_error, logic_error
 
-#include <cstddef>
-#include <cctype>
-#include <stdexcept>
-#include <iostream>
+
 
 //----------------------------------------------------------------------
 
@@ -160,7 +156,7 @@ char * StringData::mem( const char * cs , size_t n )
 
 	  if ( buf_len % sizeof(long) ||
 	       sizeof(StringData) != buf_len ||
-	       small + max_len < (char*)(&(large)) + sizeof(Large) ) {
+	       small + max_len < reinterpret_cast<char*>(&(large)) + sizeof(Large) ) {
 	    throw std::logic_error("StringData memory layout error");
 	  }
 	}
@@ -168,7 +164,7 @@ char * StringData::mem( const char * cs , size_t n )
 
       try {
 	large.siz = new_alloc ;
-	large.ptr = (char *) a.allocate( new_alloc );
+	large.ptr = static_cast<char *>(a.allocate( new_alloc ));
 //	std::cout << "String allocated at " << (void *)large.ptr << " for " << new_alloc << std::endl;
       }
       catch (...) {

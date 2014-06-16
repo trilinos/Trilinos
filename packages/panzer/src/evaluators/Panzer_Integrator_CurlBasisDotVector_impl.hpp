@@ -82,13 +82,17 @@ PHX_EVALUATOR_CTOR(Integrator_CurlBasisDotVector,p) :
    	                                  p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar );
 
   // build dof_orientation
+/*
   dof_orientation = PHX::MDField<ScalarT,Cell,BASIS>(p.get<std::string>("Test Field Name")+" Orientation", 
                                                      basis->functional);
+*/
 
 
   this->addEvaluatedField(residual);
   this->addDependentField(flux);
+/*
   this->addDependentField(dof_orientation);
+*/
   
   multiplier = p.get<double>("Multiplier");
   if (p.isType<Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers")) 
@@ -119,7 +123,7 @@ PHX_POST_REGISTRATION_SETUP(Integrator_CurlBasisDotVector,sd,fm)
 {
   this->utils.setFieldData(residual,fm);
   this->utils.setFieldData(flux,fm);
-  this->utils.setFieldData(dof_orientation,fm);
+  // this->utils.setFieldData(dof_orientation,fm);
 
   for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
        field != field_multipliers.end(); ++field)
@@ -165,6 +169,7 @@ PHX_EVALUATE_FIELDS(Integrator_CurlBasisDotVector,workset)
   }
   
   if(workset.num_cells>0) {
+/*
     Intrepid::FieldContainer<double> weighted_curl_basis = (workset.bases[basis_index])->weighted_curl_basis;
 
     // assign ScalarT "dof_orientation" to double "orientation"
@@ -182,6 +187,11 @@ PHX_EVALUATE_FIELDS(Integrator_CurlBasisDotVector,workset)
      Intrepid::FunctionSpaceTools::
        integrate<ScalarT>(residual, tmp, 
                        weighted_curl_basis, 
+		       Intrepid::COMP_BLAS);
+*/
+     Intrepid::FunctionSpaceTools::
+       integrate<ScalarT>(residual, tmp, 
+                       workset.bases[basis_index]->weighted_curl_basis, 
 		       Intrepid::COMP_BLAS);
   }
 }

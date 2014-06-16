@@ -56,6 +56,7 @@ int main(int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>    // => typedef MueLu::FooClass<Scalar, LocalOrdinal, ...> Foo
 
   using Teuchos::RCP; // reference count pointers
+  using Teuchos::rcp; // reference count pointers
 
   //
   // MPI initialization using Teuchos

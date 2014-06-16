@@ -45,7 +45,7 @@
 #include "Panzer_WorksetFactoryBase.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 /** Build sets of boundary condition worksets
   */
@@ -53,7 +53,7 @@ Teuchos::RCP<std::map<unsigned,panzer::Workset> > WorksetFactory::
 getSideWorksets(const panzer::BC & bc,
               const panzer::PhysicsBlock & pb) const
 {
-   return panzer_stk::buildBCWorksets(*mesh_,pb,bc.sidesetID());
+   return panzer_stk_classic::buildBCWorksets(*mesh_,pb,bc.sidesetID());
 }
 
 Teuchos::RCP<std::vector<panzer::Workset> > WorksetFactory::
@@ -61,11 +61,11 @@ getWorksets(const panzer::WorksetDescriptor & worksetDesc,
             const panzer::PhysicsBlock & pb) const
 {
   if(!worksetDesc.useSideset()) {
-    return panzer_stk::buildWorksets(*mesh_, pb);
+    return panzer_stk_classic::buildWorksets(*mesh_, pb);
   }
   else if(worksetDesc.useSideset() && worksetDesc.sideAssembly()) {
     // uses cascade by default, each subcell has its own workset
-    return panzer_stk::buildWorksets(*mesh_,pb,worksetDesc.getSideset(),true);
+    return panzer_stk_classic::buildWorksets(*mesh_,pb,worksetDesc.getSideset(),true);
   }
   else {
     TEUCHOS_ASSERT(false);
@@ -74,7 +74,7 @@ getWorksets(const panzer::WorksetDescriptor & worksetDesc,
     // to fix how the assembly process is handled for sidesets 
     /*
     Teuchos::RCP<std::map<unsigned,panzer::Workset> > workset_map =
-      panzer_stk::buildBCWorksets(*mesh_,pb,worksetDesc.getSideset());
+      panzer_stk_classic::buildBCWorksets(*mesh_,pb,worksetDesc.getSideset());
 
     // loop over worksets, adding them to vector
     Teuchos::RCP<std::vector<panzer::Workset> > worksets = Teuchos::rcp(new std::vector<panzer::Workset>);

@@ -465,6 +465,67 @@ int Epetra_Util::SortCrsEntries(int NumRows, const int *CRS_rowptr, int *CRS_col
   return(0);
 }
 
+//----------------------------------------------------------------------------
+int Epetra_Util::SortAndMergeCrsEntries(int NumRows, int *CRS_rowptr, int *CRS_colind, double *CRS_vals){
+  // For each row, sort column entries from smallest to largest, merging column ids that are identical by adding values.
+  // Use shell sort. Stable sort so it is fast if indices are already sorted.
+  // Code copied from  Epetra_CrsMatrix::SortEntries()
+
+  int nnz = CRS_rowptr[NumRows];
+  int new_curr=CRS_rowptr[0], old_curr=CRS_rowptr[0];
+
+  for(int i = 0; i < NumRows; i++){
+    int start=CRS_rowptr[i];
+    if(start >= nnz) continue;
+
+    double* locValues = &CRS_vals[start];
+    int NumEntries    = CRS_rowptr[i+1] - start;
+    int* locIndices   = &CRS_colind[start];
+
+    // Sort phase
+    int n = NumEntries;
+    int m = n/2;
+
+    while(m > 0) {
+      int max = n - m;
+      for(int j = 0; j < max; j++) {
+        for(int k = j; k >= 0; k-=m) {
+          if(locIndices[k+m] >= locIndices[k])
+            break;
+          double dtemp = locValues[k+m];
+          locValues[k+m] = locValues[k];
+          locValues[k] = dtemp;
+          int itemp = locIndices[k+m];
+          locIndices[k+m] = locIndices[k];
+          locIndices[k] = itemp;
+        }
+      }
+      m = m/2;
+    }
+
+    // Merge & shrink
+    for(int j=CRS_rowptr[i]; j < CRS_rowptr[i+1]; j++) {
+      if(j > CRS_rowptr[i] && CRS_colind[j]==CRS_colind[new_curr-1]) {
+	CRS_vals[new_curr-1] += CRS_vals[j];
+      }
+      else if(new_curr==j) {
+	new_curr++;
+      }
+      else {
+	CRS_colind[new_curr] = CRS_colind[j];
+	CRS_vals[new_curr]   = CRS_vals[j];
+	new_curr++;
+      }
+    }
+
+    CRS_rowptr[i] = old_curr;
+    old_curr=new_curr;
+  }
+
+  CRS_rowptr[NumRows] = new_curr;
+  return (0);
+}
+
 
 //----------------------------------------------------------------------------
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES

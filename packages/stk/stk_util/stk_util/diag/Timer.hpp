@@ -9,24 +9,26 @@
 #ifndef STK_UTIL_DIAG_Timer_hpp
 #define STK_UTIL_DIAG_Timer_hpp
 
-#include <iosfwd>
-#include <vector>
-#include <list>
-#include <string>
-
 #include <stk_util/stk_config.h>
 #if defined( STK_HAS_MPI )
-#include <mpi.h>
+#  include <mpi.h>                      // for ompi_communicator_t
 #endif
+#include <stddef.h>                     // for size_t
+#include <list>                         // for list
+#include <stk_util/diag/Option.hpp>     // for OptionMask, etc
+#include <stk_util/diag/TimerMetricTraits.hpp>  // for MetricTraits, etc
+#include <stk_util/environment/FormatTime.hpp>  // for TimeFormat
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+#include <string>                       // for string
+#include <vector>                       // for vector
+namespace sierra { namespace Diag { class TimerParser; } }
+namespace stk { namespace diag { class Timer; } }
+namespace stk { namespace diag { class TimerImpl; } }
+namespace stk { namespace diag { class TimerSet; } }
+namespace stk { namespace diag { class Writer; } }
 
-#include <stk_util/diag/TimerMetricTraits.hpp>
-#include <stk_util/parallel/Parallel.hpp>
-#include <stk_util/environment/FormatTime.hpp>
-#include <stk_util/diag/Writer_fwd.hpp>
 
-#include <stk_util/diag/String.hpp>
-#include <stk_util/diag/WriterParser.hpp>
-#include <stk_util/diag/Option.hpp>
+
 
 
 ///
@@ -37,9 +39,6 @@
 namespace stk {
 namespace diag {
 
-class Timer;
-class TimerSet;
-class TimerImpl;
 
 typedef unsigned TimerMask;        ///< Timer classification mask
 
@@ -89,7 +88,7 @@ Timer createRootTimer(const std::string &name, const TimerSet &timer_set);
  * Function <b>deleteRootTimer</b> deletes a root timer and all of it's children timers.  All
  * children Timers are invalidated and can no longer be used.
  *
- * @param                       a <b>Timer</b> value of the root timer to delete.
+ * @param timer <b>Timer</b> value of the root timer to delete.
  */
 void deleteRootTimer(Timer timer);
 
@@ -102,7 +101,7 @@ void deleteRootTimer(Timer timer);
  * @param path_tail    a <code>std::string</code> const reference to the dot separated tail
  *                              to match.
  *
- * @param found_timer    a <code>std::vector<Timer></code> reference to the vector to store
+ * @param found_timers    a <code>std::vector<Timer></code> reference to the vector to store
  *                              matching timers.
  *
  * @return      a <code>std::vector<Timer></code> reference to found_timer.
@@ -270,7 +269,7 @@ public:
      * If the <b>checkpoint</b> parameter if true, the value returned is the
      * difference between the accumulated value and the checkpointed value.
      *
-     * @param checkpoint  a <b>bool</b> value of true of the checkpointed
+     * @param arg_checkpoint  a <b>bool</b> value of true of the checkpointed
      *        value is to be returned.
      *
      * @return      a <b>T</b> value of the accumulated or the
@@ -706,7 +705,6 @@ Timer &sierraTimer();
 
 void sierraTimerDestroy();
 
-class TimerParser;
 
 /**
  * @brief Class <b>Timer</b> implements a diagnostic timer and timer container for the

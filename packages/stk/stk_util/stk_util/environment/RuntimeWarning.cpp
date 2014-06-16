@@ -6,8 +6,9 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <stk_util/environment/ReportHandler.hpp>
 #include <stk_util/environment/RuntimeWarning.hpp>
+#include <exception>                    // for exception
+#include "stk_util/environment/RuntimeMessage.hpp"
 
 namespace stk {
 

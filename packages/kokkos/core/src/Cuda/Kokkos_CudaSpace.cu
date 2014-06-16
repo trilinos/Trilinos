@@ -90,15 +90,15 @@ class CudaMemoryTrackingEntry : public Impl::MemoryTrackingEntry
 public:
 
   void * const                    ptr_alloc ;
-  const unsigned                  size ;
-  const unsigned                  count ;
+  const size_t                    size ;
+  const size_t                    count ;
   Impl::cuda_texture_object_type  tex_obj ;
 
   CudaMemoryTrackingEntry( const std::string & arg_label ,
                            const std::type_info & arg_info ,
                            void * const           arg_ptr ,
-                           const unsigned         arg_size ,
-                           const unsigned         arg_count )
+                           const size_t           arg_size ,
+                           const size_t           arg_count )
     : Impl::MemoryTrackingEntry( arg_label , arg_info , arg_ptr , arg_size * arg_count )
     , ptr_alloc( arg_ptr )
     , size( arg_size )

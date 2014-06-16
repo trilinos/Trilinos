@@ -6,9 +6,8 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <iostream>
-
 #include <stk_util/util/ci_string.hpp>
+
 
 std::ostream &
 operator<<(

@@ -366,12 +366,12 @@ int main(int argc, char *argv[]) {
     RCP<Factory> RebalancedPFact = rcp(new RebalanceTransferFactory());
     RebalancedPFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Interpolation")));
     RebalancedPFact->SetFactory("P", Pfact);
+    RebalancedPFact->SetFactory("Nullspace", M.GetFactory("Ptent"));
 
     RCP<Factory> RebalancedRFact = rcp(new RebalanceTransferFactory());
     RebalancedRFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Restriction")));
     RebalancedRFact->SetFactory("R", Rfact);
     //RebalancedRFact->SetFactory("Coordinates", TransferCoordinatesFact);
-    RebalancedRFact->SetFactory("Nullspace", M.GetFactory("Ptent")); // TODO
 
     // Compute Ac from rebalanced P and R
     RCP<Factory> RebalancedAFact = rcp(new RebalanceAcFactory());
@@ -381,7 +381,7 @@ int main(int argc, char *argv[]) {
     M.SetFactory("A", RebalancedAFact);
     M.SetFactory("P", RebalancedPFact);
     M.SetFactory("R", RebalancedRFact);
-    M.SetFactory("Nullspace",   RebalancedRFact);
+    M.SetFactory("Nullspace",   RebalancedPFact);
     M.SetFactory("Importer",    RepartitionFact);
 #else
     // no re-balancing available

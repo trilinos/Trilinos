@@ -121,8 +121,8 @@ void AlgWolf<Adapter>::partition(RCP<PartitioningSolution<Adapter> > &solution_)
 
     env->debug(DETAILED_STATUS, string("Entering AlgWolf"));
 
-    int rank = env->myRank_;
-    int nprocs = env->numProcs_;
+    // int rank = env->myRank_;
+    // int nprocs = env->numProcs_;
 
     // ////////////////////////////////////////////////////////
     // // From the CoordinateModel we need:

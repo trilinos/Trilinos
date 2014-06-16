@@ -43,6 +43,8 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   params.set("Verbose",     0);
   if ( cmd[ CMD_USE_THREADS ] )
     params.set("Num Threads", cmd[CMD_USE_THREADS]);
+  else if ( cmd[ CMD_USE_OPENMP ] )
+    params.set("Num Threads", cmd[CMD_USE_OPENMP]);
   if ( cmd[ CMD_USE_NUMA ] && cmd[ CMD_USE_CORE_PER_NUMA ] ) {
     params.set("Num NUMA", cmd[ CMD_USE_NUMA ]);
     params.set("Num CoresPerNUMA", cmd[ CMD_USE_CORE_PER_NUMA ]);
@@ -59,14 +61,21 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   typedef Stokhos::LegendreBasis<int,double> legendre_basis;
   typedef Stokhos::LexographicLess< Stokhos::MultiIndex<int> > order_type;
   typedef Stokhos::TotalOrderBasis<int,double,order_type> product_basis;
-  typedef Stokhos::TensorProductQuadrature<int,double> quadrature;
+  typedef Stokhos::Quadrature<int,double> quadrature;
   const int dim = cmd[ CMD_USE_UQ_DIM ];
   const int order = cmd[ CMD_USE_UQ_ORDER ];
   Array< RCP<const one_d_basis> > bases(dim);
   for (int i=0; i<dim; i++)
     bases[i] = rcp(new legendre_basis(order, true));
   RCP<const product_basis> basis = rcp(new product_basis(bases));
-  RCP<const quadrature> quad     = rcp(new quadrature(basis));
+  RCP<const quadrature> quad;
+  if ( cmd[ CMD_USE_SPARSE ] ) {
+    Stokhos::TotalOrderIndexSet<int> index_set(dim, order);
+    quad = rcp(new Stokhos::SmolyakSparseGridQuadrature<int,double>(basis,
+                                                                    index_set));
+  }
+  else
+    quad = rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
   const int num_quad_points                 = quad->size();
   const Array<double>& quad_weights         = quad->getQuadWeights();
   const Array< Array<double> >& quad_points = quad->getQuadPoints();
@@ -107,7 +116,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
 
     static const bool is_cuda =
       Kokkos::Impl::is_same<Device,Kokkos::Cuda>::value;
-    static const int VectorSize = is_cuda ? 16 : 4;
+    static const int VectorSize = is_cuda ? 16 : 16;
     typedef Stokhos::StaticFixedStorage<int,double,VectorSize,Device> Storage;
     typedef Sacado::MP::Vector<Storage> Scalar;
 
@@ -117,7 +126,9 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
     typedef ElementComputationKLCoefficient< Scalar, double, Device > KL;
     KL diffusion_coefficient( kl_mean, kl_variance, kl_correlation, dim );
     typedef typename KL::RandomVariableView RV;
+    typedef typename RV::HostMirror HRV;
     RV rv = diffusion_coefficient.getRandomVariables();
+    HRV hrv = Kokkos::create_mirror_view(rv);
 
     const int num_qp_blocks = ( num_quad_points + VectorSize-1 ) / VectorSize;
 
@@ -127,10 +138,15 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
       const int qp_end = qp_begin + VectorSize <= num_quad_points ?
         qp_begin+VectorSize : num_quad_points;
 
-      // Set random variables -- using UVM here
-      for (int i=0; i<dim; ++i)
-        for (int qp=qp_begin, j=0; qp<qp_end; ++qp, ++j)
-          rv(i).fastAccessCoeff(j) = quad_points[qp][i];
+      // Set random variables
+      for (int qp=qp_begin, j=0; qp<qp_end; ++qp, ++j)
+        for (int i=0; i<dim; ++i)
+          hrv(i).fastAccessCoeff(j) = quad_points[qp][i];
+      if (qp_end - qp_begin < VectorSize)
+        for (int j=qp_end-qp_begin; j<VectorSize; ++j)
+          for (int i=0; i<dim; ++i)
+            hrv(i).fastAccessCoeff(j) = quad_points[qp_end-1][i];
+      Kokkos::deep_copy( rv, hrv );
 
       // Evaluate response on qp block
       Scalar response = 0;
@@ -181,14 +197,17 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
     typedef ElementComputationKLCoefficient< Scalar, double, Device > KL;
     KL diffusion_coefficient( kl_mean, kl_variance, kl_correlation, dim );
     typedef typename KL::RandomVariableView RV;
+    typedef typename RV::HostMirror HRV;
     RV rv = diffusion_coefficient.getRandomVariables();
+    HRV hrv = Kokkos::create_mirror_view(rv);
 
     // Loop over quadrature points
     for (int qp=0; qp<num_quad_points; ++qp) {
 
-      // Set random variables -- using UVM here
+      // Set random variables
       for (int i=0; i<dim; ++i)
-        rv(i) = quad_points[qp][i];
+        hrv(i) = quad_points[qp][i];
+      Kokkos::deep_copy( rv, hrv );
 
       // Evaluate response on qp block
       Scalar response = 0;
@@ -227,7 +246,13 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   perf_total.response_mean = response_pce.mean();
   perf_total.response_std_dev = response_pce.standard_deviation();
 
-  if ( 0 == comm_rank ) { print_perf_value( std::cout , widths, perf_total ); }
+  if ( 0 == comm_rank ) {
+    print_perf_value( std::cout , cmd , widths , perf_total );
+  }
+
+  if ( cmd[ CMD_SUMMARIZE ] ) {
+    Teuchos::TimeMonitor::report (comm.ptr (), std::cout);
+  }
 
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);

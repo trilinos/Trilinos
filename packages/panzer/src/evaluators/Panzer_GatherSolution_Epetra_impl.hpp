@@ -94,7 +94,13 @@ GatherSolution_Epetra(
   if (p.isType<std::string>("Global Data Key"))
      globalDataKey_ = p.get<std::string>("Global Data Key");
 
-  this->setName("Gather Solution");
+  // figure out what the first active name is
+  std::string firstName = "<none>";
+  if(names.size()>0)
+    firstName = names[0];
+
+  std::string n = "GatherSolution (Epetra): "+firstName+" ("+PHX::TypeString<EvalT>::value+")";
+  this->setName(n);
 }
 
 // **********************************************************************
@@ -215,7 +221,13 @@ GatherSolution_Epetra(
   if (p.isType<std::string>("Global Data Key"))
      globalDataKey_ = p.get<std::string>("Global Data Key");
 
-  this->setName("Gather Solution");
+  // figure out what the first active name is
+  std::string firstName = "<none>";
+  if(names.size()>0)
+    firstName = names[0];
+
+  std::string n = "GatherSolution (Epetra): "+firstName+" ("+PHX::TypeString<EvalT>::value+")";
+  this->setName(n);
 }
 
 // **********************************************************************
@@ -347,11 +359,20 @@ GatherSolution_Epetra(
      gatherSeedIndex_ = p.get<int>("Gather Seed Index");
   }
 
+  // figure out what the first active name is
+  std::string firstName = "<none>";
+  if(names.size()>0)
+    firstName = names[0];
+
   // print out convenience
-  if(disableSensitivities_)
-     this->setName("Gather Solution (No Sensitivities)");
-  else
-     this->setName("Gather Solution");
+  if(disableSensitivities_) {
+    std::string n = "GatherSolution (Epetra, No Sensitivities): "+firstName+" ("+PHX::TypeString<EvalT>::value+")";
+    this->setName(n);
+  }
+  else {
+    std::string n = "GatherSolution (Epetra): "+firstName+" ("+PHX::TypeString<EvalT>::value+")";
+    this->setName(n);
+  }
 }
 
 // **********************************************************************

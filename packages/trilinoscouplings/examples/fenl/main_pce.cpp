@@ -42,6 +42,8 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   params.set("Verbose",     0);
   if ( cmd[ CMD_USE_THREADS ] )
     params.set("Num Threads", cmd[CMD_USE_THREADS]);
+  else if ( cmd[ CMD_USE_OPENMP ] )
+    params.set("Num Threads", cmd[CMD_USE_OPENMP]);
   if ( cmd[ CMD_USE_NUMA ] && cmd[ CMD_USE_CORE_PER_NUMA ] ) {
     params.set("Num NUMA", cmd[ CMD_USE_NUMA ]);
     params.set("Num CoresPerNUMA", cmd[ CMD_USE_CORE_PER_NUMA ]);
@@ -106,9 +108,11 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   typedef ElementComputationKLCoefficient< Scalar, double, Device > KL;
   KL diffusion_coefficient( kl_mean, kl_variance, kl_correlation, dim );
   typedef typename KL::RandomVariableView RV;
+  typedef typename RV::HostMirror HRV;
   RV rv = diffusion_coefficient.getRandomVariables();
+  HRV hrv = Kokkos::create_mirror_view(rv);
 
-  // Set random variables -- using UVM here
+  // Set random variables
   // ith random variable \xi_i = \psi_I(\xi) / \psi_I(1.0)
   // where I is determined by the basis ordering (since the component basis
   // functions have unit two-norm, \psi_I(1.0) might not be 1.0).  We compute
@@ -121,8 +125,9 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
     Stokhos::MultiIndex<int> term(dim, 0);
     term[i] = 1;
     int index = basis->index(term);
-    rv(i).fastAccessCoeff(index) = 1.0 / basis_vals[index];
+    hrv(i).fastAccessCoeff(index) = 1.0 / basis_vals[index];
   }
+  Kokkos::deep_copy( rv, hrv );
 
   // Compute stochastic response using stochastic Galerkin method
   Scalar response = 0;
@@ -161,7 +166,13 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
 
   //std::cout << std::endl << response << std::endl;
 
-  if ( 0 == comm_rank ) { print_perf_value( std::cout , widths, perf ); }
+  if ( 0 == comm_rank ) {
+    print_perf_value( std::cout , cmd , widths , perf );
+  }
+
+  if ( cmd[ CMD_SUMMARIZE ] ) {
+    Teuchos::TimeMonitor::report (comm.ptr (), std::cout);
+  }
 
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);

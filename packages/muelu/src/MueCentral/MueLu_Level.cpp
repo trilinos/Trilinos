@@ -369,6 +369,9 @@ namespace MueLu {
   }
 
   void Level::print(std::ostream& out, const VerbLevel verbLevel) const {
+    if (!(verbLevel & Debug))
+      return;
+
     out << "LevelID = " << GetLevelID() << std::endl;
 
     typedef Teuchos::TabularOutputter TTO;

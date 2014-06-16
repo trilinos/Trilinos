@@ -9,32 +9,31 @@
 #ifndef STK_UTIL_DIAG_WRITEREXT_HPP
 #define STK_UTIL_DIAG_WRITEREXT_HPP
 
-#include <bitset>
-#include <iostream>
-#include <list>
-#include <map>
-#include <set>
-#include <memory>
-#include <stack>
-#include <string>
-#include <typeinfo>
-#include <vector>
-#include <stk_util/stk_config.h>
-#include <stk_util/util/VecMap.hpp>
-#include <stk_util/util/VecSet.hpp>
+#include <stddef.h>                     // for size_t
+#include <bitset>                       // for bitset
+#include <iostream>                     // for ostream, endl
+#include <list>                         // for list
+#include <map>                          // for map, multimap
+#include <memory>                       // for auto_ptr
+#include <set>                          // for multiset, set
+#include <stk_util/diag/Mapv.hpp>       // for Mapv, MapvNode, etc
+#include <stk_util/diag/String.hpp>     // for String, Identifier
+#include <stk_util/diag/StringUtil.hpp>  // for demangle
+#include <stk_util/util/Array.hpp>      // for Array, ArrayContainer
+#include <stk_util/util/VecMap.hpp>     // for vecmap
+#include <stk_util/util/VecSet.hpp>     // for vecset
+#include <stk_util/util/Writer.hpp>     // for Writer, operator<<, dendl, etc
+#include <string>                       // for string
+#include <typeinfo>                     // for type_info
+#include <utility>                      // for pair
+#include <vector>                       // for vector
+#include "stk_util/util/FArray.hpp"     // for FArrayContainer, FArray
+namespace sierra { namespace MPI { struct TempLoc; } }
+namespace sierra { namespace MPI { template <typename T> struct Loc; } }
 
-#include <stk_util/diag/Writer.hpp>
 
 
-#include <stk_util/diag/String.hpp>
-#include <stk_util/diag/StringUtil.hpp>
 
-#include <stk_util/util/FeatureTest.hpp>
-#include <stk_util/util/Array.hpp>
-#include <stk_util/util/FArrayPrint.hpp>
-#include <stk_util/parallel/MPI.hpp>
-#include <stk_util/diag/Mapv.hpp>
-#include <stk_util/diag/Option.hpp>
 
 
 namespace stk {
@@ -650,7 +649,6 @@ Writer &operator<<(Writer &dout, const sierra::String &s);
  */
 Writer &operator<<(Writer &dout, const sierra::Identifier &s);
 
-#if defined( STK_HAS_MPI )
 /**
  * @brief Function <b>operator<<</b> writes the MPI::Loc<int> type to the output stream.
  *
@@ -702,8 +700,6 @@ Writer &operator<<(Writer &dout, const sierra::MPI::Loc<float> &loc);
  * @return		a <b>Writer</b> reference to this object
  */
 Writer &operator<<(Writer &dout, const sierra::MPI::TempLoc &loc);
-
-#endif // if defined( STK_HAS_MPI )
 
 /**
  * @brief Template function <b>c_ptr_name</b> implements c_ptr_func with the function

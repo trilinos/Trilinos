@@ -58,7 +58,7 @@ demangle(
 #else
   std::string   s;
 
-  int		status;
+  int		status=-1;
 
   char *demangled_symbol = __cxxabiv1::__cxa_demangle(symbol, 0, 0, &status);
 

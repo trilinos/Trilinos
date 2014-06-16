@@ -160,17 +160,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(
 
 // Notes:  SFS, DS are defined in main test header (we are also being lazy
 // and not putting ordinal/scalar/device in the names, assuming we will only
-// do one combination).  We can't do DefaultMultiply for DS because it
-// uses partitioning
+// do one combination).
 #define CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_ORDINAL_SCALAR_DEVICE( ORDINAL, SCALAR, DEVICE ) \
   CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_STORAGE_OP( SFS, DefaultMultiply ) \
-  CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_STORAGE_OP( SFS, EnsembleMultiply ) \
   CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_STORAGE_OP( SFS, KokkosMultiply ) \
-  CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_STORAGE_OP( DS, EnsembleMultiply )
-
-// KokkosMultiply now uses Default, which uses partitions, which doesn't work
-// for dynamic storage.
-//  CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_STORAGE_OP( DS, KokkosMultiply )
+  CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_STORAGE_OP( DS, DefaultMultiply ) \
+  CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_STORAGE_OP( DS, KokkosMultiply )
 
 CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_ORDINAL_SCALAR_DEVICE(int, double, Cuda)
 

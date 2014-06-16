@@ -56,6 +56,8 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   params.set("Verbose",     0);
   if ( cmd[ CMD_USE_THREADS ] )
     params.set("Num Threads", cmd[CMD_USE_THREADS]);
+  else if ( cmd[ CMD_USE_OPENMP ] )
+    params.set("Num Threads", cmd[CMD_USE_OPENMP]);
   if ( cmd[ CMD_USE_NUMA ] && cmd[ CMD_USE_CORE_PER_NUMA ] ) {
     params.set("Num NUMA", cmd[ CMD_USE_NUMA ]);
     params.set("Num CoresPerNUMA", cmd[ CMD_USE_CORE_PER_NUMA ]);
@@ -91,7 +93,9 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
       perf.response_mean = response;
       perf.response_std_dev = 0.0;
 
-      if ( 0 == comm_rank ) { print_perf_value( std::cout , widths, perf ); }
+      if ( 0 == comm_rank ) {
+        print_perf_value( std::cout , cmd , widths , perf );
+      }
     }
   }
   else {
@@ -118,7 +122,13 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
     perf.response_mean = response;
     perf.response_std_dev = 0.0;
 
-    if ( 0 == comm_rank ) { print_perf_value( std::cout , widths, perf ); }
+    if ( 0 == comm_rank ) {
+      print_perf_value( std::cout , cmd , widths , perf );
+    }
+  }
+
+  if ( cmd[ CMD_SUMMARIZE ] ) {
+    Teuchos::TimeMonitor::report (comm.ptr (), std::cout);
   }
 
   }

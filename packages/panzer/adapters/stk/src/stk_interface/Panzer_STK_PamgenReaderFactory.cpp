@@ -57,7 +57,7 @@
 
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 STK_PamgenReaderFactory::STK_PamgenReaderFactory()
    : fileName_(""), restartIndex_(0), useLowerCase_(false)
@@ -67,13 +67,13 @@ STK_PamgenReaderFactory::STK_PamgenReaderFactory(const std::string & fileName,in
    : fileName_(fileName), restartIndex_(restartIndex), useLowerCase_(false)
 { }
 
-Teuchos::RCP<STK_Interface> STK_PamgenReaderFactory::buildMesh(stk::ParallelMachine parallelMach) const
+Teuchos::RCP<STK_Interface> STK_PamgenReaderFactory::buildMesh(stk_classic::ParallelMachine parallelMach) const
 {
    PANZER_FUNC_TIME_MONITOR("panzer::STK_PamgenReaderFactory::buildMesh()");
 
    using Teuchos::RCP;
    using Teuchos::rcp;
-   typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType;
+   typedef stk_classic::mesh::Field<double,stk_classic::mesh::Cartesian> VectorFieldType;
    
    RCP<STK_Interface> mesh = buildUncommitedMesh(parallelMach);
 
@@ -92,7 +92,7 @@ Teuchos::RCP<STK_Interface> STK_PamgenReaderFactory::buildMesh(stk::ParallelMach
   * Allows user to add solution fields and other pieces. The mesh can be "completed"
   * by calling <code>completeMeshConstruction</code>.
   */
-Teuchos::RCP<STK_Interface> STK_PamgenReaderFactory::buildUncommitedMesh(stk::ParallelMachine parallelMach) const 
+Teuchos::RCP<STK_Interface> STK_PamgenReaderFactory::buildUncommitedMesh(stk_classic::ParallelMachine parallelMach) const 
 { 
    PANZER_FUNC_TIME_MONITOR("panzer::STK_PamgenReaderFactory::buildUncomittedMesh()");
 
@@ -104,24 +104,24 @@ Teuchos::RCP<STK_Interface> STK_PamgenReaderFactory::buildUncommitedMesh(stk::Pa
    // immediately setup lower case usage
    mesh->setUseLowerCaseForIO(useLowerCase_);
 
-   RCP<stk::mesh::fem::FEMMetaData> femMetaData = mesh->getMetaData();
-   stk::mesh::MetaData & metaData = stk::mesh::fem::FEMMetaData::get_meta_data(*femMetaData);
+   RCP<stk_classic::mesh::fem::FEMMetaData> femMetaData = mesh->getMetaData();
+   stk_classic::mesh::MetaData & metaData = stk_classic::mesh::fem::FEMMetaData::get_meta_data(*femMetaData);
 
    // read in meta data
    Ioss::Init::Initializer io;
-   stk::io::MeshData * meshData = new stk::io::MeshData;
-   stk::io::create_input_mesh("pamgen", fileName_, parallelMach,
+   stk_classic::io::MeshData * meshData = new stk_classic::io::MeshData;
+   stk_classic::io::create_input_mesh("pamgen", fileName_, parallelMach,
                                     *femMetaData, *meshData,useLowerCase_);
 
    // add in "FAMILY_TREE" entity for doing refinement
    std::size_t dimension = femMetaData->spatial_dimension();
-   std::vector<std::string> entity_rank_names = stk::mesh::fem::entity_rank_names(dimension);
+   std::vector<std::string> entity_rank_names = stk_classic::mesh::fem::entity_rank_names(dimension);
    entity_rank_names.push_back("FAMILY_TREE");
    femMetaData->set_entity_rank_names(entity_rank_names);
 
    // read in other transient fields, these will be useful later when
    // trying to read other fields for use in solve
-   stk::io::define_input_fields(*meshData,*femMetaData);
+   stk_classic::io::define_input_fields(*meshData,*femMetaData);
 
    // store mesh data pointer for later use in initializing 
    // bulk data
@@ -139,7 +139,7 @@ Teuchos::RCP<STK_Interface> STK_PamgenReaderFactory::buildUncommitedMesh(stk::Pa
    return mesh; 
 }
 
-void STK_PamgenReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk::ParallelMachine parallelMach) const
+void STK_PamgenReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk_classic::ParallelMachine parallelMach) const
 {
    PANZER_FUNC_TIME_MONITOR("panzer::STK_PamgenReaderFactory::completeMeshConstruction()");
 
@@ -150,20 +150,20 @@ void STK_PamgenReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk:
       mesh.initialize(parallelMach);
 
    // grab mesh data pointer to build the bulk data
-   stk::mesh::MetaData & metaData = stk::mesh::fem::FEMMetaData::get_meta_data(*mesh.getMetaData());
-   stk::io::MeshData * meshData = 
-         const_cast<stk::io::MeshData *>(metaData.get_attribute<stk::io::MeshData>());
+   stk_classic::mesh::MetaData & metaData = stk_classic::mesh::fem::FEMMetaData::get_meta_data(*mesh.getMetaData());
+   stk_classic::io::MeshData * meshData = 
+         const_cast<stk_classic::io::MeshData *>(metaData.get_attribute<stk_classic::io::MeshData>());
          // if const_cast is wrong ... why does it feel so right?
          // I believe this is safe since we are basically hiding this object under the covers
          // until the mesh construction can be completed...below I cleanup the object myself.
    TEUCHOS_ASSERT(metaData.remove_attribute(meshData)); 
       // remove the MeshData attribute
 
-   RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
+   RCP<stk_classic::mesh::BulkData> bulkData = mesh.getBulkData();
 
    // build mesh bulk data
    mesh.beginModification();
-   stk::io::populate_bulk_data(*bulkData, *meshData);
+   stk_classic::io::populate_bulk_data(*bulkData, *meshData);
    mesh.endModification();
 
    // put in a negative index and (like python) the restart will be from the back
@@ -175,7 +175,7 @@ void STK_PamgenReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk:
    }
 
    // populate mesh fields with specific index
-   stk::io::process_input_request(*meshData,*bulkData,restartIndex);
+   stk_classic::io::process_input_request(*meshData,*bulkData,restartIndex);
 
    mesh.buildSubcells();
    mesh.buildLocalElementIDs();
@@ -241,11 +241,11 @@ Teuchos::RCP<const Teuchos::ParameterList> STK_PamgenReaderFactory::getValidPara
    return validParams.getConst();
 }
 
-void STK_PamgenReaderFactory::registerElementBlocks(STK_Interface & mesh,stk::io::MeshData & meshData) const 
+void STK_PamgenReaderFactory::registerElementBlocks(STK_Interface & mesh,stk_classic::io::MeshData & meshData) const 
 {
    using Teuchos::RCP;
 
-   RCP<stk::mesh::fem::FEMMetaData> femMetaData = mesh.getMetaData();
+   RCP<stk_classic::mesh::fem::FEMMetaData> femMetaData = mesh.getMetaData();
 
    // here we use the Ioss interface because they don't add
    // "bonus" element blocks and its easier to determine
@@ -255,7 +255,7 @@ void STK_PamgenReaderFactory::registerElementBlocks(STK_Interface & mesh,stk::io
       Ioss::GroupingEntity * entity = *itr;
       const std::string & name = entity->name(); 
 
-      const stk::mesh::Part * part = femMetaData->get_part(name);
+      const stk_classic::mesh::Part * part = femMetaData->get_part(name);
       const CellTopologyData * ct = femMetaData->get_cell_topology(*part).getCellTopologyData();
 
       TEUCHOS_ASSERT(ct!=0);
@@ -273,18 +273,18 @@ void buildSetNames(const SetType & setData,std::vector<std::string> & names)
    }
 }
 
-void STK_PamgenReaderFactory::registerSidesets(STK_Interface & mesh,stk::io::MeshData & meshData) const
+void STK_PamgenReaderFactory::registerSidesets(STK_Interface & mesh,stk_classic::io::MeshData & meshData) const
 {
    using Teuchos::RCP;
 
-   RCP<stk::mesh::fem::FEMMetaData> metaData = mesh.getMetaData();
-   const stk::mesh::PartVector & parts = metaData->get_parts();
+   RCP<stk_classic::mesh::fem::FEMMetaData> metaData = mesh.getMetaData();
+   const stk_classic::mesh::PartVector & parts = metaData->get_parts();
 
-   stk::mesh::PartVector::const_iterator partItr;
+   stk_classic::mesh::PartVector::const_iterator partItr;
    for(partItr=parts.begin();partItr!=parts.end();++partItr) {
-      const stk::mesh::Part * part = *partItr;
-      const stk::mesh::PartVector & subsets = part->subsets();
-      // const CellTopologyData * ct = stk::mesh::fem::get_cell_topology(*part).getCellTopologyData();
+      const stk_classic::mesh::Part * part = *partItr;
+      const stk_classic::mesh::PartVector & subsets = part->subsets();
+      // const CellTopologyData * ct = stk_classic::mesh::fem::get_cell_topology(*part).getCellTopologyData();
       const CellTopologyData * ct = metaData->get_cell_topology(*part).getCellTopologyData();
 
       // if a side part ==> this is a sideset: now storage is recursive
@@ -295,8 +295,8 @@ void STK_PamgenReaderFactory::registerSidesets(STK_Interface & mesh,stk::io::Mes
                             "\" has more than one subset"); 
 
          // grab cell topology and name of subset part
-         const stk::mesh::Part * ss_part = subsets[0];
-         // const CellTopologyData * ss_ct = stk::mesh::fem::get_cell_topology(*ss_part).getCellTopologyData();
+         const stk_classic::mesh::Part * ss_part = subsets[0];
+         // const CellTopologyData * ss_ct = stk_classic::mesh::fem::get_cell_topology(*ss_part).getCellTopologyData();
          const CellTopologyData * ss_ct = metaData->get_cell_topology(*ss_part).getCellTopologyData();
  
          // only add subset parts that have no topology
@@ -306,16 +306,16 @@ void STK_PamgenReaderFactory::registerSidesets(STK_Interface & mesh,stk::io::Mes
    }
 }
 
-void STK_PamgenReaderFactory::registerNodesets(STK_Interface & mesh,stk::io::MeshData & meshData) const
+void STK_PamgenReaderFactory::registerNodesets(STK_Interface & mesh,stk_classic::io::MeshData & meshData) const
 {
    using Teuchos::RCP;
 
-   RCP<stk::mesh::fem::FEMMetaData> metaData = mesh.getMetaData();
-   const stk::mesh::PartVector & parts = metaData->get_parts();
+   RCP<stk_classic::mesh::fem::FEMMetaData> metaData = mesh.getMetaData();
+   const stk_classic::mesh::PartVector & parts = metaData->get_parts();
 
-   stk::mesh::PartVector::const_iterator partItr;
+   stk_classic::mesh::PartVector::const_iterator partItr;
    for(partItr=parts.begin();partItr!=parts.end();++partItr) {
-      const stk::mesh::Part * part = *partItr;
+      const stk_classic::mesh::Part * part = *partItr;
       const CellTopologyData * ct = metaData->get_cell_topology(*part).getCellTopologyData();
 
       // if a side part ==> this is a sideset: now storage is recursive

@@ -328,7 +328,7 @@ namespace Tpetra {
       template <class S, class LO, class GO, class Node, class OP>
       void unary_transform (Vector<S,LO,GO,Node> &vec, OP op)
       {
-        KokkosClassic::MultiVector<S,Node> &mv = vec.getLocalMVNonConst();
+        KokkosClassic::MultiVector<S,Node> mv = vec.getLocalMV ();
         const RCP<Node> node = mv.getNode();
         // ready data
         KokkosClassic::ReadyBufferHelper<Node> rbh(node);
@@ -344,8 +344,8 @@ namespace Tpetra {
       template <class S1, class S2, class LO, class GO, class Node, class OP>
       void binary_transform (Vector<S1,LO,GO,Node> &vec_inout, const Vector<S2,LO,GO,Node> &vec_in2, OP op)
       {
-        KokkosClassic::MultiVector<S1,Node>       &mv_inout = vec_inout.getLocalMVNonConst();
-        const KokkosClassic::MultiVector<S2,Node> &mv_in2   = vec_in2.getLocalMV();
+        KokkosClassic::MultiVector<S1,Node> mv_inout = vec_inout.getLocalMV ();
+        KokkosClassic::MultiVector<S2,Node> mv_in2 = vec_in2.getLocalMV ();
         const RCP<Node> node = mv_inout.getNode();
         // ready data
         KokkosClassic::ReadyBufferHelper<Node> rbh(node);
@@ -366,9 +366,9 @@ namespace Tpetra {
       template <class S1, class S2, class S3, class LO, class GO, class Node, class OP>
       void tertiary_transform(Vector<S1,LO,GO,Node> &vec_inout, const Vector<S2,LO,GO,Node> &vec_in2, const Vector<S3,LO,GO,Node> &vec_in3, OP op)
       {
-        KokkosClassic::MultiVector<S1,Node>       &mv_inout = vec_inout.getLocalMVNonConst();
-        const KokkosClassic::MultiVector<S2,Node> &mv_in2   = vec_in2.getLocalMV();
-        const KokkosClassic::MultiVector<S3,Node> &mv_in3   = vec_in3.getLocalMV();
+        KokkosClassic::MultiVector<S1,Node> mv_inout = vec_inout.getLocalMV ();
+        KokkosClassic::MultiVector<S2,Node> mv_in2   = vec_in2.getLocalMV ();
+        KokkosClassic::MultiVector<S3,Node> mv_in3   = vec_in3.getLocalMV ();
         const RCP<Node> node = mv_inout.getNode();
         // ready data
         KokkosClassic::ReadyBufferHelper<Node> rbh(node);
@@ -477,8 +477,8 @@ namespace Tpetra {
       typename OP::ReductionType
       transform_reduce(Vector<S1,LO,GO,Node> &vec_inout, const Vector<S2,LO,GO,Node> &vec_in2, OP op)
       {
-        KokkosClassic::MultiVector<S1,Node>       &mv_inout = vec_inout.getLocalMVNonConst();
-        const KokkosClassic::MultiVector<S2,Node> &mv_in2   = vec_in2.getLocalMV();
+        KokkosClassic::MultiVector<S1,Node> mv_inout = vec_inout.getLocalMV ();
+        KokkosClassic::MultiVector<S2,Node> mv_in2 = vec_in2.getLocalMV ();
         const RCP<Node> node = mv_inout.getNode();
         const RCP<const Teuchos::Comm<int> > comm = vec_inout.getMap()->getComm();
         // ready data
@@ -507,9 +507,9 @@ namespace Tpetra {
       typename OP::ReductionType
       transform_reduce(Vector<S1,LO,GO,Node> &vec_inout, const Vector<S2,LO,GO,Node> &vec_in2, const Vector<S3,LO,GO,Node> &vec_in3, OP op)
       {
-        KokkosClassic::MultiVector<S1,Node>       &mv_inout = vec_inout.getLocalMVNonConst();
-        const KokkosClassic::MultiVector<S2,Node> &mv_in2   = vec_in2.getLocalMV();
-        const KokkosClassic::MultiVector<S3,Node> &mv_in3   = vec_in3.getLocalMV();
+        KokkosClassic::MultiVector<S1,Node> mv_inout = vec_inout.getLocalMV ();
+        KokkosClassic::MultiVector<S2,Node> mv_in2   = vec_in2.getLocalMV ();
+        KokkosClassic::MultiVector<S3,Node> mv_in3   = vec_in3.getLocalMV ();
         const RCP<Node> node = mv_inout.getNode();
         const RCP<const Teuchos::Comm<int> > comm = vec_inout.getMap()->getComm();
         // ready data

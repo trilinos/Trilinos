@@ -300,8 +300,14 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
      *  of the iterative solver strategy.
      */
     void reset( const ResetType type ) {
-      if ((type & Belos::Problem) && !Teuchos::is_null(problem_)) problem_->setProblem();
-      else if (type & Belos::RecycleSubspace) keff = 0;
+      if ((type & Belos::Problem) && !Teuchos::is_null(problem_)) {
+        bool set = problem_->setProblem();
+        if  (!set)
+          throw "Could not set problem.";
+      }
+      else if (type & Belos::RecycleSubspace) {
+        keff = 0;
+      }
     }
     //@}
 
@@ -523,7 +529,9 @@ GCRODRSolMgr<ScalarType,MV,OP>::outputStream_default_ = Teuchos::rcpFromRef (std
 
 // Empty Constructor
 template<class ScalarType, class MV, class OP>
-GCRODRSolMgr<ScalarType,MV,OP>::GCRODRSolMgr()
+GCRODRSolMgr<ScalarType,MV,OP>::GCRODRSolMgr():
+  achievedTol_(0.0),
+  numIters_(0)
 {
   init ();
 }
@@ -533,7 +541,9 @@ GCRODRSolMgr<ScalarType,MV,OP>::GCRODRSolMgr()
 template<class ScalarType, class MV, class OP>
 GCRODRSolMgr<ScalarType,MV,OP>::
 GCRODRSolMgr(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >& problem,
-             const Teuchos::RCP<Teuchos::ParameterList>& pl)
+             const Teuchos::RCP<Teuchos::ParameterList>& pl):
+  achievedTol_(0.0),
+  numIters_(0)
 {
   // Initialize local pointers to null, and initialize local variables
   // to default values.

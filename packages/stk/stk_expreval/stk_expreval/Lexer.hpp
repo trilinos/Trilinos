@@ -121,8 +121,8 @@ public:
   }
 
 private:
-  Token			m_token;		//< Token which describes the value
-  std::string		m_value;		//< Value
+  Token			m_token;		///< Token which describes the value
+  std::string		m_value;		///< Value
 };
 
 typedef std::vector<Lexem> LexemVector;

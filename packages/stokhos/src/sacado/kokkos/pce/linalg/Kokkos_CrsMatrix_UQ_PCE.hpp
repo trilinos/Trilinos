@@ -1006,8 +1006,8 @@ MV_Multiply(
   typedef Stokhos::Multiply<MatrixType,InputVectorType,
     OutputVectorType> multiply_type;
 
-  if (!Impl::is_pce_constant(a)) {
-    Impl::raise_sacado_error(
+  if (!Sacado::is_constant(a)) {
+    Impl::raise_error(
       "MV_Multiply not implemented for non-constant a");
   }
 
@@ -1052,8 +1052,8 @@ MV_Multiply(
   typedef Stokhos::Multiply<MatrixType,InputVectorType,
     OutputVectorType> multiply_type;
 
-  if (!Impl::is_pce_constant(a) || !Impl::is_pce_constant(b)) {
-    Impl::raise_sacado_error(
+  if (!Sacado::is_constant(a) || !Sacado::is_constant(b)) {
+    Impl::raise_error(
       "MV_Multiply not implemented for non-constant a or b");
   }
 
@@ -1156,8 +1156,8 @@ MV_Multiply(
     typedef Stokhos::Multiply<MatrixType,InputVectorType,
       OutputVectorType> multiply_type;
 
-    if (!Impl::is_pce_constant(a)) {
-      Impl::raise_sacado_error(
+    if (!Sacado::is_constant(a)) {
+      Impl::raise_error(
         "MV_Multiply not implemented for non-constant a");
     }
 
@@ -1213,8 +1213,8 @@ MV_Multiply(
     typedef Stokhos::Multiply<MatrixType,InputVectorType,
       OutputVectorType> multiply_type;
 
-    if (!Impl::is_pce_constant(a) || !Impl::is_pce_constant(b)) {
-      Impl::raise_sacado_error(
+    if (!Sacado::is_constant(a) || !Sacado::is_constant(b)) {
+      Impl::raise_error(
         "MV_Multiply not implemented for non-constant a or b");
     }
 

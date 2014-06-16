@@ -13,7 +13,7 @@ create a Map to describe the distribution scheme you want, and then
 use the Map to create objects (such as Vectors) that have this
 distribution.  We spend a little bit more time than you might
 initially wish explaining Map, but understanding it is important for
-getting the best performance out of Teptra.  We give examples of
+getting the best performance out of Tpetra.  We give examples of
 different distributions you can create, use their Maps to create
 Vectors, and then do some arithmetic with the Vectors.  All of this
 gives us an opportunity to explain the various template parameters

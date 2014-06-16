@@ -198,6 +198,15 @@ class MatrixMatrix {
 		 bool call_FillComplete_on_result);
 
     template<typename int_type>
+    static int Tmult_AT_B_newmatrix(const CrsMatrixStruct & Atransview, 
+				   const CrsMatrixStruct & Bview, 
+				   Epetra_CrsMatrix & C);
+
+    static int mult_AT_B_newmatrix(const CrsMatrixStruct & Atransview, 
+				   const CrsMatrixStruct & Bview, 
+				   Epetra_CrsMatrix & C);
+
+    template<typename int_type>
     static int TMultiply(const Epetra_CrsMatrix& A,
 			bool transposeA,
 			const Epetra_CrsMatrix& B,

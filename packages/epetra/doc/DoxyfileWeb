@@ -42,7 +42,12 @@
 
 PROJECT_NAME           = Epetra
 
-INPUT                  = ../src ../../aztecoo/src index.doc
+INPUT                  = ../src ../../aztecoo/src index.doc \
+                         ../example/Lessons/Lesson01-Init/index.doc \
+                         ../example/Lessons/Lesson02-Map-Vector/index.doc \
+                         ../example/Lessons/Lesson03-Power-Method/index.doc \
+                         ../example/Lessons/Lesson04-Sparse-Matrix-Fill/index.doc \
+                         ../example/Lessons/Lesson05-Redistribution/index.doc
 
 FILE_PATTERNS          = E*.h
 

@@ -45,7 +45,7 @@
 #include "Panzer_STK_ModelEvaluatorFactory.hpp"
 #include "Panzer_STK_ModelEvaluatorFactory_impl.hpp"
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
   template class ModelEvaluatorFactory<double>;
 

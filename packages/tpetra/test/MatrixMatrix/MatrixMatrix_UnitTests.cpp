@@ -198,10 +198,10 @@ null_add_test (const CrsMatrixType& A,
   typedef typename CrsMatrixType::scalar_type scalar_type;
   typedef typename CrsMatrixType::local_ordinal_type local_ordinal_type;
   typedef typename CrsMatrixType::global_ordinal_type global_ordinal_type;
-  typedef typename CrsMatrixType::node_type node_type;
+  typedef typename CrsMatrixType::node_type NT;
   typedef Teuchos::ScalarTraits<scalar_type> STS;
-  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
-  typedef Tpetra::Export<local_ordinal_type, global_ordinal_type, node_type> export_type;
+  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, NT> map_type;
+  typedef Tpetra::Export<local_ordinal_type, global_ordinal_type, NT> export_type;
   const scalar_type one = STS::one ();
 
   out << "  Computing Frobenius norm of the expected result C" << endl;
@@ -405,14 +405,14 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
         if(verbose){
           out << "Running jacobi test for " << currentSystem.name() << endl;
         }
-        mult_test_results results = jacobi_test(name, A,B,comm, out);
+        mult_test_results theResults = jacobi_test(name, A,B,comm, out);
         if (verbose) {
           out << "Results:" <<endl;
-          out << "\tEpsilon: " << results.epsilon << endl;
-          out << "\tcNorm: " << results.cNorm << endl;
-          out << "\tcompNorm: " << results.compNorm << endl;
+          out << "\tEpsilon: " << theResults.epsilon << endl;
+          out << "\tcNorm: " << theResults.cNorm << endl;
+          out << "\tcompNorm: " << theResults.compNorm << endl;
         }
-        TEST_COMPARE(results.epsilon, <, epsilon)
+        TEST_COMPARE(theResults.epsilon, <, epsilon)
 
           }
     }

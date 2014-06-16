@@ -11,10 +11,12 @@
 
 //----------------------------------------------------------------------
 
-#include <stk_mesh/base/BulkData.hpp>
+#include <stddef.h>                     // for size_t
+#include <iosfwd>                       // for ostream
+#include <string>                       // for string
+#include <vector>                       // for vector
+namespace stk { namespace mesh { class BulkData; } }
 
-#include <iosfwd>
-#include <vector>
 
 namespace stk {
 namespace mesh {

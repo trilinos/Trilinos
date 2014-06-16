@@ -157,53 +157,26 @@ checkPCEView(const ViewType& v, Teuchos::FancyOStream& out) {
 template <typename ViewType>
 bool
 checkConstantPCEView(const ViewType& v,
-                     const typename ViewType::intrinsic_scalar_type& constant_val_expected,
+                     const typename ViewType::value_type& v_expected,
                      Teuchos::FancyOStream& out) {
   typedef ViewType view_type;
   typedef typename view_type::size_type size_type;
   typedef typename view_type::HostMirror host_view_type;
-  typedef typename host_view_type::array_type host_array_type;
-  typedef typename host_array_type::value_type scalar_type;
+  typedef typename host_view_type::intrinsic_scalar_type scalar_type;
 
   // Copy to host
   host_view_type h_v = Kokkos::create_mirror_view(v);
   Kokkos::deep_copy(h_v, v);
-  host_array_type h_a = h_v;
 
-  size_type num_rows, num_cols;
-
-  // For layout left, sacado dimension becomes first dimension
-  // instead of last
-  bool is_right = Kokkos::Impl::is_same< typename ViewType::array_layout,
-                                         Kokkos::LayoutRight >::value;
-  if (is_right || !view_type::is_contiguous) {
-    num_rows = h_a.dimension_0();
-    num_cols = h_a.dimension_1();
-  }
-  else {
-    num_rows = h_a.dimension_1();
-    num_cols = h_a.dimension_0();
-  }
+  const size_type num_rows = h_v.dimension_0();
+  const size_type num_cols = h_v.sacado_size();
 
   bool success = true;
-  if (is_right || !view_type::is_contiguous) {
-    for (size_type i=0; i<num_rows; ++i) {
-      for (size_type j=0; j<num_cols; ++j) {
-        scalar_type val = h_a(i,j);
-        scalar_type val_expected =
-          j == 0 ? constant_val_expected : scalar_type(0);
-        TEUCHOS_TEST_EQUALITY(val, val_expected, out, success);
-      }
-    }
-  }
-  else {
-    for (size_type i=0; i<num_rows; ++i) {
-      for (size_type j=0; j<num_cols; ++j) {
-        scalar_type val = h_a(j,i);
-        scalar_type val_expected =
-          j == 0 ? constant_val_expected : scalar_type(0);
-        TEUCHOS_TEST_EQUALITY(val, val_expected, out, success);
-      }
+  for (size_type i=0; i<num_rows; ++i) {
+    for (size_type j=0; j<num_cols; ++j) {
+      scalar_type val = h_v(i).fastAccessCoeff(j);
+      scalar_type val_expected = v_expected.fastAccessCoeff(j);
+      TEUCHOS_TEST_EQUALITY(val, val_expected, out, success);
     }
   }
 
@@ -323,7 +296,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy_ConstantScalar, Sto
 
   Kokkos::deep_copy( v, val );
 
-  success = checkConstantPCEView(v, val, out);
+  PCE pce_val(cijk); pce_val.fastAccessCoeff(0) = val;
+  success = checkConstantPCEView(v, pce_val, out);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy_ConstantPCE, Storage, Layout )
@@ -346,6 +320,34 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy_ConstantPCE, Storag
   Scalar val = 1.2345;
 
   Kokkos::deep_copy( v, PCE(val) );
+
+  PCE pce_val(cijk); pce_val.fastAccessCoeff(0) = val;
+  success = checkConstantPCEView(v, pce_val, out);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy_ConstantPCE2, Storage, Layout )
+{
+  typedef typename Storage::device_type Device;
+  typedef typename Storage::value_type Scalar;
+  typedef Sacado::UQ::PCE<Storage> PCE;
+  typedef typename ApplyView<PCE*,Layout,Device>::type ViewType;
+  typedef typename ViewType::size_type size_type;
+  typedef typename PCE::cijk_type Cijk;
+
+  // Build Cijk tensor
+  const int stoch_dim = 2;
+  const int poly_ord = 3;
+  Cijk cijk = build_cijk<Cijk>(stoch_dim, poly_ord);
+
+  const size_type num_rows = 11;
+  const size_type num_cols = cijk.dimension();
+  ViewType v("view", cijk, num_rows, num_cols);
+  PCE val(cijk);
+  for (size_type j=0; j<num_cols; ++j)
+    val.fastAccessCoeff(j) =
+      generate_pce_coefficient<Scalar>(num_rows, num_cols, size_type(0), j);
+
+  Kokkos::deep_copy( v, val );
 
   success = checkConstantPCEView(v, val, out);
 }
@@ -533,6 +535,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeviceAtomic, Storage, Layou
     Kokkos_View_PCE, DeepCopy_ConstantScalar, STORAGE, LAYOUT )         \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
     Kokkos_View_PCE, DeepCopy_ConstantPCE, STORAGE, LAYOUT )            \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
+    Kokkos_View_PCE, DeepCopy_ConstantPCE2, STORAGE, LAYOUT )           \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
     Kokkos_View_PCE, Unmanaged, STORAGE, LAYOUT )
 

@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -50,7 +50,7 @@
 #include <stdexcept>
 
 #include "Kokkos_ConfigDefs.hpp"
-#include "Kokkos_VbrMatrix.hpp" 
+#include "Kokkos_VbrMatrix.hpp"
 #include "Kokkos_MultiVector.hpp"
 #include "Kokkos_NodeHelpers.hpp"
 #include "Kokkos_DefaultArithmetic.hpp"
@@ -61,7 +61,7 @@ namespace KokkosClassic {
   // default implementation
   template <class Scalar, class Ordinal, class Node = DefaultNode::DefaultNodeType>
   /*! \class DefaultBlockSparseOps
-      \brief DefaultBlockSparseOps
+    \brief DefaultBlockSparseOps
   */
   class DefaultBlockSparseOps {
   public:
@@ -82,8 +82,8 @@ namespace KokkosClassic {
     //@}
 
     //! @name Accessor routines.
-    //@{ 
-    
+    //@{
+
     //! Node accessor.
     RCP<Node> getNode() const;
 
@@ -111,13 +111,13 @@ namespace KokkosClassic {
 
     //! Applies the matrix to a MultiVector, accumulating into Y.
     template <class DomainScalar, class RangeScalar>
-    void multiply(Teuchos::ETransp trans, 
+    void multiply(Teuchos::ETransp trans,
                   RangeScalar alpha, const MultiVector<DomainScalar,Node> &X, RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const;
 
     //! Triangular solve: find x such that A*x=y, only if A is triangular.
     template <class DomainScalar, class RangeScalar>
     void solve(Teuchos::ETransp trans, Teuchos::EUplo triang, Teuchos::EDiag diag,
-            const MultiVector<DomainScalar,Node>& Y, MultiVector<RangeScalar,Node>& X) const;
+               const MultiVector<DomainScalar,Node>& Y, MultiVector<RangeScalar,Node>& X) const;
     //@}
 
   protected:
@@ -138,19 +138,23 @@ namespace KokkosClassic {
   };
 
   template<class Scalar, class Ordinal, class Node>
-  DefaultBlockSparseOps<Scalar,Ordinal,Node>::DefaultBlockSparseOps(const RCP<Node> &node)
-  : node_(node)
-  , valsInit_(false)
-  , isPacked_(false)
-  , isEmpty_(false) {
-  }
+  DefaultBlockSparseOps<Scalar,Ordinal,Node>::
+  DefaultBlockSparseOps (const RCP<Node> &node)
+    : node_(node)
+    , numBlockRows_(0)
+    , valsInit_(false)
+    , isPacked_(false)
+    , isEmpty_(false)
+  {}
 
   template<class Scalar, class Ordinal, class Node>
   DefaultBlockSparseOps<Scalar,Ordinal,Node>::~DefaultBlockSparseOps() {
   }
 
   template <class Scalar, class Ordinal, class Node>
-  void DefaultBlockSparseOps<Scalar,Ordinal,Node>::initializeValues(const VbrMatrix<Scalar,Ordinal,Node> &matrix) {
+  void DefaultBlockSparseOps<Scalar,Ordinal,Node>::
+  initializeValues (const VbrMatrix<Scalar,Ordinal,Node> &matrix)
+  {
     isEmpty_ = false;
     pbuf_vals1D_ = matrix.get_values();
     pbuf_rptr_ = matrix.get_rptr();
@@ -165,8 +169,8 @@ namespace KokkosClassic {
 
 
   template <class Scalar, class Ordinal, class Node>
-  RCP<Node> DefaultBlockSparseOps<Scalar,Ordinal,Node>::getNode() const { 
-    return node_; 
+  RCP<Node> DefaultBlockSparseOps<Scalar,Ordinal,Node>::getNode() const {
+    return node_;
   }
 
 
@@ -186,14 +190,14 @@ namespace KokkosClassic {
   template <class Scalar, class Ordinal, class Node>
   template <class DomainScalar, class RangeScalar>
   void DefaultBlockSparseOps<Scalar,Ordinal,Node>::multiply(
-                                Teuchos::ETransp trans, 
-                                RangeScalar alpha,
-                                const MultiVector<DomainScalar,Node> &X, 
-                                MultiVector<RangeScalar,Node> &Y) const {
+                                                            Teuchos::ETransp trans,
+                                                            RangeScalar alpha,
+                                                            const MultiVector<DomainScalar,Node> &X,
+                                                            MultiVector<RangeScalar,Node> &Y) const {
     typedef DefaultBlockSparseMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  Op1;
     typedef DefaultBlockSparseMultiplyOp1Transpose<Scalar,Ordinal,DomainScalar,RangeScalar>  Op1T;
     TEUCHOS_TEST_FOR_EXCEPTION(valsInit_ == false, std::runtime_error,
-        Teuchos::typeName(*this) << "::multiply(): operation not fully initialized.");
+                               Teuchos::typeName(*this) << "::multiply(): operation not fully initialized.");
     TEUCHOS_TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
     ReadyBufferHelper<Node> rbh(node_);
     if (isEmpty_ == true) {
@@ -253,13 +257,13 @@ namespace KokkosClassic {
   template <class Scalar, class Ordinal, class Node>
   template <class DomainScalar, class RangeScalar>
   void DefaultBlockSparseOps<Scalar,Ordinal,Node>::multiply(
-                                Teuchos::ETransp trans, 
-                                RangeScalar alpha, const MultiVector<DomainScalar,Node> &X, 
-                                RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const {
+                                                            Teuchos::ETransp trans,
+                                                            RangeScalar alpha, const MultiVector<DomainScalar,Node> &X,
+                                                            RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const {
     typedef DefaultBlockSparseMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  Op1;
     typedef DefaultBlockSparseMultiplyOp1Transpose<Scalar,Ordinal,DomainScalar,RangeScalar>  Op1T;
     TEUCHOS_TEST_FOR_EXCEPTION(valsInit_ == false, std::runtime_error,
-        Teuchos::typeName(*this) << "::multiply(): operation not fully initialized.");
+                               Teuchos::typeName(*this) << "::multiply(): operation not fully initialized.");
     TEUCHOS_TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
     ReadyBufferHelper<Node> rbh(node_);
     if (isEmpty_ == true) {
@@ -323,15 +327,15 @@ namespace KokkosClassic {
   template <class Scalar, class Ordinal, class Node>
   template <class DomainScalar, class RangeScalar>
   void DefaultBlockSparseOps<Scalar,Ordinal,Node>::solve(
-                                Teuchos::ETransp trans, 
-                                Teuchos::EUplo triang, 
-                                Teuchos::EDiag diag, 
-                                const MultiVector<DomainScalar,Node> &Y, 
-                                MultiVector<RangeScalar,Node> &X) const {
+                                                         Teuchos::ETransp trans,
+                                                         Teuchos::EUplo triang,
+                                                         Teuchos::EDiag diag,
+                                                         const MultiVector<DomainScalar,Node> &Y,
+                                                         MultiVector<RangeScalar,Node> &X) const {
     typedef DefaultBlockSparseSolveOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  Op;
     typedef DefaultBlockSparseTransposeSolveOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  OpT;
     TEUCHOS_TEST_FOR_EXCEPTION(valsInit_ == false, std::runtime_error,
-        Teuchos::typeName(*this) << "::solve(): operation not fully initialized.");
+                               Teuchos::typeName(*this) << "::solve(): operation not fully initialized.");
     TEUCHOS_TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
     ReadyBufferHelper<Node> rbh(node_);
     if (isEmpty_ == true) {

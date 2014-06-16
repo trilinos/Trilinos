@@ -170,31 +170,42 @@ BlockMultiVector<Scalar, LO, GO, Node>::
 makePointMap (const map_type& meshMap, const LO blockSize)
 {
   typedef Tpetra::global_size_t GST;
+  typedef typename Teuchos::ArrayView<const GO>::size_type size_type;
 
-  const GO globalNumMeshMapIndices =
-    static_cast<GO> (meshMap.getGlobalNumElements ());
-  const GO myNumMeshMapIndices =
-    static_cast<GO> (meshMap.getNodeNumElements ());
-  const GST globalNumDOFs =
-    static_cast<GST> (globalNumMeshMapIndices * static_cast<GO> (blockSize));
-  const size_t myNumDOFs =
-    static_cast<size_t> (myNumMeshMapIndices * static_cast<GO> (blockSize));
+  const GST gblNumMeshMapInds =
+    static_cast<GST> (meshMap.getGlobalNumElements ());
+  const size_t lclNumMeshMapIndices =
+    static_cast<size_t> (meshMap.getNodeNumElements ());
+  const GST gblNumPointMapInds =
+    gblNumMeshMapInds * static_cast<GST> (blockSize);
+  const size_t lclNumPointMapInds =
+    lclNumMeshMapIndices * static_cast<size_t> (blockSize);
   const GO indexBase = meshMap.getIndexBase ();
 
-  // NOTE (mfh 05 May 2014) If meshMap is overlapping, then the
-  // resulting pointMap won't be.  However, that doesn't really
-  // matter.  Think about it:
-  //
-  // 1. BlockMultiVector's Map, from DistObject's perspective, is its
-  //    mesh Map, not its point Map.
-  // 2. This means Import and Export will only ever use the mesh Map.
-  //
-  // The returned Map has entirely different global indices on each
-  // process.  This has to be the case, by the pigeonhole principle.
-  // We make no effort to reorder for locality, but we don't need to,
-  // because the corresponding BlockCrsMatrix will also have
-  // analogously reordered Maps.
-  return map_type (globalNumDOFs, myNumDOFs, indexBase, meshMap.getComm (), meshMap.getNode ());
+  if (meshMap.isContiguous ()) {
+    return map_type (gblNumPointMapInds, lclNumPointMapInds, indexBase,
+                     meshMap.getComm (), meshMap.getNode ());
+  }
+  else {
+    // "Hilbert's Hotel" trick: multiply each process' GIDs by
+    // blockSize, and fill in.  That ensures correctness even if the
+    // mesh Map is overlapping.
+    Teuchos::ArrayView<const GO> lclMeshGblInds = meshMap.getNodeElementList ();
+    const size_type lclNumMeshGblInds = lclMeshGblInds.size ();
+    Teuchos::Array<GO> lclPointGblInds (lclNumPointMapInds);
+    for (size_type g = 0; g < lclNumMeshGblInds; ++g) {
+      const GO meshGid = lclMeshGblInds[g];
+      const GO pointGidStart = meshGid * static_cast<GO> (blockSize);
+      const size_type offset = g * static_cast<size_type> (blockSize);
+      for (LO k = 0; k < blockSize; ++k) {
+        const GO pointGid = pointGidStart + static_cast<GO> (k);
+        lclPointGblInds[offset + static_cast<size_type> (k)] = pointGid;
+      }
+    }
+
+    return map_type (gblNumPointMapInds, lclPointGblInds (), indexBase,
+                     meshMap.getComm (), meshMap.getNode ());
+  }
 }
 
 

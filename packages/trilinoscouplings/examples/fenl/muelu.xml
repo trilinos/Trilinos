@@ -19,4 +19,22 @@
     <Parameter name="chebyshev: zero starting solution" type="bool" value="true"/>
   </ParameterList>
 
+  <!-- block to enable ILU(1) with overlap 1 as coarse grid solver -->
+  <!--
+  <Parameter name="coarse: type" type="string" value="SCHWARZ"/>
+  <ParameterList    name="coarse: params">
+    <Parameter name="schwarz: overlap level"            type="int"    value="1"/>
+    <Parameter name="schwarz: combine mode"             type="string" value="Zero"/>
+    <Parameter name="schwarz: use reordering"           type="bool"   value="false"/>
+
+    <Parameter name="subdomain solver name"             type="string" value="RILUK"/>
+    <ParameterList name="subdomain solver parameters">
+      <Parameter name= "fact: iluk level-of-fill"         type="int"    value="1"/>
+      <Parameter name= "fact: absolute threshold"         type="double" value="0."/>
+      <Parameter name= "fact: relative threshold"         type="double" value="1."/>
+      <Parameter name= "fact: relax value"                type="double" value="0."/>
+    </ParameterList>
+  </ParameterList>
+  -->
+
 </ParameterList>

@@ -1131,11 +1131,11 @@ createIfpackPreconditioner(Teuchos::ParameterList& p) const
 
   // Print condition number estimate
   if (utils.isPrintType(Utils::Details)) {
-    double kappa;
-    ifpackPreconditionerPtr->Condest(false, kappa);
+    double kappa[1];
+    ifpackPreconditionerPtr->Condest(false, *kappa);
     utils.out() <<
       "\n       Condition number estimate of preconditioner is " <<
-      utils.sciformat(kappa) << std::endl;
+      utils.sciformat(kappa[0]) << std::endl;
   }
 
   return true;

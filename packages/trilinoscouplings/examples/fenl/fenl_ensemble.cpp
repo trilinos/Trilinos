@@ -39,11 +39,10 @@
 // ************************************************************************
 */
 
-#include "Stokhos_Tpetra_MP_Vector.hpp"
-#include "Belos_TpetraAdapter_MP_Vector.hpp"
-#include "Stokhos_MueLu_MP_Vector.hpp"
+#include <fenl_ensemble.hpp>
 
 #include <Kokkos_Threads.hpp>
+#include <Kokkos_OpenMP.hpp>
 #include <HexElement.hpp>
 #include <fenl_impl.hpp>
 
@@ -53,7 +52,7 @@ namespace Kokkos {
 namespace Example {
 namespace FENL {
 
-static const int VectorSize = 4;
+static const int VectorSize = 16;
 
 #if defined (KOKKOS_HAVE_PTHREAD)
 
@@ -80,8 +79,8 @@ INST_KL( double , double , Threads )
 
 typedef Stokhos::StaticFixedStorage<int,double,VectorSize,OpenMP> Storage_OpenMP;
 typedef Sacado::MP::Vector<Storage_OpenMP> Scalar_OpenMP;
-typedef ElementComputationKLCoefficient<Scalar_OpenMP,double,Threads> KL_Vector_OpenMP;
-typedef ElementComputationKLCoefficient<double,double,Threads> KL_Scalar_OpenMP;
+typedef ElementComputationKLCoefficient<Scalar_OpenMP,double,OpenMP> KL_Vector_OpenMP;
+typedef ElementComputationKLCoefficient<double,double,OpenMP> KL_Scalar_OpenMP;
 
 INST_FENL( Scalar_OpenMP , OpenMP , BoxElemPart::ElemLinear ,
            KL_Vector_OpenMP , TrivialManufacturedSolution )

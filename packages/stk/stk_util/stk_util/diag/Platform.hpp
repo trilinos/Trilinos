@@ -9,17 +9,8 @@
 #ifndef STK_UTIL_DIAG_Platform_h
 #define STK_UTIL_DIAG_Platform_h
 
-#include <iosfwd>
-#include <stk_util/stk_config.h>
-#if defined( STK_HAS_MPI )
-#include <mpi.h>
-#endif
-
-#include <stk_util/util/FeatureTest.hpp>
-#include <stk_util/diag/Env.hpp>
-#include <stk_util/diag/String.hpp>
-#include <stk_util/diag/Option.hpp>
-#include <stk_util/environment/RegisterProduct.hpp>
+#include <stddef.h>                     // for size_t
+#include <string>                       // for string
 
 namespace sierra {
 namespace Env {

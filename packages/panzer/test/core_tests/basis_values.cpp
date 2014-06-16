@@ -645,7 +645,7 @@ namespace panzer {
     RCP<PureBasis> basis = Teuchos::rcp(new PureBasis(basis_type,2,cell_data));
     RCP<panzer::BasisIRLayout> basisPtLayout = rcp(new panzer::BasisIRLayout(basis, *int_rule));
 
-    panzer::BasisValues<double,PHX::MDField<double> > basis_values;
+    panzer::BasisValues<double,PHX::MDField<double>,PHX::MDField<double,panzer::Cell,panzer::BASIS> > basis_values;
     panzer::MDFieldArrayFactory af("prefix_");
 
     basis_values.setupArrays(basisPtLayout,af);
@@ -725,7 +725,7 @@ namespace panzer {
     RCP<PureBasis> basis = Teuchos::rcp(new PureBasis(basis_type,2,cell_data));
     RCP<panzer::BasisIRLayout> basisPtLayout = rcp(new panzer::BasisIRLayout(basis, *int_rule));
 
-    panzer::BasisValues<ScalarType,PHX::MDField<ScalarType> > basis_values;
+    panzer::BasisValues<ScalarType,PHX::MDField<ScalarType>,PHX::MDField<ScalarType,panzer::Cell,panzer::BASIS> > basis_values;
     panzer::MDFieldArrayFactory af("prefix_");
 
     basis_values.setupArrays(basisPtLayout,af);

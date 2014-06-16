@@ -175,7 +175,7 @@ Perf fenl(
 
   const unsigned  newton_iteration_limit     = 10 ;
   const Magnitude newton_iteration_tolerance = 1e-7 ;
-  const unsigned  cg_iteration_limit         = 200 ;
+  const unsigned  cg_iteration_limit         = 2000 ;
   const Magnitude cg_iteration_tolerance     = 1e-7 ;
 
   //------------------------------------
@@ -305,14 +305,30 @@ Perf fenl(
     const LocalVectorType nodal_delta =
       Kokkos::subview<LocalVectorType>(k_nodal_delta.d_view,Kokkos::ALL(),0);
 
+    // Hard code CUDA thread blocks for now.  Should read these in from
+    // command line and/or xml file
+    Kokkos::DeviceConfig dev_config_elem, dev_config_gath, dev_config_bc;
+    if ( Kokkos::Impl::is_same< Device, Kokkos::Cuda >::value ) {
+      dev_config_elem = Kokkos::DeviceConfig( 0 , 16 , 64/16 );
+      dev_config_gath = Kokkos::DeviceConfig( 0 , 16 , 128/16 );
+      dev_config_bc   = Kokkos::DeviceConfig( 0 , 16 , 256/16 );
+    }
+    else {
+      dev_config_elem = Kokkos::DeviceConfig( 0 , 1 , 1 );
+      dev_config_gath = Kokkos::DeviceConfig( 0 , 1 , 1 );
+      dev_config_bc   = Kokkos::DeviceConfig( 0 , 1 , 1 );
+    }
+
     // Create element computation functor
     const ElementComputationType elemcomp(
       use_atomic ? ElementComputationType( fixture , coeff_function ,
                                            nodal_solution ,
                                            mesh_to_graph.elem_graph ,
-                                           jacobian , nodal_residual )
+                                           jacobian , nodal_residual ,
+                                           dev_config_elem )
                  : ElementComputationType( fixture , coeff_function ,
-                                           nodal_solution ) );
+                                           nodal_solution ,
+                                           dev_config_elem ) );
 
     const NodeElemGatherFillType gatherfill(
       use_atomic ? NodeElemGatherFillType()
@@ -321,14 +337,16 @@ Perf fenl(
                                            nodal_residual ,
                                            jacobian ,
                                            elemcomp.elem_residuals ,
-                                           elemcomp.elem_jacobians ) );
+                                           elemcomp.elem_jacobians ,
+                                           dev_config_gath ) );
 
     // Create boundary condition functor
     const DirichletComputationType dirichlet(
       fixture , nodal_solution , jacobian , nodal_residual ,
       2 /* apply at 'z' ends */ ,
       bc_lower_value ,
-      bc_upper_value );
+      bc_upper_value ,
+      dev_config_bc );
 
     // Create Distributed Objects
 
@@ -396,7 +414,10 @@ Perf fenl(
 
       //--------------------------------
 
+      wall_clock.reset();
       g_nodal_solution.doImport (g_nodal_solution_no_overlap, import, Tpetra::REPLACE);
+      Device::fence();
+      perf.import_time = maximum( comm , wall_clock.seconds() );
 
       // if (itrial == 0 && perf.newton_iter_count == 0)
       //   g_nodal_solution_no_overlap.describe(*out, Teuchos::VERB_EXTREME);
@@ -406,8 +427,8 @@ Perf fenl(
 
       wall_clock.reset();
 
-      Kokkos::deep_copy( nodal_residual , Scalar(0) );
-      Kokkos::deep_copy( jacobian.values , Scalar(0) );
+      Kokkos::deep_copy( nodal_residual , 0.0 );
+      Kokkos::deep_copy( jacobian.values ,0.0 );
 
       elemcomp.apply();
 
@@ -462,8 +483,12 @@ Perf fenl(
       // Update solution vector
 
       g_nodal_solution_no_overlap.update(-1.0,g_nodal_delta,1.0);
-      perf.cg_iter_count += cgsolve.iteration ;
-      perf.cg_time       += cgsolve.iter_time ;
+      perf.cg_iter_count   += cgsolve.iteration ;
+      perf.mat_vec_time    += cgsolve.matvec_time ;
+      perf.cg_iter_time    += cgsolve.iter_time ;
+      perf.prec_setup_time += cgsolve.prec_setup_time ;
+      perf.prec_apply_time += cgsolve.prec_apply_time ;
+      perf.cg_total_time   += cgsolve.total_time ;
 
       //--------------------------------
 
@@ -546,12 +571,22 @@ Perf fenl(
         std::min( perf_stats.fill_element_graph , perf.fill_element_graph );
       perf_stats.create_sparse_matrix =
         std::min( perf_stats.create_sparse_matrix , perf.create_sparse_matrix );
+       perf_stats.import_time =
+        std::min( perf_stats.import_time , perf.import_time );
       perf_stats.fill_time =
         std::min( perf_stats.fill_time , perf.fill_time );
       perf_stats.bc_time =
         std::min( perf_stats.bc_time , perf.bc_time );
-      perf_stats.cg_time =
-        std::min( perf_stats.cg_time , perf.cg_time );
+      perf_stats.mat_vec_time =
+        std::min( perf_stats.mat_vec_time , perf.mat_vec_time );
+      perf_stats.cg_iter_time =
+        std::min( perf_stats.cg_iter_time , perf.cg_iter_time );
+      perf_stats.prec_setup_time =
+        std::min( perf_stats.prec_setup_time , perf.prec_setup_time );
+      perf_stats.prec_apply_time =
+        std::min( perf_stats.prec_apply_time , perf.prec_apply_time );
+      perf_stats.cg_total_time =
+        std::min( perf_stats.cg_total_time , perf.cg_total_time );
     }
   }
 

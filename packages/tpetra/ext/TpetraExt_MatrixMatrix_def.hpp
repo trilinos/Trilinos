@@ -58,8 +58,6 @@
 #include <algorithm>
 #include "Teuchos_FancyOStream.hpp"
 
-//#define USE_NEW_TRANSPOSE_CODE
-
 //#define COMPUTE_MMM_STATISTICS
 
 
@@ -124,12 +122,9 @@ void Multiply(
   bool NewFlag=!C.getGraph()->isLocallyIndexed() && !C.getGraph()->isGloballyIndexed();
 
   bool use_optimized_ATB=false;
-#ifdef USE_NEW_TRANSPOSE_CODE
   if(transposeA && !transposeB && call_FillComplete_on_result && NewFlag) {
     use_optimized_ATB=true;
-    if(!A.getComm()->getRank()) printf("CMS: New Transpose code invoked\n");
   }
-#endif
 
   if(!use_optimized_ATB && transposeA) {
     RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> at (Teuchos::rcpFromRef (A));

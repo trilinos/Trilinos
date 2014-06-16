@@ -5,8 +5,6 @@ INCLUDE(TribitsLibraryMacros)
 # A) Package-specific configuration options
 #
 
-# TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
-
 #
 # B) Define the header and source files (and directories)
 #
@@ -22,10 +20,9 @@ FILE(GLOB HEADERS *.hpp *.h)
 FILE(GLOB SOURCES *.cpp)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../)
-INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS}/../)
-INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS}/detail/)
+INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_BINARY_DIR})
+
 
 #
 # Core headers
@@ -47,4 +44,4 @@ TRIBITS_ADD_LIBRARY(
   )
 
 INSTALL(FILES ${HEADERS} DESTINATION
-    ${CMAKE_INSTALL_PREFIX}/${Trilinos_INSTALL_INCLUDE_DIR}/stk_util/util/)
+    ${CMAKE_INSTALL_PREFIX}/include/stk_util/util/)

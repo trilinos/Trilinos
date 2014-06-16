@@ -58,45 +58,64 @@ namespace MueLu {
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getDomainMap() const {
+
   return Xpetra::toTpetraNonZero(SM_Matrix_->getDomainMap());
+
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getRangeMap() const {
+
   return Xpetra::toTpetraNonZero(SM_Matrix_->getRangeMap());
+
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setParameters(Teuchos::ParameterList& list) {
+
   disable_addon_  =  list.get("refmaxwell: disable add-on",false);
   MaxCoarseSize_  =  list.get("refmaxwell: max coarse size",1000);
   MaxLevels_      =  list.get("refmaxwell: max levels",5);
   precType11_     =  list.get("refmaxwell: edge smoother","CHEBYSHEV");
   precType22_     =  list.get("refmaxwell: node smoother","CHEBYSHEV");
+
   if(list.isSublist("refmaxwell: edge smoother list"))
     precList11_     =  list.sublist("refmaxwell: edge smoother list");
+
   if(list.isSublist("refmaxwell: node smoother list"))
     precList22_     =  list.sublist("refmaxwell: node smoother list");
+
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::compute() {
+
+  // Form TMT_Matrix
+  Teuchos::RCP<XMat> C1 = MatrixFactory::Build(SM_Matrix_->getRowMap(),100);
+  TMT_Matrix_=MatrixFactory::Build(D0_Matrix_->getDomainMap(),100);
+  Xpetra::MatrixMatrix::Multiply(*SM_Matrix_,false,*D0_Matrix_,false,*C1,true,true);
+  Xpetra::MatrixMatrix::Multiply(*D0_Matrix_,true,*C1,false,*TMT_Matrix_,true,true);
+  TMT_Matrix_->SetFixedBlockSize(1);
+
+  // build nullspace
+  Nullspace_ = MultiVectorFactory::Build(SM_Matrix_->getRowMap(),Coords_->getNumVectors()); 
+  D0_Matrix_->apply(*Coords_,*Nullspace_);
+
   // build special prolongator for (1,1)-block
   if(P11_==Teuchos::null) {
     buildProlongator();
   }
+
   // build coarse grid operator for (1,1)-block
-  if(A11_==Teuchos::null) {
-    formCoarseMatrix();
-  }
+  formCoarseMatrix();
+
   // build fine grid operator for (2,2)-block, D0* M1 D0
-  if(A22_==Teuchos::null) {
-    Teuchos::RCP<XMat> C = MatrixFactory::Build(M1_Matrix_->getRowMap(),100);
-    Xpetra::MatrixMatrix::Multiply(*M1_Matrix_,false,*D0_Matrix_,false,*C,true,true);
-    A22_=MatrixFactory::Build(D0_Matrix_->getDomainMap(),100);
-    Xpetra::MatrixMatrix::Multiply(*D0_Matrix_,true,*C,false,*A22_,true,true);
-    A22_->SetFixedBlockSize(1);
-  }
+  Teuchos::RCP<XMat> C = MatrixFactory::Build(M1_Matrix_->getRowMap(),100);
+  Xpetra::MatrixMatrix::Multiply(*M1_Matrix_,false,*D0_Matrix_,false,*C,true,true);
+  A22_=MatrixFactory::Build(D0_Matrix_->getDomainMap(),100);
+  Xpetra::MatrixMatrix::Multiply(*D0_Matrix_,true,*C,false,*A22_,true,true);
+  A22_->SetFixedBlockSize(1);
+
   // build stuff for hierarchies
   Teuchos::RCP<FactoryManager> Manager11 = Teuchos::rcp( new FactoryManager );
   Teuchos::RCP<FactoryManager> Manager22 = Teuchos::rcp( new FactoryManager );
@@ -124,6 +143,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::compute() {
   Hierarchy22_ = Teuchos::rcp( new Hierarchy(A22_) );
   Hierarchy22_ -> SetMaxCoarseSize( MaxCoarseSize_ );
   Hierarchy22_ -> Setup(*Manager22, 0, MaxLevels_ );
+
   // build ifpack2 preconditioners for Hiptmair
   Teuchos::RCP<const TCRS> EdgeMatrix = Utils::Op2NonConstTpetraCrs(SM_Matrix_ );
   Teuchos::RCP<const TCRS> NodeMatrix = Utils::Op2NonConstTpetraCrs(TMT_Matrix_);
@@ -131,21 +151,11 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::compute() {
   nodePrec_ = Ifpack2::Factory::create(precType22_, NodeMatrix);
   edgePrec_->setParameters(precList11_); edgePrec_->initialize(); edgePrec_->compute();
   nodePrec_->setParameters(precList22_); nodePrec_->initialize(); nodePrec_->compute();
+
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::buildProlongator() {
-
-  // Form TMT_Matrix
-  Teuchos::RCP<XMat> C = MatrixFactory::Build(SM_Matrix_->getRowMap(),100);
-  TMT_Matrix_=MatrixFactory::Build(D0_Matrix_->getDomainMap(),100);
-  Xpetra::MatrixMatrix::Multiply(*SM_Matrix_,false,*D0_Matrix_,false,*C,true,true);
-  Xpetra::MatrixMatrix::Multiply(*D0_Matrix_,true,*C,false,*TMT_Matrix_,true,true);
-  TMT_Matrix_->SetFixedBlockSize(1);
-
-  // build nullspace
-  Nullspace_ = MultiVectorFactory::Build(SM_Matrix_->getRowMap(),Coords_->getNumVectors()); 
-  D0_Matrix_->apply(*Coords_,*Nullspace_);
 
   // build prolongator: algorithm 1 in the reference paper
   // First, aggregate nodal matrix by creating a 2-level hierarchy
@@ -225,8 +235,10 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::formCoarseM
   // coarse matrix for P11* (M1 + D1* M2 D1) P11
   Teuchos::RCP<XMat> C = MatrixFactory::Build(SM_Matrix_->getRowMap(),100);
   Teuchos::RCP<XMat> Matrix1 = MatrixFactory::Build(P11_->getDomainMap(),100);
+
   // construct (M1 + D1* M2 D1) P11
   Xpetra::MatrixMatrix::Multiply(*SM_Matrix_,false,*P11_,false,*C,true,true);
+
   // construct P11* (M1 + D1* M2 D1) P11
   Xpetra::MatrixMatrix::Multiply(*P11_,true,*C,false,*Matrix1,true,true);
 
@@ -261,6 +273,15 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::formCoarseM
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::resetMatrix(Teuchos::RCP<TCRS> SM_Matrix_new) {
+
+  // convert Tpetra matrices to Xpetra
+  Teuchos::RCP<XCRS> SM_tmp = Teuchos::rcp( new XTCRS(SM_Matrix_new) );
+  SM_Matrix_ = Teuchos::rcp( new XCrsWrap(SM_tmp) );
+
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyHiptmairSmoother(const XTMV& RHS, XTMV& X) const {
 
   RCP<XMV> edge_residual, node_residual;
@@ -272,6 +293,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyHiptma
   edgePrec_->apply(*edge_tpetra,*edge_tpetra);
   edge_residual  =  Xpetra::toXpetra(edge_tpetra);
   X.update((Scalar) 1.0, *edge_residual, (Scalar) 1.0);
+
   // project to nodal space and smooth
   edge_residual  =  Utils::Residual(*SM_Matrix_, X, RHS);
   node_residual  =  MultiVectorFactory::Build(TMT_Matrix_->getRowMap(),RHS.getNumVectors());
@@ -281,6 +303,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyHiptma
   node_residual  =  Xpetra::toXpetra(node_tpetra);
   D0_Matrix_->apply(*node_residual,*edge_residual,Teuchos::NO_TRANS,(Scalar)1.0,(Scalar)0.0);
   X.update((Scalar) 1.0, *edge_residual, (Scalar) 1.0);
+
   // smooth again on edge elements
   edge_residual  =  Utils::Residual(*SM_Matrix_, X, RHS);
   edge_tpetra    =  Utils::MV2NonConstTpetraMV(edge_residual);
@@ -295,12 +318,15 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::apply(const
 									   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
 									   Teuchos::ETransp mode, Scalar alpha, Scalar beta) const {
   try {
+
     TMV& temp_x = const_cast<TMV &>(X);
     const XTMV tX(rcpFromRef(temp_x));
     XTMV       tY(rcpFromRef(Y));
     tY.putScalar(Teuchos::ScalarTraits<Scalar>::zero());
+
     // apply pre-smoothing
     applyHiptmairSmoother(tX,tY);
+
     // do solve for the 2x2 block system
     // first, compute residuals
     RCP<XMV> residual = Utils::Residual(*SM_Matrix_, tY, tX);
@@ -310,19 +336,25 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::apply(const
     RCP<XMV> D0result = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(),X.getNumVectors());
     P11_->apply(*residual,*P11residual,Teuchos::TRANS);
     D0_Matrix_->apply(*residual,*D0residual,Teuchos::TRANS);
+
     // block diagonal preconditioner on 2x2 (V-cycle for each block)
     Hierarchy11_->Iterate(*P11residual, *P11result, 1, true);
     Hierarchy22_->Iterate(*D0residual, *D0result, 1, true);
+
     // update current solution
     P11_->apply(*P11result,*residual,Teuchos::NO_TRANS);
     D0_Matrix_->apply(*D0result,*residual,Teuchos::NO_TRANS,(Scalar)1.0,(Scalar)1.0);
     tY.update((Scalar) 1.0, *residual, (Scalar) 1.0);
+
     // apply post-smoothing
     applyHiptmairSmoother(tX,tY);
+
   } catch (std::exception& e) {
+
     //FIXME add message and rethrow
     std::cerr << "Caught an exception in MueLu::TpetraOperator::ApplyInverse():" << std::endl
 	      << e.what() << std::endl;
+
   }
 }
 

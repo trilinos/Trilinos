@@ -6,13 +6,12 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <algorithm>
-#include <stdexcept>
-#include <iostream>
-#include <sstream>
-#include <assert.h>
-
 #include <stk_util/util/CSet.hpp>
+#include <assert.h>                     // for assert
+#include <stddef.h>                     // for size_t, NULL
+#include <algorithm>                    // for lower_bound
+#include <iterator>                     // for advance
+
 
 namespace stk {
 

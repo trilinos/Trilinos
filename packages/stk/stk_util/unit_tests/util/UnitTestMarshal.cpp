@@ -6,12 +6,14 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <iostream>
-#include <stdexcept>
+#include <list>                         // for list
+#include <stdexcept>                    // for runtime_error
+#include <gtest/gtest.h>
+#include <stk_util/util/Marshal.hpp>    // for Marshal, operator<<, etc
+#include <string>                       // for operator==, string, etc
+#include <vector>                       // for vector
 
-#include <stk_util/util/Marshal.hpp>
 
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
 struct S1
 {
@@ -82,10 +84,10 @@ test(const T &t_in)
   T t_out;
   min >> t_out;
 
-  STKUNIT_ASSERT_EQUAL(t_in, t_out);
+  ASSERT_EQ(t_in, t_out);
 }
 
-STKUNIT_UNIT_TEST(UnitTestMarshal, UnitTest)
+TEST(UnitTestMarshal, UnitTest)
 {
   // Marshal/Unmarshal POD
   {
@@ -114,15 +116,15 @@ STKUNIT_UNIT_TEST(UnitTestMarshal, UnitTest)
 
     stk::Marshal min(mout.str());
     std::string s_in;
-    int i_in;
+    int i_in = 0;
 
     min >> s_in >> i_in;
 
-    STKUNIT_ASSERT_EQUAL(min.size(), mout.size());
-    STKUNIT_ASSERT(mout);
-    STKUNIT_ASSERT(min);
-    STKUNIT_ASSERT_EQUAL((s_in == s_out), true);
-    STKUNIT_ASSERT_EQUAL(i_in, i_out);
+    ASSERT_EQ(min.size(), mout.size());
+    ASSERT_TRUE(mout);
+    ASSERT_TRUE(min);
+    ASSERT_EQ((s_in == s_out), true);
+    ASSERT_EQ(i_in, i_out);
   }
 
   // Marshal/Unmarshal locally defined class/struct
@@ -136,8 +138,8 @@ STKUNIT_UNIT_TEST(UnitTestMarshal, UnitTest)
 
     min >> s_in;
 
-    STKUNIT_ASSERT_EQUAL((s_in.m_string == s_out.m_string), true);
-    STKUNIT_ASSERT_EQUAL(s_in.m_int, s_out.m_int);
+    ASSERT_EQ((s_in.m_string == s_out.m_string), true);
+    ASSERT_EQ(s_in.m_int, s_out.m_int);
   }
 
   // Marshal/Unmarshal std::vector of S2's (uses the stk namespace operator>> and operator<<)
@@ -154,7 +156,7 @@ STKUNIT_UNIT_TEST(UnitTestMarshal, UnitTest)
     
     min >> v_in;
 
-    STKUNIT_ASSERT_EQUAL((v_in[0].m_string == v_out[0].m_string), true);
+    ASSERT_EQ((v_in[0].m_string == v_out[0].m_string), true);
   }
 
   // Marshal/Unmarshal error from type mismatch
@@ -168,9 +170,9 @@ STKUNIT_UNIT_TEST(UnitTestMarshal, UnitTest)
 
     stk::Marshal min(mout.str());
     std::string s_in;
-    double x_in;
+    double x_in = 0.0;
 
-    STKUNIT_ASSERT_THROW(min >> s_in >> x_in, std::runtime_error);
+    ASSERT_THROW(min >> s_in >> x_in, std::runtime_error);
   }
   
   // Marshal error for STL container mismatch
@@ -185,7 +187,7 @@ STKUNIT_UNIT_TEST(UnitTestMarshal, UnitTest)
     stk::Marshal min(mout.str());
     std::list<S1> v_in;
     
-    STKUNIT_ASSERT_THROW(min >> v_in, std::runtime_error);
+    ASSERT_THROW(min >> v_in, std::runtime_error);
   }
   
   // Marshal error for STL container mismatch
@@ -200,7 +202,7 @@ STKUNIT_UNIT_TEST(UnitTestMarshal, UnitTest)
     stk::Marshal min(mout.str());
     std::vector<S1> v_in;
     
-    STKUNIT_ASSERT_THROW(min >> v_in, std::runtime_error);
+    ASSERT_THROW(min >> v_in, std::runtime_error);
   }
   
   // Marshal without error for STL container mismatch
@@ -215,6 +217,6 @@ STKUNIT_UNIT_TEST(UnitTestMarshal, UnitTest)
     stk::Marshal min(mout.str());
     std::list<S1> v_in;
     
-    STKUNIT_ASSERT_NO_THROW(min >> v_in);
+    ASSERT_NO_THROW(min >> v_in);
   }
 }

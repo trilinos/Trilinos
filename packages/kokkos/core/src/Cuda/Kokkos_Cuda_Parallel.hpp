@@ -197,18 +197,7 @@ public:
   typedef typename Reduce::reference_type     reference_type ;
   typedef Cuda::size_type                     size_type ;
 
-  // Algorithmic constraints:
-  //  (a) blockSize is a power of two
-  //  (b) blockDim.x == BlockSize == 1 << BlockSizeShift
-  //  (c) blockDim.y == blockDim.z == 1
-
-  enum { WarpCount      = 8 };
-  enum { BlockSize      = CudaTraits::WarpSize << power_of_two< WarpCount >::value };
-  enum { BlockSizeShift = power_of_two< BlockSize >::value };
-  enum { BlockSizeMask  = BlockSize - 1 };
-
-  enum { GridMaxComputeCapability_2x = 0x0ffff };
-  enum { GridMax = BlockSize };
+  // Algorithmic constraints: blockSize is a power of two AND blockDim.y == blockDim.z == 1
 
   const FunctorType m_functor ;
   size_type *       m_scratch_space ;
@@ -221,6 +210,14 @@ public:
   size_type         m_global_block_begin ;
   size_type         m_global_block_count ;
 
+  // Determine block size constrained by shared memory:
+  static inline
+  unsigned local_block_size( const FunctorType & f )
+    {
+      unsigned n = CudaTraits::WarpSize * 8 ;
+      while ( n && CudaTraits::SharedMemoryCapacity < cuda_single_inter_block_reduce_scan_shmem<false>( f , n ) ) { n >>= 1 ; }
+      return n ;
+    }
 
   __device__ inline
   void operator()(void) const
@@ -244,26 +241,26 @@ public:
       const size_type iwork_end = iwork_beg + m_work_per_block < m_work
                                 ? iwork_beg + m_work_per_block : m_work ;
 
-      for ( size_type iwork = threadIdx.x + iwork_beg ; iwork < iwork_end ; iwork += BlockSize ) {
+      for ( size_type iwork = threadIdx.x + iwork_beg ; iwork < iwork_end ; iwork += blockDim.x ) {
         m_functor( iwork , value );
       }
     }
 
-    // Reduce with final value at BlockSize - 1 location.
-    if ( cuda_single_inter_block_reduce_scan<false,BlockSize>(
+    // Reduce with final value at blockDim.x - 1 location.
+    if ( cuda_single_inter_block_reduce_scan<false>(
            m_functor , m_global_block_begin + blockIdx.x , m_global_block_count ,
            shared_data , m_scratch_space , m_scratch_flags ) ) {
 
       // This is the final block with the final result at the final threads' location
 
-      size_type * const shared = shared_data + BlockSizeMask * word_count.value ;
+      size_type * const shared = shared_data + ( blockDim.x - 1 ) * word_count.value ;
       size_type * const global = m_unified_space ? m_unified_space : m_scratch_space ;
 
       if ( threadIdx.x == 0 ) { Reduce::final( m_functor , shared ); }
 
       if ( CudaTraits::WarpSize < word_count.value ) { __syncthreads(); }
 
-      for ( unsigned i = threadIdx.x ; i < word_count.value ; i += BlockSize ) { global[i] = shared[i]; }
+      for ( unsigned i = threadIdx.x ; i < word_count.value ; i += blockDim.x ) { global[i] = shared[i]; }
     }
   }
 
@@ -282,8 +279,10 @@ public:
   , m_global_block_begin( 0 )
   , m_global_block_count( 0 )
   {
-    // At most 'max_grid' blocks:
-    const int max_grid = std::min( int(GridMax) , int(( nwork + BlockSizeMask ) / BlockSize ));
+    const int block_size = local_block_size( functor );
+
+    // At most 'block_size' blocks:
+    const int max_grid = std::min( int(block_size) , int(( nwork + block_size - 1 ) / block_size ));
 
     // How much work per block:
     m_work_per_block = ( nwork + max_grid - 1 ) / max_grid ;
@@ -303,8 +302,8 @@ public:
   void execute() const
   {
     const dim3 grid( m_local_block_count , 1 , 1 );
-    const dim3 block( BlockSize , 1 , 1 );
-    const int shmem = cuda_single_inter_block_reduce_scan_shmem<false,BlockSize>( m_functor );
+    const dim3 block( local_block_size( m_functor ) , 1 , 1 );
+    const int shmem = cuda_single_inter_block_reduce_scan_shmem<false>( m_functor , block.x );
 
     CudaParallelLaunch< ParallelReduce >( *this, grid, block, shmem ); // copy to device and execute
   }
@@ -336,18 +335,7 @@ public:
   typedef typename Reduce::reference_type     reference_type ;
   typedef Cuda::size_type                     size_type ;
 
-  // Algorithmic constraints:
-  //  (a) blockSize is a power of two
-  //  (b) blockDim.x == BlockSize == 1 << BlockSizeShift
-  //  (b) blockDim.y == blockDim.z == 1
-
-  enum { WarpCount      = 8 };
-  enum { BlockSize      = CudaTraits::WarpSize << power_of_two< WarpCount >::value };
-  enum { BlockSizeShift = power_of_two< BlockSize >::value };
-  enum { BlockSizeMask  = BlockSize - 1 };
-
-  enum { GridMaxComputeCapability_2x = 0x0ffff };
-  enum { GridMax = BlockSize };
+  // Algorithmic constraints: blockDim.x is a power of two AND blockDim.y == blockDim.z == 1
 
   const FunctorType m_functor ;
   size_type *       m_scratch_space ;
@@ -359,6 +347,15 @@ public:
   size_type         m_local_block_count ;
   size_type         m_global_block_begin ;
   size_type         m_global_block_count ;
+
+  // Determine block size constrained by shared memory:
+  static inline
+  unsigned local_block_size( const FunctorType & f )
+    {
+      unsigned n = CudaTraits::WarpSize * 8 ;
+      while ( n && CudaTraits::SharedMemoryCapacity < cuda_single_inter_block_reduce_scan_shmem<false>( f , n ) ) { n >>= 1 ; }
+      return n ;
+    }
 
   __device__ inline
   void operator()(void) const
@@ -378,21 +375,21 @@ public:
       m_functor( Cuda( exec ) , value );
     }
 
-    // Reduce with final value at BlockSize - 1 location.
-    if ( cuda_single_inter_block_reduce_scan<false,BlockSize>(
+    // Reduce with final value at blockDim.x - 1 location.
+    if ( cuda_single_inter_block_reduce_scan<false>(
            m_functor , m_global_block_begin + blockIdx.x , m_global_block_count ,
            shared_data , m_scratch_space , m_scratch_flags ) ) {
 
       // This is the final block with the final result at the final threads' location
 
-      size_type * const shared = shared_data + BlockSizeMask * word_count.value ;
+      size_type * const shared = shared_data + ( blockDim.x - 1 ) * word_count.value ;
       size_type * const global = m_unified_space ? m_unified_space : m_scratch_space ;
 
       if ( threadIdx.x == 0 ) { Reduce::final( m_functor , shared ); }
 
       if ( CudaTraits::WarpSize < word_count.value ) { __syncthreads(); }
 
-      for ( unsigned i = threadIdx.x ; i < word_count.value ; i += BlockSize ) { global[i] = shared[i]; }
+      for ( unsigned i = threadIdx.x ; i < word_count.value ; i += blockDim.x ) { global[i] = shared[i]; }
     }
   }
 
@@ -406,15 +403,17 @@ public:
   , m_scratch_flags( 0 )
   , m_unified_space( 0 )
   , m_host_pointer( result )
-  , m_shmem_begin( cuda_single_inter_block_reduce_scan_shmem<false,BlockSize>( functor ) )
-  , m_shmem_end(   cuda_single_inter_block_reduce_scan_shmem<false,BlockSize>( functor )
+  , m_shmem_begin( cuda_single_inter_block_reduce_scan_shmem<false>( functor , local_block_size( functor ) ) )
+  , m_shmem_end(   cuda_single_inter_block_reduce_scan_shmem<false>( functor , local_block_size( functor ) )
                    + FunctorShmemSize< FunctorType >::value( functor ) )
   , m_local_block_count( 0 )
   , m_global_block_begin( 0 )
   , m_global_block_count( 0 )
   {
-    m_local_block_count  = std::min( int(GridMax) , int(work.league_size) );
-    m_global_block_count = std::min( int(GridMax) , int(work.league_size) );
+    const int block_size = local_block_size( functor );
+
+    m_local_block_count  = std::min( int(block_size) , int(work.league_size) );
+    m_global_block_count = std::min( int(block_size) , int(work.league_size) );
     m_scratch_space = cuda_internal_scratch_space( Reduce::value_size( functor ) * m_local_block_count );
     m_scratch_flags = cuda_internal_scratch_flags( sizeof(size_type) );
     m_unified_space = cuda_internal_scratch_unified( Reduce::value_size( functor ) );
@@ -426,7 +425,7 @@ public:
   void execute() const
   {
     const dim3 grid( m_local_block_count , 1 , 1 );
-    const dim3 block( BlockSize , 1 , 1 );
+    const dim3 block( local_block_size( m_functor ) , 1 , 1 );
 
     CudaParallelLaunch< ParallelReduce >( *this, grid, block, m_shmem_end ); // copy to device and execute
   }
@@ -586,25 +585,24 @@ public:
   typedef Cuda::size_type                     size_type ;
 
   // Algorithmic constraints:
-  //  (a) blockSize is a power of two
-  //  (b) blockDim.x == BlockSize == 1 << BlockSizeShift
+  //  (a) blockDim.x is a power of two
   //  (b) blockDim.y == blockDim.z == 1
   //  (c) gridDim.x  <= blockDim.x * blockDim.x
   //  (d) gridDim.y  == gridDim.z == 1
 
-  // blockDim.x must be power of two = 128 (4 warps) or 256 (8 warps) or 512 (16 warps)
-  // gridDim.x <= blockDim.x * blockDim.x
-  //
-  // 4 warps was 10% faster than 8 warps and 20% faster than 16 warps in unit testing
+  // Determine block size constrained by shared memory:
+  static inline
+  unsigned local_block_size( const FunctorType & f )
+    {
+      // blockDim.x must be power of two = 128 (4 warps) or 256 (8 warps) or 512 (16 warps)
+      // gridDim.x <= blockDim.x * blockDim.x
+      //
+      // 4 warps was 10% faster than 8 warps and 20% faster than 16 warps in unit testing
 
-  enum { WarpCount      = 4 };
-  enum { BlockSize      = CudaTraits::WarpSize << power_of_two< WarpCount >::value };
-  enum { BlockSizeShift = power_of_two< BlockSize >::value };
-  enum { BlockSizeMask  = BlockSize - 1 };
-
-  enum { GridMaxComputeCapability_2x = 0x0ffff };
-  enum { GridMax = ( BlockSize * BlockSize ) < GridMaxComputeCapability_2x
-                 ? ( BlockSize * BlockSize ) : GridMaxComputeCapability_2x };
+      unsigned n = CudaTraits::WarpSize * 4 ;
+      while ( n && CudaTraits::SharedMemoryCapacity < cuda_single_inter_block_reduce_scan_shmem<false>( f , n ) ) { n >>= 1 ; }
+      return n ;
+    }
 
   const FunctorType m_functor ;
   size_type *       m_scratch_space ;
@@ -636,14 +634,14 @@ public:
     const size_type iwork_end = iwork_beg + m_work_per_block < m_work 
                               ? iwork_beg + m_work_per_block : m_work ;
 
-    for ( size_type iwork = threadIdx.x + iwork_beg ; iwork < iwork_end ; iwork += BlockSize ) {
+    for ( size_type iwork = threadIdx.x + iwork_beg ; iwork < iwork_end ; iwork += blockDim.x ) {
       m_functor( iwork , Reduce::reference( shared_value ) , false );
     }
 
     // Reduce and scan, writing out scan of blocks' totals and block-groups' totals.
     // Blocks' scan values are written to 'blockIdx.x' location.
-    // Block-groups' scan values are at: i = ( j * BlockSize - 1 ) for i < gridDim.x
-    cuda_single_inter_block_reduce_scan<true,BlockSize>( m_functor , blockIdx.x , gridDim.x , shared_data , m_scratch_space , m_scratch_flags );
+    // Block-groups' scan values are at: i = ( j * blockDim.x - 1 ) for i < gridDim.x
+    cuda_single_inter_block_reduce_scan<true>( m_functor , blockIdx.x , gridDim.x , shared_data , m_scratch_space , m_scratch_flags );
   }
 
   //----------------------------------------
@@ -658,7 +656,7 @@ public:
 
     // Use shared memory as an exclusive scan: { 0 , value[0] , value[1] , value[2] , ... }
     size_type * const shared_prefix = shared_data + word_count.value * threadIdx.x ;
-    size_type * const shared_accum  = shared_data + word_count.value * ( BlockSize + 1 );
+    size_type * const shared_accum  = shared_data + word_count.value * ( blockDim.x + 1 );
 
     // Starting value for this thread block is the previous block's total.
     if ( blockIdx.x ) {
@@ -672,7 +670,7 @@ public:
           unsigned iwork_beg = blockIdx.x * m_work_per_block ;
     const unsigned iwork_end = iwork_beg + m_work_per_block ;
 
-    for ( ; iwork_beg < iwork_end ; iwork_beg += BlockSize ) {
+    for ( ; iwork_beg < iwork_end ; iwork_beg += blockDim.x ) {
 
       const unsigned iwork = threadIdx.x + iwork_beg ;
 
@@ -690,7 +688,7 @@ public:
       // Call functor to accumulate inclusive scan value for this work item
       if ( iwork < m_work ) { m_functor( iwork , Reduce::reference( shared_prefix + word_count.value ) , false ); }
 
-      // Scan block values into locations shared_data[1..BlockSize]
+      // Scan block values into locations shared_data[1..blockDim.x]
       cuda_intra_block_reduce_scan<true>( m_functor , Reduce::pointer_type(shared_data+word_count.value) );
 
       {
@@ -725,16 +723,23 @@ public:
   , m_work_per_block( 0 )
   , m_final( false )
   {
+    enum { GridMaxComputeCapability_2x = 0x0ffff };
+
+    const int block_size = local_block_size( functor );
+
+    const int grid_max = ( block_size * block_size ) < GridMaxComputeCapability_2x ?
+                         ( block_size * block_size ) : GridMaxComputeCapability_2x ;
+
     // At most 'max_grid' blocks:
-    const int max_grid = std::min( int(GridMax) , int(( nwork + BlockSizeMask ) / BlockSize ));
+    const int max_grid = std::min( int(grid_max) , int(( nwork + block_size - 1 ) / block_size ));
 
     // How much work per block:
     m_work_per_block = ( nwork + max_grid - 1 ) / max_grid ;
 
     // How many block are really needed for this much work:
     const dim3 grid( ( nwork + m_work_per_block - 1 ) / m_work_per_block , 1 , 1 );
-    const dim3 block( BlockSize , 1 , 1 );
-    const int shmem = Reduce::value_size( functor ) * ( BlockSize + 2 );
+    const dim3 block( block_size , 1 , 1 );
+    const int shmem = Reduce::value_size( functor ) * ( block_size + 2 );
 
     m_scratch_space = cuda_internal_scratch_space( Reduce::value_size( functor ) * grid.x );
     m_scratch_flags = cuda_internal_scratch_flags( sizeof(size_type) * 1 );

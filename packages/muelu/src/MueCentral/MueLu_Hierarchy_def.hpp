@@ -699,7 +699,7 @@ namespace MueLu {
 
     Teuchos::ParameterList status;
     status.set("number of levels", GetNumLevels());
-    status.set("complexity", GetOperatorComplexity());
+    status.set("complexity",       GetOperatorComplexity());
 
     return status;
   }
@@ -779,12 +779,9 @@ namespace MueLu {
       }
     }
 
-    if (verbLevel & Statistics2) {
-      Teuchos::OSTab tab2(out);
-      for (int i = 0; i < GetNumLevels(); ++i)
-        Levels_[i]->print(out, verbLevel);
-    }
-
+    Teuchos::OSTab tab2(out);
+    for (int i = 0; i < GetNumLevels(); ++i)
+      Levels_[i]->print(out, verbLevel);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

@@ -258,7 +258,7 @@ private:
   /** Dereference of 'end()' or 'rend()' iterators
    *  is erroneous and can lead to corruption of the container
    */
-  Type * ptr() const { return n->MapvNodeBase::parent == 0 ? (Type*) 0 : n ; }
+  Type * ptr() const { return n->MapvNodeBase::parent == 0 ? 0 : n ; }
 
   MapvIterator( MapvNodeBase * x ) : n( static_cast<Type*>(x) )  {}
   MapvIterator( Type * x ) : n( x )  {}
@@ -359,7 +359,7 @@ private:
   void rotate_left(  nType * x );
   void rotate_right( nType * x );
 
-  nType * header()    const { return const_cast<nType*>((const nType*)this); }
+  nType * header()    const { return const_cast<nType*>(reinterpret_cast<const nType*>(this)); }
   nType * rightmost() const { return right_end.left ; }
   nType * leftmost()  const { return left_end.right ; }
 
@@ -421,7 +421,7 @@ template <class Derived_Type>
 struct MapvDeleteOnlyPolicy {
   typedef typename Derived_Type::key_type key_type ;
 
-  Derived_Type * create( const key_type & K ) { return (Derived_Type*) 0 ; }
+  Derived_Type * create( const key_type & K ) { return 0 ; }
 
   void destroy( Derived_Type * p ) { delete p ; }
 };
@@ -430,7 +430,7 @@ template <class Derived_Type>
 struct MapvNullPolicy {
   typedef typename Derived_Type::key_type key_type ;
 
-  Derived_Type * create( const key_type & K ) { return (Derived_Type*) 0 ; }
+  Derived_Type * create( const key_type & K ) { return  0 ; }
 
   void destroy( Derived_Type * p ) {}
 };
@@ -558,11 +558,11 @@ public:
   static SelfType * container( const Derived_Type & n )
     {
       MapvBase * const c = MapvBase::container(&n);
-      return c ? static_cast<SelfType*>( c ) : (SelfType*) 0 ;
+      return c ? static_cast<SelfType*>( c ) : 0 ;
     }
 
   static SelfType * container( const Derived_Type * n )
-    { return n ? container( *n ) : (SelfType*) 0 ; }
+    { return n ? container( *n ) : 0 ; }
 
   // -------------------------------------------------------------------
 
@@ -669,7 +669,7 @@ public:
   pointer remove( const key_type & k )
     {
       pointer v = f(k);
-      return ( nEnd() != v ) ? ( MapvBase::remove(v) , v ) : (pointer) 0 ;
+      return ( nEnd() != v ) ? ( MapvBase::remove(v) , v ) : 0 ;
     }
 
   pointer remove( iterator i )

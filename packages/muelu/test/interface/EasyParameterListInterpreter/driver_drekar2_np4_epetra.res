@@ -50,6 +50,7 @@ Level 1
       algorithm = laplacian
       
      lumping = 1
+     filtered matrix: reuse graph = 1
      filtered matrix: reuse eigenvalue = 1
      
      Build (MueLu::TentativePFactory)
@@ -102,6 +103,7 @@ Level 1
   remapPartitions = 1
   numRemapValues = 4
   alwaysKeepProc0 = 1
+  repartition: print partition distribution = 0
   
  type = Interpolation
  implicit = 0
@@ -141,6 +143,7 @@ Level 2
       algorithm = laplacian
       
      lumping = 1
+     filtered matrix: reuse graph = 1
      filtered matrix: reuse eigenvalue = 1
      
      Build (MueLu::TentativePFactory)
@@ -193,6 +196,7 @@ Level 2
   remapPartitions = 1
   numRemapValues = 4
   alwaysKeepProc0 = 1
+  repartition: print partition distribution = 0
   
  type = Interpolation
  implicit = 0
@@ -232,6 +236,7 @@ Level 3
       algorithm = laplacian
       
      lumping = 1
+     filtered matrix: reuse graph = 1
      filtered matrix: reuse eigenvalue = 1
      
      Build (MueLu::TentativePFactory)
@@ -284,6 +289,7 @@ Level 3
   remapPartitions = 1
   numRemapValues = 4
   alwaysKeepProc0 = 1
+  repartition: print partition distribution = 0
   
  type = Interpolation
  implicit = 0
