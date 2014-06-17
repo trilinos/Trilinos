@@ -768,6 +768,7 @@ TEUCHOS_TEST_FOR_EXCEPTION(
    CG_divide(a,b,c);
   }
 #endif
+
   return c; 
 }
 
@@ -779,7 +780,6 @@ operator/(const typename PCE<Storage>::value_type& a,
 {
   //Creat a 0-th order PCE for a
   PCE<Storage> a_pce(a);
-//  return a / b;
   return operator/(a_pce,b);
 }
 

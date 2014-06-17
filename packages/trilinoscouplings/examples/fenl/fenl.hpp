@@ -56,6 +56,8 @@
 #include <Kokkos_View.hpp>
 #include <Kokkos_ArithTraits.hpp>
 
+#include <SGPreconditioner.hpp>
+
 namespace Kokkos {
 namespace Example {
 namespace FENL {
@@ -170,6 +172,7 @@ Perf fenl(
   const int use_atomic ,
   const int use_belos ,
   const int use_muelu ,
+  const int use_mean_based ,
   const int use_nodes[] ,
   const CoeffFunctionType& coeff_function ,
   const ManufacturedSolutionType& manufactured_solution ,

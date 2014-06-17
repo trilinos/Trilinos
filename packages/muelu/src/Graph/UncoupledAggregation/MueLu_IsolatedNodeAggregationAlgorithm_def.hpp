@@ -78,10 +78,10 @@ void IsolatedNodeAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMa
   const LO nRows = graph.GetNodeNumVertices();
 
   for (LO iNode=0; iNode<nRows; iNode++) {
-    if (aggStat[iNode] == NodeStats::BOUNDARY ||
-        (aggStat[iNode] != NodeStats::AGGREGATED && graph.getNeighborVertices(iNode).size() == 1)) {
+    if (aggStat[iNode] == BOUNDARY ||
+        (aggStat[iNode] != AGGREGATED && graph.getNeighborVertices(iNode).size() == 1)) {
       // This is a boundary or an isolated node
-      aggStat[iNode] = NodeStats::AGGREGATED;
+      aggStat[iNode] = AGGREGATED;
       numNonAggregatedNodes--;
     }
   }

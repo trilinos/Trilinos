@@ -47,9 +47,6 @@
 #define MUELU_BRICKAGGREGATIONFACTORY_DECL_HPP_
 
 #include "MueLu_ConfigDefs.hpp"
-#if defined(HAVE_MPI)
-#include <Teuchos_DefaultMpiComm.hpp>
-#include <Teuchos_CommHelpers.hpp>
 
 #include <Xpetra_Import_fwd.hpp>
 #include <Xpetra_ImportFactory_fwd.hpp>
@@ -72,13 +69,8 @@ namespace MueLu {
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
   class BrickAggregationFactory : public SingleLevelFactoryBase {
 #undef MUELU_BRICKAGGREGATIONFACTORY_SHORT
-#include "MueLu_UseShortNamesScalar.hpp"
+#include "MueLu_UseShortNames.hpp"
   private:
-    // As we don't include ShortNamesScalar, some typedefs are not available
-    typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                   Map;
-    typedef Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node>                Import;
-    typedef Xpetra::ImportFactory<LocalOrdinal,GlobalOrdinal,Node>         ImportFactory;
-    typedef MueLu::Aggregates<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Aggregates;
     typedef Teuchos::ScalarTraits<Scalar>                                  STS;
 
     // Comparator for doubles
@@ -110,9 +102,6 @@ namespace MueLu {
     RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
 
     //@}
-
-    //! @name Set/get methods.
-    //@{
 
     // Options shared by all aggregation algorithms
 
@@ -153,9 +142,7 @@ namespace MueLu {
      std::map<GlobalOrdinal,GlobalOrdinal> revMap_;
   }; // class BrickAggregationFactory
 
-  }
+}
 
 #define MUELU_BRICKAGGREGATIONFACTORY_SHORT
-#endif //if defined(HAVE_MPI)
-
 #endif /* MUELU_BRICKAGGREGATIONFACTORY_DECL_HPP_ */

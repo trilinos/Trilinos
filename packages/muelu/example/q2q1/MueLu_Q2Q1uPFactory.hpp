@@ -267,7 +267,7 @@ namespace MueLu {
       std::vector<char> depStatus(N);
       for (int k = 0; k < Cptlist.size(); k++) {
 
-        for (int i = 0; i < N; i++) {
+        for (Xpetra::global_size_t i = 0; i < N; i++) {
           bool isPresent = false;
           for (int j = 0; j < numCpts[i]; j++)
             if ((*myCpts)(i)[j] == Cptlist[k])
@@ -292,7 +292,7 @@ namespace MueLu {
       std::vector<char> depStatus(N);
       for (int k = 0; k < Cptlist.size(); k++) {
 
-        for (int i = 0; i < N; i++) {
+        for (Xpetra::global_size_t i = 0; i < N; i++) {
           bool isPresent = false;
           for (int j = 0; j < numCpts[i]; j++)
             if ((*myCpts)(i)[j] == Cptlist[k])

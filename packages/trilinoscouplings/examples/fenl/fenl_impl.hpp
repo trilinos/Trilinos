@@ -67,6 +67,8 @@
 #include <Kokkos_DefaultNode.hpp>
 
 #include <Tpetra_Vector.hpp>
+#include "Tpetra_MultiVector.hpp"
+
 
 //----------------------------------------------------------------------------
 
@@ -128,6 +130,7 @@ Perf fenl(
   const int use_atomic ,
   const int use_belos ,
   const int use_muelu ,
+  const int use_mean_based ,
   const int use_nodes[] ,
   const CoeffFunctionType& coeff_function ,
   const ManufacturedSolutionType& manufactured_solution ,
@@ -469,6 +472,7 @@ Perf fenl(
                               rcpFromRef(g_nodal_residual),
                               rcpFromRef(g_nodal_delta),
                               use_muelu,
+                              use_mean_based, 
                               cg_iteration_limit ,
                               cg_iteration_tolerance);
       }
@@ -603,6 +607,7 @@ Perf fenl(
     const int use_atomic ,                                           \
     const int use_belos ,                                            \
     const int use_muelu ,                                            \
+    const int use_mean_based ,                                       \
     const int global_elems[] ,                                       \
     const COEFF& coeff_function ,                                    \
     const MS& manufactured_solution ,                                \

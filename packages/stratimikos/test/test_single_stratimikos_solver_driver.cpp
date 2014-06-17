@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //         Stratimikos: Thyra-based strategies for linear solvers
 //                Copyright (2006) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -50,7 +50,7 @@ int main(int argc, char* argv[])
 {
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
-  
+
   using Teuchos::CommandLineProcessor;
 
   bool success = true;
@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
     //
     // Read options from command-line
     //
-    
+
     std::string     inputFile              = "";
     std::string     extraParams            = "";
     bool            dumpAll                = false;
@@ -87,19 +87,19 @@ int main(int argc, char* argv[])
       if(verbose) *out << "\nAppending extra parameters from the XML string \""<<extraParams<<"\" ...\n";
       Teuchos::updateParametersFromXmlString(extraParams, Teuchos::inOutArg(paramList));
     }
-    
+
     success
       = Thyra::test_single_stratimikos_solver(
         &paramList, dumpAll, verbose?&*out:0
         );
-    
+
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,success)
-  
+
   if (verbose) {
     if(success)  *out << "\nCongratulations! All of the tests checked out!\n";
     else         *out << "\nOh no! At least one of the tests failed!\n";
   }
 
-  return ( success ? 0 : 1 );
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }

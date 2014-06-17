@@ -43,21 +43,27 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_UNCOUPLEDAGGREGATIONALGORITHM_FWD_HPP
-#define MUELU_UNCOUPLEDAGGREGATIONALGORITHM_FWD_HPP
 
 
+#include "MueLu_ExplicitInstantiation.hpp"
 
+#if defined(HAVE_MUELU_EXPLICIT_INSTANTIATION)
 
-namespace MueLu {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  class UncoupledAggregationAlgorithm;
-}
+#include "Kokkos_DefaultNode.hpp"
+#include "Tpetra_ETIHelperMacros.h"
+#include "MueLu_AggregationPhase2bAlgorithm_def.hpp"
 
-#ifndef MUELU_UNCOUPLEDAGGREGATIONALGORITHM_SHORT
-#define MUELU_UNCOUPLEDAGGREGATIONALGORITHM_SHORT
+TPETRA_ETI_MANGLING_TYPEDEFS()
+
+#define MUELU_INST_LO_GO_N(LO, GO, N) \
+  template class MueLu::AggregationPhase2bAlgorithm<LO, GO, N>;
+
+#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_PTHREAD) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THREADSWRAPPERNODE)
+  MUELU_INST_LO_GO_N(int, int, Kokkos_Compat_KokkosThreadsWrapperNode)
 #endif
 
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE)
+  MUELU_INST_LO_GO_N(int, int, KokkosClassic_TPINode)
+#endif
 
-
-#endif // MUELU_UNCOUPLEDAGGREGATIONALGORITHM_FWD_HPP
+#endif

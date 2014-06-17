@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //         Stratimikos: Thyra-based strategies for linear solvers
 //                Copyright (2006) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -43,6 +43,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 #include "az_aztec_defs.h"
 
 struct MatrixTestPacket {
@@ -85,7 +86,7 @@ int main(int argc, char* argv[])
 {
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
-  
+
   using Teuchos::CommandLineProcessor;
 
   bool result, success = true;
@@ -98,7 +99,7 @@ int main(int argc, char* argv[])
     //
     // Read options from command-line
     //
-    
+
     std::string    matrixDir              = ".";
     int            numRandomVectors       = 1;
     bool           showAllTests           = false;
@@ -222,19 +223,12 @@ int main(int argc, char* argv[])
     }
 
   }
-  catch( const std::exception &excpt ) {
-    std::cerr << "*** Caught standard exception : " << excpt.what() << std::endl;
-    success = false;
-  }
-  catch( ... ) {
-    std::cerr << "*** Caught an unknown exception\n";
-    success = false;
-  }
-  
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
+
   if (verbose) {
     if(success)  out << "\nCongratulations! All of the tests checked out!\n";
     else         out << "\nOh no! At least one of the tests failed!\n";
   }
 
-  return ( success ? 0 : 1 );
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }

@@ -10,6 +10,7 @@ transpose: use implicit = 0   [default]
 smoother: pre or post = both   [default]
 aggregation: type = uncoupled   [default]
 multigrid algorithm = sa   [default]
+aggregation: visualize = 0   [default]
 repartition: partitioner = zoltan   [default]
 
 Level 0
@@ -39,19 +40,24 @@ Level 1
        Dirichlet detection threshold = 0
        algorithm = original
        
-      Ordering = 0   [default]
-      MaxNeighAlreadySelected = 0   [default]
-      MinNodesPerAggregate = 2   [default]
-      MaxNodesPerAggregate = 2147483647   [default]
-      UseOnePtAggregationAlgorithm = 0   [default]
-      UseSmallAggregatesAggregationAlgorithm = 0   [default]
-      UsePreserveDirichletAggregationAlgorithm = 0   [default]
-      UseUncoupledAggregationAlgorithm = 1   [default]
-      UseMaxLinkAggregationAlgorithm = 1   [default]
-      UseIsolatedNodeAggregationAlgorithm = 1   [default]
-      UseEmergencyAggregationAlgorithm = 1   [default]
-      OnePt aggregate map name =    [default]
-      SmallAgg aggregate map name =    [default]
+      mode = old
+      Ordering = 0
+      MaxNeighAlreadySelected = 0
+      MinNodesPerAggregate = 2
+      MaxNodesPerAggregate = 2147483647
+      UseOnePtAggregationAlgorithm = 0
+      UseSmallAggregatesAggregationAlgorithm = 0
+      UsePreserveDirichletAggregationAlgorithm = 0
+      UseUncoupledAggregationAlgorithm = 1
+      UseMaxLinkAggregationAlgorithm = 1
+      UseIsolatedNodeAggregationAlgorithm = 1
+      UseEmergencyAggregationAlgorithm = 1
+      aggregation: enable phase 1 = 1   [unused]
+      aggregation: enable phase 2a = 1   [unused]
+      aggregation: enable phase 2b = 1   [unused]
+      aggregation: enable phase 3 = 1   [unused]
+      OnePt aggregate map name = 
+      SmallAgg aggregate map name = 
       
       Build (MueLu::AmalgamationFactory)
       [empty list]
@@ -133,19 +139,24 @@ Level 2
        Dirichlet detection threshold = 0
        algorithm = original
        
-      Ordering = 0   [default]
-      MaxNeighAlreadySelected = 0   [default]
-      MinNodesPerAggregate = 2   [default]
-      MaxNodesPerAggregate = 2147483647   [default]
-      UseOnePtAggregationAlgorithm = 0   [default]
-      UseSmallAggregatesAggregationAlgorithm = 0   [default]
-      UsePreserveDirichletAggregationAlgorithm = 0   [default]
-      UseUncoupledAggregationAlgorithm = 1   [default]
-      UseMaxLinkAggregationAlgorithm = 1   [default]
-      UseIsolatedNodeAggregationAlgorithm = 1   [default]
-      UseEmergencyAggregationAlgorithm = 1   [default]
-      OnePt aggregate map name =    [default]
-      SmallAgg aggregate map name =    [default]
+      mode = old
+      Ordering = 0
+      MaxNeighAlreadySelected = 0
+      MinNodesPerAggregate = 2
+      MaxNodesPerAggregate = 2147483647
+      UseOnePtAggregationAlgorithm = 0
+      UseSmallAggregatesAggregationAlgorithm = 0
+      UsePreserveDirichletAggregationAlgorithm = 0
+      UseUncoupledAggregationAlgorithm = 1
+      UseMaxLinkAggregationAlgorithm = 1
+      UseIsolatedNodeAggregationAlgorithm = 1
+      UseEmergencyAggregationAlgorithm = 1
+      aggregation: enable phase 1 = 1   [unused]
+      aggregation: enable phase 2a = 1   [unused]
+      aggregation: enable phase 2b = 1   [unused]
+      aggregation: enable phase 3 = 1   [unused]
+      OnePt aggregate map name = 
+      SmallAgg aggregate map name = 
       
       Build (MueLu::AmalgamationFactory)
       [empty list]

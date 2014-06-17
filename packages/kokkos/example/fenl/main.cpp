@@ -25,6 +25,10 @@
 #include <WrapMPI.hpp>
 #include <fenl.hpp>
 
+// For vtune
+#include <sys/types.h>
+#include <unistd.h>
+
 //----------------------------------------------------------------------------
 
 enum { CMD_USE_THREADS = 0
@@ -41,6 +45,7 @@ enum { CMD_USE_THREADS = 0
      , CMD_USE_FIXTURE_QUADRATIC
      , CMD_USE_ATOMIC
      , CMD_USE_TRIALS
+     , CMD_VTUNE
      , CMD_PRINT
      , CMD_ECHO
      , CMD_ERROR
@@ -83,6 +88,9 @@ void print_cmdline( std::ostream & s , const int cmd[] )
   if ( cmd[ CMD_USE_TRIALS ] ) {
     s << " TRIALS(" << cmd[ CMD_USE_TRIALS ] << ")" ;
   }
+  if ( cmd[ CMD_VTUNE ] ) {
+    s << " VTUNE" ;
+  }
   if ( cmd[ CMD_PRINT ] ) {
     s << " PRINT" ;
   }
@@ -105,6 +113,7 @@ void print_perf_value( std::ostream & s , const std::vector<size_t> & widths,  c
   s << std::setw(widths[i++]) << ( perf.create_sparse_matrix * 1000.0 ) / perf.global_node_count << " ,";
   s << std::setw(widths[i++]) << ( perf.fill_time * 1000.0 ) / perf.global_node_count << " ,";
   s << std::setw(widths[i++]) << ( perf.bc_time * 1000.0 ) / perf.global_node_count << " ,";
+  s << std::setw(widths[i++]) << ( ( perf.matvec_time * 1000.0 ) / perf.cg_iter_count ) / perf.global_node_count << " ,";
   s << std::setw(widths[i++]) << ( ( perf.cg_time * 1000.0 ) / perf.cg_iter_count ) / perf.global_node_count << " ,";
   s << std::setw(widths[i])   << perf.error_max;
   s << std::endl ;
@@ -152,6 +161,7 @@ void run( MPI_Comm comm , const int cmd[] )
   headers.push_back(std::make_pair("MATRIX_CREATE/NODE","millisec"));
   headers.push_back(std::make_pair("MATRIX_FILL/NODE","millisec"));
   headers.push_back(std::make_pair("BOUNDARY/NODE","millisec"));
+  headers.push_back(std::make_pair("MAT_VEC/ITER/ROW","millisec"));
   headers.push_back(std::make_pair("CG/ITER/ROW","millisec"));
   headers.push_back(std::make_pair("ERROR","ratio"));
 
@@ -271,6 +281,9 @@ int main( int argc , char ** argv )
       else if ( 0 == strcasecmp( argv[i] , "trials" ) ) {
         cmdline[ CMD_USE_TRIALS ] = atoi( argv[++i] ) ;
       }
+      else if ( 0 == strcasecmp( argv[i] , "vtune" ) ) {
+        cmdline[ CMD_VTUNE ] = 1 ;
+      }
       else if ( 0 == strcasecmp( argv[i] , "print" ) ) {
         cmdline[ CMD_PRINT ] = 1 ;
       }
@@ -290,6 +303,22 @@ int main( int argc , char ** argv )
 #if defined( KOKKOS_HAVE_MPI )
   MPI_Bcast( cmdline , CMD_COUNT , MPI_INT , 0 , comm );
 #endif
+
+  if ( cmdline[ CMD_VTUNE ] ) {
+    std::stringstream cmd;
+    pid_t my_os_pid=getpid();
+    const std::string vtune_loc =
+      "/usr/local/intel/vtune_amplifier_xe_2013/bin64/amplxe-cl";
+    const std::string output_dir = "./vtune/vtune.";
+    const int p_rank = comm_rank;
+    cmd << vtune_loc
+        << " -collect hotspots -result-dir " << output_dir << p_rank
+        << " -target-pid " << my_os_pid << " &";
+    if (p_rank == 0)
+      std::cout << cmd.str() << std::endl;
+    system(cmd.str().c_str());
+    system("sleep 10");
+  }
 
   if ( ! cmdline[ CMD_ERROR ] && ! cmdline[ CMD_ECHO ] ) {
 

@@ -121,14 +121,17 @@ namespace MueLu {
     RCP<const Map>        rowMap  = A->getRowMap();
 
     Xpetra::global_size_t N = rowMap->getGlobalNumElements();
-    Xpetra::global_size_t n = sqrt(N);
+
     int V;
+    Xpetra::global_size_t n = round(sqrt(N));
     if (N == n*n) {
       // pressure mode
       V = 1;
       GetOStream(Runtime1) << "Pressure mode" << std::endl;
+
     } else {
-      n = sqrt(N/2);
+      n = round(sqrt(N/2));
+
       if (N == 2*n*n) {
         // velocity mode
         V = 2;

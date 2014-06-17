@@ -54,9 +54,11 @@ KOKKOS_INC = -I$(KOKKOS_PATH)/core/src -I$(KOKKOS_PATH)/containers/src -I../ -DK
 KOKKOS_HEADERS = $(wildcard $(KOKKOS_PATH)/core/src/*.hpp)
 KOKKOS_HEADERS += $(wildcard $(KOKKOS_PATH)/core/src/impl/*.hpp)
 KOKKOS_HEADERS += $(wildcard $(KOKKOS_PATH)/containers/src/*.hpp)
+KOKKOS_HEADERS += $(wildcard $(KOKKOS_PATH)/containers/src/impl/*.hpp)
 KOKKOS_HEADERS += $(wildcard $(KOKKOS_PATH)/linalg/src/*.hpp)
 
 SRC_KOKKOS = $(wildcard $(KOKKOS_PATH)/core/src/impl/*.cpp)
+SRC_KOKKOS += $(wildcard $(KOKKOS_PATH)/containers/src/impl/*.cpp)
 KOKKOS_LIB = libkokkoscore.a
 
 ifeq ($(CUDA), yes)

@@ -46,6 +46,7 @@
 #ifndef MUELU_REFMAXWELL_FWD_HPP
 #define MUELU_REFMAXWELL_FWD_HPP
 
+#include "MueLu_ConfigDefs.hpp"
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 
 namespace MueLu {

@@ -56,6 +56,7 @@
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_FactoryManager.hpp"
 
+#include "MueLu_AggregationExportFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_ConstraintFactory.hpp"
@@ -431,7 +432,7 @@ namespace MueLu {
     // Aggregation graph
     RCP<CoalesceDropFactory> dropFactory = rcp(new CoalesceDropFactory());
     ParameterList dropParams = *(dropFactory->GetValidParameterList());
-    dropParams.set                      ("lightweight wrap", true);
+    dropParams.set("lightweight wrap", true);
     MUELU_TEST_AND_SET_PARAM(dropParams, "algorithm",                     paramList, defaultList, "aggregation: drop scheme",         std::string);
     // Rename classical to original
     if (dropParams.isParameter("algorithm") && dropParams.get<std::string>("algorithm") == "classical")
@@ -445,8 +446,15 @@ namespace MueLu {
     // Aggregation sheme
     MUELU_READ_2LIST_PARAM(paramList, defaultList, "aggregation: type", std::string, "uncoupled", aggType);
     RCP<Factory> aggFactory;
-    if      (aggType == "uncoupled") aggFactory = rcp(new UncoupledAggregationFactory());
-    else if (aggType == "coupled")   aggFactory = rcp(new CoupledAggregationFactory());
+    if      (aggType == "uncoupled") {
+      aggFactory = rcp(new UncoupledAggregationFactory());
+      ParameterList aggParams = *(aggFactory->GetValidParameterList());
+      MUELU_TEST_AND_SET_PARAM(aggParams, "mode", paramList, defaultList, "aggregation: mode", std::string);
+      aggFactory->SetParameterList(aggParams);
+
+    } else if (aggType == "coupled") {
+      aggFactory = rcp(new CoupledAggregationFactory());
+    }
     aggFactory->SetFactory("Graph",       manager.GetFactory("Graph"));
     aggFactory->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
     manager.SetFactory("Aggregates", aggFactory);
@@ -541,6 +549,12 @@ namespace MueLu {
     RAP->SetFactory("P", manager.GetFactory("P"));
     if (!this->implicitTranspose_)
       RAP->SetFactory("R", manager.GetFactory("R"));
+    MUELU_READ_2LIST_PARAM(paramList, defaultList, "aggregation: visualize", bool, false, visAgg);
+    if (visAgg) {
+      RCP<AggregationExportFactory> aggExport = rcp(new AggregationExportFactory());
+      aggExport->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
+      RAP->AddTransferFactory(aggExport);
+    }
     manager.SetFactory("A", RAP);
 
     // === Coordinates ===
