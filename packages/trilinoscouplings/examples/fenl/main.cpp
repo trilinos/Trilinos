@@ -24,7 +24,7 @@
 
 //----------------------------------------------------------------------------
 
-template< class Device , Kokkos::Example::BoxElemPart::ElemOrder ElemOrder >
+template< class Device >
 bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
           const CMD & cmd )
 {
@@ -152,20 +152,20 @@ int main( int argc , char ** argv )
   if ( ! cmdline.CMD_ERROR  && ! cmdline.CMD_ECHO  ) {
 
 #if defined( KOKKOS_HAVE_PTHREAD )
-    if ( cmdline.CMD_USE_THREADS  ) {
-      run< Kokkos::Threads , Kokkos::Example::BoxElemPart::ElemLinear >( comm , cmdline );
+    if ( cmdline.CMD_USE_THREADS ) {
+      run< Kokkos::Threads >( comm , cmdline );
     }
 #endif
 
 #if defined( KOKKOS_HAVE_OPENMP )
-    if ( cmdline.CMD_USE_OPENMP  ) {
-      run< Kokkos::OpenMP , Kokkos::Example::BoxElemPart::ElemLinear >( comm , cmdline );
+    if ( cmdline.CMD_USE_OPENMP ) {
+      run< Kokkos::OpenMP >( comm , cmdline );
     }
 #endif
 
 #if defined( KOKKOS_HAVE_CUDA )
-    if ( cmdline.CMD_USE_CUDA  ) {
-      run< Kokkos::Cuda , Kokkos::Example::BoxElemPart::ElemLinear >( comm , cmdline );
+    if ( cmdline.CMD_USE_CUDA ) {
+      run< Kokkos::Cuda >( comm , cmdline );
     }
 #endif
 

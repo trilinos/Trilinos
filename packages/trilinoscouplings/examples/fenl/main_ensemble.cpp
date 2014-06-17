@@ -30,7 +30,7 @@
 
 //----------------------------------------------------------------------------
 
-template< class Device , Kokkos::Example::BoxElemPart::ElemOrder ElemOrder >
+template< class Device , int VectorSize >
 bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
           const CMD & cmd)
 {
@@ -101,11 +101,8 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
 
   // Compute PCE of response propagating blocks of quadrature
   // points at a time
-  if ( cmd.CMD_USE_UQ_ENSEMBLE) {
+  if ( cmd.CMD_USE_UQ_ENSEMBLE > 0 ) {
 
-    static const bool is_cuda =
-      Kokkos::Impl::is_same<Device,Kokkos::Cuda>::value;
-    static const int VectorSize = is_cuda ? 16 : 16;
     typedef Stokhos::StaticFixedStorage<int,double,VectorSize,Device> Storage;
     typedef Sacado::MP::Vector<Storage> Scalar;
 
@@ -139,21 +136,13 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
 
       // Evaluate response on qp block
       Scalar response = 0;
-      Perf perf;
-      if ( cmd.CMD_USE_FIXTURE_QUADRATIC)
-        perf = fenl< Scalar , Device , BoxElemPart::ElemQuadratic >
-          ( comm , node , cmd.CMD_PRINT, cmd.CMD_USE_TRIALS,
-            cmd.CMD_USE_ATOMIC, cmd.CMD_USE_BELOS, cmd.CMD_USE_MUELU, cmd.CMD_USE_MEANBASED ,
-            nelem , diffusion_coefficient , manufactured_solution ,
-            bc_lower_value , bc_upper_value ,
-            false , response);
-      else
-        perf = fenl< Scalar , Device , BoxElemPart::ElemLinear >
-          ( comm , node , cmd.CMD_PRINT, cmd.CMD_USE_TRIALS,
-            cmd.CMD_USE_ATOMIC, cmd.CMD_USE_BELOS, cmd.CMD_USE_MUELU, cmd.CMD_USE_MEANBASED , 
-            nelem , diffusion_coefficient , manufactured_solution ,
-            bc_lower_value , bc_upper_value ,
-            false , response);
+      Perf perf =
+        fenl< Scalar , Device , BoxElemPart::ElemLinear >
+        ( comm , node , cmd.CMD_PRINT , cmd.CMD_USE_TRIALS ,
+          cmd.CMD_USE_ATOMIC , cmd.CMD_USE_BELOS , cmd.CMD_USE_MUELU ,
+          nelem , diffusion_coefficient , manufactured_solution ,
+          bc_lower_value , bc_upper_value ,
+          false , response);
 
       // std::cout << "newton count = " << perf.newton_iter_count
       //           << " cg count = " << perf.cg_iter_count << std::endl;
@@ -200,21 +189,13 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
 
       // Evaluate response on qp block
       Scalar response = 0;
-      Perf perf;
-      if ( cmd.CMD_USE_FIXTURE_QUADRATIC)
-        perf = fenl< Scalar , Device , BoxElemPart::ElemQuadratic >
-          ( comm , node , cmd.CMD_PRINT, cmd.CMD_USE_TRIALS,
-            cmd.CMD_USE_ATOMIC, cmd.CMD_USE_BELOS, cmd.CMD_USE_MUELU, cmd.CMD_USE_MEANBASED ,
-            nelem , diffusion_coefficient , manufactured_solution ,
-            bc_lower_value , bc_upper_value ,
-            false , response);
-      else
-        perf = fenl< Scalar , Device , BoxElemPart::ElemLinear >
-          ( comm , node , cmd.CMD_PRINT, cmd.CMD_USE_TRIALS,
-            cmd.CMD_USE_ATOMIC, cmd.CMD_USE_BELOS, cmd.CMD_USE_MUELU, cmd.CMD_USE_MEANBASED ,
-            nelem , diffusion_coefficient , manufactured_solution ,
-            bc_lower_value , bc_upper_value ,
-            false , response);
+      Perf perf =
+        fenl< Scalar , Device , BoxElemPart::ElemLinear >
+        ( comm , node , cmd.CMD_PRINT , cmd.CMD_USE_TRIALS ,
+          cmd.CMD_USE_ATOMIC , cmd.CMD_USE_BELOS , cmd.CMD_USE_MUELU ,
+          nelem , diffusion_coefficient , manufactured_solution ,
+          bc_lower_value , bc_upper_value ,
+          false , response);
 
       // std::cout << "newton count = " << perf.newton_iter_count
       //           << " cg count = " << perf.cg_iter_count << std::endl;
@@ -274,19 +255,50 @@ int main( int argc , char ** argv )
 
 #if defined( KOKKOS_HAVE_PTHREAD )
     if ( cmdline.CMD_USE_THREADS ) {
-      run< Kokkos::Threads , Kokkos::Example::BoxElemPart::ElemLinear >( comm , cmdline );
+#if defined(__MIC__)
+      if ( cmdline.CMD_USE_UQ_ENSEMBLE == 0 ||
+           cmdline.CMD_USE_UQ_ENSEMBLE == 16 )
+        run< Kokkos::Threads >( comm , cmdline );
+      else if ( cmdline.CMD_USE_UQ_ENSEMBLE == 32 )
+        run< Kokkos::Threads , 32 >( comm , cmdline );
+#else
+      if ( cmdline.CMD_USE_UQ_ENSEMBLE == 0 ||
+           cmdline.CMD_USE_UQ_ENSEMBLE == 4 )
+        run< Kokkos::Threads ,  4 >( comm , cmdline );
+      else if ( cmdline.CMD_USE_UQ_ENSEMBLE == 16 )
+        run< Kokkos::Threads , 16 >( comm , cmdline );
+      else if ( cmdline.CMD_USE_UQ_ENSEMBLE == 32 )
+        run< Kokkos::Threads , 32 >( comm , cmdline );
+#endif
     }
 #endif
 
 #if defined( KOKKOS_HAVE_OPENMP )
     if ( cmdline.CMD_USE_OPENMP ) {
-      run< Kokkos::OpenMP , Kokkos::Example::BoxElemPart::ElemLinear >( comm , cmdline );
+#if defined(__MIC__)
+      if ( cmdline.CMD_USE_UQ_ENSEMBLE == 0 ||
+           cmdline.CMD_USE_UQ_ENSEMBLE == 16 )
+        run< Kokkos::OpenMP , 16 >( comm , cmdline );
+      else if ( cmdline.CMD_USE_UQ_ENSEMBLE == 32 )
+        run< Kokkos::OpenMP , 32 >( comm , cmdline );
+#else
+      if ( cmdline.CMD_USE_UQ_ENSEMBLE == 0 ||
+           cmdline.CMD_USE_UQ_ENSEMBLE == 4 )
+        run< Kokkos::OpenMP ,  4 >( comm , cmdline );
+      else if ( cmdline.CMD_USE_UQ_ENSEMBLE == 16 )
+        run< Kokkos::OpenMP , 16 >( comm , cmdline );
+      else if ( cmdline.CMD_USE_UQ_ENSEMBLE == 32 )
+        run< Kokkos::OpenMP , 32 >( comm , cmdline );
+#endif
     }
 #endif
 
 #if defined( KOKKOS_HAVE_CUDA )
-    if ( cmdline.CMD_USE_CUDA  ) {
-      run< Kokkos::Cuda , Kokkos::Example::BoxElemPart::ElemLinear >( comm , cmdline );
+    if ( cmdline.CMD_USE_CUDA ) {
+      if ( cmdline.CMD_USE_UQ_ENSEMBLE == 16 )
+        run< Kokkos::Cuda , 16 >( comm , cmdline );
+      else if ( cmdline.CMD_USE_UQ_ENSEMBLE == 32 )
+        run< Kokkos::Cuda , 32 >( comm , cmdline );
     }
 #endif
 

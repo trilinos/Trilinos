@@ -15,12 +15,12 @@ enum clp_return_type {CLP_HELP=0,
       CLP_ERROR,
       CLP_OK};
 
-struct CMD { 
+struct CMD {
   int CMD_USE_THREADS;
+  int CMD_USE_OPENMP;
   int CMD_USE_NUMA;
   int CMD_USE_CORE_PER_NUMA;
   bool CMD_USE_CUDA;
-  int CMD_USE_OPENMP;
   int CMD_USE_CUDA_DEV;
   int CMD_USE_NGPUS;
   int CMD_USE_FIXTURE_X;
@@ -34,20 +34,20 @@ struct CMD {
   bool CMD_USE_BELOS;
   bool CMD_USE_MUELU;
   bool CMD_USE_MEANBASED;
-  bool CMD_USE_UQ_ENSEMBLE;
   int CMD_USE_UQ_DIM;
   int CMD_USE_UQ_ORDER;
-  bool CMD_USE_SPARSE;
-  bool CMD_VTUNE;
-  double CMD_USE_VAR;
   double CMD_USE_MEAN;
+  double CMD_USE_VAR;
   double CMD_USE_COR;
+  bool CMD_USE_SPARSE;
+  bool CMD_USE_UQ_ENSEMBLE;
+  bool CMD_VTUNE;
   bool CMD_PRINT;
   bool CMD_SUMMARIZE;
   int CMD_ECHO;
   int CMD_ERROR;
   int CMD_COUNT;
- 
+
   CMD() : CMD_USE_THREADS(0),
           CMD_USE_NUMA(0),
           CMD_USE_CORE_PER_NUMA(0),
@@ -77,9 +77,8 @@ struct CMD {
           CMD_PRINT(false),
           CMD_SUMMARIZE(false)
 
-    {} 
+    {}
 };
-  
 
 // Print command line
 void print_cmdline( std::ostream & s , const CMD & cmd );

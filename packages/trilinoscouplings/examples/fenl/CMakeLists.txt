@@ -56,9 +56,12 @@ IF (TrilinosCouplings_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
       Stokhos_ENABLE_KokkosCore AND
       Stokhos_ENABLE_KokkosLinAlg )
 
-    SET( SOURCES fenl_ensemble.hpp fenl_ensemble.cpp )
+    SET( SOURCES fenl_ensemble.hpp
+                 fenl_ensemble_macros.hpp
+                 fenl_ensemble_threads.cpp
+                 fenl_ensemble_openmp.cpp)
     IF (Kokkos_ENABLE_Cuda)
-      CUDA_COMPILE( OBJECTS_CUDA fenl_ensemble.cpp.cu main_ensemble.cpp.cu )
+      CUDA_COMPILE( OBJECTS_CUDA fenl_ensemble_cuda.cu main_ensemble.cpp.cu )
       LIST( APPEND SOURCES ${OBJECTS_CUDA} )
     ELSE()
       LIST( APPEND SOURCES main_ensemble.cpp )

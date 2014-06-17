@@ -39,64 +39,18 @@
 // ************************************************************************
 */
 
-#include <fenl_ensemble.hpp>
-
+#include <fenl_ensemble_macros.hpp>
 #include <Kokkos_Threads.hpp>
 #include <Kokkos_OpenMP.hpp>
-#include <HexElement.hpp>
-#include <fenl_impl.hpp>
-
-#include <Teuchos_GlobalMPISession.hpp>
 
 namespace Kokkos {
 namespace Example {
 namespace FENL {
 
-static const int VectorSize = 16;
-
-#if defined (KOKKOS_HAVE_PTHREAD)
-
-typedef Stokhos::StaticFixedStorage<int,double,VectorSize,Threads> Storage_Threads;
-typedef Sacado::MP::Vector<Storage_Threads> Scalar_Threads;
-typedef ElementComputationKLCoefficient<Scalar_Threads,double,Threads> KL_Vector_Threads;
-typedef ElementComputationKLCoefficient<double,double,Threads> KL_Scalar_Threads;
-
-INST_FENL( Scalar_Threads , Threads , BoxElemPart::ElemLinear ,
-           KL_Vector_Threads , TrivialManufacturedSolution )
-INST_FENL( Scalar_Threads , Threads , BoxElemPart::ElemQuadratic ,
-           KL_Vector_Threads , TrivialManufacturedSolution )
-INST_KL( Scalar_Threads , double , Threads )
-
-INST_FENL( double , Threads , BoxElemPart::ElemLinear ,
-           KL_Scalar_Threads , TrivialManufacturedSolution )
-INST_FENL( double , Threads , BoxElemPart::ElemQuadratic ,
-           KL_Scalar_Threads , TrivialManufacturedSolution )
-INST_KL( double , double , Threads )
-
-#endif
-
 #if defined (KOKKOS_HAVE_OPENMP)
-
-typedef Stokhos::StaticFixedStorage<int,double,VectorSize,OpenMP> Storage_OpenMP;
-typedef Sacado::MP::Vector<Storage_OpenMP> Scalar_OpenMP;
-typedef ElementComputationKLCoefficient<Scalar_OpenMP,double,OpenMP> KL_Vector_OpenMP;
-typedef ElementComputationKLCoefficient<double,double,OpenMP> KL_Scalar_OpenMP;
-
-INST_FENL( Scalar_OpenMP , OpenMP , BoxElemPart::ElemLinear ,
-           KL_Vector_OpenMP , TrivialManufacturedSolution )
-INST_FENL( Scalar_OpenMP , OpenMP , BoxElemPart::ElemQuadratic ,
-           KL_Vector_OpenMP , TrivialManufacturedSolution )
-INST_KL( Scalar_OpenMP , double , OpenMP )
-
-INST_FENL( double , OpenMP , BoxElemPart::ElemLinear ,
-           KL_Scalar_OpenMP , TrivialManufacturedSolution )
-INST_FENL( double , OpenMP , BoxElemPart::ElemQuadratic ,
-           KL_Scalar_OpenMP , TrivialManufacturedSolution )
-INST_KL( double , double , OpenMP )
-
+INST_DEVICE_HOST( OpenMP )
 #endif
 
-
-} /* namespace FENL */
-} /* namespace Example */
-} /* namespace Kokkos */
+}
+}
+}
