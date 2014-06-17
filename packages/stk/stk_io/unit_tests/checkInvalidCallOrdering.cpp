@@ -1,4 +1,3 @@
-#include <mpi.h>                        // for MPI_COMM_WORLD, MPI_Comm, etc
 #include <stddef.h>                     // for size_t
 #include <unistd.h>                     // for unlink
 #include <exception>                    // for exception

@@ -7,7 +7,6 @@
 #include "Ioss_DatabaseIO.h"            // for DatabaseIO
 #include "Teuchos_RCP.hpp"              // for RCP::operator->
 #include "Teuchos_RCPDecl.hpp"          // for RCP
-#include "mpi.h"                        // for ompi_communicator_t
 #include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH
 #include "stk_io/StkMeshIoBroker.hpp"   // for StkMeshIoBroker
 #include "stk_mesh/base/Types.hpp"      // for PartVector

@@ -1,5 +1,4 @@
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_THROW, etc
-#include <mpi.h>                        // for MPI_COMM_WORLD, MPI_Comm, etc
 #include <unistd.h>                     // for unlink
 #include <exception>                    // for exception
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker

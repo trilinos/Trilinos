@@ -21,7 +21,7 @@
 #include <string>                       // for string, basic_string
 #include <vector>                       // for vector
 #include "Teuchos_RCPDecl.hpp"          // for RCP
-#include "mpi.h"                        // for MPI_Comm, etc
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert
 namespace Ioss { class Property; }
 namespace Ioss { class Region; }
@@ -173,7 +173,7 @@ namespace stk {
 
       // \param[in] comm MPI Communicator to be used for all
       // parallel communication needed to generate the mesh.
-      StkMeshIoBroker(MPI_Comm comm,
+      StkMeshIoBroker(stk::ParallelMachine comm,
 		      stk::mesh::ConnectivityMap *connectivity_map = NULL);
       StkMeshIoBroker();
 
@@ -571,7 +571,7 @@ namespace stk {
       // | LOGGING               | (true/false) to enable/disable logging of field input/output
       Ioss::PropertyManager m_property_manager;
 
-      MPI_Comm m_communicator;
+      stk::ParallelMachine m_communicator;
       std::vector<std::string>       m_rank_names; // Optional rank name vector.
 
       Teuchos::RCP<stk::mesh::MetaData>  m_meta_data;

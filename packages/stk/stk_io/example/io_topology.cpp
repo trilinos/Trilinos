@@ -9,7 +9,10 @@
 #include <string>                       // for operator<<, operator!=, etc
 #include "Ioss_CodeTypes.h"             // for HAVE_MPI
 #include "Ioss_VariableType.h"          // for NameList
+#include <stk_util/stk_config.h>
+#ifdef HAVE_MPI
 #include "mpi.h"                        // for MPI_Finalize, MPI_Init
+#endif
 
 #define OUTPUT std::cerr
 

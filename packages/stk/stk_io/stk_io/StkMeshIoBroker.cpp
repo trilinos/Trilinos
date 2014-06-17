@@ -1064,7 +1064,7 @@ namespace stk {
       Ioss::Init::Initializer::initialize_ioss();
     }
 
-    StkMeshIoBroker::StkMeshIoBroker(MPI_Comm comm, stk::mesh::ConnectivityMap * connectivity_map)
+    StkMeshIoBroker::StkMeshIoBroker(stk::ParallelMachine comm, stk::mesh::ConnectivityMap * connectivity_map)
       : m_communicator(comm), m_connectivity_map(connectivity_map), m_active_mesh_index(0)
     {
       Ioss::Init::Initializer::initialize_ioss();
@@ -1588,11 +1588,11 @@ namespace stk {
       }
 
       Heartbeat::Heartbeat(const std::string &filename, HeartbeatType hb_type,
-			   Ioss::PropertyManager properties, MPI_Comm comm)
+			   Ioss::PropertyManager properties, stk::ParallelMachine comm)
 	: m_current_step(0), m_processor(0)
 	{
 	  if (comm != MPI_COMM_NULL) {
-	    MPI_Comm_rank(comm, &m_processor);
+	    m_processor = stk::parallel_machine_rank(comm);
 	  }
 
 	  if (m_processor == 0) {
@@ -1828,7 +1828,8 @@ namespace stk {
 	  internal_write_global(m_region, globalVarName, globalVarData);
 	}
 
-	void OutputFile::setup_output_file(const std::string &filename, MPI_Comm communicator, Ioss::PropertyManager &property_manager)
+	void OutputFile::setup_output_file(const std::string &filename, stk::ParallelMachine communicator,
+					   Ioss::PropertyManager &property_manager)
 	{
 	  ThrowErrorMsgIf (filename.empty(),
 			   "No filename was specified for the output file creation.");

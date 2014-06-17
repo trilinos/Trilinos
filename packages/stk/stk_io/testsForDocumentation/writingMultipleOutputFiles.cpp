@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 #include <string>
-#include <mpi.h>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <Ioss_SubSystem.h>
 #include <stk_mesh/base/MetaData.hpp>
