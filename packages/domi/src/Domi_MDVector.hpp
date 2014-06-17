@@ -84,8 +84,85 @@ namespace Domi
 
 /** \brief Multi-dimensional distributed vector
  *
- * The <tt>MDVector</tt> class represents a multi-dimensional vector
- * distributed according to a multi-dimensional <tt>MDMap</tt>.
+ * The <tt>MDVector</tt> class is intended to perform the functions of
+ * Epetra or Tpetra MultiVectors (or Vectors), with the additional
+ * capability that the data can be multi-dimensional.  (Note that
+ * Epetra and Tpetra MultiVectors are 2 dimensional and distributed in
+ * an unstructured manner along only one of those dimensions.
+ * <tt>MDVector</tt>s can be any number of dimensions, and can be
+ * distributed in a structured fashion along all of them.)
+ *
+ * Where Epetra and Tpetra MultiVectors are built on top of
+ * <tt>Epetra_Map</tt>s and <tt>Tpetra::Map</tt>s, respectively, the
+ * <tt>MDVector</tt> is built on top of an <tt>MDMap</tt>.  As such,
+ * they support boundary padding, communication padding, and
+ * periodicity.
+ *
+ * The basic <tt>MDVector</tt> constructor takes an MDMap and an
+ * optional boolean flag providing instruction whether to zero out the
+ * data or not.  A slightly more advanced constructor takes an MDMap,
+ * a leading dimension, an optional trailing dimension, and an
+ * optional zero-out flag.  This allows the user to augment the given
+ * <tt>MDMap</tt> with an undistributed dimension.  This can be
+ * helpful when the user wants to store an array of quantities at each
+ * grid point.  These quantities can be clustered or strided in memory
+ * depending on whether a leading or trailing dimension is specified,
+ * and what the data Layout is.
+ *
+ * There are additional constructors as well, based on copying data,
+ * using <tt>Teuchos::ParameterList</tt>s to specify the
+ * <tt>MDVector</tt> layout, and parent/slice constructors, where
+ * slicing of the parent can be performed with an ordinal or a Slice.
+ *
+ * The ability to slice a parent <tt>MDVector</tt> and obtain a
+ * sub-vector is an important feature of the <tt>MDVector</tt> class.
+ * When you take a slice of a parent <tt>MDVector</tt>, the resulting
+ * sub-vector may have a new, reduced communicator (both a new
+ * <tt>MDComm</tt> and <tt>Teuchos::Comm</tt>).  When accessing a
+ * sub-vector, you should always use the onSubcommunicator() method to
+ * determine that the sub-vector exists on the current processor.
+ *
+ * Like the <tt>Teuchos::MultiVector</tt>, the user cannot index
+ * directly into an <tt>MDVector</tt>.  Rather, he or she must use the
+ * <tt>getData()</tt> and <tt>getDataNonConst()</tt> methods to obtain
+ * an <tt>MDArrayView</tt> of the data for manipulation.  This is a
+ * little different than the Tpetra behavior, where an
+ * <tt>ArrayRCP</tt> is returned to the user.  For <tt>MDVector</tt>,
+ * and <tt>MDArrayView</tt> is returned, as this supports the slicing
+ * semantics of the class.  Note that each <tt>MDVector</tt> stores an
+ * internal <tt>MDArrayRCP</tt> of either its original data or its
+ * parent's data, and then it also stores an <tt>MDArrayView</tt> that
+ * is a view into the <tt>MDArrayRCP</tt>.  So the
+ * <tt>MDArrayView</tt> passed to the user will be valid as long as
+ * the reference count of its <tt>MDArrayRCP</tt> is greater than
+ * zero.  Looping bounds for this data can be obtained using the
+ * <tt>getLocalBounds()</tt> method, which returns a concrete
+ * <tt>Slice</tt> object, and takes a boolean that specifies whether
+ * padding should be included in the start and stop indexes.
+ *
+ * There are a variety of methods for converting <tt>MDVector</tt>s to
+ * Epetra or Tpetra <tt>MultiVector</tt>s or <tt>Vector</tt>s, using
+ * either view or copy semantics.  The view semantic is only available
+ * when the <tt>MDVector</tt> is contiguous in memory, meaning there
+ * are no stride gaps due to slicing.  The copy semantic is always
+ * available.  True Epetra or Tpetra <tt>MultiVector</tt>s, in which
+ * the number of vectors is greater than 1, are only available when
+ * there is a non-distributed leading dimension and the layout is
+ * C-order, or there is a non-distributed trailing dimension and the
+ * layout is Fortran-order.
+ *
+ * If the <tt>MDVector</tt> was built with communication padding, then
+ * the user may use the <tt>updateCommPad()</tt> method to communicate
+ * via message passing data from the owning processors into the
+ * communication padding buffers.  If communication along a single
+ * axis is desired, then the overloaded <tt>updateCommPad(int
+ * axis)</tt> method can be called instead.  If asynchronous
+ * communication is desired, where computations can be performed
+ * between posting and receiving messages, then the
+ * <tt>startUpdateCommPad(int axis)</tt> and <tt>endUpdateCommPad(int
+ * axis)</tt> methods can be called.  Note that the message data
+ * structures needed to coordinate these methods are stored
+ * internally.
  */
 template< class Scalar,
           class Node = Kokkos::DefaultNode::DefaultNodeType >
@@ -387,15 +464,15 @@ public:
    * \param axis [in] the index of the axis (from zero to the number
    *        of dimensions - 1)
    *
-   * \param withCommPad [in] specify whether the dimension should
-   *        include communication padding or not
+   * \param withPad [in] specify whether the dimension should include
+   *        padding or not
    *
    * The loop bounds are returned in the form of a <tt>Slice</tt>, in
    * which the <tt>start()</tt> method returns the loop begin value,
    * and the <tt>stop()</tt> method returns the non-inclusive end
    * value.
    */
-  Slice getLocalBounds(int axis, bool withCommPad=false) const;
+  Slice getLocalBounds(int axis, bool withPad=false) const;
 
   /** \brief Return true if there is any padding stored locally
    *
@@ -512,12 +589,11 @@ public:
    * The multiple dimensions of the MDVector will be flattened in
    * order to be expressed as an Epetra_Vector.  Currently, if the
    * MDVector is non-contiguous, a Domi::MDMapNoncontiguous exception
-   * will be thrown, as Epetra_Vectors are contiguous, and this is
-   * intended as a view transform.  Non-contiguous data is the result
-   * of slicing a parent MDVector.  In this case,
-   * getEpetraVectorView() should be called on the parent, or
-   * getEpetraVectorCopy() should be called on this non-contiguous
-   * MDVector.
+   * will be thrown, as Epetra_Vectors are contiguous, and this is a
+   * view transform.  Non-contiguous data is the result of slicing a
+   * parent MDVector.  In this case, getEpetraVectorView() should be
+   * called on the parent, or getEpetraVectorCopy() should be called
+   * on this non-contiguous MDVector.
    *
    * The MDVector Scalar template must be the same type as an
    * Epetra_Vector, i.e. double, or a Domi::TypeError exception will
@@ -539,8 +615,7 @@ public:
    *
    * Currently, if the MDVector is non-contiguous, a
    * Domi::MDMapNoncontiguous exception will be thrown, as
-   * Epetra_MultiVectors are contiguous, and this is intended as a
-   * view transform.
+   * Epetra_MultiVectors are contiguous, and this is a view transform.
    *
    * The MDVector Scalar template must be the same type as an
    * Epetra_MultiVector, i.e. double, or a Domi::TypeError exception
@@ -586,11 +661,10 @@ public:
    * The multiple dimensions of the MDVector will be flattened in
    * order to be expressed as an Tpetra::Vector.  Currently, if the
    * MDVector is non-contiguous, a Domi::MDMapNoncontiguous exception
-   * will be thrown, as Tpetra::Vectors are contiguous, and this is
-   * intended as a view transform.  In this case,
-   * getTpetraVectorView() should be called on the parent, or
-   * getTpetraVectorCopy() should be called on this non-contiguous
-   * MDVector.
+   * will be thrown, as Tpetra::Vectors are contiguous, and this is a
+   * view transform.  In this case, getTpetraVectorView() should be
+   * called on the parent, or getTpetraVectorCopy() should be called
+   * on this non-contiguous MDVector.
    */
   template< class LocalOrdinal >
   Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, LocalOrdinal, Node > >
@@ -601,11 +675,10 @@ public:
    * The multiple dimensions of the MDVector will be flattened in
    * order to be expressed as an Tpetra::Vector.  Currently, if the
    * MDVector is non-contiguous, a Domi::MDMapNoncontiguous exception
-   * will be thrown, as Tpetra::Vectors are contiguous, and this is
-   * intended as a view transform.  In this case,
-   * getTpetraVectorView() should be called on the parent, or
-   * getTpetraVectorCopy() should be called on this non-contiguous
-   * MDVector.
+   * will be thrown, as Tpetra::Vectors are contiguous, and this is a
+   * view transform.  In this case, getTpetraVectorView() should be
+   * called on the parent, or getTpetraVectorCopy() should be called
+   * on this non-contiguous MDVector.
    */
   template< class LocalOrdinal,
             class GlobalOrdinal >
@@ -617,11 +690,10 @@ public:
    * The multiple dimensions of the MDVector will be flattened in
    * order to be expressed as an Tpetra::Vector.  Currently, if the
    * MDVector is non-contiguous, a Domi::MDMapNoncontiguous exception
-   * will be thrown, as Tpetra::Vectors are contiguous, and this is
-   * intended as a view transform.  In this case,
-   * getTpetraVectorView() should be called on the parent, or
-   * getTpetraVectorCopy() should be called on this non-contiguous
-   * MDVector.
+   * will be thrown, as Tpetra::Vectors are contiguous, and this is a
+   * view transform.  In this case, getTpetraVectorView() should be
+   * called on the parent, or getTpetraVectorCopy() should be called
+   * on this non-contiguous MDVector.
    */
   template< class LocalOrdinal,
             class GlobalOrdinal,
@@ -643,8 +715,8 @@ public:
    *
    * Currently, if the MDVector is non-contiguous, a
    * Domi::MDMapNoncontiguous exception will be thrown, as
-   * Tpetra::MultiVectors are contiguous, and this is intended as a
-   * view transform.
+   * Tpetra::MultiVectors are contiguous, and this is a view
+   * transform.
    */
   template < class LocalOrdinal >
   Teuchos::RCP< Tpetra::MultiVector< Scalar,
@@ -667,8 +739,8 @@ public:
    *
    * Currently, if the MDVector is non-contiguous, a
    * Domi::MDMapNoncontiguous exception will be thrown, as
-   * Tpetra::MultiVectors are contiguous, and this is intended as a
-   * view transform.
+   * Tpetra::MultiVectors are contiguous, and this is a view
+   * transform.
    */
   template < class LocalOrdinal,
              class GlobalOrdinal >
@@ -692,8 +764,8 @@ public:
    *
    * Currently, if the MDVector is non-contiguous, a
    * Domi::MDMapNoncontiguous exception will be thrown, as
-   * Tpetra::MultiVectors are contiguous, and this is intended as a
-   * view transform.
+   * Tpetra::MultiVectors are contiguous, and this is a view
+   * transform.
    */
   template < class LocalOrdinal,
              class GlobalOrdinal,
