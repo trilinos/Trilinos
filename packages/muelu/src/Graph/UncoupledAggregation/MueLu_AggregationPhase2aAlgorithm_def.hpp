@@ -65,8 +65,8 @@ namespace MueLu {
   void AggregationPhase2aAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
 
-    LO MinNodesPerAggregate = params.get<LO>("MinNodesPerAggregate");
-    LO MaxNodesPerAggregate = params.get<LO>("MaxNodesPerAggregate");
+    LO minNodesPerAggregate = params.get<LO>("MinNodesPerAggregate");
+    LO maxNodesPerAggregate = params.get<LO>("MaxNodesPerAggregate");
 
     const LO  nRows  = graph.GetNodeNumVertices();
     const int myRank = graph.GetComm()->getRank();
@@ -106,7 +106,7 @@ namespace MueLu {
             //       to count all aggregated neighbour nodes for the aggregation criteria
             // NOTE: We check here for the maximum aggregation size. If we would do it below
             //       with all the other check too big aggregates would not be accepted at all.
-            if (aggSize < as<size_t>(MaxNodesPerAggregate))
+            if (aggSize < as<size_t>(maxNodesPerAggregate))
               aggList[aggSize++] = neigh;
           }
 
@@ -115,7 +115,7 @@ namespace MueLu {
       }
 
       // NOTE: ML uses a hardcoded value 3 instead of MinNodesPerAggregate
-      if (aggSize > MinNodesPerAggregate &&
+      if (aggSize > as<size_t>(minNodesPerAggregate) &&
           aggSize > factor*numNeighbors) {
         // Accept new aggregate
         // rootCandidate becomes the root of the newly formed aggregate

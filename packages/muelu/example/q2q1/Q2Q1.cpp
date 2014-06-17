@@ -519,7 +519,7 @@ namespace MueLuTests {
     double hy = 1.0;
 
     int N = map->getGlobalNumElements();
-    int n = sqrt(N);
+    int n = round(sqrt(N));
     std::cout << "N = " << N << ", n = " << n << std::endl;
     if (N == n*n) {
       // pressure coords
@@ -531,7 +531,7 @@ namespace MueLuTests {
 
     } else {
       // velocity coords
-      n = sqrt(N/2);
+      n = round(sqrt(N/2));
 
       hx *= 0.5;
       hy *= 0.5;

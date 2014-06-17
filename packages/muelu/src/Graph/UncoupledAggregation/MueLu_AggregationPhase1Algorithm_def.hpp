@@ -169,8 +169,8 @@ namespace MueLu {
       }
 
       // Step 3: check if tentative aggregate is acceptable
-      if ((numAggregatedNeighbours <= maxNeighAlreadySelected) &&   // too many connections to other aggregates
-          (aggSize                 >= minNodesPerAggregate)) {      // too few nodes in the tentative aggregate
+      if ((numAggregatedNeighbours <= maxNeighAlreadySelected) &&           // too many connections to other aggregates
+          (aggSize                 >= as<size_t>(minNodesPerAggregate))) {  // too few nodes in the tentative aggregate
         // Accept new aggregate
         // rootCandidate becomes the root of the newly formed aggregate
         aggregates.SetIsRoot(rootCandidate);
