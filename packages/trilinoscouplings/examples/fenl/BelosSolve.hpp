@@ -100,6 +100,13 @@ belos_solve(
   Teuchos::RCP<Teuchos::Time> time_prec_setup =
     Teuchos::TimeMonitor::getNewTimer("Total MueLu setup time");
 
+  // FENL accumulates the times itself, so reset them here so they don't
+  // accumulate across solves
+  time_mat_vec->reset();
+  time_prec_apply->reset();
+  time_total->reset();
+  time_prec_setup->reset();
+
   //--------------------------------
   // Create preconditioner
   RCP<PreconditionerType> preconditioner;
