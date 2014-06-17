@@ -26,12 +26,13 @@
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_oblackholestream.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
+#include <Tpetra_MultiVector.hpp>
 
 //----------------------------------------------------------------------------
 
 template< class Device , Kokkos::Example::BoxElemPart::ElemOrder ElemOrder >
 bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
-          const int cmd[] )
+          const CMD & cmd)
 {
   typedef typename Kokkos::Compat::KokkosDeviceWrapperNode<Device> NodeType;
   bool success = true;
@@ -51,8 +52,8 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   typedef Stokhos::LexographicLess< Stokhos::MultiIndex<int> > order_type;
   typedef Stokhos::TotalOrderBasis<int,double,order_type> product_basis;
   typedef Stokhos::Sparse3Tensor<int,double> Cijk;
-  const int dim = cmd[ CMD_USE_UQ_DIM ];
-  const int order = cmd[ CMD_USE_UQ_ORDER ];
+  const int dim = cmd.CMD_USE_UQ_DIM;
+  const int order = cmd.CMD_USE_UQ_ORDER ;
   Array< RCP<const one_d_basis> > bases(dim);
   for (int i=0; i<dim; i++)
     bases[i] = rcp(new legendre_basis(order, true));
@@ -86,14 +87,14 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   const double bc_upper_value = 2 ;
   const TrivialManufacturedSolution manufactured_solution;
 
-  int nelem[3] = { cmd[ CMD_USE_FIXTURE_X ] ,
-                   cmd[ CMD_USE_FIXTURE_Y ] ,
-                   cmd[ CMD_USE_FIXTURE_Z ] };
+  int nelem[3] = { cmd.CMD_USE_FIXTURE_X  ,
+                   cmd.CMD_USE_FIXTURE_Y  ,
+                   cmd.CMD_USE_FIXTURE_Z  };
 
   // Create KL diffusion coefficient
-  const double kl_mean = 1.0;
-  const double kl_variance = 0.1;
-  const double kl_correlation = 0.25;
+  const double kl_mean = cmd.CMD_USE_MEAN;
+  const double kl_variance = cmd.CMD_USE_VAR;
+  const double kl_correlation = cmd.CMD_USE_VAR;
   typedef ElementComputationKLCoefficient< Scalar, double, Device > KL;
   KL diffusion_coefficient( kl_mean, kl_variance, kl_correlation, dim );
   typedef typename KL::RandomVariableView RV;
@@ -121,17 +122,17 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   // Compute stochastic response using stochastic Galerkin method
   Scalar response = 0;
   Perf perf;
-  if ( cmd[ CMD_USE_FIXTURE_QUADRATIC ] )
+  if ( cmd.CMD_USE_FIXTURE_QUADRATIC  )
     perf = fenl< Scalar , Device , BoxElemPart::ElemQuadratic >
-      ( comm , node , cmd[CMD_PRINT] , cmd[CMD_USE_TRIALS] ,
-        cmd[CMD_USE_ATOMIC] , cmd[CMD_USE_BELOS] , cmd[CMD_USE_MUELU] ,
+      ( comm , node , cmd.CMD_PRINT , cmd.CMD_USE_TRIALS ,
+        cmd.CMD_USE_ATOMIC , cmd.CMD_USE_BELOS , cmd.CMD_USE_MUELU , cmd.CMD_USE_MEANBASED , 
         nelem , diffusion_coefficient , manufactured_solution ,
         bc_lower_value , bc_upper_value ,
         false , response);
   else
     perf = fenl< Scalar , Device , BoxElemPart::ElemLinear >
-      ( comm , node , cmd[CMD_PRINT] , cmd[CMD_USE_TRIALS] ,
-        cmd[CMD_USE_ATOMIC] , cmd[CMD_USE_BELOS] , cmd[CMD_USE_MUELU] ,
+      ( comm , node , cmd.CMD_PRINT , cmd.CMD_USE_TRIALS ,
+        cmd.CMD_USE_ATOMIC , cmd.CMD_USE_BELOS , cmd.CMD_USE_MUELU , cmd.CMD_USE_MEANBASED , 
         nelem , diffusion_coefficient , manufactured_solution ,
         bc_lower_value , bc_upper_value ,
         false , response);
@@ -159,7 +160,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
     print_perf_value( std::cout , cmd , widths , perf );
   }
 
-  if ( cmd[ CMD_SUMMARIZE ] ) {
+  if ( cmd.CMD_SUMMARIZE  ) {
     Teuchos::TimeMonitor::report (comm.ptr (), std::cout);
   }
 
@@ -181,32 +182,32 @@ int main( int argc , char ** argv )
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
 
   //--------------------------------------------------------------------------
-
-  int cmdline[ CMD_COUNT ] ;
+  CMD cmdline; 
   parse_cmdline( argc, argv, cmdline, *comm );
-  if ( ! cmdline[ CMD_USE_UQ_DIM ] ) cmdline[ CMD_USE_UQ_DIM ] = 3 ;
-  if ( ! cmdline[ CMD_USE_UQ_ORDER ] ) cmdline[ CMD_USE_UQ_ORDER ] = 2 ;
+  if ( ! cmdline.CMD_USE_UQ_DIM  ) cmdline.CMD_USE_UQ_DIM  = 3 ;
+  if ( ! cmdline.CMD_USE_UQ_ORDER  ) cmdline.CMD_USE_UQ_ORDER  = 2 ;
 
-  if ( cmdline[ CMD_VTUNE ] ) {
+
+  if ( cmdline.CMD_VTUNE  ) {
     connect_vtune(comm->getRank());
   }
 
-  if ( ! cmdline[ CMD_ERROR ] && ! cmdline[ CMD_ECHO ] ) {
+  if ( ! cmdline.CMD_ERROR  && ! cmdline.CMD_ECHO  ) {
 
 #if defined( KOKKOS_HAVE_PTHREAD )
-    if ( cmdline[ CMD_USE_THREADS ] ) {
+    if ( cmdline.CMD_USE_THREADS  ) {
       run< Kokkos::Threads , Kokkos::Example::BoxElemPart::ElemLinear >( comm , cmdline );
     }
 #endif
 
 #if defined( KOKKOS_HAVE_OPENMP )
-    if ( cmdline[ CMD_USE_OPENMP ] ) {
+    if ( cmdline.CMD_USE_OPENMP  ) {
       run< Kokkos::OpenMP , Kokkos::Example::BoxElemPart::ElemLinear >( comm , cmdline );
     }
 #endif
 
 #if defined( KOKKOS_HAVE_CUDA )
-    if ( cmdline[ CMD_USE_CUDA ] ) {
+    if ( cmdline.CMD_USE_CUDA  ) {
       run< Kokkos::Cuda , Kokkos::Example::BoxElemPart::ElemLinear >( comm , cmdline );
     }
 #endif
@@ -215,5 +216,5 @@ int main( int argc , char ** argv )
 
   //--------------------------------------------------------------------------
 
-  return cmdline[ CMD_ERROR ] ? -1 : 0 ;
+  return cmdline.CMD_ERROR  ? -1 : 0 ;
 }

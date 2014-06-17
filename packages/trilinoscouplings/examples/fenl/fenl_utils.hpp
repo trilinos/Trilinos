@@ -15,66 +15,98 @@ enum clp_return_type {CLP_HELP=0,
       CLP_ERROR,
       CLP_OK};
 
-enum { CMD_USE_THREADS = 0
-       , CMD_USE_NUMA
-       , CMD_USE_CORE_PER_NUMA
-       , CMD_USE_CUDA
-       , CMD_USE_OPENMP
-       , CMD_USE_CUDA_DEV
-       , CMD_USE_FIXTURE_X
-       , CMD_USE_FIXTURE_Y
-       , CMD_USE_FIXTURE_Z
-       , CMD_USE_FIXTURE_BEGIN
-       , CMD_USE_FIXTURE_END
-       , CMD_USE_FIXTURE_QUADRATIC
-       , CMD_USE_ATOMIC
-       , CMD_USE_TRIALS
-       , CMD_USE_BELOS
-       , CMD_USE_MUELU
-       , CMD_USE_UQ_ENSEMBLE
-       , CMD_USE_UQ_DIM
-       , CMD_USE_UQ_ORDER
-       , CMD_USE_SPARSE
-       , CMD_VTUNE
-       , CMD_PRINT
-       , CMD_VERBOSE
-       , CMD_SUMMARIZE
-       , CMD_ECHO
-       , CMD_ERROR
-       , CMD_COUNT };
+struct CMD { 
+  int CMD_USE_THREADS;
+  int CMD_USE_NUMA;
+  int CMD_USE_CORE_PER_NUMA;
+  bool CMD_USE_CUDA;
+  int CMD_USE_OPENMP;
+  bool CMD_USE_CUDA_DEV;
+  int CMD_USE_FIXTURE_X;
+  int CMD_USE_FIXTURE_Y;
+  int CMD_USE_FIXTURE_Z;
+  int CMD_USE_FIXTURE_BEGIN;
+  int CMD_USE_FIXTURE_END;
+  bool CMD_USE_FIXTURE_QUADRATIC;
+  bool CMD_USE_ATOMIC;
+  int CMD_USE_TRIALS;
+  bool CMD_USE_BELOS;
+  bool CMD_USE_MUELU;
+  bool CMD_USE_MEANBASED;
+  bool CMD_USE_UQ_ENSEMBLE;
+  int CMD_USE_UQ_DIM;
+  int CMD_USE_UQ_ORDER;
+  bool CMD_USE_SPARSE;
+  bool CMD_VTUNE;
+  double CMD_USE_VAR;
+  double CMD_USE_MEAN;
+  double CMD_USE_COR;
+  bool CMD_PRINT;
+  bool CMD_SUMMARIZE;
+  int CMD_ECHO;
+  int CMD_ERROR;
+  int CMD_COUNT;
+ 
+  CMD() : CMD_USE_THREADS(0),
+          CMD_USE_NUMA(0),
+          CMD_USE_CORE_PER_NUMA(0),
+          CMD_USE_CUDA(false),
+          CMD_USE_OPENMP(0),
+          CMD_USE_CUDA_DEV(false),
+          CMD_USE_FIXTURE_X(2),
+          CMD_USE_FIXTURE_Y(2),
+          CMD_USE_FIXTURE_Z(2),
+          CMD_USE_FIXTURE_BEGIN(0),
+          CMD_USE_FIXTURE_END(0),
+          CMD_USE_FIXTURE_QUADRATIC(false),
+          CMD_USE_ATOMIC(false),
+          CMD_USE_TRIALS(1),
+          CMD_USE_BELOS(false),
+          CMD_USE_MUELU(false),
+          CMD_USE_MEANBASED(false),
+          CMD_USE_UQ_ENSEMBLE(false),
+          CMD_USE_UQ_DIM(3),
+          CMD_USE_UQ_ORDER(2),
+          CMD_USE_SPARSE(false),
+          CMD_VTUNE(false),
+          CMD_USE_VAR(0.1),
+          CMD_USE_MEAN(1),
+          CMD_USE_COR(0.25),
+          CMD_PRINT(false),
+          CMD_SUMMARIZE(false)
 
-// Parse command line
-clp_return_type parse_cmdline( int argc , char ** argv, int cmdline[],
-                               const Teuchos::Comm<int>& comm );
+    {} 
+};
+  
 
 // Print command line
-void print_cmdline( std::ostream & s , const int cmd[] );
+void print_cmdline( std::ostream & s , const CMD & cmd );
 
 // Create Tpetra node
 template <typename NodeType>
 Teuchos::RCP<NodeType>
-createKokkosNode( const int cmd[] , const int comm_rank ) {
+createKokkosNode( const CMD & cmd , const int comm_rank ) {
   Teuchos::ParameterList params;
   params.set("Verbose", 0);
-  if ( cmd[ CMD_USE_THREADS ] )
-    params.set("Num Threads", cmd[CMD_USE_THREADS]);
-  else if ( cmd[ CMD_USE_OPENMP ] )
-    params.set("Num Threads", cmd[CMD_USE_OPENMP]);
-  if ( cmd[ CMD_USE_NUMA ] && cmd[ CMD_USE_CORE_PER_NUMA ] ) {
-    params.set("Num NUMA", cmd[ CMD_USE_NUMA ]);
-    params.set("Num CoresPerNUMA", cmd[ CMD_USE_CORE_PER_NUMA ]);
+  if ( cmd.CMD_USE_THREADS  )
+    params.set("Num Threads", cmd.CMD_USE_THREADS);
+  else if ( cmd.CMD_USE_OPENMP  )
+    params.set("Num Threads", cmd.CMD_USE_OPENMP);
+  if ( cmd.CMD_USE_NUMA  && cmd.CMD_USE_CORE_PER_NUMA  ) {
+    params.set("Num NUMA", cmd.CMD_USE_NUMA );
+    params.set("Num CoresPerNUMA", cmd.CMD_USE_CORE_PER_NUMA );
   }
-  if ( cmd[ CMD_USE_CUDA ] )
-    params.set("Device", cmd[ CMD_USE_CUDA_DEV ] );
+  if ( cmd.CMD_USE_CUDA  )
+    params.set("Device", cmd.CMD_USE_CUDA_DEV  );
   Teuchos::RCP<NodeType> node = Teuchos::rcp (new NodeType(params));
 
-  if ( cmd[CMD_VERBOSE] ) {
+  if ( cmd.CMD_VERBOSE ) {
     typedef typename NodeType::device_type Device;
     if (comm_rank == 0)
       Device::print_configuration(std::cout);
-    if ( cmd[ CMD_USE_CUDA ] )
+    if ( cmd.CMD_USE_CUDA  )
       std::cout << "MPI rank " << comm_rank << " attached to CUDA device "
-                << cmd[ CMD_USE_CUDA_DEV ] << std::endl;
+                << cmd.CMD_USE_CUDA_DEV  << std::endl;
   }
 
   return node;
@@ -86,11 +118,11 @@ createKokkosNode( const int cmd[] , const int comm_rank ) {
 
 // Print timing headers
 std::vector< size_t >
-print_headers( std::ostream & s , const int cmd[] , const int comm_rank );
+print_headers( std::ostream & s , const CMD & cmd , const int comm_rank );
 
 // Print times
 void print_perf_value( std::ostream & s ,
-                       const int cmd[] ,
+                       const CMD & cmd ,
                        const std::vector<size_t> & widths ,
                        const Kokkos::Example::FENL::Perf & perf );
 

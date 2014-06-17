@@ -203,6 +203,83 @@ bool compare_rank_2_views(const array_type& y,
   return success;
 }
 
+template <typename vector_type, typename scalar_type>
+bool compareRank1(const vector_type& y,
+                          const vector_type& y_exp,
+                          const scalar_type rel_tol,
+                          const scalar_type abs_tol,
+                          Teuchos::FancyOStream& out)
+{
+  typedef typename vector_type::size_type size_type;
+  typename vector_type::HostMirror hy = Kokkos::create_mirror_view(y);
+  typename vector_type::HostMirror hy_exp = Kokkos::create_mirror_view(y_exp);
+  Kokkos::deep_copy(hy, y);
+  Kokkos::deep_copy(hy_exp, y_exp);
+
+  size_type num_rows = y.dimension_0();
+  bool success = true;
+  for (size_type i=0; i<num_rows; ++i) {
+    for (size_type j=0; j<y.sacado_size(); ++j) {
+      scalar_type diff = std::abs( hy(i).fastAccessCoeff(j) - hy_exp(i).fastAccessCoeff(j) );
+      scalar_type tol = rel_tol*std::abs(hy_exp(i).fastAccessCoeff(j)) + abs_tol;
+      bool s = diff < tol;
+      out << "y_expected(" << i << ").coeff(" << j << ") - "
+          << "y(" << i << ").coeff(" << j << ") = " << hy_exp(i).fastAccessCoeff(j)
+          << " - " << hy(i).fastAccessCoeff(j) << " == "
+          << diff << " < " << tol << " : ";
+      if (s)
+        out << "passed";
+      else
+        out << "failed";
+      out << std::endl;
+      success = success && s;
+    }
+  }
+  return success;
+}
+
+template <typename vector_type, typename scalar_type>
+bool compareRank2(const vector_type& y,
+                          const vector_type& y_exp,
+                          const scalar_type rel_tol,
+                          const scalar_type abs_tol,
+                          Teuchos::FancyOStream& out)
+{
+  typedef typename vector_type::size_type size_type;
+  typename vector_type::HostMirror hy = Kokkos::create_mirror_view(y);
+  typename vector_type::HostMirror hy_exp = Kokkos::create_mirror_view(y_exp);
+  Kokkos::deep_copy(hy, y);
+  Kokkos::deep_copy(hy_exp, y_exp);
+
+  size_type num_rows = y.dimension_0();
+  size_type num_cols = y.dimension_1();
+  bool success = true;
+
+ for (size_type col = 0; col < num_cols; ++col){
+ for (size_type i=0; i<num_rows; ++i) {
+    for (size_type j=0; j<y.sacado_size(); ++j) {
+      scalar_type diff = std::abs( hy(i,col).fastAccessCoeff(j) - hy_exp(i,col).fastAccessCoeff(j) );
+      scalar_type tol = rel_tol*std::abs(hy_exp(i,col).fastAccessCoeff(j)) + abs_tol;
+      bool s = diff < tol;
+      out << "y_expected(" << i << ").coeff(" << j << ") - "
+          << "y(" << i << ").coeff(" << j << ") = " << hy_exp(i,col).fastAccessCoeff(j)
+          << " - " << hy(i,col).fastAccessCoeff(j) << " == "
+          << diff << " < " << tol << " : ";
+      if (s)
+        out << "passed";
+      else
+        out << "failed";
+      out << std::endl;
+      success = success && s;
+    }
+  }
+  }
+
+
+  return success;
+}
+
+
 // Helper function to build a diagonal matrix
 template <typename MatrixType, typename CijkType>
 MatrixType
@@ -659,6 +736,311 @@ struct Stokhos_MV_Multiply_Op {
   }
 };
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
+  Kokkos_CrsMatrix_PCE, MeanMultiplyRank1, Scalar )
+{
+  typedef typename Scalar::ordinal_type Ordinal;
+
+  const Ordinal nGrid = 32;
+  const Ordinal stoch_dim = 5;
+  const Ordinal poly_ord = 3;
+  Kokkos::DeviceConfig dev_config;
+  //Create vector and matrix with dim=1
+  typedef typename Scalar::ordinal_type ordinal_type;
+  typedef typename Scalar::value_type scalar_type;
+  typedef typename Scalar::storage_type storage_type;
+  typedef typename Scalar::cijk_type cijk_type;
+  typedef typename storage_type::device_type device_type;
+  typedef Kokkos::LayoutLeft Layout;
+  typedef Kokkos::View< Scalar*, Layout, device_type > block_vector_type;
+  typedef Kokkos::CrsMatrix< Scalar, ordinal_type, device_type > block_matrix_type;
+  typedef typename block_matrix_type::StaticCrsGraphType matrix_graph_type;
+  typedef typename block_matrix_type::values_type matrix_values_type;
+
+  // Build Cijk tensor
+  cijk_type cijk = build_cijk<cijk_type>(stoch_dim, poly_ord);
+  const ordinal_type stoch_length = cijk.dimension();
+
+  // Generate FEM graph:
+  const ordinal_type fem_length = nGrid * nGrid * nGrid;
+  std::vector< std::vector<ordinal_type> > fem_graph;
+  const ordinal_type fem_graph_length = generate_fem_graph( nGrid, fem_graph );
+
+  block_vector_type x =
+  block_vector_type(Kokkos::allocate_without_initializing,
+                      "x", cijk, fem_length);
+  block_vector_type y =
+  block_vector_type(Kokkos::allocate_without_initializing,
+                      "y", cijk, fem_length);
+
+  block_vector_type y_expected =
+  block_vector_type(Kokkos::allocate_without_initializing,
+                      "y", cijk, fem_length);
+
+  typename block_vector_type::HostMirror hx = Kokkos::create_mirror_view( x );
+  typename block_vector_type::HostMirror hy = Kokkos::create_mirror_view( y );
+  typename block_vector_type::HostMirror hy_expected = Kokkos::create_mirror_view( y_expected );
+
+
+
+  // View the block vector as an array of the embedded intrinsic type.
+  typename block_vector_type::HostMirror::array_type hax = hx ;
+  typename block_vector_type::HostMirror::array_type hay = hy ;
+  typename block_vector_type::HostMirror::array_type hay_expected = hy_expected ;
+
+  for (ordinal_type iRowFEM=0; iRowFEM<fem_length; ++iRowFEM) {
+    for (ordinal_type iRowStoch=0; iRowStoch<stoch_length; ++iRowStoch) {
+        hax(iRowStoch,iRowFEM) =  
+        generate_vector_coefficient<scalar_type>(
+          fem_length, stoch_length, iRowFEM, iRowStoch );
+        hay(iRowStoch,iRowFEM) = 0.0;
+        hay_expected(iRowStoch,iRowFEM) = 0.0;
+
+    }
+  }
+  Kokkos::deep_copy( x, hx );
+  Kokkos::deep_copy( y, hy );
+  Kokkos::deep_copy( y_expected, hy_expected );
+
+
+  //------------------------------
+  // Generate block matrix -- it is always LayoutRight (currently)
+  matrix_graph_type matrix_graph =
+    Kokkos::create_staticcrsgraph<matrix_graph_type>(
+      std::string("test crs graph"), fem_graph);
+  matrix_values_type matrix_values =
+    matrix_values_type(
+      Kokkos::allocate_without_initializing,
+      "matrix", cijk, fem_graph_length, ordinal_type(1)); //instead of stoch_length
+  block_matrix_type matrix(
+    "block_matrix", fem_length, matrix_values, matrix_graph);
+  matrix.dev_config = dev_config;
+
+  typename matrix_values_type::HostMirror hM =
+    Kokkos::create_mirror_view( matrix.values );
+
+  typename matrix_values_type::HostMirror::array_type haM = hM ;
+
+  for (ordinal_type iRowFEM=0, iEntryFEM=0; iRowFEM<fem_length; ++iRowFEM) {
+    const ordinal_type row_size = fem_graph[iRowFEM].size();
+    for (ordinal_type iRowEntryFEM=0; iRowEntryFEM<row_size;
+         ++iRowEntryFEM, ++iEntryFEM) {
+      const ordinal_type iColFEM = fem_graph[iRowFEM][iRowEntryFEM];
+
+      for (ordinal_type k=0; k<1; ++k) {
+        haM(iEntryFEM, k) =
+          generate_matrix_coefficient<scalar_type>(
+            fem_length, 1, iRowFEM, iColFEM, k);
+      }
+    }
+  }
+  Kokkos::deep_copy( matrix.values, hM );
+
+    //Generate same matrix with stochastic dim = x.sacado_size() (i.e. not = 1)
+  matrix_values_type full_matrix_values =
+    matrix_values_type(
+      Kokkos::allocate_without_initializing,
+      "matrix", cijk, fem_graph_length, stoch_length);
+  block_matrix_type full_matrix(
+    "block_matrix", fem_length, full_matrix_values, matrix_graph);
+  matrix.dev_config = dev_config;
+
+  typename matrix_values_type::HostMirror full_hM =
+    Kokkos::create_mirror_view( full_matrix.values );
+
+  typename matrix_values_type::HostMirror::array_type full_haM = full_hM ;
+
+  for (ordinal_type iRowFEM=0, iEntryFEM=0; iRowFEM<fem_length; ++iRowFEM) {
+    const ordinal_type row_size = fem_graph[iRowFEM].size();
+    for (ordinal_type iRowEntryFEM=0; iRowEntryFEM<row_size;
+         ++iRowEntryFEM, ++iEntryFEM) {
+      const ordinal_type iColFEM = fem_graph[iRowFEM][iRowEntryFEM];
+   
+      for (ordinal_type k=0; k<stoch_length; ++k) {
+        if (k == 0)
+          full_haM(iEntryFEM, k) =
+          generate_matrix_coefficient<scalar_type>(
+            fem_length, 1, iRowFEM, iColFEM, k);
+        else
+          full_haM(iEntryFEM, k) = 0.0;
+
+      }
+    }
+  }
+
+  Kokkos::deep_copy( full_matrix.values, full_hM );
+
+
+  //------------------------------
+  // multiply
+
+  Kokkos::MV_Multiply( y, matrix, x ); 
+
+  //------------------------------
+  // multiply with same matrix but with sacado_size = x.sacado_size
+
+  Kokkos::MV_Multiply( y_expected, full_matrix, x );
+  
+
+  //------------------------------
+  // check
+  scalar_type rel_tol = ScalarTol<scalar_type>::tol();
+  scalar_type abs_tol = ScalarTol<scalar_type>::tol();
+  success = compareRank1(y, y_expected, rel_tol, abs_tol, out);
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
+  Kokkos_CrsMatrix_PCE, MeanMultiplyRank2, Scalar )
+{
+  //Create vector and matrix with dim=1
+  typedef typename Scalar::ordinal_type ordinal_type;
+  typedef typename Scalar::value_type scalar_type;
+  typedef typename Scalar::storage_type storage_type;
+  typedef typename Scalar::cijk_type cijk_type;
+  typedef typename storage_type::device_type device_type;
+  typedef Kokkos::LayoutLeft Layout;
+  typedef Kokkos::View< Scalar**, Layout, device_type > block_vector_type;
+  typedef Kokkos::CrsMatrix< Scalar, ordinal_type, device_type > block_matrix_type;
+  typedef typename block_matrix_type::StaticCrsGraphType matrix_graph_type;
+  typedef typename block_matrix_type::values_type matrix_values_type;
+
+
+  const ordinal_type nGrid = 5;
+  const ordinal_type stoch_dim = 2;
+  const ordinal_type poly_ord = 3;
+  Kokkos::DeviceConfig dev_config;
+
+ 
+  // Build Cijk tensor
+  cijk_type cijk = build_cijk<cijk_type>(stoch_dim, poly_ord);
+  const ordinal_type stoch_length = cijk.dimension();
+  const ordinal_type num_cols = 2;
+  // Generate FEM graph:
+  const ordinal_type fem_length = nGrid * nGrid * nGrid;
+  std::vector< std::vector<ordinal_type> > fem_graph;
+  const ordinal_type fem_graph_length = generate_fem_graph( nGrid, fem_graph );
+
+  block_vector_type x =
+  block_vector_type(Kokkos::allocate_without_initializing,
+                      "x", cijk, fem_length, num_cols);
+  block_vector_type y =
+  block_vector_type(Kokkos::allocate_without_initializing,
+                      "y", cijk, fem_length, num_cols);
+
+  block_vector_type y_expected =
+  block_vector_type(Kokkos::allocate_without_initializing,
+                      "y_expected", cijk, fem_length, num_cols);
+
+  typename block_vector_type::HostMirror hx = Kokkos::create_mirror_view( x );
+  typename block_vector_type::HostMirror hy = Kokkos::create_mirror_view( y );
+  typename block_vector_type::HostMirror hy_expected = Kokkos::create_mirror_view( y_expected );
+
+  for (ordinal_type i=0; i<num_cols; ++i){
+    for (ordinal_type iRowFEM=0; iRowFEM<fem_length; ++iRowFEM) {
+      for (ordinal_type iRowStoch=0; iRowStoch<stoch_length; ++iRowStoch) {
+        hx(iRowFEM,i).fastAccessCoeff(iRowStoch) = generate_vector_coefficient<scalar_type>(
+          fem_length, stoch_length, iRowFEM, iRowStoch );
+        hy(iRowFEM,i).fastAccessCoeff(iRowStoch) = 0.0;
+        hy_expected(iRowFEM,i).fastAccessCoeff(iRowStoch) = 0.0;
+       }
+    }
+  }
+  Kokkos::deep_copy( x, hx );
+  Kokkos::deep_copy( y, hy );
+  Kokkos::deep_copy( y_expected, hy_expected );
+
+ //------------------------------
+  // Generate matrix with stochastic dimension 1 
+  matrix_graph_type matrix_graph =
+    Kokkos::create_staticcrsgraph<matrix_graph_type>(
+      std::string("test crs graph"), fem_graph);
+  matrix_values_type matrix_values =
+    matrix_values_type(
+      Kokkos::allocate_without_initializing,
+      "matrix", cijk, fem_graph_length, ordinal_type(1)); 
+  block_matrix_type matrix(
+    "block_matrix", fem_length, matrix_values, matrix_graph);
+  matrix.dev_config = dev_config;
+
+  typename matrix_values_type::HostMirror hM =
+    Kokkos::create_mirror_view( matrix.values );
+
+  typename matrix_values_type::HostMirror::array_type haM = hM ;
+
+  for (ordinal_type iRowFEM=0, iEntryFEM=0; iRowFEM<fem_length; ++iRowFEM) {
+    const ordinal_type row_size = fem_graph[iRowFEM].size();
+    for (ordinal_type iRowEntryFEM=0; iRowEntryFEM<row_size;
+         ++iRowEntryFEM, ++iEntryFEM) {
+      const ordinal_type iColFEM = fem_graph[iRowFEM][iRowEntryFEM];
+      
+      for (ordinal_type k=0; k<1; ++k) {
+        haM(iEntryFEM, k) =
+          generate_matrix_coefficient<scalar_type>(
+            fem_length, 1, iRowFEM, iColFEM, k);
+      }
+    }
+  }
+
+  Kokkos::deep_copy( matrix.values, hM );
+
+  //Generate same matrix with stochastic dim = x.sacado_size() (i.e. not = 1)
+  matrix_values_type full_matrix_values =
+    matrix_values_type(
+      Kokkos::allocate_without_initializing,
+      "matrix", cijk, fem_graph_length, stoch_length);
+  block_matrix_type full_matrix(
+    "block_matrix", fem_length, full_matrix_values, matrix_graph);
+  matrix.dev_config = dev_config;
+
+  typename matrix_values_type::HostMirror full_hM =
+    Kokkos::create_mirror_view( full_matrix.values );
+
+  typename matrix_values_type::HostMirror::array_type full_haM = full_hM ;
+
+  for (ordinal_type iRowFEM=0, iEntryFEM=0; iRowFEM<fem_length; ++iRowFEM) {
+    const ordinal_type row_size = fem_graph[iRowFEM].size();
+    for (ordinal_type iRowEntryFEM=0; iRowEntryFEM<row_size;
+         ++iRowEntryFEM, ++iEntryFEM) {
+      const ordinal_type iColFEM = fem_graph[iRowFEM][iRowEntryFEM];
+    
+      for (ordinal_type k=0; k<stoch_length; ++k) {
+        if (k == 0)
+          full_haM(iEntryFEM, k) =
+          generate_matrix_coefficient<scalar_type>(
+            fem_length, 1, iRowFEM, iColFEM, k);
+        else 
+          full_haM(iEntryFEM, k) = 0.0;
+
+      }
+    }
+  }
+
+  Kokkos::deep_copy( full_matrix.values, full_hM );
+
+  //------------------------------
+  // multiply
+
+  Kokkos::MV_Multiply( y, matrix, x );
+
+
+  //------------------------------
+  // multiply with full matrix
+
+  Kokkos::MV_Multiply( y_expected, full_matrix, x );
+
+
+  //------------------------------
+  // check
+
+  scalar_type rel_tol = ScalarTol<scalar_type>::tol();
+  scalar_type abs_tol = ScalarTol<scalar_type>::tol();
+  success = compareRank2(y, y_expected, rel_tol, abs_tol, out);
+
+
+}
+
+
 typedef Kokkos_MV_Multiply_Op KokkosMultiply;
 
 #define CRSMATRIX_UQ_PCE_TESTS_MATRIXSCALAR( SCALAR )                   \
@@ -667,20 +1049,25 @@ typedef Kokkos_MV_Multiply_Op KokkosMultiply;
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(                                 \
     Kokkos_CrsMatrix_PCE, SumIntoValues, SCALAR )                        \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(                                 \
-    Kokkos_CrsMatrix_PCE, SumIntoValuesAtomic, SCALAR )
-
+    Kokkos_CrsMatrix_PCE, SumIntoValuesAtomic, SCALAR )                 
+#define CRSMATRIX_UQ_PCE_MEAN_MULTIPLY_TESTS( SCALAR )                   \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(                                 \
+    Kokkos_CrsMatrix_PCE, MeanMultiplyRank1, SCALAR )                        \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(                                 \
+    Kokkos_CrsMatrix_PCE, MeanMultiplyRank2, SCALAR )                        
 #define CRS_MATRIX_UQ_PCE_MULTIPLY_TESTS_SCALAR_OP( SCALAR, OP )   \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                              \
     Kokkos_CrsMatrix_PCE, Multiply, SCALAR, OP )
 
 #define CRS_MATRIX_UQ_PCE_MULTIPLY_TESTS_SCALAR( SCALAR ) \
   CRS_MATRIX_UQ_PCE_MULTIPLY_TESTS_SCALAR_OP( SCALAR, KokkosMultiply )
-
+  
 #define CRSMATRIX_UQ_PCE_TESTS_STORAGE( STORAGE )                       \
   typedef Sacado::UQ::PCE<STORAGE> UQ_PCE_ ## STORAGE;                  \
   CRSMATRIX_UQ_PCE_TESTS_MATRIXSCALAR( UQ_PCE_ ## STORAGE )             \
-  CRS_MATRIX_UQ_PCE_MULTIPLY_TESTS_SCALAR( UQ_PCE_ ## STORAGE )
-
+  CRS_MATRIX_UQ_PCE_MULTIPLY_TESTS_SCALAR( UQ_PCE_ ## STORAGE )         \
+  CRSMATRIX_UQ_PCE_MEAN_MULTIPLY_TESTS( UQ_PCE_ ## STORAGE )            
+   
 #define CRSMATRIX_UQ_PCE_TESTS_ORDINAL_SCALAR_DEVICE( ORDINAL, SCALAR, DEVICE ) \
   typedef Stokhos::DynamicStorage<ORDINAL,SCALAR,DEVICE> DS;            \
   CRSMATRIX_UQ_PCE_TESTS_STORAGE( DS )
