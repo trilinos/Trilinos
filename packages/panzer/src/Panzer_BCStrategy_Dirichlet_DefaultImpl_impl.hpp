@@ -245,8 +245,9 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
            fm.template registerEvaluator<EvalT>(eval);
          }
          {
+           // note basis values are not constructed!
            RCP< PHX::Evaluator<panzer::Traits> > eval 
-             = rcp(new panzer::BasisValues_Evaluator<EvalT,panzer::Traits>(pointRule,basis));
+             = rcp(new panzer::BasisValues_Evaluator<EvalT,panzer::Traits>(pointRule,basis,false));
          
            fm.template registerEvaluator<EvalT>(eval);
          }

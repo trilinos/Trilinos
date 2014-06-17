@@ -74,32 +74,6 @@ inline void evaluateDOF(PHX::MDField<ScalarT,Cell,Point> & dof_basis,PHX::MDFiel
 
   if(num_cells>0) {
     if(requires_orientation) {
-/*
-       // copy basis values, this will be modified by the orientation, so we don't
-       // necessarily want to wipe them out
-       Teuchos::Array<int> dimension; 
-       for(int i=0;i<basisValues.basis.rank();i++)
-          dimension.push_back(basisValues.basis.dimension(i));
-       Intrepid::FieldContainer<ScalarT> bases(dimension);
-       for(int i=0;i<bases.size();i++)
-          bases[i] = basisValues.basis[i];
-
-       // assign ScalarT "dof_orientation" to double "orientation"
-       Intrepid::FieldContainer<double> orientation(dof_orientation.dimension(0),
-                                                    dof_orientation.dimension(1));
-       for(int i=0;i<dof_orientation.dimension(0);i++)
-          for(int j=0;j<dof_orientation.dimension(1);j++)
-             orientation(i,j) = Sacado::ScalarValue<ScalarT>::eval(dof_orientation(i,j));
-
-
-       // make sure things are orientated correctly
-       Intrepid::FunctionSpaceTools::
-          applyFieldSigns<ScalarT>(bases,orientation);
-
-       // evaluate at quadrature points
-       Intrepid::FunctionSpaceTools::
-         evaluate<ScalarT>(dof_ip,dof_basis,bases);
-*/
        Intrepid::FunctionSpaceTools::
          evaluate<ScalarT>(dof_ip,dof_basis,basisValues.basis);
     }
@@ -138,20 +112,6 @@ PHX_EVALUATOR_CTOR(DOF,p) :
   this->addEvaluatedField(dof_ip);
   this->addDependentField(dof_basis);
 
-/*
-  if(requires_orientation) {
-     // unless otherwise specified (with "Orientation Field Name") use the default
-     std::string orientationFieldName = p.get<std::string>("Name")+" Orientation";
-     if(p.isType<std::string>("Orientation Field Name"))
-       orientationFieldName = p.get<std::string>("Orientation Field Name");
-     
-     dof_orientation = PHX::MDField<ScalarT,Cell,BASIS>(orientationFieldName,
-	                                                basis->functional);
-     
-     this->addDependentField(dof_orientation);
-  }
-*/
-  
   std::string n = "DOF: " + dof_basis.fieldTag().name() + " ("+PHX::TypeString<EvalT>::value+")";
   this->setName(n);
 }
@@ -161,9 +121,6 @@ PHX_POST_REGISTRATION_SETUP(DOF,sd,fm)
 {
   this->utils.setFieldData(dof_basis,fm);
   this->utils.setFieldData(dof_ip,fm);
-
-  // if(requires_orientation)
-  //    this->utils.setFieldData(dof_orientation,fm);
 
   basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0]);
 }
@@ -211,40 +168,16 @@ PHX_EVALUATOR_CTOR(DOF_PointValues,p)
   this->addEvaluatedField(dof_ip);
   this->addDependentField(dof_basis);
 
-/*
-  if(requires_orientation) {
-     // unless otherwise specified (with "Orientation Field Name") use the default
-     std::string orientationFieldName = fieldName+" Orientation";
-     if(p.isType<std::string>("Orientation Field Name"))
-       orientationFieldName = p.get<std::string>("Orientation Field Name");
-
-     dof_orientation = PHX::MDField<ScalarT,Cell,BASIS>(orientationFieldName,
-	                                                basis->functional);
-     
-     this->addDependentField(dof_orientation);
-  }
-*/
-
   // setup all basis fields that are required
   Teuchos::RCP<BasisIRLayout> layout = Teuchos::rcp(new BasisIRLayout(basis,*pointRule));
   MDFieldArrayFactory af_bv(basis->name()+"_"+pointRule->getName()+"_");
-  basisValues.setupArrays(layout,af_bv);
+  basisValues.setupArrays(layout,af_bv,false);
 
   // the field manager will allocate all of these field
 
   this->addDependentField(basisValues.basis_ref);      
   this->addDependentField(basisValues.basis);           
 
-  if(basis->getElementSpace()==PureBasis::HGRAD) {
-    this->addDependentField(basisValues.grad_basis_ref);   
-    this->addDependentField(basisValues.grad_basis);        
-  }
-
-  if(basis->getElementSpace()==PureBasis::HCURL) {
-    this->addDependentField(basisValues.curl_basis_ref);     
-    this->addDependentField(basisValues.curl_basis);          
-  }
-  
   std::string n = "DOF_PointValues: " + dof_basis.fieldTag().name() + " ("+PHX::TypeString<EvalT>::value+")";
   this->setName(n);
 }
@@ -255,24 +188,9 @@ PHX_POST_REGISTRATION_SETUP(DOF_PointValues,sd,fm)
   this->utils.setFieldData(dof_basis,fm);
   this->utils.setFieldData(dof_ip,fm);
 
-/*
-  if(requires_orientation)
-     this->utils.setFieldData(dof_orientation,fm);
-*/
-
   // setup the pointers for the basis values data structure
   this->utils.setFieldData(basisValues.basis_ref,fm);      
   this->utils.setFieldData(basisValues.basis,fm);           
-
-  if(basis->getElementSpace()==PureBasis::HGRAD) {
-    this->utils.setFieldData(basisValues.grad_basis_ref,fm);   
-    this->utils.setFieldData(basisValues.grad_basis,fm);        
-  }
-
-  if(basis->getElementSpace()==PureBasis::HCURL) {
-    this->utils.setFieldData(basisValues.curl_basis_ref,fm);     
-    this->utils.setFieldData(basisValues.curl_basis,fm);          
-  }
 }
 
 //**********************************************************************
