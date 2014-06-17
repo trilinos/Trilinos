@@ -1,7 +1,7 @@
 //  This program computes the eigenvalues of a laplacian matrix using Anasazi.
-//  NOTE:  The laplacian matrix generated has row and column ids larger than INT_MAX 
+//  NOTE:  The laplacian matrix generated has row and column ids larger than INT_MAX
 //         to test Epetra64 functionality with Anasazi solvers.
-//  
+//
 //  Karen Devine, April 2012
 //  Erik Boman, May 2012
 //  K. Devine & H. Thornquist, January 2013
@@ -38,26 +38,26 @@
 #include "build_simple_matrices.hpp"
 
 #include <stdio.h>
- 
+
 ////////////////////////////////////////////////////////////////////////////
 
-int main(int narg, char *arg[]) 
+int main(int narg, char *arg[])
 {
   using std::cout;
 
-#ifdef EPETRA_MPI  
-  // Initialize MPI  
-  MPI_Init(&narg,&arg);   
-  Epetra_MpiComm Comm( MPI_COMM_WORLD );  
-#else  
-  Epetra_SerialComm Comm;  
+#ifdef EPETRA_MPI
+  // Initialize MPI
+  MPI_Init(&narg,&arg);
+  Epetra_MpiComm Comm( MPI_COMM_WORLD );
+#else
+  Epetra_SerialComm Comm;
 #endif
-  
+
   int MyPID = Comm.MyPID();
 
   bool verbose = true;
   int verbosity = 1;
-  
+
   bool testEpetra64 = true;
 
   // Matrix properties
@@ -87,7 +87,7 @@ int main(int narg, char *arg[])
   int extrablocks = 0;
   int gensize = 25;  // Needs to be long long to test with > INT_MAX rows
   double tol = 1.0e-5;
-  
+
   // Echo the command line
   if (MyPID == 0)  {
     for (int i = 0; i < narg; i++)
@@ -147,11 +147,12 @@ int main(int narg, char *arg[])
   // We need blockSize to be set so we can allocate memory with it.
   // If it wasn't set on the command line, set it to the Anasazi defaults here.
   // Defaults are those given in the documentation.
-  if (blockSize < 0) 
-    if (method == "BKS") 
+  if (blockSize < 0) {
+    if (method == "BKS")
       blockSize = 1;
     else // other methods: LOBPCG, BD, IRTR
       blockSize = nev;
+  }
 
   // Make sure Epetra was built with 64-bit global indices enabled.
 #ifdef EPETRA_NO_64BIT_GLOBAL_INDICES
@@ -160,7 +161,7 @@ int main(int narg, char *arg[])
 #endif
 
   Epetra_CrsMatrix *K = NULL;
-  
+
   // Read matrix from file or generate a matrix
   if ((gensize > 0 && testEpetra64)) {
     // Generate the matrix using long long for global indices
@@ -193,7 +194,7 @@ int main(int narg, char *arg[])
     anasazi_verbosity += Anasazi::StatusTestDetails
                        + Anasazi::OrthoDetails
                        + Anasazi::Debug;
-  
+
   // Create parameter list to pass into solver
   Teuchos::ParameterList MyPL;
   MyPL.set("Verbosity", anasazi_verbosity);
@@ -212,23 +213,23 @@ int main(int narg, char *arg[])
   typedef Epetra_Operator OP;
   typedef Anasazi::MultiVecTraits<double, MV> MVT;
   typedef Anasazi::OperatorTraits<double, MV, OP> OPT;
-    
+
 
   // Create the eigenproblem to be solved.
-    
+
   // Dummy initial vectors - will be set later.
-  Teuchos::RCP<Epetra_MultiVector> ivec = 
+  Teuchos::RCP<Epetra_MultiVector> ivec =
     Teuchos::rcp(new Epetra_MultiVector(K->Map(), blockSize));
 
   Teuchos::RCP<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem;
-  MyProblem = 
+  MyProblem =
     Teuchos::rcp(new Anasazi::BasicEigenproblem<double, MV, OP>(rcpK, ivec) );
 
   // Inform the eigenproblem whether K is Hermitian
 
   MyProblem->setHermitian(isHermitian);
 
-  // Set the number of eigenvalues requested 
+  // Set the number of eigenvalues requested
 
   MyProblem->setNEV(nev);
 
@@ -245,7 +246,7 @@ int main(int narg, char *arg[])
   // Using random values as the initial guess.
   if (initvec == "random"){
     MVT::MvRandom(*ivec);
-  } 
+  }
   else if (initvec == "zero"){
     // All zero initial vector should be essentially the same,
     // but appears slightly worse in practice.
@@ -281,23 +282,23 @@ int main(int narg, char *arg[])
   else
     cout << "ERROR: Unknown value for initial vectors." << endl;
 
-  if (verbose && (ivec->GlobalLength64() < TINYMATRIX)) 
+  if (verbose && (ivec->GlobalLength64() < TINYMATRIX))
     ivec->Print(std::cout);
-  
+
   // Inform the eigenproblem that you are finished passing it information
-  
+
   bool boolret = MyProblem->setProblem();
   if (boolret != true) {
     if (verbose && MyPID == 0) {
-      cout << "Anasazi::BasicEigenproblem::setProblem() returned with error." 
+      cout << "Anasazi::BasicEigenproblem::setProblem() returned with error."
            << endl;
     }
     FINALIZE;
     return -1;
   }
- 
+
   Teuchos::RCP<Anasazi::SolverManager<double, MV, OP> > MySolverMgr;
- 
+
   if (method == "BKS") {
     // Initialize the Block Arnoldi solver
     MyPL.set("Extra NEV Blocks", extrablocks);
@@ -323,10 +324,10 @@ int main(int narg, char *arg[])
     cout << "Unknown solver method!" << endl;
 
   if (verbose && MyPID==0) MyPL.print(cout);
-      
+
   // Solve the problem to the specified tolerances or length
   if (MyPID == 0) cout << "Beginning the " << method << " solve..." << endl;
-    
+
   Anasazi::ReturnType returnCode = MySolverMgr->solve();
   if (returnCode != Anasazi::Converged && MyPID==0) {
     ++numfailed;
@@ -334,56 +335,56 @@ int main(int narg, char *arg[])
   }
   iter = MySolverMgr->getNumIters();
   solvetime = (MySolverMgr->getTimers()[0])->totalElapsedTime();
-  
+
   if (MyPID == 0) {
-    cout << "Iterations in this solve: " << iter << endl; 
+    cout << "Iterations in this solve: " << iter << endl;
     cout << "Solve complete; beginning post-processing..."<< endl;
   }
-  
+
   // Get the eigenvalues and eigenvectors from the eigenproblem
-  
+
   Anasazi::Eigensolution<double,MV> sol = MyProblem->getSolution();
   std::vector<Anasazi::Value<double> > evals = sol.Evals;
   Teuchos::RCP<MV> evecs = sol.Evecs;
   std::vector<int> index = sol.index;
   int numev = sol.numVecs;
-  
+
   // Compute residuals.
-  
+
   if (numev > 0) {
     Teuchos::LAPACK<int,double> lapack;
     std::vector<double> normR(numev);
-     
+
     if (MyProblem->isHermitian()) {
       // Get storage
       Epetra_MultiVector Kevecs(K->Map(),numev);
       Teuchos::RCP<Epetra_MultiVector> Mevecs;
       Teuchos::SerialDenseMatrix<int,double> B(numev,numev);
-      B.putScalar(0.0); 
+      B.putScalar(0.0);
       for (int i=0; i<numev; i++) {B(i,i) = evals[i].realpart;}
-      
+
       // Compute A*evecs
       OPT::Apply( *rcpK, *evecs, Kevecs );
       Mevecs = evecs;
-      
+
       // Compute A*evecs - lambda*evecs and its norm
       MVT::MvTimesMatAddMv( -1.0, *Mevecs, B, 1.0, Kevecs );
       MVT::MvNorm( Kevecs, normR );
-        
+
       // Scale the norms by the eigenvalue if relative convergence tol was used
       if (relconvtol) {
-        for (int i=0; i<numev; i++) 
+        for (int i=0; i<numev; i++)
           normR[i] /= Teuchos::ScalarTraits<double>::magnitude(evals[i].realpart);
       }
-        
+
     } else {
       printf("The problem isn't non-Hermitian; sorry.\n");
       exit(-1);
     }
-  
-  
+
+
     if (verbose && MyPID==0) {
-      cout.setf(std::ios_base::right, std::ios_base::adjustfield);	
+      cout.setf(std::ios_base::right, std::ios_base::adjustfield);
       cout<<endl<< "Actual Results"<<endl;
       if (MyProblem->isHermitian()) {
         cout<< std::setw(16) << "Eigenvalue "
@@ -392,23 +393,23 @@ int main(int narg, char *arg[])
             << endl;
         cout<<"--------------------------------------------------------"<<endl;
         for (int i=0; i<numev; i++) {
-          cout<< "EV" << i << std::setw(16) << evals[i].realpart 
+          cout<< "EV" << i << std::setw(16) << evals[i].realpart
               << std::setw(20) << normR[i] << endl;
-        }  
+        }
         cout<<"--------------------------------------------------------"<<endl;
-      } 
+      }
       else {
         cout<< std::setw(16) << "Real Part"
             << std::setw(16) << "Imag Part"
             << std::setw(20) << "Direct Residual"<< endl;
         cout<<"--------------------------------------------------------"<<endl;
         for (int i=0; i<numev; i++) {
-          cout<< std::setw(16) << evals[i].realpart 
-              << std::setw(16) << evals[i].imagpart 
+          cout<< std::setw(16) << evals[i].realpart
+              << std::setw(16) << evals[i].imagpart
               << std::setw(20) << normR[i] << endl;
-        }  
+        }
         cout<<"--------------------------------------------------------"<<endl;
-      }  
+      }
     }
   }
 
@@ -417,7 +418,7 @@ int main(int narg, char *arg[])
     cout << endl;
     cout << "DRIVER SUMMARY" << endl;
     cout << "Failed to converge: " << numfailed << endl;
-    cout << "Solve time:           " << solvetime << endl; 
+    cout << "Solve time:           " << solvetime << endl;
   }
 
   FINALIZE;
@@ -433,6 +434,6 @@ int main(int narg, char *arg[])
   //
   if (MyPID == 0) {
     cout << "End Result: TEST PASSED" << endl;
-  } 
+  }
   return 0;
-} 
+}
