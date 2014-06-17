@@ -6,6 +6,7 @@
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <string>                       // for string
 #include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH, etc
+#include "stk_util/parallel/Parallel.hpp"
 namespace stk { namespace mesh { class Part; } }
 namespace {
 
@@ -13,6 +14,10 @@ namespace {
   {
     std::string mesh_name = "input_mesh_example.e";
     MPI_Comm communicator = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(communicator);
+    if (numProcs != 1) {
+      return;
+    }
 
     {
       // ============================================================

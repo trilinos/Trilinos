@@ -9,12 +9,17 @@
 #include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH
 #include "stk_io/MeshField.hpp"         // for MeshField, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_util/parallel/Parallel.hpp"
 namespace {
 
   TEST(StkMeshIoBrokerHowTo, interpolateIntegerFieldInvalid)
   {
     std::string ic_name = "interpolate_field_example.e";
     MPI_Comm communicator = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(communicator);
+    if (numProcs != 1) {
+      return;
+    }
 
     {
       //-BEGIN

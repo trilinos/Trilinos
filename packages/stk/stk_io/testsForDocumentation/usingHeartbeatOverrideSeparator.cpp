@@ -6,6 +6,7 @@
 #include <map>                          // for _Rb_tree_const_iterator, etc
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker, etc
 #include <stk_util/util/ParameterList.hpp>  // for ParameterList, etc
+#include <stk_util/parallel/Parallel.hpp>
 #include <string>                       // for string, getline
 #include <utility>                      // for pair
 #include <vector>                       // for vector
@@ -19,6 +20,11 @@ namespace
 
     const std::string file_name = "HeartbeatBarSep.txt";
     MPI_Comm communicator = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(communicator);
+
+    if (numProcs != 1) {
+      return;
+    }
 
     stk::util::ParameterList parameters;
     

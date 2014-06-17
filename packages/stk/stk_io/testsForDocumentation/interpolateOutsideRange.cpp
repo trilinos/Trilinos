@@ -14,12 +14,17 @@
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_util/parallel/Parallel.hpp"
 namespace {
 
   TEST(StkMeshIoBrokerHowTo, interpolateOutsideRange)
   {
     std::string ic_name = "interpolate_field_example.e";
     MPI_Comm communicator = MPI_COMM_WORLD;
+    int num_procs = stk::parallel_machine_size(communicator);
+    if (num_procs != 1) {
+      return;
+    }
 
     {
       // ============================================================

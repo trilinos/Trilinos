@@ -13,6 +13,7 @@
 #include "Teuchos_RCP.hpp"              // for RCP::get
 #include "Teuchos_RCPDecl.hpp"          // for RCP
 #include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH, etc
+#include "stk_util/parallel/Parallel.hpp"
 namespace Ioss { class DatabaseIO; }
 
 namespace {
@@ -21,6 +22,10 @@ TEST(StkMeshIoBrokerHowTo, addFileContentsToOutputDatabase)
 {
     std::string filename = "information_records.e";
     MPI_Comm communicator = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(communicator);
+    if (numProcs != 1) {
+      return;
+    }
 
     //-BEGIN
     // ============================================================

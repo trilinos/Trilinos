@@ -151,6 +151,10 @@ TEST( StkMeshIoBroker, active_and_all )
 {
   // A simple test for reading and writing two exodus files using the StkMeshIoBroker.
   stk::ParallelMachine pm = MPI_COMM_WORLD;
+  int numProcs = stk::parallel_machine_size(pm);
+  if (numProcs != 1) {
+    return;
+  }
   stk::io::StkMeshIoBroker fixture(pm);
 
   std::string input_base_filename = "unit_test.g";
@@ -211,6 +215,10 @@ TEST( StkMeshIoBroker, large_mesh_test )
 {
   // A simple test for reading and writing two exodus files using the StkMeshIoBroker.
   stk::ParallelMachine pm = MPI_COMM_WORLD;
+  int numProcs = stk::parallel_machine_size(pm);
+  if (numProcs != 1) {
+    return;
+  }
   stk::io::StkMeshIoBroker fixture(pm);
 
   std::string input_base_filename = "1mCube_20x20x20.g";

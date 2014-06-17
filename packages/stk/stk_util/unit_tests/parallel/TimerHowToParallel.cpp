@@ -46,9 +46,9 @@ TEST(StkDiagTimerHowTo, useTimersInParallel)
      Timer      Count      Sum (% of System)   Min (% of System)   Max (% of System)        \
                            Sum (% of System)   Min (% of System)   Max (% of System)        \
 SKIP ----- --------------------- --------------------- SKIP SKIP SKIP --------------------- \
-totalTestRuntime  2            0.001 SKIP          0.000 SKIP          0.001 SKIP           \
+totalTestRuntime  2            SKIP  SKIP          SKIP  SKIP          SKIP  SKIP           \
                                0.200 SKIP          0.100 SKIP          0.100 SKIP           \
-  childTimer1     2            0.001 SKIP          0.000 SKIP          0.001 SKIP           \
+  childTimer1     2            SKIP  SKIP          SKIP  SKIP          SKIP  SKIP           \
                                0.200 SKIP          0.100 SKIP          0.100 SKIP           \
                                                                                             \
 Took 0.0004 seconds to generate the table above.                                            \

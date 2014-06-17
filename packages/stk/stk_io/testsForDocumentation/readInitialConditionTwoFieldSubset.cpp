@@ -20,6 +20,7 @@
 #include "stk_mesh/base/Selector.hpp"   // for Selector
 #include "stk_mesh/base/Types.hpp"      // for PartVector
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_util/parallel/Parallel.hpp"
 namespace Ioss { class DatabaseIO; }
 
 namespace {
@@ -32,6 +33,10 @@ namespace {
     std::string appFieldName = "pressure";
     
     MPI_Comm communicator = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(communicator);
+    if (numProcs != 1) {
+      return;
+    }
 
     {
       // ============================================================
