@@ -164,7 +164,7 @@ void verbose_print_topology(std::ostream &out, topology t)
   out << std::endl;
   out << std::noboolalpha;
 
-};
+}
 
 } //namespace stk
 
