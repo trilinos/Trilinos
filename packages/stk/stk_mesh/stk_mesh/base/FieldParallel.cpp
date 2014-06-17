@@ -7,7 +7,6 @@
 /*------------------------------------------------------------------------*/
 
 #include <stk_util/stk_config.h>
-#if defined( STK_HAS_MPI)
 #include <stk_mesh/base/FieldParallel.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>  // for CommAll, CommBuffer
 #include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
@@ -20,7 +19,6 @@
 #include <stk_mesh/base/Types.hpp>      // for PairIterEntityComm, etc
 
 #include <utility>                      // for pair
-#include <mpi.h>                        // for ompi_communicator_t
 #include <sstream>                      // for basic_ostream::operator<<, etc
 
 namespace stk {
@@ -493,12 +491,13 @@ std::vector<int> compute_receive_list(std::vector<int>& sendSizeArray, MPI_Comm 
 {
   const int msg_tag = 10240;
   int num_procs = sendSizeArray.size();
-  int my_proc;
-  MPI_Comm_rank(mpi_communicator, &my_proc);
+  int my_proc = stk::parallel_machine_rank(mpi_communicator);
   std::vector<int> receiveSizeArray(num_procs, 0);
   //
   //  Determine the total number of messages every processor will receive
   //
+#if defined( STK_HAS_MPI)
+
   std::vector<int> local_number_to_receive(num_procs, 0);
   std::vector<int> global_number_to_receive(num_procs, 0);
   for(int iproc = 0; iproc < num_procs; ++iproc) {
@@ -538,9 +537,9 @@ std::vector<int> compute_receive_list(std::vector<int>& sendSizeArray, MPI_Comm 
     receiveSizeArray[status.MPI_SOURCE] = recv_size_buffers[imsg];
   }
 
+#endif
   return receiveSizeArray;
 }
 
 } // namespace mesh
 } // namespace stk
-#endif

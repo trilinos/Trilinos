@@ -10,8 +10,6 @@
 #define stk_mesh_FieldParallel_hpp
 
 #include <stk_util/stk_config.h>
-#if defined( STK_HAS_MPI)
-#include <stk_mesh/base/FieldParallel_helpers.hpp>
 #include <stk_mesh/base/Types.hpp>      // for EntityProc
 #include <stk_mesh/base/FieldBase.hpp>  // for FieldBase
 #include <stk_mesh/base/BulkData.hpp>
@@ -23,6 +21,8 @@
 #include <vector>                       // for vector
 
 namespace stk { namespace mesh { class Ghosting; } }
+
+#include <stk_mesh/base/FieldParallel_helpers.hpp>
 
 namespace stk {
 namespace mesh {
@@ -158,11 +158,10 @@ void parallel_data_exchange_t(std::vector< std::vector<T> > &send_lists,
   //
   //  Determine the number of processors involved in this communication
   //
+#if defined( STK_HAS_MPI)
   const int msg_tag = 10242;
-  int num_procs;
-  MPI_Comm_size(mpi_communicator, &num_procs);
-  int my_proc;
-  MPI_Comm_rank(mpi_communicator, &my_proc);
+  int num_procs = stk::parallel_machine_size(mpi_communicator);
+  int my_proc = stk::parallel_machine_rank(mpi_communicator);
 
   //PRECONDITION((unsigned int) num_procs == send_lists.size() && (unsigned int) num_procs == recv_lists.size());
   int class_size = sizeof(T);
@@ -204,6 +203,7 @@ void parallel_data_exchange_t(std::vector< std::vector<T> > &send_lists,
       MPI_Wait( &recv_handles[iproc], &status );
     }
   }
+#endif
 }
 
 template<typename T>
@@ -214,11 +214,10 @@ void parallel_data_exchange_sym_t(std::vector< std::vector<T> > &send_lists,
   //
   //  Determine the number of processors involved in this communication
   //
+#if defined( STK_HAS_MPI)
   const int msg_tag = 10242;
-  int num_procs;
-  MPI_Comm_size(mpi_communicator, &num_procs);
-  int my_proc;
-  MPI_Comm_rank(mpi_communicator, &my_proc);
+  int num_procs = stk::parallel_machine_size(mpi_communicator);
+  int my_proc = stk::parallel_machine_rank(mpi_communicator);
   int class_size = sizeof(T);
 
   //
@@ -249,12 +248,12 @@ void parallel_data_exchange_sym_t(std::vector< std::vector<T> > &send_lists,
       MPI_Wait( &recv_handles[iproc], &status );
     }
   }
+#endif
 }
 
 
 } // namespace mesh
 } // namespace stk
 
-#endif
 #endif
 

@@ -11,10 +11,6 @@
 
 //----------------------------------------------------------------------
 
-#include <stk_util/stk_config.h>
-#if defined ( STK_HAS_MPI )
-#  include <mpi.h>                        // for MPI_Comm
-#endif
 #include <stddef.h>                     // for size_t, NULL
 #include <stdint.h>                     // for uint16_t
 #include <algorithm>                    // for max

@@ -1,8 +1,4 @@
 
-#include <stk_util/stk_config.h>
-#if defined ( STK_HAS_MPI )
-#  include <mpi.h>                        // for MPI_Comm
-#endif
 #include <stk_mesh/base/Types.hpp>
 #include <algorithm>                    // for sort
 #include <iomanip>                      // for operator<<, setw
