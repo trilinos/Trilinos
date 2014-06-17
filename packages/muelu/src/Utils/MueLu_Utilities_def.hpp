@@ -886,7 +886,6 @@ namespace MueLu {
 #endif
       } else if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
-//        typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::SerialNode, typename KokkosClassic::DefaultKernels<void, LocalOrdinal, Kokkos::SerialNode>::SparseOps> sparse_matrix_type;
         typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> sparse_matrix_type;
 
         typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
