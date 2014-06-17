@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //         Stratimikos: Thyra-based strategies for linear solvers
 //                Copyright (2006) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -86,7 +86,7 @@ int main(int argc, char* argv[])
 
   try {
 
-    
+
     //
     // A) Program setup code
     //
@@ -94,7 +94,7 @@ int main(int argc, char* argv[])
     //
     // Read options from command-line
     //
-    
+
     std::string     matrixFile             = "";
     std::string     extraParamsFile        = "";
     double          tol                    = 1e-5;
@@ -119,7 +119,7 @@ int main(int argc, char* argv[])
                    ,"Print the valid options in XML format or in readable format." );
     clp.setOption( "show-doc", "hide-doc", &showDoc
                    ,"Print the valid options with or without documentation." );
-    
+
     clp.setDocString(
       "Simple example for the use of the Stratimikos facade Stratimikos::DefaultLinearSolverBuilder.\n"
       "\n"
@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
       return 0;
     }
 
-    
+
     //
     // B) Epetra-specific code that sets up the linear system to be solved
     //
@@ -160,7 +160,7 @@ int main(int argc, char* argv[])
     //
 
     *out << "\nReading linear system in Epetra format from the file \'"<<matrixFile<<"\' ...\n";
-    
+
 #ifdef HAVE_MPI
     Epetra_MpiComm comm(MPI_COMM_WORLD);
 #else
@@ -212,7 +212,7 @@ int main(int argc, char* argv[])
     // they need know little about in order to wrap their objects in order to
     // pass them to Thyra-enabled solvers.
 
-      
+
     //
     // D) Thyra-specific code for solving the linear system
     //
@@ -280,7 +280,7 @@ int main(int argc, char* argv[])
       epetra_A->Apply(*epetra_x,epetra_A_x);
       epetra_r.Update(-1.0,epetra_A_x,1.0);
     }
-      
+
     const double
       nrm_r = epetraNorm2(epetra_r),
       nrm_b = epetraNorm2(*epetra_b),
@@ -293,15 +293,15 @@ int main(int argc, char* argv[])
       << " < tol = " << tol << " ? " << ( passed ? "passed" : "failed" ) << "\n";
 
     if(!passed) success = false;
-    
+
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success)
-  
+
   if (verbose) {
     if(success)  *out << "\nCongratulations! All of the tests checked out!\n";
     else         *out << "\nOh no! At least one of the tests failed!\n";
   }
 
-  return ( success ? 0 : 1 );
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 
 }
