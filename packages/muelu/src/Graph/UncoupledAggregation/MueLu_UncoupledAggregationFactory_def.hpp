@@ -111,10 +111,11 @@ namespace MueLu {
     validParamList->set<bool> ("UseEmergencyAggregationAlgorithm",          true, "Turn on/off Emergency aggregation algorithm. Puts all left over nodes "
                                "into aggregates (including very small aggregates or one-point aggregates). (default = on)");
 
-    validParamList->set<bool> ("aggregation: enable phase 1",               true, "Enable phase 1 of aggregation");
-    validParamList->set<bool> ("aggregation: enable phase 2a",              true, "Enable phase 2a of aggregation");
-    validParamList->set<bool> ("aggregation: enable phase 2b",              true, "Enable phase 2b of aggregation");
-    validParamList->set<bool> ("aggregation: enable phase 3",               true, "Enable phase 3 of aggregation");
+    validParamList->set<bool> ("aggregation: preserve Dirichlet points",   false, "Enable Dirichlet points preservation");
+    validParamList->set<bool> ("aggregation: enable phase 1",               true, "Turn on/off phase 1  of aggregation");
+    validParamList->set<bool> ("aggregation: enable phase 2a",              true, "Turn on/off phase 2a of aggregation");
+    validParamList->set<bool> ("aggregation: enable phase 2b",              true, "Turn on/off phase 2b of aggregation");
+    validParamList->set<bool> ("aggregation: enable phase 3",               true, "Turn on/off phase 3  of aggregation");
 
     validParamList->set< std::string >           ("OnePt aggregate map name",         "", "Name of input map for single node aggregates. (default='')");
     validParamList->set< RCP<const FactoryBase> >("OnePt aggregate map factory",    null, "Generating factory of (DOF) map for single node aggregates.");
@@ -167,6 +168,7 @@ namespace MueLu {
       if (pL.get<bool>("aggregation: enable phase 1" )             == true)   algos_.push_back(rcp(new AggregationPhase1Algorithm            (graphFact)));
       if (pL.get<bool>("aggregation: enable phase 2a")             == true)   algos_.push_back(rcp(new AggregationPhase2aAlgorithm           (graphFact)));
       if (pL.get<bool>("aggregation: enable phase 2b")             == true)   algos_.push_back(rcp(new AggregationPhase2bAlgorithm           (graphFact)));
+      if (pL.get<bool>("aggregation: preserve Dirichlet points")   == false)  algos_.push_back(rcp(new IsolatedNodeAggregationAlgorithm      (graphFact)));
       if (pL.get<bool>("aggregation: enable phase 3" )             == true)   algos_.push_back(rcp(new AggregationPhase3Algorithm            (graphFact)));
     }
 
@@ -193,11 +195,10 @@ namespace MueLu {
     std::vector<unsigned> aggStat(numRows, READY);
 
     ArrayRCP<const bool> dirichletBoundaryMap = graph->GetBoundaryNodeMap();
-    if (dirichletBoundaryMap != Teuchos::null) {
+    if (dirichletBoundaryMap != Teuchos::null)
       for (LO i = 0; i < numRows; i++)
         if (dirichletBoundaryMap[i] == true)
           aggStat[i] = BOUNDARY;
-    }
 
     LO nDofsPerNode = Get<LO>(currentLevel, "DofsPerNode");
     GO indexBase = graph->GetDomainMap()->getIndexBase();
