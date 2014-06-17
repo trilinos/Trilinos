@@ -133,7 +133,7 @@ namespace Example {
       RCP< const Map > rmap = A->getRowMap();
       RCP< const Map > cmap = A->getColMap();
 
-      KokkosMatrixType  kokkos_matrix = A->getKokkosMatrix();
+      KokkosMatrixType  kokkos_matrix = A->getLocalMatrix();
       size_t nnz = kokkos_matrix.nnz();
       size_t ncols = kokkos_matrix.numCols();
       KokkosGraphType kokkos_graph = kokkos_matrix.graph;
