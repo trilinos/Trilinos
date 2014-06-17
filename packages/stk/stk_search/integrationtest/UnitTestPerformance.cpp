@@ -1,4 +1,3 @@
-#include <mpi.h>
 #include <gtest/gtest.h>
 #include <vector>
 #include <fstream>
@@ -8,6 +7,7 @@
 
 #include <exodusMeshInterface.h>
 
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <stk_util/unit_test_support/perf_unit_util.hpp>
 #include <optionParsing/getOption.h>
 
@@ -39,10 +39,8 @@ TEST(Performance, ofAxisAlignedBoundingBoxesUsingBoostRtree)
 
 void testPerformanceOfAxisAlignedBoundingBoxes(stk::search::SearchMethod searchMethod, MPI_Comm comm)
 {
-    int proc = 0;
-    MPI_Comm_rank(comm, &proc);
-    int numProcs = 1;
-    MPI_Comm_size(comm, &numProcs);
+    int proc = stk::parallel_machine_rank(comm);
+    int numProcs = stk::parallel_machine_size(comm);
 
     size_t numColumnsPerProcessor = 1000;
     double boxSize = 1.0;
@@ -176,10 +174,8 @@ void testGtkSearch(MPI_Comm comm, std::vector<GtkBox>&domainBoxes, SearchResults
     CALLGRIND_START_INSTRUMENTATION;
 #endif
 
-    int num_procs = -1;
-    int proc_id   = -1;
-    MPI_Comm_rank(comm, &proc_id);
-    MPI_Comm_size(comm, &num_procs);
+    int proc_id = stk::parallel_machine_rank(comm);
+    int num_procs = stk::parallel_machine_size(comm);
     std::vector<int> procThatOwnsBox;
 
     for(size_t i=0;i<domainBoxes.size();i++)
@@ -299,11 +295,8 @@ void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxe
     CALLGRIND_START_INSTRUMENTATION;
 #endif
 
-    int procId=-1;
-    MPI_Comm_rank(comm, &procId);
-
-    int numProc=-1;
-    MPI_Comm_size(comm, &numProc);
+    int procId = stk::parallel_machine_rank(comm);
+    int numProcs = stk::parallel_machine_size(comm);
 
     StkBoxVector stkBoxes(domainBoxes.size());
     fillStkBoxesUsingGtkBoxes(domainBoxes, procId, stkBoxes);
@@ -350,11 +343,8 @@ void testStkSearchUsingGtkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxe
     CALLGRIND_START_INSTRUMENTATION;
 #endif
 
-    int procId=-1;
-    MPI_Comm_rank(comm, &procId);
-
-    int numProc=-1;
-    MPI_Comm_size(comm, &numProc);
+    int procId = stk::parallel_machine_rank(comm);
+    int numProcs = stk::parallel_machine_size(comm);
 
     GtkBoxVector searchBoxPairs(domainBoxes.size());
     for(size_t i=0;i<domainBoxes.size();i++)
@@ -400,8 +390,7 @@ void testStkSearchUsingGtkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxe
 TEST(Performance, getGoldResults)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
-    int procId=-1;
-    MPI_Comm_rank(comm, &procId);
+    int procId = stk::parallel_machine_rank(comm);
 
     std::vector<GtkBox> domainBoxes;
     fillDomainBoxes(comm, domainBoxes);

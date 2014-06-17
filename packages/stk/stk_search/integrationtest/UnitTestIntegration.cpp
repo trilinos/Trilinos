@@ -5,7 +5,7 @@
 
 int gl_argc=0;
 char** gl_argv=0;
-int proc_id=-1;
+int proc_id=0;
 
 class MinimalistPrinter : public ::testing::EmptyTestEventListener
 {
