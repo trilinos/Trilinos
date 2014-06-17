@@ -88,7 +88,7 @@ $TRILINOS_BASE_DIR/Trilinos/checkin-test.py \
 --st-extra-builds=MPI_DEBUG_ST,SERIAL_RELEASE_ST \
 --disable-packages=$DISABLE_PACKAGES \
 --skip-case-no-email \
---ctest-options="-E '(Piro_AnalysisDriver|Stokhos_Linear2D_Diffusion_GMRES_KLR|Panzer_STK_ResponseLibraryTest|MueLu_|Amesos2_|Rythmos_ImplicitRK_UnitTest_MPI_1)'" \
+--ctest-options="-E '(Piro_AnalysisDriver|Stokhos_Linear2D_Diffusion_GMRES_KLR|Panzer_STK_ResponseLibraryTest|MueLu_|Amesos2_|Rythmos_ImplicitRK_UnitTest_MPI_1|SEACASExodus_exodus_unit_tests)'" \
 $EXTRA_ARGS  
 
 # NOTE: By default we use 16 processes which is 1/2 of the 32 processes on a
