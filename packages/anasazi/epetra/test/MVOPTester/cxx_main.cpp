@@ -48,6 +48,8 @@
 #include "AnasaziEpetraAdapter.hpp"
 #include "AnasaziBasicOutputManager.hpp"
 
+#include "Teuchos_StandardCatchMacros.hpp"
+
 int main(int argc, char *argv[])
 {
 #ifdef HAVE_MPI
