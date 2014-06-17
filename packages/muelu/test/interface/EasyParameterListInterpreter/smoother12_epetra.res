@@ -8,6 +8,7 @@ transpose: use implicit = 0   [default]
 smoother: pre or post = both   [default]
 aggregation: type = uncoupled   [default]
 multigrid algorithm = sa   [default]
+aggregation: visualize = 0   [default]
 repartition: enable = 0   [default]
 smoother: params -> 
  chebyshev: ratio eigenvalue = 2   [unused]
@@ -50,8 +51,8 @@ Level 1
    aggregation: enable phase 2a = 1   [unused]
    aggregation: enable phase 2b = 1   [unused]
    aggregation: enable phase 3 = 1   [unused]
-   OnePt aggregate map name =
-   SmallAgg aggregate map name =
+   OnePt aggregate map name = 
+   SmallAgg aggregate map name = 
    
    Build (MueLu::AmalgamationFactory)
    [empty list]
@@ -107,8 +108,8 @@ Level 2
    aggregation: enable phase 2a = 1   [unused]
    aggregation: enable phase 2b = 1   [unused]
    aggregation: enable phase 3 = 1   [unused]
-   OnePt aggregate map name =
-   SmallAgg aggregate map name =
+   OnePt aggregate map name = 
+   SmallAgg aggregate map name = 
    
    Build (MueLu::AmalgamationFactory)
    [empty list]
@@ -164,8 +165,8 @@ Level 3
    aggregation: enable phase 2a = 1   [unused]
    aggregation: enable phase 2b = 1   [unused]
    aggregation: enable phase 3 = 1   [unused]
-   OnePt aggregate map name =
-   SmallAgg aggregate map name =
+   OnePt aggregate map name = 
+   SmallAgg aggregate map name = 
    
    Build (MueLu::AmalgamationFactory)
    [empty list]
@@ -221,8 +222,8 @@ Level 4
    aggregation: enable phase 2a = 1   [unused]
    aggregation: enable phase 2b = 1   [unused]
    aggregation: enable phase 3 = 1   [unused]
-   OnePt aggregate map name =
-   SmallAgg aggregate map name =
+   OnePt aggregate map name = 
+   SmallAgg aggregate map name = 
    
    Build (MueLu::AmalgamationFactory)
    [empty list]
@@ -278,8 +279,8 @@ Level 5
    aggregation: enable phase 2a = 1   [unused]
    aggregation: enable phase 2b = 1   [unused]
    aggregation: enable phase 3 = 1   [unused]
-   OnePt aggregate map name =
-   SmallAgg aggregate map name =
+   OnePt aggregate map name = 
+   SmallAgg aggregate map name = 
    
    Build (MueLu::AmalgamationFactory)
    [empty list]
