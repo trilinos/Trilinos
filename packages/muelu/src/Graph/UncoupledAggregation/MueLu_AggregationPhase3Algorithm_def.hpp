@@ -75,7 +75,7 @@ namespace MueLu {
     LO numLocalAggregates = aggregates.GetNumAggregates();
 
     for (LO i = 0; i < numRows; i++) {
-      if (aggStat[i] != READY)
+      if (aggStat[i] == AGGREGATED)
         continue;
 
        ArrayView<const LocalOrdinal> neighOfINode = graph.getNeighborVertices(i);
@@ -97,11 +97,15 @@ namespace MueLu {
           }
        }
 
+       // One way or another, the node is aggregated (possibly into a singleton)
+       aggStat   [i] = AGGREGATED;
+       procWinner[i] = myRank;
+       numNonAggregatedNodes--;
+
        if (isNewAggregate) {
+         // Create new aggregate (not singleton)
          aggregates.SetIsRoot(i);
-         aggStat     [i] = AGGREGATED;
          vertex2AggId[i] = numLocalAggregates++;
-         procWinner  [i] = myRank;
 
        } else {
          // We do not want a singleton, but there are no non-aggregated
@@ -119,23 +123,16 @@ namespace MueLu {
 
          if (j < neighOfINode.size()) {
            // Assign to an adjacent aggregate
-           aggStat     [i] = AGGREGATED;
            vertex2AggId[i] = vertex2AggId[neighOfINode[j]];
-           procWinner  [i] = myRank;
 
          } else {
-           // Create a singleton aggregate
+           // Create new aggregate (singleton)
            this->GetOStream(Warnings1) << "Found singleton: " << i << std::endl;
 
            aggregates.SetIsRoot(i);
-           aggStat     [i] = AGGREGATED;
            vertex2AggId[i] = numLocalAggregates++;
-           procWinner  [i] = myRank;
          }
        }
-
-       // One way or another, the node is aggregated (possibly into a singleton)
-       numNonAggregatedNodes--;
      }
 
     // update aggregate object
