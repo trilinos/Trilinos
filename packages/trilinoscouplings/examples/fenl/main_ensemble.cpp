@@ -261,6 +261,8 @@ int main( int argc , char ** argv )
         run< Kokkos::Threads >( comm , cmdline );
       else if ( cmdline.CMD_USE_UQ_ENSEMBLE == 32 )
         run< Kokkos::Threads , 32 >( comm , cmdline );
+      else
+        std::cout << "Invalid ensemble size!" << std::endl;
 #else
       if ( cmdline.CMD_USE_UQ_ENSEMBLE == 0 ||
            cmdline.CMD_USE_UQ_ENSEMBLE == 4 )
@@ -269,6 +271,8 @@ int main( int argc , char ** argv )
         run< Kokkos::Threads , 16 >( comm , cmdline );
       else if ( cmdline.CMD_USE_UQ_ENSEMBLE == 32 )
         run< Kokkos::Threads , 32 >( comm , cmdline );
+      else
+        std::cout << "Invalid ensemble size!" << std::endl;
 #endif
     }
 #endif
@@ -281,6 +285,8 @@ int main( int argc , char ** argv )
         run< Kokkos::OpenMP , 16 >( comm , cmdline );
       else if ( cmdline.CMD_USE_UQ_ENSEMBLE == 32 )
         run< Kokkos::OpenMP , 32 >( comm , cmdline );
+      else
+        std::cout << "Invalid ensemble size!" << std::endl;
 #else
       if ( cmdline.CMD_USE_UQ_ENSEMBLE == 0 ||
            cmdline.CMD_USE_UQ_ENSEMBLE == 4 )
@@ -289,6 +295,8 @@ int main( int argc , char ** argv )
         run< Kokkos::OpenMP , 16 >( comm , cmdline );
       else if ( cmdline.CMD_USE_UQ_ENSEMBLE == 32 )
         run< Kokkos::OpenMP , 32 >( comm , cmdline );
+      else
+        std::cout << "Invalid ensemble size!" << std::endl;
 #endif
     }
 #endif
@@ -299,6 +307,8 @@ int main( int argc , char ** argv )
         run< Kokkos::Cuda , 16 >( comm , cmdline );
       else if ( cmdline.CMD_USE_UQ_ENSEMBLE == 32 )
         run< Kokkos::Cuda , 32 >( comm , cmdline );
+      else
+        std::cout << "Invalid ensemble size!" << std::endl;
     }
 #endif
 
