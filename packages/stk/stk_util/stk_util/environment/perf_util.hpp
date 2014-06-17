@@ -5,9 +5,9 @@
 #include <algorithm>
 #include <cassert>
 #include <iostream>
-#include <mpi.h>
 #include <iomanip>
 
+#include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/environment/memory_util.hpp>
 #include <stk_util/util/human_bytes.hpp>
 
@@ -77,8 +77,7 @@ void parallel_print_time_without_output_and_hwm(MPI_Comm comm, double time_on_th
   double max_time = 0.0, min_time = 0.0, avg_time = 0.0;
   get_max_min_avg(comm, time_on_this_proc, max_time, min_time, avg_time);
 
-  int rank = 0;
-  MPI_Comm_rank(comm, &rank);
+  int rank = stk::parallel_machine_rank(comm);
 
   const double bytes_in_MB = 1024*1024;
 

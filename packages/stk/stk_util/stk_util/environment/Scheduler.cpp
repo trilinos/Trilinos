@@ -1,11 +1,11 @@
 #include <stk_util/stk_config.h>
 #include <stk_util/environment/Scheduler.hpp>
-#if defined(STK_HAS_MPI)
-#include <mpi.h>
-#endif
 #include <stk_util/environment/EnvData.hpp>
 #include <stk_util/util/SignalHandler.hpp>
 #include <stk_util/util/Callback.hpp>
+#include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/parallel/ParallelReduce.hpp>
+
 #include <float.h>
 #include <math.h>
 #include <assert.h>
@@ -302,21 +302,12 @@ bool Scheduler::force_schedule()
   // It is possible that the forceSchedule_flag has been set on only one
   // processor so we need to see if it is true on any processor...
   bool result = forceSchedule_;
-#if defined(STK_HAS_MPI)
   if (EnvData::parallel_size() > 1) {
     static int inbuf[1], outbuf[1];
     inbuf[0] = forceSchedule_ ? 1 : 0;
-    const int success = MPI_Allreduce(inbuf, outbuf, 1,
-        MPI_INT,
-        MPI_MAX,
-        EnvData::parallel_comm());
-    if (success !=  MPI_SUCCESS) {
-      throw std::runtime_error("Scheduler::force_write - MPI_Allreduce failed");
-    }
-
+    stk::all_reduce_max(EnvData::parallel_comm(), inbuf, outbuf, 1);
     result = outbuf[0] > 0;
   }
-#endif
   forceSchedule_ = false;
   return result;
 }

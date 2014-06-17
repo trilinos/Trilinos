@@ -14,9 +14,6 @@
 #include <gtest/gtest.h>
 #include <utility>                      // for pair, swap
 #include <vector>                       // for vector
-#include "mpi.h"                        // for MPI_COMM_WORLD, etc
-
-
 
 class UnitTestSTKParallelDistributedIndex {
  public:

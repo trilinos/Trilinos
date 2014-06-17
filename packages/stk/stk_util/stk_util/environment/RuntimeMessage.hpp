@@ -13,14 +13,7 @@
 #include <vector>
 #include <cstddef>
 
-#include <stk_util/stk_config.h>
-
-#if defined( STK_HAS_MPI )
-#include <mpi.h>
-#else
-#define MPI_Comm int
-#endif
-
+#include <stk_util/parallel/Parallel.hpp>
 namespace stk {
 
 ///
