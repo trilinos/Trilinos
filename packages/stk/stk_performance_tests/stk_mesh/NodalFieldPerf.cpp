@@ -8,7 +8,6 @@
 #include <stk_util/environment/CPUTime.hpp>
 #include <stk_util/environment/WallTime.hpp>
 
-#include <mpi.h>                        // for MPI_COMM_WORLD, MPI_Comm, etc
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities
 #include <vector>
