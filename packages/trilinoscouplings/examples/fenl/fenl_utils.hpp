@@ -21,7 +21,8 @@ struct CMD {
   int CMD_USE_CORE_PER_NUMA;
   bool CMD_USE_CUDA;
   int CMD_USE_OPENMP;
-  bool CMD_USE_CUDA_DEV;
+  int CMD_USE_CUDA_DEV;
+  int CMD_USE_NGPUS;
   int CMD_USE_FIXTURE_X;
   int CMD_USE_FIXTURE_Y;
   int CMD_USE_FIXTURE_Z;
@@ -52,7 +53,8 @@ struct CMD {
           CMD_USE_CORE_PER_NUMA(0),
           CMD_USE_CUDA(false),
           CMD_USE_OPENMP(0),
-          CMD_USE_CUDA_DEV(false),
+          CMD_USE_CUDA_DEV(-1),
+          CMD_USE_NGPUS(1),
           CMD_USE_FIXTURE_X(2),
           CMD_USE_FIXTURE_Y(2),
           CMD_USE_FIXTURE_Z(2),
