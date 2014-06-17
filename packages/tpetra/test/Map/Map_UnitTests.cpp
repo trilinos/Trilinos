@@ -60,8 +60,8 @@
 #ifdef DO_COMPILATION
 
 #include <Tpetra_TestingUtilities.hpp>
-
 #include <Tpetra_Map.hpp>
+#include <Teuchos_TypeTraits.hpp> // Teuchos::TypeTraits::is_same<T1,T2>::value
 
 // FINISH: add testing of operator==, operator!=, operator=, copy construct
 // put these into test_same_as and test_is_compatible
@@ -574,6 +574,26 @@ namespace {
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
+
+  // Test that Map can be declared with no template parameters, so
+  // that every template parameter has its default value.
+  TEUCHOS_UNIT_TEST( Map, AllDefaultTemplateParameters )
+  {
+    // If you are letting all template parameters take their default
+    // values, you must follow the class name Map with <>.
+    typedef Map<> map_type;
+    typedef map_type::local_ordinal_type local_ordinal_type;
+
+    out << "Test: Map, AllDefaultTemplateParameters" << std::endl;
+    Teuchos::OSTab tab0 (out);
+
+    // Verify that the default LocalOrdinal type is int.  We can't put
+    // the is_same expression in the macro, since it has a comma
+    // (commas separate arguments in a macro).
+    const bool defaultLocalOrdinalIsInt =
+      Teuchos::TypeTraits::is_same<local_ordinal_type, int>::value;
+    TEST_ASSERT( defaultLocalOrdinalIsInt );
+  }
 
   //
   // INSTANTIATIONS
