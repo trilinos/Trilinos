@@ -56,6 +56,7 @@
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_FactoryManager.hpp"
 
+#include "MueLu_AggregationExportFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_ConstraintFactory.hpp"
@@ -548,6 +549,12 @@ namespace MueLu {
     RAP->SetFactory("P", manager.GetFactory("P"));
     if (!this->implicitTranspose_)
       RAP->SetFactory("R", manager.GetFactory("R"));
+    MUELU_READ_2LIST_PARAM(paramList, defaultList, "aggregation: visualize", bool, false, visAgg);
+    if (visAgg) {
+      RCP<AggregationExportFactory> aggExport = rcp(new AggregationExportFactory());
+      aggExport->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
+      RAP->AddTransferFactory(aggExport);
+    }
     manager.SetFactory("A", RAP);
 
     // === Coordinates ===
