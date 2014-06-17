@@ -12,8 +12,6 @@
 #include <cmath>
 #include <unistd.h>
 
-#include <mpi.h>
-
 #include <stk_util/diag/PrintTimer.hpp>
 #include <stk_util/diag/Timer.hpp>
 #include <stk_util/util/Writer.hpp>

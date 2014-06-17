@@ -217,7 +217,6 @@ void parallel_data_exchange_sym_t(std::vector< std::vector<T> > &send_lists,
 #if defined( STK_HAS_MPI)
   const int msg_tag = 10242;
   int num_procs = stk::parallel_machine_size(mpi_communicator);
-  int my_proc = stk::parallel_machine_rank(mpi_communicator);
   int class_size = sizeof(T);
 
   //

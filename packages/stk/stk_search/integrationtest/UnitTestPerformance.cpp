@@ -175,7 +175,6 @@ void testGtkSearch(MPI_Comm comm, std::vector<GtkBox>&domainBoxes, SearchResults
 #endif
 
     int proc_id = stk::parallel_machine_rank(comm);
-    int num_procs = stk::parallel_machine_size(comm);
     std::vector<int> procThatOwnsBox;
 
     for(size_t i=0;i<domainBoxes.size();i++)
@@ -203,6 +202,7 @@ void testGtkSearch(MPI_Comm comm, std::vector<GtkBox>&domainBoxes, SearchResults
     std::vector<int> ghost_procs;
     ACME::BoxA_BoxB_Ghost(domainBoxes, rangeBoxes, comm, ghost_indices, ghost_procs);
 
+    int num_procs = stk::parallel_machine_size(comm);
     std::vector< std::vector<GtkBox> > send_list(num_procs);
     std::vector< std::vector<GtkBox> > recv_list(num_procs);
 
@@ -296,7 +296,6 @@ void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxe
 #endif
 
     int procId = stk::parallel_machine_rank(comm);
-    int numProcs = stk::parallel_machine_size(comm);
 
     StkBoxVector stkBoxes(domainBoxes.size());
     fillStkBoxesUsingGtkBoxes(domainBoxes, procId, stkBoxes);
@@ -344,7 +343,6 @@ void testStkSearchUsingGtkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxe
 #endif
 
     int procId = stk::parallel_machine_rank(comm);
-    int numProcs = stk::parallel_machine_size(comm);
 
     GtkBoxVector searchBoxPairs(domainBoxes.size());
     for(size_t i=0;i<domainBoxes.size();i++)
