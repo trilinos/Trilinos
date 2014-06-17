@@ -56,6 +56,7 @@ PHX_EVALUATOR_CLASS(DOFCurl)
 
   std::string basis_name;
   std::size_t basis_index;
+  int basis_dimension;
 
   PHX::MDField<ScalarT,Cell,BASIS> dof_orientation;
 

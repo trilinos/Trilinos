@@ -160,7 +160,7 @@ namespace panzer {
        Intrepid::FunctionSpaceTools::
          HCURLtransformVALUE<Scalar>(basis,
                                      jac_inv,
-                                          basis_ref);
+                                     basis_ref);
 
        if(compute_derivatives) {
           intrepid_basis->getValues(curl_basis_ref, cub_points, 

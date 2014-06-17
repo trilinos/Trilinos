@@ -68,18 +68,38 @@ inline void evaluateDOF(PHX::MDField<ScalarT,Cell,Point> & dof_basis,PHX::MDFiel
                         int num_cells,
                         panzer::BasisValues<ArrayScalarT,ArrayT,ArrayOrientationT> & basisValues)
 { 
-  // Zero out arrays (intrepid does a sum! 1/17/2012)
-  for (int i = 0; i < dof_ip.size(); ++i)
-    dof_ip[i] = 0.0;
 
   if(num_cells>0) {
     if(requires_orientation) {
-       Intrepid::FunctionSpaceTools::
-         evaluate<ScalarT>(dof_ip,dof_basis,basisValues.basis);
+      const ArrayT & basis = basisValues.basis;
+
+      int numCells  = basis.dimension(0);
+      int numFields = basis.dimension(1);
+      int numPoints = basis.dimension(2);
+      int spaceDim  = basis.dimension(3);
+
+      for (int cell=0; cell<numCells; cell++) {
+        for (int pt=0; pt<numPoints; pt++) {
+          for (int d=0; d<spaceDim; d++) {
+            // first initialize to the right thing (prevents over writing with 0)
+            // then loop over one less basis function
+            ScalarT & val = dof_ip(cell,pt,d);
+            val = dof_basis(cell, 0) * basis(cell, 0, pt, d);
+            for (int bf=1; bf<numFields; bf++)
+              val += dof_basis(cell, bf) * basis(cell, bf, pt, d);
+          }
+        }
+      } // for numCells
+
     }
-    else // no orientation needed
-       Intrepid::FunctionSpaceTools::
-         evaluate<ScalarT>(dof_ip,dof_basis,basisValues.basis);
+    else { // no orientation needed
+      // Zero out arrays (intrepid does a sum! 1/17/2012)
+      for (int i = 0; i < dof_ip.size(); ++i)
+        dof_ip[i] = 0.0;
+
+      Intrepid::FunctionSpaceTools::
+        evaluate<ScalarT>(dof_ip,dof_basis,basisValues.basis);
+    }
   }
 }
 
