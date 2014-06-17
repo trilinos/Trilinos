@@ -1,0 +1,7 @@
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  HelloWorldTests
+  SOURCES
+    SimpleCxx_HelloWorld_Tests.cpp
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )

@@ -1,0 +1,51 @@
+#
+# TribitsExampleProject Documentation
+#
+
+WARNING: WORK IN PROGRESS!  This TriBITS example project will get fleshed out
+more in the future to be more complete.
+
+The project TribitsExampleProject defines a TriBITS CMake project designed to
+provide a simple example to demonstrate how to use the TriBITS system to
+create a build/test system for any given project.
+
+To get started building you can create a directory structure like:
+
+    ~/TribitsExampleProject.base/
+        TribitsExampleProject/   # This directory
+        BUILDS/
+            GCC-<X.Y.Z>/
+                MPI_DEBUG/
+
+You can then copy the configure file as:
+
+  cd ~/TribitsExampleProject.base/BUILDS/GCC-<X.Y.Z>/BUILDS/MPI_DEBUG
+  cp ../../../../../../TribitsExampleProject/sampleScripts/linux-mpi-debug.sh do-configure
+
+You can create another directory for SERIAL_RELEASE or whatever build type you
+want.
+
+If your system is already to set up to find the MPI compiler wrappers, you con
+just configure with:
+
+  ./do-configure -DTribitsExProj_ENABLE_ALL_PACKAGES=ON
+
+and then build and test with:
+
+  make -j4 && ctest -j4
+
+The layout of a TriBITS project is defined in the file:
+
+  TribitsExampleProject/cmake/tribits/doc/README.PROJECTS_REPOSITORIES_PACKAGES
+
+Otherwise, this example TriBITS project is simple enough that it should be
+enough to go on.  (However, until the TribitsExampleProject is more fleshed
+out, more complete examples of the usage of TriBITS can be find in the usage
+of the TriBITS system by Trilinos itself.)
+
+For now, the main source for TriBITS is developed under the Trilinos git repo
+and is snapshotted into this example project periodically.  You can choose to
+snapshot the TriBITS source tree as needed to update or not, it is up to you.
+You may also choose not to snapshot the tribits directory and instead use
+TriBITS stored in the Trilinos source tree if your project already depends on
+Trilinos.

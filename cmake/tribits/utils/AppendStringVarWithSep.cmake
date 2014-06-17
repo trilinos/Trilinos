@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -39,6 +39,19 @@
 
 INCLUDE(ConcatStrings)
 
+#
+# @FUNCTION: APPEND_STRING_VAR_WITH_SEP()
+#
+# Append strings to a given string variable, joining them using a separator
+# string.
+#
+# Usage::
+#
+#   APPEND_STRING_VAR_WITH_SEP(<stringVar> "<sepStr>" "<str0>" "<str1>" ...)
+#
+# Each of the strings ``<stri>`` are appended to ``<stringVar>`` using the
+# separation string ``<sepStr>``.
+#
 FUNCTION(APPEND_STRING_VAR_WITH_SEP  STRING_VAR  SEP_STR)
   #MESSAGE("APPEND_STRING_VAR: '${STRING_VAR}' '${SEP_STR}' ${ARGN}")
   #PRINT_VAR(STRING_VAR)

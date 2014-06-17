@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -51,14 +51,11 @@ ELSE()
    SET(MISSING_REQUIRED_DEP_PACKAGE)
 ENDIF()
 
-SET(LIB_REQUIRED_DEP_PACKAGES Teuchos ${MISSING_REQUIRED_DEP_PACKAGE})
-SET(LIB_OPTIONAL_DEP_PACKAGES ${MISSING_OPTIONAL_DEP_PACKAGE})
-SET(TEST_REQUIRED_DEP_PACKAGES)
-SET(TEST_OPTIONAL_DEP_PACKAGES)
-SET(LIB_REQUIRED_DEP_TPLS Boost)
-SET(LIB_OPTIONAL_DEP_TPLS)
-SET(TEST_REQUIRED_DEP_TPLS)
-SET(TEST_OPTIONAL_DEP_TPLS)
+TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
+  LIB_REQUIRED_PACKAGES Teuchos ${MISSING_REQUIRED_DEP_PACKAGE}
+  LIB_OPTIONAL_PACKAGES ${MISSING_OPTIONAL_DEP_PACKAGE}
+  LIB_REQUIRED_TPLS Boost
+  REGRESSION_EMAIL_LIST ex2-package1-override@some.ornl.gov
+  )
 
-SET(REGRESSION_EMAIL_LIST ex2-package1-override@some.ornl.gov)
 

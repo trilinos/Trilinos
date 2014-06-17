@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -37,6 +37,20 @@
 # ************************************************************************
 # @HEADER
 
+#
+# @FUNCTION: APPEND_CMNDLINE_ARGS()
+#
+# Utility function that appends command-line arguments to a variable of
+# command-line arguments.
+#
+# Usage::
+#
+#   APPEND_CMNDLINE_ARGS(<var> "<extraArgs>")
+#
+# This function just appends the command-line arguments in the string
+# ``"<extraArgs>"`` but does not add an extra space if ``<var>`` is empty on
+# input.  This just makes the formatting of command-line arguments easier.
+#
 FUNCTION(APPEND_CMNDLINE_ARGS  CMNDLINE_VAR_NAME  EXTRAARGS)
   IF (${CMNDLINE_VAR_NAME})
     SET(${CMNDLINE_VAR_NAME} "${${CMNDLINE_VAR_NAME}} ${EXTRAARGS}" PARENT_SCOPE)

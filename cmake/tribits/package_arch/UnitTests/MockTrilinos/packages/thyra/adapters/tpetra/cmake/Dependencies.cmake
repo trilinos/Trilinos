@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -42,11 +42,6 @@ IF (SHOW_SELF_SUBPACKAGE_DEPENDENCY_ERROR)
   SET(SELF_SUBPACKAGE_DEP_REFERENCE ThyraTpetra)
 ENDIF()
 
-SET(LIB_REQUIRED_DEP_PACKAGES Tpetra ${SELF_SUBPACKAGE_DEP_REFERENCE} ThyraCoreLibs)
-SET(LIB_OPTIONAL_DEP_PACKAGES)
-SET(TEST_REQUIRED_DEP_PACKAGES)
-SET(TEST_OPTIONAL_DEP_PACKAGES)
-SET(LIB_REQUIRED_DEP_TPLS)
-SET(LIB_OPTIONAL_DEP_TPLS)
-SET(TEST_REQUIRED_DEP_TPLS)
-SET(TEST_OPTIONAL_DEP_TPLS)
+TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
+  LIB_REQUIRED_PACKAGES Tpetra ${SELF_SUBPACKAGE_DEP_REFERENCE} ThyraCoreLibs
+  )

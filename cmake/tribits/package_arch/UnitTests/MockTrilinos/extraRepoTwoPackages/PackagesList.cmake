@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -38,9 +38,7 @@
 # @HEADER
 
 
-INCLUDE(TribitsListHelpers)
-
-SET( extraRepoTwoPackages_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
-  Ex2Package1     package1   PS
-  Ex2Package2     package2   SS
+TRIBITS_REPOSITORY_DEFINE_PACKAGES(
+  Ex2Package1     package1   PT
+  Ex2Package2     package2   ST
   )

@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -37,11 +37,9 @@
 # ************************************************************************
 # @HEADER
 
-SET(LIB_REQUIRED_DEP_PACKAGES)
-SET(LIB_OPTIONAL_DEP_PACKAGES Teuchos Epetra Zoltan Galeri Amesos Ifpack AztecOO EpetraExt Isorropia)
-SET(TEST_REQUIRED_DEP_PACKAGES)
-SET(TEST_OPTIONAL_DEP_PACKAGES)
-SET(LIB_REQUIRED_DEP_TPLS BLAS LAPACK)
-SET(LIB_OPTIONAL_DEP_TPLS MPI METIS ParMETIS PETSC)
-SET(TEST_REQUIRED_DEP_TPLS)
-SET(TEST_OPTIONAL_DEP_TPLS METIS ParMETIS)
+TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
+  LIB_OPTIONAL_PACKAGES Teuchos Epetra Zoltan Galeri Amesos Ifpack AztecOO EpetraExt Isorropia
+  LIB_REQUIRED_TPLS BLAS LAPACK
+  LIB_OPTIONAL_TPLS MPI METIS ParMETIS PETSC
+  TEST_OPTIONAL_TPLS METIS ParMETIS
+  )

@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -37,7 +37,23 @@
 # ************************************************************************
 # @HEADER
 
-
+#
+# @FUNCTION: SPLIT()
+#
+# Split a string variable into a string array/list variable.
+#
+# Usage::
+#
+#   SPLIT("<inputStr>" "<sepStr>" <outputStrListVar>)
+#
+# The ``<sepStr>`` string is used with ``STRING(REGEX ...)`` to replace all
+# occurrences of ``<sepStr>`` in ``<inputStr>`` with ``";"`` and writing into
+# ``<outputStrListVar>``.
+#
+# WARNING: ``<sepStr>`` is interpreted as a regular expression (regex) so keep
+# that in mind when considering special regex chars like ``'*'``, ``'.'``,
+# etc!
+#
 FUNCTION(SPLIT  INPUT_STRING  SEP_STR  OUTPUT_STRING_VAR)
   STRING(REGEX REPLACE "${SEP_STR}" ";" OUTPUT_STRING "${INPUT_STRING}")
   SET(${OUTPUT_STRING_VAR} "${OUTPUT_STRING}" PARENT_SCOPE)

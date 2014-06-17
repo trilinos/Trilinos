@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -1269,7 +1269,6 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
   try:
 
     # B) Create the command to run the checkin-test.py script
-
     
     cmndArgs = [
       scriptsDir + "/../checkin-test.py",
@@ -1462,7 +1461,7 @@ def checkin_test_configure_enables_test(testObject, testName, optionsStr, regexL
 
 
 # Used as a helper in follow-up tests  
-def  g_test_ss_extra_builds_ss_do_all_pass(testObject, testName):
+def  g_test_st_extra_builds_st_do_all_pass(testObject, testName):
 
   testBaseDir = create_checkin_test_case_dir(testName, g_verbose)
 
@@ -1473,9 +1472,9 @@ def  g_test_ss_extra_builds_ss_do_all_pass(testObject, testName):
     +"-DTPL_LAPACK_LIBRARIES:PATH=/usr/local/liblapack.a\n" \
     )
 
-  writeStrToFile(testBaseDir+"/MPI_DEBUG_SS.config",
+  writeStrToFile(testBaseDir+"/MPI_DEBUG_ST.config",
     "-DTPL_ENABLE_MPI:BOOL=ON\n" \
-    +"-DTeuchos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON\n" \
+    +"-DTeuchos_ENABLE_SECONDARY_TESTED_CODE:BOOL=ON\n" \
     )
 
   modifiedFilesStr = ""
@@ -1487,7 +1486,7 @@ def  g_test_ss_extra_builds_ss_do_all_pass(testObject, testName):
     testName,
     \
     "--make-options=-j3 --ctest-options=-j5" \
-    +" --default-builds=MPI_DEBUG --ss-extra-builds=MPI_DEBUG_SS" \
+    +" --default-builds=MPI_DEBUG --st-extra-builds=MPI_DEBUG_ST" \
     +" --enable-packages=Phalanx" \
     +" --do-all" \
     ,
@@ -1503,11 +1502,11 @@ def  g_test_ss_extra_builds_ss_do_all_pass(testObject, testName):
     \
     True,
     \
-    "Phalanx of type SS is being excluded because it is not in the valid list of package types .PS.\n" \
+    "Phalanx of type ST is being excluded because it is not in the valid list of package types .PT.\n" \
     +"passed: Trilinos/MPI_DEBUG: skipped configure, build, test due to no enabled packages\n" \
-    +"passed: Trilinos/MPI_DEBUG_SS: passed=100,notpassed=0\n" \
+    +"passed: Trilinos/MPI_DEBUG_ST: passed=100,notpassed=0\n" \
     +"0) MPI_DEBUG => Skipped configure, build, test due to no enabled packages! => Does not affect push readiness!\n" \
-    +"2) MPI_DEBUG_SS => passed: passed=100,notpassed=0\n" \
+    +"2) MPI_DEBUG_ST => passed: passed=100,notpassed=0\n" \
     +"^READY TO PUSH\n" \
     )
 
@@ -1932,7 +1931,7 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  # ToDo: Add a test case where PS has no enables but SS does!
+  # ToDo: Add a test case where PT has no enables but ST does!
 
 
   def test_do_all_no_append_test_results_push_pass(self):
@@ -2015,9 +2014,9 @@ class test_checkin_test(unittest.TestCase):
 
     testBaseDir = create_checkin_test_case_dir(testName, g_verbose)
 
-    writeStrToFile(testBaseDir+"/MPI_DEBUG_SS.config",
+    writeStrToFile(testBaseDir+"/MPI_DEBUG_ST.config",
       "-DTPL_ENABLE_MPI:BOOL=ON\n" \
-      +"-DTeuchos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON\n" \
+      +"-DTeuchos_ENABLE_SECONDARY_TESTED_CODE:BOOL=ON\n" \
       )
 
     checkin_test_run_case(
@@ -2027,7 +2026,7 @@ class test_checkin_test(unittest.TestCase):
       testName,
       \
       "--extra-repos=preCopyrightTrilinos --allow-no-pull --without-default-builds" \
-      " --extra-builds=MPI_DEBUG_SS --enable-packages=Stalix --configure", \
+      " --extra-builds=MPI_DEBUG_ST --enable-packages=Stalix --configure", \
       \
       g_cmndinterceptsDumpDepsXMLFile \
       +g_cmndinterceptsCurrentBranch \
@@ -2078,7 +2077,7 @@ class test_checkin_test(unittest.TestCase):
       +"projectDepsXmlFileOverride="+projectDepsXmlFileOverride+"\n" \
       +"Modified file: .preCopyrightTrilinos/teko/CMakeLists.txt.\n" \
       +"  => Enabling .Teko.!\n" \
-      +"Teko of type SS is being excluded because it is not in the valid list of package types .PS.\n" \
+      +"Teko of type ST is being excluded because it is not in the valid list of package types .PT.\n" \
       +"Trilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos\n" \
       +"Enabled Packages: Teuchos, Teko\n" \
       ,
@@ -2109,7 +2108,7 @@ class test_checkin_test(unittest.TestCase):
       "-extra-repos=.preCopyrightTrilinos.\n" \
       +"Pulling in packages from extra repos: preCopyrightTrilinos ...\n" \
       +"Enabling .Teko..\n" \
-      +"Teko of type SS is being excluded because it is not in the valid list of package types .PS.\n" \
+      +"Teko of type ST is being excluded because it is not in the valid list of package types .PT.\n" \
       +"'': Pulled changes from this repo!\n" \
       +".preCopyrightTrilinos.: Pulled changes from this repo!\n" \
       +"pullInitial.preCopyrightTrilinos.out\n" \
@@ -2481,9 +2480,9 @@ class test_checkin_test(unittest.TestCase):
 
     testBaseDir = create_checkin_test_case_dir(testName, g_verbose)
 
-    writeStrToFile(testBaseDir+"/MPI_DEBUG_SS.config",
+    writeStrToFile(testBaseDir+"/MPI_DEBUG_ST.config",
       "-DTPL_ENABLE_MPI:BOOL=ON\n" \
-      +"-DTeuchos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON\n" \
+      +"-DTeuchos_ENABLE_SECONDARY_TESTED_CODE:BOOL=ON\n" \
       )
 
     checkin_test_run_case(
@@ -2494,7 +2493,7 @@ class test_checkin_test(unittest.TestCase):
       \
       " --extra-repos-file="+scriptsDir+"/UnitTests/ExtraReposListExisting_2.cmake" \
       " --extra-repos-type=Continuous" \
-      " --extra-builds=MPI_DEBUG_SS --enable-packages=Stalix --pull", \
+      " --extra-builds=MPI_DEBUG_ST --enable-packages=Stalix --pull", \
       \
       g_cmndinterceptsDumpDepsXMLFile \
       +g_cmndinterceptsCurrentBranch \
@@ -2527,9 +2526,9 @@ class test_checkin_test(unittest.TestCase):
 
     testBaseDir = create_checkin_test_case_dir(testName, g_verbose)
 
-    writeStrToFile(testBaseDir+"/MPI_DEBUG_SS.config",
+    writeStrToFile(testBaseDir+"/MPI_DEBUG_ST.config",
       "-DTPL_ENABLE_MPI:BOOL=ON\n" \
-      +"-DTeuchos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON\n" \
+      +"-DTeuchos_ENABLE_SECONDARY_TESTED_CODE:BOOL=ON\n" \
       )
 
     checkin_test_run_case(
@@ -2540,7 +2539,7 @@ class test_checkin_test(unittest.TestCase):
       \
       " --extra-repos-file="+scriptsDir+"/UnitTests/ExtraReposListExisting_2.cmake" \
       " --extra-repos-type=Nightly" \
-      " --extra-builds=MPI_DEBUG_SS --pull", \
+      " --extra-builds=MPI_DEBUG_ST --pull", \
       \
       g_cmndinterceptsDumpDepsXMLFile \
       +g_cmndinterceptsCurrentBranch \
@@ -2906,6 +2905,7 @@ class test_checkin_test(unittest.TestCase):
       ("MPI_DEBUG/do-configure.base",
        "\-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON\n" \
        +"\-DBUILD_SHARED:BOOL=ON\n" \
+       +"\-DTrilinos_TRIBITS_DIR:PATH=.*/tribits\n" \
        +"\-DTrilinos_TEST_CATEGORIES:STRING=BASIC\n" \
        +"\-DTPL_BLAS_LIBRARIES:PATH=/usr/local/libblas.a\n" \
        +"\-DTPL_LAPACK_LIBRARIES:PATH=/usr/local/liblapack.a\n"
@@ -3223,7 +3223,7 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  # D) Test --extra-builds and --ss-extra-builds
+  # D) Test --extra-builds and --st-extra-builds
 
 
   def test_extra_builds_read_config_file(self):
@@ -3283,9 +3283,9 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  def test_ss_extra_builds_ps_only_pass(self):
+  def test_st_extra_builds_pt_only_pass(self):
     
-    testName = "ss_extra_builds_ps_only_pass"
+    testName = "st_extra_builds_pt_only_pass"
 
     testBaseDir = create_checkin_test_case_dir(testName, g_verbose)
 
@@ -3296,9 +3296,9 @@ class test_checkin_test(unittest.TestCase):
       +"-DTPL_LAPACK_LIBRARIES:PATH=/usr/local/liblapack.a\n" \
       )
 
-    writeStrToFile(testBaseDir+"/MPI_DEBUG_SS.config",
+    writeStrToFile(testBaseDir+"/MPI_DEBUG_ST.config",
       "-DTPL_ENABLE_MPI:BOOL=ON\n" \
-      +"-DTeuchos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON\n" \
+      +"-DTeuchos_ENABLE_SECONDARY_TESTED_CODE:BOOL=ON\n" \
       )
 
     modifiedFilesStr = "M\tpackages/teuchos/CMakeLists.txt"
@@ -3311,7 +3311,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "--make-options=-j3 --ctest-options=-j5" \
       +" --default-builds=MPI_DEBUG --do-all --push " \
-      +" --ss-extra-builds=MPI_DEBUG_SS" \
+      +" --st-extra-builds=MPI_DEBUG_ST" \
       ,
       \
       g_cmndinterceptsDumpDepsXMLFile \
@@ -3328,20 +3328,96 @@ class test_checkin_test(unittest.TestCase):
       True,
       \
       "passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
-      +"passed: Trilinos/MPI_DEBUG_SS: passed=100,notpassed=0\n" \
+      +"passed: Trilinos/MPI_DEBUG_ST: passed=100,notpassed=0\n" \
       +"0) MPI_DEBUG => passed: passed=100,notpassed=0\n" \
-      +"2) MPI_DEBUG_SS => passed: passed=100,notpassed=0\n" \
+      +"2) MPI_DEBUG_ST => passed: passed=100,notpassed=0\n" \
       +"^DID PUSH\n" \
       )
 
 
-  def test_ss_extra_builds_skip_case_no_email_ex_only_pass(self):
+  def test_ss_extra_builds_pt_only_pass(self):
     
-    testName = "ss_extra_builds_skip_case_no_email_ex_only_pass"
+    testName = "ss_extra_builds_pt_only_pass"
 
     testBaseDir = create_checkin_test_case_dir(testName, g_verbose)
 
-    writeStrToFile(testBaseDir+"/MPI_DEBUG_SS.config",
+    writeStrToFile(testBaseDir+"/COMMON.config",
+      "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON\n" \
+      +"-DBUILD_SHARED:BOOL=ON\n" \
+      +"-DTPL_BLAS_LIBRARIES:PATH=/usr/local/libblas.a\n" \
+      +"-DTPL_LAPACK_LIBRARIES:PATH=/usr/local/liblapack.a\n" \
+      )
+
+    writeStrToFile(testBaseDir+"/MPI_DEBUG_ST.config",
+      "-DTPL_ENABLE_MPI:BOOL=ON\n" \
+      +"-DTeuchos_ENABLE_SECONDARY_TESTED_CODE:BOOL=ON\n" \
+      )
+
+    modifiedFilesStr = "M\tpackages/teuchos/CMakeLists.txt"
+
+    checkin_test_run_case(
+      \
+      self,
+      \
+      testName,
+      \
+      "--make-options=-j3 --ctest-options=-j5" \
+      +" --default-builds= --do-all --push " \
+      +" --ss-extra-builds=MPI_DEBUG_ST" \
+      ,
+      \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsPullPasses \
+      +g_cmndinterceptsConfigBuildTestPasses \
+      +g_cmndinterceptsSendBuildTestCaseEmail \
+      +g_cmndinterceptsFinalPushPasses \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      "WARNING: --ss-extra-builds is deprecated!  Use --st-extra-builds instead!\n" \
+      +"passed: Trilinos/MPI_DEBUG_ST: passed=100,notpassed=0\n" \
+      +"2) MPI_DEBUG_ST => passed: passed=100,notpassed=0\n" \
+      +"^DID PUSH\n" \
+      +"FINAL WARNING: stop using deprecated --ss-extra-builds!  Use --st-extra-builds instead!\n" \
+      )
+
+
+  def test_ss_extra_builds_and_ss_extra_builds_fails(self):
+    
+    testName = "ss_extra_builds_and_ss_extra_builds_fails"
+
+    checkin_test_run_case(
+      \
+      self,
+      \
+      testName,
+      \
+      "--make-options=-j3 --ctest-options=-j5" \
+      +" --default-builds= --do-all --push " \
+      +" --st-extra-builds=SERIAL_RELEASE_ST" \
+      +" --ss-extra-builds=MPI_DEBUG_ST" \
+      ,
+      \
+      "" \
+      ,
+      \
+      False,
+      \
+      "WARNING: --ss-extra-builds is deprecated!  Use --st-extra-builds instead!\n" \
+      +"ERROR: Can.t set deprecated --ss-extra-builds and --st-extra-builds together!\n" \
+      )
+
+
+  def test_st_extra_builds_skip_case_no_email_ex_only_pass(self):
+    
+    testName = "st_extra_builds_skip_case_no_email_ex_only_pass"
+
+    testBaseDir = create_checkin_test_case_dir(testName, g_verbose)
+
+    writeStrToFile(testBaseDir+"/MPI_DEBUG_ST.config",
       "-DTPL_ENABLE_MPI:BOOL=ON\n" \
       )
 
@@ -3354,7 +3430,7 @@ class test_checkin_test(unittest.TestCase):
       "--make-options=-j3 --ctest-options=-j5" \
       +" --default-builds=MPI_DEBUG" \
       +" --skip-case-no-email --do-all --push " \
-      +" --extra-builds=MPI_DEBUG_SS" \
+      +" --extra-builds=MPI_DEBUG_ST" \
       ,
       \
       g_cmndinterceptsDumpDepsXMLFile \
@@ -3375,9 +3451,9 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  def test_ss_extra_builds_ss_only_pass(self):
+  def test_st_extra_builds_st_only_pass(self):
     
-    testName = "ss_extra_builds_ss_only_pass"
+    testName = "st_extra_builds_st_only_pass"
 
     testBaseDir = create_checkin_test_case_dir(testName, g_verbose)
 
@@ -3388,9 +3464,9 @@ class test_checkin_test(unittest.TestCase):
       +"-DTPL_LAPACK_LIBRARIES:PATH=/usr/local/liblapack.a\n" \
       )
 
-    writeStrToFile(testBaseDir+"/MPI_DEBUG_SS.config",
+    writeStrToFile(testBaseDir+"/MPI_DEBUG_ST.config",
       "-DTPL_ENABLE_MPI:BOOL=ON\n" \
-      +"-DTeuchos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON\n" \
+      +"-DTeuchos_ENABLE_SECONDARY_TESTED_CODE:BOOL=ON\n" \
       )
 
     modifiedFilesStr = ""
@@ -3403,7 +3479,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "--make-options=-j3 --ctest-options=-j5" \
       +" --default-builds=MPI_DEBUG --do-all --push " \
-      +" --ss-extra-builds=MPI_DEBUG_SS --enable-packages=Phalanx" \
+      +" --st-extra-builds=MPI_DEBUG_ST --enable-packages=Phalanx" \
       ,
       \
       g_cmndinterceptsDumpDepsXMLFile \
@@ -3418,18 +3494,18 @@ class test_checkin_test(unittest.TestCase):
       \
       True,
       \
-      "Phalanx of type SS is being excluded because it is not in the valid list of package types .PS.\n" \
+      "Phalanx of type ST is being excluded because it is not in the valid list of package types .PT.\n" \
       +"passed: Trilinos/MPI_DEBUG: skipped configure, build, test due to no enabled packages\n" \
-      +"passed: Trilinos/MPI_DEBUG_SS: passed=100,notpassed=0\n" \
+      +"passed: Trilinos/MPI_DEBUG_ST: passed=100,notpassed=0\n" \
       +"0) MPI_DEBUG => Skipped configure, build, test due to no enabled packages! => Does not affect push readiness!\n" \
-      +"2) MPI_DEBUG_SS => passed: passed=100,notpassed=0\n" \
+      +"2) MPI_DEBUG_ST => passed: passed=100,notpassed=0\n" \
       +"^DID PUSH\n" \
       )
 
 
-  def test_ss_extra_builds_ps_ss_pass(self):
+  def test_st_extra_builds_pt_st_pass(self):
     
-    testName = "ss_extra_builds_ps_ss_pass"
+    testName = "st_extra_builds_pt_st_pass"
 
     testBaseDir = create_checkin_test_case_dir(testName, g_verbose)
 
@@ -3440,9 +3516,9 @@ class test_checkin_test(unittest.TestCase):
       +"-DTPL_LAPACK_LIBRARIES:PATH=/usr/local/liblapack.a\n" \
       )
 
-    writeStrToFile(testBaseDir+"/MPI_DEBUG_SS.config",
+    writeStrToFile(testBaseDir+"/MPI_DEBUG_ST.config",
       "-DTPL_ENABLE_MPI:BOOL=ON\n" \
-      +"-DTeuchos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON\n" \
+      +"-DTeuchos_ENABLE_SECONDARY_TESTED_CODE:BOOL=ON\n" \
       )
 
     modifiedFilesStr = ""
@@ -3455,7 +3531,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "--make-options=-j3 --ctest-options=-j5" \
       +" --default-builds=MPI_DEBUG --do-all --push " \
-      +" --ss-extra-builds=MPI_DEBUG_SS --enable-packages=Teuchos,Phalanx" \
+      +" --st-extra-builds=MPI_DEBUG_ST --enable-packages=Teuchos,Phalanx" \
       ,
       \
       g_cmndinterceptsDumpDepsXMLFile \
@@ -3471,18 +3547,18 @@ class test_checkin_test(unittest.TestCase):
       \
       True,
       \
-      "Phalanx of type SS is being excluded because it is not in the valid list of package types .PS.\n" \
+      "Phalanx of type ST is being excluded because it is not in the valid list of package types .PT.\n" \
       +"passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
-      +"passed: Trilinos/MPI_DEBUG_SS: passed=100,notpassed=0\n" \
+      +"passed: Trilinos/MPI_DEBUG_ST: passed=100,notpassed=0\n" \
       +"0) MPI_DEBUG => passed: passed=100,notpassed=0\n" \
-      +"2) MPI_DEBUG_SS => passed: passed=100,notpassed=0\n" \
+      +"2) MPI_DEBUG_ST => passed: passed=100,notpassed=0\n" \
       +"^DID PUSH\n" \
       )
 
 
-  def test_ss_extra_builds_ex_only_fail(self):
+  def test_st_extra_builds_ex_only_fail(self):
     
-    testName = "ss_extra_builds_ex_only_fail"
+    testName = "st_extra_builds_ex_only_fail"
 
     testBaseDir = create_checkin_test_case_dir(testName, g_verbose)
 
@@ -3493,9 +3569,9 @@ class test_checkin_test(unittest.TestCase):
       +"-DTPL_LAPACK_LIBRARIES:PATH=/usr/local/liblapack.a\n" \
       )
 
-    writeStrToFile(testBaseDir+"/MPI_DEBUG_SS.config",
+    writeStrToFile(testBaseDir+"/MPI_DEBUG_ST.config",
       "-DTPL_ENABLE_MPI:BOOL=ON\n" \
-      +"-DTeuchos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON\n" \
+      +"-DTeuchos_ENABLE_SECONDARY_TESTED_CODE:BOOL=ON\n" \
       )
 
     modifiedFilesStr = ""
@@ -3509,7 +3585,7 @@ class test_checkin_test(unittest.TestCase):
       " --default-builds=MPI_DEBUG --send-email-to=" \
       +" --make-options=-j3 --ctest-options=-j5" \
       +" --do-all --push" \
-      +" --ss-extra-builds=MPI_DEBUG_SS --enable-packages=ThyraCrazyStuff" \
+      +" --st-extra-builds=MPI_DEBUG_ST --enable-packages=ThyraCrazyStuff" \
       ,
       \
       g_cmndinterceptsDumpDepsXMLFile \
@@ -3519,10 +3595,10 @@ class test_checkin_test(unittest.TestCase):
       \
       False,
       \
-      "ThyraCrazyStuff of type EX is being excluded because it is not in the valid list of package types .PS.\n" \
-      "ThyraCrazyStuff of type EX is being excluded because it is not in the valid list of package types .PS,SS.\n" \
+      "ThyraCrazyStuff of type EX is being excluded because it is not in the valid list of package types .PT.\n" \
+      "ThyraCrazyStuff of type EX is being excluded because it is not in the valid list of package types .PT,ST.\n" \
       +"passed: Trilinos/MPI_DEBUG: skipped configure, build, test due to no enabled packages\n" \
-      +"passed: Trilinos/MPI_DEBUG_SS: skipped configure, build, test due to no enabled packages\n" \
+      +"passed: Trilinos/MPI_DEBUG_ST: skipped configure, build, test due to no enabled packages\n" \
       +"There were no successfuly attempts to configure/build/test!\n" \
       +"  => A PUSH IS .NOT. READY TO BE PERFORMED!\n" \
       +"^PUSH FAILED\n" \
@@ -3530,9 +3606,9 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  def test_ss_extra_builds_extra_builds_ex_only_pass(self):
+  def test_st_extra_builds_extra_builds_ex_only_pass(self):
     
-    testName = "ss_extra_builds_extra_builds_ex_only_pass"
+    testName = "st_extra_builds_extra_builds_ex_only_pass"
 
     testBaseDir = create_checkin_test_case_dir(testName, g_verbose)
 
@@ -3543,14 +3619,14 @@ class test_checkin_test(unittest.TestCase):
       +"-DTPL_LAPACK_LIBRARIES:PATH=/usr/local/liblapack.a\n" \
       )
 
-    writeStrToFile(testBaseDir+"/MPI_DEBUG_SS.config",
+    writeStrToFile(testBaseDir+"/MPI_DEBUG_ST.config",
       "-DTPL_ENABLE_MPI:BOOL=ON\n" \
-      +"-DTeuchos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON\n" \
+      +"-DTeuchos_ENABLE_SECONDARY_TESTED_CODE:BOOL=ON\n" \
       )
 
-    writeStrToFile(testBaseDir+"/SERIAL_RELEASE_SS.config",
+    writeStrToFile(testBaseDir+"/SERIAL_RELEASE_ST.config",
       "-DTPL_ENABLE_MPI:BOOL=OFF\n" \
-      +"-DTeuchos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON\n" \
+      +"-DTeuchos_ENABLE_SECONDARY_TESTED_CODE:BOOL=ON\n" \
       )
 
     modifiedFilesStr = ""
@@ -3564,8 +3640,8 @@ class test_checkin_test(unittest.TestCase):
       " --default-builds=MPI_DEBUG" \
       +" --make-options=-j3 --ctest-options=-j5" \
       +" --do-all --push" \
-      +" --ss-extra-builds=MPI_DEBUG_SS" \
-      +" --extra-builds=SERIAL_RELEASE_SS" \
+      +" --st-extra-builds=MPI_DEBUG_ST" \
+      +" --extra-builds=SERIAL_RELEASE_ST" \
       +" --enable-packages=ThyraCrazyStuff" \
       ,
       \
@@ -3582,14 +3658,14 @@ class test_checkin_test(unittest.TestCase):
       \
       True,
       \
-      "ThyraCrazyStuff of type EX is being excluded because it is not in the valid list of package types .PS.\n" \
-      "ThyraCrazyStuff of type EX is being excluded because it is not in the valid list of package types .PS,SS.\n" \
+      "ThyraCrazyStuff of type EX is being excluded because it is not in the valid list of package types .PT.\n" \
+      "ThyraCrazyStuff of type EX is being excluded because it is not in the valid list of package types .PT,ST.\n" \
       +"passed: Trilinos/MPI_DEBUG: skipped configure, build, test due to no enabled packages\n" \
-      +"passed: Trilinos/MPI_DEBUG_SS: skipped configure, build, test due to no enabled packages\n" \
-      +"passed: Trilinos/SERIAL_RELEASE_SS: passed=100,notpassed=0\n" \
+      +"passed: Trilinos/MPI_DEBUG_ST: skipped configure, build, test due to no enabled packages\n" \
+      +"passed: Trilinos/SERIAL_RELEASE_ST: passed=100,notpassed=0\n" \
       +"0) MPI_DEBUG => Skipped configure, build, test due to no enabled packages! => Does not affect push readiness!\n" \
-      +"2) MPI_DEBUG_SS => Skipped configure, build, test due to no enabled packages! => Does not affect push readiness!\n" \
-      +"3) SERIAL_RELEASE_SS => passed: passed=100,notpassed=0\n" \
+      +"2) MPI_DEBUG_ST => Skipped configure, build, test due to no enabled packages! => Does not affect push readiness!\n" \
+      +"3) SERIAL_RELEASE_ST => passed: passed=100,notpassed=0\n" \
       +"^DID PUSH\n" \
       )
 
@@ -3664,12 +3740,12 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  def test_ss_extra_builds_ss_do_all_then_empty(self):
+  def test_st_extra_builds_st_do_all_then_empty(self):
 
-    testName = "test_ss_extra_builds_ss_do_all_then_empty"
+    testName = "test_st_extra_builds_st_do_all_then_empty"
 
     # --do-all without the push (ready to push)
-    g_test_ss_extra_builds_ss_do_all_pass(self, testName)
+    g_test_st_extra_builds_st_do_all_pass(self, testName)
 
     # Follow-up status (should be ready to push)
 
@@ -3679,7 +3755,7 @@ class test_checkin_test(unittest.TestCase):
       \
       testName,
       \
-      " --default-builds=MPI_DEBUG --ss-extra-builds=MPI_DEBUG_SS --enable-packages=Phalanx" \
+      " --default-builds=MPI_DEBUG --st-extra-builds=MPI_DEBUG_ST --enable-packages=Phalanx" \
       ,
       \
       g_cmndinterceptsDumpDepsXMLFile \
@@ -3691,17 +3767,17 @@ class test_checkin_test(unittest.TestCase):
       True,
       \
       "0) MPI_DEBUG => passed: skipped configure, build, test due to no enabled packages\n" \
-      +"2) MPI_DEBUG_SS => passed: passed=100,notpassed=0\n" \
+      +"2) MPI_DEBUG_ST => passed: passed=100,notpassed=0\n" \
       +"^READY TO PUSH\n" \
       )
 
 
-  def test_ss_extra_builds_ss_do_all_then_push(self):
+  def test_st_extra_builds_st_do_all_then_push(self):
 
-    testName = "test_ss_extra_builds_ss_do_all_then_push"
+    testName = "test_st_extra_builds_st_do_all_then_push"
 
     # --do-all without the push (ready to push)
-    g_test_ss_extra_builds_ss_do_all_pass(self, testName)
+    g_test_st_extra_builds_st_do_all_pass(self, testName)
 
     # Follow-up status (should be ready to push)
 
@@ -3711,7 +3787,7 @@ class test_checkin_test(unittest.TestCase):
       \
       testName,
       \
-      " --default-builds=MPI_DEBUG --ss-extra-builds=MPI_DEBUG_SS --enable-packages=Phalanx" \
+      " --default-builds=MPI_DEBUG --st-extra-builds=MPI_DEBUG_ST --enable-packages=Phalanx" \
       +" --push"
       ,
       \
@@ -3725,7 +3801,7 @@ class test_checkin_test(unittest.TestCase):
       True,
       \
       "0) MPI_DEBUG => passed: skipped configure, build, test due to no enabled packages\n" \
-      +"2) MPI_DEBUG_SS => passed: passed=100,notpassed=0\n" \
+      +"2) MPI_DEBUG_ST => passed: passed=100,notpassed=0\n" \
       +"^DID PUSH\n" \
       )
 

@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -494,7 +494,7 @@ def createAndGetProjectDependencies(inOptions, baseTestDir, tribitsGitRepos):
       cmakeScopedDefine(inOptions.projectName, "EXTRA_REPOSITORIES", "\""+\
         ';'.join(tribitsGitRepos.tribitsExtraRepoNamesList())+"\""),
       cmakeScopedDefine(inOptions.projectName, "DEPS_XML_OUTPUT_FILE", projectDepsXmlFile),
-      "-P %s/cmake/tribits/package_arch/TribitsDumpDepsXmlScript.cmake" % inOptions.srcDir,
+      "-P %s/package_arch/TribitsDumpDepsXmlScript.cmake" % inOptions.tribitsDir,
       ]
     cmnd = ' '.join(cmakeArgumentList)
     echoRunSysCmnd(cmnd,
@@ -578,6 +578,8 @@ def writeDefaultBuildSpecificConfigFile(buildTestCaseName):
     print "\nThe file "+buildSpecificConfigFileName+" already exists!"
 
   else:
+
+   # ToDo: Get rid fo these!  These are too specific!
 
     print "\nCreating a default skeleton file "+buildSpecificConfigFileName+" ..."
 
@@ -706,7 +708,9 @@ def extractPackageEnablesFromChangeStatus(changedFileDiffOutputStr, inOptions_in
   for modifiedFileFullPath in modifiedFilesList:
 
     # Only look for global rebuild files in the master repo (not in extra repos)
-    if gitRepo.repoName == '' and isGlobalBuildFileRequiringGlobalRebuild(modifiedFileFullPath):
+    if gitRepo.repoName == '' and \
+      isGlobalBuildFileRequiringGlobalRebuild(modifiedFileFullPath) \
+      :
       if inOptions_inout.enableAllPackages == 'auto':
         if verbose:
           print "\nModifed file: '"+modifiedFileFullPath+"'\n" \
@@ -1275,6 +1279,8 @@ def runBuildTestCase(inOptions, tribitsGitRepos, buildTestCase, timings):
       cmakeBaseOptions.extend(commandLineOptionsToList(inOptions.extraCmakeOptions))
   
     cmakeBaseOptions.append(cmakeScopedDefine(projectName,
+      "TRIBITS_DIR:PATH", inOptions.tribitsDir))
+    cmakeBaseOptions.append(cmakeScopedDefine(projectName,
       "ENABLE_TESTS:BOOL", "ON"))
     cmakeBaseOptions.append(cmakeScopedDefine(projectName,
       "TEST_CATEGORIES:STRING", inOptions.testCategories))
@@ -1830,7 +1836,7 @@ def checkinTest(baseDir, inOptions, configuration={}):
     inOptions.ctestOptions = "-j"+inOptions.overallNumProcs+" "+inOptions.ctestOptions
 
   assertExtraBuildConfigFiles(inOptions.extraBuilds)
-  assertExtraBuildConfigFiles(inOptions.ssExtraBuilds)
+  assertExtraBuildConfigFiles(inOptions.stExtraBuilds)
 
   if not inOptions.skipDepsUpdate:
     removeIfExists(getProjectDependenciesXmlFileName(inOptions.projectName))
@@ -1869,17 +1875,17 @@ def checkinTest(baseDir, inOptions, configuration={}):
       buildTestCaseList,
       buildname,
       buildname in requestedDefaultBuilds,
-      ["PS"],
+      ["PT"],
       True,
       False,
       commonConfigOptions + buildopts)
       
-  if inOptions.ssExtraBuilds:
-    for ssExtraBuild in inOptions.ssExtraBuilds.split(','):
+  if inOptions.stExtraBuilds:
+    for ssExtraBuild in inOptions.stExtraBuilds.split(','):
       setBuildTestCaseInList(buildTestCaseList, ssExtraBuild, True,
-        ["PS", "SS"],  False, True, [])
+        ["PT", "ST"],  False, True, [])
 
-  allValidPackageTypesList = ["PS", "SS", "EX"]
+  allValidPackageTypesList = ["PT", "ST", "EX"]
 
   if inOptions.extraBuilds:
     for extraBuild in inOptions.extraBuilds.split(','):

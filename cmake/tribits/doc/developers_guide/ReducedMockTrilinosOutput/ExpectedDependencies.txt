@@ -1,0 +1,29 @@
+Printing package dependencies ...
+
+-- Teuchos_LIB_REQUIRED_DEP_TPLS: BLAS LAPACK
+-- Teuchos_LIB_OPTIONAL_DEP_TPLS: Boost MPI
+
+-- RTOp_LIB_REQUIRED_DEP_PACKAGES: Teuchos
+
+-- Epetra_LIB_REQUIRED_DEP_TPLS: BLAS LAPACK
+-- Epetra_LIB_OPTIONAL_DEP_TPLS: MPI
+
+-- Triutils_LIB_REQUIRED_DEP_PACKAGES: Epetra
+
+-- EpetraExt_LIB_REQUIRED_DEP_PACKAGES: Teuchos Epetra
+-- EpetraExt_LIB_OPTIONAL_DEP_PACKAGES: Triutils
+-- EpetraExt_LIB_OPTIONAL_DEP_TPLS: UMFPACK AMD PETSC
+
+-- ThyraCoreLibs_LIB_REQUIRED_DEP_PACKAGES: Teuchos RTOp
+
+-- ThyraGoodStuff_LIB_REQUIRED_DEP_PACKAGES: ThyraCoreLibs
+
+-- ThyraCrazyStuff_LIB_REQUIRED_DEP_PACKAGES: ThyraGoodStuff
+
+-- ThyraEpetra_LIB_REQUIRED_DEP_PACKAGES: Epetra ThyraCoreLibs
+
+-- ThyraEpetraExt_LIB_REQUIRED_DEP_PACKAGES: ThyraEpetra EpetraExt
+
+-- Thyra_LIB_REQUIRED_DEP_PACKAGES: ThyraCoreLibs
+-- Thyra_LIB_OPTIONAL_DEP_PACKAGES: ThyraGoodStuff ThyraCrazyStuff ThyraEpetra ThyraEpetraExt
+

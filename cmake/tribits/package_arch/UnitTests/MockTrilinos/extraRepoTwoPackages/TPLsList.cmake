@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -39,5 +39,5 @@
 
 
 # Only for unit testing
+TRIBITS_REPOSITORY_DEFINE_TPLS()
 
-SET(extraRepoTwoPackages_TPLS_FINDMODS_CLASSIFICATIONS)

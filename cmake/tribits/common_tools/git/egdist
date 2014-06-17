@@ -17,8 +17,9 @@ base git repo.  The options in [egdist options] are prefixed with '--dist-'
 and are are pulled out before running eg/git on the underlying executable.
 See --help to see the egdist options.
 
-If --dist-extra-repos="", then the list of extra repos will be read from the file
-.egdist.  The format of this file is to have one repo name per line as in:
+If --dist-extra-repos="", then the list of extra repos will be read from the
+file .egdist.  The format of this file is to have one repo name per line as
+in:
 
    Repo1
    Repo2
@@ -46,13 +47,14 @@ TIPS:
  - By default, egdist will use 'eg' in the environment.  If it can't find 'eg'
    in the environment, it will try to use 'eg' in the same directory as
    'egdist' (which is the case in the home tribits directory).  If it can't
-   find this 'eg' it will look for 'git' in the environment.  If it can't find 'git'
-   it will require that the user specify the eg/git command to run with
+   find this 'eg' it will look for 'git' in the environment.  If it can't find
+   'git' it will require that the user specify the eg/git command to run with
    --with-eg-git=<the command>.
 
- - To exclude processing either the base git repo and/or git repos listed in .egdist,
-   pass in --dist-not-base-repo and/or --dist-not-extra-repos=RepoX,RepoZ,...
-   The provides complete control over what git repos the given command is run on.
+ - To exclude processing either the base git repo and/or git repos listed in
+   .egdist, pass in --dist-not-base-repo and/or
+   --dist-not-extra-repos=RepoX,RepoZ,...  The provides complete control over
+   what git repos the given command is run on.
 
 REPO VERSION FILES:
 
@@ -120,6 +122,10 @@ arguments (SHA1s).
 Note that the set of repos listed in the RepoVersion.txt file must be a
 super-set of those processed by this script or an error will occur and the
 script will stop.
+
+Note that this Python script only depends on the Python 2.4+ standard modules
+'sys', 'os', 'subprocess', 'commands', and 're'. Also, it requires some
+compatible version of 'git' at the very minimum as well of course.
 """
 
 import sys
@@ -231,21 +237,21 @@ def getCommandlineOps():
   clp.add_option(
     extraRepoArgName, dest="extraRepos", type="string",
     default="",
-    help="Comma seprated list of extra repos to forward eg/git commands to."
+    help="Comma-separated list of extra repos to forward eg/git commands to."
     +"  If the list is empty, it will look for a file called .egdist to"
-    +" get the list of extra repos seprated by newlines."
+    +" get the list of extra repos separated by newlines."
     )
   
   clp.add_option(
     notExtraRepoArgName, dest="notExtraRepos", type="string",
     default="",
-    help="Comma seprated list of extra repos to *not* forward eg/git commands to."
+    help="Comma separated list of extra repos to *not* forward eg/git commands to."
     +"  This removes any repos from being processed that would otherwise be."
     )
   
   clp.add_option(
     notBaseRepoArgName, dest="processBaseRepo", action="store_false",
-    help="If set, don't pass the eg/git conmmand on to the base git repo.",
+    help="If set, don't pass the eg/git command on to the base git repo.",
     default=True )
   
   clp.add_option(

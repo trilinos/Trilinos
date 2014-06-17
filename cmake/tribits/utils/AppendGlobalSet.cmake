@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -40,7 +40,21 @@
 INCLUDE(GlobalSet)
 INCLUDE(AssertDefined)
 
-MACRO(APPEND_GLOBAL_SET VARNAME)
+#
+# @FUNCTION: APPEND_GLOBAL_SET()
+#
+# Utility macro that appends arguments to a global variable (reduces
+# boiler-plate code and mistakes).
+#
+# Usage::
+#
+#   APPEND_GLOBAL_SET(<varName> <arg0> <arg1> ...)
+#
+# NOTE: The variable ``<varName>`` must exist before calling this function.
+# To set it empty initially use `GLOBAL_NULL_SET()`_.
+# 
+FUNCTION(APPEND_GLOBAL_SET  VARNAME)
   ASSERT_DEFINED(${VARNAME})
-  GLOBAL_SET(${VARNAME} ${${VARNAME}} ${ARGN})
-ENDMACRO()
+  LIST(APPEND ${VARNAME} ${ARGN})
+  GLOBAL_SET(${VARNAME} ${${VARNAME}})
+ENDFUNCTION()

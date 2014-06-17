@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -40,6 +40,19 @@
 INCLUDE(PrependCmndlineArgs)
 INCLUDE(DualScopeSet)
 
+#
+# @MACRO: DUAL_SCOPE_PREPEND_CMNDLINE_ARGS()
+#
+# Utility function that prepends command-line arguments to a variable of
+# command-line arguments and sets the result in current scope and parent
+# scope.
+#
+# Usage::
+#
+#   DUAL_SCOPE_PREPEND_CMNDLINE_ARGS(<var> "<extraArgs>")
+#
+# Just calls `PREPEND_CMNDLINE_ARGS()`_ and then ``SET(<var> ${<var>} PARENT_SCOPE)``.
+#
 MACRO(DUAL_SCOPE_PREPEND_CMNDLINE_ARGS  CMNDLINE_VAR_NAME  EXTRAARGS)
   PREPEND_CMNDLINE_ARGS(${CMNDLINE_VAR_NAME} "${EXTRAARGS}")
   SET(${CMNDLINE_VAR_NAME} "${${CMNDLINE_VAR_NAME}}" PARENT_SCOPE)
