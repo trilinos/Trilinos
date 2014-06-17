@@ -7,10 +7,6 @@
 /*------------------------------------------------------------------------*/
 
 
-#include <stk_util/stk_config.h>
-#if defined ( STK_HAS_MPI )
-#  include <mpi.h>                        // for MPI_Comm
-#endif
 #include <stddef.h>                     // for NULL, size_t
 #include <iostream>                     // for ostringstream, etc
 #include <stdexcept>                    // for runtime_error
@@ -40,9 +36,7 @@ TEST(TestDataTraits, testVoid)
   // Test the DataTrait for void
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
-#if defined ( STK_HAS_MPI )
   MPI_Barrier( pm );
-#endif
 
   const DataTraits & traits = data_traits<void>();
 
@@ -93,9 +87,8 @@ void test_fundamental_type()
   stk::ParallelMachine pm = MPI_COMM_WORLD;
   int p_rank = stk::parallel_machine_rank( pm );
   int p_size = stk::parallel_machine_size( pm );
-#if defined ( STK_HAS_MPI )
   MPI_Barrier( pm );
-#endif
+
   // Test data trait properties of type T
   const DataTraits & traits = data_traits<T>();
   ASSERT_TRUE(       traits.type_info        == typeid(T) );
@@ -256,9 +249,8 @@ void test_fundamental_pointer()
   // Test DataTrait for fundamenter pointer type T*
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
-#if defined ( STK_HAS_MPI )
   MPI_Barrier( pm );
-#endif
+
   // Test data trait properties of type T*
   const DataTraits & traits = data_traits<T*>();
   ASSERT_TRUE(       traits.type_info        == typeid(T*) );
@@ -392,9 +384,8 @@ TEST(TestDataTraits, testEnum)
   stk::ParallelMachine pm = MPI_COMM_WORLD;
   int p_rank = stk::parallel_machine_rank( pm );
   int p_size = stk::parallel_machine_size( pm );
-#if defined ( STK_HAS_MPI )
   MPI_Barrier( pm );
-#endif
+
   typedef EType T ;
   const DataTraits & traits = data_traits<T>();
 
@@ -510,9 +501,8 @@ TEST(TestDataTraits, testClass)
   stk::ParallelMachine pm = MPI_COMM_WORLD;
   int p_rank = stk::parallel_machine_rank( pm );
   int p_size = stk::parallel_machine_size( pm );
-#if defined ( STK_HAS_MPI )
   MPI_Barrier( pm );
-#endif
+
   typedef Vec3 T ;
   const DataTraits & traits = data_traits<T>();
 

@@ -46,9 +46,7 @@ TEST( UnitTestBoxFixture, verifyRingFixture )
   // A unit test to verify the correctness of the RingFixture fixture.
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
-#if defined( STK_HAS_MPI)
   MPI_Barrier( pm );
-#endif
   // Create the ring fixture we'll be testing
 
   RingFixture fixture(pm);

@@ -7,10 +7,6 @@
 /*------------------------------------------------------------------------*/
 
 
-#include <stk_util/stk_config.h>
-#if defined ( STK_HAS_MPI )
-#  include <mpi.h>                        // for MPI_Comm
-#endif
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine

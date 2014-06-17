@@ -45,9 +45,7 @@ TEST(UnitTestFieldDataInitVal, test_scalar_field)
   //
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
-#if defined ( STK_HAS_MPI )
   MPI_Barrier( MPI_COMM_WORLD );
-#endif
 
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
@@ -93,9 +91,7 @@ TEST(UnitTestFieldDataInitVal, test_vector_field)
   typedef stk::mesh::Field<double,stk::mesh::Cartesian2d> VectorField;
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
-#if defined ( STK_HAS_MPI )
   MPI_Barrier( MPI_COMM_WORLD );
-#endif
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
   MetaData meta_data(spatial_dim);
@@ -143,9 +139,8 @@ TEST(UnitTestFieldDataInitVal, test_vector_field_move_bucket)
   typedef stk::mesh::Field<double,stk::mesh::Cartesian2d> VectorField;
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
-#if defined ( STK_HAS_MPI )
   MPI_Barrier( MPI_COMM_WORLD );
-#endif
+
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
   MetaData meta_data(spatial_dim);
@@ -207,9 +202,8 @@ TEST(UnitTestFieldDataInitVal, test_multi_state_vector_field)
   typedef stk::mesh::Field<double,stk::mesh::Cartesian2d> VectorField;
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
-#if defined ( STK_HAS_MPI )
   MPI_Barrier( MPI_COMM_WORLD );
-#endif
+
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
   MetaData meta_data(spatial_dim);

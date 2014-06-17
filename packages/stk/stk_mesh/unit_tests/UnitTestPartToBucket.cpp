@@ -1,7 +1,4 @@
-#include <stk_util/stk_config.h>
-#if defined ( STK_HAS_MPI )
-#  include <mpi.h>                        // for MPI_Comm
-#endif
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <stddef.h>                     // for size_t
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
@@ -19,28 +16,10 @@ namespace
 {
 void runTwoHexParallelBucketTests(const std::string &generatedMeshSpecification, const size_t expectedNumBucketsPerSlice);
 
-int getNumberOfProcessors(MPI_Comm comm)
-{
-  int numProcs = 1;
-#if defined ( STK_HAS_MPI )
-  MPI_Comm_size(comm, &numProcs);
-#endif
-  return numProcs;
-}
-
-int getProcessorId(MPI_Comm comm)
-{
-  int procId = 0;
-#if defined ( STK_HAS_MPI )
-  MPI_Comm_rank(comm, &procId);
-#endif
-  return procId;
-}
-
 TEST(PartToBucket, hex)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    if (getNumberOfProcessors(communicator) != 1)
+    stk::ParallelMachine communicator = MPI_COMM_WORLD;
+    if (stk::parallel_machine_size(communicator) != 1)
     {
         return;
     }
@@ -89,8 +68,8 @@ TEST(PartToBucket, hex)
 
 TEST(PartToBucket, hexWithSingleSideset)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    if (getNumberOfProcessors(communicator) != 1)
+    stk::ParallelMachine communicator = MPI_COMM_WORLD;
+    if (stk::parallel_machine_size(communicator) != 1)
     {
         return;
     }
@@ -151,8 +130,8 @@ TEST(PartToBucket, hexWithSingleSideset)
 
 TEST(PartToBucket, hexWithTwoSidesets)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    if (getNumberOfProcessors(communicator) != 1)
+    stk::ParallelMachine communicator = MPI_COMM_WORLD;
+    if (stk::parallel_machine_size(communicator) != 1)
     {
         return;
     }
@@ -216,8 +195,8 @@ TEST(PartToBucket, hexWithTwoSidesets)
 */
 TEST(PartToBucket, twoHex)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    if (getNumberOfProcessors(communicator) != 1)
+    stk::ParallelMachine communicator = MPI_COMM_WORLD;
+    if (stk::parallel_machine_size(communicator) != 1)
     {
         return;
     }
@@ -367,8 +346,8 @@ TEST(PartToBucket, np2TwoHexTwoSidesets)
 
 void runTwoHexParallelBucketTests(const std::string &generatedMeshSpecification, const size_t expectedNumBucketsPerSlice)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    if (getNumberOfProcessors(communicator) != 2)
+    stk::ParallelMachine communicator = MPI_COMM_WORLD;
+    if (stk::parallel_machine_size(communicator) != 1)
     {
         return;
     }
@@ -404,7 +383,7 @@ void runTwoHexParallelBucketTests(const std::string &generatedMeshSpecification,
     size_t expectedNumLocallyOwnedNodeBuckets = 0;
     size_t expectedNumGloballySharedNodeBuckets = 0;
     size_t expectedNumGhostedNodeBuckets = 0;
-    if(getProcessorId(communicator) == 0)
+    if(stk::parallel_machine_rank(communicator) == 0)
     {
         expectedNumLocallyOwnedNodeBuckets = 2 * expectedNumBucketsPerSlice;
         expectedNumGloballySharedNodeBuckets = expectedNumBucketsPerSlice;
@@ -455,8 +434,8 @@ void checkNodeInSelectedBucket(stk::mesh::Selector selectNode, stk::mesh::Entity
 */
 TEST(PartToBucket, hexWithThreeSidesets)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    if (getNumberOfProcessors(communicator) != 1)
+    stk::ParallelMachine communicator = MPI_COMM_WORLD;
+    if (stk::parallel_machine_size(communicator) != 1)
     {
         return;
     }

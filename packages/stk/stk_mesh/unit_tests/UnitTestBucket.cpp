@@ -19,7 +19,6 @@
 #include <gtest/gtest.h>
 #include <string>                       // for string, basic_string, etc
 #include <vector>                       // for vector, etc
-#include "mpi.h"                        // for MPI_Barrier, MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Types.hpp"      // for PartVector, BucketVector, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 namespace stk { namespace mesh { class FieldBase; } }

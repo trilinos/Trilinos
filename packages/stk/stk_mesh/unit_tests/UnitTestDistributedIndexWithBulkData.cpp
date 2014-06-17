@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
-#include <mpi.h>
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <stk_util/parallel/DistributedIndex.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
@@ -59,11 +59,9 @@ void updateDistributedIndexUsingStkMesh(stk::mesh::BulkData &stkMeshBulkData, co
 
 TEST( UnderstandingDistributedIndex, WithoutStkMeshBulkData)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    int procCount = -1;
-    int myProc = -1;
-    MPI_Comm_size(communicator, &procCount);
-    MPI_Comm_rank(communicator, &myProc);
+    stk::ParallelMachine communicator = MPI_COMM_WORLD;
+    int procCount = stk::parallel_machine_size(communicator);
+    int myProc = stk::parallel_machine_rank(communicator);
 
     if(procCount == 2)
     {
@@ -142,11 +140,9 @@ TEST( UnderstandingDistributedIndex, WithoutStkMeshBulkData)
 
 TEST( UnderstandingDistributedIndex, ViaStkMeshBulkData)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    int procCount = -1;
-    int myProc = -1;
-    MPI_Comm_size(communicator, &procCount);
-    MPI_Comm_rank(communicator, &myProc);
+    stk::ParallelMachine communicator = MPI_COMM_WORLD;
+    int procCount = stk::parallel_machine_size(communicator);
+    int myProc = stk::parallel_machine_rank(communicator);
 
     if(procCount == 2)
     {
@@ -221,11 +217,9 @@ TEST( UnderstandingDistributedIndex, ViaStkMeshBulkData)
 
 TEST(UnderstandingDistributedIndex, TestSharedAndGhostedAndOwnedEntitiesWithoutAnyModification)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    int procCount = -1;
-    int myProc = -1;
-    MPI_Comm_size(communicator, &procCount);
-    MPI_Comm_rank(communicator, &myProc);
+    stk::ParallelMachine communicator = MPI_COMM_WORLD;
+    int procCount = stk::parallel_machine_size(communicator);
+    int myProc = stk::parallel_machine_rank(communicator);
 
     if(procCount == 2)
     {
@@ -350,11 +344,9 @@ void testSharedNodesFor2x2x4MeshForTwoProcs(const int myProc, const stk::mesh::B
 
 TEST(UnderstandingDistributedIndex, GhostAnElement)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    int procCount = -1;
-    int myProc = -1;
-    MPI_Comm_size(communicator, &procCount);
-    MPI_Comm_rank(communicator, &myProc);
+    stk::ParallelMachine communicator = MPI_COMM_WORLD;
+    int procCount = stk::parallel_machine_size(communicator);
+    int myProc = stk::parallel_machine_rank(communicator);
 
     if(procCount == 2)
     {
@@ -425,11 +417,9 @@ TEST(UnderstandingDistributedIndex, GhostAnElement)
 
 TEST(UnderstandingDistributedIndex, KillAGhostedElement)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    int procCount = -1;
-    int myProc = -1;
-    MPI_Comm_size(communicator, &procCount);
-    MPI_Comm_rank(communicator, &myProc);
+    stk::ParallelMachine communicator = MPI_COMM_WORLD;
+    int procCount = stk::parallel_machine_size(communicator);
+    int myProc = stk::parallel_machine_rank(communicator);
 
     if(procCount == 2)
     {
@@ -495,11 +485,9 @@ TEST(UnderstandingDistributedIndex, KillAGhostedElement)
 
 TEST(UnderstandingDistributedIndex, CreateDisconnectedElement)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    int procCount = -1;
-    int myProc = -1;
-    MPI_Comm_size(communicator, &procCount);
-    MPI_Comm_rank(communicator, &myProc);
+    stk::ParallelMachine communicator = MPI_COMM_WORLD;
+    int procCount = stk::parallel_machine_size(communicator);
+    int myProc = stk::parallel_machine_rank(communicator);
 
     if(procCount == 2)
     {
@@ -587,11 +575,9 @@ void testElementMove(int fromProc, int toProc, int myProc, int elementToMoveId, 
 
 TEST(UnderstandingDistributedIndex, MoveAnElement)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    int procCount = -1;
-    int myProc = -1;
-    MPI_Comm_size(communicator, &procCount);
-    MPI_Comm_rank(communicator, &myProc);
+    stk::ParallelMachine communicator = MPI_COMM_WORLD;
+    int procCount = stk::parallel_machine_size(communicator);
+    int myProc = stk::parallel_machine_rank(communicator);
 
     if(procCount == 2)
     {
@@ -681,11 +667,9 @@ TEST(UnderstandingDistributedIndex, MoveAnElement)
 
 TEST(UnderstandingDistributedIndex, GhostANode)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    int procCount = -1;
-    int myProc = -1;
-    MPI_Comm_size(communicator, &procCount);
-    MPI_Comm_rank(communicator, &myProc);
+    stk::ParallelMachine communicator = MPI_COMM_WORLD;
+    int procCount = stk::parallel_machine_size(communicator);
+    int myProc = stk::parallel_machine_rank(communicator);
 
     if(procCount == 2)
     {
@@ -914,11 +898,9 @@ void testOneGhostingDestroyed(stk::mesh::BulkData &stkMeshBulkData,
 
 TEST(UnderstandingDistributedIndex, MultipleCustomGhostings)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    int procCount = -1;
-    int myProc = -1;
-    MPI_Comm_size(communicator, &procCount);
-    MPI_Comm_rank(communicator, &myProc);
+    stk::ParallelMachine communicator = MPI_COMM_WORLD;
+    int procCount = stk::parallel_machine_size(communicator);
+    int myProc = stk::parallel_machine_rank(communicator);
 
     if(procCount == 2)
     {
@@ -962,11 +944,9 @@ TEST(UnderstandingDistributedIndex, MultipleCustomGhostings)
 
 TEST(UnderstandingDistributedIndex, MultipleCustomGhostingsWithDestroy)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    int procCount = -1;
-    int myProc = -1;
-    MPI_Comm_size(communicator, &procCount);
-    MPI_Comm_rank(communicator, &myProc);
+    stk::ParallelMachine communicator = MPI_COMM_WORLD;
+    int procCount = stk::parallel_machine_size(communicator);
+    int myProc = stk::parallel_machine_rank(communicator);
 
     if(procCount == 2)
     {

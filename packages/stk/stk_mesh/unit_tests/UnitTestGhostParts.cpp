@@ -7,10 +7,6 @@
 /*------------------------------------------------------------------------*/
 
 
-#include <stk_util/stk_config.h>
-#if defined ( STK_HAS_MPI )
-#  include <mpi.h>                        // for MPI_Comm
-#endif
 #include <stddef.h>                     // for size_t
 #include <stdlib.h>                     // for exit
 #include <exception>                    // for exception
@@ -47,10 +43,7 @@ TEST(UnitTestGhostParts, Aura)
 {
   stk::ParallelMachine communicator = MPI_COMM_WORLD;
 
-  int numProcs = 1;
-#if defined ( STK_HAS_MPI )
-  MPI_Comm_size(communicator, &numProcs);
-#endif
+  int numProcs = stk::parallel_machine_size(communicator);
   if (numProcs != 2) {
     return;
   }
@@ -98,10 +91,7 @@ TEST(UnitTestGhostParts, Custom1)
 {
   stk::ParallelMachine communicator = MPI_COMM_WORLD;
 
-  int numProcs = 1;
-#if defined ( STK_HAS_MPI )
-  MPI_Comm_size(communicator, &numProcs);
-#endif
+  int numProcs = stk::parallel_machine_size(communicator);
   if (numProcs != 2) {
     return;
   }

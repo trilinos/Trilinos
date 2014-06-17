@@ -9,11 +9,8 @@
  * UnitTestCreateFaces.C created by tcfishe on Feb 20, 2014
  */
 
-#include <stk_util/stk_config.h>
-#if defined ( STK_HAS_MPI )
-#  include <mpi.h>                        // for MPI_Comm
-#endif
 #include <stddef.h>                     // for size_t
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
 #include <stk_mesh/base/CreateFaces.hpp>  // for create_faces
@@ -651,10 +648,7 @@ TEST ( UnitTestCreateFaces, Gears )
 
 TEST ( UnitTestCreateFaces, Heterogeneous )
 {
-  int numprocs = 1;
-#if defined ( STK_HAS_MPI )
-  MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
-#endif
+  int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);
   if (numprocs > 1)
     return;
   
@@ -737,10 +731,7 @@ TEST ( UnitTestCreateFaces, Heterogeneous )
 
 TEST ( UnitTestCreateFaces, Degenerate )
 {
-  int numprocs = 1;
-#if defined ( STK_HAS_MPI )
-  MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
-#endif
+  int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);
   if (numprocs > 1)
     return;
 
