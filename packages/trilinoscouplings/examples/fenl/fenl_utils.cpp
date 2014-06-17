@@ -90,8 +90,8 @@ clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
     // Check device is valid
     int num_device; cudaGetDeviceCount(&num_device);
     TEUCHOS_TEST_FOR_EXCEPTION(
-      device >= num_device, std::logic_error,
-      "Invalid device ID " << device << ".  You probably are trying" <<
+      cmdline.CMD_USE_CUDA_DEV >= cmdline.CMD_USE_NGPUS, std::logic_error,
+      "Invalid device ID " << cmdline.CMD_USE_CUDA_DEV << ".  You probably are trying" <<
       " to run with too many GPUs per node");
   }
 #endif
@@ -117,7 +117,7 @@ clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
   comm.broadcast( int(0) , int(cmdline.CMD_COUNT * sizeof(int)) , (char *) sizeof(cmdline) );
 
   // Reset device as each process may have a different value
-  cmdline.CMD_USE_CUDA_DEV          = device;
+  cmdline.CMD_USE_CUDA_DEV          = cmdline.CMD_USE_CUDA_DEV;
 
   return CLP_OK;
 

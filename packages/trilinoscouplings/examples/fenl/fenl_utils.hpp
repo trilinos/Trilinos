@@ -102,7 +102,7 @@ createKokkosNode( const CMD & cmd , const int comm_rank ) {
     params.set("Device", cmd.CMD_USE_CUDA_DEV  );
   Teuchos::RCP<NodeType> node = Teuchos::rcp (new NodeType(params));
 
-  if ( cmd.CMD_VERBOSE ) {
+  if ( cmd.CMD_PRINT ) {
     typedef typename NodeType::device_type Device;
     if (comm_rank == 0)
       Device::print_configuration(std::cout);
@@ -118,9 +118,15 @@ createKokkosNode( const CMD & cmd , const int comm_rank ) {
 //----------------------------------------------------------------------------
 // Display performance:
 
+// Parse command line
+clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
+                               const Teuchos::Comm<int>& comm );
+
+
 // Print timing headers
 std::vector< size_t >
 print_headers( std::ostream & s , const CMD & cmd , const int comm_rank );
+
 
 // Print times
 void print_perf_value( std::ostream & s ,
