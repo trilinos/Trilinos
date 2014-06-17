@@ -1,19 +1,24 @@
-#include "fenl_utils.hpp"
+#include <fenl_utils.hpp>
 
-#include <math.h>
-#include <stdlib.h>
-#include <strings.h>
+// #include <math.h>
+// #include <strings.h>
 
 #include <utility>
 #include <string>
 #include <sstream>
 #include <iomanip>
+#include <cstdlib>
+
+#if defined( KOKKOS_HAVE_CUDA )
+#include <cuda_runtime_api.h>
+#endif
 
 // For vtune
 #include <sys/types.h>
 #include <unistd.h>
 
 #include <Teuchos_CommandLineProcessor.hpp>
+#include <Teuchos_TestForException.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -35,7 +40,8 @@ clp_return_type parse_cmdline( int argc , char ** argv, int cmdline[],
 
   bool useCuda = false;               clp.setOption("cuda", "no-cuda",         &useCuda,  "use CUDA");
 
-  bool useCudaDev = false;            clp.setOption("cuda-dev", "no-cuda-dev", &useCudaDev,  "use CUDA dev");
+  int device = -1;                    clp.setOption("device",                  &device,                    "CUDA device ID.  Set to default of -1 to use the default device as determined by the local node MPI rank and --ngpus");
+  int ngpus = 1;                      clp.setOption("ngpus",                   &ngpus,                     "Number of GPUs per node for multi-GPU runs via MPI");
 
   std::string fixtureSpec="2x2x2";    clp.setOption("fixture",                 &fixtureSpec,  "fixture string: \"XxYxZ\"");
                                       clp.setOption("fixture-x",               cmdline+CMD_USE_FIXTURE_X,  "fixture");
@@ -68,6 +74,8 @@ clp_return_type parse_cmdline( int argc , char ** argv, int cmdline[],
 
   bool doPrint = false;               clp.setOption("print", "no-print",        &doPrint,  "print detailed test output");
 
+  bool verbose = false;               clp.setOption("verbose", "no-verbose",        &verbose,  "Verbose node initialization");
+
   bool doSummarize = false;               clp.setOption("summarize", "no-summarize",        &doSummarize,  "summarize Teuchos timers at end of run");
 
   bool doDryRun = false;              clp.setOption("echo", "no-echo",          &doDryRun,  "dry-run only");
@@ -79,11 +87,31 @@ clp_return_type parse_cmdline( int argc , char ** argv, int cmdline[],
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
   }
 
+#if defined( KOKKOS_HAVE_CUDA )
+  // Set CUDA device based on local node rank
+  if (useCuda && device == -1) {
+    int local_rank = 0;
+    char *str;
+    if ((str = std::getenv("SLURM_LOCALID")))
+      local_rank = std::atoi(str);
+    else if ((str = std::getenv("MV2_COMM_WORLD_LOCAL_RANK")))
+      local_rank = std::atoi(str);
+    else if ((str = getenv("OMPI_COMM_WORLD_LOCAL_RANK")))
+      local_rank = std::atoi(str);
+    device = local_rank % ngpus;
+
+    // Check device is valid
+    int num_device; cudaGetDeviceCount(&num_device);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      device >= num_device, std::logic_error,
+      "Invalid device ID " << device << ".  You probably are trying" <<
+      " to run with too many GPUs per node");
+  }
+#endif
+
   // cmdline is of type int*, which means we can't use it directly in CommandLineProcessor::setOptions for bools.
   cmdline[CMD_USE_CUDA]              = useCuda;
-  cmdline[CMD_USE_CUDA_DEV]          = useCudaDev;
-  if (useCudaDev)
-    cmdline[CMD_USE_CUDA] = true;
+  cmdline[CMD_USE_CUDA_DEV]          = device;
   cmdline[CMD_USE_FIXTURE_QUADRATIC] = useQuadratic;
   cmdline[CMD_USE_UQ_ENSEMBLE]       = useEnsemble;
   cmdline[CMD_USE_SPARSE]            = useSparse;
@@ -94,6 +122,7 @@ clp_return_type parse_cmdline( int argc , char ** argv, int cmdline[],
   cmdline[CMD_USE_BELOS]             = useBelos;
   cmdline[CMD_VTUNE]                 = doVtune;
   cmdline[CMD_PRINT]                 = doPrint;
+  cmdline[CMD_VERBOSE]               = verbose;
   cmdline[CMD_SUMMARIZE]             = doSummarize;
   sscanf( fixtureSpec.c_str() , "%dx%dx%d" ,
           cmdline + CMD_USE_FIXTURE_X ,
@@ -114,6 +143,9 @@ clp_return_type parse_cmdline( int argc , char ** argv, int cmdline[],
   //--------------------------------------------------------------------------
 
   comm.broadcast( int(0) , int(CMD_COUNT * sizeof(int)) , (char *) cmdline );
+
+  // Reset device as each process may have a different value
+  cmdline[CMD_USE_CUDA_DEV]          = device;
 
   return CLP_OK;
 

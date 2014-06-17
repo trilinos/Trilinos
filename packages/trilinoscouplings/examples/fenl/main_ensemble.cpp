@@ -38,20 +38,10 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   bool success = true;
   try {
 
+  const int comm_rank = comm->getRank();
+
   // Create Tpetra Node -- do this first as it initializes host/device
-  Teuchos::ParameterList params;
-  params.set("Verbose",     0);
-  if ( cmd[ CMD_USE_THREADS ] )
-    params.set("Num Threads", cmd[CMD_USE_THREADS]);
-  else if ( cmd[ CMD_USE_OPENMP ] )
-    params.set("Num Threads", cmd[CMD_USE_OPENMP]);
-  if ( cmd[ CMD_USE_NUMA ] && cmd[ CMD_USE_CORE_PER_NUMA ] ) {
-    params.set("Num NUMA", cmd[ CMD_USE_NUMA ]);
-    params.set("Num CoresPerNUMA", cmd[ CMD_USE_CORE_PER_NUMA ]);
-  }
-  if ( cmd[ CMD_USE_CUDA_DEV ] )
-    params.set("Device", cmd[ CMD_USE_CUDA_DEV ] );
-  Teuchos::RCP<NodeType> node = Teuchos::rcp (new NodeType(params));
+  Teuchos::RCP<NodeType> node = createKokkosNode<NodeType>( cmd , comm_rank );
 
   // Set up stochastic discretization
   using Teuchos::Array;
@@ -82,7 +72,6 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   const Array< Array<double> >& quad_values = quad->getBasisAtQuadPoints();
 
   // Print output headers
-  const int comm_rank = comm->getRank();
   const std::vector< size_t > widths =
     print_headers( std::cout , cmd , comm_rank );
 

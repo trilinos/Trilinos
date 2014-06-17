@@ -32,8 +32,12 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   bool success = true;
   try {
 
-  // Print output headers
   const int comm_rank = comm->getRank();
+
+  // Create Tpetra Node
+  Teuchos::RCP<NodeType> node = createKokkosNode<NodeType>( cmd , comm_rank );
+
+  // Print output headers
   const std::vector< size_t > widths =
     print_headers( std::cout , cmd , comm_rank );
 
@@ -50,21 +54,6 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
 
   ElementComputationConstantCoefficient
     diffusion_coefficient( manufactured_solution.K );
-
-  // Create Tpetra Node
-  Teuchos::ParameterList params;
-  params.set("Verbose",     0);
-  if ( cmd[ CMD_USE_THREADS ] )
-    params.set("Num Threads", cmd[CMD_USE_THREADS]);
-  else if ( cmd[ CMD_USE_OPENMP ] )
-    params.set("Num Threads", cmd[CMD_USE_OPENMP]);
-  if ( cmd[ CMD_USE_NUMA ] && cmd[ CMD_USE_CORE_PER_NUMA ] ) {
-    params.set("Num NUMA", cmd[ CMD_USE_NUMA ]);
-    params.set("Num CoresPerNUMA", cmd[ CMD_USE_CORE_PER_NUMA ]);
-  }
-  if ( cmd[ CMD_USE_CUDA_DEV ] )
-    params.set("Device", cmd[ CMD_USE_CUDA_DEV ] );
-  Teuchos::RCP<NodeType> node = Teuchos::rcp (new NodeType(params));
 
   double response = 0;
   if ( cmd[ CMD_USE_FIXTURE_BEGIN ] ) {
