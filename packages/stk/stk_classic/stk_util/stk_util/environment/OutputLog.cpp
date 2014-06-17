@@ -650,7 +650,7 @@ bind_output_streams(
   execute(command_list);
 }
 
-} // namespace stk
+} // namespace stk_classic
 
 namespace sierra {
 

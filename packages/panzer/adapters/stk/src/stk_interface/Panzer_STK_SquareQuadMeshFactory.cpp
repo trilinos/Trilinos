@@ -49,7 +49,7 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 SquareQuadMeshFactory::SquareQuadMeshFactory(bool enableRebalance)
 {

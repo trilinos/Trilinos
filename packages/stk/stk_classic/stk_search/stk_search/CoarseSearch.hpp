@@ -154,6 +154,6 @@ bool coarse_search(
 
 
 } // namespace search
-} // namespace stk
+} // namespace stk_classic
 
 #endif // stk_search_CoarseSearch_hpp

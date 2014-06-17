@@ -123,6 +123,6 @@ bool test_unequal_weights( stk_classic::ParallelMachine pm )
 
 } //namespace use_cases
 } //namespace rebalance
-} //namespace stk
+} //namespace stk_classic
 
 

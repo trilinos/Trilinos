@@ -780,7 +780,7 @@ Writer &operator<<(Writer &dout, const c_ptr_func_<T, R> &c) {
 ///
 
 } // namespace diag
-} // namespace stk
+} // namespace stk_classic
 
 #include <stk_util/diag/WriterManip.hpp>
 

@@ -126,6 +126,6 @@ void addFunction(const std::string &name, CFunctionBase *function) {
 }
 
 } // namespace expreval
-} // namespace stk
+} // namespace stk_classic
 
 #endif // stk_expreval_function_hpp

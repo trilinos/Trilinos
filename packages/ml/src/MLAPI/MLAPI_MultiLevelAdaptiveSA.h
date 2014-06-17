@@ -95,7 +95,7 @@ public:
   // @{ \name Constructors and destructors
 
   //! Constructs the hierarchy for given Operator and parameters.
-  MultiLevelAdaptiveSA(const Operator FineMatrix, Teuchos::ParameterList& List,
+  MultiLevelAdaptiveSA(const Operator & FineMatrix, Teuchos::ParameterList& List,
                        const int NumPDEEqns, const int MaxLevels = 20) :
     IsComputed_(false)
   {
@@ -851,7 +851,7 @@ public:
 private:
 
   //! Returns the smoothed prolongator operator.
-  void GetSmoothedP(Operator Aop, Teuchos::ParameterList& List, MultiVector& NS,
+  void GetSmoothedP(const Operator & Aop, Teuchos::ParameterList& List, MultiVector& NS,
                     Operator& Pop, MultiVector& NewNS)
   {
     double LambdaMax;

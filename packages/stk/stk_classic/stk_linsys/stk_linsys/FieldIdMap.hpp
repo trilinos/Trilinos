@@ -20,6 +20,6 @@ namespace linsys {
 typedef std::map<const stk_classic::mesh::FieldBase*,int> FieldIdMap;
 
 }//namespace linsys
-}//namespace stk
+}//namespace stk_classic
 
 #endif

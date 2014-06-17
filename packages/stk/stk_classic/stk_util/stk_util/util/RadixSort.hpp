@@ -173,7 +173,7 @@ void radix_sort_unsigned( T* a, size_t a_size )
 }
 
 } // namespace util
-} // namespace stk
+} // namespace stk_classic
 
 
 //--------------------------------------

@@ -56,7 +56,7 @@
 #include <vector>
 #include <map>
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 template <typename GO> class STKConnManager;
 

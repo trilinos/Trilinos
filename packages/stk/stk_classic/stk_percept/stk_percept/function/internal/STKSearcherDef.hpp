@@ -6,7 +6,7 @@
 #include <Intrepid_FunctionSpaceTools.hpp>
 #include "STKSearcher.hpp"
 
-namespace stk
+namespace stk_classic
 {
   namespace percept
   {

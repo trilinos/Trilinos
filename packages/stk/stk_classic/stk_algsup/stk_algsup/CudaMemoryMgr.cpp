@@ -35,5 +35,5 @@ CudaMemoryMgr::~CudaMemoryMgr()
 #endif
 }
 
-}//namespace stk
+}//namespace stk_classic
 

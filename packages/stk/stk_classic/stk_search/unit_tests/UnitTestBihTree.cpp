@@ -190,7 +190,7 @@ void UnitTestBihTree::testTree( )
 
 } // namespace bih
 } // namespace search
-} // namespace stk
+} // namespace stk_classic
 
 STKUNIT_UNIT_TEST(UnitTestingOfSearchBih, testUnit)
 {

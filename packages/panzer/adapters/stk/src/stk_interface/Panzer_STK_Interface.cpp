@@ -73,7 +73,7 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 ElementDescriptor::ElementDescriptor() {}
 ElementDescriptor::ElementDescriptor(stk_classic::mesh::EntityId gid,const std::vector<stk_classic::mesh::EntityId> & nodes)
@@ -1105,4 +1105,4 @@ void STK_Interface::rebalance(const Teuchos::ParameterList & params)
   orderedElementVector_ = Teuchos::null; // forces rebuild of ordered lists
 }
 
-} // end namespace panzer_stk
+} // end namespace panzer_stk_classic

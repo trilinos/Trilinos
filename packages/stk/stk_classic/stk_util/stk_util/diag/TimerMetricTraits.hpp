@@ -125,6 +125,6 @@ typename MetricTraits<T>::Type now() {
 }
 
 } // namespace diag
-} // namespace stk
+} // namespace stk_classic
 
 #endif // stk_util_diag_TimerMetricTraits_hpp

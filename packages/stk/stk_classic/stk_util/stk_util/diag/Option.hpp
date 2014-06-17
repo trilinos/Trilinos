@@ -348,7 +348,7 @@ protected:
 };
 
 } // namespace diag
-} // namespace stk
+} // namespace stk_classic
 
 namespace sierra {
 typedef stk_classic::diag::OptionMask OptionMask;

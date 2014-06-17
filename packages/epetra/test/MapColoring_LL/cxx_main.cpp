@@ -101,12 +101,14 @@ int main(int argc, char *argv[]) {
   long long * MyGlobalElements = new long long[NumMyElements];
 
   for (i = 0; i<NumMyElements; i++) {
-    MyGlobalElements[i] = (Comm.MyPID()*MaxNumMyElements+i)*2;
+    MyGlobalElements[i] = (long long)(Comm.MyPID()*MaxNumMyElements+i)*2;
     ElementSizeList[i] = i%6 + 2; // elementsizes go from 2 to 7
   }
 
-  Epetra_BlockMap Map(-1LL, NumMyElements, MyGlobalElements, ElementSizeList,
-		      0, Comm);
+  Epetra_BlockMap Map(
+      -1LL, NumMyElements, MyGlobalElements, ElementSizeList,
+      0, Comm
+      );
 
   delete [] ElementSizeList;
   delete [] MyGlobalElements;
@@ -210,8 +212,10 @@ int main(int argc, char *argv[]) {
   elementIDs0.Import(elementIDs, importer, Insert);
   elementColorValues0.Import(elementColorValues, importer, Insert);
 
-  Epetra_BlockMap MapOnPE0(-1LL,NumMyElements0, elementIDs0.Values(),
-			   elementSizes0.Values(), Map.IndexBase64(), Comm);
+  Epetra_BlockMap MapOnPE0(
+      -1LL,NumMyElements0, elementIDs0.Values(),
+      elementSizes0.Values(), Map.IndexBase64(), Comm
+      );
 
   Epetra_Import importer1(MapOnPE0, Map);
   Epetra_MapColoring ColoringOnPE0(MapOnPE0);
@@ -239,7 +243,7 @@ int main(int argc, char *argv[]) {
     if (verbose) std::cout << "Test ostream << operator" << std::endl << std::flush;
     std::cout << C0 << std::endl;
   }
-	
+
 
   delete [] elementColors;
   for (i=0; i<maxcolor; i++) if (colorLIDs[i]!=0) delete [] colorLIDs[i];

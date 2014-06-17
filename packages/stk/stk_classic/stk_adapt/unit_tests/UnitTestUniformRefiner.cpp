@@ -3273,5 +3273,5 @@ namespace stk_classic {
 
     } // namespace unit_tests
   } // namespace adapt
-} // namespace stk
+} // namespace stk_classic
 

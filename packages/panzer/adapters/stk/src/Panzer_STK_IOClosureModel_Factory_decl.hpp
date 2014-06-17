@@ -56,7 +56,7 @@ namespace panzer {
   class InputEquationSet;
 }
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
   template<typename EvalT>
   class IOClosureModelFactory : public panzer::ClosureModelFactory<EvalT> {

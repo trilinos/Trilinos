@@ -19,6 +19,6 @@ namespace stk_classic {
  */
 double cpu_time();
 
-} // namespace stk
+} // namespace stk_classic
 
 #endif // stk_util_environment_CPUTime_hpp

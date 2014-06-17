@@ -307,5 +307,5 @@ bool use_case_blas_driver(MPI_Comm comm,
 //----------------------------------------------------------------------
 
 } // namespace app
-} // namespace stk
+} // namespace stk_classic
 

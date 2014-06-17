@@ -319,4 +319,4 @@ bool operator!=(const IdentifierB &s1, const IdentifierB &s2) {
   return compare(s1.c_str(), s1.length(), s2.c_str(), s2.length()) != 0;
 }
 
-} // namespace stk
+} // namespace stk_classic

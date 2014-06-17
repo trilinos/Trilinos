@@ -107,4 +107,4 @@ operator<<(
 #endif // if defined( STK_HAS_MPI )
 
 } // namespace diag
-} // namespace stk
+} // namespace stk_classic

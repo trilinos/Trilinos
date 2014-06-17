@@ -5,7 +5,7 @@
 #include <KokkosCore_config.h>
 #ifdef KOKKOS_HAVE_CUDA
 #define KOKKOS_USE_CUDA_BUILD
-#include "BlockCrsMatrix/ExpBlockCrsMatrix.cpp"
+#include "BlockMultiVector/ExpBlockCrsMatrix.cpp"
 #undef KOKKOS_USE_CUDA_BUILD
 #endif
 #endif

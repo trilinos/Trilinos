@@ -43,29 +43,56 @@
 // ***********************************************************************
 //
 // @HEADER
+#ifndef MUELU_AGGREGATIONPHASE2BALGORITHM_DECL_HPP_
+#define MUELU_AGGREGATIONPHASE2BALGORITHM_DECL_HPP_
+
+#include "MueLu_ConfigDefs.hpp"
+
+#include "MueLu_Aggregates_fwd.hpp"
+#include "MueLu_AggregationAlgorithmBase.hpp"
+#include "MueLu_FactoryBase_fwd.hpp"
+#include "MueLu_GraphBase.hpp"
+
+#include "MueLu_AggregationPhase2bAlgorithm_fwd.hpp"
+
+namespace MueLu {
+  /*!
+    @class AggregationPhase2bAlgorithm class.
+    @brief
+  */
+
+  template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  class AggregationPhase2bAlgorithm : public MueLu::AggregationAlgorithmBase<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
+#undef MUELU_AGGREGATIONPHASE2BALGORITHM_SHORT
+#include "MueLu_UseShortNamesOrdinal.hpp"
+
+  public:
+    //! @name Constructors/Destructors.
+    //@{
+
+    //! Constructor.
+    AggregationPhase2bAlgorithm(const RCP<const FactoryBase>& graphFact = Teuchos::null) { }
+
+    //! Destructor.
+    virtual ~AggregationPhase2bAlgorithm() { }
+
+    //@}
 
 
-#include "MueLu_ExplicitInstantiation.hpp"
+    //! @name Aggregation methods.
+    //@{
 
-#if defined(HAVE_MUELU_EXPLICIT_INSTANTIATION)
+    /*! @brief Local aggregation. */
 
-#include "Kokkos_DefaultNode.hpp"
-#include "Tpetra_ETIHelperMacros.h"
-#include "MueLu_UncoupledAggregationAlgorithm_def.hpp"
+    void BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const;
+    //@}
 
-TPETRA_ETI_MANGLING_TYPEDEFS()
+    std::string description() const { return "Phase 2b (expansion)"; }
+  };
 
-#define MUELU_INST_LO_GO_N(LO, GO, N) \
-  template class MueLu::UncoupledAggregationAlgorithm<LO, GO, N>;
+} //namespace MueLu
 
-#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_PTHREAD) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THREADSWRAPPERNODE)
-  MUELU_INST_LO_GO_N(int, int, Kokkos_Compat_KokkosThreadsWrapperNode)
-#endif
-
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE)
-  MUELU_INST_LO_GO_N(int, int, KokkosClassic_TPINode)
-#endif
-
-#endif
+#define MUELU_AGGREGATIONPHASE2BALGORITHM_SHORT
 
 
+#endif /* MUELU_AGGREGATIONPHASE2BALGORITHM_DECL_HPP_ */

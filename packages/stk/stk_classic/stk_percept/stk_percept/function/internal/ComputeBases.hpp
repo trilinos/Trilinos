@@ -19,7 +19,7 @@
 
 #include <stk_percept/PerceptMesh.hpp>
 
-namespace stk
+namespace stk_classic
 {
   namespace percept
   {

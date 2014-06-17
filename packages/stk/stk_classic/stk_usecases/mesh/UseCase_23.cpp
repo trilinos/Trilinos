@@ -775,5 +775,5 @@ void use_case_23_driver(
 //----------------------------------------------------------------------
 
 } // namespace app
-} // namespace stk
+} // namespace stk_classic
 

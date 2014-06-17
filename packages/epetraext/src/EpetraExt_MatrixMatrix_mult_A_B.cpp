@@ -1532,7 +1532,7 @@ int MatrixMatrix::Tmult_AT_B_newmatrix(const CrsMatrixStruct & Atransview, const
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
+#ifdef ENABLE_MMM_TIMINGS
   using Teuchos::TimeMonitor;
   Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM-T Transpose")));
 #endif
@@ -1541,7 +1541,7 @@ int MatrixMatrix::Tmult_AT_B_newmatrix(const CrsMatrixStruct & Atransview, const
   /*************************************************************/
   /* 2/3) Call mult_A_B_newmatrix w/ fillComplete              */
   /*************************************************************/
-#ifdef HAVE_TPETRA_MMM_TIMINGS
+#ifdef ENABLE_MMM_TIMINGS
   MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM-T AB-core")));
 #endif
   RCP<Epetra_CrsMatrix> Ctemp;
@@ -1570,7 +1570,7 @@ int MatrixMatrix::Tmult_AT_B_newmatrix(const CrsMatrixStruct & Atransview, const
   /*************************************************************/
   /* 4) ExportAndFillComplete matrix (if needed)               */
   /*************************************************************/
-#ifdef HAVE_TPETRA_MMM_TIMINGS
+#ifdef ENABLE_MMM_TIMINGS
   MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM-T ESFC")));
 #endif
 

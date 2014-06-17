@@ -34,5 +34,5 @@ const BasisTag & BasisTag::tag()
 { static const BasisTag self ; return self ; }
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 

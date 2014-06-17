@@ -242,7 +242,7 @@ private:
   bool				m_registryOK;			///< Registry is OK
 };
 
-} // namespace stk
+} // namespace stk_classic
 
 #ifdef STK_BUILT_IN_SIERRA
 #undef VERSION // Nice, Trilinos leaves us this gem

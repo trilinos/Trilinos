@@ -24,7 +24,7 @@ FILE(GLOB SOURCES *.cpp)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
     stk_use_cases_app
     SOURCES ${SOURCES}
-    DEPLIBS stk_io
+    DEPLIBS stkclassic_io
     NAME stk_app_use_case_14
     ARGS "--use_case_14 --mesh gen:10x10x10 --trials 30"
     COMM serial mpi

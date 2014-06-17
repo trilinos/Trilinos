@@ -262,5 +262,5 @@ void EntityImpl::comm_clear()
 
 } // namespace impl
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 

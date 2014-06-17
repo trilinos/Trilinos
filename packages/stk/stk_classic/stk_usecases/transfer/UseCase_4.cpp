@@ -110,7 +110,7 @@ Marshal &operator>>(Marshal &min, stk_classic::mesh::EntityKey &t) {
   return read(min, t);
 }
 
-} // namespace stk
+} // namespace stk_classic
 
 namespace {
 

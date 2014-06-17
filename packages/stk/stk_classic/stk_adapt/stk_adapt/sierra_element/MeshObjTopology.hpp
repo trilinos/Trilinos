@@ -42,6 +42,6 @@ namespace stk_classic {
 
     } // namespace Elem
   } // namespace adapt
-} // namespace stk
+} // namespace stk_classic
 
 #endif // stk_adapt_sierra_element_MeshObjTopology_hpp

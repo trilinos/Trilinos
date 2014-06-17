@@ -291,7 +291,7 @@ Selector selectField( const FieldBase& field );
 /** \} */
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 #endif // stk_mesh_Selector_hpp
 

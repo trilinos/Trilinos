@@ -655,7 +655,7 @@ inline Writer &operator<<(Writer &dout, const Timer &timer) {
 }
 
 } // namespace diag
-} // namespace stk
+} // namespace stk_classic
 
 
 namespace sierra {

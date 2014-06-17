@@ -76,7 +76,7 @@ PHX_EVALUATOR_CLASS(DOF_PointValues)
   bool requires_orientation;
 
   Teuchos::RCP<const PureBasis> basis;
-  BasisValues<ScalarT,PHX::MDField<ScalarT> > basisValues;
+  BasisValues<ScalarT,PHX::MDField<ScalarT>,PHX::MDField<ScalarT,panzer::Cell,panzer::BASIS> > basisValues;
 
 PHX_EVALUATOR_CLASS_END
 

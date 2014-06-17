@@ -294,6 +294,6 @@ typedef boost::transform_iterator<To_Ptr, Bucket::iterator> BucketPtrIterator;
 typedef Bucket::iterator BucketIterator;
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 #endif

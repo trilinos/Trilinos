@@ -25,7 +25,7 @@ FILE(GLOB SOURCES *.cpp)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
     stk_use_cases_transfer
     SOURCES ${SOURCES}
-    DEPLIBS stk_io stk_search stk_search_util
+    DEPLIBS stkclassic_io stkclassic_search stkclassic_search_util
     NAME stk_transfer_use_case_0
     ARGS "--pout log --dw=transfer --use_case_0 --domain_mesh \"gen:8x8x8|zdecomp:8" --range_mesh "gen:8x8x8|zdecomp:8\""
     COMM serial mpi

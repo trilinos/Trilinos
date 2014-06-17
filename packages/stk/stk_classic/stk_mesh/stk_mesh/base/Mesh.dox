@@ -2,7 +2,7 @@
 namespace stk_classic {
 namespace mesh {
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 /** \defgroup  stk_mesh_module  Sierra Toolkit Mesh
  *

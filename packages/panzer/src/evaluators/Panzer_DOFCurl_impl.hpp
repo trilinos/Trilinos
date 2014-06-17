@@ -76,12 +76,15 @@ PHX_EVALUATOR_CTOR(DOFCurl,p) :
   { TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFCurl only works for 2D and 3D basis functions"); } 
 
   // build dof_orientation
+/*
   dof_orientation = PHX::MDField<ScalarT,Cell,BASIS>(p.get<std::string>("Name")+" Orientation", 
                                                      basis->functional);
+*/
+
   // add to evaluation graph
   this->addEvaluatedField(dof_curl);
   this->addDependentField(dof_value);
-  this->addDependentField(dof_orientation);
+//  this->addDependentField(dof_orientation);
   
   std::string n = "DOFCurl: " + dof_curl.fieldTag().name() + " ("+PHX::TypeString<EvalT>::value+")";
   this->setName(n);
@@ -92,7 +95,7 @@ PHX_POST_REGISTRATION_SETUP(DOFCurl,sd,fm)
 {
   this->utils.setFieldData(dof_value,fm);
   this->utils.setFieldData(dof_curl,fm);
-  this->utils.setFieldData(dof_orientation,fm);
+  //this->utils.setFieldData(dof_orientation,fm);
 
   basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0]);
 }
@@ -105,6 +108,7 @@ PHX_EVALUATE_FIELDS(DOFCurl,workset)
     dof_curl[i] = 0.0;
 
   if(workset.num_cells>0) {
+/*
     Intrepid::FieldContainer<double> curls = (workset.bases[basis_index])->curl_basis;
 
     // assign ScalarT "dof_orientation" to double "orientation"
@@ -121,6 +125,9 @@ PHX_EVALUATE_FIELDS(DOFCurl,workset)
 
     // evaluate at quadrature points
     Intrepid::FunctionSpaceTools::evaluate<ScalarT>(dof_curl,dof_value,curls);
+*/
+    // evaluate at quadrature points
+    Intrepid::FunctionSpaceTools::evaluate<ScalarT>(dof_curl,dof_value,workset.bases[basis_index]->curl_basis);
   }
 }
 

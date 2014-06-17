@@ -53,6 +53,6 @@ bool verify_elem_node_coord_by_part(
 
 } //namespace use_cases
 } //namespace mesh
-} //namespace stk
+} //namespace stk_classic
 
 #endif // Stk_Mesh_Use_Cases_UseCase_Common_hpp

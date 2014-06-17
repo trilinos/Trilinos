@@ -73,7 +73,7 @@
 
 #define DO_SMOOTHING_TEST 0
 
-namespace stk
+namespace stk_classic
 {
   namespace adapt
   {
@@ -3196,5 +3196,5 @@ namespace stk
 
     }//    namespace regression_tests
   }//  namespace adapt
-}// namespace stk
+}// namespace stk_classic
 

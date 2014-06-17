@@ -17,7 +17,7 @@
 #include <stk_mesh/base/Bucket.hpp>
 #include <boost/lexical_cast.hpp>
 
-namespace stk
+namespace stk_classic
 {
   namespace percept
   {

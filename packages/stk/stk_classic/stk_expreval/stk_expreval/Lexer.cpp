@@ -237,4 +237,4 @@ tokenize(
 }
 
 } // namespace expreval
-} // namespace stk
+} // namespace stk_classic

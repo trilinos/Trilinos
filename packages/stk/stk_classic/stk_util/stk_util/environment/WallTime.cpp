@@ -38,4 +38,4 @@ wall_dtime(double &t)
   return dt ;
 }
 
-} // namespace stk
+} // namespace stk_classic

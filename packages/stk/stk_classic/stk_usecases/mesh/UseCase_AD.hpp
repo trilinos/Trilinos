@@ -101,7 +101,7 @@ namespace stk_classic {
         const VectorField & node_velocity );
 
   }//namespace app
-}//namespace stk
+}//namespace stk_classic
 
 namespace lame {
   typedef std::map<std::string, std::vector<Real> > MatProps;

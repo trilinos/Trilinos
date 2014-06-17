@@ -277,5 +277,5 @@ void Entity::set_relation_orientation(RelationIterator rel, unsigned orientation
 #endif
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 

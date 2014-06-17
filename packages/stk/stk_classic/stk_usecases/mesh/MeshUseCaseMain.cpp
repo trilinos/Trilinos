@@ -27,7 +27,7 @@ void use_case_23_driver( stk_classic::ParallelMachine, bool run_performance_test
 void use_case_AD_driver( stk_classic::ParallelMachine, bool run_performance_test );
 
 } // namespace app
-} // namespace stk
+} // namespace stk_classic
 
 //----------------------------------------------------------------------
 

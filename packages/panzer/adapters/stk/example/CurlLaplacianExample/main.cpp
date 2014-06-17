@@ -256,14 +256,6 @@ int main(int argc,char * argv[])
       mesh_factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD);
    }
 
-   // build worksets
-   ////////////////////////////////////////////////////////
-
-   Teuchos::RCP<panzer_stk_classic::WorksetFactory> wkstFactory
-      = Teuchos::rcp(new panzer_stk_classic::WorksetFactory(mesh)); // build STK workset factory
-   Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-      = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
-
    // build DOF Manager and linear object factory
    /////////////////////////////////////////////////////////////
  
@@ -277,7 +269,7 @@ int main(int argc,char * argv[])
      panzer::DOFManagerFactory<int,int> globalIndexerFactory;
      RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager_int
            = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
-     dofManager = dofManager;
+     dofManager = dofManager_int;
 
      // construct some linear algebra object, build object to pass to evaluators
      linObjFactory = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(Comm.getConst(),dofManager_int));
@@ -288,11 +280,20 @@ int main(int argc,char * argv[])
      panzer::DOFManagerFactory<int,panzer::Ordinal64> globalIndexerFactory;
      RCP<panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > dofManager_long
            = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
-     dofManager = dofManager;
+     dofManager = dofManager_long;
 
      // construct some linear algebra object, build object to pass to evaluators
      linObjFactory = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64>(comm,dofManager_long));
    }
+
+   // build worksets
+   ////////////////////////////////////////////////////////
+
+   Teuchos::RCP<panzer_stk_classic::WorksetFactory> wkstFactory
+      = Teuchos::rcp(new panzer_stk_classic::WorksetFactory(mesh)); // build STK workset factory
+   Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
+      = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
+   wkstContainer->setGlobalIndexer(dofManager);
 
    // Setup STK response library for writing out the solution fields
    ////////////////////////////////////////////////////////////////////////

@@ -169,6 +169,6 @@ void EntityRepository::log_modified( Entity & e ) const
 
 } // namespace impl
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 #endif // stk_mesh_baseImpl_EntityRepository_hpp

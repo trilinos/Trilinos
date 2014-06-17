@@ -102,6 +102,6 @@ struct FieldRelation {
 };
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 #endif //stk_mesh_FieldRelation_hpp

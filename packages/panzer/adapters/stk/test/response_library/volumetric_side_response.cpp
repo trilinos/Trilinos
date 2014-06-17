@@ -84,7 +84,7 @@ using Teuchos::rcp;
 
 using Teuchos::RCP;
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
   void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 			 std::vector<panzer::BC>& bcs);

@@ -48,6 +48,6 @@ namespace stk_classic {
       } // namespace StdMeshObjTopologies
     } // namespace Elem
   } // namespace adapt
-} // namespace stk
+} // namespace stk_classic
 
 #endif // stk_adapt_sierra_element_StdMeshObjTopologies_hpp

@@ -19,7 +19,7 @@
 #include <stk_percept/function/Function.hpp>
 #include <stk_percept/function/ElementOp.hpp>
 
-namespace stk
+namespace stk_classic
 {
   namespace percept
   {

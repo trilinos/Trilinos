@@ -77,6 +77,9 @@ PartRepository::remove_attribute( Part & p, const T * a )
   return p.m_partImpl.remove_attribute<T>( a );
 }
 
+bool is_internal_part(const Part& part);
+std::string convert_to_internal_name(const std::string& part_name);
+
 } // namespace impl
 } // namespace mesh
 } // namespace stk

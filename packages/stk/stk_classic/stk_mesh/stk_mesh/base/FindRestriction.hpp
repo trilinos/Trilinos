@@ -102,6 +102,6 @@ const FieldBase::Restriction& find_restriction(const FieldBase& field,
 }
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 #endif // stk_mesh_base_FindRestriction_hpp

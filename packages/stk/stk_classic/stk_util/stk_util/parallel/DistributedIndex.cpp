@@ -1025,6 +1025,6 @@ void DistributedIndex::generate_new_keys(
 //----------------------------------------------------------------------
 
 } // namespace util
-} // namespace stk
+} // namespace stk_classic
 
 

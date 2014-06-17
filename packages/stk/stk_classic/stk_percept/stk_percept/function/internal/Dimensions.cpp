@@ -1,6 +1,6 @@
 #include <stk_percept/function/internal/Dimensions.hpp>
 
-namespace stk
+namespace stk_classic
 {
   namespace percept
   {

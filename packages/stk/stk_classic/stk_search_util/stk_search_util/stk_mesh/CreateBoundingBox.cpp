@@ -185,7 +185,7 @@ void OffsetScaleOp::operator()(AxisAlignedBoundingBox3D &box) const {
 }
 
 } // namespace search_util
-} // namespace stk
+} // namespace stk_classic
 
 namespace {
 

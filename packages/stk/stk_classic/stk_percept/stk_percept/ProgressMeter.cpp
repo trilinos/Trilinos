@@ -1,7 +1,7 @@
 #include <stk_percept/ProgressMeter.hpp>
 #include <unistd.h>
 
-namespace stk
+namespace stk_classic
 {
 namespace percept
 {

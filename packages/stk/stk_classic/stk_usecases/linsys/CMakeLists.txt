@@ -25,7 +25,7 @@ FILE(GLOB SOURCES *.cpp)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
     stk_use_cases_linsys
     SOURCES ${SOURCES}
-    DEPLIBS stk_linsys stk_io
+    DEPLIBS stkclassic_linsys stkclassic_io
     ARGS "--use_case_1 --mesh gen:10x10x10+shell:y"
     COMM serial mpi
     NUM_MPI_PROCS 3

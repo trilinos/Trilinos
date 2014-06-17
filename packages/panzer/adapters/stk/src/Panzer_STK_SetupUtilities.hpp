@@ -53,7 +53,7 @@
 #include <map>
 #include <string>
 
-namespace panzer_stk { 
+namespace panzer_stk_classic { 
 
 /** Build volumetric worksets for a STK mesh
   *

@@ -60,13 +60,10 @@
 #include "BelosPseudoBlockCGSolMgr.hpp"
 #include "BelosTpetraAdapter.hpp"
 
-// MueLu
-#include "MueLu_CreateTpetraPreconditioner.hpp"
-
 #include "Teuchos_TimeMonitor.hpp"
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+#include "SGPreconditioner.hpp"
+#include "MeanBasedPreconditioner.hpp"
+#include "MueLuPreconditioner.hpp"
 
 namespace Kokkos {
 namespace Example {
@@ -78,6 +75,7 @@ belos_solve(
   const Teuchos::RCP<Tpetra::Vector<SV,LO,GO,N> >& b,
   const Teuchos::RCP<Tpetra::Vector<SV,LO,GO,N> >& x,
   const int use_muelu,
+  const int use_mean_based,
   const unsigned max_iter = 200,
   const typename Kokkos::Details::ArithTraits<SV>::mag_type tolerance =
     Kokkos::Details::ArithTraits<SV>::epsilon())
@@ -87,8 +85,7 @@ belos_solve(
   typedef typename VectorType::dot_type BelosScalarType;
   typedef Belos::LinearProblem<BelosScalarType, VectorType, OperatorType> ProblemType;
   typedef Belos::PseudoBlockCGSolMgr<BelosScalarType, VectorType, OperatorType> SolverType;
-  typedef MueLu::TpetraOperator<SM,LO,GO,N> PreconditionerType;
-
+  typedef SGPreconditioner<SM,LO,GO,N> PreconditionerType;
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::ParameterList;
@@ -105,28 +102,46 @@ belos_solve(
 
   //--------------------------------
   // Create preconditioner
-  RCP<PreconditionerType> mueluPreconditioner;
+  RCP<PreconditionerType> preconditioner;
+  RCP<OperatorType> precOp;
+
   if (use_muelu) {
     Teuchos::TimeMonitor timeMon(*time_prec_setup);
     std::string xmlFileName="muelu.xml";
-    mueluPreconditioner = MueLu::CreateTpetraPreconditioner(A,xmlFileName);
+    preconditioner = rcp(new MueLuPreconditioner<SM, LO, GO, N>());
+    precOp = preconditioner->setupPreconditioner(A, xmlFileName);
+  }
+
+  if (use_mean_based) {  
+    Teuchos::TimeMonitor timeMon(*time_prec_setup);
+    std::string xmlFileName = "muelu.xml";
+    preconditioner = rcp(new MeanBasedPreconditioner<SM, LO, GO, N>());
+    precOp = preconditioner->setupPreconditioner(A, xmlFileName); 
   }
 
   //--------------------------------
   // Set up linear solver
   RCP<ParameterList> belosParams = Teuchos::parameterList();
-  belosParams->set("Maximum Iterations", Teuchos::as<int>(max_iter));
-  belosParams->set("Convergence Tolerance", tolerance);
-  belosParams->set("Output Frequency", 1);
-  belosParams->set("Output Style", Belos::Brief);
-  RCP<SolverType> solver = rcp(new SolverType);
+  //Read in any params from xml file
+  Teuchos::updateParametersFromXmlFileAndBroadcast("belos.xml", Teuchos::ptr(belosParams.getRawPtr()),*A->getComm());
+  
+  if (!(belosParams->isParameter("Convergence Tolerance")))
+    belosParams->set("Convergence Tolerance", tolerance);
+  if (!(belosParams->isParameter("Maximum Iterations")))
+    belosParams->set("Maximum Iterations", Teuchos::as<int>(max_iter));
+  if (!(belosParams->isParameter("Output Frequency")))
+    belosParams->set("Output Frequency", 1);
+
   RCP<ProblemType> problem = rcp(new ProblemType(A, x, b));
-  if (use_muelu) problem->setRightPrec(mueluPreconditioner);
+  RCP<SolverType> solver = rcp(new SolverType(problem, belosParams));
+  
+  if (use_muelu || use_mean_based){
+     problem->setRightPrec(precOp);
+  }
   const bool isSet = problem->setProblem();
+  
   TEUCHOS_TEST_FOR_EXCEPTION(!isSet, std::runtime_error,
                              "Belos failed to set problem correctly.");
-  solver->setParameters(belosParams);
-  solver->setProblem(problem);
 
   //--------------------------------
   // Solve for nonlinear update

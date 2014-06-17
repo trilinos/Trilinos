@@ -827,4 +827,4 @@ namespace stk_classic {
 #endif
     }
   } // namespace percept
-} // namespace stk
+} // namespace stk_classic

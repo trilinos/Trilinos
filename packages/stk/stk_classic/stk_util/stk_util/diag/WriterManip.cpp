@@ -91,4 +91,4 @@ oct(
 }
 
 } // namespace diag
-} // namespace stk
+} // namespace stk_classic

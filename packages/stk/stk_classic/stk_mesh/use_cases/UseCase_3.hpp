@@ -70,6 +70,6 @@ bool verifyMesh( const UseCase_3_Mesh & mesh );
 
 } //namespace use_cases
 } //namespace mesh
-} //namespace stk
+} //namespace stk_classic
 
 #endif // Stk_Mesh_Use_Cases_UseCase_3_hpp

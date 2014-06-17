@@ -319,6 +319,6 @@ SelectedBucketVectorIteratorRange get_selected_bucket_range(const std::vector<Bu
 SelectedBucketRangeEntityIteratorRange get_selected_bucket_entity_range(const AllBucketsRange& bucket_range, const Selector& selector);
 
 } //namespace mesh
-} //namespace stk
+} //namespace stk_classic
 
 #endif

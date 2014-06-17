@@ -141,7 +141,7 @@ PartImpl::remove_attribute( const T * a )
 
 } // namespace impl
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------

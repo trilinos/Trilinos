@@ -1,7 +1,7 @@
 #include <stk_mms/stk_mms.h>
 #include <stk_util/diag/UserPlugin.hpp>
 
-namespace stk
+namespace stk_classic
 {
 namespace mms
 {

@@ -10,7 +10,7 @@
 
 #include <boost/unordered_set.hpp>
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 namespace {
    //! A dummy response for local use, is only used by the response library

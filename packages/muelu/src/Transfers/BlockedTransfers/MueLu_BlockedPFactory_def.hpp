@@ -122,9 +122,9 @@ namespace MueLu {
     const int numFactManagers = FactManager_.size();
 
     // Plausibility check
-    TEUCHOS_TEST_FOR_EXCEPTION(A->Rows() != numFactManagers, Exceptions::RuntimeError,
+    TEUCHOS_TEST_FOR_EXCEPTION(A->Rows() != as<size_t>(numFactManagers), Exceptions::RuntimeError,
                                "Number of block rows [" << A->Rows() << "] does not match the number of SubFactorManagers [" << numFactManagers << "]");
-    TEUCHOS_TEST_FOR_EXCEPTION(A->Cols() != numFactManagers, Exceptions::RuntimeError,
+    TEUCHOS_TEST_FOR_EXCEPTION(A->Cols() != as<size_t>(numFactManagers), Exceptions::RuntimeError,
                                "Number of block cols [" << A->Cols() << "] does not match the number of SubFactorManagers [" << numFactManagers << "]");
 
 

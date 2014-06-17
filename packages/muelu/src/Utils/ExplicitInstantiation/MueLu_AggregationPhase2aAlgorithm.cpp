@@ -47,25 +47,16 @@
 
 #include "MueLu_ExplicitInstantiation.hpp"
 
-#if defined(HAVE_MUELU_EXPLICIT_INSTANTIATION)
+#include "MueLu_AggregationPhase2aAlgorithm_def.hpp"
 
-#include "Kokkos_DefaultNode.hpp"
-#include "Tpetra_ETIHelperMacros.h"
-#include "MueLu_UncoupledAggregationAlgorithm_def.hpp"
-
-TPETRA_ETI_MANGLING_TYPEDEFS()
-
-#define MUELU_INST_LO_GO_N(LO, GO, N) \
-  template class MueLu::UncoupledAggregationAlgorithm<LO, GO, N>;
-
-#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_CUDA) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_CUDAWRAPPERNODE)
-  MUELU_INST_LO_GO_N(int, int, Kokkos_Compat_KokkosCudaWrapperNode)
+#ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
+template class MueLu::AggregationPhase2aAlgorithm<int, int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void, int, KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>;
 #endif
 
-#if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THRUSTGPUNODE)
-  MUELU_INST_LO_GO_N(int, int, KokkosClassic_ThrustGPUNode)
+#ifdef HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT
+# ifdef HAVE_TEUCHOS_LONG_LONG_INT
+template class MueLu::AggregationPhase2aAlgorithm<int, long long int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void, int, KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>;
+# else
+# warning To compile MueLu with 'long long int' support, please turn on Teuchos_ENABLE_LONG_LONG_INT
+# endif
 #endif
-
-#endif
-
-

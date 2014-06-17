@@ -53,5 +53,5 @@ std::ostream & print( std::ostream & s ,
 //----------------------------------------------------------------------
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 

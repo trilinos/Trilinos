@@ -315,7 +315,7 @@ public:
 /** \} */
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 #endif /* stk_mesh_FieldData_hpp */
 

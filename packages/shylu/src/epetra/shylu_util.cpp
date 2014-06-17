@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //               ShyLU: Hybrid preconditioner package
 //                 Copyright 2012 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -54,7 +54,7 @@
 #include "Isorropia_config.h" // Just for HAVE_MPI
 
 #include "Epetra_MpiComm.h"
-#include "Epetra_CrsMatrix.h" 
+#include "Epetra_CrsMatrix.h"
 
 // EpetraExt includes
 #include "EpetraExt_RowMatrixOut.h"
@@ -74,7 +74,7 @@ using namespace std;
 
 
 // Currently takes onle MpiComm
-Epetra_CrsMatrix *balanceAndRedistribute(Epetra_CrsMatrix *A, 
+Epetra_CrsMatrix *balanceAndRedistribute(Epetra_CrsMatrix *A,
                 Teuchos::ParameterList isoList)
 {
     int myPID = A->Comm().MyPID();
@@ -87,7 +87,7 @@ Epetra_CrsMatrix *balanceAndRedistribute(Epetra_CrsMatrix *A,
 
     // ==================== Symbolic factorization =========================
     // 1. Partition and redistribute [
-    Isorropia::Epetra::Partitioner *partitioner = new 
+    Isorropia::Epetra::Partitioner *partitioner = new
                             Isorropia::Epetra::Partitioner(A, isoList, false);
     partitioner->partition();
 
@@ -124,7 +124,7 @@ void checkMaps(Epetra_CrsMatrix *A)
     int nrows = ARowMap.NumMyElements();
     int *rows = ARowMap.MyGlobalElements();
 
-    //cout <<"In PID ="<< A->Comm().MyPID() <<" #cols="<< ncols << " #rows="<< 
+    //cout <<"In PID ="<< A->Comm().MyPID() <<" #cols="<< ncols << " #rows="<<
         //nrows <<" #domain elems="<< nelems <<" #range elems="<< npts << endl;
     // See if domain map == range map == row map
     for (int i = 0; i < nelems ; i++)
@@ -148,7 +148,7 @@ void findLocalColumns(Epetra_CrsMatrix *A, int *gvals, int &SNumGlobalCols)
     // 2. Find column permutation [
     // Find all columns in this proc
     int *vals = new int[n];       // vector of size n, not ncols
-    for (int i = 0; i < n ; i++) 
+    for (int i = 0; i < n ; i++)
     {
         vals[i] = 0;
         gvals[i] = 0;
@@ -326,7 +326,7 @@ void findBlockElems(Epetra_CrsMatrix *A, int nrows, int *rows, int *gvals,
         int Lnr, int *LeftElems,
         int Rnr, int *RightElems, string s1, string s2, bool cols)
 {
- 
+
     int gid;
     int rcnt = 0; int lcnt = 0;
     // Assemble ids in two arrays
@@ -368,7 +368,7 @@ void findBlockElems(Epetra_CrsMatrix *A, int nrows, int *rows, int *gvals,
         else
         {
             assert(rcnt < Rnr);
-            RightElems[rcnt++] = gid; 
+            RightElems[rcnt++] = gid;
             ssmsg2 << gid << " ";
 #ifdef DUMP_MATRICES
             outR << gid << endl;

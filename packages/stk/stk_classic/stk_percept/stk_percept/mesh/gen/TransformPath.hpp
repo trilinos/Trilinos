@@ -4,7 +4,7 @@
 #include "SweepMesher.hpp"
 #include <cmath>
 
-namespace stk
+namespace stk_classic
 {
   namespace percept
   {
@@ -117,6 +117,6 @@ namespace stk
 
     }//namespace utils
   }//namespace percept
-}//namespace stk
+}//namespace stk_classic
 
 #endif

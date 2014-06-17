@@ -7,7 +7,7 @@
 #include <stk_mesh/base/Part.hpp>
 
 
-namespace stk
+namespace stk_classic
 {
   namespace percept
   {
@@ -24,6 +24,6 @@ namespace stk
     };
 
   }//namespace percept
-}//namespace stk
+}//namespace stk_classic
 
 #endif

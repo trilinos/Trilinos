@@ -56,20 +56,16 @@
 #include <Ifpack2_Factory.hpp>
 #include <Ifpack2_Parameters.hpp>
 
-#include <Xpetra_MultiVectorFactory.hpp>
-#include <Xpetra_Matrix.hpp>
+#include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
-#include <Xpetra_MatrixFactory.hpp>
-#include <Xpetra_BlockedCrsMatrix.hpp>
+#include <Xpetra_Matrix.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
 
 #include "MueLu_Ifpack2Smoother_decl.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_FactoryManager.hpp"
-#include <MueLu_RAPFactory.hpp>
-#include <MueLu_MHDRAPFactory_def.hpp>
 
 namespace MueLu {
 
@@ -124,54 +120,59 @@ namespace MueLu {
 
     // If we are doing "user" partitioning, we assume that what the user
     // really wants to do is make tiny little subdomains with one row
-    // asssigned to each subdomain. The rows used for these little 
+    // asssigned to each subdomain. The rows used for these little
     // subdomains correspond to those in the 2nd block row.  Then,
     // if we overlap these mini-subdomains, we will do something that
     // looks like Vanka (grabbing all velocities associated with each
     // each pressure unknown). In addition, we put all Dirichlet points
     // as a little mini-domain.
 
-    bool BlockedMatrix = false;
+    bool isBlockedMatrix = false;
     RCP<Matrix> merged2Mat;
     if (type_ == "SCHWARZ") {
       ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
-      std::string subsolveparms = "subdomain solver parameters";
-      if (paramList.isParameter(subsolveparms)) {
-        ParameterList& subparamList = paramList.sublist("subdomain solver parameters");
-        std::string partition = "partitioner: type";
-        if (subparamList.isParameter(partition)) {
-          std::string PartitionType = subparamList.get<std::string>(partition);
-          if (PartitionType == "user") {
-            BlockedMatrix = true;
-            RCP<BlockedCrsMatrix> bA = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
-            TEUCHOS_TEST_FOR_EXCEPTION( bA.is_null(), Exceptions::BadCast,
-                               "Matrix A must be of type BlockedCrsMatrix.");
-            size_t NumVels = bA->getMatrix(0,0)->getNodeNumRows();
-            size_t myrows  = A_->getNodeNumRows();
-            ArrayRCP<LocalOrdinal> blockSeeds(myrows,
-                             Teuchos::OrdinalTraits<LocalOrdinal>::invalid() );
-            size_t NumPres = bA->getMatrix(1,0)->getNodeNumRows();
 
-            for (size_t rowOfB = NumVels; rowOfB < NumVels+NumPres; ++rowOfB)
-              blockSeeds[rowOfB] = rowOfB - NumVels; 
-            RCP<BlockedCrsMatrix> bA2 = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
-               TEUCHOS_TEST_FOR_EXCEPTION( bA2.is_null(), Exceptions::BadCast,
-               "Matrix A must be of type BlockedCrsMatrix.");
-            Teuchos::RCP<CrsMatrix>  mergedMat = bA2->Merge();
-            merged2Mat = rcp(new CrsMatrixWrap(mergedMat));
+      std::string sublistName = "subdomain solver parameters";
+      if (paramList.isSublist(sublistName)) {
+        ParameterList& subList = paramList.sublist(sublistName);
 
-            // Add Dir. rows to the list of seeds 
+        std::string partName  = "partitioner: type";
+        if (subList.isParameter(partName) && subList.get<std::string>(partName) == "user") {
+          isBlockedMatrix = true;
 
-            ArrayRCP<const bool > boundaryNodes;
-            boundaryNodes = MueLu::Utils<SC,LO,GO,NO,LMO>::DetectDirichletRows(*merged2Mat, 0.0);
-            for (LO i = 0; i < boundaryNodes.size(); ++i)
-               if (boundaryNodes[i]) { blockSeeds[i] = NumPres;   NumPres++; }
+          RCP<BlockedCrsMatrix> bA = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
+          TEUCHOS_TEST_FOR_EXCEPTION(bA.is_null(), Exceptions::BadCast,
+                                     "Matrix A must be of type BlockedCrsMatrix.");
 
-            subparamList.set("partitioner: map", blockSeeds);
-            subparamList.set("partitioner: local parts",  (int) NumPres);
-          } // if (PartitionType == "user")
-        } // if (subparamList.isParameter(partition)) 
-      } // if (paramList.isParameter(subsolveparms))
+          size_t numVels = bA->getMatrix(0,0)->getNodeNumRows();
+          size_t numPres = bA->getMatrix(1,0)->getNodeNumRows();
+          size_t numRows = A_->getNodeNumRows();
+
+          ArrayRCP<LocalOrdinal> blockSeeds(numRows, Teuchos::OrdinalTraits<LocalOrdinal>::invalid());
+
+          for (size_t rowOfB = numVels; rowOfB < numVels+numPres; ++rowOfB)
+            blockSeeds[rowOfB] = rowOfB - numVels;
+
+          RCP<BlockedCrsMatrix> bA2 = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
+          TEUCHOS_TEST_FOR_EXCEPTION(bA2.is_null(), Exceptions::BadCast,
+                                     "Matrix A must be of type BlockedCrsMatrix.");
+
+          RCP<CrsMatrix> mergedMat = bA2->Merge();
+          merged2Mat = rcp(new CrsMatrixWrap(mergedMat));
+
+          // Add Dirichlet rows to the list of seeds
+          ArrayRCP<const bool> boundaryNodes;
+          boundaryNodes = Utils::DetectDirichletRows(*merged2Mat, 0.0);
+          for (LO i = 0; i < boundaryNodes.size(); i++)
+            if (boundaryNodes[i]) {
+              blockSeeds[i] = numPres;
+              numPres++;
+            }
+
+          subList.set("partitioner: map",         blockSeeds);
+          subList.set("partitioner: local parts", as<int>(numPres));
+        }
+      }
     } // if (type_ == "SCHWARZ")
 
     if (type_ == "CHEBYSHEV") {
@@ -225,8 +226,8 @@ namespace MueLu {
     }
 
     RCP<const Tpetra::CrsMatrix<SC, LO, GO, NO, LMO> > tpA;
-    if (BlockedMatrix == true) tpA = Utils::Op2NonConstTpetraCrs(merged2Mat);
-    else                       tpA = Utils::Op2NonConstTpetraCrs(A_);
+    if (isBlockedMatrix == true) tpA = Utils::Op2NonConstTpetraCrs(merged2Mat);
+    else                         tpA = Utils::Op2NonConstTpetraCrs(A_);
 
     prec_ = Ifpack2::Factory::create(type_, tpA, overlap_);
 

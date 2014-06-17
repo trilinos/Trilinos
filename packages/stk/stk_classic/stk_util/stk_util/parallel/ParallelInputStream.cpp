@@ -150,6 +150,6 @@ ParallelInputStream::ParallelInputStream(
 ParallelInputStream::~ParallelInputStream()
 { delete rdbuf(); }
 
-} // namespace stk
+} // namespace stk_classic
 
 

@@ -61,6 +61,6 @@ typename boost::iterator_range<T>::iterator end(const boost::sub_range<T> &range
   return boost::end(range);
 }
 
-} // namespace stk
+} // namespace stk_classic
 
 #endif // STK_UTIL_UTIL_RANGE_HPP

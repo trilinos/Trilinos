@@ -198,4 +198,4 @@ void IO_Fixture::set_input_ioss_region( Teuchos::RCP<Ioss::Region> input_region 
 
 } // namespace util
 } // namespace io
-} // namespace stk
+} // namespace stk_classic

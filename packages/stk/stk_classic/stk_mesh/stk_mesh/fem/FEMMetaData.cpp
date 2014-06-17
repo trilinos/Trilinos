@@ -457,4 +457,4 @@ get_cell_topology(
 
 } // namespace fem
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic

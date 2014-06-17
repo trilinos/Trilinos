@@ -358,4 +358,4 @@ void EntityRepository::update_entity_key(EntityKey key, Entity & entity)
 
 } // namespace impl
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic

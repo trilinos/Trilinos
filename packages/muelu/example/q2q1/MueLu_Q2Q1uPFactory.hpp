@@ -146,7 +146,7 @@ namespace MueLu {
     //@}
 
   private:
-    void FindDist4Cpts     (const Matrix& A, const MultiVector& coords, const Array<LO>& userCpts, std::vector<char>& status, MyCptList& myCpts) const;
+    void FindDist4Cpts     (const Matrix& A, const MultiVector& coords, const Array<LO>& userCpts, std::vector<char>& status, MyCptList& myCpts, int levelID) const;
     void PhaseTwoPattern   (const Matrix& A, const MultiVector& coords, const std::vector<char>& status, MyCptList& myCpts) const;
     void FindMidPoints     (const Matrix& A, const MultiVector& coords, Array<LO>& Cptlist, const MyCptList& myCpts) const;
     void CompDistances     (const Matrix& A, LO start, int numDist, std::vector<LO>& dist1, std::vector<LO>& dist2,
@@ -154,7 +154,8 @@ namespace MueLu {
     void CreateCrsPointers (const Matrix& A, ArrayRCP<const size_t>& ia, ArrayRCP<const LO>& ja) const;
     void CptDepends2Pattern(const Matrix& A, const MyCptList& myCpts, RCP<Matrix>& P) const;
 
-    void DumpStatus(const std::vector<char>& status, const std::string& filename) const;
+    void DumpStatus(const std::vector<char>& status, bool pressureMode, const std::string& filename) const;
+    void DumpCoords(const MultiVector&       coords, const std::string& filename) const;
   };
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -203,7 +204,7 @@ namespace MueLu {
 
     RCP<Matrix> A = Get< RCP<Matrix> >(fineLevel, "A");
 
-    Xpetra::global_size_t N = A->getRowMap()->getGlobalNumElements(), n;
+    Xpetra::global_size_t N = A->getRowMap()->getGlobalNumElements();
 
     const ParameterList& pL = GetParameterList();
     bool pressureMode = (pL.get<std::string>("mode") == "pressure");
@@ -251,13 +252,57 @@ namespace MueLu {
     GetOStream(Runtime1) << "# user C-points: " << userCpts.size() << std::endl;
 
     RCP<MyCptList>    myCpts = rcp(new MyCptList(N, 30));
+
     std::vector<char> status(N, UNASSIGNED);
 
-    FindDist4Cpts(*A, *coords, userCpts, status, *myCpts);
+    FindDist4Cpts(*A, *coords, userCpts, status, *myCpts, fineLevel.GetLevelID());
+
+    const bool doStatusOutput = pL.get<bool>("dump status");
+    if (doStatusOutput) {
+      const Array<LO>&    Cptlist = myCpts->getCList();
+      std::vector<short>& numCpts = myCpts->getNumCpts();
+
+      std::string depPrefix = std::string("dep0-l") + toString(fineLevel.GetLevelID()) + (pressureMode ? "-p-" : "-v-");
+
+      std::vector<char> depStatus(N);
+      for (int k = 0; k < Cptlist.size(); k++) {
+
+        for (Xpetra::global_size_t i = 0; i < N; i++) {
+          bool isPresent = false;
+          for (int j = 0; j < numCpts[i]; j++)
+            if ((*myCpts)(i)[j] == Cptlist[k])
+              isPresent = true;
+          depStatus[i] = (isPresent ? CPOINT : UNASSIGNED);
+        }
+
+        DumpStatus(depStatus, pressureMode, depPrefix + toString(k));
+      }
+    }
 
     // Beef up any pattern which seems pretty limited
     if (pL.get<bool>("phase2"))
       PhaseTwoPattern(*A, *coords, status, *myCpts);
+
+    if (doStatusOutput) {
+      const Array<LO>&    Cptlist = myCpts->getCList();
+      std::vector<short>& numCpts = myCpts->getNumCpts();
+
+      std::string depPrefix = std::string("dep1-l") + toString(fineLevel.GetLevelID()) + (pressureMode ? "-p-" : "-v-");
+
+      std::vector<char> depStatus(N);
+      for (int k = 0; k < Cptlist.size(); k++) {
+
+        for (Xpetra::global_size_t i = 0; i < N; i++) {
+          bool isPresent = false;
+          for (int j = 0; j < numCpts[i]; j++)
+            if ((*myCpts)(i)[j] == Cptlist[k])
+              isPresent = true;
+          depStatus[i] = (isPresent ? CPOINT : UNASSIGNED);
+        }
+
+        DumpStatus(depStatus, pressureMode, depPrefix + toString(k));
+      }
+    }
 
     RCP<Matrix> P;
     CptDepends2Pattern(*A, *myCpts, P);
@@ -367,7 +412,7 @@ namespace MueLu {
   // CompDistances().
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
-  FindDist4Cpts(const Matrix& A, const MultiVector& coords, const Array<LO>& userCpts, std::vector<char>& status, MyCptList& myCpts) const {
+  FindDist4Cpts(const Matrix& A, const MultiVector& coords, const Array<LO>& userCpts, std::vector<char>& status, MyCptList& myCpts, int levelID) const {
     int    NDim = coords.getNumVectors();
     size_t n    = A.getNodeNumRows();
 
@@ -400,6 +445,7 @@ namespace MueLu {
 
     const ParameterList& pL = GetParameterList();
     const bool doStatusOutput = pL.get<bool>("dump status");
+    const bool pressureMode   = (pL.get<std::string>("mode") == "pressure");
 
     // Set all Dirichlet points as Fpoints
     // However, if a Dirichlet point is in userCpts, it will be added to the
@@ -424,7 +470,7 @@ namespace MueLu {
 
     std::vector<short>& numCpts = myCpts.getNumCpts();
 
-    std::string st = std::string("status-") + (userCpts.size() ? "v-" : "p-");
+    std::string st = std::string("status-l") + toString(levelID) + (pressureMode ? "-p-" : "-v-");
 
     int userCcount = 0;
     int numCandidates = 0;
@@ -432,8 +478,10 @@ namespace MueLu {
 
     // Determine CPOINTs
     int dumpCount = 0;
-    if (doStatusOutput)
-      DumpStatus(status, st + i2s(dumpCount++));
+    if (doStatusOutput) {
+      DumpStatus(status, pressureMode, st + i2s(dumpCount++) + "-A");
+      DumpCoords(coords, "coord-l" + toString(levelID) + (pressureMode ? "-p" : "-v"));
+    }
 
     int i = 0;
     while (i < n) {
@@ -445,10 +493,8 @@ namespace MueLu {
       // functions. We want to then add them one-by-one, updating distances,
       // and look to see if further CPOINTs can be added once we have finished
       // all of the userCpts
-      if (userCcount < userCpts.size()) {
-        newCpt         = userCpts[userCcount++];
-        status[newCpt] = CPOINT;
-      }
+      if (userCcount < userCpts.size())
+        newCpt = userCpts[userCcount++];
 
       // Check for possible CPOINT on candidate list
       while ((newCpt == -1) && (numCandidates > 0)) {
@@ -457,7 +503,7 @@ namespace MueLu {
           status[newCpt] = CPOINT;
 
           if (doStatusOutput)
-            DumpStatus(status, st + i2s(dumpCount++));
+            DumpStatus(status, pressureMode, st + i2s(dumpCount++) + "-B");
         }
         numCandidates--;
       }
@@ -469,7 +515,7 @@ namespace MueLu {
           status[newCpt] = CPOINT;
 
           if (doStatusOutput)
-            DumpStatus(status, st + i2s(dumpCount++));
+            DumpStatus(status, pressureMode, st + i2s(dumpCount++) + "-C");
         }
         i++;
       }
@@ -499,7 +545,7 @@ namespace MueLu {
           }
         }
         if (dumpStatus && doStatusOutput)
-          DumpStatus(status, st + i2s(dumpCount++));
+          DumpStatus(status, pressureMode, st + i2s(dumpCount++) + "-D");
 
         // Update myCpts() to reflect dependence of neighbors on newCpt
         for (int k = 0; k < dist3.size(); k++) {
@@ -560,7 +606,7 @@ namespace MueLu {
         }
         dist4.resize(numNewCandidates);
         if (dumpStatus && doStatusOutput)
-          DumpStatus(status, st + i2s(dumpCount++));
+          DumpStatus(status, pressureMode, st + i2s(dumpCount++) + "-E");
 
         // Now remove all TWOTIMERs from the old candidate list
         int numOldCandidates = 0;
@@ -574,7 +620,7 @@ namespace MueLu {
           }
         }
         if (dumpStatus && doStatusOutput)
-          DumpStatus(status, st + i2s(dumpCount++));
+          DumpStatus(status, pressureMode, st + i2s(dumpCount++) + "-F");
 
         // Sort the candidates based on distances (breaking ties via degrees,
         // encouraging points near boundary). First, we order new candidates
@@ -679,6 +725,9 @@ namespace MueLu {
             numCpts[newCpt] = 1;
             myCpts(newCpt)[0] = newCpt;
 
+            if (doStatusOutput)
+              DumpStatus(status, pressureMode, st + i2s(dumpCount++) + "-G");
+
             std::vector<LO> dist1, dist2, dist3, dist4;
             CompDistances(A, newCpt, 3, dist1, dist2, dist3, dist4);
 
@@ -758,18 +807,12 @@ namespace MueLu {
     std::vector<int>  candidates(n);
 
     for (int numCDepends = 1; numCDepends <= 2; numCDepends++) {
-      for (int i = 0; i < n; i++)
-        candidates[i] = 0;
-
       int numCandidates = 0;
       for (int i = 0; i < n; i++)
-        if (status[i] != CPOINT && numCpts[i] == numCDepends)
+        if (status[i] < CPOINT && numCpts[i] == numCDepends)
           candidates[numCandidates++] = i;
 
       for (int p = 0; p < numCandidates; p++) {
-        const LO* neighs = &ja[ia[candidates[p]]];
-        int numNeighbors = ia[candidates[p]+1] - ia[candidates[p]];
-
         // Mark already existing CPOINT dependencies
         LO* cpts = myCpts(candidates[p]);
         for (int k = 0; k < numCpts[candidates[p]]; k++)
@@ -777,7 +820,9 @@ namespace MueLu {
 
         // Make a list of my neighbors' CPOINT dependencies, excluding all
         // already existing CPOINT dependencies for candidates[p]
-        int numNearbyCs = 0;
+        const LO* neighs = &ja[ia[candidates[p]]];
+        int numNeighbors = ia[candidates[p]+1] - ia[candidates[p]];
+        int numNearbyCs  = 0;
         for (int k = 0; k < numNeighbors; k++) {
           LO        curNeigh = neighs[k];
           const LO* neighCs  = myCpts(curNeigh);
@@ -834,40 +879,43 @@ namespace MueLu {
               newVec[k] = coords1D[k][nearbyCs[j]] - coords1D[k][candidates[p]];
               norm += newVec[k]*newVec[k];
             }
-            norm  = sqrt(norm);
+            norm = sqrt(norm);
             for (int k = 0; k < NDim; k++)
               newVec[k] /= norm;
 
             score[j] = 0;
             for (int k = 0; k < NDim; k++)
               score[j] += newVec[k]*(vec1[k] + vec2[k]);
+            // Why??
             score[j] /= 2;
 
             dists[j] = norm;
           }
 
-          double mDist = 0.;
+          // Normalize distances
+          double maxDist = 0.;
           for (int j = 0; j < numNearbyCs; j++)
-            if (mDist < dists[j])
-              mDist = dists[j];
+            if (maxDist < dists[j])
+              maxDist = dists[j];
 
           for (int j = 0; j < numNearbyCs; j++)
-            dists[j] /= mDist;
+            dists[j] /= maxDist;
 
-          const double distWeight = 0.3;
-          int mComposite = -10000;
-          int maxIndex = -1;
+          const double distWeight   =  0.3;
+          double       maxComposite = -10000;
+          double       maxIndex     = -1;
           for (int j = 0; j < numNearbyCs; j++) {
             // The formula is
-            //     if (score[j] - distWeight*dists[j] > mComposite)
+            //     if (score[j] - distWeight*dists[j] > maxComposite)
             // It was modified to match Matlab
-            if (score[j] - distWeight*dists[j] + 1.0e-7*(nearbyCs[j]-1) > mComposite) {
-              mComposite = score[j] - distWeight*dists[j] + 1.0e-7*(nearbyCs[j]-1);
-              maxIndex   = j;
+            double composite = score[j] - distWeight*dists[j] + 1.0e-7*(nearbyCs[j]-1);
+            if (maxComposite < composite) {
+              maxComposite = composite;
+              maxIndex     = j;
             }
           }
 
-          if (score[maxIndex] - numCDepends*0.2 > -0.3) {
+          if (score[maxIndex] - 0.2*numCDepends > -0.3) {
             TEUCHOS_TEST_FOR_EXCEPTION(numCpts[candidates[p]] >= myCpts.getNnzPerRow(), Exceptions::RuntimeError, "Increase max number of C points per row");
             myCpts(candidates[p])[numCpts[candidates[p]]++] = nearbyCs[maxIndex];
           }
@@ -1107,7 +1155,8 @@ namespace MueLu {
         count++;
       }
 
-    TEUCHOS_TEST_FOR_EXCEPTION(count != numMidPoints, Exceptions::RuntimeError, "Wrong with the number of mid points: " << count << " vs. " << numMidPoints);
+    TEUCHOS_TEST_FOR_EXCEPTION(count != numMidPoints, Exceptions::RuntimeError,
+                               "Wrong with the number of mid points: " << count << " vs. " << numMidPoints);
   }
 
   // Convert information in Cptlist, myCpts into a sparsity pattern matrix
@@ -1217,10 +1266,8 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
-  DumpStatus(const std::vector<char>& status, const std::string& filename) const {
-    int N = status.size(), n = sqrt(N);
-
-    bool pressureMode = (N == n*n);
+  DumpStatus(const std::vector<char>& status, bool pressureMode, const std::string& filename) const {
+    int N = status.size();
 
     if (pressureMode) {
       std::ofstream ofs(filename.c_str());
@@ -1233,6 +1280,24 @@ namespace MueLu {
         ofs1 << status[i+0] << std::endl;
         ofs2 << status[i+1] << std::endl;
       }
+    }
+  }
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  DumpCoords(const MultiVector& coords, const std::string& filename) const {
+    const int NDim = coords.getNumVectors();
+    const int n    = coords.getLocalLength();
+
+    ArrayRCP<ArrayRCP<const SC> > coords1D(NDim);
+    for (size_t i = 0; i < NDim; i++)
+      coords1D[i] = coords.getData(i);
+
+    std::ofstream ofs(filename.c_str());
+    for (int i = 0; i < n; i++) {
+      for (int k = 0; k < NDim; k++)
+        ofs << " " << coords1D[k][i];
+      ofs << std::endl;
     }
   }
 

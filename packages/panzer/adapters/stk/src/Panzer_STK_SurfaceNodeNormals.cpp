@@ -60,7 +60,7 @@
 #include "Intrepid_CellTools.hpp"
 #include "Teuchos_Assert.hpp"
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
   void computeSidesetNodeNormals(boost::unordered_map<unsigned,std::vector<double> >& normals,
 				 const Teuchos::RCP<const panzer_stk_classic::STK_Interface>& mesh,

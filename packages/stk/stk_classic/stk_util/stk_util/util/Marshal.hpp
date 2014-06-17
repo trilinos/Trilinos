@@ -319,6 +319,6 @@ Marshal &read(Marshal &min, T &t) {
   return min;
 }
 
-} // namespace stk
+} // namespace stk_classic
 
 #endif // STK_UTIL_UTIL_MARSHAL_HPP

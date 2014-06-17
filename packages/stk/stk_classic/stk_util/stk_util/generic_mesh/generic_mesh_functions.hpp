@@ -266,6 +266,6 @@ inline
 void
 rotate_multistate_fields( Mesh & mesh );
 
-} // namespace stk
+} // namespace stk_classic
 
 #endif // STK_UTIL_GENERIC_MESH_FUNCTIONS_HPP

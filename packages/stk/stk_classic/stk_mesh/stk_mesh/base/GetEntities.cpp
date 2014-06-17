@@ -137,5 +137,5 @@ void count_entities(
 //----------------------------------------------------------------------
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 

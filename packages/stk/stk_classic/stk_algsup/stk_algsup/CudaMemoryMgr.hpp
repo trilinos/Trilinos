@@ -182,7 +182,7 @@ void CudaMemoryMgr::copy_from_buffer(T* host_ptr, size_t buf_size, const T* devi
 
 #endif
 
-}//namespace stk
+}//namespace stk_classic
 
 #endif
 

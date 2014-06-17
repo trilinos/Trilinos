@@ -402,6 +402,6 @@ bool test_greedy_sideset ( stk_classic::ParallelMachine comm )
 
 } //namespace use_cases
 } //namespace rebalance
-} //namespace stk
+} //namespace stk_classic
 
 

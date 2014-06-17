@@ -1,7 +1,7 @@
 #ifndef stk_percept_Edge_hpp
 #define stk_percept_Edge_hpp
 
-namespace stk
+namespace stk_classic
 {
   namespace percept
   {
@@ -34,6 +34,6 @@ namespace stk
     };
 
   }//namespace percept
-}//namespace stk
+}//namespace stk_classic
 
 #endif

@@ -140,7 +140,7 @@ void tests() {
 
 } // namespace box
 } // namespace search
-} // namespace stk
+} // namespace stk_classic
 
 STKUNIT_UNIT_TEST(UnitTestingOfSearchBox, testUnit)
 {

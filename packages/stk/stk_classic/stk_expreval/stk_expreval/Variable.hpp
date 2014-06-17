@@ -438,6 +438,6 @@ private:
 };
 
 } // namespace expreval
-} // namespace stk
+} // namespace stk_classic
 
 #endif // stk_expreval_Variable_hpp

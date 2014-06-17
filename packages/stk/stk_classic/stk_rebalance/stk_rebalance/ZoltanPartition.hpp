@@ -337,6 +337,6 @@ private:
 /** \} */
 
 }
-} // namespace stk
+} // namespace stk_classic
 
 #endif

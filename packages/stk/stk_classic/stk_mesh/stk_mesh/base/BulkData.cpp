@@ -832,5 +832,5 @@ void BulkData::generate_new_entities(const std::vector<size_t>& requests,
 //----------------------------------------------------------------------
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 

@@ -20,7 +20,7 @@
 #include <stk_percept/function/internal/Searcher.hpp>
 #include <stk_percept/function/internal/IsInElement.hpp>
 
-namespace stk
+namespace stk_classic
 {
   namespace percept
   {

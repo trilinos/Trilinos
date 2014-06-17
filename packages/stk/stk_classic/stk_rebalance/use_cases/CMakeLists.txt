@@ -17,7 +17,7 @@ FILE(GLOB SOURCES *.cpp)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
     stk_rebalance_use_cases
     SOURCES ${SOURCES}
-    DEPLIBS stk_util_use_cases
+    DEPLIBS stkclassic_util_use_cases
     ARGS ""
     COMM mpi
     NUM_MPI_PROCS 1-4

@@ -68,7 +68,7 @@ stk_classic::Marshal &operator>>(stk_classic::Marshal &min, S2 &s) {
   return min >> s.m_string >> s.m_int;
 }
 
-} // namespace stk
+} // namespace stk_classic
 
 
 template <class T>

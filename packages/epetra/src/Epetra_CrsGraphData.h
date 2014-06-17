@@ -238,6 +238,11 @@ struct Epetra_CrsGraphData::IndexData<long long>
     Allocate(NumMyBlockRows, AllocSorted);
   }
 
+  virtual ~IndexData()
+  {
+    Deallocate();
+  }
+
   void Allocate(int NumMyBlockRows, bool AllocSorted)
   {
     Deallocate();

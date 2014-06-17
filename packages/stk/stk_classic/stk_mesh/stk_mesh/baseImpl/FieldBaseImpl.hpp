@@ -169,6 +169,6 @@ std::ostream & print( std::ostream & ,
 
 } // namespace impl
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 #endif // stk_mesh_baseImpl_FieldBaseIml_hpp

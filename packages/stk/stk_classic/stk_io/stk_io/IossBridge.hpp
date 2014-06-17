@@ -330,6 +330,6 @@ void get_io_field_type(const stk_classic::mesh::FieldBase *field,
  */
 
 }//namespace io
-}//namespace stk
+}//namespace stk_classic
 #endif
 

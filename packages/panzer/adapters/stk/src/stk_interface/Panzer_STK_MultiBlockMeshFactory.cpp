@@ -45,7 +45,7 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 MultiBlockMeshFactory::MultiBlockMeshFactory()
 {

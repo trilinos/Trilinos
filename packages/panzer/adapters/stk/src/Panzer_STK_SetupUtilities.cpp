@@ -47,7 +47,7 @@
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 
-namespace panzer_stk { 
+namespace panzer_stk_classic { 
 Teuchos::RCP<std::vector<panzer::Workset> >  
 buildWorksets(const panzer_stk_classic::STK_Interface & mesh,
               const panzer::PhysicsBlock & pb)

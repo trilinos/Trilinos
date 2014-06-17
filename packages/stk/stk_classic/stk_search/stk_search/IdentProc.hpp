@@ -165,6 +165,6 @@ std::ostream& operator<<(std::ostream &dout, const IdentProc<K, P> &ident_proc){
 
 } // namespace ident
 } // namespace search
-} // namespace stk
+} // namespace stk_classic
 
 #endif

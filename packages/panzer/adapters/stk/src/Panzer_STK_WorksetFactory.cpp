@@ -45,7 +45,7 @@
 #include "Panzer_WorksetFactoryBase.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 /** Build sets of boundary condition worksets
   */

@@ -115,4 +115,4 @@ RuntimeWarningDeferred::~RuntimeWarningDeferred()
   {}
 }
 
-} // namespace stk
+} // namespace stk_classic

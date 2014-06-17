@@ -21,7 +21,7 @@ INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES( .. )
 
-IF( STK_ENABLE_BoostLib )
+IF( ${PACKAGE_NAME}_ENABLE_BoostLib )
   TRIBITS_ADD_EXECUTABLE(
 	adapt_exe_1
 	HEADERS	${HEADERS}

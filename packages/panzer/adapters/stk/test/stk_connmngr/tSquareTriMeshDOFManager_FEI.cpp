@@ -70,7 +70,7 @@ using Teuchos::rcp;
 using Teuchos::rcpFromRef;
 using Teuchos::rcp_dynamic_cast;
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 Teuchos::RCP<panzer::ConnManager<int,int> > buildTriMesh(stk_classic::ParallelMachine comm,int xelmts,int yelmts,int xblocks,int yblocks)
 {

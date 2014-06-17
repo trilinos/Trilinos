@@ -529,6 +529,261 @@ public:
   }
 };
 
+template <typename Kernel>
+__global__ void
+#if __CUDA_ARCH__ >= 300
+__launch_bounds__(1024,2)
+#endif
+Rank1FullOccupancyKernelLaunch(Kernel kernel) {
+  kernel();
+}
+
+// Kernel implementing y = A * x where PCE size of A is 1
+//   A == Kokkos::CrsMatrix< Sacado::UQ::PCE<...>,...>, with A.values.sacado_size() == 1 
+//   x, y == Kokkos::View< Sacado::UQ::PCE<...>*,...>,
+//   x and y are rank 1
+template <int BlockSize,
+          typename MatrixStorage,
+          typename MatrixOrdinal,
+          typename MatrixMemory,
+          typename MatrixSize,
+          typename InputStorage,
+          typename InputMemory,
+          typename OutputStorage,
+          typename OutputMemory>
+
+class MeanMultiplyRank1<BlockSize, Kokkos::Cuda, MatrixStorage, MatrixOrdinal, MatrixMemory, MatrixSize, InputStorage, InputMemory, OutputStorage, OutputMemory>
+{
+public:
+  typedef Sacado::UQ::PCE<MatrixStorage> MatrixValue;
+  typedef Sacado::UQ::PCE<InputStorage> InputVectorValue;
+  typedef Sacado::UQ::PCE<OutputStorage> OutputVectorValue;
+
+  typedef Kokkos::Cuda Device;
+  typedef Device device_type;
+  typedef Kokkos::CrsMatrix< MatrixValue,
+                             MatrixOrdinal,
+                             Device,
+                             MatrixMemory,
+                             MatrixSize> matrix_type;
+  typedef typename matrix_type::values_type matrix_values_type;
+  typedef typename MatrixValue::ordinal_type size_type;
+  typedef Kokkos::View< InputVectorValue*,
+                        Kokkos::LayoutLeft,
+                        Device,
+                        InputMemory > input_vector_type;
+  typedef Kokkos::View< OutputVectorValue*,
+                        Kokkos::LayoutLeft,
+                        Device,
+                        OutputMemory > output_vector_type;
+private:
+
+  typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
+  typedef typename MatrixValue::value_type matrix_scalar;
+  typedef typename InputVectorValue::value_type input_scalar;
+  typedef typename OutputVectorValue::value_type output_scalar;
+
+  const matrix_values_type  m_A_values ;
+  const matrix_graph_type   m_A_graph ;
+  const output_vector_type  v_y ;
+  const input_vector_type   v_x ;
+  const input_scalar        m_a ;
+  const output_scalar       m_b ;
+
+
+  MeanMultiplyRank1( const matrix_type &        A ,
+            const input_vector_type &  x ,
+            const output_vector_type & y ,
+            const input_scalar & a ,
+            const output_scalar & b )
+  : m_A_values( A.values )
+  , m_A_graph( A.graph )
+  , v_y( y )
+  , v_x( x )
+  , m_a( a )
+  , m_b( b )
+  {}
+
+public:
+
+  __device__ void operator()(void) const
+  {
+
+    const size_type iBlockRow = blockDim.y * blockIdx.x + threadIdx.y;
+
+    //Check for valid row
+    const size_type row_count = m_A_graph.row_map.dimension_0()-1;
+    if (iBlockRow < row_count) {
+
+      const size_type iEntryBegin = m_A_graph.row_map[ iBlockRow ];
+      const size_type iEntryEnd   = m_A_graph.row_map[ iBlockRow + 1 ];
+      const size_type dim = v_x.sacado_size();
+
+      for ( size_type pce = threadIdx.x; pce <  dim ; pce+=blockDim.x){
+        double s = 0.0;
+        for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
+          const matrix_scalar aA = m_a*m_A_values(iEntry).fastAccessCoeff(0);
+          const size_type col = m_A_graph.entries(iEntry);
+          s += aA*v_x(col).fastAccessCoeff(pce);
+        }
+        v_y(iBlockRow).fastAccessCoeff(pce) = s + m_b*v_y(iBlockRow).fastAccessCoeff(pce);
+      }
+    }
+  }
+
+  static void apply( const matrix_type & A ,
+                     const input_vector_type & x ,
+                     const output_vector_type & y ,
+                     const input_scalar & a = input_scalar(1) ,
+                     const output_scalar & b = output_scalar(0) )
+  {
+    typedef MeanMultiplyRank1<BlockSize, Kokkos::Cuda, MatrixStorage, MatrixOrdinal, MatrixMemory, MatrixSize, InputStorage, InputMemory, OutputStorage, OutputMemory> Kernel;
+
+    const size_t row_count = A.graph.row_map.dimension_0() -1 ;
+
+    const size_type threads_per_row = BlockSize;
+    const size_type rows_per_block = 8;     
+    const size_type num_blocks = (row_count + rows_per_block -1 ) / rows_per_block; 
+
+    // Setup thread blocks and grid      
+    const dim3 dBlock( threads_per_row , rows_per_block , 1 );
+    const dim3 dGrid( num_blocks, 1, 1 );
+//    Kokkos::Impl::cuda_parallel_launch_local_memory<<< dGrid, dBlock >>>
+//      ( MeanMultiplyRank1( A, x, y, a, b ) );
+    Rank1FullOccupancyKernelLaunch<<<dGrid, dBlock >>>
+      ( Kernel( A, x, y, a, b ) );
+
+
+  }
+};
+
+template <typename Kernel>
+__global__ void
+#if __CUDA_ARCH__ >= 300
+__launch_bounds__(1024,2)
+#endif
+Rank2FullOccupancyKernelLaunch(Kernel kernel) {
+  kernel();
+}
+
+// Kernel implementing y = A * x where PCE size of A is 1
+//   A == Kokkos::CrsMatrix< Sacado::UQ::PCE<...>,...>, with A.values.sacado_size() == 1
+//   x, y == Kokkos::View< Sacado::UQ::PCE<...>*,...>,
+//   x and y are rank 2 
+template <int BlockSize,
+          typename MatrixStorage,
+          typename MatrixOrdinal,
+          typename MatrixMemory,
+          typename MatrixSize,
+          typename InputStorage,
+          typename InputMemory,
+          typename OutputStorage,
+          typename OutputMemory>
+
+class MeanMultiplyRank2<BlockSize, Kokkos::Cuda, MatrixStorage, MatrixOrdinal, MatrixMemory, MatrixSize, InputStorage, InputMemory, OutputStorage, OutputMemory>
+{
+public:
+  typedef Sacado::UQ::PCE<MatrixStorage> MatrixValue;
+  typedef Sacado::UQ::PCE<InputStorage> InputVectorValue;
+  typedef Sacado::UQ::PCE<OutputStorage> OutputVectorValue;
+
+  typedef Kokkos::Cuda Device;
+  typedef Device device_type;
+  typedef Kokkos::CrsMatrix< MatrixValue,
+                             MatrixOrdinal,
+                             Device,
+                             MatrixMemory,
+                             MatrixSize> matrix_type;
+  typedef typename matrix_type::values_type matrix_values_type;
+  typedef typename MatrixValue::ordinal_type size_type;
+  typedef Kokkos::View< InputVectorValue**,
+                        Kokkos::LayoutLeft,
+                        Device,
+                        InputMemory > input_vector_type;
+  typedef Kokkos::View< OutputVectorValue**,
+                        Kokkos::LayoutLeft,
+                        Device,
+                        OutputMemory > output_vector_type;
+private:
+
+  typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
+  typedef typename MatrixValue::value_type matrix_scalar;
+  typedef typename InputVectorValue::value_type input_scalar;
+  typedef typename OutputVectorValue::value_type output_scalar;
+  const matrix_values_type  m_A_values ;
+  const matrix_graph_type   m_A_graph ;
+  const output_vector_type  v_y ;
+  const input_vector_type   v_x ;
+  const input_scalar        m_a ;
+  const output_scalar       m_b ;
+
+
+  MeanMultiplyRank2( const matrix_type &        A ,
+            const input_vector_type &  x ,
+            const output_vector_type & y ,
+            const input_scalar & a ,
+            const output_scalar & b )
+  : m_A_values( A.values )
+  , m_A_graph( A.graph )
+  , v_y( y )
+  , v_x( x )
+  , m_a( a )
+  , m_b( b )
+  {}
+
+public:
+
+  __device__ void operator()(void) const
+  {
+    const size_type iBlockRow = blockDim.y * blockIdx.x + threadIdx.y;
+    //Check for valid row
+    const size_type row_count = m_A_graph.row_map.dimension_0()-1;
+    if (iBlockRow < row_count) {
+      const size_type num_cols = v_x.dimension_1();
+      const size_type iEntryBegin = m_A_graph.row_map[ iBlockRow ];
+      const size_type iEntryEnd   = m_A_graph.row_map[ iBlockRow + 1 ];
+      const size_type dim = v_x.sacado_size();
+      for (size_type col = 0; col < num_cols; ++col){
+        for ( size_type pce = threadIdx.x; pce <  dim ; pce+=blockDim.x){
+          double s = 0.0;
+          for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
+            const matrix_scalar aA = m_a*m_A_values(iEntry).fastAccessCoeff(0);
+            const size_type A_col = m_A_graph.entries(iEntry);
+            s += aA*v_x(A_col,col).fastAccessCoeff(pce);
+          }
+          v_y(iBlockRow,col).fastAccessCoeff(pce) = s + m_b*v_y(iBlockRow,col).fastAccessCoeff(pce);
+        }
+      }
+    }
+  }
+
+  static void apply( const matrix_type & A ,
+                     const input_vector_type & x ,
+                     const output_vector_type & y ,
+                     const input_scalar & a = input_scalar(1) ,
+                     const output_scalar & b = output_scalar(0) )
+  {
+    typedef MeanMultiplyRank2<BlockSize, Kokkos::Cuda, MatrixStorage, MatrixOrdinal, MatrixMemory, MatrixSize, InputStorage, InputMemory, OutputStorage, OutputMemory> Kernel;
+
+    const size_t row_count = A.graph.row_map.dimension_0() -1 ;
+
+    const size_type threads_per_row = BlockSize;
+    const size_type rows_per_block = 8;
+    const size_type num_blocks = (row_count + rows_per_block -1 ) / rows_per_block;
+
+    // Setup thread blocks and grid      
+    const dim3 dBlock( threads_per_row , rows_per_block , 1 );
+    const dim3 dGrid( num_blocks, 1, 1 );
+//    Kokkos::Impl::cuda_parallel_launch_local_memory<<< dGrid, dBlock >>>
+//      ( MeanMultiplyRank2( A, x, y, a, b ) );
+    Rank2FullOccupancyKernelLaunch<<<dGrid, dBlock >>>
+      ( Kernel( A, x, y, a, b ) );
+
+
+
+  }
+};
+
 } // namespace Stokhos
 
 #endif /* #if defined( __CUDACC__) */

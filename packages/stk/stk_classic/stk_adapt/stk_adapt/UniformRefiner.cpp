@@ -21,4 +21,4 @@ namespace stk_classic {
 
 
   } // namespace adapt
-} // namespace stk
+} // namespace stk_classic

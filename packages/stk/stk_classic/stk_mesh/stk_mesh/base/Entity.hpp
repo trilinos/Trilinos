@@ -584,6 +584,6 @@ Entity::Entity( const EntityKey & arg_key )
 /** \} */
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 #endif /* stk_mesh_base_Entity_hpp */

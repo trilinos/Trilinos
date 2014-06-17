@@ -378,7 +378,7 @@ bool same_specification(const Relation& lhs, const Relation& rhs)
 }
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------

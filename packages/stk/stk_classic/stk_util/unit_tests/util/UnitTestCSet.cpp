@@ -86,7 +86,7 @@ public:
 };
 
 }//namespace cset_unit
-}//namespace stk
+}//namespace stk_classic
 
 using namespace stk_classic;
 using namespace stk_classic::cset_unit;

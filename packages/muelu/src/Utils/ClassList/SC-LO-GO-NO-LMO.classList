@@ -8,7 +8,7 @@ BlockedDirectSolver
 BlockedGaussSeidelSmoother
 BlockedPFactory
 BlockedRAPFactory
-BrickAggregationFactory - #if defined(HAVE_MPI)
+BrickAggregationFactory
 BraessSarazinSmoother
 CGSolver
 CoalesceDropFactory

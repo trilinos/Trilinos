@@ -401,5 +401,5 @@ shards::ArrayDimTag::size_type Matrix33::to_index( shards::ArrayDimTag::size_typ
 //----------------------------------------------------------------------
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 

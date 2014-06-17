@@ -1,9 +1,9 @@
 // @HEADER
-//
 // ***********************************************************************
 //
-//        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
+//           Panzer: A partial differential equation assembly
+//       engine for strongly coupled complex multiphysics systems
+//                 Copyright (2011) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,33 +35,43 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
-//
+// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
+// Eric C. Cyr (eccyr@sandia.gov)
 // ***********************************************************************
-//
 // @HEADER
 
+#ifndef __Panzer_OrientationContainerBase_hpp__
+#define __Panzer_OrientationContainerBase_hpp__
 
-#include "MueLu_ExplicitInstantiation.hpp"
+namespace panzer {
 
-#if defined(HAVE_MUELU_EXPLICIT_INSTANTIATION)
+/** This class is used to access orientations and 
+  * provides a degree of seperation between the
+  * BasisValues objects and the global indexer (which
+  * computes and stores the orientation). The particular
+  * thing that this is does is avoids the need for the
+  * WorksetContainer/Factory to know anything about
+  * the local or global ordinal types.
+  */
+template <typename Scalar,typename Array>
+class OrientationContainerBase {
+public:
+  virtual ~OrientationContainerBase() {}
 
-#include "Kokkos_DefaultNode.hpp"
-#include "Tpetra_ETIHelperMacros.h"
-#include "MueLu_UncoupledAggregationAlgorithm_def.hpp"
+  /** Get the orientations for a number of cell local ids. This will
+    * be dependent on a particular basis.
+    *
+    * \param[in] cell_local_ids Cells to build orientations for.
+    * \param[in] orientations Array of orientations (previously allocated)
+    *                         to be filled with the orientations of a
+    *                         particular basis.
+    */
+  virtual void getOrientations(const std::string & blockId,
+                               const std::vector<std::size_t> & cell_local_ids,
+                               Array & orientations) const = 0;
 
-TPETRA_ETI_MANGLING_TYPEDEFS()
+};
 
-#define MUELU_INST_LO_GO_N(LO, GO, N) \
-  template class MueLu::UncoupledAggregationAlgorithm<LO, GO, N>;
+}
 
-#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_OPENMP) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPWRAPPERNODE)
-  MUELU_INST_LO_GO_N(int, int, Kokkos_Compat_KokkosOpenMPWrapperNode)
 #endif
-
-#endif
-
-

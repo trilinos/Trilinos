@@ -343,7 +343,7 @@ namespace stk_classic {
     //static bool myPerceptMesquiteMesh_hpp = true; 
 
   } // namespace percept
-} // namespace stk
+} // namespace stk_classic
 
 #endif // STK_BUILT_IN_SIERRA
 #endif //has file been included

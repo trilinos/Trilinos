@@ -7,7 +7,7 @@
 #include <stk_percept/function/internal/BuildBoundingBoxesDef.hpp>
 #include <stk_percept/ParallelUtil.hpp>
 
-namespace stk
+namespace stk_classic
 {
   namespace percept
   {
@@ -290,4 +290,4 @@ namespace stk
 
 
   }//namespace percept
-}//namespace stk
+}//namespace stk_classic

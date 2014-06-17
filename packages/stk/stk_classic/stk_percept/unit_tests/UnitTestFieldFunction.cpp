@@ -669,5 +669,5 @@ int main()
 
 } // namespace unit_tests
 } // namespace percept
-} // namespace stk
+} // namespace stk_classic
 

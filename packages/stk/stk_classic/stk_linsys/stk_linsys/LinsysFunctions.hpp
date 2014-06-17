@@ -109,7 +109,7 @@ void add_vector_to_vector(double scalar,
                           fei::Vector& dest_vector);
 
 }//namespace linsys
-}//namespace stk
+}//namespace stk_classic
 
 #endif
 

@@ -50,7 +50,7 @@
 
 #include "Panzer_STK_PeriodicBC_Parser.hpp"
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 class STK_Interface;
 

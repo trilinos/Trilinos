@@ -303,6 +303,6 @@ std::ostream &operator<<(std::ostream &os, const MessageType &message_type);
 /// @}
 ///
 
-} // namespace stk
+} // namespace stk_classic
 
 #endif // STK_UTIL_ENVIRONMENT_RUNTIMEMESSAGE_HPP

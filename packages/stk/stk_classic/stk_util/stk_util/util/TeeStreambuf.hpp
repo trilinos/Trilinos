@@ -192,6 +192,6 @@ private:
 
 typedef stk_classic::basic_tee_streambuf<char> tee_streambuf;
 
-} // namespace stk
+} // namespace stk_classic
 
 #endif // STK_UTIL_UTIL_TEESTREAMBUF_HPP

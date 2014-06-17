@@ -20,7 +20,7 @@
 //using namespace Intrepid;
 
 
-namespace stk
+namespace stk_classic
 {
   namespace percept
   {
@@ -39,7 +39,7 @@ namespace stk
     };
 
   }//namespace percept
-}//namespace stk
+}//namespace stk_classic
 
 
 #endif

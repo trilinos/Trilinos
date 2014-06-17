@@ -106,7 +106,7 @@ namespace stk_classic {
 
     } // namespace Elem
   } // namespace adapt
-} // namespace stk
+} // namespace stk_classic
 
 // namespace shards {
 

@@ -506,7 +506,7 @@ inline std::ostream &operator<<(std::ostream &os, const Traceback::PrintCoverage
 
 
 } // namespace diag
-} // namespace stk
+} // namespace stk_classic
 
 namespace sierra {
 namespace Diag {

@@ -73,17 +73,17 @@ namespace MueLu {
     struct MueLu_SuperNode_Struct *next;
   } MueLu_SuperNode;
 
-  /* In the algorithm, aggStat[]=READY/NOTSEL/SELECTED indicates whether a node has been aggregated. */
-  enum NodeState {
-    READY   = -11,   /* indicates that a node is available to be */
+  /* In the algorithm, aggStat[]=CA_READY/CA_NOTSEL/CA_SELECTED indicates whether a node has been aggregated. */
+  enum CANodeState {
+    CA_READY   = -11,   /* indicates that a node is available to be */
     /* selected as a root node of an aggregate  */
 
-    NOTSEL  = -12,   /* indicates that a node has been rejected  */
+    CA_NOTSEL  = -12,   /* indicates that a node has been rejected  */
     /* as a root node. This could perhaps be    */
     /* because if this node had been selected a */
     /* small aggregate would have resulted.     */
 
-    SELECTED = -13   /* indicates that a node has been assigned  */
+    CA_SELECTED = -13   /* indicates that a node has been assigned  */
     /* to an aggregate.                         */
   };
 

@@ -66,6 +66,7 @@ struct Perf {
   double create_sparse_matrix ;
   double fill_time ;
   double bc_time ;
+  double matvec_time ;
   double cg_time ;
   double newton_residual ;
   double error_max ;

@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
   int stridedBlockId = -1;
 
   Array<GO> elementList(numElements);
-  for (LO i = 0; i < numElements; i++)
+  for (Xpetra::global_size_t i = 0; i < numElements; i++)
     elementList[i] = i;
   RCP<Map> fullMap = StridedMapFactory::Build(lib, numElements, elementList(), indexBase, stridingInfo, comm);
 
@@ -289,7 +289,9 @@ int main(int argc, char *argv[]) {
   M.SetFactory("Smoother",     rcp(new SmootherFactory(smootherPrototype)));
   M.SetFactory("CoarseSolver", rcp(new SmootherFactory(smootherPrototype)));
 
+#ifdef HAVE_MUELU_DEBUG
   M.ResetDebugData();
+#endif
   H[0]->GetLevel(0)->Set("A", rcp_dynamic_cast<Matrix>(A));
   H[0]->Setup(M, 0, H[0]->GetNumLevels());
 
@@ -517,7 +519,7 @@ namespace MueLuTests {
     double hy = 1.0;
 
     int N = map->getGlobalNumElements();
-    int n = sqrt(N);
+    int n = round(sqrt(N));
     std::cout << "N = " << N << ", n = " << n << std::endl;
     if (N == n*n) {
       // pressure coords
@@ -529,7 +531,7 @@ namespace MueLuTests {
 
     } else {
       // velocity coords
-      n = sqrt(N/2);
+      n = round(sqrt(N/2));
 
       hx *= 0.5;
       hy *= 0.5;

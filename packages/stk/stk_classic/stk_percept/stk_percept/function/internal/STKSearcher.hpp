@@ -23,7 +23,7 @@
 
 #define EXTRA_PRINT 0
 
-namespace stk
+namespace stk_classic
 {
   namespace percept
   {

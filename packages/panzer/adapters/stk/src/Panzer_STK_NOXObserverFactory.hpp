@@ -55,7 +55,7 @@
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_Utilities.hpp"
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
   class NOXObserverFactory {
 

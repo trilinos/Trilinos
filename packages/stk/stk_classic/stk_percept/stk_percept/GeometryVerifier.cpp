@@ -30,7 +30,7 @@
 using namespace Intrepid;
 using namespace shards;
 
-namespace stk
+namespace stk_classic
 {
   namespace percept
   {
@@ -508,4 +508,4 @@ namespace stk
     }
 
   }//namespace percept
-}//namespace stk
+}//namespace stk_classic

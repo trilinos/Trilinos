@@ -1,7 +1,7 @@
 
 #include <stk_percept/function/internal/GenericFunction.hpp>
 
-namespace stk
+namespace stk_classic
 {
   namespace percept
   {

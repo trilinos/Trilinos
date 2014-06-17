@@ -439,12 +439,11 @@ LOCA::EigenvalueSort::LargestRealInverseCayley::sort(
   double temp, templambda;
   Teuchos::LAPACK<int,double> lapack;
 
+  TEUCHOS_TEST_FOR_EXCEPT(perm == NULL);
+
   // Reset the index
-  if (perm) {
-    for (i=0; i < n; i++) {
-      (*perm)[i] = i;
-    }
-  }
+  for (i=0; i < n; i++)
+    (*perm)[i] = i;
 
   //---------------------------------------------------------------
   // Sort eigenvalues according to the real part of the inverse-Cayley
@@ -473,12 +472,11 @@ LOCA::EigenvalueSort::LargestRealInverseCayley::sort(
   double temp, tempr, tempi;
   Teuchos::LAPACK<int,double> lapack;
 
+  TEUCHOS_TEST_FOR_EXCEPT(perm == NULL);
+
   // Reset the index
-  if (perm) {
-    for (i=0; i < n; i++) {
-      (*perm)[i] = i;
-    }
-  }
+  for (i=0; i < n; i++)
+    (*perm)[i] = i;
 
   //---------------------------------------------------------------
   // Sort eigenvalues according to the real part of the inverse-Cayley

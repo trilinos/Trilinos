@@ -111,6 +111,6 @@ namespace stk_classic {
     }; //class ShardsInterfaceTable
 
   } // namespace percept
-} // namespace stk
+} // namespace stk_classic
 
 #endif

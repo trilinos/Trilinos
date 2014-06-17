@@ -1159,6 +1159,6 @@ Writer &operator<<(Writer &dout, const sierra::vecmap<Key, T *, U> &t) {
 ///
 
 } // namespace diag
-} // namespace stk
+} // namespace stk_classic
 
 #endif // STK_UTIL_DIAG_WRITEREXT_HPP

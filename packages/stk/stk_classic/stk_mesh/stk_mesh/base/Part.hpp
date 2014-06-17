@@ -240,7 +240,7 @@ std::ostream & print( std::ostream & , const char * const , const Part & );
 
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
