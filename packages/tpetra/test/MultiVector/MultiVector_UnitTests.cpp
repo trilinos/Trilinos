@@ -2567,6 +2567,7 @@ namespace {
     typedef MultiVector<> mv_type;
     typedef mv_type::scalar_type scalar_type;
     typedef mv_type::local_ordinal_type local_ordinal_type;
+    typedef mv_type::global_ordinal_type global_ordinal_type;
 
     out << "Test: MultiVector, AllDefaultTemplateParameters" << std::endl;
     Teuchos::OSTab tab0 (out);
