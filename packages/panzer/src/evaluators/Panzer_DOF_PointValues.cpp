@@ -40,78 +40,11 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_EVALUATOR_DOF_DECL_HPP
-#define PANZER_EVALUATOR_DOF_DECL_HPP
-
-#include <string>
-#include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_Field.hpp"
-
 #include "Panzer_config.hpp"
-#include "Panzer_BasisValues.hpp"
 
-namespace panzer {
-    
-//! Interpolates basis DOF values to IP DOF values
-template<typename EvalT, typename Traits>                   
-class DOF : public PHX::EvaluatorWithBaseImpl<Traits>,      
-            public PHX::EvaluatorDerived<EvalT, Traits>  {   
-public:
+#include "Panzer_ExplicitTemplateInstantiation.hpp"
 
-  DOF(const Teuchos::ParameterList& p);
+#include "Panzer_DOF_PointValues.hpp"
+#include "Panzer_DOF_PointValues_impl.hpp"
 
-  void postRegistrationSetup(typename Traits::SetupData d,
-                             PHX::FieldManager<Traits>& fm);
-
-  void evaluateFields(typename Traits::EvalData d);
-
-private:
-
-  typedef typename EvalT::ScalarT ScalarT;
-  
-  PHX::MDField<ScalarT,Cell,Point> dof_basis;
-  PHX::MDField<ScalarT> dof_ip;
-
-  std::string basis_name;
-  std::size_t basis_index;
-
-  PHX::MDField<ScalarT,Cell,BASIS> dof_orientation;
-  bool is_vector_basis;
-};
-
-/** Interpolates basis DOF values to IP DOF Curl values (specialization for the jacobian)
-  * Allows short cut for simple jacobian to dof structure.
-  */
-template<typename Traits>                   
-class DOF<panzer::Traits::Jacobian,Traits> : 
-            public PHX::EvaluatorWithBaseImpl<Traits>,      
-            public PHX::EvaluatorDerived<panzer::Traits::Jacobian, Traits>  {   
-public:
-
-  DOF(const Teuchos::ParameterList& p);
-
-  void postRegistrationSetup(typename Traits::SetupData d,
-                             PHX::FieldManager<Traits>& fm);
-
-  void evaluateFields(typename Traits::EvalData d);
-
-private:
-
-  typedef panzer::Traits::Jacobian::ScalarT ScalarT;
-  
-  PHX::MDField<ScalarT,Cell,Point> dof_basis;
-  PHX::MDField<ScalarT> dof_ip;
-
-  std::string basis_name;
-  std::size_t basis_index;
-
-  bool accelerate_jacobian;
-  std::vector<int> offsets;
-
-  PHX::MDField<ScalarT,Cell,BASIS> dof_orientation;
-  bool is_vector_basis;
-};
-
-}
-
-#endif
+PANZER_INSTANTIATE_TEMPLATE_CLASS_TWO_T(panzer::DOF_PointValues)

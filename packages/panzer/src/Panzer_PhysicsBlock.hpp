@@ -140,7 +140,7 @@ namespace panzer {
                                                         const Teuchos::ParameterList& user_data) const;
 
     void buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-                                                      const panzer::LinearObjFactory<panzer::Traits> & lof,
+                                                      const Teuchos::Ptr<const panzer::LinearObjFactory<panzer::Traits> > & lof,
                                                       const Teuchos::ParameterList& user_data) const;
 
     void buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
@@ -176,7 +176,7 @@ namespace panzer {
 
     template<typename EvalT>
     void buildAndRegisterDOFProjectionsToIPEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
-                                                             const panzer::LinearObjFactory<panzer::Traits> & lof,
+                                                             const Teuchos::Ptr<const panzer::LinearObjFactory<panzer::Traits> > & lof,
                                                              const Teuchos::ParameterList& user_data) const;
 
     template<typename EvalT>
@@ -312,7 +312,7 @@ void panzer::PhysicsBlock::buildAndRegisterGatherAndOrientationEvaluatorsForType
 
 template<typename EvalT>
 void panzer::PhysicsBlock::buildAndRegisterDOFProjectionsToIPEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
-                                                                               const panzer::LinearObjFactory<panzer::Traits> & lof,
+                                                                               const Teuchos::Ptr<const panzer::LinearObjFactory<panzer::Traits> > & lof,
                                                                                const Teuchos::ParameterList& user_data) const
 {
   using std::vector;

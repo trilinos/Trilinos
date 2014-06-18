@@ -49,7 +49,22 @@
 namespace panzer {
     
 //! Interpolates basis DOF values to IP DOF Curl values
-PHX_EVALUATOR_CLASS(DOFCurl)
+template<typename EvalT, typename Traits>                   
+class DOFCurl : public PHX::EvaluatorWithBaseImpl<Traits>,      
+                public PHX::EvaluatorDerived<EvalT, Traits>  {   
+public:
+
+  DOFCurl(const Teuchos::ParameterList& p);
+
+  void postRegistrationSetup(typename Traits::SetupData d,
+                             PHX::FieldManager<Traits>& fm);
+
+  void evaluateFields(typename Traits::EvalData d);
+
+private:
+
+  typedef typename EvalT::ScalarT ScalarT;
+
   
   PHX::MDField<ScalarT,Cell,Point> dof_value;
   PHX::MDField<ScalarT> dof_curl;
@@ -59,8 +74,38 @@ PHX_EVALUATOR_CLASS(DOFCurl)
   int basis_dimension;
 
   PHX::MDField<ScalarT,Cell,BASIS> dof_orientation;
+};
 
-PHX_EVALUATOR_CLASS_END
+// Specitialization for the Jacobian
+template<typename Traits>                   
+class DOFCurl<panzer::Traits::Jacobian,Traits> : 
+                public PHX::EvaluatorWithBaseImpl<Traits>,      
+                public PHX::EvaluatorDerived<panzer::Traits::Jacobian, Traits>  {   
+public:
+
+  DOFCurl(const Teuchos::ParameterList& p);
+
+  void postRegistrationSetup(typename Traits::SetupData d,
+                             PHX::FieldManager<Traits>& fm);
+
+  void evaluateFields(typename Traits::EvalData d);
+
+private:
+
+  typedef panzer::Traits::Jacobian::ScalarT ScalarT;
+
+  PHX::MDField<ScalarT,Cell,Point> dof_value;
+  PHX::MDField<ScalarT> dof_curl;
+
+  std::string basis_name;
+  std::size_t basis_index;
+  int basis_dimension;
+  bool specialize_sens;
+
+  PHX::MDField<ScalarT,Cell,BASIS> dof_orientation;
+};
+
+
 
 }
 

@@ -44,11 +44,13 @@
 #define PANZER_EQUATIONSET_DEFAULT_IMPL_IMPL_HPP
 
 #include "Panzer_DOF.hpp"
+#include "Panzer_DOF_PointValues.hpp"
 #include "Panzer_DOFGradient.hpp"
 #include "Panzer_DOFCurl.hpp"
 #include "Panzer_GatherBasisCoordinates.hpp"
 #include "Panzer_GatherIntegrationCoordinates.hpp"
 #include "Panzer_GatherOrientation.hpp"
+#include "Panzer_UniqueGlobalIndexer.hpp"
 
 #include "Phalanx_MDField.hpp"
 #include "Phalanx_DataLayout.hpp"
@@ -270,20 +272,34 @@ void panzer::EquationSet_DefaultImpl<EvalT>::
 buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& fm,
                                              const panzer::FieldLayoutLibrary& fl,
                                              const Teuchos::RCP<panzer::IntegrationRule>& ir,
-                                             const LinearObjFactory<panzer::Traits> & lof,
+                                             const Teuchos::Ptr<const panzer::LinearObjFactory<panzer::Traits> > & lof,
                                              const Teuchos::ParameterList& user_data) const
 {
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
+
+  Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> globalIndexer;
+  if(lof!=Teuchos::null) 
+    globalIndexer = lof->getUniqueGlobalIndexerBase();
   
   // DOFs: Scalar value @ basis --> Scalar value @ IP 
   for (DescriptorIterator dof_iter = m_provided_dofs_desc.begin(); dof_iter != m_provided_dofs_desc.end(); ++dof_iter) {
+
     
     ParameterList p;
     p.set("Name", dof_iter->first);
     p.set("Basis", fl.lookupLayout(dof_iter->first));
     p.set("IR", ir);
+
+    if(globalIndexer!=Teuchos::null) {
+      // build the offsets for this field
+      int fieldNum = globalIndexer->getFieldNum(dof_iter->first);
+      RCP<const std::vector<int> > offsets = 
+          rcp(new std::vector<int>(globalIndexer->getGIDFieldOffsets(m_block_id,fieldNum)));
+      p.set("Jacobian Offsets Vector", offsets);
+    }
+    // else default to the slow DOF call
     
     RCP< PHX::Evaluator<panzer::Traits> > op = 
       rcp(new panzer::DOF<EvalT,panzer::Traits>(p));

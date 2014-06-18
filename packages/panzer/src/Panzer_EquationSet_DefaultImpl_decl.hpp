@@ -90,7 +90,7 @@ namespace panzer {
     virtual void buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& fm,
                                                               const panzer::FieldLayoutLibrary& fl,
                                                               const Teuchos::RCP<panzer::IntegrationRule>& ir,
-                                                              const LinearObjFactory<panzer::Traits> & lof,
+                                                              const Teuchos::Ptr<const panzer::LinearObjFactory<panzer::Traits> > & lof,
                                                               const Teuchos::ParameterList& user_data) const;
     
     virtual void buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,

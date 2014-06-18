@@ -116,7 +116,7 @@ void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
     pb->buildAndRegisterEquationSetEvaluators(*fm, user_data);
     if(!physicsBlockGatherDisabled())
       pb->buildAndRegisterGatherAndOrientationEvaluators(*fm,lo_factory,user_data);
-    pb->buildAndRegisterDOFProjectionsToIPEvaluators(*fm,lo_factory,user_data);
+    pb->buildAndRegisterDOFProjectionsToIPEvaluators(*fm,Teuchos::ptrFromRef(lo_factory),user_data);
     if(!physicsBlockScatterDisabled())
       pb->buildAndRegisterScatterEvaluators(*fm,lo_factory,user_data);
 
