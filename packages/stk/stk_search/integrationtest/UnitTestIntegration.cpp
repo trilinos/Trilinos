@@ -1,8 +1,5 @@
 #include <gtest/gtest.h>
-#include <stk_util/stk_config.h>
-#if defined ( STK_HAS_MPI )
-#include <mpi.h>
-#endif
+#include <stk_util/parallel/Parallel.hpp>
 
 int gl_argc=0;
 char** gl_argv=0;
@@ -46,10 +43,9 @@ class MinimalistPrinter : public ::testing::EmptyTestEventListener
 
 int main(int argc, char **argv)
 {
-#if defined ( STK_HAS_MPI )
-    MPI_Init(&argc, &argv);
-    MPI_Comm_rank(MPI_COMM_WORLD, &proc_id);
-#endif
+    stk::parallel_machine_init(&argc, &argv);
+    proc_id = stk::parallel_machine_rank(MPI_COMM_WORLD);
+
     testing::InitGoogleTest(&argc, argv);
 
     gl_argc = argc;
@@ -61,9 +57,6 @@ int main(int argc, char **argv)
 
     int returnVal = RUN_ALL_TESTS();
 
-
-#if defined ( STK_HAS_MPI )
-    MPI_Finalize();
-#endif
+    stk::parallel_machine_finalize();
     return returnVal;
 }

@@ -7,10 +7,7 @@
 /*------------------------------------------------------------------------*/
 
 #include <gtest/gtest.h>
-#include <stk_util/stk_config.h>
-#if defined ( STK_HAS_MPI )
-#  include <mpi.h>                        // for MPI_Comm
-#endif
+#include <stk_util/parallel/Parallel.hpp>
 
 int gl_argc=0;
 char** gl_argv=0;
@@ -20,9 +17,7 @@ int main(int argc, char **argv)
 #ifdef STK_MESH_TRACE_ENABLED
     use_case::UseCaseEnvironment use_case_environment(&argc, &argv); 
 #else
-#if defined ( STK_HAS_MPI )
-    MPI_Init(&argc, &argv);
-#endif
+    stk::parallel_machine_init(&argc, &argv);
 #endif
 
     testing::InitGoogleTest(&argc, argv);
@@ -33,9 +28,7 @@ int main(int argc, char **argv)
     int returnVal = RUN_ALL_TESTS();
 
 #ifndef STK_MESH_TRACE_ENABLED
-#if defined ( STK_HAS_MPI )
-    MPI_Finalize();
-#endif
+    stk::parallel_machine_finalize();
 #endif
 
     return returnVal;

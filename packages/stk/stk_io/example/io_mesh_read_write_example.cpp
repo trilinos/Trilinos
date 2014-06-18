@@ -12,6 +12,7 @@
 #include <boost/program_options.hpp>
 #include <boost/program_options/cmdline.hpp>
 
+#include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/util/ParameterList.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
@@ -275,7 +276,7 @@ int main(int argc, char** argv)
     ("db_integer_size", bopt::value<int>(&db_integer_size), "use 4 or 8-byte integers on output database" );
 
 
-  MPI_Init(&argc, &argv);
+  stk::parallel_machine_init(&argc, &argv);
 
   bopt::variables_map vm;
   bopt::store(bopt::command_line_parser(argc, argv).options(desc).allow_unregistered().run(), vm);
@@ -318,7 +319,7 @@ int main(int argc, char** argv)
 	 compression_level, compression_shuffle, db_integer_size, hb_type,
 	 interpolation_intervals);
 
-  MPI_Finalize();
+  stk::parallel_machine_finalize();
   return 0;
 }
 
