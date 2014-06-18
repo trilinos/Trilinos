@@ -35,7 +35,7 @@
       <Parameter name="MaxNeighAlreadySelected"             type="int"    value="0"/>
       <Parameter name="MinNodesPerAggregate"                type="int"    value="3"/>
     </ParameterList>
-    
+
     <ParameterList name="myTentativePFact">
       <Parameter name="factory"                             type="string" value="TentativePFactory"/>
     </ParameterList>
@@ -70,7 +70,7 @@
         <Parameter name="chebyshev: zero starting solution" type="bool"    value="true"/>
       </ParameterList>
     </ParameterList>
-    
+
     <ParameterList name="myJacobi">
       <Parameter name="factory"                             type="string" value="TrilinosSmoother"/>
       <Parameter name="type"                                type="string" value="RELAXATION"/>
@@ -80,7 +80,7 @@
         <Parameter name="relaxation: damping factor"        type="double" value="0.9"/>
       </ParameterList>
     </ParameterList>
-    
+
     <ParameterList name="SymGaussSeidel">
       <Parameter name="factory"                             type="string" value="TrilinosSmoother"/>
       <Parameter name="type"                                type="string" value="RELAXATION"/>

@@ -9,14 +9,14 @@
   <ParameterList name="Factories">
 
     <!-- Note that ParameterLists must be defined prior to being used -->
-      
+
     <ParameterList name="UncoupledAggregationFact">
       <Parameter name="factory"                             type="string" value="UncoupledAggregationFactory"/>
       <Parameter name="Ordering"                            type="string" value="Natural"/>
       <Parameter name="MaxNeighAlreadySelected"             type="int"    value="0"/>
       <Parameter name="MinNodesPerAggregate"                type="int"    value="2"/>
     </ParameterList>
-    
+
     <ParameterList name="myTentativePFact">
       <Parameter name="factory"                             type="string" value="TentativePFactory"/>
     </ParameterList>

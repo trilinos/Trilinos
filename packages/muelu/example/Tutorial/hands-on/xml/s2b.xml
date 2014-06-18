@@ -8,7 +8,7 @@
   <!-- Factory collection -->
   <ParameterList name="Factories">
 
-    <!-- Note that ParameterLists must be defined prior to being used --> 
+    <!-- Note that ParameterLists must be defined prior to being used -->
 
     <!-- =======================  SMOOTHERS  ======================= -->
 
@@ -22,7 +22,7 @@
         <Parameter name="chebyshev: zero starting solution" type="bool"    value="true"/>
       </ParameterList>
     </ParameterList>
-    
+
     <ParameterList name="myJacobi">
       <Parameter name="factory"                             type="string" value="TrilinosSmoother"/>
       <Parameter name="type"                                type="string" value="RELAXATION"/>
@@ -32,7 +32,7 @@
         <Parameter name="relaxation: damping factor"        type="double" value="1.0"/>
       </ParameterList>
     </ParameterList>
-    
+
     <ParameterList name="SymGaussSeidel">
       <Parameter name="factory"                             type="string" value="TrilinosSmoother"/>
       <Parameter name="type"                                type="string" value="RELAXATION"/>
