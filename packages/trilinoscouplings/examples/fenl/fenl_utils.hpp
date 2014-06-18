@@ -34,6 +34,7 @@ struct CMD {
   bool CMD_USE_BELOS;
   bool CMD_USE_MUELU;
   bool CMD_USE_MEANBASED;
+  bool CMD_USE_UQ;
   int CMD_USE_UQ_DIM;
   int CMD_USE_UQ_ORDER;
   double CMD_USE_MEAN;
@@ -42,6 +43,7 @@ struct CMD {
   bool CMD_USE_SPARSE;
   int CMD_USE_UQ_ENSEMBLE;
   bool CMD_VTUNE;
+  bool CMD_VERBOSE;
   bool CMD_PRINT;
   bool CMD_SUMMARIZE;
   int CMD_ECHO;
@@ -66,6 +68,7 @@ struct CMD {
           CMD_USE_BELOS(false),
           CMD_USE_MUELU(false),
           CMD_USE_MEANBASED(false),
+          CMD_USE_UQ(false),
           CMD_USE_UQ_DIM(3),
           CMD_USE_UQ_ORDER(2),
           CMD_USE_MEAN(1),
@@ -74,6 +77,7 @@ struct CMD {
           CMD_USE_SPARSE(false),
           CMD_USE_UQ_ENSEMBLE(0),
           CMD_VTUNE(false),
+          CMD_VERBOSE(false),
           CMD_PRINT(false),
           CMD_SUMMARIZE(false)
     {}
@@ -85,7 +89,7 @@ void print_cmdline( std::ostream & s , const CMD & cmd );
 // Create Tpetra node
 template <typename NodeType>
 Teuchos::RCP<NodeType>
-createKokkosNode( const CMD & cmd , const int comm_rank ) {
+createKokkosNode( const CMD & cmd , const Teuchos::Comm<int>& comm ) {
   Teuchos::ParameterList params;
   params.set("Verbose", 0);
   if ( cmd.CMD_USE_THREADS  )
@@ -100,13 +104,27 @@ createKokkosNode( const CMD & cmd , const int comm_rank ) {
     params.set("Device", cmd.CMD_USE_CUDA_DEV  );
   Teuchos::RCP<NodeType> node = Teuchos::rcp (new NodeType(params));
 
-  if ( cmd.CMD_PRINT ) {
+  if ( cmd.CMD_VERBOSE ) {
     typedef typename NodeType::device_type Device;
-    if (comm_rank == 0)
+    if (comm.getRank() == 0)
       Device::print_configuration(std::cout);
-    if ( cmd.CMD_USE_CUDA  )
-      std::cout << "MPI rank " << comm_rank << " attached to CUDA device "
-                << cmd.CMD_USE_CUDA_DEV  << std::endl;
+    std::cout.flush();
+    if ( cmd.CMD_USE_CUDA  ) {
+      for (int i=0; i<comm.getSize(); ++i) {
+        comm.barrier();
+        comm.barrier();
+        comm.barrier();
+        if ( i == comm.getRank() ) {
+          std::cout << "MPI rank " << comm.getRank()
+                    << " attached to CUDA device "
+                    << cmd.CMD_USE_CUDA_DEV  << std::endl;
+          std::cout.flush();
+        }
+        comm.barrier();
+        comm.barrier();
+        comm.barrier();
+      }
+    }
   }
 
   return node;
@@ -118,7 +136,8 @@ createKokkosNode( const CMD & cmd , const int comm_rank ) {
 
 // Parse command line
 clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
-                               const Teuchos::Comm<int>& comm );
+                               const Teuchos::Comm<int>& comm,
+                               const bool uq);
 
 
 // Print timing headers

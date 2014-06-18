@@ -41,7 +41,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   const int comm_rank = comm->getRank();
 
   // Create Tpetra Node -- do this first as it initializes host/device
-  Teuchos::RCP<NodeType> node = createKokkosNode<NodeType>( cmd , comm_rank );
+  Teuchos::RCP<NodeType> node = createKokkosNode<NodeType>( cmd , *comm );
 
   // Set up stochastic discretization
   using Teuchos::Array;
@@ -85,9 +85,9 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   const double bc_upper_value = 2 ;
   const TrivialManufacturedSolution manufactured_solution;
 
-  const double kl_mean = 1.0;
-  const double kl_variance = 0.1;
-  const double kl_correlation = 0.25;
+  const double kl_mean = cmd.CMD_USE_MEAN;
+  const double kl_variance = cmd.CMD_USE_VAR;
+  const double kl_correlation = cmd.CMD_USE_COR;
 
   int nelem[3] = { cmd.CMD_USE_FIXTURE_X,
                    cmd.CMD_USE_FIXTURE_Y,
@@ -245,9 +245,11 @@ int main( int argc , char ** argv )
 
   //--------------------------------------------------------------------------
   CMD cmdline;
-  parse_cmdline( argc, argv, cmdline, *comm );
-  if ( ! cmdline.CMD_USE_UQ_DIM ) cmdline.CMD_USE_UQ_DIM  = 3 ;
-  if ( ! cmdline.CMD_USE_UQ_ORDER ) cmdline.CMD_USE_UQ_ORDER  = 2 ;
+  clp_return_type rv = parse_cmdline( argc, argv, cmdline, *comm, true );
+  if (rv==CLP_HELP)
+    return(EXIT_SUCCESS);
+  else if (rv==CLP_ERROR)
+    return(EXIT_FAILURE);
 
   if ( cmdline.CMD_VTUNE  ) {
     connect_vtune(comm->getRank());

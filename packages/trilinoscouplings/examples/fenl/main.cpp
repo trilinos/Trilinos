@@ -35,7 +35,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   const int comm_rank = comm->getRank();
 
   // Create Tpetra Node
-  Teuchos::RCP<NodeType> node = createKokkosNode<NodeType>( cmd , comm_rank );
+  Teuchos::RCP<NodeType> node = createKokkosNode<NodeType>( cmd , *comm );
 
   // Print output headers
   const std::vector< size_t > widths =
@@ -141,7 +141,7 @@ int main( int argc , char ** argv )
 
   //--------------------------------------------------------------------------
   CMD cmdline;
-  clp_return_type rv = parse_cmdline( argc, argv, cmdline, *comm );
+  clp_return_type rv = parse_cmdline( argc, argv, cmdline, *comm, false );
   if (rv==CLP_HELP)
     return(EXIT_SUCCESS);
   else if (rv==CLP_ERROR)
