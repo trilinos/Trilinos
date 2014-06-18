@@ -48,7 +48,7 @@ IF (TrilinosCouplings_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(copyFenlFiles
-    DEST_FILES muelu.xml
+    DEST_FILES muelu.xml belos.xml
     )
 
   IF( TrilinosCouplings_ENABLE_Stokhos AND

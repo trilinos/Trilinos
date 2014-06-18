@@ -119,19 +119,20 @@ belos_solve(
     precOp = preconditioner->setupPreconditioner(A, xmlFileName);
   }
 
-  if (use_mean_based) {  
+  if (use_mean_based) {
     Teuchos::TimeMonitor timeMon(*time_prec_setup);
     std::string xmlFileName = "muelu.xml";
     preconditioner = rcp(new MeanBasedPreconditioner<SM, LO, GO, N>());
-    precOp = preconditioner->setupPreconditioner(A, xmlFileName); 
+    precOp = preconditioner->setupPreconditioner(A, xmlFileName);
   }
 
   //--------------------------------
   // Set up linear solver
   RCP<ParameterList> belosParams = Teuchos::parameterList();
-  //Read in any params from xml file
-  Teuchos::updateParametersFromXmlFileAndBroadcast("belos.xml", Teuchos::ptr(belosParams.getRawPtr()),*A->getComm());
-  
+  // Read in any params from xml file
+  Teuchos::updateParametersFromXmlFileAndBroadcast(
+    "belos.xml", belosParams.ptr(),*A->getComm());
+
   if (!(belosParams->isParameter("Convergence Tolerance")))
     belosParams->set("Convergence Tolerance", tolerance);
   if (!(belosParams->isParameter("Maximum Iterations")))
@@ -141,12 +142,12 @@ belos_solve(
 
   RCP<ProblemType> problem = rcp(new ProblemType(A, x, b));
   RCP<SolverType> solver = rcp(new SolverType(problem, belosParams));
-  
+
   if (use_muelu || use_mean_based){
      problem->setRightPrec(precOp);
   }
   const bool isSet = problem->setProblem();
-  
+
   TEUCHOS_TEST_FOR_EXCEPTION(!isSet, std::runtime_error,
                              "Belos failed to set problem correctly.");
 
@@ -160,16 +161,6 @@ belos_solve(
   result_struct cgsolve;
   cgsolve.iteration = solver->getNumIters();
   //cgsolve.norm_res = solver->achievedTol();
-
-  // Teuchos::Array< RCP<Teuchos::Time> > timers = solver->getTimers();
-  // for (int i=0; i<timers.size(); ++i) {
-  //   if (timers[i]->name() == "Belos: PseudoBlockCGSolMgr total solve time") {
-  //     cgsolve.iter_time = timers[i]->totalElapsedTime();
-  //     cgsolve.total_time = timers[i]->totalElapsedTime();
-  //   }
-  //   else if (timers[i]->name() == "Belos: Operation Op*x")
-  //     cgsolve.matvec_time = timers[i]->totalElapsedTime();
-  // }
 
   cgsolve.iter_time = time_total->totalElapsedTime();
   cgsolve.total_time = time_total->totalElapsedTime();
