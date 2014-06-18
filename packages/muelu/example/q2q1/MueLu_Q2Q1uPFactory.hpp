@@ -83,7 +83,7 @@ namespace MueLu {
         list_[i] = &storage_[i*nnzPerRow];
     }
 
-    int                       getNodeNumRows()  const { return list_.size(); }
+    size_t                    getNodeNumRows()  const { return list_.size(); }
     int                       getNnzPerRow()    const { return nnzPerRow_;   }
     std::vector<short>&       getNumCpts()            { return numCpts_;     }
     Teuchos::Array<LO>&       getCList()              { return cptlist_;     }
@@ -348,7 +348,7 @@ namespace MueLu {
 
   void Muelu_az_sort(int list[], int N, int list2[], double list3[]);
   void Muelu_az_dsort2(std::vector<double>& dlist, std::vector<int>& list2);
-  void MergeSort(std::vector<int>& oldCandidates, int numOldCandidates, const std::vector<int>& newCandidates, std::vector<double>& coordDist, ArrayRCP<const size_t> ia);
+  void MergeSort(std::vector<int>& oldCandidates, size_t numOldCandidates, const std::vector<int>& newCandidates, std::vector<double>& coordDist, ArrayRCP<const size_t> ia);
 
   template<class T>
   void PrintVector(const std::vector<T>& v, const std::string& name, int n = -1) {
@@ -413,20 +413,19 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
   FindDist4Cpts(const Matrix& A, const MultiVector& coords, const Array<LO>& userCpts, std::vector<char>& status, MyCptList& myCpts, int levelID) const {
-    int    NDim = coords.getNumVectors();
-    size_t n    = A.getNodeNumRows();
+    int    NDim    = coords.getNumVectors();
+    size_t numRows = A.getNodeNumRows();
 
     ArrayRCP<const size_t> ia;
     ArrayRCP<const LO>     ja;
     CreateCrsPointers(A, ia, ja);
 
     ArrayRCP<ArrayRCP<const SC> > coords1D(NDim);
-    for (size_t i = 0; i < NDim; i++)
-      coords1D[i] = coords.getData(i);
+    for (int k = 0; k < NDim; k++)
+      coords1D[k] = coords.getData(k);
 
     typedef Teuchos::ScalarTraits<SC> STS;
     SC zero = STS::zero();
-    SC one  = STS::one();
 
     // Initialize coordDist to some large value.
     // coordDist is an attempt to measure an average distance from a given
@@ -441,7 +440,7 @@ namespace MueLu {
 
       big += ((dmax - dmin)*(dmax - dmin));
     }
-    std::vector<SC> coordDist(n, 10000*big);
+    std::vector<SC> coordDist(numRows, 10000*big);
 
     const ParameterList& pL = GetParameterList();
     const bool doStatusOutput = pL.get<bool>("dump status");
@@ -450,7 +449,7 @@ namespace MueLu {
     // Set all Dirichlet points as Fpoints
     // However, if a Dirichlet point is in userCpts, it will be added to the
     // Cpt list later
-    for (int i = 0; i < n; i++)
+    for (size_t i = 0; i < numRows; i++)
       if (ia[i+1] - ia[i] == 1)
         status[i] = FPOINT;
 
@@ -465,16 +464,16 @@ namespace MueLu {
       Cptlist.push_back(userCpts[i]);
     }
 
-    std::vector<char> distIncrement(n, 0);
-    std::vector<int>  cumGraphDist (n, 0);
+    std::vector<char> distIncrement(numRows, 0);
+    std::vector<int>  cumGraphDist (numRows, 0);
 
     std::vector<short>& numCpts = myCpts.getNumCpts();
 
     std::string st = std::string("status-l") + toString(levelID) + (pressureMode ? "-p-" : "-v-");
 
     int userCcount = 0;
-    int numCandidates = 0;
-    std::vector<LO> candidateList(n, 0);
+    size_t numCandidates = 0;
+    std::vector<LO> candidateList(numRows, 0);
 
     // Determine CPOINTs
     int dumpCount = 0;
@@ -483,8 +482,8 @@ namespace MueLu {
       DumpCoords(coords, "coord-l" + toString(levelID) + (pressureMode ? "-p" : "-v"));
     }
 
-    int i = 0;
-    while (i < n) {
+    size_t i = 0;
+    while (i < numRows) {
       LO newCpt = -1;
 
       // Check userCpts list
@@ -509,7 +508,7 @@ namespace MueLu {
       }
 
       // If no new CPOINT identified in candidate list, check the unassigned list
-      while ((newCpt == -1) && (i < n)) {
+      while ((newCpt == -1) && (i < numRows)) {
         if (status[i] == UNASSIGNED) {
           newCpt         = i;
           status[newCpt] = CPOINT;
@@ -528,7 +527,7 @@ namespace MueLu {
 
         // Make sure that the only CPOINT in dist3 is newCpt. All others should be excluded.
         int numDist3 = 0;
-        for (int k = 0; k < dist3.size(); k++) {
+        for (size_t k = 0; k < dist3.size(); k++) {
           LO j = dist3[k];
           if ((status[j] < CPOINT) || (j == newCpt))
             dist3[numDist3++] = j;
@@ -537,7 +536,7 @@ namespace MueLu {
 
         // Update FPOINT list to include UNASSIGNED or CANDIDATE neighbors
         bool dumpStatus = false;
-        for (int k = 0; k < dist3.size(); k++) {
+        for (size_t k = 0; k < dist3.size(); k++) {
           LO j = dist3[k];
           if (status[j] <= CANDIDATE) {
             status[j] = FPOINT;
@@ -548,7 +547,7 @@ namespace MueLu {
           DumpStatus(status, pressureMode, st + i2s(dumpCount++) + "-D");
 
         // Update myCpts() to reflect dependence of neighbors on newCpt
-        for (int k = 0; k < dist3.size(); k++) {
+        for (size_t k = 0; k < dist3.size(); k++) {
           LO j = dist3[k];
 
           TEUCHOS_TEST_FOR_EXCEPTION(numCpts[j] >= myCpts.getNnzPerRow(), Exceptions::RuntimeError, "Increase max number of C points per row");
@@ -557,12 +556,12 @@ namespace MueLu {
 
         // Update cumGraphDist
         // NOTE: order matters as dist2 is contained within dist3, etc.
-        for (int k = 0; k < dist3.size(); k++) distIncrement[dist3[k]] = 3;
-        for (int k = 0; k < dist2.size(); k++) distIncrement[dist2[k]] = 2;
-        for (int k = 0; k < dist1.size(); k++) distIncrement[dist1[k]] = 1;
+        for (size_t k = 0; k < dist3.size(); k++) distIncrement[dist3[k]] = 3;
+        for (size_t k = 0; k < dist2.size(); k++) distIncrement[dist2[k]] = 2;
+        for (size_t k = 0; k < dist1.size(); k++) distIncrement[dist1[k]] = 1;
         distIncrement[newCpt] = 0;
 
-        for (int k = 0; k < dist3.size(); k++) {
+        for (size_t k = 0; k < dist3.size(); k++) {
           LO j = dist3[k];
           cumGraphDist[j] += distIncrement[j];
         }
@@ -573,7 +572,7 @@ namespace MueLu {
         // Distance of CANDIDATEs to CPOINTs will be used to determine the next
         // chosen CPOINT from the candidate list. Distances are also used to
         // decide where new CPOINTs should be added.
-        for (int k = 0; k < dist4.size(); k++) {
+        for (size_t k = 0; k < dist4.size(); k++) {
           LO j = dist4[k];
 
           SC distance = distance2(coords1D, newCpt, j);
@@ -586,7 +585,7 @@ namespace MueLu {
         // dist4 so that it only contains entries for the candidate list.
         size_t numNewCandidates = 0;
         dumpStatus = false;
-        for (int k = 0; k < dist4.size(); k++) {
+        for (size_t k = 0; k < dist4.size(); k++) {
           LO j = dist4[k];
 
           if (status[j] == CANDIDATE) {
@@ -609,9 +608,9 @@ namespace MueLu {
           DumpStatus(status, pressureMode, st + i2s(dumpCount++) + "-E");
 
         // Now remove all TWOTIMERs from the old candidate list
-        int numOldCandidates = 0;
+        size_t numOldCandidates = 0;
         dumpStatus = false;
-        for (int k = 0; k < numCandidates; k++) {
+        for (size_t k = 0; k < numCandidates; k++) {
           LO j = candidateList[k];
           if (status[j] == CANDIDATE) { candidateList[numOldCandidates++] = j; }
           if (status[j] == TWOTIMER ) {
@@ -628,7 +627,7 @@ namespace MueLu {
         //
         // NOTE: to match matlab (and break ties), I added the  1.e-10 term
         std::vector<double> ddtemp(numNewCandidates);
-        for (int k = 0; k < numNewCandidates; k++) {
+        for (size_t k = 0; k < numNewCandidates; k++) {
           LO j = dist4[k];
           ddtemp[k] = -coordDist[j] - 1e-4*(ia[j+1]-ia[j]) + 1e-10*(j+1);
         }
@@ -651,7 +650,7 @@ namespace MueLu {
       numCandidates = 0;
 
       std::vector<int> candidates;
-      for (i = 0; i < n; i++)
+      for (i = 0; i < numRows; i++)
         if (status[i] < CPOINT && numCpts[i] == numCDepends) {
           candidates.push_back(i);
           numCandidates++;
@@ -661,7 +660,7 @@ namespace MueLu {
         // Sort FPOINTs based on distance to CPOINTs and orientation
         double maxGraphDist = -1e20;
         double maxCoordDist = -1e20;
-        for (int p = 0; p < numCandidates; p++) {
+        for (size_t p = 0; p < numCandidates; p++) {
           LO j = candidates[p];
 
           maxGraphDist = std::max(maxGraphDist, as<double>(cumGraphDist[j])/numCpts[j]);
@@ -670,7 +669,7 @@ namespace MueLu {
 
         std::vector<double> score      (numCandidates);
         std::vector<double> orientation(numCandidates);
-        for (int p = 0; p < numCandidates; p++) {
+        for (size_t p = 0; p < numCandidates; p++) {
           LO j = candidates[p];
 
           double graphScore = as<double>(cumGraphDist[j])/(maxGraphDist*numCpts[j]);
@@ -711,11 +710,11 @@ namespace MueLu {
           }
         }
 
-        for (int p = 0; p < numCandidates; p++)
+        for (size_t p = 0; p < numCandidates; p++)
           index[p] = p;
         Muelu_az_dsort2(score, index);
 
-        for (int p = 0; p < numCandidates; p++) {
+        for (size_t p = 0; p < numCandidates; p++) {
           int newCpt = candidates[index[p]];
 
           if (numCpts[newCpt] == numCDepends &&
@@ -733,7 +732,7 @@ namespace MueLu {
 
             // Make sure that the only CPOINT in dist3 is newCpt. All others should be excluded.
             int numDist3 = 0;
-            for (int k = 0; k < dist3.size(); k++) {
+            for (size_t k = 0; k < dist3.size(); k++) {
               LO j = dist3[k];
               if (status[j] < CPOINT || j == newCpt)
                 dist3[numDist3++] = j;
@@ -742,19 +741,19 @@ namespace MueLu {
 
             // Update cumGraphDist
             // NOTE: order matters as dist2 is contained within dist3, etc.
-            for (int k = 0; k < dist2.size(); k++) distIncrement[dist2[k]] = 2;
-            for (int k = 0; k < dist1.size(); k++) distIncrement[dist1[k]] = 1;
+            for (size_t k = 0; k < dist2.size(); k++) distIncrement[dist2[k]] = 2;
+            for (size_t k = 0; k < dist1.size(); k++) distIncrement[dist1[k]] = 1;
             distIncrement[newCpt] = 0;
 
             // Update myCpts() to reflect dependence of neighbors on newCpt
-            for (int k = 0; k < dist3.size(); k++) {
+            for (size_t k = 0; k < dist3.size(); k++) {
               LO j = dist3[k];
 
               TEUCHOS_TEST_FOR_EXCEPTION(numCpts[j] >= myCpts.getNnzPerRow(), Exceptions::RuntimeError, "Increase max number of C points per row");
               myCpts(j)[numCpts[j]++] = newCpt;
             }
 
-            for (int k = 0; k < dist3.size(); k++) {
+            for (size_t k = 0; k < dist3.size(); k++) {
               LO j = dist3[k];
               cumGraphDist[j] += distIncrement[j];
             }
@@ -765,7 +764,7 @@ namespace MueLu {
     }
 
     // Build up the CPOINT list
-    for (i = 0; i < n; i++)
+    for (i = 0; i < numRows; i++)
       if (status[i] == CPOINT)
         Cptlist.push_back(i);
   }
@@ -782,33 +781,33 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
   PhaseTwoPattern(const Matrix& A, const MultiVector& coords, const std::vector<char>& status, MyCptList& myCpts) const {
-    int    NDim = coords.getNumVectors();
-    size_t n    = A.getNodeNumRows();
-    size_t N    = myCpts.getCList().size();
+    int    NDim    = coords.getNumVectors();
+    size_t numRows = A.getNodeNumRows();
 
     ArrayRCP<const size_t> ia;
     ArrayRCP<const LO>     ja;
     CreateCrsPointers(A, ia, ja);
 
     ArrayRCP<ArrayRCP<const SC> > coords1D(NDim);
-    for (size_t i = 0; i < NDim; i++)
-      coords1D[i] = coords.getData(i);
+    for (int k = 0; k < NDim; k++)
+      coords1D[k] = coords.getData(k);
 
     std::vector<short>& numCpts = myCpts.getNumCpts();
 
     typedef Teuchos::ScalarTraits<SC> STS;
     SC zero = STS::zero();
 
+    size_t N = myCpts.getCList().size();
     std::vector<int>    nearbyCs(N);
-    std::vector<double> score(N);
-    std::vector<double> dists(N);
+    std::vector<double> score   (N);
+    std::vector<double> dists   (N);
 
-    std::vector<char> scratch(n, 'n');
-    std::vector<int>  candidates(n);
+    std::vector<char> scratch   (numRows, 'n');
+    std::vector<int>  candidates(numRows);
 
     for (int numCDepends = 1; numCDepends <= 2; numCDepends++) {
       int numCandidates = 0;
-      for (int i = 0; i < n; i++)
+      for (size_t i = 0; i < numRows; i++)
         if (status[i] < CPOINT && numCpts[i] == numCDepends)
           candidates[numCandidates++] = i;
 
@@ -935,8 +934,8 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
   FindMidPoints(const Matrix& A, const MultiVector& coords, Array<LO>& Cptlist, const MyCptList& myCpts) const {
-    int    NDim = coords.getNumVectors();
-    size_t n    = A.getNodeNumRows();
+    int    NDim    = coords.getNumVectors();
+    size_t numRows = A.getNodeNumRows();
 
     const std::vector<short>& numCpts = myCpts.getNumCpts();
 
@@ -945,18 +944,17 @@ namespace MueLu {
     CreateCrsPointers(A, ia, ja);
 
     ArrayRCP<ArrayRCP<const SC> > coords1D(NDim);
-    for (size_t i = 0; i < NDim; i++)
-      coords1D[i] = coords.getData(i);
+    for (int k = 0; k < NDim; k++)
+      coords1D[k] = coords.getData(k);
 
     typedef Teuchos::ScalarTraits<SC> STS;
     SC zero = STS::zero();
-    SC one  = STS::one();
 
     // Calculate number of nonzeros per row, make it negative, and then sort.
     // The idea is that when assigning midpoints, we want to start by looking
     // at points which have many coarse point dependencies
-    std::vector<int> nnzPerRow(n);
-    for (int i = 0; i < n; i++) {
+    std::vector<int> nnzPerRow(numRows);
+    for (size_t i = 0; i < numRows; i++) {
       nnzPerRow[i] = -100000*numCpts[i] + i;
       if (nnzPerRow[i] == 0)
         nnzPerRow[i] = -1;
@@ -965,15 +963,15 @@ namespace MueLu {
     // Sort only for the purposes of filling 'index', which determines the
     // order that we search for possible midpoints
     // FIXME
-    std::vector<int> index(n);
-    for (int i = 0; i < n; i++)
+    std::vector<int> index(numRows);
+    for (size_t i = 0; i < numRows; i++)
       index[i] = i;
-    Muelu_az_sort(&nnzPerRow[0], n, &index[0], NULL);
+    Muelu_az_sort(&nnzPerRow[0], numRows, &index[0], NULL);
 
     // Reset so that we have unsorted version of nnzPerRow and also mark points
     // which cannot be mid points
-    std::vector<char> lookedAt(n, 'n');
-    for (int i = 0; i < n; i++) {
+    std::vector<char> lookedAt(numRows, 'n');
+    for (size_t i = 0; i < numRows; i++) {
       nnzPerRow[i] = numCpts[i];
       if (nnzPerRow[i] == 0) nnzPerRow[i] = 1;
       if (nnzPerRow[i] == 1) lookedAt [i] = 'y';
@@ -987,8 +985,8 @@ namespace MueLu {
     for (int k = 0; k < NDim; k++) {
       ArrayRCP<SC>& target1D = targetMidCoords1D[k];
 
-      target1D.resize(n);
-      for (int i = 0; i < n; i++) {
+      target1D.resize(numRows);
+      for (size_t i = 0; i < numRows; i++) {
         target1D[i] = zero;
 
         for (int j = 0; j < numCpts[i]; j++)
@@ -998,14 +996,14 @@ namespace MueLu {
       }
     }
 
-    std::vector<char> isMidPoint(n, 'n');
-    std::vector<char> inNearbyCs(n, 'n');
-    std::vector<char> inNeighs  (n, 'n');
-    std::vector<int>  neighs(n);
+    std::vector<char> isMidPoint(numRows, 'n');
+    std::vector<char> inNearbyCs(numRows, 'n');
+    std::vector<char> inNeighs  (numRows, 'n');
+    std::vector<int>  neighs(numRows);
     std::vector<int>  sameCGroup(50);
 
     int numMidPoints = 0;
-    for (int i = 0; i < n; i++) {
+    for (size_t i = 0; i < numRows; i++) {
       int curF = index[i];
 
       if (lookedAt[curF] == 'y')
@@ -1052,7 +1050,7 @@ namespace MueLu {
 
           // Add neighbors of curNeigh that haven't already been
           // add to the neighbor list while processing curF
-          for (int j = ia[curNeigh]; j < ia[curNeigh+1]; j++)
+          for (size_t j = ia[curNeigh]; j < ia[curNeigh+1]; j++)
             if (inNeighs[ja[j]] == 'n') {
               neighs[numNeigh++] = ja[j];
               inNeighs[ja[j]]    = 'y';
@@ -1149,7 +1147,7 @@ namespace MueLu {
     }
 
     int count = 0;
-    for (int i = 0; i < n; i++)
+    for (size_t i = 0; i < numRows; i++)
       if (isMidPoint[i] == 'y') {
         Cptlist.push_back(i);
         count++;
@@ -1164,7 +1162,7 @@ namespace MueLu {
   void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
   CptDepends2Pattern(const Matrix& A, const MyCptList& myCpts, RCP<Matrix>& P) const {
     RCP<const Map> rowMap = A.getRowMap();
-    int n = myCpts.getNodeNumRows();
+    size_t numRows = myCpts.getNodeNumRows();
 
     const Array<LO>& Cptlist = myCpts.getCList();
     RCP<const Map> coarseMap = MapFactory::Build(rowMap->lib(), Cptlist.size(), rowMap->getIndexBase(), rowMap->getComm());
@@ -1185,7 +1183,7 @@ namespace MueLu {
     ArrayView<LO>     ja  =  jaP();
     ArrayView<SC>     val = valP();
 
-    std::vector<GO> coarseCmap(n, -1);
+    std::vector<GO> coarseCmap(numRows, -1);
     for (int i = 0; i < Cptlist.size(); i++)
       coarseCmap[Cptlist[i]] = i;
 
@@ -1193,7 +1191,7 @@ namespace MueLu {
 
     ia[0] = 0;
     size_t nnzCount = 0;
-    for (int i = 0; i < n; i++) {
+    for (size_t i = 0; i < numRows; i++) {
       const LO* cpts = myCpts(i);
 
       for (int j = 0; j < numCpts[i]; j++) {
@@ -1224,14 +1222,14 @@ namespace MueLu {
   CompDistances(const Matrix& A, LO start, int numDist, std::vector<LO>& dist1, std::vector<LO>& dist2, std::vector<LO>& dist3, std::vector<LO>& dist4) const {
     TEUCHOS_TEST_FOR_EXCEPTION(numDist < 1 || numDist > 4, Exceptions::InvalidArgument, "CompDistances() cannot compute " << numDist << " distances");
 
-    Xpetra::global_size_t n = A.getGlobalNumRows();
+    size_t numRows = A.getGlobalNumRows();
 
     ArrayRCP<const size_t> ia;
     ArrayRCP<const LO>     ja;
     CreateCrsPointers(A, ia, ja);
 
-    std::vector<char> added(n, 'n');
-    std::vector<LO> neighs;
+    std::vector<char> added(numRows, 'n');
+    std::vector<LO>   neighs;
     neighs.reserve(100);
 
     neighs.push_back(start);
@@ -1241,7 +1239,7 @@ namespace MueLu {
 
       int numNeighs = neighs.size();
       for (int i = 0; i < numNeighs; i++)
-        for (int j = ia[neighs[i]]; j < ia[neighs[i]+1]; j++)
+        for (size_t j = ia[neighs[i]]; j < ia[neighs[i]+1]; j++)
           if (added[ja[j]] == 'n') {
             added[ja[j]] = 'y';
             neighs.push_back(ja[j]);
@@ -1267,16 +1265,15 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
   DumpStatus(const std::vector<char>& status, bool pressureMode, const std::string& filename) const {
-    int N = status.size();
-
     if (pressureMode) {
       std::ofstream ofs(filename.c_str());
-      for (int i = 0; i < status.size(); i++)
+      for (size_t i = 0; i < status.size(); i++)
         ofs << status[i] << std::endl;
+
     } else {
       std::ofstream ofs1((filename + ".1").c_str());
       std::ofstream ofs2((filename + ".2").c_str());
-      for (int i = 0; i < status.size(); i += 2) {
+      for (size_t i = 0; i < status.size(); i += 2) {
         ofs1 << status[i+0] << std::endl;
         ofs2 << status[i+1] << std::endl;
       }
@@ -1290,8 +1287,8 @@ namespace MueLu {
     const int n    = coords.getLocalLength();
 
     ArrayRCP<ArrayRCP<const SC> > coords1D(NDim);
-    for (size_t i = 0; i < NDim; i++)
-      coords1D[i] = coords.getData(i);
+    for (int k = 0; k < NDim; k++)
+      coords1D[k] = coords.getData(k);
 
     std::ofstream ofs(filename.c_str());
     for (int i = 0; i < n; i++) {
@@ -1618,9 +1615,9 @@ namespace MueLu {
   // NOTE: lists are given as integer arrays. These integer arrays give
   // locations in CoordDist[] defining the list values. That the ith value
   // associated with the Candidates list is actually CoordDist[Candidates[i]].
-  void MergeSort(std::vector<int>& oldCandidates, int numOldCandidates, const std::vector<int>& newCandidates, std::vector<double>& coordDist, ArrayRCP<const size_t> ia) {
-    int numNewCandidates = newCandidates.size();
-    int numCandidates    = numOldCandidates + numNewCandidates;
+  void MergeSort(std::vector<int>& oldCandidates, size_t numOldCandidates, const std::vector<int>& newCandidates, std::vector<double>& coordDist, ArrayRCP<const size_t> ia) {
+    size_t numNewCandidates = newCandidates.size();
+    size_t numCandidates    = numOldCandidates + numNewCandidates;
 
     oldCandidates.resize(numCandidates);
 
