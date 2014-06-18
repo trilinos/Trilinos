@@ -15,12 +15,12 @@ enum clp_return_type {CLP_HELP=0,
       CLP_ERROR,
       CLP_OK};
 
-struct CMD { 
+struct CMD {
   int CMD_USE_THREADS;
+  int CMD_USE_OPENMP;
   int CMD_USE_NUMA;
   int CMD_USE_CORE_PER_NUMA;
   bool CMD_USE_CUDA;
-  int CMD_USE_OPENMP;
   int CMD_USE_CUDA_DEV;
   int CMD_USE_NGPUS;
   int CMD_USE_FIXTURE_X;
@@ -34,25 +34,27 @@ struct CMD {
   bool CMD_USE_BELOS;
   bool CMD_USE_MUELU;
   bool CMD_USE_MEANBASED;
-  bool CMD_USE_UQ_ENSEMBLE;
+  bool CMD_USE_UQ;
   int CMD_USE_UQ_DIM;
   int CMD_USE_UQ_ORDER;
-  bool CMD_USE_SPARSE;
-  bool CMD_VTUNE;
-  double CMD_USE_VAR;
   double CMD_USE_MEAN;
+  double CMD_USE_VAR;
   double CMD_USE_COR;
+  bool CMD_USE_SPARSE;
+  int CMD_USE_UQ_ENSEMBLE;
+  bool CMD_VTUNE;
+  bool CMD_VERBOSE;
   bool CMD_PRINT;
   bool CMD_SUMMARIZE;
   int CMD_ECHO;
   int CMD_ERROR;
   int CMD_COUNT;
- 
+
   CMD() : CMD_USE_THREADS(0),
+          CMD_USE_OPENMP(0),
           CMD_USE_NUMA(0),
           CMD_USE_CORE_PER_NUMA(0),
           CMD_USE_CUDA(false),
-          CMD_USE_OPENMP(0),
           CMD_USE_CUDA_DEV(-1),
           CMD_USE_NGPUS(1),
           CMD_USE_FIXTURE_X(2),
@@ -66,20 +68,20 @@ struct CMD {
           CMD_USE_BELOS(false),
           CMD_USE_MUELU(false),
           CMD_USE_MEANBASED(false),
-          CMD_USE_UQ_ENSEMBLE(false),
+          CMD_USE_UQ(false),
           CMD_USE_UQ_DIM(3),
           CMD_USE_UQ_ORDER(2),
-          CMD_USE_SPARSE(false),
-          CMD_VTUNE(false),
-          CMD_USE_VAR(0.1),
           CMD_USE_MEAN(1),
+          CMD_USE_VAR(0.1),
           CMD_USE_COR(0.25),
+          CMD_USE_SPARSE(false),
+          CMD_USE_UQ_ENSEMBLE(0),
+          CMD_VTUNE(false),
+          CMD_VERBOSE(false),
           CMD_PRINT(false),
           CMD_SUMMARIZE(false)
-
-    {} 
+    {}
 };
-  
 
 // Print command line
 void print_cmdline( std::ostream & s , const CMD & cmd );
@@ -87,7 +89,7 @@ void print_cmdline( std::ostream & s , const CMD & cmd );
 // Create Tpetra node
 template <typename NodeType>
 Teuchos::RCP<NodeType>
-createKokkosNode( const CMD & cmd , const int comm_rank ) {
+createKokkosNode( const CMD & cmd , const Teuchos::Comm<int>& comm ) {
   Teuchos::ParameterList params;
   params.set("Verbose", 0);
   if ( cmd.CMD_USE_THREADS  )
@@ -102,13 +104,27 @@ createKokkosNode( const CMD & cmd , const int comm_rank ) {
     params.set("Device", cmd.CMD_USE_CUDA_DEV  );
   Teuchos::RCP<NodeType> node = Teuchos::rcp (new NodeType(params));
 
-  if ( cmd.CMD_PRINT ) {
+  if ( cmd.CMD_VERBOSE ) {
     typedef typename NodeType::device_type Device;
-    if (comm_rank == 0)
+    if (comm.getRank() == 0)
       Device::print_configuration(std::cout);
-    if ( cmd.CMD_USE_CUDA  )
-      std::cout << "MPI rank " << comm_rank << " attached to CUDA device "
-                << cmd.CMD_USE_CUDA_DEV  << std::endl;
+    std::cout.flush();
+    if ( cmd.CMD_USE_CUDA  ) {
+      for (int i=0; i<comm.getSize(); ++i) {
+        comm.barrier();
+        comm.barrier();
+        comm.barrier();
+        if ( i == comm.getRank() ) {
+          std::cout << "MPI rank " << comm.getRank()
+                    << " attached to CUDA device "
+                    << cmd.CMD_USE_CUDA_DEV  << std::endl;
+          std::cout.flush();
+        }
+        comm.barrier();
+        comm.barrier();
+        comm.barrier();
+      }
+    }
   }
 
   return node;
@@ -120,7 +136,8 @@ createKokkosNode( const CMD & cmd , const int comm_rank ) {
 
 // Parse command line
 clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
-                               const Teuchos::Comm<int>& comm );
+                               const Teuchos::Comm<int>& comm,
+                               const bool uq);
 
 
 // Print timing headers

@@ -1,8 +1,5 @@
 #include <fenl_utils.hpp>
 
-// #include <math.h>
-// #include <strings.h>
-
 #include <utility>
 #include <string>
 #include <sstream>
@@ -26,7 +23,8 @@
 
 // Parse command line
 clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
-                               const Teuchos::Comm<int>& comm )
+                               const Teuchos::Comm<int>& comm,
+                               const bool uq )
 {
   Teuchos::ParameterList params;
   Teuchos::CommandLineProcessor clp(false);
@@ -36,36 +34,43 @@ clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
   clp.setOption("numa",                    &cmdline.CMD_USE_NUMA,  "number of numa nodes");
   clp.setOption("cores",                   &cmdline.CMD_USE_CORE_PER_NUMA, "cores per numa node");
   clp.setOption("cuda", "no-cuda",         &cmdline.CMD_USE_CUDA,  "use CUDA");
-  clp.setOption("cuda-dev",                &cmdline.CMD_USE_CUDA_DEV,  "CUDA device ID.  Set to default of -1 to use the default device as determined by the local node MPI rank and --ngpus");
-  clp.setOption("npgus",                   &cmdline.CMD_USE_NGPUS, "Number of GPUs per node for multi-GPU runs via MPI");
-  if(cmdline.CMD_USE_CUDA_DEV)
-    cmdline.CMD_USE_CUDA = true;
-  std::string fixtureSpec="2x2x2";    clp.setOption("fixture",                 &fixtureSpec,  "fixture string: \"XxYxZ\"");
-                                      clp.setOption("fixture-x",               &cmdline.CMD_USE_FIXTURE_X,  "fixture");
-                                      clp.setOption("fixture-y",               &cmdline.CMD_USE_FIXTURE_Y,  "fixture");
-                                      clp.setOption("fixture-z",               &cmdline.CMD_USE_FIXTURE_Z,  "fixture");
-  std::string fixtureRange;           clp.setOption("fixture-range",           &fixtureRange,  "fixture range: \"x..y\"");
+  clp.setOption("device",                  &cmdline.CMD_USE_CUDA_DEV,  "CUDA device ID.  Set to default of -1 to use the default device as determined by the local node MPI rank and --ngpus");
+  clp.setOption("ngpus",                   &cmdline.CMD_USE_NGPUS, "Number of GPUs per node for multi-GPU runs via MPI");
+  std::string fixtureSpec="2x2x2";
+  clp.setOption("fixture",                 &fixtureSpec,  "fixture string: \"XxYxZ\"");
+  clp.setOption("fixture-x",               &cmdline.CMD_USE_FIXTURE_X,  "fixture");
+  clp.setOption("fixture-y",               &cmdline.CMD_USE_FIXTURE_Y,  "fixture");
+  clp.setOption("fixture-z",               &cmdline.CMD_USE_FIXTURE_Z,  "fixture");
+
+  std::string fixtureRange;
+  clp.setOption("fixture-range",           &fixtureRange,  "fixture range: \"x..y\"");
   clp.setOption("fixture-begin",           &cmdline.CMD_USE_FIXTURE_BEGIN,  "fixture begin");
   clp.setOption("fixture-end",             &cmdline.CMD_USE_FIXTURE_END,  "fixture end");
-  clp.setOption("sparse", "tensor",        &cmdline.CMD_USE_SPARSE ,  "use sparse or tensor grid");
-  clp.setOption("Vtune", "no-Vtune",        &cmdline.CMD_VTUNE ,  "connect to vtune");
   clp.setOption("fixture-quadratic", "no-fixture-quadratic", &cmdline.CMD_USE_FIXTURE_QUADRATIC,  "quadratic");
-  clp.setOption("ensemble", "no-ensemble",  &cmdline.CMD_USE_UQ_ENSEMBLE,  "use ensemble");
-  clp.setOption("uq-dim",                   &cmdline.CMD_USE_UQ_DIM,  "UQ dimension");
-  clp.setOption("uq-order",                 &cmdline.CMD_USE_UQ_ORDER,  "UQ order");
-  clp.setOption("mean",                   &cmdline.CMD_USE_MEAN,  "KL diffusion mean");
-  clp.setOption("var",                 &cmdline.CMD_USE_VAR,  "KL diffusion variance");
-  clp.setOption("cor",                 &cmdline.CMD_USE_COR,  "KL diffusion correlation");
+
   clp.setOption("atomic", "no-atomic",      &cmdline.CMD_USE_ATOMIC ,  "atomic");
   clp.setOption("trials",                   &cmdline.CMD_USE_TRIALS,  "trials");
   clp.setOption("belos", "no-belos",        &cmdline.CMD_USE_BELOS ,  "use Belos solver");
   clp.setOption("muelu", "no-muelu",        &cmdline.CMD_USE_MUELU,  "use MueLu preconditioner");
-  clp.setOption("mean-based", "no-mean-based",        &cmdline.CMD_USE_MEANBASED,  "use mean-based preconditioner");
+  clp.setOption("mean-based", "no-mean-based", &cmdline.CMD_USE_MEANBASED,  "use mean-based preconditioner");
   if(cmdline.CMD_USE_MUELU || cmdline.CMD_USE_MEANBASED)
     cmdline.CMD_USE_BELOS = true;
+
+  clp.setOption("uq-dim",                   &cmdline.CMD_USE_UQ_DIM,  "UQ dimension");
+  clp.setOption("uq-order",                 &cmdline.CMD_USE_UQ_ORDER,  "UQ order");
+  clp.setOption("mean",                     &cmdline.CMD_USE_MEAN,  "KL diffusion mean");
+  clp.setOption("var",                      &cmdline.CMD_USE_VAR,  "KL diffusion variance");
+  clp.setOption("cor",                      &cmdline.CMD_USE_COR,  "KL diffusion correlation");
+  clp.setOption("sparse", "tensor",         &cmdline.CMD_USE_SPARSE ,  "use sparse or tensor grid");
+  clp.setOption("ensemble",                 &cmdline.CMD_USE_UQ_ENSEMBLE,  "UQ ensemble size.  This needs to be a valid choice based on available instantiations.");
+
+  clp.setOption("vtune", "no-vtune",       &cmdline.CMD_VTUNE ,  "connect to vtune");
+  clp.setOption("verbose", "no-verbose",   &cmdline.CMD_VERBOSE, "print verbose intialization info");
   clp.setOption("print", "no-print",        &cmdline.CMD_PRINT,  "print detailed test output");
-  clp.setOption("summarize", "no-summarize",        &cmdline.CMD_SUMMARIZE,  "summarize Teuchos timers at end of run");
-  bool doDryRun = false;              clp.setOption("echo", "no-echo",          &doDryRun,  "dry-run only");
+  clp.setOption("summarize", "no-summarize",&cmdline.CMD_SUMMARIZE,  "summarize Teuchos timers at end of run");
+
+  bool doDryRun = false;
+  clp.setOption("echo", "no-echo",          &doDryRun,  "dry-run only");
 
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return CLP_HELP;
@@ -104,6 +109,8 @@ clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
           &cmdline.CMD_USE_FIXTURE_BEGIN ,
           &cmdline.CMD_USE_FIXTURE_END );
 
+  cmdline.CMD_USE_UQ = uq;
+
   if (doDryRun) {
     print_cmdline( std::cout , cmdline );
     cmdline.CMD_ECHO  = 1;
@@ -111,13 +118,6 @@ clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
     cmdline.CMD_ECHO  = 0;
   }
   cmdline.CMD_ERROR  = 0 ;
-
-  //--------------------------------------------------------------------------
-
-  comm.broadcast( int(0) , int(cmdline.CMD_COUNT * sizeof(int)) , (char *) sizeof(cmdline) );
-
-  // Reset device as each process may have a different value
-  cmdline.CMD_USE_CUDA_DEV          = cmdline.CMD_USE_CUDA_DEV;
 
   return CLP_OK;
 
@@ -127,45 +127,45 @@ clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
 void print_cmdline( std::ostream & s , const CMD & cmd )
 {
   if ( cmd.CMD_USE_THREADS  ) {
-    s << " Threads(" << cmd.CMD_USE_THREADS 
-      << ") NUMA(" << cmd.CMD_USE_NUMA 
-      << ") CORE_PER_NUMA(" << cmd.CMD_USE_CORE_PER_NUMA 
+    s << " Threads(" << cmd.CMD_USE_THREADS
+      << ") NUMA(" << cmd.CMD_USE_NUMA
+      << ") CORE_PER_NUMA(" << cmd.CMD_USE_CORE_PER_NUMA
       << ")" ;
   }
   if ( cmd.CMD_USE_OPENMP  ) {
-    s << " OpenMP(" << cmd.CMD_USE_OPENMP 
-      << ") NUMA(" << cmd.CMD_USE_NUMA 
-      << ") CORE_PER_NUMA(" << cmd.CMD_USE_CORE_PER_NUMA 
+    s << " OpenMP(" << cmd.CMD_USE_OPENMP
+      << ") NUMA(" << cmd.CMD_USE_NUMA
+      << ") CORE_PER_NUMA(" << cmd.CMD_USE_CORE_PER_NUMA
       << ")" ;
   }
   if ( cmd.CMD_USE_FIXTURE_X  ) {
-    s << " Fixture(" << cmd.CMD_USE_FIXTURE_X 
-      << "x" << cmd.CMD_USE_FIXTURE_Y 
-      << "x" << cmd.CMD_USE_FIXTURE_Z 
+    s << " Fixture(" << cmd.CMD_USE_FIXTURE_X
+      << "x" << cmd.CMD_USE_FIXTURE_Y
+      << "x" << cmd.CMD_USE_FIXTURE_Z
       << ")" ;
   }
   if ( cmd.CMD_USE_FIXTURE_BEGIN  ) {
-    s << " Fixture( " << cmd.CMD_USE_FIXTURE_BEGIN 
-      << " .. " << cmd.CMD_USE_FIXTURE_END 
+    s << " Fixture( " << cmd.CMD_USE_FIXTURE_BEGIN
+      << " .. " << cmd.CMD_USE_FIXTURE_END
       << " )" ;
   }
   if ( cmd.CMD_USE_FIXTURE_QUADRATIC  ) {
     s << " Quadratic-Element" ;
   }
   if ( cmd.CMD_USE_UQ_ENSEMBLE  ) {
-    s << " UQ ensemble" ;
+    s << " UQ ensemble(" << cmd.CMD_USE_UQ_ENSEMBLE << ")" ;
   }
   if ( cmd.CMD_USE_UQ_DIM  ) {
-    s << " UQ dimension(" << cmd.CMD_USE_UQ_DIM  << ")" << ")" ;
+    s << " UQ dimension(" << cmd.CMD_USE_UQ_DIM  << ")" ;
   }
   if ( cmd.CMD_USE_UQ_ORDER  ) {
-    s << " UQ order(" << cmd.CMD_USE_UQ_ORDER  << ")" << ")" ;
+    s << " UQ order(" << cmd.CMD_USE_UQ_ORDER  << ")" ;
   }
   if ( cmd.CMD_USE_VAR  ) {
-    s << " KL variance(" << cmd.CMD_USE_VAR  << ")" << ")" ;
+    s << " KL variance(" << cmd.CMD_USE_VAR  << ")" ;
   }
   if ( cmd.CMD_USE_MEAN  ) {
-    s << " KL mean(" << cmd.CMD_USE_MEAN  << ")" << ")" ;
+    s << " KL mean(" << cmd.CMD_USE_MEAN  << ")" ;
   }
   if ( cmd.CMD_USE_COR  ) {
     s << " KL correlation(" << cmd.CMD_USE_COR  << ")" << ")" ;
@@ -197,6 +197,9 @@ void print_cmdline( std::ostream & s , const CMD & cmd )
   if ( cmd.CMD_VTUNE  ) {
     s << " VTUNE" ;
   }
+  if ( cmd.CMD_VERBOSE  ) {
+    s << " VERBOSE" ;
+  }
   if ( cmd.CMD_PRINT  ) {
     s << " PRINT" ;
   }
@@ -222,19 +225,28 @@ print_headers( std::ostream & s , const CMD & cmd , const int comm_rank )
    if ( cmd.CMD_USE_FIXTURE_QUADRATIC  ) { s << " , QUADRATIC-ELEMENT" ; }
    else { s << " , LINEAR-ELEMENT" ; }
 
+   s << " , FIXTURE , "
+     << cmd.CMD_USE_FIXTURE_X << "x"
+     << cmd.CMD_USE_FIXTURE_Y << "x"
+     << cmd.CMD_USE_FIXTURE_Z ;
+
    if ( cmd.CMD_USE_ATOMIC ) { s << " , USING ATOMICS" ; }
    if ( cmd.CMD_USE_BELOS  ) { s << " , USING BELOS" ; }
    if ( cmd.CMD_USE_MUELU  ) { s << " , USING MUELU" ; }
-   if ( cmd.CMD_USE_UQ_ENSEMBLE  ) { s << " , USING UQ ENSEMBLE" ; }
-   if ( cmd.CMD_USE_UQ_DIM  ) { s << " , UQ DIM , " << cmd.CMD_USE_UQ_DIM ; }
-   if ( cmd.CMD_USE_UQ_ORDER  ) { s << " , UQ ORDER , " << cmd.CMD_USE_UQ_ORDER; }
 
-   if ( cmd.CMD_USE_SPARSE  ) { s << " , USING SPARSE GRID" ; }
-   else { s << " , USING TENSOR GRID" ; }
-   if ( cmd.CMD_USE_MEANBASED  ) { s << " , MEAN-BASED PREC" ; }
-     s << " , FIXTURE , " << cmd.CMD_USE_FIXTURE_X << "x" << cmd.CMD_USE_FIXTURE_Y << "x" << cmd.CMD_USE_FIXTURE_Z ;
-   if ( cmd.CMD_USE_MEAN  ) { s << " , KL MEAN , " << cmd.CMD_USE_MEAN ; }
-   if ( cmd.CMD_USE_VAR  ) { s << " , KL VAR , " << cmd.CMD_USE_VAR ; }
+   if ( cmd.CMD_USE_UQ ) {
+     s << " , KL MEAN , " << cmd.CMD_USE_MEAN ;
+     s << " , KL VAR , " << cmd.CMD_USE_VAR ;
+     s << " , KL COR , " << cmd.CMD_USE_COR ;
+     s << " , UQ DIM , " << cmd.CMD_USE_UQ_DIM ;
+     s << " , UQ ORDER , " << cmd.CMD_USE_UQ_ORDER;
+     if ( cmd.CMD_USE_UQ_ENSEMBLE  ) {
+       s << " , USING UQ ENSEMBLE , " << cmd.CMD_USE_UQ_ENSEMBLE ;
+     }
+     if ( cmd.CMD_USE_SPARSE  ) { s << " , USING SPARSE GRID" ; }
+     else { s << " , USING TENSOR GRID" ; }
+     if ( cmd.CMD_USE_MEANBASED  ) { s << " , MEAN-BASED PREC" ; }
+   }
 
   }
 
@@ -242,7 +254,7 @@ print_headers( std::ostream & s , const CMD & cmd , const int comm_rank )
 
   headers.push_back(std::make_pair("ELEMS","count"));
   headers.push_back(std::make_pair("NODES","count"));
-  if ( cmd.CMD_USE_UQ_DIM  ) {
+  if ( cmd.CMD_USE_UQ  ) {
     headers.push_back(std::make_pair("SAMPLES","count"));
     headers.push_back(std::make_pair("NEWTON","iter"));
     headers.push_back(std::make_pair("CG","iter"));
@@ -307,7 +319,7 @@ void print_perf_value( std::ostream & s ,
   s << std::setw(widths[i++]) << perf.global_elem_count << " ,";
   s << std::setw(widths[i++]) << perf.global_node_count << " ,";
 
-  if ( cmd.CMD_USE_UQ_DIM  ) {
+  if ( cmd.CMD_USE_UQ  ) {
     // Note:  cg_iter_count is already a sum across all samples,
     // so don't scale cg times by uq_count
     s << std::setw(widths[i++]) << perf.uq_count << " ,";

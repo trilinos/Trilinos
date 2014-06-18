@@ -39,34 +39,17 @@
 // ************************************************************************
 */
 
-#include <fenl_ensemble.hpp>
-
+#include <fenl_ensemble_macros.hpp>
 #include <Kokkos_Cuda.hpp>
-#include <HexElement.hpp>
-#include <fenl_impl.hpp>
 
 namespace Kokkos {
 namespace Example {
 namespace FENL {
 
-static const int VectorSize = 16;
-typedef Stokhos::StaticFixedStorage<int,double,VectorSize,Cuda> Storage;
-typedef Sacado::MP::Vector<Storage> Scalar;
-typedef ElementComputationKLCoefficient<Scalar,double,Cuda> KL_Vector;
-typedef ElementComputationKLCoefficient<double,double,Cuda> KL_Scalar;
+#if defined (KOKKOS_HAVE_CUDA)
+INST_DEVICE_GPU( Cuda )
+#endif
 
-INST_FENL( Scalar , Cuda , BoxElemPart::ElemLinear ,
-           KL_Vector , TrivialManufacturedSolution )
-INST_FENL( Scalar , Cuda , BoxElemPart::ElemQuadratic ,
-           KL_Vector , TrivialManufacturedSolution )
-INST_KL( Scalar , double , Cuda )
-
-INST_FENL( double , Cuda , BoxElemPart::ElemLinear ,
-           KL_Scalar , TrivialManufacturedSolution )
-INST_FENL( double , Cuda , BoxElemPart::ElemQuadratic ,
-           KL_Scalar , TrivialManufacturedSolution )
-INST_KL( double , double , Cuda )
-
-} /* namespace FENL */
-} /* namespace Example */
-} /* namespace Kokkos */
+}
+}
+}

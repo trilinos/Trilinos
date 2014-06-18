@@ -30,7 +30,7 @@
 
 //----------------------------------------------------------------------------
 
-template< class Device , Kokkos::Example::BoxElemPart::ElemOrder ElemOrder >
+template< class Device >
 bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
           const CMD & cmd)
 {
@@ -38,10 +38,10 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   bool success = true;
   try {
 
- const int comm_rank = comm->getRank();
+  const int comm_rank = comm->getRank();
 
   // Create Tpetra Node -- do this first as it initializes host/device
-  Teuchos::RCP<NodeType> node = createKokkosNode<NodeType>( cmd , comm_rank );
+  Teuchos::RCP<NodeType> node = createKokkosNode<NodeType>( cmd , *comm );
 
   // Set up stochastic discretization
   using Teuchos::Array;
@@ -94,7 +94,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   // Create KL diffusion coefficient
   const double kl_mean = cmd.CMD_USE_MEAN;
   const double kl_variance = cmd.CMD_USE_VAR;
-  const double kl_correlation = cmd.CMD_USE_VAR;
+  const double kl_correlation = cmd.CMD_USE_COR;
   typedef ElementComputationKLCoefficient< Scalar, double, Device > KL;
   KL diffusion_coefficient( kl_mean, kl_variance, kl_correlation, dim );
   typedef typename KL::RandomVariableView RV;
@@ -125,14 +125,16 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   if ( cmd.CMD_USE_FIXTURE_QUADRATIC  )
     perf = fenl< Scalar , Device , BoxElemPart::ElemQuadratic >
       ( comm , node , cmd.CMD_PRINT , cmd.CMD_USE_TRIALS ,
-        cmd.CMD_USE_ATOMIC , cmd.CMD_USE_BELOS , cmd.CMD_USE_MUELU , cmd.CMD_USE_MEANBASED , 
+        cmd.CMD_USE_ATOMIC , cmd.CMD_USE_BELOS , cmd.CMD_USE_MUELU ,
+        cmd.CMD_USE_MEANBASED ,
         nelem , diffusion_coefficient , manufactured_solution ,
         bc_lower_value , bc_upper_value ,
         false , response);
   else
     perf = fenl< Scalar , Device , BoxElemPart::ElemLinear >
       ( comm , node , cmd.CMD_PRINT , cmd.CMD_USE_TRIALS ,
-        cmd.CMD_USE_ATOMIC , cmd.CMD_USE_BELOS , cmd.CMD_USE_MUELU , cmd.CMD_USE_MEANBASED , 
+        cmd.CMD_USE_ATOMIC , cmd.CMD_USE_BELOS , cmd.CMD_USE_MUELU ,
+        cmd.CMD_USE_MEANBASED ,
         nelem , diffusion_coefficient , manufactured_solution ,
         bc_lower_value , bc_upper_value ,
         false , response);
@@ -182,11 +184,12 @@ int main( int argc , char ** argv )
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
 
   //--------------------------------------------------------------------------
-  CMD cmdline; 
-  parse_cmdline( argc, argv, cmdline, *comm );
-  if ( ! cmdline.CMD_USE_UQ_DIM  ) cmdline.CMD_USE_UQ_DIM  = 3 ;
-  if ( ! cmdline.CMD_USE_UQ_ORDER  ) cmdline.CMD_USE_UQ_ORDER  = 2 ;
-
+  CMD cmdline;
+  clp_return_type rv = parse_cmdline( argc, argv, cmdline, *comm, true );
+  if (rv==CLP_HELP)
+    return(EXIT_SUCCESS);
+  else if (rv==CLP_ERROR)
+    return(EXIT_FAILURE);
 
   if ( cmdline.CMD_VTUNE  ) {
     connect_vtune(comm->getRank());
@@ -195,20 +198,20 @@ int main( int argc , char ** argv )
   if ( ! cmdline.CMD_ERROR  && ! cmdline.CMD_ECHO  ) {
 
 #if defined( KOKKOS_HAVE_PTHREAD )
-    if ( cmdline.CMD_USE_THREADS  ) {
-      run< Kokkos::Threads , Kokkos::Example::BoxElemPart::ElemLinear >( comm , cmdline );
+    if ( cmdline.CMD_USE_THREADS ) {
+      run< Kokkos::Threads >( comm , cmdline );
     }
 #endif
 
 #if defined( KOKKOS_HAVE_OPENMP )
-    if ( cmdline.CMD_USE_OPENMP  ) {
-      run< Kokkos::OpenMP , Kokkos::Example::BoxElemPart::ElemLinear >( comm , cmdline );
+    if ( cmdline.CMD_USE_OPENMP ) {
+      run< Kokkos::OpenMP >( comm , cmdline );
     }
 #endif
 
 #if defined( KOKKOS_HAVE_CUDA )
-    if ( cmdline.CMD_USE_CUDA  ) {
-      run< Kokkos::Cuda , Kokkos::Example::BoxElemPart::ElemLinear >( comm , cmdline );
+    if ( cmdline.CMD_USE_CUDA ) {
+      run< Kokkos::Cuda >( comm , cmdline );
     }
 #endif
 

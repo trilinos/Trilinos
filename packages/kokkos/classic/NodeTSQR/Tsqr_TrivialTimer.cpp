@@ -47,7 +47,7 @@
 namespace TSQR {
 
   TrivialTimer::TrivialTimer (const std::string& theName, bool doStart) :
-    name_ (theName), isRunning_ (false), counter_ (0)
+    name_ (theName), counter_ (0), isRunning_ (false)
   {
     if (doStart)
       start();

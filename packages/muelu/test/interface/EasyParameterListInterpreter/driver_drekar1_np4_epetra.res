@@ -67,6 +67,7 @@ Level 1
       UseMaxLinkAggregationAlgorithm = 1
       UseIsolatedNodeAggregationAlgorithm = 1
       UseEmergencyAggregationAlgorithm = 1
+      aggregation: preserve Dirichlet points = 0   [unused]
       aggregation: enable phase 1 = 1   [unused]
       aggregation: enable phase 2a = 1   [unused]
       aggregation: enable phase 2b = 1   [unused]
@@ -165,6 +166,7 @@ Level 2
       UseMaxLinkAggregationAlgorithm = 1
       UseIsolatedNodeAggregationAlgorithm = 1
       UseEmergencyAggregationAlgorithm = 1
+      aggregation: preserve Dirichlet points = 0   [unused]
       aggregation: enable phase 1 = 1   [unused]
       aggregation: enable phase 2a = 1   [unused]
       aggregation: enable phase 2b = 1   [unused]
@@ -263,6 +265,7 @@ Level 3
       UseMaxLinkAggregationAlgorithm = 1
       UseIsolatedNodeAggregationAlgorithm = 1
       UseEmergencyAggregationAlgorithm = 1
+      aggregation: preserve Dirichlet points = 0   [unused]
       aggregation: enable phase 1 = 1   [unused]
       aggregation: enable phase 2a = 1   [unused]
       aggregation: enable phase 2b = 1   [unused]
