@@ -3,7 +3,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -59,7 +59,7 @@ clp.add_option(
 
 clp.add_option(
   "--keep-types", dest="keepTypes", type="string", default="",
-  help="List of types to keep (i.e. \"PS,SS,EX\"." )
+  help="List of types to keep (i.e. \"PT,ST,EX\"." )
 
 clp.add_option(
   "--deps-xml-file", dest="depsXmlFile", type="string",

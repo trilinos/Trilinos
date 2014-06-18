@@ -58,7 +58,7 @@ struct localsum {
   idx_type::const_type idx;
   DestType dest;
   SrcType src;
-  localsum(idx_type idx_, DestType dest_, 
+  localsum(idx_type idx_, DestType dest_,
               SrcType src_):idx(idx_),dest(dest_),src(src_) {}
 
   KOKKOS_INLINE_FUNCTION

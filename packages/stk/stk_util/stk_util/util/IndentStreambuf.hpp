@@ -72,7 +72,7 @@ public:
       m_indentLevel(0),
       m_nextIndentLevel(0),
       m_indentSize(indent_size),
-      m_flags((Flags) flags),
+      m_flags(static_cast<Flags>(flags)),
       m_indentString(0)
   {
     set_indent_size(indent_size);
@@ -129,7 +129,7 @@ public:
    *
    */
   void set_flags(unsigned flags) {
-    m_flags = (Flags) flags;
+    m_flags = static_cast<Flags>(flags);
   }
 
 
@@ -140,7 +140,7 @@ private:
    * @return			a <b>size_t</b> value of the current indentation level.
    */
   size_t indent_level() {
-    return std::min(m_indentLevel*m_indentSize, (size_t) MAX_INDENT_LEVEL*m_indentSize);
+    return std::min(m_indentLevel*m_indentSize, MAX_INDENT_LEVEL*m_indentSize);
   }
 
   /**

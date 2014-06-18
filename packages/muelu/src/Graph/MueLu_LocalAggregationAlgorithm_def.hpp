@@ -98,10 +98,10 @@ namespace MueLu {
     /* been aggregated into.                                         */
     /* ============================================================= */
 
-    Teuchos::ArrayRCP<NodeState> aggStat;
+    Teuchos::ArrayRCP<CANodeState> aggStat;
     const my_size_t nRows = graph.GetNodeNumVertices();
-    if (nRows > 0) aggStat = Teuchos::arcp<NodeState>(nRows);
-    for ( my_size_t i = 0; i < nRows; ++i ) aggStat[i] = READY;
+    if (nRows > 0) aggStat = Teuchos::arcp<CANodeState>(nRows);
+    for ( my_size_t i = 0; i < nRows; ++i ) aggStat[i] = CA_READY;
 
     /* ============================================================= */
     /* Phase 1  :                                                    */
@@ -153,7 +153,7 @@ namespace MueLu {
                 {
                   for ( int jNode = 0; jNode < nRows; ++jNode )
                     {
-                      if ( aggStat[jNode] == READY )
+                      if ( aggStat[jNode] == CA_READY )
                         {
                           nodeList->Add(jNode); //TODO optim: not necessary to create a node. Can just set iNode value and skip the end
                           break;
@@ -169,10 +169,10 @@ namespace MueLu {
           }
 
           /*------------------------------------------------------ */
-          /* consider further only if the node is in READY mode    */
+          /* consider further only if the node is in CA_READY mode    */
           /*------------------------------------------------------ */
 
-          if ( aggStat[iNode] == READY )
+          if ( aggStat[iNode] == CA_READY )
             {
               // neighOfINode is the neighbor node list of node 'iNode'.
               Teuchos::ArrayView<const LO> neighOfINode = graph.getNeighborVertices(iNode);
@@ -201,8 +201,8 @@ namespace MueLu {
                     int index = *it;
                     if ( index < nRows )
                       {
-                        if ( aggStat[index] == READY ||
-                             aggStat[index] == NOTSEL )
+                        if ( aggStat[index] == CA_READY ||
+                             aggStat[index] == CA_NOTSEL )
                           supernode->list[supernode->length++] = index;
                         else count++;
 
@@ -227,14 +227,14 @@ namespace MueLu {
               if (selectFlag != 1 ||
                   supernode->length <= GetMinNodesPerAggregate())
                 {
-                  aggStat[iNode] = NOTSEL;
+                  aggStat[iNode] = CA_NOTSEL;
                   delete supernode;
                   if ( ordering_ == GRAPH ) /* if graph ordering */
                     {
                       for (typename Teuchos::ArrayView<const LO>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it)
                         {
                           int index = *it;
-                          if  ( index < nRows && aggStat[index] == READY )
+                          if  ( index < nRows && aggStat[index] == CA_READY )
                             {
                               nodeList->Add(index);
                             }
@@ -247,7 +247,7 @@ namespace MueLu {
                   for ( int j = 0; j < supernode->length; ++j )
                     {
                       int jNode = supernode->list[j];
-                      aggStat[jNode] = SELECTED;
+                      aggStat[jNode] = CA_SELECTED;
                       vertex2AggId[jNode] = nAggregates;
                       if ( ordering_ == GRAPH ) /* if graph ordering */
                         {
@@ -257,7 +257,7 @@ namespace MueLu {
                           for (typename Teuchos::ArrayView<const LO>::const_iterator it = neighOfJNode.begin(); it != neighOfJNode.end(); ++it)
                             {
                               int index = *it;
-                              if ( index < nRows && aggStat[index] == READY )
+                              if ( index < nRows && aggStat[index] == CA_READY )
                                 {
                                   nodeList->Add(index);
                                 }
@@ -300,20 +300,20 @@ namespace MueLu {
 
         // Compute 'localReady'
         for ( my_size_t i = 0; i < nRows; ++i )
-          if (aggStat[i] == READY) localReady++;
+          if (aggStat[i] == CA_READY) localReady++;
 
         // Compute 'globalReady'
         sumAll(comm, localReady, globalReady);
 
         if(globalReady > 0)
-          GetOStream(Warnings0) << "Warning: " << globalReady << " READY nodes left" << std::endl;
+          GetOStream(Warnings0) << "Warning: " << globalReady << " CA_READY nodes left" << std::endl;
       }
 
       if (IsPrint(Statistics1)) {
         // Compute 'localSelected'
         LO localSelected=0;
         for ( my_size_t i = 0; i < nRows; ++i )
-          if ( aggStat[i] == SELECTED ) localSelected++;
+          if ( aggStat[i] == CA_SELECTED ) localSelected++;
 
         // Compute 'globalSelected'
         GO globalSelected; sumAll(comm, (GO)localSelected, globalSelected);

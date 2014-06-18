@@ -333,7 +333,12 @@ void OpenMP::initialize( unsigned thread_count ,
 
   if ( ! is_initialized ) {
 
-    Impl::s_using_hwloc = hwloc::available() && (use_cores_per_numa > 0);
+    // Use hwloc thread pinning if concerned with locality.
+    // If spreading threads across multiple NUMA regions.
+    // If hyperthreading is enabled.
+    Impl::s_using_hwloc = hwloc::available() && (
+                            ( 1 < Kokkos::hwloc::get_available_numa_count() ) ||
+                            ( 1 < Kokkos::hwloc::get_available_threads_per_core() ) );
 
     std::pair<unsigned,unsigned> threads_coord[ Impl::OpenMPexec::MAX_THREAD_COUNT ];
 
@@ -421,6 +426,62 @@ void OpenMP::finalize()
 
   if(Impl::s_using_hwloc)
     hwloc::unbind_this_thread();
+}
+
+//----------------------------------------------------------------------------
+
+void OpenMP::print_configuration( std::ostream & s , const bool detail )
+{
+  Impl::OpenMPexec::verify_is_process( "OpenMP::print_configuration" );
+
+  s << "Kokkos::OpenMP" ;
+
+#if defined( KOKKOS_HAVE_OPENMP )
+  s << " KOKKOS_HAVE_OPENMP" ;
+#endif
+#if defined( KOKKOS_HAVE_HWLOC )
+
+  const unsigned numa_count       = Kokkos::hwloc::get_available_numa_count();
+  const unsigned cores_per_numa   = Kokkos::hwloc::get_available_cores_per_numa();
+  const unsigned threads_per_core = Kokkos::hwloc::get_available_threads_per_core();
+
+  s << " hwloc[" << numa_count << "x" << cores_per_numa << "x" << threads_per_core << "]"
+    << " hwloc_binding_" << ( Impl::s_using_hwloc ? "enabled" : "disabled" )
+    ;
+#endif
+
+  const bool is_initialized = 0 != Impl::OpenMPexec::m_thread[0] ;
+
+  if ( is_initialized ) {
+    s << " threads[" << omp_get_max_threads() << "]"
+      << " threads_per_numa[" << Impl::s_threads_per_numa << "]"
+      << " threads_per_core[" << Impl::s_threads_per_core << "]"
+      << std::endl ;
+
+    if ( detail ) {
+      std::vector< std::pair<unsigned,unsigned> > coord( omp_get_max_threads() );
+
+#pragma omp parallel
+      {
+#pragma omp critical
+        {
+          coord[ omp_get_thread_num() ] = hwloc::get_this_thread_coordinate();
+        }
+/* END #pragma omp critical */
+      }
+/* END #pragma omp parallel */
+
+      for ( unsigned i = 0 ; i < coord.size() ; ++i ) {
+        s << "  thread omp_rank[" << i << "]" 
+          << " kokkos_rank[" << Impl::OpenMPexec::m_thread[ i ]->m_pool_rank << "]"
+          << " hwloc_coord[" << coord[i].first << "." << coord[i].second << "]" 
+          << std::endl ;
+      }
+    }
+  }
+  else {
+    s << " not initialized" << std::endl ;
+  }
 }
 
 } // namespace Kokkos

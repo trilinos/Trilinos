@@ -74,6 +74,7 @@
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
 #include <BelosBlockCGSolMgr.hpp>
+#include <BelosPseudoBlockCGSolMgr.hpp>
 #include <BelosBlockGmresSolMgr.hpp>
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
@@ -118,6 +119,8 @@ int main(int argc, char *argv[]) {
   std::string matrixFile;                            clp.setOption("matrix",                &matrixFile,       "matrix data file");
   std::string coordFile;                             clp.setOption("coords",                &coordFile,        "coordinates data file");
   int         numRebuilds       = 0;                 clp.setOption("rebuild",               &numRebuilds,      "#times to rebuild hierarchy");
+  int         maxIts            = 200;               clp.setOption("its",                   &maxIts,           "maximum number of solver iterations");
+  bool        scaleResidualHistory = true;              clp.setOption("scale", "noscale",  &scaleResidualHistory, "scaled Krylov residual history");
 
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
@@ -374,7 +377,7 @@ int main(int argc, char *argv[]) {
         tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 4 - Fixed Point Solve")));
 
         H->IsPreconditioner(false);
-        H->Iterate(*B, *X, 25);
+        H->Iterate(*B, *X, maxIts);
 
       } else if (solveType == "cg" || solveType == "gmres") {
 #ifdef HAVE_MUELU_BELOS
@@ -392,7 +395,7 @@ int main(int argc, char *argv[]) {
 
         // Construct a Belos LinearProblem object
         RCP< Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
-        belosProblem->setLeftPrec(belosPrec);
+        belosProblem->setRightPrec(belosPrec);
 
         bool set = belosProblem->setProblem();
         if (set == false) {
@@ -401,20 +404,22 @@ int main(int argc, char *argv[]) {
         }
 
         // Belos parameter list
-        int maxIts = 2000;
         Teuchos::ParameterList belosList;
         belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
         belosList.set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
         belosList.set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
         belosList.set("Output Frequency",      1);
         belosList.set("Output Style",          Belos::Brief);
+        if (!scaleResidualHistory) 
+          belosList.set("Implicit Residual Scaling", "None");
 
         // Create an iterative solver manager
         RCP< Belos::SolverManager<SC, MV, OP> > solver;
-        if (solveType == "cg")
-          solver = rcp(new Belos::BlockCGSolMgr   <SC, MV, OP>(belosProblem, rcp(&belosList, false)));
-        else if (solveType == "gmres")
+        if (solveType == "cg") {
+          solver = rcp(new Belos::PseudoBlockCGSolMgr   <SC, MV, OP>(belosProblem, rcp(&belosList, false)));
+        } else if (solveType == "gmres") {
           solver = rcp(new Belos::BlockGmresSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
+        }
 
         // Perform solve
         Belos::ReturnType ret = Belos::Unconverged;

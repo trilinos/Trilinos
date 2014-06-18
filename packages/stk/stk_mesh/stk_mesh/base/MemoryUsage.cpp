@@ -8,9 +8,22 @@
 
 
 #include <stk_mesh/base/MemoryUsage.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <stk_mesh/base/GetEntities.hpp>  // for count_entities, etc
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/BulkData.hpp"   // for BulkData
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/FieldBase.hpp"  // for FieldBase, etc
+#include "stk_mesh/base/FieldRestriction.hpp"  // for FieldRestriction
+#include "stk_mesh/base/MetaData.hpp"   // for MetaData
+#include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_mesh/base/Relation.hpp"   // for Relation
+#include "stk_mesh/base/Selector.hpp"   // for Selector
+#include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank
+#include "stk_mesh/baseImpl/FieldRepository.hpp"  // for FieldVector
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowErrorMsg
 
-#include <iostream>
 
 namespace stk {
 namespace mesh {
@@ -34,8 +47,6 @@ void compute_memory_usage(const BulkData& bulk, MemoryUsage& mem_usage)
     mem_usage.part_bytes += parts[i]->name().length();
     mem_usage.part_bytes += sizeof(Part*)        * parts[i]->supersets().size();
     mem_usage.part_bytes += sizeof(Part*)        * parts[i]->subsets().size();
-    mem_usage.part_bytes += sizeof(Part*)        * parts[i]->intersection_of().size();
-    mem_usage.part_bytes += sizeof(PartRelation) * parts[i]->relations().size();
   }
 
   size_t total_bytes = mem_usage.field_bytes + mem_usage.part_bytes;
@@ -55,32 +66,32 @@ void compute_memory_usage(const BulkData& bulk, MemoryUsage& mem_usage)
   mem_usage.bucket_counts.resize(nranks, 0);
   mem_usage.bucket_bytes.resize(nranks, 0);
 
-  std::vector<Entity*> entities;
+  std::vector<Entity> entities;
   for(size_t i=0; i<nranks; ++i) {
-    EntityRank rank = i;
-    total_bytes += mem_usage.entity_counts[rank]*sizeof(Entity);
+    EntityRank rank_i = static_cast<EntityRank>(i);
+    total_bytes += mem_usage.entity_counts[rank_i]*sizeof(Entity);
 
-    get_entities(bulk, rank, entities);
+    get_entities(bulk, rank_i, entities);
 
     for(size_t n=0; n<entities.size(); ++n) {
-      Entity& entity = *entities[n];
-      for(EntityRank r=0; r<i; ++r) {
-        unsigned num_rels = entity.relations(r).size();
+      Entity entity = entities[n];
+      for(EntityRank r=stk::topology::NODE_RANK; r<rank_i; ++r) {
+        unsigned num_rels = bulk.num_connectivity(entity, r);
         mem_usage.downward_relation_counts[r] += num_rels;
-        total_bytes += num_rels*sizeof(Relation);
+        ThrowErrorMsg("stk::mesh::compute_memory_usage need to be largely re-written for the new Connectivity scheme but is not needed for this 4.27.7.");
       }
-      for(EntityRank r=i+1; r<nranks; ++r) {
-        unsigned num_rels = entity.relations(r).size();
+      for(EntityRank r=static_cast<EntityRank>(rank_i+1); r<nranks; ++r) {
+        unsigned num_rels = bulk.num_connectivity(entity, r);
         mem_usage.upward_relation_counts[r] += num_rels;
-        total_bytes += num_rels*sizeof(Relation);
+        ThrowErrorMsg("stk::mesh::compute_memory_usage need to be largely re-written for the new Connectivity scheme but is not needed for this 4.27.7.");
       }
     }
 
-    const std::vector<Bucket*>& buckets = bulk.buckets(rank);
-    mem_usage.bucket_counts[rank] = buckets.size();
+    const BucketVector& buckets = bulk.buckets(rank_i);
+    mem_usage.bucket_counts[rank_i] = buckets.size();
     for(size_t b=0; b<buckets.size(); ++b) {
       Bucket& bucket = *buckets[b];
-      mem_usage.bucket_bytes[rank] += bucket.allocation_size();
+      mem_usage.bucket_bytes[rank_i] += bucket.allocation_size();
       total_bytes += bucket.allocation_size();
     }
   }
@@ -135,7 +146,7 @@ void print_memory_usage(const MemoryUsage& mem_usage, std::ostream& os)
       os << "  Rank "<<i<<": ";
     os << n << " buckets, "<< bytes<<" bytes"<<std::endl;
   }
-  os << "Total bytes: "<<mem_usage.total_bytes<<" ("<<((double)mem_usage.total_bytes)/(1024*1024)<<"MB)"<<std::endl;
+  os << "Total bytes: "<<mem_usage.total_bytes<<" ("<<(static_cast<double>(mem_usage.total_bytes))/(1024*1024)<<"MB)"<<std::endl;
 }
 
 }//namespace mesh

@@ -2111,7 +2111,7 @@ template <class RangeVector,
 
 #ifndef KOKKOS_FAST_COMPILE
 
-      if(x.dimension_1()==0) {
+      if(x.dimension_1()==1) {
         typedef View<typename DomainVectorType::const_value_type*,typename DomainVector::array_layout ,typename DomainVectorType::device_type> DomainVector1D;
         typedef View<typename RangeVectorType::value_type*,typename RangeVector::array_layout ,typename RangeVectorType::device_type,typename RangeVector::memory_traits> RangeVector1D;
         RangeVector1D y_sub = RangeVector1D(Kokkos::ViewWithoutManaging(),y.ptr_on_device(),y.dimension_0());

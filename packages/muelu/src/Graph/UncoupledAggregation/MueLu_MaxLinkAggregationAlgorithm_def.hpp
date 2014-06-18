@@ -90,7 +90,7 @@ namespace MueLu {
     //bool recomputeAggregateSizes=false; // variable not used TODO remove it
 
     for (LO iNode = 0; iNode < nRows; iNode++) {
-      if (aggStat[iNode] == NodeStats::AGGREGATED)
+      if (aggStat[iNode] == AGGREGATED)
         continue;
 
       ArrayView<const LocalOrdinal> neighOfINode = graph.getNeighborVertices(iNode);
@@ -101,7 +101,7 @@ namespace MueLu {
 
         // NOTE: we don't need the check (neigh != iNode), as we work only
         // if aggStat[neigh] == AGGREGATED, which we know is different from aggStat[iNode]
-        if (graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == NodeStats::AGGREGATED)
+        if (graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == AGGREGATED)
           aggList[aggSize++] = vertex2AggId[neigh];
       }
 
@@ -130,7 +130,7 @@ namespace MueLu {
 
       // Add node iNode to aggregate
       if (selectedAggregate != -1) {
-        aggStat[iNode]      = NodeStats::AGGREGATED;
+        aggStat[iNode]      = AGGREGATED;
         vertex2AggId[iNode] = selectedAggregate;
         procWinner[iNode]   = myRank;
 

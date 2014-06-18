@@ -82,7 +82,7 @@ namespace Zoltan2{
 template <typename Adapter>
 void AlgRCB(
   const RCP<const Environment> &env,
-  RCP<Comm<int> > &problemComm,
+  const RCP<Comm<int> > &problemComm,
   const RCP<const CoordinateModel<
     typename Adapter::base_adapter_t> > &coords, 
   RCP<PartitioningSolution<Adapter> > &solution

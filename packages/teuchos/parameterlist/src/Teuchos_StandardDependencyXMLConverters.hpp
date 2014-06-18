@@ -823,7 +823,7 @@ protected:
   virtual RCP<ArrayModifierDependency<DependeeType, DependentType> > 
   getConcreteDependency(
     RCP<const ParameterEntry> dependee,
-    const Dependency::ParameterEntryList dependents,
+    Dependency::ParameterEntryList dependents,
     RCP<const SimpleFunctionObject<DependeeType> > function) const = 0;
 
 };

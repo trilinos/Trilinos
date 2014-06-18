@@ -56,6 +56,10 @@
 #include <Ifpack2_Factory.hpp>
 #include <Ifpack2_Parameters.hpp>
 
+#include <Xpetra_BlockedCrsMatrix.hpp>
+#include <Xpetra_CrsMatrix.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
+#include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 
 #include "MueLu_Ifpack2Smoother_decl.hpp"
@@ -113,6 +117,64 @@ namespace MueLu {
     SC negone = -STS::one();
 
     SC lambdaMax = negone;
+
+    // If we are doing "user" partitioning, we assume that what the user
+    // really wants to do is make tiny little subdomains with one row
+    // asssigned to each subdomain. The rows used for these little
+    // subdomains correspond to those in the 2nd block row.  Then,
+    // if we overlap these mini-subdomains, we will do something that
+    // looks like Vanka (grabbing all velocities associated with each
+    // each pressure unknown). In addition, we put all Dirichlet points
+    // as a little mini-domain.
+
+    bool isBlockedMatrix = false;
+    RCP<Matrix> merged2Mat;
+    if (type_ == "SCHWARZ") {
+      ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
+
+      std::string sublistName = "subdomain solver parameters";
+      if (paramList.isSublist(sublistName)) {
+        ParameterList& subList = paramList.sublist(sublistName);
+
+        std::string partName  = "partitioner: type";
+        if (subList.isParameter(partName) && subList.get<std::string>(partName) == "user") {
+          isBlockedMatrix = true;
+
+          RCP<BlockedCrsMatrix> bA = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
+          TEUCHOS_TEST_FOR_EXCEPTION(bA.is_null(), Exceptions::BadCast,
+                                     "Matrix A must be of type BlockedCrsMatrix.");
+
+          size_t numVels = bA->getMatrix(0,0)->getNodeNumRows();
+          size_t numPres = bA->getMatrix(1,0)->getNodeNumRows();
+          size_t numRows = A_->getNodeNumRows();
+
+          ArrayRCP<LocalOrdinal> blockSeeds(numRows, Teuchos::OrdinalTraits<LocalOrdinal>::invalid());
+
+          for (size_t rowOfB = numVels; rowOfB < numVels+numPres; ++rowOfB)
+            blockSeeds[rowOfB] = rowOfB - numVels;
+
+          RCP<BlockedCrsMatrix> bA2 = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
+          TEUCHOS_TEST_FOR_EXCEPTION(bA2.is_null(), Exceptions::BadCast,
+                                     "Matrix A must be of type BlockedCrsMatrix.");
+
+          RCP<CrsMatrix> mergedMat = bA2->Merge();
+          merged2Mat = rcp(new CrsMatrixWrap(mergedMat));
+
+          // Add Dirichlet rows to the list of seeds
+          ArrayRCP<const bool> boundaryNodes;
+          boundaryNodes = Utils::DetectDirichletRows(*merged2Mat, 0.0);
+          for (LO i = 0; i < boundaryNodes.size(); i++)
+            if (boundaryNodes[i]) {
+              blockSeeds[i] = numPres;
+              numPres++;
+            }
+
+          subList.set("partitioner: map",         blockSeeds);
+          subList.set("partitioner: local parts", as<int>(numPres));
+        }
+      }
+    } // if (type_ == "SCHWARZ")
+
     if (type_ == "CHEBYSHEV") {
       std::string maxEigString   = "chebyshev: max eigenvalue";
       std::string eigRatioString = "chebyshev: ratio eigenvalue";
@@ -163,7 +225,10 @@ namespace MueLu {
       paramList.set(eigRatioString, ratio);
     }
 
-    RCP<const Tpetra::CrsMatrix<SC, LO, GO, NO, LMO> > tpA = Utils::Op2NonConstTpetraCrs(A_);
+    RCP<const Tpetra::CrsMatrix<SC, LO, GO, NO, LMO> > tpA;
+    if (isBlockedMatrix == true) tpA = Utils::Op2NonConstTpetraCrs(merged2Mat);
+    else                         tpA = Utils::Op2NonConstTpetraCrs(A_);
+
     prec_ = Ifpack2::Factory::create(type_, tpA, overlap_);
 
     SetPrecParameters();

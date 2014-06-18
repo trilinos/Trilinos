@@ -10,14 +10,14 @@
 #ifndef STK_MESH_DATA_TRAITS_HPP
 #define STK_MESH_DATA_TRAITS_HPP
 
-#include <cstddef>
-#include <iosfwd>
-#include <typeinfo>
-#include <vector>
-#include <string>
-#include <complex>
-
-#include <stk_util/parallel/ParallelComm.hpp>
+#include <complex>                      // for complex
+#include <cstddef>                      // for size_t
+#include <iosfwd>                       // for ostream
+#include <string>                       // for string
+#include <typeinfo>                     // for type_info
+#include <vector>                       // for vector
+namespace stk { class CommBuffer; }
+namespace stk { namespace mesh { class DataTraits; } }
 
 namespace stk {
 namespace mesh {
@@ -27,7 +27,7 @@ class DataTraits ;
 //----------------------------------------------------------------------
 /** \brief  Query singleton for data traits of a given data type. */
 template< typename T > const DataTraits & data_traits();
- 
+
 /** \brief  Query DataTraits for a given data value. */
 template< typename T >
 inline
@@ -44,7 +44,9 @@ template<> const DataTraits & data_traits< unsigned short >();
 template<> const DataTraits & data_traits< signed   int >();
 template<> const DataTraits & data_traits< unsigned int >();
 template<> const DataTraits & data_traits< signed   long >();
+template<> const DataTraits & data_traits< signed   long long>();
 template<> const DataTraits & data_traits< unsigned long >();
+template<> const DataTraits & data_traits< unsigned long long>();
 template<> const DataTraits & data_traits< float >();
 template<> const DataTraits & data_traits< double >();
 template<> const DataTraits & data_traits< std::complex<float> >();
@@ -58,7 +60,9 @@ template<> const DataTraits & data_traits< unsigned short * >();
 template<> const DataTraits & data_traits< signed   int * >();
 template<> const DataTraits & data_traits< unsigned int * >();
 template<> const DataTraits & data_traits< signed   long * >();
+template<> const DataTraits & data_traits< signed   long long * >();
 template<> const DataTraits & data_traits< unsigned long * >();
+template<> const DataTraits & data_traits< unsigned long long * >();
 template<> const DataTraits & data_traits< float * >();
 template<> const DataTraits & data_traits< double * >();
 template<> const DataTraits & data_traits< std::complex<float> * >();
@@ -72,7 +76,7 @@ public:
   // Standard properties:
   const std::type_info & type_info ;
   std::size_t            size_of ;
- 
+
   //------------------------------
   // TR1 primary type categories:
   bool         is_void ;
@@ -96,11 +100,11 @@ public:
 
   // TR1 type manipulators:
   const DataTraits * remove_pointer ; // if 'is_pointer'
- 
+
   //------------------------------
   /** \brief  Namespace-qualified text name as it appears in source code */
   std::string  name ;
- 
+
   //------------------------------
   // Only If 'is_enum'
   struct EnumMember {
@@ -108,7 +112,7 @@ public:
     long         value ;
   };
   std::vector< EnumMember > enum_info ;
- 
+
   //------------------------------
   // Only If 'is_class':
   struct ClassMember {
@@ -117,7 +121,7 @@ public:
     std::size_t        offset ;
   };
   std::vector< ClassMember > class_info ;
- 
+
   //------------------------------
   // Functions required for all field data:
 
@@ -153,7 +157,7 @@ protected:
               const char * const     arg_name ,
               const std::size_t      arg_size ,
               const std::size_t      arg_align );
- 
+
   /** \brief  CTOR for pointer type */
   DataTraits( const std::type_info & arg_type , const DataTraits & );
 

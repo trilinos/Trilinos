@@ -2716,12 +2716,9 @@ namespace Tpetra {
     }
 
     if (isStaticGraph ()) {
-      const bool domainMapsMatch = staticGraph_->getDomainMap() == domainMap;
-      const bool rangeMapsMatch = staticGraph_->getRangeMap() == rangeMap;
-      // FIXME (mfh 19 Mar 2012) Why can't we allow the Maps to be
-      // different objects, but semantically the same (in the sense of
-      // isSameAs())?
-      // (cgb 24 May 2012) We can/should. We can fix now or wait for a user to complain.
+      const bool domainMapsMatch = staticGraph_->getDomainMap()->isSameAs(*domainMap);
+      const bool rangeMapsMatch  = staticGraph_->getRangeMap() ->isSameAs(*rangeMap);
+
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         ! domainMapsMatch, std::runtime_error,
         ": The CrsMatrix's domain Map does not match the graph's domain Map.  "

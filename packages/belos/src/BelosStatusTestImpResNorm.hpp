@@ -426,16 +426,16 @@ StatusTestImpResNorm (MagnitudeType Tolerance, int quorum, bool showMaxResNormOn
     resnormtype_(TwoNorm),
     scaletype_(NormOfInitRes),
     scalenormtype_(TwoNorm),
-    scalevalue_(1.0),
+    scalevalue_(Teuchos::ScalarTraits<MagnitudeType>::one ()),
     status_(Undefined),
     curBlksz_(0),
+    curNumRHS_(0),
     curLSNum_(0),
     numrhs_(0),
     firstcallCheckStatus_(true),
     firstcallDefineResForm_(true),
     firstcallDefineScaleForm_(true),
-    lossDetected_(false),
-    curNumRHS_(0)
+    lossDetected_(false)
 {
   // This constructor will compute the residual ||r_i||/||r0_i|| <= tolerance using the 2-norm of
   // the implicit residual vector.

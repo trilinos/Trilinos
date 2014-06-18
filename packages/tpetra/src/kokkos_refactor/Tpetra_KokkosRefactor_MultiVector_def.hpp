@@ -2342,66 +2342,92 @@ namespace Tpetra {
   void
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::reduce()
   {
-    using Teuchos::Array;
-    using Teuchos::ArrayView;
-    using Teuchos::ArrayRCP;
-    using Teuchos::as;
-    using Teuchos::RCP;
+    using Kokkos::ALL;
+    using Kokkos::subview;
     using Teuchos::reduceAll;
     using Teuchos::REDUCE_SUM;
+    typedef typename dual_view_type::t_dev device_view_type;
+    typedef typename device_type::host_mirror_device_type host_mirror_device_type;
 
-    // This method should be called only for locally replicated
-    // MultiVectors (! isDistributed ()).
-    TEUCHOS_TEST_FOR_EXCEPTION(this->isDistributed (), std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      this->isDistributed (), std::runtime_error,
       "Tpetra::MultiVector::reduce() should only be called with locally "
       "replicated or otherwise not distributed MultiVector objects.");
-    RCP<const Teuchos::Comm<int> > comm = this->getMap()->getComm();
-    if (comm->getSize() == 1) return;
-    RCP<Node> node = MVT::getNode(lclMV_);
-    // sum the data across all multivectors
-    // need to have separate packed buffers for send and receive
-    // if we're packed, we'll just set the receive buffer as our data, the send as a copy
-    // if we're not packed, we'll use allocated buffers for both.
-    ArrayView<Scalar> target;
-    const size_t myStride = MVT::getStride(lclMV_),
-                 numCols  = MVT::getNumCols(lclMV_),
-                 myLen    = MVT::getNumRows(lclMV_);
-    Array<Scalar> sourceBuffer(numCols*myLen), tmparr(0);
-    bool packed = isConstantStride() && (myStride == myLen);
-    ArrayRCP<Scalar> bufView = node->template viewBufferNonConst<Scalar>(
-                                          KokkosClassic::ReadWrite,myStride*(numCols-1)+myLen,
-                                          MVT::getValuesNonConst(lclMV_) );
-    if (packed) {
-      // copy data from view to sourceBuffer, reduce into view below
-      target = bufView(0,myLen*numCols);
-      std::copy(target.begin(),target.end(),sourceBuffer.begin());
+    const Teuchos::Comm<int>& comm = * (this->getMap ()->getComm ());
+    if (comm.getSize () == 1) {
+      return;
+    }
+
+    const size_t numLclRows = getLocalLength ();
+    const size_t numCols = getNumVectors ();
+
+    // FIXME (mfh 16 June 2014) This exception will cause deadlock if
+    // it triggers on only some processes.  We don't have a good way
+    // to pack this result into the all-reduce below, but this would
+    // be a good reason to set a "local error flag" and find other
+    // opportunities to let it propagate.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      numLclRows > static_cast<size_t> (std::numeric_limits<int>::max ()),
+      std::runtime_error, "Tpetra::MultiVector::reduce: On Process " <<
+      comm.getRank () << ", the number of local rows " << numLclRows <<
+      " does not fit in int.");
+
+    //
+    // Use MPI to sum the entries across all local blocks.
+    //
+    // If this MultiVector's local data are stored contiguously, we
+    // can use the local View as the source buffer in the
+    // MPI_Allreduce.  Otherwise, we have to allocate a temporary
+    // source buffer and pack.
+    const bool contig = isConstantStride () && getStride () == numLclRows;
+    device_view_type srcBuf;
+    if (contig) {
+      srcBuf = view_.d_view;
     }
     else {
-      // copy data into sourceBuffer, reduce from sourceBuffer into tmparr below, copy back to view after that
-      tmparr.resize(myLen*numCols);
-      Scalar *sptr = sourceBuffer.getRawPtr();
-      ArrayRCP<const Scalar> vptr = bufView;
-      for (size_t j=0; j<numCols; ++j) {
-        std::copy(vptr,vptr+myLen,sptr);
-        sptr += myLen;
-        vptr += myStride;
-      }
-      target = tmparr();
+      srcBuf = device_view_type ("srcBuf", numLclRows, numCols);
+      Kokkos::deep_copy (srcBuf, view_.d_view);
     }
-    // reduce
-    reduceAll<int,Scalar> (*comm, REDUCE_SUM, as<int> (numCols*myLen),
-                           sourceBuffer.getRawPtr (), target.getRawPtr ());
-    if (! packed) {
-      // copy tmparr back into view
-      const Scalar *sptr = tmparr.getRawPtr();
-      ArrayRCP<Scalar> vptr = bufView;
-      for (size_t j=0; j<numCols; ++j) {
-        std::copy (sptr, sptr+myLen, vptr);
-        sptr += myLen;
-        vptr += myStride;
+
+    // MPI requires that the send and receive buffers don't alias one
+    // another, so we have to copy temporary storage for the result.
+    //
+    // We expect that MPI implementations will know how to read device
+    // pointers.
+    device_view_type tgtBuf ("tgtBuf", numLclRows, numCols);
+
+    const int reduceCount = static_cast<int> (numLclRows * numCols);
+    reduceAll<int, Scalar> (comm, REDUCE_SUM, reduceCount,
+                            srcBuf.ptr_on_device (), tgtBuf.ptr_on_device ());
+
+    // Tell the DualView that we plan to modify the device data.
+    view_.template modify<device_type> ();
+
+    const std::pair<size_t, size_t> lclRowRange (0, numLclRows);
+    device_view_type d_view =
+      subview<device_view_type> (view_.d_view, lclRowRange, ALL ());
+
+    if (contig || isConstantStride ()) {
+      Kokkos::deep_copy (d_view, tgtBuf);
+    }
+    else {
+      for (size_t j = 0; j < numCols; ++j) {
+        device_view_type d_view_j =
+          subview<device_view_type> (d_view, ALL (), j);
+        device_view_type tgtBuf_j =
+          subview<device_view_type> (tgtBuf, ALL (), j);
+        Kokkos::deep_copy (d_view_j, tgtBuf_j);
       }
     }
-    bufView = Teuchos::null;
+
+    // Synchronize the host with changes on the device.
+    //
+    // FIXME (mfh 16 June 2014) This raises the question of whether we
+    // want to synchronize always.  Users will find it reassuring if
+    // MultiVector methods always leave the MultiVector in a
+    // synchronized state, but it seems silly to synchronize to host
+    // if they hardly ever need host data.
+    view_.template sync<host_mirror_device_type> ();
   }
 
 

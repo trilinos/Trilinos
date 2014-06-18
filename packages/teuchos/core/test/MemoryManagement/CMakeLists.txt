@@ -1,8 +1,3 @@
-
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsAddAdvancedTest)
-
-
 #
 # The following tests are expressed in this order in order to catch compunding
 # errors.  That is, if the ealier test executables fail, the other test

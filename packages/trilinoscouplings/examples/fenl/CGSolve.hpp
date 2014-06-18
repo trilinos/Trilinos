@@ -79,14 +79,24 @@ Scalar all_reduce_max( Scalar local , const Teuchos::RCP<const Teuchos::Comm<int
 }
 
 struct result_struct {
-  double addtime,dottime,matvectime,norm_res,iter_time;
+  double add_time, dot_time, matvec_time, iter_time, prec_setup_time,
+    prec_apply_time, total_time;
   int iteration;
+  double norm_res;
   result_struct() :
-    addtime(0), dottime(0), matvectime(0), norm_res(0), iter_time(0),
-    iteration(0) {}
-  result_struct(double add, double dot, double matvec,int niter,double res) :
-    addtime(add),dottime(dot),matvectime(matvec),
-    norm_res(res),iter_time(add+dot+matvec),iteration(niter) {};
+    add_time(0), dot_time(0), matvec_time(0), iter_time(0), prec_setup_time(0),
+    prec_apply_time(0), total_time(0), iteration(0), norm_res(0) {}
+  result_struct(double add, double dot, double matvec, double prec_setup,
+                double prec_apply, double total, int niter, double res) :
+    add_time(add),
+    dot_time(dot),
+    matvec_time(matvec),
+    iter_time(add+dot+matvec),
+    prec_setup_time(prec_setup),
+    prec_apply_time(prec_apply),
+    total_time(total),
+    iteration(niter),
+    norm_res(res) {};
 };
 
 template<class CrsMatrix, class Vector>
@@ -97,6 +107,8 @@ result_struct cg_solve(
     Kokkos::Details::ArithTraits<typename CrsMatrix::scalar_type>::epsilon(),
   int print = 0)
 {
+  Kokkos::Impl::Timer total_timer;
+
   typedef typename CrsMatrix::scalar_type ScalarType;
   typedef Kokkos::Details::ArithTraits<ScalarType> KAT;
   typedef typename KAT::mag_type MagnitudeType;
@@ -109,12 +121,7 @@ result_struct cg_solve(
   Ap = Tpetra::createVector<ScalarType>(A->getRangeMap());
 
   // fill with initial Values (make this a functor call or something)
-  int length = r->getLocalLength();
-  for(int i = 0;i<length;i++) {
-    x->replaceLocalValue(i,0);
-    r->replaceLocalValue(i,1);
-    Ap->replaceLocalValue(i,1);
-  }
+  x->putScalar(0.0);
 
   MagnitudeType normr = 0;
   MagnitudeType rtrans = 0;
@@ -131,7 +138,6 @@ result_struct cg_solve(
   Kokkos::Impl::Timer timer;
   p->update(1.0,*x,0.0,*x,0.0);
   addtime += timer.seconds(); timer.reset();
-
 
   A->apply(*p, *Ap);
   matvectime += timer.seconds(); timer.reset();
@@ -176,19 +182,18 @@ result_struct cg_solve(
     MagnitudeType p_ap_dot = 0;
     A->apply(*p, *Ap);
     matvectime += timer.seconds(); timer.reset();
-    p_ap_dot = Ap->dot(*p);
 
+    p_ap_dot = Ap->dot(*p);
     dottime += timer.seconds(); timer.reset();
 
    if (p_ap_dot < brkdown_tol) {
       if (p_ap_dot < 0 ) {
         std::cerr << "cg_solve ERROR, numerical breakdown!"<<std::endl;
-        return result_struct(0,0,0,0,0);
+        return result_struct();
       }
       else brkdown_tol = 0.1 * p_ap_dot;
     }
     alpha = rtrans/p_ap_dot;
-
 
     x->update(1.0,*x,alpha,*p,0.0);
     r->update(1.0,*r,-alpha,*Ap,0.0);
@@ -199,8 +204,11 @@ result_struct cg_solve(
 
   normr = std::sqrt(rtrans);
 
-
-  return result_struct(addtime,dottime,matvectime,k-1,normr);
+  double totaltime = total_timer.seconds();
+  double prec_setup = 0;
+  double prec_apply = 0;
+  return result_struct(addtime,dottime,matvectime,prec_setup,prec_apply,
+                       totaltime,k-1,normr);
 }
 
 

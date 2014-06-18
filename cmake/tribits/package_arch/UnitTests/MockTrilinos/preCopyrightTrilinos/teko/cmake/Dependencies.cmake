@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -47,12 +47,10 @@ IF (SHOW_SELF_PACKAGE_DEPENDENCY_ERROR)
   SET(SELF_REFERENCE_TESTING_PACKAGE_NAME Teko)
 ENDIF()
 
-SET(LIB_REQUIRED_DEP_PACKAGES Teuchos Epetra Thyra EpetraExt Stratimikos AztecOO ${INVALID_TESTING_PACKAGE_NAME} ML ${SELF_REFERENCE_TESTING_PACKAGE_NAME} Ifpack Amesos)
-
-SET(LIB_OPTIONAL_DEP_PACKAGES Isorropia)
-SET(TEST_REQUIRED_DEP_PACKAGES)
-SET(TEST_OPTIONAL_DEP_PACKAGES)
-SET(LIB_REQUIRED_DEP_TPLS TekoDepTPL)
-SET(LIB_OPTIONAL_DEP_TPLS)
-SET(TEST_REQUIRED_DEP_TPLS)
-SET(TEST_OPTIONAL_DEP_TPLS)
+TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
+  LIB_REQUIRED_PACKAGES Teuchos Epetra Thyra EpetraExt Stratimikos
+    AztecOO ${INVALID_TESTING_PACKAGE_NAME} ML
+    ${SELF_REFERENCE_TESTING_PACKAGE_NAME} Ifpack Amesos
+  LIB_OPTIONAL_PACKAGES Isorropia
+  LIB_REQUIRED_TPLS TekoDepTPL
+  )

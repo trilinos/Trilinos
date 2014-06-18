@@ -246,11 +246,11 @@ private:
 
   void pack_query( CommAll & all, 
                    const std::vector< KeyProc > & key_proc_map, 
-                   const std::vector< KeyProc > & query ) const
+                   const std::vector< KeyProc > & query_in ) const
   {
     KeyProc value ;
 
-    for (typename std::vector< KeyProc >::const_iterator i = query.begin() ; i != query.end() ; ) {
+    for (typename std::vector< KeyProc >::const_iterator i = query_in.begin() ; i != query_in.end() ; ) {
       value.first = i->first ;
 
       typename std::vector< KeyProc >::const_iterator key_begin = std::lower_bound( key_proc_map.begin(), key_proc_map.end(), value.first, LessKeyProc() );
@@ -259,7 +259,7 @@ private:
       while ( key_end != key_proc_map.end() && key_end->first == value.first)
         ++key_end;
 
-      for ( ; i != query.end() && value.first == i->first ; ++i ) {
+      for ( ; i != query_in.end() && value.first == i->first ; ++i ) {
         CommBuffer & buf = all.send_buffer( i->second );
 
         for ( typename std::vector< KeyProc >::const_iterator j = key_begin ; j != key_end ; ++j ) {

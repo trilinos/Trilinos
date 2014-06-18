@@ -86,9 +86,7 @@ protected:
                                    std::max( 2u , ( cores_per_numa * threads_per_core ) / 2 );
 
     Kokkos::OpenMP::initialize( threads_count );
-
-    std::cout << "OpenMP threads: " << omp_get_max_threads() << std::endl;
-    std::cout << "requested threads: " << threads_count << std::endl;
+    Kokkos::OpenMP::print_configuration( std::cout , true );
   }
 
   static void TearDownTestCase()

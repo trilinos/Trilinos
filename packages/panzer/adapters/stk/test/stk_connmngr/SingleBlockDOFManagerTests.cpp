@@ -107,14 +107,14 @@ namespace {
     pl->set("X Elements",5);
     pl->set("Y Elements",5);
     
-    panzer_stk::SquareQuadMeshFactory factory; 
+    panzer_stk_classic::SquareQuadMeshFactory factory; 
     factory.setParameterList(pl);
-    RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
 
     RCP<panzer::SingleBlockDOFManager<LO,GO> > my_SingleBlockDOFManager = Teuchos::rcp(new panzer::SingleBlockDOFManager<LO,GO>());
     TEST_EQUALITY(my_SingleBlockDOFManager->getComm(),Teuchos::null);
 
-    RCP<panzer::ConnManager<LO,GO> > conn = rcp(new panzer_stk::STKConnManager<GO>(mesh));
+    RCP<panzer::ConnManager<LO,GO> > conn = rcp(new panzer_stk_classic::STKConnManager<GO>(mesh));
 
     RCP<Intrepid::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
      
@@ -156,14 +156,14 @@ namespace {
     pl->set("X Elements",5);
     pl->set("Y Elements",5);
     
-    panzer_stk::SquareQuadMeshFactory factory; 
+    panzer_stk_classic::SquareQuadMeshFactory factory; 
     factory.setParameterList(pl);
-    RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
 
     RCP<panzer::SingleBlockDOFManager<LO,GO> > my_SingleBlockDOFManager = Teuchos::rcp(new panzer::SingleBlockDOFManager<LO,GO>());
     TEST_EQUALITY(my_SingleBlockDOFManager->getComm(),Teuchos::null);
 
-    RCP<panzer::ConnManager<LO,GO> > conn = rcp(new panzer_stk::STKConnManager<GO>(mesh));
+    RCP<panzer::ConnManager<LO,GO> > conn = rcp(new panzer_stk_classic::STKConnManager<GO>(mesh));
 
     RCP<Intrepid::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
      
@@ -309,21 +309,21 @@ namespace {
     pl->set("X Elements",3);
     pl->set("Y Elements",3);
     
-    //stk::ParallelMachine Comm = MPI_COMM_WORLD;
+    //stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
 
-    //int myRank=stk::parallel_machine_rank(Comm);
-    //int numProcs=stk::parallel_machine_size(Comm);
+    //int myRank=stk_classic::parallel_machine_rank(Comm);
+    //int numProcs=stk_classic::parallel_machine_size(Comm);
 
     //TEUCHOS_ASSERT(numProcs==2);
 
-    panzer_stk::SquareQuadMeshFactory factory; 
+    panzer_stk_classic::SquareQuadMeshFactory factory; 
     factory.setParameterList(pl);
-    RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
 
     RCP<panzer::SingleBlockDOFManager<LO,GO> > my_SingleBlockDOFManager = Teuchos::rcp(new panzer::SingleBlockDOFManager<LO,GO>());
     TEST_EQUALITY(my_SingleBlockDOFManager->getComm(),Teuchos::null);
 
-    RCP<panzer::ConnManager<LO,GO> > conn = rcp(new panzer_stk::STKConnManager<GO>(mesh));
+    RCP<panzer::ConnManager<LO,GO> > conn = rcp(new panzer_stk_classic::STKConnManager<GO>(mesh));
 
     RCP<Intrepid::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
      

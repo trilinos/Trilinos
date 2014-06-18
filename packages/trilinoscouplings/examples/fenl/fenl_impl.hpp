@@ -67,6 +67,8 @@
 #include <Kokkos_DefaultNode.hpp>
 
 #include <Tpetra_Vector.hpp>
+#include "Tpetra_MultiVector.hpp"
+
 
 //----------------------------------------------------------------------------
 
@@ -128,6 +130,7 @@ Perf fenl(
   const int use_atomic ,
   const int use_belos ,
   const int use_muelu ,
+  const int use_mean_based ,
   const int use_nodes[] ,
   const CoeffFunctionType& coeff_function ,
   const ManufacturedSolutionType& manufactured_solution ,
@@ -175,7 +178,7 @@ Perf fenl(
 
   const unsigned  newton_iteration_limit     = 10 ;
   const Magnitude newton_iteration_tolerance = 1e-7 ;
-  const unsigned  cg_iteration_limit         = 200 ;
+  const unsigned  cg_iteration_limit         = 2000 ;
   const Magnitude cg_iteration_tolerance     = 1e-7 ;
 
   //------------------------------------
@@ -414,7 +417,10 @@ Perf fenl(
 
       //--------------------------------
 
+      wall_clock.reset();
       g_nodal_solution.doImport (g_nodal_solution_no_overlap, import, Tpetra::REPLACE);
+      Device::fence();
+      perf.import_time = maximum( comm , wall_clock.seconds() );
 
       // if (itrial == 0 && perf.newton_iter_count == 0)
       //   g_nodal_solution_no_overlap.describe(*out, Teuchos::VERB_EXTREME);
@@ -466,6 +472,7 @@ Perf fenl(
                               rcpFromRef(g_nodal_residual),
                               rcpFromRef(g_nodal_delta),
                               use_muelu,
+                              use_mean_based, 
                               cg_iteration_limit ,
                               cg_iteration_tolerance);
       }
@@ -480,8 +487,12 @@ Perf fenl(
       // Update solution vector
 
       g_nodal_solution_no_overlap.update(-1.0,g_nodal_delta,1.0);
-      perf.cg_iter_count += cgsolve.iteration ;
-      perf.cg_time       += cgsolve.iter_time ;
+      perf.cg_iter_count   += cgsolve.iteration ;
+      perf.mat_vec_time    += cgsolve.matvec_time ;
+      perf.cg_iter_time    += cgsolve.iter_time ;
+      perf.prec_setup_time += cgsolve.prec_setup_time ;
+      perf.prec_apply_time += cgsolve.prec_apply_time ;
+      perf.cg_total_time   += cgsolve.total_time ;
 
       //--------------------------------
 
@@ -564,12 +575,22 @@ Perf fenl(
         std::min( perf_stats.fill_element_graph , perf.fill_element_graph );
       perf_stats.create_sparse_matrix =
         std::min( perf_stats.create_sparse_matrix , perf.create_sparse_matrix );
+       perf_stats.import_time =
+        std::min( perf_stats.import_time , perf.import_time );
       perf_stats.fill_time =
         std::min( perf_stats.fill_time , perf.fill_time );
       perf_stats.bc_time =
         std::min( perf_stats.bc_time , perf.bc_time );
-      perf_stats.cg_time =
-        std::min( perf_stats.cg_time , perf.cg_time );
+      perf_stats.mat_vec_time =
+        std::min( perf_stats.mat_vec_time , perf.mat_vec_time );
+      perf_stats.cg_iter_time =
+        std::min( perf_stats.cg_iter_time , perf.cg_iter_time );
+      perf_stats.prec_setup_time =
+        std::min( perf_stats.prec_setup_time , perf.prec_setup_time );
+      perf_stats.prec_apply_time =
+        std::min( perf_stats.prec_apply_time , perf.prec_apply_time );
+      perf_stats.cg_total_time =
+        std::min( perf_stats.cg_total_time , perf.cg_total_time );
     }
   }
 
@@ -586,6 +607,7 @@ Perf fenl(
     const int use_atomic ,                                           \
     const int use_belos ,                                            \
     const int use_muelu ,                                            \
+    const int use_mean_based ,                                       \
     const int global_elems[] ,                                       \
     const COEFF& coeff_function ,                                    \
     const MS& manufactured_solution ,                                \

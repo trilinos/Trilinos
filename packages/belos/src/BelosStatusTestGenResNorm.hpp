@@ -92,8 +92,8 @@ class StatusTestGenResNorm: public StatusTestResNorm<ScalarType,MV,OP> {
     \brief Select how the residual std::vector is produced.
   */
   enum ResType {Implicit, /*!< Use the residual std::vector produced by the iterative solver. */
-		Explicit  /*!< Explicitly compute the residual std::vector r = b - A*x using the
-			    linear problem. */
+                Explicit  /*!< Explicitly compute the residual std::vector r = b - A*x using the
+                            linear problem. */
   };
 
   //@}
@@ -381,7 +381,8 @@ class StatusTestGenResNorm: public StatusTestResNorm<ScalarType,MV,OP> {
 };
 
 template <class ScalarType, class MV, class OP>
-StatusTestGenResNorm<ScalarType,MV,OP>::StatusTestGenResNorm( MagnitudeType Tolerance, int quorum, bool showMaxResNormOnly )
+StatusTestGenResNorm<ScalarType,MV,OP>::
+StatusTestGenResNorm (MagnitudeType Tolerance, int quorum, bool showMaxResNormOnly)
   : tolerance_(Tolerance),
     quorum_(quorum),
     showMaxResNormOnly_(showMaxResNormOnly),
@@ -389,15 +390,15 @@ StatusTestGenResNorm<ScalarType,MV,OP>::StatusTestGenResNorm( MagnitudeType Tole
     resnormtype_(TwoNorm),
     scaletype_(NormOfInitRes),
     scalenormtype_(TwoNorm),
-    scalevalue_(1.0),
+    scalevalue_(Teuchos::ScalarTraits<MagnitudeType>::one ()),
     status_(Undefined),
     curBlksz_(0),
+    curNumRHS_(0),
     curLSNum_(0),
     numrhs_(0),
     firstcallCheckStatus_(true),
     firstcallDefineResForm_(true),
-    firstcallDefineScaleForm_(true),
-    curNumRHS_(0)
+    firstcallDefineScaleForm_(true)
 {
   // This constructor will compute the residual ||r_i||/||r0_i|| <= tolerance using the 2-norm of
   // the implicit residual std::vector.
@@ -424,7 +425,7 @@ template <class ScalarType, class MV, class OP>
 int StatusTestGenResNorm<ScalarType,MV,OP>::defineResForm( ResType TypeOfResidual, NormType TypeOfNorm )
 {
   TEUCHOS_TEST_FOR_EXCEPTION(firstcallDefineResForm_==false,StatusTestError,
-	"StatusTestGenResNorm::defineResForm(): The residual form has already been defined.");
+        "StatusTestGenResNorm::defineResForm(): The residual form has already been defined.");
   firstcallDefineResForm_ = false;
 
   restype_ = TypeOfResidual;
@@ -438,7 +439,7 @@ int StatusTestGenResNorm<ScalarType,MV,OP>::defineScaleForm(ScaleType TypeOfScal
                                                          MagnitudeType ScaleValue )
 {
   TEUCHOS_TEST_FOR_EXCEPTION(firstcallDefineScaleForm_==false,StatusTestError,
-	"StatusTestGenResNorm::defineScaleForm(): The scaling type has already been defined.");
+        "StatusTestGenResNorm::defineScaleForm(): The scaling type has already been defined.");
   firstcallDefineScaleForm_ = false;
 
   scaletype_ = TypeOfScaling;
@@ -474,7 +475,7 @@ StatusType StatusTestGenResNorm<ScalarType,MV,OP>::checkStatus( Iteration<Scalar
     int validLS = 0;
     for (int i=0; i<curBlksz_; ++i) {
       if (curLSIdx_[i] > -1 && curLSIdx_[i] < numrhs_)
-	validLS++;
+        validLS++;
     }
     curNumRHS_ = validLS;
     curSoln_ = Teuchos::null;

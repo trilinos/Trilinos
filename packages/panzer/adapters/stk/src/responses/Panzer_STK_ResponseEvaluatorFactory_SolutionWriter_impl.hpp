@@ -10,7 +10,7 @@
 
 #include <boost/unordered_set.hpp>
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 namespace {
    //! A dummy response for local use, is only used by the response library
@@ -185,7 +185,7 @@ buildAndRegisterEvaluators(const std::string & responseName,
       // add the scatter field evaluator for this basis
       {
         Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
-           = Teuchos::rcp(new panzer_stk::ScatterVectorFields<EvalT,panzer::Traits>("STK HCURL Scatter Basis " +basis->name()+": "+fields_concat,
+           = Teuchos::rcp(new panzer_stk_classic::ScatterVectorFields<EvalT,panzer::Traits>("STK HCURL Scatter Basis " +basis->name()+": "+fields_concat,
                                                                               mesh_,centroidRule,fields));
 
         fm.template registerEvaluator<EvalT>(evaluator);

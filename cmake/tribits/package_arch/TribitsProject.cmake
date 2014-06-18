@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -45,6 +45,10 @@ SET(${PROJECT_NAME}_TRIBITS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits"
   )
 MARK_AS_ADVANCED(${PROJECT_NAME}_TRIBITS_DIR)
 
+IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+  MESSAGE("${PROJECT_NAME}_TRIBITS_DIR='${${PROJECT_NAME}_TRIBITS_DIR}'")
+ENDIF()
+
 SET(CMAKE_MODULE_PATH
    ${${PROJECT_NAME}_TRIBITS_DIR}/package_arch
    )
@@ -59,19 +63,29 @@ INCLUDE(TribitsProjectImpl)
 
 
 #
-# Defines a TriBITS project.
+# @MACRO: TRIBITS_PROJECT()
 #
-# Requires that PROJECT_NAME be defined before calling this macro.
+# Processes a `TriBITS Project`_'s files and configures its software which is
+# called from the project's top-level `<projectDir>/CMakeLists.txt`_ file.
 #
-# Note, this is just a shell of a macro that calls the real implementation.
-# This allows someone to set ${PROJECT_NAME}_TRIBITS_DIR in the env and point
-# to a different Tribits implementation to test before snapshoting.
+# Usage::
 #
-# ToDo: Give documentation
+#   TRIBITS_PROJECT()
 #
-
+# This macro requires that the variable `PROJECT_NAME`_ be defined before
+# calling this macro.  All default values for project settings should be set
+# before calling this macro (see `TriBITS Global Project Settings`_).  Also,
+# the variable `${PROJECT_NAME}_TRIBITS_DIR`_ must be set as well.
+#
+# This macro then adds all of the necessary paths to ``CMAKE_MODULE_PATH`` and
+# then performs all processing of the TriBITS project files (see `Full TriBITS
+# Project Configuration`_).
+#
 MACRO(TRIBITS_PROJECT)
-
   TRIBITS_PROJECT_IMPL(${ARGN})
-
 ENDMACRO()
+
+# Note, this is just a shell of a macro that calls the real implementation
+# TRIBITS_PROJECT_IMPL().  This allows someone to set
+# ${PROJECT_NAME}_TRIBITS_DIR in the env and point to a different Tribits
+# implementation to test before snapshoting.

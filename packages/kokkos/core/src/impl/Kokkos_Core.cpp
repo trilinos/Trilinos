@@ -140,7 +140,7 @@ namespace Kokkos {
     if(!Impl::is_same<Impl::DefaultDeviceType, Impl::DefaultDeviceType::host_mirror_device_type>::value) {
       if(nthreads>0) {
         if(numa>0)
-          Impl::DefaultDeviceType::host_mirror_device_type::initialize(numa,nthreads);
+          Impl::DefaultDeviceType::host_mirror_device_type::initialize(nthreads,numa);
         else
           Impl::DefaultDeviceType::host_mirror_device_type::initialize(nthreads);
       } else
@@ -148,7 +148,7 @@ namespace Kokkos {
     }
 
     #ifdef KOKKOS_HAVE_CUDA
-    if(!Impl::is_same<Impl::DefaultDeviceType, Kokkos::Cuda>::value) {
+    if(Impl::is_same<Impl::DefaultDeviceType, Kokkos::Cuda>::value) {
       if(device>-1)
         Kokkos::Cuda::initialize(device);
       else
@@ -158,7 +158,7 @@ namespace Kokkos {
     {
       if(nthreads>0) {
         if(numa>0)
-          Impl::DefaultDeviceType::initialize(numa,nthreads);
+          Impl::DefaultDeviceType::initialize(nthreads,numa);
         else
           Impl::DefaultDeviceType::initialize(nthreads);
       } else

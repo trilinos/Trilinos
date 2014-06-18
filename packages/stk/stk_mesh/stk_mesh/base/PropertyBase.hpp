@@ -148,14 +148,14 @@ public:
   virtual data_type * data( unsigned key )
   {
     const typename map_scalar::iterator i = m_data_scalar.find( key );
-    return i != m_data_scalar.end() ? & (*i).second : (data_type*) NULL ;
+    return i != m_data_scalar.end() ? & (*i).second : static_cast<data_type*>(NULL) ;
   }
 
   /** \brief  Access the properties' members */
   virtual const data_type * data( unsigned key ) const
   {
     const typename map_scalar::const_iterator i = m_data_scalar.find( key );
-    return i != m_data_scalar.end() ? & (*i).second : (data_type*) NULL ;
+    return i != m_data_scalar.end() ? & (*i).second : static_cast<data_type*>(NULL) ;
   }
 
 };
@@ -192,13 +192,13 @@ public:
   data_type * data( unsigned key )
   {
     const typename map_array::iterator i = m_data_array.find( key );
-    return i != m_data_array.end() ? & (*i).second[0] : (data_type*) NULL ;
+    return i != m_data_array.end() ? & (*i).second[0] : static_cast<data_type*>(NULL) ;
   }
 
   const data_type * data( unsigned key ) const
   {
     const typename map_array::const_iterator i = m_data_array.find( key );
-    return i != m_data_array.end() ? & (*i).second[0] : (data_type*) NULL ;
+    return i != m_data_array.end() ? & (*i).second[0] : static_cast<data_type*>(NULL) ;
   }
 };
 

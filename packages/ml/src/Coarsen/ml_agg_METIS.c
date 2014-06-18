@@ -1176,7 +1176,8 @@ int ML_Aggregate_CoarsenMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
   unsigned int nbytes, length;
    int     i, j,  k, Nrows, exp_Nrows;
    int     diff_level;
-   int     aggr_count, index, mypid, num_PDE_eqns;
+   int     aggr_count = 0;
+   int     index, mypid, num_PDE_eqns;
    int     *aggr_index = NULL, nullspace_dim;
    int     Ncoarse, count;
    int     *new_ia = NULL, *new_ja = NULL, new_Nrows;

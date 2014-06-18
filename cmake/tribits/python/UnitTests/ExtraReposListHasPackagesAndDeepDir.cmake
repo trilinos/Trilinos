@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -37,6 +37,6 @@
 # ************************************************************************
 # @HEADER
 
-SET( Trilinos_EXTRAREPOS_DIR_REPOTYPE_REPOURL_PACKSTAT_CATEGORY
+TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES(
   ExtraTeuchosRepo  packages/teuchos/extrastuff GIT  url3.com:/ExtraStuff  ""  Continuous  
   )

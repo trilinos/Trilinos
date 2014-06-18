@@ -1,14 +1,8 @@
-
 INCLUDE(TribitsLibraryMacros)
-
-ADD_SUBDIRECTORY(diag)
-
 
 #
 # A) Package-specific configuration options
 #
-
-# TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
 # B) Define the header and source files (and directories)
@@ -21,10 +15,7 @@ ADD_SUBDIRECTORY(diag)
 SET(HEADERS "")
 SET(SOURCES "")
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../)
-#INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../)
-#INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../stk_util)
+INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR})
 
 #
 # Core headers
@@ -32,25 +23,9 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-APPEND_SET(HEADERS
-BihTree.hpp
-BoundingBoxCompare.hpp
-CoarseSearch.hpp
-OctTree.hpp
-SearchTypes.hpp
-BihTreeParallelOps.hpp
-BoundingBox.hpp
-IdentProc.hpp
-OctTreeOps.hpp
-  )
+FILE(GLOB HEADERS *.hpp)
 
-APPEND_SET(SOURCES
-OctTree.cpp
-OctTreeOps.cpp
-  )
-
-IF (TPL_ENABLE_MPI)
-ENDIF()
+FILE(GLOB SOURCES *.cpp)
 
 #
 # C) Define the targets for package's library(s)
@@ -63,4 +38,4 @@ TRIBITS_ADD_LIBRARY(
   )
 
 INSTALL(FILES ${HEADERS} DESTINATION
-    ${CMAKE_INSTALL_PREFIX}/${Trilinos_INSTALL_INCLUDE_DIR}/stk_search)
+    ${CMAKE_INSTALL_PREFIX}/include/stk_search)

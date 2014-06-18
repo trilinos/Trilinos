@@ -6,9 +6,17 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <cstdio>
-#include <stdexcept>
+#include "stk_util/stk_config.h"        // for STK_HAS_MPI
 #include <stk_util/parallel/ParallelInputStream.hpp>
+#include <cstdio>                       // for NULL, EOF, fclose, fopen, etc
+#include <cstring>                      // for memset
+#include <iostream>                     // for cerr
+#include <stdexcept>                    // for runtime_error
+#include <string>                       // for string
+#if defined( STK_HAS_MPI )
+#  include "mpi.h"                        // for ompi_communicator_t, etc
+#endif
+#include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine, etc
 
 /*--------------------------------------------------------------------*/
 
@@ -62,6 +70,7 @@ private:
 ParInBuf::ParInBuf( ParallelMachine comm , const char * const file_name )
   : m_comm( comm ), m_root_fp( NULL )
 {
+  std::memset(m_buffer, BUFFER_LENGTH, sizeof(char));
   int result = 1 ;
 
   if ( 0 == parallel_machine_rank( comm ) && NULL != file_name ) {
@@ -91,7 +100,16 @@ void ParInBuf::close()
 }
 
 ParInBuf::~ParInBuf()
-{ close(); }
+{
+    try
+    {
+        close();
+    }
+    catch(...)
+    {
+        std::cerr << "Caught exception when trying to close file at " << __FILE__ ":" << __LINE__ << std::endl;
+    }
+}
 
 int ParInBuf::underflow()
 {

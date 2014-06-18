@@ -151,7 +151,7 @@ namespace {
     }
 
     RCP<const Map> inputMap =
-      rcp (new Map (globalNumElts, myElts (), indexBase, comm, node));
+      Teuchos::rcp (new Map (globalNumElts, myElts (), indexBase, comm, node));
     RCP<const Map> outputMap = Tpetra::createOneToOne<LO, GO, Node> (inputMap);
 
     TEST_ASSERT(inputMap->isSameAs(*outputMap));
@@ -203,7 +203,7 @@ namespace {
     }
 
     RCP<const Map> inputMap =
-      rcp (new Map (globalNumElts, myElts (), indexBase, comm, node));
+      Teuchos::rcp (new Map (globalNumElts, myElts (), indexBase, comm, node));
     RCP<const Map> outputMap = Tpetra::createOneToOne<LO, GO, Node> (inputMap);
 
     TEST_ASSERT(inputMap->isSameAs(*outputMap));

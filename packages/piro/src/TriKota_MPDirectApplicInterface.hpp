@@ -47,10 +47,6 @@
 #include "TriKota_ConfigDefs.hpp"
 
 #include "DirectApplicInterface.hpp"
-#include "CommandLineHandler.hpp"
-#include "DakotaStrategy.hpp"
-#include "DakotaModel.hpp"
-#include "ParallelLibrary.hpp"
 #include "ProblemDescDB.hpp"
 
 #include "Piro_Epetra_StokhosMPSolver.hpp"

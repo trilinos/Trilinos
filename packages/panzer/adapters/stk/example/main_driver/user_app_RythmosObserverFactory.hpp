@@ -57,7 +57,7 @@
 
 namespace user_app {
 
-  class RythmosObserverFactory : public panzer_stk::RythmosObserverFactory {
+  class RythmosObserverFactory : public panzer_stk_classic::RythmosObserverFactory {
 
   public:
     RythmosObserverFactory(const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & stkIOResponseLibrary,
@@ -71,7 +71,7 @@ namespace user_app {
     bool useNOXObserver() const { return false; }
     
     Teuchos::RCP<Rythmos::IntegrationObserverBase<double> >
-    buildRythmosObserver(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
+    buildRythmosObserver(const Teuchos::RCP<panzer_stk_classic::STK_Interface>& mesh,
 			 const Teuchos::RCP<panzer::UniqueGlobalIndexerBase> & dof_manager,
 			 const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> >& lof) const
     {

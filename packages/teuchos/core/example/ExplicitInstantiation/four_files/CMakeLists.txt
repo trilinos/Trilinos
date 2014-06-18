@@ -1,6 +1,3 @@
-
-INCLUDE(TribitsAddTest)
-
 SET(COMMON_SOURCES evilMain.cpp EvilBase.cpp AEvil.cpp BEvil.cpp)
 
 #

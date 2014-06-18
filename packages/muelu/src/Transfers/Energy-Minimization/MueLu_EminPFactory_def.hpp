@@ -8,7 +8,7 @@
 #include "MueLu_EminPFactory_decl.hpp"
 
 #include "MueLu_CGSolver.hpp"
-#include "MueLu_Constraint_fwd.hpp"
+#include "MueLu_Constraint.hpp"
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PatternFactory.hpp"
@@ -129,6 +129,25 @@ namespace MueLu {
 
     RCP<Matrix> P;
     solver->Iterate(*A, *X, *P0, P);
+
+    // NOTE: The code below is extremely fragile
+    if (!P->IsView("stridedMaps")) {
+      if (A->IsView("stridedMaps") == true) {
+        GetOStream(Runtime1) << "Using A to fillComplete P" << std::endl;
+
+        // FIXME: X->GetPattern() actually returns a CrsGraph.
+        // CrsGraph has no knowledge of Xpetra's sup/Matrix views. As such,
+        // it has no idea about strided maps. We create one, which is
+        // most likely incorrect for many use cases.
+        std::vector<size_t> stridingInfo(1, 1);
+        RCP<const StridedMap> dMap = StridedMapFactory::Build(X->GetPattern()->getDomainMap(), stridingInfo);
+
+        P->CreateView("stridedMaps", A->getRowMap("stridedMaps"), dMap);
+
+      } else {
+        P->CreateView("stridedMaps", P->getRangeMap(), P->getDomainMap());
+      }
+    }
 
     Set(coarseLevel, "P", P);
     if (pL.get<bool>("Keep P0")) {

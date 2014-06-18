@@ -7,10 +7,12 @@
  *    ------------------------------------------------------------
  */
 
-#include <sstream>
+#include <stk_util/stk_config.h>
+#if defined( STK_HAS_MPI )
 
-#include <stk_util/util/FeatureTest.hpp>
 #include <stk_util/parallel/MPI.hpp>
+#include <sstream>                      // for ostringstream, etc
+#include "mpi.h"                        // for MPI_Datatype, etc
 
 namespace sierra {
 namespace MPI {
@@ -248,9 +250,9 @@ ReduceSet::size() const {
     (*it)->size(buffer_end);
 
   ReduceCheck *reduce_check = static_cast<ReduceCheck *>(m_reduceVector.front());
-  reduce_check->setSize(reinterpret_cast<char *>(buffer_end) - (char *) 0);
+  reduce_check->setSize(reinterpret_cast<char *>(buffer_end) - static_cast<char*>(0));
 
-  return reinterpret_cast<char *>(buffer_end) - (char *) 0;
+  return reinterpret_cast<char *>(buffer_end) - static_cast<char*>(0);
 }
 
 void
@@ -301,8 +303,8 @@ AllReduce(
   if (size) {
     char *input_buffer  = new char[size];
     char *output_buffer = new char[size];
-    void *inbuf = (void *) input_buffer;
-    void *outbuf = (void *) output_buffer;
+    void *inbuf = input_buffer;
+    void *outbuf = output_buffer;
 
     s_currentReduceSet = &reduce_set;
 
@@ -319,3 +321,5 @@ AllReduce(
 
 } // namespace MPI
 } // namespace sierra
+
+#endif // if defined( STK_HAS_MPI )

@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -38,12 +38,30 @@
 # @HEADER
 
 
-
 #
-# Macro to set a single string by concatenating a list of separate strings
+# @FUNCTION: MULTILINE_SET()
+# 
+# Function to set a single string by concatenating a list of separate strings
 #
-
-MACRO(MULTILINE_SET VARAIBLE_NAME)
+# Usage::
+#
+#   MULTILINE_SET(<outputStrVar>
+#     "<string0>"
+#     "<string1>"
+#     ...
+#     )
+#
+# On output, the local variables ``<outputStrVar>`` is set to::
+#
+#   "<string0><string1>..."
+#
+# The purpose of this is function to make it easier to set longer strings over
+# multiple lines.
+#
+# This function is exactly the same as `CONCAT_STRINGS()`_ and should not even
+# exist :-(
+#
+FUNCTION(MULTILINE_SET VARAIBLE_NAME)
   
   SET(MULTILINE_SET_LOCAL_STR "")
 
@@ -51,6 +69,6 @@ MACRO(MULTILINE_SET VARAIBLE_NAME)
     SET(MULTILINE_SET_LOCAL_STR "${MULTILINE_SET_LOCAL_STR}${LINE_STR}")
   ENDFOREACH()
 
-  SET(${VARAIBLE_NAME} ${MULTILINE_SET_LOCAL_STR})
+  SET(${VARAIBLE_NAME} "${MULTILINE_SET_LOCAL_STR}" PARENT_SCOPE)
 
-ENDMACRO()
+ENDFUNCTION()

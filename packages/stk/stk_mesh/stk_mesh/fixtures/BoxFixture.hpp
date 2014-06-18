@@ -9,11 +9,16 @@
 #ifndef Stk_Mesh_Fixtures_BoxFixture_hpp
 #define Stk_Mesh_Fixtures_BoxFixture_hpp
 
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
+#include <stddef.h>                     // for size_t
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
+#include <stk_mesh/base/MetaData.hpp>   // for entity_rank_names, MetaData
+#include <stk_mesh/base/Types.hpp>      // for EntityId, EntityRank
+#include <string>                       // for string
+#include <vector>                       // for vector
+#include "mpi.h"                        // for MPI_COMM_WORLD
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
 
-#include <stk_mesh/fem/FEMMetaData.hpp>
 
 namespace stk {
 namespace mesh {
@@ -27,15 +32,15 @@ class  BoxFixture {
 public:
   BoxFixture(stk::ParallelMachine pm = MPI_COMM_WORLD,
              unsigned block_size = 1000,
-             const std::vector<std::string>& entity_names = stk::mesh::fem::entity_rank_names(spatial_dimension));
+             const std::vector<std::string>& entity_names = stk::mesh::entity_rank_names());
 
   ~BoxFixture () {}
 
-  fem::FEMMetaData & fem_meta () { return m_fem_meta; }
+  MetaData & fem_meta () { return m_fem_meta; }
   BulkData & bulk_data () { return m_bulk_data; }
 
-  unsigned  comm_size() const { return m_comm_size; }
-  unsigned  comm_rank() const { return m_comm_rank; }
+  int  comm_size() const { return m_comm_size; }
+  int  comm_rank() const { return m_comm_rank; }
 
   typedef int BOX[3][2];
 
@@ -52,14 +57,14 @@ public:
   void generate_boxes (const BOX root_box,
                              BOX local_box);
 
-  Entity  &get_new_entity ( EntityRank rank , EntityId parallel_dependent_id );
+  Entity get_new_entity ( EntityRank rank , EntityId parallel_dependent_id );
 
 protected:
-  fem::FEMMetaData m_fem_meta;
-  BulkData         m_bulk_data;
+  MetaData m_fem_meta;
+  BulkData m_bulk_data;
 
-  unsigned         m_comm_rank;
-  unsigned         m_comm_size;
+  int m_comm_rank;
+  int m_comm_size;
 
   BulkData::BulkDataSyncState m_previous_state;
 

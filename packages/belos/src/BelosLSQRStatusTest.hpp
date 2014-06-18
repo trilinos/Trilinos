@@ -55,7 +55,7 @@
 /*!  \class LSQRStatusTest:
   \brief A Belos::StatusTest class for specifying convergence of LSQR.  The outer status tests passes if an inner
   status passes a user specified number of times consecutively.  The inner status test depends on information
-  specificto LSQR iteration.
+  specific to LSQR iteration.
 */
 
 namespace Belos {
@@ -237,18 +237,22 @@ private:
 };
 
 template <class ScalarType, class MV, class OP>
-LSQRStatusTest<ScalarType,MV,OP>::LSQRStatusTest( MagnitudeType condMax /* = 0 */, int term_iter_max /* = 1 */, MagnitudeType rel_rhs_err /* = 0 */, MagnitudeType rel_mat_err /* = 0 */)
+LSQRStatusTest<ScalarType,MV,OP>::
+LSQRStatusTest (MagnitudeType condMax /* = 0 */,
+                int term_iter_max /* = 1 */,
+                MagnitudeType rel_rhs_err /* = 0 */,
+                MagnitudeType rel_mat_err /* = 0 */)
   : condMax_(condMax),
     term_iter_max_ (term_iter_max),
     rel_rhs_err_ (rel_rhs_err),
     rel_mat_err_ (rel_mat_err),
+    rcondMin_ ( Teuchos::ScalarTraits<MagnitudeType>::zero() ),
     status_ (Belos::Undefined),
     term_iter_ (0),
     matCondNum_ ( Teuchos::ScalarTraits<MagnitudeType>::one() ),
     matNorm_ ( Teuchos::ScalarTraits<MagnitudeType>::zero() ),
     resNorm_  ( Teuchos::ScalarTraits<MagnitudeType>::zero() ),
-    matResNorm_ ( Teuchos::ScalarTraits<MagnitudeType>::zero() ),
-    rcondMin_ ( Teuchos::ScalarTraits<MagnitudeType>::zero() )
+    matResNorm_ ( Teuchos::ScalarTraits<MagnitudeType>::zero() )
 {}
 
 template <class ScalarType, class MV, class OP>
@@ -268,11 +272,11 @@ Belos::StatusType LSQRStatusTest<ScalarType,MV,OP>::checkStatus( Belos::Iteratio
   const MagnitudeType MTone = Teuchos::ScalarTraits<MagnitudeType>::one();
   if (condMax_ > MTzero )
     {
-	rcondMin_ = MTone / condMax_;
+        rcondMin_ = MTone / condMax_;
     }
   else
     {
-	rcondMin_ = Teuchos::ScalarTraits< MagnitudeType >::eps();
+        rcondMin_ = Teuchos::ScalarTraits< MagnitudeType >::eps();
     }
 
   bool termIterFlag = false;

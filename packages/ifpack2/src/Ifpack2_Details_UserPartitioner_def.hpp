@@ -71,7 +71,7 @@ setPartitionParameters (Teuchos::ParameterList& List)
 }
 
 template<class GraphType>
-void UserPartitioner<GraphType>::UserPartitioner::computePartitions ()
+void UserPartitioner<GraphType>::computePartitions ()
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     map_.is_null (), std::logic_error, "Ifpack2::UserPartitioner::"

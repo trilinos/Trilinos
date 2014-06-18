@@ -467,6 +467,7 @@ Perf fenl(
       Kokkos::V_Add( nodal_solution , -1.0 , nodal_delta , 1.0 , nodal_solution );
 
       perf.cg_iter_count += cgsolve.iteration ;
+      perf.matvec_time   += cgsolve.matvec_time ;
       perf.cg_time       += cgsolve.iter_time ;
 
       //--------------------------------

@@ -46,39 +46,25 @@
 #include <Kokkos_Core.hpp>
 #include <cstdio>
 
-typedef Kokkos::View<double**> view_type;
+typedef Kokkos::Impl::DefaultDeviceType device_type;
 
-struct init_view {
-  view_type a;
-  init_view(view_type a_):a(a_) {};
+struct hello_world {
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (int i) const {
-    a(i,0) = 1.0*i;
-    a(i,1) = 1.0*i*i;
-    a(i,2) = 1.0*i*i*i;
+  void operator() (device_type dev, int& sum) const {
+    sum+=1;
+    printf("Hello World: %i %i // %i %i\n",dev.league_rank(),dev.team_rank(),dev.league_size(),dev.team_size());
   }
 };
 
-struct squaresum {
-  view_type a;
-  squaresum(view_type a_):a(a_) {};
-
-  KOKKOS_INLINE_FUNCTION
-  void operator() (int i, double &lsum) const {
-    lsum+= a(i,0)*a(i,1)/(a(i,2)+0.1);
-  }
-};
- 
 int main(int narg, char* args[]) {
   Kokkos::initialize(narg,args);
   
-  view_type a("A",10000,1000);
-
-  Kokkos::parallel_for(10,init_view(a));
-  double sum = 0;
-  Kokkos::parallel_reduce(10,squaresum(a),sum);
-  printf("Result %lf\n",sum);  
+  int sum = 0;
+  Kokkos::parallel_reduce(
+      Kokkos::ParallelWorkRequest(12,device_type::team_max()),
+      hello_world(),sum);
+  printf("Result %i\n",sum);
 
   Kokkos::finalize();
 }

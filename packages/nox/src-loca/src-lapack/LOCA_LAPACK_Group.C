@@ -186,6 +186,7 @@ LOCA::LAPACK::Group::applyJacobianTransposeInverseMultiVector(
   const NOX::LAPACK::Vector* constVecPtr;
   for (int j=0; j<nVecs; j++) {
     constVecPtr = dynamic_cast<const NOX::LAPACK::Vector*>(&(input[j]));
+    TEUCHOS_ASSERT(constVecPtr != NULL);
     for (int i=0; i<m; i++)
       B(i,j) = (*constVecPtr)(i);
   }
@@ -200,6 +201,7 @@ LOCA::LAPACK::Group::applyJacobianTransposeInverseMultiVector(
   NOX::LAPACK::Vector* vecPtr;
   for (int j=0; j<nVecs; j++) {
     vecPtr = dynamic_cast<NOX::LAPACK::Vector*>(&(result[j]));
+    TEUCHOS_ASSERT(vecPtr != NULL);
     for (int i=0; i<m; i++)
       (*vecPtr)(i) = B(i,j);
   }
@@ -339,6 +341,7 @@ LOCA::LAPACK::Group::applyShiftedMatrixMultiVector(
   const NOX::LAPACK::Vector* constVecPtr;
   for (int j=0; j<nVecs; j++) {
     constVecPtr = dynamic_cast<const NOX::LAPACK::Vector*>(&(input[j]));
+    TEUCHOS_ASSERT(constVecPtr != NULL);
     for (int i=0; i<m; i++)
       B(i,j) = (*constVecPtr)(i);
   }
@@ -350,6 +353,7 @@ LOCA::LAPACK::Group::applyShiftedMatrixMultiVector(
   NOX::LAPACK::Vector* vecPtr;
   for (int j=0; j<nVecs; j++) {
     vecPtr = dynamic_cast<NOX::LAPACK::Vector*>(&(result[j]));
+    TEUCHOS_ASSERT(vecPtr != NULL);
     for (int i=0; i<m; i++)
       (*vecPtr)(i) = C(i,j);
   }
@@ -373,6 +377,7 @@ LOCA::LAPACK::Group::applyShiftedMatrixInverseMultiVector(
   const NOX::LAPACK::Vector* constVecPtr;
   for (int j=0; j<nVecs; j++) {
     constVecPtr = dynamic_cast<const NOX::LAPACK::Vector*>(&(input[j]));
+    TEUCHOS_ASSERT(constVecPtr != NULL);
     for (int i=0; i<m; i++)
       B(i,j) = (*constVecPtr)(i);
   }
@@ -515,8 +520,10 @@ LOCA::LAPACK::Group::applyComplexMultiVector(
   for (int j=0; j<p; j++) {
     lapack_input_real =
       dynamic_cast<const NOX::LAPACK::Vector*>(&(input_real[j]));
+    TEUCHOS_ASSERT(lapack_input_real != NULL);
     lapack_input_imag =
       dynamic_cast<const NOX::LAPACK::Vector*>(&(input_imag[j]));
+    TEUCHOS_ASSERT(lapack_input_imag != NULL);
     for (int i=0; i<n; i++)
       input[i+n*j] = std::complex<double>((*lapack_input_real)(i),
                       (*lapack_input_imag)(i));
@@ -531,8 +538,10 @@ LOCA::LAPACK::Group::applyComplexMultiVector(
   for (int j=0; j<p; j++) {
     lapack_result_real =
       dynamic_cast<NOX::LAPACK::Vector*>(&(result_real[j]));
+    TEUCHOS_ASSERT(lapack_result_real != NULL);
     lapack_result_imag =
       dynamic_cast<NOX::LAPACK::Vector*>(&(result_imag[j]));
+    TEUCHOS_ASSERT(lapack_result_imag != NULL);
     for (int i=0; i<n; i++) {
       (*lapack_result_real)(i) = result[i+n*j].real();
       (*lapack_result_imag)(i) = result[i+n*j].imag();
@@ -571,8 +580,10 @@ LOCA::LAPACK::Group::applyComplexInverseMultiVector(
   for (int j=0; j<p; j++) {
     lapack_input_real =
       dynamic_cast<const NOX::LAPACK::Vector*>(&(input_real[j]));
+    TEUCHOS_ASSERT(lapack_input_real != NULL);
     lapack_input_imag =
       dynamic_cast<const NOX::LAPACK::Vector*>(&(input_imag[j]));
+    TEUCHOS_ASSERT(lapack_input_imag != NULL);
     for (int i=0; i<n; i++)
       input[i+n*j] = std::complex<double>((*lapack_input_real)(i),
                       (*lapack_input_imag)(i));
@@ -587,8 +598,10 @@ LOCA::LAPACK::Group::applyComplexInverseMultiVector(
   for (int j=0; j<p; j++) {
     lapack_result_real =
       dynamic_cast<NOX::LAPACK::Vector*>(&(result_real[j]));
+    TEUCHOS_ASSERT(lapack_result_real != NULL);
     lapack_result_imag =
       dynamic_cast<NOX::LAPACK::Vector*>(&(result_imag[j]));
+    TEUCHOS_ASSERT(lapack_result_imag != NULL);
     for (int i=0; i<n; i++) {
       (*lapack_result_real)(i) = input[i+n*j].real();
       (*lapack_result_imag)(i) = input[i+n*j].imag();
@@ -677,8 +690,10 @@ LOCA::LAPACK::Group::applyComplexTransposeMultiVector(
   for (int j=0; j<p; j++) {
     lapack_input_real =
       dynamic_cast<const NOX::LAPACK::Vector*>(&(input_real[j]));
+    TEUCHOS_ASSERT(lapack_input_real != NULL);
     lapack_input_imag =
       dynamic_cast<const NOX::LAPACK::Vector*>(&(input_imag[j]));
+    TEUCHOS_ASSERT(lapack_input_imag != NULL);
     for (int i=0; i<n; i++)
       input[i+n*j] = std::complex<double>((*lapack_input_real)(i),
                       (*lapack_input_imag)(i));
@@ -693,8 +708,10 @@ LOCA::LAPACK::Group::applyComplexTransposeMultiVector(
   for (int j=0; j<p; j++) {
     lapack_result_real =
       dynamic_cast<NOX::LAPACK::Vector*>(&(result_real[j]));
+    TEUCHOS_ASSERT(lapack_result_real != NULL);
     lapack_result_imag =
       dynamic_cast<NOX::LAPACK::Vector*>(&(result_imag[j]));
+    TEUCHOS_ASSERT(lapack_result_imag != NULL);
     for (int i=0; i<n; i++) {
       (*lapack_result_real)(i) = result[i+n*j].real();
       (*lapack_result_imag)(i) = result[i+n*j].imag();
@@ -733,8 +750,10 @@ LOCA::LAPACK::Group::applyComplexTransposeInverseMultiVector(
   for (int j=0; j<p; j++) {
     lapack_input_real =
       dynamic_cast<const NOX::LAPACK::Vector*>(&(input_real[j]));
+    TEUCHOS_ASSERT(lapack_input_real != NULL);
     lapack_input_imag =
       dynamic_cast<const NOX::LAPACK::Vector*>(&(input_imag[j]));
+    TEUCHOS_ASSERT(lapack_input_imag != NULL);
     for (int i=0; i<n; i++)
       input[i+n*j] = std::complex<double>((*lapack_input_real)(i),
                       (*lapack_input_imag)(i));
@@ -749,8 +768,10 @@ LOCA::LAPACK::Group::applyComplexTransposeInverseMultiVector(
   for (int j=0; j<p; j++) {
     lapack_result_real =
       dynamic_cast<NOX::LAPACK::Vector*>(&(result_real[j]));
+    TEUCHOS_ASSERT(lapack_result_real != NULL);
     lapack_result_imag =
       dynamic_cast<NOX::LAPACK::Vector*>(&(result_imag[j]));
+    TEUCHOS_ASSERT(lapack_result_imag != NULL);
     for (int i=0; i<n; i++) {
       (*lapack_result_real)(i) = input[i+n*j].real();
       (*lapack_result_imag)(i) = input[i+n*j].imag();

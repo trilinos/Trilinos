@@ -58,16 +58,16 @@
 namespace panzer {
 
   //! Used for default parameters
-  template <typename Scalar,typename Array>
-  const Array BasisValues<Scalar,Array>::dummyArray;    
+  template <typename Scalar,typename Array,typename ArrayOrientation>
+  const Array BasisValues<Scalar,Array,ArrayOrientation>::dummyArray;    
 
   // ***********************************************************
   // * Evaluation of values without weithed measure - NOT specialized
   // ***********************************************************
 
-  template<typename Scalar, typename Array>
+  template<typename Scalar, typename Array,typename ArrayOrientation>
   inline
-  void panzer::BasisValues<Scalar,Array>::
+  void panzer::BasisValues<Scalar,Array,ArrayOrientation>::
   evaluateValues(const Array& cub_points,
 		 const Array& jac,
  	 	 const Array& jac_det,
@@ -77,9 +77,9 @@ namespace panzer {
      evaluateValues(cub_points,jac,jac_det,jac_inv,dummyArray,dummyArray);
   }
 
-  template<typename Scalar, typename Array>
+  template<typename Scalar, typename Array,typename ArrayOrientation>
   inline
-  void panzer::BasisValues<Scalar,Array>::
+  void panzer::BasisValues<Scalar,Array,ArrayOrientation>::
   evaluateValues(const Array& cub_points,
 		 const Array& jac,
  	 	 const Array& jac_det,
@@ -93,9 +93,9 @@ namespace panzer {
   // ***********************************************************
   // * Evaluation of values - NOT specialized
   // ***********************************************************
-  template<typename Scalar, typename Array>
+  template<typename Scalar, typename Array,typename ArrayOrientation>
   inline
-  void panzer::BasisValues<Scalar,Array>::
+  void panzer::BasisValues<Scalar,Array,ArrayOrientation>::
   evaluateValues(const Array& cub_points,
 		 const Array& jac,
  	 	 const Array& jac_det,
@@ -213,10 +213,34 @@ namespace panzer {
 
   }
 
-  template<typename Scalar, typename Array>
-  PureBasis::EElementSpace BasisValues<Scalar,Array>::getElementSpace() const
+  template<typename Scalar, typename Array,typename ArrayOrientation>
+  PureBasis::EElementSpace BasisValues<Scalar,Array,ArrayOrientation>::getElementSpace() const
   { return basis_layout->getBasis()->getElementSpace(); }
 
-}
+  // **************************************************************
+
+  // method for applying orientations
+  template<typename Scalar,typename Array,typename ArrayOrientation>
+  void BasisValues<Scalar,Array,ArrayOrientation>::
+  applyOrientations(const ArrayOrientation& orientations)
+  {
+    PureBasis::EElementSpace elmtspace = getElementSpace();
+
+    if(elmtspace==PureBasis::HCURL) {
+       bool buildWeighted = (weighted_basis.size()!=0);
+
+       // setup the orientations for the trial space
+       Intrepid::FunctionSpaceTools::applyFieldSigns<Scalar>(basis,orientations);
+       Intrepid::FunctionSpaceTools::applyFieldSigns<Scalar>(curl_basis,orientations);
+
+       // setup the orientations for the test space
+       if(buildWeighted) {
+         Intrepid::FunctionSpaceTools::applyFieldSigns<Scalar>(weighted_basis,orientations);
+         Intrepid::FunctionSpaceTools::applyFieldSigns<Scalar>(weighted_curl_basis,orientations);
+       }
+    }
+  }
+
+} // end namespace panzer
 
 #endif

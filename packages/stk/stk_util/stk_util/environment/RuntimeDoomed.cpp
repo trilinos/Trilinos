@@ -6,11 +6,10 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <vector>
-#include <stdexcept>
-
-#include <stk_util/environment/ReportHandler.hpp>
 #include <stk_util/environment/RuntimeDoomed.hpp>
+#include <exception>                    // for exception
+#include "stk_util/environment/RuntimeMessage.hpp"
+
 
 namespace stk {
 

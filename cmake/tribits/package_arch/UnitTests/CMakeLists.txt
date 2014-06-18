@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -38,13 +38,8 @@
 # @HEADER
 
 
+ADD_SUBDIRECTORY(CTestScriptsUnitTests)
 ADD_SUBDIRECTORY(DependencyUnitTests)
-
-
-ASSERT_DEFINED(CMAKE_HOST_SYSTEM_NAME)
-IF (NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
-  ADD_SUBDIRECTORY(CTestScriptsUnitTests)
-ENDIF()
 
 
 INCLUDE(TribitsAddAdvancedTest)
@@ -61,7 +56,7 @@ TRIBITS_ADD_ADVANCED_TEST( TestingFunctionMacro_UnitTests
       -D${PROJECT_NAME}_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}
       -P "${CMAKE_CURRENT_SOURCE_DIR}/TestingFunctionMacro_UnitTests.cmake"
     PASS_REGULAR_EXPRESSION_ALL
-      "Final UnitTests Result: num_run = 213"
+      "Final UnitTests Result: num_run = 217"
       "Final UnitTests Result: PASSED"
   )
 
@@ -87,7 +82,7 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsProcessPackagesAndDirsLists_UnitTests
       -D${PROJECT_NAME}_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}
       -P "${CMAKE_CURRENT_SOURCE_DIR}/TribitsProcessPackagesAndDirsLists_UnitTests.cmake"
     PASS_REGULAR_EXPRESSION_ALL
-      "Final UnitTests Result: num_run = 11"
+      "Final UnitTests Result: num_run = 22"
       "Final UnitTests Result: PASSED"
   )
 
@@ -101,7 +96,7 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsAdjustPackageEnables_UnitTests
       -DCMAKE_CURRENT_LIST_DIR=${CMAKE_CURRENT_SOURCE_DIR}
       -P "${CMAKE_CURRENT_SOURCE_DIR}/TribitsAdjustPackageEnables_UnitTests.cmake"
     PASS_REGULAR_EXPRESSION_ALL
-      "Final UnitTests Result: num_run = 143"
+      "Final UnitTests Result: num_run = 195"
       "Final UnitTests Result: PASSED"
   )
 

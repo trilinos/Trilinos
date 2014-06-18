@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -37,11 +37,8 @@
 # ************************************************************************
 # @HEADER
 
-
-INCLUDE(TribitsListHelpers)
-
-SET( preCopyrightTrilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
-  Teko         teko      SS
+TRIBITS_REPOSITORY_DEFINE_PACKAGES(
+  Teko         teko      ST
   Stalix       stalix    EX
   )
 
@@ -53,4 +50,4 @@ SET( preCopyrightTrilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
 # get enabled implicitly.
 #
 
-PACKAGE_DISABLE_ON_PLATFORMS(Teko Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Teko Windows)

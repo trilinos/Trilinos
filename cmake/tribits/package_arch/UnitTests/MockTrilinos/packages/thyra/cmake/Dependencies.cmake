@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -37,29 +37,21 @@
 # ************************************************************************
 # @HEADER
 
-
-SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
-  CoreLibs  src  PS  REQUIRED
-  GoodStuff  src/good_stuff  SS  OPTIONAL
-  CrazyStuff  src/crazy_stuff  EX  OPTIONAL
-  Epetra  adapters/epetra  PS  OPTIONAL
-  EpetraExt  adapters/epetraext  PS  OPTIONAL
-  Tpetra  adapters/tpetra  PS  OPTIONAL
+TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
+  SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
+    CoreLibs      src                  PT  REQUIRED
+    GoodStuff     src/good_stuff       ST  OPTIONAL
+    CrazyStuff    src/crazy_stuff      EX  OPTIONAL
+    Epetra        adapters/epetra      PT  OPTIONAL
+    EpetraExt     adapters/epetraext   PT  OPTIONAL
+    Tpetra        adapters/tpetra      PT  OPTIONAL
+  LIB_OPTIONAL_PACKAGES MissingPackage
+  REGRESSION_EMAIL_LIST thyra-boneheads@gmail.com
   )
 
 # NOTE: The above subpackages automatically become required and optional LIB
 # package dependencies (prefixed by 'Thyra') added to the variables below.
 # There is no need to add them again!
 
-SET(LIB_REQUIRED_DEP_PACKAGES)
-SET(LIB_OPTIONAL_DEP_PACKAGES MissingPackage)
-SET(TEST_REQUIRED_DEP_PACKAGES)
-SET(TEST_OPTIONAL_DEP_PACKAGES)
-SET(LIB_REQUIRED_DEP_TPLS)
-SET(LIB_OPTIONAL_DEP_TPLS)
-SET(TEST_REQUIRED_DEP_TPLS)
-SET(TEST_OPTIONAL_DEP_TPLS)
-
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(MissingPackage)
 
-SET(REGRESSION_EMAIL_LIST thyra-boneheads@gmail.com)

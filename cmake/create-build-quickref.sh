@@ -27,4 +27,4 @@
 
 ARGS=$@
 
-./cmake/tribits/doc/create-project-build-quickref.py $ARGS
+./cmake/tribits/doc/build_quick_ref/create-project-build-quickref.py $ARGS

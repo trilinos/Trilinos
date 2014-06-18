@@ -6,13 +6,13 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <sstream>
-#include <string>
-#include <stk_util/util/TeeStreambuf.hpp>
+#include <sstream>                      // for ostringstream, ostream
+#include <gtest/gtest.h>
+#include <stk_util/util/TeeStreambuf.hpp>  // for tee_streambuf
+#include <string>                       // for operator==, basic_string, etc
 
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
-STKUNIT_UNIT_TEST(UnitTestTeeStreambuf, UnitTest)
+TEST(UnitTestTeeStreambuf, UnitTest)
 {
   stk::tee_streambuf    out_tee_streambuf;
 
@@ -31,21 +31,21 @@ STKUNIT_UNIT_TEST(UnitTestTeeStreambuf, UnitTest)
   
   my_out << message1;
 
-  STKUNIT_ASSERT_EQUAL((dest1.str() == message1), true);
-  STKUNIT_ASSERT_EQUAL((dest2.str() == message1), true);
+  ASSERT_EQ((dest1.str() == message1), true);
+  ASSERT_EQ((dest2.str() == message1), true);
 
   out_tee_streambuf.remove(&dest2);
 
   my_out << message2;
   
-  STKUNIT_ASSERT_EQUAL((dest1.str() == message3), true);
-  STKUNIT_ASSERT_EQUAL((dest2.str() == message1), true);
+  ASSERT_EQ((dest1.str() == message3), true);
+  ASSERT_EQ((dest2.str() == message1), true);
 
   out_tee_streambuf.remove(&dest1);
 
   my_out << message2;
 
-  STKUNIT_ASSERT_EQUAL((dest1.str() == message3), true);
-  STKUNIT_ASSERT_EQUAL((dest2.str() == message1), true);
+  ASSERT_EQ((dest1.str() == message3), true);
+  ASSERT_EQ((dest2.str() == message1), true);
 }
 

@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -39,9 +39,86 @@
 
 
 INCLUDE(TribitsConstants)
+INCLUDE(TribitsListHelpers)
 
 INCLUDE(PrintVar)
 INCLUDE(Split)
+
+#
+# @MACRO: TRIBITS_REPOSITORY_DEFINE_TPLS()
+#
+# Define the list of `TriBITS TPLs`_ for a given `TriBITS Repository`_ which
+# includes the TPL name, find module, and classification .  This macro is
+# typically called from inside of the repository's `<repoDir>/TPLsList.cmake`_
+# file.
+#
+# Usage::
+#
+#   TRIBITS_REPOSITORY_DEFINE_TPLS(
+#     <tpl0_name>   <tpl0_findmod>  <tpl0_classif>
+#     <tpl1_name>   <tpl1_findmod>  <tpl1_classif>
+#     ...
+#     )
+#
+# This macro sets up a 2D array of ``NumTPLS`` by ``NumColumns`` listing out
+# the `TriBITS TPLs`_ for a `TriBITS Repository`_.  Each row (with 3 entries)
+# specifies a TPL which contains the columns (ordered 0-2):
+#
+# 0. **TPL** (``<tpli_name>``): The name of the TriBITS TPL ``<tplName>``.
+#    This name must be unique across all other TriBITS TPLs in this or any
+#    other TriBITS repo that might be combined into a single TriBITS project
+#    meta-build (see `Globally unique TriBITS TPL names`_).  However, a TPL
+#    can be redefined from an upstream repo (see below).  The name should be a
+#    valid identifier (e.g. matches the regex ``[a-zA-Z_][a-zA-Z0-9_]*``).
+#    TPL names typically use mixed case (e.g. ``SomeTpl`` and not
+#    ``SOMETPL``).
+#
+# 1. **FINDMOD** (``<tpli_findmod>``): The relative path for the find module,
+#    usually with the name ``FindTPL<tplName>.cmake``.  This path is relative
+#    to the repository base directory.  If just the base path for the find
+#    module is given, ending with ``"/"`` (e.g. ``"cmake/tpls/"``), then the
+#    find module will be assumed to be under that this directory with the
+#    standard name (e.g. ``cmake/tpls/FindTPL<tplName>.cmake``).  A standard
+#    way to write a ``FindTPL<tplName>.cmake`` module is to use the function
+#    `TRIBITS_TPL_DECLARE_LIBRARIES()`_.
+#
+# 2. **CLASSIFICATION** (``<pkgi_classif>``): Gives the `SE Package Test
+#    Group`_ `PT`_, `ST`_, or `EX`_ and the maturity level ``EP``, ``RS``,
+#    ``PG``, ``PM``, ``GRS``, ``GPG``, ``GPM``, ``UM``.  These are separated
+#    by a coma with no space in between such as ``"RS,PT"`` for a "Research
+#    Stable", "Primary Tested" package.  No spaces are allowed so that CMake
+#    treats this a one field in the array.  The maturity level can be left off
+#    in which case it is assumed to be ``UM`` for "Unspecified Maturity".
+#
+# A TPL defined in a upstream repo can listed again in a downstream repo,
+# which allows redefining the find module that is used to specify the TPL.
+# This allows downstream repos to add additional requirements for a given TPL
+# (i.e. add more libraries, headers, etc.).  However, the downstream repo's
+# find module file must find the TPL components that are fully compatible with
+# the upstream's find module.
+#
+# This macro just sets the variable::
+#
+#   ${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS
+#
+# in the current scope.  The advantages of using this macro instead of
+# directly setting this variable are that the macro:
+#
+# * Asserts that the variable ``REPOSITORY_NAME`` is defined and set
+#
+# * Avoids having to hard-code the assumed repository name
+#   ``${REPOSITORY_NAME}``.  This provides more flexibility for how other
+#   TriBITS projects choose to name a given TriBITS repo (i.e. the name of
+#   repo subdirs).
+#
+# * Avoids misspelling the name of the variable
+#   ``${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS``.  If one misspells
+#   the name of a macro, it is an immediate error in CMake.
+#
+MACRO(TRIBITS_REPOSITORY_DEFINE_TPLS)
+  ASSERT_DEFINED(REPOSITORY_NAME)
+  SET(${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS "${ARGN}")
+ENDMACRO()
 
 
 #
@@ -51,7 +128,7 @@ INCLUDE(Split)
 # ${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS for a given repository and
 # and fills the variables ${PROJECT_NAME}_TPLS, ${PROJECT_NAME}_NUM_TPLS,
 # ${PROJECT_NAME}_REVERSE_TPLS.  For each TPL, it also sets the variable
-# ${TPL_NAME}_FINDMOD and ${TPL_NAME}_CLASSIFICATION.
+# ${TPL_NAME}_FINDMOD and ${TPL_NAME}_TESTGROUP.
 #
 
 MACRO(TRIBITS_PROCESS_TPLS_LISTS  REPOSITORY_NAME  REPOSITORY_DIR)
@@ -109,11 +186,16 @@ MACRO(TRIBITS_PROCESS_TPLS_LISTS  REPOSITORY_NAME  REPOSITORY_DIR)
       IF (TRIBITS_PROCESS_TPLS_LISTS_DEBUG)
         PRINT_VAR(TPL_CLASSIFICATION)
       ENDIF()
+
+      # ToDo: Parse out TESTGROUP and MATURITYLEVEL (Trilinos #6042)
+      SET(TPL_TESTGROUP ${TPL_CLASSIFICATION})
+
+      TRIBITS_UPDATE_PS_PT_SS_ST(TPL  ${TPL_NAME}  TPL_TESTGROUP)
   
       # Update TPLS list (unless the TPL already exists)
    
       IF (${TPL_NAME}_FINDMOD)
-        # If the varaible ${TPL_NAME}_FINDMOD already exists, then this TPL
+        # If the variable ${TPL_NAME}_FINDMOD already exists, then this TPL
         # has already been defined in a previous repository.  In this case, we
         # will just leave the TPL in its current position.
         IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
@@ -124,20 +206,20 @@ MACRO(TRIBITS_PROCESS_TPLS_LISTS  REPOSITORY_NAME  REPOSITORY_DIR)
         LIST(APPEND ${PROJECT_NAME}_TPLS ${TPL_NAME})
       ENDIF() 
  
-      # Set ${TPL_NAME}_CLASSIFICATION
+      # Set ${TPL_NAME}_TESTGROUP
   
-      IF (TPL_CLASSIFICATION STREQUAL PS
-        OR TPL_CLASSIFICATION STREQUAL SS
-        OR TPL_CLASSIFICATION STREQUAL TS
-        OR TPL_CLASSIFICATION STREQUAL EX
+      IF (TPL_TESTGROUP STREQUAL PT
+        OR TPL_TESTGROUP STREQUAL ST
+        OR TPL_TESTGROUP STREQUAL TT
+        OR TPL_TESTGROUP STREQUAL EX
         )
       ELSE()
-        MESSAGE(FATAL_ERROR "Error the TPL classification '${TPL_CLASSIFICATION}'"
+        MESSAGE(FATAL_ERROR "Error the TPL classification '${TPL_TESTGROUP}'"
           " for the TPL ${TPL_NAME} is not a valid classification." )
       ENDIF()
   
-      IF (NOT ${TPL_NAME}_CLASSIFICATION) # Allow for testing override
-        SET(${TPL_NAME}_CLASSIFICATION ${TPL_CLASSIFICATION})
+      IF (NOT ${TPL_NAME}_TESTGROUP) # Allow for testing override
+        SET(${TPL_NAME}_TESTGROUP ${TPL_TESTGROUP})
       ENDIF()
   
       # Set ${TPL_NAME}_FINDMOD

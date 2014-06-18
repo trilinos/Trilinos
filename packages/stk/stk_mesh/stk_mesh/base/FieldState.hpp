@@ -33,8 +33,8 @@ namespace mesh {
  */
 enum FieldState {
   StateNone = 0,  ///< \brief State of a field with one state
-  StateNew  = 0,  ///< \brief Newest state of a field with two states
-  StateNP1  = 0,  ///< \brief Newest state of a field with three+ states
+  StateNew  = 0,  ///< \brief Newest state of a field with two or more states
+  StateNP1  = 0,  ///< \brief Newest state of a field with two or more states
   StateOld  = 1,  ///< \brief Previous state of a field with two states
   StateN    = 1,  ///< \brief Previous state of a field with three+ states
   StateNM1  = 2,  ///< \brief Previous-1 state of a field with three+ states

@@ -50,8 +50,15 @@
 
 namespace panzer {
 
-  template<typename Scalar,typename Array>
+  /** Data structure that holds all evaluated fields associated
+    * with a basis fucntion and integration rule. This class will
+    * allocate the memory and evaluate the basis functions. The 
+    * orientations must be applied using the  
+    * <code>applyOrientations</code> method.
+    */
+  template<typename Scalar,typename Array,typename ArrayOrientation=Array>
   struct BasisValues { 
+
     static const Array dummyArray;    
  
     //! Sizes/allocates memory for arrays
@@ -76,6 +83,9 @@ namespace panzer {
 			const Array& jac_inv,
 			const Array& weighted_measure,
 			const Array& node_coordinates);
+
+    //! Method to apply orientaitons to a basis values container. 
+    void applyOrientations(const ArrayOrientation & orientations);
 
     PureBasis::EElementSpace getElementSpace() const; 
 
@@ -109,7 +119,5 @@ namespace panzer {
   };
 
 } // namespace panzer
-
-// #include "Panzer_BasisValues_impl.hpp"
 
 #endif

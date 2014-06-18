@@ -233,31 +233,27 @@ NOX::Epetra::DebugTools::writeMatrix( std::string baseName, const Epetra_RowMatr
 void
 NOX::Epetra::DebugTools::readMatrix( std::string baseName, Epetra_CrsMatrix* & p_crsMat )
 {
-
-  if( NULL != p_crsMat )
-  {
-    std::string msg = "Incoming Epetra_CrsMatrix pointer is not NULL.  This could cause a memory leak.";
-    throw msg;
-  }
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      p_crsMat != NULL,
+      "Incoming Epetra_CrsMatrix pointer is not NULL.  This could cause a memory leak."
+      );
 
   std::string mapFileName = baseName + "_map";
 
   Epetra_Map * tmpMap = NULL;
   int ierr = EpetraExt::MatrixMarketFileToMap( mapFileName.c_str(), p_crsMat->Comm(), tmpMap );
-  if( (0 != ierr) || (NULL == tmpMap) )
-  {
-    std::string msg = "Could not get Epetra_Map from file."; // \"" + mapFileName + "\"."
-    throw msg;
-  }
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      ierr != 0 || tmpMap == NULL,
+      "Could not get Epetra_Map from file." // \"" + mapFileName + "\"."
+      );
 
   std::string matrixFileName = baseName + "_matrix";
 
   ierr = EpetraExt::MatrixMarketFileToCrsMatrix( matrixFileName.c_str(), *tmpMap, p_crsMat );
-  if( (0 != ierr) || (NULL == p_crsMat) )
-  {
-    std::string msg = "Could not get Epetra_CrsMatrix from file."; // \"" + matrixFileName + "\"."
-    throw msg;
-  }
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      ierr != 0 || p_crsMat == NULL,
+      "Could not get Epetra_CrsMatrix from file." // \"" + matrixFileName + "\"."
+      );
 
   delete tmpMap;
 

@@ -169,7 +169,8 @@ struct ApplyView<DataType,NoLayout,DeviceType> {
 //
 
 const int global_num_rows = 11;
-const int global_num_cols = 9;
+const int global_num_cols = 8;  // Currently must be a multiple of 8 based on
+                                // alignment assumptions for SFS
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeepCopy, Storage, Layout )
 {

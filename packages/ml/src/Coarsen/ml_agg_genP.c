@@ -3904,6 +3904,7 @@ int ML_AGG_SemiCoarseP(ML *ml,int level, int clevel, void *data)
   if (ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) {
        printf("SemiCoarsening: Coarsening from %d to %d\n",Nglobal,Ncglobal);
   }
+  ag->curr_threshold = ag->threshold;
 
 
 #ifdef ML_TIMING
@@ -3958,9 +3959,9 @@ int FindCpts(int PtsPerLine, int CoarsenRate, int Thin, int **LayerCpts)
    FirstStride= (int) ceil( ((double) PtsPerLine+1)/( (double) (NCpts+1)));
    RestStride = ((double) (PtsPerLine-FirstStride+1))/((double) NCpts);
 
-   NCLayers   = (int) floor(((double) (PtsPerLine-FirstStride+1))/RestStride);
+   NCLayers   = (int) floor((((double) (PtsPerLine-FirstStride+1))/RestStride)+.00001);
 
-   if ( NCLayers != NCpts) { printf("sizes do not match\n"); exit(1); }
+   if ( NCLayers != NCpts) { printf("sizes do not match %d %d\n",NCpts,NCLayers); exit(1); }
    *LayerCpts = (int *) malloc((NCLayers+1)*sizeof(int));
 
    di  = (double) FirstStride;

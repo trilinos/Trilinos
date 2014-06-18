@@ -1,15 +1,21 @@
 #ifndef stk_mesh_DiagWriter_h
 #define stk_mesh_DiagWriter_h
 
+#include <sstream>
+
+#include <stk_mesh/base/Types.hpp>      // for EntityProc
+#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
+
 #ifdef STK_MESH_TRACE_ENABLED
-
-#include <stk_util/diag/Trace.hpp>
-#include <stk_util/diag/Writer.hpp>
-#include <stk_util/diag/WriterOStream.hpp>
-#include <stk_util/diag/WriterParser.hpp>
-
 #include <stk_mesh/base/DiagWriter_fwd.hpp>
-#include <stk_mesh/base/Part.hpp>
+#include <stk_util/util/Writer.hpp>
+#include <stk_util/util/Trace.hpp>
+#include <stk_util/util/WriterParser.hpp>
+#endif
+
+namespace stk { namespace diag { class Writer; } }
+namespace stk { namespace mesh { class Part; } }
+
 
 // Note, this classes/functions in this header are for internal use only.
 // The API for tracing is defined in Trace.hpp
@@ -17,9 +23,11 @@
 namespace stk {
 namespace mesh {
 
-class Part;
-class Entity;
-union EntityKey;
+namespace impl {
+class Partition;
+}
+
+#ifdef STK_MESH_TRACE_ENABLED
 
 // Must be called before theDiagWriter/meshlog
 void initDiagWriter(std::ostream& stream);
@@ -65,15 +73,19 @@ public:
 
 stk::diag::Writer& operator<<(stk::diag::Writer& writer, const Part& part);
 
-stk::diag::Writer& operator<<(stk::diag::Writer& writer, const Entity& entity);
-
 stk::diag::Writer& operator<<(stk::diag::Writer& writer, const EntityKey& key);
 
 stk::diag::Writer& operator<<(stk::diag::Writer& writer, const EntityProc& entity_proc);
 
-} // namespace mesh
-} // namespace stk
+stk::diag::Writer& operator<<(stk::diag::Writer& writer, const Bucket& bucket);
+
+namespace impl {
+stk::diag::Writer& operator<<(stk::diag::Writer& writer, const Partition& partition);
+}
 
 #endif // STKMESH_TRACE_ENABLED
+
+} // namespace mesh
+} // namespace stk
 
 #endif // stk_mesh_DiagWriter_h

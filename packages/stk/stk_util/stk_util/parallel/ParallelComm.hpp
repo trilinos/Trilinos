@@ -9,9 +9,30 @@
 #ifndef stk_util_parallel_ParallelComm_hpp
 #define stk_util_parallel_ParallelComm_hpp
 
-#include <cstddef>
-#include <iosfwd>
-#include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/stk_config.h>
+#include <cstddef>                      // for size_t, ptrdiff_t
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+#if defined( STK_HAS_MPI )
+#  include "mpi.h"                      // for ompi_communicator_t
+#endif
+
+// #define TRACKABLE_STK_PARALLEL_COMM
+
+#ifdef TRACKABLE_STK_PARALLEL_COMM
+#define BABBLE_STK_PARALLEL_COMM(comm, msg)                                              \
+{                                                                                        \
+  if (stk::CommAll::sm_verbose                                                           \
+      && !(CommAll::sm_verbose_proc0_only && (stk::parallel_machine_rank(comm) != 0))) { \
+    std::ostringstream string_maker;                                                     \
+    string_maker << "P" << stk::parallel_machine_rank(comm) << ": " << msg << "\n";      \
+    std::cout << string_maker.str();                                                     \
+  }                                                                                      \
+}
+#else
+#define BABBLE_STK_PARALLEL_COMM(comm, msg)
+#endif
+
+namespace stk { template <unsigned int N> struct CommBufferAlign; }
 
 //------------------------------------------------------------------------
 
@@ -91,6 +112,7 @@ public:
    */
   size_t capacity() const ;
 
+  // TODO - terribly misinforming when used on recv buffer, returns 0!
   /** Size, in bytes, of the buffer that has been processed.
    *  If the buffer is not yet allocated then this is the
    *  number of bytes that has been attempted to pack.
@@ -100,7 +122,7 @@ public:
   /** Size, in bytes, of the buffer remaining to be processed.
    *  Equal to 'capacity() - size()'.  A negative result
    *  indicates either the buffer is not allocated or an
-   *  overflow has occured.  An overflow will have thrown
+   *  overflow has occurred.  An overflow will have thrown
    *  an exception.
    */
   ptrdiff_t remaining() const ;
@@ -138,14 +160,14 @@ class CommAll {
 public:
 
   ParallelMachine parallel()      const { return m_comm ; }
-  unsigned        parallel_size() const { return m_size ; }
-  unsigned        parallel_rank() const { return m_rank ; }
+  int             parallel_size() const { return m_size ; }
+  int             parallel_rank() const { return m_rank ; }
 
   /** Obtain the message buffer for a given processor */
-  CommBuffer & send_buffer( unsigned ) const ;
+  CommBuffer & send_buffer( int ) const ;
 
   /** Obtain the message buffer for a given processor */
-  CommBuffer & recv_buffer( unsigned ) const ;
+  CommBuffer & recv_buffer( int ) const ;
 
   //----------------------------------------
   /** Construct for undefined communication.
@@ -165,6 +187,14 @@ public:
                          const unsigned * const send_size ,
                          const unsigned * const recv_size ,
                          const bool local_flag = false );
+
+
+  /**
+   * Allocate symmetric buffers, no communication required. buf_sizes should
+   * have lenth = parallel_size(comm).
+   */
+  bool allocate_symmetric_buffers( ParallelMachine comm ,
+                                   const unsigned * const buf_sizes );
 
   //----------------------------------------
   /** Construct for a to-be-sized communication.
@@ -206,20 +236,23 @@ public:
 
   ~CommAll();
 
+  static bool sm_verbose;
+  static bool sm_verbose_proc0_only;
+
 private:
 
   CommAll( const CommAll & );
   CommAll & operator = ( const CommAll & );
 
-  void rank_error( const char * , unsigned ) const ;
+  void rank_error( const char * , int ) const ;
 
   bool allocate_buffers( const unsigned * const send_size ,
                          const unsigned * const recv_size ,
                          bool local_flag );
 
   ParallelMachine m_comm ;
-  unsigned        m_size ;
-  unsigned        m_rank ;
+  int             m_size ;
+  int             m_rank ;
   unsigned        m_bound ;
   unsigned        m_max ;
   CommBuffer    * m_send ;
@@ -232,8 +265,8 @@ class CommBroadcast {
 public:
 
   ParallelMachine parallel()      const { return m_comm ; }
-  unsigned        parallel_size() const { return m_size ; }
-  unsigned        parallel_rank() const { return m_rank ; }
+  int             parallel_size() const { return m_size ; }
+  int             parallel_rank() const { return m_rank ; }
 
   /** Obtain the message buffer for the root_rank processor */
   CommBuffer & send_buffer();
@@ -243,7 +276,7 @@ public:
 
   //----------------------------------------
 
-  CommBroadcast( ParallelMachine , unsigned root_rank );
+  CommBroadcast( ParallelMachine , int root_rank );
 
   void communicate();
 
@@ -258,9 +291,9 @@ private:
   CommBroadcast & operator = ( const CommBroadcast & );
 
   ParallelMachine m_comm ;
-  unsigned        m_size ;
-  unsigned        m_rank ;
-  unsigned        m_root_rank ;
+  int             m_size ;
+  int             m_rank ;
+  int             m_root_rank ;
   CommBuffer      m_buffer ;
 };
 
@@ -270,31 +303,31 @@ class CommGather {
 public:
 
   ParallelMachine parallel()      const { return m_comm ; }
-  unsigned        parallel_size() const { return m_size ; }
-  unsigned        parallel_rank() const { return m_rank ; }
+  int             parallel_size() const { return m_size ; }
+  int             parallel_rank() const { return m_rank ; }
 
   ~CommGather();
 
-  CommGather( ParallelMachine , unsigned root_rank , unsigned send_size );
+  CommGather( ParallelMachine , int root_rank , unsigned send_size );
 
   CommBuffer & send_buffer() { return m_send ; }
 
   void communicate();
 
-  CommBuffer & recv_buffer( unsigned );
+  CommBuffer & recv_buffer( int );
 
-  void reset(); 
+  void reset();
 
 private:
 
   CommGather();
-  CommGather( const CommBroadcast & );
-  CommGather & operator = ( const CommBroadcast & );
+  CommGather( const CommGather & );
+  CommGather & operator = ( const CommGather & );
 
   ParallelMachine m_comm ;
-  unsigned        m_size ;
-  unsigned        m_rank ;
-  unsigned        m_root_rank ;
+  int             m_size ;
+  int             m_rank ;
+  int             m_root_rank ;
   CommBuffer      m_send ;
   CommBuffer    * m_recv ;
   int           * m_recv_count ;
@@ -309,7 +342,6 @@ private:
 
 namespace stk {
 
-template<unsigned N> struct CommBufferAlign ;
 
 template<>
 struct CommBufferAlign<1> {
@@ -443,14 +475,14 @@ void * CommBuffer::buffer() const
 // Inline implementations for the CommAll
 
 inline
-CommBuffer & CommAll::send_buffer( unsigned p ) const
+CommBuffer & CommAll::send_buffer( int p ) const
 {
   if ( m_size <= p ) { rank_error("send_buffer",p); }
   return m_send[p] ;
 }
 
 inline
-CommBuffer & CommAll::recv_buffer( unsigned p ) const
+CommBuffer & CommAll::recv_buffer( int p ) const
 {
   if ( m_size <= p ) { rank_error("recv_buffer",p); }
   return m_recv[p] ;

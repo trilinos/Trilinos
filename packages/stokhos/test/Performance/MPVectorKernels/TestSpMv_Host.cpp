@@ -65,3 +65,7 @@ void mainHost(int nGrid, int nIter, Kokkos::DeviceConfig dev_config) {
 #ifdef KOKKOS_HAVE_PTHREAD
 template void mainHost< Stokhos::StaticFixedStorage<int,double,1,Kokkos::Threads> >(int nGrid, int nIter, Kokkos::DeviceConfig dev_config);
 #endif
+
+#ifdef KOKKOS_HAVE_OPENMP
+template void mainHost< Stokhos::StaticFixedStorage<int,double,1,Kokkos::OpenMP> >(int nGrid, int nIter, Kokkos::DeviceConfig dev_config);
+#endif

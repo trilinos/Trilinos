@@ -753,15 +753,15 @@ void Relaxation<MatrixType>::compute ()
       // with +Inf and the max with -Inf, but that doesn't work if
       // scalar_type is a built-in integer type.  Thus, we have to start
       // by reading the first diagonal entry redundantly.
-      scalar_type minMagDiagEntry = zero;
-      scalar_type maxMagDiagEntry = zero;
+      // scalar_type minMagDiagEntry = zero;
+      // scalar_type maxMagDiagEntry = zero;
       magnitude_type minMagDiagEntryMag = STM::zero ();
       magnitude_type maxMagDiagEntryMag = STM::zero ();
       if (numMyRows > 0) {
         const scalar_type d_0 = diag[0];
         const magnitude_type d_0_mag = STS::magnitude (d_0);
-        minMagDiagEntry = d_0;
-        maxMagDiagEntry = d_0;
+        // minMagDiagEntry = d_0;
+        // maxMagDiagEntry = d_0;
         minMagDiagEntryMag = d_0_mag;
         maxMagDiagEntryMag = d_0_mag;
       }
@@ -782,11 +782,11 @@ void Relaxation<MatrixType>::compute ()
           ++numNegDiagEntries;
         }
         if (d_i_mag < minMagDiagEntryMag) {
-          minMagDiagEntry = d_i;
+          // minMagDiagEntry = d_i;
           minMagDiagEntryMag = d_i_mag;
         }
         if (d_i_mag > maxMagDiagEntryMag) {
-          maxMagDiagEntry = d_i;
+          // maxMagDiagEntry = d_i;
           maxMagDiagEntryMag = d_i_mag;
         }
 
@@ -869,8 +869,8 @@ void Relaxation<MatrixType>::compute ()
       globalNumNegDiagEntries_ = globalCounts[2];
 
       // Forestall "set but not used" compiler warnings.
-      (void) minMagDiagEntry;
-      (void) maxMagDiagEntry;
+      // (void) minMagDiagEntry;
+      // (void) maxMagDiagEntry;
 
       // Compute and save the difference between the computed inverse
       // diagonal, and the original diagonal's inverse.

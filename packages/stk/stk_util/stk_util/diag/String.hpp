@@ -110,12 +110,12 @@ struct Precedence<char_label_traits, char_simple_traits> {
   typedef char_label_traits Type ;
 };
 
-/** @class StringBase
+/**
  *  Template base class for don't allocate short strings class.
  */
 template<class CharTraits> class StringBase ;
 
-/** @class String
+/**
  *  Ordinary characters.
  */
 typedef StringBase< char_simple_traits > String ;

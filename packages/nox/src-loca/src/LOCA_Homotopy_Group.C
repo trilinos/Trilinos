@@ -150,7 +150,7 @@ LOCA::Homotopy::Group::Group(const LOCA::Homotopy::Group& source,
     newtonVecPtr = source.newtonVecPtr->clone(type);
 
   if (source.gradVecPtr != Teuchos::null)
-    newtonVecPtr = source.gradVecPtr->clone(type);
+    gradVecPtr = source.gradVecPtr->clone(type);
 
   if (type == NOX::DeepCopy) {
     isValidF = source.isValidF;

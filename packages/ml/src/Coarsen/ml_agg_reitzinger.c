@@ -1803,8 +1803,10 @@ int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat,
   struct ML_CSR_MSRdata *Pn, *SPn, *Tfine, *Tcoarse, *Pe;
   double thesign;
   int left,leftagg, right, rightagg;
-  int coef_count, coef_cols[100], jcoef_count, k;
-  double alpha0, beta_m, coef_vals[100];
+  int coef_count, jcoef_count, k;
+  int coef_cols[100] = {0};
+  double alpha0, beta_m;
+  double coef_vals[100] = {0.0};
   int Trowcount = 0, Tnzcount = 0, Pnzcount = 0;
   int *SPn_columns, *SPn_rowptr, *Tfine_columns, *Pn_columns, *Pn_rowptr;
   int *Tfine_rowptr;

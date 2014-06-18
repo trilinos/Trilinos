@@ -56,6 +56,8 @@
 #include <Kokkos_View.hpp>
 #include <Kokkos_ArithTraits.hpp>
 
+#include <SGPreconditioner.hpp>
+
 namespace Kokkos {
 namespace Example {
 namespace FENL {
@@ -75,8 +77,13 @@ struct Perf {
   double fill_element_graph ;
   double create_sparse_matrix ;
   double fill_time ;
+  double import_time ;
   double bc_time ;
-  double cg_time ;
+  double mat_vec_time ;
+  double cg_iter_time ;
+  double prec_setup_time ;
+  double prec_apply_time ;
+  double cg_total_time ;
   double newton_residual ;
   double error_max ;
   double response_mean ;
@@ -95,8 +102,13 @@ struct Perf {
            fill_element_graph(0) ,
            create_sparse_matrix(0) ,
            fill_time(0) ,
+           import_time(0) ,
            bc_time(0) ,
-           cg_time(0) ,
+           mat_vec_time(0) ,
+           cg_iter_time(0) ,
+           prec_setup_time(0) ,
+           prec_apply_time(0) ,
+           cg_total_time(0) ,
            newton_residual(0) ,
            error_max(0) ,
            response_mean(0) ,
@@ -116,8 +128,13 @@ struct Perf {
     fill_element_graph   += p.fill_element_graph;
     create_sparse_matrix += p.create_sparse_matrix;
     fill_time            += p.fill_time;
+    import_time          += p.import_time;
     bc_time              += p.bc_time ;
-    cg_time              += p.cg_time;
+    mat_vec_time         += p.mat_vec_time;
+    cg_iter_time         += p.cg_iter_time;
+    prec_setup_time      += p.prec_setup_time;
+    prec_apply_time      += p.prec_apply_time;
+    cg_total_time        += p.cg_total_time;
     newton_residual      += p.newton_residual ;
     error_max            += p.error_max;
   }
@@ -155,6 +172,7 @@ Perf fenl(
   const int use_atomic ,
   const int use_belos ,
   const int use_muelu ,
+  const int use_mean_based ,
   const int use_nodes[] ,
   const CoeffFunctionType& coeff_function ,
   const ManufacturedSolutionType& manufactured_solution ,

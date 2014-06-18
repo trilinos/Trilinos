@@ -1344,7 +1344,7 @@ void AZ_print_out2(int update_index[], int extern_index[], int update[],
 
 *******************************************************************************/
 
-   int type, neighbor, cflag;
+   int type = 0, neighbor, cflag;
    int ii,i = 1,j,tj;
    int iblk, jblk, m1, n1, ival, new_iblk, new_jblk;
    MPI_Request request;  /* Message handle */

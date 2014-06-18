@@ -1321,6 +1321,23 @@ namespace Tpetra {
 
   /// \brief Return a deep copy of the MultiVector \c src.
   /// \relatesalso MultiVector
+  ///
+  /// Regarding Copy or View semantics: The returned MultiVector is
+  /// always a deep copy of \c src, but always has the same semantics
+  /// as \c src.  That is, if \c src has View semantics, then the
+  /// returned MultiVector has View semantics, and if \c src has Copy
+  /// semantics, then the returned MultiVector has Copy semantics.
+  ///
+  /// You may call <tt>src.getCopyOrView ()</tt> to test the semantics
+  /// of the input MultiVector \c src.  For example, the following
+  /// will never trigger an assert:
+  /// \code
+  /// MultiVector<double> dst = createCopy (src);
+  /// assert (dst.getCopyOrView () == src.getCopyOrView ());
+  /// \endcode
+  ///
+  /// In the Kokkos refactor version of Tpetra, MultiVector always has
+  /// View semantics.  However, the above remarks still apply.
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   createCopy (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& src);
@@ -1334,9 +1351,12 @@ namespace Tpetra {
   /// \pre The two inputs must have the same number of columns.
   ///
   /// Copy the contents of the MultiVector \c src into the MultiVector
-  /// \c dst.  The two MultiVectors need not necessarily have the same
+  /// \c dst.  ("Copy the contents" means the same thing as "deep
+  /// copy.")  The two MultiVectors need not necessarily have the same
   /// template parameters, but the assignment of their entries must
-  /// make sense.
+  /// make sense.  Furthermore, their Maps must be compatible, that
+  /// is, the MultiVectors' local dimensions must be the same on all
+  /// processes.
   ///
   /// This method must always be called as a collective operation on
   /// all processes over which the multivector is distributed.  This

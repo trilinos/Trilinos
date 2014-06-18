@@ -7,8 +7,9 @@
 /*------------------------------------------------------------------------*/
 
 #include <stk_util/environment/CPUTime.hpp>
+#include <sys/resource.h>               // for rusage, getrusage, etc
+#include <sys/time.h>                   // for timeval
 
-#include <sys/resource.h>
 
 namespace stk {
 
