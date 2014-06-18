@@ -23,7 +23,6 @@
 #include <string>                       // for string, basic_string, etc
 #include <utility>                      // for pair
 #include <vector>                       // for vector, etc
-#include "mpi.h"                        // for MPI_COMM_WORLD, MPI_Barrier, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket, has_superset
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
@@ -43,8 +42,7 @@ TEST(UnitTestGhosting, WithSharedFiltered)
 {
   stk::ParallelMachine communicator = MPI_COMM_WORLD;
 
-  int numProcs = 1;
-  MPI_Comm_size(communicator, &numProcs);
+  int numProcs = stk::parallel_machine_size(communicator);
   if (numProcs != 2) {
     return;
   }
@@ -108,8 +106,7 @@ TEST(UnitTestGhosting, WithShared)
 {
   stk::ParallelMachine communicator = MPI_COMM_WORLD;
 
-  int numProcs = 1;
-  MPI_Comm_size(communicator, &numProcs);
+  int numProcs = stk::parallel_machine_size(communicator);
   if (numProcs != 3) {
     return;
   }
