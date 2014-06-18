@@ -347,7 +347,7 @@ TEST(PartToBucket, np2TwoHexTwoSidesets)
 void runTwoHexParallelBucketTests(const std::string &generatedMeshSpecification, const size_t expectedNumBucketsPerSlice)
 {
     stk::ParallelMachine communicator = MPI_COMM_WORLD;
-    if (stk::parallel_machine_size(communicator) != 1)
+    if (stk::parallel_machine_size(communicator) != 2)
     {
         return;
     }

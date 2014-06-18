@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <stk_util/stk_config.h>
 #if defined ( STK_HAS_MPI )
 #include <mpi.h>
 #endif
