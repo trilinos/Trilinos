@@ -120,9 +120,8 @@ The resulting matrix is symmetric positive definite. We choose the right hand si
     <Parameter name="verbosity" type="string"   value="Low"/>
 
     <ParameterList name="All">
-      <Parameter name="startLevel" type="int" value="0"/>
-      <Parameter name="Smoother" type="string" value="myJacobi"/>
-      <Parameter name="CoarseSolver" type="string"   value="myJacobi"/>    
+     <Parameter name="Smoother" type="string" value="myJacobi"/>
+     <Parameter name="CoarseSolver" type="string"   value="myJacobi"/>    
     </ParameterList>
   </ParameterList>
 </ParameterList>
@@ -540,7 +539,6 @@ The aggregates are built by the \verb|UncoupledAggregationFactory| which means t
     <Parameter name="maxCoarseSize" type="int" value="10"/>
     <Parameter name="verbosity" type="string" value="High"/>
     <ParameterList name="All">
-      <Parameter name="startLevel" type="int"      value="0"/>
       <Parameter name="Aggregates" type="string"   value="UncoupledAggregationFact"/>
       <Parameter name="Nullspace" type="string"   value="myTentativePFact"/>
       <Parameter name="P" type="string"   value="myTentativePFact"/>
