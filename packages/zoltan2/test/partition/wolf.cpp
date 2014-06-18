@@ -190,7 +190,7 @@ int main(int argc, char** argv)
 
   params.set("num_global_parts", numParts);  
   params.set("partitioning_approach", "partition");
-  params.set("algorithm", "rcb");
+  params.set("algorithm", "wolf");
   //////////////////////////////////////////////////////////////////////
 
 

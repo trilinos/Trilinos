@@ -47,6 +47,7 @@
 
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
+#include <Zoltan2_AlgRCB.hpp>
 
 #include <sstream>
 #include <string>
@@ -56,7 +57,8 @@
  *  \brief The algorithm for Wolf partitioning.
  */
 
-namespace Zoltan2{
+namespace Zoltan2
+{
 
 // /*! \brief The boolean parameters of interest to the Block algorithm.
 //  */
@@ -69,6 +71,7 @@ namespace Zoltan2{
 //   NUM_BLOCK_PARAMS
 // };
 
+////////////////////////////////////////////////////////////////////////////////
 /*! Wolf partitioning method.
  *
  *  \param env   library configuration and problem parameters
@@ -81,45 +84,57 @@ namespace Zoltan2{
  *    identifiers.
  *
  */
-
-
+////////////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
-class AlgWolf {
+class AlgWolf 
+{
 
 private:
-  const RCP<const Environment> env;
-  const RCP<Comm<int> > problemComm;
+  const RCP<const Environment> mEnv;
+  const RCP<Comm<int> > mProblemComm;
 
-  //const RCP<const CoordinateModel<typename Adapter::base_adapter_t> > ids;
-  const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel;
+  const RCP<const GraphModel<typename Adapter::base_adapter_t> > &mGraphModel;
+  const RCP<const CoordinateModel<typename Adapter::base_adapter_t> > mIds;
 
-  RCP<PartitioningSolution<Adapter> > solution; //Not sure if this should be saved
+  RCP<PartitioningSolution<Adapter> > mSolution; //Not sure if this should be saved
 
 public:
   // Constructor
   AlgWolf(const RCP<const Environment> &env_,
-    const RCP<Comm<int> > &problemComm_,
-    const RCP<const GraphModel<typename Adapter::base_adapter_t> > &gModel_)
-    :env(env_), problemComm(problemComm_), graphModel(gModel_)
-  {}
+	  const RCP<Comm<int> > &problemComm_,
+	  const RCP<const GraphModel<typename Adapter::base_adapter_t> > &gModel_,
+	  const RCP<const CoordinateModel<typename Adapter::base_adapter_t> > &cModel_)
+    :mEnv(env_), mProblemComm(problemComm_), mGraphModel(gModel_), mIds(cModel_)
+  {
+#ifndef INCLUDE_ZOLTAN2_EXPERIMENTAL
+    Z2_THROW_EXPERIMENTAL("Zoltan2 Wolf is strictly experimental software ")
+#endif
+
+#ifndef INCLUDE_ZOLTAN2_EXPERIMENTAL_WOLF
+    Z2_THROW_EXPERIMENTAL_WOLF("Zoltan2 Wolf is strictly experimental software ")
+#endif
+
+  }
 
   // Partitioning method
   void partition(RCP<PartitioningSolution<Adapter> > &solution_);
 
 };
+////////////////////////////////////////////////////////////////////////////////
 
-
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
 void AlgWolf<Adapter>::partition(RCP<PartitioningSolution<Adapter> > &solution_)
 {
-    using std::string;
-    using std::ostringstream;
+    // using std::string;
+    // using std::ostringstream;
 
-    typedef typename Adapter::lno_t lno_t;     // local ids
-    typedef typename Adapter::gno_t gno_t;     // global ids
-    typedef typename Adapter::scalar_t scalar_t;   // scalars
+    // typedef typename Adapter::lno_t lno_t;     // local ids
+    // typedef typename Adapter::gno_t gno_t;     // global ids
+    // typedef typename Adapter::scalar_t scalar_t;   // scalars
 
-    env->debug(DETAILED_STATUS, string("Entering AlgWolf"));
+    mEnv->debug(DETAILED_STATUS, std::string("Entering AlgWolf"));
 
     // int rank = env->myRank_;
     // int nprocs = env->numProcs_;
@@ -149,12 +164,7 @@ void AlgWolf<Adapter>::partition(RCP<PartitioningSolution<Adapter> > &solution_)
     // Q: can I use solution passed into alg or do I need to create a different one?
     //    For now using the one passed into alg
 
-    // Need to form coordinate model
-
-
-    //AlgRCB<Adapter>(env, problemComm, this->coordinateModel_, solution_);
-
-    //coordinateModel
+    AlgRCB<Adapter>(this->mEnv, mProblemComm, this->mIds, solution_);
 
 
 
@@ -265,7 +275,7 @@ void AlgWolf<Adapter>::partition(RCP<PartitioningSolution<Adapter> > &solution_)
     // ArrayRCP<const gno_t> gnos = arcpFromArrayView(idList);
     // solution->setParts(gnos, gnoPart, true);
 
-    env->debug(DETAILED_STATUS, string("Exiting AlgWolf"));
+    mEnv->debug(DETAILED_STATUS, std::string("Exiting AlgWolf"));
 }
 
 
