@@ -125,9 +125,11 @@ namespace Tpetra {
   /// it will also let you exploit the performance optimizations
   /// mentioned above.
   ///
-  /// \tparam Scalar The type of the numerical entries of the vector(s).
-  ///  (You can use real-valued or complex-valued types here, unlike in
-  ///  Epetra, where the scalar type is always \c double.)
+  /// \tparam Scalar The type of the numerical entries of the
+  ///  vector(s).  (You may use real-valued or complex-valued types
+  ///  here, unlike in Epetra, where the scalar type is always \c
+  ///  double.)  The default is \c double (real, double-precision
+  ///  floating-point type).
   ///
   /// \tparam LocalOrdinal The type of local indices.  Same as the \c
   ///   LocalOrdinal template parameter of \c Map objects used by this
@@ -347,7 +349,7 @@ namespace Tpetra {
   ///   That is, if some but not all rows are shared by more than one
   ///   process in the communicator, then inner products and norms may
   ///   be wrong.  This behavior may change in future releases.
-  template<class Scalar,
+  template<class Scalar=double,
            class LocalOrdinal=int,
            class GlobalOrdinal=LocalOrdinal,
            class Node=KokkosClassic::DefaultNode::DefaultNodeType>

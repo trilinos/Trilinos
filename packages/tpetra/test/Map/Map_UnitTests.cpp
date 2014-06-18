@@ -583,6 +583,7 @@ namespace {
     // values, you must follow the class name Map with <>.
     typedef Map<> map_type;
     typedef map_type::local_ordinal_type local_ordinal_type;
+    typedef map_type::global_ordinal_type global_ordinal_type;
 
     out << "Test: Map, AllDefaultTemplateParameters" << std::endl;
     Teuchos::OSTab tab0 (out);
@@ -593,6 +594,13 @@ namespace {
     const bool defaultLocalOrdinalIsInt =
       Teuchos::TypeTraits::is_same<local_ordinal_type, int>::value;
     TEST_ASSERT( defaultLocalOrdinalIsInt );
+
+    // Verify that the default GlobalOrdinal type has size no less
+    // than the default LocalOrdinal type.  Currently (as of 18 Jun
+    // 2014), the default GlobalOrdinal type is the same as the
+    // default LocalOrdinal type, but at some point we may want to
+    // change it to default to a 64-bit integer type.
+    TEST_ASSERT( sizeof (global_ordinal_type) >= sizeof (local_ordinal_type) );
   }
 
   //

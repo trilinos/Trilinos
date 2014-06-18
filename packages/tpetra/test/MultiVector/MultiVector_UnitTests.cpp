@@ -2556,6 +2556,47 @@ namespace {
   }
 #endif // HAVE_TEUCHOS_COMPLEX
 
+
+  // Test that MultiVector can be declared with no template
+  // parameters, so that every template parameter has its default
+  // value.
+  TEUCHOS_UNIT_TEST( MultiVector, AllDefaultTemplateParameters )
+  {
+    // If you are letting all template parameters take their default
+    // values, you must follow the class name MultiVector with <>.
+    typedef MultiVector<> mv_type;
+    typedef mv_type::scalar_type scalar_type;
+    typedef mv_type::local_ordinal_type local_ordinal_type;
+
+    out << "Test: MultiVector, AllDefaultTemplateParameters" << std::endl;
+    Teuchos::OSTab tab0 (out);
+
+    // Verify that the default Scalar type is double.  We can't put
+    // the is_same expression in the macro, since it has a comma
+    // (commas separate arguments in a macro).
+    const bool defaultScalarIsDouble =
+      Teuchos::TypeTraits::is_same<scalar_type, double>::value;
+    TEST_ASSERT( defaultScalarIsDouble );
+
+    // Verify that the default LocalOrdinal type is the same as Map's
+    // default LocalOrdinal type.  This assumes that all of Map's
+    // template parameters have default values.
+    //
+    // We can't put the is_same expression in the macro, since it has
+    // a comma (commas separate arguments in a macro).
+    typedef Tpetra::Map<>::local_ordinal_type map_local_ordinal_type;
+    const bool defaultLocalOrdinalIsInt =
+      Teuchos::TypeTraits::is_same<local_ordinal_type, map_local_ordinal_type>::value;
+    TEST_ASSERT( defaultLocalOrdinalIsInt );
+
+    // Verify that the default GlobalOrdinal type has size no less
+    // than the default LocalOrdinal type.  Currently (as of 17 Jun
+    // 2014), the default GlobalOrdinal type is the same as the
+    // default LocalOrdinal type, but at some point we may want to
+    // change it to default to a 64-bit integer type.
+    TEST_ASSERT( sizeof (global_ordinal_type) >= sizeof (local_ordinal_type) );
+  }
+
 //
 // INSTANTIATIONS
 //
