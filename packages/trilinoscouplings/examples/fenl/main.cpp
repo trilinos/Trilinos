@@ -96,14 +96,16 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
     if ( cmd.CMD_USE_FIXTURE_QUADRATIC  )
       perf = fenl< double , Device , BoxElemPart::ElemQuadratic >
         ( comm , node , cmd.CMD_PRINT , cmd.CMD_USE_TRIALS ,
-          cmd.CMD_USE_ATOMIC , cmd.CMD_USE_BELOS , cmd.CMD_USE_MUELU , cmd.CMD_USE_MEANBASED , 
+          cmd.CMD_USE_ATOMIC , cmd.CMD_USE_BELOS , cmd.CMD_USE_MUELU ,
+          cmd.CMD_USE_MEANBASED ,
           nelem , diffusion_coefficient , manufactured_solution ,
           manufactured_solution.T_zmin , manufactured_solution.T_zmax ,
           true , response);
     else
       perf = fenl< double , Device , BoxElemPart::ElemLinear >
         ( comm , node , cmd.CMD_PRINT , cmd.CMD_USE_TRIALS ,
-          cmd.CMD_USE_ATOMIC , cmd.CMD_USE_BELOS , cmd.CMD_USE_MUELU , cmd.CMD_USE_MEANBASED , 
+          cmd.CMD_USE_ATOMIC , cmd.CMD_USE_BELOS , cmd.CMD_USE_MUELU ,
+          cmd.CMD_USE_MEANBASED ,
           nelem , diffusion_coefficient , manufactured_solution ,
           manufactured_solution.T_zmin , manufactured_solution.T_zmax ,
           true , response);

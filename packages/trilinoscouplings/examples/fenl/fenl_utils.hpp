@@ -40,7 +40,7 @@ struct CMD {
   double CMD_USE_VAR;
   double CMD_USE_COR;
   bool CMD_USE_SPARSE;
-  bool CMD_USE_UQ_ENSEMBLE;
+  int CMD_USE_UQ_ENSEMBLE;
   bool CMD_VTUNE;
   bool CMD_PRINT;
   bool CMD_SUMMARIZE;
@@ -49,10 +49,10 @@ struct CMD {
   int CMD_COUNT;
 
   CMD() : CMD_USE_THREADS(0),
+          CMD_USE_OPENMP(0),
           CMD_USE_NUMA(0),
           CMD_USE_CORE_PER_NUMA(0),
           CMD_USE_CUDA(false),
-          CMD_USE_OPENMP(0),
           CMD_USE_CUDA_DEV(-1),
           CMD_USE_NGPUS(1),
           CMD_USE_FIXTURE_X(2),
@@ -66,17 +66,16 @@ struct CMD {
           CMD_USE_BELOS(false),
           CMD_USE_MUELU(false),
           CMD_USE_MEANBASED(false),
-          CMD_USE_UQ_ENSEMBLE(false),
           CMD_USE_UQ_DIM(3),
           CMD_USE_UQ_ORDER(2),
-          CMD_USE_SPARSE(false),
-          CMD_VTUNE(false),
-          CMD_USE_VAR(0.1),
           CMD_USE_MEAN(1),
+          CMD_USE_VAR(0.1),
           CMD_USE_COR(0.25),
+          CMD_USE_SPARSE(false),
+          CMD_USE_UQ_ENSEMBLE(0),
+          CMD_VTUNE(false),
           CMD_PRINT(false),
           CMD_SUMMARIZE(false)
-
     {}
 };
 

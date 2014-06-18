@@ -140,6 +140,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
         fenl< Scalar , Device , BoxElemPart::ElemLinear >
         ( comm , node , cmd.CMD_PRINT , cmd.CMD_USE_TRIALS ,
           cmd.CMD_USE_ATOMIC , cmd.CMD_USE_BELOS , cmd.CMD_USE_MUELU ,
+          cmd.CMD_USE_MEANBASED ,
           nelem , diffusion_coefficient , manufactured_solution ,
           bc_lower_value , bc_upper_value ,
           false , response);
@@ -193,6 +194,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
         fenl< Scalar , Device , BoxElemPart::ElemLinear >
         ( comm , node , cmd.CMD_PRINT , cmd.CMD_USE_TRIALS ,
           cmd.CMD_USE_ATOMIC , cmd.CMD_USE_BELOS , cmd.CMD_USE_MUELU ,
+          cmd.CMD_USE_MEANBASED ,
           nelem , diffusion_coefficient , manufactured_solution ,
           bc_lower_value , bc_upper_value ,
           false , response);
