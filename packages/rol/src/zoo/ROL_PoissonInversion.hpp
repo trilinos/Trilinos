@@ -90,8 +90,9 @@ namespace ROL {
 
     /* REGULARIZATION DEFINITIONS */
     Real reg_value(const Vector<Real> &z) {
-      Teuchos::RCP<const std::vector<Real> > zp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(z))).getVector();
+      Teuchos::RCP<const std::vector<Real> > zp = ROL::StdVector_Helper::constDownCast(z);
+//      Teuchos::RCP<const std::vector<Real> > zp =
+//        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(z))).getVector();
       Real val = 0.0;
       for (int i = 0; i < this->nz_; i++) {
         if ( this->reg_type_ == 2 ) {
@@ -115,19 +116,23 @@ namespace ROL {
         g.scale(this->alpha_*this->hz_);    
       } 
       else if ( this->reg_type_ == 1 ) {
-        Teuchos::RCP<const std::vector<Real> > zp =
-          (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(z))).getVector();
-        Teuchos::RCP<std::vector<Real> > gp =
-          Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(g)).getVector());
+        Teuchos::RCP<const std::vector<Real> > zp = ROL::StdVector_Helper::constDownCast(z);
+        Teuchos::RCP<std::vector<Real> >       gp = ROL::StdVector_Helper::downCast(g);
+//        Teuchos::RCP<const std::vector<Real> > zp =
+//          (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(z))).getVector();
+//        Teuchos::RCP<std::vector<Real> > gp =
+//          Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(g)).getVector());
         for (int i = 0; i < this->nz_; i++) {
           (*gp)[i] = this->alpha_ * this->hz_ * (*zp)[i]/std::sqrt(std::pow((*zp)[i],2.0)+this->eps_);
         }
       }
       else if ( this->reg_type_ == 0 ) {
-        Teuchos::RCP<const std::vector<Real> > zp =
-          (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(z))).getVector();
-        Teuchos::RCP<std::vector<Real> > gp =
-          Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(g)).getVector());
+        Teuchos::RCP<const std::vector<Real> > zp = ROL::StdVector_Helper::constDownCast(z);
+        Teuchos::RCP<std::vector<Real> >       gp = ROL::StdVector_Helper::downCast(g);
+//        Teuchos::RCP<const std::vector<Real> > zp =
+//          (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(z))).getVector();
+//        Teuchos::RCP<std::vector<Real> > gp =
+//          Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(g)).getVector());
         Real diff = 0.0;
         for (int i = 0; i < this->nz_; i++) {
           if ( i == 0 ) {
@@ -154,23 +159,29 @@ namespace ROL {
         hv.scale(this->alpha_*this->hz_);
       }
       else if ( this->reg_type_ == 1 ) {
-        Teuchos::RCP<const std::vector<Real> > zp =
-          (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(z))).getVector();
-        Teuchos::RCP<const std::vector<Real> > vp =
-          (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(v))).getVector();
-        Teuchos::RCP<std::vector<Real> > hvp =
-          Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(hv)).getVector());
+        Teuchos::RCP<const std::vector<Real> > zp  = ROL::StdVector_Helper::constDownCast(z);
+        Teuchos::RCP<const std::vector<Real> > vp  = ROL::StdVector_Helper::constDownCast(v);
+        Teuchos::RCP<std::vector<Real> >       hvp = ROL::StdVector_Helper::downCast(hv);
+//        Teuchos::RCP<const std::vector<Real> > zp =
+//          (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(z))).getVector();
+//        Teuchos::RCP<const std::vector<Real> > vp =
+//          (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(v))).getVector();
+//        Teuchos::RCP<std::vector<Real> > hvp =
+//          Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(hv)).getVector());
         for (int i = 0; i < this->nz_; i++) {
           (*hvp)[i] = this->alpha_*this->hz_*(*vp)[i]*this->eps_/std::pow(std::pow((*zp)[i],2.0)+this->eps_,3.0/2.0);
         }
       }
       else if ( this->reg_type_ == 0 ) {
-        Teuchos::RCP<const std::vector<Real> > zp =
-          (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(z))).getVector();
-        Teuchos::RCP<const std::vector<Real> > vp =
-          (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(v))).getVector();
-        Teuchos::RCP<std::vector<Real> > hvp =
-          Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(hv)).getVector());
+        Teuchos::RCP<const std::vector<Real> > zp  = ROL::StdVector_Helper::constDownCast(z);
+        Teuchos::RCP<const std::vector<Real> > vp  = ROL::StdVector_Helper::constDownCast(v);
+        Teuchos::RCP<std::vector<Real> >       hvp = ROL::StdVector_Helper::downCast(hv);
+//        Teuchos::RCP<const std::vector<Real> > zp =
+//          (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(z))).getVector();
+//        Teuchos::RCP<const std::vector<Real> > vp =
+//          (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(v))).getVector();
+//        Teuchos::RCP<std::vector<Real> > hvp =
+//          Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(hv)).getVector());
         Real diff1 = 0.0;
         Real diff2 = 0.0;
         for (int i = 0; i < this->nz_; i++) {
@@ -197,10 +208,12 @@ namespace ROL {
 
     /* FINITE ELEMENT DEFINTIONS */
     void apply_mass(Vector<Real> &Mf, const Vector<Real> &f ) {
-      Teuchos::RCP<const std::vector<Real> > fp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(f))).getVector();
-      Teuchos::RCP<std::vector<Real> > Mfp =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(Mf)).getVector());
+      Teuchos::RCP<const std::vector<Real> > fp  = ROL::StdVector_Helper::constDownCast(f);
+      Teuchos::RCP<std::vector<Real> >       Mfp = ROL::StdVector_Helper::downCast(Mf);
+//      Teuchos::RCP<const std::vector<Real> > fp =
+//        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(f))).getVector();
+//      Teuchos::RCP<std::vector<Real> > Mfp =
+//        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(Mf)).getVector());
 
       for (int i = 0; i < this->nu_; i++) {
         if ( i == 0 ) {
@@ -216,12 +229,15 @@ namespace ROL {
     }
 
     void solve_poisson(Vector<Real> &u, const Vector<Real> &z, Vector<Real> &b) {
-      Teuchos::RCP<const std::vector<Real> > zp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(z))).getVector();
-      Teuchos::RCP<std::vector<Real> > up =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(u)).getVector());
-      Teuchos::RCP<std::vector<Real> > bp =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(b)).getVector());
+      Teuchos::RCP<const std::vector<Real> > zp = ROL::StdVector_Helper::constDownCast(z);
+      Teuchos::RCP<std::vector<Real> >       up = ROL::StdVector_Helper::downCast(u);
+      Teuchos::RCP<std::vector<Real> >       bp = ROL::StdVector_Helper::downCast(b);
+//      Teuchos::RCP<const std::vector<Real> > zp =
+//        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(z))).getVector();
+//      Teuchos::RCP<std::vector<Real> > up =
+//        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(u)).getVector());
+//      Teuchos::RCP<std::vector<Real> > bp =
+//        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(b)).getVector());
 
       // Get Diagonal and Off-Diagonal Entries of PDE Jacobian
       std::vector<Real> d(this->nu_,1.0);
@@ -249,14 +265,18 @@ namespace ROL {
 
     void apply_linearized_control_operator( Vector<Real> &Bd, const Vector<Real> &z, 
                                       const Vector<Real> &d,  const Vector<Real> &u ) {
-      Teuchos::RCP<const std::vector<Real> > zp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(z))).getVector();
-      Teuchos::RCP<const std::vector<Real> > up =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(u))).getVector();
-      Teuchos::RCP<const std::vector<Real> > dp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(d))).getVector();
-      Teuchos::RCP<std::vector<Real> > Bdp =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(Bd)).getVector());
+      Teuchos::RCP<const std::vector<Real> > zp  = ROL::StdVector_Helper::constDownCast(z);
+      Teuchos::RCP<const std::vector<Real> > up  = ROL::StdVector_Helper::constDownCast(u);
+      Teuchos::RCP<const std::vector<Real> > dp  = ROL::StdVector_Helper::constDownCast(d);
+      Teuchos::RCP<std::vector<Real> >       Bdp = ROL::StdVector_Helper::downCast(Bd);
+//      Teuchos::RCP<const std::vector<Real> > zp =
+//        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(z))).getVector();
+//      Teuchos::RCP<const std::vector<Real> > up =
+//        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(u))).getVector();
+//      Teuchos::RCP<const std::vector<Real> > dp =
+//        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(d))).getVector();
+//      Teuchos::RCP<std::vector<Real> > Bdp =
+//        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(Bd)).getVector());
 
       for (int i = 0; i < this->nu_; i++) {
         if ( i == 0 ) {
@@ -276,14 +296,18 @@ namespace ROL {
 
     void apply_transposed_linearized_control_operator( Vector<Real> &Bd, const Vector<Real> &z,
                                                  const Vector<Real> &d,  const Vector<Real> &u ) {
-      Teuchos::RCP<const std::vector<Real> > zp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(z))).getVector();
-      Teuchos::RCP<const std::vector<Real> > up =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(u))).getVector();
-      Teuchos::RCP<const std::vector<Real> > dp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(d))).getVector();
-      Teuchos::RCP<std::vector<Real> > Bdp =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(Bd)).getVector());
+      Teuchos::RCP<const std::vector<Real> > zp  = ROL::StdVector_Helper::constDownCast(z);
+      Teuchos::RCP<const std::vector<Real> > up  = ROL::StdVector_Helper::constDownCast(u);
+      Teuchos::RCP<const std::vector<Real> > dp  = ROL::StdVector_Helper::constDownCast(d);
+      Teuchos::RCP<std::vector<Real> >       Bdp = ROL::StdVector_Helper::downCast(Bd);
+//      Teuchos::RCP<const std::vector<Real> > zp =
+//        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(z))).getVector();
+//      Teuchos::RCP<const std::vector<Real> > up =
+//        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(u))).getVector();
+//      Teuchos::RCP<const std::vector<Real> > dp =
+//        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(d))).getVector();
+//      Teuchos::RCP<std::vector<Real> > Bdp =
+//        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(Bd)).getVector());
 
       for (int i = 0; i < this->nz_; i++) {
         if ( i == 0 ) {
@@ -300,16 +324,21 @@ namespace ROL {
     
     void apply_transposed_linearized_control_operator_2( Vector<Real> &Bd, const Vector<Real> &z, const Vector<Real> &v,
                                                    const Vector<Real> &d,  const Vector<Real> &u ) {
-      Teuchos::RCP<const std::vector<Real> > zp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(z))).getVector();
-      Teuchos::RCP<const std::vector<Real> > vp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(v))).getVector();
-      Teuchos::RCP<const std::vector<Real> > up =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(u))).getVector();
-      Teuchos::RCP<const std::vector<Real> > dp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(d))).getVector();
-      Teuchos::RCP<std::vector<Real> > Bdp =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(Bd)).getVector());
+      Teuchos::RCP<const std::vector<Real> > zp  = ROL::StdVector_Helper::constDownCast(z);
+      Teuchos::RCP<const std::vector<Real> > vp  = ROL::StdVector_Helper::constDownCast(v);
+      Teuchos::RCP<const std::vector<Real> > up  = ROL::StdVector_Helper::constDownCast(u);
+      Teuchos::RCP<const std::vector<Real> > dp  = ROL::StdVector_Helper::constDownCast(d);
+      Teuchos::RCP<std::vector<Real> >       Bdp = ROL::StdVector_Helper::downCast(Bd);
+//      Teuchos::RCP<const std::vector<Real> > zp =
+//        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(z))).getVector();
+//      Teuchos::RCP<const std::vector<Real> > vp =
+//        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(v))).getVector();
+//      Teuchos::RCP<const std::vector<Real> > up =
+//        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(u))).getVector();
+//      Teuchos::RCP<const std::vector<Real> > dp =
+//        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(d))).getVector();
+//      Teuchos::RCP<std::vector<Real> > Bdp =
+//        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(Bd)).getVector());
 
       for (int i = 0; i < this->nz_; i++) {
         if ( i == 0 ) {
@@ -348,11 +377,14 @@ namespace ROL {
     }
 
     void solve_adjoint_equation(Vector<Real> &p, const Vector<Real> &u, const Vector<Real> &z) {
-      Teuchos::RCP<const std::vector<Real> > up =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(u))).getVector();
+      Teuchos::RCP<const std::vector<Real> > up = ROL::StdVector_Helper::constDownCast(u);
       StdVector<Real> res( Teuchos::rcp( new std::vector<Real>(this->nu_,0.0) ) );
-      Teuchos::RCP<std::vector<Real> > rp =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(res)).getVector());
+      Teuchos::RCP<std::vector<Real> >       rp = ROL::StdVector_Helper::downCast(res);
+//      Teuchos::RCP<const std::vector<Real> > up =
+//        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(u))).getVector();
+//      StdVector<Real> res( Teuchos::rcp( new std::vector<Real>(this->nu_,0.0) ) );
+//      Teuchos::RCP<std::vector<Real> > rp =
+//        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(res)).getVector());
       for (int i = 0; i < this->nu_; i++) {
         (*rp)[i] = -((*up)[i]-this->evaluate_target((Real)(i+1)*this->hu_));
       }
@@ -382,14 +414,16 @@ namespace ROL {
     Real value( const Vector<Real> &z, Real &tol ) {
       // SOLVE STATE EQUATION
       StdVector<Real> u( Teuchos::rcp( new std::vector<Real>(this->nu_,0.0) ) );
-      Teuchos::RCP<std::vector<Real> > up =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(u)).getVector());
+      Teuchos::RCP<std::vector<Real> > up = ROL::StdVector_Helper::downCast(u);
+//      Teuchos::RCP<std::vector<Real> > up =
+//        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(u)).getVector());
       this->solve_state_equation(u,z);
 
       // COMPUTE MISFIT
       StdVector<Real> res( Teuchos::rcp( new std::vector<Real>(this->nu_,0.0) ) );
-      Teuchos::RCP<std::vector<Real> > rp =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(res)).getVector());
+      Teuchos::RCP<std::vector<Real> > rp = ROL::StdVector_Helper::downCast(res);
+//      Teuchos::RCP<std::vector<Real> > rp =
+//        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(res)).getVector());
       for (int i = 0; i < this->nu_; i++) {
         (*rp)[i] = ((*up)[i]-this->evaluate_target((Real)(i+1)*this->hu_));
       }
@@ -460,10 +494,12 @@ namespace ROL {
     void invHessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
 
       // Cast hv and v vectors to std::vector.
-      Teuchos::RCP<std::vector<Real> > hvp =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(hv)).getVector());
-      Teuchos::RCP<std::vector<Real> > vp =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(v))).getVector());
+      Teuchos::RCP<std::vector<Real> > hvp = ROL::StdVector_Helper::downCast(hv);
+      Teuchos::RCP<std::vector<Real> >  vp = ROL::StdVector_Helper::downCast(v);
+//      Teuchos::RCP<std::vector<Real> > hvp =
+//        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(hv)).getVector());
+//      Teuchos::RCP<std::vector<Real> > vp =
+//        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(v))).getVector());
 
       int dim = vp->size();
 
@@ -510,10 +546,12 @@ namespace ROL {
   template<class Real>
   void getPoissonInversion( Teuchos::RCP<Objective<Real> > &obj, Vector<Real> &x0, Vector<Real> &x ) {
     // Cast Initial Guess and Solution Vectors
-    Teuchos::RCP<std::vector<Real> > x0p =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(x0)).getVector());
-    Teuchos::RCP<std::vector<Real> > xp =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(x)).getVector());
+    Teuchos::RCP<std::vector<Real> > x0p = ROL::StdVector_Helper::downCast(x0);
+    Teuchos::RCP<std::vector<Real> >  xp = ROL::StdVector_Helper::downCast(x);
+//    Teuchos::RCP<std::vector<Real> > x0p =
+//      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(x0)).getVector());
+//    Teuchos::RCP<std::vector<Real> > xp =
+//      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(x)).getVector());
     int n = xp->size();
     // Resize Vectors
     n = 128;

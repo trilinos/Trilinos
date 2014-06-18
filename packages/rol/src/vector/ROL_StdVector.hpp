@@ -116,6 +116,25 @@ public:
 
 }; // class StdVector
 
+namespace StdVector_Helper {
+
+template<class Real>
+Teuchos::RCP<const std::vector<Real> > constDownCast( const Vector<Real> &x ) {
+  return (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
+}
+
+template<class Real>
+Teuchos::RCP<std::vector<Real> > downCast( Vector<Real> &x ) {
+  return Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(x)).getVector());
+}
+
+template<class Real>
+Teuchos::RCP<std::vector<Real> > downCast( const Vector<Real> &x ) {
+  return Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector());
+}
+
+} // namespace StdVector
+
 } // namespace ROL
 
 #endif
