@@ -196,7 +196,7 @@ create_global_spatial_index(SpatialIndex& index, Box const& local_bounding_box, 
   MPI_Allgather(local_box, data_per_proc, impl::get_mpi_type(coordinate_t()),
                 &*recv.begin(), data_per_proc, impl::get_mpi_type(coordinate_t()), comm);
 #else
-  for (size_t i=0; i < data_per_proc; i++) {
+  for (int i=0; i < data_per_proc; i++) {
     recv[i] = local_box[i];
   }
 #endif
