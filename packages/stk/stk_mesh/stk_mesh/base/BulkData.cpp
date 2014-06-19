@@ -3795,6 +3795,144 @@ void BulkData::change_ghosting(
 
 //----------------------------------------------------------------------
 
+void BulkData::ghostEntitiesAndFields(Ghosting & ghosts, const std::set<EntityProc , EntityLess>& new_send)
+{
+    const size_t record_entity_comm_size_before_changing_it = m_entity_comm_list.size();
+    const int p_size = parallel_size() ;
+
+    CommAll comm( m_parallel_machine );
+
+    for ( int phase = 0; phase < 2; ++phase ) {
+      for ( std::set< EntityProc , EntityLess >::iterator
+              j = new_send.begin(); j != new_send.end() ; ++j ) {
+
+        Entity entity = j->first;
+        const int proc = j->second;
+
+        if ( ! in_ghost( ghosts , entity_key(entity) , proc ) ) {
+          // Not already being sent , must send it.
+          CommBuffer & buf = comm.send_buffer( proc );
+          buf.pack<unsigned>( entity_rank(entity) );
+          pack_entity_info(*this, buf , entity );
+          pack_field_values(*this, buf , entity );
+
+          if (phase == 1) {
+              entity_comm_map_insert(entity, EntityCommInfo(ghosts.ordinal(), proc));
+            EntityCommListInfo comm_info = {entity_key(entity), entity, parallel_owner_rank(entity)};
+            m_entity_comm_list.push_back( comm_info );
+          }
+        }
+      }
+
+      if (phase == 0) {
+        comm.allocate_buffers( p_size / 4 );
+      }
+      else {
+        comm.communicate();
+      }
+    }
+
+    std::ostringstream error_msg ;
+    int error_count = 0 ;
+    OrdinalVector ordinal_scratch;
+    PartVector part_scratch;
+
+    const MetaData & meta = m_mesh_meta_data ;
+    const unsigned rank_count = meta.entity_rank_count();
+
+    for ( unsigned rank = 0 ; rank < rank_count ; ++rank ) {
+      for ( int p = 0 ; p < p_size ; ++p ) {
+        CommBuffer & buf = comm.recv_buffer(p);
+        while ( buf.remaining() ) {
+          // Only unpack if of the current entity rank.
+          // If not the current entity rank, break the iteration
+          // until a subsequent entity rank iteration.
+          {
+            unsigned this_rank = ~0u ;
+            buf.peek<unsigned>( this_rank );
+
+            if ( this_rank != rank ) break ;
+
+            buf.unpack<unsigned>( this_rank );
+          }
+
+          PartVector parts ;
+          std::vector<Relation> relations ;
+          EntityKey key ;
+          int owner = ~0u ;
+
+          unpack_entity_info( buf, *this, key, owner, parts, relations );
+
+          // Must not have the locally_owned_part or globally_shared_part
+
+          remove( parts , meta.locally_owned_part() );
+          remove( parts , meta.globally_shared_part() );
+
+          if (owner != this->parallel_rank()) {
+            // We will also add the entity to the part corresponding to the 'ghosts' ghosting.
+            stk::mesh::Part& ghost_part = *m_ghost_parts[ghosts.ordinal()];
+            insert( parts, ghost_part );
+          }
+
+          GhostReuseMap::iterator f_itr = m_ghost_reuse_map.find(key);
+          const size_t use_this_offset = f_itr == m_ghost_reuse_map.end() ? 0 : f_itr->second;
+          if (use_this_offset != 0) {
+            m_ghost_reuse_map.erase(f_itr);
+          }
+
+          std::pair<Entity ,bool> result =
+            m_entity_repo.internal_create_entity( key, use_this_offset );
+
+          Entity entity = result.first;
+          const bool created   = result.second ;
+
+          require_entity_owner( entity , owner );
+
+          internal_change_entity_parts( entity , parts , PartVector() );
+
+          if ( created ) {
+            log_created_parallel_copy( entity );
+            this->set_parallel_owner_rank( entity, owner);
+          }
+
+          declare_relation( entity , relations, ordinal_scratch, part_scratch );
+
+          if ( ! unpack_field_values(*this, buf , entity , error_msg ) ) {
+            ++error_count ;
+          }
+
+          const EntityCommInfo tmp( ghosts.ordinal() , owner );
+
+          if ( entity_comm_map_insert(entity, tmp) ) {
+            EntityCommListInfo comm_info = {entity_key(entity), entity, parallel_owner_rank(entity)};
+            m_entity_comm_list.push_back( comm_info );
+          }
+        }
+      }
+    }
+
+    if (parallel_size() > 1) {
+      all_reduce( m_parallel_machine , ReduceSum<1>( & error_count ) );
+    }
+
+    ThrowErrorMsgIf( error_count, error_msg.str() );
+
+    if ( record_entity_comm_size_before_changing_it < m_entity_comm_list.size() ) {
+      // Added new ghosting entities to the list,
+      // must now sort and merge.
+
+      EntityCommListInfoVector::iterator i = m_entity_comm_list.begin();
+      i += record_entity_comm_size_before_changing_it ;
+      std::sort( i , m_entity_comm_list.end() );
+      std::inplace_merge( m_entity_comm_list.begin() , i ,
+                          m_entity_comm_list.end() );
+      m_entity_comm_list.erase( std::unique( m_entity_comm_list.begin() , m_entity_comm_list.end() ) ,
+                                m_entity_comm_list.end() );
+
+      internal_sync_comm_list_owners();
+    }
+}
+
 void BulkData::internal_change_ghosting(
   Ghosting & ghosts ,
   const std::vector<EntityProc> & add_send ,
@@ -3946,140 +4084,7 @@ void BulkData::internal_change_ghosting(
   // ranking entities may be owned by different processes,
   // as such unpacking must be performed in rank order.
 
-  {
-    const size_t entity_comm_size = m_entity_comm_list.size();
-
-    CommAll comm( m_parallel_machine );
-
-    for ( int phase = 0; phase < 2; ++phase ) {
-      for ( std::set< EntityProc , EntityLess >::iterator
-              j = new_send.begin(); j != new_send.end() ; ++j ) {
-
-        Entity entity = j->first;
-        const int proc = j->second;
-
-        if ( ! in_ghost( ghosts , entity_key(entity) , proc ) ) {
-          // Not already being sent , must send it.
-          CommBuffer & buf = comm.send_buffer( proc );
-          buf.pack<unsigned>( entity_rank(entity) );
-          pack_entity_info(*this, buf , entity );
-          pack_field_values(*this, buf , entity );
-
-          if (phase == 1) {
-              entity_comm_map_insert(entity, EntityCommInfo(ghosts.ordinal(), proc));
-            EntityCommListInfo comm_info = {entity_key(entity), entity, parallel_owner_rank(entity)};
-            m_entity_comm_list.push_back( comm_info );
-          }
-        }
-      }
-
-      if (phase == 0) {
-        BABBLE_STK_PARALLEL_COMM(m_parallel_machine, "          internal_change_ghosting calling allocate_buffers");
-        comm.allocate_buffers( p_size / 4 );
-      }
-      else {
-        BABBLE_STK_PARALLEL_COMM(m_parallel_machine, "          internal_change_ghosting calling communicate");
-        comm.communicate();
-      }
-    }
-
-    std::ostringstream error_msg ;
-    int error_count = 0 ;
-    OrdinalVector ordinal_scratch;
-    PartVector part_scratch;
-
-    for ( unsigned rank = 0 ; rank < rank_count ; ++rank ) {
-      for ( int p = 0 ; p < p_size ; ++p ) {
-        CommBuffer & buf = comm.recv_buffer(p);
-        while ( buf.remaining() ) {
-          // Only unpack if of the current entity rank.
-          // If not the current entity rank, break the iteration
-          // until a subsequent entity rank iteration.
-          {
-            unsigned this_rank = ~0u ;
-            buf.peek<unsigned>( this_rank );
-
-            if ( this_rank != rank ) break ;
-
-            buf.unpack<unsigned>( this_rank );
-          }
-
-          PartVector parts ;
-          std::vector<Relation> relations ;
-          EntityKey key ;
-          int owner = ~0u ;
-
-          unpack_entity_info( buf, *this, key, owner, parts, relations );
-
-          // Must not have the locally_owned_part or globally_shared_part
-
-          remove( parts , meta.locally_owned_part() );
-          remove( parts , meta.globally_shared_part() );
-
-          if (owner != this->parallel_rank()) {
-            // We will also add the entity to the part corresponding to the 'ghosts' ghosting.
-            stk::mesh::Part& ghost_part = *m_ghost_parts[ghosts.ordinal()];
-            insert( parts, ghost_part );
-          }
-
-          GhostReuseMap::iterator f_itr = m_ghost_reuse_map.find(key);
-          const size_t use_this_offset = f_itr == m_ghost_reuse_map.end() ? 0 : f_itr->second;
-          if (use_this_offset != 0) {
-            m_ghost_reuse_map.erase(f_itr);
-          }
-
-          std::pair<Entity ,bool> result =
-            m_entity_repo.internal_create_entity( key, use_this_offset );
-
-          Entity entity = result.first;
-          const bool created   = result.second ;
-
-          require_entity_owner( entity , owner );
-
-          internal_change_entity_parts( entity , parts , PartVector() );
-
-          if ( created ) {
-            log_created_parallel_copy( entity );
-            this->set_parallel_owner_rank( entity, owner);
-          }
-
-          declare_relation( entity , relations, ordinal_scratch, part_scratch );
-
-          if ( ! unpack_field_values(*this, buf , entity , error_msg ) ) {
-            ++error_count ;
-          }
-
-          const EntityCommInfo tmp( ghosts.ordinal() , owner );
-
-          if ( entity_comm_map_insert(entity, tmp) ) {
-            EntityCommListInfo comm_info = {entity_key(entity), entity, parallel_owner_rank(entity)};
-            m_entity_comm_list.push_back( comm_info );
-          }
-        }
-      }
-    }
-
-    if (parallel_size() > 1) {
-      all_reduce( m_parallel_machine , ReduceSum<1>( & error_count ) );
-    }
-
-    ThrowErrorMsgIf( error_count, error_msg.str() );
-
-    if ( entity_comm_size < m_entity_comm_list.size() ) {
-      // Added new ghosting entities to the list,
-      // must now sort and merge.
-
-      EntityCommListInfoVector::iterator i = m_entity_comm_list.begin();
-      i += entity_comm_size ;
-      std::sort( i , m_entity_comm_list.end() );
-      std::inplace_merge( m_entity_comm_list.begin() , i ,
-                          m_entity_comm_list.end() );
-      m_entity_comm_list.erase( std::unique( m_entity_comm_list.begin() , m_entity_comm_list.end() ) ,
-                                m_entity_comm_list.end() );
-
-      internal_sync_comm_list_owners();
-    }
-  }
+  ghostEntitiesAndFields(ghosts, new_send);
 
   ghosts.m_sync_count = m_sync_count ;
 

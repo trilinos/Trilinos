@@ -144,34 +144,6 @@ TEST( UnitTestMetaData, testEntityRepository )
 
   ASSERT_FALSE(bulk.entity_comm_map_erase(bulk.entity_key(elem), comm_info));
   ASSERT_TRUE(bulk.entity_comm_map_insert(elem, comm_info));
-
-  //Checking internal_create_entity.
-  //   Hey, this doesn't seem to test much! -- PGX
-  e.internal_create_entity( stk::mesh::EntityKey( stk::topology::ELEM_RANK, 2 ));
-  e.internal_create_entity( stk::mesh::EntityKey( stk::topology::ELEM_RANK, 5 ));
-  e.internal_create_entity( stk::mesh::EntityKey( stk::topology::ELEM_RANK, 7 ));
-
-  //Checking get_entity with invalid key - no rank or id
-  {
-    int ok = 0 ;
-    try {
-
-      stk::mesh::Entity elem3 = e.get_entity(stk::mesh::EntityKey());
-      if(bulk.is_valid(elem3)){
-        // CAROL FIXME
-      }
-
-    }
-    catch( const std::exception & x ) {
-      ok = 1 ;
-      std::cout << "UnitTestMetaData CORRECTLY caught error for : "
-                << x.what()
-                << std::endl ;
-    }
-    if ( ! ok ) {
-      throw std::runtime_error("UnitTestMetaData FAILED to catch error for get_entity - invalid key");
-    }
-  }
 }
 
 TEST( UnitTestMetaData, noEntityTypes )

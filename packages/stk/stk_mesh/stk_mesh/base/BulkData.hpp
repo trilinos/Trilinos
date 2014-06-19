@@ -67,6 +67,8 @@ class EntityRepository;
 
 }
 
+struct EntityLess;
+
 parallel::DistributedIndex::KeySpanVector convert_entity_keys_to_spans( const MetaData & meta );
 
 struct EntityCommListInfo
@@ -1334,6 +1336,7 @@ private:
                                  const std::vector<EntityProc> & add_send ,
                                  const std::vector<EntityKey> & remove_receive,
                                  bool is_full_regen = false);
+  void ghostEntitiesAndFields(Ghosting & ghosts, const std::set<EntityProc , EntityLess>& new_send);
 
   bool internal_modification_end( bool regenerate_aura, modification_optimization opt );
   void internal_resolve_shared_modify_delete();
