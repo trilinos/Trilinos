@@ -133,7 +133,7 @@ Teuchos::RCP<std::vector<Real> > downCast( const Vector<Real> &x ) {
   return Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector());
 }
 
-} // namespace StdVector
+} // namespace StdVector_Helper
 
 } // namespace ROL
 

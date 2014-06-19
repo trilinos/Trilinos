@@ -74,9 +74,6 @@ private:
   Real gamma1_;
   Real gamma2_; 
 
-  int cnt_;
-  Real force_;
-
   Real pRed_;
 
   Real TRsafe_;
@@ -88,12 +85,19 @@ private:
 
   Real ftol_old_;
 
+  Real scale_;
+  Real omega_;
+  Real force_;
+  int  updateIter_;
+  int  forceFactor_;
+  int cnt_;
+
 public:
 
   virtual ~TrustRegion() {}
 
   // Constructor
-  TrustRegion( Teuchos::ParameterList & parlist ) : cnt_(0), force_(1.0), ftol_old_(1.0) {
+  TrustRegion( Teuchos::ParameterList & parlist ) : ftol_old_(1.0), cnt_(0) {
     // Unravel Parameter List
     // Enumerations
     etr_ = StringToETrustRegion( parlist.get("Trust-Region Subproblem Solver Type",  "Cauchy Point"));
@@ -121,6 +125,11 @@ public:
     useInexact_.push_back(parlist.get("Use Inexact Objective Function", false));
     useInexact_.push_back(parlist.get("Use Inexact Gradient", false));
     useInexact_.push_back(parlist.get("Use Inexact Hessian-Times-A-Vector", false));
+    scale_       = parlist.get("Value Update Tolerance Scaling",1.e-1);
+    omega_       = parlist.get("Value Update Exponent",0.9);
+    force_       = parlist.get("Value Update Forcing Sequence Initial Value",1.0);
+    updateIter_  = parlist.get("Value Update Forcing Sequence Update Frequency",10);
+    forceFactor_ = parlist.get("Value Update Forcing Sequence Reduction Factor",0.1);
   }
 
   void update( Vector<Real> &x, Real &fnew, Real &del, 
@@ -139,11 +148,11 @@ public:
     /***************************************************************************************************/
     Real fold1 = fold;
     if ( this->useInexact_[0] ) {
-      if ( !(this->cnt_%10) && (this->cnt_ != 0) ) {
-        this->force_ *= 0.1;
+      if ( !(this->cnt_%this->updateIter_) && (this->cnt_ != 0) ) {
+        this->force_ *= this->forceFactor_;
       }
-      Real scale = 1.e-3; 
-      Real ftol  = scale*std::min(std::max(this->pRed_,0.0),this->force_);
+      Real ftol  = this->scale_*std::pow(std::min(this->eta1_,1.0-this->eta2_)
+                                        *std::min(std::max(this->pRed_,0.0),this->force_),1.0/this->omega_);
       if ( this->ftol_old_ > ftol || this->cnt_ == 0 ) {
         this->ftol_old_ = ftol;
         fold1 = pObj.value(x,this->ftol_old_);
@@ -153,7 +162,7 @@ public:
       this->cnt_++;
     }
     else {
-      pObj.update(*xnew);
+      pObj.update(*xnew,true);
       fnew = pObj.value(*xnew,tol);
     }
     nfval = 1;   

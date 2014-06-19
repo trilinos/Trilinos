@@ -84,19 +84,20 @@ private:
   Real              alpha_init_; // Initial Line Search Parameter for Projected Methods
   int               max_fval_;   // Maximum Function Evaluations for Line Search              
 
+  Real              scale0_;
+  Real              scale1_;
+
   void updateGradient( Vector<Real> &x, Objective<Real> &obj, Constraints<Real> &con, 
                        AlgorithmState<Real> &algo_state ) {
     Teuchos::RCP<StepState<Real> >& state = Step<Real>::get_state();
     if ( this->useInexact_[1] ) {
-      Real scale0 = 1.e-3;
-      Real scale1 = 2.0;
-      Real gtol1  = scale0*(state->searchSize);
-      Real gtol0  = scale1*gtol1 + 1.0;
-      while ( gtol0 > gtol1*scale1 ) {
+      Real gtol1  = this->scale0_*(state->searchSize);
+      Real gtol0  = this->scale1_*gtol1 + 1.0;
+      while ( gtol0 > gtol1*this->scale1_ ) {
         obj.gradient(*(state->gradientVec),x,gtol1);
         algo_state.gnorm = this->computeCriticalityMeasure(*(state->gradientVec),x,con);
         gtol0 = gtol1;
-        gtol1 = scale0*std::min(algo_state.gnorm,state->searchSize);
+        gtol1 = this->scale0_*std::min(algo_state.gnorm,state->searchSize);
       }
       algo_state.ngrad++;
     }
@@ -146,6 +147,8 @@ public:
     useInexact_.push_back(parlist.get("Use Inexact Objective Function", false));
     useInexact_.push_back(parlist.get("Use Inexact Gradient", false));
     useInexact_.push_back(parlist.get("Use Inexact Hessian-Times-A-Vector", false));
+    this->scale0_ = parlist.get("Gradient Update Tolerance Scaling",1.e-1);
+    this->scale1_ = parlist.get("Gradient Update Relative Tolerance",2.0);     
      
     // Initialize Trust Region Subproblem Solver Object
     useProjectedGrad_ = parlist.get("Use Projected Gradient Criticality Measure", false);
@@ -177,7 +180,9 @@ public:
     useInexact_.push_back(parlist.get("Use Inexact Objective Function", false));
     useInexact_.push_back(parlist.get("Use Inexact Gradient", false));
     useInexact_.push_back(parlist.get("Use Inexact Hessian-Times-A-Vector", false));
-     
+    this->scale0_ = parlist.get("Gradient Update Tolerance Scaling",1.e-1);
+    this->scale1_ = parlist.get("Gradient Update Relative Tolerance",2.0);     
+
     // Initialize Trust Region Subproblem Solver Object
     useProjectedGrad_ = parlist.get("Use Projected Gradient Criticality Measure", false);
     max_fval_         = parlist.get("Maximum Number of Function Evaluations", 20);
@@ -194,8 +199,8 @@ public:
     algo_state.nfval = 0;
     algo_state.ngrad = 0;
 
-    Real ftol = std::sqrt(ROL_EPSILON);
     Real htol = std::sqrt(ROL_EPSILON);
+    Real ftol = ROL_OVERFLOW; 
 
     state->descentVec  = x.clone();
     state->gradientVec = x.clone();
@@ -204,11 +209,11 @@ public:
       con.project(x);
     }
 
-    // Update approximate gradient and evaluate the objective function.
+    // Update approximate gradient and approximate objective function.
     obj.update(x,true,algo_state.iter);    
     this->updateGradient(x,obj,con,algo_state);
     algo_state.snorm = 1.e10;
-    algo_state.value = obj.value(x,ftol); // MUST DO SOMETHING HERE WITH FTOL
+    algo_state.value = obj.value(x,ftol); 
     algo_state.nfval++;
 
     // Evaluate Objective Function at Cauchy Point

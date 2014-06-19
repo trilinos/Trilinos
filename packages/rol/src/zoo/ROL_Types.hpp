@@ -102,6 +102,10 @@ namespace ROL {
    */
   static const double ROL_THRESHOLD = 10.0 * ROL_EPSILON;
 
+  /** \brief  Platform-dependent maximum double.
+   */ 
+  static const double ROL_OVERFLOW  = std::abs(Teuchos::ScalarTraits<double>::rmax());
+
   struct removeSpecialCharacters {
     bool operator()(char c) {
       return (c ==' ' || c =='-' || c == '(' || c == ')' || c=='\'' || c=='\r' || c=='\n' || c=='\t');
