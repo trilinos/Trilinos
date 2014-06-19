@@ -2921,8 +2921,8 @@ namespace Tpetra {
       // The latter two states require an all-reduce to communicate
       // globally, but we only need one all-reduce, since we only need
       // to check whether at least one of the Maps is wrong.
-      const bool domainMapsMatch = staticGraph_->getDomainMap ().isSameAs (*domainMap);
-      const bool rangeMapsMatch = staticGraph_->getRangeMap ().isSameAs (*rangeMap);
+      const bool domainMapsMatch = staticGraph_->getDomainMap ()->isSameAs (*domainMap);
+      const bool rangeMapsMatch = staticGraph_->getRangeMap ()->isSameAs (*rangeMap);
 
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         ! domainMapsMatch, std::runtime_error,
