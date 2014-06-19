@@ -84,12 +84,12 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-
   // Initialize MPI
-#ifdef HAVE_MPI
-  MPI_Init(&argc,&argv);
-#endif
+  Teuchos::GlobalMPISession session(&argc, &argv, NULL);
 
+  bool success = false;
+  bool verbose = false;
+  try {
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
   Epetra_MpiComm Comm( MPI_COMM_WORLD );
@@ -102,7 +102,6 @@ int main(int argc, char *argv[])
   int NumProc = Comm.NumProc();
 
   // Check verbosity level
-  bool verbose = false;
   if (argc > 1)
     if (argv[1][0]=='-' && argv[1][1]=='v')
       verbose = true;
@@ -116,10 +115,6 @@ int main(int argc, char *argv[])
   else
     NumGlobalElements = 101;
 
-
-  bool success = false;
-
-  try {
 
     // The number of unknowns must be at least equal to the
     // number of processors.
@@ -339,10 +334,6 @@ int main(int argc, char *argv[])
     printing.out() << "Status = " << status << std::endl;
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
-
-#ifdef HAVE_MPI
-  MPI_Finalize();
-#endif
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }

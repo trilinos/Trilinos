@@ -73,6 +73,7 @@
 #include "Epetra_Map.h"
 #include "Epetra_LinearProblem.h"
 #include "AztecOO.h"
+#include "Teuchos_StandardCatchMacros.hpp"
 
 // User's application specific files
 #include "Problem_Interface.H" // Interface file to NOX
@@ -82,236 +83,237 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-  int ierr = 0;
-
-  double nonlinear_factor = 1.0;
-  double left_bc = 0.0;
-  double right_bc = 0.40;
-
   // Initialize MPI
-#ifdef HAVE_MPI
-  MPI_Init(&argc,&argv);
-#endif
+  Teuchos::GlobalMPISession session(&argc, &argv, NULL);
 
+  bool success = false;
+  bool verbose = false;
+  try {
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
-  Epetra_MpiComm Comm( MPI_COMM_WORLD );
+    Epetra_MpiComm Comm( MPI_COMM_WORLD );
 #else
-  Epetra_SerialComm Comm;
+    Epetra_SerialComm Comm;
 #endif
 
-  // Get the process ID and the total number of processors
-  int MyPID = Comm.MyPID();
-  int NumProc = Comm.NumProc();
+    int ierr = 0;
 
-  // Get the number of elements from the command line
-  int NumGlobalElements = 100 + 1;
+    double nonlinear_factor = 1.0;
+    double left_bc = 0.0;
+    double right_bc = 0.40;
 
-  // The number of unknowns must be at least equal to the
-  // number of processors.
-  if (NumGlobalElements < NumProc) {
-    std::cout << "numGlobalBlocks = " << NumGlobalElements
-     << " cannot be < number of processors = " << NumProc << std::endl;
-    exit(1);
-  }
+    // Get the process ID and the total number of processors
+    int MyPID = Comm.MyPID();
+    int NumProc = Comm.NumProc();
 
-  // Create the FiniteElementProblem class.  This creates all required
-  // Epetra objects for the problem and allows calls to the
-  // function (RHS) and Jacobian evaluation routines.
-  FiniteElementProblem Problem(NumGlobalElements, Comm);
+    // Get the number of elements from the command line
+    int NumGlobalElements = 100 + 1;
 
-  // Get the vector from the Problem
-  Epetra_Vector& soln = Problem.getSolution();
+    // The number of unknowns must be at least equal to the
+    // number of processors.
+    if (NumGlobalElements < NumProc) {
+      std::cout << "numGlobalBlocks = " << NumGlobalElements
+        << " cannot be < number of processors = " << NumProc << std::endl;
+      exit(1);
+    }
 
-  // Initialize Solution
-  soln.PutScalar(0.1);
+    // Create the FiniteElementProblem class.  This creates all required
+    // Epetra objects for the problem and allows calls to the
+    // function (RHS) and Jacobian evaluation routines.
+    FiniteElementProblem Problem(NumGlobalElements, Comm);
 
-  // Create initial guess for the null vector of jacobian
-  Teuchos::RCP<NOX::Abstract::Vector> solnTwo =
-    Teuchos::rcp(new NOX::Epetra::Vector(soln));
-  solnTwo->init(2.5);             // initial value 1.0
+    // Get the vector from the Problem
+    Epetra_Vector& soln = Problem.getSolution();
 
-  // Begin LOCA Solver ************************************
+    // Initialize Solution
+    soln.PutScalar(0.1);
 
-  // Create parameter list
-  Teuchos::RCP<Teuchos::ParameterList> paramList =
-    Teuchos::rcp(new Teuchos::ParameterList);
+    // Create initial guess for the null vector of jacobian
+    Teuchos::RCP<NOX::Abstract::Vector> solnTwo =
+      Teuchos::rcp(new NOX::Epetra::Vector(soln));
+    solnTwo->init(2.5);             // initial value 1.0
 
-  // Create LOCA sublist
-  Teuchos::ParameterList& locaParamsList = paramList->sublist("LOCA");
+    // Begin LOCA Solver ************************************
 
-  // Create the stepper sublist and set the stepper parameters
-  Teuchos::ParameterList& locaStepperList = locaParamsList.sublist("Stepper");
-  locaStepperList.set("Continuation Method", "Natural");
-  //locaStepperList.set("Bordered Solver Method", "Nested");
-  //locaStepperList.set("Bordered Solver Method", "Householder");
-  locaStepperList.set("Continuation Parameter", "Nonlinear Factor");
-  locaStepperList.set("Initial Value", nonlinear_factor);
-  locaStepperList.set("Max Value", 1.6);
-  locaStepperList.set("Min Value", 0.00);
-  locaStepperList.set("Max Steps", 20);
-  locaStepperList.set("Max Nonlinear Iterations", 15);
+    // Create parameter list
+    Teuchos::RCP<Teuchos::ParameterList> paramList =
+      Teuchos::rcp(new Teuchos::ParameterList);
 
-  // Create bifurcation sublist
-  Teuchos::ParameterList& bifurcationList =
-    locaParamsList.sublist("Bifurcation");
-  bifurcationList.set("Type", "Phase Transition");
-  bifurcationList.set("Bifurcation Parameter", "Right BC");
+    // Create LOCA sublist
+    Teuchos::ParameterList& locaParamsList = paramList->sublist("LOCA");
 
-  bifurcationList.set("Second Solution Vector", solnTwo);
+    // Create the stepper sublist and set the stepper parameters
+    Teuchos::ParameterList& locaStepperList = locaParamsList.sublist("Stepper");
+    locaStepperList.set("Continuation Method", "Natural");
+    //locaStepperList.set("Bordered Solver Method", "Nested");
+    //locaStepperList.set("Bordered Solver Method", "Householder");
+    locaStepperList.set("Continuation Parameter", "Nonlinear Factor");
+    locaStepperList.set("Initial Value", nonlinear_factor);
+    locaStepperList.set("Max Value", 1.6);
+    locaStepperList.set("Min Value", 0.00);
+    locaStepperList.set("Max Steps", 20);
+    locaStepperList.set("Max Nonlinear Iterations", 15);
 
-  // Create predictor sublist
-  Teuchos::ParameterList& predictorList = locaParamsList.sublist("Predictor");
-  predictorList.set("Method", "Secant");
+    // Create bifurcation sublist
+    Teuchos::ParameterList& bifurcationList =
+      locaParamsList.sublist("Bifurcation");
+    bifurcationList.set("Type", "Phase Transition");
+    bifurcationList.set("Bifurcation Parameter", "Right BC");
 
-  // Create step size sublist
-  Teuchos::ParameterList& stepSizeList = locaParamsList.sublist("Step Size");
-  stepSizeList.set("Method", "Constant");
-  stepSizeList.set("Initial Step Size", 0.1);
-  stepSizeList.set("Min Step Size", 1.0e-3);
-  stepSizeList.set("Max Step Size", 2000.0);
-  stepSizeList.set("Aggressiveness", 0.1);
+    bifurcationList.set("Second Solution Vector", solnTwo);
 
-  // Create the "Solver" parameters sublist to be used with NOX Solvers
-  Teuchos::ParameterList& nlParams = paramList->sublist("NOX");
+    // Create predictor sublist
+    Teuchos::ParameterList& predictorList = locaParamsList.sublist("Predictor");
+    predictorList.set("Method", "Secant");
 
-  // Create the NOX printing parameter list
-  Teuchos::ParameterList& nlPrintParams = nlParams.sublist("Printing");
-  nlPrintParams.set("MyPID", MyPID);
-  nlPrintParams.set("Output Precision", 6);
-  nlPrintParams.set("Output Information",
-            NOX::Utils::OuterIteration +
-            NOX::Utils::OuterIterationStatusTest +
-            NOX::Utils::InnerIteration +
-            NOX::Utils::Details +
-            NOX::Utils::LinearSolverDetails +
-            NOX::Utils::Warning +
-            NOX::Utils::StepperIteration +
-            NOX::Utils::StepperDetails +
-            NOX::Utils::StepperParameters);
+    // Create step size sublist
+    Teuchos::ParameterList& stepSizeList = locaParamsList.sublist("Step Size");
+    stepSizeList.set("Method", "Constant");
+    stepSizeList.set("Initial Step Size", 0.1);
+    stepSizeList.set("Min Step Size", 1.0e-3);
+    stepSizeList.set("Max Step Size", 2000.0);
+    stepSizeList.set("Aggressiveness", 0.1);
 
-  // Create the "Linear Solver" sublist for Newton's method
-  Teuchos::ParameterList& dirParams = nlParams.sublist("Direction");
-  Teuchos::ParameterList& newParams = dirParams.sublist("Newton");
-  Teuchos::ParameterList& lsParams = newParams.sublist("Linear Solver");
-  lsParams.set("Aztec Solver", "GMRES");
-  lsParams.set("Max Iterations", 200);
-  lsParams.set("Tolerance", 1e-6);
-  lsParams.set("Output Frequency", 50);
-  //lsParams.set("Scaling", "None");
-  //lsParams.set("Scaling", "Row Sum");
-  lsParams.set("Compute Scaling Manually", false);
-  lsParams.set("Preconditioner", "Ifpack");
-  lsParams.set("Ifpack Preconditioner", "ILU");
+    // Create the "Solver" parameters sublist to be used with NOX Solvers
+    Teuchos::ParameterList& nlParams = paramList->sublist("NOX");
 
-  //lsParams.set("Preconditioner", "New Ifpack");
-  //Teuchos::ParameterList& ifpackParams = lsParams.sublist("Ifpack");
-  //ifpackParams.set("fact: level-of-fill", 1);
+    // Create the NOX printing parameter list
+    Teuchos::ParameterList& nlPrintParams = nlParams.sublist("Printing");
+    nlPrintParams.set("MyPID", MyPID);
+    nlPrintParams.set("Output Precision", 6);
+    nlPrintParams.set("Output Information",
+        NOX::Utils::OuterIteration +
+        NOX::Utils::OuterIterationStatusTest +
+        NOX::Utils::InnerIteration +
+        NOX::Utils::Details +
+        NOX::Utils::LinearSolverDetails +
+        NOX::Utils::Warning +
+        NOX::Utils::StepperIteration +
+        NOX::Utils::StepperDetails +
+        NOX::Utils::StepperParameters);
 
-  // Create and initialize the parameter vector
-  LOCA::ParameterVector pVector;
-  pVector.addParameter("Nonlinear Factor",nonlinear_factor);
-  pVector.addParameter("Left BC", left_bc);
-  pVector.addParameter("Right BC", right_bc);
+    // Create the "Linear Solver" sublist for Newton's method
+    Teuchos::ParameterList& dirParams = nlParams.sublist("Direction");
+    Teuchos::ParameterList& newParams = dirParams.sublist("Newton");
+    Teuchos::ParameterList& lsParams = newParams.sublist("Linear Solver");
+    lsParams.set("Aztec Solver", "GMRES");
+    lsParams.set("Max Iterations", 200);
+    lsParams.set("Tolerance", 1e-6);
+    lsParams.set("Output Frequency", 50);
+    //lsParams.set("Scaling", "None");
+    //lsParams.set("Scaling", "Row Sum");
+    lsParams.set("Compute Scaling Manually", false);
+    lsParams.set("Preconditioner", "Ifpack");
+    lsParams.set("Ifpack Preconditioner", "ILU");
 
-  // Create the interface between the test problem and the nonlinear solver
-  // This is created by the user using inheritance of the abstract base class:
-  Teuchos::RCP<Problem_Interface> interface =
-    Teuchos::rcp(new Problem_Interface(Problem));
-  Teuchos::RCP<LOCA::Epetra::Interface::TimeDependent> iReq = interface;
-  Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = interface;
+    //lsParams.set("Preconditioner", "New Ifpack");
+    //Teuchos::ParameterList& ifpackParams = lsParams.sublist("Ifpack");
+    //ifpackParams.set("fact: level-of-fill", 1);
 
-  // Create the Epetra_RowMatrixfor the Jacobian/Preconditioner
-  Teuchos::RCP<Epetra_RowMatrix> Amat =
-    Teuchos::rcp(&Problem.getJacobian(),false);
+    // Create and initialize the parameter vector
+    LOCA::ParameterVector pVector;
+    pVector.addParameter("Nonlinear Factor",nonlinear_factor);
+    pVector.addParameter("Left BC", left_bc);
+    pVector.addParameter("Right BC", right_bc);
 
-  // Create scaling object
-  Teuchos::RCP<NOX::Epetra::Scaling> scaling = Teuchos::null;
-//   scaling = Teuchos::rcp(new NOX::Epetra::Scaling);
-//   Teuchos::RCP<Epetra_Vector> scalingVector =
-//     Teuchos::rcp(new Epetra_Vector(soln.Map()));
-//   //scaling->addRowSumScaling(NOX::Epetra::Scaling::Left, scalingVector);
-//   scaling->addColSumScaling(NOX::Epetra::Scaling::Right, scalingVector);
+    // Create the interface between the test problem and the nonlinear solver
+    // This is created by the user using inheritance of the abstract base class:
+    Teuchos::RCP<Problem_Interface> interface =
+      Teuchos::rcp(new Problem_Interface(Problem));
+    Teuchos::RCP<LOCA::Epetra::Interface::TimeDependent> iReq = interface;
+    Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = interface;
 
-  // Create transpose scaling object
-  Teuchos::RCP<NOX::Epetra::Scaling> trans_scaling = Teuchos::null;
-//   trans_scaling = Teuchos::rcp(new NOX::Epetra::Scaling);
-//   Teuchos::RCP<Epetra_Vector> transScalingVector =
-//     Teuchos::rcp(new Epetra_Vector(soln.Map()));
-//   trans_scaling->addRowSumScaling(NOX::Epetra::Scaling::Right,
-//                   transScalingVector);
-//   trans_scaling->addColSumScaling(NOX::Epetra::Scaling::Left,
-//                   transScalingVector);
-  //bifurcationList.set("Transpose Scaling", trans_scaling);
+    // Create the Epetra_RowMatrixfor the Jacobian/Preconditioner
+    Teuchos::RCP<Epetra_RowMatrix> Amat =
+      Teuchos::rcp(&Problem.getJacobian(),false);
 
-  // Create the linear systems
-  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linsys =
-    Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(nlPrintParams, lsParams,
-                              iReq, iJac, Amat, soln,
-                              scaling));
+    // Create scaling object
+    Teuchos::RCP<NOX::Epetra::Scaling> scaling = Teuchos::null;
+    //   scaling = Teuchos::rcp(new NOX::Epetra::Scaling);
+    //   Teuchos::RCP<Epetra_Vector> scalingVector =
+    //     Teuchos::rcp(new Epetra_Vector(soln.Map()));
+    //   //scaling->addRowSumScaling(NOX::Epetra::Scaling::Left, scalingVector);
+    //   scaling->addColSumScaling(NOX::Epetra::Scaling::Right, scalingVector);
 
-  // Create the loca vector
-  NOX::Epetra::Vector locaSoln(soln);
+    // Create transpose scaling object
+    Teuchos::RCP<NOX::Epetra::Scaling> trans_scaling = Teuchos::null;
+    //   trans_scaling = Teuchos::rcp(new NOX::Epetra::Scaling);
+    //   Teuchos::RCP<Epetra_Vector> transScalingVector =
+    //     Teuchos::rcp(new Epetra_Vector(soln.Map()));
+    //   trans_scaling->addRowSumScaling(NOX::Epetra::Scaling::Right,
+    //                   transScalingVector);
+    //   trans_scaling->addColSumScaling(NOX::Epetra::Scaling::Left,
+    //                   transScalingVector);
+    //bifurcationList.set("Transpose Scaling", trans_scaling);
 
-  // Create Epetra factory
-  Teuchos::RCP<LOCA::Abstract::Factory> epetraFactory =
-    Teuchos::rcp(new LOCA::Epetra::Factory);
+    // Create the linear systems
+    Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linsys =
+      Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(nlPrintParams, lsParams,
+            iReq, iJac, Amat, soln,
+            scaling));
 
-  // Create global data object
-  Teuchos::RCP<LOCA::GlobalData> globalData =
-    LOCA::createGlobalData(paramList, epetraFactory);
+    // Create the loca vector
+    NOX::Epetra::Vector locaSoln(soln);
 
-  // Create the Group
-  Teuchos::RCP<LOCA::Epetra::Group> grp =
-    Teuchos::rcp(new LOCA::Epetra::Group(globalData, nlPrintParams, iReq,
-                     locaSoln, linsys, linsys,
-                     pVector));
+    // Create Epetra factory
+    Teuchos::RCP<LOCA::Abstract::Factory> epetraFactory =
+      Teuchos::rcp(new LOCA::Epetra::Factory);
 
-  // Inject FreeEnergy interface into the group
-  Teuchos::RCP<LOCA::Epetra::Interface::FreeEnergy> iFE = interface;
-  grp->setFreeEnergyInterface(iFE);
+    // Create global data object
+    Teuchos::RCP<LOCA::GlobalData> globalData =
+      LOCA::createGlobalData(paramList, epetraFactory);
 
-  grp->computeF();
+    // Create the Group
+    Teuchos::RCP<LOCA::Epetra::Group> grp =
+      Teuchos::rcp(new LOCA::Epetra::Group(globalData, nlPrintParams, iReq,
+            locaSoln, linsys, linsys,
+            pVector));
 
-  // Create the Solver convergence test
-  //NOX::StatusTest::NormWRMS wrms(1.0e-2, 1.0e-8);
-  Teuchos::RCP<NOX::StatusTest::NormF> wrms =
-    Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-12));
-  Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters =
-    Teuchos::rcp(new NOX::StatusTest::MaxIters(locaStepperList.get("Max Nonlinear Iterations", 10)));
-  Teuchos::RCP<NOX::StatusTest::Combo> combo =
-    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
-  combo->addStatusTest(wrms);
-  combo->addStatusTest(maxiters);
+    // Inject FreeEnergy interface into the group
+    Teuchos::RCP<LOCA::Epetra::Interface::FreeEnergy> iFE = interface;
+    grp->setFreeEnergyInterface(iFE);
 
-  // Create the stepper
-  LOCA::Stepper stepper(globalData, grp, combo, paramList);
-  LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
+    grp->computeF();
 
-  if (status == LOCA::Abstract::Iterator::Finished)
-    globalData->locaUtils->out() << "All tests passed" << std::endl;
-  else {
-    if (globalData->locaUtils->isPrintType(NOX::Utils::Error))
+    // Create the Solver convergence test
+    //NOX::StatusTest::NormWRMS wrms(1.0e-2, 1.0e-8);
+    Teuchos::RCP<NOX::StatusTest::NormF> wrms =
+      Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-12));
+    Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters =
+      Teuchos::rcp(new NOX::StatusTest::MaxIters(locaStepperList.get("Max Nonlinear Iterations", 10)));
+    Teuchos::RCP<NOX::StatusTest::Combo> combo =
+      Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
+    combo->addStatusTest(wrms);
+    combo->addStatusTest(maxiters);
+
+    // Create the stepper
+    LOCA::Stepper stepper(globalData, grp, combo, paramList);
+    LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
+
+    if (status == LOCA::Abstract::Iterator::Finished)
+      globalData->locaUtils->out() << "All tests passed" << std::endl;
+    else {
+      if (globalData->locaUtils->isPrintType(NOX::Utils::Error))
+        globalData->locaUtils->out()
+          << "Stepper failed to converge!" << std::endl;
+    }
+
+    // Output the parameter list
+    if (globalData->locaUtils->isPrintType(NOX::Utils::StepperParameters)) {
       globalData->locaUtils->out()
-    << "Stepper failed to converge!" << std::endl;
+        << std::endl << "Final Parameters" << std::endl
+        << "****************" << std::endl;
+      stepper.getList()->print(globalData->locaUtils->out());
+      globalData->locaUtils->out() << std::endl;
+    }
+
+    LOCA::destroyGlobalData(globalData);
+
+    success = ierr==0;
   }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-  // Output the parameter list
-  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperParameters)) {
-    globalData->locaUtils->out()
-      << std::endl << "Final Parameters" << std::endl
-      << "****************" << std::endl;
-    stepper.getList()->print(globalData->locaUtils->out());
-    globalData->locaUtils->out() << std::endl;
-  }
-
-  LOCA::destroyGlobalData(globalData);
-
-#ifdef HAVE_MPI
-  MPI_Finalize() ;
-#endif
-
-/* end main
-*/
-return ierr ;
+  /* end main
+  */
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }

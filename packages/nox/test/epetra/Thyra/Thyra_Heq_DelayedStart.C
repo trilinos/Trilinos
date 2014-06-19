@@ -85,32 +85,32 @@ int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
-  // Parse the command line
-  using Teuchos::CommandLineProcessor;
-  CommandLineProcessor  clp;
-  clp.throwExceptions(false);
-  clp.addOutputSetupOptions(true);
+  bool success = false;
   bool verbose = false;
-  clp.setOption( "v", "disable-verbosity", &verbose, "Enable verbosity" );
-
-  CommandLineProcessor::EParseCommandLineReturn
-    parse_return = clp.parse(argc,argv,&std::cerr);
-
-  if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL )
-    return parse_return;
-
-  if (verbose)
-    std::cout << "Verbosity Activated" << std::endl;
-  else
-    std::cout << "Verbosity Disabled" << std::endl;
-
-  bool success = true;
   try {
-      // Create a communicator for Epetra objects
+    // Parse the command line
+    using Teuchos::CommandLineProcessor;
+    CommandLineProcessor  clp;
+    clp.throwExceptions(false);
+    clp.addOutputSetupOptions(true);
+    clp.setOption( "v", "disable-verbosity", &verbose, "Enable verbosity" );
+
+    CommandLineProcessor::EParseCommandLineReturn
+      parse_return = clp.parse(argc,argv,&std::cerr);
+
+    if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL )
+      return parse_return;
+
+    if (verbose)
+      std::cout << "Verbosity Activated" << std::endl;
+    else
+      std::cout << "Verbosity Disabled" << std::endl;
+
+    // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
-      Epetra_MpiComm Comm( MPI_COMM_WORLD );
+    Epetra_MpiComm Comm( MPI_COMM_WORLD );
 #else
-      Epetra_SerialComm Comm;
+    Epetra_SerialComm Comm;
 #endif
 
     const int num_elements = 400;
@@ -119,8 +119,8 @@ int main(int argc, char *argv[])
     // for more than one proc
     if (Comm.NumProc() > num_elements) {
       std::cerr << "Error! Number of elements must be greate than number of processors!"
-                << std::endl;
-      return -1;
+        << std::endl;
+      return EXIT_FAILURE;
     }
 
     // Create the model evaluator object
@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
 
     Teuchos::RCP<NOX::Thyra::Group> nox_group =
       Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, model));
-      //Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, model, model->create_W_op(), lowsFactory, Teuchos::null, Teuchos::null));
+    //Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, model, model->create_W_op(), lowsFactory, Teuchos::null, Teuchos::null));
 
     nox_group->computeF();
 
@@ -200,13 +200,12 @@ int main(int argc, char *argv[])
     if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Output").get("Nonlinear Iterations", 0) != 14)
       status = 2;
 
-    if (status == 0) {
+    success = status==0;
+
+    if (success)
       std::cout << "Test passed!" << std::endl;
-      success = true;
-    } else {
+    else
       std::cout << "Test failed!" << std::endl;
-      success = false;
-    }
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
