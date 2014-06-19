@@ -161,10 +161,10 @@ class ProblemHandler():
   def runExample(self):
     # runs example
     print "PREPARE SIMULATON"
-    cmd = "rm *.vtp *.mat example*.txt output.log aggs*.txt"
+    cmd = "rm *.vtp *.mat example*.txt output.log aggs*.txt nodes*.txt"
     runCommand(cmd)
     print "RUN EXAMPLE"
-    cmd = "mpirun -np " + str(self.numprocs) + " " + str(self.executable) + " --nx=" + str(self.meshx) + " --ny=" + str(self.meshy) + " --mgridSweeps=" + str(self.mgsweeps) + " --xml=" + str(self.xmlFileName) + " | tee output.log"
+    cmd = "mpirun -np " + str(self.numprocs) + " " + str(self.executable) + " --nx=" + str(self.meshx) + " --ny=" + str(self.meshy) + " --mgridSweeps=" + str(self.mgsweeps) + " --xml=" + str(self.xmlFileName) + " | tee output.log 2>&1"
     print cmd
     runCommand(cmd)
     runCommand("echo 'Press q to return.' >> output.log")
@@ -319,7 +319,7 @@ class ProblemHandler():
       
   def doExitProgram(self):
     print "CLEAN UP temporary data"
-    cmd = "rm *.vtp *.mat example*.txt output.log aggs*.txt"
+    cmd = "rm *.vtp *.mat example*.txt output.log aggs*.txt nodes*.txt"
     runCommand(cmd)
     print "QUIT"
     sys.exit()  
@@ -333,7 +333,7 @@ class ProblemHandler():
     if self.xmlFileName == "" or not os.path.isfile(self.xmlFileName) or not os.access(self.xmlFileName, os.R_OK):
       print bcolors.FAIL+"Solver xml parameters: "+bcolors.ENDC + str(self.xmlFileName) + bcolors.FAIL + " invalid" + bcolors.ENDC
     else:
-      print bcolors.WARNING+"Solver xml parameters:            "+bcolors.ENDC + str(self.xmlFileName)
+      print bcolors.WARNING+"Solver xml parameters:              "+bcolors.ENDC + str(self.xmlFileName)
     print bcolors.WARNING+"Number of processors:               "+bcolors.ENDC + str(self.numprocs)
     print bcolors.WARNING+"Number of Multigrid solving sweeps: "+bcolors.ENDC + str(self.mgsweeps)
     print bcolors.HEADER+"***************************   PROBLEM   ****************************"+bcolors.ENDC
@@ -366,6 +366,12 @@ class MueLu_XMLgenerator():
     
     # restriction operators
     self.restrictionOp = "TransPFactory"
+    
+    # rebalancing
+    self.doRebalancing = False
+    self.minRowsPerProc = 800
+    self.nnzImbalance = 1.1
+    self.rebStartLevel = 1
     
     self.isDirty = True                   # flag to store, whether changes have been saved or not
     self.exitLoop = False                 # set to true to exit current loop
@@ -455,6 +461,18 @@ class MueLu_XMLgenerator():
     self.restrictionOp = "GenericRFactory"
     self.isDirty = True
   
+  # Rebalancing
+  def doRebalancingOption(self):
+    self.doRebalancing = True
+    self.minRowsPerProc = raw_input("Minimum number of DOFs per processor: ")
+    self.nnzImbalance = raw_input("Max. nonzero imbalance (default 1.1): ")
+    self.rebStartLevel = raw_input("Start rebalancing on level (default 1): ")
+    self.isDirty = True
+    
+  def doNoRebalancingOption(self):
+    self.doRebalancing = False
+    self.isDirty = True
+  
   def runMenu(self,options,callbacks):
     for i,option in enumerate(options):
       print('%s. %s' % (i, option)) # display all options
@@ -472,7 +490,9 @@ class MueLu_XMLgenerator():
   def doAggregatesMenu(self):
     options = ['Drop tolerance', 'Min. aggregate size', 'Max. aggregate size', 'Max. Neighbor Count', 'Back']
     callbacks = [self.doDropTolerance,self.doMinAggSize, self.doMaxAggSize, self.doMaxNeigh, self.askForSolver]
-    self.runMenu(options,callbacks)   
+    while self.exitLoop == False:
+      self.runMenu(options,callbacks)
+    self.exitLoop=True #False 
  
   def doSmootherMenu(self):
     options = ['Jacobi', 'Gauss-Seidel', 'Sym. Gauss-Seidel', 'Back']
@@ -488,7 +508,12 @@ class MueLu_XMLgenerator():
     options = ['Symmetric', 'Non-symmetric', 'Back']
     callbacks = [self.doSymR,self.doNonsymR, self.askForSolver]
     self.runMenu(options,callbacks)      
-      
+   
+  def doRebalancingMenu(self):
+    options = ['No rebalancing', 'Activate rebalancing', 'Back']
+    callbacks = [self.doNoRebalancingOption,self.doRebalancingOption, self.askForSolver]
+    self.runMenu(options,callbacks)      
+   
   def doExitProgram(self):
     #sys.exit() 
     print "doEXIT"
@@ -502,8 +527,8 @@ class MueLu_XMLgenerator():
     
     #options = ['Set Output file name','Common Multigrid settings', 'Level smoother settings', 'Transfer operators', 'Restriction operators', 'Save XML file', 'Exit']
     #callbacks = [self.doFileName, self.doCommonMenu, self.doSmootherMenu, self.doTransferMenu, self.doRestrictorMenu, self.generateXMLfile, self.doExitProgram]
-    options = ['Common Multigrid settings', 'Aggregate settings', 'Level smoother settings', 'Transfer operators', 'Restriction operators', 'Save XML file', 'Back']
-    callbacks = [self.doCommonMenu, self.doAggregatesMenu, self.doSmootherMenu, self.doTransferMenu, self.doRestrictorMenu, self.generateXMLfile, self.doExitProgram]
+    options = ['Common Multigrid settings', 'Aggregate settings', 'Level smoother settings', 'Transfer operators', 'Restriction operators', 'Rebalancing options', 'Save XML file', 'Back']
+    callbacks = [self.doCommonMenu, self.doAggregatesMenu, self.doSmootherMenu, self.doTransferMenu, self.doRestrictorMenu, self.doRebalancingMenu, self.generateXMLfile, self.doExitProgram]
     
     self.runMenu(options,callbacks)      
         
@@ -529,6 +554,14 @@ class MueLu_XMLgenerator():
     print bcolors.WARNING+"Transfer smoothing par.:"+bcolors.ENDC + str(self.transferOpDamp)
     print ""
     print bcolors.WARNING+"Restriction operator:   "+bcolors.ENDC + str(self.restrictionOp)
+    print ""
+    if self.doRebalancing == False:
+      print bcolors.WARNING+"NO Rebalancing"+bcolors.ENDC
+    else:
+      print bcolors.WARNING+"Rebalancing active:"+ bcolors.ENDC
+      print bcolors.WARNING+"Minimum DOFs per proc:  "+ bcolors.ENDC + str(self.minRowsPerProc)
+      print bcolors.WARNING+"Nonzero imbalance:      "+ bcolors.ENDC + str(self.nnzImbalance)      
+      print bcolors.WARNING+"Start level for rebal.: "+ bcolors.ENDC + str(self.rebStartLevel)
     print bcolors.HEADER+"***************************   SETTINGS   ****************************"+bcolors.ENDC
     
     print ""
@@ -556,6 +589,15 @@ class MueLu_XMLgenerator():
       line = line.replace("$MAXNEIGH"    , str(self.maxNeighCount))
       line = line.replace("$MINAGGS"    , str(self.minAggSize))
       line = line.replace("$MAXAGGS"    , str(self.maxAggSize))     
+      
+      if self.doRebalancing == False:
+	line = line.replace("$MANAGER_PROLONGATOR", str(self.transferOps))
+	line = line.replace("$MANAGER_RESTRICTOR",  "myRestrictorFact")
+	line = line.replace("$MANAGER_RAP", "myRAPFact")
+      else:
+	line = line.replace("$MANAGER_PROLONGATOR", "myRebalanceProlongatorFact")
+	line = line.replace("$MANAGER_RESTRICTOR",  "myRebalanceRestrictionFact")
+	line = line.replace("$MANAGER_RAP", "myRebalanceAFact")
       o.write(line)
     o.close() 
     self.isDirty = False

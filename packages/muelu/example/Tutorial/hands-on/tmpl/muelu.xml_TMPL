@@ -20,7 +20,7 @@
       <Parameter name="factory"                             type="string" value="UncoupledAggregationFactory"/>
       <Parameter name="Graph"                               type="string" value="myCoalesceDropFact"/>
       <Parameter name="DofsPerNode"                         type="string" value="myCoalesceDropFact"/>
-      <Parameter name="Ordering"                            type="string" value="Graph"/>
+      <Parameter name="Ordering"                            type="string" value="Natural"/>
       <Parameter name="MaxNeighAlreadySelected"             type="int"    value="$MAXNEIGH"/>
       <Parameter name="MinNodesPerAggregate"                type="int"    value="$MINAGGS"/>
       <Parameter name="MaxNodesPerAggregate"                type="int"    value="$MAXAGGS"/>
@@ -65,7 +65,7 @@
 	<!-- =======================  REPARTITIONING  ======================= -->
 
 	<!-- amalgamation of coarse level matrix -->
-    <!--<ParameterList name="myRebAmalgFact">
+    <ParameterList name="myRebAmalgFact">
       <Parameter name="factory"                             type="string" value="AmalgamationFactory"/>
       <Parameter name="A"                                   type="string" value="myRAPFact"/>
     </ParameterList>
@@ -80,7 +80,6 @@
       <Parameter name="factory"                             type="string" value="RepartitionInterface"/>
       <Parameter name="A"                                   type="string" value="myRAPFact"/>
       <Parameter name="AmalgamatedPartition"                type="string" value="myIsorropiaInterface"/>
-      <Parameter name="UnAmalgamationInfo"                  type="string" value="myRebAmalgFact"/>
     </ParameterList>
 
 
@@ -97,20 +96,21 @@
     <ParameterList name="myRebalanceProlongatorFact">
       <Parameter name="factory"                             type="string" value="RebalanceTransferFactory"/>
       <Parameter name="type"                                type="string" value="Interpolation"/>
-      <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
+      <Parameter name="P"                                   type="string" value="$PROLONGATOR"/>
+      <Parameter name="Nullspace"                           type="string" value="PA-AMG"/>
     </ParameterList>
 
     <ParameterList name="myRebalanceRestrictionFact">
       <Parameter name="factory"                             type="string" value="RebalanceTransferFactory"/>
       <Parameter name="type"                                type="string" value="Restriction"/>
       <Parameter name="R"                                   type="string" value="myRestrictorFact"/>
-      <Parameter name="Nullspace"                           type="string" value="myTentativePFact"/>
+      <!--<Parameter name="Nullspace"                           type="string" value="PA-AMG"/>-->
     </ParameterList>
 
     <ParameterList name="myRebalanceAFact">
       <Parameter name="factory"                             type="string" value="RebalanceAcFactory"/>
       <Parameter name="A"                                   type="string" value="myRAPFact"/>
-    </ParameterList> -->
+    </ParameterList>
     
     <!-- =======================  SMOOTHERS  ======================= -->
 
@@ -171,13 +171,14 @@
     <ParameterList name="AllLevel">
       <Parameter name="Smoother"                            type="string"   value="$SMOOTHER"/>
       <Parameter name="Aggregates"                          type="string"   value="UncoupledAggregationFact"/>
-      <Parameter name="Nullspace"                           type="string"   value="PA-AMG"/>
-      <Parameter name="P"                                   type="string"   value="$PROLONGATOR"/>
-      <Parameter name="R"                                   type="string"   value="myRestrictorFact"/>
-      <Parameter name="A"                                   type="string"   value="myRAPFact"/>
+      <Parameter name="Nullspace"                           type="string"   value="$MANAGER_PROLONGATOR"/>
+      <!--<Parameter name="Ptent"                               type="string"   value="PA-AMG"/>-->
+      <Parameter name="P"                                   type="string"   value="$MANAGER_PROLONGATOR"/>
+      <Parameter name="R"                                   type="string"   value="$MANAGER_RESTRICTOR"/>
+      <Parameter name="A"                                   type="string"   value="$MANAGER_RAP"/>
       <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/>      
-      <!-- <Parameter name="Importer"                            type="string"   value="myRepartitionFact"/> -->
-      <!-- <Parameter name="Graph"                               type="string"   value="myCoalesceDropFact"/> -->
+      <Parameter name="Importer"                            type="string"   value="myRepartitionFact"/>
+      <Parameter name="Graph"                               type="string"   value="myCoalesceDropFact"/>
     </ParameterList>
 
   </ParameterList>
