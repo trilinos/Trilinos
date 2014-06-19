@@ -296,10 +296,10 @@ TEST(UnitTestingOfBulkData, testChangeParts)
 
   if ( parallel ) {
     // If parallel, check that the entities are shared across all procs.
-    ASSERT_EQ( size_t(p_size - 1) , bulk.entity_comm_sharing(bulk.entity_key(entity_0_1)).size() );
-    ASSERT_EQ( size_t(p_size - 1) , bulk.entity_comm_sharing(bulk.entity_key(entity_1_1)).size() );
-    ASSERT_EQ( size_t(p_size - 1) , bulk.entity_comm_sharing(bulk.entity_key(entity_2_1)).size() );
-    ASSERT_EQ( size_t(p_size - 1) , bulk.entity_comm_sharing(bulk.entity_key(entity_3_1)).size() );
+    ASSERT_EQ( size_t(p_size - 1) , bulk.entity_comm_map_aura(bulk.entity_key(entity_0_1)).size() );
+    ASSERT_EQ( size_t(p_size - 1) , bulk.entity_comm_map_aura(bulk.entity_key(entity_1_1)).size() );
+    ASSERT_EQ( size_t(p_size - 1) , bulk.entity_comm_map_aura(bulk.entity_key(entity_2_1)).size() );
+    ASSERT_EQ( size_t(p_size - 1) , bulk.entity_comm_map_aura(bulk.entity_key(entity_3_1)).size() );
   }
 
   bulk.modification_begin();

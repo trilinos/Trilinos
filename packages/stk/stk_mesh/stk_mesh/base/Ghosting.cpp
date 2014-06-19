@@ -22,7 +22,7 @@ void Ghosting::send_list( std::vector< EntityProc > & v ) const
         i =  m_mesh.comm_list().begin() ;
         i != m_mesh.comm_list().end() ; ++i ){
     if ( i->owner == m_mesh.parallel_rank() ) {
-      for ( PairIterEntityComm ec = m_mesh.entity_comm(i->key) ; ! ec.empty() ; ++ec ) {
+      for ( PairIterEntityComm ec = m_mesh.entity_comm_map(i->key) ; ! ec.empty() ; ++ec ) {
         if ( ec->ghost_id == m_ordinal ) {
           v.push_back( EntityProc( i->entity , ec->proc ) );
         }
@@ -37,7 +37,7 @@ void Ghosting::receive_list( std::vector<EntityKey> & v ) const
         i =  m_mesh.comm_list().begin() ;
         i != m_mesh.comm_list().end() ; ++i ){
     if ( i->owner != m_mesh.parallel_rank() ) {
-      for ( PairIterEntityComm ec = m_mesh.entity_comm(i->key) ; ! ec.empty() ; ++ec ) {
+      for ( PairIterEntityComm ec = m_mesh.entity_comm_map(i->key) ; ! ec.empty() ; ++ec ) {
         if ( ec->ghost_id == m_ordinal ) {
           v.push_back(i->key);
         }
@@ -57,7 +57,7 @@ std::ostream& Ghosting::operator<<(std::ostream& out) const
         i =  m_mesh.comm_list().begin() ;
         i != m_mesh.comm_list().end() ; ++i ){
     if ( i->owner == m_mesh.parallel_rank() ) {
-      for ( PairIterEntityComm ec = m_mesh.entity_comm(i->key) ; ! ec.empty() ; ++ec ) {
+      for ( PairIterEntityComm ec = m_mesh.entity_comm_map(i->key) ; ! ec.empty() ; ++ec ) {
         if ( ec->ghost_id == m_ordinal ) {
           out << "    ";
           out << i->key.id();
@@ -73,7 +73,7 @@ std::ostream& Ghosting::operator<<(std::ostream& out) const
         i =  m_mesh.comm_list().begin() ;
         i != m_mesh.comm_list().end() ; ++i ) {
     if ( i->owner != m_mesh.parallel_rank() ) {
-      for ( PairIterEntityComm ec = m_mesh.entity_comm(i->key); !ec.empty(); ++ec ) {
+      for ( PairIterEntityComm ec = m_mesh.entity_comm_map(i->key); !ec.empty(); ++ec ) {
         if ( ec->ghost_id == m_ordinal ) {
           out << "    ";
           out << i->key.id();

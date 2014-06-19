@@ -130,7 +130,7 @@ void UnitTestStkMeshBulkModification::test_closure_of_non_locally_used_entities(
 {
   BulkData& bulk_data = initialize_ring_fixture();
 
-  const stk::mesh::Ghosting & ghost = bulk_data.shared_aura();
+  const stk::mesh::Ghosting & ghost = bulk_data.aura();
 
   std::vector<stk::mesh::EntityKey> ghost_receive ;
 

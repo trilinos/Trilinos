@@ -603,7 +603,7 @@ public:
    *          Is likely to be stale if ownership or sharing has changed
    *          and the 'modification_end' has not been called.
    */
-  Ghosting & shared_aura() const { return * m_ghosting[1] ; }
+  Ghosting & aura() const { return * m_ghosting[1] ; }
 
   /** Return the part corresponding to the specified ghosting.
    */
@@ -651,21 +651,21 @@ public:
 
   /** \brief  Entity Comm functions that are now moved to BulkData
    */
-  PairIterEntityComm entity_comm(const EntityKey & key) const { return m_entity_comm_map.comm(key); }
-  PairIterEntityComm entity_comm_sharing(const EntityKey & key) const { return m_entity_comm_map.sharing(key); }
-  PairIterEntityComm entity_comm(const EntityKey & key, const Ghosting & sub ) const { return m_entity_comm_map.comm(key,sub); }
-  bool entity_comm_insert(Entity entity, const EntityCommInfo & val) { return m_entity_comm_map.insert(entity_key(entity), val, parallel_owner_rank(entity)); }
-  bool entity_comm_erase(  const EntityKey & key, const EntityCommInfo & val) { return m_entity_comm_map.erase(key,val); }
-  bool entity_comm_erase(  const EntityKey & key, const Ghosting & ghost) { return m_entity_comm_map.erase(key,ghost); }
-  void entity_comm_clear_ghosting(const EntityKey & key ) { m_entity_comm_map.comm_clear_ghosting(key); }
-  void entity_comm_clear(const EntityKey & key) { m_entity_comm_map.comm_clear(key); }
-  int entity_comm_owner(const EntityKey & key) const;
+  PairIterEntityComm entity_comm_map(const EntityKey & key) const { return m_entity_comm_map.comm(key); }
+  PairIterEntityComm entity_comm_map_aura(const EntityKey & key) const { return m_entity_comm_map.aura(key); }
+  PairIterEntityComm entity_comm_map(const EntityKey & key, const Ghosting & sub ) const { return m_entity_comm_map.comm(key,sub); }
+  bool entity_comm_map_insert(Entity entity, const EntityCommInfo & val) { return m_entity_comm_map.insert(entity_key(entity), val, parallel_owner_rank(entity)); }
+  bool entity_comm_map_erase(  const EntityKey & key, const EntityCommInfo & val) { return m_entity_comm_map.erase(key,val); }
+  bool entity_comm_map_erase(  const EntityKey & key, const Ghosting & ghost) { return m_entity_comm_map.erase(key,ghost); }
+  void entity_comm_map_clear_ghosting(const EntityKey & key ) { m_entity_comm_map.comm_clear_ghosting(key); }
+  void entity_comm_map_clear(const EntityKey & key) { m_entity_comm_map.comm_clear(key); }
+  int entity_comm_map_owner(const EntityKey & key) const;
 
   // Comm-related convenience methods
 
-  bool in_shared(EntityKey key) const { return !entity_comm_sharing(key).empty(); }
+  bool in_aura(EntityKey key) const { return !entity_comm_map_aura(key).empty(); }
 
-  bool in_shared(EntityKey key, int proc) const;
+  bool in_aura(EntityKey key, int proc) const;
 
   bool in_receive_ghost( EntityKey key ) const;
 
@@ -678,9 +678,9 @@ public:
   bool in_ghost( const Ghosting & ghost , EntityKey key , int proc ) const;
 
   void comm_procs( EntityKey key, std::vector<int> & procs ) const; //shared and ghosted entities
-  void comm_shared_procs( EntityKey key, std::vector<int> & procs ) const; // shared entities
+  void comm_aura_procs( EntityKey key, std::vector<int> & procs ) const; // shared entities
 
-  void shared_procs_intersection( std::vector<EntityKey> & keys, std::vector<int> & procs ) const;
+  void aura_procs_intersection( std::vector<EntityKey> & keys, std::vector<int> & procs ) const;
 
   void comm_procs( const Ghosting & ghost ,
                    EntityKey key, std::vector<int> & procs ) const;
@@ -772,7 +772,7 @@ public:
     return m_entity_sync_counts[entity.local_offset()];
   }
 
-  enum edgeSharing { NOT_KNOWN=0, POSSIBLY_SHARED=1, IS_SHARED=2 };
+  enum edgeSharing { NOT_MARKED=0, POSSIBLY_SHARED=1, IS_SHARED=2 };
 
   void markEdge(Entity entity, edgeSharing sharedType)
   {
@@ -1340,15 +1340,19 @@ private:
   void internal_resolve_shared_modify_delete_second_pass();
   void internal_resolve_ghosted_modify_delete();
   void internal_resolve_parallel_create();
+  void resolve_ownership_of_modified_entities(const std::vector<stk::mesh::Entity> &shared_new);
+
   void internal_resolve_shared_membership();
-  void internal_update_distributed_index( std::vector<Entity> & shared_new );
+  void internal_update_distributed_index( std::vector<stk::mesh::Entity> & shared_new );
+  void move_entities_to_proper_part_ownership( const std::vector<stk::mesh::Entity> &shared_modified );
+  void update_comm_list(const std::vector<stk::mesh::Entity>& shared_modified);
 
   /** \brief  Regenerate the shared-entity aura,
    *          adding and removing ghosted entities as necessary.
    *
    *  - a collective parallel operation.
    */
-  void internal_regenerate_shared_aura();
+  void internal_regenerate_aura();
 
   void internal_basic_part_check(const Part* part,
                                  const unsigned ent_rank,
@@ -1869,7 +1873,7 @@ inline bool BulkData::internal_quick_verify_change_part(const Part* part,
 }
 
 inline
-int BulkData::entity_comm_owner(const EntityKey & key) const
+int BulkData::entity_comm_map_owner(const EntityKey & key) const
 {
   const int owner_rank = m_entity_comm_map.owner_rank(key);
   ThrowAssertMsg(owner_rank == InvalidProcessRank || owner_rank == parallel_owner_rank(get_entity(key)),
@@ -1882,8 +1886,8 @@ inline
 bool BulkData::in_receive_ghost( EntityKey key ) const
 {
   // Ghost communication with owner.
-  const int owner_rank = entity_comm_owner(key);
-  PairIterEntityComm ec = entity_comm(key);
+  const int owner_rank = entity_comm_map_owner(key);
+  PairIterEntityComm ec = entity_comm_map(key);
   return !ec.empty() && ec.front().ghost_id != 0 &&
          ec.front().proc == owner_rank;
 }
@@ -1891,7 +1895,7 @@ bool BulkData::in_receive_ghost( EntityKey key ) const
 inline
 bool BulkData::in_receive_ghost( const Ghosting & ghost , EntityKey key ) const
 {
-  const int owner_rank = entity_comm_owner(key);
+  const int owner_rank = entity_comm_map_owner(key);
   return in_ghost( ghost , key , owner_rank );
 }
 
@@ -1899,8 +1903,8 @@ inline
 bool BulkData::in_send_ghost( EntityKey key) const
 {
   // Ghost communication with non-owner.
-  const int owner_rank = entity_comm_owner(key);
-  PairIterEntityComm ec = entity_comm(key);
+  const int owner_rank = entity_comm_map_owner(key);
+  PairIterEntityComm ec = entity_comm_map(key);
   return ! ec.empty() && ec.back().ghost_id != 0 &&
     ec.back().proc != owner_rank;
 }

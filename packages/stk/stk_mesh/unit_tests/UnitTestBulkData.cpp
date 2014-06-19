@@ -94,7 +94,7 @@ void donate_one_element( BulkData & mesh , bool aura )
   for ( stk::mesh::EntityCommListInfoVector::const_iterator
         i =  mesh.comm_list().begin() ;
         i != mesh.comm_list().end() ; ++i ) {
-    if ( mesh.in_shared( i->key ) && i->key.rank() == BaseEntityRank ) {
+    if ( mesh.in_aura( i->key ) && i->key.rank() == BaseEntityRank ) {
       node_key = i->key;
       break;
     }
@@ -121,7 +121,7 @@ void donate_one_element( BulkData & mesh , bool aura )
   if ( 0 == p_rank ) {
     EntityProc entry ;
     entry.first = elem ;
-    entry.second = mesh.entity_comm_sharing(mesh.entity_key(node))[0].proc;
+    entry.second = mesh.entity_comm_map_aura(mesh.entity_key(node))[0].proc;
     change.push_back( entry );
 
     Entity const *elem_nodes_i = mesh.begin_nodes(elem);
@@ -173,7 +173,7 @@ void donate_all_shared_nodes( BulkData & mesh , bool aura )
         i != entity_comm.end() &&
         i->key.rank() == BaseEntityRank ; ++i ) {
     Entity const node = i->entity;
-    const stk::mesh::PairIterEntityComm ec = mesh.entity_comm_sharing(i->key);
+    const stk::mesh::PairIterEntityComm ec = mesh.entity_comm_map_aura(i->key);
 
     if ( mesh.parallel_owner_rank(node) == p_rank && ! ec.empty() ) {
       change.push_back( EntityProc( node , ec->proc ) );
@@ -1394,7 +1394,7 @@ TEST(UnitTestingOfBulkData, testChangeEntityPartsOfShared)
     mesh.modification_end();
 
     // Expect that this is a shared node
-    EXPECT_FALSE(mesh.entity_comm_sharing(mesh.entity_key(changing_node)).empty());
+    EXPECT_FALSE(mesh.entity_comm_map_aura(mesh.entity_key(changing_node)).empty());
 
     // Expect that part change had no impact since it was on the proc that did not end
     // up as the owner
@@ -1501,9 +1501,9 @@ TEST(UnitTestingOfBulkData, testParallelSideCreation)
     mesh.modification_end();
 
     // Expect that the side is not shared, but the nodes of side are shared
-    EXPECT_TRUE(mesh.entity_comm_sharing(mesh.entity_key(side)).empty());
-    EXPECT_FALSE(mesh.entity_comm_sharing(mesh.entity_key(side_nodes[0])).empty());
-    EXPECT_FALSE(mesh.entity_comm_sharing(mesh.entity_key(side_nodes[1])).empty());
+    EXPECT_TRUE(mesh.entity_comm_map_aura(mesh.entity_key(side)).empty());
+    EXPECT_FALSE(mesh.entity_comm_map_aura(mesh.entity_key(side_nodes[0])).empty());
+    EXPECT_FALSE(mesh.entity_comm_map_aura(mesh.entity_key(side_nodes[1])).empty());
 
     // Now "detect" that there is a duplicate aura side using the side nodes
     EntityVector sides;
@@ -1530,9 +1530,9 @@ TEST(UnitTestingOfBulkData, testParallelSideCreation)
     mesh.modification_end();
 
     // Expect that the side is shared, and nodes of side are shared
-    EXPECT_FALSE(mesh.entity_comm_sharing(mesh.entity_key(side)).empty());
-    EXPECT_FALSE(mesh.entity_comm_sharing(mesh.entity_key(side_nodes[0])).empty());
-    EXPECT_FALSE(mesh.entity_comm_sharing(mesh.entity_key(side_nodes[1])).empty());
+    EXPECT_FALSE(mesh.entity_comm_map_aura(mesh.entity_key(side)).empty());
+    EXPECT_FALSE(mesh.entity_comm_map_aura(mesh.entity_key(side_nodes[0])).empty());
+    EXPECT_FALSE(mesh.entity_comm_map_aura(mesh.entity_key(side_nodes[1])).empty());
 
     // Check that there is only a single side using the side nodes
     get_entities_through_relations(mesh, side_nodes, side_rank, sides);
@@ -1693,7 +1693,7 @@ static void test_sync_1(stk::mesh::BulkData& eMesh, PressureFieldType& pressure_
     fields.push_back(&pressure_field);
 
     // only the aura = !locally_owned_part && !globally_shared_part (outer layer)
-    if (sync_aura) stk::mesh::communicate_field_data(eMesh.shared_aura(), fields);
+    if (sync_aura) stk::mesh::communicate_field_data(eMesh.aura(), fields);
 
     // the shared part (just the shared boundary)
     if (sync_shared) stk::mesh::copy_owned_to_shared(eMesh, fields);
@@ -2170,8 +2170,8 @@ TEST(UnitTestBulkData, ChangeSharedOwner)
       }
       // We also expect the previously locally owned & shared nodes to not be locally owned now.
       for (size_t i=0 ; i<vec.size() ; ++i) {
-          EXPECT_TRUE( stkMeshBulkData.parallel_rank() != stkMeshBulkData.entity_comm_owner(stkMeshBulkData.entity_key(vec[i].first)) );
-          EXPECT_EQ( vec[i].second, stkMeshBulkData.entity_comm_owner(stkMeshBulkData.entity_key(vec[i].first)) );
+          EXPECT_TRUE( stkMeshBulkData.parallel_rank() != stkMeshBulkData.entity_comm_map_owner(stkMeshBulkData.entity_key(vec[i].first)) );
+          EXPECT_EQ( vec[i].second, stkMeshBulkData.entity_comm_map_owner(stkMeshBulkData.entity_key(vec[i].first)) );
       }
   }
 

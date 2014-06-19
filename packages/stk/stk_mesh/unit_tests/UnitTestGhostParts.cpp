@@ -62,7 +62,7 @@ TEST(UnitTestGhostParts, Aura)
   std::cerr<<"...got aura part with name="<<aura_part.name()<<std::endl;
   stk::mesh::Selector aura_selector = aura_part;
   
-  stk::mesh::Ghosting& aura_ghosting = stkMeshBulkData.shared_aura();
+  stk::mesh::Ghosting& aura_ghosting = stkMeshBulkData.aura();
   EXPECT_EQ(aura_part.mesh_meta_data_ordinal(), stkMeshBulkData.ghosting_part(aura_ghosting).mesh_meta_data_ordinal());
 
   stk::mesh::Selector not_owned_nor_shared = !stkMeshMetaData.locally_owned_part() & !stkMeshMetaData.globally_shared_part();

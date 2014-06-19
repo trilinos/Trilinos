@@ -68,7 +68,7 @@ operator()(const BulkData& mesh, CommAll & sparse ) const
       if (ptr_beg == NULL || ptr_end == NULL) continue;
 
       for ( PairIterEntityComm
-              ec = mesh.entity_comm(i->key); ! ec.empty() && ec->ghost_id == 0 ; ++ec ) {
+              ec = mesh.entity_comm_map(i->key); ! ec.empty() && ec->ghost_id == 0 ; ++ec ) {
 
         CommBuffer & b = sparse.recv_buffer( ec->proc );
 
@@ -117,7 +117,7 @@ operator()(const BulkData& mesh, CommAll & sparse ) const
       if (ptr_beg == NULL || ptr_end == NULL) continue;
 
       for ( PairIterEntityComm
-              ec = mesh.entity_comm(i->key); ! ec.empty() && ec->ghost_id == 0 ; ++ec ) {
+              ec = mesh.entity_comm_map(i->key); ! ec.empty() && ec->ghost_id == 0 ; ++ec ) {
 
         CommBuffer & b = sparse.recv_buffer( ec->proc );
 
