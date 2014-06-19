@@ -3943,10 +3943,6 @@ void BulkData::internal_change_ghosting(
 
   BABBLE_STK_PARALLEL_COMM(m_parallel_machine, "      entered internal_change_ghosting");
 
-  const MetaData & meta = m_mesh_meta_data ;
-  const unsigned rank_count = meta.entity_rank_count();
-  const int p_size = m_parallel_size ;
-
   //------------------------------------
   // Copy ghosting lists into more efficiently edited container.
   // The send and receive lists must be in entity rank-order.
