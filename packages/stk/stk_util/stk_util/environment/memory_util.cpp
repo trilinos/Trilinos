@@ -12,7 +12,12 @@
 #include<mach/mach_init.h>
 #endif
 #ifdef __linux__
-#define PROCFS
+#  ifdef BGQ_LWK
+#    include <spi/include/kernel/memory.h>
+#    include <spi/include/kernel/location.h>
+#  else
+#    define PROCFS
+#  endif
 #endif
 
 namespace stk
@@ -41,6 +46,11 @@ size_t get_memory_usage_now()
   unsigned long total_free, largest_free, total_used;
   heap_info( &frags, &total_free, &largest_free, &total_used );
   memory = total_used * 1024;
+
+#elif defined(BGQ_LWK)
+  uint64_t heap;
+  Kernel_GetMemorySize(KERNEL_MEMSIZE_HEAP, &heap);
+  memory = heap;
 
 #elif defined(PROCFS)
   unsigned long rss_pages = 0;
