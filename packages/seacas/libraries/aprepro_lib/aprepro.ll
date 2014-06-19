@@ -589,40 +589,49 @@ namespace SEAMS {
     if (aprepro.ap_file_list.size() <= 1) {		/* End of main file, not in nested include */
       return (1);
     }
+    else if (aprepro.string_interactive() && loop_lvl) {
+        return (1);
+    }
     else {
       /* We are in an included or looping file */
       if (aprepro.ap_file_list.top().tmp_file) {
-	if (aprepro.ap_options.debugging)
-	  std::cerr << "DEBUG LOOP: Loop count = " << aprepro.ap_file_list.top().loop_count << "\n";
-	if (--aprepro.ap_file_list.top().loop_count <= 0)  {
-	  if (strcmp("_string_", aprepro.ap_file_list.top().name.c_str()) != 0) {
-	    if (!aprepro.ap_options.debugging)
-	      remove(aprepro.ap_file_list.top().name.c_str());	/* Delete file if temporary */
-	  }
-	  delete yyin;
-	  aprepro.ap_file_list.pop(); 
-	  yyFlexLexer::yypop_buffer_state();
-	}
-	else {
-	  // Do not pop ap_file_list; we are rereading that file...
-	  delete yyin;
-	  yyFlexLexer::yypop_buffer_state();
-	  yyin = aprepro.open_file(aprepro.ap_file_list.top().name, "r");
-	  yyFlexLexer::yypush_buffer_state (yyFlexLexer::yy_create_buffer(yyin, YY_BUF_SIZE));
-	  aprepro.ap_file_list.top().lineno = 0;
-	}
+        if (aprepro.ap_options.debugging)
+          std::cerr << "DEBUG LOOP: Loop count = " << aprepro.ap_file_list.top().loop_count << "\n";
+        if (--aprepro.ap_file_list.top().loop_count <= 0)  {
+          // On Windows, you can't remove the temp file until all the references to the
+          // file object have been released, so we will delete it here.
+          delete yyin;
+
+          if (strcmp("_string_", aprepro.ap_file_list.top().name.c_str()) != 0) {
+            if (!aprepro.ap_options.debugging)
+              remove(aprepro.ap_file_list.top().name.c_str());	/* Delete file if temporary */
+          }
+
+          aprepro.ap_file_list.pop();
+          yyFlexLexer::yypop_buffer_state();
+        }
+        else {
+          // Do not pop ap_file_list; we are rereading that file...
+          delete yyin;
+          yyFlexLexer::yypop_buffer_state();
+          yyin = aprepro.open_file(aprepro.ap_file_list.top().name, "r");
+          yyFlexLexer::yypush_buffer_state (yyFlexLexer::yy_create_buffer(yyin, YY_BUF_SIZE));
+          aprepro.ap_file_list.top().lineno = 0;
+        }
       }
       else {
-	delete yyin;
-	yyFlexLexer::yypop_buffer_state();
-	aprepro.ap_file_list.pop();
-	/* Turn echoing back on at end of included files. */
-	echo = true;
-	/* Set immutable mode back to global immutable 
-	 * state at end of included file
-	 */
-	aprepro.stateImmutable = aprepro.ap_options.immutable;	
+        delete yyin;
+        yyFlexLexer::yypop_buffer_state();
+        aprepro.ap_file_list.pop();
+
+        /* Turn echoing back on at end of included files. */
+        echo = true;
+
+        /* Set immutable mode back to global immutable
+        * state at end of included file*/
+        aprepro.stateImmutable = aprepro.ap_options.immutable;
       }
+
       return (0);
     }
   }
