@@ -123,14 +123,14 @@ namespace MueLu {
     Xpetra::global_size_t N = rowMap->getGlobalNumElements();
 
     int V;
-    Xpetra::global_size_t n = round(sqrt(N));
+    size_t n = as<size_t>(sqrt(N));
     if (N == n*n) {
       // pressure mode
       V = 1;
       GetOStream(Runtime1) << "Pressure mode" << std::endl;
 
     } else {
-      n = round(sqrt(N/2));
+      n = as<size_t>(sqrt(N/2));
 
       if (N == 2*n*n) {
         // velocity mode

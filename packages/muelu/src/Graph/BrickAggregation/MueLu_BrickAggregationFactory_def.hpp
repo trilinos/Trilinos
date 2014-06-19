@@ -288,9 +288,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<typename BrickAggregationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::container> BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Construct1DMap(const RCP<const Teuchos::Comm<int> >& comm, const ArrayRCP<const Scalar>& x) const {
-    int numProcs = comm->getSize();
     int n = x.size();
-
 
     // Step 1: Create a local vector with unique coordinate points
     RCP<container> gMap = rcp(new container);
@@ -301,6 +299,7 @@ namespace MueLu {
     // Step 2: exchange coordinates
     // NOTE: we assume the coordinates are double, or double compatible
     // That means that for complex case, we assume that all imaginary parts are zeros
+    int numProcs = comm->getSize();
     if (numProcs > 1) {
       RCP<const Teuchos::MpiComm<int> > dupMpiComm = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm->duplicate());
 
