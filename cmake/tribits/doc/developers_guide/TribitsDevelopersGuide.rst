@@ -538,9 +538,9 @@ units are:
   Subpackages`_ that constitute the basic *Software Engineering* packages (see
   `Software Engineering Packaging Principles`_) of a TriBITS project: SE
   packages are the basis for setting dependencies in the TriBITS system.  For
-  example, the SE Packages provided by the top-level example
-  ``PackageWithSubpackages`` is (in order of increasing dependencies)
-  ``PackageWithSubpackagesSubpackageA``, ``PackageWithSubpackagesSubpackaeB``,
+  example, the SE Packages provided by the top-level example package
+  ``PackageWithSubpackages`` (in order of increasing dependencies) are
+  ``PackageWithSubpackagesSubpackageA``, ``PackageWithSubpackagesSubpackageB``,
   ``PackageWithSubpackagesSubpackageC``, and ``PackageWithSubpackages`` (see
   `TribitsExampleProject`_).
 
