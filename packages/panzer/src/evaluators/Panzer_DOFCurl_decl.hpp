@@ -100,7 +100,9 @@ private:
   std::string basis_name;
   std::size_t basis_index;
   int basis_dimension;
-  bool specialize_sens;
+
+  bool accelerate_jacobian;
+  std::vector<int> offsets;
 
   PHX::MDField<ScalarT,Cell,BASIS> dof_orientation;
 };

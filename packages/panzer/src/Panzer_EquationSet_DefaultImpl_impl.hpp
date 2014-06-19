@@ -286,7 +286,6 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
   // DOFs: Scalar value @ basis --> Scalar value @ IP 
   for (DescriptorIterator dof_iter = m_provided_dofs_desc.begin(); dof_iter != m_provided_dofs_desc.end(); ++dof_iter) {
 
-    
     ParameterList p;
     p.set("Name", dof_iter->first);
     p.set("Basis", fl.lookupLayout(dof_iter->first));
@@ -353,6 +352,17 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
       p.set("Curl Name", dof_curl_name);
       p.set("Basis", fl.lookupLayout(dof_name)); 
       p.set("IR", ir);
+
+      // this will help accelerate the DOFCurl evaluator when Jacobians are needed
+      if(globalIndexer!=Teuchos::null) {
+        // build the offsets for this field
+        int fieldNum = globalIndexer->getFieldNum(dof_name);
+        RCP<const std::vector<int> > offsets = 
+            rcp(new std::vector<int>(globalIndexer->getGIDFieldOffsets(m_block_id,fieldNum)));
+        p.set("Jacobian Offsets Vector", offsets);
+      }
+      // else default to the slow DOF call
+    
       
       RCP< PHX::Evaluator<panzer::Traits> > op = 
         rcp(new panzer::DOFCurl<EvalT,panzer::Traits>(p));
@@ -374,6 +384,15 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
     p.set("Name", td_name);
     p.set("Basis", fl.lookupLayout(itr->first)); 
     p.set("IR", ir);
+
+    if(globalIndexer!=Teuchos::null) {
+      // build the offsets for this field
+      int fieldNum = globalIndexer->getFieldNum(itr->first);
+      RCP<const std::vector<int> > offsets = 
+          rcp(new std::vector<int>(globalIndexer->getGIDFieldOffsets(m_block_id,fieldNum)));
+      p.set("Jacobian Offsets Vector", offsets);
+    }
+    // else default to the slow DOF call
 
     // set the orientiation field name explicitly if orientations are
     // required for the basis

@@ -110,7 +110,6 @@ inline void evaluateDOF_fastSens(const int numCells,
                                  const std::vector<int> & offsets,
                                  ArrayT & basis)
 { 
-
   if(num_cells>0) {
     if(is_vector_basis) {
       int numFields = basis.dimension(1);
@@ -142,23 +141,13 @@ inline void evaluateDOF_fastSens(const int numCells,
 
     }
     else { // no orientation needed
-/*
-      // Zero out arrays (intrepid does a sum! 1/17/2012)
-      for (int i = 0; i < dof_ip.size(); ++i)
-        dof_ip[i] = 0.0;
-
-      Intrepid::FunctionSpaceTools::
-        evaluate<ScalarT>(dof_ip,dof_basis,basis);
-*/
       int numFields = basis.dimension(1);
       int numPoints = basis.dimension(2);
 
       int fadSize = dof_basis(0,0).size(); // this is supposed to be fast
                                            // so assume that everything is the
                                            // same size!
-      std::cout << "HERE nc = " << numCells << std::endl;
       for (int cell=0; cell<numCells; cell++) {
-        std::cout << "HERE " << cell << std::endl;
         for (int pt=0; pt<numPoints; pt++) {
           // first initialize to the right thing (prevents over writing with 0)
           // then loop over one less basis function
@@ -304,7 +293,6 @@ void DOF<panzer::Traits::Jacobian, Traits>::
 evaluateFields(typename Traits::EvalData workset)
 { 
   panzer::BasisValues<double,Intrepid::FieldContainer<double> > & basisValues = *workset.bases[basis_index];
-  std::cout << std::endl << "WNC = " << workset.num_cells << std::endl;
 
   if(accelerate_jacobian)
     evaluateDOF_fastSens(workset.num_cells,dof_basis,dof_ip,dof_orientation,is_vector_basis,workset.num_cells,offsets,basisValues.basis);

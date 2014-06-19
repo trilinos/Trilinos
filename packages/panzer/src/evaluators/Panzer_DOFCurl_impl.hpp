@@ -200,16 +200,19 @@ DOFCurl<panzer::Traits::Jacobian, Traits>::
 DOFCurl(const Teuchos::ParameterList & p) :
   dof_value( p.get<std::string>("Name"), 
 	     p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
-  basis_name(p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->name()),
-  specialize_sens(true)
+  basis_name(p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->name())
 {
   Teuchos::RCP<const PureBasis> basis 
      = p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->getBasis();
 
   // do you specialize because you know where the basis functions are and can
   // skip a large number of AD calculations?
-  if(p.isType<bool>("Specialize Sensitivities"))
-    specialize_sens = p.get<bool>("Specialize Sensitivities");
+  if(p.isType<Teuchos::RCP<const std::vector<int> > >("Jacobian Offsets Vector")) {
+    offsets = *p.get<Teuchos::RCP<const std::vector<int> > >("Jacobian Offsets Vector");
+    accelerate_jacobian = true;  // short cut for identity matrix
+  }
+  else
+    accelerate_jacobian = false; // don't short cut for identity matrix
 
   // Verify that this basis supports the curl operation
   TEUCHOS_TEST_FOR_EXCEPTION(!basis->supportsCurl(),std::logic_error,
@@ -252,7 +255,7 @@ template<typename Traits>
 void DOFCurl<panzer::Traits::Jacobian,Traits>::
 evaluateFields(typename Traits::EvalData workset)
 { 
-  if(!specialize_sens) {
+  if(!accelerate_jacobian) {
     // do the case where we use the AD types to determine the derivatives
     evaluateCurl_withSens<ScalarT>(workset.num_cells,basis_dimension,dof_curl,dof_value,workset.bases[basis_index]->curl_basis);
     return;
@@ -275,10 +278,10 @@ evaluateFields(typename Traits::EvalData workset)
             // then loop over one less basis function
             ScalarT & curl = dof_curl(cell,pt,d);
             curl = ScalarT(numFields, dof_value(cell, 0).val() * curl_basis(cell, 0, pt, d));
-            curl.fastAccessDx(0) = dof_value(cell, 0).fastAccessDx(0) * curl_basis(cell, 0, pt, d);
+            curl.fastAccessDx(offsets[0]) = dof_value(cell, 0).fastAccessDx(offsets[0]) * curl_basis(cell, 0, pt, d);
             for (int bf=1; bf<numFields; bf++) {
               curl.val() += dof_value(cell, bf).val() * curl_basis(cell, bf, pt, d);
-              curl.fastAccessDx(bf) += dof_value(cell, bf).fastAccessDx(bf) * curl_basis(cell, bf, pt, d);
+              curl.fastAccessDx(offsets[bf]) += dof_value(cell, bf).fastAccessDx(offsets[bf]) * curl_basis(cell, bf, pt, d);
             }
           }
         }
