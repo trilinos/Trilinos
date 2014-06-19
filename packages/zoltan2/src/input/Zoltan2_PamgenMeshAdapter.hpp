@@ -285,6 +285,18 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
 	if(3 == dimension_) {
 	  Acoords_[2 * num_nodes_ + a] += coords_[2 * num_nodes_ + node];
 	}
+
+	/*
+	 * in the case of degenerate elements, where a node can be
+	 * entered into the connect table twice, need to check to
+	 * make sure that this element is not already listed as
+	 * surrounding this node
+	 */
+	if (sur_elem[node].empty() ||
+	    element_num_map_[a] != sur_elem[node][sur_elem[node].size()-1]) {
+	  /* Add the element to the list */
+	  sur_elem[node].push_back(element_num_map_[a]);
+	}
       }
 
       Acoords_[a] /= num_nodes_per_elem[b];
