@@ -112,6 +112,6 @@ the sparse matrix, but you may <i>not</i> modify its graph structure.
 The following code example shows how to fill and compute with a Epetra
 sparse matrix, using the procedure discussed in the text above.
 
-\include lesson03_power_method.cpp
+\include ./lesson03_power_method.cpp
 
 */

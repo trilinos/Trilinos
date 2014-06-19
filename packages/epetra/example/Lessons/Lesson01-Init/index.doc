@@ -48,7 +48,7 @@ idiom for initializing MPI (if available) and getting an Epetra_Comm
 corresponding to MPI_COMM_WORLD.  The example works whether or not
 Trilinos was build with MPI support.
 
-\include lesson01_mpi_on_its_own.cpp
+\include ./lesson01_mpi_on_its_own.cpp
 
 \section Epetra_Lesson01_ExistingMpiCode Initialization for an existing MPI code
 
@@ -58,7 +58,7 @@ and calls MPI_Finalize at the end.  It also must get an MPI_Comm (an
 MPI communicator) somewhere, either by using a predefined communicator
 such as MPI_COMM_WORLD, or by creating a new one.
 
-\include lesson01_mpi_on_its_own.cpp
+\include ./lesson01_mpi_on_its_own.cpp
 
 \section Epetra_Lesson01_ExistingNonMpiCode Initialization for an existing non-MPI code
 
@@ -68,7 +68,7 @@ example above, or create an Epetra_SerialComm directly as the
 "communicator."  The following example shows how to create an
 Epetra_SerialComm.
 
-\include lesson01_no_mpi.cpp
+\include ./lesson01_no_mpi.cpp
 
 \section Epetra_Lesson01_Other Things we didn't explain above
 
