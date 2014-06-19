@@ -242,6 +242,10 @@ TEST(UnitTestingOfBulkData, testChangeParts)
     ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_A_0) );
   }
 
+  //now put the connections back, so that entity_2_1 has a connected node.
+  bulk.declare_relation( entity_3_1 , entity_0_1 , test_rel_id );
+  bulk.declare_relation( entity_2_1 , entity_0_1 , test_rel_id );
+  bulk.declare_relation( entity_1_1 , entity_0_1, test_rel_id );
   bulk.modification_end();
 
   //------------------------------
@@ -257,7 +261,7 @@ TEST(UnitTestingOfBulkData, testChangeParts)
 
   tmp = bulk.bucket(entity_0_1).supersets();
   if ( bulk.parallel_owner_rank(entity_0_1) == p_rank ) {
-    ASSERT_EQ( size_t(parallel ? 4 : 3) , tmp.size() );
+    ASSERT_EQ( size_t(parallel ? 8 : 7) , tmp.size() );
     ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_univ) );
     ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_owns) );
     if ( parallel )
@@ -266,7 +270,7 @@ TEST(UnitTestingOfBulkData, testChangeParts)
   }
   else {
     ASSERT_TRUE( parallel );
-    ASSERT_EQ( size_t(3) , tmp.size() );
+    ASSERT_EQ( size_t(7) , tmp.size() );
     ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_univ) );
     ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_shared) );
     ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_A_0) );
@@ -319,7 +323,7 @@ TEST(UnitTestingOfBulkData, testChangeParts)
 
   tmp = bulk.bucket(entity_0_1).supersets();
   if ( bulk.parallel_owner_rank(entity_0_1) == p_rank ) {
-    ASSERT_EQ( size_t(parallel ? 5 : 4) , tmp.size() );
+    ASSERT_EQ( size_t(parallel ? 9 : 8) , tmp.size() );
     ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_univ) );
     ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_owns) );
     if ( parallel )
@@ -328,7 +332,7 @@ TEST(UnitTestingOfBulkData, testChangeParts)
     ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_B_0) );
   }
   else {
-    ASSERT_EQ( size_t(3) , tmp.size() );
+    ASSERT_EQ( size_t(7) , tmp.size() );
     ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_univ) );
     ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_shared) );
     ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_A_0) );
@@ -341,7 +345,7 @@ TEST(UnitTestingOfBulkData, testChangeParts)
 
   tmp = bulk.bucket(entity_0_1).supersets();
   if ( bulk.parallel_owner_rank(entity_0_1) == p_rank ) {
-    ASSERT_EQ( size_t(parallel ? 5 : 4) , tmp.size() );
+    ASSERT_EQ( size_t(parallel ? 9 : 8) , tmp.size() );
     ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_univ) );
     ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_owns) );
     if ( parallel )
@@ -350,7 +354,7 @@ TEST(UnitTestingOfBulkData, testChangeParts)
     ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_B_0) );
   }
   else {
-    ASSERT_EQ( size_t(4) , tmp.size() );
+    ASSERT_EQ( size_t(8) , tmp.size() );
     ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_univ) );
     ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_shared) );
     ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_A_0) );

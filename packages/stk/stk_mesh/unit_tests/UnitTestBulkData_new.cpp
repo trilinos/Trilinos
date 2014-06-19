@@ -236,31 +236,6 @@ TEST ( UnitTestBulkData_new , verifyExplicitAddInducedPart )
 #endif
 }
 
-/************************
- * This unit test is not possible currently because of the lack of
- * separation between internal part modification routines and public
- * part modification routines.
-TEST ( UnitTestBulkData_new , verifyCannotRemoveFromSpecialParts )
-{
-  fixtures::BoxFixture fixture;
-  BulkData          &bulk = fixture.bulk_data();
-  PartVector         test_parts;
-  PartVector         out_parts;
-  PartVector         empty_vector;
-
-  Entity new_cell = bulk.declare_entity ( 3 , fixture.comm_rank()+1 , empty_vector );
-  test_parts.push_back ( &fixture.fem_meta().universal_part() );
-  ASSERT_THROW ( bulk.change_entity_parts ( new_cell , empty_vector , test_parts ) , std::runtime_error );
-  test_parts.clear();
-  test_parts.push_back ( &fixture.fem_meta().locally_owned_part() );
-  ASSERT_THROW ( bulk.change_entity_parts ( new_cell , empty_vector , test_parts ) , std::runtime_error );
-  test_parts.clear();
-  test_parts.push_back ( &fixture.fem_meta().globally_shared_part() );
-  ASSERT_THROW ( bulk.change_entity_parts ( new_cell , empty_vector , test_parts ) , std::runtime_error );
-}
- */
-
-
 TEST ( UnitTestBulkData_new , verifyDefaultPartAddition )
 {
   TestBoxFixture fixture;
@@ -268,6 +243,8 @@ TEST ( UnitTestBulkData_new , verifyDefaultPartAddition )
 
   bulk.modification_begin();
   Entity new_cell = fixture.get_new_entity ( stk::topology::ELEM_RANK , 1 );
+  Entity new_node = fixture.get_new_entity ( stk::topology::NODE_RANK , 1 );
+  bulk.declare_relation(new_cell, new_node, 0);
   bulk.modification_end();
 
   ASSERT_TRUE ( bulk.bucket(new_cell).member ( fixture.fem_meta().universal_part() ) );
@@ -288,6 +265,8 @@ TEST ( UnitTestBulkData_new , verifyChangePartsSerial )
 
   bulk.modification_begin();
   Entity new_cell = fixture.get_new_entity ( stk::topology::ELEM_RANK , 1 );
+  Entity new_node = fixture.get_new_entity ( stk::topology::NODE_RANK , 1 );
+  bulk.declare_relation(new_cell, new_node, 0);
   bulk.change_entity_parts ( new_cell , create_parts , empty_parts );
   bulk.modification_end();
   ASSERT_TRUE ( bulk.bucket(new_cell).member ( fixture.m_test_part ) );
@@ -368,15 +347,16 @@ TEST ( UnitTestBulkData_new , verifyInducedMembership )
 
   bulk.modification_begin();
 
+  Entity node0 = fixture.get_new_entity ( stk::topology::NODE_RANK , 2 );
   Entity node = fixture.get_new_entity ( stk::topology::NODE_RANK , 1 );
   Entity cell = fixture.get_new_entity ( stk::topology::ELEM_RANK , 1 );
-
-  bulk.modification_begin();
 
   bulk.change_entity_parts ( node , create_node_parts , PartVector () );
   bulk.change_entity_parts ( cell , create_cell_parts , PartVector () );
   // Add node to cell part
   RelationIdentifier cell_node_rel_id = 0;
+  bulk.declare_relation ( cell , node0 , cell_node_rel_id );
+  cell_node_rel_id = 1;
   bulk.declare_relation ( cell , node , cell_node_rel_id );
   bulk.modification_end();
 
@@ -403,6 +383,8 @@ TEST ( UnitTestBulkData_new , verifyCanRemoveFromSetWithDifferentRankSubset )
   bulk.modification_begin();
 
   Entity e = bulk.declare_entity ( stk::topology::ELEMENT_RANK , fixture.comm_rank()+1 , add_parts );
+  Entity n = bulk.declare_entity ( stk::topology::NODE_RANK , fixture.comm_rank()+1 , add_parts );
+  bulk.declare_relation(e, n, 0);
   bulk.modification_end();
 
   bulk.modification_begin();

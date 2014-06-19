@@ -5016,11 +5016,39 @@ void print_comm_list( const BulkData & mesh , bool doit )
 
 #endif
 
+namespace {
+
+int check_for_connected_nodes(const BulkData& mesh)
+{
+  //This function returns an old-fashioned int return-code which is 0 if all is well
+  //and -1 if an error is found.
+  //
+  //All EDGE_RANK and FACE_RANK entities must have at least 1 connected node.
+  for(stk::mesh::EntityRank rank=stk::topology::EDGE_RANK; rank<=stk::topology::FACE_RANK; ++rank) {
+    const stk::mesh::BucketVector& buckets = mesh.buckets(rank);
+    for(size_t i=0; i<buckets.size(); ++i) {
+      const stk::mesh::Bucket& bucket = *buckets[i];
+      for(size_t j=0; j<bucket.size(); ++j) {
+        if (bucket.num_nodes(j) < 1) {
+          std::cerr << "Entity with rank="<<rank<<", identifier="<<mesh.identifier(bucket[j])<<" has no connected nodes."<<std::endl;
+          return -1;
+        }
+      }
+    }
+  }
+  return 0;
+}
+
+}
+
+
 bool BulkData::internal_modification_end( bool regenerate_aura, modification_optimization opt )
 {
   Trace_("stk::mesh::BulkData::internal_modification_end");
 
   if ( m_sync_state == SYNCHRONIZED ) { return false ; }
+
+  ThrowAssertMsg(check_for_connected_nodes(*this)==0, "BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
 
   if (parallel_size() > 1) {
     // Resolve modification or deletion of shared entities

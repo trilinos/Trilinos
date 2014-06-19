@@ -67,6 +67,7 @@ namespace {
   Entity node = mesh.declare_entity(stk::topology::NODE_RANK, 1 /*id*/, parts);      \
                                                                         \
   mesh.declare_relation(elem, side1,  0 /*rel id*/);                    \
+  mesh.declare_relation(elem, node,  0 /*rel id*/);                    \
   mesh.declare_relation(elem, side2,  1 /*rel id*/);                    \
   mesh.declare_relation(side1, node,  0 /*rel id*/);                    \
   mesh.declare_relation(side2, node,  0 /*rel id*/);
@@ -87,17 +88,6 @@ TEST ( UnitTestInducedPart , verifyBasicInducedPart )
   EXPECT_TRUE(mesh.bucket(node).member( side_rank_part));
   EXPECT_TRUE(mesh.bucket(side1).member( element_rank_part));
   EXPECT_TRUE(mesh.bucket(side2).member( element_rank_part));
-}
-
-TEST ( UnitTestInducedPart , verifyNotTransitiveInducedPart )
-{
-  SETUP_MESH();
-
-  // Node should not have picked-up the element_rank_part indirectly through
-  // it's relation to the sides because induced-parts are not supposed to be
-  // transitive according to the STK_Mesh domain design.
-  // TODO: Are we sure we don't want induced parts to be transitive??
-  EXPECT_TRUE(!mesh.bucket(node).member( element_rank_part));
 }
 
 TEST ( UnitTestInducedPart, verifyInducedPartCorrectnessWhenRelationsRemoved )

@@ -173,6 +173,18 @@ TEST( UnderstandingDistributedIndex, ViaStkMeshBulkData)
 
         stkMeshBulkData.modification_begin();
         stkMeshBulkData.generate_new_entities(requests, requested_entities);
+
+        //each entity in requested_entities needs to be connected to at least one node
+        //because stk-mesh requires that.
+        size_t idx = requests[0];
+        stk::mesh::Entity node = totalCount>0 ? requested_entities[0] : stk::mesh::Entity();
+        for(size_t i=1; i<requests.size(); ++i) {
+          for(size_t j=0; j<requests[i]; ++j) {
+            stk::mesh::Entity entity = requested_entities[idx++];
+            stkMeshBulkData.declare_relation(entity, node, 0);
+          }
+        }
+
         stkMeshBulkData.modification_end();
 
         EXPECT_EQ(totalCount, requested_entities.size());

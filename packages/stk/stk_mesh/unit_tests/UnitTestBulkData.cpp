@@ -195,59 +195,6 @@ void donate_all_shared_nodes( BulkData & mesh , bool aura )
 
 } // empty namespace
 
-TEST(UnitTestingOfBulkData, testBulkData)
-{
-  // Unit test the Part functionality in isolation:
-
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
-  MPI_Barrier( pm );
-
-  std::vector<std::string> entity_names(5);
-  for ( size_t i = 0 ; i < 5 ; ++i ) {
-    std::ostringstream name ;
-    name << "EntityRank" << i ;
-    entity_names[i] = name.str();
-  }
-
-  unsigned spatial_dim = 3;
-  MetaData meta( spatial_dim, entity_names );
-
-  meta.commit();
-
-  BulkData bulk( meta , pm , 100 );
-
-  for ( size_t i = 0 ; i < 4 ; ++i ) {
-    ASSERT_TRUE( bulk.modification_begin() );
-    ASSERT_EQ( i , bulk.synchronized_count() );
-    ASSERT_TRUE( bulk.modification_end() );
-  }
-
-  std::vector<Part*> no_parts ;
-
-  Entity e[5] ;
-
-  const unsigned id = bulk.parallel_rank() + 1 ;
-
-  ASSERT_TRUE( bulk.modification_begin() );
-  for ( size_t i = 0 ; i < 5 ; ++i ) {
-    e[i] = bulk.declare_entity(  static_cast<EntityRank>(i) , id , no_parts );
-  }
-  ASSERT_TRUE( bulk.modification_end() );
-
-  for ( size_t i = 0 ; i < 5 ; ++i ) {
-    ASSERT_TRUE( e[i] == bulk.get_entity( static_cast<EntityRank>(i) , id ) );
-  }
-
-  ASSERT_TRUE( bulk.modification_begin() );
-  ASSERT_THROW( bulk.declare_entity( static_cast<EntityRank>(11) , id , no_parts ),
-                        std::logic_error );
-  ASSERT_TRUE( bulk.modification_end() );
-
-  // Catch not-ok-to-modify
-  ASSERT_THROW( bulk.declare_entity( stk::topology::NODE_RANK , id + 1 , no_parts ),
-                        std::logic_error );
-}
-
 //----------------------------------------------------------------------
 // Testing for mesh entities without relations
 
@@ -523,8 +470,6 @@ TEST(UnitTestingOfBulkData, testBulkDataRankBeginEnd)
 
   //insist that there are no faces:
   ASSERT_TRUE(iter == end);
-
-  bulk.modification_end();
 }
 //----------------------------------------------------------------------
 

@@ -12,7 +12,7 @@
 #include "stk_mesh/base/Selector.hpp"   // for operator&
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank
 #include "stk_topology/topology.hpp"    // for topology, etc
-
+#include "stk_mesh/base/CreateEdges.hpp"
 
 TEST( SkinMesh, SimpleHex)
 {
@@ -33,6 +33,10 @@ TEST( SkinMesh, SimpleHex)
 
   ASSERT_EQ( 0u, stk::mesh::count_selected_entities( skin_part, mesh.buckets(stk::topology::NODE_RANK)) );
   ASSERT_EQ( 0u, stk::mesh::count_selected_entities( skin_part, mesh.buckets(side_rank)) );
+
+  stk::mesh::create_edges(mesh, fixture.m_meta.universal_part());
+
+  std::cout<<"created "<<stk::mesh::count_selected_entities(fixture.m_meta.universal_part(), mesh.buckets(stk::topology::EDGE_RANK)) << " edges."<<std::endl;
 
   // skin the mesh
   {
