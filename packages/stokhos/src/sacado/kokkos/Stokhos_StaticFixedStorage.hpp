@@ -262,10 +262,16 @@ namespace Stokhos {
   private:
 
     //! Coefficient values
-#if defined(__INTEL_COMPILER) && defined(__MIC__)
+#if defined(__INTEL_COMPILER) && !defined(__CUDA_ARCH__)
+
+#if defined(__MIC__)
     value_type coeff_[Num] __attribute__((aligned(64)));
-#elif defined(__INTEL_COMPILER) && defined(__AVX__)
+#elif defined(__AVX__)
     value_type coeff_[Num] __attribute__((aligned(32)));
+#else
+    value_type coeff_[Num] __attribute__((aligned(16)));
+#endif
+
 #else
     value_type coeff_[Num];
 #endif
