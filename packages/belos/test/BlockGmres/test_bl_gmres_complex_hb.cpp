@@ -112,42 +112,41 @@ int main(int argc, char *argv[]) {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  bool verbose = false;
-  int info = 0;
-  bool norm_failure = false;
-  bool proc_verbose = false;
-  bool pseudo = false;   // use pseudo block GMRES to solve this linear system.
-  int frequency = -1;  // how often residuals are printed by solver
-  int blocksize = 1;
-  int numrhs = 1;
-  int maxrestarts = 15;
-  int length = 50;
-  std::string filename("mhd1280b.cua");
-  MT tol = 1.0e-5;  // relative residual tolerance
-
-  CommandLineProcessor cmdp(false,true);
-  cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
-  cmdp.setOption("pseudo","regular",&pseudo,"Use pseudo-block GMRES to solve the linear systems.");
-  cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
-  cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
-  cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
-  cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
-  cmdp.setOption("num-restarts",&maxrestarts,"Maximum number of restarts allowed for the GMRES solver.");
-  cmdp.setOption("blocksize",&blocksize,"Block size used by GMRES.");
-  cmdp.setOption("subspace-length",&length,"Maximum dimension of block-subspace used by GMRES solver.");
-  if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
-    return EXIT_FAILURE;
-  }
-
-  proc_verbose = verbose && (MyPID==0);  /* Only print on the zero processor */
-  if (proc_verbose) {
-    std::cout << Belos::Belos_Version() << std::endl << std::endl;
-  }
-  if (!verbose)
-    frequency = -1;  // reset frequency if test is not verbose
-
   bool success = false;
+  bool verbose = false;
   try {
+    int info = 0;
+    bool norm_failure = false;
+    bool proc_verbose = false;
+    bool pseudo = false;   // use pseudo block GMRES to solve this linear system.
+    int frequency = -1;  // how often residuals are printed by solver
+    int blocksize = 1;
+    int numrhs = 1;
+    int maxrestarts = 15;
+    int length = 50;
+    std::string filename("mhd1280b.cua");
+    MT tol = 1.0e-5;  // relative residual tolerance
+
+    CommandLineProcessor cmdp(false,true);
+    cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+    cmdp.setOption("pseudo","regular",&pseudo,"Use pseudo-block GMRES to solve the linear systems.");
+    cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
+    cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
+    cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
+    cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
+    cmdp.setOption("num-restarts",&maxrestarts,"Maximum number of restarts allowed for the GMRES solver.");
+    cmdp.setOption("blocksize",&blocksize,"Block size used by GMRES.");
+    cmdp.setOption("subspace-length",&length,"Maximum dimension of block-subspace used by GMRES solver.");
+    if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
+      return EXIT_FAILURE;
+    }
+
+    proc_verbose = verbose && (MyPID==0);  /* Only print on the zero processor */
+    if (proc_verbose) {
+      std::cout << Belos::Belos_Version() << std::endl << std::endl;
+    }
+    if (!verbose)
+      frequency = -1;  // reset frequency if test is not verbose
 
 #ifndef HAVE_BELOS_TRIUTILS
     std::cout << "This test requires Triutils. Please configure with --enable-triutils." << std::endl;

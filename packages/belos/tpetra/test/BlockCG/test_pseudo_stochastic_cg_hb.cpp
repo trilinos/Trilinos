@@ -84,49 +84,50 @@ int main(int argc, char *argv[]) {
 
   GlobalMPISession mpisess(&argc,&argv,&cout);
 
-  const ST one  = SCT::one();
-
-  int MyPID = 0;
-
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType           Platform;
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
-
-  Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  RCP<const Comm<int> > comm = platform.getComm();
-  RCP<Node>             node = platform.getNode();
-
-  //
-  // Get test parameters from command-line processor
-  //
-  bool verbose = false, proc_verbose = false, debug = false;
-  int frequency = -1;  // how often residuals are printed by solver
-  int numrhs = 1;      // total number of right-hand sides to solve for
-  int blocksize = 1;   // blocksize used by solver
-  int maxiters = -1;   // maximum number of iterations for solver to use
-  std::string filename("bcsstk14.hb");
-  MT tol = 1.0e-5;     // relative residual tolerance
-
-  CommandLineProcessor cmdp(false,true);
-  cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
-  cmdp.setOption("debug","nodebug",&debug,"Run debugging checks.");
-  cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
-  cmdp.setOption("tol",&tol,"Relative residual tolerance used by CG solver.");
-  cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
-  cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
-  cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 := adapted to problem/block size).");
-  cmdp.setOption("block-size",&blocksize,"Block size to be used by the CG solver.");
-  if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
-    return -1;
-  }
-  if (debug) {
-    verbose = true;
-  }
-  if (!verbose) {
-    frequency = -1;  // reset frequency if test is not verbose
-  }
-
   bool success = false;
+  bool verbose = false;
   try {
+    const ST one  = SCT::one();
+
+    int MyPID = 0;
+
+    typedef Tpetra::DefaultPlatform::DefaultPlatformType           Platform;
+    typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
+
+    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
+    RCP<const Comm<int> > comm = platform.getComm();
+    RCP<Node>             node = platform.getNode();
+
+    //
+    // Get test parameters from command-line processor
+    //
+    bool proc_verbose = false, debug = false;
+    int frequency = -1;  // how often residuals are printed by solver
+    int numrhs = 1;      // total number of right-hand sides to solve for
+    int blocksize = 1;   // blocksize used by solver
+    int maxiters = -1;   // maximum number of iterations for solver to use
+    std::string filename("bcsstk14.hb");
+    MT tol = 1.0e-5;     // relative residual tolerance
+
+    CommandLineProcessor cmdp(false,true);
+    cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+    cmdp.setOption("debug","nodebug",&debug,"Run debugging checks.");
+    cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
+    cmdp.setOption("tol",&tol,"Relative residual tolerance used by CG solver.");
+    cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
+    cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
+    cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 := adapted to problem/block size).");
+    cmdp.setOption("block-size",&blocksize,"Block size to be used by the CG solver.");
+    if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
+      return -1;
+    }
+    if (debug) {
+      verbose = true;
+    }
+    if (!verbose) {
+      frequency = -1;  // reset frequency if test is not verbose
+    }
+
     MyPID = rank(*comm);
     proc_verbose = ( verbose && (MyPID==0) );
 

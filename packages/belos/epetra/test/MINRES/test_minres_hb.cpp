@@ -58,7 +58,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include <Teuchos_StandardCatchMacros.hpp>
 
-int
+  int
 main (int argc, char *argv[])
 {
   using Teuchos::inOutArg;
@@ -77,40 +77,41 @@ main (int argc, char *argv[])
   // This calls MPI_Init and MPI_Finalize as necessary.
   Belos::Test::MPISession session (inOutArg (argc), inOutArg (argv));
   RCP<const Epetra_Comm> comm = session.getComm ();
-  const int MyPID = comm->MyPID ();
 
-  //
-  // Parameters to read from command-line processor
-  //
+  bool success = false;
   bool verbose = false;
-  int frequency = -1;  // how often residuals are printed by solver
-  int numRHS = 1;  // total number of right-hand sides to solve for
-  int maxIters = 13000;  // maximum number of iterations for solver to use
-  std::string filename ("bcsstk14.hb");
-  double tol = 1.0e-5; // relative residual tolerance
-
-  //
-  // Read in command-line arguments
-  //
-  Teuchos::CommandLineProcessor cmdp (false, true);
-  cmdp.setOption ("verbose", "quiet", &verbose, "Print messages and results.");
-  cmdp.setOption ("frequency", &frequency, "Solvers frequency for printing "
-                  "residuals (#iters).");
-  cmdp.setOption ("tol", &tol, "Relative residual tolerance used by MINRES "
-                  "solver.");
-  cmdp.setOption ("filename", &filename, "Filename for Harwell-Boeing test "
-                  "matrix.");
-  cmdp.setOption ("num-rhs", &numRHS, "Number of right-hand sides to solve.");
-  cmdp.setOption ("max-iters", &maxIters, "Maximum number of iterations per "
-                  "linear system (-1 means \"adapt to problem/block size\").");
-  if (cmdp.parse (argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
-    return EXIT_FAILURE;
-  }
-  Teuchos::oblackholestream blackHole;
-  std::ostream& verbOut = (verbose && MyPID == 0) ? std::cout : blackHole;
-
-  bool testPassed = false;
   try {
+    const int MyPID = comm->MyPID ();
+
+    //
+    // Parameters to read from command-line processor
+    //
+    int frequency = -1;  // how often residuals are printed by solver
+    int numRHS = 1;  // total number of right-hand sides to solve for
+    int maxIters = 13000;  // maximum number of iterations for solver to use
+    std::string filename ("bcsstk14.hb");
+    double tol = 1.0e-5; // relative residual tolerance
+
+    //
+    // Read in command-line arguments
+    //
+    Teuchos::CommandLineProcessor cmdp (false, true);
+    cmdp.setOption ("verbose", "quiet", &verbose, "Print messages and results.");
+    cmdp.setOption ("frequency", &frequency, "Solvers frequency for printing "
+        "residuals (#iters).");
+    cmdp.setOption ("tol", &tol, "Relative residual tolerance used by MINRES "
+        "solver.");
+    cmdp.setOption ("filename", &filename, "Filename for Harwell-Boeing test "
+        "matrix.");
+    cmdp.setOption ("num-rhs", &numRHS, "Number of right-hand sides to solve.");
+    cmdp.setOption ("max-iters", &maxIters, "Maximum number of iterations per "
+        "linear system (-1 means \"adapt to problem/block size\").");
+    if (cmdp.parse (argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
+      return EXIT_FAILURE;
+    }
+    Teuchos::oblackholestream blackHole;
+    std::ostream& verbOut = (verbose && MyPID == 0) ? std::cout : blackHole;
+
     //
     // Generate the linear system(s) to solve.
     //
@@ -305,7 +306,7 @@ main (int argc, char *argv[])
         const double actRes = relativeResidualNorms[i];
         verbOut << "Problem " << i << " : \t" << actRes << endl;
         if (actRes > tol) {
-    badRes = true;
+          badRes = true;
         }
       }
     }
@@ -314,15 +315,15 @@ main (int argc, char *argv[])
     Teuchos::TimeMonitor::summarize (verbOut);
 #   endif // BELOS_TEUCHOS_TIME_MONITOR
 
-    testPassed = (ret == Belos::Converged && !badRes);
-  } // try
-  TEUCHOS_STANDARD_CATCH_STATEMENTS(true, verbOut, testPassed);
+    success = (ret == Belos::Converged && !badRes);
 
-  if (testPassed) {
-    verbOut << endl << "End Result: TEST PASSED" << endl;
-    return EXIT_SUCCESS;
-  } else {
-    verbOut << endl << "End Result: TEST FAILED" << endl;
-    return EXIT_FAILURE;
-  }
+    if (success) {
+      verbOut << endl << "End Result: TEST PASSED" << endl;
+    } else {
+      verbOut << endl << "End Result: TEST FAILED" << endl;
+    }
+  } // try
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
+
+  return success ? EXIT_SUCCESS : EXIT_FAILURE;
 } // end test_minres_hb.cpp
