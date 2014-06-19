@@ -1609,7 +1609,7 @@ namespace Tpetra {
     ///   Symmetric sweep (including both its Forward and its Backward
     ///   sweep) as one.
     ///
-    /// \section Tpetra_CrsMatrix_gaussSeidel_Details Requirements
+    /// \section Tpetra_CrsMatrix_gaussSeidel_req Requirements
     ///
     /// This method has the following requirements:
     ///
@@ -1683,7 +1683,7 @@ namespace Tpetra {
     ///   Symmetric sweep (including both its Forward and its Backward
     ///   sweep) as one.
     ///
-    /// \section Tpetra_CrsMatrix_gaussSeidel_Details Requirements
+    /// \section Tpetra_CrsMatrix_reorderedGaussSeidel_req Requirements
     ///
     /// This method has the following requirements:
     ///

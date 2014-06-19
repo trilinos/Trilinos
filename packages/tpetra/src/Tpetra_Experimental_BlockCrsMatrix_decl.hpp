@@ -605,7 +605,7 @@ private:
   /// \code
   /// size_t k_abs = ptr_[curLocalRow] + k_rel; // absolute offset
   /// LO colInd = ind_[k_abs];
-  /// \code
+  /// \endcode
   ///
   /// This method returns a relative block offset.  A <i>block</i>
   /// offset means a graph or mesh offset.  It's suitable for use in

@@ -124,7 +124,7 @@ namespace Tpetra {
   ///   If you want to solve larger problems, you must use a 64-bit
   ///   integer type here.
   ///
-  /// \section Kokkos_MV_prereq Prerequisites
+  /// \section Kokkos_KR_MV_prereq Prerequisites
   ///
   /// Before reading the rest of this documentation, it helps to know
   /// something about the Teuchos memory management classes, in
@@ -137,9 +137,9 @@ namespace Tpetra {
   /// the general idea of distributed storage of data over a
   /// communicator.
   ///
-  /// \section Kokkos_MV_layout Data layout and access
+  /// \section Kokkos_KR_MV_layout Data layout and access
   ///
-  /// \subsection Kokkos_MV_noncontig Multivectors which view another multivector
+  /// \subsection Kokkos_KR_MV_noncontig Multivectors which view another multivector
   ///
   /// A multivector could be a <i>view</i> of some subset of another
   /// multivector's columns and rows.  A view is like a pointer; it
@@ -163,7 +163,7 @@ namespace Tpetra {
   /// ability to access the data in certain ways, which we will
   /// explain below.
   ///
-  /// \subsection Kokkos_MV_views Views of a multivector's data
+  /// \subsection Kokkos_KR_MV_views Views of a multivector's data
   ///
   /// We have unfortunately overloaded the term "view."  In the
   /// section above, we explained the idea of a "multivector which is
@@ -226,7 +226,7 @@ namespace Tpetra {
   /// will <i>never</i> be copied back to device memory, and thus the
   /// original data will never be changed.
   ///
-  /// \subsection Kokkos_MV_why_views Why won't you give me a raw pointer?
+  /// \subsection Kokkos_KR_MV_why_views Why won't you give me a raw pointer?
   ///
   /// Tpetra was designed to allow different data representations
   /// underneath the same interface.  This lets Tpetra run correctly
@@ -256,7 +256,7 @@ namespace Tpetra {
   /// memory, and you are working on the host CPU).  This is why we
   /// require accessing the data through views.
   ///
-  /// \subsection Kokkos_MV_why_no_square_brackets Why no operator[]?
+  /// \subsection Kokkos_KR_MV_why_no_square_brackets Why no operator[]?
   ///
   /// The above section also explains why we do not offer a <tt>Scalar&
   /// operator[]</tt> to access each entry of a vector directly.  Direct
@@ -269,7 +269,7 @@ namespace Tpetra {
   /// expose what is expensive, by exposing data views and letting
   /// users control when to copy data between host and device.
   ///
-  /// \subsection Kokkos_MV_device_kernels How do I access the data directly?
+  /// \subsection Kokkos_KR_MV_device_kernels How do I access the data directly?
   ///
   /// "Directly" here means without views, using a device kernel if
   /// the data reside on the GPU.
@@ -294,7 +294,7 @@ namespace Tpetra {
   /// wanting to try this option, please contact the Tpetra developers
   /// for recommendations.  We will be happy to work with you.
   ///
-  /// \section Kokkos_MV_dist Parallel distribution of data
+  /// \section Kokkos_KR_MV_dist Parallel distribution of data
   ///
   /// A MultiVector's rows are distributed over processes in its (row)
   /// Map's communicator.  A MultiVector is a DistObject; the Map of
@@ -1334,7 +1334,6 @@ namespace Tpetra {
 
     bool vectorIndexOutOfRange (size_t VectorIndex) const;
 
-    /// \fn getSubArrayRCP
     /// \brief Persisting view of j-th column in the given ArrayRCP.
     ///
     /// This method considers isConstantStride().  The ArrayRCP may
