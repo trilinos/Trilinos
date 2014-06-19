@@ -348,6 +348,12 @@ class MueLu_XMLgenerator():
     self.maxMultLevels = 5   # maximum number of levels
     self.maxCoarseSize = 1000 # max. coarse size
     
+    # aggregate settings
+    self.dropTolerance = 0.0
+    self.minAggSize = 4
+    self.maxAggSize = 9
+    self.maxNeighCount = 0
+    
     # smoother settings
     self.levelSmoother = "Jacobi"
     self.levelSmootherSweeps = 1
@@ -414,6 +420,19 @@ class MueLu_XMLgenerator():
     self.levelSmootherDamp   = raw_input("Smoother damping: ")
     self.isDirty = True
 
+  def doDropTolerance(self):
+    self.dropTolerance = raw_input("Drop tolerance for matrix graph (default = 0.0): ")
+    self.isDirty = True
+  def doMinAggSize(self):
+    self.minAggSize = raw_input("Minimum number of nodes per aggregate: ")
+    self.isDirty
+  def doMaxAggSize(self):
+    self.maxAggSize = raw_input("Maximum number of nodes per aggregate: ")
+    self.isDirty
+  def doMaxNeigh(self):
+    self.maxNeighCount = raw_input("Maximum number of already aggregated neighbor nodes (default = 0): ")
+    self.isDirty
+    
   # Transfer operators
   def doPaAMG(self):
     self.transferOps = "PA-AMG"
@@ -449,7 +468,12 @@ class MueLu_XMLgenerator():
     while self.exitLoop == False:
       self.runMenu(options,callbacks)
     self.exitLoop=True #False
-    
+ 
+  def doAggregatesMenu(self):
+    options = ['Drop tolerance', 'Min. aggregate size', 'Max. aggregate size', 'Max. Neighbor Count', 'Back']
+    callbacks = [self.doDropTolerance,self.doMinAggSize, self.doMaxAggSize, self.doMaxNeigh, self.askForSolver]
+    self.runMenu(options,callbacks)   
+ 
   def doSmootherMenu(self):
     options = ['Jacobi', 'Gauss-Seidel', 'Sym. Gauss-Seidel', 'Back']
     callbacks = [self.doRelaxationJacobi,self.doRelaxationGS, self.doRelaxationSymGS, self.askForSolver]
@@ -478,24 +502,28 @@ class MueLu_XMLgenerator():
     
     #options = ['Set Output file name','Common Multigrid settings', 'Level smoother settings', 'Transfer operators', 'Restriction operators', 'Save XML file', 'Exit']
     #callbacks = [self.doFileName, self.doCommonMenu, self.doSmootherMenu, self.doTransferMenu, self.doRestrictorMenu, self.generateXMLfile, self.doExitProgram]
-    options = ['Common Multigrid settings', 'Level smoother settings', 'Transfer operators', 'Restriction operators', 'Save XML file', 'Back']
-    callbacks = [self.doCommonMenu, self.doSmootherMenu, self.doTransferMenu, self.doRestrictorMenu, self.generateXMLfile, self.doExitProgram]
+    options = ['Common Multigrid settings', 'Aggregate settings', 'Level smoother settings', 'Transfer operators', 'Restriction operators', 'Save XML file', 'Back']
+    callbacks = [self.doCommonMenu, self.doAggregatesMenu, self.doSmootherMenu, self.doTransferMenu, self.doRestrictorMenu, self.generateXMLfile, self.doExitProgram]
     
     self.runMenu(options,callbacks)      
         
   def printSettings(self):
     ## print out all made settings for xml file
     print bcolors.HEADER+"***************************   SETTINGS   ****************************"+bcolors.ENDC
-    print bcolors.WARNING+"XML file name:          "+bcolors.ENDC + str(self.xmlFileName)
+    print bcolors.WARNING+"XML file name:           "+bcolors.ENDC + str(self.xmlFileName)
     print ""
-    print bcolors.WARNING+"Max. MultiGrid levels:  "+bcolors.ENDC + str(self.maxMultLevels)
-    print bcolors.WARNING+"Max. CoarseSize:        "+bcolors.ENDC + str(self.maxCoarseSize)
+    print bcolors.WARNING+"Max. MultiGrid levels:   "+bcolors.ENDC + str(self.maxMultLevels)
+    print bcolors.WARNING+"Max. CoarseSize:         "+bcolors.ENDC + str(self.maxCoarseSize)
     print ""
-    print bcolors.WARNING+"Level smoother:         "+bcolors.ENDC + str(self.levelSmoother)
-    print bcolors.WARNING+"Level smoothing sweeps: "+bcolors.ENDC + str(self.levelSmootherSweeps)
-    print bcolors.WARNING+"Level damping parameter:"+bcolors.ENDC + str(self.levelSmootherDamp)
+    print bcolors.WARNING+"Level smoother:          "+bcolors.ENDC + str(self.levelSmoother)
+    print bcolors.WARNING+"Level smoothing sweeps:  "+bcolors.ENDC + str(self.levelSmootherSweeps)
+    print bcolors.WARNING+"Level damping parameter: "+bcolors.ENDC + str(self.levelSmootherDamp)
     print ""
-    print bcolors.WARNING+"Coarse solver:          "+bcolors.ENDC + str(self.coarseSolver)
+    print bcolors.WARNING+"Coarse solver:           "+bcolors.ENDC + str(self.coarseSolver)
+    print ""
+    print bcolors.WARNING+"Graph drop tolerance:    "+bcolors.ENDC + str(self.dropTolerance)
+    print bcolors.WARNING+"Aggregate size (min/max):"+bcolors.ENDC + str(self.minAggSize) + "/" + str(self.maxAggSize)
+    print bcolors.WARNING+"Max. neighbor count:     "+bcolors.ENDC + str(self.maxNeighCount)
     print ""
     print bcolors.WARNING+"Transfer operators:     "+bcolors.ENDC + str(self.transferOps)
     print bcolors.WARNING+"Transfer smoothing par.:"+bcolors.ENDC + str(self.transferOpDamp)
@@ -524,7 +552,10 @@ class MueLu_XMLgenerator():
       line = line.replace("$RESTRICTOR",  str(self.restrictionOp))
       line = line.replace("$PROLONGATOR", str(self.transferOps))
       line = line.replace("$SADAMPING"  , str(self.transferOpDamp))
-      
+      line = line.replace("$DROPTOL"    , str(self.dropTolerance))
+      line = line.replace("$MAXNEIGH"    , str(self.maxNeighCount))
+      line = line.replace("$MINAGGS"    , str(self.minAggSize))
+      line = line.replace("$MAXAGGS"    , str(self.maxAggSize))     
       o.write(line)
     o.close() 
     self.isDirty = False

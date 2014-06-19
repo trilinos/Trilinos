@@ -13,9 +13,7 @@
     <ParameterList name="myCoalesceDropFact">
       <Parameter name="factory"                             type="string" value="CoalesceDropFactory"/>
       <Parameter name="lightweight wrap"                    type="bool"   value="true"/>
-      <!--
-      <Parameter name="aggregation threshold"               type="double" value="0.02"/>
-      -->
+      <Parameter name="aggregation threshold"               type="double" value="$DROPTOL"/>
     </ParameterList>
 
     <ParameterList name="UncoupledAggregationFact">
@@ -23,9 +21,9 @@
       <Parameter name="Graph"                               type="string" value="myCoalesceDropFact"/>
       <Parameter name="DofsPerNode"                         type="string" value="myCoalesceDropFact"/>
       <Parameter name="Ordering"                            type="string" value="Graph"/>
-      <Parameter name="MaxNeighAlreadySelected"             type="int"    value="0"/>
-      <Parameter name="MinNodesPerAggregate"                type="int"    value="4"/>
-      <Parameter name="MaxNodesPerAggregate"                type="int"    value="9"/>
+      <Parameter name="MaxNeighAlreadySelected"             type="int"    value="$MAXNEIGH"/>
+      <Parameter name="MinNodesPerAggregate"                type="int"    value="$MINAGGS"/>
+      <Parameter name="MaxNodesPerAggregate"                type="int"    value="$MAXAGGS"/>
     </ParameterList>
 
     
@@ -59,9 +57,9 @@
       <Parameter name="factory"                             type="string" value="RAPFactory"/>
       <Parameter name="P"                                   type="string" value="$PROLONGATOR"/>
       <Parameter name="R"                                   type="string" value="myRestrictorFact"/>
-      <!--<ParameterList name="TransferFactories">
+      <ParameterList name="TransferFactories">
        <Parameter name="Visualization"                     type="string" value="myAggExportFact"/>
-     </ParameterList>-->
+     </ParameterList>
     </ParameterList>
     
 	<!-- =======================  REPARTITIONING  ======================= -->
