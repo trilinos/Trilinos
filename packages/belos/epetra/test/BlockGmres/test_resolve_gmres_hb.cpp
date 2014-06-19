@@ -59,11 +59,7 @@
 
 int main(int argc, char *argv[]) {
   //
-#ifdef EPETRA_MPI
-  MPI_Init(&argc,&argv);
-  Belos::MPIFinalize mpiFinalize; // Will call finalize with *any* return
-  (void)mpiFinalize;
-#endif
+  Teuchos::GlobalMPISession session(&argc, &argv, NULL);
   //
   typedef double                            ST;
   typedef Teuchos::ScalarTraits<ST>        SCT;
@@ -78,7 +74,7 @@ int main(int argc, char *argv[]) {
   using Teuchos::rcp;
 
   bool verbose = false;
-  bool success = true;
+  bool success = false;
   try {
     bool proc_verbose = false;
     bool badRes = false;
@@ -398,14 +394,15 @@ int main(int argc, char *argv[]) {
       std::cout << "Relative residual tolerance: " << tol << std::endl;
       std::cout << std::endl;
     }
-    if (ret!=Belos::Converged || badRes==true) {
-      success = false;
-      if (proc_verbose)
-        std::cout << "End Result: TEST FAILED" << std::endl;
-    } else {
-      success = true;
+
+    success = ret==Belos::Converged && !badRes;
+
+    if (success) {
       if (proc_verbose)
         std::cout << "End Result: TEST PASSED" << std::endl;
+    } else {
+      if (proc_verbose)
+        std::cout << "End Result: TEST FAILED" << std::endl;
     }
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,success);

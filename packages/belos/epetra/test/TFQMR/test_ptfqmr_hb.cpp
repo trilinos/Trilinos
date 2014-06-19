@@ -58,11 +58,7 @@
 
 int main(int argc, char *argv[]) {
   //
-#ifdef EPETRA_MPI
-  MPI_Init(&argc,&argv);
-  Belos::MPIFinalize mpiFinalize; // Will call finalize with *any* return
-  (void)mpiFinalize;
-#endif
+  Teuchos::GlobalMPISession session(&argc, &argv, NULL);
   //
   typedef double                            ST;
   typedef Teuchos::ScalarTraits<ST>        SCT;
@@ -78,9 +74,8 @@ int main(int argc, char *argv[]) {
 
   bool success = false;
   bool verbose = false;
-
   try {
-    bool  proc_verbose = false;
+    bool proc_verbose = false;
     bool leftprec = true; // use left preconditioning to solve these linear systems
     int frequency = -1;  // how often residuals are printed by solver
     int numrhs = 1;
