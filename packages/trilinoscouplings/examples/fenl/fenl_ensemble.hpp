@@ -94,6 +94,27 @@ struct LocalViewTraits< Kokkos::View<T,Kokkos::Cuda,M,V,Kokkos::Impl::ViewMPVect
   }
 };
 
+// Compute DeviceConfig struct's based on scalar type
+template <typename StorageType>
+struct CreateDeviceConfigs< Sacado::MP::Vector<StorageType> > {
+  typedef typename StorageType::device_type device_type;
+  static void eval( Kokkos::DeviceConfig& dev_config_elem,
+                    Kokkos::DeviceConfig& dev_config_gath,
+                    Kokkos::DeviceConfig& dev_config_bc ) {
+    static const unsigned VectorSize = StorageType::static_size;
+    if ( Kokkos::Impl::is_same< device_type, Kokkos::Cuda >::value ) {
+      dev_config_elem = Kokkos::DeviceConfig( 0 , VectorSize , 64/VectorSize  );
+      dev_config_gath = Kokkos::DeviceConfig( 0 , VectorSize , 128/VectorSize );
+      dev_config_bc   = Kokkos::DeviceConfig( 0 , VectorSize , 256/VectorSize );
+    }
+    else {
+      dev_config_elem = Kokkos::DeviceConfig( 0 , 1 , 1 );
+      dev_config_gath = Kokkos::DeviceConfig( 0 , 1 , 1 );
+      dev_config_bc   = Kokkos::DeviceConfig( 0 , 1 , 1 );
+    }
+  }
+};
+
 } /* namespace FENL */
 } /* namespace Example */
 } /* namespace Kokkos */
