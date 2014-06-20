@@ -142,27 +142,6 @@ PHX_EVALUATE_FIELDS(Integrator_BasisTimesVector,workset)
   }
 
   if(workset.num_cells>0) {
-/*
-    Intrepid::FieldContainer<double> weighted_basis = (workset.bases[basis_index])->weighted_basis;
-
-    // assign ScalarT "dof_orientation" to double "orientation"
-    Intrepid::FieldContainer<double> orientation(dof_orientation.dimension(0),
-                                                 dof_orientation.dimension(1));
-    for(int i=0;i<dof_orientation.dimension(0);i++)
-       for(int j=0;j<dof_orientation.dimension(1);j++)
-          orientation(i,j) = Sacado::ScalarValue<ScalarT>::eval(dof_orientation(i,j));
-
-    // make sure things are orientated correctly
-    Intrepid::FunctionSpaceTools::
-       applyFieldSigns<ScalarT>(weighted_basis,orientation);
-
-    // evaluate at quadrature points
-    Intrepid::FunctionSpaceTools::
-      integrate<ScalarT>(residual, tmp, 
-  		            weighted_basis,
-		            Intrepid::COMP_BLAS);
-*/
-
     Intrepid::FunctionSpaceTools::
       integrate<ScalarT>(residual, tmp, 
   		            workset.bases[basis_index]->weighted_basis,
