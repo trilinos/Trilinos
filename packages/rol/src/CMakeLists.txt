@@ -116,6 +116,7 @@ APPEND_SET(HEADERS
   zoo/ROL_HS38.hpp
   zoo/ROL_HS45.hpp
   zoo/ROL_BVP.hpp
+  zoo/ROL_DiodeCircuit.hpp
   )
 
 
