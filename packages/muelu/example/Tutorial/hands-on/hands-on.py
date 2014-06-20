@@ -182,7 +182,7 @@ class ProblemHandler():
     #runCommand(cmd)
     
     #proc1 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
-    self.proc1.stdin.write("set term wxt 1\n")
+    self.proc1.stdin.write("set term x11 1\n")
     self.proc1.stdin.write("set title \"Solution\"\n")
     self.proc1.stdin.write("set dgrid3d " + str(self.meshy) + "," + str(self.meshx) + "\n")
     self.proc1.stdin.write("set style data lines\n")
@@ -194,7 +194,7 @@ class ProblemHandler():
     self.proc1.stdin.flush()
 
     #proc2 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
-    self.proc2.stdin.write("set term wxt 2\n")
+    self.proc2.stdin.write("set term x11 2\n") #wxt
     self.proc2.stdin.write("set title \"Multigrid solution\"\n")    
     self.proc2.stdin.write("set dgrid3d " + str(self.meshy) + "," + str(self.meshx) + "\n")
     self.proc2.stdin.write("set style data lines\n")
@@ -206,7 +206,7 @@ class ProblemHandler():
     self.proc2.stdin.flush()
     
     #proc3 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
-    self.proc3.stdin.write("set term wxt 3\n")
+    self.proc3.stdin.write("set term x11 3\n")
     self.proc3.stdin.write("set title \"Error (Exact vs. Multigrid)\"\n")    
     self.proc3.stdin.write("set dgrid3d " + str(self.meshy) + "," + str(self.meshx) + "\n")
     self.proc3.stdin.write("set style data lines\n")
@@ -222,7 +222,7 @@ class ProblemHandler():
     self.proc3.stdin.flush()
     
     #proc4 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
-    self.proc4.stdin.write("set term wxt 4\n")
+    self.proc4.stdin.write("set term x11 4\n")
     self.proc4.stdin.write("set title \"Distribution of processors\"\n")    
     self.proc4.stdin.write("set dgrid3d " + str(self.meshy) + "," + str(self.meshx) + "\n")
     self.proc4.stdin.write("set style data lines\n")
@@ -443,6 +443,13 @@ class MueLu_XMLgenerator():
   def doPaAMG(self):
     self.transferOps = "PA-AMG"
     self.transferOpDamp = 0.0
+    if self.restrictionOp == "GenericRFactory":
+      self.restrictionOp = "TransPFactory"
+      print bcolors.WARNING + "GenericRFactory cannot be used with non-smoothed PA-AMG prolongation operators. We change it back to TransPFactory."+bcolors.ENDC
+      print ""
+      print "Press any key to proceed"
+      waitForKey()
+
     self.isDirty = True
   def doSaAMG(self):
     self.transferOps = "SA-AMG"
@@ -459,6 +466,13 @@ class MueLu_XMLgenerator():
     self.isDirty = True
   def doNonsymR(self):
     self.restrictionOp = "GenericRFactory"
+    if self.transferOps == "PA-AMG":
+      self.restrictionOp = "TransPFactory"
+      print bcolors.WARNING+"GenericRFactory cannot be used with non-smoothed PA-AMG prolongation operators. We change it back to TransPFactory."
+      print "To use GenericRFactory you have to select either SaPFactory or PgPFactory for prolongation."+bcolors.ENDC
+      print ""
+      print "Press any key to proceed"
+      waitForKey()
     self.isDirty = True
   
   # Rebalancing

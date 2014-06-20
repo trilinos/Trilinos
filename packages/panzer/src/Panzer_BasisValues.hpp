@@ -64,7 +64,8 @@ namespace panzer {
     //! Sizes/allocates memory for arrays
     template <typename ArrayFactory>
     void setupArrays(const Teuchos::RCP<const panzer::BasisIRLayout>& basis,
-                     const ArrayFactory & af);
+                     const ArrayFactory & af,
+                     bool computeDerivatives=true);
 
     void evaluateValues(const Array& cub_points,
 			const Array& jac,
@@ -116,6 +117,8 @@ namespace panzer {
     Teuchos::RCP<const panzer::BasisIRLayout> basis_layout;
     
     Teuchos::RCP<Intrepid::Basis<Scalar,Array> > intrepid_basis;
+
+    bool compute_derivatives;
   };
 
 } // namespace panzer

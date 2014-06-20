@@ -609,6 +609,11 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
     typedef boost::unordered_set<GO> HashTable;
     HashTable hashTable; // use to detect if global ID has been added to owned_and_ghosted_
 
+    for(std::size_t i=0;i<owned_.size();i++) {
+      hashTable.insert(owned_[i]);
+      owned_and_ghosted_.push_back(owned_[i]);
+    }
+
     // this cute trick (blah) of constructing a accessor vector is to eliminate a copy
     // of the block of code computing shared/owned DOFs
     std::vector<ElementBlockAccess> blockAccessVec;

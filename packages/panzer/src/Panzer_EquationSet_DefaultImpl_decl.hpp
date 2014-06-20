@@ -61,59 +61,60 @@ namespace panzer {
 
   template <typename EvalT>
   class EquationSet_DefaultImpl : public panzer::EquationSet<EvalT>,
-				  public panzer::GlobalDataAcceptorDefaultImpl {
+                                  public panzer::GlobalDataAcceptorDefaultImpl {
     
   public:    
     
     EquationSet_DefaultImpl(const Teuchos::RCP<Teuchos::ParameterList>& params,
-			    const int& default_integration_order,
-			    const panzer::CellData& cell_data,
-			    const Teuchos::RCP<panzer::GlobalData>& global_data,
-			    const bool build_transient_support);
+                            const int& default_integration_order,
+                            const panzer::CellData& cell_data,
+                            const Teuchos::RCP<panzer::GlobalData>& global_data,
+                            const bool build_transient_support);
     
     virtual ~EquationSet_DefaultImpl() {}
     
     virtual void buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-								const panzer::FieldLibrary& fl,
-								const LinearObjFactory<panzer::Traits> & lof,
-								const Teuchos::ParameterList& user_data) const;
+                                                                const panzer::FieldLibrary& fl,
+                                                                const LinearObjFactory<panzer::Traits> & lof,
+                                                                const Teuchos::ParameterList& user_data) const;
     
     virtual void buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-						   const panzer::FieldLibrary& fl,
-						   const LinearObjFactory<panzer::Traits> & lof,
-						   const Teuchos::ParameterList& user_data) const;
+                                                   const panzer::FieldLibrary& fl,
+                                                   const LinearObjFactory<panzer::Traits> & lof,
+                                                   const Teuchos::ParameterList& user_data) const;
 
     virtual void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-						       const panzer::FieldLibrary& fl,
-						       const Teuchos::ParameterList& user_data) const = 0;
+                                                       const panzer::FieldLibrary& fl,
+                                                       const Teuchos::ParameterList& user_data) const = 0;
 
     virtual void buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-							      const panzer::FieldLayoutLibrary& fl,
-							      const Teuchos::RCP<panzer::IntegrationRule>& ir,
-							      const Teuchos::ParameterList& user_data) const;
+                                                              const panzer::FieldLayoutLibrary& fl,
+                                                              const Teuchos::RCP<panzer::IntegrationRule>& ir,
+                                                              const Teuchos::Ptr<const panzer::LinearObjFactory<panzer::Traits> > & lof,
+                                                              const Teuchos::ParameterList& user_data) const;
     
     virtual void buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-							const panzer::FieldLayoutLibrary& fl,
-							const Teuchos::RCP<panzer::IntegrationRule>& ir,
-							const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
-							const Teuchos::ParameterList& models,
-							const Teuchos::ParameterList& user_data) const;
+                                                        const panzer::FieldLayoutLibrary& fl,
+                                                        const Teuchos::RCP<panzer::IntegrationRule>& ir,
+                                                        const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
+                                                        const Teuchos::ParameterList& models,
+                                                        const Teuchos::ParameterList& user_data) const;
 
     virtual void buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-							const panzer::FieldLayoutLibrary& fl,
-							const Teuchos::RCP<panzer::IntegrationRule>& ir,
-							const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
+                                                        const panzer::FieldLayoutLibrary& fl,
+                                                        const Teuchos::RCP<panzer::IntegrationRule>& ir,
+                                                        const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
                                                         const std::string & model_name,
-							const Teuchos::ParameterList& models,
-							const Teuchos::ParameterList& user_data) const;
+                                                        const Teuchos::ParameterList& models,
+                                                        const Teuchos::ParameterList& user_data) const;
 
     virtual void buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-							    const panzer::FieldLibrary& fl,
-							    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
-							    const std::string& model_name,
-							    const Teuchos::ParameterList& models,
-							    const LinearObjFactory<panzer::Traits> & lof,
-							    const Teuchos::ParameterList& user_data) const;
+                                                            const panzer::FieldLibrary& fl,
+                                                            const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
+                                                            const std::string& model_name,
+                                                            const Teuchos::ParameterList& models,
+                                                            const LinearObjFactory<panzer::Traits> & lof,
+                                                            const Teuchos::ParameterList& user_data) const;
 
     virtual const Teuchos::RCP<Teuchos::ParameterList> getEvaluatorParameterList() const;
     
@@ -154,8 +155,8 @@ namespace panzer {
       *                             integration order.
       */
     void updateDOF(const std::string & dofName,
-		   int basisOrder,
-		   int integrationOrder = -1);
+                   int basisOrder,
+                   int integrationOrder = -1);
 
     /** \brief Get the basis order for an existing degree of freedom.
       *
@@ -205,11 +206,11 @@ namespace panzer {
       *                        to the dofName for the scatter field name.
       */
     void addDOF(const std::string & dofName,
-		const std::string & basisType,
-		const int & basisOrder,
-		const int integrationOrder = -1,
-		const std::string residualName = "",
-		const std::string scatterName = "");
+                const std::string & basisType,
+                const int & basisOrder,
+                const int integrationOrder = -1,
+                const std::string residualName = "",
+                const std::string scatterName = "");
 
     /** Alert the panzer library that a gradient of particular a DOF is needed.
       *
@@ -302,9 +303,9 @@ namespace panzer {
      * \param[in] residualfield_name Name of the evalauted residual field.  This is optional and will use a default value if the string is empty.
      */ 
     void buildAndRegisterResidualSummationEvalautor(PHX::FieldManager<panzer::Traits>& fm,
-						    const std::string dof_name,
-						    const std::vector<std::string>& residual_contributions,
-						    const std::string residual_field_name = "") const;
+                                                    const std::string dof_name,
+                                                    const std::vector<std::string>& residual_contributions,
+                                                    const std::string residual_field_name = "") const;
 
     //! Returns the parameter list used to build this equation set
     //object.  Useful for passing off input parameter sublists

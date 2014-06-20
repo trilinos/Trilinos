@@ -66,6 +66,7 @@
 #include "Xpetra_BlockedCrsMatrix.hpp"
 #include "Xpetra_TpetraMultiVector.hpp"
 #include "XpetraExt_MatrixMatrix.hpp"
+#include "Xpetra_ExportFactory.hpp"
 #include "Ifpack2_Preconditioner.hpp"
 #include "Ifpack2_Factory_decl.hpp"
 #include "Ifpack2_Factory_def.hpp"
@@ -171,6 +172,24 @@ namespace MueLu {
     //! Setup the preconditioner
     void compute();
 
+    //! find rows associated with Dirichlet BCs
+    void findDirichletRows(Teuchos::RCP<XMat> A,
+			   std::vector<LocalOrdinal>& dirichletRows);
+
+    //! find cols associated with Dirichlet BCs
+    void findDirichletCols(Teuchos::RCP<XMat> A,
+			   std::vector<LocalOrdinal>& dirichletRows,
+			   std::vector<LocalOrdinal>& dirichletCols);
+
+    //! apply BCs to rows
+    void Apply_BCsToMatrixRows(Teuchos::RCP<XMat>& A, std::vector<LocalOrdinal>& dirichletRows);
+
+    //! apply BCs to cols
+    void Apply_BCsToMatrixCols(Teuchos::RCP<XMat>& A, std::vector<LocalOrdinal>& dirichletCols);
+
+    //! add 1's to the diagonal for zeroed out rows
+    void Remove_Zeroed_Rows(Teuchos::RCP<XMat>& A, double tol=1.0e-14);
+
     //! Setup the prolongator for the (1,1)-block
     void buildProlongator();
 
@@ -210,6 +229,8 @@ namespace MueLu {
     //! Various matrices
     Teuchos::RCP<XMat> SM_Matrix_, D0_Matrix_, M0inv_Matrix_, M1_Matrix_, Ms_Matrix_;
     Teuchos::RCP<XMat> TMT_Matrix_, TMT_Agg_Matrix_, P11_, A11_, A22_;
+    //! Vectors for BCs
+    std::vector<LocalOrdinal> BCrows_, BCcols_;
     //! Nullspace
     Teuchos::RCP<XMV>  Nullspace_, Coords_;
     //! Parameter lists

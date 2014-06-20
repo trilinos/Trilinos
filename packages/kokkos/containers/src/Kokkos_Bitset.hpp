@@ -57,10 +57,10 @@
 
 namespace Kokkos {
 
-template <typename Device>
+template <typename Device = Impl::DefaultDeviceType>
 class Bitset;
 
-template <typename Device>
+template <typename Device = Impl::DefaultDeviceType>
 class ConstBitset;
 
 template <typename DstDevice, typename SrcDevice>

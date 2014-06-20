@@ -53,7 +53,7 @@ template <typename EvalT>
 panzer::AssemblyEngine<EvalT>::
 AssemblyEngine(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
                const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof)
-  : m_field_manager_builder(fmb), m_lin_obj_factory(lof)
+  : m_field_manager_builder(fmb), m_lin_obj_factory(lof), countersInitialized_(false)
 { 
 
 }
@@ -215,8 +215,15 @@ evaluateDirichletBCs(const panzer::AssemblyEngineInArgs& in)
 {
   typedef LinearObjContainer LOC;
 
+  if(!countersInitialized_) {
+    localCounter_ = m_lin_obj_factory->buildPrimitiveGhostedLinearObjContainer();
+    globalCounter_ = m_lin_obj_factory->buildPrimitiveGhostedLinearObjContainer();
+    summedGhostedCounter_ = m_lin_obj_factory->buildPrimitiveGhostedLinearObjContainer();
+    countersInitialized_ = true;
+  }
+
   // allocate a counter to keep track of where this processor set dirichlet boundary conditions
-  Teuchos::RCP<LinearObjContainer> localCounter = m_lin_obj_factory->buildPrimitiveGhostedLinearObjContainer();
+  Teuchos::RCP<LinearObjContainer> localCounter = localCounter_;
   m_lin_obj_factory->initializeGhostedContainer(LinearObjContainer::X,*localCounter); // store counter in X
   localCounter->initialize();
      // this has only an X vector. The evaluate BCs will add a one to each row
@@ -225,14 +232,13 @@ evaluateDirichletBCs(const panzer::AssemblyEngineInArgs& in)
   // apply dirichlet conditions, make sure to keep track of the local counter
   this->evaluateBCs(panzer::BCT_Dirichlet, in,localCounter);
 
-  Teuchos::RCP<LinearObjContainer> summedGhostedCounter = m_lin_obj_factory->buildPrimitiveGhostedLinearObjContainer();
+  Teuchos::RCP<LinearObjContainer> summedGhostedCounter = summedGhostedCounter_;
   m_lin_obj_factory->initializeGhostedContainer(LinearObjContainer::X,*summedGhostedCounter); // store counter in X
   summedGhostedCounter->initialize();
 
   // do communication to build summed ghosted counter for dirichlet conditions
-  Teuchos::RCP<LinearObjContainer> globalCounter;
+  Teuchos::RCP<LinearObjContainer> globalCounter = globalCounter_;
   {
-     globalCounter = m_lin_obj_factory->buildPrimitiveLinearObjContainer();
      m_lin_obj_factory->initializeContainer(LinearObjContainer::X,*globalCounter); // store counter in X
      globalCounter->initialize();
      m_lin_obj_factory->ghostToGlobalContainer(*localCounter,*globalCounter,LOC::X);

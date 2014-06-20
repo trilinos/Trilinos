@@ -199,6 +199,27 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex)
       TEST_EQUALITY(gids[4],10); TEST_EQUALITY(gids[5],11);  
       TEST_EQUALITY(gids[6],14); TEST_EQUALITY(gids[7],13);
    }
+
+   // check that owned is_subset owned_and_ghosted
+   //////////////////////////////////////////////////////////////////////////
+   std::vector<int> owned, owned_and_shared;
+   dofManager->getOwnedIndices(owned);
+   dofManager->getOwnedAndSharedIndices(owned_and_shared);
+
+   if(numProcs==1) {
+     TEST_EQUALITY(owned.size(),owned_and_shared.size());
+   }
+   else  {
+     out << "owned size = " << owned.size() << std::endl;
+     out << "owned_and_shared size = " << owned_and_shared.size() << std::endl;
+     TEST_ASSERT(owned.size()<=owned_and_shared.size());
+   }
+   for(std::size_t i=0;i<owned.size();i++) {
+     TEST_EQUALITY(owned[i],owned_and_shared[i]);
+   }
+   for(std::size_t i=owned.size();i<owned_and_shared.size();i++) {
+     TEST_ASSERT(std::find(owned.begin(),owned.end(),owned_and_shared[i])==owned.end());
+   }
 }
 
 }
