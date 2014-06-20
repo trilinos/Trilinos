@@ -113,7 +113,6 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::compute() {
   if(BCrows_.size()>0) {
     TMT_Matrix_->resumeFill();
     Remove_Zeroed_Rows(TMT_Matrix_);
-    TMT_Matrix_->fillComplete();
   }
   TMT_Matrix_->SetFixedBlockSize(1);
   //TMT_Matrix_->describe(out,Teuchos::VERB_EXTREME);
@@ -138,7 +137,6 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::compute() {
   if(BCrows_.size()>0) {
     A22_->resumeFill();
     Remove_Zeroed_Rows(A22_);
-    A22_->fillComplete();
   }
   A22_->SetFixedBlockSize(1);
 
@@ -271,24 +269,40 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, clas
 void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Remove_Zeroed_Rows(Teuchos::RCP<XMat>& A,
 											double tol) {
   Teuchos::RCP<const XMap> rowMap = A->getRowMap();
+  RCP<XMat> DiagMatrix = MatrixFactory::Build(rowMap,1);
+  RCP<XMat> NewMatrix = MatrixFactory::Build(rowMap,1);
   for(size_t i=0; i<A->getNodeNumRows(); i++) {
-    GlobalOrdinal globalRow = rowMap->getGlobalElement(i);
-    Teuchos::ArrayView<const GlobalOrdinal> indices;
+    Teuchos::ArrayView<const LocalOrdinal> indices;
     Teuchos::ArrayView<const Scalar> values;
-    A->getGlobalRowView(globalRow,indices,values);
+    A->getLocalRowView(i,indices,values);
     int nnz=0;
     for (int j=0; j<indices.size(); j++) {
       if (abs(values[j]) > tol) {
 	nnz++;
       }
     }
+    Scalar one = (Scalar)1.0;
+    Scalar zero = (Scalar)0.0;
+    GlobalOrdinal row = rowMap->getGlobalElement(i);
     if (nnz == 0) {
-      Scalar one = (Scalar)1.0;
-      A->insertGlobalValues(globalRow,
-			    Teuchos::ArrayView<GlobalOrdinal>(&globalRow,1),
-			    Teuchos::ArrayView<Scalar>(&one,1));
+      DiagMatrix->insertGlobalValues(row,
+				     Teuchos::ArrayView<LocalOrdinal>(&row,1),
+				     Teuchos::ArrayView<Scalar>(&one,1));
+    }
+    else {
+      DiagMatrix->insertGlobalValues(row,
+				     Teuchos::ArrayView<LocalOrdinal>(&row,1),
+				     Teuchos::ArrayView<Scalar>(&zero,1));
     }
   }
+  DiagMatrix->fillComplete();
+  A->fillComplete();
+  // add matrices together
+  RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  Utils2::TwoMatrixAdd(*DiagMatrix,false,(Scalar)1.0,*A,false,(Scalar)1.0,NewMatrix,*out);
+  NewMatrix->fillComplete();
+  A=NewMatrix;
+  
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
