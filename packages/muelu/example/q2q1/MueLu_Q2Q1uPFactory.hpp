@@ -902,7 +902,7 @@ namespace MueLu {
 
           const double distWeight   =  0.3;
           double       maxComposite = -10000;
-          double       maxIndex     = -1;
+          int          maxIndex     = -1;
           for (int j = 0; j < numNearbyCs; j++) {
             // The formula is
             //     if (score[j] - distWeight*dists[j] > maxComposite)

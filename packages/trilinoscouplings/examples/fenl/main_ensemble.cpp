@@ -307,7 +307,8 @@ int main( int argc , char ** argv )
 
 #if defined( KOKKOS_HAVE_CUDA )
     if ( cmdline.CMD_USE_CUDA ) {
-      if ( cmdline.CMD_USE_UQ_ENSEMBLE == 16 )
+      if ( cmdline.CMD_USE_UQ_ENSEMBLE == 0 ||
+           cmdline.CMD_USE_UQ_ENSEMBLE == 16 )
         run< Kokkos::Cuda , 16 >( comm , cmdline );
       else if ( cmdline.CMD_USE_UQ_ENSEMBLE == 32 )
         run< Kokkos::Cuda , 32 >( comm , cmdline );

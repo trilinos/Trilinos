@@ -65,6 +65,7 @@
 #include "Panzer_BasisValues_Evaluator.hpp"
 #include "Panzer_PointValues_Evaluator.hpp"
 #include "Panzer_DOF.hpp"
+#include "Panzer_DOF_PointValues.hpp"
 
 // ***********************************************************************
 template <typename EvalT>
@@ -245,8 +246,9 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
            fm.template registerEvaluator<EvalT>(eval);
          }
          {
+           // note basis values are not constructed!
            RCP< PHX::Evaluator<panzer::Traits> > eval 
-             = rcp(new panzer::BasisValues_Evaluator<EvalT,panzer::Traits>(pointRule,basis));
+             = rcp(new panzer::BasisValues_Evaluator<EvalT,panzer::Traits>(pointRule,basis,false));
          
            fm.template registerEvaluator<EvalT>(eval);
          }

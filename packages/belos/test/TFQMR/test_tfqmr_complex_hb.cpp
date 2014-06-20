@@ -65,17 +65,6 @@
 #include "MyBetterOperator.hpp"
 #include "MyOperator.hpp"
 
-namespace Belos {
-  class MPIFinalize {
-    public:
-      ~MPIFinalize() {
-#ifdef HAVE_MPI
-        MPI_Finalize();
-#endif
-      }
-  };
-}
-
 using namespace Teuchos;
 
 int main(int argc, char *argv[]) {
@@ -103,36 +92,30 @@ int main(int argc, char *argv[]) {
   int MyPID = 0;
   bool norm_failure = false;
 
-#ifdef HAVE_MPI
-  // Initialize MPI
-  MPI_Init(&argc,&argv);
-  MPI_Comm_rank(MPI_COMM_WORLD, &MyPID);
-  Belos::MPIFinalize mpiFinalize; // Will call finalize with *any* return
-  (void)mpiFinalize;
-#endif
+  Teuchos::GlobalMPISession session(&argc, &argv, NULL);
   //
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  bool verbose = false, proc_verbose = false;
-  int frequency = -1;  // how often residuals are printed by solver
-  int blocksize = 1;
-  int numrhs = 1;
-  std::string filename("mhd1280b.cua");
-  MT tol = 1.0e-5;  // relative residual tolerance
-
-  CommandLineProcessor cmdp(false,true);
-  cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
-  cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
-  cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
-  cmdp.setOption("tol",&tol,"Relative residual tolerance used by TFQMR solver.");
-  cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
-  if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
-    return EXIT_FAILURE;
-  }
-
   bool success = false;
+  bool verbose = false;
   try {
+    bool proc_verbose = false;
+    int frequency = -1;  // how often residuals are printed by solver
+    int blocksize = 1;
+    int numrhs = 1;
+    std::string filename("mhd1280b.cua");
+    MT tol = 1.0e-5;  // relative residual tolerance
+
+    CommandLineProcessor cmdp(false, true);
+    cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+    cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
+    cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
+    cmdp.setOption("tol",&tol,"Relative residual tolerance used by TFQMR solver.");
+    cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
+    if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
+      return EXIT_FAILURE;
+    }
 
     proc_verbose = verbose && (MyPID==0);  /* Only print on the zero processor */
     if (proc_verbose) {

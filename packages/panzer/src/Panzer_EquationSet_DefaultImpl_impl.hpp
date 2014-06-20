@@ -44,11 +44,13 @@
 #define PANZER_EQUATIONSET_DEFAULT_IMPL_IMPL_HPP
 
 #include "Panzer_DOF.hpp"
+#include "Panzer_DOF_PointValues.hpp"
 #include "Panzer_DOFGradient.hpp"
 #include "Panzer_DOFCurl.hpp"
 #include "Panzer_GatherBasisCoordinates.hpp"
 #include "Panzer_GatherIntegrationCoordinates.hpp"
 #include "Panzer_GatherOrientation.hpp"
+#include "Panzer_UniqueGlobalIndexer.hpp"
 
 #include "Phalanx_MDField.hpp"
 #include "Phalanx_DataLayout.hpp"
@@ -62,10 +64,10 @@
 template <typename EvalT>
 panzer::EquationSet_DefaultImpl<EvalT>::
 EquationSet_DefaultImpl(const Teuchos::RCP<Teuchos::ParameterList>& params,
-			const int& default_integration_order,
-			const panzer::CellData& cell_data,
-			const Teuchos::RCP<panzer::GlobalData>& global_data,
-			const bool build_transient_support) :
+                        const int& default_integration_order,
+                        const panzer::CellData& cell_data,
+                        const Teuchos::RCP<panzer::GlobalData>& global_data,
+                        const bool build_transient_support) :
   panzer::GlobalDataAcceptorDefaultImpl(global_data),
   m_input_params(params),
   m_default_integration_order(default_integration_order),
@@ -146,9 +148,6 @@ void panzer::EquationSet_DefaultImpl<EvalT>::setupDeprecatedDOFsSupport()
   TEUCHOS_ASSERT(m_provided_dofs.size() > 0);
   TEUCHOS_ASSERT(m_int_rules.size() > 0);
 
-  //this->m_eval_plist->set("Equation Dimension", equation_dimension);
-  //this->m_eval_plist->set("IR", this->m_int_rule);  
-
   // Deprecated support assumes all equations in set use the same
   // basis and integration rule
   Teuchos::RCP<panzer::PureBasis> pure_basis = m_provided_dofs.begin()->second;
@@ -163,9 +162,9 @@ void panzer::EquationSet_DefaultImpl<EvalT>::setupDeprecatedDOFsSupport()
 template <typename EvalT>
 void panzer::EquationSet_DefaultImpl<EvalT>::
 buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-					       const panzer::FieldLibrary& fl,
-					       const LinearObjFactory<panzer::Traits> & lof,
-					       const Teuchos::ParameterList& user_data) const
+                                               const panzer::FieldLibrary& fl,
+                                               const LinearObjFactory<panzer::Traits> & lof,
+                                               const Teuchos::ParameterList& user_data) const
 {
   using Teuchos::ParameterList;
   using Teuchos::RCP;
@@ -193,17 +192,17 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
   {
     // add basis coordinates
     for (std::map<std::string,Teuchos::RCP<panzer::PureBasis> >::const_iterator basis =  m_unique_bases.begin();
-	 basis != m_unique_bases.end(); ++ basis) {
+         basis != m_unique_bases.end(); ++ basis) {
       RCP< PHX::Evaluator<panzer::Traits> > basis_op
-	= rcp(new panzer::GatherBasisCoordinates<EvalT,panzer::Traits>(*basis->second));
+        = rcp(new panzer::GatherBasisCoordinates<EvalT,panzer::Traits>(*basis->second));
       fm.template registerEvaluator<EvalT>(basis_op);
     }
 
     // add integration coordinates
     for (std::map<int,Teuchos::RCP<panzer::IntegrationRule> >::const_iterator ir = m_int_rules.begin();
-	 ir != m_int_rules.end(); ++ir)   {
+         ir != m_int_rules.end(); ++ir)   {
       RCP< PHX::Evaluator<panzer::Traits> > quad_op
-	= rcp(new panzer::GatherIntegrationCoordinates<EvalT,panzer::Traits>(*ir->second));
+        = rcp(new panzer::GatherIntegrationCoordinates<EvalT,panzer::Traits>(*ir->second));
       fm.template registerEvaluator<EvalT>(quad_op);
     }
 
@@ -224,7 +223,7 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
 
     // determine which fields associated with this basis need time derivatives
     for (typename std::vector<std::string>::const_iterator dof_name = basis_it->second.second->begin();
-	 dof_name != basis_it->second.second->end(); ++dof_name) {
+         dof_name != basis_it->second.second->end(); ++dof_name) {
       
       DescriptorIterator desc = m_provided_dofs_desc.find(*dof_name);
       TEUCHOS_ASSERT(desc != m_provided_dofs_desc.end());
@@ -271,21 +270,35 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
 template <typename EvalT>
 void panzer::EquationSet_DefaultImpl<EvalT>::
 buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-					     const panzer::FieldLayoutLibrary& fl,
-					     const Teuchos::RCP<panzer::IntegrationRule>& ir,
-					     const Teuchos::ParameterList& user_data) const
+                                             const panzer::FieldLayoutLibrary& fl,
+                                             const Teuchos::RCP<panzer::IntegrationRule>& ir,
+                                             const Teuchos::Ptr<const panzer::LinearObjFactory<panzer::Traits> > & lof,
+                                             const Teuchos::ParameterList& user_data) const
 {
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
+
+  Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> globalIndexer;
+  if(lof!=Teuchos::null) 
+    globalIndexer = lof->getUniqueGlobalIndexerBase();
   
   // DOFs: Scalar value @ basis --> Scalar value @ IP 
   for (DescriptorIterator dof_iter = m_provided_dofs_desc.begin(); dof_iter != m_provided_dofs_desc.end(); ++dof_iter) {
-    
+
     ParameterList p;
     p.set("Name", dof_iter->first);
     p.set("Basis", fl.lookupLayout(dof_iter->first));
     p.set("IR", ir);
+
+    if(globalIndexer!=Teuchos::null) {
+      // build the offsets for this field
+      int fieldNum = globalIndexer->getFieldNum(dof_iter->first);
+      RCP<const std::vector<int> > offsets = 
+          rcp(new std::vector<int>(globalIndexer->getGIDFieldOffsets(m_block_id,fieldNum)));
+      p.set("Jacobian Offsets Vector", offsets);
+    }
+    // else default to the slow DOF call
     
     RCP< PHX::Evaluator<panzer::Traits> > op = 
       rcp(new panzer::DOF<EvalT,panzer::Traits>(p));
@@ -314,7 +327,7 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
       p.set("IR", ir);
       
       RCP< PHX::Evaluator<panzer::Traits> > op = 
-	rcp(new panzer::DOFGradient<EvalT,panzer::Traits>(p));
+        rcp(new panzer::DOFGradient<EvalT,panzer::Traits>(p));
 
       fm.template registerEvaluator<EvalT>(op);
     }
@@ -339,9 +352,20 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
       p.set("Curl Name", dof_curl_name);
       p.set("Basis", fl.lookupLayout(dof_name)); 
       p.set("IR", ir);
+
+      // this will help accelerate the DOFCurl evaluator when Jacobians are needed
+      if(globalIndexer!=Teuchos::null) {
+        // build the offsets for this field
+        int fieldNum = globalIndexer->getFieldNum(dof_name);
+        RCP<const std::vector<int> > offsets = 
+            rcp(new std::vector<int>(globalIndexer->getGIDFieldOffsets(m_block_id,fieldNum)));
+        p.set("Jacobian Offsets Vector", offsets);
+      }
+      // else default to the slow DOF call
+    
       
       RCP< PHX::Evaluator<panzer::Traits> > op = 
-	rcp(new panzer::DOFCurl<EvalT,panzer::Traits>(p));
+        rcp(new panzer::DOFCurl<EvalT,panzer::Traits>(p));
 
       fm.template registerEvaluator<EvalT>(op);
     }
@@ -361,6 +385,15 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
     p.set("Basis", fl.lookupLayout(itr->first)); 
     p.set("IR", ir);
 
+    if(globalIndexer!=Teuchos::null) {
+      // build the offsets for this field
+      int fieldNum = globalIndexer->getFieldNum(itr->first);
+      RCP<const std::vector<int> > offsets = 
+          rcp(new std::vector<int>(globalIndexer->getGIDFieldOffsets(m_block_id,fieldNum)));
+      p.set("Jacobian Offsets Vector", offsets);
+    }
+    // else default to the slow DOF call
+
     // set the orientiation field name explicitly if orientations are
     // required for the basis
     if(itr->second.basis->requiresOrientations())
@@ -378,9 +411,9 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
 template <typename EvalT>
 void panzer::EquationSet_DefaultImpl<EvalT>::
 buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-				  const panzer::FieldLibrary& fl,
-				  const LinearObjFactory<panzer::Traits> & lof,
-				  const Teuchos::ParameterList& user_data) const
+                                  const panzer::FieldLibrary& fl,
+                                  const LinearObjFactory<panzer::Traits> & lof,
+                                  const Teuchos::ParameterList& user_data) const
 {
   using Teuchos::ParameterList;
   using Teuchos::RCP;
@@ -395,7 +428,7 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   if(!ignoreScatter) {
     
     for(typename std::map<std::string,DOFDescriptor>::const_iterator itr=m_provided_dofs_desc.begin();
-	itr!=m_provided_dofs_desc.end();++itr) {
+        itr!=m_provided_dofs_desc.end();++itr) {
       
       RCP<std::map<std::string,std::string> > names_map = rcp(new std::map<std::string,std::string>);
       RCP< std::vector<std::string> > residual_names = rcp(new std::vector<std::string>);
@@ -407,22 +440,22 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       residual_names->push_back(itr->second.residualName.second);
 
       {
-	ParameterList p("Scatter");
-	p.set("Scatter Name", itr->second.scatterName);
-	p.set("Basis", itr->second.basis.getConst());
-	p.set("Dependent Names", residual_names);
-	p.set("Dependent Map", names_map);
-	
-	RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildScatter<EvalT>(p);
-	
-	fm.template registerEvaluator<EvalT>(op);
+        ParameterList p("Scatter");
+        p.set("Scatter Name", itr->second.scatterName);
+        p.set("Basis", itr->second.basis.getConst());
+        p.set("Dependent Names", residual_names);
+        p.set("Dependent Map", names_map);
+        
+        RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildScatter<EvalT>(p);
+        
+        fm.template registerEvaluator<EvalT>(op);
       }
       
       // Require variables
       {
-	PHX::Tag<typename EvalT::ScalarT> tag(itr->second.scatterName, 
-					      Teuchos::rcp(new PHX::MDALayout<Dummy>(0)));
-	fm.template requireField<EvalT>(tag);
+        PHX::Tag<typename EvalT::ScalarT> tag(itr->second.scatterName, 
+                                              Teuchos::rcp(new PHX::MDALayout<Dummy>(0)));
+        fm.template requireField<EvalT>(tag);
       }
     
     }
@@ -436,11 +469,11 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 template <typename EvalT>
 void panzer::EquationSet_DefaultImpl<EvalT>::
 buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-				       const panzer::FieldLayoutLibrary& fl,
-				       const Teuchos::RCP<panzer::IntegrationRule>& ir,
-				       const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
-				       const Teuchos::ParameterList& models,
-				       const Teuchos::ParameterList& user_data) const
+                                       const panzer::FieldLayoutLibrary& fl,
+                                       const Teuchos::RCP<panzer::IntegrationRule>& ir,
+                                       const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
+                                       const Teuchos::ParameterList& models,
+                                       const Teuchos::ParameterList& user_data) const
 {
   for (std::vector<std::string>::const_iterator model_name = m_closure_model_ids.begin();
        model_name != m_closure_model_ids.end(); ++model_name) {
@@ -454,22 +487,22 @@ buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 template <typename EvalT>
 void panzer::EquationSet_DefaultImpl<EvalT>::
 buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-				       const panzer::FieldLayoutLibrary& fl,
-				       const Teuchos::RCP<panzer::IntegrationRule>& ir,
-				       const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
-				       const std::string& model_name,
-				       const Teuchos::ParameterList& models,
-				       const Teuchos::ParameterList& user_data) const
+                                       const panzer::FieldLayoutLibrary& fl,
+                                       const Teuchos::RCP<panzer::IntegrationRule>& ir,
+                                       const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
+                                       const std::string& model_name,
+                                       const Teuchos::ParameterList& models,
+                                       const Teuchos::ParameterList& user_data) const
 {
   Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > evaluators = 
     factory.getAsObject<EvalT>()->buildClosureModels(model_name,
-						     models,
-						     fl,
-						     ir,
-						     *(this->m_eval_plist),
-						     user_data,
-						     this->getGlobalData(),
-						     fm);
+                                                     models,
+                                                     fl,
+                                                     ir,
+                                                     *(this->m_eval_plist),
+                                                     user_data,
+                                                     this->getGlobalData(),
+                                                     fm);
   
   for (std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > >::size_type i=0; i < evaluators->size(); ++i)
     fm.template registerEvaluator<EvalT>((*evaluators)[i]);
@@ -479,12 +512,12 @@ buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 template <typename EvalT>
 void panzer::EquationSet_DefaultImpl<EvalT>::
 buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-					   const panzer::FieldLibrary& fl,
-					   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
-					   const std::string& model_name,
-					   const Teuchos::ParameterList& models,
-					   const LinearObjFactory<panzer::Traits> & lof,
-					   const Teuchos::ParameterList& user_data) const
+                                           const panzer::FieldLibrary& fl,
+                                           const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
+                                           const std::string& model_name,
+                                           const Teuchos::ParameterList& models,
+                                           const LinearObjFactory<panzer::Traits> & lof,
+                                           const Teuchos::ParameterList& user_data) const
 {
   // add basis coordinates
   for (std::map<std::string,Teuchos::RCP<panzer::PureBasis> >::const_iterator basis =  m_unique_bases.begin();
@@ -871,9 +904,9 @@ panzer::EquationSet_DefaultImpl<EvalT>::getBasisIRLayoutForDOF(const std::string
 template <typename EvalT>
 void panzer::EquationSet_DefaultImpl<EvalT>::
 buildAndRegisterResidualSummationEvalautor(PHX::FieldManager<panzer::Traits>& fm,
-					   const std::string dof_name,
-					   const std::vector<std::string>& residual_contributions,
-					   const std::string residual_field_name) const
+                                           const std::string dof_name,
+                                           const std::vector<std::string>& residual_contributions,
+                                           const std::string residual_field_name) const
 {
   using Teuchos::rcp;
   using Teuchos::RCP;

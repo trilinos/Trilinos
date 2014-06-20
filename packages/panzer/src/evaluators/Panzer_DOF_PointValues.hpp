@@ -40,46 +40,77 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_BASIS_VALUES_EVALUATOR_DECL_HPP
-#define PANZER_BASIS_VALUES_EVALUATOR_DECL_HPP
+#ifndef PANZER_EVALUATOR_DOF_POINTVALUES_HPP
+#define PANZER_EVALUATOR_DOF_POINTVALUES_HPP
 
 #include <string>
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_Field.hpp"
 
 #include "Panzer_config.hpp"
-#include "Panzer_PointValues.hpp"
 #include "Panzer_BasisValues.hpp"
 
 namespace panzer {
     
-//! Interpolates basis DOF values to IP DOF values
-PHX_EVALUATOR_CLASS(BasisValues_Evaluator)
- 
-  Teuchos::RCP<const panzer::PureBasis> basis;
-  
-  // is anything other than ScalarT really needed here?
-  BasisValues<ScalarT,PHX::MDField<ScalarT>, PHX::MDField<ScalarT,panzer::Cell,panzer::BASIS> > basisValues;
-  PointValues<ScalarT,PHX::MDField<ScalarT> > pointValues;
-
-  PHX::MDField<ScalarT,panzer::Cell,panzer::BASIS> orientation;
-
-  bool derivativesRequired_;
- 
-  //! Initialization method to unify the constructors.
-  void initialize(const Teuchos::RCP<const panzer::PointRule> & pointRule,
-                  const Teuchos::RCP<const panzer::PureBasis> & basis,
-                  bool derivativesRequired);
-
+//! Interpolates basis DOF values to IP DOF Curl values
+template<typename EvalT, typename Traits>                   
+class DOF_PointValues : public PHX::EvaluatorWithBaseImpl<Traits>,      
+                        public PHX::EvaluatorDerived<EvalT, Traits>  {   
 public:
-  BasisValues_Evaluator(const Teuchos::RCP<const panzer::PointRule> & pointRule,
-                        const Teuchos::RCP<const panzer::PureBasis> & basis);
 
-  BasisValues_Evaluator(const Teuchos::RCP<const panzer::PointRule> & pointRule,
-                        const Teuchos::RCP<const panzer::PureBasis> & basis,
-                        bool derivativesRequired);
+  DOF_PointValues(const Teuchos::ParameterList& p);
 
-PHX_EVALUATOR_CLASS_END
+  void postRegistrationSetup(typename Traits::SetupData d,
+                             PHX::FieldManager<Traits>& fm);
+
+  void evaluateFields(typename Traits::EvalData d);
+
+private:
+
+  typedef typename EvalT::ScalarT ScalarT;
+  
+  PHX::MDField<ScalarT,Cell,Point> dof_basis;
+  PHX::MDField<ScalarT> dof_ip;
+
+  PHX::MDField<ScalarT,Cell,BASIS> dof_orientation;
+  bool is_vector_basis;
+
+  Teuchos::RCP<const PureBasis> basis;
+  BasisValues<ScalarT,PHX::MDField<ScalarT>,PHX::MDField<ScalarT,panzer::Cell,panzer::BASIS> > basisValues;
+};
+
+/** Interpolates basis DOF values to IP DOF Curl values (specialization for the jacobian)
+  * Allows short cut for simple jacobian to dof structure.
+  */
+template<typename Traits>                   
+class DOF_PointValues<panzer::Traits::Jacobian,Traits> : 
+                        public PHX::EvaluatorWithBaseImpl<Traits>,      
+                        public PHX::EvaluatorDerived<panzer::Traits::Jacobian, Traits>  {   
+public:
+
+  DOF_PointValues(const Teuchos::ParameterList& p);
+
+  void postRegistrationSetup(typename Traits::SetupData d,
+                             PHX::FieldManager<Traits>& fm);
+
+  void evaluateFields(typename Traits::EvalData d);
+
+private:
+
+  typedef panzer::Traits::Jacobian::ScalarT ScalarT;
+  
+  PHX::MDField<ScalarT,Cell,Point> dof_basis;
+  PHX::MDField<ScalarT> dof_ip;
+
+  PHX::MDField<ScalarT,Cell,BASIS> dof_orientation;
+  bool is_vector_basis;
+
+  bool accelerate_jacobian;
+  std::vector<int> offsets;
+
+  Teuchos::RCP<const PureBasis> basis;
+  BasisValues<ScalarT,PHX::MDField<ScalarT>,PHX::MDField<ScalarT,panzer::Cell,panzer::BASIS> > basisValues;
+};
 
 }
 

@@ -73,7 +73,7 @@ namespace Teuchos {
 /// #include <Teuchos_GlobalMPISession.hpp>
 ///
 /// int main () {
-///   Teuchos::GlobalMPISession (&argc, &argv, NULL);
+///   Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
 ///   // Your code goes here ...
 ///   return 0;
 /// }
@@ -94,11 +94,11 @@ namespace Teuchos {
 /// very very small subset of MPI functionality without needing to include
 /// mpi.h or depend on MPI in any way.
 ///
-/// This class also contains the the most minimal of other members that are
-/// needed for only the most simplistic of tasks needed by other TeuchosCore
+/// This class also contains the most minimal of other members that are needed
+/// for only the most simplistic of tasks needed by other TeuchosCore
 /// software.  For example, you can do a barrier or sum an int across
 /// processes.  These are needed by the most basic operations involving output
-/// or determiing success or failure across processes for unit tests.
+/// or determining success or failure across processes for unit tests.
 class TEUCHOSCORE_LIB_DLL_EXPORT GlobalMPISession
 {
 public:

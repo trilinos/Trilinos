@@ -78,34 +78,34 @@ int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
-  // Parse the command line
-  using Teuchos::CommandLineProcessor;
-  CommandLineProcessor clp;
-  clp.throwExceptions(false);
-  clp.addOutputSetupOptions(true);
+  bool success = false;
   bool verbose = false;
-  clp.setOption( "v", "disable-verbosity", &verbose, "Enable verbosity" );
+  try {
+    // Parse the command line
+    using Teuchos::CommandLineProcessor;
+    CommandLineProcessor clp;
+    clp.throwExceptions(false);
+    clp.addOutputSetupOptions(true);
+    clp.setOption( "v", "disable-verbosity", &verbose, "Enable verbosity" );
 
-  CommandLineProcessor::EParseCommandLineReturn
-    parse_return = clp.parse(argc,argv,&std::cerr);
+    CommandLineProcessor::EParseCommandLineReturn
+      parse_return = clp.parse(argc,argv,&std::cerr);
 
-  if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL )
-    return parse_return;
+    if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL )
+      return parse_return;
 
-  if (verbose)
-    std::cout << "Verbosity Activated" << std::endl;
-  else
-    std::cout << "Verbosity Disabled" << std::endl;
+    if (verbose)
+      std::cout << "Verbosity Activated" << std::endl;
+    else
+      std::cout << "Verbosity Disabled" << std::endl;
 
-  // Create a communicator for Epetra objects
+    // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
-  Epetra_MpiComm Comm( MPI_COMM_WORLD );
+    Epetra_MpiComm Comm( MPI_COMM_WORLD );
 #else
-  Epetra_SerialComm Comm;
+    Epetra_SerialComm Comm;
 #endif
 
-  bool success = false;
-  try {
     int status = 0;
 
     // Check we have only one processor since this problem doesn't work

@@ -1241,7 +1241,7 @@ void GCRODRSolMgr<ScalarType,MV,OP>::initializeStateStorage() {
       }
       else {
         // Generate C1_ by cloning itself ONLY if more space is needed.
-        if (MVT::GetNumberVecs(*U1_) < recycledBlocks_+1) {
+        if (MVT::GetNumberVecs(*C1_) < recycledBlocks_+1) {
           Teuchos::RCP<const MV> tmp = C1_;
           C1_ = MVT::Clone( *tmp, recycledBlocks_+1 );
         }

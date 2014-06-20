@@ -59,12 +59,7 @@
 
 int main(int argc, char *argv[]) {
   //
-#ifdef EPETRA_MPI
-  // Initialize MPI
-  MPI_Init(&argc,&argv);
-  Belos::MPIFinalize mpiFinalize; // Will call finalize with *any* return
-  (void)mpiFinalize;
-#endif
+  Teuchos::GlobalMPISession session(&argc, &argv, NULL);
   //
   using Teuchos::ParameterList;
   using Teuchos::RCP;

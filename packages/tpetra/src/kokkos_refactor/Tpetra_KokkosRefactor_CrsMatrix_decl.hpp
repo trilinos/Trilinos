@@ -51,7 +51,11 @@
 
 namespace Tpetra {
 
-  // Partial specialization of CrsMatrix for the new Kokkos wrapper Nodes.
+  /// \brief Partial specialization of CrsMatrix for the new Kokkos
+  ///   wrapper Nodes.
+  ///
+  /// This implements the "Kokkos refactor" version of CrsMatrix.
+  /// For full documentation, see the "classic" version of CrsMatrix.
   template <class Scalar,
             class LocalOrdinal,
             class GlobalOrdinal,
@@ -978,7 +982,7 @@ namespace Tpetra {
     RCP<const crs_graph_type> getCrsGraph () const;
 
     //! Return the underlying local kokkos mtx
-    k_local_matrix_type getLocalMatrix () {return k_lclMatrix_; } 
+    k_local_matrix_type getLocalMatrix () {return k_lclMatrix_; }
 
 
     /// \brief Number of global elements in the row map of this matrix.
@@ -1547,7 +1551,7 @@ namespace Tpetra {
     ///   Symmetric sweep (including both its Forward and its Backward
     ///   sweep) as one.
     ///
-    /// \section Tpetra_CrsMatrix_gaussSeidel_Details Requirements
+    /// \section Tpetra_KR_CrsMatrix_gaussSeidel_req Requirements
     ///
     /// This method has the following requirements:
     ///
@@ -1621,7 +1625,7 @@ namespace Tpetra {
     ///   Symmetric sweep (including both its Forward and its Backward
     ///   sweep) as one.
     ///
-    /// \section Tpetra_CrsMatrix_gaussSeidel_Details Requirements
+    /// \section Tpetra_KR_CrsMatrix_reorderedGaussSeidel_req Requirements
     ///
     /// This method has the following requirements:
     ///

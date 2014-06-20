@@ -249,7 +249,7 @@ The following example follows the same initialization steps as in the
 previous lesson.  It then creates two distributed Maps and some
 vectors, and does a few computations with the vectors.
 
-\include lesson02_init_map_vec.cpp
+\include ./lesson02_init_map_vec.cpp
 
 \section Epetra_Lesson02_example_read_modify_vec Code example: Read and modify the entries of a Vector
 
@@ -258,7 +258,7 @@ previous lesson.  It then creates a distributed Epetra_Map and a
 Epetra_Vector, and shows how to read and modify the entries of the
 Epetra_Vector.
 
-\include lesson02_read_modify_vec.cpp
+\include ./lesson02_read_modify_vec.cpp
 
 \section Epetra_Lesson02_Other Things not previously explained
 

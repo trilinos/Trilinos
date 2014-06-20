@@ -51,6 +51,6 @@ together.
 This example shows how to migrate the data in Epetra objects (sparse
 matrices and vectors) between two different parallel distributions.
 
-\include lesson05_redistribution.cpp
+\include ./lesson05_redistribution.cpp
 
 */

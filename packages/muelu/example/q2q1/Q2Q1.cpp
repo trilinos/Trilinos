@@ -518,26 +518,26 @@ namespace MueLuTests {
     double hx = 1.0;
     double hy = 1.0;
 
-    int N = map->getGlobalNumElements();
-    int n = round(sqrt(N));
+    Xpetra::global_size_t N = map->getGlobalNumElements();
+    size_t                n = Teuchos::as<size_t>(sqrt(N));
     std::cout << "N = " << N << ", n = " << n << std::endl;
     if (N == n*n) {
       // pressure coords
-      for (int j = 0; j < n; j++)
-        for (int i = 0; i < n; i++) {
+      for (size_t j = 0; j < n; j++)
+        for (size_t i = 0; i < n; i++) {
           coord1D[0][j*n+i] = i*hx;
           coord1D[1][j*n+i] = j*hy;
         }
 
     } else {
       // velocity coords
-      n = round(sqrt(N/2));
+      n = Teuchos::as<size_t>(sqrt(N/2));
 
       hx *= 0.5;
       hy *= 0.5;
 
-      for (int j = 0; j < n; j++)
-        for (int i = 0; i < n; i++) {
+      for (size_t j = 0; j < n; j++)
+        for (size_t i = 0; i < n; i++) {
           coord1D[0][2*(j*n+i)+0] = coord1D[0][2*(j*n+i)+1] = i*hx;
           coord1D[1][2*(j*n+i)+0] = coord1D[1][2*(j*n+i)+1] = j*hy;
         }

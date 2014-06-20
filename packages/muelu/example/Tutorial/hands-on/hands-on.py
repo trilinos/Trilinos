@@ -161,10 +161,10 @@ class ProblemHandler():
   def runExample(self):
     # runs example
     print "PREPARE SIMULATON"
-    cmd = "rm *.vtp *.mat example*.txt output.log aggs*.txt"
+    cmd = "rm *.vtp *.mat example*.txt output.log aggs*.txt nodes*.txt"
     runCommand(cmd)
     print "RUN EXAMPLE"
-    cmd = "mpirun -np " + str(self.numprocs) + " " + str(self.executable) + " --nx=" + str(self.meshx) + " --ny=" + str(self.meshy) + " --mgridSweeps=" + str(self.mgsweeps) + " --xml=" + str(self.xmlFileName) + " | tee output.log"
+    cmd = "mpirun -np " + str(self.numprocs) + " " + str(self.executable) + " --nx=" + str(self.meshx) + " --ny=" + str(self.meshy) + " --mgridSweeps=" + str(self.mgsweeps) + " --xml=" + str(self.xmlFileName) + " | tee output.log 2>&1"
     print cmd
     runCommand(cmd)
     runCommand("echo 'Press q to return.' >> output.log")
@@ -182,7 +182,7 @@ class ProblemHandler():
     #runCommand(cmd)
     
     #proc1 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
-    self.proc1.stdin.write("set term wxt 1\n")
+    self.proc1.stdin.write("set term x11 1\n")
     self.proc1.stdin.write("set title \"Solution\"\n")
     self.proc1.stdin.write("set dgrid3d " + str(self.meshy) + "," + str(self.meshx) + "\n")
     self.proc1.stdin.write("set style data lines\n")
@@ -194,7 +194,7 @@ class ProblemHandler():
     self.proc1.stdin.flush()
 
     #proc2 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
-    self.proc2.stdin.write("set term wxt 2\n")
+    self.proc2.stdin.write("set term x11 2\n") #wxt
     self.proc2.stdin.write("set title \"Multigrid solution\"\n")    
     self.proc2.stdin.write("set dgrid3d " + str(self.meshy) + "," + str(self.meshx) + "\n")
     self.proc2.stdin.write("set style data lines\n")
@@ -206,7 +206,7 @@ class ProblemHandler():
     self.proc2.stdin.flush()
     
     #proc3 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
-    self.proc3.stdin.write("set term wxt 3\n")
+    self.proc3.stdin.write("set term x11 3\n")
     self.proc3.stdin.write("set title \"Error (Exact vs. Multigrid)\"\n")    
     self.proc3.stdin.write("set dgrid3d " + str(self.meshy) + "," + str(self.meshx) + "\n")
     self.proc3.stdin.write("set style data lines\n")
@@ -222,7 +222,7 @@ class ProblemHandler():
     self.proc3.stdin.flush()
     
     #proc4 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
-    self.proc4.stdin.write("set term wxt 4\n")
+    self.proc4.stdin.write("set term x11 4\n")
     self.proc4.stdin.write("set title \"Distribution of processors\"\n")    
     self.proc4.stdin.write("set dgrid3d " + str(self.meshy) + "," + str(self.meshx) + "\n")
     self.proc4.stdin.write("set style data lines\n")
@@ -319,7 +319,7 @@ class ProblemHandler():
       
   def doExitProgram(self):
     print "CLEAN UP temporary data"
-    cmd = "rm *.vtp *.mat example*.txt output.log aggs*.txt"
+    cmd = "rm *.vtp *.mat example*.txt output.log aggs*.txt nodes*.txt"
     runCommand(cmd)
     print "QUIT"
     sys.exit()  
@@ -333,7 +333,7 @@ class ProblemHandler():
     if self.xmlFileName == "" or not os.path.isfile(self.xmlFileName) or not os.access(self.xmlFileName, os.R_OK):
       print bcolors.FAIL+"Solver xml parameters: "+bcolors.ENDC + str(self.xmlFileName) + bcolors.FAIL + " invalid" + bcolors.ENDC
     else:
-      print bcolors.WARNING+"Solver xml parameters:            "+bcolors.ENDC + str(self.xmlFileName)
+      print bcolors.WARNING+"Solver xml parameters:              "+bcolors.ENDC + str(self.xmlFileName)
     print bcolors.WARNING+"Number of processors:               "+bcolors.ENDC + str(self.numprocs)
     print bcolors.WARNING+"Number of Multigrid solving sweeps: "+bcolors.ENDC + str(self.mgsweeps)
     print bcolors.HEADER+"***************************   PROBLEM   ****************************"+bcolors.ENDC
@@ -348,6 +348,12 @@ class MueLu_XMLgenerator():
     self.maxMultLevels = 5   # maximum number of levels
     self.maxCoarseSize = 1000 # max. coarse size
     
+    # aggregate settings
+    self.dropTolerance = 0.0
+    self.minAggSize = 4
+    self.maxAggSize = 9
+    self.maxNeighCount = 0
+    
     # smoother settings
     self.levelSmoother = "Jacobi"
     self.levelSmootherSweeps = 1
@@ -360,6 +366,12 @@ class MueLu_XMLgenerator():
     
     # restriction operators
     self.restrictionOp = "TransPFactory"
+    
+    # rebalancing
+    self.doRebalancing = False
+    self.minRowsPerProc = 800
+    self.nnzImbalance = 1.1
+    self.rebStartLevel = 1
     
     self.isDirty = True                   # flag to store, whether changes have been saved or not
     self.exitLoop = False                 # set to true to exit current loop
@@ -414,10 +426,30 @@ class MueLu_XMLgenerator():
     self.levelSmootherDamp   = raw_input("Smoother damping: ")
     self.isDirty = True
 
+  def doDropTolerance(self):
+    self.dropTolerance = raw_input("Drop tolerance for matrix graph (default = 0.0): ")
+    self.isDirty = True
+  def doMinAggSize(self):
+    self.minAggSize = raw_input("Minimum number of nodes per aggregate: ")
+    self.isDirty
+  def doMaxAggSize(self):
+    self.maxAggSize = raw_input("Maximum number of nodes per aggregate: ")
+    self.isDirty
+  def doMaxNeigh(self):
+    self.maxNeighCount = raw_input("Maximum number of already aggregated neighbor nodes (default = 0): ")
+    self.isDirty
+    
   # Transfer operators
   def doPaAMG(self):
     self.transferOps = "PA-AMG"
     self.transferOpDamp = 0.0
+    if self.restrictionOp == "GenericRFactory":
+      self.restrictionOp = "TransPFactory"
+      print bcolors.WARNING + "GenericRFactory cannot be used with non-smoothed PA-AMG prolongation operators. We change it back to TransPFactory."+bcolors.ENDC
+      print ""
+      print "Press any key to proceed"
+      waitForKey()
+
     self.isDirty = True
   def doSaAMG(self):
     self.transferOps = "SA-AMG"
@@ -434,6 +466,25 @@ class MueLu_XMLgenerator():
     self.isDirty = True
   def doNonsymR(self):
     self.restrictionOp = "GenericRFactory"
+    if self.transferOps == "PA-AMG":
+      self.restrictionOp = "TransPFactory"
+      print bcolors.WARNING+"GenericRFactory cannot be used with non-smoothed PA-AMG prolongation operators. We change it back to TransPFactory."
+      print "To use GenericRFactory you have to select either SaPFactory or PgPFactory for prolongation."+bcolors.ENDC
+      print ""
+      print "Press any key to proceed"
+      waitForKey()
+    self.isDirty = True
+  
+  # Rebalancing
+  def doRebalancingOption(self):
+    self.doRebalancing = True
+    self.minRowsPerProc = raw_input("Minimum number of DOFs per processor: ")
+    self.nnzImbalance = raw_input("Max. nonzero imbalance (default 1.1): ")
+    self.rebStartLevel = raw_input("Start rebalancing on level (default 1): ")
+    self.isDirty = True
+    
+  def doNoRebalancingOption(self):
+    self.doRebalancing = False
     self.isDirty = True
   
   def runMenu(self,options,callbacks):
@@ -449,7 +500,14 @@ class MueLu_XMLgenerator():
     while self.exitLoop == False:
       self.runMenu(options,callbacks)
     self.exitLoop=True #False
-    
+ 
+  def doAggregatesMenu(self):
+    options = ['Drop tolerance', 'Min. aggregate size', 'Max. aggregate size', 'Max. Neighbor Count', 'Back']
+    callbacks = [self.doDropTolerance,self.doMinAggSize, self.doMaxAggSize, self.doMaxNeigh, self.askForSolver]
+    while self.exitLoop == False:
+      self.runMenu(options,callbacks)
+    self.exitLoop=True #False 
+ 
   def doSmootherMenu(self):
     options = ['Jacobi', 'Gauss-Seidel', 'Sym. Gauss-Seidel', 'Back']
     callbacks = [self.doRelaxationJacobi,self.doRelaxationGS, self.doRelaxationSymGS, self.askForSolver]
@@ -464,7 +522,12 @@ class MueLu_XMLgenerator():
     options = ['Symmetric', 'Non-symmetric', 'Back']
     callbacks = [self.doSymR,self.doNonsymR, self.askForSolver]
     self.runMenu(options,callbacks)      
-      
+   
+  def doRebalancingMenu(self):
+    options = ['No rebalancing', 'Activate rebalancing', 'Back']
+    callbacks = [self.doNoRebalancingOption,self.doRebalancingOption, self.askForSolver]
+    self.runMenu(options,callbacks)      
+   
   def doExitProgram(self):
     #sys.exit() 
     print "doEXIT"
@@ -478,29 +541,41 @@ class MueLu_XMLgenerator():
     
     #options = ['Set Output file name','Common Multigrid settings', 'Level smoother settings', 'Transfer operators', 'Restriction operators', 'Save XML file', 'Exit']
     #callbacks = [self.doFileName, self.doCommonMenu, self.doSmootherMenu, self.doTransferMenu, self.doRestrictorMenu, self.generateXMLfile, self.doExitProgram]
-    options = ['Common Multigrid settings', 'Level smoother settings', 'Transfer operators', 'Restriction operators', 'Save XML file', 'Back']
-    callbacks = [self.doCommonMenu, self.doSmootherMenu, self.doTransferMenu, self.doRestrictorMenu, self.generateXMLfile, self.doExitProgram]
+    options = ['Common Multigrid settings', 'Aggregate settings', 'Level smoother settings', 'Transfer operators', 'Restriction operators', 'Rebalancing options', 'Save XML file', 'Back']
+    callbacks = [self.doCommonMenu, self.doAggregatesMenu, self.doSmootherMenu, self.doTransferMenu, self.doRestrictorMenu, self.doRebalancingMenu, self.generateXMLfile, self.doExitProgram]
     
     self.runMenu(options,callbacks)      
         
   def printSettings(self):
     ## print out all made settings for xml file
     print bcolors.HEADER+"***************************   SETTINGS   ****************************"+bcolors.ENDC
-    print bcolors.WARNING+"XML file name:          "+bcolors.ENDC + str(self.xmlFileName)
+    print bcolors.WARNING+"XML file name:           "+bcolors.ENDC + str(self.xmlFileName)
     print ""
-    print bcolors.WARNING+"Max. MultiGrid levels:  "+bcolors.ENDC + str(self.maxMultLevels)
-    print bcolors.WARNING+"Max. CoarseSize:        "+bcolors.ENDC + str(self.maxCoarseSize)
+    print bcolors.WARNING+"Max. MultiGrid levels:   "+bcolors.ENDC + str(self.maxMultLevels)
+    print bcolors.WARNING+"Max. CoarseSize:         "+bcolors.ENDC + str(self.maxCoarseSize)
     print ""
-    print bcolors.WARNING+"Level smoother:         "+bcolors.ENDC + str(self.levelSmoother)
-    print bcolors.WARNING+"Level smoothing sweeps: "+bcolors.ENDC + str(self.levelSmootherSweeps)
-    print bcolors.WARNING+"Level damping parameter:"+bcolors.ENDC + str(self.levelSmootherDamp)
+    print bcolors.WARNING+"Level smoother:          "+bcolors.ENDC + str(self.levelSmoother)
+    print bcolors.WARNING+"Level smoothing sweeps:  "+bcolors.ENDC + str(self.levelSmootherSweeps)
+    print bcolors.WARNING+"Level damping parameter: "+bcolors.ENDC + str(self.levelSmootherDamp)
     print ""
-    print bcolors.WARNING+"Coarse solver:          "+bcolors.ENDC + str(self.coarseSolver)
+    print bcolors.WARNING+"Coarse solver:           "+bcolors.ENDC + str(self.coarseSolver)
+    print ""
+    print bcolors.WARNING+"Graph drop tolerance:    "+bcolors.ENDC + str(self.dropTolerance)
+    print bcolors.WARNING+"Aggregate size (min/max):"+bcolors.ENDC + str(self.minAggSize) + "/" + str(self.maxAggSize)
+    print bcolors.WARNING+"Max. neighbor count:     "+bcolors.ENDC + str(self.maxNeighCount)
     print ""
     print bcolors.WARNING+"Transfer operators:     "+bcolors.ENDC + str(self.transferOps)
     print bcolors.WARNING+"Transfer smoothing par.:"+bcolors.ENDC + str(self.transferOpDamp)
     print ""
     print bcolors.WARNING+"Restriction operator:   "+bcolors.ENDC + str(self.restrictionOp)
+    print ""
+    if self.doRebalancing == False:
+      print bcolors.WARNING+"NO Rebalancing"+bcolors.ENDC
+    else:
+      print bcolors.WARNING+"Rebalancing active:"+ bcolors.ENDC
+      print bcolors.WARNING+"Minimum DOFs per proc:  "+ bcolors.ENDC + str(self.minRowsPerProc)
+      print bcolors.WARNING+"Nonzero imbalance:      "+ bcolors.ENDC + str(self.nnzImbalance)      
+      print bcolors.WARNING+"Start level for rebal.: "+ bcolors.ENDC + str(self.rebStartLevel)
     print bcolors.HEADER+"***************************   SETTINGS   ****************************"+bcolors.ENDC
     
     print ""
@@ -524,7 +599,19 @@ class MueLu_XMLgenerator():
       line = line.replace("$RESTRICTOR",  str(self.restrictionOp))
       line = line.replace("$PROLONGATOR", str(self.transferOps))
       line = line.replace("$SADAMPING"  , str(self.transferOpDamp))
+      line = line.replace("$DROPTOL"    , str(self.dropTolerance))
+      line = line.replace("$MAXNEIGH"    , str(self.maxNeighCount))
+      line = line.replace("$MINAGGS"    , str(self.minAggSize))
+      line = line.replace("$MAXAGGS"    , str(self.maxAggSize))     
       
+      if self.doRebalancing == False:
+	line = line.replace("$MANAGER_PROLONGATOR", str(self.transferOps))
+	line = line.replace("$MANAGER_RESTRICTOR",  "myRestrictorFact")
+	line = line.replace("$MANAGER_RAP", "myRAPFact")
+      else:
+	line = line.replace("$MANAGER_PROLONGATOR", "myRebalanceProlongatorFact")
+	line = line.replace("$MANAGER_RESTRICTOR",  "myRebalanceRestrictionFact")
+	line = line.replace("$MANAGER_RAP", "myRebalanceAFact")
       o.write(line)
     o.close() 
     self.isDirty = False

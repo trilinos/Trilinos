@@ -59,16 +59,12 @@
 
 int main(int argc, char *argv[]) {
   //
-#ifdef EPETRA_MPI
-  // Initialize MPI
-  MPI_Init(&argc,&argv);
-  Belos::MPIFinalize mpiFinalize; // Will call finalize with *any* return
-  (void)mpiFinalize;
-#endif
+  Teuchos::GlobalMPISession session(&argc, &argv, NULL);
   //
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
+
   bool success = false;
   bool verbose = false;
   try {
@@ -207,8 +203,4 @@ int main(int argc, char *argv[]) {
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
-} // end test_bl_cg_hb.cpp
-
-
-
-
+}

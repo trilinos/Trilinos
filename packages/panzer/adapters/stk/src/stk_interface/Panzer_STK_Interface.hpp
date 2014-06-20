@@ -530,11 +530,11 @@ public:
    // const stk_classic::mesh::fem::FEMInterface & getFEMInterface() const 
    // { return *femPtr_; }
 
-   const stk_classic::mesh::EntityRank getElementRank() const { return metaData_->element_rank(); }
-   const stk_classic::mesh::EntityRank getSideRank() const { return metaData_->side_rank(); }
-   const stk_classic::mesh::EntityRank getFaceRank() const { return metaData_->face_rank(); }
-   const stk_classic::mesh::EntityRank getEdgeRank() const { return metaData_->edge_rank(); }
-   const stk_classic::mesh::EntityRank getNodeRank() const { return metaData_->node_rank(); }
+   stk_classic::mesh::EntityRank getElementRank() const { return metaData_->element_rank(); }
+   stk_classic::mesh::EntityRank getSideRank() const { return metaData_->side_rank(); }
+   stk_classic::mesh::EntityRank getFaceRank() const { return metaData_->face_rank(); }
+   stk_classic::mesh::EntityRank getEdgeRank() const { return metaData_->edge_rank(); }
+   stk_classic::mesh::EntityRank getNodeRank() const { return metaData_->node_rank(); }
 
    /** Build fields and parts from the meta data
      */

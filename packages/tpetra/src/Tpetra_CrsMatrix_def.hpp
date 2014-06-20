@@ -2716,8 +2716,25 @@ namespace Tpetra {
     }
 
     if (isStaticGraph ()) {
-      const bool domainMapsMatch = staticGraph_->getDomainMap()->isSameAs(*domainMap);
-      const bool rangeMapsMatch  = staticGraph_->getRangeMap() ->isSameAs(*rangeMap);
+      // FIXME (mfh 18 Jun 2014) This check for correctness of the
+      // input Maps incurs a penalty of two all-reduces for the
+      // otherwise optimal const graph case.
+      //
+      // We could turn these (max) 2 all-reduces into (max) 1, by
+      // fusing them.  We could do this by adding a "locallySameAs"
+      // method to Map, which would return one of four states:
+      //
+      //   a. Certainly globally the same
+      //   b. Certainly globally not the same
+      //   c. Locally the same
+      //   d. Locally not the same
+      //
+      // The first two states don't require further communication.
+      // The latter two states require an all-reduce to communicate
+      // globally, but we only need one all-reduce, since we only need
+      // to check whether at least one of the Maps is wrong.
+      const bool domainMapsMatch = staticGraph_->getDomainMap ()->isSameAs (*domainMap);
+      const bool rangeMapsMatch  = staticGraph_->getRangeMap ()->isSameAs (*rangeMap);
 
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         ! domainMapsMatch, std::runtime_error,

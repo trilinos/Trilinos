@@ -59,6 +59,8 @@ using namespace boost::mpl::placeholders;
 
 namespace panzer {
 
+class UniqueGlobalIndexerBase; // forward declaration
+
 /** Abstract factory that builds the linear algebra 
   * objects required for the assembly including the 
   * gather/scatter evaluator objects. 
@@ -251,6 +253,9 @@ public:
    template <typename EvalT>
    Teuchos::RCP<PHX::Evaluator<Traits> > buildScatterInitialCondition(const Teuchos::ParameterList & pl) const
    { return Teuchos::rcp_dynamic_cast<PHX::Evaluator<Traits> >(scatterInitialConditionManager_->template getAsBase<EvalT>()->clone(pl)); }
+
+   //! Get the global indexer object associated with this factory
+   virtual Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> getUniqueGlobalIndexerBase() const = 0;
 
    virtual void beginFill(LinearObjContainer & loc) const {}
    virtual void endFill(LinearObjContainer & loc) const {}
