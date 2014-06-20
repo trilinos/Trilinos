@@ -536,65 +536,81 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
       ML_Gen_Smoother_Jacobi(ml_, currentLevel, pre_or_post,
                              Mynum_smoother_steps, Myomega);
 
-    } else if( MySmoother == "Gauss-Seidel" ) {
-
+    } else if( MySmoother == "Gauss-Seidel"){ 
       // ================== //
       // point Gauss-Seidel //
       // ================== //
 
       bool gs_type = List_.get("smoother: Gauss-Seidel efficient symmetric",false);
       bool use_l1  = List_.get("smoother: use l1 Gauss-Seidel",false);
+      bool use_ml_smoother = ml_->Amat[currentLevel].type != ML_TYPE_CRS_MATRIX && ml_->Amat[currentLevel].type != ML_TYPE_ROW_MATRIX
+		&& ml_->Amat[currentLevel].type != ML_TYPE_VBR_MATRIX;
+#ifndef HAVE_ML_IFPACK
+      use_ml_smoother=true;
+#endif
 
-      if( verbose_ ) std::cout << msg << "Gauss-Seidel (sweeps="
-			       << Mynum_smoother_steps << ",omega=" << Myomega << ","
-			       << MyPreOrPostSmoother
-			       << (gs_type ? ",efficient symmetric" : "" )
-			       << (use_l1  ? ",l1 damping" : "" )
-			       << ")" <<std::endl;
-
-#ifdef HAVE_ML_IFPACK
-      std::string MyIfpackType = "point relaxation stand-alone";
-      ParameterList& MyIfpackList = smList.sublist("smoother: ifpack list");
-      MyIfpackList.set("relaxation: type", "Gauss-Seidel");
-      MyIfpackList.set("relaxation: sweeps", Mynum_smoother_steps);
-      MyIfpackList.set("relaxation: damping factor", Myomega);
-      MyIfpackList.set("relaxation: use l1",use_l1);
-      int smoothing_indices=0;
-      if(MyIfpackList.isParameter("relaxation: number of local smoothing indices"))
-	smoothing_indices = MyIfpackList.get("relaxation: number of local smoothing indices",0);
-
-      if (verbose_) {
-	if (ml_->Amat[currentLevel].type == ML_TYPE_CRS_MATRIX)
-	  std::cout << msg << "Epetra_CrsMatrix detected, using "
-		    << "Ifpack implementation" << std::endl;
+      if( verbose_ ) {
+	if(use_ml_smoother)
+	  std::cout << msg << "ML Gauss-Seidel (sweeps="
+		    << Mynum_smoother_steps << ",omega=" << Myomega << ","
+		    << MyPreOrPostSmoother
+		    << (gs_type ? ",efficient symmetric" : "" )
+		    << ")" <<std::endl;
 	else
-	  std::cout << msg << "Wrapping to use "
-		    << "Ifpack implementation" << std::endl;
-	if (smoothing_indices)
-	  std::cout << msg << "Local/reordered smoothing with " << smoothing_indices<<" indices" << std::endl;
+	  std::cout << msg << "Gauss-Seidel (sweeps="
+		    << Mynum_smoother_steps << ",omega=" << Myomega << ","
+		    << MyPreOrPostSmoother
+		    << (gs_type ? ",efficient symmetric" : "" )
+		    << (use_l1  ? ",l1 damping" : "" )
+		    << ")" <<std::endl;
       }
 
-      if(gs_type){
-	if(pre_or_post==ML_PRESMOOTHER || pre_or_post==ML_BOTH) {
+      if(!use_ml_smoother) {
+#ifdef HAVE_ML_IFPACK
+	std::string MyIfpackType = "point relaxation stand-alone";
+	ParameterList& MyIfpackList = smList.sublist("smoother: ifpack list");
+	MyIfpackList.set("relaxation: type", "Gauss-Seidel");
+	MyIfpackList.set("relaxation: sweeps", Mynum_smoother_steps);
+	MyIfpackList.set("relaxation: damping factor", Myomega);
+	MyIfpackList.set("relaxation: use l1",use_l1);
+	int smoothing_indices=0;
+	if(MyIfpackList.isParameter("relaxation: number of local smoothing indices"))
+	  smoothing_indices = MyIfpackList.get("relaxation: number of local smoothing indices",0);
+	
+	if (verbose_) {
+	  if (ml_->Amat[currentLevel].type == ML_TYPE_CRS_MATRIX)
+	    std::cout << msg << "Epetra_CrsMatrix detected, using "
+		      << "Ifpack implementation" << std::endl;
+	  else 
+	    std::cout << msg << "Wrapping to use "
+		      << "Ifpack implementation" << std::endl;
+	  if (smoothing_indices)
+	    std::cout << msg << "Local/reordered smoothing with " << smoothing_indices<<" indices" << std::endl;
+	}
+	
+	if(gs_type){
+	  if(pre_or_post==ML_PRESMOOTHER || pre_or_post==ML_BOTH) {
+	    ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
+				   IfpackOverlap, currentLevel, ML_PRESMOOTHER,
+				   (void*)&MyIfpackList,(void*)Comm_);
+	  }
+	  if(pre_or_post==ML_POSTSMOOTHER || pre_or_post==ML_BOTH) {
+	    ParameterList& BackwardSmoothingList_= MyIfpackList;
+	    BackwardSmoothingList_.set("relaxation: backward mode",true);
+	    ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
+				   IfpackOverlap, currentLevel,  ML_POSTSMOOTHER,
+				   (void*)&BackwardSmoothingList_,(void*)Comm_);
+	  }
+	}
+	else{
 	  ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
-				 IfpackOverlap, currentLevel, ML_PRESMOOTHER,
+				 IfpackOverlap, currentLevel, pre_or_post,
+				 //MyIfpackList,*Comm_);
 				 (void*)&MyIfpackList,(void*)Comm_);
 	}
-	if(pre_or_post==ML_POSTSMOOTHER || pre_or_post==ML_BOTH) {
-	  ParameterList& BackwardSmoothingList_= MyIfpackList;
-	  BackwardSmoothingList_.set("relaxation: backward mode",true);
-	  ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
-                                 IfpackOverlap, currentLevel,  ML_POSTSMOOTHER,
-				 (void*)&BackwardSmoothingList_,(void*)Comm_);
-	}
-      }
-      else{
-	ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
-			       IfpackOverlap, currentLevel, pre_or_post,
-			       //MyIfpackList,*Comm_);
-			       (void*)&MyIfpackList,(void*)Comm_);
-      }
-#else
+#endif
+      }       
+      else {
         if(gs_type)
           ML_Gen_Smoother_EffSymGaussSeidel(ml_, currentLevel, pre_or_post,
                                             Mynum_smoother_steps, Myomega);
@@ -602,10 +618,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
         else
           ML_Gen_Smoother_GaussSeidel(ml_, currentLevel, pre_or_post,
                                       Mynum_smoother_steps, Myomega);
-#endif
+      }
 
-    } else if( MySmoother == "ML Gauss-Seidel" ) {
-
+    } else if( MySmoother == "ML Gauss-Seidel"){
       // ======================= //
       // ML's point Gauss-Seidel //
       // ======================= //
@@ -629,41 +644,57 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
       // symmetric Gauss-Seidel //
       // ====================== //
       bool use_l1  = List_.get("smoother: use l1 Gauss-Seidel",false);
-      if( verbose_ ) std::cout << msg << "symmetric Gauss-Seidel (sweeps="
-			       << Mynum_smoother_steps << ",omega=" << Myomega << ","
-			       << MyPreOrPostSmoother
-			       << (use_l1  ? ",l1 damping" : "" )
-			       << ")" <<std::endl;
-#ifdef HAVE_ML_IFPACK
-      std::string MyIfpackType = "point relaxation stand-alone";
-      ParameterList& MyIfpackList = smList.sublist("smoother: ifpack list");;
-      MyIfpackList.set("relaxation: type", "symmetric Gauss-Seidel");
-      MyIfpackList.set("relaxation: sweeps", Mynum_smoother_steps);
-      MyIfpackList.set("relaxation: damping factor", Myomega);
-      MyIfpackList.set("relaxation: use l1",use_l1);
-      int smoothing_indices=0;
-      if(MyIfpackList.isParameter("relaxation: number of local smoothing indices"))
-	smoothing_indices = MyIfpackList.get("relaxation: number of local smoothing indices",0);
-
-
-      if (verbose_) {
-	if (ml_->Amat[currentLevel].type == ML_TYPE_CRS_MATRIX)
-	  std::cout << msg << "Epetra_CrsMatrix detected, using "
-		    << "Ifpack implementation" << std::endl;
+      bool use_ml_smoother = ml_->Amat[currentLevel].type != ML_TYPE_CRS_MATRIX && ml_->Amat[currentLevel].type != ML_TYPE_ROW_MATRIX 
+	&& ml_->Amat[currentLevel].type != ML_TYPE_VBR_MATRIX;
+#ifndef HAVE_ML_IFPACK
+      use_ml_smoother=true;
+#endif
+      if( verbose_ ) {
+	if(use_ml_smoother)
+	  std::cout << msg << "ML symmetric Gauss-Seidel (sweeps="
+		    << Mynum_smoother_steps << ",omega=" << Myomega << ","
+		    << MyPreOrPostSmoother
+		    << ")" <<std::endl;
 	else
-	  std::cout << msg << "Wrapping to use "
-		    << "Ifpack implementation" << std::endl;
-	if (smoothing_indices)
-	  std::cout << msg << "Local/reordered smoothing with " << smoothing_indices<<" indices" << std::endl;
+	  std::cout << msg << "symmetric Gauss-Seidel (sweeps="
+		    << Mynum_smoother_steps << ",omega=" << Myomega << ","
+		    << MyPreOrPostSmoother
+		    << (use_l1  ? ",l1 damping" : "" )
+		    << ")" <<std::endl;
       }
 
-      ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
-			     IfpackOverlap, currentLevel, pre_or_post,
-			     (void*)&MyIfpackList,(void*)Comm_);
-#else
-      ML_Gen_Smoother_SymGaussSeidel(ml_, currentLevel, pre_or_post,
-                                     Mynum_smoother_steps, Myomega);
+      if(!use_ml_smoother) {
+#ifdef HAVE_ML_IFPACK
+	std::string MyIfpackType = "point relaxation stand-alone";
+	ParameterList& MyIfpackList = smList.sublist("smoother: ifpack list");;
+	MyIfpackList.set("relaxation: type", "symmetric Gauss-Seidel");
+	MyIfpackList.set("relaxation: sweeps", Mynum_smoother_steps);
+	MyIfpackList.set("relaxation: damping factor", Myomega);
+	MyIfpackList.set("relaxation: use l1",use_l1);
+	int smoothing_indices=0;
+	if(MyIfpackList.isParameter("relaxation: number of local smoothing indices"))
+	  smoothing_indices = MyIfpackList.get("relaxation: number of local smoothing indices",0);
+	
+	
+	if (verbose_) {
+	  if (ml_->Amat[currentLevel].type == ML_TYPE_CRS_MATRIX)
+	    std::cout << msg << "Epetra_CrsMatrix detected, using "
+		      << "Ifpack implementation" << std::endl;
+	  else
+	    std::cout << msg << "Wrapping to use "
+		      << "Ifpack implementation" << std::endl;
+	  if (smoothing_indices)
+	    std::cout << msg << "Local/reordered smoothing with " << smoothing_indices<<" indices" << std::endl;
+	}
+	
+	ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
+			       IfpackOverlap, currentLevel, pre_or_post,
+			       (void*)&MyIfpackList,(void*)Comm_);
 #endif
+      }
+      else 
+	ML_Gen_Smoother_SymGaussSeidel(ml_, currentLevel, pre_or_post,
+				       Mynum_smoother_steps, Myomega);
     } else if( MySmoother == "ML symmetric Gauss-Seidel" ) {
 
       // =========================== //
