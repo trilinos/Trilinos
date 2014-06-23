@@ -11,6 +11,7 @@
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, EntityRank
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include <exampleMeshes/StkMeshFromGeneratedMesh.h>
 
 using stk::mesh::MetaData;
 
@@ -391,3 +392,31 @@ TEST( UnitTestCreateEdges , testCreateEdges3x3 )
     }
   }
 }
+
+TEST( UnitTestCreateEdges , hex1x1x4 )
+{
+    stk::ParallelMachine communicator = MPI_COMM_WORLD;
+    int procCount = stk::parallel_machine_size(communicator);
+
+    if(procCount == 2)
+    {
+        const std::string generatedMeshSpec = "generated:1x1x4|sideset:xXyYzZ|nodeset:xXyYzZ";
+        unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
+
+        stk::mesh::BulkData &stkMeshBulkData = *stkMesh.getBulkData();
+
+        const stk::mesh::BucketVector &buckets = stkMeshBulkData.buckets(stk::topology::EDGE_RANK);
+
+        EXPECT_EQ(0u, buckets.size());
+
+        stk::mesh::create_edges(stkMeshBulkData);
+
+        EXPECT_NE(0u, buckets.size());
+
+        stkMeshBulkData.modification_begin();
+        stkMeshBulkData.modification_end();
+    }
+}
+
+
+

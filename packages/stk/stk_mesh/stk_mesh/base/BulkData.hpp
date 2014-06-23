@@ -269,6 +269,7 @@ public:
    *              a parallel-consistent exception will be thrown.
    */
   bool modification_end( modification_optimization opt = MOD_END_SORT );
+  bool modification_end_for_edge_creation( modification_optimization opt = MOD_END_SORT);
 
 
   /** If field-data was set to not stay in sync with buckets as the mesh was populated,
@@ -1359,6 +1360,8 @@ private:
   void ghost_entities_and_fields(Ghosting & ghosts, const std::set<EntityProc , EntityLess>& new_send);
 
   bool internal_modification_end( bool regenerate_aura, modification_optimization opt );
+  bool internal_modification_end_for_edge_creation( bool regenerate_aura, modification_optimization opt );
+
   void internal_resolve_shared_modify_delete();
   void internal_resolve_shared_modify_delete_second_pass();
   void internal_resolve_ghosted_modify_delete();
@@ -1366,7 +1369,9 @@ private:
   void resolve_ownership_of_modified_entities(const std::vector<stk::mesh::Entity> &shared_new);
 
   void internal_resolve_shared_membership();
-  void internal_update_distributed_index( std::vector<stk::mesh::Entity> & shared_new );
+  void internal_update_distributed_index(stk::mesh::EntityRank entityRank, std::vector<stk::mesh::Entity> & shared_new );
+  void internal_update_distributed_index(std::vector<stk::mesh::Entity> & shared_new );
+
   void move_entities_to_proper_part_ownership( const std::vector<stk::mesh::Entity> &shared_modified );
   void update_comm_list(const std::vector<stk::mesh::Entity>& shared_modified);
 
