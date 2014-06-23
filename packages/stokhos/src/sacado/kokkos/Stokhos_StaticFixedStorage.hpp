@@ -43,6 +43,7 @@
 #define STOKHOS_STATIC_FIXED_STORAGE_HPP
 
 #include "Stokhos_StaticArrayTraits.hpp"
+#include "Stokhos_MemoryTraits.hpp"
 
 #include "Kokkos_Macros.hpp"
 #include "Kokkos_Cuda.hpp"
@@ -74,6 +75,9 @@ namespace Stokhos {
     typedef const value_type* const_pointer;
     typedef const volatile value_type* const_volatile_pointer;
     typedef Stokhos::StaticArrayTraits<value_type,device_type> ss;
+
+    typedef typename device_type::memory_space memory_space;
+    typedef typename Stokhos::MemoryTraits<memory_space> MemTraits;
 
     //! Turn StaticFixedStorage into a meta-function class usable with mpl::apply
     template <typename ord_t, typename val_t = value_t , typename dev_t = device_t >
@@ -263,16 +267,8 @@ namespace Stokhos {
   private:
 
     //! Coefficient values
-#if defined(__INTEL_COMPILER)
-
-#if defined(__MIC__)
-    value_type coeff_[Num] __attribute__((aligned(64)));
-#elif defined(__AVX__)
-    value_type coeff_[Num] __attribute__((aligned(32)));
-#else
-    value_type coeff_[Num] __attribute__((aligned(16)));
-#endif
-
+#if STOKHOS_ALIGN_MEMORY && ( defined(__INTEL_COMPILER) )
+    value_type coeff_[Num] __attribute__((aligned(MemTraits::Alignment)));
 #else
     value_type coeff_[Num];
 #endif
@@ -306,6 +302,9 @@ namespace Stokhos {
     typedef const value_type* const_pointer;
     typedef const volatile value_type* const_volatile_pointer;
     typedef Stokhos::StaticArrayTraits<value_type,device_type> ss;
+
+    typedef typename device_type::memory_space memory_space;
+    typedef typename Stokhos::MemoryTraits<memory_space> MemTraits;
 
     //! Turn StaticFixedStorage into a meta-function class usable with mpl::apply
     template <typename ord_t, typename val_t = value_t , typename dev_t = device_type >

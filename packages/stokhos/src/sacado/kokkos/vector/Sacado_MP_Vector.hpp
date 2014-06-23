@@ -56,6 +56,7 @@
 #include "Sacado_mpl_apply.hpp"
 #include "Sacado_mpl_range_c.hpp"
 #include "Stokhos_mpl_for_each.hpp"
+#include "Stokhos_MemoryTraits.hpp"
 
 #include "Kokkos_View_Utils.hpp"
 
@@ -142,6 +143,9 @@ namespace Sacado {
       typedef typename storage_type::const_reference const_reference;
       typedef typename storage_type::const_volatile_reference const_volatile_reference;
 
+      typedef typename device_type::memory_space memory_space;
+      typedef typename Stokhos::MemoryTraits<memory_space> MemTraits;
+
       //! Typename of scalar's (which may be different from value_type)
       typedef typename ScalarType<value_type>::type scalar_type;
 
@@ -153,6 +157,41 @@ namespace Sacado {
 
       //! Number of arguments
       static const int num_args = 1;
+
+#if STOKHOS_ALIGN_MEMORY
+      KOKKOS_INLINE_FUNCTION
+      static void* operator new(std::size_t sz) {
+        return MemTraits::alloc(sz);
+      }
+      KOKKOS_INLINE_FUNCTION
+      static void* operator new[](std::size_t sz) {
+        return MemTraits::alloc(sz);
+      }
+      KOKKOS_INLINE_FUNCTION
+      static void* operator new(std::size_t sz, void* ptr) {
+        return ptr;
+      }
+      KOKKOS_INLINE_FUNCTION
+      static void* operator new[](std::size_t sz, void* ptr) {
+        return ptr;
+      }
+      KOKKOS_INLINE_FUNCTION
+      static void operator delete(void* ptr) {
+        MemTraits::free(ptr);
+      }
+      KOKKOS_INLINE_FUNCTION
+      static void operator delete[](void* ptr) {
+        MemTraits::free(ptr);
+      }
+      KOKKOS_INLINE_FUNCTION
+      static void operator delete(void* ptr, void*) {
+        MemTraits::free(ptr);
+      }
+      KOKKOS_INLINE_FUNCTION
+      static void operator delete[](void* ptr, void*) {
+        MemTraits::free(ptr);
+      }
+#endif
 
       //! Default constructor
       /*!
@@ -1572,6 +1611,54 @@ namespace Sacado {
 } // namespace Sacado
 
 #include "Sacado_MP_Vector_ops.hpp"
+
+#if STOKHOS_ALIGN_MEMORY
+
+#include <memory>
+
+namespace std {
+
+template <typename Storage>
+class allocator< Sacado::MP::Vector< Storage > >
+  : public Stokhos::aligned_allocator< Sacado::MP::Vector< Storage > > {
+public:
+  typedef Sacado::MP::Vector<Storage>    T;
+  typedef Stokhos::aligned_allocator<T>  Base;
+  typedef typename Base::value_type      value_type;
+  typedef typename Base::pointer         pointer;
+  typedef typename Base::const_pointer   const_pointer;
+  typedef typename Base::reference       reference;
+  typedef typename Base::const_reference const_reference;
+  typedef typename Base::size_type       size_type;
+  typedef typename Base::difference_type difference_type;
+
+  template <class U> struct rebind { typedef allocator<U> other; };
+  allocator() {}
+  template <class U> allocator(const allocator<U>&) {}
+};
+
+template <typename Storage>
+class allocator< const Sacado::MP::Vector< Storage > >
+  : public Stokhos::aligned_allocator< const Sacado::MP::Vector< Storage > > {
+public:
+  typedef Sacado::MP::Vector<Storage>    T;
+  typedef Stokhos::aligned_allocator<const T> Base;
+  typedef typename Base::value_type      value_type;
+  typedef typename Base::pointer         pointer;
+  typedef typename Base::const_pointer   const_pointer;
+  typedef typename Base::reference       reference;
+  typedef typename Base::const_reference const_reference;
+  typedef typename Base::size_type       size_type;
+  typedef typename Base::difference_type difference_type;
+
+  template <class U> struct rebind { typedef allocator<U> other; };
+  allocator() {}
+  template <class U> allocator(const allocator<U>&) {}
+};
+
+}
+
+#endif
 
 #endif // HAVE_STOKHOS_SACADO
 
