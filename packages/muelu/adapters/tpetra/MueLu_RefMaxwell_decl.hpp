@@ -60,6 +60,7 @@
 #include "Tpetra_Operator.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector_decl.hpp"
+#include "MatrixMarket_Tpetra.hpp"
 #include "Xpetra_Matrix.hpp"
 #include "Xpetra_MatrixFactory.hpp"
 #include "Xpetra_CrsMatrixWrap.hpp"
@@ -202,6 +203,15 @@ namespace MueLu {
     //! apply Hiptmair smoothing
     void applyHiptmairSmoother(const XTMV& RHS, XTMV& X) const;
 
+    //! apply additive version of preconditioner (block Jacobi for 2x2 solve)
+    void applyInverseAdditive(const XTMV& RHS, XTMV& X) const;
+
+    //! apply 1-2-1 version of preconditioner
+    void applyInverse121(const XTMV& RHS, XTMV& X) const;
+
+    //! apply 2-1-2 version of preconditioner
+    void applyInverse212(const XTMV& RHS, XTMV& X) const;
+
     //! Returns in Y the result of a Tpetra::Operator applied to a Tpetra::MultiVector X.
     //! \param[in]  X - Tpetra::MultiVector of dimension NumVectors to multiply with matrix.
     //! \param[out] Y - Tpetra::MultiVector of dimension NumVectors containing result.
@@ -240,7 +250,7 @@ namespace MueLu {
     //! Some options
     bool disable_addon_;
     int MaxCoarseSize_, MaxLevels_;
-    std::string precType11_, precType22_;
+    std::string precType11_, precType22_, mode_;
 
   };
 
