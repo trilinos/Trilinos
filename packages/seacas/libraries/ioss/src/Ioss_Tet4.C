@@ -100,6 +100,7 @@ Ioss::Tet4::Tet4()
 {
   Ioss::ElementTopology::alias("tetra4", "tetra");
   Ioss::ElementTopology::alias("tetra4", "tet4");
+  Ioss::ElementTopology::alias("tetra4", "tet");
   Ioss::ElementTopology::alias("tetra4", "Solid_Tet_4_3D");
 }
 
