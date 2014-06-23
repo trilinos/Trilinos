@@ -148,8 +148,8 @@ C   --   Uses CHLSIZ, DBORD0, DVIEW0, DVIEW, WVIEW of /LAYOUT/
       LOGICAL NEWSET
       INTEGER IPTIMS(*)
       REAL TIMES(*)
-      CHARACTER*(MXSTLN) NAMECO(*)
-      CHARACTER*(MXSTLN) NAMES(*)
+      CHARACTER*(*) NAMECO(*)
+      CHARACTER*(*) NAMES(*)
       INTEGER IELBST(NELBLK)
       INTEGER ISSNPS(NUMNPS,4)
       INTEGER ISSESS(NUMESS,4)
@@ -417,7 +417,7 @@ C           displayed in the plot legend.
                   VARVAL = TIMES(IPTIMS(I))
                ELSE IF (LIDSP(J) .GT. 0)THEN
                   IF (FIRSTH) THEN
-                     CALL DBVIX ('H', 1, IXHV)
+                     CALL DBVIX_BL ('H', 1, IXHV)
                      CALL MDRSRV ('SCRH', KVARH, NVARHI)
                      CALL MDSTAT (NERR, MEM)
                      IF (NERR .GT. 0)GOTO 180
@@ -425,12 +425,12 @@ C           displayed in the plot legend.
      &                  A(KVARH))
                      FIRSTH = .FALSE.
                   ENDIF
-                  CALL DBVIX ('H', LIDSP(J), IDVAR)
+                  CALL DBVIX_BL ('H', LIDSP(J), IDVAR)
                   DISPVL = NAMES(IDVAR)
                   VARVAL = A(KVARH+LIDSP(J)-1)
                ELSE
                   IF (FIRSTG) THEN
-                     CALL DBVIX ('G', 1, IXGV)
+                     CALL DBVIX_BL ('G', 1, IXGV)
                      CALL MDRSRV ('SCRG', KVARG, NVARGL)
                      CALL MDSTAT (NERR, MEM)
                      IF (NERR .GT. 0)GOTO 180
@@ -438,7 +438,7 @@ C           displayed in the plot legend.
      &                  A(KVARG))
                      FIRSTG = .FALSE.
                   ENDIF
-                  CALL DBVIX ('G', -LIDSP(J), IDVAR)
+                  CALL DBVIX_BL ('G', -LIDSP(J), IDVAR)
                   DISPVL = NAMES(IDVAR)
                   VARVAL = A(KVARG-LIDSP(J)-1)
                ENDIF
