@@ -110,10 +110,32 @@ namespace MueLu {
     typedef Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>                       XCrsWrap;
     
     //! Constructor
-    RefMaxwell() : Hierarchy11_(Teuchos::null), Hierarchy22_(Teuchos::null), disable_addon_(false) { }
-
+    RefMaxwell() :
+      Hierarchy11_(Teuchos::null),
+      Hierarchy22_(Teuchos::null),
+      disable_addon_(false),
+      MaxCoarseSize_(1000),
+      MaxLevels_(5),
+      Cycles_(1),
+      precType11_("CHEBYSHEV"),
+      precType22_("CHEBYSHEV"),
+      mode_("block jacobi")
+    {
+    }
+    
     //! Constructor with Hierarchies
-    RefMaxwell(Teuchos::RCP<Hierarchy> H11, Teuchos::RCP<Hierarchy> H22) : Hierarchy11_(H11), Hierarchy22_(H22), disable_addon_(false) { }
+    RefMaxwell(Teuchos::RCP<Hierarchy> H11, Teuchos::RCP<Hierarchy> H22) :
+      Hierarchy11_(H11),
+      Hierarchy22_(H22),
+      disable_addon_(false),
+      MaxCoarseSize_(1000),
+      MaxLevels_(5),
+      Cycles_(1),
+      precType11_("CHEBYSHEV"),
+      precType22_("CHEBYSHEV"),
+      mode_("block jacobi")
+    {
+    }
 
     //! Constructor with matrices
     RefMaxwell(Teuchos::RCP<TCRS> SM_Matrix,
@@ -126,7 +148,13 @@ namespace MueLu {
       Hierarchy11_(Teuchos::null),
       Hierarchy22_(Teuchos::null),
       parameterList_(List),
-      disable_addon_(false)
+      disable_addon_(false),
+      MaxCoarseSize_(1000),
+      MaxLevels_(5),
+      Cycles_(1),
+      precType11_("CHEBYSHEV"),
+      precType22_("CHEBYSHEV"),
+      mode_("block jacobi")
     {
       // set parameters
       setParameters(List);
@@ -203,14 +231,11 @@ namespace MueLu {
     //! apply Hiptmair smoothing
     void applyHiptmairSmoother(const XTMV& RHS, XTMV& X) const;
 
-    //! apply additive version of preconditioner (block Jacobi for 2x2 solve)
-    void applyInverseAdditive(const XTMV& RHS, XTMV& X) const;
+    //! apply block Jacobi for 2x2 solve
+    void applyBlockJacobi(const XTMV& RHS, XTMV& X) const;
 
-    //! apply 1-2-1 version of preconditioner
-    void applyInverse121(const XTMV& RHS, XTMV& X) const;
-
-    //! apply 2-1-2 version of preconditioner
-    void applyInverse212(const XTMV& RHS, XTMV& X) const;
+    //! apply block Gauss-Seidel for 2x2 solve
+    void applyBlockGaussSeidel(const XTMV& RHS, XTMV& X) const;
 
     //! Returns in Y the result of a Tpetra::Operator applied to a Tpetra::MultiVector X.
     //! \param[in]  X - Tpetra::MultiVector of dimension NumVectors to multiply with matrix.
@@ -249,7 +274,7 @@ namespace MueLu {
     Teuchos::RCP< Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > nodePrec_, edgePrec_;
     //! Some options
     bool disable_addon_;
-    int MaxCoarseSize_, MaxLevels_;
+    int MaxCoarseSize_, MaxLevels_, Cycles_;
     std::string precType11_, precType22_, mode_;
 
   };

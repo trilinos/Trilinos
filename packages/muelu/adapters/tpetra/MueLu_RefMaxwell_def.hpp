@@ -76,9 +76,10 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setParamete
   disable_addon_  =  list.get("refmaxwell: disable add-on",false);
   MaxCoarseSize_  =  list.get("refmaxwell: max coarse size",1000);
   MaxLevels_      =  list.get("refmaxwell: max levels",5);
+  Cycles_         =  list.get("refmaxwell: cycles",1);
   precType11_     =  list.get("refmaxwell: edge smoother","CHEBYSHEV");
   precType22_     =  list.get("refmaxwell: node smoother","CHEBYSHEV");
-  mode_           =  list.get("refmaxwell: mode","additive");
+  mode_           =  list.get("refmaxwell: mode","block jacobi");
 
   if(list.isSublist("refmaxwell: edge smoother list"))
     precList11_     =  list.sublist("refmaxwell: edge smoother list");
@@ -470,7 +471,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyHiptma
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyInverseAdditive(const XTMV& RHS, XTMV& X) const {
+void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyBlockJacobi(const XTMV& RHS, XTMV& X) const {
 
   // compute residuals
   RCP<XMV> residual  = Utils::Residual(*SM_Matrix_, X, RHS);
@@ -481,9 +482,9 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyInvers
   P11_->apply(*residual,*P11res,Teuchos::TRANS);
   D0_Matrix_->apply(*residual,*D0res,Teuchos::TRANS);
   
-  // block diagonal preconditioner on 2x2 (V-cycle for each block)
-  Hierarchy11_->Iterate(*P11res, *P11x, 1, true);
-  Hierarchy22_->Iterate(*D0res,  *D0x,  1, true);
+  // block diagonal preconditioner on 2x2 (V-cycle for diagonal blocks)
+  Hierarchy11_->Iterate(*P11res, *P11x, Cycles_, true);
+  Hierarchy22_->Iterate(*D0res,  *D0x,  Cycles_, true);
   
   // update current solution
   P11_->apply(*P11x,*residual,Teuchos::NO_TRANS);
@@ -493,46 +494,30 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyInvers
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyInverse121(const XTMV& RHS, XTMV& X) const {
+void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyBlockGaussSeidel(const XTMV& RHS, XTMV& X) const {
 
   // compute residuals
   RCP<XMV> residual  = Utils::Residual(*SM_Matrix_, X, RHS);
   RCP<XMV> P11res    = MultiVectorFactory::Build(P11_->getDomainMap(),X.getNumVectors());
   RCP<XMV> P11x      = MultiVectorFactory::Build(P11_->getDomainMap(),X.getNumVectors());
+  RCP<XMV> a1        = MultiVectorFactory::Build(P11_->getRangeMap(), X.getNumVectors());
+  RCP<XMV> M1a1      = MultiVectorFactory::Build(P11_->getRangeMap(), X.getNumVectors());
   RCP<XMV> D0res     = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(),X.getNumVectors());
   RCP<XMV> D0x       = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(),X.getNumVectors());
+  RCP<XMV> p0        = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(),X.getNumVectors());
   P11_->apply(*residual,*P11res,Teuchos::TRANS);
   D0_Matrix_->apply(*residual,*D0res,Teuchos::TRANS);
   
-  // block diagonal preconditioner on 2x2 (V-cycle for each block)
-  Hierarchy11_->Iterate(*P11res, *P11x, 1, true);
-  Hierarchy22_->Iterate(*D0res,  *D0x,  1, true);
+  // block lower triangular solve for 2x2 (V-cycle for diagonal blocks)
+  Hierarchy11_->Iterate(*P11res, *P11x, Cycles_, true);
+  P11_->apply(*P11x,*a1,Teuchos::NO_TRANS);
+  M1_Matrix_->apply(*a1,*M1a1,Teuchos::NO_TRANS);
+  D0_Matrix_->apply(*M1a1,*p0,Teuchos::TRANS);
+  D0res->update((Scalar)-1.0,*p0,(Scalar)1.0);
+  Hierarchy22_->Iterate(*D0res,  *D0x,  Cycles_, true);
   
   // update current solution
-  P11_->apply(*P11x,*residual,Teuchos::NO_TRANS);
-  D0_Matrix_->apply(*D0x,*residual,Teuchos::NO_TRANS,(Scalar)1.0,(Scalar)1.0);
-  X.update((Scalar) 1.0, *residual, (Scalar) 1.0);
-
-}
-
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyInverse212(const XTMV& RHS, XTMV& X) const {
-
-  // compute residuals
-  RCP<XMV> residual  = Utils::Residual(*SM_Matrix_, X, RHS);
-  RCP<XMV> P11res    = MultiVectorFactory::Build(P11_->getDomainMap(),X.getNumVectors());
-  RCP<XMV> P11x      = MultiVectorFactory::Build(P11_->getDomainMap(),X.getNumVectors());
-  RCP<XMV> D0res     = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(),X.getNumVectors());
-  RCP<XMV> D0x       = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(),X.getNumVectors());
-  P11_->apply(*residual,*P11res,Teuchos::TRANS);
-  D0_Matrix_->apply(*residual,*D0res,Teuchos::TRANS);
-  
-  // block diagonal preconditioner on 2x2 (V-cycle for each block)
-  Hierarchy11_->Iterate(*P11res, *P11x, 1, true);
-  Hierarchy22_->Iterate(*D0res,  *D0x,  1, true);
-  
-  // update current solution
-  P11_->apply(*P11x,*residual,Teuchos::NO_TRANS);
+  residual = a1;
   D0_Matrix_->apply(*D0x,*residual,Teuchos::NO_TRANS,(Scalar)1.0,(Scalar)1.0);
   X.update((Scalar) 1.0, *residual, (Scalar) 1.0);
 
@@ -553,14 +538,12 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::apply(const
     applyHiptmairSmoother(tX,tY);
 
     // do solve for the 2x2 block system
-    if(mode_=="additive")
-      applyInverseAdditive(tX,tY);
-    else if(mode_=="121")
-      applyInverse121(tX,tY);
-    else if(mode_=="212")
-      applyInverse212(tX,tY);
+    if(mode_=="block jacobi")
+      applyBlockJacobi(tX,tY);
+    else if(mode_=="block gauss-seidel")
+      applyBlockGaussSeidel(tX,tY);
     else
-      applyInverseAdditive(tX,tY);
+      applyBlockJacobi(tX,tY);
     
     // apply post-smoothing
     applyHiptmairSmoother(tX,tY);
@@ -568,7 +551,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::apply(const
   } catch (std::exception& e) {
 
     //FIXME add message and rethrow
-    std::cerr << "Caught an exception in MueLu::TpetraOperator::ApplyInverse():" << std::endl
+    std::cerr << "Caught an exception in MueLu::RefMaxwell::ApplyInverse():" << std::endl
 	      << e.what() << std::endl;
 
   }
