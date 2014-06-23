@@ -11,6 +11,7 @@
 #include <iterator>                     // for iterator_traits, etc
 #include <stdexcept>                    // for runtime_error
 #include <vector>                       // for vector
+#include <iostream>
 namespace sierra { namespace MPI { template <typename T> struct Datatype; } }
 
 namespace sierra {
@@ -31,6 +32,8 @@ void
     for (int i = 0; i < *len; ++i)
       complex_inout[i] += complex_in[i];
   }
+
+
 
 ///
 /// @addtogroup MPIDetail
@@ -53,6 +56,19 @@ MPI_Datatype float_complex_type();
  * @return	a <code>MPI_Datatype</code> value of the C++ complex MPI data type.
  */
 MPI_Datatype double_complex_type();
+
+/**
+ *MPI datatypes for MPI::Loc using 64-bits for index.
+ */
+
+
+
+MPI_Datatype int_int64_type();
+MPI_Datatype short_int64_type();
+MPI_Datatype long_int64_type();
+MPI_Datatype unsigned_long_int64_type();
+MPI_Datatype float_int64_type();
+MPI_Datatype double_int64_type();
 
 /**
  * @brief Function <code>double_complex_sum_op</code> returns a sum operation for the C++
@@ -112,13 +128,13 @@ struct Loc
       m_loc(0)
   {}
 
-  Loc(const T &value, int loc)
+  Loc(const T &value, int64_t loc)
     : m_value(value),
       m_loc(loc)
   {}
 
   T		m_value;
-  int		m_loc;
+  int64_t	m_loc;
 };
 
 struct TempLoc
@@ -129,7 +145,7 @@ struct TempLoc
       m_loc(0)
   {}
 
-  TempLoc(double value, double other, int loc)
+  TempLoc(double value, double other, int64_t loc)
     : m_value(value),
       m_other(other),
       m_loc(loc)
@@ -137,9 +153,80 @@ struct TempLoc
 
   double        m_value;
   double        m_other;
-  int		m_loc;
+  int64_t	m_loc;
 };
 
+template<class T>
+inline
+void
+  mpi_max_loc_global(
+    void *		invec,
+    void *		inoutvec,
+    int *		len,
+    MPI_Datatype *	datatype)
+  {
+    Loc<T> *Loc_in = static_cast<Loc<T> *>(invec);
+    Loc<T> *Loc_inout = static_cast<Loc<T> *>(inoutvec);
+
+    for (int i = 0; i < *len; ++i) {
+//      std::cout << Loc_in[i].m_value << " , " << Loc_inout[i].m_value << "loc: " << Loc_in[i].m_loc << " , " << Loc_inout[i].m_loc << std::endl;
+      if(Loc_in[i].m_value > Loc_inout[i].m_value) {
+        Loc_inout[i].m_value = Loc_in[i].m_value;
+        Loc_inout[i].m_loc = Loc_in[i].m_loc;
+      }
+    }
+  }
+
+template<class T>
+inline
+void
+  mpi_min_loc_global(
+    void *		invec,
+    void *		inoutvec,
+    int *		len,
+    MPI_Datatype *	datatype)
+  {
+    Loc<T> *Loc_in = static_cast<Loc<T> *>(invec);
+    Loc<T> *Loc_inout = static_cast<Loc<T> *>(inoutvec);
+
+    for (int i = 0; i < *len; ++i) {
+//      std::cout << Loc_in[i].m_value << " , " << Loc_inout[i].m_value << "loc: " << Loc_in[i].m_loc << " , " << Loc_inout[i].m_loc << std::endl;
+      if(Loc_in[i].m_value < Loc_inout[i].m_value) {
+        Loc_inout[i].m_value = Loc_in[i].m_value;
+        Loc_inout[i].m_loc = Loc_in[i].m_loc;
+      }
+    }
+  }
+
+template<class T>
+inline
+MPI_Op mpi_max_loc_global_op()
+{
+  static MPI_Op s_mpi_max_loc_global_op;
+  static bool initialized = false;
+
+  if (!initialized) {
+    initialized = true;
+
+    MPI_Op_create(mpi_max_loc_global<T>, true, &s_mpi_max_loc_global_op);
+  }
+  return s_mpi_max_loc_global_op;
+}
+
+template<class T>
+inline
+MPI_Op mpi_min_loc_global_op()
+{
+  static MPI_Op s_mpi_min_loc_global_op;
+  static bool initialized = false;
+
+  if (!initialized) {
+    initialized = true;
+
+    MPI_Op_create(mpi_min_loc_global<T>, true, &s_mpi_min_loc_global_op);
+  }
+  return s_mpi_min_loc_global_op;
+}
 
 /**
  * @brief Traits class <code>Datatype</code> implements a traits class containing two
@@ -280,7 +367,7 @@ template <>
 struct Datatype<Loc<int> >
 {
   static MPI_Datatype type() {
-    return MPI_2INT;
+    return int_int64_type();
   }
 };
 
@@ -288,7 +375,7 @@ template <>
 struct Datatype<Loc<short> >
 {
   static MPI_Datatype type() {
-    return MPI_SHORT_INT;
+    return short_int64_type();
   }
 };
 
@@ -296,7 +383,7 @@ template <>
 struct Datatype<Loc<long> >
 {
   static MPI_Datatype type() {
-    return MPI_LONG_INT;
+    return long_int64_type();
   }
 };
 
@@ -304,25 +391,15 @@ template <>
 struct Datatype<Loc<unsigned long> >
 {
   static MPI_Datatype type() {
-    return MPI_LONG_INT;
+    return unsigned_long_int64_type();
   }
 };
-
-// #ifdef MPI_LONG_LONG_INT
-// template <>
-// struct Datatype<Loc<long long> >
-// {
-//   static MPI_Datatype type() {
-//     return long_long_int_int_type();
-//   }
-// };
-// #endif
 
 template <>
 struct Datatype<Loc<float> >
 {
   static MPI_Datatype type() {
-    return MPI_FLOAT_INT;
+    return float_int64_type();
   }
 };
 
@@ -330,7 +407,7 @@ template <>
 struct Datatype<Loc<double> >
 {
   static MPI_Datatype type() {
-    return MPI_DOUBLE_INT;
+    return double_int64_type();
   }
 };
 
