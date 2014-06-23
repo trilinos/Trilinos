@@ -334,7 +334,6 @@ float *nextWgt;
 
   GRAPH_DATA *graph = (GRAPH_DATA *)data;
   *ierr = ZOLTAN_OK;
-  srand48(graph->numMyVertices);
 
   if ( (sizeGID != 1) || (sizeLID != 1) || 
        (num_obj != graph->numMyVertices)) {
