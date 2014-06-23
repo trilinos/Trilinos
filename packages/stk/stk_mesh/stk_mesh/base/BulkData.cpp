@@ -216,7 +216,7 @@ void markEdgesForResolvingSharingInfoUsingNodes(stk::mesh::BulkData &mesh, stk::
             Entity entity = bucket[entityIndex];
             const unsigned num_nodes_for_entity = bucket.num_nodes(entityIndex);
 
-            if ( num_nodes_for_entity != 0 )
+            if ( num_nodes_for_entity > 1 )
             {
                 if(stk::mesh::in_owned_closure(mesh, entity, mesh.parallel_rank()))
                 {
