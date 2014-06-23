@@ -1,9 +1,8 @@
 #ifndef MUELU_EMINPFACTORY_DEF_HPP
 #define MUELU_EMINPFACTORY_DEF_HPP
 
-#include <Xpetra_CrsGraph_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_MultiVector_fwd.hpp>
+#include <Xpetra_StridedMapFactory.hpp>
 
 #include "MueLu_EminPFactory_decl.hpp"
 

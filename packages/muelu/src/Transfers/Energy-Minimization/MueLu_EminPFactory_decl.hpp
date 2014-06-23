@@ -47,6 +47,9 @@
 #define MUELU_EMINPFACTORY_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
+
+#include <Xpetra_StridedMapFactory_fwd.hpp>
+
 #include "MueLu_EminPFactory_fwd.hpp"
 
 #include "MueLu_Constraint_fwd.hpp"
