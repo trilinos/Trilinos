@@ -6,7 +6,7 @@
  */
 #cmakedefine KOKKOS_FOR_SIERRA
 
-#if !defined( KOKKOS_FOR_SERRIA )
+#if !defined( KOKKOS_FOR_SIERRA )
 
 #cmakedefine KOKKOS_HAVE_MPI
 #cmakedefine KOKKOS_HAVE_CUDA

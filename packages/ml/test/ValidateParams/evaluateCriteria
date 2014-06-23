@@ -16,7 +16,7 @@
 'ML_Aggregate_CoarsenMIS : current level = 3'                      in-both
 'Smoother (level 0) : Jacobi'                                      in-both
 'Smoother (level 1) : IFPACK'                                      in-both
-'Smoother (level 2) : symmetric Gauss-Seidel'                      in-both
+'Smoother (level 2) : ML symmetric Gauss-Seidel'                   in-both
 'Smoother (level 3) : MLS/Chebyshev'                               in-both
 'Amesos (level 4) : Building KLU'                                  in-both
 
