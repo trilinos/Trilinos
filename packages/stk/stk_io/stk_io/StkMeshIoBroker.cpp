@@ -1930,11 +1930,15 @@ namespace stk {
 
 	int OutputFile::process_output_request(double time, const stk::mesh::BulkData& bulk_data)
 	{
-	  ThrowErrorMsgIf(m_non_any_global_variables_defined,
-			  "The output database " << m_region->name() << " has defined global variables, "
-			  "but is calling the process_output_request() function which does not output global "
-			  "variables.  Call begin_output_step() instead.");
-      
+	  if (m_non_any_global_variables_defined) {
+	    std::ostringstream errmsg;
+	    errmsg << "The output database " << m_region->name() << " has defined global variables, "
+	      "but is calling the process_output_request() function which does not output global "
+	      "variables.  Call begin_output_step() instead.";
+	    std::runtime_error x(errmsg.str());
+	    throw x;
+	  }
+
 	  begin_output_step(time, bulk_data);
 	  write_defined_output_fields(bulk_data);
 	  write_defined_global_any_fields(m_region, m_global_any_fields);
