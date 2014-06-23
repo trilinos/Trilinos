@@ -57,6 +57,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1-4
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  problemGRAPH
+  SOURCES problemGRAPH.c
+  ARGS 
+  COMM serial mpi
+  NUM_MPI_PROCS 1-4
+  )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(CExamplesCopyFiles
   SOURCE_FILES hypergraph.txt mesh.txt objects.txt graph.txt
