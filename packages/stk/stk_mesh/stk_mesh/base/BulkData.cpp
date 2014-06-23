@@ -3795,7 +3795,7 @@ void BulkData::change_ghosting(
 
 //----------------------------------------------------------------------
 
-void BulkData::ghostEntitiesAndFields(Ghosting & ghosts, const std::set<EntityProc , EntityLess>& new_send)
+void BulkData::ghost_entities_and_fields(Ghosting & ghosts, const std::set<EntityProc , EntityLess>& new_send)
 {
     const size_t record_entity_comm_size_before_changing_it = m_entity_comm_list.size();
     const int p_size = parallel_size() ;
@@ -4080,7 +4080,7 @@ void BulkData::internal_change_ghosting(
   // ranking entities may be owned by different processes,
   // as such unpacking must be performed in rank order.
 
-  ghostEntitiesAndFields(ghosts, new_send);
+  ghost_entities_and_fields(ghosts, new_send);
 
   ghosts.m_sync_count = m_sync_count ;
 

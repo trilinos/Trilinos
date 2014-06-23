@@ -67,7 +67,26 @@ class EntityRepository;
 
 }
 
-struct EntityLess;
+class BulkData;
+
+struct EntityLess {
+  inline EntityLess(const BulkData& mesh);
+
+  /** \brief  Comparison operator */
+  inline bool operator()(const Entity lhs, const Entity rhs) const;
+
+  inline bool operator()(const Entity lhs, const EntityKey & rhs) const;
+
+  inline bool operator()( const EntityProc & lhs, const EntityProc & rhs) const;
+
+  inline bool operator()( const EntityProc & lhs, const Entity rhs) const;
+
+  inline bool operator()( const EntityProc & lhs, const EntityKey & rhs) const;
+
+  inline EntityLess& operator=(const EntityLess& rhs);
+
+  const BulkData* m_mesh;
+}; //struct EntityLess
 
 parallel::DistributedIndex::KeySpanVector convert_entity_keys_to_spans( const MetaData & meta );
 
@@ -1336,7 +1355,7 @@ private:
                                  const std::vector<EntityProc> & add_send ,
                                  const std::vector<EntityKey> & remove_receive,
                                  bool is_full_regen = false);
-  void ghostEntitiesAndFields(Ghosting & ghosts, const std::set<EntityProc , EntityLess>& new_send);
+  void ghost_entities_and_fields(Ghosting & ghosts, const std::set<EntityProc , EntityLess>& new_send);
 
   bool internal_modification_end( bool regenerate_aura, modification_optimization opt );
   void internal_resolve_shared_modify_delete();
@@ -1474,53 +1493,55 @@ bool in_owned_closure(const BulkData& mesh, const Entity entity , int proc )
   return same_proc && mesh.owned_closure(entity);
 }
 
- /** \brief  Comparitor functor for entities compares the entities' keys */
-struct EntityLess {
-  EntityLess(const BulkData& mesh) : m_mesh(&mesh) {}
+ /** \brief  Comparator functor for entities compares the entities' keys */
+inline
+EntityLess::EntityLess(const BulkData& mesh) : m_mesh(&mesh) {}
 
-  /** \brief  Comparison operator */
-  bool operator()(const Entity lhs, const Entity rhs) const
-  {
-    const EntityKey lhs_key = m_mesh->in_index_range(lhs) ? m_mesh->entity_key(lhs) : EntityKey();
-    const EntityKey rhs_key = m_mesh->in_index_range(rhs) ? m_mesh->entity_key(rhs) : EntityKey();
-    return lhs_key < rhs_key;
-  }
+/** \brief  Comparison operator */
+inline
+bool EntityLess::operator()(const Entity lhs, const Entity rhs) const
+{
+  const EntityKey lhs_key = m_mesh->in_index_range(lhs) ? m_mesh->entity_key(lhs) : EntityKey();
+  const EntityKey rhs_key = m_mesh->in_index_range(rhs) ? m_mesh->entity_key(rhs) : EntityKey();
+  return lhs_key < rhs_key;
+}
 
-  bool operator()(const Entity lhs, const EntityKey & rhs) const
-  {
-    const EntityKey lhs_key = m_mesh->in_index_range(lhs) ? m_mesh->entity_key(lhs) : EntityKey();
-    return lhs_key < rhs;
-  }
+inline
+bool EntityLess::operator()(const Entity lhs, const EntityKey & rhs) const
+{
+  const EntityKey lhs_key = m_mesh->in_index_range(lhs) ? m_mesh->entity_key(lhs) : EntityKey();
+  return lhs_key < rhs;
+}
 
-  bool operator()( const EntityProc & lhs, const EntityProc & rhs) const
-  {
-    const EntityKey lhs_key = m_mesh->in_index_range(lhs.first) ? m_mesh->entity_key(lhs.first) : EntityKey() ;
-    const EntityKey rhs_key = m_mesh->in_index_range(rhs.first) ? m_mesh->entity_key(rhs.first) : EntityKey() ;
-    return lhs_key != rhs_key ? lhs_key < rhs_key : lhs.second < rhs.second ;
-  }
+inline
+bool EntityLess::operator()( const EntityProc & lhs, const EntityProc & rhs) const
+{
+  const EntityKey lhs_key = m_mesh->in_index_range(lhs.first) ? m_mesh->entity_key(lhs.first) : EntityKey() ;
+  const EntityKey rhs_key = m_mesh->in_index_range(rhs.first) ? m_mesh->entity_key(rhs.first) : EntityKey() ;
+  return lhs_key != rhs_key ? lhs_key < rhs_key : lhs.second < rhs.second ;
+}
 
-  bool operator()( const EntityProc & lhs, const Entity rhs) const
-  {
-    const EntityKey lhs_key = m_mesh->in_index_range(lhs.first) ? m_mesh->entity_key(lhs.first) : EntityKey();
-    const EntityKey rhs_key = m_mesh->in_index_range(rhs)       ? m_mesh->entity_key(rhs)       : EntityKey();
-    return lhs_key < rhs_key;
-  }
+inline
+bool EntityLess::operator()( const EntityProc & lhs, const Entity rhs) const
+{
+  const EntityKey lhs_key = m_mesh->in_index_range(lhs.first) ? m_mesh->entity_key(lhs.first) : EntityKey();
+  const EntityKey rhs_key = m_mesh->in_index_range(rhs)       ? m_mesh->entity_key(rhs)       : EntityKey();
+  return lhs_key < rhs_key;
+}
 
-  bool operator()( const EntityProc & lhs, const EntityKey & rhs) const
-  {
-    const EntityKey lhs_key = m_mesh->in_index_range(lhs.first) ? m_mesh->entity_key(lhs.first) : EntityKey();
-    return lhs_key < rhs ;
-  }
+inline
+bool EntityLess::operator()( const EntityProc & lhs, const EntityKey & rhs) const
+{
+  const EntityKey lhs_key = m_mesh->in_index_range(lhs.first) ? m_mesh->entity_key(lhs.first) : EntityKey();
+  return lhs_key < rhs ;
+}
 
-  EntityLess& operator=(const EntityLess& rhs)
-  {
-    m_mesh = rhs.m_mesh;
-    return *this;
-  }
-
-  const BulkData* m_mesh;
-}; //struct EntityLess
-
+inline
+EntityLess& EntityLess::operator=(const EntityLess& rhs)
+{
+  m_mesh = rhs.m_mesh;
+  return *this;
+}
 
 inline
 BulkData & BulkData::get( const Bucket & bucket) {
