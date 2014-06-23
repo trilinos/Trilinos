@@ -19,7 +19,6 @@ CoordinatesTransferFactory
 CoupledRBMFactory
 DemoFactory
 DirectSolver
-EasyParameterListInterpreter
 EminPFactory
 FactoryFactory
 FactoryManager

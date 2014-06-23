@@ -62,7 +62,6 @@
 #include <MueLu.hpp>
 #include <MueLu_Level.hpp>
 #include <MueLu_BaseClass.hpp>
-#include <MueLu_EasyParameterListInterpreter.hpp> // TODO: move into MueLu.hpp
 #include <MueLu_ParameterListInterpreter.hpp> // TODO: move into MueLu.hpp
 
 #include <MueLu_Utilities.hpp>
@@ -316,13 +315,8 @@ int main(int argc, char *argv[]) {
       // =========================================================================
       comm->barrier();
       tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1.5 - MueLu read XML")));
-      bool useEasy = !mueluList.isSublist("Hierarchy"); // XML files for the original interpreter always contain "Hierarchy" sublist
 
-      RCP<HierarchyManager> mueLuFactory;
-      if (useEasy == false)
-        mueLuFactory = rcp(new ParameterListInterpreter    (mueluList));
-      else
-        mueLuFactory = rcp(new EasyParameterListInterpreter(mueluList));
+      RCP<HierarchyManager> mueLuFactory = rcp(new ParameterListInterpreter(mueluList));
 
       comm->barrier();
       tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 2 - MueLu Setup")));

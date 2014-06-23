@@ -58,7 +58,6 @@
 #include <MueLu.hpp>
 #include <MueLu_Level.hpp>
 #include <MueLu_BaseClass.hpp>
-#include <MueLu_EasyParameterListInterpreter.hpp>
 
 #include <MueLu_BlockedDirectSolver.hpp>
 #include <MueLu_BlockedPFactory.hpp>
@@ -69,6 +68,7 @@
 #include <MueLu_FactoryManager.hpp>
 #include <MueLu_FilteredAFactory.hpp>
 #include <MueLu_GenericRFactory.hpp>
+#include <MueLu_ParameterListInterpreter.hpp>
 #include <MueLu_PatternFactory.hpp>
 #include <MueLu_Q2Q1PFactory.hpp>
 #include <MueLu_Q2Q1uPFactory.hpp>
@@ -304,7 +304,7 @@ int main(int argc, char *argv[]) {
     ParameterList paramList;
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
 
-    RCP<HierarchyManager> mueLuFactory = rcp(new EasyParameterListInterpreter(paramList));
+    RCP<HierarchyManager> mueLuFactory = rcp(new ParameterListInterpreter(paramList));
     H[1] = mueLuFactory->CreateHierarchy();
     H[1]->GetLevel(0)->Set("A", rcp_dynamic_cast<Matrix>(rcp(new CrsMatrixWrap(A->Merge()))));
     mueLuFactory->SetupHierarchy(*H[1]);
