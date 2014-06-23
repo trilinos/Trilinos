@@ -66,6 +66,7 @@
 #include "MueLu_EminPFactory.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_FilteredAFactory.hpp"
+#include "MueLu_GenericRFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_PatternFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
@@ -479,7 +480,10 @@ namespace MueLu {
 
     // === Prolongation ===
     MUELU_READ_2LIST_PARAM(paramList, defaultList, "multigrid algorithm", std::string, "sa", multigridAlgo);
-    if (multigridAlgo == "sa") {
+    if (multigridAlgo == "unsmoothed") {
+      manager.SetFactory("P", Ptent);
+
+    } else if (multigridAlgo == "sa") {
       // Smoothed aggregation
       RCP<SaPFactory> P = rcp(new SaPFactory());
       ParameterList Pparams = *(P->GetValidParameterList());
@@ -536,9 +540,12 @@ namespace MueLu {
 
     // === Restriction ===
     if (!this->implicitTranspose_) {
-      RCP<TransPFactory> R = rcp(new TransPFactory());
+      RCP<Factory> R;
+      if (multigridAlgo != "pg")    R = rcp(new TransPFactory());
+      else                          R = rcp(new GenericRFactory());
       R->SetFactory("P", manager.GetFactory("P"));
       manager.SetFactory("R", R);
+
     } else {
       manager.SetFactory("R", Teuchos::null);
     }
