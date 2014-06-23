@@ -449,7 +449,9 @@ namespace MueLu {
     if      (aggType == "uncoupled") {
       aggFactory = rcp(new UncoupledAggregationFactory());
       ParameterList aggParams = *(aggFactory->GetValidParameterList());
-      MUELU_TEST_AND_SET_PARAM(aggParams, "mode", paramList, defaultList, "aggregation: mode", std::string);
+      MUELU_TEST_AND_SET_PARAM(aggParams, "mode",                 paramList, defaultList, "aggregation: mode",          std::string);
+      MUELU_TEST_AND_SET_PARAM(aggParams, "MinNodesPerAggregate", paramList, defaultList, "aggregation: min agg size",  int);
+      MUELU_TEST_AND_SET_PARAM(aggParams, "MaxNodesPerAggregate", paramList, defaultList, "aggregation: max agg size",  int);
       aggFactory->SetParameterList(aggParams);
 
     } else if (aggType == "coupled") {
