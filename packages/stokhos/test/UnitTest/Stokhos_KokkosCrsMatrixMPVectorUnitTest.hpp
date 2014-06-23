@@ -345,7 +345,8 @@ struct AddDiagonalValuesAtomicKernel {
   }
 };
 
-const unsigned VectorSize = 3;
+const unsigned VectorSize = 8;  // Currently must be a multiple of 8 based on
+                                // alignment assumptions for SFS
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   Kokkos_CrsMatrix_MP, ReplaceValues, MatrixScalar )
@@ -559,7 +560,6 @@ struct Stokhos_MV_Multiply_Op {
 };
 
 typedef Kokkos_MV_Multiply_Op KokkosMultiply;
-typedef Stokhos_MV_Multiply_Op<Stokhos::EnsembleMultiply> EnsembleMultiply;
 typedef Stokhos_MV_Multiply_Op<Stokhos::DefaultMultiply> DefaultMultiply;
 
 #define CRSMATRIX_MP_VECTOR_TESTS_MATRIXSCALAR( SCALAR )                \

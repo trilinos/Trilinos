@@ -9,11 +9,13 @@
 #ifndef stk_util_parallel_DistributedIndex_hpp
 #define stk_util_parallel_DistributedIndex_hpp
 
-#include <stdint.h>
-#include <utility>
-#include <vector>
-#include <cstddef>
-#include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/stk_config.h>
+#include <stdint.h>                     // for uint64_t
+#include <cstddef>                      // for size_t
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+#include <stk_util/util/TrackingAllocator.hpp>
+#include <utility>                      // for pair
+#include <vector>                       // for vector
 
 class UnitTestSTKParallelDistributedIndex ;
 
@@ -44,6 +46,12 @@ public:
   typedef std::pair<KeyType,KeyType>  KeySpan ;
   typedef std::pair<KeyType,ProcType> KeyProc ;
 
+  typedef TrackedVectorMetaFunc<unsigned long, DistributedIndex>::type UnsignedVector;
+  typedef TrackedVectorMetaFunc<long,          DistributedIndex>::type LongVector;
+  typedef TrackedVectorMetaFunc<KeySpan,       DistributedIndex>::type KeySpanVector;
+  typedef TrackedVectorMetaFunc<KeyType,       DistributedIndex>::type KeyTypeVector;
+  typedef TrackedVectorMetaFunc<KeyProc,       DistributedIndex>::type KeyProcVector;
+
   /*----------------------------------------*/
 
   ~DistributedIndex();
@@ -58,33 +66,36 @@ public:
    *    partition_spans[i].second <  partition_spans[i+1].first
    */
   DistributedIndex( ParallelMachine comm ,
-                    const std::vector<KeySpan> & partition_spans );
+                    const KeySpanVector & partition_spans );
 
   /*----------------------------------------*/
   /** \brief  Query with which process the local added keys are shared. */
-  void query( std::vector<KeyProc> & sharing_of_local_keys ) const ;
+  void query( KeyProcVector & sharing_of_local_keys ) const ;
 
   /** \brief  Query which processors added the given keys.
    *          The local processor is in the output if it
    *          submitted a queried key.
    */
-  void query( const std::vector<KeyType> & keys , 
-              std::vector<KeyProc> & sharing_of_keys ) const ;
+  void query( const KeyTypeVector & keys, KeyProcVector & sharing_of_keys ) const ;
 
   /** \brief  Query which processors added the given keys.
    *          The results of the query are pushed to the processes
    *          on which the keys are used.
    */
-  void query_to_usage( const std::vector<KeyType> & keys , 
-                       std::vector<KeyProc> & sharing_of_keys ) const ;
+  void query_to_usage( const KeyTypeVector & keys , KeyProcVector & sharing_of_keys ) const ;
 
   /*------------------------------------------------------------------*/
   /** \brief  Update a parallel index with new and changed keys.
    *          FIRST: Remove this process' participation in the existing keys.
    *          SECOND: Add this process' participation in the new keys.
    */
-  void update_keys( const std::vector<KeyType> & add_new_keys ,
-                    const std::vector<KeyType> & remove_existing_keys );
+  void update_keys( KeyTypeVector::const_iterator  add_new_keys_begin, KeyTypeVector::const_iterator  add_new_keys_end ,
+                    KeyTypeVector::const_iterator remove_existing_keys_begin, KeyTypeVector::const_iterator remove_existing_keys_end);
+
+  void update_keys( KeyTypeVector::const_iterator add_new_keys_begin, KeyTypeVector::const_iterator add_new_keys_end);
+
+  void register_removed_key( KeyType removed_key )
+  { m_removed_keys.push_back(removed_key); }
 
   /** \brief  Request a collection of unused keys.
    *
@@ -97,7 +108,7 @@ public:
    *  Multiple request should be bundled to reduce
    *  parallel communication costs.
    *  The output 'requested_keys' are sorted according to the policy.
-   * 
+   *
    *  The the 'first' member of the requests are the lower bound
    *  value for the keys.
    *
@@ -106,7 +117,7 @@ public:
    */
   void generate_new_keys(
     const std::vector<size_t>                 & requests ,
-          std::vector< std::vector<KeyType> > & requested_keys );
+          std::vector< KeyTypeVector > & requested_keys );
 
 private:
 
@@ -114,30 +125,29 @@ private:
   /** \brief  An internally used method to count communication needs.
    */
   void generate_new_global_key_upper_bound(
-    const std::vector<size_t>  & requests ,
-          std::vector<DistributedIndex::KeyType> & global_key_upper_bound ) const;
+    const std::vector<size_t>  & requests , KeyTypeVector & global_key_upper_bound ) const;
 
 
   /** \brief  An internally used method to determine which
    *          keys will be kept and which will be donated.
    */
   void generate_new_keys_local_planning(
-    const std::vector<DistributedIndex::KeyType> & global_key_upper_bound ,
+    const KeyTypeVector & global_key_upper_bound ,
     const std::vector<size_t>  & requests_local ,
-          std::vector<long>    & new_requests ,
-          std::vector<KeyType> & requested_keys ,
-          std::vector<KeyType> & contrib_keys ) const ;
+          LongVector    & new_requests ,
+          KeyTypeVector & requested_keys ,
+          KeyTypeVector & contrib_keys ) const ;
 
   /** \brief  An internally used method to determine to which
    *          other processes keys will be donated.
    */
   void generate_new_keys_global_planning(
-    const std::vector<long>    & new_request ,
-          std::vector<long>    & my_donations ) const ;
+    const LongVector    & new_request ,
+          LongVector    & my_donations ) const ;
 
   /** \brief  An internally used method to query usage of keys. */
-  void query( const std::vector<KeyProc> & request ,
-                    std::vector<KeyProc> & sharing_of_keys ) const ;
+  void query( const KeyProcVector & request ,
+                    KeyProcVector & sharing_of_keys ) const ;
 
   /*------------------------------------------------------------------*/
   /** \brief  An internally used method to determine to which
@@ -158,13 +168,17 @@ private:
   ProcType             m_comm_rank ; ///< This process' rank
   ProcType             m_comm_size ; ///< The number of processes
   size_t               m_span_count ;///< Number of spans of keys
-  std::vector<KeySpan> m_key_span ;  ///< (min,max) for N span
-  std::vector<KeyProc> m_key_usage ; ///< Index for all key usage
+  KeySpanVector m_key_span ;  ///< (min,max) for N span
+  KeyTypeVector m_removed_keys;
 
   /*  Unit testing of internal methods requires the unit test to have
    *  access to those internal methods.
    */
   friend class ::UnitTestSTKParallelDistributedIndex ;
+
+protected:
+  KeyProcVector m_key_usage ; ///< Index for all key usage
+
 };
 
 //----------------------------------------------------------------------

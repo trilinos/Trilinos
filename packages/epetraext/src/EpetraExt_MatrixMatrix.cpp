@@ -325,7 +325,7 @@ int mult_A_Btrans(CrsMatrixStruct& Aview,
   }
   else
 #endif
-    throw "EpetraExt::mult_A_Btrans: GlobalIndices type unknown";
+    throw std::runtime_error("EpetraExt::mult_A_Btrans: GlobalIndices type unknown");
 }
 
 //=========================================================================
@@ -488,7 +488,7 @@ int mult_Atrans_B(CrsMatrixStruct& Aview,
   }
   else
 #endif
-    throw "EpetraExt::mult_Atrans_B: GlobalIndices type unknown";
+    throw std::runtime_error("EpetraExt::mult_Atrans_B: GlobalIndices type unknown");
 }
 
 //kernel method for computing the local portion of C = A^T*B^T
@@ -658,7 +658,7 @@ int mult_Atrans_Btrans(CrsMatrixStruct& Aview,
   }
   else
 #endif
-    throw "EpetraExt::mult_Atrans_Btrans: GlobalIndices type unknown";
+    throw std::runtime_error("EpetraExt::mult_Atrans_Btrans: GlobalIndices type unknown");
 }
 
 // ==============================================================
@@ -945,7 +945,7 @@ int import_only(const Epetra_CrsMatrix& M,
 
   }
   else
-    throw "import_only: This routine only works if you either have the right map or no prototypeImporter";
+    throw std::runtime_error("import_only: This routine only works if you either have the right map or no prototypeImporter");
 
   if (numProcs < 2) {
     if (Mview.numRemote > 0) {
@@ -1172,7 +1172,7 @@ Epetra_Map* find_rows_containing_cols(const Epetra_CrsMatrix& M,
   }
   else
 #endif
-    throw "EpetraExt::find_rows_containing_cols: GlobalIndices type unknown";
+    throw std::runtime_error("EpetraExt::find_rows_containing_cols: GlobalIndices type unknown");
 }
 
 //=========================================================================
@@ -1205,6 +1205,9 @@ int MatrixMatrix::TMultiply(const Epetra_CrsMatrix& A,
   if (!A.Filled() || !B.Filled()) {
     EPETRA_CHK_ERR(-1);
   }
+  
+  // Is the C matrix new?
+  bool NewFlag=!C.IndicesAreLocal() && !C.IndicesAreGlobal();
 
   //We're going to refer to the different combinations of op(A) and op(B)
   //as scenario 1 through 4.
@@ -1213,6 +1216,7 @@ int MatrixMatrix::TMultiply(const Epetra_CrsMatrix& A,
   if (transposeB && !transposeA) scenario = 2;//A*B^T
   if (transposeA && !transposeB) scenario = 3;//A^T*B
   if (transposeA && transposeB)  scenario = 4;//A^T*B^T
+  if(NewFlag && transposeA && !transposeB) scenario = 5; // A^T*B, newmatrix
 
   //now check size compatibility
   long long Aouter = transposeA ? A.NumGlobalCols64() : A.NumGlobalRows64();
@@ -1264,8 +1268,10 @@ int MatrixMatrix::TMultiply(const Epetra_CrsMatrix& A,
   //Declare a couple of structs that will be used to hold views of the data
   //of A and B, to be used for fast access during the matrix-multiplication.
   CrsMatrixStruct Aview;
+  CrsMatrixStruct Atransview;
   CrsMatrixStruct Bview;
-
+  Teuchos::RCP<Epetra_CrsMatrix> Atrans;
+  
   const Epetra_Map* targetMap_A = rowmap_A;
   const Epetra_Map* targetMap_B = rowmap_B;
 
@@ -1276,15 +1282,25 @@ int MatrixMatrix::TMultiply(const Epetra_CrsMatrix& A,
     //If op(A) = A^T, find all rows of A that contain column-indices in the
     //local portion of the domain-map. (We'll import any remote rows
     //that fit this criteria onto the local processor.)
-    if (transposeA) {
+    if (scenario == 3 || scenario == 4) {
       workmap1 = Tfind_rows_containing_cols<int_type>(A, *domainMap_A);
       targetMap_A = workmap1;
     }
   }
-
+  if (scenario == 5) {
+    targetMap_A = &(A.ColMap());
+  }
+  
   //Now import any needed remote rows and populate the Aview struct.
   if(scenario==1 && call_FillComplete_on_result) {
     EPETRA_CHK_ERR(import_only<int_type>(A,*targetMap_A,Aview));
+  }
+  else if (scenario == 5){
+    // Perform a local transpose of A and store that in Atransview
+    EpetraExt::RowMatrix_Transpose at(const_cast<Epetra_Map *>(targetMap_A),false);
+    Epetra_CrsMatrix * Anonconst = const_cast<Epetra_CrsMatrix *>(&A);
+    Atrans = Teuchos::rcp(at.CreateTransposeLocal(*Anonconst));
+    import_only<int_type>(*Atrans,*targetMap_A,Atransview);
   }
   else  {
     EPETRA_CHK_ERR( import_and_extract_views<int_type>(A, *targetMap_A, Aview));
@@ -1298,14 +1314,16 @@ int MatrixMatrix::TMultiply(const Epetra_CrsMatrix& A,
   // Make sure B's views are consistent with A even in serial.
   const Epetra_Map* colmap_op_A = NULL;
   if(scenario==1 || numProcs > 1){
-    if (transposeA) {
+    if (transposeA && scenario == 3) {
       colmap_op_A = targetMap_A;
     }
     else {
       colmap_op_A = &(A.ColMap());
     }
-    targetMap_B = colmap_op_A;
+    targetMap_B = colmap_op_A;  
   }
+  if(scenario==5) targetMap_B = &(B.RowMap());
+
 
   if (numProcs > 1) {
     //If op(B) = B^T, find all rows of B that contain column-indices in the
@@ -1320,7 +1338,7 @@ int MatrixMatrix::TMultiply(const Epetra_CrsMatrix& A,
   }
 
   //Now import any needed remote rows and populate the Bview struct.  
-  if(scenario==1 && call_FillComplete_on_result) {
+  if((scenario==1 && call_FillComplete_on_result) || scenario==5) {
     EPETRA_CHK_ERR(import_only<int_type>(B,*targetMap_B,Bview,A.Importer()));
   }
   else {
@@ -1346,10 +1364,12 @@ int MatrixMatrix::TMultiply(const Epetra_CrsMatrix& A,
     break;
   case 4:    EPETRA_CHK_ERR( mult_Atrans_Btrans(Aview, Bview, ecrsmat) );
     break;
+  case 5:    EPETRA_CHK_ERR( mult_AT_B_newmatrix(Atransview, Bview, C) );
+    break;
   }
 
 
-  if (scenario != 1 && call_FillComplete_on_result) {
+  if (scenario != 1 && call_FillComplete_on_result && scenario != 5) {
     //We'll call FillComplete on the C matrix before we exit, and give
     //it a domain-map and a range-map.
     //The domain-map will be the domain-map of B, unless
@@ -1397,7 +1417,7 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
   }
   else
 #endif
-    throw "EpetraExt::MatrixMatrix::Add: GlobalIndices type unknown";
+    throw std::runtime_error("EpetraExt::MatrixMatrix::Add: GlobalIndices type unknown");
 }
 
 //=========================================================================
@@ -1514,7 +1534,7 @@ int MatrixMatrix::Add(const Epetra_CrsMatrix& A,
   }
   else
 #endif
-    throw "EpetraExt::MatrixMatrix::Add: GlobalIndices type unknown";
+    throw std::runtime_error("EpetraExt::MatrixMatrix::Add: GlobalIndices type unknown");
 }
 
 template<typename int_type>
@@ -1626,7 +1646,7 @@ int MatrixMatrix::Add(const Epetra_CrsMatrix& A,
   }
   else
 #endif
-    throw "EpetraExt::MatrixMatrix::Add: GlobalIndices type unknown";
+    throw std::runtime_error("EpetraExt::MatrixMatrix::Add: GlobalIndices type unknown");
 }
 
 
@@ -1788,7 +1808,7 @@ int MatrixMatrix::Jacobi(double omega,
   }
   else
 #endif
-    throw "EpetraExt::MatrixMatrix::Jacobi: GlobalIndices type unknown";
+    throw std::runtime_error("EpetraExt::MatrixMatrix::Jacobi: GlobalIndices type unknown");
 }
 
 

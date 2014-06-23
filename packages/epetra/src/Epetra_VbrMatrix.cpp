@@ -2896,7 +2896,8 @@ int Epetra_VbrMatrix::CopyAndPermute(const Epetra_SrcDistObject & Source,
                                      int NumPermuteIDs,
                                      int * PermuteToLIDs,
                                      int *PermuteFromLIDs,
-                                     const Epetra_OffsetIndex * Indexor)
+                                     const Epetra_OffsetIndex * Indexor,
+                                     Epetra_CombineMode CombineMode)
 {
   (void)Indexor;
   const Epetra_VbrMatrix & A = dynamic_cast<const Epetra_VbrMatrix &>(Source);
@@ -2907,6 +2908,11 @@ int Epetra_VbrMatrix::CopyAndPermute(const Epetra_SrcDistObject & Source,
   int RowDim;
   Epetra_SerialDenseMatrix ** Entries;
   int FromBlockRow, ToBlockRow;
+
+  if(   CombineMode != Add
+  && CombineMode != Zero
+  && CombineMode != Insert )
+    EPETRA_CHK_ERR(-1); // CombineMode not supported, default to mode Zero
 
   // Do copy first
   if (NumSameIDs>0) {
@@ -2922,11 +2928,22 @@ int Epetra_VbrMatrix::CopyAndPermute(const Epetra_SrcDistObject & Source,
                   BlockIndices, Entries)); // Set pointers
       // Place into target matrix.  Depends on Epetra_DataAccess copy/view and static/dynamic graph.
       if (StaticGraph() || IndicesAreLocal()) {
-  EPETRA_CHK_ERR(BeginReplaceGlobalValues(BlockRow, NumBlockEntries,
+            if (CombineMode==Add) {
+              EPETRA_CHK_ERR(BeginSumIntoGlobalValues(BlockRow, NumBlockEntries,
                                                 BlockIndices));
+            }
+            else if (CombineMode==Insert) {
+              EPETRA_CHK_ERR(BeginReplaceGlobalValues(BlockRow, NumBlockEntries,
+                                                BlockIndices));
+            }
       }
       else {
-  EPETRA_CHK_ERR(BeginInsertGlobalValues(BlockRow, NumBlockEntries, BlockIndices));
+            if (CombineMode==Add) {
+               EPETRA_CHK_ERR(BeginSumIntoGlobalValues(BlockRow, NumBlockEntries, BlockIndices));
+            }
+            else if (CombineMode==Insert) {
+               EPETRA_CHK_ERR(BeginInsertGlobalValues(BlockRow, NumBlockEntries, BlockIndices));
+            }
       }
       // Insert block entries one-at-a-time
       for (j=0; j<NumBlockEntries; j++) SubmitBlockEntry(Entries[j]->A(),
@@ -2949,10 +2966,20 @@ int Epetra_VbrMatrix::CopyAndPermute(const Epetra_SrcDistObject & Source,
                BlockIndices, Entries)); // Set pointers
       // Place into target matrix.  Depends on Epetra_DataAccess copy/view and static/dynamic graph.
       if (StaticGraph() || IndicesAreLocal()) {
-  EPETRA_CHK_ERR(BeginReplaceGlobalValues(ToBlockRow, NumBlockEntries, BlockIndices));
+            if (CombineMode==Add) {
+              EPETRA_CHK_ERR(BeginSumIntoGlobalValues(ToBlockRow, NumBlockEntries, BlockIndices));
+            }
+            else if (CombineMode==Insert) {
+              EPETRA_CHK_ERR(BeginReplaceGlobalValues(ToBlockRow, NumBlockEntries, BlockIndices));
+            }
       }
       else {
-  EPETRA_CHK_ERR(BeginInsertGlobalValues(ToBlockRow, NumBlockEntries, BlockIndices));
+            if (CombineMode==Add) {
+               EPETRA_CHK_ERR(BeginSumIntoGlobalValues(ToBlockRow, NumBlockEntries, BlockIndices));
+            }
+            else if (CombineMode==Insert) {
+               EPETRA_CHK_ERR(BeginInsertGlobalValues(ToBlockRow, NumBlockEntries, BlockIndices));
+            }
       }
       // Insert block entries one-at-a-time
       for (j=0; j<NumBlockEntries; j++) SubmitBlockEntry(Entries[j]->A(),

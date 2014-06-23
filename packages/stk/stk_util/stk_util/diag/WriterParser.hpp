@@ -1,7 +1,8 @@
 #ifndef STK_UTIL_Diag_WriterParser_h
 #define STK_UTIL_Diag_WriterParser_h
 
-#include <stk_util/diag/Option.hpp>
+#include <stk_util/diag/Option.hpp>     // for OptionMaskParser, etc
+#include <string>                       // for string
 
 namespace stk {
 namespace diag {

@@ -9,7 +9,8 @@
 #ifndef stk_util_environment_FormatMemorySize_hpp
 #define stk_util_environment_FormatMemorySize_hpp
 
-#include <string>
+#include <stddef.h>                     // for size_t
+#include <string>                       // for string
 
 namespace stk {
 

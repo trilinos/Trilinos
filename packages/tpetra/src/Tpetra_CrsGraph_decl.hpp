@@ -149,7 +149,7 @@ namespace Tpetra {
    the general idea of distributed storage of data over a
    communicator.  Finally, you should read the documentation of Map.
 
-   \section Tpetra_CrsMatrix_local_vs_global Local vs. global indices and nonlocal insertion
+   \section Tpetra_CrsGraph_local_vs_global Local vs. global indices and nonlocal insertion
 
    Graph entries can be added using either local or global coordinates
    for the indices. The accessors isGloballyIndexed() and

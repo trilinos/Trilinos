@@ -52,6 +52,7 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_HierarchyManager.hpp"
 
+#include "MueLu_AggregationExportFactory_fwd.hpp"
 #include "MueLu_CoalesceDropFactory_fwd.hpp"
 #include "MueLu_CoarseMapFactory_fwd.hpp"
 #include "MueLu_ConstraintFactory_fwd.hpp"

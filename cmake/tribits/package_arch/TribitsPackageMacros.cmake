@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -50,9 +50,23 @@ INCLUDE(PrependGlobalSet)
 INCLUDE(RemoveGlobalDuplicates)
 INCLUDE(TribitsAddOptionAndDefine)
 
+INCLUDE(TribitsLibraryMacros)
+INCLUDE(TribitsAddExecutable)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsAddTest)
+INCLUDE(TribitsAddAdvancedTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
+
+
 ###
 ### WARNING: See "NOTES TO DEVELOPERS" at the bottom of file!
 ###
+
+
+#
+# Utility macros
+#
+
 
 #
 # Macro that defines the package architecture system varaibles used to link
@@ -61,7 +75,6 @@ INCLUDE(TribitsAddOptionAndDefine)
 # See README.DEPENDENCIES for information on what these varaibles mean and how
 # they are used.
 #
-
 MACRO(TRIBITS_DEFINE_LINKAGE_VARS PACKAGE_NAME_IN)
   GLOBAL_NULL_SET(${PACKAGE_NAME_IN}_INCLUDE_DIRS)
   GLOBAL_NULL_SET(${PACKAGE_NAME_IN}_LIBRARY_DIRS)
@@ -73,7 +86,6 @@ ENDMACRO()
 #
 # Macro that defines varaibles that create global targets
 #
-
 MACRO(TRIBITS_DEFINE_TARGET_VARS PARENT_PACKAGE_NAME_IN)
   GLOBAL_NULL_SET(${PARENT_PACKAGE_NAME_IN}_LIB_TARGETS)
   GLOBAL_NULL_SET(${PARENT_PACKAGE_NAME_IN}_ALL_TARGETS)
@@ -99,10 +111,12 @@ ENDMACRO()
 
 
 #
-# TRIBITS_PACKAGE_DECL(...): Macro called at the very beginning of a ${PROJECT_NAME}
-# package's top-level CMakeLists.txt file when there are subpackages.
+# @MACRO: TRIBITS_PACKAGE_DECL()
 #
-# Usage is:
+# Macro called at the very beginning of a package's top-level
+# `<packageDir>/CMakeLists.txt`_ file when a package has subpackages.
+#
+# Usage::
 #
 #   TRIBITS_PACKAGE_DECL(
 #     <packageName>
@@ -114,39 +128,64 @@ ENDMACRO()
 #
 # The arguments are:
 #
-#   <packageName>
+#   ``<packageName>``
 #
 #     Gives the name of the Package, mostly just for checking and
-#     documentation purposes.
+#     documentation purposes.  This must match the name of the package
+#     provided in the `<repoDir>/PackagesList.cmake`_ or an error is issued.
 #
-#   ENABLE_SHADOWING_WARNINGS
+#   ``ENABLE_SHADOWING_WARNINGS``
 #
-#     If specified, then shadowing warnings will be turned on for supported
-#     platforms/compilers.  The default is for shadowing warnings to be turned
-#     off.  Note that this can be overridden globally by setting the cache
-#     variable ${PROJECT_NAME}_ENABLE_SHADOWING_WARNINGS.
+#     If specified, then shadowing warnings for the package's sources will be
+#     turned on for supported platforms/compilers.  The default is for
+#     shadowing warnings to be turned off.  Note that this can be overridden
+#     globally by setting the cache variable
+#     ``${PROJECT_NAME}_ENABLE_SHADOWING_WARNINGS``.
 #
-#   DISABLE_STRONG_WARNINGS
+#   ``DISABLE_STRONG_WARNINGS``
 #
-#     If specified, then all strong warnings will be turned off, if they are
-#     not already turned off by global cache variables.
+#     If specified, then all strong warnings for the package's sources will be
+#     turned off, if they are not already turned off by global cache
+#     variables.  Strong warnings are turned on by default in development
+#     mode.
+#  
+#   ``CLEANED``
 #
-#   CLEANED
-#
-#     If specified, then warnings will be promoted to errors for all defined
-#     warnings.
-#
-#   DISABLE_CIRCULAR_REF_DETECTION_FAILURE
+#     If specified, then warnings will be promoted to errors for compiling the
+#     package's sources for all defined warnings.
+#  
+#   ``DISABLE_CIRCULAR_REF_DETECTION_FAILURE``
 #
 #     If specified, then the standard grep looking for RCPNode circular
-#     references that causes tests to fail will be disabled.  Note that if
-#     these warnings are being produced then it means that the test is leaking
-#     memory and user like may also be leaking memory.
+#     references in `TRIBITS_ADD_TEST()`_ and `TRIBITS_ADD_ADVANCED_TEST()`_
+#     that causes tests to fail will be disabled.  Note that if these warnings
+#     are being produced then it means that the test is leaking memory and
+#     user like may also be leaking memory.
+#
+# There are several side-effects of calling this macro:
+#
+# * The variables ``${PACKAGE_NAME}_LIB_TARGETS`` (lists all of the package's
+#   targets) and ``${PACKAGE_NAME}_ALL_TARGETS`` (lists all of the package's
+#   libraries) and are initialized to empty.
+#
+# * The local variables ``PACKAGE_SOURCE_DIR`` and ``PACKAGE_BINARY_DIR`` are
+#   set for this package's use in its CMakeLists.txt files.
+#
+# * Package-specific compiler options are set up in package-scope (i.e., the
+#   package's subdirs) in ``CMAKE_<LANG>_FLAG``.
+#
+# * This packages's cmake subdir ``${PACKAGE_SOURCE_DIR}/cmake`` is added to
+#   ``CMAKE_MODULE_PATH`` locally so that the package's try-compile modules
+#   can be read in with just a raw ``INCLUDE()`` leaving off the full path and
+#   the ``*.cmake`` extension.
+#
+# If the package does not have subpackages, just call `TRIBITS_PACKAGE()`_
+# which calls this macro.
 #
 MACRO(TRIBITS_PACKAGE_DECL PACKAGE_NAME_IN)
 
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    MESSAGE("\nPACKAGE_DECL: ${PACKAGE_NAME_IN}")
+    MESSAGE("\nTRIBITS_PACKAGE_DECL: ${PACKAGE_NAME_IN}")
   ENDIF()
    
   #
@@ -200,21 +239,45 @@ MACRO(TRIBITS_PACKAGE_DECL PACKAGE_NAME_IN)
   # Set up parent package linkage varaibles
   TRIBITS_DEFINE_TARGET_VARS(${PACKAGE_NAME})
 
+  #
+  # Append the local package's cmake directory in order to help pull in 
+  # configure-time testing macros  
+  #
+
+  PREPEND_SET(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+
 ENDMACRO()
 
 
 #
-# TRIBITS_PACKAGE_DEF(): Macro called after subpackages are processed in order to
-# handle the libraries, tests, and examples of the final package.
+# @MACRO: TRIBITS_PACKAGE_DEF()
 #
-
+# Macro called in `<packageDir>/CMakeLists.txt`_ after subpackages are
+# processed in order to handle the libraries, tests, and examples of the
+# parent package.
+#
+# Usage::
+#
+#   TRIBITS_PACKAGE_DEF()
+#
+# If the package does not have subpackages, just call `TRIBITS_PACKAGE()`_
+# which calls this macro.
+#
+# This macro has several side effects:
+#
+# * The variable ``PACKAGE_NAME`` is set in the local scope for usage by the
+#   package's ``CMakeLists.txt`` files.
+#
+# * The intra-package dependency variables (i.e. list of include directories,
+#   list of libraries, etc.) are initialized to empty.
+#
 MACRO(TRIBITS_PACKAGE_DEF)
 
   # Reset since it was changed by the subpackages
   SET(PACKAGE_NAME ${PARENT_PACKAGE_NAME})
 
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    MESSAGE("\nPACKAGE_DEF: ${PACKAGE_NAME}")
+    MESSAGE("\nTRIBITS_PACKAGE_DEF: ${PACKAGE_NAME}")
   ENDIF()
 
   IF (NOT ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME})
@@ -234,10 +297,12 @@ ENDMACRO()
 
 
 #
-# TRIBITS_PACKAGE(...): Macro called at the very beginning of a ${PROJECT_NAME}
-# package's top-level CMakeLists.txt file.
+# @MACRO: TRIBITS_PACKAGE()
 #
-# Usage is:
+# Macro called at the very beginning of a package's top-level
+# `<packageDir>/CMakeLists.txt`_ file.
+#
+# Usage::
 #
 #   TRIBITS_PACKAGE(
 #     <packageName>
@@ -247,7 +312,9 @@ ENDMACRO()
 #     [DISABLE_CIRCULAR_REF_DETECTION_FAILURE]
 #     )
 #
-# See TRIBITS_PACKAGE_DECL(...) for a description of the arguments.
+# See `TRIBITS_PACKAGE_DECL()`_ for the documentation for the arguments and
+# `TRIBITS_PACKAGE_DECL()`_ and `TRIBITS_PACKAGE()`_ for a description the
+# side-effects (and variables set) after calling this macro.
 #
 MACRO(TRIBITS_PACKAGE PACKAGE_NAME_IN)
   TRIBITS_PACKAGE_DECL(${PACKAGE_NAME_IN} ${ARGN})
@@ -256,21 +323,32 @@ ENDMACRO()
 
 
 #
-# Macro called to add a set of test directories for a package
+# @MACRO: TRIBITS_ADD_TEST_DIRECTORIES()
 #
-# This macro only needs to be called from the top most CMakeList.txt file for
-# which all subdirectories area all "tests".
+# Macro called to add a set of test directories for an SE package.
+#
+# Usage::
+#
+#    TRIBITS_ADD_TEST_DIRECTORIES(<dir1> <dir2> ...)
+#
+# This macro only needs to be called from the top most ``CMakeLists.txt`` file
+# for which all subdirectories are all "tests".
 #
 # This macro can be called several times within a package and it will have the
 # right effect.
 #
-# This macro defines hooks for inserting certain types of behavior in a
-# uniform way.
+# Currently, all this macro does macro is to call ``ADD_SUBDIRECTORY(<diri>)``
+# if ``${PACKAGE_NAME}_ENABLE_TESTS`` or
+# ``${PARENT_PACKAGE_NAME}_ENABLE_TESTS`` are ``TRUE``. However, this macro
+# may be extended in the future in order to modify behavior related to adding
+# tests and examples in a uniform way.
 #
 MACRO(TRIBITS_ADD_TEST_DIRECTORIES)
 
   IF(${PACKAGE_NAME}_ENABLE_TESTS OR ${PARENT_PACKAGE_NAME}_ENABLE_TESTS)
     FOREACH(TEST_DIR ${ARGN})
+      TRIBITS_TRACE_FILE_PROCESSING(PACKAGE  ADD_SUBDIR
+        "${CMAKE_CURRENT_SOURCE_DIR}/${TEST_DIR}/CMakeLists.txt")
       ADD_SUBDIRECTORY(${TEST_DIR})
     ENDFOREACH()
   ENDIF()
@@ -279,10 +357,25 @@ ENDMACRO()
 
 
 #
-# Common options to add to a package
+# Macros to add common options to add to an SE package
 #
 
 
+#
+# @MACRO: TRIBITS_ADD_DEBUG_OPTION()
+#
+# Add the standard cache variable option ``${PACKAGE_NAME}_ENABLE_DEBUG`` for
+# the package.
+#
+# Usage::
+#
+#   TRIBITS_ADD_DEBUG_OPTION()
+#
+# This option is given the default ``${${PROJECT_NAME}_ENABLE_DEBUG}`` and if
+# true, will set the variable ``HAVE_${PACKAGE_NAME_UC}_DEBUG`` (to be used in
+# the package's configured header file).  This macro is typically called in
+# the package's `<packageDir>/CMakeLists.txt`_ file.
+#
 MACRO(TRIBITS_ADD_DEBUG_OPTION)
   TRIBITS_ADD_OPTION_AND_DEFINE(
     ${PACKAGE_NAME}_ENABLE_DEBUG
@@ -302,6 +395,22 @@ MACRO(TRIBITS_ADD_ENABLE_TEUCHOS_TIME_MONITOR_OPTION)
 ENDMACRO()
 
 
+#
+# @MACRO: TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
+#
+# Add the standard option ``${PACKAGE_NAME}_SHOW_DEPRECATED_WARNINGS`` for the
+# package.
+#
+# Usage::
+#
+#   TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
+#
+# This macro should be called in the package's <packageDir>/CMakeLists.txt`_
+# file.  This option is given the default value
+# ``${${PROJECT_NAME}_SHOW_DEPRECATED_WARNINGS}``.  This option is then looked
+# for in `TRIBITS_CONFIGURE_FILE()`_ to add macros to add deprecated warnings
+# to deprecated parts of a package.
+#
 MACRO(TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION)
   ADVANCED_SET(
     ${PACKAGE_NAME}_SHOW_DEPRECATED_WARNINGS  ${${PROJECT_NAME}_SHOW_DEPRECATED_WARNINGS}
@@ -325,6 +434,7 @@ MACRO(TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION)
     )
 ENDMACRO()
 
+
 MACRO(TRIBITS_ADD_ETI_SUPPORT)
   APPEND_GLOBAL_SET(${PROJECT_NAME}_ETI_PACKAGES ${PACKAGE_NAME})
   GLOBAL_NULL_SET(${PACKAGE_NAME}_ETI_LIBRARYSET)
@@ -332,22 +442,34 @@ ENDMACRO()
 
 
 #
-# Macro called to add a set of example directories for a package
+# @MACRO: TRIBITS_ADD_EXAMPLE_DIRECTORIES()
+#  
+# Macro called to conditionally add a set of example directories for an SE
+# package.
 #
-# This macro only needs to be called from the top most CMakeList.txt file for
-# which all subdirectories area all "examples".
+# Usage::
 #
-# This macro can be called several times within a package and it will have the
-# right effect.
+#    TRIBITS_ADD_EXAMPLE_DIRECTORIES(<dir1> <dir2> ...)
 #
-# This macro defines hooks for inserting certain types of behavior in a
-# uniform way.
+# This macro typically is called from the top-level
+# `<packageDir>/CMakeLists.txt`_ file for which all subdirectories are all
+# "examples" according to standard package layout.
 #
-
+# This macro can be called several times within a package as desired to break
+# up example directories any way one would like.
+#
+# Currently, all it does macro does is to call ``ADD_SUBDIRECTORY(<diri>)`` if
+# ``${PACKAGE_NAME}_ENABLE_EXAMPLES`` or
+# ``${PARENT_PACKAGE_NAME}_ENABLE_EXAMPLES`` are true. However, this macro may
+# be extended in the future in order to modify behavior related to adding
+# tests and examples in a uniform way.
+#
 MACRO(TRIBITS_ADD_EXAMPLE_DIRECTORIES)
 
   IF(${PACKAGE_NAME}_ENABLE_EXAMPLES OR ${PARENT_PACKAGE_NAME}_ENABLE_EXAMPLES)
     FOREACH(EXAMPLE_DIR ${ARGN})
+      TRIBITS_TRACE_FILE_PROCESSING(PACKAGE  ADD_SUBDIR
+        "${CMAKE_CURRENT_SOURCE_DIR}/${EXAMPLE_DIR}/CMakeLists.txt")
       ADD_SUBDIRECTORY(${EXAMPLE_DIR})
     ENDFOREACH()
   ENDIF()
@@ -356,8 +478,8 @@ ENDMACRO()
 
 
 #
-# Function that sets up package linkage linkage variables in case the package
-# has no libraries.
+# Utility function that sets up package linkage linkage variables in case the
+# package has no libraries.
 #
 
 FUNCTION(TRIBITS_PACKAGE_FINALIZE_DEPENDENCY_VARS)
@@ -416,11 +538,10 @@ ENDFUNCTION()
 #
 # Helper macro for [SUB]TRIBITS_PACKAGE_POSTPROCESS()
 #
-
 MACRO(TRIBITS_PACKAGE_POSTPROCESS_COMMON)
 
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    MESSAGE("\nPACKAGE_POSTPROCESS: ${PACKAGE_NAME}")
+    MESSAGE("\nTRIBITS_PACKAGE_POSTPROCESS_COMMON: ${PACKAGE_NAME}")
     PRINT_VAR(${PACKAGE_NAME}_INCLUDE_DIRS)
     PRINT_VAR(${PACKAGE_NAME}_LIBRARY_DIRS)
     PRINT_VAR(${PACKAGE_NAME}_LIBRARIES)
@@ -442,15 +563,26 @@ ENDMACRO()
 
 
 #
-# Macro called at the very end of a package's top-level CMakeLists.txt file
+# @MACRO: TRIBITS_PACKAGE_POSTPROCESS()
+#  
+# Macro called at the very end of a package's top-level
+# `<packageDir>/CMakeLists.txt`_ file that performs some critical
+# post-processing activities.
 #
-
+# Usage::
+#
+#   TRIBITS_PACKAGE_POSTPROCESS()
+#
+# NOTE: It is unfortunate that this macro must be called in a packages's
+# top-level ``CMakeLists.txt`` file but limitations of the CMake language make
+# it necessary to do so.
+#
 MACRO(TRIBITS_PACKAGE_POSTPROCESS)
 
   # Only parent packages have the targets (${PACKAGE_NAME}_libs and
   # (${PACKAGE_NAME}_all
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    MESSAGE("\nPACKAGE_POSTPROCESS: ${PACKAGE_NAME}")
+    MESSAGE("\nTRIBITS_PACKAGE_POSTPROCESS: ${PACKAGE_NAME}")
     PRINT_VAR(${PACKAGE_NAME}_LIB_TARGETS)
     PRINT_VAR(${PACKAGE_NAME}_ALL_TARGETS)
   ENDIF()
@@ -460,13 +592,25 @@ MACRO(TRIBITS_PACKAGE_POSTPROCESS)
   TRIBITS_PACKAGE_FINALIZE_DEPENDENCY_VARS()
   TRIBITS_PACKAGE_POSTPROCESS_COMMON()
 
+  # NOTE: This package is only able 
+
 ENDMACRO()
 
 
 #
-# Macro that processes subpackages for packages that have them
+# @MACRO: TRIBITS_PROCESS_SUBPACKAGES()
 #
-
+# Macro that processes the `TriBITS Subpackages`_ for a parent `TriBITS
+# package`_ for packages that are broken down into subpackages.  This is
+# called in the parent packages top-level `<packageDir>/CMakeLists.txt`_ file.
+#
+# Usage::
+#
+#   TRIBITS_PROCESS_SUBPACKAGES()
+#
+# This macro must be called after `TRIBITS_PACKAGE_DECL()`_ but before
+# `TRIBITS_PACKAGE_DEF()`_.
+#
 MACRO(TRIBITS_PROCESS_SUBPACKAGES)
 
   #MESSAGE("TRIBITS_PROCESS_SUBPACKAGES: ${PARENT_PACKAGE_NAME}")
@@ -492,6 +636,8 @@ MACRO(TRIBITS_PROCESS_SUBPACKAGES)
       DUAL_SCOPE_SET(${SUBPACKAGE_FULLNAME}_BINARY_DIR
         ${${PARENT_PACKAGE_NAME}_BINARY_DIR}/${SUBPACKAGE_DIR})
 
+      TRIBITS_TRACE_FILE_PROCESSING(PACKAGE  ADD_SUBDIR
+        "${${SUBPACKAGE_FULLNAME}_SOURCE_DIR}/CMakeLists.txt")
       ADD_SUBDIRECTORY(${${SUBPACKAGE_FULLNAME}_SOURCE_DIR}
         ${${SUBPACKAGE_FULLNAME}_BINARY_DIR})
 
@@ -502,14 +648,6 @@ MACRO(TRIBITS_PROCESS_SUBPACKAGES)
   ENDFOREACH()
 
 ENDMACRO()
-
-
-#
-# Append the local package's cmake directory in order to help pull in 
-# configure-time testing macros
-#
-
-PREPEND_SET(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 
 ##################################################################
@@ -529,3 +667,7 @@ PREPEND_SET(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 #
 # without carefully studying the documentation in README.DEPENENCIES and then
 # carefully studying all of the code and issues that modify these variables!
+#
+# ToDo: Write some good unit tests that pin down the behavior of all of all
+# of this!
+#

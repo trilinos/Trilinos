@@ -65,8 +65,6 @@ template<>
 class Task< Kokkos::Serial , void > {
 private:
 
-  template< class , class , class , class , class , class > friend class TaskSpawn ;
-
   /**\brief  States of a task */
   enum { STATE_CONSTRUCTING = 0 , STATE_WAITING = 1 , STATE_EXECUTING = 2 , STATE_COMPLETE = 4 };
 

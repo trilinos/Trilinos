@@ -86,11 +86,14 @@ namespace Piro {
 
       numSpaceDim = numSpaceDim_;
 
-      x.resize(numNodes);
-      y.resize(numNodes);
-      z.resize(numNodes);
+      if ( (numNodes == 0) && (numSpaceDim_ > 0) ) x.resize(1);
+      else x.resize(numNodes);
+      if ( (numNodes == 0) && (numSpaceDim_ > 1) ) y.resize(1);
+      else y.resize(numNodes);
+      if ( (numNodes == 0) && (numSpaceDim_ > 2) ) z.resize(1);
+      else z.resize(numNodes);
 
-      if(nullSpaceDim > 0) rr.resize((nullSpaceDim + numScalar) * numPDEs * numNodes);
+      if(nullSpaceDim > 0) rr.resize((nullSpaceDim + numScalar) * numPDEs * numNodes + 1);
 
     }
 

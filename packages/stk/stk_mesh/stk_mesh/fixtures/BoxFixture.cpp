@@ -8,19 +8,13 @@
 
 
 #include <stk_mesh/fixtures/BoxFixture.hpp>
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
+#include <stk_mesh/base/Types.hpp>      // for EntityId, EntityRank, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+namespace stk { namespace mesh { class Part; } }
 
-#include <stk_util/environment/ReportHandler.hpp>
 
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/FieldData.hpp>
-#include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
 
-#include <stdexcept>
 
 namespace stk {
 namespace mesh {
@@ -30,13 +24,13 @@ BoxFixture::BoxFixture( stk::ParallelMachine pm ,
                         unsigned block_size,
                         const std::vector<std::string>& entity_names )
   : m_fem_meta ( spatial_dimension, entity_names ),
-    m_bulk_data ( fem::FEMMetaData::get_meta_data(m_fem_meta) , pm , block_size ),
+    m_bulk_data ( m_fem_meta , pm , block_size ),
     m_comm_rank( stk::parallel_machine_rank( pm ) ),
     m_comm_size( stk::parallel_machine_size( pm ) ),
     m_previous_state ( stk::mesh::BulkData::MODIFIABLE )
 {}
 
-Entity& BoxFixture::get_new_entity ( EntityRank rank , EntityId parallel_dependent_id )
+Entity BoxFixture::get_new_entity ( EntityRank rank , EntityId parallel_dependent_id )
 {
   return m_bulk_data.declare_entity ( rank , parallel_dependent_id*m_comm_size + m_comm_rank + 1 , std::vector<Part *> () );
 }
@@ -80,15 +74,15 @@ void BoxFixture::generate_boxes( const BOX   root_box,
 
     const EntityId elem_id =  1 + i + j * ngx + k * ngx * ngy;
 
-    Entity & node0 = m_bulk_data.declare_entity( 0 , n0 , no_parts );
-    Entity & node1 = m_bulk_data.declare_entity( 0 , n1 , no_parts );
-    Entity & node2 = m_bulk_data.declare_entity( 0 , n2 , no_parts );
-    Entity & node3 = m_bulk_data.declare_entity( 0 , n3 , no_parts );
-    Entity & node4 = m_bulk_data.declare_entity( 0 , n4 , no_parts );
-    Entity & node5 = m_bulk_data.declare_entity( 0 , n5 , no_parts );
-    Entity & node6 = m_bulk_data.declare_entity( 0 , n6 , no_parts );
-    Entity & node7 = m_bulk_data.declare_entity( 0 , n7 , no_parts );
-    Entity & elem  = m_bulk_data.declare_entity( 3 , elem_id , no_parts );
+    Entity node0 = m_bulk_data.declare_entity( stk::topology::NODE_RANK , n0 , no_parts );
+    Entity node1 = m_bulk_data.declare_entity( stk::topology::NODE_RANK , n1 , no_parts );
+    Entity node2 = m_bulk_data.declare_entity( stk::topology::NODE_RANK , n2 , no_parts );
+    Entity node3 = m_bulk_data.declare_entity( stk::topology::NODE_RANK , n3 , no_parts );
+    Entity node4 = m_bulk_data.declare_entity( stk::topology::NODE_RANK , n4 , no_parts );
+    Entity node5 = m_bulk_data.declare_entity( stk::topology::NODE_RANK , n5 , no_parts );
+    Entity node6 = m_bulk_data.declare_entity( stk::topology::NODE_RANK , n6 , no_parts );
+    Entity node7 = m_bulk_data.declare_entity( stk::topology::NODE_RANK , n7 , no_parts );
+    Entity elem  = m_bulk_data.declare_entity( stk::topology::ELEMENT_RANK , elem_id , no_parts );
 
     m_bulk_data.declare_relation( elem , node0 , 0 );
     m_bulk_data.declare_relation( elem , node1 , 1 );
@@ -120,7 +114,10 @@ void BoxFixture::box_partition( int ip , int up , int axis ,
     const int np_low = np / 2 ;  /* Rounded down */
     const int np_upp = np - np_low ;
 
-    const int n_upp = (int) (((double) n) * ( ((double)np_upp) / ((double)np)));
+    const int n_upp =
+        static_cast<int>(
+            static_cast<double>(n) * ( static_cast<double>(np_upp) / static_cast<double>(np) )
+            );
     const int n_low = n - n_upp ;
     const int next_axis = ( axis + 2 ) % 3 ;
 
@@ -133,7 +130,7 @@ void BoxFixture::box_partition( int ip , int up , int axis ,
       dbox[ axis ][1] = dbox[ axis ][0] + n_low ;
 
       box_partition( ip, ip + np_low, next_axis,
-                     (const int (*)[2]) dbox, p_box );
+                     static_cast<const int (*)[2]>(dbox), p_box );
     }
 
     if ( np_upp ) { /* P = [ip+np_low,ip+np_low+np_upp) */
@@ -147,7 +144,7 @@ void BoxFixture::box_partition( int ip , int up , int axis ,
       dbox[ axis ][1]  = dbox[ axis ][0] + n_upp ;
 
       box_partition( ip, ip + np_upp, next_axis,
-                     (const int (*)[2]) dbox, p_box );
+                     static_cast<const int (*)[2]>(dbox), p_box );
     }
   }
 }

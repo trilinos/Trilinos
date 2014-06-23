@@ -19,6 +19,11 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
   "Build with debug code enabled."
   OFF )
 
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_FADTYPE
+  PANZER_FADTYPE
+  "Build with debug code enabled."
+  "Sacado::ELRCacheFad::DFad<RealType>" )
+
 # optional package specific configurations
 ############################################################
 
@@ -67,8 +72,8 @@ COMBINED_OPTION( ${PACKAGE_NAME}_BUILD_SOLVER_DRIVERS_EPETRA
     " enabled, otherwise defaults to OFF."
   )
 
-COMBINED_OPTION( ${PACKAGE_NAME}_BUILD_STK_AND_SEACAS_SUPPORT
-  DEP_OPTIONS_NAMES ${PACKAGE_NAME}_ENABLE_STK ${PACKAGE_NAME}_ENABLE_SEACASIoss ${PACKAGE_NAME}_ENABLE_SEACASExodus
+COMBINED_OPTION( ${PACKAGE_NAME}_BUILD_STKClassic_AND_SEACAS_SUPPORT
+  DEP_OPTIONS_NAMES ${PACKAGE_NAME}_ENABLE_STKClassic ${PACKAGE_NAME}_ENABLE_SEACASIoss ${PACKAGE_NAME}_ENABLE_SEACASExodus
   DOCSTR "Enables support for the STK mesh database and SEACAS I/O Layers."
     " Defaults to ON if STK, SEACASIoss, SEACASExodus are"
     " enabled, otherwise defaults to OFF."

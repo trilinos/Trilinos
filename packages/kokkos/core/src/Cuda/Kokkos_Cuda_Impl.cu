@@ -591,6 +591,12 @@ int Cuda::is_initialized()
 void Cuda::initialize( const Cuda::SelectDevice config )
 { Impl::CudaInternal::singleton().initialize( config.cuda_device_id ); }
 
+void Cuda::initialize( const int device ) 
+{ initialize( SelectDevice(device) ); }
+
+void Cuda::initialize( const int device , const int )
+{ initialize( device ); }
+
 std::vector<unsigned>
 Cuda::detect_device_arch()
 {

@@ -135,10 +135,10 @@ namespace Galeri {
     {
     public:
       static Teuchos::RCP< ::Xpetra::EpetraMap> Build(global_size_t numGlobalElements, const Teuchos::ArrayView<const int> &elementList, int indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
-      { return rcp( new ::Xpetra::EpetraMap(numGlobalElements, elementList, indexBase, comm) ); }
+      { return Teuchos::rcp( new ::Xpetra::EpetraMap(numGlobalElements, elementList, indexBase, comm) ); }
 
       static Teuchos::RCP< ::Xpetra::EpetraMap> Build(global_size_t numGlobalElements, global_size_t numLocalElements, int indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
-      { return rcp( new ::Xpetra::EpetraMap(numGlobalElements, numLocalElements, indexBase, comm) ); }
+      { return Teuchos::rcp( new ::Xpetra::EpetraMap(numGlobalElements, numLocalElements, indexBase, comm) ); }
     };
 #endif
 

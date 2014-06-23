@@ -110,7 +110,7 @@ Registry *
 Registry::getFactoryPtr(
   const NamePair &	name_pair) const
 {
-  Registry *creator_function = (Registry *) getFuncPtr(name_pair);
+  Registry *creator_function = reinterpret_cast<Registry *>(getFuncPtr(name_pair));
   if (creator_function)
     return creator_function;
   else {
@@ -158,17 +158,17 @@ Registry::registerDL(
   if (!dl){
     throw std::runtime_error(dlerror());
   }
-  
+
   if (function_name) {
     std::string s = std::strlen(function_name) ? function_name : "dl_register";
-    
-    dl_register_t f = (dl_register_t) dlsym(dl, s.c_str());
+
+    dl_register_t f = reinterpret_cast<dl_register_t>(dlsym(dl, s.c_str()));
     if (!f) {
       s = s + SIERRA_FORTRAN_SUFFIX;
-      
-      f = (dl_register_t) dlsym(dl, s.c_str());
+
+      f = reinterpret_cast<dl_register_t>(dlsym(dl, s.c_str()));
     }
-    
+
     if (f) {
       slibout.m(Slib::LOG_PLUGIN) << "Executing dynamic library " << so_path << " function " << s << "()" << stk::diag::dendl;
       (*f)();
@@ -181,7 +181,7 @@ Registry::registerDL(
       }
     }
   }
-  
+
 #else
   throw std::runtime_error("Dynamic linkage is not supported on this platform");
 #endif

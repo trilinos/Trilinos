@@ -1,0 +1,38 @@
+///
+/// \addtogroup stk_search_octtree_detail
+/// @{
+///
+/// @brief Searches using octtree
+///
+/// Some descriptive stuff here
+///
+/// \anchor stk_search_howto_octtree
+/// For example:
+///
+/// \code
+/// #include <stk_search/OctTree.hpp>
+/// 
+/// namespace {
+/// 
+/// void bootstrap()
+/// {
+///   boost::program_options::options_description desc("Use case options");
+///   desc.add_options()
+///     ("performance", "run performance test")
+///     ("mesh", boost::program_options::value<std::string>(), "run mesh file performance test");
+/// 
+///   stk_classic::env::get_options_description().add(desc);
+/// }
+/// 
+/// stk_classic::Bootstrap x(&bootstrap);
+/// 
+/// } // namespace <empty>
+///
+/// \endcode
+///
+///
+/// Maybe more stuff here...
+///
+/// @}
+///
+

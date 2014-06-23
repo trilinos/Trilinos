@@ -60,10 +60,10 @@
 #include "Intrepid_CellTools.hpp"
 #include "Teuchos_Assert.hpp"
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
   void computeSidesetNodeNormals(boost::unordered_map<unsigned,std::vector<double> >& normals,
-				 const Teuchos::RCP<const panzer_stk::STK_Interface>& mesh,
+				 const Teuchos::RCP<const panzer_stk_classic::STK_Interface>& mesh,
 				 const std::string& sidesetName,
 				 const std::string& elementBlockName,
 				 std::ostream* out,
@@ -71,21 +71,21 @@ namespace panzer_stk {
   {    
     using Teuchos::RCP;
     
-    RCP<stk::mesh::fem::FEMMetaData> metaData = mesh->getMetaData();
-    RCP<stk::mesh::BulkData> bulkData = mesh->getBulkData();
+    RCP<stk_classic::mesh::fem::FEMMetaData> metaData = mesh->getMetaData();
+    RCP<stk_classic::mesh::BulkData> bulkData = mesh->getBulkData();
 
     // Grab all nodes for a surface including ghosted to get correct contributions to normal average    
-    stk::mesh::Part * sidePart = mesh->getSideset(sidesetName);
-    stk::mesh::Part * elmtPart = mesh->getElementBlockPart(elementBlockName);
-    stk::mesh::Selector sideSelector = *sidePart;
-    stk::mesh::Selector blockSelector = *elmtPart;
-    stk::mesh::Selector mySelector = metaData->universal_part() & blockSelector & sideSelector;
-    std::vector<stk::mesh::Entity*> sides;
-    stk::mesh::get_selected_entities(mySelector,bulkData->buckets(metaData->side_rank()),sides);
+    stk_classic::mesh::Part * sidePart = mesh->getSideset(sidesetName);
+    stk_classic::mesh::Part * elmtPart = mesh->getElementBlockPart(elementBlockName);
+    stk_classic::mesh::Selector sideSelector = *sidePart;
+    stk_classic::mesh::Selector blockSelector = *elmtPart;
+    stk_classic::mesh::Selector mySelector = metaData->universal_part() & blockSelector & sideSelector;
+    std::vector<stk_classic::mesh::Entity*> sides;
+    stk_classic::mesh::get_selected_entities(mySelector,bulkData->buckets(metaData->side_rank()),sides);
 
     std::vector<std::size_t> localSideTopoIDs;
-    std::vector<stk::mesh::Entity*> parentElements;
-    panzer_stk::workset_utils::getUniversalSubcellElements(*mesh,elementBlockName,sides,localSideTopoIDs,parentElements);
+    std::vector<stk_classic::mesh::Entity*> parentElements;
+    panzer_stk_classic::workset_utils::getUniversalSubcellElements(*mesh,elementBlockName,sides,localSideTopoIDs,parentElements);
 
     if (pout != NULL) {
       for (std::size_t i=0; i < localSideTopoIDs.size(); ++i) {
@@ -109,12 +109,12 @@ namespace panzer_stk {
     Intrepid::DefaultCubatureFactory<double> cubFactory;
     int cubDegree = 1;
 
-    std::vector<stk::mesh::Entity*>::const_iterator side = sides.begin();
+    std::vector<stk_classic::mesh::Entity*>::const_iterator side = sides.begin();
     std::vector<std::size_t>::const_iterator sideID = localSideTopoIDs.begin();
-    std::vector<stk::mesh::Entity*>::const_iterator parentElement = parentElements.begin();
+    std::vector<stk_classic::mesh::Entity*>::const_iterator parentElement = parentElements.begin();
     for ( ; sideID != localSideTopoIDs.end(); ++side,++sideID,++parentElement) {
     
-      std::vector<stk::mesh::Entity*> elementEntities;
+      std::vector<stk_classic::mesh::Entity*> elementEntities;
       elementEntities.push_back(*parentElement);
       Intrepid::FieldContainer<double> vertices;
       mesh->getElementVertices(elementEntities,elementBlockName,vertices);
@@ -136,8 +136,8 @@ namespace panzer_stk {
       }
 
       // loop over nodes in nodes in side and add normal contribution for averaging
-      stk::mesh::PairIterRelation nodeRelations = (*side)->relations(mesh->getNodeRank());
-      for (stk::mesh::PairIterRelation::iterator node = nodeRelations.begin(); node != nodeRelations.end(); ++node) {
+      stk_classic::mesh::PairIterRelation nodeRelations = (*side)->relations(mesh->getNodeRank());
+      for (stk_classic::mesh::PairIterRelation::iterator node = nodeRelations.begin(); node != nodeRelations.end(); ++node) {
 	for (unsigned dim = 0; dim < parentTopology->getDimension(); ++dim) {
 	  nodeNormals[node->entity()->identifier()].push_back(normal(0,0,dim));
 	}
@@ -208,7 +208,7 @@ namespace panzer_stk {
   }
 
   void computeSidesetNodeNormals(boost::unordered_map<std::size_t,Intrepid::FieldContainer<double> >& normals,
-				 const Teuchos::RCP<const panzer_stk::STK_Interface>& mesh,
+				 const Teuchos::RCP<const panzer_stk_classic::STK_Interface>& mesh,
 				 const std::string& sidesetName,
 				 const std::string& elementBlockName,
 				 std::ostream* out,
@@ -220,36 +220,36 @@ namespace panzer_stk {
     
     computeSidesetNodeNormals(nodeEntityIdToNormals,mesh,sidesetName,elementBlockName,out,pout);
 
-    RCP<stk::mesh::fem::FEMMetaData> metaData = mesh->getMetaData();
-    RCP<stk::mesh::BulkData> bulkData = mesh->getBulkData();
+    RCP<stk_classic::mesh::fem::FEMMetaData> metaData = mesh->getMetaData();
+    RCP<stk_classic::mesh::BulkData> bulkData = mesh->getBulkData();
 
     // Grab all nodes for a surface including ghosted to get correct contributions to normal average    
-    stk::mesh::Part * sidePart = mesh->getSideset(sidesetName);
-    stk::mesh::Part * elmtPart = mesh->getElementBlockPart(elementBlockName);
-    stk::mesh::Selector sideSelector = *sidePart;
-    stk::mesh::Selector blockSelector = *elmtPart;
-    stk::mesh::Selector mySelector = metaData->universal_part() & blockSelector & sideSelector;
-    std::vector<stk::mesh::Entity*> sides;
-    stk::mesh::get_selected_entities(mySelector,bulkData->buckets(metaData->side_rank()),sides);
+    stk_classic::mesh::Part * sidePart = mesh->getSideset(sidesetName);
+    stk_classic::mesh::Part * elmtPart = mesh->getElementBlockPart(elementBlockName);
+    stk_classic::mesh::Selector sideSelector = *sidePart;
+    stk_classic::mesh::Selector blockSelector = *elmtPart;
+    stk_classic::mesh::Selector mySelector = metaData->universal_part() & blockSelector & sideSelector;
+    std::vector<stk_classic::mesh::Entity*> sides;
+    stk_classic::mesh::get_selected_entities(mySelector,bulkData->buckets(metaData->side_rank()),sides);
 
     RCP<const shards::CellTopology> parentTopology = mesh->getCellTopology(elementBlockName);
 
     std::vector<std::size_t> localSideTopoIDs;
-    std::vector<stk::mesh::Entity*> parentElements;
-    panzer_stk::workset_utils::getUniversalSubcellElements(*mesh,elementBlockName,sides,localSideTopoIDs,parentElements);
+    std::vector<stk_classic::mesh::Entity*> parentElements;
+    panzer_stk_classic::workset_utils::getUniversalSubcellElements(*mesh,elementBlockName,sides,localSideTopoIDs,parentElements);
     
-    std::vector<stk::mesh::Entity*>::const_iterator side = sides.begin();
+    std::vector<stk_classic::mesh::Entity*>::const_iterator side = sides.begin();
     std::vector<std::size_t>::const_iterator sideID = localSideTopoIDs.begin();
-    std::vector<stk::mesh::Entity*>::const_iterator parentElement = parentElements.begin();
+    std::vector<stk_classic::mesh::Entity*>::const_iterator parentElement = parentElements.begin();
     for ( ; sideID != localSideTopoIDs.end(); ++side,++sideID,++parentElement) {
     
       // loop over nodes in nodes in side element
-      stk::mesh::PairIterRelation nodeRelations = (*parentElement)->relations(mesh->getNodeRank());
+      stk_classic::mesh::PairIterRelation nodeRelations = (*parentElement)->relations(mesh->getNodeRank());
 
       normals[mesh->elementLocalId(*parentElement)].resize(nodeRelations.size(),parentTopology->getDimension()); 
 
       int nodeIndex = 0;
-      for (stk::mesh::PairIterRelation::iterator node = nodeRelations.begin(); node != nodeRelations.end(); ++node,++nodeIndex) {
+      for (stk_classic::mesh::PairIterRelation::iterator node = nodeRelations.begin(); node != nodeRelations.end(); ++node,++nodeIndex) {
 	// if the node is on the sideset, insert, otherwise set normal
 	// to zero (it is an interior node of the parent element).
 	if (nodeEntityIdToNormals.find(node->entity()->identifier()) != nodeEntityIdToNormals.end()) { 

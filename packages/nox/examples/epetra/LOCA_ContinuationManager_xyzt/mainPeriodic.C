@@ -57,6 +57,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 
 // ParaCont headers
 #include "ContinuationManager.H"
@@ -65,20 +66,20 @@
 // Main driver
 int main( int argc, char **argv )
 {
-
   // Initialise MPI
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 
+  bool success = false;
+  bool verbose = false;
   try {
-
 #ifdef HAVE_MPI
     // Create a two-level communicator for space&time parallelism
     int numSpatialProcs = 1;
     int numTimeSteps = 2;
     Teuchos::RefCountPtr <EpetraExt::MultiMpiComm> globalComm =
       Teuchos::rcp(new EpetraExt::MultiMpiComm(MPI_COMM_WORLD,
-                                              numSpatialProcs,
-                                              numTimeSteps));
+            numSpatialProcs,
+            numTimeSteps));
 
     // Get the communicator for the spatial sub-problem
     //Teuchos::RefCountPtr <Epetra_MpiComm> comm =
@@ -90,15 +91,15 @@ int main( int argc, char **argv )
       Teuchos::rcp(new EpetraExt::MultiSerialComm(numTimeSteps));
 
     // Get the communicator for the spatial sub-problem
-   // Teuchos::RefCountPtr <Epetra_SerialComm> comm =
+    // Teuchos::RefCountPtr <Epetra_SerialComm> comm =
     //   Teuchos::rcp(&(globalComm->SubDomainComm()), false);
 #endif
     Teuchos::RefCountPtr <Epetra_Comm> comm =
-       Teuchos::rcp(&(globalComm->SubDomainComm()), false);
+      Teuchos::rcp(&(globalComm->SubDomainComm()), false);
 
     std::string fileName = "task.xml";
     if (argc>1)
-       fileName = argv[1];
+      fileName = argv[1];
 
     // Instantiate the continuation manager
     Teuchos::RefCountPtr <ContinuationManager> contManager =
@@ -115,25 +116,12 @@ int main( int argc, char **argv )
     contManager->BuildLOCAPeriodicStepper(globalComm);
 
     // Run LOCA
-    bool status = contManager->RunLOCAStepper();
+    success = contManager->RunLOCAStepper();
 
-  if (status)
-    std::cout << "\nAll tests passed" << std::endl;
-
+    if (success)
+      std::cout << "\nAll tests passed" << std::endl;
   }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-  catch (std::exception& e) {
-    std::cout << e.what() << std::endl;
-  }
-
-  catch (const char *s) {
-    std::cout << s << std::endl;
-  }
-
-  catch (...) {
-    std::cout << "Caught unknown exception!" << std::endl;
-  }
-
-  return(EXIT_SUCCESS);
-
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }

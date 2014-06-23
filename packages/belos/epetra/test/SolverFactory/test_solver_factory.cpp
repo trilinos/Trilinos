@@ -103,89 +103,89 @@ namespace {
   //
   // verbose: Whether to write verbose output.
   template<class SolverFactoryType, class SolverBaseType, class SolverImplType>
-  void
-  testCreatingSolver (SolverFactoryType& factory,
-          const std::string& solverName,
-          std::ostream& out,
-          const bool verbose)
-  {
-    using Teuchos::ParameterList;
-    using Teuchos::parameterList;
-    using Teuchos::RCP;
-    using Teuchos::rcp_dynamic_cast;
-    using Teuchos::TypeNameTraits;
-    using std::endl;
+    void
+    testCreatingSolver (SolverFactoryType& factory,
+        const std::string& solverName,
+        std::ostream& out,
+        const bool verbose)
+    {
+      using Teuchos::ParameterList;
+      using Teuchos::parameterList;
+      using Teuchos::RCP;
+      using Teuchos::rcp_dynamic_cast;
+      using Teuchos::TypeNameTraits;
+      using std::endl;
 
-    if (verbose) {
-      out << "Creating solver named: \"" << solverName << "\"" << endl;
+      if (verbose) {
+        out << "Creating solver named: \"" << solverName << "\"" << endl;
+      }
+      RCP<ParameterList> solverParams = parameterList ();
+      RCP<SolverBaseType> solver = factory.create (solverName, solverParams);
+      TEUCHOS_TEST_FOR_EXCEPTION(solver.is_null(), std::logic_error,
+          "Failed to create solver with valid name \""
+          << solverName << "\".");
+      if (verbose) {
+        out << "Solver description: " << solver->description() << endl;
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION(rcp_dynamic_cast<SolverImplType> (solver).is_null(),
+          std::logic_error, "Solver does not have the correct type.  Type should be "
+          << TypeNameTraits<SolverImplType>::name() << ".");
     }
-    RCP<ParameterList> solverParams = parameterList ();
-    RCP<SolverBaseType> solver = factory.create (solverName, solverParams);
-    TEUCHOS_TEST_FOR_EXCEPTION(solver.is_null(), std::logic_error,
-             "Failed to create solver with valid name \""
-             << solverName << "\".");
-    if (verbose) {
-      out << "Solver description: " << solver->description() << endl;
-    }
-    TEUCHOS_TEST_FOR_EXCEPTION(rcp_dynamic_cast<SolverImplType> (solver).is_null(),
-      std::logic_error, "Solver does not have the correct type.  Type should be "
-      << TypeNameTraits<SolverImplType>::name() << ".");
-  }
 
   int
-  selectVerbosity (const bool verbose, const bool debug)
-  {
-    // NOTE Calling this a "MsgType" (its correct type) or even an
-    // "enum MsgType" confuses the compiler.
-    int theType = Belos::Errors; // default (always print errors)
-    if (verbose)
+    selectVerbosity (const bool verbose, const bool debug)
+    {
+      // NOTE Calling this a "MsgType" (its correct type) or even an
+      // "enum MsgType" confuses the compiler.
+      int theType = Belos::Errors; // default (always print errors)
+      if (verbose)
       {
-  // "Verbose" also means printing out Debug messages (as well
-  // as everything else).
-  theType = theType |
-    Belos::Warnings |
-    Belos::IterationDetails |
-    Belos::OrthoDetails |
-    Belos::FinalSummary |
-    Belos::TimingDetails |
-    Belos::StatusTestDetails |
-    Belos::Debug;
+        // "Verbose" also means printing out Debug messages (as well
+        // as everything else).
+        theType = theType |
+          Belos::Warnings |
+          Belos::IterationDetails |
+          Belos::OrthoDetails |
+          Belos::FinalSummary |
+          Belos::TimingDetails |
+          Belos::StatusTestDetails |
+          Belos::Debug;
       }
-    if (debug)
-      // "Debug" doesn't necessarily mean the same thing as
-      // "Verbose".  We interpret "Debug" to mean printing out
-      // messages marked as Debug (as well as Error messages).
-      theType = theType | Belos::Debug;
-    return theType;
-  }
+      if (debug)
+        // "Debug" doesn't necessarily mean the same thing as
+        // "Verbose".  We interpret "Debug" to mean printing out
+        // messages marked as Debug (as well as Error messages).
+        theType = theType | Belos::Debug;
+      return theType;
+    }
 
   /// The problem is defined on a 2D grid; global size is nx * nx.
   Teuchos::RCP<Epetra_Operator>
-  makeMatrix (const Teuchos::RCP<Epetra_Comm>& comm,
+    makeMatrix (const Teuchos::RCP<Epetra_Comm>& comm,
         Teuchos::RCP<const Epetra_Map>& domainMap,
         Teuchos::RCP<const Epetra_Map>& rangeMap,
         const int nx = 30)
-  {
-    using Teuchos::ParameterList;
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-    using Teuchos::rcp_implicit_cast;
+    {
+      using Teuchos::ParameterList;
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+      using Teuchos::rcp_implicit_cast;
 
-    ParameterList GaleriList;
-    GaleriList.set("n", nx * nx);
-    GaleriList.set("nx", nx);
-    GaleriList.set("ny", nx);
-    RCP<const Epetra_Map> rowMap = rcp (Galeri::CreateMap("Linear", *comm, GaleriList));
-    // "&*rowMap" turns an RCP<Epetra_Map> into a raw pointer
-    // (Epetra_Map*), which is what Galeri::CreateCrsMatrix() wants.
-    RCP<Epetra_RowMatrix> A =
-      rcp (Galeri::CreateCrsMatrix("Laplace2D", &*rowMap, GaleriList));
-    TEUCHOS_TEST_FOR_EXCEPTION(A.is_null(), std::runtime_error,
-             "Galeri returned a null operator A.");
-    domainMap = rowMap;
-    rangeMap = rowMap;
-    return rcp_implicit_cast<Epetra_Operator> (A);
-  }
+      ParameterList GaleriList;
+      GaleriList.set("n", nx * nx);
+      GaleriList.set("nx", nx);
+      GaleriList.set("ny", nx);
+      RCP<const Epetra_Map> rowMap = rcp (Galeri::CreateMap("Linear", *comm, GaleriList));
+      // "&*rowMap" turns an RCP<Epetra_Map> into a raw pointer
+      // (Epetra_Map*), which is what Galeri::CreateCrsMatrix() wants.
+      RCP<Epetra_RowMatrix> A =
+        rcp (Galeri::CreateCrsMatrix("Laplace2D", &*rowMap, GaleriList));
+      TEUCHOS_TEST_FOR_EXCEPTION(A.is_null(), std::runtime_error,
+          "Galeri returned a null operator A.");
+      domainMap = rowMap;
+      rangeMap = rowMap;
+      return rcp_implicit_cast<Epetra_Operator> (A);
+    }
 
 } // namespace (anonymous)
 
@@ -226,32 +226,32 @@ main (int argc, char *argv[])
   }
   std::ostream& out = (comm->MyPID() == 0) ? std::cout : blackHole;
 
-  int numRHS = 1;
-  bool verbose = false;
-  bool debug = false;
-
-  // Define command-line arguments.
-  CommandLineProcessor cmdp (false, true);
-  cmdp.setOption ("numRHS", &numRHS, "Number of right-hand sides in the linear "
-      "system to solve.");
-  cmdp.setOption ("verbose", "quiet", &verbose, "Print messages and results.");
-  cmdp.setOption ("debug", "nodebug", &debug, "Print debugging information.");
-
-  // Parse the command-line arguments.
-  {
-    const CommandLineProcessor::EParseCommandLineReturn parseResult =
-      cmdp.parse (argc,argv);
-    if (parseResult == CommandLineProcessor::PARSE_HELP_PRINTED) {
-      if (comm->MyPID() == 0)
-        std::cout << "End Result: TEST PASSED" << endl;
-      return EXIT_SUCCESS;
-    }
-    TEUCHOS_TEST_FOR_EXCEPTION(parseResult != CommandLineProcessor::PARSE_SUCCESSFUL,
-        std::invalid_argument, "Failed to parse command-line arguments.");
-  }
-
   bool success = false;
+  bool verbose = false;
   try {
+    int numRHS = 1;
+    bool debug = false;
+
+    // Define command-line arguments.
+    CommandLineProcessor cmdp (false, true);
+    cmdp.setOption ("numRHS", &numRHS, "Number of right-hand sides in the linear "
+        "system to solve.");
+    cmdp.setOption ("verbose", "quiet", &verbose, "Print messages and results.");
+    cmdp.setOption ("debug", "nodebug", &debug, "Print debugging information.");
+
+    // Parse the command-line arguments.
+    {
+      const CommandLineProcessor::EParseCommandLineReturn parseResult =
+        cmdp.parse (argc,argv);
+      if (parseResult == CommandLineProcessor::PARSE_HELP_PRINTED) {
+        if (comm->MyPID() == 0)
+          std::cout << "End Result: TEST PASSED" << endl;
+        return EXIT_SUCCESS;
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION(parseResult != CommandLineProcessor::PARSE_SUCCESSFUL,
+          std::invalid_argument, "Failed to parse command-line arguments.");
+    }
+
     // Declare an output manager for handling local output.  Initialize,
     // using the caller's desired verbosity level.
     RCP<OutputManager<scalar_type> > outMan =

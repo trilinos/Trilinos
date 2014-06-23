@@ -80,15 +80,14 @@ int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
-  bool verbose = true;
-  bool success = true;
+  bool success = false;
+  bool verbose = false;
   try {
     // Parse the command line
     using Teuchos::CommandLineProcessor;
     CommandLineProcessor  clp;
     clp.throwExceptions(false);
     clp.addOutputSetupOptions(true);
-    bool verbose = false;
     clp.setOption( "v", "disable-verbosity", &verbose, "Enable verbosity" );
 
     CommandLineProcessor::EParseCommandLineReturn
@@ -164,12 +163,9 @@ int main(int argc, char *argv[])
 
     TEUCHOS_ASSERT(solve_status.extraParameters->get<int>("Number of Iterations") == 7);
 
-    if (solve_status.solveStatus == ::Thyra::SOLVE_STATUS_CONVERGED) {
+    success = (solve_status.solveStatus == ::Thyra::SOLVE_STATUS_CONVERGED);
+    if (success)
       std::cout << "Test passed!" << std::endl;
-      success = true;
-    } else {
-      success = false;
-    }
 
     Teuchos::TimeMonitor::summarize();
   }

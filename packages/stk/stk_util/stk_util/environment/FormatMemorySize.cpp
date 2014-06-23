@@ -6,13 +6,11 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <sstream>
-#include <iomanip>
-#include <cmath>
-
-#include <boost/lexical_cast.hpp>
-
 #include <stk_util/environment/FormatMemorySize.hpp>
+#include <boost/lexical_cast.hpp>       // for lexical_cast
+#include <sstream>                      // for basic_stringbuf<>::int_type, etc
+
+
 
 namespace stk {
 

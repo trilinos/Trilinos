@@ -108,7 +108,7 @@ namespace panzer {
   void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 			 std::vector<panzer::BC>& bcs);
 
-  Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY);
+  Teuchos::RCP<panzer_stk_classic::STK_Interface> buildMesh(int elemX,int elemY);
 
   TEUCHOS_UNIT_TEST(gs_evaluators, gather_constr)
   {
@@ -123,7 +123,7 @@ namespace panzer {
     pl.set("Basis",linBasis);
     pl.set("Field Names",fieldNames);
 
-    Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildMesh(2,2);
+    Teuchos::RCP<panzer_stk_classic::STK_Interface> mesh = buildMesh(2,2);
 
     RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
 
@@ -164,8 +164,8 @@ namespace panzer {
                                  physicsBlocks);
     }
 
-    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
-       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
+    Teuchos::RCP<panzer_stk_classic::WorksetFactory> wkstFactory
+       = Teuchos::rcp(new panzer_stk_classic::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
        = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
 
@@ -174,7 +174,7 @@ namespace panzer {
 
     // build the connection manager 
     const Teuchos::RCP<panzer::ConnManager<int,int> > 
-      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+      conn_manager = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
 
     panzer::DOFManagerFactory<int,int> globalIndexerFactory;
     RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
@@ -237,10 +237,10 @@ namespace panzer {
      return Teuchos::rcp(new panzer::BasisIRLayout("Q1",1,intRule)); 
   }
 
-  Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY)
+  Teuchos::RCP<panzer_stk_classic::STK_Interface> buildMesh(int elemX,int elemY)
   {
-    typedef panzer_stk::STK_Interface::SolutionFieldType VariableField;
-    typedef panzer_stk::STK_Interface::VectorFieldType CoordinateField;
+    typedef panzer_stk_classic::STK_Interface::SolutionFieldType VariableField;
+    typedef panzer_stk_classic::STK_Interface::VectorFieldType CoordinateField;
 
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",2);
@@ -248,9 +248,9 @@ namespace panzer {
     pl->set("X Elements",elemX);
     pl->set("Y Elements",elemY);
     
-    panzer_stk::SquareQuadMeshFactory factory;
+    panzer_stk_classic::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
-    RCP<panzer_stk::STK_Interface> mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
+    RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
  
     // add in some fields
     mesh->addSolutionField("dog","eblock-0_0");
@@ -264,17 +264,17 @@ namespace panzer {
     TEUCHOS_ASSERT(cField!=0);
 
     // fill the fields with data
-    const std::vector<stk::mesh::Bucket*> nodeData 
+    const std::vector<stk_classic::mesh::Bucket*> nodeData 
         = mesh->getBulkData()->buckets(mesh->getNodeRank());
     for(std::size_t b=0;b<nodeData.size();++b) {
-       stk::mesh::Bucket * bucket = nodeData[b];
+       stk_classic::mesh::Bucket * bucket = nodeData[b];
 
        // build all buckets
-       for(stk::mesh::Bucket::iterator itr=bucket->begin();
+       for(stk_classic::mesh::Bucket::iterator itr=bucket->begin();
            itr!=bucket->end();++itr) {
 
-          stk::mesh::EntityArray<CoordinateField> coordinates(*cField,*itr);
-          stk::mesh::EntityArray<VariableField> dog_array(*field,*itr);
+          stk_classic::mesh::EntityArray<CoordinateField> coordinates(*cField,*itr);
+          stk_classic::mesh::EntityArray<VariableField> dog_array(*field,*itr);
 
           double x = coordinates(0);
           double y = coordinates(1);

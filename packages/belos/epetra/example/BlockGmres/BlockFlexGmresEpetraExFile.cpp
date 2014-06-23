@@ -53,9 +53,9 @@
 #include "EpetraExt_readEpetraLinearSystem.h"
 #include "Epetra_Map.h"
 #ifdef EPETRA_MPI
-  #include "Epetra_MpiComm.h"
+#include "Epetra_MpiComm.h"
 #else
-  #include "Epetra_SerialComm.h"
+#include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_CrsMatrix.h"
 
@@ -89,36 +89,37 @@ int main(int argc, char *argv[]) {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  bool verbose = false, proc_verbose = false;
-  int frequency = -1;        // frequency of status test output.
-  int blocksize = 1;         // blocksize
-  int numrhs = 1;            // number of right-hand sides to solve for
-  int maxrestarts = 15;      // maximum number of restarts allowed
-  int maxiters = -1;         // maximum number of iterations allowed per linear system
-  int maxsubspace = 25;      // maximum number of blocks the solver can use for the subspace
-  std::string filename("orsirr1.hb");
-  MT tol = 1.0e-5;           // relative residual tolerance
-
-  // Specify whether to use RHS as initial guess. If false, use zero.
-  bool useRHSAsInitialGuess = false;
-
-  Teuchos::CommandLineProcessor cmdp(false,true);
-  cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
-  cmdp.setOption("use-rhs","use-zero",&useRHSAsInitialGuess,"Use RHS as initial guess.");
-  cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
-  cmdp.setOption("filename",&filename,"Filename for test matrix.  Acceptable file extensions: *.hb,*.mtx,*.triU,*.triS");
-  cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
-  cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
-  cmdp.setOption("block-size",&blocksize,"Block size used by GMRES.");
-  cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 = adapted to problem/block size).");
-  cmdp.setOption("max-subspace",&maxsubspace,"Maximum number of blocks the solver can use for the subspace.");
-  cmdp.setOption("max-restarts",&maxrestarts,"Maximum number of restarts allowed for GMRES solver.");
-  if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
-    return EXIT_FAILURE;
-  }
-
   bool success = false;
+  bool verbose = false;
   try {
+    bool proc_verbose = false;
+    int frequency = -1;        // frequency of status test output.
+    int blocksize = 1;         // blocksize
+    int numrhs = 1;            // number of right-hand sides to solve for
+    int maxrestarts = 15;      // maximum number of restarts allowed
+    int maxiters = -1;         // maximum number of iterations allowed per linear system
+    int maxsubspace = 25;      // maximum number of blocks the solver can use for the subspace
+    std::string filename("orsirr1.hb");
+    MT tol = 1.0e-5;           // relative residual tolerance
+
+    // Specify whether to use RHS as initial guess. If false, use zero.
+    bool useRHSAsInitialGuess = false;
+
+    Teuchos::CommandLineProcessor cmdp(false,true);
+    cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+    cmdp.setOption("use-rhs","use-zero",&useRHSAsInitialGuess,"Use RHS as initial guess.");
+    cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
+    cmdp.setOption("filename",&filename,"Filename for test matrix.  Acceptable file extensions: *.hb,*.mtx,*.triU,*.triS");
+    cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
+    cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
+    cmdp.setOption("block-size",&blocksize,"Block size used by GMRES.");
+    cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 = adapted to problem/block size).");
+    cmdp.setOption("max-subspace",&maxsubspace,"Maximum number of blocks the solver can use for the subspace.");
+    cmdp.setOption("max-restarts",&maxrestarts,"Maximum number of restarts allowed for GMRES solver.");
+    if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
+      return EXIT_FAILURE;
+    }
+
     if (!verbose)
       frequency = -1;  // reset frequency if test is not verbose
 

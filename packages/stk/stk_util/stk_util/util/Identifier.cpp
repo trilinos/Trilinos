@@ -7,8 +7,10 @@
 /*------------------------------------------------------------------------*/
 
 #include <stk_util/util/Identifier.hpp>
-#include <cstring>
-#include <iostream>
+#include <algorithm>                    // for min
+#include <cstring>                      // for strlen
+#include <iostream>                     // for istream, ostream, etc
+#include "stk_util/util/ci_traits.hpp"  // for ignorecase_traits
 
 namespace stk {
 

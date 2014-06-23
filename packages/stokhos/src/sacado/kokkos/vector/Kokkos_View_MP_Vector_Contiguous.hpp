@@ -227,6 +227,16 @@ struct sacado_mp_vector_partition_constructor_requires_unmanaged_view {};
 
 namespace Kokkos {
 
+// Overload of deep_copy for MP::Vector views intializing to a constant scalar
+template< typename T, typename L, typename D, typename M >
+void deep_copy(
+  const View<T,L,D,M,Impl::ViewMPVectorContiguous>& view ,
+  const typename View<T,L,D,M,Impl::ViewMPVectorContiguous>::intrinsic_scalar_type& value )
+{
+  typedef View<T,L,D,M,Impl::ViewMPVectorContiguous> ViewType;
+  Impl::ViewFill< typename ViewType::flat_array_type >( view , value );
+}
+
 /**\brief View::value_type  == Sacado::MP::Vector< Storage<...> > */
 template< class DataType ,
           class Arg1Type ,
@@ -241,6 +251,7 @@ class View< DataType , Arg1Type , Arg2Type , Arg3Type , Impl::ViewMPVectorContig
 {
 public:
 
+  typedef Impl::ViewTag kokkos_tag;
   typedef ViewTraits< DataType
                     , typename ViewTraits< DataType , Arg1Type, Arg2Type, Arg3Type >::array_layout
                     , typename ViewTraits< DataType , Arg1Type, Arg2Type, Arg3Type >::device_type
@@ -504,7 +515,7 @@ public:
                                m_offset_map,
                                m_sacado_size.value );
 
-      (void) Impl::ViewFill< View >( *this , typename traits::value_type() );
+      deep_copy( *this , intrinsic_scalar_type() );
     }
 
   explicit inline
@@ -559,7 +570,7 @@ public:
                                m_offset_map,
                                m_sacado_size.value );
 
-      (void) Impl::ViewFill< View >( *this , typename traits::value_type() );
+      deep_copy( *this , intrinsic_scalar_type() );
     }
 
   template <typename iType>
@@ -1129,6 +1140,8 @@ namespace Impl {
  *  This specialization is required so that the array shape of
  *  Kokkos::View< Sacado::MP::Vector< StorageType > , ... >
  *  can be determined at compile-time.
+ *
+ *  This treats Sacado::MP::Vector as an atomic scalar.
  */
 template< class StorageType >
 struct AnalyzeShape< Sacado::MP::Vector< StorageType > >
@@ -1144,21 +1157,9 @@ public:
 
   typedef Shape< sizeof(Sacado::MP::Vector< StorageType >) , 0 > shape ;
 
-  // If ( ! StorageType::is_static ) then 0 == StorageType::static_size and the first array declaration is not used.
-  // However, the compiler will still generate this type declaration and it must not have a zero length.
-  typedef typename
-    if_c< StorageType::is_static
-        , typename nested::array_type [ StorageType::is_static ? StorageType::static_size : 1 ]
-        , typename nested::array_type *
-        >::type array_type ;
-
-  typedef typename
-    if_c< StorageType::is_static
-        , typename nested::const_array_type [ StorageType::is_static ? StorageType::static_size : 1 ]
-        , typename nested::const_array_type *
-        >::type const_array_type ;
-
-  typedef array_type non_const_array_type ;
+  typedef       Sacado::MP::Vector< StorageType >  array_type ;
+  typedef const Sacado::MP::Vector< StorageType >  const_array_type ;
+  typedef       Sacado::MP::Vector< StorageType >  non_const_array_type ;
 
   typedef       Sacado::MP::Vector< StorageType >  type ;
   typedef const Sacado::MP::Vector< StorageType >  const_type ;
@@ -1174,6 +1175,8 @@ public:
  *  This specialization is required so that the array shape of
  *  Kokkos::View< Sacado::MP::Vector< StorageType > , ... >
  *  can be determined at compile-time.
+ *
+ *  This treats Sacado::MP::Vector as an array.
  */
 template< class StorageType, class Layout >
 struct AnalyzeSacadoShape< Sacado::MP::Vector< StorageType >, Layout >
@@ -1666,6 +1669,77 @@ struct ViewAssignment< ViewDefault , ViewMPVectorContiguous , void >
 
     dst.m_tracking.increment( dst.m_ptr_on_device );
   }
+};
+
+// Specialization for deep_copy( view, view::value_type ) for Cuda
+template< class T , class L , class M , unsigned Rank >
+struct ViewFill< View<T,L,Cuda,M,ViewMPVectorContiguous> , Rank >
+{
+  typedef View<T,L,Cuda,M,ViewMPVectorContiguous> OutputView ;
+  typedef typename OutputView::const_value_type   const_value_type ;
+  typedef typename OutputView::device_type        device_type ;
+  typedef typename OutputView::size_type          size_type ;
+
+  template <unsigned VectorLength>
+  struct Kernel {
+    typedef typename OutputView::device_type device_type ;
+    const OutputView output;
+    const_value_type input;
+
+    Kernel( const OutputView & arg_out , const_value_type & arg_in ) :
+      output(arg_out), input(arg_in) {}
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()( device_type dev ) const
+    {
+      const size_type tidx = dev.team_rank() % VectorLength;
+      const size_type tidy = dev.team_rank() / VectorLength;
+      const size_type nrow = dev.team_size() / VectorLength;
+      const size_type nvec = output.sacado_size();
+
+      const size_type i0 = dev.league_rank() * nrow + tidy;
+      if ( i0 >= output.dimension_0() ) return;
+
+      for ( size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
+      for ( size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
+      for ( size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
+      for ( size_type i4 = 0 ; i4 < output.dimension_4() ; ++i4 ) {
+      for ( size_type i5 = 0 ; i5 < output.dimension_5() ; ++i5 ) {
+      for ( size_type i6 = 0 ; i6 < output.dimension_6() ; ++i6 ) {
+      for ( size_type i7 = 0 ; i7 < output.dimension_7() ; ++i7 ) {
+      for ( size_type is = tidx ; is < nvec ; is+=VectorLength ) {
+        output.at(i0,i1,i2,i3,i4,i5,i6,i7).fastAccessCoeff(is) =
+          input.fastAccessCoeff(is) ;
+      }}}}}}}}
+    }
+  };
+
+  ViewFill( const OutputView & output , const_value_type & input )
+  {
+    if ( Sacado::is_constant(input) ) {
+      deep_copy( output , input.fastAccessCoeff(0) );
+    }
+    else {
+
+      // Coalesced accesses are 128 bytes in size
+      typedef typename OutputView::intrinsic_scalar_type scalar_type;
+      const unsigned vector_length =
+        ( 128 + sizeof(scalar_type)-1 ) / sizeof(scalar_type);
+
+      // 8 warps per block should give good occupancy
+      const size_type block_size = 256;
+
+      const size_type rows_per_block = block_size / vector_length;
+      const size_type n = output.dimension_0();
+      const size_type league_size = ( n + rows_per_block-1 ) / rows_per_block;
+      const size_type team_size = rows_per_block * vector_length;
+      ParallelWorkRequest config( league_size, team_size );
+
+      parallel_for( config, Kernel<vector_length>(output, input) );
+      device_type::fence();
+    }
+  }
+
 };
 
 } // namespace Impl

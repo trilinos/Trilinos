@@ -56,6 +56,7 @@
 #include <Kokkos_HostSpace.hpp>
 #include <Kokkos_Parallel.hpp>
 #include <Kokkos_Layout.hpp>
+#include <impl/Kokkos_Tags.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -77,6 +78,8 @@ public:
   //! \name Type declarations that all Kokkos devices must provide.
   //@{
 
+  //! The tag (what type of kokkos_object is this).
+  typedef Impl::DeviceTag       kokkos_tag ;
   typedef OpenMP                device_type ;
   typedef HostSpace::size_type  size_type ;
   typedef HostSpace             memory_space ;
@@ -114,13 +117,6 @@ public:
    *  2) Allocate a HostThread for each OpenMP thread to hold its
    *     topology and fan in/out data.
    */
-#if 0
-  static void initialize( const unsigned team_count         = 1 ,
-                          const unsigned threads_per_team   = 1 ,
-                          const unsigned use_numa_count     = 0 ,
-                          const unsigned use_cores_per_numa = 0 );
-#endif
-
   static void initialize( unsigned thread_count = 0 ,
                           unsigned use_numa_count = 0 ,
                           unsigned use_cores_per_numa = 0 );

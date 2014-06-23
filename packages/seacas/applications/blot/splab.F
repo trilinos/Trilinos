@@ -323,7 +323,7 @@ C   --Show display variables for each curve
                VARVAL = TIMES(IPTIMS(NP))
             ELSE IF (LIDSP(ND) .GT. 0)THEN
                IF (FIRSTH) THEN
-                  CALL DBVIX ('H', 1, IXHV)
+                  CALL DBVIX_BL ('H', 1, IXHV)
                   CALL MDRSRV ('SCRH', KVARH, NVARHI)
                   CALL MDSTAT (NERR, MEM)
                   IF (NERR .GT. 0)GOTO 130
@@ -331,12 +331,12 @@ C   --Show display variables for each curve
      &               A(KVARH))
                   FIRSTH = .FALSE.
                ENDIF
-               CALL DBVIX ('H', LIDSP(ND), IDVAR)
+               CALL DBVIX_BL ('H', LIDSP(ND), IDVAR)
                DISPVL = NAMES(IDVAR)
                VARVAL = A(KVARH+LIDSP(ND)-1)
             ELSE
                IF (FIRSTG) THEN
-                  CALL DBVIX ('G', 1, IXGV)
+                  CALL DBVIX_BL ('G', 1, IXGV)
                   CALL MDRSRV ('SCRG', KVARG, NVARGL)
                   CALL MDSTAT (NERR, MEM)
                   IF (NERR .GT. 0)GOTO 130
@@ -344,7 +344,7 @@ C   --Show display variables for each curve
      &               A(KVARG))
                   FIRSTG = .FALSE.
                ENDIF
-               CALL DBVIX ('G', -LIDSP(ND), IDVAR)
+               CALL DBVIX_BL ('G', -LIDSP(ND), IDVAR)
                DISPVL = NAMES(IDVAR)
                VARVAL = A(KVARG-LIDSP(ND)-1)
             ENDIF

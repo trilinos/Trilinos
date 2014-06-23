@@ -135,9 +135,9 @@ class MultiVectorCombination : public BaseLinearCombination
 {
 public:
   MultiVectorCombination(const double alpha,
-                         const MultiVector x,
+                         const MultiVector & x,
                          const double beta,
-                         const MultiVector y) :
+                         const MultiVector & y) :
     x_(x),
     y_(y),
     alpha_(alpha),

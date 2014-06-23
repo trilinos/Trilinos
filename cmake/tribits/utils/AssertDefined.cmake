@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -37,6 +37,42 @@
 # ************************************************************************
 # @HEADER
 
+#
+# @FUNCTION: ASSERT_DEFINED()
+#
+# Assert that a variable is defined and if not call ``MESSAGE(SEND_ERROR
+# ...)``.
+#
+# Usage::
+#
+#   ASSERT_DEFINED(<varName>)
+#
+# This is used to get around the problem of CMake not asserting the
+# dereferencing of undefined variables.  For example, how does one know if one
+# did not misspell the name of a variable in an if statement like::
+#
+#   IF (SOME_VARBLE)
+#     ...
+#   ENDIF()
+#
+# ?
+#
+#  If one misspelled the variable ``SOME_VARBLE`` (which is likely in this
+#  case), then the if statement will always be false!  To avoid this problem
+#  when one always expects that a variable is explicitly set, instead do::
+#
+#   ASSERT_DEFINED(SOME_VARBLE)
+#   IF (SOME_VARBLE)
+#     ...
+#   ENDIF()
+#
+# Now if one misspells this variable, then CMake will asset and stop
+# processing.  This is not a perfect solution since one can misspell the
+# variable name in the following if statement but typically one would always
+# just copy and paste between the two statements so these names are always the
+# same.  This is the best that can be done in CMake unfortunately to catch
+# usage of misspelled undefined variables.
+#
 FUNCTION(ASSERT_DEFINED VARS)
   FOREACH(VAR ${VARS})
     IF(NOT DEFINED ${VAR})
@@ -44,3 +80,7 @@ FUNCTION(ASSERT_DEFINED VARS)
     ENDIF()
   ENDFOREACH()
 ENDFUNCTION()
+
+# ToDo: The VARS arg This really needs to be repalced with ${ARGV}.  I fear
+# that only the first arg passed in is asserted.  However, to change this now
+# is breaking backward compatibility.

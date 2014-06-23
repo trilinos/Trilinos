@@ -56,6 +56,7 @@
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_FactoryManager.hpp"
 
+#include "MueLu_AggregationExportFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_ConstraintFactory.hpp"
@@ -170,6 +171,7 @@ namespace MueLu {
       std::string verbosityLevel = paramList.get<std::string>("verbosity");
       TEUCHOS_TEST_FOR_EXCEPTION(verbMap.count(verbosityLevel) == 0, Exceptions::RuntimeError, "Invalid verbosity level: \"" << verbosityLevel << "\"");
       this->verbosity_ = verbMap[verbosityLevel];
+      this->SetVerbLevel(this->verbosity_);
     }
 
     // Detect if we need to transfer coordinates to coarse levels. We do that iff
@@ -230,6 +232,45 @@ namespace MueLu {
 
       this->AddFactoryManager(levelID, 1, levelManager);
     }
+
+    if (paramList.isParameter("strict parameter checking") &&
+        paramList.get<bool>  ("strict parameter checking")) {
+      ParameterList unusedParamList;
+
+      // Check for unused parameters that aren't lists
+      for (ParameterList::ConstIterator itr = paramList.begin(); itr != paramList.end(); ++itr) {
+        const ParameterEntry& entry = paramList.entry(itr);
+
+        if (!entry.isList() && !entry.isUsed())
+          unusedParamList.setEntry(paramList.name(itr), entry);
+      }
+#if 0
+      // Check for unused parameters in level-specific sublists
+      for (int levelID = 0; levelID < this->numDesiredLevel_; levelID++) {
+        std::string levelStr = "level" + toString(levelID);
+
+        if (paramList.isSublist(levelStr)) {
+          const ParameterList& levelList = paramList.sublist(levelStr);
+
+          for (ParameterList::ConstIterator itr = levelList.begin(); itr != levelList.end(); ++itr) {
+            const ParameterEntry& entry = levelList.entry(itr);
+
+            if (!entry.isList() && !entry.isUsed())
+              unusedParamList.sublist(levelStr).setEntry(levelList.name(itr), entry);
+          }
+        }
+      }
+#endif
+      if (unusedParamList.numParams() > 0) {
+        std::ostringstream unusedParamsStream;
+        int indent = 4;
+        unusedParamList.print(unusedParamsStream, indent);
+
+        TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true, Teuchos::Exceptions::InvalidParameter,
+                                            "WARNING: Unused parameters were detected. Please check spelling and type." << std::endl << unusedParamsStream.str());
+      }
+    }
+
     // FIXME: parameters passed to packages, like Ifpack2, are not touched by us, resulting in "[unused]" flag
     // being displayed. On the other hand, we don't want to simply iterate through them touching. I don't know
     // what a good solution looks like
@@ -238,9 +279,10 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void EasyParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetupMatrix(Matrix& A) const {
-    TEUCHOS_TEST_FOR_EXCEPTION(A.GetFixedBlockSize() != blockSize_, Exceptions::RuntimeError,
-                               "Provided parameter list block size (\"number of equations\") is " << blockSize_ << ", but "
-                               << "the matrix block size (GetFixedBlockSize()) is " << A.GetFixedBlockSize());
+    if (A.GetFixedBlockSize() != blockSize_)
+      this->GetOStream(Warnings0) << "Warning: setting matrix block size to " << blockSize_ << " (value of \"number of equations\" parameter in the list) "
+          << "instead of " << A.GetFixedBlockSize() << " (provided matrix)." << std::endl;
+
     A.SetFixedBlockSize(blockSize_);
   }
 
@@ -260,9 +302,10 @@ namespace MueLu {
     // === Smoothing ===
     bool isCustomSmoother =
         paramList.isParameter("smoother: pre or post") ||
-        paramList.isParameter("smoother: type")   || paramList.isParameter("smoother: pre type")   || paramList.isParameter("smoother: post type") ||
-        paramList.isSublist("smoother: params")   || paramList.isSublist("smoother: pre params")   || paramList.isSublist("smoother: post params") ||
-        paramList.isParameter("smoother: sweeps") || paramList.isParameter("smoother: pre sweeps") || paramList.isParameter("smoother: post sweeps");
+        paramList.isParameter("smoother: type")    || paramList.isParameter("smoother: pre type")    || paramList.isParameter("smoother: post type")   ||
+        paramList.isSublist  ("smoother: params")  || paramList.isSublist  ("smoother: pre params")  || paramList.isSublist  ("smoother: post params") ||
+        paramList.isParameter("smoother: sweeps")  || paramList.isParameter("smoother: pre sweeps")  || paramList.isParameter("smoother: post sweeps") ||
+        paramList.isParameter("smoother: overlap") || paramList.isParameter("smoother: pre overlap") || paramList.isParameter("smoother: post overlap");;
     MUELU_READ_2LIST_PARAM(paramList, defaultList, "smoother: pre or post", std::string, "both", PreOrPost);
     if (PreOrPost == "none") {
       manager.SetFactory("Smoother", Teuchos::null);
@@ -271,23 +314,26 @@ namespace MueLu {
       // FIXME: get default values from the factory
       // NOTE: none of the smoothers at the moment use parameter validation framework, so we
       // cannot get the default values from it.
-      TEUCHOS_TEST_FOR_EXCEPTION(paramList.isParameter("smoother: type") && paramList.isParameter("smoother: pre type"),
-                                 Exceptions::InvalidArgument, "You cannot specify both \"smoother: type\" and \"smoother: pre type\"");
-      TEUCHOS_TEST_FOR_EXCEPTION(paramList.isParameter("smoother: type") && paramList.isParameter("smoother: post type"),
-                                 Exceptions::InvalidArgument, "You cannot specify both \"smoother: type\" and \"smoother: post type\"");
-      TEUCHOS_TEST_FOR_EXCEPTION(paramList.isParameter("smoother: sweeps") && paramList.isParameter("smoother: pre sweeps"),
-                                 Exceptions::InvalidArgument, "You cannot specify both \"smoother: sweeps\" and \"smoother: pre sweeps\"");
-      TEUCHOS_TEST_FOR_EXCEPTION(paramList.isParameter("smoother: sweeps") && paramList.isParameter("smoother: post sweeps"),
-                                 Exceptions::InvalidArgument, "You cannot specify both \"smoother: sweeps\" and \"smoother: post sweeps\"");
-      TEUCHOS_TEST_FOR_EXCEPTION(paramList.isSublist("smoother: params") && paramList.isSublist("smoother: pre params"),
-                                 Exceptions::InvalidArgument, "You cannot specify both \"smoother: params\" and \"smoother: pre params\"");
-      TEUCHOS_TEST_FOR_EXCEPTION(paramList.isSublist("smoother: params") && paramList.isSublist("smoother: pre params"),
-                                 Exceptions::InvalidArgument, "You cannot specify both \"smoother: params\" and \"smoother: pre params\"");
+#define TEST_MUTUALLY_EXCLUSIVE(arg1,arg2) \
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.isParameter(#arg1) && paramList.isParameter(#arg2), \
+                                 Exceptions::InvalidArgument, "You cannot specify both \""#arg1"\" and \""#arg2"\"");
+#define TEST_MUTUALLY_EXCLUSIVE_S(arg1,arg2) \
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.isSublist(#arg1) && paramList.isSublist(#arg2), \
+                                 Exceptions::InvalidArgument, "You cannot specify both \""#arg1"\" and \""#arg2"\"");
+
+      TEST_MUTUALLY_EXCLUSIVE  ("smoother: type",    "smoother: pre type");
+      TEST_MUTUALLY_EXCLUSIVE  ("smoother: type",    "smoother: post type");
+      TEST_MUTUALLY_EXCLUSIVE  ("smoother: sweeps",  "smoother: pre sweeps");
+      TEST_MUTUALLY_EXCLUSIVE  ("smoother: sweeps",  "smoother: post sweeps");
+      TEST_MUTUALLY_EXCLUSIVE  ("smoother: overlap", "smoother: pre overlap");
+      TEST_MUTUALLY_EXCLUSIVE  ("smoother: overlap", "smoother: post overlap");
+      TEST_MUTUALLY_EXCLUSIVE_S("smoother: params",  "smoother: pre params");
+      TEST_MUTUALLY_EXCLUSIVE_S("smoother: params",  "smoother: post params");
       TEUCHOS_TEST_FOR_EXCEPTION(PreOrPost == "both" && (paramList.isParameter("smoother: pre type") != paramList.isParameter("smoother: post type")),
                                  Exceptions::InvalidArgument, "You must specify both \"smoother: pre type\" and \"smoother: post type\"");
 
       // Default values
-      const int overlap = 0;
+      int overlap = 0;
       ParameterList defaultSmootherParams;
       defaultSmootherParams.set("relaxation: type",           "Symmetric Gauss-Seidel");
       defaultSmootherParams.set("relaxation: sweeps",         Teuchos::OrdinalTraits<LO>::one());
@@ -296,6 +342,10 @@ namespace MueLu {
       RCP<SmootherPrototype> preSmoother = Teuchos::null, postSmoother = Teuchos::null;
       std::string            preSmootherType,             postSmootherType;
       ParameterList          preSmootherParams,           postSmootherParams;
+
+      if (paramList.isParameter("smoother: overlap"))
+        overlap = paramList.get<int>("smoother: overlap");
+
       if (PreOrPost == "pre" || PreOrPost == "both") {
         if (paramList.isParameter("smoother: pre type")) {
           preSmootherType = paramList.get<std::string>("smoother: pre type");
@@ -303,6 +353,8 @@ namespace MueLu {
           MUELU_READ_2LIST_PARAM(paramList, defaultList, "smoother: type", std::string, "RELAXATION", preSmootherTypeTmp);
           preSmootherType = preSmootherTypeTmp;
         }
+        if (paramList.isParameter("smoother: pre overlap"))
+          overlap = paramList.get<int>("smoother: pre overlap");
 
         if (paramList.isSublist("smoother: pre params"))
           preSmootherParams = paramList.sublist("smoother: pre params");
@@ -332,6 +384,8 @@ namespace MueLu {
           postSmootherParams = defaultList.sublist("smoother: params");
         else if (postSmootherType == "RELAXATION")
           postSmootherParams = defaultSmootherParams;
+        if (paramList.isParameter("smoother: post overlap"))
+          overlap = paramList.get<int>("smoother: post overlap");
 
         if (postSmootherType == preSmootherType && areSame(preSmootherParams, postSmootherParams))
           postSmoother = preSmoother;
@@ -378,7 +432,7 @@ namespace MueLu {
     // Aggregation graph
     RCP<CoalesceDropFactory> dropFactory = rcp(new CoalesceDropFactory());
     ParameterList dropParams = *(dropFactory->GetValidParameterList());
-    dropParams.set                      ("lightweight wrap", true);
+    dropParams.set("lightweight wrap", true);
     MUELU_TEST_AND_SET_PARAM(dropParams, "algorithm",                     paramList, defaultList, "aggregation: drop scheme",         std::string);
     // Rename classical to original
     if (dropParams.isParameter("algorithm") && dropParams.get<std::string>("algorithm") == "classical")
@@ -392,8 +446,15 @@ namespace MueLu {
     // Aggregation sheme
     MUELU_READ_2LIST_PARAM(paramList, defaultList, "aggregation: type", std::string, "uncoupled", aggType);
     RCP<Factory> aggFactory;
-    if      (aggType == "uncoupled") aggFactory = rcp(new UncoupledAggregationFactory());
-    else if (aggType == "coupled")   aggFactory = rcp(new CoupledAggregationFactory());
+    if      (aggType == "uncoupled") {
+      aggFactory = rcp(new UncoupledAggregationFactory());
+      ParameterList aggParams = *(aggFactory->GetValidParameterList());
+      MUELU_TEST_AND_SET_PARAM(aggParams, "mode", paramList, defaultList, "aggregation: mode", std::string);
+      aggFactory->SetParameterList(aggParams);
+
+    } else if (aggType == "coupled") {
+      aggFactory = rcp(new CoupledAggregationFactory());
+    }
     aggFactory->SetFactory("Graph",       manager.GetFactory("Graph"));
     aggFactory->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
     manager.SetFactory("Aggregates", aggFactory);
@@ -488,6 +549,12 @@ namespace MueLu {
     RAP->SetFactory("P", manager.GetFactory("P"));
     if (!this->implicitTranspose_)
       RAP->SetFactory("R", manager.GetFactory("R"));
+    MUELU_READ_2LIST_PARAM(paramList, defaultList, "aggregation: visualize", bool, false, visAgg);
+    if (visAgg) {
+      RCP<AggregationExportFactory> aggExport = rcp(new AggregationExportFactory());
+      aggExport->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
+      RAP->AddTransferFactory(aggExport);
+    }
     manager.SetFactory("A", RAP);
 
     // === Coordinates ===
@@ -540,6 +607,7 @@ namespace MueLu {
       MUELU_TEST_AND_SET_PARAM(repartParams, "nonzeroImbalance",    paramList, defaultList, "repartition: max imbalance",     double);
       MUELU_TEST_AND_SET_PARAM(repartParams, "remapPartitions",     paramList, defaultList, "repartition: remap parts",       bool);
       MUELU_TEST_AND_SET_PARAM(repartParams, "alwaysKeepProc0",     paramList, defaultList, "repartition: keep proc 0",       bool);
+      MUELU_TEST_AND_SET_PARAM(repartParams, "repartition: print partition distribution", paramList, defaultList, "repartition: print partition distribution", bool);
       repartFactory->SetParameterList(repartParams);
       repartFactory->SetFactory("A",         manager.GetFactory("A"));
       repartFactory->SetFactory("Partition", manager.GetFactory("Partition"));
@@ -559,7 +627,10 @@ namespace MueLu {
       newP->  SetParameterList(newPparams);
       newP->  SetFactory("Importer",    manager.GetFactory("Importer"));
       newP->  SetFactory("P",           manager.GetFactory("P"));
+      newP->  SetFactory("Nullspace",   manager.GetFactory("Ptent"));
+      newP->  SetFactory("Coordinates", manager.GetFactory("Coordinates"));
       manager.SetFactory("P",           newP);
+      manager.SetFactory("Coordinates", newP);
 
       // Rebalanced R
       RCP<RebalanceTransferFactory> newR = rcp(new RebalanceTransferFactory());
@@ -568,14 +639,11 @@ namespace MueLu {
       newRparams.set("implicit",          !this->doPRrebalance_);
       newRparams.set("implicit transpose", this->implicitTranspose_);
       newR->  SetParameterList(newRparams);
-      newR->  SetFactory("Importer",    manager.GetFactory("Importer"));
-      newR->  SetFactory("Nullspace",   manager.GetFactory("Ptent"));
-      newR->  SetFactory("Coordinates", manager.GetFactory("Coordinates"));
+      newR->  SetFactory("Importer",       manager.GetFactory("Importer"));
       if (!this->implicitTranspose_) {
-        newR->SetFactory("R",           manager.GetFactory("R"));
-        manager.SetFactory("R",           newR);
+        newR->SetFactory("R",              manager.GetFactory("R"));
+        manager.SetFactory("R",            newR);
       }
-      manager.SetFactory("Coordinates", newR);
 
       // NOTE: the role of NullspaceFactory is to provide nullspace on the finest
       // level if a user does not do that. For all other levels it simply passes
@@ -583,7 +651,7 @@ namespace MueLu {
       // repartitioning, that factory is "TentativePFactory"; if we do, it is
       // "RebalanceTransferFactory". But we still have to have NullspaceFactory as
       // the "Nullspace" of the manager
-      nullSpace->SetFactory("Nullspace", newR);
+      nullSpace->SetFactory("Nullspace", newP);
 #else
       throw Exceptions::RuntimeError("No repartitioning available for a serial run");
 #endif

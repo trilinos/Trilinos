@@ -125,9 +125,11 @@ namespace Tpetra {
   /// it will also let you exploit the performance optimizations
   /// mentioned above.
   ///
-  /// \tparam Scalar The type of the numerical entries of the vector(s).
-  ///  (You can use real-valued or complex-valued types here, unlike in
-  ///  Epetra, where the scalar type is always \c double.)
+  /// \tparam Scalar The type of the numerical entries of the
+  ///  vector(s).  (You may use real-valued or complex-valued types
+  ///  here, unlike in Epetra, where the scalar type is always \c
+  ///  double.)  The default is \c double (real, double-precision
+  ///  floating-point type).
   ///
   /// \tparam LocalOrdinal The type of local indices.  Same as the \c
   ///   LocalOrdinal template parameter of \c Map objects used by this
@@ -347,7 +349,7 @@ namespace Tpetra {
   ///   That is, if some but not all rows are shared by more than one
   ///   process in the communicator, then inner products and norms may
   ///   be wrong.  This behavior may change in future releases.
-  template<class Scalar,
+  template<class Scalar=double,
            class LocalOrdinal=int,
            class GlobalOrdinal=LocalOrdinal,
            class Node=KokkosClassic::DefaultNode::DefaultNodeType>
@@ -849,11 +851,24 @@ namespace Tpetra {
     //! Return non-const persisting pointers to values.
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > get2dViewNonConst();
 
-    //! Return a const reference to the underlying KokkosClassic::MultiVector object (advanced use only)
-    const KokkosClassic::MultiVector<Scalar,Node> & getLocalMV() const;
+    /// \brief A view of the underlying KokkosClassic::MultiVector object.
+    ///
+    /// \brief This method is for expert users only.
+    ///   It may change or be removed at any time.
+    KokkosClassic::MultiVector<Scalar,Node> getLocalMV () const;
 
-    //! Return a non-const reference to the underlying KokkosClassic::MultiVector object (advanced use only)
-    KokkosClassic::MultiVector<Scalar,Node> & getLocalMVNonConst();
+    /// \brief A nonconst reference to a view of the underlying
+    ///   KokkosClassic::MultiVector object.
+    ///
+    /// \brief This method is for expert users only.
+    ///   It may change or be removed at any time.
+    ///
+    /// \warning This method is DEPRECATED.  It may disappear at any
+    ///   time.  Please call getLocalMV() instead.  There was never
+    ///   actually a need for a getLocalMVNonConst() method, as far as
+    ///   I can tell.
+    TEUCHOS_DEPRECATED
+    KokkosClassic::MultiVector<Scalar,Node>& getLocalMVNonConst ();
 
     //@}
     //! @name Mathematical methods
@@ -1308,6 +1323,23 @@ namespace Tpetra {
 
   /// \brief Return a deep copy of the MultiVector \c src.
   /// \relatesalso MultiVector
+  ///
+  /// Regarding Copy or View semantics: The returned MultiVector is
+  /// always a deep copy of \c src, but always has the same semantics
+  /// as \c src.  That is, if \c src has View semantics, then the
+  /// returned MultiVector has View semantics, and if \c src has Copy
+  /// semantics, then the returned MultiVector has Copy semantics.
+  ///
+  /// You may call <tt>src.getCopyOrView ()</tt> to test the semantics
+  /// of the input MultiVector \c src.  For example, the following
+  /// will never trigger an assert:
+  /// \code
+  /// MultiVector<double> dst = createCopy (src);
+  /// assert (dst.getCopyOrView () == src.getCopyOrView ());
+  /// \endcode
+  ///
+  /// In the Kokkos refactor version of Tpetra, MultiVector always has
+  /// View semantics.  However, the above remarks still apply.
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   createCopy (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& src);
@@ -1321,9 +1353,12 @@ namespace Tpetra {
   /// \pre The two inputs must have the same number of columns.
   ///
   /// Copy the contents of the MultiVector \c src into the MultiVector
-  /// \c dst.  The two MultiVectors need not necessarily have the same
+  /// \c dst.  ("Copy the contents" means the same thing as "deep
+  /// copy.")  The two MultiVectors need not necessarily have the same
   /// template parameters, but the assignment of their entries must
-  /// make sense.
+  /// make sense.  Furthermore, their Maps must be compatible, that
+  /// is, the MultiVectors' local dimensions must be the same on all
+  /// processes.
   ///
   /// This method must always be called as a collective operation on
   /// all processes over which the multivector is distributed.  This

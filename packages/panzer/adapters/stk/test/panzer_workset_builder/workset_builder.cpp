@@ -66,8 +66,8 @@ using Teuchos::rcp;
 
 namespace panzer {
 
-  void getNodeIds(stk::mesh::EntityRank nodeRank,const stk::mesh::Entity * element,
-		  std::vector<stk::mesh::EntityId> & nodeIds);
+  void getNodeIds(stk_classic::mesh::EntityRank nodeRank,const stk_classic::mesh::Entity * element,
+		  std::vector<stk_classic::mesh::EntityId> & nodeIds);
 
   void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 			 std::vector<panzer::BC>& bcs);
@@ -81,9 +81,9 @@ namespace panzer {
     pl->set("X Elements",2);  // in each block
     pl->set("Y Elements",2);  // in each block
 
-    panzer_stk::SquareQuadMeshFactory factory;
+    panzer_stk_classic::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
-    RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
     if(mesh->isWritable())
       mesh->writeToExodus("blocked_mesh.exo");
 
@@ -131,7 +131,7 @@ namespace panzer {
       std::vector<std::size_t> local_cell_ids;
       Intrepid::FieldContainer<double> cell_vertex_coordinates;
 
-      panzer_stk::workset_utils::getIdsAndVertices(*mesh, element_blocks[i], local_cell_ids, 
+      panzer_stk_classic::workset_utils::getIdsAndVertices(*mesh, element_blocks[i], local_cell_ids, 
 				cell_vertex_coordinates);
 
       Teuchos::RCP<shards::CellTopology> topo
@@ -177,9 +177,9 @@ namespace panzer {
     //    4 5 6 7
     //    0 1 2 3
 
-    panzer_stk::SquareQuadMeshFactory factory;
+    panzer_stk_classic::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
-    RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
 
     std::vector<std::string> element_blocks;
     mesh->getElementBlockNames(element_blocks);
@@ -304,9 +304,9 @@ namespace panzer {
     //    4 5 6 7
     //    0 1 2 3
 
-    panzer_stk::SquareQuadMeshFactory factory;
+    panzer_stk_classic::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
-    RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
 
     std::vector<std::string> element_blocks;
     mesh->getElementBlockNames(element_blocks);
@@ -348,7 +348,7 @@ namespace panzer {
 
     {
       std::string sideset = "vertical_0";
-      Teuchos::RCP<std::vector<panzer::Workset> > worksets = panzer_stk::buildWorksets(*mesh,
+      Teuchos::RCP<std::vector<panzer::Workset> > worksets = panzer_stk_classic::buildWorksets(*mesh,
                                           *(panzer::findPhysicsBlock(element_blocks[0],physicsBlocks)),
                                           *(panzer::findPhysicsBlock(element_blocks[1],physicsBlocks)),
                                           sideset);
@@ -427,9 +427,9 @@ namespace panzer {
     Teuchos::RCP<shards::CellTopology> topo
        = Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
     
-    panzer_stk::SquareQuadMeshFactory factory;
+    panzer_stk_classic::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
-    RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
     unsigned dim = mesh->getDimension();
 
     Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList("Physics Blocks");
@@ -472,14 +472,14 @@ namespace panzer {
     for (std::vector<panzer::BC>::const_iterator bc = bcs.begin();
 	 bc != bcs.end(); ++bc) {
       
-      std::vector<stk::mesh::Entity*> sideEntities; 
+      std::vector<stk_classic::mesh::Entity*> sideEntities; 
       mesh->getMySides(bc->sidesetID(),bc->elementBlockID(),sideEntities);
    
       
-      std::vector<stk::mesh::Entity*> elements;
+      std::vector<stk_classic::mesh::Entity*> elements;
       std::vector<std::size_t> local_cell_ids;
       std::vector<std::size_t> local_side_ids;
-      panzer_stk::workset_utils::getSideElements(*mesh, bc->elementBlockID(),
+      panzer_stk_classic::workset_utils::getSideElements(*mesh, bc->elementBlockID(),
 		      sideEntities,local_side_ids,elements);
 
       Intrepid::FieldContainer<double> vertices;
@@ -487,8 +487,8 @@ namespace panzer {
       
       // loop over elements of this block
       for(std::size_t elm=0;elm<elements.size();++elm) {
-	std::vector<stk::mesh::EntityId> nodes;
-	stk::mesh::Entity * element = elements[elm];
+	std::vector<stk_classic::mesh::EntityId> nodes;
+	stk_classic::mesh::Entity * element = elements[elm];
 	
 	local_cell_ids.push_back(mesh->elementLocalId(element));
 	getNodeIds(mesh->getNodeRank(),element,nodes);
@@ -583,15 +583,15 @@ namespace panzer {
       pl->set("Y Elements",4);
       pl->set("Z Elements",2);
   
-      panzer_stk::CubeTetMeshFactory factory;
+      panzer_stk_classic::CubeTetMeshFactory factory;
       factory.setParameterList(pl);
-      RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+      RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
   
-      std::vector<stk::mesh::Entity*> sideEntities; 
+      std::vector<stk_classic::mesh::Entity*> sideEntities; 
       mesh->getMySides("left","eblock-0_0_0",sideEntities);
 
-      std::vector<std::vector<stk::mesh::Entity*> > subcells;
-      panzer_stk::workset_utils::getSubcellEntities(*mesh,sideEntities,subcells);
+      std::vector<std::vector<stk_classic::mesh::Entity*> > subcells;
+      panzer_stk_classic::workset_utils::getSubcellEntities(*mesh,sideEntities,subcells);
 
       TEST_EQUALITY(subcells.size(),2);
       TEST_EQUALITY(subcells[0].size(),15);
@@ -607,22 +607,22 @@ namespace panzer {
       pl->set("Y Elements",1);
       pl->set("Z Elements",1);
 
-      panzer_stk::CubeTetMeshFactory factory;
+      panzer_stk_classic::CubeTetMeshFactory factory;
       factory.setParameterList(pl);
-      RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+      RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
 
-      std::vector<stk::mesh::Entity*> sideEntities; 
+      std::vector<stk_classic::mesh::Entity*> sideEntities; 
       mesh->getMySides("left","eblock-0_0_0",sideEntities);
 
       std::vector<std::size_t> localSubcellDim,localSubcellIds;
-      std::vector<stk::mesh::Entity*> elements;
+      std::vector<stk_classic::mesh::Entity*> elements;
 
       // TOUCHING TABLE:
       // the following elements touch the side
       //    1 2 3 4 5 6 9 10 11 12       // element global IDs
       //    N E N E F F N  E  E  N       // face (F), edge (E), node (N)
 
-      panzer_stk::workset_utils::getSideElementCascade(*mesh,"eblock-0_0_0",sideEntities,
+      panzer_stk_classic::workset_utils::getSideElementCascade(*mesh,"eblock-0_0_0",sideEntities,
                                                        localSubcellDim,localSubcellIds,elements);
 
       TEST_EQUALITY(elements.size(),30);
@@ -643,7 +643,7 @@ namespace panzer {
 
       // check that each element is assigned the correct dimension
       {
-        std::set<stk::mesh::EntityId> nodeE, edgeE, faceE;
+        std::set<stk_classic::mesh::EntityId> nodeE, edgeE, faceE;
         nodeE.insert(1); nodeE.insert(2); nodeE.insert(3); nodeE.insert(4); nodeE.insert(5); 
         nodeE.insert(6); nodeE.insert(9); nodeE.insert(10); nodeE.insert(11); nodeE.insert(12);
 
@@ -658,12 +658,12 @@ namespace panzer {
     }
   }
 
-  void getNodeIds(stk::mesh::EntityRank nodeRank,const stk::mesh::Entity * element,
-		  std::vector<stk::mesh::EntityId> & nodeIds)
+  void getNodeIds(stk_classic::mesh::EntityRank nodeRank,const stk_classic::mesh::Entity * element,
+		  std::vector<stk_classic::mesh::EntityId> & nodeIds)
   {
-    stk::mesh::PairIterRelation nodeRel = element->relations(nodeRank);
+    stk_classic::mesh::PairIterRelation nodeRel = element->relations(nodeRank);
     
-    stk::mesh::PairIterRelation::iterator itr;
+    stk_classic::mesh::PairIterRelation::iterator itr;
     for(itr=nodeRel.begin();itr!=nodeRel.end();++itr) 
       nodeIds.push_back(itr->entity()->identifier());
   }

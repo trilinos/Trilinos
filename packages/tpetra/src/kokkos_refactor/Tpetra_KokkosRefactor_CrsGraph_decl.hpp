@@ -54,83 +54,10 @@ namespace Tpetra {
   class CrsMatrix;
 #endif
 
-  /** \class CrsGraph
-   \brief A distributed graph accessed by rows (adjacency lists) and stored sparsely.
-
-   \tparam LocalOrdinal The type of local indices.  Same as the \c
-     LocalOrdinal template parameter of \c Map objects used by this
-     graph.  (In Epetra, this is just \c int.)  The default type is
-     \c int, which should suffice for most users.  This type must be
-     big enough to store the local (per process) number of rows or
-     columns.
-
-   \tparam GlobalOrdinal The type of global indices.  Same as the \c
-     GlobalOrdinal template parameter of \c Map objects used by this
-     graph.  (In Epetra, this is just \c int.  One advantage of
-     Tpetra over Epetra is that you can use a 64-bit integer type here
-     if you want to solve big problems.)  The default type is
-     <tt>LocalOrdinal</tt>.  This type must be big enough to store the
-     global (over all processes in the communicator) number of rows or
-     columns.
-
-   \tparam Node A class implementing on-node shared-memory parallel
-     operations.  It must implement the
-     \ref kokkos_node_api "Kokkos Node API."
-     The default \c Node type should suffice for most users.
-     The actual default type depends on your Trilinos build options.
-
-   \tparam LocalMatOps Type implementing local sparse
-     graph-(multi)vector multiply and local sparse triangular solve.
-     It must implement the \ref kokkos_crs_ops "Kokkos CRS Ops API."
-     The default \c LocalMatOps type should suffice for most users.
-     The actual default type depends on your Trilinos build options.
-
-   This class implements a distributed-memory parallel sparse graph.
-   It provides access by rows to the elements of the graph, as if the
-   local data were stored in compressed sparse row format (adjacency
-   lists, in graph terms).  (Implementations are <i>not</i> required
-   to store the data in this way internally.)  This class has an
-   interface like that of \c Epetra_CrsGraph, but also allows
-   insertion of data into nonowned rows, much like \c
-   Epetra_FECrsGraph.
-
-   \section Tpetra_CrsGraph_prereq Prerequisites
-
-   Before reading the rest of this documentation, it helps to know
-   something about the Teuchos memory management classes, in
-   particular Teuchos::RCP, Teuchos::ArrayRCP, and Teuchos::ArrayView.
-   You should also know a little bit about MPI (the Message Passing
-   Interface for distributed-memory programming).  You won't have to
-   use MPI directly to use CrsGraph, but it helps to be familiar with
-   the general idea of distributed storage of data over a
-   communicator.  Finally, you should read the documentation of Map.
-
-   \section Tpetra_CrsMatrix_local_vs_global Local vs. global indices and nonlocal insertion
-
-   Graph entries can be added using either local or global coordinates
-   for the indices. The accessors isGloballyIndexed() and
-   isLocallyIndexed() indicate whether the indices are currently
-   stored as global or local indices. Many of the class methods are
-   divided into global and local versions, which differ only in
-   whether they accept/return indices in the global or local
-   coordinate space. Some of these methods may only be used if the
-   graph coordinates are in the appropriate coordinates.  For example,
-   getGlobalRowView() returns a View to the indices in global
-   coordinates; if the indices are not in global coordinates, then no
-   such View can be created.
-
-   The global/local distinction does distinguish between operation on
-   the global/local graph. Almost all methods operate on the local
-   graph, i.e., the rows of the graph associated with the local node,
-   per the distribution specified by the row map. Access to non-local
-   rows requires performing an explicit communication via the
-   import/export capabilities of the CrsGraph object; see
-   DistObject. However, the method insertGlobalIndices() is an
-   exception to this rule, as non-local rows are allowed to be added
-   via the local graph. These rows are stored in the local graph and
-   communicated to the appropriate node on the next call to
-   globalAssemble() or fillComplete() (the latter calls the former).
-   */
+  /// \brief Partial specialization of CrsGraph for the new Kokkos Node types.
+  ///
+  /// This implements the "Kokkos refactor" version of CrsGraph.
+  /// For full documentation, see the "classic" version of CrsGraph.
   template <class LocalOrdinal,
             class GlobalOrdinal,
             class DeviceType>

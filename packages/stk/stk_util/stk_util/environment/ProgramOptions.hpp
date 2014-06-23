@@ -19,7 +19,7 @@ namespace stk {
 ///
 
 /**
- * @brief Function <b>get_options_description</b> is a singleton used to store the command
+ * @brief Function <b>get_options_description</b> accesses a singleton used to store the command
  * line option descriptions for the boost::program_options library.  This option
  * descriptions should be populated with options by each module using <b>Bootstrap</b>
  * object callback functions.  This allows modules to populate these prior to main's
@@ -31,7 +31,7 @@ namespace stk {
 boost::program_options::options_description &get_options_description();
 
 /**
- * @brief Function <b>get_variabel_map</b> is a singleton used to store the variables parsed from
+ * @brief Function <b>get_variables_map</b> accesses a singleton used to store the variables parsed from
  * the line option descriptions.
  *
  * @return	        an <b>boost::program_options::variable_map</b> reference to the

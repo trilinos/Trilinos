@@ -12,24 +12,28 @@
 #include <stk_util/environment/ProgramOptions.hpp>
 #include <stk_util/use_cases/UseCaseEnvironment.hpp>
 
-// Prototypes for use-case driver functions
-// (the functions live in UseCase_*.cpp).
+#include <mesh/MeshUseCase_1.hpp>
+#include <mesh/MeshUseCase_2.hpp>
+#include <mesh/MeshUseCase_3.hpp>
+#include <mesh/UseCase_ElementDeath.hpp>
+#include <mesh/UseCase_Skinning.hpp>
+#include <mesh/UseCase_ChangeOwner.hpp>
 
-namespace stk_use_cases {
-void use_case_13_driver( stk::ParallelMachine );
-}//namespace stk_use_cases
-
-namespace stk {
-namespace app {
-
-void use_case_14_driver( stk::ParallelMachine, bool run_performance_test );
-void use_case_23_driver( stk::ParallelMachine, bool run_performance_test );
-void use_case_AD_driver( stk::ParallelMachine, bool run_performance_test );
-
-} // namespace app
-} // namespace stk
+#include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/base/DiagWriter.hpp>
+#include <stk_mesh/base/EntityKey.hpp>
 
 //----------------------------------------------------------------------
+
+void printStatus(bool status)
+{
+  if (status) {
+    std::cout << "passed" << std::endl;
+  }
+  else {
+    std::cout << "FAILED" << std::endl;
+  }
+}
 
 int
 main(
@@ -40,45 +44,135 @@ main(
   boost::program_options::options_description desc("Use case options");
   desc.add_options()
     ("performance", "run performance test")
-    ( "use_case_13" , "use case 13" )
-    ( "use_case_14" , "use case 14" )
-    ( "use_case_23" , "use case 23" )
-    ( "use_case_AD" , "use case AD" )
     ("mesh", boost::program_options::value<std::string>(), "run mesh file performance test");
 
   stk::get_options_description().add(desc);
 
   use_case::UseCaseEnvironment use_case_environment(&argc, &argv);
 
-  boost::program_options::variables_map &vm = stk::get_variables_map();
-  
   stk::ParallelMachine parallel_machine = use_case_environment.m_comm;
+
+  bool status = true;
 
   // Now call the use-case drivers based on command line options
 
-  bool run_performance_case = vm.count("performance") != 0;
+  const bool single_process =
+    stk::parallel_machine_size( parallel_machine ) <= 1 ;
 
-  if (vm.count("use_case_13")) {
-    stk_use_cases::use_case_13_driver( parallel_machine );
-  }
-  else if (vm.count("use_case_14")) {
-    stk::app::use_case_14_driver( parallel_machine, run_performance_case );
-  }
-  else if (vm.count("use_case_23")) {
-    stk::app::use_case_23_driver( parallel_machine, run_performance_case );
-  }
-  else if (vm.count("use_case_AD")) {
-    stk::app::use_case_AD_driver( parallel_machine, run_performance_case );
-  }
-  else {
-    stk_use_cases::use_case_13_driver( parallel_machine );
-    stk::app::use_case_14_driver( parallel_machine, run_performance_case );
-    stk::app::use_case_23_driver( parallel_machine, run_performance_case );
-    stk::app::use_case_AD_driver( parallel_machine, run_performance_case );
+  {
+
+//
+//    stk_use_cases::use_case_13_driver( parallel_machine );
+//    stk::app::use_case_14_driver( parallel_machine, run_performance_case );
+//    stk::app::use_case_23_driver( parallel_machine, run_performance_case );
+//    stk::app::use_case_AD_driver( parallel_machine, run_performance_case );
+//
+//    // Use cases imported from stk_mesh/use_cases
+
+    if ( single_process ) {
+      std::cout << "Use Case 1 ... ";
+      bool local_status = true ;
+      try {
+        stk::mesh::use_cases::UseCase_1_Mesh mesh(parallel_machine);
+        printStatus(local_status);
+      }
+      catch ( const std::exception & x ) {
+        local_status = false ;
+        printStatus(local_status);
+        std::cout << x.what();
+      }
+      status = status && local_status;
+    }
+
+    if ( single_process ) {
+      std::cout << "Use Case 2 ... ";
+      bool local_status = true ;
+      try {
+        stk::mesh::use_cases::UseCase_2_Mesh mesh(parallel_machine);
+        mesh.populate(1,3);
+        local_status = stk::mesh::use_cases::verifyMesh(mesh,1,3);
+        printStatus(local_status);
+      }
+      catch ( const std::exception & x ) {
+        local_status = false ;
+        printStatus(local_status);
+        std::cout << x.what();
+      }
+      status = status && local_status;
+    }
+
+    if ( single_process ) {
+      std::cout << "Use Case 3 ... ";
+      bool local_status = true ;
+      try {
+        stk::mesh::use_cases::UseCase_3_Mesh mesh(parallel_machine);
+        mesh.populate();
+        local_status = stk::mesh::use_cases::verifyMesh(mesh);
+        printStatus(local_status);
+      }
+      catch ( const std::exception & x ) {
+        local_status = false ;
+        printStatus(local_status);
+        std::cout << x.what();
+      }
+      status = status && local_status;
+    }
+
+    {
+      std::cout << "Use Case Change Owner ... ";
+      Grid2D_Fixture test( parallel_machine );
+      const bool local_status = test.test_change_owner();
+      printStatus(local_status);
+      status = status && local_status;
+    }
+
+    {
+      std::cout << "Use Case Change Owner with constraint ... ";
+      const bool local_status = test_change_owner_with_constraint( parallel_machine );
+      printStatus(local_status);
+      status = status && local_status;
+    }
+
+    {
+      std::cout << "Use Case Change Owner #2 ... ";
+      const bool local_status = test_change_owner_2( parallel_machine );
+      printStatus(local_status);
+      status = status && local_status;
+    }
+
+    {
+      std::cout << "Use Case Change Owner #3 ... ";
+      const bool result = test_change_owner_3( parallel_machine );
+      printStatus(result);
+    }
+
+    {
+      std::cout << "Use Case Element Death 1 ... ";
+      bool local_status = element_death_use_case_1(parallel_machine);
+      printStatus(local_status);
+      status = status && local_status;
+    }
+    {
+      std::cout << "Use Case Skinning 1 ... ";
+      bool local_status = skinning_use_case_1(parallel_machine);
+      printStatus(local_status);
+      status = status && local_status;
+    }
+    {
+      std::cout << "Use Case Skinning 1b ... ";
+      bool local_status = skinning_use_case_1b(parallel_machine);
+      printStatus(local_status);
+      status = status && local_status;
+    }
+    {
+      std::cout << "Use Case Skinning 2 ... ";
+      bool local_status = skinning_use_case_2(parallel_machine);
+      printStatus(local_status);
+      status = status && local_status;
+    }
+
   }
 
-  // If we've made it this far, the use-case has passed
-  use_case::print_status(parallel_machine, true);
-
-  return 0;
+  bool collective_result = use_case::print_status(parallel_machine, status);
+  return collective_result ? 0 : -1;
 }

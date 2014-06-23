@@ -6,6 +6,22 @@
 typedef MueLu::Aggregates<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Aggregates;
 #endif
 
+#ifdef MUELU_AGGREGATIONPHASE1ALGORITHM_SHORT
+typedef MueLu::AggregationPhase1Algorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> AggregationPhase1Algorithm;
+#endif
+
+#ifdef MUELU_AGGREGATIONPHASE2AALGORITHM_SHORT
+typedef MueLu::AggregationPhase2aAlgorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> AggregationPhase2aAlgorithm;
+#endif
+
+#ifdef MUELU_AGGREGATIONPHASE2BALGORITHM_SHORT
+typedef MueLu::AggregationPhase2bAlgorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> AggregationPhase2bAlgorithm;
+#endif
+
+#ifdef MUELU_AGGREGATIONPHASE3ALGORITHM_SHORT
+typedef MueLu::AggregationPhase3Algorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> AggregationPhase3Algorithm;
+#endif
+
 #ifdef MUELU_AMALGAMATIONINFO_SHORT
 typedef MueLu::AmalgamationInfo<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> AmalgamationInfo;
 #endif
@@ -80,10 +96,6 @@ typedef MueLu::RepartitionInterface<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
 
 #ifdef MUELU_SMALLAGGREGATIONALGORITHM_SHORT
 typedef MueLu::SmallAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SmallAggregationAlgorithm;
-#endif
-
-#ifdef MUELU_UNCOUPLEDAGGREGATIONALGORITHM_SHORT
-typedef MueLu::UncoupledAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> UncoupledAggregationAlgorithm;
 #endif
 
 #ifdef MUELU_UNCOUPLEDAGGREGATIONFACTORY_SHORT

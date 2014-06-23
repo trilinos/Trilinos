@@ -50,12 +50,14 @@
 
 namespace panzer {
 
-template<typename Scalar,typename Array>
+template<typename Scalar,typename Array,typename ArrayOrientation>
 template <typename ArrayFactory>
-void panzer::BasisValues<Scalar,Array>::
+void panzer::BasisValues<Scalar,Array,ArrayOrientation>::
 setupArrays(const Teuchos::RCP<const panzer::BasisIRLayout>& layout,
-            const ArrayFactory & af)
+            const ArrayFactory & af,
+            bool computeDerivatives)
 {
+  compute_derivatives = computeDerivatives;
   basis_layout = layout;
   Teuchos::RCP<const panzer::PureBasis> basisDesc = layout->getBasis();
 
@@ -87,10 +89,12 @@ setupArrays(const Teuchos::RCP<const panzer::BasisIRLayout>& layout,
      // build gradients
      ///////////////////////////////////////////////
 
-     grad_basis_ref = af.template buildArray<Scalar,BASIS,IP,Dim>("grad_basis_ref",card,num_quad,dim); // F, P, D
-     grad_basis = af.template buildArray<Scalar,Cell,BASIS,IP,Dim>("grad_basis",numcells,card,num_quad,dim);
+     if(compute_derivatives) {
+       grad_basis_ref = af.template buildArray<Scalar,BASIS,IP,Dim>("grad_basis_ref",card,num_quad,dim); // F, P, D
+       grad_basis = af.template buildArray<Scalar,Cell,BASIS,IP,Dim>("grad_basis",numcells,card,num_quad,dim);
 
-     weighted_grad_basis = af.template buildArray<Scalar,Cell,BASIS,IP,Dim>("weighted_grad_basis",numcells,card,num_quad,dim);
+       weighted_grad_basis = af.template buildArray<Scalar,Cell,BASIS,IP,Dim>("weighted_grad_basis",numcells,card,num_quad,dim);
+     }
 
      // build curl
      ///////////////////////////////////////////////
@@ -116,20 +120,22 @@ setupArrays(const Teuchos::RCP<const panzer::BasisIRLayout>& layout,
      // build curl
      ///////////////////////////////////////////////
 
-     if(dim==2) {
-        // curl of HCURL basis is not dimension dependent
-        curl_basis_ref = af.template buildArray<Scalar,BASIS,IP>("curl_basis_ref",card,num_quad); // F, P
-        curl_basis = af.template buildArray<Scalar,Cell,BASIS,IP>("curl_basis",numcells,card,num_quad);
-
-        weighted_curl_basis = af.template buildArray<Scalar,Cell,BASIS,IP>("weighted_curl_basis",numcells,card,num_quad);
+     if(compute_derivatives) {
+       if(dim==2) {
+          // curl of HCURL basis is not dimension dependent
+          curl_basis_ref = af.template buildArray<Scalar,BASIS,IP>("curl_basis_ref",card,num_quad); // F, P
+          curl_basis = af.template buildArray<Scalar,Cell,BASIS,IP>("curl_basis",numcells,card,num_quad);
+  
+          weighted_curl_basis = af.template buildArray<Scalar,Cell,BASIS,IP>("weighted_curl_basis",numcells,card,num_quad);
+       }
+       else if(dim==3){
+          curl_basis_ref = af.template buildArray<Scalar,BASIS,IP,Dim>("curl_basis_ref",card,num_quad,dim); // F, P, D
+          curl_basis = af.template buildArray<Scalar,Cell,BASIS,IP,Dim>("curl_basis",numcells,card,num_quad,dim);
+  
+          weighted_curl_basis = af.template buildArray<Scalar,Cell,BASIS,IP,Dim>("weighted_curl_basis",numcells,card,num_quad,dim);
+       }
+       else { TEUCHOS_ASSERT(false); } // what do I do with 1D?
      }
-     else if(dim==3){
-        curl_basis_ref = af.template buildArray<Scalar,BASIS,IP,Dim>("curl_basis_ref",card,num_quad,dim); // F, P, D
-        curl_basis = af.template buildArray<Scalar,Cell,BASIS,IP,Dim>("curl_basis",numcells,card,num_quad,dim);
-
-        weighted_curl_basis = af.template buildArray<Scalar,Cell,BASIS,IP,Dim>("weighted_curl_basis",numcells,card,num_quad,dim);
-     }
-     else { TEUCHOS_ASSERT(false); } // what do I do with 1D?
   }
   else if(elmtspace==panzer::PureBasis::CONST) {
      // CONST is a nodal field
@@ -162,15 +168,17 @@ setupArrays(const Teuchos::RCP<const panzer::BasisIRLayout>& layout,
 
 #define BASIS_VALUES_INSTANTIATION(SCALAR) \
 template class BasisValues<SCALAR,Intrepid::FieldContainer<SCALAR> >;\
-template class BasisValues<SCALAR,PHX::MDField<SCALAR> >;\
+template class BasisValues<SCALAR,PHX::MDField<SCALAR>,PHX::MDField<SCALAR,panzer::Cell,panzer::BASIS> >;\
 template \
 void BasisValues<SCALAR,Intrepid::FieldContainer<SCALAR> >::setupArrays<IntrepidFieldContainerFactory>( \
                    const Teuchos::RCP<const panzer::BasisIRLayout>& basis, \
-                   const IntrepidFieldContainerFactory & af); \
+                   const IntrepidFieldContainerFactory & af, \
+                   bool computeDerivatives); \
 template \
-void BasisValues<SCALAR,PHX::MDField<SCALAR> >::setupArrays<MDFieldArrayFactory>( \
+void BasisValues<SCALAR,PHX::MDField<SCALAR>,PHX::MDField<SCALAR,panzer::Cell,panzer::BASIS> >::setupArrays<MDFieldArrayFactory>( \
                    const Teuchos::RCP<const panzer::BasisIRLayout>& basis, \
-                   const MDFieldArrayFactory & af);
+                   const MDFieldArrayFactory & af, \
+                   bool computeDerivatives);
 
 BASIS_VALUES_INSTANTIATION(panzer::Traits::RealType)
 BASIS_VALUES_INSTANTIATION(panzer::Traits::FadType)

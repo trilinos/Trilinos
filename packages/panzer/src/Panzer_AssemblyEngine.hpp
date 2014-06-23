@@ -103,8 +103,14 @@ namespace panzer {
     
       Teuchos::RCP<panzer::FieldManagerBuilder> m_field_manager_builder;
 
-      Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > 
-      m_lin_obj_factory;
+      Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > m_lin_obj_factory;
+
+      // These members improve performance by ensuring that "buildPrimitiveGhostedLinearObjContainer"
+      // is not called uneccessarily often
+      bool countersInitialized_;
+      Teuchos::RCP<LinearObjContainer> localCounter_;
+      Teuchos::RCP<LinearObjContainer> globalCounter_;
+      Teuchos::RCP<LinearObjContainer> summedGhostedCounter_;
   };
   
 }

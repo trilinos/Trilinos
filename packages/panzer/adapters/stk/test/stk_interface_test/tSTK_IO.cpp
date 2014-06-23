@@ -61,7 +61,7 @@ using Teuchos::rcp;
 
 typedef Intrepid::FieldContainer<double> FieldContainer;
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 RCP<STK_Interface> buildMesh(int xElements,int yElements);
 RCP<STK_Interface> buildMesh_cells(int xElements,int yElements);
@@ -241,7 +241,7 @@ RCP<STK_Interface> buildMesh(int xElements,int yElements)
     pl->set("X Elements",xElements);  // in each block
     pl->set("Y Elements",yElements);  // in each block
 
-    panzer_stk::SquareQuadMeshFactory factory;
+    panzer_stk_classic::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
     RCP<STK_Interface> mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
 
@@ -262,7 +262,7 @@ RCP<STK_Interface> buildMesh_cells(int xElements,int yElements)
     pl->set("X Elements",xElements);  // in each block
     pl->set("Y Elements",yElements);  // in each block
 
-    panzer_stk::SquareQuadMeshFactory factory;
+    panzer_stk_classic::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
     RCP<STK_Interface> mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
 
@@ -292,10 +292,10 @@ void buildLocalIds(const STK_Interface & mesh,
       std::vector<std::size_t> & localBlockIds = *localIds[blockId];
 
       // grab elements on this block
-      std::vector<stk::mesh::Entity*> blockElmts;
+      std::vector<stk_classic::mesh::Entity*> blockElmts;
       mesh.getMyElements(blockId,blockElmts);
 
-      std::vector<stk::mesh::Entity*>::const_iterator itr;
+      std::vector<stk_classic::mesh::Entity*>::const_iterator itr;
       for(itr=blockElmts.begin();itr!=blockElmts.end();++itr)
          localBlockIds.push_back(mesh.elementLocalId(*itr));
 

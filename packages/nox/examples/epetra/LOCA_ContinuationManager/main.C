@@ -57,6 +57,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 
 // ParaCont headers
 #include "ContinuationManager.H"
@@ -69,6 +70,8 @@ int main( int argc, char **argv )
   // Initialise MPI
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 
+  bool success = false;
+  bool verbose = false;
   try {
 
 #ifdef HAVE_MPI
@@ -83,7 +86,7 @@ int main( int argc, char **argv )
 
     std::string fileName = "task.xml";
     if (argc>1)
-       fileName = argv[1];
+      fileName = argv[1];
 
     // Instantiate the continuation manager
     Teuchos::RefCountPtr <ContinuationManager> contManager =
@@ -100,25 +103,13 @@ int main( int argc, char **argv )
     contManager->BuildLOCAStepper();
 
     // Run LOCA
-    bool status = contManager->RunLOCAStepper();
+    success = contManager->RunLOCAStepper();
 
-  if (status)
-    std::cout << "\nAll tests passed" << std::endl;
+    if (success)
+      std::cout << "\nAll tests passed" << std::endl;
 
   }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-  catch (std::exception& e) {
-    std::cout << e.what() << std::endl;
-  }
-
-  catch (const char *s) {
-    std::cout << s << std::endl;
-  }
-
-  catch (...) {
-    std::cout << "Caught unknown exception!" << std::endl;
-  }
-
-  return(EXIT_SUCCESS);
-
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }

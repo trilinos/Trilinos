@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -39,6 +39,18 @@
 
 INCLUDE(AppendSet)
 
+#
+# @MACRO: APPEND_GLOB()
+#
+# Utility macro that does a ``FILE(GLOB ...)`` and appends to an existing list
+# (removes boiler-plate code).
+#
+# Usage::
+#
+#   APPEND_GLOB(<fileListVar> <glob0> <glob1> ...)
+#
+# On output, ``<fileListVar>`` will have the list of glob files appended.
+#
 MACRO(APPEND_GLOB VAR)
   FILE(GLOB LOCAL_TMP_VAR ${ARGN})
   APPEND_SET(${VAR} ${LOCAL_TMP_VAR})

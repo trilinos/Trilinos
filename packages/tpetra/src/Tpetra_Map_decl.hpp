@@ -100,13 +100,12 @@ namespace Tpetra {
   ///
   /// \tparam LocalOrdinal The type of local indices.  Should be an
   ///   integer, and generally should be signed.  A good model of
-  ///   <tt>LocalOrdinal</tt> is \c int.  (In Epetra, this is always
-  ///   just \c int.)
+  ///   <tt>LocalOrdinal</tt> is \c int, which is also the default.
+  ///   (In Epetra, this is always just \c int.)
   ///
   /// \tparam GlobalOrdinal The type of global indices.  Should be an
-  ///   integer, and generally should be signed.  Also,
-  ///   <tt>sizeof(GlobalOrdinal)</tt> should be greater than to equal
-  ///   to <tt>sizeof(LocalOrdinal)</tt>.  For example, if
+  ///   integer, and generally should be signed.  Also, we require
+  ///   <tt>sizeof(GlobalOrdinal) >= sizeof(LocalOrdinal)</tt>.  If
   ///   <tt>LocalOrdinal</tt> is \c int, good models of
   ///   <tt>GlobalOrdinal</tt> are \c int, \c long, <tt>long long</tt>
   ///   (if the configure-time option
@@ -229,7 +228,7 @@ namespace Tpetra {
   /// product functions produce small dense matrices that are required
   /// by all images.  Replicated local objects handle these
   /// situations.
-  template <class LocalOrdinal,
+  template <class LocalOrdinal = int,
             class GlobalOrdinal = LocalOrdinal,
             class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class Map : public Teuchos::Describable {
@@ -293,7 +292,7 @@ namespace Tpetra {
          GlobalOrdinal indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
          LocalGlobal lg=GloballyDistributed,
-         const Teuchos::RCP<Node> &node = KokkosClassic::Details::getNode<Node>());
+         const Teuchos::RCP<Node> &node = defaultArgNode());
 
     /** \brief Constructor with a user-defined contiguous distribution.
      *
@@ -338,7 +337,7 @@ namespace Tpetra {
          size_t numLocalElements,
          GlobalOrdinal indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-         const Teuchos::RCP<Node> &node = KokkosClassic::Details::getNode<Node>());
+         const Teuchos::RCP<Node> &node = defaultArgNode());
 
     /** \brief Constructor with user-defined arbitrary (possibly noncontiguous) distribution.
      *
@@ -378,7 +377,7 @@ namespace Tpetra {
          const Teuchos::ArrayView<const GlobalOrdinal> &elementList,
          GlobalOrdinal indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-         const Teuchos::RCP<Node> &node = KokkosClassic::Details::getNode<Node>());
+         const Teuchos::RCP<Node> &node = defaultArgNode());
 
 
     /// \brief Default constructor (that does nothing).
@@ -662,6 +661,15 @@ namespace Tpetra {
     //@}
     //! Advanced methods
     //@{
+
+    static Teuchos::RCP<Node> defaultArgNode() {
+        // Workaround function for a deferred visual studio bug
+        // http://connect.microsoft.com/VisualStudio/feedback/details/719847/erroneous-error-c2783-could-not-deduce-template-argument
+        // Use this function for default arguments rather than calling
+        // what is the return value below.  Also helps in reducing
+        // duplication in various constructors.
+        return KokkosClassic::Details::getNode<Node>();
+    }
 
     //! Create a shallow copy of this Map, with a different Node type.
     template <class NodeOut>

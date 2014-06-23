@@ -43,6 +43,7 @@
 #define __Kokkos_Raw_addSparseMatrices_def_hpp
 
 #include <Kokkos_ConfigDefs.hpp>
+#include <functional> // std::plus
 
 namespace KokkosClassic {
 namespace Raw {

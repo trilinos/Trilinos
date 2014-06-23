@@ -46,7 +46,7 @@
 #include <Panzer_STK_MeshFactory.hpp>
 #include <Panzer_STK_Interface.hpp>
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 class STK_Interface;
 
@@ -59,10 +59,10 @@ public:
    ~MultiBlockMeshFactory();
 
    //! Build the mesh object
-   Teuchos::RCP<STK_Interface> buildMesh(stk::ParallelMachine parallelMach) const;
+   Teuchos::RCP<STK_Interface> buildMesh(stk_classic::ParallelMachine parallelMach) const;
 
-   virtual Teuchos::RCP<STK_Interface> buildUncommitedMesh(stk::ParallelMachine parallelMach) const;
-   virtual void completeMeshConstruction(STK_Interface & mesh,stk::ParallelMachine parallelMach) const;
+   virtual Teuchos::RCP<STK_Interface> buildUncommitedMesh(stk_classic::ParallelMachine parallelMach) const;
+   virtual void completeMeshConstruction(STK_Interface & mesh,stk_classic::ParallelMachine parallelMach) const;
 
    //! From ParameterListAcceptor
    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & paramList);
@@ -73,12 +73,12 @@ public:
    void initializeWithDefaults();
 
 protected: 
-   void buildMetaData(stk::ParallelMachine parallelMach, STK_Interface & mesh) const;
-   void buildElements(stk::ParallelMachine parallelMach,STK_Interface & mesh) const;
-   void buildBlock(stk::ParallelMachine parallelMach,int xBlock,int yBlock,STK_Interface & mesh) const;
+   void buildMetaData(stk_classic::ParallelMachine parallelMach, STK_Interface & mesh) const;
+   void buildElements(stk_classic::ParallelMachine parallelMach,STK_Interface & mesh) const;
+   void buildBlock(stk_classic::ParallelMachine parallelMach,int xBlock,int yBlock,STK_Interface & mesh) const;
    std::pair<int,int> determineXElemSizeAndStart(int xBlock,unsigned int size,unsigned int rank) const;
    std::pair<int,int> determineYElemSizeAndStart(int yBlock,unsigned int size,unsigned int rank) const;
-   const stk::mesh::Relation * getRelationByID(unsigned ID,stk::mesh::PairIterRelation relations) const;
+   const stk_classic::mesh::Relation * getRelationByID(unsigned ID,stk_classic::mesh::PairIterRelation relations) const;
    void addSideSets(STK_Interface & mesh) const;
 
    int nXElems_;

@@ -55,7 +55,6 @@ namespace sierra {
  *  All non-modifying query operations conform to
  *  either the constant or logarithmic complexity.
  */
-
 template <class Key, class T, class Compare = std::less<Key> >
 class vecmap {
 public:

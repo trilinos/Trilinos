@@ -41,6 +41,7 @@
 // @HEADER
 
 #include "TriKota_MPDirectApplicInterface.hpp"
+#include "DakotaModel.hpp"
 #include "Teuchos_VerboseObject.hpp"
 
 using namespace Dakota;

@@ -81,7 +81,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   # mode.  However, it passes when I run it it locally and it gets run nightly
   # on other machines so I will disable this for now.  If someone else reports
   # a problem then I will look into this further.
-  SET_DEFAULT( Trilinos_EXCLUDE_PACKAGES TrilinosFramework )
+  SET_DEFAULT( Trilinos_EXCLUDE_PACKAGES TriBITS )
   
   SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
     "-DCMAKE_BUILD_TYPE:STRING=RELEASE"

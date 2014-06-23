@@ -54,7 +54,7 @@ namespace Tpetra {
 /// parameters.  A Vector is a special case of a MultiVector that has
 /// only one vector (column).  It may be used wherever a MultiVector
 /// may be used.
-template<class Scalar,
+template<class Scalar=double,
          class LocalOrdinal=int,
          class GlobalOrdinal=LocalOrdinal,
          class Node=KokkosClassic::DefaultNode::DefaultNodeType>

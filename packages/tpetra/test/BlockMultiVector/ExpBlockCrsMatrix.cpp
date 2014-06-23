@@ -176,6 +176,7 @@ namespace {
     typedef typename BCM::little_block_type little_block_type;
     typedef typename BV::little_vec_type little_vec_type;
     typedef Teuchos::ScalarTraits<Scalar> STS;
+    typedef typename STS::magnitudeType MT;
 
     const Scalar two = STS::one () + STS::one ();
     const Scalar three = STS::one () + STS::one () + STS::one ();
@@ -325,7 +326,7 @@ namespace {
         little_block_type tempBlock (tempBlockPtr, blockSize, blockSize, 1);
         for (LO j = 0; j < blockSize; ++j) {
           for (LO i = 0; i < blockSize; ++i) {
-            tempBlock(i,j) = static_cast<Scalar> (j + i * blockSize);
+            tempBlock(i,j) = static_cast<Scalar> (static_cast<MT> (j + i * blockSize));
           }
         }
       } // for each entry in the row
@@ -348,7 +349,7 @@ namespace {
 
         for (LO j = 0; j < blockSize; ++j) {
           for (LO i = 0; i < blockSize; ++i) {
-            TEST_ASSERT( curBlk(i,j) == static_cast<Scalar> (j + i * blockSize) );
+            TEST_ASSERT( curBlk(i,j) == static_cast<Scalar> (static_cast<MT> (j + i * blockSize)) );
           }
         }
       } // for each entry in the row
@@ -388,7 +389,7 @@ namespace {
         TEST_ASSERT( X_lcl.getRawPtr () != NULL );
         TEST_ASSERT( X_lcl.getBlockSize () == blockSize );
         for (LO i = 0; i < blockSize; ++i) {
-          X_lcl(i) = static_cast<Scalar> (blockSize - i);
+          X_lcl(i) = static_cast<Scalar> (static_cast<MT> (blockSize - i));
         }
       }
 
@@ -413,7 +414,7 @@ namespace {
           expectedVal *= static_cast<LO> (2);
           out << "Y_lcl(" << i << ") = " << Y_lcl(i)
               << "; expectedVal = " << expectedVal << std::endl;
-          TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (expectedVal) );
+          TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (static_cast<MT> (expectedVal)) );
         }
       }
 
@@ -440,11 +441,15 @@ namespace {
           for (LO j = 0; j < blockSize; ++j) {
             expectedVal += blockSize*(1 - i)*j - j*j + i*blockSize*blockSize;
           }
-          expectedVal *= (static_cast<LO> (2) * static_cast<LO> (alpha));
-          expectedVal += static_cast<LO> (beta);
+          // Taking the real part doesn't do anything here, since
+          // alpha is real.  However, it returns MT, which is safe to
+          // cast to LO, even if Scalar is complex.
+          expectedVal *= (static_cast<LO> (2) * static_cast<LO> (STS::real (alpha)));
+          // See above note about taking the real part.
+          expectedVal += static_cast<LO> (STS::real (beta));
           out << "Y_lcl(" << i << ") = " << Y_lcl(i)
               << "; expectedVal = " << expectedVal << std::endl;
-          TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (expectedVal) );
+          TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (static_cast<MT> (expectedVal)) );
         }
       }
     } // done with single-vector applyBlock test
@@ -489,7 +494,7 @@ namespace {
           TEST_ASSERT( X_lcl.getRawPtr () != NULL );
           TEST_ASSERT( X_lcl.getBlockSize () == blockSize );
           for (LO i = 0; i < blockSize; ++i) {
-            X_lcl(i) = static_cast<Scalar> ((blockSize - i) * (j + 1));
+            X_lcl(i) = static_cast<Scalar> (static_cast<MT> ((blockSize - i) * (j + 1)));
           }
         }
       }
@@ -517,7 +522,7 @@ namespace {
             expectedVal *= static_cast<LO> (col + 1);
             out << "Y_lcl(" << i << ") = " << Y_lcl(i)
                 << "; expectedVal = " << expectedVal << std::endl;
-            TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (expectedVal) );
+            TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (static_cast<MT> (expectedVal)) );
           }
         }
       }
@@ -546,12 +551,16 @@ namespace {
             for (LO j = 0; j < blockSize; ++j) {
               expectedVal += blockSize*(1 - i)*j - j*j + i*blockSize*blockSize;
             }
-            expectedVal *= (static_cast<LO> (2) * static_cast<LO> (alpha));
+            // Taking the real part doesn't do anything here, since
+            // alpha is real.  However, it returns MT, which is safe to
+            // cast to LO, even if Scalar is complex.
+            expectedVal *= (static_cast<LO> (2) * static_cast<LO> (STS::real (alpha)));
             expectedVal *= static_cast<LO> (col + 1);
-            expectedVal += static_cast<LO> (beta);
+            // See above note about taking the real part.
+            expectedVal += static_cast<LO> (STS::real (beta));
             out << "Y_lcl(" << i << ") = " << Y_lcl(i)
                 << "; expectedVal = " << expectedVal << std::endl;
-            TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (expectedVal) );
+            TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (static_cast<MT> (expectedVal)) );
           }
         } // for each column (vector) of the BlockMultiVector
       } // for each local (mesh) row of the output BlockMultiVector
@@ -591,7 +600,7 @@ namespace {
         TEST_ASSERT( X_lcl.getRawPtr () != NULL );
         TEST_ASSERT( X_lcl.getBlockSize () == blockSize );
         for (LO i = 0; i < blockSize; ++i) {
-          X_lcl(i) = static_cast<Scalar> (blockSize - i);
+          X_lcl(i) = static_cast<Scalar> (static_cast<MT> (blockSize - i));
         }
       }
 
@@ -623,7 +632,7 @@ namespace {
           expectedVal *= static_cast<LO> (2);
           out << "Y_lcl(" << i << ") = " << Y_lcl(i)
               << "; expectedVal = " << expectedVal << std::endl;
-          TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (expectedVal) );
+          TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (static_cast<MT> (expectedVal)) );
         }
       }
 
@@ -650,11 +659,15 @@ namespace {
           for (LO j = 0; j < blockSize; ++j) {
             expectedVal += blockSize*(1 - i)*j - j*j + i*blockSize*blockSize;
           }
-          expectedVal *= (static_cast<LO> (2) * static_cast<LO> (alpha));
-          expectedVal += static_cast<LO> (beta);
+          // Taking the real part doesn't do anything here, since
+          // alpha is real.  However, it returns MT, which is safe to
+          // cast to LO, even if Scalar is complex.
+          expectedVal *= (static_cast<LO> (2) * static_cast<LO> (STS::real (alpha)));
+          // See above note about taking the real part.
+          expectedVal += static_cast<LO> (STS::real (beta));
           out << "Y_lcl(" << i << ") = " << Y_lcl(i)
               << "; expectedVal = " << expectedVal << std::endl;
-          TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (expectedVal) );
+          TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (static_cast<MT> (expectedVal)) );
         }
       }
     } // done with single-vector apply test
@@ -699,7 +712,7 @@ namespace {
           TEST_ASSERT( X_lcl.getRawPtr () != NULL );
           TEST_ASSERT( X_lcl.getBlockSize () == blockSize );
           for (LO i = 0; i < blockSize; ++i) {
-            X_lcl(i) = static_cast<Scalar> ((blockSize - i) * (j + 1));
+            X_lcl(i) = static_cast<Scalar> (static_cast<MT> ((blockSize - i) * (j + 1)));
           }
         }
       }
@@ -734,7 +747,7 @@ namespace {
             expectedVal *= static_cast<LO> (col + 1);
             out << "Y_lcl(" << i << ") = " << Y_lcl(i)
                 << "; expectedVal = " << expectedVal << std::endl;
-            TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (expectedVal) );
+            TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (static_cast<MT> (expectedVal)) );
           }
         }
       }
@@ -763,12 +776,16 @@ namespace {
             for (LO j = 0; j < blockSize; ++j) {
               expectedVal += blockSize*(1 - i)*j - j*j + i*blockSize*blockSize;
             }
-            expectedVal *= (static_cast<LO> (2) * static_cast<LO> (alpha));
+            // Taking the real part doesn't do anything here, since
+            // alpha is real.  However, it returns MT, which is safe to
+            // cast to LO, even if Scalar is complex.
+            expectedVal *= (static_cast<LO> (2) * static_cast<LO> (STS::real (alpha)));
             expectedVal *= static_cast<LO> (col + 1);
-            expectedVal += static_cast<LO> (beta);
+            // See above note about taking the real part.
+            expectedVal += static_cast<LO> (STS::real (beta));
             out << "Y_lcl(" << i << ") = " << Y_lcl(i)
                 << "; expectedVal = " << expectedVal << std::endl;
-            TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (expectedVal) );
+            TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (static_cast<MT> (expectedVal)) );
           }
         } // for each column (vector) of the BlockMultiVector
       } // for each local (mesh) row of the output BlockMultiVector

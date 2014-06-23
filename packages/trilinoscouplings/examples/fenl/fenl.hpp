@@ -54,12 +54,16 @@
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 #include <Kokkos_View.hpp>
+#include <Kokkos_CrsMatrix.hpp>
 #include <Kokkos_ArithTraits.hpp>
+
+#include <SGPreconditioner.hpp>
 
 namespace Kokkos {
 namespace Example {
 namespace FENL {
 
+// Struct storing performance statistics
 struct Perf {
   size_t uq_count ;
   size_t global_elem_count ;
@@ -74,8 +78,13 @@ struct Perf {
   double fill_element_graph ;
   double create_sparse_matrix ;
   double fill_time ;
+  double import_time ;
   double bc_time ;
-  double cg_time ;
+  double mat_vec_time ;
+  double cg_iter_time ;
+  double prec_setup_time ;
+  double prec_apply_time ;
+  double cg_total_time ;
   double newton_residual ;
   double error_max ;
   double response_mean ;
@@ -94,8 +103,13 @@ struct Perf {
            fill_element_graph(0) ,
            create_sparse_matrix(0) ,
            fill_time(0) ,
+           import_time(0) ,
            bc_time(0) ,
-           cg_time(0) ,
+           mat_vec_time(0) ,
+           cg_iter_time(0) ,
+           prec_setup_time(0) ,
+           prec_apply_time(0) ,
+           cg_total_time(0) ,
            newton_residual(0) ,
            error_max(0) ,
            response_mean(0) ,
@@ -115,10 +129,47 @@ struct Perf {
     fill_element_graph   += p.fill_element_graph;
     create_sparse_matrix += p.create_sparse_matrix;
     fill_time            += p.fill_time;
+    import_time          += p.import_time;
     bc_time              += p.bc_time ;
-    cg_time              += p.cg_time;
+    mat_vec_time         += p.mat_vec_time;
+    cg_iter_time         += p.cg_iter_time;
+    prec_setup_time      += p.prec_setup_time;
+    prec_apply_time      += p.prec_apply_time;
+    cg_total_time        += p.cg_total_time;
     newton_residual      += p.newton_residual ;
     error_max            += p.error_max;
+  }
+};
+
+//----------------------------------------------------------------------------
+
+// Traits class for creating strided local views for embedded ensemble-based,
+// specialized for ensemble UQ scalar type
+template <typename ViewType>
+struct LocalViewTraits {
+  typedef ViewType view_type;
+  // typedef Kokkos::View<typename view_type::data_type,
+  //                      typename view_type::array_layout,
+  //                      typename view_type::device_type,
+  //                      Kokkos::MemoryUnmanaged> local_view_type;
+  typedef const view_type& local_view_type;
+  typedef typename view_type::value_type local_value_type;
+  static const bool use_team = false;
+  KOKKOS_INLINE_FUNCTION
+  static local_view_type create_local_view(const view_type& v,
+                                           const unsigned local_rank)
+  { return v; }
+};
+
+// Compute DeviceConfig struct's based on scalar type
+template <typename ScalarType>
+struct CreateDeviceConfigs {
+  static void eval( Kokkos::DeviceConfig& dev_config_elem,
+                    Kokkos::DeviceConfig& dev_config_gath,
+                    Kokkos::DeviceConfig& dev_config_bc ) {
+    dev_config_elem = Kokkos::DeviceConfig( 0 , 1 , 1 );
+    dev_config_gath = Kokkos::DeviceConfig( 0 , 1 , 1 );
+    dev_config_bc   = Kokkos::DeviceConfig( 0 , 1 , 1 );
   }
 };
 
@@ -134,6 +185,7 @@ Perf fenl(
   const int use_atomic ,
   const int use_belos ,
   const int use_muelu ,
+  const int use_mean_based ,
   const int use_nodes[] ,
   const CoeffFunctionType& coeff_function ,
   const ManufacturedSolutionType& manufactured_solution ,
@@ -269,6 +321,7 @@ struct ElementComputationConstantCoefficient {
   float operator()( double /* x */
                   , double /* y */
                   , double /* z */
+                  , unsigned ensemble_rank
                   ) const
     { return coeff_k ; }
 
@@ -286,9 +339,13 @@ class ElementComputationKLCoefficient {
 public:
 
   enum { is_constant = false };
-  typedef Kokkos::View<Scalar*, Device>          RandomVariableView;
-  typedef Kokkos::View<MeshScalar*, Device>      EigenView;
-  typedef typename RandomVariableView::size_type size_type;
+  typedef Kokkos::View<Scalar*, Kokkos::LayoutLeft, Device> RandomVariableView;
+  typedef Kokkos::View<MeshScalar*, Device>                 EigenView;
+  typedef typename RandomVariableView::size_type            size_type;
+
+  typedef LocalViewTraits< RandomVariableView >           local_rv_view_traits;
+  typedef typename local_rv_view_traits::local_view_type  local_rv_view_type;
+  typedef typename local_rv_view_traits::local_value_type local_scalar_type;
 
 private:
 
@@ -323,20 +380,24 @@ public:
   RandomVariableView getRandomVariables() { return m_rv; }
 
   KOKKOS_INLINE_FUNCTION
-  Scalar operator() ( const MeshScalar x,
-                      const MeshScalar y,
-                      const MeshScalar z ) const
+  local_scalar_type operator() ( const MeshScalar x,
+                                 const MeshScalar y,
+                                 const MeshScalar z,
+                                 const size_type  ensemble_rank ) const
   {
-    Scalar val = 0.0;
+    local_rv_view_type local_rv =
+      local_rv_view_traits::create_local_view(m_rv, ensemble_rank);
+
+    local_scalar_type val = 0.0;
     if (m_num_rv > 0)
-      val += m_eig(0) * m_rv(0);
+      val += m_eig(0) * local_rv(0);
     for ( size_type i=1; i<m_num_rv; i+=2 ) {
       const MeshScalar b = (i+1)/2;  // floor((i+1)/2)
-      val += m_eig(i) * std::sin( b * m_pi * x ) * m_rv(i);
+      val += m_eig(i) * std::sin( b * m_pi * x ) * local_rv(i);
     }
     for ( size_type i=2; i<m_num_rv; i+=2 ) {
       const MeshScalar b = (i+1)/2;  // floor((i+1)/2)
-      val += m_eig(i) * std::cos( b * m_pi * x ) * m_rv(i);
+      val += m_eig(i) * std::cos( b * m_pi * x ) * local_rv(i);
     }
 
     val = m_mean + m_variance * val;

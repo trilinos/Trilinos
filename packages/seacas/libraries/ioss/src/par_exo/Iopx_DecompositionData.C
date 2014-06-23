@@ -1428,14 +1428,14 @@ namespace Iopx {
       // processors. The first processor with non-zero node count is
       // the "root" for this nodeset.
       {
-        std::vector<char> has_nodes_local(set_count);
+        std::vector<int> has_nodes_local(set_count);
         for (size_t i=0; i < set_count; i++) {
           has_nodes_local[i] = node_sets[i].entitylist_map.empty() ? 0 : 1;
         }
 
-        std::vector<char> has_nodes(set_count * processorCount);
-        MPI_Allgather(TOPTR(has_nodes_local), has_nodes_local.size(), MPI_CHAR,
-                      TOPTR(has_nodes),       has_nodes_local.size(), MPI_CHAR, comm_);
+        std::vector<int> has_nodes(set_count * processorCount);
+        MPI_Allgather(TOPTR(has_nodes_local), has_nodes_local.size(), MPI_INT,
+                      TOPTR(has_nodes),       has_nodes_local.size(), MPI_INT, comm_);
 
         for (size_t i=0; i < set_count; i++) {
           node_sets[i].hasEntities.resize(processorCount);
@@ -1576,14 +1576,14 @@ namespace Iopx {
       // processors. The first processor with non-zero elem count is
       // the "root" for this sideset.
       {
-        std::vector<char> has_elems_local(set_count);
+        std::vector<int> has_elems_local(set_count);
         for (size_t i=0; i < set_count; i++) {
           has_elems_local[i] = side_sets[i].entitylist_map.empty() ? 0 : 1;
         }
 
-        std::vector<char> has_elems(set_count * processorCount);
-        MPI_Allgather(TOPTR(has_elems_local), has_elems_local.size(), MPI_CHAR,
-                      TOPTR(has_elems),       has_elems_local.size(), MPI_CHAR, comm_);
+        std::vector<int> has_elems(set_count * processorCount);
+        MPI_Allgather(TOPTR(has_elems_local), has_elems_local.size(), MPI_INT,
+                      TOPTR(has_elems),       has_elems_local.size(), MPI_INT, comm_);
 
         for (size_t i=0; i < set_count; i++) {
           side_sets[i].hasEntities.resize(processorCount);

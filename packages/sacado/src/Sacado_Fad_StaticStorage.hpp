@@ -106,6 +106,22 @@ namespace Sacado {
         sz_ = sz;
       }
 
+      //! Resize the derivative array to sz
+      /*!
+       * This method doest not preserve any existing derivative components but
+       * sets any that are added to zero.
+       */
+      KOKKOS_INLINE_FUNCTION
+      void resizeAndZero(int sz) {
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (sz > Num)
+          throw "StaticStorage::resize() Error:  Supplied derivative dimension exceeds maximum length.";
+#endif
+        if (sz > sz_)
+          ss_array<T>::zero(dx_+sz_, sz-sz_);
+        sz_ = sz;
+      }
+
       //! Expand derivative array to size sz
       /*!
        * This method preserves any existing derivative components and

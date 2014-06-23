@@ -2443,7 +2443,7 @@ namespace Tpetra {
       LocalOrdinal,
       Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   replaceDomainMapAndImporter (const Teuchos::RCP<const map_type>& newDomainMap,
-                               Teuchos::RCP<const Tpetra::Import<LocalOrdinal, GlobalOrdinal, node_type> >& newImporter)
+                               Teuchos::RCP<const import_type>& newImporter)
   {
     const char tfecfFuncName[] = "replaceDomainMapAndImporter";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -2492,7 +2492,11 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::globalAssemble()
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal,
+            Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+            typename KokkosClassic::DefaultKernels<Scalar, LocalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  globalAssemble ()
   {
     using Teuchos::arcp;
     using Teuchos::Array;
@@ -2900,12 +2904,26 @@ namespace Tpetra {
     }
 
     if (isStaticGraph ()) {
-      const bool domainMapsMatch = staticGraph_->getDomainMap() == domainMap;
-      const bool rangeMapsMatch = staticGraph_->getRangeMap() == rangeMap;
-      // FIXME (mfh 19 Mar 2012) Why can't we allow the Maps to be
-      // different objects, but semantically the same (in the sense of
-      // isSameAs())?
-      // (cgb 24 May 2012) We can/should. We can fix now or wait for a user to complain.
+      // FIXME (mfh 18 Jun 2014) This check for correctness of the
+      // input Maps incurs a penalty of two all-reduces for the
+      // otherwise optimal const graph case.
+      //
+      // We could turn these (max) 2 all-reduces into (max) 1, by
+      // fusing them.  We could do this by adding a "locallySameAs"
+      // method to Map, which would return one of four states:
+      //
+      //   a. Certainly globally the same
+      //   b. Certainly globally not the same
+      //   c. Locally the same
+      //   d. Locally not the same
+      //
+      // The first two states don't require further communication.
+      // The latter two states require an all-reduce to communicate
+      // globally, but we only need one all-reduce, since we only need
+      // to check whether at least one of the Maps is wrong.
+      const bool domainMapsMatch = staticGraph_->getDomainMap ()->isSameAs (*domainMap);
+      const bool rangeMapsMatch = staticGraph_->getRangeMap ()->isSameAs (*rangeMap);
+
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         ! domainMapsMatch, std::runtime_error,
         ": The CrsMatrix's domain Map does not match the graph's domain Map.  "
@@ -2998,13 +3016,17 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::expertStaticFillComplete(const RCP<const map_type> & domainMap,
-                                                                                               const RCP<const map_type> & rangeMap,
-                                                                                               const RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &importer,
-                                                                                               const RCP<const Export<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &exporter,
-                                                                                               const RCP<ParameterList> &params)
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal,
+            Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+            typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  expertStaticFillComplete (const RCP<const map_type> & domainMap,
+                            const RCP<const map_type> & rangeMap,
+                            const RCP<const import_type>& importer,
+                            const RCP<const export_type>& exporter,
+                            const RCP<ParameterList> &params)
   {
-  const char tfecfFuncName[] = "expertStaticFillComplete";
+    const char tfecfFuncName[] = "expertStaticFillComplete";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ! isFillActive() || isFillComplete(),
       std::runtime_error, ": Matrix fill state must be active (isFillActive() "
       "must be true) before calling fillComplete().");
@@ -3108,9 +3130,27 @@ namespace Tpetra {
     using Teuchos::rcp_const_cast;
     using Teuchos::rcpFromRef;
 
-    // because of Views, it is difficult to determine if X and Y point to the same data.
-    // however, if they reference the exact same object, we will do the user the favor of copying X into new storage (with a warning)
-    // we ony need to do this if we have trivial importers; otherwise, we don't actually apply the operator from X into Y
+    // mfh 05 Jun 2014: Special case for alpha == 0.  I added this to
+    // fix an Ifpack2 test (RILUKSingleProcessUnitTests), which was
+    // failing only for the Kokkos refactor version of Tpetra.  It's a
+    // good idea regardless to have the bypass.
+    if (alpha == STS::zero ()) {
+      if (beta == STS::zero ()) {
+        Y_in.putScalar (STS::zero ());
+      } else if (beta != STS::one ()) {
+        Y_in.scale (beta);
+      }
+      return;
+    }
+
+    // It's possible that X is a view of Y or vice versa.  We don't
+    // allow this (apply() requires that X and Y not alias one
+    // another), but it's helpful to detect and work around this case.
+    // We don't try to to detect the more subtle cases (e.g., one is a
+    // subview of the other, but their initial pointers differ).  We
+    // only need to do this if this matrix's Import is trivial;
+    // otherwise, we don't actually apply the operator from X into Y.
+
     RCP<const import_type> importer = this->getGraph ()->getImporter ();
     RCP<const export_type> exporter = this->getGraph ()->getExporter ();
 
@@ -3123,14 +3163,14 @@ namespace Tpetra {
     // We treat the case of a replicated MV output specially.
     const bool Y_is_replicated = ! Y_in.isDistributed ();
 
-    // This is part of the "hack" for replicated MV output.  We'll let
-    // each process do its thing, but do an all-reduce at the end to
-    // sum up the results.  Setting beta=0 on all processes but Proc 0
-    // makes the math work out for the all-reduce.  (This assumes that
-    // the replicated data is correctly replicated, so that the data
-    // are the same on all processes.)
+    // This is part of the special case for replicated MV output.
+    // We'll let each process do its thing, but do an all-reduce at
+    // the end to sum up the results.  Setting beta=0 on all processes
+    // but Proc 0 makes the math work out for the all-reduce.  (This
+    // assumes that the replicated data is correctly replicated, so
+    // that the data are the same on all processes.)
     if (Y_is_replicated && this->getComm ()->getRank () > 0) {
-      beta = STS::zero();
+      beta = STS::zero ();
     }
 
     // Temporary MV for Import operation.  After the block of code
@@ -3145,9 +3185,8 @@ namespace Tpetra {
         // copy of X_in, we force creation of the column (== domain)
         // Map MV (if it hasn't already been created, else fetch the
         // cached copy).  This avoids creating a new MV each time.
-
         RCP<MV> X_colMapNonConst = getColumnMapMultiVector (X_in, true);
-        *X_colMapNonConst = X_in; // MV assignment just copies the data.
+        Tpetra::deep_copy (*X_colMapNonConst, X_in);
         X_colMap = rcp_const_cast<const MV> (X_colMapNonConst);
       }
       else {
@@ -3164,12 +3203,7 @@ namespace Tpetra {
       RCP<MV> X_colMapNonConst = getColumnMapMultiVector (X_in);
 
       // Import from the domain Map MV to the column Map MV.
-      {
-#ifdef HAVE_KOKKOSCLASSIC_CUDA_NODE_MEMORY_PROFILING
-        //        Teuchos::TimeMonitor lcltimer (*importTimer_);
-#endif
-        X_colMapNonConst->doImport (X_in, *importer, INSERT);
-      }
+      X_colMapNonConst->doImport (X_in, *importer, INSERT);
       X_colMap = rcp_const_cast<const MV> (X_colMapNonConst);
     }
 
@@ -3185,13 +3219,13 @@ namespace Tpetra {
     if (! exporter.is_null ()) {
       this->template localMultiply<Scalar, Scalar> (*X_colMap, *Y_rowMap,
                                                     Teuchos::NO_TRANS,
-                                                    alpha, STS::zero());
+                                                    alpha, STS::zero ());
       // If we're overwriting the output MV Y_in completely (beta ==
       // 0), then make sure that it is filled with zeros before we do
       // the Export.  Otherwise, the ADD combine mode will use data in
       // Y_in, which is supposed to be zero.
       if (Y_is_overwritten) {
-        Y_in.putScalar (STS::zero());
+        Y_in.putScalar (STS::zero ());
       }
       else {
         // Scale the output MV by beta, so that the Export sums in the
@@ -3199,12 +3233,7 @@ namespace Tpetra {
         Y_in.scale (beta);
       }
       // Do the Export operation.
-      {
-#ifdef HAVE_KOKKOSCLASSIC_CUDA_NODE_MEMORY_PROFILING
-        //Teuchos::TimeMonitor lcltimer (*exportTimer_);
-#endif
-        Y_in.doExport (*Y_rowMap, *exporter, ADD);
-      }
+      Y_in.doExport (*Y_rowMap, *exporter, ADD);
     }
     else { // Don't do an Export: row Map and range Map are the same.
       //
@@ -3212,6 +3241,11 @@ namespace Tpetra {
       // MV aliases Y_in, then we can't let the kernel write directly
       // to Y_in.  Instead, we have to use the cached row (== range)
       // Map MV as temporary storage.
+      //
+      // FIXME (mfh 05 Jun 2014) This test for aliasing only tests if
+      // the user passed in the same MultiVector for both X and Y.  It
+      // won't detect whether one MultiVector views the other.  We
+      // should also check the MultiVectors' raw data pointers.
       if (! Y_in.isConstantStride () || X_colMap.getRawPtr () == &Y_in) {
         // Force creating the MV if it hasn't been created already.
         // This will reuse a previously created cached MV.
@@ -3220,13 +3254,13 @@ namespace Tpetra {
         // If beta == 0, we don't need to copy Y_in into Y_rowMap,
         // since we're overwriting it anyway.
         if (beta != STS::zero ()) {
-          *Y_rowMap = Y_in;
+          Tpetra::deep_copy (*Y_rowMap, Y_in);
         }
         this->template localMultiply<Scalar, Scalar> (*X_colMap,
                                                       *Y_rowMap,
                                                       Teuchos::NO_TRANS,
                                                       alpha, beta);
-        Y_in = *Y_rowMap; // MV assignment just copies the data.
+        Tpetra::deep_copy (Y_in, *Y_rowMap);
       }
       else {
         this->template localMultiply<Scalar, Scalar> (*X_colMap, Y_in,
@@ -3310,12 +3344,7 @@ namespace Tpetra {
     // If we have a non-trivial exporter, we must import elements that
     // are permuted or are on other processors.
     if (! exporter.is_null ()) {
-      {
-#ifdef HAVE_KOKKOSCLASSIC_CUDA_NODE_MEMORY_PROFILING
-        //        Teuchos::TimeMonitor lcltimer(*importTimer_);
-#endif
-        exportMV_->doImport (X_in, *exporter, INSERT);
-      }
+      exportMV_->doImport (X_in, *exporter, INSERT);
       X = exportMV_; // multiply out of exportMV_
     }
 
@@ -3330,22 +3359,21 @@ namespace Tpetra {
       } else {
         Y_in.scale (beta);
       }
-      //
-      {
-#ifdef HAVE_KOKKOSCLASSIC_CUDA_NODE_MEMORY_PROFILING
-        //        Teuchos::TimeMonitor lcltimer(*importTimer_);
-#endif
-        Y_in.doExport(*importMV_,*importer,ADD);
-      }
+      Y_in.doExport(*importMV_,*importer,ADD);
     }
     // otherwise, multiply into Y
     else {
       // can't multiply in-situ; can't multiply into non-strided multivector
+      //
+      // FIXME (mfh 05 Jun 2014) This test for aliasing only tests if
+      // the user passed in the same MultiVector for both X and Y.  It
+      // won't detect whether one MultiVector views the other.  We
+      // should also check the MultiVectors' raw data pointers.
       if (! Y_in.isConstantStride () || X.getRawPtr () == &Y_in) {
-        // generate a strided copy of Y
-        MV Y (Y_in);
+        // Make a deep copy of Y_in, into which to write the multiply result.
+        MV Y (Y_in, Teuchos::Copy);
         this->template localMultiply<Scalar, Scalar> (*X, Y, mode, alpha, beta);
-        Y_in = Y;
+        Tpetra::deep_copy (Y_in, Y);
       } else {
         this->template localMultiply<Scalar, Scalar> (*X, Y_in, mode, alpha, beta);
       }
@@ -6047,7 +6075,7 @@ namespace Tpetra {
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   importAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, node_type, LocalMatOps> >& destMatrix,
-                         const Import<LocalOrdinal, GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& importer,
+                         const import_type& importer,
                          const Teuchos::RCP<const map_type>& domainMap,
                          const Teuchos::RCP<const map_type>& rangeMap,
                          const Teuchos::RCP<Teuchos::ParameterList>& params) const
@@ -6062,7 +6090,7 @@ namespace Tpetra {
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   exportAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, node_type, LocalMatOps> >& destMatrix,
-                         const Export<LocalOrdinal, GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& exporter,
+                         const export_type& exporter,
                          const Teuchos::RCP<const map_type>& domainMap,
                          const Teuchos::RCP<const map_type>& rangeMap,
                          const Teuchos::RCP<Teuchos::ParameterList>& params) const

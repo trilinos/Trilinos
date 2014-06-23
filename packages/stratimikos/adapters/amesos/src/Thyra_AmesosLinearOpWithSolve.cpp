@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //         Stratimikos: Thyra-based strategies for linear solvers
 //                Copyright (2006) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov)
+//
 // ***********************************************************************
 // @HEADER
 */
@@ -54,7 +54,9 @@ namespace Thyra {
 // Constructors/initializers/accessors
 
 
-AmesosLinearOpWithSolve::AmesosLinearOpWithSolve()
+AmesosLinearOpWithSolve::AmesosLinearOpWithSolve():
+  amesosSolverTransp_(Thyra::NOTRANS),
+  amesosSolverScalar_(1.0)
 {}
 
 
@@ -353,7 +355,7 @@ AmesosLinearOpWithSolve::solveImpl(
   solveStatus.achievedTol = SolveStatus<double>::unknownTolerance();
   solveStatus.message =
     std::string("Solver ")+typeName(*amesosSolver_)+std::string(" converged!");
-  
+
   //
   // Report the overall time
   //

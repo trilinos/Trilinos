@@ -60,12 +60,14 @@
 #include "Tpetra_Operator.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector_decl.hpp"
+#include "MatrixMarket_Tpetra.hpp"
 #include "Xpetra_Matrix.hpp"
 #include "Xpetra_MatrixFactory.hpp"
 #include "Xpetra_CrsMatrixWrap.hpp"
 #include "Xpetra_BlockedCrsMatrix.hpp"
 #include "Xpetra_TpetraMultiVector.hpp"
 #include "XpetraExt_MatrixMatrix.hpp"
+#include "Xpetra_ExportFactory.hpp"
 #include "Ifpack2_Preconditioner.hpp"
 #include "Ifpack2_Factory_decl.hpp"
 #include "Ifpack2_Factory_def.hpp"
@@ -108,10 +110,32 @@ namespace MueLu {
     typedef Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>                       XCrsWrap;
     
     //! Constructor
-    RefMaxwell() : Hierarchy11_(Teuchos::null), Hierarchy22_(Teuchos::null), disable_addon_(false) { }
-
+    RefMaxwell() :
+      Hierarchy11_(Teuchos::null),
+      Hierarchy22_(Teuchos::null),
+      disable_addon_(false),
+      MaxCoarseSize_(1000),
+      MaxLevels_(5),
+      Cycles_(1),
+      precType11_("CHEBYSHEV"),
+      precType22_("CHEBYSHEV"),
+      mode_("block jacobi")
+    {
+    }
+    
     //! Constructor with Hierarchies
-    RefMaxwell(Teuchos::RCP<Hierarchy> H11, Teuchos::RCP<Hierarchy> H22) : Hierarchy11_(H11), Hierarchy22_(H22), disable_addon_(false) { }
+    RefMaxwell(Teuchos::RCP<Hierarchy> H11, Teuchos::RCP<Hierarchy> H22) :
+      Hierarchy11_(H11),
+      Hierarchy22_(H22),
+      disable_addon_(false),
+      MaxCoarseSize_(1000),
+      MaxLevels_(5),
+      Cycles_(1),
+      precType11_("CHEBYSHEV"),
+      precType22_("CHEBYSHEV"),
+      mode_("block jacobi")
+    {
+    }
 
     //! Constructor with matrices
     RefMaxwell(Teuchos::RCP<TCRS> SM_Matrix,
@@ -124,7 +148,13 @@ namespace MueLu {
       Hierarchy11_(Teuchos::null),
       Hierarchy22_(Teuchos::null),
       parameterList_(List),
-      disable_addon_(false)
+      disable_addon_(false),
+      MaxCoarseSize_(1000),
+      MaxLevels_(5),
+      Cycles_(1),
+      precType11_("CHEBYSHEV"),
+      precType22_("CHEBYSHEV"),
+      mode_("block jacobi")
     {
       // set parameters
       setParameters(List);
@@ -171,14 +201,41 @@ namespace MueLu {
     //! Setup the preconditioner
     void compute();
 
+    //! find rows associated with Dirichlet BCs
+    void findDirichletRows(Teuchos::RCP<XMat> A,
+			   std::vector<LocalOrdinal>& dirichletRows);
+
+    //! find cols associated with Dirichlet BCs
+    void findDirichletCols(Teuchos::RCP<XMat> A,
+			   std::vector<LocalOrdinal>& dirichletRows,
+			   std::vector<LocalOrdinal>& dirichletCols);
+
+    //! apply BCs to rows
+    void Apply_BCsToMatrixRows(Teuchos::RCP<XMat>& A, std::vector<LocalOrdinal>& dirichletRows);
+
+    //! apply BCs to cols
+    void Apply_BCsToMatrixCols(Teuchos::RCP<XMat>& A, std::vector<LocalOrdinal>& dirichletCols);
+
+    //! add 1's to the diagonal for zeroed out rows
+    void Remove_Zeroed_Rows(Teuchos::RCP<XMat>& A, double tol=1.0e-14);
+
     //! Setup the prolongator for the (1,1)-block
     void buildProlongator();
 
     //! Compute P11^{T}*A*P11 efficiently
     void formCoarseMatrix();
+    
+    //! Reset system matrix
+    void resetMatrix(Teuchos::RCP<TCRS> SM_Matrix_new);
 
     //! apply Hiptmair smoothing
     void applyHiptmairSmoother(const XTMV& RHS, XTMV& X) const;
+
+    //! apply block Jacobi for 2x2 solve
+    void applyBlockJacobi(const XTMV& RHS, XTMV& X) const;
+
+    //! apply block Gauss-Seidel for 2x2 solve
+    void applyBlockGaussSeidel(const XTMV& RHS, XTMV& X) const;
 
     //! Returns in Y the result of a Tpetra::Operator applied to a Tpetra::MultiVector X.
     //! \param[in]  X - Tpetra::MultiVector of dimension NumVectors to multiply with matrix.
@@ -207,6 +264,8 @@ namespace MueLu {
     //! Various matrices
     Teuchos::RCP<XMat> SM_Matrix_, D0_Matrix_, M0inv_Matrix_, M1_Matrix_, Ms_Matrix_;
     Teuchos::RCP<XMat> TMT_Matrix_, TMT_Agg_Matrix_, P11_, A11_, A22_;
+    //! Vectors for BCs
+    std::vector<LocalOrdinal> BCrows_, BCcols_;
     //! Nullspace
     Teuchos::RCP<XMV>  Nullspace_, Coords_;
     //! Parameter lists
@@ -215,8 +274,8 @@ namespace MueLu {
     Teuchos::RCP< Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > nodePrec_, edgePrec_;
     //! Some options
     bool disable_addon_;
-    int MaxCoarseSize_, MaxLevels_;
-    std::string precType11_, precType22_;
+    int MaxCoarseSize_, MaxLevels_, Cycles_;
+    std::string precType11_, precType22_, mode_;
 
   };
 

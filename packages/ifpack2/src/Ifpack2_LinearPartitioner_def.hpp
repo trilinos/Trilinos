@@ -67,7 +67,7 @@ setPartitionParameters (Teuchos::ParameterList& List) {}
 
 
 template<class GraphType>
-void LinearPartitioner<GraphType>::LinearPartitioner::computePartitions()
+void LinearPartitioner<GraphType>::computePartitions()
 {
   using Teuchos::as;
   // Partition_ is an array of local_ordinal_type.  local_ordinal_type

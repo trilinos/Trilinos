@@ -123,6 +123,7 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values,
     int jac_col_gid = Indices[col];                // Global col of J
     if (V_map.MyGID(jac_col_gid)) {
       int v_row_lid = V_map.LID(jac_col_gid);      // Local row of V
+      TEUCHOS_ASSERT_INEQUALITY(v_row_lid, >=, 0);
       Values[col] += computeUV(u_row_lid, v_row_lid);
     }
   }
@@ -146,6 +147,7 @@ ExtractDiagonalCopy(Epetra_Vector & Diagonal) const
     int jac_row_gid = row_map.GID(row);
     int u_row_lid = U_map.LID(jac_row_gid);
     int v_row_lid = V_map.LID(jac_row_gid);
+    TEUCHOS_ASSERT_INEQUALITY(v_row_lid, >=, 0);
     Diagonal[row] += computeUV(u_row_lid, v_row_lid);
   }
 
@@ -333,7 +335,7 @@ NormInf() const
   InvRowSums(tmp);
   tmp.Reciprocal(tmp);
 
-  double val;
+  double val = 0.0;
   tmp.MaxValue(&val);
 
   return val;
@@ -350,7 +352,7 @@ NormOne() const
   InvColSums(tmp);
   tmp.Reciprocal(tmp);
 
-  double val;
+  double val = 0.0;
   tmp.MaxValue(&val);
 
   return val;

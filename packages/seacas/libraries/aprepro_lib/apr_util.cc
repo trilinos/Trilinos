@@ -3,7 +3,12 @@
 #include <errno.h>                      // for errno, EDOM, ERANGE
 #include <stddef.h>                     // for size_t
 #include <sys/stat.h>                   // for stat, S_ISDIR
-#include <unistd.h>                     // for close
+#ifdef _WIN32
+  #include <fcntl.h>
+  #include <io.h>
+#else
+  #include <unistd.h>                     // for close
+#endif
 #include <cstdio>                       // for perror
 #include <cstdlib>                      // for mkstemp
 #include <cstring>                      // for strlen, strcpy, memcpy, etc
@@ -13,6 +18,10 @@
 #include <vector>                       // for vector
 #include "aprepro.h"                    // for file_rec, Aprepro, symrec, etc
 #include "aprepro_parser.h"             // for Parser, Parser::token, etc
+
+#if !defined(S_ISDIR) && defined(_WIN32)
+  #define S_ISDIR(mode) (((mode) & S_IFMT) == S_IFDIR)
+#endif
 
 namespace {
   std::vector<char*> allocations;
@@ -65,10 +74,13 @@ namespace SEAMS {
     std::strcpy(tmp_name, "./aprepro_temp_XXXXXX");
 #if defined(__CYGWIN__) && defined(__NO_CYGWIN_OPTION__) 
     fd = mkstemps(tmp_name, 0);
+    close(fd);
+#elif defined(_WIN32)
+    std::strcpy(tmp_name, _mktemp(tmp_name));
 #else
     fd = mkstemp(tmp_name);
-#endif
     close(fd);
+#endif
     return tmp_name;
   }  
 

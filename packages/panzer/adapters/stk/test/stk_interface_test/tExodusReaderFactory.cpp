@@ -62,12 +62,12 @@
 
 #ifdef HAVE_IOSS
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 TEUCHOS_UNIT_TEST(tExodusReaderFactory, basic_test)
 {
-   int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);
-   int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+   int numprocs = stk_classic::parallel_machine_size(MPI_COMM_WORLD);
+   int rank = stk_classic::parallel_machine_rank(MPI_COMM_WORLD);
    out << "Running numprocs = " << numprocs << " rank = " << rank << std::endl;
 
    std::vector<Teuchos::RCP<STK_ExodusReaderFactory> > facts;

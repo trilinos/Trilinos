@@ -7,10 +7,11 @@
 #include "Panzer_PointValues_Evaluator.hpp"
 #include "Panzer_BasisValues_Evaluator.hpp"
 #include "Panzer_DOF.hpp"
+#include "Panzer_DOF_PointValues.hpp"
 
 #include <boost/unordered_set.hpp>
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 namespace {
    //! A dummy response for local use, is only used by the response library
@@ -49,9 +50,47 @@ buildAndRegisterEvaluators(const std::string & responseName,
   const std::map<std::string,Teuchos::RCP<panzer::PureBasis> > & bases = physicsBlock.getBases();
   std::map<std::string,std::vector<std::string> > basisBucket;
 
-  std::vector<panzer::StrPureBasisPair> allFields = physicsBlock.getProvidedDOFs();;
+  std::vector<panzer::StrPureBasisPair> allFields;
+
+  // only add in solution fields if required
+
+  if(!addCoordinateFields_ && addSolutionFields_) {
+    // inject all the fields, including the coordinates (we will remove them shortly)
+    allFields = physicsBlock.getProvidedDOFs();
+
+    // get a list of strings with fields to remove
+    std::vector<std::string> removedFields;
+    const std::vector<std::vector<std::string> > & coord_fields = physicsBlock.getCoordinateDOFs();
+    for(std::size_t c=0;c<coord_fields.size();c++)
+      for(std::size_t d=0;d<coord_fields[c].size();d++)
+        removedFields.push_back(coord_fields[c][d]);
+
+    // remove all coordinate fields
+    deleteRemovedFields(removedFields,allFields); 
+  }
+  else if(addCoordinateFields_ && !addSolutionFields_) {
+    Teuchos::RCP<const panzer::FieldLibraryBase> fieldLib = physicsBlock.getFieldLibraryBase();
+    const std::vector<std::vector<std::string> > & coord_fields = physicsBlock.getCoordinateDOFs();
+    
+    // get the basis and field for each coordiante
+    for(std::size_t c=0;c<coord_fields.size();c++) {
+      for(std::size_t d=0;d<coord_fields[c].size();d++) {
+        Teuchos::RCP<panzer::PureBasis> basis = // const_cast==yuck!
+            Teuchos::rcp_const_cast<panzer::PureBasis>(fieldLib->lookupBasis(coord_fields[c][d]));
+
+        // make sure they are inserted in the allFields list
+        allFields.push_back(std::make_pair(coord_fields[c][d],basis));
+      }
+    }
+  }
+  else if(addSolutionFields_)
+    allFields = physicsBlock.getProvidedDOFs();;
+
   allFields.insert(allFields.end(),additionalFields_.begin(),additionalFields_.end());
-  bucketByBasisType(physicsBlock.getProvidedDOFs(),basisBucket);
+
+  deleteRemovedFields(removedFields_,allFields);
+
+  bucketByBasisType(allFields,basisBucket);
 
   // add this for HCURL and HDIV basis, only want to add them once: evaluate vector fields at centroid
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -93,6 +132,7 @@ buildAndRegisterEvaluators(const std::string & responseName,
        basis->getElementSpace()==panzer::PureBasis::CONST) {
       
       // determine if user has modified field scalar for each field to be written to STK
+      std::string fields_concat = "";
       std::vector<double> scalars(fields.size(),1.0); // fill with 1.0 
       for(std::size_t f=0;f<fields.size();f++) { 
         boost::unordered_map<std::string,double>::const_iterator f2s_itr = fieldToScalar_.find(fields[f]);
@@ -103,10 +143,12 @@ buildAndRegisterEvaluators(const std::string & responseName,
           scalars[f] = f2s_itr->second;
           scaledFieldsHash.erase(fields[f]);
         }
+
+        fields_concat += fields[f];
       }
 
       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval = 
-        Teuchos::rcp(new ScatterFields<EvalT,panzer::Traits>("STK HGRAD Scatter Basis " +basis->name(),
+        Teuchos::rcp(new ScatterFields<EvalT,panzer::Traits>("STK HGRAD Scatter Basis " +basis->name()+": "+fields_concat,
                                                       mesh_, basis, fields,scalars));
 
       // register and require evaluator fields
@@ -124,6 +166,7 @@ buildAndRegisterEvaluators(const std::string & responseName,
       }
 
       // add a DOF_PointValues for each field
+      std::string fields_concat = "";
       std::vector<std::string> pointFields;
       for(std::size_t f=0;f<fields.size();f++) {
         Teuchos::ParameterList p;
@@ -136,12 +179,14 @@ buildAndRegisterEvaluators(const std::string & responseName,
         fm.template registerEvaluator<EvalT>(evaluator);
 
         pointFields.push_back(fields[f]+"_"+centroidRule->getName());
+
+        fields_concat += fields[f];
       }
 
       // add the scatter field evaluator for this basis
       {
         Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
-           = Teuchos::rcp(new panzer_stk::ScatterVectorFields<EvalT,panzer::Traits>("STK HCURL Scatter Basis " +basis->name(),
+           = Teuchos::rcp(new panzer_stk_classic::ScatterVectorFields<EvalT,panzer::Traits>("STK HCURL Scatter Basis " +basis->name()+": "+fields_concat,
                                                                               mesh_,centroidRule,fields));
 
         fm.template registerEvaluator<EvalT>(evaluator);
@@ -242,6 +287,18 @@ void ResponseEvaluatorFactory_SolutionWriter<EvalT>::
 addAdditionalField(const std::string & fieldName,const Teuchos::RCP<panzer::PureBasis> & basis)
 {
   additionalFields_.push_back(std::make_pair(fieldName,basis));
+}
+
+template <typename EvalT>
+void ResponseEvaluatorFactory_SolutionWriter<EvalT>::
+deleteRemovedFields(const std::vector<std::string> & removedFields,
+                    std::vector<panzer::StrPureBasisPair> & fields) const
+{
+  RemovedFieldsSearchUnaryFunctor functor;
+  functor.removedFields_ = removedFields;
+
+  // This is the Erase-Remove Idiom: see http://en.wikipedia.org/wiki/Erase-remove_idiom
+  fields.erase(std::remove_if(fields.begin(),fields.end(),functor),fields.end());
 }
 
 }

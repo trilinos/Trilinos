@@ -49,7 +49,6 @@
 #include <string>
 #include <vector>
 #include <algorithm>
-#include <exodusII.h>
 #include <unistd.h>
 #include <sys/times.h>
 

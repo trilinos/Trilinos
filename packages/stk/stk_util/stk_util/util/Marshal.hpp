@@ -9,13 +9,13 @@
 #ifndef STK_UTIL_UTIL_MARSHAL_HPP
 #define STK_UTIL_UTIL_MARSHAL_HPP
 
-#include <stdint.h>
+#include <stddef.h>                     // for size_t
+#include <list>                         // for list
+#include <sstream>                      // for stringstream
+#include <string>                       // for string
+#include <typeinfo>                     // for type_info
+#include <vector>                       // for vector
 
-#include <string>
-#include <sstream>
-#include <vector>
-#include <list>
-#include <typeinfo>
 
 namespace stk {
 
@@ -306,7 +306,7 @@ Marshal &operator>>(Marshal &min, std::list<T> &l)  {
 
 template <class T>
 Marshal &write(Marshal &mout, const T &t) {
-  mout.write((const char *) &t, sizeof(T));
+  mout.write(reinterpret_cast<const char *>(&t), sizeof(T));
 
   return mout;
 }
@@ -315,7 +315,7 @@ template <typename T>
 Marshal &read(Marshal &min, T &t) {
   t = T();
   
-  min.read((char *) &t, sizeof(T));
+  min.read(reinterpret_cast<char *>(&t), sizeof(T));
   return min;
 }
 

@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -37,7 +37,20 @@
 # ************************************************************************
 # @HEADER
 
-MACRO(SET_AND_INC_DIRS DIR_VAR_NAME INCLUDE_DIR)
+#
+# @MACRO: SET_AND_INC_DIRS()
+#
+# Set a variable to an include directory and call ``INCLUDE_DIRECTORIES()``
+# (removes boiler-plate code).
+#
+# Usage:
+#
+#   SET_AND_INC_DIRS(<dirVarName> <includeDir>)
+#
+# On output, this sets ``<dirVarName>`` to ``<includeDir>`` in the local scope
+# and calls ``INCLUDE_DIRECTORIES(<includeDir>)``.
+#
+MACRO(SET_AND_INC_DIRS  DIR_VAR_NAME  INCLUDE_DIR)
   SET(${DIR_VAR_NAME} ${INCLUDE_DIR})
   INCLUDE_DIRECTORIES(${${DIR_VAR_NAME}})
 ENDMACRO()

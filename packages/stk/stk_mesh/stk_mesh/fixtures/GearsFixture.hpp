@@ -9,25 +9,23 @@
 #ifndef STK_MESH_FIXTURES_GEARS_FIXTURE_HPP
 #define STK_MESH_FIXTURES_GEARS_FIXTURE_HPP
 
-#include <vector>
+#include <stddef.h>                     // for size_t
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian
+#include <stk_mesh/base/Field.hpp>      // for Field
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+#include <vector>                       // for vector
+namespace stk { namespace mesh { class Part; } }
+namespace stk { namespace mesh { namespace fixtures { class Gear; } } }
 
-#include <stk_util/parallel/Parallel.hpp>
 
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/DataTraits.hpp>
 
-#include <stk_mesh/fem/FEMMetaData.hpp>
-#include <stk_mesh/fem/CoordinateSystems.hpp>
-#include <stk_mesh/fem/TopologyDimensions.hpp>
 
 namespace stk {
 namespace mesh {
 namespace fixtures {
 
-class Gear;
 
 struct GearParams {
   GearParams()
@@ -73,10 +71,8 @@ class GearsFixture{
 
   const size_t NUM_GEARS;
 
-  fem::FEMMetaData meta_data;
-  BulkData         bulk_data;
-
-  const EntityRank element_rank;
+  MetaData meta_data;
+  BulkData bulk_data;
 
   Part & cylindrical_coord_part;
   Part & hex_part;

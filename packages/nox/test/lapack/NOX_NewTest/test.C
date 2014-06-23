@@ -48,6 +48,7 @@
 #include "NOX.H"  // NOX headers
 #include "NOX_LAPACK.H" // NOX LAPACK Interface headers
 #include "NOX_TestError.H" // common file for testing
+#include "Teuchos_StandardCatchMacros.hpp" // exception handling
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -56,13 +57,16 @@
 
 int main(int argc, char *argv[]) {
 
-  // Set up the printing utilities
-  Teuchos::ParameterList noxParams;
-  Teuchos::ParameterList& printParams = noxParams.sublist("Printing");
-  printParams.set("Output Precision", 5);
-  if (argc > 1) {
-    if (argv[1][0]=='-' && argv[1][1]=='v')
-       printParams.set("Output Information",
+  bool success = false;
+  bool verbose = false;
+  try {
+    // Set up the printing utilities
+    Teuchos::ParameterList noxParams;
+    Teuchos::ParameterList& printParams = noxParams.sublist("Printing");
+    printParams.set("Output Precision", 5);
+    if (argc > 1) {
+      if (argv[1][0]=='-' && argv[1][1]=='v')
+        printParams.set("Output Information",
             NOX::Utils::OuterIteration +
             NOX::Utils::OuterIterationStatusTest +
             NOX::Utils::InnerIteration +
@@ -70,32 +74,29 @@ int main(int argc, char *argv[]) {
             NOX::Utils::Details +
             NOX::Utils::Warning +
             NOX::Utils::TestDetails);
+      else
+        printParams.set("Output Information", NOX::Utils::Error);
+    }
+    NOX::Utils printing(printParams);
+
+    // Identify the test
+    if (printing.isPrintType(NOX::Utils::TestDetails)) {
+      std::cout << "Starting lapack/NOX_NewTest/NOX_NewTest.exe" << std::endl;
+    }
+
+    // *** Insert your testing here! ***
+
+    success = true;
+
+    if (success)
+      std::cout << "Test passed!" << std::endl;
     else
-       printParams.set("Output Information", NOX::Utils::Error);
+      std::cout << "Test failed!" << std::endl;
   }
-  NOX::Utils printing(printParams);
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-  // Identify the test
-  if (printing.isPrintType(NOX::Utils::TestDetails)) {
-    std::cout << "Starting lapack/NOX_NewTest/NOX_NewTest.exe" << std::endl;
-  }
-
-  // Final return value (0 = succefull, non-zero = failure)
-  int status = 0;
-
-  // *** Insert your testing here! ***
-
-
-
-  if (status == 0)
-    std::cout << "Test passed!" << std::endl;
-  else
-    std::cout << "Test failed!" << std::endl;
-
-  // Final return value (0 = succefull, non-zero = failure)
-  return status;
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
-
 /*
-  end of file main.cc
-*/
+   end of file main.cc
+   */

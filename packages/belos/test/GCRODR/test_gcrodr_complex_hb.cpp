@@ -64,17 +64,6 @@
 #include "MyBetterOperator.hpp"
 #include "MyOperator.hpp"
 
-namespace Belos {
-  class MPIFinalize {
-    public:
-      ~MPIFinalize() {
-#ifdef HAVE_MPI
-        MPI_Finalize();
-#endif
-      }
-  };
-}
-
 using namespace Teuchos;
 
 int main(int argc, char *argv[]) {
@@ -99,16 +88,10 @@ int main(int argc, char *argv[]) {
   ST zero = SCT::zero();
 
   int info = 0;
-  int MyPID = 0;
   bool norm_failure = false;
 
-#ifdef HAVE_MPI
-  // Initialize MPI
-  MPI_Init(&argc,&argv);
-  MPI_Comm_rank(MPI_COMM_WORLD, &MyPID);
-  Belos::MPIFinalize mpiFinalize; // Will call finalize with *any* return
-  (void)mpiFinalize;
-#endif
+  Teuchos::GlobalMPISession session(&argc, &argv, NULL);
+  int MyPID = session.getRank();
 
   using Teuchos::RCP;
   using Teuchos::rcp;

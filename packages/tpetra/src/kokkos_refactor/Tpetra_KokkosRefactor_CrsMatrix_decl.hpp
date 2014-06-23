@@ -51,7 +51,11 @@
 
 namespace Tpetra {
 
-  // Partial specialization of CrsMatrix for the new Kokkos wrapper Nodes.
+  /// \brief Partial specialization of CrsMatrix for the new Kokkos
+  ///   wrapper Nodes.
+  ///
+  /// This implements the "Kokkos refactor" version of CrsMatrix.
+  /// For full documentation, see the "classic" version of CrsMatrix.
   template <class Scalar,
             class LocalOrdinal,
             class GlobalOrdinal,
@@ -92,6 +96,12 @@ namespace Tpetra {
 
     //! The Map specialization suitable for this CrsMatrix specialization.
     typedef Map<LocalOrdinal, GlobalOrdinal, node_type> map_type;
+
+    //! The Import specialization suitable for this CrsMatrix specialization.
+    typedef Import<LocalOrdinal, GlobalOrdinal, node_type> import_type;
+
+    //! The Export specialization suitable for this CrsMatrix specialization.
+    typedef Export<LocalOrdinal, GlobalOrdinal, node_type> export_type;
 
     //! The CrsGraph specialization suitable for this CrsMatrix specialization.
     typedef CrsGraph<LocalOrdinal, GlobalOrdinal, node_type, LocalMatOps> crs_graph_type;
@@ -901,8 +911,8 @@ namespace Tpetra {
     void
     expertStaticFillComplete (const RCP<const map_type>& domainMap,
                               const RCP<const map_type>& rangeMap,
-                              const RCP<const Import<LocalOrdinal,GlobalOrdinal,node_type> >& importer = Teuchos::null,
-                              const RCP<const Export<LocalOrdinal,GlobalOrdinal,node_type> >& exporter = Teuchos::null,
+                              const RCP<const import_type>& importer = Teuchos::null,
+                              const RCP<const export_type>& exporter = Teuchos::null,
                               const RCP<ParameterList>& params = Teuchos::null);
 
     /// \brief Replace the matrix's column Map with the given Map.
@@ -931,7 +941,7 @@ namespace Tpetra {
     ///   same as the provided new domain Map.
     void
     replaceDomainMapAndImporter (const Teuchos::RCP<const map_type>& newDomainMap,
-                                 Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,node_type> >& newImporter);
+                                 Teuchos::RCP<const import_type>& newImporter);
 
     /// \brief Remove processes owning zero rows from the Maps and their communicator.
     ///
@@ -970,6 +980,10 @@ namespace Tpetra {
 
     //! This matrix's graph, as a CrsGraph.
     RCP<const crs_graph_type> getCrsGraph () const;
+
+    //! Return the underlying local kokkos mtx
+    k_local_matrix_type getLocalMatrix () {return k_lclMatrix_; }
+
 
     /// \brief Number of global elements in the row map of this matrix.
     ///
@@ -1537,7 +1551,7 @@ namespace Tpetra {
     ///   Symmetric sweep (including both its Forward and its Backward
     ///   sweep) as one.
     ///
-    /// \section Tpetra_CrsMatrix_gaussSeidel_Details Requirements
+    /// \section Tpetra_KR_CrsMatrix_gaussSeidel_req Requirements
     ///
     /// This method has the following requirements:
     ///
@@ -1611,7 +1625,7 @@ namespace Tpetra {
     ///   Symmetric sweep (including both its Forward and its Backward
     ///   sweep) as one.
     ///
-    /// \section Tpetra_CrsMatrix_gaussSeidel_Details Requirements
+    /// \section Tpetra_KR_CrsMatrix_reorderedGaussSeidel_req Requirements
     ///
     /// This method has the following requirements:
     ///
@@ -1873,7 +1887,7 @@ namespace Tpetra {
     ///   only, and should never be called by user code.
     void
     importAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, node_type, LocalMatOps> >& destMatrix,
-                           const Import<LocalOrdinal, GlobalOrdinal, node_type>& importer,
+                           const import_type& importer,
                            const Teuchos::RCP<const map_type>& domainMap,
                            const Teuchos::RCP<const map_type>& rangeMap,
                            const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const;
@@ -1895,7 +1909,7 @@ namespace Tpetra {
     ///   only, and should never be called by user code.
     void
     exportAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, node_type, LocalMatOps> >& destMatrix,
-                           const Export<LocalOrdinal, GlobalOrdinal, node_type>& exporter,
+                           const export_type& exporter,
                            const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
                            const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
                            const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const;
@@ -2180,10 +2194,6 @@ namespace Tpetra {
     typedef typename LocalMatOps::template bind_scalar<Scalar>::other_type                    sparse_ops_type;
     typedef typename sparse_ops_type::template graph<LocalOrdinal,node_type>::graph_type          local_graph_type;
     typedef typename sparse_ops_type::template matrix<Scalar,LocalOrdinal,node_type>::matrix_type local_matrix_type;
-  protected:
-
-    typedef Export<LocalOrdinal, GlobalOrdinal, node_type> export_type;
-    typedef Import<LocalOrdinal, GlobalOrdinal, node_type> import_type;
 
     // Enums
     enum GraphAllocationStatus {

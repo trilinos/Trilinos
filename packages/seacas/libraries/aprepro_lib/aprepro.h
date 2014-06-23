@@ -151,7 +151,7 @@ namespace SEAMS {
 	the parse_* call (* = stream, file, or string).
     */
     const std::ostringstream &parsing_results() const {return parsingResults;}
-    void clear_results() {parsingResults.str("");}
+    void clear_results();
     
     /** Return string representation of current version of aprepro.  */
     std::string version() const;
@@ -171,6 +171,18 @@ namespace SEAMS {
      */
     bool parse_string(const std::string& input,
 		      const std::string& sname = "string stream");
+
+    /** Invoke the scanner and parser on an input string in an
+     * interactive manner.
+     * @param input input stringInput
+     * @return true if successfully parsed
+     */
+    bool parse_string_interactive(const std::string &input);
+
+    /** Get the string interactive flag, which indicates if we are in
+     * the middle of parsing a string in an interactive manner.
+     */
+    bool string_interactive() {return stringInteractive;}
 
     /** Invoke the scanner and parser on a file. Use parse_stream with a
      * std::ifstream if detection of file reading errors is required.
@@ -210,6 +222,13 @@ namespace SEAMS {
     void init_table(const char *comment);
     std::vector<symrec*> sym_table;
     std::ostringstream parsingResults;
+
+    // Input stream used with parse_string_interactive
+    std::istringstream stringInput;
+
+    bool stringInteractive;
+    class Scanner* stringScanner;
+
   public:
     bool stateImmutable;
   };

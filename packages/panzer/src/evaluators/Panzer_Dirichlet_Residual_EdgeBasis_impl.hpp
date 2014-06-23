@@ -83,9 +83,10 @@ PHX_EVALUATOR_CTOR(DirichletResidual_EdgeBasis,p)
   value    = PHX::MDField<ScalarT,Cell,Point,Dim>(value_name, vector_layout_vector);
 
   // setup the orientation field
-  std::string orientationFieldName = field_name+" Orientation";
-  if(p.isType<std::string>("Orientation Field Name"))
-    orientationFieldName = p.get<std::string>("Orientation Field Name");
+  std::string orientationFieldName = basis->name() + " Orientation";
+  // std::string orientationFieldName = field_name+" Orientation";
+  // if(p.isType<std::string>("Orientation Field Name"))
+  //   orientationFieldName = p.get<std::string>("Orientation Field Name");
   dof_orientation = PHX::MDField<ScalarT,Cell,BASIS>(orientationFieldName,
 	                                                basis_layout);
 
@@ -104,8 +105,6 @@ PHX_EVALUATOR_CTOR(DirichletResidual_EdgeBasis,p)
   this->addDependentField(dof_orientation);
   this->addDependentField(value);
   this->addDependentField(pointValues.jac);
-
-     
  
   std::string n = "Dirichlet Residual Edge Basis Evaluator";
   this->setName(n);

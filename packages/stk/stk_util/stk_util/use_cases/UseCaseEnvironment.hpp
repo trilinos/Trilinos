@@ -12,7 +12,7 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/BroadcastArg.hpp>
 
-#include <stk_util/diag/Writer_fwd.hpp>
+#include <stk_util/util/Writer_fwd.hpp>
 #include <stk_util/diag/Timer.hpp>
 
 #include <stk_util/environment/OutputLog.hpp>

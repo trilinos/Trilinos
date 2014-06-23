@@ -40,10 +40,15 @@ namespace SEAMS {
     // See the random number generator...
     time_t time_val = std::time ((time_t*)NULL);
     srand((unsigned)time_val);
+
+    stringScanner = NULL;
   }
 
   Aprepro::~Aprepro()
   {
+    if(stringScanner && stringScanner != lexer)
+      delete stringScanner;
+
     delete lexer;
     
     for (unsigned hashval = 0; hashval < HASHSIZE; hashval++) {
@@ -58,6 +63,12 @@ namespace SEAMS {
   }
 
   std::string Aprepro::version() const {return version_string;}
+
+  void Aprepro::clear_results()
+  {
+    parsingResults.str("");
+    parsingResults.clear();
+  }
   
   bool Aprepro::parse_stream(std::istream& in, const std::string& in_name)
   {
@@ -91,6 +102,35 @@ namespace SEAMS {
   {
     std::istringstream iss(input);
     return parse_stream(iss, sname);
+  }
+
+  bool Aprepro::parse_string_interactive(const std::string &input)
+  {
+    stringInteractive = true;
+
+    if (!ap_options.include_file.empty()) {
+      file_rec include_file(ap_options.include_file.c_str(), 0, false, 0);
+      ap_file_list.push(include_file);
+      // File included on command line will be processed as immutable and no-echo
+      // Will revert to global settings at end of file.
+      stateImmutable = true;
+      echo = false;
+    }
+
+    if(!stringScanner)
+      stringScanner = new Scanner(*this, &stringInput, &parsingResults);
+
+    this->lexer = stringScanner;
+
+    stringInput.str(input);
+    stringInput.clear();
+
+    Parser parser(*this);
+    parser.set_debug_level(ap_options.trace_parsing);
+    bool result = parser.parse() == 0;
+
+    stringInteractive = false;
+    return result;
   }
 
   void Aprepro::error(const std::string& m) const

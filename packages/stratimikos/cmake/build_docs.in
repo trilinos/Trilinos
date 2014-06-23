@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# Remove the directories to make sure that we don't have rebuild problems
+# that can sometimes happen with doxygen
+
+rm -r ../browser/doc/html
+
+rm -r html
+
+# Create new directories manually since the doxygen exe under windows
+# seems to be messing this up.
+
+mkdir ../browser/doc/html
+
+mkdir html
+
+# Build the documentation
+
+./build_docs_guts
+
+# Files needed for collapsible parameter list (short term proof of concept)
+#TODO:
+mkdir html/common
+cp -r ../../common/paramList html/common/paramList
+cp parameterList/stratimikos.xml html
+

@@ -75,7 +75,6 @@
     <Parameter name="verbosity"                             type="string"   value="Low"/>
 
     <ParameterList name="All">
-      <Parameter name="startLevel"                          type="int"      value="0"/>
       <Parameter name="Smoother"                            type="string"   value="myJacobi"/>
       <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/>
     </ParameterList>

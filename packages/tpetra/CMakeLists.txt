@@ -40,7 +40,7 @@ SET(Tpetra_MACHINE_XML_FILE_DIR
 # B) Set up package-specific options
 #
 
-TRIBITS_SET_SS_FOR_DEV_MODE(SS_FOR_DEV_PS_FOR_RELEASE)
+TRIBITS_SET_ST_FOR_DEV_MODE(ST_FOR_DEV_PT_FOR_RELEASE)
 
 ASSERT_DEFINED(KokkosClassic_DefaultNode)
 ASSERT_DEFINED(KokkosClassic_ENABLED_NODES)
@@ -89,62 +89,7 @@ ELSE()
   MESSAGE(STATUS "Not enabling Tpetra/RTI")
 ENDIF()
 
-TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_MMM_TIMINGS
-  HAVE_TPETRA_MMM_TIMINGS
-  "Enable timers for matrix-matrix multiplication"
-  OFF )
-
-
-#
-# Decide whether to enable the Kokkos Refactor version of Tpetra.
-#
-# If you don't know what this is, you don't want it.  This needs to
-# happen before we decide on the lists of types over which to do
-# explicit instantiation, since the Kokkos Refactor version of Tpetra
-# doesn't work with all Scalar types.
-#
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  Tpetra_ENABLE_Kokkos_Refactor
-  TPETRA_ENABLE_KOKKOS_REFACTOR
-  "Enable Tpetra code for refactor to new KokkosCore interface."
-  OFF
-  )
-
-# Make sure all requisite packages are enabled
-IF (Tpetra_ENABLE_Kokkos_Refactor AND
-    (NOT Tpetra_ENABLE_KokkosCore OR
-     NOT Tpetra_ENABLE_KokkosCompat OR
-     NOT Tpetra_ENABLE_KokkosLinAlg OR
-     NOT Tpetra_ENABLE_KokkosContainers OR
-     NOT Tpetra_ENABLE_KokkosMpiComm))
-  MESSAGE(FATAL_ERROR "Tpetra_ENABLE_Kokkos_Refactor is ON but not all required packages are enabled.  Please enable Kokkos subpackages Core, Compat, LinAlg, Containers, and MpiComm.")
-ENDIF()
-
-IF (Tpetra_ENABLE_Kokkos_Refactor)
-  SET(Tpetra_Have_Kokkos_Refactor ON CACHE INTERNAL "")
-ELSE()
-  SET(Tpetra_Have_Kokkos_Refactor OFF CACHE INTERNAL "")
-ENDIF()
-# Set corresponding value of CPP macro
-GLOBAL_SET(TPETRA_HAVE_KOKKOS_REFACTOR ${Tpetra_Have_Kokkos_Refactor})
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  Tpetra_ENABLE_Kokkos_Refactor_Map
-  TPETRA_USE_KOKKOS_REFACTOR_MAP
-  "Enable Tpetra::Map specialization for refactor to new Kokkos interface.  If this option is OFF, you may still use the other Kokkos refactor classes with the old Map implementation."
-  OFF
-  )
-
-IF (Tpetra_ENABLE_Kokkos_Refactor_Map AND NOT Tpetra_Have_Kokkos_Refactor)
-  MESSAGE( FATAL_ERROR "If Tpetra_ENABLE_Kokkos_Refactor_Map is ON, then Tpetra's Kokkos refactor code must be enabled as well.  This requires Tpetra_ENABLE_Kokkos_Refactor to be ON, and the Core, Compat, LinAlg, Containers, and MpiComm subpackages of Kokkos to be enabled." )
-ENDIF ()
-
-#
-# Decide whether to do explicit instantiation for Scalar = float.
-#
-
-IF (SS_FOR_DEV_PS_FOR_RELEASE AND HAVE_TEUCHOS_BLASFLOAT) 
+IF (ST_FOR_DEV_PT_FOR_RELEASE AND HAVE_TEUCHOS_BLASFLOAT) 
   GLOBAL_SET(HAVE_TPETRA_INST_FLOAT_DEFAULT ON)
 ELSE()
   GLOBAL_SET(HAVE_TPETRA_INST_FLOAT_DEFAULT OFF)
@@ -159,25 +104,11 @@ IF(Tpetra_INST_FLOAT)
   LIST(APPEND Tpetra_ETI_SCALARS "float")
 ENDIF()
 
-#
-# Decide whether to do explicit instantiation for Scalar = std::complex<float>.
-#
-
-IF (SS_FOR_DEV_PS_FOR_RELEASE AND HAVE_COMPLEX_BLAS AND HAVE_TEUCHOS_BLASFLOAT)
-  IF (Tpetra_Have_Kokkos_Refactor)
-    # mfh 22 Apr 2014: The Kokkos Refactor version of Tpetra doesn't
-    # currently work for Scalar = std::complex<T>.  Fixing this will
-    # require volatile overloads of operator= and operator+ for
-    # complex numbers.  We will probably need a Kokkos::complex<T>
-    # type for that.
-    GLOBAL_SET(HAVE_TPETRA_INST_COMPLEX_FLOAT_DEFAULT OFF)
-  ELSE ()
-    GLOBAL_SET(HAVE_TPETRA_INST_COMPLEX_FLOAT_DEFAULT ON)
-  ENDIF ()
+IF (ST_FOR_DEV_PT_FOR_RELEASE AND HAVE_COMPLEX_BLAS AND HAVE_TEUCHOS_BLASFLOAT)
+  GLOBAL_SET(HAVE_TPETRA_INST_COMPLEX_FLOAT_DEFAULT ON)
 ELSE()
   GLOBAL_SET(HAVE_TPETRA_INST_COMPLEX_FLOAT_DEFAULT OFF)
-ENDIF ()
-
+ENDIF()
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_COMPLEX_FLOAT
   HAVE_TPETRA_INST_COMPLEX_FLOAT
@@ -188,25 +119,11 @@ IF(Tpetra_INST_COMPLEX_FLOAT)
   LIST(APPEND Tpetra_ETI_SCALARS "std::complex<float>")
 ENDIF()
 
-#
-# Decide whether to do explicit instantiation for Scalar = std::complex<double>.
-#
-
-IF (SS_FOR_DEV_PS_FOR_RELEASE AND HAVE_COMPLEX_BLAS)
-  IF (Tpetra_Have_Kokkos_Refactor)
-    # mfh 22 Apr 2014: The Kokkos Refactor version of Tpetra doesn't
-    # currently work for Scalar = std::complex<T>.  Fixing this will
-    # require volatile overloads of operator= and operator+ for
-    # complex numbers.  We will probably need a Kokkos::complex<T>
-    # type for that.
-    GLOBAL_SET(HAVE_TPETRA_INST_COMPLEX_DOUBLE_DEFAULT OFF)
-  ELSE ()
-    GLOBAL_SET(HAVE_TPETRA_INST_COMPLEX_DOUBLE_DEFAULT ON)
-  ENDIF ()
+IF (ST_FOR_DEV_PT_FOR_RELEASE AND HAVE_COMPLEX_BLAS)
+  GLOBAL_SET(HAVE_TPETRA_INST_COMPLEX_DOUBLE_DEFAULT ON)
 ELSE()
   GLOBAL_SET(HAVE_TPETRA_INST_COMPLEX_DOUBLE_DEFAULT OFF)
 ENDIF()
-
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_COMPLEX_DOUBLE
   HAVE_TPETRA_INST_COMPLEX_DOUBLE
@@ -217,24 +134,11 @@ IF(Tpetra_INST_COMPLEX_DOUBLE)
   LIST(APPEND Tpetra_ETI_SCALARS "std::complex<double>")
 ENDIF()
 
-#
-# Decide whether to do explicit instantiation for Scalar = qd_real.
-#
-
-IF (SS_FOR_DEV_PS_FOR_RELEASE AND Tpetra_ENABLE_QD)
-  IF (Tpetra_Have_Kokkos_Refactor)
-    # mfh 22 Apr 2014: The Kokkos Refactor version of Tpetra doesn't
-    # currently work for Scalar = qd_real.  Fixing this will require
-    # volatile overloads of operator= and operator+ for qd_real.  We
-    # will probably need a Kokkos::qd_real type for that.
-    GLOBAL_SET(HAVE_TPETRA_INST_QD_REAL_DEFAULT OFF)
-  ELSE ()
-    GLOBAL_SET(HAVE_TPETRA_INST_QD_REAL_DEFAULT ON)
-  ENDIF ()
+IF (ST_FOR_DEV_PT_FOR_RELEASE AND Tpetra_ENABLE_QD)
+  GLOBAL_SET(HAVE_TPETRA_INST_QD_REAL_DEFAULT ON)
 ELSE()
   GLOBAL_SET(HAVE_TPETRA_INST_QD_REAL_DEFAULT OFF)
 ENDIF()
-
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_QD_REAL
   HAVE_TPETRA_INST_QD_REAL
@@ -245,24 +149,11 @@ IF(Tpetra_INST_QD_REAL)
   LIST(APPEND Tpetra_ETI_SCALARS "qd_real")
 ENDIF()
 
-#
-# Decide whether to do explicit instantiation for Scalar = dd_real.
-#
-
-IF (SS_FOR_DEV_PS_FOR_RELEASE AND Tpetra_ENABLE_QD)
-  IF (Tpetra_Have_Kokkos_Refactor)
-    # mfh 22 Apr 2014: The Kokkos Refactor version of Tpetra doesn't
-    # currently work for Scalar = dd_real.  Fixing this will require
-    # volatile overloads of operator= and operator+ for dd_real.  We
-    # will probably need a Kokkos::dd_real type for that.
-    GLOBAL_SET(HAVE_TPETRA_INST_DD_REAL_DEFAULT OFF)
-  ELSE ()
-    GLOBAL_SET(HAVE_TPETRA_INST_DD_REAL_DEFAULT ON)
-  ENDIF ()
+IF (ST_FOR_DEV_PT_FOR_RELEASE AND Tpetra_ENABLE_QD)
+  GLOBAL_SET(HAVE_TPETRA_INST_DD_REAL_DEFAULT ON)
 ELSE()
   GLOBAL_SET(HAVE_TPETRA_INST_DD_REAL_DEFAULT OFF)
 ENDIF()
-
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_DD_REAL
   HAVE_TPETRA_INST_DD_REAL
@@ -274,7 +165,7 @@ IF(Tpetra_INST_DD_REAL)
 ENDIF()
 
 #
-# Determine the GlobalOrdinal types for which to do explicit instantiation.
+# Set GlobalOrdinal ETI types.  
 #
 # Unfortunately, we have to add these types to the list of Scalar ETI
 # types as well, since some downstream packages use Scalar =
@@ -316,9 +207,7 @@ IF (Tpetra_INST_UNSIGNED_LONG)
   # global_size_t (using wrong OrdinalTraits<>::invald(). 
 ENDIF()
 
-#
-# Various options 
-#
+
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_Threaded_MKL
@@ -383,7 +272,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   OFF
   )
 
-# This does not depend on the Kokkos Refactor version of Tpetra.
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_ENABLE_Kokkos_DistObject
   TPETRA_ENABLE_KOKKOS_DISTOBJECT
@@ -398,6 +286,43 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   OFF
   )
 
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_ENABLE_Kokkos_Refactor
+  TPETRA_ENABLE_KOKKOS_REFACTOR
+  "Enable Tpetra code for refactor to new KokkosCore interface."
+  OFF
+  )
+
+# Make sure all requisite packages are enabled
+IF (Tpetra_ENABLE_Kokkos_Refactor AND
+    (NOT Tpetra_ENABLE_KokkosCore OR
+     NOT Tpetra_ENABLE_KokkosCompat OR
+     NOT Tpetra_ENABLE_KokkosLinAlg OR
+     NOT Tpetra_ENABLE_KokkosContainers OR
+     NOT Tpetra_ENABLE_KokkosMpiComm))
+  MESSAGE(FATAL_ERROR "Tpetra_ENABLE_Kokkos_Refactor is ON but not all required packages are enabled.  Please enable Kokkos subpackages Core, Compat, LinAlg, Containers, and MpiComm.")
+ENDIF()
+
+IF (Tpetra_ENABLE_Kokkos_Refactor)
+  SET(Tpetra_Have_Kokkos_Refactor ON CACHE INTERNAL "")
+ELSE()
+  SET(Tpetra_Have_Kokkos_Refactor OFF CACHE INTERNAL "")
+ENDIF()
+# Set corresponding value of CPP macro
+GLOBAL_SET(TPETRA_HAVE_KOKKOS_REFACTOR ${Tpetra_Have_Kokkos_Refactor})
+
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_ENABLE_Kokkos_Refactor_Map
+  TPETRA_USE_KOKKOS_REFACTOR_MAP
+  "Enable Tpetra::Map specialization for refactor to new Kokkos interface.  If this option is OFF, you may still use the other Kokkos refactor classes with the old Map implementation."
+  OFF
+  )
+
+IF (Tpetra_ENABLE_Kokkos_Refactor_Map AND NOT Tpetra_Have_Kokkos_Refactor)
+  MESSAGE( FATAL_ERROR "If Tpetra_ENABLE_Kokkos_Refactor_Map is ON, then Tpetra's Kokkos refactor code must be enabled as well.  This requires Tpetra_ENABLE_Kokkos_Refactor to be ON, and the Core, Compat, LinAlg, Containers, and MpiComm subpackages of Kokkos to be enabled." )
+ENDIF ()
+
 #
 # C) Add the libraries, tests, and examples
 #
@@ -410,7 +335,7 @@ IF (Tpetra_ENABLE_RTI)
 ENDIF()
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)
-TRIBITS_ADD_TEST_DIRECTORIES(example)
+TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 
 GLOBAL_SET(Tpetra_ETI_SCALARS ${Tpetra_ETI_SCALARS})
 GLOBAL_SET(Tpetra_ETI_GORDS   ${Tpetra_ETI_GORDS})

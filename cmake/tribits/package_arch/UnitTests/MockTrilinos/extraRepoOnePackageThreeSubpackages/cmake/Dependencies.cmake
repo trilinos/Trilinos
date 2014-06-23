@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -37,17 +37,10 @@
 # ************************************************************************
 # @HEADER
 
-SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
-  SP1  sp1  PS  REQUIRED
-  SP2  sp2  SS  OPTIONAL
-  SP3  sp3  EX  OPTIONAL
+TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
+  SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
+    SP1  sp1  PT  REQUIRED
+    SP2  sp2  ST  OPTIONAL
+    SP3  sp3  EX  OPTIONAL
   )
 
-SET(LIB_REQUIRED_DEP_PACKAGES)
-SET(LIB_OPTIONAL_DEP_PACKAGES)
-SET(TEST_REQUIRED_DEP_PACKAGES)
-SET(TEST_OPTIONAL_DEP_PACKAGES)
-SET(LIB_REQUIRED_DEP_TPLS)
-SET(LIB_OPTIONAL_DEP_TPLS)
-SET(TEST_REQUIRED_DEP_TPLS)
-SET(TEST_OPTIONAL_DEP_TPLS)

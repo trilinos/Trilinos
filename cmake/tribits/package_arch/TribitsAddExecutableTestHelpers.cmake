@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -37,10 +37,11 @@
 # ************************************************************************
 # @HEADER
 
+INCLUDE(AdvancedSet)
 
-
-SET(CMAKE_EXECUTABLE_SUFFIX ".exe")
-
+ADVANCED_SET( ${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX ".exe"
+  CACHE STRING
+  "Default exec suffix on all platforms (can be overridden by each executable added)." )
 
 #
 # Process the COMM arguments
@@ -82,16 +83,18 @@ ENDFUNCTION()
 FUNCTION( TRIBITS_CREATE_NAME_FROM_CURRENT_SOURCE_DIRECTORY DIRECTORY_NAME )
     SET(DIRECTORY_NAME "")
     #Get the unique part of the path for this test directory
-    STRING(REGEX REPLACE ${PACKAGE_SOURCE_DIR} "" unique_dir_path ${CMAKE_CURRENT_SOURCE_DIR})
+    STRING(REGEX REPLACE ${PACKAGE_SOURCE_DIR} "" unique_dir_path
+      ${CMAKE_CURRENT_SOURCE_DIR})
     
     #strip off the preceeding "/"
     STRING(LENGTH ${unique_dir_path} udp_length)
     MATH(EXPR last_index "${udp_length}-1")
     STRING(SUBSTRING ${unique_dir_path} 1 ${last_index} unique_dir_path)
 
-    #Make the name acceptable for filesystems. This may need to be made compatible with windows
-    #since they use a "\" instead of a "/" for directory delimiters. I'm not sure how this will
-    #react if we encounter a directory name with a space in it.
+    # Make the name acceptable for filesystems. This may need to be made
+    # compatible with windows since they use a "\" instead of a "/" for
+    # directory delimiters. I'm not sure how this will react if we encounter a
+    # directory name with a space in it.
     STRING(REGEX REPLACE "/" "_" DIRECTORY_NAME ${unique_dir_path})
 
     #PRINT_VAR(DIRECTORY_NAME)

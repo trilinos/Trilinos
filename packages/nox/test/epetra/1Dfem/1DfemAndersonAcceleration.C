@@ -78,12 +78,12 @@
 #include "1DfemPrePostOperator.H"
 
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 
 using namespace std;
 
 int main(int argc, char *argv[])
 {
-
   // Initialize MPI
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
@@ -91,34 +91,34 @@ int main(int argc, char *argv[])
 
   int status = 0; // Converged
 
-  {
-
-    // Create a communicator for Epetra objects
+  // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
-    Epetra_MpiComm Comm( MPI_COMM_WORLD );
+  Epetra_MpiComm Comm( MPI_COMM_WORLD );
 #else
-    Epetra_SerialComm Comm;
+  Epetra_SerialComm Comm;
 #endif
 
-    // Get the process ID and the total number of processors
-    int MyPID = Comm.MyPID();
-    int NumProc = Comm.NumProc();
+  // Get the process ID and the total number of processors
+  int MyPID = Comm.MyPID();
+  int NumProc = Comm.NumProc();
 
-    // Check verbosity level
-    bool verbose = false;
-    if (argc > 1)
-      if (argv[1][0]=='-' && argv[1][1]=='v')
-    verbose = true;
+  // Check verbosity level
+  bool verbose = false;
+  if (argc > 1)
+    if (argv[1][0]=='-' && argv[1][1]=='v')
+      verbose = true;
 
   // Get the number of elements from the command line
-    int NumGlobalElements = 0;
-    if ((argc > 2) && (verbose))
-      NumGlobalElements = atoi(argv[2]) + 1;
-    else if ((argc > 1) && (!verbose))
-      NumGlobalElements = atoi(argv[1]) + 1;
-    else
-      NumGlobalElements = 200;
+  int NumGlobalElements = 0;
+  if ((argc > 2) && (verbose))
+    NumGlobalElements = atoi(argv[2]) + 1;
+  else if ((argc > 1) && (!verbose))
+    NumGlobalElements = atoi(argv[1]) + 1;
+  else
+    NumGlobalElements = 200;
 
+  bool success = false;
+  try {
     // The number of unknowns must be at least equal to the
     // number of processors.
     if (NumGlobalElements < NumProc) {
@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
 
     if (verbose)
       if (MyPID == 0)
-    std::cout << "\n" << NOX::version() << std::endl;
+        std::cout << "\n" << NOX::version() << std::endl;
 
     // Create the interface between NOX and the application
     // This object is derived from NOX::Epetra::Interface
@@ -172,19 +172,19 @@ int main(int argc, char *argv[])
     printParams.set("Output Processor", 0);
     if (verbose)
       printParams.set("Output Information",
-              NOX::Utils::OuterIteration +
-              NOX::Utils::OuterIterationStatusTest +
-              NOX::Utils::InnerIteration +
-              NOX::Utils::LinearSolverDetails +
-              NOX::Utils::Parameters +
-              NOX::Utils::Details +
-              NOX::Utils::Warning +
-              NOX::Utils::Debug +
-              NOX::Utils::TestDetails +
-              NOX::Utils::Error);
+          NOX::Utils::OuterIteration +
+          NOX::Utils::OuterIterationStatusTest +
+          NOX::Utils::InnerIteration +
+          NOX::Utils::LinearSolverDetails +
+          NOX::Utils::Parameters +
+          NOX::Utils::Details +
+          NOX::Utils::Warning +
+          NOX::Utils::Debug +
+          NOX::Utils::TestDetails +
+          NOX::Utils::Error);
     else
       printParams.set("Output Information", NOX::Utils::Error +
-              NOX::Utils::TestDetails);
+          NOX::Utils::TestDetails);
 
     // Create a print class for controlling output below
     NOX::Utils printing(printParams);
@@ -208,7 +208,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
-    return 0;
+    return EXIT_SUCCESS;
 #endif
 
     // Various Preconditioner options
@@ -247,15 +247,14 @@ int main(int argc, char *argv[])
       MLList.set("coarse: type","Jacobi");
       // Set ML output verbosity
       if( verbose )
-        MLList.set("output", 10);
+      MLList.set("output", 10);
       else
-        MLList.set("output", 0);*/
+      MLList.set("output", 0);*/
       MLList.set("PDE equations", 1);
       MLList.set("coarse: max size", 2000);
       MLList.set("coarse: type", "Amesos-KLU");
       //MLList.set("ML output", 10);
       lsParams.set("ML", MLList);
-
     }
 #endif
 
@@ -263,7 +262,7 @@ int main(int argc, char *argv[])
     Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo =
       Teuchos::rcp(new UserPrePostOperator(printing));
     nlParams.sublist("Solver Options").set("User Defined Pre/Post Operator",
-                       ppo);
+        ppo);
 
     // Let's force all status tests to do a full check
     nlParams.sublist("Solver Options").set("Status Test Check Type", "Complete");
@@ -278,18 +277,18 @@ int main(int argc, char *argv[])
     Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = interface;
     Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys =
       Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
-                                                        iReq,
-                            iJac, Analytic,
-                             //iPrec, Analytic,
-                                                        *soln));
+            iReq,
+            iJac, Analytic,
+            //iPrec, Analytic,
+            *soln));
 
     // Create the Group
     NOX::Epetra::Vector initialGuess(soln, NOX::Epetra::Vector::CreateView);
     Teuchos::RCP<NOX::Epetra::Group> grpPtr =
       Teuchos::rcp(new NOX::Epetra::Group(printParams,
-                      iReq,
-                      initialGuess,
-                      linSys));
+            iReq,
+            initialGuess,
+            linSys));
     NOX::Epetra::Group& grp = *grpPtr;
 
     // Create the convergence tests
@@ -334,10 +333,10 @@ int main(int argc, char *argv[])
     // Output the parameter list
     if (verbose) {
       if (printing.isPrintType(NOX::Utils::Parameters)) {
-    printing.out() << std::endl << "Final Parameters" << std::endl
-               << "****************" << std::endl;
-    solver->getList().print(printing.out());
-    printing.out() << std::endl;
+        printing.out() << std::endl << "Final Parameters" << std::endl
+          << "****************" << std::endl;
+        solver->getList().print(printing.out());
+        printing.out() << std::endl;
       }
     }
 
@@ -358,25 +357,27 @@ int main(int argc, char *argv[])
     if (solvStatus != NOX::StatusTest::Converged) {
       status = 1;
       if (printing.isPrintType(NOX::Utils::Error))
-    printing.out() << "Nonlinear solver failed to converge!" << std::endl;
+        printing.out() << "Nonlinear solver failed to converge!" << std::endl;
     }
     // 2. Nonlinear solve iterations (10)
     if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Output").get("Nonlinear Iterations", 0) != 11)
       status = 2;
+
+    success = status==0;
+
     // Summarize test results
-    if (status == 0)
+    if (success)
       printing.out() << "Test passed!" << std::endl;
     else
       printing.out() << "Test failed!" << std::endl;
 
     printing.out() << "Status = " << status << std::endl;
-
   }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
-  // Final return value (0 = successfull, non-zero = failure)
-  return status;
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }

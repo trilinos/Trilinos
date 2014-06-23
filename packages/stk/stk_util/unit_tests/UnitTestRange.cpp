@@ -6,14 +6,18 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
+#include <stk_util/util/Foreach.hpp>    // for stk_foreach
+#include <utility>                      // for pair, make_pair
+#include <vector>                       // for vector
+#include "boost/foreach.hpp"            // for auto_any_base
+#include "boost/range/iterator_range_core.hpp"  // for operator==, etc
+#include "boost/range/iterator_range_io.hpp"  // for operator<<
+#include "boost/range/sub_range.hpp"    // for sub_range, operator==
 
-#include <stk_util/util/Range.hpp>
-#include <stk_util/util/Foreach.hpp>
 
-#include <vector>
 
-STKUNIT_UNIT_TEST( UnitTestRange, range )
+TEST( UnitTestRange, range )
 {
   typedef std::vector<int> IntVector;
   typedef boost::sub_range<IntVector> IntRange;
@@ -25,22 +29,22 @@ STKUNIT_UNIT_TEST( UnitTestRange, range )
   IntRange c_range(array.begin(),array.end() );
   IntRange d_range(array);
 
-  STKUNIT_EXPECT_EQ( a_range, b_range );
-  STKUNIT_EXPECT_EQ( a_range, c_range );
-  STKUNIT_EXPECT_EQ( a_range, d_range );
+  EXPECT_EQ( a_range, b_range );
+  EXPECT_EQ( a_range, c_range );
+  EXPECT_EQ( a_range, d_range );
 
   stk_foreach( int & i, a_range)
   {
-    STKUNIT_EXPECT_EQ( i, 0 );
+    EXPECT_EQ( i, 0 );
     i = 1;
   }
 
   stk_foreach( int i, c_range)
   {
-    STKUNIT_EXPECT_EQ( i, 1 );
+    EXPECT_EQ( i, 1 );
   }
 
-  STKUNIT_EXPECT_TRUE( a_range == array);
+  EXPECT_TRUE( a_range == array);
 
 }
 

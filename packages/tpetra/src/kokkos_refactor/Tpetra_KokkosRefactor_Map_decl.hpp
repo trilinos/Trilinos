@@ -77,7 +77,7 @@ namespace Tpetra {
   /// matrix (as in CrsMatrix), or a row of one or more vectors (as in
   /// MultiVector).
   ///
-  /// \section Tpetra_Map_prereq Prerequisites
+  /// \section Tpetra_KR_Map_prereq Prerequisites
   ///
   /// Before reading the rest of this documentation, it helps to know
   /// something about the Teuchos memory management classes, in
@@ -88,9 +88,9 @@ namespace Tpetra {
   /// directly to use Map, but it helps to be familiar with the
   /// general idea of distributed storage of data over a communicator.
   ///
-  /// \section Tpetra_Map_concepts Map concepts
+  /// \section Tpetra_KR_Map_concepts Map concepts
   ///
-  /// \subsection Tpetra_Map_local_vs_global Local and global indices
+  /// \subsection Tpetra_KR_Map_local_vs_global Local and global indices
   ///
   /// The distinction between local and global indices and types might
   /// confuse new Tpetra users.  <i>Global</i> indices represent the
@@ -116,7 +116,7 @@ namespace Tpetra {
   /// 32-bit integer \c LocalOrdinal type to save bandwidth in sparse
   /// matrix-vector multiply.
   ///
-  /// \subsection Tpetra_Map_contig Contiguous or noncontiguous
+  /// \subsection Tpetra_KR_Map_contig Contiguous or noncontiguous
   ///
   /// A <i>contiguous</i> Map divides an interval of global indices
   /// over the processes in its communicator, such that each process
@@ -152,7 +152,7 @@ namespace Tpetra {
   /// Map setup time).  Contiguous Maps also can convert between
   /// global and local indices more efficiently.
   ///
-  /// \subsection Tpetra_Map_dist_repl Globally distributed or locally replicated
+  /// \subsection Tpetra_KR_Map_dist_repl Globally distributed or locally replicated
   ///
   /// <i>Globally distributed</i> means that <i>all</i> of the
   /// following are true:
@@ -179,7 +179,7 @@ namespace Tpetra {
   /// by all images.  Replicated local objects handle these
   /// situations.
   ///
-  /// \section Tpetra_Map_dev Host and device views
+  /// \section Tpetra_KR_Map_dev Host and device views
   ///
   /// Like all Tpetra objects that use the new Kokkos back-end, Map
   /// has "dual view" semantics.  This means that the data live in the

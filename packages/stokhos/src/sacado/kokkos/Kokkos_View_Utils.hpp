@@ -46,6 +46,16 @@ namespace Kokkos {
 
 namespace Impl {
 
+KOKKOS_INLINE_FUNCTION
+void raise_error(const char *msg)
+{
+#if defined(__CUDACC__) && defined(__CUDA_ARCH__)
+  cuda_abort(msg);
+#else
+  throw std::runtime_error(msg);
+#endif
+}
+
 template< class T , class Device > struct RebindStokhosStorageDevice ;
 
 template< class T , class Device >

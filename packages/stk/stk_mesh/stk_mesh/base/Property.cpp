@@ -10,14 +10,17 @@
  * @author H. Carter Edwards
  */
 
-#include <string.h>
-#include <stdexcept>
-#include <iostream>
-#include <sstream>
-#include <algorithm>
+#include <string.h>                     // for NULL
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_util/util/string_case_compare.hpp>  // for not_equal_case
+#include <string>                       // for operator<<, string
+#include <typeinfo>                     // for type_info
+#include <vector>                       // for vector, etc
+#include "stk_mesh/base/PropertyBase.hpp"  // for Property
+#include "stk_mesh/base/Types.hpp"      // for PropertyBase
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowErrorMsgIf
 
-#include <stk_util/util/string_case_compare.hpp>
-#include <stk_mesh/base/MetaData.hpp>
 
 namespace stk {
 namespace mesh {

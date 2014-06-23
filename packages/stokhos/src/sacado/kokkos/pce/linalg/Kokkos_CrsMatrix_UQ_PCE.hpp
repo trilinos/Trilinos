@@ -167,7 +167,7 @@ public:
     else
       for ( size_type j = 0 ; j < m_tensor.dimension() ; ++j )
         y[j] = m_b * y[j] ;
-
+    //loop over cols of A 
     for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
       const input_scalar * const x  = & m_x( 0 , m_A_graph.entries(iEntry) );
       const matrix_scalar * const A = & m_A_values( iEntry , 0 );
@@ -926,6 +926,245 @@ public:
   }
 };
 
+// Kernel implementing y = A * x where PCE size of A is 1
+//   A == Kokkos::CrsMatrix< Sacado::UQ::PCE<...>,...>, with A.values.sacado_size() == 1 
+//   x, y == Kokkos::View< Sacado::UQ::PCE<...>*,...>,
+//   x and y are rank 1
+template <int BlockSize,
+          typename Device,
+          typename MatrixStorage,
+          typename MatrixOrdinal,
+          typename MatrixMemory,
+          typename MatrixSize,
+          typename InputStorage,
+          typename InputMemory,
+          typename OutputStorage,
+          typename OutputMemory>
+
+class MeanMultiplyRank1
+{
+public:
+  typedef Sacado::UQ::PCE<MatrixStorage> MatrixValue;
+  typedef Sacado::UQ::PCE<InputStorage> InputVectorValue;
+  typedef Sacado::UQ::PCE<OutputStorage> OutputVectorValue;
+
+  typedef Device device_type;
+  typedef Kokkos::CrsMatrix< MatrixValue,
+                             MatrixOrdinal,
+                             Device,
+                             MatrixMemory,
+                             MatrixSize> matrix_type;
+  typedef typename matrix_type::values_type matrix_values_type;
+  typedef typename MatrixValue::ordinal_type size_type;
+  typedef Kokkos::View< InputVectorValue*,
+                        Kokkos::LayoutLeft,
+                        Device,
+                        InputMemory > input_vector_type;
+  typedef Kokkos::View< OutputVectorValue*,
+                        Kokkos::LayoutLeft,
+                        Device,
+                        OutputMemory > output_vector_type;
+
+private:
+
+  typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
+  typedef typename MatrixValue::value_type matrix_scalar;
+  typedef typename InputVectorValue::value_type input_scalar;
+  typedef typename OutputVectorValue::value_type output_scalar;
+
+  const matrix_values_type  m_A_values ;
+  const matrix_graph_type   m_A_graph ;
+  const output_vector_type  v_y ;
+  const input_vector_type   v_x ;
+  const input_scalar        m_a ;
+  const output_scalar       m_b ;
+
+
+  MeanMultiplyRank1( const matrix_type &        A ,
+            const input_vector_type &  x ,
+            const output_vector_type & y ,
+            const input_scalar & a ,
+            const output_scalar & b )
+  : m_A_values( A.values )
+  , m_A_graph( A.graph )
+  , v_y( y )
+  , v_x( x )
+  , m_a( a )
+  , m_b( b )
+  {}
+
+public:
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type iBlockRow ) const
+  {
+    const size_type dim = v_x.sacado_size();
+    const size_type iEntryBegin = m_A_graph.row_map[ iBlockRow ];
+    const size_type iEntryEnd   = m_A_graph.row_map[ iBlockRow + 1 ];
+    const size_type numBlocks = dim / BlockSize;
+    for ( size_type pce_block = 0; pce_block <  numBlocks ; ++pce_block){
+      double s[BlockSize] = {};
+      for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
+        const matrix_scalar aA = m_a*m_A_values(iEntry).fastAccessCoeff(0);
+        const size_type col = m_A_graph.entries(iEntry);
+        for (size_type k = 0 ; k < BlockSize; ++k)
+          s[k] += aA*v_x(col).fastAccessCoeff(k+pce_block*BlockSize);
+      }
+      for (size_type k = 0; k < BlockSize; ++k){
+        const size_type i = k+pce_block*BlockSize;
+        v_y(iBlockRow).fastAccessCoeff(i) = s[k] + m_b*v_y(iBlockRow).fastAccessCoeff(i);
+      }
+    }
+
+    //Remaining coeffs 
+    const size_type rem = dim % BlockSize;
+    if (rem > 0){
+      double s[BlockSize] = {};
+      const size_type i = dim - rem;
+      for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
+        const matrix_scalar aA = m_a*m_A_values(iEntry).fastAccessCoeff(0);
+        const size_type col = m_A_graph.entries(iEntry);
+        for (size_type k = 0 ; k < rem; ++k)
+          s[k] += aA*v_x(col).fastAccessCoeff(k+i);
+      }
+      for (size_type k = 0; k < rem; ++k){
+        const size_type j = k + i;
+        v_y(iBlockRow).fastAccessCoeff(j) = s[k] + m_b*v_y(iBlockRow).fastAccessCoeff(j);
+      }
+    }
+
+  }
+  static void apply( const matrix_type & A ,
+                     const input_vector_type & x ,
+                     const output_vector_type & y ,
+                     const input_scalar & a = input_scalar(1) ,
+                     const output_scalar & b = output_scalar(0) )
+  {
+    const size_t row_count = A.graph.row_map.dimension_0() -1 ;
+      Kokkos::parallel_for( row_count , MeanMultiplyRank1(A,x,y,a,b) );
+    
+  }
+};
+
+// Kernel implementing y = A * x where A has PCE size = 1
+//   A == Kokkos::CrsMatrix< Sacado::UQ::PCE<...>,...>,
+//   x, y == Kokkos::View< Sacado::UQ::PCE<...>**,...>,
+//   x and y are rank 2
+template <int BlockSize,
+          typename Device,
+          typename MatrixStorage,
+          typename MatrixOrdinal,
+          typename MatrixMemory,
+          typename MatrixSize,
+          typename InputStorage,
+          typename InputMemory,
+          typename OutputStorage,
+          typename OutputMemory>
+
+class MeanMultiplyRank2 
+{
+public:
+  typedef Sacado::UQ::PCE<MatrixStorage> MatrixValue;
+  typedef Sacado::UQ::PCE<InputStorage> InputVectorValue;
+  typedef Sacado::UQ::PCE<OutputStorage> OutputVectorValue;
+
+  typedef Device device_type;
+
+  typedef Kokkos::CrsMatrix< MatrixValue,
+                             MatrixOrdinal,
+                             Device,
+                             MatrixMemory,
+                             MatrixSize> matrix_type;
+  typedef typename matrix_type::values_type matrix_values_type;
+  typedef typename MatrixValue::ordinal_type size_type;
+  typedef Kokkos::View< InputVectorValue**,
+                        Kokkos::LayoutLeft,
+                        Device,
+                        InputMemory > input_vector_type;
+  typedef Kokkos::View< OutputVectorValue**,
+                        Kokkos::LayoutLeft,
+                        Device,
+                        OutputMemory > output_vector_type;
+  typedef typename MatrixValue::value_type matrix_scalar;
+private:
+
+  typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
+  typedef typename InputVectorValue::value_type input_scalar;
+  typedef typename OutputVectorValue::value_type output_scalar;
+
+  const matrix_values_type  m_A_values ;
+  const matrix_graph_type   m_A_graph ;
+  const input_vector_type   v_x ;
+  const output_vector_type  v_y ;
+  const input_scalar        m_a ;
+  const output_scalar       m_b ;
+
+  MeanMultiplyRank2( const matrix_type &        A ,
+            const input_vector_type &  x ,
+            const output_vector_type & y ,
+            const input_scalar & a ,
+            const output_scalar & b )
+  : m_A_values( A.values )
+  , m_A_graph( A.graph )
+  , v_x( x )
+  , v_y( y )
+  , m_a( a )
+  , m_b( b )
+  {}
+
+public:
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type iBlockRow ) const
+  {
+    const size_type iEntryBegin = m_A_graph.row_map[ iBlockRow ];
+    const size_type iEntryEnd   = m_A_graph.row_map[ iBlockRow + 1 ];
+    const size_type num_col = v_y.dimension_1();
+    const size_type dim = v_y.sacado_size();
+    const size_type numBlocks = dim / BlockSize;
+    for (size_type x_col=0; x_col<num_col; ++x_col) {
+      for ( size_type pce_block = 0; pce_block <  numBlocks ; ++pce_block){
+        output_scalar s[BlockSize] = {};
+        for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
+          const size_type A_col = m_A_graph.entries(iEntry);
+          const matrix_scalar aA = m_a*m_A_values(iEntry).fastAccessCoeff(0);
+
+          for (size_type k = 0; k < BlockSize; ++k)
+            s[k] += aA * v_x(A_col,x_col).fastAccessCoeff(k+pce_block*BlockSize);
+        }
+        for (size_type k = 0; k < BlockSize; ++k){
+          const size_type i = k+pce_block*BlockSize;
+          v_y(iBlockRow,x_col).fastAccessCoeff(i) = s[k] + m_b*v_y(iBlockRow,x_col).fastAccessCoeff(i);
+        }
+      }
+
+      //Remaining coeffs
+      const size_type rem = dim % BlockSize;
+      if (rem > 0){
+        double s[BlockSize] = {};
+        size_type i = dim - rem;
+        for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
+          const matrix_scalar aA = m_a*m_A_values(iEntry).fastAccessCoeff(0);
+          const size_type A_col = m_A_graph.entries(iEntry);
+          for (size_type k = 0 ; k < rem; ++k)
+            s[k] += aA*v_x(A_col,x_col).fastAccessCoeff(k+i);
+        }
+        for (size_type k = 0; k < rem; ++k){
+          const size_type j = k + i;
+          v_y(iBlockRow, x_col).fastAccessCoeff(j) = s[k] + m_b*v_y(iBlockRow,x_col).fastAccessCoeff(j);
+        }
+      }
+    }
+  }
+  static void apply( const matrix_type & A ,
+                     const input_vector_type & x ,
+                     const output_vector_type & y ,
+                     const input_scalar & a = input_scalar(1) ,
+                     const output_scalar & b = output_scalar(0) )
+  {
+    const size_t row_count = A.graph.row_map.dimension_0() - 1 ;
+    Kokkos::parallel_for( row_count , MeanMultiplyRank2(A,x,y,a,b) );
+  }
+};
+
 } // namespace Stokhos
 
 namespace Kokkos {
@@ -966,7 +1205,14 @@ MV_Multiply(
     InputLayout, Device, InputMemory > InputVectorType;
   typedef Stokhos::Multiply<MatrixType,InputVectorType,
     OutputVectorType> multiply_type;
-  multiply_type::apply( A, x, y );
+
+  if (A.values.sacado_size() == 1 && x.sacado_size() != 1){
+    const int BlockSize = 32;
+    typedef Stokhos::MeanMultiplyRank1<BlockSize, Device, MatrixStorage, MatrixOrdinal, MatrixMemory, MatrixSize, InputStorage, InputMemory, OutputStorage,OutputMemory> mean_multiply_type;
+    mean_multiply_type::apply( A, x, y );
+  }
+  else
+    multiply_type::apply( A, x, y );
 }
 
 template <typename Device,
@@ -1006,12 +1252,17 @@ MV_Multiply(
   typedef Stokhos::Multiply<MatrixType,InputVectorType,
     OutputVectorType> multiply_type;
 
-  if (!Impl::is_pce_constant(a)) {
-    Impl::raise_sacado_error(
+  if (!Sacado::is_constant(a)) {
+    Impl::raise_error(
       "MV_Multiply not implemented for non-constant a");
   }
-
-  multiply_type::apply( A, x, y, a.fastAccessCoeff(0) );
+  if (A.values.sacado_size() == 1 && x.sacado_size() != 1){
+    const int BlockSize = 32;
+    typedef Stokhos::MeanMultiplyRank1<BlockSize, Device, MatrixStorage, MatrixOrdinal, MatrixMemory, MatrixSize, InputStorage, InputMemory, OutputStorage,OutputMemory> mean_multiply_type;
+    mean_multiply_type::apply( A, x, y, a.fastAccessCoeff(0));
+  }
+  else
+    multiply_type::apply( A, x, y, a.fastAccessCoeff(0) );
 }
 
 template <typename Device,
@@ -1052,12 +1303,17 @@ MV_Multiply(
   typedef Stokhos::Multiply<MatrixType,InputVectorType,
     OutputVectorType> multiply_type;
 
-  if (!Impl::is_pce_constant(a) || !Impl::is_pce_constant(b)) {
-    Impl::raise_sacado_error(
+  if (!Sacado::is_constant(a) || !Sacado::is_constant(b)) {
+    Impl::raise_error(
       "MV_Multiply not implemented for non-constant a or b");
   }
-
-  multiply_type::apply( A, x, y, a.fastAccessCoeff(0), b.fastAccessCoeff(0) );
+  if (A.values.sacado_size() == 1 && x.sacado_size() != 1){
+    const int BlockSize = 32;
+    typedef Stokhos::MeanMultiplyRank1<BlockSize, Device, MatrixStorage, MatrixOrdinal, MatrixMemory, MatrixSize, InputStorage, InputMemory, OutputStorage,OutputMemory> mean_multiply_type;
+    mean_multiply_type::apply( A, x, y, a.fastAccessCoeff(0), b.fastAccessCoeff(0) );
+  }
+  else
+    multiply_type::apply( A, x, y, a.fastAccessCoeff(0), b.fastAccessCoeff(0) );
 }
 
 template <typename Device,
@@ -1105,7 +1361,13 @@ MV_Multiply(
       InputLayout, Device, InputMemory > InputVectorType;
     typedef Stokhos::Multiply<MatrixType,InputVectorType,
       OutputVectorType> multiply_type;
-    multiply_type::apply( A, x, y );
+    if (A.values.sacado_size() == 1 && x.sacado_size() != 1){
+      const int BlockSize = 32;
+      typedef Stokhos::MeanMultiplyRank2<BlockSize, Device, MatrixStorage, MatrixOrdinal, MatrixMemory, MatrixSize, InputStorage, InputMemory, OutputStorage,OutputMemory> mean_multiply_type;
+      mean_multiply_type::apply( A, x, y );
+    }
+    else
+      multiply_type::apply( A, x, y );
   }
 }
 
@@ -1156,12 +1418,18 @@ MV_Multiply(
     typedef Stokhos::Multiply<MatrixType,InputVectorType,
       OutputVectorType> multiply_type;
 
-    if (!Impl::is_pce_constant(a)) {
-      Impl::raise_sacado_error(
+    if (!Sacado::is_constant(a)) {
+      Impl::raise_error(
         "MV_Multiply not implemented for non-constant a");
     }
+    if (A.values.sacado_size() == 1 && x.sacado_size() != 1){
+      const int BlockSize = 32;
+      typedef Stokhos::MeanMultiplyRank2<BlockSize, Device, MatrixStorage, MatrixOrdinal, MatrixMemory, MatrixSize, InputStorage, InputMemory, OutputStorage,OutputMemory> mean_multiply_type;
 
-    multiply_type::apply( A, x, y, a.fastAccessCoeff(0) );
+      mean_multiply_type::apply( A, x, y, a.fastAccessCoeff(0) );
+    }
+    else
+      multiply_type::apply( A, x, y, a.fastAccessCoeff(0) );
   }
 }
 
@@ -1213,12 +1481,17 @@ MV_Multiply(
     typedef Stokhos::Multiply<MatrixType,InputVectorType,
       OutputVectorType> multiply_type;
 
-    if (!Impl::is_pce_constant(a) || !Impl::is_pce_constant(b)) {
-      Impl::raise_sacado_error(
+    if (!Sacado::is_constant(a) || !Sacado::is_constant(b)) {
+      Impl::raise_error(
         "MV_Multiply not implemented for non-constant a or b");
     }
-
-    multiply_type::apply( A, x, y, a.fastAccessCoeff(0), b.fastAccessCoeff(0) );
+    if (A.values.sacado_size() == 1 && x.sacado_size() != 1){
+      const int BlockSize = 32;
+      typedef Stokhos::MeanMultiplyRank2<BlockSize, Device, MatrixStorage, MatrixOrdinal, MatrixMemory, MatrixSize, InputStorage, InputMemory, OutputStorage,OutputMemory> mean_multiply_type;
+      mean_multiply_type::apply( A, x, y, a.fastAccessCoeff(0), b.fastAccessCoeff(0) );
+     }
+    else
+      multiply_type::apply( A, x, y, a.fastAccessCoeff(0), b.fastAccessCoeff(0) );
   }
 }
 

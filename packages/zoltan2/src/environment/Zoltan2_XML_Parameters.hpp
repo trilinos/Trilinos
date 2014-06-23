@@ -394,6 +394,7 @@
         <String value=\"block\"/> \
         <String value=\"cyclic\"/> \
         <String value=\"random\"/> \
+        <String value=\"wolf\"/> \
       </Validator> \
       <Validator defaultParameterName=\"rectilinear_blocks\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"26\"> \
         <String integralValue=\"1\" stringValue=\"true\"/> \

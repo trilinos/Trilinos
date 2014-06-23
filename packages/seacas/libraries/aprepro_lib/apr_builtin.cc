@@ -7,7 +7,11 @@
 #include <ctime>
 #include <cstdio>
 #include <sys/stat.h>
-#include <unistd.h>
+#ifdef _WIN32
+  #include <io.h>
+#else
+  #include <unistd.h>
+#endif
 #include <cstring>
 #include <assert.h>
 #include "aprepro.h"

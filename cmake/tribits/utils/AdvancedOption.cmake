@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -37,7 +37,21 @@
 # ************************************************************************
 # @HEADER
 
-
+#
+# @MACRO: ADVANCED_OPTION()
+#
+# Macro that sets an option and marks it as advanced (removes boiler-plate and
+# duplication).
+#
+# Usage::
+#
+#   ADVANCED_OPTION(<varName> [other arguments])
+#
+# This just calls the built-in CMake commands::
+#
+#   OPTION(<varName> [other arguments])
+#   MARK_AS_ADVANCED(<varName>)
+# 
 MACRO(ADVANCED_OPTION VARNAME)
   OPTION(${VARNAME} ${ARGN})
   MARK_AS_ADVANCED(${VARNAME})

@@ -79,7 +79,8 @@ namespace MueLu {
   RCP<const ParameterList> BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set< RCP<const FactoryBase> >("A", Teuchos::null, "Generating factory of the matrix A (block matrix)");
+    validParamList->set< RCP<const FactoryBase> >("A",          null, "Generating factory of the matrix A (block matrix)");
+    validParamList->set< bool >                  ("backwards", false, "Forward/backward order");
 
     return validParamList;
   }
@@ -87,19 +88,22 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
     Input(fineLevel, "A");
-    //fineLevel.DeclareInput("A",AFact_.get(),this);
 
-    //Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
+    const ParameterList& pL = GetParameterList();
+    const bool backwards = pL.get<bool>("backwards");
 
-    std::vector<Teuchos::RCP<const FactoryManagerBase> >::const_iterator it;
-    for(it = FactManager_.begin(); it!=FactManager_.end(); ++it) {
-      SetFactoryManager fineSFM  (rcpFromRef(fineLevel),   *it);
-      SetFactoryManager coarseSFM(rcpFromRef(coarseLevel), *it);
+    const int numFactManagers = FactManager_.size();
+    for (int k = 0; k < numFactManagers; k++) {
+      int i = (backwards ? numFactManagers-1 - k : k);
+      const RCP<const FactoryManagerBase>& factManager = FactManager_[i];
+
+      SetFactoryManager fineSFM  (rcpFromRef(fineLevel),   factManager);
+      SetFactoryManager coarseSFM(rcpFromRef(coarseLevel), factManager);
 
       if (!restrictionMode_)
-        coarseLevel.DeclareInput("P",(*it)->GetFactory("P").get(), this);
+        coarseLevel.DeclareInput("P", factManager->GetFactory("P").get(), this);
       else
-        coarseLevel.DeclareInput("R",(*it)->GetFactory("R").get(), this);
+        coarseLevel.DeclareInput("R", factManager->GetFactory("R").get(), this);
     }
 
   }
@@ -115,59 +119,56 @@ namespace MueLu {
     RCP<BlockedCrsMatrix> A = rcp_dynamic_cast<BlockedCrsMatrix>(Ain);
     TEUCHOS_TEST_FOR_EXCEPTION(A.is_null(), Exceptions::BadCast, "Input matrix A is not a BlockedCrsMatrix.");
 
+    const int numFactManagers = FactManager_.size();
+
     // Plausibility check
-    TEUCHOS_TEST_FOR_EXCEPTION(A->Rows() != FactManager_.size(), Exceptions::RuntimeError,
-                               "Number of block rows [" << A->Rows() << "] does not match the number of SubFactorManagers [" << FactManager_.size() << "]");
-    TEUCHOS_TEST_FOR_EXCEPTION(A->Cols() != FactManager_.size(), Exceptions::RuntimeError,
-                               "Number of block cols [" << A->Cols() << "] does not match the number of SubFactorManagers [" << FactManager_.size() << "]");
+    TEUCHOS_TEST_FOR_EXCEPTION(A->Rows() != as<size_t>(numFactManagers), Exceptions::RuntimeError,
+                               "Number of block rows [" << A->Rows() << "] does not match the number of SubFactorManagers [" << numFactManagers << "]");
+    TEUCHOS_TEST_FOR_EXCEPTION(A->Cols() != as<size_t>(numFactManagers), Exceptions::RuntimeError,
+                               "Number of block cols [" << A->Cols() << "] does not match the number of SubFactorManagers [" << numFactManagers << "]");
+
 
     // Build blocked prolongator
-    std::vector<RCP<Matrix> >     subBlockP;
-    std::vector<RCP<const Map> >  subBlockPRangeMaps;
-    std::vector<RCP<const Map> >  subBlockPDomainMaps;
-    subBlockP          .reserve(FactManager_.size());       // reserve size for block P operators
-    subBlockPRangeMaps .reserve(FactManager_.size());       // reserve size for block P operators
-    subBlockPDomainMaps.reserve(FactManager_.size());       // reserve size for block P operators
+    std::vector<RCP<Matrix> >     subBlockP          (numFactManagers);
+    std::vector<RCP<const Map> >  subBlockPRangeMaps (numFactManagers);
+    std::vector<RCP<const Map> >  subBlockPDomainMaps(numFactManagers);
 
     std::vector<GO> fullRangeMapVector;
     std::vector<GO> fullDomainMapVector;
 
+    const ParameterList& pL = GetParameterList();
+    const bool backwards = pL.get<bool>("backwards");
+
     // Build and store the subblocks and the corresponding range and domain
     // maps.  Since we put together the full range and domain map from the
     // submaps, we do not have to use the maps from blocked A
-    std::vector<RCP<const FactoryManagerBase> >::const_iterator it;
-    for (it = FactManager_.begin(); it != FactManager_.end(); ++it) {
-      SetFactoryManager fineSFM  (rcpFromRef(fineLevel),   *it);
-      SetFactoryManager coarseSFM(rcpFromRef(coarseLevel), *it);
+    for (int k = 0; k < numFactManagers; k++) {
+      int i = (backwards ? numFactManagers-1 - k : k);
+      const RCP<const FactoryManagerBase>& factManager = FactManager_[i];
 
-      if (!restrictionMode_) {
-        RCP<Matrix> P = coarseLevel.Get<RCP<Matrix> >("P", (*it)->GetFactory("P").get());
-        subBlockP.push_back(P);
+      SetFactoryManager fineSFM  (rcpFromRef(fineLevel),   factManager);
+      SetFactoryManager coarseSFM(rcpFromRef(coarseLevel), factManager);
 
-      } else {
-        RCP<Matrix> R = coarseLevel.Get<RCP<Matrix> >("R", (*it)->GetFactory("R").get());
-        subBlockP.push_back(R); // create and return block R operator
-      }
+      if (!restrictionMode_) subBlockP[i] = coarseLevel.Get<RCP<Matrix> >("P", factManager->GetFactory("P").get());
+      else                   subBlockP[i] = coarseLevel.Get<RCP<Matrix> >("R", factManager->GetFactory("R").get());
 
       // Check if prolongator/restrictor operators have strided maps
-      TEUCHOS_TEST_FOR_EXCEPTION(subBlockP.back()->IsView("stridedMaps") == false, Exceptions::BadCast,
-                                 "subBlock P operator [" << it - FactManager_.begin() << "] has no strided map information.");
+      TEUCHOS_TEST_FOR_EXCEPTION(subBlockP[i]->IsView("stridedMaps") == false, Exceptions::BadCast,
+                                 "subBlock P operator [" << i << "] has no strided map information.");
 
       // Append strided row map (= range map) to list of range maps.
-      RCP<const Map> rangeMap = subBlockP.back()->getRowMap("stridedMaps"); // getRangeMap();
-      subBlockPRangeMaps.push_back(rangeMap);
+      subBlockPRangeMaps[i] = subBlockP[i]->getRowMap("stridedMaps");
 
       // Use plain range map to determine the DOF ids
-      ArrayView<const GO> nodeRangeMap = rangeMap->getNodeElementList(); // subBlockPRangeMaps.back()->getNodeElementList();
+      ArrayView<const GO> nodeRangeMap = subBlockPRangeMaps[i]->getNodeElementList();
       fullRangeMapVector.insert(fullRangeMapVector.end(), nodeRangeMap.begin(), nodeRangeMap.end());
       sort(fullRangeMapVector.begin(), fullRangeMapVector.end());
 
       // Append strided col map (= domain map) to list of range maps.
-      RCP<const Map> domainMap = subBlockP.back()->getColMap("stridedMaps"); // getDomainMap();
-      subBlockPDomainMaps.push_back(domainMap);
+      subBlockPDomainMaps[i] = subBlockP[i]->getColMap("stridedMaps");
 
       // Use plain domain map to determine the DOF ids
-      ArrayView<const GO> nodeDomainMap = domainMap->getNodeElementList(); // subBlockPDomainMaps.back()->getNodeElementList();
+      ArrayView<const GO> nodeDomainMap = subBlockPDomainMaps[i]->getNodeElementList();
       fullDomainMapVector.insert(fullDomainMapVector.end(), nodeDomainMap.begin(), nodeDomainMap.end());
       sort(fullDomainMapVector.begin(), fullDomainMapVector.end());
     }
@@ -177,7 +178,7 @@ namespace MueLu {
     GO domainIndexBase = 0;
     if (!restrictionMode_) {
       // Prolongation mode: just use index base of range and domain map of A
-      rangeIndexBase  = A->getRangeMap()->getIndexBase();
+      rangeIndexBase  = A->getRangeMap() ->getIndexBase();
       domainIndexBase = A->getDomainMap()->getIndexBase();
 
     } else {

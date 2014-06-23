@@ -566,7 +566,18 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
       alg_mj.partition( this->envConst_, problemComm_,
          this->coordinateModel_, solution_);
     }
-    else{
+    else if (algorithm_ == std::string("wolf"))
+    {
+      AlgWolf<Adapter> alg_wolf(this->envConst_, problemComm_,this->graphModel_,
+				this->coordinateModel_);
+
+      // need to add coordModel, make sure this is built
+
+      alg_wolf.partition(solution_);
+
+    }
+    else
+    {
       throw std::logic_error("partitioning algorithm not supported yet");
     }
   }
@@ -728,9 +739,10 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   ///////////////////////////////////////////////////////////////////
   // Determine algorithm, model, and algorithm requirements.  This
   // is a first pass.  Feel free to change this and add to it.
-  
+
   if (algorithm != defString)
   {
+
     // Figure out the model required by the algorithm
     if (algorithm == std::string("block") ||
         algorithm == std::string("random") ||
@@ -778,6 +790,12 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       }
       algorithm_ = algorithm;
       needConsecutiveGlobalIds = true;
+    }
+    else if (algorithm == std::string("wolf"))
+    {
+      modelAvail_[GraphModelType]=true;
+      modelAvail_[CoordinateModelType]=true;
+      algorithm_ = algorithm;
     }
     else
     {

@@ -74,17 +74,17 @@ struct FibChild : public Kokkos::task_serial<Device,long> {
       else {
         if ( has_nested ) {
 #if 1
-          const Kokkos::Future<Device,long> fib_1 = Kokkos::task_dependence(this,0);
-          const Kokkos::Future<Device,long> fib_2 = Kokkos::task_dependence(this,1);
+          const Kokkos::Future<long,Device> fib_1 = Kokkos::task_dependence(this,0);
+          const Kokkos::Future<long,Device> fib_2 = Kokkos::task_dependence(this,1);
 #else
-          const Kokkos::Future<Device,long> fib_1 = fib_task_pool.dependence(this,0);
-          const Kokkos::Future<Device,long> fib_2 = fib_task_pool.dependence(this,1);
+          const Kokkos::Future<long,Device> fib_1 = fib_task_pool.dependence(this,0);
+          const Kokkos::Future<long,Device> fib_2 = fib_task_pool.dependence(this,1);
 #endif
 
           result = fib_1.get() + fib_2.get();
         }
         else {
-          Kokkos::Future<Device,long> nested[2] ;
+          Kokkos::Future<long,Device> nested[2] ;
           // Spawn new children and respawn myself to sum their results:
           has_nested = 1 ;
 #if 1
@@ -113,7 +113,7 @@ struct FibChild2 : public Kokkos::task_serial<Device,long> {
   void apply( long & result )
     {
       if ( ! nested ) {
-        Kokkos::Future<Device,long> nest[2] ;
+        Kokkos::Future<long,Device> nest[2] ;
         if ( n < 2 ) {
           result = n ;
         }
@@ -138,8 +138,8 @@ struct FibChild2 : public Kokkos::task_serial<Device,long> {
         }
      }
      else {
-        const Kokkos::Future<Device,long> fib_a = Kokkos::task_dependence(this,0);
-        const Kokkos::Future<Device,long> fib_b = Kokkos::task_dependence(this,1);
+        const Kokkos::Future<long,Device> fib_a = Kokkos::task_dependence(this,0);
+        const Kokkos::Future<long,Device> fib_b = Kokkos::task_dependence(this,1);
 
         result = ( nested == 2 ) ? fib_a.get() + fib_b.get()
                                  : 3 * fib_a.get() + 2 * fib_b.get() ;
@@ -155,7 +155,7 @@ long eval_fib( long n )
 template< class Device >
 void test_fib( long n )
 {
-  Kokkos::Future<Device,long> f = Kokkos::spawn( FibChild<Device>(n) );
+  Kokkos::Future<long,Device> f = Kokkos::spawn( FibChild<Device>(n) );
 
   Kokkos::wait( f );
 
@@ -169,7 +169,7 @@ void test_fib( long n )
 template< class Device >
 void test_fib2( long n )
 {
-  Kokkos::Future<Device,long> f = Kokkos::spawn( FibChild2<Device>(n) );
+  Kokkos::Future<long,Device> f = Kokkos::spawn( FibChild2<Device>(n) );
 
   Kokkos::wait( f );
 
@@ -201,12 +201,12 @@ void test_norm2( const int n )
 
   for ( int i = 0 ; i < n ; ++i ) x[i] = 1 ;
 
-  Kokkos::Future<Device,double> f = Kokkos::spawn( Norm2<Device>(n,x) );
+  Kokkos::Future<double,Device> f = Kokkos::spawn( Norm2<Device>(n,x) );
 
 #if 0
 
-  Kokkos::Future<Device,double> f =
-    Kokkos::spawn< Kokkos::task_reduce<Device,double,size_t> >
+  Kokkos::Future<double,Device> f =
+    Kokkos::spawn< Kokkos::task_reduce<double,Device,size_t> >
       ( n
       , [=]( int i , double & val ) { val += x[i] * x[i] ; } /* data parallel operator */
       , []( double & val ) { val = std::sqrt( val ); }       /* task serial operator */
