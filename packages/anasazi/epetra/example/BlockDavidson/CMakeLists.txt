@@ -1,5 +1,15 @@
 INCLUDE(TribitsAddExecutableAndTest)
 
+
+IF (${PACKAGE_NAME}_ENABLE_Galeri)
+  TRIBITS_ADD_EXECUTABLE(
+    BlockDavidsonEpetra
+    SOURCES BlockDavidsonEpetra.cpp
+    COMM serial mpi
+  )
+ENDIF ()
+
+
 TRIBITS_ADD_EXECUTABLE(
   Epetra_BD_example
   SOURCES BlockDavidsonEpetraEx.cpp

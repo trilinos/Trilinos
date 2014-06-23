@@ -281,11 +281,11 @@ main (int argc, char *argv[])
   // Set parameters for the block Krylov-Schur eigensolver
   //
 
-  double tol = 1.0e-8;
-  int nev = 10;
-  int blockSize = 3;
-  int numBlocks = 3 * nev / blockSize;
-  int maxRestarts = 5;
+  double tol = 1.0e-8; // convergence tolerance
+  int nev = 10; // number of eigenvalues for which to solve
+  int blockSize = 3; // block size (number of eigenvectors processed at once)
+  int numBlocks = 3 * nev / blockSize; // restart length
+  int maxRestarts = 5; // maximum number of restart cycles
 
   // We're looking for the largest-magnitude eigenvalues of the
   // _inverse_ operator, thus, the smallest-magnitude eigenvalues of
@@ -305,7 +305,7 @@ main (int argc, char *argv[])
   // Create an initial set of vectors to start the eigensolver.  Note:
   // This needs to have the same number of columns as the block size.
   RCP<MV> ivec = rcp (new MV (K->Map (), blockSize));
-  MVT::MvRandom (*ivec);
+  ivec->Random ();
 
   // Create the Epetra_Operator for the spectral transformation using
   // the Amesos direct solver.
@@ -319,8 +319,8 @@ main (int argc, char *argv[])
   // defined by M (since it is symmetric positive definite).
   RCP<AmesosGenOp> Aop = rcp (new AmesosGenOp (AmesosSolver, M));
 
-  // This object holds all the stuff about your problem that Anasazi
-  // will see.
+  // Create the eigenproblem.  This object holds all the stuff about
+  // your problem that Anasazi will see.
   //
   // Anasazi only needs M so that it can orthogonalize basis vectors
   // with respect to the M inner product.  Wouldn't it be nice if
@@ -339,7 +339,7 @@ main (int argc, char *argv[])
   const bool boolret = MyProblem->setProblem ();
   if (boolret != true) {
     if (MyPID == 0) {
-      std::cerr << "Anasazi::BasicEigenproblem::setProblem() returned with error." << endl;
+      cerr << "Anasazi::BasicEigenproblem::setProblem() returned with error." << endl;
     }
 #ifdef EPETRA_MPI
     MPI_Finalize ();
@@ -358,7 +358,7 @@ main (int argc, char *argv[])
   // you reuse intermediate state, like allocated basis vectors.
   Anasazi::ReturnType returnCode = MySolverMgr.solve ();
   if (returnCode != Anasazi::Converged && MyPID == 0) {
-    cout << "Anasazi::EigensolverMgr::solve() returned unconverged." << endl;
+    cout << "Anasazi eigensolver did not converge." << endl;
   }
 
   // Get the eigenvalues and eigenvectors from the eigenproblem.
