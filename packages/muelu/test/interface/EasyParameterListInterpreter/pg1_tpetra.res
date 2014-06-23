@@ -7,6 +7,7 @@ number of equations = 1   [default]
 transpose: use implicit = 0   [default]
 smoother: pre or post = both   [default]
 aggregation: type = uncoupled   [default]
+problem: symmetric = 1   [default]
 aggregation: visualize = 0   [default]
 repartition: enable = 0   [default]
 
@@ -71,12 +72,7 @@ Level 1
  Minimization norm = 2   [default]
  ReUseRowBasedOmegas = 0   [default]
 
- Call prolongator factory for calculating restrictor (MueLu::GenericRFactory)
-  Prolongator smoothing (PG-AMG) (MueLu::PgPFactory)
-   PgPFactory::ComputeRowBasedOmega (MueLu::PgPFactory)
-  Minimization norm = 2   [default]
-  ReUseRowBasedOmegas = 0   [default]
-
+ Transpose P (MueLu::TransPFactory)
  [empty list]
 
  Computing Ac (MueLu::RAPFactory)
@@ -146,12 +142,7 @@ Level 2
  Minimization norm = 2   [default]
  ReUseRowBasedOmegas = 0   [default]
 
- Call prolongator factory for calculating restrictor (MueLu::GenericRFactory)
-  Prolongator smoothing (PG-AMG) (MueLu::PgPFactory)
-   PgPFactory::ComputeRowBasedOmega (MueLu::PgPFactory)
-  Minimization norm = 2   [default]
-  ReUseRowBasedOmegas = 0   [default]
-
+ Transpose P (MueLu::TransPFactory)
  [empty list]
 
  Computing Ac (MueLu::RAPFactory)

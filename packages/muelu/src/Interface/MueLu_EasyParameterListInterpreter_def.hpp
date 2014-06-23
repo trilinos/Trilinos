@@ -540,9 +540,16 @@ namespace MueLu {
 
     // === Restriction ===
     if (!this->implicitTranspose_) {
+      MUELU_READ_2LIST_PARAM(paramList, defaultList, "problem: symmetric", bool, true, isSymmetric);
+      if (isSymmetric == false && (multigridAlgo == "unsmoothed" || multigridAlgo == "emin")) {
+        this->GetOStream(Warnings0) << "Warning: switching to symmetric problem as multigrid algorithm \"" << multigridAlgo << "\" is restricted to symmetric case" << std::endl;
+        isSymmetric = true;
+      }
+
       RCP<Factory> R;
-      if (multigridAlgo != "pg")    R = rcp(new TransPFactory());
-      else                          R = rcp(new GenericRFactory());
+      if (isSymmetric)  R = rcp(new TransPFactory());
+      else              R = rcp(new GenericRFactory());
+
       R->SetFactory("P", manager.GetFactory("P"));
       manager.SetFactory("R", R);
 

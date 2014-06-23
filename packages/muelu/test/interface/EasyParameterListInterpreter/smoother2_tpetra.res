@@ -8,6 +8,7 @@ transpose: use implicit = 0   [default]
 smoother: type = RELAXATION   [default]
 aggregation: type = uncoupled   [default]
 multigrid algorithm = sa   [default]
+problem: symmetric = 1   [default]
 aggregation: visualize = 0   [default]
 repartition: enable = 0   [default]
 
