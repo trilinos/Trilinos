@@ -1,27 +1,28 @@
 // This example computes the eigenvalues of smallest magnitude of a
-// generalized eigenvalue problem \f$K x = \lambda M x\f$, using
-// Anasazi's implementation of the block Krylov-Schur method.
+// generalized eigenvalue problem $K x = \lambda M x$, using Anasazi's
+// implementation of the block Krylov-Schur method.  It implements
+// inverse iteration using the KLU sparse direct linear solver, and
+// accesses KLU through Trilinos' Amesos package.
 //
 // Anasazi computes the smallest-magnitude eigenvalues using a
 // shift-and-invert strategy.  For simplicity, the code below uses a
 // shift of zero.  It illustrates the general pattern for using
 // Anasazi for this problem:
 //
-//   1. Construct an "operator" A such that \f$Az = K^{-1} M z\f$.
-//   2. Use Anasazi to solve \f$Az = \sigma z\f$, which is a spectral
-//      transformation of the original problem \f$K x = \lambda M x\f$.
-//   3. The eigenvalues \f$\lambda\f$ of the original problem are the
-//      inverses of the eigenvalues \f$\sigma\f$ of the transformed
+//   1. Construct an "operator" A such that $Az = K^{-1} M z$.
+//   2. Use Anasazi to solve $Az = \sigma z$, which is a spectral
+//      transformation of the original problem $K x = \lambda M x$.
+//   3. The eigenvalues $\lambda$ of the original problem are the
+//      inverses of the eigenvalues $\sigma$ of the transformed
 //      problem.
 //
-// The "operator A such that \f$A z = K^{-1} M z\f$" is a subclass of
+// The "operator A such that $A z = K^{-1} M z$" is a subclass of
 // Epetra_Operator.  The Apply method of that operator takes the
-// vector b, and computes \f$x = K^{-1} M b\f$.  It does so first by
-// applying the matrix M, and then by solving the linear system \f$K
-// x = M b\f$ for x.  Trilinos implements many different ways to
-// solve linear systems.  The example below uses the sparse direct
-// solver KLU to do so.  Trilinos' Amesos package has an interface to
-// KLU.
+// vector b, and computes $x = K^{-1} M b$.  It does so first by
+// applying the matrix M, and then by solving the linear system $K x =
+// M b$ for x.  Trilinos implements many different ways to solve
+// linear systems.  The example below uses the sparse direct solver
+// KLU to do so.  Trilinos' Amesos package has an interface to KLU.
 
 // Include header for block Krylov-Schur solver
 #include "AnasaziBlockKrylovSchurSolMgr.hpp"
@@ -166,8 +167,19 @@ main (int argc, char *argv[])
   using std::cerr;
   using std::cout;
   using std::endl;
-
-  int i;
+  // Anasazi solvers have the following template parameters:
+  //
+  //   - Scalar: The type of dot product results.
+  //   - MV: The type of (multi)vectors.
+  //   - OP: The type of operators (functions from multivector to
+  //     multivector).  A matrix (like Epetra_CrsMatrix) is an example
+  //     of an operator; an Ifpack preconditioner is another example.
+  //
+  // Here, Scalar is double, MV is Epetra_MultiVector, and OP is
+  // Epetra_Operator.
+  typedef Epetra_MultiVector MV;
+  typedef Epetra_Operator OP;
+  typedef Anasazi::MultiVecTraits<double, MV> MVT;
 
 #ifdef EPETRA_MPI
   // Initialize MPI
@@ -175,14 +187,18 @@ main (int argc, char *argv[])
   Epetra_MpiComm Comm (MPI_COMM_WORLD);
 #else
   Epetra_SerialComm Comm;
-#endif
+#endif // EPETRA_MPI
 
   const int MyPID = Comm.MyPID ();
 
-  // Number of dimension of the domain
-  int space_dim = 2;
+  //
+  // Set up the test problem
+  //
 
-  // Size of each of the dimensions of the domain
+  // Dimensionality of the spatial domain to discretize
+  const int space_dim = 2;
+
+  // Size of each of the dimensions of the (discrete) domain
   std::vector<double> brick_dim (space_dim);
   brick_dim[0] = 1.0;
   brick_dim[1] = 1.0;
@@ -206,14 +222,20 @@ main (int argc, char *argv[])
     rcp (const_cast<Epetra_CrsMatrix* > (testCase->getMass ()), false);
 
   //
-  // Set up Amesos direct solver for linear systems with K
+  // Create linear solver for linear systems with K
+  //
+  // Anasazi uses shift and invert, with a "shift" of zero, to find
+  // the eigenvalues of least magnitude.  In this example, we
+  // implement the "invert" part of shift and invert by using an
+  // Amesos direct solver.
   //
 
   // Create Epetra linear problem class for solving linear systems
   // with K.  This implements the inverse operator for shift and
   // invert.
   Epetra_LinearProblem AmesosProblem;
-  // Tell Amesos about the matrix K.
+  // Tell the linear problem about the matrix K.  Epetra_LinearProblem
+  // doesn't know about RCP, so we have to give it a raw pointer.
   AmesosProblem.SetOperator (K.get ());
 
   // Create Amesos factory and solver for solving linear systems with
@@ -256,21 +278,22 @@ main (int argc, char *argv[])
   AmesosSolver->NumericFactorization ();
 
   //
-  // Define block Krylov-Schur parameters
+  // Set parameters for the block Krylov-Schur eigensolver
   //
+
+  double tol = 1.0e-8;
   int nev = 10;
   int blockSize = 3;
   int numBlocks = 3 * nev / blockSize;
   int maxRestarts = 5;
-  double tol = 1.0e-8;
+
   // We're looking for the largest-magnitude eigenvalues of the
   // _inverse_ operator, thus, the smallest-magnitude eigenvalues of
   // the original operator.
   std::string which = "LM";
   int verbosity = Anasazi::Errors + Anasazi::Warnings + Anasazi::FinalSummary;
-  //
-  // Create parameter list to pass into solver
-  //
+
+  // Create ParameterList to pass into eigensolver
   Teuchos::ParameterList MyPL;
   MyPL.set ("Verbosity", verbosity);
   MyPL.set ("Which", which);
@@ -279,25 +302,21 @@ main (int argc, char *argv[])
   MyPL.set ("Maximum Restarts", maxRestarts);
   MyPL.set ("Convergence Tolerance", tol);
 
-  typedef Epetra_MultiVector MV;
-  typedef Epetra_Operator OP;
-  typedef Anasazi::MultiVecTraits<double, MV> MVT;
-  typedef Anasazi::OperatorTraits<double, MV, OP> OPT;
-
-  // Create an Epetra_MultiVector for an initial vector to start the
-  // solver.  Note: This needs to have the same number of columns as
-  // the block size.
+  // Create an initial set of vectors to start the eigensolver.  Note:
+  // This needs to have the same number of columns as the block size.
   RCP<MV> ivec = rcp (new MV (K->Map (), blockSize));
   MVT::MvRandom (*ivec);
 
   // Create the Epetra_Operator for the spectral transformation using
   // the Amesos direct solver.
   //
-  // Anasazi just sees the operator that implements K^{-1} M.  K got
-  // absorbed into the AmesosProblem object.  Anasazi also needs to
-  // see M so that it can orthogonalize basis vectors with respect to
-  // the inner product defined by the (symmetric positive definite)
-  // matrix M.
+  // The AmesosGenOp object is the operator we give to Anasazi.  Thus,
+  // Anasazi just sees an operator that computes y = K^{-1} M x.  The
+  // matrix K got absorbed into AmesosProblem (the
+  // Epetra_LinearProblem object).  Later, when we set up the Anasazi
+  // eigensolver, we will need to tell it about M, so that it can
+  // orthogonalize basis vectors with respect to the inner product
+  // defined by M (since it is symmetric positive definite).
   RCP<AmesosGenOp> Aop = rcp (new AmesosGenOp (AmesosSolver, M));
 
   // This object holds all the stuff about your problem that Anasazi
@@ -316,22 +335,27 @@ main (int argc, char *argv[])
   // Set the number of eigenvalues requested
   MyProblem->setNEV (nev);
 
-  // Inform the eigenproblem that you are finished passing it information
+  // Tell the eigenproblem that you are finished passing it information.
   const bool boolret = MyProblem->setProblem ();
   if (boolret != true) {
     if (MyPID == 0) {
       std::cerr << "Anasazi::BasicEigenproblem::setProblem() returned with error." << endl;
     }
-#ifdef HAVE_MPI
-    MPI_Finalize () ;
-#endif
+#ifdef EPETRA_MPI
+    MPI_Finalize ();
+#endif // EPETRA_MPI
     return -1;
   }
 
-  // Initialize the Block Arnoldi solver
+  // Create the Block Krylov-Schur eigensolver.
   Anasazi::BlockKrylovSchurSolMgr<double, MV, OP> MySolverMgr (MyProblem, MyPL);
 
   // Solve the eigenvalue problem.
+  //
+  // Note that creating the eigensolver is separate from solving it.
+  // After creating the eigensolver, you may call solve() multiple
+  // times with different parameters or initial vectors.  This lets
+  // you reuse intermediate state, like allocated basis vectors.
   Anasazi::ReturnType returnCode = MySolverMgr.solve ();
   if (returnCode != Anasazi::Converged && MyPID == 0) {
     cout << "Anasazi::EigensolverMgr::solve() returned unconverged." << endl;
@@ -353,11 +377,11 @@ main (int argc, char *argv[])
     // are the inverses of the original eigenvalues.  Reconstruct the
     // eigenvectors too.
     MV tempvec (K->Map (), MVT::GetNumberVecs (*evecs));
-    OPT::Apply (*K, *evecs, tempvec);
+    K->Apply (*evecs, tempvec);
     Teuchos::SerialDenseMatrix<int,double> dmatr (numev, numev);
     MVT::MvTransMv (1.0, tempvec, *evecs, dmatr);
 
-    if (MyPID==0) {
+    if (MyPID == 0) {
       double compeval = 0.0;
       cout.setf (std::ios_base::right, std::ios_base::adjustfield);
       cout << "Actual Eigenvalues (obtained by Rayleigh quotient) : " << endl;
@@ -365,7 +389,7 @@ main (int argc, char *argv[])
       cout << std::setw(16) << "Real Part"
            << std::setw(16) << "Rayleigh Error" << endl;
       cout << "------------------------------------------------------" << endl;
-      for (i=0; i<numev; ++i) {
+      for (int i = 0; i < numev; ++i) {
         compeval = dmatr(i,i);
         cout << std::setw(16) << compeval
              << std::setw(16)
@@ -378,7 +402,7 @@ main (int argc, char *argv[])
 
 #ifdef EPETRA_MPI
   MPI_Finalize ();
-#endif
+#endif // EPETRA_MPI
 
   return 0;
 }
