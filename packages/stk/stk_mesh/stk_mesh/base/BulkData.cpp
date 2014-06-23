@@ -211,19 +211,19 @@ void markEdgesForResolvingSharingInfoUsingNodes(stk::mesh::BulkData &mesh, stk::
     {
         const stk::mesh::Bucket& bucket = *buckets[bucketIndex];
         stk::topology topology = bucket.topology();
-        for(size_t i = 0; i < bucket.size(); i++)
+        for(size_t entityIndex = 0; entityIndex < bucket.size(); entityIndex++)
         {
-            Entity entity = bucket[i];
-            const unsigned num_nodes = bucket.num_nodes(i);
+            Entity entity = bucket[entityIndex];
+            const unsigned num_nodes_for_entity = bucket.num_nodes(entityIndex);
 
-            if ( num_nodes != 0 )
+            if ( num_nodes_for_entity != 0 )
             {
                 if(stk::mesh::in_owned_closure(mesh, entity, mesh.parallel_rank()))
                 {
-                    EntityVector edge_nodes(num_nodes);
+                    EntityVector edge_nodes(num_nodes_for_entity);
 
-                    Entity const * nodes = bucket.begin_nodes(i);
-                    edge_nodes.assign(nodes, nodes+num_nodes);
+                    Entity const * nodes = bucket.begin_nodes(entityIndex);
+                    edge_nodes.assign(nodes, nodes+num_nodes_for_entity);
 
                     //sort edge nodes into lexicographical smallest permutation
                     if(EntityLess(mesh)(edge_nodes[1], edge_nodes[0]))
@@ -232,7 +232,7 @@ void markEdgesForResolvingSharingInfoUsingNodes(stk::mesh::BulkData &mesh, stk::
                     }
 
                     bool shared_edge = true;
-                    for(size_t n = 0; n < num_nodes; ++n)
+                    for(size_t n = 0; n < num_nodes_for_entity; ++n)
                     {
                         Entity node = edge_nodes[n];
                         shared_edge = shared_edge && mesh.bucket(node).shared();
@@ -242,7 +242,7 @@ void markEdgesForResolvingSharingInfoUsingNodes(stk::mesh::BulkData &mesh, stk::
                     {
                         shared_edge_type sedge;
                         sedge.topology = topology;
-                        for(size_t n = 0; n < num_nodes; ++n)
+                        for(size_t n = 0; n < num_nodes_for_entity; ++n)
                         {
                             sedge.nodes[n] = mesh.entity_key(edge_nodes[n]);
                         }
