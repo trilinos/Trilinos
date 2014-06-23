@@ -5280,6 +5280,21 @@ int check_for_connected_nodes(const BulkData& mesh)
   return 0;
 }
 
+int check_no_shared_elements_or_higher(const BulkData& mesh)
+{
+  for(stk::mesh::EntityRank rank=stk::topology::ELEMENT_RANK; rank < mesh.mesh_meta_data().entity_rank_count(); ++rank) {
+    const stk::mesh::BucketVector& buckets = mesh.buckets(rank);
+    for(size_t j=0; j<buckets.size(); ++j) {
+      if (buckets[j]->size() > 0 && buckets[j]->shared()) {
+        stk::mesh::Entity entity = (*buckets[j])[0];
+        std::cerr << "Entities with rank ELEMENT_RANK or higher must not be shared. Entity with rank="<<rank<<", identifier="<<mesh.identifier(entity)<<" is shared."<<std::endl;
+        return -1;
+      }
+    }
+  } 
+  return 0;
+}
+
 }
 
 
@@ -5291,6 +5306,8 @@ bool BulkData::internal_modification_end( bool regenerate_aura, modification_opt
   if ( m_sync_state == SYNCHRONIZED ) { return false ; }
 
   ThrowAssertMsg(check_for_connected_nodes(*this)==0, "BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
+
+  ThrowAssertMsg(add_fmwk_data() || check_no_shared_elements_or_higher(*this)==0, "BulkData::modification_end ERROR, Sharing of entities with rank ELEMENT_RANK or higher is not allowed.");
 
   if (parallel_size() > 1) {
     // Resolve modification or deletion of shared entities
