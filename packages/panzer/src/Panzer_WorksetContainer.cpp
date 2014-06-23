@@ -244,7 +244,7 @@ applyOrientations(const std::string & eBlock,std::vector<Workset> & worksets) co
  
     fout << "Panzer Warning: No global indexer assigned to a workset container. "
          << "Orientation of the basis for edge basis functions cannot be applied, "
-         << "if those basis functions are used, there will be problems!";
+         << "if those basis functions are used, there will be problems!" << std::endl;
     return;
   }
 
