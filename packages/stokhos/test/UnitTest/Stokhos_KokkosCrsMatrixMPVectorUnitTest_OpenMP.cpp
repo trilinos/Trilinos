@@ -80,7 +80,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(
   Kokkos_CrsMatrix_MP, Multiply_1, Storage, MultiplyOp )
 {
   typedef typename Storage::ordinal_type Ordinal;
-  const Ordinal NumPerThread = 3;
+  const Ordinal NumPerThread = 16;
   const Ordinal ThreadsPerVector = 1;
   success =
     test_host_embedded_vector<Storage,Ordinal,MultiplyOp,NumPerThread,ThreadsPerVector>(num_hyper_threads, num_cores, out);
@@ -90,18 +90,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(
   Kokkos_CrsMatrix_MP, Multiply_2, Storage, MultiplyOp )
 {
   typedef typename Storage::ordinal_type Ordinal;
-  const Ordinal NumPerThread = 3;
+  const Ordinal NumPerThread = 8;
   const Ordinal ThreadsPerVector = 2;
-  success =
-    test_host_embedded_vector<Storage,Ordinal,MultiplyOp,NumPerThread,ThreadsPerVector>(num_hyper_threads, num_cores, out);
-}
-
-TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(
-  Kokkos_CrsMatrix_MP, Multiply_4, Storage, MultiplyOp )
-{
-  typedef typename Storage::ordinal_type Ordinal;
-  const Ordinal NumPerThread = 3;
-  const Ordinal ThreadsPerVector = 4;
   success =
     test_host_embedded_vector<Storage,Ordinal,MultiplyOp,NumPerThread,ThreadsPerVector>(num_hyper_threads, num_cores, out);
 }
@@ -110,9 +100,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
     Kokkos_CrsMatrix_MP, Multiply_1, STORAGE, OP )                      \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
-    Kokkos_CrsMatrix_MP, Multiply_2, STORAGE, OP )                      \
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
-    Kokkos_CrsMatrix_MP, Multiply_4, STORAGE, OP )
+    Kokkos_CrsMatrix_MP, Multiply_2, STORAGE, OP )
 
 // Notes:  SFS, DS are defined in main test header (we are also being lazy
 // and not putting ordinal/scalar/device in the names, assuming we will only
