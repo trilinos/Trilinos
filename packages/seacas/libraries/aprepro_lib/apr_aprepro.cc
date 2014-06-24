@@ -15,7 +15,7 @@
 
 namespace {
   const unsigned int HASHSIZE = 5939;
-  const char* version_string = "4.06 (2014/04/07)";
+  const char* version_string = "4.10 (2014/06/24)";
   
   unsigned hash_symbol (const char *symbol)
   {
@@ -31,7 +31,8 @@ namespace SEAMS {
   int   echo = true;
   
   Aprepro::Aprepro()
-    : sym_table(HASHSIZE), stateImmutable(false)
+    : sym_table(HASHSIZE), stringInteractive(false), stringScanner(NULL),
+      stateImmutable(false)
   {
     ap_file_list.push(file_rec());
     init_table("#");
@@ -40,8 +41,6 @@ namespace SEAMS {
     // See the random number generator...
     time_t time_val = std::time ((time_t*)NULL);
     srand((unsigned)time_val);
-
-    stringScanner = NULL;
   }
 
   Aprepro::~Aprepro()
