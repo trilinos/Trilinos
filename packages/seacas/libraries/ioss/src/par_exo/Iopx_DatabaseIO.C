@@ -7070,8 +7070,7 @@ namespace Iopx {
         return;
 
       // Get the names of the maps...
-      int max_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
-      char **names = get_exodus_names(map_count, max_length);
+      char **names = get_exodus_names(map_count, maximumNameLength);
       int ierr = ex_get_names(exoid, EX_ELEM_MAP, names);
       if (ierr < 0)
         exodus_error(exoid, __LINE__, -1);
