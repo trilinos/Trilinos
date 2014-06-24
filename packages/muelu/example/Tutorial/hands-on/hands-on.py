@@ -88,6 +88,8 @@ class ProblemHandler():
     
     self.isDirty = True                   # flag to store, whether problem has to be rerun or not
 
+    self.editor = "kwrite"    # TODO replace me by local editor...
+    
   def main(self):
     self.printMainMenu()
     
@@ -145,8 +147,8 @@ class ProblemHandler():
   def printActionMenu(self):
     #options = ['Rerun example', 'Show screen output', 'Change solver', 'Change processors', 'Exit']
     #callbacks = [self.runExample,self.printScreenOutput,self.changeSolver,self.changeProcs,self.doExitProgram]
-    options = ['Rerun simulation', 'Show screen output', 'Change solver', 'Change procs', 'Change MG sweeps','Plot solution','Postprocess aggregates', 'Exit']
-    callbacks = [self.runExample,self.printScreenOutput,self.changeSolver,self.changeProcs, self.changeMGsweeps,self.plotSolution, self.postprocessAggregates, self.doExitProgram]
+    options = ['Rerun simulation', 'Show screen output', 'Change solver', 'Open xml file', 'Change procs', 'Change MG sweeps','Plot solution','Postprocess aggregates', 'Exit']
+    callbacks = [self.runExample,self.printScreenOutput,self.changeSolver,self.openXMLfile,self.changeProcs, self.changeMGsweeps,self.plotSolution, self.postprocessAggregates, self.doExitProgram]
     while True:
       clearWindow()    
       self.printSettings()
@@ -279,6 +281,9 @@ class ProblemHandler():
       print runCommand("less output.log")
     waitForKey()
     
+  def openXMLfile(self):
+    editor = subprocess.Popen([self.editor + " " + self.xmlFileName], shell=True, stdin=subprocess.PIPE, )
+
   def printProblemSelectionMenu(self):
     options = ['Laplace 2D (50x50)', 'Laplace 2D', 'Recirc 2D (50x50)', 'Recirc 2D', 'Exit']
     callbacks = [self.doLaplace2D50,self.doLaplace2Dn,self.doRecirc2D50,self.doRecirc2Dn, self.doExitProgram]
