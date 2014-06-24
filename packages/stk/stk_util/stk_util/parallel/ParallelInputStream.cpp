@@ -13,9 +13,6 @@
 #include <iostream>                     // for cerr
 #include <stdexcept>                    // for runtime_error
 #include <string>                       // for string
-#if defined( STK_HAS_MPI )
-#  include "mpi.h"                        // for ompi_communicator_t, etc
-#endif
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine, etc
 
 /*--------------------------------------------------------------------*/

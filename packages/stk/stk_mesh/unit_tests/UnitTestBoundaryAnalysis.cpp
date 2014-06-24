@@ -18,7 +18,6 @@
 #include <gtest/gtest.h>
 #include <utility>                      // for pair, operator==
 #include <vector>                       // for vector, vector<>::iterator
-#include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Types.hpp"      // for EntityId, Ordinal, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 namespace stk { namespace mesh { class Part; } }
@@ -41,7 +40,6 @@ public:
   }
 
   void test_boundary_analysis();
-  void test_boundary_analysis_null_topology();
 
   stk::ParallelMachine m_comm;
   int m_num_procs;
@@ -54,12 +52,6 @@ TEST( UnitTestStkMeshBoundaryAnalysis , testUnit )
 {
   UnitTestStkMeshBoundaryAnalysis unit(MPI_COMM_WORLD);
   unit.test_boundary_analysis();
-}
-
-TEST( UnitTestStkMeshBoundaryAnalysis , testNullTopology )
-{
-  UnitTestStkMeshBoundaryAnalysis unit(MPI_COMM_WORLD);
-  unit.test_boundary_analysis_null_topology();
 }
 
 } //end namespace
@@ -238,39 +230,3 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
   }
 }
 
-void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis_null_topology()
-{
-  //test on boundary_analysis for closure with a NULL topology - coverage of lines 39-40 of BoundaryAnalysis.cpp
-
-  //create new fem_meta, bulk and boundary for this test
-  const int spatial_dimension = 3;
-  stk::mesh::MetaData fem_meta(spatial_dimension);
-
-  const stk::mesh::EntityRank side_rank = fem_meta.side_rank();
-
-  //declare part with topology = NULL
-  stk::mesh::Part & quad_part = fem_meta.declare_part("quad_part", side_rank);
-  fem_meta.commit();
-
-  stk::ParallelMachine comm(MPI_COMM_WORLD);
-  stk::mesh::BulkData bulk ( fem_meta , comm , 100 );
-
-  stk::mesh::EntitySideVector boundary;
-  std::vector<stk::mesh::Entity> newclosure;
-
-  stk::mesh::PartVector face_parts;
-  face_parts.push_back(&quad_part);
-
-  bulk.modification_begin();
-  if (m_rank == 0) {
-    stk::mesh::Entity new_face = bulk.declare_entity(side_rank, 1, face_parts);
-    newclosure.push_back(new_face);
-  }
-
-  stk::mesh::boundary_analysis(bulk, newclosure, side_rank, boundary);
-  /*
-  EXPECT_TRUE(!boundary.empty());
-  */
-
-  bulk.modification_end();
-}

@@ -112,7 +112,6 @@ STKUNIT_UNIT_TEST(adapt, count_memory)
       percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data);
       //eMesh.print_info("quad mesh",2);
 
-      // see stk_samba/perf_test_tri_refine.cpp
       //const size_t num_new_tris = 2000*2000;
       const size_t num_new_tris = 20*20;
       const size_t num_nodes_per_tri = 3;

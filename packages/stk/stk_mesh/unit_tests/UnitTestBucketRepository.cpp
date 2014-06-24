@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <stddef.h>                     // for size_t
+#include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_size, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/baseImpl/BucketRepository.hpp>  // for BucketRepository
 #include <stk_mesh/baseImpl/EntityRepository.hpp>  // for EntityRepository
 #include <stk_mesh/baseImpl/Partition.hpp>  // for Partition
 #include <utility>                      // for pair
-#include "mpi.h"                        // for MPI_COMM_WORLD, MPI_Comm, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
@@ -16,7 +16,7 @@
 
 TEST(BucketRepositoryTest, createBuckets)
 {
-    MPI_Comm comm = MPI_COMM_WORLD;
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
     size_t spatialDim = 3;
     stk::mesh::MetaData stkMeshMetaData(spatialDim, stk::mesh::entity_rank_names());
 

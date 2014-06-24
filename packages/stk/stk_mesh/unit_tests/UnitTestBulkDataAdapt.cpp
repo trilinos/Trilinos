@@ -13,7 +13,6 @@
 #include <gtest/gtest.h>
 #include <string>                       // for string, char_traits
 #include <vector>                       // for vector
-#include "mpi.h"                        // for MPI_Barrier, MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, entity_rank_names

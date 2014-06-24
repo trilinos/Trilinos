@@ -10,7 +10,6 @@
 #include <string>                       // for string
 #include <vector>                       // for vector, etc
 #include "gtest/gtest.h"                // for AssertHelper, ASSERT_TRUE
-#include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Entity.hpp"     // for Entity

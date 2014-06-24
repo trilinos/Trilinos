@@ -16,9 +16,6 @@
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <stk_util/util/SimpleArrayOps.hpp>  // for BitAnd, BitOr, Copy, etc
 #include <string>                       // for string
-#if defined( STK_HAS_MPI)
-#  include "mpi.h"                      // for ompi_communicator_t
-#endif
 
 //------------------------------------------------------------------------
 

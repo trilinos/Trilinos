@@ -19,7 +19,6 @@
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <gtest/gtest.h>
 #include <vector>                       // for vector, vector<>::iterator, etc
-#include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket, BucketIterator
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
 #include "stk_mesh/base/Ghosting.hpp"   // for Ghosting
@@ -131,7 +130,7 @@ void UnitTestStkMeshBulkModification::test_closure_of_non_locally_used_entities(
 {
   BulkData& bulk_data = initialize_ring_fixture();
 
-  const stk::mesh::Ghosting & ghost = bulk_data.shared_aura();
+  const stk::mesh::Ghosting & ghost = bulk_data.aura();
 
   std::vector<stk::mesh::EntityKey> ghost_receive ;
 

@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include <mpi.h>
-
+#include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/environment/WallTime.hpp>
 
 #if defined(_OPENMP) && !defined(__INTEL_COMPILER)
@@ -20,16 +20,12 @@ TEST(MpiPlusOpenMp, HelloWorld)
 
 int getNumProcs()
 {
-    int numProcs = -1;
-    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
-    return numProcs;
+  return stk::parallel_machine_size(MPI_COMM_WORLD);
 }
 
 int getProcId()
 {
-    int procId = -1;
-    MPI_Comm_rank(MPI_COMM_WORLD, &procId);
-    return procId;
+  return stk::parallel_machine_rank(MPI_COMM_WORLD);
 }
 
 int getNumThreads()
@@ -55,7 +51,7 @@ TEST(MpiPlusOpenMp, Reduction)
 
     double mpiSum = -1;
     const int numItemsPerProc = 1;
-    MPI_Allreduce(&threadSum, &mpiSum, numItemsPerProc, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    stk::all_reduce_sum(MPI_COMM_WORLD, &threadSum, &mpiSum, numItemsPerProc);
 
     int numProcs = getNumProcs();
     int numThreads = getNumThreads();
@@ -92,8 +88,7 @@ TEST(MpiPlusOpenMp, VectorSumReduction)
 
     double mpiSum = -1;
     const int numItemsPerProc = 1;
-    MPI_Allreduce(&threadSum, &mpiSum, numItemsPerProc,
-                  MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    stk::all_reduce_sum(MPI_COMM_WORLD, &threadSum, &mpiSum, numItemsPerProc);
 
     double end_time_wall = stk::wall_time();
 

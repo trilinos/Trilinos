@@ -58,8 +58,6 @@
 #include <Tpetra_Vector.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 
-//#include <Zoltan2_Memory.hpp>  KDD User app wouldn't include our memory mgr.
-
 using Teuchos::RCP;
 using namespace std;
 
@@ -90,6 +88,11 @@ typedef Zoltan2::XpetraCrsMatrixAdapter<SparseMatrix> SparseMatrixAdapter;
 typedef Zoltan2::XpetraCrsGraphAdapter<SparseGraph> SparseGraphAdapter;
 typedef Zoltan2::XpetraMultiVectorAdapter<Vector> MultiVectorAdapter;
 
+
+// Integer vector
+typedef Tpetra::Vector<int, z2TestLO, z2TestGO> IntVector;
+typedef Zoltan2::XpetraMultiVectorAdapter<IntVector> IntVectorAdapter;
+
 #define epsilon 0.00000001
 #define NNZ_IDX 1
 
@@ -101,6 +104,7 @@ int main(int narg, char** arg)
   std::string inputPath = testDataFilePath;  // Directory with input file
   bool verbose = false;              // Verbosity of output
   bool distributeInput = true;
+  bool haveFailure = false;
   int nVwgts = 0;
   int nEwgts = 0;
   int testReturn = 0;
@@ -408,6 +412,28 @@ int main(int narg, char** arg)
   redistribProd = Tpetra::createVector<Scalar,z2TestLO,z2TestGO>(
                                        redistribMatrix->getRangeMap());
 
+  // Test redistributing an integer vector with the same solution.
+  // This test is mostly to make sure compilation always works.
+  RCP<IntVector> origIntVec;
+  IntVector *redistIntVec;
+  origIntVec = Tpetra::createVector<int,z2TestLO,z2TestGO>(
+                                        origMatrix->getRangeMap());
+  for (size_t i = 0; i < origIntVec->getLocalLength(); i++)
+    origIntVec->replaceLocalValue(i, me);
+
+  IntVectorAdapter int_vec_adapter(origIntVec);
+  int_vec_adapter.applyPartitioningSolution(*origIntVec, redistIntVec,
+                                             problem.getSolution());
+  int origIntNorm = origIntVec->norm1();
+  int redistIntNorm = redistIntVec->norm1();
+  if (me == 0) std::cout << "IntegerVectorTest:  " << origIntNorm << " == "
+                         << redistIntNorm << " ?";
+  if (origIntNorm != redistIntNorm) {
+    if (me == 0) std::cout << " FAIL" << std::endl;
+    haveFailure = true;
+  }
+  else if (me == 0) std::cout << " OK" << std::endl;
+  delete redistIntVec;
 
   ////// Verify that redistribution is "correct"; perform matvec with 
   ////// original and redistributed matrices/vectors and compare norms.
@@ -424,16 +450,20 @@ int main(int narg, char** arg)
   if (me == 0)
     cout << "Norm of Redistributed matvec prod:  " << redistribNorm << endl;
 
-  if (redistribNorm > origNorm+epsilon || redistribNorm < origNorm-epsilon) 
+  if (redistribNorm > origNorm+epsilon || redistribNorm < origNorm-epsilon) {
     testReturn = 1;
+    haveFailure = true;
+  }
 
   delete redistribVector;
   delete redistribMatrix;
 
   if (me == 0) {
-    if (testReturn)
+    if (testReturn) {
       std::cout << "Mat-Vec product changed; FAIL" << std::endl;
-    else
+      haveFailure = true;
+    }
+    if (!haveFailure)
       std::cout << "PASS" << std::endl;
   }
 

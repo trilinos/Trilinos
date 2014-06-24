@@ -542,6 +542,7 @@ IF (Stokhos_ENABLE_Sacado)
     LIST(APPEND SACADO_HEADERS
       sacado/kokkos/Stokhos_Sacado_Kokkos.hpp
       sacado/kokkos/Stokhos_Sacado_Kokkos_MathFunctions.hpp
+      sacado/kokkos/Stokhos_MemoryTraits.hpp
       sacado/kokkos/Stokhos_KokkosTraits.hpp
       sacado/kokkos/Stokhos_StaticArrayTraits.hpp
       sacado/kokkos/Stokhos_DynArrayTraits.hpp
@@ -580,6 +581,7 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/kokkos/pce/Teuchos_SerialQRDenseSolver_UQ_PCE.hpp
       )
     LIST(APPEND SACADO_SOURCES
+      sacado/kokkos/Stokhos_MemoryTraits.cpp
       sacado/kokkos/vector/Kokkos_View_MP_Vector.cpp
       )
     IF (Stokhos_ENABLE_KokkosLinAlg)

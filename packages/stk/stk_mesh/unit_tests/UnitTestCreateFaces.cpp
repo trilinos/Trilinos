@@ -10,6 +10,7 @@
  */
 
 #include <stddef.h>                     // for size_t
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
 #include <stk_mesh/base/CreateFaces.hpp>  // for create_faces
@@ -22,7 +23,6 @@
 #include <stk_mesh/fixtures/heterogeneous_mesh.hpp>
 #include <gtest/gtest.h>
 #include <vector>                       // for vector, vector<>::iterator
-#include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/Part.hpp"       // for Part
@@ -314,7 +314,7 @@ TEST( UnitTestCreateFaces , testCreateFaces3x3x3 )
           EXPECT_NE(face_owner, my_proc_id);
         }
 
-        const bool is_shared = fixture.m_bulk_data.in_shared(fixture.m_bulk_data.entity_key(face));
+        const bool is_shared = fixture.m_bulk_data.in_aura(fixture.m_bulk_data.entity_key(face));
         if (is_shared) elem_num_shared_faces += 1;
 
         const bool is_ghosted_or_shared = is_ghosted || is_shared;
@@ -433,7 +433,7 @@ TEST( UnitTestCreateFaces , testCreateTetFaces3x3x3 )
           EXPECT_NE(face_owner, my_proc_id);
         }
 
-        const bool is_shared = fixture.m_bulk_data.in_shared(fixture.m_bulk_data.entity_key(face));
+        const bool is_shared = fixture.m_bulk_data.in_aura(fixture.m_bulk_data.entity_key(face));
         if (is_shared) elem_num_shared_faces += 1;
 
         const bool is_ghosted_or_shared = is_ghosted || is_shared;
@@ -648,8 +648,7 @@ TEST ( UnitTestCreateFaces, Gears )
 
 TEST ( UnitTestCreateFaces, Heterogeneous )
 {
-  int numprocs = 1;
-  MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
+  int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);
   if (numprocs > 1)
     return;
   
@@ -732,8 +731,7 @@ TEST ( UnitTestCreateFaces, Heterogeneous )
 
 TEST ( UnitTestCreateFaces, Degenerate )
 {
-  int numprocs = 1;
-  MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
+  int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);
   if (numprocs > 1)
     return;
 

@@ -13,7 +13,6 @@
 #include <gtest/gtest.h>
 #include <unit_tests/UnitTestModificationEndWrapper.hpp>
 #include <vector>                       // for vector, etc
-#include "mpi.h"                        // for MPI_Barrier, MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
 #include "stk_mesh/base/Part.hpp"       // for Part
@@ -44,7 +43,6 @@ TEST( UnitTestBoxFixture, verifyRingFixture )
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier( pm );
-
   // Create the ring fixture we'll be testing
 
   RingFixture fixture(pm);
@@ -108,8 +106,8 @@ TEST( UnitTestBoxFixture, verifyRingFixture )
     ASSERT_TRUE( bulk.is_valid(node0) );
     ASSERT_TRUE( bulk.is_valid(node1) );
 
-    ASSERT_EQ( bulk.entity_comm_sharing(bulk.entity_key(node0)).size(), 1u );
-    ASSERT_EQ( bulk.entity_comm_sharing(bulk.entity_key(node1)).size() , 1u );
+    ASSERT_EQ( bulk.entity_comm_map_aura(bulk.entity_key(node0)).size(), 1u );
+    ASSERT_EQ( bulk.entity_comm_map_aura(bulk.entity_key(node1)).size() , 1u );
   }
 
   // Test no-op first:
@@ -238,7 +236,7 @@ void test_shift_ring( RingFixture& ring, bool generate_aura=true )
         i = bulk.comm_list().begin() ;
         i != bulk.comm_list().end() ; ++i )
   {
-    if ( bulk.in_shared( i->key ) ) { ++count_shared ; }
+    if ( bulk.in_aura( i->key ) ) { ++count_shared ; }
   }
   ASSERT_EQ( count_shared , 2u );
 
@@ -246,8 +244,8 @@ void test_shift_ring( RingFixture& ring, bool generate_aura=true )
     const EntityKey node_recv = EntityKey(NODE_RANK , ring.m_node_ids[id_recv]);
     const EntityKey node_send = EntityKey(NODE_RANK , ring.m_node_ids[id_send]);
 
-    ASSERT_EQ( bulk.entity_comm_sharing(node_recv).size(), 1u );
-    ASSERT_EQ( bulk.entity_comm_sharing(node_send).size() , 1u );
+    ASSERT_EQ( bulk.entity_comm_map_aura(node_recv).size(), 1u );
+    ASSERT_EQ( bulk.entity_comm_map_aura(node_send).size() , 1u );
   }
 }
 

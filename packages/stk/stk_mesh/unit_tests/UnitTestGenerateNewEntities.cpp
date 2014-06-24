@@ -12,7 +12,6 @@
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <gtest/gtest.h>
 #include <vector>                       // for vector, etc
-#include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Types.hpp"      // for EntityVector, EntityRank, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 

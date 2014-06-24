@@ -6,8 +6,9 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include "stk_util/stk_config.h"        // for STK_HAS_MPI
+#include <stk_util/stk_config.h>        // for STK_HAS_MPI
 #include <stk_util/environment/RuntimeMessage.hpp>
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <algorithm>                    // for max, stable_sort
 #include <functional>                   // for equal_to, binary_function
 #include <sstream>                      // for operator<<, basic_ostream, etc
@@ -20,10 +21,6 @@
 #include <vector>                       // for vector, etc
 #include "boost/unordered/detail/buckets.hpp"  // for iterator, etc
 #include "boost/unordered/unordered_map.hpp"
-#if defined( STK_HAS_MPI )
-#  include "mpi.h"                      // for MPI_CHAR, MPI_Comm_rank, etc
-#endif
-
 
 namespace stk {
 
@@ -300,10 +297,8 @@ report_deferred_messages(
 {
 #ifdef STK_HAS_MPI
   const int p_root = 0 ;
-  int p_size = 1;
-  MPI_Comm_size(comm, &p_size);
-  int p_rank = 0;
-  MPI_Comm_rank(comm, &p_rank);
+  int p_size = stk::parallel_machine_size(comm);
+  int p_rank = stk::parallel_machine_rank(comm);
 
   for (DeferredMessageVector::iterator it = s_deferredMessageVector.begin(); it != s_deferredMessageVector.end(); ++it)
     (*it).m_rank = p_rank;
@@ -414,10 +409,8 @@ aggregate_messages(
   os.str("");
   
   const int p_root = 0 ;
-  int p_size = 1;
-  MPI_Comm_size(comm, &p_size);
-  int p_rank = 0;
-  MPI_Comm_rank(comm, &p_rank);
+  int p_size = stk::parallel_machine_size(comm);
+  int p_rank = stk::parallel_machine_rank(comm);
   
   int result =-1;
 

@@ -194,7 +194,7 @@ struct ConnectivityMap
   bool valid(EntityRank from, EntityRank to) const
   {
     // You can always have dynamic connectivity to "beyond-element" entities
-    return (from > 3 || to > 3) ? true : m_map[from][to] != INVALID_CONNECTIVITY_TYPE;
+    return (from > stk::topology::ELEMENT_RANK || to > stk::topology::ELEMENT_RANK) ? true : m_map[from][to] != INVALID_CONNECTIVITY_TYPE;
   }
 
   map_type m_map;

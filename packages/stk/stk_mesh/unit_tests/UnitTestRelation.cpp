@@ -16,7 +16,6 @@
 #include <string>                       // for string
 #include <unit_tests/UnitTestModificationEndWrapper.hpp>
 #include <vector>                       // for vector, vector<>::iterator
-#include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Entity.hpp"     // for Entity, operator<<
 #include "stk_mesh/base/Types.hpp"      // for ConnectivityOrdinal, etc
@@ -77,8 +76,6 @@ TEST(UnitTestingOfRelation, testRelationCoverage)
 
   // Cannot declare a back relation
   ASSERT_THROW ( bulk.declare_relation ( node0 , edge , 0 /*rel ord*/) , std::runtime_error );
-
-  bulk.modification_end();
 }
 
 TEST(UnitTestingOfRelation, testRelationNoGhosting)
@@ -113,7 +110,7 @@ TEST(UnitTestingOfRelation, testRelationNoGhosting)
   ring_bulk.modification_begin();
   for ( unsigned p = 0 ; p < p_size ; ++p ) {
     if ( p != p_rank ) {
-      ASSERT_EQ( ring_bulk.in_shared( ring_bulk.entity_key(elementnew) , p ), false );
+      ASSERT_EQ( ring_bulk.in_aura( ring_bulk.entity_key(elementnew) , p ), false );
       ASSERT_EQ( ring_bulk.in_send_ghost( ring_bulk.entity_key(elementnew) , p ), false );
     }
   }
@@ -122,7 +119,7 @@ TEST(UnitTestingOfRelation, testRelationNoGhosting)
   ASSERT_EQ( ring_bulk.in_send_ghost( ring_bulk.entity_key(elementnew) , p_rank+100 ), false );
 
   Entity node = ring_bulk.get_entity( stk::topology::NODE_RANK , mesh.m_node_ids[ nPerProc * p_rank ] );
-  ASSERT_EQ( ring_bulk.in_shared( ring_bulk.entity_key(node) , p_rank+100 ), false );
+  ASSERT_EQ( ring_bulk.in_aura( ring_bulk.entity_key(node) , p_rank+100 ), false );
 }
 
 TEST(UnitTestingOfRelation, testRelationWithGhosting)
@@ -163,7 +160,7 @@ TEST(UnitTestingOfRelation, testRelationWithGhosting)
     //not owned and not shared
     Entity node2 = bulk.get_entity( stk::topology::NODE_RANK , mesh.m_node_ids[ nPerProc * p_rank ] );
 
-    ASSERT_EQ( bulk.in_shared( bulk.entity_key(node2) , p_rank+100 ), false );
+    ASSERT_EQ( bulk.in_aura( bulk.entity_key(node2) , p_rank+100 ), false );
     ASSERT_EQ( bulk.in_send_ghost( bulk.entity_key(node) , p_rank+100 ), false );
   }
 }
@@ -216,8 +213,6 @@ TEST(UnitTestingOfRelation, testDegenerateRelation)
     mesh.destroy_relation( elem, node, i );
     ASSERT_EQ( nodes_per_elem - (i+1), static_cast<unsigned>(mesh.num_nodes(elem)) );
   }
-
-  mesh.modification_end();
 }
 
 TEST(UnitTestingOfRelation, testRelationAttribute)
@@ -453,10 +448,6 @@ TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
     // Set up relation from elem to edge
     mesh.declare_relation( elem, edge, 0 /*rel-id*/ );
   }
-
-  mesh.modification_end();
-
-  mesh.modification_begin();
 
   if (p_rank < 2) {
     // Set up relations from edge to nodes

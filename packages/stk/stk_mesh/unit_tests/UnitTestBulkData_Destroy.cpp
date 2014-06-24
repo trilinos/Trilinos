@@ -13,7 +13,6 @@
 #include <gtest/gtest.h>
 #include <unit_tests/UnitTestModificationEndWrapper.hpp>
 #include <vector>                       // for vector
-#include "mpi.h"                        // for MPI_Barrier, MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/ConnectivityMap.hpp"  // for ConnectivityMap
 #include "stk_mesh/base/Entity.hpp"     // for Entity
@@ -224,7 +223,7 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
     ASSERT_TRUE( bulk.is_valid(node) );
     ASSERT_NE( p_rank , bulk.parallel_owner_rank(node) );
 
-    ASSERT_EQ( size_t(1) , bulk.entity_comm_sharing(bulk.entity_key(node)).size() );
+    ASSERT_EQ( size_t(1) , bulk.entity_comm_map_aura(bulk.entity_key(node)).size() );
     ASSERT_EQ( size_t(2) , bulk.count_relations(node) );
 
     EntityId node_element_ids[2] ;
@@ -289,8 +288,8 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
     ASSERT_NE( p_rank , bulk.parallel_owner_rank(node_not_owned) );
     ASSERT_EQ( p_rank , bulk.parallel_owner_rank(node_owned) );
 
-    ASSERT_EQ( 1u , bulk.entity_comm_sharing(bulk.entity_key(node_owned)).size() );
-    ASSERT_EQ( 1u , bulk.entity_comm_sharing(bulk.entity_key(node_not_owned)).size() );
+    ASSERT_EQ( 1u , bulk.entity_comm_map_aura(bulk.entity_key(node_owned)).size() );
+    ASSERT_EQ( 1u , bulk.entity_comm_map_aura(bulk.entity_key(node_not_owned)).size() );
     ASSERT_EQ( 2u , bulk.count_relations(node_owned) );
 
     EntityId node_element_ids[2] ;

@@ -119,15 +119,23 @@ set_box(Box & box, Iterator itr)
 }
 
 inline
-MPI_Datatype get_mpi_type(double)
+ParallelDatatype get_mpi_type(double)
 {
+#ifdef STK_HAS_MPI
   return MPI_DOUBLE;
+#else
+  return 0;
+#endif
 }
 
 inline
-MPI_Datatype get_mpi_type(float)
+ParallelDatatype get_mpi_type(float)
 {
+#ifdef STK_HAS_MPI
   return MPI_FLOAT;
+#else
+  return 1;
+#endif
 }
 
 template <typename RangeBox>
@@ -164,7 +172,7 @@ bool invalid_box(CoordType *raw_box)
     retval |= ((raw_box[i + Dimension] - raw_box[i]) < 0);
   }
   return retval;
-};
+}
 
 template <typename Box, typename SpatialIndex>
 void // TODO: enable if box matches spatialindex
@@ -182,11 +190,16 @@ create_global_spatial_index(SpatialIndex& index, Box const& local_bounding_box, 
   impl::fill_array(local_bounding_box, local_box);
 
   int size = stk::parallel_machine_size(comm);
-  std::vector<coordinate_t> recv(data_per_proc * size, 0);
 
+  std::vector<coordinate_t> recv(data_per_proc * size, 0);
+#ifdef STK_HAS_MPI
   MPI_Allgather(local_box, data_per_proc, impl::get_mpi_type(coordinate_t()),
                 &*recv.begin(), data_per_proc, impl::get_mpi_type(coordinate_t()), comm);
-
+#else
+  for (int i=0; i < data_per_proc; i++) {
+    recv[i] = local_box[i];
+  }
+#endif
   for (int p = 0; p < size; ++p) {
     coordinate_t *raw_box = &*(recv.begin() + p * data_per_proc);
     if (invalid_box<coordinate_t, bg::dimension<point_t>::value>(raw_box)) {

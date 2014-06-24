@@ -11,7 +11,9 @@
 #include <stk_util/parallel/ParallelComm.hpp>  // for CommAll
 #include <gtest/gtest.h>
 #include <vector>                       // for vector
-#include "mpi.h"                        // for MPI_COMM_WORLD, etc
+#include <stk_util/stk_config.h>
+#if defined ( STK_HAS_MPI )
+#  include <mpi.h>                        // for MPI_Comm
 
 
 TEST(ParallelComm, CommAllDestructor)
@@ -131,3 +133,4 @@ TEST(ParallelComm, HowToCommunicateAnArbitraryNumberOfValues)
     }
 }
 //EndDocTest
+#endif

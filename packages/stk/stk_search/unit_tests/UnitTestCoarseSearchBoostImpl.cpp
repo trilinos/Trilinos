@@ -24,9 +24,8 @@ TEST(stk_search, boost_global_spatial_index)
   const unsigned MaxVolumesPerNode = 16;
   typedef bgi::rtree< BoxProc, bgi::quadratic<MaxVolumesPerNode> > Rtree;
 
-  int rank, size;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  int size = parallel_size;
+  int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
 
   Point min_corner(rank - 0.2, 0, 0);
   Point max_corner(rank + 1.2, 1, 1);

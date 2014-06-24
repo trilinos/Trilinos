@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
-#include <mpi.h>
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <stk_util/parallel/DistributedIndex.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
@@ -59,11 +59,9 @@ void updateDistributedIndexUsingStkMesh(stk::mesh::BulkData &stkMeshBulkData, co
 
 TEST( UnderstandingDistributedIndex, WithoutStkMeshBulkData)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    int procCount = -1;
-    int myProc = -1;
-    MPI_Comm_size(communicator, &procCount);
-    MPI_Comm_rank(communicator, &myProc);
+    stk::ParallelMachine communicator = MPI_COMM_WORLD;
+    int procCount = stk::parallel_machine_size(communicator);
+    int myProc = stk::parallel_machine_rank(communicator);
 
     if(procCount == 2)
     {
@@ -142,11 +140,9 @@ TEST( UnderstandingDistributedIndex, WithoutStkMeshBulkData)
 
 TEST( UnderstandingDistributedIndex, ViaStkMeshBulkData)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    int procCount = -1;
-    int myProc = -1;
-    MPI_Comm_size(communicator, &procCount);
-    MPI_Comm_rank(communicator, &myProc);
+    stk::ParallelMachine communicator = MPI_COMM_WORLD;
+    int procCount = stk::parallel_machine_size(communicator);
+    int myProc = stk::parallel_machine_rank(communicator);
 
     if(procCount == 2)
     {
@@ -177,6 +173,18 @@ TEST( UnderstandingDistributedIndex, ViaStkMeshBulkData)
 
         stkMeshBulkData.modification_begin();
         stkMeshBulkData.generate_new_entities(requests, requested_entities);
+
+        //each entity in requested_entities needs to be connected to at least one node
+        //because stk-mesh requires that.
+        size_t idx = requests[0];
+        stk::mesh::Entity node = totalCount>0 ? requested_entities[0] : stk::mesh::Entity();
+        for(size_t i=1; i<requests.size(); ++i) {
+          for(size_t j=0; j<requests[i]; ++j) {
+            stk::mesh::Entity entity = requested_entities[idx++];
+            stkMeshBulkData.declare_relation(entity, node, 0);
+          }
+        }
+
         stkMeshBulkData.modification_end();
 
         EXPECT_EQ(totalCount, requested_entities.size());
@@ -221,11 +229,9 @@ TEST( UnderstandingDistributedIndex, ViaStkMeshBulkData)
 
 TEST(UnderstandingDistributedIndex, TestSharedAndGhostedAndOwnedEntitiesWithoutAnyModification)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    int procCount = -1;
-    int myProc = -1;
-    MPI_Comm_size(communicator, &procCount);
-    MPI_Comm_rank(communicator, &myProc);
+    stk::ParallelMachine communicator = MPI_COMM_WORLD;
+    int procCount = stk::parallel_machine_size(communicator);
+    int myProc = stk::parallel_machine_rank(communicator);
 
     if(procCount == 2)
     {
@@ -248,7 +254,7 @@ TEST(UnderstandingDistributedIndex, TestSharedAndGhostedAndOwnedEntitiesWithoutA
             stk::mesh::Entity sharedNode = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, sharedNodeIds[i]);
             stk::mesh::Bucket& bucket = stkMeshBulkData.bucket(sharedNode);
             EXPECT_TRUE(bucket.shared());
-            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_sharing(stkMeshBulkData.entity_key(sharedNode));
+            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map_aura(stkMeshBulkData.entity_key(sharedNode));
             EXPECT_TRUE(commStuff.size() == 1);
             EXPECT_TRUE((*commStuff.first).proc == otherProcId);
             size_t sharedButNotGhostedId = 0;
@@ -271,7 +277,7 @@ TEST(UnderstandingDistributedIndex, TestSharedAndGhostedAndOwnedEntitiesWithoutA
             stk::mesh::Bucket& bucket = stkMeshBulkData.bucket(ghostedNode);
             bool isGhosted = !bucket.shared() && !bucket.owned();
             EXPECT_TRUE(isGhosted);
-            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm(stkMeshBulkData.entity_key(ghostedNode));
+            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map(stkMeshBulkData.entity_key(ghostedNode));
             size_t numProcsOtherThanMeOnWhichEntityIsAGhost = 1;
             EXPECT_TRUE(commStuff.size() == numProcsOtherThanMeOnWhichEntityIsAGhost);
             EXPECT_TRUE((*commStuff.first).proc == otherProcId);
@@ -294,7 +300,7 @@ TEST(UnderstandingDistributedIndex, TestSharedAndGhostedAndOwnedEntitiesWithoutA
             stk::mesh::Bucket& bucket = stkMeshBulkData.bucket(ghostedElement);
             bool isGhosted = !bucket.shared() && !bucket.owned();
             EXPECT_TRUE(isGhosted);
-            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm(stkMeshBulkData.entity_key(ghostedElement));
+            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map(stkMeshBulkData.entity_key(ghostedElement));
             size_t numProcsOtherThanMeOnWhichEntityIsAGhost = 1;
             EXPECT_TRUE(commStuff.size() == numProcsOtherThanMeOnWhichEntityIsAGhost);
             EXPECT_TRUE((*commStuff.first).proc == otherProcId);
@@ -314,7 +320,7 @@ TEST(UnderstandingDistributedIndex, TestSharedAndGhostedAndOwnedEntitiesWithoutA
             stk::mesh::Entity ownedElement = stkMeshBulkData.get_entity(stk::topology::ELEMENT_RANK, ownedElements[i]);
             stk::mesh::Bucket& bucket = stkMeshBulkData.bucket(ownedElement);
             EXPECT_TRUE(bucket.owned());
-            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm(stkMeshBulkData.entity_key(ownedElement));
+            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map(stkMeshBulkData.entity_key(ownedElement));
             size_t numProcsOtherThanMeOnWhichEntityIsAGhost = 1;
             EXPECT_TRUE(commStuff.size() == numProcsOtherThanMeOnWhichEntityIsAGhost);
             EXPECT_TRUE((*commStuff.first).proc == otherProcId);
@@ -340,7 +346,7 @@ void testSharedNodesFor2x2x4MeshForTwoProcs(const int myProc, const stk::mesh::B
         stk::mesh::Entity sharedNode = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, sharedNodeIds[i]);
         stk::mesh::Bucket& bucket = stkMeshBulkData.bucket(sharedNode);
         EXPECT_TRUE(bucket.shared());
-        stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_sharing(stkMeshBulkData.entity_key(sharedNode));
+        stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map_aura(stkMeshBulkData.entity_key(sharedNode));
         EXPECT_TRUE(commStuff.size() == 1);
         EXPECT_TRUE((*commStuff.first).proc == otherProcId);
         size_t sharedButNotGhostedId = 0;
@@ -350,11 +356,9 @@ void testSharedNodesFor2x2x4MeshForTwoProcs(const int myProc, const stk::mesh::B
 
 TEST(UnderstandingDistributedIndex, GhostAnElement)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    int procCount = -1;
-    int myProc = -1;
-    MPI_Comm_size(communicator, &procCount);
-    MPI_Comm_rank(communicator, &myProc);
+    stk::ParallelMachine communicator = MPI_COMM_WORLD;
+    int procCount = stk::parallel_machine_size(communicator);
+    int myProc = stk::parallel_machine_rank(communicator);
 
     if(procCount == 2)
     {
@@ -412,7 +416,7 @@ TEST(UnderstandingDistributedIndex, GhostAnElement)
         if ( myProc == processorThatReceivesGhostedElement13 )
         {
             stk::mesh::Entity element = stkMeshBulkData.get_entity(stk::topology::ELEMENT_RANK, ghostedElementId);
-            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm(stkMeshBulkData.entity_key(element));
+            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map(stkMeshBulkData.entity_key(element));
             size_t numProcsToCommunicateWithForEntity = 1;
             EXPECT_TRUE(commStuff.size() == numProcsToCommunicateWithForEntity);
             EXPECT_TRUE((*commStuff.first).proc == otherProcId);
@@ -425,11 +429,9 @@ TEST(UnderstandingDistributedIndex, GhostAnElement)
 
 TEST(UnderstandingDistributedIndex, KillAGhostedElement)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    int procCount = -1;
-    int myProc = -1;
-    MPI_Comm_size(communicator, &procCount);
-    MPI_Comm_rank(communicator, &myProc);
+    stk::ParallelMachine communicator = MPI_COMM_WORLD;
+    int procCount = stk::parallel_machine_size(communicator);
+    int myProc = stk::parallel_machine_rank(communicator);
 
     if(procCount == 2)
     {
@@ -472,7 +474,7 @@ TEST(UnderstandingDistributedIndex, KillAGhostedElement)
             bool isGhosted = !bucket.shared() && !bucket.owned();
             EXPECT_TRUE(isGhosted);
 
-            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm(stkMeshBulkData.entity_key(element));
+            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map(stkMeshBulkData.entity_key(element));
             size_t numProcsToCommunicateWithForEntity = 1;
             EXPECT_TRUE(commStuff.size() == numProcsToCommunicateWithForEntity);
             EXPECT_TRUE((*commStuff.first).proc == otherProcId);
@@ -495,11 +497,9 @@ TEST(UnderstandingDistributedIndex, KillAGhostedElement)
 
 TEST(UnderstandingDistributedIndex, CreateDisconnectedElement)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    int procCount = -1;
-    int myProc = -1;
-    MPI_Comm_size(communicator, &procCount);
-    MPI_Comm_rank(communicator, &myProc);
+    stk::ParallelMachine communicator = MPI_COMM_WORLD;
+    int procCount = stk::parallel_machine_size(communicator);
+    int myProc = stk::parallel_machine_rank(communicator);
 
     if(procCount == 2)
     {
@@ -587,11 +587,9 @@ void testElementMove(int fromProc, int toProc, int myProc, int elementToMoveId, 
 
 TEST(UnderstandingDistributedIndex, MoveAnElement)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    int procCount = -1;
-    int myProc = -1;
-    MPI_Comm_size(communicator, &procCount);
-    MPI_Comm_rank(communicator, &myProc);
+    stk::ParallelMachine communicator = MPI_COMM_WORLD;
+    int procCount = stk::parallel_machine_size(communicator);
+    int myProc = stk::parallel_machine_rank(communicator);
 
     if(procCount == 2)
     {
@@ -620,7 +618,7 @@ TEST(UnderstandingDistributedIndex, MoveAnElement)
             bool isGhosted = !bucket.owned() && !bucket.shared();
             EXPECT_TRUE(isGhosted);
 
-            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm(stkMeshBulkData.entity_key(elementToMove));
+            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map(stkMeshBulkData.entity_key(elementToMove));
             size_t numProcsToCommunicateWithForEntity = 1;
             EXPECT_TRUE(commStuff.size() == numProcsToCommunicateWithForEntity);
             EXPECT_TRUE((*commStuff.first).proc == toProc);
@@ -633,7 +631,7 @@ TEST(UnderstandingDistributedIndex, MoveAnElement)
             stk::mesh::Bucket& bucket = stkMeshBulkData.bucket(elementToMove);
             EXPECT_TRUE(bucket.owned());
 
-            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm(stkMeshBulkData.entity_key(elementToMove));
+            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map(stkMeshBulkData.entity_key(elementToMove));
             size_t numProcsToCommunicateWithForEntity = 1;
             EXPECT_TRUE(commStuff.size() == numProcsToCommunicateWithForEntity);
             EXPECT_TRUE((*commStuff.first).proc == fromProc);
@@ -655,7 +653,7 @@ TEST(UnderstandingDistributedIndex, MoveAnElement)
             bool isGhosted = !bucket.owned() && !bucket.shared();
             EXPECT_TRUE(isGhosted);
 
-            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm(stkMeshBulkData.entity_key(elementToMove));
+            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map(stkMeshBulkData.entity_key(elementToMove));
             size_t numProcsToCommunicateWithForEntity = 1;
             EXPECT_TRUE(commStuff.size() == numProcsToCommunicateWithForEntity);
             EXPECT_TRUE((*commStuff.first).proc == toProc);
@@ -667,7 +665,7 @@ TEST(UnderstandingDistributedIndex, MoveAnElement)
         {
             stk::mesh::Bucket& bucket = stkMeshBulkData.bucket(elementToMove);
             EXPECT_TRUE(bucket.owned());
-            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm(stkMeshBulkData.entity_key(elementToMove));
+            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map(stkMeshBulkData.entity_key(elementToMove));
             size_t numProcsToCommunicateWithForEntity = 1;
             EXPECT_TRUE(commStuff.size() == numProcsToCommunicateWithForEntity);
             EXPECT_TRUE((*commStuff.first).proc == fromProc);
@@ -681,11 +679,9 @@ TEST(UnderstandingDistributedIndex, MoveAnElement)
 
 TEST(UnderstandingDistributedIndex, GhostANode)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    int procCount = -1;
-    int myProc = -1;
-    MPI_Comm_size(communicator, &procCount);
-    MPI_Comm_rank(communicator, &myProc);
+    stk::ParallelMachine communicator = MPI_COMM_WORLD;
+    int procCount = stk::parallel_machine_size(communicator);
+    int myProc = stk::parallel_machine_rank(communicator);
 
     if(procCount == 2)
     {
@@ -718,7 +714,7 @@ TEST(UnderstandingDistributedIndex, GhostANode)
             bool isGhosted = !bucket.shared() && !bucket.owned();
             EXPECT_FALSE(isGhosted);
 
-            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm(stkMeshBulkData.entity_key(ghostedNode));
+            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map(stkMeshBulkData.entity_key(ghostedNode));
             size_t numProcsToCommunicateWithForEntity = 0;
             EXPECT_TRUE(commStuff.size() == numProcsToCommunicateWithForEntity);
         }
@@ -750,7 +746,7 @@ TEST(UnderstandingDistributedIndex, GhostANode)
             bool isGhosted = !bucket.shared() && !bucket.owned();
             EXPECT_TRUE(isGhosted);
 
-            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm(stkMeshBulkData.entity_key(ghostedNode));
+            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map(stkMeshBulkData.entity_key(ghostedNode));
             size_t numProcsToCommunicateWithForEntity = 1;
             EXPECT_TRUE(commStuff.size() == numProcsToCommunicateWithForEntity);
             EXPECT_TRUE((*commStuff.first).proc == otherProcId);
@@ -765,7 +761,7 @@ TEST(UnderstandingDistributedIndex, GhostANode)
             bool isThisAGhostOnThisProc = !bucket.shared() && !bucket.owned();
             EXPECT_FALSE(isThisAGhostOnThisProc);
 
-            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm(stkMeshBulkData.entity_key(ghostedNode));
+            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map(stkMeshBulkData.entity_key(ghostedNode));
             size_t numProcsToCommunicateWithForEntity = 1;
             EXPECT_TRUE(commStuff.size() == numProcsToCommunicateWithForEntity);
         }
@@ -782,7 +778,7 @@ void testReceivingProcHasOneNodeGhosted(stk::mesh::BulkData &stkMeshBulkData,
     bool isGhosted = !bucket.shared() && !bucket.owned();
     EXPECT_TRUE(isGhosted);
 
-    stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm(stkMeshBulkData.entity_key(ghostedNode));
+    stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map(stkMeshBulkData.entity_key(ghostedNode));
     size_t numGhostingsInvolvingEntity = 2;
     EXPECT_EQ(numGhostingsInvolvingEntity, commStuff.size());
     EXPECT_EQ(owningProc, (*commStuff.first).proc);
@@ -798,7 +794,7 @@ void testOwningProcHasOneNodeGhosted(stk::mesh::BulkData &stkMeshBulkData,
                            int nodeIdToGhost, int ghostReceivingProc)
 {
     stk::mesh::Entity ghostedNode = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, nodeIdToGhost);
-    stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm(stkMeshBulkData.entity_key(ghostedNode));
+    stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map(stkMeshBulkData.entity_key(ghostedNode));
     size_t numGhostingsInvolvingEntity = 2;
     EXPECT_EQ(numGhostingsInvolvingEntity, commStuff.size());
     EXPECT_EQ(ghostReceivingProc, (*commStuff.first).proc);
@@ -823,7 +819,7 @@ void testOwningProcHasNoGhosts(stk::mesh::BulkData &stkMeshBulkData,
                            int nodeIdToGhost, int ghostReceivingProc)
 {
     stk::mesh::Entity ghostedNode = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, nodeIdToGhost);
-    stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm(stkMeshBulkData.entity_key(ghostedNode));
+    stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map(stkMeshBulkData.entity_key(ghostedNode));
     size_t numGhostingsInvolvingEntity = 0;
     EXPECT_EQ(numGhostingsInvolvingEntity, commStuff.size());
 }
@@ -838,7 +834,7 @@ void testReceivingProcAfterOneGhostingDestroyed(stk::mesh::BulkData &stkMeshBulk
     bool isGhosted = !bucket.shared() && !bucket.owned();
     EXPECT_TRUE(isGhosted);
 
-    stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm(stkMeshBulkData.entity_key(ghostedNode));
+    stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map(stkMeshBulkData.entity_key(ghostedNode));
     size_t numGhostingsInvolvingEntity = 1;
     EXPECT_EQ(numGhostingsInvolvingEntity, commStuff.size());
     EXPECT_EQ(owningProc, (*commStuff.first).proc);
@@ -851,7 +847,7 @@ void testOwningProcAfterOneGhostingDestroyed(stk::mesh::BulkData &stkMeshBulkDat
                            int nodeIdToGhost, int ghostReceivingProc)
 {
     stk::mesh::Entity ghostedNode = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, nodeIdToGhost);
-    stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm(stkMeshBulkData.entity_key(ghostedNode));
+    stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map(stkMeshBulkData.entity_key(ghostedNode));
     size_t numGhostingsInvolvingEntity = 1;
     EXPECT_EQ(numGhostingsInvolvingEntity, commStuff.size());
     EXPECT_EQ(ghostReceivingProc, (*commStuff.first).proc);
@@ -914,11 +910,9 @@ void testOneGhostingDestroyed(stk::mesh::BulkData &stkMeshBulkData,
 
 TEST(UnderstandingDistributedIndex, MultipleCustomGhostings)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    int procCount = -1;
-    int myProc = -1;
-    MPI_Comm_size(communicator, &procCount);
-    MPI_Comm_rank(communicator, &myProc);
+    stk::ParallelMachine communicator = MPI_COMM_WORLD;
+    int procCount = stk::parallel_machine_size(communicator);
+    int myProc = stk::parallel_machine_rank(communicator);
 
     if(procCount == 2)
     {
@@ -962,11 +956,9 @@ TEST(UnderstandingDistributedIndex, MultipleCustomGhostings)
 
 TEST(UnderstandingDistributedIndex, MultipleCustomGhostingsWithDestroy)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    int procCount = -1;
-    int myProc = -1;
-    MPI_Comm_size(communicator, &procCount);
-    MPI_Comm_rank(communicator, &myProc);
+    stk::ParallelMachine communicator = MPI_COMM_WORLD;
+    int procCount = stk::parallel_machine_size(communicator);
+    int myProc = stk::parallel_machine_rank(communicator);
 
     if(procCount == 2)
     {

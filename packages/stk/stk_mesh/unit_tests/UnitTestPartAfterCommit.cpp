@@ -23,7 +23,6 @@
 #include <string>                       // for string, basic_string, etc
 #include <utility>                      // for pair
 #include <vector>                       // for vector, etc
-#include "mpi.h"                        // for MPI_COMM_WORLD, MPI_Barrier, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket, has_superset
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
@@ -212,12 +211,10 @@ TEST(UnitTestPartsAfterCommit, PartInduction)
 
 TEST(UnitTestPartsAfterCommit, SelectorOps)
 {
-    int numProcs = -1;
-    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+    stk::ParallelMachine communicator = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(communicator);
     if(numProcs == 1)
     {
-        stk::ParallelMachine communicator = MPI_COMM_WORLD;
-
         stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
         const std::string generatedMeshSpecification = "generated:1x1x1";
         stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);

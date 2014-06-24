@@ -6,14 +6,10 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include "stk_util/stk_config.h"        // for STK_HAS_MPI
 #include <stk_util/parallel/BroadcastArg.hpp>
 #include <stddef.h>                     // for size_t
 #include <algorithm>                    // for copy
 #include <string>                       // for basic_string, string
-#if defined( STK_HAS_MPI)
-#  include "mpi.h"                      // for MPI_Bcast, MPI_BYTE, etc
-#endif
 #include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_rank, etc
 
 
@@ -24,11 +20,7 @@ BroadcastArg::BroadcastArg(
   int                   argc,
   char **               argv)
 {
-#ifdef STK_HAS_MPI
   int rank = stk::parallel_machine_rank(parallel_machine);
-#else
-  int rank = 0;
-#endif
 
   size_t buffer_length = 0;
   char * buffer = 0;

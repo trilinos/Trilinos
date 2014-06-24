@@ -20,7 +20,6 @@
 #include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceMin, etc
 #include <stk_util/util/string_case_compare.hpp>  // for equal_case
 #include "Shards_BasicTopologies.hpp"   // for getCellTopologyData, etc
-#include "mpi.h"                        // for ompi_communicator_t
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
 #include "stk_mesh/base/Part.hpp"       // for Part, etc

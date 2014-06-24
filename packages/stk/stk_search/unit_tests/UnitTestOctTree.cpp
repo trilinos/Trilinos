@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
-#include <mpi.h>
 #include <stk_search/OctTreeOps.hpp>
 #include <stk_search/OctTree.hpp>
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 
 #include <gtest/gtest.h>
 
@@ -21,10 +21,8 @@ TEST(stk_search_oct_tree, checkCuts)
     typedef std::vector<BoxIdent> BoxVector;
 
     MPI_Comm comm = MPI_COMM_WORLD;
-    int proc_id = -1;
-    int num_procs = -1;
-    MPI_Comm_rank(comm, &proc_id);
-    MPI_Comm_size(comm, &num_procs);
+    int proc_id = stk::parallel_machine_rank(comm);
+    int num_procs = stk::parallel_machine_size(comm);
 
     double offsetFromEdgeOfProcessorBoundary=0.1;
     double sizeOfDomainPerProcessor=1.0;
@@ -117,8 +115,7 @@ TEST(stk_search_oct_tree, checkCuts)
 
 TEST(stk_search_oct_tree, testCalculationOfKeyUsingOffset)
 {
-    int procId=-1;
-    MPI_Comm_rank(MPI_COMM_WORLD, &procId);
+    int procId=stk::parallel_machine_rank(MPI_COMM_WORLD);
     if ( procId == 0 )
     {
         int key_1[4] = { 1, 1, 1, 1 };
@@ -138,9 +135,7 @@ TEST(stk_search_oct_tree, testCalculationOfKeyUsingOffset)
 
 TEST(stk_search_oct_tree, testPartitioningOfPhysicalTreeForVaryingNumberOfProcsAndWeights)
 {
-    int procId=-1;
-    MPI_Comm_rank(MPI_COMM_WORLD, &procId);
-
+    int procId=stk::parallel_machine_rank(MPI_COMM_WORLD);
     if ( procId == 0 )
     {
         std::vector<unsigned> ordinals;
@@ -192,8 +187,7 @@ TEST(stk_search_oct_tree, stressTestPartitioningUpToOneMillionProcessors)
     unsigned tree_size = stk::oct_tree_size(depth);
     float * weights = new float[tree_size*2];
 
-    int procId=-1;
-    MPI_Comm_rank(MPI_COMM_WORLD, &procId);
+    int procId=stk::parallel_machine_rank(MPI_COMM_WORLD);
     std::vector<unsigned> numProcs;
     numProcs.push_back(2);
     numProcs.push_back(8);

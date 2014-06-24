@@ -19,7 +19,6 @@
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
 #include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
 #include <gtest/gtest.h>
-#include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { class Bucket; } }

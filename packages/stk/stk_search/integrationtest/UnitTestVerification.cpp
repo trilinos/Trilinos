@@ -1,8 +1,8 @@
 #include <stk_search/BoundingBox.hpp>
 #include <stk_search/IdentProc.hpp>
 #include <unit_tests/UnitTestUtils.hpp>
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 
-#include <mpi.h>
 #include <gtest/gtest.h>
 #include <vector>
 
@@ -13,8 +13,7 @@ namespace
 void runTwoSpheresTest(stk::search::SearchMethod searchMethod, const double distanceBetweenSphereCenters, const double radius, std::vector< std::pair<Ident, Ident> > &boxIdPairResults)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
-    int procId = -1;
-    MPI_Comm_rank(comm, &procId);
+    int procId = stk::parallel_machine_rank(comm);
 
     std::vector< std::pair<Sphere,Ident> > boxVector1;
     boxVector1.push_back(generateBoundingVolume<Sphere>(0, 0, 0, radius, 1, procId));
@@ -30,9 +29,7 @@ const double radiusOfOneHalf = 0.5;
 int numProcessors()
 {
     MPI_Comm comm = MPI_COMM_WORLD;
-    int numProcs = 1;
-    MPI_Comm_size(comm, &numProcs);
-    return numProcs;
+    return stk::parallel_machine_size(comm);
 }
 
 TEST(Verification, OverlappingSpheres_BOOST_RTREE)
@@ -128,8 +125,7 @@ void runBoxOverlappingEightSurroundingBoxes(stk::search::SearchMethod searchMeth
 {
     int numProc = numProcessors();
     MPI_Comm comm = MPI_COMM_WORLD;
-    int procId = -1;
-    MPI_Comm_rank(comm, &procId);
+    int procId = stk::parallel_machine_rank(comm);
 
     std::vector< std::pair<OuterBoundingBoxType,Ident> > boxVector1;
     if(procId == 0)
@@ -301,8 +297,7 @@ template<class BoundingBoxType>
 void runLineOfBoundingBoxes(stk::search::SearchMethod searchMethod, enum Axis axis)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
-    int procId = -1;
-    MPI_Comm_rank(comm, &procId);
+    int procId = stk::parallel_machine_rank(comm);
 
     const double radius = 0.708;
     const double distanceBetweenCenters = 1.0;
@@ -345,8 +340,7 @@ void runLineOfBoundingBoxes(stk::search::SearchMethod searchMethod, enum Axis ax
     std::vector< std::pair<Ident, Ident> > boxIdPairResults;
     stk::search::coarse_search(boxVector1, boxVector2, searchMethod, comm, boxIdPairResults);
 
-    int numProcs = -1;
-    MPI_Comm_size(comm, &numProcs);
+    int numProcs = stk::parallel_machine_size(comm);
 
     unsigned numExpectedResults = 2;
     bool doOwnFirstOrLastSphereInLine = procId == 0 || procId == numProcs-1;

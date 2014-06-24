@@ -42,7 +42,9 @@
 #include <string>
 #include <utility>
 #include <vector>
+#if !defined(NO_EXODUS_SUPPORT)
 #include <exodusII.h>
+#endif
 
 #include "Ioss_CommSet.h"
 #include "Ioss_CoordinateFrame.h"
@@ -199,6 +201,7 @@ namespace {
 
   int print_groups(int exoid, std::string prefix)
   {
+#if !defined(NO_EXODUS_SUPPORT)
     int idum;
     float rdum;
     char group_name[33];
@@ -213,11 +216,13 @@ namespace {
     for (size_t i=0; i < num_children; i++) {
       print_groups(children[i], prefix);
     }
+#endif
     return 0;
   }
 
   void group_info(Info::Interface& interface)
   {
+#if !defined(NO_EXODUS_SUPPORT)
     // Assume exodusII...
     std::string inpfile = interface.filename();
     float version = 0.0;
@@ -228,6 +233,7 @@ namespace {
 			 EX_READ, &CPU_word_size, &IO_word_size, &version);
 
     int num_groups = print_groups(exoid,"");
+#endif
   }
 
   void file_info(Info::Interface& interface)

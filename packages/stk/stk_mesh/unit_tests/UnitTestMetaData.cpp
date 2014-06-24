@@ -17,7 +17,6 @@
 #include <string>                       // for string, operator==, etc
 #include <vector>                       // for vector
 #include "Shards_CellTopologyData.h"    // for CellTopologyData
-#include "mpi.h"                        // for MPI_COMM_WORLD
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
@@ -119,64 +118,32 @@ TEST( UnitTestMetaData, testEntityRepository )
 
   bulk.modification_begin();
 
+  stk::mesh::Entity node = stk::mesh::Entity();
   int id_base = 0;
   for ( id_base = 0 ; id_base < 97 ; ++id_base )
   {
     int new_id = size * id_base + rank;
-    bulk.declare_entity( stk::topology::NODE_RANK , new_id+1 , add_part );
+    node = bulk.declare_entity( stk::topology::NODE_RANK , new_id+1 , add_part );
   }
 
   int new_id = size * (++id_base) + rank;
   stk::mesh::Entity elem  = bulk.declare_entity( stk::topology::ELEMENT_RANK , new_id+1 , add_part );
+  bulk.declare_relation(elem, node, 0);
 
-  //new_id = size * (++id_base) + rank;
-  // stk::mesh::Entity elem2  = bulk.declare_entity( stk::topology::ELEMENT_RANK , new_id+1 , add_part );
+  bulk.entity_comm_map_clear(bulk.entity_key(elem));
 
-  stk::mesh::impl::EntityRepository &e = bulk.get_entity_repository();
+  bulk.entity_comm_map_clear_ghosting(bulk.entity_key(elem));
 
-  bulk.entity_comm_clear(bulk.entity_key(elem));
-
-  bulk.entity_comm_clear_ghosting(bulk.entity_key(elem));
-
-  const stk::mesh::Ghosting & ghost = bulk.shared_aura();
+  const stk::mesh::Ghosting & ghost = bulk.aura();
 
   bulk.modification_end();
 
-  ASSERT_FALSE(bulk.entity_comm_erase(bulk.entity_key(elem), ghost));
+  ASSERT_FALSE(bulk.entity_comm_map_erase(bulk.entity_key(elem), ghost));
 
   const stk::mesh::EntityCommInfo comm_info( ghost.ordinal() , 0 );
 
-  ASSERT_FALSE(bulk.entity_comm_erase(bulk.entity_key(elem), comm_info));
-
-  ASSERT_TRUE(bulk.entity_comm_insert(elem, comm_info));
-
-  //Checking internal_create_entity.
-  //   Hey, this doesn't seem to test much! -- PGX
-  e.internal_create_entity( stk::mesh::EntityKey( stk::topology::ELEM_RANK, 2 ));
-  e.internal_create_entity( stk::mesh::EntityKey( stk::topology::ELEM_RANK, 5 ));
-  e.internal_create_entity( stk::mesh::EntityKey( stk::topology::ELEM_RANK, 7 ));
-
-  //Checking get_entity with invalid key - no rank or id
-  {
-    int ok = 0 ;
-    try {
-
-      stk::mesh::Entity elem3 = e.get_entity(stk::mesh::EntityKey());
-      if(bulk.is_valid(elem3)){
-        // CAROL FIXME
-      }
-
-    }
-    catch( const std::exception & x ) {
-      ok = 1 ;
-      std::cout << "UnitTestMetaData CORRECTLY caught error for : "
-                << x.what()
-                << std::endl ;
-    }
-    if ( ! ok ) {
-      throw std::runtime_error("UnitTestMetaData FAILED to catch error for get_entity - invalid key");
-    }
-  }
+  ASSERT_FALSE(bulk.entity_comm_map_erase(bulk.entity_key(elem), comm_info));
+  ASSERT_TRUE(bulk.entity_comm_map_insert(elem, comm_info));
 }
 
 TEST( UnitTestMetaData, noEntityTypes )

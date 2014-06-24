@@ -15,6 +15,7 @@
 #include <init/Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>
 
+#include <stk_util/parallel/Parallel.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
@@ -908,7 +909,7 @@ namespace stk_example_io {
   namespace bopt = boost::program_options;
   int main(int argc, char** argv)
   {
-    MPI_Init(&argc, &argv);
+    stk::parallel_machine_init(&argc, &argv);
 
     bopt::options_description desc("options");
 
@@ -948,7 +949,7 @@ namespace stk_example_io {
       std::cout << "OPTION ERROR: The '--mesh <filename>' option is required!\n";
       std::exit(EXIT_FAILURE);
     }
-    MPI_Finalize();
+    stk::parallel_machine_finalize();
 
     return 0;
   }

@@ -346,6 +346,72 @@ void all_reduce_sum( ParallelMachine ,
 }
 
 void all_reduce_sum( ParallelMachine ,
+                     const long * local , long * global , unsigned count )
+{
+  for ( unsigned i = 0 ; i < count ; ++i ) { global[i] = local[i] ; }
+}
+
+void all_reduce_sum( ParallelMachine ,
+                     const size_t * local , size_t * global , unsigned count )
+{
+  for ( unsigned i = 0 ; i < count ; ++i ) { global[i] = local[i] ; }
+}
+
+void all_reduce_max( ParallelMachine ,
+                     const double * local , double * global , unsigned count )
+{
+  for ( unsigned i = 0 ; i < count ; ++i ) { global[i] = local[i] ; }
+}
+
+void all_reduce_max( ParallelMachine ,
+                     const float * local , float * global , unsigned count )
+{
+  for ( unsigned i = 0 ; i < count ; ++i ) { global[i] = local[i] ; }
+}
+
+void all_reduce_max( ParallelMachine ,
+                     const int * local , int * global , unsigned count )
+{
+  for ( unsigned i = 0 ; i < count ; ++i ) { global[i] = local[i] ; }
+}
+
+void all_reduce_max( ParallelMachine ,
+                     const long * local , long * global , unsigned count )
+{
+  for ( unsigned i = 0 ; i < count ; ++i ) { global[i] = local[i] ; }
+}
+
+void all_reduce_max( ParallelMachine ,
+                     const size_t * local , size_t * global , unsigned count )
+{
+  for ( unsigned i = 0 ; i < count ; ++i ) { global[i] = local[i] ; }
+}
+
+void all_reduce_min( ParallelMachine ,
+                     const double * local , double * global , unsigned count )
+{
+  for ( unsigned i = 0 ; i < count ; ++i ) { global[i] = local[i] ; }
+}
+
+void all_reduce_min( ParallelMachine ,
+                     const float * local , float * global , unsigned count )
+{
+  for ( unsigned i = 0 ; i < count ; ++i ) { global[i] = local[i] ; }
+}
+
+void all_reduce_min( ParallelMachine ,
+                     const int * local , int * global , unsigned count )
+{
+  for ( unsigned i = 0 ; i < count ; ++i ) { global[i] = local[i] ; }
+}
+
+void all_reduce_min( ParallelMachine ,
+                     const long * local , long * global , unsigned count )
+{
+  for ( unsigned i = 0 ; i < count ; ++i ) { global[i] = local[i] ; }
+}
+
+void all_reduce_min( ParallelMachine ,
                      const size_t * local , size_t * global , unsigned count )
 {
   for ( unsigned i = 0 ; i < count ; ++i ) { global[i] = local[i] ; }

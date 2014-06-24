@@ -10,7 +10,6 @@
 #include <stk_mesh/fixtures/GearsFixture.hpp>  // for GearsFixture, etc
 #include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture
 #include <gtest/gtest.h>
-#include "mpi.h"                        // for MPI_COMM_WORLD
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
 

@@ -13,7 +13,6 @@
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <gtest/gtest.h>
 #include <vector>                       // for operator!=
-#include "mpi.h"                        // for MPI_Barrier, MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data
@@ -89,7 +88,6 @@ TEST(UnitTestFieldDataInitVal, test_vector_field)
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier( MPI_COMM_WORLD );
-
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
   MetaData meta_data(spatial_dim);

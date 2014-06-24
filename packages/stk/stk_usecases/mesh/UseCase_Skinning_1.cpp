@@ -100,7 +100,7 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
         //each node should be attached to only 1 element and 3 faces
         correct_relations &= ( mesh.count_relations(current_node) == 4 );
         //the entire closure of the element should exist on a single process
-        correct_comm      &= ( mesh.entity_comm(mesh.entity_key(current_node)).size() == 0 );
+        correct_comm      &= ( mesh.entity_comm_map(mesh.entity_key(current_node)).size() == 0 );
       }
     }
     passed &= (correct_skin && correct_relations && correct_comm);

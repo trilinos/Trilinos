@@ -16,7 +16,6 @@
 #include <string>                       // for allocator, operator+, etc
 #include <vector>                       // for vector
 #include "gtest/gtest.h"                // for AssertHelper
-#include "mpi.h"                        // for MPI_COMM_WORLD
 #include "stk_mesh/base/Types.hpp"      // for PartVector
 
 

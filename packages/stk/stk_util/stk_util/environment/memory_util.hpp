@@ -3,12 +3,9 @@
 
 #include <vector>
 #include <string>
-#include <stk_util/stk_config.h>
-#if defined( STK_HAS_MPI )
-#include <mpi.h>
-#endif
 
-#include <stk_util/parallel/MPI.hpp>
+#include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/parallel/ParallelReduce.hpp>
 
 namespace stk {
 
@@ -31,20 +28,12 @@ namespace stk {
   inline
   void get_max_min_avg(MPI_Comm comm, T this_proc, T& max, T& min, T& avg)
   {
-#if defined(STK_HAS_MPI)
-    int num_procs = 1;
-    MPI_Comm_size(comm, &num_procs);
-
+    int num_procs = stk::parallel_machine_size(comm);
     T this_proc_average = this_proc / num_procs;
 
-    MPI_Datatype type = sierra::MPI::Datatype<T>::type();
-
-    MPI_Allreduce(&this_proc,         &max, 1, type, MPI_MAX, comm);
-    MPI_Allreduce(&this_proc,         &min, 1, type, MPI_MIN, comm);
-    MPI_Allreduce(&this_proc_average, &avg, 1, type, MPI_SUM, comm);
-#else
-    max = min = avg = this_proc;
-#endif
+    stk::all_reduce_max(comm, &this_proc, &max, 1);
+    stk::all_reduce_min(comm, &this_proc, &min, 1);
+    stk::all_reduce_sum(comm, &this_proc_average, &avg, 1);
   }
 }
 #endif /* STK_MEMORY_UTIL_H */

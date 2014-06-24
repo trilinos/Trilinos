@@ -18,7 +18,6 @@
 #include <string>                       // for operator==, string, etc
 #include <typeinfo>                     // for type_info
 #include <vector>                       // for vector
-#include "mpi.h"                        // for MPI_Barrier, MPI_COMM_WORLD, etc
 #include "stk_util/parallel/ParallelComm.hpp"  // for CommAll
 
 

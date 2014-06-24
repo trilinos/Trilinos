@@ -10,18 +10,12 @@
 #include <ostream>                      // for basic_ostream::operator<<
 #include <gtest/gtest.h>
 #include "gtest/gtest.h"                // for AssertHelper
-#include "mpi.h"                        // for MPI_Comm_rank, etc
-#include "stk_util/stk_config.h"        // for STK_HAS_MPI
+#include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
 
 TEST(UnitTestTemplate, testUnit)
 {
-  int mpi_rank = 0;
-  int mpi_size = 1;
-  
-#ifdef STK_HAS_MPI
-  ASSERT_EQ(MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank), MPI_SUCCESS);
-  ASSERT_EQ(MPI_Comm_size(MPI_COMM_WORLD, &mpi_size), MPI_SUCCESS);
-#endif
+  int mpi_rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  int mpi_size = stk::parallel_machine_size(MPI_COMM_WORLD);
   
   ASSERT_TRUE(mpi_rank < mpi_size);
 }

@@ -38,7 +38,7 @@ void set_owners(BulkData& mesh)
   for ( size_t i=0; i<entity_comm.size(); ++i) {
     Entity const entity = entity_comm[i].entity;;
 
-    const PairIterEntityComm sharing = mesh.entity_comm_sharing(entity_comm[i].key);
+    const PairIterEntityComm sharing = mesh.entity_comm_map_sharing(entity_comm[i].key);
 
     if ( ! sharing.empty() && entity_comm[i].owner == local_proc ) {
       ProcSet proc_set ;

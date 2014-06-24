@@ -5,7 +5,6 @@
 #include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field, etc
-#include "mpi.h"                        // for MPI_COMM_WORLD
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/FieldBase.hpp"  // for field_scalars_per_entity, etc
 #include "stk_mesh/base/Types.hpp"      // for EntityId

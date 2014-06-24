@@ -6,19 +6,19 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#include <stk_util/stk_config.h>
+#include <stk_mesh/base/FieldParallel.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>  // for CommAll, CommBuffer
 #include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
 #include <stk_util/util/PairIter.hpp>   // for PairIter
 
-#include <stk_mesh/base/FieldParallel.hpp>
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/base/Entity.hpp>     // for Entity
 #include <stk_mesh/base/Ghosting.hpp>   // for Ghosting
 #include <stk_mesh/base/Types.hpp>      // for PairIterEntityComm, etc
 
 #include <utility>                      // for pair
-#include <mpi.h>                        // for ompi_communicator_t
 #include <sstream>                      // for basic_ostream::operator<<, etc
 
 namespace stk {
@@ -65,7 +65,7 @@ void communicate_field_data(
       continue;
     }
 
-    for ( PairIterEntityComm ec = mesh.entity_comm(i->key, ghosts) ; ! ec.empty() ; ++ec ) {
+    for ( PairIterEntityComm ec = mesh.entity_comm_map(i->key, ghosts) ; ! ec.empty() ; ++ec ) {
       if ( owned ) {
         send_size[ ec->proc ] += e_size ;
       }
@@ -108,7 +108,7 @@ void communicate_field_data(
             unsigned char * ptr =
               reinterpret_cast<unsigned char *>(stk::mesh::field_data( f , e ));
 
-            for ( PairIterEntityComm ec = mesh.entity_comm(i->key, ghosts); !ec.empty(); ++ec ) {
+            for ( PairIterEntityComm ec = mesh.entity_comm_map(i->key, ghosts); !ec.empty(); ++ec ) {
               if (phase == 0) { // send
                 CommBuffer & b = sparse.send_buffer( ec->proc );
                 b.pack<unsigned char>( ptr , size );
@@ -275,7 +275,7 @@ void communicate_field_data(
       if(!is_matching_rank(f, e)) continue;
       const unsigned size = field_bytes_per_entity( f , e );
       if ( size ) {
-        PairIterEntityComm ec = mesh.entity_comm(entity_comm[i].key);
+        PairIterEntityComm ec = mesh.entity_comm_map(entity_comm[i].key);
         for (; ! ec.empty() && ec->ghost_id == 0 ; ++ec ) {
           msg_size[ ec->proc ] += size ;
         }
@@ -303,7 +303,7 @@ void communicate_field_data(
       if ( size ) {
         unsigned char * ptr =
           reinterpret_cast<unsigned char *>(stk::mesh::field_data( f , e ));
-        PairIterEntityComm ec = mesh.entity_comm(entity_comm[i].key);
+        PairIterEntityComm ec = mesh.entity_comm_map(entity_comm[i].key);
         for (; ! ec.empty() && ec->ghost_id == 0 ; ++ec ) {
           CommBuffer & b = sparse.send_buffer( ec->proc );
           b.pack<unsigned char>( ptr , size );
@@ -491,12 +491,13 @@ std::vector<int> compute_receive_list(std::vector<int>& sendSizeArray, MPI_Comm 
 {
   const int msg_tag = 10240;
   int num_procs = sendSizeArray.size();
-  int my_proc;
-  MPI_Comm_rank(mpi_communicator, &my_proc);
+  int my_proc = stk::parallel_machine_rank(mpi_communicator);
   std::vector<int> receiveSizeArray(num_procs, 0);
   //
   //  Determine the total number of messages every processor will receive
   //
+#if defined( STK_HAS_MPI)
+
   std::vector<int> local_number_to_receive(num_procs, 0);
   std::vector<int> global_number_to_receive(num_procs, 0);
   for(int iproc = 0; iproc < num_procs; ++iproc) {
@@ -536,6 +537,7 @@ std::vector<int> compute_receive_list(std::vector<int>& sendSizeArray, MPI_Comm 
     receiveSizeArray[status.MPI_SOURCE] = recv_size_buffers[imsg];
   }
 
+#endif
   return receiveSizeArray;
 }
 

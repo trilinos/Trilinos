@@ -79,7 +79,7 @@ void construct_communication_set( const BulkData & bulk, const std::set<Entity,E
 
     // Add sharing processes and ghost-send processes to communication_set
 
-    for ( PairIterEntityComm ec = bulk.entity_comm(bulk.entity_key(entity)); ! ec.empty() ; ++ec ) {
+    for ( PairIterEntityComm ec = bulk.entity_comm_map(bulk.entity_key(entity)); ! ec.empty() ; ++ec ) {
       if ( owned || ec->ghost_id == 0 ) {
         EntityKeyProc tmp( bulk.entity_key(entity) , ec->proc );
         communication_set.insert( tmp );

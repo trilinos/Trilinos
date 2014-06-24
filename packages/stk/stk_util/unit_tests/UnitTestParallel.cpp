@@ -14,8 +14,6 @@
 #include <stk_util/parallel/ParallelReduce.hpp>  // for all_write_string
 #include <gtest/gtest.h>
 #include <string>                       // for string
-#include "mpi.h"                        // for MPI_COMM_WORLD
-
 
 TEST(UnitTestParallel, testUnit)
 {

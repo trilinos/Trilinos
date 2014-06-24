@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
-#include <mpi.h>
+#include <stk_util/parallel/Parallel.hpp>
 
 int gl_argc=0;
 char** gl_argv=0;
-int proc_id=-1;
+int proc_id=0;
 
 class MinimalistPrinter : public ::testing::EmptyTestEventListener
 {
@@ -43,8 +43,9 @@ class MinimalistPrinter : public ::testing::EmptyTestEventListener
 
 int main(int argc, char **argv)
 {
-    MPI_Init(&argc, &argv);
-    MPI_Comm_rank(MPI_COMM_WORLD, &proc_id);
+    stk::parallel_machine_init(&argc, &argv);
+    proc_id = stk::parallel_machine_rank(MPI_COMM_WORLD);
+
     testing::InitGoogleTest(&argc, argv);
 
     gl_argc = argc;
@@ -56,6 +57,6 @@ int main(int argc, char **argv)
 
     int returnVal = RUN_ALL_TESTS();
 
-    MPI_Finalize();
+    stk::parallel_machine_finalize();
     return returnVal;
 }

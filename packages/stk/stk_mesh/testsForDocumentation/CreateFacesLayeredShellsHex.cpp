@@ -1,5 +1,4 @@
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
-#include <mpi.h>                        // for MPI_COMM_WORLD, MPI_Comm, etc
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/CreateFaces.hpp>  // for create_faces
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities

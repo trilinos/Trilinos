@@ -1,13 +1,13 @@
 #include <gtest/gtest.h>
-#include <mpi.h>
+#include <stk_util/parallel/Parallel.hpp>
 
 int main(int argc, char **argv)
 {
-    MPI_Init(&argc, &argv);
+    stk::parallel_machine_init(&argc, &argv);
 
     testing::InitGoogleTest(&argc, argv);
     int errorCode = RUN_ALL_TESTS();
     
-    MPI_Finalize();
+    stk::parallel_machine_finalize();
     return errorCode;
 }

@@ -16,10 +16,6 @@
 #include <stk_util/util/TrackingAllocator.hpp>
 #include <utility>                      // for pair
 #include <vector>                       // for vector
-#if defined( STK_HAS_MPI)
-#include "mpi.h"                        // for ompi_communicator_t
-#endif
-
 
 class UnitTestSTKParallelDistributedIndex ;
 

@@ -9,7 +9,7 @@
 #include <string>                       // for operator<<, operator!=, etc
 #include "Ioss_CodeTypes.h"             // for HAVE_MPI
 #include "Ioss_VariableType.h"          // for NameList
-#include "mpi.h"                        // for MPI_Finalize, MPI_Init
+#include <stk_util/parallel/Parallel.hpp>
 
 #define OUTPUT std::cerr
 
@@ -24,9 +24,7 @@ static int convert_stk_to_ioss_topology();
 
 int main(int argc, char *argv[])
 {
-#ifdef HAVE_MPI
-  MPI_Init(&argc, &argv);
-#endif
+  stk::parallel_machine_init(&argc, &argv);
 
   Ioss::StorageInitializer initialize_storage;
   Ioss::Initializer  initialize_topologies;
@@ -34,9 +32,7 @@ int main(int argc, char *argv[])
   int err_count = convert_ioss_to_stk_topology();
   err_count += convert_stk_to_ioss_topology();
 
-#ifdef HAVE_MPI
-  MPI_Finalize();
-#endif
+  stk::parallel_machine_finalize();
   OUTPUT << "\n" << argv[0];;
   if (err_count == 0) {
     OUTPUT << "\nSIERRA execution successful." << std::endl;

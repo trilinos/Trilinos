@@ -9,12 +9,11 @@
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
 #include <stk_util/parallel/ParallelReduce.hpp>  // for all_reduce_sum
-#include "mpi.h"                        // for ompi_communicator_t
 #include "stk_mesh/base/Bucket.hpp"     // for has_superset, Bucket
 #include "stk_mesh/base/Types.hpp"      // for EntityRank
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
 namespace stk { namespace mesh { class Part; } }
 
 
@@ -79,13 +78,8 @@ void comm_mesh_counts( const BulkData & M ,
 
     all_reduce_sum(M.parallel(), &localEntityCounts[0], &globalCounts[0], numEntityRanks);
 
-#if defined( STK_HAS_MPI )
     all_reduce_min(M.parallel(), &localEntityCounts[0], &min_counts[0], numEntityRanks);
     all_reduce_max(M.parallel(), &localEntityCounts[0], &max_counts[0], numEntityRanks);
-#else
-    min_counts = globalCounts;
-    max_counts = globalCounts;
-#endif
 
     return;
 }

@@ -23,7 +23,6 @@
 #include <string>                       // for string, basic_string, etc
 #include <utility>                      // for pair
 #include <vector>                       // for vector, etc
-#include "mpi.h"                        // for MPI_COMM_WORLD, MPI_Barrier, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket, has_superset
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
@@ -44,8 +43,7 @@ TEST(UnitTestGhostParts, Aura)
 {
   stk::ParallelMachine communicator = MPI_COMM_WORLD;
 
-  int numProcs = 1;
-  MPI_Comm_size(communicator, &numProcs);
+  int numProcs = stk::parallel_machine_size(communicator);
   if (numProcs != 2) {
     return;
   }
@@ -64,7 +62,7 @@ TEST(UnitTestGhostParts, Aura)
   std::cerr<<"...got aura part with name="<<aura_part.name()<<std::endl;
   stk::mesh::Selector aura_selector = aura_part;
   
-  stk::mesh::Ghosting& aura_ghosting = stkMeshBulkData.shared_aura();
+  stk::mesh::Ghosting& aura_ghosting = stkMeshBulkData.aura();
   EXPECT_EQ(aura_part.mesh_meta_data_ordinal(), stkMeshBulkData.ghosting_part(aura_ghosting).mesh_meta_data_ordinal());
 
   stk::mesh::Selector not_owned_nor_shared = !stkMeshMetaData.locally_owned_part() & !stkMeshMetaData.globally_shared_part();
@@ -93,8 +91,7 @@ TEST(UnitTestGhostParts, Custom1)
 {
   stk::ParallelMachine communicator = MPI_COMM_WORLD;
 
-  int numProcs = 1;
-  MPI_Comm_size(communicator, &numProcs);
+  int numProcs = stk::parallel_machine_size(communicator);
   if (numProcs != 2) {
     return;
   }

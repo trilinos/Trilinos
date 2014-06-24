@@ -122,7 +122,7 @@ Smoother (level 1) : level-of-fill=-1,rel. threshold=1,abs. threshold=0
 Smoother (level 1) : Setup time : 0.21875 (s)
 
 Smoother (level 2) : # global rows = 1227, # estim. global nnz = 11311
-Smoother (level 2) : symmetric Gauss-Seidel (sweeps=2,omega=1,both)
+Smoother (level 2) : ML symmetric Gauss-Seidel (sweeps=2,omega=1,both)
 Smoother (level 2) : Setup time : 0.0078125 (s)
 
 Smoother (level 3) : # global rows = 140, # estim. global nnz = 1266

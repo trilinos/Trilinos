@@ -13,7 +13,6 @@
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/Types.hpp>      // for EntityProc, EntityId, etc
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
-#include "mpi.h"                        // for ompi_communicator_t
 #include "stk_topology/topology.hpp"    // for topology, etc
 
 

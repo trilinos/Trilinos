@@ -19,7 +19,6 @@
 #include <string>                       // for operator==, string, etc
 #include <vector>                       // for vector
 #include "Shards_Array.hpp"
-#include "mpi.h"                        // for MPI_COMM_SELF, etc
 #include "stk_mesh/base/Field.hpp"      // for Field
 #include "stk_mesh/base/FieldBase.hpp"  // for field_bytes_per_entity, etc
 #include "stk_mesh/base/Part.hpp"       // for Part

@@ -1,10 +1,10 @@
 
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
-#include <mpi.h>                        // for MPI_Comm_size, etc
 #include <stddef.h>                     // for size_t, NULL
 #include <string.h>                     // for memcpy, memmove
 #include <algorithm>                    // for binary_search, sort
 #include <iostream>                     // for basic_ostream::operator<<, etc
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian3d
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/FieldBase.hpp>  // for FieldMetaDataVector, etc
@@ -187,8 +187,7 @@ void testTwoEntitiesTwoBuckets(stk::mesh::BulkData &bulkData, stk::mesh::FieldDa
 
 TEST(DefaultFieldDataManagerTest, AllocateFieldData)
 {
-    int numProcs = -1;
-    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+    int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
     if(numProcs == 1)
     {
 
@@ -209,8 +208,7 @@ TEST(DefaultFieldDataManagerTest, AllocateFieldData)
 
 TEST(DefaultFieldDataManagerTest, AllocateFieldDataTwoBuckets)
 {
-    int numProcs = -1;
-    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+    int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
     if(numProcs == 1)
     {
 
@@ -233,8 +231,7 @@ TEST(DefaultFieldDataManagerTest, AllocateFieldDataTwoBuckets)
 
 TEST(DefaultFieldDataManagerTest, TwoEntitiesTwoBuckets)
 {
-    int numProcs = -1;
-    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+    int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
     if(numProcs == 1)
     {
 
@@ -253,8 +250,7 @@ TEST(DefaultFieldDataManagerTest, TwoEntitiesTwoBuckets)
 
 TEST(ContiguousFieldDataManagerTest, AllocateFieldData)
 {
-    int numProcs = -1;
-    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+    int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
     if(numProcs == 1)
     {
         const size_t spatialDim = 3;
@@ -273,8 +269,7 @@ TEST(ContiguousFieldDataManagerTest, AllocateFieldData)
 
 TEST(ContiguousFieldDataManagerTest, AllocateFieldDataAndReorderBuckets)
 {
-    int numProcs = -1;
-    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+    int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
     if(numProcs == 1)
     {
         const size_t spatialDim = 3;
@@ -300,8 +295,7 @@ TEST(ContiguousFieldDataManagerTest, AllocateFieldDataAndReorderBuckets)
 
 TEST(ContiguousFieldDataManagerTest, TwoEntitiesTwoBuckets)
 {
-    int numProcs = -1;
-    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+    int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
     if(numProcs == 1)
     {
 
@@ -357,8 +351,7 @@ void testPartToNodeMapping(const stk::mesh::BulkData &bulkData, const stk::mesh:
 
 TEST(ContiguousFieldDataManagerTest, nodalFieldNotOnAllNodeBuckets)
 {
-    int numProcs = -1;
-    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+    int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
     if(numProcs == 1)
     {
         const size_t spatialDim = 3;
@@ -416,8 +409,7 @@ TEST(ContiguousFieldDataManagerTest, nodalFieldNotOnAllNodeBuckets)
 
 TEST(ContiguousFieldDataManagerTest, allocate_bucket_field_data)
 {
-    int numProcs = -1;
-    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+    int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
     if(numProcs == 1)
     {
         const size_t spatialDim = 3;
@@ -541,8 +533,7 @@ void deallocateNodeBucketFieldData(const stk::mesh::FieldVector & fields,
 
 void allocate_bucket_field_data_tableBased(stk::mesh::FieldDataManager *fieldDataManager)
 {
-    int numProcs = -1;
-    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+    int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
     if(numProcs == 1)
     {
         const size_t spatialDim = 3;
@@ -643,8 +634,7 @@ void testAddingSingleEntity(stk::mesh::MetaData &meshMetaData, stk::mesh::Contig
 
 TEST(ContiguousFieldDataManagerTest, add_field_data_for_entity)
 {
-    int numProcs = -1;
-    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+    int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
     if(numProcs == 1)
     {
         stk::mesh::ContiguousFieldDataManager fieldDataManager;
@@ -713,8 +703,7 @@ TEST(ContiguousFieldDataManagerTest, add_field_data_for_entity)
 
 TEST(ContiguousFieldDataManagerTest, deallocate_nonempty_bucket)
 {
-    int numProcs = -1;
-    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+    int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
     if(numProcs == 1)
     {
         stk::mesh::ContiguousFieldDataManager fieldDataManager;

@@ -1280,7 +1280,7 @@ void define_communication_maps(const stk::mesh::BulkData &bulk,
 
     size_t size = 0;
     for (size_t i=0; i < entities.size(); i++) {
-      for ( stk::mesh::PairIterEntityComm ec = bulk.entity_comm(bulk.entity_key(entities[i])); ! ec.empty() ; ++ec ) {
+      for ( stk::mesh::PairIterEntityComm ec = bulk.entity_comm_map(bulk.entity_key(entities[i])); ! ec.empty() ; ++ec ) {
 	if (ec->ghost_id == 0) {
 	  size++;
 	}
@@ -1751,7 +1751,7 @@ void output_communication_maps(Ioss::Region &io_region,
     ep.reserve(size*2);
 
     for (size_t i=0; i < entities.size(); i++) {
-      for ( stk::mesh::PairIterEntityComm ec = bulk.entity_comm(bulk.entity_key(entities[i])); ! ec.empty() ; ++ec ) {
+      for ( stk::mesh::PairIterEntityComm ec = bulk.entity_comm_map(bulk.entity_key(entities[i])); ! ec.empty() ; ++ec ) {
         if (ec->ghost_id == 0) {
           ep.push_back(bulk.identifier(entities[i]));
           ep.push_back(ec->proc);

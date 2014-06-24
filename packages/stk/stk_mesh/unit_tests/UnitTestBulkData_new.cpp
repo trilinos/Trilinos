@@ -20,7 +20,6 @@
 #include <string>                       // for string
 #include <utility>                      // for pair, make_pair
 #include <vector>                       // for vector, etc
-#include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket, Bucket::iterator
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData, EntityLess, etc
 #include "stk_mesh/base/Entity.hpp"     // for Entity
@@ -197,7 +196,7 @@ TEST ( UnitTestBulkData_new , verifyDetectsNonOwnerChange )
   Entity shared_node = fixture.node(1 /*x*/, 1 /*y*/);
   // Assert that this node is shared
   if ( p_size > 1 && bulk.is_valid(shared_node) && (p_rank == 0 || p_rank == 1) ) {
-    ASSERT_GE(bulk.entity_comm_sharing(bulk.entity_key(shared_node)).size(), 1u);
+    ASSERT_GE(bulk.entity_comm_map_aura(bulk.entity_key(shared_node)).size(), 1u);
   }
 
   bulk.modification_begin();
@@ -237,31 +236,6 @@ TEST ( UnitTestBulkData_new , verifyExplicitAddInducedPart )
 #endif
 }
 
-/************************
- * This unit test is not possible currently because of the lack of
- * separation between internal part modification routines and public
- * part modification routines.
-TEST ( UnitTestBulkData_new , verifyCannotRemoveFromSpecialParts )
-{
-  fixtures::BoxFixture fixture;
-  BulkData          &bulk = fixture.bulk_data();
-  PartVector         test_parts;
-  PartVector         out_parts;
-  PartVector         empty_vector;
-
-  Entity new_cell = bulk.declare_entity ( 3 , fixture.comm_rank()+1 , empty_vector );
-  test_parts.push_back ( &fixture.fem_meta().universal_part() );
-  ASSERT_THROW ( bulk.change_entity_parts ( new_cell , empty_vector , test_parts ) , std::runtime_error );
-  test_parts.clear();
-  test_parts.push_back ( &fixture.fem_meta().locally_owned_part() );
-  ASSERT_THROW ( bulk.change_entity_parts ( new_cell , empty_vector , test_parts ) , std::runtime_error );
-  test_parts.clear();
-  test_parts.push_back ( &fixture.fem_meta().globally_shared_part() );
-  ASSERT_THROW ( bulk.change_entity_parts ( new_cell , empty_vector , test_parts ) , std::runtime_error );
-}
- */
-
-
 TEST ( UnitTestBulkData_new , verifyDefaultPartAddition )
 {
   TestBoxFixture fixture;
@@ -269,6 +243,8 @@ TEST ( UnitTestBulkData_new , verifyDefaultPartAddition )
 
   bulk.modification_begin();
   Entity new_cell = fixture.get_new_entity ( stk::topology::ELEM_RANK , 1 );
+  Entity new_node = fixture.get_new_entity ( stk::topology::NODE_RANK , 1 );
+  bulk.declare_relation(new_cell, new_node, 0);
   bulk.modification_end();
 
   ASSERT_TRUE ( bulk.bucket(new_cell).member ( fixture.fem_meta().universal_part() ) );
@@ -289,6 +265,8 @@ TEST ( UnitTestBulkData_new , verifyChangePartsSerial )
 
   bulk.modification_begin();
   Entity new_cell = fixture.get_new_entity ( stk::topology::ELEM_RANK , 1 );
+  Entity new_node = fixture.get_new_entity ( stk::topology::NODE_RANK , 1 );
+  bulk.declare_relation(new_cell, new_node, 0);
   bulk.change_entity_parts ( new_cell , create_parts , empty_parts );
   bulk.modification_end();
   ASSERT_TRUE ( bulk.bucket(new_cell).member ( fixture.m_test_part ) );
@@ -369,15 +347,16 @@ TEST ( UnitTestBulkData_new , verifyInducedMembership )
 
   bulk.modification_begin();
 
+  Entity node0 = fixture.get_new_entity ( stk::topology::NODE_RANK , 2 );
   Entity node = fixture.get_new_entity ( stk::topology::NODE_RANK , 1 );
   Entity cell = fixture.get_new_entity ( stk::topology::ELEM_RANK , 1 );
-
-  bulk.modification_begin();
 
   bulk.change_entity_parts ( node , create_node_parts , PartVector () );
   bulk.change_entity_parts ( cell , create_cell_parts , PartVector () );
   // Add node to cell part
   RelationIdentifier cell_node_rel_id = 0;
+  bulk.declare_relation ( cell , node0 , cell_node_rel_id );
+  cell_node_rel_id = 1;
   bulk.declare_relation ( cell , node , cell_node_rel_id );
   bulk.modification_end();
 
@@ -404,6 +383,8 @@ TEST ( UnitTestBulkData_new , verifyCanRemoveFromSetWithDifferentRankSubset )
   bulk.modification_begin();
 
   Entity e = bulk.declare_entity ( stk::topology::ELEMENT_RANK , fixture.comm_rank()+1 , add_parts );
+  Entity n = bulk.declare_entity ( stk::topology::NODE_RANK , fixture.comm_rank()+1 , add_parts );
+  bulk.declare_relation(e, n, 0);
   bulk.modification_end();
 
   bulk.modification_begin();
@@ -554,7 +535,7 @@ TEST ( UnitTestBulkData_new , verifyChangeGhostingGuards )
   }
 
   Ghosting &ghosting = bulk1.create_ghosting ( "Ghost 1" );
-  ASSERT_THROW ( bulk1.change_ghosting ( bulk1.shared_aura() , to_send , empty_vector ) , std::runtime_error );
+  ASSERT_THROW ( bulk1.change_ghosting ( bulk1.aura() , to_send , empty_vector ) , std::runtime_error );
 
   ghosting.receive_list(empty_vector);
   ghosting.send_list(to_send);
@@ -952,7 +933,7 @@ void new_insert_transitive_closure( BulkData& bulk_data, std::set<EntityProc,Ent
   // owned or shared by the receiving processor.
 
   if ( entry.second != bulk_data.parallel_owner_rank(entry.first) &&
-       ! bulk_data.in_shared( bulk_data.entity_key(entry.first), entry.second ) ) {
+       ! bulk_data.in_aura( bulk_data.entity_key(entry.first), entry.second ) ) {
 
     std::pair< std::set<EntityProc,EntityLess>::iterator , bool >
       result = new_send.insert( entry );

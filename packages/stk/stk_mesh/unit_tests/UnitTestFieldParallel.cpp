@@ -6,6 +6,8 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#include <stk_util/stk_config.h>
+#if defined ( STK_HAS_MPI )
 #include <stddef.h>                     // for size_t
 #include <algorithm>                    // for max, min
 #include <iostream>                     // for basic_ostream::operator<<
@@ -210,7 +212,7 @@ void do_parallel_assemble()
       Entity node = bucket[n];
       EntityId node_id = bulk.identifier(node);
 
-      bool is_left_node = bulk.in_shared(bulk.entity_key(node), p_rank - 1);
+      bool is_left_node = bulk.in_aura(bulk.entity_key(node), p_rank - 1);
 
       int sharing_rank = is_left_node ? p_rank - 1 : p_rank + 1;
       int field_id = 1;
@@ -242,7 +244,7 @@ void do_parallel_assemble()
       Entity edge = bucket[e];
       EntityId edge_id = bulk.identifier(edge);
 
-      bool is_left_edge = bulk.in_shared(bulk.entity_key(edge), p_rank - 1);
+      bool is_left_edge = bulk.in_aura(bulk.entity_key(edge), p_rank - 1);
 
       int sharing_rank = is_left_edge ? p_rank - 1 : p_rank + 1;
       int field_id = 5;
@@ -269,3 +271,4 @@ TEST(FieldParallel, parallel_max)
 }
 
 } //namespace <anonymous>
+#endif

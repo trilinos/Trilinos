@@ -92,12 +92,12 @@ setup(const panzer::PhysicsBlock& side_pb,
 */
 
   // gather the DOF
-  addDOF(this->m_bc.equationSetName());              // DOF Name
+  this->addDOF(this->m_bc.equationSetName());              // DOF Name
 
   // add in the targert
-  addTarget("Constant_"+this->m_bc.equationSetName(),  // Target Name
-            this->m_bc.equationSetName(),              // DOF Name
-            "Residual_"+this->m_bc.identifier());      // Residual Name
+  this->addTarget("Constant_"+this->m_bc.equationSetName(),  // Target Name
+                  this->m_bc.equationSetName(),              // DOF Name
+                  "Residual_"+this->m_bc.identifier());      // Residual Name
 
   // find the basis for this dof 
   const vector<pair<string,RCP<panzer::PureBasis> > >& dofs = side_pb.getProvidedDOFs();

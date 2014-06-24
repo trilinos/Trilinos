@@ -15,10 +15,10 @@
 #include <string>                       // for string, basic_string, etc
 #include <utility>                      // for pair
 #include <vector>                       // for vector, etc
-#include "mpi.h"                        // for MPI_COMM_WORLD, MPI_Barrier, etc
 #include "stk_mesh/base/MetaData.hpp"
 #include "stk_mesh/base/BulkData.hpp"
 #include "stk_mesh/base/GetEntities.hpp"
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include "stk_io/StkMeshIoBroker.hpp"
 #include "Ioss_Region.h"
 #include "Ioss_CommSet.h"
