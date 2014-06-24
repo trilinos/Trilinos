@@ -42,6 +42,27 @@
       <Parameter name="Damping factor"                      type="double" value="$SADAMPING"/>
     </ParameterList>    
     
+    <ParameterList name="myPatternFact">
+      <Parameter name="factory"                             type="string" value="PatternFactory"/>
+      <Parameter name="P"                                   type="string" value="PA-AMG"/>
+      <Parameter name="k"                                   type="int"    value="1"/>
+    </ParameterList>
+
+    <ParameterList name="myConstraintFact">
+      <Parameter name="factory"                             type="string" value="ConstraintFactory"/>
+      <Parameter name="Ppattern"                            type="string" value="myPatternFact"/>
+      <!-- <Parameter name="FineNullspace"                       type="string" value="myNullspaceFact"/> -->
+      <!-- not sure about this -->
+      <Parameter name="CoarseNullspace"                     type="string" value="PA-AMG"/>
+    </ParameterList>    
+    
+    <ParameterList name="Emin">
+      <Parameter name="factory"                             type="string" value="EminPFactory"/>
+      <Parameter name="P"                                   type="string" value="PA-AMG"/>
+      <Parameter name="Constraint"                          type="string" value="myConstraintFact"/>
+      <Parameter name="emin: num iterations"                type="int" value="2"/>
+    </ParameterList>
+    
     <ParameterList name="myRestrictorFact">
       <Parameter name="factory"                             type="string" value="$RESTRICTOR"/>
       <Parameter name="P"                                   type="string" value="$PROLONGATOR"/>
@@ -61,7 +82,7 @@
        <Parameter name="Visualization"                     type="string" value="myAggExportFact"/>
      </ParameterList>
     </ParameterList>
-    
+        
 	<!-- =======================  REPARTITIONING  ======================= -->
 
 	<!-- amalgamation of coarse level matrix -->

@@ -448,6 +448,7 @@ class MueLu_XMLgenerator():
   def doPaAMG(self):
     self.transferOps = "PA-AMG"
     self.transferOpDamp = 0.0
+    self.isDirty = True
     if self.restrictionOp == "GenericRFactory":
       self.restrictionOp = "TransPFactory"
       print bcolors.WARNING + "GenericRFactory cannot be used with non-smoothed PA-AMG prolongation operators. We change it back to TransPFactory."+bcolors.ENDC
@@ -464,6 +465,16 @@ class MueLu_XMLgenerator():
     self.transferOps = "PG-AMG"
     self.transferOpDamp = 0.0
     self.isDirty = True
+  def doEmin(self):
+    self.transferOps = "Emin"
+    self.transferOpDamp = 0.0
+    self.isDirty = True
+    if self.restrictionOp == "GenericRFactory":
+      self.restrictionOp = "TransPFactory"
+      print bcolors.WARNING + "GenericRFactory cannot be used with Emin prolongation operators. We change it back to TransPFactory."+bcolors.ENDC
+      print ""
+      print "Press any key to proceed"
+      waitForKey()    
     
   # Restriction operators
   def doSymR(self):
@@ -474,6 +485,13 @@ class MueLu_XMLgenerator():
     if self.transferOps == "PA-AMG":
       self.restrictionOp = "TransPFactory"
       print bcolors.WARNING+"GenericRFactory cannot be used with non-smoothed PA-AMG prolongation operators. We change it back to TransPFactory."
+      print "To use GenericRFactory you have to select either SaPFactory or PgPFactory for prolongation."+bcolors.ENDC
+      print ""
+      print "Press any key to proceed"
+      waitForKey()
+    if self.transferOps == "Emin":
+      self.restrictionOp = "TransPFactory"
+      print bcolors.WARNING+"GenericRFactory cannot be used with Emin prolongation operators. We change it back to TransPFactory."
       print "To use GenericRFactory you have to select either SaPFactory or PgPFactory for prolongation."+bcolors.ENDC
       print ""
       print "Press any key to proceed"
@@ -519,8 +537,8 @@ class MueLu_XMLgenerator():
     self.runMenu(options,callbacks)
 
   def doTransferMenu(self):
-    options = ['Non-smoothed transfer (PA-AMG)', 'Smoothed transfer (SA-AMG)', 'Smoothed transfer (PG-AMG)', 'Back']
-    callbacks = [self.doPaAMG,self.doSaAMG, self.doPgAMG, self.askForSolver]
+    options = ['Non-smoothed transfer (PA-AMG)', 'Smoothed transfer (SA-AMG)', 'Smoothed transfer (PG-AMG)','Energy minimization', 'Back']
+    callbacks = [self.doPaAMG,self.doSaAMG, self.doPgAMG, self.doEmin, self.askForSolver]
     self.runMenu(options,callbacks)
       
   def doRestrictorMenu(self):
