@@ -171,7 +171,7 @@
     <ParameterList name="AllLevel">
       <Parameter name="Smoother"                            type="string"   value="$SMOOTHER"/>
       <Parameter name="Aggregates"                          type="string"   value="UncoupledAggregationFact"/>
-      <Parameter name="Nullspace"                           type="string"   value="$MANAGER_PROLONGATOR"/>
+      <Parameter name="Nullspace"                           type="string"   value="$MANAGER_NULLSPACE"/>
       <!--<Parameter name="Ptent"                               type="string"   value="PA-AMG"/>-->
       <Parameter name="P"                                   type="string"   value="$MANAGER_PROLONGATOR"/>
       <Parameter name="R"                                   type="string"   value="$MANAGER_RESTRICTOR"/>

@@ -608,10 +608,12 @@ class MueLu_XMLgenerator():
 	line = line.replace("$MANAGER_PROLONGATOR", str(self.transferOps))
 	line = line.replace("$MANAGER_RESTRICTOR",  "myRestrictorFact")
 	line = line.replace("$MANAGER_RAP", "myRAPFact")
+	line = line.replace("$MANAGER_NULLSPACE", "PA-AMG")
       else:
 	line = line.replace("$MANAGER_PROLONGATOR", "myRebalanceProlongatorFact")
 	line = line.replace("$MANAGER_RESTRICTOR",  "myRebalanceRestrictionFact")
 	line = line.replace("$MANAGER_RAP", "myRebalanceAFact")
+	line = line.replace("$MANAGER_NULLSPACE", "myRebalanceProlongatorFact")
       o.write(line)
     o.close() 
     self.isDirty = False
