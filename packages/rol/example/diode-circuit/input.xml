@@ -39,7 +39,7 @@
   <Parameter name="Step Tolerance"                                    type="double" value="1.e-30"                  />
   <Parameter name="Maximum Number of Iterations"                      type="int"    value="1000"                     />
 
-  <Parameter name="Thermal Voltage"                                   type="double" value="0.02585"                     />
+  <Parameter name="Thermal Voltage"                                   type="double" value="0.025864186"                     />
   <Parameter name="Source voltage lower bound"                        type="double" value="0.0"                   />
   <Parameter name="Source voltage upper bound"                        type="double" value="1.0"                   />
   <Parameter name="Source voltage step"                               type="double" value="1.e-2"                   />
