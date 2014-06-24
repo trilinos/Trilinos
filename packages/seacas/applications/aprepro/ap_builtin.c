@@ -995,6 +995,7 @@ char *do_file_to_string(char *filename)
 
   assert(strlen(lines) <= size);
   NEWSTR(lines, ret_string);
+  fclose(fp);
   if (line) free(line);
   if (lines) free(lines);
   return ret_string;

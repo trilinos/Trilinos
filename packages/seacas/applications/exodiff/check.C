@@ -367,11 +367,13 @@ namespace {
       }
     }
 
+    // Check that can access all nodesets in file2.
+    // This should never fail if the above tests pass...
     for (int b = 0; b < file2.Num_Node_Sets(); ++b) {
       Node_Set<INT>* set2 = file2.Get_Node_Set_by_Index(b);
       if (set2 == NULL) {
-	std::cout << "exodiff: ERROR .. Nodeset id " << set2->Id()
-		  << " exists in second file but not the first.\n";
+	std::cout << "exodiff: ERROR .. Could not access the Nodeset with index "
+		  << b << " in the second file.\n";
 	if (interface.pedantic)
 	  is_same = false;
       }
