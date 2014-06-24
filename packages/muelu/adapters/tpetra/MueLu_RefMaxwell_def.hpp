@@ -218,7 +218,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::findDirichl
   Teuchos::ArrayRCP<const Scalar> myCols = myColsToZero->getData(0);
   dirichletCols.resize(colMap->getNodeNumElements());
   for(size_t i=0; i<colMap->getNodeNumElements(); i++) {
-    if(myCols[i]>0.0)
+    if(abs(myCols[i])>0.0)
       dirichletCols[i]=1;
     else
       dirichletCols[i]=0;
