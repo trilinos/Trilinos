@@ -168,7 +168,7 @@ void GearsFixture::communicate_model_fields()
 
   // Parallel collective call:
 #if defined( STK_HAS_MPI)
-  communicate_field_data(bulk_data.aura(), fields);
+  communicate_field_data(bulk_data.aura_ghosting(), fields);
 #endif
 }
 

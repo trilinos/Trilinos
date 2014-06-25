@@ -250,7 +250,7 @@ int EntityCommDatabase::owner_rank( const EntityKey & key ) const
 }
 
 
-PairIterEntityComm EntityCommDatabase::aura( const EntityKey & key ) const
+PairIterEntityComm EntityCommDatabase::shared_comm_info( const EntityKey & key ) const
 {
   if (!cached_find(key)) return PairIterEntityComm();
 

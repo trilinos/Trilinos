@@ -152,7 +152,7 @@ struct IsInvalid
 class BulkData {
 
 public:
-
+  enum GHOSTING_ID { SHARED = 0, AURA = 1 };
   //Power users only.
   //Call this right after construction, before any field-data has been allocated.
   //If you call this method too late (after any field-data has been allocated, it will have no effect.
@@ -626,7 +626,8 @@ public:
    *          Is likely to be stale if ownership or sharing has changed
    *          and the 'modification_end' has not been called.
    */
-  Ghosting & aura() const { return * m_ghosting[1] ; }
+  Ghosting & aura_ghosting() const { return * m_ghosting[AURA] ; }
+  Ghosting & shared_ghosting() const { return * m_ghosting[SHARED] ; }
 
   /** Return the part corresponding to the specified ghosting.
    */
@@ -675,7 +676,7 @@ public:
   /** \brief  Entity Comm functions that are now moved to BulkData
    */
   PairIterEntityComm entity_comm_map(const EntityKey & key) const { return m_entity_comm_map.comm(key); }
-  PairIterEntityComm entity_comm_map_aura(const EntityKey & key) const { return m_entity_comm_map.aura(key); }
+  PairIterEntityComm entity_comm_map_shared(const EntityKey & key) const { return m_entity_comm_map.shared_comm_info(key); }
   PairIterEntityComm entity_comm_map(const EntityKey & key, const Ghosting & sub ) const { return m_entity_comm_map.comm(key,sub); }
   bool entity_comm_map_insert(Entity entity, const EntityCommInfo & val) { return m_entity_comm_map.insert(entity_key(entity), val, parallel_owner_rank(entity)); }
   bool entity_comm_map_erase(  const EntityKey & key, const EntityCommInfo & val) { return m_entity_comm_map.erase(key,val); }
@@ -686,9 +687,9 @@ public:
 
   // Comm-related convenience methods
 
-  bool in_aura(EntityKey key) const { return !entity_comm_map_aura(key).empty(); }
+  bool in_shared(EntityKey key) const { return !entity_comm_map_shared(key).empty(); }
 
-  bool in_aura(EntityKey key, int proc) const;
+  bool in_shared(EntityKey key, int proc) const;
 
   bool in_receive_ghost( EntityKey key ) const;
 
@@ -701,9 +702,9 @@ public:
   bool in_ghost( const Ghosting & ghost , EntityKey key , int proc ) const;
 
   void comm_procs( EntityKey key, std::vector<int> & procs ) const; //shared and ghosted entities
-  void comm_aura_procs( EntityKey key, std::vector<int> & procs ) const; // shared entities
+  void comm_shared_procs( EntityKey key, std::vector<int> & procs ) const; // shared entities
 
-  void aura_procs_intersection( std::vector<EntityKey> & keys, std::vector<int> & procs ) const;
+  void shared_procs_intersection( std::vector<EntityKey> & keys, std::vector<int> & procs ) const;
 
   void comm_procs( const Ghosting & ghost ,
                    EntityKey key, std::vector<int> & procs ) const;
@@ -941,7 +942,7 @@ public:
     int &rank = bucket(entity).m_owner_ranks[bucket_ordinal(entity)];
     if ( in_owner_rank != rank ) {
       rank = in_owner_rank;
-      modified(entity);
+      mark_entity_and_upward_related_entities_as_modified(entity);
       return true;
     }
     return false;
@@ -1002,7 +1003,7 @@ public:
    * modification model, all entities that have modified_entity in their
    * closure must also be marked as modified.
    */
-  void modified(Entity entity);
+  void mark_entity_and_upward_related_entities_as_modified(Entity entity);
 
   //
   // Connectivity getter methods. For each entity, you can get connected entities
@@ -1242,7 +1243,9 @@ private:
   std::vector<EntityKey>   m_entity_keys;
   std::vector<uint16_t>    m_entity_states;
   std::vector<int>         m_mark_edge;
+protected:
   std::vector<uint16_t>    m_closure_count;
+private:
   std::vector<size_t>      m_entity_sync_counts;
   std::vector<unsigned>    m_local_ids;
 
@@ -1362,7 +1365,11 @@ private:
   bool internal_modification_end( bool regenerate_aura, modification_optimization opt );
   bool internal_modification_end_for_edge_creation( bool regenerate_aura, modification_optimization opt );
 
+protected:
   void internal_resolve_shared_modify_delete();
+private:
+  void internal_establish_new_owner(stk::mesh::Entity entity);
+  void internal_update_parts_for_shared_entity(stk::mesh::Entity entity, const bool is_entity_shared, const bool did_i_just_become_owner);
   void internal_resolve_shared_modify_delete_second_pass();
   void internal_resolve_ghosted_modify_delete();
   void internal_resolve_parallel_create();
@@ -2106,7 +2113,7 @@ struct EntityGhostData
 };
 
 void get_ghost_data( const BulkData& bulkData, Entity entity, std::vector<EntityGhostData> & dataVector );
-
+void delete_shared_entities_which_are_no_longer_in_owned_closure( BulkData & mesh );
 
 
 } // namespace mesh

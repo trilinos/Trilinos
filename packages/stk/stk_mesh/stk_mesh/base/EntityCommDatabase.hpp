@@ -60,7 +60,7 @@ class EntityCommDatabase
 public:
   EntityCommDatabase() : m_comm_map(), m_last_lookup(m_comm_map.end()) {}
 
-  PairIterEntityComm aura( const EntityKey & key ) const;
+  PairIterEntityComm shared_comm_info( const EntityKey & key ) const;
   PairIterEntityComm comm( const EntityKey & key ) const;
   PairIterEntityComm comm( const EntityKey & key, const Ghosting & sub ) const;
   int owner_rank( const EntityKey & key ) const;

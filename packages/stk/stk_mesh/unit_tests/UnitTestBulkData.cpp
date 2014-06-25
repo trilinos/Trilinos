@@ -43,6 +43,8 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/util/PairIter.hpp"   // for PairIter
 #include "stk_io/StkMeshIoBroker.hpp"
+#include <stk_mesh/base/Comm.hpp>
+
 namespace stk { namespace mesh { class FieldBase; } }
 
 
@@ -94,7 +96,7 @@ void donate_one_element( BulkData & mesh , bool aura )
   for ( stk::mesh::EntityCommListInfoVector::const_iterator
         i =  mesh.comm_list().begin() ;
         i != mesh.comm_list().end() ; ++i ) {
-    if ( mesh.in_aura( i->key ) && i->key.rank() == BaseEntityRank ) {
+    if ( mesh.in_shared( i->key ) && i->key.rank() == BaseEntityRank ) {
       node_key = i->key;
       break;
     }
@@ -121,7 +123,7 @@ void donate_one_element( BulkData & mesh , bool aura )
   if ( 0 == p_rank ) {
     EntityProc entry ;
     entry.first = elem ;
-    entry.second = mesh.entity_comm_map_aura(mesh.entity_key(node))[0].proc;
+    entry.second = mesh.entity_comm_map_shared(mesh.entity_key(node))[0].proc;
     change.push_back( entry );
 
     Entity const *elem_nodes_i = mesh.begin_nodes(elem);
@@ -173,7 +175,7 @@ void donate_all_shared_nodes( BulkData & mesh , bool aura )
         i != entity_comm.end() &&
         i->key.rank() == BaseEntityRank ; ++i ) {
     Entity const node = i->entity;
-    const stk::mesh::PairIterEntityComm ec = mesh.entity_comm_map_aura(i->key);
+    const stk::mesh::PairIterEntityComm ec = mesh.entity_comm_map_shared(i->key);
 
     if ( mesh.parallel_owner_rank(node) == p_rank && ! ec.empty() ) {
       change.push_back( EntityProc( node , ec->proc ) );
@@ -1393,7 +1395,7 @@ TEST(UnitTestingOfBulkData, testChangeEntityPartsOfShared)
     mesh.modification_end();
 
     // Expect that this is a shared node
-    EXPECT_FALSE(mesh.entity_comm_map_aura(mesh.entity_key(changing_node)).empty());
+    EXPECT_FALSE(mesh.entity_comm_map_shared(mesh.entity_key(changing_node)).empty());
 
     // Expect that part change had no impact since it was on the proc that did not end
     // up as the owner
@@ -1500,9 +1502,9 @@ TEST(UnitTestingOfBulkData, testParallelSideCreation)
     mesh.modification_end();
 
     // Expect that the side is not shared, but the nodes of side are shared
-    EXPECT_TRUE(mesh.entity_comm_map_aura(mesh.entity_key(side)).empty());
-    EXPECT_FALSE(mesh.entity_comm_map_aura(mesh.entity_key(side_nodes[0])).empty());
-    EXPECT_FALSE(mesh.entity_comm_map_aura(mesh.entity_key(side_nodes[1])).empty());
+    EXPECT_TRUE(mesh.entity_comm_map_shared(mesh.entity_key(side)).empty());
+    EXPECT_FALSE(mesh.entity_comm_map_shared(mesh.entity_key(side_nodes[0])).empty());
+    EXPECT_FALSE(mesh.entity_comm_map_shared(mesh.entity_key(side_nodes[1])).empty());
 
     // Now "detect" that there is a duplicate aura side using the side nodes
     EntityVector sides;
@@ -1529,9 +1531,9 @@ TEST(UnitTestingOfBulkData, testParallelSideCreation)
     mesh.modification_end();
 
     // Expect that the side is shared, and nodes of side are shared
-    EXPECT_FALSE(mesh.entity_comm_map_aura(mesh.entity_key(side)).empty());
-    EXPECT_FALSE(mesh.entity_comm_map_aura(mesh.entity_key(side_nodes[0])).empty());
-    EXPECT_FALSE(mesh.entity_comm_map_aura(mesh.entity_key(side_nodes[1])).empty());
+    EXPECT_FALSE(mesh.entity_comm_map_shared(mesh.entity_key(side)).empty());
+    EXPECT_FALSE(mesh.entity_comm_map_shared(mesh.entity_key(side_nodes[0])).empty());
+    EXPECT_FALSE(mesh.entity_comm_map_shared(mesh.entity_key(side_nodes[1])).empty());
 
     // Check that there is only a single side using the side nodes
     get_entities_through_relations(mesh, side_nodes, side_rank, sides);
@@ -1692,7 +1694,7 @@ static void test_sync_1(stk::mesh::BulkData& eMesh, PressureFieldType& pressure_
     fields.push_back(&pressure_field);
 
     // only the aura = !locally_owned_part && !globally_shared_part (outer layer)
-    if (sync_aura) stk::mesh::communicate_field_data(eMesh.aura(), fields);
+    if (sync_aura) stk::mesh::communicate_field_data(eMesh.aura_ghosting(), fields);
 
     // the shared part (just the shared boundary)
     if (sync_shared) stk::mesh::copy_owned_to_shared(eMesh, fields);
@@ -2651,3 +2653,140 @@ TEST(DocTestBulkData, sharerDeletesSharedNodes)
 
 } // empty namespace
 
+//====================
+extern int gl_argc;
+extern char** gl_argv;
+
+inline std::string getOption(const std::string& option, const std::string defaultString="no")
+{
+    std::string returnValue = defaultString;
+    if ( gl_argv != 0 )
+    {
+        for (int i=0;i<gl_argc;i++)
+        {
+            std::string input_argv(gl_argv[i]);
+            if ( option == input_argv )
+            {
+                if ( (i+1) < gl_argc )
+                {
+                    returnValue = std::string(gl_argv[i+1]);
+                }
+                break;
+            }
+        }
+    }
+    return returnValue;
+}
+
+namespace
+{
+
+class BulkDataTester : public stk::mesh::BulkData
+{
+public:
+    BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm) :
+        stk::mesh::BulkData(mesh_meta_data, comm){}
+    ~BulkDataTester() {}
+
+    void my_internal_resolve_shared_modify_delete()
+    {
+        this->internal_resolve_shared_modify_delete();
+    }
+
+    void reset_closure_count(Entity entity)
+    {
+        m_closure_count[entity.local_offset()] = 0;
+    }
+};
+
+void testElementMove(int fromProc, int toProc, int myProc, int elementToMoveId, stk::mesh::BulkData &stkMeshBulkData)
+{
+    stk::mesh::Entity elementToMove = stkMeshBulkData.get_entity(stk::topology::ELEMENT_RANK, elementToMoveId);
+    std::vector<std::pair<stk::mesh::Entity, int> > entityProcPairs;
+    if(myProc == fromProc)
+    {
+        entityProcPairs.push_back(std::make_pair(elementToMove, toProc));
+    }
+    stkMeshBulkData.change_entity_owner(entityProcPairs);
+}
+
+TEST(BulkData, ModificationEnd)
+{
+    MPI_Comm communicator = MPI_COMM_WORLD;
+    int numProcs = -1;
+    MPI_Comm_size(communicator, &numProcs);
+
+    if(numProcs == 2)
+    {
+        const int spatialDim = 3;
+        stk::mesh::MetaData stkMeshMetaData(spatialDim);
+        BulkDataTester *stkMeshBulkData = new BulkDataTester(stkMeshMetaData, communicator);
+
+        std::string exodusFileName = getOption("-i", "generated:1x1x4");
+
+        // STK IO module will be described in separate chapter.
+        // It is used here to read the mesh data from the Exodus file and populate an STK Mesh.
+        // The order of the following lines in {} are important
+        {
+          stk::io::StkMeshIoBroker exodusFileReader(communicator);
+
+          // Inform STK IO which STK Mesh objects to populate later
+          exodusFileReader.set_bulk_data(*stkMeshBulkData);
+
+          exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
+
+          // Populate the MetaData which has the descriptions of the Parts and Fields.
+          exodusFileReader.create_input_mesh();
+
+          // Populate entities in STK Mesh from Exodus file
+          exodusFileReader.populate_bulk_data();
+        }
+
+        int elementToMove = 3;
+        int nodeToCheck = 9;
+
+        stk::mesh::EntityKey nodeEntityKey(stk::topology::NODE_RANK,nodeToCheck);
+        stk::mesh::EntityKey entityToMoveKey(stk::topology::ELEMENT_RANK, elementToMove);
+
+        stk::mesh::EntityCommListInfoVector::const_iterator iter = std::lower_bound(stkMeshBulkData->comm_list().begin(), stkMeshBulkData->comm_list().end(), nodeEntityKey);
+
+        ASSERT_TRUE(iter != stkMeshBulkData->comm_list().end());
+        EXPECT_EQ(nodeEntityKey,iter->key);
+        EXPECT_TRUE(stkMeshBulkData->is_valid(iter->entity));
+
+        stkMeshBulkData->modification_begin();
+
+        ASSERT_TRUE ( stkMeshBulkData->is_valid(stkMeshBulkData->get_entity(entityToMoveKey)) );
+
+        if ( stkMeshBulkData->parallel_rank() == 1 )
+        {
+            stkMeshBulkData->destroy_entity( stkMeshBulkData->get_entity(entityToMoveKey) );
+        }
+
+        // Really testing destroy_entity
+        stk::mesh::delete_shared_entities_which_are_no_longer_in_owned_closure( *stkMeshBulkData );
+
+        iter = std::lower_bound(stkMeshBulkData->comm_list().begin(), stkMeshBulkData->comm_list().end(), nodeEntityKey);
+
+        ASSERT_TRUE(iter != stkMeshBulkData->comm_list().end());
+        EXPECT_EQ(nodeEntityKey,iter->key);
+
+        if ( stkMeshBulkData->parallel_rank() == 0 )
+        {
+            EXPECT_TRUE(stkMeshBulkData->is_valid(iter->entity));
+        }
+        else
+        {
+            EXPECT_FALSE(stkMeshBulkData->is_valid(iter->entity));
+        }
+
+    //    stkMeshBulkData->my_internal_resolve_shared_modify_delete();
+
+        std::vector<size_t> globalCounts;
+        stk::mesh::comm_mesh_counts(*stkMeshBulkData, globalCounts);
+
+        delete stkMeshBulkData;
+    }
+}
+
+}
