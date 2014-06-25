@@ -145,5 +145,5 @@ TEST( heavy, heavy )
     }
   }
 
-  stk::parallel_print_time_without_output_and_hwm(pm, timings[NUM_PHASES]);
+  stk::parallel_print_time_for_performance_compare(pm, timings[NUM_PHASES]);
 }
