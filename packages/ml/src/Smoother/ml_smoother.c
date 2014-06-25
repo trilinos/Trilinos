@@ -1907,6 +1907,7 @@ int ML_Smoother_BlockGS(ML_Smoother *sm,int inlen,double x[],int outlen,
     }
   else x2 = x;
 
+#define BLxCK_JACOBI_INSTEAD
 
   for (iter = 0; iter < smooth_ptr->ntimes; iter++) {
     if (getrow_comm != NULL)
@@ -1923,10 +1924,14 @@ int ML_Smoother_BlockGS(ML_Smoother *sm,int inlen,double x[],int outlen,
         colptr = Amat_CrsBindx;
         for (i = 0; i < Nblocks; i++) {
           for (k = 0; k < blocksize; k++) {
+#ifdef BLOCK_JACOBI_INSTEAD
+            correc[k]=rhs[row++];
+#else
             dtemp = 0.;
             for (j = Amat_CrsRowptr[row]; j < Amat_CrsRowptr[row+1]; j++)
               dtemp += (*valptr++)*x2[*colptr++];
             correc[k]=rhs[row++]-dtemp;
+#endif
           }
           ML_dgetrs_special(blocksize, blockdata[i], perms[i], correc);
           for (k = 0; k < blocksize; k++) (*xptr++) += omega*correc[k];
