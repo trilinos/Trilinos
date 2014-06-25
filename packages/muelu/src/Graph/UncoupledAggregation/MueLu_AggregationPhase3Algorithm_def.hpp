@@ -97,11 +97,6 @@ namespace MueLu {
           }
        }
 
-       // One way or another, the node is aggregated (possibly into a singleton)
-       aggStat   [i] = AGGREGATED;
-       procWinner[i] = myRank;
-       numNonAggregatedNodes--;
-
        if (isNewAggregate) {
          // Create new aggregate (not singleton)
          aggregates.SetIsRoot(i);
@@ -133,6 +128,12 @@ namespace MueLu {
            vertex2AggId[i] = numLocalAggregates++;
          }
        }
+
+       // One way or another, the node is aggregated (possibly into a singleton)
+       aggStat   [i] = AGGREGATED;
+       procWinner[i] = myRank;
+       numNonAggregatedNodes--;
+
      }
 
     // update aggregate object
