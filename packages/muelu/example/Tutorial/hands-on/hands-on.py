@@ -89,7 +89,7 @@ class ProblemHandler():
     self.proc.append(subprocess.Popen(['gnuplot', '--persist'], shell=True, stdin=subprocess.PIPE, ))
     self.proc.append(subprocess.Popen(['gnuplot', '--persist'], shell=True, stdin=subprocess.PIPE, ))
 
-    self.isDirty = True                   # flag to store, whether problem has to be rerun or not
+    self.isDirty = True # flag to store whether or not problem must be run again
 
     self.editor = "kwrite"    # TODO replace me by local editor...
 
@@ -104,7 +104,7 @@ class ProblemHandler():
     # select an option
     choice = raw_input('your choice? ')
     if is_number(str(choice)) and int(choice) < len(options):
-      callbacks[int(choice)]() # call correspondending function
+      callbacks[int(choice)]() # call corresponding function
     else:
       print("ups: choice = " + str(choice) + " len(option)=" + str(len(option)))
 
