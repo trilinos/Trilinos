@@ -111,7 +111,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::compute() {
   Xpetra::MatrixMatrix::Multiply(*SM_Matrix_,false,*D0_Matrix_,false,*C1,true,true);
   Xpetra::MatrixMatrix::Multiply(*D0_Matrix_,true,*C1,false,*TMT_Matrix_,true,true);
   TMT_Matrix_->resumeFill();
-  Remove_Zeroed_Rows(TMT_Matrix_);
+  Remove_Zeroed_Rows(TMT_Matrix_,1.0e-16);
   TMT_Matrix_->SetFixedBlockSize(1);
   //TMT_Matrix_->describe(out,Teuchos::VERB_EXTREME);
 
@@ -133,7 +133,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::compute() {
   A22_=MatrixFactory::Build(D0_Matrix_->getDomainMap(),100);
   Xpetra::MatrixMatrix::Multiply(*D0_Matrix_,true,*C,false,*A22_,true,true);
   A22_->resumeFill();
-  Remove_Zeroed_Rows(A22_);
+  Remove_Zeroed_Rows(A22_,1.0e-16);
   A22_->SetFixedBlockSize(1);
 
   // build stuff for hierarchies
@@ -184,7 +184,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::findDirichl
     A->getLocalRowView(i,indices,values);
     int nnz=0;
     for (int j=0; j<indices.size(); j++) {
-      if (abs(values[j]) > 1.0e-13) {
+      if (abs(values[j]) > 1.0e-16) {
 	nnz++;
       }
     }
@@ -236,7 +236,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Apply_BCsTo
     vec.resize(indices.size());
     Teuchos::ArrayView<Scalar> zerovalues(vec);
     for(int j=0; j<indices.size(); j++)
-      zerovalues[j]=(Scalar)0.0;
+      zerovalues[j]=(Scalar)1.0e-32;
     A->replaceLocalValues(dirichletRows[i],indices,zerovalues);
   }
 }
@@ -253,7 +253,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Apply_BCsTo
     Teuchos::ArrayView<Scalar> zerovalues(vec);
     for(int j=0; j<indices.size(); j++) {
       if(dirichletCols[indices[j]]==1)
-	zerovalues[j]=(Scalar)0.0;
+	zerovalues[j]=(Scalar)1.0e-32;
       else
 	zerovalues[j]=values[j];
     }
