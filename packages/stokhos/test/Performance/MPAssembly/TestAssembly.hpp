@@ -264,15 +264,21 @@ Perf fenl_assembly(
     VectorType nodal_solution( "nodal_solution" , fixture.node_count() );
     nodal_residual = VectorType( "nodal_residual" , fixture.node_count_owned() );
 
+    // Get DeviceConfig structs used by some functors
+    Kokkos::DeviceConfig dev_config_elem, dev_config_gath, dev_config_bc;
+    Kokkos::Example::FENL::CreateDeviceConfigs<Scalar>::eval( dev_config_elem,
+                                                              dev_config_gath,
+                                                              dev_config_bc );
+
     // Create element computation functor
     const ElementComputationType elemcomp(
       use_atomic ? ElementComputationType( fixture , diffusion_coefficient ,
                                            nodal_solution ,
                                            mesh_to_graph.elem_graph ,
                                            jacobian , nodal_residual ,
-                                           dev_config )
+                                           dev_config_elem )
                  : ElementComputationType( fixture , diffusion_coefficient ,
-                                           nodal_solution , dev_config ) );
+                                           nodal_solution , dev_config_elem ) );
 
     const NodeElemGatherFillType gatherfill(
       use_atomic ? NodeElemGatherFillType()
@@ -281,7 +287,8 @@ Perf fenl_assembly(
                                            nodal_residual ,
                                            jacobian ,
                                            elemcomp.elem_residuals ,
-                                           elemcomp.elem_jacobians ) );
+                                           elemcomp.elem_jacobians ,
+                                           dev_config_gath) );
 
     // Create boundary condition functor
     const DirichletComputationType dirichlet(
@@ -289,7 +296,7 @@ Perf fenl_assembly(
       2 /* apply at 'z' ends */ ,
       bc_lower_value ,
       bc_upper_value ,
-      dev_config );
+      dev_config_bc );
 
     Kokkos::deep_copy( nodal_solution , Scalar(1) );
 
@@ -305,12 +312,10 @@ Perf fenl_assembly(
     //--------------------------------
     // Element contributions to residual and jacobian
 
-    // ETP:  Need to make a version of these kernels for MP::Vector
-    // (as-is, uncoalesced writes for CUDA!)
+    wall_clock.reset();
+
     Kokkos::deep_copy( nodal_residual , Scalar(0) );
     Kokkos::deep_copy( jacobian.values , Scalar(0) );
-
-    wall_clock.reset();
 
     elemcomp.apply();
 
