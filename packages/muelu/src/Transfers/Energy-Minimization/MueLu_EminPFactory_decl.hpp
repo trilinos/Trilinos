@@ -48,6 +48,7 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
+#include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_StridedMapFactory_fwd.hpp>
 
 #include "MueLu_EminPFactory_fwd.hpp"
