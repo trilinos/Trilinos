@@ -7,7 +7,7 @@
 #include <gtest/gtest.h>
 #include <string>                       // for string
 #include "Ioss_Field.h"                 // for Field, etc
-#include "gtest/gtest.h"                // for AssertHelper, EXPECT_THROW
+#include "gtest/gtest.h"                // for AssertHelper, EXPECT_ANY_THROW
 #include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH, etc
 #include "stk_mesh/base/Selector.hpp"   // for Selector
 #include "stk_topology/topology.hpp"    // for topology, etc

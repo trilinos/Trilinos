@@ -217,7 +217,7 @@ namespace
     EXPECT_EQ(more_params.get_param("phase").type, stk::util::ParameterType::INVALID);
 
     //+ If the wrong type is specified, an exception will be thrown...
-    EXPECT_THROW(more_params.get_value<std::complex<int> >("phase"), std::exception);
+    EXPECT_ANY_THROW(more_params.get_value<std::complex<int> >("phase"));
     //-END-usertype
   }
 }

@@ -60,7 +60,7 @@ TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalVariables)
 	//+ If try to get a global that does not exist, will throw
 	//+ an exception by default...
 	double value = 0.0;
-	EXPECT_THROW(stkIo.get_global("does_not_exist", value),std::exception);
+	EXPECT_ANY_THROW(stkIo.get_global("does_not_exist", value));
 	
 	//+ If the application wants to handle the error instead (without a try/catch),
 	//+ can pass in an optional boolean:

@@ -145,8 +145,8 @@ TEST(GlobalVariablesTest, InvalidGlobalRequest)
       stkIo.populate_bulk_data();
 
       bool abort_if_not_exist = true;
-      EXPECT_THROW(stkIo.get_global("does_not_exist", global_value), std::exception);
-      EXPECT_THROW(stkIo.get_global("does_not_exist", global_value, abort_if_not_exist), std::exception);
+      EXPECT_ANY_THROW(stkIo.get_global("does_not_exist", global_value));
+      EXPECT_ANY_THROW(stkIo.get_global("does_not_exist", global_value, abort_if_not_exist));
       ASSERT_TRUE(stkIo.get_global(globalVarName, global_value, abort_if_not_exist));
 
       abort_if_not_exist = false;
@@ -320,7 +320,7 @@ TEST(GlobalVariablesTest, TwoGlobalDoublesSameName)
     std::vector<std::string> globalVarNames;
     globalVarNames.push_back("testGlobal");
     globalVarNames.push_back("testGlobal");
-    EXPECT_THROW(testTwoGlobals<double>("TwoGlobalDoublesSameName.exo", globalVarNames), std::exception);
+    EXPECT_ANY_THROW(testTwoGlobals<double>("TwoGlobalDoublesSameName.exo", globalVarNames));
     unlink("TwoGlobalDoublesSameName.exo");
 }
 
