@@ -35,6 +35,7 @@ struct CMD {
   bool CMD_USE_MUELU;
   bool CMD_USE_MEANBASED;
   bool CMD_USE_UQ;
+  int CMD_USE_UQ_FAKE;
   int CMD_USE_UQ_DIM;
   int CMD_USE_UQ_ORDER;
   double CMD_USE_MEAN;
@@ -69,6 +70,7 @@ struct CMD {
           CMD_USE_MUELU(false),
           CMD_USE_MEANBASED(false),
           CMD_USE_UQ(false),
+          CMD_USE_UQ_FAKE(0),
           CMD_USE_UQ_DIM(3),
           CMD_USE_UQ_ORDER(2),
           CMD_USE_MEAN(1),

@@ -59,17 +59,36 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
     bases[i] = rcp(new legendre_basis(order, true));
   RCP<const product_basis> basis = rcp(new product_basis(bases));
   RCP<const quadrature> quad;
-  if ( cmd.CMD_USE_SPARSE  ) {
-    Stokhos::TotalOrderIndexSet<int> index_set(dim, order);
-    quad = rcp(new Stokhos::SmolyakSparseGridQuadrature<int,double>(basis,
-                                                                    index_set));
+  int num_quad_points;
+  Array<double> quad_weights;
+  Array< Array<double> > quad_points;
+  Array< Array<double> > quad_values;
+  if ( cmd.CMD_USE_UQ_FAKE > 0 ) {
+    // Create fake UQ problem of size cmd.CMD_USE_UQ_FAKE, initializing
+    // points, weights, values to 0
+    num_quad_points = cmd.CMD_USE_UQ_FAKE;
+    quad_weights.resize(num_quad_points);
+    quad_points.resize(num_quad_points);
+    quad_values.resize(num_quad_points);
+    for (int i=0; i<num_quad_points; ++i) {
+      quad_points[i].resize(dim);
+      quad_values[i].resize(basis->size());
+    }
   }
-  else
-    quad = rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
-  const int num_quad_points                 = quad->size();
-  const Array<double>& quad_weights         = quad->getQuadWeights();
-  const Array< Array<double> >& quad_points = quad->getQuadPoints();
-  const Array< Array<double> >& quad_values = quad->getBasisAtQuadPoints();
+  else {
+    if ( cmd.CMD_USE_SPARSE  ) {
+      Stokhos::TotalOrderIndexSet<int> index_set(dim, order);
+      quad =
+        rcp(new Stokhos::SmolyakSparseGridQuadrature<int,double>(basis,
+                                                                 index_set));
+    }
+    else
+      quad = rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
+    num_quad_points = quad->size();
+    quad_weights    = quad->getQuadWeights();
+    quad_points     = quad->getQuadPoints();
+    quad_values     = quad->getBasisAtQuadPoints();
+  }
 
   // Print output headers
   const std::vector< size_t > widths =
@@ -145,8 +164,6 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
           bc_lower_value , bc_upper_value ,
           false , response);
 
-      // std::cout << "newton count = " << perf.newton_iter_count
-      //           << " cg count = " << perf.cg_iter_count << std::endl;
       perf.newton_iter_count *= VectorSize;
       perf.cg_iter_count *= VectorSize;
       perf.map_ratio *= VectorSize;
@@ -199,8 +216,6 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
           bc_lower_value , bc_upper_value ,
           false , response);
 
-      // std::cout << "newton count = " << perf.newton_iter_count
-      //           << " cg count = " << perf.cg_iter_count << std::endl;
       perf_total.increment(perf);
 
       // Sum response into integral computing response PCE coefficients

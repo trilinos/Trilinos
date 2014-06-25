@@ -56,6 +56,7 @@ clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
   if(cmdline.CMD_USE_MUELU || cmdline.CMD_USE_MEANBASED)
     cmdline.CMD_USE_BELOS = true;
 
+  clp.setOption("uq-fake",                     &cmdline.CMD_USE_UQ_FAKE,  "setup a fake UQ problem of this size");
   clp.setOption("uq-dim",                   &cmdline.CMD_USE_UQ_DIM,  "UQ dimension");
   clp.setOption("uq-order",                 &cmdline.CMD_USE_UQ_ORDER,  "UQ order");
   clp.setOption("mean",                     &cmdline.CMD_USE_MEAN,  "KL diffusion mean");
@@ -155,6 +156,9 @@ void print_cmdline( std::ostream & s , const CMD & cmd )
   if ( cmd.CMD_USE_UQ_ENSEMBLE  ) {
     s << " UQ ensemble(" << cmd.CMD_USE_UQ_ENSEMBLE << ")" ;
   }
+  if ( cmd.CMD_USE_UQ_FAKE ) {
+    s << " UQ fake(" << cmd.CMD_USE_UQ_FAKE  << ")" ;
+  }
   if ( cmd.CMD_USE_UQ_DIM  ) {
     s << " UQ dimension(" << cmd.CMD_USE_UQ_DIM  << ")" ;
   }
@@ -238,13 +242,18 @@ print_headers( std::ostream & s , const CMD & cmd , const int comm_rank )
      s << " , KL MEAN , " << cmd.CMD_USE_MEAN ;
      s << " , KL VAR , " << cmd.CMD_USE_VAR ;
      s << " , KL COR , " << cmd.CMD_USE_COR ;
-     s << " , UQ DIM , " << cmd.CMD_USE_UQ_DIM ;
-     s << " , UQ ORDER , " << cmd.CMD_USE_UQ_ORDER;
+     if ( cmd.CMD_USE_UQ_FAKE ) {
+       s << " , UQ FAKE , " << cmd.CMD_USE_UQ_FAKE ;
+     }
+     else {
+       s << " , UQ DIM , " << cmd.CMD_USE_UQ_DIM ;
+       s << " , UQ ORDER , " << cmd.CMD_USE_UQ_ORDER;
+       if ( cmd.CMD_USE_SPARSE  ) { s << " , USING SPARSE GRID" ; }
+       else { s << " , USING TENSOR GRID" ; }
+     }
      if ( cmd.CMD_USE_UQ_ENSEMBLE  ) {
        s << " , USING UQ ENSEMBLE , " << cmd.CMD_USE_UQ_ENSEMBLE ;
      }
-     if ( cmd.CMD_USE_SPARSE  ) { s << " , USING SPARSE GRID" ; }
-     else { s << " , USING TENSOR GRID" ; }
      if ( cmd.CMD_USE_MEANBASED  ) { s << " , MEAN-BASED PREC" ; }
    }
 
