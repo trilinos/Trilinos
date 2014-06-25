@@ -16,7 +16,7 @@
 #include <stdexcept>                    // for logic_error, runtime_error
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/base/FieldParallel.hpp>  // for communicate_field_data, etc
-#include <stk_mesh/base/GetEntities.hpp>  // for count_entities, etc
+#include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
 #include <gtest/gtest.h>
@@ -26,16 +26,13 @@
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket, has_superset
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
-#include "stk_mesh/base/Field.hpp"      // for Field
-#include "stk_mesh/base/FieldBase.hpp"  // for field_data, etc
 #include "stk_mesh/base/Ghosting.hpp"   // for Ghosting
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, entity_rank_names, etc
 #include "stk_mesh/base/Part.hpp"       // for Part
-#include "stk_mesh/base/Relation.hpp"
 #include "stk_mesh/base/Selector.hpp"   // for Selector, operator|
 #include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityVector, etc
+#include "stk_mesh/base/CreateEdges.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_util/util/PairIter.hpp"   // for PairIter
 #include "stk_io/StkMeshIoBroker.hpp"
 
 void setupKeyholeMesh2D_case1(stk::mesh::BulkData& bulk)
@@ -43,63 +40,50 @@ void setupKeyholeMesh2D_case1(stk::mesh::BulkData& bulk)
 //
 //   proc 0      proc 1
 //            |
-//            | block_2
-//            | 10---9
-// block_1    | | 3  |
-//    4----3  | 3----8 
+//            |  block_2 block_3
+//            |
+//  block_1   |  10---9  9----12
+//            |  | 3  |  |  4  |
+//    4----3  |  3----8  8----11
 //    | 1  |  |
-//    1----2  | 2----7
-//            | | 2  |
-//            | 5----6
+//    1----2  |  2----7
+//            |  | 2  |
+//            |  5----6
 //            |
 //
 //shared nodes 2 and 3 should be members of block_1 and block_2 on both procs
+//nodes 8 and 9 are ghosts on proc 0, and should be members of block_2 and block_3
 //
+//if edges are added, the edge between nodes 2 and 3 should be a member of block_1 not block_2.
+//
+//also, the edge between nodes 8 and 9 should be a member of block_2 and block_3 on both procs.
 
   stk::mesh::MetaData& meta = bulk.mesh_meta_data();
 
   stk::mesh::Part& block_1 = meta.declare_part_with_topology("block_1", stk::topology::QUAD_4_2D);
   stk::mesh::Part& block_2 = meta.declare_part_with_topology("block_2", stk::topology::QUAD_4_2D);
+  stk::mesh::Part& block_3 = meta.declare_part_with_topology("block_3", stk::topology::QUAD_4_2D);
   meta.commit();
 
   bulk.modification_begin();
 
-  const unsigned num_nodes = 10;
-  std::vector<stk::mesh::Entity> nodes(num_nodes+1, stk::mesh::Entity());
+  const int nodesPerElem = 4;
+  stk::mesh::EntityId elem1_nodes[nodesPerElem] = {1, 2, 3, 4};
+  stk::mesh::EntityId elem2_nodes[nodesPerElem] = {5, 6, 7, 2};
+  stk::mesh::EntityId elem3_nodes[nodesPerElem] = {3, 8, 9, 10};
+  stk::mesh::EntityId elem4_nodes[nodesPerElem] = {8, 11, 12, 9};
 
-  for(unsigned i=1; i<=num_nodes; ++i) {
-    if (bulk.parallel_rank() == 0) {
-      if (i > 4) break;
-    }
-    if (bulk.parallel_rank() == 1) {
-      if (i==1 || i==4) continue;
-    }
-    nodes[i] = bulk.declare_entity(stk::topology::NODE_RANK, static_cast<stk::mesh::EntityId>(i));
-  }
-
-  stk::mesh::EntityId id = 1;
+  stk::mesh::EntityId elemId = 1;
   if (bulk.parallel_rank() == 0) {
-    stk::mesh::Entity elem1 = bulk.declare_entity(stk::topology::ELEM_RANK, id, block_1);
-    bulk.declare_relation(elem1, nodes[1], 0);
-    bulk.declare_relation(elem1, nodes[2], 1);
-    bulk.declare_relation(elem1, nodes[3], 2);
-    bulk.declare_relation(elem1, nodes[4], 3);
+    stk::mesh::declare_element(bulk, block_1, elemId, elem1_nodes);
   }
-
-  if (bulk.parallel_rank() == 1) {
-    id = 2;
-    stk::mesh::Entity elem2 = bulk.declare_entity(stk::topology::ELEM_RANK, id, block_2);
-    bulk.declare_relation(elem2, nodes[5], 0);
-    bulk.declare_relation(elem2, nodes[6], 1);
-    bulk.declare_relation(elem2, nodes[7], 2);
-    bulk.declare_relation(elem2, nodes[2], 3);
-
-    id = 3;
-    stk::mesh::Entity elem3 = bulk.declare_entity(stk::topology::ELEM_RANK, id, block_2);
-    bulk.declare_relation(elem3, nodes[3], 0);
-    bulk.declare_relation(elem3, nodes[8], 1);
-    bulk.declare_relation(elem3, nodes[9], 2);
-    bulk.declare_relation(elem3, nodes[10], 3);
+  else if (bulk.parallel_rank() == 1) {
+    elemId = 2;
+    stk::mesh::declare_element(bulk, block_2, elemId, elem2_nodes);
+    elemId = 3;
+    stk::mesh::declare_element(bulk, block_2, elemId, elem3_nodes);
+    elemId = 4;
+    stk::mesh::declare_element(bulk, block_3, elemId, elem4_nodes);
   }
 
   bulk.modification_end();
@@ -112,8 +96,8 @@ void setupKeyholeMesh2D_case2(stk::mesh::BulkData& bulk)
 //            |
 //            | block_2 block_3
 //            |
-//            |         12---11
-// block_1    |         | 4  |
+// block_1    |         12---11
+//            |         | 4  |
 //    4----3  | 3----6  6----10
 //    | 1  |  | |  2 |
 //    1----2  | 2----5  5----9
@@ -123,6 +107,8 @@ void setupKeyholeMesh2D_case2(stk::mesh::BulkData& bulk)
 //
 //nodes 5 and 6 are ghosts (aura) on proc 0,
 //and should be members of block_2 and block_3 on proc 0
+//if edges are added, the edge between nodes 5 and 6 should
+//be a member of block_2 not block_3.
 //
 
   stk::mesh::MetaData& meta = bulk.mesh_meta_data();
@@ -134,49 +120,23 @@ void setupKeyholeMesh2D_case2(stk::mesh::BulkData& bulk)
 
   bulk.modification_begin();
 
-  const unsigned num_nodes = 12;
-  std::vector<stk::mesh::Entity> nodes(num_nodes+1, stk::mesh::Entity());
+  const int nodesPerElem = 4;
+  stk::mesh::EntityId elem1_nodes[nodesPerElem] = {1, 2, 3, 4};
+  stk::mesh::EntityId elem2_nodes[nodesPerElem] = {2, 5, 6, 3};
+  stk::mesh::EntityId elem3_nodes[nodesPerElem] = {7, 8, 9, 5};
+  stk::mesh::EntityId elem4_nodes[nodesPerElem] = {6, 10, 11, 12};
 
-  for(unsigned i=1; i<=num_nodes; ++i) {
-    if (bulk.parallel_rank() == 0) {
-      if (i > 4) break;
-    }
-    if (bulk.parallel_rank() == 1) {
-      if (i==1 || i==4) continue;
-    }
-    nodes[i] = bulk.declare_entity(stk::topology::NODE_RANK, static_cast<stk::mesh::EntityId>(i));
-  }
-
-  stk::mesh::EntityId id = 1;
+  stk::mesh::EntityId elemId = 1;
   if (bulk.parallel_rank() == 0) {
-    stk::mesh::Entity elem1 = bulk.declare_entity(stk::topology::ELEM_RANK, id, block_1);
-    bulk.declare_relation(elem1, nodes[1], 0);
-    bulk.declare_relation(elem1, nodes[2], 1);
-    bulk.declare_relation(elem1, nodes[3], 2);
-    bulk.declare_relation(elem1, nodes[4], 3);
+    stk::mesh::declare_element(bulk, block_1, elemId, elem1_nodes);
   }
-
-  if (bulk.parallel_rank() == 1) {
-    id = 2;
-    stk::mesh::Entity elem2 = bulk.declare_entity(stk::topology::ELEM_RANK, id, block_2);
-    bulk.declare_relation(elem2, nodes[2], 0);
-    bulk.declare_relation(elem2, nodes[5], 1);
-    bulk.declare_relation(elem2, nodes[6], 2);
-    bulk.declare_relation(elem2, nodes[3], 3);
-
-    id = 3;
-    stk::mesh::Entity elem3 = bulk.declare_entity(stk::topology::ELEM_RANK, id, block_3);
-    bulk.declare_relation(elem3, nodes[7], 0);
-    bulk.declare_relation(elem3, nodes[8], 1);
-    bulk.declare_relation(elem3, nodes[9], 2);
-    bulk.declare_relation(elem3, nodes[5], 3);
-
-    id = 4;
-    stk::mesh::Entity elem4 = bulk.declare_entity(stk::topology::ELEM_RANK, id, block_3);
-    bulk.declare_relation(elem4, nodes[6], 0);
-    bulk.declare_relation(elem4, nodes[10], 1);
-    bulk.declare_relation(elem4, nodes[11], 2);
-    bulk.declare_relation(elem4, nodes[12], 3);
+  else if (bulk.parallel_rank() == 1) {
+    elemId = 2;
+    stk::mesh::declare_element(bulk, block_2, elemId, elem2_nodes);
+    elemId = 3;
+    stk::mesh::declare_element(bulk, block_3, elemId, elem3_nodes);
+    elemId = 4;
+    stk::mesh::declare_element(bulk, block_3, elemId, elem4_nodes);
   }
 
   bulk.modification_end();
@@ -216,6 +176,26 @@ TEST(UnitTestKeyhole, NodeParts_case1)
 
   const unsigned expected_num_shared_nodes = 2;
   EXPECT_EQ(expected_num_shared_nodes, num_shared_nodes);
+
+  if (bulk.parallel_rank() == 0) {
+    stk::mesh::Entity node8 = bulk.get_entity(stk::topology::NODE_RANK, stk::mesh::EntityId(8));
+    stk::mesh::Entity node9 = bulk.get_entity(stk::topology::NODE_RANK, stk::mesh::EntityId(9));
+
+    EXPECT_TRUE(bulk.is_valid(node8));
+    EXPECT_TRUE(bulk.is_valid(node9));
+
+    const stk::mesh::Part& aura_part = meta.aura_part();
+    EXPECT_TRUE(bulk.bucket(node8).member(aura_part));
+    EXPECT_TRUE(bulk.bucket(node9).member(aura_part));
+
+    stk::mesh::Part& block_2 = *meta.get_part("block_2");
+    stk::mesh::Part& block_3 = *meta.get_part("block_3");
+    stk::mesh::PartVector blocks(2);
+    blocks[0] = &block_2;
+    blocks[1] = &block_3;
+    EXPECT_TRUE(bulk.bucket(node8).member_all(blocks));
+    EXPECT_TRUE(bulk.bucket(node9).member_all(blocks));
+  }
 }
 
 TEST(UnitTestKeyhole, NodeParts_case2)
@@ -253,5 +233,111 @@ TEST(UnitTestKeyhole, NodeParts_case2)
     const unsigned expected_num_aura_nodes = 2;
     EXPECT_EQ(expected_num_aura_nodes, num_aura_nodes);
   }
+}
+
+TEST(UnitTestKeyhole, EdgeParts_case1)
+{
+  stk::ParallelMachine communicator = MPI_COMM_WORLD;
+
+  int numProcs = stk::parallel_machine_size(communicator);
+  if (numProcs != 2) {
+    return;
+  }
+
+  const unsigned spatialDim = 2;
+  stk::mesh::MetaData meta(spatialDim);
+  stk::mesh::BulkData bulk(meta, communicator);
+
+  setupKeyholeMesh2D_case1(bulk);
+
+  stk::mesh::create_edges(bulk);
+
+  //find the edge between nodes 2 and 3.
+  stk::mesh::Entity edge = stk::mesh::Entity();
+  stk::mesh::EntityId nodeId2 = 2;
+  stk::mesh::Entity node2 = bulk.get_entity(stk::topology::NODE_RANK, nodeId2);
+  unsigned num_edges = bulk.num_edges(node2);
+  const stk::mesh::Entity* edges = bulk.begin_edges(node2);
+  for(unsigned i=0; i<num_edges; ++i) {
+    stk::mesh::Entity this_edge = edges[i];
+    const stk::mesh::Entity* edge_nodes = bulk.begin_nodes(this_edge);
+    if (bulk.identifier(edge_nodes[0])==2 && bulk.identifier(edge_nodes[1])==3) {
+      edge = this_edge;
+      break;
+    }
+  }
+
+  EXPECT_TRUE(bulk.is_valid(edge));
+  std::cerr<<"proc "<<bulk.parallel_rank()<<" found edge id="<<bulk.identifier(edge)<<" between nodes 2 and 3"<<std::endl;
+
+  const stk::mesh::Part& block_1 = *meta.get_part("block_1");
+  const stk::mesh::Part& block_2 = *meta.get_part("block_2");
+  const stk::mesh::Bucket& edge_bucket = bulk.bucket(edge);
+  EXPECT_TRUE(edge_bucket.member(block_1));
+  EXPECT_FALSE(edge_bucket.member(block_2));
+
+  //find the edge between nodes 8 and 9.
+  edge = stk::mesh::Entity();
+  stk::mesh::EntityId nodeId8 = 8;
+  stk::mesh::Entity node8 = bulk.get_entity(stk::topology::NODE_RANK, nodeId8);
+  num_edges = bulk.num_edges(node8);
+  edges = bulk.begin_edges(node8);
+  for(unsigned i=0; i<num_edges; ++i) {
+    stk::mesh::Entity this_edge = edges[i];
+    const stk::mesh::Entity* edge_nodes = bulk.begin_nodes(this_edge);
+    if (bulk.identifier(edge_nodes[0])==8 && bulk.identifier(edge_nodes[1])==9) {
+      edge = this_edge;
+      break;
+    }
+  }
+
+  EXPECT_TRUE(bulk.is_valid(edge));
+  std::cerr<<"proc "<<bulk.parallel_rank()<<" found edge id="<<bulk.identifier(edge)<<" between nodes 8 and 9"<<std::endl;
+
+  const stk::mesh::Part& block_3 = *meta.get_part("block_3");
+  EXPECT_TRUE(bulk.bucket(edge).member(block_2));
+  EXPECT_TRUE(bulk.bucket(edge).member(block_3));
+}
+
+TEST(UnitTestKeyhole, EdgeParts_case2)
+{
+  stk::ParallelMachine communicator = MPI_COMM_WORLD;
+
+  int numProcs = stk::parallel_machine_size(communicator);
+  if (numProcs != 2) {
+    return;
+  }
+
+  const unsigned spatialDim = 2;
+  stk::mesh::MetaData meta(spatialDim);
+  stk::mesh::BulkData bulk(meta, communicator);
+
+  setupKeyholeMesh2D_case2(bulk);
+
+  stk::mesh::create_edges(bulk);
+
+  //find the edge between nodes 5 and 6.
+  stk::mesh::Entity edge = stk::mesh::Entity();
+  stk::mesh::EntityId nodeId5 = 5;
+  stk::mesh::Entity node5 = bulk.get_entity(stk::topology::NODE_RANK, nodeId5);
+  unsigned num_edges = bulk.num_edges(node5);
+  const stk::mesh::Entity* edges = bulk.begin_edges(node5);
+  for(unsigned i=0; i<num_edges; ++i) {
+    stk::mesh::Entity this_edge = edges[i];
+    const stk::mesh::Entity* edge_nodes = bulk.begin_nodes(this_edge);
+    if (bulk.identifier(edge_nodes[0])==5 && bulk.identifier(edge_nodes[1])==6) {
+      edge = this_edge;
+      break;
+    }
+  }
+
+  EXPECT_TRUE(bulk.is_valid(edge));
+  std::cerr<<"proc "<<bulk.parallel_rank()<<" found edge id="<<bulk.identifier(edge)<<" between nodes 5 and 6"<<std::endl;
+
+  const stk::mesh::Part& block_2 = *meta.get_part("block_2");
+  const stk::mesh::Part& block_3 = *meta.get_part("block_3");
+  const stk::mesh::Bucket& edge_bucket = bulk.bucket(edge);
+  EXPECT_TRUE(edge_bucket.member(block_2));
+  EXPECT_FALSE(edge_bucket.member(block_3));
 }
 
