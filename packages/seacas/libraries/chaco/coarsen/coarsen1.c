@@ -3,6 +3,7 @@
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
 #include "smalloc.h"                    // for smalloc, sfree
+#include "structs.h"
 
 
 void 

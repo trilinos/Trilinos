@@ -2,6 +2,7 @@
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
+#include "structs.h"
 
 int 
 msolve_ (long *lnvtxs, double *x, double *y, double *dA, double *vwsqrt, double *work)

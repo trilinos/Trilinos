@@ -5,6 +5,7 @@
 #include <stdio.h>                      // for printf
 #include "params.h"                     // for MAXSETS
 #include "smalloc.h"                    // for sfree
+#include "structs.h"
 
 
 static void free3d();

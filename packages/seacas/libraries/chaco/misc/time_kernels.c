@@ -4,6 +4,7 @@
 
 #include <math.h>                       // for sqrt
 #include <stdio.h>                      // for printf, NULL
+#include "structs.h"
 
 static double    checkvec();
 

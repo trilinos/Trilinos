@@ -5,6 +5,7 @@
 #include <stdio.h>                      // for printf, NULL
 #include "defs.h"                       // for TRUE, FALSE, max, min
 #include "smalloc.h"                    // for sfree, smalloc
+#include "structs.h"
 
 /* Perform Rayleigh Quotient Iteration */
 

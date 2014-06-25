@@ -5,6 +5,7 @@
 #include <stdio.h>                      // for NULL
 #include "defs.h"                       // for TRUE
 #include "smalloc.h"                    // for sfree, smalloc_ret
+#include "structs.h"
 
 
 /* Given a partition, refine the mapping in a locally greedy fasion. */

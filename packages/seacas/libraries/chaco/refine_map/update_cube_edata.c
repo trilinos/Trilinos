@@ -4,6 +4,7 @@
 
 #include <stdio.h>                      // for NULL
 #include "refine_map.h"                 // for refine_edata
+#include "structs.h"
 
 void 
 update_cube_edata (

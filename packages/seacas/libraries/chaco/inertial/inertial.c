@@ -3,6 +3,7 @@
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
 #include <stdio.h>                      // for printf
+#include "structs.h"
 
 int       PROJECTION_AXIS = 0;	/* axis to flatten geometry */
 				/* => long regions, good for SnRad */
