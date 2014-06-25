@@ -457,8 +457,8 @@ namespace {
     for (int b = 0; b < file2.Num_Side_Sets(); ++b) {
       Side_Set<INT>* set2 = file2.Get_Side_Set_by_Index(b);
       if (set2 == NULL) {
-	std::cout << "exodiff: ERROR .. Sideset id " << set2->Id()
-		  << " exists in second file but not the first.\n";
+	std::cout << "exodiff: ERROR .. Could not access the Sideset with index "
+		  << b << " in the second file.\n";
 	if (interface.pedantic)
 	  is_same = false;
       }
