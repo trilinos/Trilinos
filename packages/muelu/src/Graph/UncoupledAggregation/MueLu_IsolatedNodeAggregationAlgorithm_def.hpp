@@ -72,13 +72,12 @@ namespace MueLu {
   void IsolatedNodeAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
 
-    const LO numRows = graph.GetNodeNumVertices();
+    const LO  numRows = graph.GetNodeNumVertices();
 
+    // Remove all isolated nodes
     for (LO i = 0; i < numRows; i++)
-      if (aggStat[i] == BOUNDARY ||
-          (aggStat[i] != AGGREGATED && graph.getNeighborVertices(i).size() == 1)) {
-        // This is a boundary or an isolated node
-        aggStat[i] = AGGREGATED;
+      if (aggStat[i] != AGGREGATED && aggStat[i] != IGNORED && graph.getNeighborVertices(i).size() == 1) {
+        aggStat[i] = IGNORED;
         numNonAggregatedNodes--;
       }
   }

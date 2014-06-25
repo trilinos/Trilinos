@@ -75,7 +75,7 @@ namespace MueLu {
     LO numLocalAggregates = aggregates.GetNumAggregates();
 
     for (LO i = 0; i < numRows; i++) {
-      if (aggStat[i] == AGGREGATED)
+      if (aggStat[i] == AGGREGATED || aggStat[i] == IGNORED)
         continue;
 
        ArrayView<const LocalOrdinal> neighOfINode = graph.getNeighborVertices(i);

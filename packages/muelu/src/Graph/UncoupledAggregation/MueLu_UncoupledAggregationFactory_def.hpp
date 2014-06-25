@@ -147,7 +147,7 @@ namespace MueLu {
   void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const {
     FactoryMonitor m(*this, "Build", currentLevel);
 
-    const ParameterList& pL = GetParameterList();
+    ParameterList pL = GetParameterList();
     bDefinitionPhase_ = false;  // definition phase is finished, now all aggregation algorithm information is fixed
 
     // define aggregation algorithms
@@ -161,15 +161,16 @@ namespace MueLu {
       if (pL.get<bool>("UsePreserveDirichletAggregationAlgorithm") == true)   algos_.push_back(rcp(new PreserveDirichletAggregationAlgorithm (graphFact)));
       if (pL.get<bool>("UseUncoupledAggregationAlgorithm")         == true)   algos_.push_back(rcp(new AggregationPhase1Algorithm            (graphFact)));
       if (pL.get<bool>("UseMaxLinkAggregationAlgorithm")           == true)   algos_.push_back(rcp(new MaxLinkAggregationAlgorithm           (graphFact)));
-      if (pL.get<bool>("UseIsolatedNodeAggregationAlgorithm")      == true)   algos_.push_back(rcp(new IsolatedNodeAggregationAlgorithm      (graphFact)));
       if (pL.get<bool>("UseEmergencyAggregationAlgorithm")         == true)   algos_.push_back(rcp(new EmergencyAggregationAlgorithm         (graphFact)));
+                                                                              algos_.push_back(rcp(new IsolatedNodeAggregationAlgorithm      (graphFact)));
 
     } else {
+      if (pL.get<bool>("aggregation: preserve Dirichlet points")   == true)   algos_.push_back(rcp(new PreserveDirichletAggregationAlgorithm (graphFact)));
       if (pL.get<bool>("aggregation: enable phase 1" )             == true)   algos_.push_back(rcp(new AggregationPhase1Algorithm            (graphFact)));
       if (pL.get<bool>("aggregation: enable phase 2a")             == true)   algos_.push_back(rcp(new AggregationPhase2aAlgorithm           (graphFact)));
       if (pL.get<bool>("aggregation: enable phase 2b")             == true)   algos_.push_back(rcp(new AggregationPhase2bAlgorithm           (graphFact)));
-      if (pL.get<bool>("aggregation: preserve Dirichlet points")   == false)  algos_.push_back(rcp(new IsolatedNodeAggregationAlgorithm      (graphFact)));
       if (pL.get<bool>("aggregation: enable phase 3" )             == true)   algos_.push_back(rcp(new AggregationPhase3Algorithm            (graphFact)));
+                                                                              algos_.push_back(rcp(new IsolatedNodeAggregationAlgorithm      (graphFact)));
     }
 
     std::string mapOnePtName = pL.get<std::string>("OnePt aggregate map name"), mapSmallAggName = pL.get<std::string>("SmallAgg aggregate map name");

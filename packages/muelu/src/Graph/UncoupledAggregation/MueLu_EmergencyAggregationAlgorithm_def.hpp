@@ -84,7 +84,7 @@ namespace MueLu {
 
     LO nLocalAggregates = aggregates.GetNumAggregates();
     for (LO iNode = 0; iNode < nRows; iNode++) {
-      if (aggStat[iNode] != AGGREGATED) {
+      if (aggStat[iNode] != AGGREGATED && aggStat[iNode] != IGNORED) {
         aggSize = 0;
         aggregates.SetIsRoot(iNode);
 

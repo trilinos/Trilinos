@@ -75,6 +75,7 @@ namespace MueLu {
     NOTSEL     = 2, // indicates that a node has been rejected as a root node.
                     // This could perhaps be because if this node had been
                     // selected a small aggregate would have resulted
+                    // This is Phase 1 specific
 
     AGGREGATED = 3, // indicates that a node has been assigned
                     // to an aggregate
@@ -86,8 +87,12 @@ namespace MueLu {
                     // (only neighbour nodes which are also marked with the
                     // SMALLAGG flag)
 
+    IGNORED    = 6, // indicates that the node is removed from consideration,
+                    // and is not aggregated
 
-    BOUNDARY   = 6  // node is a Dirichlet node and should never be aggregated
+    BOUNDARY   = 7  // node is a Dirichlet node
+                    // During aggregation, it is transformed either to AGGREGATED
+                    // or to IGNORED
   };
 
 
