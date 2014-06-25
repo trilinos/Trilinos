@@ -157,6 +157,7 @@ int main(int argc, char *argv[]) {
   RCP<TimeMonitor> tm                = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1 - Matrix Build")));
 
   RCP<Matrix>      A;
+  RCP<const Map>   map;
   RCP<MultiVector> coordinates;
   RCP<MultiVector> nullspace;
   if (matrixFile.empty()) {
@@ -176,7 +177,6 @@ int main(int argc, char *argv[]) {
     // Create map and coordinates
     // In the future, we hope to be able to first create a Galeri problem, and then request map and coordinates from it
     // At the moment, however, things are fragile as we hope that the Problem uses same map and coordinates inside
-    RCP<const Map> map;
     if (matrixType == "Laplace1D") {
       map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian1D", comm, galeriList);
       coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D", map, galeriList);
@@ -224,8 +224,10 @@ int main(int argc, char *argv[]) {
     } else {
       nullspace->putScalar(one);
     }
+
   } else {
-    RCP<const Map> map = (mapFile.empty() ? Teuchos::null : Utils2::ReadMap(mapFile, xpetraParameters.GetLib(), comm));
+    if (!mapFile.empty())
+      map = Utils2::ReadMap(mapFile, xpetraParameters.GetLib(), comm);
     comm->barrier();
 
     if (lib == Xpetra::UseEpetra) {
@@ -247,12 +249,12 @@ int main(int argc, char *argv[]) {
 
     comm->barrier();
 
-    coordinates = Utils2::ReadMultiVector(coordFile, map);
+    if (!coordFile.empty())
+      coordinates = Utils2::ReadMultiVector(coordFile, map);
 
     nullspace = MultiVectorFactory::Build(map, 1);
     nullspace->putScalar(one);
   }
-  RCP<const Map> map = A->getRowMap();
 
   comm->barrier();
   tm = Teuchos::null;
@@ -328,7 +330,8 @@ int main(int argc, char *argv[]) {
         H = mueLuFactory->CreateHierarchy();
         H->GetLevel(0)->Set("A",           A);
         H->GetLevel(0)->Set("Nullspace",   nullspace);
-        H->GetLevel(0)->Set("Coordinates", coordinates);
+        if (!coordinates.is_null())
+          H->GetLevel(0)->Set("Coordinates", coordinates);
         mueLuFactory->SetupHierarchy(*H);
       }
 
