@@ -57,7 +57,6 @@
 
 #include "MueLu_AggregationAlgorithmBase.hpp"
 #include "MueLu_OnePtAggregationAlgorithm_fwd.hpp"
-#include "MueLu_SmallAggregationAlgorithm_fwd.hpp"
 #include "MueLu_PreserveDirichletAggregationAlgorithm_fwd.hpp"
 #include "MueLu_MaxLinkAggregationAlgorithm_fwd.hpp"
 #include "MueLu_IsolatedNodeAggregationAlgorithm_fwd.hpp"
@@ -118,11 +117,6 @@ public:
     SetParameter("OnePt aggregate map name", ParameterEntry(std::string(name))); // revalidate
     SetFactory("OnePt aggregate map factory",mapFact);
   }
-  // set information about small aggregates
-  void SetSmallAggMapName(const std::string name, Teuchos::RCP<const FactoryBase> mapFact) {
-    SetParameter("SmallAgg aggregate map name", ParameterEntry(std::string(name))); // revalidate
-    SetFactory("SmallAgg aggregate map factory",mapFact);
-  }
 
   // deprecated
   Ordering GetOrdering() const {
@@ -132,12 +126,12 @@ public:
   }
   // deprecated
   int GetMaxNeighAlreadySelected() const {
-    const ParameterList & pL = GetParameterList();
+    const ParameterList& pL = GetParameterList();
     return Teuchos::as<int>(pL.get<LocalOrdinal>("MaxNeighAlreadySelected"));
   }
   // deprecated
   int GetMinNodesPerAggregate() const {
-    const ParameterList & pL = GetParameterList();
+    const ParameterList& pL = GetParameterList();
     return Teuchos::as<int>(pL.get<LocalOrdinal>("MinNodesPerAggregate"));
   }
 

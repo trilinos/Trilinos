@@ -59,25 +59,23 @@ Level 1
      
      Build (MueLu::TentativePFactory)
       Build (MueLu::UncoupledAggregationFactory)
-      mode = old
-      Ordering = 0
-      MaxNeighAlreadySelected = 0
-      MinNodesPerAggregate = 2
-      MaxNodesPerAggregate = 2147483647
-      UseOnePtAggregationAlgorithm = 0
-      UseSmallAggregatesAggregationAlgorithm = 0
-      UsePreserveDirichletAggregationAlgorithm = 0
-      UseUncoupledAggregationAlgorithm = 1
-      UseMaxLinkAggregationAlgorithm = 1
-      UseIsolatedNodeAggregationAlgorithm = 1
-      UseEmergencyAggregationAlgorithm = 1
+      mode = old   [unused]
+      Ordering = 0   [unused]
+      MaxNeighAlreadySelected = 0   [unused]
+      MinNodesPerAggregate = 2   [unused]
+      MaxNodesPerAggregate = 2147483647   [unused]
+      UseOnePtAggregationAlgorithm = 0   [unused]
+      UsePreserveDirichletAggregationAlgorithm = 0   [unused]
+      UseUncoupledAggregationAlgorithm = 1   [unused]
+      UseMaxLinkAggregationAlgorithm = 1   [unused]
+      UseIsolatedNodeAggregationAlgorithm = 1   [unused]
+      UseEmergencyAggregationAlgorithm = 1   [unused]
       aggregation: preserve Dirichlet points = 0   [unused]
       aggregation: enable phase 1 = 1   [unused]
       aggregation: enable phase 2a = 1   [unused]
       aggregation: enable phase 2b = 1   [unused]
       aggregation: enable phase 3 = 1   [unused]
       OnePt aggregate map name = 
-      SmallAgg aggregate map name = 
       
       Build (MueLu::AmalgamationFactory)
       [empty list]
@@ -160,25 +158,23 @@ Level 2
      
      Build (MueLu::TentativePFactory)
       Build (MueLu::UncoupledAggregationFactory)
-      mode = old
-      Ordering = 0
-      MaxNeighAlreadySelected = 0
-      MinNodesPerAggregate = 2
-      MaxNodesPerAggregate = 2147483647
-      UseOnePtAggregationAlgorithm = 0
-      UseSmallAggregatesAggregationAlgorithm = 0
-      UsePreserveDirichletAggregationAlgorithm = 0
-      UseUncoupledAggregationAlgorithm = 1
-      UseMaxLinkAggregationAlgorithm = 1
-      UseIsolatedNodeAggregationAlgorithm = 1
-      UseEmergencyAggregationAlgorithm = 1
+      mode = old   [unused]
+      Ordering = 0   [unused]
+      MaxNeighAlreadySelected = 0   [unused]
+      MinNodesPerAggregate = 2   [unused]
+      MaxNodesPerAggregate = 2147483647   [unused]
+      UseOnePtAggregationAlgorithm = 0   [unused]
+      UsePreserveDirichletAggregationAlgorithm = 0   [unused]
+      UseUncoupledAggregationAlgorithm = 1   [unused]
+      UseMaxLinkAggregationAlgorithm = 1   [unused]
+      UseIsolatedNodeAggregationAlgorithm = 1   [unused]
+      UseEmergencyAggregationAlgorithm = 1   [unused]
       aggregation: preserve Dirichlet points = 0   [unused]
       aggregation: enable phase 1 = 1   [unused]
       aggregation: enable phase 2a = 1   [unused]
       aggregation: enable phase 2b = 1   [unused]
       aggregation: enable phase 3 = 1   [unused]
       OnePt aggregate map name = 
-      SmallAgg aggregate map name = 
       
       Build (MueLu::AmalgamationFactory)
       [empty list]
@@ -261,25 +257,23 @@ Level 3
      
      Build (MueLu::TentativePFactory)
       Build (MueLu::UncoupledAggregationFactory)
-      mode = old
-      Ordering = 0
-      MaxNeighAlreadySelected = 0
-      MinNodesPerAggregate = 2
-      MaxNodesPerAggregate = 2147483647
-      UseOnePtAggregationAlgorithm = 0
-      UseSmallAggregatesAggregationAlgorithm = 0
-      UsePreserveDirichletAggregationAlgorithm = 0
-      UseUncoupledAggregationAlgorithm = 1
-      UseMaxLinkAggregationAlgorithm = 1
-      UseIsolatedNodeAggregationAlgorithm = 1
-      UseEmergencyAggregationAlgorithm = 1
+      mode = old   [unused]
+      Ordering = 0   [unused]
+      MaxNeighAlreadySelected = 0   [unused]
+      MinNodesPerAggregate = 2   [unused]
+      MaxNodesPerAggregate = 2147483647   [unused]
+      UseOnePtAggregationAlgorithm = 0   [unused]
+      UsePreserveDirichletAggregationAlgorithm = 0   [unused]
+      UseUncoupledAggregationAlgorithm = 1   [unused]
+      UseMaxLinkAggregationAlgorithm = 1   [unused]
+      UseIsolatedNodeAggregationAlgorithm = 1   [unused]
+      UseEmergencyAggregationAlgorithm = 1   [unused]
       aggregation: preserve Dirichlet points = 0   [unused]
       aggregation: enable phase 1 = 1   [unused]
       aggregation: enable phase 2a = 1   [unused]
       aggregation: enable phase 2b = 1   [unused]
       aggregation: enable phase 3 = 1   [unused]
       OnePt aggregate map name = 
-      SmallAgg aggregate map name = 
       
       Build (MueLu::AmalgamationFactory)
       [empty list]

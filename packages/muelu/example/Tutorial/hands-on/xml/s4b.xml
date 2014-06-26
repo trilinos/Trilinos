@@ -41,9 +41,8 @@
 
     <ParameterList name="myAggExportFact">
       <Parameter name="factory"                             type="string" value="AggregationExportFactory"/>
-      <!--<Parameter name="DofsPerNode"                         type="string" value="myCoalesceDropFact"/>-->
-	<Parameter name="Output filename"                   type="string" value="aggs_level%LEVELID_proc%PROCID.txt"/>
-	<Parameter name="DofsPerNode"                       type="string" value="myCoalesceDropFact"/>
+      <Parameter name="Output filename"                   type="string" value="aggs_level%LEVELID_proc%PROCID.txt"/>
+      <Parameter name="DofsPerNode"                       type="string" value="myCoalesceDropFact"/>
     </ParameterList>
 
     <ParameterList name="myRAPFact">

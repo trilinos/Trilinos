@@ -30,7 +30,6 @@
     <ParameterList name="CoupledAggregationFact">
       <Parameter name="factory"                             type="string" value="CoupledAggregationFactory"/>
       <Parameter name="Graph"                               type="string" value="myCoalesceDropFact"/>
-      <Parameter name="DofsPerNode"                         type="string" value="myCoalesceDropFact"/>
       <Parameter name="Ordering"                            type="string" value="Graph"/>
       <Parameter name="MaxNeighAlreadySelected"             type="int"    value="0"/>
       <Parameter name="MinNodesPerAggregate"                type="int"    value="3"/>

@@ -53,7 +53,6 @@
 #include "MueLu_UncoupledAggregationFactory_decl.hpp"
 
 #include "MueLu_OnePtAggregationAlgorithm.hpp"
-#include "MueLu_SmallAggregationAlgorithm.hpp"
 #include "MueLu_PreserveDirichletAggregationAlgorithm.hpp"
 #include "MueLu_MaxLinkAggregationAlgorithm.hpp"
 #include "MueLu_IsolatedNodeAggregationAlgorithm.hpp"
@@ -100,7 +99,6 @@ namespace MueLu {
     validParamList->set<LO>      ("MaxNodesPerAggregate",             OTS::max(), "Maximum number of nodes for aggregate");
 
     validParamList->set<bool> ("UseOnePtAggregationAlgorithm",             false, "Allow special nodes to be marked for one-to-one transfer to the coarsest level. (default = off)");
-    validParamList->set<bool> ("UseSmallAggregatesAggregationAlgorithm",   false, "Turn on/off build process for small aggregates in user defined regions. (default = off)");
     validParamList->set<bool> ("UsePreserveDirichletAggregationAlgorithm", false, "Turn on/off aggregate Dirichlet (isolated nodes) into separate 1pt node aggregates (default = off)");
     validParamList->set<bool> ("UseUncoupledAggregationAlgorithm",          true, "Turn on/off uncoupled aggregation process. Do not turn off: this is "
                                "the main aggregation routine within the uncoupled aggregation process. (default = on)");
@@ -119,8 +117,6 @@ namespace MueLu {
 
     validParamList->set< std::string >           ("OnePt aggregate map name",         "", "Name of input map for single node aggregates. (default='')");
     validParamList->set< RCP<const FactoryBase> >("OnePt aggregate map factory",    null, "Generating factory of (DOF) map for single node aggregates.");
-    validParamList->set< std::string >           ("SmallAgg aggregate map name",      "", "Name of input map for small aggregates. (default='')");
-    validParamList->set< RCP<const FactoryBase> >("SmallAgg aggregate map factory", null, "Generating factory of (DOF) map for small aggregates.");
 
     return validParamList;
   }
@@ -131,15 +127,11 @@ namespace MueLu {
     Input(currentLevel, "DofsPerNode");
 
     const ParameterList& pL = GetParameterList();
-    std::string mapOnePtName = pL.get<std::string>("OnePt aggregate map name"), mapSmallAggName = pL.get<std::string>("SmallAgg aggregate map name");
 
+    std::string mapOnePtName = pL.get<std::string>("OnePt aggregate map name");
     if (mapOnePtName.length() > 0) {
       RCP<const FactoryBase> mapOnePtFact = GetFactory("OnePt aggregate map factory");
       currentLevel.DeclareInput(mapOnePtName, mapOnePtFact.get());
-    }
-    if (mapSmallAggName.length() > 0) {
-      RCP<const FactoryBase> mapSmallAggFact = GetFactory("SmallAgg aggregate map factory");
-      currentLevel.DeclareInput(mapSmallAggName, mapSmallAggFact.get());
     }
   }
 
@@ -157,7 +149,6 @@ namespace MueLu {
     algos_.clear();
     if (pL.get<std::string>("mode") == "old") {
       if (pL.get<bool>("UseOnePtAggregationAlgorithm")             == true)   algos_.push_back(rcp(new OnePtAggregationAlgorithm             (graphFact)));
-      if (pL.get<bool>("UseSmallAggregatesAggregationAlgorithm")   == true)   algos_.push_back(rcp(new SmallAggregationAlgorithm             (graphFact)));
       if (pL.get<bool>("UsePreserveDirichletAggregationAlgorithm") == true)   algos_.push_back(rcp(new PreserveDirichletAggregationAlgorithm (graphFact)));
       if (pL.get<bool>("UseUncoupledAggregationAlgorithm")         == true)   algos_.push_back(rcp(new AggregationPhase1Algorithm            (graphFact)));
       if (pL.get<bool>("UseMaxLinkAggregationAlgorithm")           == true)   algos_.push_back(rcp(new MaxLinkAggregationAlgorithm           (graphFact)));
@@ -173,15 +164,11 @@ namespace MueLu {
                                                                               algos_.push_back(rcp(new IsolatedNodeAggregationAlgorithm      (graphFact)));
     }
 
-    std::string mapOnePtName = pL.get<std::string>("OnePt aggregate map name"), mapSmallAggName = pL.get<std::string>("SmallAgg aggregate map name");
-    RCP<const Map> OnePtMap, SmallAggMap;
+    std::string mapOnePtName = pL.get<std::string>("OnePt aggregate map name");
+    RCP<const Map> OnePtMap;
     if (mapOnePtName.length()) {
       RCP<const FactoryBase> mapOnePtFact = GetFactory("OnePt aggregate map factory");
       OnePtMap = currentLevel.Get<RCP<const Map> >(mapOnePtName, mapOnePtFact.get());
-    }
-    if (mapSmallAggName.length()) {
-      RCP<const FactoryBase> mapSmallAggFact = GetFactory("SmallAgg aggregate map factory");
-      SmallAggMap = currentLevel.Get<RCP<const Map> >(mapSmallAggName, mapSmallAggFact.get());
     }
 
     RCP<const GraphBase> graph = Get< RCP<GraphBase> >(currentLevel, "Graph");
@@ -203,24 +190,14 @@ namespace MueLu {
 
     LO nDofsPerNode = Get<LO>(currentLevel, "DofsPerNode");
     GO indexBase = graph->GetDomainMap()->getIndexBase();
-    if (SmallAggMap != Teuchos::null || OnePtMap != Teuchos::null) {
+    if (OnePtMap != Teuchos::null) {
       for (LO i = 0; i < numRows; i++) {
         // reconstruct global row id (FIXME only works for contiguous maps)
         GO grid = (graph->GetDomainMap()->getGlobalElement(i)-indexBase) * nDofsPerNode + indexBase;
 
-        if (SmallAggMap != null) {
-          for (LO kr = 0; kr < nDofsPerNode; kr++) {
-            if (SmallAggMap->isNodeGlobalElement(grid + kr))
-              aggStat[i] = SMALLAGG;
-          }
-        }
-
-        if (OnePtMap != null) {
-          for (LO kr = 0; kr < nDofsPerNode; kr++) {
-            if (OnePtMap->isNodeGlobalElement(grid + kr))
-              aggStat[i] = ONEPT;
-          }
-        }
+        for (LO kr = 0; kr < nDofsPerNode; kr++)
+          if (OnePtMap->isNodeGlobalElement(grid + kr))
+            aggStat[i] = ONEPT;
       }
     }
 
