@@ -97,11 +97,7 @@ function [mesh] = RectGrid(xmin, xmax, ymin, ymax, nx, ny, celltype)
 %
 %  (Usually, the local grid.node numbering should not be important.)
 %
-%  AUTHORS:  Matthias Heinkenschloss and Denis Ridzal
-%            Department of Computational and Applied Mathematics
-%            Rice University
-%            November 23, 2005
-%
+%  AUTHORS:
 %            Denis Ridzal
 %            Sandia National Laboratories
 
