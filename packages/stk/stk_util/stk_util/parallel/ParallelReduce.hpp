@@ -16,16 +16,49 @@
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <stk_util/util/SimpleArrayOps.hpp>  // for BitAnd, BitOr, Copy, etc
 #include <string>                       // for string
+#include "stk_util/parallel/MPI.hpp"
+#include <stk_util/parallel/ParallelComm.hpp>
 
 //------------------------------------------------------------------------
 
 namespace stk {
 
+template<typename T>
+void all_reduce_impl( ParallelMachine comm , const T * local , T * global , unsigned count, MPI_Op op )
+{
+  T * tmp = const_cast<T*>( local );
+  BABBLE_STK_PARALLEL_COMM(comm, "                      calling MPI_Allreduce from all_reduce");
+#if defined( STK_HAS_MPI )
+  MPI_Allreduce( tmp , global , count , sierra::MPI::Datatype<T>::type() , op , comm );
+#else
+  for ( unsigned i = 0 ; i < count ; ++i ) { global[i] = local[i] ; }
+#endif
+}
+
+void all_reduce_impl(ParallelMachine comm, const size_t * local, size_t * global, unsigned count, MPI_Op op);
+
+template<typename T>
+void all_reduce_max( ParallelMachine comm , const T * local , T * global , unsigned count )
+{
+  all_reduce_impl(comm, local, global, count, MPI_MAX);
+}
+
+template<typename T>
+void all_reduce_min( ParallelMachine comm , const T * local , T * global , unsigned count )
+{
+  all_reduce_impl(comm, local, global, count, MPI_MIN);
+}
+
+template<typename T>
+void all_reduce_sum( ParallelMachine comm , const T * local , T * global , unsigned count )
+{
+  all_reduce_impl(comm, local, global, count, MPI_SUM);
+}
+
 /** \addtogroup parallel_module
  *  \{
  */
 
-// REFACTOR: Replace ReduceSum with Sum?, etc...  Should be possible
 
 /** \brief  Write string from any or all processors
  *          to the ostream on the root processor.
@@ -34,63 +67,10 @@ void all_write_string( ParallelMachine ,
                        std::ostream & ,
                        const std::string & );
 
-/** \brief  Parallel summation to all processors */
-void all_reduce_sum( ParallelMachine ,
-                     const double * local , double * global , unsigned count );
-
-/** \brief  Parallel summation to all processors */
-void all_reduce_sum( ParallelMachine ,
-                     const float * local , float * global , unsigned count );
-
-/** \brief  Parallel summation to all processors */
-void all_reduce_sum( ParallelMachine ,
-                     const int * local , int * global , unsigned count );
-
-/** \brief  Parallel summation to all processors */
-void all_reduce_sum( ParallelMachine comm ,
-                     const int64_t * local , int64_t * global , unsigned count );
-
-/** \brief  Parallel summation to all processors */
-void all_reduce_sum( ParallelMachine ,
-                     const size_t * local , size_t * global , unsigned count );
-
 /** \brief  Parallel bitwise-or to all processors */
 void all_reduce_bor( ParallelMachine ,
                      const unsigned * local ,
                      unsigned * global , unsigned count );
-
-void all_reduce_max( ParallelMachine ,
-                     const double * local , double * global , unsigned count );
-
-void all_reduce_max( ParallelMachine ,
-                     const unsigned * local , unsigned * global , unsigned count );
-
-void all_reduce_max( ParallelMachine ,
-                     const int * local , int * global , unsigned count );
-
-/** \brief  Parallel summation to all processors */
-void all_reduce_max( ParallelMachine comm ,
-                     const int64_t * local , int64_t * global , unsigned count );
-
-/** \brief  Parallel summation to all processors */
-void all_reduce_max( ParallelMachine ,
-                     const size_t * local , size_t * global , unsigned count );
-
-void all_reduce_min( ParallelMachine ,
-                     const double * local , double * global , unsigned count );
-
-void all_reduce_min( ParallelMachine ,
-                     const unsigned * local , unsigned * global , unsigned count );
-
-void all_reduce_min( ParallelMachine ,
-                     const int * local , int * global , unsigned count );
-
-void all_reduce_min( ParallelMachine comm ,
-                     const int64_t * local , int64_t * global , unsigned count );
-
-/** \brief  Parallel summation to all processors */
-void all_reduce_min( ParallelMachine ,
-                     const size_t * local , size_t * global , unsigned count );
 
 /** Aggregated parallel in-place reduce-to-all-processors operations.
  *

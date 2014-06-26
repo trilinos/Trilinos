@@ -339,7 +339,6 @@ struct Datatype<double>
   }
 };
 
-
 template <>
 struct Datatype<std::complex<float> >
 {
