@@ -52,13 +52,14 @@
 #if defined(__MIC__)
 // For MIC (Xeon Phi) -- vector width = 8 (double precision)
 #define INSTANTIATE_MP_VECTOR_SFS_SLD_CPU(INSTMACRO, S, L, D, LO, GO, N) \
-  INSTANTIATE_MP_VECTOR_SFS_SLND(INSTMACRO, S, L,  8, D, LO, GO, N)      \
-  INSTANTIATE_MP_VECTOR_SFS_SLND(INSTMACRO, S, L, 16, D, LO, GO, N)
+  INSTANTIATE_MP_VECTOR_SFS_SLND(INSTMACRO, S, L, 16, D, LO, GO, N)      \
+  INSTANTIATE_MP_VECTOR_SFS_SLND(INSTMACRO, S, L, 32, D, LO, GO, N)
 #else
 // For CPU with AVX instructions -- vector width = 4 (double precision)
 #define INSTANTIATE_MP_VECTOR_SFS_SLD_CPU(INSTMACRO, S, L, D, LO, GO, N) \
   INSTANTIATE_MP_VECTOR_SFS_SLND(INSTMACRO, S, L,  4, D, LO, GO, N)      \
-  INSTANTIATE_MP_VECTOR_SFS_SLND(INSTMACRO, S, L,  8, D, LO, GO, N)
+  INSTANTIATE_MP_VECTOR_SFS_SLND(INSTMACRO, S, L, 16, D, LO, GO, N)      \
+  INSTANTIATE_MP_VECTOR_SFS_SLND(INSTMACRO, S, L, 32, D, LO, GO, N)
 #endif
 
 // For CUDA GPU -- warp size = 32
@@ -79,10 +80,10 @@
 //  INSTANTIATE_MP_VECTOR_DS_SLD(INSTMACRO, double, int, D, LO, GO, N)
 
 #define INSTANTIATE_MP_VECTOR_S_CPU(INSTMACRO, LO, GO, N) \
-  typedef typename Stokhos::DeviceForNode<N>::type DFN_CPU_ ## LO ## _ ## GO ## _ ## N; \
+  typedef Stokhos::DeviceForNode<N>::type DFN_CPU_ ## LO ## _ ## GO ## _ ## N; \
   INSTANTIATE_MP_VECTOR_S_D_CPU(INSTMACRO, DFN_CPU_ ## LO ## _ ## GO ## _ ## N, LO, GO, N)
 #define INSTANTIATE_MP_VECTOR_S_GPU(INSTMACRO, LO, GO, N) \
-  typedef typename Stokhos::DeviceForNode<N>::type DFN_GPU_ ## LO ## _ ## GO ## _ ## N; \
+  typedef Stokhos::DeviceForNode<N>::type DFN_GPU_ ## LO ## _ ## GO ## _ ## N; \
   INSTANTIATE_MP_VECTOR_S_D_GPU(INSTMACRO, DFN_GPU_ ## LO ## _ ## GO ## _ ## N, LO, GO, N)
 
 #if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_PTHREAD)

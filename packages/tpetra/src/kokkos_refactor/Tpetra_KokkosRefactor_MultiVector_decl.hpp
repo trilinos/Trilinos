@@ -124,7 +124,7 @@ namespace Tpetra {
   ///   If you want to solve larger problems, you must use a 64-bit
   ///   integer type here.
   ///
-  /// \section Kokkos_MV_prereq Prerequisites
+  /// \section Kokkos_KR_MV_prereq Prerequisites
   ///
   /// Before reading the rest of this documentation, it helps to know
   /// something about the Teuchos memory management classes, in
@@ -137,9 +137,9 @@ namespace Tpetra {
   /// the general idea of distributed storage of data over a
   /// communicator.
   ///
-  /// \section Kokkos_MV_layout Data layout and access
+  /// \section Kokkos_KR_MV_layout Data layout and access
   ///
-  /// \subsection Kokkos_MV_noncontig Multivectors which view another multivector
+  /// \subsection Kokkos_KR_MV_noncontig Multivectors which view another multivector
   ///
   /// A multivector could be a <i>view</i> of some subset of another
   /// multivector's columns and rows.  A view is like a pointer; it
@@ -163,7 +163,7 @@ namespace Tpetra {
   /// ability to access the data in certain ways, which we will
   /// explain below.
   ///
-  /// \subsection Kokkos_MV_views Views of a multivector's data
+  /// \subsection Kokkos_KR_MV_views Views of a multivector's data
   ///
   /// We have unfortunately overloaded the term "view."  In the
   /// section above, we explained the idea of a "multivector which is
@@ -226,7 +226,7 @@ namespace Tpetra {
   /// will <i>never</i> be copied back to device memory, and thus the
   /// original data will never be changed.
   ///
-  /// \subsection Kokkos_MV_why_views Why won't you give me a raw pointer?
+  /// \subsection Kokkos_KR_MV_why_views Why won't you give me a raw pointer?
   ///
   /// Tpetra was designed to allow different data representations
   /// underneath the same interface.  This lets Tpetra run correctly
@@ -256,7 +256,7 @@ namespace Tpetra {
   /// memory, and you are working on the host CPU).  This is why we
   /// require accessing the data through views.
   ///
-  /// \subsection Kokkos_MV_why_no_square_brackets Why no operator[]?
+  /// \subsection Kokkos_KR_MV_why_no_square_brackets Why no operator[]?
   ///
   /// The above section also explains why we do not offer a <tt>Scalar&
   /// operator[]</tt> to access each entry of a vector directly.  Direct
@@ -269,7 +269,7 @@ namespace Tpetra {
   /// expose what is expensive, by exposing data views and letting
   /// users control when to copy data between host and device.
   ///
-  /// \subsection Kokkos_MV_device_kernels How do I access the data directly?
+  /// \subsection Kokkos_KR_MV_device_kernels How do I access the data directly?
   ///
   /// "Directly" here means without views, using a device kernel if
   /// the data reside on the GPU.
@@ -294,7 +294,7 @@ namespace Tpetra {
   /// wanting to try this option, please contact the Tpetra developers
   /// for recommendations.  We will be happy to work with you.
   ///
-  /// \section Kokkos_MV_dist Parallel distribution of data
+  /// \section Kokkos_KR_MV_dist Parallel distribution of data
   ///
   /// A MultiVector's rows are distributed over processes in its (row)
   /// Map's communicator.  A MultiVector is a DistObject; the Map of
@@ -338,24 +338,28 @@ namespace Tpetra {
     //! The Kokkos Node type.
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
 
-    /// \brief The type of an inner ("dot") product result.
+    /// \brief Type of an inner ("dot") product result.
     ///
     /// This is usually the same as \c scalar_type, but may differ if
     /// \c Scalar is e.g., an uncertainty quantification type from the
     /// Stokhos package.
     typedef typename Kokkos::Details::InnerProductSpaceTraits<Scalar>::dot_type dot_type;
 
-    //! The type of the magnitude (absolute value) of a \c scalar_type value.
+    //! Type of the magnitude (absolute value) of a \c scalar_type value.
     typedef typename Kokkos::Details::ArithTraits<Scalar>::mag_type mag_type;
 
-    typedef Kokkos::DualView<scalar_type**,Kokkos::LayoutLeft,typename node_type::device_type> dual_view_type;
-
-
+    //! Type of the (new) Kokkos Device which implements parallel operations.
     typedef typename Node::device_type device_type;
+
+    //! Kokkos::DualView specialization used by this class.
+    typedef Kokkos::DualView<scalar_type**, Kokkos::LayoutLeft, device_type> dual_view_type;
 
     //@}
     //! @name Constructors and destructor
     //@{
+
+    //! Default constructor: makes a MultiVector with no rows or columns.
+    MultiVector ();
 
     /// \brief Basic constuctor.
     ///
@@ -363,12 +367,27 @@ namespace Tpetra {
     /// \param NumVectors [in] Number of vectors (columns).
     /// \param zeroOut [in] Whether to initialize all the entries of
     ///   the MultiVector to zero.
+    ///
+    /// \note The Kokkos refactor version of MultiVector reserves the
+    ///   right to initialize all entries of the MultiVector to zero,
+    ///   regardless of the value of \c zeroOut.
     MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
                  size_t NumVectors,
                  bool zeroOut=true);
 
     //! Copy constructor (shallow copy!).
     MultiVector (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source);
+
+    /// \brief Copy constructor, with option to do deep or shallow copy.
+    ///
+    /// The Kokkos refactor version of Tpetra, unlike the "classic"
+    /// version, always has view semantics.  Thus, copyOrView =
+    /// Teuchos::View has no effect, and copyOrView = Teuchos::Copy
+    /// does not mark this MultiVector as having copy semantics.
+    /// However, copyOrView = Teuchos::Copy will make the resulting
+    /// MultiVector a deep copy of the input MultiVector.
+    MultiVector (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& source,
+                 const Teuchos::DataAccess copyOrView);
 
     /// \brief Create multivector by copying two-dimensional array of local data.
     ///
@@ -407,20 +426,90 @@ namespace Tpetra {
                  const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> >&ArrayOfPtrs,
                  const size_t NumVectors);
 
-    /// \brief Expert mode constructor.
+    /// \brief Expert mode constructor, that takes a Kokkos::DualView
+    ///   of the MultiVector's data, and returns a MultiVector that
+    ///   views those data.
     ///
     /// \warning This constructor is only for expert users.  We make
     ///   no promises about backwards compatibility for this interface.
     ///   It may change or go away at any time.
     ///
     /// \param map [in] Map describing the distribution of rows.
-    /// \param view [in] Device view to the data (shallow copy)
+    /// \param view [in] Device view to the data (shallow copy).
     MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
-                 const dual_view_type view);
+                 const dual_view_type& view);
 
-    //! Advanced constructor for non-contiguous views.
+    /// \brief Expert mode constructor, that takes a Kokkos::DualView
+    ///   of the MultiVector's data and the "original"
+    ///   Kokkos::DualView of the data, and returns a MultiVector that
+    ///   views those data.
+    ///
+    /// \warning This constructor is only for expert users.  We make
+    ///   no promises about backwards compatibility for this interface.
+    ///   It may change or go away at any time.
+    ///
+    /// \param map [in] Map describing the distribution of rows.
+    /// \param view [in] View of the data (shallow copy).
+    /// \param origView [in] The </i>original</i> view of the data.
+    ///
+    /// The original view keeps the "original" dimensions.  Doing so
+    /// lets us safely construct a column Map view of a (domain Map
+    /// view of a (column Map MultiVector)).  The result of a
+    /// Kokkos::subview does not remember the original dimensions of
+    /// the view, and does not allow constructing a view with a
+    /// superset of rows or columns, so we have to keep the original
+    /// view.
     MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
-                 const dual_view_type view,
+                 const dual_view_type& view,
+                 const dual_view_type& origView);
+
+    /// \brief Expert mode constructor for noncontiguous views.
+    ///
+    /// This constructor that takes a Kokkos::DualView of the
+    /// MultiVector's data, and a list of the columns to view, and
+    /// returns a MultiVector that views those data.  The resulting
+    /// MultiVector does <i>not</i> have constant stride, that is,
+    /// isConstantStride() returns false.
+    ///
+    /// \warning This constructor is only for expert users.  We make
+    ///   no promises about backwards compatibility for this interface.
+    ///   It may change or go away at any time.
+    ///
+    /// \param map [in] Map describing the distribution of rows.
+    /// \param view [in] Device view to the data (shallow copy).
+    /// \param whichVectors [in] Which columns (vectors) to view.
+    MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+                 const dual_view_type& view,
+                 const Teuchos::ArrayView<const size_t>& whichVectors);
+
+    /// \brief Expert mode constructor for noncontiguous views, with
+    ///   original view.
+    ///
+    /// This constructor that takes a Kokkos::DualView of the
+    /// MultiVector's data, a view of the original data, and a list of
+    /// the columns to view, and returns a MultiVector that views
+    /// those data.  The resulting MultiVector does <i>not</i> have
+    /// constant stride, that is, isConstantStride() returns false.
+    ///
+    /// \warning This constructor is only for expert users.  We make
+    ///   no promises about backwards compatibility for this interface.
+    ///   It may change or go away at any time.
+    ///
+    /// \param map [in] Map describing the distribution of rows.
+    /// \param view [in] View of the data (shallow copy).
+    /// \param origView [in] The </i>original</i> view of the data.
+    /// \param whichVectors [in] Which columns (vectors) to view.
+    ///
+    /// The original view keeps the "original" dimensions.  Doing so
+    /// lets us safely construct a column Map view of a (domain Map
+    /// view of a (column Map MultiVector)).  The result of a
+    /// Kokkos::subview does not remember the original dimensions of
+    /// the view, and does not allow constructing a view with a
+    /// superset of rows or columns, so we have to keep the original
+    /// view.
+    MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+                 const dual_view_type& view,
+                 const dual_view_type& origView,
                  const Teuchos::ArrayView<const size_t>& whichVectors);
 
     //! Return a deep copy of <tt>*this</tt>, for a different Kokkos Node type.
@@ -771,11 +860,24 @@ namespace Tpetra {
     //! Return non-const persisting pointers to values.
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > get2dViewNonConst();
 
-    //! Return a const reference to the underlying KokkosClassic::MultiVector object (advanced use only)
-    const KokkosClassic::MultiVector<Scalar,Node> & getLocalMV() const;
+    /// \brief A view of the underlying KokkosClassic::MultiVector object.
+    ///
+    /// \brief This method is for expert users only.
+    ///   It may change or be removed at any time.
+    KokkosClassic::MultiVector<Scalar,Node> getLocalMV() const;
 
-    //! Return a non-const reference to the underlying KokkosClassic::MultiVector object (advanced use only)
-    KokkosClassic::MultiVector<Scalar,Node> & getLocalMVNonConst();
+    /// \brief A nonconst reference to a view of the underlying
+    ///   KokkosClassic::MultiVector object.
+    ///
+    /// \brief This method is for expert users only.
+    ///   It may change or be removed at any time.
+    ///
+    /// \warning This method is DEPRECATED.  It may disappear at any
+    ///   time.  Please call getLocalMV() instead.  There was never
+    ///   actually a need for a getLocalMVNonConst() method, as far as
+    ///   I can tell.
+    TEUCHOS_DEPRECATED KokkosClassic::MultiVector<Scalar,Node> &
+    getLocalMVNonConst ();
 
     /// \brief Get the Kokkos::DualView which implements local storage.
     ///
@@ -1118,6 +1220,39 @@ namespace Tpetra {
     virtual void
     removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap);
 
+    /// \brief Set whether this has copy (copyOrView = Teuchos::Copy)
+    ///   or view (copyOrView = Teuchos::View) semantics.
+    ///
+    /// \warning The Kokkos refactor version of MultiVector
+    ///   <i>only</i> implements view semantics.  If you attempt to
+    ///   call this method with copyOrView == Teuchos::Copy, it will
+    ///   throw std::invalid_argument.
+    ///
+    /// \warning This method is only for expert use.  It may change or
+    ///   disappear at any time.
+    void setCopyOrView (const Teuchos::DataAccess copyOrView) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        copyOrView == Teuchos::Copy, std::invalid_argument,
+        "Tpetra::MultiVector::setCopyOrView: The Kokkos refactor version of "
+        "MultiVector _only_ implements view semantics.  You may not call this "
+        "method with copyOrView = Teuchos::Copy.  The only valid argument is "
+        "Teuchos::View.");
+    }
+
+    /// \brief Get whether this has copy (copyOrView = Teuchos::Copy)
+    ///   or view (copyOrView = Teuchos::View) semantics.
+    ///
+    /// \note The Kokkos refactor version of MultiVector <i>only</i>
+    ///   implements view semantics.  This is not currently true for
+    ///   the "classic" version of MultiVector, though that will
+    ///   change in the near future.
+    ///
+    /// \warning This method is only for expert use.  It may change or
+    ///   disappear at any time.
+    Teuchos::DataAccess getCopyOrView () const {
+      return Teuchos::View;
+    }
+
   protected:
     template <class S, class LO, class GO, class D>
     friend MultiVector<S,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<D> >
@@ -1137,8 +1272,44 @@ namespace Tpetra {
     /// The latter owns the MultiVector's data.
     KMV lclMV_;
 
-    //! The Kokkos::DualView containing the MultiVector's data.
-    dual_view_type view_;
+    /// \brief The Kokkos::DualView containing the MultiVector's data.
+    ///
+    /// This has to be declared \c mutable, so that get1dView() can
+    /// retain its current \c const marking, even though it has always
+    /// implied a device->host synchronization.  Lesson to the reader:
+    /// Use \c const sparingly!
+    mutable dual_view_type view_;
+
+    /// \brief The "original view" of the MultiVector's data.
+    ///
+    /// Methods like offsetView() return a view of a contiguous subset
+    /// of rows.  At some point, we might like to get all of the rows
+    /// back, by taking another view of a <i>super</i>set of rows.
+    /// For example, we might like to get a column Map view of a
+    /// (domain Map view of a (column Map MultiVector)).  Tpetra's
+    /// implementation of Gauss-Seidel and SOR in CrsMatrix relies on
+    /// this functionality.  However, Kokkos (rightfully) forbids us
+    /// from taking a superset of rows of the current view.
+    ///
+    /// We deal with this at the Tpetra level by keeping around the
+    /// original view of <i>all</i> the rows (and columns), which is
+    /// \c origView_.  Methods like offsetView() then use origView_,
+    /// not view_, to make the subview for the returned MultiVector.
+    /// Furthermore, offsetView() can do error checking by getting the
+    /// original number of rows from origView_.
+    ///
+    /// This may pose some problems for offsetView if it is given an
+    /// offset other than zero, but that case is hardly exercised, so
+    /// I am not going to worry about it for now.
+    ///
+    /// Note that the "original" view isn't always original.  It
+    /// always has the original number of rows.  However, some special
+    /// cases of constructors that take a whichVectors argument, when
+    /// whichVectors.size() is 1, may point origView_ to the column to
+    /// view.  Those constructors do this so that the resulting
+    /// MultiVector has constant stride.  This special case does not
+    /// affect correctness of offsetView and related methods.
+    mutable dual_view_type origView_;
 
     /// \brief Indices of columns this multivector is viewing.
     ///
@@ -1161,9 +1332,8 @@ namespace Tpetra {
     friend Teuchos::RCP<MultiVector<S,LO,GO,N> >
     createMultiVectorFromView (const Teuchos::RCP<const Map<LO,GO,N> >&, const Teuchos::ArrayRCP<S>&, const size_t, const size_t);
 
-     bool vectorIndexOutOfRange (size_t VectorIndex) const;
+    bool vectorIndexOutOfRange (size_t VectorIndex) const;
 
-    /// \fn getSubArrayRCP
     /// \brief Persisting view of j-th column in the given ArrayRCP.
     ///
     /// This method considers isConstantStride().  The ArrayRCP may
@@ -1171,6 +1341,11 @@ namespace Tpetra {
     template <class T>
     ArrayRCP<T> getSubArrayRCP(ArrayRCP<T> arr, size_t j) const;
 
+    //! "Original" number of rows in the (local) data.
+    size_t getOrigNumLocalRows () const;
+
+    //! "Original" number of columns in the (local) data.
+    size_t getOrigNumLocalCols () const;
 
     //@}
     //! @name Implementation of Tpetra::DistObject

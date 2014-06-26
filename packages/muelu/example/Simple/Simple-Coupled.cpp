@@ -74,16 +74,11 @@
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
 
 // Define default template types
-typedef std::complex<double>                         SC;
-typedef int                                          LO;
-typedef int                                          GO;
+typedef std::complex<double>                                SC;
+typedef int                                                 LO;
+typedef int                                                 GO;
 typedef KokkosClassic::DefaultNode::DefaultNodeType         NO;
 typedef KokkosClassic::DefaultKernels<SC,LO,NO>::SparseOps  LMO;
-//typedef KokkosClassic::SerialNode                           NO;
-//typedef KokkosClassic::AltSparseOps<void,int,
-//			     KokkosClassic::SerialNode,
-//			     KokkosClassic::details::AltSparseOpsDefaultAllocator
-//			     <int, KokkosClassic::SerialNode> >     LMO;
 
 typedef Tpetra::Vector<SC,LO,GO,NO>                  TVEC;
 typedef Tpetra::MultiVector<SC,LO,GO,NO>             TMV;

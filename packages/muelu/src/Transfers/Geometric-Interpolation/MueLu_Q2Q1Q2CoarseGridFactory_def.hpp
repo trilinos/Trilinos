@@ -123,7 +123,7 @@ namespace MueLu {
 
     // Compute number of coarse grid elements in total:
     GO totalCoarseElements = totalFineElements/4;
-    LO nCoarseElements = sqrt(totalCoarseElements);
+    LO nCoarseElements = (int) sqrt(totalCoarseElements);
 
     // Initialize some counters:
     size_t EdgeCount = (nCoarseElements + 1) * (nCoarseElements + 1);

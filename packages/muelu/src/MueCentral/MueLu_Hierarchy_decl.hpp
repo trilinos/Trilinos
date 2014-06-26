@@ -112,10 +112,11 @@ namespace MueLu {
     //@{
 
     //!
-    static Xpetra::global_size_t GetDefaultMaxCoarseSize()                             { return 2000;   }
-    static bool                  GetDefaultPRrebalance()                               { return true;   }
-    static int                   GetDefaultMaxLevels()                                 { return 10;     }
     static CycleType             GetDefaultCycle()                                     { return VCYCLE; }
+    static bool                  GetDefaultImplicitTranspose()                         { return false;  }
+    static Xpetra::global_size_t GetDefaultMaxCoarseSize()                             { return 2000;   }
+    static int                   GetDefaultMaxLevels()                                 { return 10;     }
+    static bool                  GetDefaultPRrebalance()                               { return true;   }
 
     Xpetra::global_size_t        GetMaxCoarseSize() const                              { return maxCoarseSize_; }
 
@@ -147,13 +148,11 @@ namespace MueLu {
     LO GetNumLevels() const;
     double GetOperatorComplexity() const;
 
-    //! Indicate that Iterate should use tranpose of prolongator for restriction operations.
+    //! Indicate that Iterate should use transpose of prolongator for restriction operations.
     void SetImplicitTranspose(const bool &implicit);
 
-    //! If true is returned, iterate will use tranpose of prolongator for restriction operations.
+    //! If true is returned, iterate will use transpose of prolongator for restriction operations.
     bool GetImplicitTranspose() const;
-
-    //@}
 
     //! Helper function
     void CheckLevel(Level& level, int levelID);
@@ -221,7 +220,7 @@ namespace MueLu {
       @param InitialGuessIsZero Indicates whether the initial guess is zero
       @param Cycle Supports VCYCLE and WCYCLE types.
     */
-    void Iterate(const MultiVector& B, LO nIts, MultiVector& X, //TODO: move parameter nIts and default value = 1
+    void Iterate(const MultiVector& B, MultiVector& X, LO nIts = 1,
                  bool InitialGuessIsZero = false, LO startLevel = 0);
 
     /*!
@@ -338,27 +337,27 @@ namespace MueLu {
 
   }; //class Hierarchy
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-template<typename Node2, typename LocalMatOps2>
-Teuchos::RCP<Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> >
-Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::clone(const Teuchos::RCP<Node2> &node2) const{
-	typedef Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2>           New_H_Type;
-	typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2>      CloneMatrix;
-	typedef MueLu::SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> CloneSmoother;
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template<typename Node2, typename LocalMatOps2>
+  Teuchos::RCP<Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> >
+  Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::clone(const Teuchos::RCP<Node2> &node2) const{
+    typedef Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2>           New_H_Type;
+    typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2>      CloneMatrix;
+    typedef MueLu::SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> CloneSmoother;
 
-	Teuchos::RCP<New_H_Type> new_h = Teuchos::rcp(new New_H_Type());
-	new_h->Levels_.resize(this->GetNumLevels());
-	new_h->maxCoarseSize_     = maxCoarseSize_;
-	new_h->implicitTranspose_ = implicitTranspose_;
-	new_h->isPreconditioner_  = isPreconditioner_;
-	new_h->isDumpingEnabled_  = isDumpingEnabled_;
-	new_h->dumpLevel_         = dumpLevel_;
-	new_h->dumpFile_          = dumpFile_;
+    Teuchos::RCP<New_H_Type> new_h = Teuchos::rcp(new New_H_Type());
+    new_h->Levels_.resize(this->GetNumLevels());
+    new_h->maxCoarseSize_     = maxCoarseSize_;
+    new_h->implicitTranspose_ = implicitTranspose_;
+    new_h->isPreconditioner_  = isPreconditioner_;
+    new_h->isDumpingEnabled_  = isDumpingEnabled_;
+    new_h->dumpLevel_         = dumpLevel_;
+    new_h->dumpFile_          = dumpFile_;
 
-	RCP<SmootherBase>  Pre, Post;
-	RCP<CloneSmoother> clonePre, clonePost;
-	RCP<CloneMatrix>   cloneA, cloneR, cloneP;
-	RCP<Matrix>        A, R, P;
+    RCP<SmootherBase>  Pre, Post;
+    RCP<CloneSmoother> clonePre, clonePost;
+    RCP<CloneMatrix>   cloneA, cloneR, cloneP;
+    RCP<Matrix>        A, R, P;
     for (int i = 0; i < GetNumLevels(); i++) {
       RCP<Level> level      = this->Levels_[i];
       RCP<Level> clonelevel = rcp(new Level());
@@ -392,7 +391,7 @@ Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::clone(const T
     }
 
     return new_h;
-}
+  }
 
 } //namespace MueLu
 

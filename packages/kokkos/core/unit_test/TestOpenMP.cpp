@@ -45,7 +45,7 @@
 
 // Force OMP atomics for testing only
 
-#define KOKKOS_ATOMICS_USE_OMP31
+//#define KOKKOS_ATOMICS_USE_OMP31
 #include <Kokkos_Atomic.hpp>
 
 #include <Kokkos_OpenMP.hpp>
@@ -70,6 +70,7 @@
 #include <TestMultiReduce.hpp>
 #include <TestAggregate.hpp>
 #include <TestCompilerMacros.hpp>
+#include <TestCXX11.hpp>
 
 namespace Test {
 
@@ -85,9 +86,7 @@ protected:
                                    std::max( 2u , ( cores_per_numa * threads_per_core ) / 2 );
 
     Kokkos::OpenMP::initialize( threads_count );
-
-    std::cout << "OpenMP threads: " << omp_get_max_threads() << std::endl;
-    std::cout << "requested threads: " << threads_count << std::endl;
+    Kokkos::OpenMP::print_configuration( std::cout , true );
   }
 
   static void TearDownTestCase()
@@ -256,5 +255,16 @@ TEST_F( openmp , compiler_macros )
   ASSERT_TRUE( ( TestCompilerMacros::Test< Kokkos::OpenMP >() ) );
 }
 
+
+//----------------------------------------------------------------------------
+#if defined (KOKKOS_HAVE_CXX11)  && (defined KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_OPENMP)
+TEST_F( openmp , cxx11 )
+{
+  ASSERT_TRUE( ( TestCXX11::Test< Kokkos::OpenMP >(1) ) );
+  ASSERT_TRUE( ( TestCXX11::Test< Kokkos::OpenMP >(2) ) );
+  ASSERT_TRUE( ( TestCXX11::Test< Kokkos::OpenMP >(3) ) );
+  ASSERT_TRUE( ( TestCXX11::Test< Kokkos::OpenMP >(4) ) );
+}
+#endif
 } // namespace test
 

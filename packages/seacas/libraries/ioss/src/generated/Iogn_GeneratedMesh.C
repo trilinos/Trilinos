@@ -31,18 +31,19 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <generated/Iogn_GeneratedMesh.h>
-#include <Ioss_EntityType.h>
-#include <tokenize.h>
+#include <Ioss_EntityType.h>            // for EntityType, etc
+#include <assert.h>                     // for assert
+#include <sys/types.h>                  // for ssize_t
+#include <tokenize.h>                   // for tokenize
+#include <cmath>                        // for atan2, cos, sin
+#include <cstdlib>                      // for strtod, NULL, strtol, exit, etc
+#include <cstring>                      // for memcpy
+#include <iomanip>                      // for operator<<, setw
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <string>                       // for string, operator==, etc
+#include <vector>                       // for vector
 
-#include <cmath>
-#include <cstring>
-#include <cstdlib>
 
-#include <vector>
-#include <string>
-#include <iostream>
-#include <iomanip>
-#include <assert.h>
 
 namespace Iogn {
   GeneratedMesh::GeneratedMesh(int64_t num_x, int64_t num_y, int64_t num_z,
@@ -85,14 +86,6 @@ namespace Iogn {
 
     initialize();
     parse_options(groups);
-    if (createTets && (!sidesets.empty() || !shellBlocks.empty())) {
-      if (myProcessor == 0) {
-        std::cerr << "ERROR: (Iogn::GeneratedMesh)\n"
-                  << "       The 'tets' option can not currently be used with shells or sidesets.\n"
-                  << "       The current parameters do not meet that requirement. Execution will terminate.\n";
-      }
-      std::exit(EXIT_FAILURE);
-    }
   }
 
   GeneratedMesh::GeneratedMesh() : numX(0), numY(0), numZ(0), myNumZ(0), myStartZ(0),
@@ -689,7 +682,7 @@ namespace Iogn {
     }
   }
 
-  void GeneratedMesh::node_map(Int64Vector &map)
+  void GeneratedMesh::node_map(Int64Vector &map) const
   {
     int64_t count = node_count_proc();
     map.reserve(count);
@@ -699,7 +692,7 @@ namespace Iogn {
     }
   }
 
-  void GeneratedMesh::node_map(IntVector &map)
+  void GeneratedMesh::node_map(IntVector &map) const
   {
     int count = node_count_proc();
     map.resize(count);
@@ -879,83 +872,167 @@ namespace Iogn {
 
   void GeneratedMesh::element_surface_map(ShellLocation loc, Int64Vector &map) const
   {
-    assert(!createTets);
     int64_t count = shell_element_count_proc(loc);
     map.resize(2*count);
-
     int64_t index  = 0;
     int64_t offset = 0;
 
-    switch (loc) {
-    case MX:
-      offset = myStartZ * numX * numY + 1;  // 1-based elem id
-      for (size_t k = 0; k < myNumZ; ++k) {
-        for (size_t j = 0; j < numY; ++j) {
-          map[index++] = offset;
-          map[index++] = 3; // 0-based local face id
-          offset += numX;
-        }
-      }
-      break;
-
-    case PX:
-      offset = myStartZ * numX * numY + numX;
-      for (size_t k = 0; k < myNumZ; ++k) {
-        for (size_t j = 0; j < numY; ++j) {
-          map[index++] = offset; // 1-based elem id
-          map[index++] = 1; // 0-based local face id
-          offset += numX;
-        }
-      }
-      break;
-
-    case MY:
-      offset = myStartZ * numX * numY + 1;
-      for (size_t k = 0; k < myNumZ; ++k) {
-        for (size_t i = 0; i < numX; ++i) {
-          map[index++] = offset++;
-          map[index++] = 0; // 0-based local face id
-        }
-        offset+= numX * (numY-1);
-      }
-      break;
-
-    case PY:
-      offset = myStartZ * numX * numY + numX * (numY-1) +1;
-      for (size_t k = 0; k < myNumZ; ++k) {
-        for (size_t i = 0; i < numX; ++i) {
-          map[index++] = offset++;
-          map[index++] = 2; // 0-based local face id
-        }
-        offset+= numX * (numY-1);
-      }
-      break;
-
-    case MZ:
-      if (myProcessor == 0) {
-        offset = 1;
-        for (size_t i=0; i < numY; i++) {
-          for (size_t j=0; j < numX; j++) {
-            map[index++] = offset++;
-            map[index++] = 4;
+    if (createTets) {
+      // For tet elements
+      switch (loc) {
+      case MX:
+        offset = myStartZ * numX * numY + 1; 
+        for (size_t k = 0; k < myNumZ; ++k) {
+          for (size_t j = 0; j < numY; ++j) {
+            map[index++] = 6 * offset - 4; // 1-based elem id
+            map[index++] = 3; // 0-based local face id
+            map[index++] = 6 * offset - 3;
+            map[index++] = 3; // 0-based local face id
+            offset += numX;
           }
         }
-      }
-      break;
-
-    case PZ:
-      if (myProcessor == processorCount-1) {
-        offset = (numZ-1)*numX*numY + 1;
-        for (size_t i=0, k=0; i < numY; i++) {
-          for (size_t j=0; j < numX; j++, k++) {
-            map[index++] = offset++;
-            map[index++] = 5;
+        break;
+  
+      case PX:
+        offset = myStartZ * numX * numY + numX;
+        for (size_t k = 0; k < myNumZ; ++k) {
+          for (size_t j = 0; j < numY; ++j) {
+            map[index++] = 6 * offset - 1; // 1-based elem id
+            map[index++] = 3; // 0-based local face id  
+            map[index++] = 6 * offset; // 1-based elem id
+            map[index++] = 3; // 0-based local face id
+            offset += numX;
           }
         }
+        break;
+  
+      case MY:
+        offset = myStartZ * numX * numY + 1;
+        for (size_t k = 0; k < myNumZ; ++k) {
+          for (size_t i = 0; i < numX; ++i) {
+            map[index++] = 6 * offset - 2; // 1-based elem id
+            map[index++] = 0; // 0-based local face id
+            map[index++] = 6 * offset++ - 1; // 1-based elem id
+            map[index++] = 0; // 0-based local face id
+          }
+          offset+= numX * (numY-1);
+        }
+        break;
+  
+      case PY:
+        offset = myStartZ * numX * numY + numX * (numY-1) +1;
+        for (size_t k = 0; k < myNumZ; ++k) {
+          for (size_t i = 0; i < numX; ++i) {
+            map[index++] = 6 * offset - 5;
+            map[index++] = 1; // 0-based local face id
+            map[index++] = 6 * offset++ - 4;
+            map[index++] = 1; // 0-based local face id
+          }
+          offset+= numX * (numY-1);
+        }
+        break;
+  
+      case MZ:
+        if (myProcessor == 0) {
+          offset = 1;
+          for (size_t i=0; i < numY; i++) {
+            for (size_t j=0; j < numX; j++) {
+              map[index++] = 6 * offset - 5;
+              map[index++] = 3;
+              map[index++] = 6 * offset++;
+              map[index++] = 2;
+            }
+          }
+        }
+        break;
+  
+      case PZ:
+        if (myProcessor == processorCount-1) {
+          offset = (numZ-1)*numX*numY + 1;
+          for (size_t i=0, k=0; i < numY; i++) {
+            for (size_t j=0; j < numX; j++, k++) {
+              map[index++] = 6 * offset - 3;
+              map[index++] = 1;
+              map[index++] = 6 * offset++ - 2;
+              map[index++] = 1;
+            }
+          }
+        }
+        break;
       }
-      break;
+    }else {
+      // For hex elements
+      switch (loc) {
+      case MX:
+        offset = myStartZ * numX * numY + 1;  // 1-based elem id
+        for (size_t k = 0; k < myNumZ; ++k) {
+          for (size_t j = 0; j < numY; ++j) {
+            map[index++] = offset;
+            map[index++] = 3; // 0-based local face id
+            offset += numX;
+          }
+        }
+        break;
+  
+      case PX:
+        offset = myStartZ * numX * numY + numX;
+        for (size_t k = 0; k < myNumZ; ++k) {
+          for (size_t j = 0; j < numY; ++j) {
+            map[index++] = offset; // 1-based elem id
+            map[index++] = 1; // 0-based local face id
+            offset += numX;
+          }
+        }
+        break;
+  
+      case MY:
+        offset = myStartZ * numX * numY + 1;
+        for (size_t k = 0; k < myNumZ; ++k) {
+          for (size_t i = 0; i < numX; ++i) {
+            map[index++] = offset++;
+            map[index++] = 0; // 0-based local face id
+          }
+          offset+= numX * (numY-1);
+        }
+        break;
+  
+      case PY:
+        offset = myStartZ * numX * numY + numX * (numY-1) +1;
+        for (size_t k = 0; k < myNumZ; ++k) {
+          for (size_t i = 0; i < numX; ++i) {
+            map[index++] = offset++;
+            map[index++] = 2; // 0-based local face id
+          }
+          offset+= numX * (numY-1);
+        }
+        break;
+  
+      case MZ:
+        if (myProcessor == 0) {
+          offset = 1;
+          for (size_t i=0; i < numY; i++) {
+            for (size_t j=0; j < numX; j++) {
+              map[index++] = offset++;
+              map[index++] = 4;
+            }
+          }
+        }
+        break;
+  
+      case PZ:
+        if (myProcessor == processorCount-1) {
+          offset = (numZ-1)*numX*numY + 1;
+          for (size_t i=0, k=0; i < numY; i++) {
+            for (size_t j=0; j < numX; j++, k++) {
+              map[index++] = offset++;
+              map[index++] = 5;
+            }
+          }
+        }
+        break;
+      }
     }
-  }
+ }
 
   void GeneratedMesh::coordinates(std::vector<double> &coord) const
   {
@@ -1105,9 +1182,10 @@ namespace Iogn {
     INT xp1yp1 = (numX+1) * (numY+1);
 
     /* build connectivity array (node list) for mesh */
-    if (block_number == 1) {  // HEX Element Block
+    if (block_number == 1) {  // main block elements 
 
       if (createTets) {
+        // Tet elements
         INT tet_vert[][4] = {
           {0, 2, 3, 6},
           {0, 3, 7, 6},
@@ -1144,6 +1222,7 @@ namespace Iogn {
         }
       }
       else {
+        // Hex elements
         size_t cnt = 0;
         for (size_t m=myStartZ; m < myNumZ+myStartZ; m++) {
           for (size_t i=0, k=0; i < numY; i++) {
@@ -1165,85 +1244,207 @@ namespace Iogn {
       }
     } else { // Shell blocks....
       ShellLocation loc = shellBlocks[block_number-2];
+      
+      if (createTets) {
+        // Tet shells 
+        size_t cnt = 0;
+        INT tet_vert[][3] = 
+        {{0,3,2},
+         {0,2,1}};
+        INT hex_vert[4]; 
+        switch (loc) {
+        case MX:  // Minumum X Face
+          for (size_t i=0; i< myNumZ; i++){
+            size_t layer_off = i * xp1yp1;
+            for (size_t j=0; j < numY; j++) {
+              size_t base = layer_off + j * (numX+1) + 1 + myStartZ * xp1yp1;
+              hex_vert[0] = base; 
+              hex_vert[1] = base + xp1yp1;
+              hex_vert[2] = base + xp1yp1 + (numX+1);
+              hex_vert[3] = base + (numX+1);
 
-      size_t cnt = 0;
-      switch (loc) {
-      case MX:  // Minumum X Face
-        for (size_t i=0; i < myNumZ; i++) {
-          size_t layer_off = i * xp1yp1;
-          for (size_t j=0; j < numY; j++) {
-            size_t base = layer_off + j * (numX+1) + 1 + myStartZ * xp1yp1;
-            connect[cnt++] = base;
-            connect[cnt++] = base + xp1yp1;
-            connect[cnt++] = base + xp1yp1 + (numX+1);
-            connect[cnt++] = base + (numX+1);
-          }
-        }
-        break;
-      case PX: // Maximum X Face
-        for (size_t i=0; i < myNumZ; i++) {
-          size_t layer_off = i * xp1yp1;
-          for (size_t j=0; j < numY; j++) {
-            size_t base = layer_off + j * (numX+1) + numX + 1 + myStartZ * xp1yp1;
-            connect[cnt++] = base;
-            connect[cnt++] = base + (numX+1);
-            connect[cnt++] = base + xp1yp1 +(numX+1);
-            connect[cnt++] = base + xp1yp1;
-          }
-        }
-        break;
-      case MY: // Minumum Y Face
-        for (size_t i=0; i < myNumZ; i++) {
-          size_t layer_off = i * xp1yp1;
-          for (size_t j=0; j < numX; j++) {
-            size_t base = layer_off + j + 1 + myStartZ * xp1yp1;
-            connect[cnt++] = base;
-            connect[cnt++] = base + 1;
-            connect[cnt++] = base + xp1yp1 + 1;
-            connect[cnt++] = base + xp1yp1;
-          }
-        }
-        break;
-      case PY: // Maximum Y Face
-        for (size_t i=0; i < myNumZ; i++) {
-          size_t layer_off = i * xp1yp1;
-          for (size_t j=0; j < numX; j++) {
-            size_t base = layer_off + (numX+1)*(numY) + j + 1 + myStartZ * xp1yp1;
-            connect[cnt++] = base;
-            connect[cnt++] = base + xp1yp1;
-            connect[cnt++] = base + xp1yp1 + 1;
-            connect[cnt++] = base + 1;
-          }
-        }
-        break;
-      case MZ: // Minumum Z Face
-        if (myProcessor == 0) {
-          for (size_t i=0, k=0; i < numY; i++) {
-            for (size_t j=0; j < numX; j++, k++) {
-              size_t base = i + k + 1 + myStartZ * xp1yp1;
-              connect[cnt++] = base;
-              connect[cnt++] = base+numX+1;
-              connect[cnt++] = base+numX+2;
-              connect[cnt++] = base+1;
+              for (size_t tet = 0; tet < 2; tet++) {
+                connect[cnt++] = hex_vert[tet_vert[tet][0]];
+                connect[cnt++] = hex_vert[tet_vert[tet][1]];
+                connect[cnt++] = hex_vert[tet_vert[tet][2]];
+              }
             }
           }
-        }
-        break;
-      case PZ: // Maximum Z Face
-        if (myProcessor == processorCount-1) {
-          for (size_t i=0, k=0; i < numY; i++) {
-            for (size_t j=0; j < numX; j++, k++) {
-              size_t base = xp1yp1 * (numZ - myStartZ) + k + i + 1 + myStartZ * xp1yp1;
-              connect[cnt++] = base;
-              connect[cnt++] = base+1;
-              connect[cnt++] = base+numX+2;
-              connect[cnt++] = base+numX+1;
+          break;
+        case PX:  // Maximum X Face
+          for (size_t i=0; i< myNumZ; i++){
+            size_t layer_off = i * xp1yp1;
+            for (size_t j=0; j < numY; j++) {
+              size_t base = layer_off + j * (numX+1) + numX + 1 + myStartZ * xp1yp1;
+              hex_vert[0] = base; 
+              hex_vert[1] = base + (numX+1);
+              hex_vert[2] = base + xp1yp1 + (numX+1);
+              hex_vert[3] = base + xp1yp1;
+
+              for (size_t tet = 0; tet < 2; tet++) {
+                connect[cnt++] = hex_vert[tet_vert[tet][0]];
+                connect[cnt++] = hex_vert[tet_vert[tet][1]];
+                connect[cnt++] = hex_vert[tet_vert[tet][2]];
+              }
             }
           }
+          break;
+        case MY:  // Minumum Y Face
+          for (size_t i=0; i< myNumZ; i++){
+            size_t layer_off = i * xp1yp1;
+            for (size_t j=0; j < numX; j++) {
+              size_t base = layer_off + j + 1 + myStartZ * xp1yp1;
+              hex_vert[0] = base; 
+              hex_vert[1] = base + 1;
+              hex_vert[2] = base + xp1yp1 + 1;
+              hex_vert[3] = base + xp1yp1;
+
+              for (size_t tet = 0; tet < 2; tet++) {
+                connect[cnt++] = hex_vert[tet_vert[tet][0]];
+                connect[cnt++] = hex_vert[tet_vert[tet][1]];
+                connect[cnt++] = hex_vert[tet_vert[tet][2]];
+              }
+            }
+          }
+          break;
+        case PY:  // Maximum Y Face
+          for (size_t i=0; i< myNumZ; i++){
+            size_t layer_off = i * xp1yp1;
+            for (size_t j=0; j < numX; j++) {
+              size_t base = layer_off + (numX+1)*(numY) + j + 1 + myStartZ * xp1yp1;
+              hex_vert[0] = base; 
+              hex_vert[1] = base + xp1yp1;
+              hex_vert[2] = base + xp1yp1 + 1;
+              hex_vert[3] = base + 1;
+
+              for (size_t tet = 0; tet < 2; tet++) {
+                connect[cnt++] = hex_vert[tet_vert[tet][0]];
+                connect[cnt++] = hex_vert[tet_vert[tet][1]];
+                connect[cnt++] = hex_vert[tet_vert[tet][2]];
+              }
+            }
+          }
+          break;
+        case MZ:  // Minumum Z Face
+          if (myProcessor == 0) {
+            for (size_t i=0, k=0; i< numY; i++){
+              for (size_t j=0; j < numX; j++, k++) {
+                size_t base = i + k + 1 + myStartZ * xp1yp1;
+                hex_vert[0] = base; 
+                hex_vert[1] = base + numX + 1;
+                hex_vert[2] = base + numX + 2;
+                hex_vert[3] = base + 1;
+  
+                for (size_t tet = 0; tet < 2; tet++) {
+                  connect[cnt++] = hex_vert[tet_vert[tet][0]];
+                  connect[cnt++] = hex_vert[tet_vert[tet][1]];
+                  connect[cnt++] = hex_vert[tet_vert[tet][2]];
+                }
+              }
+            }
+          }
+          break;
+        case PZ:  // Maximum Z Face
+          if (myProcessor == processorCount-1) {
+            for (size_t i=0, k=0; i< numY; i++){
+              for (size_t j=0; j < numX; j++, k++) {
+                size_t base = xp1yp1 * (numZ - myStartZ) + k + i + 1 + myStartZ * xp1yp1;
+                hex_vert[0] = base; 
+                hex_vert[1] = base + 1;
+                hex_vert[2] = base + numX + 2;
+                hex_vert[3] = base + numX + 1;
+  
+                for (size_t tet = 0; tet < 2; tet++) {
+                  connect[cnt++] = hex_vert[tet_vert[tet][0]];
+                  connect[cnt++] = hex_vert[tet_vert[tet][1]];
+                  connect[cnt++] = hex_vert[tet_vert[tet][2]];
+                }
+              }
+            }
+          }
+          break;
         }
-        break;
+      }else{
+        // Hex shells
+        size_t cnt = 0;
+        switch (loc) {
+        case MX:  // Minumum X Face
+          for (size_t i=0; i < myNumZ; i++) {
+            size_t layer_off = i * xp1yp1;
+            for (size_t j=0; j < numY; j++) {
+              size_t base = layer_off + j * (numX+1) + 1 + myStartZ * xp1yp1;
+              connect[cnt++] = base;
+              connect[cnt++] = base + xp1yp1;
+              connect[cnt++] = base + xp1yp1 + (numX+1);
+              connect[cnt++] = base + (numX+1);
+            }
+          }
+          break;
+        case PX: // Maximum X Face
+          for (size_t i=0; i < myNumZ; i++) {
+            size_t layer_off = i * xp1yp1;
+            for (size_t j=0; j < numY; j++) {
+              size_t base = layer_off + j * (numX+1) + numX + 1 + myStartZ * xp1yp1;
+              connect[cnt++] = base;
+              connect[cnt++] = base + (numX+1);
+              connect[cnt++] = base + xp1yp1 +(numX+1);
+              connect[cnt++] = base + xp1yp1;
+            }
+          }
+          break;
+        case MY: // Minumum Y Face
+          for (size_t i=0; i < myNumZ; i++) {
+            size_t layer_off = i * xp1yp1;
+            for (size_t j=0; j < numX; j++) {
+              size_t base = layer_off + j + 1 + myStartZ * xp1yp1;
+              connect[cnt++] = base;
+              connect[cnt++] = base + 1;
+              connect[cnt++] = base + xp1yp1 + 1;
+              connect[cnt++] = base + xp1yp1;
+            }
+          }
+          break;
+        case PY: // Maximum Y Face
+          for (size_t i=0; i < myNumZ; i++) {
+            size_t layer_off = i * xp1yp1;
+            for (size_t j=0; j < numX; j++) {
+              size_t base = layer_off + (numX+1)*(numY) + j + 1 + myStartZ * xp1yp1;
+              connect[cnt++] = base;
+              connect[cnt++] = base + xp1yp1;
+              connect[cnt++] = base + xp1yp1 + 1;
+              connect[cnt++] = base + 1;
+            }
+          }
+          break;
+        case MZ: // Minumum Z Face
+          if (myProcessor == 0) {
+            for (size_t i=0, k=0; i < numY; i++) {
+              for (size_t j=0; j < numX; j++, k++) {
+                size_t base = i + k + 1 + myStartZ * xp1yp1;
+                connect[cnt++] = base;
+                connect[cnt++] = base+numX+1;
+                connect[cnt++] = base+numX+2;
+                connect[cnt++] = base+1;
+              }
+            }
+          }
+          break;
+        case PZ: // Maximum Z Face
+          if (myProcessor == processorCount-1) {
+            for (size_t i=0, k=0; i < numY; i++) {
+              for (size_t j=0; j < numX; j++, k++) {
+                size_t base = xp1yp1 * (numZ - myStartZ) + k + i + 1 + myStartZ * xp1yp1;
+                connect[cnt++] = base;
+                connect[cnt++] = base+1;
+                connect[cnt++] = base+numX+2;
+                connect[cnt++] = base+numX+1;
+              }
+            }
+          }
+          break;
+        }
+      assert((cnt == size_t(4 * element_count_proc(block_number)) && !createTets) || (cnt == size_t(3 * element_count_proc(block_number)) && createTets));
       }
-      assert(cnt == size_t(4 * element_count_proc(block_number)));
     }
     return;
   }

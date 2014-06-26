@@ -91,6 +91,7 @@ public:
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
+  typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef MeshAdapter<User>       base_adapter_t;
   typedef User user_t;
@@ -261,6 +262,8 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
 
   Acoords_ = new double [num_elem_ * dimension_];
   long long a = 0;
+  std::vector<std::vector<long long> > sur_elem;
+  sur_elem.resize(num_nodes_);
 
   for(long long b = 0; b < num_elem_blk; b++) {
     connect[b] = new long long [num_nodes_per_elem[b]*num_elem_this_blk[b]];
@@ -275,17 +278,24 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
       }
 
       for(long long j = 0; j < num_nodes_per_elem[b]; j++) {
-	Acoords_[a] +=
-	  coords_[connect[b][i*num_elem_this_blk[b]+num_nodes_per_elem[b]]-1];
-	Acoords_[num_nodes_ + a] +=
-	  coords_[connect[b]
-		  [num_nodes_+i*num_elem_this_blk[b]+num_nodes_per_elem[b]]-1];
+	long long node = connect[b][i * num_nodes_per_elem[b] + j] - 1;
+	Acoords_[a] += coords_[node];
+	Acoords_[num_nodes_ + a] += coords_[num_nodes_ + node];
 
 	if(3 == dimension_) {
-	  Acoords_[2 * num_nodes_ + a] +=
-	    coords_[connect[b]
-		   [2*num_nodes_+i*num_elem_this_blk[b]+num_nodes_per_elem[b]]-
-		   1];
+	  Acoords_[2 * num_nodes_ + a] += coords_[2 * num_nodes_ + node];
+	}
+
+	/*
+	 * in the case of degenerate elements, where a node can be
+	 * entered into the connect table twice, need to check to
+	 * make sure that this element is not already listed as
+	 * surrounding this node
+	 */
+	if (sur_elem[node].empty() ||
+	    element_num_map_[a] != sur_elem[node][sur_elem[node].size()-1]) {
+	  /* Add the element to the list */
+	  sur_elem[node].push_back(element_num_map_[a]);
 	}
       }
 

@@ -20,10 +20,10 @@
 #
 # You should have received a copy of the GNU Lesser General Public
 # License along with this library; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 # USA
 #
-# Questions? Contact Jonathan Hu (jhu@sandia.gov) or Ray Tuminaro 
+# Questions? Contact Jonathan Hu (jhu@sandia.gov) or Ray Tuminaro
 # (rstumin@sandia.gov).
 #
 # ************************************************************************
@@ -56,7 +56,9 @@
 #include <vector>
 
 // this class
-#include "nlnml_nonlinearlevel.H" 
+#include "nlnml_nonlinearlevel.H"
+
+using namespace std;
 
 /*----------------------------------------------------------------------*
  |  ctor (public)                                             m.gee 3/06|
@@ -96,20 +98,20 @@ fineJac_(fineJac)
     int    maxnnz  = 0;
     double cputime = 0.0;
     Epetra_CrsMatrix* tmp;
-    ML_Operator2EpetraCrsMatrix(&(ml_->Amat[level_]),tmp,maxnnz, 
+    ML_Operator2EpetraCrsMatrix(&(ml_->Amat[level_]),tmp,maxnnz,
                                 false, cputime);
     SmootherA_ = rcp(tmp);
     SmootherA_->OptimizeStorage();
     graph = &(SmootherA_->Graph());
   }
-  
+
   // generate the coarse level interface
   int outlevel = getParameter("nlnML output",0);
   int maxlevel = getParameter("nlnML max levels",2);
-  coarseinterface_ = 
+  coarseinterface_ =
     rcp(new NLNML::NLNML_CoarseLevelNoxInterface(fineinterface_,Level(),outlevel,
                                                  P_,graph->RowMap(),maxlevel));
-  
+
   // on the fine grid, generate a pre/postoperator to apply constraints
   bool applyconstraints = false;
   if (!Level() && getParameter("nlnML apply constraints",false)==true)
@@ -118,18 +120,18 @@ fineJac_(fineJac)
   if (!Level() && applyconstraints)
     prepost_ = rcp(new NLNML::NLNML_PrePostOperator(coarseinterface_,
                                                     fineinterface_));
-  
+
   // get the current solution to this level
   xthis_ = rcp(coarseinterface_->restrict_fine_to_this(xfine));
-  
+
   // create this level's preconditioner
   ML_Aggregate_Create(&thislevel_ag_);
   ML_Create(&thislevel_ml_,1);
-  
+
   // set the Jacobian on level 0 of the local ml
   EpetraMatrix2MLMatrix(thislevel_ml_,0,SmootherA_.get());
-  ML_Set_PrintLevel(OutLevel()); 
-  ML_Aggregate_Set_CoarsenScheme_Uncoupled(thislevel_ag_); 
+  ML_Set_PrintLevel(OutLevel());
+  ML_Aggregate_Set_CoarsenScheme_Uncoupled(thislevel_ag_);
   ML_Aggregate_Set_DampingFactor(thislevel_ag_, 0.0);
   ML_Aggregate_Set_Threshold(thislevel_ag_, 0.0);
   ML_Aggregate_Set_MaxCoarseSize(thislevel_ag_,1);
@@ -140,11 +142,11 @@ fineJac_(fineJac)
   if (thislevel_nlevel != 1)
   {
      cout << "**ERR**: NLNML::NLNML_NonlinearLevel::NLNML_NonlinearLevel:\n"
-          << "**ERR**: ML generated a local hierarchy of " <<  thislevel_nlevel << " on level " << level_ << "\n" 
+          << "**ERR**: ML generated a local hierarchy of " <<  thislevel_nlevel << " on level " << level_ << "\n"
           << "**ERR**: this is supposed to be 1 Level only!\n"
           << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
   }
-  
+
   // set the smoother
   string smoothertype;
   int    nsmooth;
@@ -171,53 +173,53 @@ fineJac_(fineJac)
                                                SmootherA_->OperatorDomainMap(),
                                                SmootherA_->OperatorRangeMap());
   RefCountPtr<ML_Epetra::MultiLevelOperator> rcpml_tmp = rcp(ml_tmp);
-  
+
   thislevel_prec_ = rcp(new NLNML::NLNML_ConstrainedMultiLevelOperator(
                                                              rcpml_tmp,
                                                              coarseinterface_,
                                                              applyconstraints));
 
   // ------------------------------------------------------------------------
-  // set up NOX on this level   
+  // set up NOX on this level
   // ------------------------------------------------------------------------
   nlparams_ = rcp(new Teuchos::ParameterList());
-  Teuchos::ParameterList& printParams = nlparams_->sublist("Printing");  
-  printParams.set("MyPID", comm_.MyPID()); 
+  Teuchos::ParameterList& printParams = nlparams_->sublist("Printing");
+  printParams.set("MyPID", comm_.MyPID());
   printParams.set("Output Precision", 14);
   printParams.set("Output Processor", 0);
   if (OutLevel()>9)
     printParams.set("Output Information",
-                             NOX::Utils::OuterIteration + 
-			     NOX::Utils::Warning);
+                             NOX::Utils::OuterIteration +
+           NOX::Utils::Warning);
   else if (OutLevel()>8)
     printParams.set("Output Information",
-	                     NOX::Utils::Warning);
+                       NOX::Utils::Warning);
   else
     printParams.set("Output Information",0);
-  
+
   if (!Level() && applyconstraints)
     nlparams_->sublist("Solver Options").set("User Defined Pre/Post Operator",prepost_);
-  
-  nlparams_->set("Nonlinear Solver", "Line Search Based");    
+
+  nlparams_->set("Nonlinear Solver", "Line Search Based");
   Teuchos::ParameterList& searchParams = nlparams_->sublist("Line Search");
   Teuchos::ParameterList* lsParamsptr  = 0;
   if (isnlncg)
   {
     searchParams.set("Method", "NonlinearCG");
-    Teuchos::ParameterList& dirParams = nlparams_->sublist("Direction"); 
+    Teuchos::ParameterList& dirParams = nlparams_->sublist("Direction");
     dirParams.set("Method", "NonlinearCG");
     Teuchos::ParameterList& nlcgParams = dirParams.sublist("Nonlinear CG");
-    nlcgParams.set("Restart Frequency", 10);                         
+    nlcgParams.set("Restart Frequency", 10);
     nlcgParams.set("Precondition", "On");
     nlcgParams.set("Orthogonalize", "Polak-Ribiere");
     //nlcgParams.set("Orthogonalize", "Fletcher-Reeves");
 
-    Teuchos::ParameterList& lsParams = nlcgParams.sublist("Linear Solver");     
-    lsParams.set("Aztec Solver", "CG"); 
-    lsParams.set("Max Iterations", 1);  
+    Teuchos::ParameterList& lsParams = nlcgParams.sublist("Linear Solver");
+    lsParams.set("Aztec Solver", "CG");
+    lsParams.set("Max Iterations", 1);
     lsParams.set("Tolerance", 1e-11);
-    lsParams.set("Output Frequency", 0);   
-    lsParams.set("Preconditioning", "User Supplied Preconditioner");   
+    lsParams.set("Output Frequency", 0);
+    lsParams.set("Preconditioning", "User Supplied Preconditioner");
     lsParams.set("Preconditioner","User Defined");
   }
   else
@@ -235,26 +237,26 @@ fineJac_(fineJac)
     Teuchos::ParameterList& lsParams = newtonParams.sublist("Linear Solver");
     lsParamsptr = &lsParams;
     lsParams.set("Size of Krylov Subspace", 100);
-    lsParams.set("Aztec Solver", "GMRES"); 
-    lsParams.set("Max Iterations", niterscg); 
-    double norm = getParameter("nlnML absolute residual tolerance",1.0e-06); 
-    lsParams.set("Tolerance",norm); 
+    lsParams.set("Aztec Solver", "GMRES");
+    lsParams.set("Max Iterations", niterscg);
+    double norm = getParameter("nlnML absolute residual tolerance",1.0e-06);
+    lsParams.set("Tolerance",norm);
     if (OutLevel()>9)
       lsParams.set("Output Frequency",10);
     else
-      lsParams.set("Output Frequency",0);   
+      lsParams.set("Output Frequency",0);
     lsParams.set("Preconditioning", "User Supplied Preconditioner");
     lsParams.set("Preconditioner","User Defined");
   }
-  
-  // create the initial guess     
+
+  // create the initial guess
   NOX::Epetra::Vector initialguess(xthis_);
-  
+
   // create interfaces
   thislevel_A_ = rcp(new NOX::Epetra::MatrixFree(printParams,coarseinterface_,*xthis_,false));
   if (isnlncg)
   {
-    thislevel_linSys_ = 
+    thislevel_linSys_ =
       rcp( new NLNML::NLNML_LinearSystem(thislevel_A_,thislevel_A_,null,
                                          coarseinterface_,thislevel_prec_,
                                          true,Level(),OutLevel()));
@@ -265,7 +267,7 @@ fineJac_(fineJac)
   {
     RefCountPtr<NOX::Epetra::Interface::Preconditioner> iPrec = rcp(this);
     iPrec.release();
-    azlinSys_ = 
+    azlinSys_ =
       rcp(new NOX::Epetra::LinearSystemAztecOO(printParams,*lsParamsptr,
                                                thislevel_A_,thislevel_A_,
                                                iPrec,thislevel_prec_,
@@ -273,17 +275,17 @@ fineJac_(fineJac)
     group_ = rcp(new NOX::Epetra::Group(printParams,coarseinterface_,initialguess,
                                         azlinSys_));
   }
-  
+
   // create some convergence test
-  double norm = getParameter("nlnML absolute residual tolerance",1.0e-06); 
+  double norm = getParameter("nlnML absolute residual tolerance",1.0e-06);
   create_Nox_Convergencetest(norm,norm,1);
-  
+
   // create the solver
   //JJH
   //solver_ = rcp(new NOX::Solver::Manager(group_,combo2_,nlparams_));
   solver_ = NOX::Solver::buildSolver(group_,combo2_,nlparams_);
-  
-  
+
+
   return;
 }
 
@@ -303,31 +305,31 @@ NLNML::NLNML_NonlinearLevel::~NLNML_NonlinearLevel()
  |  compute this preconditioner (public, derived)             m.gee 3/06|
  *----------------------------------------------------------------------*/
 bool NLNML::NLNML_NonlinearLevel::computePreconditioner(
-                                     const Epetra_Vector& x, 
-				     Epetra_Operator& M,
-				     Teuchos::ParameterList* precParams)
+                                     const Epetra_Vector& x,
+             Epetra_Operator& M,
+             Teuchos::ParameterList* precParams)
 {
-  return true;  
+  return true;
 }
 
 
 /*----------------------------------------------------------------------*
  |  compute this Jacobian (public, derived)                   m.gee 3/06|
  *----------------------------------------------------------------------*/
-bool NLNML::NLNML_NonlinearLevel::computeJacobian(const Epetra_Vector& x, 
+bool NLNML::NLNML_NonlinearLevel::computeJacobian(const Epetra_Vector& x,
                                                   Epetra_Operator& Jac)
 {
-  return true;  
+  return true;
 }
 
 /*----------------------------------------------------------------------*
  |  (private)                                                 m.gee 3/06|
  *----------------------------------------------------------------------*/
-bool NLNML::NLNML_NonlinearLevel::Set_Smoother(ML* ml, ML_Aggregate* ag, 
+bool NLNML::NLNML_NonlinearLevel::Set_Smoother(ML* ml, ML_Aggregate* ag,
                                                int level, int nlevel,
-                                               ML* thislevel_ml, 
-                                               ML_Aggregate* thislevel_ag, 
-                                               string smoothertype, 
+                                               ML* thislevel_ml,
+                                               ML_Aggregate* thislevel_ag,
+                                               string smoothertype,
                                                int nsmooth)
 {
   if (smoothertype=="SGS")
@@ -356,7 +358,7 @@ bool NLNML::NLNML_NonlinearLevel::Set_Smoother(ML* ml, ML_Aggregate* ag,
                                          nblocks,blocks);
     if (nblocks && blocks)
     {
-      ML_free(blocks); 
+      ML_free(blocks);
       ML_free(blockpde);
     }
   }
@@ -378,17 +380,17 @@ bool NLNML::NLNML_NonlinearLevel::Set_Smoother(ML* ml, ML_Aggregate* ag,
                                          nblocks,blocks);
     if (nblocks && blocks)
     {
-      ML_free(blocks); 
+      ML_free(blocks);
       ML_free(blockpde);
     }
   }
   else
   {
     cout << "**ERR**: NLNML::NLNML_NonlinearLevel::Set_Smoother:\n"
-         << "**ERR**: unknown type of smoother: " <<  smoothertype << " on level " << Level() << "\n" 
+         << "**ERR**: unknown type of smoother: " <<  smoothertype << " on level " << Level() << "\n"
          << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
   }
-  return true;  
+  return true;
 }
 
 
@@ -396,8 +398,8 @@ bool NLNML::NLNML_NonlinearLevel::Set_Smoother(ML* ml, ML_Aggregate* ag,
 /*----------------------------------------------------------------------*
  |  (private)                                                 m.gee 3/06|
  *----------------------------------------------------------------------*/
-void NLNML::NLNML_NonlinearLevel::create_Nox_Convergencetest(double normf, 
-                                                             double norm_update, 
+void NLNML::NLNML_NonlinearLevel::create_Nox_Convergencetest(double normf,
+                                                             double norm_update,
                                                              int maxiter)
 {
   absresid_ = rcp(new NOX::StatusTest::NormF(normf,NOX::StatusTest::NormF::Unscaled));
@@ -412,72 +414,72 @@ void NLNML::NLNML_NonlinearLevel::create_Nox_Convergencetest(double normf,
   combo2_->addStatusTest(fv_);
   combo2_->addStatusTest(maxiters_);
   combo2_->addStatusTest(combo1_);
-  return;  
+  return;
 }
 
 /*----------------------------------------------------------------------*
  |  (private)                                                 m.gee 3/06|
  *----------------------------------------------------------------------*/
-bool NLNML::NLNML_NonlinearLevel::Iterate(Epetra_Vector* f, 
-                                          Epetra_Vector* x, 
-                                          int numiter, 
+bool NLNML::NLNML_NonlinearLevel::Iterate(Epetra_Vector* f,
+                                          Epetra_Vector* x,
+                                          int numiter,
                                           double* norm)
 {
   if (solver_==null || group_==null || combo2_==null)
   {
     cout << "**ERR**: NLNML::NLNML_NonlinearLevel::Iterate:\n"
-         << "**ERR**: group_ || solver_ || combo2_ or even some of them are NULL\n" 
+         << "**ERR**: group_ || solver_ || combo2_ or even some of them are NULL\n"
          << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
   }
-  
-  // put x into group_ 
+
+  // put x into group_
   NOX::Epetra::Vector X(*x,NOX::DeepCopy);
   group_->setX(X);
-  
+
   // recreate the convergence test
   create_Nox_Convergencetest(*norm,*norm,numiter);
-  
+
   // make a soft reset of the NOX solver
   //JJH
   //solver_->reset(group_,combo2_);
   solver_->reset(group_->getX(),combo2_);
-  
+
   if (OutLevel() && !Comm().MyPID() && !coarseinterface_->isFAS())
   {
-    printf("nlnML (level %d): Entering Nonlinear Smoother, Goal: %12.8e\n",level_,*norm); 
+    printf("nlnML (level %d): Entering Nonlinear Smoother, Goal: %12.8e\n",level_,*norm);
     fflush(stdout);
   }
   else if (OutLevel() && !Comm().MyPID() && coarseinterface_->isFAS())
   {
-    printf("nlnML (level %d): Entering FAS-Nonlinear Smoother, Goal: %12.8e\n",level_,*norm); 
+    printf("nlnML (level %d): Entering FAS-Nonlinear Smoother, Goal: %12.8e\n",level_,*norm);
     fflush(stdout);
   }
-  
+
   // iterate
   NOX::StatusTest::StatusType status = solver_->solve();
-  
+
   // get # iterations
   int niter = solver_->getNumIterations();
-  
+
   // get solution and F
-  const NOX::Epetra::Group& finalGroup = 
+  const NOX::Epetra::Group& finalGroup =
     dynamic_cast<const NOX::Epetra::Group&>(solver_->getSolutionGroup());
-  const Epetra_Vector& finalSolution = 
-    (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();      
-  const Epetra_Vector& finalF = 
+  const Epetra_Vector& finalSolution =
+    (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
+  const Epetra_Vector& finalF =
     (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getF())).getEpetraVector();
-  
+
   bool returnstatus=false;
   double norm2;
   finalF.Norm2(&norm2);
   *norm = norm2;
-  
+
   if (status == NOX::StatusTest::Converged)
   {
      returnstatus = true;
      if (OutLevel() > 0 && Comm().MyPID() == 0) {
-        //cout << "ML (level " << level_ << "): NOX: " 
-        //     << niter << " iterations, Norm(F)=" 
+        //cout << "ML (level " << level_ << "): NOX: "
+        //     << niter << " iterations, Norm(F)="
         //     << norm2 << " , Converged\n"; fflush(stdout);
         printf("nlnML (level %d): NOX: %d iterations, Norm(F)=%12.8e , Converged\n",level_,niter,norm2);
         fflush(stdout);
@@ -488,7 +490,7 @@ bool NLNML::NLNML_NonlinearLevel::Iterate(Epetra_Vector* f,
      returnstatus = false;
      if (OutLevel() > 0 && Comm().MyPID() == 0) {
         //cout << "ML (level " << level_ << "): NOX: "
-        //     << niter << " iterations, Norm(F)=" 
+        //     << niter << " iterations, Norm(F)="
         //     << norm2 << ", Unconverged\n"; fflush(stdout);
         printf("nlnML (level %d): NOX: %d iterations, Norm(F)=%12.8e , Unonverged\n",level_,niter,norm2);
         fflush(stdout);
@@ -498,7 +500,7 @@ bool NLNML::NLNML_NonlinearLevel::Iterate(Epetra_Vector* f,
   {
      returnstatus = false;
      if (OutLevel() > 0 && Comm().MyPID() == 0) {
-        //cout << "ML (level " << level_ << "): NOX: " 
+        //cout << "ML (level " << level_ << "): NOX: "
         //     << niter << " iterations, Norm(F)=" << norm2 << ", Failed\n"; fflush(stdout);
         printf("nlnML (level %d): NOX: %d iterations, Norm(F)=%12.8e , Failed\n",level_,niter,norm2);
         fflush(stdout);
@@ -508,33 +510,19 @@ bool NLNML::NLNML_NonlinearLevel::Iterate(Epetra_Vector* f,
   {
      returnstatus = false;
      if (Comm().MyPID() == 0)
-        //cout << "ML (level " << level_ << "): ***WRN*** NOX returned unknown status, Norm(F)=" 
+        //cout << "ML (level " << level_ << "): ***WRN*** NOX returned unknown status, Norm(F)="
         //     << norm2 << "\n"; fflush(stdout);
         printf("nlnML (level %d): ***WRN*** NOX: return status unknown, Norm(F)=%12.8e , Failed\n",level_,norm2);
         fflush(stdout);
   }
-  
+
   // reset number of calls to coarseinterface->computeF
   coarseinterface_->resetnumcallscomputeF();
-  
+
   // update the solution
   x->Update(1.0,finalSolution,0.0);
   f->Update(1.0,finalF,0.0);
-  
-  return returnstatus;  
+
+  return returnstatus;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #endif

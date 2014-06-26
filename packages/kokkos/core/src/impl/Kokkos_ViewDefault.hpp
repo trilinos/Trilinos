@@ -686,9 +686,9 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     dst.m_tracking      = src.m_tracking ;
-    dst.m_shape.N0      = src.m_shape.N1 ;
-    dst.m_shape.N1      = src.m_shape.N2 ;
-    dst.m_stride.value  = dst.m_shape.N1 ;
+    dst.m_offset_map.N0 = src.m_offset_map.N1 ;
+    dst.m_offset_map.N1 = src.m_offset_map.N2 ;
+    dst.m_offset_map.SR = dst.m_offset_map.N1 ;
     dst.m_ptr_on_device = &src(i0,0,0);
 
     dst.m_tracking.increment( dst.m_ptr_on_device );
@@ -721,9 +721,9 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     dst.m_tracking      = src.m_tracking ;
-    dst.m_shape.N0      = src.m_shape.N2 ;
-    dst.m_shape.N1      = src.m_shape.N3 ;
-    dst.m_stride.value  = dst.m_shape.N1 ;
+    dst.m_offset_map.N0 = src.m_offset_map.N2 ;
+    dst.m_offset_map.N1 = src.m_offset_map.N3 ;
+    dst.m_offset_map.SR = dst.m_offset_map.N1 ;
     dst.m_ptr_on_device = &src(i0,i1,0,0);
 
     dst.m_tracking.increment( dst.m_ptr_on_device );
@@ -757,9 +757,9 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     dst.m_tracking      = src.m_tracking ;
-    dst.m_shape.N0      = src.m_shape.N3 ;
-    dst.m_shape.N1      = src.m_shape.N4 ;
-    dst.m_stride.value  = dst.m_shape.N1 ;
+    dst.m_offset_map.N0 = src.m_offset_map.N3 ;
+    dst.m_offset_map.N1 = src.m_offset_map.N4 ;
+    dst.m_offset_map.SR = dst.m_offset_map.N1 ;
     dst.m_ptr_on_device = &src(i0,i1,i2,0,0);
 
     dst.m_tracking.increment( dst.m_ptr_on_device );
@@ -795,9 +795,9 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     dst.m_tracking      = src.m_tracking ;
-    dst.m_shape.N0      = src.m_shape.N4 ;
-    dst.m_shape.N1      = src.m_shape.N5 ;
-    dst.m_stride.value  = dst.m_shape.N1 ;
+    dst.m_offset_map.N0 = src.m_offset_map.N4 ;
+    dst.m_offset_map.N1 = src.m_offset_map.N5 ;
+    dst.m_offset_map.SR = dst.m_offset_map.N1 ;
     dst.m_ptr_on_device = &src(i0,i1,i2,i3,0,0);
 
     dst.m_tracking.increment( dst.m_ptr_on_device );
@@ -833,9 +833,9 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     dst.m_tracking      = src.m_tracking ;
-    dst.m_shape.N0      = src.m_shape.N5 ;
-    dst.m_shape.N1      = src.m_shape.N6 ;
-    dst.m_stride.value  = dst.m_shape.N1 ;
+    dst.m_offset_map.N0 = src.m_offset_map.N5 ;
+    dst.m_offset_map.N1 = src.m_offset_map.N6 ;
+    dst.m_offset_map.SR = dst.m_offset_map.N1 ;
     dst.m_ptr_on_device = &src(i0,i1,i2,i3,i4,0,0);
 
     dst.m_tracking.increment( dst.m_ptr_on_device );
@@ -873,9 +873,9 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     dst.m_tracking      = src.m_tracking ;
-    dst.m_shape.N0      = src.m_shape.N6 ;
-    dst.m_shape.N1      = src.m_shape.N7 ;
-    dst.m_stride.value  = dst.m_shape.N1 ;
+    dst.m_offset_map.N0 = src.m_offset_map.N6 ;
+    dst.m_offset_map.N1 = src.m_offset_map.N7 ;
+    dst.m_offset_map.SR = dst.m_offset_map.N1 ;
     dst.m_ptr_on_device = &src(i0,i1,i2,i3,i4,i5,0,0);
 
     dst.m_tracking.increment( dst.m_ptr_on_device );
@@ -908,10 +908,10 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     dst.m_tracking      = src.m_tracking ;
-    dst.m_shape.N0      = src.m_shape.N1 ;
-    dst.m_shape.N1      = src.m_shape.N2 ;
-    dst.m_shape.N2      = src.m_shape.N3 ;
-    dst.m_stride.value  = dst.m_shape.N1 * dst.m_shape.N2 ;
+    dst.m_offset_map.N0 = src.m_offset_map.N1 ;
+    dst.m_offset_map.N1 = src.m_offset_map.N2 ;
+    dst.m_offset_map.N2 = src.m_offset_map.N3 ;
+    dst.m_offset_map.SR = dst.m_offset_map.N1 * dst.m_offset_map.N2 ;
     dst.m_ptr_on_device = &src(i0,0,0,0);
 
     dst.m_tracking.increment( dst.m_ptr_on_device );
@@ -945,10 +945,10 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     dst.m_tracking      = src.m_tracking ;
-    dst.m_shape.N0      = src.m_shape.N2 ;
-    dst.m_shape.N1      = src.m_shape.N3 ;
-    dst.m_shape.N2      = src.m_shape.N4 ;
-    dst.m_stride.value  = dst.m_shape.N1 * dst.m_shape.N2 ;
+    dst.m_offset_map.N0 = src.m_offset_map.N2 ;
+    dst.m_offset_map.N1 = src.m_offset_map.N3 ;
+    dst.m_offset_map.N2 = src.m_offset_map.N4 ;
+    dst.m_offset_map.SR = dst.m_offset_map.N1 * dst.m_offset_map.N2 ;
     dst.m_ptr_on_device = &src(i0,i1,0,0,0);
 
     dst.m_tracking.increment( dst.m_ptr_on_device );
@@ -983,10 +983,10 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     dst.m_tracking      = src.m_tracking ;
-    dst.m_shape.N0      = src.m_shape.N3 ;
-    dst.m_shape.N1      = src.m_shape.N4 ;
-    dst.m_shape.N2      = src.m_shape.N5 ;
-    dst.m_stride.value  = dst.m_shape.N1 * dst.m_shape.N2 ;
+    dst.m_offset_map.N0 = src.m_offset_map.N3 ;
+    dst.m_offset_map.N1 = src.m_offset_map.N4 ;
+    dst.m_offset_map.N2 = src.m_offset_map.N5 ;
+    dst.m_offset_map.SR = dst.m_offset_map.N1 * dst.m_offset_map.N2 ;
     dst.m_ptr_on_device = &src(i0,i1,i2,0,0,0);
 
     dst.m_tracking.increment( dst.m_ptr_on_device );
@@ -1022,10 +1022,10 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     dst.m_tracking      = src.m_tracking ;
-    dst.m_shape.N0      = src.m_shape.N4 ;
-    dst.m_shape.N1      = src.m_shape.N5 ;
-    dst.m_shape.N2      = src.m_shape.N6 ;
-    dst.m_stride.value  = dst.m_shape.N1 * dst.m_shape.N2 ;
+    dst.m_offset_map.N0 = src.m_offset_map.N4 ;
+    dst.m_offset_map.N1 = src.m_offset_map.N5 ;
+    dst.m_offset_map.N2 = src.m_offset_map.N6 ;
+    dst.m_offset_map.SR = dst.m_offset_map.N1 * dst.m_offset_map.N2 ;
     dst.m_ptr_on_device = &src(i0,i1,i2,i3,0,0,0);
 
     dst.m_tracking.increment( dst.m_ptr_on_device );
@@ -1062,10 +1062,10 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     dst.m_tracking      = src.m_tracking ;
-    dst.m_shape.N0      = src.m_shape.N5 ;
-    dst.m_shape.N1      = src.m_shape.N6 ;
-    dst.m_shape.N2      = src.m_shape.N7 ;
-    dst.m_stride.value  = dst.m_shape.N1 * dst.m_shape.N2 ;
+    dst.m_offset_map.N0 = src.m_offset_map.N5 ;
+    dst.m_offset_map.N1 = src.m_offset_map.N6 ;
+    dst.m_offset_map.N2 = src.m_offset_map.N7 ;
+    dst.m_offset_map.SR = dst.m_offset_map.N1 * dst.m_offset_map.N2 ;
     dst.m_ptr_on_device = &src(i0,i1,i2,i3,i4,0,0,0);
 
     dst.m_tracking.increment( dst.m_ptr_on_device );
@@ -1099,12 +1099,12 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     dst.m_tracking      = src.m_tracking ;
-    dst.m_shape.N0      = src.m_shape.N1 ;
-    dst.m_shape.N1      = src.m_shape.N2 ;
-    dst.m_shape.N2      = src.m_shape.N3 ;
-    dst.m_shape.N3      = src.m_shape.N4 ;
-    dst.m_stride.value  = dst.m_shape.N1 * dst.m_shape.N2 *
-                          dst.m_shape.N3 ;
+    dst.m_offset_map.N0 = src.m_offset_map.N1 ;
+    dst.m_offset_map.N1 = src.m_offset_map.N2 ;
+    dst.m_offset_map.N2 = src.m_offset_map.N3 ;
+    dst.m_offset_map.N3 = src.m_offset_map.N4 ;
+    dst.m_offset_map.SR = dst.m_offset_map.N1 * dst.m_offset_map.N2 *
+                          dst.m_offset_map.N3 ;
     dst.m_ptr_on_device = &src(i0,0,0,0,0);
 
     dst.m_tracking.increment( dst.m_ptr_on_device );
@@ -1139,12 +1139,12 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     dst.m_tracking      = src.m_tracking ;
-    dst.m_shape.N0      = src.m_shape.N2 ;
-    dst.m_shape.N1      = src.m_shape.N3 ;
-    dst.m_shape.N2      = src.m_shape.N4 ;
-    dst.m_shape.N3      = src.m_shape.N5 ;
-    dst.m_stride.value  = dst.m_shape.N1 * dst.m_shape.N2 *
-                          dst.m_shape.N3 ;
+    dst.m_offset_map.N0 = src.m_offset_map.N2 ;
+    dst.m_offset_map.N1 = src.m_offset_map.N3 ;
+    dst.m_offset_map.N2 = src.m_offset_map.N4 ;
+    dst.m_offset_map.N3 = src.m_offset_map.N5 ;
+    dst.m_offset_map.SR = dst.m_offset_map.N1 * dst.m_offset_map.N2 *
+                          dst.m_offset_map.N3 ;
     dst.m_ptr_on_device = &src(i0,i1,0,0,0,0);
 
     dst.m_tracking.increment( dst.m_ptr_on_device );
@@ -1180,12 +1180,12 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     dst.m_tracking      = src.m_tracking ;
-    dst.m_shape.N0      = src.m_shape.N3 ;
-    dst.m_shape.N1      = src.m_shape.N4 ;
-    dst.m_shape.N2      = src.m_shape.N5 ;
-    dst.m_shape.N3      = src.m_shape.N6 ;
-    dst.m_stride.value  = dst.m_shape.N1 * dst.m_shape.N2 *
-                          dst.m_shape.N3 ;
+    dst.m_offset_map.N0 = src.m_offset_map.N3 ;
+    dst.m_offset_map.N1 = src.m_offset_map.N4 ;
+    dst.m_offset_map.N2 = src.m_offset_map.N5 ;
+    dst.m_offset_map.N3 = src.m_offset_map.N6 ;
+    dst.m_offset_map.SR = dst.m_offset_map.N1 * dst.m_offset_map.N2 *
+                          dst.m_offset_map.N3 ;
     dst.m_ptr_on_device = &src(i0,i1,i2,0,0,0,0);
 
     dst.m_tracking.increment( dst.m_ptr_on_device );
@@ -1222,12 +1222,12 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     dst.m_tracking      = src.m_tracking ;
-    dst.m_shape.N0      = src.m_shape.N4 ;
-    dst.m_shape.N1      = src.m_shape.N5 ;
-    dst.m_shape.N2      = src.m_shape.N6 ;
-    dst.m_shape.N3      = src.m_shape.N7 ;
-    dst.m_stride.value  = dst.m_shape.N1 * dst.m_shape.N2 *
-                          dst.m_shape.N3 ;
+    dst.m_offset_map.N0 = src.m_offset_map.N4 ;
+    dst.m_offset_map.N1 = src.m_offset_map.N5 ;
+    dst.m_offset_map.N2 = src.m_offset_map.N6 ;
+    dst.m_offset_map.N3 = src.m_offset_map.N7 ;
+    dst.m_offset_map.SR = dst.m_offset_map.N1 * dst.m_offset_map.N2 *
+                          dst.m_offset_map.N3 ;
     dst.m_ptr_on_device = &src(i0,i1,i2,i3,0,0,0,0);
 
     dst.m_tracking.increment( dst.m_ptr_on_device );
@@ -1262,13 +1262,13 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     dst.m_tracking      = src.m_tracking ;
-    dst.m_shape.N0      = src.m_shape.N1 ;
-    dst.m_shape.N1      = src.m_shape.N2 ;
-    dst.m_shape.N2      = src.m_shape.N3 ;
-    dst.m_shape.N3      = src.m_shape.N4 ;
-    dst.m_shape.N4      = src.m_shape.N5 ;
-    dst.m_stride.value  = dst.m_shape.N1 * dst.m_shape.N2 *
-                          dst.m_shape.N3 * dst.m_shape.N4 ;
+    dst.m_offset_map.N0 = src.m_offset_map.N1 ;
+    dst.m_offset_map.N1 = src.m_offset_map.N2 ;
+    dst.m_offset_map.N2 = src.m_offset_map.N3 ;
+    dst.m_offset_map.N3 = src.m_offset_map.N4 ;
+    dst.m_offset_map.N4 = src.m_offset_map.N5 ;
+    dst.m_offset_map.SR = dst.m_offset_map.N1 * dst.m_offset_map.N2 *
+                          dst.m_offset_map.N3 * dst.m_offset_map.N4 ;
     dst.m_ptr_on_device = &src(i0,0,0,0,0,0);
 
     dst.m_tracking.increment( dst.m_ptr_on_device );
@@ -1304,13 +1304,13 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     dst.m_tracking      = src.m_tracking ;
-    dst.m_shape.N0      = src.m_shape.N2 ;
-    dst.m_shape.N1      = src.m_shape.N3 ;
-    dst.m_shape.N2      = src.m_shape.N4 ;
-    dst.m_shape.N3      = src.m_shape.N5 ;
-    dst.m_shape.N4      = src.m_shape.N6 ;
-    dst.m_stride.value  = dst.m_shape.N1 * dst.m_shape.N2 *
-                          dst.m_shape.N3 * dst.m_shape.N4 ;
+    dst.m_offset_map.N0 = src.m_offset_map.N2 ;
+    dst.m_offset_map.N1 = src.m_offset_map.N3 ;
+    dst.m_offset_map.N2 = src.m_offset_map.N4 ;
+    dst.m_offset_map.N3 = src.m_offset_map.N5 ;
+    dst.m_offset_map.N4 = src.m_offset_map.N6 ;
+    dst.m_offset_map.SR = dst.m_offset_map.N1 * dst.m_offset_map.N2 *
+                          dst.m_offset_map.N3 * dst.m_offset_map.N4 ;
     dst.m_ptr_on_device = &src(i0,i1,0,0,0,0,0);
 
     dst.m_tracking.increment( dst.m_ptr_on_device );
@@ -1347,13 +1347,13 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     dst.m_tracking      = src.m_tracking ;
-    dst.m_shape.N0      = src.m_shape.N3 ;
-    dst.m_shape.N1      = src.m_shape.N4 ;
-    dst.m_shape.N2      = src.m_shape.N5 ;
-    dst.m_shape.N3      = src.m_shape.N6 ;
-    dst.m_shape.N4      = src.m_shape.N7 ;
-    dst.m_stride.value  = dst.m_shape.N1 * dst.m_shape.N2 *
-                          dst.m_shape.N3 * dst.m_shape.N4 ;
+    dst.m_offset_map.N0 = src.m_offset_map.N3 ;
+    dst.m_offset_map.N1 = src.m_offset_map.N4 ;
+    dst.m_offset_map.N2 = src.m_offset_map.N5 ;
+    dst.m_offset_map.N3 = src.m_offset_map.N6 ;
+    dst.m_offset_map.N4 = src.m_offset_map.N7 ;
+    dst.m_offset_map.SR = dst.m_offset_map.N1 * dst.m_offset_map.N2 *
+                          dst.m_offset_map.N3 * dst.m_offset_map.N4 ;
     dst.m_ptr_on_device = &src(i0,i1,i2,0,0,0,0,0);
 
     dst.m_tracking.increment( dst.m_ptr_on_device );
@@ -1381,37 +1381,29 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                   )>::type * = 0 )
   {
     enum { src_rank = 1 };
-    const bool is_range[ src_rank ] =
-      { ViewOffsetRange< Type0 >::is_range
-      };
 
-    const unsigned begin[ src_rank ] =
-      { ViewOffsetRange< Type0 >::begin( arg0 )
-      };
+    size_t str[2] = {0,0};
 
-    unsigned dim[ src_rank ] =
-      { ViewOffsetRange< Type0 >::dimension( src.m_offset_map.N0 , arg0 )
-      };
+    src.m_offset_map.stride( str );
 
-    size_t str[ src_rank ] , offset = 0 ;
+    const size_t offset = ViewOffsetRange< Type0 >::begin( arg0 ) * str[0] ;
 
-    for ( int i = 0 , j = 0 ; i < src_rank ; ++i ) {
-      dim[j] = dim[i] ;
-      str[j] = str[i] ;
-      offset += begin[i] * str[i] ;
-      if ( is_range[i] ) { ++j ; }
+    LayoutStride spec ;
+
+    // Collapse dimension for non-ranges
+    if ( ViewOffsetRange< Type0 >::is_range ) {
+      spec.dimension[0] = ViewOffsetRange< Type0 >::dimension( src.m_offset_map.N0 , arg0 );
+      spec.stride[0]    = str[0] ;
+    }
+    else {
+      spec.dimension[0] = 1 ;
+      spec.stride[0]    = 1 ;
     }
 
     dst.m_tracking.decrement( dst.m_ptr_on_device );
-
     dst.m_tracking = src.m_tracking ;
-
-    dst.m_offset_map.assign( dim[0], 0, 0, 0, 0, 0, 0, 0 );
-
-    for ( int i = 0 ; i < int(ViewTraits<DT,DL,DD,DM>::rank) ; ++i ) { dst.m_offset_map.S[i] = str[i] ; }
-
+    dst.m_offset_map.assign( spec );
     dst.m_ptr_on_device = src.m_ptr_on_device + offset ;
-
     dst.m_tracking.increment( dst.m_ptr_on_device );
   }
 
@@ -1438,40 +1430,42 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                   )>::type * = 0 )
   {
     enum { src_rank = 2 };
+
     const bool is_range[ src_rank ] =
       { ViewOffsetRange< Type0 >::is_range
       , ViewOffsetRange< Type1 >::is_range
       };
 
     const unsigned begin[ src_rank ] =
-      { ViewOffsetRange< Type0 >::begin( arg0 )
-      , ViewOffsetRange< Type1 >::begin( arg1 )
+      { static_cast<unsigned>(ViewOffsetRange< Type0 >::begin( arg0 ))
+      , static_cast<unsigned>(ViewOffsetRange< Type1 >::begin( arg1 ))
       };
 
-    unsigned dim[ src_rank ] =
-      { ViewOffsetRange< Type0 >::dimension( src.m_offset_map.N0 , arg0 )
-      , ViewOffsetRange< Type1 >::dimension( src.m_offset_map.N1 , arg1 )
-      };
+    size_t stride[9] ;
 
-    size_t str[ src_rank ] , offset = 0 ;
+    src.m_offset_map.stride( stride );
 
-    for ( int i = 0 , j = 0 ; i < src_rank ; ++i ) {
-      dim[j] = dim[i] ;
-      str[j] = str[i] ;
-      offset += begin[i] * str[i] ;
+    LayoutStride spec ;
+
+    spec.dimension[0] = ViewOffsetRange< Type0 >::dimension( src.m_offset_map.N0 , arg0 );
+    spec.dimension[1] = ViewOffsetRange< Type1 >::dimension( src.m_offset_map.N1 , arg1 );
+    spec.stride[0]    = stride[0] ;
+    spec.stride[1]    = stride[1] ;
+
+    size_t offset = 0 ;
+
+    // Collapse dimension for non-ranges
+    for ( int i = 0 , j = 0 ; i < int(src_rank) ; ++i ) {
+      spec.dimension[j] = spec.dimension[i] ;
+      spec.stride[j]    = spec.stride[i] ;
+      offset += begin[i] * spec.stride[i] ;
       if ( is_range[i] ) { ++j ; }
     }
 
     dst.m_tracking.decrement( dst.m_ptr_on_device );
-
     dst.m_tracking = src.m_tracking ;
-
-    dst.m_offset_map.assign( dim[0], dim[1], 0, 0, 0, 0, 0, 0 );
-
-    for ( int i = 0 ; i < int(ViewTraits<DT,DL,DD,DM>::rank) ; ++i ) { dst.m_offset_map.S[i] = str[i] ; }
-
+    dst.m_offset_map.assign( spec );
     dst.m_ptr_on_device = src.m_ptr_on_device + offset ;
-
     dst.m_tracking.increment( dst.m_ptr_on_device );
   }
 
@@ -1501,6 +1495,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                   )>::type * = 0 )
   {
     enum { src_rank = 3 };
+
     const bool is_range[ src_rank ] =
       { ViewOffsetRange< Type0 >::is_range
       , ViewOffsetRange< Type1 >::is_range
@@ -1519,25 +1514,26 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
       , ViewOffsetRange< Type2 >::dimension( src.m_offset_map.N2 , arg2 )
       };
 
-    size_t str[ src_rank ] , offset = 0 ;
+    size_t stride[9] = {0,0,0,0,0,0,0,0,0};
 
-    for ( int i = 0 , j = 0 ; i < src_rank ; ++i ) {
-      dim[j] = dim[i] ;
-      str[j] = str[i] ;
-      offset += begin[i] * str[i] ;
+    src.m_offset_map.stride( stride );
+
+    LayoutStride spec ;
+
+    size_t offset = 0 ;
+
+    // Collapse dimension for non-ranges
+    for ( int i = 0 , j = 0 ; i < int(src_rank) ; ++i ) {
+      spec.dimension[j] = dim[i] ;
+      spec.stride[j]    = stride[i] ;
+      offset += begin[i] * stride[i] ;
       if ( is_range[i] ) { ++j ; }
     }
 
     dst.m_tracking.decrement( dst.m_ptr_on_device );
-
     dst.m_tracking = src.m_tracking ;
-
-    dst.m_offset_map.assign( dim[0], dim[1], dim[2], 0, 0, 0, 0, 0 );
-
-    for ( int i = 0 ; i < int(ViewTraits<DT,DL,DD,DM>::rank) ; ++i ) { dst.m_offset_map.S[i] = str[i] ; }
-
+    dst.m_offset_map.assign( spec );
     dst.m_ptr_on_device = src.m_ptr_on_device + offset ;
-
     dst.m_tracking.increment( dst.m_ptr_on_device );
   }
 
@@ -1578,38 +1574,39 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
       };
 
     const unsigned begin[ src_rank ] =
-      { ViewOffsetRange< Type0 >::begin( arg0 )
-      , ViewOffsetRange< Type1 >::begin( arg1 )
-      , ViewOffsetRange< Type2 >::begin( arg2 )
-      , ViewOffsetRange< Type3 >::begin( arg3 )
+      { static_cast<unsigned>(ViewOffsetRange< Type0 >::begin( arg0 ))
+      , static_cast<unsigned>(ViewOffsetRange< Type1 >::begin( arg1 ))
+      , static_cast<unsigned>(ViewOffsetRange< Type2 >::begin( arg2 ))
+      , static_cast<unsigned>(ViewOffsetRange< Type3 >::begin( arg3 ))
       };
 
     unsigned dim[ src_rank ] =
-      { ViewOffsetRange< Type0 >::dimension( src.m_offset_map.N0 , arg0 )
-      , ViewOffsetRange< Type1 >::dimension( src.m_offset_map.N1 , arg1 )
-      , ViewOffsetRange< Type2 >::dimension( src.m_offset_map.N2 , arg2 )
-      , ViewOffsetRange< Type3 >::dimension( src.m_offset_map.N3 , arg3 )
+      { static_cast<unsigned>(ViewOffsetRange< Type0 >::dimension( src.m_offset_map.N0 , arg0 ))
+      , static_cast<unsigned>(ViewOffsetRange< Type1 >::dimension( src.m_offset_map.N1 , arg1 ))
+      , static_cast<unsigned>(ViewOffsetRange< Type2 >::dimension( src.m_offset_map.N2 , arg2 ))
+      , static_cast<unsigned>(ViewOffsetRange< Type3 >::dimension( src.m_offset_map.N3 , arg3 ))
       };
 
-    size_t str[ src_rank ] , offset = 0 ;
+    size_t stride[9] = {0,0,0,0,0,0,0,0,0};
 
-    for ( int i = 0 , j = 0 ; i < src_rank ; ++i ) {
-      dim[j] = dim[i] ;
-      str[j] = str[i] ;
-      offset += begin[i] * str[i] ;
+    src.m_offset_map.stride( stride );
+
+    LayoutStride spec ;
+
+    size_t offset = 0 ;
+
+    // Collapse dimension for non-ranges
+    for ( int i = 0 , j = 0 ; i < int(src_rank) ; ++i ) {
+      spec.dimension[j] = dim[i] ;
+      spec.stride[j]    = stride[i] ;
+      offset += begin[i] * stride[i] ;
       if ( is_range[i] ) { ++j ; }
     }
 
     dst.m_tracking.decrement( dst.m_ptr_on_device );
-
     dst.m_tracking = src.m_tracking ;
-
-    dst.m_offset_map.assign( dim[0], dim[1], dim[2], dim[3], 0, 0, 0, 0 );
-
-    for ( int i = 0 ; i < int(ViewTraits<DT,DL,DD,DM>::rank) ; ++i ) { dst.m_offset_map.S[i] = str[i] ; }
-
+    dst.m_offset_map.assign( spec );
     dst.m_ptr_on_device = src.m_ptr_on_device + offset ;
-
     dst.m_tracking.increment( dst.m_ptr_on_device );
   }
 
@@ -1669,25 +1666,26 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
       , ViewOffsetRange< Type4 >::dimension( src.m_offset_map.N4 , arg4 )
       };
 
-    size_t str[ src_rank ] , offset = 0 ;
+    size_t stride[9] = {0,0,0,0,0,0,0,0,0};
 
-    for ( int i = 0 , j = 0 ; i < src_rank ; ++i ) {
-      dim[j] = dim[i] ;
-      str[j] = str[i] ;
-      offset += begin[i] * str[i] ;
+    src.m_offset_map.stride( stride );
+
+    LayoutStride spec ;
+
+    size_t offset = 0 ;
+
+    // Collapse dimension for non-ranges
+    for ( int i = 0 , j = 0 ; i < int(src_rank) ; ++i ) {
+      spec.dimension[j] = dim[i] ;
+      spec.stride[j]    = stride[i] ;
+      offset += begin[i] * stride[i] ;
       if ( is_range[i] ) { ++j ; }
     }
 
     dst.m_tracking.decrement( dst.m_ptr_on_device );
-
     dst.m_tracking = src.m_tracking ;
-
-    dst.m_offset_map.assign( dim[0], dim[1], dim[2], dim[3], dim[4], 0, 0, 0 );
-
-    for ( int i = 0 ; i < int(ViewTraits<DT,DL,DD,DM>::rank) ; ++i ) { dst.m_offset_map.S[i] = str[i] ; }
-
+    dst.m_offset_map.assign( spec );
     dst.m_ptr_on_device = src.m_ptr_on_device + offset ;
-
     dst.m_tracking.increment( dst.m_ptr_on_device );
   }
 
@@ -1753,25 +1751,26 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
       , ViewOffsetRange< Type5 >::dimension( src.m_offset_map.N5 , arg5 )
       };
 
-    size_t str[ src_rank ] , offset = 0 ;
+    size_t stride[9] = {0,0,0,0,0,0,0,0,0};
 
-    for ( int i = 0 , j = 0 ; i < src_rank ; ++i ) {
-      dim[j] = dim[i] ;
-      str[j] = str[i] ;
-      offset += begin[i] * str[i] ;
+    src.m_offset_map.stride( stride );
+
+    LayoutStride spec ;
+
+    size_t offset = 0 ;
+
+    // Collapse dimension for non-ranges
+    for ( int i = 0 , j = 0 ; i < int(src_rank) ; ++i ) {
+      spec.dimension[j] = dim[i] ;
+      spec.stride[j]    = stride[i] ;
+      offset += begin[i] * stride[i] ;
       if ( is_range[i] ) { ++j ; }
     }
 
     dst.m_tracking.decrement( dst.m_ptr_on_device );
-
     dst.m_tracking = src.m_tracking ;
-
-    dst.m_offset_map.assign( dim[0], dim[1], dim[2], dim[3], dim[4], dim[5], 0, 0 );
-
-    for ( int i = 0 ; i < int(ViewTraits<DT,DL,DD,DM>::rank) ; ++i ) { dst.m_offset_map.S[i] = str[i] ; }
-
+    dst.m_offset_map.assign( spec );
     dst.m_ptr_on_device = src.m_ptr_on_device + offset ;
-
     dst.m_tracking.increment( dst.m_ptr_on_device );
   }
 
@@ -1843,25 +1842,26 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
       , ViewOffsetRange< Type6 >::dimension( src.m_offset_map.N6 , arg6 )
       };
 
-    size_t str[ src_rank ] , offset = 0 ;
+    size_t stride[9] = {0,0,0,0,0,0,0,0,0};
 
-    for ( int i = 0 , j = 0 ; i <  src_rank ; ++i ) {
-      dim[j] = dim[i] ;
-      str[j] = str[i] ;
-      offset += begin[i] * str[i] ;
+    src.m_offset_map.stride( stride );
+
+    LayoutStride spec ;
+
+    size_t offset = 0 ;
+
+    // Collapse dimension for non-ranges
+    for ( int i = 0 , j = 0 ; i < int(src_rank) ; ++i ) {
+      spec.dimension[j] = dim[i] ;
+      spec.stride[j]    = stride[i] ;
+      offset += begin[i] * stride[i] ;
       if ( is_range[i] ) { ++j ; }
     }
 
     dst.m_tracking.decrement( dst.m_ptr_on_device );
-
     dst.m_tracking = src.m_tracking ;
-
-    dst.m_offset_map.assign( dim[0], dim[1], dim[2], dim[3], dim[4], dim[5], dim[6], 0 );
-
-    for ( int i = 0 ; i < int(ViewTraits<DT,DL,DD,DM>::rank) ; ++i ) { dst.m_offset_map.S[i] = str[i] ; }
-
+    dst.m_offset_map.assign( spec );
     dst.m_ptr_on_device = src.m_ptr_on_device + offset ;
-
     dst.m_tracking.increment( dst.m_ptr_on_device );
   }
 
@@ -1940,12 +1940,19 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
       , ViewOffsetRange< Type7 >::dimension( src.m_offset_map.N7 , arg7 )
       };
 
-    size_t str[ src_rank ] , offset = 0 ;
+    size_t stride[9] = {0,0,0,0,0,0,0,0,0};
 
+    src.m_offset_map.stride( stride );
+
+    LayoutStride spec ;
+
+    size_t offset = 0 ;
+
+    // Collapse dimension for non-ranges
     for ( int i = 0 , j = 0 ; i < int(src_rank) ; ++i ) {
-      dim[j] = dim[i] ;
-      str[j] = str[i] ;
-      offset += begin[i] * str[i] ;
+      spec.dimension[j] = dim[i] ;
+      spec.stride[j]    = stride[i] ;
+      offset += begin[i] * stride[i] ;
       if ( is_range[i] ) { ++j ; }
     }
 
@@ -1953,9 +1960,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
 
     dst.m_tracking = src.m_tracking ;
 
-    dst.m_offset_map.assign( dim[0], dim[1], dim[2], dim[3], dim[4], dim[5], dim[6], dim[7] );
-
-    for ( int i = 0 ; i < int(ViewTraits<DT,DL,DD,DM>::rank) ; ++i ) { dst.m_offset_map.S[i] = str[i] ; }
+    dst.m_offset_map.assign( spec );
 
     dst.m_ptr_on_device = src.m_ptr_on_device + offset ;
 

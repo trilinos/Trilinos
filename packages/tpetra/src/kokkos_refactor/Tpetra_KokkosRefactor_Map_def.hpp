@@ -39,11 +39,6 @@
 // ************************************************************************
 // @HEADER
 
-/// \file Tpetra_Map_def.hpp
-///
-/// Implementation of the methods of Tpetra::Map, and of related
-/// nonmember constructors for Tpetra::Map.
-
 #ifndef TPETRA_KOKKOSREFACTOR_MAP_DEF_HPP
 #define TPETRA_KOKKOSREFACTOR_MAP_DEF_HPP
 
@@ -53,10 +48,18 @@
 #include <stdexcept>
 
 #ifdef DOXYGEN_USE_ONLY
-  #include "Tpetra_Map_decl.hpp"
+#  include "Tpetra_Map_decl.hpp"
 #endif
 
 namespace Tpetra {
+
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  Map () :
+    comm_ (new Teuchos::SerialComm<int> ()),
+    node_ (KokkosClassic::Details::getNode<Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > ()),
+    directory_ (new Directory<LocalOrdinal, GlobalOrdinal, node_type> ())
+  {}
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
@@ -66,7 +69,8 @@ namespace Tpetra {
        const LocalGlobal lOrG,
        const Teuchos::RCP<node_type>& node) :
     comm_ (comm),
-    node_ (node)
+    node_ (node),
+    directory_ (new Directory<LocalOrdinal, GlobalOrdinal, node_type> ())
   {
     // Start with a host Map implementation, since this will make this
     // class' public (host) methods work.  If users want device
@@ -77,8 +81,6 @@ namespace Tpetra {
     // the host and device Maps to be separate.
     mapHost_ = host_impl_type (Teuchos::as<GlobalOrdinal> (globalNumIndices),
                                indexBase, *comm, lOrG);
-
-    // Create the Directory on demand in getRemoteIndexList().
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -89,7 +91,8 @@ namespace Tpetra {
        const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
        const Teuchos::RCP<node_type>& node) :
     comm_ (comm),
-    node_ (node)
+    node_ (node),
+    directory_ (new Directory<LocalOrdinal, GlobalOrdinal, node_type> ())
   {
     typedef GlobalOrdinal GO;
     const global_size_t GSTI = Teuchos::OrdinalTraits<global_size_t>::invalid ();
@@ -119,7 +122,8 @@ namespace Tpetra {
        const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
        const Teuchos::RCP<node_type>& node) :
     comm_ (comm),
-    node_ (node)
+    node_ (node),
+    directory_ (new Directory<LocalOrdinal, GlobalOrdinal, node_type> ())
   {
     typedef GlobalOrdinal GO;
     const global_size_t GSTI = Teuchos::OrdinalTraits<global_size_t>::invalid ();
@@ -148,7 +152,8 @@ namespace Tpetra {
        const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
        const Teuchos::RCP<node_type> &node) :
     comm_ (comm),
-    node_ (node)
+    node_ (node),
+    directory_ (new Directory<LocalOrdinal, GlobalOrdinal, node_type> ())
   {
     typedef GlobalOrdinal GO;
     typedef Kokkos::View<const GlobalOrdinal*, device_type,
@@ -749,7 +754,9 @@ namespace Tpetra {
         map->mapDevice_.setDistributed (allProcsOwnAllGids != 1);
       }
 
-      // The Directory will be created on demand in getRemoteIndexList().
+      // Map's default constructor creates an uninitialized Directory.
+      // The Directory will be initialized on demand in
+      // getRemoteIndexList().
       //
       // FIXME (mfh 26 Mar 2013) It should be possible to "filter" the
       // directory more efficiently than just recreating it.  If
@@ -757,7 +764,7 @@ namespace Tpetra {
       // revisit this.  On the other hand, Directory creation is only
       // collective over the new, presumably much smaller
       // communicator, so it may not be worth the effort to optimize.
-      map->directory_ = null;
+
       return map;
     }
   }
@@ -767,35 +774,25 @@ namespace Tpetra {
   Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   setupDirectory () const
   {
-    using Teuchos::rcp;
-    typedef Directory<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > directory_type;
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      directory_.is_null (), std::logic_error, "Tpetra::Map::setupDirectory: "
+      "The Directory is null.  "
+      "Please report this bug to the Tpetra developers.");
+
     // Only create the Directory if it hasn't been created yet.
     // This is a collective operation.
-    if (directory_.is_null ()) {
-      directory_ = rcp (new directory_type (*this));
+    if (! directory_->initialized ()) {
+      directory_->initialize (*this);
     }
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   LookupStatus
   Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
-  getRemoteIndexList (const Teuchos::ArrayView<const GlobalOrdinal> & GIDs,
-                      const Teuchos::ArrayView<int> & PIDs,
-                      const Teuchos::ArrayView<LocalOrdinal> & LIDs) const
+  getRemoteIndexList (const Teuchos::ArrayView<const GlobalOrdinal>& GIDs,
+                      const Teuchos::ArrayView<int>& PIDs,
+                      const Teuchos::ArrayView<LocalOrdinal>& LIDs) const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      this->getComm ().is_null (), std::logic_error, "Tpetra::Map (Kokkos "
-      "refactor)::getRemoteIndexList (3 args): getComm() returns null.  "
-      "Please report this bug to the Tpetra developers.");
-
-    // mfh 03 Mar 2014: The exception test below should be commented
-    // out; it's valid to give getRemoteIndexList GIDs that the Map
-    // doesn't own, and a Map with zero GIDs doesn't own any GIDs.
-    //
-    // TEUCHOS_TEST_FOR_EXCEPTION(
-    //   GIDs.size () > 0 && getGlobalNumElements () == 0, std::runtime_error,
-    //   "Tpetra::Map (Kokkos refactor)::getRemoteIndexList (3 args): The Map has "
-    //   "zero entries (globally), so you may not call this method.");
     TEUCHOS_TEST_FOR_EXCEPTION(
       GIDs.size () != PIDs.size (), std::invalid_argument,
       "Tpetra::Map (Kokkos refactor)::getRemoteIndexList (3 args): GIDs.size ()"
@@ -805,15 +802,31 @@ namespace Tpetra {
       "Tpetra::Map (Kokkos refactor)::getRemoteIndexList (3 args): GIDs.size ()"
       " = " << GIDs.size () << " != LIDs.size () = " << LIDs.size () << ".");
 
+    // Empty Maps (i.e., containing no indices on any processes in the
+    // Map's communicator) are perfectly valid.  In that case, if the
+    // input GID list is nonempty, we fill the output arrays with
+    // invalid values, and return IDNotPresent to notify the caller.
+    // It's perfectly valid to give getRemoteIndexList GIDs that the
+    // Map doesn't own.  SubmapImport test 2 needs this functionality.
+    if (getGlobalNumElements () == 0) {
+      if (GIDs.size () == 0) {
+        return AllIDsPresent; // trivially
+      } else {
+        for (Teuchos::ArrayView<int>::size_type k = 0; k < PIDs.size (); ++k) {
+          PIDs[k] = Teuchos::OrdinalTraits<int>::invalid ();
+        }
+        for (typename Teuchos::ArrayView<LocalOrdinal>::size_type k = 0;
+             k < LIDs.size (); ++k) {
+          LIDs[k] = Teuchos::OrdinalTraits<LocalOrdinal>::invalid ();
+        }
+        return IDNotPresent;
+      }
+    }
+
     // getRemoteIndexList must be called collectively, and Directory
-    // creation is collective too, so it's OK to create the Directory
-    // on demand.
+    // initialization is collective too, so it's OK to initialize the
+    // Directory on demand.
     setupDirectory ();
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      directory_.is_null (), std::logic_error,
-      "Tpetra::Map (Kokkos refactor)::getRemoteIndexList (3 args): "
-      "setupDirectory() failed to construct the directory.  "
-      "Please report this bug to the Tpetra developers.");
     return directory_->getDirectoryEntries (*this, GIDs, PIDs, LIDs);
   }
 
@@ -821,36 +834,35 @@ namespace Tpetra {
   LookupStatus
   Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   getRemoteIndexList (const Teuchos::ArrayView<const GlobalOrdinal>& GIDs,
-                      const Teuchos::ArrayView<int> & PIDs) const
+                      const Teuchos::ArrayView<int>& PIDs) const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      this->getComm ().is_null (), std::logic_error, "Tpetra::Map (Kokkos "
-      "refactor)::getRemoteIndexList (2 args): getComm() returns null.  "
-      "Please report this bug to the Tpetra developers.");
-
-    // mfh 03 Mar 2014: SubmapImport test 2 actually triggers the
-    // commented-out exception test below.  If I leave it commented
-    // out, the test passes.  (It should be commented out; it's valid
-    // to give getRemoteIndexList GIDs that the Map doesn't own.)
-    //
-    // TEUCHOS_TEST_FOR_EXCEPTION(
-    //   GIDs.size () > 0 && getGlobalNumElements () == 0, std::runtime_error,
-    //   "Tpetra::Map (Kokkos refactor)::getRemoteIndexList (2 args): The Map has "
-    //   "zero entries (globally), so you may not call this method.");
     TEUCHOS_TEST_FOR_EXCEPTION(
       GIDs.size () != PIDs.size (), std::invalid_argument,
       "Tpetra::Map (Kokkos refactor)::getRemoteIndexList (2 args): GIDs.size ()"
       " = " << GIDs.size () << " != PIDs.size () = " << PIDs.size () << ".");
 
+    // Empty Maps (i.e., containing no indices on any processes in the
+    // Map's communicator) are perfectly valid.  In that case, if the
+    // input GID list is nonempty, we fill the output array with
+    // invalid values, and return IDNotPresent to notify the caller.
+    // It's perfectly valid to give getRemoteIndexList GIDs that the
+    // Map doesn't own.  SubmapImport test 2 needs this functionality.
+    if (getGlobalNumElements () == 0) {
+      if (GIDs.size () == 0) {
+        return AllIDsPresent; // trivially
+      } else {
+        // The Map contains no indices, so all output PIDs are invalid.
+        for (Teuchos::ArrayView<int>::size_type k = 0; k < PIDs.size (); ++k) {
+          PIDs[k] = Teuchos::OrdinalTraits<int>::invalid ();
+        }
+        return IDNotPresent;
+      }
+    }
+
     // getRemoteIndexList must be called collectively, and Directory
     // creation is collective too, so it's OK to create the Directory
     // on demand.
     setupDirectory ();
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      directory_.is_null (), std::logic_error,
-      "Tpetra::Map (Kokkos refactor)::getRemoteIndexList (2 args): "
-      "setupDirectory() failed to construct the directory.  "
-      "Please report this bug to the Tpetra developers.");
     return directory_->getDirectoryEntries (*this, GIDs, PIDs);
   }
 
@@ -866,6 +878,21 @@ namespace Tpetra {
   Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   getNode () const {
     return node_;
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  bool
+  Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  isOneToOne () const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      getComm ().is_null (), std::logic_error, "Tpetra::Map::isOneToOne: "
+      "getComm() returns null.  Please report this bug to the Tpetra "
+      "developers.");
+
+    // This is a collective operation, if it hasn't been called before.
+    setupDirectory ();
+    return directory_->isOneToOne (*this);
   }
 
 } // namespace Tpetra

@@ -53,7 +53,7 @@
   INSTANTIATE_UQ_PCE_DS_SLD(INSTMACRO, double, int, D, LO, GO, N)
 
 #define INSTANTIATE_UQ_PCE_S(INSTMACRO, LO, GO, N) \
-  typedef typename Stokhos::DeviceForNode2<N>::type DFN_ ## LO ## _ ## GO ## _ ## N; \
+  typedef Stokhos::DeviceForNode2<N>::type DFN_ ## LO ## _ ## GO ## _ ## N; \
   INSTANTIATE_UQ_PCE_S_D(INSTMACRO, DFN_ ## LO ## _ ## GO ## _ ## N, LO, GO, N)
 
 #define INSTANTIATE_UQ_PCE(INSTMACRO, LO, GO, N) \

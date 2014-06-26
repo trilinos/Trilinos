@@ -880,8 +880,7 @@ void Radial_Trisection_Inline_Mesh_Desc::setStrides()
 //! Zoltan could be used for this. The elements on the processor are
 //! packed into the stl list.
 /****************************************************************************/
-Partition * Radial_Trisection_Inline_Mesh_Desc::Decompose(std::list <long long> & global_el_ids,
-							  long long & error_code)
+ long long Radial_Trisection_Inline_Mesh_Desc::Decompose(std::set <long long> & global_el_ids)
   /****************************************************************************/
 {
   std::vector <Partition *> sorted_partition_list;
@@ -895,9 +894,9 @@ Partition * Radial_Trisection_Inline_Mesh_Desc::Decompose(std::list <long long> 
     if(my_rank == num_processors-1)my_end +=remainder;
 
     for(long long mtotal = my_start; mtotal < my_end; mtotal ++){
-      global_el_ids.push_back(mtotal);
+      global_el_ids.insert(mtotal);
     }
-    return base_partition;
+    return 0;
   }
   else if(inline_decomposition_type == RANDOM){
     long long total = kestride * nelz_tot;
@@ -905,9 +904,9 @@ Partition * Radial_Trisection_Inline_Mesh_Desc::Decompose(std::list <long long> 
       SRANDOM(i);
       long long rand_num = RANDOM();
       long long proc = rand_num%num_processors;
-      if(proc == my_rank)global_el_ids.push_back(i);
+      if(proc == my_rank)global_el_ids.insert(i);
     }
-    return base_partition;
+    return 0;
   }
   else if(inline_decomposition_type == BISECTION){
 
@@ -927,8 +926,7 @@ Partition * Radial_Trisection_Inline_Mesh_Desc::Decompose(std::list <long long> 
       error_stream << "Terminating from Inline_Mesh_Desc::Decompose, ";
       error_stream << "non-zero return value from dom_decomp_2/3d ";
       error_stream << decomp_result;
-      error_code = 1;
-      return NULL;
+      return 1;
     }
 
     if(dimension == 3){
@@ -1004,7 +1002,7 @@ Partition * Radial_Trisection_Inline_Mesh_Desc::Decompose(std::list <long long> 
       for(long long j = my_part->lows[1]; j < my_part->highs[1]; j++){
 	for(long long i = my_part->lows[0]; i < my_part->highs[0]; i++){
 	  long long elnum = get_element_number_from_l_i_j_k(trisection_blocks,i,j,k);	  
-	  global_el_ids.push_back(elnum);
+	  global_el_ids.insert(elnum);
 	}
 	//add in the trisection blocks here if controlled.
 	if(((j/div) %2) == 0){
@@ -1012,7 +1010,7 @@ Partition * Radial_Trisection_Inline_Mesh_Desc::Decompose(std::list <long long> 
 	  long long jj = j % (2*div);
 	  for(long long ii = 0; ii < div; ii ++){
 	    long long elnum =  get_element_number_from_l_i_j_k(l,ii,jj,k);
-	    global_el_ids.push_back(elnum);
+	    global_el_ids.insert(elnum);
 	  }
 	}
       }
@@ -1028,8 +1026,7 @@ Partition * Radial_Trisection_Inline_Mesh_Desc::Decompose(std::list <long long> 
 	  << inline_nprocs[1] << " Y/THETA " 
 	  << inline_nprocs[2] << " Z " << "\n"
 	  << " does not correspond to the number of processors " << num_processors << "." ;
-      error_code = 1;
-      return NULL;
+      return 1;
     }
     if(inline_nprocs[0] != 1){
       std::ostringstream oss;
@@ -1037,8 +1034,7 @@ Partition * Radial_Trisection_Inline_Mesh_Desc::Decompose(std::list <long long> 
 	  << "The value " << "\n"
 	  << inline_nprocs[0] << " X/R " 
 	  << " is unacceptable.";
-      error_code = 1;
-      return NULL;
+      return 1;
     }
     long long remaining_cuts[3];
     remaining_cuts[0] = 1;
@@ -1063,24 +1059,21 @@ Partition * Radial_Trisection_Inline_Mesh_Desc::Decompose(std::list <long long> 
       error_stream << "Radial_Trisection_inline_Mesh_Desc::Decompose"
 	  << " Value for numprocs specified in I direction " << inline_nprocs[0] 
 	  << " is greater than the number of elements in I " << nelx_tot << ".";
-      error_code = 1;
-      return NULL;
+      return 1;
     }
 
     if(inc_nels[1] == 0 ){
       error_stream << "Radial_Trisection_inline_Mesh_Desc::Decompose"
 	  << " Value for numprocs specified in J direction " << inline_nprocs[1] 
 	  << " is greater than the number of elements in J " << nely_tot << ".";
-      error_code = 1;
-      return NULL;
+      return 1;
     }
 
     if(inc_nels[2] == 0 ){
       error_stream << "Radial_Trisection_inline_Mesh_Desc::Decompose"
 	  << " Value for numprocs specified in K direction " << inline_nprocs[2] 
 		   << " is greater than the number of elements in K " << nelz_tot << ".";
-      error_code = 1;
-      return NULL;
+      return 1;
     }
 	
     info_stream << "Using PROCESSOR LAYOUT decomposition.\n";
@@ -1135,7 +1128,7 @@ Partition * Radial_Trisection_Inline_Mesh_Desc::Decompose(std::list <long long> 
       for(long long j = my_part->lows[1]; j < my_part->highs[1]; j++){
 	for(long long i = my_part->lows[0]; i < my_part->highs[0]; i++){
 	  long long elnum = get_element_number_from_l_i_j_k(trisection_blocks,i,j,k);	  
-	  global_el_ids.push_back(elnum);
+	  global_el_ids.insert(elnum);
 	}
 	//add in the trisection blocks here if controlled.
 	if(((j/div) %2) == 0){
@@ -1143,15 +1136,14 @@ Partition * Radial_Trisection_Inline_Mesh_Desc::Decompose(std::list <long long> 
 	  long long jj = j % (2*div);
 	  for(long long ii = 0; ii < div; ii ++){
 	    long long elnum =  get_element_number_from_l_i_j_k(l,ii,jj,k);
-	    global_el_ids.push_back(elnum);
+	    global_el_ids.insert(elnum);
 	  }
 	}
       }
     }
     
   }
-  global_el_ids.sort();
-  return base_partition;
+  return 0;
 }
 
 /****************************************************************************/
@@ -1429,7 +1421,7 @@ void Radial_Trisection_Inline_Mesh_Desc::get_l_i_j_k_from_node_number(long long 
 }
 
 /****************************************************************************/
-void Radial_Trisection_Inline_Mesh_Desc::Build_Global_Lists(std::list <long long> & element_list,
+void Radial_Trisection_Inline_Mesh_Desc::Build_Global_Lists(const std::set <long long> & global_element_ids,
                                        std::vector <long long> & element_vector,
                                        std::list <long long> & global_node_list,
                                        std::vector <long long> & global_node_vector,
@@ -1437,15 +1429,15 @@ void Radial_Trisection_Inline_Mesh_Desc::Build_Global_Lists(std::list <long long
                                        std::map <long long, long long> & global_element_map)
 /****************************************************************************/
 {
-  //can muck with element_list and element vector here
+  //can muck with global_element_ids and element vector here
 
   element_block_lists = new std::vector <long long> [numBlocks()];
 
   std::vector < std::pair < long long, long long > > * tblist;
   tblist = new std::vector < std::pair < long long , long long > > [numBlocks()];
 
-  std::list <long long> ::iterator lit;
-  for(lit = element_list.begin();lit != element_list.end();lit ++){
+  std::set <long long> ::iterator lit;
+  for(lit = global_element_ids.begin();lit != global_element_ids.end();lit ++){
     long long the_element = *lit;
     // These are the indices of the element in the entire domain
     long long global_l;
@@ -1649,12 +1641,8 @@ LoopLimits Radial_Trisection_Inline_Mesh_Desc::get_tri_block_limits(bool is_bloc
 
 //! Reads in/creates the serial component of the unstructured mesh in parallel
 /****************************************************************************/
-void Radial_Trisection_Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_part,
-                                          std::vector <long long> & element_vector,
-                                          std::list <long long> & global_node_list,
-                                          std::vector<long long> & global_node_vector,
-                                          std::map <long long, long long> & global_node_map,
-                                          std::map <long long, long long> & global_element_map)
+void Radial_Trisection_Inline_Mesh_Desc::Calc_Serial_Component(const std::set <long long> &gloabl_element_ids,
+							       const std::vector<long long> & global_node_vector)
 /****************************************************************************/
 {
   //NODESETS
@@ -1668,8 +1656,10 @@ void Radial_Trisection_Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_pa
   std::list < PG_BC_Specification *> ::iterator setit;
   long long nsct = 0;
   for(setit = nodeset_list.begin(); setit != nodeset_list.end();setit++,nsct ++){
-    LoopLimits ll = (*setit)->limits;
-    Topo_Loc the_location = (*setit)->location;
+    for(unsigned ict = 0;ict < (*setit)->the_locs.size();ict ++){
+
+    LoopLimits ll = (*setit)->the_locs[ict].limits;
+    Topo_Loc the_location = (*setit)->the_locs[ict].location;
 
     std::list < long long > nodes_vector;
 
@@ -1700,13 +1690,13 @@ void Radial_Trisection_Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_pa
 	}
       }
     }
-    if((!(*setit)->block_boundary_set) || 
-       ((*setit)->block_boundary_set && (((*setit)->block_id-1)%inline_bx == 0))){
+    if((!(*setit)->the_locs[ict].block_boundary_set) || 
+       ((*setit)->the_locs[ict].block_boundary_set && (((*setit)->the_locs[ict].block_id-1)%inline_bx == 0))){
       // need to do trisect blocks now
       for(long long i = 0; i < trisection_blocks; i ++){
 	Topo_Loc new_location;
 	long long is_nodes = 1;
-	LoopLimits tll = get_tri_block_limits((*setit)->block_boundary_set,(*setit)->block_id,i,the_location,new_location,is_nodes);
+	LoopLimits tll = get_tri_block_limits((*setit)->the_locs[ict].block_boundary_set,(*setit)->the_locs[ict].block_id,i,the_location,new_location,is_nodes);
 
 	if(dimension == 3){
 	  for ( long long _nk_ = tll.ks; _nk_ < tll.ke; _nk_ ++){ 
@@ -1750,6 +1740,7 @@ void Radial_Trisection_Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_pa
         if((*nit) == global_node_vector[the_nct])nodeset_vectors[nsct].push_back((*nit));
       }
     }
+    }
   }
   // END OF NODESETS
 
@@ -1778,10 +1769,12 @@ void Radial_Trisection_Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_pa
   if(sideset_list.size() > 0)sideset_vectors = new std::vector < std::pair <long long ,Topo_Loc > > [sideset_list.size()];  
 
   for(setit = sideset_list.begin(); setit != sideset_list.end();setit++,nsct ++){
-     Topo_Loc the_location = (*setit)->location;
+    for(unsigned ict = 0;ict < (*setit)->the_locs.size();ict ++){
+
+     Topo_Loc the_location =  (*setit)->the_locs[ict].location;
     //Sidesets allowed only on faces of block, not on edges or corners
 
-    LoopLimits ll = (*setit)->limits;
+    LoopLimits ll = (*setit)->the_locs[ict].limits;
 	if(dimension == 3){
 	  for ( long long _nk_ = ll.ks; _nk_ < ll.ke; _nk_ ++){ 
 	    for ( long long _nj_ = ll.js; _nj_ < ll.je; _nj_ ++){ 
@@ -1810,13 +1803,13 @@ void Radial_Trisection_Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_pa
 	  }
 	}
 	
-	if((!(*setit)->block_boundary_set) || 
-	   ((*setit)->block_boundary_set && (((*setit)->block_id-1)%inline_bx == 0))){
+	if((!(*setit)->the_locs[ict].block_boundary_set) || 
+	   ((*setit)->the_locs[ict].block_boundary_set && (((*setit)->the_locs[ict].block_id-1)%inline_bx == 0))){
 	// need to do trisect blocks now
 	for(long long i = 0; i < trisection_blocks; i ++){
 	  Topo_Loc new_location;
 	  long long is_nodes = 0;
-	  LoopLimits tll = get_tri_block_limits((*setit)->block_boundary_set,(*setit)->block_id,i,the_location,new_location,is_nodes);
+	  LoopLimits tll = get_tri_block_limits((*setit)->the_locs[ict].block_boundary_set,(*setit)->the_locs[ict].block_id,i,the_location,new_location,is_nodes);
 	  
 	  if(dimension == 3){
 	    for ( long long _nk_ = tll.ks; _nk_ < tll.ke; _nk_ ++){ 
@@ -1847,6 +1840,7 @@ void Radial_Trisection_Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_pa
 	  }
 	}
 	}
+    }
   }
   //END of SIDESETS
 }
@@ -1857,8 +1851,10 @@ long long Radial_Trisection_Inline_Mesh_Desc::Rename_Block_BC_Sets()
 {
   std::list < PG_BC_Specification * > ::iterator setit;
   for(setit = nodeset_list.begin(); setit != nodeset_list.end();setit++){
-    if((*setit)->block_boundary_set){
-      long long bid = (*setit)->block_id-1;
+    for(unsigned ict = 0;ict < (*setit)->the_locs.size();ict ++){
+
+    if((*setit)->the_locs[ict].block_boundary_set){
+      long long bid = (*setit)->the_locs[ict].block_id-1;
       long long kind = bid/(blockKstride());
       long long jord = (bid-kind*blockKstride());
       //interior
@@ -1871,13 +1867,15 @@ long long Radial_Trisection_Inline_Mesh_Desc::Rename_Block_BC_Sets()
 	if (jind){
 	  iind =1+ ((jord-1)-jind*(inline_bx-1));
 	}
-	(*setit)->block_id = 1 + iind + jind*inline_bx + kind * inline_bx*inline_by;
+	(*setit)->the_locs[ict].block_id = 1 + iind + jind*inline_bx + kind * inline_bx*inline_by;
       }
     }
   }
+  }
   for(setit = sideset_list.begin(); setit != sideset_list.end();setit++){
-    if((*setit)->block_boundary_set){
-      long long bid = (*setit)->block_id-1;
+    for(unsigned ict = 0;ict < (*setit)->the_locs.size();ict ++){
+    if((*setit)->the_locs[ict].block_boundary_set){
+      long long bid = (*setit)->the_locs[ict].block_id-1;
       long long kind = bid/(blockKstride());
       long long jord = (bid-kind*blockKstride());
       //interior
@@ -1890,10 +1888,11 @@ long long Radial_Trisection_Inline_Mesh_Desc::Rename_Block_BC_Sets()
 	if (jind){
 	  iind =1+ ((jord-1)-jind*(inline_bx-1));
 	}
-	(*setit)->block_id = 1 + iind + jind*inline_bx + kind * inline_bx*inline_by;
+	(*setit)->the_locs[ict].block_id = 1 + iind + jind*inline_bx + kind * inline_bx*inline_by;
       }
 
     }
+  }
   }
   return 0;
 }
@@ -2237,9 +2236,9 @@ void Radial_Trisection_Inline_Mesh_Desc::getGlobal_Element_Block_Totals(long lon
 
 /****************************************************************************/
 void  Radial_Trisection_Inline_Mesh_Desc::Calc_Parallel_Info(                                          
-					  std::vector <long long> & element_vector,
-					  std::vector<long long> & global_node_vector,   
-					  std::map <long long, long long> & global_node_map,                          
+					  const std::vector <long long> & element_vector,
+					  const std::vector<long long> & global_node_vector,   
+					  const std::map <long long, long long> & global_node_map,                          
 					  std::list   <long long> & internal_node_list,	
 					  std::list   <long long> & border_nodes_list,
 					  std::list   <long long> & internal_element_list,

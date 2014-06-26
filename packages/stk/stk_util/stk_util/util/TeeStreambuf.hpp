@@ -65,9 +65,6 @@ public:
 
   /**
    * @brief Member function <b>add</b> adds the specified destination output stream buffer.
-   *
-   * @param sb			a <b>std::streambuf</b> pointer to the output strema buffer to add.
-   *
    */
   void add(std::ostream *os) {
     m_destinations.insert(os);
@@ -75,10 +72,6 @@ public:
 
   /**
    * @brief Member function <b>remove</b> removes the specified destination output stream buffer. 
-   *
-   * @param sb			a <b>std::streambuf</b> pointer to the output strema buffer to
-   *                            remove. 
-   *
    */
   void remove(std::ostream *os) {
     m_destinations.erase(os);

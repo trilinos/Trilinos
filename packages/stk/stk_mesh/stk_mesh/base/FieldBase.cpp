@@ -6,28 +6,31 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <cstring>
-#include <iostream>
-#include <sstream>
-
 #include <stk_mesh/base/FieldBase.hpp>
-#include <stk_mesh/base/MetaData.hpp>
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <vector>                       // for vector, etc
+#include "Shards_Array.hpp"             // for ArrayDimTag
+#include "stk_mesh/base/DataTraits.hpp"  // for DataTraits
+#include "stk_mesh/base/FieldRestriction.hpp"  // for FieldRestriction
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequireMsg
+namespace stk { namespace mesh { class BulkData; } }
+
 
 namespace stk {
 namespace mesh {
 
 std::ostream & operator << ( std::ostream & s , const FieldBase & field )
 {
-  s << "FieldBase<" ;
+  s << "Field<" ;
   s << field.data_traits().name ;
-  for ( unsigned i = 0 ; i < field.rank() ; ++i ) {
+  for ( unsigned i = 0 ; i < field.field_array_rank() ; ++i ) {
     s << "," << field.dimension_tags()[i]->name();
   }
   s << ">" ;
 
-  s << "[ name = \"" ;
+  s << "[ name: \"" ;
   s << field.name() ;
-  s << "\" , #states = " ;
+  s << "\" , #states: " ;
   s << field.number_of_states();
   s << " ]" ;
   return s ;
@@ -37,17 +40,36 @@ std::ostream & print( std::ostream & s ,
                       const char * const b ,
                       const FieldBase & field )
 {
-  const PartVector & all_parts = MetaData::get(field).get_parts();
+  s << b << field << std::endl;
+  std::string indent = b;
+  indent += "  ";
+  print_restrictions(s, indent.c_str(), field);
+  return s ;
+}
+
+std::ostream & print_restrictions(std::ostream & s ,
+                                  const char * const b ,
+                                  const FieldBase & field )
+{
   const std::vector<FieldBase::Restriction> & rMap = field.restrictions();
-  s << field ;
-  s << " {" ;
+
   for ( std::vector<FieldBase::Restriction>::const_iterator
         i = rMap.begin() ; i != rMap.end() ; ++i ) {
-    s << std::endl << b << "  " ;
-    i->print( s, i->entity_rank(), * all_parts[ i->part_ordinal() ], field.rank() );
+    s << b;
+    i->print( s, i->selector(), field.field_array_rank() );
+    s << std::endl;
   }
-  s << std::endl << b << "}" ;
-  return s ;
+  return s;
+}
+
+void FieldBase::set_mesh(stk::mesh::BulkData* bulk)
+{
+  if (m_mesh == NULL) {
+    m_mesh = bulk;
+  }
+  else {
+    ThrowRequireMsg(bulk == m_mesh, "Internal Error: Trying to use field " << name() << " on more than one bulk data");
+  }
 }
 
 //----------------------------------------------------------------------

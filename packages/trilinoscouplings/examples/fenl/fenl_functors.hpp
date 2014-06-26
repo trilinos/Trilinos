@@ -58,6 +58,7 @@
 
 #include <impl/Kokkos_Timer.hpp>
 
+#include <fenl.hpp>
 #include <BoxElemFixture.hpp>
 #include <HexElement.hpp>
 
@@ -145,7 +146,7 @@ public:
         // Zero the row count to restart the fill
         Kokkos::deep_copy( row_count , 0u );
 
-        node_node_set.rehash( set_capacity );
+        node_node_set = SetType( set_capacity );
 
         // May be larger that requested:
         set_capacity = node_node_set.capacity();
@@ -224,6 +225,7 @@ public:
   KOKKOS_INLINE_FUNCTION
   void fill_set( const unsigned ielem ) const
   {
+    // Loop over element's (row_local_node,col_local_node) pairs:
     for ( unsigned row_local_node = 0 ; row_local_node < elem_node_id.dimension_1() ; ++row_local_node ) {
 
       const unsigned row_node = elem_node_id( ielem , row_local_node );
@@ -232,13 +234,18 @@ public:
 
         const unsigned col_node = elem_node_id( ielem , col_local_node );
 
-        const key_type key = (row_node < col_node) ? make_pair( row_node, col_node ) : make_pair( col_node, row_node ) ;
+        // If either node is locally owned then insert the pair into the unordered map:
 
-        const typename SetType::insert_result result = node_node_set.insert( key );
+        if ( row_node < row_count.dimension_0() || col_node < row_count.dimension_0() ) {
 
-        if ( result.success() ) {
-          if ( row_node < row_count.dimension_0() ) { atomic_fetch_add( & row_count( row_node ) , 1 ); }
-          if ( col_node < row_count.dimension_0() ) { atomic_fetch_add( & row_count( col_node ) , 1 ); }
+          const key_type key = (row_node < col_node) ? make_pair( row_node, col_node ) : make_pair( col_node, row_node ) ;
+
+          const typename SetType::insert_result result = node_node_set.insert( key );
+
+          if ( result.success() ) {
+            if ( row_node < row_count.dimension_0() ) { atomic_fetch_add( & row_count( row_node ) , 1 ); }
+            if ( col_node < row_count.dimension_0() && col_node != row_node ) { atomic_fetch_add( & row_count( col_node ) , 1 ); }
+          }
         }
       }
     }
@@ -257,7 +264,7 @@ public:
         graph.entries( offset ) = col_node ;
       }
 
-      if ( col_node < row_count.dimension_0() ) {
+      if ( col_node < row_count.dimension_0() && col_node != row_node ) {
         const unsigned offset = graph.row_map( col_node ) + atomic_fetch_add( & row_count( col_node ) , 1 );
         graph.entries( offset ) = row_node ;
       }
@@ -283,7 +290,6 @@ public:
   KOKKOS_INLINE_FUNCTION
   void fill_elem_graph_map( const unsigned ielem ) const
   {
-    typedef typename CrsGraphType::size_type size_type;
     typedef typename CrsGraphType::data_type entry_type;
     for ( unsigned row_local_node = 0 ; row_local_node < elem_node_id.dimension_1() ; ++row_local_node ) {
 
@@ -380,6 +386,17 @@ public:
   typedef typename ElemCompType::elem_matrices_type  elem_matrices_type ;
   typedef typename ElemCompType::elem_graph_type     elem_graph_type ;
 
+  typedef typename ElemCompType::local_vector_view_traits local_vector_view_traits;
+  typedef typename ElemCompType::local_matrix_view_traits local_matrix_view_traits;
+  typedef typename ElemCompType::local_elem_vectors_traits local_elem_vectors_traits;
+  typedef typename ElemCompType::local_elem_matrices_traits local_elem_matrices_traits;
+
+  typedef typename ElemCompType::local_vector_type local_vector_type;
+  typedef typename ElemCompType::local_matrix_type local_matrix_type;
+  typedef typename ElemCompType::local_elem_vectors_type local_elem_vectors_type;
+  typedef typename ElemCompType::local_elem_matrices_type local_elem_matrices_type;
+
+  static const bool use_team = ElemCompType::use_team;
   static const unsigned ElemNodeCount = ElemCompType::ElemNodeCount ;
 
   //------------------------------------
@@ -407,6 +424,7 @@ private:
   elem_vectors_type     elem_residual ;
   elem_matrices_type    elem_jacobian ;
   PhaseType             phase ;
+  const Kokkos::DeviceConfig dev_config ;
 
 public:
 
@@ -422,6 +440,7 @@ public:
     , elem_residual()
     , elem_jacobian()
     , phase( FILL_NODE_COUNT )
+    , dev_config()
     {}
 
   NodeElemGatherFill( const NodeElemGatherFill & rhs )
@@ -436,6 +455,7 @@ public:
     , elem_residual( rhs.elem_residual )
     , elem_jacobian( rhs.elem_jacobian )
     , phase(         rhs.phase )
+    , dev_config(    rhs.dev_config )
     {}
 
   NodeElemGatherFill( const elem_node_type     & arg_elem_node_id ,
@@ -443,7 +463,8 @@ public:
                       const vector_type        & arg_residual ,
                       const sparse_matrix_type & arg_jacobian ,
                       const elem_vectors_type  & arg_elem_residual ,
-                      const elem_matrices_type & arg_elem_jacobian )
+                      const elem_matrices_type & arg_elem_jacobian ,
+                      const Kokkos::DeviceConfig arg_dev_config )
     : elem_node_id( arg_elem_node_id )
     , elem_graph( arg_elem_graph )
     , row_total( "row_total" )
@@ -455,6 +476,7 @@ public:
     , elem_residual( arg_elem_residual )
     , elem_jacobian( arg_elem_jacobian )
     , phase( FILL_NODE_COUNT )
+    , dev_config( arg_dev_config )
     {
       //--------------------------------
       // Count node->element relations
@@ -515,7 +537,17 @@ public:
 
   void apply() const
   {
-    Kokkos::parallel_for( residual.dimension_0() , *this );
+    const size_t n = residual.dimension_0();
+    if ( use_team && phase == GATHER_FILL) {
+      const size_t team_size = dev_config.block_dim.x * dev_config.block_dim.y;
+      const size_t league_size =
+        (n + dev_config.block_dim.y-1) / dev_config.block_dim.y;
+      Kokkos::ParallelWorkRequest config( league_size, team_size );
+      parallel_for( config , *this );
+    }
+    else {
+      Kokkos::parallel_for( n , *this );
+    }
   }
 
   //------------------------------------
@@ -573,8 +605,22 @@ public:
   //------------------------------------
 
   KOKKOS_INLINE_FUNCTION
-  void gather_fill( const unsigned irow ) const
+  void gather_fill( const unsigned irow ,
+                    const unsigned ensemble_rank ) const
   {
+    local_vector_type local_residual =
+      local_vector_view_traits::create_local_view(residual,
+                                                  ensemble_rank);
+    local_matrix_type local_jacobian_values =
+      local_matrix_view_traits::create_local_view(jacobian.values,
+                                                  ensemble_rank);
+    local_elem_vectors_type local_elem_residual =
+        local_elem_vectors_traits::create_local_view(elem_residual,
+                                                     ensemble_rank);
+    local_elem_matrices_type local_elem_jacobian =
+      local_elem_matrices_traits::create_local_view(elem_jacobian,
+                                                    ensemble_rank);
+
     const unsigned node_elem_begin = graph.row_map(irow);
     const unsigned node_elem_end   = graph.row_map(irow+1);
 
@@ -585,7 +631,7 @@ public:
       const unsigned elem_id   = graph.entries( i, 0);
       const unsigned row_index = graph.entries( i, 1);
 
-      residual(irow) += elem_residual(elem_id, row_index);
+      local_residual(irow) += local_elem_residual(elem_id, row_index);
 
       //  for each node in a particular related element
       //  gather the contents of the element stiffness
@@ -594,7 +640,8 @@ public:
       for ( unsigned j = 0 ; j < ElemNodeCount ; ++j ) {
         const unsigned A_index = elem_graph( elem_id , row_index , j );
 
-        jacobian.values( A_index ) += elem_jacobian( elem_id, row_index, j );
+        local_jacobian_values( A_index ) +=
+          local_elem_jacobian( elem_id, row_index, j );
       }
     }
   }
@@ -602,7 +649,27 @@ public:
   //------------------------------------
 
   KOKKOS_INLINE_FUNCTION
-  void operator()( const unsigned iwork ) const
+  void operator()( device_type dev ) const
+  {
+
+    const unsigned num_ensemble_threads = dev_config.block_dim.x ;
+    const unsigned num_element_threads  = dev_config.block_dim.y ;
+    const unsigned element_rank  = dev.team_rank() / num_ensemble_threads ;
+    const unsigned ensemble_rank = dev.team_rank() % num_ensemble_threads ;
+
+    const unsigned iwork =
+      dev.league_rank() * num_element_threads + element_rank;
+
+    if (iwork >= residual.dimension_0())
+      return;
+
+    (*this)( iwork, ensemble_rank );
+
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const unsigned iwork ,
+                   const unsigned ensemble_rank = 0 ) const
   {
     if ( phase == FILL_NODE_COUNT ) {
       fill_node_count( iwork );
@@ -614,7 +681,7 @@ public:
       sort_graph_entries( iwork );
     }
     else if ( phase == GATHER_FILL ) {
-      gather_fill( iwork );
+      gather_fill( iwork , ensemble_rank );
     }
   }
 
@@ -657,25 +724,6 @@ namespace Kokkos {
 namespace Example {
 namespace FENL {
 
-struct ElementComputationConstantCoefficient {
-  enum { is_constant = true };
-
-  const float coeff_k ;
-
-  KOKKOS_INLINE_FUNCTION
-  float operator()( double /* x */
-                  , double /* y */
-                  , double /* z */
-                  ) const
-    { return coeff_k ; }
-
-  ElementComputationConstantCoefficient( const float val )
-    : coeff_k( val ) {}
-
-  ElementComputationConstantCoefficient( const ElementComputationConstantCoefficient & rhs )
-    : coeff_k( rhs.coeff_k ) {}
-};
-
 template< class FiniteElementMeshType , class SparseMatrixType
         , class CoeffFunctionType = ElementComputationConstantCoefficient
         >
@@ -695,11 +743,24 @@ public:
   typedef Kokkos::Example::BoxElemFixture< DeviceType, Order, CoordinateMap >  mesh_type ;
   typedef Kokkos::Example::HexElement_Data< mesh_type::ElemNode >              element_data_type ;
 
-  typedef Kokkos::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType >  sparse_matrix_type ;
-  typedef typename sparse_matrix_type::StaticCrsGraphType                                       sparse_graph_type ;
+  //------------------------------------
 
   typedef DeviceType   device_type ;
   typedef ScalarType   scalar_type ;
+
+  typedef Kokkos::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType >  sparse_matrix_type ;
+  typedef typename sparse_matrix_type::StaticCrsGraphType                                       sparse_graph_type ;
+  typedef typename sparse_matrix_type::values_type matrix_values_type ;
+  typedef Kokkos::View< scalar_type* , Kokkos::LayoutLeft, device_type > vector_type ;
+
+  //------------------------------------
+
+  typedef LocalViewTraits< vector_type > local_vector_view_traits;
+  typedef LocalViewTraits< matrix_values_type> local_matrix_view_traits;
+  typedef typename local_vector_view_traits::local_view_type local_vector_type;
+  typedef typename local_matrix_view_traits::local_view_type local_matrix_type;
+  typedef typename local_vector_view_traits::local_value_type local_scalar_type;
+  static const bool use_team = local_vector_view_traits::use_team;
 
   static const unsigned SpatialDim       = element_data_type::spatial_dimension ;
   static const unsigned TensorDim        = SpatialDim * SpatialDim ;
@@ -713,7 +774,11 @@ public:
   typedef typename mesh_type::elem_node_type                                       elem_node_type ;
   typedef Kokkos::View< scalar_type*[FunctionCount][FunctionCount] , device_type > elem_matrices_type ;
   typedef Kokkos::View< scalar_type*[FunctionCount] ,                device_type > elem_vectors_type ;
-  typedef Kokkos::View< scalar_type* , Kokkos::LayoutLeft,          device_type > vector_type ;
+
+  typedef LocalViewTraits< elem_matrices_type > local_elem_matrices_traits;
+  typedef LocalViewTraits< elem_vectors_type > local_elem_vectors_traits;
+  typedef typename local_elem_matrices_traits::local_view_type local_elem_matrices_type;
+  typedef typename local_elem_vectors_traits::local_view_type local_elem_vectors_type;
 
   typedef typename NodeNodeGraph< elem_node_type , sparse_graph_type , ElemNodeCount >::ElemGraphType elem_graph_type ;
 
@@ -733,6 +798,7 @@ public:
   const vector_type         residual ;
   const sparse_matrix_type  jacobian ;
   const CoeffFunctionType   coeff_function ;
+  const Kokkos::DeviceConfig dev_config ;
 
   ElementComputation( const ElementComputation & rhs )
     : elem_data()
@@ -745,16 +811,18 @@ public:
     , residual( rhs.residual )
     , jacobian( rhs.jacobian )
     , coeff_function( rhs.coeff_function )
+    , dev_config( rhs.dev_config )
     {}
 
   // If the element->sparse_matrix graph is provided then perform atomic updates
   // Otherwise fill per-element contributions for subequent gather-add into a residual and jacobian.
   ElementComputation( const mesh_type          & arg_mesh ,
-	              const CoeffFunctionType  & arg_coeff_function ,
+                      const CoeffFunctionType  & arg_coeff_function ,
                       const vector_type        & arg_solution ,
                       const elem_graph_type    & arg_elem_graph ,
                       const sparse_matrix_type & arg_jacobian ,
-                      const vector_type        & arg_residual )
+                      const vector_type        & arg_residual ,
+                      const Kokkos::DeviceConfig arg_dev_config )
     : elem_data()
     , elem_node_ids( arg_mesh.elem_node() )
     , node_coords(   arg_mesh.node_coord() )
@@ -765,11 +833,13 @@ public:
     , residual( arg_residual )
     , jacobian( arg_jacobian )
     , coeff_function( arg_coeff_function )
+    , dev_config( arg_dev_config )
     {}
 
   ElementComputation( const mesh_type          & arg_mesh ,
-	              const CoeffFunctionType  & arg_coeff_function ,
-                      const vector_type        & arg_solution )
+                      const CoeffFunctionType  & arg_coeff_function ,
+                      const vector_type        & arg_solution ,
+                      const Kokkos::DeviceConfig arg_dev_config)
     : elem_data()
     , elem_node_ids( arg_mesh.elem_node() )
     , node_coords(   arg_mesh.node_coord() )
@@ -780,13 +850,24 @@ public:
     , residual()
     , jacobian()
     , coeff_function( arg_coeff_function )
+    , dev_config( arg_dev_config )
     {}
 
   //------------------------------------
 
   void apply() const
   {
-    parallel_for( elem_node_ids.dimension_0() , *this );
+    const size_t nelem = elem_node_ids.dimension_0();
+    if ( use_team ) {
+      const size_t team_size = dev_config.block_dim.x * dev_config.block_dim.y;
+      const size_t league_size =
+        (nelem + dev_config.block_dim.y-1) / dev_config.block_dim.y;
+      Kokkos::ParallelWorkRequest config( league_size, team_size );
+      parallel_for( config , *this );
+    }
+    else {
+      parallel_for( nelem , *this );
+    }
   }
 
   //------------------------------------
@@ -876,21 +957,21 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   void contributeResidualJacobian(
-    const double dof_values[] ,
+    const local_scalar_type dof_values[] ,
     const float  dpsidx[] ,
     const float  dpsidy[] ,
     const float  dpsidz[] ,
     const float  detJ ,
-    const float  coeff_k ,
+    const local_scalar_type  coeff_k ,
     const float  integ_weight ,
     const float  bases_vals[] ,
-    double       elem_res[] ,
-    double       elem_mat[][ FunctionCount ] ) const
+    local_scalar_type  elem_res[] ,
+    local_scalar_type  elem_mat[][ FunctionCount ] ) const
   {
-    double value_at_pt = 0 ;
-    double gradx_at_pt = 0 ;
-    double grady_at_pt = 0 ;
-    double gradz_at_pt = 0 ;
+    local_scalar_type value_at_pt = 0 ;
+    local_scalar_type gradx_at_pt = 0 ;
+    local_scalar_type grady_at_pt = 0 ;
+    local_scalar_type gradz_at_pt = 0 ;
 
     for ( unsigned m = 0 ; m < FunctionCount ; m++ ) {
       value_at_pt += dof_values[m] * bases_vals[m] ;
@@ -899,15 +980,15 @@ public:
       gradz_at_pt += dof_values[m] * dpsidz[m] ;
     }
 
-    const scalar_type k_detJ_weight = coeff_k        * detJ * integ_weight ;
-    const double res_val = value_at_pt * value_at_pt * detJ * integ_weight ;
-    const double mat_val = 2.0 * value_at_pt         * detJ * integ_weight ;
+    const local_scalar_type k_detJ_weight = coeff_k             * detJ * integ_weight ;
+    const local_scalar_type res_val = value_at_pt * value_at_pt * detJ * integ_weight ;
+    const local_scalar_type mat_val = 2.0 * value_at_pt         * detJ * integ_weight ;
 
     // $$ R_i = \int_{\Omega} \nabla \phi_i \cdot (k \nabla T) + \phi_i T^2 d \Omega $$
     // $$ J_{i,j} = \frac{\partial R_i}{\partial T_j} = \int_{\Omega} k \nabla \phi_i \cdot \nabla \phi_j + 2 \phi_i \phi_j T d \Omega $$
 
     for ( unsigned m = 0; m < FunctionCount; ++m) {
-      double * const mat = elem_mat[m] ;
+      local_scalar_type * const mat = elem_mat[m] ;
       const float bases_val_m = bases_vals[m];
       const float dpsidx_m    = dpsidx[m] ;
       const float dpsidy_m    = dpsidy[m] ;
@@ -929,14 +1010,44 @@ public:
   }
 
   KOKKOS_INLINE_FUNCTION
-  void operator()( const unsigned ielem ) const
+  void operator()( device_type dev ) const
   {
+
+    const unsigned num_ensemble_threads = dev_config.block_dim.x ;
+    const unsigned num_element_threads  = dev_config.block_dim.y ;
+    const unsigned element_rank  = dev.team_rank() / num_ensemble_threads ;
+    const unsigned ensemble_rank = dev.team_rank() % num_ensemble_threads ;
+
+    const unsigned ielem =
+      dev.league_rank() * num_element_threads + element_rank;
+
+    if (ielem >= elem_node_ids.dimension_0())
+      return;
+
+    (*this)( ielem, ensemble_rank );
+
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const unsigned ielem ,
+                   const unsigned ensemble_rank = 0 ) const
+  {
+    local_vector_type local_solution =
+      local_vector_view_traits::create_local_view(solution,
+                                                  ensemble_rank);
+    local_vector_type local_residual =
+      local_vector_view_traits::create_local_view(residual,
+                                                  ensemble_rank);
+    local_matrix_type local_jacobian_values =
+      local_matrix_view_traits::create_local_view(jacobian.values,
+                                                  ensemble_rank);
+
     // Gather nodal coordinates and solution vector:
 
     double x[ FunctionCount ] ;
     double y[ FunctionCount ] ;
     double z[ FunctionCount ] ;
-    double val[ FunctionCount ] ;
+    local_scalar_type val[ FunctionCount ] ;
     unsigned node_index[ ElemNodeCount ];
 
     for ( unsigned i = 0 ; i < ElemNodeCount ; ++i ) {
@@ -948,12 +1059,12 @@ public:
       y[i] = node_coords( ni , 1 );
       z[i] = node_coords( ni , 2 );
 
-      val[i] = solution( ni );
+      val[i] = local_solution( ni );
     }
 
 
-    double elem_vec[ FunctionCount ] ;
-    double elem_mat[ FunctionCount ][ FunctionCount ] ;
+    local_scalar_type elem_vec[ FunctionCount ] ;
+    local_scalar_type elem_mat[ FunctionCount ][ FunctionCount ] ;
 
     for( unsigned i = 0; i < FunctionCount ; i++ ) {
       elem_vec[i] = 0 ;
@@ -968,7 +1079,7 @@ public:
       float dpsidy[ FunctionCount ] ;
       float dpsidz[ FunctionCount ] ;
 
-      float coeff_k = 0 ;
+      local_scalar_type coeff_k = 0 ;
 
       {
         double pt_x = 0 ;
@@ -985,7 +1096,8 @@ public:
           }
         }
 
-        coeff_k = coeff_function(pt_x,pt_y,pt_z);
+        // Need to fix this for local_scalar_type!!!!!!
+        coeff_k = coeff_function(pt_x,pt_y,pt_z,ensemble_rank);
       }
 
       const float detJ =
@@ -1019,10 +1131,17 @@ if ( 1 == ielem ) {
 #endif
 
     if ( ! residual.dimension_0() ) {
+      local_elem_vectors_type local_elem_residuals =
+        local_elem_vectors_traits::create_local_view(elem_residuals,
+                                                     ensemble_rank);
+      local_elem_matrices_type local_elem_jacobians =
+        local_elem_matrices_traits::create_local_view(elem_jacobians,
+                                                      ensemble_rank);
+
       for( unsigned i = 0; i < FunctionCount ; i++){
-        elem_residuals(ielem, i) = elem_vec[i] ;
+        local_elem_residuals(ielem, i) = elem_vec[i] ;
         for( unsigned j = 0; j < FunctionCount ; j++){
-          elem_jacobians(ielem, i, j) = elem_mat[i][j] ;
+          local_elem_jacobians(ielem, i, j) = elem_mat[i][j] ;
         }
       }
     }
@@ -1030,12 +1149,12 @@ if ( 1 == ielem ) {
       for( unsigned i = 0 ; i < FunctionCount ; i++ ) {
         const unsigned row = node_index[i] ;
         if ( row < residual.dimension_0() ) {
-          atomic_fetch_add( & residual( row ) , elem_vec[i] );
+          atomic_add( & local_residual( row ) , elem_vec[i] );
 
           for( unsigned j = 0 ; j < FunctionCount ; j++ ) {
             const unsigned entry = elem_graph( ielem , i , j );
             if ( entry != ~0u ) {
-              atomic_fetch_add( & jacobian.values( entry ) , elem_mat[i][j] );
+              atomic_add( & local_jacobian_values( entry ) , elem_mat[i][j] );
             }
           }
         }
@@ -1061,15 +1180,23 @@ public:
   typedef typename mesh_type::node_coord_type                                  node_coord_type ;
   typedef typename node_coord_type::value_type                                 scalar_coord_type ;
 
-  typedef Kokkos::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType >  sparse_matrix_type ;
-  typedef typename sparse_matrix_type::StaticCrsGraphType                                       sparse_graph_type ;
-
   typedef DeviceType   device_type ;
   typedef ScalarType   scalar_type ;
 
+  typedef Kokkos::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType >  sparse_matrix_type ;
+  typedef typename sparse_matrix_type::StaticCrsGraphType                                       sparse_graph_type ;
+  typedef typename sparse_matrix_type::values_type matrix_values_type ;
+  typedef Kokkos::View< scalar_type* , device_type > vector_type ;
+
   //------------------------------------
 
-  typedef Kokkos::View< scalar_type* , device_type > vector_type ;
+  typedef LocalViewTraits< vector_type > local_vector_view_traits;
+  typedef LocalViewTraits< matrix_values_type> local_matrix_view_traits;
+  typedef typename local_vector_view_traits::local_view_type local_vector_type;
+  typedef typename local_matrix_view_traits::local_view_type local_matrix_type;
+  static const bool use_team = local_vector_view_traits::use_team;
+
+  typedef double       bc_scalar_type ;
 
   //------------------------------------
   // Computational data:
@@ -1078,13 +1205,14 @@ public:
   const vector_type         solution ;
   const sparse_matrix_type  jacobian ;
   const vector_type         residual ;
-  const scalar_type         bc_lower_value ;
-  const scalar_type         bc_upper_value ;
+  const bc_scalar_type      bc_lower_value ;
+  const bc_scalar_type      bc_upper_value ;
   const scalar_coord_type   bc_lower_limit ;
   const scalar_coord_type   bc_upper_limit ;
   const unsigned            bc_plane ;
   const unsigned            node_count ;
         bool                init ;
+  const Kokkos::DeviceConfig dev_config ;
 
 
   DirichletComputation( const mesh_type          & arg_mesh ,
@@ -1092,8 +1220,9 @@ public:
                         const sparse_matrix_type & arg_jacobian ,
                         const vector_type        & arg_residual ,
                         const unsigned             arg_bc_plane ,
-                        const scalar_type          arg_bc_lower_value ,
-                        const scalar_type          arg_bc_upper_value )
+                        const bc_scalar_type       arg_bc_lower_value ,
+                        const bc_scalar_type       arg_bc_upper_value ,
+                        const Kokkos::DeviceConfig arg_dev_config )
     : node_coords( arg_mesh.node_coord() )
     , solution(    arg_solution )
     , jacobian(    arg_jacobian )
@@ -1105,6 +1234,7 @@ public:
     , bc_plane(       arg_bc_plane )
     , node_count( arg_mesh.node_count_owned() )
     , init( false )
+    , dev_config( arg_dev_config )
     {
       parallel_for( node_count , *this );
       init = true ;
@@ -1112,14 +1242,48 @@ public:
 
   void apply() const
   {
-    parallel_for( node_count , *this );
+    if ( use_team ) {
+      const size_t team_size = dev_config.block_dim.x * dev_config.block_dim.y;
+      const size_t league_size =
+        (node_count + dev_config.block_dim.y-1) / dev_config.block_dim.y;
+      Kokkos::ParallelWorkRequest config( league_size, team_size );
+      parallel_for( config , *this );
+    }
+    else
+      parallel_for( node_count , *this );
   }
 
   //------------------------------------
 
   KOKKOS_INLINE_FUNCTION
-  void operator()( const unsigned inode ) const
+  void operator()( device_type dev ) const
   {
+
+    const unsigned num_ensemble_threads = dev_config.block_dim.x ;
+    const unsigned num_node_threads     = dev_config.block_dim.y ;
+    const unsigned node_rank     = dev.team_rank() / num_ensemble_threads ;
+    const unsigned ensemble_rank = dev.team_rank() % num_ensemble_threads ;
+
+    const unsigned inode = dev.league_rank() * num_node_threads + node_rank;
+
+    if (inode >= node_count)
+      return;
+
+    (*this)( inode, ensemble_rank );
+
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const unsigned inode ,
+                   const unsigned ensemble_rank = 0) const
+  {
+    local_vector_type local_residual =
+      local_vector_view_traits::create_local_view(residual,
+                                                  ensemble_rank);
+    local_matrix_type local_jacobian_values =
+      local_matrix_view_traits::create_local_view(jacobian.values,
+                                                  ensemble_rank);
+
     //  Apply dirichlet boundary condition on the Solution and Residual vectors.
     //  To maintain the symmetry of the original global stiffness matrix,
     //  zero out the columns that correspond to boundary conditions, and
@@ -1139,13 +1303,13 @@ public:
     else {
       if ( bc_lower || bc_upper ) {
 
-        residual(inode) = 0 ;
+        local_residual(inode) = 0 ;
 
         //  zero each value on the row, and leave a one
         //  on the diagonal
 
         for( unsigned i = iBeg ; i < iEnd ; ++i ) {
-          jacobian.values(i) = int(inode) == int(jacobian.graph.entries(i)) ? 1 : 0 ;
+          local_jacobian_values(i) = int(inode) == int(jacobian.graph.entries(i)) ? 1 : 0 ;
         }
       }
       else {
@@ -1158,13 +1322,189 @@ public:
           const scalar_coord_type cc = node_coords(cnode,bc_plane);
 
           if ( ( cc <= bc_lower_limit ) || ( bc_upper_limit <= cc ) ) {
-            jacobian.values(i) = 0 ;
+            local_jacobian_values(i) = 0 ;
           }
         }
       }
     }
   }
 };
+
+template< typename FixtureType , typename VectorType >
+class ResponseComputation
+{
+public:
+
+  typedef FixtureType fixture_type ;
+  typedef VectorType vector_type ;
+  typedef typename vector_type::device_type device_type ;
+  typedef typename vector_type::value_type value_type ;
+
+  typedef Kokkos::Example::HexElement_Data< fixture_type::ElemNode > element_data_type ;
+  static const unsigned SpatialDim       = element_data_type::spatial_dimension ;
+  static const unsigned TensorDim        = SpatialDim * SpatialDim ;
+  static const unsigned ElemNodeCount    = element_data_type::element_node_count ;
+  static const unsigned IntegrationCount = element_data_type::integration_count ;
+
+  //------------------------------------
+  // Computational data:
+
+  const element_data_type    elem_data ;
+  const fixture_type         fixture ;
+  const vector_type          solution ;
+
+  ResponseComputation( const ResponseComputation & rhs )
+    : elem_data()
+    , fixture( rhs.fixture )
+    , solution( rhs.solution )
+    {}
+
+  ResponseComputation( const fixture_type& arg_fixture ,
+                       const vector_type & arg_solution )
+    : elem_data()
+    , fixture( arg_fixture )
+    , solution( arg_solution )
+    {}
+
+  //------------------------------------
+
+  value_type apply() const
+  {
+    value_type response = 0;
+    //Kokkos::parallel_reduce( fixture.elem_count() , *this , response );
+    Kokkos::parallel_reduce( solution.dimension_0() , *this , response );
+    return response;
+  }
+
+  //------------------------------------
+
+   KOKKOS_INLINE_FUNCTION
+  float compute_detJ(
+    const float grad[][ ElemNodeCount ] , // Gradient of bases master element
+    const double x[] ,
+    const double y[] ,
+    const double z[] ) const
+  {
+    enum { j11 = 0 , j12 = 1 , j13 = 2 ,
+           j21 = 3 , j22 = 4 , j23 = 5 ,
+           j31 = 6 , j32 = 7 , j33 = 8 };
+
+    // Jacobian accumulation:
+
+    double J[ TensorDim ] = { 0, 0, 0,  0, 0, 0,  0, 0, 0 };
+
+    for( unsigned i = 0; i < ElemNodeCount ; ++i ) {
+      const double x1 = x[i] ;
+      const double x2 = y[i] ;
+      const double x3 = z[i] ;
+
+      const float g1 = grad[0][i] ;
+      const float g2 = grad[1][i] ;
+      const float g3 = grad[2][i] ;
+
+      J[j11] += g1 * x1 ;
+      J[j12] += g1 * x2 ;
+      J[j13] += g1 * x3 ;
+
+      J[j21] += g2 * x1 ;
+      J[j22] += g2 * x2 ;
+      J[j23] += g2 * x3 ;
+
+      J[j31] += g3 * x1 ;
+      J[j32] += g3 * x2 ;
+      J[j33] += g3 * x3 ;
+    }
+
+    // Inverse jacobian:
+
+    float invJ[ TensorDim ] = {
+      static_cast<float>( J[j22] * J[j33] - J[j23] * J[j32] ) ,
+      static_cast<float>( J[j13] * J[j32] - J[j12] * J[j33] ) ,
+      static_cast<float>( J[j12] * J[j23] - J[j13] * J[j22] ) ,
+
+      static_cast<float>( J[j23] * J[j31] - J[j21] * J[j33] ) ,
+      static_cast<float>( J[j11] * J[j33] - J[j13] * J[j31] ) ,
+      static_cast<float>( J[j13] * J[j21] - J[j11] * J[j23] ) ,
+
+      static_cast<float>( J[j21] * J[j32] - J[j22] * J[j31] ) ,
+      static_cast<float>( J[j12] * J[j31] - J[j11] * J[j32] ) ,
+      static_cast<float>( J[j11] * J[j22] - J[j12] * J[j21] ) };
+
+    const float detJ = J[j11] * invJ[j11] +
+                       J[j21] * invJ[j12] +
+                       J[j31] * invJ[j13] ;
+
+    return detJ ;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  value_type contributeResponse(
+    const value_type dof_values[] ,
+    const float  detJ ,
+    const float  integ_weight ,
+    const float  bases_vals[] ) const
+  {
+    // $$ g_i = \int_{\Omega} T^2 d \Omega $$
+
+    value_type value_at_pt = 0 ;
+    for ( unsigned m = 0 ; m < ElemNodeCount ; m++ ) {
+      value_at_pt += dof_values[m] * bases_vals[m] ;
+    }
+
+    value_type elem_response =
+      value_at_pt * value_at_pt * detJ * integ_weight ;
+
+    return elem_response;
+  }
+
+  /*
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const unsigned ielem , value_type& response ) const
+  {
+    // Gather nodal coordinates and solution vector:
+
+    double x[ ElemNodeCount ] ;
+    double y[ ElemNodeCount ] ;
+    double z[ ElemNodeCount ] ;
+    value_type val[ ElemNodeCount ] ;
+
+    for ( unsigned i = 0 ; i < ElemNodeCount ; ++i ) {
+      const unsigned ni = fixture.elem_node( ielem , i );
+
+      x[i] = fixture.node_coord( ni , 0 );
+      y[i] = fixture.node_coord( ni , 1 );
+      z[i] = fixture.node_coord( ni , 2 );
+
+      val[i] = solution( ni );
+    }
+
+    for ( unsigned i = 0 ; i < IntegrationCount ; ++i ) {
+
+      const float detJ = compute_detJ( elem_data.gradients[i] , x , y , z );
+
+      response += contributeResponse( val , detJ , elem_data.weights[i] ,
+                                      elem_data.values[i] );
+    }
+  }
+  */
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const unsigned i , value_type& response ) const
+  {
+    const value_type& u = solution(i);
+    response += (u * u) / fixture.node_count_global();
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void init( value_type & response ) const
+  { response = 0 ; }
+
+  KOKKOS_INLINE_FUNCTION
+  void join( volatile value_type & response ,
+             volatile const value_type & input ) const
+  { response += input ; }
+
+}; /* ResponseComputation */
 
 } /* namespace FENL */
 } /* namespace Example */
@@ -1180,4 +1520,3 @@ public:
 //----------------------------------------------------------------------------
 
 #endif /* #ifndef KOKKOS_EXAMPLE_FENLFUNCTORS_HPP */
-

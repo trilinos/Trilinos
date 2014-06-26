@@ -1,0 +1,19 @@
+INCLUDE(TribitsAddExecutableAndTest)
+
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  AdditiveSchwarz_RILUK
+  SOURCES
+    Solve.cpp
+    Test.cpp
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 1-4
+  DEPLIBS ifpack2 tpetra ifpack2_tpetra_testinst
+  STANDARD_PASS_OUTPUT
+)
+
+
+#    ${TEUCHOS_STD_UNIT_TEST_MAIN}

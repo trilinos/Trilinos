@@ -14,18 +14,23 @@
 
 // Your code is an existing MPI code, so it presumably includes mpi.h directly.
 #include <mpi.h>
-// ... Your other include files go here ...
-#include <Teuchos_DefaultMpiComm.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
-#include <Tpetra_Version.hpp>
-#include <Teuchos_oblackholestream.hpp>
 
+#include <Teuchos_DefaultMpiComm.hpp> // wrapper for MPI_Comm
+#include <Tpetra_Version.hpp> // Tpetra version string
+
+//
+// ... Your other include files go here ...
+//
+
+// Do something with the given communicator.  In this case, we just
+// print Tpetra's version to stdout on Process 0.
 void
-exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                std::ostream& out)
+exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
 {
-  // Print out the Tpetra software version information.
-  out << Tpetra::version() << std::endl << std::endl;
+  if (comm->getRank () == 0) {
+    // On (MPI) Process 0, print out the Tpetra software version.
+    std::cout << Tpetra::version () << std::endl << std::endl;
+  }
 }
 
 int
@@ -35,10 +40,10 @@ main (int argc, char *argv[])
   // you don't have to write the namespace along with the class or
   // object name.  This is especially helpful with commonly used
   // things like std::endl or Teuchos::RCP.
+  using std::cout;
   using std::endl;
   using Teuchos::Comm;
   using Teuchos::MpiComm;
-  using Teuchos::opaqueWrapper;
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -56,35 +61,37 @@ main (int argc, char *argv[])
   // the future duplicate the MPI_Comm automatically, but it does
   // not currently do this.
 
-
   // Wrap the MPI_Comm.  If you wrap it in this way, you are telling
   // Trilinos that you are responsible for calling MPI_Comm_free on
   // your MPI_Comm after use, if necessary.  (It's not necessary for
   // MPI_COMM_WORLD.)  There is a way to tell Trilinos to call
-  // MPI_Comm_free itself; we don't show it here.
+  // MPI_Comm_free itself; we don't show it here.  (It involves
+  // passing the result of Teuchos::opaqueWrapper to MpiComm's
+  // constructor.)
 
-  RCP<const Comm<int> > comm = rcp (new MpiComm<int> (opaqueWrapper (yourComm)));
+  RCP<const Comm<int> > comm = rcp (new MpiComm<int> (yourComm));
+
+  // In old versions of Trilinos, the above line of code might not
+  // compile.  You might have to do the following:
+  //
+  // using Teuchos::opaqueWrapper;
+  // RCP<const Comm<int> > comm = rcp (new MpiComm<int> (opaqueWrapper (yourComm)));
 
   // Get my process' rank, and the total number of processes.
-  // Equivalent to MPI_Comm_rank resp. MPI_Comm_size.  We don't
-  // actually use numProcs in this code, so I've commented it out to
-  // avoid a compiler warning for an unused variable.
-  const int myRank = comm->getRank();
-  //const int numProcs = comm->getSize();
+  // Equivalent to MPI_Comm_rank resp. MPI_Comm_size.
+  const int myRank = comm->getRank ();
+  const int numProcs = comm->getSize ();
 
-  // The stream to which to write output.  Only MPI Process 0
-  // gets to write to stdout; the other MPI processes get a
-  // "black hole stream" which discards output (see above).
-  Teuchos::oblackholestream blackHole;
-  std::ostream& out = (myRank == 0) ? std::cout : blackHole;
+  if (myRank == 0) {
+    cout << "Total number of processes: " << numProcs << endl;
+  }
 
-  // We have a communicator and an output stream.
-  // Let's do something with them!
-  exampleRoutine (comm, out);
+  // Do something with the new communicator.
+  exampleRoutine (comm);
 
   // This tells the Trilinos test framework that the test passed.
   if (myRank == 0) {
-    std::cout << "End Result: TEST PASSED" << std::endl;
+    cout << "End Result: TEST PASSED" << endl;
   }
 
   // If you need to call MPI_Comm_free on your MPI_Comm, now would

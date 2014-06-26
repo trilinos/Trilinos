@@ -213,6 +213,38 @@ namespace Xpetra {
     TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
   }
 
+  void EpetraMultiVector::
+  assign (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs)
+  {
+    typedef EpetraMultiVector this_type;
+    const this_type* rhsPtr = dynamic_cast<const this_type*> (&rhs);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      rhsPtr == NULL, std::invalid_argument, "Xpetra::MultiVector::operator=: "
+      "The left-hand side (LHS) of the assignment has a different type than "
+      "the right-hand side (RHS).  The LHS has type Xpetra::EpetraMultiVector "
+      "(which means it wraps an Epetra_MultiVector), but the RHS has some "
+      "other type.  This probably means that the RHS wraps a Tpetra::Multi"
+      "Vector.  Xpetra::MultiVector does not currently implement assignment "
+      "from a Tpetra object to an Epetra object, though this could be added "
+      "with sufficient interest.");
+
+    RCP<const Epetra_MultiVector> rhsImpl = rhsPtr->getEpetra_MultiVector ();
+    RCP<Epetra_MultiVector> lhsImpl = this->getEpetra_MultiVector ();
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      rhsImpl.is_null (), std::logic_error, "Xpetra::MultiVector::operator= "
+      "(in Xpetra::EpetraMultiVector::assign): *this (the right-hand side of "
+      "the assignment) has a null RCP<Epetra_MultiVector> inside.  Please "
+      "report this bug to the Xpetra developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      lhsImpl.is_null (), std::logic_error, "Xpetra::MultiVector::operator= "
+      "(in Xpetra::EpetraMultiVector::assign): The left-hand side of the "
+      "assignment has a null RCP<Epetra_MultiVector> inside.  Please report "
+      "this bug to the Xpetra developers.");
+
+    // Epetra_MultiVector's assignment operator does a deep copy.
+    *lhsImpl = *rhsImpl;
+  }
 
   // TODO: move that elsewhere
   const Epetra_MultiVector & toEpetra(const MultiVector<double, int, int> & x) {

@@ -3570,8 +3570,14 @@ Returns the local IDs of neighboring elements. ";
 %feature("docstring")  Galeri::FiniteElements::CreateCrsMatrix "Epetra_CrsMatrix * Galeri::CreateCrsMatrix(const string MatrixType,
 const Epetra_Map *Map, Teuchos::ParameterList &List) ";
 
+%feature("docstring")  Galeri::FiniteElements::TCreateMap "Epetra_Map* Galeri::TCreateMap(string MapType, Epetra_Comm &Comm,
+Teuchos::ParameterList &List) ";
+
 %feature("docstring")  Galeri::FiniteElements::CreateMap "Epetra_Map
 * Galeri::CreateMap(string MapType, Epetra_Comm &Comm,
+Teuchos::ParameterList &List) ";
+
+%feature("docstring")  Galeri::FiniteElements::CreateMap64 "Epetra_Map * Galeri::CreateMap64(string MapType, Epetra_Comm &Comm,
 Teuchos::ParameterList &List) ";
 
 %feature("docstring")  Galeri::FiniteElements::CSRCSC "int
@@ -3623,7 +3629,13 @@ Galeri::toString(const int &x) ";
 Galeri::toString(const unsigned int &x) ";
 
 %feature("docstring")  Galeri::FiniteElements::toString "string
+Galeri::toString(const long int &x) ";
+
+%feature("docstring")  Galeri::FiniteElements::toString "string
 Galeri::toString(const double &x) ";
+
+%feature("docstring")  Galeri::FiniteElements::toString "string
+Galeri::toString(const long long &x) ";
 
 %feature("docstring")
 Galeri::FiniteElements::GetNeighboursCartesian2d "void
@@ -3683,60 +3695,112 @@ Computes the volume of a tetrahedron. ";
 
 
 // File: namespaceGaleri_1_1Maps.xml
+%feature("docstring")  Galeri::Maps::TCartesian2D "Epetra_Map*
+Galeri::Maps::TCartesian2D(const Epetra_Comm &Comm, const int nx,
+const int ny, const int mx, const int my) ";
+
 %feature("docstring")  Galeri::Maps::Cartesian2D "Epetra_Map*
 Galeri::Maps::Cartesian2D(const Epetra_Comm &Comm, const int nx, const
 int ny, const int mx, const int my) ";
+
+%feature("docstring")  Galeri::Maps::Cartesian2D64 "Epetra_Map*
+Galeri::Maps::Cartesian2D64(const Epetra_Comm &Comm, const int nx,
+const int ny, const int mx, const int my) ";
+
+%feature("docstring")  Galeri::Maps::TCartesian3D "Epetra_Map*
+Galeri::Maps::TCartesian3D(const Epetra_Comm &Comm, const int nx,
+const int ny, const int nz, const int mx, const int my, const int mz)
+";
 
 %feature("docstring")  Galeri::Maps::Cartesian3D "Epetra_Map*
 Galeri::Maps::Cartesian3D(const Epetra_Comm &Comm, const int nx, const
 int ny, const int nz, const int mx, const int my, const int mz) ";
 
+%feature("docstring")  Galeri::Maps::Cartesian3D64 "Epetra_Map*
+Galeri::Maps::Cartesian3D64(const Epetra_Comm &Comm, const int nx,
+const int ny, const int nz, const int mx, const int my, const int mz)
+";
+
+%feature("docstring")  Galeri::Maps::TInterlaced "Epetra_Map*
+Galeri::Maps::TInterlaced(Epetra_Comm &Comm, int_type
+NumGlobalElements) ";
+
 %feature("docstring")  Galeri::Maps::Interlaced "Epetra_Map*
 Galeri::Maps::Interlaced(Epetra_Comm &Comm, int NumGlobalElements) ";
 
+%feature("docstring")  Galeri::Maps::Interlaced64 "Epetra_Map*
+Galeri::Maps::Interlaced64(Epetra_Comm &Comm, long long
+NumGlobalElements) ";
+
+%feature("docstring")  Galeri::Maps::TLinear "Epetra_Map*
+Galeri::Maps::TLinear(Epetra_Comm &Comm, int_type NumGlobalElements)
+";
+
 %feature("docstring")  Galeri::Maps::Linear "Epetra_Map*
 Galeri::Maps::Linear(Epetra_Comm &Comm, int NumGlobalElements) ";
+
+%feature("docstring")  Galeri::Maps::Linear64 "Epetra_Map*
+Galeri::Maps::Linear64(Epetra_Comm &Comm, long long NumGlobalElements)
+";
+
+%feature("docstring")  Galeri::Maps::TNodeCartesian2D "Epetra_Map*
+Galeri::Maps::TNodeCartesian2D(const Epetra_Comm &Comm, const
+Epetra_Comm &NodeComm, const int MyNodeID, const int nx, const int ny,
+const int ndx, const int ndy, const int px, const int py) ";
 
 %feature("docstring")  Galeri::Maps::NodeCartesian2D "Epetra_Map*
 Galeri::Maps::NodeCartesian2D(const Epetra_Comm &Comm, const
 Epetra_Comm &NodeComm, const int MyNodeID, const int nx, const int ny,
 const int ndx, const int ndy, const int px, const int py) ";
 
+%feature("docstring")  Galeri::Maps::NodeCartesian2D64 "Epetra_Map*
+Galeri::Maps::NodeCartesian2D64(const Epetra_Comm &Comm, const
+Epetra_Comm &NodeComm, const int MyNodeID, const int nx, const int ny,
+const int ndx, const int ndy, const int px, const int py) ";
+
+%feature("docstring")  Galeri::Maps::TRandom "Epetra_Map*
+Galeri::Maps::TRandom(const Epetra_Comm &Comm, const int_type n) ";
+
 %feature("docstring")  Galeri::Maps::Random "Epetra_Map*
 Galeri::Maps::Random(const Epetra_Comm &Comm, const int n) ";
 
+%feature("docstring")  Galeri::Maps::Random64 "Epetra_Map*
+Galeri::Maps::Random64(const Epetra_Comm &Comm, const long long n) ";
+
 
 // File: namespaceGaleri_1_1Matrices.xml
-%feature("docstring")  Galeri::Matrices::BentPipe2D "Epetra_CrsMatrix* Galeri::Matrices::BentPipe2D(const Epetra_Map *Map,
-const int nx, const int ny, const double lx, const double ly, const
-double conv, const double diff) ";
+%feature("docstring")  Galeri::Matrices::BentPipe2D "Epetra_CrsMatrix
+* Galeri::Matrices::BentPipe2D(const Epetra_Map *Map, const int nx,
+const int ny, const double lx, const double ly, const double conv,
+const double diff) ";
 
-%feature("docstring")  Galeri::Matrices::BigCross2D "Epetra_CrsMatrix* Galeri::Matrices::BigCross2D(const Epetra_Map *Map,
-const int nx, const int ny, const double a, const double b, const
-double c, const double d, const double e, const double bb, const
-double cc, const double dd, const double ee) ";
+%feature("docstring")  Galeri::Matrices::BigCross2D "Epetra_CrsMatrix
+* Galeri::Matrices::BigCross2D(const Epetra_Map *Map, const int nx,
+const int ny, const double a, const double b, const double c, const
+double d, const double e, const double bb, const double cc, const
+double dd, const double ee) ";
 
-%feature("docstring")  Galeri::Matrices::BigStar2D "Epetra_CrsMatrix*
-Galeri::Matrices::BigStar2D(const Epetra_Map *Map, const int nx, const
-int ny, const double a, const double b, const double c, const double
-d, const double e, const double z1, const double z2, const double z3,
-const double z4, const double bb, const double cc, const double dd,
-const double ee) ";
+%feature("docstring")  Galeri::Matrices::BigStar2D "Epetra_CrsMatrix
+* Galeri::Matrices::BigStar2D(const Epetra_Map *Map, const int nx,
+const int ny, const double a, const double b, const double c, const
+double d, const double e, const double z1, const double z2, const
+double z3, const double z4, const double bb, const double cc, const
+double dd, const double ee) ";
 
-%feature("docstring")  Galeri::Matrices::Cauchy "Epetra_CrsMatrix*
+%feature("docstring")  Galeri::Matrices::Cauchy "Epetra_CrsMatrix *
 Galeri::Matrices::Cauchy(const Epetra_Map *Map) ";
 
-%feature("docstring")  Galeri::Matrices::Cross2D "Epetra_CrsMatrix*
+%feature("docstring")  Galeri::Matrices::Cross2D "Epetra_CrsMatrix *
 Galeri::Matrices::Cross2D(const Epetra_Map *Map, const int nx, const
 int ny, const double a, const double b, const double c, const double
 d, const double e) ";
 
-%feature("docstring")  Galeri::Matrices::Cross2D "Epetra_CrsMatrix*
+%feature("docstring")  Galeri::Matrices::Cross2D "Epetra_CrsMatrix *
 Galeri::Matrices::Cross2D(const Epetra_Map *Map, const int nx, const
 int ny, const Epetra_Vector &A, const Epetra_Vector &B, const
 Epetra_Vector &C, const Epetra_Vector &D, const Epetra_Vector &E) ";
 
-%feature("docstring")  Galeri::Matrices::Cross3D "Epetra_CrsMatrix*
+%feature("docstring")  Galeri::Matrices::Cross3D "Epetra_CrsMatrix *
 Galeri::Matrices::Cross3D(const Epetra_Map *Map, const int nx, const
 int ny, const int nz, const double a, const double b, const double c,
 const double d, const double e, const double f, const double g) ";
@@ -3748,66 +3812,66 @@ Galeri::Matrices::Diag(const Epetra_Map *Map, double Value) ";
 Galeri::Matrices::Diag(const Epetra_Map *Map, Epetra_Vector &Vector)
 ";
 
-%feature("docstring")  Galeri::Matrices::Fielder "Epetra_CrsMatrix*
+%feature("docstring")  Galeri::Matrices::Fielder "Epetra_CrsMatrix *
 Galeri::Matrices::Fielder(const Epetra_Map *Map) ";
 
-%feature("docstring")  Galeri::Matrices::Hanowa "Epetra_CrsMatrix*
+%feature("docstring")  Galeri::Matrices::Hanowa "Epetra_CrsMatrix *
 Galeri::Matrices::Hanowa(const Epetra_Map *Map, const double value) ";
 
-%feature("docstring")  Galeri::Matrices::Hilbert "Epetra_CrsMatrix*
+%feature("docstring")  Galeri::Matrices::Hilbert "Epetra_CrsMatrix *
 Galeri::Matrices::Hilbert(const Epetra_Map *Map) ";
 
-%feature("docstring")  Galeri::Matrices::JordanBlock "Epetra_CrsMatrix* Galeri::Matrices::JordanBlock(const Epetra_Map *Map,
-const double value) ";
+%feature("docstring")  Galeri::Matrices::JordanBlock "Epetra_CrsMatrix * Galeri::Matrices::JordanBlock(const Epetra_Map
+*Map, const double value) ";
 
-%feature("docstring")  Galeri::Matrices::KMS "Epetra_CrsMatrix*
+%feature("docstring")  Galeri::Matrices::KMS "Epetra_CrsMatrix *
 Galeri::Matrices::KMS(const Epetra_Map *Map, const double value) ";
 
-%feature("docstring")  Galeri::Matrices::Laplace1DNeumann "Epetra_CrsMatrix* Galeri::Matrices::Laplace1DNeumann(const Epetra_Map
+%feature("docstring")  Galeri::Matrices::Laplace1DNeumann "Epetra_CrsMatrix * Galeri::Matrices::Laplace1DNeumann(const Epetra_Map
 *Map) ";
 
-%feature("docstring")  Galeri::Matrices::Lehmer "Epetra_CrsMatrix*
+%feature("docstring")  Galeri::Matrices::Lehmer "Epetra_CrsMatrix *
 Galeri::Matrices::Lehmer(const Epetra_Map *Map) ";
 
-%feature("docstring")  Galeri::Matrices::Minij "Epetra_CrsMatrix*
+%feature("docstring")  Galeri::Matrices::Minij "Epetra_CrsMatrix *
 Galeri::Matrices::Minij(const Epetra_Map *Map) ";
 
-%feature("docstring")  Galeri::Matrices::Ones "Epetra_CrsMatrix*
+%feature("docstring")  Galeri::Matrices::Ones "Epetra_CrsMatrix *
 Galeri::Matrices::Ones(const Epetra_Map *Map, const double value) ";
 
-%feature("docstring")  Galeri::Matrices::Parter "Epetra_CrsMatrix*
+%feature("docstring")  Galeri::Matrices::Parter "Epetra_CrsMatrix *
 Galeri::Matrices::Parter(const Epetra_Map *Map) ";
 
-%feature("docstring")  Galeri::Matrices::Pei "Epetra_CrsMatrix*
+%feature("docstring")  Galeri::Matrices::Pei "Epetra_CrsMatrix *
 Galeri::Matrices::Pei(const Epetra_Map *Map, const double value) ";
 
-%feature("docstring")  Galeri::Matrices::Recirc2D "Epetra_CrsMatrix*
+%feature("docstring")  Galeri::Matrices::Recirc2D "Epetra_CrsMatrix *
 Galeri::Matrices::Recirc2D(const Epetra_Map *Map, const int nx, const
 int ny, const double lx, const double ly, const double conv, const
 double diff) ";
 
-%feature("docstring")  Galeri::Matrices::Ris "Epetra_CrsMatrix*
+%feature("docstring")  Galeri::Matrices::Ris "Epetra_CrsMatrix *
 Galeri::Matrices::Ris(const Epetra_Map *Map) ";
 
-%feature("docstring")  Galeri::Matrices::Star2D "Epetra_CrsMatrix*
+%feature("docstring")  Galeri::Matrices::Star2D "Epetra_CrsMatrix *
 Galeri::Matrices::Star2D(const Epetra_Map *Map, const int nx, const
 int ny, const double a, const double b, const double c, const double
 d, const double e, const double z1, const double z2, const double z3,
 const double z4) ";
 
-%feature("docstring")  Galeri::Matrices::Stretched2D "Epetra_CrsMatrix* Galeri::Matrices::Stretched2D(const Epetra_Map *Map,
-const int nx, const int ny, const double epsilon) ";
+%feature("docstring")  Galeri::Matrices::Stretched2D "Epetra_CrsMatrix * Galeri::Matrices::Stretched2D(const Epetra_Map
+*Map, const int nx, const int ny, const double epsilon) ";
 
-%feature("docstring")  Galeri::Matrices::Tridiag "Epetra_CrsMatrix*
+%feature("docstring")  Galeri::Matrices::Tridiag "Epetra_CrsMatrix *
 Galeri::Matrices::Tridiag(const Epetra_Map *Map, const double a, const
 double b, const double c) ";
 
-%feature("docstring")  Galeri::Matrices::UniFlow2D "Epetra_CrsMatrix*
-Galeri::Matrices::UniFlow2D(const Epetra_Map *Map, const int nx, const
-int ny, const double lx, const double ly, const double conv, const
-double diff, const double alpha) ";
+%feature("docstring")  Galeri::Matrices::UniFlow2D "Epetra_CrsMatrix
+* Galeri::Matrices::UniFlow2D(const Epetra_Map *Map, const int nx,
+const int ny, const double lx, const double ly, const double conv,
+const double diff, const double alpha) ";
 
-%feature("docstring")  Galeri::Matrices::Vander "Epetra_CrsMatrix*
+%feature("docstring")  Galeri::Matrices::Vander "Epetra_CrsMatrix *
 Galeri::Matrices::Vander(const Epetra_Map *Map, const double value) ";
 
 

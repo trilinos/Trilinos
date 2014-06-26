@@ -54,10 +54,30 @@
 #include <stdexcept>
 
 #ifdef DOXYGEN_USE_ONLY
-  #include "Tpetra_Map_decl.hpp"
+#  include "Tpetra_Map_decl.hpp"
 #endif
 
 namespace Tpetra {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Map<LocalOrdinal,GlobalOrdinal,Node>::
+  Map () :
+    comm_ (new Teuchos::SerialComm<int> ()),
+    node_ (KokkosClassic::Details::getNode<Node> ()),
+    indexBase_ (0),
+    numGlobalElements_ (0),
+    numLocalElements_ (0),
+    minMyGID_ (Teuchos::OrdinalTraits<GlobalOrdinal>::invalid ()),
+    maxMyGID_ (Teuchos::OrdinalTraits<GlobalOrdinal>::invalid ()),
+    minAllGID_ (Teuchos::OrdinalTraits<GlobalOrdinal>::invalid ()),
+    maxAllGID_ (Teuchos::OrdinalTraits<GlobalOrdinal>::invalid ()),
+    firstContiguousGID_ (Teuchos::OrdinalTraits<GlobalOrdinal>::invalid ()),
+    lastContiguousGID_ (Teuchos::OrdinalTraits<GlobalOrdinal>::invalid ()),
+    uniform_ (false), // trivially
+    contiguous_ (false),
+    distributed_ (false), // no communicator yet
+    directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
+  {}
+
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::
   Map (global_size_t numGlobalElements,
@@ -67,7 +87,8 @@ namespace Tpetra {
        const Teuchos::RCP<Node> &node) :
     comm_ (comm),
     node_ (node),
-    uniform_ (true)
+    uniform_ (true),
+    directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
   {
     using Teuchos::as;
     using Teuchos::broadcast;
@@ -218,7 +239,8 @@ namespace Tpetra {
        const Teuchos::RCP<Node> &node) :
     comm_ (comm),
     node_ (node),
-    uniform_ (false)
+    uniform_ (false),
+    directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
   {
     using Teuchos::as;
     using Teuchos::broadcast;
@@ -350,7 +372,8 @@ namespace Tpetra {
        const Teuchos::RCP<Node> &node) :
     comm_ (comm),
     node_ (node),
-    uniform_ (false)
+    uniform_ (false),
+    directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
   {
     using Teuchos::arcp;
     using Teuchos::ArrayView;
@@ -597,19 +620,36 @@ namespace Tpetra {
   Map<LocalOrdinal,GlobalOrdinal,Node>::~Map ()
   {}
 
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool
+  Map<LocalOrdinal,GlobalOrdinal,Node>::isOneToOne () const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      getComm ().is_null (), std::logic_error, "Tpetra::Map::isOneToOne: "
+      "getComm() returns null.  Please report this bug to the Tpetra "
+      "developers.");
+
+    // This is a collective operation, if it hasn't been called before.
+    setupDirectory ();
+    return directory_->isOneToOne (*this);
+  }
+
+
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   LocalOrdinal
   Map<LocalOrdinal,GlobalOrdinal,Node>::
-  getLocalElement(GlobalOrdinal globalIndex) const {
-    if (isContiguous()) {
-      if (globalIndex < getMinGlobalIndex() || globalIndex > getMaxGlobalIndex()) {
-        return Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
+  getLocalElement (GlobalOrdinal globalIndex) const
+  {
+    if (isContiguous ()) {
+      if (globalIndex < getMinGlobalIndex () || globalIndex > getMaxGlobalIndex ()) {
+        return Teuchos::OrdinalTraits<LocalOrdinal>::invalid ();
       }
-      return Teuchos::as<LocalOrdinal>(globalIndex - getMinGlobalIndex());
+      return Teuchos::as<LocalOrdinal> (globalIndex - getMinGlobalIndex ());
     }
     else if (globalIndex >= firstContiguousGID_ &&
              globalIndex <= lastContiguousGID_) {
-      return Teuchos::as<LocalOrdinal>(globalIndex - firstContiguousGID_);
+      return Teuchos::as<LocalOrdinal> (globalIndex - firstContiguousGID_);
     }
     else {
       // This returns Teuchos::OrdinalTraits<LocalOrdinal>::invalid()
@@ -621,12 +661,13 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   GlobalOrdinal
   Map<LocalOrdinal,GlobalOrdinal,Node>::
-  getGlobalElement(LocalOrdinal localIndex) const {
-    if (localIndex < getMinLocalIndex() || localIndex > getMaxLocalIndex()) {
-      return Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
+  getGlobalElement (LocalOrdinal localIndex) const
+  {
+    if (localIndex < getMinLocalIndex () || localIndex > getMaxLocalIndex ()) {
+      return Teuchos::OrdinalTraits<GlobalOrdinal>::invalid ();
     }
-    if (isContiguous()) {
-      return getMinGlobalIndex() + localIndex;
+    if (isContiguous ()) {
+      return getMinGlobalIndex () + localIndex;
     }
     else {
       return lgMap_[localIndex];
@@ -636,8 +677,9 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   Map<LocalOrdinal,GlobalOrdinal,Node>::
-  isNodeLocalElement (LocalOrdinal localIndex) const {
-    if (localIndex < getMinLocalIndex() || localIndex > getMaxLocalIndex()) {
+  isNodeLocalElement (LocalOrdinal localIndex) const
+  {
+    if (localIndex < getMinLocalIndex () || localIndex > getMaxLocalIndex ()) {
       return false;
     } else {
       return true;
@@ -1083,6 +1125,7 @@ namespace Tpetra {
     using Teuchos::null;
     using Teuchos::outArg;
     using Teuchos::RCP;
+    using Teuchos::rcp;
     using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
 
@@ -1151,7 +1194,9 @@ namespace Tpetra {
       map->glMap_ = glMap_;
       map->node_ = node_;
 
-      // The Directory will be created on demand in getRemoteIndexList().
+      // Map's default constructor creates an uninitialized Directory.
+      // The Directory will be initialized on demand in
+      // getRemoteIndexList().
       //
       // FIXME (mfh 26 Mar 2013) It should be possible to "filter" the
       // directory more efficiently than just recreating it.  If
@@ -1159,7 +1204,7 @@ namespace Tpetra {
       // revisit this.  On the other hand, Directory creation is only
       // collective over the new, presumably much smaller
       // communicator, so it may not be worth the effort to optimize.
-      map->directory_ = null;
+
       return map;
     }
   }
@@ -1168,44 +1213,76 @@ namespace Tpetra {
   void
   Map<LocalOrdinal,GlobalOrdinal,Node>::setupDirectory () const
   {
-    using Teuchos::rcp;
-    typedef Directory<LocalOrdinal,GlobalOrdinal,Node> directory_type;
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      directory_.is_null (), std::logic_error, "Tpetra::Map::setupDirectory: "
+      "The Directory is null.  "
+      "Please report this bug to the Tpetra developers.");
+
     // Only create the Directory if it hasn't been created yet.
     // This is a collective operation.
-    if (directory_.is_null ()) {
-      directory_ = rcp (new directory_type (*this));
+    if (! directory_->initialized ()) {
+      directory_->initialize (*this);
     }
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  LookupStatus Map<LocalOrdinal,GlobalOrdinal,Node>::getRemoteIndexList(
-                    const Teuchos::ArrayView<const GlobalOrdinal> & GIDList,
-                    const Teuchos::ArrayView<int> & imageIDList,
-                    const Teuchos::ArrayView<LocalOrdinal> & LIDList) const {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      GIDList.size() > 0 && getGlobalNumElements() == 0, std::runtime_error,
-      Teuchos::typeName(*this) << "::getRemoteIndexList: The Map has zero "
-      "entries (globally), so you may not call this method.");
+  LookupStatus
+  Map<LocalOrdinal,GlobalOrdinal,Node>::
+  getRemoteIndexList (const Teuchos::ArrayView<const GlobalOrdinal>& GIDs,
+                      const Teuchos::ArrayView<int>& PIDs,
+                      const Teuchos::ArrayView<LocalOrdinal>& LIDs) const
+  {
+    // Empty Maps (i.e., containing no indices on any processes in the
+    // Map's communicator) are perfectly valid.  In that case, if the
+    // input GID list is nonempty, we fill the output arrays with
+    // invalid values, and return IDNotPresent to notify the caller.
+    // It's perfectly valid to give getRemoteIndexList GIDs that the
+    // Map doesn't own.  SubmapImport test 2 needs this functionality.
+    if (getGlobalNumElements () == 0) {
+      if (GIDs.size () == 0) {
+        return AllIDsPresent; // trivially
+      } else {
+        for (Teuchos::ArrayView<int>::size_type k = 0; k < PIDs.size (); ++k) {
+          PIDs[k] = Teuchos::OrdinalTraits<int>::invalid ();
+        }
+        for (typename Teuchos::ArrayView<LocalOrdinal>::size_type k = 0;
+             k < LIDs.size (); ++k) {
+          LIDs[k] = Teuchos::OrdinalTraits<LocalOrdinal>::invalid ();
+        }
+        return IDNotPresent;
+      }
+    }
+
     // getRemoteIndexList must be called collectively, and Directory
-    // creation is collective too, so it's OK to create the Directory
-    // on demand.
+    // initialization is collective too, so it's OK to initialize the
+    // Directory on demand.
     setupDirectory ();
-    return directory_->getDirectoryEntries (*this, GIDList, imageIDList, LIDList);
+    return directory_->getDirectoryEntries (*this, GIDs, PIDs, LIDs);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  LookupStatus Map<LocalOrdinal,GlobalOrdinal,Node>::getRemoteIndexList(
-                    const Teuchos::ArrayView<const GlobalOrdinal> & GIDList,
-                    const Teuchos::ArrayView<int> & imageIDList) const {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      GIDList.size() > 0 && getGlobalNumElements() == 0, std::runtime_error,
-      Teuchos::typeName(*this) << "::getRemoteIndexList: The Map has zero "
-      "entries (globally), so you may not call this method.");
+  LookupStatus
+  Map<LocalOrdinal,GlobalOrdinal,Node>::
+  getRemoteIndexList (const Teuchos::ArrayView<const GlobalOrdinal> & GIDs,
+                      const Teuchos::ArrayView<int> & PIDs) const
+  {
+    if (getGlobalNumElements () == 0) {
+      if (GIDs.size () == 0) {
+        return AllIDsPresent; // trivially
+      } else {
+        // The Map contains no indices, so all output PIDs are invalid.
+        for (Teuchos::ArrayView<int>::size_type k = 0; k < PIDs.size (); ++k) {
+          PIDs[k] = Teuchos::OrdinalTraits<int>::invalid ();
+        }
+        return IDNotPresent;
+      }
+    }
+
     // getRemoteIndexList must be called collectively, and Directory
-    // creation is collective too, so it's OK to create the Directory
-    // on demand.
+    // initialization is collective too, so it's OK to initialize the
+    // Directory on demand.
     setupDirectory ();
-    return directory_->getDirectoryEntries (*this, GIDList, imageIDList);
+    return directory_->getDirectoryEntries (*this, GIDs, PIDs);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1417,7 +1494,7 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& M)
     return M;
   }
   else {
-    Tpetra::Directory<LO, GO, NT> directory (*M);
+    Tpetra::Directory<LO, GO, NT> directory;
     const size_t numMyElems = M->getNodeNumElements ();
     ArrayView<const GO> myElems = M->getNodeElementList ();
     Array<int> owner_procs_vec (numMyElems);
@@ -1459,7 +1536,8 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,Global
 
   //Based off Epetra's one to one.
 
-  Tpetra::Directory<LO, GO, Node> directory (*M, tie_break);
+  Tpetra::Directory<LO, GO, Node> directory;
+  directory.initialize (*M, tie_break);
   size_t numMyElems = M->getNodeNumElements ();
   ArrayView<const GO> myElems = M->getNodeElementList ();
   Array<int> owner_procs_vec (numMyElems);
@@ -1478,6 +1556,8 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,Global
   }
   myOwned_vec.resize (numMyOwnedElems);
 
+  // FIXME (mfh 08 May 2014) The above Directory should be perfectly
+  // valid for the new Map.  Why can't we reuse it?
   const global_size_t GINV =
     Teuchos::OrdinalTraits<global_size_t>::invalid ();
   return rcp (new map_type (GINV, myOwned_vec (), M->getIndexBase (),

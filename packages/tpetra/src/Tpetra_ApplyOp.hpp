@@ -46,7 +46,7 @@
 #include "Tpetra_Operator.hpp"
 #include "Tpetra_MultiVector.hpp"
 
-/// \file Tpetra_ApplyOp_decl.hpp
+/// \file Tpetra_ApplyOp.hpp
 /// \brief Implementation of the class Tpetra::ApplyOp.
 
 namespace Tpetra {
@@ -77,9 +77,9 @@ namespace Tpetra {
     template <class Scalar, class OperatorType>
     class ApplyOp :
       public Tpetra::Operator<Scalar,
-			      typename OperatorType::local_ordinal_type,
-			      typename OperatorType::global_ordinal_type,
-			      typename OperatorType::node_type> {
+                              typename OperatorType::local_ordinal_type,
+                              typename OperatorType::global_ordinal_type,
+                              typename OperatorType::node_type> {
     public:
       // \name Typedefs
       //@{
@@ -106,7 +106,7 @@ namespace Tpetra {
       /// \brief Constructor
       ///
       /// \param A [in] The Operator to wrap with a different Scalar type.
-      ApplyOp (const Teuchos::RCP<const OperatorType> &op) : operator_(op) 
+      ApplyOp (const Teuchos::RCP<const OperatorType> &op) : operator_(op)
       {}
 
       //! Destructor
@@ -123,12 +123,12 @@ namespace Tpetra {
       /// applyTempl<Scalar,Scalar>() method.
       void
       apply (const Tpetra::MultiVector<Scalar,local_ordinal_type,global_ordinal_type,node_type>& X,
-	     Tpetra::MultiVector<Scalar,local_ordinal_type,global_ordinal_type,node_type>& Y,
-	     Teuchos::ETransp mode = Teuchos::NO_TRANS,
-	     Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-	     Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const
+             Tpetra::MultiVector<Scalar,local_ordinal_type,global_ordinal_type,node_type>& Y,
+             Teuchos::ETransp mode = Teuchos::NO_TRANS,
+             Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+             Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const
       {
-	operator_->template applyTempl<Scalar,Scalar> (X, Y, mode, alpha, beta);
+        operator_->template applyTempl<Scalar,Scalar> (X, Y, mode, alpha, beta);
       }
 
 
@@ -138,19 +138,19 @@ namespace Tpetra {
       /// This depends on whether it is true for the Operator that
       /// this object wraps.
       bool hasTransposeApply() const {
-	return operator_->hasTransposeApply ();
+        return operator_->hasTransposeApply ();
       }
 
       //! The domain Map of this Operator.
-      Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > 
+      Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >
       getDomainMap () const {
-	return operator_->getDomainMap ();
+        return operator_->getDomainMap ();
       }
 
       //! The range Map of this Operator.
-      Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > 
+      Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >
       getRangeMap () const {
-	return operator_->getRangeMap ();
+        return operator_->getRangeMap ();
       }
       //@}
 

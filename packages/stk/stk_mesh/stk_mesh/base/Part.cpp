@@ -6,18 +6,16 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Part.hpp>
-#include <stk_util/util/string_case_compare.hpp>
+#include <algorithm>                    // for lower_bound, sort, unique
+#include <ostream>                      // for operator<<, basic_ostream, etc
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/base/Types.hpp>      // for PartVector
+#include <stk_util/util/string_case_compare.hpp>  // for not_equal_case
 
-#include <algorithm>
-#include <ostream>
-#include <sstream>
 
 namespace stk {
 namespace mesh {
-
-//----------------------------------------------------------------------
 
 Part * find( const PartVector & parts , const std::string & name )
 {
@@ -35,40 +33,47 @@ print( std::ostream & os , const char * const lead , const Part & p )
 {
   const PartVector & supersets = p.supersets();
   const PartVector & subsets   = p.subsets();
-  const PartVector & intersection = p.intersection_of();
 
-  std::vector<Part*>::const_iterator i ;
-
-  if ( lead != NULL ) { os << lead ; }
-  os << "Part[ " ;
-  os << p.name() ;
-  os << " , " ;
-  os << p.mesh_meta_data_ordinal() ;
-  os << " ] {" ;
-  os << std::endl ;
+  std::vector<Part*>::const_iterator i;
 
   if ( lead != NULL ) { os << lead ; }
-  os << "  Supersets {" ;
+  os << "Part[ ";
+  os << "name: \"";
+  os << p.name();
+  os << "\" , ord: ";
+  os << p.mesh_meta_data_ordinal();
+  os << " , rank: ";
+  if (p.primary_entity_rank() == stk::topology::INVALID_RANK) {
+    os << "INVALID_RANK";
+  }
+  else {
+    os << p.primary_entity_rank();
+  }
+  os << " ]";
+  os << std::endl;
+
+  if ( lead != NULL ) { os << lead ; }
+  os << "  Supersets {";
   for ( i = supersets.begin() ; i != supersets.end() ; ++i ) {
-    const std::string & n = (*i)->name() ; os << " " << n ;
+    const std::string & n = (*i)->name();
+    os << " \"" << n << "\"";
   }
-  os << " }" << std::endl ;
+  os << "  }" << std::endl;
 
-  if ( lead != NULL ) { os << lead ; }
-  os << "  Intersection_Of {" ;
-  for ( i = intersection.begin() ; i != intersection.end() ; ++i ) {
-    const std::string & n = (*i)->name() ; os << " " << n ;
+  if ( lead != NULL ) { os << lead; }
+  os << "  Subsets {";
+  if (&p == &MetaData::get(p).universal_part() ) {
+    os << " *all_parts*";
   }
-  os << " } }" << std::endl ;
-
-  if ( lead != NULL ) { os << lead ; }
-  os << "  Subsets {" ;
-  for ( i = subsets.begin() ; i != subsets.end() ; ++i ) {
-    const std::string & n = (*i)->name() ; os << " " << n ;
+  else {
+    for ( i = subsets.begin() ; i != subsets.end() ; ++i ) {
+      const std::string & n = (*i)->name();
+      os << " \"" << n << "\"";
+    }
   }
-  os << " }" << std::endl ;
+  os << "  }" << std::endl;
 
-  return os ;
+  return os;
 }
 
 //----------------------------------------------------------------------
@@ -187,19 +192,19 @@ bool intersect( const Part & a , const Part & b )
          intersect( b_sub , a_sub );
 }
 
-std::string convert_to_internal_name(const std::string& part_name)
+bool Part::contains(const Part& part) const
 {
-  std::ostringstream out;
-  out << INTERNAL_PART_PREFIX << part_name << INTERNAL_PART_POSTFIX;
-  std::string out_str = out.str();
-  return out_str;
+  if (this == &part) { // same part
+    return true;
+  }
+  const PartVector & subs = subsets();
+  for (size_t i = 0, ie = subs.size(); i < ie; ++i) {
+    if (subs[i] == &part) {
+      return true;
+    }
+  }
+  return false;
 }
-
-
-//----------------------------------------------------------------------
-//----------------------------------------------------------------------
-
 
 } // namespace mesh
 } // namespace stk
-

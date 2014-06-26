@@ -435,11 +435,14 @@ namespace Tpetra {
                        Kokkos::Compat::deallocator (k_lclGraph_.entries), false);
 
     //FIXME: This doesn't work because of const/non const issues
-    /*k_rowPtrs_ = k_lclGraph_.row_map;
+    /*k_rowPtrs_ = k_lclGraph_.row_map;*/
 
-    rowPtrs_ = arcp (k_lclGraph_.row_map.ptr_on_device (), 0,
-                       k_lclGraph_.row_map.dimension_0 (),
-                       Kokkos::Compat::deallocator (k_lclGraph_.row_map), false);*/
+    // FIXME:  ETP 05/19/2014:  Add const_cast to prevent getRowInfo() from
+    // throwing an exception.
+    rowPtrs_ =
+      arcp (const_cast<size_t*>(k_lclGraph_.row_map.ptr_on_device ()), 0,
+            k_lclGraph_.row_map.dimension_0 (),
+            Kokkos::Compat::deallocator (k_lclGraph_.row_map), false);
 
     haveLocalConstants_ = true;
     computeGlobalConstants();
@@ -2135,7 +2138,10 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::setAllIndices(const t_RowPtrs & rowPointers,const t_LocalOrdinal_1D & columnIndices)
+  void
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+           typename KokkosClassic::DefaultKernels<void, LocalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  setAllIndices (const t_RowPtrs& rowPointers, const t_LocalOrdinal_1D& columnIndices)
   {
     const char tfecfFuncName[] = "setAllIndices()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( hasColMap() == false, std::runtime_error, ": requires a ColMap.");
@@ -2173,7 +2179,108 @@ namespace Tpetra {
     k_rowPtrs_           = Kokkos::Compat::getKokkosViewDeepCopy<DeviceType>(rowPointers());
     rowPtrs_             = rowPointers;
     nodeNumEntries_ = nodeNumAllocated_ = rowPtrs_[getNodeNumRows()];
+    numAllocForAllRows_  = 0;
+    numAllocPerRow_      = null;
     checkInternalState();
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void
+  CrsGraph<
+    LocalOrdinal,
+    GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+    typename KokkosClassic::DefaultKernels<
+      void,
+      LocalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  getNumEntriesPerLocalRowUpperBound (Teuchos::ArrayRCP<const size_t>& boundPerLocalRow,
+                                      size_t& boundForAllLocalRows,
+                                      bool& boundSameForAllLocalRows) const
+  {
+    // The three output arguments.  We assign them to the actual
+    // output arguments at the end, in order to implement
+    // transactional semantics.
+    Teuchos::ArrayRCP<const size_t> numEntriesPerRow;
+    size_t numEntriesForAll = 0;
+    bool allRowsSame = true;
+
+    const ptrdiff_t numRows = static_cast<ptrdiff_t> (this->getNodeNumRows ());
+
+    if (! this->indicesAreAllocated ()) {
+      if (! this->numAllocPerRow_.is_null ()) {
+        numEntriesPerRow = this->numAllocPerRow_;
+        allRowsSame = false; // conservatively; we don't check the array
+      }
+      else {
+        numEntriesForAll = this->numAllocForAllRows_;
+        allRowsSame = true;
+      }
+    }
+    else if (! this->numRowEntries_.is_null ()) {
+      numEntriesPerRow = numRowEntries_;
+        allRowsSame = false; // conservatively; we don't check the array
+    }
+    else if (this->nodeNumAllocated_ == 0) {
+      numEntriesForAll = 0;
+      allRowsSame = true;
+    }
+    else {
+      // left with the case that we have optimized storage. in this
+      // case, we have to construct a list of row sizes.
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        this->getProfileType () != StaticProfile, std::logic_error,
+        "Tpetra::CrsGraph::getNumEntriesPerRowUpperBound: "
+        "The graph is not StaticProfile, but storage appears to be optimized.  "
+        "Please report this bug to the Tpetra developers.");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        numRows != 0 && this->rowPtrs_.size () == 0, std::logic_error,
+        "Tpetra::CrsGraph::getNumEntriesPerRowUpperBound: "
+        "The graph has " << numRows << " (> 0) row" << (numRows != 1 ? "s" : "")
+        << " on the calling process, but the rowPtrs_ array has zero entries.  "
+        "Please report this bug to the Tpetra developers.");
+
+      Teuchos::ArrayRCP<size_t> numEnt;
+      if (numRows != 0) {
+        numEnt = Teuchos::arcp<size_t> (numRows);
+      }
+
+      // We have to iterate through the row offsets anyway, so we
+      // might as well check whether all rows' bounds are the same.
+      bool allRowsReallySame = false;
+      for (ptrdiff_t i = 0; i < numRows; ++i) {
+        numEnt[i] = this->rowPtrs_[i+1] - this->rowPtrs_[i];
+        if (i != 0 && numEnt[i] != numEnt[i-1]) {
+          allRowsReallySame = false;
+        }
+      }
+      if (allRowsReallySame) {
+        if (numRows == 0) {
+          numEntriesForAll = 0;
+        } else {
+          numEntriesForAll = numEnt[1] - numEnt[0];
+        }
+        allRowsSame = true;
+      }
+      else {
+        numEntriesPerRow = numEnt; // Teuchos::arcp_const_cast<const size_t> (numEnt);
+        allRowsSame = false; // conservatively; we don't check the array
+      }
+    }
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      numEntriesForAll != 0 && numEntriesPerRow.size () != 0, std::logic_error,
+      "Tpetra::CrsGraph::getNumEntriesPerLocalRowUpperBound: "
+      "numEntriesForAll and numEntriesPerRow are not consistent.  The former "
+      "is " << numEntriesForAll << ", but the latter has nonzero size "
+      << numEntriesPerRow.size () << ".  "
+      "Please report this bug to the Tpetra developers.");
+
+    boundPerLocalRow = numEntriesPerRow;
+    boundForAllLocalRows = numEntriesForAll;
+    boundSameForAllLocalRows = allRowsSame;
   }
 
   // TODO: in the future, globalAssemble() should use import/export functionality
@@ -2517,10 +2624,12 @@ namespace Tpetra {
                 const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &rangeMap,
                 const RCP<ParameterList> &params)
   {
+    const char tfecfFuncName[] = "fillComplete()";
+
 #ifdef HAVE_TPETRA_DEBUG
     rowMap_->getComm ()->barrier ();
 #endif // HAVE_TPETRA_DEBUG
-    const char tfecfFuncName[] = "fillComplete()";
+
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ! isFillActive() || isFillComplete(),
       std::runtime_error, ": Graph fill state must be active (isFillActive() "
       "must be true) before calling fillComplete().");
@@ -2562,9 +2671,13 @@ namespace Tpetra {
     }
     // set domain/range map: may clear the import/export objects
     setDomainRangeMaps(domainMap,rangeMap);
-    // make column map
-    if (! hasColMap()) {
-      makeColMap();
+
+    // If the graph does not already have a column Map (either from
+    // the user constructor calling the version of the constructor
+    // that takes a column Map, or from a previous fillComplete call),
+    // then create it.
+    if (! hasColMap ()) {
+      makeColMap ();
     }
 
     // Make indices local, if they aren't already.
@@ -2974,7 +3087,6 @@ namespace Tpetra {
           // upperTriangular_, lowerTriangular_, or
           // nodeMaxNumRowEntries_) which this loop sets.
           const LO rlcid = colMap.getLocalElement (globalRow);
-          if (rlcid != Teuchos::OrdinalTraits<LO>::invalid ()) {
             // This process owns one or more entries in the current row.
             RowInfo rowInfo = getRowInfo (localRow);
             ArrayView<const LO> rview = getLocalView (rowInfo);
@@ -3003,7 +3115,6 @@ namespace Tpetra {
             }
             // Update the max number of entries over all rows.
             nodeMaxNumRowEntries_ = std::max (nodeMaxNumRowEntries_, rowInfo.numEntries);
-          }
         }
       }
       haveLocalConstants_ = true;

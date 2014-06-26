@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -61,7 +61,7 @@ Epetra_SerialSpdDenseSolver::~Epetra_SerialSpdDenseSolver()
 }
 //=============================================================================
 int Epetra_SerialSpdDenseSolver::SetMatrix(Epetra_SerialSymDenseMatrix & A_in) {
-  
+
   SymMatrix_=&A_in;
   SymFactor_=&A_in;
   SCOND_ = -1.0;
@@ -90,7 +90,7 @@ int Epetra_SerialSpdDenseSolver::Factor(void) {
   if (Equilibrate_) ierr = EquilibrateMatrix();
 
   if (ierr!=0) EPETRA_CHK_ERR(ierr-2);
-  
+
   POTRF (SymMatrix_->UPLO(), N_, AF_, LDAF_, &INFO_);
   Factored_ = true;
   double DN = N_;
@@ -105,7 +105,7 @@ int Epetra_SerialSpdDenseSolver::Factor(void) {
 int Epetra_SerialSpdDenseSolver::Solve(void) {
   int ierr = 0;
 
-  // We will call one of four routines depending on what services the user wants and 
+  // We will call one of four routines depending on what services the user wants and
   // whether or not the matrix has been inverted or factored already.
   //
   // If the matrix has been inverted, use DGEMM to compute solution.
@@ -141,10 +141,10 @@ int Epetra_SerialSpdDenseSolver::Solve(void) {
 
     if (!Factored()) Factor(); // Matrix must be factored
     if (B_!=X_) {
-       *LHS_ = *RHS_; // Copy B to X if needed 
+       *LHS_ = *RHS_; // Copy B to X if needed
        X_ = LHS_->A(); LDX_ = LHS_->LDA();
     }
-    
+
     POTRS(SymMatrix_->UPLO(), N_, NRHS_, AF_, LDAF_, X_, LDX_, &INFO_);
     if (INFO_!=0) EPETRA_CHK_ERR(INFO_);
     UpdateFlops(2.0*DN*DN*DNRHS);
@@ -177,31 +177,31 @@ int Epetra_SerialSpdDenseSolver::ApplyRefinement(void)
   BERR_ = new double[NRHS_];
   AllocateWORK();
   AllocateIWORK();
-  
+
   PORFS(SymMatrix_->UPLO(), N_, NRHS_, A_, LDA_, AF_, LDAF_,
-	       B_, LDB_, X_, LDX_, FERR_, BERR_, 
+	       B_, LDB_, X_, LDX_, FERR_, BERR_,
 	       WORK_, IWORK_, &INFO_);
-  
-  
+
+
   SolutionErrorsEstimated_ = true;
   ReciprocalConditionEstimated_ = true;
   SolutionRefined_ = true;
-  
+
   UpdateFlops(2.0*DN*DN*DNRHS); // Not sure of count
-  
+
   EPETRA_CHK_ERR(INFO_);
   return(0);
-  
+
 }
 
 //=============================================================================
 int Epetra_SerialSpdDenseSolver::ComputeEquilibrateScaling(void) {
   if (R_!=0) return(0); // Already computed
- 
+
   double DN = N_;
   R_ = new double[N_];
   C_ = R_;
-  
+
   POEQU (N_, AF_, LDAF_, R_, &SCOND_, &AMAX_, &INFO_);
   if (INFO_ != 0) EPETRA_CHK_ERR(INFO_);
 
@@ -209,7 +209,7 @@ int Epetra_SerialSpdDenseSolver::ComputeEquilibrateScaling(void) {
 
   C_ = R_; // Set column scaling pointer so we can use EquilibrateRHS and UnequilibrateLHS from base class
   UpdateFlops(2.0*DN*DN);
-  
+
   return(0);
 }
 
@@ -281,7 +281,7 @@ int Epetra_SerialSpdDenseSolver::EquilibrateMatrix(void) {
   double NumFlops = (double) ((N_+1)*N_/2);
   if (A_==AF_) NumFlops += NumFlops;
   UpdateFlops(NumFlops);
-  
+
   return(0);
 }
 
@@ -296,7 +296,7 @@ int Epetra_SerialSpdDenseSolver::Invert(void)
   UpdateFlops((DN*DN*DN));
   Inverted_ = true;
   Factored_ = false;
-  
+
   EPETRA_CHK_ERR(INFO_);
   return(0);
 }

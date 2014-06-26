@@ -63,7 +63,7 @@ extern "C" {
 #endif
 
 #ifdef HAVE_STOKHOS_DAKOTA
-#include "CompressedSensing.hpp"
+#include "LinearSolver.hpp"
 #endif
 
 template <typename ordinal_type, typename value_type>

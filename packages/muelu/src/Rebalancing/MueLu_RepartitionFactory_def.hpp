@@ -46,11 +46,6 @@
 #ifndef MUELU_REPARTITIONFACTORY_DEF_HPP
 #define MUELU_REPARTITIONFACTORY_DEF_HPP
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 #include <algorithm>
 #include <iostream>
 #include <sstream>
@@ -92,6 +87,8 @@ namespace MueLu {
     validParamList->set<bool>       ("remapPartitions",          true, "Perform partition remapping to minimize data movement");
     validParamList->set<int>        ("numRemapValues",              4, "Number of maximum components from each processor used to construct partial bipartite graph");
     validParamList->set<bool>       ("alwaysKeepProc0",          true, "Always keep processor 0 in subcommunicator");
+
+    validParamList->set<bool>       ("repartition: print partition distribution", false, "Print partition distribution with '+' and '.'");
 
     validParamList->set< RCP<const FactoryBase> >("A",         Teuchos::null, "Factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("Partition", Teuchos::null, "Factory of the partition");
@@ -526,7 +523,7 @@ namespace MueLu {
     // ======================================================================================================
     // Print some data
     // ======================================================================================================
-    if (IsPrint(Statistics2)) {
+    if (pL.get<bool>("repartition: print partition distribution") && IsPrint(Statistics2)) {
       // Print the grid of processors
       GetOStream(Statistics2) << "Partition distribution over cores (ownership is indicated by '+')" << std::endl;
 

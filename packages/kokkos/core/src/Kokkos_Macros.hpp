@@ -46,7 +46,9 @@
 #ifndef KOKKOS_MACROS_HPP
 #define KOKKOS_MACROS_HPP
 
+#ifndef KOKKOS_DONT_INCLUDE_CORE_CONFIG_H
 #include <KokkosCore_config.h>
+#endif
 #include <impl/Kokkos_Compiler_Macros.hpp>
 
 namespace Kokkos {
@@ -117,10 +119,6 @@ class CudaSpace ;
 //----------------------------------------------------------------------------
 
 #if defined( __INTEL_COMPILER )
-
-#if (__INTEL_COMPILER < 1200)
-#define KOKKOS_DISABLE_ASM true;
-#endif
 
 /*  Compiling with Intel compiler */
 /*  TBD: Version testing */

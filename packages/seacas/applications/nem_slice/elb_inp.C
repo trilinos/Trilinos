@@ -40,19 +40,20 @@
  *	read_cmd_file()
  *	check_inp_specs()
  *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
+#include "elb_inp.h"
 #include <exodusII.h>                   // for ex_close, EX_READ, etc
-
-#include <stdio.h>                      // for sprintf, NULL, sscanf, etc
-#include <stdlib.h>                     // for malloc, realloc, exit, free
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for NULL, sprintf, printf, etc
+#include <stdlib.h>                     // for malloc, exit, free
 #include <string.h>                     // for strcmp, strstr, strchr, etc
-
-#include "elb.h"                  // for Weight_Description<INT>, etc
-#include "elb_err.h"              // for Gen_Error, error_lev, etc
-#include "elb_inp.h"              // for NONE
-#include "elb_util.h"             // for strip_string, token_compare, etc
-#include "elb_format.h"
+#include "elb.h"                        // for Problem_Description, etc
+#include "elb_err.h"                    // for Gen_Error, error_lev
+#include "elb_format.h"                 // for ST_ZU
+#include "elb_util.h"                   // for strip_string, token_compare, etc
 #include "getopt.h"                     // for getopt
 #include "md_getsubopt.h"               // for md_getsubopt
+
+
 
 namespace {
   void print_usage(void);

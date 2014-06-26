@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -57,9 +57,9 @@
 #include "LOCA_Parameter_SublistParser.H"
 
 LOCA::StepSize::Adaptive::Adaptive(
-	 const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RCP<Teuchos::ParameterList>& stepsizeParams) :
+     const Teuchos::RCP<LOCA::GlobalData>& global_data,
+     const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+     const Teuchos::RCP<Teuchos::ParameterList>& stepsizeParams) :
   LOCA::StepSize::Constant(global_data, topParams, stepsizeParams),
   agrValue(0.0),
   maxNonlinearSteps(0.0)
@@ -67,9 +67,9 @@ LOCA::StepSize::Adaptive::Adaptive(
   agrValue = stepsizeParams->get("Aggressiveness", 0.5);
 
   // Get maximum number of nonlinear iterations from stepper parameters
-  Teuchos::RCP<Teuchos::ParameterList> p = 
+  Teuchos::RCP<Teuchos::ParameterList> p =
     topParams->getSublist("Stepper");
-  maxNonlinearSteps = 
+  maxNonlinearSteps =
     static_cast<double>(p->get("Max Nonlinear Iterations", 15));
 }
 
@@ -77,15 +77,15 @@ LOCA::StepSize::Adaptive::~Adaptive()
 {
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::StepSize::Adaptive::computeStepSize(
-		     LOCA::MultiContinuation::AbstractStrategy& curGroup,
-		     const LOCA::MultiContinuation::ExtendedVector& predictor,
-		     const NOX::Solver::Generic& solver,
-		     const LOCA::Abstract::Iterator::StepStatus& stepStatus,
-//		     const LOCA::Stepper& stepper,
-		     const LOCA::Abstract::Iterator& stepper,
-		     double& stepSize) 
+             LOCA::MultiContinuation::AbstractStrategy& curGroup,
+             const LOCA::MultiContinuation::ExtendedVector& predictor,
+             const NOX::Solver::Generic& solver,
+             const LOCA::Abstract::Iterator::StepStatus& stepStatus,
+//             const LOCA::Stepper& stepper,
+             const LOCA::Abstract::Iterator& stepper,
+             double& stepSize)
 {
   // If this is the first step, set step size to initial value
   if (isFirstStep) {
@@ -100,10 +100,10 @@ LOCA::StepSize::Adaptive::computeStepSize(
     prevStepSize = 0.0;
   }
   else {
-  
+
     // A failed nonlinear solve cuts the step size in half
     if (stepStatus == LOCA::Abstract::Iterator::Unsuccessful) {
-      stepSize *= LOCA::StepSize::Constant::failedFactor;    
+      stepSize *= LOCA::StepSize::Constant::failedFactor;
     }
     else {
 
@@ -111,22 +111,22 @@ LOCA::StepSize::Adaptive::computeStepSize(
       LOCA::StepSize::Constant::startStepSize *= ds_ratio;
       LOCA::StepSize::Constant::maxStepSize *= ds_ratio;
       LOCA::StepSize::Constant::minStepSize *= ds_ratio;
-      
+
       // Get number of nonlinear iterations in last step
-      double numNonlinearSteps = 
-	static_cast<double>(solver.getNumIterations());
+      double numNonlinearSteps =
+    static_cast<double>(solver.getNumIterations());
 
       // Save successful stepsize as previous
       prevStepSize = stepSize;
 
       // adapive step size control
-      double factor = (maxNonlinearSteps - numNonlinearSteps) 
-               	      / (maxNonlinearSteps);
+      double factor = (maxNonlinearSteps - numNonlinearSteps)
+                         / (maxNonlinearSteps);
 
       stepSize *= (1.0 + agrValue * factor * factor);
 
       stepSize *= ds_ratio;
-    } 
+    }
   }
 
   // Clip step size to be within prescribed bounds

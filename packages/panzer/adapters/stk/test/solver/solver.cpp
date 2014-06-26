@@ -109,10 +109,10 @@ namespace panzer {
     pl->set("X Elements",20);
     pl->set("Y Elements",20);
     
-    panzer_stk::SquareQuadMeshFactory mesh_factory;
+    panzer_stk_classic::SquareQuadMeshFactory mesh_factory;
     mesh_factory.setParameterList(pl);
-    //RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
-    RCP<panzer_stk::STK_Interface> mesh = 
+    //RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<panzer_stk_classic::STK_Interface> mesh = 
       mesh_factory.buildUncommitedMesh(MPI_COMM_WORLD);
 
     RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -181,8 +181,8 @@ namespace panzer {
 
     // build worksets
     //////////////////////////////////////////////////////////////
-    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
-       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
+    Teuchos::RCP<panzer_stk_classic::WorksetFactory> wkstFactory 
+       = Teuchos::rcp(new panzer_stk_classic::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
        = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
 
@@ -191,7 +191,7 @@ namespace panzer {
  
     // build the connection manager 
     const Teuchos::RCP<panzer::ConnManager<int,int> > 
-      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+      conn_manager = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
 
     panzer::DOFManagerFactory<int,int> globalIndexerFactory;
     RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
@@ -300,7 +300,7 @@ namespace panzer {
     ghosted_solution.PutScalar(0.0);
     ghosted_solution.Import(*solution,*importer,Insert);
 
-    panzer_stk::write_solution_data(*dofManager,*mesh,ghosted_solution);
+    panzer_stk_classic::write_solution_data(*dofManager,*mesh,ghosted_solution);
     mesh->writeToExodus("output.exo");
 
     // Test solution values on left, middle, and right side of mesh.
@@ -386,10 +386,10 @@ namespace panzer {
     pl->set("X Elements",20);
     pl->set("Y Elements",20);
     
-    panzer_stk::SquareQuadMeshFactory mesh_factory;
+    panzer_stk_classic::SquareQuadMeshFactory mesh_factory;
     mesh_factory.setParameterList(pl);
-    //RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
-    RCP<panzer_stk::STK_Interface> mesh = 
+    //RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<panzer_stk_classic::STK_Interface> mesh = 
       mesh_factory.buildUncommitedMesh(MPI_COMM_WORLD);
 
     RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -459,8 +459,8 @@ namespace panzer {
    
     // build worksets
     //////////////////////////////////////////////////////////////
-    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
-       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
+    Teuchos::RCP<panzer_stk_classic::WorksetFactory> wkstFactory 
+       = Teuchos::rcp(new panzer_stk_classic::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
        = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
 
@@ -469,7 +469,7 @@ namespace panzer {
  
     // build the connection manager 
     const Teuchos::RCP<panzer::ConnManager<int,int> > 
-      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+      conn_manager = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
 
     panzer::DOFManagerFactory<int,int> globalIndexerFactory;
     RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
@@ -577,7 +577,7 @@ namespace panzer {
     ghosted_solution.PutScalar(0.0);
     ghosted_solution.Import(*solution,*importer,Insert);
 
-    panzer_stk::write_solution_data(*dofManager,*mesh,ghosted_solution);
+    panzer_stk_classic::write_solution_data(*dofManager,*mesh,ghosted_solution);
     
   }
 

@@ -31,15 +31,14 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <iostream>
-#include <cstdlib>
-
-#include "smart_assert.h"
 #include "exo_block.h"
-#include "exodusII.h"
+#include <cstdlib>                      // for exit, NULL
+#include <iostream>                     // for operator<<, endl, ostream, etc
+#include <string>                       // for string, char_traits
+#include "exodusII.h"                   // for ex_block, etc
+#include "smart_assert.h"               // for SMART_ASSERT
 
-#include <string>
-#include <sstream>
+
 
 using namespace std;
 

@@ -287,10 +287,6 @@ struct PerformanceDriverOp {
       test_scalar_spmv<Scalar,Ordinal,Device>(
         ensemble, nGrid, nIter, dev_config );
 
-    const std::vector<double> perf_ensemble =
-      test_mpvector_spmv<storage_type>(
-        ensemble, nGrid, nIter, dev_config, Stokhos::EnsembleMultiply() );
-
     const std::vector<double> perf_mpvector =
       test_mpvector_spmv<storage_type>(
         ensemble, nGrid, nIter, dev_config, Stokhos::DefaultMultiply() );
@@ -302,8 +298,6 @@ struct PerformanceDriverOp {
               << perf_scalar[3] << " , "
               << perf_scalar[4] / perf_scalar[4] << " , "
               << perf_scalar[4] << " , "
-              << perf_ensemble[4]/ perf_scalar[4] << " , "
-              << perf_ensemble[4] << " , "
               << perf_mpvector[4]/ perf_scalar[4] << " , "
               << perf_mpvector[4] << " , "
               << std::endl;
@@ -321,12 +315,9 @@ void performance_test_driver( const int nGrid,
             << "\"FEM Size\" , "
             << "\"FEM Graph Size\" , "
             << "\"Ensemble Size\" , "
-            << "\"Total Size\" , "
             << "\"Scalar SpMv Time\" , "
             << "\"Scalar SpMv Speedup\" , "
             << "\"Scalar SpMv GFLOPS\" , "
-            << "\"Ensemble SpMv Speedup\" , "
-            << "\"Ensemble SpMv GFLOPS\" , "
             << "\"MPVector SpMv Speedup\" , "
             << "\"MPVector SpMv GFLOPS\" , "
             << std::endl;

@@ -55,6 +55,10 @@
   int run_tpi(int& argc, char* argv[]);
 #endif
 
+#ifdef HAVE_KOKKOSCLASSIC_THRUST
+  int run_thrust(int& argc, char* argv[]);
+#endif
+
 int main(int argc, char *argv[]) {
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
@@ -79,5 +83,10 @@ int main(int argc, char *argv[]) {
   std::cout << std::endl << "----------------------------------------------------"<< std::endl<<std::endl;
   run_tpi(argc,argv);
 #endif
+#ifdef HAVE_KOKKOSCLASSIC_THRUST
+  std::cout << std::endl << "----------------------------------------------------"<< std::endl<<std::endl;
+  run_thrust(argc,argv);
+#endif
+
   return 0;
 }

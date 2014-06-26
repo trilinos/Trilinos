@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -79,11 +79,11 @@ Central (2nd order accurate):
 
 where \f$J\f$ is the Jacobian, \f$y\f$ is the vector that the Jacobian is to be applied to, \f$x\f$ is the solution vector, \f$F(x)\f$ is the residual evaluation at \f$ x \f$,and \f$\delta\f$ is a scalar perturbation calculated by a variety of formulas (see MatrixFreeJacobianOperator::E_PerturbationType for references).
 
-NOTE: The base evaluation \f$f(x)\f$ and its corresponding base solution \f$x\f$ is assumed to be supplied from an exterior source and that \f$f(x)\f$ is up to date wrt \f$x\f$.  Otherwise this algorithm would be inefficient due to extra base evaluations for every Jacobian-vector product.  A call must be made to either setBaseEvaluationToRawThyra() or setBaseEvaluationToNOXGroup() to set up the base objects.  If a NOX Group is used, the evaluation will be ensured to be correct because of the mechanics for isF().  In the case of raw objects, the user must take care to keep the base values up-to-date. 
+NOTE: The base evaluation \f$f(x)\f$ and its corresponding base solution \f$x\f$ is assumed to be supplied from an exterior source and that \f$f(x)\f$ is up to date wrt \f$x\f$.  Otherwise this algorithm would be inefficient due to extra base evaluations for every Jacobian-vector product.  A call must be made to either setBaseEvaluationToRawThyra() or setBaseEvaluationToNOXGroup() to set up the base objects.  If a NOX Group is used, the evaluation will be ensured to be correct because of the mechanics for isF().  In the case of raw objects, the user must take care to keep the base values up-to-date.
 */
 template<typename Scalar>
 class MatrixFreeJacobianOperator : public ::Thyra::LinearOpBase<Scalar>,
-				   public Teuchos::ParameterListAcceptorDefaultBase {
+                   public Teuchos::ParameterListAcceptorDefaultBase {
 
  public:
 
@@ -102,7 +102,7 @@ class MatrixFreeJacobianOperator : public ::Thyra::LinearOpBase<Scalar>,
     UserDefined=3
   };
 
-  //! Defined where to get the base objects for the solution, \f$x\f$, and the residual, \f$ f(x) \f$, and the perturbed residual evaluation from.  In many cases the base values have been precomputed and can just be used to eliminate redundant residual evaluations.  
+  //! Defined where to get the base objects for the solution, \f$x\f$, and the residual, \f$ f(x) \f$, and the perturbed residual evaluation from.  In many cases the base values have been precomputed and can just be used to eliminate redundant residual evaluations.
   enum E_BaseEvaluationType
     {
       //! User defines thyra objects for solution vector, x, residual vector, f, and residual evaluations
@@ -116,9 +116,9 @@ class MatrixFreeJacobianOperator : public ::Thyra::LinearOpBase<Scalar>,
   /** \name Setup the base evaluation sources */
   //@{
   void setBaseEvaluationToRawThyra(const Teuchos::RCP<const ::Thyra::VectorBase<Scalar> >& x_base,
-				   const Teuchos::RCP<const ::Thyra::VectorBase<Scalar> >& f_base,
-				   const Teuchos::RCP< ::Thyra::ModelEvaluator<Scalar> > model);
-  
+                   const Teuchos::RCP<const ::Thyra::VectorBase<Scalar> >& f_base,
+                   const Teuchos::RCP< ::Thyra::ModelEvaluator<Scalar> > model);
+
   void setBaseEvaluationToNOXGroup(const Teuchos::RCP<const NOX::Abstract::Group>& base_group);
   //@}
 
@@ -142,10 +142,10 @@ class MatrixFreeJacobianOperator : public ::Thyra::LinearOpBase<Scalar>,
   bool opSupportedImpl (::Thyra::EOpTransp M_trans) const;
 
   void applyImpl(const ::Thyra::EOpTransp M_trans,
-		 const ::Thyra::MultiVectorBase< Scalar > &y,
-		 const Teuchos::Ptr< ::Thyra::MultiVectorBase< Scalar > > &u,
-		 const Scalar alpha,
-		 const Scalar beta) const;
+         const ::Thyra::MultiVectorBase< Scalar > &y,
+         const Teuchos::Ptr< ::Thyra::MultiVectorBase< Scalar > > &u,
+         const Scalar alpha,
+         const Scalar beta) const;
   //@}
 
   //! Change the value of \f$ \lambda \f$ in the perturbation calculation.
@@ -174,7 +174,7 @@ protected:
   //! Printing utilities.
   NOX::Utils utils_;
 
-  //! A list of valid parameters 
+  //! A list of valid parameters
   mutable Teuchos::RCP<Teuchos::ParameterList> valid_params_;
 
   E_DifferenceType difference_type_;

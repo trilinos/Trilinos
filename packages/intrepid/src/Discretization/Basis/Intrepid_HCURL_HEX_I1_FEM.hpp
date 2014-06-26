@@ -112,7 +112,7 @@ namespace Intrepid {
  */
   
 template<class Scalar, class ArrayScalar> 
-class Basis_HCURL_HEX_I1_FEM : public Basis<Scalar, ArrayScalar> {
+class Basis_HCURL_HEX_I1_FEM : public Basis<Scalar, ArrayScalar>, public DofCoordsInterface<ArrayScalar> {
 private:
   
   /** \brief  Initializes <var>tagToOrdinal_</var> and <var>ordinalToTag_</var> lookup arrays.
@@ -147,6 +147,14 @@ public:
                  const ArrayScalar &    inputPoints,
                  const ArrayScalar &    cellVertices,
                  const EOperator        operatorType = OPERATOR_VALUE) const;
+
+  /** \brief  Returns spatial locations (coordinates) of degrees of freedom on a
+              <strong>reference Quadrilateral</strong>.
+
+      \param  DofCoords      [out] - array with the coordinates of degrees of freedom,
+                                     dimensioned (F,D)
+  */
+  void getDofCoords(ArrayScalar & DofCoords) const;
 };
 }// namespace Intrepid
 

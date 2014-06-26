@@ -53,6 +53,17 @@
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_Map.h>
 
+// EpetraExt
+#include <EpetraExt_MatrixMatrix.h>
+#include <EpetraExt_RowMatrixOut.h>
+#include <EpetraExt_MultiVectorOut.h>
+#include <EpetraExt_CrsMatrixIn.h>
+#include <EpetraExt_MultiVectorIn.h>
+#include <EpetraExt_BlockMapIn.h>
+#include <Xpetra_EpetraUtils.hpp>
+#include <Xpetra_EpetraMultiVector.hpp>
+#include <EpetraExt_BlockMapOut.h>
+
 // Galeri
 #include <Galeri_Maps.h>
 #include <Galeri_CrsMatrices.h>
@@ -114,13 +125,13 @@ int main(int argc, char *argv[]) {
   // Parameters initialization
   // =========================================================================
   Teuchos::CommandLineProcessor clp(false);
-  GO nx = 100, ny = 100;
-  clp.setOption("nx",                   &nx,              "mesh size in x direction");
-  clp.setOption("ny",                   &ny,              "mesh size in y direction");
-  std::string xmlFileName = "xml/s2a.xml"; clp.setOption("xml", &xmlFileName,     "read parameters from a file. Otherwise, this example uses by default 'tutorial1a.xml'");
-  int mgridSweeps = 1; clp.setOption("mgridSweeps", &mgridSweeps, "number of multigrid sweeps within Multigrid solver.");
-  std::string printTimings = "no";   clp.setOption("timings", &printTimings,     "print timings to screen [yes/no]");
-  double tol               = 1e-12;  clp.setOption("tol",                   &tol,              "solver convergence tolerance");
+  GO nx                    = 100;           clp.setOption("nx",                       &nx, "mesh size in x direction");
+  GO ny                    = 100;           clp.setOption("ny",                       &ny, "mesh size in y direction");
+  std::string xmlFileName  = "xml/s2a.xml"; clp.setOption("xml",             &xmlFileName, "read parameters from a file");
+  int mgridSweeps          = 1;             clp.setOption("mgridSweeps",     &mgridSweeps, "number of multigrid sweeps within Multigrid solver.");
+  std::string printTimings = "no";          clp.setOption("timings",        &printTimings, "print timings to screen [yes/no]");
+  double tol               = 1e-12;         clp.setOption("tol",                     &tol, "solver convergence tolerance");
+  int importOldData = 0;                    clp.setOption("importOldData", &importOldData, "import map and matrix from previous run (highly experimental).");
 
   switch (clp.parse(argc,argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -145,17 +156,39 @@ int main(int argc, char *argv[]) {
   GaleriList.set("lx", 1.0); // length of x-axis
   GaleriList.set("ly", 1.0); // length of y-axis
 
-  // create map
-  Teuchos::RCP<Epetra_Map> epMap = Teuchos::rcp(Galeri::CreateMap("Cartesian2D", *epComm, GaleriList));
+  Teuchos::RCP<Epetra_Map> epMap = Teuchos::null;
+  Teuchos::RCP<Epetra_MultiVector> epCoord = Teuchos::null;
+  Teuchos::RCP<Epetra_CrsMatrix> epA = Teuchos::null;
 
-  // create coordinates
-  Teuchos::RCP<Epetra_MultiVector> epCoord = Teuchos::rcp(Galeri::CreateCartesianCoordinates("2D", epMap.get(), GaleriList));
+  if(importOldData==0) {
 
-  // create matrix
-  Teuchos::RCP<Epetra_CrsMatrix> epA = Teuchos::rcp(Galeri::CreateCrsMatrix("Laplace2D", epMap.get(), GaleriList));
+    // create map
+    epMap = Teuchos::rcp(Galeri::CreateMap("Cartesian2D", *epComm, GaleriList));
 
-  double hx = 1./(nx-1); double hy = 1./(ny-1);
-  epA->Scale(1./(hx*hy));
+    // create coordinates
+    epCoord = Teuchos::rcp(Galeri::CreateCartesianCoordinates("2D", epMap.get(), GaleriList));
+
+    // create matrix
+    epA = Teuchos::rcp(Galeri::CreateCrsMatrix("Laplace2D", epMap.get(), GaleriList));
+
+    double hx = 1./(nx-1); double hy = 1./(ny-1);
+    epA->Scale(1./(hx*hy));
+
+  } else {
+    std::cout << "Import old data" << std::endl;
+    Epetra_Map* myEpMap;
+    EpetraExt::MatrixMarketFileToMap("ARowMap.mat", *(Xpetra::toEpetra(comm)), myEpMap);
+    epMap = Teuchos::rcp(myEpMap);
+    comm->barrier();
+    Epetra_MultiVector* myEpVector;
+    EpetraExt::MatrixMarketFileToMultiVector("ACoordVector.mat", *epMap, myEpVector);
+    epCoord = Teuchos::rcp(myEpVector);
+    comm->barrier();
+    Epetra_CrsMatrix* myEpMatrix;
+    EpetraExt::MatrixMarketFileToCrsMatrix("A.mat",*(Xpetra::toEpetra(comm)), myEpMatrix);
+    epA = Teuchos::rcp(myEpMatrix);
+    comm->barrier();
+  }
 
   // Epetra -> Xpetra
   Teuchos::RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
@@ -270,7 +303,7 @@ int main(int argc, char *argv[]) {
       tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 5 - Multigrid Solve")));
       mgridLsgVec->update(1.0,*xX,1.0);
       H->IsPreconditioner(false);
-      H->Iterate(*xB, mgridSweeps, *mgridLsgVec);
+      H->Iterate(*xB, *mgridLsgVec, mgridSweeps);
       comm->barrier();
       tm = Teuchos::null;
     }
@@ -367,6 +400,20 @@ int main(int argc, char *argv[]) {
 
       } // end myProc
     }
+
+    // export map
+    RCP<const Map> Amap = A->getRowMap();
+    RCP<const Xpetra::EpetraMap> epAmap = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMap>(Amap);
+
+    //Epetra_Map* eMap;
+    //int rv = EpetraExt::MatrixMarketFileToMap(fileName.c_str(), *(Xpetra::toEpetra(comm)), eMap);
+    EpetraExt::BlockMapToMatrixMarketFile( "ARowMap.mat", epAmap->getEpetra_BlockMap(),
+        "ARowMap",
+        "Row map of matrix A",
+        true);
+
+    EpetraExt::MultiVectorToMatrixMarketFile("ACoordVector.mat", *epCoord, "Coordinate multi vector", "Multi vector with mesh coordinates", true);
+    EpetraExt::RowMatrixToMatrixMarketFile("A.mat", *epA, "A matrix", "Matrix A", true);
 
     ////////////
     myfile.close();

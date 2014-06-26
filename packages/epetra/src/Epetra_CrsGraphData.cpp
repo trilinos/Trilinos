@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -99,7 +99,7 @@ Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV, const Epetra_Bloc
     NumMyNonzeros_(0),
     NumMyRows_(RowMap.NumMyPoints()),
     NumMyCols_(NumMyRows_),
-    NumMyDiagonals_(0),  
+    NumMyDiagonals_(0),
     MaxNumIndices_(0),
     GlobalMaxNumIndices_(0),
     NumTempColIndices_(0),
@@ -123,8 +123,8 @@ Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV, const Epetra_Bloc
 }
 
 //=============================================================================
-Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV, 
-           const Epetra_BlockMap& RowMap, 
+Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV,
+           const Epetra_BlockMap& RowMap,
            const Epetra_BlockMap& ColMap, bool StaticProfile)
   // maps
   : RowMap_(RowMap),
@@ -173,7 +173,7 @@ Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV,
     NumMyNonzeros_(0),
     NumMyRows_(RowMap.NumMyPoints()),
     NumMyCols_(ColMap.NumMyPoints()),
-    NumMyDiagonals_(0),  
+    NumMyDiagonals_(0),
     MaxNumIndices_(0),
     GlobalMaxNumIndices_(0),
     NumTempColIndices_(0),
@@ -205,7 +205,7 @@ Epetra_CrsGraphData::~Epetra_CrsGraphData() {
   if(data->Indices_ != 0 && !StorageOptimized_) {
     for (int i=0; i<NumMyBlockRows_; i++) {
       data->Indices_[i] = 0;
-    } 
+    }
     delete[] data->Indices_;
     data->Indices_ = 0;
   }
@@ -214,7 +214,7 @@ Epetra_CrsGraphData::~Epetra_CrsGraphData() {
   if(LL_data->Indices_ != 0 && !StorageOptimized_) {
     for (int i=0; i<NumMyBlockRows_; i++) {
       LL_data->Indices_[i] = 0;
-    } 
+    }
     delete[] LL_data->Indices_;
     LL_data->Indices_ = 0;
   }
@@ -263,23 +263,23 @@ int Epetra_CrsGraphData::MakeImportExport() {
     }
     Importer_ = new Epetra_Import(ColMap_, DomainMap_);
   }
-  
+
   // Now see if we need to define an export map.  This is only needed if RowMap and RangeMap are different
   if (!RowMap_.SameAs(RangeMap_)) {
     if (Exporter_ != 0) {
       delete Exporter_;
       Exporter_ = 0;
     }
-    Exporter_ = new Epetra_Export(RowMap_, RangeMap_); // Create Export object. 
+    Exporter_ = new Epetra_Export(RowMap_, RangeMap_); // Create Export object.
   }
-   
+
   return(0);
 }
 
 //==========================================================================
 int Epetra_CrsGraphData::ReAllocateAndCast(char*& UserPtr, int& Length, const int IntPacketSizeTimesNumTrans) {
   if(IntPacketSizeTimesNumTrans > Length) {
-    if(Length > 0) 
+    if(Length > 0)
       delete[] UserPtr;
     Length = IntPacketSizeTimesNumTrans;
     int* newPtr = new int[Length];
@@ -302,7 +302,7 @@ void Epetra_CrsGraphData::Print(std::ostream& os, int level) const {
     os << "DomainMap_:\n" << DomainMap_ << std::endl;
     os << "RangeMap_:\n" << RangeMap_ << std::endl;
   }
-  
+
   if(one_bit) {
     os.width(26); os << "HaveColMap_: "              << HaveColMap_;
     os.width(25); os << "Filled_: "                  << Filled_;
@@ -319,7 +319,7 @@ void Epetra_CrsGraphData::Print(std::ostream& os, int level) const {
     os.width(25); os << "NoDiagonal_: "              << NoDiagonal_ << std::endl;
     os.width(25); os << "GlobalConstantsComputed_: " << GlobalConstantsComputed_ << std::endl;
     os.width(25); os << "StaticProfile_: " << StaticProfile_ << std::endl << std::endl;
-    
+
     os.width(10); os << "NGBR_: " << NumGlobalBlockRows_;
     os.width(10); os << "NGBC_: " << NumGlobalBlockCols_;
     os.width(10); os << "NGBD_: " << NumGlobalBlockDiagonals_;
@@ -347,7 +347,7 @@ void Epetra_CrsGraphData::Print(std::ostream& os, int level) const {
     os.width(11); os << "MNN_: "  << MaxNumNonzeros_;
     os.width(11); os << "GMNN_: " << GlobalMaxNumNonzeros_;
     os.width(11); os << "RC: " << ReferenceCount() << std::endl << std::endl;
-    
+
     os << "NIPR_: " << NumIndicesPerRow_ << std::endl;
     os << "NAIPR_: " << NumAllocatedIndicesPerRow_ << std::endl;
     os << "IndexOffset_: " << IndexOffset_ << std::endl;
@@ -361,7 +361,7 @@ void Epetra_CrsGraphData::Print(std::ostream& os, int level) const {
       throw "Epetra_CrsGraphData::Print: GlobalIndicesLongLong but no long long API";
 #endif
   }
-    
+
   if(two_bit) {
   if(RowMap_.GlobalIndicesInt() || (RowMap_.GlobalIndicesLongLong() && IndicesAreLocal_))
   {
@@ -397,7 +397,7 @@ void Epetra_CrsGraphData::Print(std::ostream& os, int level) const {
 #endif
    }
   }
-  
+
   os << "***** End CrsGraphData *****" << std::endl;
 }
 
@@ -413,16 +413,16 @@ Epetra_CrsGraphData::EntriesInOneRow<int_type>::AddEntry (const int_type Col)
       entries_.push_back(Col);
       return;
     }
- 
+
   // do a binary search to find the place where to insert:
   typename std::vector<int_type>::iterator it = std::lower_bound(entries_.begin(),
                 entries_.end(),
                 Col);
- 
+
   // If this entry is a duplicate, exit immediately
   if (*it == Col)
     return;
- 
+
   // Insert at the right place in the vector. Vector grows automatically to
   // fit elements. Always doubles its size.
   entries_.insert(it, Col);
@@ -461,7 +461,7 @@ Epetra_CrsGraphData::EntriesInOneRow<int_type>::AddEntries (const int  numCols,
 
     // find a possible insertion point for the first entry. check whether
     // the first entry is a duplicate before actually doing something.
-    typename std::vector<int_type>::iterator it = 
+    typename std::vector<int_type>::iterator it =
       std::lower_bound(entries_.begin(), entries_.end(), col);
     while (*it == col) {
       ++curInput;

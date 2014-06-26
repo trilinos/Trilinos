@@ -6,22 +6,13 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <cstdlib>
-#include <cstring>
-#include <string>
-#include <iomanip>
-#include <sstream>
-#include <fstream>
-#include <list>
-
+#include <stk_util/stk_config.h>
 #include <stk_util/diag/WriterExt.hpp>
-#include <stk_util/diag/Writer.hpp>
-#include <stk_util/environment/Demangle.hpp>
-#include <stk_util/diag/Trace.hpp>
-#include <stk_util/diag/Option.hpp>
-#include <stk_util/diag/String.hpp>
-#include <stk_util/diag/StringUtil.hpp>
-#include <stk_util/util/Null_Streambuf.hpp>
+#include <stk_util/diag/String.hpp>     // for Identifier, String
+#include <stk_util/environment/Demangle.hpp>  // for demangle
+#include <stk_util/util/Writer.hpp>     // for operator<<, Writer
+#include "stk_util/parallel/MPI.hpp"    // for Loc, TempLoc
+
 
 
 namespace stk {
@@ -60,7 +51,7 @@ operator<<(
 }
 
 
-#if defined( STK_HAS_MPI )
+#if defined ( STK_HAS_MPI )
 Writer &
 operator<<(
   Writer &        dout,
@@ -103,8 +94,7 @@ operator<<(
     dout << loc.m_value << " " << loc.m_other << "@" << loc.m_loc;
   return dout;
 }
-
-#endif // if defined( STK_HAS_MPI )
+#endif
 
 } // namespace diag
 } // namespace stk

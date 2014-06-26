@@ -90,6 +90,7 @@ public:
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
+  typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef Xpetra::CrsGraph<lno_t, gno_t, node_t> xgraph_t;
   typedef GraphAdapter<User,UserCoord> base_adapter_t;
@@ -213,12 +214,8 @@ public:
 
   void getEdgesView(const lno_t *&offsets, const gid_t *&adjIds) const
   {
-    adjIds = NULL;
-    offsets = NULL;
-    if (getLocalNumVertices()) {
-      offsets = offs_.getRawPtr();
-      if (getLocalNumEdges()) adjIds = adjids_.getRawPtr();
-    }
+    offsets = offs_.getRawPtr();
+    adjIds = (getLocalNumEdges() ? adjids_.getRawPtr() : NULL);
   }
 
   int getNumWeightsPerVertex() const { return nWeightsPerVertex_;}
@@ -407,9 +404,9 @@ template <typename User, typename UserCoord>
 
   size_t len = solution.getLocalNumberOfIds();
   const gid_t *gids = solution.getIdList();
-  const partId_t *parts = solution.getPartList();
+  const part_t *parts = solution.getPartList();
   ArrayRCP<gid_t> gidList = arcp(const_cast<gid_t *>(gids), 0, len, false);
-  ArrayRCP<partId_t> partList = arcp(const_cast<partId_t *>(parts), 0, len, 
+  ArrayRCP<part_t> partList = arcp(const_cast<part_t *>(parts), 0, len, 
     false);
 
   ArrayRCP<lno_t> dummyIn;

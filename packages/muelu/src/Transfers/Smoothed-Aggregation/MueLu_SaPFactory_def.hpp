@@ -46,11 +46,6 @@
 #ifndef MUELU_SAPFACTORY_DEF_HPP
 #define MUELU_SAPFACTORY_DEF_HPP
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 #include <Xpetra_Matrix.hpp>
 
 #include "MueLu_SaPFactory_decl.hpp"
@@ -148,8 +143,10 @@ namespace MueLu {
         SubFactoryMonitor m2(*this, "Fused (I-omega*D^{-1} A)*Ptent", coarseLevel);
         Teuchos::RCP<Vector> invDiag = Utils::GetMatrixDiagonalInverse(*A);
 
-	SC omega = dampingFactor / lambdaMax;
-	finalP=Utils::Jacobi(omega,*invDiag,*A, *Ptent, finalP,GetOStream(Statistics2));
+        SC omega = dampingFactor / lambdaMax;
+
+        // finalP = Ptent + (I - \omega D^{-1}A) Ptent
+        finalP = Utils::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2));
       }
 
     } else {

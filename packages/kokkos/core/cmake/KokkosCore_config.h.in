@@ -4,6 +4,9 @@
 /* The trivial 'src/build_common.sh' creates a config
  * that must stay in sync with this file.
  */
+#cmakedefine KOKKOS_FOR_SIERRA
+
+#if !defined( KOKKOS_FOR_SIERRA )
 
 #cmakedefine KOKKOS_HAVE_MPI
 #cmakedefine KOKKOS_HAVE_CUDA
@@ -12,5 +15,8 @@
 #cmakedefine KOKKOS_HAVE_OPENMP
 #cmakedefine KOKKOS_HAVE_HWLOC
 #cmakedefine KOKKOS_EXPRESSION_CHECK
+#cmakedefine KOKKOS_HAVE_CXX11
+
+#endif
 
 #endif

@@ -143,11 +143,6 @@ size_t removeUndesiredEdges(
 
   newWeights = NULL;
   int eDim = edgeWeights.size();
-  std::vector<bool> uniformWeight;
-  if (eDim > 0){
-    for (int i=0; i < eDim; i++)
-      uniformWeight[i] = (edgeWeights[i].size() == 0);
-  }
 
   // count desired edges
 
@@ -215,13 +210,15 @@ size_t removeUndesiredEdges(
     newWeights = new scalar_t * [eDim];
     env->localMemoryAssertion(__FILE__, __LINE__, eDim, newWeights);
 
-    for (int w=0; w < eDim; w++){
-      if (uniformWeight[w])
-        newWeights[w] = NULL;  // implies uniform
-      else{
+    if (numKeep) {
+      for (int w=0; w < eDim; w++){
         newWeights[w] = new scalar_t [numKeep];
         env->localMemoryAssertion(__FILE__, __LINE__, numKeep, newWeights[w]);
       }
+    }
+    else {
+      for (int w=0; w < eDim; w++)
+        newWeights[w] = NULL;
     }
   }
 
@@ -236,11 +233,8 @@ size_t removeUndesiredEdges(
 
       if (keep){
         newGids[next] = allIds[j];
-        if (eDim > 0){
-          for (int w=0; w < eDim; w++){
-            if (!uniformWeight[w])
-              newWeights[w][next] = edgeWeights[w][j];
-          }
+        for (int w=0; w < eDim; w++){
+          newWeights[w][next] = edgeWeights[w][j];
         }
         next++;
         if (next == numKeep)
@@ -339,13 +333,11 @@ size_t computeLocalEdgeList(
     if (nWeightsPerEdge > 0){
       input_t *wgts = new input_t [nWeightsPerEdge];
       for (int w=0; w < nWeightsPerEdge; w++){
-        if (newWeights[w]){
-          ArrayRCP<const scalar_t> wgtArray(
-            newWeights[w], 0, numLocalGraphEdges, true);
-          wgts[w] = input_t(wgtArray, 1);
-        }
+        ArrayRCP<const scalar_t> wgtArray(newWeights[w], 0, numLocalGraphEdges,true);
+        wgts[w] = input_t(wgtArray, 1);
       }
       eWeights = arcp(wgts, 0, nWeightsPerEdge);
+      delete [] newWeights;
     }
 
     // Create local ID array.  First translate gid to gno.
@@ -898,13 +890,11 @@ void GraphModel<Adapter>::shared_constructor(
       numLocalEdges_ = numNewEdges;
 
       for (int w=0; w < nWeightsPerEdge_; w++){
-        if (newWeights[w] != NULL){   // non-uniform weights
-          ArrayRCP<const scalar_t> wgtArray(newWeights[w],
-            0, numNewEdges, true);
-          eWeights_[w] = input_t(wgtArray, 1);
-        }
+        ArrayRCP<const scalar_t> wgtArray(newWeights[w], 0, numNewEdges, true);
+        eWeights_[w] = input_t(wgtArray, 1);
       }
     }
+    delete [] newWeights;
   }
 
   // Create an IdentifierMap, which maps the user's global IDs to
@@ -1010,26 +1000,16 @@ void GraphModel<Adapter>::shared_constructor(
         const scalar_t *weights=NULL;
         int stride=0;
         ia->getWeightsView(weights, stride, idx);
-        // If weights is NULL, user wants to use uniform weights
-        if (weights != NULL){
-          ArrayRCP<const scalar_t> wgtArray = arcp(weights, 0,
-                                                   stride*numLocalVertices_,
-                                                   false);
-          weightInfo[idx] = input_t(wgtArray, stride);
-        }
-        else {
-          // User did not provide weights for this idx; create uniform weights.
-          scalar_t *uniwgts = new scalar_t[numLocalVertices_];
-          for (size_t i = 0; i < numLocalVertices_; i++)
-            uniwgts[i] = scalar_t(1);
-          ArrayRCP<const scalar_t> wgtArray(uniwgts, 0,numLocalVertices_, true);
-          weightInfo[idx] = input_t(wgtArray, 1);
-        }
+        ArrayRCP<const scalar_t> wgtArray = arcp(weights, 0,
+                                                 stride*numLocalVertices_,
+                                                 false);
+        weightInfo[idx] = input_t(wgtArray, stride);
       }
     }
 
     vWeights_ = arcp<input_t>(weightInfo, 0, numWeightsPerVertex_, true);
   }
+
 
   // Vertex coordinates
 

@@ -3,7 +3,7 @@ SUMMARY
 
 This test driver builds a sparse matrix with 25 non-zeros per row (on average) with the specified local grid dimensions.
 It then tests the performance of:
-- sparse matrix-vector multiplication, 
+- sparse matrix-vector multiplication,
 - sparse matrix-multivector multiplication for 2, 4, 8 RHS,
 - vector 2-norm (for a vector of the same global dimension as the sparse matrix)
 - vector dot product
@@ -19,7 +19,7 @@ HOW TO BUILD
 
 - Untar the source code.
 - Create a directory called EPETRA_MPI_OPT under the main trilinos directory
-- Create a file called "invoke-configure" in the EPETRA_MPI_OPT directory and insert the following 
+- Create a file called "invoke-configure" in the EPETRA_MPI_OPT directory and insert the following
   configure invocation command (or something very similar, depending on compilers, etc.):
 
 ../configure -C \

@@ -33,11 +33,10 @@
 #ifndef IOSS_Ioss_FileInfo_h
 #define IOSS_Ioss_FileInfo_h
 
+#include <sys/types.h>                  // for off_t
+#include <time.h>                       // for time_t
+#include <string>                       // for string, operator!=, etc
 #include <Ioss_CodeTypes.h>
-
-#include <string>
-#include <iosfwd>
-#include <sys/types.h>
 
 namespace Ioss {
 

@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -48,12 +48,12 @@
 #ifndef NOX_EPETRA_LINEARSYSTEMSTRATIMIKOS_H
 #define NOX_EPETRA_LINEARSYSTEMSTRATIMIKOS_H
 
-#include "NOX_Common.H" 
+#include "NOX_Common.H"
 
 #ifdef HAVE_NOX_STRATIMIKOS
 
-#include "NOX_Epetra_LinearSystem.H"	// base class
-#include "NOX_Epetra_Vector.H"	// class data element
+#include "NOX_Epetra_LinearSystem.H"    // base class
+#include "NOX_Epetra_Vector.H"    // class data element
 #include "NOX_Utils.H"          // class data element
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_Time.h"        // class data element
@@ -92,24 +92,24 @@ namespace NOX {
 //! Improved version of the Epetra support class.
 namespace Epetra {
 
-/*! 
+/*!
 
 \brief Concrete implementation of NOX::Epetra::LinearSolver for Stratimikos.
 
-This solver class provides the linear algebra services 
+This solver class provides the linear algebra services
 through the Stratimikos linear solver strategies
 package.
- 
-This class handles construction of both the preconditioners 
-and solvers.  All options are determined through parameter 
-lists and the basic constructors. 
+
+This class handles construction of both the preconditioners
+and solvers.  All options are determined through parameter
+lists and the basic constructors.
 
 <B>Constructing a Linear System</B>
 
 There are two constructors for this linear system class.
 The first is for supplying a Jacobian operator which, if
-it is a Epetra_RowMatrix, can be used to generate a 
-preconditioner. 
+it is a Epetra_RowMatrix, can be used to generate a
+preconditioner.
 
 The second is for the cases when the user wants to supply
 an operator other than the Jacobian for use in preconditioning.
@@ -119,14 +119,14 @@ an approximation of the Jacobian, which is used internally
 to generate a preconditioner (such as by ILU). The second
 use case is where the preconditioning operator supplied to
 this constructor approximates the inverse of the Jacobian
-matrix. This case requires that the bool option 
+matrix. This case requires that the bool option
 precIsAlreadyInverted is set as true (optional eighth argument).
 
 As compared to the NOX::Epetra::LinearSystem::AztecOO class,
-this implementation has dropped internal support for 
-Matrix-Free and Finite Difference Jacobians. However, 
+this implementation has dropped internal support for
+Matrix-Free and Finite Difference Jacobians. However,
 the Jacobian operator supplied to this class can be
-constructed using these classes, as is done in the 
+constructed using these classes, as is done in the
 1DfemStratimikos examples.
 
 <B>"Stratimikos Linear Solver" sublist parameters</B>
@@ -134,7 +134,7 @@ constructed using these classes, as is done in the
 A Teuchos::ParameterList called "Stratimikos Linear Solver" is input to this class
 to select all the options. This list itself contains only 2 sublists.
 
-<li> "Stratimikos" sublist - This very extensive list is sent directly 
+<li> "Stratimikos" sublist - This very extensive list is sent directly
 to the Stratimikos layer to allow selection of numerous linear solver
 and preconditioning strategies. This list is documented here:
 Stratimikos::DefaultLinearSolverBuilder .
@@ -165,7 +165,7 @@ protected:
   //! List of types of epetra objects that can be used for the Jacobian and/or Preconditioner.
   enum OperatorType {
     //! An Epetra_Operator derived object.
-    EpetraOperator, 
+    EpetraOperator,
     //! An Epetra_RowMatrix derived object.
     EpetraRowMatrix,
     //! An Epetra_VbrMatrix object.
@@ -176,80 +176,80 @@ protected:
 
 public:
 
-  //! Constructor with a user supplied Jacobian Operator.  
-  /*! Either there is no preconditioning or the preconditioner will be 
-    used/created internally.  The Jacobian (if derived from an 
+  //! Constructor with a user supplied Jacobian Operator.
+  /*! Either there is no preconditioning or the preconditioner will be
+    used/created internally.  The Jacobian (if derived from an
     Epetra_RowMatrix class) can be used to internally to create a
-    preconditioner. The stratimikosLinSolParam list needs to have 
-    a sublist called Stratimikos which is sent directly to the 
+    preconditioner. The stratimikosLinSolParam list needs to have
+    a sublist called Stratimikos which is sent directly to the
     Stratimikos package. See Stratimikos for full documentation.
    */
 
   LinearSystemStratimikos(
-    Teuchos::ParameterList& printingParams, 
-    Teuchos::ParameterList& stratimikosLinSolParams, 
-    const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac, 
+    Teuchos::ParameterList& printingParams,
+    Teuchos::ParameterList& stratimikosLinSolParams,
+    const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac,
     const Teuchos::RCP<Epetra_Operator>& J,
     const NOX::Epetra::Vector& cloneVector,
-    const Teuchos::RCP<NOX::Epetra::Scaling> scalingObject = 
+    const Teuchos::RCP<NOX::Epetra::Scaling> scalingObject =
     Teuchos::null);
 
   //! Constructor with user supplied separate objects for the
-  //! Jacobian (J) and Preconditioner (M). 
+  //! Jacobian (J) and Preconditioner (M).
   /*! If precIsAlreadyInverted=false, then M is considered an
       approximate Jacobian. Preconditioner algorithms such as
       ILU are then used to generate an approximate M-inverse.
       Else, if precIsAlreadyInverted=true, then the M operator
       is already assumed to approximate J-inverse and it is
-      just applied as-is. 
-  
-      The stratimikosLinSolParams list needs to have a 
-      sublist called Stratimikos which is sent directly to the 
+      just applied as-is.
+
+      The stratimikosLinSolParams list needs to have a
+      sublist called Stratimikos which is sent directly to the
       Stratimikos package. See Stratimikos for full documentation.
   */
   LinearSystemStratimikos(
-    Teuchos::ParameterList& printingParams, 
-    Teuchos::ParameterList& stratimikosLinSolParams, 
-    const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac, 
-    const Teuchos::RCP<Epetra_Operator>& J,  
-    const Teuchos::RCP<NOX::Epetra::Interface::Preconditioner>& iPrec, 
+    Teuchos::ParameterList& printingParams,
+    Teuchos::ParameterList& stratimikosLinSolParams,
+    const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac,
+    const Teuchos::RCP<Epetra_Operator>& J,
+    const Teuchos::RCP<NOX::Epetra::Interface::Preconditioner>& iPrec,
     const Teuchos::RCP<Epetra_Operator>& M,
     const NOX::Epetra::Vector& cloneVector,
     const bool& precIsAlreadyInverted = false,
-    const Teuchos::RCP<NOX::Epetra::Scaling> scalingObject = 
+    const Teuchos::RCP<NOX::Epetra::Scaling> scalingObject =
     Teuchos::null);
 
   //! Destructor.
   virtual ~LinearSystemStratimikos();
 
-  virtual bool applyJacobian(const NOX::Epetra::Vector& input, 
-			     NOX::Epetra::Vector& result) const;
+  virtual bool applyJacobian(const NOX::Epetra::Vector& input,
+                 NOX::Epetra::Vector& result) const;
 
-  virtual bool applyJacobianTranspose(const NOX::Epetra::Vector& input, 
-				      NOX::Epetra::Vector& result) const;
-  
-  virtual bool applyJacobianInverse(Teuchos::ParameterList& linearSolverParams, 
-				    const NOX::Epetra::Vector& input, 
-				    NOX::Epetra::Vector& result);
+  virtual bool applyJacobianTranspose(const NOX::Epetra::Vector& input,
+                      NOX::Epetra::Vector& result) const;
+
+  virtual bool applyJacobianInverse(Teuchos::ParameterList& linearSolverParams,
+                    const NOX::Epetra::Vector& input,
+                    NOX::Epetra::Vector& result);
 
   virtual bool applyRightPreconditioning(bool useTranspose,
-				   Teuchos::ParameterList& linearSolverParams, 
-				   const NOX::Epetra::Vector& input, 
-				   NOX::Epetra::Vector& result) const;
+                   Teuchos::ParameterList& linearSolverParams,
+                   const NOX::Epetra::Vector& input,
+                   NOX::Epetra::Vector& result) const;
 
-  virtual bool createPreconditioner(const NOX::Epetra::Vector& x, 
-				    Teuchos::ParameterList& linearSolverParams,
-				    bool recomputeGraph) const;
-  
+  virtual bool createPreconditioner(const NOX::Epetra::Vector& x,
+                    Teuchos::ParameterList& linearSolverParams,
+                    bool recomputeGraph) const;
+
   virtual bool destroyPreconditioner() const;
 
   /*! \brief recompute preconditioner not supported here. The
       current supported options are rebuild and reuse.
   */
-  virtual bool recomputePreconditioner(const NOX::Epetra::Vector& x, 
-			     Teuchos::ParameterList& linearSolverParams) const;
+  virtual bool recomputePreconditioner(const NOX::Epetra::Vector& x,
+                 Teuchos::ParameterList& linearSolverParams) const;
   // Derived class
-  virtual PreconditionerReusePolicyType 
+  virtual PreconditionerReusePolicyType
   getPreconditionerPolicy(bool advanceReuseCounter=true);
 
   //! Reset the NOX Stratimimos Options, such as preconditioner reuse.
@@ -258,18 +258,18 @@ public:
   //! Get the scaling object.
   virtual Teuchos::RCP<NOX::Epetra::Scaling> getScaling();
 
-  //! Sets the diagonal scaling vector(s) used in scaling the linear system.  See NOX::Epetra::Scaling for details on how to specify scaling of the linear system.  
+  //! Sets the diagonal scaling vector(s) used in scaling the linear system.  See NOX::Epetra::Scaling for details on how to specify scaling of the linear system.
   void resetScaling(const Teuchos::RCP<NOX::Epetra::Scaling>& s);
 
-  //! Compute the Jacobian 
+  //! Compute the Jacobian
   virtual bool computeJacobian(const NOX::Epetra::Vector& x);
 
   //! NOX::Interface::Jacobian accessor
-  virtual Teuchos::RCP<const NOX::Epetra::Interface::Jacobian> 
+  virtual Teuchos::RCP<const NOX::Epetra::Interface::Jacobian>
   getJacobianInterface() const;
 
   //! NOX::Interface::Preconditioiner accessor
-  virtual Teuchos::RCP<const NOX::Epetra::Interface::Preconditioner> 
+  virtual Teuchos::RCP<const NOX::Epetra::Interface::Preconditioner>
   getPrecInterface() const;
 
   //! Indicates whether a preconditioner has been constructed
@@ -284,14 +284,14 @@ public:
   //! Jacobian Epetra_Operator accessor
   virtual Teuchos::RCP<Epetra_Operator> getJacobianOperator();
 
-  //! Preconditioner Epetra_Operator accessor (only the base matrix if using an internal preconditioner - aztecoo or ifpack). 
+  //! Preconditioner Epetra_Operator accessor (only the base matrix if using an internal preconditioner - aztecoo or ifpack).
   virtual Teuchos::RCP<const Epetra_Operator> getPrecOperator() const;
 
   //! Return preconditioner operator generated and stored in AztecOO
   /*!
    * Note:  This should only be called if hasPreconditioner() returns true.
    */
-  virtual Teuchos::RCP<const Epetra_Operator> 
+  virtual Teuchos::RCP<const Epetra_Operator>
   getGeneratedPrecOperator() const;
 
   //! Return preconditioner operator generated and stored in AztecOO
@@ -299,10 +299,10 @@ public:
 
   //virtual void getNormLastLinearSolveResidual(double & residual) const;
 
-  //! Returns the total time (sec.) spent in createPreconditioner(). 
+  //! Returns the total time (sec.) spent in createPreconditioner().
   double getTimeCreatePreconditioner() const;
 
-  //! Returns the total time (sec.) spent in applyJacobianInverse(). 
+  //! Returns the total time (sec.) spent in applyJacobianInverse().
   double getTimeApplyJacobianInverse() const;
 
   //! Set Jacobian operator for solve
@@ -317,13 +317,13 @@ public:
   //! Statistics for number of times the linear solver has been called
   int getNumLinearSolves();
 
-  //! Statistics for number of iterations taken in last linear solve 
+  //! Statistics for number of iterations taken in last linear solve
   int getLinearItersLastSolve();
-  
+
   //! Statistics for cumulative number of iterations in all linear solve
   int getLinearItersTotal();
-  
-  //! Statistics for the achieved tolerance of last linear solve 
+
+  //! Statistics for the achieved tolerance of last linear solve
   double getAchievedTol();
 
 protected:
@@ -344,14 +344,14 @@ protected:
       otherwise the aztec object may ignore this operation.
   */
 
-  virtual void throwError(const std::string& functionName, 
-			  const std::string& errorMsg) const;
+  virtual void throwError(const std::string& functionName,
+              const std::string& errorMsg) const;
 
   //! Prints a warning for ifpack preconditioner failures (error_code != 0).
-  virtual void precError(int error_code, 
-			 const std::string& nox_function,
-			 const std::string& prec_type,
-			 const std::string& prec_function) const;
+  virtual void precError(int error_code,
+             const std::string& nox_function,
+             const std::string& prec_type,
+             const std::string& prec_function) const;
 
 protected:
 
@@ -363,22 +363,22 @@ protected:
 
   //! Type of operator for the Jacobian.
   OperatorType jacType;
-  
+
   //! Pointer to the Jacobian operator.
   mutable Teuchos::RCP<Epetra_Operator> jacPtr;
 
   //! Reference to the user supplied preconditioner interface functions
   Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> precInterfacePtr;
 
-  //! Type of operator for the preconditioner. 
+  //! Type of operator for the preconditioner.
   OperatorType precType;
 
   //! Pointer to the preconditioner operator.
   mutable Teuchos::RCP<Epetra_Operator> precPtr;
 
-  //! Source of preconditioner: 
+  //! Source of preconditioner:
   //! SeparateMatrix is approximate Jacobian, to do ILU on, e.g.
-  //! User_Defined_ is just an operator 
+  //! User_Defined_ is just an operator
   enum PreconditionerMatrixSourceType
     {UseJacobian, SeparateMatrix, UserDefined_};
   PreconditionerMatrixSourceType precMatrixSource;
@@ -397,7 +397,7 @@ protected:
 
   mutable double conditionNumberEstimate;
 
-  //! True if the preconditioner has been computed 
+  //! True if the preconditioner has been computed
   mutable bool isPrecConstructed;
 
   //! If set to true, solver information is printed to the "Output" sublist of the "Linear Solver" list.
@@ -414,7 +414,7 @@ protected:
 
   //! Counter for number of times called since reset or construction
   int precQueryCounter;
-  
+
   //! Parameter to determine whether or not to recompute Preconditioner
   int maxAgeOfPrec;
 

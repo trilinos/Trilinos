@@ -1,7 +1,14 @@
 #ifndef _ELB_LOADBAL_CONST_H_
 #define _ELB_LOADBAL_CONST_H_
 
-#include "elb.h"
+struct Machine_Description;
+struct Problem_Description;
+struct Solver_Description;
+struct Sphere_Info;
+template <typename INT> struct Graph_Description;
+template <typename INT> struct LB_Description;
+template <typename INT> struct Mesh_Description;
+template <typename INT> struct Weight_Description;
 
 template <typename INT>
 int generate_loadbal(

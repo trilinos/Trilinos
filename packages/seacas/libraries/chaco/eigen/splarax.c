@@ -2,9 +2,8 @@
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
-#include <stdio.h>
-#include "defs.h"
-#include "structs.h"
+#include <stdio.h>                      // for NULL
+#include "structs.h"                    // for vtx_data
 
 
 /* Sparse linked A(matrix) times x(vector), double precision. */

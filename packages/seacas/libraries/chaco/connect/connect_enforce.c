@@ -2,11 +2,10 @@
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include "defs.h"
-#include "structs.h"
-#include "smalloc.h"
+#include <stdio.h>                      // for NULL, printf
+#include "defs.h"                       // for TRUE
+#include "smalloc.h"                    // for sfree, smalloc
+#include "structs.h"                    // for vtx_data, heap
 
 /* Move vertices between domains to ensure each domain is connected. */
 /* Note: This will likely result in load imbalance. */

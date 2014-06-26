@@ -341,7 +341,8 @@ static void create_peer(
         NNTI_peer_t *peer,
         char *name,
         NNTI_ip_addr addr,
-        NNTI_tcp_port port);
+        NNTI_tcp_port port,
+        NNTI_qp_num qpn);
 //static void copy_peer(
 //        NNTI_peer_t *src,
 //        NNTI_peer_t *dest);
@@ -384,6 +385,7 @@ static NNTI_result_t insert_conn_qpn(const NNTI_qp_num qpn, ib_connection *conn)
 static ib_connection *get_conn_peer(const NNTI_peer_t *peer);
 static ib_connection *get_conn_qpn(const NNTI_qp_num qpn);
 static NNTI_peer_t *get_peer_by_url(const char *url);
+static ib_connection *get_conn_by_url(const char *url);
 static ib_connection *del_conn_peer(const NNTI_peer_t *peer);
 static ib_connection *del_conn_qpn(const NNTI_qp_num qpn);
 
@@ -427,6 +429,7 @@ static const int MIN_TIMEOUT = 0;  /* in milliseconds */
 struct addrport_key {
     NNTI_ip_addr    addr;       /* part1 of a compound key */
     NNTI_tcp_port   port;       /* part2 of a compound key */
+    NNTI_qp_num     qpn;        /* part3 of a compound key */
 
     // Need this operators for the hash map
     bool operator<(const addrport_key &key1) const {
@@ -435,6 +438,10 @@ struct addrport_key {
         } else if (addr == key1.addr) {
             if (port < key1.port) {
                 return true;
+            } else if (port == key1.port) {
+                if (qpn < key1.qpn) {
+                    return true;
+                }
             }
         }
         return false;
@@ -445,6 +452,10 @@ struct addrport_key {
         } else if (addr == key1.addr) {
             if (port > key1.port) {
                 return true;
+            } else if (port == key1.port) {
+                if (qpn > key1.qpn) {
+                    return true;
+                }
             }
         }
         return false;
@@ -1002,7 +1013,8 @@ NNTI_result_t NNTI_ib_init (
                 &trans_hdl->me,
                 transport_global_data.listen_name,
                 transport_global_data.listen_addr,
-                transport_global_data.listen_port);
+                transport_global_data.listen_port,
+                0);
 
         ib_initialized = true;
     }
@@ -1158,7 +1170,8 @@ retry:
             peer_hdl,
             conn->peer_name,
             conn->peer_addr,
-            conn->peer_port);
+            conn->peer_port,
+            conn->req_qp.peer_qpn);
 
     conn->peer=*peer_hdl;
 
@@ -1648,6 +1661,9 @@ NNTI_result_t NNTI_ib_put (
     assert(wr);
 
     wr->conn = get_conn_peer(&dest_buffer_hdl->buffer_owner);
+    if (wr->conn == NULL) {
+        wr->conn = get_conn_by_url(dest_buffer_hdl->buffer_owner.url);
+    }
     assert(wr->conn);
 
     wr->reg_buf = (NNTI_buffer_t *)src_buffer_hdl;
@@ -1776,6 +1792,9 @@ NNTI_result_t NNTI_ib_get (
     assert(wr);
 
     wr->conn = get_conn_peer(&src_buffer_hdl->buffer_owner);
+    if (wr->conn == NULL) {
+        wr->conn = get_conn_by_url(src_buffer_hdl->buffer_owner.url);
+    }
     assert(wr->conn);
 
     wr->reg_buf = (NNTI_buffer_t *)dest_buffer_hdl;
@@ -3752,25 +3771,25 @@ static void create_status(
             case IB_OP_PUT_INITIATOR:
             case IB_OP_SEND_REQUEST:
             case IB_OP_SEND_BUFFER:
-                create_peer(&status->src, transport_global_data.listen_name, transport_global_data.listen_addr, transport_global_data.listen_port);
-                create_peer(&status->dest, conn->peer_name, conn->peer_addr, conn->peer_port);
+                create_peer(&status->src, transport_global_data.listen_name, transport_global_data.listen_addr, transport_global_data.listen_port, conn->req_qp.qpn);
+                create_peer(&status->dest, conn->peer_name, conn->peer_addr, conn->peer_port, conn->req_qp.peer_qpn);
                 break;
             case IB_OP_GET_TARGET:
                 if (config.use_rdma_target_ack) {
-                    create_peer(&status->src, transport_global_data.listen_name, transport_global_data.listen_addr, transport_global_data.listen_port);
-                    create_peer(&status->dest, conn->peer_name, conn->peer_addr, conn->peer_port);
+                    create_peer(&status->src, transport_global_data.listen_name, transport_global_data.listen_addr, transport_global_data.listen_port, conn->req_qp.qpn);
+                    create_peer(&status->dest, conn->peer_name, conn->peer_addr, conn->peer_port, conn->req_qp.peer_qpn);
                 }
                 break;
             case IB_OP_GET_INITIATOR:
             case IB_OP_NEW_REQUEST:
             case IB_OP_RECEIVE:
-                create_peer(&status->src, conn->peer_name, conn->peer_addr, conn->peer_port);
-                create_peer(&status->dest, transport_global_data.listen_name, transport_global_data.listen_addr, transport_global_data.listen_port);
+                create_peer(&status->src, conn->peer_name, conn->peer_addr, conn->peer_port, conn->req_qp.peer_qpn);
+                create_peer(&status->dest, transport_global_data.listen_name, transport_global_data.listen_addr, transport_global_data.listen_port, conn->req_qp.qpn);
                 break;
             case IB_OP_PUT_TARGET:
                 if (config.use_rdma_target_ack) {
-                    create_peer(&status->src, conn->peer_name, conn->peer_addr, conn->peer_port);
-                    create_peer(&status->dest, transport_global_data.listen_name, transport_global_data.listen_addr, transport_global_data.listen_port);
+                    create_peer(&status->src, conn->peer_name, conn->peer_addr, conn->peer_port, conn->req_qp.peer_qpn);
+                    create_peer(&status->dest, transport_global_data.listen_name, transport_global_data.listen_addr, transport_global_data.listen_port, conn->req_qp.qpn);
                 }
                 break;
         }
@@ -3802,7 +3821,7 @@ static void create_status(
     }
 }
 
-static void create_peer(NNTI_peer_t *peer, char *name, NNTI_ip_addr addr, NNTI_tcp_port port)
+static void create_peer(NNTI_peer_t *peer, char *name, NNTI_ip_addr addr, NNTI_tcp_port port, NNTI_qp_num qpn)
 {
     log_debug(nnti_debug_level, "enter");
 
@@ -3811,6 +3830,7 @@ static void create_peer(NNTI_peer_t *peer, char *name, NNTI_ip_addr addr, NNTI_t
     peer->peer.transport_id                   =NNTI_TRANSPORT_IB;
     peer->peer.NNTI_remote_process_t_u.ib.addr=addr;
     peer->peer.NNTI_remote_process_t_u.ib.port=port;
+    peer->peer.NNTI_remote_process_t_u.ib.qpn =qpn;
 
     log_debug(nnti_debug_level, "exit");
 }
@@ -4198,11 +4218,12 @@ static int new_client_connection(
     if (rc)
         goto out;
 
-    c->peer_name    = strdup(param_in.name);
-    c->peer_addr    = ntohl(param_in.addr);
-    c->peer_port    = ntohl(param_in.port);
-    c->peer_lid     = ntohl(param_in.lid);
-    c->peer_req_qpn = ntohl(param_in.req_qpn);
+    c->peer_name        = strdup(param_in.name);
+    c->peer_addr        = ntohl(param_in.addr);
+    c->peer_port        = ntohl(param_in.port);
+    c->peer_lid         = ntohl(param_in.lid);
+    c->peer_req_qpn     = ntohl(param_in.req_qpn);
+    c->req_qp.peer_qpn  = ntohl(param_in.req_qpn);
     c->data_qp.peer_qpn = ntohl(param_in.my_qpn);
 
 out:
@@ -4291,11 +4312,12 @@ static int new_server_connection(
     if (rc)
         goto out;
 
-    c->peer_name    = strdup(param_in.name);
-    c->peer_addr    = ntohl(param_in.addr);
-    c->peer_port    = ntohl(param_in.port);
-    c->peer_lid     = ntohl(param_in.lid);
-    c->peer_req_qpn = ntohl(param_in.req_qpn);
+    c->peer_name        = strdup(param_in.name);
+    c->peer_addr        = ntohl(param_in.addr);
+    c->peer_port        = ntohl(param_in.port);
+    c->peer_lid         = ntohl(param_in.lid);
+    c->peer_req_qpn     = ntohl(param_in.req_qpn);
+    c->req_qp.peer_qpn  = ntohl(param_in.req_qpn);
     c->data_qp.peer_qpn = ntohl(param_in.my_qpn);
 
 out:
@@ -4309,6 +4331,7 @@ static NNTI_result_t insert_conn_peer(const NNTI_peer_t *peer, ib_connection *co
 
     key.addr = peer->peer.NNTI_remote_process_t_u.ib.addr;
     key.port = peer->peer.NNTI_remote_process_t_u.ib.port;
+    key.qpn  = peer->peer.NNTI_remote_process_t_u.ib.qpn;
 
     if (logging_debug(nnti_debug_level)) {
         fprint_NNTI_peer(logger_get_file(), "peer",
@@ -4357,6 +4380,7 @@ static ib_connection *get_conn_peer(const NNTI_peer_t *peer)
     memset(&key, 0, sizeof(addrport_key));
     key.addr=peer->peer.NNTI_remote_process_t_u.ib.addr;
     key.port=peer->peer.NNTI_remote_process_t_u.ib.port;
+    key.qpn =peer->peer.NNTI_remote_process_t_u.ib.qpn;
 
     nthread_lock(&nnti_conn_peer_lock);
     if (connections_by_peer.find(key) != connections_by_peer.end()) {
@@ -4426,6 +4450,32 @@ static NNTI_peer_t *get_peer_by_url(const char *url)
 
     return(NULL);
 }
+static ib_connection *get_conn_by_url(const char *url)
+{
+    ib_connection *conn = NULL;
+
+    log_debug(nnti_debug_level, "looking for url=%s", url);
+
+    conn_by_peer_iter_t i;
+    nthread_lock(&nnti_conn_peer_lock);
+    for (i=connections_by_peer.begin(); i != connections_by_peer.end(); i++) {
+        log_debug(nnti_debug_level, "peer_map key=(%llu,%llu) conn=%p",
+                (uint64_t)i->first.addr, (uint64_t)i->first.port, i->second);
+        if (strcmp(i->second->peer.url, url) == 0) {
+            conn=i->second;
+            break;
+        }
+    }
+    nthread_unlock(&nnti_conn_peer_lock);
+
+    if (conn != NULL) {
+        log_debug(nnti_debug_level, "connection found");
+        return conn;
+    }
+
+    log_debug(nnti_debug_level, "connection NOT found");
+    return(NULL);
+}
 static ib_connection *del_conn_peer(const NNTI_peer_t *peer)
 {
     ib_connection  *conn=NULL;
@@ -4439,6 +4489,7 @@ static ib_connection *del_conn_peer(const NNTI_peer_t *peer)
     memset(&key, 0, sizeof(addrport_key));
     key.addr=peer->peer.NNTI_remote_process_t_u.ib.addr;
     key.port=peer->peer.NNTI_remote_process_t_u.ib.port;
+    key.qpn =peer->peer.NNTI_remote_process_t_u.ib.qpn;
 
     nthread_lock(&nnti_conn_peer_lock);
     if (connections_by_peer.find(key) != connections_by_peer.end()) {
@@ -5001,7 +5052,8 @@ static NNTI_result_t check_for_waiting_connection()
                 &peer,
                 conn->peer_name,
                 conn->peer_addr,
-                conn->peer_port);
+                conn->peer_port,
+                conn->req_qp.peer_qpn);
 
         conn->peer=peer;
 
@@ -5211,12 +5263,13 @@ static void print_ib_conn(ib_connection *c)
     log_debug(debug_level, "c->req_cq          =%p", transport_global_data.req_cq);
     log_debug(debug_level, "c->req_srq         =%p", transport_global_data.req_srq);
 
-    log_debug(debug_level, "c->req_qp.qp          =%p", c->req_qp.qp);
-    log_debug(debug_level, "c->req_qp.qpn         =%llu", (uint64_t)c->req_qp.qpn);
+    log_debug(debug_level, "c->req_qp.qp       =%p", c->req_qp.qp);
+    log_debug(debug_level, "c->req_qp.qpn      =%llu", (uint64_t)c->req_qp.qpn);
+    log_debug(debug_level, "c->req_qp.peer_qpn =%llu", (uint64_t)c->req_qp.peer_qpn);
 
-    log_debug(debug_level, "c->data_qp.qp          =%p",     c->data_qp.qp);
-    log_debug(debug_level, "c->data_qp.qpn         =%llu",   (uint64_t)c->data_qp.qpn);
-    log_debug(debug_level, "c->data_qp.peer_qpn    =%llu",   (uint64_t)c->data_qp.peer_qpn);
+    log_debug(debug_level, "c->data_qp.qp      =%p",     c->data_qp.qp);
+    log_debug(debug_level, "c->data_qp.qpn     =%llu",   (uint64_t)c->data_qp.qpn);
+    log_debug(debug_level, "c->data_qp.peer_qpn=%llu",   (uint64_t)c->data_qp.peer_qpn);
 
     log_debug(debug_level, "c->state           =%d", c->state);
 

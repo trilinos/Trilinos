@@ -77,18 +77,16 @@ enum BaseAdapterType {
     adapters are already defined for common data structures, such as
     Tpetra and Epetra objects and C-language pointers to arrays.
 
-    \todo Add add a MeshAdapter
  */
 
 template <typename User>
   class BaseAdapter {
 
-private:
-
-  typedef typename InputTraits<User>::gid_t    gid_t;
+public:
+  typedef typename InputTraits<User>::gid_t gid_t;
   typedef typename InputTraits<User>::scalar_t scalar_t;
 
-public:
+  typedef typename InputTraits<User>::part_t part_t;  
 
   /*! \brief Returns the type of adapter.
    */
@@ -127,7 +125,23 @@ public:
   virtual void getWeightsView(const scalar_t *&wgt, int &stride,
                               int idx = 0) const = 0;
 
- /*! \brief Apply a PartitioningSolution to an input.
+  /*! \brief Provide pointer to an array containing the input part 
+   *         assignment for each ID.
+   *         The input part information may be used for re-partitioning
+   *         to reduce data movement, or for mapping parts to processes.
+   *         Adapters may return NULL for this pointer (the default
+   *         behavior); if NULL is returned, algorithms will assume
+   *         the rank 
+   *    \param inputPart on return a pointer to input part numbers
+   */ 
+  void getPartsView(const part_t *&inputPart) const
+  {
+    // Default behavior:  return NULL for inputPart array;
+    // assume input part == rank
+    inputPart = NULL;
+  }
+
+  /*! \brief Apply a PartitioningSolution to an input.
    *
    *  This is not a required part of the InputAdapter interface. However
    *  if the Caller calls a Problem method to redistribute data, it needs

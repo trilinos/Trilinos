@@ -56,6 +56,7 @@
 #include <Kokkos_HostSpace.hpp>
 #include <Kokkos_Parallel.hpp>
 #include <Kokkos_Layout.hpp>
+#include <impl/Kokkos_Tags.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -77,6 +78,8 @@ public:
   //! \name Type declarations that all Kokkos devices must provide.
   //@{
 
+  //! The tag (what type of kokkos_object is this).
+  typedef Impl::DeviceTag       kokkos_tag ;
   typedef OpenMP                device_type ;
   typedef HostSpace::size_type  size_type ;
   typedef HostSpace             memory_space ;
@@ -114,32 +117,25 @@ public:
    *  2) Allocate a HostThread for each OpenMP thread to hold its
    *     topology and fan in/out data.
    */
-#if 0
-  static void initialize( const unsigned team_count         = 1 ,
-                          const unsigned threads_per_team   = 1 ,
-                          const unsigned use_numa_count     = 0 ,
-                          const unsigned use_cores_per_numa = 0 );
-#endif
-
   static void initialize( unsigned thread_count = 0 ,
                           unsigned use_numa_count = 0 ,
                           unsigned use_cores_per_numa = 0 );
 
   static int is_initialized();
 
-  static unsigned league_max();
-  static unsigned team_max();
+  KOKKOS_FUNCTION static unsigned team_max();
+  KOKKOS_FUNCTION static unsigned team_recommended();
   //@}
   //------------------------------------
   //! \name Function for the functor device interface */
   //@{
 
-  inline int league_rank() const ;
-  inline int league_size() const ;
-  inline int team_rank() const ;
-  inline int team_size() const ;
+  KOKKOS_INLINE_FUNCTION int league_rank() const ;
+  KOKKOS_INLINE_FUNCTION int league_size() const ;
+  KOKKOS_INLINE_FUNCTION int team_rank() const ;
+  KOKKOS_INLINE_FUNCTION int team_size() const ;
 
-  inline void team_barrier();
+  KOKKOS_INLINE_FUNCTION void team_barrier();
 
   /** \brief  Intra-team exclusive prefix sum with team_rank() ordering.
    *
@@ -147,7 +143,7 @@ public:
    *    reduction_total = dev.team_scan( value ) + value ;
    */
   template< typename Type >
-  inline Type team_scan( const Type & value );
+  KOKKOS_INLINE_FUNCTION Type team_scan( const Type & value );
 
   /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
    *          with intra-team non-deterministic ordering accumulation.
@@ -159,10 +155,10 @@ public:
    *  non-deterministic.
    */
   template< typename TypeLocal , typename TypeGlobal >
-  inline TypeGlobal team_scan( const TypeLocal & value , TypeGlobal * const global_accum );
+  KOKKOS_INLINE_FUNCTION TypeGlobal team_scan( const TypeLocal & value , TypeGlobal * const global_accum );
 
 
-  inline void * get_shmem( const int size );
+  KOKKOS_INLINE_FUNCTION void * get_shmem( const int size );
 
   explicit inline OpenMP( Impl::OpenMPexec & );
 

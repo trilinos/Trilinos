@@ -66,10 +66,10 @@ namespace Zoltan2{
 /*! \brief coordinateModelPartBox Class,
  * represents the boundaries of the box which is a result of a geometric partitioning algorithm.
  */
-template <typename scalar_t,typename partId_t>
+template <typename scalar_t,typename part_t>
 class coordinateModelPartBox{
 
-        partId_t pID; //part Id
+        part_t pID; //part Id
         int dim;    //dimension of the box
         scalar_t *lmins;    //minimum boundaries of the box along all dimensions.
         scalar_t *lmaxs;    //maximum boundaries of the box along all dimensions.
@@ -80,17 +80,17 @@ class coordinateModelPartBox{
         //we use hashing. A box can be put into multiple hash buckets.
         //the following 2 variable holds the minimum and maximum of the
         //hash values along all dimensions.
-        partId_t *minHashIndices;
-        partId_t *maxHashIndices;
+        part_t *minHashIndices;
+        part_t *maxHashIndices;
 
         //result hash bucket indices.
-        std::vector <partId_t> *gridIndices;
+        std::vector <part_t> *gridIndices;
         //neighbors of the box.
-        std::set <partId_t> neighbors;
+        std::set <part_t> neighbors;
 public:
         /*! \brief Constructor
          */
-        coordinateModelPartBox(partId_t pid, int dim_):
+        coordinateModelPartBox(part_t pid, int dim_):
             pID(pid),
             dim(dim_),
             lmins(0), lmaxs(0),
@@ -102,9 +102,9 @@ public:
             lmins = new scalar_t [dim];
             lmaxs = new scalar_t [dim];
 
-            minHashIndices = new partId_t [dim];
-            maxHashIndices = new partId_t [dim];
-            gridIndices = new std::vector <partId_t> ();
+            minHashIndices = new part_t [dim];
+            maxHashIndices = new part_t [dim];
+            gridIndices = new std::vector <part_t> ();
             for (int i = 0; i < dim; ++i){
                 lmins[i] = -this->maxScalar;
                 lmaxs[i] = this->maxScalar;
@@ -113,7 +113,7 @@ public:
         /*! \brief  Constructor
          * deep copy of the maximum and minimum boundaries.
          */
-        coordinateModelPartBox(partId_t pid, int dim_, scalar_t *lmi, scalar_t *lma):
+        coordinateModelPartBox(part_t pid, int dim_, scalar_t *lmi, scalar_t *lma):
             pID(pid),
             dim(dim_),
             lmins(0), lmaxs(0),
@@ -124,9 +124,9 @@ public:
             gridIndices(0), neighbors(){
             lmins = new scalar_t [dim];
             lmaxs = new scalar_t [dim];
-            minHashIndices = new partId_t [dim];
-            maxHashIndices = new partId_t [dim];
-            gridIndices = new std::vector <partId_t> ();
+            minHashIndices = new part_t [dim];
+            maxHashIndices = new part_t [dim];
+            gridIndices = new std::vector <part_t> ();
             for (int i = 0; i < dim; ++i){
                 lmins[i] = lmi[i];
                 lmaxs[i] = lma[i];
@@ -137,7 +137,7 @@ public:
         /*! \brief  Copy Constructor
          * deep copy of the maximum and minimum boundaries.
          */
-        coordinateModelPartBox(const coordinateModelPartBox <scalar_t, partId_t> &other):
+        coordinateModelPartBox(const coordinateModelPartBox <scalar_t, part_t> &other):
             pID(0),
             dim(other.getDim()),
             lmins(0), lmaxs(0),
@@ -149,9 +149,9 @@ public:
 
             lmins = new scalar_t [dim];
             lmaxs = new scalar_t [dim];
-            minHashIndices = new partId_t [dim];
-            maxHashIndices = new partId_t [dim];
-            gridIndices = new std::vector <partId_t> ();
+            minHashIndices = new part_t [dim];
+            maxHashIndices = new part_t [dim];
+            gridIndices = new std::vector <part_t> ();
             scalar_t *othermins = other.getlmins();
             scalar_t *othermaxs = other.getlmaxs();
             for (int i = 0; i < dim; ++i){
@@ -171,12 +171,12 @@ public:
 
         /*! \brief  function to set the part id
          */
-        void setpId(partId_t pid){
+        void setpId(part_t pid){
             this->pID = pid;
         }
         /*! \brief  function to get the part id
          */
-        partId_t getpId() const{
+        part_t getpId() const{
             return this->pID;
         }
 
@@ -200,19 +200,19 @@ public:
         /*! \brief  function to get the indices of the buckets
          * that the part is inserted to
          */
-        std::vector <partId_t> * getGridIndices (){
+        std::vector <part_t> * getGridIndices (){
             return this->gridIndices;
         }
 
         /*! \brief  function to get the indices of the neighboring parts.
          */
-        std::set<partId_t> *getNeighbors(){
+        std::set<part_t> *getNeighbors(){
             return &(this->neighbors);
         }
 
         /*! \brief  function to check if two boxes are neighbors.
          */
-        bool isNeighborWith(const coordinateModelPartBox <scalar_t, partId_t> &other){
+        bool isNeighborWith(const coordinateModelPartBox <scalar_t, part_t> &other){
 
 
             scalar_t *omins = other.getlmins();
@@ -242,12 +242,12 @@ public:
 
         /*! \brief  function to add a new neighbor to the neighbor list.
          */
-        void addNeighbor(partId_t nIndex){
+        void addNeighbor(part_t nIndex){
             neighbors.insert(nIndex);
         }
         /*! \brief  function to check if a given part is already in the neighbor list.
          */
-        bool isAlreadyNeighbor(partId_t nIndex){
+        bool isAlreadyNeighbor(part_t nIndex){
 
             if (neighbors.end() != neighbors.find(nIndex)){
                 return true;
@@ -262,22 +262,22 @@ public:
         void setMinMaxHashIndices (
                 scalar_t *minMaxBoundaries,
                 scalar_t *sliceSizes,
-                partId_t numSlicePerDim
+                part_t numSlicePerDim
                 ){
             for (int j = 0; j < dim; ++j){
                 scalar_t distance = (lmins[j] - minMaxBoundaries[j]);
-                partId_t minInd = 0;
+                part_t minInd = 0;
                 if (distance > _EPSILON && sliceSizes[j] > _EPSILON){
-                    minInd = static_cast<partId_t>(floor((lmins[j] - minMaxBoundaries[j])/ sliceSizes[j]));
+                    minInd = static_cast<part_t>(floor((lmins[j] - minMaxBoundaries[j])/ sliceSizes[j]));
                 }
 
                 if(minInd >= numSlicePerDim){
                     minInd = numSlicePerDim - 1;
                 }
-                partId_t maxInd = 0;
+                part_t maxInd = 0;
                 distance = (lmaxs[j] - minMaxBoundaries[j]);
                 if (distance > _EPSILON && sliceSizes[j] > _EPSILON){
-                    maxInd = static_cast<partId_t>(ceil((lmaxs[j] - minMaxBoundaries[j])/ sliceSizes[j]));
+                    maxInd = static_cast<part_t>(ceil((lmaxs[j] - minMaxBoundaries[j])/ sliceSizes[j]));
                 }
                 if(maxInd >= numSlicePerDim){
                     maxInd = numSlicePerDim - 1;
@@ -288,32 +288,32 @@ public:
                 minHashIndices[j] = minInd;
                 maxHashIndices[j] = maxInd;
             }
-            std::vector <partId_t> *in = new std::vector <partId_t> ();
+            std::vector <part_t> *in = new std::vector <part_t> ();
             in->push_back(0);
-            std::vector <partId_t> *out = new std::vector <partId_t> ();
+            std::vector <part_t> *out = new std::vector <part_t> ();
 
             for (int j = 0; j < dim; ++j){
 
-                partId_t minInd = minHashIndices[j];
-                partId_t maxInd = maxHashIndices[j];
+                part_t minInd = minHashIndices[j];
+                part_t maxInd = maxHashIndices[j];
 
 
-                partId_t pScale = partId_t(pow (float(numSlicePerDim), int(dim - j -1)));
+                part_t pScale = part_t(pow (float(numSlicePerDim), int(dim - j -1)));
 
-                partId_t inSize = in->size();
+                part_t inSize = in->size();
 
-                for (partId_t k = minInd; k <= maxInd; ++k){
-                    for (partId_t i = 0; i < inSize; ++i){
+                for (part_t k = minInd; k <= maxInd; ++k){
+                    for (part_t i = 0; i < inSize; ++i){
                         out->push_back((*in)[i] + k * pScale);
                     }
                 }
                 in->clear();
-                std::vector <partId_t> *tmp = in;
+                std::vector <part_t> *tmp = in;
                 in= out;
                 out= tmp;
             }
 
-            std::vector <partId_t> *tmp = in;
+            std::vector <part_t> *tmp = in;
             in = gridIndices;
             gridIndices = tmp;
 
@@ -456,11 +456,11 @@ public:
 /*! \brief GridHash Class,
  * Hashing Class for part boxes
  */
-template <typename scalar_t, typename partId_t>
+template <typename scalar_t, typename part_t>
 class GridHash{
 private:
 
-    RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > pBoxes;
+    RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, part_t> > > pBoxes;
 
     //minimum of the maximum box boundaries
     scalar_t *minMaxBoundaries;
@@ -468,30 +468,30 @@ private:
     scalar_t *maxMinBoundaries;
     //the size of each slice along dimensions
     scalar_t *sliceSizes;
-    partId_t nTasks;
+    part_t nTasks;
     int dim;
     //the number of slices per dimension
-    partId_t numSlicePerDim;
+    part_t numSlicePerDim;
     //the number of grids - buckets
-    partId_t numGrids;
+    part_t numGrids;
     //hash vector
-    std::vector <std::vector <partId_t>  > grids;
+    std::vector <std::vector <part_t>  > grids;
     //result communication graph.
-    ArrayRCP <partId_t> comXAdj;
-    ArrayRCP <partId_t> comAdj;
+    ArrayRCP <part_t> comXAdj;
+    ArrayRCP <part_t> comAdj;
 public:
 
     /*! \brief GridHash Class,
      * Constructor
      */
-    GridHash(RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > pBoxes_,
-            partId_t ntasks_, int dim_):
+    GridHash(RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, part_t> > > pBoxes_,
+            part_t ntasks_, int dim_):
         pBoxes(pBoxes_),
         minMaxBoundaries(0),
         maxMinBoundaries(0), sliceSizes(0),
         nTasks(ntasks_),
         dim(dim_),
-        numSlicePerDim(partId_t(pow(double(ntasks_), 1.0 / dim))),
+        numSlicePerDim(part_t(pow(double(ntasks_), 1.0 / dim))),
         numGrids(0),
         grids(),
         comXAdj(), comAdj(){
@@ -503,21 +503,21 @@ public:
         numSlicePerDim /= 2;
         if (numSlicePerDim == 0) numSlicePerDim = 1;
 
-        numGrids = partId_t(pow(float(numSlicePerDim), int(dim)));
+        numGrids = part_t(pow(float(numSlicePerDim), int(dim)));
 
         //allocate memory for buckets.
-        std::vector <std::vector <partId_t>  > grids_ (numGrids);
+        std::vector <std::vector <part_t>  > grids_ (numGrids);
         this->grids = grids_;
         //get the boundaries of buckets.
         this->getMinMaxBoundaries();
         //insert boxes to buckets
         this->insertToHash();
         //calculate the neighbors for each bucket.
-        partId_t nCount = this->calculateNeighbors();
+        part_t nCount = this->calculateNeighbors();
 
         //allocate memory for communication graph
-        ArrayRCP <partId_t> tmpComXadj(ntasks_);
-        ArrayRCP <partId_t> tmpComAdj(nCount);
+        ArrayRCP <part_t> tmpComXadj(ntasks_);
+        ArrayRCP <part_t> tmpComAdj(nCount);
         comXAdj = tmpComXadj;
         comAdj = tmpComAdj;
         //fill communication graph
@@ -539,18 +539,18 @@ public:
      */
     void fillAdjArrays(){
 
-        partId_t adjIndex = 0;
+        part_t adjIndex = 0;
 
-        for(partId_t i = 0; i < this->nTasks; ++i){
-            std::set<partId_t> *neigbors = (*pBoxes)[i].getNeighbors();
+        for(part_t i = 0; i < this->nTasks; ++i){
+            std::set<part_t> *neigbors = (*pBoxes)[i].getNeighbors();
 
-            partId_t s = neigbors->size();
+            part_t s = neigbors->size();
 
             comXAdj[i] = s;
             if (i > 0){
                 comXAdj[i] += comXAdj[i - 1];
             }
-            typedef typename std::set<partId_t> mySet;
+            typedef typename std::set<part_t> mySet;
             typedef typename mySet::iterator myIT;
             myIT it;
             for (it=neigbors->begin(); it!=neigbors->end(); ++it)
@@ -568,8 +568,8 @@ public:
      * returns the adj arrays.
      */
     void getAdjArrays(
-            ArrayRCP <partId_t> &comXAdj_,
-            ArrayRCP <partId_t> &comAdj_){
+            ArrayRCP <part_t> &comXAdj_,
+            ArrayRCP <part_t> &comAdj_){
         comXAdj_ = this->comXAdj;
         comAdj_ = this->comAdj;
     }
@@ -577,17 +577,17 @@ public:
     /*! \brief GridHash Class,
      * For each box compares the adjacency against the boxes that are in the same buckets.
      */
-    partId_t calculateNeighbors(){
-        partId_t nCount = 0;
-        for(partId_t i = 0; i < this->nTasks; ++i){
-            std::vector <partId_t> *gridIndices =(*pBoxes)[i].getGridIndices();
-            partId_t gridCount = gridIndices->size();
+    part_t calculateNeighbors(){
+        part_t nCount = 0;
+        for(part_t i = 0; i < this->nTasks; ++i){
+            std::vector <part_t> *gridIndices =(*pBoxes)[i].getGridIndices();
+            part_t gridCount = gridIndices->size();
 
-            for (partId_t j = 0; j < gridCount; ++j){
-                partId_t grid = (*gridIndices)[j];
-                partId_t boxCount = grids[grid].size();
-                for (partId_t k = 0; k < boxCount; ++k){
-                    partId_t boxIndex = grids[grid][k];
+            for (part_t j = 0; j < gridCount; ++j){
+                part_t grid = (*gridIndices)[j];
+                part_t boxCount = grids[grid].size();
+                for (part_t k = 0; k < boxCount; ++k){
+                    part_t boxIndex = grids[grid][k];
                     if (boxIndex > i){
                         if((!(*pBoxes)[i].isAlreadyNeighbor(boxIndex))&& (*pBoxes)[i].isNeighborWith((*pBoxes)[boxIndex])){
                             //cout << "i:" << i << " n:" << boxIndex << " are neighbors."<< endl;
@@ -609,15 +609,15 @@ public:
     void insertToHash(){
 
         //cout << "ntasks:" << this->nTasks << endl;
-        for(partId_t i = 0; i < this->nTasks; ++i){
+        for(part_t i = 0; i < this->nTasks; ++i){
             (*pBoxes)[i].setMinMaxHashIndices(minMaxBoundaries, sliceSizes, numSlicePerDim);
 
-            std::vector <partId_t> *gridIndices =(*pBoxes)[i].getGridIndices();
+            std::vector <part_t> *gridIndices =(*pBoxes)[i].getGridIndices();
 
-            partId_t gridCount = gridIndices->size();
+            part_t gridCount = gridIndices->size();
             //cout << "i:" << i << " gridsize:" << gridCount << endl;
-            for (partId_t j = 0; j < gridCount; ++j){
-                partId_t grid = (*gridIndices)[j];
+            for (part_t j = 0; j < gridCount; ++j){
+                part_t grid = (*gridIndices)[j];
 
                 //cout << "i:" << i << " is being inserted to:" << grid << endl;
                 (grids)[grid].push_back(i);
@@ -626,9 +626,9 @@ public:
 
 
 /*
-        for(partId_t i = 0; i < grids.size(); ++i){
+        for(part_t i = 0; i < grids.size(); ++i){
             cout << "grid:" << i << " gridsuze:" << (grids)[i].size() << " elements:";
-            for(partId_t j = 0; j < (grids)[i].size(); ++j){
+            for(part_t j = 0; j < (grids)[i].size(); ++j){
                 cout <<(grids)[i][j] << " ";
             }
             cout << endl;
@@ -649,7 +649,7 @@ public:
             maxMinBoundaries[j] = mins[j];
         }
 
-        for (partId_t i = 1; i < nTasks; ++i){
+        for (part_t i = 1; i < nTasks; ++i){
 
             mins = (*pBoxes)[i].getlmins();
             maxs = (*pBoxes)[i].getlmaxs();
@@ -681,18 +681,18 @@ public:
 
 };
 /*
-template <typename scalar_t,typename partId_t>
+template <typename scalar_t,typename part_t>
 class coordinatePartBox{
 public:
-        partId_t pID;
+        part_t pID;
         int dim;
         int numCorners;
         scalar_t **corners;
         scalar_t *lmins, *gmins;
         scalar_t *lmaxs, *gmaxs;
         scalar_t maxScalar;
-        std::vector <partId_t> hash_indices;
-        coordinatePartBox(partId_t pid, int dim_, scalar_t *lMins, scalar_t *gMins,
+        std::vector <part_t> hash_indices;
+        coordinatePartBox(part_t pid, int dim_, scalar_t *lMins, scalar_t *gMins,
                                     scalar_t *lMaxs, scalar_t *gMaxs):
             pID(pid),
             dim(dim_),
@@ -724,7 +724,7 @@ public:
 
 };
 
-template <typename Adapter, typename partId_t>
+template <typename Adapter, typename part_t>
 class CoordinateCommGraph{
 private:
 
@@ -736,9 +736,9 @@ private:
     const Teuchos::Comm<int> *comm;
     const Zoltan2::CoordinateModel<typename Adapter::base_adapter_t> *coords;
     const Zoltan2::PartitioningSolution<Adapter> *soln;
-    std::vector<coordinatePartBox, partId_t> cpb;
+    std::vector<coordinatePartBox, part_t> cpb;
     int coordDim;
-    partId_t numParts;
+    part_t numParts;
 
 
 public:
@@ -770,7 +770,7 @@ public:
         scalar_t *lmaxs = new scalar_t [allocSize];
         scalar_t *gmaxs = new scalar_t [allocSize];
 
-        for(partId_t i = 0; i < numParts; ++i){
+        for(part_t i = 0; i < numParts; ++i){
             coordinatePartBox tmp(
                     i,
                     this->coordDim,
@@ -800,9 +800,9 @@ public:
             pqJagged_coordinates[dim] =  (scalar_t *)ar.getRawPtr();
         }
 
-        partId_t *sol_part = soln->getPartList();
+        part_t *sol_part = soln->getPartList();
         for(lno_t i = 0; i < numLocalCoords; ++i){
-            partId_t p = sol_part[i];
+            part_t p = sol_part[i];
             cpb[p].updateMinMax(pqJagged_coordinates, i);
         }
         delete []pqJagged_coordinates;
@@ -817,12 +817,12 @@ public:
     }
 
     void hash_part_boxes (){
-        partId_t pSingleDim = pow(double(numParts), double(1.0 / coordDim));
+        part_t pSingleDim = pow(double(numParts), double(1.0 / coordDim));
         if (pSingleDim == 0) pSingleDim = 1;
-        std::vector < std::vector <partId_t> > hash
+        std::vector < std::vector <part_t> > hash
                 (
-                        partId_t ( pow ( partId_t (pSingleDim),
-                                         partId_t(coordDim)
+                        part_t ( pow ( part_t (pSingleDim),
+                                         part_t(coordDim)
                                        )
                                  )
                 );
@@ -830,15 +830,15 @@ public:
         //calculate the corners of the dataset.
         scalar_t *allMins = new scalar_t [coordDim];
         scalar_t *allMaxs = new scalar_t [coordDim];
-        partId_t *hash_scales= new scalar_t [coordDim];
+        part_t *hash_scales= new scalar_t [coordDim];
 
         for (int j = 0; j < coordDim; ++j){
             allMins[j] = cpb[0].gmins[j];
             allMaxs[j] = cpb[0].gmaxs[j];
-            hash_scales[j] = partId_t ( pow ( partId_t (pSingleDim), partId_t(coordDim - j - 1)));
+            hash_scales[j] = part_t ( pow ( part_t (pSingleDim), part_t(coordDim - j - 1)));
         }
 
-        for (partId_t i = 1; i < numParts; ++i){
+        for (part_t i = 1; i < numParts; ++i){
             for (int j = 0; j < coordDim; ++j){
                 scalar_t minC = cpb[i].gmins[i];
                 scalar_t maxC = cpb[i].gmaxs[i];
@@ -859,10 +859,10 @@ public:
 
 
 
-        std::vector <partId_t> *hashIndices = new std::vector <partId_t>();
-        std::vector <partId_t> *resultHashIndices = new std::vector <partId_t>();
-        std::vector <partId_t> *tmp_swap;
-        for (partId_t i = 0; i < numParts; ++i){
+        std::vector <part_t> *hashIndices = new std::vector <part_t>();
+        std::vector <part_t> *resultHashIndices = new std::vector <part_t>();
+        std::vector <part_t> *tmp_swap;
+        for (part_t i = 0; i < numParts; ++i){
             hashIndices->clear();
             resultHashIndices->clear();
 
@@ -872,14 +872,14 @@ public:
 
                 scalar_t minC = cpb[i].gmins[i];
                 scalar_t maxC = cpb[i].gmaxs[i];
-                partId_t minHashIndex = partId_t ((minC - allMins[j]) / hash_slices_size[j]);
-                partId_t maxHashIndex  = partId_t ((maxC - allMins[j]) / hash_slices_size[j]);
+                part_t minHashIndex = part_t ((minC - allMins[j]) / hash_slices_size[j]);
+                part_t maxHashIndex  = part_t ((maxC - allMins[j]) / hash_slices_size[j]);
 
-                partId_t hashIndexSize = hashIndices->size();
+                part_t hashIndexSize = hashIndices->size();
 
-                for (partId_t k = minHashIndex; k <= maxHashIndex; ++k ){
+                for (part_t k = minHashIndex; k <= maxHashIndex; ++k ){
 
-                    for (partId_t i = 0; i < hashIndexSize; ++i){
+                    for (part_t i = 0; i < hashIndexSize; ++i){
                         resultHashIndices->push_back(hashIndices[i] + k *  hash_scales[j]);
                     }
                 }
@@ -888,8 +888,8 @@ public:
                 resultHashIndices = tmp_swap;
             }
 
-            partId_t hashIndexSize = hashIndices->size();
-            for (partId_t j = 0; j < hashIndexSize; ++j){
+            part_t hashIndexSize = hashIndices->size();
+            for (part_t j = 0; j < hashIndexSize; ++j){
                 hash[(*hashIndices)[j]].push_back(i);
             }
             cpb[i].hash_indices = (*hashIndices);

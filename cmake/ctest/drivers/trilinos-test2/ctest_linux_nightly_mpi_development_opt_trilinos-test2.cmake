@@ -76,7 +76,6 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DMPI_BASE_DIR:PATH=/home/trilinos"
   "-DTPL_ENABLE_Pthread:BOOL=ON"
   "-DTPL_ENABLE_Boost:BOOL=ON"
-  "-DBoost_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/boost-1.49.0"
   "-DTPL_ENABLE_ParMETIS:BOOL=ON"
   "-DParMETIS_LIBRARY_DIRS:PATH=/home/trilinos/tpl/gcc4.1.2/openmpi1.4/ParMETIS_3.1"
   "-DTPL_ENABLE_Scotch:BOOL=ON"

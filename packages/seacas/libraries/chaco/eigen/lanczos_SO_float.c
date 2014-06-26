@@ -2,12 +2,11 @@
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
-#include <stdio.h>
-#include <math.h>
-#include "structs.h"
-#include "defs.h"
-#include "params.h"
-#include "smalloc.h"
+#include <math.h>                       // for sqrt
+#include <stdio.h>                      // for printf, NULL, FILE
+#include "defs.h"                       // for TRUE, FALSE, min, max
+#include "smalloc.h"                    // for sfree, smalloc
+#include "structs.h"                    // for scanlink, orthlink_float
 
 /* See comments in lanczos_SO() */
 

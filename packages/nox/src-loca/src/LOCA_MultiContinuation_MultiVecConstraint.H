@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -54,38 +54,38 @@
 #include "LOCA_MultiContinuation_ConstraintInterfaceMVDX.H" // base class
 #include "NOX_Abstract_MultiVector.H"                   // for dense matrix
 
-namespace LOCA { 
+namespace LOCA {
 
-  namespace MultiContinuation { 
+  namespace MultiContinuation {
 
-    /*! 
-     * \brief Implementation of 
+    /*!
+     * \brief Implementation of
      * LOCA::MultiContinuation::ConstraintInterfaceMVDX for a simple linear
      * multivector constraint.
      */
-    class MultiVecConstraint : 
+    class MultiVecConstraint :
       public LOCA::MultiContinuation::ConstraintInterfaceMVDX {
 
     public:
 
       //! Constructor
       MultiVecConstraint(
-	  const Teuchos::RCP<const NOX::Abstract::MultiVector>& dx);
+      const Teuchos::RCP<const NOX::Abstract::MultiVector>& dx);
 
       //! Copy constructor
-      MultiVecConstraint(const MultiVecConstraint& source, 
-			 NOX::CopyType type = NOX::DeepCopy);
+      MultiVecConstraint(const MultiVecConstraint& source,
+             NOX::CopyType type = NOX::DeepCopy);
 
       //! Destructor
       ~MultiVecConstraint();
 
       //! Set constraint vector
       virtual void setDx(
-	    const Teuchos::RCP<const NOX::Abstract::MultiVector>& dx);
+        const Teuchos::RCP<const NOX::Abstract::MultiVector>& dx);
 
-      /*! 
-       * @name Implementation of LOCA::MultiContinuation::ConstraintInterfaceMVDX 
-       * virtual methods 
+      /*!
+       * @name Implementation of LOCA::MultiContinuation::ConstraintInterfaceMVDX
+       * virtual methods
        */
       //@{
 
@@ -93,7 +93,7 @@ namespace LOCA {
       virtual void copy(const ConstraintInterface& source);
 
       //! Cloning function
-      virtual 
+      virtual
       Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
@@ -108,8 +108,8 @@ namespace LOCA {
 
       //! Sets parameters indexed by paramIDs
       virtual void setParams(
-			 const std::vector<int>& paramIDs, 
-			 const NOX::Abstract::MultiVector::DenseMatrix& vals);
+             const std::vector<int>& paramIDs,
+             const NOX::Abstract::MultiVector::DenseMatrix& vals);
 
       //! Compute continuation constraint equations
       virtual NOX::Abstract::Group::ReturnType
@@ -126,9 +126,9 @@ namespace LOCA {
        * \c true, then the \c dgdp contains \f$g\f$ on input.
        */
       virtual NOX::Abstract::Group::ReturnType
-      computeDP(const std::vector<int>& paramIDs, 
-		NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
-		bool isValidG);
+      computeDP(const std::vector<int>& paramIDs,
+        NOX::Abstract::MultiVector::DenseMatrix& dgdp,
+        bool isValidG);
 
       //! Return \c true if constraint residuals are valid
       virtual bool isConstraints() const;
@@ -144,8 +144,8 @@ namespace LOCA {
       virtual const NOX::Abstract::MultiVector*
       getDX() const;
 
-      /*! 
-       * \brief Return \c true if solution component of constraint 
+      /*!
+       * \brief Return \c true if solution component of constraint
        * derivatives is zero
        */
       virtual bool isDXZero() const;

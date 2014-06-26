@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -65,7 +65,7 @@ namespace NOX {
 }
 
 namespace NOX {
-  
+
   //! Container class to hold "global" %NOX objects
   /*!%GlobalData is a container class that holds ref-count pointers to
    * "global" objects, i.e., objects that nearly every NOX object will
@@ -80,23 +80,23 @@ namespace NOX {
   class GlobalData {
 
   public:
-    
+
     //! Consturctor using the top level NOX parameter list.
     GlobalData(const Teuchos::RCP<Teuchos::ParameterList>& noxParams);
 
     //! Constructor taking a ref-count pointer to each global object.
     GlobalData(const Teuchos::RCP<NOX::Utils>& utils,
-	       const Teuchos::RCP<NOX::MeritFunction::Generic>& mf);
-    
+           const Teuchos::RCP<NOX::MeritFunction::Generic>& mf);
+
     //! Destructor.
     virtual ~GlobalData();
-    
+
     //! Returns the print utils object.
     Teuchos::RCP<NOX::Utils> getUtils() const;
 
     //! Returns the merit function object.
     Teuchos::RCP<NOX::MeritFunction::Generic> getMeritFunction() const;
-    
+
     /*! \brief Returns the top-level nox parameter list input by the user.
 
        This list is kept in global data so that any sublists of the
@@ -134,7 +134,7 @@ namespace NOX {
        to require a merit function for all line search and direction
        ctors since only a few line searches and the steepest descent
        direction needs a merit function.  But we need all objects to
-       have a consistent merit function.  
+       have a consistent merit function.
     */
     Teuchos::RCP<NOX::MeritFunction::Generic> meritFunctionPtr;
 

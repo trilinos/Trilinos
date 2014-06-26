@@ -136,6 +136,13 @@ namespace Tpetra {
     template<typename Scalar, typename Ordinal>
     void sortCrsEntries(const Teuchos::ArrayView<size_t> &CRS_rowptr, const Teuchos::ArrayView<Ordinal> & CRS_colind, const Teuchos::ArrayView<Scalar> &CRS_vals);
 
+    // ===================================================================
+    //! sortAndMergeCrsEntries
+    /*! sorts the entries of the matrix by colind w/i each row, merging entries in a row with the same colind
+    */
+    template<typename Scalar, typename Ordinal>
+    void sortAndMergeCrsEntries(const Teuchos::ArrayView<size_t> &CRS_rowptr, const Teuchos::ArrayView<Ordinal> & CRS_colind, const Teuchos::ArrayView<Scalar> &CRS_vals);
+
 
     // ===================================================================
     //! lowCommunicationMakeColMapAndReindex
@@ -431,10 +438,13 @@ void Tpetra::Import_Util::unpackAndCombineIntoCrsArrays(const CrsMatrix<Scalar, 
   TargetPids.assign(mynnz,-1);
 
   // Grab pointers for SourceMatrix
-  ArrayRCP<const size_t> Source_rowptr;
-  ArrayRCP<const LO>     Source_colind;
-  ArrayRCP<const Scalar> Source_vals;
-  SourceMatrix.getAllValues(Source_rowptr,Source_colind,Source_vals);
+  ArrayRCP<const size_t> Source_rowptr_RCP;
+  ArrayRCP<const LO>     Source_colind_RCP;
+  ArrayRCP<const Scalar> Source_vals_RCP;
+  SourceMatrix.getAllValues(Source_rowptr_RCP,Source_colind_RCP,Source_vals_RCP);
+  ArrayView<const size_t> Source_rowptr = Source_rowptr_RCP();
+  ArrayView<const LO>     Source_colind = Source_colind_RCP();
+  ArrayView<const Scalar> Source_vals   = Source_vals_RCP();
 
   const map_type& sourceColMap = * (SourceMatrix.getColMap());
   ArrayView<const GO> globalColElts = sourceColMap.getNodeElementList();
@@ -549,6 +559,69 @@ void Tpetra::Import_Util::sortCrsEntries(const Teuchos::ArrayView<size_t> &CRS_r
       m = m/2;
     }
   }
+}
+
+//----------------------------------------------------------------------------
+// Note: This should get merged with the other Tpetra sort routines eventually.
+template<typename Scalar, typename Ordinal>
+void Tpetra::Import_Util::sortAndMergeCrsEntries(const Teuchos::ArrayView<size_t> &CRS_rowptr, const Teuchos::ArrayView<Ordinal> & CRS_colind, const Teuchos::ArrayView<Scalar> &CRS_vals){
+  // For each row, sort column entries from smallest to largest, merging column ids that are identify by adding values
+  // Use shell sort. Stable sort so it is fast if indices are already sorted.
+  // Code copied from  Epetra_CrsMatrix::SortEntries()
+
+  size_t NumRows = CRS_rowptr.size()-1;
+  size_t nnz = CRS_colind.size();
+  size_t new_curr=CRS_rowptr[0], old_curr=CRS_rowptr[0];
+
+  for(size_t i = 0; i < NumRows; i++){
+    size_t start=CRS_rowptr[i];
+    if(start >= nnz) continue;
+
+    Scalar* locValues   = &CRS_vals[start];
+    size_t NumEntries   = CRS_rowptr[i+1] - start;
+    Ordinal* locIndices = &CRS_colind[start];
+
+    // Sort phase
+    Ordinal n = NumEntries;
+    Ordinal m = n/2;
+
+    while(m > 0) {
+      Ordinal max = n - m;
+      for(Ordinal j = 0; j < max; j++) {
+        for(Ordinal k = j; k >= 0; k-=m) {
+          if(locIndices[k+m] >= locIndices[k])
+            break;
+          Scalar dtemp = locValues[k+m];
+          locValues[k+m] = locValues[k];
+          locValues[k] = dtemp;
+          Ordinal itemp = locIndices[k+m];
+          locIndices[k+m] = locIndices[k];
+          locIndices[k] = itemp;
+        }
+      }
+      m = m/2;
+    }
+
+    // Merge & shrink
+    for(size_t j=CRS_rowptr[i]; j < CRS_rowptr[i+1]; j++) {
+      if(j > CRS_rowptr[i] && CRS_colind[j]==CRS_colind[new_curr-1]) {
+	CRS_vals[new_curr-1] += CRS_vals[j];
+      }
+      else if(new_curr==j) {
+	new_curr++;
+      }
+      else {
+	CRS_colind[new_curr] = CRS_colind[j];
+	CRS_vals[new_curr]   = CRS_vals[j];
+	new_curr++;
+      }
+    }
+
+    CRS_rowptr[i] = old_curr;
+    old_curr=new_curr;
+  }
+
+  CRS_rowptr[NumRows] = new_curr;
 }
 
 //----------------------------------------------------------------------------

@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -52,9 +52,9 @@
 #include "LOCA_Hopf_ComplexMultiVector.H"
 
 LOCA::Hopf::ComplexVector::ComplexVector(
-		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
-		    const NOX::Abstract::Vector& realVec,
-		    const NOX::Abstract::Vector& imagVec) :
+            const Teuchos::RCP<LOCA::GlobalData>& global_data,
+            const NOX::Abstract::Vector& realVec,
+            const NOX::Abstract::Vector& imagVec) :
   LOCA::Extended::Vector(global_data,2,0)
 {
   setVector(0, realVec);
@@ -62,8 +62,8 @@ LOCA::Hopf::ComplexVector::ComplexVector(
 }
 
 LOCA::Hopf::ComplexVector::ComplexVector(
-				     const LOCA::Hopf::ComplexVector& source,
-				     NOX::CopyType type) :
+                     const LOCA::Hopf::ComplexVector& source,
+                     NOX::CopyType type) :
   LOCA::Extended::Vector(source, type)
 {
 }
@@ -73,35 +73,35 @@ LOCA::Hopf::ComplexVector::~ComplexVector()
 {
 }
 
-NOX::Abstract::Vector& 
+NOX::Abstract::Vector&
 LOCA::Hopf::ComplexVector::operator=(const NOX::Abstract::Vector& y)
 {
   return operator=(dynamic_cast<const LOCA::Hopf::ComplexVector&>(y));
 }
 
-LOCA::Extended::Vector& 
+LOCA::Extended::Vector&
 LOCA::Hopf::ComplexVector::operator=(const LOCA::Extended::Vector& y)
 {
   return operator=(dynamic_cast<const LOCA::Hopf::ComplexVector&>(y));
 }
 
-LOCA::Hopf::ComplexVector& 
+LOCA::Hopf::ComplexVector&
 LOCA::Hopf::ComplexVector::operator=(const LOCA::Hopf::ComplexVector& y)
-{ 
+{
   LOCA::Extended::Vector::operator=(y);
   return *this;
 }
 
-Teuchos::RCP<NOX::Abstract::Vector> 
+Teuchos::RCP<NOX::Abstract::Vector>
 LOCA::Hopf::ComplexVector::clone(NOX::CopyType type) const
 {
-  return 
+  return
     Teuchos::rcp(new LOCA::Hopf::ComplexVector(*this, type));
 }
 
-void 
+void
 LOCA::Hopf::ComplexVector::setVec(const NOX::Abstract::Vector& realVec,
-				  const NOX::Abstract::Vector& imagVec)
+                  const NOX::Abstract::Vector& imagVec)
 {
   setVector(0, realVec);
   setVector(1, imagVec);
@@ -132,16 +132,16 @@ LOCA::Hopf::ComplexVector::getImagVec()
 }
 
 LOCA::Hopf::ComplexVector::ComplexVector(
-		  const Teuchos::RCP<LOCA::GlobalData>& global_data) :
+          const Teuchos::RCP<LOCA::GlobalData>& global_data) :
   LOCA::Extended::Vector(global_data,2,0)
 {
 }
 
 Teuchos::RCP<LOCA::Extended::MultiVector>
-LOCA::Hopf::ComplexVector::generateMultiVector(int nColumns, 
-					       int nVectorRows, 
-					       int nScalarRows) const
+LOCA::Hopf::ComplexVector::generateMultiVector(int nColumns,
+                           int nVectorRows,
+                           int nScalarRows) const
 {
-  return 
+  return
     Teuchos::rcp(new LOCA::Hopf::ComplexMultiVector(globalData, nColumns));
 }

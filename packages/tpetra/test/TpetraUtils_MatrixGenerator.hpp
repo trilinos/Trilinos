@@ -44,17 +44,11 @@
 #ifndef TPETRAUTILS_MATRIXGENERATOR_HPP
 #define TPETRAUTILS_MATRIXGENERATOR_HPP
 
-/// \file MatrixMarket_Tpetra.hpp
-/// \brief Matrix Market file readers and writers for Tpetra objects.
-/// \author Mark Hoemmen
+/// \file TpetraUtils_MatrixGenerator.hpp
+/// \brief MiniFE test problem generator.
 ///
-/// This header file implements Matrix Market file readers and writers
-/// for both sparse and dense matrices (as \c Tpetra::CrsMatrix
-/// resp. \c Tpetra::MultiVector).  The Matrix Market (see their <a
-/// href="http://math.nist.gov/MatrixMarket"> web site </a> for
-/// details) defines a human-readable ASCII text file format ("Matrix
-/// Market format") for interchange of sparse and dense matrices.
-///
+/// \warning If you don't know what this file is for, don't use it!
+
 #include "Tpetra_config.h"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Vector.hpp"
@@ -75,7 +69,6 @@ namespace Tpetra {
     public:
       //! This class' template parameter; a specialization of CrsMatrix.
       typedef SparseMatrixType sparse_matrix_type;
-      typedef RCP<sparse_matrix_type> sparse_matrix_ptr;
 
       /// Type of the entries of the sparse matrix.
       /// The first template parameter of CrsMatrix and MultiVector.
@@ -104,26 +97,24 @@ namespace Tpetra {
 
       //! The Vector specialization associated with SparseMatrixType.
       typedef Vector<scalar_type,
-                          local_ordinal_type,
-                          global_ordinal_type,
-                          node_type> vector_type;
+                     local_ordinal_type,
+                     global_ordinal_type,
+                     node_type> vector_type;
 
-      typedef RCP<node_type> node_ptr;
-      typedef Comm<int> comm_type;
-      typedef RCP<const comm_type> comm_ptr;
+      typedef Teuchos::Comm<int> comm_type;
       typedef Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
-      typedef RCP<const map_type> map_ptr;
 
     private:
       /// \typedef size_type
       /// \brief Handy typedef for entries of arrays such as rowPtr.
-      typedef typename ArrayRCP<global_ordinal_type>::size_type size_type;
+      typedef typename Teuchos::ArrayRCP<global_ordinal_type>::size_type size_type;
 
-      static RCP<const map_type>
-      makeRangeMap (const RCP<const comm_type>& pComm,
-                    const RCP<node_type>& pNode,
+      static Teuchos::RCP<const map_type>
+      makeRangeMap (const Teuchos::RCP<const comm_type>& pComm,
+                    const Teuchos::RCP<node_type>& pNode,
                     const global_ordinal_type numRows)
       {
+        using Teuchos::rcp;
         // A conventional, uniformly partitioned, contiguous map.
         return rcp (new map_type (static_cast<global_size_t> (numRows),
                                   static_cast<global_ordinal_type> (0),
@@ -158,12 +149,13 @@ namespace Tpetra {
       ///   pRowMap is nonnull, used only for error checking.
       ///
       /// \return If pRowMap is null, a new row map, otherwise pRowMap.
-      static RCP<const map_type>
-      makeRowMap (const RCP<const map_type>& pRowMap,
-                  const RCP<const comm_type>& pComm,
-                  const RCP<node_type>& pNode,
+      static Teuchos::RCP<const map_type>
+      makeRowMap (const Teuchos::RCP<const map_type>& pRowMap,
+                  const Teuchos::RCP<const comm_type>& pComm,
+                  const Teuchos::RCP<node_type>& pNode,
                   const global_ordinal_type numRows)
       {
+        using Teuchos::rcp;
         // If the caller didn't provide a map, return a conventional,
         // uniformly partitioned, contiguous map.
         if (pRowMap.is_null()) {
@@ -171,22 +163,23 @@ namespace Tpetra {
                                     static_cast<global_ordinal_type> (0),
                                     pComm, GloballyDistributed, pNode));
         } else {
-          TEUCHOS_TEST_FOR_EXCEPTION(! pRowMap->isDistributed() && pComm->getSize() > 1,
-                             std::invalid_argument,
-                             "The specified row map is not distributed, but "
-                             "the given communicator includes more than one "
-                             "rank (in fact, there are " << pComm->getSize()
-                             << " ranks).");
-          TEUCHOS_TEST_FOR_EXCEPTION(pRowMap->getComm() != pComm,
-                             std::invalid_argument,
-                             "The specified row map's communicator (pRowMap->"
-                             "getComm()) is different than the given separately "
-                             "supplied communicator pComm.");
-          TEUCHOS_TEST_FOR_EXCEPTION(pRowMap->getNode() != pNode,
-                             std::invalid_argument,
-                             "The specified row map's node (pRowMap->getNode()) "
-                             "is different than the given separately supplied "
-                             "node pNode.");
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            ! pRowMap->isDistributed () && pComm->getSize () > 1,
+            std::invalid_argument, "The specified row Map is not distributed, "
+            "but the given communicator includes more than one process (in "
+            "fact, there are " << pComm->getSize () << " processes).");
+          // FIXME (mfh 25 Jun 2014) The communicators really don't
+          // have to be identical; they only have to have the same
+          // number of processes in the same order.
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            pRowMap->getComm () != pComm, std::invalid_argument,
+            "The specified row map's communicator (pRowMap->getComm()) is "
+            "different than the given separately supplied communicator pComm.");
+          // FIXME (mfh 25 Jun 2014) This really doesn't matter either.
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            pRowMap->getNode () != pNode, std::invalid_argument,
+            "The specified row map's node (pRowMap->getNode()) is different "
+            "than the given separately supplied node pNode.");
           return pRowMap;
         }
       }
@@ -213,14 +206,14 @@ namespace Tpetra {
         // Abbreviations so that the map creation call isn't too long.
         typedef local_ordinal_type LO;
         typedef global_ordinal_type GO;
-        typedef node_type Node;
+        typedef node_type NT;
 
         if (numRows == numCols) {
           return pRangeMap;
         } else {
-          return createUniformContigMapWithNode<LO,GO,Node> (numCols,
-                                                             pRangeMap->getComm (),
-                                                             pRangeMap->getNode ());
+          return createUniformContigMapWithNode<LO,GO,NT> (numCols,
+                                                           pRangeMap->getComm (),
+                                                           pRangeMap->getNode ());
         }
       }
 
@@ -239,16 +232,19 @@ namespace Tpetra {
       /// Column indices are zero-based on input.  This method will
       /// change them in place to match the index base of the input
       /// row Map (\c pRowMap).
-      static sparse_matrix_ptr
-      makeMatrix (ArrayRCP<size_t>& myNumEntriesPerRow,
-                  ArrayRCP<size_t>& myRowPtr,
-                  ArrayRCP<global_ordinal_type>& myColInd,
-                  ArrayRCP<scalar_type>& myValues,
-                  const map_ptr& pRowMap,
-                  const map_ptr& pRangeMap,
-                  const map_ptr& pDomainMap,
+      static Teuchos::RCP<sparse_matrix_type>
+      makeMatrix (Teuchos::ArrayRCP<size_t>& myNumEntriesPerRow,
+                  Teuchos::ArrayRCP<size_t>& myRowPtr,
+                  Teuchos::ArrayRCP<global_ordinal_type>& myColInd,
+                  Teuchos::ArrayRCP<scalar_type>& myValues,
+                  const Teuchos::RCP<const map_type>& pRowMap,
+                  const Teuchos::RCP<const map_type>& pRangeMap,
+                  const Teuchos::RCP<const map_type>& pDomainMap,
                   const bool callFillComplete = true)
       {
+        using Teuchos::ArrayView;
+        using Teuchos::RCP;
+        using Teuchos::rcp;
         using std::cerr;
         using std::endl;
         // Typedef to make certain type declarations shorter.
@@ -277,7 +273,7 @@ namespace Tpetra {
         // Create with DynamicProfile, so that the fillComplete() can
         // do first-touch reallocation (a NUMA (Non-Uniform Memory
         // Access) optimization on multicore CPUs).
-        sparse_matrix_ptr A =
+        RCP<sparse_matrix_type> A =
           rcp (new sparse_matrix_type (pRowMap, myNumEntriesPerRow,
                                        DynamicProfile));
 
@@ -323,17 +319,20 @@ namespace Tpetra {
       ///
       /// Each process inserts its data into the sparse matrix, and
       /// then all processes call fillComplete().
-      static sparse_matrix_ptr
-      makeMatrix (ArrayRCP<size_t>& myNumEntriesPerRow,
-                  ArrayRCP<size_t>& myRowPtr,
-                  ArrayRCP<global_ordinal_type>& myColInd,
-                  ArrayRCP<scalar_type>& myValues,
-                  const map_ptr& pRowMap,
-                  const map_ptr& pRangeMap,
-                  const map_ptr& pDomainMap,
-                  const RCP<Teuchos::ParameterList>& constructorParams,
-                  const RCP<Teuchos::ParameterList>& fillCompleteParams)
+      static Teuchos::RCP<sparse_matrix_type>
+      makeMatrix (Teuchos::ArrayRCP<size_t>& myNumEntriesPerRow,
+                  Teuchos::ArrayRCP<size_t>& myRowPtr,
+                  Teuchos::ArrayRCP<global_ordinal_type>& myColInd,
+                  Teuchos::ArrayRCP<scalar_type>& myValues,
+                  const Teuchos::RCP<const map_type>& pRowMap,
+                  const Teuchos::RCP<const map_type>& pRangeMap,
+                  const Teuchos::RCP<const map_type>& pDomainMap,
+                  const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
+                  const Teuchos::RCP<Teuchos::ParameterList>& fillCompleteParams)
       {
+        using Teuchos::ArrayView;
+        using Teuchos::RCP;
+        using Teuchos::rcp;
         using std::cerr;
         using std::endl;
         // Typedef to make certain type declarations shorter.
@@ -366,7 +365,7 @@ namespace Tpetra {
         // Create with DynamicProfile, so that the fillComplete() can
         // do first-touch reallocation (a NUMA (Non-Uniform Memory
         // Access) optimization on multicore CPUs).
-        sparse_matrix_ptr A =
+        RCP<sparse_matrix_type> A =
           rcp (new sparse_matrix_type (pRowMap, myNumEntriesPerRow,
                                        DynamicProfile, constructorParams));
 
@@ -408,7 +407,7 @@ namespace Tpetra {
       ///
       /// This method computes \c colMap only if it is null on input,
       /// and if \c callFillComplete is true.
-      static sparse_matrix_ptr
+      static Teuchos::RCP<sparse_matrix_type>
       makeMatrix (Teuchos::ArrayRCP<size_t>& myNumEntriesPerRow,
                   Teuchos::ArrayRCP<size_t>& myRowPtr,
                   Teuchos::ArrayRCP<global_ordinal_type>& myColInd,
@@ -425,7 +424,6 @@ namespace Tpetra {
         using Teuchos::RCP;
         using Teuchos::rcp;
         typedef global_ordinal_type GO;
-        typedef typename ArrayView<const GO>::size_type size_type;
 
         // Construct the CrsMatrix.
         //
@@ -478,7 +476,15 @@ namespace Tpetra {
       }
 
       template<class GO, class S>
-      static void miniFE_get_row(size_t* rows, S* vals, GO* cols,size_t startrow, size_t endrow,size_t& row,size_t o,size_t nx1,size_t c1,size_t c2, size_t c3,size_t val,size_t &miniFE_a,size_t &miniFE_b,size_t &miniFE_c) {
+      static void
+      miniFE_get_row (size_t* rows, S* vals, GO* cols, size_t startrow,
+                      size_t endrow, size_t& row,size_t o,size_t nx1,
+                      size_t c1,size_t c2, size_t c3,size_t val,
+                      size_t &miniFE_a,size_t &miniFE_b,size_t &miniFE_c)
+      {
+        // FIXME (mfh 25 Jun 2014) Seriously, "val27"???  Who writes
+        // code like this???
+
         bool val27=false;
         if(c1*c2*c3==27) {
           val27=true;
@@ -548,149 +554,149 @@ namespace Tpetra {
     public:
 
 
-       static RCP<SparseMatrixType> generate_miniFE_matrix(
+      static Teuchos::RCP<SparseMatrixType>
+      generate_miniFE_matrix (int nx,
+                              const Teuchos::RCP<const Comm<int> >& pComm,
+                              const Teuchos::RCP<node_type>& pNode,
+                              const bool callFillComplete=true,
+                              const bool debug = false)
+      {
+        using Teuchos::ArrayRCP;
+        using Teuchos::RCP;
 
-           int nx,
-           const RCP<const Comm<int> >& pComm,
-           const RCP<typename SparseMatrixType::node_type>& pNode,
-           const bool callFillComplete=true,
-           const bool debug = false) {
+        size_t miniFE_a = 0;
+        size_t miniFE_b = 0;
+        size_t miniFE_c = 0;
 
-         size_t miniFE_a = 0;
-         size_t miniFE_b = 0;
-         size_t miniFE_c = 0;
+        const int myRank = pComm->getRank ();
+        const int rootRank = 0;
 
+        size_t nx1 = nx+1;
 
+        int nrows_block = 1+nx-1+1;
+        int nrows_superblock = (1+nx-1+1)*nrows_block;
+        int nrows = (1+(nx-1)+1)*nrows_superblock;
 
-         const int myRank = pComm->getRank ();
-         const int rootRank = 0;
+        size_t nnz=0;
+        nnz+=4*(8 + (nx-1)*12 + 8);
+        nnz+=4*(nx-1)*(12 + (nx-1)*18 + 12);
+        nnz+=(nx-1)*(nx-1)*(18 + (nx-1)*27 + 18);
 
-         size_t nx1 = nx+1;
+        size_t dims[3];
+        dims[0] = nrows;
+        dims[1] = nrows;
+        dims[2] = nnz;
 
-         int nrows_block = 1+nx-1+1;
-         int nrows_superblock = (1+nx-1+1)*nrows_block;
-         int nrows = (1+(nx-1)+1)*nrows_superblock;
+        Teuchos::RCP<const map_type> pRangeMap = makeRangeMap (pComm, pNode, dims[0]);
+        Teuchos::RCP<const map_type> pDomainMap = makeDomainMap (pRangeMap, dims[0], dims[1]);
+        Teuchos::RCP<const map_type> pRowMap = makeRowMap (null, pComm, pNode, dims[0]);
 
-         size_t nnz=0;
-         nnz+=4*(8 + (nx-1)*12 + 8);
-         nnz+=4*(nx-1)*(12 + (nx-1)*18 + 12);
-         nnz+=(nx-1)*(nx-1)*(18 + (nx-1)*27 + 18);
+        size_t startrow = pRowMap->getMinGlobalIndex();
+        size_t endrow = pRowMap->getMaxGlobalIndex()+1;
 
-         size_t dims[3];
-         dims[0] = nrows;
-         dims[1] = nrows;
-         dims[2] = nnz;
+        ArrayRCP<size_t> numEntriesPerRow(endrow-startrow);
+        ArrayRCP<size_t> rowPtr(endrow-startrow+1);
+        ArrayRCP<global_ordinal_type> colInd((endrow-startrow)*27);
+        ArrayRCP<scalar_type> values((endrow-startrow)*27);
 
-         map_ptr pRangeMap = makeRangeMap (pComm, pNode, dims[0]);
-         map_ptr pDomainMap = makeDomainMap (pRangeMap, dims[0], dims[1]);
-         map_ptr pRowMap = makeRowMap (null, pComm, pNode, dims[0]);
-
-         size_t startrow = pRowMap->getMinGlobalIndex();
-         size_t endrow = pRowMap->getMaxGlobalIndex()+1;
-
-         ArrayRCP<size_t> numEntriesPerRow(endrow-startrow);
-         ArrayRCP<size_t> rowPtr(endrow-startrow+1);
-         ArrayRCP<global_ordinal_type> colInd((endrow-startrow)*27);
-         ArrayRCP<scalar_type> values((endrow-startrow)*27);
-
-         size_t* rows = &rowPtr[0];
-         scalar_type* vals = &values[0];
-         global_ordinal_type* cols = &colInd[0];
+        size_t* rows = &rowPtr[0];
+        scalar_type* vals = &values[0];
+        global_ordinal_type* cols = &colInd[0];
 
 
-         size_t row = 0;
-         miniFE_get_superblock(rows,vals,cols,startrow,endrow,row,0,nx1,2,0,0,0,miniFE_a,miniFE_b,miniFE_c);
-         for(size_t i=0;i<nx1-2;i++){
-           miniFE_get_superblock(rows,vals,cols,startrow,endrow,row,i*nx1*nx1,nx1,3,4,2,1,miniFE_a,miniFE_b,miniFE_c);
-         }
-         miniFE_get_superblock(rows,vals,cols,startrow,endrow,row,(nx1-2)*nx1*nx1,nx1,2,4,2,1,miniFE_a,miniFE_b,miniFE_c);
+        size_t row = 0;
+        miniFE_get_superblock(rows,vals,cols,startrow,endrow,row,0,nx1,2,0,0,0,miniFE_a,miniFE_b,miniFE_c);
+        for(size_t i=0;i<nx1-2;i++){
+          miniFE_get_superblock(rows,vals,cols,startrow,endrow,row,i*nx1*nx1,nx1,3,4,2,1,miniFE_a,miniFE_b,miniFE_c);
+        }
+        miniFE_get_superblock(rows,vals,cols,startrow,endrow,row,(nx1-2)*nx1*nx1,nx1,2,4,2,1,miniFE_a,miniFE_b,miniFE_c);
 
-         for(size_t i=0;i<endrow-startrow;i++)
-           numEntriesPerRow[i]=rowPtr[i+1]-rowPtr[i];
+        for(size_t i=0;i<endrow-startrow;i++)
+          numEntriesPerRow[i]=rowPtr[i+1]-rowPtr[i];
 
-         // Distribute the matrix data.  Each processor has to add the
-         // rows that it owns.  If you try to make Proc 0 call
-         // insertGlobalValues() for _all_ the rows, not just those it
-         // owns, then fillComplete() will compute the number of
-         // columns incorrectly.  That's why Proc 0 has to distribute
-         // the matrix data and why we make all the processors (not
-         // just Proc 0) call insertGlobalValues() on their own data.
-         //
-         // These arrays represent each processor's part of the matrix
-         // data, in "CSR" format (sort of, since the row indices might
-         // not be contiguous).
-         /*ArrayRCP<size_t> myNumEntriesPerRow;
-         ArrayRCP<size_t> myRowPtr;
-         ArrayRCP<global_ordinal_type> myColInd;
-         ArrayRCP<scalar_type> myValues;
-         // Distribute the matrix data.  This is a collective operation.
-         distribute (myNumEntriesPerRow, myRowPtr, myColInd, myValues, pRowMap,
-                     numEntriesPerRow, rowPtr, colInd, values, 0);
-         sparse_matrix_ptr pMatrix =
-             makeMatrix (myNumEntriesPerRow, myRowPtr, myColInd, myValues,
-                       pRowMap, pRangeMap, pDomainMap, callFillComplete);*/
-         sparse_matrix_ptr pMatrix =
-                      makeMatrix (numEntriesPerRow, rowPtr, colInd, values,
-                                pRowMap, pRangeMap, pDomainMap, callFillComplete);
-         // Only use a reduce-all in debug mode to check if pMatrix is
-         // null.  Otherwise, just throw an exception.  We never expect
-         // a null pointer here, so we can save a communication.
-         /*if (debug) {
-           int localIsNull = pMatrix.is_null () ? 1 : 0;
-           int globalIsNull = 0;
-           reduceAll (*pComm, REDUCE_MAX, localIsNull, ptr (&globalIsNull));
-           TEUCHOS_TEST_FOR_EXCEPTION(globalIsNull != 0, std::logic_error,
-             "Reader::makeMatrix() returned a null pointer on at least one "
-             "process.  Please report this bug to the Tpetra developers.");
-         }
-         else {*/
-           TEUCHOS_TEST_FOR_EXCEPTION(pMatrix.is_null(), std::logic_error,
-             "Reader::makeMatrix() returned a null pointer.  "
-             "Please report this bug to the Tpetra developers.");
-         //}
+        // Distribute the matrix data.  Each processor has to add the
+        // rows that it owns.  If you try to make Proc 0 call
+        // insertGlobalValues() for _all_ the rows, not just those it
+        // owns, then fillComplete() will compute the number of
+        // columns incorrectly.  That's why Proc 0 has to distribute
+        // the matrix data and why we make all the processors (not
+        // just Proc 0) call insertGlobalValues() on their own data.
+        //
+        // These arrays represent each processor's part of the matrix
+        // data, in "CSR" format (sort of, since the row indices might
+        // not be contiguous).
+        /*ArrayRCP<size_t> myNumEntriesPerRow;
+          ArrayRCP<size_t> myRowPtr;
+          ArrayRCP<global_ordinal_type> myColInd;
+          ArrayRCP<scalar_type> myValues;
+          // Distribute the matrix data.  This is a collective operation.
+          distribute (myNumEntriesPerRow, myRowPtr, myColInd, myValues, pRowMap,
+          numEntriesPerRow, rowPtr, colInd, values, 0);
+          RCP<sparse_matrix_type> pMatrix =
+          makeMatrix (myNumEntriesPerRow, myRowPtr, myColInd, myValues,
+          pRowMap, pRangeMap, pDomainMap, callFillComplete);*/
+        RCP<sparse_matrix_type> pMatrix =
+          makeMatrix (numEntriesPerRow, rowPtr, colInd, values,
+                      pRowMap, pRangeMap, pDomainMap, callFillComplete);
+        // Only use a reduce-all in debug mode to check if pMatrix is
+        // null.  Otherwise, just throw an exception.  We never expect
+        // a null pointer here, so we can save a communication.
+        /*if (debug) {
+          int localIsNull = pMatrix.is_null () ? 1 : 0;
+          int globalIsNull = 0;
+          reduceAll (*pComm, REDUCE_MAX, localIsNull, ptr (&globalIsNull));
+          TEUCHOS_TEST_FOR_EXCEPTION(globalIsNull != 0, std::logic_error,
+          "Reader::makeMatrix() returned a null pointer on at least one "
+          "process.  Please report this bug to the Tpetra developers.");
+          }
+          else {*/
+        TEUCHOS_TEST_FOR_EXCEPTION(pMatrix.is_null(), std::logic_error,
+                                   "Reader::makeMatrix() returned a null pointer.  "
+                                   "Please report this bug to the Tpetra developers.");
+        //}
 
-         // We can't get the dimensions of the matrix until after
-         // fillComplete() is called.  Thus, we can't do the sanity
-         // check (dimensions read from the Matrix Market data,
-         // vs. dimensions reported by the CrsMatrix) unless the user
-         // asked makeMatrix() to call fillComplete().
-         //
-         // Note that pMatrix->getGlobalNum{Rows,Cols}() does _not_ do
-         // what one might think it does, so you have to ask the range
-         // resp. domain map for the number of rows resp. columns.
-         if (callFillComplete) {
-           const int numProcs = pComm->getSize ();
+        // We can't get the dimensions of the matrix until after
+        // fillComplete() is called.  Thus, we can't do the sanity
+        // check (dimensions read from the Matrix Market data,
+        // vs. dimensions reported by the CrsMatrix) unless the user
+        // asked makeMatrix() to call fillComplete().
+        //
+        // Note that pMatrix->getGlobalNum{Rows,Cols}() does _not_ do
+        // what one might think it does, so you have to ask the range
+        // resp. domain map for the number of rows resp. columns.
+        if (callFillComplete) {
+          const int numProcs = pComm->getSize ();
 
-           if (false && debug) {
-             const size_t globalNumRows =
-               pRangeMap->getGlobalNumElements();
-             const size_t globalNumCols =
-               pDomainMap->getGlobalNumElements();
-             if (myRank == rootRank) {
-               std::cerr << "-- Matrix is "
-                    << globalNumRows << " x " << globalNumCols
-                    << " with " << pMatrix->getGlobalNumEntries()
-                    << " entries, and index base "
-                    << pMatrix->getIndexBase() << "." << std::endl;
-             }
-             pComm->barrier ();
-             for (int p = 0; p < numProcs; ++p) {
-               if (myRank == p) {
-                 std::cerr << "-- Proc " << p << " owns "
-                      << pMatrix->getNodeNumCols() << " columns, and "
-                      << pMatrix->getNodeNumEntries() << " entries." << std::endl;
-               }
-               pComm->barrier ();
-             }
-           } // if (extraDebug && debug)
-         } // if (callFillComplete)
+          if (false && debug) {
+            const size_t globalNumRows =
+              pRangeMap->getGlobalNumElements();
+            const size_t globalNumCols =
+              pDomainMap->getGlobalNumElements();
+            if (myRank == rootRank) {
+              std::cerr << "-- Matrix is "
+                        << globalNumRows << " x " << globalNumCols
+                        << " with " << pMatrix->getGlobalNumEntries()
+                        << " entries, and index base "
+                        << pMatrix->getIndexBase() << "." << std::endl;
+            }
+            pComm->barrier ();
+            for (int p = 0; p < numProcs; ++p) {
+              if (myRank == p) {
+                std::cerr << "-- Proc " << p << " owns "
+                          << pMatrix->getNodeNumCols() << " columns, and "
+                          << pMatrix->getNodeNumEntries() << " entries." << std::endl;
+              }
+              pComm->barrier ();
+            }
+          } // if (extraDebug && debug)
+        } // if (callFillComplete)
 
-         if (debug && myRank == rootRank) {
-           std::cerr << "-- Done creating the CrsMatrix from the Matrix Market data"
-                << std::endl;
-         }
-         return pMatrix;
-       }
+        if (debug && myRank == rootRank) {
+          std::cerr << "-- Done creating the CrsMatrix from the Matrix Market data"
+                    << std::endl;
+        }
+        return pMatrix;
+      }
 
     private:
        template<class S>

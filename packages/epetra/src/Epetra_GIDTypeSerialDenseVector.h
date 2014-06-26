@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -50,7 +50,7 @@
 
 //! Epetra_GIDTypeSerialDenseVector: A class for switching between "int" and "long long" GID Type at compile time.
 
-/*! The Epetra_GIDTypeSerialDenseVector class enables the construction and use of integer-valued, 
+/*! The Epetra_GIDTypeSerialDenseVector class enables the construction and use of integer-valued,
     dense vectors to store "int" or "long long".
 */
 

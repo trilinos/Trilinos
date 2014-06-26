@@ -211,7 +211,7 @@ IF(${PACKAGE_NAME}_ENABLE_Fortran)
     )	
 ENDIF()
 
-# Set addition headers and source based on package-specific 
+# Set addition headers and source based on package-specific
 # configuration options
 
 IF(TPL_ENABLE_MPI)

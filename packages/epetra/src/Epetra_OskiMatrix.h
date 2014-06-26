@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -75,7 +75,7 @@ class Epetra_OskiPermutation;
     - The MatPowMultiply kernel does not work.
     - Optimized multivector kernels are not created by default when installing OSKI.
     - The tune function cannot transform a (nearly) symmetric matrix to be stored as such.
-    - In order to use the \f$A^TA\f$ OSKI kernel (MatTransMatMultiply), in oski/src/MBCSR/ata.c you must replace the lines 
+    - In order to use the \f$A^TA\f$ OSKI kernel (MatTransMatMultiply), in oski/src/MBCSR/ata.c you must replace the lines
     \code const char *kernel_name = (opA == OP_AT_A)
         ? "SubmatRperTransSubmatRperMult" : "SubmatRperHermSubmatRperMult";
     \endcode
@@ -84,23 +84,23 @@ class Epetra_OskiPermutation;
         ? "SubmatReprTransSubmatReprMult" : "SubmatReprHermSubmatReprMult";
     \endcode
     - OSKI does not convert between CSR and CSC when it could be profitable, such as when performing
-    \f$AA^T\f$ on a CSR matrix. 
+    \f$AA^T\f$ on a CSR matrix.
     - OSKI may be incompatible with the following architectures:
         - Barcelona (quad-core Opteron): errors during "make install" (confirmed with OSKI developers)
         - single core Xeon: OSKI installs, but never transforms matrices.  This includes cases where other machines will transform the same
           matrices, and where one would expect the matrix to be transformed, based on OSKI tuning data.
 */
- 
+
 class Epetra_OskiMatrix: public Epetra_CrsMatrix{
  public:
 	//! @name Constructors/Destructor
 	//@{
         //! Copy constructor.
         Epetra_OskiMatrix(const Epetra_OskiMatrix& Source); //not in use for now
- 
+
 	//! Constructor creates an Epetra_OskiMatrix from an Epetra_CrsMatrix.
 	/*! \param Source (In) An Epetra_CrsMatrix that is to be wrapped as an Epetra_OskiMatrix.
-	    \param List (In) Any options or data wanted or needed for the conversion.  
+	    \param List (In) Any options or data wanted or needed for the conversion.
             \return Pointer to an Epetra_OskiMatrix.
 
             Options that can be passed to the List are presented below.  They are: "<type> <option name> <default value>: <description of purpose>"
@@ -122,8 +122,8 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 	//! @name Extract/Replace Values
 	//@{
 	//! Replace current values with this list of entries for a given local row of the matrix.  Warning this could be expensive.
-	/*! The reason this function could be expensive is its underlying implementation.  
-	    Both the OSKI and Epetra versions of the matrix must be changed when the matrix 
+	/*! The reason this function could be expensive is its underlying implementation.
+	    Both the OSKI and Epetra versions of the matrix must be changed when the matrix
 	    has been permuted.  When this is the case, a call must be made to the Epetra
 	    ReplaceMyValues, and NumEntries calls must be made to a function that changes the
 	    OSKI matrix's values one at a time.
@@ -141,9 +141,9 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
     	   	  entries of MyRow.
 
 	*/
-	int ReplaceMyValues(int MyRow, 
-			    int NumEntries, 
-			    double* Values, 
+	int ReplaceMyValues(int MyRow,
+			    int NumEntries,
+			    double* Values,
 			    int* Indices);
 
    	//! Add this list of entries to existing values for a given local row of the matrix.  WARNING: this could be expensive.
@@ -155,7 +155,7 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 	    \param MyRow - (In) Row number (in local coordinates) to put elements.
     	    \param NumEntries - (In) Number of entries.
     	    \param Values - (In) Values to enter.
-    	    \param Indices - (In) Local column indices corresponding to values. 
+    	    \param Indices - (In) Local column indices corresponding to values.
     	    \return Integer error code, set to 0 if successful. Note that if the
     		    allocated length of the row has to be expanded, a positive warning code
     		    may be returned.  This should be treated as a fatal error, as part of
@@ -164,9 +164,9 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
     	    \post The given Values at the given Indices have been summed into the
     		  entries of MyRow.
 	*/
-	int SumIntoMyValues(int MyRow, 
-			    int NumEntries, 
-			    double* Values, 
+	int SumIntoMyValues(int MyRow,
+			    int NumEntries,
+			    double* Values,
 			    int* Indices);
 
 
@@ -183,7 +183,7 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
      	    If a diagonal value does not exist for a given row, the corresponding value in
             the input Epetra_OskiVector will be ignored, and the return code will be set to 1.
     	    \param Diagonal - (In) New values to be placed in the main diagonal.
-    	    \return Integer error code, set to 0 if successful, set to 1 on the calling processor 
+    	    \return Integer error code, set to 0 if successful, set to 1 on the calling processor
 	       	    if one or more diagonal entries not present in matrix.  Other error codes can
 		    be returned as well, indicating improperly constructed matrices or vectors.
     	    \pre Filled()==true
@@ -205,7 +205,7 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
             \post Unchanged
 	*/
   	int Multiply(bool TransA,
-	    	     const Epetra_Vector& x, 
+	    	     const Epetra_Vector& x,
 		     Epetra_Vector& y) const;
 	
 	//! Performs a matrix vector multiply of y = Alpha*this^TransA*x + Beta*y
@@ -221,7 +221,7 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
             \post Unchanged
 	*/
   	int Multiply(bool TransA,
-	    	     const Epetra_Vector& x, 
+	    	     const Epetra_Vector& x,
 		     Epetra_Vector& y,
 		     double Alpha,
 		     double Beta = 0.0) const;
@@ -237,7 +237,7 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 	    \post Unchanged
 	*/
   	int Multiply(bool TransA,
-   	    	     const Epetra_MultiVector& X, 
+   	    	     const Epetra_MultiVector& X,
 	    	     Epetra_MultiVector& Y) const;
 
 	//! Performs a matrix multi-vector multiply of Y = Alpha*this^TransA*X + Beta*Y
@@ -253,7 +253,7 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 	    \post Unchanged
 	*/
   	int Multiply(bool TransA,
-   	    	     const Epetra_MultiVector& X, 
+   	    	     const Epetra_MultiVector& X,
 	    	     Epetra_MultiVector& Y,
 		     double Alpha,
 	    	     double Beta = 0.0) const;
@@ -271,7 +271,7 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
             \post Unchanged
 	*/
         int Solve(bool Upper, bool TransA, bool UnitDiagonal, const Epetra_Vector& x, Epetra_Vector &y) const;
-        
+
 	//! Performs a triangular solve of y = Alpha*(this^TransA)^-1*x where this is a triangular matrix.
 	/*! The vector x can be either be an Epetra_Vector or Epetra_OskiVector.
 	    \param TransA (In) If TransA = TRUE then use the transpose of the matrix in
@@ -284,7 +284,7 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
             \post Unchanged
 	*/
         int Solve(bool TransA, const Epetra_Vector& x, Epetra_Vector& y, double Alpha = 1.0) const;
-        
+
 	//! Performs a triangular solve of Y = (this^TransA)^-1*X where this is a triangular matrix.
 	/*! The vector X can be either be an Epetra_MultiVector or Epetra_OskiMultiVector.  The OskiMatrix must already be triangular, and the UnitDiagonal setting associated with it will be used.
 	    \param Upper (In) This parameter is ignored only here to match the Epetra_CrsMatrix::Solve syntax.
@@ -298,7 +298,7 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
             \post Unchanged
 	*/
         int Solve(bool Upper, bool TransA, bool UnitDiagonal, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
-        
+
 	//! Performs a triangular solve of Y = Alpha*(this^TransA)^-1*X where this is a triangular matrix.
 	/*! The vector X can be either be an Epetra_MultiVector or Epetra_OskiMultiVector.
 	    \param TransA (In) If TransA = TRUE then use the transpose of the matrix in
@@ -311,7 +311,7 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
             \post Unchanged
 	*/
         int Solve(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y, double Alpha = 1.0) const;
-        
+
 
 	//! Performs two matrix vector multiplies of y = Alpha*this^TransA*this*x + Beta*y or y = Alpha*this*this^TransA*x + Beta*y.
 	/*! The vectors x, y and t can be either Epetra_Vectors or Epetra_OskiVectors.
@@ -319,11 +319,11 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 	    bidiagonalization methods.  The parallel version of y = Alpha*this*this^TransA*x + Beta*y
             uses calls to the Multiply routine under the hood, as it is not possible to perform
             both multiplies automatically.
-	    \param ATA (In) If TransA = TRUE then compute this^T*this*x otherwise compute 
+	    \param ATA (In) If TransA = TRUE then compute this^T*this*x otherwise compute
 		   this*this^T*x.
 	    \param x (In) The vector the matrix is multiplied by.
 	    \param y (In/Out) The vector where the calculation result is stored.
-	    \param t (Out) The vector where the result of the this*x is stored if 
+	    \param t (Out) The vector where the result of the this*x is stored if
 		   TransA = true and this^T*x is stored otherwise.
 	    \param Alpha (In) A scalar constant used to scale x.
 	    \param Beta  (In) A scalar constant used to scale y.
@@ -331,7 +331,7 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
             \pre Filled()==true
             \post Unchanged
 	*/
-	int MatTransMatMultiply(bool ATA, 
+	int MatTransMatMultiply(bool ATA,
 			 	const Epetra_Vector& x,
 				Epetra_Vector& y,
 				Epetra_Vector* t,
@@ -344,11 +344,11 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 	    bidiagonalization methods.  The parallel version of Y = Alpha*this*this^TransA*X + Beta*Y
             uses calls to the Multiply routine under the hood, as it is not possible to perform
             both multiplies automatically.
-	    \param ATA (In) If TransA = TRUE then compute this^T*this*X otherwise compute 
+	    \param ATA (In) If TransA = TRUE then compute this^T*this*X otherwise compute
 		   this*this^T*X.
 	    \param X (In) The vector the matrix is multiplied by.
 	    \param Y (In/Out) The vector where the calculation result is stored.
-	    \param T (Out) The multi-vector where the result of the this*X is stored if 
+	    \param T (Out) The multi-vector where the result of the this*X is stored if
 		   TransA = true and this^T*X is stored otherwise.
 	    \param Alpha (In) A scalar constant used to scale X.
 	    \param Beta  (In) A scalar constant used to scale Y.
@@ -356,7 +356,7 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
             \pre Filled()==true
             \post Unchanged
 	*/
-	int MatTransMatMultiply(bool ATA, 
+	int MatTransMatMultiply(bool ATA,
 				const Epetra_MultiVector& X,
 				Epetra_MultiVector& Y,
 				Epetra_MultiVector* T,
@@ -418,7 +418,7 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 					double Zeta = 0.0) const;
 
 	//! Performs a matrix vector multiply of y = Alpha*(this^TransA)^Power*x + Beta*y.  This is not implemented as described in the detailed description.
-	/*! The vectors x and y can be either Epetra_Vectors or Epetra_OskiVectors.  
+	/*! The vectors x and y can be either Epetra_Vectors or Epetra_OskiVectors.
 	    The vector T can be either an Epetra_MultiVector or Epetra_OskiMultiVector.
 	    This composed routine is used in power and S-step methods.  This routine is
             not implemented due a bug in the oski-1.01h kernel that makes testing of correctness
@@ -427,8 +427,8 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 	           computing the product.
 	    \param x (In) The vector the matrix is multiplied by.
 	    \param y (In/Out) The vector where the calculation result is stored.
-	    \param T (Out) The multi-vector where the result of each subsequent multiplication 
-		   this*x ... this^(Power-1)*x is stored. 
+	    \param T (Out) The multi-vector where the result of each subsequent multiplication
+		   this*x ... this^(Power-1)*x is stored.
 	    \param Power (In) The power to raise the matrix to in the calculation.
 	    \param Alpha (In) A scalar constant used to scale x.
 	    \param Beta  (In) A scalar constant used to scale y.
@@ -445,7 +445,7 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 			   double Beta = 0.0) const;
 
 	//! Performs a matrix vector multiply of y = Alpha*(this^TransA)^Power*x + Beta*y.  This is not implemented as described in the detailed description.
-	/*! The vectors x and y can be either Epetra_Vectors or Epetra_OskiVectors.  
+	/*! The vectors x and y can be either Epetra_Vectors or Epetra_OskiVectors.
 	    This composed routine is used in power and S-step methods.  This routine is
             not implemented due a bug in the oski-1.01h kernel that makes testing of correctness
             impossible.
@@ -476,7 +476,7 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 		   be moved to the user guide in the future.
 	    \return On successful storage of the hint 0 is returned.  On failure an error code
 		    is returned.
-         
+
             Options that can be passed to the List are presented below.  They are: "<type> <option name>: <description of purpose>".  The
 available hints are grouped by section, and only one hint from each section can be true for a given matrix.  For options where multiple arguments can be passed in at once the interface only supports up to 5.  This means only 5 block sizes or 5 diaganols can be passed in at once.  If you have more changing the code to support your needs should be simple, but every case you use must be enumerated.  Of course you can just say there are diagonals and blocks and not pass in specific sizes as wells.
 
@@ -491,10 +491,10 @@ available hints are grouped by section, and only one hint from each section can 
 
 	    - bool alignedblocks: If true, all blocks are aligned to a grid.
 	    - bool unalignedblocks: If true, blocks are not aligned to a grid.
-	    
+	
 	    - bool symmetricpattern: If true, the matrix is either symmetric or nearly symmetric.
 	    - bool nonsymmetricpattern: If true, the matrix has a very unsymmetric pattern.
-	    
+	
 	    - bool randompattern: If true, the matrix's non-zeros are distributed in a random pattern.
 	    - bool correlatedpattern: If true, the row and column indices for
 	      non-zeros are highly correlated.
@@ -527,10 +527,10 @@ available hints are grouped by section, and only one hint from each section can 
 		   by using these options the associated vector or NumCalls becomes invalid.
 	    \return Stores the workload hint in the matrix if the operation is valid.  If the
 	       	    operation is not valid an error code is returned.
-	   
+	
             Options that can be passed to the List are presented below.  They are: "<type> <option name>: <description of purpose>".  The
 available hints are grouped by section, and only one hint from each section can be true for a given matrix.
-  
+
 	    These replace InVec.
 	    - bool symminvec: If true, use a symbolic vector rather than the vector passed in for tuning purposes.
 	    - bool symminmultivec: If true, use a symbolic multi-vector rather than the multi-vector passed in for tuning purposes.
@@ -551,7 +551,7 @@ available hints are grouped by section, and only one hint from each section can 
 			    const Teuchos::ParameterList& List);
 	
 	//! Workload hints for computing a triangular solve used by OskiTuneMat to optimize the data structure storage, and the routine to compute the calculation.
-	/*! In parallel the routine uses symbolic vectors.  This is done for two reasons.  Doing this             
+	/*! In parallel the routine uses symbolic vectors.  This is done for two reasons.  Doing this
             saves on data allocation and potentially communication overhead.  For a matrix-vector
             routine there should be no advantage to having the actual vector, as its size must be the same
             as a matrix dimension.  For a matrix-multivector routine there could be gains from knowing the
@@ -563,16 +563,16 @@ available hints are grouped by section, and only one hint from each section can 
 	    \param Alpha (In) A scalar constant used to scale InVec.
 	    \param Vector (In) The vector being used in the solve and to store the solution.
 	    \param NumCalls (In) The number of times the operation is called or the tuning level wanted.
-	    \param List (In) Used for denoting the use of a symbolic vectors, as well as for 
+	    \param List (In) Used for denoting the use of a symbolic vectors, as well as for
 		   level of aggressive tuning if either NumCalls not
 		   known or to be overridden.  Options are shown below. It should be noted that
 		   by using these options the associated vector or NumCalls becomes invalid.
 	    \return Stores the workload hint in the matrix if the operation is valid.  If the
 	       	    operation is not valid an error code is returned.
-	    
+	
             Options that can be passed to the List are presented below.  They are: "<type> <option name>: <description of purpose>".  The
 available hints are grouped by section, and only one hint from each section can be true for a given matrix.
-  
+
 	    These replace Vector.
 	    - bool symmvec: If true, use a symbolic vector rather than the vector passed in for tuning purposes.
 	    - bool symmmultivec: If true, use a symbolic multi-vector rather than the multi-vector passed in for tuning purposes.
@@ -598,8 +598,8 @@ available hints are grouped by section, and only one hint from each section can 
 	    \param InVec (In) The vector the matrix is multiplied by or whether it is a single vector or multi-vector.
 	    \param Beta  (In) A scalar constant used to scale OutVec.
 	    \param OutVec (In) The vector where the calculation result is stored or whether it is a single vector or multi-vector.
-	    \param Intermediate (In) The vector where result of the first product can be stored 
-		   or whether it is a single vector or multi-vector.  If this quantity is NULL 
+	    \param Intermediate (In) The vector where result of the first product can be stored
+		   or whether it is a single vector or multi-vector.  If this quantity is NULL
 		   then the intermediate product is not stored.
 	    \param NumCalls (In) The number of times the operation is called or the tuning level wanted.
 	    \param List (In) Used for denoting the use of symbolic vectors for InVec,
@@ -608,10 +608,10 @@ available hints are grouped by section, and only one hint from each section can 
 		   by using these options the associated vector or NumCalls becomes invalid.
 	    \return Stores the workload hint in the matrix if the operation is valid.  If the
 	       	    operation is not valid an error code is returned.
-	    
+	
             Options that can be passed to the List are presented below.  They are: "<type> <option name>: <description of purpose>".  The
 available hints are grouped by section, and only one hint from each section can be true for a given matrix.
-  
+
 	    These replace InVec.
 	    - bool symminvec: If true, use a symbolic vector rather than the vector passed in for tuning purposes.
 	    - bool symminmultivec: If true, use a symbolic multi-vector rather than the multi-vector passed in for tuning purposes.
@@ -661,10 +661,10 @@ available hints are grouped by section, and only one hint from each section can 
 		   by using these options the associated vector or NumCalls becomes invalid.
 	    \return Stores the workload hint in the matrix if the operation is valid.  If the
 	       	    operation is not valid an error code is returned.
-	    
+	
             Options that can be passed to the List are presented below.  They are: "<type> <option name>: <description of purpose>".  The
 available hints are grouped by section, and only one hint from each section can be true for a given matrix.
-  
+
 	    These replace InVec.
 	    - bool symminvec: If true, use a symbolic vector rather than the vector passed in for tuning purposes.
 	    - bool symminmultivec: If true, use a symbolic multi-vector rather than the multi-vector passed in for tuning purposes.
@@ -709,8 +709,8 @@ available hints are grouped by section, and only one hint from each section can 
 	    \param InVec (In) The vector the matrix is multiplied by or whether it is a single vector or multi-vector.
 	    \param Beta  (In) A scalar constant used to scale OutVec.
 	    \param OutVec (In) The vector where the calculation result is stored or whether it is a single vector or multi-vector.
-	    \param Intermediate (In) The multi-vector where result of the first product can be stored 
-		   or whether it is a single vector or multi-vector.  If this quantity is NULL 
+	    \param Intermediate (In) The multi-vector where result of the first product can be stored
+		   or whether it is a single vector or multi-vector.  If this quantity is NULL
 		   then the intermediate product is not stored.
 	    \param Power (In) The power to raise the matrix to in the calculation.
 	    \param NumCalls (In) The number of times the operation is called or the tuning level wanted.
@@ -720,10 +720,10 @@ available hints are grouped by section, and only one hint from each section can 
 		   by using these options the associated vector or NumCalls becomes invalid.
 	    \return Stores the workload hint in the matrix if the operation is valid.  If the
 	       	    operation is not valid an error code is returned.
-	    
+	
             Options that can be passed to the List are presented below.  They are: "<type> <option name>: <description of purpose>".  The
 available hints are grouped by section, and only one hint from each section can be true for a given matrix.
-  
+
 	    These replace InVec.
 	    - bool symminvec: If true, use a symbolic vector rather than the vector passed in for tuning purposes.
 	    - bool symminmultivec: If true, use a symbolic multi-vector rather than the multi-vector passed in for tuning purposes.
@@ -731,7 +731,7 @@ available hints are grouped by section, and only one hint from each section can 
             These replace OutVec.
 	    - bool symmoutvec: If true, use a symbolic vector rather than the vector passed in for tuning purposes.
 	    - bool symmoutmultivec: If true, use a symbolic multi-vector rather than the multi-vector passed in for tuning purposes.
-            
+
             This replaces Intermediate.
 	    - bool symmintermultivec: If true, use a symbolic multi-vector rather than the multi-vector passed in for tuning purposes.
 
@@ -751,7 +751,7 @@ available hints are grouped by section, and only one hint from each section can 
 	//! Tunes the matrix multiply if its deemed profitable.
 	/*! The routine tunes based upon user provided hints if given.  If hints are not given the
 	    tuning is performed based on expected future workload for the calculation.
-	    \return On success returns a non-negative status code of the transformations 
+	    \return On success returns a non-negative status code of the transformations
 		    performed.  On failure an error code is returned.
 	*/
 	int TuneMatrix();
@@ -772,7 +772,7 @@ available hints are grouped by section, and only one hint from each section can 
 	const Epetra_OskiPermutation& ViewColumnPermutation() const;
 	
 	//! Returns a string holding the transformations performed on the matrix when it was tuned.
-	/*! \return Upon success returns a newly-allocated string that stores the 
+	/*! \return Upon success returns a newly-allocated string that stores the
 		    transformations applied to the matrix during tuning.  NULL is returned
 		    upon an error.  It is the users responsibility to deallocate the returned
                     string.
@@ -796,6 +796,6 @@ available hints are grouped by section, and only one hint from each section can 
  private:
 	const Epetra_CrsMatrix* Epetra_View_;
 	oski_matrix_t A_tunable_;
-	bool Copy_Created_; 
+	bool Copy_Created_;
 };
 #endif /* EPETRA_OSKIMATRIX_H */

@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -63,43 +63,43 @@ namespace NOX {
 namespace Epetra {
 
   /*! \brief Concrete class for a weighted L2 vector space.
-    
+
   This class allows users to override the inner product and norm
   used by the NOX::Epetra::Vector class.  The most frequent use of
   this class is for introducing a weighted norm throughout NOX.
-  
+
   */
   class VectorSpaceScaledL2 : public NOX::Epetra::VectorSpace {
-    
+
   public:
-    
+
     //! Constructor
     VectorSpaceScaledL2(const Teuchos::RCP<NOX::Epetra::Scaling>& s,
-			NOX::Epetra::Scaling::ScaleType st = 
-			NOX::Epetra::Scaling::Left);
-    
+            NOX::Epetra::Scaling::ScaleType st =
+            NOX::Epetra::Scaling::Left);
+
     //! Destructor
     virtual ~VectorSpaceScaledL2();
-    
+
     //! Computes a scaled inner product.
     /*! Computes a scaled inner product: \f$ <Da, Db> \f$ where
       \f$D\f$ is the set of scaling vectors associated with either
       left of right scaling.
     */
-    virtual double innerProduct(const Epetra_Vector& a, 
-				const Epetra_Vector& b) const;
-    
+    virtual double innerProduct(const Epetra_Vector& a,
+                const Epetra_Vector& b) const;
+
     //! Computes the scaled norm.
     /*! Computes the scaled norm using \f$ Da \f$ where \f$D\f$ is the
       set of scaling vectors associated with either left of right
       scaling.
     */
     virtual double norm(const Epetra_Vector& a,
-			NOX::Abstract::Vector::NormType = 
-			NOX::Abstract::Vector::TwoNorm) const;
-    
+            NOX::Abstract::Vector::NormType =
+            NOX::Abstract::Vector::TwoNorm) const;
+
   protected:
-    
+
     //! Scaling vector used in the inner product
     Teuchos::RCP<NOX::Epetra::Scaling> scalingPtr;
 

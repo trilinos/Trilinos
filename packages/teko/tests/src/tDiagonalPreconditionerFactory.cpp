@@ -194,7 +194,7 @@ bool tDiagonalPreconditionerFactory::test_initializePrec(int verbosity,std::ostr
   if(Thyra::get_Epetra_Operator(*pop)==Teuchos::null) 
      return false;
 
-  //  pstate->BDP_->Print(cout);
+  //  pstate->BDP_->Print(std::cout);
   return true;
 }
 
@@ -241,7 +241,7 @@ bool tDiagonalPreconditionerFactory::test_canApply(int verbosity,std::ostream & 
   Z.Norm2(&dnrm);
 
   if(!epetraF->Comm().MyPID())
-    cout<<"||Z-Y||/||Z|| = " <<dnrm/znrm<<endl;
+    std::cout << "||Z-Y||/||Z|| = " << dnrm/znrm << std::endl;
   if(dnrm/znrm > 1e-12) return false;
   else return true;
 }

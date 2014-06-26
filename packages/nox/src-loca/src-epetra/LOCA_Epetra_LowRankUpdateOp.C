@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -58,10 +58,10 @@
 
 LOCA::Epetra::LowRankUpdateOp::LowRankUpdateOp(
         const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	const Teuchos::RCP<Epetra_Operator>& jacOperator, 
-	const Teuchos::RCP<const Epetra_MultiVector>& U_multiVec, 
-	const Teuchos::RCP<const Epetra_MultiVector>& V_multiVec,
-	bool setup_for_solve) :
+    const Teuchos::RCP<Epetra_Operator>& jacOperator,
+    const Teuchos::RCP<const Epetra_MultiVector>& U_multiVec,
+    const Teuchos::RCP<const Epetra_MultiVector>& V_multiVec,
+    bool setup_for_solve) :
   globalData(global_data),
   label("LOCA::Epetra::LowRankUpdateOp"),
   localMap(V_multiVec->NumVectors(), 0, jacOperator->Comm()),
@@ -99,16 +99,16 @@ LOCA::Epetra::LowRankUpdateOp::~LowRankUpdateOp()
 {
 }
 
-int 
-LOCA::Epetra::LowRankUpdateOp::SetUseTranspose(bool UseTranspose) 
+int
+LOCA::Epetra::LowRankUpdateOp::SetUseTranspose(bool UseTranspose)
 {
   useTranspose = UseTranspose;
   return J->SetUseTranspose(UseTranspose);
 }
 
-int 
-LOCA::Epetra::LowRankUpdateOp::Apply(const Epetra_MultiVector& Input, 
-				     Epetra_MultiVector& Result) const
+int
+LOCA::Epetra::LowRankUpdateOp::Apply(const Epetra_MultiVector& Input,
+                     Epetra_MultiVector& Result) const
 {
   // Number of input vectors
   int m = Input.NumVectors();
@@ -143,9 +143,9 @@ LOCA::Epetra::LowRankUpdateOp::Apply(const Epetra_MultiVector& Input,
   return res;
 }
 
-int 
-LOCA::Epetra::LowRankUpdateOp::ApplyInverse(const Epetra_MultiVector& Input, 
-					    Epetra_MultiVector& Result) const
+int
+LOCA::Epetra::LowRankUpdateOp::ApplyInverse(const Epetra_MultiVector& Input,
+                        Epetra_MultiVector& Result) const
 {
   // Number of input vectors
   int k = Input.NumVectors();
@@ -162,29 +162,29 @@ LOCA::Epetra::LowRankUpdateOp::ApplyInverse(const Epetra_MultiVector& Input,
   }
 
   if (!useTranspose) {
-    
+
     // Compute V^T*Result
     tmpMat->Multiply('T', 'N', 1.0, *V, Result, 0.0);
 
     // Backsolve LU factorization against tmpMat
     int info;
     lapack.GETRS('N', m, k, lu->Values(), m, &ipiv[0], tmpMat->Values(), m,
-		 &info);
+         &info);
 
     // Compute Result - JinvU*tmpMat
     Result.Multiply('N', 'N', -1.0, *JinvU, *tmpMat, 1.0);
   }
   else {
     globalData->locaErrorCheck->throwError(
-		      "LOCA::Epetra::LowRankUpdateOp::ApplyInverse",
-		      "Operator does not support transpose");
+              "LOCA::Epetra::LowRankUpdateOp::ApplyInverse",
+              "Operator does not support transpose");
     return -1;
   }
-  
+
   return res;
 }
 
-double 
+double
 LOCA::Epetra::LowRankUpdateOp::NormInf() const
 {
   double Jn;
@@ -204,36 +204,36 @@ LOCA::Epetra::LowRankUpdateOp::NormInf() const
 }
 
 
-const char* 
+const char*
 LOCA::Epetra::LowRankUpdateOp::Label () const
 {
   return const_cast<char*>(label.c_str());
 }
-  
-bool 
+
+bool
 LOCA::Epetra::LowRankUpdateOp::UseTranspose() const
 {
   return useTranspose;
 }
 
-bool 
+bool
 LOCA::Epetra::LowRankUpdateOp::HasNormInf() const
 {
   return J->HasNormInf();
 }
 
-const Epetra_Comm & 
+const Epetra_Comm &
 LOCA::Epetra::LowRankUpdateOp::Comm() const
 {
   return J->Comm();
 }
-const Epetra_Map& 
+const Epetra_Map&
 LOCA::Epetra::LowRankUpdateOp::OperatorDomainMap() const
 {
   return J->OperatorDomainMap();
 }
 
-const Epetra_Map& 
+const Epetra_Map&
 LOCA::Epetra::LowRankUpdateOp::OperatorRangeMap() const
 {
   return J->OperatorRangeMap();

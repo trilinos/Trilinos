@@ -405,6 +405,42 @@ TensorBase<T, ST>::operator-=(TensorBase<S, SS> const & X)
 }
 
 //
+// Component scale
+//
+template<typename T, typename ST>
+template<typename S>
+inline
+TensorBase<T, ST> &
+TensorBase<T, ST>::operator*=(S const & X)
+{
+  Index const
+  number_components = get_number_components();
+
+  for (Index i = 0; i < number_components; ++i) {
+    (*this)[i] *= X;
+  }
+  return *this;
+}
+
+//
+// Component divide
+//
+template<typename T, typename ST>
+template<typename S>
+inline
+TensorBase<T, ST> &
+TensorBase<T, ST>::operator/=(S const & X)
+{
+  Index const
+  number_components = get_number_components();
+
+  for (Index i = 0; i < number_components; ++i) {
+    (*this)[i] /= X;
+  }
+  return *this;
+}
+
+//
 // Fill with zeros
 //
 template<typename T, typename ST>

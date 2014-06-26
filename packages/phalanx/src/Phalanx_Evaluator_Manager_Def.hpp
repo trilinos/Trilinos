@@ -207,8 +207,8 @@ void PHX::EvaluatorManager<Traits>::createProviderEvaluationOrder()
     
     bool removedVariable = false;
     
-    // Loop over all varibles still in the list until we find a
-    // Provider that can remove a varible
+    // Loop over all variables still in the list until we find a
+    // Provider that can remove a variable
     bool foundProvider = false;
     int providerIndex = -1;
     for (std::size_t var = 0; var < tmpList.size(); var++) {

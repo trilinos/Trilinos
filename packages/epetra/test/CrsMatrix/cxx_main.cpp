@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -59,10 +59,10 @@
 int check(Epetra_CrsMatrix& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonzeros1,
 	  int NumGlobalNonzeros1, int * MyGlobalElements, bool verbose);
 
-int power_method(bool TransA, Epetra_CrsMatrix& A, 
+int power_method(bool TransA, Epetra_CrsMatrix& A,
 		 Epetra_Vector& q,
-		 Epetra_Vector& z, 
-		 Epetra_Vector& resid, 
+		 Epetra_Vector& z,
+		 Epetra_Vector& resid,
 		 double * lambda, int niters, double tolerance,
 		 bool verbose);
 
@@ -118,18 +118,18 @@ int main(int argc, char *argv[])
   bool verbose1 = verbose;
 
   // Redefine verbose to only print on PE 0
-  if(verbose && rank!=0) 
+  if(verbose && rank!=0)
 		verbose = false;
 
   int NumMyEquations = 10000;
   int NumGlobalEquations = (NumMyEquations * NumProc) + EPETRA_MIN(NumProc,3);
-  if(MyPID < 3) 
+  if(MyPID < 3)
     NumMyEquations++;
 
   // Construct a Map that puts approximately the same Number of equations on each processor
 
   Epetra_Map Map(NumGlobalEquations, NumMyEquations, 0, Comm);
-  
+
   // Get update list and number of local equations from newly created Map
   int* MyGlobalElements = new int[Map.NumMyElements()];
   Map.MyGlobalElements(MyGlobalElements);
@@ -153,14 +153,14 @@ int main(int argc, char *argv[])
   Epetra_CrsMatrix A(Copy, Map, NumNz);
   EPETRA_TEST_ERR(A.IndicesAreGlobal(),ierr);
   EPETRA_TEST_ERR(A.IndicesAreLocal(),ierr);
-  
+
   // Add  rows one-at-a-time
   // Need some vectors to help
   // Off diagonal Values will always be -1
 
 
   double* Values = new double[2];
-  Values[0] = -1.0; 
+  Values[0] = -1.0;
 	Values[1] = -1.0;
   int* Indices = new int[2];
   double two = 2.0;
@@ -205,18 +205,18 @@ int main(int argc, char *argv[])
   EPETRA_TEST_ERR(A.LowerTriangular(),ierr);
 	
   int NumMyNonzeros = 3 * NumMyEquations;
-  if(A.LRID(0) >= 0) 
+  if(A.LRID(0) >= 0)
 		NumMyNonzeros--; // If I own first global row, then there is one less nonzero
-  if(A.LRID(NumGlobalEquations-1) >= 0) 
+  if(A.LRID(NumGlobalEquations-1) >= 0)
 		NumMyNonzeros--; // If I own last global row, then there is one less nonzero
-  EPETRA_TEST_ERR(check(A, NumMyEquations, NumGlobalEquations, NumMyNonzeros, 3*NumGlobalEquations-2, 
+  EPETRA_TEST_ERR(check(A, NumMyEquations, NumGlobalEquations, NumMyNonzeros, 3*NumGlobalEquations-2,
 	       MyGlobalElements, verbose),ierr);
   forierr = 0;
-  for (int i = 0; i < NumMyEquations; i++) 
+  for (int i = 0; i < NumMyEquations; i++)
 		forierr += !(A.NumGlobalEntries(MyGlobalElements[i])==NumNz[i]+1);
   EPETRA_TEST_ERR(forierr,ierr);
   forierr = 0;
-  for (int i = 0; i < NumMyEquations; i++) 
+  for (int i = 0; i < NumMyEquations; i++)
 		forierr += !(A.NumMyEntries(i)==NumNz[i]+1);
   EPETRA_TEST_ERR(forierr,ierr);
 
@@ -279,7 +279,7 @@ int main(int argc, char *argv[])
   if (verbose) cout << "\n\nIncreasing the magnitude of first diagonal term and solving again\n\n"
 		    << endl;
 
-  
+
   if (A.MyGlobalRow(0)) {
     int numvals = A.NumGlobalEntries(0);
     double * Rowvals = new double [numvals];
@@ -287,7 +287,7 @@ int main(int argc, char *argv[])
     A.ExtractGlobalRowCopy(0, numvals, numvals, Rowvals, Rowinds); // Get A[0,0]
 
     for (int i=0; i<numvals; i++) if (Rowinds[i] == 0) Rowvals[i] *= 10.0;
-    
+
     A.ReplaceGlobalValues(0, numvals, Rowvals, Rowinds);
     delete [] Rowvals;
     delete [] Rowinds;
@@ -325,7 +325,7 @@ int main(int argc, char *argv[])
   if (verbose) cout << "\n\n*****Testing constant entry constructor" << endl<< endl;
 
   Epetra_CrsMatrix AA(Copy, Map, 5);
-  
+
   if (debug) Comm.Barrier();
 
   double dble_one = 1.0;
@@ -343,9 +343,9 @@ int main(int argc, char *argv[])
   EPETRA_TEST_ERR(AA.StorageOptimized(),ierr);
   EPETRA_TEST_ERR(!(AA.UpperTriangular()),ierr);
   EPETRA_TEST_ERR(!(AA.LowerTriangular()),ierr);
-  
+
   if (debug) Comm.Barrier();
-  EPETRA_TEST_ERR(check(AA, NumMyEquations, NumGlobalEquations, NumMyEquations, NumGlobalEquations, 
+  EPETRA_TEST_ERR(check(AA, NumMyEquations, NumGlobalEquations, NumMyEquations, NumGlobalEquations,
 	       MyGlobalElements, verbose),ierr);
 
   if (debug) Comm.Barrier();
@@ -361,7 +361,7 @@ int main(int argc, char *argv[])
   if (verbose) cout << "\n\n*****Testing copy constructor" << endl<< endl;
 
   Epetra_CrsMatrix B(AA);
-  EPETRA_TEST_ERR(check(B, NumMyEquations, NumGlobalEquations, NumMyEquations, NumGlobalEquations, 
+  EPETRA_TEST_ERR(check(B, NumMyEquations, NumGlobalEquations, NumMyEquations, NumGlobalEquations,
 	       MyGlobalElements, verbose),ierr);
 
   forierr = 0;
@@ -384,7 +384,7 @@ int main(int argc, char *argv[])
     forierr += !(BV.InsertMyValues(i, NumEntries, Vals, Inds)==0);
   }
   BV.FillComplete(false);
-  EPETRA_TEST_ERR(check(BV, NumMyEquations, NumGlobalEquations, NumMyEquations, NumGlobalEquations, 
+  EPETRA_TEST_ERR(check(BV, NumMyEquations, NumGlobalEquations, NumMyEquations, NumGlobalEquations,
 												MyGlobalElements, verbose),ierr);
 
   forierr = 0;
@@ -409,40 +409,40 @@ int main(int argc, char *argv[])
   if (verbose1) {
     // Test ostream << operator (if verbose1)
     // Construct a Map that puts 2 equations on each PE
-    
+
     int NumMyElements1 = 2;
     int NumMyEquations1 = NumMyElements1;
     int NumGlobalEquations1 = NumMyEquations1*NumProc;
 
     Epetra_Map Map1(-1, NumMyElements1, 0, Comm);
-    
+
     // Get update list and number of local equations from newly created Map
     int * MyGlobalElements1 = new int[Map1.NumMyElements()];
     Map1.MyGlobalElements(MyGlobalElements1);
-    
+
     // Create an integer vector NumNz that is used to build the Petra Matrix.
     // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation on this processor
-    
+
     int * NumNz1 = new int[NumMyEquations1];
-    
+
     // We are building a tridiagonal matrix where each row has (-1 2 -1)
     // So we need 2 off-diagonal terms (except for the first and last equation)
-    
+
     for (int i=0; i<NumMyEquations1; i++)
       if (MyGlobalElements1[i]==0 || MyGlobalElements1[i] == NumGlobalEquations1-1)
 	NumNz1[i] = 1;
       else
 	NumNz1[i] = 2;
-    
+
     // Create a Epetra_Matrix
-    
+
     Epetra_CrsMatrix A1(Copy, Map1, NumNz1);
-    
+
     // Add  rows one-at-a-time
     // Need some vectors to help
     // Off diagonal Values will always be -1
-    
-    
+
+
     double *Values1 = new double[2];
     Values1[0] = -1.0; Values1[1] = -1.0;
     int *Indices1 = new int[2];
@@ -474,10 +474,10 @@ int main(int argc, char *argv[])
     EPETRA_TEST_ERR(forierr,ierr);
     delete [] Indices1;
     delete [] Values1;
-    
+
     // Finish up
     EPETRA_TEST_ERR(!(A1.FillComplete(false)==0),ierr);
-    
+
     // Test diagonal extraction function
 
     Epetra_Vector checkDiag(Map1);
@@ -507,12 +507,12 @@ int main(int argc, char *argv[])
     double orignorm = A1.NormOne();
     EPETRA_TEST_ERR(!(A1.Scale(4.0)==0),ierr);
     EPETRA_TEST_ERR(!(A1.NormOne()!=orignorm),ierr);
-    
+
     if (verbose) cout << "\n\nMatrix scale OK.\n\n" << endl;
 
     if (verbose) cout << "\n\nPrint out tridiagonal matrix, each part on each processor.\n\n" << endl;
     cout << A1 << endl;
-   
+
 
   // Release all objects
   delete [] NumNz1;
@@ -527,20 +527,20 @@ int main(int argc, char *argv[])
 		// code below.
   Epetra_Map RowMap(-1,NumMyRows2,0,Comm);
   Epetra_Map ColMap(NumMyElements2,NumMyElements2,0,Comm);
-  // The DomainMap needs to be different from the ColMap for the test to 
+  // The DomainMap needs to be different from the ColMap for the test to
   // be meaningful.
   Epetra_Map DomainMap(NumMyElements2,0,Comm);
   int NumMyRangeElements2 = 0;
   // We need to distribute the elements differently for the range map also.
   if (MyPID % 2 == 0)
-    NumMyRangeElements2 = NumMyRows2*2; //put elements on even number procs 
+    NumMyRangeElements2 = NumMyRows2*2; //put elements on even number procs
   if (NumProc % 2 == 1 && MyPID == NumProc-1)
     NumMyRangeElements2 = NumMyRows2; //If number of procs is odd, put
 			// the last NumMyElements2 elements on the last proc
   Epetra_Map RangeMap(-1,NumMyRangeElements2,0,Comm);
   Epetra_CrsMatrix A2(Copy,RowMap,ColMap,NumMyElements2);
   double * Values2 = new double[NumMyElements2];
-  int * Indices2 = new int[NumMyElements2]; 
+  int * Indices2 = new int[NumMyElements2];
 
   for (int i=0; i<NumMyElements2; i++) {
     Values2[i] = i+MyPID;
@@ -568,7 +568,7 @@ int main(int argc, char *argv[])
     RangeLeftScaleValues[i] = 1.0/((i + RangeMap.MinMyGID() ) % 2 + 1);
   for (int  i=0; i<DomainLoopLength;i++)
     DomainRightScaleValues[i] = 1.0/((i + DomainMap.MinMyGID() ) % 2 + 1);
-                                                                                
+
   Epetra_Vector xRow(View,RowMap,RowLeftScaleValues);
   Epetra_Vector xCol(View,ColMap,ColRightScaleValues);
   Epetra_Vector xRange(View,RangeMap,RangeLeftScaleValues);
@@ -631,25 +631,25 @@ int main(int argc, char *argv[])
   }
 
   //
-  //  Now try changing the values underneath and make sure that 
-  //  telling one process about the change causes NormInf() and 
+  //  Now try changing the values underneath and make sure that
+  //  telling one process about the change causes NormInf() and
   //  NormOne() to recompute the norm on all processes.
   //
-  
-  double *values; 
-  int num_my_rows = A2.NumMyRows() ; 
+
+  double *values;
+  int num_my_rows = A2.NumMyRows() ;
   int num_entries;
 
   for ( int  i=0 ; i< num_my_rows; i++ ) {
     EPETRA_TEST_ERR( A2.ExtractMyRowView( i, num_entries, values ), ierr );
     for ( int j = 0 ; j <num_entries; j++ ) {
-      values[j] *= 2.0; 
+      values[j] *= 2.0;
     }
   }
 
 
   if ( MyPID == 0 )
-    A2.SumIntoGlobalValues( 0, 0, 0, 0 ) ; 
+    A2.SumIntoGlobalValues( 0, 0, 0, 0 ) ;
 
   double A2infNorm5 = A2.NormInf();
   double A2oneNorm5 = A2.NormOne();
@@ -669,7 +669,7 @@ int main(int argc, char *argv[])
   for ( int  i=0 ; i< num_my_rows; i++ ) {
     EPETRA_TEST_ERR( A2.ExtractMyRowView( i, num_entries, values ), ierr );
     for ( int j = 0 ; j <num_entries; j++ ) {
-      values[j] /= 2.0; 
+      values[j] /= 2.0;
     }
   }
 
@@ -745,7 +745,7 @@ cout << A2;
   delete [] ColRightScaleValues;
   delete [] DomainRightScaleValues;
   if (verbose) cout << "Begin partial sum testing." << endl;
-  // Test with a matrix that has partial sums for a subset of the rows 
+  // Test with a matrix that has partial sums for a subset of the rows
   // on multiple processors. (Except for the serial case, of course.)
   int NumMyRows3 = 2; // Changing this requires further changes below
   int * myGlobalElements = new int[NumMyRows3];
@@ -782,7 +782,7 @@ cout << A2;
   }
   // we want to take the transpose of our matrix and fill in different values.
   int NumMyColumns3 = NumMyRows3;
-  Epetra_Map ColMap3cm(RowMap3); 
+  Epetra_Map ColMap3cm(RowMap3);
   Epetra_Map RowMap3cm(A3.ColMap());
 
   Epetra_CrsMatrix A3cm(Copy,RowMap3cm,ColMap3cm,NumProc+1);
@@ -796,7 +796,7 @@ cout << A2;
     A3cm.InsertGlobalValues(ii, NumMyColumns3, Values3cm, Indices3cm);
   }
 
-  // The DomainMap and the RangeMap from the last test will work fine for 
+  // The DomainMap and the RangeMap from the last test will work fine for
   // the RangeMap and DomainMap, respectively, but I will make copies to
   // avaoid confusion when passing what looks like a DomainMap where we
   // need a RangeMap and vice vera.
@@ -821,14 +821,14 @@ cout << A2;
     EPETRA_TEST_ERR(-62,ierr);
     InvSumsBroke = true;
   }
-  
+
   if (verbose) cout << "End partial sum testing" << endl;
   if (verbose) cout << "Begin replicated testing" << endl;
 
-  // We will now view the shared row as a repliated row, rather than one 
+  // We will now view the shared row as a repliated row, rather than one
   // that has partial sums of its entries on mulitple processors.
   // We will reuse much of the data used for the partial sum tesitng.
-  Epetra_Vector xRow3(RowMap3,false); 
+  Epetra_Vector xRow3(RowMap3,false);
   Epetra_CrsMatrix A4(Copy, RowMap3, NumMyElements3);
   for (int ii=0; ii < NumMyElements3; ii++) {
     Values3[ii] = (int)((ii*.6)+1.0);
@@ -843,7 +843,7 @@ cout << A2;
   EPETRA_TEST_ERR(A4.InvRowMaxs(xRange3),ierr);
   if (verbose1) cout << xRow3 << xRange3;
 
-  EPETRA_TEST_ERR(A4.InvRowSums(xRow3),ierr);                      
+  EPETRA_TEST_ERR(A4.InvRowSums(xRow3),ierr);
   if (verbose1) cout << xRow3;
   EPETRA_TEST_ERR(A4.LeftScale(xRow3),ierr);
   float A4infNormFloat = A4.NormInf();
@@ -858,7 +858,7 @@ cout << A2;
     EPETRA_TEST_ERR(-63,ierr);
     InvSumsBroke = true;
   }
-  
+
   Epetra_Vector xCol3cm(ColMap3cm,false);
   Epetra_CrsMatrix A4cm(Copy, RowMap3cm, ColMap3cm, NumProc+1);
   //Use values from A3cm
@@ -873,7 +873,7 @@ cout << A2;
   if (verbose1) cout << xCol3cm << xDomain3cm;
 
   EPETRA_TEST_ERR(A4cm.InvColSums(xCol3cm),ierr);
- 
+
   if (verbose1) cout << xCol3cm << endl;
   EPETRA_TEST_ERR(A4cm.RightScale(xCol3cm),ierr);
   float A4cmOneNormFloat = A4cm.NormOne();
@@ -932,7 +932,7 @@ cout << A2;
       if (verbose) std::cout << "Subcommunicator test FAILED."<<std::endl;
       EPETRA_TEST_ERR(-66, ierr);
     }
-    
+
     delete Map2;
   }
 
@@ -954,9 +954,9 @@ cout << A2;
 return ierr ;
 }
 
-int power_method(bool TransA, Epetra_CrsMatrix& A, Epetra_Vector& q, Epetra_Vector& z, 
-								 Epetra_Vector& resid, double* lambda, int niters, double tolerance, bool verbose) 
-{  
+int power_method(bool TransA, Epetra_CrsMatrix& A, Epetra_Vector& q, Epetra_Vector& z,
+								 Epetra_Vector& resid, double* lambda, int niters, double tolerance, bool verbose)
+{
 	
   // Fill z with random Numbers
   z.Random();
@@ -974,7 +974,7 @@ int power_method(bool TransA, Epetra_CrsMatrix& A, Epetra_Vector& q, Epetra_Vect
 		if(iter%100==0 || iter+1==niters) {
 			resid.Update(1.0, z, -(*lambda), q, 0.0); // Compute A*q - lambda*q
 			resid.Norm2(&residual);
-			if(verbose) cout << "Iter = " << iter << "  Lambda = " << *lambda 
+			if(verbose) cout << "Iter = " << iter << "  Lambda = " << *lambda
 											 << "  Residual of A*q - lambda*q = " << residual << endl;
 		}
 		if(residual < tolerance) {
@@ -986,8 +986,8 @@ int power_method(bool TransA, Epetra_CrsMatrix& A, Epetra_Vector& q, Epetra_Vect
 }
 
 int check(Epetra_CrsMatrix& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonzeros1,
-					int NumGlobalNonzeros1, int* MyGlobalElements, bool verbose) 
-{  
+					int NumGlobalNonzeros1, int* MyGlobalElements, bool verbose)
+{
   (void)MyGlobalElements;
   int ierr = 0, forierr = 0;
   int NumGlobalIndices;
@@ -1064,7 +1064,7 @@ int check(Epetra_CrsMatrix& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonz
     A.ExtractGlobalRowCopy(Row, MaxNumIndices, NumGlobalIndices, GlobalCopyValues, GlobalCopyIndices);
     A.ExtractMyRowCopy(i, MaxNumIndices, NumMyIndices, MyCopyValues, MyCopyIndices);
     forierr += !(NumGlobalIndices == NumMyIndices);
-    for (int j = 1; j < NumMyIndices; j++) 
+    for (int j = 1; j < NumMyIndices; j++)
 			forierr += !(MyCopyIndices[j-1] < MyCopyIndices[j]);
     for (int j = 0; j < NumGlobalIndices; j++) {
 			forierr += !(GlobalCopyIndices[j] == A.GCID(MyCopyIndices[j]));

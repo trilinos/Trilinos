@@ -89,6 +89,7 @@ class Epetra_Vector;
 #ifdef HAVE_MUELU_TPETRA
 #include <Xpetra_TpetraMultiVector_fwd.hpp>
 #include <Xpetra_TpetraCrsMatrix_fwd.hpp>
+#include <Tpetra_Map_decl.hpp>
 
 namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>                    class Vector;
@@ -193,11 +194,11 @@ namespace MueLu {
     }
 
     static RCP<Matrix> Jacobi(Scalar omega,
-			      const Vector& D,
-			      const Matrix& A,
-			      const Matrix& B,
-			      RCP<Matrix> C_in,
-			      Teuchos::FancyOStream &fos);
+                              const Vector& D,
+                              const Matrix& A,
+                              const Matrix& B,
+                              RCP<Matrix> C_in,
+                              Teuchos::FancyOStream &fos);
 
 
     /*! @brief Helper function to do matrix-matrix multiply
@@ -331,6 +332,7 @@ namespace MueLu {
                                      const RCP<const Map> domainMap        = Teuchos::null,
                                      const RCP<const Map> rangeMap         = Teuchos::null,
                                      const bool           callFillComplete = true,
+                                     const bool           binary           = false,
                                      const bool           tolerant         = false,
                                      const bool           debug            = false);
     //@}
@@ -377,6 +379,17 @@ namespace MueLu {
         @return boolean array.  The ith entry is true iff row i is a Dirichlet row.
     */
     static Teuchos::ArrayRCP<const bool> DetectDirichletRows(const Matrix& A, const Magnitude& tol = Teuchos::ScalarTraits<SC>::zero());
+
+    /*! @brief Set seed for random number generator.
+
+      Distribute the seeds evenly in [1,INT_MAX-1].  This guarantees nothing
+      about where random number streams on difference processes will intersect.
+      This does avoid overflow situations in parallel when multiplying by a PID.
+      It also avoids the pathological case of having the *same* random number stream
+      on each process.
+    */
+
+    static void SetRandomSeed(const Teuchos::Comm<int> &comm);
   }; // class Utils
 
 #ifdef HAVE_MUELU_EPETRA

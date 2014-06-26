@@ -2197,6 +2197,98 @@ namespace Tpetra {
     checkInternalState();
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  getNumEntriesPerLocalRowUpperBound (Teuchos::ArrayRCP<const size_t>& boundPerLocalRow,
+                                      size_t& boundForAllLocalRows,
+                                      bool& boundSameForAllLocalRows) const
+  {
+    // The three output arguments.  We assign them to the actual
+    // output arguments at the end, in order to implement
+    // transactional semantics.
+    Teuchos::ArrayRCP<const size_t> numEntriesPerRow;
+    size_t numEntriesForAll = 0;
+    bool allRowsSame = true;
+
+    const ptrdiff_t numRows = static_cast<ptrdiff_t> (this->getNodeNumRows ());
+
+    if (! this->indicesAreAllocated ()) {
+      if (! this->numAllocPerRow_.is_null ()) {
+        numEntriesPerRow = this->numAllocPerRow_;
+        allRowsSame = false; // conservatively; we don't check the array
+      }
+      else {
+        numEntriesForAll = this->numAllocForAllRows_;
+        allRowsSame = true;
+      }
+    }
+    else if (! this->numRowEntries_.is_null ()) {
+      numEntriesPerRow = numRowEntries_;
+        allRowsSame = false; // conservatively; we don't check the array
+    }
+    else if (this->nodeNumAllocated_ == 0) {
+      numEntriesForAll = 0;
+      allRowsSame = true;
+    }
+    else {
+      // left with the case that we have optimized storage. in this
+      // case, we have to construct a list of row sizes.
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        this->getProfileType () != StaticProfile, std::logic_error,
+        "Tpetra::CrsGraph::getNumEntriesPerRowUpperBound: "
+        "The graph is not StaticProfile, but storage appears to be optimized.  "
+        "Please report this bug to the Tpetra developers.");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        numRows != 0 && this->rowPtrs_.size () == 0, std::logic_error,
+        "Tpetra::CrsGraph::getNumEntriesPerRowUpperBound: "
+        "The graph has " << numRows << " (> 0) row" << (numRows != 1 ? "s" : "")
+        << " on the calling process, but the rowPtrs_ array has zero entries.  "
+        "Please report this bug to the Tpetra developers.");
+
+      Teuchos::ArrayRCP<size_t> numEnt;
+      if (numRows != 0) {
+        numEnt = Teuchos::arcp<size_t> (numRows);
+      }
+
+      // We have to iterate through the row offsets anyway, so we
+      // might as well check whether all rows' bounds are the same.
+      bool allRowsReallySame = false;
+      for (ptrdiff_t i = 0; i < numRows; ++i) {
+        numEnt[i] = this->rowPtrs_[i+1] - this->rowPtrs_[i];
+        if (i != 0 && numEnt[i] != numEnt[i-1]) {
+          allRowsReallySame = false;
+        }
+      }
+      if (allRowsReallySame) {
+        if (numRows == 0) {
+          numEntriesForAll = 0;
+        } else {
+          numEntriesForAll = numEnt[1] - numEnt[0];
+        }
+        allRowsSame = true;
+      }
+      else {
+        numEntriesPerRow = numEnt; // Teuchos::arcp_const_cast<const size_t> (numEnt);
+        allRowsSame = false; // conservatively; we don't check the array
+      }
+    }
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      numEntriesForAll != 0 && numEntriesPerRow.size () != 0, std::logic_error,
+      "Tpetra::CrsGraph::getNumEntriesPerLocalRowUpperBound: "
+      "numEntriesForAll and numEntriesPerRow are not consistent.  The former "
+      "is " << numEntriesForAll << ", but the latter has nonzero size "
+      << numEntriesPerRow.size () << ".  "
+      "Please report this bug to the Tpetra developers.");
+
+    boundPerLocalRow = numEntriesPerRow;
+    boundForAllLocalRows = numEntriesForAll;
+    boundSameForAllLocalRows = allRowsSame;
+  }
+
   // TODO: in the future, globalAssemble() should use import/export functionality
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
@@ -3474,6 +3566,12 @@ namespace Tpetra {
                 << "Node number of entries = " << nodeNumEntries_ << std::endl
                 << "Node number of diagonals = " << nodeNumDiags_ << std::endl
                 << "Node max number of entries = " << nodeMaxNumRowEntries_ << std::endl;
+            if (isUpperTriangular()) {
+              out << "Graph is upper triangular" << std::endl;
+            }
+            if (isLowerTriangular()) {
+              out << "Graph is lower triangular" << std::endl;
+            }
             if (indicesAreAllocated()) {
               out << "Node number of allocated entries = " << nodeNumAllocated_ << std::endl;
             }

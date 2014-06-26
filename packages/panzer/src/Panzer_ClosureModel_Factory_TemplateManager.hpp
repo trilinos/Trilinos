@@ -47,6 +47,7 @@
 
 #include "Panzer_Traits.hpp"
 #include "Panzer_Base.hpp"
+#include "Panzer_ClosureModel_Factory_Base.hpp"
 #include "Panzer_ClosureModel_Factory.hpp"
 
 #include "boost/mpl/placeholders.hpp"
@@ -57,7 +58,7 @@ namespace panzer {
   template<typename Traits>
   class ClosureModelFactory_TemplateManager : 
     public PHX::TemplateManager<typename Traits::EvalTypes,
-				panzer::Base,
+				panzer::ClosureModelFactoryBase,
                                 panzer::ClosureModelFactory<_> > {
 
   public:

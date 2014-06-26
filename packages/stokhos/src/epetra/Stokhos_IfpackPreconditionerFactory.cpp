@@ -66,9 +66,9 @@ compute(const Teuchos::RCP<Epetra_Operator>& op, bool compute_prec) {
   Teuchos::RCP<Ifpack_Preconditioner> ifpackPrec = 
     Teuchos::rcp(Factory.Create(prec, mat.get(), overlap));
   ifpackPrec->SetParameters(*precParams);
-  int err = ifpackPrec->Initialize();  
+  ifpackPrec->Initialize();  
   if (compute_prec)
-    err = ifpackPrec->Compute();
+    ifpackPrec->Compute();
   return ifpackPrec;
 #else
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
@@ -96,7 +96,7 @@ recompute(const Teuchos::RCP<Epetra_Operator>& op,
   non_const_prec_crs_mat = *mat;
   
   // Compute preconditioenr
-  int err = ifpackPrec->Compute();
+  ifpackPrec->Compute();
 #else
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 		     "Stokhos::IfpackPreconditionerFactory is available " <<

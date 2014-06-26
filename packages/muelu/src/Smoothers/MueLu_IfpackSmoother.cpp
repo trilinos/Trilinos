@@ -230,8 +230,14 @@ namespace MueLu {
 
   std::string IfpackSmoother::description() const {
     std::ostringstream out;
-    out << SmootherPrototype::description();
-    out << "{type = " << type_ << "}";
+    // The check "GetVerbLevel() == Test" is to avoid
+    // failures in the EasyInterface test.
+    if (prec_ == Teuchos::null || GetVerbLevel() == Test) {
+      out << SmootherPrototype::description();
+      out << "{type = " << type_ << "}";
+    } else {
+      out << prec_->Label();
+    }
     return out.str();
   }
 

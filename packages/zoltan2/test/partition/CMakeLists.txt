@@ -108,9 +108,9 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Partitioning1_OneProc
-  SOURCES partitioning1.cpp
+TRIBITS_ADD_TEST(
+  Partitioning1
+  NAME Partitioning1_OneProc
   NUM_MPI_PROCS 4
   COMM serial mpi
   ARGS 
@@ -118,6 +118,73 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
+
+TRIBITS_ADD_TEST(
+  Partitioning1
+  NAME Partitioning1_VWeights
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS 
+   "--inputFile=simple --vertexWeights=3"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+TRIBITS_ADD_TEST(
+  Partitioning1
+  NAME Partitioning1_OneProc_VWeights
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS 
+   "--inputFile=simple --no-distribute --vertexWeights=1"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+TRIBITS_ADD_TEST(
+  Partitioning1
+  NAME Partitioning1_EWeights
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS 
+   "--inputFile=simple --edgeWeights=1"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+TRIBITS_ADD_TEST(
+  Partitioning1
+  NAME Partitioning1_OneProc_EWeights
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS 
+   "--inputFile=simple --no-distribute --edgeWeights=2"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+##########################################
+#IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Experimental_Wolf)
+
+IF (${PACKAGE_NAME}_ENABLE_Experimental)
+
+IF (${PACKAGE_NAME}_ENABLE_Experimental_Wolf)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Wolf
+  SOURCES wolf.cpp
+  NUM_MPI_PROCS 1
+  COMM serial mpi
+  ARGS 
+   "--inputFile=simple"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+ENDIF()
+#
+ENDIF()
+##########################################
+
 
 # Command that copies files to the executable directory.
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_partition_tests

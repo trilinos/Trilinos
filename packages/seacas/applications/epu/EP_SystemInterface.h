@@ -35,11 +35,12 @@
 #ifndef Sierra_SystemInterface_h
 #define Sierra_SystemInterface_h
 
-#include "GetLongOpt.h"
+#include <iosfwd>                       // for ostream
+#include <string>                       // for string
+#include <utility>                      // for pair
+#include <vector>                       // for vector
+#include "GetLongOpt.h"                 // for GetLongOption
 
-#include <string>
-#include <iosfwd>
-#include <vector>
 
 namespace Excn {
   typedef std::vector<std::pair<std::string, int> > StringIdVector;

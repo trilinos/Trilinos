@@ -2,6 +2,107 @@
 Release Notes for Trilinos Package Tpetra
 -----------------------------------------
 
+Dev version:
+-------------
+
+* Map now implements view semantics, and it now has an isOneToOne
+  predicate
+
+isOneToOne is a collective which tests whether the Map is one to one
+(that is, whether every global index is owned by at most one process
+in the Map's communicator).
+
+"View semantics" means that Map's copy constructor and assignment
+operator (operator=) do a shallow copy, and that empty construction is
+possible.  The new test for isOneToOne is the first Tpetra test that
+assumes view semantics of Map.
+
+Trilinos 11.8
+-------------
+
+* BACKWARDS IMCOMPATIBLE CHANGE: MultiVector and Vector now implement
+  view semantics
+
+This means that the copy constructor and assignment operator
+(operator=) of both classes now do shallow copies.  This change will
+support gradual porting to the new ("Kokkos Refactor") version of
+Tpetra.
+
+We have propagated this change to other Trilinos packages that use
+Tpetra.  Please use the new createCopy nonmember function to get a new
+instance of (Multi)Vector that is a deep copy of an existing
+(Multi)Vector.  Also, please use the new nonmember function deep_copy
+to do a deep copy between two existing compatible (Multi)Vector
+instances.
+
+* Kokkos Refactor updates
+
+Development continues on the Kokkos Refactor version of Tpetra.  This
+is a partial specialization of some Tpetra classes that uses the new
+Kokkos programming model.  We plan eventually to switch to this
+version of Tpetra and deprecate the old version.
+
+This release adds a Kokkos Refactor version of Map.  Its GID->LID and
+LID->GID conversion methods are now thread-safe and thread-scalable on
+the host.  It also has a "device object" that you can use on CUDA
+devices.
+
+The Kokkos Refactor version of MultiVector now implements "dual view"
+semantics.  This means that the Tpetra interface lets users mark
+either host or device as modified, and synchronize between host and
+device on demand, if necessary.
+
+* Sparse matrix-matrix multiply performance improvements
+
+This release includes many performance improvements to Tpetra's sparse
+matrix-matrix multiply routine, and other supporting routines, such as
+explicit transpose, and {im,ex}portAndFillComplete.  Tpetra now has a
+sparse matrix-matrix multiply variant for implementing Jacobi
+smoothing of matrices.  This is useful for algebraic multigrid.
+
+* CrsMatrix: "Preserve Local Graph" defaults true (17 Mar 2014)
+    
+In CrsMatrix, the undocumented parameter "Preserve Local Graph" now
+defaults to true.  This makes the following scenario work by default:
+    
+  1. Create a CrsMatrix A that creates and owns its graph (i.e., don't
+      use the constructor that takes an RCP<const Tpetra::CrsGraph> or
+      a local graph)
+  2. Set an entry in the matrix A, and call fillComplete on it
+  3. Create a CrsMatrix B using A's graph (obtained via
+      A.getCrsGraph()), so that B has a const (a.k.a. "static") graph
+  4. Change a value in B (you can't change its structure), and call
+      fillComplete on B
+    
+Before this commit, the above scenario didn't work by default.  This
+is because A's first fillComplete call would call
+fillLocalGraphAndMatrix, which by default sets the local graph to
+null.  As a result, from that point, A.getCrsGraph()->getLocalGraph()
+returns null, which makes B's fillComplete throw an exception.  The
+only way to make this scenario work was to set A's "Preserve Local
+Graph" parameter to true.  (It defaulted to false.)
+    
+The idea behind this nonintuitive behavior was for the local sparse
+ops object to own all the data.  This might make sense if it is a
+third-party library that takes CSR's three arrays and copies them into
+its own storage format.  In that case, it might be a good idea to free
+the original three CSR arrays, in order to avoid duplicate storage.
+However, resumeFill never had a way to get that data back out of the
+local sparse ops object.  Rather than try to implement that, it's
+easier just to make "Preserve Local Graph" default to true.
+    
+The possible data duplication mentioned in the previous paragraph can
+never happen with the Kokkos Refactor version of CrsMatrix, since it
+insists on controlling the matrix representation itself.  This makes
+the code shorter and easier to read, and also ensures efficient fill.
+That will in turn make the option unnecessary.
+
+* Many bug fixes
+
+The most important bug fixed is Bug 6069, an error in Distributor,
+which would only manifest on MPICH.  This bug fix alone is enough
+reason to upgrade to Trilinos 11.8.
+
 Trilinos 11.6
 -------------
 

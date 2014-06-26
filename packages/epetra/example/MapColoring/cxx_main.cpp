@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -92,7 +92,7 @@ int main(int argc, char * argv[]) {
   int NumGlobalElements = nx * ny;
   if (NumGlobalElements < NumProc) {
     if (verbose)
-      cout << "numGlobalElements = " << NumGlobalElements 
+      cout << "numGlobalElements = " << NumGlobalElements
 	   << " cannot be < number of processors = " << NumProc << endl;
     exit(1);
   } // end if
@@ -106,7 +106,7 @@ int main(int argc, char * argv[]) {
   int NumMyElements = Map.NumMyElements();
   int * MyGlobalElements = new int[NumMyElements];
   Map.MyGlobalElements(MyGlobalElements);
-  for (int p = 0; p < NumProc; p++) 
+  for (int p = 0; p < NumProc; p++)
     if (p == MyPID) {
       cout << endl << "Processor " << MyPID << ": Global elements = ";
       for (int i = 0; i < NumMyElements; i++)
@@ -242,7 +242,7 @@ int main(int argc, char * argv[]) {
   for (int i = 0; i < NumMyElements; i++)
     Delta = max(Delta, adj1[i].size());
   cout << endl << "Delta = " << Delta << endl << endl;
-  
+
   // Now create a color map and initialize all values to 0, which
   // indicates that none of the columns have yet been colored.
   int * color_map = new int[NumMyElements];
@@ -263,7 +263,7 @@ int main(int argc, char * argv[]) {
   Epetra_MapColoring C1(Map, color_map);
 
   cout << C1;
-  
+
   // Clean up
 
   delete [] MyGlobalElements;

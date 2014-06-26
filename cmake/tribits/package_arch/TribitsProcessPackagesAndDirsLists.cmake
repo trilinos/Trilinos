@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -52,27 +52,131 @@ INCLUDE(TribitsListHelpers)
 
 
 #
-# Macro used in Dependencies.cmake files to allow some upstream dependent packages
-# to be missing.
+# @MACRO: TRIBITS_REPOSITORY_DEFINE_PACKAGES()
 #
-# Usage:
+# Define the set of packages for a given `TriBITS Repository`_.  This macro is
+# typically called from inside of a `<repoDir>/PackagesList.cmake`_ file for a
+# given TriBITS repo.
 #
-#   TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(<pack_1> <pack_2> ...)
+# Usage::
 #
-# If the missing upstream SE package <pack_i> is optional, then the effect
+#    TRIBITS_REPOSITORY_DEFINE_PACKAGES(
+#       <pkg0>  <pkg0_dir>  <pkg0_classif>
+#       <pkg1>  <pkg1_dir>  <pkg1_classif>
+#       ...
+#       )
+#
+# This macro sets up a 2D array of ``NumPackages`` by ``NumColumns`` listing
+# out the packages for a TriBITS repository.  Each row (with 3 column entries)
+# specifies a package which contains the columns (ordered 0-2):
+#
+# 0. **PACKAGE** (``<pkgi>``): The name of the TriBITS package.  This name
+#    must be unique across all other TriBITS packages in this or any other
+#    TriBITS repo that might be combined into a single TriBITS project
+#    meta-build (see `Globally unique TriBITS package names`_).  The name
+#    should be a valid identifier (e.g. matches the regex
+#    ``[a-zA-Z_][a-zA-Z0-9_]*``).  The package names tend to used mixed case
+#    (e.g. ```SomePackge`` not ``SOMEPACKGE``).
+#
+# 1. **DIR** (``<pkgi_dir>``): The relative directory for the package
+#    ``<packageDir>``.  This directory is relative to the TriBITS repository
+#    base directory ``<repoDir>``.  Under this directory will be a
+#    package-specific ``cmake/`` directory with the file
+#    `<packageDir>/cmake/Dependencies.cmake`_ and a base-level
+#    `<packageDir>/CMakeLists.txt`_ file.  The entire contents of the package
+#    including all of the source code and all of the tests should be contained
+#    under this directory.  The TriBITS testing infrastructure relies on the
+#    mapping of changed files to these base directories when deciding what
+#    packages are modified and need to be retested (along with downstream
+#    packages).  For details, see `checkin-test.py`_.
+#
+# 2. **CLASSIFICATION** (``<pkgi_classif>``): Gives the `SE Package Test
+#    Group`_ `PT`_, `ST`_, or `EX`_ and the maturity level ``EP``, ``RS``,
+#    ``PG``, ``PM``, ``GRS``, ``GPG``, ``GPM``, ``UM``.  These are separated
+#    by a coma with no space in between such as ``"RS,PT"`` for a "Research
+#    Stable", "Primary Tested" package.  No spaces are allowed so that CMake
+#    treats this a one field in the array.  The maturity level can be left off
+#    in which case it is assumed to be ``UM`` for "Unspecified Maturity".
+#    This classification for individual packages can be changed to ``EX`` for
+#    specific platforms by calling `TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()`_.
+#
+# **IMPORTANT:** The packages must be listed in increasing order of package
+# dependencies.  That is `No circular dependencies of any kind are allowed`_
+# (see the *ADP (Acyclic Dependencies Principle)* in `Software Engineering
+# Packaging Principles`_).  Package ``i`` can only list dependencies (in
+# `<packageDir>/cmake/Dependencies.cmake`_) for packages listed before this
+# package in this list (or in upstream TriBITS repositories).  This avoids an
+# expensive package sorting algorithm and makes it easy to flag packages with
+# circular dependencies or misspelling of package names.
+#
+# NOTE: This macro just sets the variable::
+#
+#   ${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
+#
+# in the current scope.  The advantages of using this macro instead of
+# directly setting this variable are that the macro:
+#
+# * Asserts that the variable ``REPOSITORY_NAME`` is defined and set
+#
+# * Avoids having to hard-code the assumed repository name
+#   ``${REPOSITORY_NAME}``.  This provides more flexibility for how other
+#   TriBITS projects choose to name a given TriBITS repo (i.e. the name of
+#   repo subdirs).
+#
+# * Avoid misspelling the name of the variable
+#   ``${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS``.  If one
+#   misspells the name of the macro, it is an immediate error in CMake.
+#
+MACRO(TRIBITS_REPOSITORY_DEFINE_PACKAGES)
+  ASSERT_DEFINED(REPOSITORY_NAME)
+  SET(${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS "${ARGN}")
+ENDMACRO()
+
+
+#
+# @MACRO: TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()
+# 
+# Allow listed packages to be missing.  This macro is typically called in a
+# Package's Dependencies.cmake file.
+#
+# Usage::
+#
+#   TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(<pkg0> <plg1> ...)
+#
+# If the missing upstream SE package ``<pkgi>`` is optional, then the effect
 # will be to simply ignore the missing package and remove it from the
-# dependency list.  However, if the missing upstream SE package <pack_i> is
-# required, then in addition to ignoring the missing package, the current SE
-# (sub)package will also e hard disabled,
-# i.e. ${PROJECT_NAME}_ENABLE_{CURRENT_PACKAGE}=OFF.
+# dependency list for downstream SE packages that have an optional dependency
+# on the missing upstream SE package.  However, all downstream SE packages
+# that have a required dependency on the missing upstream SE package
+# ``<pkgi>`` will be hard disabled,
+# i.e. ``${PROJECT_NAME}_ENABLE_{CURRENT_PACKAGE}=OFF``.
 #
-# This function is typically used in packages in external TriBITS repos that
-#  depend on other packages in other exteral TriBITS repos that might be
-#  missing.
+# This function is typically used for marking packages in external TriBITS
+# repos where the repos might be missing.  This allows the downstream repos
+# and packages to still be enabled (assuming they don't have required
+# dependencies on the missing packages) when one or more upstream repos are
+# missing.
 #
-# NOTE: Using this function effectively turns off error checking for
-#  misspelled package names so it is important to only use it when it
-#  absolutely is needed.
+# Using this function effectively turns off error checking for misspelled
+# package names so it is important to only use it when it absolutely is
+# needed.  The typical place to call this macro is in the
+# `<packageDir>/cmake/Dependencies.cmake`_ files for the packages who list
+# dependencies on the possibility missing upstream SE package(s).  Therefore,
+# if a given package is not defined, the ``Dependencies.cmake`` file that
+# calls this macro will not be processed and the error checking for the listed
+# packages will not be turned off.  Otherwise, this macro can also be called
+# from any file processed at the top-level scope *before* all of the
+# ``<packageDir>/cmake/Dependencies.cmake`` files are processed (see `Reduced
+# Package Dependency Processing`_).  For tweaking at the project level, likely
+# the best place to call this macro is in the file
+# `<projectDir>/cmake/ProjectDependenciesSetup.cmake`_.  In this way, it will
+# not turn off error checking in other projects where the given packages may
+# always be required and therefore one does not want to turn off error
+# checking for mispelled package names.
+#
+# NOTE: Currently, this macro just sets the non-cache local variables
+# ``<pkgi>__ALLOW_MISSING_EXTERNAL_PACKAGE=TRUE``.  Therefore this macro must
+# be called from the top-level CMake project scope for it to have an effect.
 #
 MACRO(TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES)
   FOREACH(TRIBITS_PACKAGE ${ARGN})
@@ -105,55 +209,64 @@ ENDMACRO()
 
 
 #
-# Macro that sets up standard user options for each package
+# Macro that sets up standard user options a package
+#
+# On completion, the following variables are set:
+#
+# * ${PACKAGE_NAME_IN}_TESTGROUP: Set to PT, ST, or EX
 #
 
-MACRO(TRIBITS_INSERT_STANDARD_PACKAGE_OPTIONS  PACKAGE_NAME_IN  PACKAGE_CLASSIFICATION_IN)
+MACRO(TRIBITS_INSERT_STANDARD_PACKAGE_OPTIONS  PACKAGE_NAME_IN  PACKAGE_TESTGROUP_IN)
 
   IF (TRIBITS_INSERT_STANDARD_PACKAGE_OPTIONS_DEBUG)
-    MESSAGE("TRIBITS_INSERT_STANDARD_PACKAGE_OPTIONS: ${PACKAGE_NAME_IN} ${PACKAGE_CLASSIFICATION_IN}")
-    PRINT_VAR(${PACKAGE_NAME_IN}_CLASSIFICATION)
+    MESSAGE("TRIBITS_INSERT_STANDARD_PACKAGE_OPTIONS: ${PACKAGE_NAME_IN} ${PACKAGE_TESTGROUP_IN}")
+    PRINT_VAR(${PACKAGE_NAME_IN}_TESTGROUP)
   ENDIF()
 
-  SET(PACKAGE_CLASSIFICATION_LOCAL ${PACKAGE_CLASSIFICATION_IN})
+  SET(PACKAGE_TESTGROUP_LOCAL ${PACKAGE_TESTGROUP_IN})
 
-  IF (${PACKAGE_CLASSIFICATION_IN} STREQUAL PS OR ${PACKAGE_CLASSIFICATION_IN} STREQUAL SS) 
+  # ${PROJECT_NAME}_ELEVATE_ST_TO_PT is deprecated but allowed for backward compatibility
+  IF (${PROJECT_NAME}_ELEVATE_SS_TO_PS)
+    SET(${PROJECT_NAME}_ELEVATE_ST_TO_PT ON)
+  ENDIF()
+
+  IF (${PACKAGE_TESTGROUP_IN} STREQUAL PT OR ${PACKAGE_TESTGROUP_IN} STREQUAL ST) 
     IF (TRIBITS_INSERT_STANDARD_PACKAGE_OPTIONS_DEBUG)
-      MESSAGE("-- " "PS or SS")
-      PRINT_VAR(${PROJECT_NAME}_ELEVATE_SS_TO_PS)
+      MESSAGE("-- " "PT or ST")
+      PRINT_VAR(${PROJECT_NAME}_ELEVATE_ST_TO_PT)
     ENDIF()
-    IF (${PROJECT_NAME}_ELEVATE_SS_TO_PS)
-      SET(PACKAGE_CLASSIFICATION_LOCAL PS)
+    IF (${PROJECT_NAME}_ELEVATE_ST_TO_PT)
+      SET(PACKAGE_TESTGROUP_LOCAL PT)
     ENDIF()
     IF (TRIBITS_INSERT_STANDARD_PACKAGE_OPTIONS_DEBUG)
-      PRINT_VAR(PACKAGE_CLASSIFICATION_LOCAL)
+      PRINT_VAR(PACKAGE_TESTGROUP_LOCAL)
     ENDIF()
     SET(PACKAGE_ENABLE "")
-  ELSEIF (${PACKAGE_CLASSIFICATION_IN} STREQUAL EX)
+  ELSEIF (${PACKAGE_TESTGROUP_IN} STREQUAL EX)
     IF (TRIBITS_INSERT_STANDARD_PACKAGE_OPTIONS_DEBUG)
       MESSAGE("-- " "EX")
     ENDIF()
     SET(PACKAGE_ENABLE OFF)
   ELSE()
-    MESSAGE(FATAL_ERROR "Error the package classification '${PACKAGE_CLASSIFICATION_IN}'"
+    MESSAGE(FATAL_ERROR "Error the package classification '${PACKAGE_TESTGROUP_IN}'"
       " for the package ${PACKAGE_NAME_IN} is not a valid classification." )
   ENDIF()
 
   IF (TRIBITS_INSERT_STANDARD_PACKAGE_OPTIONS_DEBUG)
     PRINT_VAR(PACKAGE_ENABLE)
-    PRINT_VAR(${PACKAGE_NAME_IN}_CLASSIFICATION)
+    PRINT_VAR(${PACKAGE_NAME_IN}_TESTGROUP)
   ENDIF()
 
-  IF ("${${PACKAGE_NAME_IN}_CLASSIFICATION}" STREQUAL "") # Allow testing override
+  IF ("${${PACKAGE_NAME_IN}_TESTGROUP}" STREQUAL "") # Allow testing override
     IF (TRIBITS_INSERT_STANDARD_PACKAGE_OPTIONS_DEBUG)
-      MESSAGE("-- " "Setting classification to ${PACKAGE_CLASSIFICATION_LOCAL}") 
-      PRINT_VAR(PACKAGE_CLASSIFICATION_LOCAL)
+      MESSAGE("-- " "Setting classification to ${PACKAGE_TESTGROUP_LOCAL}") 
+      PRINT_VAR(PACKAGE_TESTGROUP_LOCAL)
     ENDIF()
-    SET(${PACKAGE_NAME_IN}_CLASSIFICATION "${PACKAGE_CLASSIFICATION_LOCAL}")
+    SET(${PACKAGE_NAME_IN}_TESTGROUP "${PACKAGE_TESTGROUP_LOCAL}")
   ENDIF()
 
   IF (TRIBITS_INSERT_STANDARD_PACKAGE_OPTIONS_DEBUG)
-    PRINT_VAR(${PACKAGE_NAME_IN}_CLASSIFICATION)
+    PRINT_VAR(${PACKAGE_NAME_IN}_TESTGROUP)
   ENDIF()
 
   MULTILINE_SET(DOCSTR
@@ -221,17 +334,17 @@ FUNCTION(TRIBITS_IMPLICIT_PACKAGE_ENABLE_IS_ALLOWED  UPSTREAM_PACKAGE_NAME_IN  P
   IMPLICIT_PACKAGE_ENABLE_ALLOWED_OUT
   )
 
-  IF (${PACKAGE_NAME_IN}_CLASSIFICATION STREQUAL PS)
+  IF (${PACKAGE_NAME_IN}_TESTGROUP STREQUAL PT)
     SET(IMPLICIT_PACKAGE_ENABLE_ALLOWED TRUE)
-  ELSEIF (${PACKAGE_NAME_IN}_CLASSIFICATION STREQUAL SS
-    AND ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE
+  ELSEIF (${PACKAGE_NAME_IN}_TESTGROUP STREQUAL ST
+    AND ${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE
     )
     SET(IMPLICIT_PACKAGE_ENABLE_ALLOWED TRUE)
   ELSE()
     IF (UPSTREAM_PACKAGE_NAME_IN)
       MESSAGE("-- " "WARNING: Not Setting ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME_IN}=ON"
         " even though ${UPSTREAM_PACKAGE_NAME_IN} has an optional dependence on"
-        " ${PACKAGE_NAME_IN} because ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE=OFF" )
+        " ${PACKAGE_NAME_IN} because ${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE=OFF" )
     ENDIF()
     SET(IMPLICIT_PACKAGE_ENABLE_ALLOWED FALSE)
   ENDIF()
@@ -319,6 +432,11 @@ MACRO(TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS  REPOSITORY_NAME  REPOSITORY_DIR)
       IF (TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS_VERBOSE)
         PRINT_VAR(PACKAGE_CLASSIFICATION)
       ENDIF()
+
+      # ToDo: Parse out TESTGROUP and MATURITYLEVEL (Trilinos #6042)
+      SET(PACKAGE_TESTGROUP ${PACKAGE_CLASSIFICATION})
+
+      TRIBITS_UPDATE_PS_PT_SS_ST(Package ${TRIBITS_PACKAGE} PACKAGE_TESTGROUP)
   
       IF ("${REPOSITORY_DIR}" STREQUAL ".")
         SET(REPOSITORY_AND_PACKAGE_DIR "${PACKAGE_DIR}")
@@ -355,7 +473,7 @@ MACRO(TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS  REPOSITORY_NAME  REPOSITORY_DIR)
       IF (PACKAGE_EXISTS OR ${PROJECT_NAME}_IGNORE_PACKAGE_EXISTS_CHECK)
         LIST(APPEND ${PROJECT_NAME}_PACKAGES ${TRIBITS_PACKAGE})
         LIST(APPEND ${PROJECT_NAME}_PACKAGE_DIRS "${REPOSITORY_AND_PACKAGE_DIR}")
-        TRIBITS_INSERT_STANDARD_PACKAGE_OPTIONS(${TRIBITS_PACKAGE} ${PACKAGE_CLASSIFICATION})
+        TRIBITS_INSERT_STANDARD_PACKAGE_OPTIONS(${TRIBITS_PACKAGE} ${PACKAGE_TESTGROUP})
         SET(${TRIBITS_PACKAGE}_PARENT_PACKAGE "")
         SET(${TRIBITS_PACKAGE}_PARENT_REPOSITORY ${REPOSITORY_NAME})
       ELSE()

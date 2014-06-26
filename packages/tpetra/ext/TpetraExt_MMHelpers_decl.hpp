@@ -50,9 +50,6 @@
 #include <set>
 #include <map>
 
-// Turn on to enable the special MMM timers
-// #define ENABLE_MMM_TIMINGS
-
 
 /*! \file TpetraExt_MMHelpers_decl.hpp
 
@@ -84,21 +81,6 @@ public:
 
   void deleteContents();
 
-  //The maximum number of row entries a.k.a. the longest of the indice arrays.
-  typename Array<ArrayView<const LocalOrdinal> >::size_type maxNumRowEntries;
-  
-  /** \brief Number of local rows that the imported version of the matrix has */
-  size_t numRows;
-  /** \brief Number of entries in each row of the imported version of the matrix */
-  Teuchos::Array<size_t> numEntriesPerRow;
-  /** \brief Indicies of entries in each row of the imported version of the matrix */
-  Teuchos::Array<Teuchos::ArrayView<const LocalOrdinal> > indices;
-  /** \brief Values of entries in each row of the imported version of the matrix */
-  Teuchos::Array<Teuchos::ArrayView<const Scalar> > values;
-  /** \brief Which of the desired global rows are remote*/
-  Teuchos::Array<bool> remote;
-  /** \brief number of rows in the original matrix that are remote (based on the rows that this proc actually needs*/
-  global_size_t numRemote;
   /** \brief Original row map of matrix */
   Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > origRowMap;
   /** \brief Desired row map for "imported" version of the matrix */

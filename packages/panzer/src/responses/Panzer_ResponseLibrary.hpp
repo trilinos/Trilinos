@@ -226,6 +226,9 @@ public:
    void useClosureModelByEBlockInResponse(bool value)
    { closureModelByEBlock_ = value; }
 
+   void disableGather(bool value)
+   { disableGather_ = value; }
+
 protected:
 
    /** Setup up field managers for all responses. Once this method is called
@@ -264,6 +267,7 @@ private:
    //! Store all the response objects 
    boost::unordered_map<std::string, Response_TemplateManager> responseObjects_;
    bool closureModelByEBlock_;
+   bool disableGather_;
 
    bool responseEvaluatorsBuilt_;
 

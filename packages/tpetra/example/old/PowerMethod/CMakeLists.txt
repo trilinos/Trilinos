@@ -1,15 +1,6 @@
 INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE(TribitsCopyFilesToBinaryDir)
 
-# mfh 07 Nov 2013: Lesson03 replaces this example.
-# TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#   PowerMethodExample
-#   SOURCES Tpetra_Power_Method
-#   ARGS 
-#   COMM serial mpi
-#   STANDARD_PASS_OUTPUT
-# )
-
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   PowerMethodVbrExample
   SOURCES Tpetra_Power_Method_VbrMatrix

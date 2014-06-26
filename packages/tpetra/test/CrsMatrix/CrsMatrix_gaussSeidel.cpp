@@ -328,11 +328,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
         D_data[k] = STS::one() / D_data[k];
       }
     }
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      zeroDiagEltIndex != -1,
-      std::logic_error,
-      "On Process " << comm->getRank () << ", diagonal element "
-      << zeroDiagEltIndex << ", possibly among others, is zero.");
+    TEST_EQUALITY_CONST(zeroDiagEltIndex, static_cast<size_type> (-1));
+    // TEUCHOS_TEST_FOR_EXCEPTION(
+    //   zeroDiagEltIndex != -1,
+    //   std::logic_error,
+    //   "On Process " << comm->getRank () << ", diagonal element "
+    //   << zeroDiagEltIndex << ", possibly among others, is zero.");
   }
 
   if (myRank == 0) {
@@ -708,11 +709,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, reorderedGaussSeidelSerial, LocalO
         D_data[k] = STS::one() / D_data[k];
       }
     }
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      zeroDiagEltIndex != -1,
-      std::logic_error,
-      "On Process " << comm->getRank () << ", diagonal element "
-      << zeroDiagEltIndex << ", possibly among others, is zero.");
+    TEST_EQUALITY_CONST(zeroDiagEltIndex, static_cast<size_type> (-1));
+    // TEUCHOS_TEST_FOR_EXCEPTION(
+    //   zeroDiagEltIndex != -1,
+    //   std::logic_error,
+    //   "On Process " << comm->getRank () << ", diagonal element "
+    //   << zeroDiagEltIndex << ", possibly among others, is zero.");
   }
 
   if (myRank == 0) {
@@ -765,7 +767,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, reorderedGaussSeidelSerial, LocalO
   Teuchos::Array<LO> rowIndices(matrix->getNodeNumRows());
   for( LO i=0; (size_t)i < matrix->getNodeNumRows(); i++)
     rowIndices[i]=i;
-  
+
 
   // Monitor the norms of (X,) D, and B.  If the norms of D or B
   // change, that means Gauss-Seidel is broken (or we mixed up the
@@ -862,10 +864,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, reorderedGaussSeidelSerial, LocalO
 // INSTANTIATE THE TEMPLATED UNIT TESTS
 //////////////////////////////////////////////////////////////////////
 
-typedef KokkosClassic::SerialNode serial_node_type;
+typedef KokkosClassic::DefaultNode::DefaultNodeType default_node_type;
 #define UNIT_TEST_GROUP( SCALAR, LO, GO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, gaussSeidelSerial, LO, GO, SCALAR, serial_node_type ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, reorderedGaussSeidelSerial, LO, GO, SCALAR, serial_node_type )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, gaussSeidelSerial, LO, GO, SCALAR, default_node_type ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, reorderedGaussSeidelSerial, LO, GO, SCALAR, default_node_type )
 
 TPETRA_ETI_MANGLING_TYPEDEFS()
 

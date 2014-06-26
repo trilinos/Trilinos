@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -63,7 +63,7 @@
 #include "LOCA_ErrorCheck.H"
 
 LOCA::Epetra::TransposeLinearSystem::Factory::Factory(
-		  const Teuchos::RCP<LOCA::GlobalData>& global_data) : 
+          const Teuchos::RCP<LOCA::GlobalData>& global_data) :
   globalData(global_data)
 {
 }
@@ -74,8 +74,8 @@ LOCA::Epetra::TransposeLinearSystem::Factory::~Factory()
 
 Teuchos::RCP<LOCA::Epetra::TransposeLinearSystem::AbstractStrategy>
 LOCA::Epetra::TransposeLinearSystem::Factory::create(
-		const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
-		const Teuchos::RCP<NOX::Epetra::LinearSystem>& linsys)
+        const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
+        const Teuchos::RCP<NOX::Epetra::LinearSystem>& linsys)
 {
   std::string methodName = "LOCA::Epetra::TransposeLinearSystem::Factory::create()";
   Teuchos::RCP<LOCA::Epetra::TransposeLinearSystem::AbstractStrategy> strategy;
@@ -84,18 +84,18 @@ LOCA::Epetra::TransposeLinearSystem::Factory::create(
   const std::string& name = strategyName(*solverParams);
 
   if (name == "Transpose Preconditioner")
-    strategy = 
+    strategy =
       Teuchos::rcp(new LOCA::Epetra::TransposeLinearSystem::TransposePreconditioner(globalData, solverParams, linsys));
 
 #ifdef HAVE_NOX_EPETRAEXT
   else if (name == "Explicit Transpose") {
-    strategy = 
+    strategy =
       Teuchos::rcp(new LOCA::Epetra::TransposeLinearSystem::ExplicitTranspose(globalData, solverParams, linsys));
   }
 #endif
 
   else if (name == "Left Preconditioning") {
-    strategy = 
+    strategy =
       Teuchos::rcp(new LOCA::Epetra::TransposeLinearSystem::LeftPreconditioning(globalData, solverParams, linsys));
   }
 
@@ -103,30 +103,30 @@ LOCA::Epetra::TransposeLinearSystem::Factory::create(
 
     // Get name of user-defined strategy
     std::string userDefinedName = solverParams->get("User-Defined Name",
-							"???");
+                            "???");
     if ((*solverParams).INVALID_TEMPLATE_QUALIFIER
-	isType< Teuchos::RCP<LOCA::Epetra::TransposeLinearSystem::AbstractStrategy> >(userDefinedName))
+    isType< Teuchos::RCP<LOCA::Epetra::TransposeLinearSystem::AbstractStrategy> >(userDefinedName))
       strategy = (*solverParams).INVALID_TEMPLATE_QUALIFIER
-	get< Teuchos::RCP<LOCA::Epetra::TransposeLinearSystem::AbstractStrategy> >(userDefinedName);
-    else 
+    get< Teuchos::RCP<LOCA::Epetra::TransposeLinearSystem::AbstractStrategy> >(userDefinedName);
+    else
       globalData->locaErrorCheck->throwError(
-				      methodName,
-				      "Cannot find user-defined strategy: " + 
-				      userDefinedName);
+                      methodName,
+                      "Cannot find user-defined strategy: " +
+                      userDefinedName);
   }
-  else 
+  else
     globalData->locaErrorCheck->throwError(
-				      methodName,
-				      "Invalid bordered solver strategy: " + 
-				      name);
+                      methodName,
+                      "Invalid bordered solver strategy: " +
+                      name);
 
   return strategy;
 }
 
 const std::string&
 LOCA::Epetra::TransposeLinearSystem::Factory::strategyName(
-				  Teuchos::ParameterList& solverParams) const
+                  Teuchos::ParameterList& solverParams) const
 {
-  return solverParams.get("Transpose Solver Method", 
-				   "Transpose Preconditioner");
+  return solverParams.get("Transpose Solver Method",
+                   "Transpose Preconditioner");
 }

@@ -116,6 +116,25 @@
   throw std::runtime_error(oss.str()); \
   }
 
+/*! \brief Throw an error when wolf experimental code is requested but not compiled.
+ *
+ *  Experimental code must be enabled with CMAKE Option
+ *  -D Zoltan2_ENABLE_Experimental_Wolf:BOOL=ON
+ *  If it is not enabled but it is called, throw an exception.
+ *  The input string mystr is a use-specific message included in the throw
+ *  message.
+ */
+
+#define Z2_THROW_EXPERIMENTAL_WOLF(mystr) \
+  { \
+  std::ostringstream oss; \
+  oss << (mystr) << std::endl \
+      << "To experiment with this software, configure with " \
+      << "-D Zoltan2_ENABLE_Experimental_Wolf:BOOL=ON " \
+      << std::endl; \
+  throw std::runtime_error(oss.str()); \
+  }
+
 /*! \brief Throw an error when actual value is not equal to expected value.
  *
  *  Check if the two arguments passed are equal and throw a runtime error if

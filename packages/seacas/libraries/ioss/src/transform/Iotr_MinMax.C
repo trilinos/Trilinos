@@ -30,15 +30,16 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <Ioss_Field.h>
-#include <Ioss_VariableType.h>
-#include <stddef.h>
-#include <stdlib.h>
 #include <transform/Iotr_MinMax.h>
-#include <algorithm>
-#include <string>
+#include <Ioss_Field.h>                 // for Field, etc
+#include <Ioss_VariableType.h>          // for VariableType
+#include <math.h>                       // for fabs
+#include <stddef.h>                     // for size_t, NULL
+#include <stdlib.h>                     // for abs
+#include <algorithm>                    // for max_element, min_element
+#include <string>                       // for operator==, string
+#include "Ioss_Transform.h"             // for Factory, Transform
 
-#include "Ioss_Transform.h"
 
 namespace {
   bool IntAbsLess(int elem1, int elem2)
@@ -81,6 +82,9 @@ namespace Iotr {
     } else if (type == "absolute_maximum") {
       doMin = false;
       doAbs = true;
+    } else {
+      doMin = false;
+      doAbs = false;
     }
   }
 

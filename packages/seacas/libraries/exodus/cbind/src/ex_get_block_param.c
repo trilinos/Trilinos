@@ -53,10 +53,13 @@
 *
 */
 
-#include <string.h>
-#include <stdio.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <inttypes.h>                   // for PRId64
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <string.h>                     // for strcpy
+#include "exodusII.h"                   // for ex_block, exerrval, ex_err, etc
+#include "exodusII_int.h"               // for EX_FATAL, ATT_NAME_ELB, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_inq_dimid, etc
 
 /*
  * reads the parameters used to describe an edge, face, or element block

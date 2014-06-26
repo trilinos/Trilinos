@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,15 +34,15 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
 
 #include "Epetra_Map.h"
 #include "Epetra_Time.h"
-#include "Epetra_SerialDenseMatrix.h" 
+#include "Epetra_SerialDenseMatrix.h"
 #include "Epetra_SerialDenseVector.h"
 #include "Epetra_SerialDenseSolver.h"
 #ifdef EPETRA_MPI
@@ -56,8 +56,8 @@
 // prototypes
 
 int check(Epetra_SerialDenseSolver & solver, double * A1, int LDA,
-	  int N1, int NRHS1, double OneNorm1, 
-	  double * B1, int LDB1, 
+	  int N1, int NRHS1, double OneNorm1,
+	  double * B1, int LDB1,
 	  double * X1, int LDX1,
 	  bool Transpose, bool verbose);
 
@@ -75,7 +75,7 @@ void printArray(double* array, int length);
 bool identicalSignatures(Epetra_SerialDenseMatrix& a, Epetra_SerialDenseMatrix& b, bool testLDA = true);
 bool seperateData(Epetra_SerialDenseMatrix& a, Epetra_SerialDenseMatrix& b);
 
- 
+
 int main(int argc, char *argv[])
 {
   int ierr = 0, i, j, k;
@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
   int LDA1 = LDA;
   double OneNorm1;
   bool Transpose = false;
-  
+
   Epetra_SerialDenseSolver solver;
   Epetra_SerialDenseMatrix * Matrix;
   for (int kk=0; kk<2; kk++) {
@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
       GenerateHilbert(A, LDA, i);
       OneNorm1 = 0.0;
       for (j=1; j<=i; j++) OneNorm1 += 1.0/((double) j); // 1-Norm = 1 + 1/2 + ...+1/n
-      
+
       if (kk==0) {
 	Matrix = new Epetra_SerialDenseMatrix(View, A, LDA, i, i);
 	LDA1 = LDA;
@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
 	Transpose = true;
 	solver.SolveToRefinedSolution(true);
       }
-      
+
       for (k=0; k<NRHS; k++)
 	for (j=0; j<i; j++) {
 	  B[j+k*LDB] = 1.0/((double) (k+3)*(j+3));
@@ -164,15 +164,15 @@ int main(int argc, char *argv[])
 
       solver.SetMatrix(*Matrix);
       solver.SetVectors(Epetra_X, Epetra_B);
-      
+
       ierr = check(solver, A1, LDA1,  i, NRHS, OneNorm1, B1, LDB1,  X1, LDX1, Transpose, verbose);
       assert (ierr>-1);
       delete Matrix;
       if (ierr!=0) {
-	if (verbose) cout << "Factorization failed due to bad conditioning.  This is normal if RCOND is small." 
+	if (verbose) cout << "Factorization failed due to bad conditioning.  This is normal if RCOND is small."
 			  << endl;
 	break;
-      } 
+      }
     }
   }
 
@@ -222,7 +222,7 @@ int main(int argc, char *argv[])
 	 << " Expected inf-norm                = " << NormInfD_ref*ScalarA << endl;
   }
 
-  
+
   /////////////////////////////////////////////////////////////////////
   // Now test that A.Multiply(false, x, y) produces the same result
   // as y.Multiply('N','N', 1.0, A, x, 0.0).
@@ -272,7 +272,7 @@ int main(int argc, char *argv[])
       return(-99);
     }
   }
- 
+
   /////////////////////////////////////////////////////////////////////
   // Now test for larger system, both correctness and performance.
   /////////////////////////////////////////////////////////////////////
@@ -290,7 +290,7 @@ int main(int argc, char *argv[])
 
   A = new double[LDA*N];
   X = new double[LDB*NRHS];
-  
+
   for (j=0; j<N; j++) {
     for (k=0; k<NRHS; k++) X[j+k*LDX] = 1.0/((double) (j+5+k));
     for (i=0; i<N; i++) {
@@ -323,7 +323,7 @@ int main(int argc, char *argv[])
   double MFLOPS = FLOPS/time/1000000.0;
   if (verbose) cout << "MFLOPS for Factorization = " << MFLOPS << endl;
 
-  // Define Left hand side and right hand side 
+  // Define Left hand side and right hand side
   Epetra_SerialDenseMatrix LHS(View, X, LDX, N, NRHS);
   Epetra_SerialDenseMatrix RHS;
   RHS.Shape(N,NRHS); // Allocate RHS
@@ -357,7 +357,7 @@ int main(int argc, char *argv[])
   if (verbose) cout << "MFLOPS for Solve (NRHS = " << NRHS <<") = " << MFLOPS << endl;
 
   double * resid = new double[NRHS];
-  bool OK = Residual(N, NRHS, A, LDA, BigSolver.Transpose(), BigSolver.X(), BigSolver.LDX(), 
+  bool OK = Residual(N, NRHS, A, LDA, BigSolver.Transpose(), BigSolver.X(), BigSolver.LDX(),
 		     OrigRHS.A(), OrigRHS.LDA(), resid);
 
   if (verbose) {
@@ -402,7 +402,7 @@ int main(int argc, char *argv[])
   MFLOPS = FLOPS/time/1000000.0;
   if (verbose) cout << "MFLOPS to solve single RHS = " << MFLOPS << endl;
 
-  OK = Residual(N, 1, A, LDA, BigSolver.Transpose(), BigSolver.X(), BigSolver.LDX(), OrigB2.A(), 
+  OK = Residual(N, 1, A, LDA, BigSolver.Transpose(), BigSolver.X(), BigSolver.LDX(), OrigB2.A(),
 		OrigB2.LDA(), resid);
 
   if (verbose) {
@@ -426,22 +426,22 @@ int main(int argc, char *argv[])
   C1[1+2*N] = 1000.0;  // Make matrix nonsymmetric
 
   // Fill values of C with Hilbert values
-  for (i=0; i<N; i++) 
+  for (i=0; i<N; i++)
     for (j=0; j<N; j++)
       C(i,j) = C1[i+j*N];
 
   // Test if values are correctly written and read
-  for (i=0; i<N; i++) 
+  for (i=0; i<N; i++)
     for (j=0; j<N; j++) {
       assert(C(i,j) == C1[i+j*N]);
       assert(C(i,j) == C[j][i]);
     }
 
   if (verbose)
-    cout << "Default constructor and index operator check OK.  Values of Hilbert matrix = " 
+    cout << "Default constructor and index operator check OK.  Values of Hilbert matrix = "
 	 << endl << C << endl
-	 << "Values should be 1/(i+j+1), except value (1,2) should be 1000" << endl; 
-  
+	 << "Values should be 1/(i+j+1), except value (1,2) should be 1000" << endl;
+
   delete [] C1;
 
   // now test sized/shaped constructor
@@ -457,7 +457,7 @@ int main(int argc, char *argv[])
     assert(sizedVector(i) == 0.0);
   if (verbose)
     cout << "Shaped/sized constructors check OK." << endl;
-  
+
   // test Copy/View mode in op= and cpy ctr
   int temperr = 0;
   temperr = matrixAssignment(verbose, debug);
@@ -468,7 +468,7 @@ int main(int argc, char *argv[])
   if(verbose && temperr == 0)
     cout << "Copy ctr checked OK." << endl;
   EPETRA_TEST_ERR(temperr, ierr);
-  
+
   // Test some vector methods
 
   Epetra_SerialDenseVector v1(3);
@@ -501,11 +501,11 @@ int main(int argc, char *argv[])
 return ierr ;
 }
 
-int check(Epetra_SerialDenseSolver &solver, double * A1, int LDA1, 
-	  int N1, int NRHS1, double OneNorm1, 
-	  double * B1, int LDB1, 
+int check(Epetra_SerialDenseSolver &solver, double * A1, int LDA1,
+	  int N1, int NRHS1, double OneNorm1,
+	  double * B1, int LDB1,
 	  double * X1, int LDX1,
-	  bool Transpose, bool verbose) {  
+	  bool Transpose, bool verbose) {
 
   int i;
   bool OK;
@@ -546,7 +546,7 @@ int check(Epetra_SerialDenseSolver &solver, double * A1, int LDA1,
 
   // Other binary tests
 
-  assert(!solver.Factored()); 
+  assert(!solver.Factored());
   assert(solver.Transpose()==Transpose);
   assert(!solver.SolutionErrorsEstimated());
   assert(!solver.Inverted());
@@ -554,8 +554,8 @@ int check(Epetra_SerialDenseSolver &solver, double * A1, int LDA1,
   assert(!solver.Solved());
 
   assert(!solver.SolutionRefined());
-      
-  
+
+
   int ierr = solver.Factor();
   assert(ierr>-1);
   if (ierr!=0) return(ierr); // Factorization failed due to poor conditioning.
@@ -563,13 +563,13 @@ int check(Epetra_SerialDenseSolver &solver, double * A1, int LDA1,
   ierr = solver.ReciprocalConditionEstimate(rcond);
   assert(ierr==0);
   if (verbose) {
-    
+
     double rcond1 = 1.0/exp(3.5*((double)N));
     if (N==1) rcond1 = 1.0;
-    cout << "\n\nRCOND = "<< rcond << " should be approx = " 
+    cout << "\n\nRCOND = "<< rcond << " should be approx = "
 		    << rcond1 << endl << endl;
   }
-  
+
   ierr = solver.Solve();
   assert(ierr>-1);
   if (ierr!=0 && verbose) cout << "LAPACK rules suggest system should be equilibrated." << endl;
@@ -585,7 +585,7 @@ int check(Epetra_SerialDenseSolver &solver, double * A1, int LDA1,
       cout << "\n\nBERR[0] = "<< solver.BERR()[0] << endl<< endl;
     }
   }
-  
+
   double * resid = new double[NRHS];
   OK = Residual(N, NRHS, A1, LDA1, solver.Transpose(), solver.X(), solver.LDX(), B1, LDB1, resid);
   if (verbose) {
@@ -594,9 +594,9 @@ int check(Epetra_SerialDenseSolver &solver, double * A1, int LDA1,
     if (solver.A_Equilibrated()) {
       double * R = solver.R();
       double * C = solver.C();
-      for (i=0; i<solver.M(); i++) 
+      for (i=0; i<solver.M(); i++)
       cout << "R[" << i <<"] = "<< R[i] << endl;
-      for (i=0; i<solver.N(); i++) 
+      for (i=0; i<solver.N(); i++)
       cout << "C[" << i <<"] = "<< C[i] << endl;
     }
  */
@@ -614,15 +614,15 @@ int check(Epetra_SerialDenseSolver &solver, double * A1, int LDA1,
   assert(!solver.Factored());
   assert(solver.Transpose()==Transpose);
 
-  
+
   Epetra_SerialDenseMatrix RHS1(Copy, B1, LDB1, N, NRHS);
   Epetra_SerialDenseMatrix LHS1(Copy, X1, LDX1, N, NRHS);
   assert(solver.SetVectors(LHS1, RHS1)==0);
   assert(!solver.Solved());
 
   assert(solver.Solve()>-1);
-	 
-  
+	
+
 
   OK = Residual(N, NRHS, A1, LDA1, solver.Transpose(), solver.X(), solver.LDX(), B1, LDB1, resid);
 
@@ -634,7 +634,7 @@ int check(Epetra_SerialDenseSolver &solver, double * A1, int LDA1,
     cout  << endl;
   }
   delete [] resid;
-  
+
 
   return(0);
 }

@@ -13,14 +13,16 @@
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Version.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
-#include <Teuchos_oblackholestream.hpp>
 
+// Do something with the given communicator.  In this case, we just
+// print Tpetra's version to stdout on Process 0.
 void
-exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                std::ostream& out)
+exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
 {
-  // Print out the Tpetra software version information.
-  out << Tpetra::version() << std::endl << std::endl;
+  if (comm->getRank () == 0) {
+    // On (MPI) Process 0, print out the Tpetra software version.
+    std::cout << Tpetra::version () << std::endl << std::endl;
+  }
 }
 
 int
@@ -29,19 +31,9 @@ main (int argc, char *argv[])
   // These "using" declarations make the code more concise, in that
   // you don't have to write the namespace along with the class or
   // object name.  This is especially helpful with commonly used
-  // things like std::endl or Teuchos::RCP.
+  // things like std::endl.
+  using std::cout;
   using std::endl;
-  using Teuchos::Comm;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-
-  // A "black hole stream" prints nothing.  It's like /dev/null in
-  // Unix-speak.  The typical MPI convention is that only MPI Rank 0
-  // is allowed to print anything.  We enforce this convention by
-  // setting Rank 0 to use std::cout for output, but all other ranks
-  // to use the black hole stream.  It's more concise and less error
-  // prone than having to check the rank every time you want to print.
-  Teuchos::oblackholestream blackHole;
 
   // Start up MPI, if using MPI.  Trilinos doesn't have to be built
   // with MPI; it's called a "serial" build if you build without MPI.
@@ -66,28 +58,24 @@ main (int argc, char *argv[])
   // "Tpetra::DefaultPlatform" knows whether or not we built with MPI
   // support.  If we didn't build with MPI, we'll get a "communicator"
   // with size 1, whose only process has rank 0.
-  RCP<const Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  Teuchos::RCP<const Teuchos::Comm<int> > comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
 
   // Get my process' rank, and the total number of processes.
-  // Equivalent to MPI_Comm_rank resp. MPI_Comm_size.  We don't
-  // actually use numProcs in this code, so I've commented it out to
-  // avoid a compiler warning for an unused variable.
-  const int myRank = comm->getRank();
-  //const int numProcs = comm->getSize();
+  // Equivalent to MPI_Comm_rank resp. MPI_Comm_size.
+  const int myRank = comm->getRank ();
+  const int numProcs = comm->getSize ();
 
-  // The stream to which to write output.  Only MPI Rank 0 gets to
-  // write to stdout; the other MPI processes get a "black hole
-  // stream" (see above).
-  std::ostream& out = (myRank == 0) ? std::cout : blackHole;
+  if (myRank == 0) {
+    cout << "Total number of processes: " << numProcs << endl;
+  }
 
-  // We have a communicator and an output stream.
-  // Let's do something with them!
-  exampleRoutine (comm, out);
+  // Do something with the new communicator.
+  exampleRoutine (comm);
 
   // This tells the Trilinos test framework that the test passed.
   if (myRank == 0) {
-    std::cout << "End Result: TEST PASSED" << std::endl;
+    cout << "End Result: TEST PASSED" << endl;
   }
 
   // GlobalMPISession calls MPI_Finalize() in its destructor, if

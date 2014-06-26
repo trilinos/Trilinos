@@ -33,14 +33,15 @@
 #ifndef IOSS_Ioss_Element_Topology_h
 #define IOSS_Ioss_Element_Topology_h
 
-#include <Ioss_CodeTypes.h>
-#include <string>
+#include <Ioss_CodeTypes.h>             // for IntVector
+#include <functional>                   // for less
+#include <map>                          // for map, map<>::value_compare
+#include <string>                       // for string, operator<
+#include <vector>                       // for vector
+namespace Ioss { class ElementTopology; }
 
-#include <vector>
-#include <map>
 
 namespace Ioss {
-  class ElementTopology;
   typedef std::vector<std::string> NameList;
   typedef std::map<std::string, ElementTopology*,
     std::less<std::string> > ElementTopologyMap;

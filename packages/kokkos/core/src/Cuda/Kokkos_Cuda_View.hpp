@@ -343,6 +343,7 @@ class View< T , L , D , M , Impl::ViewCudaTexture >
 {
 public:
 
+  typedef Impl::ViewTag kokkos_tag;
   typedef ViewTraits< T , L , D , M > traits ;
 
 private:

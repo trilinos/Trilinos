@@ -60,5 +60,5 @@ void      mat_vec(DATA_TYPE *, int , DATA_TYPE *);
 
 #ifdef __cplusplus
 }
-#endif 
+#endif
 #endif

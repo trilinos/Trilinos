@@ -86,10 +86,6 @@ typedef MueLu::DemoFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> D
 typedef MueLu::DirectSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> DirectSolver;
 #endif
 
-#ifdef MUELU_EASYPARAMETERLISTINTERPRETER_SHORT
-typedef MueLu::EasyParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> EasyParameterListInterpreter;
-#endif
-
 #ifdef MUELU_EMINPFACTORY_SHORT
 typedef MueLu::EminPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> EminPFactory;
 #endif
@@ -128,6 +124,10 @@ typedef MueLu::HierarchyFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatO
 
 #ifdef MUELU_IFPACK2SMOOTHER_SHORT
 typedef MueLu::Ifpack2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Ifpack2Smoother;
+#endif
+
+#ifdef MUELU_INDEFBLOCKEDDIAGONALSMOOTHER_SHORT
+typedef MueLu::IndefBlockedDiagonalSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> IndefBlockedDiagonalSmoother;
 #endif
 
 #ifdef MUELU_LOCALPERMUTATIONSTRATEGY_SHORT
@@ -226,6 +226,10 @@ typedef MueLu::RebalanceBlockRestrictionFactory<Scalar,LocalOrdinal,GlobalOrdina
 typedef MueLu::RebalanceTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RebalanceTransferFactory;
 #endif
 
+#ifdef MUELU_REFMAXWELL_SHORT
+typedef MueLu::RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RefMaxwell;
+#endif
+
 #ifdef MUELU_REPARTITIONFACTORY_SHORT
 typedef MueLu::RepartitionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RepartitionFactory;
 #endif
@@ -308,6 +312,10 @@ typedef MueLu::TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatO
 
 #ifdef MUELU_USERPFACTORY_SHORT
 typedef MueLu::UserPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> UserPFactory;
+#endif
+
+#ifdef MUELU_UZAWASMOOTHER_SHORT
+typedef MueLu::UzawaSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> UzawaSmoother;
 #endif
 
 #ifdef MUELU_UTILITIES_SHORT

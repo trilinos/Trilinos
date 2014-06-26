@@ -1,6 +1,6 @@
 // @HEADER
 // ***********************************************************************
-//                Copyright message goes here. 
+//                Copyright message goes here.
 // ***********************************************************************
 // @HEADER
 
@@ -98,7 +98,7 @@ void roundRobinGlobalIds(T numGlobalCoords, int nprocs, int rank,
   T share = numGlobalCoords / nprocs;
   T extra = numGlobalCoords % nprocs;
   T numLocalCoords = share;
-  if (rank < extra)
+  if (static_cast<T> (rank) < extra)
     numLocalCoords++;
 
   gids = new T [numLocalCoords];
@@ -112,7 +112,7 @@ void roundRobinGlobalIds(T numGlobalCoords, int nprocs, int rank,
   return;
 }
 template <typename T>
-void subGroupGloballyIncreasingIds(T numGlobalCoords, 
+void subGroupGloballyIncreasingIds(T numGlobalCoords,
   int nprocs, int rank, T *&gids)
 {
   int numProcsLeftHalf = nprocs / 2;
@@ -123,30 +123,30 @@ void subGroupGloballyIncreasingIds(T numGlobalCoords,
 
   T endP = ((numProcsLeftHalf > rank) ?  numProcsLeftHalf : rank);
 
-  for (T p=0; p < endP ; p++){ 
+  for (T p=0; p < endP ; p++){
     T numLocalCoords = share;
     if (p < extra)
       numLocalCoords++;
 
-    if (p < rank)
+    if (p < static_cast<T> (rank))
       firstIdx += numLocalCoords;
-   
-    if (p < numProcsLeftHalf)
+
+    if (p < static_cast<T> (numProcsLeftHalf))
       numCoordsLeftHalf += numLocalCoords;
   }
 
   endIdx = firstIdx + share;
-  if (rank < extra)
+  if (rank < static_cast<T> (extra))
     endIdx++;
 
   if (rank >= numProcsLeftHalf){
     firstIdx -= numCoordsLeftHalf;
     endIdx -= numCoordsLeftHalf;
   }
-  
-  int firstProc=0, endProc=0; 
 
-  if (rank < numProcsLeftHalf){ 
+  int firstProc=0, endProc=0;
+
+  if (rank < numProcsLeftHalf){
     firstProc = 0;
     endProc = numProcsLeftHalf;
   }
@@ -167,7 +167,7 @@ void subGroupGloballyIncreasingIds(T numGlobalCoords,
   // The processes were divided into two halves, represented
   // by a vertical line through the matrix dividing the
   // processes in the left half from the processes in the
-  // right half.  
+  // right half.
   //
   // Now we want to enumerate the global ids in my half
   // in increasing order.
@@ -181,9 +181,9 @@ void subGroupGloballyIncreasingIds(T numGlobalCoords,
   T firstCol = (firstIdx % numProcsInMyHalf) + firstProc;
   int next = 0;
 
-  for (T row = firstRow; next < numLocalCoords; row++){
+  for (T row = firstRow; static_cast<T> (next) < numLocalCoords; row++){
     T firstGid = row * nprocs + firstCol;
-    for (T col=firstCol; next < numLocalCoords && col < endProc; col++){
+    for (T col = firstCol; static_cast<T> (next) < numLocalCoords && col < static_cast<T> (endProc); col++){
       gids[next++] = firstGid++;
     }
     firstCol = firstProc;
@@ -202,7 +202,7 @@ int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession session(&argc, &argv, NULL);
   RCP<const Comm<int> > genComm = Teuchos::DefaultComm<int>::getComm();
-  RCP<const MpiComm<int> > comm = 
+  RCP<const MpiComm<int> > comm =
     rcp_dynamic_cast<const MpiComm<int> >(genComm);
 
   int rank = genComm->getRank();
@@ -292,7 +292,7 @@ void timeTpetra(GO numGlobalCoords, const RCP<const MpiComm<int> > &comm,
   tmvBuild->incrementNumCalls();
 
   typedef Tpetra::Map<LO, GO> map_t;
-  RCP<const map_t> tmap = rcp(new map_t(numGlobalCoords, 
+  RCP<const map_t> tmap = rcp(new map_t(numGlobalCoords,
     numLocalCoords, 0, comm));
 
   Scalar *coords = new Scalar [COORDDIM * numLocalCoords];
@@ -320,7 +320,7 @@ void timeTpetra(GO numGlobalCoords, const RCP<const MpiComm<int> > &comm,
     long nkb = Zoltan2::getProcessKilobytes();
     std::cout << "Create mvector 1: " << nkb << std::endl;;
   }
-  
+
 
   ///////////// Step 2 //////////////////////////////////
   // Migrate the MV.
@@ -382,8 +382,8 @@ void timeTpetra(GO numGlobalCoords, const RCP<const MpiComm<int> > &comm,
 
   delete [] myHalfProcs;
 
-  // Divide the multivector into two.  Each process group is creating 
-  // a multivector with non-contiguous global ids.  For one group, 
+  // Divide the multivector into two.  Each process group is creating
+  // a multivector with non-contiguous global ids.  For one group,
   // base gid is not 0.
 
   ArrayView<const GO> gidList = mvector->getMap()->getNodeElementList();
@@ -457,7 +457,7 @@ void timeEpetra(GO numGlobalCoords, const RCP<const MpiComm<int> > &comm,
   emvBuild->start();
   emvBuild->incrementNumCalls();
 
-  RCP<Epetra_BlockMap> emap = rcp(new Epetra_BlockMap(numGlobalCoords, 
+  RCP<Epetra_BlockMap> emap = rcp(new Epetra_BlockMap(numGlobalCoords,
     numLocalCoords, 1, 0, *ecomm));
 
   Scalar *coords = new Scalar [COORDDIM * numLocalCoords];
@@ -482,7 +482,7 @@ void timeEpetra(GO numGlobalCoords, const RCP<const MpiComm<int> > &comm,
   emvMigrate->start();
   emvMigrate->incrementNumCalls();
 
-  RCP<Epetra_BlockMap> newMap = rcp(new Epetra_BlockMap(numGlobalCoords, 
+  RCP<Epetra_BlockMap> newMap = rcp(new Epetra_BlockMap(numGlobalCoords,
     numLocalCoords, newGids, 1, 0, *ecomm));
 
   RCP<Epetra_Import> importer = rcp(new Epetra_Import(*newMap, *emap));
@@ -535,15 +535,15 @@ void timeEpetra(GO numGlobalCoords, const RCP<const MpiComm<int> > &comm,
 
   delete [] myHalfProcs;
 
-  // Divide the multivector into two.  Each process group is creating 
-  // a multivector with non-contiguous global ids.  For one group, 
+  // Divide the multivector into two.  Each process group is creating
+  // a multivector with non-contiguous global ids.  For one group,
   // base gid is not 0.
 
   emvBuildN->start();
   emvBuildN->incrementNumCalls();
 
   RCP<Epetra_BlockMap> subMap = rcp(new Epetra_BlockMap(-1,
-   numLocalCoords, newGids, 1, 0, *subComm)); 
+   numLocalCoords, newGids, 1, 0, *subComm));
 
   Scalar **avSubList = new Scalar * [COORDDIM];
 
@@ -572,7 +572,7 @@ void timeEpetra(GO numGlobalCoords, const RCP<const MpiComm<int> > &comm,
   emvMigrateN->incrementNumCalls();
 
   RCP<Epetra_BlockMap> newSubMap = rcp(new Epetra_BlockMap(-1,
-    numLocalCoords, increasingGids, 1, 0, *subComm)); 
+    numLocalCoords, increasingGids, 1, 0, *subComm));
 
   RCP<Epetra_Import> subImporter = rcp(new Epetra_Import(
     *subMap, *newSubMap));
@@ -603,7 +603,7 @@ void timeZoltan(ZGO numGlobalCoords,
   ZLO numLocalCoords = numSequentialGlobalIds(numGlobalCoords, nprocs, rank);
 
   ZGO offset=0;
-  MPI_Exscan(&numLocalCoords, &offset, 1, 
+  MPI_Exscan(&numLocalCoords, &offset, 1,
     MPI_ZGO_TYPE, MPI_SUM, MPI_COMM_WORLD);
 
   ZGO *gids = new ZGO [numLocalCoords];
@@ -637,7 +637,7 @@ void timeZoltan(ZGO numGlobalCoords,
 
   ///////////// Step 2 //////////////////////////////////
   // Migrate the array of coordinates.
-  
+
   ZGO *newGids = NULL;
   roundRobinGlobalIds<ZGO>(numGlobalCoords, nprocs, rank, newGids);
 
@@ -652,9 +652,9 @@ void timeZoltan(ZGO numGlobalCoords,
   rc = Zoltan_DD_Update(ddNew, newGids, NULL, NULL, NULL, numLocalCoords);
   if (rc != ZOLTAN_OK)
     exit(1);
-  
+
   int *procOwners = new int [numLocalCoords];  // procs to get my data
-  rc = Zoltan_DD_Find(ddNew, gids, NULL, NULL, NULL, 
+  rc = Zoltan_DD_Find(ddNew, gids, NULL, NULL, NULL,
     numLocalCoords, procOwners);
   if (rc != ZOLTAN_OK)
     exit(1);
@@ -680,9 +680,9 @@ void timeZoltan(ZGO numGlobalCoords,
   x = static_cast<void *>(newCoords);
   char *charNewCoords = static_cast<char *>(x);
 
-  rc = Zoltan_Comm_Do(commPlan, tag, charCoords, 
+  rc = Zoltan_Comm_Do(commPlan, tag, charCoords,
     sizeof(Scalar)*COORDDIM, charNewCoords);
-    
+
   if (rc != ZOLTAN_OK)
     exit(1);
 
@@ -723,9 +723,12 @@ void timeZoltan(ZGO numGlobalCoords,
   MPI_Comm_group(MPI_COMM_WORLD, &group);
   MPI_Group_incl(group, groupSize, myHalfProcs, &subGroup);
   MPI_Comm_create(MPI_COMM_WORLD, subGroup, &subComm);
+  MPI_Group_free(&subGroup);
 
-  // Create global data directories for our sub groups. 
-  // (Analygous to creating the new MultiVectors in Tpetra.)
+  delete [] myHalfProcs;
+
+  // Create global data directories for our sub groups.
+  // (Analogous to creating the new MultiVectors in Tpetra.)
 
   ztnBuildN->start();
   ztnBuildN->incrementNumCalls();
@@ -761,11 +764,11 @@ void timeZoltan(ZGO numGlobalCoords,
   if (rc != ZOLTAN_OK)
     exit(1);
 
-  rc = Zoltan_DD_Update(ddNewSub, increasingGids, NULL, NULL, NULL, 
+  rc = Zoltan_DD_Update(ddNewSub, increasingGids, NULL, NULL, NULL,
     numLocalCoords);
 
   // Which processes gets my current coordinates in new map?
-    
+
   rc = Zoltan_DD_Find(ddNewSub, newGids, NULL, NULL, NULL, numLocalCoords, procOwners);
   if (rc != ZOLTAN_OK)
     exit(1);
@@ -807,7 +810,7 @@ void timeZoltan(ZGO numGlobalCoords,
 int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession session(&argc, &argv, NULL);
-  Teuchos::RCP<const Teuchos::Comm<int> > genComm = 
+  Teuchos::RCP<const Teuchos::Comm<int> > genComm =
     Teuchos::DefaultComm<int>::getComm();
 
   if (genComm->getRank() == 0){

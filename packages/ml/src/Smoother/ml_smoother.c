@@ -1831,6 +1831,10 @@ int ML_Smoother_BlockGS(ML_Smoother *sm,int inlen,double x[],int outlen,
   int    *Amat_CrsBindx = NULL, *Amat_CrsRowptr = NULL;
   int     blocksizeminusone, *colptr = NULL;
   double *xptr, dtemp, *valptr = NULL;
+#define BLxCK_JACOBI_INSTEAD
+#ifdef BLOCK_JACOBI_INSTEAD
+  double *res;   /* only done for Crs matrices */
+#endif
 
   smooth_ptr = (ML_Smoother *) sm;
 
@@ -1907,10 +1911,20 @@ int ML_Smoother_BlockGS(ML_Smoother *sm,int inlen,double x[],int outlen,
     }
   else x2 = x;
 
+#ifdef BLOCK_JACOBI_INSTEAD
+  res = (double *) ML_allocate((inlen+1)*sizeof(double));
+  for (i = 0; i < inlen; i++) res[i] = 0.0;
+#endif
 
   for (iter = 0; iter < smooth_ptr->ntimes; iter++) {
     if (getrow_comm != NULL)
       ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE,NULL);
+#ifdef BLOCK_JACOBI_INSTEAD
+    if ( (iter != 0) || (smooth_ptr->init_guess == ML_NONZERO))
+       ML_Operator_Apply(Amat, inlen, x2, inlen, res);
+    for (i = 0; i < inlen; i++) res[i] = rhs[i] - res[i];
+#endif
+
     /* forward mode */
     if(smooth_ptr->gs_sweep_type == ML_GS_standard ||
        smooth_ptr->gs_sweep_type == ML_GS_symmetric ||
@@ -1923,10 +1937,14 @@ int ML_Smoother_BlockGS(ML_Smoother *sm,int inlen,double x[],int outlen,
         colptr = Amat_CrsBindx;
         for (i = 0; i < Nblocks; i++) {
           for (k = 0; k < blocksize; k++) {
+#ifdef BLOCK_JACOBI_INSTEAD
+            correc[k]=res[row++];
+#else
             dtemp = 0.;
             for (j = Amat_CrsRowptr[row]; j < Amat_CrsRowptr[row+1]; j++)
               dtemp += (*valptr++)*x2[*colptr++];
             correc[k]=rhs[row++]-dtemp;
+#endif
           }
           ML_dgetrs_special(blocksize, blockdata[i], perms[i], correc);
           for (k = 0; k < blocksize; k++) (*xptr++) += omega*correc[k];
@@ -2009,6 +2027,9 @@ int ML_Smoother_BlockGS(ML_Smoother *sm,int inlen,double x[],int outlen,
       }
     } /* if backward mode */
   } /*for (iter = 0; iter < smooth_ptr->ntimes; iter++) */
+#ifdef BLOCK_JACOBI_INSTEAD
+  free(res);
+#endif
 
   if (getrow_comm != NULL) {
     for (i = 0; i < inlen; i++) x[i] = x2[i];

@@ -1,12 +1,12 @@
 // @HEADER
 // ************************************************************************
-// 
+//
 //        Piro: Strategy package for embedded analysis capabilitites
 //                  Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 //
 // Questions? Contact Glen Hansen (gahanse@sandia.gov), Sandia
 // National Laboratories.
-// 
+//
 // ************************************************************************
 // @HEADER
 
@@ -57,14 +57,15 @@ Piro::Epetra::AdaptiveSolutionManager::AdaptiveSolutionManager(
            const Teuchos::RCP<const Epetra_Map> &overlapMap_,
            const Teuchos::RCP<const Epetra_CrsGraph> &overlapJacGraph_) :
   LOCA::Epetra::AdaptiveSolutionManager(map_, overlapMap_, overlapJacGraph_),
-  adaptiveMesh(false)
+  adaptiveMesh(false),
+  createPrec(false)
 {
 
   // Create problem PL
-  RCP<Teuchos::ParameterList> problemParams = 
+  RCP<Teuchos::ParameterList> problemParams =
     Teuchos::sublist(appParams, "Problem", true);
 
-  piroParams = 
+  piroParams =
     sublist(appParams, "Piro", true);
 
   if(problemParams->isSublist("Adaptation")){ // If the user has specified adaptation on input, grab the sublist
@@ -96,7 +97,7 @@ Piro::Epetra::AdaptiveSolutionManager::initialize(
 
 }
 
-Teuchos::RCP<LOCA::Epetra::Group> 
+Teuchos::RCP<LOCA::Epetra::Group>
 Piro::Epetra::AdaptiveSolutionManager::buildSolutionGroup(){
 
   // Create the Jacobian matrix
@@ -113,7 +114,7 @@ Piro::Epetra::AdaptiveSolutionManager::buildSolutionGroup(){
     sublist("Newton").sublist("Stratimikos Linear Solver");
 
 
-  // Inexact Newton must be set in a second sublist when using 
+  // Inexact Newton must be set in a second sublist when using
   // Stratimikos: This code snippet sets it automatically
   bool inexact = (noxParams.sublist("Direction").sublist("Newton").
                   get("Forcing Term Method", "Constant") != "Constant");
@@ -146,7 +147,7 @@ Piro::Epetra::AdaptiveSolutionManager::buildSolutionGroup(){
   Teuchos::RCP<Epetra_Operator> Ashift=A;
   bool separateMatrixMem = piroParams->get("LOCASolver: Create Second Matrix",false);
   if (separateMatrixMem) {
-    Teuchos::RCP<Epetra_CrsMatrix> Acrs = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(A); 
+    Teuchos::RCP<Epetra_CrsMatrix> Acrs = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(A);
     if (Acrs != Teuchos::null)
      // Ashift = Teuchos::rcp(new Epetra_CrsMatrix(*Acrs));
      Ashift = model->create_W();

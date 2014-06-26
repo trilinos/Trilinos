@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -50,20 +50,20 @@
 #endif
 
 //=============================================================================
-Epetra_Time::Epetra_Time(const Epetra_Comm& Comm) 
+Epetra_Time::Epetra_Time(const Epetra_Comm& Comm)
   : StartTime_(0.0),
     Comm_(&Comm)
 {
   StartTime_ = WallTime();
 }
 //=============================================================================
-Epetra_Time::Epetra_Time(const Epetra_Time& Time) 
+Epetra_Time::Epetra_Time(const Epetra_Time& Time)
   : StartTime_(Time.StartTime_),
     Comm_(Time.Comm_)
 {
 }
 //=============================================================================
-Epetra_Time::~Epetra_Time(void)  
+Epetra_Time::~Epetra_Time(void)
 {
 }
 //=============================================================================

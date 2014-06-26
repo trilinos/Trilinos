@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -63,8 +63,8 @@ class Epetra_Map;
 <b> Distributed Global vs. Replicated Local</b>
 <ul>
   <li> Distributed Global Vectors - In most instances, a multi-vector will be partitioned
-       across multiple memory images associated with multiple processors.  In this case, there is 
-       a unique copy of each element and elements are spread across all processors specified by 
+       across multiple memory images associated with multiple processors.  In this case, there is
+       a unique copy of each element and elements are spread across all processors specified by
        the Epetra_Comm communicator.
   <li> Replicated Local Vectors - Some algorithms use vectors that are too small to
        be distributed across all processors.  Replicated local vectors handle
@@ -74,7 +74,7 @@ class Epetra_Map;
 <b>Constructing Epetra_LongLongVectors</b>
 
 There are four Epetra_LongLongVector constructors.  The first is a basic constructor that allocates
-space and sets all values to zero, the second is a 
+space and sets all values to zero, the second is a
 copy constructor. The third and fourth constructors work with user data.  These constructors have
 two data access modes:
 <ol>
@@ -85,11 +85,11 @@ two data access modes:
 </ol>
 
 \warning View mode is \e extremely dangerous from a data hiding perspective.
-Therefore, we strongly encourage users to develop code using Copy mode first and 
+Therefore, we strongly encourage users to develop code using Copy mode first and
 only use the View mode in a secondary optimization phase.
 
 All Epetra_LongLongVector constructors require a map argument that describes the layout of elements
-on the parallel machine.  Specifically, 
+on the parallel machine.  Specifically,
 \c map is a Epetra_Map, Epetra_LocalMap or Epetra_BlockMap object describing the desired
 memory layout for the vector.
 
@@ -107,7 +107,7 @@ a view of them.
 
 \warning ExtractView functions are \e extremely dangerous from a data hiding perspective.
 For both ExtractView fuctions, there is a corresponding ExtractCopy function.  We
-strongly encourage users to develop code using ExtractCopy functions first and 
+strongly encourage users to develop code using ExtractCopy functions first and
 only use the ExtractView functions in a secondary optimization phase.
 
 There are two Extract functions:
@@ -117,7 +117,7 @@ There are two Extract functions:
 </ul>
 
 
-\warning A Epetra_Map, Epetra_LocalMap or Epetra_BlockMap object is required for all 
+\warning A Epetra_Map, Epetra_LocalMap or Epetra_BlockMap object is required for all
   Epetra_LongLongVector constructors.
 
 */
@@ -128,11 +128,11 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongVector : public Epetra_DistObject {
   public:
 
     //! @name Constructors/destructors
-  //@{ 
+  //@{
   //! Basic Epetra_LongLongVector constuctor.
-  /*! Creates a Epetra_LongLongVector object and, by default, fills with zero values.  
+  /*! Creates a Epetra_LongLongVector object and, by default, fills with zero values.
 
-    \param In 
+    \param In
            Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
 
      \warning Note that, because Epetra_LocalMap
@@ -149,14 +149,14 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongVector : public Epetra_DistObject {
   Epetra_LongLongVector(const Epetra_BlockMap& Map, bool zeroOut = true);
 
   //! Epetra_LongLongVector copy constructor.
-  
+
   Epetra_LongLongVector(const Epetra_LongLongVector& Source);
-  
+
   //! Set vector values from user array.
   /*!
-    \param In 
+    \param In
            Epetra_DataAccess - Enumerated type set to Copy or View.
-    \param In 
+    \param In
            Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
     \param In
            V - Pointer to an array of long long numbers..
@@ -167,35 +167,35 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongVector : public Epetra_DistObject {
   */
   Epetra_LongLongVector(Epetra_DataAccess CV, const Epetra_BlockMap& Map, long long *V);
 
-  //! Epetra_LongLongVector destructor.  
+  //! Epetra_LongLongVector destructor.
   virtual ~Epetra_LongLongVector ();
   //@}
-  
+
 
   //! @name Post-construction modification methods
-  //@{ 
+  //@{
   //! Set all elements of the vector to Value
   int PutValue(long long Value);
   //@}
-  
+
 
   //! @name Extraction methods
-  //@{ 
+  //@{
 
 
   //! Put vector values into user-provided array.
   /*!
     \param Out
-           V - Pointer to memory space that will contain the vector values.  
+           V - Pointer to memory space that will contain the vector values.
 
     \return Integer error code, set to 0 if successful.
   */
   int ExtractCopy(long long *V) const;
-  
+
   //! Set user-provided address of V.
   /*!
     \param Out
-           V - Address of a pointer to that will be set to point to the values of the vector.  
+           V - Address of a pointer to that will be set to point to the values of the vector.
 
     \return Integer error code, set to 0 if successful.
   */
@@ -203,13 +203,13 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongVector : public Epetra_DistObject {
   //@}
 
   //! @name Mathematical methods
-  //@{ 
+  //@{
   //! Find maximum value
   /*!
     \return Maximum value across all processors.
   */
   long long MaxValue();
- 
+
   //! Find minimum value
   /*!
     \return Minimum value across all processors.
@@ -217,9 +217,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongVector : public Epetra_DistObject {
   long long MinValue();
 
   //@}
-  
+
   //! @name Overloaded operators
-  //@{ 
+  //@{
 
   //! = Operator.
   /*!
@@ -229,7 +229,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongVector : public Epetra_DistObject {
     \return Epetra_LongLongVector.
   */
   Epetra_LongLongVector& operator = (const Epetra_LongLongVector& Source);
-  
+
   //! Element access function.
   /*!
     \return V[Index].
@@ -241,9 +241,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongVector : public Epetra_DistObject {
   */
     const long long& operator [] (int index) const { return Values_[index]; }
     //@}
-    
+
     //! @name Attribute access functions
-  //@{ 
+  //@{
 
   //! Returns a pointer to an array containing the values of this vector.
   long long * Values() const {return(Values_);};
@@ -256,7 +256,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongVector : public Epetra_DistObject {
   //@}
 
   //! @name I/O methods
-  //@{ 
+  //@{
 
   //! Print method
   virtual void Print(std::ostream & os) const;
@@ -272,11 +272,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongVector : public Epetra_DistObject {
   int CheckSizes(const Epetra_SrcDistObject& A);
 
   int CopyAndPermute(const Epetra_SrcDistObject & Source,
-                     int NumSameIDs, 
+                     int NumSameIDs,
                      int NumPermuteIDs,
                      int * PermuteToLIDs,
                      int * PermuteFromLIDs,
-                     const Epetra_OffsetIndex * Indexor);
+                     const Epetra_OffsetIndex * Indexor,
+                     Epetra_CombineMode CombineMode = Zero);
 
   int PackAndPrepare(const Epetra_SrcDistObject & Source,
                      int NumExportIDs,
@@ -287,13 +288,13 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongVector : public Epetra_DistObject {
                      int * Sizes,
                      bool& VarSizes,
                      Epetra_Distributor & Distor);
-  
+
   int UnpackAndCombine(const Epetra_SrcDistObject & Source,
                        int NumImportIDs,
-                       int * ImportLIDs, 
-                       int LenImports, 
+                       int * ImportLIDs,
+                       int LenImports,
                        char * Imports,
-                       int & SizeOfPacket, 
+                       int & SizeOfPacket,
                        Epetra_Distributor & Distor,
                        Epetra_CombineMode CombineMode,
                        const Epetra_OffsetIndex * Indexor);

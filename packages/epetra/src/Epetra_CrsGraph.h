@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -45,7 +45,7 @@
 #define EPETRA_CRSGRAPH_H
 
 #include "Epetra_ConfigDefs.h"
-#include "Epetra_DistObject.h" 
+#include "Epetra_DistObject.h"
 #include "Epetra_CrsGraphData.h"
 class Epetra_BlockMap;
 class Epetra_Util;
@@ -58,7 +58,7 @@ class Epetra_RowMatrix;
 //! Epetra_CrsGraph: A class for constructing and using sparse compressed row graphs.
 
 /*! Epetra_CrsGraph enables the piecewise construction and use of sparse matrix graphs (the integer structure without
-    values) where entries are intended for row access.  
+    values) where entries are intended for row access.
 
     Epetra_CrsGraph is an attribute of all Epetra row-based matrix classes, defining their nonzero structure and also
     holding their Epetra_Map attributes.
@@ -69,43 +69,43 @@ Constructing Epetra_CrsGraph objects is a multi-step process.  The basic steps a
 <ol>
   <li> Create Epetra_CrsGraph instance, including some initial storage,  via constructor. In
        addition to the copy constructor, Epetra_CrsGraph has four different constructors.  All four of these
-          constructors have 
-    an argument, StaticProfile, which by default is set to false.  If it is set to true, then the 
-    profile (the number of indices per row as defined by NumIndicesPerRow) will be rigidly enforced.  
+          constructors have
+    an argument, StaticProfile, which by default is set to false.  If it is set to true, then the
+    profile (the number of indices per row as defined by NumIndicesPerRow) will be rigidly enforced.
     Although this takes away flexibility, it allows a single array to be allocated for all indices.
     This decreases memory fragmentation and improves performance across many operations. A more detailed
     discussion of the StaticProfile option is found below.
     <ol>
-     <li> User-provided row map, variable nonzero profile: This constructor is used to define the 
+     <li> User-provided row map, variable nonzero profile: This constructor is used to define the
           row distribution of the graph and specify a varying number of nonzero entries per row.
-    It is best to use this constructor when the user will be inserting entries using global index 
+    It is best to use this constructor when the user will be inserting entries using global index
     values and wants every column index to be included in the graph.  Note that in this case, the
     column map will be built for the user when FillComplete() is called.  This constructor is also
     appropriate for when there is a large variation in the number of indices per row.  If this is not
     the case, the next constructor may be more convenient to use.
-     <li> User-provided row map, fixed nonzero profile: This constructor is used to define the 
+     <li> User-provided row map, fixed nonzero profile: This constructor is used to define the
           row distribution of the graph and specify a fixed number of nonzero entries per row.
-    It is best to use this constructor when the user will be inserting entries using global index 
+    It is best to use this constructor when the user will be inserting entries using global index
     values and wants every column index to be included in the graph.  Note that in this case, the
     column map will be built for the user when FillComplete() is called.  This constructor is also
     appropriate for when there is little or no variation in the number of indices per row.
-     <li> User-provided row map, user-provided column map and variable nonzero profile: 
-          This constructor is used to define the 
+     <li> User-provided row map, user-provided column map and variable nonzero profile:
+          This constructor is used to define the
           row \e and \e column distribution of the graph, and specify a varying number of nonzero entries per row.
     It is best to use this constructor when the user will be inserting entries and already knows which columns
     of the matrix should be included on each processor.  Note that in this case, the
-    column map will \e not be built for the user when FillComplete() is called.  Also, if the user attempts to 
+    column map will \e not be built for the user when FillComplete() is called.  Also, if the user attempts to
     insert a column index whose GID is not part of the column map on that process, the index will be
     discarded.  This property can be used to "filter out" column entries that should be ignored.
     This constructor is also
     appropriate for when there is a large variation in the number of indices per row.  If this is not
     the case, the next constructor may be more convenient to use.
-     <li> User-provided row map, user-provided column map and fixed nonzero profile: 
-          This constructor is used to define the 
+     <li> User-provided row map, user-provided column map and fixed nonzero profile:
+          This constructor is used to define the
           row \e and \e column distribution of the graph, and specify a fixed number of nonzero entries per row.
     It is best to use this constructor when the user will be inserting entries and already knows which columns
     of the matrix should be included on each processor.  Note that in this case, the
-    column map will \e not be built for the user when FillComplete() is called.  Also, if the user attempts to 
+    column map will \e not be built for the user when FillComplete() is called.  Also, if the user attempts to
     insert a column index whose GID is not part of the column map on that process, the index will be
     discarded.  This constructor is also
     appropriate for when there is little or no variation in the number of indices per row.
@@ -131,12 +131,12 @@ The Epetra_CrsGraph class attempts to address four basic types of situations, de
       served by the constructor that requires only a row map, and a fixed number of indices per row.  In fact, setting NumIndicesPerRow=0
       is probably the best option.
  <li> Stronger control over memory allocation performance and use over flexibility and simplicity:  In this case the user explicitly set
-      StaticProfile to true and will provide values, either a single global int or an array of int's, for NumIndicesPerRow, such that 
-      the actual number of indices submitted to the graph will not exceed the estimates.  Because we know that NumIndicesPerRow will not 
+      StaticProfile to true and will provide values, either a single global int or an array of int's, for NumIndicesPerRow, such that
+      the actual number of indices submitted to the graph will not exceed the estimates.  Because we know that NumIndicesPerRow will not
       be exceeded, we can pre-allocate all of the storage for the graph as a single array.  This is typically much more efficient.
  <li> Explicit control over column indices:  In this case the user prescribes the column map.  Given the column map, any index that is
       submitted for entry into the graph will be included \e only if they are present in the list of GIDs for the column map on the
-      processor that submits the index.  This feature allows the user to define a filter such that only certain columns will be kept.  The 
+      processor that submits the index.  This feature allows the user to define a filter such that only certain columns will be kept.  The
       user also prescribes the local ordering via this technique, since the ordering of GIDs in the column map imposes the local
       ordering.
  <li> Construction using local indices only:  In some situations, users may want to build a graph using local index values only.  In this
@@ -145,10 +145,10 @@ The Epetra_CrsGraph class attempts to address four basic types of situations, de
 
 Notes:
 <ul>
-<li>In all but the most advanced uses, users will typically \e not specify the column map.  In other words, graph entries will be submitted using 
+<li>In all but the most advanced uses, users will typically \e not specify the column map.  In other words, graph entries will be submitted using
 GIDs not LIDs and all entries that are submitted are intended to be inserted into the graph.
 
-<li>If a user is not particularly worried about performance, or really needs the flexibility associated with the first situation, then there 
+<li>If a user is not particularly worried about performance, or really needs the flexibility associated with the first situation, then there
 is no need to explicitly manage the NumIndicesPerRow values or set StaticProfile to true.  In this case, it is best to set NumIndicesPerRow to
 zero.
 
@@ -205,87 +205,87 @@ Note the behavior of several graph methods:
  <li>ExtractMyRowView() returns an error if IndicesAreGlobal()==true
 </ul>
 
-Note that even after a graph is constructed, it is possible to add or remove entries.  However, 
+Note that even after a graph is constructed, it is possible to add or remove entries.  However,
 FillComplete must then be called again to restore the graph to a consistent state.
 
-*/    
+*/
 
 class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
-      
+
  public:
 
    //! @name Constructors/Destructor
-  //@{ 
+  //@{
   //! Epetra_CrsGraph constuctor with variable number of indices per row.
-  /*! Creates a Epetra_CrsGraph object and allocates storage.  
-    
+  /*! Creates a Epetra_CrsGraph object and allocates storage.
+
     \param CV - (In) A Epetra_DataAccess enumerated type set to Copy or View.
-    \param RowMap - (In) An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap) listing the rows that this 
+    \param RowMap - (In) An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap) listing the rows that this
      processor will contribute to.In
     \param NumIndicesPerRow - (In) An integer array of length NumMyRows
      such that NumIndicesPerRow[i] indicates the (approximate if StaticProfile=false) number of entries in the ith row.
     \param StaticProfile - (In) Optional argument that indicates whether or not NumIndicesPerRow should be interpreted as an exact
-           count of nonzeros, or should be used as an approximation.  By default this value is false, allowing the profile to be determined 
+           count of nonzeros, or should be used as an approximation.  By default this value is false, allowing the profile to be determined
            dynamically.  If the user sets it to true, then the memory allocation for the Epetra_CrsGraph object will be done in one large
      block, saving on memory fragmentation and generally improving the performance of matrix multiplication and solve kernels.
   */
   Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, const int* NumIndicesPerRow, bool StaticProfile = false);
-  
+
   //! Epetra_CrsGraph constuctor with fixed number of indices per row.
-  /*! Creates a Epetra_CrsGraph object and allocates storage.  
-    
+  /*! Creates a Epetra_CrsGraph object and allocates storage.
+
     \param CV - (In) A Epetra_DataAccess enumerated type set to Copy or View.
-    \param RowMap - (In) An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap) listing the rows that this 
+    \param RowMap - (In) An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap) listing the rows that this
      processor will contribute to.
     \param NumIndicesPerRow - (In) An integer that indicates the (approximate if StaticProfile=false) number of entries in the each row.
      Note that it is possible to use 0 for this value and let fill occur during the insertion phase.
     \param StaticProfile - (In) Optional argument that indicates whether or not NumIndicesPerRow should be interpreted as an exact
-           count of nonzeros, or should be used as an approximation.  By default this value is false, allowing the profile to be determined 
+           count of nonzeros, or should be used as an approximation.  By default this value is false, allowing the profile to be determined
            dynamically.  If the user sets it to true, then the memory allocation for the Epetra_CrsGraph object will be done in one large
      block, saving on memory fragmentation and generally improving the performance of matrix multiplication and solve kernels.
-     
+
   */
   Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, int NumIndicesPerRow, bool StaticProfile = false);
-  
+
   //! Epetra_CrsGraph constuctor with variable number of indices per row.
-  /*! Creates a Epetra_CrsGraph object and allocates storage.  
-    
+  /*! Creates a Epetra_CrsGraph object and allocates storage.
+
     \param CV - (In) A Epetra_DataAccess enumerated type set to Copy or View.
-    \param RowMap - (In) An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap) listing the rows that this 
+    \param RowMap - (In) An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap) listing the rows that this
      processor will contribute to.
-    \param ColMap - (In) An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap) listing the columns that this 
+    \param ColMap - (In) An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap) listing the columns that this
      processor will contribute to.
     \param NumIndicesPerRow - (In) An integer array of length NumMyRows
      such that NumIndicesPerRow[i] indicates the (approximate if StaticProfile=false) number of entries in the ith row.
     \param StaticProfile - (In) Optional argument that indicates whether or not NumIndicesPerRow should be interpreted as an exact
-           count of nonzeros, or should be used as an approximation.  By default this value is false, allowing the profile to be determined 
+           count of nonzeros, or should be used as an approximation.  By default this value is false, allowing the profile to be determined
            dynamically.  If the user sets it to true, then the memory allocation for the Epetra_CrsGraph object will be done in one large
      block, saving on memory fragmentation and generally improving the performance of matrix multiplication and solve kernels.
   */
-  Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, 
+  Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap,
       const Epetra_BlockMap& ColMap, const int* NumIndicesPerRow, bool StaticProfile = false);
-  
+
   //! Epetra_CrsGraph constuctor with fixed number of indices per row.
-  /*! Creates a Epetra_CrsGraph object and allocates storage.  
-    
+  /*! Creates a Epetra_CrsGraph object and allocates storage.
+
     \param CV - (In) A Epetra_DataAccess enumerated type set to Copy or View.
-    \param RowMap - (In) An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap) listing the rows that this 
+    \param RowMap - (In) An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap) listing the rows that this
      processor will contribute to.
-    \param ColMap - (In) An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap) listing the columns that this 
+    \param ColMap - (In) An Epetra_BlockMap (or Epetra_Map or Epetra_LocalMap) listing the columns that this
      processor will contribute to.
     \param In
            NumIndicesPerRow - An integer that indicates the (approximate if StaticProfile=false) number of entries in the each row.
      Note that it is possible to use 0 for this value and let fill occur during the insertion phase.
     \param StaticProfile - (In) Optional argument that indicates whether or not NumIndicesPerRow should be interpreted as an exact
-           count of nonzeros, or should be used as an approximation.  By default this value is false, allowing the profile to be determined 
+           count of nonzeros, or should be used as an approximation.  By default this value is false, allowing the profile to be determined
            dynamically.  If the user sets it to true, then the memory allocation for the Epetra_CrsGraph object will be done in one large
      block, saving on memory fragmentation and generally improving the performance of matrix multiplication and solve kernels.
-     
+
   */
-  Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, 
+  Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap,
       const Epetra_BlockMap& ColMap, int NumIndicesPerRow, bool StaticProfile = false);
-  
-  //! Copy constructor. 
+
+  //! Copy constructor.
   /*! This will create a Level 1 deep copy. This Graph will share ownership
       of the CrsGraphData object with the right hand side Graph.
   */
@@ -294,9 +294,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
   //! Epetra_CrsGraph Destructor
   virtual ~Epetra_CrsGraph();
   //@}
-  
+
   //! @name Insertion/Removal methods
-  //@{ 
+  //@{
   //! Enter a list of elements in a specified global row of the graph.
   /*!
     \param Row - (In) Global row number of indices.
@@ -306,7 +306,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
     \return Integer error code, set to 0 if successful. If the insertion requires
      that additional memory be allocated for the row, a positive error code of 1
      is returned. If the graph is a 'View'
-     mode graph, then a positive warning code of 2 will be returned if the 
+     mode graph, then a positive warning code of 2 will be returned if the
      specified row already exists. Returns 1 if underlying graph data is shared
      by multiple graph instances.
 
@@ -324,7 +324,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
     \param Row - (In) Global row number of indices.
     \param NumIndices - (In) Number of Indices.
     \param Indices - (In) Global column indices to remove.
-     
+
     \return Integer error code, set to 0 if successful. Returns 1 if data is shared.
 
     \pre IndicesAreGlobal()==true, StorageOptimized()==false
@@ -335,7 +335,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   int RemoveGlobalIndices(long long GlobalRow, int NumIndices, long long* Indices);
 #endif
-  
+
   //! Remove all indices from a specified global row of the graph.
   /*!
     \param Row - (In) Global row number of indices.
@@ -346,7 +346,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
   */
   int RemoveGlobalIndices(long long Row);
 
-  
+
   //! Enter a list of elements in a specified local row of the graph.
   /*!
     \param Row - (In) Local row number of indices.
@@ -364,19 +364,19 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
     \pre IndicesAreLocal()==true, StorageOptimized()==false
   */
   int InsertMyIndices(int LocalRow, int NumIndices, int* Indices);
-  
+
   //! Remove a list of elements from a specified local row of the graph.
   /*!
     \param Row - (In) Local row number of indices.
     \param NumIndices - (In) Number of Indices.
     \param Indices - (In) Local column indices to remove.
-     
+
     \return Integer error code, set to 0 if successful. Returns 1 if data is shared.
 
     \pre IndicesAreLocal()==true, StorageOptimized()==false
   */
   int RemoveMyIndices(int LocalRow, int NumIndices, int* Indices);
-  
+
   //! Remove all indices from a specified local row of the graph.
   /*!
     \param Row - (In) Local row number of indices.
@@ -389,8 +389,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
   //@}
 
   //! @name Transformation methods
-  //@{ 
-  
+  //@{
+
   //! Tranform to local index space.  Perform other operations to allow optimal matrix operations.
   /*! This overloading of the FillComplete method assumes that the domain-map and range-map both equal
     the row-map, and simply calls FillComplete(RowMap(), RowMap()).
@@ -436,7 +436,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
   //@}
 
   //! @name Extraction methods
-  //@{ 
+  //@{
 
   //! Extract a list of elements in a specified global row of the graph. Put into storage allocated by calling routine.
   /*!
@@ -500,37 +500,37 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
   //@}
 
   //! @name Graph Properties Query Methods
-  //@{ 
+  //@{
   //! If FillComplete() has been called, this query returns true, otherwise it returns false.
   bool Filled() const {return(CrsGraphData_->Filled_);}
-  
+
   //! If OptimizeStorage() has been called, this query returns true, otherwise it returns false.
   bool StorageOptimized() const {return(CrsGraphData_->StorageOptimized_);}
-  
+
   //! If column indices are in global range, this query returns true, otherwise it returns false.
   bool IndicesAreGlobal() const {return(CrsGraphData_->IndicesAreGlobal_);}
-  
+
   //! If column indices are in local range, this query returns true, otherwise it returns false.
   bool IndicesAreLocal() const {return(CrsGraphData_->IndicesAreLocal_);}
-  
+
   //! If graph is lower triangular in local index space, this query returns true, otherwise it returns false.
   /*!
     \pre Filled()==true
   */
   bool LowerTriangular() const {return(CrsGraphData_->LowerTriangular_);}
-  
+
   //! If graph is upper triangular in local index space, this query returns true, otherwise it returns false.
   /*!
     \pre Filled()==true
   */
   bool UpperTriangular() const {return(CrsGraphData_->UpperTriangular_);}
-  
+
   //! If graph has no diagonal entries in global index space, this query returns true, otherwise it returns false.
   /*!
     \pre Filled()==true
   */
   bool NoDiagonal() const {return(CrsGraphData_->NoDiagonal_);}
-  
+
   //! Returns true of GID is owned by the calling processor, otherwise it returns false.
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   bool MyGlobalRow(int GID) const {return(RowMap().MyGID(GID));}
@@ -541,19 +541,19 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
 #endif
 
   //! Returns true if we have a well-defined ColMap, and returns false otherwise.
-  /*! \pre We have a well-defined ColMap if a) a ColMap was passed in at construction, 
+  /*! \pre We have a well-defined ColMap if a) a ColMap was passed in at construction,
     or b) the MakeColMap function has been called. (Calling either of the FillComplete functions
-    will result in MakeColMap being called.) 
+    will result in MakeColMap being called.)
   */
   bool HaveColMap() const {return(CrsGraphData_->HaveColMap_);}
   //@}
-  
+
   //! @name Attribute access functions
-  //@{ 
-    
+  //@{
+
   //! Returns the number of matrix rows on this processor.
   int NumMyRows() const {return(CrsGraphData_->NumMyRows_);}
-  
+
   //! Returns the number of matrix rows in global matrix.
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     int  NumGlobalRows() const {
@@ -563,14 +563,14 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
     }
 #endif
   long long NumGlobalRows64() const {return(CrsGraphData_->NumGlobalRows_);}
-  
+
   //! Returns the number of entries in the set of column-indices that appear on this processor.
   /*! The set of column-indices that appear on this processor is the union of column-indices that
     appear in all local rows. The size of this set isn't available until FillComplete() has been called.
     \pre Filled()==true
   */
   int NumMyCols() const {return(CrsGraphData_->NumMyCols_);}
-  
+
   //! Returns the number of matrix columns in global matrix.
   /*!
     \pre Filled()==true
@@ -583,7 +583,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
     }
 #endif
   long long NumGlobalCols64() const {return(CrsGraphData_->NumGlobalCols_);}
-  
+
   //! Returns the number of indices in the global graph.
   /*! Note that if the graph's maps are defined such that some nonzeros
             appear on more than one processor, then those nonzeros will be
@@ -599,7 +599,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
     }
 #endif
   long long NumGlobalNonzeros64() const {return(CrsGraphData_->NumGlobalNonzeros_);}
-  
+
   //! Returns the number of diagonal entries in the global graph, based on global row/column index comparisons.
   /*!
     \pre Filled()==true
@@ -612,16 +612,16 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
     }
 #endif
   long long NumGlobalDiagonals64() const {return(CrsGraphData_->NumGlobalDiagonals_);}
-  
+
   //! Returns the number of diagonal entries in the local graph, based on global row/column index comparisons.
   /*!
     \pre Filled()==true
   */
   int NumMyDiagonals() const {return(CrsGraphData_->NumMyDiagonals_);}
-  
+
   //! Returns the number of block matrix rows on this processor.
   int NumMyBlockRows() const {return(CrsGraphData_->NumMyBlockRows_);}
-  
+
   //! Returns the number of Block matrix rows in global matrix.
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     int  NumGlobalBlockRows() const {
@@ -631,13 +631,13 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
     }
 #endif
   long long NumGlobalBlockRows64() const {return(CrsGraphData_->NumGlobalBlockRows_);}
-  
+
   //! Returns the number of Block matrix columns on this processor.
   /*!
     \pre Filled()==true
   */
   int NumMyBlockCols() const {return(CrsGraphData_->NumMyBlockCols_);}
-  
+
   //! Returns the number of Block matrix columns in global matrix.
   /*!
     \pre Filled()==true
@@ -650,13 +650,13 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
     }
 #endif
   long long NumGlobalBlockCols64() const {return(CrsGraphData_->NumGlobalBlockCols_);}
-  
+
   //! Returns the number of Block diagonal entries in the local graph, based on global row/column index comparisons.
   /*!
     \pre Filled()==true
   */
   int NumMyBlockDiagonals() const {return(CrsGraphData_->NumMyBlockDiagonals_);}
-  
+
   //! Returns the number of Block diagonal entries in the global graph, based on global row/column index comparisons.
   /*!
     \pre Filled()==true
@@ -669,7 +669,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
     }
 #endif
   long long NumGlobalBlockDiagonals64() const {return(CrsGraphData_->NumGlobalBlockDiagonals_);}
-  
+
   //! Returns the number of entries in the global graph.
   /*!
     \pre Filled()==true
@@ -682,7 +682,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
     }
 #endif
   long long NumGlobalEntries64() const {return(CrsGraphData_->NumGlobalEntries_);}
-  
+
   //! Returns the number of entries on this processor.
   /*!
     \pre Filled()==true
@@ -693,53 +693,53 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
     \pre Filled()==true
   */
   int MaxRowDim() const {return(CrsGraphData_->MaxRowDim_);}
-  
+
   //! Returns the max row dimension of block entries across all processors.
   /*!
     \pre Filled()==true
   */
   int GlobalMaxRowDim() const {return(CrsGraphData_->GlobalMaxRowDim_);}
-  
+
   //! Returns the max column dimension of block entries on the processor.
   /*!
     \pre Filled()==true
   */
   int MaxColDim() const {return(CrsGraphData_->MaxColDim_);}
-  
+
   //! Returns the max column dimension of block entries across all processors.
   /*!
     \pre Filled()==true
   */
   int GlobalMaxColDim() const {return(CrsGraphData_->GlobalMaxColDim_);}
-  
+
   //! Returns the number of indices in the local graph.
   /*!
     \pre Filled()==true
   */
   int NumMyNonzeros() const {return(CrsGraphData_->NumMyNonzeros_);}
-  
+
   //! Returns the current number of nonzero entries in specified global row on this processor.
   int NumGlobalIndices(long long Row) const;
-  
+
   //! Returns the allocated number of nonzero entries in specified global row on this processor.
   int NumAllocatedGlobalIndices(long long Row) const;
-  
+
   //! Returns the maximum number of nonzero entries across all rows on this processor.
   /*!
     \pre Filled()==true
   */
   int MaxNumIndices() const {return(CrsGraphData_->MaxNumIndices_);}
-  
+
   //! Returns the maximun number of nonzero entries across all rows across all processors.
   /*!
     \pre Filled()==true
   */
   int GlobalMaxNumIndices() const {return(CrsGraphData_->GlobalMaxNumIndices_);}
-  
+
   //! Returns the maximum number of nonzero points across all rows on this processor.
   /*! For each entry in the graph, let i = the GRID of the entry and j = the CGID of the entry.  Then
       the entry size is the product of the rowmap elementsize of i and the colmap elementsize of i.
-      Let ki = sum of all entry sizes for the entries in the ith row. 
+      Let ki = sum of all entry sizes for the entries in the ith row.
       For example,
             if the ith block row had 5 block entries and the element size of each entry was 4-by-4, ki would be 80.
       Then this function returns the max over all ki for all row on this processor.
@@ -747,24 +747,24 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
       \pre Filled()==true
   */
   int MaxNumNonzeros() const {return(CrsGraphData_->MaxNumNonzeros_);}
-  
+
   //! Returns the maximun number of nonzero points across all rows across all processors.
   /*! This function returns the max over all processor of MaxNumNonzeros().
 
       \pre Filled()==true
    */
   int GlobalMaxNumNonzeros() const {return(CrsGraphData_->GlobalMaxNumNonzeros_);}
-  
+
   //! Returns the current number of nonzero entries in specified local row on this processor.
   int NumMyIndices(int Row) const {if (Row<0 || Row >= NumMyRows()) return(0);
-    if (StorageOptimized()) return(CrsGraphData_->IndexOffset_[Row+1] - CrsGraphData_->IndexOffset_[Row]); 
+    if (StorageOptimized()) return(CrsGraphData_->IndexOffset_[Row+1] - CrsGraphData_->IndexOffset_[Row]);
     else return(CrsGraphData_->NumIndicesPerRow_[Row]);}
-  
+
   //! Returns the allocated number of nonzero entries in specified local row on this processor.
   int NumAllocatedMyIndices(int Row) const {if (Row<0 || Row >= NumMyRows()) return(0);
-    if (StorageOptimized()) return(CrsGraphData_->IndexOffset_[Row+1] - CrsGraphData_->IndexOffset_[Row]); 
+    if (StorageOptimized()) return(CrsGraphData_->IndexOffset_[Row+1] - CrsGraphData_->IndexOffset_[Row]);
     else return(CrsGraphData_->NumAllocatedIndicesPerRow_[Row]);}
-  
+
   //! Returns the index base for row and column indices for this graph.
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   //! Index base for this map.
@@ -775,10 +775,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
   }
 #endif
   long long  IndexBase64() const {return(CrsGraphData_->IndexBase_);};
-  
+
   //! Returns the RowMap associated with this graph.
   const Epetra_BlockMap& RowMap() const {return(Epetra_DistObject::Map());}
-    
+
   /** Replaces the current RowMap with the user-specified map object, but only
       if currentmap->PointSameAs(newmap) is true. This is a collective function.
       Returns 0 if map is replaced, -1 if not.
@@ -788,22 +788,22 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
   int ReplaceRowMap(const Epetra_BlockMap& newmap);
 
   /** Replaces the current ColMap with the user-specified map object, but only
-            if no entries have been inserted into the graph yet (both IndicesAreLocal() 
-      and IndicesAreGlobal() are false) or currentmap->PointSameAs(newmap) is true. 
+            if no entries have been inserted into the graph yet (both IndicesAreLocal()
+      and IndicesAreGlobal() are false) or currentmap->PointSameAs(newmap) is true.
       This is a collective function.
       Returns 0 if map is replaced, -1 if not.
-  
+
       \pre (IndicesAreLocal()==false && IndicesAreGlobal()==false) || ColMap().PointSameAs(newmap)==true
   */
   int ReplaceColMap(const Epetra_BlockMap& newmap);
 
   //! Replaces the current DomainMap & Importer with the user-specified map object.
   /** Replaces the current DomainMap and Importer with the user-specified map object, but only
-      if the matrix has been FillCompleted, Importer's TargetMap matches the ColMap 
+      if the matrix has been FillCompleted, Importer's TargetMap matches the ColMap
       and Importer's SourceMap matches the DomainMap (assuming the importer isn't null).  If an Importer
       is passed in, Epetra_CrsMatrix will copy it.
       Returns 0 if map/importer is replaced, -1 if not.
-      
+
       \pre (!NewImporter && ColMap().PointSameAs(NewDomainMap)) || (NewImporter && ColMap().PointSameAs(NewImporter->TargetMap()) && NewDomainMap.PointSameAs(NewImporter->SourceMap()))
   */
   int ReplaceDomainMapAndImporter(const Epetra_BlockMap& NewDomainMap, const Epetra_Import * NewImporter);
@@ -811,10 +811,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
   //! Remove processes owning zero rows from the Maps and their communicator.
   /** Remove processes owning zero rows from the Maps and their communicator.
      \warning This method is ONLY for use by experts.
-     
+
      \warning We make NO promises of backwards compatibility.
      This method may change or disappear at any time.
-     
+
      \param newMap [in] This <i>must</i> be the result of calling
      the removeEmptyProcesses() method on the row BlockMap.  If it
      is not, this method's behavior is undefined.  This pointer
@@ -828,31 +828,31 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
     \pre HaveColMap()==true
    */
   const Epetra_BlockMap& ColMap() const {return(CrsGraphData_->ColMap_);}
-  
+
   //! Returns the DomainMap associated with this graph.
   /*!
     \pre Filled()==true
    */
   const Epetra_BlockMap& DomainMap() const {return(CrsGraphData_->DomainMap_);}
-  
+
   //! Returns the RangeMap associated with this graph.
   /*!
     \pre Filled()==true
    */
   const Epetra_BlockMap& RangeMap() const {return(CrsGraphData_->RangeMap_);}
-  
+
   //! Returns the Importer associated with this graph.
   const Epetra_Import* Importer() const {return(CrsGraphData_->Importer_);}
-  
+
   //! Returns the Exporter associated with this graph.
   const Epetra_Export* Exporter() const {return(CrsGraphData_->Exporter_);}
-  
+
   //! Returns a pointer to the Epetra_Comm communicator associated with this graph.
   const Epetra_Comm& Comm() const {return(Epetra_DistObject::Comm());}
   //@}
-  
+
   //! @name Local/Global ID methods
-  //@{ 
+  //@{
 
   //! Returns the local row index for given global row index, returns -1 if no local row for this global row.
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
@@ -878,7 +878,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
     }
 #endif
   long long GRID64(int LRID_in) const {return(RowMap().GID64(LRID_in));}
-  
+
   //! Returns the local column index for given global column index, returns -1 if no local column for this global column.
   /*!
     \pre HaveColMap()==true (If HaveColMap()==false, returns -1)
@@ -896,7 +896,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
       return( CrsGraphData_->HaveColMap_ ? ColMap().LID(GCID_in) : -1 );
     }
 #endif
-  
+
   //! Returns the global column index for give local column index, returns IndexBase-1 if we don't have this local column.
   /*!
     \pre HaveColMap()==true (If HaveColMap()==false, returns -1)
@@ -912,7 +912,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
     {
       return( CrsGraphData_->HaveColMap_ ? ColMap().GID64(LCID_in) : -1 );
     }
-  
+
   //! Returns true if the GRID passed in belongs to the calling processor in this map, otherwise returns false.
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   bool MyGRID(int GRID_in) const {return(LRID(GRID_in) != -1);}
@@ -921,10 +921,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   bool MyGRID(long long GRID_in) const {return(LRID(GRID_in) != -1);}
 #endif
-  
+
   //! Returns true if the LRID passed in belongs to the calling processor in this map, otherwise returns false.
   bool MyLRID(int LRID_in) const {return(GRID64(LRID_in) != IndexBase64() - 1);}
-  
+
   //! Returns true if the GCID passed in belongs to the calling processor in this map, otherwise returns false.
   /*!
     \pre HaveColMap()==true (If HaveColMap()==false, returns -1)
@@ -943,22 +943,22 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
    */
   bool MyLCID(int LCID_in) const {return(GCID64(LCID_in) != IndexBase64() - 1);}
   //@}
-  
+
   //! @name Inlined Operator Methods
-  //@{ 
-  
+  //@{
+
   //! Inlined bracket operator for fast access to data. (Const and Non-const versions)
   /*! No error checking and dangerous for optimization purposes.
     \param Loc (In) - Local row.
-    
+
     \return reference to pointer to locally indexed Loc row in matrix.
   */
 
-  inline int*  operator[]( int Loc ) { 
+  inline int*  operator[]( int Loc ) {
     if (StorageOptimized()){ return(CrsGraphData_->data->All_Indices_.Values() + CrsGraphData_->IndexOffset_[Loc]);}
     else return(CrsGraphData_->data->Indices_[Loc]); }
 
-  inline int* operator[]( int Loc ) const { 
+  inline int* operator[]( int Loc ) const {
     if (StorageOptimized()) { return(CrsGraphData_->data->All_Indices_.Values() +CrsGraphData_->IndexOffset_[Loc]);}
     else return(CrsGraphData_->data->Indices_[Loc]); }
 
@@ -971,7 +971,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
   Epetra_CrsGraph& operator = (const Epetra_CrsGraph& Source);
 
   //! @name I/O Methods
-  //@{ 
+  //@{
 
   //! Print method
   virtual void Print(std::ostream& os) const;
@@ -981,27 +981,27 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
   //@}
 
   //! @name Deprecated methods:  These methods still work, but will be removed in a future version
-  //@{ 
+  //@{
 
-  //! Use ColMap() instead. 
+  //! Use ColMap() instead.
   const Epetra_BlockMap& ImportMap() const {return(CrsGraphData_->ColMap_);}
-  
+
   //! Use FillComplete() instead.
   int TransformToLocal();
-  
+
   //! Use FillComplete(const Epetra_BlockMap& DomainMap, const Epetra_BlockMap& RangeMap) instead.
   int TransformToLocal(const Epetra_BlockMap* DomainMap, const Epetra_BlockMap* RangeMap);
-  
+
   //@}
 
   //! @name Expert Users and Developers Only
-  //@{ 
+  //@{
 
   //! Returns the reference count of CrsGraphData.
   /*! (Intended for testing purposes.) */
   int ReferenceCount() const {return(CrsGraphData_->ReferenceCount());}
 
-  //! Returns a pointer to the CrsGraphData instance this CrsGraph uses. 
+  //! Returns a pointer to the CrsGraphData instance this CrsGraph uses.
   /*! (Intended for developer use only for testing purposes.) */
   const Epetra_CrsGraphData* DataPtr() const {return(CrsGraphData_);}
 
@@ -1017,7 +1017,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
          */
         void SortGhostsAssociatedWithEachProcessor(bool Flag) {CrsGraphData_->SortGhostsAssociatedWithEachProcessor_ = Flag;}
 
-  //@}  
+  //@}
 
   // functions listed in protected are the ones used by CrsMatrix and VbrMatrix.
   // functions listed in private are the ones that are really private.
@@ -1062,7 +1062,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
     if (StorageOptimized()) return(CrsGraphData_->Data<int_type>().All_Indices_.Values()+CrsGraphData_->IndexOffset_[LocalRow]);
     else return(CrsGraphData_->Data<int_type>().Indices_[LocalRow]);}
 
-  // If column indices are stored in one long array (via a call to OptimizeStorage), 
+  // If column indices are stored in one long array (via a call to OptimizeStorage),
   // IndicesAreContiguous returns true, otherwise it returns false.
   bool IndicesAreContiguous() const {return(CrsGraphData_->IndicesAreContiguous_);}
   bool StaticProfile() const {return(CrsGraphData_->StaticProfile_);}
@@ -1101,7 +1101,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
 
   //! If SortIndices() has been called, this query returns true, otherwise it returns false.
   bool Sorted() const {return(CrsGraphData_->Sorted_);}
-  
+
   //! Removes any redundant column indices in the rows of the graph.
   /*!
     \return Integer error code, set to 0 if successful. Returns 1 if data is shared.
@@ -1130,44 +1130,49 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
   void SetFilled(bool Flag) {CrsGraphData_->Filled_ = Flag;}
   bool Allocated() const {return(CrsGraphData_->Allocated_);}
   void SetAllocated(bool Flag) {CrsGraphData_->Allocated_ = Flag;}
-  
+
   int CheckSizes(const Epetra_SrcDistObject& A);
 
   int CopyAndPermute(const Epetra_SrcDistObject& Source,
-                           int NumSameIDs, 
+                           int NumSameIDs,
                            int NumPermuteIDs,
                            int* PermuteToLIDs,
                            int* PermuteFromLIDs,
-                           const Epetra_OffsetIndex * Indexor);
+                           const Epetra_OffsetIndex * Indexor,
+                           Epetra_CombineMode CombineMode = Zero);
   int CopyAndPermuteRowMatrix(const Epetra_RowMatrix& A,
-                                    int NumSameIDs, 
+                                    int NumSameIDs,
                                     int NumPermuteIDs,
                                     int* PermuteToLIDs,
                                     int* PermuteFromLIDs,
-                                    const Epetra_OffsetIndex * Indexor);
+                                    const Epetra_OffsetIndex * Indexor,
+                                    Epetra_CombineMode CombineMode);
 
   template<typename int_type>
   int CopyAndPermuteRowMatrix(const Epetra_RowMatrix& A,
-                                    int NumSameIDs, 
+                                    int NumSameIDs,
                                     int NumPermuteIDs,
                                     int* PermuteToLIDs,
                                     int* PermuteFromLIDs,
-                                    const Epetra_OffsetIndex * Indexor);
+                                    const Epetra_OffsetIndex * Indexor,
+                                    Epetra_CombineMode CombineMode);
 
   int CopyAndPermuteCrsGraph(const Epetra_CrsGraph& A,
-                                   int NumSameIDs, 
+                                   int NumSameIDs,
                                    int NumPermuteIDs,
                                    int* PermuteToLIDs,
                                    int* PermuteFromLIDs,
-                                   const Epetra_OffsetIndex * Indexor);
-  
+                                   const Epetra_OffsetIndex * Indexor,
+                                   Epetra_CombineMode CombineMode);
+
   template<typename int_type>
   int CopyAndPermuteCrsGraph(const Epetra_CrsGraph& A,
-                                   int NumSameIDs, 
+                                   int NumSameIDs,
                                    int NumPermuteIDs,
                                    int* PermuteToLIDs,
                                    int* PermuteFromLIDs,
-                                   const Epetra_OffsetIndex * Indexor);
+                                   const Epetra_OffsetIndex * Indexor,
+                                   Epetra_CombineMode CombineMode);
 
         int PackAndPrepare(const Epetra_SrcDistObject& Source,
                            int NumExportIDs,
@@ -1199,17 +1204,17 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
 
         int UnpackAndCombine(const Epetra_SrcDistObject& Source,
                              int NumImportIDs,
-                             int* ImportLIDs, 
-                             int LenImports, 
+                             int* ImportLIDs,
+                             int LenImports,
                              char* Imports,
-                             int& SizeOfPacket, 
+                             int& SizeOfPacket,
                              Epetra_Distributor& Distor,
                              Epetra_CombineMode CombineMode,
                              const Epetra_OffsetIndex * Indexor);
 
   void CleanupData();
 
-  Epetra_CrsGraphData* CrsGraphData_;  
+  Epetra_CrsGraphData* CrsGraphData_;
 
 private:
 

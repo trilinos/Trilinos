@@ -47,12 +47,14 @@
 
 #include <Kokkos_Cuda.hpp>
 
+#include <Kokkos_Bitset.hpp>
 #include <Kokkos_UnorderedMap.hpp>
 
 #include <Kokkos_Vector.hpp>
 
 
 //----------------------------------------------------------------------------
+#include <TestBitset.hpp>
 #include <TestUnorderedMap.hpp>
 #include <TestVector.hpp>
 #include <TestDualView.hpp>
@@ -65,7 +67,7 @@ void cuda_test_insert_close(  uint32_t num_nodes
                             , uint32_t num_duplicates
                            )
 {
-  test_insert_close< Kokkos::Cuda >( num_nodes, num_inserts, num_duplicates);
+  test_insert< Kokkos::Cuda >( num_nodes, num_inserts, num_duplicates, true);
 }
 
 void cuda_test_insert_far(  uint32_t num_nodes
@@ -73,7 +75,7 @@ void cuda_test_insert_far(  uint32_t num_nodes
                           , uint32_t num_duplicates
                          )
 {
-  test_insert_far< Kokkos::Cuda >( num_nodes, num_inserts, num_duplicates);
+  test_insert< Kokkos::Cuda >( num_nodes, num_inserts, num_duplicates, false);
 }
 
 void cuda_test_failed_insert(  uint32_t num_nodes )
@@ -94,6 +96,11 @@ void cuda_test_vector_combinations(unsigned int size)
 void cuda_test_dualview_combinations(unsigned int size)
 {
   test_dualview_combinations<int,Kokkos::Cuda>(size);
+}
+
+void cuda_test_bitset()
+{
+  test_bitset<Kokkos::Cuda>();
 }
 
 }

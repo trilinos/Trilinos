@@ -53,7 +53,5 @@
 #include "Panzer_ScatterDirichletResidual_EpetraSG_impl.hpp"
 
 PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::ScatterDirichletResidual_Epetra,int,int)
-PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::ScatterDirichletResidual_Epetra,short,int)
-PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::ScatterDirichletResidual_Epetra,char,int)
 
 #endif

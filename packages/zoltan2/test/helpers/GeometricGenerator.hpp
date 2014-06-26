@@ -651,7 +651,7 @@ public:
   }
 
   CoordinateNormalDistribution(gno_t np_, int dim, CoordinatePoint<T> center_ ,
-                               T sd_x, T sd_y, T sd_z, int wSize) : 
+                               T sd_x, T sd_y, T sd_z, int wSize) :
     CoordinateDistribution<T,lno_t,gno_t>(np_,dim,wSize),
     standartDevx(sd_x), standartDevy(sd_y), standartDevz(sd_z)
   {
@@ -789,8 +789,8 @@ public:
   }
 
 
-  CoordinateGridDistribution(gno_t alongX, gno_t alongY, gno_t alongZ, int dim, 
-                             T l_x, T r_x, T l_y, T r_y, T l_z, T r_z , 
+  CoordinateGridDistribution(gno_t alongX, gno_t alongY, gno_t alongZ, int dim,
+                             T l_x, T r_x, T l_y, T r_y, T l_z, T r_z ,
                              int myRank_, int wSize) :
       CoordinateDistribution<T,lno_t,gno_t>(alongX * alongY * alongZ,dim,wSize),
       leftMostx(l_x), rightMostx(r_x), leftMosty(l_y), rightMosty(r_y), leftMostz(l_z), rightMostz(r_z), myRank(myRank_){
@@ -908,7 +908,7 @@ private:
   T **coords;
   T **wghts;
   WeightDistribution<T,T> **wd;
-  int numWeightsPerCoord; 
+  int numWeightsPerCoord;
   int predistribution;
   RCP<const Teuchos::Comm<int> > comm;
   //RCP< Tpetra::MultiVector<T, lno_t, gno_t, node_t> >tmVector;
@@ -1387,7 +1387,7 @@ private:
     }
   }
 
-  void parseParams(Teuchos::ParameterList params){
+  void parseParams(const Teuchos::ParameterList & params){
     try {
       std::string holeDescription  = "";
       std::string proc_load_distributions = "";
@@ -2445,7 +2445,7 @@ public:
 	  }
 	  CATCH_EXCEPTIONS("solve()")
 
-	  const zoltan2_partId_t *partIds= problem->getSolution().getPartList();
+	  const typename inputAdapter_t::part_t *partIds = problem->getSolution().getPartList();
 
 	  for (int i = 0; i < this->numLocalCoords;++i){
 		  coordinate_grid_parts[i] = partIds[i];

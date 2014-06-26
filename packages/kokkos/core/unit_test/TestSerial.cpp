@@ -61,8 +61,10 @@
 #include <TestTile.hpp>
 #include <TestCrsArray.hpp>
 #include <TestReduce.hpp>
+#include <TestScan.hpp>
 #include <TestAggregate.hpp>
 #include <TestCompilerMacros.hpp>
+#include <TestCXX11.hpp>
 
 namespace Test {
 
@@ -108,6 +110,13 @@ TEST_F( serial, double_reduce_dynamic ) {
 TEST_F( serial, long_reduce_dynamic_view ) {
   TestReduceDynamicView< long ,   Kokkos::Serial >( 1000000 );
 }
+
+TEST_F( serial , scan )
+{
+  TestScan< Kokkos::Serial >( 10 );
+  TestScan< Kokkos::Serial >( 10000 );
+}
+
 
 TEST_F( serial , view_remap )
 {
@@ -260,6 +269,19 @@ TEST_F( serial , compiler_macros )
 {
   ASSERT_TRUE( ( TestCompilerMacros::Test< Kokkos::Serial >() ) );
 }
+
+
+
+//----------------------------------------------------------------------------
+#if defined (KOKKOS_HAVE_CXX11) && (defined KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_SERIAL)
+TEST_F( serial , cxx11 )
+{
+  ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Serial >(1) ) );
+  ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Serial >(2) ) );
+  ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Serial >(3) ) );
+  ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Serial >(4) ) );
+}
+#endif
 
 } // namespace test
 

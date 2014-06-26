@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,7 +44,7 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                                
+
 
 #include "NOX.H"
 
@@ -88,23 +88,23 @@
   #define DEBUG_BLOCKGRAPH(a) a
 #else
   #define DEBUG_BLOCKGRAPH(a)
-#endif 
+#endif
 
 int OffBlock_Manager::idToFind = -1;
 
-OffBlock_Manager::OffBlock_Manager(Problem_Manager& problemMan_, 
-		Epetra_CrsGraph& graph_, int probEqId, int probVarId) :
+OffBlock_Manager::OffBlock_Manager(Problem_Manager& problemMan_,
+        Epetra_CrsGraph& graph_, int probEqId, int probVarId) :
   GenericEpetraProblem(graph_.Comm(), 0),
   problemEqId(probEqId),
   problemVarId(probVarId)
 {
- 
+
   setManager(&problemMan_);
 
   // Assign a meaningful name
   GenericEpetraProblem &problemEq = myManager->getProblem(problemEqId),
                        &problemVar = myManager->getProblem(problemVarId);
-  
+
   std::string myName = "OffBlock " + problemEq.getName() + " wrt " + problemVar.getName();
   setName(myName);
 
@@ -125,13 +125,13 @@ OffBlock_Manager::OffBlock_Manager(Problem_Manager& problemMan_,
 
 // These methods are needed to allow inheritance from GenericEpetraProblem base
 
-bool 
+bool
 OffBlock_Manager::evaluate( NOX::Epetra::Interface::Required::FillType flag,
               const Epetra_Vector *solnVector,
               Epetra_Vector *rhsVector)
 {
   // Determine if fill call is valid
-  if (rhsVector == 0 || flag != NOX::Epetra::Interface::Required::FD_Res) 
+  if (rhsVector == 0 || flag != NOX::Epetra::Interface::Required::FD_Res)
   {
     std::cout << "ERROR: Either invalid RHS vector or call made from other than "
          << "NOX::Epetra::FiniteDifference to OffBlock fill !!" << std::endl;
@@ -159,10 +159,10 @@ OffBlock_Manager::evaluate( NOX::Epetra::Interface::Required::FillType flag,
   return true;
 }
 
-Teuchos::RCP<NOX::Epetra::Group> 
+Teuchos::RCP<NOX::Epetra::Group>
 OffBlock_Manager::getGroup()
 {
-  if( Teuchos::is_null(group) ) 
+  if( Teuchos::is_null(group) )
   {
     std::cout << "ERROR: Unable to get off-block Group for "
          << "dependence of problem " << problemEqId << " on problem "
@@ -173,10 +173,10 @@ OffBlock_Manager::getGroup()
   return( group );
 }
 
-Epetra_CrsMatrix&  
+Epetra_CrsMatrix&
 OffBlock_Manager::getMatrix()
 {
-  if( Teuchos::is_null(matrixOperator) ) 
+  if( Teuchos::is_null(matrixOperator) )
   {
     std::cout << "ERROR: Unable to get FDColoring underlying matrix for "
          << "dependence of problem " << problemEqId << " on problem "
@@ -187,10 +187,10 @@ OffBlock_Manager::getMatrix()
   return( matrixOperator->getUnderlyingMatrix() );
 }
 
-Teuchos::RCP<Epetra_Vector> 
+Teuchos::RCP<Epetra_Vector>
 OffBlock_Manager::getRowMapVec() const
 {
-  if( Teuchos::is_null(rowMapVec) ) 
+  if( Teuchos::is_null(rowMapVec) )
   {
     std::cout << "ERROR: Unable to get Row Map Vector for OffBlock " << getName() << std::endl;
     throw "Problem_Manager ERROR";
@@ -199,22 +199,22 @@ OffBlock_Manager::getRowMapVec() const
   return( rowMapVec );
 }
 
-int 
+int
 OffBlock_Manager::getProblemEqId() const
 {
   return problemEqId;
 }
 
-int 
+int
 OffBlock_Manager::getProblemVarId() const
 {
   return problemVarId;
 }
 
-void 
-OffBlock_Manager::convertBlockRowIndicesToComposite(int numIndices, 
+void
+OffBlock_Manager::convertBlockRowIndicesToComposite(int numIndices,
                          int * blockIndices, int * compositeIndices)
-{ 
+{
   for( int i = 0 ; i < numIndices; ++i )
   {
     // Add a check for index validity ? RWH
@@ -222,10 +222,10 @@ OffBlock_Manager::convertBlockRowIndicesToComposite(int numIndices,
   }
 }
 
-void 
-OffBlock_Manager::convertBlockColIndicesToComposite(int numIndices, 
+void
+OffBlock_Manager::convertBlockColIndicesToComposite(int numIndices,
                          int * blockIndices, int * compositeIndices)
-{ 
+{
   for( int i = 0 ; i < numIndices; ++i )
   {
     // Add a check for index validity, RWH
@@ -233,12 +233,12 @@ OffBlock_Manager::convertBlockColIndicesToComposite(int numIndices,
   }
 }
 
-void 
+void
 OffBlock_Manager::createFDobjects( bool useColoring )
 {
   graph = AA;
 
-  DEBUG_BLOCKGRAPH( std::cout << "OffBlock_Manager::createFDobjects() : incoming graph --> \n" 
+  DEBUG_BLOCKGRAPH( std::cout << "OffBlock_Manager::createFDobjects() : incoming graph --> \n"
                          << *graph << std::endl << "\n\tDone." << std::endl;)
 
   // Note: We use a vector corresponding to compositeSoln
@@ -251,15 +251,15 @@ OffBlock_Manager::createFDobjects( bool useColoring )
   {
     // Now setup each FD Jacobian as its own group/linearsystem
     matrixOperator = Teuchos::rcp( new NOX::Epetra::FiniteDifference(
-      	myManager->nlParams->sublist("Printing"),
-        offBlockInterface, 
-  	*noxVec, 
-  	//rowMapVec, 
-//  	compositeVec, 
-  	graph) );
-  
+          myManager->nlParams->sublist("Printing"),
+        offBlockInterface,
+      *noxVec,
+      //rowMapVec,
+//      compositeVec,
+      graph) );
+
     Teuchos::RCP<NOX::Epetra::Interface::Jacobian> jacInt = matrixOperator;
-  
+
     // Here we create a linear system solely for the sake of filling an
     // off-diagonal block Jacobian contribution using FDC.  The nlParams and
     // statusTest are irrelevant and so are taken as that of the overall
@@ -270,19 +270,19 @@ OffBlock_Manager::createFDobjects( bool useColoring )
         offBlockInterface,
         jacInt,
         matrixOperator,
-  	*rowMapVec) );
-//  	compositeVec, 
-  
+      *rowMapVec) );
+//      compositeVec,
+
     //noxVec = new NOX::Epetra::Vector(*rowMapVec);
 //    NOX::Epetra::Vector tmpNOXVec(compositeVec);
-  
+
     group = Teuchos::rcp( new NOX::Epetra::Group(
       myManager->nlParams->sublist("Printing"),
       offBlockInterface,
       *noxVec,
       linearSystem) );
 
-    DEBUG_BLOCKGRAPH(   
+    DEBUG_BLOCKGRAPH(
       std::cout << "OffBlock_Manager::createFDobjects .... " << myName << std::endl
            << "---------------------------------------------------------------"
            << "graph :" << *graph << std::endl
@@ -305,39 +305,39 @@ OffBlock_Manager::createFDobjects( bool useColoring )
     bool useParallel = false;
     bool distance1 = false;
     int verbose = 0;
-  
+
     DEBUG_BLOCKGRAPH( std::cout << "OffBlock_Manager::createFDobjects() : incoming graph --> \n" << *graph << std::endl;)
-  
+
     colorTime.ResetStartTime();
-  
+
     // Just a dummy for now, but needs to be hooked up correctly.
     //Epetra_Vector &compositeVec = *(myManager->getCompositeSoln());
-  
+
     mapColoring   = Teuchos::rcp( new EpetraExt::CrsGraph_MapColoring(algType, reordering, distance1, verbose) );
     colorMap      = Teuchos::rcp( & ((*mapColoring)(*graph)) );
     colorMapIndex = Teuchos::rcp( new EpetraExt::CrsGraph_MapColoringIndex(*colorMap) );
     columnSet     = Teuchos::rcp( (& (*colorMapIndex)( *graph )));
-  
+
     if (MyPID == 0) {
       printf("\n\tTime to color Jacobian # %d (%d) --> %e sec. \n",
                   problemEqId,problemVarId,colorTime.ElapsedTime());
       std::cout << "\nUsing " << colorMap->NumColors() << " colors for "
            << graph->NumMyRows() << " unknowns\n" << std::endl;
     }
-  
+
     // Now setup each FDC Jacobian as its own group/linearsystem
     matrixOperator = Teuchos::rcp( new NOX::Epetra::FiniteDifferenceColoring(
         myManager->nlParams->sublist("Printing"),
-      	offBlockInterface, 
-  	*noxVec, 
-  	graph, 
-  	colorMap, 
-  	columnSet,
-  	useParallel,
-  	distance1 ) );
-  
+          offBlockInterface,
+      *noxVec,
+      graph,
+      colorMap,
+      columnSet,
+      useParallel,
+      distance1 ) );
+
     Teuchos::RCP<NOX::Epetra::Interface::Jacobian> jacInt = matrixOperator;
-  
+
     // Here we create a linear system solely for the sake of filling an
     // off-diagonal block Jacobian contribution using FDC.  The nlParams and
     // statusTest are irrelevant and so are taken as that of the overall
@@ -349,9 +349,9 @@ OffBlock_Manager::createFDobjects( bool useColoring )
         jacInt,
         matrixOperator,
         *rowMapVec ) );
-  
+
     NOX::Epetra::Vector tmpNOXVec(*rowMapVec);
-  
+
     group = Teuchos::rcp( new NOX::Epetra::Group(
       myManager->nlParams->sublist("Printing"),
       offBlockInterface,
@@ -365,12 +365,12 @@ OffBlock_Manager::createFDobjects( bool useColoring )
   }
 }
 
-Epetra_CrsGraph & 
+Epetra_CrsGraph &
 OffBlock_Manager::createBlockGraphFromComposite(Epetra_CrsGraph & globalGraph)
 {
   // here we simply go through the graph and assign contiguous indices for
   // all unique and meaningful entries
-  
+
   int rowCount = 0;
   int colCount = 0;
   int   numCols;
@@ -390,7 +390,7 @@ OffBlock_Manager::createBlockGraphFromComposite(Epetra_CrsGraph & globalGraph)
         {
           colBlockToComposite[ colCount ] = globalGraph.GCID( indices[col]  );
           colCompositeToBlock[ globalGraph.GCID( indices[col]  ) ] = colCount++ ;
-          
+
         }
       }
     }
@@ -403,7 +403,7 @@ OffBlock_Manager::createBlockGraphFromComposite(Epetra_CrsGraph & globalGraph)
 
   blockRowMap = Teuchos::rcp( new Epetra_Map ( numGlobalRows, rowBlockToComposite.size(), 0, globalGraph.Comm()) );
   blockColMap = Teuchos::rcp( new Epetra_Map ( numGlobalCols, colBlockToComposite.size(), 0, globalGraph.Comm()) );
- 
+
   DEBUG_BLOCKGRAPH( std::cout << "\n----> Block-sized Row Map : " << *blockRowMap << std::endl;)
   DEBUG_BLOCKGRAPH( std::cout << "\n----> Block-sized Col Map : " << *blockColMap << std::endl;)
 
@@ -429,12 +429,12 @@ OffBlock_Manager::createBlockGraphFromComposite(Epetra_CrsGraph & globalGraph)
     DEBUG_BLOCKGRAPH( std::cout << std::endl;)
   }
 
-  
+
   DEBUG_BLOCKGRAPH( std::cout << "\n----> Block-Graph : " << *blockGraph << std::endl;)
-  
+
   blockGraph->FillComplete();
 
-  return *blockGraph; 
+  return *blockGraph;
 }
 
-#endif 
+#endif

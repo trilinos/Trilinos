@@ -1,0 +1,140 @@
+///
+/// \addtogroup stk_util_diag_timer_detail
+/// @{
+///
+/// @brief Timers are part of the diagnostic subsystem.  The allow easy block level and ad
+/// hoc timing with hierarchical display.
+///
+/// Lap time, accumulated time and checkpoint.
+/// 
+/// The timers are best implemented within an application as a member of a class or a
+/// static variable within a function.  Each timer is created with a name and a parent.
+/// This name is looked up within the parent to generate the display hierarchy.  Due to
+/// this overhead, the timer's should be mutable members of rarely created objects whose
+/// timers are created during construction, or as static variables of functions whose
+/// timers are created during the first function execution.  Once created, the timer is
+/// actually a reference to a separate timer container that lives until application shuts
+/// down.
+///
+/// When the timer is created, it is given a name, enable bits and a parent.  If the enable
+/// bits are not provided, they are inherited from the parent.  If the parent is not
+/// provided, it is assigned the root timer as a parent.  When the timer is created, the
+/// parent is searched for the timer's name, if found, then this timer is assigned to the
+/// existing timer.  If not found, a new timer is created.  So, by assigning a unique name
+/// to each class member timer, the hierarchy of object's timers is easily created.
+///
+/// Class member timers should be declared mutable so that they may be update even in
+/// const objects.
+///
+/// Starting and stopping of timers is generally performed using the TimeBlock and
+/// TimeBlockSynchronized sentries.  By using sentry's, you are guaranteed that the timer
+/// will be stopped if it has been started.  The default behavior of the TimeBlock
+/// sentries is to start the timer on construction and stop is on destruction.
+/// Alternatively, you can not start the timer on construction, but start it at a later
+/// time, rest assured that if started it will be stopped by the sentry destructor.
+///
+/// It is not necessary that all timers be used to collect time, they may simply be used
+/// as a timer container for establishing a display hierarchy.
+///
+/// \anchor stk_util_diag_timer_howto_add_to_class
+/// To time operations within an object:<BR>
+///
+/// \code
+///     #include <stk_util/diag/Timer.hpp>
+///
+///     class AClass
+///     {
+///     public:
+///       AClass(const std::string &name, ParentClass &parent)
+///       : m_timerAClass(std::string("AClass ") + name, Diag::TIMER_REGION, parent.getParentTimer()),
+///         m_timerInitialize("Initialize", m_timerAClass),
+///         m_timerExecute("Execute", m_timerAClass)
+///       {}
+///    
+///       void initialize() {
+///         Diag::Timer::TimeBlock _timer(m_timerInitialize);
+///    
+///         ...
+///       }
+///    
+///       void execute() {
+///         Diag::Timer::TimeBlock _timer(m_timerExecute);
+///    
+///         ...
+///       }
+///    
+///     private:
+///       mutable Diag::Timer		m_timerAClass;		///< AClass's root timer
+///       mutable Diag::Timer		m_timerInitialize;	///< Initialize timer
+///       mutable Diag::Timer		m_timerExecute;		///< Execute timer
+///     };
+/// \endcode
+///
+/// \anchor stk_util_diag_timer_howto_add_to_function
+///
+/// To time functions:<BR>
+///
+/// \code
+///     void
+///     aFunction()
+///     {
+///       static Diag::Timer a_function_timer("aFunction", Diag::TIMER_PROFILE1);
+///
+///       Diag::Timer::TimeBlock _timer(a_function_timer);
+///    
+///       ...
+///     }
+/// \endcode
+///
+///
+/// \anchor stk_util_diag_timer_howto_checkpoint
+/// \section stk_util_diag_timer_checkpoint Checkpointing an application timers
+///
+/// Printing of the diagnostic timer's is generally performed by the framework.  However
+/// for non-Solution Control based applications, the following will enable the
+/// checkpointed output from the timers.
+///
+/// \code
+///     Int step = (Int) parameters().value( "GLOBAL_TIMESTEP_COUNTER" ) + 1;
+///     Fmwk::Domain::singleton()->print_timer_information(step);
+/// \endcode
+///
+/// \anchor stk_util_diag_timer_howto_stop_watch
+/// \section stk_util_diag_timer_stop_watch Using the diagnostic timers for examining execution times
+///
+/// The timers are similar to a stop watch.  They maintain a lap timer and accumulated completed lap
+/// time.  Once a lap is started, retrieving the lap time will give you the time since the most
+/// recent start.  Once the lap is stopped, the completed lap time is accumulated to the timer.
+/// Retrieving the lap time will give you the time of the most recent completed lap.  Retrieving the
+/// accumulated time does not include any time from a started lap, only laps which have been
+/// completed.
+///
+/// You can also checkpoint the timers by using the <b>checkpoint()</b> function.  Calling
+/// getAccumulatedLap(true) will provide you with the accumulated time since the last
+/// checkpoint.
+///
+/// For Example:<BR>
+///
+/// \code
+///     {
+///       {
+///         Diag::Timer _timer(m_timerExecute);
+///         for (int i = 0; i < some_silly_number; ++i) {
+///           Do some heavy lifting
+///    
+///           std::cout << "This heavy lifing has taken " << m_timerExecute.getCpuTime().getLap();
+///         }
+///       }
+///    
+///       std::cout << "This heavy lifting:" << std::endl
+///                 << "started at " << m_timerExecute.getCpuTime().getStart() << std::endl
+///                 << "took " << m_timerExecute.getCpuTime().getLap() << std::endl
+///                 << "stopped at " << m_timerExecute.getCpuTime().getStop() << std::endl
+///                 << "and has taken " << m_timerExecute.getCpuTime().getAccumulatedLap(false) << std::endl
+///                 << "and has taken " << m_timerExecute.getCpuTime().getAccumulatedLap(true)
+///                 << " since being checkpointed" << std::endl;
+///     }
+/// \endcode
+///
+/// @} 
+///

@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -80,7 +80,7 @@ Coupling_Matlab_Interface::Coupling_Matlab_Interface(Problem_Manager &  manager_
 //----------------------  Commands for Coupling solver ------------------------
 //-----------------------------------------------------------------------------
 
-Coupling_Matlab_Interface::CommandBase::CommandBase( EpetraExt::EpetraExt_MatlabEngine & engine_, 
+Coupling_Matlab_Interface::CommandBase::CommandBase( EpetraExt::EpetraExt_MatlabEngine & engine_,
                           Problem_Manager & problemManager_) :
   Matlab_Interface::CommandBase( engine_, *problemManager_.getCompositeSolver() ),
   problemManager(problemManager_)
@@ -92,7 +92,7 @@ Coupling_Matlab_Interface::CommandBase::CommandBase( EpetraExt::EpetraExt_Matlab
 //----------------   Matlab Coupling Interface Commands   ---------------------
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Coupling_Matlab_Interface::CMD_problemSummary::doCommand( std::string commandLine )
 {
   problemManager.outputStatus(std::cout);
@@ -101,7 +101,7 @@ Coupling_Matlab_Interface::CMD_problemSummary::doCommand( std::string commandLin
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Coupling_Matlab_Interface::CMD_showAllValid::doCommand( std::string commandLine )
 {
 
@@ -127,7 +127,7 @@ Coupling_Matlab_Interface::CMD_showAllValid::doCommand( std::string commandLine 
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Coupling_Matlab_Interface::CMD_compPreconditioner::doCommand( std::string commandLine )
 {
     //Epetra_Operator * dummyOp = NULL;
@@ -140,10 +140,10 @@ Coupling_Matlab_Interface::CMD_compPreconditioner::doCommand( std::string comman
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Coupling_Matlab_Interface::CMD_compJac::doCommand( std::string commandLine )
 {
-  commandLine.replace( commandLine.find(command), command.size(), ""); 
+  commandLine.replace( commandLine.find(command), command.size(), "");
   std::string::size_type loc = commandLine.find(" ");
   if( std::string::npos == loc )
   {
@@ -151,7 +151,7 @@ Coupling_Matlab_Interface::CMD_compJac::doCommand( std::string commandLine )
     return false;
   }
   std::string arg1 = commandLine.substr(0, loc);
-  commandLine.replace( 0, loc+1, ""); 
+  commandLine.replace( 0, loc+1, "");
   loc = commandLine.find("]");
   std::string arg2 = commandLine.substr(0, loc);
   int probId = atoi( arg1.c_str()) ,
@@ -166,10 +166,10 @@ Coupling_Matlab_Interface::CMD_compJac::doCommand( std::string commandLine )
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Coupling_Matlab_Interface::CMD_setXvec::doCommand( std::string commandLine )
 {
-  commandLine.replace( commandLine.find(command), command.size(), ""); 
+  commandLine.replace( commandLine.find(command), command.size(), "");
   std::string::size_type loc = commandLine.find("]");
   if( std::string::npos == loc )
   {
@@ -179,12 +179,12 @@ Coupling_Matlab_Interface::CMD_setXvec::doCommand( std::string commandLine )
   std::string arg1 = commandLine.substr(0, loc);
   int probId = atoi( arg1.c_str()) ;
 
-  commandLine.replace( 0, loc+2, ""); 
+  commandLine.replace( 0, loc+2, "");
 
-  std::cout << "Set solution vector for Problem " << probId << " using \"" 
+  std::cout << "Set solution vector for Problem " << probId << " using \""
        << commandLine << "\"" << std::endl;
 
-  // Note we set both vectors, the one one in the problem, and the one in 
+  // Note we set both vectors, the one one in the problem, and the one in
   // the corresponding group
 
   Epetra_Vector * p_soln = problemManager.getProblem(probId).getSolution().get();
@@ -197,10 +197,10 @@ Coupling_Matlab_Interface::CMD_setXvec::doCommand( std::string commandLine )
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Coupling_Matlab_Interface::CMD_compRes::doCommand( std::string commandLine )
 {
-  commandLine.replace( commandLine.find(command), command.size(), ""); 
+  commandLine.replace( commandLine.find(command), command.size(), "");
   std::string::size_type loc = commandLine.find("]");
   if( std::string::npos == loc )
   {
@@ -219,7 +219,7 @@ Coupling_Matlab_Interface::CMD_compRes::doCommand( std::string commandLine )
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Coupling_Matlab_Interface::CMD_syncAllGroupX::doCommand( std::string command )
 {
 
@@ -245,7 +245,7 @@ Coupling_Matlab_Interface::CMD_syncAllGroupX::doCommand( std::string command )
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Coupling_Matlab_Interface::CMD_doXfers::doCommand( std::string command )
 {
   problemManager.syncAllProblems();
@@ -255,7 +255,7 @@ Coupling_Matlab_Interface::CMD_doXfers::doCommand( std::string command )
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Coupling_Matlab_Interface::CMD_getAllX::doCommand( std::string command )
 {
   map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemIter = problemManager.getProblems().begin();
@@ -282,10 +282,10 @@ Coupling_Matlab_Interface::CMD_getAllX::doCommand( std::string command )
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Coupling_Matlab_Interface::CMD_getJac::doCommand( std::string commandLine )
 {
-  commandLine.replace( commandLine.find(command), command.size(), ""); 
+  commandLine.replace( commandLine.find(command), command.size(), "");
   std::string::size_type loc = commandLine.find(" ");
   if( std::string::npos == loc )
   {
@@ -293,7 +293,7 @@ Coupling_Matlab_Interface::CMD_getJac::doCommand( std::string commandLine )
     return false;
   }
   std::string arg1 = commandLine.substr(0, loc);
-  commandLine.replace( 0, loc+1, ""); 
+  commandLine.replace( 0, loc+1, "");
   loc = commandLine.find("]");
   std::string arg2 = commandLine.substr(0, loc);
   int probId = atoi( arg1.c_str()) ,
@@ -315,7 +315,7 @@ Coupling_Matlab_Interface::CMD_getJac::doCommand( std::string commandLine )
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Coupling_Matlab_Interface::CMD_getAllJac::doCommand( std::string commandLine )
 {
   map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemIter = problemManager.getProblems().begin();
@@ -341,10 +341,10 @@ Coupling_Matlab_Interface::CMD_getAllJac::doCommand( std::string commandLine )
     }
 
     // Do off-diagoanl blocks if appropriate
-    if( problemManager.useOffBlocks() ) 
+    if( problemManager.useOffBlocks() )
     {
 #ifdef HAVE_NOX_EPETRAEXT
-      for( unsigned int k = 0; k < problem.getDependentProblems().size(); ++k) 
+      for( unsigned int k = 0; k < problem.getDependentProblems().size(); ++k)
       {
         int depId = problem.getDependentProblems()[k];
 
@@ -369,10 +369,10 @@ Coupling_Matlab_Interface::CMD_getAllJac::doCommand( std::string commandLine )
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Coupling_Matlab_Interface::CMD_getRes::doCommand( std::string commandLine )
 {
-  commandLine.replace( commandLine.find(command), command.size(), ""); 
+  commandLine.replace( commandLine.find(command), command.size(), "");
   std::string::size_type loc = commandLine.find("]");
   if( std::string::npos == loc )
   {
@@ -395,7 +395,7 @@ Coupling_Matlab_Interface::CMD_getRes::doCommand( std::string commandLine )
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Coupling_Matlab_Interface::CMD_getAllRes::doCommand( std::string command )
 {
   map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemIter = problemManager.getProblems().begin();
@@ -423,15 +423,15 @@ Coupling_Matlab_Interface::CMD_getAllRes::doCommand( std::string command )
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Coupling_Matlab_Interface::CMD_getPrecMatrix::doCommand( std::string command )
 {
 
   std::cout << "Command currently unspupported." << std::endl;
   return false;
   //Epetra_RowMatrix & rowMatrix = *(problemManager.get_matrix());
-  //engine.PutRowMatrix( rowMatrix, "PrecMatrix", false );                                              
-  return true;                                                                                       
+  //engine.PutRowMatrix( rowMatrix, "PrecMatrix", false );
+  return true;
 
 }
 

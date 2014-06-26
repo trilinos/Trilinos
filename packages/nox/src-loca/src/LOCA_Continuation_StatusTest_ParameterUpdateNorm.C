@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -48,16 +48,16 @@
 // ************************************************************************
 //@HEADER
 
-#include "LOCA_Continuation_StatusTest_ParameterUpdateNorm.H" 
+#include "LOCA_Continuation_StatusTest_ParameterUpdateNorm.H"
 #include "LOCA_Continuation_ExtendedGroup.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Solver_Generic.H"
 #include "NOX_Utils.H"
 
 LOCA::Continuation::StatusTest::ParameterUpdateNorm::ParameterUpdateNorm(
-							       double rtol_, 
-							       double atol_,
-							       double tol_) :
+                                   double rtol_,
+                                   double atol_,
+                                   double tol_) :
   rtol(rtol_),
   atol(atol_),
   tol(tol_),
@@ -71,16 +71,16 @@ LOCA::Continuation::StatusTest::ParameterUpdateNorm::~ParameterUpdateNorm()
 {
 }
 
-NOX::StatusTest::StatusType 
+NOX::StatusTest::StatusType
 LOCA::Continuation::StatusTest::ParameterUpdateNorm::checkStatus(
-					 const NOX::Solver::Generic& problem)
+                     const NOX::Solver::Generic& problem)
 {
   // Get solution groups from solver
   const NOX::Abstract::Group& soln = problem.getSolutionGroup();
   const NOX::Abstract::Group& oldsoln = problem.getPreviousSolutionGroup();
 
   // Cast soln group to continuation group
-  const LOCA::Continuation::ExtendedGroup* conGroupPtr = 
+  const LOCA::Continuation::ExtendedGroup* conGroupPtr =
     dynamic_cast<const LOCA::Continuation::ExtendedGroup*>(&soln);
 
   // Check that group is a continuation group, return converged if not
@@ -90,43 +90,43 @@ LOCA::Continuation::StatusTest::ParameterUpdateNorm::checkStatus(
   }
 
   // Get solution vectors
-  const LOCA::Continuation::ExtendedVector& x = 
+  const LOCA::Continuation::ExtendedVector& x =
     dynamic_cast<const LOCA::Continuation::ExtendedVector&>(soln.getX());
-  const LOCA::Continuation::ExtendedVector& xold = 
+  const LOCA::Continuation::ExtendedVector& xold =
     dynamic_cast<const LOCA::Continuation::ExtendedVector&>(oldsoln.getX());
-  
+
   // On the first iteration, the old and current solution are the same so
-  // we should return the test as unconverged until there is a valid 
+  // we should return the test as unconverged until there is a valid
   // old solution (i.e. the number of iterations is greater than zero).
   int niters = problem.getNumIterations();
-  if (niters == 0) 
+  if (niters == 0)
   {
     paramUpdateNorm = 1.0e+12;
     status = NOX::StatusTest::Unconverged;
     return status;
-  } 
+  }
 
-  paramUpdateNorm = 
+  paramUpdateNorm =
     fabs(x.getParam() - xold.getParam()) / (rtol*fabs(xold.getParam()) + atol);
 
-  if (paramUpdateNorm < tol) 
+  if (paramUpdateNorm < tol)
     status = NOX::StatusTest::Converged;
   else
     status = NOX::StatusTest::Unconverged;
-  
+
   return status;
 }
 
-NOX::StatusTest::StatusType 
+NOX::StatusTest::StatusType
 LOCA::Continuation::StatusTest::ParameterUpdateNorm::getStatus() const
 {
   return status;
 }
 
 
-ostream& 
-LOCA::Continuation::StatusTest::ParameterUpdateNorm::print(ostream& stream, 
-							   int indent) const
+ostream&
+LOCA::Continuation::StatusTest::ParameterUpdateNorm::print(ostream& stream,
+                               int indent) const
 {
   for (int j = 0; j < indent; j++)
     stream << ' ';
@@ -138,25 +138,25 @@ LOCA::Continuation::StatusTest::ParameterUpdateNorm::print(ostream& stream,
 }
 
 
-double 
+double
 LOCA::Continuation::StatusTest::ParameterUpdateNorm::getUpdateNorm() const
 {
   return paramUpdateNorm;
-}   
+}
 
-double 
+double
 LOCA::Continuation::StatusTest::ParameterUpdateNorm::getRTOL() const
 {
   return rtol;
 }
 
-double 
+double
 LOCA::Continuation::StatusTest::ParameterUpdateNorm::getATOL() const
 {
   return atol;
 }
 
-double 
+double
 LOCA::Continuation::StatusTest::ParameterUpdateNorm::getTOL() const
 {
   return tol;

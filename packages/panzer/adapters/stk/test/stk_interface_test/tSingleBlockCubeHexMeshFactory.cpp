@@ -63,15 +63,15 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcpFromRef;
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 void test1(Teuchos::FancyOStream &out, bool &success, MPI_Comm & comm);
 void test2(Teuchos::FancyOStream &out, bool &success, MPI_Comm & comm);
 void test4(Teuchos::FancyOStream &out, bool &success, MPI_Comm & comm);
 void test27(Teuchos::FancyOStream &out, bool &success, MPI_Comm & comm);
 
-void entityVecToGIDVec(const std::vector<stk::mesh::Entity*> & eVec,
-                             std::vector<stk::mesh::EntityId> & gidVec)
+void entityVecToGIDVec(const std::vector<stk_classic::mesh::Entity*> & eVec,
+                             std::vector<stk_classic::mesh::EntityId> & gidVec)
 {
    gidVec.resize(eVec.size());
    for(std::size_t i=0;i<eVec.size();i++)
@@ -187,8 +187,8 @@ void test2(Teuchos::FancyOStream &out, bool &success,MPI_Comm & comm)
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getEdgeRank()),2*(4+1)*(5+1)+4*(2+1)*(5+1)+5*(2+1)*(4+1));
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),(4+1)*(2+1)*(5+1));
 
-   std::vector<stk::mesh::Entity*> myElements;
-   std::vector<stk::mesh::EntityId> myGids;
+   std::vector<stk_classic::mesh::Entity*> myElements;
+   std::vector<stk_classic::mesh::EntityId> myGids;
    mesh->getMyElements(myElements);
    entityVecToGIDVec(myElements,myGids);
 
@@ -242,8 +242,8 @@ void test4(Teuchos::FancyOStream &out, bool &success,MPI_Comm & comm)
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getEdgeRank()),2*(4+1)*(5+1)+4*(2+1)*(5+1)+5*(2+1)*(4+1));
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),(4+1)*(2+1)*(5+1));
 
-   std::vector<stk::mesh::Entity*> myElements;
-   std::vector<stk::mesh::EntityId> myGids;
+   std::vector<stk_classic::mesh::Entity*> myElements;
+   std::vector<stk_classic::mesh::EntityId> myGids;
    mesh->getMyElements(myElements);
    entityVecToGIDVec(myElements,myGids);
 
@@ -312,8 +312,8 @@ void test27(Teuchos::FancyOStream &out, bool &success,MPI_Comm & comm)
    TEST_EQUALITY(mesh->getNumSidesets(),6);
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getElementRank()),6*9*12);
 
-   std::vector<stk::mesh::Entity*> myElements;
-   std::vector<stk::mesh::EntityId> myGids;
+   std::vector<stk_classic::mesh::Entity*> myElements;
+   std::vector<stk_classic::mesh::EntityId> myGids;
    mesh->getMyElements(myElements);
    entityVecToGIDVec(myElements,myGids);
 }

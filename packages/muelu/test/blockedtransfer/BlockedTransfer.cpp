@@ -384,7 +384,7 @@ int main(int argc, char *argv[]) {
   X->putScalar((SC) 0.0);
 
   LO nIts = 9;
-  H.Iterate(*B, nIts, *X);
+  H.Iterate(*B, *X, nIts);
 
 
   return EXIT_SUCCESS;

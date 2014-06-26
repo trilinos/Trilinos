@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -49,11 +49,11 @@
 /* ************************************************************************ */
 /* ************************************************************************ */
 
-/*! 
+/*!
   \mainpage NOX & LOCA: Object-Oriented Nonlinear Solver and Continuation Packages
 
   \section introduction Introduction
-  
+
   %NOX is short for <em>Nonlinear Object-Oriented Solutions</em>, and
   its objective is to enable the robust and efficient solution of the
   equation: \f$ F(x)=0 \f$, where \f$F:\Re^n \rightarrow \Re^n\f$.
@@ -73,7 +73,7 @@
   F(x,p)=0
   \f$
   and their bifurcations, where
-  \f$F:\Re^n\times\Re^m\rightarrow\Re^n\f$.  For %LOCA specific information, 
+  \f$F:\Re^n\times\Re^m\rightarrow\Re^n\f$.  For %LOCA specific information,
   see \ref loca_overview.
 
   \section announcements Announcements
@@ -113,35 +113,35 @@
 
   <p>We recommend that users and developers subscribe to the following mailing lists as appropriate.
   <ul>
-  <li><a href="http://software.sandia.gov/mailman/listinfo/nox-announce">NOX-Announce Mailing List</a> - 
+  <li><a href="http://software.sandia.gov/mailman/listinfo/nox-announce">NOX-Announce Mailing List</a> -
   Low-volume, primarily for release announcements. (Highly Recommended)
-  <li><a href="http://software.sandia.gov/mailman/listinfo/nox-users">NOX-Users Mailing List</a> - 
+  <li><a href="http://software.sandia.gov/mailman/listinfo/nox-users">NOX-Users Mailing List</a> -
   Discussion forum for users of %NOX. (Recommended)
-  <li><a href="http://software.sandia.gov/mailman/listinfo/nox-developers">NOX-Developers Mailing List</a> - 
+  <li><a href="http://software.sandia.gov/mailman/listinfo/nox-developers">NOX-Developers Mailing List</a> -
   Discussion forum for %NOX developers. (Developers)
-  <li><a href="http://software.sandia.gov/mailman/listinfo/nox-checkins">NOX-Checkins Mailing List</a> - 
+  <li><a href="http://software.sandia.gov/mailman/listinfo/nox-checkins">NOX-Checkins Mailing List</a> -
   CVS Commit Messages (Active  Developers)
   </ul>
-  
+
   \section contributors NOX & LOCA Contributors
-  
+
   The following people have contributed code to %NOX and/or %LOCA:
-  
+
   <ul>
   <li> Brett Bader, Sandia National Labs, bwbader@sandia.gov
   <li> Russ Hooper, Sandia National Labs, rhoope@sandia.gov
-  <li> <a href="http://csmr.ca.sandia.gov/~tgkolda/">Tammy Kolda</a>,  
-  Sandia National Labs, 
+  <li> <a href="http://csmr.ca.sandia.gov/~tgkolda/">Tammy Kolda</a>,
+  Sandia National Labs,
   tgkolda@sandia.gov
   <li> Roger Pawlowski, Sandia National Labs, rppawlo@sandia.gov (%NOX Project Lead)
   <li> Eric Phipps, Sandia National Labs, etphipp@sandia.gov (Primary %LOCA developer)
   <li> Andy Salinger, Sandia National Labs, agsalin@sandia.gov (%LOCA Project Lead)
   </ul>
-  
+
   \section questions For All Other Questions and Comments...
-  
+
   Please contact Roger Pawlowski (rppawlo@sandia.gov) or Eric Phipps (etphipp@sandia.gov).
-  
+
 */
 
 /* ************************************************************************ */
@@ -162,10 +162,10 @@ To get started with %NOX, you'll want to follow these four steps.
 
 \section documentation  Generating Documentation
 
-The documentation is available online at 
+The documentation is available online at
 <a href="http://trilinos.sandia.gov/packages/nox/">http://trilinos.sandia.gov/packages/nox/</a>.
 
-To generate a local copy of the documentation, you'll need to have doxygen installed. 
+To generate a local copy of the documentation, you'll need to have doxygen installed.
 Then follow the instructions in \c nox/doc/README.
 
 The documentation is generated in the source directory tree.  The main page is \c nox/doc/html/index.html.
@@ -344,7 +344,7 @@ Abstract::Group which contains the initial guess as its x-vector. See
 
 // Construct an object that derives from the abstract Group object. Here
 // we call it the ExampleGroup. It should contain the initial guess.
-Teuchos::RCP<UserConcreteGroup> grp = 
+Teuchos::RCP<UserConcreteGroup> grp =
   Teuchos::rcp(new UserConcreteGroup);
 \endcode
 
@@ -366,7 +366,7 @@ failure. For example...
 
 These and other status tests can be combined using the
 NOX::StatusTest::Combo object. It takes an arbitrary number of status
-tests and either AND's or OR's them together.  
+tests and either AND's or OR's them together.
 
 Alternatively, users can build a set of status tests from a Teuchos::ParameterList by using the NOX::StatusTest::Factory object.  See NOX::StatusTest::Factory for parameter list arguments and examples.
 
@@ -383,7 +383,7 @@ Teuchos::RCP<NOX::StatusTest::MaxIters> statusTestMaxIters =
   Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
 Teuchos::RCP<NOX::StatusTest::Combo> statusTestsCombo =
   Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR,
-                                          statusTestNormF, 
+                                          statusTestNormF,
                                           statusTestMaxIters));
 \endcode
 
@@ -392,7 +392,7 @@ This test uses an OR combination, meaning that either test registered with the C
 \section step3_stepc Step C: Set the solver parameters
 
 Next, we set up a parameter list containing the information on what
-types of solvers and so forth should be used. 
+types of solvers and so forth should be used.
 
 \code
 // Create the list of solver parameters
@@ -418,7 +418,7 @@ initial guess, the status tests, and the solver parameters.
 
 \code
 // Create the solver
-Teuchos::RCP<NOX::Solver::Generic> solver = 
+Teuchos::RCP<NOX::Solver::Generic> solver =
   NOX::Solver::buildSolver(grp, statusTestsCombo, solverParametersPtr);
 
 // Solve the nonlinear system
@@ -463,7 +463,7 @@ Although we don't recommend it, users can link %NOX and %LOCA to their applicati
 
 \verbatim
 NOX_PREFIX = /usr/local
-LDFLAGS = -L$(NOX_PREFIX)/lib 
+LDFLAGS = -L$(NOX_PREFIX)/lib
 LIBS = -lnox
 CXXFLAGS = -I$(NOX_PREFIX)/include/
 \endverbatim
@@ -472,8 +472,8 @@ Compiling with LAPACK support:
 
 \verbatim
 NOX_PREFIX = /usr/local
-LDFLAGS = -L$(NOX_PREFIX)/lib 
-LIBS = -lnox -lnoxlapack -llapack -lblas 
+LDFLAGS = -L$(NOX_PREFIX)/lib
+LIBS = -lnox -lnoxlapack -llapack -lblas
 CXXFLAGS = -I$(NOX_PREFIX)/include/
 \endverbatim
 
@@ -483,8 +483,8 @@ We assume that Epetra, EpetraExt, Aztec, and Ifpack are installed in the same di
 
 \verbatim
 NOX_PREFIX = /usr/local
-LDFLAGS = -L$(NOX_PREFIX)/lib 
-LIBS = -lnox -lnoxepetra -laztecoo -lifpack -lepetraext -lepetra  -llapack -lblas 
+LDFLAGS = -L$(NOX_PREFIX)/lib
+LIBS = -lnox -lnoxepetra -laztecoo -lifpack -lepetraext -lepetra  -llapack -lblas
 CXXFLAGS = -I$(NOX_PREFIX)/include/
 \endverbatim
 
@@ -510,7 +510,7 @@ CVS Respository View/Query Tool: <a
 href="http://software.sandia.gov/bonsai/cvsqueryform.cgi?cvsroot=/space/CVS&module=nox">Trilinos Bonsai</a>
 
 The following pages are relevant to developers.
-<ul> 
+<ul>
 <li>\ref cvsrepos
 <li>\ref coding
 <li>\ref prerelease
@@ -526,39 +526,39 @@ The following pages are relevant to developers.
 /*! \page nox_release_information NOX and LOCA Release Information (Last updated March 1st 2010)
 
 
- %NOX/%LOCA version 10.2 will be release as part of Trilinos 10.2 in March 2010. 
+ %NOX/%LOCA version 10.2 will be release as part of Trilinos 10.2 in March 2010.
  <ul>
- <li> We have fixed a long standing issue with nox regarding overloading of the std::ostream operator.  If you are compiling nox and get a compile/link error that fails to find the "operator<<" method on one of your classes, then you need to move your overloaded std::ostream function for that object into the correct namespace (the same namespace as the object it is operating on).  
+ <li> We have fixed a long standing issue with nox regarding overloading of the std::ostream operator.  If you are compiling nox and get a compile/link error that fails to find the "operator<<" method on one of your classes, then you need to move your overloaded std::ostream function for that object into the correct namespace (the same namespace as the object it is operating on).
 
 The following artice by Herb Sutter explains this issue:
 
 <a href="http://www.gotw.ca/publications/mill08.htm">Herb Sutter Article</a>
- 
+
  </ul>
 
 
- %NOX/%LOCA version 10.0 will be release as part of Trilinos 10.0 in September 2009.  
+ %NOX/%LOCA version 10.0 will be release as part of Trilinos 10.0 in September 2009.
  <ul>
  <li> NOX has been changed over to use the cmake build system.  The autotools have been deprecated and will be completely removed in the next release.
  </ul>
- %NOX/%LOCA version 9.0 will be release as part of Trilinos 9.0 in September 2008.  
+ %NOX/%LOCA version 9.0 will be release as part of Trilinos 9.0 in September 2008.
  <ul>
  <li> No major changes to nox/loca.
  </ul>
  %NOX/%LOCA version 8.0 will be release as part of Trilinos 8.0 in early September 2007.  Current changes/additions:
 <ul>
-  <li> All %Manager classes have been replaced with Factories.  This change clarifies what occurs during reset calls and simplifies object management.  No more handles.  The factories return "Generic" base class objects. 
+  <li> All %Manager classes have been replaced with Factories.  This change clarifies what occurs during reset calls and simplifies object management.  No more handles.  The factories return "Generic" base class objects.
   <li> A new concrete implementation of the group/vector has been added to support %Thyra objects.  %Thyra is a set of abstract interfaces designed to provide developers of abstract numerical algorithms a single point of contact with codes.  It plays the same role as the NOX::Abstract::Group and NOX::Abstract::Vector play in NOX. More information on %Thyra can be found at <A HREF="http://trilinos.sandia.gov/packages/thyra">Thyra</A>.  The group leverages the <A HREF="http://trilinos.sandia.gov/packages/stratimikos">Stratimikos library</A> to build the linear solver and preconditioner.  In the future, we plan to move away from the direct Epetra support class as the %Thyra wrappers gain more functionality.  Examples can be found in nox/test/epetra/Thyra_2Dsim directory.
-  <li> A wrapper called Thyra::NOXNonlinearSolver has been added that derives from the Thyra::NonlinearSolverBase class.  This allows abstract numerical agorithms to use NOX as the nonlinear solver through a Thyra abstract interface.  In particular, NOX can now be used by Rythmos. 
+  <li> A wrapper called Thyra::NOXNonlinearSolver has been added that derives from the Thyra::NonlinearSolverBase class.  This allows abstract numerical agorithms to use NOX as the nonlinear solver through a Thyra abstract interface.  In particular, NOX can now be used by Rythmos.
   <li> A NOX::StatusTest::Factory has been added to allow for the construction of an entire status test set via a parameter list.  Please use the nonmember functions to build parameter lists instead of using the Factory object directly.
   <li> The NOX::Utils object can now take a parameter sublist to enable the print options specified with the "Output Information" parameter.  Previously the user had to sum the print options into an integer that was set in the parameter list.  Now the user can just specify a sublist of print options for the "Output Information" parameter.  Setting the integer still works.  Here is an example:
 \code
-Teuchos::ParameterList p; 
+Teuchos::ParameterList p;
 p.set("MyPID", myPID);
 p.set("Output Processor", printProc);
 p.set("Output Precision", 3);
 p.set("Output Stream", outputstream);
-p.set("Error Stream", outputstream);   
+p.set("Error Stream", outputstream);
 Teuchos::ParameterList& info = p.sublist("Output Information");
 info.set("Error", true);
 info.set("Details", true);
@@ -566,8 +566,8 @@ info.set("Outer Iteration StatusTest", true);
 info.set("Outer Iteration", true);
 NOX::Utils utils3(p);
 \endcode
-  <li> Removed all instances of enumerated types from the parameter list.  This was causing problems with the python interfaces.  Enumerated type are now std::string types. 
-  <li> The RefCountPtr class in Teuchos was changed to RCP to shorten the amount of code.  All instances of RefCountPtr should be changed to RCP.  There is a script available in Teuchos to automatically make this change to any package.  
+  <li> Removed all instances of enumerated types from the parameter list.  This was causing problems with the python interfaces.  Enumerated type are now std::string types.
+  <li> The RefCountPtr class in Teuchos was changed to RCP to shorten the amount of code.  All instances of RefCountPtr should be changed to RCP.  There is a script available in Teuchos to automatically make this change to any package.
 </ul>
 
  %NOX/%LOCA version 7.0 will be release as part of Trilinos 7.0 in early September 2006.  %NOX and %LOCA have undergone many important changes between the 6.0 and 7.0 release:
@@ -581,7 +581,7 @@ NOX::Utils utils3(p);
   <li> The epetra interfaces (NOX::Epetra::Interface namespace) have been changed.  They now take an Epetra_Operator as an argument when evaluating the Jacobian and preconditioner objects.  While this is redundant for our base epetra group (since it shares the same operator between groups), this allows users to override the eptra group and use separate operators for each group if desired.
   <li> There are 2 options for creating an Ifpack preconditioners.  The original code where the "Preconditioner" option in the "Linear Solver" sublist was set to "Ifpack" and the new ifpack code "New Ifpack".  The original option explicitly constructs an ifpack ilu object that has since been deprecated and will most likely be removed in the next release (Trilinos 8.0).  The option "New Ifpack" uses the new ifpack factory object.  You can now create a parameter list that directly uses the ifpack factory arguments and can create any ifpack preconditioner (not limited to ILU).  We recommend switching to the "New Ifpack" preconditionerr interface asap.
   <li> In the epetra support, the preconditioner options "AztecOO", "New Ifpack", and "ML" allow users to recompute the preconditioner using the same graph so that preconditioner memory is not allocated and destroyed each linear solve.  The new "Linear Solver" sublist key is "Preconditioner Reuse Policy" with the possible values "Rebuild", "Reuse", and "Recompute".  If you choose "Rebuild", this is what nox has done in previous releases - destroy, reallocate and recompute the preconditioner for each linear solve.   "Reuse" wil use the same preconditioner for every linear solve.  "Recompute" will recompute the preconditioner, but will try to efficiently reuse any objects that don't need to be destroyed.  How efficient the "Recompute" option is depends on the type of preconditioner.  For example if we are using ILU in Ifpack, the graph that is allocated does not need to be destroyed and recomputed even though the computation will recompute the factorization when the matrix changes.  These changes support native Aztec, Ifpack and ML preconditioners.
-  <li> Build options have changed.  please run "configure --help" to see the new options.  
+  <li> Build options have changed.  please run "configure --help" to see the new options.
   <li> Many of the internals of %LOCA have been rewritten to more fully support multi-parameter continuation, constraint tracking, higher-order predictors and advanced bifurcation algorithms.  The old framework has been completely removed, and therefore all users must upgrade their interface to the new framework.  For a brief description of the new framework, see the \ref new_loca_framework page.  In addition, some of the parameter list entries that control %LOCA have changed.  See the \ref loca_parameters for a description of the new parameter list structure.
   <li> A minimally augmented turning point formulation has been added to %LOCA.  This method appears to be significantly faster and more robust than the turning point methods based on the Moore-Spence formulation.
   <li> A modified pitchfork bordering method has been added to %LOCA, which is similar to the modified turning point method already available.  This method avoids the singular matrix solves in the original pitchfork bordering method.
@@ -609,7 +609,7 @@ been added, and is an extension of the Householder method already available
 to systems with more than one augmented row/column.  This method allows
 bordered systems of equations to be solved in roughly the same time as
 original system and is well-conditioned even when the original system is
-nearly singular.  This capability is only available using the LOCA::NewStepper 
+nearly singular.  This capability is only available using the LOCA::NewStepper
 discussed below.
 <li> Many of the internals of %LOCA have been rewritten to more fully support
 multi-parameter continuation, constraint tracking, higher-order predictors
@@ -617,7 +617,7 @@ and advanced bifurcation algorithms.  This process is mostly, but not fully
 complete.  This functionality is available by choosing the LOCA::NewStepper
 for continuation instead of the original LOCA::Stepper.  However pitchfork
 and Hopf continuation are currently not available in the new framework.
-Documentation for this new framework can be found on the 
+Documentation for this new framework can be found on the
 \ref new_loca_framework page.
 <li> LOCA's interface to eigensolvers has changed slightly and now uses
 a strategy interface approach instead of relying on the group to provide
@@ -641,7 +641,7 @@ There currently is a portability issue with %LOCA to the Solaris platform using 
 </ul>
 
 NOX release 4.0 notes:
-<ul> 
+<ul>
 <li> A new Tensor based solver that is independent of the linear solver is now implemented (in the prerelease section).
 <li> Inexact Trust Region Techniques are fully supported (also in the prerelease section).
 <li> Improved support for Epetra objects - The NOX::EpetraNew::Group should be used in place of the NOX::Epetra::Group.  In the future we will be phasing out the NOX::Epetra::Group and replace it with NOX::EpetraNew::Group.
@@ -654,7 +654,7 @@ NOX release 4.0 notes:
 /* ************************************************************************ */
 /* ************************************************************************ */
 
-/*! \page nox_configuration_options NOX Configuration Options 
+/*! \page nox_configuration_options NOX Configuration Options
 
 Here is a list and explanation of %NOX specific configuration options.  See the <a href="http://trilinos.sandia.gov/TrilinosUserGuide.pdf">Trilinos User Guide</a> for general options supported by all packages in %Trilinos.
 
@@ -664,7 +664,7 @@ To get a complete list of all configure options supported by %NOX and %LOCA do t
     $ rm CMakeCache.txt
     $ cmake -LAH -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
       $TRILINOS_HOME
-  
+
     NOTE: You can also just look at the text file CMakeCache.txt after
     configure which gets created in the build directory and has all of the
     cache variables and documentation.
@@ -673,15 +673,15 @@ To get a complete list of all configure options supported by %NOX and %LOCA do t
 \section basic_config Basic Options
 
 <ul>
-  <li> \c NOX_ENABLE_DEBUG=ON          
+  <li> \c NOX_ENABLE_DEBUG=ON
     <ul>
       <li> This turns on special debugging checks and output in %NOX.
     </ul>
-  <li> \c NOX_ENABLE_EXAMPLES=ON          
+  <li> \c NOX_ENABLE_EXAMPLES=ON
     <ul>
       <li> Builds the example code in %NOX and %LOCA. Overrides the Trilinos_ENABLE_EXAMPLES configure flag for the nox package only.
     </ul>
-  <li> \c NOX_ENABLE_TESTS=ON         
+  <li> \c NOX_ENABLE_TESTS=ON
     <ul>
       <li> Builds the tests in %NOX and %LOCA. Overrides the Trilinos_ENABLE_TESTS configure flag for the nox package only.
     </ul>
@@ -690,7 +690,7 @@ To get a complete list of all configure options supported by %NOX and %LOCA do t
 \section lapack_options LAPACK-Related Options
 
 <ul>
-  <li> \c  NOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK=ON       
+  <li> \c  NOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK=ON
     <ul>
       <li> Compile noxlapack library (libnoxlapack.a). Default is not to compile the library.
     </ul>
@@ -699,7 +699,7 @@ To get a complete list of all configure options supported by %NOX and %LOCA do t
 \section epetra_options Epetra-Related Options
 
 <ul>
-  <li> \c NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA=ON         
+  <li> \c NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA=ON
     <ul>
       <li> Compile noxepetra library (libnoxepetra.a). Default is not to compile the library unless Epetra, EpetraExt, Ifpack, and AztecOO are enabled.
     </ul>
@@ -708,7 +708,7 @@ To get a complete list of all configure options supported by %NOX and %LOCA do t
 \section thyra_options Thyra-Related Options
 
 <ul>
-  <li> \c NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA=ON         
+  <li> \c NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA=ON
     <ul>
       <li> Compile noxthyra library (libnoxthyra.a). Default is not to compile the library unless the Thyra package is enabled.
     </ul>
@@ -717,14 +717,14 @@ To get a complete list of all configure options supported by %NOX and %LOCA do t
 \section petsc_options PETSc-Related Options
 
 <ul>
-  <li> \c NOX_ENABLE_ABSTRACT_IMPLEMENTATION_PETSC=ON      
+  <li> \c NOX_ENABLE_ABSTRACT_IMPLEMENTATION_PETSC=ON
     <ul>
       <li> Compile noxpetsc library (libnoxpetsc.a). Default is not to compile the library.
-      <li> Requires existing PETSc source specified by environment variables, 
+      <li> Requires existing PETSc source specified by environment variables,
            \c PETSC_DIR and \c PETSC_ARCH
     </ul>
 
-  See \ref petsc_interface for more information regarding building 
+  See \ref petsc_interface for more information regarding building
        %NOX with PETSc
 </ul>
 
@@ -745,7 +745,7 @@ To get a complete list of all configure options supported by %NOX and %LOCA do t
   <li> \c NOX_ENABLE_MF=ON
     <ul>
       <li> Enable Multifario support in %LOCA.
-      <li> <a href="http://www.coin-or.org/multifario/"> Multifario </a> (MF) is a multi-parameter continuation library written by Mike Henderson at IBM.  Including this option allows %LOCA to use MF for multi-parameter continuation.  
+      <li> <a href="http://www.coin-or.org/multifario/"> Multifario </a> (MF) is a multi-parameter continuation library written by Mike Henderson at IBM.  Including this option allows %LOCA to use MF for multi-parameter continuation.
       <li> The version of MF that is known to work with %LOCA is available in the Trilinos3PL.
       <li> The multifario libraries can be specified using the TPL support.  See the Trilinos CMake quickstart guide for more details on enabling third party libraries.
     </ul>
@@ -757,7 +757,7 @@ To get a complete list of all configure options supported by %NOX and %LOCA do t
 <li>  \c NOX_BUILD_PRERELEASE=ON
   <ul>
     <li> Cannot be used with the distribution version of the code - only works with the development version.
-         Compiles code that is not included in the releases but is part of the CVS repository. 
+         Compiles code that is not included in the releases but is part of the CVS repository.
          See \ref prerelease.
   </ul>
 </ul>
@@ -773,12 +773,12 @@ To get a complete list of all configure options supported by %NOX and %LOCA do t
 
 We define <em>prerelease code</em> to be code that should not be
 distributed, documented, or tested as part of the automatic nightly
-scripts. 
+scripts.
 
 Prerelease code will only be used if configure is executed with the \c
-NOX_BUILD_PRERELEASE=ON option. In that case, 
+NOX_BUILD_PRERELEASE=ON option. In that case,
 <ul>
-<li>all prerelease code will be compiled (\c -DWITH_PRERELEASE is added to \c CPPFLAGS), 
+<li>all prerelease code will be compiled (\c -DWITH_PRERELEASE is added to \c CPPFLAGS),
 <li>doxygen will document prerelease code (\c WITH_PRERELEASE is added to the \c PREDEFINED variable in Doxyfile),
 <li>\c BUILD_PRERELEASE is true for automake/autoconf Makefile generation.
 </ul>
@@ -787,7 +787,7 @@ There are two steps to adding prerelease code.
 
 <ol>
 
-<li> Add ifdef's to the source and header files. 
+<li> Add ifdef's to the source and header files.
 
 In other words, the code should be surrounded by a \c WITH_PRERELEASE
 ifdef as follows.
@@ -807,7 +807,7 @@ in the libnox.a library.
 \verbatim
 # Prerelease Code
 IF (${PACKAGE_NAME}_BUILD_PRERELEASE)
-  
+
   APPEND_SET(HEADERS
     NOX_Solver_TensorBasedTest.H
     NOX_LineSearch_Tensor.H
@@ -842,7 +842,7 @@ ENDIF()
 The git repository is located on software.sandia.gov. See Bill Goldman (bgoldma@sandia.gov) for an account.
 
 You should not do any development on software.sandia.gov. Instead,
-check out a copy to your local machine.  
+check out a copy to your local machine.
 
 */
 
@@ -880,13 +880,13 @@ the file <code>NOX_Abstract_Group.H</code>.
 <pre>
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -914,7 +914,7 @@ the file <code>NOX_Abstract_Group.H</code>.
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -987,9 +987,9 @@ on. Currently, we have the following system headers:
 </ul>
 <li>Do not use relative or absolute paths when including header files.  The autotools will set the paths correctly for you.  This is especially important since installing the headers and libraries moves the headers into a flat directory structure.
 <ul>
-<li> DO NOT do this:<br>  
+<li> DO NOT do this:<br>
      <code>#include "../test/utils/NOX_TestCompare.H"</code>
-<li> Do this: <br> 
+<li> Do this: <br>
      <code>#include "NOX_TestCompare.H"</code>
 </ul><br>&nbsp;
 <li>Definitions of classes that are only accessed via pointers
@@ -1010,7 +1010,7 @@ types</EM> in function/member function prototypes.
 <H3>Naming Conventions</H3>
 <ul>
 <li>Everything must be declared within the <code>NOX</code>
-namespace. No exceptions! 
+namespace. No exceptions!
 <br>&nbsp;
 <li>Furthermore, each class should be within the appropriate
 sub-namespace. The choices are:
@@ -1028,7 +1028,7 @@ sub-namespace. The choices are:
 <li>Class names should begin with an uppercase letter. Variable and
 function names should begin with a lowercase letter.
 <br>&nbsp;
-<li>In names (function, class, variable, etc) 
+<li>In names (function, class, variable, etc)
     which consist of more than one word, the words are
     written together and each word that follows the first is begun
     with an uppercase letter. (e.g., <code>NOX::Linesearch::MoreThuente</code>).
@@ -1039,7 +1039,7 @@ with one or two underscores (`<CODE>_</CODE>' or `<CODE>__</CODE>').
 <li>Names should not include abbreviations that are not generally
     accepted.
 <br>&nbsp;
-<li>Choose variable names that suggest the usage. 
+<li>Choose variable names that suggest the usage.
 </ul>
 
 <H3>Style</H3>
@@ -1053,7 +1053,7 @@ with one or two underscores (`<CODE>_</CODE>' or `<CODE>__</CODE>').
 <li>No inline functions, except the empty <code>{}</code>
 function. The reason for this is that if the function does not inline
 correctly, it can actually lead to slower code rather than faster
-code. 
+code.
 </ul>
 <h5>Functions</h5>
 <ul>
@@ -1086,8 +1086,8 @@ directly after a function name.
 <PRE>
    int i,j;   // No!!
 
-   int i;     // Yes   
-   int j;   
+   int i;     // Yes
+   int j;
 </PRE>
 
 <li>
@@ -1098,7 +1098,7 @@ definition. Instead of saying that <CODE>*i</CODE> is an <CODE>int</CODE>,
 say that <CODE>i</CODE> is an <CODE>int*</CODE>.
 <PRE>
    int *i;   // No!!
-   int* i;   // Yes   
+   int* i;   // Yes
 </PRE>
 </ul>
 
@@ -1117,7 +1117,7 @@ say that <CODE>i</CODE> is an <CODE>int*</CODE>.
   if (((a == b) && (c < d)) || (e == f))  // Yes
   {
     /* Stuff */
-  } 
+  }
 </pre>
 <li>The block of any <code>if</code> statement should always follow on
 a separate line.
@@ -1125,24 +1125,24 @@ a separate line.
    if ( /*Something*/ ) i++; // No!!
 
    if ( /*Something*/ )      // Yes!
-     i++; 
+     i++;
 </PRE>
 <li>Braces ("{}") which enclose a block should be aligned as follows:
 <PRE>
    if ( /*Something*/ ) // Yes!
    {
-     i++; 
+     i++;
      j++;
    }
 
    if ( /*Something*/ ) { // Okay
-     i++; 
+     i++;
      j++;
    }
 
    if ( /*Something*/ ) // No!
      {
-       i++; 
+       i++;
        j++;
      }
 </PRE>
@@ -1161,9 +1161,9 @@ Adding the following line to your \c .emacs file will help:
 <li>Always provide a space on both sides of <code>=</code> signs and all logical
 operators.
 <br>&nbsp;
-<li>Each statement shall always be in a separate line, however small it may appear. 
+<li>Each statement shall always be in a separate line, however small it may appear.
 <br>&nbsp;
- 
+
 <Li>Do not use <EM>spaces</EM> around
 `<CODE>.</CODE>' or `<CODE>-&gt;</CODE>', nor between unary operators
 and operands.
@@ -1177,13 +1177,13 @@ format code.
 
 <ul>
 <li>A public member function must never return a non-const reference
-or pointer to member data. 
+or pointer to member data.
 <br>&nbsp;
 <li>Constants are to be defined using <code>const</code> or
-<code>enum</code>; never using <code>#define</code>. 
+<code>enum</code>; never using <code>#define</code>.
 <br>&nbsp;
 <li>A switch statement must always contain a default branch which
-handles unexpected cases.  
+handles unexpected cases.
 </ul>
 
 
@@ -1226,7 +1226,7 @@ the function name to <code>NOX::Utils::err</code> or <code>NOX::Utils::perr</cod
 <code>"NOX Error"</code>. For example if utils is a NOX::Utils object,
 
 <pre>
-  if (/* Error Condition */) 
+  if (/* Error Condition */)
   {
     utils.err() << "ERROR: NOX::Epetra::Group::getNewton() - invalid Newton vector" << std::endl;
     throw "NOX Error";
@@ -1296,7 +1296,7 @@ each parameter is listed.
 <pre>
 /*!
   \brief %Newton-like solver with a line search.
-  
+
   The following parameters are valid for this solver:
 
   - "Line Search" - Sublist of the line search parameters, passed to
@@ -1328,13 +1328,13 @@ each parameter is listed.
 </pre>
 Here's a more complicated example to produce a two-tiered list.
 <pre>
-/*! 
+/*!
    The parameters must specify the type of line search as well as all
    the corresponding parameters for that line search.
- 
+
    &lt;ul&gt;
    &lt;li&gt; "Method" - Name of the line search. Valid choices are
-     &lt;ul&gt; 
+     &lt;ul&gt;
      &lt;li&gt; "Full Step" (NOX::Linesearch::FullStep)
      &lt;li&gt; "Interval %Halving" (NOX::Linesearch::Halving)
      &lt;li&gt; "Polynomial" (NOX::Linesearch::Polynomial)
@@ -1350,7 +1350,7 @@ Here's a more complicated example to produce a two-tiered list.
 ways, as follows.
 
 <pre>
-  /*! 
+  /*!
     \brief The test can be either the AND of all the component
     tests, or the OR of all the component tests.
   */
@@ -1364,12 +1364,12 @@ ways, as follows.
 convenient. However, sometimes it cross-links when you don't intend
 for it to. For example, the following line would automatically
 generate a link from the word <code>Newton</code> to the
-NOX::Solver::Newton class. 
+NOX::Solver::Newton class.
 
 <pre>
 //! Newton-like solver with a line search.
 </pre>
- 
+
 To prevent that automatic link, insert a percent sign (<code>%</code>)
 immediately before the word that is causing the link. For example,
 
@@ -1410,23 +1410,23 @@ immediately before the word that is causing the link. For example,
 
   The \b LAPACK interface is an interface to the BLAS/LAPACK library.
   It is not intended for large-scale computations, but to serve as an
-  easy-to-understand example of how one might interface to %NOX.  
-  
+  easy-to-understand example of how one might interface to %NOX.
+
   The \b Epetra interface is an interface to the
-  Trilinos/Epetra library developed by 
-  <a href="http://www.sandia.gov">Sandia National Labs</a>; 
-  for more information see the 
+  Trilinos/Epetra library developed by
+  <a href="http://www.sandia.gov">Sandia National Labs</a>;
+  for more information see the
   <a href="http://trilinos.sandia.gov/trilinos">Trilinos Home Page</a>.
 
   The \b Thyra interface is an interface to the
-  Trilinos/Thyra library developed by 
-  <a href="http://www.sandia.gov">Sandia National Labs</a>; 
-  for more information see the 
+  Trilinos/Thyra library developed by
+  <a href="http://www.sandia.gov">Sandia National Labs</a>;
+  for more information see the
   <a href="http://trilinos.sandia.gov/trilinos">Trilinos Home Page</a>.
 
   The \b PETSc interface is an interface with the PETSc library. PETSc
-  was developed at 
-  <a href="http://www.anl.gov">Argonne National Labs</a>; 
+  was developed at
+  <a href="http://www.anl.gov">Argonne National Labs</a>;
   for more information see the
   <a href="http://www-fp.mcs.anl.gov/petsc">PETSc Home Page</a>
 
@@ -1449,15 +1449,15 @@ immediately before the word that is causing the link. For example,
   - NOX::LineSearch::Polynomial
   - NOX::LineSearch::MoreThuente
 
-  Convergence or failure of a given solver method is determined by 
+  Convergence or failure of a given solver method is determined by
   the status tests defined in the NOX::StatusTest namespace. Various
   status tests may be combined via the NOX::StatusTest::Combo
   object. Users are free to create additional status tests that derive
   from the NOX::StatusTest::Generic class.
 
-    
+
     */
- 
+
 /* ************************************************************************ */
 /* ************************************************************************ */
 /* ************************************************************************ */
@@ -1478,7 +1478,7 @@ immediately before the word that is causing the link. For example,
 
 <ul>
 <li> "Nonlinear Solver" [std::string] - see NOX::Solver::Factory for complete list of options. Valid choices are:
-   <ul> 
+   <ul>
      <li> "Line Search Based" or "Newton" (NOX::Solver::LineSearchBased) [Default]
      <li> "Trust Region Based" (NOX::Solver::TrustRegionBased)
      <li> "Inexact Trust Region Based" (NOX::Solver::InexactTrustRegionBased)
@@ -1492,62 +1492,62 @@ immediately before the word that is causing the link. For example,
 
      <li> "Method" [std::string] - see NOX::Direction::Factory for complete list of options.  Valid options are:
            <ul>
-	   <li> 
+       <li>
            <li> "Newton" NOX::Direction::Newton
-	   <li> "Steepest Descent" NOX::Direction::SteepestDescent
-	   <li> "NonlinearCG" NOX::Direction::NonlinearCG
-	   <li> "Broyden" NOX::Direction::Broyden 
-	   <li> "Tensor" PRERELEASE ONLY! NOX::Direction::Tensor
-	   <li> "Modified-Newton" PRERELEASE ONLY! NOX::Direction::ModifiedNewton
-	   <li> "Quasi-Newton" PRERELEASE ONLY! NOX::Direction::QuasiNewton
-	   <li> "User Defined" - see NOX::Direction::Factory for details
-	   </ul>
+       <li> "Steepest Descent" NOX::Direction::SteepestDescent
+       <li> "NonlinearCG" NOX::Direction::NonlinearCG
+       <li> "Broyden" NOX::Direction::Broyden
+       <li> "Tensor" PRERELEASE ONLY! NOX::Direction::Tensor
+       <li> "Modified-Newton" PRERELEASE ONLY! NOX::Direction::ModifiedNewton
+       <li> "Quasi-Newton" PRERELEASE ONLY! NOX::Direction::QuasiNewton
+       <li> "User Defined" - see NOX::Direction::Factory for details
+       </ul>
 
      <li> "User Defined Constructor" [Teuchos::RCP<NOX::Direction::UserDefinedFactory>] - see NOX::Direction::Factory for details.
 
      <li> "Newton" [sublist] - used by NOX::Direction::Newton,
           see class documentation for details.
 
-	  <ul>
+      <ul>
 
-	  <li> "Forcing Term Method" [std::string]
-	  <li> "Forcing Term Initial Tolerance" [double]
-	  <li> "Forcing Term Minimum Tolerance" [double]
-	  <li> "Forcing Term Maximum Tolerance" [double]
-	  <li> "Forcing Term Alpha" [double]
-	  <li> "Forcing Term Gamma" [double]
-	  <li> "Rescue Bad Newton Solver" [boolean]
+      <li> "Forcing Term Method" [std::string]
+      <li> "Forcing Term Initial Tolerance" [double]
+      <li> "Forcing Term Minimum Tolerance" [double]
+      <li> "Forcing Term Maximum Tolerance" [double]
+      <li> "Forcing Term Alpha" [double]
+      <li> "Forcing Term Gamma" [double]
+      <li> "Rescue Bad Newton Solver" [boolean]
 
-	  <li> "Linear Solver" [sublist] - passed to
-	       NOX::Abstract::Group::computeNewton() by
-	       NOX::Direction::Newton.
+      <li> "Linear Solver" [sublist] - passed to
+           NOX::Abstract::Group::computeNewton() by
+           NOX::Direction::Newton.
 
-	       <ul>
-	       <li> "Tolerance" [double]
-	       </ul>
-	       
-	       NOTE: This list will carry any number of linear solver
-	       options depending upon the concrete implementation of
-	       the linear solver used in the applyJacobianInverse()
-	       method of the NOX::Abstract::Group class.  For Epetra
-	       support, this option list can be found in the
-	       NOX::Epetra::LinearSystemAztecOO object.
+           <ul>
+           <li> "Tolerance" [double]
+           </ul>
 
-	  </ul>
+           NOTE: This list will carry any number of linear solver
+           options depending upon the concrete implementation of
+           the linear solver used in the applyJacobianInverse()
+           method of the NOX::Abstract::Group class.  For Epetra
+           support, this option list can be found in the
+           NOX::Epetra::LinearSystemAztecOO object.
+
+      </ul>
 
      <li> "Steepest Descent" [sublist] - used by
           NOX::Direction::SteepestDescent, see class documentation for
           details
 
-	  <ul>
-	  <li> "Scaling Type" [std::string]  Type of scaling to use.  Options are:
+      <ul>
+      <li> "Scaling Type" [std::string]  Type of scaling to use.  Options are:
                <ul>
-	       <li> "2-Norm"
-	       <li> "Quadratic Model Min"
-	       <li> "F 2-Norm"
-	       <li> "None"
-	       </ul>
-	  </ul>
+           <li> "2-Norm"
+           <li> "Quadratic Model Min"
+           <li> "F 2-Norm"
+           <li> "None"
+           </ul>
+      </ul>
 
      </ul>
 
@@ -1557,77 +1557,77 @@ immediately before the word that is causing the link. For example,
      <ul>
      <li> "Method" [std::string] - see NOX::LineSearch::Factory for a detailed list of options.  Valid options are:
           <ul>
-	  <li> "Full Step" (NOX::LineSearch::FullStep)
-	  <li> "Backtrack" (NOX::LineSearch::Backtrack)
-	  <li> "Polynomial" (NOX::LineSearch::Polynomial)
-	  <li> "More'-Thuente" (NOX::LineSearch::MoreThuente)
-	  <li> "User Defined" - see NOX::LineSearch::Factory.
-	  </ul>
+      <li> "Full Step" (NOX::LineSearch::FullStep)
+      <li> "Backtrack" (NOX::LineSearch::Backtrack)
+      <li> "Polynomial" (NOX::LineSearch::Polynomial)
+      <li> "More'-Thuente" (NOX::LineSearch::MoreThuente)
+      <li> "User Defined" - see NOX::LineSearch::Factory.
+      </ul>
 
      <li> "User Defined Constructor" [Teuchos::RCP<NOX::LineSearch::UserDefinedFactory>] - see NOX::LineSearch::Factory for details
 
-     <li>"Full Step" [sublist] - used by NOX::LineSearch::FullStep, 
+     <li>"Full Step" [sublist] - used by NOX::LineSearch::FullStep,
          see class documentation for all details
-	 <ul>
-	 <li> "Full Step" [double]
-	 </ul>
+     <ul>
+     <li> "Full Step" [double]
+     </ul>
 
      <li> "Backtrack" [sublist] - used by NOX::LineSearch::Backtrack,
           see class documentation for all details.
-	  <ul>
-	  <li> "Minimum Step" [double]
-	  <li> "Default Step" [double]
-	  <li> "Recovery Step" [double]
-	  <li> "Maximum Step" [double]
-	  <li> "Max Iters" [int]
-	  <li> "Reduction Factor" [double]
-	  </ul>
+      <ul>
+      <li> "Minimum Step" [double]
+      <li> "Default Step" [double]
+      <li> "Recovery Step" [double]
+      <li> "Maximum Step" [double]
+      <li> "Max Iters" [int]
+      <li> "Reduction Factor" [double]
+      </ul>
 
      <li> "Polynomial" [sublist] - used by NOX::LineSearch::MoreThuente,
           see class documentation for details.
-	  <ul>
-	  <li> "Default Step" [double]
-	  <li> "Max Iters" [int]
-	  <li> "Minimum Step" [double]
-	  <li> "Recovery Step" [double]
-	  <li> "Interpolation Type" [std::string] Valid options are:
-	       <ul>
-	       <li> "Quadratic"
-	       <li> "Quadratic3"
-	       <li> "Cubit"
-	       </ul>
-	  <li> "Min Bounds Factor" [double]
-	  <li> "Max Bounds Factor" [double]
-	  <li> "Sufficient Decrease Condition" [std::string] Valid options are:
-	       <ul>
-	       <li> "Armijo-Goldstein"
-	       <li> "Ared/Pred"
-	       </ul>
-	  <li> "Alpha Factor" [double]
-	  <li> "Force Interpolation" [boolean]
-	  <li> "Use Counters" [boolean]
-	  <li> "Maximum Iteration for Increase" [int]
-	  <li> "Allowed Relative Increase" [boolean]
-	  </ul>
+      <ul>
+      <li> "Default Step" [double]
+      <li> "Max Iters" [int]
+      <li> "Minimum Step" [double]
+      <li> "Recovery Step" [double]
+      <li> "Interpolation Type" [std::string] Valid options are:
+           <ul>
+           <li> "Quadratic"
+           <li> "Quadratic3"
+           <li> "Cubit"
+           </ul>
+      <li> "Min Bounds Factor" [double]
+      <li> "Max Bounds Factor" [double]
+      <li> "Sufficient Decrease Condition" [std::string] Valid options are:
+           <ul>
+           <li> "Armijo-Goldstein"
+           <li> "Ared/Pred"
+           </ul>
+      <li> "Alpha Factor" [double]
+      <li> "Force Interpolation" [boolean]
+      <li> "Use Counters" [boolean]
+      <li> "Maximum Iteration for Increase" [int]
+      <li> "Allowed Relative Increase" [boolean]
+      </ul>
 
-     <li> "More'-Thuente" [sublist] - used by NOX::LineSearch::MoreThuente, 
+     <li> "More'-Thuente" [sublist] - used by NOX::LineSearch::MoreThuente,
      see class documentation for all details.
-	  <ul>
-	  <li> "Sufficient Decrease" [double]
-	  <li> "Curvature Condition" [double]
-	  <li> "Interval Width" [double]
-	  <li> "Minimum Step" [double]
-	  <li> "Maximum Step" [double]
-	  <li> "Max Iters" [int]
-	  <li> "Default Step" [double]
-	  <li> "Recovery Step Type" [double]
-	  <li> "Sufficient Decrease Condition" [std::string] Valid options are:
-	       <ul>
-	       <li> "Armijo-Goldstein"
-	       <li> "Ared/Pred"
-	       </ul>
-	  <li> "Optimize Slope Calculation" [boolean]
-	  </ul>
+      <ul>
+      <li> "Sufficient Decrease" [double]
+      <li> "Curvature Condition" [double]
+      <li> "Interval Width" [double]
+      <li> "Minimum Step" [double]
+      <li> "Maximum Step" [double]
+      <li> "Max Iters" [int]
+      <li> "Default Step" [double]
+      <li> "Recovery Step Type" [double]
+      <li> "Sufficient Decrease Condition" [std::string] Valid options are:
+           <ul>
+           <li> "Armijo-Goldstein"
+           <li> "Ared/Pred"
+           </ul>
+      <li> "Optimize Slope Calculation" [boolean]
+      </ul>
      </ul>
 
 
@@ -1644,7 +1644,7 @@ immediately before the word that is causing the link. For example,
      <li> "Recovery Step" [double]
      </ul>
 
-<li> "Solver Options" [sublist] - used by all solvers for basic options that all solvers should support (see individual solvers to make sure the option is supported).  
+<li> "Solver Options" [sublist] - used by all solvers for basic options that all solvers should support (see individual solvers to make sure the option is supported).
      <ul>
      <li> "User Defined Pre/Post Operator" [Teuchos::RCP<NOX::Abstract::PrePostOperator>] - an observer object that
      allows users to insert pre and post method calls into nox's
@@ -1658,8 +1658,8 @@ immediately before the word that is causing the link. For example,
      \code
   Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo =
     Teuchos::rcp(new UserPrePostOperator(printing));
-  nlParams.sublist("Solver Options").set("User Defined Pre/Post Operator", 
-					 ppo);
+  nlParams.sublist("Solver Options").set("User Defined Pre/Post Operator",
+                     ppo);
      \endcode
 
      NOTE: The type of object set in the parameter list MUST be an RCP of the type NOX::Abstract::PrePostOperator.  It can NOT be a derived type!
@@ -1667,11 +1667,11 @@ immediately before the word that is causing the link. For example,
      <li> "Status Test Check Type" [std::string] - References a NOX::StatusTest::CheckType that determines if all ("Complete") or just a minimal ("Minimal") set of status tests should be run at each iteration.  The status tests can be run efficiently if set to NOX::StatusTest::Minimal and all test run every iteration if it is set to NOX::StatusTest::Complete.  Valid options are:
      <ul>
      <li> "Complete" - All status tests are checked at each iteration.  Use this if you want to monitor progess in certain values computed in a status test.
-     <li> "Minimal" - Compute only enough tests as necessary.  This is useful if some status tests are expensive.  For example, if you have 3 convergence tests in an "AND" Combo, a minimal check will only check enough tests until one is not converged.  It will then not check the others since it can't return a convecged status. 
+     <li> "Minimal" - Compute only enough tests as necessary.  This is useful if some status tests are expensive.  For example, if you have 3 convergence tests in an "AND" Combo, a minimal check will only check enough tests until one is not converged.  It will then not check the others since it can't return a convecged status.
      <li> "None" - Use internally to turn off tests that should not be checked when using the "Minimal" option.  Users should not call this!
      </ul>
 
-     <li> "User Defined Merit Function" [Teuchos::RCP<NOX::MeritFunction::Generic>] - An object that allows the user to define their own merit function for use in the globalization algorithms.  The user must implement a derived class from NOX::MeritFunction::Generic and then pass it into %NOX through the parameter list.  
+     <li> "User Defined Merit Function" [Teuchos::RCP<NOX::MeritFunction::Generic>] - An object that allows the user to define their own merit function for use in the globalization algorithms.  The user must implement a derived class from NOX::MeritFunction::Generic and then pass it into %NOX through the parameter list.
 
      \code
   Teuchos::RCP<UserMeritFunction> mf =
@@ -1688,24 +1688,24 @@ immediately before the word that is causing the link. For example,
 
      <li> "Output Information" [sublist|int] - Either a sublist of output information booleans listed below or the integer value of the sum of the enumerated types requested.  See NOX::Utils for details on how to use the integer value.  The following sublist parameters will print information if the flag is set to true.
         <ul>
-	<li> "Error" [boolean]
-	<li> "Warning" [boolean]
-	<li> "Outer Iteration" [boolean]
-	<li> "Inner Iteration" [boolean]
-	<li> "Parameters" [boolean]
-	<li> "Details" [boolean]
-	<li> "Outer Iteration StatusTest" [boolean]
-	<li> "Linear Solver Details" [boolean]
-	<li> "Test Details" [boolean]
-	<li> "Stepper Iteration" [boolean]
-	<li> "Stepper Details" [boolean]
-	<li> "Stepper Parameters" [boolean]
-	<li> "Debug" [boolean]
-	</ul>
+    <li> "Error" [boolean]
+    <li> "Warning" [boolean]
+    <li> "Outer Iteration" [boolean]
+    <li> "Inner Iteration" [boolean]
+    <li> "Parameters" [boolean]
+    <li> "Details" [boolean]
+    <li> "Outer Iteration StatusTest" [boolean]
+    <li> "Linear Solver Details" [boolean]
+    <li> "Test Details" [boolean]
+    <li> "Stepper Iteration" [boolean]
+    <li> "Stepper Details" [boolean]
+    <li> "Stepper Parameters" [boolean]
+    <li> "Debug" [boolean]
+    </ul>
      <li> "MyPID" [int]
      <li> "Output Processor" [int]
      <li> "Output Precision" [int]
-     
+
      </ul>
 
 </ul>
@@ -1735,18 +1735,18 @@ A user can build a set of status tests from an independent parameter list using 
  object.  This object defines the method for evaluating the set of
  nonlinear equations to be solved:
 
- <li> computeF(const Epetra_Vector& x, Epetra_Vector& RHS, const FillType flag) - 
-      Computes the set of nonlinear equations, \f$ F \f$, to be solved 
-      by %NOX. This method must be supplied by the user.  
+ <li> computeF(const Epetra_Vector& x, Epetra_Vector& RHS, const FillType flag) -
+      Computes the set of nonlinear equations, \f$ F \f$, to be solved
+      by %NOX. This method must be supplied by the user.
       - x - solution vector specified from %NOX.
-      - RHS - the Epetra_Vector to be filled with the \f$ F \f$ values that 
+      - RHS - the Epetra_Vector to be filled with the \f$ F \f$ values that
         correspond to the input solution vector x.
-      - flag - enumerated type (see NOX::Epetra::FillType) that 
-        tells a users interface why computeF() was called.  %NOX 
-        has the ability to generate Jacobians based on numerical 
-        differencing using calls to computeF().  In this case, the 
-	user may want to compute an inexact (and hopefully cheaper) 
-        \f$ F \f$ since it is only used in the Jacobian (or preconditioner). 
+      - flag - enumerated type (see NOX::Epetra::FillType) that
+        tells a users interface why computeF() was called.  %NOX
+        has the ability to generate Jacobians based on numerical
+        differencing using calls to computeF().  In this case, the
+    user may want to compute an inexact (and hopefully cheaper)
+        \f$ F \f$ since it is only used in the Jacobian (or preconditioner).
 
  Additonally if the user wishes to provide a Jacobian operator, they
  will need to implement a concrete class derived from the
@@ -1754,16 +1754,16 @@ A user can build a set of status tests from an independent parameter list using 
  method for evaluating the Jacobian:
 
  <li> computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac) - this
-      is an optional method that the user can implement if they wish to 
-      supply their own evaluation of the Jacobian. If the user does not 
-      wish to supply their own Jacobian, they should implement this method 
-      so that it throws an error if it is called.  This method should update 
-      the Jac operator so that subsequent Epetra_Operator::Apply() calls 
-      on that operator correspond to the Jacobian at the current solution 
+      is an optional method that the user can implement if they wish to
+      supply their own evaluation of the Jacobian. If the user does not
+      wish to supply their own Jacobian, they should implement this method
+      so that it throws an error if it is called.  This method should update
+      the Jac operator so that subsequent Epetra_Operator::Apply() calls
+      on that operator correspond to the Jacobian at the current solution
       vector x.
       - x - solution vector specified from %NOX.
-      - Jac - a reference to the Jacobian operator that the user supplied 
-        in the NOX::Epetra::Group constructor.  
+      - Jac - a reference to the Jacobian operator that the user supplied
+        in the NOX::Epetra::Group constructor.
 
  Additonally if the user wishes to provide a preconditioner operator,
  they will need to implement a concrete class derived from the
@@ -1781,9 +1781,9 @@ A user can build a set of status tests from an independent parameter list using 
       preconditioner objects such as AztecOO, Ipfack, and ML.
 
       - x - solution vector specified from %NOX.
-      - M - a reference to the operator that is to be filled.  This operator 
-	should be updated to correspond to the current solution vector x.
-      - precParams - a pointer to a parameter list that can be used by 
+      - M - a reference to the operator that is to be filled.  This operator
+    should be updated to correspond to the current solution vector x.
+      - precParams - a pointer to a parameter list that can be used by
         the preconditioner.
 
  \section epetra_interface_operators Optional Operators
@@ -1808,7 +1808,7 @@ A user can build a set of status tests from an independent parameter list using 
     in NOX's configure script.  This will generate a separate library called
     libnoxepetra.a
 
-  - In addition to the %NOX headers, be sure to include the %NOX %Epetra 
+  - In addition to the %NOX headers, be sure to include the %NOX %Epetra
     support specific headers in your interface:
     \verbatim
     // NOX headers for an epetra interface
@@ -1854,7 +1854,7 @@ A user can build a set of status tests from an independent parameter list using 
 
  To link your code to %NOX using the thyra interface, you must write a
  concrete class derived from the Thyra::ModelEvaluator
- object.  
+ object.
 
   The directory Trilinos/packages/nox/test/epetra/Thyra_2Dsim contains
   examples and is the best resource on how to use %NOX with %Thyra.
@@ -1873,7 +1873,7 @@ implementation has been tested against PETSc 3.0.0-p5.
 
 \section build_nox_petsc_library Building the Library
 
-To compile the %NOX/PETSc library \c libnoxpetsc.a, use the following 
+To compile the %NOX/PETSc library \c libnoxpetsc.a, use the following
 configuration sequence:
 
 \verbatim
@@ -1900,9 +1900,9 @@ configure --enable-nox-petsc PETSC_DIR=${HOME}/petsc-3.0.0-p5 PETSC_ARCH=linux
 \section build_nox_petsc_examples Building the Examples
 
 To compile the examples for %NOX/PETSc, an additional environment variable,
-\c PETSC_BOPT, must be defined and set to the value of BOPT used to build the 
-user's PETSc installation.  For example, for PETSc previously built 
-debug-enabled for C++ using BOPT=g_c++, simply set PETSC_BOPT=g_c++.  
+\c PETSC_BOPT, must be defined and set to the value of BOPT used to build the
+user's PETSc installation.  For example, for PETSc previously built
+debug-enabled for C++ using BOPT=g_c++, simply set PETSC_BOPT=g_c++.
 The configure script then allows the examples to be built using the following:
 \verbatim
 configure --enable-nox-petsc --enable-nox-petsc-examples.
@@ -1954,13 +1954,13 @@ setenv LD_LIBRARY_PATH ${PETSC_DIR}/lib/lib_${PETSC_BOPT}/${PETSC_ARCH}
 #include "Epetra_Map.h"
 #include "Epetra_LinearProblem.h"
 
-// User's application specific files 
-#include "1DfemInterface.H" 
+// User's application specific files
+#include "1DfemInterface.H"
 #include "1DfemPrePostOperator.H"
 
 #include "Teuchos_ParameterList.hpp"
 \endcode
- 
+
 
  For convenience define the following:
 
@@ -1975,7 +1975,7 @@ using namespace std;
 \code
 int main(int argc, char *argv[])
 {
- 
+
   // Initialize MPI
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
@@ -2008,14 +2008,14 @@ int main(int argc, char *argv[])
     NumGlobalElements = atoi(argv[2]) + 1;
   else if ((argc > 1) && (!verbose))
     NumGlobalElements = atoi(argv[1]) + 1;
-  else 
+  else
     NumGlobalElements = 101;
 
-  // The number of unknowns must be at least equal to the 
+  // The number of unknowns must be at least equal to the
   // number of processors.
   if (NumGlobalElements < NumProc) {
-    cout << "numGlobalBlocks = " << NumGlobalElements 
-	 << " cannot be < number of processors = " << NumProc << std::endl;
+    cout << "numGlobalBlocks = " << NumGlobalElements
+     << " cannot be < number of processors = " << NumProc << std::endl;
     cout << "Test failed!" << std::endl;
     throw "NOX Error";
   }
@@ -2026,24 +2026,24 @@ int main(int argc, char *argv[])
 \code
   // Create the interface between NOX and the application
   // This object is derived from NOX::Epetra::Interface
-  Teuchos::RCP<Interface> interface = 
+  Teuchos::RCP<Interface> interface =
     Teuchos::rcp(new Interface(NumGlobalElements, Comm));
 \endcode
 
- Grab the initial guess vector and initialize it and the interface object. 
+ Grab the initial guess vector and initialize it and the interface object.
 
 \code
   // Get the vector from the Problem
   Teuchos::RCP<Epetra_Vector> soln = interface->getSolution();
-  Teuchos::RCP<NOX::Epetra::Vector> noxSoln = 
-    Teuchos::rcp(new NOX::Epetra::Vector(soln, 
-					 NOX::Epetra::Vector::CreateView));
+  Teuchos::RCP<NOX::Epetra::Vector> noxSoln =
+    Teuchos::rcp(new NOX::Epetra::Vector(soln,
+                     NOX::Epetra::Vector::CreateView));
 
   // Set the PDE factor (for nonlinear forcing term).  This could be specified
   // via user input.
   interface->setPDEfactor(1000.0);
 
-  // Set the initial guess 
+  // Set the initial guess
   soln->PutScalar(1.0);
 \endcode
 
@@ -2062,26 +2062,26 @@ int main(int argc, char *argv[])
 
   // Set the printing parameters in the "Printing" sublist
   Teuchos::ParameterList& printParams = nlParams.sublist("Printing");
-  printParams.set("MyPID", MyPID); 
+  printParams.set("MyPID", MyPID);
   printParams.set("Output Precision", 3);
   printParams.set("Output Processor", 0);
   if (verbose)
-    printParams.set("Output Information", 
-			     NOX::Utils::OuterIteration + 
-			     NOX::Utils::OuterIterationStatusTest + 
-			     NOX::Utils::InnerIteration +
-			     NOX::Utils::LinearSolverDetails +
-			     NOX::Utils::Parameters + 
-			     NOX::Utils::Details + 
-			     NOX::Utils::Warning +
+    printParams.set("Output Information",
+                 NOX::Utils::OuterIteration +
+                 NOX::Utils::OuterIterationStatusTest +
+                 NOX::Utils::InnerIteration +
+                 NOX::Utils::LinearSolverDetails +
+                 NOX::Utils::Parameters +
+                 NOX::Utils::Details +
+                 NOX::Utils::Warning +
                              NOX::Utils::Debug +
-			     NOX::Utils::TestDetails +
-			     NOX::Utils::Error);
+                 NOX::Utils::TestDetails +
+                 NOX::Utils::Error);
   else
     printParams.set("Output Information", NOX::Utils::Error +
-			     NOX::Utils::TestDetails);
+                 NOX::Utils::TestDetails);
 
-  // Sublist for line search 
+  // Sublist for line search
   Teuchos::ParameterList& searchParams = nlParams.sublist("Line Search");
   searchParams.set("Method", "Full Step");
 
@@ -2093,8 +2093,8 @@ int main(int argc, char *argv[])
 
   // Sublist for linear solver for the Newton method
   Teuchos::ParameterList& lsParams = newtonParams.sublist("Linear Solver");
-  lsParams.set("Aztec Solver", "GMRES");  
-  lsParams.set("Max Iterations", 800);  
+  lsParams.set("Aztec Solver", "GMRES");
+  lsParams.set("Max Iterations", 800);
   lsParams.set("Tolerance", 1e-4);
   lsParams.set("Preconditioner", "New Ifpack");
   lsParams.set("Preconditioner Reuse Policy", "Reuse");
@@ -2103,12 +2103,12 @@ int main(int argc, char *argv[])
 
  Optionally the user can define methods that will be called before and after each nonlineaer iteration and before and after each nonlinear solve.  This is done by creating an object derived from NOX::Abstract::PrePostOperator.
 
-\code 
+\code
   // Add a user defined pre/post operator object
   Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo =
     Teuchos::rcp(new UserPrePostOperator(printing));
-  nlParams.sublist("Solver Options").set("User Defined Pre/Post Operator", 
-					 ppo);
+  nlParams.sublist("Solver Options").set("User Defined Pre/Post Operator",
+                     ppo);
 \endcode
 
  Set the status test check option.
@@ -2123,43 +2123,43 @@ int main(int argc, char *argv[])
 
 \code
   // 2. Matrix-Free (Epetra_Operator)
-  Teuchos::RCP<NOX::Epetra::MatrixFree> MF = 
-    Teuchos::rcp(new NOX::Epetra::MatrixFree(printParams, interface, 
-					     *noxSoln));
+  Teuchos::RCP<NOX::Epetra::MatrixFree> MF =
+    Teuchos::rcp(new NOX::Epetra::MatrixFree(printParams, interface,
+                         *noxSoln));
 \endcode
 
  Create a Finite Difference operator to estimate the Jacobian matrix for preconditioning.
 
 \code
   // 3. Finite Difference (Epetra_RowMatrix)
-  Teuchos::RCP<NOX::Epetra::FiniteDifference> FD = 
-    Teuchos::rcp(new NOX::Epetra::FiniteDifference(printParams, interface, 
-						   *soln));
+  Teuchos::RCP<NOX::Epetra::FiniteDifference> FD =
+    Teuchos::rcp(new NOX::Epetra::FiniteDifference(printParams, interface,
+                           *soln));
 \endcode
 
- Create a linear system derived from NOX::Epetra::LinearSystem.  NOX comes with a concrete implementation of the linear system class that uses AztecOO as the linear solver called NOX::Epetra::LinearSystemAztecOO.  In this case we will use the constructor that specifies the Jacobian operator and a preconditioner matrix to be used with an internally constructed AztecOO preconditioner. 
+ Create a linear system derived from NOX::Epetra::LinearSystem.  NOX comes with a concrete implementation of the linear system class that uses AztecOO as the linear solver called NOX::Epetra::LinearSystemAztecOO.  In this case we will use the constructor that specifies the Jacobian operator and a preconditioner matrix to be used with an internally constructed AztecOO preconditioner.
 
 \code
   // Create the linear system
   Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = MF;
   Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = FD;
-  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = 
+  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys =
     Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
-						      iJac, MF, 
-						      iPrec, FD, 
-						      *soln));
+                              iJac, MF,
+                              iPrec, FD,
+                              *soln));
 \endcode
-  
+
  Create the group using the linear system.
 
 \code
   // Create the Group
   NOX::Epetra::Vector initialGuess(soln, NOX::Epetra::Vector::CreateView);
-  Teuchos::RCP<NOX::Epetra::Group> grpPtr = 
-    Teuchos::rcp(new NOX::Epetra::Group(printParams, 
-					iReq, 
-					initialGuess, 
-					linSys));  
+  Teuchos::RCP<NOX::Epetra::Group> grpPtr =
+    Teuchos::rcp(new NOX::Epetra::Group(printParams,
+                    iReq,
+                    initialGuess,
+                    linSys));
   NOX::Epetra::Group& grp = *grpPtr;
 \endcode
 
@@ -2167,9 +2167,9 @@ int main(int argc, char *argv[])
 
 \code
   // Create the convergence tests
-  Teuchos::RCP<NOX::StatusTest::NormF> absresid = 
+  Teuchos::RCP<NOX::StatusTest::NormF> absresid =
     Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
-  Teuchos::RCP<NOX::StatusTest::NormF> relresid = 
+  Teuchos::RCP<NOX::StatusTest::NormF> relresid =
     Teuchos::rcp(new NOX::StatusTest::NormF(grp, 1.0e-2));
   Teuchos::RCP<NOX::StatusTest::NormUpdate> update =
     Teuchos::rcp(new NOX::StatusTest::NormUpdate(1.0e-5));
@@ -2181,11 +2181,11 @@ int main(int argc, char *argv[])
   converged->addStatusTest(relresid);
   converged->addStatusTest(wrms);
   converged->addStatusTest(update);
-  Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters = 
+  Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters =
     Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
   Teuchos::RCP<NOX::StatusTest::FiniteValue> fv =
     Teuchos::rcp(new NOX::StatusTest::FiniteValue);
-  Teuchos::RCP<NOX::StatusTest::Combo> combo = 
+  Teuchos::RCP<NOX::StatusTest::Combo> combo =
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
   combo->addStatusTest(fv);
   combo->addStatusTest(converged);
@@ -2196,21 +2196,21 @@ int main(int argc, char *argv[])
 
 \code
   // Create the solver
-  Teuchos::RCP<NOX::Solver::Generic> solver = 
+  Teuchos::RCP<NOX::Solver::Generic> solver =
     NOX::Solver::buildSolver(grpPtr, combo, nlParamsPtr);
   NOX::StatusTest::StatusType solvStatus = solver->solve();
 
   // End Nonlinear Solver **************************************
- 
+
 \endcode
 
- Get the underlying solution vector in terms of an Epetra_Vector and do whatever you want with it.  
- 
+ Get the underlying solution vector in terms of an Epetra_Vector and do whatever you want with it.
+
 \code
   // Get the Epetra_Vector with the final solution from the solver
-  const NOX::Epetra::Group& finalGroup = 
+  const NOX::Epetra::Group& finalGroup =
     dynamic_cast<const NOX::Epetra::Group&>(solver->getSolutionGroup());
-  const Epetra_Vector& finalSolution = 
+  const Epetra_Vector& finalSolution =
     (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).
     getEpetraVector();
 \endcode

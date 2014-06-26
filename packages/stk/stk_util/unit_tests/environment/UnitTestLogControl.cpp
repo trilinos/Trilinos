@@ -6,15 +6,12 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <iostream>
-#include <iomanip>
-#include <sstream>
+#include <iostream>                     // for ostringstream, etc
+#include <stk_util/environment/LogControl.hpp>  // for LogControl, RuleMap, etc
+#include <gtest/gtest.h>
+#include <string>                       // for operator==, char_traits, etc
 
-#include <iostream>
-#include <stdexcept>
-#include <stk_util/environment/LogControl.hpp>
 
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
 namespace {
 
@@ -22,7 +19,7 @@ std::ostringstream os;
 
 } // namespace <empty>
 
-STKUNIT_UNIT_TEST(UnitTestLogControl, UnitTest)
+TEST(UnitTestLogControl, UnitTest)
 {
   stk::RuleMap rule_map;
 
@@ -204,6 +201,6 @@ STKUNIT_UNIT_TEST(UnitTestLogControl, UnitTest)
     "    Running nonlinear 9\n"
     "      Work count 899\n";
   
-  STKUNIT_ASSERT_EQUAL((result == os.str()), true);
+  ASSERT_EQ((result == os.str()), true);
 }
 

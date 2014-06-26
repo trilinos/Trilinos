@@ -13,4 +13,12 @@ Analysis is performed for screen_1.ml
 
 FAQ:
 
- * put removeLines.sh in a directory in your path.  Since arcadia cd's around, PWD is not enough
+ * if you see the error
+          tt = map(float,r[-1].split())
+          ValueError: invalid literal for float(): sh:
+
+   then put removeLines.sh in a directory that is on your path.  Since arcadia cd's around, PWD is not enough.
+
+ * if you see the message "running now?"
+
+   make sure each directory run_1, run_8, etc. has a file screen.out.12345.  (It can be empty.)

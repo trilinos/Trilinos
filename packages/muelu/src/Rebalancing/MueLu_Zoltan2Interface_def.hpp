@@ -46,11 +46,6 @@
 #ifndef MUELU_ZOLTAN2INTERFACE_DEF_HPP
 #define MUELU_ZOLTAN2INTERFACE_DEF_HPP
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 #include <sstream>
 #include <set>
 
@@ -203,7 +198,7 @@ namespace MueLu {
     RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(rowMap, false);
     ArrayRCP<GO>                      decompEntries = decomposition->getDataNonConst(0);
 
-    const zoltan2_partId_t * parts = problem->getSolution().getPartList();
+    const typename InputAdapterType::part_t * parts = problem->getSolution().getPartList();
 
     // K. Devine comment:
     //   At present, Zoltan2 does not guarantee that the parts in getPartList() are listed

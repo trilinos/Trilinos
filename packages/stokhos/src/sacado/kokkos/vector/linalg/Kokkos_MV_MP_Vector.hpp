@@ -53,38 +53,6 @@
 
 namespace Kokkos {
 
-namespace Impl {
-
-// Utility function to see if a PCE is really a constant
-template <typename Storage>
-bool is_mp_vector_constant(const Sacado::MP::Vector<Storage>& x)
-{
-  typedef typename Storage::ordinal_type ordinal_type;
-  typedef typename Storage::value_type value_type;
-
-  // All size-1 vectors are constants
-  const ordinal_type sz = x.size();
-  if (sz == 1) return true;
-
-  // Maybe use a tolerance????
-  const value_type val = x.fastAccessCoeff(0);
-  for (ordinal_type i=1; i<sz; ++i)
-    if (x.fastAccessCoeff(i) != val) return false;
-
-  return true;
-}
-
-inline void raise_mp_vector_error(const char *msg)
-{
-#if defined(__CUDACC__) && defined(__CUDA_ARCH__)
-  cuda_abort(msg);
-#else
-  throw std::runtime_error(msg);
-#endif
-}
-
-} // namespace Impl
-
 // Rank-1 vector add with Sacado::MP::Vector scalar type, constant a, b
 template <typename RS, typename RL, typename RD, typename RM,
           typename XS, typename XL, typename XD, typename XM,
@@ -123,15 +91,11 @@ V_Add( const Kokkos::View< Sacado::MP::Vector<RS>*, RL, RD, RM >& r,
        const Kokkos::View< Sacado::MP::Vector<YS>*, YL, YD, YM >& y,
        int n = -1)
 {
-  typedef Kokkos::View< Sacado::MP::Vector<RS>*, RL, RD, RM > RVector;
-  typedef Kokkos::View< Sacado::MP::Vector<XS>*, XL, XD, XM > XVector;
-  typedef Kokkos::View< Sacado::MP::Vector<YS>*, YL, YD, YM > YVector;
-
-  if (Impl::is_mp_vector_constant(av) && Impl::is_mp_vector_constant(bv)) {
+  if (Sacado::is_constant(av) && Sacado::is_constant(bv)) {
    return V_Add( r, av.fastAccessCoeff(0), x, bv.fastAccessCoeff(0), y, n );
   }
   else {
-    Impl::raise_mp_vector_error("V_Add not implemented for non-constant a or b");
+    Impl::raise_error("V_Add not implemented for non-constant a or b");
   }
   return r;
 }
@@ -174,15 +138,11 @@ MV_Add( const Kokkos::View< Sacado::MP::Vector<RS>**, RL, RD, RM >& r,
         const Kokkos::View< Sacado::MP::Vector<YS>**, YL, YD, YM >& y,
         int n = -1)
 {
-  typedef Kokkos::View< Sacado::MP::Vector<RS>**, RL, RD, RM > RVector;
-  typedef Kokkos::View< Sacado::MP::Vector<XS>**, XL, XD, XM > XVector;
-  typedef Kokkos::View< Sacado::MP::Vector<YS>**, YL, YD, YM > YVector;
-
-  if (Impl::is_mp_vector_constant(av) && Impl::is_mp_vector_constant(bv)) {
+  if (Sacado::is_constant(av) && Sacado::is_constant(bv)) {
     return MV_Add( r, av.fastAccessCoeff(0), x, bv.fastAccessCoeff(0), y, n );
   }
   else {
-    Impl::raise_mp_vector_error("MV_Add not implemented for non-constant a or b");
+    Impl::raise_error("MV_Add not implemented for non-constant a or b");
   }
   return r;
 }

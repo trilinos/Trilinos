@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -41,15 +41,19 @@ INCLUDE(ConcatStrings)
 INCLUDE(PrintVar)
 
 #
-# Append strings to an existing string variable
+# @FUNCTION: APPEND_STRING_VAR()
 #
-# APPEND_STIRNG_VAR(STRING_VAR "string1" "string2" ...)
+# Append strings to an existing string variable (reduces boiler-place code and
+# reduces mistakes).
 #
-# Note that the usage of the characters '[', ']', '{', '}' are taken by CMake
-# to bypass the meaning of ';' to separate string characters.
+# Usage::
 #
-# If you want to ignore the meaning of these special characters and are okay with
-# just adding one string at a time use APPEND_STRING_VAR_EXT(...)
+#   APPEND_STRING_VAR(<stringVar> "<string1>" "<string2>" ...)
+#
+# Note that the usage of the characters ``'['``, ``']'``, ``'{'``, ``'}'`` are
+# taken by CMake to bypass the meaning of ';' to separate string characters.
+# If one wants to ignore the meaning of these special characters and are okay
+# with just adding one string at a time, then use `APPEND_STRING_VAR_EXT()`_.
 #
 FUNCTION(APPEND_STRING_VAR STRING_VAR_OUT)
   #MESSAGE("APPEND_STRING_VAR: ${STRING_VAR_OUT} {${ARGN}}")
@@ -61,9 +65,17 @@ ENDFUNCTION()
 
 
 #
-# Append a single string to an existing string variable, ignoring ';'
+# @FUNCTION: APPEND_STRING_VAR_EXT()
 #
-# APPEND_STIRNG_VAR_EXT(STRING_VAR_OUT "string")
+# Append a single string to an existing string variable, ignoring ';' (reduces
+# boiler-place code and reduces mistakes).
+#
+# Usage::
+#
+#   APPEND_STRING_VAR_EXT(<stringVar> "<string>")
+#
+# Simply sets ``<stringVar> = "${<stringVar>}<string>"`` and leaves in ``';'``
+# without creating new array elements.
 #
 FUNCTION(APPEND_STRING_VAR_EXT  STRING_VAR_OUT  STRING_TO_APPEND)
   SET(STRING_VAR "${${STRING_VAR_OUT}}${STRING_TO_APPEND}")

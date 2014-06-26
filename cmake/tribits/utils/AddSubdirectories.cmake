@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -38,9 +38,21 @@
 # @HEADER
 
 #
-# Macro that adds a list of subdirectories
+# @MACRO: ADD_SUBDIRECTORIES()
 #
-
+# Macro that adds a list of subdirectories all at once (removes boiler-place
+# code).
+#
+# Usage::
+#
+#   ADD_SUBDIRECTORIES(<dir1> <dir2> ...)
+#
+# instead of::
+#
+#   ADD_SUBDIRECTORY(<dir1>)
+#   ADD_SUBDIRECTORY(<dir2>)
+#   ...
+#
 MACRO(ADD_SUBDIRECTORIES)
   FOREACH(DIR ${ARGV})
     ADD_SUBDIRECTORY(${DIR})

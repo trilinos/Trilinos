@@ -1,16 +1,17 @@
 #ifndef STK_UTIL_DIAG_WriterRegsitry_h
 #define STK_UTIL_DIAG_WriterRegsitry_h
 
-#include <map>
-#include <string>
-#include <vector>
+#include <map>                          // for map
+#include <stk_util/util/Writer_fwd.hpp>  // for Writer
+#include <stk_util/util/string_case_compare.hpp>  // for LessCase
+#include <string>                       // for string
+#include <utility>                      // for pair
+#include <vector>                       // for vector
+#include "stk_util/diag/Option.hpp"     // for OptionMaskParser
+namespace stk { namespace diag { class Writer; } }
+namespace stk { namespace diag { class WriterThrowSafe; } }
 
-#include <stk_util/util/string_case_compare.hpp>
-#include <stk_util/diag/Writer.hpp>
 
-#include <stk_util/util/FeatureTest.hpp>
-#include <stk_util/diag/Writer_fwd.hpp>
-#include <stk_util/diag/WriterParser.hpp>
 
 namespace sierra {
 namespace Diag {
@@ -84,7 +85,6 @@ void unregisterWriter(const std::string &name, Writer &diag_writer);
 } // namespace Diag
 } // namespace sierra
 
-#include <stk_util/diag/WriterExt.hpp>
 
 #endif // STK_UTIL_DIAG_WriterRegsitry_h
 

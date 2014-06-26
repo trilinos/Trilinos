@@ -125,9 +125,8 @@ void panzer::ScatterDirichletResidual_Epetra<panzer::Traits::Residual, Traits,LO
 postRegistrationSetup(typename Traits::SetupData d, 
 		      PHX::FieldManager<Traits>& fm)
 {
-  // globalIndexer_ = d.globalIndexer_;
-
   fieldIds_.resize(scatterFields_.size());
+
   // load required field numbers for fast use
   for(std::size_t fd=0;fd<scatterFields_.size();++fd) {
     // get field ID from DOF manager
@@ -175,7 +174,6 @@ template<typename Traits,typename LO,typename GO>
 void panzer::ScatterDirichletResidual_Epetra<panzer::Traits::Residual, Traits,LO,GO>::
 evaluateFields(typename Traits::EvalData workset)
 { 
-   std::vector<GO> GIDs;
    std::vector<int> LIDs;
  
    // for convenience pull out some objects from workset
@@ -194,12 +192,7 @@ evaluateFields(typename Traits::EvalData workset)
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-      globalIndexer_->getElementGIDs(cellLocalId,GIDs); 
-
-      // caculate the local IDs for this element
-      LIDs.resize(GIDs.size());
-      for(std::size_t i=0;i<GIDs.size();i++)
-         LIDs[i] = r->Map().LID(GIDs[i]);
+      LIDs = globalIndexer_->getElementLIDs(cellLocalId); 
 
       // loop over each field to be scattered
       for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
@@ -297,9 +290,8 @@ void panzer::ScatterDirichletResidual_Epetra<panzer::Traits::Tangent, Traits,LO,
 postRegistrationSetup(typename Traits::SetupData d, 
 		      PHX::FieldManager<Traits>& fm)
 {
-  // globalIndexer_ = d.globalIndexer_;
-
   fieldIds_.resize(scatterFields_.size());
+
   // load required field numbers for fast use
   for(std::size_t fd=0;fd<scatterFields_.size();++fd) {
     // get field ID from DOF manager
@@ -360,7 +352,6 @@ template<typename Traits,typename LO,typename GO>
 void panzer::ScatterDirichletResidual_Epetra<panzer::Traits::Tangent, Traits,LO,GO>::
 evaluateFields(typename Traits::EvalData workset)
 { 
-   std::vector<GO> GIDs;
    std::vector<int> LIDs;
  
    // for convenience pull out some objects from workset
@@ -379,12 +370,8 @@ evaluateFields(typename Traits::EvalData workset)
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-      globalIndexer_->getElementGIDs(cellLocalId,GIDs); 
-
-      // caculate the local IDs for this element
-      LIDs.resize(GIDs.size());
-      for(std::size_t i=0;i<GIDs.size();i++)
-         LIDs[i] = r->Map().LID(GIDs[i]);
+      // globalIndexer_->getElementGIDs(cellLocalId,GIDs); 
+      LIDs = globalIndexer_->getElementLIDs(cellLocalId); 
 
       // loop over each field to be scattered
       for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
@@ -495,6 +482,7 @@ postRegistrationSetup(typename Traits::SetupData d,
 		      PHX::FieldManager<Traits>& fm)
 {
   fieldIds_.resize(scatterFields_.size());
+
   // load required field numbers for fast use
   for(std::size_t fd=0;fd<scatterFields_.size();++fd) {
     // get field ID from DOF manager
@@ -543,12 +531,20 @@ template<typename Traits,typename LO,typename GO>
 void panzer::ScatterDirichletResidual_Epetra<panzer::Traits::Jacobian, Traits,LO,GO>::
 evaluateFields(typename Traits::EvalData workset)
 { 
-   std::vector<GO> GIDs;
    std::vector<int> LIDs;
  
    // for convenience pull out some objects from workset
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
+/*
+	      // this is the default case
+	      for(int sensIndex=0;sensIndex<scatterField.size();++sensIndex)
+		jacRow[sensIndex] = scatterField.fastAccessDx(sensIndex);
+	      TEUCHOS_ASSERT(jacRow.size()==LIDs.size());
+*/
+		
+	      // int err = Jac->ReplaceGlobalValues(gid, scatterField.size(), &jacRow[0],&GIDs[0]);
+	      // int err = Jac->ReplaceMyValues(lid, scatterField.size(), &jacRow[0],&LIDs[0]);
 
    Teuchos::RCP<const EpetraLinearObjContainer> epetraContainer = epetraContainer_;
    TEUCHOS_ASSERT(epetraContainer!=Teuchos::null);
@@ -564,20 +560,7 @@ evaluateFields(typename Traits::EvalData workset)
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-      globalIndexer_->getElementGIDs(cellLocalId,GIDs); 
-
-      if(r!=Teuchos::null) {
-         // caculate the local IDs for this element
-         LIDs.resize(GIDs.size());
-         for(std::size_t i=0;i<GIDs.size();i++)
-            LIDs[i] = r->Map().LID(GIDs[i]);
-      }
-      else {
-         // caculate the local IDs for this element
-         LIDs.resize(GIDs.size());
-         for(std::size_t i=0;i<GIDs.size();i++)
-            LIDs[i] = Jac->RowMap().LID(GIDs[i]);
-      }
+      LIDs = globalIndexer_->getElementLIDs(cellLocalId); 
 
       // loop over each field to be scattered
       for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
@@ -620,7 +603,7 @@ evaluateFields(typename Traits::EvalData workset)
                }
             }
  
-            int gid = GIDs[offset];
+            // int gid = GIDs[offset];
             const ScalarT & scatterField = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
 
 	    if(r!=Teuchos::null) 
@@ -632,12 +615,7 @@ evaluateFields(typename Traits::EvalData workset)
             std::vector<double> jacRow(scatterField.size(),0.0);
     
             if(!preserveDiagonal_) {
-	      // this is the default case
-	      for(int sensIndex=0;sensIndex<scatterField.size();++sensIndex)
-		jacRow[sensIndex] = scatterField.fastAccessDx(sensIndex);
-	      TEUCHOS_ASSERT(jacRow.size()==GIDs.size());
-		
-	      int err = Jac->ReplaceGlobalValues(gid, scatterField.size(), &jacRow[0],&GIDs[0]);
+	      int err = Jac->ReplaceMyValues(lid, scatterField.size(), scatterField.dx(), &LIDs[0]);
 	      TEUCHOS_ASSERT(err==0); 
 	    }
          }

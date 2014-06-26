@@ -61,7 +61,8 @@ PHX_EVALUATOR_CTOR(DirichletResidual_EdgeBasis,p)
   basis = p.get<Teuchos::RCP<const panzer::PureBasis> >("Basis");
   pointRule = p.get<Teuchos::RCP<const panzer::PointRule> >("Point Rule");
 
-  std::string dof_name = p.get<std::string>("DOF Name")+"_"+pointRule->getName(); 
+  std::string field_name = p.get<std::string>("DOF Name");
+  std::string dof_name = field_name+"_"+pointRule->getName(); 
   std::string value_name = p.get<std::string>("Value Name");
 
   Teuchos::RCP<PHX::DataLayout> basis_layout = basis->functional;
@@ -77,9 +78,17 @@ PHX_EVALUATOR_CTOR(DirichletResidual_EdgeBasis,p)
   TEUCHOS_ASSERT(vector_layout_vector->dimension(1)==vector_layout_dof->dimension(1));
   TEUCHOS_ASSERT(vector_layout_vector->dimension(2)==vector_layout_dof->dimension(2));
 
-  residual = PHX::MDField<ScalarT>(residual_name, basis_layout);
-  dof      = PHX::MDField<ScalarT>(dof_name, vector_layout_dof);
-  value    = PHX::MDField<ScalarT>(value_name, vector_layout_vector);
+  residual = PHX::MDField<ScalarT,Cell,BASIS>(residual_name, basis_layout);
+  dof      = PHX::MDField<ScalarT,Cell,Point,Dim>(dof_name, vector_layout_dof);
+  value    = PHX::MDField<ScalarT,Cell,Point,Dim>(value_name, vector_layout_vector);
+
+  // setup the orientation field
+  std::string orientationFieldName = basis->name() + " Orientation";
+  // std::string orientationFieldName = field_name+" Orientation";
+  // if(p.isType<std::string>("Orientation Field Name"))
+  //   orientationFieldName = p.get<std::string>("Orientation Field Name");
+  dof_orientation = PHX::MDField<ScalarT,Cell,BASIS>(orientationFieldName,
+	                                                basis_layout);
 
   // setup all basis fields that are required
   panzer::MDFieldArrayFactory af_pv(pointRule->getName()+"_");
@@ -93,6 +102,7 @@ PHX_EVALUATOR_CTOR(DirichletResidual_EdgeBasis,p)
   
   this->addEvaluatedField(residual);
   this->addDependentField(dof);
+  this->addDependentField(dof_orientation);
   this->addDependentField(value);
   this->addDependentField(pointValues.jac);
  
@@ -105,6 +115,7 @@ PHX_POST_REGISTRATION_SETUP(DirichletResidual_EdgeBasis,worksets,fm)
 {
   this->utils.setFieldData(residual,fm);
   this->utils.setFieldData(dof,fm);
+  this->utils.setFieldData(dof_orientation,fm);
   this->utils.setFieldData(value,fm);
   this->utils.setFieldData(pointValues.jac,fm);
 
@@ -117,17 +128,72 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
   if(workset.num_cells<=0)
     return;
 
-  Intrepid::CellTools<ScalarT>::getPhysicalEdgeTangents(edgeTan,
-                                          pointValues.jac,
-                                          workset.subcell_index, 
-                                         *basis->getCellTopology());
+  if(workset.subcell_dim==1) {
+    Intrepid::CellTools<ScalarT>::getPhysicalEdgeTangents(edgeTan,
+                                            pointValues.jac,
+                                            workset.subcell_index, 
+                                           *basis->getCellTopology());
+  
+    for(std::size_t c=0;c<workset.num_cells;c++) {
+      for(int b=0;b<dof.dimension(1);b++) {
+        residual(c,b) = ScalarT(0.0);
+        for(int d=0;d<dof.dimension(2);d++)
+          residual(c,b) += (dof(c,b,d)-value(c,b,d))*edgeTan(c,b,d);
+      } 
+    }
+  }
+  else if(workset.subcell_dim==2) {
+    // we need to compute the tangents on each edge for each cell.
+    // how do we do this????
+    const shards::CellTopology & parentCell = *basis->getCellTopology();
+    int cellDim = parentCell.getDimension();
+    int numEdges = dof.dimension(1);
 
+    refEdgeTan = Intrepid::FieldContainer<ScalarT>(numEdges,cellDim);
+
+    for(int i=0;i<numEdges;i++) {
+      Intrepid::FieldContainer<double> refEdgeTan_local(cellDim);
+      Intrepid::CellTools<double>::getReferenceEdgeTangent(refEdgeTan_local, i, parentCell);
+
+      for(int d=0;d<cellDim;d++) 
+        refEdgeTan(i,d) = refEdgeTan_local(d);
+    }
+
+    // Loop over workset faces and edge points
+    for(std::size_t c=0;c<workset.num_cells;c++) {
+      for(int pt = 0; pt < numEdges; pt++) {
+
+        // Apply parent cell Jacobian to ref. edge tangent
+        for(int i = 0; i < cellDim; i++) {
+          edgeTan(c, pt, i) = 0.0;
+          for(int j = 0; j < cellDim; j++){
+            edgeTan(c, pt, i) +=  pointValues.jac(c, pt, i, j)*refEdgeTan(pt,j);
+          }// for j
+        }// for i
+      }// for pt
+    }// for pCell
+
+    for(std::size_t c=0;c<workset.num_cells;c++) {
+      for(int b=0;b<dof.dimension(1);b++) {
+        residual(c,b) = ScalarT(0.0);
+        for(int d=0;d<dof.dimension(2);d++)
+          residual(c,b) += (dof(c,b,d)-value(c,b,d))*edgeTan(c,b,d);
+      } 
+    }
+
+  }
+  else {
+    // don't know what to do 
+    TEUCHOS_ASSERT(false);
+  }
+
+  // loop over residuals scaling by orientation. This gurantees
+  // everything is oriented in the "positive" direction, this allows
+  // sums acrossed processor to be oriented in the same way (right?)
   for(std::size_t c=0;c<workset.num_cells;c++) {
     for(int b=0;b<dof.dimension(1);b++) {
-      residual(c,b) = ScalarT(0.0);
-      for(int d=0;d<dof.dimension(2);d++)
-        residual(c,b) += (dof(c,b,d)-value(c,b,d))*edgeTan(c,b,d);
-    } 
+      residual(c,b) *= dof_orientation(c,b);
+    }
   }
 }
 

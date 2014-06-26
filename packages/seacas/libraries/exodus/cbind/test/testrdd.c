@@ -353,7 +353,7 @@ int main (int argc, char **argv)
       {
         printf ("dist factors for node set %2d\n", ids[i]);
 
-        for (j=0; j<num_nodes_in_set; j++)
+        for (j=0; j<num_df_in_set; j++)
         {
            printf ("%5.2f\n", dist_fact[j]);
         }

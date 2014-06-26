@@ -53,6 +53,7 @@
 #include <Kokkos_Layout.hpp>
 #include <Kokkos_HostSpace.hpp>
 #include <Kokkos_MemoryTraits.hpp>
+#include <impl/Kokkos_Tags.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -75,6 +76,8 @@ public:
   //! \name Type declarations that all Kokkos devices must provide.
   //@{
 
+  //! The tag (what type of kokkos_object is this).
+  typedef Impl::DeviceTag       kokkos_tag ;
   //! The device type (same as this class).
   typedef Serial                device_type ;
   //! The size_type typedef best suited for this device.
@@ -127,7 +130,10 @@ public:
   /// device have completed.
   static void fence() {}
 
-  static void initialize() {}
+  static void initialize( unsigned threads_count = 1 ,
+                          unsigned use_numa_count = 0 ,
+                          unsigned use_cores_per_numa = 0 ,
+                          bool allow_asynchronous_threadpool = false) {}
 
   static int is_initialized() { return 1 ; }
 
@@ -137,12 +143,28 @@ public:
   //! Print configuration information to the given output stream.
   static void print_configuration( std::ostream & , const bool detail = false );
 
-  inline int league_rank() const { return 0 ; }
-  inline int league_size() const { return 1 ; }
+  //--------------------------------------------------------------------------
+
+  static inline int team_max() { return 1 ; }
+  static inline int team_recommended() { return 1 ; }
+
+  //--------------------------------------------------------------------------
+
+  inline int league_rank() const { return m_league_rank ; }
+  inline int league_size() const { return m_league_size ; }
   inline int team_rank() const { return 0 ; }
   inline int team_size() const { return 1 ; }
 
   inline void team_barrier() {}
+
+  template< class ArgType >
+  KOKKOS_INLINE_FUNCTION
+  ArgType team_scan( const ArgType & value , ArgType * const global_accum = 0 )
+    {
+      const ArgType tmp = global_accum ? *global_accum : ArgType(0) ;
+      if ( global_accum ) { *global_accum += value ; }
+      return tmp ;
+    }
 
   inline std::pair<size_t,size_t> work_range( size_t n ) const
     { return std::pair<size_t,size_t>(0,n); }
@@ -151,6 +173,14 @@ public:
   inline T * get_shmem( const int count );
 
   static void * resize_reduce_scratch( const unsigned );
+  static void * resize_shared_scratch( const unsigned );
+
+  Serial( const int rank , const int size )
+    : m_league_rank(rank) , m_league_size(size) {}
+
+private:
+  int m_league_rank ;
+  int m_league_size ;
 };
 
 } // namespace Kokkos
@@ -162,7 +192,6 @@ namespace Kokkos {
 namespace Impl {
 
 //----------------------------------------------------------------------------
-//TODO: Needs constructor for Kokkos::ParallelWorkRequest CRT
 
 template< class FunctorType , class WorkSpec >
 class ParallelFor< FunctorType , WorkSpec , Serial > {
@@ -203,7 +232,44 @@ public:
   void wait() {}
 };
 
+template< class FunctorType , class WorkSpec >
+class ParallelScan< FunctorType , WorkSpec , Kokkos::Serial >
+{
+public:
+  typedef ReduceAdapter< FunctorType >   Reduce ;
+  typedef typename Reduce::pointer_type  pointer_type ;
+
+  inline
+  ParallelScan( const FunctorType & functor , const size_t work_count )
+  {
+    pointer_type result = (pointer_type ) Serial::resize_reduce_scratch( Reduce::value_size( functor ) );
+
+    functor.init( Reduce::reference( result ) );
+
+    for ( size_t iwork = 0 ; iwork < work_count ; ++iwork ) {
+      functor( iwork , Reduce::reference( result ) , true );
+    }
+  }
+
+  void wait() {}
+};
+
 //----------------------------------------------------------------------------
+
+template< class FunctorType >
+class ParallelFor< FunctorType , ParallelWorkRequest , Serial > {
+public:
+
+  ParallelFor( const FunctorType         & functor
+             , const ParallelWorkRequest & work )
+    {
+      Serial::resize_shared_scratch( FunctorShmemSize< FunctorType >::value( functor ) );
+
+      for ( size_t iwork = 0 ; iwork < work.league_size ; ++iwork ) {
+        functor( Serial(iwork,work.league_size) );
+      }
+    }
+};
 
 } // namespace Impl
 } // namespace Kokkos

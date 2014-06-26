@@ -56,6 +56,10 @@ namespace Test {
 template< class Device >
 struct FibChild : public Kokkos::task_serial<Device,long> {
 
+#if 0
+  Kokkos::TaskPool< FibChild > fib_task_pool ;
+#endif
+
   const long n ;
   int has_nested ;
 
@@ -69,18 +73,29 @@ struct FibChild : public Kokkos::task_serial<Device,long> {
       }
       else {
         if ( has_nested ) {
-          const Kokkos::Future<Device,long> fib_1 = Kokkos::task_dependence(this,0);
-          const Kokkos::Future<Device,long> fib_2 = Kokkos::task_dependence(this,1);
+#if 1
+          const Kokkos::Future<long,Device> fib_1 = Kokkos::task_dependence(this,0);
+          const Kokkos::Future<long,Device> fib_2 = Kokkos::task_dependence(this,1);
+#else
+          const Kokkos::Future<long,Device> fib_1 = fib_task_pool.dependence(this,0);
+          const Kokkos::Future<long,Device> fib_2 = fib_task_pool.dependence(this,1);
+#endif
 
           result = fib_1.get() + fib_2.get();
         }
         else {
-          Kokkos::Future<Device,long> nested[2] ;
+          Kokkos::Future<long,Device> nested[2] ;
           // Spawn new children and respawn myself to sum their results:
           has_nested = 1 ;
+#if 1
           nested[0] = Kokkos::spawn( FibChild(n-1) );
           nested[1] = Kokkos::spawn( FibChild(n-2) );
           Kokkos::respawn( this , nested , nested + 2 );
+#else
+          nested[0] = fib_task_pool.spawn( n-1 );
+          nested[1] = fib_task_pool.spawn( n-2 );
+          fib_task_pool.respawn( this , nested , nested + 2 );
+#endif
         }
       }
     }
@@ -97,44 +112,37 @@ struct FibChild2 : public Kokkos::task_serial<Device,long> {
   inline
   void apply( long & result )
     {
-      switch( nested ) {
-      case 2 : // Fib(n-1) + Fib(n-2)
-        {
-          const Kokkos::Future<Device,long> fib_1 = Kokkos::task_dependence(this,0);
-          const Kokkos::Future<Device,long> fib_2 = Kokkos::task_dependence(this,1);
-          result = fib_1.get() + fib_2.get();
-        }
-        break ;
-      case 3 : // ( Fib(n-2) + Fib(n-3) ) + ( Fib(n-3) + Fib(n-4) )
-        {
-          const Kokkos::Future<Device,long> fib_2 = Kokkos::task_dependence(this,0);
-          const Kokkos::Future<Device,long> fib_3 = Kokkos::task_dependence(this,1);
-          const Kokkos::Future<Device,long> fib_4 = Kokkos::task_dependence(this,2);
-          result = fib_2.get() + 2 * fib_3.get() + fib_4.get();
-        }
-        break ;
-      case 0 :
+      if ( ! nested ) {
+        Kokkos::Future<long,Device> nest[2] ;
         if ( n < 2 ) {
           result = n ;
         }
         else if ( n < 4 ) {
-          Kokkos::Future<Device,long> nest[2] ;
           // Spawn new children and respawn myself to sum their results:
+          // result = Fib(n-1) + Fib(n-2)
           nested = 2 ;
           nest[0] = Kokkos::spawn( FibChild2(n-1) );
           nest[1] = Kokkos::spawn( FibChild2(n-2) );
           Kokkos::respawn( this , nest , nest + 2 );
         }
         else {
-          Kokkos::Future<Device,long> nest[3] ;
           // Spawn new children and respawn myself to sum their results:
-          nested = 3 ;
-          nest[0] = Kokkos::spawn( FibChild2(n-2) );
-          nest[1] = Kokkos::spawn( FibChild2(n-3) );
-          nest[2] = Kokkos::spawn( FibChild2(n-4) );
-          Kokkos::respawn( this , nest , nest + 3 );
+          // result = Fib(n-1) + Fib(n-2)
+          // result = ( Fib(n-2) + Fib(n-3) ) + ( Fib(n-3) + Fib(n-4) )
+          // result = ( ( Fib(n-3) + Fib(n-4) ) + Fib(n-3) ) + ( Fib(n-3) + Fib(n-4) )
+          // result = 3 * Fib(n-3) + 2 * Fib(n-4)
+          nested = 4 ;
+          nest[0] = Kokkos::spawn( FibChild2(n-3) );
+          nest[1] = Kokkos::spawn( FibChild2(n-4) );
+          Kokkos::respawn( this , nest , nest + 2 );
         }
-        break ;
+     }
+     else {
+        const Kokkos::Future<long,Device> fib_a = Kokkos::task_dependence(this,0);
+        const Kokkos::Future<long,Device> fib_b = Kokkos::task_dependence(this,1);
+
+        result = ( nested == 2 ) ? fib_a.get() + fib_b.get()
+                                 : 3 * fib_a.get() + 2 * fib_b.get() ;
       }
     }
 };
@@ -147,25 +155,29 @@ long eval_fib( long n )
 template< class Device >
 void test_fib( long n )
 {
-  Kokkos::Future<Device,long> f = Kokkos::spawn( FibChild<Device>(n) );
+  Kokkos::Future<long,Device> f = Kokkos::spawn( FibChild<Device>(n) );
 
   Kokkos::wait( f );
 
-  std::cout << "Fib(" << n << ") = " << f.get();
-  if ( f.get() != eval_fib(n) ) { std::cout << " != " << eval_fib(n); }
-  std::cout << std::endl ;
+  if ( f.get() != eval_fib(n) ) {
+    std::cout << "Fib(" << n << ") = " << f.get();
+    std::cout << " != " << eval_fib(n);
+    std::cout << std::endl ;
+  }
 }
 
 template< class Device >
 void test_fib2( long n )
 {
-  Kokkos::Future<Device,long> f = Kokkos::spawn( FibChild2<Device>(n) );
+  Kokkos::Future<long,Device> f = Kokkos::spawn( FibChild2<Device>(n) );
 
   Kokkos::wait( f );
 
-  std::cout << "Fib2(" << n << ") = " << f.get();
-  if ( f.get() != eval_fib(n) ) { std::cout << " != " << eval_fib(n); }
-  std::cout << std::endl ;
+  if ( f.get() != eval_fib(n) ) {
+    std::cout << "Fib2(" << n << ") = " << f.get();
+    std::cout << " != " << eval_fib(n);
+    std::cout << std::endl ;
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -189,12 +201,12 @@ void test_norm2( const int n )
 
   for ( int i = 0 ; i < n ; ++i ) x[i] = 1 ;
 
-  Kokkos::Future<Device,double> f = Kokkos::spawn( Norm2<Device>(n,x) );
+  Kokkos::Future<double,Device> f = Kokkos::spawn( Norm2<Device>(n,x) );
 
 #if 0
 
-  Kokkos::Future<Device,double> f =
-    Kokkos::spawn< Kokkos::task_reduce<Device,double,size_t> >
+  Kokkos::Future<double,Device> f =
+    Kokkos::spawn< Kokkos::task_reduce<double,Device,size_t> >
       ( n
       , [=]( int i , double & val ) { val += x[i] * x[i] ; } /* data parallel operator */
       , []( double & val ) { val = std::sqrt( val ); }       /* task serial operator */
@@ -207,7 +219,9 @@ void test_norm2( const int n )
 
   Kokkos::wait( f );
 
+#if defined(PRINT)
   std::cout << "Norm2: " << f.get() << std::endl ;
+#endif
 
   delete[] x ;
 }

@@ -19,7 +19,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 // (etphipp@sandia.gov).
@@ -55,13 +55,10 @@ template <typename T, typename Storage>
 template <typename S>
 KOKKOS_INLINE_FUNCTION
 Sacado::Fad::GeneralFad<T,Storage>::GeneralFad(const Expr<S>& x) :
-  Storage(T(0.)),
+  Storage(x.size(), T(0.)),
   update_val_(x.updateValue())
 {
-  int sz = x.size();
-
-  if (sz != this->size())
-    this->resize(sz);
+  const int sz = x.size();
 
   if (sz) {
     if (x.hasFastAccess())
@@ -97,10 +94,8 @@ Sacado::Fad::GeneralFad<T,Storage>::operator=(const T& v)
 {
   this->val() = v;
 
-  if (this->size()) {
-    this->zero();    // We need to zero out the array for future resizes
+  if (this->size())
     this->resize(0);
-  }
 
   return *this;
 }
@@ -124,10 +119,10 @@ KOKKOS_INLINE_FUNCTION
 Sacado::Fad::GeneralFad<T,Storage>&
 Sacado::Fad::GeneralFad<T,Storage>::operator=(const Expr<S>& x)
 {
-  int sz = x.size();
+  const int sz = x.size();
 
   if (sz != this->size())
-    this->resize(sz);
+    this->resizeAndZero(sz);
 
   if (sz) {
     if (x.hasFastAccess())
@@ -172,7 +167,7 @@ KOKKOS_INLINE_FUNCTION
 Sacado::Fad::GeneralFad<T,Storage>&
 Sacado::Fad::GeneralFad<T,Storage>::operator *= (const T& v)
 {
-  int sz = this->size();
+  const int sz = this->size();
 
   if (update_val_)
     this->val() *= v;
@@ -187,7 +182,7 @@ KOKKOS_INLINE_FUNCTION
 Sacado::Fad::GeneralFad<T,Storage>&
 Sacado::Fad::GeneralFad<T,Storage>::operator /= (const T& v)
 {
-  int sz = this->size();
+  const int sz = this->size();
 
   if (update_val_)
     this->val() /= v;
@@ -227,7 +222,7 @@ Sacado::Fad::GeneralFad<T,Storage>&
 Sacado::Fad::GeneralFad<T,Storage>::
 operator *= (const typename Sacado::dummy<value_type,scalar_type>::type& v)
 {
-  int sz = this->size();
+  const int sz = this->size();
 
   if (update_val_)
     this->val() *= v;
@@ -243,7 +238,7 @@ Sacado::Fad::GeneralFad<T,Storage>&
 Sacado::Fad::GeneralFad<T,Storage>::
 operator /= (const typename Sacado::dummy<value_type,scalar_type>::type& v)
 {
-  int sz = this->size();
+  const int sz = this->size();
 
   if (update_val_)
     this->val() /= v;
@@ -259,7 +254,7 @@ KOKKOS_INLINE_FUNCTION
 Sacado::Fad::GeneralFad<T,Storage>&
 Sacado::Fad::GeneralFad<T,Storage>::operator += (const Sacado::Fad::Expr<S>& x)
 {
-  int xsz = x.size(), sz = this->size();
+  const int xsz = x.size(), sz = this->size();
 
 #if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
   if ((xsz != sz) && (xsz != 0) && (sz != 0))
@@ -276,7 +271,7 @@ Sacado::Fad::GeneralFad<T,Storage>::operator += (const Sacado::Fad::Expr<S>& x)
           this->fastAccessDx(i) += x.dx(i);
     }
     else {
-      this->resize(xsz);
+      this->resizeAndZero(xsz);
       if (x.hasFastAccess())
         for (int i=0; i<xsz; ++i)
           this->fastAccessDx(i) = x.fastAccessDx(i);
@@ -299,7 +294,7 @@ KOKKOS_INLINE_FUNCTION
 Sacado::Fad::GeneralFad<T,Storage>&
 Sacado::Fad::GeneralFad<T,Storage>::operator -= (const Sacado::Fad::Expr<S>& x)
 {
-  int xsz = x.size(), sz = this->size();
+  const int xsz = x.size(), sz = this->size();
 
 #if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
   if ((xsz != sz) && (xsz != 0) && (sz != 0))
@@ -316,7 +311,7 @@ Sacado::Fad::GeneralFad<T,Storage>::operator -= (const Sacado::Fad::Expr<S>& x)
           this->fastAccessDx(i) -= x.dx(i);
     }
     else {
-      this->resize(xsz);
+      this->resizeAndZero(xsz);
       if (x.hasFastAccess())
         for(int i=0; i<xsz; ++i)
           this->fastAccessDx(i) = -x.fastAccessDx(i);
@@ -340,7 +335,7 @@ KOKKOS_INLINE_FUNCTION
 Sacado::Fad::GeneralFad<T,Storage>&
 Sacado::Fad::GeneralFad<T,Storage>::operator *= (const Sacado::Fad::Expr<S>& x)
 {
-  int xsz = x.size(), sz = this->size();
+  const int xsz = x.size(), sz = this->size();
   T xval = x.val();
   T v = this->val();
 
@@ -359,7 +354,7 @@ Sacado::Fad::GeneralFad<T,Storage>::operator *= (const Sacado::Fad::Expr<S>& x)
           this->fastAccessDx(i) = v*x.dx(i) + this->fastAccessDx(i)*xval;
     }
     else {
-      this->resize(xsz);
+      this->resizeAndZero(xsz);
       if (x.hasFastAccess())
         for(int i=0; i<xsz; ++i)
           this->fastAccessDx(i) = v*x.fastAccessDx(i);
@@ -388,7 +383,7 @@ KOKKOS_INLINE_FUNCTION
 Sacado::Fad::GeneralFad<T,Storage>&
 Sacado::Fad::GeneralFad<T,Storage>::operator /= (const Sacado::Fad::Expr<S>& x)
 {
-  int xsz = x.size(), sz = this->size();
+  const int xsz = x.size(), sz = this->size();
   T xval = x.val();
   T v = this->val();
 
@@ -407,7 +402,7 @@ Sacado::Fad::GeneralFad<T,Storage>::operator /= (const Sacado::Fad::Expr<S>& x)
           this->fastAccessDx(i) = ( this->fastAccessDx(i)*xval - v*x.dx(i) )/ (xval*xval);
     }
     else {
-      this->resize(xsz);
+      this->resizeAndZero(xsz);
       if (x.hasFastAccess())
         for(int i=0; i<xsz; ++i)
           this->fastAccessDx(i) = - v*x.fastAccessDx(i) / (xval*xval);

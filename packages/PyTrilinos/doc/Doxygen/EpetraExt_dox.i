@@ -77,15 +77,12 @@ algo=GREEDY, int reordering=0, bool distance1=false, int verbosity=0)
 
 Constructor ";
 
+%feature("docstring")  EpetraExt::CrsGraph_MapColoring::Toperator "CrsGraph_MapColoring::NewTypeRef
+EpetraExt::CrsGraph_MapColoring::Toperator(OriginalTypeRef orig) ";
+
 
 // File: classEpetraExt_1_1CrsGraph__MapColoringIndex.xml
-%feature("docstring") EpetraExt::CrsGraph_MapColoringIndex "
-
-Generates a std::vector of Epetra_IntVector's to be used to map
-perturbation contributions to a CrsGraph/CrsMatrix from a perturbed
-vector.
-
-C++ includes: EpetraExt_MapColoringIndex.h ";
+%feature("docstring") EpetraExt::CrsGraph_MapColoringIndex "";
 
 %feature("docstring")
 EpetraExt::CrsGraph_MapColoringIndex::~CrsGraph_MapColoringIndex "EpetraExt::CrsGraph_MapColoringIndex::~CrsGraph_MapColoringIndex()
@@ -94,6 +91,21 @@ Destructor ";
 
 %feature("docstring")
 EpetraExt::CrsGraph_MapColoringIndex::CrsGraph_MapColoringIndex "EpetraExt::CrsGraph_MapColoringIndex::CrsGraph_MapColoringIndex(const
+Epetra_MapColoring &ColorMap)
+
+Constructor input param ColorMap defines the perturbation coloring ";
+
+
+// File: classEpetraExt_1_1CrsGraph__MapColoringIndex64.xml
+%feature("docstring") EpetraExt::CrsGraph_MapColoringIndex64 "";
+
+%feature("docstring")
+EpetraExt::CrsGraph_MapColoringIndex64::~CrsGraph_MapColoringIndex64 "EpetraExt::CrsGraph_MapColoringIndex64::~CrsGraph_MapColoringIndex64()
+
+Destructor ";
+
+%feature("docstring")
+EpetraExt::CrsGraph_MapColoringIndex64::CrsGraph_MapColoringIndex64 "EpetraExt::CrsGraph_MapColoringIndex64::CrsGraph_MapColoringIndex64(const
 Epetra_MapColoring &ColorMap)
 
 Constructor input param ColorMap defines the perturbation coloring ";
@@ -289,7 +301,11 @@ Forward transfer of data from orig object input in the operator()
 method call to the new object created in this same call. Returns true
 is operation is successful.
 
-Preconditions: ";
+Preconditions:
+
+Invariants:
+
+Postconditions: ";
 
 %feature("docstring")  EpetraExt::CrsMatrix_SubCopy::rvs "bool
 EpetraExt::CrsMatrix_SubCopy::rvs()
@@ -298,7 +314,11 @@ Reverse transfer of data from new object created in the operator()
 method call to the orig object input to this same method. Returns true
 if operation is successful.
 
-Preconditions: ";
+Preconditions:
+
+Invariants:
+
+Postconditions: ";
 
 
 // File: classEpetraExt_1_1CrsMatrix__View.xml
@@ -346,6 +366,12 @@ int NumEntries, double *Values, int *Indices)=0 ";
 %feature("docstring")  EpetraExt::CrsWrapper::SumIntoGlobalValues "virtual int EpetraExt::CrsWrapper::SumIntoGlobalValues(int GlobalRow,
 int NumEntries, double *Values, int *Indices)=0 ";
 
+%feature("docstring")  EpetraExt::CrsWrapper::InsertGlobalValues "virtual int EpetraExt::CrsWrapper::InsertGlobalValues(long long
+GlobalRow, int NumEntries, double *Values, long long *Indices)=0 ";
+
+%feature("docstring")  EpetraExt::CrsWrapper::SumIntoGlobalValues "virtual int EpetraExt::CrsWrapper::SumIntoGlobalValues(long long
+GlobalRow, int NumEntries, double *Values, long long *Indices)=0 ";
+
 
 // File: classEpetraExt_1_1CrsWrapper__Epetra__CrsMatrix.xml
 %feature("docstring") EpetraExt::CrsWrapper_Epetra_CrsMatrix "";
@@ -375,38 +401,52 @@ EpetraExt::CrsWrapper_Epetra_CrsMatrix::SumIntoGlobalValues "int
 EpetraExt::CrsWrapper_Epetra_CrsMatrix::SumIntoGlobalValues(int
 GlobalRow, int NumEntries, double *Values, int *Indices) ";
 
+%feature("docstring")
+EpetraExt::CrsWrapper_Epetra_CrsMatrix::InsertGlobalValues "int
+EpetraExt::CrsWrapper_Epetra_CrsMatrix::InsertGlobalValues(long long
+GlobalRow, int NumEntries, double *Values, long long *Indices) ";
+
+%feature("docstring")
+EpetraExt::CrsWrapper_Epetra_CrsMatrix::SumIntoGlobalValues "int
+EpetraExt::CrsWrapper_Epetra_CrsMatrix::SumIntoGlobalValues(long long
+GlobalRow, int NumEntries, double *Values, long long *Indices) ";
+
 
 // File: classEpetraExt_1_1CrsWrapper__GraphBuilder.xml
 %feature("docstring") EpetraExt::CrsWrapper_GraphBuilder "";
 
 %feature("docstring")
-EpetraExt::CrsWrapper_GraphBuilder::CrsWrapper_GraphBuilder "EpetraExt::CrsWrapper_GraphBuilder::CrsWrapper_GraphBuilder(const
-Epetra_Map &emap) ";
+EpetraExt::CrsWrapper_GraphBuilder::CrsWrapper_GraphBuilder "EpetraExt::CrsWrapper_GraphBuilder< int_type
+>::CrsWrapper_GraphBuilder(const Epetra_Map &emap) ";
 
 %feature("docstring")
-EpetraExt::CrsWrapper_GraphBuilder::~CrsWrapper_GraphBuilder "EpetraExt::CrsWrapper_GraphBuilder::~CrsWrapper_GraphBuilder() ";
+EpetraExt::CrsWrapper_GraphBuilder::~CrsWrapper_GraphBuilder "EpetraExt::CrsWrapper_GraphBuilder< int_type
+>::~CrsWrapper_GraphBuilder() ";
 
-%feature("docstring")  EpetraExt::CrsWrapper_GraphBuilder::RowMap "const Epetra_Map& EpetraExt::CrsWrapper_GraphBuilder::RowMap() const
-";
+%feature("docstring")  EpetraExt::CrsWrapper_GraphBuilder::RowMap "const Epetra_Map& EpetraExt::CrsWrapper_GraphBuilder< int_type
+>::RowMap() const ";
 
-%feature("docstring")  EpetraExt::CrsWrapper_GraphBuilder::Filled "bool EpetraExt::CrsWrapper_GraphBuilder::Filled() ";
+%feature("docstring")  EpetraExt::CrsWrapper_GraphBuilder::Filled "bool EpetraExt::CrsWrapper_GraphBuilder< int_type >::Filled() ";
 
 %feature("docstring")
 EpetraExt::CrsWrapper_GraphBuilder::InsertGlobalValues "int
-EpetraExt::CrsWrapper_GraphBuilder::InsertGlobalValues(int GlobalRow,
-int NumEntries, double *Values, int *Indices) ";
+EpetraExt::CrsWrapper_GraphBuilder< int_type
+>::InsertGlobalValues(int_type GlobalRow, int NumEntries, double
+*Values, int_type *Indices) ";
 
 %feature("docstring")
 EpetraExt::CrsWrapper_GraphBuilder::SumIntoGlobalValues "int
-EpetraExt::CrsWrapper_GraphBuilder::SumIntoGlobalValues(int GlobalRow,
-int NumEntries, double *Values, int *Indices) ";
+EpetraExt::CrsWrapper_GraphBuilder< int_type
+>::SumIntoGlobalValues(int_type GlobalRow, int NumEntries, double
+*Values, int_type *Indices) ";
 
-%feature("docstring")  EpetraExt::CrsWrapper_GraphBuilder::get_graph "std::map< int, std::set< int > * > &
-EpetraExt::CrsWrapper_GraphBuilder::get_graph() ";
+%feature("docstring")  EpetraExt::CrsWrapper_GraphBuilder::get_graph "std::map< int_type, std::set< int_type > * > &
+EpetraExt::CrsWrapper_GraphBuilder< int_type >::get_graph() ";
 
 %feature("docstring")
 EpetraExt::CrsWrapper_GraphBuilder::get_max_row_length "int
-EpetraExt::CrsWrapper_GraphBuilder::get_max_row_length() ";
+EpetraExt::CrsWrapper_GraphBuilder< int_type >::get_max_row_length()
+";
 
 
 // File: classEpetraExt_1_1DistArray.xml
@@ -487,10 +527,10 @@ Returns a pointer to the internally stored data (const version). ";
 // File: classEpetraExt_1_1Exception.xml
 %feature("docstring") EpetraExt::Exception "";
 
-%feature("docstring")  EpetraExt::Exception::Exception "EpetraExt::Exception::Exception(const string FileName, const int
-LineNumber, const string Line1, const string Line2=\"\", const string
-Line3=\"\", const string Line4=\"\", const string Line5=\"\", const
-string Line6=\"\") ";
+%feature("docstring")  EpetraExt::Exception::Exception "EpetraExt::Exception::Exception(const std::string FileName, const int
+LineNumber, const std::string Line1, const std::string Line2=\"\",
+const std::string Line3=\"\", const std::string Line4=\"\", const
+std::string Line5=\"\", const std::string Line6=\"\") ";
 
 %feature("docstring")  EpetraExt::Exception::Print "void
 EpetraExt::Exception::Print() ";
@@ -501,6 +541,106 @@ EpetraExt::Exception::Print() ";
 
 %feature("docstring")  EpetraExt::InPlaceTransform::~InPlaceTransform
 "virtual EpetraExt::InPlaceTransform< T >::~InPlaceTransform() ";
+
+
+// File: classEpetraExt_1_1LightweightCrsMatrix.xml
+%feature("docstring") EpetraExt::LightweightCrsMatrix "";
+
+%feature("docstring")
+EpetraExt::LightweightCrsMatrix::LightweightCrsMatrix "EpetraExt::LightweightCrsMatrix::LightweightCrsMatrix(const
+Epetra_CrsMatrix &A, RemoteOnlyImport &RowImporter) ";
+
+%feature("docstring")
+EpetraExt::LightweightCrsMatrix::LightweightCrsMatrix "EpetraExt::LightweightCrsMatrix::LightweightCrsMatrix(const
+Epetra_CrsMatrix &A, Epetra_Import &RowImporter) ";
+
+%feature("docstring")
+EpetraExt::LightweightCrsMatrix::~LightweightCrsMatrix "EpetraExt::LightweightCrsMatrix::~LightweightCrsMatrix() ";
+
+%feature("docstring")  EpetraExt::LightweightCrsMatrix::getcolind "std::vector<int>& EpetraExt::LightweightCrsMatrix::getcolind() ";
+
+%feature("docstring")  EpetraExt::LightweightCrsMatrix::getcolind "std::vector<long long>& EpetraExt::LightweightCrsMatrix::getcolind()
+";
+
+
+// File: classEpetraExt_1_1LightweightMap.xml
+%feature("docstring") EpetraExt::LightweightMap "";
+
+%feature("docstring")  EpetraExt::LightweightMap::LightweightMap "EpetraExt::LightweightMap::LightweightMap() ";
+
+%feature("docstring")  EpetraExt::LightweightMap::LightweightMap "EpetraExt::LightweightMap::LightweightMap(int NumGlobalElements, int
+NumMyElements, const int *MyGlobalElements, int IndexBase, bool
+GenerateHash=true) ";
+
+%feature("docstring")  EpetraExt::LightweightMap::LightweightMap "EpetraExt::LightweightMap::LightweightMap(long long NumGlobalElements,
+int NumMyElements, const long long *MyGlobalElements, int IndexBase,
+bool GenerateHash=true) ";
+
+%feature("docstring")  EpetraExt::LightweightMap::LightweightMap "EpetraExt::LightweightMap::LightweightMap(long long NumGlobalElements,
+int NumMyElements, const long long *MyGlobalElements, long long
+IndexBase, bool GenerateHash=true) ";
+
+%feature("docstring")  EpetraExt::LightweightMap::LightweightMap "EpetraExt::LightweightMap::LightweightMap(const Epetra_Map &Map) ";
+
+%feature("docstring")  EpetraExt::LightweightMap::LightweightMap "EpetraExt::LightweightMap::LightweightMap(const LightweightMap &Map)
+";
+
+%feature("docstring")  EpetraExt::LightweightMap::~LightweightMap "EpetraExt::LightweightMap::~LightweightMap() ";
+
+%feature("docstring")  EpetraExt::LightweightMap::LID "int
+EpetraExt::LightweightMap::LID(int GID) const ";
+
+%feature("docstring")  EpetraExt::LightweightMap::GID "int
+EpetraExt::LightweightMap::GID(int LID) const ";
+
+%feature("docstring")  EpetraExt::LightweightMap::LID "int
+EpetraExt::LightweightMap::LID(long long GID) const ";
+
+%feature("docstring")  EpetraExt::LightweightMap::GID64 "long long
+EpetraExt::LightweightMap::GID64(int LID) const ";
+
+%feature("docstring")  EpetraExt::LightweightMap::NumMyElements "int
+EpetraExt::LightweightMap::NumMyElements() const ";
+
+%feature("docstring")  EpetraExt::LightweightMap::MyGlobalElements "int * EpetraExt::LightweightMap::MyGlobalElements() const ";
+
+%feature("docstring")  EpetraExt::LightweightMap::IndexBase "int
+EpetraExt::LightweightMap::IndexBase() const ";
+
+%feature("docstring")  EpetraExt::LightweightMap::MyGlobalElementsPtr
+"void EpetraExt::LightweightMap::MyGlobalElementsPtr(int
+*&MyGlobalElementList) const ";
+
+%feature("docstring")  EpetraExt::LightweightMap::MyGlobalElements64 "long long * EpetraExt::LightweightMap::MyGlobalElements64() const ";
+
+%feature("docstring")  EpetraExt::LightweightMap::MyGlobalElementsPtr
+"void EpetraExt::LightweightMap::MyGlobalElementsPtr(long long
+*&MyGlobalElementList) const ";
+
+%feature("docstring")  EpetraExt::LightweightMap::IndexBase64 "long
+long EpetraExt::LightweightMap::IndexBase64() const ";
+
+%feature("docstring")  EpetraExt::LightweightMap::MinLID "int
+EpetraExt::LightweightMap::MinLID() const ";
+
+%feature("docstring")  EpetraExt::LightweightMap::MaxLID "int
+EpetraExt::LightweightMap::MaxLID() const ";
+
+%feature("docstring")  EpetraExt::LightweightMap::GlobalIndicesInt "bool EpetraExt::LightweightMap::GlobalIndicesInt() const ";
+
+%feature("docstring")
+EpetraExt::LightweightMap::GlobalIndicesLongLong "bool
+EpetraExt::LightweightMap::GlobalIndicesLongLong() const ";
+
+
+// File: classEpetraExt_1_1LightweightMapData.xml
+%feature("docstring") EpetraExt::LightweightMapData "";
+
+%feature("docstring")
+EpetraExt::LightweightMapData::LightweightMapData "EpetraExt::LightweightMapData::LightweightMapData() ";
+
+%feature("docstring")
+EpetraExt::LightweightMapData::~LightweightMapData "EpetraExt::LightweightMapData::~LightweightMapData() ";
 
 
 // File: classEpetraExt_1_1LinearProblem__CrsSingletonFilter.xml
@@ -795,8 +935,14 @@ Initial analysis phase of transform. Returns true if the transform is
 possible allowing methods  construct(),  fwd() and  rvs() to be
 successfully utilized.
 
-Preconditions: default implementation calls method operator() and
-stores the resulting object in an internal attribute newObj_. ";
+Preconditions:
+
+Invariants:
+
+Postconditions:
+
+The default implementation calls method operator() and stores the
+resulting object in an internal attribute newObj_. ";
 
 %feature("docstring")
 EpetraExt::LinearProblem_CrsSingletonFilter::construct "LinearProblem_CrsSingletonFilter::NewTypeRef
@@ -804,8 +950,13 @@ EpetraExt::LinearProblem_CrsSingletonFilter::construct()
 
 Construction of new object as a result of the transform.
 
-Preconditions: default implementation returns internal attribute
-newObj_. ";
+Preconditions:
+
+Invariants:
+
+Postconditions:
+
+The default implementation returns internal attribute newObj_. ";
 
 %feature("docstring")
 EpetraExt::LinearProblem_CrsSingletonFilter::fwd "bool
@@ -815,7 +966,11 @@ Forward transfer of data from orig object input in the operator()
 method call to the new object created in this same call. Returns true
 is operation is successful.
 
-Preconditions: ";
+Preconditions:
+
+Invariants:
+
+Postconditions: ";
 
 %feature("docstring")
 EpetraExt::LinearProblem_CrsSingletonFilter::rvs "bool
@@ -825,7 +980,11 @@ Reverse transfer of data from new object created in the operator()
 method call to the orig object input to this same method. Returns true
 if operation is successful.
 
-Preconditions: ";
+Preconditions:
+
+Invariants:
+
+Postconditions: ";
 
 
 // File: classEpetraExt_1_1LinearProblem__GraphTrans.xml
@@ -945,7 +1104,11 @@ Forward transfer of data from orig object input in the operator()
 method call to the new object created in this same call. Returns true
 is operation is successful.
 
-Preconditions: ";
+Preconditions:
+
+Invariants:
+
+Postconditions: ";
 
 
 // File: classEpetraExt_1_1LinearProblem__Scale.xml
@@ -1105,68 +1268,7 @@ C++ includes: EpetraExt_Permutation_impl.h ";
 
 
 // File: classEpetraExt_1_1Permutation.xml
-%feature("docstring") EpetraExt::Permutation "
-
-Permutation stores and describes a permutation matrix P. As described
-in \"Matrix Computations\" (Golub and Van Loan), a permutation matrix
-is the identity matrix with its rows re-ordered. The permutation is
-internally stored as an integer vector p, where p[i] is the column-
-index of the \"1\" in P's i-th row. Consider the example of permuting
-a matrix A by applying the permutation matrix P to form the result B.
-i.e., B = PA. If p[i] = j, then row j of A becomes row i of B.
-
-This Permutation class is templated on the type of the object to be
-permuted. However, not all objects are eligible to be template
-parameters. Currently the following objects may be used:
-Epetra_CrsMatrix, Epetra_CrsGraph and Epetra_MultiVector.
-
-A test program which exercises this Permutation class is located in
-the directory packages/epetraext/test/Permutation.
-
-Implementation Notes: Permutation currently inherits
-StructuralSameTypeTransform, which in turn     inherits Transform
-through SameTypeTransform. Permutation, and its base classes,     are
-templates. A couple of noteworthy consequences result from this:
-
-1. A separate instantiation of Permutation must be created for each
-type        of object to be permuted. Example:
-Epetra_CrsGraph& graph = ... Epetra_CrsMatrix& A = ...
-Permutation<Epetra_CrsGraph> graph_perm(...);
-Permutation<Epetra_CrsMatrix> matrix_perm(...);
-
-Epetra_CrsMatrix& PA = matrix_perm(A); Epetra_CrsGraph& Pgraph =
-graph_perm(graph);
-
-2. Following the semantics of Transform, when the Permutation class is
-used        to create a new permuted copy of an object, ownership of
-the new copy is        retained by Permutation. Permutation will
-destroy the new object. This means        that only one object should
-be permuted by a Permutation instance.
-
-It is not clear that these are desirable behaviors for permutations.
-It is     possible that Permutation will be altered to remove these
-limitations, as     follows:
-
-1. If Permutation doesn't inherit Transform, then Permutation need not
-be        a template and instead we could either overload or template-
-ize the        operator() method member. This would allow a single
-instantiation of Permutation to be used for permuting all of the
-eligible target types.
-
-2. Allowing the caller (user) to take ownership of the newly- produced
-permuted objects would allow a single Permutation instance to be used
-repeatedly since it would no longer need to hold a pointer to the new
-object        for later deletion.
-
-Then, example usage could look like this: Epetra_CrsMatrix& A = ...
-Epetra_MultiVector& v = ... Permutation P(...);
-
-Epetra_CrsMatrix PA = P(A);          Epetra_MultiVector Pv = P(v);
-
-Questions and comments about this class may be directed to Alan
-Williams.
-
-C++ includes: EpetraExt_Permutation.h ";
+%feature("docstring") EpetraExt::Permutation "";
 
 %feature("docstring")  EpetraExt::Permutation::Permutation "EpetraExt::Permutation< T >::Permutation(Epetra_DataAccess CV, const
 Epetra_BlockMap &map, int *permutation)
@@ -1198,9 +1300,41 @@ map:  Defines the index space to be permuted. ";
 
 Copy Constructor ";
 
-%feature("docstring")  EpetraExt::Permutation::~Permutation "EpetraExt::Permutation< T >::~Permutation()
 
-Destructor ";
+// File: classEpetraExt_1_1Permutation64.xml
+%feature("docstring") EpetraExt::Permutation64 "";
+
+%feature("docstring")  EpetraExt::Permutation64::Permutation64 "EpetraExt::Permutation64< T >::Permutation64(Epetra_DataAccess CV,
+const Epetra_BlockMap &map, long long *permutation)
+
+Constructor
+
+Parameters:
+-----------
+
+CV:  Set to either Copy or View.
+
+map:  Defines the index space to be permuted.
+
+permutation:  Array defining the permutation. The length of this array
+must be 'map.NumMyElements()'. This array is the local portion of the
+'p' vector described in the 'Detailed Description' section. ";
+
+%feature("docstring")  EpetraExt::Permutation64::Permutation64 "EpetraExt::Permutation64< T >::Permutation64(const Epetra_BlockMap
+&map)
+
+Constructor. This constructor creates an empty permutation object. The
+contents must then be set using regular Epetra_IntVector methods.
+
+Parameters:
+-----------
+
+map:  Defines the index space to be permuted. ";
+
+%feature("docstring")  EpetraExt::Permutation64::Permutation64 "EpetraExt::Permutation64< T >::Permutation64(const Permutation64< T >
+&src)
+
+Copy Constructor ";
 
 
 // File: classEpetraExt_1_1ProductOperator.xml
@@ -1216,21 +1350,21 @@ M = M[0]*M[1]*...*M[num_Op-1]
 and operator applications are performed one constituent operator at a
 time as:
 
-Forward Mat-vec: Y = M * X     T[k-1] = M[k]*T[k]       for k =
-num_Op-1...0         where: T[num_Op-1] = X (input vector) where:
-T[-1]       = Y (output vector)   Adjoint Mat-vec: Y = M' * X T[k] =
-M[k]'*T[k-1]       for k = 0...num_Op-1         where: T[-1] = X
-(input vector)        where: T[num_Op-1] = Y (output vector)
+Forward Mat-vec: Y = M * X    T[k-1] = M[k]*T[k]      for k =
+num_Op-1...0        where: T[num_Op-1] = X (input vector)       where:
+T[-1]       = Y (output vector)  Adjoint Mat-vec: Y = M' * X    T[k] =
+M[k]'*T[k-1]      for k = 0...num_Op-1        where: T[-1]       = X
+(input vector)       where: T[num_Op-1] = Y (output vector)
 
 Likewise, the inverse can also be applied (if all of the constituent
 operators support the inverse operation) as:
 
-Forward Inverse Mat-vec: Y = inv(M) * X     T[k] = inv(M[k])*T[k-1]
-for k = 0...num_Op-1       for k = 0...num_Op-1 where: T[-1]       = X
-(input vector)        where: T[num_Op-1] = Y (output vector)   Adjoint
-Inverse Mat-vec: Y = inv(M') * X     T[k] = inv(M[k]')*T[k-1]
-for k = num_Op-1...0         where: T[num_Op-1] = X (input vector)
-where: T[-1]       = Y (output vector)
+Forward Inverse Mat-vec: Y = inv(M) * X    T[k] = inv(M[k])*T[k-1] for
+k = 0...num_Op-1      for k = 0...num_Op-1        where: T[-1] = X
+(input vector)       where: T[num_Op-1] = Y (output vector) Adjoint
+Inverse Mat-vec: Y = inv(M') * X    T[k] = inv(M[k]')*T[k-1] for k =
+num_Op-1...0        where: T[num_Op-1] = X (input vector) where: T[-1]
+= Y (output vector)
 
 Note that maps for the result of the inverse of an operator is the
 same as the result of the adjoint of the operator and the map for the
@@ -1305,15 +1439,15 @@ The forward constituent operator T[k-1] = M[k]*T[k] described in the
 main documenatation above is defined as follows:
 
 Op[k]->SetUseTranspose( Op_trans[k]!=Teuchos::NO_TRANS ); if(
-Op_inverse[k]==APPLY_MODE_APPLY )      Op[k]->Apply( T[k], T[k-1] );
-else         Op[k]->ApplyInverse( T[k], T[k-1] );
+Op_inverse[k]==APPLY_MODE_APPLY )   Op[k]->Apply( T[k], T[k-1] ); else
+Op[k]->ApplyInverse( T[k], T[k-1] );
 
 The inverse constituent operator T[k] = inv(M[k])*T[k-1] described in
 the main documenatation above is defined as follows:
 
 Op[k]->SetUseTranspose( Op_trans[k]!=Teuchos::NO_TRANS ); if(
-Op_inverse[k]==APPLY_MODE_APPLY )      Op[k]->ApplyInverse( T[k-1],
-T[k] );          else         Op[k]->Apply( T[k-1], T[k] );
+Op_inverse[k]==APPLY_MODE_APPLY )   Op[k]->ApplyInverse( T[k-1], T[k]
+);       else      Op[k]->Apply( T[k-1], T[k] );
 
 The other transposed constituent operators M[k]' and inv(M[k]') are
 defined by simply changing the value of the transpose as
@@ -1422,6 +1556,51 @@ const ";
 const ";
 
 
+// File: classEpetraExt_1_1RemoteOnlyImport.xml
+%feature("docstring") EpetraExt::RemoteOnlyImport "";
+
+%feature("docstring")  EpetraExt::RemoteOnlyImport::RemoteOnlyImport "EpetraExt::RemoteOnlyImport::RemoteOnlyImport(const Epetra_Import
+&Importer, LightweightMap &RemoteOnlyTargetMap) ";
+
+%feature("docstring")  EpetraExt::RemoteOnlyImport::~RemoteOnlyImport
+"EpetraExt::RemoteOnlyImport::~RemoteOnlyImport() ";
+
+%feature("docstring")  EpetraExt::RemoteOnlyImport::NumSameIDs "int
+EpetraExt::RemoteOnlyImport::NumSameIDs() ";
+
+%feature("docstring")  EpetraExt::RemoteOnlyImport::NumPermuteIDs "int EpetraExt::RemoteOnlyImport::NumPermuteIDs() ";
+
+%feature("docstring")  EpetraExt::RemoteOnlyImport::NumRemoteIDs "int
+EpetraExt::RemoteOnlyImport::NumRemoteIDs() ";
+
+%feature("docstring")  EpetraExt::RemoteOnlyImport::NumExportIDs "int
+EpetraExt::RemoteOnlyImport::NumExportIDs() ";
+
+%feature("docstring")  EpetraExt::RemoteOnlyImport::ExportLIDs "int*
+EpetraExt::RemoteOnlyImport::ExportLIDs() ";
+
+%feature("docstring")  EpetraExt::RemoteOnlyImport::ExportPIDs "int*
+EpetraExt::RemoteOnlyImport::ExportPIDs() ";
+
+%feature("docstring")  EpetraExt::RemoteOnlyImport::RemoteLIDs "int*
+EpetraExt::RemoteOnlyImport::RemoteLIDs() ";
+
+%feature("docstring")  EpetraExt::RemoteOnlyImport::PermuteToLIDs "int* EpetraExt::RemoteOnlyImport::PermuteToLIDs() ";
+
+%feature("docstring")  EpetraExt::RemoteOnlyImport::PermuteFromLIDs "int* EpetraExt::RemoteOnlyImport::PermuteFromLIDs() ";
+
+%feature("docstring")  EpetraExt::RemoteOnlyImport::NumSend "int
+EpetraExt::RemoteOnlyImport::NumSend() ";
+
+%feature("docstring")  EpetraExt::RemoteOnlyImport::Distributor "Epetra_Distributor& EpetraExt::RemoteOnlyImport::Distributor() ";
+
+%feature("docstring")  EpetraExt::RemoteOnlyImport::SourceMap "const
+Epetra_BlockMap& EpetraExt::RemoteOnlyImport::SourceMap() const ";
+
+%feature("docstring")  EpetraExt::RemoteOnlyImport::TargetMap "const
+LightweightMap& EpetraExt::RemoteOnlyImport::TargetMap() const ";
+
+
 // File: classEpetraExt_1_1RowMatrix__Transpose.xml
 %feature("docstring") EpetraExt::RowMatrix_Transpose "
 
@@ -1435,17 +1614,13 @@ EpetraExt::RowMatrix_Transpose::~RowMatrix_Transpose "EpetraExt::RowMatrix_Trans
 Destructor. ";
 
 %feature("docstring")
-EpetraExt::RowMatrix_Transpose::RowMatrix_Transpose "EpetraExt::RowMatrix_Transpose::RowMatrix_Transpose(bool
-MakeDataContiguous=false, Epetra_Map *TransposeRowMap=0, bool
-IgnoreNonLocalCols=false)
+EpetraExt::RowMatrix_Transpose::RowMatrix_Transpose "EpetraExt::RowMatrix_Transpose::RowMatrix_Transpose(Epetra_Map
+*TransposeRowMap=0, bool IgnoreNonLocalCols=false)
 
 Constructor.
 
 Parameters:
 -----------
-
-In:  MakeDataContiguous - Whether to optimize form of matrix to be
-contiguous data storage.
 
 In:  TransposeRowMap - Map to be used for row mapping of transpose
 matrix
@@ -1462,6 +1637,13 @@ Foward Data Migration. ";
 EpetraExt::RowMatrix_Transpose::rvs()
 
 Reverse Data Migration. ";
+
+%feature("docstring")
+EpetraExt::RowMatrix_Transpose::ReleaseTranspose "void
+EpetraExt::RowMatrix_Transpose::ReleaseTranspose()
+
+Release the pointer to TransposeMatrix_ (so you can take the matrix
+out w/o worring about deallocation) ";
 
 
 // File: classEpetraExt_1_1SameTypeTransform.xml
@@ -1481,7 +1663,11 @@ Forward transfer of data from orig object input in the operator()
 method call to the new object created in this same call. Returns true
 is operation is successful.
 
-Preconditions: ";
+Preconditions:
+
+Invariants:
+
+Postconditions: ";
 
 %feature("docstring")  EpetraExt::StructuralSameTypeTransform::rvs "bool EpetraExt::StructuralSameTypeTransform< T >::rvs()
 
@@ -1489,7 +1675,11 @@ Reverse transfer of data from new object created in the operator()
 method call to the orig object input to this same method. Returns true
 if operation is successful.
 
-Preconditions: ";
+Preconditions:
+
+Invariants:
+
+Postconditions: ";
 
 %feature("docstring")
 EpetraExt::StructuralSameTypeTransform::~StructuralSameTypeTransform "virtual EpetraExt::StructuralSameTypeTransform< T
@@ -1506,7 +1696,11 @@ Forward transfer of data from orig object input in the operator()
 method call to the new object created in this same call. Returns true
 is operation is successful.
 
-Preconditions: ";
+Preconditions:
+
+Invariants:
+
+Postconditions: ";
 
 %feature("docstring")  EpetraExt::StructuralTransform::rvs "bool
 EpetraExt::StructuralTransform< T, U >::rvs()
@@ -1515,11 +1709,126 @@ Reverse transfer of data from new object created in the operator()
 method call to the orig object input to this same method. Returns true
 if operation is successful.
 
-Preconditions: ";
+Preconditions:
+
+Invariants:
+
+Postconditions: ";
 
 %feature("docstring")
 EpetraExt::StructuralTransform::~StructuralTransform "virtual
 EpetraExt::StructuralTransform< T, U >::~StructuralTransform() ";
+
+
+// File: classEpetraExt_1_1TCrsGraph__MapColoringIndex.xml
+%feature("docstring") EpetraExt::TCrsGraph_MapColoringIndex "
+
+Generates a std::vector of Epetra_IntVector's to be used to map
+perturbation contributions to a CrsGraph/CrsMatrix from a perturbed
+vector.
+
+C++ includes: EpetraExt_MapColoringIndex.h ";
+
+
+// File: classEpetraExt_1_1TPermutation.xml
+%feature("docstring") EpetraExt::TPermutation "
+
+Permutation stores and describes a permutation matrix P. As described
+in \"Matrix Computations\" (Golub and Van Loan), a permutation matrix
+is the identity matrix with its rows re-ordered. The permutation is
+internally stored as an integer vector p, where p[i] is the column-
+index of the \"1\" in P's i-th row. Consider the example of permuting
+a matrix A by applying the permutation matrix P to form the result B.
+i.e., B = PA. If p[i] = j, then row j of A becomes row i of B.
+
+This Permutation class is templated on the type of the object to be
+permuted. However, not all objects are eligible to be template
+parameters. Currently the following objects may be used:
+Epetra_CrsMatrix, Epetra_CrsGraph and Epetra_MultiVector.
+
+A test program which exercises this Permutation class is located in
+the directory packages/epetraext/test/Permutation.
+
+Implementation Notes: Permutation currently inherits
+StructuralSameTypeTransform, which in turn     inherits Transform
+through SameTypeTransform. Permutation, and its base classes,     are
+templates. A couple of noteworthy consequences result from this:
+
+1. A separate instantiation of Permutation must be created for each
+type        of object to be permuted. Example:
+Epetra_CrsGraph& graph = ... Epetra_CrsMatrix& A = ...
+Permutation<Epetra_CrsGraph> graph_perm(...);
+Permutation<Epetra_CrsMatrix> matrix_perm(...);
+
+Epetra_CrsMatrix& PA = matrix_perm(A); Epetra_CrsGraph& Pgraph =
+graph_perm(graph);
+
+2. Following the semantics of Transform, when the Permutation class is
+used        to create a new permuted copy of an object, ownership of
+the new copy is        retained by Permutation. Permutation will
+destroy the new object. This means        that only one object should
+be permuted by a Permutation instance.
+
+It is not clear that these are desirable behaviors for permutations.
+It is     possible that Permutation will be altered to remove these
+limitations, as     follows:
+
+1. If Permutation doesn't inherit Transform, then Permutation need not
+be        a template and instead we could either overload or template-
+ize the        operator() method member. This would allow a single
+instantiation of Permutation to be used for permuting all of the
+eligible target types.
+
+2. Allowing the caller (user) to take ownership of the newly- produced
+permuted objects would allow a single Permutation instance to be used
+repeatedly since it would no longer need to hold a pointer to the new
+object        for later deletion.
+
+Then, example usage could look like this: Epetra_CrsMatrix& A = ...
+Epetra_MultiVector& v = ... Permutation P(...);
+
+Epetra_CrsMatrix PA = P(A);          Epetra_MultiVector Pv = P(v);
+
+Questions and comments about this class may be directed to Alan
+Williams.
+
+C++ includes: EpetraExt_Permutation.h ";
+
+%feature("docstring")  EpetraExt::TPermutation::TPermutation "EpetraExt::TPermutation< T, int_type >::TPermutation(Epetra_DataAccess
+CV, const Epetra_BlockMap &map, int_type *permutation)
+
+Constructor
+
+Parameters:
+-----------
+
+CV:  Set to either Copy or View.
+
+map:  Defines the index space to be permuted.
+
+permutation:  Array defining the permutation. The length of this array
+must be 'map.NumMyElements()'. This array is the local portion of the
+'p' vector described in the 'Detailed Description' section. ";
+
+%feature("docstring")  EpetraExt::TPermutation::TPermutation "EpetraExt::TPermutation< T, int_type >::TPermutation(const
+Epetra_BlockMap &map)
+
+Constructor. This constructor creates an empty permutation object. The
+contents must then be set using regular Epetra_IntVector methods.
+
+Parameters:
+-----------
+
+map:  Defines the index space to be permuted. ";
+
+%feature("docstring")  EpetraExt::TPermutation::TPermutation "EpetraExt::TPermutation< T, int_type >::TPermutation(const
+TPermutation< T, int_type > &src)
+
+Copy Constructor ";
+
+%feature("docstring")  EpetraExt::TPermutation::~TPermutation "EpetraExt::TPermutation< T, int_type >::~TPermutation()
+
+Destructor ";
 
 
 // File: classEpetraExt_1_1Transform.xml
@@ -1544,7 +1853,11 @@ Forward transfer of data from orig object input in the operator()
 method call to the new object created in this same call. Returns true
 is operation is successful.
 
-Preconditions: ";
+Preconditions:
+
+Invariants:
+
+Postconditions: ";
 
 %feature("docstring")  EpetraExt::Transform::rvs "virtual bool
 EpetraExt::Transform< T, U >::rvs()=0
@@ -1553,7 +1866,11 @@ Reverse transfer of data from new object created in the operator()
 method call to the orig object input to this same method. Returns true
 if operation is successful.
 
-Preconditions: ";
+Preconditions:
+
+Invariants:
+
+Postconditions: ";
 
 /*  Virtual functions with default implements allowing for optional
 */
@@ -1569,23 +1886,40 @@ Initial analysis phase of transform. Returns true if the transform is
 possible allowing methods  construct(),  fwd() and  rvs() to be
 successfully utilized.
 
-Preconditions: default implementation calls method operator() and
-stores the resulting object in an internal attribute newObj_. ";
+Preconditions:
+
+Invariants:
+
+Postconditions:
+
+The default implementation calls method operator() and stores the
+resulting object in an internal attribute newObj_. ";
 
 %feature("docstring")  EpetraExt::Transform::construct "Transform< T,
 U >::NewTypeRef EpetraExt::Transform< T, U >::construct()
 
 Construction of new object as a result of the transform.
 
-Preconditions: default implementation returns internal attribute
-newObj_. ";
+Preconditions:
+
+Invariants:
+
+Postconditions:
+
+The default implementation returns internal attribute newObj_. ";
 
 %feature("docstring")  EpetraExt::Transform::isConstructed "bool
 EpetraExt::Transform< T, U >::isConstructed()
 
 Check for whether transformed object has been constructed
 
-Preconditions: default implementation returns true if newObj_ != 0. ";
+Preconditions:
+
+Invariants:
+
+Postconditions:
+
+The default implementation returns true if newObj_ != 0. ";
 
 %feature("docstring")  EpetraExt::Transform::~Transform "virtual
 EpetraExt::Transform< T, U >::~Transform() ";
@@ -1682,7 +2016,11 @@ Forward transfer of data from orig object input in the operator()
 method call to the new object created in this same call. Returns true
 is operation is successful.
 
-Preconditions: ";
+Preconditions:
+
+Invariants:
+
+Postconditions: ";
 
 %feature("docstring")  EpetraExt::ViewTransform::rvs "bool
 EpetraExt::ViewTransform< T >::rvs()
@@ -1691,7 +2029,11 @@ Reverse transfer of data from new object created in the operator()
 method call to the orig object input to this same method. Returns true
 if operation is successful.
 
-Preconditions: ";
+Preconditions:
+
+Invariants:
+
+Postconditions: ";
 
 %feature("docstring")  EpetraExt::ViewTransform::~ViewTransform "virtual EpetraExt::ViewTransform< T >::~ViewTransform() ";
 
@@ -1708,7 +2050,7 @@ documentation of class EpetraExt::XMLWriter, which also contains a
 MATLAB script. A typical usage of this class is reported in file
 epetraext/example/inout/XML_IO.cpp.
 
-This class requires Teuchos to be configured with the option --enable-
+This class requires Teuchos to be configured with the option enable-
 teuchos-expat.
 
 Reading objects from a file requires the following steps. First, we
@@ -1739,11 +2081,24 @@ EpetraExt::XMLReader::Read(const std::string &Label, Epetra_Map *&Map)
 
 Reads the Epetra_Map stored with label Label. ";
 
+%feature("docstring")  EpetraExt::XMLReader::Read64 "void
+EpetraExt::XMLReader::Read64(const std::string &Label, Epetra_Map
+*&Map)
+
+Reads the Epetra_Map stored with label Label. Long Long version. ";
+
 %feature("docstring")  EpetraExt::XMLReader::Read "void
 EpetraExt::XMLReader::Read(const std::string &Label, Epetra_CrsGraph
 *&Graph)
 
 Reads the Epetra_CrsGraph stored with label Label. ";
+
+%feature("docstring")  EpetraExt::XMLReader::Read64 "void
+EpetraExt::XMLReader::Read64(const std::string &Label, Epetra_CrsGraph
+*&Graph)
+
+Reads the Epetra_CrsGraph stored with label Label. Long Long version.
+";
 
 %feature("docstring")  EpetraExt::XMLReader::Read "void
 EpetraExt::XMLReader::Read(const std::string &Label, Epetra_CrsMatrix
@@ -1751,11 +2106,25 @@ EpetraExt::XMLReader::Read(const std::string &Label, Epetra_CrsMatrix
 
 Reads the Epetra_CrsMatrix stored with label Label. ";
 
+%feature("docstring")  EpetraExt::XMLReader::Read64 "void
+EpetraExt::XMLReader::Read64(const std::string &Label,
+Epetra_CrsMatrix *&Matrix)
+
+Reads the Epetra_CrsMatrix stored with label Label. Long Long version.
+";
+
 %feature("docstring")  EpetraExt::XMLReader::Read "void
 EpetraExt::XMLReader::Read(const std::string &Label,
 Epetra_MultiVector *&MultiVector)
 
 Reads the Epetra_MultiVector stored with label Label. ";
+
+%feature("docstring")  EpetraExt::XMLReader::Read64 "void
+EpetraExt::XMLReader::Read64(const std::string &Label,
+Epetra_MultiVector *&MultiVector)
+
+Reads the Epetra_MultiVector stored with label Label. Long Long
+version. ";
 
 %feature("docstring")  EpetraExt::XMLReader::Read "void
 EpetraExt::XMLReader::Read(const std::string &Label, std::vector<
@@ -1805,7 +2174,7 @@ std::string, and std::vector<std::string>.
 
 The written file is as follows:
 
-This class requires Teuchos to be configured with the option --enable-
+This class requires Teuchos to be configured with the option enable-
 teuchos-expat.
 
 Marzio Sala, D-INFK/ETHZ
@@ -1870,16 +2239,12 @@ Writes a Teuchos::ParameterList using label Label. ";
 
 // File: namespaceEpetraExt.xml
 %feature("docstring")  EpetraExt::sparsedot "double
-EpetraExt::sparsedot(double *u, int *u_ind, int u_len, double *v, int
-*v_ind, int v_len)
+EpetraExt::sparsedot(double *u, int_type *u_ind, int u_len, double *v,
+int_type *v_ind, int v_len)
 
 Method for internal use... sparsedot forms a dot-product between two
 sparsely-populated 'vectors'. Important assumption: assumes the
 indices in u_ind and v_ind are sorted. ";
-
-%feature("docstring")  EpetraExt::mult_A_B "int
-EpetraExt::mult_A_B(CrsMatrixStruct &Aview, CrsMatrixStruct &Bview,
-CrsWrapper &C) ";
 
 %feature("docstring")  EpetraExt::mult_A_Btrans "int
 EpetraExt::mult_A_Btrans(CrsMatrixStruct &Aview, CrsMatrixStruct
@@ -1895,32 +2260,186 @@ EpetraExt::mult_Atrans_Btrans(CrsMatrixStruct &Aview, CrsMatrixStruct
 
 %feature("docstring")  EpetraExt::import_and_extract_views "int
 EpetraExt::import_and_extract_views(const Epetra_CrsMatrix &M, const
-Epetra_Map &targetMap, CrsMatrixStruct &Mview) ";
+Epetra_Map &targetMap, CrsMatrixStruct &Mview, const Epetra_Import
+*prototypeImporter=0) ";
+
+%feature("docstring")  EpetraExt::import_only "int
+EpetraExt::import_only(const Epetra_CrsMatrix &M, const Epetra_Map
+&targetMap, CrsMatrixStruct &Mview, const Epetra_Import
+*prototypeImporter=0) ";
 
 %feature("docstring")  EpetraExt::form_map_union "int
 EpetraExt::form_map_union(const Epetra_Map *map1, const Epetra_Map
 *map2, const Epetra_Map *&mapunion) ";
 
+%feature("docstring")  EpetraExt::Tfind_rows_containing_cols "Epetra_Map* EpetraExt::Tfind_rows_containing_cols(const
+Epetra_CrsMatrix &M, const Epetra_Map &column_map) ";
+
 %feature("docstring")  EpetraExt::find_rows_containing_cols "Epetra_Map* EpetraExt::find_rows_containing_cols(const
 Epetra_CrsMatrix &M, const Epetra_Map &column_map) ";
+
+%feature("docstring")  EpetraExt::C_estimate_nnz "static int
+EpetraExt::C_estimate_nnz(const Epetra_CrsMatrix &A, const
+Epetra_CrsMatrix &B) ";
+
+%feature("docstring")  EpetraExt::auto_resize "static int
+EpetraExt::auto_resize(std::vector< int > &x, int num_new) ";
+
+%feature("docstring")  EpetraExt::aztecoo_and_ml_compatible_map_union
+"int EpetraExt::aztecoo_and_ml_compatible_map_union(const
+Epetra_CrsMatrix &B, const LightweightCrsMatrix &Bimport, Epetra_Map
+*&unionmap, std::vector< int > &Cremotepids, std::vector< int >
+&Bcols2Ccols, std::vector< int > &Icols2Ccols) ";
+
+%feature("docstring")  EpetraExt::resize_doubles "void
+EpetraExt::resize_doubles(int nold, int nnew, double *&d) ";
+
+%feature("docstring")  EpetraExt::mult_A_B_newmatrix "int
+EpetraExt::mult_A_B_newmatrix(const Epetra_CrsMatrix &A, const
+Epetra_CrsMatrix &B, CrsMatrixStruct &Bview, std::vector< int >
+&Bcol2Ccol, std::vector< int > &Bimportcol2Ccol, std::vector< int >
+&Cremotepids, Epetra_CrsMatrix &C) ";
+
+%feature("docstring")  EpetraExt::mult_A_B_reuse "int
+EpetraExt::mult_A_B_reuse(const Epetra_CrsMatrix &A, const
+Epetra_CrsMatrix &B, CrsMatrixStruct &Bview, std::vector< int >
+&Bcol2Ccol, std::vector< int > &Bimportcol2Ccol, Epetra_CrsMatrix &C)
+";
+
+%feature("docstring")  EpetraExt::mult_A_B_general "int
+EpetraExt::mult_A_B_general(const Epetra_CrsMatrix &A, CrsMatrixStruct
+&Aview, const Epetra_CrsMatrix &B, CrsMatrixStruct &Bview,
+Epetra_CrsMatrix &C, bool call_FillComplete_on_result) ";
+
+%feature("docstring")  EpetraExt::jacobi_A_B_reuse "int
+EpetraExt::jacobi_A_B_reuse(double omega, const Epetra_Vector &Dinv,
+const Epetra_CrsMatrix &A, const Epetra_CrsMatrix &B, CrsMatrixStruct
+&Bview, std::vector< int > &Bcol2Ccol, std::vector< int >
+&Bimportcol2Ccol, Epetra_CrsMatrix &C) ";
+
+%feature("docstring")  EpetraExt::jacobi_A_B_newmatrix "int
+EpetraExt::jacobi_A_B_newmatrix(double omega, const Epetra_Vector
+&Dinv, const Epetra_CrsMatrix &A, const Epetra_CrsMatrix &B,
+CrsMatrixStruct &Bview, std::vector< int > &Bcol2Ccol, std::vector<
+int > &Bimportcol2Ccol, std::vector< int > &Cremotepids,
+Epetra_CrsMatrix &C) ";
+
+%feature("docstring")  EpetraExt::debug_print_distor "void
+EpetraExt::debug_print_distor(const char *label, const
+Epetra_Distributor *Distor, const Epetra_Comm &Comm) ";
+
+%feature("docstring")  EpetraExt::debug_compare_import "void
+EpetraExt::debug_compare_import(const Epetra_Import *Import1, const
+Epetra_Import *Import2) ";
 
 %feature("docstring")  EpetraExt::dumpCrsMatrixStruct "int
 EpetraExt::dumpCrsMatrixStruct(const CrsMatrixStruct &M) ";
 
 %feature("docstring")  EpetraExt::insert_matrix_locations "void
-EpetraExt::insert_matrix_locations(CrsWrapper_GraphBuilder
+EpetraExt::insert_matrix_locations(CrsWrapper_GraphBuilder< int_type >
 &graphbuilder, Epetra_CrsMatrix &C) ";
+
+%feature("docstring")  EpetraExt::Tpack_outgoing_rows "void
+EpetraExt::Tpack_outgoing_rows(const Epetra_CrsMatrix &mtx, const
+std::vector< int_type > &proc_col_ranges, std::vector< int_type >
+&send_rows, std::vector< int > &rows_per_send_proc) ";
 
 %feature("docstring")  EpetraExt::pack_outgoing_rows "void
 EpetraExt::pack_outgoing_rows(const Epetra_CrsMatrix &mtx, const
 std::vector< int > &proc_col_ranges, std::vector< int > &send_rows,
 std::vector< int > &rows_per_send_proc) ";
 
-%feature("docstring")  EpetraExt::get_col_range "std::pair< int, int
-> EpetraExt::get_col_range(const Epetra_CrsMatrix &mtx) ";
+%feature("docstring")  EpetraExt::pack_outgoing_rows "void
+EpetraExt::pack_outgoing_rows(const Epetra_CrsMatrix &mtx, const
+std::vector< long long > &proc_col_ranges, std::vector< long long >
+&send_rows, std::vector< int > &rows_per_send_proc) ";
 
-%feature("docstring")  EpetraExt::get_col_range "std::pair<int,int>
-EpetraExt::get_col_range(const Epetra_Map &emap) ";
+%feature("docstring")  EpetraExt::get_col_range< int > "
+std::pair<int,int> EpetraExt::get_col_range< int >(const Epetra_Map
+&emap) ";
+
+%feature("docstring")  EpetraExt::get_col_range< long long > "
+std::pair<long long,long long> EpetraExt::get_col_range< long long
+>(const Epetra_Map &emap) ";
+
+%feature("docstring")  EpetraExt::Tget_col_range "std::pair<int_type,int_type> EpetraExt::Tget_col_range(const
+Epetra_CrsMatrix &mtx) ";
+
+%feature("docstring")  EpetraExt::get_col_range< int > "
+std::pair<int,int> EpetraExt::get_col_range< int >(const
+Epetra_CrsMatrix &mtx) ";
+
+%feature("docstring")  EpetraExt::get_col_range< long long > "
+std::pair<long long,long long> EpetraExt::get_col_range< long long
+>(const Epetra_CrsMatrix &mtx) ";
+
+%feature("docstring")  EpetraExt::MakeColMapAndReindexSort "void
+EpetraExt::MakeColMapAndReindexSort(int &NumRemoteColGIDs, GO
+*&RemoteColindices, std::vector< int > &RemotePermuteIDs, std::vector<
+int > &RemoteOwningPIDs) ";
+
+%feature("docstring")  EpetraExt::MakeColMapAndReindexSort< int > "
+void EpetraExt::MakeColMapAndReindexSort< int >(int &NumRemoteColGIDs,
+int *&RemoteColindices, std::vector< int > &RemotePermuteIDs,
+std::vector< int > &RemoteOwningPIDs) ";
+
+%feature("docstring")  EpetraExt::MakeColMapAndReindexSort< long long
+> " void EpetraExt::MakeColMapAndReindexSort< long long >(int
+&NumRemoteColGIDs, long long *&RemoteColindices, std::vector< int >
+&RemotePermuteIDs, std::vector< int > &RemoteOwningPIDs) ";
+
+%feature("docstring")  EpetraExt::lessthan12 "static bool
+EpetraExt::lessthan12(std::pair< int, int > i, std::pair< int, int >
+j) ";
+
+%feature("docstring")  EpetraExt::build_type3_exports_sort "void
+EpetraExt::build_type3_exports_sort(std::vector< int_type >
+&ExportGID3, std::vector< int > &ExportPID3, int total_length3) ";
+
+%feature("docstring")  EpetraExt::build_type3_exports_sort< int > "
+void EpetraExt::build_type3_exports_sort< int >(std::vector< int >
+&ExportGID3, std::vector< int > &ExportPID3, int total_length3) ";
+
+%feature("docstring")  EpetraExt::build_type3_exports_sort< long long
+> " void EpetraExt::build_type3_exports_sort< long long >(std::vector<
+long long > &ExportGID3, std::vector< int > &ExportPID3, int
+total_length3) ";
+
+%feature("docstring")  EpetraExt::build_type3_exports "int
+EpetraExt::build_type3_exports(int MyPID, int Nrecv, Epetra_BlockMap
+&DomainMap, std::vector< int > &ReverseRecvSizes, const int_type
+*ReverseRecvBuffer, std::vector< int > &ExportLID3, std::vector< int >
+&ExportPID3) ";
+
+%feature("docstring")  EpetraExt::build_type2_exports "int
+EpetraExt::build_type2_exports(const Epetra_CrsMatrix &SourceMatrix,
+ImportType &MyImporter, std::vector< int > &ExportLID2, std::vector<
+int > &ExportPID2) ";
+
+%feature("docstring")  EpetraExt::build_type1_exports_sort "void
+EpetraExt::build_type1_exports_sort(std::vector< int > &ExportLID1,
+std::vector< int > &ExportPID1, std::vector< int_type > &ExportGID1,
+int total_length1) ";
+
+%feature("docstring")  EpetraExt::build_type1_exports_sort< int > "
+void EpetraExt::build_type1_exports_sort< int >(std::vector< int >
+&ExportLID1, std::vector< int > &ExportPID1, std::vector< int >
+&ExportGID1, int total_length1) ";
+
+%feature("docstring")  EpetraExt::build_type1_exports_sort< long long
+> " void EpetraExt::build_type1_exports_sort< long long >(std::vector<
+int > &ExportLID1, std::vector< int > &ExportPID1, std::vector< long
+long > &ExportGID1, int total_length1) ";
+
+%feature("docstring")  EpetraExt::build_type1_exports "int
+EpetraExt::build_type1_exports(const Epetra_Import *Importer1,
+std::vector< int > &ExportLID1, std::vector< int > &ExportPID1) ";
+
+%feature("docstring")  EpetraExt::get_col_range "std::pair<int_type,int_type> EpetraExt::get_col_range(const Epetra_Map
+&emap) ";
+
+%feature("docstring")  EpetraExt::get_col_range "std::pair<int_type,int_type> EpetraExt::get_col_range(const
+Epetra_CrsMatrix &mtx) ";
 
 %feature("docstring")  EpetraExt::EpetraExt_Version "std::string
 EpetraExt::EpetraExt_Version() ";
@@ -1963,6 +2482,10 @@ Returns 0 if no error, -1 if any problems with file system, -2 if file
 contained nontrivial Epetra_BlockMap, 1 if number of processors
 differs from file creator. ";
 
+%feature("docstring")  EpetraExt::MatrixMarketFileToMap64 "int
+EpetraExt::MatrixMarketFileToMap64(const char *filename, const
+Epetra_Comm &comm, Epetra_Map *&map) ";
+
 %feature("docstring")  EpetraExt::MatrixMarketFileToBlockMap "int
 EpetraExt::MatrixMarketFileToBlockMap(const char *filename, const
 Epetra_Comm &comm, Epetra_BlockMap *&blockMap)
@@ -2001,12 +2524,24 @@ WARNING:  User must delete!!.
 Returns 0 if no error, -1 if any problems with file system, returns 1
 if number of processors differs from file creator. ";
 
+%feature("docstring")  EpetraExt::MatrixMarketFileToBlockMap64 "int
+EpetraExt::MatrixMarketFileToBlockMap64(const char *filename, const
+Epetra_Comm &comm, Epetra_BlockMap *&map) ";
+
 %feature("docstring")  EpetraExt::MatrixMarketFileToRowMap "int
 EpetraExt::MatrixMarketFileToRowMap(const char *filename, const
 Epetra_Comm &comm, Epetra_BlockMap *&rowmap) ";
 
 %feature("docstring")  EpetraExt::MatrixMarketFileToBlockMaps "int
 EpetraExt::MatrixMarketFileToBlockMaps(const char *filename, const
+Epetra_Comm &comm, Epetra_BlockMap *&rowmap, Epetra_BlockMap *&colmap,
+Epetra_BlockMap *&rangemap, Epetra_BlockMap *&domainmap)
+
+Constructs row,col,range and domain maps from a matrix-market matrix
+file. ";
+
+%feature("docstring")  EpetraExt::MatrixMarketFileToBlockMaps64 "int
+EpetraExt::MatrixMarketFileToBlockMaps64(const char *filename, const
 Epetra_Comm &comm, Epetra_BlockMap *&rowmap, Epetra_BlockMap *&colmap,
 Epetra_BlockMap *&rangemap, Epetra_BlockMap *&domainmap)
 
@@ -2058,13 +2593,21 @@ the map entries will be written.
 
 Returns 0 if no error, -1 if any problems with file system. ";
 
+%feature("docstring")  EpetraExt::TBlockMapToHandle "int
+EpetraExt::TBlockMapToHandle(FILE *handle, const Epetra_BlockMap &map)
+";
+
 %feature("docstring")  EpetraExt::BlockMapToHandle "int
 EpetraExt::BlockMapToHandle(FILE *handle, const Epetra_BlockMap &map)
 ";
 
 %feature("docstring")  EpetraExt::writeBlockMap "int
-EpetraExt::writeBlockMap(FILE *handle, int length, const int *v1,
-const int *v2, bool doSizes) ";
+EpetraExt::writeBlockMap(FILE *handle, long long length, const int
+*v1, const int *v2, bool doSizes) ";
+
+%feature("docstring")  EpetraExt::writeBlockMap "int
+EpetraExt::writeBlockMap(FILE *handle, long long length, const long
+long *v1, const int *v2, bool doSizes) ";
 
 %feature("docstring")  EpetraExt::BlockMapToHandle "int
 EpetraExt::BlockMapToHandle(std::FILE *handle, const Epetra_BlockMap
@@ -2088,12 +2631,16 @@ to be dumped to file.
 Returns 0 if no error, -1 if any problems with file system. ";
 
 %feature("docstring")  EpetraExt::writeBlockMap "int
-EpetraExt::writeBlockMap(std::FILE *handle, int length, const int *v1,
-const int *v2, bool doSizes) ";
+EpetraExt::writeBlockMap(std::FILE *handle, long long length, const
+int *v1, const int *v2, bool doSizes) ";
+
+%feature("docstring")  EpetraExt::writeBlockMap "int
+EpetraExt::writeBlockMap(std::FILE *handle, long long length, const
+long long *v1, const int *v2, bool doSizes) ";
 
 %feature("docstring")  EpetraExt::sort_three "static void
-EpetraExt::sort_three(int *list, int *parlista, double *parlistb, int
-start, int end) ";
+EpetraExt::sort_three(int_type *list, int_type *parlista, double
+*parlistb, int start, int end) ";
 
 %feature("docstring")  EpetraExt::MatrixMarketFileToCrsMatrix "int
 EpetraExt::MatrixMarketFileToCrsMatrix(const char *filename, const
@@ -2299,14 +2846,56 @@ Returns 0 if no error, -1 if any problems with file system.  (See the
 <a href=\"http://math.nist.gov/MatrixMarket\">Matrix Market</a> home
 page for details.) ";
 
+%feature("docstring")  EpetraExt::MatrixMarketFileToCrsMatrix64 "int
+EpetraExt::MatrixMarketFileToCrsMatrix64(const char *filename, const
+Epetra_Comm &comm, Epetra_CrsMatrix *&A) ";
+
+%feature("docstring")  EpetraExt::MatrixMarketFileToCrsMatrix64 "int
+EpetraExt::MatrixMarketFileToCrsMatrix64(const char *filename, const
+Epetra_Comm &comm, Epetra_CrsMatrix *&A, const bool transpose) ";
+
+%feature("docstring")  EpetraExt::MatrixMarketFileToCrsMatrix64 "int
+EpetraExt::MatrixMarketFileToCrsMatrix64(const char *filename, const
+Epetra_Comm &comm, Epetra_CrsMatrix *&A, const bool transpose, const
+bool verbose) ";
+
+%feature("docstring")  EpetraExt::MatrixMarketFileToCrsMatrix64 "int
+EpetraExt::MatrixMarketFileToCrsMatrix64(const char *filename, const
+Epetra_Map &rowMap, const Epetra_Map &rangeMap, const Epetra_Map
+&domainMap, Epetra_CrsMatrix *&A, const bool transpose, const bool
+verbose) ";
+
+%feature("docstring")  EpetraExt::MatrixMarketFileToCrsMatrix64 "int
+EpetraExt::MatrixMarketFileToCrsMatrix64(const char *filename, const
+Epetra_Map &rowMap, Epetra_CrsMatrix *&A, const bool transpose, const
+bool verbose) ";
+
+%feature("docstring")  EpetraExt::MatrixMarketFileToCrsMatrix64 "int
+EpetraExt::MatrixMarketFileToCrsMatrix64(const char *filename, const
+Epetra_Map &rowMap, const Epetra_Map &colMap, Epetra_CrsMatrix *&A,
+const bool transpose, const bool verbose) ";
+
+%feature("docstring")  EpetraExt::MatrixMarketFileToCrsMatrix64 "int
+EpetraExt::MatrixMarketFileToCrsMatrix64(const char *filename, const
+Epetra_Map &rowMap, const Epetra_Map &colMap, const Epetra_Map
+&rangeMap, const Epetra_Map &domainMap, Epetra_CrsMatrix *&A, const
+bool transpose, const bool verbose) ";
+
 %feature("docstring")  EpetraExt::MatrixMarketFileToCrsMatrixHandle "int EpetraExt::MatrixMarketFileToCrsMatrixHandle(const char *filename,
 const Epetra_Comm &comm, Epetra_CrsMatrix *&A, const Epetra_Map
 *rowMap, const Epetra_Map *colMap, const Epetra_Map *rangeMap, const
 Epetra_Map *domainMap, const bool transpose, const bool verbose) ";
 
+%feature("docstring")  EpetraExt::MatrixMarketFileToCrsMatrixHandle64
+"int EpetraExt::MatrixMarketFileToCrsMatrixHandle64(const char
+*filename, const Epetra_Comm &comm, Epetra_CrsMatrix *&A, const
+Epetra_Map *rowMap, const Epetra_Map *colMap, const Epetra_Map
+*rangeMap, const Epetra_Map *domainMap, const bool transpose, const
+bool verbose) ";
+
 %feature("docstring")  EpetraExt::quickpart_list_inc_int "static void
-EpetraExt::quickpart_list_inc_int(int *list, int *parlista, double
-*parlistb, int start, int end, int *equal, int *larger) ";
+EpetraExt::quickpart_list_inc_int(int_type *list, int_type *parlista,
+double *parlistb, int start, int end, int *equal, int *larger) ";
 
 %feature("docstring")  EpetraExt::MatlabFileToCrsMatrix "int
 EpetraExt::MatlabFileToCrsMatrix(const char *filename, const
@@ -2339,18 +2928,17 @@ dimensions. Next to insert values.
 The global row and column dimensions will be determined by the maximum
 row and column index, respectively, contained in the file. If some
 rows or columns are empty they will still be present in the matrix.
-
 The format expected for the input file is a list of nonzero entries
-with one entry per row. Each row will have the row index, column index
-and value listed with space in between each item. The number of lines
-in the file should be exactly the number of entries of the matrix. For
-example, consider the following matrix where only the nonzero values
-are stored:
+with one entry per row.  Each row will have   the row index, column
+index and value listed with space in between each item.  The number of
+lines in the file should  be exactly the number of entries of the
+matrix.  For example, consider the following matrix where only the
+nonzero values are stored:
 
 \\\\[ \\\\left[\\\\begin{array}{cccc} 5 & 7 & 0 & 0 \\\\\\\\ 3 & 2 & 0
 & 1 \\\\\\\\ 0 & 0 & 0 & 4 \\\\\\\\ \\\\end{array}\\\\right]. \\\\]
 
-A Matlab format file for this matrix would be: 1 1 5.0 1 2 7.0 2 1 3.0
+A Matlab format file for this matrix would be:1 1 5.0 1 2 7.0 2 1 3.0
 2 2 2.0 2 4 1.0 4 4 4.0
 
 Note that the entries can be listed in any order and that the matrix
@@ -2360,6 +2948,10 @@ floating point format.
 
 (See the <a href=\"http://www.mathworks.com\">Matlab</a> home page for
 details.) ";
+
+%feature("docstring")  EpetraExt::MatlabFileToCrsMatrix64 "int
+EpetraExt::MatlabFileToCrsMatrix64(const char *filename, const
+Epetra_Comm &comm, Epetra_CrsMatrix *&A) ";
 
 %feature("docstring")  EpetraExt::HypreFileToCrsMatrix "int
 EpetraExt::HypreFileToCrsMatrix(const char *filename, const
@@ -2386,6 +2978,10 @@ WARNING:  User must delete!!.
 
 Returns 0 if no error, -1 if any problems with file system. ";
 
+%feature("docstring")  EpetraExt::HypreFileToCrsMatrix64 "int
+EpetraExt::HypreFileToCrsMatrix64(const char *filename, const
+Epetra_Comm &comm, Epetra_CrsMatrix *&Matrix) ";
+
 %feature("docstring")  EpetraExt::mm_read_unsymmetric_sparse "int
 EpetraExt::mm_read_unsymmetric_sparse(const char *fname, int *M_, int
 *N_, int *nz_, double **val_, int **I_, int **J_) ";
@@ -2397,16 +2993,22 @@ EpetraExt::mm_is_valid(MM_typecode matcode) ";
 EpetraExt::mm_read_banner(FILE *f, MM_typecode *matcode) ";
 
 %feature("docstring")  EpetraExt::mm_write_mtx_crd_size "int
-EpetraExt::mm_write_mtx_crd_size(FILE *f, int M, int N, int nz) ";
+EpetraExt::mm_write_mtx_crd_size(FILE *f, long long M, long long N,
+long long nz) ";
 
 %feature("docstring")  EpetraExt::mm_read_mtx_crd_size "int
 EpetraExt::mm_read_mtx_crd_size(FILE *f, int *M, int *N, int *nz) ";
+
+%feature("docstring")  EpetraExt::mm_read_mtx_crd_size "int
+EpetraExt::mm_read_mtx_crd_size(FILE *f, long long *M, long long *N,
+long long *nz) ";
 
 %feature("docstring")  EpetraExt::mm_read_mtx_array_size "int
 EpetraExt::mm_read_mtx_array_size(FILE *f, int *M, int *N) ";
 
 %feature("docstring")  EpetraExt::mm_write_mtx_array_size "int
-EpetraExt::mm_write_mtx_array_size(FILE *f, int M, int N) ";
+EpetraExt::mm_write_mtx_array_size(FILE *f, long long M, long long N)
+";
 
 %feature("docstring")  EpetraExt::mm_read_mtx_crd_data "int
 EpetraExt::mm_read_mtx_crd_data(FILE *f, int M, int N, int nz, int
@@ -2415,6 +3017,10 @@ I[], int J[], double val[], MM_typecode matcode) ";
 %feature("docstring")  EpetraExt::mm_read_mtx_crd_entry "int
 EpetraExt::mm_read_mtx_crd_entry(FILE *f, int *I, int *J, double
 *real, double *imag, MM_typecode matcode) ";
+
+%feature("docstring")  EpetraExt::mm_read_mtx_crd_entry "int
+EpetraExt::mm_read_mtx_crd_entry(FILE *f, long long *I, long long *J,
+double *real, double *imag, MM_typecode matcode) ";
 
 %feature("docstring")  EpetraExt::mm_read_mtx_crd "int
 EpetraExt::mm_read_mtx_crd(char *fname, int *M, int *N, int *nz, int
@@ -2437,6 +3043,10 @@ EpetraExt::mm_read_banner(std::FILE *f, MM_typecode *matcode) ";
 EpetraExt::mm_read_mtx_crd_size(std::FILE *f, int *M, int *N, int *nz)
 ";
 
+%feature("docstring")  EpetraExt::mm_read_mtx_crd_size "int
+EpetraExt::mm_read_mtx_crd_size(std::FILE *f, long long *M, long long
+*N, long long *nz) ";
+
 %feature("docstring")  EpetraExt::mm_read_mtx_array_size "int
 EpetraExt::mm_read_mtx_array_size(std::FILE *f, int *M, int *N) ";
 
@@ -2444,11 +3054,12 @@ EpetraExt::mm_read_mtx_array_size(std::FILE *f, int *M, int *N) ";
 EpetraExt::mm_write_banner(std::FILE *f, MM_typecode matcode) ";
 
 %feature("docstring")  EpetraExt::mm_write_mtx_crd_size "int
-EpetraExt::mm_write_mtx_crd_size(std::FILE *f, int M, int N, int nz)
-";
+EpetraExt::mm_write_mtx_crd_size(std::FILE *f, long long M, long long
+N, long long nz) ";
 
 %feature("docstring")  EpetraExt::mm_write_mtx_array_size "int
-EpetraExt::mm_write_mtx_array_size(std::FILE *f, int M, int N) ";
+EpetraExt::mm_write_mtx_array_size(std::FILE *f, long long M, long
+long N) ";
 
 %feature("docstring")  EpetraExt::mm_read_mtx_crd_data "int
 EpetraExt::mm_read_mtx_crd_data(std::FILE *f, int M, int N, int nz,
@@ -2457,6 +3068,10 @@ int I[], int J[], double val[], MM_typecode matcode) ";
 %feature("docstring")  EpetraExt::mm_read_mtx_crd_entry "int
 EpetraExt::mm_read_mtx_crd_entry(std::FILE *f, int *I, int *J, double
 *real, double *img, MM_typecode matcode) ";
+
+%feature("docstring")  EpetraExt::mm_read_mtx_crd_entry "int
+EpetraExt::mm_read_mtx_crd_entry(std::FILE *f, long long *I, long long
+*J, double *real, double *img, MM_typecode matcode) ";
 
 %feature("docstring")  EpetraExt::MatrixMarketFileToMultiVector "int
 EpetraExt::MatrixMarketFileToMultiVector(const char *filename, const
@@ -2553,6 +3168,10 @@ Epetra_MultiVector &A) ";
 
 %feature("docstring")  EpetraExt::MultiVectorToMatrixMarketHandle "int EpetraExt::MultiVectorToMatrixMarketHandle(FILE *handle, const
 Epetra_MultiVector &A) ";
+
+%feature("docstring")  EpetraExt::TMultiVectorToHandle "int
+EpetraExt::TMultiVectorToHandle(FILE *handle, const Epetra_MultiVector
+&A, bool mmFormat) ";
 
 %feature("docstring")  EpetraExt::MultiVectorToHandle "int
 EpetraExt::MultiVectorToHandle(FILE *handle, const Epetra_MultiVector
@@ -2705,10 +3324,10 @@ EpetraExt::OperatorToHandle(FILE *handle, const Epetra_Operator &A) ";
 %feature("docstring")  EpetraExt::writeOperatorStrip "int
 EpetraExt::writeOperatorStrip(FILE *handle, const Epetra_MultiVector
 &y, const Epetra_Map &rootDomainMap, const Epetra_Map &rootRangeMap,
-int startColumn) ";
+long long startColumn) ";
 
 %feature("docstring")  EpetraExt::get_nz "int EpetraExt::get_nz(const
-Epetra_Operator &A, int &nz) ";
+Epetra_Operator &A, long long &nz) ";
 
 %feature("docstring")  EpetraExt::OperatorToHandle "int
 EpetraExt::OperatorToHandle(std::FILE *handle, const Epetra_Operator
@@ -2743,7 +3362,7 @@ Returns 0 if no error, -1 if any problems with file system. ";
 %feature("docstring")  EpetraExt::writeOperatorStrip "int
 EpetraExt::writeOperatorStrip(std::FILE *handle, const
 Epetra_MultiVector &y, const Epetra_Map &rootDomainMap, const
-Epetra_Map &rootRangeMap, int startColumn) ";
+Epetra_Map &rootRangeMap, long long startColumn) ";
 
 %feature("docstring")  EpetraExt::readEpetraLinearSystem "void
 EpetraExt::readEpetraLinearSystem(const std::string &fileName, const
@@ -2783,6 +3402,13 @@ This function reads from a number file formats (*.triU, *.triS, *.mtx,
 ToDo: Finish documentation!
 
 ToDo: Put this in EpetraExt after the release is finished. ";
+
+%feature("docstring")  EpetraExt::readEpetraLinearSystem64 "void
+EpetraExt::readEpetraLinearSystem64(const std::string &fileName, const
+Epetra_Comm &comm, Teuchos::RefCountPtr< Epetra_CrsMatrix > *A=NULL,
+Teuchos::RefCountPtr< Epetra_Map > *map=NULL, Teuchos::RefCountPtr<
+Epetra_Vector > *x=NULL, Teuchos::RefCountPtr< Epetra_Vector >
+*b=NULL, Teuchos::RefCountPtr< Epetra_Vector > *xExact=NULL) ";
 
 %feature("docstring")  EpetraExt::RowMatrixToMatlabFile "int
 EpetraExt::RowMatrixToMatlabFile(const char *filename, const
@@ -3165,6 +3791,9 @@ EpetraExt::ceil31log2(int n) ";
 
 
 // File: EpetraExt__MatrixMatrix_8h.xml
+
+
+// File: EpetraExt__MatrixMatrix__mult__A__B_8cpp.xml
 
 
 // File: EpetraExt__MMHelpers_8cpp.xml

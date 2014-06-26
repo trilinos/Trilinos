@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -57,18 +57,18 @@ namespace LOCA {
 
   namespace SingularJacobianSolve {
 
-    /*! 
-     * \brief This class computes the solution to \f$J x = b\f$ using the 
+    /*!
+     * \brief This class computes the solution to \f$J x = b\f$ using the
      * Nic-Day method.
      */
     /*!
      * This singular solve method is a modification of the deflation idea
-     * implemented in LOCA::SingularJacobianSolve::Nic where deflation of 
+     * implemented in LOCA::SingularJacobianSolve::Nic where deflation of
      * the right hand side is used to improve
      * the conditioning of the linear system.  Typically a solution to
-     * \f$J x = b\f$ when \f$J\f$ is nearly singular will have a large 
+     * \f$J x = b\f$ when \f$J\f$ is nearly singular will have a large
      * component in the direction of the null vector \f$v\f$.  The idea
-     * then is to deflate \f$Jv\f$ out of the right hand side \f$b\f$.  
+     * then is to deflate \f$Jv\f$ out of the right hand side \f$b\f$.
      * The complete algorithm used here is:
      * \f[
      *   \begin{aligned}
@@ -78,22 +78,22 @@ namespace LOCA {
      *   \end{aligned}
      * \f]
      * The solve \f$J\tilde{x} = \tilde{b}\f$ uses the underlying group's
-     * applyJacobianInverse() method and therefore this is a generic 
+     * applyJacobianInverse() method and therefore this is a generic
      * technique for computing solutions to nearly singular system since
-     * it uses any supplied linear solver.  
+     * it uses any supplied linear solver.
 
      * This algorithm is selected by
      * setting the "Method" parameter of the "Singular Solve" sublist of
      * the NOX linear solver parameter list to "Nic-Day".  The idea for this
-     * algorithm is taken from:  R. A. Nicolaides, "Deflation of Conjugate 
-     * Gradients With Applications to Boundary Value Problems," SIAM J. 
+     * algorithm is taken from:  R. A. Nicolaides, "Deflation of Conjugate
+     * Gradients With Applications to Boundary Value Problems," SIAM J.
      * Numer. Anal., 24(2), 1987.
      */
     class NicDay : public LOCA::SingularJacobianSolve::Generic {
 
     public:
 
-      //! Constructor. 
+      //! Constructor.
       NicDay(Teuchos::ParameterList& params);
 
       //! Copy constructor
@@ -106,7 +106,7 @@ namespace LOCA {
       virtual LOCA::SingularJacobianSolve::Generic* clone() const;
 
       //! Assignment operator
-      virtual LOCA::SingularJacobianSolve::Generic& 
+      virtual LOCA::SingularJacobianSolve::Generic&
       operator = (const LOCA::SingularJacobianSolve::Generic& source);
 
       //! Assignment operator
@@ -115,29 +115,29 @@ namespace LOCA {
 
       //! Reset parameters
       /*!
-	There are no additional parameters for the NicDay calculation.
+    There are no additional parameters for the NicDay calculation.
       */
-      virtual NOX::Abstract::Group::ReturnType 
+      virtual NOX::Abstract::Group::ReturnType
       reset(Teuchos::ParameterList& params);
-  
-      //! Computes the solution as described above.
-      virtual NOX::Abstract::Group::ReturnType 
-      compute(Teuchos::ParameterList& params,
-	      LOCA::Continuation::AbstractGroup& grp,
-	      const NOX::Abstract::Vector& input,
-	      const NOX::Abstract::Vector& approxNullVec,
-	      const NOX::Abstract::Vector& jacApproxNullVec,
-	      NOX::Abstract::Vector& result);
 
-      //! Computes solution for multiple RHS 
-      virtual NOX::Abstract::Group::ReturnType 
+      //! Computes the solution as described above.
+      virtual NOX::Abstract::Group::ReturnType
+      compute(Teuchos::ParameterList& params,
+          LOCA::Continuation::AbstractGroup& grp,
+          const NOX::Abstract::Vector& input,
+          const NOX::Abstract::Vector& approxNullVec,
+          const NOX::Abstract::Vector& jacApproxNullVec,
+          NOX::Abstract::Vector& result);
+
+      //! Computes solution for multiple RHS
+      virtual NOX::Abstract::Group::ReturnType
       computeMulti(Teuchos::ParameterList& params,
-		   LOCA::Continuation::AbstractGroup& grp,
-		   const NOX::Abstract::Vector*const* inputs,
-		   const NOX::Abstract::Vector& approxNullVec,
-		   const NOX::Abstract::Vector& jacApproxNullVec,
-		   NOX::Abstract::Vector** results,
-		   int nVecs);
+           LOCA::Continuation::AbstractGroup& grp,
+           const NOX::Abstract::Vector*const* inputs,
+           const NOX::Abstract::Vector& approxNullVec,
+           const NOX::Abstract::Vector& jacApproxNullVec,
+           NOX::Abstract::Vector** results,
+           int nVecs);
 
     };
   } // namespace SingularJacobianSolve

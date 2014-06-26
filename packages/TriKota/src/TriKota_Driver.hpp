@@ -19,7 +19,7 @@
 // 
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // 
 // Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
@@ -34,16 +34,16 @@
 // Have to do this first to pull in all of Dakota's #define's
 #include "TriKota_ConfigDefs.hpp"
 
-// Dakota includes
+#ifdef HAVE_MPI
+#include <mpi.h>
+#endif
 
-#include "dakota_system_defs.hpp"
-#include "ParallelLibrary.hpp"
+// Dakota includes/forward declarations
 #include "ProblemDescDB.hpp"
-#include "DakotaStrategy.hpp"
-#include "DakotaModel.hpp"
-#include "DakotaInterface.hpp"
-#include "DirectApplicInterface.hpp"
-
+namespace Dakota {
+  class DirectApplicInterface;
+  class LibraryEnvironment;
+}
 
 //Trilinos includes
 #include "Teuchos_RCP.hpp"
@@ -58,15 +58,15 @@ public:
   //! Reading a restart file is off by default. Number of restart 
   //! entries to read, if turned on, defaults to all (0 flag value)
 
-  Driver(const char* dakota_in="dakota.in",  
-    const char* dakota_out="dakota.out",
-    const char* dakota_err="dakota.err",
-    const char* dakota_restart_out="dakota_restart.out",
-    const char* dakota_restart_in=NULL,
-    const int stop_restart_evals=0
-    );
+  Driver(std::string dakota_in="dakota.in",  
+	 std::string dakota_out="dakota.out",
+	 std::string dakota_err="dakota.err",
+	 std::string dakota_restart_out="dakota_restart.out",
+	 std::string dakota_restart_in="",
+	 const int stop_restart_evals=0
+  	 );
 
-  ~Driver() {};
+  ~Driver() { }
 
   /*! \brief Accessor to get an MPI_Comm from Dakota. This allows Dakota to
      choose the parallelism, and the application to be constructed as a 
@@ -95,14 +95,16 @@ public:
   //! Accessor for final parameters after an optimization run.
   const Dakota::Variables getFinalSolution() const;
 
+  // BMA: do you want Dakota rank 0 or application rank 0
+  // I think you could query the Dakota environment for it's rank within the Dakota MPI_Comm...
   //! Query if current processor is rankZero for this iterator
   bool rankZero() const { return rank_zero;};
 
 private:
 
-  Dakota::ParallelLibrary parallel_lib;
-  Dakota::ProblemDescDB problem_db;
-  Dakota::Strategy selected_strategy;
+  /// The Dakota library environment that manages Dakota instances
+  Teuchos::RCP<Dakota::LibraryEnvironment> dakota_env;
+
 #ifdef HAVE_MPI
   MPI_Comm analysis_comm;
 #else

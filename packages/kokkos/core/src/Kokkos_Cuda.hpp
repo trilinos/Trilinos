@@ -63,6 +63,7 @@
 #include <Kokkos_Layout.hpp>
 #include <Kokkos_CudaSpace.hpp>
 #include <Kokkos_MemoryTraits.hpp>
+#include <impl/Kokkos_Tags.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -91,6 +92,8 @@ public:
   //! \name Type declarations that all Kokkos devices must provide.
   //@{
 
+  //! The tag (what type of kokkos_object is this).
+  typedef Impl::DeviceTag       kokkos_tag ;
   //! The device type (same as this class).
   typedef Cuda                  device_type ;
   //! This device's preferred memory space.
@@ -170,6 +173,8 @@ public:
 
   //! Initialize, telling the CUDA run-time library which device to use.
   static void initialize( const SelectDevice = SelectDevice() );
+  static void initialize( int device );
+  static void initialize( int device , int );
 
   static int is_initialized();
 
@@ -187,6 +192,7 @@ public:
   static std::vector<unsigned> detect_device_arch();
 
   static unsigned team_max();
+  static unsigned team_recommended();
 
   //@}
   //--------------------------------------------------------------------------

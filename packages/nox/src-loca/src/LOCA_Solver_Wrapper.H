@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -51,7 +51,7 @@
 #ifndef LOCA_SOLVER_WRAPPER_H
 #define LOCA_SOLVER_WRAPPER_H
 
-#include "NOX_Solver_Generic.H"	// base class
+#include "NOX_Solver_Generic.H"    // base class
 
 namespace LOCA {
 
@@ -63,25 +63,25 @@ namespace LOCA {
      */
     /*!
      * The %LOCA::Solver::Wrapper class provides a wrapper for %NOX solvers
-     * to change the group data returned by getSolutionGroup() and 
+     * to change the group data returned by getSolutionGroup() and
      * getPreviousSolutionGroup() so that status tests can operate correctly.
      * %LOCA continuation and bifurcation algorithms are implemented by
      * extended groups which augment the nonlinear equations defining
      * equilibrium solutions with appropriate continuation/bifurcation
      * equations.  Therefore the groups returned by getSolutionGroup() and
-     * getPreviousSolutionGroup() will be groups corresponding to the 
+     * getPreviousSolutionGroup() will be groups corresponding to the
      * continuation/bifurcation equations, not the underlying group.
      * Status tests that are designed to use concrete data from the original
      * underlying group (e.g., NOX::StatusTest::NormWRMS) will then fail
      * (usually via a segmentation fault or raised exception) when applied
-     * to the extended continuation or bifurcation groups.  
+     * to the extended continuation or bifurcation groups.
      *
      * This solver wrapper class fixes this problem by reimplementing the
-     * solution group accessor methods to return the underlying groups of 
-     * the solution groups 
-     * (via LOCA::Extended::MultiAbstractGroup::getUnderlyingGroup()) if they 
-     * are extended groups (derived from LOCA::Extended::MultiAbstractGroup).  
-     * If the groups are not extended groups, the original solution groups are 
+     * solution group accessor methods to return the underlying groups of
+     * the solution groups
+     * (via LOCA::Extended::MultiAbstractGroup::getUnderlyingGroup()) if they
+     * are extended groups (derived from LOCA::Extended::MultiAbstractGroup).
+     * If the groups are not extended groups, the original solution groups are
      * returned.  All other NOX::Solver::Generic methods are passed to the
      * wrapped solver.
      *
@@ -113,58 +113,58 @@ namespace LOCA {
 
       //! Implementation of reset method (forwarded to wrapped solver)
       void reset(const NOX::Abstract::Vector& initialGuess);
-  
+
       //! Implementation of reset method (forwarded to wrapped solver)
-      void reset(const NOX::Abstract::Vector& initialGuess, 
-		 const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
-      
+      void reset(const NOX::Abstract::Vector& initialGuess,
+         const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
+
       //! Implementation of getStatus method (forwarded to wrapped solver)
       NOX::StatusTest::StatusType getStatus();
-      
+
       //! Implementation of step method (forwarded to wrapped solver)
       NOX::StatusTest::StatusType step();
-      
+
       //! Implementation of solve method (forwarded to wrapped solver)
       NOX::StatusTest::StatusType solve();
-      
+
       /*!
-       * \brief Returns underlying group if solution group is extended, 
+       * \brief Returns underlying group if solution group is extended,
        * solution group otherwise.
        */
       const NOX::Abstract::Group& getSolutionGroup() const;
-      
+
       /*!
-       * \brief Returns underlying group if previous solution group is 
+       * \brief Returns underlying group if previous solution group is
        * extended, previous solution group otherwise.
        */
       const NOX::Abstract::Group& getPreviousSolutionGroup() const;
-      
-      /*! 
-       * \brief Implementation of getNumIterations method (forwarded to 
+
+      /*!
+       * \brief Implementation of getNumIterations method (forwarded to
        * wrapped solver)
        */
       int getNumIterations() const;
-      
-      /*! 
-       * \brief Implementation of getList method (forwarded to 
+
+      /*!
+       * \brief Implementation of getList method (forwarded to
        * wrapped solver)
        */
       const Teuchos::ParameterList& getList() const;
-      
+
       /*!
-       * \brief Returns underlying group if solution group is extended, 
+       * \brief Returns underlying group if solution group is extended,
        * solution group otherwise.
        */
       Teuchos::RCP< const NOX::Abstract::Group > getSolutionGroupPtr() const;
-      
+
       /*!
-       * \brief Returns underlying group if previous solution group is 
+       * \brief Returns underlying group if previous solution group is
        * extended, previous solution group otherwise.
        */
       Teuchos::RCP< const NOX::Abstract::Group > getPreviousSolutionGroupPtr() const;
-      
-      /*! 
-       * \brief Implementation of getListPtr method (forwarded to 
+
+      /*!
+       * \brief Implementation of getListPtr method (forwarded to
        * wrapped solver)
        */
       Teuchos::RCP< const Teuchos::ParameterList > getListPtr() const;
@@ -175,7 +175,7 @@ namespace LOCA {
       void resetWrapper();
 
     protected:
-      
+
       //! Pointer to the solver object
       Teuchos::RCP<NOX::Solver::Generic> solverPtr;
 

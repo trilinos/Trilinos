@@ -111,7 +111,7 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   MKL             "cmake/TPLs/"    EX
   yaml-cpp        "cmake/TPLs/"    EX
   Peano           "cmake/TPLs/"    EX
-  CUDA            "cmake/TPLs/"    SS
+  CUDA            "${${PROJECT_NAME}_TRIBITS_DIR}/tpls/"    SS
   CUSPARSE        "cmake/TPLs/"    SS
   Thrust          "cmake/TPLs/"    SS
   Cusp            "cmake/TPLs/"    SS
@@ -189,6 +189,8 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   MATLABLib       "cmake/TPLs/"    EX
   Eigen           "cmake/TPLs/"    EX
   X11             "cmake/TPLs/"    SS
+  Lemon           "cmake/TPLs/"    EX
+  GLM             "cmake/TPLs/"    EX
   )
 
 # NOTES:

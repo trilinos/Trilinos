@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
+// Questions? Contact Glen Hansen (gahanse@sandia.gov), Sandia
 // National Laboratories.
 //
 // ************************************************************************
@@ -77,7 +77,7 @@ void PerformSolveImpl(
         responses[j] = g;
 
         if(Teuchos::nonnull(observer))
-           observer->observeResponse(j, Teuchos::rcpFromRef(outArgs), 
+           observer->observeResponse(j, Teuchos::rcpFromRef(outArgs),
                 Teuchos::rcpFromRef(responses), g);
 
         if (computeSensitivities) {
@@ -98,9 +98,27 @@ void PerformSolveImpl(
     }
   }
 
+/*
+   TODO: This improper use of "reportFinalPoint" needs to be redone, but will
+   require redesign of this section of code.
+*/
+
+  Thyra::ModelEvaluator<Scalar>* mutable_modelPtr =
+         const_cast<Thyra::ModelEvaluator<Scalar>* >(&model);
+
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> finalPoint;
+
+  mutable_modelPtr->reportFinalPoint(finalPoint, /*unused*/ true);
+
   // Solve the problem using the default values for the parameters
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = model.createInArgs();
   model.evalModel(inArgs, outArgs);
+
+  // If the model has set that it provides IN_ARG_x, get the final solution
+  if(finalPoint.supports(Thyra::ModelEvaluatorBase::IN_ARG_x)){
+        Teuchos::RCP<const Thyra::VectorBase<Scalar> > x_init = finalPoint.get_x();
+        responses[responseCount-1] = Teuchos::rcp_const_cast< Thyra::VectorBase<Scalar> >(x_init);
+  }
 
 }
 

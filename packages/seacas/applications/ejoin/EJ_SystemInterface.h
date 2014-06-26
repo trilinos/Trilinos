@@ -32,11 +32,13 @@
 #ifndef Sierra_SystemInterface_h
 #define Sierra_SystemInterface_h
 
-#include "EJ_CodeTypes.h"
-#include "GetLongOpt.h"
-#include "EJ_vector3d.h"
+#include <iosfwd>                       // for ostream
+#include <string>                       // for string
+#include <vector>                       // for vector
+#include "EJ_CodeTypes.h"               // for StringIdVector, Omissions, etc
+#include "EJ_vector3d.h"                // for vector3d
+#include "GetLongOpt.h"                 // for GetLongOption
 
-#include <iosfwd>
 class SystemInterface
 {
  public:

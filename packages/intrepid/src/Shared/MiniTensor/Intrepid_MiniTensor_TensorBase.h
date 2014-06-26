@@ -194,6 +194,22 @@ public:
   operator-=(TensorBase<S, SS> const & X);
 
   ///
+  /// Component scale
+  /// \param X components are scaled by the parameter
+  ///
+  template<typename S>
+  TensorBase<T, ST> &
+  operator*=(S const & X);
+
+  ///
+  /// Component divide
+  /// \param X components are divided by the parameter
+  ///
+  template<typename S>
+  TensorBase<T, ST> &
+  operator/=(S const & X);
+
+  ///
   /// Fill with zeros
   ///
   void

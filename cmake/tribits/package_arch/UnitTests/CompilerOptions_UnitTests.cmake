@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -63,7 +63,7 @@ INCLUDE(GlobalSet)
 # Set up unit test functions that will be called below to actually run the
 # unit tests.
 #
-# The reason that we use functions is so that we can change varibles just
+# The reason that we use functions is so that we can change variables just
 # inside of the functions that have their own variable scoping.  In that way,
 # we can keep variables that are set in one unit test from affecting the
 # others.

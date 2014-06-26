@@ -155,7 +155,7 @@ Perf fenl(
   const int use_print ,
   const int use_trials ,
   const int use_atomic ,
-  const int use_nodes[] )
+  const int use_elems[] )
 {
   typedef Kokkos::Example::BoxElemFixture< Device , ElemOrder > FixtureType ;
 
@@ -208,7 +208,7 @@ Perf fenl(
   const float bubble_z = 1.0 ;
 
   const FixtureType fixture( BoxElemPart::DecomposeNode , comm_size , comm_rank ,
-                             use_nodes[0] , use_nodes[1] , use_nodes[2] ,
+                             use_elems[0] , use_elems[1] , use_elems[2] ,
                              bubble_x , bubble_y , bubble_z );
 
   //------------------------------------
@@ -231,26 +231,69 @@ Perf fenl(
 
   //------------------------------------
 
-  if ( print_flag ) {
-    std::cout << "Manufactured solution"
-              << " a[" << manufactured_solution.a << "]"
-              << " b[" << manufactured_solution.b << "]"
-              << " K[" << manufactured_solution.K << "]"
-              << " {" ;
-    for ( unsigned inode = 0 ; inode < fixture.node_count() ; ++inode ) {
-      std::cout << " " << manufactured_solution( fixture.node_coord( inode , 2 ) );
-    }
-    std::cout << " }" << std::endl ;
+  for ( int k = 0 ; k < comm_size && use_print ; ++k ) {
+    if ( k == comm_rank ) {
+      typename FixtureType::node_grid_type::HostMirror
+        h_node_grid = Kokkos::create_mirror_view( fixture.node_grid() );
 
-    std::cout << "ElemNode {" << std::endl ;
-    for ( unsigned ielem = 0 ; ielem < fixture.elem_count() ; ++ielem ) {
-      std::cout << "  elem[" << ielem << "]{" ;
-      for ( unsigned inode = 0 ; inode < FixtureType::ElemNode ; ++inode ) {
-        std::cout << " " << fixture.elem_node(ielem,inode);
+      typename FixtureType::node_coord_type::HostMirror
+        h_node_coord = Kokkos::create_mirror_view( fixture.node_coord() );
+
+      typename FixtureType::elem_node_type::HostMirror
+        h_elem_node = Kokkos::create_mirror_view( fixture.elem_node() );
+
+      Kokkos::deep_copy( h_node_grid , fixture.node_grid() );
+      Kokkos::deep_copy( h_node_coord , fixture.node_coord() );
+      Kokkos::deep_copy( h_elem_node , fixture.elem_node() );
+
+      std::cout << "MPI[" << comm_rank << "]" << std::endl ;
+      std::cout << "Node grid {" ;
+      for ( unsigned inode = 0 ; inode < fixture.node_count() ; ++inode ) {
+        std::cout << " (" << h_node_grid(inode,0)
+                  << "," << h_node_grid(inode,1)
+                  << "," << h_node_grid(inode,2)
+                  << ")" ;
       }
       std::cout << " }" << std::endl ;
+  
+      std::cout << "Node coord {" ;
+      for ( unsigned inode = 0 ; inode < fixture.node_count() ; ++inode ) {
+        std::cout << " (" << h_node_coord(inode,0)
+                  << "," << h_node_coord(inode,1)
+                  << "," << h_node_coord(inode,2)
+                  << ")" ;
+      }
+      std::cout << " }" << std::endl ;
+
+      std::cout << "Manufactured solution"
+                << " a[" << manufactured_solution.a << "]"
+                << " b[" << manufactured_solution.b << "]"
+                << " K[" << manufactured_solution.K << "]"
+                << " {" ;
+      for ( unsigned inode = 0 ; inode < fixture.node_count() ; ++inode ) {
+        std::cout << " " << manufactured_solution( h_node_coord( inode , 2 ) );
+      }
+      std::cout << " }" << std::endl ;
+
+      std::cout << "ElemNode {" << std::endl ;
+      for ( unsigned ielem = 0 ; ielem < fixture.elem_count() ; ++ielem ) {
+        std::cout << "  elem[" << ielem << "]{" ;
+        for ( unsigned inode = 0 ; inode < FixtureType::ElemNode ; ++inode ) {
+          std::cout << " " << h_elem_node(ielem,inode);
+        }
+        std::cout << " }{" ;
+        for ( unsigned inode = 0 ; inode < FixtureType::ElemNode ; ++inode ) {
+          std::cout << " (" << h_node_grid(h_elem_node(ielem,inode),0)
+                    << "," << h_node_grid(h_elem_node(ielem,inode),1)
+                    << "," << h_node_grid(h_elem_node(ielem,inode),2)
+                    << ")" ;
+        }
+        std::cout << " }" << std::endl ;
+      }
+      std::cout << "}" << std::endl ;
     }
-    std::cout << "}" << std::endl ;
+    std::cout.flush();
+    MPI_Barrier( comm );
   }
 
   //------------------------------------
@@ -294,34 +337,39 @@ Perf fenl(
 
     //----------------------------------
 
-    if ( print_flag ) {
-      const unsigned nrow = jacobian.numRows();
-      std::cout << "JacobianGraph[ "
-                << jacobian.numRows() << " x " << jacobian.numCols()
-                << " ] {" << std::endl ;
-      for ( unsigned irow = 0 ; irow < nrow ; ++irow ) {
-        std::cout << "  row[" << irow << "]{" ;
-        const unsigned entry_end = jacobian.graph.row_map(irow+1);
-        for ( unsigned entry = jacobian.graph.row_map(irow) ; entry < entry_end ; ++entry ) {
-          std::cout << " " << jacobian.graph.entries(entry);
-        }
-        std::cout << " }" << std::endl ;
-      }
-      std::cout << "}" << std::endl ;
-
-      std::cout << "ElemGraph {" << std::endl ;
-      for ( unsigned ielem = 0 ; ielem < mesh_to_graph.elem_graph.dimension_0() ; ++ielem ) {
-        std::cout << "  elem[" << ielem << "]{" ;
-        for ( unsigned irow = 0 ; irow < mesh_to_graph.elem_graph.dimension_1() ; ++irow ) {
-          std::cout << " {" ;
-          for ( unsigned icol = 0 ; icol < mesh_to_graph.elem_graph.dimension_2() ; ++icol ) {
-            std::cout << " " << mesh_to_graph.elem_graph(ielem,irow,icol);
+    for ( int k = 0 ; k < comm_size && print_flag ; ++k ) {
+      if ( k == comm_rank ) {
+        const unsigned nrow = jacobian.numRows();
+        std::cout << "MPI[" << comm_rank << "]" << std::endl ;
+        std::cout << "JacobianGraph[ "
+                  << jacobian.numRows() << " x " << jacobian.numCols()
+                  << " ] {" << std::endl ;
+        for ( unsigned irow = 0 ; irow < nrow ; ++irow ) {
+          std::cout << "  row[" << irow << "]{" ;
+          const unsigned entry_end = jacobian.graph.row_map(irow+1);
+          for ( unsigned entry = jacobian.graph.row_map(irow) ; entry < entry_end ; ++entry ) {
+            std::cout << " " << jacobian.graph.entries(entry);
           }
-          std::cout << " }" ;
+          std::cout << " }" << std::endl ;
         }
-        std::cout << " }" << std::endl ;
+        std::cout << "}" << std::endl ;
+
+        std::cout << "ElemGraph {" << std::endl ;
+        for ( unsigned ielem = 0 ; ielem < mesh_to_graph.elem_graph.dimension_0() ; ++ielem ) {
+          std::cout << "  elem[" << ielem << "]{" ;
+          for ( unsigned irow = 0 ; irow < mesh_to_graph.elem_graph.dimension_1() ; ++irow ) {
+            std::cout << " {" ;
+            for ( unsigned icol = 0 ; icol < mesh_to_graph.elem_graph.dimension_2() ; ++icol ) {
+              std::cout << " " << mesh_to_graph.elem_graph(ielem,irow,icol);
+            }
+            std::cout << " }" ;
+          }
+          std::cout << " }" << std::endl ;
+        }
+        std::cout << "}" << std::endl ;
       }
-      std::cout << "}" << std::endl ;
+      std::cout.flush();
+      MPI_Barrier( comm );
     }
 
     //----------------------------------
@@ -419,6 +467,7 @@ Perf fenl(
       Kokkos::V_Add( nodal_solution , -1.0 , nodal_delta , 1.0 , nodal_solution );
 
       perf.cg_iter_count += cgsolve.iteration ;
+      perf.matvec_time   += cgsolve.matvec_time ;
       perf.cg_time       += cgsolve.iter_time ;
 
       //--------------------------------
@@ -429,49 +478,57 @@ Perf fenl(
             Kokkos::Example::all_reduce(
               Kokkos::V_Dot( nodal_delta, nodal_delta ) , comm ) );
 
-        std::cout << "Newton iteration[" << perf.newton_iter_count << "]"
-                  << " residual[" << perf.newton_residual << "]"
-                  << " update[" << delta_norm << "]"
-                  << " cg_iteration[" << cgsolve.iteration << "]"
-                  << " cg_residual[" << cgsolve.norm_res << "]"
-                  << std::endl ;
-
-        const unsigned nrow = jacobian.numRows();
-
-        std::cout << "Residual {" ;
-        for ( unsigned irow = 0 ; irow < nrow ; ++irow ) {
-          std::cout << " " << nodal_residual(irow);
+        if ( 0 == comm_rank ) {
+          std::cout << "Newton iteration[" << perf.newton_iter_count << "]"
+                    << " residual[" << perf.newton_residual << "]"
+                    << " update[" << delta_norm << "]"
+                    << " cg_iteration[" << cgsolve.iteration << "]"
+                    << " cg_residual[" << cgsolve.norm_res << "]"
+                    << std::endl ;
         }
-        std::cout << " }" << std::endl ;
 
-        std::cout << "Delta {" ;
-        for ( unsigned irow = 0 ; irow < nrow ; ++irow ) {
-          std::cout << " " << nodal_delta(irow);
-        }
-        std::cout << " }" << std::endl ;
+        for ( int k = 0 ; k < comm_size ; ++k ) {
+          if ( k == comm_rank ) {
+            const unsigned nrow = jacobian.numRows();
 
-        std::cout << "Solution {" ;
-        for ( unsigned irow = 0 ; irow < nrow ; ++irow ) {
-          std::cout << " " << nodal_solution(irow);
-        }
-        std::cout << " }" << std::endl ;
+            std::cout << "MPI[" << comm_rank << "]" << std::endl ;
+            std::cout << "Residual {" ;
+            for ( unsigned irow = 0 ; irow < nrow ; ++irow ) {
+              std::cout << " " << nodal_residual(irow);
+            }
+            std::cout << " }" << std::endl ;
 
-        std::cout << "Jacobian[ "
-                  << jacobian.numRows() << " x " << jacobian.numCols()
-                  << " ] {" << std::endl ;
-        for ( unsigned irow = 0 ; irow < nrow ; ++irow ) {
-          std::cout << "  {" ;
-          const unsigned entry_end = jacobian.graph.row_map(irow+1);
-          for ( unsigned entry = jacobian.graph.row_map(irow) ; entry < entry_end ; ++entry ) {
-            std::cout << " (" << jacobian.graph.entries(entry)
-                      << "," << jacobian.values(entry)
-                      << ")" ;
+            std::cout << "Delta {" ;
+            for ( unsigned irow = 0 ; irow < nrow ; ++irow ) {
+              std::cout << " " << nodal_delta(irow);
+            }
+            std::cout << " }" << std::endl ;
+
+            std::cout << "Solution {" ;
+            for ( unsigned irow = 0 ; irow < nrow ; ++irow ) {
+              std::cout << " " << nodal_solution(irow);
+            }
+            std::cout << " }" << std::endl ;
+
+            std::cout << "Jacobian[ "
+                      << jacobian.numRows() << " x " << jacobian.numCols()
+                      << " ] {" << std::endl ;
+            for ( unsigned irow = 0 ; irow < nrow ; ++irow ) {
+              std::cout << "  {" ;
+              const unsigned entry_end = jacobian.graph.row_map(irow+1);
+              for ( unsigned entry = jacobian.graph.row_map(irow) ; entry < entry_end ; ++entry ) {
+                std::cout << " (" << jacobian.graph.entries(entry)
+                          << "," << jacobian.values(entry)
+                          << ")" ;
+              }
+              std::cout << " }" << std::endl ;
+            }
+            std::cout << "}" << std::endl ;
           }
-          std::cout << " }" << std::endl ;
+          std::cout.flush();
+          MPI_Barrier( comm );
         }
-        std::cout << "}" << std::endl ;
       }
-
       //--------------------------------
     }
 

@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -60,7 +60,7 @@
 #include "LOCA_Parameter_SublistParser.H"
 #include "LOCA_MultiPredictor_AbstractStrategy.H"
 #include "LOCA_MultiContinuation_AbstractStrategy.H"
-#include "LOCA_MultiContinuation_AbstractGroup.H"  
+#include "LOCA_MultiContinuation_AbstractGroup.H"
 #include "LOCA_MultiContinuation_ExtendedGroup.H"
 #include "LOCA_MultiContinuation_ExtendedVector.H"
 #include "LOCA_MultiContinuation_ConstrainedGroup.H"
@@ -73,9 +73,9 @@ extern "C" {
 
 LOCA::MultiStepper::MultiStepper(
             const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	   const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
-	   const Teuchos::RCP< NOX::StatusTest::Generic>& t,
-	   const Teuchos::RCP<Teuchos::ParameterList>& p) :
+       const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
+       const Teuchos::RCP< NOX::StatusTest::Generic>& t,
+       const Teuchos::RCP<Teuchos::ParameterList>& p) :
   globalData(),
   parsedParams(),
   predictor(),
@@ -92,16 +92,16 @@ LOCA::MultiStepper::MultiStepper(
   reset(global_data, initialGuess, t, p);
 }
 
-LOCA::MultiStepper::~MultiStepper() 
-{ 
+LOCA::MultiStepper::~MultiStepper()
+{
 }
 
-bool 
+bool
 LOCA::MultiStepper::reset(
-		  const Teuchos::RCP<LOCA::GlobalData>& global_data,
-		  const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
-		  const Teuchos::RCP<NOX::StatusTest::Generic>& t,
-		  const Teuchos::RCP<Teuchos::ParameterList>& p) 
+          const Teuchos::RCP<LOCA::GlobalData>& global_data,
+          const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
+          const Teuchos::RCP<NOX::StatusTest::Generic>& t,
+          const Teuchos::RCP<Teuchos::ParameterList>& p)
 {
   globalData = global_data;
   paramListPtr = p;
@@ -112,11 +112,11 @@ LOCA::MultiStepper::reset(
   parsedParams->parseSublists(paramListPtr);
 
   // Create predictor strategy
-  Teuchos::RCP<Teuchos::ParameterList> predictorParams = 
+  Teuchos::RCP<Teuchos::ParameterList> predictorParams =
     parsedParams->getSublist("Predictor");
   predictor = globalData->locaFactory->createPredictorStrategy(
-							     parsedParams,
-							     predictorParams);
+                                 parsedParams,
+                                 predictorParams);
 
   // Get stepper sublist
   stepperList = parsedParams->getSublist("Stepper");
@@ -129,7 +129,7 @@ LOCA::MultiStepper::reset(
 
   // Make a copy of the parameter list, change continuation method to
   // natural
-  Teuchos::RCP<Teuchos::ParameterList> firstStepperParams = 
+  Teuchos::RCP<Teuchos::ParameterList> firstStepperParams =
     Teuchos::rcp(new Teuchos::ParameterList(*stepperList));
   firstStepperParams->set("Continuation Method", "Natural");
 
@@ -138,37 +138,37 @@ LOCA::MultiStepper::reset(
     = buildConstrainedGroup(initialGuess);
 
   // Create bifurcation group
-  Teuchos::RCP<Teuchos::ParameterList> bifurcationParams = 
+  Teuchos::RCP<Teuchos::ParameterList> bifurcationParams =
     parsedParams->getSublist("Bifurcation");
   bifGroupPtr = globalData->locaFactory->createBifurcationStrategy(
-						       parsedParams,
-						       bifurcationParams,
-						       constraintsGrp);
+                               parsedParams,
+                               bifurcationParams,
+                               constraintsGrp);
 
   // Create continuation strategy
   curGroupPtr = globalData->locaFactory->createContinuationStrategy(
-							parsedParams,
-							firstStepperParams,
-							bifGroupPtr, predictor,
-							conParamIDVec);
+                            parsedParams,
+                            firstStepperParams,
+                            bifGroupPtr, predictor,
+                            conParamIDVec);
 
-  // Set step size			    
+  // Set step size
   for (unsigned int i=0; i<conParamIDVec.size(); i++)
     curGroupPtr->setStepSize(0.0, i);
-  
+
   // Set previous solution vector in current solution group
   curGroupPtr->setPrevX(curGroupPtr->getX());
 
   // Create solver using initial conditions
-  solverPtr = NOX::Solver::buildSolver(curGroupPtr, 
-				       statusTestPtr,
-				       parsedParams->getSublist("NOX"));
+  solverPtr = NOX::Solver::buildSolver(curGroupPtr,
+                       statusTestPtr,
+                       parsedParams->getSublist("NOX"));
 
   printInitializationInfo();
 
   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperParameters))
     paramListPtr->print(globalData->locaUtils->out());
-  
+
   return true;
 }
 
@@ -184,39 +184,39 @@ LOCA::MultiStepper::run() {
   const LOCA::MultiContinuation::ExtendedGroup& constSolnGrp =
     dynamic_cast<const LOCA::MultiContinuation::ExtendedGroup&>(
        solverPtr->getSolutionGroup());
-  Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> underlyingGroup 
+  Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> underlyingGroup
     = Teuchos::rcp_const_cast<LOCA::MultiContinuation::AbstractGroup>(constSolnGrp.getUnderlyingGroup());
 
   // Create continuation strategy
   curGroupPtr = globalData->locaFactory->createContinuationStrategy(
-							parsedParams,
-							stepperList,
-							underlyingGroup, 
-							predictor,
-							conParamIDVec);
+                            parsedParams,
+                            stepperList,
+                            underlyingGroup,
+                            predictor,
+                            conParamIDVec);
 
-  // If nonlinear solve failed, return (this must be done after continuation 
-  // groups are created so MultiStepper::getSolutionGroup() functions 
+  // If nonlinear solve failed, return (this must be done after continuation
+  // groups are created so MultiStepper::getSolutionGroup() functions
   // correctly.
   if (solverStatus != NOX::StatusTest::Converged)
     return LOCA::Abstract::Iterator::Failed;
-  
+
   // Save initial solution
   curGroupPtr->printSolution();
 
   // Create new solver using new continuation groups and combo status test
   solverPtr = NOX::Solver::buildSolver(curGroupPtr, statusTestPtr,
-				       parsedParams->getSublist("NOX"));
+                       parsedParams->getSublist("NOX"));
 
   MFImplicitMF M;
   MFNRegion Omega;
   MFAtlas A;
   MFNVector u0;
   MFContinuationMethod H;
-  LOCAData* data = new LOCAData(globalData, parsedParams, solverPtr, 
-				curGroupPtr, paramListPtr, 
-				statusTestPtr, 
-				Teuchos::rcp(&conParamData,false));
+  LOCAData* data = new LOCAData(globalData, parsedParams, solverPtr,
+                curGroupPtr, paramListPtr,
+                statusTestPtr,
+                Teuchos::rcp(&conParamData,false));
   M=MFIMFCreateLOCA(data);
   Omega=MFNRegionCreateLOCA(data);
   u0=MFCreateLOCANVectorWithData(Teuchos::rcp_dynamic_cast<LMCEV>(curGroupPtr->getX().clone()), data->mfErrorHandler);
@@ -239,10 +239,10 @@ LOCA::MultiStepper::run() {
   MFMultifarioSetIntegerParameter(H, "dumpToPlotFile", stepperList->get("Dump Polyhedra", true), data->mfErrorHandler);
 
   /* Write points to a file */
-  MFMultifarioSetIntegerParameter(H,"dumpToCenterFile", stepperList->get("Dump Centers", false), data->mfErrorHandler); 
+  MFMultifarioSetIntegerParameter(H,"dumpToCenterFile", stepperList->get("Dump Centers", false), data->mfErrorHandler);
 
   /* File name to save data */
-  const char *fname = 
+  const char *fname =
     stepperList->get("Filename", "MFresults").c_str();
   MFMultifarioSetFilename(H,const_cast<char*>(fname), data->mfErrorHandler);
 
@@ -270,31 +270,31 @@ LOCA::MultiStepper::getList() const
   return paramListPtr;
 }
 
-void 
+void
 LOCA::MultiStepper::printInitializationInfo()
-{  
+{
   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) {
-    globalData->locaUtils->out() 
-      << std::endl 
-      << globalData->locaUtils->fill(72, '~') 
+    globalData->locaUtils->out()
+      << std::endl
+      << globalData->locaUtils->fill(72, '~')
       << std::endl;
-    globalData->locaUtils->out() 
-      << "Beginning Continuation Run \n" 
+    globalData->locaUtils->out()
+      << "Beginning Continuation Run \n"
       << "Method: MultiParmeter Continuation \n"
       << std::endl;
-    globalData->locaUtils->out() 
-      << globalData->locaUtils->fill(72, '~') 
+    globalData->locaUtils->out()
+      << globalData->locaUtils->fill(72, '~')
       << std::endl << std::endl;
   }
 }
 
-void 
+void
 LOCA::MultiStepper::getConParamData()
 {
   std::string callingFunction = "LOCA::MultiStepper::getConParamInfo()";
 
   // Get number of continuation parameters
-  int numParams = 
+  int numParams =
     stepperList->get("Number of Continuation Parameters",1);
 
   // Get data for each continuation parameter
@@ -311,8 +311,8 @@ LOCA::MultiStepper::getConParamData()
     if (!stepperList->isSublist(sublistName)) {
       std::stringstream errorStream;
       errorStream << "No sublist for continuation parameter " << i << "!";
-      globalData->locaErrorCheck->throwError(callingFunction, 
-					     errorStream.str());
+      globalData->locaErrorCheck->throwError(callingFunction,
+                         errorStream.str());
     }
     Teuchos::ParameterList* conSublistPtr = &(stepperList->sublist(sublistName));
 
@@ -322,10 +322,10 @@ LOCA::MultiStepper::getConParamData()
     // Get continuation parameter name
     if (!conSublistPtr->isParameter("Parameter Name")) {
       std::stringstream errorStream;
-      errorStream << "\"Parameter Name\" for parameter sublist " 
+      errorStream << "\"Parameter Name\" for parameter sublist "
                   << i << " is not set!";
-      globalData->locaErrorCheck->throwError(callingFunction, 
-					     errorStream.str());
+      globalData->locaErrorCheck->throwError(callingFunction,
+                         errorStream.str());
     }
     d.name = conSublistPtr->get("Parameter Name", "None");
     d.ID = paramVec.getIndex(d.name);
@@ -333,60 +333,60 @@ LOCA::MultiStepper::getConParamData()
     // Get initial value
     if (!conSublistPtr->isParameter("Initial Value")) {
       std::stringstream errorStream;
-      errorStream << "\"Initial Value\" for parameter sublist " 
+      errorStream << "\"Initial Value\" for parameter sublist "
                   << i << " is not set!";
-      globalData->locaErrorCheck->throwError(callingFunction, 
-					     errorStream.str());
+      globalData->locaErrorCheck->throwError(callingFunction,
+                         errorStream.str());
     }
     d.initialValue = conSublistPtr->get("Initial Value", 0.0);
 
     // Get max value
     if (!conSublistPtr->isParameter("Max Value")) {
       std::stringstream errorStream;
-      errorStream << "\"Max Value\" for parameter sublist " 
+      errorStream << "\"Max Value\" for parameter sublist "
                   << i << " is not set!";
-      globalData->locaErrorCheck->throwError(callingFunction, 
-					     errorStream.str());
+      globalData->locaErrorCheck->throwError(callingFunction,
+                         errorStream.str());
     }
     d.maxValue = conSublistPtr->get("Max Value", 0.0);
 
     // Get min value
     if (!conSublistPtr->isParameter("Min Value")) {
       std::stringstream errorStream;
-      errorStream << "\"Min Value\" for parameter sublist " 
+      errorStream << "\"Min Value\" for parameter sublist "
                   << i << " is not set!";
-      globalData->locaErrorCheck->throwError(callingFunction, 
-					     errorStream.str());
+      globalData->locaErrorCheck->throwError(callingFunction,
+                         errorStream.str());
     }
     d.minValue = conSublistPtr->get("Min Value", 0.0);
 
     // Get initial step size
     if (!conSublistPtr->isParameter("Initial Step Size")) {
       std::stringstream errorStream;
-      errorStream << "\"Initial Step Size\" for parameter sublist " 
+      errorStream << "\"Initial Step Size\" for parameter sublist "
                   << i << " is not set!";
-      globalData->locaErrorCheck->throwError(callingFunction, 
-					     errorStream.str());
+      globalData->locaErrorCheck->throwError(callingFunction,
+                         errorStream.str());
     }
     d.initialStepSize = conSublistPtr->get("Initial Step Size", 0.1);
 
     // Get initial max size
     if (!conSublistPtr->isParameter("Max Step Size")) {
       std::stringstream errorStream;
-      errorStream << "\"Max Step Size\" for parameter sublist " 
+      errorStream << "\"Max Step Size\" for parameter sublist "
                   << i << " is not set!";
-      globalData->locaErrorCheck->throwError(callingFunction, 
-					     errorStream.str());
+      globalData->locaErrorCheck->throwError(callingFunction,
+                         errorStream.str());
     }
     d.maxStepSize = conSublistPtr->get("Max Step Size", 1.0);
 
     // Get initial min size
     if (!conSublistPtr->isParameter("Min Step Size")) {
       std::stringstream errorStream;
-      errorStream << "\"Min Step Size\" for parameter sublist " 
+      errorStream << "\"Min Step Size\" for parameter sublist "
                   << i << " is not set!";
-      globalData->locaErrorCheck->throwError(callingFunction, 
-					     errorStream.str());
+      globalData->locaErrorCheck->throwError(callingFunction,
+                         errorStream.str());
     }
     d.minStepSize = conSublistPtr->get("Min Step Size", 1.0e-3);
 
@@ -420,7 +420,7 @@ LOCA::MultiStepper::buildConstrainedGroup(
       get< Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface> >("Constraint Object");
   else
     globalData->locaErrorCheck->throwError(methodName,
-	  "\"Constraint Object\" parameter is not of type Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>!");
+      "\"Constraint Object\" parameter is not of type Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>!");
 
   // Get parameter names for constraints
   if ((*constraintsList).INVALID_TEMPLATE_QUALIFIER
@@ -429,7 +429,7 @@ LOCA::MultiStepper::buildConstrainedGroup(
       get< Teuchos::RCP< std::vector<std::string> > >("Constraint Parameter Names");
   else
     globalData->locaErrorCheck->throwError(methodName,
-	  "\"Constraint Parameter Names\" parameter is not of type Teuchos::RCP< std::vector<std::string> >!");
+      "\"Constraint Parameter Names\" parameter is not of type Teuchos::RCP< std::vector<std::string> >!");
 
   // Convert names to integer IDs
   std::vector<int> constraintParamIDs(constraintParamNames->size());
@@ -438,12 +438,12 @@ LOCA::MultiStepper::buildConstrainedGroup(
     constraintParamIDs[i] = pvec.getIndex((*constraintParamNames)[i]);
 
   // Create constrained group
-  return 
+  return
     Teuchos::rcp(new LOCA::MultiContinuation::ConstrainedGroup(
-							globalData,
-							parsedParams,
-							constraintsList,
-							grp,
-							constraints,
-							constraintParamIDs));
+                            globalData,
+                            parsedParams,
+                            constraintsList,
+                            grp,
+                            constraints,
+                            constraintParamIDs));
 }

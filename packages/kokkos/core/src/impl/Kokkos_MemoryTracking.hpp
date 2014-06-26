@@ -69,7 +69,7 @@ protected:
   MemoryTrackingEntry( const std::string    & arg_label ,
                        const std::type_info & arg_type ,
                        const void * const     arg_begin ,
-                       const unsigned         arg_bytes )
+                       const ptrdiff_t        arg_bytes )
     : label( arg_label )
     , type(  arg_type )
     , begin( reinterpret_cast<ptrdiff_t>( arg_begin ) )
@@ -125,10 +125,14 @@ public:
   MemoryTracking & operator[]( const iType & i ) const
     { return *m_tracking[i]; }
 
+  /** \brief Construct with a name for error messages */
   explicit MemoryTracking( const std::string & space );
 
   /** \brief  Print memory leak warning for all entries. */
   ~MemoryTracking();
+
+  /** \brief Query if constructed */
+  bool exists() const { return ! m_tracking_end.empty(); }
 
 private:
   MemoryTracking();

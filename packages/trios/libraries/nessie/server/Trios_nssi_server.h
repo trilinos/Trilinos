@@ -80,13 +80,13 @@ struct nssi_request;
  * @brief A macro for registering server callback functions.
  *
  * This macro constructs the service op structure with appropriate
- * XDR-encoding functions, then adds the function to the list of
+ * XDR-encoding functions, then adds the opcode to the list of
  * supported ops for this service.
  *
  * @param id  The opcode of the function to register.
  * @param fptr  The function pointer.
- * @param arg_type Type for the function input arguments.
- * @param res_type Type of the result. The stub will use nssi_send_result.
+ * @param arg_type  Type for the function input arguments.
+ * @param res_type  Type of the result. The stub will use nssi_send_result.
  *
  * @note We need a special version for C++ because sizeof(void)
  * is not allowed in C++.  See nssi_tests.h for
@@ -97,6 +97,37 @@ struct nssi_request;
         nssi_svc_op op; \
         op.opcode = id; \
         op.func = (nssi_rpc_proc)&fptr; \
+        op.obj = (NssiRpc *)NULL; \
+        op.sizeof_args = Nessie::SizeOf<arg_type>::value; \
+        op.decode_args = (xdrproc_t)&xdr_ ## arg_type; \
+        op.sizeof_res = Nessie::SizeOf<res_type>::value; \
+        op.encode_res = (xdrproc_t)&xdr_ ## res_type; \
+        nssi_service_add_op( NULL, &op); \
+    }
+
+/**
+ * @ingroup rpc_server_api
+ * @brief A macro for registering server callback function objects.
+ *
+ * This macro constructs the service op structure with appropriate
+ * XDR-encoding functions, then adds the opcode to the list of
+ * supported ops for this service.
+ *
+ * @param id  The opcode of the function object to register.
+ * @param obj  The function object pointer.
+ * @param arg_type  Type for the function input arguments.
+ * @param res_type  Type of the result. The stub will use nssi_send_result.
+ *
+ * @note We need a special version for C++ because sizeof(void)
+ * is not allowed in C++.  See nssi_tests.h for
+ * the implementation of SizeOf<T>.
+ */
+#define NSSI_REGISTER_SERVER_OBJ(id, func_obj, arg_type, res_type) \
+    { \
+        nssi_svc_op op; \
+        op.opcode = id; \
+        op.func = (nssi_rpc_proc)NULL; \
+        op.obj = func_obj; \
         op.sizeof_args = Nessie::SizeOf<arg_type>::value; \
         op.decode_args = (xdrproc_t)&xdr_ ## arg_type; \
         op.sizeof_res = Nessie::SizeOf<res_type>::value; \
@@ -124,6 +155,7 @@ struct nssi_request;
         nssi_svc_op op; \
         op.opcode = id; \
         op.func = (nssi_rpc_proc)&fptr; \
+        op.obj = (void *)NULL; \
         op.sizeof_args = sizeof(arg_type); \
         op.decode_args = (xdrproc_t)&xdr_ ## arg_type; \
         op.sizeof_res = sizeof(res_type); \
@@ -158,6 +190,25 @@ extern "C" {
                 const NNTI_buffer_t *);
 
 
+#ifdef __cplusplus
+        class NssiRpc {
+            public:
+                virtual int doRPC(
+                        const int            opcode,
+                        const unsigned long  request_id,
+                        const NNTI_peer_t   *caller,
+                        const void          *void_args,
+                        const NNTI_buffer_t *data_addr,
+                        const NNTI_buffer_t *res_addr) = 0;
+//                virtual void registerRPC() = 0;
+        };
+#else
+        /* In C code, we need a substitute for class NssiRpc. */
+        typedef uint8_t NssiRpc;
+#endif
+
+
+
         /**
          * @brief A structure associated with an operation made available
          * by a registered service.
@@ -171,6 +222,9 @@ extern "C" {
 
                 /** @brief Function pointer for the server-side function.  */
                 nssi_rpc_proc func;
+
+                /** @brief Function pointer for the server-side function.  */
+                NssiRpc *obj;
 
                 /** @brief Size of the arguments structure. */
                 uint32_t sizeof_args;

@@ -114,7 +114,7 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWith3Billion )
   }
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
   typedef int LO;
-  typedef KokkosClassic::SerialNode NT;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType NT;
   typedef Tpetra::Map<LO, GO, NT> map_type;
 
   const size_t localNumElts = 5;
@@ -139,8 +139,8 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWith3Billion )
 
   RCP<NT> node;
   {
-    ParameterList junk;
-    node = rcp (new NT (junk));
+    Teuchos::ParameterList defaultParams;
+    node = Teuchos::rcp (new NT (defaultParams));
   }
   // Tpetra::Map requires that the index base and the first GID be equal.
   const GO indexBase = globalFirstGid;

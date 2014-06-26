@@ -48,9 +48,7 @@
 *
 *****************************************************************************/
 
-#include <stdlib.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include "exodusII.h"                   // for ex_get_truth_table, etc
 
 /*!
  * reads the EXODUS II nodeset variable truth table from the database

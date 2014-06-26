@@ -56,9 +56,8 @@
 *
 *****************************************************************************/
 
-#include <stdlib.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_put_partial_var, etc
 
 /*!
  * \deprecated use ex_put_partial_var() instead 

@@ -137,8 +137,32 @@ namespace Belos {
   /// \example PCPG/PCPGEpetraExFile.cpp
   ///
   /// The provided example uses PCPGSolMgr with an ML preconditioner.
+  // Partial specialization for complex ScalarType.
+  // This contains a trivial implementation.
+  // See discussion in the class documentation above.
+  template<class ScalarType, class MV, class OP,
+           const bool scalarTypeIsComplex = Teuchos::ScalarTraits<ScalarType>::isComplex>
+  class PCPGSolMgr :
+    public Details::RealSolverManager<ScalarType, MV, OP,
+                                      Teuchos::ScalarTraits<ScalarType>::isComplex>
+  {
+    static const bool isComplex = Teuchos::ScalarTraits<ScalarType>::isComplex;
+    typedef Details::RealSolverManager<ScalarType, MV, OP, isComplex> base_type;
+
+  public:
+    PCPGSolMgr () :
+      base_type ()
+    {}
+    PCPGSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+                const Teuchos::RCP<Teuchos::ParameterList> &pl) :
+      base_type ()
+    {}
+    virtual ~PCPGSolMgr () {}
+  };
+
   template<class ScalarType, class MV, class OP>
-  class PCPGSolMgr : public SolverManager<ScalarType,MV,OP> {
+  class PCPGSolMgr<ScalarType, MV, OP, false> :
+    public Details::RealSolverManager<ScalarType, MV, OP, false> {
   private:
     typedef MultiVecTraits<ScalarType,MV> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
@@ -376,42 +400,44 @@ namespace Belos {
 
 // Default solver values.
 template<class ScalarType, class MV, class OP>
-const typename PCPGSolMgr<ScalarType,MV,OP>::MagnitudeType PCPGSolMgr<ScalarType,MV,OP>::convtol_default_ = 1e-8;
+const typename PCPGSolMgr<ScalarType,MV,OP,false>::MagnitudeType
+PCPGSolMgr<ScalarType,MV,OP,false>::convtol_default_ = 1e-8;
 
 template<class ScalarType, class MV, class OP>
-const typename PCPGSolMgr<ScalarType,MV,OP>::MagnitudeType PCPGSolMgr<ScalarType,MV,OP>::orthoKappa_default_ = -1.0;
+const typename PCPGSolMgr<ScalarType,MV,OP,false>::MagnitudeType
+PCPGSolMgr<ScalarType,MV,OP,false>::orthoKappa_default_ = -1.0;
 
 template<class ScalarType, class MV, class OP>
-const int PCPGSolMgr<ScalarType,MV,OP>::maxIters_default_ = 1000;
+const int PCPGSolMgr<ScalarType,MV,OP,false>::maxIters_default_ = 1000;
 
 template<class ScalarType, class MV, class OP>
-const int PCPGSolMgr<ScalarType,MV,OP>::deflatedBlocks_default_ = 2;
+const int PCPGSolMgr<ScalarType,MV,OP,false>::deflatedBlocks_default_ = 2;
 
 template<class ScalarType, class MV, class OP>
-const int PCPGSolMgr<ScalarType,MV,OP>::savedBlocks_default_ = 16;
+const int PCPGSolMgr<ScalarType,MV,OP,false>::savedBlocks_default_ = 16;
 
 template<class ScalarType, class MV, class OP>
-const int PCPGSolMgr<ScalarType,MV,OP>::verbosity_default_ = Belos::Errors;
+const int PCPGSolMgr<ScalarType,MV,OP,false>::verbosity_default_ = Belos::Errors;
 
 template<class ScalarType, class MV, class OP>
-const int PCPGSolMgr<ScalarType,MV,OP>::outputStyle_default_ = Belos::General;
+const int PCPGSolMgr<ScalarType,MV,OP,false>::outputStyle_default_ = Belos::General;
 
 template<class ScalarType, class MV, class OP>
-const int PCPGSolMgr<ScalarType,MV,OP>::outputFreq_default_ = -1;
+const int PCPGSolMgr<ScalarType,MV,OP,false>::outputFreq_default_ = -1;
 
 template<class ScalarType, class MV, class OP>
-const std::string PCPGSolMgr<ScalarType,MV,OP>::label_default_ = "Belos";
+const std::string PCPGSolMgr<ScalarType,MV,OP,false>::label_default_ = "Belos";
 
 template<class ScalarType, class MV, class OP>
-const std::string PCPGSolMgr<ScalarType,MV,OP>::orthoType_default_ = "DGKS";
+const std::string PCPGSolMgr<ScalarType,MV,OP,false>::orthoType_default_ = "DGKS";
 
 template<class ScalarType, class MV, class OP>
-const Teuchos::RCP<std::ostream> PCPGSolMgr<ScalarType,MV,OP>::outputStream_default_ = Teuchos::rcp(&std::cout,false);
+const Teuchos::RCP<std::ostream> PCPGSolMgr<ScalarType,MV,OP,false>::outputStream_default_ = Teuchos::rcp(&std::cout,false);
 
 
 // Empty Constructor
 template<class ScalarType, class MV, class OP>
-PCPGSolMgr<ScalarType,MV,OP>::PCPGSolMgr() :
+PCPGSolMgr<ScalarType,MV,OP,false>::PCPGSolMgr() :
   outputStream_(outputStream_default_),
   convtol_(convtol_default_),
   orthoKappa_(orthoKappa_default_),
@@ -424,6 +450,7 @@ PCPGSolMgr<ScalarType,MV,OP>::PCPGSolMgr() :
   outputStyle_(outputStyle_default_),
   outputFreq_(outputFreq_default_),
   orthoType_(orthoType_default_),
+  dimU_(0),
   label_(label_default_),
   isSet_(false)
 {}
@@ -431,7 +458,7 @@ PCPGSolMgr<ScalarType,MV,OP>::PCPGSolMgr() :
 
 // Basic Constructor
 template<class ScalarType, class MV, class OP>
-PCPGSolMgr<ScalarType,MV,OP>::PCPGSolMgr(
+PCPGSolMgr<ScalarType,MV,OP,false>::PCPGSolMgr(
                                              const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                                              const Teuchos::RCP<Teuchos::ParameterList> &pl ) :
   problem_(problem),
@@ -447,20 +474,25 @@ PCPGSolMgr<ScalarType,MV,OP>::PCPGSolMgr(
   outputStyle_(outputStyle_default_),
   outputFreq_(outputFreq_default_),
   orthoType_(orthoType_default_),
+  dimU_(0),
   label_(label_default_),
   isSet_(false)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    problem_.is_null (), std::invalid_argument,
+    "Belos::PCPGSolMgr two-argument constructor: "
+    "'problem' is null.  You must supply a non-null Belos::LinearProblem "
+    "instance when calling this constructor.");
 
-  if (!is_null(pl)) {
+  if (! pl.is_null ()) {
     // Set the parameters using the list that was passed in.
-    setParameters( pl );
+    setParameters (pl);
   }
 }
 
 
 template<class ScalarType, class MV, class OP>
-void PCPGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params )
+void PCPGSolMgr<ScalarType,MV,OP,false>::setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params )
 {
   // Create the internal parameter list if ones doesn't already exist.
   if (params_ == Teuchos::null) {
@@ -690,7 +722,7 @@ void PCPGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::Pa
 
 template<class ScalarType, class MV, class OP>
 Teuchos::RCP<const Teuchos::ParameterList>
-PCPGSolMgr<ScalarType,MV,OP>::getValidParameters() const
+PCPGSolMgr<ScalarType,MV,OP,false>::getValidParameters() const
 {
   static Teuchos::RCP<const Teuchos::ParameterList> validPL;
   if (is_null(validPL)) {
@@ -734,7 +766,7 @@ PCPGSolMgr<ScalarType,MV,OP>::getValidParameters() const
 
 // solve()
 template<class ScalarType, class MV, class OP>
-ReturnType PCPGSolMgr<ScalarType,MV,OP>::solve() {
+ReturnType PCPGSolMgr<ScalarType,MV,OP,false>::solve() {
 
   // Set the current parameters if are not set already.
   if (!isSet_) { setParameters( params_ ); }
@@ -1114,7 +1146,7 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP>::solve() {
 // Note that Anasazi::GenOrthoManager provides simplified versions of the algorithm,
 // that are not rank revealing, and are not designed for PCPG in other ways too.
 template<class ScalarType, class MV, class OP>
-int PCPGSolMgr<ScalarType,MV,OP>::ARRQR(int p, int q, const Teuchos::SerialDenseMatrix<int,ScalarType>& D)
+int PCPGSolMgr<ScalarType,MV,OP,false>::ARRQR(int p, int q, const Teuchos::SerialDenseMatrix<int,ScalarType>& D)
 {
   using Teuchos::RCP;
   ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
@@ -1127,11 +1159,11 @@ int PCPGSolMgr<ScalarType,MV,OP>::ARRQR(int p, int q, const Teuchos::SerialDense
   std::vector<int> curind(1);
   std::vector<int> ipiv(p - q); // RRQR Pivot indices
   std::vector<ScalarType> Pivots(p); // RRQR Pivots
-  int i, imax, j, k, l;
+  int i, imax, j, l;
   ScalarType rteps = 1.5e-8;
 
   // Scale such that diag( U'C) = I
-  for( int i = q ; i < p ; i++ ){
+  for( i = q ; i < p ; i++ ){
     ipiv[i-q] = i;
     curind[0] = i;
     RCP<MV> P = MVT::CloneViewNonConst(*U_,curind);
@@ -1147,7 +1179,7 @@ int PCPGSolMgr<ScalarType,MV,OP>::ARRQR(int p, int q, const Teuchos::SerialDense
       imax = i;
       l = ipiv[imax-q];
       for( j = i+1 ; j < p ; j++ ){
-         k = ipiv[j-q];
+         const int k = ipiv[j-q];
          if( Pivots[k] > Pivots[l] ){
            imax = j;
            l = k;
@@ -1223,7 +1255,7 @@ int PCPGSolMgr<ScalarType,MV,OP>::ARRQR(int p, int q, const Teuchos::SerialDense
 
 //  The method returns a string describing the solver manager.
 template<class ScalarType, class MV, class OP>
-std::string PCPGSolMgr<ScalarType,MV,OP>::description() const
+std::string PCPGSolMgr<ScalarType,MV,OP,false>::description() const
 {
   std::ostringstream oss;
   oss << "Belos::PCPGSolMgr<...,"<<Teuchos::ScalarTraits<ScalarType>::name()<<">";

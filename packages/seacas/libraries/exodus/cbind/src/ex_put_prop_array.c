@@ -33,10 +33,12 @@
  * 
  */
 
-#include "exodusII.h"
-#include "exodusII_int.h"
-#include <string.h>
-#include <stdlib.h> /* for free() */
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <string.h>                     // for strcpy, memset, strlen, etc
+#include "exodusII.h"                   // for ex_err, exerrval, etc
+#include "exodusII_int.h"               // for EX_FATAL, ATT_PROP_NAME, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_set_fill, etc
 
 /*!
 

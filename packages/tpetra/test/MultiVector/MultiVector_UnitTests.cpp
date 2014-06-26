@@ -111,7 +111,12 @@ namespace Teuchos {
 
 namespace {
 
-  using Tpetra::TestingUtilities::getNode;
+  template<class NodeType>
+  Teuchos::RCP<NodeType> getNode () {
+    Teuchos::ParameterList defaultParams;
+    return Teuchos::rcp (new NodeType (defaultParams));
+  }
+
   using Tpetra::TestingUtilities::getDefaultComm;
 
   using std::endl;
@@ -153,25 +158,6 @@ namespace {
 
   using Tpetra::createContigMapWithNode;
   using Tpetra::createLocalMapWithNode;
-
-  using KokkosClassic::SerialNode;
-  RCP<SerialNode> snode;
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-  using KokkosClassic::TBBNode;
-  RCP<TBBNode> tbbnode;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  using KokkosClassic::TPINode;
-  RCP<TPINode> tpinode;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-  using KokkosClassic::OpenMPNode;
-  RCP<OpenMPNode> ompnode;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-  using KokkosClassic::ThrustGPUNode;
-  RCP<ThrustGPUNode> thrustnode;
-#endif
 
   double errorTolSlack = 1.0e+2;
 
@@ -1050,6 +1036,8 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, CopyView, LO , GO , Scalar , Node )
   {
+    using std::endl;
+
     RCP<Node> node = getNode<Node>();
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
@@ -1198,20 +1186,22 @@ namespace {
     }
     {
       A.randomize();
+
+      out << "Check that get1dView and get1dCopy have the same values" << endl;
       {
-        // check that 1dView and 1dCopy have the same values
         ArrayRCP<const Scalar> view;
         Array<Scalar> copy(numLocal*numVectors);
-        view = A.get1dView();
-        A.get1dCopy(copy(),numLocal);
+        TEST_NOTHROW( view = A.get1dView() );
+        TEST_NOTHROW( A.get1dCopy(copy(),numLocal) );
         TEST_COMPARE_FLOATING_ARRAYS(view,copy,M0);
       }
+
+      out << "Check that get1dViewNonConst and get1dCopy have the same values" << endl;
       {
-        // check that 1dView and 1dCopy have the same values
         ArrayRCP<Scalar> view;
         Array<Scalar> copy(numLocal*numVectors);
-        view = A.get1dViewNonConst();
-        A.get1dCopy(copy(),numLocal);
+        TEST_NOTHROW( view = A.get1dViewNonConst() );
+        TEST_NOTHROW( A.get1dCopy(copy(),numLocal) );
         TEST_COMPARE_FLOATING_ARRAYS(view,copy,M0);
         // clear view, ensure that A is zero
         std::fill(view.begin(), view.end(), S0);
@@ -1220,31 +1210,34 @@ namespace {
         A.norm1(norms());
         TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,M0);
       }
+
       A.randomize();
+
+      out << "Check that get2dView and get2dCopy have the same values" << endl;
       {
-        // check that 1dView and 1dCopy have the same values
         ArrayRCP<ArrayRCP<const Scalar> > views;
         Array<Scalar> copyspace(numLocal*numVectors);
         Array<ArrayView<Scalar> > copies(numVectors);
         for (size_t j=0; j < numVectors; ++j) {
           copies[j] = copyspace(numLocal*j,numLocal);
         }
-        views = A.get2dView();
-        A.get2dCopy(copies());
+        TEST_NOTHROW( views = A.get2dView() );
+        TEST_NOTHROW( A.get2dCopy(copies()) );
         for (size_t j=0; j < numVectors; ++j) {
           TEST_COMPARE_FLOATING_ARRAYS(views[j],copies[j],M0);
         }
       }
+
+      out << "Check that get2dViewNonConst and get2dCopy have the same values" << endl;
       {
-        // check that 1dView and 1dCopy have the same values
         ArrayRCP<ArrayRCP<Scalar> > views;
         Array<Scalar> copyspace(numLocal*numVectors);
         Array<ArrayView<Scalar> > copies(numVectors);
         for (size_t j=0; j < numVectors; ++j) {
           copies[j] = copyspace(numLocal*j,numLocal);
         }
-        views = A.get2dViewNonConst();
-        A.get2dCopy(copies());
+        TEST_NOTHROW( views = A.get2dViewNonConst() );
+        TEST_NOTHROW( A.get2dCopy(copies()) );
         for (size_t j=0; j < numVectors; ++j) {
           TEST_COMPARE_FLOATING_ARRAYS(views[j],copies[j],M0);
         }
@@ -2562,6 +2555,48 @@ namespace {
     TEST_EQUALITY( results[0], -STS::one() );
   }
 #endif // HAVE_TEUCHOS_COMPLEX
+
+
+  // Test that MultiVector can be declared with no template
+  // parameters, so that every template parameter has its default
+  // value.
+  TEUCHOS_UNIT_TEST( MultiVector, AllDefaultTemplateParameters )
+  {
+    // If you are letting all template parameters take their default
+    // values, you must follow the class name MultiVector with <>.
+    typedef MultiVector<> mv_type;
+    typedef mv_type::scalar_type scalar_type;
+    typedef mv_type::local_ordinal_type local_ordinal_type;
+    typedef mv_type::global_ordinal_type global_ordinal_type;
+
+    out << "Test: MultiVector, AllDefaultTemplateParameters" << std::endl;
+    Teuchos::OSTab tab0 (out);
+
+    // Verify that the default Scalar type is double.  We can't put
+    // the is_same expression in the macro, since it has a comma
+    // (commas separate arguments in a macro).
+    const bool defaultScalarIsDouble =
+      Teuchos::TypeTraits::is_same<scalar_type, double>::value;
+    TEST_ASSERT( defaultScalarIsDouble );
+
+    // Verify that the default LocalOrdinal type is the same as Map's
+    // default LocalOrdinal type.  This assumes that all of Map's
+    // template parameters have default values.
+    //
+    // We can't put the is_same expression in the macro, since it has
+    // a comma (commas separate arguments in a macro).
+    typedef Tpetra::Map<>::local_ordinal_type map_local_ordinal_type;
+    const bool defaultLocalOrdinalIsInt =
+      Teuchos::TypeTraits::is_same<local_ordinal_type, map_local_ordinal_type>::value;
+    TEST_ASSERT( defaultLocalOrdinalIsInt );
+
+    // Verify that the default GlobalOrdinal type has size no less
+    // than the default LocalOrdinal type.  Currently (as of 17 Jun
+    // 2014), the default GlobalOrdinal type is the same as the
+    // default LocalOrdinal type, but at some point we may want to
+    // change it to default to a 64-bit integer type.
+    TEST_ASSERT( sizeof (global_ordinal_type) >= sizeof (local_ordinal_type) );
+  }
 
 //
 // INSTANTIATIONS

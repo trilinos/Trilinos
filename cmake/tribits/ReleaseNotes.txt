@@ -4,6 +4,19 @@ Release Notes for TriBITS
 ----------------------------------------
 
 
+Trilinos 11.7:
+--------------
+
+(*) Switched from the terms Primary Stable (PS) and Secondary Stable (SS) code
+to Primary Tested (PT) and Secondary Tested (ST) according to the plan in the
+TriBITS Lifecycle model.  Using 'PS' and 'SS' is still allowed but is
+deprecated.  This also included deprecating the varible
+<Project>_ENABLE_SECONDARY_STABLE_CODE and replacing it with
+<Project>_ENABLE_SECONDARY_TEST_CODE.  Again, backward compatibility is
+preserved.  Also, the checkin-test.py arg --ss-extra-builds is deprecated and
+replaced with --st-extra-builds.
+
+
 Trilinos 11.6:
 --------------
 

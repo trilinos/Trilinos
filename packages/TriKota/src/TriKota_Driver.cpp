@@ -19,7 +19,7 @@
 // 
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // 
 // Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
@@ -35,18 +35,22 @@
 #include <mpi.h>
 #endif
 
+// Dakota's library environment-related headers
+#include "LibraryEnvironment.hpp"
+#include "DirectApplicInterface.hpp"
+
 using namespace std;
 using namespace Dakota;
 
 // Dakota driver when linking in as a library 
 // Assumes MPI_COMM_WORLD both for Dakota and the model evaluation
-TriKota::Driver::Driver(const char* dakota_in,  
-                               const char* dakota_out,
-                               const char* dakota_err,
-                               const char* dakota_restart_out,
-                               const char* dakota_restart_in,
-                               const int stop_restart_evals)
- :  parallel_lib(), problem_db(parallel_lib), rank_zero(true)
+TriKota::Driver::Driver(std::string dakota_in,  
+			std::string dakota_out,
+			std::string dakota_err,
+			std::string dakota_restart_out,
+			std::string dakota_restart_in,
+			const int stop_restart_evals)
+ : rank_zero(true)
 {
 
   Teuchos::RCP<Teuchos::FancyOStream>
@@ -54,14 +58,34 @@ TriKota::Driver::Driver(const char* dakota_in,
 
   *out << "\nStarting TriKota_Driver!" << endl;
 
-  parallel_lib.specify_outputs_restart(dakota_out, dakota_err, dakota_restart_in,
-                                       dakota_restart_out, stop_restart_evals);
-  problem_db.manage_inputs(dakota_in);
+  // set the Dakota input/output/etc in program options
+  Dakota::ProgramOptions prog_opts;
+  prog_opts.input_file(dakota_in);
+  prog_opts.output_file(dakota_out);
+  prog_opts.error_file(dakota_err);
+  prog_opts.write_restart_file(dakota_restart_out);
+  prog_opts.read_restart_file(dakota_restart_in);
+  prog_opts.stop_restart_evals(stop_restart_evals);
 
-  // instantiate the strategy
-  selected_strategy = Strategy(problem_db);
+  // TODO: could expand this library instantiation to accept an MPI_Comm
+  //       other than world.
+  // initialize library environment; no further updates until runtime
+  // (explicit default)
+  bool done_modifying_db = true;
+  dakota_env = Teuchos::rcp(new Dakota::LibraryEnvironment(prog_opts));
 
-  Model& first_model = *(problem_db.model_list().begin());
+  // BMA TODO: is the analysis comm needed at construct time? should
+  // we protect against model type:
+  //
+  // std::string model_type("single");
+  // std::string interf_type("direct");
+  // std::string an_driver("");
+  // ModelList ml = 
+  //   dakota_env.filtered_model_list(model_type, interf_type, an_driver);
+
+  // BMA: the following assumes there is only one model and could be
+  // generalized
+  Model& first_model = *(dakota_env->problem_description_db().model_list().begin());
   analysis_comm =
      first_model.parallel_configuration_iterator()->ea_parallel_level().server_intra_communicator();
 
@@ -73,6 +97,7 @@ TriKota::Driver::Driver(const char* dakota_in,
   else         rank_zero = false;
 #endif
 }
+
 
 #ifdef HAVE_MPI
 MPI_Comm TriKota::Driver::getAnalysisComm()
@@ -86,24 +111,24 @@ int TriKota::Driver::getAnalysisComm()
 
 ProblemDescDB& TriKota::Driver::getProblemDescDB()
 {
-  return problem_db;
+  return dakota_env->problem_description_db();
 }
   
 void TriKota::Driver::run(Dakota::DirectApplicInterface* appInterface)
 {
 
-  Model& first_model = *(problem_db.model_list().begin());
+  Model& first_model = *(dakota_env->problem_description_db().model_list().begin());
   Interface& interface  = first_model.derived_interface();
 
   // Pass a pointer to a Dakota::DirectApplicInterface
   interface.assign_rep(appInterface, false);
 
-  selected_strategy.run_strategy();
+  dakota_env->execute();
 }
 
 const Dakota::Variables TriKota::Driver::getFinalSolution() const
 {
   if (!rank_zero)
     throw std::logic_error("getFinalSolution can only be called for rank==0 as of Nov 2010.");
-  return selected_strategy.variables_results();
+  return dakota_env->variables_results();
 }

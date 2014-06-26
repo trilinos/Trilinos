@@ -41,17 +41,15 @@ INSTALL(FILES ${HEADERS_THREADS} DESTINATION ${TRILINOS_INCDIR}/Threads/)
 
 #-----------------------------------------------------------------------------
 
-IF(Kokkos_ENABLE_OpenMP)
 
-  FILE(GLOB HEADERS_OPENMP OpenMP/*.hpp)
-  FILE(GLOB SOURCES_OPENMP OpenMP/*.cpp)
+FILE(GLOB HEADERS_OPENMP OpenMP/*.hpp)
+FILE(GLOB SOURCES_OPENMP OpenMP/*.cpp)
 
-  LIST(APPEND HEADERS_PRIVATE ${HEADERS_OPENMP} )
-  LIST(APPEND SOURCES         ${SOURCES_OPENMP} )
+LIST(APPEND HEADERS_PRIVATE ${HEADERS_OPENMP} )
+LIST(APPEND SOURCES         ${SOURCES_OPENMP} )
 
-  INSTALL(FILES ${HEADERS_OPENMP} DESTINATION ${TRILINOS_INCDIR}/OpenMP/)
+INSTALL(FILES ${HEADERS_OPENMP} DESTINATION ${TRILINOS_INCDIR}/OpenMP/)
 
-ENDIF()
 
 #-----------------------------------------------------------------------------
 
@@ -75,6 +73,11 @@ IF(Kokkos_ENABLE_Cuda)
 
   INSTALL(FILES ${HEADERS_CUDA} DESTINATION ${TRILINOS_INCDIR}/Cuda/)
 
+ENDIF()
+
+IF(Kokkos_ENABLE_SIERRA_BUILD)
+  FILE(GLOB HEADERS_CUDA Cuda/*.hpp)
+  INSTALL(FILES ${HEADERS_CUDA} DESTINATION ${TRILINOS_INCDIR}/Cuda/)
 ENDIF()
 
 #-----------------------------------------------------------------------------

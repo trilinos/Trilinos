@@ -2,13 +2,17 @@
 #define STK_UTIL_PARALLEL_MPI_hpp
 
 #include <stk_util/stk_config.h>
-#if defined( STK_HAS_MPI )
+#if defined ( STK_HAS_MPI )
 
-#include <mpi.h>
-#include <vector>
-#include <iterator>
-#include <stdexcept>
-#include <complex>
+#include <mpi.h>                        // for MPI_Datatype, etc
+#include <stddef.h>                     // for size_t
+#include <algorithm>                    // for min, max
+#include <complex>                      // for complex
+#include <iterator>                     // for iterator_traits, etc
+#include <stdexcept>                    // for runtime_error
+#include <vector>                       // for vector
+#include <iostream>
+namespace sierra { namespace MPI { template <typename T> struct Datatype; } }
 
 namespace sierra {
 namespace MPI {
@@ -28,6 +32,8 @@ void
     for (int i = 0; i < *len; ++i)
       complex_inout[i] += complex_in[i];
   }
+
+
 
 ///
 /// @addtogroup MPIDetail
@@ -50,6 +56,19 @@ MPI_Datatype float_complex_type();
  * @return	a <code>MPI_Datatype</code> value of the C++ complex MPI data type.
  */
 MPI_Datatype double_complex_type();
+
+/**
+ *MPI datatypes for MPI::Loc using 64-bits for index.
+ */
+
+
+
+MPI_Datatype int_int64_type();
+MPI_Datatype short_int64_type();
+MPI_Datatype long_int64_type();
+MPI_Datatype unsigned_long_int64_type();
+MPI_Datatype float_int64_type();
+MPI_Datatype double_int64_type();
 
 /**
  * @brief Function <code>double_complex_sum_op</code> returns a sum operation for the C++
@@ -108,14 +127,14 @@ struct Loc
     : m_value(),
       m_loc(0)
   {}
-  
-  Loc(const T &value, int loc)
+
+  Loc(const T &value, int64_t loc)
     : m_value(value),
       m_loc(loc)
   {}
-  
+
   T		m_value;
-  int		m_loc;
+  int64_t	m_loc;
 };
 
 struct TempLoc
@@ -125,18 +144,89 @@ struct TempLoc
       m_other(),
       m_loc(0)
   {}
-  
-  TempLoc(double value, double other, int loc)
+
+  TempLoc(double value, double other, int64_t loc)
     : m_value(value),
       m_other(other),
       m_loc(loc)
   {}
-  
+
   double        m_value;
   double        m_other;
-  int		m_loc;
+  int64_t	m_loc;
 };
 
+template<class T>
+inline
+void
+  mpi_max_loc_global(
+    void *		invec,
+    void *		inoutvec,
+    int *		len,
+    MPI_Datatype *	datatype)
+  {
+    Loc<T> *Loc_in = static_cast<Loc<T> *>(invec);
+    Loc<T> *Loc_inout = static_cast<Loc<T> *>(inoutvec);
+
+    for (int i = 0; i < *len; ++i) {
+//      std::cout << Loc_in[i].m_value << " , " << Loc_inout[i].m_value << "loc: " << Loc_in[i].m_loc << " , " << Loc_inout[i].m_loc << std::endl;
+      if(Loc_in[i].m_value > Loc_inout[i].m_value) {
+        Loc_inout[i].m_value = Loc_in[i].m_value;
+        Loc_inout[i].m_loc = Loc_in[i].m_loc;
+      }
+    }
+  }
+
+template<class T>
+inline
+void
+  mpi_min_loc_global(
+    void *		invec,
+    void *		inoutvec,
+    int *		len,
+    MPI_Datatype *	datatype)
+  {
+    Loc<T> *Loc_in = static_cast<Loc<T> *>(invec);
+    Loc<T> *Loc_inout = static_cast<Loc<T> *>(inoutvec);
+
+    for (int i = 0; i < *len; ++i) {
+//      std::cout << Loc_in[i].m_value << " , " << Loc_inout[i].m_value << "loc: " << Loc_in[i].m_loc << " , " << Loc_inout[i].m_loc << std::endl;
+      if(Loc_in[i].m_value < Loc_inout[i].m_value) {
+        Loc_inout[i].m_value = Loc_in[i].m_value;
+        Loc_inout[i].m_loc = Loc_in[i].m_loc;
+      }
+    }
+  }
+
+template<class T>
+inline
+MPI_Op mpi_max_loc_global_op()
+{
+  static MPI_Op s_mpi_max_loc_global_op;
+  static bool initialized = false;
+
+  if (!initialized) {
+    initialized = true;
+
+    MPI_Op_create(mpi_max_loc_global<T>, true, &s_mpi_max_loc_global_op);
+  }
+  return s_mpi_max_loc_global_op;
+}
+
+template<class T>
+inline
+MPI_Op mpi_min_loc_global_op()
+{
+  static MPI_Op s_mpi_min_loc_global_op;
+  static bool initialized = false;
+
+  if (!initialized) {
+    initialized = true;
+
+    MPI_Op_create(mpi_min_loc_global<T>, true, &s_mpi_min_loc_global_op);
+  }
+  return s_mpi_min_loc_global_op;
+}
 
 /**
  * @brief Traits class <code>Datatype</code> implements a traits class containing two
@@ -146,8 +236,6 @@ struct TempLoc
  * The <b>type()</b> function returns the MPI data type.
  *
  */
-template <typename T>
-struct Datatype;
 
 template <>
 struct Datatype<char>
@@ -279,7 +367,7 @@ template <>
 struct Datatype<Loc<int> >
 {
   static MPI_Datatype type() {
-    return MPI_2INT;
+    return int_int64_type();
   }
 };
 
@@ -287,7 +375,7 @@ template <>
 struct Datatype<Loc<short> >
 {
   static MPI_Datatype type() {
-    return MPI_SHORT_INT;
+    return short_int64_type();
   }
 };
 
@@ -295,7 +383,7 @@ template <>
 struct Datatype<Loc<long> >
 {
   static MPI_Datatype type() {
-    return MPI_LONG_INT;
+    return long_int64_type();
   }
 };
 
@@ -303,25 +391,15 @@ template <>
 struct Datatype<Loc<unsigned long> >
 {
   static MPI_Datatype type() {
-    return MPI_LONG_INT;
+    return unsigned_long_int64_type();
   }
 };
-
-// #ifdef MPI_LONG_LONG_INT
-// template <>
-// struct Datatype<Loc<long long> >
-// {
-//   static MPI_Datatype type() {
-//     return long_long_int_int_type();
-//   }
-// };
-// #endif
 
 template <>
 struct Datatype<Loc<float> >
 {
   static MPI_Datatype type() {
-    return MPI_FLOAT_INT;
+    return float_int64_type();
   }
 };
 
@@ -329,7 +407,7 @@ template <>
 struct Datatype<Loc<double> >
 {
   static MPI_Datatype type() {
-    return MPI_DOUBLE_INT;
+    return double_int64_type();
   }
 };
 
@@ -363,7 +441,7 @@ AllReduce(MPI_Comm mpi_comm, MPI_Op op, T *src_dest, size_t size)
 {
   std::vector<T> source(src_dest, src_dest + size);
 
-  if (MPI_Allreduce(&source[0], &src_dest[0], (int) size, Datatype<T>::type(), op, mpi_comm) != MPI_SUCCESS )
+  if (MPI_Allreduce(&source[0], &src_dest[0], size, Datatype<T>::type(), op, mpi_comm) != MPI_SUCCESS )
     throw std::runtime_error("MPI_Allreduce failed");
 }
 
@@ -375,12 +453,8 @@ AllReduce(MPI_Comm mpi_comm, MPI_Op op, T *src_dest, size_t size)
  *
  * @param op		a <code>MPI_Op</code> value of the MPI operation.
  *
- * @param src_dest	a <code>std::vector<T></code> reference to be copied for the
+ * @param dest	        a <code>std::vector<T></code> reference to be copied for the
  *			source and used as the destination.
- *
- * @param size		a <code>size_t</code> value of the length of the array pointed to
- *			by <b>src_dest</b>
- *
  */
 template<class T>
 inline void
@@ -388,7 +462,7 @@ AllReduce(MPI_Comm mpi_comm, MPI_Op op, std::vector<T> &dest)
 {
   std::vector<T> source(dest);
 
-  if (MPI_Allreduce(&source[0], &dest[0], (int) dest.size(), Datatype<T>::type(), op, mpi_comm) != MPI_SUCCESS )
+  if (MPI_Allreduce(&source[0], &dest[0], dest.size(), Datatype<T>::type(), op, mpi_comm) != MPI_SUCCESS )
     throw std::runtime_error("MPI_Allreduce failed");
 }
 
@@ -400,15 +474,11 @@ AllReduce(MPI_Comm mpi_comm, MPI_Op op, std::vector<T> &dest)
  *
  * @param op		a <code>MPI_Op</code> value of the MPI operation.
  *
- * @param src		a <code>std::vector<T></code> reference to the source data for the
+ * @param source	a <code>std::vector<T></code> reference to the source data for the
  *			MPI op.
  *
  * @param dest		a <code>std::vector<T></code> reference to the destination data
  *			for the MPI op.
- *
- * @param size		a <code>size_t</code> value of the length of the array pointed to
- *			by <b>src_dest</b>
- *
  */
 template<class T>
 inline void
@@ -417,7 +487,7 @@ AllReduce(MPI_Comm mpi_comm, MPI_Op op, std::vector<T> &source, std::vector<T> &
   if (source.size() != dest.size())
     throw std::runtime_error("sierra::MPI::AllReduce(MPI_Comm mpi_comm, MPI_Op op, std::vector<T> &source, std::vector<T> &dest) vector lengths not equal");
 
-  if (MPI_Allreduce(&source[0], &dest[0], (int) dest.size(), Datatype<T>::type(), op, mpi_comm) != MPI_SUCCESS )
+  if (MPI_Allreduce(&source[0], &dest[0], dest.size(), Datatype<T>::type(), op, mpi_comm) != MPI_SUCCESS )
     throw std::runtime_error("MPI_Allreduce failed");
 }
 
@@ -431,8 +501,8 @@ AllGather(MPI_Comm mpi_comm, std::vector<T> &source, std::vector<T> &dest)
   if (source.size()*nproc != dest.size())
     throw std::runtime_error("sierra::MPI::AllReduce(MPI_Comm mpi_comm, MPI_Op op, std::vector<T> &source, std::vector<T> &dest) vector lengths not equal");
 
-  if (MPI_Allgather(&source[0], (int)source.size(), Datatype<T>::type(),
-                    &dest[0],   (int)source.size(), Datatype<T>::type(),
+  if (MPI_Allgather(&source[0], source.size(), Datatype<T>::type(),
+                    &dest[0],   source.size(), Datatype<T>::type(),
                     mpi_comm) != MPI_SUCCESS ){
     throw std::runtime_error("MPI_Allreduce failed");
   }
@@ -454,10 +524,10 @@ T *align_cast(void *p)
   enum {mask = alignment - 1};
 
   char * c = reinterpret_cast<char *>(p);
-  size_t front_misalign = (c - (char *)0) & mask;
+  size_t front_misalign = (c - static_cast<char*>(0)) & mask;
   if (front_misalign > 0) {
     size_t correction = alignment - front_misalign;
-    T *q = reinterpret_cast<T *>((c - (char *)0) + correction);
+    T *q = reinterpret_cast<T *>((c - static_cast<char*>(0)) + correction);
     return q;
   }
 
@@ -1000,7 +1070,7 @@ AllReduceCollected(MPI_Comm mpi_comm, MPI_Op op, U collector)
 
 
   std::vector<int> local_array_len(num_proc, 0);
-  local_array_len[my_proc] == size;
+  local_array_len[my_proc] = size;
   std::vector<int> global_array_len(num_proc, 0);
 
   MPI_Allreduce(&local_array_len[0], &global_array_len[0], num_proc, MPI_INT, MPI_SUM, mpi_comm);

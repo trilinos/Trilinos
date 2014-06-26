@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -53,7 +53,7 @@
 #include "LOCA_ErrorCheck.H"
 
 LOCA::BorderedSolver::HouseholderQR::HouseholderQR(
-	 const Teuchos::RCP<LOCA::GlobalData>& global_data) : 
+     const Teuchos::RCP<LOCA::GlobalData>& global_data) :
   globalData(global_data),
   dblas()
 {
@@ -65,17 +65,17 @@ LOCA::BorderedSolver::HouseholderQR::~HouseholderQR()
 
 void
 LOCA::BorderedSolver::HouseholderQR::computeQR(
-			    const NOX::Abstract::MultiVector::DenseMatrix& C,
-			    const NOX::Abstract::MultiVector& B,
-			    bool use_c_transpose,
-			    NOX::Abstract::MultiVector::DenseMatrix& Y1,
-			    NOX::Abstract::MultiVector& Y2,
-			    NOX::Abstract::MultiVector::DenseMatrix& T,
-			    NOX::Abstract::MultiVector::DenseMatrix& R)
+                const NOX::Abstract::MultiVector::DenseMatrix& C,
+                const NOX::Abstract::MultiVector& B,
+                bool use_c_transpose,
+                NOX::Abstract::MultiVector::DenseMatrix& Y1,
+                NOX::Abstract::MultiVector& Y2,
+                NOX::Abstract::MultiVector::DenseMatrix& T,
+                NOX::Abstract::MultiVector::DenseMatrix& R)
 {
   double beta;
   int m = B.numVectors();
-  
+
   // Initialize
   Y1.putScalar(0.0);
   T.putScalar(0.0);
@@ -83,7 +83,7 @@ LOCA::BorderedSolver::HouseholderQR::computeQR(
   if (use_c_transpose) {
     for (int i=0; i<m; i++)
       for (int j=0; j<m; j++)
-	R(i,j) = C(j,i);        // Copy transpose of C into R
+    R(i,j) = C(j,i);        // Copy transpose of C into R
   }
   else
     R.assign(C);
@@ -104,11 +104,11 @@ LOCA::BorderedSolver::HouseholderQR::computeQR(
   for (int i=0; i<m; i++) {
 
     // Create view of column i of Y1 starting at row i
-    v1 = 
-      Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(Teuchos::View, 
-							       Y1, 
-							       m-i, 
-							       1, i, i));
+    v1 =
+      Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(Teuchos::View,
+                                   Y1,
+                                   m-i,
+                                   1, i, i));
 
     // Create view of columns i through m-1 of Y2
     h_idx.resize(m-i);
@@ -117,33 +117,33 @@ LOCA::BorderedSolver::HouseholderQR::computeQR(
     h2 = Y2.subView(h_idx);
 
     // Create view of columns i thru m-1 of R, starting at row i
-    h1 = 
-      Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(Teuchos::View, 
-							       R,
-							       m-i,
-							       m-i,
-							       i, i));
+    h1 =
+      Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(Teuchos::View,
+                                   R,
+                                   m-i,
+                                   m-i,
+                                   i, i));
 
     if (i > 0) {
 
       // Create view of columns 0 through i-1 of Y2
       y_idx.push_back(i-1);
       y2 = Y2.subView(y_idx);
-      
+
       // Create view of columns 0 through i-1 of Y1, starting at row i
-      y1 = 
-	Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(Teuchos::View,
-								 Y1,
-								 m-i,
-								 i, i, 0));
+      y1 =
+    Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(Teuchos::View,
+                                 Y1,
+                                 m-i,
+                                 i, i, 0));
 
       // Create view of column i, row 0 through i-1 of T
-      z = 
-	Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(Teuchos::View,
-								 T, 
-								 i, 
-								 1, 
-								 0, i));
+      z =
+    Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(Teuchos::View,
+                                 T,
+                                 i,
+                                 1,
+                                 0, i));
     }
 
     // Compute Householder Vector
@@ -154,7 +154,7 @@ LOCA::BorderedSolver::HouseholderQR::computeQR(
 
     // Copy v2 into Y2
     Y2[i] = (*v2)[0];
-    
+
     T(i,i) = -beta;
 
     if (i > 0) {
@@ -167,7 +167,7 @@ LOCA::BorderedSolver::HouseholderQR::computeQR(
 
       // Compute z = T * z
       dblas.TRMV(Teuchos::UPPER_TRI, Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG,
-		 i, T.values(), m, z->values(), 1);
+         i, T.values(), m, z->values(), 1);
 
     }
   }
@@ -176,20 +176,20 @@ LOCA::BorderedSolver::HouseholderQR::computeQR(
 
 void
 LOCA::BorderedSolver::HouseholderQR::computeHouseholderVector(
-			  int col,
-			  const NOX::Abstract::MultiVector::DenseMatrix& A1,
-			  const NOX::Abstract::MultiVector& A2,
-			  NOX::Abstract::MultiVector::DenseMatrix& V1,
-			  NOX::Abstract::MultiVector& V2,
-			  double& beta)
+              int col,
+              const NOX::Abstract::MultiVector::DenseMatrix& A1,
+              const NOX::Abstract::MultiVector& A2,
+              NOX::Abstract::MultiVector::DenseMatrix& V1,
+              NOX::Abstract::MultiVector& V2,
+              double& beta)
 {
   double houseP = A1(col,col);
-  
+
   V1(0,0) = 1.0;
   V2[0] = A2[col];
 
   double sigma = A2[col].innerProduct(A2[col]);
-  for (int i=col+1; i<A1.numRows(); i++)    
+  for (int i=col+1; i<A1.numRows(); i++)
     sigma += A1(i,col)*A1(i,col);
 
   if (sigma == 0.0)
@@ -201,7 +201,7 @@ LOCA::BorderedSolver::HouseholderQR::computeHouseholderVector(
     else
       houseP = -sigma / (houseP + mu);
     beta = 2.0*houseP*houseP/(sigma + houseP*houseP);
-    
+
     V2.scale(1.0/houseP);
     for (int i=1; i<V1.numRows(); i++)
       V1(i,0) = A1(i+col,col) / houseP;
@@ -213,11 +213,11 @@ LOCA::BorderedSolver::HouseholderQR::computeHouseholderVector(
 
 void
 LOCA::BorderedSolver::HouseholderQR::applyHouseholderVector(
-			   const NOX::Abstract::MultiVector::DenseMatrix& V1,
-			   const NOX::Abstract::MultiVector& V2,
-			   double beta,
-			   NOX::Abstract::MultiVector::DenseMatrix& A1,
-			   NOX::Abstract::MultiVector& A2)
+               const NOX::Abstract::MultiVector::DenseMatrix& V1,
+               const NOX::Abstract::MultiVector& V2,
+               double beta,
+               NOX::Abstract::MultiVector::DenseMatrix& A1,
+               NOX::Abstract::MultiVector& A2)
 {
   int nColsA = A2.numVectors();
 
@@ -237,13 +237,13 @@ LOCA::BorderedSolver::HouseholderQR::applyHouseholderVector(
 
 void
 LOCA::BorderedSolver::HouseholderQR::applyCompactWY(
-			    const NOX::Abstract::MultiVector::DenseMatrix& Y1,
-			    const NOX::Abstract::MultiVector& Y2,
-			    const NOX::Abstract::MultiVector::DenseMatrix& T,
-			    NOX::Abstract::MultiVector::DenseMatrix& X1,
-			    NOX::Abstract::MultiVector& X2,
-			    bool isZeroX1, bool isZeroX2,
-			    bool useTranspose) const
+                const NOX::Abstract::MultiVector::DenseMatrix& Y1,
+                const NOX::Abstract::MultiVector& Y2,
+                const NOX::Abstract::MultiVector::DenseMatrix& T,
+                NOX::Abstract::MultiVector::DenseMatrix& X1,
+                NOX::Abstract::MultiVector& X2,
+                bool isZeroX1, bool isZeroX2,
+                bool useTranspose) const
 {
   if (isZeroX1 && isZeroX2) {
     X1.putScalar(0.0);
@@ -273,9 +273,9 @@ LOCA::BorderedSolver::HouseholderQR::applyCompactWY(
     tmp.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, Y1, X1, 0.0);
 
   // Compute op(T)*(Y1^T*X1 + Y2^T*X2)
-  dblas.TRMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, T_flag, 
-	     Teuchos::NON_UNIT_DIAG, tmp.numRows(), tmp.numCols(), 1.0, 
-	     T.values(), T.numRows(), tmp.values(), tmp.numRows());
+  dblas.TRMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, T_flag,
+         Teuchos::NON_UNIT_DIAG, tmp.numRows(), tmp.numCols(), 1.0,
+         T.values(), T.numRows(), tmp.values(), tmp.numRows());
 
   // Compute X1 = X1 + Y1*op(T)*(Y1^T*X1 + Y2^T*X2)
   // Opportunity for optimization here since Y1 is a lower-triangular
@@ -289,19 +289,19 @@ LOCA::BorderedSolver::HouseholderQR::applyCompactWY(
   if (isZeroX2)
     X2.update(Teuchos::NO_TRANS, 1.0, Y2, tmp, 0.0);
   else
-    X2.update(Teuchos::NO_TRANS, 1.0, Y2, tmp, 1.0); 
+    X2.update(Teuchos::NO_TRANS, 1.0, Y2, tmp, 1.0);
 }
 
 void
 LOCA::BorderedSolver::HouseholderQR::applyCompactWY(
-		     const NOX::Abstract::MultiVector::DenseMatrix& Y1,
-		     const NOX::Abstract::MultiVector& Y2,
-		     const NOX::Abstract::MultiVector::DenseMatrix& T,
-		     const NOX::Abstract::MultiVector::DenseMatrix* input1,
-		     const NOX::Abstract::MultiVector* input2,
-		     NOX::Abstract::MultiVector::DenseMatrix& result1,
-		     NOX::Abstract::MultiVector& result2,
-		     bool useTranspose) const
+             const NOX::Abstract::MultiVector::DenseMatrix& Y1,
+             const NOX::Abstract::MultiVector& Y2,
+             const NOX::Abstract::MultiVector::DenseMatrix& T,
+             const NOX::Abstract::MultiVector::DenseMatrix* input1,
+             const NOX::Abstract::MultiVector* input2,
+             NOX::Abstract::MultiVector::DenseMatrix& result1,
+             NOX::Abstract::MultiVector& result2,
+             bool useTranspose) const
 {
   bool isZeroX1 = (input1 == NULL);
   bool isZeroX2 = (input2 == NULL);
@@ -311,7 +311,7 @@ LOCA::BorderedSolver::HouseholderQR::applyCompactWY(
   if (!isZeroX2)
     result2 = *input2;
 
-  applyCompactWY(Y1, Y2, T, result1, result2, isZeroX1, isZeroX2, 
-		 useTranspose);
+  applyCompactWY(Y1, Y2, T, result1, result2, isZeroX1, isZeroX2,
+         useTranspose);
 }
 

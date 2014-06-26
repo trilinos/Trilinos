@@ -31,9 +31,16 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "EJ_mapping.h"
-#include <smart_assert.h>
-#include <Ioss_SubSystem.h>
-#include <algorithm>
+#include <smart_assert.h>               // for SMART_ASSERT
+#include <stddef.h>                     // for size_t
+#include <algorithm>                    // for sort, equal_range, remove, etc
+#include <iostream>                     // for operator<<, cerr, etc
+#include <utility>                      // for pair, make_pair
+#include "Ioss_ElementBlock.h"          // for ElementBlock
+#include "Ioss_GroupingEntity.h"        // for GroupingEntity
+#include "Ioss_NodeBlock.h"             // for NodeBlock
+#include "Ioss_Property.h"              // for Property
+#include "Ioss_Region.h"                // for Region, etc
 
 namespace {
   bool entity_is_omitted(Ioss::GroupingEntity *block) {

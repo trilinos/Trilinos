@@ -84,7 +84,7 @@ namespace MueLu {
 
     LO nLocalAggregates = aggregates.GetNumAggregates();
     for (LO iNode = 0; iNode < nRows; iNode++) {
-      if (aggStat[iNode] != NodeStats::AGGREGATED) {
+      if (aggStat[iNode] != AGGREGATED) {
         aggSize = 0;
         aggregates.SetIsRoot(iNode);
 
@@ -96,13 +96,13 @@ namespace MueLu {
         for (LO j = 0; j < neighOfINode.size(); j++) {
           LO neigh = neighOfINode[j];
 
-          if (neigh != iNode && graph.isLocalNeighborVertex(neigh) && aggStat[neigh] != NodeStats::AGGREGATED)
+          if (neigh != iNode && graph.isLocalNeighborVertex(neigh) && aggStat[neigh] != AGGREGATED)
             aggList[aggSize++] = neigh;
         }
 
         // finalize aggregate
         for (size_t k = 0; k < aggSize; k++) {
-          aggStat     [aggList[k]] = NodeStats::AGGREGATED;
+          aggStat     [aggList[k]] = AGGREGATED;
           vertex2AggId[aggList[k]] = aggIndex;
           procWinner  [aggList[k]] = myRank;
         }

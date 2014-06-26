@@ -136,33 +136,31 @@ def controller():
         for i in range(0, len(nnodes)):
             nx.append(int(options.nx * pow(nnodes[i] * float(cpn)/CPN, 1./dim)))
 
+        global NUM_RUNS
         for i in range(0, len(nnodes)):
             if unified == True:
                 # Assemble unified xml file
                 unified_xml = "unified.xml"
                 unified_cmd = ["--xml=" + unified_xml]
 
-                global NUM_RUNS
-
                 qn = "\\\\n"
                 os.system("echo -e '<ParameterList   name=\"Driver\">'" + " > " + unified_xml)
                 # Move number of runs into an xml file, and reset the global
                 os.system("echo -e '  <Parameter     name=\"number of reruns\" type=\"int\" value=\"" + str(NUM_RUNS) + "\"/>'"+qn + " >> " + unified_xml)
-                NUM_RUNS = 1
                 for k in range(0,len(datafiles)):
                     os.system("echo -e '  <ParameterList name=\"Run" + str(k+1) + "\">'" + " >> " + unified_xml)
                     os.system("echo -e '    <Parameter   name=\"filename\" type=\"string\" value=\"cmd" + str(k+1) + "\"/>'"+ qn + qn + " >> " + unified_xml)
-                    os.system("cat " + datafiles[i] + " >> " + unified_xml)
+                    os.system("cat " + datafiles[k] + " >> " + unified_xml)
                     os.system("echo -e '  </ParameterList>'" + " >> " + unified_xml)
 
                 os.system("echo -e '</ParameterList>'" + " >> " + unified_xml)
 
                 build(nnodes=nnodes[i], nx=nx[i], binary=options.binary, petra=petra, matrix=options.matrix,
-                      datafiles=[unified_xml], cmds=unified_cmd, template=options.template, output=options.output, cpn=cpn, unified=True)
+                      datafiles=[unified_xml], cmds=unified_cmd, template=options.template, output=options.output, cpn=cpn, unified=True, num_runs=1)
 
             else:
                 build(nnodes=nnodes[i], nx=nx[i], binary=options.binary, petra=petra, matrix=options.matrix,
-                      datafiles=datafiles, cmds=cmds, template=options.template, output=options.output, cpn=cpn, unified=False)
+                      datafiles=datafiles, cmds=cmds, template=options.template, output=options.output, cpn=cpn, unified=False, num_runs=NUM_RUNS)
 
     elif options.action == 'run':
         run()
@@ -266,11 +264,24 @@ def analyze(petra, analysis_runs, labels, timelines, parsefunc):
                     try:
                         rtime_epetra = []
                         for epetra_file in sort_nicely(glob.glob(analysis_run + "*.epetra")):
-                            r = commands.getstatusoutput("grep -i \"" + s + "\" " + epetra_file + " | cut -f3 -d')' | cut -f1 -d'('")
-                            if r[0] != 0:
-                                return "Error reading \"" + analysis_run + ".epetra"
+                            if (parsefunc == ""):
+                                r = commands.getstatusoutput("grep \"" + s + "\" " + epetra_file)
+                                if r[0] != 0:
+                                    raise RuntimeError("Error reading \"" + analysis_run + ".epetra")
+                                grep_res = r[1]
 
-                            rtime_epetra.append(float(r[1]))
+                                r = commands.getstatusoutput("echo \"" + grep_res + "\" | tail -n 1 | awk '{print $(NF-4)}'")
+                                try:
+                                    rtime_epetra.append(float(r[1]))
+                                except (ValueError):
+                                    # check for serial version (it outputs a single timer, compared to multiple in parallel (min, max, ...))
+                                    r = commands.getstatusoutput("echo \"" + grep_res + "\" | tail -n 1 | awk '{print $(NF-1)}'")
+                                    rtime_epetra.append(float(r[1]))
+
+                            else:
+                                r = commands.getstatusoutput(parsefunc(epetra_file, s))
+                                rtime_epetra.append(float(r[1]))
+
 
                         time_epetra[s] = stat_time(rtime_epetra)
 
@@ -287,11 +298,23 @@ def analyze(petra, analysis_runs, labels, timelines, parsefunc):
                     try:
                         rtime_tpetra = []
                         for tpetra_file in sort_nicely(glob.glob(analysis_run + "*.tpetra")):
-                            r = commands.getstatusoutput("grep -i \"" + s + "\" " + tpetra_file + " | cut -f3 -d')' | cut -f1 -d'('")
-                            if r[0] != 0:
-                                return "Error reading \"" + analysis_run + ".tpetra"
+                            if (parsefunc == ""):
+                                r = commands.getstatusoutput("grep \"" + s + "\" " + tpetra_file)
+                                if r[0] != 0:
+                                    raise RuntimeError("Error reading \"" + analysis_run + ".tpetra")
+                                grep_res = r[1]
 
-                            rtime_tpetra.append(float(r[1]))
+                                r = commands.getstatusoutput("echo \"" + grep_res + "\" | tail -n 1 | awk '{print $(NF-4)}'")
+                                try:
+                                    rtime_tpetra.append(float(r[1]))
+                                except (ValueError):
+                                    # check for serial version (it outputs a single timer, compared to multiple in parallel (min, max, ...))
+                                    r = commands.getstatusoutput("echo \"" + grep_res + "\" | tail -n 1 | awk '{print $(NF-1)}'")
+                                    rtime_tpetra.append(float(r[1]))
+
+                            else:
+                                r = commands.getstatusoutput(parsefunc(tpetra_file, s))
+                                rtime_tpetra.append(float(r[1]))
 
                         time_tpetra[s] = stat_time(rtime_tpetra)
 
@@ -301,7 +324,7 @@ def analyze(petra, analysis_runs, labels, timelines, parsefunc):
                         fullstr += "%13.2f %7.2f%%" % (time_tpetra[s], eff_tpetra[s])
 
                     except (RuntimeError, ValueError):
-                        # print("Problem converting \"%s\" to float for timeline \"%s\" in \"%s\"" % (r[1], s, tpetra_file))
+                        #print("Problem converting \"%s\" to float for timeline \"%s\" in \"%s\"" % (r[1], s, tpetra_file))
                         fullstr += "           -   -"
 
                 if has_ml:
@@ -310,10 +333,12 @@ def analyze(petra, analysis_runs, labels, timelines, parsefunc):
                       return "Error: no parsing function provided"
                     else:
                       theCommand = parsefunc(ml_file,s)
+
                     r = commands.getstatusoutput(theCommand)
-                    # handle multiple timers w/ same name.  This splits last entry in tuple by line breaks into
+
+                    # Handle multiple timers w/ same name.  This splits last entry in tuple by line breaks into
                     # an array of strings.  The string array is then converted ("mapped") into an array of floats.
-                    tt = map(float,r[-1].split())
+                    tt = map(float, r[-1].split())
                     time_ml[s] = sum(tt)
 
                     if nnodes == str(BASECASE):
@@ -325,7 +350,7 @@ def analyze(petra, analysis_runs, labels, timelines, parsefunc):
 
             os.chdir("..")
 
-def build(nnodes, nx, binary, petra, matrix, datafiles, cmds, template, output, cpn, unified):
+def build(nnodes, nx, binary, petra, matrix, datafiles, cmds, template, output, cpn, unified, num_runs):
     dir = DIR_PREFIX + str(nnodes)
     print("Building %s..." % dir)
 
@@ -367,7 +392,7 @@ def build(nnodes, nx, binary, petra, matrix, datafiles, cmds, template, output, 
                " | sed \"s/_EPETRA_/"     + str(petra & 1)            + "/g\"" +
                " | sed \"s/_TPETRA_/"     + str(petra & 2)            + "/g\"" +
                " | sed \"s/_UNIFIED_/"    + str(unified)              + "/g\"" +
-               " | sed \"s/_NUM_RUNS_/"   + str(NUM_RUNS)             + "/g\"" +
+               " | sed \"s/_NUM_RUNS_/"   + str(num_runs)             + "/g\"" +
                " | sed \"s/_NUM_CMDS_/"   + str(len(cmds))            + "/g\"")
 
     for i in range(len(cmds)):

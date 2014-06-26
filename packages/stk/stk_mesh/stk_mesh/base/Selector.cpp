@@ -7,255 +7,240 @@
 /*------------------------------------------------------------------------*/
 
 
-#include <stdexcept>
-#include <sstream>
-#include <iostream>
-
 #include <stk_mesh/base/Selector.hpp>
-#include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Types.hpp>
+#include <iostream>                     // for operator<<
+#include <stk_mesh/base/Bucket.hpp>     // for has_superset
+#include <stk_mesh/base/Types.hpp>      // for PartVector
+#include <string>                       // for operator<<
+#include "stk_mesh/base/FieldBase.hpp"  // for FieldBase
+#include "stk_mesh/base/FieldRestriction.hpp"
+#include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequireMsg
+
 
 namespace stk {
 namespace mesh {
 
-Selector::Selector( )
-  : m_mesh_meta_data(0), m_op()
+namespace {
+
+using impl::SelectorNode;
+
+const char* to_str(SelectorNodeType::node_type type)
 {
-  compoundAll();
+  switch(type) {
+  case SelectorNodeType::UNION:
+    return " | ";
+  case SelectorNodeType::INTERSECTION:
+    return " & ";
+  default:
+    return " - ";
+  };
 }
 
-
-Selector::Selector( const Part & p )
-  : m_mesh_meta_data( & MetaData::get(p) ) , m_op()
+std::ostream& print_expr_impl(std::ostream & out, SelectorNode const* root)
 {
-  m_op.push_back( OpType( p.mesh_meta_data_ordinal() , 0 , 0 ) );
-}
-
-void Selector::compoundAll()
-{
-  m_op.insert( m_op.begin(), OpType( 0, 0, m_op.size()+1 ) );
-}
-
-
-Selector & Selector::complement()
-{
-  bool singlePart = (m_op.size() == 1);
-  bool fullCompoundPart = (m_op[0].m_count == m_op.size());
-
-  if ( !(singlePart || fullCompoundPart) ) {
-    // Turn into a compound
-    compoundAll();
-  }
-  // Flip the bit
-  m_op[0].m_unary ^= 1;
-  return *this;
-}
-
-bool Selector::operator()( const Part & part ) const
-{
-  unsigned part_ord = part.mesh_meta_data_ordinal();
-  std::pair<const unsigned *, const unsigned *> part_ords(&part_ord, &part_ord+1);
-  return apply(part_ords, PartOrdLess());
-}
-
-bool Selector::operator()( const Bucket & candidate ) const
-{ return apply( m_op.begin() , m_op.end() , candidate.superset_part_ordinals(), PartOrdLess() ); }
-
-bool Selector::operator()( const Bucket * candidate ) const{
-  return operator()(*candidate);
-}
-
-bool Selector::operator()( const Entity & candidate ) const
-{
-  const Bucket & b = candidate.bucket();
-  return this->operator()(b);
-}
-
-Selector & Selector::operator &= ( const Selector & B )
-{
-  if (m_mesh_meta_data == 0) {
-    m_mesh_meta_data = B.m_mesh_meta_data;
-  }
-
-  m_op.insert( m_op.end() , B.m_op.begin() , B.m_op.end() );
-  return *this;
-}
-
-
-Selector & Selector::operator |= ( const Selector & B )
-{
-  if (m_mesh_meta_data == 0) {
-    m_mesh_meta_data = B.m_mesh_meta_data;
-  }
-
-  Selector notB = B; notB.complement();
-
-  const size_t original_size = m_op.size();
-
-  if ( 1 == original_size &&
-       m_op.front().m_count == 1 &&
-       m_op.front().m_unary == 0 ) {
-    // this == empty ; therefore,
-    // this UNION B == B
-    m_op = B.m_op ;
-  }
-  else if ( m_op.front().m_count == original_size &&
-            m_op.front().m_unary != 0 ) {
-    // This is a full-compound complement.
-    // Simply add notB to the end and increase the size of the compound
-
-    // this == ! A ; therefore,
-    // this UNION B == ! ( ! ( ! A ) & ! B )
-    // this UNION B == ! ( A & ! B )
-
-    m_op.insert(
-        m_op.end(),
-        notB.m_op.begin(),
-        notB.m_op.end() );
-
-    m_op.front().m_count = m_op.size();
-  }
-  else {
-    // this UNION B == ! ( ! this & ! B )
-
-    this->complement();                   //   ( ! (this) )
-
-    const unsigned finalSize = 1 + m_op.size() + notB.m_op.size();
-
-    m_op.insert(
-        m_op.end(),
-        notB.m_op.begin(),
-        notB.m_op.end() );                // ! ( ! (this) & !B )
-    m_op.insert(
-        m_op.begin(),
-        OpType( 0 , 1 , finalSize ) );    // ! ( ! (this) & ? )
-  }
-
-  return *this;
-}
-
-Selector operator & ( const Part & A , const Part & B )
-{
-  Selector S( A );
-  S &= Selector( B );
-  return S;
-}
-
-
-Selector operator & ( const Part & A , const Selector & B )
-{
-  Selector S( A );
-  S &= B;
-  return S;
-}
-
-Selector operator & ( const Selector & A, const Part & B )
-{
-  Selector S( A );
-  S &= Selector(B);
-  return S;
-}
-
-Selector operator & ( const Selector & A, const Selector & B )
-{
-  Selector S( A );
-  S &= Selector(B);
-  return S;
-}
-
-Selector operator | ( const Part & A , const Part & B )
-{
-  Selector S( A );
-  S |= Selector( B );
-  return S;
-}
-
-
-Selector operator | ( const Part & A , const Selector & B )
-{
-  Selector S( A );
-  S |= B;
-  return S;
-}
-
-Selector operator | ( const Selector & A, const Part & B  )
-{
-  Selector S( A );
-  S |= Selector(B);
-  return S;
-}
-
-Selector operator | ( const Selector & A, const Selector & B  )
-{
-  Selector S( A );
-  S |= Selector(B);
-  return S;
-}
-
-
-
-
-Selector operator ! ( const Part & A )
-{
-  Selector S(A);
-  return S.complement();
-}
-
-
-std::ostream & operator<<( std::ostream & out, const Selector & selector)
-{
-  out << selector.printExpression(selector.m_op.begin(),selector.m_op.end());
+  switch(root->m_type) {
+  case SelectorNodeType::UNION:
+  case SelectorNodeType::INTERSECTION:
+  case SelectorNodeType::DIFFERENCE:
+    out << "(";
+    print_expr_impl(out, root->lhs());
+    out << to_str(root->m_type);
+    print_expr_impl(out, root->rhs());
+    out << ")";
+    break;
+  case SelectorNodeType::COMPLEMENT:
+    out << "!(";
+    print_expr_impl(out, root->unary());
+    out << ")";
+    break;
+  case SelectorNodeType::PART:
+    if (root->part() != NULL) {
+      out << root->part()->name();
+    }
+    else {
+      out << "NOTHING";
+    }
+    break;
+  };
   return out;
 }
 
-std::string Selector::printExpression(
-    const std::vector<OpType>::const_iterator start,
-    const std::vector<OpType>::const_iterator finish
-    ) const
+bool select_bucket_impl(Bucket const& bucket, SelectorNode const* root)
 {
-  std::ostringstream outS;
-
-  std::vector<OpType>::const_iterator start_it = start;
-  std::vector<OpType>::const_iterator finish_it = finish;
-
-  const OpType & op = *start_it;
-  if (op.m_count > 0) { // Compound
-    if (op.m_unary != 0) { // Complement
-      outS << "!";
-    }
-    outS << "(";
-    if (op.m_count == 1) {
-      outS << ")";
-    }
-    else {
-      finish_it = start_it;
-      for (int i=0 ; i < op.m_count ; ++i) {
-        ++finish_it;
-      }
-      ++start_it;
-      outS << printExpression(start_it,finish_it) << ")";
-      start_it = finish_it;
-      --start_it; // back up one
-    }
-  }
-  else { // Part
-    if (m_mesh_meta_data != NULL) {
-      Part & part = m_mesh_meta_data->get_part(op.m_part_id);
-      if (op.m_unary != 0) { // Complement
-        outS << "!";
-      }
-      outS << part.name();
-    }
-  }
-  ++start_it;
-  if (start_it != finish) {
-    outS << " AND " << printExpression(start_it,finish);
-  }
-  return outS.str();
+  switch(root->m_type) {
+  case SelectorNodeType::UNION:
+    return select_bucket_impl(bucket, root->lhs()) || select_bucket_impl(bucket, root->rhs());
+  case SelectorNodeType::INTERSECTION:
+    return select_bucket_impl(bucket, root->lhs()) && select_bucket_impl(bucket, root->rhs());
+  case SelectorNodeType::DIFFERENCE:
+    return select_bucket_impl(bucket, root->lhs()) && !select_bucket_impl(bucket, root->rhs());
+  case SelectorNodeType::COMPLEMENT:
+    return !select_bucket_impl(bucket, root->unary());
+  case SelectorNodeType::PART:
+    return (root->part() != NULL)? has_superset(bucket, *root->part()) : false;
+  default:
+    return false;
+  };
 }
 
+bool select_part_impl(Part const& part, SelectorNode const* root)
+{
+  switch(root->m_type) {
+  case SelectorNodeType::UNION:
+    return select_part_impl(part, root->lhs()) || select_part_impl(part, root->rhs());
+  case SelectorNodeType::INTERSECTION:
+    return select_part_impl(part, root->lhs()) && select_part_impl(part, root->rhs());
+  case SelectorNodeType::DIFFERENCE:
+    return select_part_impl(part, root->lhs()) && !select_part_impl(part, root->rhs());
+  case SelectorNodeType::COMPLEMENT:
+    return !select_part_impl(part, root->unary());
+  case SelectorNodeType::PART:
+    return (root->part() != NULL) ? root->part()->contains(part) : false;
+  default:
+    return false;
+  };
+}
+
+bool is_all_union_impl(SelectorNode const* root)
+{
+  switch(root->m_type) {
+  case SelectorNodeType::UNION:
+    return is_all_union_impl(root->lhs()) && is_all_union_impl(root->rhs());
+  case SelectorNodeType::INTERSECTION:
+  case SelectorNodeType::DIFFERENCE:
+  case SelectorNodeType::COMPLEMENT:
+    return false;
+  case SelectorNodeType::PART:
+    return root->part() != NULL;
+  default:
+    return false;
+  };
+}
+
+void gather_parts_impl(PartVector& parts, SelectorNode const* root)
+{
+  switch(root->m_type) {
+  case SelectorNodeType::UNION:
+    gather_parts_impl(parts, root->lhs());
+    gather_parts_impl(parts, root->rhs());
+    break;
+  case SelectorNodeType::INTERSECTION:
+    // HACK: Only first part (picks up Context part)
+    gather_parts_impl(parts, root->lhs());
+    break;
+  case SelectorNodeType::DIFFERENCE:
+    ThrowRequireMsg(false, "Cannot get_parts from a selector with differences");
+    break;
+  case SelectorNodeType::COMPLEMENT:
+    ThrowRequireMsg(false, "Cannot get_parts from a selector with differences");
+    break;
+  case SelectorNodeType::PART:
+    if (root->part() != NULL) parts.push_back(const_cast<Part*>(root->part()));
+  };
+}
+
+bool select_part_vector_impl(PartVector const& parts, SelectorNode const* root)
+{
+  switch(root->m_type) {
+  case SelectorNodeType::UNION:
+    return select_part_vector_impl(parts, root->lhs()) || select_part_vector_impl(parts, root->rhs());
+  case SelectorNodeType::INTERSECTION:
+    return select_part_vector_impl(parts, root->lhs()) && select_part_vector_impl(parts, root->rhs());
+  case SelectorNodeType::DIFFERENCE:
+    return select_part_vector_impl(parts, root->lhs()) && !select_part_vector_impl(parts, root->rhs());
+  case SelectorNodeType::COMPLEMENT:
+    return !select_part_vector_impl(parts, root->unary());
+  case SelectorNodeType::PART:
+    if (root->part() == NULL) {
+      return false;
+    }
+    else {
+      for (size_t i = 0, ie = parts.size(); i < ie; ++i) {
+        if (parts[i] == root->part()) {
+          return true;
+        }
+      }
+      return false;
+    }
+  default:
+    return false;
+  };
+}
+
+} // namespace
+
+std::ostream & operator<<( std::ostream & out, const Selector & selector)
+{
+  return print_expr_impl(out, &selector.m_expr[0]);
+}
+
+
+bool Selector::operator()( const Part & part ) const
+{
+  return select_part_impl(part, &m_expr[0]);
+}
+
+bool Selector::operator()( const Part * part ) const
+{
+  return select_part_impl(*part, &m_expr[0]);
+}
+
+bool Selector::operator()( const Bucket & bucket ) const
+{
+  return select_bucket_impl(bucket, &m_expr[0]);
+}
+
+bool Selector::operator()( const Bucket * bucket ) const
+{
+  return select_bucket_impl(*bucket, &m_expr[0]);
+}
+
+bool Selector::operator()(const PartVector& parts) const
+{
+  return select_part_vector_impl(parts, &m_expr[0]);
+}
+
+bool Selector::operator<(const Selector& rhs) const
+{
+  // kinda arbitrary, but should work as long as all we need is a consistent ordering
+  if (m_expr.size() != rhs.m_expr.size()) {
+    return m_expr.size() < rhs.m_expr.size();
+  }
+
+  for (size_t i = 0, ie = m_expr.size(); i < ie; ++i) {
+    if (m_expr[i].m_type != rhs.m_expr[i].m_type) {
+      return m_expr[i].m_type < rhs.m_expr[i].m_type;
+    }
+    if (m_expr[i].m_type == SelectorNodeType::PART &&
+        m_expr[i].part() != rhs.m_expr[i].part()) {
+      Part const* lhs_part = m_expr[i].part();
+      Part const* rhs_part = rhs.m_expr[i].part();
+
+      if (lhs_part != NULL && rhs_part != NULL) {
+        return lhs_part->mesh_meta_data_ordinal() < rhs_part->mesh_meta_data_ordinal();
+      }
+      else if (lhs_part == NULL && rhs_part != NULL) {
+        return false;
+      }
+      else if (lhs_part != NULL && rhs_part == NULL) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+void Selector::get_parts(PartVector& parts) const
+{
+  gather_parts_impl(parts, &m_expr[0]);
+}
+
+bool Selector::is_all_unions() const
+{
+  return is_all_union_impl(&m_expr[0]);
+}
 
 Selector selectUnion( const PartVector& union_part_vector )
 {
@@ -268,7 +253,6 @@ Selector selectUnion( const PartVector& union_part_vector )
   }
   return selector;
 }
-
 
 Selector selectIntersection( const PartVector& intersection_part_vector )
 {
@@ -285,14 +269,7 @@ Selector selectIntersection( const PartVector& intersection_part_vector )
 Selector selectField( const FieldBase& field )
 {
   Selector selector;
-  const MetaData& meta = MetaData::get(field);
-  const FieldRestrictionVector& rvec = field.restrictions();
-
-  for(size_t i=0; i<rvec.size(); ++i) {
-    selector |= meta.get_part(rvec[i].part_ordinal());
-  }
-
-  const FieldRestrictionVector& sel_rvec = field.selector_restrictions();
+  const FieldRestrictionVector& sel_rvec = field.restrictions();
   for(size_t i=0; i<sel_rvec.size(); ++i) {
     selector |= sel_rvec[i].selector();
   }
@@ -300,9 +277,31 @@ Selector selectField( const FieldBase& field )
   return selector;
 }
 
-
+bool is_subset(Selector const& lhs, Selector const& rhs)
+{
+  // If either selector has complements or intersections, it becomes
+  // much harder to determine if one is a subset of the other
+  if (lhs.is_all_unions() && rhs.is_all_unions()) {
+    PartVector lhs_parts, rhs_parts;
+    lhs.get_parts(lhs_parts);
+    rhs.get_parts(rhs_parts);
+    for (size_t l = 0, le = lhs_parts.size(); l < le; ++l) {
+      Part const& lhs_part = *lhs_parts[l];
+      bool found = false;
+      for (size_t r = 0, re = rhs_parts.size(); !found && r < re; ++r) {
+        Part const& rhs_part = *rhs_parts[r];
+        found = rhs_part.contains(lhs_part);
+      }
+      if (!found) {
+        return false;
+      }
+    }
+    return true;
+  }
+  else {
+    return false;
+  }
+}
 
 } // namespace mesh
 } // namespace stk
-
-

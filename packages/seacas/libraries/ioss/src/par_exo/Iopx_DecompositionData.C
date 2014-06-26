@@ -1,19 +1,25 @@
+
 #include <par_exo/Iopx_DecompositionData.h>
-#include <Ioss_Utils.h>
-#include <Ioss_Field.h>
-#include <Ioss_ElementTopology.h>
-#include <Ioss_ParallelUtils.h>
-#include <Ioss_Map.h>
-#include <exodusII_par.h>
-#include <assert.h>
-#include <mpi.h>
+#include <Ioss_ElementTopology.h>       // for ElementTopology
+#include <Ioss_Field.h>                 // for Field, etc
+#include <Ioss_Map.h>                   // for Map, MapContainer
+#include <Ioss_ParallelUtils.h>         // for ParallelUtils, etc
+#include <Ioss_Utils.h>                 // for TOPTR, Utils, ct_assert
+#include <assert.h>                     // for assert
+#include <limits.h>                     // for INT_MAX
+#include <mpi.h>                        // for MPI_Alltoall, MPI_Bcast, etc
+#include <parmetis.h>                   // for ParMETIS_V3_Mesh2Dual, etc
+#include <stdlib.h>                     // for exit, EXIT_FAILURE
+#include <algorithm>                    // for sort, lower_bound, copy, etc
+#include <iostream>                     // for operator<<, ostringstream, etc
+#include <iterator>                     // for distance
+#include <map>                          // for map
+#include <numeric>                      // for accumulate
+#include <utility>                      // for pair, make_pair
+#include "Ioss_PropertyManager.h"       // for PropertyManager
+#include "zoltan.h"                     // for Zoltan_Initialize
+#include "zoltan_cpp.h"                 // for Zoltan
 
-#include <parmetis.h>
-
-#include <algorithm>
-#include <numeric>
-#include <map>
-#include <set>
 
 namespace {
   MPI_Datatype mpi_type(double /*dummy*/)  {return MPI_DOUBLE;}
@@ -1237,6 +1243,9 @@ namespace Iopx {
       }
       fileBlockIndex[b+1] = fileBlockIndex[b] + ebs[b].num_entry;
       el_blocks[b].topologyType = ebs[b].topology;
+      if (ebs[b].num_entry == 0 && (strcmp(ebs[b].topology, "NULL") == 0))
+	el_blocks[b].topologyType = "sphere";
+	
       el_blocks[b].nodesPerEntity = ebs[b].num_nodes_per_entry;
       el_blocks[b].attributeCount = ebs[b].num_attribute;
     }
@@ -1419,14 +1428,14 @@ namespace Iopx {
       // processors. The first processor with non-zero node count is
       // the "root" for this nodeset.
       {
-        std::vector<char> has_nodes_local(set_count);
+        std::vector<int> has_nodes_local(set_count);
         for (size_t i=0; i < set_count; i++) {
           has_nodes_local[i] = node_sets[i].entitylist_map.empty() ? 0 : 1;
         }
 
-        std::vector<char> has_nodes(set_count * processorCount);
-        MPI_Allgather(TOPTR(has_nodes_local), has_nodes_local.size(), MPI_CHAR,
-                      TOPTR(has_nodes),       has_nodes_local.size(), MPI_CHAR, comm_);
+        std::vector<int> has_nodes(set_count * processorCount);
+        MPI_Allgather(TOPTR(has_nodes_local), has_nodes_local.size(), MPI_INT,
+                      TOPTR(has_nodes),       has_nodes_local.size(), MPI_INT, comm_);
 
         for (size_t i=0; i < set_count; i++) {
           node_sets[i].hasEntities.resize(processorCount);
@@ -1567,14 +1576,14 @@ namespace Iopx {
       // processors. The first processor with non-zero elem count is
       // the "root" for this sideset.
       {
-        std::vector<char> has_elems_local(set_count);
+        std::vector<int> has_elems_local(set_count);
         for (size_t i=0; i < set_count; i++) {
           has_elems_local[i] = side_sets[i].entitylist_map.empty() ? 0 : 1;
         }
 
-        std::vector<char> has_elems(set_count * processorCount);
-        MPI_Allgather(TOPTR(has_elems_local), has_elems_local.size(), MPI_CHAR,
-                      TOPTR(has_elems),       has_elems_local.size(), MPI_CHAR, comm_);
+        std::vector<int> has_elems(set_count * processorCount);
+        MPI_Allgather(TOPTR(has_elems_local), has_elems_local.size(), MPI_INT,
+                      TOPTR(has_elems),       has_elems_local.size(), MPI_INT, comm_);
 
         for (size_t i=0; i < set_count; i++) {
           side_sets[i].hasEntities.resize(processorCount);

@@ -194,14 +194,16 @@ int main(int argc, char *argv[])
 
   int nWeights = 1;
 
-  zoltan2_partId_t *p = new zoltan2_partId_t [vlen];
-  memset(p, 0, sizeof(zoltan2_partId_t) * vlen);
-  ArrayRCP<zoltan2_partId_t> solnParts(p, 0, vlen, true);
+  typedef Zoltan2::XpetraMultiVectorAdapter<tvector_t> adapter_t;
+  typedef adapter_t::part_t part_t;
+
+  part_t *p = new part_t [vlen];
+  memset(p, 0, sizeof(part_t) * vlen);
+  ArrayRCP<part_t> solnParts(p, 0, vlen, true);
 
   std::vector<const scalar_t *> emptyWeights;
   std::vector<int> emptyStrides;
 
-  typedef Zoltan2::XpetraMultiVectorAdapter<tvector_t> adapter_t;
   Zoltan2::PartitioningSolution<adapter_t> solution(
     env, comm, idMap, nWeights);
   solution.setParts(gidArray, solnParts, true);

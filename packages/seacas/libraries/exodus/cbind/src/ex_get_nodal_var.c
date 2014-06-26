@@ -33,8 +33,12 @@
  * 
  */
 
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for exerrval, ex_err, etc
+#include "exodusII_int.h"               // for EX_NOERR, EX_WARN, etc
+#include "netcdf.h"                     // for nc_inq_varid, NC_NOERR, etc
 
 /*!
 The function ex_get_nodal_var() reads the values of a single nodal

@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
 #endif
 
   // get number of processors and the name of this processor
- 
+
 #ifdef PETRA_MPI
   Petra_Comm& comm = *new Petra_Comm(MPI_COMM_WORLD);
 #else
@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
   if (numGlobalEquations < NumProc)
       {
      if (MyPID==0)
-       cout << "numGlobalBlocks = " << numGlobalEquations 
+       cout << "numGlobalBlocks = " << numGlobalEquations
 	    << " cannot be < number of processors = " << NumProc << endl;
      exit(1);
       }
@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
   // Construct a map that puts approximately the same number of equations on each processor
 
   Petra_Map& map = *new Petra_Map(numGlobalEquations, comm);
-  
+
   // Get update list and number of local equations from newly created map
   int * UpdateList = map.getUpdateList();
   int numLocalEquations = map.numLocalEquations();
@@ -119,9 +119,9 @@ int main(int argc, char *argv[])
   // Create a Petra_Matrix
 
   Petra_RDP_DCRS_Matrix& A = *new Petra_RDP_DCRS_Matrix(map);
-  
+
   // Allocate space using numNz
-  
+
   assert(A.allocate(numNz)==0);
 
   // Add  rows one-at-a-time
@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
   int *indices = new int[2];
   double two = 2.0;
   int numEntries;
-  
+
   for (i=0; i<numLocalEquations; i++)
     {
     if (UpdateList[i]==0)
@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
      assert(A.putRow(UpdateList[i], numEntries, values, indices)==0);
      assert(A.putRow(UpdateList[i], 1, &two, UpdateList+i)==0); // Put in the diagonal entry
     }
-  
+
   // Finish up
   assert(A.fillComplete()==0);
 
@@ -185,12 +185,12 @@ int main(int argc, char *argv[])
 	{
 	  resid.linComb(z, -lambda, q); // Compute A*q - lambda*q
 	  resid.norm2(&residual);
-	  if (MyPID==0) cout << "Iter = " << iter << "  Lambda = " << lambda 
+	  if (MyPID==0) cout << "Iter = " << iter << "  Lambda = " << lambda
 			     << "  Residual of A*q - lambda*q = " << residual << endl;
-	} 
+	}
       if (residual < tolerance) break;
     }
-  
+
   // Release all objects
 
   delete [] numNz;
@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
   delete &A;
   delete &map;
   delete &comm;
-				       
+				
 #ifdef PETRA_MPI
   MPI_Finalize() ;
 #endif

@@ -5,8 +5,6 @@ INCLUDE(TribitsLibraryMacros)
 # A) Package-specific configuration options
 #
 
-# TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
-
 #
 # B) Define the header and source files (and directories)
 #
@@ -22,12 +20,7 @@ SET(HEADERS_IMPL "")
 SET(SOURCES_IMPL "")
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../baseImpl/)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../)
-# INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../)
-# INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../stk_util)
-# INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS}/..)
-
+INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR})
 #
 # Core headers
 #
@@ -55,7 +48,7 @@ TRIBITS_ADD_LIBRARY(
   )
 
 INSTALL(FILES ${HEADERS} DESTINATION
-    ${CMAKE_INSTALL_PREFIX}/${Trilinos_INSTALL_INCLUDE_DIR}/stk_mesh/base/)
+    ${CMAKE_INSTALL_PREFIX}/include/stk_mesh/base/)
 
 INSTALL(FILES ${HEADERS_IMPL} DESTINATION
-    ${CMAKE_INSTALL_PREFIX}/${Trilinos_INSTALL_INCLUDE_DIR}/stk_mesh/baseImpl/)
+    ${CMAKE_INSTALL_PREFIX}/include/stk_mesh/baseImpl/)

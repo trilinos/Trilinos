@@ -112,6 +112,7 @@ public:
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
+  typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef User user_t;
   typedef User userCoord_t;
@@ -151,9 +152,7 @@ public:
                 optional entity weights.
 
       \param weights on return will contain a list of the weights for the
-               number specified.  If weights for
-           this number are to be uniform for all entities in the
-           global problem, the \c weights should be a NULL pointer.
+               number specified.  
 
       \param stride on return will indicate the stride of the weights list.
 

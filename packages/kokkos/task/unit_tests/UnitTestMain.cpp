@@ -42,11 +42,20 @@
 */
 
 
+#include <Kokkos_Macros.hpp>
 #include <Serial/Kokkos_Serial_Task.hpp>
+
+#if 0 && defined( KOKKOS_HAVE_OPENMP )
+#include <OpenMP/Kokkos_OpenMP_Task.hpp>
+#endif
+
 #include <UnitTest_Task.hpp>
+#include <UnitTest_IntPool.hpp>
 
 int main()
 {
+  for ( int i = 1 ; i < 1000000 ; i = i << 1 ) Test::test_intpool<Kokkos::Serial>(i);
+
   Test::test_norm2<Kokkos::Serial>( 1000 );
 
   for ( long i = 0 ; i < 30 ; ++i ) Test::test_fib<Kokkos::Serial>(i);

@@ -139,6 +139,8 @@ PAMGEN_ADD_TEST( 42 ARGS -f report17.txt -r 0 -n 8 -d 3)
 PAMGEN_ADD_TEST( 43 ARGS -f uded.txt -r 0 -n 1 -d 3)
 PAMGEN_ADD_TEST( 44 ARGS -f ur.txt -r 0 -n 1 -d 3)
 PAMGEN_ADD_TEST( 45 ARGS -f two_meshes.txt -r 0 -n 1 -d 3)
+PAMGEN_ADD_TEST( 46 ARGS -f double_ss_ns.txt -r 0 -n 1 -d 3)
+
 
 # 2009/05/28: rabartl: Above, the test 17 timing out at 600s on gabriel and
 # the test 26 just takes too long (see bug 4428).
@@ -149,6 +151,12 @@ PAMGEN_ADD_TEST( 45 ARGS -f two_meshes.txt -r 0 -n 1 -d 3)
 #
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyFiles
-  SOURCE_FILES geom_warp2d.txt uded.txt ur.txt  two_meshes.txt report17.txt report16.txt report15.txt report14.txt report13.txt report12.txt report11.txt report9.txt report10.txt report7.txt report8.txt report6.txt report4.txt report5.txt report3.txt report2.txt report1.txt geom_warp.txt ui2d.txt ui.txt mesh.txt lbrick.txt brick.txt tri.txt tri_proc.txt 2dtri.txt 2dtribis.txt hbrick.txt 3dbj.txt trisect_multi_theta.txt trisect_multi_theta_2d.txt ${RES_FILES}
+  SOURCE_FILES geom_warp2d.txt uded.txt ur.txt  two_meshes.txt report17.txt
+report16.txt report15.txt report14.txt report13.txt report12.txt report11.txt
+report9.txt report10.txt report7.txt report8.txt report6.txt report4.txt
+report5.txt report3.txt report2.txt report1.txt geom_warp.txt ui2d.txt ui.txt
+mesh.txt lbrick.txt brick.txt tri.txt tri_proc.txt 2dtri.txt 2dtribis.txt
+hbrick.txt 3dbj.txt trisect_multi_theta.txt trisect_multi_theta_2d.txt
+double_ss_ns.txt ${RES_FILES}
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test_files
   )

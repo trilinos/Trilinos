@@ -18,6 +18,7 @@ find_program (${PACKAGE_NAME}_Netcdf_EXECUTABLE_NCDUMP
 
 
 IF (${PACKAGE_NAME}_Netcdf_EXECUTABLE_NCDUMP)
+  SET(NETCDF_NCDUMP ${${PACKAGE_NAME}_Netcdf_EXECUTABLE_NCDUMP})
   SET( forbind_OLDTESTS
     testwt
     testwtd
@@ -47,7 +48,7 @@ IF (${PACKAGE_NAME}_Netcdf_EXECUTABLE_NCDUMP)
   #       when built with shareable libraries on some platforms....
 
   FOREACH ( testName ${forbind_OLDTESTS} )
-    TRIBITS_ADD_EXECUTABLE( f_${testName} NOEXEPREFIX LINKER_LANGUAGE Fortran SOURCES ${testName}.f DEPLIBS exodus_for)
+    TRIBITS_ADD_EXECUTABLE( f_${testName} NOEXEPREFIX NOEXESUFFIX LINKER_LANGUAGE Fortran SOURCES ${testName}.f DEPLIBS exodus_for)
   ENDFOREACH ( testName )
 
   TRIBITS_ADD_ADVANCED_TEST(

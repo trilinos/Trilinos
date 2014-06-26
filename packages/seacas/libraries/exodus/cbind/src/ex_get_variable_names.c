@@ -33,10 +33,11 @@
  * 
  */
 
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <stdio.h>                      // for sprintf
+#include "exodusII.h"                   // for exerrval, ex_err, etc
+#include "exodusII_int.h"               // for EX_WARN, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_inq_varid
 
-#include <ctype.h>
 
 /*!
 The function ex_get_variable_names() reads the names of the results
@@ -76,7 +77,6 @@ As an example, the following code segment will read the names of the
 nodal variables stored in the data file:
 
 \code
-#include "exodusII.h"
 int error, exoid, num_nod_vars;
 char *var_names[10];
 

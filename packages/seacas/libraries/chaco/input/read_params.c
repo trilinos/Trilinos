@@ -2,12 +2,11 @@
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
-#include <stdio.h>
-#include <ctype.h>
-#include <string.h>
-#include "defs.h"
-#include "params.h"
-#include "smalloc.h"
+#include <ctype.h>                      // for isdigit, isspace, isalpha, etc
+#include <stdio.h>                      // for printf, NULL, fprintf, etc
+#include <string.h>                     // for strcmp, strlen
+#include "defs.h"                       // for TRUE, FALSE
+#include "params.h"                     // for LINE_LENGTH
 
 static int read_intTF(), read_long(), read_double(), read_string();
 

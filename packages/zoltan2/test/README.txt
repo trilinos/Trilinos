@@ -9,6 +9,9 @@ data/
 helpers/  
   Classes and methods used by tests.
 
+color/      
+  Coloring tests.
+
 order/      
   Ordering tests.
 

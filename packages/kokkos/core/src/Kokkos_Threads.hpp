@@ -49,6 +49,7 @@
 #include <Kokkos_Layout.hpp>
 #include <Kokkos_MemoryTraits.hpp>
 #include <Kokkos_HostSpace.hpp>
+#include <impl/Kokkos_Tags.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -67,6 +68,8 @@ class Threads {
 public:
   //! \name Type declarations that all Kokkos devices must provide.
   //@{
+  //! The tag (what type of kokkos_object is this).
+  typedef Impl::DeviceTag       kokkos_tag ;
 
   typedef Threads                  device_type ;
   typedef Kokkos::HostSpace        memory_space ;
@@ -123,12 +126,12 @@ public:
   //! \name Function for the functor device interface */
   //@{
 
-  inline int league_rank() const ;
-  inline int league_size() const ;
-  inline int team_rank() const ;
-  inline int team_size() const ;
+  KOKKOS_INLINE_FUNCTION int league_rank() const ;
+  KOKKOS_INLINE_FUNCTION int league_size() const ;
+  KOKKOS_INLINE_FUNCTION int team_rank() const ;
+  KOKKOS_INLINE_FUNCTION int team_size() const ;
 
-  inline void team_barrier();
+  KOKKOS_INLINE_FUNCTION void team_barrier();
 
   /** \brief  Intra-team exclusive prefix sum with team_rank() ordering.
    *
@@ -136,7 +139,7 @@ public:
    *    reduction_total = dev.team_scan( value ) + value ;
    */
   template< typename Type >
-  inline Type team_scan( const Type & value );
+  KOKKOS_INLINE_FUNCTION Type team_scan( const Type & value );
 
   /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
    *          with intra-team non-deterministic ordering accumulation.
@@ -148,9 +151,9 @@ public:
    *  non-deterministic.
    */
   template< typename TypeLocal , typename TypeGlobal >
-  inline TypeGlobal team_scan( const TypeLocal & value , TypeGlobal * const global_accum );
+  KOKKOS_INLINE_FUNCTION TypeGlobal team_scan( const TypeLocal & value , TypeGlobal * const global_accum );
 
-  inline void * get_shmem( const int size );
+  KOKKOS_INLINE_FUNCTION void * get_shmem( const int size );
 
   explicit inline Threads( Impl::ThreadsExec & );
 
@@ -189,9 +192,8 @@ public:
    *  does not satisfy the condition: 0 == team_max() % team_size
    *  then some threads will idle.
    */
-  static unsigned team_max();
-
-  static unsigned league_max();
+  KOKKOS_INLINE_FUNCTION static unsigned team_max();
+  KOKKOS_INLINE_FUNCTION static unsigned team_recommended();
 
   //@}
   /*------------------------------------------------------------------------*/

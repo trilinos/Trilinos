@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,14 +44,14 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                                
+
 #include "NOX.H"  // NOX headers
 #include "NOX_LAPACK.H" // NOX LAPACK Interface headers
-#include "NOX_TestError.H" // common file for testing 
+#include "NOX_TestError.H" // common file for testing
 
 #ifdef HAVE_MPI
 #include <mpi.h>
-#else 
+#else
 #endif
 
 int main(int argc, char *argv[]) {
@@ -60,16 +60,16 @@ int main(int argc, char *argv[]) {
   Teuchos::ParameterList noxParams;
   Teuchos::ParameterList& printParams = noxParams.sublist("Printing");
   printParams.set("Output Precision", 5);
-  if (argc > 1) { 
+  if (argc > 1) {
     if (argv[1][0]=='-' && argv[1][1]=='v')
-       printParams.set("Output Information", 
-			NOX::Utils::OuterIteration + 
-			NOX::Utils::OuterIterationStatusTest + 
-			NOX::Utils::InnerIteration +
-			NOX::Utils::Parameters + 
-			NOX::Utils::Details + 
-			NOX::Utils::Warning +
-			NOX::Utils::TestDetails);
+       printParams.set("Output Information",
+            NOX::Utils::OuterIteration +
+            NOX::Utils::OuterIterationStatusTest +
+            NOX::Utils::InnerIteration +
+            NOX::Utils::Parameters +
+            NOX::Utils::Details +
+            NOX::Utils::Warning +
+            NOX::Utils::TestDetails);
     else
        printParams.set("Output Information", NOX::Utils::Error);
   }
@@ -82,9 +82,9 @@ int main(int argc, char *argv[]) {
   int status = 0;
 
   // Begin real testing here!
-  if (status == 0) 
+  if (status == 0)
     std::cout << "Test passed!" << std::endl;
-  else 
+  else
     std::cout << "Test failed!" << std::endl;
 
   // 0 is success

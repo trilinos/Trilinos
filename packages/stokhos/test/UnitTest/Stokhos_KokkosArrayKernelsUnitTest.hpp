@@ -1272,7 +1272,6 @@ bool test_linear_tensor(const UnitTestSetup<Device>& setup,
                         Teuchos::FancyOStream& out,
                         const bool symmetric) {
   typedef ScalarType value_type ;
-  typedef int ordinal_type;
   typedef Kokkos::View< value_type** , Kokkos::LayoutLeft ,
     Device > block_vector_type ;
   typedef Stokhos::LinearSparse3Tensor<value_type,Device,BlockSize> TensorType;

@@ -52,6 +52,8 @@
 
 #include <Kokkos_Serial.hpp>
 #include <Kokkos_Task.hpp>
+#include <Kokkos_View.hpp>
+#include <impl/Kokkos_IntPool.hpp>
 
 //----------------------------------------------------------------------------
 
@@ -62,8 +64,6 @@ namespace Impl {
 template<>
 class Task< Kokkos::Serial , void > {
 private:
-
-  template< class , class , class , class , class , class > friend class TaskSpawn ;
 
   /**\brief  States of a task */
   enum { STATE_CONSTRUCTING = 0 , STATE_WAITING = 1 , STATE_EXECUTING = 2 , STATE_COMPLETE = 4 };
@@ -168,7 +168,7 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   Task * task_dependence( int i ) const
-    { return ( STATE_EXECUTING == m_state && i < m_dep_count ) ? m_dep[i] : (Task*) 0 ; }
+    { return ( STATE_EXECUTING == m_state && 0 <= i && i < m_dep_count ) ? m_dep[i] : (Task*) 0 ; }
 
   KOKKOS_INLINE_FUNCTION
   int task_dependence() const
@@ -614,6 +614,73 @@ public:
 
 } /* namespace Kokkos */
 
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+
+template< class FunctorType , class PatternType >
+class TaskPool< FunctorType , PatternType , Kokkos::Serial > {
+public:
+
+  typedef Kokkos::Serial device_type ;
+  typedef Kokkos::Impl::IntPool<device_type>  int_pool_type ;
+
+  class TaskType {
+    FunctorType m_functor ;
+    PatternType m_pattern ;
+    int         m_ref_count ;
+    int         m_state ;
+    int         m_index ;
+
+  };
+
+  void apply( int itask ) const
+    {
+      m_task_pool[itask].apply();
+    }
+
+  template< class Arg1Type
+          , class Arg2Type
+          , class Arg3Type
+          , class Arg4Type
+          , class Arg5Type
+          , class FutureType
+          >
+  KOKKOS_INLINE_FUNCTION
+  typename PatternType::future_type
+  spawn( Arg1Type const & arg1
+       , Arg2Type const & arg2
+       , Arg3Type const & arg3
+       , Arg4Type const & arg4
+       , Arg5Type const & arg5
+       , FutureType const * const ibegin
+       , FutureType const * const iend
+       )
+    {
+      int value = 0 ;
+
+      while ( int_pool_type::FAIL == m_task_wait.claim( value ) );
+
+      TaskType * const t = & m_task_pool[ value ];
+
+      new( & t->m_functor ) FunctorType(arg1,arg2,arg3,arg4,arg5);
+
+      return typename PatternType::future_type(t);
+    }
+
+
+private:
+
+  Kokkos::View<TaskType*,device_type> m_task_pool ; // Allocate without initializing
+  Kokkos::Impl::IntPool<device_type>  m_task_wait ;
+  Kokkos::Impl::IntPool<device_type>  m_task_depend ;
+
+};
+
+} /* namespace Kokkos */
+
+//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 #endif /* #define KOKKOS_SERIAL_TASK_HPP */

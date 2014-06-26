@@ -7,10 +7,12 @@
  *    ------------------------------------------------------------
  */
 
-#include <sstream>
+#include <stk_util/stk_config.h>
+#if defined( STK_HAS_MPI )
 
-#include <stk_util/util/FeatureTest.hpp>
 #include <stk_util/parallel/MPI.hpp>
+#include <sstream>                      // for ostringstream, etc
+#include "mpi.h"                        // for MPI_Datatype, etc
 
 namespace sierra {
 namespace MPI {
@@ -49,27 +51,113 @@ float_complex_type()
   return s_mpi_float_complex;
 }
 
+MPI_Datatype
+short_int64_type()
+{
+  static MPI_Datatype s_mpi_short_int64;
+  static bool initialized = false;
 
-// #ifdef MPI_LONG_LONG_INT
-// MPI_Datatype
-// long_long_int_int_type()
-// {
-//   static MPI_Datatype s_mpi_long_long_int_int;
-//   static bool initialized = false;
+  if (!initialized) {
+    initialized = true;
+    int blocks[] = {1, 1};
+    MPI_Aint displacements[] = {0, (MPI_Aint)offsetof(struct Loc<short>, m_loc)};
+    MPI_Datatype types[] = {MPI_SHORT, MPI_INT64_T};
 
-//   int B[] = {2, 1};
-//   MPI_Aint D[] = {0, 8};
-//   MPI_Datatype T[] = {MPI_LONG_LONG_INT, MPI_INT};
-  
-//   if (!initialized) {
-//     initialized = true;
+    MPI_Type_struct(2, blocks, displacements, types, &s_mpi_short_int64);
+    MPI_Type_commit(&s_mpi_short_int64);
+  }
+  return s_mpi_short_int64;
+}
 
-//     MPI_Type_struct(2, B, D, T, &s_mpi_long_long_int_int);
-//     MPI_Type_commit(&s_mpi_long_long_int_int);
-//   }
-//   return s_mpi_long_long_int_int;
-// }
-// #endif
+MPI_Datatype
+int_int64_type()
+{
+  static MPI_Datatype s_mpi_int_int64;
+  static bool initialized = false;
+
+  if (!initialized) {
+    initialized = true;
+    int blocks[] = {1, 1};
+    MPI_Aint displacements[] = {0, (MPI_Aint)offsetof(struct Loc<int>, m_loc)};
+    MPI_Datatype types[] = {MPI_INT, MPI_INT64_T};
+
+    MPI_Type_struct(2, blocks, displacements, types, &s_mpi_int_int64);
+    MPI_Type_commit(&s_mpi_int_int64);
+  }
+  return s_mpi_int_int64;
+}
+
+MPI_Datatype
+long_int64_type()
+{
+  static MPI_Datatype s_mpi_long_int64;
+  static bool initialized = false;
+
+  if (!initialized) {
+    initialized = true;
+    int blocks[] = {1, 1};
+    MPI_Aint displacements[] = {0, (MPI_Aint)offsetof(struct Loc<long>, m_loc)};
+    MPI_Datatype types[] = {MPI_LONG, MPI_INT64_T};
+
+    MPI_Type_struct(2, blocks, displacements, types, &s_mpi_long_int64);
+    MPI_Type_commit(&s_mpi_long_int64);
+  }
+  return s_mpi_long_int64;
+}
+
+MPI_Datatype
+unsigned_long_int64_type()
+{
+  static MPI_Datatype s_mpi_unsigned_long_int64;
+  static bool initialized = false;
+
+  if (!initialized) {
+    initialized = true;
+    int blocks[] = {1, 1};
+    MPI_Aint displacements[] = {0,(MPI_Aint)offsetof(struct Loc<unsigned long>, m_loc)};
+    MPI_Datatype types[] = {MPI_UNSIGNED_LONG, MPI_INT64_T};
+
+    MPI_Type_struct(2, blocks, displacements, types, &s_mpi_unsigned_long_int64);
+    MPI_Type_commit(&s_mpi_unsigned_long_int64);
+  }
+  return s_mpi_unsigned_long_int64;
+}
+
+MPI_Datatype
+float_int64_type()
+{
+  static MPI_Datatype s_mpi_float_int64;
+  static bool initialized = false;
+
+  if (!initialized) {
+    initialized = true;
+    int blocks[] = {1, 1};
+    MPI_Aint displacements[] = {0, (MPI_Aint)offsetof(struct Loc<unsigned long>, m_loc)};
+    MPI_Datatype types[] = {MPI_FLOAT, MPI_INT64_T};
+
+    MPI_Type_struct(2, blocks, displacements, types, &s_mpi_float_int64);
+    MPI_Type_commit(&s_mpi_float_int64);
+  }
+  return s_mpi_float_int64;
+}
+
+MPI_Datatype
+double_int64_type()
+{
+  static MPI_Datatype s_mpi_double_int64;
+  static bool initialized = false;
+
+  if (!initialized) {
+    initialized = true;
+    int blocks[] = {1, 1};
+    MPI_Aint displacements[] = {0, (MPI_Aint)offsetof(struct Loc<unsigned long>, m_loc)};
+    MPI_Datatype types[] = {MPI_DOUBLE, MPI_INT64_T};
+
+    MPI_Type_struct(2, blocks, displacements, types, &s_mpi_double_int64);
+    MPI_Type_commit(&s_mpi_double_int64);
+  }
+  return s_mpi_double_int64;
+}
 
 
 MPI_Datatype
@@ -248,9 +336,9 @@ ReduceSet::size() const {
     (*it)->size(buffer_end);
 
   ReduceCheck *reduce_check = static_cast<ReduceCheck *>(m_reduceVector.front());
-  reduce_check->setSize(reinterpret_cast<char *>(buffer_end) - (char *) 0);
+  reduce_check->setSize(reinterpret_cast<char *>(buffer_end) - static_cast<char*>(0));
 
-  return reinterpret_cast<char *>(buffer_end) - (char *) 0;
+  return reinterpret_cast<char *>(buffer_end) - static_cast<char*>(0);
 }
 
 void
@@ -301,8 +389,8 @@ AllReduce(
   if (size) {
     char *input_buffer  = new char[size];
     char *output_buffer = new char[size];
-    void *inbuf = (void *) input_buffer;
-    void *outbuf = (void *) output_buffer;
+    void *inbuf = input_buffer;
+    void *outbuf = output_buffer;
 
     s_currentReduceSet = &reduce_set;
 
@@ -319,3 +407,5 @@ AllReduce(
 
 } // namespace MPI
 } // namespace sierra
+
+#endif // if defined( STK_HAS_MPI )

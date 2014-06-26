@@ -58,13 +58,16 @@ namespace Zoltan2 {
 
 /*! \brief An identifier for the general type of model.
  */
-enum ModelType {
-  InvalidModel = 0,
+enum ModelType 
+{
   HypergraphModelType,
   GraphModelType,
   CoordinateModelType,
-  IdentifierModelType
-} ;
+  IdentifierModelType,
+  MAX_NUM_MODEL_TYPES
+};
+
+
 
 /*! \brief Flags are set by a Problem to tell a Model what transformations
  *          it may need to do on the user's input.

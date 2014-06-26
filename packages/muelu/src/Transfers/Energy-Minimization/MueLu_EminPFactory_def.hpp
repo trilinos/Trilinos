@@ -1,18 +1,18 @@
 #ifndef MUELU_EMINPFACTORY_DEF_HPP
 #define MUELU_EMINPFACTORY_DEF_HPP
 
-#include <Xpetra_CrsGraph_fwd.hpp>
-#include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_MultiVector_fwd.hpp>
+#include <Xpetra_Matrix.hpp>
+#include <Xpetra_StridedMapFactory.hpp>
 
 #include "MueLu_EminPFactory_decl.hpp"
 
 #include "MueLu_CGSolver.hpp"
-#include "MueLu_Constraint_fwd.hpp"
+#include "MueLu_Constraint.hpp"
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PatternFactory.hpp"
 #include "MueLu_PerfUtils.hpp"
+#include "MueLu_SolverBase.hpp"
 #include "MueLu_SteepestDescentSolver.hpp"
 #include "MueLu_TentativePFactory.hpp"
 
@@ -25,12 +25,21 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("A",                 Teuchos::null, "Generating factory for the matrix A used during internal iterations");
     validParamList->set< RCP<const FactoryBase> >("P",                 Teuchos::null, "Generating factory for the initial guess");
     validParamList->set< RCP<const FactoryBase> >("Constraint",        Teuchos::null, "Generating factory for constraints");
-    validParamList->set< int >                   ("Niterations",                   3, "Number of iterations of the internal iterative method");
-    validParamList->set< int >                   ("Reuse Niterations",             1, "Number of iterations of the internal iterative method");
+    validParamList->set< int >                   ("emin: num iterations",          2, "Number of iterations of the internal iterative method");
+    validParamList->set< int >                   ("emin: num reuse iterations",    1, "Number of iterations of the internal iterative method");
+
     validParamList->set< RCP<Matrix> >           ("P0",                Teuchos::null, "Initial guess at P");
     validParamList->set< bool >                  ("Keep P0",                   false, "Keep an initial P0 (for reuse)");
+
     validParamList->set< RCP<Constraint> >       ("Constraint0",       Teuchos::null, "Initial Constraint");
     validParamList->set< bool >                  ("Keep Constraint0",          false, "Keep an initial Constraint (for reuse)");
+
+    {
+      typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
+      RCP<validatorType> typeValidator = rcp (new validatorType(Teuchos::tuple<std::string>("cg", "sd"), "solver"));
+      validParamList->set                        ("emin: iterative method",     "cg", "Iterative procedure", typeValidator);
+    }
+
     return validParamList;
   }
 
@@ -73,24 +82,24 @@ namespace MueLu {
   void EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildP(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Prolongator minimization", coarseLevel);
 
-    const ParameterList & pL = GetParameterList();
+    const ParameterList& pL = GetParameterList();
 
     // Get the matrix
     RCP<Matrix> A = Get< RCP<Matrix> >(fineLevel, "A");
 
     // Get/make initial guess
     RCP<Matrix> P0;
-    int         Niterations;
+    int         numIts;
     if (coarseLevel.IsAvailable("P0", this)) {
       // Reuse data
-      P0          = coarseLevel.Get<RCP<Matrix> >("P0", this);
-      Niterations = pL.get<int>("Reuse Niterations");
+      P0     = coarseLevel.Get<RCP<Matrix> >("P0", this);
+      numIts = pL.get<int>("emin: num reuse iterations");
       GetOStream(Runtime0) << "Reusing P0" << std::endl;
 
     } else {
       // Construct data
-      P0          = Get< RCP<Matrix> >(coarseLevel, "P");
-      Niterations = pL.get<int>("Niterations");
+      P0     = Get< RCP<Matrix> >(coarseLevel, "P");
+      numIts = pL.get<int>("emin: num iterations");
     }
     // NOTE: the main assumption here that P0 satisfies both constraints:
     //   - nonzero pattern
@@ -107,12 +116,37 @@ namespace MueLu {
       // Construct data
       X = Get< RCP<Constraint> >(coarseLevel, "Constraint");
     }
-    GetOStream(Runtime0) << "Number of emin iterations = " << Niterations << std::endl;
+    GetOStream(Runtime0) << "Number of emin iterations = " << numIts << std::endl;
 
+
+    std::string solverType = pL.get<std::string>("emin: iterative method");
+    RCP<SolverBase> solver;
+    if (solverType == "cg")
+      solver = rcp(new CGSolver(numIts));
+    else if (solverType == "sd")
+      solver = rcp(new SteepestDescentSolver(numIts));
 
     RCP<Matrix> P;
-    CGSolver EminSolver(Niterations);
-    EminSolver.Iterate(*A, *X, *P0, P);
+    solver->Iterate(*A, *X, *P0, P);
+
+    // NOTE: The code below is extremely fragile
+    if (!P->IsView("stridedMaps")) {
+      if (A->IsView("stridedMaps") == true) {
+        GetOStream(Runtime1) << "Using A to fillComplete P" << std::endl;
+
+        // FIXME: X->GetPattern() actually returns a CrsGraph.
+        // CrsGraph has no knowledge of Xpetra's sup/Matrix views. As such,
+        // it has no idea about strided maps. We create one, which is
+        // most likely incorrect for many use cases.
+        std::vector<size_t> stridingInfo(1, 1);
+        RCP<const StridedMap> dMap = StridedMapFactory::Build(X->GetPattern()->getDomainMap(), stridingInfo);
+
+        P->CreateView("stridedMaps", A->getRowMap("stridedMaps"), dMap);
+
+      } else {
+        P->CreateView("stridedMaps", P->getRangeMap(), P->getDomainMap());
+      }
+    }
 
     Set(coarseLevel, "P", P);
     if (pL.get<bool>("Keep P0")) {

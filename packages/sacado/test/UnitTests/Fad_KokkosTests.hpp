@@ -19,7 +19,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 // (etphipp@sandia.gov).
@@ -36,7 +36,7 @@
 
 template <typename FadType1, typename FadType2>
 bool checkFads(const FadType1& x, const FadType2& x2,
-               Teuchos::FancyOStream& out)
+               Teuchos::FancyOStream& out, double tol = 1.0e-15)
 {
   bool success = true;
 
@@ -48,7 +48,7 @@ bool checkFads(const FadType1& x, const FadType2& x2,
 
   // Check derivatives match
   for (int i=0; i<x.size(); ++i)
-    TEUCHOS_TEST_EQUALITY(x.dx(i), x2.dx(i), out, success);
+    TEUCHOS_TEST_FLOATING_EQUALITY(x.dx(i), x2.dx(i), tol, out, success);
 
   return success;
 }
@@ -315,6 +315,51 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, Unmanaged2, FadType, Layout, Device )
+{
+  typedef typename FadType::value_type scalar_type;
+  typedef typename ApplyView<scalar_type***,Layout,Device>::type ViewType;
+  typedef typename ApplyView<FadType**,Layout,Device>::type FadViewType;
+  typedef typename ViewType::size_type size_type;
+  typedef typename ViewType::HostMirror host_view_type;
+  typedef typename FadViewType::HostMirror fad_host_view_type;
+
+  const size_type num_rows = global_num_rows;
+  const size_type num_cols = global_num_cols;
+  const size_type fad_size = global_fad_size;
+
+  // Create and fill view
+  ViewType v("view", num_rows, num_cols, fad_size+1);
+  host_view_type h_v = Kokkos::create_mirror_view(v);
+  for (size_type i=0; i<num_rows; ++i) {
+    for (size_type j=0; j<num_cols; ++j) {
+      FadType f = generate_fad<FadType>(num_rows, num_cols, fad_size, i, j);
+      h_v(i,j,0) = f.val();
+      for (size_type k=0; k<fad_size; k++)
+        h_v(i,j,k+1) = f.dx(k);
+    }
+  }
+  Kokkos::deep_copy(v, h_v);
+
+  // Create unmanaged view
+  FadViewType v_fad(Kokkos::view_without_managing,
+                    v.ptr_on_device(), num_rows, num_cols, fad_size+1);
+
+  // Copy back -- can't use create_mirror_view() because v_fad is unmanaged
+  fad_host_view_type h_v_fad("host_view_fad", num_rows, num_cols, fad_size+1);
+  Kokkos::deep_copy(h_v_fad, v_fad);
+
+  // Check
+  success = true;
+  for (size_type i=0; i<num_rows; ++i) {
+    for (size_type j=0; j<num_cols; ++j) {
+      FadType f = generate_fad<FadType>(num_rows, num_cols, fad_size, i, j);
+      success = success && checkFads(f, h_v_fad(i,j), out);
+    }
+  }
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, UnmanagedConst, FadType, Layout, Device )
 {
   typedef typename FadType::value_type scalar_type;
@@ -362,13 +407,60 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   }
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, UnmanagedConst2, FadType, Layout, Device )
+{
+  typedef typename FadType::value_type scalar_type;
+  typedef typename ApplyView<scalar_type***,Layout,Device>::type ViewType;
+  typedef typename ApplyView<const scalar_type***,Layout,Device>::type ConstViewType;
+  typedef typename ApplyView<FadType**,Layout,Device>::type FadViewType;
+  typedef typename ApplyView<const FadType**,Layout,Device>::type ConstFadViewType;
+  typedef typename ViewType::size_type size_type;
+  typedef typename ViewType::HostMirror host_view_type;
+  typedef typename FadViewType::HostMirror fad_host_view_type;
+
+  const size_type num_rows = global_num_rows;
+  const size_type num_cols = global_num_cols;
+  const size_type fad_size = global_fad_size;
+
+  // Create and fill view
+  ViewType v("view", num_rows, num_cols, fad_size+1);
+  host_view_type h_v = Kokkos::create_mirror_view(v);
+  for (size_type i=0; i<num_rows; ++i) {
+    for (size_type j=0; j<num_cols; ++j) {
+      FadType f = generate_fad<FadType>(num_rows, num_cols, fad_size, i, j);
+      h_v(i,j,0) = f.val();
+      for (size_type k=0; k<fad_size; k++)
+        h_v(i,j,k+1) = f.dx(k);
+    }
+  }
+  Kokkos::deep_copy(v, h_v);
+  ConstViewType v_const = v;
+
+  // Create unmanaged view
+  ConstFadViewType v_fad(Kokkos::view_without_managing, v_const.ptr_on_device(),
+                         num_rows, num_cols, fad_size+1);
+
+  // Copy back -- can't use create_mirror_view() because v_fad is unmanaged
+  fad_host_view_type h_v_fad("host_view_fad", num_rows, num_cols, fad_size+1);
+  Kokkos::deep_copy(h_v_fad, v_fad);
+
+  // Check
+  success = true;
+  for (size_type i=0; i<num_rows; ++i) {
+    for (size_type j=0; j<num_cols; ++j) {
+      FadType f = generate_fad<FadType>(num_rows, num_cols, fad_size, i, j);
+      success = success && checkFads(f, h_v_fad(i,j), out);
+    }
+  }
+}
+
 #else
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, ShmemSize, FadType, Layout, Device )
 {
   typedef typename ApplyView<FadType**,Layout,Device>::type ViewType;
-  typedef typename FadType::value_type value_type;
   typedef typename ViewType::size_type size_type;
 
   const size_type num_rows = global_num_rows;
@@ -390,14 +482,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, Unmanaged, FadType, Layout, Device ) {}
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, Unmanaged2, FadType, Layout, Device ) {}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, UnmanagedConst, FadType, Layout, Device ) {}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, UnmanagedConst2, FadType, Layout, Device ) {}
 
 #endif
 
 #define VIEW_FAD_TESTS_FLD( F, L, D )                                   \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, DeepCopy, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Unmanaged, F, L, D ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Unmanaged2, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, UnmanagedConst, F, L, D ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, UnmanagedConst2, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Multiply, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, MultiplyConst, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, ShmemSize, F, L, D )

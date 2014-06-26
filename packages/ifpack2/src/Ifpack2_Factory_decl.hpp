@@ -154,17 +154,17 @@ public:
           const int overlap);
 
   //! Clones a preconditioner for a different node type from an Ifpack2 RILUK or Chebyshev preconditioner
-  template<class MatrixType, class M2>
+  template<class InputMatrixType, class OutputMatrixType>
   static
-  Teuchos::RCP<Preconditioner<typename M2::scalar_type,
-                              typename M2::local_ordinal_type,
-                              typename M2::global_ordinal_type,
-                              typename M2::node_type> >
-  clone (const Teuchos::RCP<Preconditioner<typename MatrixType::scalar_type,
-                                           typename MatrixType::local_ordinal_type,
-                                           typename MatrixType::global_ordinal_type,
-                                           typename MatrixType::node_type> >& prec,
-         const Teuchos::RCP<const M2>& matrix,
+  Teuchos::RCP<Preconditioner<typename OutputMatrixType::scalar_type,
+                              typename OutputMatrixType::local_ordinal_type,
+                              typename OutputMatrixType::global_ordinal_type,
+                              typename OutputMatrixType::node_type> >
+  clone (const Teuchos::RCP<Preconditioner<typename InputMatrixType::scalar_type,
+                                           typename InputMatrixType::local_ordinal_type,
+                                           typename InputMatrixType::global_ordinal_type,
+                                           typename InputMatrixType::node_type> >& prec,
+         const Teuchos::RCP<const OutputMatrixType>& matrix,
          const Teuchos::ParameterList& params = Teuchos::ParameterList ());
 };
 

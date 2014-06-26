@@ -89,14 +89,29 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND
       COMM mpi
       )
       
-	TRIBITS_ADD_TEST(
+    TRIBITS_ADD_TEST(
       Navier2DBlocked_xml
       NAME "Navier2DBlocked_xml_sim2"
       ARGS "--xml=mySIM2.xml"
       NUM_MPI_PROCS 4
       COMM mpi
       )
+    
+    TRIBITS_ADD_TEST(
+      Navier2DBlocked_xml
+      NAME "Navier2DBlocked_xml_uzawa1"
+      ARGS "--xml=myUzawa1.xml"
+      NUM_MPI_PROCS 4
+      COMM mpi
+      )    
       
+    TRIBITS_ADD_TEST(
+      Navier2DBlocked_xml
+      NAME "Navier2DBlocked_xml_indef1"
+      ARGS "--xml=myIndefDiag1.xml"
+      NUM_MPI_PROCS 4
+      COMM mpi
+      )         
     ##################################
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       Navier2DBlocked_BraessSarazinSmoother
@@ -184,7 +199,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND
       )
 
     TRIBITS_COPY_FILES_TO_BINARY_DIR(Navier2D_cp
-      SOURCE_FILES A5932_re1000.txt b5932_re1000.txt myXML.xml myXMLg.xml myBS1.xml myBS2.xml myBGS1.xml mySIM1.xml mySIM2.xml
+      SOURCE_FILES A5932_re1000.txt b5932_re1000.txt myXML.xml myXMLg.xml myBS1.xml myBS2.xml myBGS1.xml mySIM1.xml mySIM2.xml myUzawa1.xml myIndefDiag1.xml
       )
   ENDIF()
 

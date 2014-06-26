@@ -1,0 +1,27 @@
+
+
+something 1
+
+other
+
+SOME_FUNC_NAME2()
+-----------------
+Better documenation
+
+Usage::
+
+  SOME_FUNC_NAME2(blah
+    goat
+    )
+
+
+something 2
+
+SOME_MACRO_NAME1()
+++++++++++++++++++
+
+Good documenation
+
+
+something else
+

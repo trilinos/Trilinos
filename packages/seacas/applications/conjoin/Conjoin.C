@@ -2165,12 +2165,16 @@ namespace {
 	  sets[p][i].position_ = gi;
 	  
 	  // Get the parameters for this sideset...
-	  ex_get_set_param (id, EX_SIDE_SET, sets[p][i].id,
-			    &sets[p][i].sideCount,
-			    &sets[p][i].dfCount);
+	  ex_set set;
+	  set.type = EX_SIDE_SET;
+	  set.id = sets[p][i].id;
+	  set.entry_list = NULL;
+	  set.extra_list = NULL;
+	  set.distribution_factor_list = NULL;
+	  ex_get_sets(id, 1, &set);
 
-
-
+	  sets[p][i].sideCount = set.num_entry;
+	  sets[p][i].dfCount = set.num_distribution_factor;
 	  glob_ssets[gi].sideCount += sets[p][i].entity_count();
 	  glob_ssets[gi].dfCount   += sets[p][i].dfCount;
 

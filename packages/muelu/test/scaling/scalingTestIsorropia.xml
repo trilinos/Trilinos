@@ -111,13 +111,13 @@
       <Parameter name="factory"                             type="string" value="RebalanceTransferFactory"/>
       <Parameter name="type"                                type="string" value="Interpolation"/>
       <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
+      <Parameter name="Nullspace"                           type="string" value="myTentativePFact"/>
     </ParameterList>
 
     <ParameterList name="myRebalanceRestrictionFact">
       <Parameter name="factory"                             type="string" value="RebalanceTransferFactory"/>
       <Parameter name="type"                                type="string" value="Restriction"/>
       <Parameter name="R"                                   type="string" value="myRestrictorFact"/>
-      <Parameter name="Nullspace"                           type="string" value="myTentativePFact"/>
     </ParameterList>
 
     <ParameterList name="myRebalanceAFact">
@@ -199,8 +199,8 @@
       <Parameter name="P"                                   type="string"   value="myRebalanceProlongatorFact"/>
       <Parameter name="R"                                   type="string"   value="myRebalanceRestrictionFact"/>
       <Parameter name="Aggregates"                          type="string"   value="UncoupledAggregationFact"/>
-      <Parameter name="Nullspace"                           type="string"   value="myRebalanceRestrictionFact"/>
-      <Parameter name="Coordinates"                         type="string"   value="myRebalanceRestrictionFact"/>
+      <Parameter name="Nullspace"                           type="string"   value="myRebalanceProlongatorFact"/>
+      <Parameter name="Coordinates"                         type="string"   value="myRebalanceProlongatorFact"/>
       <Parameter name="Importer"                            type="string"   value="myRepartitionFact"/>
       <Parameter name="Graph"                               type="string"   value="myCoalesceDropFact"/>
       <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/>

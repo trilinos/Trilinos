@@ -233,7 +233,7 @@ namespace {
 	    is_same = false;
 	  }
 	}
-	if (block2 != NULL) {
+	if (block1 != NULL && block2 != NULL) {
 	  if (!Check_Elmt_Block_Params(block1, block2)) {
 	    is_same = false;
 	  } else {
@@ -367,7 +367,20 @@ namespace {
       }
     }
 
-    // Do the following check(s) only if there are nodeset varibles...
+    // Check that can access all nodesets in file2.
+    // This should never fail if the above tests pass...
+    for (int b = 0; b < file2.Num_Node_Sets(); ++b) {
+      Node_Set<INT>* set2 = file2.Get_Node_Set_by_Index(b);
+      if (set2 == NULL) {
+	std::cout << "exodiff: ERROR .. Could not access the Nodeset with index "
+		  << b << " in the second file.\n";
+	if (interface.pedantic)
+	  is_same = false;
+      }
+    }
+
+
+    // Do the following check(s) only if there are nodeset variables...
     // For each nodeset, check that the order of the nodeset nodes is the same.
     // Eventually need to be able to map the order...
     if (!interface.ns_var_names.empty() || interface.pedantic) {
@@ -441,7 +454,18 @@ namespace {
       }
     }
 
-    // Do the following check(s) only if there are sideset varibles... (or -pedantic)
+    for (int b = 0; b < file2.Num_Side_Sets(); ++b) {
+      Side_Set<INT>* set2 = file2.Get_Side_Set_by_Index(b);
+      if (set2 == NULL) {
+	std::cout << "exodiff: ERROR .. Could not access the Sideset with index "
+		  << b << " in the second file.\n";
+	if (interface.pedantic)
+	  is_same = false;
+      }
+    }
+
+
+    // Do the following check(s) only if there are sideset variables... (or -pedantic)
     // For each sideset, check that the order of the sideset sides is the same.
     // Eventually need to be able to map the order...
     if (!interface.ss_var_names.empty() || interface.pedantic) {

@@ -1,10 +1,4 @@
-
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsAddAdvancedTest)
-
-
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CWrapperSupport_UnitTests

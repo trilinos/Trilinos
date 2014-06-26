@@ -11,33 +11,9 @@
 #define nProcs 200;
 #define nParts 200;
 
-typedef int partId_t;
-template <typename scalar_t, typename procId_t>
-void randomFill(scalar_t **&partCenters, procId_t &numCoords, int &coorDim){
-    partCenters = Zoltan2::allocMemory<scalar_t *>(coorDim);
-    for(int i = 0; i < coorDim; ++i){
-        partCenters[i] = Zoltan2::allocMemory<scalar_t>(numCoords);
-        for(procId_t j = 0; j < numCoords; ++j){
-            partCenters[i][j] = i;
-        }
-    }
-}
-
-template <typename scalar_t, typename procId_t>
-void getPartCenters(scalar_t **&partCenters, procId_t &numCoords, int &coorDim){
-    numCoords = nParts;
-    coorDim = partDIM;
-    randomFill(partCenters, numCoords, coorDim);
-}
-
-template <typename scalar_t, typename procId_t>
-void getProcCenters(scalar_t **&procCenters, procId_t &numCoords, int &coorDim){
-    numCoords = nProcs;
-    coorDim = procDIM;
-    randomFill(procCenters, numCoords, coorDim);
-}
-
-
+typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
+typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> inputAdapter_t;
+typedef inputAdapter_t::part_t part_t;
 
 string trim_right_copy(
         const string& s,
@@ -144,9 +120,9 @@ void getArgVals(
         int argc,
         char **argv,
         std::string &procF,
-        partId_t &nx,
-        partId_t &ny,
-        partId_t &nz){
+        part_t &nx,
+        part_t &ny,
+        part_t &nz){
 
     bool isprocset = false;
     int ispartset = 0;
@@ -208,25 +184,25 @@ int main(int argc, char *argv[]){
     //    cout << "Usage: " << argv[0] << " PART=partGeoParams.txt PROC=procGeoParams.txt" << endl;
     //    exit(1);
     //}
-    zoltan2_partId_t numParts = 0;
+    part_t numParts = 0;
     scalar_t **partCenters = NULL;
     int coordDim = 0;
 
-    zoltan2_partId_t numProcs = 0;
+    part_t numProcs = 0;
     scalar_t **procCoordinates = NULL;
     int procDim = 0;
 
 
 
-    partId_t jobX = 1, jobY = 1 ,jobZ = 1;
+    part_t jobX = 1, jobY = 1 ,jobZ = 1;
     string procfile = "";
 
     const RCP<Comm<int> > commN;
     RCP<Comm<int> >comm =  Teuchos::rcp_const_cast<Comm<int> >
             (Teuchos::DefaultComm<int>::getDefaultSerialComm(commN));
 
-    partId_t *task_communication_xadj_ = NULL;
-    partId_t *task_communication_adj_ = NULL;
+    part_t *task_communication_xadj_ = NULL;
+    part_t *task_communication_adj_ = NULL;
     try {
 
         getArgVals(
@@ -247,11 +223,11 @@ int main(int argc, char *argv[]){
             }
 
 
-            task_communication_xadj_ = new partId_t [numParts];
-            task_communication_adj_ = new partId_t [numParts * 6];
+            task_communication_xadj_ = new part_t [numParts];
+            task_communication_adj_ = new part_t [numParts * 6];
 
             int prevNCount = 0;
-            for (int i = 0; i < numParts; ++i) {
+            for (part_t i = 0; i < numParts; ++i) {
               int x = i % jobX;
               int y = (i / (jobX)) % jobY;
               int z = (i / (jobX)) / jobY;
@@ -283,14 +259,13 @@ int main(int argc, char *argv[]){
 
 
 
-        //getProcCenters(procCoordinates, numProcs, procDim);
         {
             std::fstream m(procfile.c_str());
             procCoordinates = new scalar_t * [procDim];
             for(int i = 0; i < procDim; ++i){
                 procCoordinates[i] = new scalar_t[numParts];
             }
-            int i = 0;
+            part_t i = 0;
             while(i < numProcs){
                 m >> procCoordinates[0][i] >> procCoordinates[1][i] >> procCoordinates[2][i];
                 //cout << "i:" <<i << endl;
@@ -301,52 +276,50 @@ int main(int argc, char *argv[]){
         }
 
 
-        typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
-        typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> inputAdapter_t;
-
         /*
-        Zoltan2::CoordinateCommunicationModel<scalar_t,scalar_t,zoltan2_partId_t> *cm =
-                new Zoltan2::CoordinateCommunicationModel<scalar_t,scalar_t,zoltan2_partId_t>(
+        Zoltan2::CoordinateCommunicationModel<scalar_t,scalar_t,int> *cm =
+                new Zoltan2::CoordinateCommunicationModel<scalar_t,scalar_t,int>(
                         procDim, procCoordinates,
                         coordDim, partCenters,
                         numProcs, numParts);
 
         Zoltan2::Environment *env = new Zoltan2::Environment();
-        Zoltan2::CoordinateTaskMapper <inputAdapter_t, zoltan2_partId_t> *ctm=
-                new Zoltan2::CoordinateTaskMapper<inputAdapter_t,zoltan2_partId_t>(env, cm);
+        Zoltan2::CoordinateTaskMapper <inputAdapter_t, int> *ctm=
+                new Zoltan2::CoordinateTaskMapper<inputAdapter_t,int>(env, cm);
 
         */
         RCP<const Teuchos::Comm<int> > tcomm = Teuchos::DefaultComm<int>::getComm();
-        zoltan2_partId_t *proc_to_task_xadj_ = new zoltan2_partId_t[numProcs], *proc_to_task_adj_ = new zoltan2_partId_t[numParts];
+        part_t *proc_to_task_xadj_ = new part_t[numProcs];
+        part_t *proc_to_task_adj_ = new part_t[numParts];
 /*
         cout << "procDim:" << procDim <<
                 " numProcs:" << numProcs <<
                 " coordDim:" << coordDim <<
                 " numParts" << numParts << endl;
 
-        for(zoltan2_partId_t j = 0; j < numProcs; ++j){
+        for(part_t j = 0; j < numProcs; ++j){
             cout << "proc - coord:" << j << " " << procCoordinates[0][j]<< " " << procCoordinates[1][j]<< " " << procCoordinates[2][j] << endl;
         }
 
-        for(zoltan2_partId_t j = 0; j < numParts; ++j){
+        for(part_t j = 0; j < numParts; ++j){
             cout << "part - coord:" << j << " " << partCenters[0][j]<< " " << partCenters[1][j]<< " " << partCenters[2][j] << endl;
         }
 */
         /*
-        zoltan2_partId_t partArray[3];
+        int partArray[3];
         partArray[0] = 8;
         partArray[1] = 4;
         partArray[2] = 16;
         */
-        zoltan2_partId_t *partArray = NULL;
+        part_t *partArray = NULL;
         int partArraysize = -1;
-        zoltan2_partId_t hopper[3];
+        part_t hopper[3];
         hopper[0] = 17;
         hopper[1] = 8;
         hopper[2] = 24;
-        zoltan2_partId_t *machineDimensions = NULL;
+        part_t *machineDimensions = NULL;
         //machineDimensions = hopper;
-        Zoltan2::coordinateTaskMapperInterface<zoltan2_partId_t, scalar_t, scalar_t>(
+        Zoltan2::coordinateTaskMapperInterface<part_t, scalar_t, scalar_t>(
                 tcomm,
                 procDim,
                 numProcs,
@@ -376,8 +349,15 @@ int main(int argc, char *argv[]){
         delete cm;
         delete env;
         */
-        delete []proc_to_task_xadj_;
+        delete [] proc_to_task_xadj_;
         delete [] proc_to_task_adj_;
+        delete [] task_communication_xadj_;
+        delete [] task_communication_adj_;
+
+        for (int i = 0; i < coordDim; i++) delete [] partCenters[i];
+        delete [] partCenters;
+        for (int i = 0; i < procDim; i++) delete [] procCoordinates[i];
+        delete [] procCoordinates;
     }
     catch(std::string &s){
         cerr << s << endl;

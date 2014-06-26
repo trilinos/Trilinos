@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -62,7 +62,7 @@ namespace NOX {
 namespace NOX {
 namespace LineSearch {
 
-//! Use NonlinearCG linesearch 
+//! Use NonlinearCG linesearch
 /*!
 
   This is a simple linesearch intended to be used with
@@ -74,15 +74,15 @@ namespace LineSearch {
   directional derivative (details below).  The step length, \f$ \lambda
   \f$ is computed from a single evaluation of,
 
-  \f[ 
+  \f[
     \lambda = - \frac{F(x_{old})^T d}{d^T J(x_{old})d}
   \f]
 
   where \f$ J \f$ is the n x n Jacobian matrix.  Explicit construction of
-  \f$ J \f$ is avoided by performing the product \f$ Jd \f$ using a 
+  \f$ J \f$ is avoided by performing the product \f$ Jd \f$ using a
   directional derivative (cf NOX::Epetra::MatrixFree):
 
-  \f[ 
+  \f[
   J(x_{old})d \approx \frac{F(x_{old} + \delta d) - F(x_{old})}{\delta}
   \f]
 
@@ -94,7 +94,7 @@ namespace LineSearch {
   This linesearch is derived by attempting to achieve in a single step,
   the following minimization:
 
-  \f[ 
+  \f[
     \min_\lambda \phi(\lambda)\equiv\phi (x_{old}+ \lambda d)
   \f]
 
@@ -103,22 +103,22 @@ namespace LineSearch {
   \leftrightarrow F(x) \f$.  The minimization above can now be cast as
   an equation:
 
-  \f[ 
-    \phi ' (\lambda) = \nabla\phi (x_{old}+ \lambda d)^T d = 
+  \f[
+    \phi ' (\lambda) = \nabla\phi (x_{old}+ \lambda d)^T d =
     F(x_{old}+ \lambda d)^T d = 0~~.
   \f]
 
-  An approximate solution to this equation can be obtained from a 
+  An approximate solution to this equation can be obtained from a
   second-order expansion of \f[ \phi(\lambda) \f],
 
-  \f[ 
+  \f[
     \phi(\lambda)\approx\phi (0) + \phi ' (0)\lambda + \phi '' (0)
     \frac{\lambda^2}{2}
   \f]
-  
+
   from which it immediately follows
 
-  \f[ 
+  \f[
     \%lambda_{min} \approx - \frac{\phi ' (0)}{\phi '' (0)} =
     - \frac{F(x_{old})^T d}{d^T J(x_{old})d}
   \f]
@@ -137,7 +137,7 @@ namespace LineSearch {
 <b>References</b>
 
   <ul>
-   
+
   This linesearch is adapted from ideas presented in Section 14.2 of:
 
   <li>Jonathan Richard Shewchuk,
@@ -157,20 +157,20 @@ public:
 
   //! Constructor
   NonlinearCG(const Teuchos::RCP<NOX::GlobalData>& gd,
-	      Teuchos::ParameterList& params);
+          Teuchos::ParameterList& params);
 
   //! Destructor
   ~NonlinearCG();
-  
-  // derived
-  bool reset(const Teuchos::RCP<NOX::GlobalData>& gd,
-	     Teuchos::ParameterList& params);
 
   // derived
-  bool compute(NOX::Abstract::Group& newgrp, double& step, 
-	       const NOX::Abstract::Vector& dir,
-	       const NOX::Solver::Generic& s);
-  
+  bool reset(const Teuchos::RCP<NOX::GlobalData>& gd,
+         Teuchos::ParameterList& params);
+
+  // derived
+  bool compute(NOX::Abstract::Group& newgrp, double& step,
+           const NOX::Abstract::Vector& dir,
+           const NOX::Solver::Generic& s);
+
 private:
 
   //! Method for computing directional derivatives numerically

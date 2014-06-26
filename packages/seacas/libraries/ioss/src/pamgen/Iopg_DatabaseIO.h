@@ -33,27 +33,36 @@
 #ifndef SIERRA_Iopg_DatabaseIO_h
 #define SIERRA_Iopg_DatabaseIO_h
 
+#include <Ioss_DBUsage.h>               // for DatabaseUsage
+#include <Ioss_DatabaseIO.h>            // for DatabaseIO
+#include <Ioss_IOFactory.h>             // for IOFactory
+#include <Ioss_Map.h>                   // for Map
+#include <stddef.h>                     // for size_t
+#include <stdint.h>                     // for int64_t
+#include <string>                       // for string
+#include <vector>                       // for vector
+#include "Ioss_State.h"                 // for State
 #include <Ioss_CodeTypes.h>
-#include <Ioss_DatabaseIO.h>
-#include <Ioss_IOFactory.h>
-#include <Ioss_Field.h>
-#include <Ioss_Map.h>
-#include <Ioss_DBUsage.h>
 
-#include <string>
-#include <assert.h>
-#include <iostream>
+namespace Ioss { class CommSet; }
+namespace Ioss { class EdgeBlock; }
+namespace Ioss { class EdgeSet; }
+namespace Ioss { class ElementBlock; }
+namespace Ioss { class ElementSet; }
+namespace Ioss { class FaceBlock; }
+namespace Ioss { class FaceSet; }
+namespace Ioss { class Field; }
+namespace Ioss { class NodeBlock; }
+namespace Ioss { class NodeSet; }
+namespace Ioss { class PropertyManager; }
+namespace Ioss { class Region; }
+namespace Ioss { class SideBlock; }
+namespace Ioss { class SideSet; }
+
 
 namespace Ioss {
   class GroupingEntity;
-  class Region;
   class EntityBlock;
-  class NodeBlock;
-  class SideBlock;
-  class ElementBlock;
-  class NodeSet;
-  class SideSet;
-  class CommSet;
 }
 
 namespace Iopg {

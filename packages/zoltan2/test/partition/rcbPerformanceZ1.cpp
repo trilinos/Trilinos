@@ -365,7 +365,7 @@ const RCP<tMVector_t> getMeshCoordinates(
 }
 
 
-void getArgVals(int argc, char **argv,   partId_t &numParts,
+void getArgVals(int argc, char **argv,   int &numParts,
     std::string &paramFile){
 
   for(int i = 0; i < argc; ++i){
@@ -697,6 +697,8 @@ int main(int argc, char *argv[])
         &exportToPart);  /* Partition to which each vertex will belong */
 
   MEMORY_CHECK(doMemory && rank==0, "After Zoltan_LB_Partition");
+  Zoltan_LB_Free_Part(importGlobalGids, importLocalGids, importProcs, importToPart);
+  Zoltan_LB_Free_Part(exportGlobalGids, exportLocalGids, exportProcs, exportToPart);
   Zoltan_Destroy(&zz);
   MEMORY_CHECK(doMemory && rank==0, "After Zoltan_Destroy");
 

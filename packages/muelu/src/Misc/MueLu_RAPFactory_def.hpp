@@ -46,11 +46,6 @@
 #ifndef MUELU_RAPFACTORY_DEF_HPP
 #define MUELU_RAPFACTORY_DEF_HPP
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 
 #include <sstream>
 
@@ -68,29 +63,31 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RAPFactory()
-    : implicitTranspose_(false), hasDeclaredInput_(false) { }
+    : hasDeclaredInput_(false) { }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<const ParameterList> RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set< RCP<const FactoryBase> >("A",                 Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
-    validParamList->set< RCP<const FactoryBase> >("P",                 Teuchos::null, "Prolongator factory");
-    validParamList->set< RCP<const FactoryBase> >("R",                 Teuchos::null, "Restrictor factory");
-    validParamList->set< RCP<const FactoryBase> >("AP Pattern",        Teuchos::null, "AP pattern factory");
-    validParamList->set< RCP<const FactoryBase> >("RAP Pattern",       Teuchos::null, "RAP pattern factory");
-    validParamList->set< bool >                  ("Keep AP Pattern",   false,         "Keep the AP pattern (for reuse)");
-    validParamList->set< bool >                  ("Keep RAP Pattern",  false,         "Keep the RAP pattern (for reuse)");
+    validParamList->set< RCP<const FactoryBase> >("A",                   null, "Generating factory of the matrix A used during the prolongator smoothing process");
+    validParamList->set< RCP<const FactoryBase> >("P",                   null, "Prolongator factory");
+    validParamList->set< RCP<const FactoryBase> >("R",                   null, "Restrictor factory");
+    validParamList->set< RCP<const FactoryBase> >("AP Pattern",          null, "AP pattern factory");
+    validParamList->set< RCP<const FactoryBase> >("RAP Pattern",         null, "RAP pattern factory");
+    validParamList->set< bool >                  ("Keep AP Pattern",    false, "Keep the AP pattern (for reuse)");
+    validParamList->set< bool >                  ("Keep RAP Pattern",   false, "Keep the RAP pattern (for reuse)");
+    validParamList->set< bool >                  ("implicit transpose", false, "Use implicit transpose for restriction");
 
-    validParamList->set< bool >                  ("CheckMainDiagonal",  false,        "Check main diagonal for zeros (default = false).");
-    validParamList->set< bool >                  ("RepairMainDiagonal", false,       "Repair zeros on main diagonal (default = false).");
+    validParamList->set< bool >                  ("CheckMainDiagonal",  false, "Check main diagonal for zeros (default = false).");
+    validParamList->set< bool >                  ("RepairMainDiagonal", false, "Repair zeros on main diagonal (default = false).");
 
     return validParamList;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-    if (implicitTranspose_ == false)
+    const Teuchos::ParameterList& pL = GetParameterList();
+    if (pL.get<bool>("implicit transpose") == false)
       Input(coarseLevel, "R");
 
     Input(fineLevel,   "A");
@@ -114,9 +111,7 @@ namespace MueLu {
         coarseLevel.Keep("RAP Pattern", this);
 
       RCP<Matrix> A = Get< RCP<Matrix> >(fineLevel,   "A");
-      RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P"), R, AP, Ac;
-      if (!implicitTranspose_)
-        R = Get< RCP<Matrix> >(coarseLevel, "R");
+      RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P"), AP, Ac;
 
       // Reuse pattern if available (multiple solve)
       if (coarseLevel.IsAvailable("AP Pattern", this)) {
@@ -145,11 +140,13 @@ namespace MueLu {
 
       const bool doTranspose    = true;
       const bool doFillComplete = true;
-      if (implicitTranspose_) {
+      if (pL.get<bool>("implicit transpose") == true) {
         SubFactoryMonitor m2(*this, "MxM: P' x (AP) (implicit)", coarseLevel);
         Ac = Utils::Multiply(*P,  doTranspose, *AP, !doTranspose, Ac, GetOStream(Statistics2), doFillComplete, doOptimizeStorage);
 
       } else {
+        RCP<Matrix> R = Get< RCP<Matrix> >(coarseLevel, "R");
+
         SubFactoryMonitor m2(*this, "MxM: R x (AP) (explicit)", coarseLevel);
         Ac = Utils::Multiply(*R, !doTranspose, *AP, !doTranspose, Ac, GetOStream(Statistics2), doFillComplete, doOptimizeStorage);
       }

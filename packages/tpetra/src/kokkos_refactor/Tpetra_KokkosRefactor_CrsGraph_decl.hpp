@@ -42,21 +42,10 @@
 #ifndef TPETRA_KOKKOSREFACTOR_CRSGRAPH_DECL_HPP
 #define TPETRA_KOKKOSREFACTOR_CRSGRAPH_DECL_HPP
 
-/*#include <Teuchos_CompileTimeAssert.hpp>
-#include <Teuchos_Describable.hpp>
-#include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
-
-#include <Kokkos_DefaultNode.hpp>
-#include <Kokkos_DefaultKernels.hpp>
-
-#include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_RowGraph.hpp"
-#include "Tpetra_DistObject.hpp"
-#include "Tpetra_Exceptions.hpp"
-#include "Tpetra_CrsGraph_decl.hpp"*/
-#include "Kokkos_StaticCrsGraph.hpp"
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 #include <Kokkos_DualView.hpp>
+#include <Kokkos_StaticCrsGraph.hpp>
+
 namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -65,110 +54,30 @@ namespace Tpetra {
   class CrsMatrix;
 #endif
 
-  /// \struct RowInfo
-  /// \brief Allocation information for a locally owned row in a
-  ///   CrsGraph or CrsMatrix
+  /// \brief Partial specialization of CrsGraph for the new Kokkos Node types.
   ///
-  /// A RowInfo instance identifies a locally owned row uniquely by
-  /// its local index, and contains other information useful for
-  /// inserting entries into the row.  It is the return value of
-  /// CrsGraph's getRowInfo() or updateAllocAndValues() methods.
- /* struct RowInfo {
-    size_t localRow;
-    size_t allocSize;
-    size_t numEntries;
-    size_t offset1D;
-  };
-
-  enum ELocalGlobal {
-    LocalIndices,
-    GlobalIndices
-  };*/
-
-  /** \class CrsGraph
-   * \brief A distributed graph accessed by rows (adjacency lists) and stored sparsely.
-
-   \tparam LocalOrdinal The type of local indices.  Same as the \c
-     LocalOrdinal template parameter of \c Map objects used by this
-     graph.  (In Epetra, this is just \c int.)  The default type is
-     \c int, which should suffice for most users.  This type must be
-     big enough to store the local (per process) number of rows or
-     columns.
-
-   \tparam GlobalOrdinal The type of global indices.  Same as the \c
-     GlobalOrdinal template parameter of \c Map objects used by this
-     graph.  (In Epetra, this is just \c int.  One advantage of
-     Tpetra over Epetra is that you can use a 64-bit integer type here
-     if you want to solve big problems.)  The default type is
-     <tt>LocalOrdinal</tt>.  This type must be big enough to store the
-     global (over all processes in the communicator) number of rows or
-     columns.
-
-   \tparam Node A class implementing on-node shared-memory parallel
-     operations.  It must implement the
-     \ref kokkos_node_api "Kokkos Node API."
-     The default \c Node type should suffice for most users.
-     The actual default type depends on your Trilinos build options.
-
-   \tparam LocalMatOps Type implementing local sparse
-     graph-(multi)vector multiply and local sparse triangular solve.
-     It must implement the \ref kokkos_crs_ops "Kokkos CRS Ops API."
-     The default \c LocalMatOps type should suffice for most users.
-     The actual default type depends on your Trilinos build options.
-
-   This class implements a distributed-memory parallel sparse graph.
-   It provides access by rows to the elements of the graph, as if the
-   local data were stored in compressed sparse row format (adjacency
-   lists, in graph terms).  (Implementations are <i>not</i> required
-   to store the data in this way internally.)  This class has an
-   interface like that of \c Epetra_CrsGraph, but also allows
-   insertion of data into nonowned rows, much like \c
-   Epetra_FECrsGraph.
-
-   \section Tpetra_CrsGraph_prereq Prerequisites
-
-   Before reading the rest of this documentation, it helps to know
-   something about the Teuchos memory management classes, in
-   particular Teuchos::RCP, Teuchos::ArrayRCP, and Teuchos::ArrayView.
-   You should also know a little bit about MPI (the Message Passing
-   Interface for distributed-memory programming).  You won't have to
-   use MPI directly to use CrsGraph, but it helps to be familiar with
-   the general idea of distributed storage of data over a
-   communicator.  Finally, you should read the documentation of Map.
-
-   \section Tpetra_CrsMatrix_local_vs_global Local vs. global indices and nonlocal insertion
-
-   Graph entries can be added using either local or global coordinates
-   for the indices. The accessors isGloballyIndexed() and
-   isLocallyIndexed() indicate whether the indices are currently
-   stored as global or local indices. Many of the class methods are
-   divided into global and local versions, which differ only in
-   whether they accept/return indices in the global or local
-   coordinate space. Some of these methods may only be used if the
-   graph coordinates are in the appropriate coordinates.  For example,
-   getGlobalRowView() returns a View to the indices in global
-   coordinates; if the indices are not in global coordinates, then no
-   such View can be created.
-
-   The global/local distinction does distinguish between operation on
-   the global/local graph. Almost all methods operate on the local
-   graph, i.e., the rows of the graph associated with the local node,
-   per the distribution specified by the row map. Access to non-local
-   rows requires performing an explicit communication via the
-   import/export capabilities of the CrsGraph object; see
-   DistObject. However, the method insertGlobalIndices() is an
-   exception to this rule, as non-local rows are allowed to be added
-   via the local graph. These rows are stored in the local graph and
-   communicated to the appropriate node on the next call to
-   globalAssemble() or fillComplete() (the latter calls the former).
-   */
+  /// This implements the "Kokkos refactor" version of CrsGraph.
+  /// For full documentation, see the "classic" version of CrsGraph.
   template <class LocalOrdinal,
             class GlobalOrdinal,
             class DeviceType>
-  class CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,
-  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps> :
-    public RowGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >,
-    public DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >,
+  class CrsGraph<
+    LocalOrdinal, // the type of local indices
+    GlobalOrdinal, // the type of global indices
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, // the Kokkos Node type
+    typename KokkosClassic::DefaultKernels<
+      void,
+      LocalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps> :
+    public RowGraph<
+      LocalOrdinal,
+      GlobalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >,
+    public DistObject<
+      GlobalOrdinal,
+      LocalOrdinal,
+      GlobalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >,
     public Teuchos::ParameterListAcceptorDefaultBase
   {
     template <class S, class LO, class GO, class N, class SpMatOps>
@@ -406,175 +315,11 @@ namespace Tpetra {
     clone (const Teuchos::RCP<Node2> &node2,
            const Teuchos::RCP<Teuchos::ParameterList> &params = null) const
     {
-      using Teuchos::arcp;
-      using Teuchos::ArrayRCP;
-      using Teuchos::RCP;
-      using Teuchos::ParameterList;
-      using std::endl;
       typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node2,
-        typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps> CrsGraph2;
-      typedef Map<LocalOrdinal, GlobalOrdinal, Node2> Map2;
-      const char tfecfFuncName[] = "clone()";
-
-      bool fillCompleteClone  = true;
-      bool useLocalIndices    = hasColMap();
-      ProfileType pftype = StaticProfile;
-      if (! params.is_null ()) {
-        fillCompleteClone = params->get ("fillComplete clone", fillCompleteClone);
-        useLocalIndices = params->get ("Locally indexed clone", useLocalIndices);
-        if (params->get ("Static profile clone",true) == false) {
-          pftype = DynamicProfile;
-        }
-      }
-
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        hasColMap() == false && useLocalIndices == true,
-        std::runtime_error,
-        ": You asked clone() to use local indices (by setting the \"Locally "
-        "indexed clone\" parameter to true), but the source graph does not "
-        "yet have a column Map, so this is impossible.");
-
-      RCP<const Map2> clonedRowMap = rowMap_->template clone<Node2> (node2);
-      RCP<CrsGraph2> clonedGraph;
-      ArrayRCP<const size_t> numEntries;
-      size_t numEntriesForAll = 0;
-      if (indicesAreAllocated() == false) {
-        if (numAllocPerRow_ != null) {
-          numEntries = numAllocPerRow_;
-        }
-        else {
-          numEntriesForAll = numAllocForAllRows_;
-        }
-      }
-      else if (numRowEntries_ != null) {
-        numEntries = numRowEntries_;
-      }
-      else if (nodeNumAllocated_ == 0) {
-        numEntriesForAll = 0;
-      }
-      else {
-        // left with the case that we have optimized storage. in this case, we have to construct a list of row sizes.
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          getProfileType() != StaticProfile, std::logic_error,
-          "Internal logic error. Please report this to Tpetra team.");
-        const size_t numRows = getNodeNumRows();
-        numEntriesForAll = 0;
-        ArrayRCP<size_t> numEnt;
-        if (numRows) {
-          numEnt = arcp<size_t> (numRows);
-        }
-        for (size_t i=0; i<numRows; ++i) {
-          numEnt[i] = rowPtrs_[i+1] - rowPtrs_[i];
-        }
-        numEntries = numEnt;
-      }
-
-      RCP<ParameterList> graphparams = sublist(params,"CrsGraph");
-      if (useLocalIndices) {
-        RCP<const Map2> clonedColMap = colMap_->template clone<Node2>(node2);
-        if (numEntries == null) {
-          clonedGraph = rcp (new CrsGraph2 (clonedRowMap, clonedColMap, numEntriesForAll, pftype, graphparams));
-        }
-        else {
-          clonedGraph = rcp (new CrsGraph2 (clonedRowMap, clonedColMap, numEntries, pftype, graphparams));
-        }
-      }
-      else {
-        if (numEntries.is_null ()) {
-          clonedGraph = rcp (new CrsGraph2 (clonedRowMap, numEntriesForAll, pftype, graphparams));
-        }
-        else {
-          clonedGraph = rcp (new CrsGraph2 (clonedRowMap, numEntries, pftype, graphparams));
-        }
-      }
-      // done with these
-      numEntries = null;
-      numEntriesForAll = 0;
-
-      if (useLocalIndices) {
-        clonedGraph->allocateIndices(LocalIndices);
-        if (this->isLocallyIndexed ()) {
-          ArrayView<const LocalOrdinal> linds;
-          for (LocalOrdinal lrow = rowMap_->getMinLocalIndex ();
-               lrow <= rowMap_->getMaxLocalIndex ();
-               ++lrow) {
-            this->getLocalRowView (lrow, linds);
-            if (linds.size ()) {
-              clonedGraph->insertLocalIndices (lrow, linds);
-            }
-          }
-        }
-        else { // this->isGloballyIndexed()
-          Array<LocalOrdinal> linds;
-          for (LocalOrdinal lrow =  rowMap_->getMinLocalIndex();
-               lrow <= rowMap_->getMaxLocalIndex();
-               ++lrow) {
-            size_t theNumEntries;
-            linds.resize (this->getNumEntriesInLocalRow (lrow));
-            this->getLocalRowCopy (rowMap_->getGlobalElement (lrow), linds (), theNumEntries);
-            if (theNumEntries) {
-              clonedGraph->insertLocalIndices (lrow, linds (0, theNumEntries));
-            }
-          }
-        }
-      }
-      else { /* useGlobalIndices */
-        clonedGraph->allocateIndices (GlobalIndices);
-        if (this->isGloballyIndexed ()) {
-          ArrayView<const GlobalOrdinal> ginds;
-          for (GlobalOrdinal grow =  rowMap_->getMinGlobalIndex();
-               grow <= rowMap_->getMaxGlobalIndex();
-               ++grow) {
-            this->getGlobalRowView (grow, ginds);
-            if (ginds.size ()) {
-              clonedGraph->insertGlobalIndices (grow, ginds);
-            }
-          }
-        }
-        else { // this->isLocallyIndexed()
-          Array<GlobalOrdinal> ginds;
-          for (GlobalOrdinal grow =  rowMap_->getMinGlobalIndex();
-               grow <= rowMap_->getMaxGlobalIndex();
-               ++grow) {
-            size_t theNumEntries;
-            ginds.resize (this->getNumEntriesInGlobalRow (grow));
-            this->getGlobalRowCopy (grow, ginds (), theNumEntries);
-            if (theNumEntries) {
-              clonedGraph->insertGlobalIndices (grow, ginds (0,theNumEntries));
-            }
-          }
-        }
-      }
-
-      if (fillCompleteClone) {
-        RCP<ParameterList> fillparams = sublist (params, "fillComplete");
-        try {
-          RCP<const Map2> clonedRangeMap;
-          RCP<const Map2> clonedDomainMap;
-          if (rangeMap_ != null && rangeMap_ != rowMap_) {
-            clonedRangeMap  = rangeMap_->template clone<Node2>(node2);
-          }
-          else {
-            clonedRangeMap = clonedRowMap;
-          }
-          if (domainMap_ != null && domainMap_ != rowMap_) {
-            clonedDomainMap = domainMap_->template clone<Node2>(node2);
-          }
-          else {
-            clonedDomainMap = clonedRowMap;
-          }
-          clonedGraph->fillComplete (clonedDomainMap, clonedRangeMap, fillparams);
-        }
-        catch (std::exception &e) {
-          const bool caughtExceptionOnClone = true;
-          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-            caughtExceptionOnClone, std::runtime_error,
-            ": Caught the following exception while calling fillComplete() on "
-            "clone of type" << endl << Teuchos::typeName (*clonedGraph)
-            << endl << ":" << endl << e.what() << endl);
-        }
-      }
-      return clonedGraph;
+        typename KokkosClassic::DefaultKernels<void, LocalOrdinal, Node2>::SparseOps> output_crs_graph_type;
+      typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> input_crs_graph_type;
+      typedef Details::CrsGraphCopier<output_crs_graph_type, input_crs_graph_type> copier_type;
+      return copier_type::clone (*this, node2, params);
     }
 
     //! Destructor.
@@ -1002,6 +747,33 @@ namespace Tpetra {
     //! \name Advanced methods, at increased risk of deprecation.
     //@{
 
+    /// \brief Get an upper bound on the number of entries that can be
+    ///   stored in each row.
+    ///
+    /// When a CrsGraph is constructed, callers must give an upper
+    /// bound on the number of entries in each local row.  They may
+    /// either supply a single integer which is the upper bound for
+    /// all local rows, or they may give an array with a possibly
+    /// different upper bound for each local row.
+    ///
+    /// This method returns the upper bound for each row.  If
+    /// numEntriesPerLocalRowBound is Teuchos::null on output and
+    /// boundSameForAllLocalRows is true on output, then
+    /// numEntriesAllLocalRowsBound is the upper bound for all local
+    /// rows.  If boundSameForAllLocalRows is false on output, then
+    /// numEntriesPerLocalRowBound has zero or more entries on output,
+    /// and numEntriesPerLocalRowBound[i_local] is the upper bound for
+    /// local row i_local.
+    ///
+    /// The output argument boundSameForAllLocalRows is conservative;
+    /// it only tells us whether boundForAllLocalRows has a meaningful
+    /// value on output.  We don't necessarily check whether all
+    /// entries of boundPerLocalRow are the same.
+    void
+    getNumEntriesPerLocalRowUpperBound (Teuchos::ArrayRCP<const size_t>& boundPerLocalRow,
+                                        size_t& boundForAllLocalRows,
+                                        bool& boundSameForAllLocalRows) const;
+
     /// \brief Set the graph's data directly, using 1-D storage.
     ///
     /// \pre <tt>hasColMap() == true</tt>
@@ -1114,16 +886,6 @@ namespace Tpetra {
         }
       }
     };
-
-  private:
-    // We forbid copy construction by declaring this method private
-    // and not implementing it.
-    CrsGraph (const CrsGraph<LocalOrdinal,GlobalOrdinal,Node>& rhs);
-
-    // We forbid assignment (operator=) by declaring this method
-    // private and not implementing it.
-    CrsGraph<LocalOrdinal,GlobalOrdinal,Node>&
-    operator= (const CrsGraph<LocalOrdinal,GlobalOrdinal,Node>& rhs);
 
   protected:
     typedef typename LocalMatOps::template graph<LocalOrdinal,Node>::graph_type local_graph_type;
@@ -1805,24 +1567,6 @@ namespace Tpetra {
     inline bool hasRowInfo () const;
 
   }; // class CrsGraph
-
-  /** \brief Non-member function to create an empty CrsGraph given a row map and a non-zero profile.
-
-      \return A dynamically allocated (DynamicProfile) graph with specified number of nonzeros per row (defaults to zero).
-
-      \relatesalso CrsGraph
-   */
-  /*template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
-  createCrsGraph (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
-                   size_t maxNumEntriesPerRow = 0,
-                   const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
-  {
-    using Teuchos::rcp;
-    typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node> graph_type;
-    return rcp (new graph_type (map, maxNumEntriesPerRow, DynamicProfile, params));
-  }*/
-
 
 } // namespace Tpetra
 

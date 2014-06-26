@@ -229,7 +229,7 @@ int SparseMatrix_generate(OrdinalType nrows, OrdinalType ncols, OrdinalType &nnz
 
 template<typename Scalar>
 int test_crs_matrix_test(LocalOrdinalType numRows, LocalOrdinalType numCols, LocalOrdinalType nnz, LocalOrdinalType numVecs, LocalOrdinalType test, const char* filename,const bool binaryfile) {
-        typedef Kokkos::CrsMatrix<Scalar,LocalOrdinalType,device_type> matrix_type ;
+        typedef Kokkos::CrsMatrix<Scalar,LocalOrdinalType,device_type,void,int> matrix_type ;
         typedef typename Kokkos::MultiVectorDynamic<Scalar,device_type>::type mv_type;
         typedef typename Kokkos::MultiVectorDynamic<Scalar,device_type>::random_read_type mv_random_read_type;
         typedef typename mv_type::HostMirror h_mv_type;
@@ -318,24 +318,24 @@ int test_crs_matrix_test(LocalOrdinalType numRows, LocalOrdinalType numCols, Loc
     clock_gettime(CLOCK_REALTIME,&starttime);
 
         for(LocalOrdinalType i=0;i<loop;i++)
-                Kokkos::MV_Multiply(0.0,y,1.0,A,t_x);
+                Kokkos::MV_Multiply(y,A,x);
         device_type::fence();
         clock_gettime(CLOCK_REALTIME,&endtime);
         double time = endtime.tv_sec - starttime.tv_sec + 1.0 * (endtime.tv_nsec - starttime.tv_nsec) / 1000000000;
         double matrix_size = 1.0*((nnz*(sizeof(Scalar)+sizeof(LocalOrdinalType)) + numRows*sizeof(LocalOrdinalType)))/1024/1024;
         double vector_size = 2.0*numRows*numVecs*sizeof(Scalar)/1024/1024;
-        double vector_readwrite = 2.0*nnz*numVecs*sizeof(Scalar)/1024/1024;
+        double vector_readwrite = (nnz+numCols)*numVecs*sizeof(Scalar)/1024/1024;
 
         double problem_size = matrix_size+vector_size;
-    printf("%i %i %i %i %6.2lf MB %6.2lf GB/s %6.2lf ms %i\n",nnz, numRows,numCols,numVecs,problem_size,(matrix_size+vector_readwrite)/time*loop/1024, time/loop*1000, num_errors);
+    printf("%i %i %i %i %6.2lf MB %6.2lf GB/s %6.2lf GFlop/s %6.3lf ms %i\n",nnz, numRows,numCols,numVecs,problem_size,(matrix_size+vector_readwrite)/time*loop/1024, 2.0*nnz*numVecs*loop/time/1e9,time/loop*1000, num_errors);
         return (int)total_error;
 }
 
 template<typename Scalar>
 int test_crs_matrix_test_singlevec(int numRows, int numCols, int nnz, int test, const char* filename, const bool binaryfile) {
-        typedef Kokkos::CrsMatrix<Scalar,int,device_type> matrix_type ;
+        typedef Kokkos::CrsMatrix<Scalar,int,device_type,void,int> matrix_type ;
         typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft,device_type> mv_type;
-        typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft,device_type,Kokkos::MemoryRandomAccess> mv_random_read_type;
+        typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft,device_type,Kokkos::MemoryRandomAccess > mv_random_read_type;
         typedef typename mv_type::HostMirror h_mv_type;
 
         Scalar* val = NULL;
@@ -391,11 +391,11 @@ int test_crs_matrix_test_singlevec(int numRows, int numCols, int nnz, int test, 
           //error[k]+=(h_y_compare(i,k)-h_y(i,k))*(h_y_compare(i,k)-h_y(i,k));
           printf("%i %i %lf %lf %lf\n",i,k,h_y_compare(i,k),h_y(i,k),h_x(i,k));
                 }*/
-    typename Kokkos::CrsMatrix<Scalar,int,device_type>::values_type x1("X1",numCols);
-    typename Kokkos::CrsMatrix<Scalar,int,device_type>::values_type y1("Y1",numRows);
-    Kokkos::MV_Multiply(0.0,y1,1.0,A,x1);
+    typename Kokkos::CrsMatrix<Scalar,int,device_type,void,int>::values_type x1("X1",numCols);
+    typename Kokkos::CrsMatrix<Scalar,int,device_type,void,int>::values_type y1("Y1",numRows);
+    Kokkos::MV_Multiply(y1,A,x1);
 
-        Kokkos::MV_Multiply(0.0,y,1.0,A,x);
+        Kokkos::MV_Multiply(y,A,x);
         device_type::fence();
         Kokkos::deep_copy(h_y,y);
         Scalar error = 0;
@@ -414,21 +414,21 @@ int test_crs_matrix_test_singlevec(int numRows, int numCols, int nnz, int test, 
                 total_error += error;
                 total_sum += sum;
 
-    int loop = 10;
+    int loop = 100;
         timespec starttime,endtime;
     clock_gettime(CLOCK_REALTIME,&starttime);
 
         for(int i=0;i<loop;i++)
-                Kokkos::MV_Multiply(0.0,y,1.0,A,t_x);
+                Kokkos::MV_Multiply(y,A,x);
         device_type::fence();
         clock_gettime(CLOCK_REALTIME,&endtime);
         double time = endtime.tv_sec - starttime.tv_sec + 1.0 * (endtime.tv_nsec - starttime.tv_nsec) / 1000000000;
         double matrix_size = 1.0*((nnz*(sizeof(Scalar)+sizeof(int)) + numRows*sizeof(int)))/1024/1024;
         double vector_size = 2.0*numRows*sizeof(Scalar)/1024/1024;
-        double vector_readwrite = 2.0*nnz*sizeof(Scalar)/1024/1024;
+        double vector_readwrite = (nnz+numCols)*sizeof(Scalar)/1024/1024;
 
         double problem_size = matrix_size+vector_size;
-    printf("%i %i %i %i %6.2lf MB %6.2lf GB/s %6.2lf ms %i\n",nnz, numRows,numCols,1,problem_size,(matrix_size+vector_readwrite)/time*loop/1024, time/loop*1000, num_errors);
+    printf("%i %i %i %i %6.2lf MB %6.2lf GB/s %6.2lf GFlop/s %6.3lf ms %i\n",nnz, numRows,numCols,1,problem_size,(matrix_size+vector_readwrite)/time*loop/1024, 2.0*nnz*loop/time/1e9, time/loop*1000, num_errors);
         return (int)total_error;
 }
 
@@ -466,10 +466,6 @@ int main(int argc, char **argv)
  }
 
 
- KokkosCUDA(
-   Kokkos::Cuda::SelectDevice select_device(device);
-   Kokkos::Cuda::initialize( select_device );
- )
 
 #ifdef _OPENMP
    omp_set_num_threads(numa*threads_per_numa);
@@ -479,6 +475,10 @@ int main(int argc, char **argv)
    Kokkos::Threads::initialize( numa*threads_per_numa , numa );
 #pragma message "Compile PThreads"
 #endif
+ KokkosCUDA(
+   Kokkos::Cuda::SelectDevice select_device(device);
+   Kokkos::Cuda::initialize( select_device );
+ )
 
  int numVecsList[10] = {1, 2, 3, 4, 5, 8, 11, 15, 16, 17};
  int maxNumVecs = numVecs==-1?17:numVecs;

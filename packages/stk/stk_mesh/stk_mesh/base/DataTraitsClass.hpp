@@ -7,7 +7,7 @@
 /*------------------------------------------------------------------------*/
 
 #include <stk_mesh/base/DataTraits.hpp>
-
+#include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/environment/ReportHandler.hpp>
 
 namespace stk {

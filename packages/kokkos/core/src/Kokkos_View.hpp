@@ -55,7 +55,7 @@
 #include <impl/Kokkos_AnalyzeShape.hpp>
 #include <impl/Kokkos_ViewSupport.hpp>
 #include <impl/Kokkos_ViewOffset.hpp>
-
+#include <impl/Kokkos_Tags.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -94,12 +94,17 @@ namespace Kokkos {
  * to developers implementing a new specialization of View.
  *
  * Template argument permutations:
- *   - View< DataType , Device , void         , void >
- *   - View< DataType , Device , MemoryTraits , void >
- *   - View< DataType , Device , void         , MemoryTraits >
- *   - View< DataType , ArrayLayout , Device  , void >
- *   - View< DataType , ArrayLayout , Device  , MemoryTraits >
+ *   - View< DataType , void         , void         , void >
+ *   - View< DataType , Device       , void         , void >
+ *   - View< DataType , Device       , MemoryTraits , void >
+ *   - View< DataType , Device       , void         , MemoryTraits >
+ *   - View< DataType , ArrayLayout  , void         , void >
+ *   - View< DataType , ArrayLayout  , Device       , void >
+ *   - View< DataType , ArrayLayout  , MemoryTraits , void   >
+ *   - View< DataType , ArrayLayout  , Device       , MemoryTraits >
+ *   - View< DataType , MemoryTraits , void         , void  >
  */
+
 template< class DataType ,
           class Arg1 ,
           class Arg2 ,
@@ -107,26 +112,31 @@ template< class DataType ,
 class ViewTraits {
 private:
 
-  // Arg1 is either Device or Layout, both of which must have 'typedef ... array_layout'.
-  // If Arg1 is not Layout then Arg1 must be Device
-  enum { Arg1IsDevice = ! Impl::is_same< Arg1 , typename Arg1::array_layout >::value };
-  enum { Arg2IsDevice = ! Arg1IsDevice };
+  // Layout, Device, and MemoryTraits are optional
+  // but need to appear in that order. That means Layout
+  // can only be Arg1, Device can be Arg1 or Arg2, and
+  // MemoryTraits can be Arg1, Arg2 or Arg3
 
-  // If Arg1 is device and Arg2 is not void then Arg2 is MemoryTraits.
-  // If Arg1 is device and Arg2 is void and Arg3 is not void then Arg3 is MemoryTraits.
-  // If Arg2 is device and Arg3 is not void then Arg3 is MemoryTraits.
-  enum { Arg2IsVoid = Impl::is_same< Arg2 , void >::value };
-  enum { Arg3IsVoid = Impl::is_same< Arg3 , void >::value };
-  enum { Arg2IsMemory = ! Arg2IsVoid && Arg1IsDevice && Arg3IsVoid };
-  enum { Arg3IsMemory = ! Arg3IsVoid && ( ( Arg1IsDevice && Arg2IsVoid ) || Arg2IsDevice ) };
+  enum { Arg1IsLayout = is_layout<Arg1>::value };
+
+  enum { Arg1IsDevice = is_device<Arg1>::value };
+  enum { Arg2IsDevice = is_device<Arg2>::value };
+
+  enum { Arg1IsMemory = is_memorytraits<Arg1>::value };
+  enum { Arg2IsMemory = is_memorytraits<Arg2>::value };
+  enum { Arg3IsMemory = is_memorytraits<Arg3>::value };
 
 
-  typedef typename Arg1::array_layout  ArrayLayout ;
-  typedef typename Impl::if_c< Arg1IsDevice , Arg1 , Arg2 >::type::device_type  DeviceType ;
+  typedef typename Impl::if_c< Arg1IsDevice , Arg1 ,
+          typename Impl::if_c< Arg2IsDevice , Arg2 , Impl::DefaultDeviceType
+          >::type >::type  DeviceType ;
 
-  typedef typename Impl::if_c< Arg2IsMemory , Arg2 ,
+  typedef typename Impl::if_c< Arg1IsLayout , Arg1 , typename DeviceType::array_layout >::type ArrayLayout;
+
+  typedef typename Impl::if_c< Arg1IsMemory , Arg1 ,
+          typename Impl::if_c< Arg2IsMemory , Arg2 ,
           typename Impl::if_c< Arg3IsMemory , Arg3 , MemoryManaged
-          >::type >::type::memory_traits  MemoryTraits ;
+          >::type >::type >::type  MemoryTraits ;
 
   typedef Impl::AnalyzeShape<DataType> analysis ;
 
@@ -375,7 +385,7 @@ const ViewWithoutManaging view_without_managing = ViewWithoutManaging();
  * \endcode
  */
 template< class DataType ,
-          class Arg1Type ,        /* ArrayLayout or DeviceType */
+          class Arg1Type = void , /* ArrayLayout, DeviceType or MemoryTraits*/
           class Arg2Type = void , /* DeviceType or MemoryTraits */
           class Arg3Type = void , /* MemoryTraits */
           class Specialize =
@@ -384,6 +394,7 @@ class View ;
 
 //----------------------------------------------------------------------------
 
+/*
 template< class V >
 struct is_view : public Impl::false_type {};
 
@@ -393,7 +404,7 @@ template< class DataType ,
           class Arg3 ,
           class Spec >
 struct is_view< View< DataType , Arg1 , Arg2 , Arg3 , Spec > >
-  : public Impl::true_type {};
+  : public Impl::true_type {};*/
 
 //----------------------------------------------------------------------------
 
@@ -405,7 +416,7 @@ class View< DataType , Arg1Type , Arg2Type , Arg3Type , Impl::ViewDefault >
   : public ViewTraits< DataType , Arg1Type , Arg2Type, Arg3Type >
 {
 public:
-
+  typedef Impl::ViewTag kokkos_tag;
   typedef ViewTraits< DataType , Arg1Type , Arg2Type, Arg3Type > traits ;
 
 private:
@@ -454,7 +465,7 @@ public:
 
   enum { Rank = traits::rank };
 
-  KOKKOS_INLINE_FUNCTION typename traits::shape_type shape() const { return m_offset_map ; }
+  KOKKOS_INLINE_FUNCTION offset_map_type shape() const { return m_offset_map ; }
   KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_0() const { return m_offset_map.N0 ; }
   KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_1() const { return m_offset_map.N1 ; }
   KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_2() const { return m_offset_map.N2 ; }
@@ -478,7 +489,7 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   View() : m_ptr_on_device(0)
-    { m_offset_map.assign(0,0,0,0,0,0,0,0); }
+    { m_offset_map.assign(0, 0,0,0,0,0,0,0,0); }
 
   KOKKOS_INLINE_FUNCTION
   View( const View & rhs ) : m_ptr_on_device(0)

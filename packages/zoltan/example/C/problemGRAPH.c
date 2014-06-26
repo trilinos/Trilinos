@@ -161,6 +161,7 @@ int main(int argc, char *argv[])
      Zoltan_Set_Param(zz,"LB_METHOD","GRAPH");
 #ifdef HAVE_PARMETIS
      Zoltan_Set_Param(zz,"GRAPH_PACKAGE","PARMETIS");
+     Zoltan_Set_Param(zz,"PARMETIS_METHOD","PARTKWAY");
 #else
   #ifdef HAVE_SCOTCH
      Zoltan_Set_Param(zz,"GRAPH_PACKAGE","SCOTCH");
@@ -168,9 +169,7 @@ int main(int argc, char *argv[])
 #endif
      Zoltan_Set_Param(zz,"EDGE_WEIGHT_DIM","1");
      Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "0");
-     Zoltan_Set_Param(zz,"LB_APPROACH","REPARTITION");
-     Zoltan_Set_Param(zz,"GRAPH_SYMMETRIZE","TRANSPOSE");
-     Zoltan_Set_Param(zz,"GRAPH_SYM_WEIGHT","ADD");
+     Zoltan_Set_Param(zz, "LB_APPROACH","PARTITION");
 
   /* Graph parameters */
 
@@ -335,11 +334,9 @@ float *nextWgt;
 
   GRAPH_DATA *graph = (GRAPH_DATA *)data;
   *ierr = ZOLTAN_OK;
-  srand48(graph->numMyVertices);
 
   if ( (sizeGID != 1) || (sizeLID != 1) || 
-       (num_obj != graph->numMyVertices)||
-       (wgt_dim != 1)){
+       (num_obj != graph->numMyVertices)) {
     *ierr = ZOLTAN_FATAL;
     return;
   }
@@ -350,7 +347,6 @@ float *nextWgt;
   
 
   for (i=0; i < num_obj; i++){
-
 
     to = graph->nborIndex[localID[i]+1];
     from = graph->nborIndex[localID[i]];
@@ -363,7 +359,9 @@ float *nextWgt;
 
       *nextNbor++ = graph->nborGID[j];
       *nextProc++ = graph->nborProc[j];
-      *nextWgt++ = (float)10.0*drand48();
+      if (wgt_dim)
+        *nextWgt++ = (float)((graph->nborGID[j]<globalID[i]) ? graph->nborGID[j]
+                                                             : globalID[i]);
     }
   }
   return;

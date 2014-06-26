@@ -60,6 +60,15 @@ namespace Ifpack2 {
 
   IFPACK2_INSTANTIATE_LG(LCLINST)
 
+  // FIXME (mfh 24 May 2014) This will result in a duplicate symbol if
+  // the default Node type is TPINode.  See the definition of LCLINST
+  // above.
+#  if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
+
+  template class LinearPartitioner<Tpetra::RowGraph<int, int, KokkosClassic::TPINode> >;
+
+#  endif // defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
+
 }
 
-#endif
+#endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION

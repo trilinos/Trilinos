@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -42,7 +42,7 @@
 # This is a helper CTest script that is used to drive unit testing of the
 # TribitsCTestDriverCore.cmake scirpt.
 #
-# NOTE: Some varibles need to be set in the calling script in order to
+# NOTE: Some variables need to be set in the calling script in order to
 # override options set in the environment form the parent TriBITS project run
 # of TribitsCTestDriverCore.cmake
 #

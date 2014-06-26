@@ -7,20 +7,34 @@
 /*------------------------------------------------------------------------*/
 
 
-#include <stdexcept>
+#include <stddef.h>                     // for size_t, NULL
+#include <iosfwd>                       // for ostringstream, ostream
+#include <set>                          // for set, etc
+#include <stdexcept>                    // for runtime_error, logic_error
+#include <stk_mesh/base/EntityCommDatabase.hpp>  // for pack_entity_info, etc
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field, etc
+#include <stk_mesh/fixtures/BoxFixture.hpp>  // for BoxFixture
+#include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture, etc
+#include <stk_mesh/fixtures/QuadFixture.hpp>  // for QuadFixture
+#include <gtest/gtest.h>
+#include <string>                       // for string
+#include <utility>                      // for pair, make_pair
+#include <vector>                       // for vector, etc
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket, Bucket::iterator
+#include "stk_mesh/base/BulkData.hpp"   // for BulkData, EntityLess, etc
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
+#include "stk_mesh/base/Field.hpp"      // for Field
+#include "stk_mesh/base/FieldBase.hpp"  // for field_data
+#include "stk_mesh/base/Ghosting.hpp"   // for Ghosting, operator<<
+#include "stk_mesh/base/Types.hpp"      // for EntityProc, PartVector, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_size, etc
+#include "stk_util/parallel/ParallelComm.hpp"  // for CommAll, CommBuffer
+namespace stk { namespace mesh { class Part; } }
 
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
-#include <stk_mesh/fixtures/BoxFixture.hpp>
-#include <stk_mesh/fixtures/HexFixture.hpp>
-#include <stk_mesh/fixtures/QuadFixture.hpp>
-
-#include <stk_mesh/fem/FEMMetaData.hpp>
-
-#include <stk_mesh/base/EntityComm.hpp>
-#include <stk_mesh/base/FieldData.hpp>
-
-using stk::mesh::Part;
+using namespace stk::mesh;
 
 // UnitTestBulkData_new is the beginnings of a refactoring of the bulk
 // data unit test.  It relies on a customized BoxFixture to rapidly
@@ -28,40 +42,39 @@ using stk::mesh::Part;
 
 namespace {
 
-void new_insert_transitive_closure( std::set<stk::mesh::EntityProc,stk::mesh::EntityLess> &  ,
-					 const stk::mesh::EntityProc & entry );
+void new_insert_transitive_closure( BulkData& bulk_data, std::set<EntityProc,EntityLess> &  ,
+					 const EntityProc & entry );
 void new_comm_sync_send_recv(
-   stk::mesh::BulkData & mesh ,
-   std::set< stk::mesh::EntityProc , stk::mesh::EntityLess > & new_send ,
-   std::set< stk::mesh::Entity * , stk::mesh::EntityLess > & new_recv );
+   BulkData & mesh ,
+   std::set< EntityProc , EntityLess > & new_send ,
+   std::set< Entity , EntityLess > & new_recv );
 
 void new_comm_recv_to_send(
-  stk::mesh::BulkData & mesh ,
-  const std::set< stk::mesh::Entity * , stk::mesh::EntityLess > & new_recv ,
-        std::set< stk::mesh::EntityProc , stk::mesh::EntityLess > & new_send );
+  BulkData & mesh ,
+  const std::set< Entity , EntityLess > & new_recv ,
+        std::set< EntityProc , EntityLess > & new_send );
 
 /**
  * The customized box fixture used in this file for testing. This fixture
  * is similar to the BoxFixture it inherits from, with the only difference
  * being the extra parts that this fixture declares for testing purposes.
  */
-class TestBoxFixture : public stk::mesh::fixtures::BoxFixture
+struct TestBoxFixture : public fixtures::BoxFixture
 {
- public:
   TestBoxFixture(stk::ParallelMachine pm = MPI_COMM_WORLD,
                  unsigned block_size = 1000) :
     BoxFixture(pm, block_size),
     m_test_part ( m_fem_meta.declare_part ( "Test Part" ) ),
-    m_cell_part ( m_fem_meta.declare_part ( "Cell list" , 3 /*max rank*/ ) ),
-    m_part_A_0 ( m_fem_meta.declare_part ( "Part A 0", 0 ) ),
-    m_part_A_1 ( m_fem_meta.declare_part ( "Part A 1", 1 ) ),
-    m_part_A_2 ( m_fem_meta.declare_part ( "Part A 2", 2 ) ),
-    m_part_A_3 ( m_fem_meta.declare_part ( "Part A 3", 3 ) ),
+    m_cell_part ( m_fem_meta.declare_part ( "Cell list" , stk::topology::ELEM_RANK ) ),
+    m_part_A_0 ( m_fem_meta.declare_part ( "Part A 0", stk::topology::NODE_RANK ) ),
+    m_part_A_1 ( m_fem_meta.declare_part ( "Part A 1", stk::topology::EDGE_RANK ) ),
+    m_part_A_2 ( m_fem_meta.declare_part ( "Part A 2", stk::topology::FACE_RANK ) ),
+    m_part_A_3 ( m_fem_meta.declare_part ( "Part A 3", stk::topology::ELEM_RANK ) ),
     m_part_A_superset ( m_fem_meta.declare_part ( "Part A superset" ) ),
-    m_part_B_0 ( m_fem_meta.declare_part ( "Part B 0", 0 ) ),
-    m_part_B_1 ( m_fem_meta.declare_part ( "Part B 1", 1 ) ),
-    m_part_B_2 ( m_fem_meta.declare_part ( "Part B 2", 2 ) ),
-    m_part_B_3 ( m_fem_meta.declare_part ( "Part B 3", 3 ) ),
+    m_part_B_0 ( m_fem_meta.declare_part ( "Part B 0", stk::topology::NODE_RANK ) ),
+    m_part_B_1 ( m_fem_meta.declare_part ( "Part B 1", stk::topology::EDGE_RANK ) ),
+    m_part_B_2 ( m_fem_meta.declare_part ( "Part B 2", stk::topology::FACE_RANK ) ),
+    m_part_B_3 ( m_fem_meta.declare_part ( "Part B 3", stk::topology::ELEM_RANK ) ),
     m_part_B_superset ( m_fem_meta.declare_part ( "Part B superset" ) )
   {
     m_fem_meta.declare_part_subset ( m_part_A_superset , m_part_A_0 );
@@ -80,24 +93,6 @@ class TestBoxFixture : public stk::mesh::fixtures::BoxFixture
     m_fem_meta.commit();
   }
 
-  Part & get_test_part () { return m_test_part; }
-  Part & get_cell_part () { return m_cell_part; }
-
-  Part & get_part_a_0 () { return m_part_A_0; }
-  Part & get_part_a_1 () { return m_part_A_1; }
-  Part & get_part_a_2 () { return m_part_A_2; }
-  Part & get_part_a_3 () { return m_part_A_3; }
-
-  Part & get_part_a_superset () { return m_part_A_superset; }
-
-  Part & get_part_b_0 () { return m_part_B_0; }
-  Part & get_part_b_1 () { return m_part_B_1; }
-  Part & get_part_b_2 () { return m_part_B_2; }
-  Part & get_part_b_3 () { return m_part_B_3; }
-
-  Part & get_part_b_superset () { return m_part_B_superset; }
-
- private:
   Part     & m_test_part;   // A simple part
   Part     & m_cell_part;   // A part to put cells in
 
@@ -118,13 +113,13 @@ class TestBoxFixture : public stk::mesh::fixtures::BoxFixture
 
 }
 
-STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyAssertOwnerDeletedEntity )
+TEST ( UnitTestBulkData_new , verifyAssertOwnerDeletedEntity )
 {
   TestBoxFixture fixture;
 
-  stk::mesh::BulkData         &bulk = fixture.bulk_data();
-  stk::mesh::Part             &new_part = fixture.get_test_part ();
-  stk::mesh::PartVector        add_part;
+  BulkData         &bulk = fixture.bulk_data();
+  Part             &new_part = fixture.m_test_part;
+  PartVector        add_part;
   add_part.push_back ( &new_part );
 
   const int root_box[3][2] = { { 0 , 4 } , { 0 , 5 } , { 0 , 6 } };
@@ -132,20 +127,19 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyAssertOwnerDeletedEntity )
 
   bulk.modification_begin();
   fixture.generate_boxes( root_box, local_box );
-  STKUNIT_ASSERT(bulk.modification_end());
+  ASSERT_TRUE(bulk.modification_end());
 
   // Find a cell owned by this process
-  stk::mesh::Entity  *cell_to_delete = NULL;
-  stk::mesh::Entity  *cell_to_delete_copy = NULL;
-  std::vector<stk::mesh::Bucket *>::const_iterator cur_bucket = bulk.buckets(3).begin();
-  while ( cur_bucket != bulk.buckets(3).end() )
+  Entity cell_to_delete = Entity();
+  BucketVector::const_iterator cur_bucket = bulk.buckets(stk::topology::ELEM_RANK).begin();
+  while ( cur_bucket != bulk.buckets(stk::topology::ELEM_RANK).end() )
   {
-    stk::mesh::Bucket::iterator cur_entity = (*cur_bucket)->begin();
+    Bucket::iterator cur_entity = (*cur_bucket)->begin();
     while ( cur_entity != (*cur_bucket)->end() )
     {
-      if ( cur_entity->owner_rank() == fixture.comm_rank() )
+      if ( bulk.parallel_owner_rank(*cur_entity) == fixture.comm_rank() )
       {
-        cell_to_delete = &*cur_entity;
+        cell_to_delete = *cur_entity;
         break;
       }
       ++cur_entity;
@@ -153,67 +147,64 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyAssertOwnerDeletedEntity )
     ++cur_bucket;
   }
 
-  STKUNIT_ASSERT ( cell_to_delete != NULL );
-  cell_to_delete_copy = cell_to_delete;
+  ASSERT_TRUE ( bulk.is_valid(cell_to_delete) );
   bulk.modification_begin();
   bulk.destroy_entity ( cell_to_delete );
-  // Destroying an already destroyed entity returns false
-  STKUNIT_ASSERT( false == bulk.destroy_entity( cell_to_delete_copy ) );
   bulk.modification_end();
 }
 
 
-STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyDetectsBadKey )
+TEST ( UnitTestBulkData_new , verifyDetectsBadKey )
 {
   TestBoxFixture fixture;
 
-  stk::mesh::BulkData         &bulk = fixture.bulk_data();
-  stk::mesh::Part             &new_part = fixture.get_test_part ();
-  stk::mesh::PartVector        add_part, empty_vector;
+  BulkData         &bulk = fixture.bulk_data();
+  Part             &new_part = fixture.m_test_part;
+  PartVector        add_part, empty_vector;
   add_part.push_back ( &new_part );
 
-  stk::mesh::EntityKey bad_key1 ( 45 , 1 );  // Bad entity rank
-  stk::mesh::EntityKey bad_key2 ( 1 , 0 );   // Bad id
+  EntityKey bad_key1 ( static_cast<EntityRank>(45) , 1 );  // Bad entity rank
+  EntityKey bad_key2 ( stk::topology::EDGE_RANK , 0 );   // Bad id
 
-  STKUNIT_ASSERT_THROW ( bulk.declare_entity(bad_key1.rank(),
+  ASSERT_THROW ( bulk.declare_entity(bad_key1.rank(),
                                              bad_key1.id(),
                                              empty_vector),
                          std::logic_error );
-  STKUNIT_ASSERT_THROW ( bulk.declare_entity(bad_key2.rank(),
+  ASSERT_THROW ( bulk.declare_entity(bad_key2.rank(),
                                              bad_key2.id(),
                                              empty_vector),
                          std::logic_error );
 }
 
-STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyDetectsNonOwnerChange )
+TEST ( UnitTestBulkData_new , verifyDetectsNonOwnerChange )
 {
   // Set up a mesh where there are shared nodes. Take one of the nodes, and
   // have the non-owning processes try to make a change to that node; this
   // should cause an exception.
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
-  unsigned p_size = stk::parallel_machine_size(pm);
-  unsigned p_rank = stk::parallel_machine_rank(pm);
+  int p_size = stk::parallel_machine_size(pm);
+  int p_rank = stk::parallel_machine_rank(pm);
 
-  stk::mesh::fixtures::QuadFixture fixture(pm, 1 /*nx*/, p_size /*ny*/);
-  fixture.m_fem_meta.commit();
+  fixtures::QuadFixture fixture(pm, 1 /*nx*/, p_size /*ny*/);
+  fixture.m_meta.commit();
   fixture.generate_mesh();
-  stk::mesh::BulkData & bulk = fixture.m_bulk_data;
+  BulkData & bulk = fixture.m_bulk_data;
 
-  stk::mesh::PartVector empty_vector;
+  PartVector empty_vector;
 
-  stk::mesh::Entity* shared_node = fixture.node(1 /*x*/, 1 /*y*/);
+  Entity shared_node = fixture.node(1 /*x*/, 1 /*y*/);
   // Assert that this node is shared
-  if ( p_size > 1 && shared_node && (p_rank == 0 || p_rank == 1) ) {
-    STKUNIT_ASSERT_GE(shared_node->sharing().size(), 1u);
+  if ( p_size > 1 && bulk.is_valid(shared_node) && (p_rank == 0 || p_rank == 1) ) {
+    ASSERT_GE(bulk.entity_comm_map_aura(bulk.entity_key(shared_node)).size(), 1u);
   }
 
   bulk.modification_begin();
 
   // Non-owners of shared_node will attempt to make a change to it; this should
   // cause an exception
-  if (shared_node && p_rank != shared_node->owner_rank()) {
-    STKUNIT_ASSERT_THROW(bulk.change_entity_parts(*shared_node,
+  if (bulk.is_valid(shared_node) && p_rank != bulk.parallel_owner_rank(shared_node)) {
+    ASSERT_THROW(bulk.change_entity_parts(shared_node,
                                                   empty_vector,  //add parts
                                                   empty_vector), //rem parts
                          std::logic_error);
@@ -222,223 +213,194 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyDetectsNonOwnerChange )
   bulk.modification_end();
 }
 
-STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyGetEntityGuards )
+TEST ( UnitTestBulkData_new , verifyExplicitAddInducedPart )
 {
   TestBoxFixture fixture;
-
-  stk::mesh::BulkData      &bulk = fixture.bulk_data();
-  STKUNIT_ASSERT_THROW ( bulk.get_entity ( 1 , 0 ) , std::logic_error );
-}
-
-
-STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyExplicitAddInducedPart )
-{
-  TestBoxFixture fixture;
-  stk::mesh::BulkData     &bulk = fixture.bulk_data ();
-  stk::mesh::PartVector    empty_vector;
-  stk::mesh::PartVector    cell_part_vector;
+  BulkData     &bulk = fixture.bulk_data ();
+  PartVector    empty_vector;
+  PartVector    cell_part_vector;
 
   bulk.modification_begin();
 
-  stk::mesh::Entity &new_cell = bulk.declare_entity ( 3 , fixture.comm_rank()+1 , empty_vector );
-  stk::mesh::Entity &new_node = bulk.declare_entity ( 0 , fixture.comm_rank()+1 , empty_vector );
+  Entity new_cell = bulk.declare_entity ( stk::topology::ELEMENT_RANK , fixture.comm_rank()+1 , empty_vector );
+  Entity new_node = bulk.declare_entity ( stk::topology::NODE_RANK , fixture.comm_rank()+1 , empty_vector );
 
   bulk.declare_relation ( new_cell , new_node , 1 );
 
-  cell_part_vector.push_back ( &fixture.get_cell_part () );
+  cell_part_vector.push_back ( &fixture.m_cell_part );
   bulk.change_entity_parts ( new_cell , cell_part_vector );
 #ifdef SIERRA_MIGRATION
   bulk.change_entity_parts ( new_node , cell_part_vector );
 #else
-  STKUNIT_ASSERT_THROW ( bulk.change_entity_parts ( new_node , cell_part_vector ) , std::runtime_error );
+  ASSERT_THROW ( bulk.change_entity_parts ( new_node , cell_part_vector ) , std::runtime_error );
 #endif
 }
 
-/************************
- * This unit test is not possible currently because of the lack of
- * separation between internal part modification routines and public
- * part modification routines.
-STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyCannotRemoveFromSpecialParts )
-{
-  stk::mesh::fixtures::BoxFixture fixture;
-  stk::mesh::BulkData          &bulk = fixture.bulk_data();
-  stk::mesh::PartVector         test_parts;
-  stk::mesh::PartVector         out_parts;
-  stk::mesh::PartVector         empty_vector;
-
-  stk::mesh::Entity &new_cell = bulk.declare_entity ( 3 , fixture.comm_rank()+1 , empty_vector );
-  test_parts.push_back ( &fixture.fem_meta().universal_part() );
-  STKUNIT_ASSERT_THROW ( bulk.change_entity_parts ( new_cell , empty_vector , test_parts ) , std::runtime_error );
-  test_parts.clear();
-  test_parts.push_back ( &fixture.fem_meta().locally_owned_part() );
-  STKUNIT_ASSERT_THROW ( bulk.change_entity_parts ( new_cell , empty_vector , test_parts ) , std::runtime_error );
-  test_parts.clear();
-  test_parts.push_back ( &fixture.fem_meta().globally_shared_part() );
-  STKUNIT_ASSERT_THROW ( bulk.change_entity_parts ( new_cell , empty_vector , test_parts ) , std::runtime_error );
-}
- */
-
-
-STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyDefaultPartAddition )
+TEST ( UnitTestBulkData_new , verifyDefaultPartAddition )
 {
   TestBoxFixture fixture;
-  stk::mesh::BulkData            &bulk = fixture.bulk_data ();
+  BulkData            &bulk = fixture.bulk_data ();
 
   bulk.modification_begin();
-  stk::mesh::Entity &new_cell = fixture.get_new_entity ( 3 , 1 );
+  Entity new_cell = fixture.get_new_entity ( stk::topology::ELEM_RANK , 1 );
+  Entity new_node = fixture.get_new_entity ( stk::topology::NODE_RANK , 1 );
+  bulk.declare_relation(new_cell, new_node, 0);
   bulk.modification_end();
 
-  STKUNIT_ASSERT ( new_cell.bucket().member ( fixture.fem_meta().universal_part() ) );
-  STKUNIT_ASSERT ( new_cell.bucket().member ( fixture.fem_meta().locally_owned_part() ) );
+  ASSERT_TRUE ( bulk.bucket(new_cell).member ( fixture.fem_meta().universal_part() ) );
+  ASSERT_TRUE ( bulk.bucket(new_cell).member ( fixture.fem_meta().locally_owned_part() ) );
 }
 
-STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyChangePartsSerial )
+TEST ( UnitTestBulkData_new , verifyChangePartsSerial )
 {
   TestBoxFixture fixture;
-  stk::mesh::BulkData            &bulk = fixture.bulk_data ();
-  stk::mesh::PartVector           create_parts , remove_parts , add_parts, empty_parts;
+  BulkData            &bulk = fixture.bulk_data ();
+  PartVector           create_parts , remove_parts , add_parts, empty_parts;
 
-  create_parts.push_back ( &fixture.get_test_part() );
-  create_parts.push_back ( &fixture.get_part_a_3() );
-  remove_parts.push_back ( &fixture.get_part_a_3() );
-  add_parts.push_back ( &fixture.get_part_b_superset() );
-  add_parts.push_back ( &fixture.get_cell_part() );
+  create_parts.push_back ( &fixture.m_test_part );
+  create_parts.push_back ( &fixture.m_part_A_3 );
+  remove_parts.push_back ( &fixture.m_part_A_3 );
+  add_parts.push_back ( &fixture.m_part_B_superset );
+  add_parts.push_back ( &fixture.m_cell_part );
 
   bulk.modification_begin();
-  stk::mesh::Entity &new_cell = fixture.get_new_entity ( 3 , 1 );
+  Entity new_cell = fixture.get_new_entity ( stk::topology::ELEM_RANK , 1 );
+  Entity new_node = fixture.get_new_entity ( stk::topology::NODE_RANK , 1 );
+  bulk.declare_relation(new_cell, new_node, 0);
   bulk.change_entity_parts ( new_cell , create_parts , empty_parts );
   bulk.modification_end();
-  STKUNIT_ASSERT ( new_cell.bucket().member ( fixture.get_test_part() ) );
-  STKUNIT_ASSERT ( new_cell.bucket().member ( fixture.get_part_a_3() ) );
-  STKUNIT_ASSERT ( new_cell.bucket().member ( fixture.get_part_a_superset() ) );
-  STKUNIT_ASSERT ( !new_cell.bucket().member ( fixture.get_part_b_superset() ) );
-  STKUNIT_ASSERT ( !new_cell.bucket().member ( fixture.get_cell_part() ) );
+  ASSERT_TRUE ( bulk.bucket(new_cell).member ( fixture.m_test_part ) );
+  ASSERT_TRUE ( bulk.bucket(new_cell).member ( fixture.m_part_A_3 ) );
+  ASSERT_TRUE ( bulk.bucket(new_cell).member ( fixture.m_part_A_superset ) );
+  ASSERT_TRUE ( !bulk.bucket(new_cell).member ( fixture.m_part_B_superset ) );
+  ASSERT_TRUE ( !bulk.bucket(new_cell).member ( fixture.m_cell_part ) );
 
   bulk.modification_begin();
   bulk.change_entity_parts ( new_cell , add_parts , remove_parts );
   bulk.modification_end();
-  STKUNIT_ASSERT ( new_cell.bucket().member ( fixture.get_test_part() ) );
-  STKUNIT_ASSERT ( !new_cell.bucket().member ( fixture.get_part_a_3() ) );
-  STKUNIT_ASSERT ( new_cell.bucket().member ( fixture.get_part_a_superset() ) );
-  STKUNIT_ASSERT ( new_cell.bucket().member ( fixture.get_part_b_superset() ) );
-  STKUNIT_ASSERT ( new_cell.bucket().member ( fixture.get_cell_part() ) );
+  ASSERT_TRUE ( bulk.bucket(new_cell).member ( fixture.m_test_part ) );
+  ASSERT_TRUE ( !bulk.bucket(new_cell).member ( fixture.m_part_A_3 ) );
+  ASSERT_TRUE ( bulk.bucket(new_cell).member ( fixture.m_part_A_superset ) );
+  ASSERT_TRUE ( bulk.bucket(new_cell).member ( fixture.m_part_B_superset ) );
+  ASSERT_TRUE ( bulk.bucket(new_cell).member ( fixture.m_cell_part ) );
 
   bulk.modification_begin();
   bulk.change_entity_parts ( new_cell , empty_parts , add_parts );
   bulk.modification_end();
-  STKUNIT_ASSERT ( new_cell.bucket().member ( fixture.get_test_part() ) );
-  STKUNIT_ASSERT ( !new_cell.bucket().member ( fixture.get_part_a_3() ) );
-  STKUNIT_ASSERT ( new_cell.bucket().member ( fixture.get_part_a_superset() ) );
-  STKUNIT_ASSERT ( !new_cell.bucket().member ( fixture.get_part_b_superset() ) );
-  STKUNIT_ASSERT ( !new_cell.bucket().member ( fixture.get_cell_part() ) );
+  ASSERT_TRUE ( bulk.bucket(new_cell).member ( fixture.m_test_part ) );
+  ASSERT_TRUE ( !bulk.bucket(new_cell).member ( fixture.m_part_A_3 ) );
+  ASSERT_TRUE ( bulk.bucket(new_cell).member ( fixture.m_part_A_superset ) );
+  ASSERT_TRUE ( !bulk.bucket(new_cell).member ( fixture.m_part_B_superset ) );
+  ASSERT_TRUE ( !bulk.bucket(new_cell).member ( fixture.m_cell_part ) );
 
   //Verify still a member of default parts
-  STKUNIT_ASSERT ( new_cell.bucket().member ( fixture.fem_meta().universal_part() ) );
-  STKUNIT_ASSERT ( new_cell.bucket().member ( fixture.fem_meta().locally_owned_part() ) );
+  ASSERT_TRUE ( bulk.bucket(new_cell).member ( fixture.fem_meta().universal_part() ) );
+  ASSERT_TRUE ( bulk.bucket(new_cell).member ( fixture.fem_meta().locally_owned_part() ) );
 }
 
-STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyParallelAddParts )
+TEST ( UnitTestBulkData_new , verifyParallelAddParts )
 {
   TestBoxFixture fixture;
-  stk::mesh::BulkData             &bulk = fixture.bulk_data ();
-  stk::mesh::PartVector            add_part;
+  BulkData             &bulk = fixture.bulk_data ();
+  PartVector            add_part;
 
   const int root_box[3][2] = { { 0 , 4 } , { 0 , 5 } , { 0 , 6 } };
   int local_box[3][2] = { { 0 , 0 } , { 0 , 0 } , { 0 , 0 } };
 
-  add_part.push_back ( &fixture.get_part_a_0() );
+  add_part.push_back ( &fixture.m_part_A_0 );
 
   bulk.modification_begin();
   fixture.generate_boxes( root_box, local_box );
-  STKUNIT_ASSERT(bulk.modification_end());
+  ASSERT_TRUE(bulk.modification_end());
 
   bulk.modification_begin();
 
-  for ( std::vector<stk::mesh::Entity*>::const_iterator
-        cur_entity =  bulk.entity_comm().begin();
-        cur_entity != bulk.entity_comm().end() ; ++cur_entity ) {
-    stk::mesh::Entity & entity = **cur_entity ;
-    if ( entity.entity_rank() == 0 ) {
-      if ( entity.owner_rank() == fixture.comm_rank() ) {
-        bulk.change_entity_parts ( entity, add_part, stk::mesh::PartVector() );
+  for ( EntityCommListInfoVector::const_iterator
+        i =  bulk.comm_list().begin();
+        i != bulk.comm_list().end() ; ++i ) {
+    if ( i->key.rank() == 0 ) {
+      if ( i->owner == fixture.comm_rank() ) {
+        bulk.change_entity_parts ( i->entity, add_part, PartVector() );
       }
     }
   }
 
   bulk.modification_end();
 
-  for ( std::vector<stk::mesh::Entity*>::const_iterator
-        cur_entity =  bulk.entity_comm().begin();
-        cur_entity != bulk.entity_comm().end() ; ++cur_entity ) {
-    stk::mesh::Entity & entity = **cur_entity ;
-    if ( entity.entity_rank() == 0 ) {
-      STKUNIT_ASSERT ( entity.bucket().member ( fixture.get_part_a_0 () ) );
+  for ( EntityCommListInfoVector::const_iterator
+        i =  bulk.comm_list().begin();
+        i != bulk.comm_list().end() ; ++i ) {
+    if ( i->key.rank() == 0 ) {
+      ASSERT_TRUE ( bulk.bucket(i->entity).member ( fixture.m_part_A_0 ) );
     }
   }
 }
 
-STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyInducedMembership )
+TEST ( UnitTestBulkData_new , verifyInducedMembership )
 {
   TestBoxFixture fixture;
-  stk::mesh::BulkData             &bulk = fixture.bulk_data ();
-  stk::mesh::PartVector            create_node_parts , create_cell_parts , empty_parts;
+  BulkData             &bulk = fixture.bulk_data ();
+  PartVector            create_node_parts , create_cell_parts , empty_parts;
 
-  create_node_parts.push_back ( &fixture.get_part_a_0() );
-  create_cell_parts.push_back ( &fixture.get_cell_part() );
-
-  bulk.modification_begin();
-
-  stk::mesh::Entity &node = fixture.get_new_entity ( 0 , 1 );
-  stk::mesh::Entity &cell = fixture.get_new_entity ( 3 , 1 );
+  create_node_parts.push_back ( &fixture.m_part_A_0 );
+  create_cell_parts.push_back ( &fixture.m_cell_part );
 
   bulk.modification_begin();
 
-  bulk.change_entity_parts ( node , create_node_parts , stk::mesh::PartVector () );
-  bulk.change_entity_parts ( cell , create_cell_parts , stk::mesh::PartVector () );
+  Entity node0 = fixture.get_new_entity ( stk::topology::NODE_RANK , 2 );
+  Entity node = fixture.get_new_entity ( stk::topology::NODE_RANK , 1 );
+  Entity cell = fixture.get_new_entity ( stk::topology::ELEM_RANK , 1 );
+
+  bulk.change_entity_parts ( node , create_node_parts , PartVector () );
+  bulk.change_entity_parts ( cell , create_cell_parts , PartVector () );
   // Add node to cell part
-  stk::mesh::RelationIdentifier cell_node_rel_id = 0;
+  RelationIdentifier cell_node_rel_id = 0;
+  bulk.declare_relation ( cell , node0 , cell_node_rel_id );
+  cell_node_rel_id = 1;
   bulk.declare_relation ( cell , node , cell_node_rel_id );
   bulk.modification_end();
 
-  STKUNIT_ASSERT ( node.bucket().member ( fixture.get_cell_part() ) );
+  ASSERT_TRUE ( bulk.bucket(node).member ( fixture.m_cell_part ) );
 
   bulk.modification_begin();
   bulk.destroy_relation ( cell , node, cell_node_rel_id );
   bulk.modification_end();
 
-  STKUNIT_ASSERT ( !node.bucket().member ( fixture.get_cell_part() ) );
+  ASSERT_TRUE ( !bulk.bucket(node).member ( fixture.m_cell_part ) );
 }
 
-STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyCanRemoveFromSetWithDifferentRankSubset )
+TEST ( UnitTestBulkData_new , verifyCanRemoveFromSetWithDifferentRankSubset )
 {
   TestBoxFixture fixture;
-  stk::mesh::BulkData           &bulk = fixture.bulk_data ();
-  stk::mesh::PartVector          add_parts , remove_parts, empty_parts;
+  BulkData           &bulk = fixture.bulk_data ();
+  PartVector          add_parts , remove_parts, empty_parts;
 
-  add_parts.push_back ( &fixture.get_part_b_3() );
-  add_parts.push_back ( &fixture.get_part_a_superset() );
+  add_parts.push_back ( &fixture.m_part_B_3 );
+  add_parts.push_back ( &fixture.m_part_A_superset );
 
-  remove_parts.push_back ( &fixture.get_part_a_superset() );
+  remove_parts.push_back ( &fixture.m_part_A_superset );
 
   bulk.modification_begin();
 
-  stk::mesh::Entity  &e = bulk.declare_entity ( 3 , fixture.comm_rank()+1 , add_parts );
+  Entity e = bulk.declare_entity ( stk::topology::ELEMENT_RANK , fixture.comm_rank()+1 , add_parts );
+  Entity n = bulk.declare_entity ( stk::topology::NODE_RANK , fixture.comm_rank()+1 , add_parts );
+  bulk.declare_relation(e, n, 0);
   bulk.modification_end();
 
   bulk.modification_begin();
   bulk.change_entity_parts ( e , empty_parts , remove_parts );
   bulk.modification_end();
 
-  STKUNIT_ASSERT ( e.bucket().member ( fixture.get_part_b_3() ) );
-  STKUNIT_ASSERT ( !e.bucket().member ( fixture.get_part_a_superset() ) );
+  ASSERT_TRUE ( bulk.bucket(e).member ( fixture.m_part_B_3 ) );
+  ASSERT_TRUE ( !bulk.bucket(e).member ( fixture.m_part_A_superset ) );
 }
 
 
-STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyCommonGhostingName )
+TEST ( UnitTestBulkData_new , verifyCommonGhostingName )
 {
 
   TestBoxFixture fixture;
-  stk::mesh::BulkData          &bulk = fixture.bulk_data ();
+  BulkData          &bulk = fixture.bulk_data ();
 
   bulk.modification_begin();
 
@@ -446,50 +408,50 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyCommonGhostingName )
 
   if ( fixture.comm_rank() == 0 )
   {
-    STKUNIT_ASSERT_THROW ( bulk.create_ghosting ( "Name 1" ) , std::runtime_error );
+    ASSERT_THROW ( bulk.create_ghosting ( "Name 1" ) , std::runtime_error );
   }
   else
   {
-    STKUNIT_ASSERT_THROW ( bulk.create_ghosting ( "Name 2" ) , std::runtime_error );
+    ASSERT_THROW ( bulk.create_ghosting ( "Name 2" ) , std::runtime_error );
   }
 }
 
 
-STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyTrivialDestroyAllGhostings )
+TEST ( UnitTestBulkData_new , verifyTrivialDestroyAllGhostings )
 {
   TestBoxFixture fixture;
 
   if ( fixture.comm_size() == 1 ) return;
 
-  stk::mesh::BulkData  &bulk = fixture.bulk_data();
+  BulkData  &bulk = fixture.bulk_data();
 
   const int root_box[3][2] = { { 0 , 4 } , { 0 , 5 } , { 0 , 6 } };
   int local_box[3][2] = { { 0 , 0 } , { 0 , 0 } , { 0 , 0 } };
 
   bulk.modification_begin();
   fixture.generate_boxes( root_box, local_box );
-  STKUNIT_ASSERT(bulk.modification_end());
+  ASSERT_TRUE(bulk.modification_end());
 
   bulk.modification_begin();
 
-  stk::mesh::Ghosting &ghosting = bulk.create_ghosting ( "Ghost 1" );
+  Ghosting &ghosting = bulk.create_ghosting ( "Ghost 1" );
 
   // Find a cell owned by this process
-  std::vector<stk::mesh::Bucket *>::const_iterator cur_bucket = bulk.buckets(3).begin();
-  unsigned send_rank = 0;
+  BucketVector::const_iterator cur_bucket = bulk.buckets(stk::topology::ELEM_RANK).begin();
+  int send_rank = 0;
 
-  std::vector<stk::mesh::EntityProc>  to_send;
-  std::vector<stk::mesh::Entity *>    empty_vector;
-  while ( cur_bucket != bulk.buckets(3).end() )
+  std::vector<EntityProc>  to_send;
+  std::vector<EntityKey>   empty_vector;
+  while ( cur_bucket != bulk.buckets(stk::topology::ELEM_RANK).end() )
   {
-    stk::mesh::Bucket::iterator cur_entity = (*cur_bucket)->begin();
+    Bucket::iterator cur_entity = (*cur_bucket)->begin();
     while ( cur_entity != (*cur_bucket)->end() )
     {
-      if ( cur_entity->owner_rank() == fixture.comm_rank() )
+      if ( bulk.parallel_owner_rank(*cur_entity) == fixture.comm_rank() )
       {
         if ( send_rank == fixture.comm_size() ) send_rank = 0;
         if ( send_rank != fixture.comm_rank() )
-          to_send.push_back ( std::make_pair ( &*cur_entity , send_rank ) );
+          to_send.push_back ( std::make_pair ( *cur_entity , send_rank ) );
         send_rank++;
       }
       ++cur_entity;
@@ -501,13 +463,13 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyTrivialDestroyAllGhostings )
 
 
   {
-    std::vector<stk::mesh::EntityProc> send_list ;
-    std::vector<stk::mesh::Entity*>    recv_list ;
+    std::vector<EntityProc> send_list ;
+    std::vector<EntityKey>  recv_list ;
     ghosting.send_list( send_list );
     ghosting.receive_list( recv_list );
 
-    STKUNIT_ASSERT ( ! send_list.empty()  );
-    STKUNIT_ASSERT ( ! recv_list.empty() );
+    ASSERT_TRUE ( ! send_list.empty()  );
+    ASSERT_TRUE ( ! recv_list.empty() );
   }
 
   // Usage of operator << in Ghosting.cpp
@@ -519,22 +481,22 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyTrivialDestroyAllGhostings )
   bulk.modification_end();
 
   {
-    std::vector<stk::mesh::EntityProc> send_list ;
-    std::vector<stk::mesh::Entity*>    recv_list ;
+    std::vector<EntityProc> send_list ;
+    std::vector<EntityKey>  recv_list ;
     ghosting.send_list( send_list );
     ghosting.receive_list( recv_list );
 
-    STKUNIT_ASSERT ( send_list.empty() );
-    STKUNIT_ASSERT ( recv_list.empty() );
+    ASSERT_TRUE ( send_list.empty() );
+    ASSERT_TRUE ( recv_list.empty() );
   }
 }
 
 
-STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyChangeGhostingGuards )
+TEST ( UnitTestBulkData_new , verifyChangeGhostingGuards )
 {
   TestBoxFixture fixture1, fixture2;
-  stk::mesh::BulkData & bulk1 = fixture1.bulk_data ();
-  stk::mesh::BulkData & bulk2 = fixture2.bulk_data ();
+  BulkData & bulk1 = fixture1.bulk_data ();
+  BulkData & bulk2 = fixture2.bulk_data ();
 
   const int root_box[3][2] = { { 0 , 4 } , { 0 , 5 } , { 0 , 6 } };
   int local_box1[3][2] = { { 0 , 0 } , { 0 , 0 } , { 0 , 0 } };
@@ -542,29 +504,29 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyChangeGhostingGuards )
 
   bulk1.modification_begin();
   fixture1.generate_boxes( root_box, local_box1 );
-  STKUNIT_ASSERT(bulk1.modification_end());
+  ASSERT_TRUE(bulk1.modification_end());
 
   bulk2.modification_begin();
   fixture2.generate_boxes( root_box, local_box2 );
-  STKUNIT_ASSERT(bulk2.modification_end());
+  ASSERT_TRUE(bulk2.modification_end());
 
   bulk1.modification_begin();
   bulk2.modification_begin();
 
-  std::vector<stk::mesh::EntityProc>  to_send;
-  std::vector<stk::mesh::Entity *>    empty_vector;
-  std::vector<stk::mesh::Bucket *>::const_iterator cur_bucket = bulk1.buckets(3).begin();
-  unsigned send_rank = 0;
-  while ( cur_bucket != bulk1.buckets(3).end() )
+  std::vector<EntityProc>  to_send;
+  std::vector<EntityKey>   empty_vector;
+  BucketVector::const_iterator cur_bucket = bulk1.buckets(stk::topology::ELEM_RANK).begin();
+  int send_rank = 0;
+  while ( cur_bucket != bulk1.buckets(stk::topology::ELEM_RANK).end() )
   {
-    stk::mesh::Bucket::iterator cur_entity = (*cur_bucket)->begin();
+    Bucket::iterator cur_entity = (*cur_bucket)->begin();
     while ( cur_entity != (*cur_bucket)->end() )
     {
-      if ( cur_entity->owner_rank() == fixture1.comm_rank() )
+      if ( bulk1.parallel_owner_rank(*cur_entity) == fixture1.comm_rank() )
       {
         if ( send_rank == fixture1.comm_size() ) send_rank = 0;
         if ( send_rank != fixture1.comm_rank() )
-          to_send.push_back ( std::make_pair ( &*cur_entity , send_rank ) );
+          to_send.push_back ( std::make_pair ( *cur_entity , send_rank ) );
         ++send_rank;
       }
       ++cur_entity;
@@ -572,9 +534,8 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyChangeGhostingGuards )
     ++cur_bucket;
   }
 
-  stk::mesh::Ghosting &ghosting = bulk1.create_ghosting ( "Ghost 1" );
-  STKUNIT_ASSERT_THROW ( bulk2.change_ghosting ( ghosting , to_send , empty_vector ) , std::runtime_error );
-  STKUNIT_ASSERT_THROW ( bulk1.change_ghosting ( bulk1.shared_aura() , to_send , empty_vector ) , std::runtime_error );
+  Ghosting &ghosting = bulk1.create_ghosting ( "Ghost 1" );
+  ASSERT_THROW ( bulk1.change_ghosting ( bulk1.aura() , to_send , empty_vector ) , std::runtime_error );
 
   ghosting.receive_list(empty_vector);
   ghosting.send_list(to_send);
@@ -584,51 +545,51 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyChangeGhostingGuards )
 }
 
 
-STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyOtherGhostingGuards )
+TEST ( UnitTestBulkData_new , verifyOtherGhostingGuards )
 {
   TestBoxFixture fixture;
-  stk::mesh::BulkData          &bulk = fixture.bulk_data ();
+  BulkData          &bulk = fixture.bulk_data ();
 
   const int root_box[3][2] = { { 0 , 4 } , { 0 , 5 } , { 0 , 6 } };
   int local_box[3][2] = { { 0 , 0 } , { 0 , 0 } , { 0 , 0 } };
 
   bulk.modification_begin();
   fixture.generate_boxes( root_box, local_box );
-  STKUNIT_ASSERT(bulk.modification_end());
+  ASSERT_TRUE(bulk.modification_end());
 
   bulk.modification_begin();
 
-  std::vector<stk::mesh::EntityProc>  to_send_unowned;
-  std::vector<stk::mesh::EntityProc>  empty_send;
-  std::vector<stk::mesh::Entity *>    to_remove_not_ghosted;
-  std::vector<stk::mesh::Entity *>    empty_remove;
-  std::vector<stk::mesh::Bucket *>::const_iterator cur_bucket = bulk.buckets(3).begin();
-  unsigned send_rank = 0;
-  while ( cur_bucket != bulk.buckets(3).end() )
+  std::vector<EntityProc>  to_send_unowned;
+  std::vector<EntityProc>  empty_send;
+  std::vector<EntityKey>   to_remove_not_ghosted;
+  std::vector<EntityKey>   empty_remove;
+  BucketVector::const_iterator cur_bucket = bulk.buckets(stk::topology::ELEM_RANK).begin();
+  int send_rank = 0;
+  while ( cur_bucket != bulk.buckets(stk::topology::ELEM_RANK).end() )
   {
-    stk::mesh::Bucket::iterator cur_entity = (*cur_bucket)->begin();
+    Bucket::iterator cur_entity = (*cur_bucket)->begin();
     while ( cur_entity != (*cur_bucket)->end() )
     {
-      if ( cur_entity->owner_rank() != fixture.comm_rank() )
+      if ( bulk.parallel_owner_rank(*cur_entity) != fixture.comm_rank() )
       {
         if ( send_rank == fixture.comm_size() ) send_rank = 0;
         if ( send_rank != fixture.comm_rank() )
-          to_send_unowned.push_back ( std::make_pair ( &*cur_entity , send_rank ) );
+          to_send_unowned.push_back ( std::make_pair ( *cur_entity , send_rank ) );
         ++send_rank;
       }
       else
       {
-        to_remove_not_ghosted.push_back ( &*cur_entity );
+        to_remove_not_ghosted.push_back ( bulk.entity_key(*cur_entity) );
       }
       ++cur_entity;
     }
     ++cur_bucket;
   }
 
-  stk::mesh::Ghosting &ghosting = bulk.create_ghosting ( "Ghost 1" );
+  Ghosting &ghosting = bulk.create_ghosting ( "Ghost 1" );
   if ( to_send_unowned.size() > 0 )
   {
-    STKUNIT_ASSERT_THROW ( bulk.change_ghosting ( ghosting , to_send_unowned , empty_remove ) , std::runtime_error );
+    ASSERT_THROW ( bulk.change_ghosting ( ghosting , to_send_unowned , empty_remove ) , std::runtime_error );
   }
   else
   {
@@ -637,7 +598,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyOtherGhostingGuards )
 
   if ( to_remove_not_ghosted.size() > 0 )
   {
-    STKUNIT_ASSERT_THROW ( bulk.change_ghosting ( ghosting , empty_send , to_remove_not_ghosted ) , std::runtime_error );
+    ASSERT_THROW ( bulk.change_ghosting ( ghosting , empty_send , to_remove_not_ghosted ) , std::runtime_error );
   }
   else
   {
@@ -647,90 +608,92 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyOtherGhostingGuards )
 }
 
 
-STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyPartsOnCreate )
+TEST ( UnitTestBulkData_new , verifyPartsOnCreate )
 {
    TestBoxFixture fixture;
-   stk::mesh::BulkData           & bulk = fixture.bulk_data ();
-   stk::mesh::Part               & part_a = fixture.get_part_a_0 ();
-   stk::mesh::Part               & part_b = fixture.get_part_b_0 ();
+   BulkData           & bulk = fixture.bulk_data ();
+   Part               & part_a = fixture.m_part_A_0;
+   Part               & part_b = fixture.m_part_B_0;
 
-   stk::mesh::PartVector           create_vector;
+   PartVector           create_vector;
    create_vector.push_back ( &part_a );
 
    bulk.modification_begin();
 
-   stk::mesh::Entity &node = bulk.declare_entity ( 0 , fixture.comm_rank()+1 ,create_vector );
+   Entity node = bulk.declare_entity ( stk::topology::NODE_RANK , fixture.comm_rank()+1 ,create_vector );
    bulk.modification_end();
 
-   STKUNIT_ASSERT ( node.bucket().member ( part_a ) );
+   ASSERT_TRUE ( bulk.bucket(node).member ( part_a ) );
 
    bulk.modification_begin();
    create_vector.push_back ( &part_b );
-   stk::mesh::Entity &node2 = bulk.declare_entity ( 0 , fixture.comm_size() + fixture.comm_rank() + 1 , create_vector );
+   Entity node2 = bulk.declare_entity ( stk::topology::NODE_RANK , fixture.comm_size() + fixture.comm_rank() + 1 , create_vector );
    bulk.modification_end();
 
-   STKUNIT_ASSERT ( node2.bucket().member ( part_a ) );
-   STKUNIT_ASSERT ( node2.bucket().member ( part_b ) );
+   ASSERT_TRUE ( bulk.bucket(node2).member ( part_a ) );
+   ASSERT_TRUE ( bulk.bucket(node2).member ( part_b ) );
 }
 
 //----------------------------------------------------------------------
 
-STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyBoxGhosting )
+TEST ( UnitTestBulkData_new , verifyBoxGhosting )
 {
-  const unsigned p_size = stk::parallel_machine_size( MPI_COMM_WORLD );
+  const int p_size = stk::parallel_machine_size( MPI_COMM_WORLD );
   if ( 8 < p_size ) { return ; }
 
-  stk::mesh::fixtures::HexFixture fixture( MPI_COMM_WORLD, 2, 2, 2 );
-  fixture.m_fem_meta.commit();
+  fixtures::HexFixture fixture( MPI_COMM_WORLD, 2, 2, 2 );
+  fixture.m_meta.commit();
   fixture.generate_mesh();
+  const BulkData& mesh = fixture.m_bulk_data;
 
   for ( size_t iz = 0 ; iz < 3 ; ++iz ) {
-  for ( size_t iy = 0 ; iy < 3 ; ++iy ) {
-  for ( size_t ix = 0 ; ix < 3 ; ++ix ) {
-    stk::mesh::Entity * const node = fixture.node(ix,iy,iz);
-    STKUNIT_ASSERT( NULL != node );
+    for ( size_t iy = 0 ; iy < 3 ; ++iy ) {
+      for ( size_t ix = 0 ; ix < 3 ; ++ix ) {
+        Entity const node = fixture.node(ix,iy,iz);
+        ASSERT_TRUE( mesh.is_valid(node) );
 
-    STKUNIT_ASSERT( fixture.node_id(ix,iy,iz) == node->identifier() );
-    stk::mesh::fixtures::HexFixture::Scalar * const node_coord =
-      stk::mesh::field_data( fixture.m_coord_field , *node );
-    STKUNIT_ASSERT( node_coord != NULL );
-  }
-  }
+        ASSERT_TRUE( fixture.node_id(ix,iy,iz) == mesh.identifier(node) );
+        fixtures::HexFixture::Scalar * const node_coord =
+            field_data( fixture.m_coord_field , node );
+        ASSERT_TRUE( node_coord != NULL );
+      }
+    }
   }
 
   for ( size_t iz = 0 ; iz < 2 ; ++iz ) {
   for ( size_t iy = 0 ; iy < 2 ; ++iy ) {
   for ( size_t ix = 0 ; ix < 2 ; ++ix ) {
-    stk::mesh::Entity * const elem = fixture.elem(ix,iy,iz);
-    STKUNIT_ASSERT( NULL != elem );
-
-    stk::mesh::PairIterRelation elem_nodes = elem->relations();
-    STKUNIT_ASSERT_EQUAL( 8u , elem_nodes.size() );
-    stk::mesh::fixtures::HexFixture::Scalar ** const elem_node_coord =
-      stk::mesh::field_data( fixture.m_coord_gather_field , *elem );
-    for ( size_t j = 0 ; j < elem_nodes.size() ; ++j ) {
-      STKUNIT_ASSERT_EQUAL( j , elem_nodes[j].identifier() );
-      stk::mesh::fixtures::HexFixture::Scalar * const node_coord =
-        stk::mesh::field_data( fixture.m_coord_field , *elem_nodes[j].entity() );
-      STKUNIT_ASSERT( node_coord == elem_node_coord[ elem_nodes[j].identifier() ] );
+    Entity const elem = fixture.elem(ix,iy,iz);
+    ASSERT_TRUE( mesh.is_valid(elem) );
+    size_t num_elem_nodes = mesh.num_nodes(elem);
+    ASSERT_EQ( 8u , num_elem_nodes );
+    Entity const *elem_nodes = mesh.begin_nodes(elem);
+    // ConnectivityOrdinal const *elem_node_ords = mesh.begin_node_ordinals(elem);
+    if ( 8u == num_elem_nodes ) {
+      ASSERT_TRUE( elem_nodes[0] == fixture.node(ix,iy,iz));
+      ASSERT_TRUE( elem_nodes[1] == fixture.node(ix+1,iy,iz));
+      ASSERT_TRUE( elem_nodes[2] == fixture.node(ix+1,iy+1,iz));
+      ASSERT_TRUE( elem_nodes[3] == fixture.node(ix,iy+1,iz));
+      ASSERT_TRUE( elem_nodes[4] == fixture.node(ix,iy,iz+1));
+      ASSERT_TRUE( elem_nodes[5] == fixture.node(ix+1,iy,iz+1));
+      ASSERT_TRUE( elem_nodes[6] == fixture.node(ix+1,iy+1,iz+1));
+      ASSERT_TRUE( elem_nodes[7] == fixture.node(ix,iy+1,iz+1));
     }
-    if ( 8u == elem_nodes.size() ) {
-      STKUNIT_ASSERT( elem_nodes[0].entity() == fixture.node(ix,iy,iz));
-      STKUNIT_ASSERT( elem_nodes[1].entity() == fixture.node(ix+1,iy,iz));
-      STKUNIT_ASSERT( elem_nodes[2].entity() == fixture.node(ix+1,iy,iz+1));
-      STKUNIT_ASSERT( elem_nodes[3].entity() == fixture.node(ix,iy,iz+1));
-      STKUNIT_ASSERT( elem_nodes[4].entity() == fixture.node(ix,iy+1,iz));
-      STKUNIT_ASSERT( elem_nodes[5].entity() == fixture.node(ix+1,iy+1,iz));
-      STKUNIT_ASSERT( elem_nodes[6].entity() == fixture.node(ix+1,iy+1,iz+1));
-      STKUNIT_ASSERT( elem_nodes[7].entity() == fixture.node(ix,iy+1,iz+1));
-    }
+    // Now check access to field data via the fast rank functions.
+    // Node const *eph_elem_nodes = mesh.begin_nodes(elem);
+    // for ( size_t j = 0 ; j < num_elem_nodes ; ++j )
+    // {
+    //   fixtures::HexFixture::Scalar * const node_coord =
+    //     field_data( fixture.m_coord_field , eph_elem_nodes[j]);
+    //   EXPECT_EQ( node_coord, elem_node_coord[ elem_node_ords[j] ] );
+    // }
 
   }
   }
   }
 }
 
-STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
+TEST ( UnitTestBulkData_new , testEntityComm )
 {
   //Test on unpack_field_values in EntityComm.cpp
   //code based on ../base/BulkDataGhosting.cpp
@@ -738,79 +701,75 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
 
   const int spatial_dimension = 3;
 
-  stk::mesh::fem::FEMMetaData fem_meta;
-  fem_meta.FEM_initialize(spatial_dimension, stk::mesh::fem::entity_rank_names ( spatial_dimension ));
+  MetaData fem_meta(spatial_dimension);
 
-  stk::mesh::fem::CellTopology tet_top(shards::getCellTopologyData<shards::Tetrahedron<4> >());
-  stk::mesh::Part & part_a = fem_meta.declare_part( "block_a", tet_top );
-  stk::mesh::Part & part_b = fem_meta.declare_part( "block_b", tet_top );
+  stk::mesh::Part & part_a = fem_meta.declare_part_with_topology( "block_a", stk::topology::TET_4 );
+  stk::mesh::Part & part_b = fem_meta.declare_part_with_topology( "block_b", stk::topology::TET_4 );
 
-  stk::mesh::fem::CellTopology node_top(shards::getCellTopologyData<shards::Node>());
-  stk::mesh::Part & part_a_0 = fem_meta.declare_part( "block_a_0", node_top );
+  stk::mesh::Part & part_a_0 = fem_meta.declare_part_with_topology( "block_a_0", stk::topology::NODE );
 
-  typedef stk::mesh::Field<double>  ScalarFieldType;
+  typedef Field<double>  ScalarFieldType;
 
   ScalarFieldType & volume =
-     fem_meta.declare_field < ScalarFieldType > ( "volume" , 4 );
+    fem_meta.declare_field < ScalarFieldType > ( stk::topology::ELEMENT_RANK, "volume" , 4 );
   ScalarFieldType & temperature =
-     fem_meta.declare_field < ScalarFieldType > ( "temperature" , 4 );
-  stk::mesh::Part  & universal     = fem_meta.universal_part ();
-  put_field ( volume , 3 , universal );
-  put_field ( temperature , 3 , universal );
+    fem_meta.declare_field < ScalarFieldType > ( stk::topology::ELEMENT_RANK, "temperature" , 4 );
+  Part  & universal     = fem_meta.universal_part ();
+  put_field ( volume , universal );
+  put_field ( temperature , universal );
 
   fem_meta.commit();
 
-  stk::mesh::PartVector    create_vector;
-  stk::mesh::PartVector    empty_vector;
+  PartVector    create_vector;
+  PartVector    empty_vector;
   create_vector.push_back ( &part_a );
   create_vector.push_back ( &part_b );
 
-  stk::mesh::MetaData & meta = stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
-  stk::mesh::BulkData bulk ( meta , MPI_COMM_WORLD , 100 );
+  BulkData bulk ( fem_meta , MPI_COMM_WORLD , 100 );
 
   bulk.modification_begin();
 
-  stk::mesh::Ghosting &ghosts = bulk.create_ghosting ( "Ghost 1" );
+  Ghosting &ghosts = bulk.create_ghosting ( "Ghost 1" );
 
-  unsigned size2 = stk::parallel_machine_size( MPI_COMM_WORLD );
-  unsigned rank_count2 = stk::parallel_machine_rank( MPI_COMM_WORLD );
+  int size2 = stk::parallel_machine_size( MPI_COMM_WORLD );
+  int rank_count2 = stk::parallel_machine_rank( MPI_COMM_WORLD );
   int new_id2 = size2 + rank_count2;
 
-  stk::mesh::Entity &elem2 = bulk.declare_entity ( 3 , new_id2+1 ,create_vector );
-  STKUNIT_ASSERT_EQUAL( elem2.bucket().member ( part_a ), true );
+  Entity elem2 = bulk.declare_entity ( stk::topology::ELEMENT_RANK , new_id2+1 ,create_vector );
+  ASSERT_EQ( bulk.bucket(elem2).member ( part_a ), true );
 
-  unsigned size = stk::parallel_machine_size( MPI_COMM_WORLD );
-  unsigned rank_count = stk::parallel_machine_rank( MPI_COMM_WORLD );
+  int size = stk::parallel_machine_size( MPI_COMM_WORLD );
+  int rank_count = stk::parallel_machine_rank( MPI_COMM_WORLD );
 
   int id_base = 0;
   for ( id_base = 0 ; id_base < 99 ; ++id_base )
   {
     int new_id = size * id_base + rank_count;
-    stk::mesh::Entity &new_node = bulk.declare_entity( 0 , new_id+1 , empty_vector );
-    STKUNIT_ASSERT_EQUAL( new_node.bucket().member ( part_a_0 ), false );
+    Entity new_node = bulk.declare_entity( stk::topology::NODE_RANK , new_id+1 , empty_vector );
+    ASSERT_EQ( bulk.bucket(new_node).member ( part_a_0 ), false );
   }
 
   //Create a bucket of nodes for sending
 
-  std::vector<stk::mesh::EntityProc>  add_send;
+  std::vector<EntityProc>  add_send;
 
-  const std::vector<stk::mesh::Bucket*> & buckets = bulk.buckets( 0 );
+  const BucketVector & buckets = bulk.buckets( stk::topology::NODE_RANK );
 
-  std::vector<stk::mesh::Bucket*>::const_iterator cur_bucket;
+  BucketVector::const_iterator cur_bucket;
 
   cur_bucket = buckets.begin();
 
-  unsigned send_rank = 0;
+  int send_rank = 0;
   while ( cur_bucket != buckets.end() )
   {
-    stk::mesh::Bucket::iterator cur_entity = (*cur_bucket)->begin();
+    Bucket::iterator cur_entity = (*cur_bucket)->begin();
     while ( cur_entity != (*cur_bucket)->end() )
     {
-      if ( cur_entity->owner_rank() == rank_count )
+      if ( bulk.parallel_owner_rank(*cur_entity) == rank_count )
       {
         if ( send_rank == size ) send_rank = 0;
         if ( send_rank != rank_count )
-          add_send.push_back ( std::make_pair ( &*cur_entity , send_rank ) );
+          add_send.push_back ( std::make_pair ( *cur_entity , send_rank ) );
         ++send_rank;
       }
       ++cur_entity;
@@ -818,25 +777,37 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
     ++cur_bucket;
   }
 
-  std::set< stk::mesh::EntityProc , stk::mesh::EntityLess > new_send ;
-  std::set< stk::mesh::Entity * ,   stk::mesh::EntityLess > new_recv ;
+  EntityLess entless(bulk);
+  std::set< EntityProc , EntityLess > new_send(entless) ;
+  std::set< Entity ,   EntityLess > new_recv(entless) ;
 
   //  Keep the closure of the remaining received ghosts.
   //  Working from highest-to-lowest key (rank entity type)
   //  results in insertion of the transitive closure.
   //  Insertion will not invalidate the associative container's iterator.
 
-  for ( std::set< stk::mesh::Entity * , stk::mesh::EntityLess >::iterator
+  for ( std::set< Entity , EntityLess >::iterator
         i = new_recv.end() ; i != new_recv.begin() ; ) {
     --i ;
 
-    const unsigned erank = (*i)->entity_rank();
+    const unsigned erank = bulk.entity_rank(*i);
 
-    for ( stk::mesh::PairIterRelation
-          irel = (*i)->relations(); ! irel.empty() ; ++irel ) {
-      if ( irel->entity_rank() < erank &&
-           in_receive_ghost( ghosts , * irel->entity() ) ) {
-        new_recv.insert( irel->entity() );
+    MeshIndex mesh_idx = bulk.mesh_index(*i);
+    Bucket &bkt = *mesh_idx.bucket;
+    Ordinal bkt_ordinal = mesh_idx.bucket_ordinal;
+
+    for (EntityRank irank = stk::topology::BEGIN_RANK;
+          irank < erank;
+          ++irank)
+    {
+      Entity const *irels_itr = bkt.begin(bkt_ordinal, irank);
+      Entity const *irels_end = bkt.end(bkt_ordinal, irank);
+      for (; irels_itr != irels_end; ++irels_itr)
+      {
+        if (bulk.in_receive_ghost( ghosts , bulk.entity_key(*irels_itr) ) )
+        {
+          new_recv.insert( *irels_itr );
+        }
       }
     }
   }
@@ -847,9 +818,9 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
   //------------------------------------
   // Add the specified entities and their closure to the send ghosting
 
-  for ( std::vector< stk::mesh::EntityProc >::const_iterator
+  for ( std::vector< EntityProc >::const_iterator
         i = add_send.begin() ; i != add_send.end() ; ++i ) {
-        new_insert_transitive_closure( new_send , *i );
+        new_insert_transitive_closure( bulk, new_send , *i );
   }
 
   // Synchronize the send and receive list.
@@ -871,29 +842,29 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
   {
     stk::CommAll comm( MPI_COMM_WORLD );
 
-    for ( std::set< stk::mesh::EntityProc , stk::mesh::EntityLess >::iterator
+    for ( std::set< EntityProc , EntityLess >::iterator
           j = new_send.begin(); j != new_send.end() ; ++j ) {
-          stk::mesh::Entity & entity = * j->first ;
-      if ( ! in_ghost( ghosts , entity , j->second ) ) {
+      Entity entity = j->first ;
+      if ( ! bulk.in_ghost( ghosts , bulk.entity_key(entity) , j->second ) ) {
         // Not already being sent , must send it.
         stk::CommBuffer & buf = comm.send_buffer( j->second );
-        buf.pack<unsigned>( entity.entity_rank() );
-        stk::mesh::pack_entity_info(  buf , entity );
-        stk::mesh::pack_field_values( buf , entity );
+        buf.pack<unsigned>( bulk.entity_rank(entity) );
+        pack_entity_info(bulk,  buf , entity );
+        pack_field_values(bulk, buf , entity );
       }
     }
 
     comm.allocate_buffers( size / 4 );
 
-    for ( std::set< stk::mesh::EntityProc , stk::mesh::EntityLess >::iterator
+    for ( std::set< EntityProc , EntityLess >::iterator
           j = new_send.begin(); j != new_send.end() ; ++j ) {
-          stk::mesh::Entity & entity = * j->first ;
-      if ( ! in_ghost( ghosts , entity , j->second ) ) {
+      Entity entity = j->first;
+      if ( ! bulk.in_ghost( ghosts , bulk.entity_key(entity) , j->second ) ) {
         // Not already being sent , must send it.
         stk::CommBuffer & buf = comm.send_buffer( j->second );
-        buf.pack<unsigned>( entity.entity_rank() );
-        stk::mesh::pack_entity_info(  buf , entity );
-        stk::mesh::pack_field_values( buf , entity );
+        buf.pack<unsigned>( bulk.entity_rank(entity) );
+        pack_entity_info(bulk,  buf , entity );
+        pack_field_values(bulk, buf , entity );
 
       }
     }
@@ -902,9 +873,9 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
 
     std::ostringstream error_msg ;
 
-    for ( unsigned rank = 0 ; rank < rank_count ; ++rank ) {
+    for ( int rank = 0 ; rank < rank_count ; ++rank ) {
 
-      for ( unsigned p = 0 ; p < size ; ++p ) {
+      for ( int p = 0 ; p < size ; ++p ) {
 
         stk::CommBuffer & buf = comm.recv_buffer(p);
 
@@ -914,15 +885,15 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
           // If not the current entity rank, break the iteration
           // until a subsequent entity rank iteration.
           {
-            unsigned this_rank = ~0u ;
-            buf.peek<unsigned>( this_rank );
+            int this_rank = ~0u ;
+            buf.peek<int>( this_rank );
             if ( this_rank != rank ) break ;
 
-            buf.unpack<unsigned>( this_rank );
+            buf.unpack<int>( this_rank );
           }
 
           // FIXME for Carol; the code below did not work with -np 4
-          //STKUNIT_ASSERT_EQUAL( stk::mesh::unpack_field_values( buf , elem2 , error_msg ), false);
+          //ASSERT_EQ( unpack_field_values( buf , elem2 , error_msg ), false);
 	  //std::cout << "Error message for unpack_field_values = " << error_msg.str() << std::endl ;
 
         }
@@ -934,49 +905,52 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
   bulk.modification_end ();
 }
 
-STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testUninitializedMetaData )
+TEST ( UnitTestBulkData_new , testUninitializedMetaData )
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
 
-  stk::mesh::MetaData meta; // Construct, but do not initialize
-  stk::mesh::BulkData bulk(meta, pm);
+  MetaData meta; // Construct, but do not initialize
+  BulkData bulk(meta, pm);
 
-  meta.set_entity_rank_names(stk::mesh::fem::entity_rank_names(2 /*spatial-dim*/));
+  meta.initialize(2);
 
   meta.commit();
 
   bulk.modification_begin();
 
-  STKUNIT_ASSERT_THROW( bulk.declare_entity(0, /*rank*/
+  ASSERT_THROW( bulk.declare_entity(stk::topology::NODE_RANK,
                                             1, /*id*/
-                                            stk::mesh::PartVector() ),
+                                            PartVector() ),
                         std::logic_error);
 }
 
 namespace {
 
-void new_insert_transitive_closure( std::set<stk::mesh::EntityProc,stk::mesh::EntityLess> & new_send ,
-                                const stk::mesh::EntityProc & entry )
+void new_insert_transitive_closure( BulkData& bulk_data, std::set<EntityProc,EntityLess> & new_send ,
+                                const EntityProc & entry )
 {
   // Do not insert if I can determine that this entity is already
   // owned or shared by the receiving processor.
 
-  if ( entry.second != entry.first->owner_rank() &&
-       ! in_shared( * entry.first , entry.second ) ) {
+  if ( entry.second != bulk_data.parallel_owner_rank(entry.first) &&
+       ! bulk_data.in_aura( bulk_data.entity_key(entry.first), entry.second ) ) {
 
-    std::pair< std::set<stk::mesh::EntityProc,stk::mesh::EntityLess>::iterator , bool >
+    std::pair< std::set<EntityProc,EntityLess>::iterator , bool >
       result = new_send.insert( entry );
 
     if ( result.second ) {
       // A new insertion, must also insert the closure
 
-      const unsigned etype = entry.first->entity_rank();
-      stk::mesh::PairIterRelation irel  = entry.first->relations();
+      const unsigned erank = bulk_data.entity_rank(entry.first);
 
-      for ( ; ! irel.empty() ; ++irel ) {
-        if ( irel->entity_rank() < etype ) {
-          stk::mesh::EntityProc tmp( irel->entity() , entry.second );
-          new_insert_transitive_closure( new_send , tmp );
+      for (EntityRank irank = stk::topology::BEGIN_RANK; irank < erank; ++irank)
+      {
+        Entity const *rels_i = bulk_data.begin(entry.first, irank);
+        Entity const *rels_e = bulk_data.end(entry.first, irank);
+        for ( ; rels_i != rels_e; ++rels_i)
+        {
+          EntityProc tmp( *rels_i , entry.second );
+          new_insert_transitive_closure( bulk_data, new_send , tmp );
         }
       }
     }
@@ -987,32 +961,32 @@ void new_insert_transitive_closure( std::set<stk::mesh::EntityProc,stk::mesh::En
 // Synchronize the send list to the receive list.
 
 void new_comm_sync_send_recv(
-  stk::mesh::BulkData & mesh ,
-  std::set< stk::mesh::EntityProc , stk::mesh::EntityLess > & new_send ,
-  std::set< stk::mesh::Entity * , stk::mesh::EntityLess > & new_recv )
+  BulkData & mesh ,
+  std::set< EntityProc , EntityLess > & new_send ,
+  std::set< Entity , EntityLess > & new_recv )
 {
-  const unsigned parallel_rank = mesh.parallel_rank();
-  const unsigned parallel_size = mesh.parallel_size();
+  const int parallel_rank = mesh.parallel_rank();
+  const int parallel_size = mesh.parallel_size();
 
   stk::CommAll all( mesh.parallel() );
 
   // Communication sizing:
 
-  for ( std::set< stk::mesh::EntityProc , stk::mesh::EntityLess >::iterator
+  for ( std::set< EntityProc , EntityLess >::iterator
         i = new_send.begin() ; i != new_send.end() ; ++i ) {
-    const unsigned owner = i->first->owner_rank();
-    all.send_buffer( i->second ).skip<stk::mesh::EntityKey>(2);
+    const int owner = mesh.parallel_owner_rank(i->first);
+    all.send_buffer( i->second ).skip<EntityKey>(1).skip<int>(1);
     if ( owner != parallel_rank ) {
-      all.send_buffer( owner ).skip<stk::mesh::EntityKey>(2);
+      all.send_buffer( owner ).skip<EntityKey>(1).skip<int>(1);
     }
   }
 
   all.allocate_buffers( parallel_size / 4 , false /* Not symmetric */ );
 
   // Communication packing (with message content comments):
-  for ( std::set< stk::mesh::EntityProc , stk::mesh::EntityLess >::iterator
+  for ( std::set< EntityProc , EntityLess >::iterator
         i = new_send.begin() ; i != new_send.end() ; ) {
-    const unsigned owner = i->first->owner_rank();
+    const int owner = mesh.parallel_owner_rank(i->first);
 
     // Inform receiver of ghosting, the receiver does not own
     // and does not share this entity.
@@ -1020,8 +994,8 @@ void new_comm_sync_send_recv(
     // This status will be resolved on the final communication pass
     // when new ghosts are packed and sent.
 
-    const stk::mesh::EntityKey &entity_key = i->first->key();
-    const uint64_t &proc = i->second;
+    const EntityKey entity_key = mesh.entity_key(i->first);
+    const int proc = i->second;
 
     all.send_buffer( i->second ).pack(entity_key).pack(proc);
 
@@ -1032,7 +1006,7 @@ void new_comm_sync_send_recv(
 
       // Erase it from my processor's ghosting responsibility:
       // The iterator passed to the erase method will be invalidated.
-      std::set< stk::mesh::EntityProc , stk::mesh::EntityLess >::iterator jrem = i ; ++i ;
+      std::set< EntityProc , EntityLess >::iterator jrem = i ; ++i ;
       new_send.erase( jrem );
     }
     else {
@@ -1043,25 +1017,25 @@ void new_comm_sync_send_recv(
   all.communicate();
 
   // Communication unpacking:
-  for ( unsigned p = 0 ; p < parallel_size ; ++p ) {
+  for ( int p = 0 ; p < parallel_size ; ++p ) {
     stk::CommBuffer & buf = all.recv_buffer(p);
     while ( buf.remaining() ) {
 
-      stk::mesh::EntityKey entity_key;
-      uint64_t proc(0);
+      EntityKey entity_key;
+      int proc = 0;
 
       buf.unpack(entity_key).unpack(proc);
 
-      stk::mesh::Entity * const e = mesh.get_entity( entity_key );
+      Entity const e = mesh.get_entity( entity_key );
 
       if ( parallel_rank != proc ) {
         //  Receiving a ghosting need for an entity I own.
         //  Add it to my send list.
-        STKUNIT_ASSERT( e != NULL );
-        stk::mesh::EntityProc tmp( e , proc );
+        ASSERT_TRUE( mesh.is_valid(e) );
+        EntityProc tmp( e , proc );
         new_send.insert( tmp );
       }
-      else if ( e != NULL ) {
+      else if ( mesh.is_valid(e) ) {
         //  I am the receiver for this ghost.
         //  If I already have it add it to the receive list,
         //  otherwise don't worry about it - I will receive
@@ -1073,40 +1047,156 @@ void new_comm_sync_send_recv(
 }
 
 void new_comm_recv_to_send(
-  stk::mesh::BulkData & mesh ,
-  const std::set< stk::mesh::Entity * , stk::mesh::EntityLess > & new_recv ,
-        std::set< stk::mesh::EntityProc , stk::mesh::EntityLess > & new_send )
+  BulkData & mesh ,
+  const std::set< Entity , EntityLess > & new_recv ,
+        std::set< EntityProc , EntityLess > & new_send )
 {
-  const unsigned parallel_size = mesh.parallel_size();
+  const int parallel_size = mesh.parallel_size();
 
   stk::CommAll all( mesh.parallel() );
 
-  for ( std::set< stk::mesh::Entity * , stk::mesh::EntityLess >::const_iterator
+  for ( std::set< Entity , EntityLess >::const_iterator
         i = new_recv.begin() ; i != new_recv.end() ; ++i ) {
-    const unsigned owner = (*i)->owner_rank();
-    all.send_buffer( owner ).skip<stk::mesh::EntityKey>(1);
+    const int owner = mesh.parallel_owner_rank(*i);
+    all.send_buffer( owner ).skip<EntityKey>(1);
   }
 
   all.allocate_buffers( parallel_size / 4 , false /* Not symmetric */ );
 
-  for ( std::set< stk::mesh::Entity * , stk::mesh::EntityLess >::const_iterator
+  for ( std::set< Entity , EntityLess >::const_iterator
         i = new_recv.begin() ; i != new_recv.end() ; ++i ) {
-    const unsigned owner = (*i)->owner_rank();
-    const stk::mesh::EntityKey key = (*i)->key();
-    all.send_buffer( owner ).pack<stk::mesh::EntityKey>( & key , 1 );
+    const int owner = mesh.parallel_owner_rank(*i);
+    const EntityKey key = mesh.entity_key(*i);
+    all.send_buffer( owner ).pack<EntityKey>( & key , 1 );
   }
 
   all.communicate();
 
-  for ( unsigned p = 0 ; p < parallel_size ; ++p ) {
+  for ( int p = 0 ; p < parallel_size ; ++p ) {
     stk::CommBuffer & buf = all.recv_buffer(p);
     while ( buf.remaining() ) {
-      stk::mesh::EntityKey key ;
-      buf.unpack<stk::mesh::EntityKey>( & key , 1 );
-      stk::mesh::EntityProc tmp( mesh.get_entity( entity_rank(key), entity_id(key) ) , p );
+      EntityKey key ;
+      buf.unpack<EntityKey>( & key , 1 );
+      EntityProc tmp( mesh.get_entity( key.rank(), key.id() ) , p );
       new_send.insert( tmp );
     }
   }
 }
 
 }
+
+TEST ( UnitTestBulkData_new , testGhostHandleRemainsValidAfterRefresh )
+{
+  //
+  // Testing if a handle to a ghosted entity remains valid before and after a
+  // modification cycle in which the ghost is refreshed.
+  //
+  // To test this, we focus on a single node shared on 2 procs, ghosted on others
+  //
+  //
+  // 1D Mesh (node,owner)--[elem,owner]---(...)
+  //
+  // <---(50,0)--[100,0]--(21,1)--[201,1]---(32,2)---[302,2]---(50,0)--->
+  //
+
+  // elem, node0, node1, owner
+  EntityId elems_0[][4] = { {100, 21, 50, 0}, {201, 21, 32, 1}, {302, 32, 50, 2} };
+  // node, owner
+  EntityId nodes_0[][2] = { {21,1}, {50,0}, {32, 2} };
+
+  const unsigned nelems = sizeof(elems_0)/4/sizeof(EntityId);
+  const unsigned nnodes = sizeof(nodes_0)/2/sizeof(EntityId);
+
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+
+  // Set up meta and bulk data
+  const unsigned spatial_dim = 2;
+
+  std::vector<std::string> entity_rank_names = stk::mesh::entity_rank_names();
+  entity_rank_names.push_back("FAMILY_TREE");
+
+  MetaData meta_data(spatial_dim, entity_rank_names);
+  //Part & part_tmp = meta_data.declare_part( "temp");
+
+  meta_data.commit();
+  unsigned max_bucket_size = 1;
+  BulkData mesh(meta_data, pm, max_bucket_size);
+  //BulkData mesh(MetaData::get_meta_data(meta_data), pm);
+  int p_rank = mesh.parallel_rank();
+  int p_size = mesh.parallel_size();
+
+  if (p_size != 3) return;
+
+  //
+  // Begin modification cycle so we can create the entities and relations
+  //
+  {
+    // We're just going to add everything to the universal part
+    PartVector empty_parts;
+
+    // Create elements
+    const EntityRank elem_rank = stk::topology::ELEMENT_RANK;
+    Entity elem = Entity();
+
+    mesh.modification_begin();
+
+    for (unsigned ielem=0; ielem < nelems; ielem++) {
+      if (static_cast<int>(elems_0[ielem][3]) == p_rank) {
+        elem = mesh.declare_entity(elem_rank, elems_0[ielem][0], empty_parts);
+
+        EntityVector nodes;
+        // Create node on all procs
+        nodes.push_back( mesh.declare_entity(stk::topology::NODE_RANK, elems_0[ielem][2], empty_parts) );
+        nodes.push_back( mesh.declare_entity(stk::topology::NODE_RANK, elems_0[ielem][1], empty_parts) );
+
+        // Add relations to nodes
+        mesh.declare_relation( elem, nodes[0], 0 );
+        mesh.declare_relation( elem, nodes[1], 1 );
+      }
+    }
+
+    mesh.modification_end();
+  }
+
+  // change node owners
+  {
+    mesh.modification_begin();
+
+    std::vector<EntityProc> change;
+
+    for (unsigned inode=0; inode < nnodes; inode++) {
+      Entity node = mesh.get_entity(stk::topology::NODE_RANK, nodes_0[inode][0]);
+      if (mesh.is_valid(node) && mesh.parallel_owner_rank(node) == p_rank) {
+        int dest = nodes_0[inode][1];
+        EntityProc eproc(node, dest);
+        change.push_back(eproc);
+      }
+    }
+
+    mesh.change_entity_owner( change );
+
+    mesh.modification_end();
+  }
+
+  // The real test is here
+  {
+    Entity node_21_handle_before_elem_deletion = mesh.get_entity(stk::topology::NODE_RANK, 21);
+    if (p_rank == 2) {
+      ASSERT_TRUE(mesh.in_receive_ghost(mesh.entity_key(node_21_handle_before_elem_deletion)));
+    }
+
+    // attempt to delete a node and its elems but on a ghosted proc
+    mesh.modification_begin();
+
+    Entity elem = mesh.get_entity(stk::topology::ELEMENT_RANK, 100);
+    if (mesh.is_valid(elem)) mesh.destroy_entity(elem);
+
+    mesh.modification_end();
+
+    // Key check is here
+    if (p_rank == 2) {
+      ASSERT_TRUE(mesh.is_valid(node_21_handle_before_elem_deletion));
+    }
+  }
+}
+

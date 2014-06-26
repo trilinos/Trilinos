@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -47,7 +47,7 @@
 #  PYTHONINTERP_FOUND - Was the Python executable found
 #  PYTHON_EXECUTABLE  - path to the Python interpreter
 #
-# This module also responds to the following CMake cache varibles:
+# This module also responds to the following CMake cache variables:
 #
 #  PythonInterp_FIND_VERSION - Requires that a given version be found
 #    if some Python executable is found (e.g. '2.4').  Note that this

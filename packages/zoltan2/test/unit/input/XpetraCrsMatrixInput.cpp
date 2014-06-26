@@ -181,12 +181,14 @@ int main(int argc, char *argv[])
   int nWeights = 1;
 
 
-  zoltan2_partId_t *p = new zoltan2_partId_t [nrows];
-  memset(p, 0, sizeof(zoltan2_partId_t) * nrows);
-  ArrayRCP<zoltan2_partId_t> solnParts(p, 0, nrows, true);
-
   typedef Zoltan2::XpetraCrsMatrixAdapter<tmatrix_t> adapter_t;
   typedef Zoltan2::PartitioningSolution<adapter_t> soln_t;
+  typedef adapter_t::part_t part_t;
+
+  part_t *p = new part_t [nrows];
+  memset(p, 0, sizeof(part_t) * nrows);
+  ArrayRCP<part_t> solnParts(p, 0, nrows, true);
+
   soln_t solution(env, comm, idMap, nWeights);
   solution.setParts(gidArray, solnParts, false);//could use true, but test false
 

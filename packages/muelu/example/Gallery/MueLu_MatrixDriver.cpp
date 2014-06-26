@@ -46,6 +46,10 @@
 #include <iostream>
 #include <unistd.h>
 
+#ifdef _MSC_VER
+#include <windows.h> // for Sleep
+#endif
+
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
 
@@ -103,7 +107,7 @@ int main(int argc, char** argv)
   /**********************************************************************************/
   /* CREATE INITAL MATRIX                                                           */
   /**********************************************************************************/
-  RCP<const Tpetra::Map<LO,GO> > map = rcp( new Tpetra::Map<LO,GO>(matrixParameters.GetNumGlobalElements(), 0, comm) );
+  RCP<const Tpetra::Map<LO,GO> > map = Teuchos::rcp( new Tpetra::Map<LO,GO>(matrixParameters.GetNumGlobalElements(), 0, comm) );
   RCP<Galeri::Xpetra::Problem<Tpetra::Map<LO,GO>,Tpetra::CrsMatrix<SC,LO,GO>,Tpetra::MultiVector<SC,LO,GO> > > problem =
       Galeri::Xpetra::BuildProblem<SC, LO, GO, Tpetra::Map<LO,GO>, Tpetra::CrsMatrix<SC,LO,GO>, Tpetra::MultiVector<SC,LO,GO> >
       (matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
@@ -118,8 +122,11 @@ int main(int argc, char** argv)
     std::cout << "\n================ MAP =====================================================\n" << std::endl;
   map->describe(*out, Teuchos::VERB_EXTREME);
   comm->barrier();
+#ifdef _MSC_VER
+  Sleep(1000);
+#else
   sleep(1);
-
+#endif
   if (comm->getRank() == 0)
     std::cout << "\n================ MATRIX ==================================================\n" << std::endl;
   A->describe(*out, Teuchos::VERB_EXTREME);

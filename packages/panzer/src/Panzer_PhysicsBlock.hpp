@@ -83,10 +83,10 @@ namespace panzer {
   void buildPhysicsBlocks(const std::map<std::string,std::string>& block_ids_to_physics_ids,
                           const std::map<std::string,Teuchos::RCP<const shards::CellTopology> >& block_ids_to_cell_topo,
                           const Teuchos::RCP<Teuchos::ParameterList>& physics_blocks_plist,
-			  const int default_integration_order,
+                          const int default_integration_order,
                           const std::size_t workset_size,
                           const Teuchos::RCP<const panzer::EquationSetFactory>& eqset_factory,
-			  const Teuchos::RCP<panzer::GlobalData>& global_data,
+                          const Teuchos::RCP<panzer::GlobalData>& global_data,
                           const bool build_transient_support,
                           std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks);
 
@@ -98,8 +98,8 @@ namespace panzer {
       ]param[in] throw_on_failure Optional parameter that determines if the function hsould throw on failure.  Default is true.  If set to false and the funtion fails to find the physics block, then a null RCP is returned.
   */
   Teuchos::RCP<panzer::PhysicsBlock> findPhysicsBlock(const std::string element_block_id,
-						      const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physics_blocks,
-						      bool throw_on_failure = true);
+                                                      const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physics_blocks,
+                                                      bool throw_on_failure = true);
   
   //! Object that contains information on the physics and discretization of a block of elements with the SAME topology.
   class PhysicsBlock {
@@ -112,78 +112,91 @@ namespace panzer {
 
     PhysicsBlock(const Teuchos::RCP<Teuchos::ParameterList>& physics_block_plist,
                  const std::string & element_block_id,
-		 const int default_integration_order,
-		 const panzer::CellData & cell_data,
-		 const Teuchos::RCP<const panzer::EquationSetFactory>& factory,
-		 const Teuchos::RCP<panzer::GlobalData>& global_data,
-		 const bool build_transient_support);
+                 const int default_integration_order,
+                 const panzer::CellData & cell_data,
+                 const Teuchos::RCP<const panzer::EquationSetFactory>& factory,
+                 const Teuchos::RCP<panzer::GlobalData>& global_data,
+                 const bool build_transient_support);
 
     PhysicsBlock(const panzer::PhysicsBlock & pb,
                  const panzer::CellData & cell_data);
 
+    /** This constructor builds a bare bones equation set. It will do gather
+      * and scatter for a particular field and set of basis functions. It will
+      * not have any equation sets associated with it.
+      */ 
+    PhysicsBlock(const std::string & element_block_id,
+                 const std::string & physics_block_id,
+                 const int integration_order,
+                 const panzer::CellData & cell_data,
+                 const Teuchos::RCP<panzer::GlobalData>& global_data,
+                 const Teuchos::RCP<panzer::PureBasis> & fields);
+
     void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-					       const Teuchos::ParameterList& user_data) const;
+                                               const Teuchos::ParameterList& user_data) const;
 
     void buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-							const panzer::LinearObjFactory<panzer::Traits> & lof,
-							const Teuchos::ParameterList& user_data) const;
+                                                        const panzer::LinearObjFactory<panzer::Traits> & lof,
+                                                        const Teuchos::ParameterList& user_data) const;
 
     void buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-						      const Teuchos::ParameterList& user_data) const;
+                                                      const Teuchos::Ptr<const panzer::LinearObjFactory<panzer::Traits> > & lof,
+                                                      const Teuchos::ParameterList& user_data) const;
 
     void buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-					   const panzer::LinearObjFactory<panzer::Traits> & lof,
-					   const Teuchos::ParameterList& user_data) const;
+                                           const panzer::LinearObjFactory<panzer::Traits> & lof,
+                                           const Teuchos::ParameterList& user_data) const;
 
     void buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-						const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
-						const Teuchos::ParameterList& models,
-						const Teuchos::ParameterList& user_data) const;
+                                                const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
+                                                const Teuchos::ParameterList& models,
+                                                const Teuchos::ParameterList& user_data) const;
 
     void buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-						    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
-						    const std::string& model_name,
-						    const Teuchos::ParameterList& models,
-						    const panzer::LinearObjFactory<panzer::Traits> & lof,
-						    const Teuchos::ParameterList& user_data) const;
+                                                    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
+                                                    const std::string& model_name,
+                                                    const Teuchos::ParameterList& models,
+                                                    const panzer::LinearObjFactory<panzer::Traits> & lof,
+                                                    const Teuchos::ParameterList& user_data) const;
 
     void buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-					    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
-				            const std::string& model_name,
-					    const Teuchos::ParameterList& models,
-					    const Teuchos::ParameterList& user_data) const;
+                                            const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
+                                            const std::string& model_name,
+                                            const Teuchos::ParameterList& models,
+                                            const Teuchos::ParameterList& user_data) const;
 
     template<typename EvalT>
     void buildAndRegisterEquationSetEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
-						      const Teuchos::ParameterList& user_data) const;
+                                                      const Teuchos::ParameterList& user_data) const;
 
     template<typename EvalT>
     void buildAndRegisterGatherAndOrientationEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
-							       const LinearObjFactory<panzer::Traits> & lof,
-							       const Teuchos::ParameterList& user_data) const;
+                                                               const LinearObjFactory<panzer::Traits> & lof,
+                                                               const Teuchos::ParameterList& user_data) const;
 
     template<typename EvalT>
     void buildAndRegisterDOFProjectionsToIPEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
-							     const Teuchos::ParameterList& user_data) const;
+                                                             const Teuchos::Ptr<const panzer::LinearObjFactory<panzer::Traits> > & lof,
+                                                             const Teuchos::ParameterList& user_data) const;
 
     template<typename EvalT>
     void buildAndRegisterScatterEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
-						  const LinearObjFactory<panzer::Traits> & lof,
-						  const Teuchos::ParameterList& user_data) const;
+                                                  const LinearObjFactory<panzer::Traits> & lof,
+                                                  const Teuchos::ParameterList& user_data) const;
 
     template<typename EvalT>
     void buildAndRegisterClosureModelEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
-						       const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
-						       const Teuchos::ParameterList& models,
-						       const Teuchos::ParameterList& user_data) const;
+                                                       const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
+                                                       const Teuchos::ParameterList& models,
+                                                       const Teuchos::ParameterList& user_data) const;
 
     template<typename EvalT>
     void buildAndRegisterInitialConditionEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
-							   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
-							   const std::string& model_name,
-							   const Teuchos::ParameterList& models,
-							   const panzer::LinearObjFactory<panzer::Traits> & lof,
-							   const Teuchos::ParameterList& user_data) const;
+                                                           const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
+                                                           const std::string& model_name,
+                                                           const Teuchos::ParameterList& models,
+                                                           const panzer::LinearObjFactory<panzer::Traits> & lof,
+                                                           const Teuchos::ParameterList& user_data) const;
 
     const std::vector<std::string>& getDOFNames() const;
     const std::vector<StrPureBasisPair>& getProvidedDOFs() const;
@@ -223,10 +236,10 @@ namespace panzer {
 
   protected:
     void initialize(const Teuchos::RCP<Teuchos::ParameterList>& input_parameters,
-		    const int& default_integration_order,
+                    const int& default_integration_order,
                     const std::string & element_block_id,
-   		    const panzer::CellData & cell_data,
-		    const bool build_transient_support);
+                       const panzer::CellData & cell_data,
+                    const bool build_transient_support);
 
     std::string m_physics_id;
     std::string m_element_block_id;
@@ -259,7 +272,7 @@ namespace panzer {
 
 template<typename EvalT>
 void panzer::PhysicsBlock::buildAndRegisterEquationSetEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
-									const Teuchos::ParameterList& user_data) const
+                                                                        const Teuchos::ParameterList& user_data) const
 {
   using std::vector;
   using Teuchos::RCP;
@@ -278,8 +291,8 @@ void panzer::PhysicsBlock::buildAndRegisterEquationSetEvaluatorsForType(PHX::Fie
 
 template<typename EvalT>
 void panzer::PhysicsBlock::buildAndRegisterGatherAndOrientationEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
-										 const LinearObjFactory<panzer::Traits> & lof,
-										 const Teuchos::ParameterList& user_data) const
+                                                                                 const LinearObjFactory<panzer::Traits> & lof,
+                                                                                 const Teuchos::ParameterList& user_data) const
 {
   using std::vector;
   using Teuchos::RCP;
@@ -299,7 +312,8 @@ void panzer::PhysicsBlock::buildAndRegisterGatherAndOrientationEvaluatorsForType
 
 template<typename EvalT>
 void panzer::PhysicsBlock::buildAndRegisterDOFProjectionsToIPEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
-									       const Teuchos::ParameterList& user_data) const
+                                                                               const Teuchos::Ptr<const panzer::LinearObjFactory<panzer::Traits> > & lof,
+                                                                               const Teuchos::ParameterList& user_data) const
 {
   using std::vector;
   using Teuchos::RCP;
@@ -313,11 +327,11 @@ void panzer::PhysicsBlock::buildAndRegisterDOFProjectionsToIPEvaluatorsForType(P
 
     // Loop over integration rules
     for (std::map<int,Teuchos::RCP<panzer::IntegrationRule> >::const_iterator ir_iter = m_integration_rules.begin();
-	 ir_iter != m_integration_rules.end(); ++ ir_iter) {
+         ir_iter != m_integration_rules.end(); ++ ir_iter) {
       
       Teuchos::RCP<panzer::IntegrationRule> ir = ir_iter->second;
       
-      eqstm.getAsObject<EvalT>()->buildAndRegisterDOFProjectionsToIPEvaluators(fm,*m_field_lib->buildFieldLayoutLibrary(*ir),ir,user_data);
+      eqstm.getAsObject<EvalT>()->buildAndRegisterDOFProjectionsToIPEvaluators(fm,*m_field_lib->buildFieldLayoutLibrary(*ir),ir,lof,user_data);
 
     }
 
@@ -326,8 +340,8 @@ void panzer::PhysicsBlock::buildAndRegisterDOFProjectionsToIPEvaluatorsForType(P
 
 template<typename EvalT>
 void panzer::PhysicsBlock::buildAndRegisterScatterEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
-								    const LinearObjFactory<panzer::Traits> & lof,
-								    const Teuchos::ParameterList& user_data) const
+                                                                    const LinearObjFactory<panzer::Traits> & lof,
+                                                                    const Teuchos::ParameterList& user_data) const
 {
   using std::vector;
   using Teuchos::RCP;
@@ -347,9 +361,9 @@ void panzer::PhysicsBlock::buildAndRegisterScatterEvaluatorsForType(PHX::FieldMa
 
 template<typename EvalT>
 void panzer::PhysicsBlock::buildAndRegisterClosureModelEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
-									 const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
-									 const Teuchos::ParameterList& models,
-									 const Teuchos::ParameterList& user_data) const
+                                                                         const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
+                                                                         const Teuchos::ParameterList& models,
+                                                                         const Teuchos::ParameterList& user_data) const
 {
   using std::vector;
   using Teuchos::RCP;
@@ -364,7 +378,7 @@ void panzer::PhysicsBlock::buildAndRegisterClosureModelEvaluatorsForType(PHX::Fi
 
     // Loop over integration rules
     for (std::map<int,Teuchos::RCP<panzer::IntegrationRule> >::const_iterator ir_iter = m_integration_rules.begin();
-	 ir_iter != m_integration_rules.end(); ++ ir_iter) {
+         ir_iter != m_integration_rules.end(); ++ ir_iter) {
       
       Teuchos::RCP<panzer::IntegrationRule> ir = ir_iter->second;
       
@@ -376,11 +390,11 @@ void panzer::PhysicsBlock::buildAndRegisterClosureModelEvaluatorsForType(PHX::Fi
 
 template<typename EvalT>
 void panzer::PhysicsBlock::buildAndRegisterInitialConditionEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
-									     const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
-									     const std::string& model_name,
-									     const Teuchos::ParameterList& models,
-									     const panzer::LinearObjFactory<panzer::Traits> & lof,
-									     const Teuchos::ParameterList& user_data) const
+                                                                             const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
+                                                                             const std::string& model_name,
+                                                                             const Teuchos::ParameterList& models,
+                                                                             const panzer::LinearObjFactory<panzer::Traits> & lof,
+                                                                             const Teuchos::ParameterList& user_data) const
 {
   using std::vector;
   using Teuchos::RCP;

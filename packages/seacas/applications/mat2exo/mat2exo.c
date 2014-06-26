@@ -56,15 +56,13 @@
    modified by Greg Sjaardema, 07/05/2012 to use matio instead of matlab libraries.
 */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <time.h>
-#include <assert.h>
-#include <exodusII.h>
-#include "matio.h"
-#include "add_to_log.h"
+#include <exodusII.h>                   // for ex_inquire_int, ex_put_var, etc
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf, NULL, printf, etc
+#include <stdlib.h>                     // for calloc, free, exit
+#include <string.h>                     // for strtok, memcpy, strcat, etc
+#include "add_to_log.h"                 // for add_to_log
+#include "matio.h"                      // for matvar_t, Mat_VarFree, etc
 
 /**********************************************************************/
 mat_t *mat_file=0;  /* file for binary .mat input */

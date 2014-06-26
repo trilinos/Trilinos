@@ -1,7 +1,3 @@
-
-INCLUDE(TribitsAddExecutableAndTest)
-
-
 #
 # UnitTest_UnitTests
 #

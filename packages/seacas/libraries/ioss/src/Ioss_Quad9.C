@@ -32,12 +32,13 @@
 
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity
-#include <Ioss_ElementVariableType.h>
 #include <Ioss_Quad9.h>
-#include <assert.h>
-#include <stddef.h>
+#include <Ioss_ElementVariableType.h>   // for ElementVariableType
+#include <assert.h>                     // for assert
+#include <stddef.h>                     // for NULL
+#include "Ioss_CodeTypes.h"             // for IntVector
+#include "Ioss_ElementTopology.h"       // for ElementTopology
 
-#include "Ioss_ElementTopology.h"
 
 namespace Ioss {
   class St_Quad9 : public ElementVariableType

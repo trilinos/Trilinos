@@ -193,6 +193,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_SparseGridQuadratureImp.hpp
   Stokhos_AnisoSparseGridQuadrature.hpp
   Stokhos_AnisoSparseGridQuadratureImp.hpp
+  Stokhos_SmolyakSparseGridQuadrature.hpp
+  Stokhos_SmolyakSparseGridQuadratureImp.hpp
   Stokhos_UserDefinedQuadrature.hpp
   Stokhos_UserDefinedQuadratureImp.hpp
   Stokhos_QuadratureFactory.hpp
@@ -540,6 +542,7 @@ IF (Stokhos_ENABLE_Sacado)
     LIST(APPEND SACADO_HEADERS
       sacado/kokkos/Stokhos_Sacado_Kokkos.hpp
       sacado/kokkos/Stokhos_Sacado_Kokkos_MathFunctions.hpp
+      sacado/kokkos/Stokhos_MemoryTraits.hpp
       sacado/kokkos/Stokhos_KokkosTraits.hpp
       sacado/kokkos/Stokhos_StaticArrayTraits.hpp
       sacado/kokkos/Stokhos_DynArrayTraits.hpp
@@ -562,6 +565,8 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/kokkos/vector/Kokkos_View_MP_Vector_Interlaced.hpp
       sacado/kokkos/vector/Kokkos_View_MP_Vector_Utils.hpp
       sacado/kokkos/vector/Kokkos_Atomic_MP_Vector.hpp
+      sacado/kokkos/vector/Teuchos_LAPACK_MP_Vector.hpp
+      sacado/kokkos/vector/Teuchos_SerialQRDenseSolver_MP_Vector.hpp
 
       sacado/kokkos/pce/Stokhos_Sacado_Kokkos_UQ_PCE.hpp
       sacado/kokkos/pce/Sacado_UQ_PCE.hpp
@@ -572,8 +577,11 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/kokkos/pce/Kokkos_View_UQ_PCE_Contiguous.hpp
       sacado/kokkos/pce/Kokkos_View_UQ_PCE_Utils.hpp
       sacado/kokkos/pce/Kokkos_Atomic_UQ_PCE.hpp
+      sacado/kokkos/pce/Teuchos_LAPACK_UQ_PCE.hpp
+      sacado/kokkos/pce/Teuchos_SerialQRDenseSolver_UQ_PCE.hpp
       )
     LIST(APPEND SACADO_SOURCES
+      sacado/kokkos/Stokhos_MemoryTraits.cpp
       sacado/kokkos/vector/Kokkos_View_MP_Vector.cpp
       )
     IF (Stokhos_ENABLE_KokkosLinAlg)

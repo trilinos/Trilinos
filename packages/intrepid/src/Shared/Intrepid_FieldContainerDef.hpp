@@ -122,6 +122,8 @@ FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const int dim0,
                                        const int dim1,
                                        const int dim2) : dim0_(dim0), dim1_(dim1), dim2_(dim2), dim3_(0), dim4_(0)
 {
+  using Teuchos::as;
+  using Teuchos::Ordinal;
 #ifdef HAVE_INTREPID_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION( (0 > dim0), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): FieldContainer cannot have a negative 1st dimension.");
@@ -134,7 +136,7 @@ FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const int dim0,
   dimensions_[0] = dim0_;  
   dimensions_[1] = dim1_; 
   dimensions_[2] = dim2_;  
-  data_.assign(dim0_*dim1_*dim2_, (Scalar)0);
+  data_.assign(as<Ordinal>(dim0_*dim1_*dim2_), as<Scalar>(0));
   data_ptr_ = data_.begin();
 }
 
@@ -146,6 +148,8 @@ FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const int dim0,
                                        const int dim2,
                                        const int dim3) : dim0_(dim0), dim1_(dim1), dim2_(dim2), dim3_(dim3), dim4_(0)
 {
+  using Teuchos::as;
+  using Teuchos::Ordinal;
 #ifdef HAVE_INTREPID_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION( (0 > dim0), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): FieldContainer cannot have a negative 1st dimension.");
@@ -161,7 +165,7 @@ FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const int dim0,
   dimensions_[1] = dim1_; 
   dimensions_[2] = dim2_;  
   dimensions_[3] = dim3_; 
-  data_.assign(dim0_*dim1_*dim2_*dim3_, (Scalar)0);
+  data_.assign(as<Ordinal>(dim0_*dim1_*dim2_*dim3_), as<Scalar>(0));
   data_ptr_ = data_.begin();
 }
 
@@ -174,6 +178,8 @@ FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const int dim0,
                                        const int dim3,
                                        const int dim4) : dim0_(dim0), dim1_(dim1), dim2_(dim2), dim3_(dim3), dim4_(dim4)
 {
+  using Teuchos::as;
+  using Teuchos::Ordinal;
 #ifdef HAVE_INTREPID_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION( (0 > dim0), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): FieldContainer cannot have a negative 1st dimension.");
@@ -192,7 +198,7 @@ FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const int dim0,
   dimensions_[2] = dim2_;  
   dimensions_[3] = dim3_;  
   dimensions_[4] = dim4_;  
-  data_.assign(dim0_*dim1_*dim2_*dim3_*dim4_, (Scalar)0);
+  data_.assign(as<Ordinal>(dim0_*dim1_*dim2_*dim3_*dim4_), as<Scalar>(0));
   data_ptr_ = data_.begin();
 }
 

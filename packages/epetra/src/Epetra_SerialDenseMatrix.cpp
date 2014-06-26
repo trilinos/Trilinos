@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -96,7 +96,7 @@ Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix(Epetra_DataAccess CV_in, doub
     Epetra_Object(-1, false),
     M_(NumRows),
     N_(NumCols),
-    A_Copied_(false),    
+    A_Copied_(false),
     CV_(CV_in),
     LDA_(LDA_in),
     A_(A_in),
@@ -129,7 +129,7 @@ Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix(Epetra_DataAccess CV_in, doub
 }
 //=============================================================================
 Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix(const Epetra_SerialDenseMatrix& Source)
-  : Epetra_CompObject(Source),  
+  : Epetra_CompObject(Source),
     M_(Source.M_),
     N_(Source.N_),
     A_Copied_(false),
@@ -164,14 +164,14 @@ int Epetra_SerialDenseMatrix::Reshape(int NumRows, int NumCols) {
 	if(newsize > 0) {
 		// Allocate space for new matrix
 		A_tmp = new double[newsize];
-		for (int k = 0; k < newsize; k++) 
+		for (int k = 0; k < newsize; k++)
 			A_tmp[k] = 0.0; // Zero out values
 		int M_tmp = EPETRA_MIN(M_, NumRows);
 		int N_tmp = EPETRA_MIN(N_, NumCols);
-		if (A_ != 0) 
+		if (A_ != 0)
 			CopyMat(A_, LDA_, M_tmp, N_tmp, A_tmp, NumRows); // Copy principal submatrix of A to new A
   }
-  CleanupData(); // Get rid of anything that might be already allocated  
+  CleanupData(); // Get rid of anything that might be already allocated
   M_ = NumRows;
   N_ = NumCols;
   LDA_ = M_;
@@ -194,7 +194,7 @@ int Epetra_SerialDenseMatrix::Shape(int NumRows, int NumCols) {
 	const int newsize = LDA_ * N_;
 	if(newsize > 0) {
 		A_ = new double[newsize];
-		for (int k = 0; k < newsize; k++) 
+		for (int k = 0; k < newsize; k++)
 			A_[k] = 0.0; // Zero out values
 		A_Copied_ = true;
 	}
@@ -225,7 +225,7 @@ Epetra_SerialDenseMatrix& Epetra_SerialDenseMatrix::operator = (const Epetra_Ser
 		return(*this); // Special case of both are views to same data.
 
 	if(std::strcmp(Label(), Source.Label()) != 0)
-		throw ReportError("operator= type mismatch (lhs = " + std::string(Label()) + 
+		throw ReportError("operator= type mismatch (lhs = " + std::string(Label()) +
       ", rhs = " + std::string(Source.Label()) + ").", -5);
 	
 	if(Source.CV_ == View) {
@@ -301,10 +301,10 @@ bool Epetra_SerialDenseMatrix::operator==(const Epetra_SerialDenseMatrix& rhs) c
 
 //=============================================================================
 Epetra_SerialDenseMatrix& Epetra_SerialDenseMatrix::operator+= ( const Epetra_SerialDenseMatrix & Source) {
-  if (M() != Source.M()) 
+  if (M() != Source.M())
 		throw ReportError("Row dimension of source = " + toString(Source.M()) +
 											" is different than  row dimension of target = " + toString(LDA()), -1);
-  if (N() != Source.N()) 
+  if (N() != Source.N())
 		throw ReportError("Column dimension of source = " + toString(Source.N()) +
 											" is different than column dimension of target = " + toString(N()), -2);
 
@@ -315,7 +315,7 @@ Epetra_SerialDenseMatrix& Epetra_SerialDenseMatrix::operator+= ( const Epetra_Se
 void Epetra_SerialDenseMatrix::CopyMat(const double* Source,
                                        int Source_LDA,
                                        int NumRows,
-                                       int NumCols, 
+                                       int NumCols,
                                        double* Target,
                                        int Target_LDA,
                                        bool add)
@@ -347,17 +347,17 @@ void Epetra_SerialDenseMatrix::CopyMat(const double* Source,
   double* targetPtr = Target;
   double* sourcePtr = Source;
   double* targetEnd = 0;
- 
+
   for (j = 0; j < NumCols; j++) {
     targetPtr = Target + j * Target_LDA;
     targetEnd = targetPtr+NumRows;
     sourcePtr = Source + j * Source_LDA;
     if (add) {
-      while(targetPtr != targetEnd) 
+      while(targetPtr != targetEnd)
 		*targetPtr++ += *sourcePtr++;
     }
     else {
-      while(targetPtr != targetEnd) 
+      while(targetPtr != targetEnd)
 		*targetPtr++ = *sourcePtr++;
     }
   }
@@ -388,7 +388,7 @@ double Epetra_SerialDenseMatrix::NormInf() const {
     double anorm = 0.0;
     double * ptr;
 
-    // Loop across columns in inner loop.  Most expensive memory access, but 
+    // Loop across columns in inner loop.  Most expensive memory access, but
     // requires no extra storage.
     for (i=0; i<M_; i++) {
       double sum=0.0;
@@ -406,7 +406,7 @@ double Epetra_SerialDenseMatrix::NormInf() const {
 int Epetra_SerialDenseMatrix::Scale(double ScalarA) {
 
   int i, j;
-  
+
   double * ptr;
   for (j=0; j<N_; j++) {
     ptr = A_ + j*LDA_;
@@ -414,30 +414,30 @@ int Epetra_SerialDenseMatrix::Scale(double ScalarA) {
   }
   UpdateFlops((double)N_*(double)N_);
   return(0);
-  
+
 }
 //=========================================================================
-int Epetra_SerialDenseMatrix::Multiply (char TransA, char TransB, double ScalarAB, 
-					const Epetra_SerialDenseMatrix& A_in, 
+int Epetra_SerialDenseMatrix::Multiply (char TransA, char TransB, double ScalarAB,
+					const Epetra_SerialDenseMatrix& A_in,
 					const Epetra_SerialDenseMatrix& B,
 					double ScalarThis ) {
   // Check for compatible dimensions
 
   if (TransA!='T' && TransA!='N') EPETRA_CHK_ERR(-2); // Return error
   if (TransB!='T' && TransB!='N') EPETRA_CHK_ERR(-3);
-  
+
   int A_nrows = (TransA=='T') ? A_in.N() : A_in.M();
   int A_ncols = (TransA=='T') ? A_in.M() : A_in.N();
   int B_nrows = (TransB=='T') ? B.N() : B.M();
   int B_ncols = (TransB=='T') ? B.M() : B.N();
-  
+
   if (M_        != A_nrows     ||
       A_ncols   != B_nrows     ||
       N_        != B_ncols  ) EPETRA_CHK_ERR(-1); // Return error
 
-    
+
   // Call GEMM function
-  GEMM(TransA, TransB, M_, N_, A_ncols, ScalarAB, A_in.A(), A_in.LDA(), 
+  GEMM(TransA, TransB, M_, N_, A_ncols, ScalarAB, A_in.A(), A_in.LDA(),
        B.A(), B.LDA(), ScalarThis, A_, LDA_);
   long int nflops = 2*M_;
   nflops *= N_;
@@ -491,28 +491,28 @@ int  Epetra_SerialDenseMatrix::Multiply (bool transA,
 }
 
 //=========================================================================
-int  Epetra_SerialDenseMatrix::Multiply (char SideA, double ScalarAB, 
-				      const Epetra_SerialSymDenseMatrix& A_in, 
+int  Epetra_SerialDenseMatrix::Multiply (char SideA, double ScalarAB,
+				      const Epetra_SerialSymDenseMatrix& A_in,
 				      const Epetra_SerialDenseMatrix& B,
 				      double ScalarThis ) {
   // Check for compatible dimensions
-  
+
   if (SideA=='R') {
-    if (M_ != B.M() || 
+    if (M_ != B.M() ||
 	N_ != A_in.N() ||
 	B.N() != A_in.M() ) EPETRA_CHK_ERR(-1); // Return error
   }
   else if (SideA=='L') {
-    if (M_ != A_in.M() || 
+    if (M_ != A_in.M() ||
 	N_ != B.N() ||
 	A_in.N() != B.M() ) EPETRA_CHK_ERR(-1); // Return error
   }
   else {
     EPETRA_CHK_ERR(-2); // Return error, incorrect value for SideA
   }
-  
+
   // Call SYMM function
-  SYMM(SideA, A_in.UPLO(), M_, N_, ScalarAB, A_in.A(), A_in.LDA(), 
+  SYMM(SideA, A_in.UPLO(), M_, N_, ScalarAB, A_in.A(), A_in.LDA(),
        B.A(), B.LDA(), ScalarThis, A_, LDA_);
   long int nflops = 2*M_;
   nflops *= N_;
@@ -561,7 +561,7 @@ int Epetra_SerialDenseMatrix::Random() {
 	
   return(0);
 }
-  
+
 //=========================================================================
 int Epetra_SerialDenseMatrix::Apply(const Epetra_SerialDenseMatrix& X,
 				    Epetra_SerialDenseMatrix& Y) {

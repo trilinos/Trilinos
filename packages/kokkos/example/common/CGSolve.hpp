@@ -71,9 +71,11 @@ struct CGSolve< ImportType , SparseMatrixType , VectorType ,
   )>::type >
 {
   typedef typename VectorType::value_type scalar_type ;
+  typedef typename VectorType::device_type device_type;
 
   size_t iteration ;
   double iter_time ;
+  double matvec_time ;
   double norm_res ;
 
   CGSolve( const ImportType       & import ,
@@ -84,6 +86,7 @@ struct CGSolve< ImportType , SparseMatrixType , VectorType ,
            const double             tolerance = std::numeric_limits<double>::epsilon() )
     : iteration(0)
     , iter_time(0)
+    , matvec_time(0)
     , norm_res(0)
   {
     const size_t count_owned = import.count_owned ;
@@ -110,13 +113,17 @@ struct CGSolve< ImportType , SparseMatrixType , VectorType ,
     iteration = 0 ;
 
     Kokkos::Impl::Timer wall_clock ;
+    Kokkos::Impl::Timer timer;
 
     while ( tolerance < norm_res && iteration < maximum_iteration ) {
 
       /* pAp_dot = dot( p , Ap = A * p ) */
 
+      timer.reset();
       /* import p    */  import( pAll );
       /* Ap = A * p  */  Kokkos::MV_Multiply( Ap , A , pAll );
+      device_type::fence();
+      matvec_time += timer.seconds();
 
       const double pAp_dot = Kokkos::Example::all_reduce( Kokkos::V_Dot( p , Ap ) , import.comm );
       const double alpha   = old_rdot / pAp_dot ;
@@ -134,6 +141,7 @@ struct CGSolve< ImportType , SparseMatrixType , VectorType ,
       ++iteration ;
     }
 
+    device_type::fence();
     iter_time = wall_clock.seconds();
   }
 };

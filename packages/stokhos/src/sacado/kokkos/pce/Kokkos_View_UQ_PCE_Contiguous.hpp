@@ -147,7 +147,10 @@ struct PCEAllocation {
   // This makes BIG assumption on how the data was allocated
   KOKKOS_INLINE_FUNCTION
   void assign(value_type * ptr) {
-    m_scalar_ptr_on_device = reinterpret_cast<scalar_type*>(ptr);
+    if (ptr != 0)
+      m_scalar_ptr_on_device = ptr->coeff();
+    else
+      m_scalar_ptr_on_device = 0;
   }
 
   template <class CijkType>
@@ -191,6 +194,20 @@ struct sacado_pce_partition_constructor_requires_unmanaged_view {};
 
 namespace Kokkos {
 
+// Overload of deep_copy for UQ::PCE views intializing to a constant scalar
+template< typename T, typename L, typename D, typename M >
+void deep_copy(
+  const View<T,L,D,M,Impl::ViewPCEContiguous>& view ,
+  const typename View<T,L,D,M,Impl::ViewPCEContiguous>::intrinsic_scalar_type& value )
+{
+  typedef View<T,L,D,M,Impl::ViewPCEContiguous> ViewType;
+  typedef typename ViewType::intrinsic_scalar_type ScalarType;
+  if (value == ScalarType(0))
+    Impl::ViewFill< typename ViewType::flat_array_type >( view , value );
+  else
+    Impl::ViewFill< ViewType >( view , value );
+}
+
 /**\brief View::value_type  == Sacado::UQ::PCE< Storage<...> > */
 template< class DataType ,
           class Arg1Type ,
@@ -205,6 +222,7 @@ class View< DataType , Arg1Type , Arg2Type , Arg3Type , Impl::ViewPCEContiguous 
 {
 public:
 
+  typedef Impl::ViewTag kokkos_tag;
   typedef ViewTraits< DataType
                     , typename ViewTraits< DataType , Arg1Type, Arg2Type, Arg3Type >::array_layout
                     , typename ViewTraits< DataType , Arg1Type, Arg2Type, Arg3Type >::device_type
@@ -243,6 +261,7 @@ private:
   typename traits::device_type::size_type m_storage_size ; // Storage size of sacado dimension
   sacado_size_type                        m_sacado_size ; // Size of sacado dimension
   Impl::ViewTracking< traits >            m_tracking ;
+  bool                                    m_is_contiguous ;
 
   // Note:  if the view is partitioned, m_sacado_size != m_storage_size.
   // We always have m_storage_size >= m_sacado_size
@@ -263,6 +282,20 @@ private:
   // dimension, padding wouldn't generally work.  So unless there becomes
   // a way to turn padding off in the default view, a specialization
   // will be necessary.
+
+  // Check whether data allocation is contiguous
+  // Since View() takes an arbitrary pointer, we can't necessarily assume
+  // the data was allocated contiguously
+  KOKKOS_INLINE_FUNCTION
+  bool is_data_contiguous() const {
+    const typename traits::size_type sz = this->size();
+    if (sz == 0)
+      return true;
+    const intrinsic_scalar_type* last_coeff = m_ptr_on_device[sz-1].coeff();
+    const intrinsic_scalar_type* last_coeff_expected =
+      m_allocation.m_scalar_ptr_on_device + (sz-1)*m_storage_size;
+    return last_coeff == last_coeff_expected;
+  }
 
 public:
 
@@ -396,6 +429,7 @@ public:
       m_offset_map.assign(0,0,0,0,0,0,0,0);
       m_stride = 1 ; // need to initialize to 1 as there are checks for
                      // m_stride != 1 that need to work for empty views
+      m_is_contiguous = true;
     }
 
   KOKKOS_INLINE_FUNCTION
@@ -471,8 +505,9 @@ public:
                                m_offset_map,
                                m_cijk,
                                m_sacado_size.value );
+      m_is_contiguous = true;
 
-      (void) Impl::ViewFill< View >( *this , typename traits::value_type() );
+      deep_copy( *this , intrinsic_scalar_type() );
     }
 
   explicit inline
@@ -501,8 +536,9 @@ public:
                                m_offset_map,
                                m_cijk,
                                m_sacado_size.value );
+      m_is_contiguous = true;
 
-      (void) Impl::ViewFill< View >( *this , typename traits::value_type() );
+      deep_copy( *this , intrinsic_scalar_type() );
     }
 
   explicit inline
@@ -531,6 +567,7 @@ public:
                                m_offset_map,
                                m_cijk,
                                m_sacado_size.value );
+      m_is_contiguous = true;
     }
 
   explicit inline
@@ -560,6 +597,7 @@ public:
                                m_offset_map,
                                m_cijk,
                                m_sacado_size.value );
+      m_is_contiguous = true;
     }
 
   template <typename iType>
@@ -589,8 +627,9 @@ public:
                                m_offset_map,
                                m_cijk,
                                m_sacado_size.value );
+      m_is_contiguous = true;
 
-      (void) Impl::ViewFill< View >( *this , typename traits::value_type() );
+      deep_copy( *this , intrinsic_scalar_type() );
     }
 
   template <typename iType>
@@ -621,8 +660,9 @@ public:
                                m_offset_map,
                                m_cijk,
                                m_sacado_size.value );
+      m_is_contiguous = true;
 
-      (void) Impl::ViewFill< View >( *this , typename traits::value_type() );
+      deep_copy( *this , intrinsic_scalar_type() );
     }
 
   template <typename iType>
@@ -653,6 +693,7 @@ public:
                                m_offset_map,
                                m_cijk,
                                m_sacado_size.value );
+      m_is_contiguous = true;
     }
 
   template <typename iType>
@@ -684,6 +725,7 @@ public:
                                m_offset_map,
                                m_cijk,
                                m_sacado_size.value );
+      m_is_contiguous = true;
     }
 
   //------------------------------------
@@ -701,7 +743,7 @@ public:
         const size_t n6 = 0 ,
         typename Impl::enable_if<(
           ( Impl::is_same<T,typename traits::value_type>::value ||
-            Impl::is_same<T,typename traits::const_value_type>::value ) &&
+            Impl::is_same<T,typename traits::non_const_value_type>::value ) &&
           ! traits::is_managed ),
         const size_t >::type n7 = 0 )
     : m_ptr_on_device(ptr)
@@ -715,6 +757,8 @@ public:
         m_storage_size = m_cijk.dimension();
       m_sacado_size = m_storage_size;
       m_allocation.assign(ptr);
+      m_tracking = false;
+      m_is_contiguous = this->is_data_contiguous();
     }
 
   template< typename T >
@@ -729,7 +773,7 @@ public:
         const size_t n6 = 0 ,
         typename Impl::enable_if<(
           ( Impl::is_same<T,typename traits::value_type>::value ||
-            Impl::is_same<T,typename traits::const_value_type>::value ) &&
+            Impl::is_same<T,typename traits::non_const_value_type>::value ) &&
           ! traits::is_managed ),
         const size_t >::type n7 = 0 )
     : m_ptr_on_device(ptr)
@@ -743,6 +787,67 @@ public:
         m_storage_size = m_cijk.dimension();
       m_sacado_size = m_storage_size;
       m_allocation.assign(ptr);
+      m_tracking = false;
+      m_is_contiguous = this->is_data_contiguous();
+    }
+
+  template< typename T >
+  View( const ViewWithoutManaging & ,
+        T * ptr ,
+        const size_t n0 = 0 ,
+        const size_t n1 = 0 ,
+        const size_t n2 = 0 ,
+        const size_t n3 = 0 ,
+        const size_t n4 = 0 ,
+        const size_t n5 = 0 ,
+        const size_t n6 = 0 ,
+        typename Impl::enable_if<(
+          Impl::is_same<T,typename traits::value_type>::value ||
+          Impl::is_same<T,typename traits::non_const_value_type>::value ),
+        const size_t >::type n7 = 0 )
+    : m_ptr_on_device(ptr)
+    {
+      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
+      m_stride = 1 ;
+      m_cijk = getGlobalCijkTensor<cijk_type>();
+      m_storage_size =
+        Impl::GetSacadoSize<unsigned(Rank)>::eval(n0,n1,n2,n3,n4,n5,n6,n7);
+      if (m_storage_size == 0)
+        m_storage_size = m_cijk.dimension();
+      m_sacado_size = m_storage_size;
+      m_allocation.assign(ptr);
+      m_tracking = false;
+      m_is_contiguous = this->is_data_contiguous();
+    }
+
+  template< typename T >
+  View( const ViewWithoutManaging & ,
+        T * ptr ,
+        const cijk_type & cijk ,
+        const size_t n0 = 0 ,
+        const size_t n1 = 0 ,
+        const size_t n2 = 0 ,
+        const size_t n3 = 0 ,
+        const size_t n4 = 0 ,
+        const size_t n5 = 0 ,
+        const size_t n6 = 0 ,
+        typename Impl::enable_if<(
+          Impl::is_same<T,typename traits::value_type>::value ||
+          Impl::is_same<T,typename traits::non_const_value_type>::value ),
+        const size_t >::type n7 = 0 )
+    : m_ptr_on_device(ptr)
+    {
+      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
+      m_stride = 1 ;
+      m_cijk = cijk;
+      m_storage_size =
+        Impl::GetSacadoSize<unsigned(Rank)>::eval(n0,n1,n2,n3,n4,n5,n6,n7);
+      if (m_storage_size == 0)
+        m_storage_size = m_cijk.dimension();
+      m_sacado_size = m_storage_size;
+      m_allocation.assign(ptr);
+      m_tracking = false;
+      m_is_contiguous = this->is_data_contiguous();
     }
 
   //------------------------------------
@@ -1159,7 +1264,50 @@ public:
   KOKKOS_FORCEINLINE_FUNCTION
   cijk_type cijk() const
     { return m_cijk; }
+
+  // Is allocation contiguous
+  KOKKOS_INLINE_FUNCTION
+  bool is_allocation_contiguous() const
+    { return m_is_contiguous; }
 };
+
+namespace Impl {
+
+// Deep copy between views not assuming contiguous storage of arrays
+// Need to use team interface for Cuda
+template< class OutputView , class InputView >
+struct DeepCopyNonContiguous
+{
+  typedef typename OutputView::device_type device_type ;
+  typedef typename device_type::size_type  size_type ;
+
+  const OutputView output ;
+  const InputView  input ;
+
+  DeepCopyNonContiguous( const OutputView & arg_out ,
+                         const InputView & arg_in ) :
+    output( arg_out ), input( arg_in )
+  {
+    parallel_for( output.dimension_0() , *this );
+    device_type::fence();
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i0 ) const
+  {
+    for ( size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
+    for ( size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
+    for ( size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
+    for ( size_type i4 = 0 ; i4 < output.dimension_4() ; ++i4 ) {
+    for ( size_type i5 = 0 ; i5 < output.dimension_5() ; ++i5 ) {
+    for ( size_type i6 = 0 ; i6 < output.dimension_6() ; ++i6 ) {
+    for ( size_type i7 = 0 ; i7 < output.dimension_7() ; ++i7 ) {
+      output.at(i0,i1,i2,i3,i4,i5,i6,i7) = input.at(i0,i1,i2,i3,i4,i5,i6,i7) ;
+    }}}}}}}
+  }
+};
+
+} // namespace Impl
 
 /** \brief  A deep copy between views of the same specialization, compatible type,
  *          same rank, same layout are handled by that specialization.
@@ -1182,14 +1330,87 @@ void deep_copy( const View<DT,DL,DD,DM,Impl::ViewPCEContiguous> & dst ,
 {
   typedef View<DT,DL,DD,DM,Impl::ViewPCEContiguous> dst_type ;
   typedef View<ST,SL,SD,SM,Impl::ViewPCEContiguous> src_type ;
-
   typedef typename dst_type::array_type dst_array_type ;
   typedef typename src_type::array_type src_array_type ;
 
-  dst_array_type dst_array = dst ;
-  src_array_type src_array = src ;
+  // For contiguous views, can just deep_copy underlying arrays
+  if ( dst.is_allocation_contiguous() && src.is_allocation_contiguous() ) {
+    dst_array_type dst_array = dst ;
+    src_array_type src_array = src ;
+    deep_copy( dst_array , src_array );
+  }
 
-  deep_copy( dst_array , src_array );
+  // otherwise, use a custom kernel
+  else {
+
+    // If views are in the same memory space, copy component-wise
+    if ( Impl::is_same< typename dst_type::memory_space ,
+                        typename src_type::memory_space >::value ) {
+      Impl::DeepCopyNonContiguous< dst_type , src_type >( dst , src );
+    }
+
+    else {
+
+      typedef View< typename src_type::non_const_data_type ,
+                    typename src_type::array_layout ,
+                    typename src_type::device_type > tmp_src_type;
+      typedef typename tmp_src_type::array_type tmp_src_array_type;
+      typedef View< typename dst_type::non_const_data_type ,
+                    typename dst_type::array_layout ,
+                    typename dst_type::device_type > tmp_dst_type;
+      typedef typename tmp_dst_type::array_type tmp_dst_array_type;
+
+      // Copy src into a contiguous view in src's memory space,
+      // then copy to dst
+      if (  dst.is_allocation_contiguous() &&
+           !src.is_allocation_contiguous() ) {
+        size_t src_dims[8];
+        src.dimensions(src_dims);
+        src_dims[src_type::Rank] = src.sacado_size();
+        tmp_src_type src_tmp( allocate_without_initializing ,
+                              "src_tmp" , src.cijk() , src_dims );
+        Impl::DeepCopyNonContiguous< tmp_src_type , src_type >( src_tmp , src );
+        dst_array_type dst_array = dst ;
+        tmp_src_array_type src_array = src_tmp ;
+        deep_copy( dst_array , src_array );
+      }
+
+      // Copy src into a contiguous view in dst's memory space,
+      // then copy to dst
+      else if ( !dst.is_allocation_contiguous() &&
+                 src.is_allocation_contiguous() ) {
+        size_t dst_dims[8];
+        dst.dimensions(dst_dims);
+        dst_dims[dst_type::Rank] = dst.sacado_size();
+        tmp_dst_type dst_tmp( allocate_without_initializing ,
+                              "dst_tmp" , dst.cijk() , dst_dims );
+        tmp_dst_array_type dst_array = dst_tmp ;
+        src_array_type src_array = src ;
+        deep_copy( dst_array , src_array );
+        Impl::DeepCopyNonContiguous< dst_type , tmp_dst_type >( dst , dst_tmp );
+      }
+
+      // Copy src into a contiguous view in src's memory space,
+      // copy to a continugous view in dst's memory space, then copy to dst
+      else {
+        size_t src_dims[8];
+        src.dimensions(src_dims);
+        src_dims[src_type::Rank] = src.sacado_size();
+        tmp_src_type src_tmp( allocate_without_initializing ,
+                              "src_tmp" , src.cijk() , src_dims );
+        Impl::DeepCopyNonContiguous< tmp_src_type , src_type >( src_tmp , src );
+        size_t dst_dims[8];
+        dst.dimensions(dst_dims);
+        dst_dims[dst_type::Rank] = dst.sacado_size();
+        tmp_dst_type dst_tmp( allocate_without_initializing ,
+                              "dst_tmp" , dst.cijk() , dst_dims );
+        tmp_dst_array_type dst_array = dst_tmp ;
+        tmp_src_array_type src_array = src_tmp ;
+        deep_copy( dst_array , src_array );
+        Impl::DeepCopyNonContiguous< dst_type , tmp_dst_type >( dst , dst_tmp );
+      }
+    }
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -1233,6 +1454,8 @@ namespace Impl {
  *  This specialization is required so that the array shape of
  *  Kokkos::View< Sacado::UQ::PCE< StorageType > , ... >
  *  can be determined at compile-time.
+ *
+ *  This treats Sacado::UQ::PCE as an atomic scalar.
  */
 template< class StorageType >
 struct AnalyzeShape< Sacado::UQ::PCE< StorageType > >
@@ -1248,21 +1471,9 @@ public:
 
   typedef Shape< sizeof(Sacado::UQ::PCE< StorageType >) , 0 > shape ;
 
-  // If ( ! StorageType::is_static ) then 0 == StorageType::static_size and the first array declaration is not used.
-  // However, the compiler will still generate this type declaration and it must not have a zero length.
-  typedef typename
-    if_c< StorageType::is_static
-        , typename nested::array_type [ StorageType::is_static ? StorageType::static_size : 1 ]
-        , typename nested::array_type *
-        >::type array_type ;
-
-  typedef typename
-    if_c< StorageType::is_static
-        , typename nested::const_array_type [ StorageType::is_static ? StorageType::static_size : 1 ]
-        , typename nested::const_array_type *
-        >::type const_array_type ;
-
-  typedef array_type non_const_array_type ;
+  typedef       Sacado::UQ::PCE< StorageType >  array_type ;
+  typedef const Sacado::UQ::PCE< StorageType >  const_array_type ;
+  typedef       Sacado::UQ::PCE< StorageType >  non_const_array_type ;
 
   typedef       Sacado::UQ::PCE< StorageType >  type ;
   typedef const Sacado::UQ::PCE< StorageType >  const_type ;
@@ -1278,6 +1489,8 @@ public:
  *  This specialization is required so that the array shape of
  *  Kokkos::View< Sacado::UQ::PCE< StorageType > , ... >
  *  can be determined at compile-time.
+ *
+ *  This treats Sacado::UQ::PCE as an array.
  */
 template< class StorageType, class Layout >
 struct AnalyzeSacadoShape< Sacado::UQ::PCE< StorageType >, Layout >
@@ -1357,6 +1570,7 @@ struct ViewAssignment< ViewPCEContiguous , ViewPCEContiguous , void >
     dst.m_allocation    = src.m_allocation ;
     dst.m_storage_size  = src.m_storage_size ;
     dst.m_sacado_size   = src.m_sacado_size;
+    dst.m_is_contiguous = src.m_is_contiguous;
 
     dst.m_tracking.increment( dst.m_ptr_on_device );
   }
@@ -1398,21 +1612,19 @@ struct ViewAssignment< ViewPCEContiguous , ViewPCEContiguous , void >
                       View<ST,SL,SD,SM,specialize>::is_static )
                   ), const Sacado::UQ::PCEPartition & >::type part )
   {
-    typedef View<ST,SL,SD,SM,specialize>   src_type ;
     typedef View<DT,DL,DD,DM,specialize>   dst_type ;
 
     // Must have: begin = i * src.m_sacado_size.value
     //            end   = begin + src.m_sacado_size.value
     //
     if ( dst_type::is_static && (part.begin % dst.m_sacado_size.value ||
-                                 part.begin + dst.m_sacado_size.value != part.end) ) {
-      const char msg[] = "Kokkos::View< Sacado::UQ::PCE ... > incompatible partitioning" ;
-#if defined(__CUDACC__) && defined(__CUDA_ARCH__)
-      cuda_abort(msg);
-#else
-      throw std::runtime_error(msg);
-#endif
-    }
+                                 part.begin + dst.m_sacado_size.value != part.end) )
+      Impl::raise_error("Kokkos::View< Sacado::UQ::PCE ... >:  incompatible partitioning");
+
+    if ( !src.m_is_contiguous )
+      Impl::raise_error("Kokkos::View< Sacado::UQ::PCE ... >:  can't partition non-contiguous view");
+
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     const int length = part.end - part.begin ;
 
@@ -1433,6 +1645,9 @@ struct ViewAssignment< ViewPCEContiguous , ViewPCEContiguous , void >
     dst.m_allocation.m_scalar_ptr_on_device =
       src.m_allocation.m_scalar_ptr_on_device +
       (part.begin / dst.m_sacado_size.value) * src.m_storage_size ;
+    dst.m_is_contiguous = src.m_is_contiguous;
+
+    dst.m_tracking.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -1472,6 +1687,7 @@ struct ViewAssignment< ViewPCEContiguous , ViewPCEContiguous , void >
       dst.m_cijk         = src.m_cijk ;
       dst.m_storage_size = src.m_storage_size ;
       dst.m_sacado_size  = src.m_sacado_size;
+      dst.m_is_contiguous = src.m_is_contiguous;
 
       dst.m_tracking.increment( dst.m_ptr_on_device );
     }
@@ -1507,6 +1723,7 @@ struct ViewAssignment< ViewPCEContiguous , ViewPCEContiguous , void >
     dst.m_cijk          = src.m_cijk ;
     dst.m_storage_size  = src.m_storage_size ;
     dst.m_sacado_size   = src.m_sacado_size;
+    dst.m_is_contiguous = src.m_is_contiguous;
 
     dst.m_tracking.increment( dst.m_ptr_on_device );
   }
@@ -1541,6 +1758,7 @@ struct ViewAssignment< ViewPCEContiguous , ViewPCEContiguous , void >
     dst.m_cijk          = src.m_cijk ;
     dst.m_storage_size  = src.m_storage_size ;
     dst.m_sacado_size   = src.m_sacado_size;
+    dst.m_is_contiguous = src.m_is_contiguous;
 
     dst.m_tracking.increment( dst.m_ptr_on_device );
   }
@@ -1585,6 +1803,7 @@ struct ViewAssignment< ViewPCEContiguous , ViewPCEContiguous , void >
         src.m_allocation.m_scalar_ptr_on_device + dst.m_offset_map.N0 * range1.first * src.m_storage_size ;
       dst.m_storage_size = src.m_storage_size ;
       dst.m_sacado_size = src.m_sacado_size;
+      dst.m_is_contiguous = src.m_is_contiguous;
 
       // LayoutRight won't work with how we are currently using the stride
 
@@ -1632,6 +1851,7 @@ struct ViewAssignment< ViewPCEContiguous , ViewPCEContiguous , void >
         src.m_allocation.m_scalar_ptr_on_device + range0.first * src.m_storage_size;
       dst.m_storage_size = src.m_storage_size ;
       dst.m_sacado_size = src.m_sacado_size;
+      dst.m_is_contiguous = src.m_is_contiguous;
 
       // LayoutRight won't work with how we are currently using the stride
 
@@ -1653,14 +1873,11 @@ struct ViewAssignment< ViewDefault , ViewPCEContiguous , void >
   {
     typedef View<ST,SL,SD,SM,ViewPCEContiguous> src_type ;
 
-    if ( src.m_stride != 1 ) {
-      const char msg[] = "Kokkos::View< Sacado::UQ::PCE ... > incompatible assignment" ;
-#if defined(__CUDACC__) && defined(__CUDA_ARCH__)
-      cuda_abort(msg);
-#else
-      throw std::runtime_error(msg);
-#endif
-    }
+    if ( src.m_stride != 1 )
+      Impl::raise_error("Kokkos::View< Sacado::UQ::PCE ... >:  incompatible assignment");
+
+    if ( !src.m_is_contiguous )
+      Impl::raise_error("Kokkos::View< Sacado::UQ::PCE ... >:  can't assign non-contiguous view");
 
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
@@ -1737,14 +1954,11 @@ struct ViewAssignment< ViewDefault , ViewPCEContiguous , void >
     typedef View<DT,DL,DD,DM,ViewDefault>   dst_type ;
     typedef typename dst_type::array_layout dst_layout_type ;
 
-    if ( src.m_stride != 1 ) {
-      const char msg[] = "Kokkos::View< Sacado::UQ::PCE ... > incompatible assignment" ;
-#if defined(__CUDACC__) && defined(__CUDA_ARCH__)
-      cuda_abort(msg);
-#else
-      throw std::runtime_error(msg);
-#endif
-    }
+    if ( src.m_stride != 1 )
+      Impl::raise_error("Kokkos::View< Sacado::UQ::PCE ... >:  incompatible assignment");
+
+    if ( !src.m_is_contiguous )
+      Impl::raise_error("Kokkos::View< Sacado::UQ::PCE ... >:  can't assign non-contiguous view");
 
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
@@ -1775,6 +1989,133 @@ struct ViewAssignment< ViewDefault , ViewPCEContiguous , void >
 
     dst.m_tracking.increment( dst.m_ptr_on_device );
   }
+};
+
+// Specialization for deep_copy( view, view::value_type ) for Cuda
+template< class T , class L , class M , unsigned Rank >
+struct ViewFill< View<T,L,Cuda,M,ViewPCEContiguous> , Rank >
+{
+  typedef View<T,L,Cuda,M,ViewPCEContiguous>         OutputView ;
+  typedef typename OutputView::const_value_type      const_value_type ;
+  typedef typename OutputView::intrinsic_scalar_type scalar_type ;
+  typedef typename OutputView::device_type           device_type ;
+  typedef typename OutputView::size_type             size_type ;
+
+  template <unsigned VectorLength>
+  struct PCEKernel {
+    typedef typename OutputView::device_type device_type ;
+    const OutputView output;
+    const_value_type input;
+
+    PCEKernel( const OutputView & arg_out , const_value_type & arg_in ) :
+      output(arg_out), input(arg_in) {}
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()( device_type dev ) const
+    {
+      const size_type tidx = dev.team_rank() % VectorLength;
+      const size_type tidy = dev.team_rank() / VectorLength;
+      const size_type nrow = dev.team_size() / VectorLength;
+      const size_type npce = output.sacado_size();
+
+      const size_type i0 = dev.league_rank() * nrow + tidy;
+      if ( i0 >= output.dimension_0() ) return;
+
+      for ( size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
+      for ( size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
+      for ( size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
+      for ( size_type i4 = 0 ; i4 < output.dimension_4() ; ++i4 ) {
+      for ( size_type i5 = 0 ; i5 < output.dimension_5() ; ++i5 ) {
+      for ( size_type i6 = 0 ; i6 < output.dimension_6() ; ++i6 ) {
+      for ( size_type i7 = 0 ; i7 < output.dimension_7() ; ++i7 ) {
+      for ( size_type is = tidx ; is < npce ; is+=VectorLength ) {
+        output.at(i0,i1,i2,i3,i4,i5,i6,i7).fastAccessCoeff(is) =
+          input.fastAccessCoeff(is) ;
+      }}}}}}}}
+    }
+  };
+
+  template <unsigned VectorLength>
+  struct ScalarKernel {
+    typedef typename OutputView::device_type device_type ;
+    const OutputView  output;
+    const scalar_type input;
+
+    ScalarKernel( const OutputView & arg_out , const scalar_type & arg_in ) :
+      output(arg_out), input(arg_in) {}
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()( device_type dev ) const
+    {
+      const size_type tidx = dev.team_rank() % VectorLength;
+      const size_type tidy = dev.team_rank() / VectorLength;
+      const size_type nrow = dev.team_size() / VectorLength;
+      const size_type npce = output.sacado_size();
+
+      const size_type i0 = dev.league_rank() * nrow + tidy;
+      if ( i0 >= output.dimension_0() ) return;
+
+      for ( size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
+      for ( size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
+      for ( size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
+      for ( size_type i4 = 0 ; i4 < output.dimension_4() ; ++i4 ) {
+      for ( size_type i5 = 0 ; i5 < output.dimension_5() ; ++i5 ) {
+      for ( size_type i6 = 0 ; i6 < output.dimension_6() ; ++i6 ) {
+      for ( size_type i7 = 0 ; i7 < output.dimension_7() ; ++i7 ) {
+      for ( size_type is = tidx ; is < npce ; is+=VectorLength ) {
+        output.at(i0,i1,i2,i3,i4,i5,i6,i7).fastAccessCoeff(is) =
+          is == 0 ? input : scalar_type(0) ;
+      }}}}}}}}
+    }
+  };
+
+  ViewFill( const OutputView & output , const_value_type & input )
+  {
+    // Coalesced accesses are 128 bytes in size
+    typedef typename OutputView::intrinsic_scalar_type scalar_type;
+    const unsigned vector_length =
+      ( 128 + sizeof(scalar_type)-1 ) / sizeof(scalar_type);
+
+    // 8 warps per block should give good occupancy
+    const size_type block_size = 256;
+
+    const size_type rows_per_block = block_size / vector_length;
+    const size_type n = output.dimension_0();
+    const size_type league_size = ( n + rows_per_block-1 ) / rows_per_block;
+    const size_type team_size = rows_per_block * vector_length;
+    ParallelWorkRequest config( league_size, team_size );
+
+    if (input.size() != output.sacado_size() && input.size() != 1)
+      Impl::raise_error("ViewFill:  Invalid input value size");
+
+    if (input.size() == 1)
+      parallel_for(
+        config, ScalarKernel<vector_length>(output, input.fastAccessCoeff(0)) );
+    else
+      parallel_for( config, PCEKernel<vector_length>(output, input) );
+    device_type::fence();
+  }
+
+  ViewFill( const OutputView & output , const scalar_type & input )
+  {
+    // Coalesced accesses are 128 bytes in size
+    typedef typename OutputView::intrinsic_scalar_type scalar_type;
+    const unsigned vector_length =
+      ( 128 + sizeof(scalar_type)-1 ) / sizeof(scalar_type);
+
+    // 8 warps per block should give good occupancy
+    const size_type block_size = 256;
+
+    const size_type rows_per_block = block_size / vector_length;
+    const size_type n = output.dimension_0();
+    const size_type league_size = ( n + rows_per_block-1 ) / rows_per_block;
+    const size_type team_size = rows_per_block * vector_length;
+    ParallelWorkRequest config( league_size, team_size );
+
+    parallel_for( config, ScalarKernel<vector_length>(output, input) );
+    device_type::fence();
+  }
+
 };
 
 } // namespace Impl

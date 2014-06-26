@@ -47,6 +47,7 @@
 #define KOKKOS_TASK_HPP
 
 #include <Kokkos_Macros.hpp>
+#include <impl/Kokkos_IntPool.hpp>
 #include <impl/Kokkos_Traits.hpp>
 #include <impl/Kokkos_StaticAssert.hpp>
 
@@ -73,7 +74,7 @@ class task_scan ;
 namespace Kokkos {
 namespace Impl {
 
-template< class DeviceType , class ResultType = void >
+template< class Arg0_Type , class Arg1_Type = void >
 class Task ;
 
 struct TaskResultTypeIsVoid {};
@@ -93,9 +94,32 @@ class FunctorTraits ;
 
 namespace Kokkos {
 
-template< class DeviceType , class ResultType = void >
+// TaskPool< MyFunctor , Kokkos::TaskSerial<long> , Kokkos::Serial >
+template< class FunctorType , class PatternType , class DeviceType >
+class TaskPool ;
+
+} /* namespace Kokkos */
+
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+
+template< class Arg1_Type , class Arg2_Type = void >
 class Future {
 public:
+
+  // If the second argument is void then the first argument
+  // is the device type.
+  typedef typename
+    Impl::if_c< Impl::is_same<Arg2_Type,void>::value
+              , Arg1_Type , Arg2_Type >
+      ::type device_type ;
+
+  // If the second argument is void then the value_type is void.
+  typedef typename
+    Impl::if_c< ! Impl::is_same<Arg2_Type,void>::value
+              , Arg1_Type , void >
+      ::type value_type ;
 
   KOKKOS_INLINE_FUNCTION
   Future() : m_task(0) {}
@@ -103,58 +127,74 @@ public:
   KOKKOS_INLINE_FUNCTION
   Future( const Future & rhs )
     : m_task( rhs.m_task )
-    { Impl::Task<DeviceType>::increment( m_task ); }
+    { Impl::Task<device_type>::increment( m_task ); }
 
   KOKKOS_INLINE_FUNCTION
   Future & operator = ( const Future & rhs )
     {
-      Impl::Task<DeviceType>::decrement( m_task );
+      Impl::Task<device_type>::decrement( m_task );
       m_task = rhs.m_task ;
-      Impl::Task<DeviceType>::increment( m_task );
+      Impl::Task<device_type>::increment( m_task );
       return *this ;
     }
 
-  template< class T >
+  template< class V >
   KOKKOS_INLINE_FUNCTION
-  Future( const Future<DeviceType,T> & rhs )
-    : m_task( Impl::Task<DeviceType,ResultType>::verify_type( rhs.m_task ) )
-    { Impl::Task<DeviceType>::increment( m_task ); }
+  Future( const Future<device_type,V> & rhs )
+    : m_task( Impl::Task<device_type,value_type>::verify_type( rhs.m_task ) )
+    { Impl::Task<device_type>::increment( m_task ); }
 
-  template< class T >
+  template< class V >
   KOKKOS_INLINE_FUNCTION
-  Future & operator = ( const Future<DeviceType,T> & rhs )
+  Future & operator = ( const Future<device_type,V> & rhs )
     {
-      Impl::Task<DeviceType>::decrement( m_task );
-      m_task = Impl::Task<DeviceType,ResultType>::verify_type( rhs.m_task );
-      Impl::Task<DeviceType>::increment( m_task );
+      Impl::Task<device_type>::decrement( m_task );
+      m_task = Impl::Task<device_type,value_type>::verify_type( rhs.m_task );
+      Impl::Task<device_type>::increment( m_task );
       return *this ;
     }
 
-  typedef typename Impl::Task<DeviceType,ResultType>::get_result_type get_result_type ;
+  template< class T >
+  KOKKOS_INLINE_FUNCTION
+  Future( const Future<T,device_type> & rhs )
+    : m_task( Impl::Task<device_type,value_type>::verify_type( rhs.m_task ) )
+    { Impl::Task<device_type>::increment( m_task ); }
+
+  template< class T >
+  KOKKOS_INLINE_FUNCTION
+  Future & operator = ( const Future<T,device_type> & rhs )
+    {
+      Impl::Task<device_type>::decrement( m_task );
+      m_task = Impl::Task<device_type,value_type>::verify_type( rhs.m_task );
+      Impl::Task<device_type>::increment( m_task );
+      return *this ;
+    }
+
+  typedef typename Impl::Task<device_type,value_type>::get_result_type get_result_type ;
 
   KOKKOS_INLINE_FUNCTION
   get_result_type get() const 
-    { return static_cast< Impl::Task<DeviceType,ResultType> *>( m_task )->get(); }
+    { return static_cast< Impl::Task<device_type,value_type> *>( m_task )->get(); }
 
   //--------------------------------------------------------------------------
 
   KOKKOS_INLINE_FUNCTION explicit
-  Future( Impl::Task<DeviceType> * t )
-    : m_task( Impl::Task<DeviceType,ResultType>::verify_type(t) )
-    { Impl::Task<DeviceType>::increment( m_task ); }
+  Future( Impl::Task<device_type> * t )
+    : m_task( Impl::Task<device_type,value_type>::verify_type(t) )
+    { Impl::Task<device_type>::increment( m_task ); }
 
   KOKKOS_INLINE_FUNCTION
-  Future( const Impl::Task<DeviceType> * const t , int i )
-    : m_task( t ? Impl::Task<DeviceType,ResultType>::verify_type( t->task_dependence(i) )
-                : (Impl::Task<DeviceType,ResultType>*) 0 )
-    { Impl::Task<DeviceType>::increment( m_task ); }
+  Future( const Impl::Task<device_type> * const t , int i )
+    : m_task( t ? Impl::Task<device_type,value_type>::verify_type( t->task_dependence(i) )
+                : (Impl::Task<device_type,value_type>*) 0 )
+    { Impl::Task<device_type>::increment( m_task ); }
 
   static inline
-  void wait( Future const & f ) { Impl::Task<DeviceType>::task_wait( f.m_task ); }
+  void wait( Future const & f ) { Impl::Task<device_type>::task_wait( f.m_task ); }
 
 private:
 
-  Impl::Task<DeviceType> * m_task ;
+  Impl::Task<device_type> * m_task ;
 
   template< class , class > friend class Future ;
   template< class , class > friend class Impl::Task ;

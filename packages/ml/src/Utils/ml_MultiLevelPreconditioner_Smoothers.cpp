@@ -13,6 +13,7 @@
 
 #include "ml_common.h"
 #include "ml_include.h"
+#include <algorithm>
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
@@ -71,6 +72,34 @@ double ML_Smoother_ChebyshevAlpha(double, ML*, int, int);
 using namespace Teuchos;
 
 
+// ===========================================================================
+
+void ML_Operator_Blocked_Getrow(ML_Operator *Amat, int block_size, int requested_block_row, int allocated_space, int columns[],double values[], int row_lengths[]) {
+  // Get all of the individual rows
+  int offset = 0;
+  for (int i = 0; i < block_size; i++) {
+    int row = requested_block_row*block_size+i;
+    int size=0;
+    int status = ML_Operator_Getrow(Amat, 1, &row, allocated_space, &(columns[offset]),&(values[offset]), &size );
+    if (status == 0) {
+      std::cerr << "ML_Operator_Blocked_Getrow: Insufficient memory allocated"<<std::endl;
+      exit(EXIT_FAILURE);     
+    }
+    offset+=size;
+  }
+
+
+  // Switch columns to block IDs
+  for(int i=0; i<offset; i++) {
+    columns[i] = (int) (columns[i] / block_size);
+    values[i]  = 1.0;
+  }
+
+  // Sort & merge
+  std::sort(columns, columns+offset);
+  row_lengths[0] = std::unique(columns, columns+offset) - columns;
+}
+
 
 // ============================================================================
 inline void local_automatic_line_search(ML * ml, int currentLevel, int NumEqns, int * blockIndices, int last, int next, int LineID, double tol, int *itemp, double * dtemp) {
@@ -82,29 +111,36 @@ inline void local_automatic_line_search(ML * ml, int currentLevel, int NumEqns, 
   if (grid_info != NULL) zvals = grid_info->z;
 
   ML_Operator * Amat = &(ml->Amat[currentLevel]);
-  int allocated_space = Amat->max_nz_per_row+2;
+  int allocated_space = NumEqns*(Amat->max_nz_per_row)+2;
   int * cols    = itemp;
   int * indices = &itemp[allocated_space];
   double * vals = dtemp;
   double * dist = &dtemp[allocated_space];
 
+  // Note: "next" is now a block index, not a point one
+  //  printf("[%d] next = %d/%d\n",Amat->comm->ML_mypid,next,N/NumEqns);
 
-  while (blockIndices[next] == -1) {
+  while (blockIndices[next*NumEqns] == -1) {
     // Get the next row
     int n=0;
     int neighbors_in_line=0;
-    ML_Operator_Getrow(Amat,1,&next,allocated_space, cols,vals,&n);
-    double x0 = xvals[next/NumEqns];
-    double y0 = yvals[next/NumEqns];
-    double z0 = zvals[next/NumEqns];
+
+    if(NumEqns==1) ML_Operator_Getrow(Amat,1,&next,allocated_space, cols,vals,&n);
+    else           ML_Operator_Blocked_Getrow(Amat,NumEqns,next,allocated_space,cols,vals,&n);
+
+    double x0 = (xvals) ? xvals[next] : 0.0;
+    double y0 = (yvals) ? yvals[next] : 0.0;
+    double z0 = (zvals) ? zvals[next] : 0.0;
 
     // Calculate neighbor distances & sort
     int neighbor_len=0;
-    for(int i=0; i<n; i+=NumEqns) {
+    //    for(int i=0; i<n; i+=NumEqns) {
+    for(int i=0; i<n; i++) {
       double mydist = 0.0;
-      if(cols[i] >=N) continue; // Check for off-proc entries
-      int nn = cols[i] / NumEqns;
-      if(blockIndices[nn]==LineID) neighbors_in_line++;
+
+      if(cols[i]*NumEqns > N) continue; // Check for off-proc entries
+      int nn=cols[i];
+      if(blockIndices[nn*NumEqns]==LineID) neighbors_in_line++;
       if(xvals!=NULL) mydist += (x0 - xvals[nn]) * (x0 - xvals[nn]);
       if(yvals!=NULL) mydist += (y0 - yvals[nn]) * (y0 - yvals[nn]);
       if(zvals!=NULL) mydist += (z0 - zvals[nn]) * (z0 - zvals[nn]);
@@ -118,16 +154,16 @@ inline void local_automatic_line_search(ML * ml, int currentLevel, int NumEqns, 
 
     // Otherwise add me to the line 
     for(int k=0; k<NumEqns; k++) 
-      blockIndices[next + k] = LineID;
+      blockIndices[next*NumEqns + k] = LineID;
     
     // Try to find the next guy in the line (only check the closest two that aren't element 0 (diagonal)
     ML_az_dsort2(dist,neighbor_len,indices);
 
-    if(neighbor_len > 2 && indices[1] != last && blockIndices[indices[1]] == -1 && dist[1]/dist[neighbor_len-1] < tol) {
+    if(neighbor_len > 2 && indices[1] != last && blockIndices[indices[1]*NumEqns] == -1 && dist[1]/dist[neighbor_len-1] < tol) {
       last=next;
       next=indices[1];
     }
-    else if(neighbor_len > 3 && indices[2] != last && blockIndices[indices[2]] == -1 && dist[2]/dist[neighbor_len-1] < tol) {
+    else if(neighbor_len > 3 && indices[2] != last && blockIndices[indices[2]*NumEqns] == -1 && dist[2]/dist[neighbor_len-1] < tol) {
       last=next;
       next=indices[2];
     }
@@ -142,7 +178,7 @@ inline void local_automatic_line_search(ML * ml, int currentLevel, int NumEqns, 
 int ML_Compute_Blocks_AutoLine(ML * ml, int currentLevel, int NumEqns, double tol,  int * blockIndices) {
   ML_Operator * Amat = &(ml->Amat[currentLevel]);
   int N = ml->Amat[currentLevel].outvec_leng;
-  int allocated_space = (Amat->max_nz_per_row+2);
+  int allocated_space = NumEqns*(Amat->max_nz_per_row)+2;
   double *xvals= NULL, *yvals = NULL, *zvals = NULL;
   ML_Aggregate_Viz_Stats *grid_info = (ML_Aggregate_Viz_Stats *) ml->Grid[currentLevel].Grid;
   if (grid_info != NULL) xvals = grid_info->x;
@@ -159,22 +195,47 @@ int ML_Compute_Blocks_AutoLine(ML * ml, int currentLevel, int NumEqns, double to
 
   int num_lines = 0;
 
+  // Have everyone check their send lists for block correctness, and error out if one is deficient.
+  // We want to make sure that if a processor has a one column in a block for it's column map, it needs
+  // all columns in said block.
+  ML_CommInfoOP * comm_info = Amat->getrow->pre_comm;  
+  if(comm_info) {
+    bool sends_all_cols=true;
+    for(int i=0; i<comm_info->N_neighbors; i++) {
+      ML_NeighborList *neighbor = &(comm_info->neighbors[i]);       
+      int * sends = comm_info->neighbors[i].send_list;
+      for (int j=0; sends_all_cols && j<neighbor->N_send; j++) {
+	if( ! (j % NumEqns ==0 || sends[j] - sends[j-1] == 1)) 
+	  sends_all_cols=false;
+      }     	
+    }
+    if(!sends_all_cols) {
+      std::cerr << "ML_Compute_Blocks_AutoLine: Incomplete ghost block detected.  Ghost blocks must be complete for line detecion to work"<<std::endl;
+      exit(EXIT_FAILURE);
+    }    
+  }
+
+
+  // Loop over all of the blocks
   for(int i=0; i<N; i+=NumEqns) {
     int nz=0;
+    int ii = i / NumEqns;
+
     // Short circuit if I've already been blocked
     if(blockIndices[i] !=-1) continue;
 
     // Get neighbors and sort by distance
-    ML_Operator_Getrow(Amat,1,&i,allocated_space,cols,vals,&nz);
-    double x0 = xvals[i/NumEqns];
-    double y0 = yvals[i/NumEqns];
-    double z0 = zvals[i/NumEqns];
+    if(NumEqns==1) ML_Operator_Getrow(Amat,1,&ii,allocated_space, cols,vals,&nz);
+    else           ML_Operator_Blocked_Getrow(Amat,NumEqns,ii,allocated_space,cols,vals,&nz);
 
+    double x0 = (xvals) ? xvals[ii] : 0.0;
+    double y0 = (yvals) ? yvals[ii] : 0.0;
+    double z0 = (zvals) ? zvals[ii] : 0.0;
     int neighbor_len=0;
-    for(int j=0; j<nz; j+=NumEqns) {
+    for(int j=0; j<nz; j++) {
       double mydist = 0.0;
-      int nn = cols[j] / NumEqns;
-      if(cols[j] >=N) continue; // Check for off-proc entries
+      int nn = cols[j];
+      if(cols[j]*NumEqns > N) continue; // Check for off-proc entries
       if(xvals!=NULL) mydist += (x0 - xvals[nn]) * (x0 - xvals[nn]);
       if(yvals!=NULL) mydist += (y0 - yvals[nn]) * (y0 - yvals[nn]);
       if(zvals!=NULL) mydist += (z0 - zvals[nn]) * (z0 - zvals[nn]);
@@ -187,16 +248,15 @@ int ML_Compute_Blocks_AutoLine(ML * ml, int currentLevel, int NumEqns, double to
     // Number myself
     for(int k=0; k<NumEqns; k++)
       blockIndices[i + k] = num_lines;
-
+    
     // Fire off a neighbor line search (nearest neighbor)
     if(neighbor_len > 2 && dist[1]/dist[neighbor_len-1] < tol) {
-      local_automatic_line_search(ml,currentLevel,NumEqns,blockIndices,i,indices[1],num_lines,tol,itemp,dtemp);
+      local_automatic_line_search(ml,currentLevel,NumEqns,blockIndices,ii,indices[1],num_lines,tol,itemp,dtemp);
     }
     // Fire off a neighbor line search (second nearest neighbor)
     if(neighbor_len > 3 && dist[2]/dist[neighbor_len-1] < tol) {
-      local_automatic_line_search(ml,currentLevel,NumEqns,blockIndices,i,indices[2],num_lines,tol,itemp,dtemp);
+      local_automatic_line_search(ml,currentLevel,NumEqns,blockIndices,ii,indices[2],num_lines,tol,itemp,dtemp);
     }
-
     num_lines++;
   }
 
@@ -476,65 +536,81 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
       ML_Gen_Smoother_Jacobi(ml_, currentLevel, pre_or_post,
                              Mynum_smoother_steps, Myomega);
 
-    } else if( MySmoother == "Gauss-Seidel" ) {
-
+    } else if( MySmoother == "Gauss-Seidel"){ 
       // ================== //
       // point Gauss-Seidel //
       // ================== //
 
       bool gs_type = List_.get("smoother: Gauss-Seidel efficient symmetric",false);
       bool use_l1  = List_.get("smoother: use l1 Gauss-Seidel",false);
+      bool use_ml_smoother = ml_->Amat[currentLevel].type != ML_TYPE_CRS_MATRIX && ml_->Amat[currentLevel].type != ML_TYPE_ROW_MATRIX
+		&& ml_->Amat[currentLevel].type != ML_TYPE_VBR_MATRIX;
+#ifndef HAVE_ML_IFPACK
+      use_ml_smoother=true;
+#endif
 
-      if( verbose_ ) std::cout << msg << "Gauss-Seidel (sweeps="
-			       << Mynum_smoother_steps << ",omega=" << Myomega << ","
-			       << MyPreOrPostSmoother
-			       << (gs_type ? ",efficient symmetric" : "" )
-			       << (use_l1  ? ",l1 damping" : "" )
-			       << ")" <<std::endl;
-
-#ifdef HAVE_ML_IFPACK
-      std::string MyIfpackType = "point relaxation stand-alone";
-      ParameterList& MyIfpackList = smList.sublist("smoother: ifpack list");
-      MyIfpackList.set("relaxation: type", "Gauss-Seidel");
-      MyIfpackList.set("relaxation: sweeps", Mynum_smoother_steps);
-      MyIfpackList.set("relaxation: damping factor", Myomega);
-      MyIfpackList.set("relaxation: use l1",use_l1);
-      int smoothing_indices=0;
-      if(MyIfpackList.isParameter("relaxation: number of local smoothing indices"))
-	smoothing_indices = MyIfpackList.get("relaxation: number of local smoothing indices",0);
-
-      if (verbose_) {
-	if (ml_->Amat[currentLevel].type == ML_TYPE_CRS_MATRIX)
-	  std::cout << msg << "Epetra_CrsMatrix detected, using "
-		    << "Ifpack implementation" << std::endl;
+      if( verbose_ ) {
+	if(use_ml_smoother)
+	  std::cout << msg << "ML Gauss-Seidel (sweeps="
+		    << Mynum_smoother_steps << ",omega=" << Myomega << ","
+		    << MyPreOrPostSmoother
+		    << (gs_type ? ",efficient symmetric" : "" )
+		    << ")" <<std::endl;
 	else
-	  std::cout << msg << "Wrapping to use "
-		    << "Ifpack implementation" << std::endl;
-	if (smoothing_indices)
-	  std::cout << msg << "Local/reordered smoothing with " << smoothing_indices<<" indices" << std::endl;
+	  std::cout << msg << "Gauss-Seidel (sweeps="
+		    << Mynum_smoother_steps << ",omega=" << Myomega << ","
+		    << MyPreOrPostSmoother
+		    << (gs_type ? ",efficient symmetric" : "" )
+		    << (use_l1  ? ",l1 damping" : "" )
+		    << ")" <<std::endl;
       }
 
-      if(gs_type){
-	if(pre_or_post==ML_PRESMOOTHER || pre_or_post==ML_BOTH) {
+      if(!use_ml_smoother) {
+#ifdef HAVE_ML_IFPACK
+	std::string MyIfpackType = "point relaxation stand-alone";
+	ParameterList& MyIfpackList = smList.sublist("smoother: ifpack list");
+	MyIfpackList.set("relaxation: type", "Gauss-Seidel");
+	MyIfpackList.set("relaxation: sweeps", Mynum_smoother_steps);
+	MyIfpackList.set("relaxation: damping factor", Myomega);
+	MyIfpackList.set("relaxation: use l1",use_l1);
+	int smoothing_indices=0;
+	if(MyIfpackList.isParameter("relaxation: number of local smoothing indices"))
+	  smoothing_indices = MyIfpackList.get("relaxation: number of local smoothing indices",0);
+	
+	if (verbose_) {
+	  if (ml_->Amat[currentLevel].type == ML_TYPE_CRS_MATRIX)
+	    std::cout << msg << "Epetra_CrsMatrix detected, using "
+		      << "Ifpack implementation" << std::endl;
+	  else 
+	    std::cout << msg << "Wrapping to use "
+		      << "Ifpack implementation" << std::endl;
+	  if (smoothing_indices)
+	    std::cout << msg << "Local/reordered smoothing with " << smoothing_indices<<" indices" << std::endl;
+	}
+	
+	if(gs_type){
+	  if(pre_or_post==ML_PRESMOOTHER || pre_or_post==ML_BOTH) {
+	    ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
+				   IfpackOverlap, currentLevel, ML_PRESMOOTHER,
+				   (void*)&MyIfpackList,(void*)Comm_);
+	  }
+	  if(pre_or_post==ML_POSTSMOOTHER || pre_or_post==ML_BOTH) {
+	    ParameterList& BackwardSmoothingList_= MyIfpackList;
+	    BackwardSmoothingList_.set("relaxation: backward mode",true);
+	    ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
+				   IfpackOverlap, currentLevel,  ML_POSTSMOOTHER,
+				   (void*)&BackwardSmoothingList_,(void*)Comm_);
+	  }
+	}
+	else{
 	  ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
-				 IfpackOverlap, currentLevel, ML_PRESMOOTHER,
+				 IfpackOverlap, currentLevel, pre_or_post,
+				 //MyIfpackList,*Comm_);
 				 (void*)&MyIfpackList,(void*)Comm_);
 	}
-	if(pre_or_post==ML_POSTSMOOTHER || pre_or_post==ML_BOTH) {
-	  ParameterList& BackwardSmoothingList_= MyIfpackList;
-	  BackwardSmoothingList_.set("relaxation: backward mode",true);
-	  ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
-                                 IfpackOverlap, currentLevel,  ML_POSTSMOOTHER,
-				 (void*)&BackwardSmoothingList_,(void*)Comm_);
-	}
-      }
-      else{
-	ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
-			       IfpackOverlap, currentLevel, pre_or_post,
-			       //MyIfpackList,*Comm_);
-			       (void*)&MyIfpackList,(void*)Comm_);
-      }
-#else
+#endif
+      }       
+      else {
         if(gs_type)
           ML_Gen_Smoother_EffSymGaussSeidel(ml_, currentLevel, pre_or_post,
                                             Mynum_smoother_steps, Myomega);
@@ -542,10 +618,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
         else
           ML_Gen_Smoother_GaussSeidel(ml_, currentLevel, pre_or_post,
                                       Mynum_smoother_steps, Myomega);
-#endif
+      }
 
-    } else if( MySmoother == "ML Gauss-Seidel" ) {
-
+    } else if( MySmoother == "ML Gauss-Seidel"){
       // ======================= //
       // ML's point Gauss-Seidel //
       // ======================= //
@@ -569,41 +644,57 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
       // symmetric Gauss-Seidel //
       // ====================== //
       bool use_l1  = List_.get("smoother: use l1 Gauss-Seidel",false);
-      if( verbose_ ) std::cout << msg << "symmetric Gauss-Seidel (sweeps="
-			       << Mynum_smoother_steps << ",omega=" << Myomega << ","
-			       << MyPreOrPostSmoother
-			       << (use_l1  ? ",l1 damping" : "" )
-			       << ")" <<std::endl;
-#ifdef HAVE_ML_IFPACK
-      std::string MyIfpackType = "point relaxation stand-alone";
-      ParameterList& MyIfpackList = smList.sublist("smoother: ifpack list");;
-      MyIfpackList.set("relaxation: type", "symmetric Gauss-Seidel");
-      MyIfpackList.set("relaxation: sweeps", Mynum_smoother_steps);
-      MyIfpackList.set("relaxation: damping factor", Myomega);
-      MyIfpackList.set("relaxation: use l1",use_l1);
-      int smoothing_indices=0;
-      if(MyIfpackList.isParameter("relaxation: number of local smoothing indices"))
-	smoothing_indices = MyIfpackList.get("relaxation: number of local smoothing indices",0);
-
-
-      if (verbose_) {
-	if (ml_->Amat[currentLevel].type == ML_TYPE_CRS_MATRIX)
-	  std::cout << msg << "Epetra_CrsMatrix detected, using "
-		    << "Ifpack implementation" << std::endl;
+      bool use_ml_smoother = ml_->Amat[currentLevel].type != ML_TYPE_CRS_MATRIX && ml_->Amat[currentLevel].type != ML_TYPE_ROW_MATRIX 
+	&& ml_->Amat[currentLevel].type != ML_TYPE_VBR_MATRIX;
+#ifndef HAVE_ML_IFPACK
+      use_ml_smoother=true;
+#endif
+      if( verbose_ ) {
+	if(use_ml_smoother)
+	  std::cout << msg << "ML symmetric Gauss-Seidel (sweeps="
+		    << Mynum_smoother_steps << ",omega=" << Myomega << ","
+		    << MyPreOrPostSmoother
+		    << ")" <<std::endl;
 	else
-	  std::cout << msg << "Wrapping to use "
-		    << "Ifpack implementation" << std::endl;
-	if (smoothing_indices)
-	  std::cout << msg << "Local/reordered smoothing with " << smoothing_indices<<" indices" << std::endl;
+	  std::cout << msg << "symmetric Gauss-Seidel (sweeps="
+		    << Mynum_smoother_steps << ",omega=" << Myomega << ","
+		    << MyPreOrPostSmoother
+		    << (use_l1  ? ",l1 damping" : "" )
+		    << ")" <<std::endl;
       }
 
-      ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
-			     IfpackOverlap, currentLevel, pre_or_post,
-			     (void*)&MyIfpackList,(void*)Comm_);
-#else
-      ML_Gen_Smoother_SymGaussSeidel(ml_, currentLevel, pre_or_post,
-                                     Mynum_smoother_steps, Myomega);
+      if(!use_ml_smoother) {
+#ifdef HAVE_ML_IFPACK
+	std::string MyIfpackType = "point relaxation stand-alone";
+	ParameterList& MyIfpackList = smList.sublist("smoother: ifpack list");;
+	MyIfpackList.set("relaxation: type", "symmetric Gauss-Seidel");
+	MyIfpackList.set("relaxation: sweeps", Mynum_smoother_steps);
+	MyIfpackList.set("relaxation: damping factor", Myomega);
+	MyIfpackList.set("relaxation: use l1",use_l1);
+	int smoothing_indices=0;
+	if(MyIfpackList.isParameter("relaxation: number of local smoothing indices"))
+	  smoothing_indices = MyIfpackList.get("relaxation: number of local smoothing indices",0);
+	
+	
+	if (verbose_) {
+	  if (ml_->Amat[currentLevel].type == ML_TYPE_CRS_MATRIX)
+	    std::cout << msg << "Epetra_CrsMatrix detected, using "
+		      << "Ifpack implementation" << std::endl;
+	  else
+	    std::cout << msg << "Wrapping to use "
+		      << "Ifpack implementation" << std::endl;
+	  if (smoothing_indices)
+	    std::cout << msg << "Local/reordered smoothing with " << smoothing_indices<<" indices" << std::endl;
+	}
+	
+	ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
+			       IfpackOverlap, currentLevel, pre_or_post,
+			       (void*)&MyIfpackList,(void*)Comm_);
 #endif
+      }
+      else 
+	ML_Gen_Smoother_SymGaussSeidel(ml_, currentLevel, pre_or_post,
+				       Mynum_smoother_steps, Myomega);
     } else if( MySmoother == "ML symmetric Gauss-Seidel" ) {
 
       // =========================== //
@@ -653,6 +744,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
        std::string MyGSType = smList.get("smoother: line GS Type",GSType);
        std::string MyGroupDofsString= List_.get("smoother: line group dofs",GroupDofsString);
        int MyGroupDofsInLine = 0;
+       int NumEqnsOnLevel = ml_->Amat[currentLevel].num_PDEs;
+
 
        if (GroupDofsString == "separate") MyGroupDofsInLine = 0;
        if (GroupDofsString == "grouped")  MyGroupDofsInLine = 1;
@@ -682,13 +775,13 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
        if (ml_->Amat[currentLevel].NumZDir != -1) {
           MyNumVerticalNodes = ml_->Amat[currentLevel].NumZDir;
           if     (ml_->Amat[currentLevel].Zorientation== 1) MyMeshNumbering= "vertical";
-          else if(ml_->Amat[currentLevel].Zorientation== 1) MyMeshNumbering= "horizontal";
+          else if(ml_->Amat[currentLevel].Zorientation== 2) MyMeshNumbering= "horizontal";
           else MyMeshNumbering = "use coordinates";
        }
        if (ml_->Pmat[currentLevel].NumZDir != -1) {
           MyNumVerticalNodes = ml_->Pmat[currentLevel].NumZDir;
           if     (ml_->Pmat[currentLevel].Zorientation== 1) MyMeshNumbering= "vertical";
-          else if(ml_->Pmat[currentLevel].Zorientation== 1) MyMeshNumbering= "horizontal";
+          else if(ml_->Pmat[currentLevel].Zorientation== 2) MyMeshNumbering= "horizontal";
           else MyMeshNumbering = "use coordinates";
        }
        if (ml_->Pmat[currentLevel].NumZDir == -7) {
@@ -706,7 +799,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
           if (grid_info != NULL) yvals = grid_info->y;
           if (grid_info != NULL) zvals = grid_info->z;
 
-          if ( (xvals == NULL) || (yvals == NULL) || (zvals == NULL)) {
+          if ( (nnn != 0) && ((xvals == NULL) || (yvals == NULL) || (zvals == NULL))) {
              std::cerr << ErrorMsg_ << "line smoother: must supply either coordinates or orientation should be either 'horizontal' or 'vertical' " << "\n";
              exit(EXIT_FAILURE);
           }
@@ -732,29 +825,28 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
 
        if(MyLineDetectionThreshold > 0.0) {
 	 // Use Mavriplis-inspired line detection
-	 NumBlocks = ML_Compute_Blocks_AutoLine(ml_,currentLevel,NumPDEEqns_,MyLineDetectionThreshold,blockIndices);
+	 NumBlocks = ML_Compute_Blocks_AutoLine(ml_,currentLevel,NumEqnsOnLevel,MyLineDetectionThreshold,blockIndices);
 	 int GlobalBlocks=0;
 	 Comm().SumAll(&NumBlocks,&GlobalBlocks,1);
 	 if( verbose_ ) std::cout << msg << MySmoother << ": using automatic line detection ("<<GlobalBlocks<<" blocks found)"<<std::endl;
-
        }
        else {
 	 // Use Tuminaro's line detection
 
 	 if (MyMeshNumbering == "vertical") { /* vertical numbering for nodes */
 	   if (MyGroupDofsInLine == 1) { /*  one line for all dofs */
-	     for (int dof = 0; dof < NumPDEEqns_; dof++) {
-	       for (int iii = dof; iii < nnn; iii+= NumPDEEqns_) {
-		 tempi = iii/(NumPDEEqns_*MyNumVerticalNodes);
+	     for (int dof = 0; dof < NumEqnsOnLevel; dof++) {
+	       for (int iii = dof; iii < nnn; iii+= NumEqnsOnLevel) {
+		 tempi = iii/(NumEqnsOnLevel*MyNumVerticalNodes);
                 blockIndices[iii] = tempi;
 	       }
 	     }
 	   }
 	   else { /*  different lines for each dof */
-	     for (int dof = 0; dof < NumPDEEqns_; dof++) {
-	       for (int iii = dof; iii < nnn; iii+= NumPDEEqns_) {
-                tempi = iii/(NumPDEEqns_*MyNumVerticalNodes);
-                blockIndices[iii] = NumPDEEqns_*tempi+dof;
+	     for (int dof = 0; dof < NumEqnsOnLevel; dof++) {
+	       for (int iii = dof; iii < nnn; iii+= NumEqnsOnLevel) {
+                tempi = iii/(NumEqnsOnLevel*MyNumVerticalNodes);
+                blockIndices[iii] = NumEqnsOnLevel*tempi+dof;
 	       }
 	     }
 	   }
@@ -764,7 +856,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
           if (MyGroupDofsInLine == 1) {/*  one line for all dofs */
             for (int iii = 0; iii < nnn; iii++)
 	      blockIndices[iii] = (int) floor(((double)(iii%tempi))/
-					      ((double) NumPDEEqns_)+.00001);
+					      ((double) NumEqnsOnLevel)+.00001);
           }
           else { /* different lines for each dof */
             for (int iii = 0; iii < nnn; iii++) blockIndices[iii] = (iii%tempi);
@@ -778,7 +870,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
 	   int    NumCoords, index, next, subindex, subnext;
 	   double xfirst, yfirst;
 	   
-	   NumCoords = nnn/NumPDEEqns_;
+	   NumCoords = nnn/NumEqnsOnLevel;
 	   
 	   /* sort coordinates so that we can order things according to lines */
 	   
@@ -840,11 +932,11 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
                exit(EXIT_FAILURE);
 	     }
 	     int count = 0;
-	     for (int i = 0; i < NumPDEEqns_; i++) {
+	     for (int i = 0; i < NumEqnsOnLevel; i++) {
                if (MyGroupDofsInLine != 1) count = 0;
                for (int j= index; j < next; j++) {
-		 blockIndices[NumPDEEqns_*OrigLoc[j]+i] = NumBlocks;
-		 blockOffset[NumPDEEqns_*OrigLoc[j]+i] = count++;
+		 blockIndices[NumEqnsOnLevel*OrigLoc[j]+i] = NumBlocks;
+		 blockOffset[NumEqnsOnLevel*OrigLoc[j]+i] = count++;
                }
                NumBlocks += NotGrouped;
 	     }
@@ -871,7 +963,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
        if(MyLineDetectionThreshold > 0.0) 
 	 nBlocks = NumBlocks; 
        else {
-	 if (MyGroupDofsInLine == 1) nBlocks = nnn/(MyNumVerticalNodes*NumPDEEqns_);
+	 if (MyGroupDofsInLine == 1) nBlocks = nnn/(MyNumVerticalNodes*NumEqnsOnLevel);
 	 else                        nBlocks = nnn/MyNumVerticalNodes;
        }
 

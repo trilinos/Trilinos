@@ -143,7 +143,7 @@ namespace {
 
   const char *complex_suffix[] = {".re", ".im"};
 
-  const char *Version() {return "Iopx_DatabaseIO.C 2012/04/19 gdsjaar";}
+  const char *Version() {return "Iopx_DatabaseIO.C 2014/05/08";}
 
   bool type_match(const std::string& type, const char *substring);
   int64_t extract_id(const std::string &name_id);
@@ -156,33 +156,7 @@ namespace {
     std::ostringstream errmsg;
     // Create errmsg here so that the exerrval doesn't get cleared by
     // the ex_close call.
-    // Try to interpret exodus error messages...
-    std::string error_type;
-    switch (exerrval) {
-    case -31:
-      error_type = "System Error -- Usually disk full or filesystem issue"; break;
-    case -33:
-      error_type = "Not a netcdf id"; break;
-    case -34:
-      error_type = "Too many files open"; break;
-    case -41:
-    case -44:
-    case -48:
-    case -53:
-    case -62:
-      error_type = "Internal netcdf/exodusII dimension exceeded"; break;
-    case -51:
-      error_type = "Not an exodusII/netcdf file"; break;
-    case -59:
-      error_type = "Attribute of variable name contains illegal characters"; break;
-    case -60:
-      error_type = "Memory allocation (malloc) failure"; break;
-    case -64:
-      error_type = "Filesystem issue; File likely truncated or possibly corrupted"; break;
-    default:
-      ;
-    }
-    errmsg << "ExodusII error (" << exerrval << ")" << error_type << " at line " << lineno
+    errmsg << "Parallel Exodus error (" << exerrval << ")" << nc_strerror(exerrval) << " at line " << lineno
         << " in file '" << Version()
         << "' Please report to gdsjaar@sandia.gov if you need help.";
 
@@ -284,7 +258,8 @@ namespace {
                   const char suffix_separator, int *local_truth,
                   std::vector<Ioss::Field> &fields);
 
-  void add_map_fields(int exoid, Ioss::ElementBlock *block, int64_t my_element_count);
+  void add_map_fields(int exoid, Ioss::ElementBlock *block, int64_t my_element_count,
+		      size_t name_length);
 
   template <typename T>
   bool check_block_order(const std::vector<T*> &blocks);
@@ -1325,7 +1300,8 @@ namespace Iopx {
         add_results_fields(entity_type, io_block, iblk);
 
         if (entity_type == EX_ELEM_BLOCK) {
-          add_map_fields(get_file_pointer(), (Ioss::ElementBlock*)io_block, decomp->el_blocks[iblk].ioss_count());
+          add_map_fields(get_file_pointer(), (Ioss::ElementBlock*)io_block,
+			 decomp->el_blocks[iblk].ioss_count(), maximumNameLength);
         }
       }
     }
@@ -7088,7 +7064,8 @@ namespace Iopx {
       }
     }
 
-    void add_map_fields(int exoid, Ioss::ElementBlock *block, int64_t my_element_count)
+    void add_map_fields(int exoid, Ioss::ElementBlock *block,
+			int64_t my_element_count, size_t name_length)
     {
       // Check for optional element maps...
       int map_count = ex_inquire_int(exoid, EX_INQ_ELEM_MAP);
@@ -7096,8 +7073,7 @@ namespace Iopx {
         return;
 
       // Get the names of the maps...
-      int max_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
-      char **names = get_exodus_names(map_count, max_length);
+      char **names = get_exodus_names(map_count, name_length);
       int ierr = ex_get_names(exoid, EX_ELEM_MAP, names);
       if (ierr < 0)
         exodus_error(exoid, __LINE__, -1);

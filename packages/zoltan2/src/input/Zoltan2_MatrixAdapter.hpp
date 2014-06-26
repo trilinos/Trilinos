@@ -120,6 +120,7 @@ public:
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
+  typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef User user_t;
   typedef UserCoord userCoord_t;
@@ -218,9 +219,7 @@ public:
 
   /*! \brief  Provide a pointer to the row weights, if any.
       \param weights is the list of weights with a given index for
-           the rows returned in getRowIDsView().  If weights for
-           this index are to be uniform for all rows in the
-           global problem, the \c weights should be a NULL pointer.
+           the rows returned in getRowIDsView().  
       \param stride The k'th weight is located at weights[stride*k]
       \param idx ranges from zero to one less than getNumWeightsPerRow().
    */
@@ -309,9 +308,7 @@ public:
 
   /*! \brief  Provide a pointer to the column weights, if any.
       \param weights is the list of weights with a given index for
-           the columns returned in getColumnIDsView().  If weights for
-           this index are to be uniform for all columns in the
-           global problem, the \c weights should be a NULL pointer.
+           the columns returned in getColumnIDsView().
       \param stride The k'th weight is located at weights[stride*k]
       \param idx ranges from zero to one less than getNumWeightsPerColumn().
    */

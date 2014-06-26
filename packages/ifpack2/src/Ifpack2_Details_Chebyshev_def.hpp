@@ -61,7 +61,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
@@ -785,7 +785,7 @@ makeInverseDiagonal (const row_matrix_type& A, const bool useDiagOffsets) const
   // Invert the diagonal entries, replacing entries less (in
   // magnitude) than the user-specified value with that value.
   typedef KokkosClassic::MultiVector<ST, typename MV::node_type> KMV;
-  KMV& localDiag = D_rangeMap->getLocalMVNonConst ();
+  KMV localDiag = D_rangeMap->getLocalMV ();
   typedef KokkosClassic::DefaultArithmetic<KMV> KMVT;
   KMVT::ReciprocalThreshold (localDiag, minDiagVal_);
   return Teuchos::rcp_const_cast<const V> (D_rangeMap);

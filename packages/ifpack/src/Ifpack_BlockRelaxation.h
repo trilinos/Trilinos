@@ -47,6 +47,7 @@
 #include "Ifpack_ConfigDefs.h"
 #include "Ifpack_Preconditioner.h" 
 #include "Ifpack_Partitioner.h"
+#include "Ifpack_LinePartitioner.h"
 #include "Ifpack_LinearPartitioner.h"
 #include "Ifpack_GreedyPartitioner.h"
 #include "Ifpack_METISPartitioner.h"
@@ -1190,6 +1191,8 @@ int Ifpack_BlockRelaxation<T>::Initialize()
     Partitioner_ = Teuchos::rcp( new Ifpack_EquationPartitioner(&*Graph_) );
   else if (PartitionerType_ == "user")
     Partitioner_ = Teuchos::rcp( new Ifpack_UserPartitioner(&*Graph_) );
+  else if (PartitionerType_ == "line")
+    Partitioner_ = Teuchos::rcp( new Ifpack_LinePartitioner(&*Graph_) );
   else
     IFPACK_CHK_ERR(-2);
 
@@ -1214,6 +1217,22 @@ int Ifpack_BlockRelaxation<T>::Initialize()
     }
   }
   W_->Reciprocal(*W_);
+
+  // Update Label_ if line smoothing
+  if (PartitionerType_ == "line") {
+    // set the label
+    string PT2;
+    if (PrecType_ == IFPACK_JACOBI)
+      PT2 = "BJ";
+    else if (PrecType_ == IFPACK_GS)
+      PT2 = "BGS";
+    else if (PrecType_ == IFPACK_SGS)
+      PT2 = "BSGS";
+    Label_ = "IFPACK (" + PT2 + ", auto-line, sweeps=" 
+      + Ifpack_toString(NumSweeps_) + ", damping="
+      + Ifpack_toString(DampingFactor_) + ", blocks="
+      + Ifpack_toString(NumLocalBlocks()) + ")";
+  }
 
   InitializeTime_ += Time_.ElapsedTime();
   IsInitialized_ = true;

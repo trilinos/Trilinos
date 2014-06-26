@@ -175,7 +175,7 @@ template< typename T >
 T atomic_fetch_add( volatile T * const dest , const T val )
 {
   T retval;
-#pragma omp critical
+#pragma omp atomic capture
   {
     retval = dest[0];
     dest[0] += val;

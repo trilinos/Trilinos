@@ -47,8 +47,7 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include "exodusII.h"                   // for ex_get_attr_names, etc
 
 /*!
  * reads the attribute names for an element block

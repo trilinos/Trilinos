@@ -49,7 +49,7 @@
 #include "Epetra_Distributor.h"
 
 //==============================================================================
-Poisson2dOperator::Poisson2dOperator(int nx, int ny, const Epetra_Comm & comm) 
+Poisson2dOperator::Poisson2dOperator(int nx, int ny, const Epetra_Comm & comm)
   : nx_(nx),
     ny_(ny),
     useTranspose_(false),
@@ -69,7 +69,7 @@ Poisson2dOperator::Poisson2dOperator(int nx, int ny, const Epetra_Comm & comm)
     ny = 2*numProc; ny_ = ny;
     std::cout << " Increasing ny to " << ny << " to avoid degenerate distribution on " << numProc << " processors." << std::endl;
   }
-  
+
   int chunkSize = ny/numProc;
   int remainder = ny%numProc;
 
@@ -83,22 +83,22 @@ Poisson2dOperator::Poisson2dOperator(int nx, int ny, const Epetra_Comm & comm)
     // Build import GID list to build import map and importer
     if (myPID>0) numImports_ += nx;
     if (myPID+1<numProc) numImports_ += nx;
-    
+
     if (numImports_>0) importIDs_ = new int[numImports_];
     int * ptr = importIDs_;
     int minGID = map_->MinMyGID();
     int maxGID = map_->MaxMyGID();
-    
+
     if (myPID>0) for (int i=0; i< nx; i++) *ptr++ = minGID - nx + i;
     if (myPID+1<numProc) for (int i=0; i< nx; i++) *ptr++ = maxGID + i +1;
-    
+
     // At the end of the above step importIDs_ will have a list of global IDs that are needed
-    // to compute the matrix multiplication operation on this processor.  Now build import map 
+    // to compute the matrix multiplication operation on this processor.  Now build import map
     // and importer
-    
-    
+
+
     importMap_ = new Epetra_Map(-1, numImports_, importIDs_, 0, comm_);
-    
+
     importer_ = new Epetra_Import(*importMap_, *map_);
 
   }

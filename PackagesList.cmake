@@ -105,7 +105,7 @@ INCLUDE(TribitsListHelpers)
 #
 
 SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
-  TrilinosFramework     cmake                             PS # Only tests, no libraries/capabilities!
+  TriBITS               cmake/tribits                     PS # Only tests, no libraries/capabilities!
   Teuchos               packages/teuchos                  PS
   ThreadPool            packages/ThreadPool               PS # Depends on ptheads system library
   RTOp                  packages/rtop                     PS
@@ -152,7 +152,6 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   NOX                   packages/nox                      PS
   Moertel               packages/moertel                  PS
   MueLu                 packages/muelu                    SS
-  TrilinosCouplings     packages/trilinoscouplings        SS
   Rythmos               packages/rythmos                  PS
   MOOCHO                packages/moocho                   PS
   Aristos               packages/aristos                  EX
@@ -169,6 +168,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Optika		packages/optika		          SS
   Mesquite              packages/mesquite                 PS
   MeshingGenie          packages/meshinggenie             EX
+  TrilinosCouplings     packages/trilinoscouplings        SS
   FEApp                 demos/FEApp                       SS # Capability demonstration package
   )
 
@@ -181,22 +181,22 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
 # get enabled implicitly.
 #
 
-PACKAGE_DISABLE_ON_PLATFORMS(MOOCHO Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(Phalanx Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(Phdmesh Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(PyTrilinos Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(Sundance Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(Tpetra Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(Ifpack2 Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(TriKota Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(Pamgen Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(STK Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(SEACAS Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(Anasazi Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(Zoltan Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(Isorropia Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(Teko Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(Mesquite AIX)
-PACKAGE_DISABLE_ON_PLATFORMS(Trios Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(Xpetra Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(Panzer Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(MOOCHO Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Phalanx Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Phdmesh Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(PyTrilinos Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Sundance Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Tpetra Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Ifpack2 Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(TriKota Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Pamgen Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(STK Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(SEACAS Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Anasazi Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Zoltan Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Isorropia Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Teko Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Mesquite AIX)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Trios Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Xpetra Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Panzer Windows)

@@ -46,91 +46,104 @@
 #ifndef MUELU_PARAMETERLISTINTERPRETER_DECL_HPP
 #define MUELU_PARAMETERLISTINTERPRETER_DECL_HPP
 
-#include <string>
-
-#include <Teuchos_Array.hpp>
 #include <Teuchos_ParameterList.hpp>
 
-#include <Xpetra_MultiVectorFactory_fwd.hpp>
-
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_HierarchyFactory_fwd.hpp"
 #include "MueLu_HierarchyManager.hpp"
+
+#include "MueLu_AggregationExportFactory_fwd.hpp"
+#include "MueLu_CoalesceDropFactory_fwd.hpp"
+#include "MueLu_CoarseMapFactory_fwd.hpp"
+#include "MueLu_ConstraintFactory_fwd.hpp"
+#include "MueLu_CoordinatesTransferFactory_fwd.hpp"
+#include "MueLu_CoupledAggregationFactory_fwd.hpp"
+#include "MueLu_DirectSolver_fwd.hpp"
+#include "MueLu_EminPFactory_fwd.hpp"
+#include "MueLu_FactoryFactory_fwd.hpp"
+#include "MueLu_FilteredAFactory_fwd.hpp"
+#include "MueLu_GenericRFactory_fwd.hpp"
+#include "MueLu_NullspaceFactory_fwd.hpp"
+#include "MueLu_PatternFactory_fwd.hpp"
+#include "MueLu_PgPFactory_fwd.hpp"
+#include "MueLu_RAPFactory_fwd.hpp"
+#include "MueLu_RebalanceAcFactory_fwd.hpp"
+#include "MueLu_RebalanceTransferFactory_fwd.hpp"
+#include "MueLu_RepartitionFactory_fwd.hpp"
+#include "MueLu_SaPFactory_fwd.hpp"
+#include "MueLu_SmootherFactory_fwd.hpp"
+#include "MueLu_TentativePFactory_fwd.hpp"
+#include "MueLu_TransPFactory_fwd.hpp"
+#include "MueLu_UncoupledAggregationFactory_fwd.hpp"
+#include "MueLu_ZoltanInterface_fwd.hpp"
+#include "MueLu_Zoltan2Interface_fwd.hpp"
 
 namespace MueLu {
 
-/*! @class ParameterListInterpreter
-
-    @brief Translates a ParameterList to a form that MueLu can use.
-
-    Either takes a pre-formed ParameterList or reads an XML file and creates an internal Parameterlist
-*/
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
   class ParameterListInterpreter : public HierarchyManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> {
 #undef MUELU_PARAMETERLISTINTERPRETER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:
-
     //! @name Constructors/Destructors
     //@{
 
-    //! Constructor
-    ParameterListInterpreter() { }
-
     //! Constructor that accepts a user-provided ParameterList.
-    ParameterListInterpreter(Teuchos::ParameterList & paramList);
+    ParameterListInterpreter(Teuchos::ParameterList& paramList);
 
     /*! @brief Constructor that reads parameters from an XML file.
 
         XML options are converted to ParameterList entries by Teuchos.
     */
-    ParameterListInterpreter(const std::string & xmlFileName, const Teuchos::Comm<int> &comm);
+    ParameterListInterpreter(const std::string& xmlFileName, const Teuchos::Comm<int>& comm);
 
     //! Destructor.
     virtual ~ParameterListInterpreter() { }
 
     //@}
 
-    //@{
+    void SetParameterList(const Teuchos::ParameterList& paramList);
 
-    void SetParameterList(const Teuchos::ParameterList & paramList);
-
-    //@}
+    void SetupHierarchy(Hierarchy& H) const;
 
   private:
+    //! Setup Matrix object
+    virtual void SetupMatrix(Matrix& A) const;
+
+    int       blockSize_;
+    CycleType Cycle_;
+
+    //! Easy interpreter stuff
+    //@{
+    void SetEasyParameterList(const Teuchos::ParameterList& paramList);
+
+    void UpdateFactoryManager(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager) const;
+
+    bool useCoordinates_;
+    //@}
+
+    //! Factory interpreter stuff
+    // TODO:
+    // - parameter list validator
+    // - SetParameterList
+    // - Set/Get directly Level manager
+    // - build per level
+    // - comments/docs
+    // - use FactoryManager instead of FactoryMap
+    //@{
+    void SetFactoryParameterList(const Teuchos::ParameterList& paramList);
+
     typedef std::map<std::string, RCP<const FactoryBase>  > FactoryMap; //TODO: remove this line
     typedef std::map<std::string, RCP<FactoryManagerBase> > FactoryManagerMap;
 
-    void BuildFactoryMap(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn, FactoryMap & factoryMapOut, FactoryManagerMap & factoryManagers) const;
-
-    //mutable std::map<std::string, RCP<FactoryManagerBase> > factoryManagers_;
-
-    //! @name Matrix configuration
-    //@{
-
-    //! Setup Matrix object
-    virtual void SetupMatrix(Matrix & Op) const;
-
-    //! Setup extra data
-    virtual void SetupExtra(Hierarchy & H) const;
+    void BuildFactoryMap(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, FactoryMap& factoryMapOut, FactoryManagerMap& factoryManagers) const;
 
     //! Matrix configuration storage
     Teuchos::ParameterList operatorList_; //TODO: should it be stored in another format to avoid xml parsing in SetupMatrix()?
-
     //@}
-
-  }; // class
+  };
 
 } // namespace MueLu
 
 #define MUELU_PARAMETERLISTINTERPRETER_SHORT
-#endif // MUELU_PARAMETERLISTINTERPRETER_DECL_HPP
-
-// TODO:
-// - parameter list validator
-// - SetParameterList
-// - Set/Get directly Level manager
-// - build per level
-// - comments/docs
-// - use FactoryManager instead of FactoryMap
+#endif /* MUELU_PARAMETERLISTINTERPRETER_DECL_HPP */

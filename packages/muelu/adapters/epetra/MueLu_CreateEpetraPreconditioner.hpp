@@ -7,7 +7,6 @@
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <MueLu.hpp>
 #include <MueLu_EpetraOperator.hpp>
-#include <MueLu_EasyParameterListInterpreter.hpp>
 #include <MueLu_ParameterListInterpreter.hpp>
 #include <MueLu_Hierarchy.hpp>
 #include <MueLu_Exceptions.hpp>
@@ -73,12 +72,7 @@ namespace MueLu {
     RCP<HierarchyManager> mueLuFactory;
     RCP<Hierarchy>        H;
     if (hasParamList) {
-      bool useEasy = !paramList.isSublist("Hierarchy");
-
-      if (useEasy == false)
-        mueLuFactory = rcp(new ParameterListInterpreter    <SC,LO,GO,NO>(paramList));
-      else
-        mueLuFactory = rcp(new EasyParameterListInterpreter<SC,LO,GO,NO>(paramList));
+      mueLuFactory = rcp(new ParameterListInterpreter<SC,LO,GO,NO>(paramList));
 
       H = mueLuFactory->CreateHierarchy();
 

@@ -46,7 +46,6 @@
 #include <string>
 #include "boost/mpl/apply.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Panzer_Base.hpp"
 #include "user_app_ClosureModel_Factory_Physics1.hpp"
 
 namespace user_app {
@@ -61,8 +60,8 @@ namespace user_app {
       m_throw_if_model_not_found(throw_if_model_not_found) {}
 
     template <typename EvalT>
-    Teuchos::RCP<panzer::Base> build() const {
-      return Teuchos::rcp( static_cast<panzer::Base*>
+    Teuchos::RCP<panzer::ClosureModelFactoryBase> build() const {
+      return Teuchos::rcp( static_cast<panzer::ClosureModelFactoryBase*>
 			   (new user_app::MyModelFactory_Physics1<EvalT>(m_throw_if_model_not_found)) );
     }
     

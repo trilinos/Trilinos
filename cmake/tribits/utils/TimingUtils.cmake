@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -42,11 +42,28 @@
 #
 # Warning: Depends on calling 'date' program so will not be portable to all
 # platforms so call with care.
-
+#
 
 #
+# @FUNCTION: TIMER_GET_RAW_SECONDS()
+# 
 # Return the raw time in seconds since epoch, i.e., since 1970-01-01 00:00:00
-# UTC
+# UTC.
+#
+# Usage::
+#
+#   TIMER_GET_RAW_SECONDS(<rawSecondsVar>)
+#
+# This function is used along with `TIMER_GET_REL_SECONDS()`_, and
+# `TIMER_PRINT_REL_TIME()`_ to time big chunks of CMake code for timing and
+# profiling purposes.  See `TIMER_PRINT_REL_TIME()`_ for more details and an
+# example.
+#
+# NOTE: This function runs an external process to run the ``date`` command.
+# Therefore, it only works on Unix/Linux and other systems that have a
+# standard ``date`` command.  Since this runs an external process, this
+# function should only be used to time very course-grained operations
+# (i.e. that take longer than a second).
 #
 FUNCTION(TIMER_GET_RAW_SECONDS   SECONDS_RAW_OUT)
   EXECUTE_PROCESS(COMMAND date "+%s" OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -56,7 +73,18 @@ ENDFUNCTION()
 
 
 #
-# Return the relative time between start and stop seconds
+# @FUNCTION: TIMER_GET_REL_SECONDS()
+#
+# Return the relative time between start and stop seconds.
+#
+# Usage::
+#
+#   TIMER_GET_REL_SECONDS(<startSeconds> <endSeconds> <relSecondsOutVar>)
+#
+# This simple function computes the relative number of seconds between
+# ``<startSeconds>`` and ``<endSeconds>`` (returned from
+# `TIMER_GET_RAW_SECONDS()`_) and sets the result in the local variable
+# ``<relSecondsOutVar>``.
 #
 FUNCTION(TIMER_GET_REL_SECONDS  SECONDS_RAW_START
   SECONDS_RAW_END  SECONDS_REL_OUT
@@ -67,8 +95,40 @@ ENDFUNCTION()
 
 
 #
-# Print the relative time in minutes
+# @FUNCTION: TIMER_PRINT_REL_TIME()
 #
+# Print the relative time between start and stop timers in ``<min>m<sec>s``
+# format.
+#
+# Usage::
+#
+#   TIMER_PRINT_REL_TIME(<startSeconds> <endSeconds> "<messageStr>")
+#
+# Differences the raw times ``<startSeconds>`` and ``<endSeconds>``
+# (i.e. gotten from `TIMER_GET_RAW_SECONDS()`_) and prints the time in
+# ``<min>m<sec>s`` format.  This can only resolve times a second or greater
+# apart.  If the start and end times are less than a second then ``0m0s`` will
+# be printed.
+#
+# This is meant to be used with `TIMER_GET_RAW_SECONDS()`_ to time expensive
+# blocks of CMake code like::
+#
+#   TIMER_GET_RAW_SECONDS(REAL_EXPENSIVE_START)
+#
+#   REAL_EXPENSIVE(...)
+#
+#   TIMER_GET_RAW_SECONDS(REAL_EXPENSIVE_END)
+#
+#   TIMER_PRINT_REL_TIME(${REAL_EXPENSIVE_START} ${REAL_EXPENSIVE_END}
+#      "REAL_EXPENSIVE() time")
+#
+# This will print something like::
+#
+#   REAL_EXPENSIVE() time: 0m5s
+#
+# Again, don't try to time something that takes less than 1 second as it will
+# be recorded as ``0m0s``.
+#   
 FUNCTION(TIMER_PRINT_REL_TIME  SECONDS_RAW_START   SECONDS_RAW_END
   MESSAGE_STR
   )

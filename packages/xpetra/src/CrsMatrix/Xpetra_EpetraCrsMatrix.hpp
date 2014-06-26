@@ -140,9 +140,11 @@ namespace Xpetra {
     //** \warning This is an expert-only routine and should not be called from user code. */
     void allocateAllValues(size_t numNonZeros,ArrayRCP<size_t> & rowptr, ArrayRCP<LocalOrdinal> & colind, ArrayRCP<Scalar> & values);
 
-    //! Sets the matrix's structure from the Crs arrays
-    //** \warning This is an expert-only routine and should not be called from user code. */
+    //! Sets the 1D pointer arrays of the graph.
     void setAllValues(const ArrayRCP<size_t> & rowptr, const ArrayRCP<LocalOrdinal> & colind, const ArrayRCP<Scalar> & values);
+
+    //! Gets the 1D pointer arrays of the graph.
+    void getAllValues(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind, ArrayRCP<const Scalar>& values) const;
 
     //! Expert static fill complete
     //** \warning This is an expert-only routine and should not be called from user code. */
@@ -238,6 +240,9 @@ namespace Xpetra {
 
     //! Extract a list of entries in a specified local row of the matrix. Put into storage allocated by calling routine.
     void getLocalRowCopy(LocalOrdinal LocalRow, const ArrayView< LocalOrdinal > &Indices, const ArrayView< Scalar > &Values, size_t &NumEntries) const;
+
+    //! Extract a list of entries in a specified global row of this matrix. Put into pre-allocated storage.
+    void getGlobalRowCopy(GlobalOrdinal GlobalRow, const ArrayView< GlobalOrdinal > &Indices, const ArrayView< Scalar > &Values, size_t &NumEntries) const;
 
     //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
     void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView< const GlobalOrdinal > &indices, ArrayView< const Scalar > &values) const;

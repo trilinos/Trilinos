@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -52,7 +52,7 @@
 #include "Epetra_Map.h"
 #include "Epetra_IntSerialDenseVector.h"
 #include "Epetra_Version.h"
-                                            
+
 // prototype
 int main(int argc, char *argv[]) {
 #ifdef HAVE_MPI
@@ -67,12 +67,12 @@ int main(int argc, char *argv[]) {
 
   std::cout << Comm << std::endl; // Print out process information
   // Get the number of global equations from the command line
-  if (argc!=2) { 
+  if (argc!=2) {
     std::cout << "Usage: " << argv[0] << " number_of_equations" << std::endl;
     exit(1);
    }
   int NumGlobalElements = atoi(argv[1]);
-  // Construct a Map that puts approximately the same number of 
+  // Construct a Map that puts approximately the same number of
   // equations on each processor.
   Epetra_Map Map(NumGlobalElements, 0, Comm);
   // Get update list and number of local equations from newly created Map.

@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -41,6 +41,31 @@ INCLUDE(ParseVariableArguments)
 INCLUDE(MultilineSet)
 INCLUDE(ConcatStrings)
 
+
+#
+# @FUNCTION: COMBINED_OPTION()
+#
+# Set up a ``BOOL`` cache variable (i.e. an option) based on a set of
+# dependent options.
+#
+# Usage::
+#
+#   COMBINED_OPTION( <combinedOptionName>
+#     DEP_OPTIONS_NAMES <depOpName0> <depOptName1> ...
+#     DOCSTR "<docstr0>" "<docstr1" ...
+#     )
+#
+# This sets up a ``BOOL`` cache variable ``<combinedOptionName>`` which is
+# defaulted to ``ON`` if all of the listed dependent option variables
+# ``<depOpName0>``, ``<depOptName1>``, ... are all ``ON``.  However, if
+# ``<combinedOptionName>`` is set to ``ON`` by the user and not all of the
+# dependent option variables are also ``ON``, then this results in a fatal
+# error and all processing stops.
+#
+# This is used by a CMake project to automatically turn on a feature that
+# requires a set of other features (when they are all enabled) but allows a
+# user to disable the feature if desired.
+#
 FUNCTION(COMBINED_OPTION  COMBINED_OPTION_NAME)
 
   PARSE_ARGUMENTS(
@@ -53,7 +78,7 @@ FUNCTION(COMBINED_OPTION  COMBINED_OPTION_NAME)
     ${ARGN}
     )
 
-  # ToDo: Assert the the right input was passed in!
+  # ToDo: Assert that the right input was passed in!
 
   SET(DEFAULT_VAL ON)
   FOREACH( DEP_OPTION_NAME ${PARSE_DEP_OPTIONS_NAMES})
@@ -69,6 +94,8 @@ FUNCTION(COMBINED_OPTION  COMBINED_OPTION_NAME)
 
   #PRINT_VAR(${COMBINED_OPTION_NAME})
 
+  # Determine if the combined option was turned on by the individual options
+  # are not turned on as well.
   SET(ALL_ENABLED TRUE)
   IF (${COMBINED_OPTION_NAME})
     FOREACH( DEP_OPTION_NAME ${PARSE_DEP_OPTIONS_NAMES})
@@ -80,6 +107,8 @@ FUNCTION(COMBINED_OPTION  COMBINED_OPTION_NAME)
     ENDFOREACH()
   ENDIF()
 
+  # Print out detailed error message if the combined option was enabled but
+  # the dependent options were not.
   IF (NOT ALL_ENABLED)
 
     SET(OPTION_NAMES "")

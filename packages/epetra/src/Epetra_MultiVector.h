@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -60,7 +60,7 @@ class Epetra_Vector;
 
 //! Epetra_MultiVector: A class for constructing and using dense multi-vectors, vectors and matrices in parallel.
 
-/*! The Epetra_MultiVector class enables the construction and use of real-valued, 
+/*! The Epetra_MultiVector class enables the construction and use of real-valued,
   double-precision dense vectors, multi-vectors,
   and matrices in a distributed memory environment.  The dimensions and distribution of the dense
   multi-vectors is determined in part by a Epetra_Comm object, a Epetra_Map (or Epetra_LocalMap
@@ -69,11 +69,11 @@ class Epetra_Vector;
   There are several concepts that important for understanding the Epetra_MultiVector class:
 
   <ul>
-  <li>  Multi-vectors, Vectors and Matrices.  
+  <li>  Multi-vectors, Vectors and Matrices.
   <ul>
   <li> Vector - A list of real-valued, double-precision numbers.  Also a multi-vector with one vector.
   <li> Multi-Vector - A collection of one or more vectors, all having the same length and distribution.
-  <li> (Dense) Matrix - A special form of multi-vector such that stride in memory between any 
+  <li> (Dense) Matrix - A special form of multi-vector such that stride in memory between any
   two consecutive vectors in the multi-vector is the same for all vectors.  This is identical
   to a two-dimensional array in Fortran and plays an important part in high performance
   computations.
@@ -81,12 +81,12 @@ class Epetra_Vector;
   <li> Distributed Global vs. Replicated Local.
   <ul>
   <li> Distributed Global Multi-vectors - In most instances, a multi-vector will be partitioned
-  across multiple memory images associated with multiple processors.  In this case, there is 
-  a unique copy of each element and elements are spread across all processors specified by 
+  across multiple memory images associated with multiple processors.  In this case, there is
+  a unique copy of each element and elements are spread across all processors specified by
   the Epetra_Comm communicator.
   <li> Replicated Local Multi-vectors - Some algorithms use multi-vectors that are too small to
   be distributed across all processors, the Hessenberg matrix in a GMRES
-  computation.  In other cases, such as with block iterative methods,  block dot product 
+  computation.  In other cases, such as with block iterative methods,  block dot product
   functions produce small
   dense matrices that are required by all processors.  Replicated local multi-vectors handle
   these types of situation.
@@ -95,7 +95,7 @@ class Epetra_Vector;
   <ul>
   <li> Multi-vector functions - These functions operate simultaneously but independently
   on each vector in the multi-vector and produce individual results for each vector.
-  <li> Dense matrix functions - These functions operate on the multi-vector as a matrix, 
+  <li> Dense matrix functions - These functions operate on the multi-vector as a matrix,
   providing access to selected dense BLAS and LAPACK operations.
   </ul>
   </ul>
@@ -112,11 +112,11 @@ class Epetra_Vector;
   </ol>
 
   \warning View mode is \e extremely dangerous from a data hiding perspective.
-  Therefore, we strongly encourage users to develop code using Copy mode first and 
+  Therefore, we strongly encourage users to develop code using Copy mode first and
   only use the View mode in a secondary optimization phase.
 
   All Epetra_MultiVector constructors require a map argument that describes the layout of elements
-  on the parallel machine.  Specifically, 
+  on the parallel machine.  Specifically,
   \c map is a Epetra_Map, Epetra_LocalMap or Epetra_BlockMap object describing the desired
   memory layout for the multi-vector.
 
@@ -137,16 +137,16 @@ class Epetra_Vector;
 
   \warning ExtractView functions are \e extremely dangerous from a data hiding perspective.
   For both ExtractView fuctions, there is a corresponding ExtractCopy function.  We
-  strongly encourage users to develop code using ExtractCopy functions first and 
+  strongly encourage users to develop code using ExtractCopy functions first and
   only use the ExtractView functions in a secondary optimization phase.
 
   There are four Extract functions:
   <ul>
   <li> ExtractCopy - Copy values into a user-provided two-dimensional array.
   <li> ExtractCopy - Copy values into a user-provided array of pointers.
-  <li> ExtractView - Set user-provided two-dimensional array parameters 
+  <li> ExtractView - Set user-provided two-dimensional array parameters
   to point to Epetra_MultiVector data.
-  <li> ExtractView - Set user-provided array of pointer parameters 
+  <li> ExtractView - Set user-provided array of pointer parameters
   to point to Epetra_MultiVector data.
   </ul>
 
@@ -171,11 +171,11 @@ class Epetra_Vector;
 
   Each Epetra_MultiVector object keep track of the number
   of \e serial floating point operations performed using the specified object as the \e this argument
-  to the function.  The Flops() function returns this number as a double precision number.  Using this 
+  to the function.  The Flops() function returns this number as a double precision number.  Using this
   information, in conjunction with the Epetra_Time class, one can get accurate parallel performance
   numbers.  The ResetFlops() function resets the floating point counter.
 
-  \warning A Epetra_Map, Epetra_LocalMap or Epetra_BlockMap object is required for all 
+  \warning A Epetra_Map, Epetra_LocalMap or Epetra_BlockMap object is required for all
   Epetra_MultiVector constructors.
 
 */
@@ -186,17 +186,17 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
  public:
 
    //! @name Constructors/destructors
-  //@{ 
+  //@{
   //! Basic Epetra_MultiVector constuctor.
-  /*! Creates a Epetra_MultiVector object and, by default, fills with zero values.  
+  /*! Creates a Epetra_MultiVector object and, by default, fills with zero values.
 
-  \param In 
+  \param In
   Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
 
   \warning Note that, because Epetra_LocalMap
   derives from Epetra_Map and Epetra_Map derives from Epetra_BlockMap, this constructor works
   for all three types of Epetra map classes.
-  \param In 
+  \param In
   NumVectors - Number of vectors in multi-vector.
   \param In
   zeroOut - If <tt>true</tt> then the allocated memory will be zeroed
@@ -208,14 +208,14 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
   Epetra_MultiVector(const Epetra_BlockMap& Map, int NumVectors, bool zeroOut = true);
 
   //! Epetra_MultiVector copy constructor.
-  
+
   Epetra_MultiVector(const Epetra_MultiVector& Source);
-  
+
   //! Set multi-vector values from two-dimensional array.
   /*!
-    \param In 
+    \param In
     Epetra_DataAccess - Enumerated type set to Copy or View.
-    \param In 
+    \param In
     Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
     \param In
     A - Pointer to an array of double precision numbers.  The first vector starts at A.
@@ -224,78 +224,78 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
     MyLDA - The "Leading Dimension", or stride between vectors in memory.
     \warning This value refers to the stride on the calling processor.  Thus it is a
     local quantity, not a global quantity.
-    \param In 
+    \param In
     NumVectors - Number of vectors in multi-vector.
 
     \return Integer error code, set to 0 if successful.
 
     See Detailed Description section for further discussion.
   */
-  Epetra_MultiVector(Epetra_DataAccess CV, const Epetra_BlockMap& Map, 
+  Epetra_MultiVector(Epetra_DataAccess CV, const Epetra_BlockMap& Map,
          double *A, int MyLDA, int NumVectors);
 
   //! Set multi-vector values from array of pointers.
   /*!
-    \param In 
+    \param In
     Epetra_DataAccess - Enumerated type set to Copy or View.
-    \param In 
+    \param In
     Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
     \param In
     ArrayOfPointers - An array of pointers such that ArrayOfPointers[i] points to the memory
     location containing ith vector to be copied.
-    \param In 
+    \param In
     NumVectors - Number of vectors in multi-vector.
 
     \return Integer error code, set to 0 if successful.
 
     See Detailed Description section for further discussion.
   */
-  Epetra_MultiVector(Epetra_DataAccess CV, const Epetra_BlockMap& Map, 
+  Epetra_MultiVector(Epetra_DataAccess CV, const Epetra_BlockMap& Map,
          double **ArrayOfPointers, int NumVectors);
 
   //! Set multi-vector values from list of vectors in an existing Epetra_MultiVector.
   /*!
-    \param In 
+    \param In
     Epetra_DataAccess - Enumerated type set to Copy or View.
     \param In
     Source - An existing fully constructed Epetra_MultiVector.
     \param In
-    Indices - Integer list of the vectors to copy.  
-    \param In 
+    Indices - Integer list of the vectors to copy.
+    \param In
     NumVectors - Number of vectors in multi-vector.
 
     \return Integer error code, set to 0 if successful.
 
     See Detailed Description section for further discussion.
   */
-  Epetra_MultiVector(Epetra_DataAccess CV,  
+  Epetra_MultiVector(Epetra_DataAccess CV,
          const Epetra_MultiVector& Source, int *Indices, int NumVectors);
 
   //! Set multi-vector values from range of vectors in an existing Epetra_MultiVector.
   /*!
-    \param In 
+    \param In
     Epetra_DataAccess - Enumerated type set to Copy or View.
     \param In
     Source - An existing fully constructed Epetra_MultiVector.
     \param In
-    StartIndex - First of the vectors to copy.  
-    \param In 
+    StartIndex - First of the vectors to copy.
+    \param In
     NumVectors - Number of vectors in multi-vector.
 
     \return Integer error code, set to 0 if successful.
 
     See Detailed Description section for further discussion.
   */
-  Epetra_MultiVector(Epetra_DataAccess CV, 
-         const Epetra_MultiVector& Source, int StartIndex, 
+  Epetra_MultiVector(Epetra_DataAccess CV,
+         const Epetra_MultiVector& Source, int StartIndex,
          int NumVectors);
-  
-  //! Epetra_MultiVector destructor.  
+
+  //! Epetra_MultiVector destructor.
   virtual ~Epetra_MultiVector();
   //@}
 
   //! @name Post-construction modification routines
-  //@{ 
+  //@{
 
   //! Replace current value  at the specified (GlobalRow, VectorIndex) location with ScalarValue.
   /*!
@@ -328,7 +328,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
   //! Replace current value at the specified (GlobalBlockRow, BlockRowOffset, VectorIndex) location with ScalarValue.
   /*!
     Replaces the existing value for a single entry in the multivector.  The
-    specified global block row and block row offset 
+    specified global block row and block row offset
     must correspond to a GID owned by the map of the multivector on the
     calling processor.  In other words, this method does not perform cross-processor communication.
 
@@ -383,7 +383,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
   //! Adds ScalarValue to existing value at the specified (GlobalBlockRow, BlockRowOffset, VectorIndex) location.
   /*!
     Sums the given value into the existing value for a single entry in the multivector.  The
-    specified global block row and block row offset 
+    specified global block row and block row offset
     must correspond to a GID owned by the map of the multivector on the
     calling processor.  In other words, this method does not perform cross-processor communication.
 
@@ -412,12 +412,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
     specified local row must correspond to a GID owned by the map of the multivector on the
     calling processor.  In other words, this method does not perform cross-processor communication.
 
-    This method is intended for use with vectors based on an Epetra_Map.  If used 
-    on a vector based on a non-trivial Epetra_BlockMap, this will update only block 
-    row 0, i.e. 
+    This method is intended for use with vectors based on an Epetra_Map.  If used
+    on a vector based on a non-trivial Epetra_BlockMap, this will update only block
+    row 0, i.e.
 
-    Epetra_MultiVector::ReplaceMyValue  (  MyRow,  VectorIndex,  ScalarValue )  is 
-    equivalent to:  
+    Epetra_MultiVector::ReplaceMyValue  (  MyRow,  VectorIndex,  ScalarValue )  is
+    equivalent to:
     Epetra_MultiVector::ReplaceMyValue  (  0, MyRow,  VectorIndex,  ScalarValue )
 
 
@@ -437,7 +437,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
   //! Replace current value at the specified (MyBlockRow, BlockRowOffset, VectorIndex) location with ScalarValue.
   /*!
     Replaces the existing value for a single entry in the multivector.  The
-    specified local block row and block row offset 
+    specified local block row and block row offset
     must correspond to a GID owned by the map of the multivector on the
     calling processor.  In other words, this method does not perform cross-processor communication.
 
@@ -482,7 +482,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
   //! Adds ScalarValue to existing value at the specified (MyBlockRow, BlockRowOffset, VectorIndex) location.
   /*!
     Sums the given value into the existing value for a single entry in the multivector.  The
-    specified local block row and block row offset 
+    specified local block row and block row offset
     must correspond to a GID owned by the map of the multivector on the
     calling processor.  In other words, this method does not perform cross-processor communication.
 
@@ -508,9 +508,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
     \return Integer error code, set to 0 if successful.
   */
   int PutScalar (double ScalarConstant);
-  
+
   //! Set multi-vector values to random numbers.
-  /*! MultiVector uses the random number generator provided by Epetra_Util. 
+  /*! MultiVector uses the random number generator provided by Epetra_Util.
     The multi-vector values will be set to random values on the interval (-1.0, 1.0).
 
     \return Integer error code, set to 0 if successful.
@@ -521,12 +521,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
   //@}
 
   //! @name Extraction methods
-  //@{ 
+  //@{
 
   //! Put multi-vector values into user-provided two-dimensional array.
   /*!
     \param Out
-    A - Pointer to memory space that will contain the multi-vector values.  
+    A - Pointer to memory space that will contain the multi-vector values.
     The first vector will be copied to the memory pointed to by A.
     The second vector starts at A+MyLDA, the third at A+2*MyLDA, and so on.
     \param In
@@ -543,7 +543,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
   //! Put multi-vector values into user-provided array of pointers.
   /*!
     \param Out
-    ArrayOfPointers - An array of pointers to memory space that will contain the 
+    ArrayOfPointers - An array of pointers to memory space that will contain the
     multi-vector values, such that ArrayOfPointers[i] points to the memory
     location where the ith vector to be copied.
 
@@ -555,14 +555,14 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
 
   // ExtractView functions
 
-  
+
   //! Set user-provided addresses of A and MyLDA.
   /*!
-    \param 
-    A (Out) - Address of a pointer to that will be set to point to the values of the multi-vector.  
+    \param
+    A (Out) - Address of a pointer to that will be set to point to the values of the multi-vector.
     The first vector will be at the memory pointed to by A.
     The second vector starts at A+MyLDA, the third at A+2*MyLDA, and so on.
-    \param 
+    \param
     MyLDA (Out) - Address of the "Leading Dimension", or stride between vectors in memory.
     \warning This value refers to the stride on the calling processor.  Thus it is a
     local quantity, not a global quantity.
@@ -575,7 +575,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
 
   //! Set user-provided addresses of ArrayOfPointers.
   /*!
-    \param 
+    \param
     ArrayOfPointers (Out) - Address of array of pointers to memory space that will set to the
     multi-vector array of pointers, such that ArrayOfPointers[i] points to the memory
     location where the ith vector is located.
@@ -589,7 +589,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
   //@}
 
   //! @name Mathematical methods
-  //@{ 
+  //@{
 
   //! Computes dot product of each corresponding pair of vectors.
   /*!
@@ -610,7 +610,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
     \e this will contain the absolute values of the entries of A.
 
     \return Integer error code, set to 0 if successful.
-    
+
     Note:  It is possible to use the same argument for A and \e this.
   */
   int Abs(const Epetra_MultiVector& A);
@@ -624,8 +624,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
 
     \return Integer error code, set to 0 if successful.  Returns 2 if some entry
     is too small, but not zero.  Returns 1 if some entry is zero.
-    
-    Note:  It is possible to use the same argument for A and \e this.  Also, 
+
+    Note:  It is possible to use the same argument for A and \e this.  Also,
     if a given value of A is smaller than Epetra_DoubleMin (defined in Epetra_Epetra.h),
     but nonzero, then the return code is 2.  If an entry is zero, the return code
     is 1.  However, in all cases the reciprocal value is still used, even
@@ -689,7 +689,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
 
     \return Integer error code, set to 0 if successful.
   */
-  int Update(double ScalarA, const Epetra_MultiVector& A, 
+  int Update(double ScalarA, const Epetra_MultiVector& A,
        double ScalarB, const Epetra_MultiVector& B, double ScalarThis);
 
   //! Compute 1-norm of each vector in multi-vector.
@@ -772,24 +772,24 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
     \return Integer error code, set to 0 if successful.
   */
   int MeanValue (double * Result) const;
-  
-  
+
+
   //! Matrix-Matrix multiplication, \e this = ScalarThis*\e this + ScalarAB*A*B.
   /*! This function performs a variety of matrix-matrix multiply operations, interpreting
     the Epetra_MultiVectors (\e this-aka C , A and B) as 2D matrices.  Variations are due to
     the fact that A, B and C can be local replicated or global distributed
-    Epetra_MultiVectors and that we may or may not operate with the transpose of 
+    Epetra_MultiVectors and that we may or may not operate with the transpose of
     A and B.  Possible cases are:
     \verbatim
 
     Total of 32 case (2^5).
     Num
     OPERATIONS                        case  Notes
-    1) C(local) = A^X(local) * B^X(local)  4   (X=Transpose or Not, No comm needed) 
+    1) C(local) = A^X(local) * B^X(local)  4   (X=Transpose or Not, No comm needed)
     2) C(local) = A^T(distr) * B  (distr)  1   (2D dot product, replicate C)
     3) C(distr) = A  (distr) * B^X(local)  2   (2D vector update, no comm needed)
 
-    Note that the following operations are not meaningful for 
+    Note that the following operations are not meaningful for
     1D distributions:
 
     1) C(local) = A^T(distr) * B^T(distr)  1
@@ -825,12 +825,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
     copy is made and used for the computation.  This activity is transparent to the user,
     except that there is memory and computation overhead.  All temporary space is deleted
     prior to exit.}
-   
+
   */
-  int Multiply(char TransA, char TransB, double ScalarAB, 
+  int Multiply(char TransA, char TransB, double ScalarAB,
          const Epetra_MultiVector& A, const Epetra_MultiVector& B,
          double ScalarThis );
-  
+
 
 
   //! Multiply a Epetra_MultiVector with another, element-by-element.
@@ -857,7 +857,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
   //@}
 
   //! @name Random number utilities
-  //@{ 
+  //@{
 
 
   //! Set seed for Random function.
@@ -878,7 +878,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
   //@}
 
   //! @name Overloaded operators
-  //@{ 
+  //@{
 
   //! = Operator.
   /*!
@@ -888,10 +888,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
     \return Epetra_MultiVector.
   */
   Epetra_MultiVector& operator = (const Epetra_MultiVector& Source);
-  
+
   // Local element access functions
 
-  // 
+  //
 
   //! Vector access function.
   /*!
@@ -919,8 +919,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
   //@}
 
   //! @name Attribute access functions
-  //@{ 
-  
+  //@{
+
   //! Returns the number of vectors in the multi-vector.
   int NumVectors() const {return(NumVectors_);};
 
@@ -939,7 +939,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
 
   //! Returns the stride between  vectors in the multi-vector (only meaningful if ConstantStride() is true).
   int Stride() const {return(Stride_);};
-  
+
   //! Returns true if this multi-vector has constant stride between vectors.
   bool ConstantStride() const {return(ConstantStride_);};
   //@}
@@ -950,19 +950,19 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
   int ReplaceMap(const Epetra_BlockMap& map);
 
   //! @name I/O methods
-  //@{ 
+  //@{
 
   //! Print method
   virtual void Print(std::ostream & os) const;
   //@}
 
   //! @name Expert-only unsupported methods
-  //@{ 
+  //@{
 
   //! Reset the view of an existing multivector to point to new user data.
   /*! Allows the (very) light-weight replacement of multivector values for an
     existing multivector that was constructed using an Epetra_DataAccess mode of View.
-    No checking is performed to see if the array of values passed in contains valid 
+    No checking is performed to see if the array of values passed in contains valid
     data.  It is assumed that the user has verified the integrity of data before calling
     this method. This method is useful for situations where a multivector is needed
     for use with an Epetra operator or matrix and the user is not passing in a multivector,
@@ -989,7 +989,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
   //@}
 
   // Expert-only function
-  int Reduce(); 
+  int Reduce();
 
  protected:
 
@@ -1010,7 +1010,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
   inline void UpdateDoubleTemp() const
   {if (DoubleTemp_==0) DoubleTemp_=new double[NumVectors_+1]; return;}
 
-  inline void UpdateVectors()  const {if (Vectors_==0) { Vectors_ = new Epetra_Vector *[NumVectors_]; 
+  inline void UpdateVectors()  const {if (Vectors_==0) { Vectors_ = new Epetra_Vector *[NumVectors_];
     for (int i=0; i<NumVectors_; i++) Vectors_[i] = 0;}
     return;
   }
@@ -1019,12 +1019,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
   int DoView(void);
   template<typename int_type>
   int ChangeGlobalValue(int_type GlobalBlockRow,
-                        int BlockRowOffset, 
+                        int BlockRowOffset,
                         int VectorIndex,
                         double ScalarValue,
                         bool SumInto);
   int ChangeMyValue(int MyBlockRow,
-                    int BlockRowOffset, 
+                    int BlockRowOffset,
                     int VectorIndex,
                     double ScalarValue,
                     bool SumInto);
@@ -1032,11 +1032,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
   int CheckSizes(const Epetra_SrcDistObject& A);
 
   int CopyAndPermute(const Epetra_SrcDistObject & Source,
-                     int NumSameIDs, 
+                     int NumSameIDs,
                      int NumPermuteIDs,
                      int * PermuteToLIDs,
                      int * PermuteFromLIDs,
-                     const Epetra_OffsetIndex * Indexor);
+                     const Epetra_OffsetIndex * Indexor,
+                     Epetra_CombineMode CombineMode = Zero);
 
   int PackAndPrepare(const Epetra_SrcDistObject & Source,
                      int NumExportIDs,
@@ -1047,19 +1048,19 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
                      int * Sizes,
                      bool & VarSizes,
                      Epetra_Distributor & Distor);
-  
+
   int UnpackAndCombine(const Epetra_SrcDistObject & Source,
                        int NumImportIDs,
-                       int * ImportLIDs, 
-                       int LenImports, 
+                       int * ImportLIDs,
+                       int LenImports,
                        char * Imports,
-                       int & SizeOfPacket, 
+                       int & SizeOfPacket,
                        Epetra_Distributor & Distor,
                        Epetra_CombineMode CombineMode,
                        const Epetra_OffsetIndex * Indexor );
 
   double **Pointers_;        // Pointers to each vector;
-  
+
   int MyLength_;
   long long GlobalLength_;
   int NumVectors_;

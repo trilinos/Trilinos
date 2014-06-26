@@ -51,21 +51,19 @@
 *
 *****************************************************************************/
 
-#include <ctype.h>
-#include <string.h>
-#include <stdlib.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <ctype.h>                      // for toupper
+#include <inttypes.h>                   // for PRId64
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <stdlib.h>                     // for malloc, NULL, free
+#include <string.h>                     // for strncmp, strlen
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_err, exerrval, ex_block, etc
+#include "exodusII_int.h"               // for elem_blk_parm, EX_FATAL, etc
 /*!
  * This routine is designed to read the Exodus II V 2.0 side set side 
  * definition  and return a ExodusI style side set node definition.
  */
-static void* safe_free(void* array)
-{
-  if (array != 0) free(array);
-  return 0;
-}
-
 static void set_count(int exoid, void_int *cnt, size_t ndx, size_t val)
 {
   if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
@@ -301,13 +299,12 @@ int ex_get_side_set_node_list(int exoid,
 
   if (ex_get_set(exoid, EX_SIDE_SET, side_set_id, 
 		 side_set_elem_list, side_set_side_list) == -1) {
-    safe_free(side_set_elem_list);
-    safe_free(side_set_side_list);
     sprintf(errmsg,
 	    "Error: failed to get side set %"PRId64" in file id %d",
 	    side_set_id, exoid);
     ex_err("ex_get_side_set_node_list",errmsg,exerrval);
-    return (EX_FATAL);
+    err_stat = EX_FATAL;
+    goto cleanup;
   }
 
   /* Allocate space for the ss element index array */
@@ -663,7 +660,7 @@ int ex_get_side_set_node_list(int exoid,
     if (elem > elem_ctr) {
       /* release connectivity array space and get next one */
       if (elem_ctr > 0) {
-        safe_free(connect);
+        ex_safe_free(connect);
       }
 
       /* Allocate space for the connectivity array for new element block */
@@ -742,7 +739,7 @@ int ex_get_side_set_node_list(int exoid,
 	    {
 	      exerrval = EX_BADPARAM;
 	      sprintf(errmsg,
-		      "Error: Invalid triangle edge number "ST_ZU" in file id %d",
+		      "Error: Invalid triangle edge number %"ST_ZU" in file id %d",
 		      side_num+1, exoid);
 	      ex_err("ex_get_side_set_node_list",errmsg,exerrval);
 	      err_stat = EX_FATAL;
@@ -798,7 +795,7 @@ int ex_get_side_set_node_list(int exoid,
 	    {
 	      exerrval = EX_BADPARAM;
 	      sprintf(errmsg,
-		      "Error: Invalid quad edge number "ST_ZU" in file id %d",
+		      "Error: Invalid quad edge number %"ST_ZU" in file id %d",
 		      side_num+1, exoid);
 	      ex_err("ex_get_side_set_node_list",errmsg,exerrval);
 	      err_stat = EX_FATAL;
@@ -821,7 +818,7 @@ int ex_get_side_set_node_list(int exoid,
 	    {
 	      exerrval = EX_BADPARAM;
 	      sprintf(errmsg,
-		      "Error: Invalid shell face number "ST_ZU" in file id %d",
+		      "Error: Invalid shell face number %"ST_ZU" in file id %d",
 		      side_num+1, exoid);
 	      ex_err("ex_get_side_set_node_list",errmsg,exerrval);
 	      err_stat = EX_FATAL;
@@ -864,7 +861,7 @@ int ex_get_side_set_node_list(int exoid,
 	    {
 	      exerrval = EX_BADPARAM;
 	      sprintf(errmsg,
-		      "Error: Invalid tetra face number "ST_ZU" in file id %d",
+		      "Error: Invalid tetra face number %"ST_ZU" in file id %d",
 		      side_num+1, exoid);
 	      ex_err("ex_get_side_set_node_list",errmsg,exerrval);
 	      err_stat = EX_FATAL;
@@ -895,7 +892,7 @@ int ex_get_side_set_node_list(int exoid,
 	    {
 	      exerrval = EX_BADPARAM;
 	      sprintf(errmsg,
-		      "Error: Invalid wedge face number "ST_ZU" in file id %d",
+		      "Error: Invalid wedge face number %"ST_ZU" in file id %d",
 		      side_num+1, exoid);
 	      ex_err("ex_get_side_set_node_list",errmsg,exerrval);
 	      err_stat = EX_FATAL;
@@ -938,7 +935,7 @@ int ex_get_side_set_node_list(int exoid,
 	    {
 	      exerrval = EX_BADPARAM;
 	      sprintf(errmsg,
-		      "Error: Invalid pyramid face number "ST_ZU" in file id %d",
+		      "Error: Invalid pyramid face number %"ST_ZU" in file id %d",
 		      side_num+1, exoid);
 	      ex_err("ex_get_side_set_node_list",errmsg,exerrval);
 	      err_stat = EX_FATAL;
@@ -981,7 +978,7 @@ int ex_get_side_set_node_list(int exoid,
 	    {
 	      exerrval = EX_BADPARAM;
 	      sprintf(errmsg,
-		      "Error: Invalid hex face number "ST_ZU" in file id %d",
+		      "Error: Invalid hex face number %"ST_ZU" in file id %d",
 		      side_num+1, exoid);
 	      ex_err("ex_get_side_set_node_list",errmsg,exerrval);
 	      err_stat = EX_FATAL;
@@ -1015,7 +1012,8 @@ int ex_get_side_set_node_list(int exoid,
 		  "Error: %s is an unsupported element type",
 		  elem_blk_parms[parm_ndx].elem_type);
 	  ex_err("ex_get_side_set_node_list",errmsg,exerrval);
-	  return(EX_FATAL);
+	  err_stat = EX_FATAL;
+	  goto cleanup;
 	}
       }
   }
@@ -1024,14 +1022,14 @@ int ex_get_side_set_node_list(int exoid,
   /* All done: release connectivity array space, element block ids array,
      element block parameters array, and side set element index array */
  cleanup:
-  safe_free(connect);
-  safe_free(ss_parm_ndx);
-  safe_free(elem_blk_ids);
-  safe_free(elem_blk_parms);
-  safe_free(ss_elem_ndx);
-  safe_free(ss_elem_node_ndx);
-  safe_free(side_set_side_list);
-  safe_free(side_set_elem_list);
+  ex_safe_free(connect);
+  ex_safe_free(ss_parm_ndx);
+  ex_safe_free(elem_blk_ids);
+  ex_safe_free(elem_blk_parms);
+  ex_safe_free(ss_elem_ndx);
+  ex_safe_free(ss_elem_node_ndx);
+  ex_safe_free(side_set_side_list);
+  ex_safe_free(side_set_elem_list);
 
   return(err_stat);
 }

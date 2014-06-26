@@ -46,11 +46,6 @@
 #ifndef MUELU_COALESCEDROPFACTORY_DEF_HPP
 #define MUELU_COALESCEDROPFACTORY_DEF_HPP
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_VectorFactory.hpp>
@@ -106,11 +101,16 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
     Input(currentLevel, "A");
-    Input(currentLevel, "UnAmalgamationInfo");
 
-    const ParameterList  & pL = GetParameterList();
-    if (pL.get<bool>("lightweight wrap") == true && pL.get<std::string>("algorithm") == "laplacian")
-      Input(currentLevel, "Coordinates");
+    const ParameterList& pL = GetParameterList();
+    if (pL.get<bool>("lightweight wrap") == true) {
+      if (pL.get<std::string>("algorithm") == "laplacian")
+        Input(currentLevel, "Coordinates");
+
+    } else {
+      Input(currentLevel, "UnAmalgamationInfo");
+    }
+
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

@@ -570,7 +570,9 @@ namespace Tpetra {
   private:
     //! Buffer into which packed data are imported (received from other processes).
     Kokkos::View<packet_type*,device_type> imports_;
+  protected:
     Teuchos::Array<Packet> imports_old_;
+  private:
 
     /// \brief Number of packets to receive for each receive operation.
     ///
@@ -584,11 +586,15 @@ namespace Tpetra {
     /// the multivector.)
     Kokkos::View<size_t*,device_type> numImportPacketsPerLID_;
     typename Kokkos::View<size_t*,device_type>::HostMirror host_numImportPacketsPerLID_;
+  protected:
     Teuchos::Array<size_t> numImportPacketsPerLID_old_;
+  private:
 
     //! Buffer from which packed data are exported (sent to other processes).
     Kokkos::View<packet_type*,device_type> exports_;
+  protected:
     Teuchos::Array<Packet> exports_old_;
+  private:
 
     /// \brief Number of packets to send for each send operation.
     ///
@@ -601,9 +607,11 @@ namespace Tpetra {
     /// argument of packAndPrepare() to the number of columns in the
     /// multivector.)
     Kokkos::View<size_t*,device_type> numExportPacketsPerLID_;
+  protected:
     Teuchos::Array<size_t> numExportPacketsPerLID_old_;
 
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
+  private:
     Teuchos::RCP<Teuchos::Time> doXferTimer_;
     Teuchos::RCP<Teuchos::Time> copyAndPermuteTimer_;
     Teuchos::RCP<Teuchos::Time> packAndPrepareTimer_;

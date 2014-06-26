@@ -181,9 +181,9 @@ public:
   KOKKOS_INLINE_FUNCTION
   size_t node_global_index( unsigned local ) const
     {
-      const unsigned node_grid[SpaceDim] =
+      const unsigned ng[SpaceDim] =
         { m_node_grid(local,0) , m_node_grid(local,1) , m_node_grid(local,2) };
-      return m_box_part.global_node_id( node_grid );
+      return m_box_part.global_node_id( ng );
     }
 
   KOKKOS_INLINE_FUNCTION
@@ -300,30 +300,30 @@ public:
       const size_t inode = i % ElemNode ;
 
       unsigned elem_grid[SpaceDim] ;
-      unsigned node_grid[SpaceDim] ;
+      unsigned ng[SpaceDim] ;
 
       m_box_part.uses_elem_coord( ielem , elem_grid );
 
       enum { elem_node_scale = Order == BoxElemPart::ElemLinear ? 1 :
                                Order == BoxElemPart::ElemQuadratic ? 2 : 0 };
 
-      node_grid[0] = elem_node_scale * elem_grid[0] + m_elem_node_local[inode][0] ;
-      node_grid[1] = elem_node_scale * elem_grid[1] + m_elem_node_local[inode][1] ;
-      node_grid[2] = elem_node_scale * elem_grid[2] + m_elem_node_local[inode][2] ;
+      ng[0] = elem_node_scale * elem_grid[0] + m_elem_node_local[inode][0] ;
+      ng[1] = elem_node_scale * elem_grid[1] + m_elem_node_local[inode][1] ;
+      ng[2] = elem_node_scale * elem_grid[2] + m_elem_node_local[inode][2] ;
 
-      m_elem_node(ielem,inode) = m_box_part.local_node_id( node_grid );
+      m_elem_node(ielem,inode) = m_box_part.local_node_id( ng );
     }
 
     if ( i < m_node_grid.dimension_0() ) {
-      unsigned node_grid[SpaceDim] ;
-      m_box_part.local_node_coord( i , node_grid );
-      m_node_grid(i,0) = node_grid[0] ;
-      m_node_grid(i,1) = node_grid[1] ;
-      m_node_grid(i,2) = node_grid[2] ;
+      unsigned ng[SpaceDim] ;
+      m_box_part.local_node_coord( i , ng );
+      m_node_grid(i,0) = ng[0] ;
+      m_node_grid(i,1) = ng[1] ;
+      m_node_grid(i,2) = ng[2] ;
 
-      m_coord_map( node_grid[0] ,
-                   node_grid[1] ,
-                   node_grid[2] ,
+      m_coord_map( ng[0] ,
+                   ng[1] ,
+                   ng[2] ,
                    m_node_coord(i,0) ,
                    m_node_coord(i,1) ,
                    m_node_coord(i,2) );

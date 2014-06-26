@@ -57,8 +57,8 @@ namespace user_app {
   public:
     
     template <typename EvalT>
-    Teuchos::RCP<panzer::Base> build() const {
-      return Teuchos::rcp( static_cast<panzer::Base*>
+    Teuchos::RCP<panzer::ClosureModelFactoryBase> build() const {
+      return Teuchos::rcp( static_cast<panzer::ClosureModelFactoryBase*>
 			   (new user_app::STKModelFactory<EvalT>) );
     }
     

@@ -2,13 +2,12 @@
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
-#include "defs.h"
-#include "params.h"
+#include <math.h>                       // for sqrt
+#include <stdio.h>                      // for NULL, printf, fprintf, etc
+#include "defs.h"                       // for FALSE, TRUE
+#include "params.h"                     // for MAXSETS
+#include "smalloc.h"                    // for sfree, smalloc_ret
 #include "structs.h"
-#include "smalloc.h"
 
 extern void reflect_input(int       nvtxs,          /* number of vertices in graph */
 			  int       nedges,         /* number of edges in graph */

@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -118,7 +118,7 @@ NOX::Epetra::DebugTools::compute_matrix_using_operator( const Epetra_Operator * 
   if( 0 == op->Comm().MyPID() )
   {
     std::cout << "****************  CREATING MATRIX FROM OPERATOR ************************ "
-	      << std::endl;
+          << std::endl;
     std::cout << NOX::Utils::fill(72) << std::endl;
   }
   int totalPerturbations = tempVec->GlobalLength();
@@ -139,13 +139,13 @@ NOX::Epetra::DebugTools::compute_matrix_using_operator( const Epetra_Operator * 
     {
       if( fabs( (*tempRes)[row] ) > 1.e-12 )
       {
-	int ierr = p_mat->InsertGlobalValues( rowMap.GID(row), 1, &(*tempRes)[row], &col );
-	if( ierr < 0 )
-	{
+    int ierr = p_mat->InsertGlobalValues( rowMap.GID(row), 1, &(*tempRes)[row], &col );
+    if( ierr < 0 )
+    {
           std::string msg = //"ERROR (" + ierr + ") : "
-	       "NOX::Epetra::DebugTools::compute_matrix_using_operator crsMatrix.ExtractGlobalRowView(...) failed for row : ";// + row;
+           "NOX::Epetra::DebugTools::compute_matrix_using_operator crsMatrix.ExtractGlobalRowView(...) failed for row : ";// + row;
           throw msg;
-	}
+    }
       }
     }
     if( (0 == op->Comm().MyPID()) && (0 == (col % outFreq)) )
@@ -233,31 +233,27 @@ NOX::Epetra::DebugTools::writeMatrix( std::string baseName, const Epetra_RowMatr
 void
 NOX::Epetra::DebugTools::readMatrix( std::string baseName, Epetra_CrsMatrix* & p_crsMat )
 {
-
-  if( NULL != p_crsMat )
-  {
-    std::string msg = "Incoming Epetra_CrsMatrix pointer is not NULL.  This could cause a memory leak.";
-    throw msg;
-  }
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      p_crsMat != NULL,
+      "Incoming Epetra_CrsMatrix pointer is not NULL.  This could cause a memory leak."
+      );
 
   std::string mapFileName = baseName + "_map";
 
   Epetra_Map * tmpMap = NULL;
   int ierr = EpetraExt::MatrixMarketFileToMap( mapFileName.c_str(), p_crsMat->Comm(), tmpMap );
-  if( (0 != ierr) || (NULL == tmpMap) )
-  {
-    std::string msg = "Could not get Epetra_Map from file."; // \"" + mapFileName + "\"." 
-    throw msg;
-  }
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      ierr != 0 || tmpMap == NULL,
+      "Could not get Epetra_Map from file." // \"" + mapFileName + "\"."
+      );
 
   std::string matrixFileName = baseName + "_matrix";
 
   ierr = EpetraExt::MatrixMarketFileToCrsMatrix( matrixFileName.c_str(), *tmpMap, p_crsMat );
-  if( (0 != ierr) || (NULL == p_crsMat) )
-  {
-    std::string msg = "Could not get Epetra_CrsMatrix from file."; // \"" + matrixFileName + "\"." 
-    throw msg;
-  }
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      ierr != 0 || p_crsMat == NULL,
+      "Could not get Epetra_CrsMatrix from file." // \"" + matrixFileName + "\"."
+      );
 
   delete tmpMap;
 
@@ -279,23 +275,23 @@ NOX::Epetra::DebugTools::writeOperator( std::string baseName, const Epetra_Opera
 
   switch( opTyp )
   {
-    case MATRIX_FREE	  :
+    case MATRIX_FREE      :
       Epetra_CrsMatrix * tmpMatrix;
       tmpMatrix = compute_matrix_using_operator( &op );
       writeMatrix( baseName, *tmpMatrix );
       delete tmpMatrix;
       break;
 
-    case FINITE_DIFFERENCE	   :
+    case FINITE_DIFFERENCE       :
     case FINITE_DIFFERENCE_COLORNG :
       writeMatrix( baseName, dynamic_cast<const NOX::Epetra::FiniteDifference &>(op).getUnderlyingMatrix(), outFormat );
       break;
 
-    case CRS_MATRIX	  :
+    case CRS_MATRIX      :
       writeMatrix( baseName, dynamic_cast<const Epetra_CrsMatrix &>(op), outFormat );
       break;
 
-    default			  :
+    default              :
       std::string msg = "Could not get a valid Matrix from incoming Epetra_Operator."; // of type " + opTyp + ".";
       throw msg;
   }
@@ -317,17 +313,17 @@ NOX::Epetra::TestCompare::TestCompare(std::ostream& os, const NOX::Utils& utils)
 
 //----------------------------------------------------------------------------
 
-int 
+int
 NOX::Epetra::TestCompare::testCrsMatrices(
-		 const Epetra_CrsMatrix& mat          , 
-		 const Epetra_CrsMatrix& mat_expected , 
-		 double rtol, double atol             ,
-		 const std::string& name              ,
+         const Epetra_CrsMatrix& mat          ,
+         const Epetra_CrsMatrix& mat_expected ,
+         double rtol, double atol             ,
+         const std::string& name              ,
                  bool enforceStructure                  )
 {
-  if (utils.isPrintType(NOX::Utils::TestDetails)) 
+  if (utils.isPrintType(NOX::Utils::TestDetails))
     os << std::endl << "\tChecking " << name << ":  ";
-  
+
   int passed = 0;
 
   if( !mat_expected.RowMap().SameAs( mat.RowMap() ) )
@@ -352,7 +348,7 @@ NOX::Epetra::TestCompare::testCrsMatrices(
   {
     mat_expected.ExtractMyRowView(row, numEntries1, values1, columns1);
     mat.ExtractMyRowView         (row, numEntries2, values2, columns2);
-    
+
     if( numEntries1 != numEntries2 )
     {
       if( enforceStructure )
@@ -400,7 +396,7 @@ NOX::Epetra::TestCompare::testCrsMatrices(
       testCol = columns2[col];
       baseVal = values1 [col];
       testVal = values2 [col];
-  
+
       if( baseCol != testCol )
       {
         if( enforceStructure )
@@ -452,18 +448,18 @@ NOX::Epetra::TestCompare::testCrsMatrices(
   else
     passed = 0; // true by convention in NOX::TestCompare
 
-  if (utils.isPrintType(NOX::Utils::TestDetails)) 
+  if (utils.isPrintType(NOX::Utils::TestDetails))
   {
     if( 0 == passed)
       os << "Passed." << std::endl;
     else
       os << "Failed." << std::endl;
 
-    os << "\t\tComputed norm:        " << utils.sciformat(infNorm) 
+    os << "\t\tComputed norm:        " << utils.sciformat(infNorm)
        << std::endl
-       << "\t\tRelative Tolerance:   " << utils.sciformat(rtol) 
+       << "\t\tRelative Tolerance:   " << utils.sciformat(rtol)
        << std::endl
-       << "\t\tAbsolute Tolerance:   " << utils.sciformat(rtol) 
+       << "\t\tAbsolute Tolerance:   " << utils.sciformat(rtol)
        << std::endl;
   }
 

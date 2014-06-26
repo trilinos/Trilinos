@@ -1,0 +1,4 @@
+<ParameterList name="MueLu">
+  <Parameter name="multigrid algorithm"     type="string"   value="pg"/>
+  <Parameter name="problem: symmetric"      type="bool"     value="false"/>
+</ParameterList>

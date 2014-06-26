@@ -46,142 +46,147 @@
 
 namespace Piro {
 
-MLRigidBodyModes::MLRigidBodyModes(int numPDEs_)
-   : numPDEs(numPDEs_),
-     numElasticityDim(0),
-     nullSpaceDim(0),
-     numScalar(0),
-     mlUsed(false)
-{
-}
+  MLRigidBodyModes::MLRigidBodyModes(int numPDEs_)
+    : numPDEs(numPDEs_),
+    numElasticityDim(0),
+    nullSpaceDim(0),
+    numSpaceDim(0),
+    numScalar(0),
+    mlUsed(false)
+  {
+  }
 
-void
-MLRigidBodyModes::setPiroPL(const Teuchos::RCP<Teuchos::ParameterList>& piroParams){
+  void
+    MLRigidBodyModes::setPiroPL(const Teuchos::RCP<Teuchos::ParameterList>& piroParams){
 
-  const Teuchos::RCP<Teuchos::ParameterList> stratList = extractStratimikosParams(piroParams);
+      const Teuchos::RCP<Teuchos::ParameterList> stratList = extractStratimikosParams(piroParams);
 
-  if (Teuchos::nonnull(stratList) && stratList->isParameter("Preconditioner Type")) {
-    if ("ML" == stratList->get<std::string>("Preconditioner Type")) {
-      // ML preconditioner is used, get nodal coordinates from application
-      mlList =
-        sublist(sublist(sublist(stratList, "Preconditioner Types"), "ML"), "ML Settings");
-      mlUsed = true;
+      if (Teuchos::nonnull(stratList) && stratList->isParameter("Preconditioner Type")) {
+        if ("ML" == stratList->get<std::string>("Preconditioner Type")) {
+          // ML preconditioner is used, get nodal coordinates from application
+          mlList =
+            sublist(sublist(sublist(stratList, "Preconditioner Types"), "ML"), "ML Settings");
+          mlUsed = true;
+        }
+      }
+
     }
-  }
 
-}
+  void
+    MLRigidBodyModes::updateMLPL(const Teuchos::RCP<Teuchos::ParameterList>& mlParams){
 
-void
-MLRigidBodyModes::updateMLPL(const Teuchos::RCP<Teuchos::ParameterList>& mlParams){
+      mlList = mlParams;
 
-  mlList = mlParams;
+      informML();
 
-  informML();
+    }
 
-}
+  void
+    MLRigidBodyModes::resize(const int numSpaceDim_, const int numNodes){
 
-void
-MLRigidBodyModes::resize(const int numSpaceDim_, const int numNodes){
+      numSpaceDim = numSpaceDim_;
 
-  numSpaceDim = numSpaceDim_;
+      if ( (numNodes == 0) && (numSpaceDim_ > 0) ) x.resize(1);
+      else x.resize(numNodes);
+      if ( (numNodes == 0) && (numSpaceDim_ > 1) ) y.resize(1);
+      else y.resize(numNodes);
+      if ( (numNodes == 0) && (numSpaceDim_ > 2) ) z.resize(1);
+      else z.resize(numNodes);
 
-  x.resize(numNodes);
-  y.resize(numNodes);
-  z.resize(numNodes);
+      if(nullSpaceDim > 0) rr.resize((nullSpaceDim + numScalar) * numPDEs * numNodes + 1);
 
-  if(nullSpaceDim > 0) rr.resize((nullSpaceDim + numScalar) * numPDEs * numNodes);
+    }
 
-}
+  void
+    MLRigidBodyModes::getCoordArrays(double **xx, double **yy, double **zz){
 
-void
-MLRigidBodyModes::getCoordArrays(double **xx, double **yy, double **zz){
+      *xx = &x[0];
+      *yy = &y[0];
+      *zz = &z[0];
 
-  *xx = &x[0];
-  *yy = &y[0];
-  *zz = &z[0];
+    }
 
-}
+  void
+    MLRigidBodyModes::setParameters(const int numPDEs_, const int numElasticityDim_,
+        const int numScalar_, const int nullSpaceDim_){
 
-void
-MLRigidBodyModes::setParameters(const int numPDEs_, const int numElasticityDim_,
-          const int numScalar_, const int nullSpaceDim_){
+      numPDEs = numPDEs_;
+      numElasticityDim = numElasticityDim_;
+      numScalar = numScalar_;
+      nullSpaceDim = nullSpaceDim_;
 
-   numPDEs = numPDEs_;
-   numElasticityDim = numElasticityDim_;
-   numScalar = numScalar_;
-   nullSpaceDim = nullSpaceDim_;
+    }
 
-}
+  void
+    MLRigidBodyModes::informML(){
 
-void
-MLRigidBodyModes::informML(){
+      //numPDEs = # PDEs
+      //numElasticityDim = # elasticity dofs
+      //nullSpaceDim = dimension of elasticity nullspace
+      //numScalar = # scalar dofs coupled to elasticity
 
-  //numPDEs = # PDEs
-  //numElasticityDim = # elasticity dofs
-  //nullSpaceDim = dimension of elasticity nullspace
-  //numScalar = # scalar dofs coupled to elasticity
+      mlList->set("x-coordinates", &x[0]);
+      mlList->set("y-coordinates", &y[0]);
+      mlList->set("z-coordinates", &z[0]);
 
-  mlList->set("x-coordinates", &x[0]);
-  mlList->set("y-coordinates", &y[0]);
-  mlList->set("z-coordinates", &z[0]);
+      mlList->set("PDE equations", numPDEs);
 
-  mlList->set("PDE equations", numPDEs);
+      if (numElasticityDim > 0 ) {
 
-  if (numElasticityDim > 0 ) {
+        //    std::cout << "\nEEEEE setting ML Null Space for Elasticity-type problem of Dimension: "
+        //          << numElasticityDim <<  " nodes  " << x.size() << " nullspace  " << nullSpaceDim << std::endl;
+        //    std::cout << "\nIKIKIK number scalar dofs: " <<numScalar <<  ", number PDEs  " << numPDEs << std::endl;
 
-//    std::cout << "\nEEEEE setting ML Null Space for Elasticity-type problem of Dimension: " 
-//          << numElasticityDim <<  " nodes  " << x.size() << " nullspace  " << nullSpaceDim << std::endl;
-//    std::cout << "\nIKIKIK number scalar dofs: " <<numScalar <<  ", number PDEs  " << numPDEs << std::endl;
+        (void) Piro_ML_Coord2RBM(x.size(), &x[0], &y[0], &z[0], &rr[0], numPDEs, numScalar, nullSpaceDim);
 
-    (void) Piro_ML_Coord2RBM(x.size(), &x[0], &y[0], &z[0], &rr[0], numPDEs, numScalar, nullSpaceDim);
+        //const Epetra_Comm &comm = app->getMap()->Comm();
+        //Epetra_Map map(nNodes*numPDEs, 0, comm);
+        //Epetra_MultiVector rbm_mv(Copy, map, rbm, nNodes*numPDEs, nullSpaceDim + numScalar);
+        //std::cout << "rbm: " << rbm_mv << std::endl;
+        //for (int i = 0; i<nNodes*numPDEs*(nullSpaceDim+numScalar); i++)
+        //   std::cout << rbm[i] << std::endl;
+        //EpetraExt::MultiVectorToMatrixMarketFile("rbm.mm", rbm_mv);
 
-    //const Epetra_Comm &comm = app->getMap()->Comm();
-    //Epetra_Map map(nNodes*numPDEs, 0, comm);
-    //Epetra_MultiVector rbm_mv(Copy, map, rbm, nNodes*numPDEs, nullSpaceDim + numScalar);
-    //std::cout << "rbm: " << rbm_mv << std::endl;
-    //for (int i = 0; i<nNodes*numPDEs*(nullSpaceDim+numScalar); i++)
-    //   std::cout << rbm[i] << std::endl;
-    //EpetraExt::MultiVectorToMatrixMarketFile("rbm.mm", rbm_mv);
+        mlList->set("null space: type", "pre-computed");
+        mlList->set("null space: dimension", nullSpaceDim);
+        mlList->set("null space: vectors", &rr[0]);
+        mlList->set("null space: add default vectors", false);
 
-    mlList->set("null space: type", "pre-computed");
-    mlList->set("null space: dimension", nullSpaceDim);
-    mlList->set("null space: vectors", &rr[0]);
-    mlList->set("null space: add default vectors", false);
+      }
+    }
 
-  }
-}
+  //The following function returns the rigid body modes for elasticity problems.
+  //It is a modification of the ML function ml_rbm.c, extended to the case that
+  //NscalarDof scalar PDEs are coupled to an elasticity problem
+  //Extended by IK, Feb. 2012
 
-//The following function returns the rigid body modes for elasticity problems.
-//It is a modification of the ML function ml_rbm.c, extended to the case that 
-//NscalarDof scalar PDEs are coupled to an elasticity problem
-//Extended by IK, Feb. 2012
+  void
+    MLRigidBodyModes::Piro_ML_Coord2RBM(int Nnodes,
+        double x[], double y[], double z[], double rbm[], int Ndof, int NscalarDof, int NSdim)
+    {
 
-void 
-MLRigidBodyModes::Piro_ML_Coord2RBM(int Nnodes, 
-                                    double x[], double y[], double z[], double rbm[], int Ndof, int NscalarDof, int NSdim)
-{
+      int vec_leng, ii, jj, offset, node, dof;
 
-    int vec_leng, ii, jj, offset, node, dof;
-
-   vec_leng = Nnodes*Ndof;
-   for (int i = 0; i < Nnodes*Ndof*(NSdim + NscalarDof); i++)
-       rbm[i] = 0.0;
+      vec_leng = Nnodes*Ndof;
+      for (int i = 0; i < Nnodes*Ndof*(NSdim + NscalarDof); i++)
+        rbm[i] = 0.0;
 
 
-   for( node = 0 ; node < Nnodes; node++ )
-   {
-      dof = node*Ndof;
-      switch( Ndof - NscalarDof )
+      for( node = 0 ; node < Nnodes; node++ )
       {
-         case 6:
+        dof = node*Ndof;
+        switch( Ndof - NscalarDof )
+        {
+          case 6:
             for(ii=3;ii<6+NscalarDof;ii++){ /* lower half = [ 0 I ] */
               for(jj=0;jj<6+NscalarDof;jj++){
                 offset = dof+ii+jj*vec_leng;
                 rbm[offset] = (ii==jj) ? 1.0 : 0.0;
               }
             }
+            break;
 
-         case 3:
+          case 3:
             for(ii=0;ii<3+NscalarDof;ii++){ /* upper left = [ I ] */
               for(jj=0;jj<3+NscalarDof;jj++){
                 offset = dof+ii+jj*vec_leng;
@@ -191,21 +196,22 @@ MLRigidBodyModes::Piro_ML_Coord2RBM(int Nnodes,
             for(ii=0;ii<3;ii++){ /* upper right = [ Q ] */
               for(jj=3+NscalarDof;jj<6+NscalarDof;jj++){
                 offset = dof+ii+jj*vec_leng;
-               // std::cout <<"jj " << jj << " " << ii + jj << std::endl;
-           if(ii == jj-3-NscalarDof) rbm[offset] = 0.0;
+                // std::cout <<"jj " << jj << " " << ii + jj << std::endl;
+                if(ii == jj-3-NscalarDof) rbm[offset] = 0.0;
                 else {
-                     if (ii+jj == 4+NscalarDof) rbm[offset] = z[node];
-                     else if ( ii+jj == 5+NscalarDof ) rbm[offset] = y[node];
-                     else if ( ii+jj == 6+NscalarDof ) rbm[offset] = x[node];
-                    else rbm[offset] = 0.0;
+                  if (ii+jj == 4+NscalarDof) rbm[offset] = z[node];
+                  else if ( ii+jj == 5+NscalarDof ) rbm[offset] = y[node];
+                  else if ( ii+jj == 6+NscalarDof ) rbm[offset] = x[node];
+                  else rbm[offset] = 0.0;
                 }
               }
             }
             ii = 0; jj = 5+NscalarDof; offset = dof+ii+jj*vec_leng; rbm[offset] *= -1.0;
             ii = 1; jj = 3+NscalarDof; offset = dof+ii+jj*vec_leng; rbm[offset] *= -1.0;
             ii = 2; jj = 4+NscalarDof; offset = dof+ii+jj*vec_leng; rbm[offset] *= -1.0;
-         break;
- case 2:
+            break;
+
+          case 2:
             for(ii=0;ii<2+NscalarDof;ii++){ /* upper left = [ I ] */
               for(jj=0;jj<2+NscalarDof;jj++){
                 offset = dof+ii+jj*vec_leng;
@@ -223,27 +229,30 @@ MLRigidBodyModes::Piro_ML_Coord2RBM(int Nnodes,
               }
             }
             break;
-         case 1:
-             for (ii = 0; ii<1+NscalarDof; ii++) {
-               for (jj=0; jj<1+NscalarDof; jj++) {
-                  offset = dof+ii+jj*vec_leng;
-                  rbm[offset] = (ii == jj) ? 1.0 : 0.0;
-                }
-             }
+
+          case 1:
+            for (ii = 0; ii<1+NscalarDof; ii++) {
+              for (jj=0; jj<1+NscalarDof; jj++) {
+                offset = dof+ii+jj*vec_leng;
+                rbm[offset] = (ii == jj) ? 1.0 : 0.0;
+              }
+            }
             break;
 
-         default:
+          default:
+            TEUCHOS_TEST_FOR_EXCEPTION(
+                true,
+                std::logic_error,
+                "Piro_ML_Coord2RBM: Ndof = " << Ndof << " not implemented\n"
+                );
+        } /*switch*/
 
-            TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-                   "Piro_ML_Coord2RBM: Ndof = " << Ndof << " not implemented\n");
-      } /*switch*/
+      } /*for( node = 0 ; node < Nnodes; node++ )*/
 
-  } /*for( node = 0 ; node < Nnodes; node++ )*/
-
-  return;
+      return;
 
 
-} /*ML_Coord2RBM*/
+    } /*ML_Coord2RBM*/
 
 
 

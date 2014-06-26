@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -41,19 +41,35 @@ INCLUDE(TribitsPackageMacros)
 
 
 #
-# Define a subpackage.
+# @MACRO: TRIBITS_SUBPACKAGE()
 #
-# Once called, the following varibles are in scope:
+# Forward declare a `TriBITS Subpackage`_ called at the top of the
+# subpackage's `<packageDir>/<spkgDir>/CMakeLists.txt`_ file.
 #
-#   PARENT_PACKAGE_NAME: The name of the parent package
+# Usage::
 #
-#   SUBPACKAGE_NAME: The local name of the subpackage (does not contain the
-#   parent package name).
+#   TRIBITS_SUBPACKAGE(<spkgName>)
 #
-#   SUBPACKAGE_FULLNAME: The full project-level name of the subpackage (which
-#   includes the parent package name at the beginning).
+# Once called, the following local variables are in scope:
 #
-#   PACKAGE_NAME: Inside the subpackage, the same as SUBPACKAGE_FULLNAME.
+#   ``PARENT_PACKAGE_NAME``
+#
+#     The name of the parent package.
+#
+#   ``SUBPACKAGE_NAME``
+#
+#     The local name of the subpackage (does not contain
+#     the parent package name).
+#
+#   ``SUBPACKAGE_FULLNAME``
+#
+#     The full project-level name of the subpackage (which includes the parent
+#     package name at the beginning,
+#     ``${PARENT_PACKAGE_NAME}${SUBPACKAGE_NAME}``).
+#
+#   ``PACKAGE_NAME``
+#
+#     Inside the subpackage, the same as ``SUBPACKAGE_FULLNAME``.
 #
 MACRO(TRIBITS_SUBPACKAGE SUBPACKAGE_NAME_IN)
 
@@ -74,7 +90,7 @@ MACRO(TRIBITS_SUBPACKAGE SUBPACKAGE_NAME_IN)
   SET(PARENT_PACKAGE_SOURCE_DIR "${PACKAGE_SOURCE_DIR}")
   SET(PARENT_PACKAGE_BINARY_DIR "${PACKAGE_BINARY_DIR}")
 
-  # Now override the package-like varibles
+  # Now override the package-like variables
   TRIBITS_SET_COMMON_VARS(${SUBPACKAGE_FULLNAME})
   TRIBITS_DEFINE_LINKAGE_VARS(${SUBPACKAGE_FULLNAME})
 
@@ -82,9 +98,19 @@ ENDMACRO()
 
 
 #
-# Postprocess after defining a subpackage
+# @MACRO: TRIBITS_SUBPACKAGE_POSTPROCESS()
 #
-
+# Macro that performs standard post-processing after defining a `TriBITS
+# Subpackage`_ which is called at the bottom of a subpackage's
+# `<packageDir>/<spkgDir>/CMakeLists.txt`_ file.
+#
+# Usage::
+#
+#   TRIBITS_SUBPACKAGE_POSTPROCESS()
+#
+# NOTE: It is unfortunate that a Subpackages's CMakeLists.txt file must call
+# this macro but limitations of the CMake language make it necessary to do so.
+#
 MACRO(TRIBITS_SUBPACKAGE_POSTPROCESS)
   TRIBITS_PACKAGE_POSTPROCESS_COMMON()
 ENDMACRO()

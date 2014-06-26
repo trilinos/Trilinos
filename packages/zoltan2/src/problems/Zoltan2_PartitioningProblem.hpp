@@ -100,6 +100,7 @@ public:
   typedef typename Adapter::gid_t gid_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::lno_t lno_t;
+  typedef typename Adapter::part_t part_t;
   typedef typename Adapter::user_t user_t;
   typedef typename Adapter::base_adapter_t base_adapter_t;
 
@@ -228,7 +229,7 @@ public:
    *            part sizes once for each.
    */
 
-  void setPartSizes(int len, partId_t *partIds, scalar_t *partSizes, 
+  void setPartSizes(int len, part_t *partIds, scalar_t *partSizes, 
     bool makeCopy=true) 
   { 
     setPartSizesForCriteria(0, len, partIds, partSizes, makeCopy);
@@ -268,7 +269,7 @@ public:
    * setPartSizesForCriteria.
    */
 
-  void setPartSizesForCriteria(int criteria, int len, partId_t *partIds,
+  void setPartSizesForCriteria(int criteria, int len, part_t *partIds,
     scalar_t *partSizes, bool makeCopy=true) ;
 /*
   void setMachine(MachineRepresentation<typename Adapter::base_adapter_t::scalar_t> *machine);
@@ -308,7 +309,10 @@ private:
 #endif
 
   BaseAdapterType inputType_;
-  ModelType modelType_;
+
+  //ModelType modelType_;
+  bool modelAvail_[MAX_NUM_MODEL_TYPES];
+
   modelFlag_t graphFlags_;
   modelFlag_t idFlags_;
   modelFlag_t coordFlags_;
@@ -316,7 +320,7 @@ private:
 
   int numberOfWeights_;
 
-  // Suppose Array<partId_t> partIds = partIds_[w].  If partIds.size() > 0
+  // Suppose Array<part_t> partIds = partIds_[w].  If partIds.size() > 0
   // then the user supplied part sizes for weight index "w", and the sizes
   // corresponding to the Ids in partIds are partSizes[w].
   //
@@ -325,7 +329,7 @@ private:
   // but they can still specify part sizes. 
   // So numberOfCriteria_ is numberOfWeights_ or one, whichever is greater.
 
-  ArrayRCP<ArrayRCP<partId_t> > partIds_;
+  ArrayRCP<ArrayRCP<part_t> > partIds_;
   ArrayRCP<ArrayRCP<scalar_t> > partSizes_;
   int numberOfCriteria_;
 
@@ -351,14 +355,20 @@ template <typename Adapter>
     ParameterList *p, MPI_Comm comm):
       Problem<Adapter>(A,p,comm), solution_(),
       problemComm_(), problemCommConst_(),
-      inputType_(InvalidAdapterType), modelType_(InvalidModel), 
+      inputType_(InvalidAdapterType), 
       graphFlags_(), idFlags_(), coordFlags_(), algorithm_(),
       numberOfWeights_(), partIds_(), partSizes_(), 
       numberOfCriteria_(), levelNumberParts_(), hierarchical_(false), 
       timer_(), metricsRequested_(false), metrics_()
 {
 
+  for(int i=0;i<MAX_NUM_MODEL_TYPES;i++)
+  {
+    modelAvail_[i]=false;
+  }
+
   initializeProblem();
+
 }
 #endif
 /*
@@ -372,13 +382,18 @@ template <typename Adapter>
     ParameterList *p):
       Problem<Adapter>(A,p), solution_(),
       problemComm_(), problemCommConst_(),
-      inputType_(InvalidAdapterType), modelType_(InvalidModel), 
+      inputType_(InvalidAdapterType), 
       graphFlags_(), idFlags_(), coordFlags_(), algorithm_(),
       numberOfWeights_(), 
       partIds_(), partSizes_(), numberOfCriteria_(), 
       levelNumberParts_(), hierarchical_(false), timer_(),
       metricsRequested_(false), metrics_()
 {
+  for(int i=0;i<MAX_NUM_MODEL_TYPES;i++)
+  {
+    modelAvail_[i]=false;
+  }
+
   initializeProblem();
 }
 
@@ -424,7 +439,7 @@ template <typename Adapter>
   // The Caller can specify part sizes in setPartSizes().  If he/she
   // does not, the part size arrays are empty.
 
-  ArrayRCP<partId_t> *noIds = new ArrayRCP<partId_t> [numberOfCriteria_];
+  ArrayRCP<part_t> *noIds = new ArrayRCP<part_t> [numberOfCriteria_];
   ArrayRCP<scalar_t> *noSizes = new ArrayRCP<scalar_t> [numberOfCriteria_];
 
   partIds_ = arcp(noIds, 0, numberOfCriteria_, true);
@@ -442,7 +457,7 @@ template <typename Adapter>
 
 template <typename Adapter>
   void PartitioningProblem<Adapter>::setPartSizesForCriteria(
-    int criteria, int len, partId_t *partIds, scalar_t *partSizes, bool makeCopy) 
+    int criteria, int len, part_t *partIds, scalar_t *partSizes, bool makeCopy) 
 {
   this->env_->localInputAssertion(__FILE__, __LINE__, "invalid length", 
     len>= 0, BASIC_ASSERTION);
@@ -451,7 +466,7 @@ template <typename Adapter>
     criteria >= 0 && criteria < numberOfCriteria_, BASIC_ASSERTION);
 
   if (len == 0){
-    partIds_[criteria] = ArrayRCP<partId_t>();
+    partIds_[criteria] = ArrayRCP<part_t>();
     partSizes_[criteria] = ArrayRCP<scalar_t>();
     return;
   }
@@ -463,15 +478,15 @@ template <typename Adapter>
   // by the PartitioningSolution, which computes global part distribution and
   // part sizes.
 
-  partId_t *z2_partIds = NULL;
+  part_t *z2_partIds = NULL;
   scalar_t *z2_partSizes = NULL;
   bool own_memory = false;
 
   if (makeCopy){
-    z2_partIds = new partId_t [len];
+    z2_partIds = new part_t [len];
     z2_partSizes = new scalar_t [len];
     this->env_->localMemoryAssertion(__FILE__, __LINE__, len, z2_partSizes);
-    memcpy(z2_partIds, partIds, len * sizeof(partId_t));
+    memcpy(z2_partIds, partIds, len * sizeof(part_t));
     memcpy(z2_partSizes, partSizes, len * sizeof(scalar_t));
     own_memory=true;
   }
@@ -540,19 +555,29 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
     else if (algorithm_ == std::string("block")){
       AlgBlock<Adapter> algblock(this->envConst_, problemComm_,
         this->identifierModel_, solution_);
-      algblock.solve();
+      algblock.partition();
     }
     else if (algorithm_ == std::string("rcb")){
       AlgRCB<Adapter>(this->envConst_, problemComm_,
         this->coordinateModel_, solution_);
     }
     else if (algorithm_ == std::string("multijagged")){
-      Zoltan2_AlgMJ<Adapter> *alg_mj = new Zoltan2_AlgMJ<Adapter>();
-      alg_mj->multi_jagged_part( this->envConst_, problemComm_,
+      Zoltan2_AlgMJ<Adapter> alg_mj;
+      alg_mj.partition( this->envConst_, problemComm_,
          this->coordinateModel_, solution_);
-      delete alg_mj;
     }
-    else{
+    else if (algorithm_ == std::string("wolf"))
+    {
+      AlgWolf<Adapter> alg_wolf(this->envConst_, problemComm_,this->graphModel_,
+				this->coordinateModel_);
+
+      // need to add coordModel, make sure this is built
+
+      alg_wolf.partition(solution_);
+
+    }
+    else
+    {
       throw std::logic_error("partitioning algorithm not supported yet");
     }
   }
@@ -568,9 +593,10 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
   if (mapping_type == 0){
 
-    //partId_t *task_communication_xadj = NULL, *task_communication_adj = NULL;
-    Zoltan2::CoordinateTaskMapper <Adapter, zoltan2_partId_t> *ctm=
-                  new Zoltan2::CoordinateTaskMapper<Adapter,zoltan2_partId_t>(
+    //part_t *task_communication_xadj = NULL, *task_communication_adj = NULL;
+
+    Zoltan2::CoordinateTaskMapper <Adapter, part_t> *ctm=
+                  new Zoltan2::CoordinateTaskMapper<Adapter,part_t>(
                           problemComm_.getRawPtr(),
                           machine_.getRawPtr(),
                           this->coordinateModel_.getRawPtr(),
@@ -635,12 +661,24 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   //
   // Save these values in order to determine if we need to create a new model.
 
-  ModelType previousModel = modelType_;
+  //ModelType previousModel = modelType_;
+  bool prevModelAvail[MAX_NUM_MODEL_TYPES];
+  for(int i=0;i<MAX_NUM_MODEL_TYPES;i++)
+  {
+    prevModelAvail[i] = modelAvail_[i];
+  }
+
+
   modelFlag_t previousGraphModelFlags = graphFlags_;
   modelFlag_t previousIdentifierModelFlags = idFlags_;
   modelFlag_t previousCoordinateModelFlags = coordFlags_;
 
-  modelType_ = InvalidModel;
+  //modelType_ = InvalidModel;
+  for(int i=0;i<MAX_NUM_MODEL_TYPES;i++)
+  {
+    modelAvail_[i] = false;
+  }
+
   graphFlags_.reset();
   idFlags_.reset();
   coordFlags_.reset();
@@ -701,62 +739,89 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   ///////////////////////////////////////////////////////////////////
   // Determine algorithm, model, and algorithm requirements.  This
   // is a first pass.  Feel free to change this and add to it.
-  
-  if (algorithm != defString){
+
+  if (algorithm != defString)
+  {
+
     // Figure out the model required by the algorithm
     if (algorithm == std::string("block") ||
         algorithm == std::string("random") ||
         algorithm == std::string("cyclic") ){
 
-      modelType_ = IdentifierModelType;
+      //modelType_ = IdentifierModelType;
+      modelAvail_[IdentifierModelType] = true;
+
       algorithm_ = algorithm;
       needConsecutiveGlobalIds = true;
     }
     else if (algorithm == std::string("rcb") ||
              algorithm == std::string("rib") ||
              algorithm == std::string("multijagged") ||
-             algorithm == std::string("hsfc")){
-
-      modelType_ = CoordinateModelType;
+             algorithm == std::string("hsfc"))
+    {
+      //modelType_ = CoordinateModelType;
+      modelAvail_[CoordinateModelType]=true;
+    
       algorithm_ = algorithm;
     }
     else if (algorithm == std::string("metis") ||
              algorithm == std::string("parmetis") ||
              algorithm == std::string("scotch") ||
-             algorithm == std::string("ptscotch")){
+             algorithm == std::string("ptscotch"))
+    {
 
-      modelType_ = GraphModelType;
+      //modelType_ = GraphModelType;
+      modelAvail_[GraphModelType]=true;
+
       algorithm_ = algorithm;
       removeSelfEdges = true;
       needConsecutiveGlobalIds = true;
     }
     else if (algorithm == std::string("patoh") ||
-             algorithm == std::string("phg")){
-
-      if ((modelType_ != GraphModelType) &&
-          (modelType_ != HypergraphModelType) ){
-        modelType_ = HypergraphModelType;
+             algorithm == std::string("phg"))
+    {
+      // if ((modelType_ != GraphModelType) &&
+      //     (modelType_ != HypergraphModelType) )
+      if ((modelAvail_[GraphModelType]==false) &&
+          (modelAvail_[HypergraphModelType]==false) )
+      {
+        //modelType_ = HypergraphModelType;
+        modelAvail_[HypergraphModelType]=true;
       }
       algorithm_ = algorithm;
       needConsecutiveGlobalIds = true;
     }
-    else{
+    else if (algorithm == std::string("wolf"))
+    {
+      modelAvail_[GraphModelType]=true;
+      modelAvail_[CoordinateModelType]=true;
+      algorithm_ = algorithm;
+    }
+    else
+    {
       // Parameter list should ensure this does not happen.
       throw std::logic_error("parameter list algorithm is invalid");
     }
   }
-  else if (model != defString){
+  else if (model != defString)
+  {
     // Figure out the algorithm suggested by the model.
-    if (model == std::string("hypergraph")){
-      modelType_ = HypergraphModelType;
+    if (model == std::string("hypergraph"))
+    {      
+      //modelType_ = HypergraphModelType;
+      modelAvail_[HypergraphModelType]=true;
+
       if (problemComm_->getSize() > 1)
         algorithm_ = std::string("phg"); 
       else
         algorithm_ = std::string("patoh"); 
       needConsecutiveGlobalIds = true;
     }
-    else if (model == std::string("graph")){
-      modelType_ = GraphModelType;
+    else if (model == std::string("graph"))
+    {
+      //modelType_ = GraphModelType;
+      modelAvail_[GraphModelType]=true;
+
 #ifdef HAVE_ZOLTAN2_SCOTCH
       if (problemComm_->getSize() > 1)
         algorithm_ = std::string("ptscotch"); 
@@ -782,49 +847,69 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 #endif
 #endif
     }
-    else if (model == std::string("geometry")){
-      modelType_ = CoordinateModelType;
+    else if (model == std::string("geometry"))
+    {
+      //modelType_ = CoordinateModelType;
+      modelAvail_[CoordinateModelType]=true;
+
       algorithm_ = std::string("rcb");
     }
-    else if (model == std::string("ids")){
-      modelType_ = IdentifierModelType;
+    else if (model == std::string("ids"))
+    {
+      //modelType_ = IdentifierModelType;
+      modelAvail_[IdentifierModelType]=true;
+
       algorithm_ = std::string("block");
       needConsecutiveGlobalIds = true;
     }
-    else{
+    else
+    {
       // Parameter list should ensure this does not happen.
       env.localBugAssertion(__FILE__, __LINE__, 
         "parameter list model type is invalid", 1, BASIC_ASSERTION);
     }
   }
-  else{   
+  else
+  {   
     // Determine an algorithm and model suggested by the input type.
     //   TODO: this is a good time to use the time vs. quality parameter
     //     in choosing an algorithm, and setting some parameters
 
-    if (inputType_ == MatrixAdapterType){
-      modelType_ = HypergraphModelType;
+    if (inputType_ == MatrixAdapterType)
+    {
+      //modelType_ = HypergraphModelType;
+      modelAvail_[HypergraphModelType]=true;
+      
       if (problemComm_->getSize() > 1)
         algorithm_ = std::string("phg"); 
       else
         algorithm_ = std::string("patoh"); 
     }
     else if (inputType_ == GraphAdapterType ||
-        inputType_ == MeshAdapterType){
-      modelType_ = GraphModelType;
+        inputType_ == MeshAdapterType)
+    {
+      //modelType_ = GraphModelType;
+      modelAvail_[GraphModelType]=true;
+
       if (problemComm_->getSize() > 1)
         algorithm_ = std::string("phg"); 
       else
         algorithm_ = std::string("patoh"); 
     }
-    else if (inputType_ == CoordinateAdapterType){
-      modelType_ = CoordinateModelType;
+    else if (inputType_ == CoordinateAdapterType)
+    {
+      //modelType_ = CoordinateModelType;
+      modelAvail_[CoordinateModelType]=true;
+
       if(algorithm_ != std::string("multijagged"))
       algorithm_ = std::string("rcb");
     }
     else if (inputType_ == VectorAdapterType ||
-             inputType_ == IdentifierAdapterType){
-      modelType_ = IdentifierModelType;
+             inputType_ == IdentifierAdapterType)
+    {
+      //modelType_ = IdentifierModelType;
+      modelAvail_[IdentifierModelType]=true;
+
       algorithm_ = std::string("block");
     }
     else{
@@ -873,7 +958,9 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   // Set model creation flags, if any.
 
   this->env_->debug(DETAILED_STATUS, "    models");
-  if (modelType_ == GraphModelType){
+  //  if (modelType_ == GraphModelType)
+  if (modelAvail_[GraphModelType]==true)
+  {
 
     // Any parameters in the graph sublist?
 
@@ -923,14 +1010,19 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
         graphFlags_.set(VERTICES_ARE_MESH_ELEMENTS);
     } 
   }
-  else if (modelType_ == IdentifierModelType){
+  //MMW is it ok to remove else?
+  //  else if (modelType_ == IdentifierModelType)
+  if (modelAvail_[IdentifierModelType]==true)
+  {
 
     // Any special behaviors required by the algorithm?
     
     if (needConsecutiveGlobalIds)
       idFlags_.set(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
   }
-  else if (modelType_ == CoordinateModelType){
+  //  else if (modelType_ == CoordinateModelType)
+  if (modelAvail_[CoordinateModelType]==true)
+  {
 
     // Any special behaviors required by the algorithm?
     
@@ -939,11 +1031,16 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   }
 
 
-  if (  newData ||
-       (modelType_ != previousModel) ||
+  if ( newData ||
+       (modelAvail_[GraphModelType]!=prevModelAvail[GraphModelType]) ||
+       (modelAvail_[HypergraphModelType]!=prevModelAvail[HypergraphModelType]) ||
+       (modelAvail_[CoordinateModelType]!=prevModelAvail[CoordinateModelType]) ||
+       (modelAvail_[IdentifierModelType]!=prevModelAvail[IdentifierModelType]) ||
+	//       (modelType_ != previousModel) ||
        (graphFlags_ != previousGraphModelFlags) ||
        (coordFlags_ != previousCoordinateModelFlags) ||
-       (idFlags_ != previousIdentifierModelFlags) ) {
+       (idFlags_ != previousIdentifierModelFlags) ) 
+  {
 
     // Create the computational model.
     // Models are instantiated for base input adapter types (mesh,
@@ -955,119 +1052,53 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     //KDD const Teuchos::ParameterList pl = this->envConst_->getParameters();
     //bool exceptionThrow = true;
 
-    switch (modelType_) {
-
-    case GraphModelType:
-      this->env_->debug(DETAILED_STATUS, "    building graph model");
-      this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
-        this->baseInputAdapter_, this->envConst_, problemComm_, graphFlags_));
-
-      this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
-        this->graphModel_);
-
-      break;
-
-    case HypergraphModelType:
-      break;
-  
-    case CoordinateModelType:
-      this->env_->debug(DETAILED_STATUS, "    building coordinate model");
-      this->coordinateModel_ = rcp(new CoordinateModel<base_adapter_t>(
-        this->baseInputAdapter_, this->envConst_, problemComm_, coordFlags_));
-
-      ////////////////////////////////////////////////////////////////////////////
-      // It's possible at this point that the Problem may want to
-      // add problem parameters to the parameter list in the Environment.
-      //
-      // Since the parameters in the Environment have already been
-      // validated in its constructor, a new Environment must be created:
-      ////////////////////////////////////////////////////////////////////////////
-      // Teuchos::RCP<const Teuchos::Comm<int> > oldComm = this->env_->comm_;
-      // const ParameterList &oldParams = this->env_->getUnvalidatedParameters();
-      //
-      // ParameterList newParams = oldParams;
-      // newParams.set("new_parameter", "new_value");
-      //
-      // ParameterList &newPartParams = newParams.sublist("partitioning");
-      // newPartParams.set("new_partitioning_parameter", "its_value");
-      //
-      // this->env_ = rcp(new Environment(newParams, oldComm));
-      ////////////////////////////////////////////////////////////////////////////
-/*
-      if(algorithm == string("multijagged")){
-
-          //int coordinateCnt = this->coordinateModel_->getCoordinateDim();
-          //cout << coordinateCnt << " " << pl.getPtr<Array <int> >("pqParts")->size() << endl;
-          //exceptionThrow = coordinateCnt == pl.getPtr<Array <int> >("pqParts")->size();
-          int arraySize = pl.getPtr<Array <int> >("pqParts")->size() - 1;
-          exceptionThrow = arraySize > 0;
-          this->envConst_->localInputAssertion(__FILE__, __LINE__, "invalid length of cut lines. Size of cut lines should be at least 1.",
-                  		  exceptionThrow, BASIC_ASSERTION);
-
-
-          int totalPartCount = 1;
-          for(int i = 0; i < arraySize; ++i){
-        	  //cout <<  pl.getPtr<Array <int> >("pqParts")->getRawPtr()[i] << " ";
-        	  totalPartCount *= pl.getPtr<Array <int> >("pqParts")->getRawPtr()[i];
-// TODO:  Using pointer in parameter list.   Ross says, "Bad."  Can't print it.
-          }
-          Teuchos::ParameterList newParams = pl;
-// TODO:  KDD I thought we got rid of sublists in the parameter list??
-          Teuchos::ParameterList &parParams = newParams.sublist("partitioning");
-
-// TODO:  KDD Is there a more elegant solution here than changing the paramlist?
-// TODO:  How does this even work?  Where is newParams used?
-
-          parParams.set("num_global_parts", totalPartCount);
-
-
-          //cout << endl;
-          Teuchos::RCP<const Teuchos::Comm<int> > oldComm = this->envConst_->comm_;
-
-          //this->envConst_ = rcp(new Environment(newParams, oldComm));
-
-
-      }
-*/
-
-      this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
-        this->coordinateModel_);
-      break;
-
-    case IdentifierModelType:
-      this->env_->debug(DETAILED_STATUS, "    building identifier model");
-      this->identifierModel_ = rcp(new IdentifierModel<base_adapter_t>(
-        this->baseInputAdapter_, this->envConst_, problemComm_, idFlags_));
-
-      this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
-        this->identifierModel_);
-      break;
-
-    default:
-      cout << __func__ << " Invalid model" << modelType_ << endl;
-      break;
+    if(modelAvail_[GraphModelType]==false && modelAvail_[HypergraphModelType]==false &&
+       modelAvail_[CoordinateModelType]==false && modelAvail_[IdentifierModelType]==false)
+    {
+      cout << __func__ << " Invalid model"  << endl;
     }
+    else
+    {
+      if(modelAvail_[GraphModelType]==true)
+      {
+        this->env_->debug(DETAILED_STATUS, "    building graph model");
+        this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
+          this->baseInputAdapter_, this->envConst_, problemComm_, graphFlags_));
+
+        this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(this->graphModel_);
+      }
+      if(modelAvail_[HypergraphModelType]==true)
+      {
+	std::cout << "Hypergraph model not implemented yet..." << std::endl;
+      }
+
+      if(modelAvail_[CoordinateModelType]==true)
+      {
+      	this->env_->debug(DETAILED_STATUS, "    building coordinate model");
+      	this->coordinateModel_ = rcp(new CoordinateModel<base_adapter_t>(
+      				     this->baseInputAdapter_, this->envConst_, problemComm_, coordFlags_));
+
+        this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(this->coordinateModel_);
+      }
+
+      if(modelAvail_[IdentifierModelType]==true)
+      {
+        this->env_->debug(DETAILED_STATUS, "    building identifier model");
+        this->identifierModel_ = rcp(new IdentifierModel<base_adapter_t>(
+                                     this->baseInputAdapter_, this->envConst_, problemComm_, idFlags_));
+
+        this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(this->identifierModel_);
+      }
+  
+
+    }
+
+
 
     this->env_->memory("After creating Model");
     this->env_->debug(DETAILED_STATUS, "createPartitioningProblem done");
   }
 
-  /*
-  Teuchos::RCP<const Teuchos::Comm<int> > oldComm = this->env_->comm_;
-  const ParameterList &oldParams = this->env_->getUnvalidatedParameters();
-
-  ParameterList newParams = oldParams;
-  int totalPartCount = 1;
-  const int *partNo = pl.getPtr<Array <int> >("pqParts")->getRawPtr();
-
-  for (int i = 0; i < coordDim; ++i){
-	  totalPartCount *= partNo[i];
-  }
-  newParams.set("num_global_parts", totalPartCount);
-
-
-  this->env_ = rcp(new Environment(newParams, oldComm));
-*/
 }
 
 }  // namespace Zoltan2

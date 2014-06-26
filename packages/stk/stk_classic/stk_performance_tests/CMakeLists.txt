@@ -1,0 +1,3 @@
+
+TRIBITS_ADD_TEST_DIRECTORIES(stk_mesh)
+

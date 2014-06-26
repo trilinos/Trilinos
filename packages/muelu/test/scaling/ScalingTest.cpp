@@ -343,7 +343,9 @@ int main(int argc, char *argv[]) {
       AFact->setVerbLevel(Teuchos::VERB_HIGH);
       if (!optExplicitR) {
         H->SetImplicitTranspose(true);
-        AFact->SetImplicitTranspose(true);
+        ParameterList Aclist = *(AFact->GetValidParameterList());
+        Aclist.set("implicit transpose", true);
+        AFact->SetParameterList(Aclist);
         if (comm->getRank() == 0) std::cout << "\n\n* ***** USING IMPLICIT RESTRICTION OPERATOR ***** *\n" << std::endl;
       }
 
@@ -415,12 +417,12 @@ int main(int argc, char *argv[]) {
         RCP<Factory> RebalancedPFact = rcp(new RebalanceTransferFactory());
         RebalancedPFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Interpolation")));
         RebalancedPFact->SetFactory("P", PFact);
+        RebalancedPFact->SetFactory("Coordinates", TransferCoordinatesFact);
+        RebalancedPFact->SetFactory("Nullspace", M.GetFactory("Ptent")); // TODO
 
         RCP<Factory> RebalancedRFact = rcp(new RebalanceTransferFactory());
         RebalancedRFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Restriction")));
         RebalancedRFact->SetFactory("R", RFact);
-        RebalancedRFact->SetFactory("Coordinates", TransferCoordinatesFact);
-        RebalancedRFact->SetFactory("Nullspace", M.GetFactory("Ptent")); // TODO
 
         // Compute Ac from rebalanced P and R
         RCP<Factory> RebalancedAFact = rcp(new RebalanceAcFactory());
@@ -430,8 +432,8 @@ int main(int argc, char *argv[]) {
         M.SetFactory("A", RebalancedAFact);
         M.SetFactory("P", RebalancedPFact);
         M.SetFactory("R", RebalancedRFact);
-        M.SetFactory("Nullspace",   RebalancedRFact);
-        M.SetFactory("Coordinates", RebalancedRFact);
+        M.SetFactory("Nullspace",   RebalancedPFact);
+        M.SetFactory("Coordinates", RebalancedPFact);
         M.SetFactory("Importer",    RepartitionFact);
 
 #else
@@ -526,7 +528,7 @@ int main(int argc, char *argv[]) {
     TimeMonitor tm(*TimeMonitor::getNewTimer("ScalingTest: 3 - Fixed Point Solve"));
 
     H->IsPreconditioner(false);
-    H->Iterate(*B, optIts, *X);
+    H->Iterate(*B, *X, optIts);
 
   } // optFixedPt
 

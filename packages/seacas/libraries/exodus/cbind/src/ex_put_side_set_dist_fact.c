@@ -49,8 +49,7 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include "exodusII.h"                   // for ex_put_set_dist_fact, etc
 
 /*!
  * writes the distribution factors for a single side set

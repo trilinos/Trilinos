@@ -13,6 +13,10 @@ C++ includes: IntrepidManager.hpp ";
 %feature("docstring")  stk::percept::IntrepidManager::Bases::Bases "stk::percept::IntrepidManager::Bases::Bases(IM &im) ";
 
 
+// File: classIntrepid_1_1Basis.xml
+%feature("docstring") Intrepid::Basis "";
+
+
 // File: classIntrepid_1_1Basis__HGRAD__HEX__C2__Serendipity__FEM.xml
 %feature("docstring") Intrepid::Basis_HGRAD_HEX_C2_Serendipity_FEM "
 
@@ -27,9 +31,8 @@ follows:
 
 =================================================================================================
 |         |           degree-of-freedom-tag table                    |
-|   |   DoF
-|----------------------------------------------------------|      DoF
-definition       |   | ordinal |  subc dim    | subc ordinal | subc
+| |   DoF |----------------------------------------------------------|
+DoF definition       | | ordinal |  subc dim    | subc ordinal | subc
 DoF ord |subc num DoF |                           |
 |=========|==============|==============|==============|=============|===========================|
 |    0    |       0      |       0      |       0      |      1      |
@@ -176,9 +179,8 @@ follows:
 
 =================================================================================================
 |         |           degree-of-freedom-tag table                    |
-|   |   DoF
-|----------------------------------------------------------|      DoF
-definition       |   | ordinal |  subc dim    | subc ordinal | subc
+| |   DoF |----------------------------------------------------------|
+DoF definition       | | ordinal |  subc dim    | subc ordinal | subc
 DoF ord |subc num DoF |                           |
 |=========|==============|==============|==============|=============|===========================|
 |    0    |       0      |       0      |       0      |      1      |
@@ -279,9 +281,8 @@ degrees-of-freedom (DoF) defined and enumerated as follows:
 
 =================================================================================================
 |         |           degree-of-freedom-tag table                    |
-|   |   DoF
-|----------------------------------------------------------|      DoF
-definition       |   | ordinal |  subc dim    | subc ordinal | subc
+| |   DoF |----------------------------------------------------------|
+DoF definition       | | ordinal |  subc dim    | subc ordinal | subc
 DoF ord |subc num DoF |                           |
 |=========|==============|==============|==============|=============|===========================|
 |    0    |       0      |       0      |       0      |      1      |
@@ -333,14 +334,14 @@ L_14(u)= u( 0,1/2, 1)   |
 |=========|==============|==============|==============|=============|===========================|
 |   MAX   |  maxScDim=2  |  maxScOrd=8  |  maxDfOrd=0  |      -      |
 |
-|=========|==============|==============|==============|=============|===========================|
-
+|=========|==============|==============|==============|=============|===========================|\\\\remark
 Ordering of DoFs follows the node order in Wedge<15> topology. Note
-that node order in this topology does not follow the natural oder of
-k-subcells where the nodes are located, except for nodes 0 to 5 which
-coincide with the vertices of the base Wedge<6> topology. As a result,
-L_0 to L_5 are associated with nodes 0 to 5, but L_6 to L_14 are not
-associated with edges 0 to 9 in that order.
+that node           order in this topology does not follow the natural
+oder of k-subcells where the nodes           are located, except for
+nodes 0 to 5 which coincide with the vertices of the base
+Wedge<6> topology. As a result, L_0 to L_5 are associated with nodes 0
+to 5, but           L_6 to L_14 are not associated with edges 0 to 9
+in that order.
 
 C++ includes: Intrepid_HGRAD_WEDGE_C2_Serendipity_FEM.hpp ";
 
@@ -522,7 +523,24 @@ the list is always applied first. ";
 
 
 // File: classstk_1_1percept_1_1util_1_1CompositeGeneralFunction.xml
-%feature("docstring") stk::percept::util::CompositeGeneralFunction "";
+%feature("docstring") stk::percept::util::CompositeGeneralFunction "
+
+example usage
+
+GeneralFunction<double, std::vector<double> > f;
+GeneralFunction<std::vector<double>, int > g; std::vector<double> y;
+double x; y = f(x); f(x, y);
+
+// multiple points std::vector<double> xv; std::vector<
+std::vector<double> > yv; f(xv, yv);
+
+// function composition GeneralFunction<double, int> g_of_f = g(f);
+int iy; iy = g_of_f(x);
+
+// gradient GeneralFunction<double, std::vector<std::vector<double> >
+> grad_f = f.grad();
+
+C++ includes: GeneralFunction.hpp ";
 
 %feature("docstring")
 stk::percept::util::CompositeGeneralFunction::CompositeGeneralFunction
@@ -560,8 +578,8 @@ stk::percept::ComputeFieldValues::get_fieldValues(const
 stk::mesh::Entity &element, MDArray &transformed_basis_values,
 mesh::FieldBase *field, MDArray &output_field_values)
 
-NOTE: this is needed since FunctionSpaceTools::evaluate method assumes
-the output array is initialized to 0 ";
+NOTE: this is needed since Intrepid::FunctionSpaceTools::evaluate
+method assumes the output array is initialized to 0 ";
 
 
 // File: classstk_1_1percept_1_1ConstantFunction.xml
@@ -841,14 +859,20 @@ output) expect the rightmost dimensions of input to be equal to the
 rightmost dimensions of its domain dimensions, and similar for output
 and codomain_dimensions
 
-Conventions: 1. core dimensions given by getDomainDimensions() and
-getCodomainDimensions() properties 2. rightmost dimensions of input
-array must match rightmost dimensions of Function's domain 3.
+Conventions: core dimensions given by getDomainDimensions() and
+getCodomainDimensions() properties
+
+rightmost dimensions of input array must match rightmost dimensions of
+Function's domain
+
 rightmost dimensions of output array must match rightmost dimensions
-of Function's codomain 4. domain and codomain can have different ranks
-and dimensions 5. usage of conventions 1-4 are in scenarios where the
-input and output arrays contain multiple points that the client is
-requesting the Function to evaluate. For example:
+of Function's codomain
+
+domain and codomain can have different ranks and dimensions
+
+usage of conventions 1-4 are in scenarios where the input and output
+arrays contain multiple points that the client is requesting the
+Function to evaluate. For example:
 
 int numElements = bucket.size(); int numQuadPoints =
 quadratureFactory.getNumPoints(); int spaceDim = 3; int numValuesAtQP
@@ -1469,17 +1493,61 @@ stk::percept::IntegratedOp::init() ";
 // File: classstk_1_1percept_1_1IntrepidManager.xml
 %feature("docstring") stk::percept::IntrepidManager "
 
-|-------------------------------------------------------------------------------------------------|
-| Index type | Dimension | Description |
-|---------------------------|-----------|---------------------------------------------------------|
-| point | [P] | number of points stored in an MD array | | vertex |
-[V] | number of nodes stored in an MD aray | | field | [F] | number of
-fields stored in an MD array | | basis field | [B] | number of basis
-fields stored in an MD array | | cell | [C] | number of cells stored
-in an MD array | | field coordinate | [D] | space dimension | |
-derivative ordinal | [K] | cardinality of the set of kth derivatives |
-| | | | | dof | [DOF] | number of DOFs stored in an MD array |
-|-------------------------------------------------------------------------------------------------|
+|----------------------------------------------------------------------------------------------|
+Index type
+
+Dimension
+
+Description
+
+point
+
+[P]
+
+number of points stored in an MD array
+
+vertex
+
+[V]
+
+number of nodes stored in an MD aray
+
+field
+
+[F]
+
+number of fields stored in an MD array
+
+basis field
+
+[B]
+
+number of basis fields stored in an MD array
+
+cell
+
+[C]
+
+number of cells stored in an MD array
+
+field coordinate
+
+[D]
+
+space dimension
+
+derivative ordinal
+
+[K]
+
+cardinality of the set of kth derivatives
+
+dof
+
+[DOF]
+
+number of DOFs stored in an MD array
+|----------------------------------------------------------------------------------------------|
 
 Note: Intrepid really doesn't have a concept of \"DOF\" at a node.
 It's either a single variable, or a vector- or tensor-valued variable.
@@ -2104,10 +2172,12 @@ stk::adapt::NodeRegistry::checkForRemote(const stk::mesh::Entity
 bool needNodes_notUsed)
 
 check the newly registered node from the registry, which does one of
-three things, depending on what mode we are in: 1. counts buffer in
-prep for sending (just does a pack) 2. packs the buffer (after buffers
-are alloc'd) 3. returns the new node after all communications are done
-";
+three things, depending on what mode we are in: counts buffer in prep
+for sending (just does a pack)
+
+packs the buffer (after buffers are alloc'd)
+
+returns the new node after all communications are done ";
 
 %feature("docstring")  stk::adapt::NodeRegistry::getFromRemote "bool
 stk::adapt::NodeRegistry::getFromRemote(const stk::mesh::Entity
@@ -3040,15 +3110,15 @@ Case 0: a single refinement of a parent P_0 and its children C_0_0,
 C_0_1,...,C_0_N leads to a new family tree entity FT_0 that has down
 relations to {P_0, C_0_0, C_0_1,...,C_0_N} The back pointers from P_0,
 C_0_0, ... are initially stored as the 0'th index of their relations,
-i.e.: P_0.relations(FAMILY_TREE_RANK)[0] --> FT_0,
-C_0_0.relations(FAMILY_TREE_RANK)[0] --> FT_0, etc. Case 1: a
-previously refined child, say C_0_1, renamed to P_0_1, gets further
-refined leading to a new family tree entity, FT_1 pointing to: {P_0_1,
+i.e.: P_0.relations(FAMILY_TREE_RANK)[0]> FT_0,
+C_0_0.relations(FAMILY_TREE_RANK)[0]> FT_0, etc. Case 1: a previously
+refined child, say C_0_1, renamed to P_0_1, gets further refined
+leading to a new family tree entity, FT_1 pointing to: {P_0_1,
 C_0_1_0, C_0_1_1,... } but, now the relations indexing changes
 (actually, we can't predict what it will be, thus the need for this
 function getFamilyTreeRelationIndex):
-P_0_1.relations(FAMILY_TREE_RANK)[0] --> FT_1
-P_0_1.relations(FAMILY_TREE_RANK)[1] --> FT_0 etc. So, we use this
+P_0_1.relations(FAMILY_TREE_RANK)[0]> FT_1
+P_0_1.relations(FAMILY_TREE_RANK)[1]> FT_0 etc. So, we use this
 function to look for the family tree corresponding to if we are
 looking for the first level (if there's only one level, or we are
 looking for the family tree associated with the element when it was a
@@ -3488,7 +3558,7 @@ that are shared by child objects are only counted once. Every node of
 the parent is also one of the child nodes. ";
 
 %feature("docstring")
-stk::adapt::Elem::RefinementTopology::child_nodes "const UInt* const
+stk::adapt::Elem::RefinementTopology::child_nodes "const UInt* const*
 stk::adapt::Elem::RefinementTopology::child_nodes() const ";
 
 %feature("docstring")
@@ -3572,35 +3642,7 @@ stk::adapt::Elem::StdMeshObjTopologies::RefinementTopologyExtra "";
 stk::adapt::Elem::StdMeshObjTopologies::RefinementTopologyExtra::refinement_topology
 "RefTopoX
 stk::adapt::Elem::StdMeshObjTopologies::RefinementTopologyExtra<
-shards::Line< 2 > >::refinement_topology 0 1 PARENT Linear Edge
-Element Nodes (SPACE_DIM = 1!) o--------------- o
-
-After refinement:
-
-0 2 1 CHILD Linear Edge Element Nodes (new nodes = *)
-o-------*-------o
-
-| CHILD Linear Edge Node Maps (global node numbers!) 0 1 | o-------o |
-E#1 | Element (or edge) 0: childNodeMap[0] = { 0, 2 }; | 0 1 | o
--------o | E#2 | Element (or edge) 1: childNodeMap[1] = { 2, 1 };
-
-Refined Linear Edge (or Linear Bar element) PERMUTATION Node Maps:
-
-Polarity = 1 { 0, 1; 2 } Polarity = 0 { 1, 0; 2 } 0 2 1 PARENT 3-Node
-Line Object Nodes o-------o-------o
-
-After refinement:
-
-0 3 2 4 1 CHILD Objects (new nodes = *) o---*---o---*---o
-
-| CHILD Line Node Maps (global node numbers!) 0 2 1 | o---o---o | E#1
-| Object (or line) 0: childNodeMap[0] = { 0, 2, 3 }; | 0 2 1 | o---o
----o | E#2 | Object (or line) 1: childNodeMap[1] = { 2, 1, 4 };
-
-Refined 3-Node Line Object PERMUTATION Node Maps:
-
-Polarity = 1 { 0, 1, 2; 3, 4 } Polarity = 0 { 1, 0, 2; 4, 3 } New ref
-topo info ------------------
+shards::Line< 2 > >::refinement_topology New ref topo info
 
 {Ord, Rnk-assoc, Ord-rnk-assoc, Ord-node-on-subcell, num-rnk-assoc,
 param-coord}
@@ -3615,7 +3657,7 @@ ordinal_of_node_on_subcell; // ordinal of the node on the subcell
 num_nodes_on_subcell; // how many nodes exist on the subcell double
 parametric_coordinates[3]; };
 
-Bootstrapping thisfile: to create this file, run the regression test
+Bootstrapping this file: to create this file, run the regression test
 RegressionTestUniformRefiner.cpp :: generate_tables after putting in a
 dummy entry in ./sierra_element/GeneratedRefinementTable.hpp. The run
 will produce a local file, generated_refinement_tables.hpp which can
@@ -3820,12 +3862,9 @@ ghost or non-ghost element
 
 Global element ops: here's where we e.g. connect the new elements by
 declaring new relations
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 Global node loop operations: this is where we perform ops like adding
-new nodes to the right parts, interpolating fields, etc.
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-";
+new nodes to the right parts, interpolating fields, etc. ";
 
 %feature("docstring")  stk::adapt::Refiner::setRemoveOldElements "void stk::adapt::Refiner::setRemoveOldElements(bool do_remove) ";
 
@@ -3876,6 +3915,10 @@ stk::adapt::Refiner::setAlwaysInitializeNodeRegistry(bool do_init) ";
 %feature("docstring")
 stk::adapt::Refiner::getAlwaysInitializeNodeRegistry "bool
 stk::adapt::Refiner::getAlwaysInitializeNodeRegistry() ";
+
+%feature("docstring")  stk::adapt::Refiner::snapAndSmooth "void
+stk::adapt::Refiner::snapAndSmooth(bool geomSnap, std::string
+geomFile) ";
 
 %feature("docstring")  stk::adapt::Refiner::deleteParentElements "void stk::adapt::Refiner::deleteParentElements()
 
@@ -3949,7 +3992,7 @@ stk::adapt::RefinerPattern< shards::Line< 2 >, shards::Line< 2 >,-1
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -4019,7 +4062,7 @@ shards::Tetrahedron< 4 >, shards::Tetrahedron< 4 >,-1
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -4039,7 +4082,11 @@ shards::Tetrahedron< 4 >, shards::Tetrahedron< 4 >,-1
 >::createNewElements(percept::PerceptMesh &eMesh, NodeRegistry
 &nodeRegistry, stk::mesh::Entity &element, NewSubEntityNodesType
 &new_sub_entity_nodes, std::vector< stk::mesh::Entity * >::iterator
-&element_pool, stk::mesh::FieldBase *proc_rank_field=0) ";
+&element_pool, stk::mesh::FieldBase *proc_rank_field=0)
+
+given the node database ( NodeRegistry), and the newly created nodes,
+and an iterator for the elements in the element pool, create all new
+sub-elements of the refined element ";
 
 
 // File: classstk_1_1adapt_1_1RefinerPattern_3_01shards_1_1Triangle_3_013_01_4_00_01shards_1_1Triangle_3_013_01_4_00_012_01_4.xml
@@ -4086,7 +4133,7 @@ stk::adapt::RefinerPattern< shards::Triangle< 3 >, shards::Triangle< 3
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -4154,7 +4201,7 @@ stk::adapt::RefinerPattern< shards::Triangle< 3 >, shards::Triangle< 3
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -4682,44 +4729,7 @@ stk::percept::SweepMesher::debug(const char *str) ";
 stk::percept::SweepMesher::debug(const char *str, const int i) ";
 
 %feature("docstring")  stk::percept::SweepMesher::breakElement "void
-stk::percept::SweepMesher::breakElement< shards_Hexahedron_8,
-shards_Tetrahedron_4 >(unsigned elemIndex)
-
-Break a wedge element into 3 (common case) or 8 (rare case) tets using
-a constructive algorithm.
-
-Break a hex element into 6 (common case) or 12 (rare case) tets using
-a constructive algorithm. Note: the 5-tet case cannot be constructed
-with this algorithm - a table lookup scheme would be more efficient
-and allow for the 5-tet case
-
-Rare case where all valences are 3 (each face is broken in same
-twisting direction - this is the classic \"un-tetrahedralizable\"
-configuration, the Schonhardt prism) - in this case, we have to add a
-Steiner point. The point can be added along one face's diagonal
-midpoint, but this introduces a need to investigate neighbors, so, we
-simply choose to create more tets by using the centroid as the Steiner
-point.
-(cf.http://www.ams.org/journals/spmj/2005-16-04/S1061-0022-05-00872-1/S1061-0022-05-00872-1.pdf
-St. Petersburg Math. J. Tom. 16 (2004), vyp. 4 Vol. 16 (2005), No. 4,
-Pages 673690 S 1061-0022(05)00872-1 Article electronically published
-on June 24, 2005 REGULAR TRIANGULATIONS AND STEINER POINTS M. YU.
-ZVAGELSKI I, A. V. PROSKURNIKOV, AND YU. R. ROMANOVSKI I )
-
-normal case - connect max valence node to other faces without that
-node (should be 3 tets always)
-
-Rare case - create tets by joining centroid to each face - for now,
-just throw an exception to see how often this case occurs - FIXME -
-take this exception out later
-
-normal case - connect max valence node to other faces without that
-node (should be 6 tets always) Note: there is a 5-tet configuration
-that exists for some face diagonal configurations - FIXME - could add
-this case later The 5-tet case consists of an interior tet with no
-boundary faces, and 4 corner tets; the boundary faces have to each
-have alternating diagonals along the 3 axis directions for this
-configuration to exist ";
+stk::percept::SweepMesher::breakElement(unsigned elemIndex) ";
 
 %feature("docstring")  stk::percept::SweepMesher::breakAllElements "void stk::percept::SweepMesher::breakAllElements() ";
 
@@ -4753,6 +4763,51 @@ stk::percept::SweepMesher::stkMeshCreateBulkAfterMetaCommit(stk::ParallelMachine
 %feature("docstring")  stk::percept::SweepMesher::writeSTKMesh "void
 stk::percept::SweepMesher::writeSTKMesh(const char *filename) ";
 
+%feature("docstring")  stk::percept::SweepMesher::breakElement "void
+stk::percept::SweepMesher::breakElement(unsigned elemIndex) ";
+
+%feature("docstring")  stk::percept::SweepMesher::breakElement "void
+stk::percept::SweepMesher::breakElement(unsigned elemIndex)
+
+Break a wedge element into 3 (common case) or 8 (rare case) tets using
+a constructive algorithm.
+
+Rare case where all valences are 3 (each face is broken in same
+twisting direction - this is the classic \"un-tetrahedralizable\"
+configuration, the Schonhardt prism) - in this case, we have to add a
+Steiner point. The point can be added along one face's diagonal
+midpoint, but this introduces a need to investigate neighbors, so, we
+simply choose to create more tets by using the centroid as the Steiner
+point.
+(cf.http://www.ams.org/journals/spmj/2005-16-04/S1061-0022-05-00872-1/S1061-0022-05-00872-1.pdf
+St. Petersburg Math. J. Tom. 16 (2004), vyp. 4 Vol. 16 (2005), No. 4,
+Pages 673690 S 1061-0022(05)00872-1 Article electronically published
+on June 24, 2005 REGULAR TRIANGULATIONS AND STEINER POINTS M. YU.
+ZVAGELSKI I, A. V. PROSKURNIKOV, AND YU. R. ROMANOVSKI I )
+
+normal case - connect max valence node to other faces without that
+node (should be 3 tets always) ";
+
+%feature("docstring")  stk::percept::SweepMesher::breakElement "void
+stk::percept::SweepMesher::breakElement(unsigned elemIndex)
+
+Break a hex element into 6 (common case) or 12 (rare case) tets using
+a constructive algorithm. Note: the 5-tet case cannot be constructed
+with this algorithm - a table lookup scheme would be more efficient
+and allow for the 5-tet case
+
+Rare case - create tets by joining centroid to each face - for now,
+just throw an exception to see how often this case occurs - FIXME -
+take this exception out later
+
+normal case - connect max valence node to other faces without that
+node (should be 6 tets always) Note: there is a 5-tet configuration
+that exists for some face diagonal configurations - FIXME - could add
+this case later The 5-tet case consists of an interior tet with no
+boundary faces, and 4 corner tets; the boundary faces have to each
+have alternating diagonals along the 3 axis directions for this
+configuration to exist ";
+
 
 // File: classstk_1_1utils_1_1SweepMesher.xml
 %feature("docstring") stk::utils::SweepMesher "
@@ -4776,7 +4831,7 @@ Then use sweep to create a hex mesh (this example breaks a quad to
 create two Tri's, then creates a mixed hex/wedge mesh)
 
 boost::array< double, 3> dir = {0,0,1}; std::vector<Transform *>
-xforms(1, &TransformDir( dir ) );
+xforms(1,  &TransformDir( dir ) );
 
 // break one of the quads into tris unsigned quadElemIndex = 1;
 tp2.breakElem<SweepMesher::ET_Quad4,
@@ -5149,7 +5204,7 @@ shards::Beam< 2 >, shards::Beam< 2 >, 2, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -5212,7 +5267,7 @@ shards::Beam< 2 >, shards::Beam< 3 >, 1, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -5263,7 +5318,7 @@ shards::Beam< 3 >, shards::Beam< 3 >, 2, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -5335,7 +5390,7 @@ shards::Hexahedron< 20 >, shards::Hexahedron< 20 >, 8, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -5407,7 +5462,7 @@ shards::Hexahedron< 27 >, shards::Hexahedron< 27 >, 8, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -5479,7 +5534,7 @@ shards::Hexahedron< 8 >, shards::Hexahedron< 20 >, 1, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -5551,7 +5606,7 @@ shards::Hexahedron< 8 >, shards::Hexahedron< 27 >, 1, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -5622,7 +5677,7 @@ shards::Hexahedron< 8 >, shards::Hexahedron< 8 >, 8, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -5671,24 +5726,24 @@ o----------|-------o 2 |      /           |      / |     /
 
 face numbering for symmetric hex to tet break pattern |   typedef |
 MakeTypeList< IndexList< 0 , 1 ,   8 > , 7
-| IndexList< 1 , 2 ,   9 > , o------------------o 6
-| IndexList< 2 , 3 ,  10 > , /|                 /|
-| IndexList< 3 , 0 ,  11 > ,
-/ |                / |                                              |
-IndexList< 4 , 5 ,  16 > ,                                         / |
-13          /  |                                              |
-IndexList< 5 , 6 ,  17 > ,                                        / |
+| IndexList< 1 , 2 ,   9 > ,
+o ------------------o 6                                            |
+IndexList< 2 , 3 ,  10 > ,                                          /|
+/|                                              | IndexList< 3 , 0 ,
+11 > ,                                         / | / |
+| IndexList< 4 , 5 ,  16 > ,                                        /
+| 13          /  |                                              |
+IndexList< 5 , 6 ,  17 > ,                                       /   |
 o         /   |                                              |
-IndexList< 6 , 7 ,  18 > ,                                       / |
+IndexList< 6 , 7 ,  18 > ,                                      /    |
 o10   /    |     Node #14 is at centroid of element       | IndexList<
-7 , 4 ,  19 > ,                                      / |            /
-|                                              | IndexList< 0 , 4 ,
-12 > ,                                   4 / |         5 /      |
-\"2D surface\" containing nodes            | IndexList< 1 , 5 ,  13 >
-,                                    o ------------------o    9  |
-0,1,5,4 has node 25 at center.... |                   IndexList< 2 , 6
-,  14 > , | 11o   | 3        |   o   | |                   IndexList<
-3 , 7 ,  15 > >::type |       o----------|-------o 2 |
+7 , 4 ,  19 > ,                                     /     | /     |
+| IndexList< 0 , 4 ,  12 > ,                                  4 /
+| 5 /      |     \"2D surface\" containing nodes            |
+IndexList< 1 , 5 ,  13 > ,                                   o
+------------------o    9  |      0,1,5,4 has node 25 at center.... |
+IndexList< 2 , 6 ,  14 > , | 11o   | 3        |   o   | |
+IndexList< 3 , 7 ,  15 > >::type |       o----------|-------o 2 |
 HexahedronEdgeNodeMap ; |      /           |      / | |     /   8
 |     / |   typedef |    /    o        |    / |     MakeTypeList<
 IndexList< 0, 1, 5, 4,   8, 13, 16, 12,   25 > , |   /        o12   |
@@ -5698,7 +5753,7 @@ IndexList< 0, 1, 5, 4,   8, 13, 16, 12,   25 > , |   /        o12   |
 IndexList< 0, 4, 7, 3,  12, 19, 15, 11,   23 > , |/                 |/
 |                   IndexList< 0, 3, 2, 1,  11, 10,  9,  8,   21 > , o
 ------------------o |                   IndexList< 4, 5, 6, 7,  16,
-17, 18, 19,   22 > >::type       0                    1 |
+17, 18, 19,   22 > >::type      0                    1 |
 HexahedronFaceNodeMap ; | |
 
 C++ includes: UniformRefinerPattern_Hex8_Tet4_24.hpp ";
@@ -5729,7 +5784,7 @@ shards::Hexahedron< 8 >, shards::Tetrahedron< 4 >, 24
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -5791,24 +5846,24 @@ o----------|-------o 2 |      /           |      / |     /
 
 face numbering for symmetric hex to tet break pattern |   typedef |
 MakeTypeList< IndexList< 0 , 1 ,   8 > , 7
-| IndexList< 1 , 2 ,   9 > , o------------------o 6
-| IndexList< 2 , 3 ,  10 > , /|                 /|
-| IndexList< 3 , 0 ,  11 > ,
-/ |                / |                                              |
-IndexList< 4 , 5 ,  16 > ,                                         / |
-13          /  |                                              |
-IndexList< 5 , 6 ,  17 > ,                                        / |
+| IndexList< 1 , 2 ,   9 > ,
+o ------------------o 6                                            |
+IndexList< 2 , 3 ,  10 > ,                                          /|
+/|                                              | IndexList< 3 , 0 ,
+11 > ,                                         / | / |
+| IndexList< 4 , 5 ,  16 > ,                                        /
+| 13          /  |                                              |
+IndexList< 5 , 6 ,  17 > ,                                       /   |
 o         /   |                                              |
-IndexList< 6 , 7 ,  18 > ,                                       / |
+IndexList< 6 , 7 ,  18 > ,                                      /    |
 o10   /    |     Node #14 is at centroid of element       | IndexList<
-7 , 4 ,  19 > ,                                      / |            /
-|                                              | IndexList< 0 , 4 ,
-12 > ,                                   4 / |         5 /      |
-\"2D surface\" containing nodes            | IndexList< 1 , 5 ,  13 >
-,                                    o ------------------o    9  |
-0,1,5,4 has node 25 at center.... |                   IndexList< 2 , 6
-,  14 > , | 11o   | 3        |   o   | |                   IndexList<
-3 , 7 ,  15 > >::type |       o----------|-------o 2 |
+7 , 4 ,  19 > ,                                     /     | /     |
+| IndexList< 0 , 4 ,  12 > ,                                  4 /
+| 5 /      |     \"2D surface\" containing nodes            |
+IndexList< 1 , 5 ,  13 > ,                                   o
+------------------o    9  |      0,1,5,4 has node 25 at center.... |
+IndexList< 2 , 6 ,  14 > , | 11o   | 3        |   o   | |
+IndexList< 3 , 7 ,  15 > >::type |       o----------|-------o 2 |
 HexahedronEdgeNodeMap ; |      /           |      / | |     /   8
 |     / |   typedef |    /    o        |    / |     MakeTypeList<
 IndexList< 0, 1, 5, 4,   8, 13, 16, 12,   25 > , |   /        o12   |
@@ -5818,7 +5873,7 @@ IndexList< 0, 1, 5, 4,   8, 13, 16, 12,   25 > , |   /        o12   |
 IndexList< 0, 4, 7, 3,  12, 19, 15, 11,   23 > , |/                 |/
 |                   IndexList< 0, 3, 2, 1,  11, 10,  9,  8,   21 > , o
 ------------------o |                   IndexList< 4, 5, 6, 7,  16,
-17, 18, 19,   22 > >::type       0                    1 |
+17, 18, 19,   22 > >::type      0                    1 |
 HexahedronFaceNodeMap ; | |
 
 C++ includes: UniformRefinerPattern_Hex8_Tet4_6_12.hpp ";
@@ -5849,7 +5904,7 @@ shards::Hexahedron< 8 >, shards::Tetrahedron< 4 >, 6
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -5925,7 +5980,7 @@ shards::Line< 2 >, shards::Line< 2 >, 2, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -5988,7 +6043,7 @@ shards::Line< 2 >, shards::Line< 3 >, 1, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -6039,7 +6094,7 @@ shards::Line< 3 >, shards::Line< 3 >, 2, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -6110,7 +6165,7 @@ shards::Pyramid< 13 >, shards::Pyramid< 13 >, 10, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -6180,7 +6235,7 @@ shards::Pyramid< 5 >, shards::Pyramid< 13 >, 1, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -6254,9 +6309,7 @@ shards::Pyramid< 5 >, shards::Pyramid< 5 >, 10, SierraPort
 stk::adapt::UniformRefinerPattern< shards::Pyramid< 5 >,
 shards::Pyramid< 5 >, 10, SierraPort >::getFromTopoPartName()
 
-provided by this class
-------------------------------------------------------------------------------------------------------------------------
-";
+provided by this class ";
 
 %feature("docstring")  stk::adapt::UniformRefinerPattern<
 shards::Pyramid< 5 >, shards::Pyramid< 5 >, 10, SierraPort
@@ -6284,7 +6337,7 @@ shards::Pyramid< 5 >, shards::Pyramid< 5 >, 10, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -6354,7 +6407,7 @@ shards::Pyramid< 5 >, shards::Pyramid< 5 >, 6, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -6425,7 +6478,7 @@ shards::Pyramid< 5 >, shards::Tetrahedron< 4 >, 4, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -6476,7 +6529,7 @@ shards::Quadrilateral< 4 >, shards::Quadrilateral< 4 >, 4
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -6548,7 +6601,7 @@ shards::Quadrilateral< 4 >, shards::Quadrilateral< 4 >, 4, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -6620,7 +6673,7 @@ shards::Quadrilateral< 4 >, shards::Quadrilateral< 8 >, 1, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -6692,7 +6745,7 @@ shards::Quadrilateral< 4 >, shards::Quadrilateral< 9 >, 1, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -6713,8 +6766,8 @@ shards::Quadrilateral< 9 >, 1, SierraPort
 >::fixSurfaceAndEdgeSetNamesMap()
 
 for i/o to work properly, supply string replacements such as for
-hex-->tet breaking, you would supply \"quad\"-->\"tri\" etc. string
-maps ";
+hex>tet breaking, you would supply \"quad\">\"tri\" etc. string maps
+";
 
 %feature("docstring")  stk::adapt::UniformRefinerPattern<
 shards::Quadrilateral< 4 >, shards::Quadrilateral< 9 >, 1, SierraPort
@@ -6754,7 +6807,7 @@ shards::Quadrilateral< 4 >, shards::Triangle< 3 >, 2
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -6774,8 +6827,8 @@ stk::adapt::UniformRefinerPattern< shards::Quadrilateral< 4 >,
 shards::Triangle< 3 >, 2 >::fixSurfaceAndEdgeSetNamesMap()
 
 for i/o to work properly, supply string replacements such as for
-hex-->tet breaking, you would supply \"quad\"-->\"tri\" etc. string
-maps ";
+hex>tet breaking, you would supply \"quad\">\"tri\" etc. string maps
+";
 
 %feature("docstring")  stk::adapt::UniformRefinerPattern<
 shards::Quadrilateral< 4 >, shards::Triangle< 3 >, 2
@@ -6817,7 +6870,7 @@ shards::Quadrilateral< 4 >, shards::Triangle< 3 >, 4, Specialization
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -6838,8 +6891,8 @@ shards::Triangle< 3 >, 4, Specialization
 >::fixSurfaceAndEdgeSetNamesMap()
 
 for i/o to work properly, supply string replacements such as for
-hex-->tet breaking, you would supply \"quad\"-->\"tri\" etc. string
-maps ";
+hex>tet breaking, you would supply \"quad\">\"tri\" etc. string maps
+";
 
 %feature("docstring")  stk::adapt::UniformRefinerPattern<
 shards::Quadrilateral< 4 >, shards::Triangle< 3 >, 4, Specialization
@@ -6897,7 +6950,7 @@ shards::Quadrilateral< 4 >, shards::Triangle< 3 >, 6
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -6972,7 +7025,7 @@ shards::Quadrilateral< 8 >, shards::Quadrilateral< 8 >, 4, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -7044,7 +7097,7 @@ shards::Quadrilateral< 9 >, shards::Quadrilateral< 9 >, 4, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -7096,7 +7149,7 @@ shards::ShellLine< 2 >, shards::ShellLine< 2 >, 2, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -7161,7 +7214,7 @@ shards::ShellLine< 2 >, shards::ShellLine< 3 >, 1, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -7213,7 +7266,7 @@ shards::ShellLine< 3 >, shards::ShellLine< 3 >, 2, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -7288,7 +7341,7 @@ shards::ShellQuadrilateral< 4 >, 4, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -7365,7 +7418,7 @@ shards::ShellQuadrilateral< 8 >, 1, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -7442,7 +7495,7 @@ shards::ShellQuadrilateral< 9 >, 1, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -7519,7 +7572,7 @@ shards::ShellQuadrilateral< 8 >, 4, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -7593,7 +7646,7 @@ shards::ShellTriangle< 3 >, shards::ShellTriangle< 3 >, 4, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -7665,7 +7718,7 @@ shards::ShellTriangle< 6 >, shards::ShellTriangle< 6 >, 4, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -7737,7 +7790,7 @@ shards::Tetrahedron< 10 >, shards::Tetrahedron< 10 >, 8, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -7809,7 +7862,7 @@ shards::Tetrahedron< 4 >, shards::Tetrahedron< 10 >, 1, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -7881,7 +7934,7 @@ shards::Tetrahedron< 4 >, shards::Tetrahedron< 4 >, 8, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -7951,7 +8004,7 @@ shards::Triangle< 3 >, shards::Triangle< 3 >, 4, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -8021,7 +8074,7 @@ shards::Triangle< 3 >, shards::Triangle< 6 >, 1, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -8091,7 +8144,7 @@ shards::Triangle< 6 >, shards::Triangle< 6 >, 4, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -8161,7 +8214,7 @@ shards::Wedge< 15 >, shards::Wedge< 15 >, 8, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -8231,7 +8284,7 @@ shards::Wedge< 18 >, shards::Wedge< 18 >, 8, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -8301,7 +8354,7 @@ shards::Wedge< 6 >, shards::Wedge< 15 >, 1, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -8371,7 +8424,7 @@ shards::Wedge< 6 >, shards::Wedge< 18 >, 1, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -8441,7 +8494,7 @@ shards::Wedge< 6 >, shards::Wedge< 6 >, 8, SierraPort
 &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -8472,7 +8525,6 @@ sub-elements of the refined element ";
 %feature("docstring") stk::adapt::UniformRefinerPatternBase "
 
 The base class for all refinement patterns
-------------------------------------------------------------------------------------------------------------------------
 
 C++ includes: UniformRefinerPattern.hpp ";
 
@@ -8511,7 +8563,7 @@ stk::adapt::UniformRefinerPatternBase::fillNeededEntities(std::vector<
 NeededEntityType > &needed_entities)=0
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -8587,17 +8639,15 @@ stk::adapt::UniformRefinerPatternBase::fixSurfaceAndEdgeSetNamesMap "virtual Str
 stk::adapt::UniformRefinerPatternBase::fixSurfaceAndEdgeSetNamesMap()
 
 for i/o to work properly, supply string replacements such as for
-hex-->tet breaking, you would supply \"quad\"-->\"tri\" etc. string
-maps ";
+hex>tet breaking, you would supply \"quad\">\"tri\" etc. string maps
+";
 
 %feature("docstring")
 stk::adapt::UniformRefinerPatternBase::getFromTopoPartName "virtual
 std::string
 stk::adapt::UniformRefinerPatternBase::getFromTopoPartName()=0
 
-provided by this class
-------------------------------------------------------------------------------------------------------------------------
-";
+provided by this class ";
 
 %feature("docstring")
 stk::adapt::UniformRefinerPatternBase::getToTopoPartName "virtual
@@ -8630,10 +8680,11 @@ stk::adapt::UniformRefinerPatternBase::getAppendOriginalString() ";
 "void stk::adapt::UniformRefinerPatternBase::setToOne(std::vector<
 NeededEntityType > &needed_entities)
 
-utilities --------- sets the needed number of nodes on each sub-entity
-to 1 - this is just a helper - in general, edges and faces have 1 new
-node for linear elements, and multiple new nodes in the case of
-quadratic elements ";
+utilities
+
+sets the needed number of nodes on each sub-entity to 1 - this is just
+a helper - in general, edges and faces have 1 new node for linear
+elements, and multiple new nodes in the case of quadratic elements ";
 
 %feature("docstring")  stk::adapt::UniformRefinerPatternBase::midPoint
 "double* stk::adapt::UniformRefinerPatternBase::midPoint(const double
@@ -8668,9 +8719,7 @@ CellTopologyData* stk::adapt::URP< FromTopology, ToTopology
 std::string stk::adapt::URP< FromTopology, ToTopology
 >::getFromTopoPartName()
 
-provided by this class
-------------------------------------------------------------------------------------------------------------------------
-";
+provided by this class ";
 
 %feature("docstring")  stk::adapt::URP::getToTopoPartName "virtual
 std::string stk::adapt::URP< FromTopology, ToTopology
@@ -8702,7 +8751,6 @@ stk::adapt::URP< FromTopology, ToTopology
 
 Utility intermediate base class providing more support for standard
 refinement operations
-------------------------------------------------------------------------------------------------------------------------
 
 C++ includes: UniformRefinerPattern.hpp ";
 
@@ -8740,9 +8788,7 @@ stk::adapt::URP_Heterogeneous_3D::getFromTypeKey() ";
 stk::adapt::URP_Heterogeneous_3D::getFromTopoPartName "virtual
 std::string stk::adapt::URP_Heterogeneous_3D::getFromTopoPartName()
 
-provided by this class
-------------------------------------------------------------------------------------------------------------------------
-";
+provided by this class ";
 
 %feature("docstring")
 stk::adapt::URP_Heterogeneous_3D::getToTopoPartName "virtual
@@ -8763,7 +8809,7 @@ stk::adapt::URP_Heterogeneous_3D::fillNeededEntities(std::vector<
 NeededEntityType > &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -8814,9 +8860,7 @@ stk::adapt::URP_Heterogeneous_Enrich_3D::getFromTopoPartName "virtual
 std::string
 stk::adapt::URP_Heterogeneous_Enrich_3D::getFromTopoPartName()
 
-provided by this class
-------------------------------------------------------------------------------------------------------------------------
-";
+provided by this class ";
 
 %feature("docstring")
 stk::adapt::URP_Heterogeneous_Enrich_3D::getToTopoPartName "virtual
@@ -8847,7 +8891,7 @@ stk::adapt::URP_Heterogeneous_Enrich_3D::fillNeededEntities(std::vector<
 NeededEntityType > &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -8900,9 +8944,7 @@ stk::adapt::URP_Heterogeneous_QuadraticRefine_3D::getFromTopoPartName
 "virtual std::string
 stk::adapt::URP_Heterogeneous_QuadraticRefine_3D::getFromTopoPartName()
 
-provided by this class
-------------------------------------------------------------------------------------------------------------------------
-";
+provided by this class ";
 
 %feature("docstring")
 stk::adapt::URP_Heterogeneous_QuadraticRefine_3D::getToTopoPartName "virtual std::string
@@ -8931,7 +8973,7 @@ stk::adapt::URP_Heterogeneous_QuadraticRefine_3D::fillNeededEntities(std::vector
 NeededEntityType > &needed_entities)
 
 must be provided by derived classes
-------------------------------------------------------------------------------------------------------------------------
+
 supplies the ranks of the sub entities needed during refinement (eg.
 m_eMesh.face_rank(), m_eMesh.edge_rank(),..) 10/02/10 and the number
 of nodes needed for each sub entity ";
@@ -9098,6 +9140,11 @@ spc[8][3], double den_xyz[3], double *coord[8]) ";
 
 %feature("docstring")  stk::adapt::Elem::doPrintSizes "static void
 stk::adapt::doPrintSizes() ";
+
+%feature("docstring")  stk::adapt::Elem::getChildVectorPtr "static
+const SameRankRelationValue*
+stk::adapt::getChildVectorPtr(SameRankRelation &repo,
+stk::mesh::Entity *parent) ";
 
 %feature("docstring")  stk::adapt::Elem::get_random_sequence "static
 std::vector<unsigned> stk::adapt::get_random_sequence(int min, int
@@ -9275,28 +9322,23 @@ stk::adapt::Elem::StdMeshObjTopologies::tri(UInt eclass, UInt nnode)
 
 2 PARENT Linear 3-Node Triangle Element Nodes o (SPACE_DIM = 2!) /
 \\\\ / \\\\ (PARENT) Linear 3-Node Triangle Edge Node Map: / \\\\ /
-\\\\ { {0, 1}, {1, 2}, {2, 0} }; / \\\\ / \\\\ / \\\\ o---------------
-o 0 1
+\\\\ { {0, 1}, {1, 2}, {2, 0} }; / \\\\ / \\\\ / \\\\ o---------o 0 1
 
-After refinement:
-
-2 CHILD Linear 3-Node Triangle Element Nodes o (new nodes = *) / \\\\
-/ \\\\ / \\\\ 5 *-------* 4 / \\\\ / \\\\ / \\\\ / \\\\ / \\\\ / \\\\
-o-------*-------o 0 3 1
+After refinement:    2            CHILD Linear 3-Node Triangle Element
+Nodes     o (new nodes = *)    / \\\\   /   \\\\  /     \\\\ 5 *-* 4 /
+\\\\ / \\\\ / \\\\ / \\\\ / \\\\ / \\\\ o-*-o 0 3 1
 
 | CHILD Linear 3-Node Triangle Element Node Maps: | | | static const
 UInt child_0[] = { 0, 3, 5 }; | static const UInt child_1[] = { 3, 1,
 4 }; | static const UInt child_2[] = { 5, 4, 2 }; | static const UInt
 child_3[] = { 4, 5, 3 }; | 2 PARENT 6-Node Triangle Object Nodes o /
 \\\\ / \\\\ (PARENT) 6-Node Triangle Object Edge Node Map: / \\\\ 5 o
-o 4 { {0, 1, 3}, {1, 2, 4}, {2, 0, 5} }; / \\\\ / \\\\ / \\\\ o-------
-o-------o 0 3 1
+o 4 { {0, 1, 3}, {1, 2, 4}, {2, 0, 5} }; / \\\\ / \\\\ / \\\\ o----o
+----o 0 3 1
 
-After refinement:
-
-2 CHILD 6-Node Triangle Object Nodes o (new nodes = *) / \\\\ 10 * * 9
-/ 14 \\\\ 5 o---*---o 4 / \\\\ / \\\\ 11 * 12* *13 * 8 / \\\\ / \\\\
-o---*---o---*---o 0 6 3 7 1
+After refinement:    2            CHILD 6-Node Triangle Object Nodes
+o (new nodes = *)    / \\\\ 10 * * 9 / 14 \\\\ 5 o*o 4 / \\\\ / \\\\
+11 * 12* *13 * 8 / \\\\ / \\\\ o*o*o 0 6 3 7 1
 
 | CHILD 6-Node Triangle Object Node Maps: | | static const UInt
 child_0[] = { 0, 3, 5, 6, 12, 11 }; | static const UInt child_1[] = {
@@ -9317,13 +9359,11 @@ stk::adapt::Elem::StdMeshObjTopologies::tri4(UInt eclass)
 
 2 PARENT 4-Node Triangle Object Nodes o / \\\\ / \\\\ (PARENT) 4-Node
 Triangle Object Edge Node Map: / \\\\ / \\\\ { {0, 1}, {1, 2}, {2, 0}
-}; / o \\\\ / 3 \\\\ / \\\\ o---------------o 0 1
+}; / o \\\\ / 3 \\\\ / \\\\ o------------o 0 1
 
-After refinement:
-
-2 CHILD 4-Node Triangle Object Nodes o (new nodes = *) / \\\\ / 9 \\\\
-/ * \\\\ 6 *-------* 5 / \\\\ o / \\\\ / 7 \\\\ 3 / 8 \\\\ / * \\\\ /
-* \\\\ o-------*-------o 0 4 1
+After refinement:    2            CHILD 4-Node Triangle Object Nodes
+o (new nodes = *)    / \\\\   / 9 \\\\  /  *  \\\\ 6 *----* 5 / \\\\ o
+/ \\\\ / 7 \\\\ 3 / 8 \\\\ / * \\\\ / * \\\\ o----*----o 0 4 1
 
 | CHILD 4-Node Triangle Object Node Maps: | | static const UInt
 child_0[] = { 0, 4, 6, 7 }; | static const UInt child_1[] = { 4, 1, 5,
@@ -9346,22 +9386,27 @@ After Refinement and using child node numbering: Rotation Polarity
 %feature("docstring")  stk::adapt::Elem::StdMeshObjTopologies::quad "const MeshObjTopology *
 stk::adapt::Elem::StdMeshObjTopologies::quad(UInt eclass, UInt nnode)
 
-3 2 PARENT Linear 4-Node Quadrilateral Element Nodes o---------------o
-(SPACE_DIM = 2!) | | | | | | | | | | (PARENT) Linear 4-Node
-Quadrilateral | | Element Edge Node Map: | | | | { {0, 1}, {1, 2}, {2,
-3} {3, 0} }; | | o---------------o 0 1
+3 2 PARENT Linear 4-Node Quadrilateral Element Nodes o---------o
+(SPACE_DIM = 2!)
+
+| | (PARENT) Linear 4-Node Quadrilateral | | Element Edge Node Map: |
+| | | { {0, 1}, {1, 2}, {2, 3} {3, 0} }; | | o---------o 0 1
 
 After refinement:
 
-3 6 2 CHILD Linear 4-Node Quadrilateral Element Nodes
-o-------*-------o (SPACE_DIM = 2!) (new nodes = *) | | | | | | | | | |
-8| | 7*-------*-------*5 | | | | | | | | | | | | o-------*-------o 0 4
-1 | CHILD Linear 4-Node Quadrilateral Element Node Maps: | | | Element
-0: childNodeMap[0] = { 0, 4, 8, 7 } | Element 1: childNodeMap[1] = {
-4, 1, 5, 8 } | Element 2: childNodeMap[2] = { 8, 5, 2, 6 } | Element
-3: childNodeMap[3] = { 7, 8, 6, 3 } |
+3 6 2 CHILD Linear 4-Node Quadrilateral Element Nodes o-*-o (SPACE_DIM
+= 2!) (new nodes = *)
 
-New ref topo info Quad4 ------------------
+8
+
+7*-*- 5
+
+o--o 0 4 1 | CHILD Linear 4-Node Quadrilateral Element Node Maps: | |
+| Element 0: childNodeMap[0] = { 0, 4, 8, 7 } | Element 1:
+childNodeMap[1] = { 4, 1, 5, 8 } | Element 2: childNodeMap[2] = { 8,
+5, 2, 6 } | Element 3: childNodeMap[3] = { 7, 8, 6, 3 } |
+
+New ref topo info Quad4
 
 {Ord, Rnk-assoc, Ord-rnk-assoc, Ord-node-on-subcell, num-rnk-assoc,
 param-coord} { {0, 0, 0, 0, 1, {0.0, 0.0, 0.0} }, {1, 0, 1, 0, 1,
@@ -9376,24 +9421,25 @@ Rotation Polarity 0 1 { 0, 1, 2, 3; 4, 5, 6, 7, 8 } 0 0 { 0, 3, 2, 1;
 7, 6, 5, 4, 8 } 1 1 { 3, 0, 1, 2; 7, 4, 5, 6, 8 } 1 0 { 3, 2, 1, 0; 6,
 5, 4, 7, 8 } 2 1 { 2, 3, 0, 1; 6, 7, 4, 5, 8 } 2 0 { 2, 1, 0, 3; 5, 4,
 7, 6, 8 } 3 1 { 1, 2, 3, 0; 5, 6, 7, 4, 8 } 3 0 { 1, 0, 3, 2; 4, 7, 6,
-5, 8 } 3 6 2 PARENT 9-Node Quadrilateral Object Nodes o-------o-------
-o | | | | | 8 | 7 o o o 5 (PARENT) 9-Node Quadrilateral Object's | |
-Edge Node Map: | | | | { {0, 1, 4}, {1, 2, 5}, {2, 3, 6} {3, 0, 7} };
-o-------o-------o 0 4 1
+5, 8 } 3 6 2 PARENT 9-Node Quadrilateral Object Nodes o----o----o
+
+8  7 o o o 5 (PARENT) 9-Node Quadrilateral Object's | | Edge Node Map:
+| | | | { {0, 1, 4}, {1, 2, 5}, {2, 3, 6} {3, 0, 7} }; o----o----o 0 4
+1
 
 After refinement:
 
-3 14 6 13 2 CHILD 9-Node Quadrilateral Object Nodes
-o----*----o----*----o (new nodes = *) | | | | 24 | 23 | 15* * *19 *
-*12 | | | | 8| 18 | 7 o----*----o----*----o 5 | 20 | | | | | 16* * 17*
-* *11 | 21 | 22 | | | | o----*----o----*----o 0 9 4 10 1
+3 14 6 13 2 CHILD 9-Node Quadrilateral Object Nodes o-*-o-*-o (new
+nodes = *) | | | | 24 | 23 | 15* * 19 * *12 | | | | 8| 18 | 7
+o-*-o-*-o 5 | 20 | | | | | 16 * 17* * *11 | 21 | 22 | | | | o-*-o-*-o
+0 9 4 10 1
 
 CHILD 9-Node Quadrilateral Object Node Maps: | | | Object 0:
 childNodeMap[0] = { 0, 4, 8, 7, 9, 17, 20, 16; 21 } | Object 1:
 childNodeMap[1] = { 4, 1, 5, 8, 10, 11, 18, 17; 22 } | Object 2:
 childNodeMap[2] = { 8, 5, 2, 6, 18, 12, 13, 19; 23 } | Object 3:
-childNodeMap[3] = { 7, 8, 6, 3, 20, 19, 14, 15; 24 } | New ref topo
-info Quad9 ------------------
+childNodeMap[3] = { 7, 8, 6, 3, 20, 19, 14, 15; 24 } |New ref topo
+info Quad9
 
 {Ord, Rnk-assoc, Ord-rnk-assoc, Ord-node-on-subcell, num-rnk-assoc,
 param-coord} { {0, 0, 0, 0, 1, {0.0, 0.0, 0.0} }, {1, 0, 1, 0, 1,
@@ -9438,13 +9484,12 @@ stk::adapt::Elem::StdMeshObjTopologies::tet(UInt nnode)
 
 PARENT 4-Node Tetrahedron Object Nodes 3 o /|\\\\ / | \\\\ (PARENT)
 4-Node Tetrahedron Object / | \\\\ Edge Node Map: / | \\\\ / | \\\\ {
-{0, 1}, {1, 2}, {2, 0}, {0, 3}, {1, 3}, {2, 3} }; 0 o-----|-----o 2
-\\\\ | / \\\\ | / \\\\ | / \\\\ | / \\\\|/ o 1
+{0, 1}, {1, 2}, {2, 0}, {0, 3}, {1, 3}, {2, 3} }; 0 o|o 2 \\\\ | /
+\\\\ | / \\\\ | / \\\\ | / |/ o 1
 
-After refinement (new nodes = *):
-
-3 o /|\\\\ / | \\\\ 7 * | * 9 / | \\\\ / 6| \\\\ 0 o----*|-----o 2
-\\\\ *8 / \\\\ | / 4 * | * 5 \\\\ | / \\\\|/ o 1
+After refinement (new nodes = *):     3      o     /|\\\\    / | \\\\
+7 *  |  * 9  /   |   \\\\ /   6| \\\\ 0 o-*|o 2 \\\\ *8 / \\\\ | / 4 *
+| * 5 \\\\ | / |/ o 1
 
 CHILD 4-Node Tetrahedron 3D Object Node Maps: | | static const UInt
 child_0[] = { 0, 4, 6, 7 }; // srkenno 091410 fixed (used to be {0, 4,
@@ -9455,14 +9500,14 @@ const UInt child_5[] = { 6, 9, 8, 5 }; | static const UInt child_6[] =
 { 9, 8, 7, 6 }; | static const UInt child_7[] = { 5, 6, 4, 8 }; |
 PARENT 10-Node Tetrahedron Object Nodes 3 o /|\\\\ / | \\\\ 7 o | o 9
 (PARENT) 10-Node Tetrahedron Object / | \\\\ Edge Node Map: / 6| \\\\
-0 o----o|-----o 2 { {0, 1, 4}, {1, 2, 5}, {2, 0, 6}, \\\\ o8 / {0, 3,
-7}, {1, 3, 8}, {2, 3, 9} }; \\\\ | / 4 o | o 5 \\\\ | / \\\\|/ o 1
+0 o-o|o 2 { {0, 1, 4}, {1, 2, 5}, {2, 0, 6}, \\\\ o8 / {0, 3, 7}, {1,
+3, 8}, {2, 3, 9} }; \\\\ | / 4 o | o 5 \\\\ | / |/ o 1
 
-After refinement (new nodes = *):
-
-3 o /|\\\\ * | * / | \\\\ 7 o | o 9 / * \\\\ * | * / 6| \\\\ 0
-o---*--o|--*----o 2 \\\\ o8 / * | * \\\\ | / 4 o | o 5 \\\\ * / * | *
-\\\\|/ o 1
+After refinement (new nodes = *):          3           o
+/|\\\\         * | *        /  | \\\\     7 o   |   o 9      /    *
+\\\\     *     |     *    / 6|      \\\\ 0 o---*--o|--*----o 2    \\\\
+o8     /     *     | *      \\\\    |    /     4 o   |   o 5
+\\\\  *  /         * | *          \\\\|/           o           1
 
 | // Child edge node tables | | static const UInt edge_0[] = { 0, 1,
 4, 10, 11 }; | static const UInt edge_1[] = { 1, 2, 5, 12, 13 }; |
@@ -9486,29 +9531,27 @@ UInt cfn_6[] = {9, 8, 6, 32, 22, 33, 8, 7, 6, 23, 25, 22, 9, 6, 7, 33,
 24, 22, 26, 6, 4, 8, 31, 34, 22, 5, 8, 4, 26, 34, 30, 5, 4, 6, 30, 31,
 24 }; |
 
-Face #0: Face #1: Face #2:
+Face #0:               Face #1:               Face #2:        3 3
+3       o                      o o      / \\\\                    /
+\\\\                    / \\\\ 19*   *20              20*   *21
+21*   *19    / 23  \\\\ / 32  \\\\                / 29  \\\\    < 7
+o---*---o 8          8 o---*---o 9          9 o---*---o 7  \\\\  /
+\\\\     / \\\\ / \\\\     / \\\\            / \\\\     / \\\\    \\\\
+16* 27* 34 17 17 26 28 18 18 33 25 *16 | / \\\\ / \\\\ / \\\\ / \\\\ /
+\\\\ / \\\\ | oo*o o*o*o o*o*o # 0 10 4 11 1 1 12 5 13 2 2 14 6 15 0
 
-3 3 3 o o o / \\\\ / \\\\ / \\\\ 19* *20 20* *21 21* *19 / 23 \\\\ /
-32 \\\\ / 29 \\\\ < 7 o---*---o 8 8 o---*---o 9 9 o---*---o 7 \\\\ /
-\\\\ / \\\\ / \\\\ / \\\\ / \\\\ / \\\\ \\\\ 16* 27* *34 *17 17* 26*
-*28 *18 18* 33* *25 *16 | / \\\\ / \\\\ / \\\\ / \\\\ / \\\\ / \\\\ |
-o---*---o---*---o o---*---o---*---o o---*---o---*---o # 0 10 4 11 1 1
-12 5 13 2 2 14 6 15 0 # # \\\\ \\\\ \\\\ \\\\ --> -->
+\\\\ \\\\ \\\\ \\\\>>
 
-Face #3:
+Face #3: 1  o / \\\\ 11* 12 / 30 \\\\ 4 o*o 5 / \\\\ / \\\\ 10 31* 24
+*13 / \\\\ / \\\\ oo*o 0 15 6 14 2 # \\\\ \\\\>
 
-1 o / \\\\ 11* *12 / 30 \\\\ 4 o---*---o 5 / \\\\ / \\\\ 10* 31* *24
-*13 / \\\\ / \\\\ o---*---o---*---o 0 15 6 14 2 # \\\\ \\\\ -->
+Various Interior Faces of Children: 7              9        7   25
+6     8   26    5  o              o o---*---o       o---*---o / \\\\
+/ \\\\         \\\\     / \\\\     / 23* 25 32 33 27 31 34 30 / 22
+\\\\ / 22 \\\\ \\\\ / \\\\ / 8o*o10 8o*o6 o o \\\\ / \\\\ / 4 4 26 24
+34 *31 \\\\ / \\\\ / o o 5 4
 
-Various Interior Faces of Children:
-
-7 9 7 25 6 8 26 5 o o o---*---o o---*---o / \\\\ / \\\\ \\\\ / \\\\ /
-23* *25 32* *33 27* *31 34* *30 / 22 \\\\ / 22 \\\\ \\\\ / \\\\ /
-8o---*---o10 8o---*---o6 o o \\\\ / \\\\ / 4 4 26* *24 34* *31 \\\\ /
-\\\\ / o o 5 4
-
-9 9 o o / \\\\ / \\\\ 33* *28 29* *32 / \\\\ / \\\\ o---*---o
-o---*---o 6 24 5 7 23 8
+9 9 o o / \\\\ / \\\\ 33* 28 29 32 / \\\\ / \\\\ oo o*o 6 24 5 7 23 8
 
 Edge node tables for refined 10-Node Tetrahedrons: | | static const
 UInt edge_0[] = { 0, 1, 4, 10, 11 }; | static const UInt edge_1[] = {
@@ -9537,21 +9580,22 @@ CHILD 10-Node Tetrahedron Object Node Maps:
 8, 24, 31, 30, 26, 22, 34 }; | PARENT Semi-Linear 8-Node Tetrahedron
 Nodes 3 (SPACE_DIM = 3!) o /|\\\\ / | \\\\ / | \\\\ \"Front faces\" /
 | \\\\ Node 4 on 2D surface containing nodes 0, 1, 3 / | \\\\ Node 5
-on 2D surface containing nodes 1, 2, 3 0 o-----|-----o 2 \\\\ 4 | + /
+on 2D surface containing nodes 1, 2, 3 0 o--|--o 2 \\\\ 4 | + /
 (PARENT) Semi-Linear 8-Node Tetrahedron \\\\ + | 5 / 3D Element Edge
 Node Map: \\\\ | / \\\\ | / { {0, 1}, {1, 2}, {2, 0}, {0, 3}, {1, 3},
-{2, 3} } \\\\|/ o 1
+{2, 3} } |/ o 1
 
-3 o /|\\\\ \"Back faces (note mid-face-node does not follow face
-ordering!)\" / | \\\\ Node 7 on 2D surface containing nodes 0, 3, 2 /
-| \\\\ Node 6 on 2D surface containing nodes 0, 2, 1 / |+ \\\\ / |7
-\\\\ 0 o-----|-----o 2 \\\\ 6| / \\\\ +| / \\\\ | / \\\\ | / \\\\|/ o
-1
+3          o         /|\\\\         \"Back faces (note mid- face-node
+does not follow face ordering!)\"        / | \\\\ Node 7 on 2D surface
+containing nodes 0, 3, 2       /  |  \\\\ Node 6 on 2D surface
+containing nodes 0, 2, 1      /   |+  \\\\     / |7   \\\\  0
+o-----|-----o 2     \\\\   6|    /      \\\\  +|   / \\\\  |  /
+\\\\ | /         \\\\|/          o          1
 
-After refinement (new nodes = *):
-
-3 o /|\\\\ / | \\\\ 11* | *13 / | \\\\ / 10| \\\\ 0 o----*|-----o 2
-\\\\ *12 / \\\\ | / 8 * | * 9 \\\\ | / \\\\|/ o 1
+After refinement (new nodes = *):        3         o        /|\\\\
+/ | \\\\    11*  |  *13     / |   \\\\    /  10|    \\\\ 0
+o----*|-----o 2    \\\\    *12  / \\\\   |   /    8 *  |  * 9
+\\\\ | /        \\\\|/         o 1
 
 | // Child edge node tables | | static const UInt edge_0[] = { 0, 1, 8
 }; | static const UInt edge_1[] = { 1, 2, 9 }; | static const UInt
@@ -9573,29 +9617,29 @@ cfn_5[] = | { 10, 13, 9, 32, 13, 12, 9, 5, 10, 9, 12, 27, 10, 12, 13,
 26, 13, 10, 11, 7, 13, 11, 12, 33 }; | static const UInt cfn_7[] = | {
 9, 10, 12, 27, 10, 8, 12, 29, 9, 12, 8, 31, 9, 8, 10, 6 }; |
 
-Face #0: Face #1: Face #2:
+Face #0:               Face #1:               Face #2:        3 3
+3       o                      o o      / \\\\                    /
+\\\\                    / \\\\ / 16\\\\                  / 19\\\\
+/ 24\\\\    /  * \\\\                /  *  \\\\                /  *
+\\\\    < 11*-------*12          12*-------*13          13*-------*11
+\\\\  / \\\\  o  / \\\\            / \\\\  o  / \\\\            / \\\\
+o  / \\\\    \\\\ /14 \\\\ 4 /15 \\\\          /17 \\\\ 5 /18 \\\\ /25
+\\\\ 7 / 23\\\\    | / * \\\\ / * \\\\ / * \\\\ / * \\\\ / * \\\\ / *
+\\\\ | o----*----o o----*----o o----*----o # 0 8 1 1 9 2 2 10 0
 
-3 3 3 o o o / \\\\ / \\\\ / \\\\ / 16\\\\ / 19\\\\ / 24\\\\ / * \\\\ /
-* \\\\ / * \\\\ < 11*-------*12 12*-------*13 13*-------*11 \\\\ /
-\\\\ o / \\\\ / \\\\ o / \\\\ / \\\\ o / \\\\ \\\\ /14 \\\\ 4 /15 \\\\
-/17 \\\\ 5 /18 \\\\ /25 \\\\ 7 / 23\\\\ | / * \\\\ / * \\\\ / * \\\\ /
-* \\\\ / * \\\\ / * \\\\ | o-------*-------o o-------*-------o
-o-------*-------o # 0 8 1 1 9 2 2 10 0 # # \\\\ \\\\ \\\\ \\\\ --> -->
+\\\\ \\\\ \\\\ \\\\>>
 
-Face #3:
+Face #3: 1  o / \\\\ /22 \\\\ / * \\\\ 8*----*9 / \\\\ o / \\\\ /20
+\\\\ 6 / 21\\\\ / * \\\\ / * \\\\ o----*----o 0 10 2 # \\\\ \\\\>
 
-1 o / \\\\ /22 \\\\ / * \\\\ 8*-------*9 / \\\\ o / \\\\ /20 \\\\ 6 /
-21\\\\ / * \\\\ / * \\\\ o-------*-------o 0 10 2 # \\\\ \\\\ -->
+Various Interior Faces of Children:11              13       11
+10     12        9  *              * *-------*       *-------* / \\\\
+/ \\\\         \\\\  *  / \\\\  *  / /26 \\\\ /28 \\\\ \\\\30 / \\\\31
+/ / * \\\\ / * \\\\ \\\\ / \\\\ / 12*----*10 10*----*12 * * \\\\ * /
+\\\\ * / 8 8 \\\\27 / \\\\29 / \\\\ / \\\\ / * 9 8
 
-Various Interior Faces of Children:
-
-11 13 11 10 12 9 * * *-------* *-------* / \\\\ / \\\\ \\\\ * / \\\\ *
-/ /26 \\\\ /28 \\\\ \\\\30 / \\\\31 / / * \\\\ / * \\\\ \\\\ / \\\\ /
-12*-------*10 10*-------*12 * * \\\\ * / \\\\ * / 8 8 \\\\27 / \\\\29
-/ \\\\ / \\\\ / * * 9 8
-
-13 13 * * / \\\\ / \\\\ /32 \\\\ /33 \\\\ / * \\\\ / * \\\\ *-------*
-*-------* 10 9 11 12
+13 13 * / \\\\ / \\\\ /32 \\\\ /33 \\\\ / * \\\\ / * \\\\ *----*
+*----* 10 9 11 12
 
 | // tet8 face node tables | | static const UInt t8_face_0[] = { 0, 1,
 3, 4, 8, 12, 11, 14, 15, 16 }; | static const UInt t8_face_1[] = { 1,
@@ -9617,21 +9661,16 @@ static const UInt child_7[] = { 9, 10, 8, 12, 27, 29, 31, 6 }; | ";
 %feature("docstring")  stk::adapt::Elem::StdMeshObjTopologies::hex "const MeshObjTopology *
 stk::adapt::Elem::StdMeshObjTopologies::hex(UInt nnode)
 
-PARENT Linear 8-Node Hexahedron Nodes 7 6 (SPACE_DIM = 3!) o
-------------------o /| /| / | / | / | / | / | / | / | / | / | / | 4 /
-| 5 / | o------------------o | | | | | | 3 o----------|-------o 2 | /
-| / | / | / | / | / | / | / | / | / | / | / |/ |/ o------------------o
-0 1
-
-(PARENT) Linear 8-Node Hexahedron 3D Element Edge Node Map:
-
-{ {0, 1}, {1, 2}, {2, 3}, {3, 0}, {4, 5}, {5, 6}, {6, 7}, {7, 4}, {0,
-4}, {1, 5}, {2, 6}, {3, 7} };
-
-3D Element Face Node Map:
-
-{ {0, 1, 5, 4}, {1, 2, 6, 5}, { 2, 3, 7, 6}, { 0, 4, 7, 3}, { 0, 3, 2,
-1}, { 4, 5, 6, 7} }; Shards face list info:
+PARENT Linear 8-Node Hexahedron Nodes 7 6 (SPACE_DIM = 3!) o---------o
+/| /| / | / | / | / | / | / | / | / | / | / | 4 / | 5 / | o---------o
+| | | | | | 3 o-|-o 2 | / | / | / | / | / | / | / | / | / | / | / | /
+|/ |/ o---------o 0 1                   (PARENT) Linear 8-Node
+Hexahedron 3D Element Edge Node Map:                           { {0,
+1}, {1, 2}, {2, 3}, {3, 0},                            {4, 5}, {5, 6},
+{6, 7}, {7, 4},                            {0, 4}, {1, 5}, {2, 6}, {3,
+7}  }; 3D Element Face Node Map:                           { {0, 1, 5,
+4}, {1, 2, 6, 5}, { 2, 3, 7, 6}, { 0, 4, 7, 3},  { 0, 3, 2, 1}, { 4,
+5, 6, 7} }; Shards face list info:
 
 typedef MakeTypeList< IndexList< 0, 1, 5, 4,   8, 13, 16, 12,   25 > ,
 IndexList< 1, 2, 6, 5,   9, 14, 17, 13,   24 > , IndexList< 2, 3, 7,
@@ -9641,16 +9680,16 @@ IndexList< 1, 2, 6, 5,   9, 14, 17, 13,   24 > , IndexList< 2, 3, 7,
 
 After refinement (new nodes = *):
 
-7 18 6 o---------*--------o /| /| /| / | / | / | 19 / | 22/ | / |
-*---------*--------*17 | /| 15*----/|---*---/|---*14 / | /| / | /|26/
-| /| | (PARENT) Linear 8-Node Hexahedron 4 / | / |16/ | / | / | / | |
-3D Element Edge Node to mid-edge quadratic node map o---------*--20
-----o5 |/ | | | 23*---|-|---*- 10|---*24 | | { 8, 9, 10, 11, | /|
-3o-|--/|---*|--/|---o 2 | 16, 17, 18, 19, | / | / | / | / | / | / |
-12, 13, 14, 15 } |/ | / 25|/ | / |/ | / | 12*---------*--------*13 |/
-| Face to mid-face quadratic node map | 11*-----|---*----|---* 9 | {
-25, 24, 26, 23, 21, 22 } | / | /21 | / | 0, 1, 2, 3, 4, 5 | / | / | /
-|/ |/ |/ o---------*--------o 0 8 1
+7         18         6       o---------*--------o      /| /|       /|
+/ |       / |      / | 19 /  |    22/  |     /  |
+*---------*--------*17 |  /| 15*----/|---*---/|---*14 / |  /|   / |
+/|26/ |  /|                                 |   (PARENT) Linear 8-Node
+Hexahedron 4 / | / |16/ | / | / | / | | 3D Element Edge Node to mid-
+edge quadratic node map o*20-o5 |/ | | | 23*|-|*- 10| 24 | | { 8, 9,
+10, 11, | /| 3o-|/||/|o 2 | 16, 17, 18, 19, | / | / | / | / | / | / |
+12, 13, 14, 15 } |/ | / 25|/ | / |/ | / | 12** 13 |/ | Face to mid-
+face quadratic node map | 11|*-|* 9 | { 25, 24, 26, 23, 21, 22 } | / |
+/21 | / | 0, 1, 2, 3, 4, 5 | / | / | / |/ |/ |/ o*o 0 8 1
 
 CHILD Linear 8-Node Hexahedron 3D Element Node Maps: | | static const
 UInt child_0[] = { 0, 8, 21, 11, 12, 25, 20, 23 }; | static const UInt
@@ -9661,11 +9700,10 @@ child_4[] = { 12, 25, 20, 23, 4, 16, 22, 19 }; | static const UInt
 child_5[] = { 25, 13, 24, 20, 16, 5, 17, 22 }; | static const UInt
 child_6[] = { 20, 24, 14, 26, 22, 17, 6, 18 }; | static const UInt
 child_7[] = { 23, 20, 26, 15, 19, 22, 18, 7 }; | PARENT Quadratic
-20-Node Hexahedron Nodes 7 18 6 (SPACE_DIM = 3!) o--------o---------o
-/| /| / | / | / | / | 19o | 17o | / 15o / o14 / | / | 4 / | 16 / | o
----------o--------o 5 | | | 10 | | | 3 o-------o--|-------o 2 | / | /
-| / | / 12o / o13 / | o11 | o9 | / | / | / | / |/ |/ o---------o
---------o 0 8 1
+20-Node Hexahedron Nodes 7 18 6 (SPACE_DIM = 3!) o--o---o /| /| / | /
+| / | / | 19o | 17o | / 15o / o14 / | / | 4 / | 16 / | o---o--o 5 | |
+| 10 | | | 3 o-o|-o 2 | / | / | / | / 12o / o13 / | o11 | o9 | / | / |
+/ | / |/ |/ o---o--o 0 8 1
 
 PARENT Quadratic 20-Node Hexahedron 3D Element Edge Node Map:
 
@@ -9696,17 +9734,17 @@ const UInt child_5[] = { 25, 13, 24, 20, 16, 5, 17, 22, | 52, 53, 78,
 71, 46, 47, 64 }; | | static const UInt child_7[] = { 23, 20, 26, 15,
 19, 22, 18, 7, | 77, 76, 56, 57, 73, 80, 63, 42, 72, 64, 48, 49 }; |
 PARENT Quadratic 27-Node Hexahedron Nodes 7 18 6 (SPACE_DIM = 3!) o
---------o---------o /| /| / | / | / | / | 19o | 17o | / 15o / o14 / |
-/ | 4 / | 16 / | o---------o--------o 5 | | | 10 | | | 3 o-------
-o--|-------o 2 | / | / | / | / 12o / o13 / | o11 | o9 | / | / | / | /
-|/ |/ o---------o--------o 0 8 1
+-----o------o /| /| / | / | / | / | 19o | 17o | / 15o / o14 / | / | 4
+/ | 16 / | o------o-----o 5 | | | 10 | | | 3 o----o|----o 2 | / | / |
+/ | / 12o / o13 / | o11 | o9 | / | / | / | / |/ |/ o------o-----o 0 8
+1
 
-x--------x---------x /| /| / | / | / | 22 / | x | o x | / x o26 / x
-(Node #20 is at centroid of element) / | / | / | / | \"2D surface\"
-containing nodes 0, 8, 1, 13, 5, 16, 4, 12 has x---------x--------x |
-node 25 at center.... | 23o | | o24 | | x-------x--|-------x | / | / |
-/ 25 | / x / o x / | x o21 | x | / | / | / | / |/ |/ x---------x
---------x
+x--------x---------x      /|                 /|     / | / |    /  |
+22          /  |   x   |    o         x   |  /    x o26   /    x
+(Node #20 is at centroid of element) /     | /     | / | / | \"2D
+surface\" containing nodes 0, 8, 1, 13, 5, 16, 4, 12 has x------x-----
+x | node 25 at center.... | 23o | | o24 | | x----x|----x | / | / | /
+25 | / x / o x / | x o21 | x | / | / | / | / |/ |/ x------x-----x
 
 PARENT Quadratic 27-Node Hexahedron 3D Element Edge Node Map:
 
@@ -9753,14 +9791,13 @@ static const UInt child_6[] = { 20, 24, 14, 26, 22, 17, 6, 18, | 78,
 22, 18, 7, | 77, 76, 56, 57, 73, 80, 63, 42, 72, 64, 48, 49, | 88,
 120, 96, 99, 115, 124, 111 }; | | | Refined Hexagonal Element
 \"Exterior\" Faces | (Local Face node numbering for
-'Hierarchical/Consistent' Hex objects) | | 3 14 6 13 2 |
-o----*----o----*----o | | | | | | 24 | 23 | | 15* * *19 * *12 | | | |
-| | 8| 18 | | 7 o----*----o----*----o 5 | | 20 | | | | | | | 16* * 17*
-* *11 | | 21 | 22 | | | | | | o----*----o----*----o | 0 9 4 10 1 | | |
-Hexagonal object face topology child-nodes: | | // Face node tables
-use Six groups of nodes: | // a) vertices (Local nodes: 0-1-2-3 ) | //
-b) edge mid-points (Local nodes: 4-5-6-7 ) | // c) centroid (Local
-node : 8 ) | // d) edge quater points (Local nodes:
+'Hierarchical/Consistent' Hex objects) | | 3 14 6 13 2 | o-*-o-*-o | |
+| | | | 24 | 23 | | 15* * 19 * *12 | | | | | | 8| 18 | | 7 o-*-o-*-o 5
+| | 20 | | | | | | | 16 * 17* * *11 | | 21 | 22 | | | | | | o-*-o-*-o
+| 0 9 4 10 1 | | | Hexagonal object face topology child-nodes: | | //
+Face node tables use Six groups of nodes: | // a) vertices (Local
+nodes: 0-1-2-3 ) | // b) edge mid-points (Local nodes: 4-5-6-7 ) | //
+c) centroid (Local node : 8 ) | // d) edge quater points (Local nodes:
 9-10-11-12-13-14-15-16) | // e) interior edge mid-points (Local nodes:
 17-18-19-20 ) | // f) mid-quadrant points (Local nodes: 21-22-23-24 )
 | | static const UInt face_0[] = { 0, 1, 5, 4, 8, 13, 16, 12, 25, |
@@ -9780,13 +9817,14 @@ static const UInt face_5[] = { 4, 5, 6, 7, 16, 17, 18, 19, 22, | 43,
 stk::adapt::Elem::StdMeshObjTopologies::wedge(UInt nnode)
 
 Wedge Element with 6 Nodes Pentahedral Element with 6 Nodes 3-Sided
-Prism Element with 6 Nodes
-
-PARENT Linear 6-Node Wedge Nodes 5 (SPACE_DIM = 3!) . o . / \\\\ . /
-\\\\ Face_Quad_4_3D() 0-1-4-3 . / \\\\ Face_Quad_4_3D() 1-4-5-2 . /
-\\\\ Face_Quad_4_3D() 0-2-5-3 2 . o---------o 4 Face_Tri_3_3D() 0-1-2
-o . 3 . Face_Tri_3_3D() 3-4-5 /. . /. \\\\ . /. \\\\ . /. \\\\ . o
----------o 0 1
+Prism Element with 6 Nodes                             PARENT Linear
+6-Node Wedge Nodes 5           (SPACE_DIM = 3!)                . o
+. / \\\\ . /   \\\\         Face_Quad_4_3D()  0-1-4-3             . /
+\\\\ Face_Quad_4_3D()  1-4-5-2            . /       \\\\
+Face_Quad_4_3D()  0-2-5-3         2 . o---------o 4    Face_Tri_3_3D()
+0-1-2          o . 3      .        Face_Tri_3_3D()   3-4-5         /.
+.        /.  \\\\      .       /.    \\\\    .      /.      \\\\  . o
+---------o    0           1
 
 CHILD Wedge6 node tables; | | static const UInt child_0[] = { 0, 6, 8,
 9, 15, 17 }; | static const UInt child_1[] = { 6, 1, 7, 15, 10, 16 };
@@ -9811,40 +9849,41 @@ Refined Wedge6 Face node tables: | | static const UInt face_0[] = { 0,
 9, 14, 11, 8, 17 }; | static const UInt face_3[] = { 0, 2, 1, 8, 7, 6,
 -1, -1, -1}; | static const UInt face_4[] = { 3, 4, 5, 12, 13, 14, -1,
 -1, -1}; Wedge Element with 15 Nodes Pentahedral Element with 15 Nodes
-3-Sided Prism Element with 15 Nodes
+3-Sided Prism Element with 15 Nodes                    PARENT
+Quadratic 15-Node Wedge Nodes (SPACE_DIM = 3!)                      5
+o / \\\\                14 /   \\\\                  o     o 13 /
+\\\\              3 /         \\\\               o-----o-----o 12
+4             11              o              Face_Quad_8_3D()
+0-6-1-10-4-12-3-9             . .             Face_Quad_8_3D()
+1-10-4-13-5-11-2-7            .   .            Face_Quad_8_3D()
+0-8-2-11-5-14-3-9           .     .           Face_Tri_6_3D()
+0-6-1-7-2-8          .       .          Face_Tri_6_3D() 3-12-4-13-5-14
+.         .      9 o...........o 10         2 o       / \\\\      /
+\\\\   8 o     o 7    /       \\\\   / \\\\  o-----o-----o 0      6
+1
 
-PARENT Quadratic 15-Node Wedge Nodes (SPACE_DIM = 3!)
+| | After Refinement: |   Face #0                     Face #1
+Face #2
 
-5 o / \\\\ 14 / \\\\ o o 13 / \\\\ 3 / \\\\ o-----o-----o 12 4 11 o
-Face_Quad_8_3D() 0-6-1-10-4-12-3-9 . . Face_Quad_8_3D()
-1-10-4-13-5-11-2-7 . . Face_Quad_8_3D() 0-8-2-11-5-14-3-9 . .
-Face_Tri_6_3D() 0-6-1-7-2-8 . . Face_Tri_6_3D() 3-12-4-13-5-14 . . 9
-o...........o 10
+3 30 12 31 4 4 32 13 33 5 5 34 14 35 3 o-*-o-*-o o-*-o-*-o o-*-o-*-o |
+| | | | | | | | | | | | | | | | | 51* 52 *53 53 54 *55 55 56 *51 | | |
+| | | | | | | 15| 25 | | 16| 27 | | 17| 29 | 9 o-*-o-*-o 10 10
+o-*-o-*-o 11 11 o-*-o-*-o 9 | 24 | | | 26 | | | 28 | | | | | | | | | |
+| 45 46* 47 47 48* 49* 49* 50* *45 ^ | | | | | | | | | | | | | | | | |
+| | | o-*-o-*-o o-*-o-*-o o-*-o-*-o # 0 18 6 19 1 1 20 7 21 2 2 22 8
+23 0
 
-2 o / \\\\ / \\\\ 8 o o 7 / \\\\ / \\\\ o-----o-----o 0 6 1
+\\\\ \\\\ \\\\ \\\\>>
 
-| | After Refinement: |
+Face #4                          Face #5
 
-Face #0 Face #1 Face #2
+2 21 7 20 1 5 33 13 32 4 o--*--o--*--o o--*--o--*--o \\\\ / \\\\ /
+\\\\ / \\\\ / \\\\ / \\\\ / \\\\ / \\\\ / 22* 36* 38 *19 34 42* 44 *31
+\\\\ / \\\\ / \\\\ / \\\\ / \\\\ / 37 \\\\ / \\\\ / 43 \\\\ / 8
+o--*--o 6 14 o--*--o 12 \\\\ / \\\\ / \\\\ / \\\\ / ^ 23 18 35 *30 ^
+\\\\ \\\\ / \\\\ / / \\\\ \\\\ / \\\\ / /o o
 
-3 30 12 31 4 4 32 13 33 5 5 34 14 35 3 o----*----o----*----o
-o----*----o----*----o o----*----o----*----o | | | | | | | | | | | | |
-| | | | | 51* *52 *53 53* *54 *55 55* *56 *51 | | | | | | | | | | 15|
-25 | | 16| 27 | | 17| 29 | 9 o----*----o----*----o 10 10
-o----*----o----*----o 11 11 o----*----o----*----o 9 | 24 | | | 26 | |
-| 28 | | | | | | | | | | | 45* 46* *47 47* 48* 49* 49* 50* *45 ^ | | |
-| | | | | | | | | | | | | | | | | o----*----o----*----o
-o----*----o----*----o o----*----o----*----o # 0 18 6 19 1 1 20 7 21 2
-2 22 8 23 0 # # \\\\ \\\\ \\\\ \\\\ --> -->
-
-Face #4 Face #5
-
-2 21 7 20 1 5 33 13 32 4 o-----*-----o-----*-----o
-o-----*-----o-----*-----o \\\\ / \\\\ / \\\\ / \\\\ / \\\\ / \\\\ /
-\\\\ / \\\\ / 22* 36* *38 *19 34* 42* *44 *31 \\\\ / \\\\ / \\\\ /
-\\\\ / \\\\ / 37 \\\\ / \\\\ / 43 \\\\ / 8 o-----*-----o 6 14
-o-----*-----o 12 \\\\ / \\\\ / \\\\ / \\\\ / ^ 23* *18 35* *30 ^ \\\\
-\\\\ / \\\\ / / \\\\ \\\\ / \\\\ / / # o o # 0 3
+0 3
 
 CHILD Wedge15 node tables: | | static const UInt child_0[] = { 0, 6,
 8, 9, 15, 17, 18, 37, 28, 45, 46, 50, 24, 40, 29 }; | static const
@@ -10465,6 +10504,9 @@ the result - reverse the triangle polarity and check for consistency
 stk::diag::Writer
 stk::adapt::unit_tests::s_diagWriter(std::cout.rdbuf(), dw_enabled) ";
 
+%feature("docstring")  stk::adapt::unit_tests::dw "static
+stk::diag::Writer& stk::adapt::unit_tests::dw() ";
+
 %feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(nodeRegistry,
 createAddNodes_serial_and_1st_parallel) ";
 
@@ -10748,7 +10790,7 @@ Ioss::SideSet as fields on the corresponding part.
 
 Each sideblock in the active sidesets is then processed by defining a
 part for each Ioss::SideBlock on the Ioss::SideSet unless the
-sideblock has the \"omitted\" property set to the value 1. The example
+sideblock has the \"omitted\" property set to the value The example
 then iterates each sideblock and defines any \"distribution factor\"
 and Ioss::Field::TRANSIENT fields that exist on the Ioss::SideBlock as
 fields on the corresponding part. ";
@@ -11032,8 +11074,8 @@ Create the operator that will do the work get the l2 norm
 the function to be integrated: (Integral[ abs(x), dxdydz]) =?= (2 *
 |x|^2/2 @ [0, 0.5]) ==> .25)
 
------ here the function to be integrated: sqrt(Integral[(x*y*z)^2,
-dxdydz]) =?= (see unitTest1.py)
+here the function to be integrated: sqrt(Integral[(x*y*z)^2, dxdydz])
+=?= (see unitTest1.py)
 
 the function to be integrated (but over a rotated domain):
 sqrt(Integral[(x*y*z)^2, dxdydz]) =?= (see unitTest2.py) now rotate
@@ -11168,11 +11210,17 @@ a tutorial on some of the innards of stk_mesh database ";
 test_mesh_diff)
 
 Test the mesh_difference capability of PerceptMesh and the interface
-to stk_io 1. read (and write and read back in) meshes generated above
-(quad_fixture) 2. invoke PerceptMesh::print_info(ostringstream...) to
-create a string representation of the mesh 3. compare the string with
-the saved, gold value of the string 4. invoke mesh_difference to
-ensure it behaves as expected (two meshes are shown as identical) 5.
+to stk_io read (and write and read back in) meshes generated above
+(quad_fixture)
+
+invoke PerceptMesh::print_info(ostringstream...) to create a string
+representation of the mesh
+
+compare the string with the saved, gold value of the string
+
+invoke mesh_difference to ensure it behaves as expected (two meshes
+are shown as identical)
+
 modify one mesh and ensure mesh_difference shows the meshes as being
 different ";
 
@@ -11307,7 +11355,7 @@ Ioss::SideSet as fields on the corresponding part.
 
 Each sideblock in the active sidesets is then processed by defining a
 part for each Ioss::SideBlock on the Ioss::SideSet unless the
-sideblock has the \"omitted\" property set to the value 1. The example
+sideblock has the \"omitted\" property set to the value The example
 then iterates each sideblock and defines any \"distribution factor\"
 and Ioss::Field::TRANSIENT fields that exist on the Ioss::SideBlock as
 fields on the corresponding part.
@@ -12327,88 +12375,88 @@ char **argv) ";
 // File: deprecated.xml
 
 
-// File: dir_11f034dd7735221cdf627bf79f3072dc.xml
+// File: dir_12aa767689b3a8cbe635f36782e9da85.xml
 
 
-// File: dir_3650b8648b98b754fdec60c37bf0dc95.xml
+// File: dir_9944abcd890cc5891cc65ed5f130ba40.xml
 
 
-// File: dir_972ece956570245404e1b799a1859c28.xml
+// File: dir_103611afdd1b3ef49e51374345a58382.xml
 
 
-// File: dir_88a03661e184aeb19be31dcbf2058403.xml
+// File: dir_4bd28504b1dcd198a84cde6d516ad820.xml
 
 
-// File: dir_86d9755b1d9028ac71e5cc1c36f168f1.xml
+// File: dir_faecb4b817f91b570291525c8d1fc57d.xml
 
 
-// File: dir_954e47fdee18c4918c689d29195f8395.xml
+// File: dir_1778e59e02a63ea24ae2cfeda29e1f8f.xml
 
 
-// File: dir_0941ebabbc452a1d3783e7c2234b0985.xml
+// File: dir_0581750b4006c977e142c075f6e087b1.xml
 
 
-// File: dir_a25ddaaa64c8aa19203fd4d33d0c2425.xml
+// File: dir_0574eb22d22fc04efbc328ced9200922.xml
 
 
-// File: dir_afc3b0b0577b2468d37f97703cc327d8.xml
+// File: dir_9cc8afb3ee0a4498340e2292b5a44f3c.xml
 
 
-// File: dir_0e473d907fbca9a6ade6d6c3de8bdff8.xml
+// File: dir_147ae5c3d9c6b30c575c92a19e303491.xml
 
 
-// File: dir_19d3ce17e8f9e372363f2114f3dbcd20.xml
+// File: dir_8eea4fb4ae94641a46b130d3c564a96a.xml
 
 
-// File: dir_cdeef988af37fd61781324a92413ec46.xml
+// File: dir_4fafec400c87011dfac215eb6c918856.xml
 
 
-// File: dir_ce4d385d7da70846972fe7d1116aeaa9.xml
+// File: dir_ce413a1ff66b4bcd70b62ed226d9d668.xml
 
 
-// File: dir_0831f8d588f2754b86cefbbc7533e6cb.xml
+// File: dir_7f8437356d43db8d6249d19635277fbe.xml
 
 
-// File: dir_2721ee84a542daf599cbb9e5a489547b.xml
+// File: dir_ccd84062f0a55cc447074d221a9c2d07.xml
 
 
-// File: dir_d3157ce94e39b061aa74600e8e4e431d.xml
+// File: dir_52cf1b2d1336b704d72443ae8d725de5.xml
 
 
-// File: dir_0defabeaccbd07bbd140d268e2f41fd9.xml
+// File: dir_34f4628fc22dd664cf580645f843816e.xml
 
 
-// File: dir_939612a4f550c6384b6f75b967919c63.xml
+// File: dir_02528af981cb17bccdd9d4fddb19cd8f.xml
 
 
-// File: dir_32031a3b22d1ae4e8f376ff6a496f3d0.xml
+// File: dir_c52dccac87ef7acbfcc6b3cec5ae7345.xml
 
 
-// File: dir_dc90e54d5d10f796f8c92cc919e361bc.xml
+// File: dir_8ba96757dfc105d47df8d12dd0e7fd33.xml
 
 
-// File: dir_4467ffbefb08b7ba3cf95a1b2f780234.xml
+// File: dir_4bf8f58da2394c7ab0d70261ab68671b.xml
 
 
-// File: dir_6f07f491ab744074018df0847278a6ff.xml
+// File: dir_ae824ae9f84d5a581510e3a841c47da3.xml
 
 
-// File: dir_634d56cc0e1f94b03ae0bd7693bf304d.xml
+// File: dir_4c6d079a8e11856e9249f237e93bb173.xml
 
 
-// File: dir_aa698353c03beac8eec839f77dbd7cfc.xml
+// File: dir_dd89544f290eb61a426e3e1e03dd2e8b.xml
 
 
-// File: dir_c2e4336b4d72311dc5d317b35195bcbf.xml
+// File: dir_68df66f0d0770fdebcae65af3530051e.xml
 
 
-// File: dir_88e797595a8ec3f773d78a2377cad2f2.xml
+// File: dir_80d0f0c85e9dfd96ac3e101f97e8a3bf.xml
 
 
-// File: dir_abab4e79a7a8ddb45125c4bf4e64cebe.xml
+// File: dir_fe4a17eb885974e3288ed19e74133f8c.xml
 
 
-// File: dir_19fbb4666aa3fd0c5547b10975f59150.xml
+// File: dir_111094d03a4b335b433d19d3eb2df419.xml
 
 
 // File: indexpage.xml

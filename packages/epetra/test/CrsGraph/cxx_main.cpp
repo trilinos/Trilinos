@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -110,18 +110,18 @@ int main(int argc, char *argv[]) {
   bool verbose1 = verbose;
 
   // Redefine verbose to only print on PE 0
-  if(verbose && rank != 0) 
+  if(verbose && rank != 0)
 		verbose = false;
 
   int NumMyEquations = 5;
   int NumGlobalEquations = NumMyEquations*NumProc+EPETRA_MIN(NumProc,3);
-  if(MyPID < 3) 
+  if(MyPID < 3)
     NumMyEquations++;
 
   // Construct a Map that puts approximately the same Number of equations on each processor
 
   Epetra_Map& Map = *new Epetra_Map(NumGlobalEquations, NumMyEquations, 0, Comm);
-  
+
   // Get update list and number of local equations from newly created Map
   int* MyGlobalElements = new int[Map.NumMyElements()];
   Map.MyGlobalElements(MyGlobalElements);
@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
   Epetra_CrsGraph& A = *new Epetra_CrsGraph(Copy, Map, NumNz);
   EPETRA_TEST_ERR(A.IndicesAreGlobal(),ierr);
   EPETRA_TEST_ERR(A.IndicesAreLocal(),ierr);
-  
+
   // Add  rows one-at-a-time
   // Need some vectors to help
   // Off diagonal Values will always be -1
@@ -174,7 +174,7 @@ int main(int argc, char *argv[]) {
   EPETRA_TEST_ERR(forierr,ierr);
 	//A.PrintGraphData(cout);
   delete[] Indices;
-  
+
   int gRID = A.GRID(0);
   int numIndices = A.NumGlobalIndices(gRID);
   std::vector<int> indices_vec(numIndices);
@@ -214,18 +214,18 @@ int main(int argc, char *argv[]) {
   if(verbose) cout << "\n*****Testing variable entry constructor\n" << endl;
 
   int NumMyNonzeros = 3 * NumMyEquations;
-  if(A.LRID(0) >= 0) 
+  if(A.LRID(0) >= 0)
 		NumMyNonzeros--; // If I own first global row, then there is one less nonzero
-  if(A.LRID(NumGlobalEquations-1) >= 0) 
+  if(A.LRID(NumGlobalEquations-1) >= 0)
 		NumMyNonzeros--; // If I own last global row, then there is one less nonzero
 
-  EPETRA_TEST_ERR(check(A, NumMyEquations, NumGlobalEquations, NumMyNonzeros, 3*NumGlobalEquations-2, 
+  EPETRA_TEST_ERR(check(A, NumMyEquations, NumGlobalEquations, NumMyNonzeros, 3*NumGlobalEquations-2,
 												MyGlobalElements, verbose),ierr);
   forierr = 0;
-  for(i = 0; i < NumMyEquations; i++) 
+  for(i = 0; i < NumMyEquations; i++)
 		forierr += !(A.NumGlobalIndices(MyGlobalElements[i])==NumNz[i]+1);
   EPETRA_TEST_ERR(forierr,ierr);
-  for(i = 0; i < NumMyEquations; i++) 
+  for(i = 0; i < NumMyEquations; i++)
 		forierr += !(A.NumMyIndices(i)==NumNz[i]+1);
   EPETRA_TEST_ERR(forierr,ierr);
 
@@ -238,10 +238,10 @@ int main(int argc, char *argv[]) {
   if(verbose) cout << "\n*****Testing constant entry constructor\n" << endl;
 
   Epetra_CrsGraph& AA = *new Epetra_CrsGraph(Copy, Map, 5);
-  
+
   if(debug) Comm.Barrier();
 
-  for(i = 0; i < NumMyEquations; i++) 
+  for(i = 0; i < NumMyEquations; i++)
 		AA.InsertGlobalIndices(MyGlobalElements[i], 1, MyGlobalElements+i);
 
   // Note:  All processors will call the following Insert routines, but only the processor
@@ -251,7 +251,7 @@ int main(int argc, char *argv[]) {
   if(AA.MyGlobalRow(0)) {
     EPETRA_TEST_ERR(!(AA.InsertGlobalIndices(0, 0, &One)==0),ierr);
   }
-  else 
+  else
 		EPETRA_TEST_ERR(!(AA.InsertGlobalIndices(0, 1, &One)==-2),ierr);
   EPETRA_TEST_ERR(!(AA.FillComplete()==0),ierr);
   EPETRA_TEST_ERR(AA.StorageOptimized(),ierr);
@@ -259,13 +259,13 @@ int main(int argc, char *argv[]) {
   EPETRA_TEST_ERR(!(AA.LowerTriangular()),ierr);
 
   if(debug) Comm.Barrier();
-  EPETRA_TEST_ERR(check(AA, NumMyEquations, NumGlobalEquations, NumMyEquations, NumGlobalEquations, 
+  EPETRA_TEST_ERR(check(AA, NumMyEquations, NumGlobalEquations, NumMyEquations, NumGlobalEquations,
 												MyGlobalElements, verbose),ierr);
 
   if(debug) Comm.Barrier();
 
   forierr = 0;
-  for(i = 0; i < NumMyEquations; i++) 
+  for(i = 0; i < NumMyEquations; i++)
 		forierr += !(AA.NumGlobalIndices(MyGlobalElements[i])==1);
   EPETRA_TEST_ERR(forierr,ierr);
 
@@ -278,11 +278,11 @@ int main(int argc, char *argv[]) {
   Epetra_CrsGraph& B = *new Epetra_CrsGraph(AA);
   delete &AA;
 
-  EPETRA_TEST_ERR(check(B, NumMyEquations, NumGlobalEquations, NumMyEquations, NumGlobalEquations, 
+  EPETRA_TEST_ERR(check(B, NumMyEquations, NumGlobalEquations, NumMyEquations, NumGlobalEquations,
 												MyGlobalElements, verbose),ierr);
 
   forierr = 0;
-  for(i = 0; i < NumMyEquations; i++) 
+  for(i = 0; i < NumMyEquations; i++)
 		forierr += !(B.NumGlobalIndices(MyGlobalElements[i])==1);
   EPETRA_TEST_ERR(forierr,ierr);
 
@@ -304,40 +304,40 @@ int main(int argc, char *argv[]) {
   if (verbose1) {
     // Test ostream << operator (if verbose1)
     // Construct a Map that puts 2 equations on each PE
-    
+
     int NumMyElements1 = 4;
     int NumMyEquations1 = NumMyElements1;
     int NumGlobalEquations1 = NumMyEquations1*NumProc;
 
     Epetra_Map& Map1 = *new Epetra_Map(NumGlobalEquations1, NumMyElements1, 1, Comm);
-    
+
     // Get update list and number of local equations from newly created Map
     int* MyGlobalElements1 = new int[Map1.NumMyElements()];
     Map1.MyGlobalElements(MyGlobalElements1);
-    
+
     // Create an integer vector NumNz that is used to build the Petra Matrix.
     // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation on this processor
-    
+
     int* NumNz1 = new int[NumMyEquations1];
-    
+
     // We are building a tridiagonal matrix where each row has (-1 2 -1)
     // So we need 2 off-diagonal terms (except for the first and last equation)
-    
+
     for(i = 0; i < NumMyEquations1; i++)
       if(MyGlobalElements1[i]==1 || MyGlobalElements1[i] == NumGlobalEquations1)
 				NumNz1[i] = 1;
       else
 				NumNz1[i] = 2;
-    
+
     // Create a Epetra_Graph using 1-based arithmetic
-    
+
     Epetra_CrsGraph& A1 = *new Epetra_CrsGraph(Copy, Map1, NumNz1);
-    
+
     // Add  rows one-at-a-time
     // Need some vectors to help
     // Off diagonal Values will always be -1
-    
-    
+
+
     int* Indices1 = new int[2];
     int NumEntries1;
 
@@ -363,10 +363,10 @@ int main(int argc, char *argv[]) {
 		
     // Finish up
     EPETRA_TEST_ERR(!(A1.FillComplete()==0),ierr);
-    
+
     if(verbose) cout << "Print out tridiagonal matrix, each part on each processor. Index base is one.\n" << endl;
     cout << A1 << endl;
-    
+
   // Release all objects
   delete[] NumNz1;
   delete[] Indices1;
@@ -593,7 +593,7 @@ int checkCopyAndAssignment(Epetra_Comm& Comm, bool verbose) {
 //==============================================================================
 int check(Epetra_CrsGraph& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonzeros1,
 	  int NumGlobalNonzeros1, int* MyGlobalElements, bool verbose)
-{  
+{
 
   int ierr = 0;
 	int i;
@@ -644,7 +644,7 @@ int check(Epetra_CrsGraph& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonze
   EPETRA_TEST_ERR(!(A.MyLRID(NumMyRows-1)),ierr);
   EPETRA_TEST_ERR(A.MyLRID(-1),ierr);
   EPETRA_TEST_ERR(A.MyLRID(NumMyRows),ierr);
-    
+
   forierr = 0;
   for(i = 0; i < NumMyRows; i++) {
     int Row = A.GRID(i);
@@ -664,7 +664,7 @@ int check(Epetra_CrsGraph& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonze
     A.ExtractGlobalRowCopy(Row, MaxNumIndices, NumGlobalIndices, GlobalCopyIndices);
     A.ExtractMyRowCopy(i, MaxNumIndices, NumMyIndices, MyCopyIndices);
     forierr += !(NumGlobalIndices==NumMyIndices);
-    for(j = 1; j < NumMyIndices; j++) 
+    for(j = 1; j < NumMyIndices; j++)
 			EPETRA_TEST_ERR(!(MyCopyIndices[j-1]<MyCopyIndices[j]),ierr);
     for(j = 0; j < NumGlobalIndices; j++) {
 			forierr += !(GlobalCopyIndices[j]==A.GCID(MyCopyIndices[j]));

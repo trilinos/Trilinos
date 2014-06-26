@@ -1068,7 +1068,7 @@ namespace {
   {
     INT   *pt_list;
     size_t nelem;
-    INT   *hold_elem;
+    INT   *hold_elem = NULL;
     size_t nhold;
     size_t count;
     size_t num_found = 0;
@@ -1095,7 +1095,6 @@ namespace {
 	  return 0;
 	}
 
-
 	rows[0] = 1;
 	for(size_t ecnt=1; ecnt < mesh->num_elems; ecnt++) {
 	  ssize_t distance = graph->start[ecnt] - graph->start[ecnt-1] + 1;
@@ -1110,6 +1109,10 @@ namespace {
 	  return 0;
 	}
 
+	for (size_t i=0; i < nedges; i++) {
+	  columns[i] = 0;
+	}
+	
 	size_t ki = 0;
 	size_t kf = 0;
 	for(size_t ecnt=0; ecnt < mesh->num_elems; ecnt++) {
@@ -1580,7 +1583,7 @@ namespace {
     int    dflag;
 
     INT   *pt_list, nelem;
-    INT   *hold_elem;
+    INT   *hold_elem = NULL;
     INT    side_nodes[MAX_SIDE_NODES], mirror_nodes[MAX_SIDE_NODES];
     int    side_cnt;
 

@@ -63,18 +63,16 @@ int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
   RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-  
+
 
   // Initialize a "FancyOStream" to output to standard out (cout)
   RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   out->setOutputToRootOnly(0);
-  
-  
+
+
   // First, we start with an Xpetra::Map
   Xpetra::UnderlyingLib lib = Xpetra::UseTpetra;
-  //  Teuchos::ParameterList defaultParameters;
-  //  RCP<KokkosClassic::SerialNode> node = rcp(new KokkosClassic::SerialNode(defaultParameters));
-  
+
   string fileNameA00 = "./Matrices/J_00_3.mm";
   string fileNameA01 = "./Matrices/J_01_3.mm";
   string fileNameA02 = "./Matrices/J_02_3.mm";
@@ -84,7 +82,7 @@ int main(int argc, char *argv[]) {
   string fileNameA20 = "./Matrices/J_20_3.mm";
   string fileNameA21 = "./Matrices/J_21_3.mm";
   string fileNameA22 = "./Matrices/J_22_3.mm";
-  
+
   RCP<Matrix> A00  = Utils::Read(fileNameA00,lib,comm);
   RCP<Matrix> A01  = Utils::Read(fileNameA01,lib,comm);
   RCP<Matrix> A02  = Utils::Read(fileNameA02,lib,comm);
@@ -107,17 +105,17 @@ int main(int argc, char *argv[]) {
   size_t nm = MMap->getGlobalNumElements();
 
   RCP<const Map> AMap = Xpetra::MapFactory<LO,GO>::createUniformContigMap(Xpetra::UseTpetra,nv+np+nm,comm);
-  
+
   size_t maxEntriesPerRow = 84;
   RCP<Matrix> A = rcp(new CrsMatrixWrap(AMap,maxEntriesPerRow));
-  
+
   Teuchos::ArrayView<const LO> colPtr;
   Teuchos::ArrayView<const SC> valPtr;
-  
+
   A00->getLocalRowView(7,colPtr,valPtr);
-  
+
   std::cout << "valPtr.size() = " << valPtr.size() << std::endl;
-  
+
   A01->getLocalRowView(7,colPtr,valPtr);
 
   std::cout << "valPtr.size() = " << valPtr.size() << std::endl;
@@ -128,9 +126,9 @@ int main(int argc, char *argv[]) {
     {
       Teuchos::ArrayView<const LO> colPtr;
       Teuchos::ArrayView<const SC> valPtr;
-    
+
       A00->getLocalRowView(VRow,colPtr,valPtr);
-      
+
       //Can be directly inserted!
       A->insertGlobalValues(VRow,colPtr,valPtr);
 
@@ -166,9 +164,9 @@ int main(int argc, char *argv[]) {
     {
       Teuchos::ArrayView<const LO> colPtr;
       Teuchos::ArrayView<const SC> valPtr;
-    
+
       A10->getLocalRowView(PRow,colPtr,valPtr);
-      
+
       //Can be directly inserted!
       A->insertGlobalValues(PRow+nv,colPtr,valPtr);
 
@@ -204,9 +202,9 @@ int main(int argc, char *argv[]) {
     {
       Teuchos::ArrayView<const LO> colPtr;
       Teuchos::ArrayView<const SC> valPtr;
-    
+
       A20->getLocalRowView(MRow,colPtr,valPtr);
-      
+
       //Can be directly inserted!
       A->insertGlobalValues(MRow+nv+np,colPtr,valPtr);
 
@@ -236,7 +234,7 @@ int main(int argc, char *argv[]) {
       A->insertGlobalValues(MRow+nv+np,newColPtr.view(0,colPtr.size()),valPtr);
 
     }
-  
+
   A->fillComplete();
 
 
@@ -253,15 +251,15 @@ int main(int argc, char *argv[]) {
 
 // Let's read in the element connectivity info:
   GO totalFineElements = 32*32;
-  
+
   RCP<Teuchos::SerialDenseMatrix<GO,GO> > fineGridVElements = rcp(new Teuchos::SerialDenseMatrix<GO,GO>(totalFineElements,18));
   RCP<Teuchos::SerialDenseMatrix<GO,GO> > fineGridPElements = rcp(new Teuchos::SerialDenseMatrix<GO,GO>(totalFineElements,4));
   RCP<Teuchos::SerialDenseMatrix<GO,GO> > fineGridMElements = rcp(new Teuchos::SerialDenseMatrix<GO,GO>(totalFineElements,9));
-  
+
   std::ifstream VElementFile("./Matrices/elements_0_0");
   std::ifstream PElementFile("./Matrices/elements_1_1");
   std::ifstream MElementFile("./Matrices/elements_2_2");
-  
+
   for (GO ii=0;ii<totalFineElements;ii++)
     {
       for (LO jj=0;jj<9;jj++)
@@ -282,7 +280,7 @@ int main(int argc, char *argv[]) {
   PElementFile.close();
   MElementFile.close();
 
-  
+
   Hierarchy H;
   H.setDefaultVerbLevel(Teuchos::VERB_NONE);
 
@@ -309,15 +307,15 @@ int main(int argc, char *argv[]) {
   finest->Set("NV",A00->getGlobalNumRows());
   finest->Set("NP",A10->getGlobalNumRows());
   finest->Set("NM",A20->getGlobalNumRows());
-  
 
-  
+
+
   // Create a GeoInterpFactory
   RCP<GeoInterpFactory> geoInterp = rcp( new GeoInterpFactory() );
   RCP<Q2Q1Q2CoarseGridFactory> coarseElementFact = rcp( new Q2Q1Q2CoarseGridFactory() );
   RCP<MueLu::MHDRAPFactory<SC,LO,GO,NO,LMO> > rapFact = rcp( new MueLu::MHDRAPFactory<SC,LO,GO,NO,LMO>() );
 
-  
+
   RCP<FactoryManager> M = rcp(new FactoryManager() );
   M->SetFactory("A",rapFact);
   M->SetFactory("A00",rapFact);
@@ -336,7 +334,7 @@ int main(int argc, char *argv[]) {
   M->SetFactory("PP",geoInterp);
   M->SetFactory("PM",geoInterp);
   M->SetFactory("P",geoInterp);
-  
+
 
   H.Setup(*M,0,3);
 
@@ -350,6 +348,7 @@ int main(int argc, char *argv[]) {
 
   //Utils::Write("./output/BigAMat.mm",*A);
   std::cout << "Hello world!\n";
-  
+
+  return 0;
 }
 
