@@ -13,6 +13,7 @@
 #include <stk_util/parallel/MPI.hpp>
 #include <sstream>                      // for ostringstream, etc
 #include "mpi.h"                        // for MPI_Datatype, etc
+#include <boost/static_assert.hpp> 
 
 namespace sierra {
 namespace MPI {
@@ -20,6 +21,9 @@ namespace MPI {
 template struct Loc<int>;
 template struct Loc<double>;
 template struct Loc<float>;
+template struct Loc<short>;
+template struct Loc<long>;
+template struct Loc<unsigned long>;
 
 MPI_Datatype
 double_complex_type()
@@ -61,7 +65,8 @@ short_int64_type()
     initialized = true;
     int blocks[] = {1, 1};
     MPI_Aint displacements[] = {0, (MPI_Aint)offsetof(struct Loc<short>, m_loc)};
-    MPI_Datatype types[] = {MPI_SHORT, MPI_INT64_T};
+    BOOST_STATIC_ASSERT(sizeof(long long) == sizeof(int64_t));
+    MPI_Datatype types[] = {MPI_SHORT, MPI_LONG_LONG};
 
     MPI_Type_struct(2, blocks, displacements, types, &s_mpi_short_int64);
     MPI_Type_commit(&s_mpi_short_int64);
@@ -79,7 +84,8 @@ int_int64_type()
     initialized = true;
     int blocks[] = {1, 1};
     MPI_Aint displacements[] = {0, (MPI_Aint)offsetof(struct Loc<int>, m_loc)};
-    MPI_Datatype types[] = {MPI_INT, MPI_INT64_T};
+    BOOST_STATIC_ASSERT(sizeof(long long) == sizeof(int64_t));
+    MPI_Datatype types[] = {MPI_INT, MPI_LONG_LONG};
 
     MPI_Type_struct(2, blocks, displacements, types, &s_mpi_int_int64);
     MPI_Type_commit(&s_mpi_int_int64);
@@ -97,7 +103,8 @@ long_int64_type()
     initialized = true;
     int blocks[] = {1, 1};
     MPI_Aint displacements[] = {0, (MPI_Aint)offsetof(struct Loc<long>, m_loc)};
-    MPI_Datatype types[] = {MPI_LONG, MPI_INT64_T};
+    BOOST_STATIC_ASSERT(sizeof(long long) == sizeof(int64_t));
+    MPI_Datatype types[] = {MPI_LONG, MPI_LONG_LONG};
 
     MPI_Type_struct(2, blocks, displacements, types, &s_mpi_long_int64);
     MPI_Type_commit(&s_mpi_long_int64);
@@ -115,7 +122,8 @@ unsigned_long_int64_type()
     initialized = true;
     int blocks[] = {1, 1};
     MPI_Aint displacements[] = {0,(MPI_Aint)offsetof(struct Loc<unsigned long>, m_loc)};
-    MPI_Datatype types[] = {MPI_UNSIGNED_LONG, MPI_INT64_T};
+    BOOST_STATIC_ASSERT(sizeof(long long) == sizeof(int64_t));
+    MPI_Datatype types[] = {MPI_UNSIGNED_LONG, MPI_LONG_LONG};
 
     MPI_Type_struct(2, blocks, displacements, types, &s_mpi_unsigned_long_int64);
     MPI_Type_commit(&s_mpi_unsigned_long_int64);
@@ -132,8 +140,9 @@ float_int64_type()
   if (!initialized) {
     initialized = true;
     int blocks[] = {1, 1};
-    MPI_Aint displacements[] = {0, (MPI_Aint)offsetof(struct Loc<unsigned long>, m_loc)};
-    MPI_Datatype types[] = {MPI_FLOAT, MPI_INT64_T};
+    MPI_Aint displacements[] = {0, (MPI_Aint)offsetof(struct Loc<float>, m_loc)};
+    BOOST_STATIC_ASSERT(sizeof(long long) == sizeof(int64_t));
+    MPI_Datatype types[] = {MPI_FLOAT, MPI_LONG_LONG};
 
     MPI_Type_struct(2, blocks, displacements, types, &s_mpi_float_int64);
     MPI_Type_commit(&s_mpi_float_int64);
@@ -150,8 +159,9 @@ double_int64_type()
   if (!initialized) {
     initialized = true;
     int blocks[] = {1, 1};
-    MPI_Aint displacements[] = {0, (MPI_Aint)offsetof(struct Loc<unsigned long>, m_loc)};
-    MPI_Datatype types[] = {MPI_DOUBLE, MPI_INT64_T};
+    MPI_Aint displacements[] = {0, (MPI_Aint)offsetof(struct Loc<double>, m_loc)};
+    BOOST_STATIC_ASSERT(sizeof(long long) == sizeof(int64_t));
+    MPI_Datatype types[] = {MPI_DOUBLE, MPI_LONG_LONG};
 
     MPI_Type_struct(2, blocks, displacements, types, &s_mpi_double_int64);
     MPI_Type_commit(&s_mpi_double_int64);

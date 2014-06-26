@@ -74,8 +74,8 @@ TEST(ParallelComm, CommunicateMPILocInt)
       EXPECT_EQ(limit_32bit_integer+n, vout[n].m_loc);
     }
 
-    delete vin;
-    delete vout;
+    delete[] vin;
+    delete[] vout;
 }
 
 TEST(ParallelComm, CommunicateMPILocDouble)
@@ -117,8 +117,8 @@ TEST(ParallelComm, CommunicateMPILocDouble)
       EXPECT_EQ(limit_32bit_integer+n, vout[n].m_loc);
     }
 
-    delete vin;
-    delete vout;
+    delete[] vin;
+    delete[] vout;
 }
 
 //DocTest1

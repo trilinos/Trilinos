@@ -120,22 +120,22 @@ MPI_Datatype double_double_int_type();
  * MAXLOC data types.
  *
  */
+
+
 template <typename T>
 struct Loc
 {
-  Loc()
-    : m_value(),
-      m_loc(0)
-  {}
-
-  Loc(const T &value, int64_t loc)
-    : m_value(value),
-      m_loc(loc)
-  {}
-
   T		m_value;
   int64_t	m_loc;
 };
+
+template <typename T>
+Loc<T> create_Loc(const T &value, int64_t loc){
+    Loc<T> mpi_loc;
+    mpi_loc.m_value = value;
+    mpi_loc.m_loc = loc;
+    return mpi_loc;
+  }
 
 struct TempLoc
 {
@@ -169,7 +169,6 @@ void
     Loc<T> *Loc_inout = static_cast<Loc<T> *>(inoutvec);
 
     for (int i = 0; i < *len; ++i) {
-//      std::cout << Loc_in[i].m_value << " , " << Loc_inout[i].m_value << "loc: " << Loc_in[i].m_loc << " , " << Loc_inout[i].m_loc << std::endl;
       if(Loc_in[i].m_value > Loc_inout[i].m_value) {
         Loc_inout[i].m_value = Loc_in[i].m_value;
         Loc_inout[i].m_loc = Loc_in[i].m_loc;
@@ -190,7 +189,6 @@ void
     Loc<T> *Loc_inout = static_cast<Loc<T> *>(inoutvec);
 
     for (int i = 0; i < *len; ++i) {
-//      std::cout << Loc_in[i].m_value << " , " << Loc_inout[i].m_value << "loc: " << Loc_in[i].m_loc << " , " << Loc_inout[i].m_loc << std::endl;
       if(Loc_in[i].m_value < Loc_inout[i].m_value) {
         Loc_inout[i].m_value = Loc_in[i].m_value;
         Loc_inout[i].m_loc = Loc_in[i].m_loc;
