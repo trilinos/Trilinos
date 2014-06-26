@@ -2,9 +2,9 @@
 
 namespace pike {
 
-  void observeInitialization(const pike::Solver& solver) {}
+  void ObserverDefaultBase::observeInitialization(const pike::Solver& solver) {}
   
-  void observeFinalization(const pike::Solver& solver) {}
+  void ObserverDefaultBase::observeFinalization(const pike::Solver& solver) {}
 
   void ObserverDefaultBase::observeBeginSolve(const Solver& solver) {}
 
