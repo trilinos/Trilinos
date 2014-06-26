@@ -255,11 +255,13 @@ int main(int argc, char *argv[]) {
     // some custom data you want to run.  Typically, you need a Map
     // (though you may avoid that in a serial run), a matrix (in a
     // MatrixMarket format), and a file with coordinates.
-    RCP<const Map> map = (mapFile.empty() ? Teuchos::null : Utils2::ReadMap(mapFile, xpetraParameters.GetLib(), comm));
+    if (!mapFile.empty())
+      map = Utils2::ReadMap(mapFile, xpetraParameters.GetLib(), comm);
 
     A = Utils::Read(matrixFile, map);
 
-    coordinates = Utils2::ReadMultiVector(coordFile, map);
+    if (!coordFile.empty())
+      coordinates = Utils2::ReadMultiVector(coordFile, map);
   }
 
   // For scalar equations, we assume that the constant vector is a
@@ -283,7 +285,8 @@ int main(int argc, char *argv[]) {
   // containing the parameters.  Only Process 0 reads from this file.
   // We additionally provide a communicator, so that Process 0 can
   // broadcast the parameters to all other processes.
-  RCP<HierarchyManager> mueLuFactory = rcp(new ParameterListInterpreter(xmlFileName, *comm));
+  RCP<HierarchyManager> mueLuFactory =
+      rcp(new ParameterListInterpreter(xmlFileName, *comm));
 
   // The CreateHierarchy() call creates a Hierarchy object. This
   // object is not set up, though, so it cannot be used yet.
@@ -302,9 +305,10 @@ int main(int argc, char *argv[]) {
   // vector. Coordinates are needed only in two cases: if one uses
   // distance Laplacian filtering, or one uses repartitioning (which
   // is based on geometric partitioning).
-  L->Set("A",           A);
-  L->Set("Nullspace",   nullspace);
-  L->Set("Coordinates", coordinates);
+  L->Set("A",         A);
+  L->Set("Nullspace", nullspace);
+  if (!coordinates.is_null())
+    L->Set("Coordinates", coordinates);
 
   // Now that we have set the mandatory data, we can construct the
   // preconditioner.  The result of this is a fully constructed
@@ -359,7 +363,7 @@ int main(int argc, char *argv[]) {
   // Prepare the linear problem to solve the linear system that was
   // already passed in.
   bool set = belosProblem->setProblem ();
-  if (! set) {
+  if (!set) {
     out << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
     return EXIT_FAILURE;
   }
