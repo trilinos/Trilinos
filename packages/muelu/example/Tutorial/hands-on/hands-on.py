@@ -183,40 +183,54 @@ class ProblemHandler():
     waitForKey()
 
   def plotSolution(self):
-    for i in range(0,4):
-      self.proc[i].stdin.write("set term x11 " + str(i+1))
-      self.proc[i].stdin.write("set dgrid3d " + str(self.meshy) + "," + str(self.meshx) + "\n")
-      self.proc[i].stdin.write("set style data lines\n")
-      self.proc[i].stdin.write("set nolabel\n")
-      self.proc[i].stdin.write("set key off\n")
-      self.proc[i].stdin.write("set autoscale\n")
 
-      if   i == 0:
-        self.proc[0].stdin.write("set title \"Solution\"\n")
-        self.proc[0].stdin.write("splot \"example.txt\" using 3:4:5\n")
+    self.proc[0].stdin.write("set term x11 1\n")
+    self.proc[0].stdin.write("set title \"Solution\"\n")
+    self.proc[0].stdin.write("set dgrid3d " + str(self.meshy) + "," + str(self.meshx) + "\n")
+    self.proc[0].stdin.write("set style data lines\n")
+    self.proc[0].stdin.write("set nolabel\n")
+    self.proc[0].stdin.write("set key off\n")
+    self.proc[0].stdin.write("set autoscale\n")
+    self.proc[0].stdin.write("splot \"example.txt\" using 3:4:5\n")
+    self.proc[0].stdin.flush()
 
-      elif i == 1:
-        self.proc[1].stdin.write("set title \"Multigrid solution\"\n")
-        self.proc[1].stdin.write("splot \"example.txt\" using 3:4:7\n")
-
-      elif i == 2:
-        self.proc[2].stdin.write("set title \"Error (Exact vs. Multigrid)\"\n")
-        self.proc[2].stdin.write("set palette model RGB defined ( 0 'black', 1 'white')\n")
-        self.proc[2].stdin.write("set hidden3d\n")
-        self.proc[2].stdin.write("set style line 1 lt 4 lw .5\n")
-        self.proc[2].stdin.write("set pm3d\n")
-        self.proc[2].stdin.write("splot \"example.txt\" using 3:4:($ 5-$ 7) with lines palette\n")
-
-      elif i == 3:
-        self.proc[3].stdin.write("set title \"Distribution of processors\"\n")
-        self.proc[3].stdin.write("set palette model RGB defined ( 0 'red', 1 'green', 2 'blue', 3 'yellow', 4 'pink')\n")
-        self.proc[3].stdin.write("set hidden3d\n")
-        self.proc[3].stdin.write("set style line 1 lt 4 lw .5\n")
-        self.proc[3].stdin.write("set pm3d\n")
-        self.proc[3].stdin.write("splot \"example.txt\" using 3:4:1 with points palette\n")
-
-      # self.proc[i].stdin.write("quit\n") #close the gnuplot window
-      self.proc[i].stdin.flush()
+    self.proc[1].stdin.write("set term x11 2\n") #wxt
+    self.proc[1].stdin.write("set title \"Multigrid solution\"\n")    
+    self.proc[1].stdin.write("set dgrid3d " + str(self.meshy) + "," + str(self.meshx) + "\n")
+    self.proc[1].stdin.write("set style data lines\n")
+    self.proc[1].stdin.write("set nolabel\n")
+    self.proc[1].stdin.write("set key off\n")
+    self.proc[1].stdin.write("set autoscale\n")
+    self.proc[1].stdin.write("splot \"example.txt\" using 3:4:7\n")
+    self.proc[1].stdin.flush()
+    
+    self.proc[2].stdin.write("set term x11 3\n")
+    self.proc[2].stdin.write("set title \"Error (Exact vs. Multigrid)\"\n")    
+    self.proc[2].stdin.write("set dgrid3d " + str(self.meshy) + "," + str(self.meshx) + "\n")
+    self.proc[2].stdin.write("set style data lines\n")
+    self.proc[2].stdin.write("set palette model RGB defined ( 0 'black', 1 'white')\n")
+    self.proc[2].stdin.write("set nolabel\n")
+    self.proc[2].stdin.write("set key off\n")
+    self.proc[2].stdin.write("set autoscale\n")
+    self.proc[2].stdin.write("set hidden3d\n")
+    self.proc[2].stdin.write("set style line 1 lt 4 lw .5\n")
+    self.proc[2].stdin.write("set pm3d\n")
+    self.proc[2].stdin.write("splot \"example.txt\" using 3:4:($ 5-$ 7) with lines palette\n")
+    self.proc[2].stdin.flush()
+    
+    self.proc[3].stdin.write("set term x11 4\n")
+    self.proc[3].stdin.write("set title \"Distribution of processors\"\n")    
+    self.proc[3].stdin.write("set dgrid3d " + str(self.meshy) + "," + str(self.meshx) + "\n")
+    self.proc[3].stdin.write("set style data lines\n")
+    self.proc[3].stdin.write("set palette model RGB defined ( 0 'red', 1 'green', 2 'blue', 3 'yellow', 4 'pink')\n")
+    self.proc[3].stdin.write("set nolabel\n")
+    self.proc[3].stdin.write("set key off\n")
+    self.proc[3].stdin.write("set autoscale\n")
+    self.proc[3].stdin.write("set hidden3d\n")
+    self.proc[3].stdin.write("set style line 1 lt 4 lw .5\n")
+    self.proc[3].stdin.write("set pm3d\n")
+    self.proc[3].stdin.write("splot \"example.txt\" using 3:4:1 with points palette\n")
+    self.proc[3].stdin.flush()
 
   def postprocessAggregates(self):
     # check whether "example.txt" is available
