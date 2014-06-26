@@ -645,8 +645,8 @@ public:
    *          Is likely to be stale if ownership or sharing has changed
    *          and the 'modification_end' has not been called.
    */
-  Ghosting & aura_ghosting() const { return * m_ghosting[AURA] ; }
-  Ghosting & shared_ghosting() const { return * m_ghosting[SHARED] ; }
+  Ghosting & aura_ghosting() const { return *m_ghosting[AURA] ; }
+  Ghosting & shared_ghosting() const { return *m_ghosting[SHARED] ; }
 
   /** Return the part corresponding to the specified ghosting.
    */

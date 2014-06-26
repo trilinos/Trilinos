@@ -4626,97 +4626,10 @@ void BulkData::internal_update_distributed_index(
         stk::mesh::EntityRank entityRank, std::vector<Entity> & shared_new )
 {
   Trace_("stk::mesh::BulkData::internal_update_distributed_index");
-  BABBLE_STK_PARALLEL_COMM(m_parallel_machine, "      entered internal_update_distributed_index");
-
   std::vector<EntityKey> entity_keys;
-
-  parallel::DistributedIndex::KeyTypeVector local_created_or_modified ; // only store locally owned/shared entities
 
   std::vector<shared_edge_type> shared_edges;
   markEdgesForResolvingSharingInfoUsingNodes(*this, stk::topology::EDGE_RANK, shared_edges);
-
-  // Iterate over all entities known to this process, putting
-  // modified shared/owned entities in local_created_or_modified.
-  size_t num_created_or_modified = 0;
-
-  for ( impl::EntityRepository::const_iterator
-        i = m_entity_repo.begin() ; i != m_entity_repo.end() ; ++i )
-  {
-    Entity entity = i->second ;
-
-    if ( state(entity) != Unchanged &&  isEdgeMarked(entity)==BulkData::NOT_MARKED &&
-            entity_rank(entity) == entityRank &&
-         in_owned_closure( *this, entity , m_parallel_rank ) )
-    {
-      // Has been changed and is in owned closure, may be shared
-      ++num_created_or_modified;
-    }
-  }
-
-  local_created_or_modified.reserve(num_created_or_modified);
-
-  for ( impl::EntityRepository::const_iterator
-        i = m_entity_repo.begin() ; i != m_entity_repo.end() ; ++i )
-  {
-    Entity entity = i->second ;
-
-    if ( state(entity) != Unchanged &&  isEdgeMarked(entity)==BulkData::NOT_MARKED &&
-            entity_rank(entity) == entityRank &&
-         in_owned_closure(*this, entity , m_parallel_rank ) )
-    {
-      // Has been changed and is in owned closure, may be shared
-      local_created_or_modified.push_back( entity_key(entity) );
-    }
-  }
-
-  {
-    // Update distributed index. Note that the DistributedIndex only
-    // tracks ownership and sharing information.
-    parallel::DistributedIndex::KeyTypeVector::const_iterator begin = local_created_or_modified.begin();
-    parallel::DistributedIndex::KeyTypeVector::const_iterator end = local_created_or_modified.end();
-    m_entities_index.update_keys( begin, end );
-  }
-
-  if (parallel_size() > 1)
-  {
-    // Retrieve data regarding which processes use the local_created_or_modified
-    // including this process.
-    parallel::DistributedIndex::KeyProcVector global_created_or_modified ;
-    m_entities_index.query_to_usage( local_created_or_modified ,
-                                     global_created_or_modified );
-
-    //------------------------------
-    // Take the usage data and update the sharing comm lists
-    {
-      Entity entity = Entity();
-
-      // Iterate over all global modifications to this entity, this vector is
-      // sorted, so we're guaranteed that all modifications to a particular
-      // entities will be adjacent in this vector.
-
-      for ( parallel::DistributedIndex::KeyProcVector::iterator
-              i =  global_created_or_modified.begin() ;
-            i != global_created_or_modified.end() ; ++i ) {
-
-        EntityKey key( static_cast<EntityKey::entity_key_t>(i->first) );
-        int modifying_proc = i->second;
-
-        if ( m_parallel_rank != modifying_proc ) {
-          // Another process also created or updated this entity.
-          // Only want to look up entities at most once
-          if ( !is_valid(entity) || entity_key(entity) != key ) {
-            // Have not looked this entity up by key
-            entity = get_entity( key );
-            entity_keys.push_back(key);
-          }
-
-          // Add the other_process to the entity's sharing info.
-          entity_comm_map_insert(entity, EntityCommInfo( 0 /*sharing*/, modifying_proc ));
-        }
-      }
-    }
-  }
-
   update_shared_edges_global_ids( *this, shared_edges );
 
   for (size_t i=0; i<shared_edges.size();i++)
