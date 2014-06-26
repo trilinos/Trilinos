@@ -30,6 +30,13 @@
 #include "boost/program_options/errors.hpp"  // for program_options
 #include "boost/program_options/variables_map.hpp"  // for variables_map, etc
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire
+
+#if defined(__GNUC__)
+#include <cstdlib>
+#include <sys/time.h>
+#include <sys/resource.h>
+#endif
+
 namespace boost { namespace program_options { class options_description; } }
 
 
@@ -231,6 +238,40 @@ subsection_separator()
   static const char *s_subsectionSeparator = "---------------------------------------------------";
 
   return s_subsectionSeparator;
+}
+
+
+double
+wall_now()
+{
+  timeval tp;
+  struct timezone tz;
+  gettimeofday(&tp, &tz);
+  return (tp.tv_sec + ((static_cast<double>(tp.tv_usec))/1000000.0));
+}
+
+
+double
+cpu_now()
+{
+#if defined(REDS)
+  struct rusage my_rusage;
+
+  getrusage(RUSAGE_SELF, &my_rusage);
+
+  return static_cast<double>(my_rusage.ru_utime.tv_sec) +
+    static_cast<double>(my_rusage.ru_utime.tv_usec)*1.0e-6;
+
+#elif ! defined(__PGI)
+  struct rusage my_rusage;
+
+  getrusage(RUSAGE_SELF, &my_rusage);
+
+  return static_cast<double>(my_rusage.ru_utime.tv_sec + my_rusage.ru_stime.tv_sec) +
+    static_cast<double>(my_rusage.ru_utime.tv_usec + my_rusage.ru_stime.tv_usec)*1.0e-6;
+#else
+  return 0;
+#endif
 }
 
 
