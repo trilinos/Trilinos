@@ -12,6 +12,10 @@ namespace pike {
 
     virtual ~SolverObserver() {}
 
+    virtual void observeInitialization(const pike::Solver& solver) = 0;
+
+    virtual void observeFinalization(const pike::Solver& solver) = 0;
+
     virtual void observeBeginSolve(const pike::Solver& solver) = 0;
 
     virtual void observeEndSolve(const pike::Solver& solver) = 0;

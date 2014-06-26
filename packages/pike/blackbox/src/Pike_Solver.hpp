@@ -67,8 +67,18 @@ namespace pike {
     */
     virtual pike::SolveStatus step() = 0;
 
+    /** \brief Initialize the system. This is typically used to
+	trigger one time initialization requirements in the
+	pike::SolverObserver::observeInitialization(). */
+    virtual void initialize() = 0;
+
     //! Solve the system (step() until either converged or failed). Returns the current SolveStatus.
     virtual pike::SolveStatus solve() = 0;
+
+    /** \brief Prepare to terminate the simulation. This is typically
+	used to trigger one time stopping requirements in the
+	pike::SolverObserver::observeFianlize(). */
+    virtual void finalize() = 0;
 
     //! Reset the solver to reuse for another solve.
     virtual void reset() = 0;

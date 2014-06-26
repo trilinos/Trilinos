@@ -42,7 +42,15 @@ namespace pike {
 
     virtual pike::SolveStatus step();
 
+    /** \brief If not called manually by the user, this will be called
+	internally on the first call to solve() */
+    virtual void initialize();
+
     virtual pike::SolveStatus solve();
+
+    /** \brief In not called manually by the user, this will be called
+	in the destructor of this solver. */
+    virtual void finalize();
 
     virtual void reset();
 
@@ -83,6 +91,9 @@ namespace pike {
     std::vector<Teuchos::RCP<pike::DataTransfer> > transfers_;
     bool registrationComplete_;
     std::string name_;
+
+    bool isInitialized_;
+    bool isFinalized_;
 
     // Output
     bool printBeginSolveStatus_;

@@ -73,14 +73,16 @@ namespace pike {
     solver->completeRegistration();
     solver->setStatusTests(tests);
     solver->addObserver(logger);
+    solver->initialize();
     solver->solve();
+    solver->finalize();
 
     TEST_EQUALITY(solver->getStatus(),pike::CONVERGED);
     TEST_EQUALITY(solver->getNumberOfIterations(),7);
 
     Teuchos::RCP<const std::vector<std::string> > log = logger->getLog();
     
-    TEST_EQUALITY(log->size(), 17);
+    TEST_EQUALITY(log->size(), 19);
 
     for (std::vector<std::string>::const_iterator l=log->begin(); l != log->end(); ++l)
       out << *l << std::endl;
@@ -88,7 +90,7 @@ namespace pike {
     Teuchos::RCP<std::vector<std::string> > nonConstLog = logger->getNonConstLog();
 
     nonConstLog->push_back("test");
-    TEST_EQUALITY(log->size(), 18);
+    TEST_EQUALITY(log->size(), 20);
   }
 
 }

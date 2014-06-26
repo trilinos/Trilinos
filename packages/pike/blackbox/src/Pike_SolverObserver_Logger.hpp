@@ -20,6 +20,10 @@ namespace pike {
 
     Teuchos::RCP<std::vector<std::string> > getNonConstLog() const;
 
+    void observeInitialization(const pike::Solver& solver);
+
+    void observeFinalization(const pike::Solver& solver);
+
     void observeBeginSolve(const Solver& solver);
 
     void observeEndSolve(const Solver& solver);

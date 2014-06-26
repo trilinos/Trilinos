@@ -23,6 +23,16 @@ namespace pike {
     return log_;
   }
   
+  void LoggerObserver::observeInitialization(const pike::Solver& solver)
+  {
+    log_->push_back(solver.name()+": observeInitialization");
+  }
+
+  void LoggerObserver::observeFinalization(const pike::Solver& solver)
+  {
+    log_->push_back(solver.name()+": observeFinalization");
+  }
+
   void LoggerObserver::observeBeginSolve(const Solver& solver)
   { 
     log_->push_back(solver.name()+": observeBeginSolve");

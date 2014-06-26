@@ -99,12 +99,14 @@ namespace pike {
     solver->completeRegistration();
     solver->setStatusTests(tests);
     solver->addObserver(logger);
+    solver->initialize();
     solver->solve();
+    solver->finalize();
 
     TEST_EQUALITY(solver->getStatus(),pike::CONVERGED);
     TEST_EQUALITY(solver->getNumberOfIterations(),7);
 
-    TEST_EQUALITY(log->size(), 61);
+    TEST_EQUALITY(log->size(), 63);
 
     for (std::vector<std::string>::const_iterator l=log->begin(); l != log->end(); ++l)
       out << *l << std::endl;

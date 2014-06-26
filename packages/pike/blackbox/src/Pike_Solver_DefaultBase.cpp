@@ -12,7 +12,9 @@ namespace pike {
   SolverDefaultBase::SolverDefaultBase() :
     numberOfIterations_(0),
     status_(pike::UNCHECKED),
-    registrationComplete_(false)
+    registrationComplete_(false),
+    isInitialized_(false),
+    isFinalized_(false)
   {
     validParameters_ = Teuchos::parameterList();
     validParameters_->set("Print Begin Solve Status",true, "If set to true the status tests will print current status at the beginning of the solve.");
@@ -22,7 +24,11 @@ namespace pike {
     Teuchos::setupVerboseObjectSublist(validParameters_.get());
   }
 
-  SolverDefaultBase::~SolverDefaultBase() {}
+  SolverDefaultBase::~SolverDefaultBase() 
+  {
+    if (!isFinalized_)
+      this->finalize();
+  }
 
   void SolverDefaultBase::registerComm(const Teuchos::RCP<const Teuchos::Comm<int> >&)
   {  
@@ -122,9 +128,20 @@ namespace pike {
     return status_;
   }
   
+  void SolverDefaultBase::initialize()
+  {
+    for (ObserverIterator observer = observers_.begin(); observer != observers_.end(); ++observer)
+      (*observer)->observeInitialization(*this);
+    
+    isInitialized_ = true;
+  }
+
   pike::SolveStatus SolverDefaultBase::solve()
   {
     TEUCHOS_ASSERT(registrationComplete_);
+
+    if (!isInitialized_)
+      this->initialize();
 
     for (ObserverIterator observer = observers_.begin(); observer != observers_.end(); ++observer)
       (*observer)->observeBeginSolve(*this);
@@ -168,6 +185,14 @@ namespace pike {
 	(*observer)->observeFailedSolve(*this);
 
     return status_;
+  }
+
+  void SolverDefaultBase::finalize()
+  {
+    for (ObserverIterator observer = observers_.begin(); observer != observers_.end(); ++observer)
+      (*observer)->observeFinalization(*this);
+    
+    isFinalized_ = true;
   }
 
   void SolverDefaultBase::reset()
