@@ -230,7 +230,7 @@ int main(int argc, char *argv[]) {
   solver -> setProblem( problem );
   Belos::ReturnType status = solver -> solve();
   int iters = solver -> getNumIters();
-  if(iters<10 && status == Belos::Converged) {
+  if(iters<20 && status == Belos::Converged) {
     if(commrank==0) {
       std::cout<<"SUCCESS! Belos converged in "<<iters<<" iterations."<<std::endl;
     }
