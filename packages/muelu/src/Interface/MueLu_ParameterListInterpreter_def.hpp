@@ -429,7 +429,7 @@ namespace MueLu {
     // === Aggregation ===
     // Aggregation graph
     RCP<CoalesceDropFactory> dropFactory = rcp(new CoalesceDropFactory());
-    ParameterList dropParams = *(dropFactory->GetValidParameterList());
+    ParameterList dropParams;
     dropParams.set("lightweight wrap", true);
     MUELU_TEST_AND_SET_PARAM(dropParams, "algorithm",                     paramList, defaultList, "aggregation: drop scheme",         std::string);
     // Rename classical to original
@@ -446,7 +446,7 @@ namespace MueLu {
     RCP<Factory> aggFactory;
     if      (aggType == "uncoupled") {
       aggFactory = rcp(new UncoupledAggregationFactory());
-      ParameterList aggParams = *(aggFactory->GetValidParameterList());
+      ParameterList aggParams;
       MUELU_TEST_AND_SET_PARAM(aggParams, "mode",                 paramList, defaultList, "aggregation: mode",          std::string);
       MUELU_TEST_AND_SET_PARAM(aggParams, "MinNodesPerAggregate", paramList, defaultList, "aggregation: min agg size",  int);
       MUELU_TEST_AND_SET_PARAM(aggParams, "MaxNodesPerAggregate", paramList, defaultList, "aggregation: max agg size",  int);
@@ -484,14 +484,14 @@ namespace MueLu {
     } else if (multigridAlgo == "sa") {
       // Smoothed aggregation
       RCP<SaPFactory> P = rcp(new SaPFactory());
-      ParameterList Pparams = *(P->GetValidParameterList());
+      ParameterList Pparams;
       MUELU_TEST_AND_SET_PARAM(Pparams, "Damping factor", paramList, defaultList, "sa: damping factor", double);
       P->SetParameterList(Pparams);
 
       if (paramList.isParameter("sa: use filtered matrix") && paramList.get<bool>("sa: use filtered matrix")) {
         // Filtering
         RCP<FilteredAFactory> filterFactory = rcp(new FilteredAFactory());
-        ParameterList fParams = *(filterFactory->GetValidParameterList());
+        ParameterList fParams;
         MUELU_TEST_AND_SET_PARAM(fParams, "lumping", paramList, defaultList, "filtered matrix: use lumping", bool);
         filterFactory->SetParameterList(fParams);
         filterFactory->SetFactory("Graph", manager.GetFactory("Graph"));
@@ -507,7 +507,7 @@ namespace MueLu {
                                  "Invalid pattern name: \"" << patternType << "\". Valid options: \"AkPtent\"");
       // Pattern
       RCP<PatternFactory> patternFactory = rcp(new PatternFactory());
-      ParameterList patternParams = *(patternFactory->GetValidParameterList());
+      ParameterList patternParams;
       MUELU_TEST_AND_SET_PARAM(patternParams, "k", paramList, defaultList, "emin: pattern order", int);
       patternFactory->SetParameterList(patternParams);
       patternFactory->SetFactory("P", manager.GetFactory("Ptent"));
@@ -521,7 +521,7 @@ namespace MueLu {
 
       // Energy minimization
       RCP<EminPFactory> P = rcp(new EminPFactory());
-      ParameterList Pparams = *(P->GetValidParameterList());
+      ParameterList Pparams;
       MUELU_TEST_AND_SET_PARAM(Pparams, "emin: num iterations",   paramList, defaultList, "emin: num iterations",   int);
       MUELU_TEST_AND_SET_PARAM(Pparams, "emin: iterative method", paramList, defaultList, "emin: iterative method", std::string);
       P->SetParameterList(Pparams);
@@ -557,7 +557,7 @@ namespace MueLu {
 
     // === RAP ===
     RCP<RAPFactory> RAP = rcp(new RAPFactory());
-    ParameterList RAPparams = *(RAP->GetValidParameterList());
+    ParameterList RAPparams;
     RAPparams.set("implicit transpose", this->implicitTranspose_);
     RAP->SetParameterList(RAPparams);
     RAP->SetFactory("P", manager.GetFactory("P"));
@@ -600,7 +600,7 @@ namespace MueLu {
       } else if (partName == "zoltan2") {
 #ifdef HAVE_MUELU_ZOLTAN2
         partitioner = rcp(new Zoltan2Interface());
-        ParameterList partParams = *(partitioner->GetValidParameterList());
+        ParameterList partParams;
         RCP<const ParameterList> partpartParams = rcp(new ParameterList(paramList.sublist("repartition: params", false)));
         partParams.set("ParameterList", partpartParams);
         partitioner->SetParameterList(partParams);
@@ -614,7 +614,7 @@ namespace MueLu {
 
       // Repartitioner
       RCP<RepartitionFactory> repartFactory = rcp(new RepartitionFactory());
-      ParameterList repartParams = *(repartFactory->GetValidParameterList());
+      ParameterList repartParams;
       MUELU_TEST_AND_SET_PARAM(repartParams, "startLevel",          paramList, defaultList, "repartition: start level",       int);
       MUELU_TEST_AND_SET_PARAM(repartParams, "startLevel",          paramList, defaultList, "repartition: start level",       int);
       MUELU_TEST_AND_SET_PARAM(repartParams, "minRowsPerProcessor", paramList, defaultList, "repartition: min rows per proc", int);

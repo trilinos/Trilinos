@@ -49,33 +49,33 @@ Level 1
      Matrix filtering (MueLu::FilteredAFactory)
       Build (MueLu::CoalesceDropFactory)
       lightweight wrap = 1
-      aggregation threshold = 0.02
-      Dirichlet detection threshold = 0
       algorithm = laplacian
+      aggregation threshold = 0.02
+      Dirichlet detection threshold = 0   [default]
       
      lumping = 1
-     filtered matrix: reuse graph = 1
-     filtered matrix: reuse eigenvalue = 1
+     filtered matrix: reuse graph = 1   [default]
+     filtered matrix: reuse eigenvalue = 1   [default]
      
      Build (MueLu::TentativePFactory)
       Build (MueLu::UncoupledAggregationFactory)
-      mode = old   [unused]
-      Ordering = 0   [unused]
-      MaxNeighAlreadySelected = 0   [unused]
-      MinNodesPerAggregate = 2   [unused]
-      MaxNodesPerAggregate = 2147483647   [unused]
-      UseOnePtAggregationAlgorithm = 0   [unused]
-      UsePreserveDirichletAggregationAlgorithm = 0   [unused]
-      UseUncoupledAggregationAlgorithm = 1   [unused]
-      UseMaxLinkAggregationAlgorithm = 1   [unused]
-      UseIsolatedNodeAggregationAlgorithm = 1   [unused]
-      UseEmergencyAggregationAlgorithm = 1   [unused]
-      aggregation: preserve Dirichlet points = 0   [unused]
-      aggregation: enable phase 1 = 1   [unused]
-      aggregation: enable phase 2a = 1   [unused]
-      aggregation: enable phase 2b = 1   [unused]
-      aggregation: enable phase 3 = 1   [unused]
-      OnePt aggregate map name = 
+      mode = old   [default]
+      Ordering = 0   [default]
+      MaxNeighAlreadySelected = 0   [default]
+      MinNodesPerAggregate = 2   [default]
+      MaxNodesPerAggregate = 2147483647   [default]
+      UseOnePtAggregationAlgorithm = 0   [default]
+      UsePreserveDirichletAggregationAlgorithm = 0   [default]
+      UseUncoupledAggregationAlgorithm = 1   [default]
+      UseMaxLinkAggregationAlgorithm = 1   [default]
+      UseIsolatedNodeAggregationAlgorithm = 1   [default]
+      UseEmergencyAggregationAlgorithm = 1   [default]
+      aggregation: preserve Dirichlet points = 0   [default]
+      aggregation: enable phase 1 = 1   [default]
+      aggregation: enable phase 2a = 1   [default]
+      aggregation: enable phase 2b = 1   [default]
+      aggregation: enable phase 3 = 1   [default]
+      OnePt aggregate map name =    [default]
       
       Build (MueLu::AmalgamationFactory)
       [empty list]
@@ -90,7 +90,7 @@ Level 1
       
      [empty list]
      
-    Damping factor = 1.33333
+    Damping factor = 1.33333   [default]
     
     Transpose P (MueLu::TransPFactory)
     [empty list]
@@ -99,19 +99,19 @@ Level 1
    write start = -1   [default]
    write end = -1   [default]
    
-   Keep AP Pattern = 0
-   Keep RAP Pattern = 0
    implicit transpose = 0
-   CheckMainDiagonal = 0
-   RepairMainDiagonal = 0
+   Keep AP Pattern = 0   [default]
+   Keep RAP Pattern = 0   [default]
+   CheckMainDiagonal = 0   [default]
+   RepairMainDiagonal = 0   [default]
    
   startLevel = 1
   minRowsPerProcessor = 2000
   nonzeroImbalance = 1.327
   remapPartitions = 1
-  numRemapValues = 4
   alwaysKeepProc0 = 1
-  repartition: print partition distribution = 0
+  numRemapValues = 4   [default]
+  repartition: print partition distribution = 0   [default]
   
  type = Interpolation
  implicit = 0
@@ -148,33 +148,33 @@ Level 2
      Matrix filtering (MueLu::FilteredAFactory)
       Build (MueLu::CoalesceDropFactory)
       lightweight wrap = 1
-      aggregation threshold = 0.02
-      Dirichlet detection threshold = 0
       algorithm = laplacian
+      aggregation threshold = 0.02
+      Dirichlet detection threshold = 0   [default]
       
      lumping = 1
-     filtered matrix: reuse graph = 1
-     filtered matrix: reuse eigenvalue = 1
+     filtered matrix: reuse graph = 1   [default]
+     filtered matrix: reuse eigenvalue = 1   [default]
      
      Build (MueLu::TentativePFactory)
       Build (MueLu::UncoupledAggregationFactory)
-      mode = old   [unused]
-      Ordering = 0   [unused]
-      MaxNeighAlreadySelected = 0   [unused]
-      MinNodesPerAggregate = 2   [unused]
-      MaxNodesPerAggregate = 2147483647   [unused]
-      UseOnePtAggregationAlgorithm = 0   [unused]
-      UsePreserveDirichletAggregationAlgorithm = 0   [unused]
-      UseUncoupledAggregationAlgorithm = 1   [unused]
-      UseMaxLinkAggregationAlgorithm = 1   [unused]
-      UseIsolatedNodeAggregationAlgorithm = 1   [unused]
-      UseEmergencyAggregationAlgorithm = 1   [unused]
-      aggregation: preserve Dirichlet points = 0   [unused]
-      aggregation: enable phase 1 = 1   [unused]
-      aggregation: enable phase 2a = 1   [unused]
-      aggregation: enable phase 2b = 1   [unused]
-      aggregation: enable phase 3 = 1   [unused]
-      OnePt aggregate map name = 
+      mode = old   [default]
+      Ordering = 0   [default]
+      MaxNeighAlreadySelected = 0   [default]
+      MinNodesPerAggregate = 2   [default]
+      MaxNodesPerAggregate = 2147483647   [default]
+      UseOnePtAggregationAlgorithm = 0   [default]
+      UsePreserveDirichletAggregationAlgorithm = 0   [default]
+      UseUncoupledAggregationAlgorithm = 1   [default]
+      UseMaxLinkAggregationAlgorithm = 1   [default]
+      UseIsolatedNodeAggregationAlgorithm = 1   [default]
+      UseEmergencyAggregationAlgorithm = 1   [default]
+      aggregation: preserve Dirichlet points = 0   [default]
+      aggregation: enable phase 1 = 1   [default]
+      aggregation: enable phase 2a = 1   [default]
+      aggregation: enable phase 2b = 1   [default]
+      aggregation: enable phase 3 = 1   [default]
+      OnePt aggregate map name =    [default]
       
       Build (MueLu::AmalgamationFactory)
       [empty list]
@@ -189,7 +189,7 @@ Level 2
       
      [empty list]
      
-    Damping factor = 1.33333
+    Damping factor = 1.33333   [default]
     
     Transpose P (MueLu::TransPFactory)
     [empty list]
@@ -198,19 +198,19 @@ Level 2
    write start = -1   [default]
    write end = -1   [default]
    
-   Keep AP Pattern = 0
-   Keep RAP Pattern = 0
    implicit transpose = 0
-   CheckMainDiagonal = 0
-   RepairMainDiagonal = 0
+   Keep AP Pattern = 0   [default]
+   Keep RAP Pattern = 0   [default]
+   CheckMainDiagonal = 0   [default]
+   RepairMainDiagonal = 0   [default]
    
   startLevel = 1
   minRowsPerProcessor = 2000
   nonzeroImbalance = 1.327
   remapPartitions = 1
-  numRemapValues = 4
   alwaysKeepProc0 = 1
-  repartition: print partition distribution = 0
+  numRemapValues = 4   [default]
+  repartition: print partition distribution = 0   [default]
   
  type = Interpolation
  implicit = 0
@@ -247,33 +247,33 @@ Level 3
      Matrix filtering (MueLu::FilteredAFactory)
       Build (MueLu::CoalesceDropFactory)
       lightweight wrap = 1
-      aggregation threshold = 0.02
-      Dirichlet detection threshold = 0
       algorithm = laplacian
+      aggregation threshold = 0.02
+      Dirichlet detection threshold = 0   [default]
       
      lumping = 1
-     filtered matrix: reuse graph = 1
-     filtered matrix: reuse eigenvalue = 1
+     filtered matrix: reuse graph = 1   [default]
+     filtered matrix: reuse eigenvalue = 1   [default]
      
      Build (MueLu::TentativePFactory)
       Build (MueLu::UncoupledAggregationFactory)
-      mode = old   [unused]
-      Ordering = 0   [unused]
-      MaxNeighAlreadySelected = 0   [unused]
-      MinNodesPerAggregate = 2   [unused]
-      MaxNodesPerAggregate = 2147483647   [unused]
-      UseOnePtAggregationAlgorithm = 0   [unused]
-      UsePreserveDirichletAggregationAlgorithm = 0   [unused]
-      UseUncoupledAggregationAlgorithm = 1   [unused]
-      UseMaxLinkAggregationAlgorithm = 1   [unused]
-      UseIsolatedNodeAggregationAlgorithm = 1   [unused]
-      UseEmergencyAggregationAlgorithm = 1   [unused]
-      aggregation: preserve Dirichlet points = 0   [unused]
-      aggregation: enable phase 1 = 1   [unused]
-      aggregation: enable phase 2a = 1   [unused]
-      aggregation: enable phase 2b = 1   [unused]
-      aggregation: enable phase 3 = 1   [unused]
-      OnePt aggregate map name = 
+      mode = old   [default]
+      Ordering = 0   [default]
+      MaxNeighAlreadySelected = 0   [default]
+      MinNodesPerAggregate = 2   [default]
+      MaxNodesPerAggregate = 2147483647   [default]
+      UseOnePtAggregationAlgorithm = 0   [default]
+      UsePreserveDirichletAggregationAlgorithm = 0   [default]
+      UseUncoupledAggregationAlgorithm = 1   [default]
+      UseMaxLinkAggregationAlgorithm = 1   [default]
+      UseIsolatedNodeAggregationAlgorithm = 1   [default]
+      UseEmergencyAggregationAlgorithm = 1   [default]
+      aggregation: preserve Dirichlet points = 0   [default]
+      aggregation: enable phase 1 = 1   [default]
+      aggregation: enable phase 2a = 1   [default]
+      aggregation: enable phase 2b = 1   [default]
+      aggregation: enable phase 3 = 1   [default]
+      OnePt aggregate map name =    [default]
       
       Build (MueLu::AmalgamationFactory)
       [empty list]
@@ -288,7 +288,7 @@ Level 3
       
      [empty list]
      
-    Damping factor = 1.33333
+    Damping factor = 1.33333   [default]
     
     Transpose P (MueLu::TransPFactory)
     [empty list]
@@ -297,19 +297,19 @@ Level 3
    write start = -1   [default]
    write end = -1   [default]
    
-   Keep AP Pattern = 0
-   Keep RAP Pattern = 0
    implicit transpose = 0
-   CheckMainDiagonal = 0
-   RepairMainDiagonal = 0
+   Keep AP Pattern = 0   [default]
+   Keep RAP Pattern = 0   [default]
+   CheckMainDiagonal = 0   [default]
+   RepairMainDiagonal = 0   [default]
    
   startLevel = 1
   minRowsPerProcessor = 2000
   nonzeroImbalance = 1.327
   remapPartitions = 1
-  numRemapValues = 4
   alwaysKeepProc0 = 1
-  repartition: print partition distribution = 0
+  numRemapValues = 4   [default]
+  repartition: print partition distribution = 0   [default]
   
  type = Interpolation
  implicit = 0

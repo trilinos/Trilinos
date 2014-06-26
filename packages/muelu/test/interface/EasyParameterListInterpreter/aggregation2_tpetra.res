@@ -31,9 +31,9 @@ Level 1
    Build (MueLu::CoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
     lightweight wrap = 1
-    aggregation threshold = 0
-    Dirichlet detection threshold = 0
-    algorithm = original
+    aggregation threshold = 0   [default]
+    Dirichlet detection threshold = 0   [default]
+    algorithm = original   [default]
     
    [empty list]
    
@@ -50,17 +50,17 @@ Level 1
    
   [empty list]
   
- Damping factor = 1.33333
+ Damping factor = 1.33333   [default]
  
  Transpose P (MueLu::TransPFactory)
  [empty list]
  
  Computing Ac (MueLu::RAPFactory)
- Keep AP Pattern = 0
- Keep RAP Pattern = 0
  implicit transpose = 0
- CheckMainDiagonal = 0
- RepairMainDiagonal = 0
+ Keep AP Pattern = 0   [default]
+ Keep RAP Pattern = 0   [default]
+ CheckMainDiagonal = 0   [default]
+ RepairMainDiagonal = 0   [default]
  
  Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
  relaxation: type = Symmetric Gauss-Seidel
@@ -81,9 +81,9 @@ Level 2
    Build (MueLu::CoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
     lightweight wrap = 1
-    aggregation threshold = 0
-    Dirichlet detection threshold = 0
-    algorithm = original
+    aggregation threshold = 0   [default]
+    Dirichlet detection threshold = 0   [default]
+    algorithm = original   [default]
     
    [empty list]
    
@@ -100,17 +100,17 @@ Level 2
    
   [empty list]
   
- Damping factor = 1.33333
+ Damping factor = 1.33333   [default]
  
  Transpose P (MueLu::TransPFactory)
  [empty list]
  
  Computing Ac (MueLu::RAPFactory)
- Keep AP Pattern = 0
- Keep RAP Pattern = 0
  implicit transpose = 0
- CheckMainDiagonal = 0
- RepairMainDiagonal = 0
+ Keep AP Pattern = 0   [default]
+ Keep RAP Pattern = 0   [default]
+ CheckMainDiagonal = 0   [default]
+ RepairMainDiagonal = 0   [default]
  
  Setup Smoother (MueLu::Amesos2Smoother{type = Superlu})
  presmoother -> 

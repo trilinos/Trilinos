@@ -32,27 +32,27 @@ Level 1
    Build (MueLu::UncoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
     lightweight wrap = 1
-    aggregation threshold = 0
-    Dirichlet detection threshold = 0
-    algorithm = original
+    aggregation threshold = 0   [default]
+    Dirichlet detection threshold = 0   [default]
+    algorithm = original   [default]
     
-   mode = old   [unused]
-   Ordering = 0   [unused]
-   MaxNeighAlreadySelected = 0   [unused]
-   MinNodesPerAggregate = 2   [unused]
-   MaxNodesPerAggregate = 2147483647   [unused]
-   UseOnePtAggregationAlgorithm = 0   [unused]
-   UsePreserveDirichletAggregationAlgorithm = 0   [unused]
-   UseUncoupledAggregationAlgorithm = 1   [unused]
-   UseMaxLinkAggregationAlgorithm = 1   [unused]
-   UseIsolatedNodeAggregationAlgorithm = 1   [unused]
-   UseEmergencyAggregationAlgorithm = 1   [unused]
-   aggregation: preserve Dirichlet points = 0   [unused]
-   aggregation: enable phase 1 = 1   [unused]
-   aggregation: enable phase 2a = 1   [unused]
-   aggregation: enable phase 2b = 1   [unused]
-   aggregation: enable phase 3 = 1   [unused]
-   OnePt aggregate map name = 
+   mode = old   [default]
+   Ordering = 0   [default]
+   MaxNeighAlreadySelected = 0   [default]
+   MinNodesPerAggregate = 2   [default]
+   MaxNodesPerAggregate = 2147483647   [default]
+   UseOnePtAggregationAlgorithm = 0   [default]
+   UsePreserveDirichletAggregationAlgorithm = 0   [default]
+   UseUncoupledAggregationAlgorithm = 1   [default]
+   UseMaxLinkAggregationAlgorithm = 1   [default]
+   UseIsolatedNodeAggregationAlgorithm = 1   [default]
+   UseEmergencyAggregationAlgorithm = 1   [default]
+   aggregation: preserve Dirichlet points = 0   [default]
+   aggregation: enable phase 1 = 1   [default]
+   aggregation: enable phase 2a = 1   [default]
+   aggregation: enable phase 2b = 1   [default]
+   aggregation: enable phase 3 = 1   [default]
+   OnePt aggregate map name =    [default]
    
    Build (MueLu::AmalgamationFactory)
    [empty list]
@@ -67,17 +67,17 @@ Level 1
    
   [empty list]
   
- Damping factor = 1.33333
+ Damping factor = 1.33333   [default]
  
  Transpose P (MueLu::TransPFactory)
  [empty list]
  
  Computing Ac (MueLu::RAPFactory)
- Keep AP Pattern = 0
- Keep RAP Pattern = 0
  implicit transpose = 0
- CheckMainDiagonal = 0
- RepairMainDiagonal = 0
+ Keep AP Pattern = 0   [default]
+ Keep RAP Pattern = 0   [default]
+ CheckMainDiagonal = 0   [default]
+ RepairMainDiagonal = 0   [default]
  
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
  chebyshev: ratio eigenvalue = 5   [unused]
@@ -88,27 +88,27 @@ Level 2
    Build (MueLu::UncoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
     lightweight wrap = 1
-    aggregation threshold = 0
-    Dirichlet detection threshold = 0
-    algorithm = original
+    aggregation threshold = 0   [default]
+    Dirichlet detection threshold = 0   [default]
+    algorithm = original   [default]
     
-   mode = old   [unused]
-   Ordering = 0   [unused]
-   MaxNeighAlreadySelected = 0   [unused]
-   MinNodesPerAggregate = 2   [unused]
-   MaxNodesPerAggregate = 2147483647   [unused]
-   UseOnePtAggregationAlgorithm = 0   [unused]
-   UsePreserveDirichletAggregationAlgorithm = 0   [unused]
-   UseUncoupledAggregationAlgorithm = 1   [unused]
-   UseMaxLinkAggregationAlgorithm = 1   [unused]
-   UseIsolatedNodeAggregationAlgorithm = 1   [unused]
-   UseEmergencyAggregationAlgorithm = 1   [unused]
-   aggregation: preserve Dirichlet points = 0   [unused]
-   aggregation: enable phase 1 = 1   [unused]
-   aggregation: enable phase 2a = 1   [unused]
-   aggregation: enable phase 2b = 1   [unused]
-   aggregation: enable phase 3 = 1   [unused]
-   OnePt aggregate map name = 
+   mode = old   [default]
+   Ordering = 0   [default]
+   MaxNeighAlreadySelected = 0   [default]
+   MinNodesPerAggregate = 2   [default]
+   MaxNodesPerAggregate = 2147483647   [default]
+   UseOnePtAggregationAlgorithm = 0   [default]
+   UsePreserveDirichletAggregationAlgorithm = 0   [default]
+   UseUncoupledAggregationAlgorithm = 1   [default]
+   UseMaxLinkAggregationAlgorithm = 1   [default]
+   UseIsolatedNodeAggregationAlgorithm = 1   [default]
+   UseEmergencyAggregationAlgorithm = 1   [default]
+   aggregation: preserve Dirichlet points = 0   [default]
+   aggregation: enable phase 1 = 1   [default]
+   aggregation: enable phase 2a = 1   [default]
+   aggregation: enable phase 2b = 1   [default]
+   aggregation: enable phase 3 = 1   [default]
+   OnePt aggregate map name =    [default]
    
    Build (MueLu::AmalgamationFactory)
    [empty list]
@@ -123,17 +123,17 @@ Level 2
    
   [empty list]
   
- Damping factor = 1.33333
+ Damping factor = 1.33333   [default]
  
  Transpose P (MueLu::TransPFactory)
  [empty list]
  
  Computing Ac (MueLu::RAPFactory)
- Keep AP Pattern = 0
- Keep RAP Pattern = 0
  implicit transpose = 0
- CheckMainDiagonal = 0
- RepairMainDiagonal = 0
+ Keep AP Pattern = 0   [default]
+ Keep RAP Pattern = 0   [default]
+ CheckMainDiagonal = 0   [default]
+ RepairMainDiagonal = 0   [default]
  
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
  chebyshev: ratio eigenvalue = 4   [unused]
@@ -144,27 +144,27 @@ Level 3
    Build (MueLu::UncoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
     lightweight wrap = 1
-    aggregation threshold = 0
-    Dirichlet detection threshold = 0
-    algorithm = original
+    aggregation threshold = 0   [default]
+    Dirichlet detection threshold = 0   [default]
+    algorithm = original   [default]
     
-   mode = old   [unused]
-   Ordering = 0   [unused]
-   MaxNeighAlreadySelected = 0   [unused]
-   MinNodesPerAggregate = 2   [unused]
-   MaxNodesPerAggregate = 2147483647   [unused]
-   UseOnePtAggregationAlgorithm = 0   [unused]
-   UsePreserveDirichletAggregationAlgorithm = 0   [unused]
-   UseUncoupledAggregationAlgorithm = 1   [unused]
-   UseMaxLinkAggregationAlgorithm = 1   [unused]
-   UseIsolatedNodeAggregationAlgorithm = 1   [unused]
-   UseEmergencyAggregationAlgorithm = 1   [unused]
-   aggregation: preserve Dirichlet points = 0   [unused]
-   aggregation: enable phase 1 = 1   [unused]
-   aggregation: enable phase 2a = 1   [unused]
-   aggregation: enable phase 2b = 1   [unused]
-   aggregation: enable phase 3 = 1   [unused]
-   OnePt aggregate map name = 
+   mode = old   [default]
+   Ordering = 0   [default]
+   MaxNeighAlreadySelected = 0   [default]
+   MinNodesPerAggregate = 2   [default]
+   MaxNodesPerAggregate = 2147483647   [default]
+   UseOnePtAggregationAlgorithm = 0   [default]
+   UsePreserveDirichletAggregationAlgorithm = 0   [default]
+   UseUncoupledAggregationAlgorithm = 1   [default]
+   UseMaxLinkAggregationAlgorithm = 1   [default]
+   UseIsolatedNodeAggregationAlgorithm = 1   [default]
+   UseEmergencyAggregationAlgorithm = 1   [default]
+   aggregation: preserve Dirichlet points = 0   [default]
+   aggregation: enable phase 1 = 1   [default]
+   aggregation: enable phase 2a = 1   [default]
+   aggregation: enable phase 2b = 1   [default]
+   aggregation: enable phase 3 = 1   [default]
+   OnePt aggregate map name =    [default]
    
    Build (MueLu::AmalgamationFactory)
    [empty list]
@@ -179,17 +179,17 @@ Level 3
    
   [empty list]
   
- Damping factor = 1.33333
+ Damping factor = 1.33333   [default]
  
  Transpose P (MueLu::TransPFactory)
  [empty list]
  
  Computing Ac (MueLu::RAPFactory)
- Keep AP Pattern = 0
- Keep RAP Pattern = 0
  implicit transpose = 0
- CheckMainDiagonal = 0
- RepairMainDiagonal = 0
+ Keep AP Pattern = 0   [default]
+ Keep RAP Pattern = 0   [default]
+ CheckMainDiagonal = 0   [default]
+ RepairMainDiagonal = 0   [default]
  
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
  chebyshev: ratio eigenvalue = 2.99461   [unused]
@@ -200,27 +200,27 @@ Level 4
    Build (MueLu::UncoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
     lightweight wrap = 1
-    aggregation threshold = 0
-    Dirichlet detection threshold = 0
-    algorithm = original
+    aggregation threshold = 0   [default]
+    Dirichlet detection threshold = 0   [default]
+    algorithm = original   [default]
     
-   mode = old   [unused]
-   Ordering = 0   [unused]
-   MaxNeighAlreadySelected = 0   [unused]
-   MinNodesPerAggregate = 2   [unused]
-   MaxNodesPerAggregate = 2147483647   [unused]
-   UseOnePtAggregationAlgorithm = 0   [unused]
-   UsePreserveDirichletAggregationAlgorithm = 0   [unused]
-   UseUncoupledAggregationAlgorithm = 1   [unused]
-   UseMaxLinkAggregationAlgorithm = 1   [unused]
-   UseIsolatedNodeAggregationAlgorithm = 1   [unused]
-   UseEmergencyAggregationAlgorithm = 1   [unused]
-   aggregation: preserve Dirichlet points = 0   [unused]
-   aggregation: enable phase 1 = 1   [unused]
-   aggregation: enable phase 2a = 1   [unused]
-   aggregation: enable phase 2b = 1   [unused]
-   aggregation: enable phase 3 = 1   [unused]
-   OnePt aggregate map name = 
+   mode = old   [default]
+   Ordering = 0   [default]
+   MaxNeighAlreadySelected = 0   [default]
+   MinNodesPerAggregate = 2   [default]
+   MaxNodesPerAggregate = 2147483647   [default]
+   UseOnePtAggregationAlgorithm = 0   [default]
+   UsePreserveDirichletAggregationAlgorithm = 0   [default]
+   UseUncoupledAggregationAlgorithm = 1   [default]
+   UseMaxLinkAggregationAlgorithm = 1   [default]
+   UseIsolatedNodeAggregationAlgorithm = 1   [default]
+   UseEmergencyAggregationAlgorithm = 1   [default]
+   aggregation: preserve Dirichlet points = 0   [default]
+   aggregation: enable phase 1 = 1   [default]
+   aggregation: enable phase 2a = 1   [default]
+   aggregation: enable phase 2b = 1   [default]
+   aggregation: enable phase 3 = 1   [default]
+   OnePt aggregate map name =    [default]
    
    Build (MueLu::AmalgamationFactory)
    [empty list]
@@ -235,17 +235,17 @@ Level 4
    
   [empty list]
   
- Damping factor = 1.33333
+ Damping factor = 1.33333   [default]
  
  Transpose P (MueLu::TransPFactory)
  [empty list]
  
  Computing Ac (MueLu::RAPFactory)
- Keep AP Pattern = 0
- Keep RAP Pattern = 0
  implicit transpose = 0
- CheckMainDiagonal = 0
- RepairMainDiagonal = 0
+ Keep AP Pattern = 0   [default]
+ Keep RAP Pattern = 0   [default]
+ CheckMainDiagonal = 0   [default]
+ RepairMainDiagonal = 0   [default]
  
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
  chebyshev: ratio eigenvalue = 2.99194   [unused]
@@ -256,27 +256,27 @@ Level 5
    Build (MueLu::UncoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
     lightweight wrap = 1
-    aggregation threshold = 0
-    Dirichlet detection threshold = 0
-    algorithm = original
+    aggregation threshold = 0   [default]
+    Dirichlet detection threshold = 0   [default]
+    algorithm = original   [default]
     
-   mode = old   [unused]
-   Ordering = 0   [unused]
-   MaxNeighAlreadySelected = 0   [unused]
-   MinNodesPerAggregate = 2   [unused]
-   MaxNodesPerAggregate = 2147483647   [unused]
-   UseOnePtAggregationAlgorithm = 0   [unused]
-   UsePreserveDirichletAggregationAlgorithm = 0   [unused]
-   UseUncoupledAggregationAlgorithm = 1   [unused]
-   UseMaxLinkAggregationAlgorithm = 1   [unused]
-   UseIsolatedNodeAggregationAlgorithm = 1   [unused]
-   UseEmergencyAggregationAlgorithm = 1   [unused]
-   aggregation: preserve Dirichlet points = 0   [unused]
-   aggregation: enable phase 1 = 1   [unused]
-   aggregation: enable phase 2a = 1   [unused]
-   aggregation: enable phase 2b = 1   [unused]
-   aggregation: enable phase 3 = 1   [unused]
-   OnePt aggregate map name = 
+   mode = old   [default]
+   Ordering = 0   [default]
+   MaxNeighAlreadySelected = 0   [default]
+   MinNodesPerAggregate = 2   [default]
+   MaxNodesPerAggregate = 2147483647   [default]
+   UseOnePtAggregationAlgorithm = 0   [default]
+   UsePreserveDirichletAggregationAlgorithm = 0   [default]
+   UseUncoupledAggregationAlgorithm = 1   [default]
+   UseMaxLinkAggregationAlgorithm = 1   [default]
+   UseIsolatedNodeAggregationAlgorithm = 1   [default]
+   UseEmergencyAggregationAlgorithm = 1   [default]
+   aggregation: preserve Dirichlet points = 0   [default]
+   aggregation: enable phase 1 = 1   [default]
+   aggregation: enable phase 2a = 1   [default]
+   aggregation: enable phase 2b = 1   [default]
+   aggregation: enable phase 3 = 1   [default]
+   OnePt aggregate map name =    [default]
    
    Build (MueLu::AmalgamationFactory)
    [empty list]
@@ -291,17 +291,17 @@ Level 5
    
   [empty list]
   
- Damping factor = 1.33333
+ Damping factor = 1.33333   [default]
  
  Transpose P (MueLu::TransPFactory)
  [empty list]
  
  Computing Ac (MueLu::RAPFactory)
- Keep AP Pattern = 0
- Keep RAP Pattern = 0
  implicit transpose = 0
- CheckMainDiagonal = 0
- RepairMainDiagonal = 0
+ Keep AP Pattern = 0   [default]
+ Keep RAP Pattern = 0   [default]
+ CheckMainDiagonal = 0   [default]
+ RepairMainDiagonal = 0   [default]
  
  Setup Smoother (MueLu::AmesosSmoother{type = Superlu})
  presmoother -> 

@@ -113,7 +113,7 @@ namespace MueLu {
     }
 
     virtual void SetParameterList(const ParameterList& paramList) {
-      paramList_ = paramList;
+      paramList_.setParameters(paramList);
 
       // Validate and add defaults parameters.
       RCP<const ParameterList> validParamList = GetValidParameterList(paramList_);
@@ -128,24 +128,23 @@ namespace MueLu {
 
     // The returned list always has an entry for each valid parameter.
     // Therefore, there is not need to test if a parameter is present before getting it.
-    virtual const Teuchos::ParameterList & GetParameterList() const {
+    virtual const Teuchos::ParameterList& GetParameterList() const {
       if (paramList_.numParams() == 0) {
         // If paramList_ is empty, set paramList_ to the default list.
         // If paramList_ is not empty, we are sure that the list has all the valid parameters defined
         // because the parameter list validation process adds the default values to the user list.
         RCP<const ParameterList> validParamList = GetValidParameterList();
-        if (validParamList != Teuchos::null) {
+        if (validParamList != Teuchos::null)
           paramList_ = *validParamList;
-        }
       }
 
       return paramList_;
     }
 
-    void SetParameter(const std::string &name, const ParameterEntry &entry) {
-      Teuchos::ParameterList paramList(paramList_);
+    void SetParameter(const std::string& name, const ParameterEntry& entry) {
+      Teuchos::ParameterList paramList;
       paramList.setEntry(name, entry);
-      SetParameterList(paramList); // This force revalidation of the list (and add defaults)
+      SetParameterList(paramList); // This forces revalidation of the list
     }
 
     const ParameterEntry & GetParameter(const std::string &name) const {
