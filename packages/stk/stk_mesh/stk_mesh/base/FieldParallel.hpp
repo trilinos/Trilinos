@@ -161,7 +161,6 @@ void parallel_data_exchange_t(std::vector< std::vector<T> > &send_lists,
 #if defined( STK_HAS_MPI)
   const int msg_tag = 10242;
   int num_procs = stk::parallel_machine_size(mpi_communicator);
-  int my_proc = stk::parallel_machine_rank(mpi_communicator);
 
   //PRECONDITION((unsigned int) num_procs == send_lists.size() && (unsigned int) num_procs == recv_lists.size());
   int class_size = sizeof(T);

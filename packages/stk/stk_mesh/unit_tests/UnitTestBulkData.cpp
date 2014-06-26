@@ -2469,14 +2469,15 @@ TEST(DocTestBulkData, inducedPartMembershipIgnoredForNonOwnedHigherRankedEntitie
     bulk.modification_begin();
     const stk::mesh::EntityId element_id_0 = 1000;
     const stk::mesh::EntityId element_id_1 = 1001;
-    const stk::mesh::RelationIdentifier node_rel_id = 0;
     if (myRank == 0)
     {
+       const stk::mesh::RelationIdentifier node_rel_id = 0;
        stk::mesh::Entity element = bulk.declare_entity(stk::topology::ELEMENT_RANK, element_id_0, partA);
        bulk.declare_relation(element,sharedNodeA,node_rel_id);
     }
     else  // myRank == 1
     {
+       const stk::mesh::RelationIdentifier node_rel_id = 0;
        stk::mesh::Entity element = bulk.declare_entity(stk::topology::ELEMENT_RANK, element_id_1, partB);
        bulk.declare_relation(element,sharedNodeA,node_rel_id);
     }

@@ -159,9 +159,9 @@ TEST(UnitTestKeyhole, NodeParts_case1)
 
   stk::mesh::Part& shared = meta.globally_shared_part();
   const stk::mesh::BucketVector& shared_node_buckets = bulk.get_buckets(stk::topology::NODE_RANK, shared);
-  stk::mesh::PartVector blocks(2);
-  blocks[0] = meta.get_part("block_1");
-  blocks[1] = meta.get_part("block_2");
+  stk::mesh::PartVector blocksA(2);
+  blocksA[0] = meta.get_part("block_1");
+  blocksA[1] = meta.get_part("block_2");
   unsigned num_shared_nodes = 0;
   for(size_t i=0; i<shared_node_buckets.size(); ++i) {
     num_shared_nodes += shared_node_buckets[i]->size();
@@ -170,7 +170,7 @@ TEST(UnitTestKeyhole, NodeParts_case1)
     oss<<"proc "<<bulk.parallel_rank()<<", shared node ids: ";
     for(size_t j=0; j<bucket.size(); ++j) oss <<bulk.identifier(bucket[j])<<" ";
     std::cerr<<oss.str()<<std::endl;
-    bool in_both_blocks = bucket.member_all(blocks);
+    bool in_both_blocks = bucket.member_all(blocksA);
     EXPECT_TRUE(in_both_blocks);
   }
 
@@ -190,11 +190,11 @@ TEST(UnitTestKeyhole, NodeParts_case1)
 
     stk::mesh::Part& block_2 = *meta.get_part("block_2");
     stk::mesh::Part& block_3 = *meta.get_part("block_3");
-    stk::mesh::PartVector blocks(2);
-    blocks[0] = &block_2;
-    blocks[1] = &block_3;
-    EXPECT_TRUE(bulk.bucket(node8).member_all(blocks));
-    EXPECT_TRUE(bulk.bucket(node9).member_all(blocks));
+    stk::mesh::PartVector blocksB(2);
+    blocksB[0] = &block_2;
+    blocksB[1] = &block_3;
+    EXPECT_TRUE(bulk.bucket(node8).member_all(blocksB));
+    EXPECT_TRUE(bulk.bucket(node9).member_all(blocksB));
   }
 }
 
