@@ -363,7 +363,7 @@ namespace MueLu {
     print(ss, verbLevel);
 
     out0->setOutputToRootOnly(-1);
-    *out0 << ss.str();
+    *out0 << ss.str() << std::endl;
     out0->setOutputToRootOnly(previousSetting);
     out0->setShowProcRank(false);
   }
