@@ -3364,6 +3364,8 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
   Trace_("stk::mesh::BulkData::change_entity_owner");
   DiagIf(LOG_ENTITY, "arg_change: " << arg_change);
 
+  require_ok_to_modify();
+
   const MetaData  & meta = m_mesh_meta_data ;
   const int       p_rank = m_parallel_rank ;
   const int       p_size = m_parallel_size ;
