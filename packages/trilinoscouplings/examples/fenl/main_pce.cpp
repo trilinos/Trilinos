@@ -21,8 +21,8 @@
 //----------------------------------------------------------------------------
 
 #include <Tpetra_Version.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
 #include <Teuchos_Comm.hpp>
+#include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_oblackholestream.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
@@ -181,7 +181,7 @@ int main( int argc , char ** argv )
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
 
   Teuchos::RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+    Teuchos::DefaultComm<int>::getComm();
 
   //--------------------------------------------------------------------------
   CMD cmdline;
