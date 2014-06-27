@@ -314,6 +314,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
   long long tnoct = 0;
   elemOffsets_    = new long long [num_elem_];
   telct_ = 0;
+  size_t max_nsur = 0;
 
   for (long long b = 0; b < num_elem_blk; b++) {
     for (long long i = 0; i < num_elem_this_blk[b]; i++) {
@@ -322,6 +323,15 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
 
       for (long long j = 0; j < num_nodes_per_elem[b]; j++) {
 	elemToNode_[tnoct] = connect[b][i*num_nodes_per_elem[b] + j]-1;
+
+	if(sur_elem[tnoct].empty()) {
+	  printf("WARNING: Node = "ST_ZU" has no elements\n", tnoct+1);
+	} else {
+	  size_t nsur = sur_elem[tnoct].size();
+	  if (nsur > max_nsur)
+	    max_nsur = nsur;
+	}
+
 	++tnoct;
       }
     }
