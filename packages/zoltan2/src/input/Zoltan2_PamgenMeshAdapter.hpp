@@ -322,7 +322,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
 
       for (long long j = 0; j < num_nodes_per_elem[b]; j++) {
 	elemToNode_[tnoct] = connect[b][i*num_nodes_per_elem[b] + j]-1;
-	++tnolct;
+	++tnoct;
       }
     }
   }
