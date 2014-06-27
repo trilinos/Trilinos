@@ -158,74 +158,38 @@ struct TempLoc
   int64_t	m_loc;
 };
 
-template<class T>
+template<class T, class CompareOp>
 inline
-void
-  mpi_max_loc_global(
-    void *		invec,
-    void *		inoutvec,
-    int *		len,
-    MPI_Datatype *	datatype)
-  {
-    Loc<T> *Loc_in = static_cast<Loc<T> *>(invec);
-    Loc<T> *Loc_inout = static_cast<Loc<T> *>(inoutvec);
-
-    for (int i = 0; i < *len; ++i) {
-      if(Loc_in[i].m_value > Loc_inout[i].m_value) {
-        Loc_inout[i].m_value = Loc_in[i].m_value;
-        Loc_inout[i].m_loc = Loc_in[i].m_loc;
-      }
-    }
-  }
-
-template<class T>
-inline
-void
-  mpi_min_loc_global(
-    void *		invec,
-    void *		inoutvec,
-    int *		len,
-    MPI_Datatype *	datatype)
-  {
-    Loc<T> *Loc_in = static_cast<Loc<T> *>(invec);
-    Loc<T> *Loc_inout = static_cast<Loc<T> *>(inoutvec);
-
-    for (int i = 0; i < *len; ++i) {
-      if(Loc_in[i].m_value < Loc_inout[i].m_value) {
-        Loc_inout[i].m_value = Loc_in[i].m_value;
-        Loc_inout[i].m_loc = Loc_in[i].m_loc;
-      }
-    }
-  }
-
-template<class T>
-inline
-MPI_Op mpi_max_loc_global_op()
+void mpi_loc_global(void * invec, void * inoutvec, int * len, MPI_Datatype * datatype)
 {
-  static MPI_Op s_mpi_max_loc_global_op;
-  static bool initialized = false;
+  CompareOp op;
+  Loc<T> *Loc_in = static_cast<Loc<T> *>(invec);
+  Loc<T> *Loc_inout = static_cast<Loc<T> *>(inoutvec);
 
-  if (!initialized) {
-    initialized = true;
-
-    MPI_Op_create(mpi_max_loc_global<T>, true, &s_mpi_max_loc_global_op);
+  for (int i = 0; i < *len; ++i)
+  {
+    if (op(Loc_in[i].m_value, Loc_inout[i].m_value))
+    {
+      Loc_inout[i].m_value = Loc_in[i].m_value;
+      Loc_inout[i].m_loc = Loc_in[i].m_loc;
+    }
   }
-  return s_mpi_max_loc_global_op;
 }
 
-template<class T>
+
+template<class T, class CompareOp>
 inline
-MPI_Op mpi_min_loc_global_op()
+MPI_Op get_mpi_loc_op()
 {
-  static MPI_Op s_mpi_min_loc_global_op;
+  static MPI_Op s_mpi_loc_global_op;
   static bool initialized = false;
 
   if (!initialized) {
     initialized = true;
 
-    MPI_Op_create(mpi_min_loc_global<T>, true, &s_mpi_min_loc_global_op);
+    MPI_Op_create(mpi_loc_global<T, CompareOp>, true, &s_mpi_loc_global_op);
   }
-  return s_mpi_min_loc_global_op;
+  return s_mpi_loc_global_op;
 }
 
 /**

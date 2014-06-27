@@ -18,7 +18,6 @@
 #include <string>                       // for string
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/MPI.hpp>
-#include <stk_util/environment/Env.hpp>
 #include "stk_util/environment/ReportHandler.hpp"
 
 //------------------------------------------------------------------------
@@ -57,64 +56,74 @@ void all_reduce_sum( ParallelMachine comm , const T * local , T * global , unsig
   all_reduce_impl(comm, local, global, count, MPI_SUM);
 }
 
-
 template<typename T, typename IdType>
 void
-global_minloc(unsigned n,
-    const T local_min[],
+all_reduce_loc_impl(ParallelMachine comm,
+    const T local_extrema[],
     const IdType local_loc[],
-    T global_min[],
-    IdType global_loc[])
+    T global_extrema[],
+    IdType global_loc[],
+    unsigned n,
+    MPI_Op mpiOp)
 {
     typedef sierra::MPI::Loc<T, IdType> MpiLocType;
     if ( n < 1 ) return;
     MpiLocType * const vin  = new MpiLocType[n] ;
     MpiLocType * const vout = new MpiLocType[n] ;
     for (unsigned i = 0 ; i < n ; ++i ) {
-      vin[i].m_value = local_min[i] ;
-      vin[i].m_loc = local_loc[i] ;
-    }
-    ThrowRequire( MPI_SUCCESS == MPI_Allreduce( vin, vout, (int) n,
-                                       sierra::MPI::Datatype<MpiLocType >::type(),
-                                       sierra::MPI::mpi_min_loc_global_op<double>(),
-                                       sierra::Env::parallel_comm() ) );
-
-    for (unsigned i = 0 ; i < n ; ++i ) {
-      global_min[i] = vout[i].m_value ;
-      global_loc[i] = vout[i].m_loc ;
-    }
-    delete[] vin ;
-    delete[] vout ;
-
-}
-
-template<typename T, typename IdType>
-void
-global_maxloc(unsigned n,
-    const T local_max[],
-    const IdType local_loc[],
-    T global_max[],
-    IdType global_loc[])
-{
-    typedef sierra::MPI::Loc<T, IdType> MpiLocType;
-    if ( n < 1 ) return;
-    MpiLocType * const vin  = new MpiLocType[n] ;
-    MpiLocType * const vout = new MpiLocType[n] ;
-    for (unsigned i = 0 ; i < n ; ++i ) {
-      vin[i].m_value = local_max[i] ;
+      vin[i].m_value = local_extrema[i] ;
       vin[i].m_loc = local_loc[i] ;
     }
     ThrowRequire(MPI_SUCCESS == MPI_Allreduce( vin, vout, (int) n,
                                        sierra::MPI::Datatype<MpiLocType >::type(),
-                                       sierra::MPI::mpi_max_loc_global_op<double>(),
-                                       sierra::Env::parallel_comm() ) );
+                                       mpiOp,
+                                       comm )
+        );
 
     for (unsigned i = 0 ; i < n ; ++i ) {
-      global_max[i] = vout[i].m_value ;
+      global_extrema[i] = vout[i].m_value ;
       global_loc[i] = vout[i].m_loc ;
     }
     delete[] vin ;
     delete[] vout ;
+}
+
+
+
+template<typename T, typename IdType>
+void
+all_reduce_minloc(ParallelMachine comm,
+    const T local_extrema[],
+    const IdType local_loc[],
+    T global_extrema[],
+    IdType global_loc[],
+    unsigned count)
+{
+  all_reduce_loc_impl(comm,
+                  local_extrema,
+                  local_loc,
+                  global_extrema,
+                  global_loc,
+                  count,
+                  sierra::MPI::get_mpi_loc_op<T, std::less<T> >());
+}
+
+template<typename T, typename IdType>
+void
+all_reduce_maxloc(ParallelMachine comm,
+    const T local_extrema[],
+    const IdType local_loc[],
+    T global_extrema[],
+    IdType global_loc[],
+    unsigned count)
+{
+  all_reduce_loc_impl(comm,
+                  local_extrema,
+                  local_loc,
+                  global_extrema,
+                  global_loc,
+                  count,
+                  sierra::MPI::get_mpi_loc_op<T, std::greater<T> >());
 }
 
 /** \addtogroup parallel_module

@@ -15,8 +15,6 @@
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine, etc
 #include "stk_util/stk_config.h"        // for STK_HAS_MPI
 
-#include <mpi.h>
-
 namespace stk {
 
 #if defined( STK_HAS_MPI )
