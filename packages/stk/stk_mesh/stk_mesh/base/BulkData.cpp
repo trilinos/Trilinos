@@ -726,7 +726,13 @@ void BulkData::require_metadata_committed()
 
 //----------------------------------------------------------------------
 
-bool BulkData::modification_begin()
+const std::string& BulkData::get_modification_begin_description() const {
+  return m_modification_begin_description;
+}
+
+//----------------------------------------------------------------------
+
+bool BulkData::modification_begin(const std::string description)
 {
   Trace_("stk::mesh::BulkData::modification_begin");
 
@@ -739,6 +745,9 @@ bool BulkData::modification_begin()
   }
 
   if ( m_sync_state == MODIFIABLE && m_mesh_finalized == false ) return false ;
+
+  m_modification_begin_description = description;
+
 
   if ( ! m_meta_data_verified ) {
     require_metadata_committed();
@@ -5322,6 +5331,8 @@ bool BulkData::modification_end( modification_optimization opt)
 #ifdef STK_VERBOSE_OUTPUT
   print_bucket_data(*this);
 #endif
+
+  m_modification_begin_description = "NO_MODIFICATION";
 
   return return_value;
 }

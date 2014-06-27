@@ -244,11 +244,19 @@ public:
    *          parallel consistent.  An exception is thrown if this
    *          verification fails.
    *
+   *  Input string is some description of why or where modification was
+   *  started from that can be later queried.
+   *
    *  \return  True if transitioned out of the guaranteed
    *           parallel consistent state to the "ok to modify" state.
    *           False if already in this state.
    */
-  bool modification_begin();
+  bool modification_begin(const std::string description = "UNSPECIFIED");
+
+  /** \brief  Return the description given for the modification_begin
+   *          call that began the most recent mesh modification cycle
+   */
+  const std::string& get_modification_begin_description() const;
 
 
   /** \brief  Parallel synchronization of modifications and
@@ -1224,6 +1232,7 @@ private:
   BulkDataSyncState  m_sync_state;
   bool               m_meta_data_verified;
   bool               m_mesh_finalized;
+  std::string        m_modification_begin_description;
 #ifdef SIERRA_MIGRATION
   bool                              m_add_fmwk_data; // flag that will add extra data to buckets to support fmwk
   const sierra::Fmwk::MeshBulkData* m_fmwk_bulk_ptr;
