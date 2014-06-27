@@ -1388,11 +1388,14 @@ private:
 
 protected:
   void internal_resolve_shared_modify_delete();
+  void update_comm_list_based_on_changes_in_comm_map();
 private:
   void internal_establish_new_owner(stk::mesh::Entity entity);
   void internal_update_parts_for_shared_entity(stk::mesh::Entity entity, const bool is_entity_shared, const bool did_i_just_become_owner);
   void internal_resolve_shared_modify_delete_second_pass();
+protected:
   void internal_resolve_ghosted_modify_delete();
+private:
   void internal_resolve_parallel_create();
   void resolve_ownership_of_modified_entities(const std::vector<stk::mesh::Entity> &shared_new);
 
@@ -2166,7 +2169,7 @@ struct EntityGhostData
 
 void get_ghost_data( const BulkData& bulkData, Entity entity, std::vector<EntityGhostData> & dataVector );
 void delete_shared_entities_which_are_no_longer_in_owned_closure( BulkData & mesh );
-
+bool comm_mesh_verify_parallel_consistency(BulkData & M , std::ostream & error_log );
 
 } // namespace mesh
 } // namespace stk

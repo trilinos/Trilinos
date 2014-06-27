@@ -4477,8 +4477,7 @@ void BulkData::internal_regenerate_aura()
 //----------------------------------------------------------------------
 //EndSync
 //----------------------------------------------------------------------
-bool comm_mesh_verify_parallel_consistency(
-  BulkData & M , std::ostream & error_log );
+
 
 //----------------------------------------------------------------------
 
@@ -5033,6 +5032,9 @@ void BulkData::internal_resolve_ghosted_modify_delete()
 
       // Owner modified or destroyed, must locally destroy.
 
+        // Manoj: could be error here. I think the loop below
+        // should loop thru all ghostings, m_ghosting. But effect might be same.
+        // would only impact custom ghostings.
       for ( PairIterEntityComm ec = entity_comm_map(key); !ec.empty() ; ++ec ) {
         ghosting_change_flags[ ec->ghost_id ] = true ;
       }
@@ -5041,19 +5043,15 @@ void BulkData::internal_resolve_ghosted_modify_delete()
       // is the ghosting information, can clear it all out.
       entity_comm_map_clear(key);
 
-      if ( ! locally_destroyed ) {
-
-        // If mesh modification causes a ghost entity to become
-        // a member of an owned-closure then do not automatically
-        // destroy it.  The new sharing status will be resolved
-        // in 'internal_resolve_parallel_create'.
-
-        if ( ! in_owned_closure(*this, entity , m_parallel_rank ) ) {
-
+      if ( ! locally_destroyed && ! in_owned_closure(*this, entity , m_parallel_rank ) )
+      {
+          // If mesh modification causes a ghost entity to become
+          // a member of an owned-closure then do not automatically
+          // destroy it.  The new sharing status will be resolved
+          // in 'internal_resolve_parallel_create'.
           const bool destroy_entity_successful = destroy_entity(entity, true);
           ThrowRequireMsg(destroy_entity_successful,
-              "Could not destroy ghost entity " << identifier(entity));
-        }
+                          "Could not destroy ghost entity " << identifier(entity));
       }
     }
   } // end loop on remote mod
@@ -5451,6 +5449,26 @@ int check_no_shared_elements_or_higher(const BulkData& mesh)
 
 }
 
+void BulkData::update_comm_list_based_on_changes_in_comm_map()
+// Resolution of shared and ghost modifications can empty
+// the communication information for entities.
+// If there is no communication information then the
+// entity must be removed from the communication list.
+{
+  EntityCommListInfoVector::iterator i = m_entity_comm_list.begin();
+  bool changed = false ;
+  for ( ; i != m_entity_comm_list.end() ; ++i ) {
+    if ( entity_comm_map(i->key).empty() ) {
+      i->key = EntityKey();
+      changed = true;
+    }
+  }
+  if ( changed ) {
+    i = std::remove_if( m_entity_comm_list.begin() ,
+                        m_entity_comm_list.end() , IsInvalid() );
+    m_entity_comm_list.erase( i , m_entity_comm_list.end() );
+  }
+}
 
 bool BulkData::internal_modification_end( bool regenerate_aura, modification_optimization opt )
 {
@@ -5472,25 +5490,7 @@ bool BulkData::internal_modification_end( bool regenerate_aura, modification_opt
     // by destroying ghost entities that have been touched.
     internal_resolve_ghosted_modify_delete();
 
-    // Resolution of shared and ghost modifications can empty
-    // the communication information for entities.
-    // If there is no communication information then the
-    // entity must be removed from the communication list.
-    {
-      EntityCommListInfoVector::iterator i = m_entity_comm_list.begin();
-      bool changed = false ;
-      for ( ; i != m_entity_comm_list.end() ; ++i ) {
-        if ( entity_comm_map(i->key).empty() ) {
-          i->key = EntityKey();
-          changed = true;
-        }
-      }
-      if ( changed ) {
-        i = std::remove_if( m_entity_comm_list.begin() ,
-                            m_entity_comm_list.end() , IsInvalid() );
-        m_entity_comm_list.erase( i , m_entity_comm_list.end() );
-      }
-    }
+    update_comm_list_based_on_changes_in_comm_map();
 
     // Resolve creation of entities: discover sharing and set unique ownership.
     internal_resolve_parallel_create();
