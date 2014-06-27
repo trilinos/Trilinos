@@ -59,6 +59,17 @@ namespace stk { namespace mesh { struct ConnectivityMap; } }
 // Use macro below to enable metric gathering for get_buckets memoization
 //#define GATHER_GET_BUCKETS_METRICS
 
+// Use macro below to activate counters that track calls to mesh-modification routines
+//#define STK_MESH_MODIFICATION_COUNTERS
+
+#ifdef STK_MESH_MODIFICATION_COUNTERS
+#define INCREMENT_MODIFICATION_COUNTER(MOD_TYPE) {++m_modification_counters[MOD_TYPE];}
+#define INCREMENT_ENTITY_MODIFICATION_COUNTER(RANK,MOD_TYPE) {++m_entity_modification_counters[RANK][MOD_TYPE];}
+#else
+#define INCREMENT_MODIFICATION_COUNTER(MOD_TYPE) {}
+#define INCREMENT_ENTITY_MODIFICATION_COUNTER(RANK,MOD_TYPE) {}
+#endif
+
 namespace stk {
 namespace mesh {
 
@@ -1188,6 +1199,7 @@ private:
   void update_deleted_entities_container();
   void addMeshEntities(const std::vector< stk::parallel::DistributedIndex::KeyTypeVector >& requested_key_types,
          const std::vector<Part*> &rem, const std::vector<Part*> &add, std::vector<Entity>& requested_entities);
+  std::pair<Entity, bool> internal_create_entity(EntityKey key, size_t preferred_offset = 0);
 
 #ifndef DOXYGEN_COMPILE
 
@@ -1469,6 +1481,37 @@ private:
   friend class stk::mesh::Bucket; // for field callbacks
 
 #endif /* DOXYGEN_COMPILE */
+
+
+  enum ModificationTypes {
+      CHANGE_ENTITY_OWNER,
+      CHANGE_GHOSTING,
+      CREATE_GHOSTING,
+      DECLARE_RELATION,
+      DESTROY_ALL_GHOSTING,
+      DESTROY_RELATION,
+      NumModificationTypes
+  };
+
+  enum EntityModificationTypes {
+      CHANGE_ENTITY_ID,
+      CHANGE_ENTITY_PARTS,
+      DECLARE_ENTITY,
+      DESTROY_ENTITY,
+      NumEntityModificationTypes
+  };
+
+#ifdef STK_MESH_MODIFICATION_COUNTERS
+  unsigned m_modification_counters[NumModificationTypes];
+  unsigned m_entity_modification_counters[stk::topology::NUM_RANKS][NumEntityModificationTypes];
+#endif
+
+  void reset_modification_counters();
+  std::string create_modification_counts_filename() const;
+  void write_modification_counts();
+  void write_modification_counts_to_stream(std::ostream& out);
+  void write_entity_modification_entry(std::ostream& out, const std::string& label, EntityModificationTypes entityModification);
+
 };
 
 ///////////////////////////////////////////////////////////////////////////////

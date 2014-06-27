@@ -16,6 +16,8 @@
 #include <algorithm>                    // for sort, lower_bound, unique, etc
 #include <boost/foreach.hpp>            // for auto_any_base, etc
 #include <iostream>                     // for operator<<, basic_ostream, etc
+#include <sstream>
+#include <fstream>
 #include <iterator>                     // for back_insert_iterator, etc
 #include <set>                          // for set, set<>::iterator, etc
 #include <stk_mesh/base/Bucket.hpp>     // for Bucket, BucketIdComparator, etc
@@ -352,7 +354,17 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
            (mesh_meta_data.spatial_dimension() == 2 ? ConnectivityMap::default_map_2d() : ConnectivityMap::default_map())
 /*           (mesh_meta_data.spatial_dimension() == 2 ? ConnectivityMap::fixed_edges_map_2d() : ConnectivityMap::fixed_edges_map()) */
                         )
+#ifdef STK_MESH_MODIFICATION_COUNTERS
+,
+    m_modification_counters()
+#endif
 {
+#ifdef STK_MESH_MODIFICATION_COUNTERS
+  std::ofstream outfile(create_modification_counts_filename().c_str());
+  outfile.close();
+  reset_modification_counters();
+#endif
+
   if (m_field_data_manager == NULL)
   {
       m_field_data_manager = &m_default_field_data_manager;
@@ -366,6 +378,66 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
   create_ghosting( "shared_aura" );
 
   m_sync_state = SYNCHRONIZED ;
+}
+
+void BulkData::reset_modification_counters()
+{
+#ifdef STK_MESH_MODIFICATION_COUNTERS
+    for(unsigned i=0; i<static_cast<unsigned>(NumModificationTypes); ++i)
+    {
+        m_modification_counters[i] = 0;
+    }
+    for(unsigned i=0; i<static_cast<unsigned>(NumEntityModificationTypes); ++i)
+    {
+        for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<mesh_meta_data().entity_rank_count(); rank++)
+        {
+            m_entity_modification_counters[rank][i] = 0;
+        }
+    }
+#endif
+}
+void BulkData::write_entity_modification_entry(std::ostream& out, const std::string& label, EntityModificationTypes entityModification)
+{
+#ifdef STK_MESH_MODIFICATION_COUNTERS
+    for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<mesh_meta_data().entity_rank_count(); rank++)
+    {
+        out << synchronized_count()<< " "<<label<<"["<<rank<<"]: "       << m_entity_modification_counters[rank][entityModification]<<"\n";
+    }
+#endif
+}
+
+void BulkData::write_modification_counts_to_stream(std::ostream& out)
+{
+#ifdef STK_MESH_MODIFICATION_COUNTERS
+    write_entity_modification_entry(out, "declare_entity", DECLARE_ENTITY);
+    write_entity_modification_entry(out, "destroy_entity", DESTROY_ENTITY);
+    write_entity_modification_entry(out, "change_entity_id", CHANGE_ENTITY_ID);
+    write_entity_modification_entry(out, "change_entity_parts", CHANGE_ENTITY_PARTS);
+    out << synchronized_count()<< " change_entity_owner: "  << m_modification_counters[CHANGE_ENTITY_OWNER]<<"\n";
+    out << synchronized_count()<< " create_ghosting: "      << m_modification_counters[CREATE_GHOSTING]<<"\n";
+    out << synchronized_count()<< " change_ghosting: "      << m_modification_counters[CHANGE_GHOSTING]<<"\n";
+    out << synchronized_count()<< " destroy_all_ghosting: " << m_modification_counters[DESTROY_ALL_GHOSTING]<<"\n";
+    out << synchronized_count()<< " declare_relation: "     << m_modification_counters[DECLARE_RELATION]<<"\n";
+    out << synchronized_count()<< " destroy_relation: "     << m_modification_counters[DESTROY_RELATION]<<"\n";
+#endif
+}
+
+std::string BulkData::create_modification_counts_filename() const
+{
+    static int counter = 0;
+    std::ostringstream filename;
+    filename<<"modification_counts_"<<counter<<"_np"<<this->parallel_size()<<"."<<this->parallel_rank();
+    counter++;
+    return filename.str();
+}
+
+void BulkData::write_modification_counts()
+{
+#ifdef STK_MESH_MODIFICATION_COUNTERS
+    std::ofstream outfile(create_modification_counts_filename().c_str(), std::ios::app);
+    write_modification_counts_to_stream(outfile);
+    reset_modification_counters();
+#endif
 }
 
 #ifdef GATHER_GET_BUCKETS_METRICS
@@ -610,6 +682,7 @@ void BulkData::gather_and_print_mesh_partitioning() const
 
 BulkData::~BulkData()
 {
+
 #ifdef STK_PROFILE_MEMORY
   ParallelMachine world = MPI_COMM_WORLD; // HACK, but necessary to work with Fmwk
   const int real_rank = parallel_machine_rank(world);
@@ -981,7 +1054,7 @@ void BulkData::initialize_arrays()
 Entity BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id ,
                                  const PartVector & parts )
 {
-  m_check_invalid_rels = false;
+    m_check_invalid_rels = false;
 
   require_ok_to_modify();
 
@@ -991,7 +1064,7 @@ Entity BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id ,
   TraceIfWatching("stk::mesh::BulkData::declare_entity", LOG_ENTITY, key);
   DiagIfWatching(LOG_ENTITY, key, "declaring entity with parts " << parts);
 
-  std::pair< Entity , bool > result = m_entity_repo.internal_create_entity( key );
+  std::pair< Entity , bool > result = internal_create_entity( key );
 
   Entity declared_entity = result.first;
 
@@ -1049,6 +1122,8 @@ void BulkData::change_entity_id( EntityId id, Entity entity)
 
 void BulkData::internal_change_entity_key( EntityKey old_key, EntityKey new_key, Entity entity)
 {
+  INCREMENT_ENTITY_MODIFICATION_COUNTER(old_key.rank(), CHANGE_ENTITY_ID);
+
   m_entity_repo.update_entity_key(new_key, old_key, entity);
   set_entity_key(entity, new_key);
 }
@@ -1072,6 +1147,9 @@ bool BulkData::destroy_entity( Entity entity, bool was_ghost )
 
   const bool ghost = was_ghost || in_receive_ghost(key);
   const EntityRank erank = entity_rank(entity);
+
+  INCREMENT_ENTITY_MODIFICATION_COUNTER(erank, DESTROY_ENTITY);
+
   const EntityRank end_rank = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count());
   for (EntityRank irank = static_cast<EntityRank>(erank + 1); irank != end_rank; ++irank) {
     if (num_connectivity(entity, irank) > 0) {
@@ -1195,6 +1273,12 @@ void BulkData::generate_new_entities(const std::vector<size_t>& requests,
     addMeshEntities(requested_key_types, rem, add, requested_entities);
 }
 
+std::pair<Entity, bool> BulkData::internal_create_entity(EntityKey key, size_t preferred_offset)
+{
+    INCREMENT_ENTITY_MODIFICATION_COUNTER(key.rank(), DECLARE_ENTITY);
+    return m_entity_repo.internal_create_entity(key, preferred_offset);
+}
+
 void BulkData::addMeshEntities(const std::vector< stk::parallel::DistributedIndex::KeyTypeVector >& requested_key_types,
        const std::vector<Part*> &rem, const std::vector<Part*> &add, std::vector<Entity>& requested_entities)
 {
@@ -1209,7 +1293,7 @@ void BulkData::addMeshEntities(const std::vector< stk::parallel::DistributedInde
         {
             EntityKey key(static_cast<EntityKey::entity_key_t>((*kitr)));
             require_good_rank_and_id(key.rank(), key.id());
-            std::pair<Entity, bool> result = m_entity_repo.internal_create_entity(key);
+            std::pair<Entity, bool> result = internal_create_entity(key);
 
             //if an entity is declared with the declare_entity function in
             //the same modification cycle as the generate_new_entities
@@ -1972,6 +2056,8 @@ bool BulkData::internal_declare_relation(Entity e_from, Entity e_to,
                                          unsigned sync_count, bool is_back_relation,
                                          Permutation permut)
 {
+    INCREMENT_MODIFICATION_COUNTER(DECLARE_RELATION);
+
   TraceIfWatching("stk::mesh::BuilkData::internal_declare_relation", LOG_ENTITY, entity_key(e_from));
 
   const MeshIndex& idx = mesh_index(e_from);
@@ -2104,6 +2190,8 @@ bool BulkData::destroy_relation( Entity e_from ,
                                  Entity e_to,
                                  const RelationIdentifier local_id )
 {
+    INCREMENT_MODIFICATION_COUNTER(DESTROY_RELATION);
+
   TraceIfWatching("stk::mesh::BulkData::destroy_relation", LOG_ENTITY, entity_key(e_from));
   TraceIfWatchingDec("stk::mesh::BulkData::destroy_relation", LOG_ENTITY, entity_key(e_to), 1);
   DiagIfWatching(LOG_ENTITY, entity_key(e_from),
@@ -3363,6 +3451,8 @@ void generate_parallel_change( const BulkData & mesh ,
 
 void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
 {
+    INCREMENT_MODIFICATION_COUNTER(CHANGE_ENTITY_OWNER);
+
   Trace_("stk::mesh::BulkData::change_entity_owner");
   DiagIf(LOG_ENTITY, "arg_change: " << arg_change);
 
@@ -3544,8 +3634,7 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
           remove( parts , meta.locally_owned_part() );
         }
 
-        std::pair<Entity ,bool> result =
-          m_entity_repo.internal_create_entity( key );
+        std::pair<Entity ,bool> result = internal_create_entity( key );
 
         Entity entity = result.first;
 
@@ -3604,6 +3693,8 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
 
 Ghosting & BulkData::create_ghosting( const std::string & name )
 {
+    INCREMENT_MODIFICATION_COUNTER(CREATE_GHOSTING);
+
   require_ok_to_modify();
 
   // Verify name is the same on all processors,
@@ -3697,6 +3788,8 @@ void BulkData::destroy_ghosting( Ghosting& ghost_layer )
 
 void BulkData::destroy_all_ghosting()
 {
+    INCREMENT_MODIFICATION_COUNTER(DESTROY_ALL_GHOSTING);
+
   Trace_("stk::mesh::BulkData::destroy_all_ghosting");
 
   require_ok_to_modify();
@@ -3893,8 +3986,7 @@ void BulkData::ghost_entities_and_fields(Ghosting & ghosts, const std::set<Entit
             m_ghost_reuse_map.erase(f_itr);
           }
 
-          std::pair<Entity ,bool> result =
-            m_entity_repo.internal_create_entity( key, use_this_offset );
+          std::pair<Entity ,bool> result = internal_create_entity( key, use_this_offset );
 
           Entity entity = result.first;
           const bool created   = result.second ;
@@ -3955,6 +4047,8 @@ void BulkData::internal_change_ghosting(
   Trace_("stk::mesh::BulkData::internal_change_ghosting");
 
   BABBLE_STK_PARALLEL_COMM(m_parallel_machine, "      entered internal_change_ghosting");
+
+  INCREMENT_MODIFICATION_COUNTER(CHANGE_GHOSTING);
 
   //------------------------------------
   // Copy ghosting lists into more efficiently edited container.
@@ -5338,6 +5432,8 @@ bool BulkData::modification_end( modification_optimization opt)
 
   m_modification_begin_description = "NO_MODIFICATION";
 
+  write_modification_counts();
+
   return return_value;
 }
 
@@ -6173,6 +6269,7 @@ void BulkData::change_entity_parts( Entity entity,
 #endif
 
   const EntityRank ent_rank = entity_rank(entity);
+
   const EntityRank undef_rank  = InvalidEntityRank;
 
   // Transitive addition and removal:
@@ -6282,6 +6379,8 @@ void BulkData::internal_change_entity_parts(
     // thus nothing to do.
     return ;
   }
+
+  INCREMENT_ENTITY_MODIFICATION_COUNTER(entity_rank(entity), CHANGE_ENTITY_PARTS);
 
   const unsigned locally_owned_ordinal = m_mesh_meta_data.locally_owned_part().mesh_meta_data_ordinal();
 
