@@ -1461,7 +1461,14 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   findGlobalIndex (RowInfo rowinfo, GlobalOrdinal ind, size_t hint) const
   {
+    using Teuchos::ArrayView;
     typedef typename ArrayView<const GlobalOrdinal>::iterator IT;
+
+    // Don't let an invalid global column index through.
+    if (ind == Teuchos::OrdinalTraits<GlobalOrdinal>::invalid ()) {
+      return Teuchos::OrdinalTraits<size_t>::invalid ();
+    }
+
     ArrayView<const GlobalOrdinal> indices = getGlobalView (rowinfo);
 
     // We don't actually require that the hint be a valid index.

@@ -499,13 +499,32 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       matrix.fillComplete(params);
       TEST_EQUALITY_CONST( matrix.isFillActive(),   false );
       TEST_EQUALITY_CONST( matrix.isFillComplete(), true );
+
+      LO numValid = 0;
+
+      // It's forbidden to call any of the *LocalValues methods if the
+      // matrix is fill complete (not fill active).
+
       TEST_THROW( matrix.insertLocalValues ( 0, tuple<LO>(0), tuple<Scalar>(0) ), std::runtime_error );
-      TEST_THROW( matrix.replaceLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) ), std::runtime_error );
-      TEST_THROW( matrix.sumIntoLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) ), std::runtime_error );
-      TEST_THROW( matrix.setAllToScalar(SZERO),                                   std::runtime_error );
-      TEST_THROW( matrix.scale(SZERO),                                            std::runtime_error );
-      TEST_THROW( matrix.globalAssemble(),                                        std::runtime_error );
-      TEST_THROW( matrix.fillComplete(),                                          std::runtime_error );
+      // numValid = matrix.insertLocalValues (0, tuple<LO> (0), tuple<Scalar> (0));
+      // TEST_EQUALITY( numValid, 0 );
+
+      //TEST_THROW( matrix.replaceLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) ), std::runtime_error );
+      numValid = matrix.replaceLocalValues (0, tuple<LO> (0), tuple<Scalar> (0));
+      TEST_EQUALITY( numValid, Teuchos::OrdinalTraits<LO>::invalid () );
+
+      //TEST_THROW( matrix.replaceLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) ), std::runtime_error );
+      numValid = matrix.replaceLocalValues (0, tuple<LO> (0), tuple<Scalar> (0));
+      TEST_EQUALITY( numValid, Teuchos::OrdinalTraits<LO>::invalid () );
+
+      //TEST_THROW( matrix.sumIntoLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) ), std::runtime_error );
+      numValid = matrix.sumIntoLocalValues (0, tuple<LO> (0), tuple<Scalar> (0));
+      TEST_EQUALITY( numValid, Teuchos::OrdinalTraits<LO>::invalid () );
+
+      TEST_THROW( matrix.setAllToScalar(SZERO), std::runtime_error );
+      TEST_THROW( matrix.scale(SZERO),          std::runtime_error );
+      TEST_THROW( matrix.globalAssemble(),      std::runtime_error );
+      TEST_THROW( matrix.fillComplete(),        std::runtime_error );
     }
     {
       MAT matrix(map,map,0,DynamicProfile);

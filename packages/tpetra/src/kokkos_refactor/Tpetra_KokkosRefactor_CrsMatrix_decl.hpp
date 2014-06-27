@@ -683,7 +683,7 @@ namespace Tpetra {
                        const ArrayView<const LocalOrdinal> &cols,
                        const ArrayView<const Scalar> &vals);
 
-    /// Replace one or more entries' values, using global indices.
+    /// \brief Replace one or more entries' values, using global indices.
     ///
     /// \param globalRow [in] Global index of the row in which to
     ///   replace the entries.  This row <i>must</i> be owned by the
@@ -706,7 +706,7 @@ namespace Tpetra {
                          const ArrayView<const GlobalOrdinal>& cols,
                          const ArrayView<const Scalar>& vals);
 
-    /// Replace one or more entries' values, using global indices.
+    /// \brief Replace one or more entries' values, using local indices.
     ///
     /// \param localRow [in] local index of the row in which to
     ///   replace the entries.  This row <i>must</i> be owned by the
@@ -719,10 +719,25 @@ namespace Tpetra {
     /// at entry <tt>(localRow, cols[k])</tt> of the matrix with
     /// <tt>vals[k]</tt>.  That entry must exist in the matrix
     /// already.
-    void
-    replaceLocalValues (LocalOrdinal localRow,
-                        const ArrayView<const LocalOrdinal> &cols,
-                        const ArrayView<const Scalar>       &vals);
+    ///
+    /// \return The number of indices for which values were actually
+    ///   replaced; the number of "correct" indices.
+    ///
+    /// If the returned value N satisfies <tt>0 <= N <
+    /// cols.size()</tt>, then <tt>cols.size() - N</tt> of the entries
+    /// of <tt>cols</tt> are not valid local column indices.  If the
+    /// returned value is
+    /// Teuchos::OrdinalTraits<LocalOrdinal>::invalid(), then at least
+    /// one of the following is true:
+    ///   <ul>
+    ///   <li> <tt>! isFillActive ()</tt> </li>
+    ///   <li> <tt>! hasColMap ()</tt> </li>
+    ///   <li> <tt> cols.size () != vals.size ()</tt> </li>
+    ///   </ul>
+    LocalOrdinal
+    replaceLocalValues (const LocalOrdinal localRow,
+                        const ArrayView<const LocalOrdinal>& cols,
+                        const ArrayView<const Scalar>& vals);
 
     /// \brief Sum into one or more sparse matrix entries, using global indices.
     ///
@@ -757,16 +772,22 @@ namespace Tpetra {
 
     /// \brief Sum into one or more sparse matrix entries, using local indices.
     ///
-    /// \param localRow [in] Local index of a row.  This row must be
-    ///   owned by the calling process.
+    /// \param localRow [in] Local index of a row.  This row
+    ///   <i>must</i> be owned by the calling process.
     /// \param cols [in] Local indices of the columns whose entries we
     ///   want to modify.
     /// \param vals [in] Values corresponding to the above column
     ///   indices.  <tt>vals[k]</tt> corresponds to <tt>cols[k]</tt>.
-    void
+    ///
+    /// \return The number of indices for which values were actually
+    ///   replaced; the number of "correct" indices.
+    ///
+    /// This method has the same preconditions and return value
+    /// meaning as replaceLocalValues() (which see).
+    LocalOrdinal
     sumIntoLocalValues (const LocalOrdinal localRow,
-                        const ArrayView<const LocalOrdinal>  &cols,
-                        const ArrayView<const Scalar>        &vals);
+                        const ArrayView<const LocalOrdinal>& cols,
+                        const ArrayView<const Scalar>& vals);
 
     //! Set all matrix entries equal to \c alpha.
     void setAllToScalar (const Scalar &alpha);
@@ -1995,100 +2016,6 @@ namespace Tpetra {
                          const Teuchos::ArrayView<const Scalar> values,
                          const Tpetra::CombineMode combineMode);
 
-    /// \brief Transform CrsMatrix entries, using local indices.
-    ///
-    /// For every entry \f$A(i,j)\f$ to transform, if \f$v_{ij}\f$ is
-    /// the corresponding entry of the \c values array, then we apply
-    /// the binary function f to \f$A(i,j)\f$ as follows:
-    /// \f[
-    ///   A(i,j) := f(A(i,j), v_{ij}).
-    /// \f]
-    /// For example, BinaryFunction = std::plus<Scalar> does the same
-    /// thing as sumIntoLocalValues(), and BinaryFunction =
-    /// project2nd<Scalar,Scalar> does the same thing as
-    /// replaceLocalValues().
-    ///
-    /// \tparam BinaryFunction The type of binary function to apply.
-    ///   std::binary_function is a model for this.
-    ///
-    /// \pre The matrix must have a column Map.
-    ///
-    /// \param localRow [in] (Local) index of the row to modify.
-    ///   This row <i>must</i> be owned by the calling process.
-    ///
-    /// \param indices [in] (Local) indices in the row to modify.
-    ///   Indices not in the column Map and their corresponding values
-    ///   will be ignored.
-    ///
-    /// \param values [in] Values to use for modification.
-    ///
-    /// This method works whether indices are local or global.
-    /// However, it will cost more if indices are global, since it
-    /// will have to convert the local indices to global indices in
-    /// that case.
-    template<class BinaryFunction>
-    void
-    transformLocalValues (LocalOrdinal localRow,
-                          const Teuchos::ArrayView<const LocalOrdinal>& indices,
-                          const Teuchos::ArrayView<const Scalar>        & values,
-                          BinaryFunction f)
-    {
-      typedef LocalOrdinal LO;
-      typedef GlobalOrdinal GO;
-      typedef node_type NT;
-      using Teuchos::Array;
-      using Teuchos::ArrayView;
-
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        ! isFillActive (),
-        std::runtime_error,
-        "Tpetra::CrsMatrix::transformLocalValues: Fill must be active in order "
-        "to call this method.  That is, isFillActive() must return true.  If "
-        "you have already called fillComplete(), you need to call resumeFill() "
-        "before you can replace values.");
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        values.size () != indices.size (),
-        std::runtime_error,
-        "Tpetra::CrsMatrix::transformLocalValues: values.size () = "
-        << values.size () << " != indices.size () = " << indices.size ()
-        << ".");
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        ! this->hasColMap (),
-        std::runtime_error,
-        "Tpetra::CrsMatrix::transformLocalValues: We cannot transform local "
-        "indices without a column map.");
-      const bool isLocalRow = getRowMap ()->isNodeLocalElement (localRow);
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        ! isLocalRow,
-        std::runtime_error,
-        "Tpetra::CrsMatrix::transformLocalValues: The specified local row "
-        << localRow << " does not belong to this process "
-        << getRowMap ()->getComm ()->getRank () << ".");
-
-      RowInfo rowInfo = staticGraph_->getRowInfo (localRow);
-      if (indices.size () > 0) {
-        ArrayView<Scalar> curVals = this->getViewNonConst (rowInfo);
-        if (isLocallyIndexed ()) {
-          staticGraph_->template transformLocalValues<Scalar, BinaryFunction> (rowInfo, curVals, indices, values, f);
-        }
-        else if (isGloballyIndexed ()) {
-          // Convert the given local indices to global indices.
-          const Map<LO, GO, NT>& colMap = * (this->getColMap ());
-          Array<GO> gindices (indices.size ());
-          typename ArrayView<const LO>::iterator lindit = indices.begin();
-          typename Array<GO>::iterator           gindit = gindices.begin();
-          while (lindit != indices.end()) {
-            // There is no need to filter out indices not in the column
-            // Map.  Those that aren't will be mapped to invalid(),
-            // which transformGlobalValues() will ignore.
-            *gindit++ = colMap.getGlobalElement (*lindit++);
-          }
-          staticGraph_->template transformGlobalValues<Scalar, BinaryFunction> (rowInfo, curVals, gindices (), values, f);
-        }
-      }
-    }
-
-
     /// \brief Transform CrsMatrix entries, using global indices.
     ///
     /// For every entry \f$A(i,j)\f$ to transform, if \f$v_{ij}\f$ is
@@ -2177,10 +2104,12 @@ namespace Tpetra {
             // which transformLocalValues() will ignore.
             *lindit++ = colMap.getLocalElement (*gindit++);
           }
-          staticGraph_->template transformLocalValues<Scalar, BinaryFunction> (rowInfo, curVals, lindices (), values, f);
+          // FIXME (mfh 27 Jun 2014) Use the returned value.
+          (void) staticGraph_->template transformLocalValues<Scalar, BinaryFunction> (rowInfo, curVals, lindices (), values, f);
         }
         else if (isGloballyIndexed ()) {
-          staticGraph_->template transformGlobalValues<Scalar, BinaryFunction> (rowInfo, curVals, indices, values, f);
+          // FIXME (mfh 27 Jun 2014) Use the returned value.
+          (void) staticGraph_->template transformGlobalValues<Scalar, BinaryFunction> (rowInfo, curVals, indices, values, f);
         }
       }
     }
