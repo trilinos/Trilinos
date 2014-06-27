@@ -12,6 +12,8 @@
 #include <stdexcept>                    // for runtime_error
 #include <vector>                       // for vector
 #include <iostream>
+#include <sys/types.h>
+#include <stdint.h>
 namespace sierra { namespace MPI { template <typename T> struct Datatype; } }
 
 namespace sierra {
@@ -122,11 +124,11 @@ MPI_Datatype double_double_int_type();
  */
 
 
-template <typename T>
+template <typename T, typename IdType=int64_t>
 struct Loc
 {
-  T		m_value;
-  int64_t	m_loc;
+  T m_value;
+  IdType m_loc;
 };
 
 template <typename T>
@@ -357,7 +359,7 @@ struct Datatype<std::complex<double> >
 
 
 template <>
-struct Datatype<Loc<int> >
+struct Datatype<Loc<int, uint64_t> >
 {
   static MPI_Datatype type() {
     return int_int64_type();
@@ -365,7 +367,7 @@ struct Datatype<Loc<int> >
 };
 
 template <>
-struct Datatype<Loc<short> >
+struct Datatype<Loc<short, uint64_t> >
 {
   static MPI_Datatype type() {
     return short_int64_type();
@@ -373,7 +375,7 @@ struct Datatype<Loc<short> >
 };
 
 template <>
-struct Datatype<Loc<long> >
+struct Datatype<Loc<long, uint64_t> >
 {
   static MPI_Datatype type() {
     return long_int64_type();
@@ -381,7 +383,7 @@ struct Datatype<Loc<long> >
 };
 
 template <>
-struct Datatype<Loc<unsigned long> >
+struct Datatype<Loc<unsigned long, uint64_t> >
 {
   static MPI_Datatype type() {
     return unsigned_long_int64_type();
@@ -389,7 +391,7 @@ struct Datatype<Loc<unsigned long> >
 };
 
 template <>
-struct Datatype<Loc<float> >
+struct Datatype<Loc<float, uint64_t> >
 {
   static MPI_Datatype type() {
     return float_int64_type();
@@ -397,10 +399,34 @@ struct Datatype<Loc<float> >
 };
 
 template <>
-struct Datatype<Loc<double> >
+struct Datatype<Loc<double, uint64_t> >
 {
   static MPI_Datatype type() {
     return double_int64_type();
+  }
+};
+
+template <>
+struct Datatype<Loc<double, int64_t> >
+{
+  static MPI_Datatype type() {
+    return double_int64_type();
+  }
+};
+
+template <>
+struct Datatype<Loc<int, int64_t> >
+{
+  static MPI_Datatype type() {
+    return int_int64_type();
+  }
+};
+
+template <>
+struct Datatype<Loc<double, int> >
+{
+  static MPI_Datatype type() {
+    return MPI_DOUBLE_INT;
   }
 };
 
