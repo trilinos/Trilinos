@@ -83,29 +83,28 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
 
-    RealT V_th = parlist->get("Thermal Voltage", 0.02585);
-    RealT lo_Vsrc = parlist->get("Source Voltage Lower Bound", 0.0);
-    RealT up_Vsrc = parlist->get("Source Voltage Upper Bound", 1.0);
+    RealT V_th      = parlist->get("Thermal Voltage", 0.02585);
+    RealT lo_Vsrc   = parlist->get("Source Voltage Lower Bound", 0.0);
+    RealT up_Vsrc   = parlist->get("Source Voltage Upper Bound", 1.0);
     RealT step_Vsrc = parlist->get("Source Voltage Step", 1.e-2);
 
     RealT true_Is = parlist->get("True Saturation Current", 1.e-12);
     RealT true_Rs = parlist->get("True Saturation Resistance", 0.25);
     RealT init_Is = parlist->get("Initial Saturation Current", 1.e-12);
     RealT init_Rs = parlist->get("Initial Saturation Resistance", 0.25);
-    RealT lo_Is = parlist->get("Saturation Current Lower Bound", 1.e-16);
-    RealT up_Is = parlist->get("Saturation Current Upper Bound", 1.e-1);
-    RealT lo_Rs = parlist->get("Saturation Resistance Lower Bound", 1.e-2);
-    RealT up_Rs = parlist->get("Saturation Resistance Upper Bound", 30.0);
+    RealT lo_Is   = parlist->get("Saturation Current Lower Bound", 1.e-16);
+    RealT up_Is   = parlist->get("Saturation Current Upper Bound", 1.e-1);
+    RealT lo_Rs   = parlist->get("Saturation Resistance Lower Bound", 1.e-2);
+    RealT up_Rs   = parlist->get("Saturation Resistance Upper Bound", 30.0);
 
-    bool use_lambertw = parlist->get("Use Analytical Solution",true); 
-    bool use_scale = parlist->get("Use Scaling For Epsilon-Active Sets",true);
+    bool use_lambertw   = parlist->get("Use Analytical Solution",true); 
+    bool use_scale      = parlist->get("Use Scaling For Epsilon-Active Sets",true);
     bool use_linesearch = parlist->get("Use Line Search", true);
-    bool datatype = parlist->get("Get Data From Input File",false);
-    bool use_adjoint = parlist->get("Use Adjoint Gradient Computation",false);
-    bool use_hessvec = parlist->get("Use Hessian-Vector Implementation",false);
-    bool plot = parlist->get("Generate Plot Data",false);
-
-    RealT noise = parlist->get("Measurement Noise",0.0);
+    bool datatype       = parlist->get("Get Data From Input File",false);
+    bool use_adjoint    = parlist->get("Use Adjoint Gradient Computation",false);
+    int  use_hessvec    = parlist->get("Use Hessian-Vector Implementation",1); // 0 - FD, 1 - exact, 2 - GN
+    bool plot           = parlist->get("Generate Plot Data",false);
+    RealT noise         = parlist->get("Measurement Noise",0.0);
 
     Teuchos::RCP< ROL::Objective_DiodeCircuit<RealT> > obj;
             

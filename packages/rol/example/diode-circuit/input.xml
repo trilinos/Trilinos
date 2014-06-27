@@ -11,7 +11,7 @@
   <Parameter name="Barzilai-Borwein Type"                             type="int"    value="1"                       />
   <Parameter name="Use Inexact Objective Function"                    type="bool"   value="false"                   />
   <Parameter name="Use Inexact Gradient"                              type="bool"   value="false"                   />
-  <Parameter name="Use Inexact Hessian-Times-A-Vector"                type="bool"   value="false"                   />
+  <Parameter name="Use Inexact Hessian-Times-A-Vector"                type="bool"   value="true"                   />
   <Parameter name="Maximum Number of Function Evaluations"            type="int"    value="200"                      />
   <Parameter name="Sufficient Decrease Parameter"                     type="double" value="1.e-4"                   />
   <Parameter name="Curvature Conditions Parameter"                    type="double" value="0.9"                     />
@@ -39,7 +39,7 @@
   <Parameter name="Step Tolerance"                                    type="double" value="1.e-30"                  />
   <Parameter name="Maximum Number of Iterations"                      type="int"    value="1000"                     />
 
-  <Parameter name="Thermal Voltage"                                   type="double" value="0.025864186"                     />
+  <Parameter name="Thermal Voltage"                                   type="double" value="0.0258641863846"                     />
   <Parameter name="Source voltage lower bound"                        type="double" value="0.0"                   />
   <Parameter name="Source voltage upper bound"                        type="double" value="1.0"                   />
   <Parameter name="Source voltage step"                               type="double" value="1.e-2"                   />
@@ -48,7 +48,7 @@
   <Parameter name="Initial Saturation Current"                        type="double" value="1.e-2"                   />
   <Parameter name="Initial Saturation Resistance"                     type="double" value="1.0"                   />
   <Parameter name="Saturation Current Lower Bound"                    type="double" value="1.e-18"                     />
-  <Parameter name="Saturation Current Upper Bound"                    type="double" value="1.0"                     />
+  <Parameter name="Saturation Current Upper Bound"                    type="double" value="0.1"                     />
   <Parameter name="Saturation Resistance Lower Bound"                 type="double" value="1.e-4"                     />
   <Parameter name="Saturation Resistance Upper Bound"                 type="double" value="100.0"                     />
   <Parameter name="Use Scaling For Epsilon-Active Sets"               type="bool"   value="true"                     />
@@ -57,6 +57,6 @@
   <Parameter name="Measurement Noise"                                 type="double" value="0.0"                     />
   <Parameter name="Use Line Search"                                   type="bool"   value="false"                     />
   <Parameter name="Generate Plot Data"                                type="bool"   value="true"                     />
-  <Parameter name="Use Hessian-Vector Implementation"                 type="bool"   value="true"                     />
+  <Parameter name="Use Hessian-Vector Implementation"                 type="int"    value="2"                     />
   <Parameter name="Use Adjoint Gradient Computation"                  type="bool"   value="true"                     />
 </ParameterList>
