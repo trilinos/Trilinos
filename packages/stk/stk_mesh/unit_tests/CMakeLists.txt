@@ -17,6 +17,9 @@ LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/UnitTestPartAfterCommit.cp
 LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/UnitTestGhostingWithShared.cpp")
 LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/UnitTestKeyhole.cpp")
 
+#removing due to dependence on a header not in Trilinos
+LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/UnitTestCreateEdges.cpp")
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
     stk_mesh_unit_tests
     SOURCES ${SOURCES}
