@@ -528,7 +528,7 @@ private:
   UserSubroutine &operator=(const UserSubroutine&);	///< Not implemented
 
 public:
-  typedef S Signature;					///< Subroutine call signature
+  typedef S Signature; ///< Subroutine call signature
 
   /**
    * @brief Member function <b>instance</b> returns the instance of the registry,
