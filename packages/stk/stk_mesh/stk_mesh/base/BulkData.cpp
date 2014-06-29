@@ -313,6 +313,7 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
     m_sync_state( MODIFIABLE ),
     m_meta_data_verified( false ),
     m_mesh_finalized(false),
+    m_modification_begin_description("UNSET"),
 #ifdef SIERRA_MIGRATION
     m_add_fmwk_data(add_fmwk_data),
     m_fmwk_bulk_ptr(NULL),
@@ -745,6 +746,7 @@ bool BulkData::modification_begin(const std::string description)
   }
 
   if ( m_sync_state == MODIFIABLE && m_mesh_finalized == false ) return false ;
+
 
   m_modification_begin_description = description;
 

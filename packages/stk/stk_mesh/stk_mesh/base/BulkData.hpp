@@ -251,7 +251,7 @@ public:
    *           parallel consistent state to the "ok to modify" state.
    *           False if already in this state.
    */
-  bool modification_begin(const std::string description = "UNSPECIFIED");
+  bool modification_begin(const std::string description = std::string("UNSPECIFIED"));
 
   /** \brief  Return the description given for the modification_begin
    *          call that began the most recent mesh modification cycle
