@@ -160,7 +160,20 @@ namespace Xpetra {
     void replaceGlobalValues(GlobalOrdinal globalRow, const ArrayView< const GlobalOrdinal > &cols, const ArrayView< const Scalar > &vals) { XPETRA_MONITOR("TpetraCrsMatrix::replaceGlobalValues"); mtx_->replaceGlobalValues(globalRow, cols, vals); }
 
     //! Replace matrix entries, using local IDs.
-    void replaceLocalValues(LocalOrdinal localRow, const ArrayView< const LocalOrdinal > &cols, const ArrayView< const Scalar > &vals) { XPETRA_MONITOR("TpetraCrsMatrix::replaceLocalValues"); mtx_->replaceLocalValues(localRow, cols, vals); }
+    void
+    replaceLocalValues (LocalOrdinal localRow,
+                        const ArrayView<const LocalOrdinal> &cols,
+                        const ArrayView<const Scalar> &vals)
+    {
+      XPETRA_MONITOR("TpetraCrsMatrix::replaceLocalValues");
+      typedef typename ArrayView<const LocalOrdinal>::size_type size_type;
+      const LocalOrdinal numValid =
+        mtx_->replaceLocalValues (localRow, cols, vals);
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        static_cast<size_type> (numValid) != cols.size (), std::runtime_error,
+        "replaceLocalValues returned " << numValid << " != cols.size() = " <<
+        cols.size () << ".");
+    }
 
     //! Set all matrix entries equal to scalarThis.
     void setAllToScalar(const Scalar &alpha) { XPETRA_MONITOR("TpetraCrsMatrix::setAllToScalar"); mtx_->setAllToScalar(alpha); }
