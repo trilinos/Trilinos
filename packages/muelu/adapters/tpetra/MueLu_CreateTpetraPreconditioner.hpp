@@ -99,9 +99,14 @@ namespace MueLu {
     } else {
       int nPDE = 1;
       if (paramList.isSublist("Matrix")) {
+        // Factory style parameter list
         const Teuchos::ParameterList& operatorList = paramList.sublist("Matrix");
         if (operatorList.isParameter("PDE equations"))
           nPDE = operatorList.get<int>("PDE equations");
+
+      } else if (paramList.isParameter("number of equations")) {
+        // Easy style parameter list
+        nPDE = paramList.get<int>("number of equations");
       }
 
       nullspace = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(A->getDomainMap(), nPDE);
