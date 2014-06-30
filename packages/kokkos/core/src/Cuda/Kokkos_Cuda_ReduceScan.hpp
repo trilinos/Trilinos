@@ -219,9 +219,7 @@ bool cuda_single_inter_block_reduce_scan( const FunctorType     & functor ,
     const size_type e = ( long(block_count) * long( threadIdx.x + 1 ) ) >> BlockSizeShift ;
 
     {
-      reference_type shared_value = Reduce::reference( shared_data + word_count.value * threadIdx.x );
-
-      functor.init( shared_value );
+      reference_type shared_value = Reduce::init( functor , shared_data + word_count.value * threadIdx.x );
 
       for ( size_type i = b ; i < e ; ++i ) {
         functor.join( shared_value , Reduce::reference( global_data + word_count.value * i ) );
@@ -234,7 +232,7 @@ bool cuda_single_inter_block_reduce_scan( const FunctorType     & functor ,
 
       size_type * const shared_value = shared_data + word_count.value * ( threadIdx.x ? threadIdx.x - 1 : blockDim.x );
 
-      if ( ! threadIdx.x ) { functor.init( Reduce::reference( shared_value ) ); }
+      if ( ! threadIdx.x ) { Reduce::init( functor , shared_value ); }
 
       // Join previous inclusive scan value to each member
       for ( size_type i = b ; i < e ; ++i ) {

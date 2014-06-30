@@ -228,9 +228,7 @@ public:
       word_count( Reduce::value_size( m_functor ) / sizeof(size_type) );
 
     {
-      reference_type value = Reduce::reference( shared_data + threadIdx.x * word_count.value );
-
-      m_functor.init( value );
+      reference_type value = Reduce::init( m_functor , shared_data + threadIdx.x * word_count.value );
 
       // Number of blocks is bounded so that the reduction can be limited to two passes.
       // Each thread block is given an approximately equal amount of work to perform.
@@ -366,9 +364,7 @@ public:
       word_count( Reduce::value_size( m_functor ) / sizeof(size_type) );
 
     {
-      reference_type value = Reduce::reference( shared_data + threadIdx.x * word_count.value );
-
-      m_functor.init( value );
+      reference_type value = Reduce::init( m_functor , shared_data + threadIdx.x * word_count.value );
 
       CudaExec exec( m_shmem_begin , m_shmem_end );
 
@@ -623,7 +619,7 @@ public:
 
     size_type * const shared_value = shared_data + word_count.value * threadIdx.x ;
 
-    m_functor.init( Reduce::reference( shared_value ) );
+    Reduce::init( m_functor , shared_value );
 
     // Number of blocks is bounded so that the reduction can be limited to two passes.
     // Each thread block is given an approximately equal amount of work to perform.
@@ -664,7 +660,7 @@ public:
       for ( unsigned i = threadIdx.x ; i < word_count.value ; ++i ) { shared_accum[i] = block_total[i] ; }
     }
     else if ( 0 == threadIdx.x ) {
-      m_functor.init( Reduce::reference( shared_accum ) );
+      Reduce::init( m_functor , shared_accum );
     }
 
           unsigned iwork_beg = blockIdx.x * m_work_per_block ;
@@ -676,7 +672,7 @@ public:
 
       __syncthreads(); // Don't overwrite previous iteration values until they are used
 
-      m_functor.init( Reduce::reference( shared_prefix + word_count.value ) );
+      Reduce::init( m_functor , shared_prefix + word_count.value );
 
       // Copy previous block's accumulation total into thread[0] prefix and inclusive scan value of this block
       for ( unsigned i = threadIdx.x ; i < word_count.value ; ++i ) {

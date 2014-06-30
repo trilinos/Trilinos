@@ -69,6 +69,7 @@ public:
   ReduceFunctor( const ReduceFunctor & rhs )
     : nwork( rhs.nwork ) {}
 
+/*
   KOKKOS_INLINE_FUNCTION
   void init( value_type & dst ) const
   {
@@ -76,6 +77,7 @@ public:
     dst.value[1] = 0 ;
     dst.value[2] = 0 ;
   }
+*/
 
   KOKKOS_INLINE_FUNCTION
   void join( volatile value_type & dst ,
@@ -135,11 +137,13 @@ public:
     : value_count( arg_count )
     , nwork( arg_nwork ) {}
 
+/*
   KOKKOS_INLINE_FUNCTION
   void init( value_type dst ) const
   {
     for ( unsigned i = 0 ; i < value_count ; ++i ) dst[i] = 0 ;
   }
+*/
 
   KOKKOS_INLINE_FUNCTION
   void join( volatile ScalarType dst[] ,

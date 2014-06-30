@@ -113,9 +113,7 @@ public:
 
       const std::pair<size_t,size_t> range = exec.work_range( work_count );
 
-      typename Reduce::reference_type update = Reduce::reference( exec.reduce_base() );
-
-      functor.init( update );
+      typename Reduce::reference_type update = Reduce::init( functor , exec.reduce_base() );
 
       for ( size_t iw = range.first, work_end = range.second ; iw < work_end ; ++iw ) {
         functor( iw , update );
@@ -174,9 +172,8 @@ public:
       const std::pair<size_t,size_t> range = exec.work_range( work_count );
 
       typename Reduce::reference_type update =
-        Reduce::reference( pointer_type( exec.reduce_base() ) + Reduce::value_count( functor ) );
-
-      functor.init( update );
+        Reduce::init( functor , 
+                      pointer_type( exec.reduce_base() ) + Reduce::value_count( functor ) );
 
       for ( size_t iw = range.first , work_end = range.second ; iw < work_end ; ++iw ) {
         functor( iw , update , false );
@@ -199,7 +196,7 @@ public:
           functor.join( Reduce::reference( ptr + value_count ) , Reduce::reference( ptr ) );
         }
         else {
-          functor.init( Reduce::reference( ptr ) );
+          Reduce::init( functor , ptr );
         }
 
         ptr_prev = ptr ;
@@ -267,7 +264,7 @@ public:
 #pragma simd
 #pragma ivdep
       for ( size_t iv = 0 ; iv < vector_length::value ; ++iv ) {
-        functor.init( Reduce::reference( ptr + iv * Reduce::value_count( functor ) ) );
+        Reduce::init( functor , ptr + iv * Reduce::value_count( functor ) );
       }
 
 #pragma simd vectorlength( vector_length::value )
@@ -363,9 +360,7 @@ public:
     {
       OpenMPexec & exec = * OpenMPexec::get_thread_omp();
 
-      typename Reduce::reference_type update = Reduce::reference( exec.reduce_base() );
-
-      functor.init( update );
+      typename Reduce::reference_type update = Reduce::init( functor , exec.reduce_base() );
 
       for ( exec.team_work_init( work.league_size , work.team_size ) ; exec.team_work_avail() ; exec.team_work_next() ) {
         functor( OpenMP( exec ) , update );
