@@ -2044,7 +2044,11 @@ namespace Tpetra {
       // We've validated the input, so it's safe to start copying.
       for (size_t j = 0; j < numCols; ++j) {
         const size_t col = isConstantStride () ? j : whichVectors_[j];
-        host_view_type src = Kokkos::subview<host_view_type> (view_.d_view, Kokkos::ALL (), col);
+
+        // [HCE 2014:06:30]
+        // host_view_type src = Kokkos::subview<host_view_type> (view_.d_view, Kokkos::ALL (), col);
+        host_view_type src = Kokkos::subview<host_view_type> (view_.h_view, Kokkos::ALL (), col);
+
         unmanaged_host_view_type dst (ArrayOfPtrs[j].getRawPtr (),
                                       ArrayOfPtrs[j].size (),
                                       static_cast<size_t> (1));
