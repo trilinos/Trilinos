@@ -77,9 +77,9 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setParamete
   MaxCoarseSize_  =  list.get("refmaxwell: max coarse size",1000);
   MaxLevels_      =  list.get("refmaxwell: max levels",5);
   Cycles_         =  list.get("refmaxwell: cycles",1);
-  precType11_     =  list.get("refmaxwell: edge smoother","CHEBYSHEV");
-  precType22_     =  list.get("refmaxwell: node smoother","CHEBYSHEV");
-  mode_           =  list.get("refmaxwell: mode","block jacobi");
+  precType11_     =  list.get("refmaxwell: edge smoother","RELAXATION");
+  precType22_     =  list.get("refmaxwell: node smoother","RELAXATION");
+  mode_           =  list.get("refmaxwell: mode","additive");
 
   if(list.isSublist("refmaxwell: edge smoother list"))
     precList11_     =  list.sublist("refmaxwell: edge smoother list");
@@ -340,6 +340,8 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::buildProlon
   Teuchos::RCP<XMat> D0_Matrix_Abs=MatrixFactory2::BuildCopy(D0_Matrix_);
   D0_Matrix_Abs -> resumeFill();
   D0_Matrix_Abs -> setAllToScalar((Scalar)0.5);
+  Apply_BCsToMatrixRows(D0_Matrix_Abs,BCrows_);
+  Apply_BCsToMatrixCols(D0_Matrix_Abs,BCcols_);
   D0_Matrix_Abs -> fillComplete(D0_Matrix_->getDomainMap(),D0_Matrix_->getRangeMap());
   Teuchos::RCP<XMat> Ptent = MatrixFactory::Build(D0_Matrix_Abs->getRowMap(),100);
   Xpetra::MatrixMatrix::Multiply(*D0_Matrix_Abs,false,*P,false,*Ptent,true,true);
@@ -437,7 +439,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::resetMatrix
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyHiptmairSmoother(const XTMV& RHS, XTMV& X) const {
 
-  RCP<XMV> edge_residual, node_residual;
+  RCP<XMV> edge_residual,  node_residual;
   RCP<TMV> edge_tpetra1,   node_tpetra1;
   RCP<TMV> edge_tpetra2,   node_tpetra2;
 
@@ -471,7 +473,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyHiptma
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyBlockJacobi(const XTMV& RHS, XTMV& X) const {
+void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyInverseAdditive(const XTMV& RHS, XTMV& X) const {
 
   // compute residuals
   RCP<XMV> residual  = Utils::Residual(*SM_Matrix_, X, RHS);
@@ -494,31 +496,63 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyBlockJ
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyBlockGaussSeidel(const XTMV& RHS, XTMV& X) const {
+void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyInverse121(const XTMV& RHS, XTMV& X) const {
 
-  // compute residuals
-  RCP<XMV> residual  = Utils::Residual(*SM_Matrix_, X, RHS);
   RCP<XMV> P11res    = MultiVectorFactory::Build(P11_->getDomainMap(),X.getNumVectors());
   RCP<XMV> P11x      = MultiVectorFactory::Build(P11_->getDomainMap(),X.getNumVectors());
-  RCP<XMV> a1        = MultiVectorFactory::Build(P11_->getRangeMap(), X.getNumVectors());
-  RCP<XMV> M1a1      = MultiVectorFactory::Build(P11_->getRangeMap(), X.getNumVectors());
   RCP<XMV> D0res     = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(),X.getNumVectors());
   RCP<XMV> D0x       = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(),X.getNumVectors());
-  RCP<XMV> p0        = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(),X.getNumVectors());
+
+  // precondition (1,1)-block
+  RCP<XMV> residual  = Utils::Residual(*SM_Matrix_, X, RHS);
   P11_->apply(*residual,*P11res,Teuchos::TRANS);
-  D0_Matrix_->apply(*residual,*D0res,Teuchos::TRANS);
-  
-  // block lower triangular solve for 2x2 (V-cycle for diagonal blocks)
   Hierarchy11_->Iterate(*P11res, *P11x, Cycles_, true);
-  P11_->apply(*P11x,*a1,Teuchos::NO_TRANS);
-  M1_Matrix_->apply(*a1,*M1a1,Teuchos::NO_TRANS);
-  D0_Matrix_->apply(*M1a1,*p0,Teuchos::TRANS);
-  D0res->update((Scalar)-1.0,*p0,(Scalar)1.0);
+  P11_->apply(*P11x,*residual,Teuchos::NO_TRANS);
+  X.update((Scalar) 1.0, *residual, (Scalar) 1.0);
+
+  // precondition (2,2)-block
+  residual  = Utils::Residual(*SM_Matrix_, X, RHS);
+  D0_Matrix_->apply(*residual,*D0res,Teuchos::TRANS);
   Hierarchy22_->Iterate(*D0res,  *D0x,  Cycles_, true);
-  
-  // update current solution
-  residual = a1;
-  D0_Matrix_->apply(*D0x,*residual,Teuchos::NO_TRANS,(Scalar)1.0,(Scalar)1.0);
+  D0_Matrix_->apply(*D0x,*residual,Teuchos::NO_TRANS);
+  X.update((Scalar) 1.0, *residual, (Scalar) 1.0);
+
+  // precondition (1,1)-block
+  residual  = Utils::Residual(*SM_Matrix_, X, RHS);
+  P11_->apply(*residual,*P11res,Teuchos::TRANS);
+  Hierarchy11_->Iterate(*P11res, *P11x, Cycles_, true);
+  P11_->apply(*P11x,*residual,Teuchos::NO_TRANS);
+  X.update((Scalar) 1.0, *residual, (Scalar) 1.0);
+
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyInverse212(const XTMV& RHS, XTMV& X) const {
+
+  RCP<XMV> P11res    = MultiVectorFactory::Build(P11_->getDomainMap(),X.getNumVectors());
+  RCP<XMV> P11x      = MultiVectorFactory::Build(P11_->getDomainMap(),X.getNumVectors());
+  RCP<XMV> D0res     = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(),X.getNumVectors());
+  RCP<XMV> D0x       = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(),X.getNumVectors());
+
+  // precondition (2,2)-block
+  RCP<XMV> residual  = Utils::Residual(*SM_Matrix_, X, RHS);
+  D0_Matrix_->apply(*residual,*D0res,Teuchos::TRANS);
+  Hierarchy22_->Iterate(*D0res,  *D0x,  Cycles_, true);
+  D0_Matrix_->apply(*D0x,*residual,Teuchos::NO_TRANS);
+  X.update((Scalar) 1.0, *residual, (Scalar) 1.0);
+
+  // precondition (1,1)-block
+  residual  = Utils::Residual(*SM_Matrix_, X, RHS);
+  P11_->apply(*residual,*P11res,Teuchos::TRANS);
+  Hierarchy11_->Iterate(*P11res, *P11x, Cycles_, true);
+  P11_->apply(*P11x,*residual,Teuchos::NO_TRANS);
+  X.update((Scalar) 1.0, *residual, (Scalar) 1.0);
+
+  // precondition (2,2)-block
+  residual  = Utils::Residual(*SM_Matrix_, X, RHS);
+  D0_Matrix_->apply(*residual,*D0res,Teuchos::TRANS);
+  Hierarchy22_->Iterate(*D0res,  *D0x,  Cycles_, true);
+  D0_Matrix_->apply(*D0x,*residual,Teuchos::NO_TRANS);
   X.update((Scalar) 1.0, *residual, (Scalar) 1.0);
 
 }
@@ -538,12 +572,14 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::apply(const
     applyHiptmairSmoother(tX,tY);
 
     // do solve for the 2x2 block system
-    if(mode_=="block jacobi")
-      applyBlockJacobi(tX,tY);
-    else if(mode_=="block gauss-seidel")
-      applyBlockGaussSeidel(tX,tY);
+    if(mode_=="additive") 
+      applyInverseAdditive(tX,tY);
+    else if(mode_=="121")
+      applyInverse121(tX,tY);
+    else if(mode_=="212")
+      applyInverse212(tX,tY);
     else
-      applyBlockJacobi(tX,tY);
+      applyInverseAdditive(tX,tY);
     
     // apply post-smoothing
     applyHiptmairSmoother(tX,tY);

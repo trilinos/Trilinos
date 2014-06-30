@@ -119,7 +119,7 @@ namespace MueLu {
       Cycles_(1),
       precType11_("CHEBYSHEV"),
       precType22_("CHEBYSHEV"),
-      mode_("block jacobi")
+      mode_("additive")
     {
     }
     
@@ -133,7 +133,7 @@ namespace MueLu {
       Cycles_(1),
       precType11_("CHEBYSHEV"),
       precType22_("CHEBYSHEV"),
-      mode_("block jacobi")
+      mode_("additive")
     {
     }
 
@@ -154,7 +154,7 @@ namespace MueLu {
       Cycles_(1),
       precType11_("CHEBYSHEV"),
       precType22_("CHEBYSHEV"),
-      mode_("block jacobi")
+      mode_("additive")
     {
       // set parameters
       setParameters(List);
@@ -231,11 +231,14 @@ namespace MueLu {
     //! apply Hiptmair smoothing
     void applyHiptmairSmoother(const XTMV& RHS, XTMV& X) const;
 
-    //! apply block Jacobi for 2x2 solve
-    void applyBlockJacobi(const XTMV& RHS, XTMV& X) const;
+    //! apply additive algorithm for 2x2 solve
+    void applyInverseAdditive(const XTMV& RHS, XTMV& X) const;
 
-    //! apply block Gauss-Seidel for 2x2 solve
-    void applyBlockGaussSeidel(const XTMV& RHS, XTMV& X) const;
+    //! apply 1-2-1 algorithm for 2x2 solve
+    void applyInverse121(const XTMV& RHS, XTMV& X) const;
+
+    //! apply 2-1-2 algorithm for 2x2 solve
+    void applyInverse212(const XTMV& RHS, XTMV& X) const;
 
     //! Returns in Y the result of a Tpetra::Operator applied to a Tpetra::MultiVector X.
     //! \param[in]  X - Tpetra::MultiVector of dimension NumVectors to multiply with matrix.
