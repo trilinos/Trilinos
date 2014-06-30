@@ -920,34 +920,40 @@ namespace MueLu {
       ifs.read(reinterpret_cast<char*>(&n),   sizeof(n));
       ifs.read(reinterpret_cast<char*>(&nnz), sizeof(nnz));
 
+      int myRank = comm->getRank();
+
       GO indexBase = 0;
-      RCP<Map>    rowMap = MapFactory::Build(lib, m, indexBase, comm), rangeMap  = rowMap;
-      RCP<Map>    colMap = MapFactory::Build(lib, n, indexBase, comm), domainMap = colMap;
+      RCP<Map>    rowMap = MapFactory::Build(lib, m, (myRank == 0 ? m : 0), indexBase, comm), rangeMap  = rowMap;
+      RCP<Map>    colMap = MapFactory::Build(lib, n, (myRank == 0 ? n : 0), indexBase, comm), domainMap = colMap;
       RCP<Matrix> A   = MatrixFactory::Build(rowMap, colMap, 1);
 
       TEUCHOS_TEST_FOR_EXCEPTION(sizeof(int) != sizeof(GO), Exceptions::RuntimeError, "Incompatible sizes");
 
-      Teuchos::Array<GO> inds;
-      Teuchos::Array<SC> vals;
-      for (int i = 0; i < m; i++) {
-        int row, rownnz;
-        ifs.read(reinterpret_cast<char*>(&row),    sizeof(row));
-        ifs.read(reinterpret_cast<char*>(&rownnz), sizeof(rownnz));
-        inds.resize(rownnz);
-        vals.resize(rownnz);
-        for (int j = 0; j < rownnz; j++) {
-          int index;
-          ifs.read(reinterpret_cast<char*>(&index), sizeof(index));
-          inds[j] = Teuchos::as<GO>(index);
+      if (myRank == 0) {
+        Teuchos::Array<GO> inds;
+        Teuchos::Array<SC> vals;
+        for (int i = 0; i < m; i++) {
+          int row, rownnz;
+          ifs.read(reinterpret_cast<char*>(&row),    sizeof(row));
+          ifs.read(reinterpret_cast<char*>(&rownnz), sizeof(rownnz));
+          inds.resize(rownnz);
+          vals.resize(rownnz);
+          for (int j = 0; j < rownnz; j++) {
+            int index;
+            ifs.read(reinterpret_cast<char*>(&index), sizeof(index));
+            inds[j] = Teuchos::as<GO>(index);
+          }
+          for (int j = 0; j < rownnz; j++) {
+            double value;
+            ifs.read(reinterpret_cast<char*>(&value), sizeof(value));
+            vals[j] = Teuchos::as<SC>(value);
+          }
+          A->insertGlobalValues(row, inds, vals);
         }
-        for (int j = 0; j < rownnz; j++) {
-          double value;
-          ifs.read(reinterpret_cast<char*>(&value), sizeof(value));
-          vals[j] = Teuchos::as<SC>(value);
-        }
-        A->insertGlobalValues(row, inds, vals);
       }
+
       A->fillComplete(domainMap, rangeMap);
+
       return A;
     }
 
