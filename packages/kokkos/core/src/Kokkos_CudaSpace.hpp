@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -160,13 +160,13 @@ struct VerifyExecutionSpaceCanAccessDataSpace< CudaSpace , HostSpace >
   { Kokkos::cuda_abort("Cuda code attempted to access HostSpace memory"); }
 };
 
-/** \brief  Produce error message when trying to access Cuda 
+/** \brief  Produce error message when trying to access Cuda
  *          memory on the host.
  */
 template<>
 struct VerifyExecutionSpaceCanAccessDataSpace< HostSpace , CudaSpace >
 {
-#ifdef KOKKOS_USE_UVM
+#ifdef KOKKOS_USE_CUDA_UVM
   inline static void verify( void ) { }
   inline static void verify( const void * p ) { }
 #else

@@ -183,7 +183,7 @@ void * CudaSpace::allocate(
     try {
       Kokkos::Impl::cuda_device_synchronize();
 
-#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_UVM)
+#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM)
       CUDA_SAFE_CALL( cudaMallocManaged( (void**) &ptr, size, cudaMemAttachGlobal) );
 #else
       CUDA_SAFE_CALL( cudaMalloc( (void**) &ptr, size) );

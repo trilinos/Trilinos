@@ -68,7 +68,7 @@ SRC_KOKKOS += $(wildcard $(KOKKOS_PATH)/core/src/Cuda/*.cu)
 KOKKOS_HEADERS += $(wildcard $(KOKKOS_PATH)/core/src/Cuda/*.hpp)
 KOKKOS_LINK += -L$(CUDA_PATH)/lib64 -lcudart -lcuda 
 ifeq ($(CUDA_UVM), yes)
-KOKKOS_INC += -DKOKKOS_USE_UVM
+KOKKOS_INC += -DKOKKOS_USE_CUDA_UVM
 endif
 endif
 

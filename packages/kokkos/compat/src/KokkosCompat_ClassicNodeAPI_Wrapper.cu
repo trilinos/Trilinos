@@ -30,7 +30,7 @@ namespace Kokkos {
     init(int NumThreads, int NumNUMA, int NumCoresPerNUMA, int Device) {
 
       // Setting (currently) necessary environment variables for NVIDIA UVM
-      #ifdef KOKKOS_USE_UVM
+      #ifdef KOKKOS_USE_CUDA_UVM
         putenv("CUDA_LAUNCH_BLOCKING=1");
       #else
         throw std::runtime_error("Using CudaWrapperNode without UVM is not allowed.");

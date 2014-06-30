@@ -25,8 +25,15 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Kokkos_ENABLE_Cuda
   KOKKOS_HAVE_CUDA
-  "Enable CUDA support in Kokkos (new)."
+  "Enable CUDA support in Kokkos."
   "${TPL_ENABLE_CUDA}"
+  )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Kokkos_ENABLE_Cuda_UVM
+  KOKKOS_USE_CUDA_UVM
+  "Enable CUDA Unified Virtual Memory support in Kokkos."
+  OFF
   )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(

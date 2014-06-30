@@ -113,7 +113,7 @@ public:
 
   /// \typedef t_host
   /// \brief The type of a Kokkos::View host mirror of \c t_dev.
-#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_UVM)
+#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM)
   typedef t_dev t_host;
 #else
   typedef typename t_dev::HostMirror t_host ;
@@ -128,7 +128,7 @@ public:
 
   /// \typedef t_host_const
   /// \brief The type of a const View host mirror of \c t_dev_const.
-#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_UVM)
+#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM)
   typedef t_dev_const t_host_const;
 #else
   typedef typename t_dev_const::HostMirror t_host_const;
@@ -143,7 +143,7 @@ public:
   /// \typedef t_host_const_randomread
   /// \brief The type of a const, random-access View host mirror of
   ///   \c t_dev_const_randomread.
-#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_UVM)
+#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM)
   typedef t_dev_const_randomread t_host_const_randomread;
 #else
   typedef typename t_dev_const_randomread::HostMirror t_host_const_randomread;
@@ -220,7 +220,7 @@ public:
             const size_t n6 = 0,
             const size_t n7 = 0)
     : d_view (label, n0, n1, n2, n3, n4, n5, n6, n7)
-#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_UVM)
+#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM)
     , h_view (d_view) // with UVM, host View is _always_ a shallow copy
 #else
     , h_view (create_mirror_view (d_view)) // without UVM, host View mirrors
@@ -408,7 +408,7 @@ public:
            const size_t n6 = 0 ,
            const size_t n7 = 0 ) {
      Kokkos::realloc(d_view,n0,n1,n2,n3,n4,n5,n6,n7);
-#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_UVM)
+#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM)
      h_view = d_view ;
 #else
      h_view = create_mirror_view( d_view );
@@ -432,7 +432,7 @@ public:
    if(modified_device() >= modified_host()) {
      /* Resize on Device */
      Kokkos::resize(d_view,n0,n1,n2,n3,n4,n5,n6,n7);
-#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_UVM)
+#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM)
      h_view = d_view ;
 #else
      h_view = create_mirror_view( d_view );
@@ -445,7 +445,7 @@ public:
      /* Realloc on Device */
 
      Kokkos::realloc(d_view,n0,n1,n2,n3,n4,n5,n6,n7);
-#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_UVM)
+#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM)
      t_host temp_view = d_view ;
 #else
      t_host temp_view = create_mirror_view( d_view );
