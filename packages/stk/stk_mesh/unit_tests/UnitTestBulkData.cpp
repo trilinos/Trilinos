@@ -2686,7 +2686,7 @@ class BulkDataTester : public stk::mesh::BulkData
 public:
     BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm) :
         stk::mesh::BulkData(mesh_meta_data, comm){}
-    ~BulkDataTester() {}
+    virtual ~BulkDataTester() {}
 
     void my_internal_resolve_shared_modify_delete()
     {
@@ -2698,17 +2698,6 @@ public:
         m_closure_count[entity.local_offset()] = 0;
     }
 };
-
-void testElementMove(int fromProc, int toProc, int myProc, int elementToMoveId, stk::mesh::BulkData &stkMeshBulkData)
-{
-    stk::mesh::Entity elementToMove = stkMeshBulkData.get_entity(stk::topology::ELEMENT_RANK, elementToMoveId);
-    std::vector<std::pair<stk::mesh::Entity, int> > entityProcPairs;
-    if(myProc == fromProc)
-    {
-        entityProcPairs.push_back(std::make_pair(elementToMove, toProc));
-    }
-    stkMeshBulkData.change_entity_owner(entityProcPairs);
-}
 
 TEST(BulkData, ModificationEnd)
 {
