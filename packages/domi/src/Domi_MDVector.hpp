@@ -434,7 +434,8 @@ public:
    */
   Slice getGlobalBounds(int axis, bool withBndryPadding=false) const;
 
-  /** \brief Get the global loop bounds along the specified axis
+  /** \brief Get the global loop bounds on this processor along the
+   *         specified axis
    *
    * \param axis [in] the index of the axis (from zero to the number
    *        of dimensions - 1)
@@ -874,30 +875,44 @@ public:
   //@{
 
   /** \brief Get a non-const view of the data as an MDArrayView
+   *
+   * \param includePadding [in] if true, include the boundary and
+   *        communication padding in the returned MDArrayView
    */
   MDArrayView< Scalar > getDataNonConst(bool includePadding = true);
 
   /** \brief Get a const view of the data as an MDArrayView
+   *
+   * \param includePadding [in] if true, include the boundary and
+   *        communication padding in the returned MDArrayView
    */
   MDArrayView< const Scalar > getData(bool includePadding = true) const;
 
   /** \brief Get a non-const view of the lower padding data along the
-             given axis as an MDArrayView
+   *         given axis as an MDArrayView
+   *
+   * \param axis [in] the axis from which to extract the lower padding
    */
   MDArrayView< Scalar > getLowerPadDataNonConst(int axis);
 
   /** \brief Get a const view of the lower padding data along the
-             given axis as an MDArrayView
+   *         given axis as an MDArrayView
+   *
+   * \param axis [in] the axis from which to extract the lower padding
    */
   MDArrayView< const Scalar > getLowerPadData(int axis) const;
 
   /** \brief Get a non-const view of the upper padding data along the
-             given axis as an MDArrayView
+   *         given axis as an MDArrayView
+   *
+   * \param axis [in] the axis from which to extract the upper padding
    */
   MDArrayView< Scalar > getUpperPadDataNonConst(int axis);
 
   /** \brief Get a const view of the upper padding data along the
-             given axis as an MDArrayView
+   *         given axis as an MDArrayView
+   *
+   * \param axis [in] the axis from which to extract the upper padding
    */
   MDArrayView< const Scalar > getUpperPadData(int axis) const;
 
@@ -907,6 +922,8 @@ public:
   //@{
 
   /** \brief Compute the dot product of this MDVector and MDVector a
+   *
+   * \param a [in] partner MDVector for performing dot product
    */
   Scalar
   dot(const MDVector< Scalar, Node > & a) const;
@@ -924,6 +941,8 @@ public:
   typename Teuchos::ScalarTraits< Scalar >::magnitudeType normInf() const;
 
   /** \brief Compute the weighted norm of this 
+   *
+   * \param weights [in] MDVector of weights for weighted norm
    */
   typename Teuchos::ScalarTraits< Scalar >::magnitudeType
   normWeighted(const MDVector< Scalar, Node > & weights) const;
@@ -943,6 +962,10 @@ public:
 
   /** \brief Print the object with some verbosity level to a
    *         FancyOStream
+   *
+   * \param out [in] output stream
+   *
+   * \param verbLevel [in] verbosity level
    */
   virtual void
   describe(Teuchos::FancyOStream &out,
@@ -954,11 +977,18 @@ public:
   /** \name Global assignment methods */
   //@{
 
-  /// Set all values in the multivector with the given value. 
+  /** \brief Set all values in the multivector with the given value. 
+   *
+   * \param value [in] assignment value
+   *
+   * \param includePadding [in] if true, assign values to the boundary
+   *        and communication padding as well
+   */
   void putScalar(const Scalar & value,
                  bool includePadding = true);
 
-  /// Set all values in the multivector to pseudorandom numbers. 
+  /** \brief Set all values in the multivector to pseudorandom numbers. 
+   */
   void randomize();
 
   //@}
@@ -966,24 +996,43 @@ public:
   /** \name Global communication methods */
   //@{
 
-  /// Sum values of a locally replicated multivector across all processes.
+  /** \brief Sum values of a locally replicated multivector across all
+   *         processes.
+   */
   void reduce();
 
-  /// The simplest method for updating the communication padding.
-  /// This method will update the communication padding along all
-  /// axes.
+  /** \brief The simplest method for updating the communication padding.
+   *
+   * This method will update the communication padding along all axes.
+  */
   void updateCommPad();
 
-  /// Update the data in the communication padding along the specified
-  /// axis
+  /* \brief Update the data in the communication padding along the
+   *        specified axis
+   *
+   * \param axis [in] the axis along which communication will be
+   *        performed
+   */
   void updateCommPad(int axis);
 
-  /// Post the non-blocking sends and receives for the communication
-  /// padding along the given axis
+  /** \brief Start an asyncronous update of the communication padding
+   *
+   * \param axis [in] the axis along which communication will be
+   *        performed
+   *
+   * Post the non-blocking sends and receives for the communication
+   * padding along the given axis
+  */
   void startUpdateCommPad(int axis);
 
-  /// Wait for all of the non-blocking updates for the communication
-  /// padding along the given axis to complete
+  /** \brief Complete an asyncronous update of the communication padding
+   *
+   * \param axis [in] the axis along which communication will be
+   *        performed
+   *
+   * Wait for all of the non-blocking updates for the communication
+   * padding along the given axis to complete
+   */
   void endUpdateCommPad(int axis);
 
   //@}
@@ -991,27 +1040,29 @@ public:
   /** \name Sub-MDVector operators */
   //@{
 
-  /** \brief Sub-vector access operator.  The returned
-   *  <tt>MDVector</tt> will have one fewer dimensions than the
-   *  calling <tt>MDVector</tt>.
+  /** \brief Sub-vector access operator.
    *
    * \param index [in] index of the desired sub-vector.  Note that to
    *        obtain expected behavior, you should always chain together
    *        <tt>n</tt> square bracket operators when referencing an
    *        <tt>n</tt>-dimensional <tt>MDVector</tt>.
+   *
+   * The returned <tt>MDVector</tt> will have one fewer dimensions
+   * than the calling <tt>MDVector</tt>.
    */
   MDVector< Scalar, Node >
   operator[](dim_type index) const;
 
-  /** \brief Sub-vector access operator.  The returned
-   *  <tt>MDVector</tt> will have the same number of dimensions as the
-   *  calling <tt>MDVector</tt>.
+  /** \brief Sub-vector access operator.
    *
    * \param slice [in] a Slice of global indexes that specifies the
    *        desired sub-vector.  Note that to obtain expected
    *        behavior, you should always chain together <tt>n</tt>
    *        square bracket operators when referencing an
    *        <tt>n</tt>-dimensional <tt>MDVector</tt>.
+   *
+   * The returned <tt>MDVector</tt> will have the same number of
+   * dimensions as the calling <tt>MDVector</tt>.
    *
    * Note that if you wish to obtain a sub-vector that has boundary
    * padding along the axis being sliced, you will have to use the
@@ -1020,6 +1071,31 @@ public:
    */
   MDVector< Scalar, Node >
   operator[](Slice slice) const;
+
+  //@}
+
+  /** \name Input/Output */
+  //@{
+
+  /** \brief Write the MDVector to a binary file
+   *
+   * \param filename [in] name of the output file
+   *
+   * \param includeBndryPad [in] if true, include the boundary pad
+   *        with the output data
+   */
+  void writeBinary(const std::string & filename,
+                   bool includeBndryPad = false) const;
+
+  /** \brief Read the MDVector from a binary file
+   *
+   * \param filename [in] name of the input file
+   *
+   * \param includeBndryPad [in] if true, include the boundary pad
+   *        with the input data
+   */
+  void readBinary(const std::string & filename,
+                  bool includeBndryPad = false);
 
   //@}
 
@@ -1045,6 +1121,10 @@ private:
   // a specific axis, namely this internally stored and updated next
   // axis
   int _nextAxis;
+
+  ///////////////////////////////////
+  // *** Communication Support *** //
+  ///////////////////////////////////
 
   // Define a struct for storing all the information needed for a
   // single message: a pointer to the buffer, a reference to the
@@ -1083,6 +1163,48 @@ private:
   // A private method to initialize the _sendMessages and
   // _recvMessages arrays.
   void initializeMessages();
+
+  //////////////////////////////////
+  // *** Input/Output Support *** //
+  //////////////////////////////////
+
+  // Define a struct for storing all of the information needed to
+  // write or read the MDVector to a file: arrays that store the file
+  // shape, the local buffer shape, the local data shape, the file
+  // starting coordinates, and the data starting coordinates.
+  struct FileInfo
+  {
+    Teuchos::Array< dim_type > fileShape;
+    Teuchos::Array< dim_type > bufferShape;
+    Teuchos::Array< dim_type > dataShape;
+    Teuchos::Array< dim_type > fileStart;
+    Teuchos::Array< dim_type > dataStart;
+#ifdef HAVE_MPI
+    Teuchos::RCP< MPI_Datatype > filetype;
+    Teuchos::RCP< MPI_Datatype > datatype;
+#endif
+  };
+
+  // FileInfo struct for an input or output file that does not store
+  // boundary padding.  This is mutable because it does not get set
+  // until the first time the MDVector is read or written to a file,
+  // and the writeBinary() method should logically be const.
+  mutable Teuchos::RCP< FileInfo > _fileInfo;
+
+  // FileInfo struct for an input or output file that does store
+  // boundary padding.  This is mutable because it does not get set
+  // until the first time the MDVector is read or written to a file,
+  // and the writeBinary() method should logically be const.
+  mutable Teuchos::RCP< FileInfo > _fileInfoWithBndry;
+
+  // Compute either the _fileInfo or _fileInfoWithBndry data members.
+  // This private method gets called by the writeBinary() and
+  // readBinary() methods, and sets the requested fileInfo object,
+  // unless it has already been set.  This is const so that it can be
+  // called by writeBinary(), but its whole purpose is to change
+  // mutable data members.
+  Teuchos::RCP< FileInfo > & computeFileInfo(bool includeBndryPad) const;
+
 };
 
 /////////////////////////////
@@ -3093,6 +3215,270 @@ initializeMessages()
 #endif
 
 }
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class Node >
+void
+MDVector< Scalar, Node >::
+writeBinary(const std::string & filename,
+            bool includeBndryPad) const
+{
+  FILE * datafile;
+  // If we are using MPI and overwriting an existing file, and the new
+  // file is shorter than the old file, it appears that the new file
+  // will retain the old file's length and trailing data.  To prevent
+  // this behavior, we open and close the file to give it zero length.
+  int pid = _teuchosComm->getRank();
+  if (pid == 0)
+  {
+    datafile = fopen(filename.c_str(), "w");
+    fclose(datafile);
+  }
+  _teuchosComm->barrier();
+
+  // Get the pointer to this MDVector's MDArray, including all padding
+  const Scalar * buffer = getData(true).getRawPtr();
+
+  // Compute either _fileInfo or _fileInfoWithBndry, whichever is
+  // appropriate, and return a reference to that fileInfo object
+  Teuchos::RCP< FileInfo > & fileInfo = computeFileInfo(includeBndryPad);
+
+  // Parallel output
+#ifdef HAVE_MPI
+
+  // Since HAVE_MPI is defined, we know that _teuchosComm points to a
+  // const Teuchos::MpiComm< int >.  We downcast, extract and
+  // dereference so that we can get access to the MPI_Comm used to
+  // construct it.
+  Teuchos::RCP< const Teuchos::MpiComm< int > > mpiComm =
+    Teuchos::rcp_dynamic_cast< const Teuchos::MpiComm< int > >(_teuchosComm);
+  const Teuchos::OpaqueWrapper< MPI_Comm > & communicator =
+    *(mpiComm->getRawMpiComm());
+
+  // Compute the access mode
+  int access = MPI_MODE_WRONLY | MPI_MODE_CREATE;
+
+  // I copy the filename C string, because the c_str() method returns
+  // a const char*, and the MPI_File_open() function requires
+  // (incorrectly) a non-const char*.
+  char * cstr = new char[filename.size()+1];
+  std::strcpy(cstr, filename.c_str());
+
+  // Use MPI I/O to write the binary file
+  MPI_File   mpiFile;
+  MPI_Status status;
+  char       datarep[7] = "native";
+  MPI_File_open(communicator(), cstr, access, MPI_INFO_NULL, &mpiFile);
+  MPI_File_set_view(mpiFile, 0, mpiType< Scalar >(),
+                    *(fileInfo->filetype), datarep, MPI_INFO_NULL);
+  MPI_File_write_all(mpiFile, (void*)buffer, 1, *(fileInfo->datatype),
+                     &status);
+  MPI_File_close(&mpiFile);
+
+  // Delete the C string
+  delete [] cstr;
+
+  // Serial output
+#else
+
+  // Get the number of dimensions
+  int ndims = _mdMap->numDims();
+
+  // Initialize the data file
+  datafile = fopen(filename.c_str(), "w");
+
+  // Obtain the data to write, including the boundary padding if requested
+  MDArrayView< const Scalar > mdArrayView = getData(includeBndryPad);
+
+  // Iterate over the data and write it to the data file
+  typedef typename MDArrayView< Scalar >::const_iterator const_iterator;
+  for (const_iterator it = mdArrayView.begin(); it != mdArrayView.end(); ++it)
+  {
+    fwrite(*it, sizeof(Scalar), 1, datafile);
+  }
+
+  // Close the data file
+  fclose(datafile);
+
+#endif
+
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class Node >
+void
+MDVector< Scalar, Node >::
+readBinary(const std::string & filename,
+           bool includeBndryPad)
+{
+  // Get the pointer to this MDVector's MDArray, including all padding
+  const Scalar * buffer = getDataNonConst(true).getRawPtr();
+
+  // Compute either _fileInfo or _fileInfoWithBndry, whichever is
+  // appropriate, and return a reference to that fileInfo object
+  Teuchos::RCP< FileInfo > & fileInfo = computeFileInfo(includeBndryPad);
+
+  // Parallel input
+#ifdef HAVE_MPI
+
+  // Since HAVE_MPI is defined, we know that _teuchosComm points to a
+  // const Teuchos::MpiComm< int >.  We downcast, extract and
+  // dereference so that we can get access to the MPI_Comm used to
+  // construct it.
+  Teuchos::RCP< const Teuchos::MpiComm< int > > mpiComm =
+    Teuchos::rcp_dynamic_cast< const Teuchos::MpiComm< int > >(_teuchosComm);
+  const Teuchos::OpaqueWrapper< MPI_Comm > & communicator =
+    *(mpiComm->getRawMpiComm());
+
+  // Compute the access mode
+  int access = MPI_MODE_RDONLY;
+
+  // I copy the filename C string, because the c_str() method returns
+  // a const char*, and the MPI_File_open() function requires
+  // (incorrectly) a non-const char*.
+  char * cstr = new char[filename.size()+1];
+  std::strcpy(cstr, filename.c_str());
+
+  // Use MPI I/O to read the binary file
+  MPI_File   mpiFile;
+  MPI_Status status;
+  char       datarep[7] = "native";
+  MPI_File_open(communicator(), cstr, access, MPI_INFO_NULL, &mpiFile);
+  MPI_File_set_view(mpiFile, 0, mpiType< Scalar >(),
+                    *(fileInfo->filetype), datarep, MPI_INFO_NULL);
+  MPI_File_read_all(mpiFile, (void*)buffer, 1, *(fileInfo->datatype),
+                    &status);
+  MPI_File_close(&mpiFile);
+
+  // Delete the C string
+  delete [] cstr;
+
+  // Serial output
+#else
+
+  // Get the number of dimensions
+  int ndims = _mdMap->numDims();
+
+  // Initialize the data file
+  FILE * datafile;
+  datafile = fopen(filename.c_str(), "r");
+
+  // Obtain the MDArrayView to read into, including the boundary
+  // padding if requested
+  MDArrayView< Scalar > mdArrayView = getDataNonConst(includeBndryPad);
+
+  // Initialize the set of indexes
+  Teuchos::Array< Ordinal > index(3);
+  for (int axis = 0; axis < ndims; ++axis)
+    index[axis] = fileInfo->dataStart[axis];
+
+  // Iterate over the data and read it from the data file
+  typedef typename MDArrayView< Scalar >::iterator iterator;
+  for (iterator it = mdArrayView.begin(); it != mdArrayView.end(); ++it)
+  {
+    fread(&(*it), sizeof(Scalar), 1, datafile);
+  }
+
+  // Close the data file
+  fclose(datafile);
+
+#endif
+
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class Node >
+Teuchos::RCP< typename MDVector< Scalar, Node >::FileInfo > &
+MDVector< Scalar, Node >::
+computeFileInfo(bool includeBndryPad) const
+{
+  // Work with the appropriate FileInfo object.  By using a reference
+  // here, we are working directly with the member data.
+  Teuchos::RCP< MDVector< Scalar, Node >::FileInfo > & fileInfo =
+    includeBndryPad ? _fileInfoWithBndry : _fileInfo;
+
+  // If the fileInfo object already has been set, our work is done
+  if (!fileInfo.is_null()) return fileInfo;
+
+  // Initialize the new FileInfo object
+  int ndims = _mdMap->numDims();
+  fileInfo.reset(new MDVector< Scalar, Node >::FileInfo);
+  fileInfo->fileShape.resize(ndims);
+  fileInfo->bufferShape.resize(ndims);
+  fileInfo->dataShape.resize(ndims);
+  fileInfo->fileStart.resize(ndims);
+  fileInfo->dataStart.resize(ndims);
+
+  // Initialize the shapes and starts.
+  for (int axis = 0; axis < ndims; ++axis)
+  {
+    // Initialize the FileInfo arrays using includeBndryPad where
+    // appropriate
+    fileInfo->fileShape[axis]   = getGlobalDim(axis,includeBndryPad);
+    fileInfo->bufferShape[axis] = getLocalDim(axis,true );
+    fileInfo->dataShape[axis]   = getLocalDim(axis,false);
+    fileInfo->fileStart[axis]   = getGlobalRankBounds(axis,includeBndryPad).start();
+    fileInfo->dataStart[axis]   = getLocalBounds(axis).start();
+    // Modify dataShape and dataStart if boundary padding is included
+    if (includeBndryPad)
+    {
+      int commIndex = _mdMap->getCommIndex(axis);
+      if (commIndex == 0)
+      {
+        int pad = getLowerBndryPad(axis);
+        fileInfo->dataShape[axis] += pad;
+        fileInfo->dataStart[axis] -= pad;
+      }
+      if (commIndex == _mdMap->getCommSize(axis)-1)
+      {
+        fileInfo->dataShape[axis] += getUpperBndryPad(axis);
+      }
+    }
+  }
+
+#ifdef DOMI_MDVECTOR_DEBUG_IO
+  cout << pid << ": fileShape   = " << fileInfo->fileShape()   << endl;
+  cout << pid << ": bufferShape = " << fileInfo->bufferShape() << endl;
+  cout << pid << ": dataShape   = " << fileInfo->dataShape()   << endl;
+  cout << pid << ": fileStart   = " << fileInfo->fileStart()   << endl;
+  cout << pid << ": dataStart   = " << fileInfo->dataStart()   << endl;
+#endif
+
+#ifdef HAVE_MPI
+  int mpi_order = getLayout() == C_ORDER ? MPI_ORDER_C : MPI_ORDER_FORTRAN;
+  // Build the MPI_Datatype for the file
+  fileInfo->filetype = Teuchos::rcp(new MPI_Datatype);
+  MPI_Type_create_subarray(ndims,
+                           fileInfo->fileShape.getRawPtr(),
+                           fileInfo->dataShape.getRawPtr(),
+                           fileInfo->fileStart.getRawPtr(),
+                           mpi_order,
+                           mpiType< Scalar >(),
+                           fileInfo->filetype.get());
+  MPI_Type_commit(fileInfo->filetype.get());
+
+  // Build the MPI_Datatype for the data
+  fileInfo->datatype = Teuchos::rcp(new MPI_Datatype);
+  MPI_Type_create_subarray(ndims,
+                           fileInfo->bufferShape.getRawPtr(),
+                           fileInfo->dataShape.getRawPtr(),
+                           fileInfo->dataStart.getRawPtr(),
+                           mpi_order,
+                           mpiType< Scalar >(),
+                           fileInfo->datatype.get());
+  MPI_Type_commit(fileInfo->datatype.get());
+#endif  // DGM_PARALLEL
+
+  return fileInfo;
+}
+
+////////////////////////////////////////////////////////////////////////
 
 }  // Namespace Domi
 
