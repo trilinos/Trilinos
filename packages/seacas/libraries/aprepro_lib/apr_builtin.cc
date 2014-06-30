@@ -1,3 +1,5 @@
+#include "apr_builtin.h"
+
 #include <cmath>
 #include <cctype>
 #include <errno.h>
@@ -52,88 +54,6 @@ extern SEAMS::Aprepro *aprepro;
 #else
 #define LOG1P(x)	std::log(1.0 + (x))
 #endif
-
-double do_acos(double x);
-double do_acosd(double x);
-double do_acosh(double x);
-double do_angle(double x1, double y1, double x2, double y2);
-double do_angled(double x1, double y1, double x2, double y2);
-double do_asin(double x);
-double do_asind(double x);
-double do_asinh(double x);
-double do_atan(double x);
-double do_atan2(double x, double y);
-double do_atan2d(double x, double y);
-double do_atand(double x);
-double do_atanh(double x);
-double do_ceil(double x);
-double do_cos(double x);
-double do_cosd(double x);
-double do_cosh(double x);
-double do_d2r(double x);
-double do_dim(double x, double y);
-double do_dist(double x1, double y1, double x2, double y2);
-double do_exp(double x);
-double do_fabs(double x);
-double do_floor(double x);
-double do_nint(double x);
-double do_fmod(double x, double y);
-double do_hypot(double x, double y);
-double do_int(double x);
-double do_log(double x);
-double do_log10(double x);
-double do_max(double x, double y);
-double do_min(double x, double y);
-double do_r2d(double x);
-double do_rand(double xl, double xh);
-double do_srand(double seed);
-double do_rand_normal(double mean, double stddev);
-double do_rand_lognormal(double mean, double stddev);
-double do_rand_weibull(double alpha, double beta);
-double do_sign(double x, double y);
-double do_sin(double x);
-double do_sind(double x);
-double do_sinh(double x);
-double do_sqrt(double x);
-double do_tan(double x);
-double do_tand(double x);
-double do_tanh(double x);
-double do_polarX(double rad, double ang);
-double do_polarY(double rad, double ang);
-double do_strtod(char *string);
-double do_option(char *option, double value);
-double do_word_count(char *string, char *delm );
-double do_Material(double id, char *type, char *name, char *model, char *code, FILE * yyout);
-double do_lgamma(double val);
-double do_juldayhms(double mon, double day, double year,
-			    double h, double mi, double se);
-double do_julday(double mon, double day, double year);
-double do_log1p(double mag);
-double do_rows(array *arr);
-double do_cols(array *arr);
-
-const char  *do_execute(char *string);
-const char  *do_getenv(char *string);
-const char  *do_tolower(char *string);
-const char  *do_toupper(char *string);
-const char  *do_tostring(double x);
-const char  *do_output(char *newfile);
-const char  *do_append(char *newfile);
-const char  *do_error(char *error_string);
-const char  *do_get_date(void);
-const char  *do_get_iso_date(void);
-const char  *do_get_time(void);
-const char  *do_get_word(double n, char *string, char *delm);
-const char  *do_file_to_string(char *filename);
-const char  *do_extract(char *string, char *begin, char *end);
-const char  *do_include_path(char *newpath);
-const char  *do_intout(double intval);
-const char  *do_print_array(array *my_array_data);
-
-array *do_make_array(double rows, double cols);
-array *do_identity(double size);
-array *do_transpose(array *a);
-array *do_csv_array(char *filename);
 
 /* DO_INT:  Calculate integer nearest to zero from value */
 double do_int(double x)
@@ -1176,9 +1096,16 @@ array *do_transpose(const array *a)
   return array_data;
 }
 
-array *do_csv_array(const char *filename)
+array *do_csv_array1(const char *filename)
 {
-  const char *delim = ",";
+  return do_csv_array(filename, 0.0);
+}
+
+array *do_csv_array(const char *filename, double skip)
+{
+  int rows_to_skip = (int)skip;
+  
+  const char *delim = ",\t ";
   std::fstream *file = aprepro->open_file(filename, "r");
   
   size_t rows = 0;
@@ -1187,9 +1114,55 @@ array *do_csv_array(const char *filename)
   std::string line;
   while (std::getline(*file, line)) {
     rows++;
-    std::vector<std::string> tokens;
-    tokenize(line, delim, tokens);
-    cols = tokens.size() > cols ? tokens.size() : cols;
+    if (rows > rows_to_skip) {
+      std::vector<std::string> tokens;
+      tokenize(line, delim, tokens);
+      cols = tokens.size() > cols ? tokens.size() : cols;
+    }
+  }
+
+  array *array_data = new array(rows-rows_to_skip, cols);
+
+  /* Read file again storing entries in array_data->data */
+  file->clear();
+  file->seekg(0);
+    
+  int idx = 0;
+  rows = 0;
+  while (std::getline(*file, line)) {
+    if (++rows > rows_to_skip) {
+      std::vector<std::string> tokens;
+      tokenize(line, delim, tokens);
+      for (size_t i=0; i < (size_t)array_data->cols; i++) {
+	if (i < tokens.size()) {
+	  array_data->data[idx++] = atof(tokens[i].c_str());
+	}
+	else {
+	  array_data->data[idx++] = 0.0;
+	}
+      }
+    }
+  }
+  assert((int)rows - rows_to_skip == array_data->rows);
+  return array_data;
+}
+
+array *do_csv_array2(const char *filename, const char *comment)
+{
+  const char *delim = ",\t ";
+  std::fstream *file = aprepro->open_file(filename, "r");
+  
+  size_t rows = 0;
+  size_t cols = 0;
+
+  std::string line;
+  while (std::getline(*file, line)) {
+    if (line[0] != comment[0]) {
+      rows++;
+      std::vector<std::string> tokens;
+      tokenize(line, delim, tokens);
+      cols = tokens.size() > cols ? tokens.size() : cols;
+    }
   }
 
   array *array_data = new array(rows, cols);
@@ -1201,17 +1174,19 @@ array *do_csv_array(const char *filename)
   int idx = 0;
   rows = 0;
   while (std::getline(*file, line)) {
-    std::vector<std::string> tokens;
-    tokenize(line, delim, tokens);
-    for (size_t i=0; i < (size_t)array_data->cols; i++) {
-      if (i < tokens.size()) {
-	array_data->data[idx++] = atof(tokens[i].c_str());
-      }
-      else {
-	array_data->data[idx++] = 0.0;
+    if (line[0] != comment[0]) {
+      rows++;
+      std::vector<std::string> tokens;
+      tokenize(line, delim, tokens);
+      for (size_t i=0; i < (size_t)array_data->cols; i++) {
+	if (i < tokens.size()) {
+	  array_data->data[idx++] = atof(tokens[i].c_str());
+	}
+	else {
+	  array_data->data[idx++] = 0.0;
+	}
       }
     }
-    rows++;
   }
   assert((int)rows == array_data->rows);
   return array_data;

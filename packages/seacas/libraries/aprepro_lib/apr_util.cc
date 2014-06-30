@@ -30,6 +30,20 @@ namespace {
 namespace SEAMS {
   extern Aprepro *aprepro;
 
+  bool arg_check(SEAMS::symrec *symbol, bool is_null) {
+    if (is_null) {
+      std::cerr << "Aprepro: ERROR:  "
+		<< "Incorrect argument count/type for function '" 
+		<< symbol->name << "'.\n"
+		<< "                 "
+		<< "The correct syntax is " << symbol->syntax << " ("
+		<< aprepro->ap_file_list.top().name<< ", line "
+		<< aprepro->ap_file_list.top().lineno + 1 << ")\n";
+      return false;
+    }
+    return true;
+  }
+
   void set_type(const SEAMS::Aprepro &apr, SEAMS::symrec* var, int type)
   {
     if (var->name[0] == '_' || !apr.state_is_immutable()) {

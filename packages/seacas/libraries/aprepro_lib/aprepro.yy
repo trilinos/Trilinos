@@ -3,6 +3,7 @@
 #include "apr_util.h"
 #include "apr_array.h"
 
+#include <iostream>
 #include <stdlib.h>
 #include <cmath>
 #include <cerrno>
@@ -12,6 +13,7 @@
 namespace SEAMS {
    extern int echo;
  }
+
  %}
 
 /* Require bison 2.4 or later */
@@ -139,13 +141,42 @@ bool:     sexp LT sexp          { $$ = (strcmp($1,$3) <  0 ? 1 : 0);	}
         | sexp NE  sexp         { $$ = (strcmp($1,$3) != 0 ? 1 : 0);	}
 
 aexp:   AVAR                    { $$ = $1->value.avar;}
-        | AFNCT LPAR sexp RPAR  { $$ = (*($1->value.arrfnct_c))($3);      }
-        | AFNCT LPAR exp COMMA exp RPAR  
-                                { $$ = (*($1->value.arrfnct_dd))($3,$5);   }
-        | AFNCT LPAR exp RPAR  
-                                { $$ = (*($1->value.arrfnct_d))($3);      }
-        | AFNCT LPAR aexp RPAR  
-                                { $$ = (*($1->value.arrfnct_a))($3);      }
+        | AFNCT LPAR sexp RPAR  {
+	  if (arg_check($1, $1->value.arrfnct_c == NULL))
+	    $$ = (*($1->value.arrfnct_c))($3);
+	  else
+	    yyerrok;
+	}
+        | AFNCT LPAR sexp COMMA exp RPAR  {
+	  if (arg_check($1, $1->value.arrfnct_cd == NULL))
+	    $$ = (*($1->value.arrfnct_cd))($3,$5);
+	  else
+	    yyerrok;
+	}
+        | AFNCT LPAR sexp COMMA sexp RPAR  {
+	  if (arg_check($1, $1->value.arrfnct_cc == NULL))
+	    $$ = (*($1->value.arrfnct_cc))($3,$5);
+	  else
+	    yyerrok;
+	}
+        | AFNCT LPAR exp COMMA exp RPAR {
+	  if (arg_check($1, $1->value.arrfnct_dd == NULL))
+	    $$ = (*($1->value.arrfnct_dd))($3,$5);
+	  else
+	    yyerrok;
+	}
+        | AFNCT LPAR exp RPAR {
+	  if (arg_check($1, $1->value.arrfnct_d == NULL))
+	    $$ = (*($1->value.arrfnct_d))($3);
+	  else
+	    yyerrok;
+	}
+        | AFNCT LPAR aexp RPAR  {
+	  if (arg_check($1, $1->value.arrfnct_a == NULL))
+	    $$ = (*($1->value.arrfnct_a))($3);
+	  else
+	    yyerrok;
+	}
         | AVAR EQUAL aexp       { $$ = $3; delete $1->value.avar; $1->value.avar = $3; 
                                   redefined_warning(aprepro, $1);
                                   set_type(aprepro, $1, token::AVAR); }
@@ -195,17 +226,49 @@ sexp:     QSTRING		{ $$ = $1;				}
 		                  set_type(aprepro, $1, token::SVAR);		}
 	| IMMSVAR EQUAL sexp	{ immutable_modify(aprepro, $1); YYERROR; }
         | IMMVAR EQUAL sexp	{ immutable_modify(aprepro, $1); YYERROR; }
-        | SFNCT LPAR sexp RPAR	{ $$ = (char*)(*($1->value.strfnct_c))($3);	}
-	| SFNCT LPAR RPAR	{ $$ = (char*)(*($1->value.strfnct))();	}
-        | SFNCT LPAR exp  RPAR	{ $$ = (char*)(*($1->value.strfnct_d))($3);	}
-        | SFNCT LPAR aexp RPAR	{ $$ = (char*)(*($1->value.strfnct_a))($3);	}
+        | SFNCT LPAR sexp RPAR	{
+	  if (arg_check($1, $1->value.strfnct_c == NULL))
+	    $$ = (char*)(*($1->value.strfnct_c))($3);
+	  else
+	    $$ = "";
+	}
+	| SFNCT LPAR RPAR	{
+	  if (arg_check($1, $1->value.strfnct == NULL))
+	    $$ = (char*)(*($1->value.strfnct))();
+	  else
+	    $$ = "";
+	}
+        | SFNCT LPAR exp  RPAR	{
+	  if (arg_check($1, $1->value.strfnct_d == NULL))
+	    $$ = (char*)(*($1->value.strfnct_d))($3);
+	  else
+	    $$ = "";
+	}
+        | SFNCT LPAR aexp RPAR	{
+	  if (arg_check($1, $1->value.strfnct_a == NULL))
+	    $$ = (char*)(*($1->value.strfnct_a))($3);
+	  else
+	    $$ = "";
+	}
         | sexp CONCAT sexp	{ concat_string($1, $3, &$$); }
-        | SFNCT LPAR exp COMMA sexp COMMA sexp COMMA sexp COMMA sexp RPAR
-				{ $$ = (char*)(*($1->value.strfnct_dcccc))($3, $5, $7, $9, $11); }
-        | SFNCT LPAR exp COMMA sexp COMMA sexp  RPAR
-				{ $$ = (char*)(*($1->value.strfnct_dcc))($3, $5, $7); }
-        | SFNCT LPAR sexp COMMA sexp COMMA sexp  RPAR
-				{ $$ = (char*)(*($1->value.strfnct_ccc))($3, $5, $7); }
+        | SFNCT LPAR exp COMMA sexp COMMA sexp COMMA sexp COMMA sexp RPAR {
+	  if (arg_check($1, $1->value.strfnct_dcccc == NULL))
+	    $$ = (char*)(*($1->value.strfnct_dcccc))($3, $5, $7, $9, $11);
+	  else
+	    $$ = "";
+	}
+        | SFNCT LPAR exp COMMA sexp COMMA sexp  RPAR {
+	  if (arg_check($1, $1->value.strfnct_dcc == NULL))
+	    $$ = (char*)(*($1->value.strfnct_dcc))($3, $5, $7);
+	  else
+	    $$ = "";
+	}
+        | SFNCT LPAR sexp COMMA sexp COMMA sexp  RPAR {
+	  if (arg_check($1, $1->value.strfnct_ccc == NULL))
+	    $$ = (char*)(*($1->value.strfnct_ccc))($3, $5, $7);
+	  else
+	    $$ = "";
+	}
         | bool QUEST sexp COLON sexp  { $$ = ($1) ? ($3) : ($5);              }
 
 exp:	  NUM			{ $$ = $1; 				}
@@ -277,24 +340,79 @@ exp:	  NUM			{ $$ = $1; 				}
 		                  set_type(aprepro, $1, token::VAR);
 				  SEAMS::math_error(aprepro, "Power");
 				  undefined_warning(aprepro, $1->name);          }
-	| FNCT LPAR RPAR		{ $$ = (*($1->value.fnctptr))();	}
-	| FNCT LPAR exp RPAR	{ $$ = (*($1->value.fnctptr_d))($3); 	}
-	| FNCT LPAR sexp RPAR	{ $$ = (*($1->value.fnctptr_c))($3); 	}
-	| FNCT LPAR aexp RPAR	{ $$ = (*($1->value.fnctptr_a))($3); 	}
-	| FNCT LPAR sexp COMMA exp RPAR
-                                { $$ = (*($1->value.fnctptr_cd))($3, $5); 	}
-	| FNCT LPAR sexp COMMA sexp RPAR
-                                { $$ = (*($1->value.fnctptr_cc))($3, $5); 	}
-   	| FNCT LPAR exp COMMA exp RPAR
-				{ $$ = (*($1->value.fnctptr_dd))($3, $5);	}
-	| FNCT LPAR exp COMMA exp COMMA exp RPAR
-				{ $$ = (*($1->value.fnctptr_ddd))($3, $5, $7); }
-	| FNCT LPAR exp COMMA exp SEMI exp COMMA exp RPAR
-				{ $$ = (*($1->value.fnctptr_dddd))($3, $5, $7, $9); }
-	| FNCT LPAR exp COMMA exp COMMA exp COMMA exp RPAR
-				{ $$ = (*($1->value.fnctptr_dddd))($3, $5, $7, $9); }
-	| FNCT LPAR exp COMMA exp COMMA exp COMMA exp COMMA exp COMMA exp RPAR
-  		     { $$ = (*($1->value.fnctptr_dddddd))($3, $5, $7, $9, $11, $13); }
+
+        | FNCT LPAR RPAR	{
+	  if (arg_check($1, $1->value.fnctptr == NULL))
+	    $$ = (*($1->value.fnctptr))();
+	  else 
+	    $$ = 0.0;
+	  }
+
+	| FNCT LPAR exp RPAR	{
+	  if (arg_check($1, $1->value.fnctptr_d == NULL))
+	    $$ = (*($1->value.fnctptr_d))($3);
+	  else
+	    $$ = 0.0;
+	  }
+
+	| FNCT LPAR sexp RPAR	{
+	  if (arg_check($1, $1->value.fnctptr_c == NULL))
+	    $$ = (*($1->value.fnctptr_c))($3);
+	  else
+	    $$ = 0.0;
+	  }
+
+	| FNCT LPAR aexp RPAR	{
+	  if (arg_check($1, $1->value.fnctptr_a == NULL))
+	    $$ = (*($1->value.fnctptr_a))($3);
+	  else
+	    $$ = 0.0;
+	  }
+
+	| FNCT LPAR sexp COMMA exp RPAR {
+	    if (arg_check($1, $1->value.fnctptr_cd == NULL))
+	      $$ = (*($1->value.fnctptr_cd))($3, $5);
+	    else
+	      $$ = 0.0;
+	  }	    
+
+	| FNCT LPAR sexp COMMA sexp RPAR {
+	    if (arg_check($1, $1->value.fnctptr_cc == NULL))
+	      $$ = (*($1->value.fnctptr_cc))($3, $5);
+	    else
+	      $$ = 0.0;
+	  }
+
+        | FNCT LPAR exp COMMA exp RPAR {
+	    if (arg_check($1, $1->value.fnctptr_dd == NULL))
+	      $$ = (*($1->value.fnctptr_dd))($3, $5);
+	    else
+	      $$ = 0.0;
+	  }
+	| FNCT LPAR exp COMMA exp COMMA exp RPAR {
+	    if (arg_check($1, $1->value.fnctptr_ddd == NULL))
+	      $$ = (*($1->value.fnctptr_ddd))($3, $5, $7);
+	    else
+	      $$ = 0.0;
+	  }
+	| FNCT LPAR exp COMMA exp SEMI exp COMMA exp RPAR {
+	    if (arg_check($1, $1->value.fnctptr_dddd == NULL))
+	      $$ = (*($1->value.fnctptr_dddd))($3, $5, $7, $9);
+	    else
+	      $$ = 0.0;
+	  }
+	| FNCT LPAR exp COMMA exp COMMA exp COMMA exp RPAR {
+	    if (arg_check($1, $1->value.fnctptr_dddd == NULL))
+	      $$ = (*($1->value.fnctptr_dddd))($3, $5, $7, $9);
+	    else
+	      $$ = 0.0;
+	  }
+	| FNCT LPAR exp COMMA exp COMMA exp COMMA exp COMMA exp COMMA exp RPAR {
+	    if (arg_check($1, $1->value.fnctptr_dddddd == NULL))
+	      $$ = (*($1->value.fnctptr_dddddd))($3, $5, $7, $9, $11, $13);
+	    else
+	      $$ = 0.0;
+	  }
 	| exp PLU exp		{ $$ = $1 + $3; 			}
 	| exp SUB exp		{ $$ = $1 - $3; 			}
 	| exp TIM exp		{ $$ = $1 * $3; 			}

@@ -15,7 +15,7 @@
 
 namespace {
   const unsigned int HASHSIZE = 5939;
-  const char* version_string = "4.10 (2014/06/24)";
+  const char* version_string = "4.11 (2014/07/02)";
   
   unsigned hash_symbol (const char *symbol)
   {
@@ -191,6 +191,7 @@ namespace SEAMS {
   symrec *Aprepro::putsym (const std::string &sym_name, SYMBOL_TYPE sym_type, bool is_internal)
   {
     int parser_type = 0;
+    bool is_function = false;
     switch (sym_type)
       {
       case VARIABLE:
@@ -213,14 +214,43 @@ namespace SEAMS {
 	break;
       case FUNCTION:
 	parser_type = Parser::token::FNCT;
+	is_function = true;
 	break;
       case STRING_FUNCTION:
 	parser_type = Parser::token::SFNCT;
+	is_function = true;
 	break;
       case ARRAY_FUNCTION:
 	parser_type = Parser::token::AFNCT;
+	is_function = true;
 	break;
       }
+
+    // If the type is a function type, it can be overloaded as long as
+    // it returns the same type which means that the "parser_type" is
+    // the same.  If we have a function, see if it has already been
+    // defined and if so, check that the parser_type matches and then
+    // retrn that pointer instead of creating a new symrec.
+
+    if (is_function) {
+      symrec *ptr = getsym(sym_name.c_str());
+      if (ptr != NULL) {
+	if (ptr->type != parser_type) {
+	  char tmpstr[128];
+	  sprintf(tmpstr,
+		  "Aprepro: ERROR:  Overloaded function '%s' does not return same type.",
+		  sym_name.c_str()); 
+	  perror(tmpstr);
+	  exit(EXIT_FAILURE);
+	}
+	// Function with this name already exists; return that
+	// pointer.
+	// Note that the info and syntax fields will contain the
+	// latest values, not the firstt...
+	return ptr;
+      }
+    }
+    
     symrec *ptr = new symrec(sym_name, parser_type, is_internal);
     if (ptr == NULL)
       return NULL;

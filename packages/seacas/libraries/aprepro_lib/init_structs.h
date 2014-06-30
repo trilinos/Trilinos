@@ -109,6 +109,22 @@ struct array_c_init
     const char *description;
   };
 
+struct array_cc_init
+  {
+    const char *fname;
+    SEAMS::array *(*fnct)(const char*, const char*);
+    const char *syntax;
+    const char *description;
+  };
+
+struct array_cd_init
+  {
+    const char *fname;
+    SEAMS::array *(*fnct)(const char*, double);
+    const char *syntax;
+    const char *description;
+  };
+
 struct array_dd_init
   {
     const char *fname;

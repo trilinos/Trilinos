@@ -37,7 +37,7 @@ namespace SEAMS {
     std::string info;
     int   type;
     bool  isInternal;  
-    union {
+    struct value {
       double var;
       double (*fnctptr)();
       double (*fnctptr_d)(double);
@@ -60,9 +60,39 @@ namespace SEAMS {
       const char *(*strfnct_dcccc)(double, char*, char*, char*, char*);
       array *avar; /* Array Variable */
       array *(*arrfnct_c)(const char*);
+      array *(*arrfnct_cc)(const char*,const char*);
+      array *(*arrfnct_cd)(const char*,double);
       array *(*arrfnct_dd)(double,double);
       array *(*arrfnct_d)(double);
       array *(*arrfnct_a)(const array*);
+
+      value() :
+	var(0),
+	fnctptr(NULL),
+	fnctptr_d(NULL),
+	fnctptr_c(NULL),
+	fnctptr_dc(NULL),
+	fnctptr_cd(NULL),
+	fnctptr_cc(NULL),
+	fnctptr_dd(NULL),
+	fnctptr_ddd(NULL),
+	fnctptr_dddd(NULL),
+	fnctptr_dddddd(NULL),
+	fnctptr_a(NULL),
+	svar(NULL),
+	strfnct(NULL),
+	strfnct_c(NULL),
+	strfnct_d(NULL),
+	strfnct_a(NULL),
+	strfnct_ccc(NULL),
+	strfnct_dcc(NULL),
+	strfnct_dcccc(NULL),
+	avar(NULL),
+	arrfnct_c(NULL),
+	arrfnct_cd(NULL),
+	arrfnct_dd(NULL),
+	arrfnct_d(NULL),
+	arrfnct_a(NULL) {}
     } value;
     symrec *next;
 
@@ -117,7 +147,7 @@ namespace SEAMS {
     file_rec(const char *my_name, int line_num, bool is_temp, int loop_cnt)
       : name(my_name), lineno(line_num), loop_count(loop_cnt), tmp_file(is_temp) {}
     file_rec()
-      : name("UNKNOWN_FILE_NAME"), lineno(0), loop_count(0), tmp_file(false) {}
+      : name("STDIN"), lineno(0), loop_count(0), tmp_file(false) {}
   };
 
   /** The Aprepro class brings together all components. It creates an instance of
