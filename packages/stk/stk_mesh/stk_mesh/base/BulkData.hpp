@@ -1397,14 +1397,18 @@ protected:
   void internal_resolve_ghosted_modify_delete();
 private:
   void internal_resolve_parallel_create();
-  void resolve_ownership_of_modified_entities(const std::vector<stk::mesh::Entity> &shared_new);
-
   void internal_resolve_shared_membership();
+
+protected:
   void internal_update_distributed_index(stk::mesh::EntityRank entityRank, std::vector<stk::mesh::Entity> & shared_new );
   void internal_update_distributed_index(std::vector<stk::mesh::Entity> & shared_new );
-
+  void fillLocallyCreatedOrModifiedEntities(parallel::DistributedIndex::KeyTypeVector &local_created_or_modified);
+  void resolve_ownership_of_modified_entities(const std::vector<stk::mesh::Entity> &shared_new);
   void move_entities_to_proper_part_ownership( const std::vector<stk::mesh::Entity> &shared_modified );
   void update_comm_list(const std::vector<stk::mesh::Entity>& shared_modified);
+
+private:
+
 
   /** \brief  Regenerate the shared-entity aura,
    *          adding and removing ghosted entities as necessary.
