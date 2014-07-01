@@ -307,25 +307,21 @@ struct Datatype<unsigned long>
   }
 };
 
-// #ifdef MPI_LONG_LONG_INT
-// template <>
-// struct Datatype<long long>
-// {
-//   static MPI_Datatype type() {
-//     return MPI_LONG_LONG_INT;
-//   }
-// };
-// #endif
+template <>
+struct Datatype<long long>
+{
+  static MPI_Datatype type() {
+    return MPI_LONG_LONG;
+  }
+};
 
-// #ifdef MPI_UNSIGNED_LONG_LONG_INT
-// template <>
-// struct Datatype<unsigned long long>
-// {
-//   static MPI_Datatype type() {
-//     return MPI_UNSIGNED_LONG_LONG_INT;
-//   }
-// };
-// #endif
+template <>
+struct Datatype<unsigned long long>
+{
+  static MPI_Datatype type() {
+    return MPI_UNSIGNED_LONG_LONG;
+  }
+};
 
 template <>
 struct Datatype<float>
