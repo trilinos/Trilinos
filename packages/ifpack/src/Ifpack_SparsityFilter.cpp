@@ -172,7 +172,8 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
 int Ifpack_SparsityFilter::
 ExtractDiagonalCopy(Epetra_Vector & Diagonal) const
 {
-  IFPACK_RETURN(A_->ExtractDiagonalCopy(Diagonal));
+  int ierr = A_->ExtractDiagonalCopy(Diagonal);
+  IFPACK_RETURN(ierr);
 }
 
 //==============================================================================
@@ -228,7 +229,8 @@ Solve(bool Upper, bool Trans, bool UnitDiagonal,
 int Ifpack_SparsityFilter::
 Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
-  IFPACK_RETURN(Multiply(UseTranspose(),X,Y));
+  int ierr = Multiply(UseTranspose(),X,Y);
+  IFPACK_RETURN(ierr);
 }
 
 //==============================================================================

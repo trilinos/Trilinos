@@ -493,7 +493,8 @@ template<typename T>
 int Ifpack_BlockRelaxation<T>::
 Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
-  IFPACK_RETURN(Matrix().Apply(X,Y));
+  int ierr = Matrix().Apply(X,Y);
+  IFPACK_RETURN(ierr);
 }
 
 //==============================================================================
@@ -647,7 +648,8 @@ ApplyInverseJacobi(const Epetra_MultiVector& X,
 
   // do not compute the residual in this case
   if (NumSweeps_ == 1 && ZeroStartingSolution_) {
-    IFPACK_RETURN(DoJacobi(X,Y));
+    int ierr = DoJacobi(X,Y);
+    IFPACK_RETURN(ierr);
   }
 
   Epetra_MultiVector AX(Y);
