@@ -14,9 +14,8 @@
 #include <vector>                       // for vector
 #include <stk_util/stk_config.h>
 #include <limits>
-#if defined ( STK_HAS_MPI )
-#  include <mpi.h>                        // for MPI_Comm
 
+#if defined ( STK_HAS_MPI )
 
 TEST(ParallelComm, CommAllDestructor)
 {
