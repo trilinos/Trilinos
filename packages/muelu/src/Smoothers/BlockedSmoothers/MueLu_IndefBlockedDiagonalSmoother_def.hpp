@@ -145,7 +145,7 @@ namespace MueLu {
     FactoryMonitor m(*this, "Setup for indefinite blocked diagonal smoother", currentLevel);
 
     if (SmootherPrototype::IsSetup() == true)
-      this->GetOStream(Warnings0) << "Warning: MueLu::IndefBlockedDiagonalSmoother::Setup(): Setup() has already been called";
+      this->GetOStream(Warnings0) << "MueLu::IndefBlockedDiagonalSmoother::Setup(): Setup() has already been called";
 
     // extract blocked operator A from current level
     A_ = Factory::Get<RCP<Matrix> > (currentLevel, "A");

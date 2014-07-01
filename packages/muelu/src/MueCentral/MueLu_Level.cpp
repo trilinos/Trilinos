@@ -77,14 +77,14 @@ namespace MueLu {
 
   void Level::SetLevelID(int levelID) {
     if (levelID_ != -1 && levelID_ != levelID)
-      GetOStream(Warnings1) << "Warning: Level::SetLevelID(): Changing an already defined LevelID (previousID=" << levelID_ << ", newID=" << levelID << ")" << std::endl;
+      GetOStream(Warnings1) << "Level::SetLevelID(): Changing an already defined LevelID (previousID=" << levelID_ << ", newID=" << levelID << ")" << std::endl;
 
     levelID_ = levelID;
   }
 
   void Level::SetPreviousLevel(const RCP<Level> & previousLevel) {
     if (previousLevel_ != Teuchos::null && previousLevel_ != previousLevel)
-      GetOStream(Warnings1) << "Warning: Level::SetPreviousLevel(): PreviousLevel was already defined" << std::endl;
+      GetOStream(Warnings1) << "Level::SetPreviousLevel(): PreviousLevel was already defined" << std::endl;
 
     previousLevel_ = previousLevel;
   }

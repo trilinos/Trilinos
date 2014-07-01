@@ -113,7 +113,7 @@ namespace MueLu {
   void IfpackSmoother::Setup(Level &currentLevel) {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
     if (SmootherPrototype::IsSetup() == true)
-      GetOStream(Warnings0) << "Warning: MueLu::IfpackSmoother::Setup(): Setup() has already been called";
+      GetOStream(Warnings0) << "MueLu::IfpackSmoother::Setup(): Setup() has already been called";
 
     A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A");
 

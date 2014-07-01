@@ -518,7 +518,7 @@ namespace MueLu {
           emptySolve = false;
         }
         if (emptySolve == true)
-          GetOStream(Warnings0) << "Warning: No coarse grid solver" << std::endl;
+          GetOStream(Warnings0) << "No coarse grid solver" << std::endl;
 
       } else {
         // On intermediate levels, we do cycles
@@ -533,7 +533,7 @@ namespace MueLu {
             RCP<SmootherBase> preSmoo = Fine->Get< RCP<SmootherBase> >("PreSmoother");
             preSmoo->Apply(X, B, zeroGuess);
           } else {
-            GetOStream(Warnings1) << "Warning: Level " <<  startLevel << ": No PreSmoother!" << std::endl;
+            GetOStream(Warnings1) << "Level " <<  startLevel << ": No PreSmoother!" << std::endl;
           }
         }
 
@@ -637,7 +637,7 @@ namespace MueLu {
             postSmoo->Apply(X, B, false);
 
           } else {
-            GetOStream(Warnings1) << "Warning: Level " <<  startLevel << ": No PostSmoother!" << std::endl;
+            GetOStream(Warnings1) << "Level " <<  startLevel << ": No PostSmoother!" << std::endl;
           }
         }
       }

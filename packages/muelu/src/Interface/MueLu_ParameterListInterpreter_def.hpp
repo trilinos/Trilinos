@@ -540,7 +540,7 @@ namespace MueLu {
     if (!this->implicitTranspose_) {
       MUELU_READ_2LIST_PARAM(paramList, defaultList, "problem: symmetric", bool, true, isSymmetric);
       if (isSymmetric == false && (multigridAlgo == "unsmoothed" || multigridAlgo == "emin")) {
-        this->GetOStream(Warnings0) << "Warning: switching to symmetric problem as multigrid algorithm \"" << multigridAlgo << "\" is restricted to symmetric case" << std::endl;
+        this->GetOStream(Warnings0) << "Switching to symmetric problem as multigrid algorithm \"" << multigridAlgo << "\" is restricted to symmetric case" << std::endl;
         isSymmetric = true;
       }
 
@@ -875,7 +875,7 @@ namespace MueLu {
           factoryManagers[paramName] = m;
 
         } else {
-          this->GetOStream(Warnings0) << "Warning: Could not interpret parameter list " << paramList1 << std::endl;
+          this->GetOStream(Warnings0) << "Could not interpret parameter list " << paramList1 << std::endl;
           TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "XML Parameter list must either be of type \"factory\" or of type \"group\".");
         }
       } else {
@@ -891,7 +891,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetupMatrix(Matrix& A) const {
     if (A.GetFixedBlockSize() != blockSize_)
-      this->GetOStream(Warnings0) << "Warning: setting matrix block size to " << blockSize_ << " (value of the parameter in the list) "
+      this->GetOStream(Warnings0) << "Setting matrix block size to " << blockSize_ << " (value of the parameter in the list) "
           << "instead of " << A.GetFixedBlockSize() << " (provided matrix)." << std::endl;
 
     A.SetFixedBlockSize(blockSize_);

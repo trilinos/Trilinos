@@ -161,7 +161,7 @@ namespace MueLu {
     FactoryMonitor m(*this, "Setup blocked Braess-Sarazin Smoother", currentLevel);
 
     if (SmootherPrototype::IsSetup() == true)
-            this->GetOStream(Warnings0) << "Warning: MueLu::BreaessSarazinSmoother::Setup(): Setup() has already been called";
+      this->GetOStream(Warnings0) << "MueLu::BreaessSarazinSmoother::Setup(): Setup() has already been called";
 
     // extract blocked operator A from current level
     A_ = Factory::Get<RCP<Matrix> > (currentLevel, "A");

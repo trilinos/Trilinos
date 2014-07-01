@@ -83,7 +83,7 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void MergedSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(Level& level) {
     if (SmootherPrototype::IsSetup() == true)
-      this->GetOStream(Warnings0) << "Warning: MueLu::MergedSmoother::Setup(): Setup() has already been called";
+      this->GetOStream(Warnings0) << "MueLu::MergedSmoother::Setup(): Setup() has already been called";
 
     for (typename ArrayView<RCP<SmootherPrototype> >::iterator it = smootherList_.begin(); it != smootherList_.end(); ++it) {
       try {

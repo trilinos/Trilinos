@@ -118,7 +118,7 @@ namespace MueLu {
     FactoryMonitor monitor(*this, "Permuting Smoother", currentLevel);
 
     if (SmootherPrototype::IsSetup() == true)
-      this->GetOStream(Warnings0) << "Warning: MueLu::PermutingSmoother::Setup(): Setup() has already been called" << std::endl;
+      this->GetOStream(Warnings0) << "MueLu::PermutingSmoother::Setup(): Setup() has already been called" << std::endl;
 
     // extract information from level class
     permP_         = currentLevel.Get< RCP<Matrix> > ("permP",       permFact_.get());

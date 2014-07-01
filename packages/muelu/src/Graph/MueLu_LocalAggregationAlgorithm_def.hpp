@@ -306,7 +306,7 @@ namespace MueLu {
         sumAll(comm, localReady, globalReady);
 
         if(globalReady > 0)
-          GetOStream(Warnings0) << "Warning: " << globalReady << " CA_READY nodes left" << std::endl;
+          GetOStream(Warnings0) << globalReady << " CA_READY nodes left" << std::endl;
       }
 
       if (IsPrint(Statistics1)) {
