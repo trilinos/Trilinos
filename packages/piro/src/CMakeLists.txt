@@ -68,7 +68,7 @@ IF (Piro_ENABLE_NOX)
                      Piro_Epetra_AdaptiveSolutionManager.hpp
                      Piro_NullSpaceUtils.hpp
                      Piro_Epetra_VelocityVerletSolver.hpp
-                     Piro_Epetra_NewmarkBetaSolver.hpp
+                     Piro_Epetra_NewmarkSolver.hpp
                      Piro_Epetra_TrapezoidRuleSolver.hpp
 		     Piro_Epetra_SensitivityOperator.hpp)
   APPEND_SET(SOURCES Piro_Epetra_NOXSolver.cpp
@@ -81,7 +81,7 @@ IF (Piro_ENABLE_NOX)
                      Piro_Epetra_AdaptiveSolutionManager.cpp
                      Piro_NullSpaceUtils.cpp
                      Piro_Epetra_VelocityVerletSolver.cpp
-                     Piro_Epetra_NewmarkBetaSolver.cpp
+                     Piro_Epetra_NewmarkSolver.cpp
                      Piro_Epetra_TrapezoidRuleSolver.cpp
 		     Piro_Epetra_SensitivityOperator.cpp)
 ENDIF()

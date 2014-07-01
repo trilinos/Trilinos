@@ -49,7 +49,7 @@
 #include "Piro_Epetra_LOCASolver.hpp"
 #include "Piro_Epetra_LOCAAdaptiveSolver.hpp"
 #include "Piro_Epetra_VelocityVerletSolver.hpp"
-#include "Piro_Epetra_NewmarkBetaSolver.hpp"
+#include "Piro_Epetra_NewmarkSolver.hpp"
 #include "Piro_Epetra_TrapezoidRuleSolver.hpp"
 #endif
 
@@ -228,10 +228,10 @@ Piro::Epetra::SolverFactory::createSolver(
     const Teuchos::RCP<NOX::Epetra::Observer> observer =
       this->create<NOX::Epetra::Observer>(piroParams);
     result = Teuchos::rcp(new Piro::Epetra::VelocityVerletSolver(piroParams, model, observer));
-  } else if (type == "Newmark Beta") {
+  } else if (type == "Newmark") {
     const Teuchos::RCP<NOX::Epetra::Observer> observer =
       this->create<NOX::Epetra::Observer>(piroParams);
-    result = Teuchos::rcp(new Piro::Epetra::NewmarkBetaSolver(piroParams, model, observer));
+    result = Teuchos::rcp(new Piro::Epetra::NewmarkSolver(piroParams, model, observer));
   } else
 #endif
 

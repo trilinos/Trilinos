@@ -342,13 +342,13 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
 
     utils.out() << "Convergence Stats: for step  #" << stepNum << " : Newton, Krylov, Kr/Ne; LastKrylov, LastTol: " 
 	 << NewtonIters << "  " << KrylovIters << "  " 
-	 << (double) KrylovIters / (double) NewtonIters << "  " 
+	 << (((double) NewtonIters!=0) ? ((double) KrylovIters / (double) NewtonIters) : 0.0) << "  " 
          << lastSolveKrylovIters << " " <<  linsys->getAchievedTol() << std::endl;
 
     if (stepNum > 1)
      utils.out() << "Convergence Stats: running total: Newton, Krylov, Kr/Ne, Kr/Step: " 
            << totalNewtonIters << "  " << totalKrylovIters << "  " 
-           << (double) totalKrylovIters / (double) totalNewtonIters 
+           << (((double) totalNewtonIters!=0) ? ((double) totalKrylovIters / (double) totalNewtonIters) : 0.0)
            << "  " << (double) totalKrylovIters / (double) stepNum << std::endl;
     
   }
