@@ -4540,11 +4540,11 @@ int ML_Smoother_Gen_LineSmootherFacts(ML_Sm_BGS_Data **data, ML_Operator *Amat,
    /* allocate memory for each block                              */
    /* ----------------------------------------------------------- */
 
-   dataptr->trid_dl  = (double **) ML_allocate(Nblocks*sizeof(double *));
-   dataptr->trid_d   = (double **) ML_allocate(Nblocks*sizeof(double *));
-   dataptr->trid_du  = (double **) ML_allocate(Nblocks*sizeof(double *));
-   dataptr->trid_du2 = (double **) ML_allocate(Nblocks*sizeof(double *));
-   dataptr->trid_ipiv= (int    **) ML_allocate(Nblocks*sizeof(int    *));
+   dataptr->trid_dl  = (double **) ML_allocate((Nblocks+1)*sizeof(double *));
+   dataptr->trid_d   = (double **) ML_allocate((Nblocks+1)*sizeof(double *));
+   dataptr->trid_du  = (double **) ML_allocate((Nblocks+1)*sizeof(double *));
+   dataptr->trid_du2 = (double **) ML_allocate((Nblocks+1)*sizeof(double *));
+   dataptr->trid_ipiv= (int    **) ML_allocate((Nblocks+1)*sizeof(int    *));
 
    trid_dl  = dataptr->trid_dl;
    trid_d   = dataptr->trid_d;
