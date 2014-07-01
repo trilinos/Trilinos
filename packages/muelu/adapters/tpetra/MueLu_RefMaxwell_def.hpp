@@ -147,16 +147,27 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::compute() {
     = Teuchos::rcp( new Ifpack2Smoother(precType22_,precList22_) );
   Teuchos::RCP<SmootherFactory> SmooFact22
     = Teuchos::rcp( new SmootherFactory(SmooProto22) );
+  Teuchos::RCP<CoalesceDropFactory> Dropfact11
+    = Teuchos::rcp( new CoalesceDropFactory() );
+  Teuchos::RCP<CoalesceDropFactory> Dropfact22
+    = Teuchos::rcp( new CoalesceDropFactory() );
   Teuchos::RCP<UncoupledAggregationFactory> Aggfact11
     = Teuchos::rcp( new UncoupledAggregationFactory() );
   Teuchos::RCP<UncoupledAggregationFactory> Aggfact22
     = Teuchos::rcp( new UncoupledAggregationFactory() );
+  Teuchos::ParameterList params;
+  params.set("aggregation threshold",1.0e-16);
+  params.set("Dirichlet detection threshold",1.0e-16);
+  Dropfact11->SetParameterList(params);
+  Dropfact22->SetParameterList(params);
   Manager11->SetFactory("Aggregates",Aggfact11);
   Manager11->SetFactory("Smoother",SmooFact11);
   Manager11->SetFactory("CoarseSolver",SmooFact11);
+  Manager11->SetFactory("Graph",Dropfact11);
   Manager22->SetFactory("Aggregates",Aggfact22);
   Manager22->SetFactory("Smoother",SmooFact22);
   Manager22->SetFactory("CoarseSolver",SmooFact22);
+  Manager22->SetFactory("Graph",Dropfact22);
   Hierarchy11_ = Teuchos::rcp( new Hierarchy(A11_) );
   Hierarchy11_ -> SetMaxCoarseSize( MaxCoarseSize_ );
   Hierarchy11_ -> Setup(*Manager11, 0, MaxLevels_ );
@@ -320,9 +331,9 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::buildProlon
     = Teuchos::rcp( new SaPFactory );
   Teuchos::RCP<UncoupledAggregationFactory> Aggfact
     = Teuchos::rcp( new UncoupledAggregationFactory() );
-  Teuchos::ParameterList params1;
-  params1.set("Damping factor",(Scalar)0.0);
-  Pfact      -> SetParameterList(params1);
+  Teuchos::ParameterList params;
+  params.set("Damping factor",(Scalar)0.0);
+  Pfact      -> SetParameterList(params);
   auxManager -> SetFactory("P", Pfact);
   auxManager -> SetFactory("Ptent", TentPfact);
   auxManager -> SetFactory("Aggregates", Aggfact);

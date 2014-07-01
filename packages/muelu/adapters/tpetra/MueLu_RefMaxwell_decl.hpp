@@ -53,6 +53,7 @@
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
+#include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
 
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
