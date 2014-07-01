@@ -54,7 +54,7 @@ TEST( stk_topology, side_node_ordinals)
     }
   }
 
-};
+}
 
 TEST( stk_topology, superelement_topology )
 {
