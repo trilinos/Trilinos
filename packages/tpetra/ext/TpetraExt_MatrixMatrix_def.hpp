@@ -125,6 +125,10 @@ void Multiply(
   if(transposeA && !transposeB && call_FillComplete_on_result && NewFlag) {
     use_optimized_ATB=true;
   }
+#ifdef USE_OLD_TRANSPOSE // NOTE: For Grey Ballard's use.  Remove this later.
+  use_optimized_ATB=false;
+#endif
+
 
   if(!use_optimized_ATB && transposeA) {
     RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> at (Teuchos::rcpFromRef (A));
