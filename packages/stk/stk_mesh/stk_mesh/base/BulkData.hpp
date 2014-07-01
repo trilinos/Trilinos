@@ -60,7 +60,7 @@ namespace stk { namespace mesh { struct ConnectivityMap; } }
 //#define GATHER_GET_BUCKETS_METRICS
 
 // Use macro below to activate counters that track calls to mesh-modification routines
-//#define STK_MESH_MODIFICATION_COUNTERS
+#define STK_MESH_MODIFICATION_COUNTERS
 
 #ifdef STK_MESH_MODIFICATION_COUNTERS
 #define INCREMENT_MODIFICATION_COUNTER(MOD_TYPE) {++m_modification_counters[MOD_TYPE];}
@@ -1510,6 +1510,7 @@ private:
   };
 
 #ifdef STK_MESH_MODIFICATION_COUNTERS
+  static unsigned m_num_bulk_data_counter;
   unsigned m_modification_counters[NumModificationTypes];
   unsigned m_entity_modification_counters[stk::topology::NUM_RANKS][NumEntityModificationTypes];
 #endif
@@ -1519,6 +1520,8 @@ private:
   void write_modification_counts();
   void write_modification_counts_to_stream(std::ostream& out);
   void write_entity_modification_entry(std::ostream& out, const std::string& label, EntityModificationTypes entityModification);
+  void write_modification_labels_to_stream(std::ostream& out);
+  void write_entity_modification_entry_label(std::ostream& out, const std::string& label);
 
 };
 

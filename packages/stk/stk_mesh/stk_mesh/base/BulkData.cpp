@@ -291,6 +291,8 @@ convert_entity_keys_to_spans( const MetaData & meta )
 
 //----------------------------------------------------------------------
 
+unsigned BulkData::m_num_bulk_data_counter = 0;
+
 BulkData::BulkData( MetaData & mesh_meta_data ,
                     ParallelMachine parallel
 #ifdef SIERRA_MIGRATION
@@ -360,7 +362,9 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
 #endif
 {
 #ifdef STK_MESH_MODIFICATION_COUNTERS
+  m_num_bulk_data_counter++;
   std::ofstream outfile(create_modification_counts_filename().c_str());
+  write_modification_labels_to_stream(outfile);
   outfile.close();
   reset_modification_counters();
 #endif
@@ -396,12 +400,39 @@ void BulkData::reset_modification_counters()
     }
 #endif
 }
+void BulkData::write_entity_modification_entry_label(std::ostream& out, const std::string& label)
+{
+#ifdef STK_MESH_MODIFICATION_COUNTERS
+    for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<mesh_meta_data().entity_rank_count(); rank++)
+    {
+        out <<label<<"["<<rank<<"], ";
+    }
+#endif
+}
+
+void BulkData::write_modification_labels_to_stream(std::ostream& out)
+{
+#ifdef STK_MESH_MODIFICATION_COUNTERS
+    out << "modification cycle, ";
+    write_entity_modification_entry_label(out, "declare_entity");
+    write_entity_modification_entry_label(out, "destroy_entity");
+    write_entity_modification_entry_label(out, "change_entity_id");
+    write_entity_modification_entry_label(out, "change_entity_parts");
+    out << "change_entity_owner, ";
+    out << "create_ghosting, ";
+    out << "change_ghosting, ";
+    out << "destroy_all_ghosting, ";
+    out << "declare_relation, ";
+    out << "destroy_relation\n";
+#endif
+}
+
 void BulkData::write_entity_modification_entry(std::ostream& out, const std::string& label, EntityModificationTypes entityModification)
 {
 #ifdef STK_MESH_MODIFICATION_COUNTERS
     for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<mesh_meta_data().entity_rank_count(); rank++)
     {
-        out << synchronized_count()<< " "<<label<<"["<<rank<<"]: "       << m_entity_modification_counters[rank][entityModification]<<"\n";
+        out << m_entity_modification_counters[rank][entityModification]<<", ";
     }
 #endif
 }
@@ -409,25 +440,24 @@ void BulkData::write_entity_modification_entry(std::ostream& out, const std::str
 void BulkData::write_modification_counts_to_stream(std::ostream& out)
 {
 #ifdef STK_MESH_MODIFICATION_COUNTERS
+    out << synchronized_count()<<", ";
     write_entity_modification_entry(out, "declare_entity", DECLARE_ENTITY);
     write_entity_modification_entry(out, "destroy_entity", DESTROY_ENTITY);
     write_entity_modification_entry(out, "change_entity_id", CHANGE_ENTITY_ID);
     write_entity_modification_entry(out, "change_entity_parts", CHANGE_ENTITY_PARTS);
-    out << synchronized_count()<< " change_entity_owner: "  << m_modification_counters[CHANGE_ENTITY_OWNER]<<"\n";
-    out << synchronized_count()<< " create_ghosting: "      << m_modification_counters[CREATE_GHOSTING]<<"\n";
-    out << synchronized_count()<< " change_ghosting: "      << m_modification_counters[CHANGE_GHOSTING]<<"\n";
-    out << synchronized_count()<< " destroy_all_ghosting: " << m_modification_counters[DESTROY_ALL_GHOSTING]<<"\n";
-    out << synchronized_count()<< " declare_relation: "     << m_modification_counters[DECLARE_RELATION]<<"\n";
-    out << synchronized_count()<< " destroy_relation: "     << m_modification_counters[DESTROY_RELATION]<<"\n";
+    out << m_modification_counters[CHANGE_ENTITY_OWNER]<<", ";
+    out << m_modification_counters[CREATE_GHOSTING]<<", ";
+    out << m_modification_counters[CHANGE_GHOSTING]<<", ";
+    out << m_modification_counters[DESTROY_ALL_GHOSTING]<<", ";
+    out << m_modification_counters[DECLARE_RELATION]<<", ";
+    out << m_modification_counters[DESTROY_RELATION]<<"\n";
 #endif
 }
 
 std::string BulkData::create_modification_counts_filename() const
 {
-    static int counter = 0;
     std::ostringstream filename;
-    filename<<"modification_counts_"<<counter<<"_np"<<this->parallel_size()<<"."<<this->parallel_rank();
-    counter++;
+    filename<<"modification_counts_"<<m_num_bulk_data_counter<<"_np"<<this->parallel_size()<<"."<<this->parallel_rank()<<".csv";
     return filename.str();
 }
 
