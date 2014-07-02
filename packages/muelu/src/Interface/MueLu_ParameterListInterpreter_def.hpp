@@ -52,6 +52,7 @@
 
 #include "MueLu_ParameterListInterpreter_decl.hpp"
 
+#include "MueLu_MasterList.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_FactoryManager.hpp"

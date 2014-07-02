@@ -1,0 +1,111 @@
+// @HEADER
+//
+// ***********************************************************************
+//
+//        MueLu: A package for multigrid based preconditioning
+//                  Copyright 2012 Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact
+//                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
+//                    Ray Tuminaro      (rstumin@sandia.gov)
+//
+// ***********************************************************************
+//
+// @HEADER
+#include <Teuchos_XMLParameterListCoreHelpers.hpp>
+
+#include "MueLu_MasterList.hpp"
+
+namespace MueLu {
+
+  Teuchos::RCP<const Teuchos::ParameterList> MasterList::List() {
+    if (masterList_.is_null()) {
+      masterList_ = Teuchos::getParametersFromXmlString(stringList_);
+    }
+
+    return masterList_;
+  }
+
+  Teuchos::RCP<Teuchos::ParameterList> MasterList::masterList_ = Teuchos::null;
+  const std::string                    MasterList::stringList_ =
+"<ParameterList name=\"MueLu\">"
+  "<Parameter name=\"verbosity\" type=\"string\" value=\"high\"/>"
+  "<Parameter name=\"number of equations\" type=\"int\" value=\"1\"/>"
+  "<Parameter name=\"max levels\" type=\"int\" value=\"10\"/>"
+  "<Parameter name=\"cycle type\" type=\"string\" value=\"V\"/>"
+  "<ParameterList name=\"print\"/>"
+  "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
+  "<Parameter name=\"transpose: use implicit\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: type\" type=\"string\" value=\"uncoupled\"/>"
+  "<Parameter name=\"aggregation: drop scheme\" type=\"string\" value=\"classical\"/>"
+  "<Parameter name=\"aggregation: drop tol\" type=\"double\" value=\"0.0\"/>"
+  "<Parameter name=\"aggregation: min agg size\" type=\"int\" value=\"0\"/>"
+  "<Parameter name=\"aggregation: max agg size\" type=\"int\" value=\"0\"/>"
+  "<Parameter name=\"aggregation: Dirichlet threshold\" type=\"double\" value=\"0.0\"/>"
+  "<Parameter name=\"aggregation: visualize\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"smoother: pre or post\" type=\"string\" value=\"both\"/>"
+  "<Parameter name=\"smoother: type\" type=\"string\" value=\"gs\"/>"
+  "<Parameter name=\"smoother: pre type\" type=\"string\" value=\"gs\"/>"
+  "<Parameter name=\"smoother: post type\" type=\"string\" value=\"gs\"/>"
+  "<ParameterList name=\"smoother: params\"/>"
+  "<ParameterList name=\"smoother: pre params\"/>"
+  "<ParameterList name=\"smoother: post params\"/>"
+  "<Parameter name=\"smoother: overlap\" type=\"int\" value=\"0\"/>"
+  "<Parameter name=\"smoother: pre overlap\" type=\"int\" value=\"0\"/>"
+  "<Parameter name=\"smoother: post overlap\" type=\"int\" value=\"0\"/>"
+  "<Parameter name=\"coarse: type\" type=\"string\" value=\"SuperLU\"/>"
+  "<ParameterList name=\"coarse: params\"/>"
+  "<Parameter name=\"coarse: max size\" type=\"int\" value=\"2000\"/>"
+  "<Parameter name=\"repartition: enable\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"repartition: partitioner\" type=\"string\" value=\"zoltan2\"/>"
+  "<ParameterList name=\"repartition: params\"/>"
+  "<Parameter name=\"repartition: start level\" type=\"int\" value=\"2\"/>"
+  "<Parameter name=\"repartition: min rows per proc\" type=\"int\" value=\"800\"/>"
+  "<Parameter name=\"repartition: max imbalance\" type=\"double\" value=\"1.2\"/>"
+  "<Parameter name=\"repartition: remap parts\" type=\"bool\" value=\"true\"/>"
+  "<Parameter name=\"repartition: keep proc 0\" type=\"bool\" value=\"true\"/>"
+  "<Parameter name=\"repartition: rebalance P and R\" type=\"bool\" value=\"true\"/>"
+  "<Parameter name=\"sa: damping factor\" type=\"double\" value=\"4/3\"/>"
+  "<Parameter name=\"sa: use filtered matrix\" type=\"bool\" value=\"true\"/>"
+  "<Parameter name=\"filtered matrix: use lumping\" type=\"bool\" value=\"true\"/>"
+  "<Parameter name=\"filtered matrix: reuse eigenvalue\" type=\"bool\" value=\"true\"/>"
+  "<Parameter name=\"emin: iterative method\" type=\"string\" value=\"cg\"/>"
+  "<Parameter name=\"emin: num iterations\" type=\"int\" value=\"2\"/>"
+  "<Parameter name=\"emin: pattern\" type=\"string\" value=\"AkPtent\"/>"
+  "<Parameter name=\"emin: pattern order\" type=\"int\" value=\"1\"/>"
+"</ParameterList>"
+;
+
+}
+
