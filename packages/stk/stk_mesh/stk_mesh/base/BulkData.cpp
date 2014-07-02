@@ -291,7 +291,9 @@ convert_entity_keys_to_spans( const MetaData & meta )
 
 //----------------------------------------------------------------------
 
+#ifdef STK_MESH_MODIFICATION_COUNTERS
 unsigned BulkData::m_num_bulk_data_counter = 0;
+#endif
 
 BulkData::BulkData( MetaData & mesh_meta_data ,
                     ParallelMachine parallel
@@ -377,9 +379,9 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
   initialize_arrays();
 
   m_ghost_parts.clear();
-  create_ghosting( "shared" );
+  internal_create_ghosting( "shared" );
   //shared part should reside in m_ghost_parts[0]
-  create_ghosting( "shared_aura" );
+  internal_create_ghosting( "shared_aura" );
 
   m_sync_state = SYNCHRONIZED ;
 }
@@ -456,9 +458,13 @@ void BulkData::write_modification_counts_to_stream(std::ostream& out)
 
 std::string BulkData::create_modification_counts_filename() const
 {
-    std::ostringstream filename;
-    filename<<"modification_counts_"<<m_num_bulk_data_counter<<"_np"<<this->parallel_size()<<"."<<this->parallel_rank()<<".csv";
-    return filename.str();
+    std::string fileName;
+#ifdef STK_MESH_MODIFICATION_COUNTERS
+    std::ostringstream oss;
+    oss<<"modification_counts_"<<m_num_bulk_data_counter<<"_np"<<this->parallel_size()<<"."<<this->parallel_rank()<<".csv";
+    fileName = oss.str();
+#endif
+    return fileName;
 }
 
 void BulkData::write_modification_counts()
@@ -1081,7 +1087,28 @@ void BulkData::initialize_arrays()
 
 //----------------------------------------------------------------------
 
+Entity BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id)
+{
+    //PUBLIC MODIFICATION METHOD
+    PartVector parts(1, &mesh_meta_data().universal_part());
+    return internal_declare_entity(ent_rank, ent_id, parts);
+}
+
+Entity BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id , Part& part)
+{
+    //PUBLIC MODIFICATION METHOD
+    PartVector parts(1, &part);
+    return internal_declare_entity( ent_rank, ent_id, parts);
+}
+
 Entity BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id ,
+                                 const PartVector & parts )
+{
+    //PUBLIC MODIFICATION METHOD
+    return internal_declare_entity(ent_rank, ent_id, parts);
+}
+
+Entity BulkData::internal_declare_entity( EntityRank ent_rank , EntityId ent_id ,
                                  const PartVector & parts )
 {
     m_check_invalid_rels = false;
@@ -1091,7 +1118,7 @@ Entity BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id ,
   require_good_rank_and_id(ent_rank, ent_id);
 
   EntityKey key( ent_rank , ent_id );
-  TraceIfWatching("stk::mesh::BulkData::declare_entity", LOG_ENTITY, key);
+  TraceIfWatching("stk::mesh::BulkData::internal_declare_entity", LOG_ENTITY, key);
   DiagIfWatching(LOG_ENTITY, key, "declaring entity with parts " << parts);
 
   std::pair< Entity , bool > result = internal_create_entity( key );
@@ -1112,7 +1139,7 @@ Entity BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id ,
   PartVector add( parts );
   add.push_back( owns );
 
-  change_entity_parts( declared_entity , add , rem );
+  internal_verify_and_change_entity_parts( declared_entity , add , rem );
 
   if ( result.second ) {
     this->set_parallel_owner_rank(declared_entity, m_parallel_rank);
@@ -1125,12 +1152,6 @@ Entity BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id ,
   return declared_entity ;
 }
 
-Entity BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id)
-{
-    Part& universal = mesh_meta_data().universal_part();
-    return declare_entity(ent_rank, ent_id, universal);
-}
-
 void BulkData::change_entity_id( EntityId id, Entity entity)
 {
 // When stk parallel is used within Fmwk, this assertion is violated
@@ -1140,6 +1161,7 @@ void BulkData::change_entity_id( EntityId id, Entity entity)
 #endif
 
   EntityRank e_rank = entity_rank(entity);
+  //PUBLIC MODIFICATION METHOD
 
   require_ok_to_modify();
   require_good_rank_and_id(e_rank, id);
@@ -1161,6 +1183,12 @@ void BulkData::internal_change_entity_key( EntityKey old_key, EntityKey new_key,
 //----------------------------------------------------------------------
 
 bool BulkData::destroy_entity( Entity entity, bool was_ghost )
+{
+    //PUBLIC MODIFICATION METHOD
+    return internal_destroy_entity(entity, was_ghost);
+}
+
+bool BulkData::internal_destroy_entity( Entity entity, bool was_ghost )
 {
   const EntityKey key = entity_key(entity);
   TraceIfWatching("stk::mesh::BulkData::destroy_entity", LOG_ENTITY, key);
@@ -1224,7 +1252,7 @@ bool BulkData::destroy_entity( Entity entity, bool was_ghost )
     {
       --j;
       if (is_valid(rel_entities[j])) {
-        destroy_relation(entity, rel_entities[j], rel_ordinals[j]);
+        internal_destroy_relation(entity, rel_entities[j], rel_ordinals[j]);
       }
     }
   }
@@ -1338,7 +1366,7 @@ void BulkData::addMeshEntities(const std::vector< stk::parallel::DistributedInde
             Entity new_entity = result.first;
 
             //add entity to 'owned' part
-            change_entity_parts(new_entity, add, rem);
+            internal_verify_and_change_entity_parts(new_entity, add, rem);
             requested_entities.push_back(new_entity);
 
             this->set_parallel_owner_rank(new_entity, m_parallel_rank);
@@ -2106,12 +2134,24 @@ void BulkData::declare_relation( Entity e_from ,
                                  const RelationIdentifier local_id ,
                                  Permutation permut)
 {
+  //PUBLIC MODIFICATION METHOD
   OrdinalVector ordinal_scratch;
   PartVector part_scratch;
-  declare_relation(e_from, e_to, local_id, permut, ordinal_scratch, part_scratch);
+  internal_declare_relation(e_from, e_to, local_id, permut, ordinal_scratch, part_scratch);
 }
 
 void BulkData::declare_relation( Entity e_from ,
+                                 Entity e_to ,
+                                 const RelationIdentifier local_id ,
+                                 Permutation permut,
+                                 OrdinalVector& ordinal_scratch,
+                                 PartVector& part_scratch)
+{
+    //PUBLIC MODIFICATION METHOD
+    internal_declare_relation(e_from, e_to, local_id, permut, ordinal_scratch, part_scratch);
+}
+
+void BulkData::internal_declare_relation( Entity e_from ,
                                  Entity e_to ,
                                  const RelationIdentifier local_id ,
                                  Permutation permut,
@@ -2179,15 +2219,15 @@ void BulkData::declare_relation( Entity e_from ,
 
 //----------------------------------------------------------------------
 
-void BulkData::declare_relation( Entity entity ,
+void BulkData::internal_declare_relation( Entity entity ,
                                  const std::vector<Relation> & rel )
 {
   OrdinalVector ordinal_scratch;
   PartVector part_scratch;
-  declare_relation(entity, rel, ordinal_scratch, part_scratch);
+  internal_declare_relation(entity, rel, ordinal_scratch, part_scratch);
 }
 
-void BulkData::declare_relation( Entity entity ,
+void BulkData::internal_declare_relation( Entity entity ,
                                  const std::vector<Relation> & rel,
                                  OrdinalVector& ordinal_scratch,
                                  PartVector& part_scratch )
@@ -2202,10 +2242,10 @@ void BulkData::declare_relation( Entity entity ,
     const unsigned n = i->relation_ordinal();
     const Permutation permut = static_cast<Permutation>(i->getOrientation());
     if ( entity_rank(e) < erank ) {
-      declare_relation( entity , e , n, permut, ordinal_scratch, part_scratch );
+      internal_declare_relation( entity , e , n, permut, ordinal_scratch, part_scratch );
     }
     else if ( erank < entity_rank(e) ) {
-      declare_relation( e , entity , n, permut, ordinal_scratch, part_scratch );
+      internal_declare_relation( e , entity , n, permut, ordinal_scratch, part_scratch );
     }
     else {
       ThrowErrorMsg("Given entities of the same entity rank. entity is " <<
@@ -2217,6 +2257,14 @@ void BulkData::declare_relation( Entity entity ,
 //----------------------------------------------------------------------
 
 bool BulkData::destroy_relation( Entity e_from ,
+                                 Entity e_to,
+                                 const RelationIdentifier local_id )
+{
+    //PUBLIC MODIFICATION METHOD
+    return internal_destroy_relation(e_from, e_to,  local_id);
+}
+
+bool BulkData::internal_destroy_relation( Entity e_from ,
                                  Entity e_to,
                                  const RelationIdentifier local_id )
 {
@@ -3481,6 +3529,12 @@ void generate_parallel_change( const BulkData & mesh ,
 
 void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
 {
+    //PUBLIC MODIFICATION METHOD
+    internal_change_entity_owner(arg_change);
+}
+
+void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg_change )
+{
     INCREMENT_MODIFICATION_COUNTER(CHANGE_ENTITY_OWNER);
 
   Trace_("stk::mesh::BulkData::change_entity_owner");
@@ -3582,7 +3636,7 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
       // the owner rank to pass the ownership test.
       Entity entity = i->first;
 
-      change_entity_parts( entity , PartVector() , owned );
+      internal_verify_and_change_entity_parts( entity , PartVector() , owned );
 
       const bool changed = this->set_parallel_owner_rank( entity, i->second );
       if (changed) {
@@ -3598,7 +3652,7 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
         internal_change_owner_in_comm_data(entity_key(entity), i->second);
       }
       if ( p_rank == i->second ) { // I receive ownership
-        change_entity_parts( entity , owned , PartVector() );
+          internal_verify_and_change_entity_parts( entity , owned , PartVector() );
       }
     }
   }
@@ -3679,7 +3733,7 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
           internal_change_owner_in_comm_data(entity_key(entity), owner);
         }
 
-        declare_relation( entity , relations );
+        internal_declare_relation( entity , relations );
 
         if ( ! unpack_field_values(*this, buf , entity , error_msg ) ) {
           ++error_count ;
@@ -3700,7 +3754,7 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
             i != unique_list_of_send_closure.rend() ;
             ++i) {
         if ( ! member_of_owned_closure(*this, *i , p_rank ) ) {
-          ThrowRequireMsg( destroy_entity( *i ),
+          ThrowRequireMsg( internal_destroy_entity( *i ),
                            "Failed to destroy entity " << identifier(*i) );
         }
       }
@@ -3722,6 +3776,12 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
 //----------------------------------------------------------------------
 
 Ghosting & BulkData::create_ghosting( const std::string & name )
+{
+    //PUBLIC MODIFICATION METHOD
+    return internal_create_ghosting(name);
+}
+
+Ghosting & BulkData::internal_create_ghosting( const std::string & name )
 {
     INCREMENT_MODIFICATION_COUNTER(CREATE_GHOSTING);
 
@@ -3809,16 +3869,18 @@ void comm_sync_send_recv(
 
 void BulkData::destroy_ghosting( Ghosting& ghost_layer )
 {
+  //PUBLIC MODIFICATION METHOD
   std::vector<EntityKey> receive_list;
   ghost_layer.receive_list(receive_list);
-  change_ghosting(ghost_layer, std::vector<stk::mesh::EntityProc>(), receive_list);
+  internal_verify_inputs_and_change_ghosting(ghost_layer, std::vector<stk::mesh::EntityProc>(), receive_list);
 }
 
 //----------------------------------------------------------------------
 
 void BulkData::destroy_all_ghosting()
 {
-    INCREMENT_MODIFICATION_COUNTER(DESTROY_ALL_GHOSTING);
+  //PUBLIC MODIFICATION METHOD
+  INCREMENT_MODIFICATION_COUNTER(DESTROY_ALL_GHOSTING);
 
   Trace_("stk::mesh::BulkData::destroy_all_ghosting");
 
@@ -3840,7 +3902,7 @@ void BulkData::destroy_all_ghosting()
 
     if ( in_receive_ghost( i->key ) ) {
         entity_comm_map_clear( i->key );
-      destroy_entity( i->entity );
+        internal_destroy_entity( i->entity );
       i->key = EntityKey();
     }
     else {
@@ -3861,6 +3923,15 @@ void BulkData::destroy_all_ghosting()
 //----------------------------------------------------------------------
 
 void BulkData::change_ghosting(
+  Ghosting & ghosts ,
+  const std::vector<EntityProc> & add_send ,
+  const std::vector<EntityKey> & remove_receive )
+{
+    //PUBLIC MODIFICATION METHOD
+    internal_verify_inputs_and_change_ghosting(ghosts, add_send, remove_receive);
+}
+
+void BulkData::internal_verify_inputs_and_change_ghosting(
   Ghosting & ghosts ,
   const std::vector<EntityProc> & add_send ,
   const std::vector<EntityKey> & remove_receive )
@@ -4030,7 +4101,7 @@ void BulkData::ghost_entities_and_fields(Ghosting & ghosts, const std::set<Entit
             this->set_parallel_owner_rank( entity, owner);
           }
 
-          declare_relation( entity , relations, ordinal_scratch, part_scratch );
+          internal_declare_relation( entity , relations, ordinal_scratch, part_scratch );
 
           if ( ! unpack_field_values(*this, buf , entity , error_msg ) ) {
             ++error_count ;
@@ -4196,7 +4267,7 @@ void BulkData::internal_change_ghosting(
       removed = true ;
       i->key = EntityKey(); // No longer communicated
       if ( remove_recv ) {
-        ThrowRequireMsg( destroy_entity( i->entity, remove_recv ),
+        ThrowRequireMsg( internal_destroy_entity( i->entity, remove_recv ),
                          " FAILED attempt to destroy entity: " << identifier(i->entity) );
       }
     }
@@ -5081,7 +5152,7 @@ void BulkData::internal_resolve_ghosted_modify_delete()
           // a member of an owned-closure then do not automatically
           // destroy it.  The new sharing status will be resolved
           // in 'internal_resolve_parallel_create'.
-          const bool destroy_entity_successful = destroy_entity(entity, true);
+          const bool destroy_entity_successful = internal_destroy_entity(entity, true);
           ThrowRequireMsg(destroy_entity_successful,
                           "Could not destroy ghost entity " << identifier(entity));
       }
@@ -6180,11 +6251,20 @@ void merge_in( std::vector<unsigned> & vec , const std::vector<Part*> & parts )
 } // namespace impl
 
 void BulkData::change_entity_parts( Entity entity,
-                                    PartVector::const_iterator begin_add_parts, PartVector::const_iterator end_add_parts,
-                                    PartVector::const_iterator begin_remove_parts, PartVector::const_iterator end_remove_parts,
-                                    bool always_propagate_internal_changes)
+    const PartVector & add_parts ,
+    const PartVector & remove_parts,
+    bool always_propagate_internal_changes)
 {
-  TraceIfWatching("stk::mesh::BulkData::change_entity_parts", LOG_ENTITY, entity_key(entity));
+  //PUBLIC MODIFICATION METHOD
+    internal_verify_and_change_entity_parts(entity, add_parts, remove_parts, always_propagate_internal_changes);
+}
+
+void BulkData::internal_verify_and_change_entity_parts( Entity entity,
+                                                        const PartVector & add_parts ,
+                                                        const PartVector & remove_parts,
+                                                        bool always_propagate_internal_changes)
+{
+  TraceIfWatching("stk::mesh::BulkData::internal_change_entity_parts", LOG_ENTITY, entity_key(entity));
   DiagIfWatching(LOG_ENTITY, entity_key(entity), "entity state: " << entity_key(entity));
 
   require_ok_to_modify();
@@ -6212,16 +6292,16 @@ void BulkData::change_entity_parts( Entity entity,
   const unsigned expected_min_num_supersets = 2;
 
   PartVector a_parts;
-  a_parts.reserve( std::distance(begin_add_parts, end_add_parts) * (expected_min_num_supersets + 1) );
-  for(PartVector::const_iterator add_iter=begin_add_parts; add_iter!=end_add_parts; ++add_iter) {
+  a_parts.reserve( std::distance(add_parts.begin(), add_parts.end()) * (expected_min_num_supersets + 1) );
+  for(PartVector::const_iterator add_iter=add_parts.begin(); add_iter!=add_parts.end(); ++add_iter) {
 #ifdef FMWK_NO_GLOBALLY_SHARED_ELEMENTS
-    ThrowErrorMsgIf(entity_rank == stk::topology::ELEMENT_RANK && **add_iter == mesh_meta_data().globally_shared_part(), "FMWK_NO_GLOBALLY_SHARED_ELEMENTS  Error in BulkData::change_entity_parts, trying to make an element globally shared!");
+    ThrowErrorMsgIf(entity_rank == stk::topology::ELEMENT_RANK && **add_iter == mesh_meta_data().globally_shared_part(), "FMWK_NO_GLOBALLY_SHARED_ELEMENTS  Error in BulkData::internal_change_entity_parts, trying to make an element globally shared!");
 #endif // FMWK_NO_GLOBALLY_SHARED_ELEMENTS
     a_parts.push_back((*add_iter));
   }
   bool quick_verify_check = true;
 
-  for ( PartVector::const_iterator ia = begin_add_parts; ia != end_add_parts ; ++ia ) {
+  for ( PartVector::const_iterator ia = add_parts.begin(); ia != add_parts.end() ; ++ia ) {
     quick_verify_check = quick_verify_check &&
       internal_quick_verify_change_part(*ia, ent_rank, undef_rank);
     const PartVector& supersets = (*ia)->supersets();
@@ -6237,7 +6317,7 @@ void BulkData::change_entity_parts( Entity entity,
                                 a_parts_end   = a_parts.end();
   PartVector r_parts ;
 
-  for ( PartVector::const_iterator ir = begin_remove_parts; ir != end_remove_parts ; ++ir ) {
+  for ( PartVector::const_iterator ir = remove_parts.begin(); ir != remove_parts.end() ; ++ir ) {
 
     // The following guards should be in the public interface to
     // changing parts.  However, internal mechanisms such as changing

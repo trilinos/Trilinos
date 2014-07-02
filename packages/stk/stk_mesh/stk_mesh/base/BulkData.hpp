@@ -60,7 +60,7 @@ namespace stk { namespace mesh { struct ConnectivityMap; } }
 //#define GATHER_GET_BUCKETS_METRICS
 
 // Use macro below to activate counters that track calls to mesh-modification routines
-#define STK_MESH_MODIFICATION_COUNTERS
+//#define STK_MESH_MODIFICATION_COUNTERS
 
 #ifdef STK_MESH_MODIFICATION_COUNTERS
 #define INCREMENT_MODIFICATION_COUNTER(MOD_TYPE) {++m_modification_counters[MOD_TYPE];}
@@ -416,11 +416,7 @@ public:
    */
   Entity declare_entity( EntityRank ent_rank , EntityId ent_id , const PartVector& parts);
 
-  Entity declare_entity( EntityRank ent_rank , EntityId ent_id , Part& part)
-  {
-    PartVector parts(1, &part);
-    return declare_entity( ent_rank, ent_id, parts);
-  }
+  Entity declare_entity( EntityRank ent_rank , EntityId ent_id , Part& part);
 
   /** This overloading of declare_entity that doesn't take a part
    * creates the new entity in the 'universal' part.
@@ -441,21 +437,8 @@ public:
    */
   void change_entity_parts( Entity entity,
       const PartVector & add_parts ,
-      const PartVector & remove_parts = PartVector() )
-  {
-    change_entity_parts(entity,
-                        add_parts.begin(), add_parts.end(),
-                        remove_parts.begin(), remove_parts.end());
-  }
-
-  //Optional parameter 'always_propagate_internal_changes' is always true except when this function
-  //is being called from the sierra-framework. The fmwk redundantly does its own propagation of the
-  //internal part changes (mostly induced-part stuff), so it's a performance optimization to avoid
-  //the propagation that stk-mesh does.
-  void change_entity_parts( Entity entity,
-                            PartVector::const_iterator begin_add_parts, PartVector::const_iterator end_add_parts,
-                            PartVector::const_iterator begin_remove_parts, PartVector::const_iterator end_remove_parts,
-                            bool always_propagate_internal_changes=true );
+      const PartVector & remove_parts = PartVector(),
+      bool always_propagate_internal_changes=true);
 
   /** \brief  Request the destruction an entity on the local process.
    *
@@ -537,14 +520,6 @@ public:
       Permutation permutation,
       OrdinalVector& ordinal_scratch,
       PartVector& part_scratch);
-
-  /** \brief  Declare a collection of relations by simply iterating
-   *          the input and calling declare_relation on each entry.
-   */
-  void declare_relation( Entity entity, const std::vector<Relation> & rel);
-
-  void declare_relation( Entity entity, const std::vector<Relation> & rel,
-                         OrdinalVector& ordinal_scratch, PartVector& part_scratch);
 
   /** \brief  Remove all relations between two entities.
    *
@@ -1342,10 +1317,28 @@ private:
 
   void initialize_arrays();
 
+  void internal_declare_relation(Entity e_from ,
+                                 Entity e_to ,
+                                 const RelationIdentifier local_id ,
+                                 Permutation permut,
+                                 OrdinalVector& ordinal_scratch,
+                                 PartVector& part_scratch);
+
+  /** \brief  Declare a collection of relations by simply iterating
+   *          the input and calling declare_relation on each entry.
+   */
+  void internal_declare_relation( Entity entity, const std::vector<Relation> & rel);
+
+  void internal_declare_relation( Entity entity, const std::vector<Relation> & rel,
+                         OrdinalVector& ordinal_scratch, PartVector& part_scratch);
+
   bool internal_declare_relation(Entity e_from, Entity e_to,
                                  RelationIdentifier local_id,
                                  unsigned sync_count, bool is_back_relation,
                                  Permutation permut);
+  bool internal_destroy_relation(Entity e_from ,
+                                 Entity e_to,
+                                 const RelationIdentifier local_id );
 
   /** \brief  The meta data manager for this bulk data manager. */
   MetaData & meta_data() const { return m_mesh_meta_data ; }
@@ -1365,6 +1358,12 @@ private:
    */
   int determine_new_owner( Entity ) const ;
 
+  Entity internal_declare_entity( EntityRank ent_rank , EntityId ent_id ,
+                                   const PartVector & parts );
+  bool internal_destroy_entity( Entity entity, bool was_ghost = false );
+
+  void internal_change_entity_owner( const std::vector<EntityProc> & arg_change );
+
   /*  Entity modification consequences:
    *  1) Change entity relation => update via part relation => change parts
    *  2) Change parts => update forward relations via part relation
@@ -1377,6 +1376,11 @@ private:
 
   void internal_propagate_part_changes( Entity entity, const std::vector<Part*> & removed );
 
+  Ghosting & internal_create_ghosting( const std::string & name );
+  void internal_verify_inputs_and_change_ghosting(
+                                    Ghosting & ghosts ,
+                                    const std::vector<EntityProc> & add_send ,
+                                    const std::vector<EntityKey> & remove_receive );
   void internal_change_ghosting( Ghosting & ghosts,
                                  const std::vector<EntityProc> & add_send ,
                                  const std::vector<EntityKey> & remove_receive,
@@ -1390,6 +1394,15 @@ protected:
   void internal_resolve_shared_modify_delete();
   void update_comm_list_based_on_changes_in_comm_map();
 private:
+  //Optional parameter 'always_propagate_internal_changes' is always true except when this function
+  //is being called from the sierra-framework. The fmwk redundantly does its own propagation of the
+  //internal part changes (mostly induced-part stuff), so it's a performance optimization to avoid
+  //the propagation that stk-mesh does.
+  void internal_verify_and_change_entity_parts( Entity entity,
+                                                const PartVector & add_parts ,
+                                                const PartVector & remove_parts,
+                                                bool always_propagate_internal_changes=true );
+
   void internal_establish_new_owner(stk::mesh::Entity entity);
   void internal_update_parts_for_shared_entity(stk::mesh::Entity entity, const bool is_entity_shared, const bool did_i_just_become_owner);
   void internal_resolve_shared_modify_delete_second_pass();
