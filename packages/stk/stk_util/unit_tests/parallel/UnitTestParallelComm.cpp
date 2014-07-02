@@ -56,7 +56,7 @@ TEST(ParallelComm, CommunicateMPILocInt)
 
     MPI_Allreduce( vin, vout, nvalues,
                sierra::MPI::Datatype<sierra::MPI::Loc<int> >::type(),
-               sierra::MPI::get_mpi_loc_op<int, std::greater<int> >(),
+               sierra::MPI::get_mpi_loc_op<int, std::greater<int>, int64_t >(),
                comm);
 
     for(int n = 0; n < nvalues; n++) {
@@ -66,7 +66,7 @@ TEST(ParallelComm, CommunicateMPILocInt)
     
     MPI_Allreduce( vin, vout, nvalues,
                sierra::MPI::Datatype<sierra::MPI::Loc<int> >::type(),
-               sierra::MPI::get_mpi_loc_op<int, std::less<int> >(),
+               sierra::MPI::get_mpi_loc_op<int, std::less<int>, int64_t>(),
                comm);
     for(int n = 0; n < nvalues; n++) {
       EXPECT_EQ(n, vout[n].m_value);
@@ -99,7 +99,7 @@ TEST(ParallelComm, CommunicateMPILocDouble)
 
     MPI_Allreduce( vin, vout, nvalues,
                sierra::MPI::Datatype<sierra::MPI::Loc<double> >::type(),
-               sierra::MPI::get_mpi_loc_op<double, std::greater<double> >(),
+               sierra::MPI::get_mpi_loc_op<double, std::greater<double>, int64_t >(),
                comm);
 
     for(int n = 0; n < nvalues; n++) {
@@ -109,7 +109,7 @@ TEST(ParallelComm, CommunicateMPILocDouble)
     
     MPI_Allreduce( vin, vout, nvalues,
                sierra::MPI::Datatype<sierra::MPI::Loc<double> >::type(),
-               sierra::MPI::get_mpi_loc_op<double, std::less<double> >(),
+               sierra::MPI::get_mpi_loc_op<double, std::less<double>, int64_t >(),
                comm);
     for(int n = 0; n < nvalues; n++) {
       EXPECT_EQ(value_offset+n, vout[n].m_value);

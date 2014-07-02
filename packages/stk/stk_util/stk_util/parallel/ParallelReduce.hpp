@@ -105,7 +105,7 @@ all_reduce_minloc(ParallelMachine comm,
                   global_extrema,
                   global_loc,
                   count,
-                  sierra::MPI::get_mpi_loc_op<T, std::less<T> >());
+                  sierra::MPI::get_mpi_loc_op<T, std::less<T>, IdType>());
 }
 
 template<typename T, typename IdType>
@@ -123,7 +123,7 @@ all_reduce_maxloc(ParallelMachine comm,
                   global_extrema,
                   global_loc,
                   count,
-                  sierra::MPI::get_mpi_loc_op<T, std::greater<T> >());
+                  sierra::MPI::get_mpi_loc_op<T, std::greater<T>, IdType>());
 }
 
 /** \addtogroup parallel_module

@@ -1,6 +1,7 @@
 #ifndef STK_UTIL_PARALLEL_MPI_hpp
 #define STK_UTIL_PARALLEL_MPI_hpp
 
+#include <boost/static_assert.hpp>
 #include <stk_util/stk_config.h>
 #if defined ( STK_HAS_MPI )
 
@@ -158,13 +159,13 @@ struct TempLoc
   int64_t	m_loc;
 };
 
-template<class T, class CompareOp>
+template<class T, class CompareOp, class IdType>
 inline
 void mpi_loc_global(void * invec, void * inoutvec, int * len, MPI_Datatype * datatype)
 {
   CompareOp op;
-  Loc<T> *Loc_in = static_cast<Loc<T> *>(invec);
-  Loc<T> *Loc_inout = static_cast<Loc<T> *>(inoutvec);
+  Loc<T, IdType> *Loc_in = static_cast<Loc<T, IdType> *>(invec);
+  Loc<T, IdType> *Loc_inout = static_cast<Loc<T, IdType> *>(inoutvec);
 
   for (int i = 0; i < *len; ++i)
   {
@@ -177,7 +178,7 @@ void mpi_loc_global(void * invec, void * inoutvec, int * len, MPI_Datatype * dat
 }
 
 
-template<class T, class CompareOp>
+template<class T, class CompareOp, class IdType>
 inline
 MPI_Op get_mpi_loc_op()
 {
@@ -187,7 +188,7 @@ MPI_Op get_mpi_loc_op()
   if (!initialized) {
     initialized = true;
 
-    MPI_Op_create(mpi_loc_global<T, CompareOp>, true, &s_mpi_loc_global_op);
+    MPI_Op_create(mpi_loc_global<T, CompareOp, IdType>, true, &s_mpi_loc_global_op);
   }
   return s_mpi_loc_global_op;
 }
@@ -394,6 +395,15 @@ template <>
 struct Datatype<Loc<double, int> >
 {
   static MPI_Datatype type() {
+    return MPI_DOUBLE_INT;
+  }
+};
+
+template <>
+struct Datatype<Loc<size_t, int> >
+{
+  static MPI_Datatype type() {
+    BOOST_STATIC_ASSERT(sizeof(double) == sizeof(size_t));
     return MPI_DOUBLE_INT;
   }
 };
