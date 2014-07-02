@@ -420,6 +420,43 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
   //------------------------------------
   /** \brief  Extract Rank-2 array from LayoutLeft Rank-2 array. */
   template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM ,
+            typename iType >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
+                  const View<ST,SL,SD,SM,Specialize> & src ,
+                  const std::pair<iType,iType> & range ,
+                  const typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
+                    &&
+                    is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutLeft >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 2 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank == 2 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2 )
+                  ), unsigned >::type i1 )
+  {
+    assert_shape_bounds( src.m_offset_map , 2 , range.first , i1 );
+    assert_shape_bounds( src.m_offset_map , 2 , range.second - 1 , i1 );
+
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+
+    if ( range.first < range.second ) {
+      dst.m_tracking      = src.m_tracking ;
+      dst.m_offset_map.N0 = range.second - range.first ;
+      dst.m_offset_map.N1 = 1 ;
+      dst.m_offset_map.S0 = range.second - range.first ;
+      dst.m_ptr_on_device = src.m_ptr_on_device + src.m_offset_map(range.first,i1);
+
+      dst.m_tracking.increment( dst.m_ptr_on_device );
+    }
+  }
+
+  //------------------------------------
+  /** \brief  Extract Rank-2 array from LayoutLeft Rank-2 array. */
+  template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM >
   KOKKOS_INLINE_FUNCTION
   ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
