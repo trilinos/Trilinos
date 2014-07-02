@@ -68,7 +68,7 @@ namespace Galeri {
         nx_ = list.get("nx", -1);
         ny_ = list.get("ny", -1);
 
-        nDim = 2;
+        nDim_ = 2;
         double one = 1.0;
         stretch.push_back(list.get("stretchx", one));
         stretch.push_back(list.get("stretchy", one));
@@ -98,7 +98,7 @@ namespace Galeri {
       };
 
       GlobalOrdinal                  nx_, ny_, nz_;
-      size_t                         nDim;
+      size_t                         nDim_;
       std::vector<GO>                dims;
       // NOTE: nodes correspond to a local subdomain nodes. I have to construct overlapped subdomains because
       // InsertGlobalValues in Epetra does not support inserting into rows owned by other processor
@@ -154,7 +154,7 @@ namespace Galeri {
 
       for (size_t j = 0; j < numGaussPoints; j++) {
         SerialDenseMatrix<LO,SC>& S = Ss[j];
-        S.shape(Teuchos::as<LO>(sDim), Teuchos::as<LO>(nDim));
+        S.shape(Teuchos::as<LO>(sDim), Teuchos::as<LO>(nDim_));
         EvalDxi (refPoints, gaussPoints[j], S[0]);
         EvalDeta(refPoints, gaussPoints[j], S[1]);
 
@@ -176,10 +176,10 @@ namespace Galeri {
       this->A_ = MatrixTraits<Map,Matrix>::Build(this->Map_, 9*numDofPerNode);
 
       SC one = Teuchos::ScalarTraits<SC>::one(), zero = Teuchos::ScalarTraits<SC>::zero();
-      SerialDenseMatrix<LO,SC> prevKE(numDofPerElem, numDofPerElem), prevElementNodes(numNodesPerElem, Teuchos::as<LO>(nDim));        // cache
+      SerialDenseMatrix<LO,SC> prevKE(numDofPerElem, numDofPerElem), prevElementNodes(numNodesPerElem, Teuchos::as<LO>(nDim_));        // cache
       for (size_t i = 0; i < elements_.size(); i++) {
         // Select nodes subvector
-        SerialDenseMatrix<LO,SC> elementNodes(numNodesPerElem, Teuchos::as<LO>(nDim));
+        SerialDenseMatrix<LO,SC> elementNodes(numNodesPerElem, Teuchos::as<LO>(nDim_));
         std::vector<LO>& elemNodes = elements_[i];
         for (size_t j = 0; j < numNodesPerElem; j++) {
           elementNodes(j,0) = nodes_[elemNodes[j]].x;
@@ -212,10 +212,10 @@ namespace Galeri {
             SerialDenseMatrix<LO,SC>& B = Bs[j];
             SerialDenseMatrix<LO,SC>& S = Ss[j];
 
-            SerialDenseMatrix<LO,SC> JAC(Teuchos::as<LO>(nDim), Teuchos::as<LO>(nDim));
+            SerialDenseMatrix<LO,SC> JAC(Teuchos::as<LO>(nDim_), Teuchos::as<LO>(nDim_));
 
-            for (size_t p = 0; p < nDim; p++)
-              for (size_t q = 0; q < nDim; q++) {
+            for (size_t p = 0; p < nDim_; p++)
+              for (size_t q = 0; q < nDim_; q++) {
                 JAC(p,q) = zero;
 
                 for (size_t k = 0; k < numNodesPerElem; k++)
@@ -225,7 +225,7 @@ namespace Galeri {
             SC detJ = JAC(0,0)*JAC(1,1) - JAC(0,1)*JAC(1,0);
 
             // J2 = inv([JAC zeros(2); zeros(2) JAC])
-            SerialDenseMatrix<LO,SC> J2(Teuchos::as<LO>(nDim*nDim),Teuchos::as<LO>(nDim*nDim));
+            SerialDenseMatrix<LO,SC> J2(Teuchos::as<LO>(nDim_*nDim_),Teuchos::as<LO>(nDim_*nDim_));
             J2(0,0) = J2(2,2) =  JAC(1,1) / detJ;
             J2(0,1) = J2(2,3) = -JAC(0,1) / detJ;
             J2(1,0) = J2(3,2) = -JAC(1,0) / detJ;
@@ -315,7 +315,7 @@ namespace Galeri {
     RCP<MultiVector> Elasticity2DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildCoords() {
       // FIXME: map here is an extended map, with multiple DOF per node
       // as we cannot construct a single DOF map in Problem, we repeat the coords
-      this->Coords_ = MultiVectorTraits<Map,MultiVector>::Build(this->Map_, nDim);
+      this->Coords_ = MultiVectorTraits<Map,MultiVector>::Build(this->Map_, nDim_);
 
       Teuchos::ArrayRCP<SC> x = this->Coords_->getDataNonConst(0);
       Teuchos::ArrayRCP<SC> y = this->Coords_->getDataNonConst(1);
@@ -339,7 +339,8 @@ namespace Galeri {
 
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
     RCP<MultiVector> Elasticity2DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildNullspace() {
-      this->Nullspace_ = MultiVectorTraits<Map,MultiVector>::Build(this->Map_, 3);
+      const int numVectors = 3;
+      this->Nullspace_ = MultiVectorTraits<Map,MultiVector>::Build(this->Map_, numVectors);
 
       if (this->Coords_ == Teuchos::null)
         BuildCoords();
@@ -357,7 +358,7 @@ namespace Galeri {
 
       // Translations
       Teuchos::ArrayRCP<SC> T0 = this->Nullspace_->getDataNonConst(0), T1 = this->Nullspace_->getDataNonConst(1);
-      for (size_t i = 0; i < numDofs; i += nDim) {
+      for (size_t i = 0; i < numDofs; i += nDim_) {
         T0[i]   = one;
         T1[i+1] = one;
       }
@@ -368,12 +369,20 @@ namespace Galeri {
 
       // Rotations
       Teuchos::ArrayRCP<SC> R0 = this->Nullspace_->getDataNonConst(2);
-      for (size_t i = 0; i < numDofs; i += nDim) {
+      for (size_t i = 0; i < numDofs; i += nDim_) {
         // Rotate in Y-Z Plane (around Z axis): [ -y; x]
         R0[i+0] = -(y[i]-cy);
         R0[i+1] =  (x[i]-cx);
       }
-      // FIXME: Normalize
+
+      // Equalize norms of all vectors to that of the first one
+      // We do not normalize them as a vector of ones seems nice
+      Teuchos::Array<typename Teuchos::ScalarTraits<SC>::magnitudeType> norms2(numVectors);
+      for (int i = 1; i < numVectors; i++)
+        norms2[i] = norms2[0] / norms2[i];
+      norms2[0] = Teuchos::ScalarTraits<SC>::one();
+      this->Nullspace_->norm2(norms2);
+      this->Nullspace_->scale(norms2);
 
       return this->Nullspace_;
     }
