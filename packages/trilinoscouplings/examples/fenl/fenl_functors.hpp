@@ -194,7 +194,6 @@ public:
       //--------------------------------
       // Done with the temporary sets and arrays
       wall_clock.reset();
-      phase = SORT_GRAPH_ENTRIES ;
 
       row_total = UnsignedValue();
       row_count = RowMapType();
@@ -203,6 +202,7 @@ public:
 
       //--------------------------------
 
+      phase = SORT_GRAPH_ENTRIES ;
       Kokkos::parallel_for( node_count , *this );
 
       device_type::fence();
