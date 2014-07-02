@@ -1395,9 +1395,9 @@ private:
   void internal_resolve_shared_modify_delete_second_pass();
 protected:
   void internal_resolve_ghosted_modify_delete();
+  void internal_resolve_shared_membership();
 private:
   void internal_resolve_parallel_create();
-  void internal_resolve_shared_membership();
 
 protected:
   void internal_update_distributed_index(stk::mesh::EntityRank entityRank, std::vector<stk::mesh::Entity> & shared_new );
@@ -1407,7 +1407,6 @@ protected:
   void move_entities_to_proper_part_ownership( const std::vector<stk::mesh::Entity> &shared_modified );
   void update_comm_list(const std::vector<stk::mesh::Entity>& shared_modified);
 
-private:
 
 
   /** \brief  Regenerate the shared-entity aura,
@@ -1415,8 +1414,10 @@ private:
    *
    *  - a collective parallel operation.
    */
+protected:
   void internal_regenerate_aura();
 
+private:
   void internal_basic_part_check(const Part* part,
                                  const unsigned ent_rank,
                                  const unsigned undef_rank,

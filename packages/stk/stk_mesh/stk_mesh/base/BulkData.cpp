@@ -5578,21 +5578,7 @@ bool BulkData::internal_modification_end_for_edge_creation( bool regenerate_aura
     // If there is no communication information then the
     // entity must be removed from the communication list.
 
-    {
-      EntityCommListInfoVector::iterator i = m_entity_comm_list.begin();
-      bool changed = false ;
-      for ( ; i != m_entity_comm_list.end() ; ++i ) {
-        if ( entity_comm_map(i->key).empty() ) {
-          i->key = EntityKey();
-          changed = true;
-        }
-      }
-      if ( changed ) {
-        i = std::remove_if( m_entity_comm_list.begin() ,
-                            m_entity_comm_list.end() , IsInvalid() );
-        m_entity_comm_list.erase( i , m_entity_comm_list.end() );
-      }
-    }
+    update_comm_list_based_on_changes_in_comm_map();
 
     {
         std::vector<Entity> shared_modified ;
