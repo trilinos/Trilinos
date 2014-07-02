@@ -90,7 +90,7 @@ namespace MueLu {
     /*! @brief Constructor.
       User can supply a factory for generating the tentative prolongator.
     */
-    PgPFactory();
+    PgPFactory() { }
 
     //! Destructor.
     virtual ~PgPFactory() { }
@@ -102,22 +102,11 @@ namespace MueLu {
 
     RCP<const ParameterList> GetValidParameterList() const;
 
-    //! Change view of diagonal.
-    void SetDiagonalView(std::string const& diagView);
-
     //! Set minimization mode (L2NORM for cheapest, ANORM more expensive, DINVANORM = default)
     void SetMinimizationMode(MinimizationNorm minnorm);
 
     //! return minimization mode
     MinimizationNorm GetMinimizationMode();
-    //@}
-
-    //! @name Get methods.
-    //@{
-
-    //! Returns current view of diagonal.
-    std::string GetDiagonalView();
-
     //@}
 
     //! Input
