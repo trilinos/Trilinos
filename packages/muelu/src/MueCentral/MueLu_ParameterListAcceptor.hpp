@@ -55,7 +55,7 @@ namespace MueLu {
     // One solution is to never set any unused parameter in getValidParameters().
     // If some parameters are available only conditionnaly, do not set them by default in setValidParameters when the conditions are not met.
     //
-    virtual RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const = 0;
+    virtual RCP<const ParameterList> GetValidParameterList() const = 0;
 
     //! @brief Set parameters from a parameter list and return with default values.
     //
@@ -116,7 +116,7 @@ namespace MueLu {
       paramList_.setParameters(paramList);
 
       // Validate and add defaults parameters.
-      RCP<const ParameterList> validParamList = GetValidParameterList(paramList_);
+      RCP<const ParameterList> validParamList = GetValidParameterList();
       if (validParamList != Teuchos::null) {
         paramList_.validateParametersAndSetDefaults(*validParamList);
       } else {

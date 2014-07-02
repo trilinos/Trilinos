@@ -85,7 +85,7 @@ namespace MueLu {
     //! Destructor.
     virtual ~SaPFactory() { }
 
-    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+    RCP<const ParameterList> GetValidParameterList() const;
 
     //@}
 

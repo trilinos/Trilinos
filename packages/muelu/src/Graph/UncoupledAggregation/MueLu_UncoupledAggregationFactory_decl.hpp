@@ -91,7 +91,7 @@ public:
   //! Destructor.
   virtual ~UncoupledAggregationFactory() { }
 
-  RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+  RCP<const ParameterList> GetValidParameterList() const;
 
   //@}
 

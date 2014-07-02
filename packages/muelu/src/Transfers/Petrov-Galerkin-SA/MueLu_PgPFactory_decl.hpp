@@ -100,7 +100,7 @@ namespace MueLu {
     //! @name Set methods.
     //@{
 
-    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+    RCP<const ParameterList> GetValidParameterList() const;
 
     //! Change view of diagonal.
     void SetDiagonalView(std::string const& diagView);
@@ -123,7 +123,7 @@ namespace MueLu {
     //! Input
     //@{
 
-    void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
+    void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
     //@}
 
     //! @name Build methods.
@@ -134,9 +134,9 @@ namespace MueLu {
 
       Builds smoothed aggregation prolongator and returns it in <tt>coarseLevel</tt>.
     */
-    void Build(Level& fineLevel, Level &coarseLevel) const;
+    void Build(Level& fineLevel, Level& coarseLevel) const;
 
-    void BuildP(Level &fineLevel, Level &coarseLevel) const;
+    void BuildP(Level& fineLevel, Level& coarseLevel) const;
 
     //@}
 
@@ -148,7 +148,7 @@ namespace MueLu {
 
     void MultiplyAll(const RCP<Matrix>& left, const RCP<Matrix>& right, Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& InnerProdVec) const;
 
-    void ComputeRowBasedOmega(Level& fineLevel, Level &coarseLevel, const RCP<Matrix>& A, const RCP<Matrix>& P0, const RCP<Matrix>& DinvAP0, RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & RowBasedOmega) const;
+    void ComputeRowBasedOmega(Level& fineLevel, Level& coarseLevel, const RCP<Matrix>& A, const RCP<Matrix>& P0, const RCP<Matrix>& DinvAP0, RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & RowBasedOmega) const;
 
   private:
 

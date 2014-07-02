@@ -87,7 +87,7 @@ namespace MueLu {
 
     //@}
 
-    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+    RCP<const ParameterList> GetValidParameterList() const;
 
     //! @name Input
     //@{

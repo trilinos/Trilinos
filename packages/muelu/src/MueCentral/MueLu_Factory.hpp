@@ -126,7 +126,7 @@ namespace MueLu {
 
     //@}
 
-    virtual RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const {
+    virtual RCP<const ParameterList> GetValidParameterList() const {
       return Teuchos::null;  // Teuchos::null == GetValidParameterList() not implemented == skip validation and no default values (dangerous)
     }
 

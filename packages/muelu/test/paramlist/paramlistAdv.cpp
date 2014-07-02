@@ -19,13 +19,13 @@ namespace MueLu {
     virtual ~ParameterListAcceptorAdvImpl() { }
 
     // This functions add *all* the extra parameters recursively using GetValidParameterListSimple
-    RCP<const ParameterList> GetValidParameterList(const ParameterList& pL = ParameterList()) const {
-      RCP<const ParameterList> validParamList = GetValidParameterListSimple(pL);
+    RCP<const ParameterList> GetValidParameterList() const {
+      RCP<const ParameterList> validParamList = GetValidParameterListSimple();
 
       int numParams;
       do {
         numParams = validParamList->numParams();
-        validParamList = GetValidParameterListSimple(*validParamList);
+        validParamList = GetValidParameterListSimple();
       } while (validParamList->numParams() != numParams);
 
       return validParamList;
@@ -33,7 +33,7 @@ namespace MueLu {
 
     // GetValidParameterListSimple only add one extra level of default parameters. Ex: if "Solver" is not set in the input list "pL",
     // extra parameters "T" or "K" are not added to the validParamList.
-    virtual RCP<const ParameterList> GetValidParameterListSimple(const ParameterList& pL = ParameterList()) const = 0;
+    virtual RCP<const ParameterList> GetValidParameterListSimple() const = 0;
 
     void GetDocumentation(std::ostream &os) const {
       GetAdvancedDocumentation(os);
@@ -55,30 +55,14 @@ namespace MueLu {
 
     virtual ~MyFactory() { }
 
-    RCP<const ParameterList> GetValidParameterListSimple(const ParameterList& pL = ParameterList()) const {
-      //std::cout << "MyFactory::getValidParameters()" << std::endl;
-      typedef Teuchos::StringToIntegralParameterEntryValidator<int> validator_type;
-
-      Teuchos::ParameterList paramList(pL); // make a copy to avoid setting [use]/[unused] flags here. Even if the input list is const, these flags are modified!
+    RCP<const ParameterList> GetValidParameterListSimple() const {
       RCP<ParameterList> validParamList = Teuchos::rcp(new ParameterList()); // output list
 
+      typedef Teuchos::StringToIntegralParameterEntryValidator<int> validator_type;
       validParamList->set("Solver", "ILUT", "The type of solver to use.", Teuchos::rcp(new validator_type(Teuchos::tuple<std::string>("ILUT", "ILUK"), "Solver")));
 
-      if (paramList.isParameter("Solver")) {
-        // conditional parameters
-
-        std::string type = paramList.get<std::string>("Solver");
-        // std::cout << "getValidParameters::pL         =>" << std::cout << paramList << std::endl; // previous get() should not set [used] flag.
-        // std::cout << "getValidParameters::paramList: =>" << std::cout << pL << std::endl;
-
-        if (type == "ILUT") {
-          AddILUTParameters(*validParamList);
-        } else if (type == "ILUK") {
-          AddILUKParameters(*validParamList);
-        } else {
-          // not a valid parameter value. What to do? Ignore. We are not validating at this point.
-        }
-      }
+      AddILUTParameters(*validParamList);
+      AddILUKParameters(*validParamList);
 
       return validParamList;
     }
