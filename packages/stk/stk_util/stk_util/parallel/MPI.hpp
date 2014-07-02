@@ -273,6 +273,7 @@ struct Datatype<unsigned long>
   }
 };
 
+#ifdef MPI_LONG_LONG
 template <>
 struct Datatype<long long>
 {
@@ -280,7 +281,9 @@ struct Datatype<long long>
     return MPI_LONG_LONG;
   }
 };
+#endif
 
+#ifdef MPI_UNSIGNED_LONG_LONG
 template <>
 struct Datatype<unsigned long long>
 {
@@ -288,6 +291,7 @@ struct Datatype<unsigned long long>
     return MPI_UNSIGNED_LONG_LONG;
   }
 };
+#endif
 
 template <>
 struct Datatype<float>
