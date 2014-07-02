@@ -31,7 +31,9 @@ namespace SEAMS {
   int   echo = true;
   
   Aprepro::Aprepro()
-    : sym_table(HASHSIZE), stringInteractive(false), stringScanner(NULL),
+    : lexer(NULL), sym_table(HASHSIZE),
+      stringInteractive(false), stringScanner(NULL),
+      errorStream(&std::cerr), warningStream(&std::cerr), infoStream(&std::cerr),
       stateImmutable(false)
   {
     ap_file_list.push(file_rec());
@@ -107,6 +109,9 @@ namespace SEAMS {
   {
     stringInteractive = true;
 
+    if(ap_file_list.size() == 1)
+      ap_file_list.top().name == "interactive_input";
+
     if (!ap_options.include_file.empty()) {
       file_rec include_file(ap_options.include_file.c_str(), 0, false, 0);
       ap_file_list.push(include_file);
@@ -132,11 +137,74 @@ namespace SEAMS {
     return result;
   }
 
-  void Aprepro::error(const std::string& m) const
+  void Aprepro::error(const std::string& msg, bool line_info, bool prefix) const
   {
-    std::cerr << "Aprepro: ERROR: " << m << " ("
-	      << ap_file_list.top().name<< ", line "
-	      << ap_file_list.top().lineno + 1 << ")\n";
+    std::stringstream ss;
+    if (prefix) {
+      (*errorStream) << "Aprepro: ERROR: ";
+    }
+
+    ss << msg;
+
+    if(line_info) {
+      ss << " (" << ap_file_list.top().name <<
+	", line " << ap_file_list.top().lineno + 1 << ")";
+    }
+    ss << "\n";
+
+    // Send it to the user defined stream
+    (*errorStream) << ss.str();
+  }
+
+  void Aprepro::warning(const std::string &msg, bool line_info, bool prefix) const
+  {
+    if(!ap_options.warning_msg)
+      return;
+
+    std::stringstream ss;
+    if (prefix) {
+      (*warningStream) << "Aprepro: WARNING: ";
+    }
+
+    ss << msg;
+
+    if(line_info) {
+      ss << " (" << ap_file_list.top().name <<
+            ", line " << ap_file_list.top().lineno + 1 << ")";
+    }
+    ss << "\n";
+
+    // Send it to the user defined stream
+    (*warningStream) << ss.str();
+  }
+
+  void Aprepro::info(const std::string &msg, bool line_info, bool prefix) const
+  {
+    if(!ap_options.info_msg)
+      return;
+
+    std::stringstream ss;
+    if(prefix) {
+      (*infoStream) << "Aprepro: INFO: ";
+    }
+    ss << msg;
+
+    if(line_info) {
+      ss << " (" << ap_file_list.top().name <<
+            ", line " << ap_file_list.top().lineno + 1 << ")";
+    }
+    ss << "\n";
+
+    // Send it to the user defined stream
+    (*infoStream) << ss.str();
+  }
+
+  void Aprepro::set_error_streams(std::ostream *error,
+                                  std::ostream *warning, std::ostream *info)
+  {
+    errorStream = error;
+    warningStream = warning;
+    infoStream = info;
   }
 
   /* Two methods for opening files. In OPEN_FILE, the file must exist
@@ -343,7 +411,7 @@ namespace SEAMS {
     var->value.svar = tmp;
     }
     else {
-      std::cerr << "Aprepro: WARN: Invalid variable name syntax '" << sym_name << "'. Variable not defined.\n";
+      warning("Invalid variable name syntax '" + sym_name + "'. Variable not defined.\n", false);
     }
   }
 
@@ -355,7 +423,68 @@ namespace SEAMS {
       var->value.var = sym_value;
     }
     else {
-      std::cerr << "Aprepro: WARN: Invalid variable name syntax '" << sym_name << "'. Variable not defined.\n";
+      warning("Invalid variable name syntax '" + sym_name + "'. Variable not defined.\n", false);
+    }
+  }
+
+  std::vector<std::string> Aprepro::get_variable_names(bool doInternal)
+  {
+    std::vector<std::string> names;
+
+    for(unsigned int hashval = 0; hashval < HASHSIZE; hashval++)
+    {
+      for(symrec *ptr = sym_table[hashval]; ptr != NULL; ptr = ptr->next)
+      {
+        if(ptr->isInternal != doInternal)
+          continue;
+
+        switch(ptr->type)
+        {
+          case Parser::token::VAR:
+          case Parser::token::IMMVAR:
+          case Parser::token::SVAR:
+          case Parser::token::IMMSVAR:
+          case Parser::token::AVAR:
+            // Add to our vector
+            names.push_back(ptr->name);
+            break;
+
+          default:
+            // Do nothing
+            break;
+        }
+      }
+    }
+
+    return names;
+  }
+
+  void Aprepro::remove_variable(const std::string &sym_name)
+  {
+    symrec *ptr = getsym(sym_name.c_str());
+    bool is_valid_variable =
+        (ptr != NULL) && (!ptr->isInternal) &&
+        ((ptr->type == Parser::token::VAR) ||
+         (ptr->type == Parser::token::SVAR) ||
+         (ptr->type == Parser::token::AVAR) ||
+         (ptr->type == Parser::token::IMMVAR) ||
+         (ptr->type == Parser::token::IMMSVAR) ||
+         (ptr->type == Parser::token::UNDVAR));
+
+    if(is_valid_variable)
+    {
+      int hashval = hash_symbol(sym_name.c_str());
+      for (symrec *ptr = sym_table[hashval]; ptr != NULL; ) {
+        symrec *save = ptr;
+        ptr = ptr->next;
+        delete save;
+      }
+
+      sym_table[hashval] = NULL;
+    }
+    else
+    {
+      warning("Variable '" + sym_name + "' not defined.\n", false);
     }
   }
 

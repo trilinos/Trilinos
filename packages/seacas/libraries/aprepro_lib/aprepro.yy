@@ -230,44 +230,50 @@ sexp:     QSTRING		{ $$ = $1;				}
 	  if (arg_check($1, $1->value.strfnct_c == NULL))
 	    $$ = (char*)(*($1->value.strfnct_c))($3);
 	  else
-	    $$ = "";
+	    $$ = (char*)"";
 	}
 	| SFNCT LPAR RPAR	{
 	  if (arg_check($1, $1->value.strfnct == NULL))
 	    $$ = (char*)(*($1->value.strfnct))();
 	  else
-	    $$ = "";
+	    $$ = (char*)"";
 	}
         | SFNCT LPAR exp  RPAR	{
 	  if (arg_check($1, $1->value.strfnct_d == NULL))
 	    $$ = (char*)(*($1->value.strfnct_d))($3);
 	  else
-	    $$ = "";
+	    $$ = (char*)"";
 	}
         | SFNCT LPAR aexp RPAR	{
 	  if (arg_check($1, $1->value.strfnct_a == NULL))
 	    $$ = (char*)(*($1->value.strfnct_a))($3);
 	  else
-	    $$ = "";
+	    $$ = (char*)"";
 	}
         | sexp CONCAT sexp	{ concat_string($1, $3, &$$); }
+        | SFNCT LPAR exp COMMA exp RPAR {
+	  if (arg_check($1, $1->value.strfnct_dd == NULL))
+	    $$ = (char*)(*($1->value.strfnct_dd))($3, $5);
+	  else
+	    $$ = (char*)"";
+	}
         | SFNCT LPAR exp COMMA sexp COMMA sexp COMMA sexp COMMA sexp RPAR {
 	  if (arg_check($1, $1->value.strfnct_dcccc == NULL))
 	    $$ = (char*)(*($1->value.strfnct_dcccc))($3, $5, $7, $9, $11);
 	  else
-	    $$ = "";
+	    $$ = (char*)"";
 	}
         | SFNCT LPAR exp COMMA sexp COMMA sexp  RPAR {
 	  if (arg_check($1, $1->value.strfnct_dcc == NULL))
 	    $$ = (char*)(*($1->value.strfnct_dcc))($3, $5, $7);
 	  else
-	    $$ = "";
+	    $$ = (char*)"";
 	}
         | SFNCT LPAR sexp COMMA sexp COMMA sexp  RPAR {
 	  if (arg_check($1, $1->value.strfnct_ccc == NULL))
 	    $$ = (char*)(*($1->value.strfnct_ccc))($3, $5, $7);
 	  else
-	    $$ = "";
+	    $$ = (char*)"";
 	}
         | bool QUEST sexp COLON sexp  { $$ = ($1) ? ($3) : ($5);              }
 
@@ -376,6 +382,13 @@ exp:	  NUM			{ $$ = $1; 				}
 	      $$ = 0.0;
 	  }	    
 
+        | FNCT LPAR exp COMMA sexp RPAR {
+	  if (arg_check($1, $1->value.fnctptr_dc == NULL))
+	    $$ = (*($1->value.fnctptr_dc))($3, $5);
+	  else
+	    $$ = 0.0;
+	  }
+
 	| FNCT LPAR sexp COMMA sexp RPAR {
 	    if (arg_check($1, $1->value.fnctptr_cc == NULL))
 	      $$ = (*($1->value.fnctptr_cc))($3, $5);
@@ -395,6 +408,12 @@ exp:	  NUM			{ $$ = $1; 				}
 	    else
 	      $$ = 0.0;
 	  }
+	| FNCT LPAR sexp COMMA sexp COMMA exp RPAR {
+	    if (arg_check($1, $1->value.fnctptr_ccd == NULL))
+	      $$ = (*($1->value.fnctptr_ccd))($3, $5, $7);
+	    else
+	      $$ = 0.0;
+	  }
 	| FNCT LPAR exp COMMA exp SEMI exp COMMA exp RPAR {
 	    if (arg_check($1, $1->value.fnctptr_dddd == NULL))
 	      $$ = (*($1->value.fnctptr_dddd))($3, $5, $7, $9);
@@ -404,6 +423,12 @@ exp:	  NUM			{ $$ = $1; 				}
 	| FNCT LPAR exp COMMA exp COMMA exp COMMA exp RPAR {
 	    if (arg_check($1, $1->value.fnctptr_dddd == NULL))
 	      $$ = (*($1->value.fnctptr_dddd))($3, $5, $7, $9);
+	    else
+	      $$ = 0.0;
+	  }
+        | FNCT LPAR exp COMMA exp COMMA exp COMMA exp COMMA sexp RPAR {
+	    if (arg_check($1, $1->value.fnctptr_ddddc == NULL))
+	      $$ = (*($1->value.fnctptr_ddddc))($3, $5, $7, $9, $11);
 	    else
 	      $$ = 0.0;
 	  }

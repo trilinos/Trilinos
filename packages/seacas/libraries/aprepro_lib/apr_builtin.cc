@@ -744,22 +744,18 @@ const char *do_output(char *filename)
       delete output;
     }
 
-    if (aprepro->ap_options.info_msg == true) {
-      std::cerr << "Aprepro: INFO: Output now redirected to original output stream.\n";
-    }
+    aprepro->info("Output now redirected to original output stream.\n");
   }
   else {
     std::ostream* output = new std::ofstream(filename);
     if (output != NULL) {
       aprepro->outputStream.push(output);
 
-      if (aprepro->ap_options.info_msg == true) {
-	std::cerr << "Aprepro: INFO: Output now redirected to file '"
-		  << filename << "'.\n";
-      }
+      aprepro->info("Output now redirected to file'" +
+                    std::string(filename) + "'.\n");
     } else {
-	std::cerr << "Aprepro: ERROR: Could not open output file '"
-		  << filename << "'.\n";
+    aprepro->error("Could not open output file '" +
+                   std::string(filename) + "'.\n", false);
     }
   }
   return (NULL);
@@ -777,22 +773,18 @@ const char *do_append(char *filename)
       delete output;
     }
 
-    if (aprepro->ap_options.info_msg == true) {
-      std::cerr << "Aprepro: INFO: Output now redirected to original output stream.\n";
-    }
+    aprepro->info("Output now redirected to original output stream.\n");
   }
   else {
     std::ofstream* output = new std::ofstream(filename, std::ios_base::app); // Append
     if (output != NULL) {
       aprepro->outputStream.push(output);
 
-      if (aprepro->ap_options.info_msg == true) {
-	std::cerr << "Aprepro: INFO: Output now redirected to file '"
-		  << filename << "'\n";
-      }
+      aprepro->info("Output now redirected to file '" +
+                    std::string(filename) + "'\n");
     } else {
-	std::cerr << "Aprepro: ERROR: Could not open output file '"
-		  << filename << "' for appending.\n";
+      aprepro->error("Could not open output file '" +
+                     std::string(filename) + "' for appending.\n", false);
     }
   }
   return (NULL);
@@ -842,14 +834,14 @@ const char *do_getenv(char *env)
   char *tmp;
   char *ret_string;
   if (env == NULL)
-    return (NULL);
+    return "";
   
   tmp = (char *)getenv(env);
   if (tmp != NULL) {
     new_string(tmp, &ret_string);
     return (ret_string);
   } else {
-    return (NULL);
+    return "";
   }
 }
 

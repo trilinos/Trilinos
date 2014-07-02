@@ -47,7 +47,9 @@ namespace SEAMS {
       double (*fnctptr_cc)(char*,char*);
       double (*fnctptr_dd)(double,double);
       double (*fnctptr_ddd)(double,double,double);
+      double (*fnctptr_ccd)(char*, char*,double);
       double (*fnctptr_dddd)(double,double,double,double);
+      double (*fnctptr_ddddc)(double,double,double,double,char*);
       double (*fnctptr_dddddd)(double,double,double,double,double,double);
       double (*fnctptr_a)(const array*);
       const char *svar;
@@ -55,6 +57,7 @@ namespace SEAMS {
       const char *(*strfnct_c)(char*);
       const char *(*strfnct_d)(double);
       const char *(*strfnct_a)(const array*);
+      const char *(*strfnct_dd)(double,double);
       const char *(*strfnct_ccc)(char*,char*,char*);
       const char *(*strfnct_dcc)(double,char*,char*);
       const char *(*strfnct_dcccc)(double, char*, char*, char*, char*);
@@ -76,7 +79,9 @@ namespace SEAMS {
 	fnctptr_cc(NULL),
 	fnctptr_dd(NULL),
 	fnctptr_ddd(NULL),
+	fnctptr_ccd(NULL),
 	fnctptr_dddd(NULL),
+	fnctptr_ddddc(NULL),
 	fnctptr_dddddd(NULL),
 	fnctptr_a(NULL),
 	svar(NULL),
@@ -84,11 +89,13 @@ namespace SEAMS {
 	strfnct_c(NULL),
 	strfnct_d(NULL),
 	strfnct_a(NULL),
+	strfnct_dd(NULL),
 	strfnct_ccc(NULL),
 	strfnct_dcc(NULL),
 	strfnct_dcccc(NULL),
 	avar(NULL),
 	arrfnct_c(NULL),
+	arrfnct_cc(NULL),
 	arrfnct_cd(NULL),
 	arrfnct_dd(NULL),
 	arrfnct_d(NULL),
@@ -234,6 +241,9 @@ namespace SEAMS {
 
     void add_variable(const std::string &sym_name, const std::string &sym_value, bool is_immutable=false);
     void add_variable(const std::string &sym_name, double sym_value, bool is_immutable=false);
+    std::vector<std::string> get_variable_names(bool doInternal = false);
+    void remove_variable(const std::string &sym_name);
+
     bool set_option(const std::string &option);
     
     std::fstream *open_file(const std::string &file, const char *mode);
@@ -244,7 +254,15 @@ namespace SEAMS {
     class Scanner* lexer;
 
     /** Error handling. */
-    void error(const std::string& m) const;
+    void error(const std::string& msg,
+               bool line_info=true, bool prefix=true) const;
+    void warning(const std::string& msg,
+                 bool line_info=true, bool prefix=true) const;
+    void info(const std::string& msg,
+              bool line_info=false, bool prefix=true) const;
+
+    void set_error_streams(std::ostream* error, std::ostream* warning,
+                           std::ostream* info);
 
     void dumpsym (int type, bool doInternal) const;
   private:
@@ -258,6 +276,11 @@ namespace SEAMS {
 
     bool stringInteractive;
     class Scanner* stringScanner;
+
+    // For error handling
+    std::ostream *errorStream;
+    std::ostream *warningStream;
+    std::ostream *infoStream;
 
   public:
     bool stateImmutable;

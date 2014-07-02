@@ -100,25 +100,18 @@ namespace SEAMS {
 
   void yyerror (const SEAMS::Aprepro &apr, const std::string &s)
   {
-    std::cerr << "Aprepro: ERROR:  '" << s << "' ("
-	      << apr.ap_file_list.top().name << ", line "
-	      << apr.ap_file_list.top().lineno + 1 << ")\n";
+    apr.error(s);
   }
 
   void immutable_modify(const SEAMS::Aprepro &apr, const SEAMS::symrec *var)
   {
-    std::cerr << "Aprepro: (IMMUTABLE) Variable " << var->name
-	      << " is immutable and cannot be modified ("
-	      << apr.ap_file_list.top().name << ", line "
-	      << apr.ap_file_list.top().lineno + 1 << ")\n";
+    apr.error("(IMMUTABLE) Variable " + var->name +
+              " is immutable and cannot be modified", true, false);
   }
 
   void undefined_warning (const SEAMS::Aprepro &apr, const std::string &var)
   {
-    if (apr.ap_options.warning_msg)
-      std::cerr << "Aprepro: WARN: Undefined variable '"
-		<< var << "' (" << apr.ap_file_list.top().name << ", line "
-		<< apr.ap_file_list.top().lineno + 1 <<")\n";
+    apr.warning("Undefined variable '" + var + "'");
   }
 
   void redefined_warning (const SEAMS::Aprepro &apr, const SEAMS::symrec* var)
@@ -131,18 +124,13 @@ namespace SEAMS {
       else
 	type = "User";
 
-      std::cerr << "Aprepro: WARN: " << type << "-defined Variable '"
-		<< var->name << "' redefined (" << apr.ap_file_list.top().name << ", line "
-		<< apr.ap_file_list.top().lineno + 1 <<")\n";
+      apr.warning(type + "-defined Variable '" + var->name + "' redefined");
     }
   }
 
   void warning (const SEAMS::Aprepro &apr, const std::string &s)
   {
-    if (apr.ap_options.warning_msg)
-      std::cerr << "Aprepro: WARN:  '" << s << "' ("
-		<< apr.ap_file_list.top().name << ", line "
-		<< apr.ap_file_list.top().lineno + 1 << ")\n";
+    apr.warning(s);
   }
 
   void math_error(const SEAMS::Aprepro &apr, const char *function)
