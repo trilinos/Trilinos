@@ -352,6 +352,59 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy_ConstantPCE2, Stora
   success = checkConstantPCEView(v, val, out);
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Kokkos_View_PCE, DeepCopy_Subview_Range, Storage )
+{
+  typedef typename Storage::device_type Device;
+  typedef typename Storage::value_type Scalar;
+  typedef Sacado::UQ::PCE<Storage> PCE;
+  typedef typename ApplyView<PCE**,Kokkos::LayoutLeft,Device>::type ViewType;
+  typedef typename ViewType::size_type size_type;
+  typedef typename ViewType::HostMirror host_view_type;
+  typedef typename PCE::cijk_type Cijk;
+
+  // Build Cijk tensor
+  const int stoch_dim = 2;
+  const int poly_ord = 3;
+  Cijk cijk = build_cijk<Cijk>(stoch_dim, poly_ord);
+
+  const size_type num_rows1 = global_num_rows;
+  const size_type num_rows2 = global_num_rows*2;
+  const size_type num_cols = 5;
+  const size_type num_pce = cijk.dimension();
+    Storage::is_static ? Storage::static_size : global_num_cols;
+  ViewType v1("view1", num_rows1, num_cols, num_pce);
+  ViewType v2("view2", num_rows2, num_cols, num_pce);
+
+  for (size_type j=0; j<num_cols; ++j) {
+    std::pair<size_type,size_type> rows( 0, num_rows1 );
+    ViewType v1s = Kokkos::subview<ViewType>( v1, rows, j );
+    ViewType v2s = Kokkos::subview<ViewType>( v2, rows, j );
+    Kokkos::deep_copy( v1s, Scalar(j+1) );
+    Kokkos::deep_copy( v2s, v1s );
+  }
+
+  // Check
+  success = true;
+  host_view_type hv2 = Kokkos::create_mirror_view( v2 );
+  Kokkos::deep_copy( hv2, v2 );
+  for (size_type j=0; j<num_cols; ++j) {
+    for (size_type i=0; i<num_rows1; ++i) {
+      for (size_type k=0; k<num_pce; ++k) {
+        Scalar val = hv2(i,j).fastAccessCoeff(k);
+        Scalar val_expected = j+1;
+        TEUCHOS_TEST_EQUALITY(val, val_expected, out, success);
+      }
+    }
+    for (size_type i=num_rows1; i<num_rows2; ++i) {
+      for (size_type k=0; k<num_pce; ++k) {
+        Scalar val = hv2(i,j).fastAccessCoeff(k);
+        Scalar val_expected = 0;
+        TEUCHOS_TEST_EQUALITY(val, val_expected, out, success);
+      }
+    }
+  }
+}
+
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy_HostArray, Storage, Layout )
 {
   typedef typename Storage::device_type Device;
@@ -559,7 +612,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeviceAtomic, Storage, Layou
   using Kokkos::LayoutRight;                                            \
   VIEW_UQ_PCE_TESTS_STORAGE_LAYOUT(STORAGE, NoLayout)                   \
   VIEW_UQ_PCE_TESTS_STORAGE_LAYOUT(STORAGE, LayoutLeft)                 \
-  VIEW_UQ_PCE_TESTS_STORAGE_LAYOUT(STORAGE, LayoutRight)
+  VIEW_UQ_PCE_TESTS_STORAGE_LAYOUT(STORAGE, LayoutRight)                \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(                                 \
+    Kokkos_View_PCE, DeepCopy_Subview_Range, STORAGE )
 
 #define VIEW_UQ_PCE_TESTS_ORDINAL_SCALAR_DEVICE( ORDINAL, SCALAR, DEVICE ) \
   typedef Stokhos::DynamicStorage<ORDINAL,SCALAR,DEVICE> DS;            \
