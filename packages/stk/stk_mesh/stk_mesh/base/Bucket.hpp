@@ -149,6 +149,7 @@ private:
 
   bool m_owned;
   bool m_shared;
+  bool m_aura;
 
 public:
 
@@ -158,6 +159,7 @@ public:
 
   bool owned() const { return m_owned; }
   bool shared() const { return m_shared; }
+  bool in_aura() const { return m_aura; }
 
   //--------------------------------
   // Container-like types and methods:

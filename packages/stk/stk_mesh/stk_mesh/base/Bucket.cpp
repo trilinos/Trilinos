@@ -264,6 +264,7 @@ Bucket::Bucket( BulkData & arg_mesh ,
   , m_dynamic_other_connectivity(arg_entity_rank, &m_mesh)
   , m_owned(has_superset(*this, m_mesh.mesh_meta_data().locally_owned_part()))
   , m_shared(has_superset(*this, m_mesh.mesh_meta_data().globally_shared_part()))
+  , m_aura(has_superset(*this, m_mesh.mesh_meta_data().aura_part()))
 {
   ThrowAssertMsg(arg_capacity != 0, "Buckets should never have zero capacity");
 

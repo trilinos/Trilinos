@@ -289,6 +289,7 @@ public:
    */
   bool modification_end( modification_optimization opt = MOD_END_SORT );
   bool modification_end_for_edge_creation( modification_optimization opt = MOD_END_SORT);
+  bool modification_end_for_edge_creation_exp( modification_optimization opt = MOD_END_SORT);
 
 
   /** If field-data was set to not stay in sync with buckets as the mesh was populated,
@@ -692,6 +693,9 @@ public:
   bool in_send_ghost( EntityKey key) const;
 
   bool in_send_ghost( EntityKey key , int proc ) const;
+
+  bool is_ghosted_onto_another_proc( EntityKey key ) const;
+  bool is_ghosted_onto_proc( EntityKey key, int otherProc ) const;
 
   bool in_ghost( const Ghosting & ghost , EntityKey key , int proc ) const;
 
@@ -1385,10 +1389,11 @@ private:
                                  const std::vector<EntityProc> & add_send ,
                                  const std::vector<EntityKey> & remove_receive,
                                  bool is_full_regen = false);
-  void ghost_entities_and_fields(Ghosting & ghosts, const std::set<EntityProc , EntityLess>& new_send);
+  void ghost_entities_and_fields(Ghosting & ghosting, const std::set<EntityProc , EntityLess>& new_send);
 
   bool internal_modification_end( bool regenerate_aura, modification_optimization opt );
   bool internal_modification_end_for_edge_creation( bool regenerate_aura, modification_optimization opt );
+  bool internal_modification_end_for_edge_creation_exp( bool regenerate_aura, modification_optimization opt );
 
 protected:
   void internal_resolve_shared_modify_delete();
