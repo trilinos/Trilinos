@@ -802,7 +802,7 @@ namespace Tpetra {
             getKokkosView(),
             imports,
             importLIDs,
-            KokkosRefactor::Details::InsertOp<Scalar>(),
+            KokkosRefactor::Details::InsertOp(),
             numVecs);
         }
         else {
@@ -811,7 +811,7 @@ namespace Tpetra {
             imports,
             importLIDs,
             getKokkosViewDeepCopy<device_type>(whichVectors_ ()),
-            KokkosRefactor::Details::InsertOp<Scalar>(),
+            KokkosRefactor::Details::InsertOp(),
             numVecs);
         }
       }
@@ -821,7 +821,7 @@ namespace Tpetra {
             getKokkosView(),
             imports,
             importLIDs,
-            KokkosRefactor::Details::AddOp<Scalar>(),
+            KokkosRefactor::Details::AddOp(),
             numVecs);
         }
         else {
@@ -830,7 +830,7 @@ namespace Tpetra {
             imports,
             importLIDs,
             getKokkosViewDeepCopy<device_type>(whichVectors_ ()),
-            KokkosRefactor::Details::AddOp<Scalar>(),
+            KokkosRefactor::Details::AddOp(),
             numVecs);
         }
       }
@@ -840,7 +840,7 @@ namespace Tpetra {
             getKokkosView(),
             imports,
             importLIDs,
-            KokkosRefactor::Details::AbsMaxOp<Scalar>(),
+            KokkosRefactor::Details::AbsMaxOp(),
             numVecs);
         }
         else {
@@ -849,7 +849,7 @@ namespace Tpetra {
             imports,
             importLIDs,
             getKokkosViewDeepCopy<device_type>(whichVectors_ ()),
-            KokkosRefactor::Details::AbsMaxOp<Scalar>(),
+            KokkosRefactor::Details::AbsMaxOp(),
             numVecs);
         }
       }
