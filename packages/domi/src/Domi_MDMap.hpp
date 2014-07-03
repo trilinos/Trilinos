@@ -771,6 +771,9 @@ public:
    *
    * \param mdMap [in] MDMap to compare against
    *
+   * \param verbose [in] set to one to print why MDMaps are not the
+   *        same
+   *
    * Two MDMaps are considered "identical" if all of the following
    * are true:
    * <ol>
@@ -785,7 +788,8 @@ public:
    *        identical.</li>
    * <ol>
    */
-  bool isSameAs(const MDMap< Node > & mdMap) const;
+  bool isSameAs(const MDMap< Node > & mdMap,
+                const int verbose = 0) const;
 
   /** \brief True if there are no stride gaps on any processor
    *
@@ -2625,32 +2629,66 @@ MDMap< Node >::isCompatible(const MDMap< Node > & mdMap) const
 
 template< class Node >
 bool
-MDMap< Node >::isSameAs(const MDMap< Node > & mdMap) const
+MDMap< Node >::isSameAs(const MDMap< Node > & mdMap,
+                        const int verbose) const
 {
   // Trivial comparison.  We assume that if the object pointers match
   // on this processor, then they match on all processors
   if (this == &mdMap) return true;
 
-  // Check if MDMaps are compatible.  Assume this check produces the
-  // same result on all processes
-  if (! isCompatible(mdMap)) return false;
+  // Start by setting a local result to true.  We will perform a
+  // number of tests, and if they fail, the local result will be set
+  // to false.  At the end, we will perform a global reduction to
+  // obtain the global result.
+  int localResult = 1;
+  TeuchosCommRCP comm = getTeuchosComm();
+  int rank = comm->getRank();
 
-  // Check that underlying communicators are congruent.  This
-  // congruent() function should really be in Teuchos, but oh well ...
-#ifdef HAVE_TPETRA
-  using Tpetra::Details::congruent;
-  if (! congruent(*(getTeuchosComm()),
-                  *(mdMap.getTeuchosComm()))) return false;
-#endif
+  // Check if MDMaps are compatible.
+  if (! isCompatible(mdMap))
+  {
+    localResult = 0;
+    if (verbose)
+      std::cout << rank << ": MDMaps are incompatible" << std::endl;
+  }
 
-  // Check the global bounds.  Assume this check produces the
-  // same result on all processes
-  if (_globalBounds != mdMap._globalBounds) return false;
+  // Check that underlying communicators are the same size
+  if (comm->getSize() != mdMap.getTeuchosComm()->getSize())
+  {
+    localResult = 0;
+    if (verbose)
+      std::cout << rank << ": this Comm size = " << comm->getSize() << " != "
+                << mdMap.getTeuchosComm()->getSize() << std::endl;
+  }
 
-  // Check the local dimensions.  This needs to be checked locally on
-  // each processor and then the results communicated to obtain global
-  // result
-  int localResult  = (_localDims == mdMap._localDims);
+  // Check that underlying communicators have the same rank
+  if (rank != mdMap.getTeuchosComm()->getRank())
+  {
+    localResult = 0;
+    if (verbose)
+      std::cout << rank << ": this Comm rank = " << rank << " != "
+                << mdMap.getTeuchosComm()->getRank() << std::endl;
+  }
+
+  // Check the global bounds.
+  if (_globalBounds != mdMap._globalBounds)
+  {
+    localResult = 0;
+    if (verbose)
+      std::cout << rank << ": global bounds " << _globalBounds << " != "
+                << mdMap._globalBounds << std::endl;
+  }
+
+  // Check the local dimensions.
+  if (_localDims != mdMap._localDims)
+  {
+    localResult = 0;
+    if (verbose)
+      std::cout << rank << ": local dimensions " << _localDims << " != "
+                << mdMap._localDims << std::endl;
+  }
+
+  // Obtain the global result
   int globalResult = 1;
   Teuchos::reduceAll(*(getTeuchosComm()),
                      Teuchos::REDUCE_MIN,
