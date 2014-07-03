@@ -120,7 +120,6 @@ namespace Ioss {
     std::string filename_;
     bool exists_;   ///< this is used frequently, check on creation
     bool readable_; ///< this is used frequently, check on creation
-    struct stat *s_;
   };
 }
 #endif // IOSS_Ioss_FileInfo_h
