@@ -131,6 +131,13 @@ public:
 
   //@}
 
+  /** \name MDComm layout */
+  //@{
+
+  static const Layout commLayout;
+
+  //@}
+
   /** \name Constructors and Destructor */
   //@{
 
@@ -161,7 +168,8 @@ public:
    *
    * \param plist [in] ParameterList with construction information
    *        \htmlonly
-   *        <iframe src="domi.xml" width="100%" scrolling="no" frameborder="0"></iframe>
+   *        <iframe src="domi.xml" width="100%" scrolling="no" frameborder="0">
+   *        </iframe>
    *        <hr />
    *        \endhtmlonly
    */
@@ -395,14 +403,14 @@ private:
   // An array of the sizes of the communicator along each axis
   Teuchos::Array< int > _commDims;
 
-  // An array of flags denoting periodic axes
-  Teuchos::Array< int > _periodic;
+  // An array of the strides between processor ranks along each axis.
+  Teuchos::Array< int > _commStrides;
 
   // The comm index for this processor along each axis
   Teuchos::Array< int > _commIndex;
 
-  // An array of the strides between processor ranks along each axis.
-  Teuchos::Array< int > _commStrides;
+  // An array of flags denoting periodic axes
+  Teuchos::Array< int > _periodic;
 
 };
 

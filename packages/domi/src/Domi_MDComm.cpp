@@ -54,6 +54,12 @@
 namespace Domi
 {
 
+////////////////////////////////////////////////////////////////////////
+
+const Layout MDComm::commLayout = C_ORDER;
+
+////////////////////////////////////////////////////////////////////////
+
 MDComm::MDComm(const TeuchosCommRCP teuchosComm,
                const Teuchos::ArrayView< int > & commDims,
                const Teuchos::ArrayView< int > & periodic) :
@@ -61,11 +67,11 @@ MDComm::MDComm(const TeuchosCommRCP teuchosComm,
   _commDims(regularizeCommDims(teuchosComm->getSize(),
                                commDims.size(),
                                commDims)),
-  _periodic(computePeriodic(commDims.size(), periodic)),
-  _commIndex(computeCommIndexes(teuchosComm->getRank(),
-                                _commDims)),
   _commStrides(computeStrides<int,int>(_commDims,
-                                       DEFAULT_ORDER))
+                                       commLayout)),
+  _commIndex(computeCommIndexes(teuchosComm->getRank(),
+                                _commStrides)),
+  _periodic(computePeriodic(commDims.size(), periodic))
 {
 }
 
@@ -97,13 +103,13 @@ MDComm::MDComm(const TeuchosCommRCP teuchosComm,
     plist.get("periodic", Teuchos::Array< int >());
   _periodic = computePeriodic(numDims, periodic);
 
-  // Set the axis ranks for this processor
-  _commIndex = computeCommIndexes(_teuchosComm->getRank(),
-                                  _commDims);
-
   // Set the axis strides
   _commStrides = computeStrides<int,int>(_commDims,
-                                         DEFAULT_ORDER);
+                                         commLayout);
+
+  // Set the axis ranks for this processor
+  _commIndex = computeCommIndexes(_teuchosComm->getRank(),
+                                  _commStrides);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -114,11 +120,11 @@ MDComm::MDComm(const TeuchosCommRCP teuchosComm,
   _commDims(regularizeCommDims(teuchosComm->getSize(),
                                numDims,
                                Teuchos::Array< int >())),
-  _periodic(numDims, 0),
-  _commIndex(computeCommIndexes(teuchosComm->getRank(),
-                                _commDims)),
   _commStrides(computeStrides<int,int>(_commDims,
-                                       DEFAULT_ORDER))
+                                       commLayout)),
+  _commIndex(computeCommIndexes(teuchosComm->getRank(),
+                                _commStrides)),
+  _periodic(numDims, 0)
 {
 }
 
@@ -132,11 +138,11 @@ MDComm::MDComm(const TeuchosCommRCP teuchosComm,
   _commDims(regularizeCommDims(teuchosComm->getSize(),
                                numDims,
                                commDims)),
-  _periodic(computePeriodic(numDims, periodic)),
-  _commIndex(computeCommIndexes(teuchosComm->getRank(),
-                                _commDims)),
   _commStrides(computeStrides<int,int>(_commDims,
-                                       DEFAULT_ORDER))
+                                       commLayout)),
+  _commIndex(computeCommIndexes(teuchosComm->getRank(),
+                                _commStrides)),
+  _periodic(computePeriodic(numDims, periodic))
 {
 }
 
@@ -146,9 +152,9 @@ MDComm::MDComm(const MDComm & parent,
                int axis,
                int axisRank) :
   _commDims(),
-  _periodic(),
+  _commStrides(),
   _commIndex(),
-  _commStrides()
+  _periodic()
 {
   if (parent.onSubcommunicator())
   {
@@ -213,7 +219,7 @@ MDComm::MDComm(const MDComm & parent,
           val += mdIndex[myAxis] * parent._commStrides[myAxis];
         ranks[index] = val;
         // Increment mdIndex
-        int myAxis = 0;
+        int myAxis = numDims-1;
         done = false;
         while (not done)
         {
@@ -222,8 +228,8 @@ MDComm::MDComm(const MDComm & parent,
           if (not done)
           {
             mdIndex[myAxis] = bounds[myAxis].start();
-            ++myAxis;
-            if (myAxis >= numDims)
+            --myAxis;
+            if (myAxis < 0)
               done = true;
           }
         }
@@ -241,10 +247,7 @@ MDComm::MDComm(const MDComm & parent,
           _commIndex.push_back(parent._commIndex[myAxis]);
         }
       }
-      _commStrides.push_back(1);
-      for (int myAxis = 1; myAxis < _commDims.size(); ++myAxis)
-        _commStrides.push_back(_commStrides[myAxis-1] *
-                               _commDims[myAxis-1]);
+      _commStrides = computeStrides<int,int>(_commDims, commLayout);
     }
   }
 }
@@ -255,9 +258,9 @@ MDComm::MDComm(const MDComm & parent,
                int axis,
                const Slice & slice) :
   _commDims(parent._commDims),
-  _periodic(parent._periodic),
+  _commStrides(parent.numDims()),
   _commIndex(parent._commIndex),
-  _commStrides(parent.numDims())
+  _periodic(parent._periodic)
 {
   if (parent.onSubcommunicator())
   {
@@ -283,9 +286,7 @@ MDComm::MDComm(const MDComm & parent,
       _periodic[axis] = 0;
 
     // Compute the new strides of the new sub-communicator
-    _commStrides[0] = 1;
-    for (int myAxis = 1; myAxis < numDims; ++myAxis)
-      _commStrides[myAxis] = _commStrides[myAxis-1] * _commDims[myAxis-1];
+    _commStrides = computeStrides<int,int>(_commDims, commLayout);
 
     // Compute the ranks of the subcommunicator
     size_type rankSize = 1;
@@ -305,7 +306,7 @@ MDComm::MDComm(const MDComm & parent,
       }
       ranks[index] = val;
       // Increment mdIndex
-      int myAxis = 0;
+      int myAxis = numDims-1;
       done = false;
       while (not done)
       {
@@ -314,8 +315,8 @@ MDComm::MDComm(const MDComm & parent,
         if (not done)
         {
           mdIndex[myAxis] = 0;
-          ++myAxis;
-          if (myAxis >= numDims)
+          --myAxis;
+          if (myAxis < 0)
             done = true;
         }
       }
@@ -324,15 +325,16 @@ MDComm::MDComm(const MDComm & parent,
     // Set the communicator
     _teuchosComm =
       parent.getTeuchosComm()->createSubcommunicator(ranks()).getConst();
+  }
 
-    // On processors that are not a part of the subcommunicator, reset
-    // the data attributes.
-    if (_teuchosComm.getRawPtr() == 0)
-    {
-      _commDims.clear();
-      _commIndex.clear();
-      _commStrides.clear();
-    }
+  // On processors that are not a part of the subcommunicator, reset
+  // the data attributes.
+  if (_teuchosComm.getRawPtr() == 0)
+  {
+    _commDims.clear();
+    _commStrides.clear();
+    _commIndex.clear();
+    _periodic.clear();
   }
 }
 
@@ -357,6 +359,9 @@ MDComm::MDComm(const MDComm & parent,
     tempMDComm1 = tempMDComm2;
   }
   *this = tempMDComm1;
+  // std::cout << parent.getTeuchosComm()->getRank() << ": _commDims = " << _commDims
+  //           << ", _commStrides = " << _commStrides << ", _commIndex = "
+  //           << _commIndex << ", _periodic = " << _periodic << std::endl;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -367,9 +372,9 @@ MDComm::MDComm(const MDComm & source) :
   _epetraComm(source._epetraComm),
 #endif
   _commDims(source._commDims),
-  _periodic(source._periodic),
+  _commStrides(source._commStrides),
   _commIndex(source._commIndex),
-  _commStrides(source._commStrides)
+  _periodic(source._periodic)
 {
 }
 
@@ -388,9 +393,9 @@ MDComm & MDComm::operator=(const MDComm & source)
   _epetraComm    = source._epetraComm;
 #endif
   _commDims    = source._commDims;
-  _periodic    = source._periodic;
-  _commIndex   = source._commIndex;
   _commStrides = source._commStrides;
+  _commIndex   = source._commIndex;
+  _periodic    = source._periodic;
   return *this;
 }
 
