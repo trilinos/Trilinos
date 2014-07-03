@@ -103,10 +103,13 @@ namespace MueLu {
     Cycle_     = Hierarchy::GetDefaultCycle();
     blockSize_ = 1;
 
-    if (paramList.isSublist("Hierarchy"))
+    if (paramList.isSublist("Hierarchy")) {
       SetFactoryParameterList(paramList);
-    else
+
+    } else {
+      Validate(paramList);
       SetEasyParameterList(paramList);
+    }
   }
 
   // =====================================================================================================
@@ -248,6 +251,7 @@ namespace MueLu {
       this->AddFactoryManager(levelID, 1, levelManager);
     }
 
+#if 0
     if (paramList.isParameter("strict parameter checking") &&
         paramList.get<bool>  ("strict parameter checking")) {
       ParameterList unusedParamList;
@@ -285,6 +289,7 @@ namespace MueLu {
                                             "WARNING: Unused parameters were detected. Please check spelling and type." << std::endl << unusedParamsStream.str());
       }
     }
+#endif
 
     // FIXME: parameters passed to packages, like Ifpack2, are not touched by us, resulting in "[unused]" flag
     // being displayed. On the other hand, we don't want to simply iterate through them touching. I don't know
@@ -679,6 +684,66 @@ namespace MueLu {
   }
 #undef MUELU_READ_2LIST_PARAM
 #undef MUELU_TEST_AND_SET_PARAM
+
+  int LevenshteinDistance(const char* s, size_t len_s, const char* t, size_t len_t);
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Validate(const Teuchos::ParameterList& constParamList) const {
+    ParameterList paramList = constParamList;
+    const ParameterList& validList = *MasterList::List();
+
+    // Validate up to maxLevels level specific parameter sublists
+    const int maxLevels = 100;
+
+    // Extract level specific list
+    std::vector<ParameterList> paramLists;
+    for (int levelID = 0; levelID < maxLevels; levelID++) {
+      std::string sublistName = "level " + toString(levelID);
+      if (paramList.isSublist(sublistName)) {
+        paramLists.push_back(paramList.sublist(sublistName));
+        // paramLists.back().setName(sublistName);
+        paramList.remove(sublistName);
+      }
+    }
+    paramLists.push_back(paramList);
+    // paramLists.back().setName("main");
+
+    const int maxDepth = 0;
+    for (size_t i = 0; i < paramLists.size(); i++) {
+      // validate every sublist
+      try {
+        paramLists[i].validateParameters(validList, maxDepth);
+      } catch (const Teuchos::Exceptions::InvalidParameterName& e) {
+        std::string eString = e.what();
+
+        // Parse name from: <Error, the parameter {name="smoothe: type",...>
+        size_t nameStart = eString.find_first_of('"') + 1;
+        size_t nameEnd   = eString.find_first_of('"', nameStart);
+        std::string name = eString.substr(nameStart, nameEnd - nameStart);
+
+        int         bestScore = 100;
+        std::string bestName  = "";
+        for (ParameterList::ConstIterator it = validList.begin(); it != validList.end(); it++) {
+          const std::string& pName = validList.name(it);
+          this->GetOStream(Runtime1) << "| " << pName;
+
+          int score = LevenshteinDistance(name.c_str(), name.length(), pName.c_str(), pName.length());
+          this->GetOStream(Runtime1) << " -> " << score << std::endl;
+          if (score < bestScore) {
+            bestScore = score;
+            bestName  = pName;
+          }
+        }
+
+        if (bestScore < 10 && bestName != "") {
+          TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameterName, eString << "The parameter name \"" + name + "\" is not valid. Did you mean \"" + bestName << "\"?\n");
+        } else {
+          TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameterName, eString << "The parameter name \"" + name + "\" is not valid.\n");
+        }
+
+      }
+    }
+  }
 
   // =====================================================================================================
   // ==================================== FACTORY interpreter ============================================

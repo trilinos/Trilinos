@@ -116,6 +116,7 @@ namespace MueLu {
     //! Easy interpreter stuff
     //@{
     void SetEasyParameterList(const Teuchos::ParameterList& paramList);
+    void Validate(const Teuchos::ParameterList& paramList) const;
 
     void UpdateFactoryManager(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager) const;
 
