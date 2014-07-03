@@ -181,12 +181,6 @@ void all_write_string( ParallelMachine ,
   arg_root_os << arg_msg ;
 }
 
-void all_reduce_impl( ParallelMachine ,
-                     const size_t * local , size_t * global , unsigned count, MPI_Op op)
-{
-  for ( unsigned i = 0 ; i < count ; ++i ) { global[i] = local[i] ; }
-}
-
 void all_reduce_bor( ParallelMachine ,
                      const unsigned * local ,
                      unsigned * global , unsigned count )
