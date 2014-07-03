@@ -155,6 +155,10 @@ struct remove_const< const T >
 /** \brief Compute the strides of an <tt>MDArray</tt>,
  *         <tt>MDArrayView</tt>, or <tt>MDArrayRCP</tt>, given the
  *         dimensions (as an Array) and the storage order.
+ *
+ * \param dimensions [in] an array of dimensions
+ *
+ * \param layout [in] the memory storage order
  */
 template< class SIZE_TYPE, class DIM_TYPE >
 Teuchos::Array< SIZE_TYPE >
@@ -163,6 +167,8 @@ computeStrides(const Teuchos::Array< DIM_TYPE > & dimensions,
 {
   int n = dimensions.size();
   Teuchos::Array< SIZE_TYPE > strides(n);
+  if (n == 0) return strides;
+
   if (layout == FIRST_INDEX_FASTEST)
   {
     strides[0] = 1;
@@ -183,6 +189,10 @@ computeStrides(const Teuchos::Array< DIM_TYPE > & dimensions,
 /** \brief Compute the strides of an <tt>MDArray</tt>,
  *         <tt>MDArrayView</tt>, or <tt>MDArrayRCP</tt>, given its
  *         dimensions as an ArrayView.
+ *
+ * \param dimensions [in] an array of dimensions
+ *
+ * \param layout [in] the memory storage order
  */
 template< class SIZE_TYPE, class DIM_TYPE >
 Teuchos::Array< SIZE_TYPE >
@@ -208,6 +218,8 @@ computeStrides(const Teuchos::ArrayView< DIM_TYPE > & dimensions,
 /** \brief Compute the minimum size required for an <tt>MDArray</tt>,
  *         <tt>MDArrayView</tt>, or <tt>MDArrayRCP</tt>, given its
  *         dimensions as an Arrayview.
+ *
+ * \param dimensions [in] an array of dimensions
  */
 template< class DIM_TYPE >
 size_type computeSize(const Teuchos::ArrayView< DIM_TYPE > & dimensions)
@@ -224,6 +236,8 @@ size_type computeSize(const Teuchos::ArrayView< DIM_TYPE > & dimensions)
 /** \brief Compute the minimum size required for an <tt>MDArray</tt>,
  *         <tt>MDArrayView</tt>, or <tt>MDArrayRCP</tt>, given its
  *         dimensions as an Array.
+ *
+ * \param dimensions [in] an array of dimensions
  */
 template< class DIM_TYPE >
 size_type computeSize(const Teuchos::Array< DIM_TYPE > & dimensions)
@@ -246,6 +260,10 @@ size_type computeSize(const Teuchos::Array< DIM_TYPE > & dimensions)
 /** \brief Compute the minimum size required for an <tt>MDArray</tt>,
  *         <tt>MDArrayView</tt>, or <tt>MDArrayRCP</tt>, given its
  *         dimensions and strides.
+ *
+ * \param dimensions [in] an array of dimensions
+ *
+ * \param strides [in] an array of strides
  */
 template< class SIZE_TYPE, class DIM_TYPE >
 SIZE_TYPE computeSize(const Teuchos::ArrayView< DIM_TYPE > & dimensions,
@@ -263,6 +281,12 @@ SIZE_TYPE computeSize(const Teuchos::ArrayView< DIM_TYPE > & dimensions,
 /** \brief Compute a valid commDims array, given the number of
  *         processors, the number of dimensions, and a candidate
  *         commDims array.
+ *
+ * \param numProcs [in] the number of processors
+ *
+ * \param numDims [in] the number of dimensions
+ *
+ * \param commDims [in] the communicor dimensions to be regularized
  *
  *  The candidate array can have fewer entries than the number of
  *  dimensions -- this function will fill in the extra ones.  It can
@@ -285,20 +309,15 @@ regularizeCommDims(int numProcs,
 ////////////////////////////////////////////////////////////////////////
 
 /** \brief Compute the axis ranks for a given processor rank, given
- *         the number of processors along each axis.
+ *         the communicator stride sizes along each axis.
+ *
+ * \param rank [in] the rank of the given processor
+ *
+ * \param commStrides [in] an array of the communicator stride sizes
+ *        along each axis
  */
 Teuchos::Array< int >
 computeCommIndexes(int rank,
-                   const Teuchos::ArrayView< int > & commDims);
-
-////////////////////////////////////////////////////////////////////////
-
-/** \brief Compute the axis ranks for a given processor rank, given
- *         the offset and the processors strides along each axis.
- */
-Teuchos::Array< int >
-computeCommIndexes(int rank,
-                   int offset,
                    const Teuchos::ArrayView< int > & commStrides);
 
 ////////////////////////////////////////////////////////////////////////
@@ -307,6 +326,11 @@ computeCommIndexes(int rank,
  *
  * If the input array is shorter than the number of dimensions, fill
  * the remainder of the result with zeros.
+ *
+ * \param numDims [in] the number of dimensions
+ *
+ * \param periodic [in] an array of flags indicating whether each axis
+ *        is periodic
  */
 Teuchos::Array< int >
 computePeriodic(int numDims,
@@ -316,6 +340,8 @@ computePeriodic(int numDims,
 
 /** \brief Given a std::string which contains comma-separated integers,
  *         return an array of ints.
+ *
+ * \param string [in] a string of comma-separated integers
  */
 Teuchos::Array< int >
 splitStringOfIntsWithCommas(std::string data);
@@ -325,7 +351,7 @@ splitStringOfIntsWithCommas(std::string data);
 #ifdef HAVE_MPI
 
 /** \brief Return an MPI_Datatype, given its corresponding C/C++ type,
-           specified as template parameter T
+ *         specified as template parameter T
  */
 template< class T > MPI_Datatype mpiType();
 
@@ -336,7 +362,9 @@ template< class T > MPI_Datatype mpiType();
 #ifdef HAVE_MPI
 
 /** \brief Return an MPI flag for data layout, given its corresponding
-           Domi enumeration
+ *         Domi enumeration
+ *
+ * \param layout [in] the Domi memory storage order
  */
 int mpiOrder(Layout layout);
 

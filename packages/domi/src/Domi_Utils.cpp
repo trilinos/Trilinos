@@ -50,6 +50,8 @@
 namespace Domi
 {
 
+////////////////////////////////////////////////////////////////////////
+
 Teuchos::Array< int >
 regularizeCommDims(int numProcs,
                    int numDims,
@@ -104,36 +106,13 @@ regularizeCommDims(int numProcs,
 
 Teuchos::Array< int >
 computeCommIndexes(int rank,
-                   const Teuchos::ArrayView< int > & commDims)
-{
-  Teuchos::Array< int > result(commDims.size());
-  int relRank = rank;
-  int stride = 1;
-  for (int axis = 0; axis < commDims.size()-1; ++axis)
-    stride *= commDims[axis];
-  for (int axis = commDims.size()-1; axis > 0; --axis)
-  {
-    result[axis] = relRank / stride;
-    relRank      = relRank % stride;
-    stride       = stride / commDims[axis-1];
-  }
-  result[0] = relRank;
-  return result;
-}
-
-////////////////////////////////////////////////////////////////////////
-
-Teuchos::Array< int >
-computeCommIndexes(int rank,
-                   int offset,
                    const Teuchos::ArrayView< int > & commStrides)
 {
   Teuchos::Array< int > result(commStrides.size());
-  int relRank = rank - offset;
-  for (int axis = commStrides.size()-1; axis >= 0; --axis)
+  for (int axis = 0; axis < commStrides.size(); ++axis)
   {
-    result[axis] = relRank / commStrides[axis];
-    relRank      = relRank % commStrides[axis];
+    result[axis] = rank / commStrides[axis];
+    rank         = rank % commStrides[axis];
   }
   return result;
 }
