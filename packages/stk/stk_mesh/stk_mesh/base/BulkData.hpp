@@ -63,11 +63,11 @@ namespace stk { namespace mesh { struct ConnectivityMap; } }
 //#define STK_MESH_MODIFICATION_COUNTERS
 
 #ifdef STK_MESH_MODIFICATION_COUNTERS
-#define INCREMENT_MODIFICATION_COUNTER(MOD_TYPE) {++m_modification_counters[MOD_TYPE];}
-#define INCREMENT_ENTITY_MODIFICATION_COUNTER(RANK,MOD_TYPE) {++m_entity_modification_counters[RANK][MOD_TYPE];}
+#define INCREMENT_MODIFICATION_COUNTER(METHOD_TYPE, MOD_TYPE) {++m_modification_counters[METHOD_TYPE][MOD_TYPE];}
+#define INCREMENT_ENTITY_MODIFICATION_COUNTER(METHOD_TYPE, RANK,MOD_TYPE) {++m_entity_modification_counters[METHOD_TYPE][RANK][MOD_TYPE];}
 #else
-#define INCREMENT_MODIFICATION_COUNTER(MOD_TYPE) {}
-#define INCREMENT_ENTITY_MODIFICATION_COUNTER(RANK,MOD_TYPE) {}
+#define INCREMENT_MODIFICATION_COUNTER(METHOD_TYPE, MOD_TYPE) {}
+#define INCREMENT_ENTITY_MODIFICATION_COUNTER(METHOD_TYPE, RANK,MOD_TYPE) {}
 #endif
 
 namespace stk {
@@ -1509,6 +1509,7 @@ private:
       CHANGE_GHOSTING,
       CREATE_GHOSTING,
       DECLARE_RELATION,
+      DESTROY_GHOSTING,
       DESTROY_ALL_GHOSTING,
       DESTROY_RELATION,
       NumModificationTypes
@@ -1521,20 +1522,31 @@ private:
       DESTROY_ENTITY,
       NumEntityModificationTypes
   };
+  enum PublicOrInternalMethod {
+      PUBLIC = 0,
+      INTERNAL,
+      NumMethodTypes
+  };
 
 #ifdef STK_MESH_MODIFICATION_COUNTERS
   static unsigned m_num_bulk_data_counter;
-  unsigned m_modification_counters[NumModificationTypes];
-  unsigned m_entity_modification_counters[stk::topology::NUM_RANKS][NumEntityModificationTypes];
+  unsigned m_modification_counters[NumMethodTypes][NumModificationTypes];
+  unsigned m_entity_modification_counters[NumMethodTypes][stk::topology::NUM_RANKS][NumEntityModificationTypes];
 #endif
 
   void reset_modification_counters();
   std::string create_modification_counts_filename() const;
   void write_modification_counts();
+  void write_modification_counts_to_stream_for_method_type(std::ostream& out, enum PublicOrInternalMethod methodType);
   void write_modification_counts_to_stream(std::ostream& out);
-  void write_entity_modification_entry(std::ostream& out, const std::string& label, EntityModificationTypes entityModification);
+  void write_entity_modification_entry(std::ostream& out,
+                                         enum PublicOrInternalMethod methodType,
+                                         EntityModificationTypes entityModification);
+  void write_modification_labels_to_stream_for_method_type(std::ostream& out, enum PublicOrInternalMethod methodType);
   void write_modification_labels_to_stream(std::ostream& out);
-  void write_entity_modification_entry_label(std::ostream& out, const std::string& label);
+  void write_modification_entry_label(std::ostream& out, const std::string& label, enum PublicOrInternalMethod methodType);
+  void write_entity_modification_entry_label(std::ostream& out, const std::string& label, enum PublicOrInternalMethod methodType);
+  std::string convert_label_for_method_type(const std::string &label, enum PublicOrInternalMethod methodType);
 
 };
 
