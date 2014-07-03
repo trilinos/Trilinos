@@ -157,7 +157,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::compute() {
     = Teuchos::rcp( new UncoupledAggregationFactory() );
   Teuchos::ParameterList params;
   params.set("aggregation threshold",(Scalar)1.0e-16);
-  params.set("Dirichlet detection threshold",1.0e-16);
+  params.set("Dirichlet detection threshold",(Scalar)1.0e-16);
   Dropfact11->SetParameterList(params);
   Dropfact22->SetParameterList(params);
   Manager11->SetFactory("Aggregates",Aggfact11);
