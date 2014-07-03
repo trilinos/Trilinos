@@ -408,6 +408,10 @@ namespace MueLu {
       // cannot get the default values from it.
       MUELU_READ_2LIST_PARAM(paramList, defaultList, "coarse: type", std::string, "", coarseType);
 
+      int overlap = 0;
+      if (paramList.isParameter("coarse: overlap"))
+        overlap = paramList.get<int>("coarse: overlap");
+
       ParameterList coarseParams;
       if (paramList.isSublist("coarse: params"))
         coarseParams = paramList.sublist("coarse: params");
@@ -421,7 +425,7 @@ namespace MueLu {
       if (coarseType == "RELAXATION" || coarseType == "CHEBYSHEV" ||
           coarseType == "ILUT" || coarseType == "ILU" || coarseType == "RILUK" || coarseType == "SCHWARZ" ||
           coarseType == "Amesos")
-        coarseSmoother = rcp(new TrilinosSmoother(coarseType, coarseParams));
+        coarseSmoother = rcp(new TrilinosSmoother(coarseType, coarseParams, overlap));
       else
         coarseSmoother = rcp(new DirectSolver(coarseType, coarseParams));
 
