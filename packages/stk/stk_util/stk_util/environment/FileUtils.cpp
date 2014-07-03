@@ -12,16 +12,16 @@
 typedef std::vector<std::string> StringVector;
 
 namespace {
-  std::string tailname(const std::string &filename) const
+  std::string tailname(const std::string &filename)
   {
     size_t ind = filename.find_last_of("/", filename.size());
     if (ind != std::string::npos)
-      return filename.substr(ind+1, filename_.size());
+      return filename.substr(ind+1, filename.size());
     else
       return filename; // No path, just return the filename
   }
 
-  std::string basename(const std::string &filename) const
+  std::string basename(const std::string &filename)
   {
     std::string tail = tailname(filename);
 
@@ -42,15 +42,15 @@ namespace {
       input_file_name = stk::EnvData::instance().m_inputFile;
     }
 
-    std::string basename = basename(input_file_name);
+    std::string base = basename(input_file_name);
 
     // See if name contains ".aprepro"
-    size_t pos = basename.find(".aprepro");
+    size_t pos = base.find(".aprepro");
     if (pos != std::string::npos) {
       // Strip if off...
-      filename = basename.substr(0,pos) + basename.substr(pos+8);
+      filename = base.substr(0,pos) + base.substr(pos+8);
     } else {
-      filename = basename;
+      filename = base;
     }
     return filename;
   }
