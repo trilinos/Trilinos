@@ -318,22 +318,24 @@ TEUCHOS_UNIT_TEST( MDComm, getCommIndex )
   commDims.resize(numDims);
   Array< int > strides(numDims);
   for (int axis = 0; axis < numDims; ++axis)
-  {
     commDims[axis] = mdComm.getCommDim(axis);
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    int index1 = numDims-axis-1;
+    int index2 = numDims-axis;
     if (axis == 0)
-      strides[axis] = 1;
+      strides[index1] = 1;
     else
-      strides[axis] = strides[axis-1] * commDims[axis-1];
+      strides[index1] = strides[index2] * commDims[index2];
   }
   // Compute what the axis ranks should be for this processor
   Array< int > commIndex(numDims);
   int rank = comm->getRank();
-  for (int axis = numDims-1; axis > 0; --axis)
+  for (int axis = 0; axis < numDims; ++axis)
   {
     commIndex[axis] = rank / strides[axis];
     rank            = rank % strides[axis];
   }
-  commIndex[0] = rank;
 
   // Test the getCommIndex() method
   for (int axis = 0; axis < numDims; ++axis)
@@ -355,12 +357,18 @@ TEUCHOS_UNIT_TEST( MDComm, getLowerNeighbor )
   Array< int > commIndex(numDims);
   Array< int > lowerNeighborRanks(numDims);
   for (int axis = 0; axis < numDims; ++axis)
-  {
     commDims[axis] = mdComm.getCommDim(axis);
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    int index1 = numDims-axis-1;
+    int index2 = numDims-axis;
     if (axis == 0)
-      commStrides[axis] = 1;
+      commStrides[index1] = 1;
     else
-      commStrides[axis] = commStrides[axis-1] * commDims[axis-1];
+      commStrides[index1] = commStrides[index2] * commDims[index2];
+  }
+  for (int axis = 0; axis < numDims; ++axis)
+  {
     commIndex[axis] = mdComm.getCommIndex(axis);
     if (commIndex[axis] == 0)
       lowerNeighborRanks[axis] = -1;
@@ -394,12 +402,18 @@ TEUCHOS_UNIT_TEST( MDComm, getLowerNeighborPeriodic )
   Array< int > commIndex(numDims);
   Array< int > lowerNeighborRanks(numDims);
   for (int axis = 0; axis < numDims; ++axis)
-  {
     commDims[axis] = mdComm.getCommDim(axis);
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    int index1 = numDims-axis-1;
+    int index2 = numDims-axis;
     if (axis == 0)
-      commStrides[axis] = 1;
+      commStrides[index1] = 1;
     else
-      commStrides[axis] = commStrides[axis-1] * commDims[axis-1];
+      commStrides[index1] = commStrides[index2] * commDims[index2];
+  }
+  for (int axis = 0; axis < numDims; ++axis)
+  {
     commIndex[axis] = mdComm.getCommIndex(axis);
     if (periodic[axis] && commIndex[axis] == 0)
       lowerNeighborRanks[axis] = comm->getRank() + (commDims[axis]-1) *
@@ -430,12 +444,18 @@ TEUCHOS_UNIT_TEST( MDComm, getUpperNeighbor )
   Array< int > commIndex(numDims);
   Array< int > upperNeighborRanks(numDims);
   for (int axis = 0; axis < numDims; ++axis)
-  {
     commDims[axis] = mdComm.getCommDim(axis);
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    int index1 = numDims-axis-1;
+    int index2 = numDims-axis;
     if (axis == 0)
-      commStrides[axis] = 1;
+      commStrides[index1] = 1;
     else
-      commStrides[axis] = commStrides[axis-1] * commDims[axis-1];
+      commStrides[index1] = commStrides[index2] * commDims[index2];
+  }
+  for (int axis = 0; axis < numDims; ++axis)
+  {
     commIndex[axis] = mdComm.getCommIndex(axis);
     if (commIndex[axis] == commDims[axis]-1)
       upperNeighborRanks[axis] = -1;
@@ -469,12 +489,18 @@ TEUCHOS_UNIT_TEST( MDComm, getUpperNeighborPeriodic )
   Array< int > commIndex(numDims);
   Array< int > upperNeighborRanks(numDims);
   for (int axis = 0; axis < numDims; ++axis)
-  {
     commDims[axis] = mdComm.getCommDim(axis);
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    int index1 = numDims-axis-1;
+    int index2 = numDims-axis;
     if (axis == 0)
-      commStrides[axis] = 1;
+      commStrides[index1] = 1;
     else
-      commStrides[axis] = commStrides[axis-1] * commDims[axis-1];
+      commStrides[index1] = commStrides[index2] * commDims[index2];
+  }
+  for (int axis = 0; axis < numDims; ++axis)
+  {
     commIndex[axis] = mdComm.getCommIndex(axis);
     if (periodic[axis] && commIndex[axis] == commDims[axis]-1)
       upperNeighborRanks[axis] = comm->getRank() - (commDims[axis]-1) *
@@ -632,6 +658,9 @@ TEUCHOS_UNIT_TEST( MDComm, subCommLowerRight )
       partOfSubComm = false;
 
 #if 0
+  std::cout << "P" << comm->getRank() << ": commIndex = ("
+            << mdComm.getCommIndex(0) << "," << mdComm.getCommIndex(1) << ")"
+            << std::endl;
   if (partOfSubComm)
     std::cout << "P" << comm->getRank() << ": IS part of sub-comm "
               << newSizes << std::endl;
@@ -856,10 +885,8 @@ TEUCHOS_UNIT_TEST( MDComm, subCommReduce )
     finalCommDims[axis] = mdComm.getCommDim(axis);
 
   // Compute the axis commStrides
-  Array< int > commStrides(numDims);
-  commStrides[0] = 1;
-  for (int axis = 1; axis < numDims; ++axis)
-    commStrides[axis] = commStrides[axis-1] * finalCommDims[axis-1];
+  Array< int > commStrides =
+    Domi::computeStrides<int,int>(finalCommDims,Domi::MDComm::commLayout);
 
   // We will reduce this MDComm several times by using the comm index
   // constructor along each dimension
@@ -874,15 +901,11 @@ TEUCHOS_UNIT_TEST( MDComm, subCommReduce )
     for (int newAxis = 0; newAxis < numDims; ++newAxis)
     {
       if (newAxis != axis)
-      {
         newCommDims.push_back(finalCommDims[newAxis]);
-        int i = newAxisStrides.size();
-        if (i == 0)
-          newAxisStrides.push_back(1);
-        else
-          newAxisStrides.push_back(newAxisStrides[i-1]*newCommDims[i-1]);
-      }
     }
+    if (numDims == 1) newCommDims.push_back(finalCommDims[0]);
+    newAxisStrides =
+      Domi::computeStrides<int,int>(newCommDims, Domi::MDComm::commLayout);
 
     int redAxisRank = finalCommDims[axis] / 2;
     bool partOfSubComm = true;
@@ -1021,7 +1044,7 @@ TEUCHOS_UNIT_TEST( MDComm, subCommPeriodic )
   }
 
   // Construct the sub-MDComm
-  MDComm subMDComm(mdComm, slices);
+  MDComm subMdComm(mdComm, slices);
 
   // Should this processor be a part of the sub-MDComm?
   bool partOfSubComm = true;
@@ -1029,19 +1052,23 @@ TEUCHOS_UNIT_TEST( MDComm, subCommPeriodic )
     if (mdComm.getCommIndex(axis) >= newSizes[axis])
       partOfSubComm = false;
 
+  // std::cout << comm->getRank() << ": slices = " << slices << ", newSizes = "
+  //           << newSizes << ", part of sub-communicator = " << partOfSubComm
+  //           << std::endl;
+
   // Do some unit tests
   if (partOfSubComm)
   {
-    TEST_EQUALITY(subMDComm.numDims(), numDims);
+    TEST_EQUALITY(subMdComm.numDims(), numDims);
     for (int axis = 0; axis < numDims; ++axis)
     {
-      TEST_EQUALITY(subMDComm.getCommDim(axis), newSizes[axis]);
-      TEST_EQUALITY(subMDComm.isPeriodic(axis), (axis == 0));
+      TEST_EQUALITY(subMdComm.getCommDim(axis), newSizes[axis]);
+      TEST_EQUALITY(subMdComm.isPeriodic(axis), (axis == 0));
     }
   }
   else
   {
-    TEST_EQUALITY(subMDComm.numDims(), 0);
+    TEST_EQUALITY_CONST(subMdComm.numDims(), 0);
   }
 }
 
