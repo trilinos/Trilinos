@@ -251,50 +251,47 @@ namespace MueLu {
       this->AddFactoryManager(levelID, 1, levelManager);
     }
 
-#if 0
-    if (paramList.isParameter("strict parameter checking") &&
-        paramList.get<bool>  ("strict parameter checking")) {
-      ParameterList unusedParamList;
-
-      // Check for unused parameters that aren't lists
-      for (ParameterList::ConstIterator itr = paramList.begin(); itr != paramList.end(); ++itr) {
-        const ParameterEntry& entry = paramList.entry(itr);
-
-        if (!entry.isList() && !entry.isUsed())
-          unusedParamList.setEntry(paramList.name(itr), entry);
-      }
-#if 0
-      // Check for unused parameters in level-specific sublists
-      for (int levelID = 0; levelID < this->numDesiredLevel_; levelID++) {
-        std::string levelStr = "level" + toString(levelID);
-
-        if (paramList.isSublist(levelStr)) {
-          const ParameterList& levelList = paramList.sublist(levelStr);
-
-          for (ParameterList::ConstIterator itr = levelList.begin(); itr != levelList.end(); ++itr) {
-            const ParameterEntry& entry = levelList.entry(itr);
-
-            if (!entry.isList() && !entry.isUsed())
-              unusedParamList.sublist(levelStr).setEntry(levelList.name(itr), entry);
-          }
-        }
-      }
-#endif
-      if (unusedParamList.numParams() > 0) {
-        std::ostringstream unusedParamsStream;
-        int indent = 4;
-        unusedParamList.print(unusedParamsStream, indent);
-
-        TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true, Teuchos::Exceptions::InvalidParameter,
-                                            "WARNING: Unused parameters were detected. Please check spelling and type." << std::endl << unusedParamsStream.str());
-      }
-    }
-#endif
-
     // FIXME: parameters passed to packages, like Ifpack2, are not touched by us, resulting in "[unused]" flag
     // being displayed. On the other hand, we don't want to simply iterate through them touching. I don't know
     // what a good solution looks like
     this->GetOStream(static_cast<MsgType>(Runtime1 | Test), 0) << paramList << std::endl;
+
+
+    // Check unused parameters
+    ParameterList unusedParamList;
+
+    // Check for unused parameters that aren't lists
+    for (ParameterList::ConstIterator it = paramList.begin(); it != paramList.end(); it++) {
+      const ParameterEntry& entry = paramList.entry(it);
+
+      if (!entry.isList() && !entry.isUsed())
+        unusedParamList.setEntry(paramList.name(it), entry);
+    }
+
+    // Check for unused parameters in level-specific sublists
+    for (int levelID = 0; levelID < this->numDesiredLevel_; levelID++) {
+      std::string levelStr = "level " + toString(levelID);
+
+      if (paramList.isSublist(levelStr)) {
+        const ParameterList& levelList = paramList.sublist(levelStr);
+
+        for (ParameterList::ConstIterator itr = levelList.begin(); itr != levelList.end(); ++itr) {
+          const ParameterEntry& entry = levelList.entry(itr);
+
+          if (!entry.isList() && !entry.isUsed())
+            unusedParamList.sublist(levelStr).setEntry(levelList.name(itr), entry);
+        }
+      }
+    }
+
+    if (unusedParamList.numParams() > 0) {
+      std::ostringstream unusedParamsStream;
+      int indent = 4;
+      unusedParamList.print(unusedParamsStream, indent);
+
+      this->GetOStream(Warnings1) << "The following parameters were not used:\n" << unusedParamsStream.str() << std::endl;
+    }
+
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
