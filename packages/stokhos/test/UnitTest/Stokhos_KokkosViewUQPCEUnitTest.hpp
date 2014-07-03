@@ -371,9 +371,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Kokkos_View_PCE, DeepCopy_Subview_Range, Stor
   const size_type num_rows2 = global_num_rows*2;
   const size_type num_cols = 5;
   const size_type num_pce = cijk.dimension();
-    Storage::is_static ? Storage::static_size : global_num_cols;
-  ViewType v1("view1", num_rows1, num_cols, num_pce);
-  ViewType v2("view2", num_rows2, num_cols, num_pce);
+  ViewType v1("view1", cijk, num_rows1, num_cols);
+  ViewType v2("view2", cijk, num_rows2, num_cols);
 
   for (size_type j=0; j<num_cols; ++j) {
     std::pair<size_type,size_type> rows( 0, num_rows1 );
@@ -391,7 +390,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Kokkos_View_PCE, DeepCopy_Subview_Range, Stor
     for (size_type i=0; i<num_rows1; ++i) {
       for (size_type k=0; k<num_pce; ++k) {
         Scalar val = hv2(i,j).fastAccessCoeff(k);
-        Scalar val_expected = j+1;
+        Scalar val_expected = k == 0 ? Scalar(j+1) : Scalar(0);
         TEUCHOS_TEST_EQUALITY(val, val_expected, out, success);
       }
     }
