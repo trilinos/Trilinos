@@ -336,6 +336,11 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
       }
     }
   }
+
+  std::vector<long long> start;
+  start.resize(num_nodes_);
+
+
 }
 
   
