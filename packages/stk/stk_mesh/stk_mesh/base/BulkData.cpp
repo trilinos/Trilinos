@@ -504,9 +504,8 @@ std::string BulkData::create_modification_counts_filename() const
     std::string fileName;
 #ifdef STK_MESH_MODIFICATION_COUNTERS
     std::ostringstream oss;
-    int numProcs = -1, procId = -1;
-    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
-    MPI_Comm_rank(MPI_COMM_WORLD, &procId);
+    int numProcs = parallel_machine_size(MPI_COMM_WORLD);
+    int procId = parallel_machine_rank(MPI_COMM_WORLD);
     oss<<"modification_counts_"<<m_num_bulk_data_counter<<"_np"<<numProcs<<"."<<procId<<".csv";
     fileName = oss.str();
 #endif
