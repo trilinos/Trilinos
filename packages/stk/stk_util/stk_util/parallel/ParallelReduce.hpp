@@ -24,16 +24,13 @@
 
 namespace stk {
 
+#if defined (STK_HAS_MPI)
 template<typename T>
 void all_reduce_impl( ParallelMachine comm , const T * local , T * global , unsigned count, MPI_Op op )
 {
   T * tmp = const_cast<T*>( local );
   BABBLE_STK_PARALLEL_COMM(comm, "                      calling MPI_Allreduce from all_reduce");
-#if defined( STK_HAS_MPI )
   MPI_Allreduce( tmp , global , count , sierra::MPI::Datatype<T>::type() , op , comm );
-#else
-  for ( unsigned i = 0 ; i < count ; ++i ) { global[i] = local[i] ; }
-#endif
 }
 
 void all_reduce_impl(ParallelMachine comm, const size_t * local, size_t * global, unsigned count, MPI_Op op);
@@ -125,6 +122,52 @@ all_reduce_maxloc(ParallelMachine comm,
                   count,
                   sierra::MPI::get_mpi_loc_op<T, std::greater<T>, IdType>());
 }
+
+#else
+template<typename T>
+void all_reduce_max( ParallelMachine comm , const T * local , T * global , unsigned count )
+{
+  for ( unsigned i = 0 ; i < count ; ++i ) { global[i] = local[i] ; }
+}
+
+template<typename T>
+void all_reduce_min( ParallelMachine comm , const T * local , T * global , unsigned count )
+{
+  for ( unsigned i = 0 ; i < count ; ++i ) { global[i] = local[i] ; }
+}
+
+template<typename T>
+void all_reduce_sum( ParallelMachine comm , const T * local , T * global , unsigned count )
+{
+  for ( unsigned i = 0 ; i < count ; ++i ) { global[i] = local[i] ; }
+}
+
+template<typename T, typename IdType>
+void
+all_reduce_minloc(ParallelMachine comm,
+    const T local_extrema[],
+    const IdType local_loc[],
+    T global_extrema[],
+    IdType global_loc[],
+    unsigned count)
+{
+  for ( unsigned i = 0 ; i < count ; ++i ) { global_extrema[i] = local_extrema[i] ; }
+  for ( unsigned i = 0 ; i < count ; ++i ) { global_loc[i] = local_loc[i] ; }
+}
+
+template<typename T, typename IdType>
+void
+all_reduce_maxloc(ParallelMachine comm,
+    const T local_extrema[],
+    const IdType local_loc[],
+    T global_extrema[],
+    IdType global_loc[],
+    unsigned count)
+{
+  for ( unsigned i = 0 ; i < count ; ++i ) { global_extrema[i] = local_extrema[i] ; }
+  for ( unsigned i = 0 ; i < count ; ++i ) { global_loc[i] = local_loc[i] ; }
+}
+#endif
 
 /** \addtogroup parallel_module
  *  \{
