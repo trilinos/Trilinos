@@ -775,9 +775,9 @@ namespace MueLu {
   void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write(const std::string& fileName, const Matrix& Op) {
     std::string mapfile = "rowmap_" + fileName;
     Write(mapfile, *(Op.getRowMap()));
-    //TODO enable this once bug#6139 is fixed.
-    //mapfile = "colmap_" + fileName;
-    //Write(mapfile, *(Op.getColMap()));
+    //Re-enabling this because bug#6139 is fixed.
+    mapfile = "colmap_" + fileName;
+    Write(mapfile, *(Op.getColMap()));
 
     const CrsMatrixWrap& crsOp = dynamic_cast<const CrsMatrixWrap&>(Op);
     RCP<const CrsMatrix> tmp_CrsMtx = crsOp.getCrsMatrix();
