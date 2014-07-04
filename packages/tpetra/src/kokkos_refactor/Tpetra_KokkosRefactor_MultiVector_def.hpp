@@ -574,30 +574,23 @@ namespace Tpetra {
     //
     // For GPU Nodes: All of this happens using device pointers; this
     // does not require host views of either source or destination.
-    if (isConstantStride ()) {
-      const size_t numSrcCols = MVT::getNumCols (sourceMV.lclMV_);
-      const size_t numDestCols = MVT::getNumCols (lclMV_);
-
-      const KMV src = sourceMV.lclMV_.offsetView (numSameIDs, numSrcCols, 0, 0);
-      KMV dest = lclMV_.offsetViewNonConst (numSameIDs, numDestCols, 0, 0);
-      if (sourceMV.isConstantStride ()) {
-        MVT::Assign (dest, src);
-      }
-      else {
-        MVT::Assign (dest, src, sourceMV.whichVectors_ ());
-      }
-    }
-    else {
-      // Copy the columns one at a time, since MVT doesn't have an
-      // Assign method for noncontiguous access to the destination
-      // multivector.
+    //
+    // Note (ETP 2 Jul 2014)  We need to always copy one column at a
+    // time, even when both multivectors are constant-stride, since
+    // deep_copy between strided subviews with more than one column
+    // doesn't currently work.
+    if (numSameIDs > 0) {
+      const std::pair<size_t, size_t> rows( 0, numSameIDs );
       for (size_t j = 0; j < numCols; ++j) {
-        const size_t destCol = isConstantStride () ? j : whichVectors_[j];
-        const size_t srcCol = sourceMV.isConstantStride () ?
-          j : sourceMV.whichVectors_[j];
-        KMV dest_j = lclMV_.offsetViewNonConst (numSameIDs, 1, 0, destCol);
-        const KMV src_j = sourceMV.lclMV_.offsetView (numSameIDs, 1, 0, srcCol);
-        MVT::Assign (dest_j, src_j); // Copy src_j into dest_j
+        const size_t dstCol =
+          isConstantStride() ? j : whichVectors_[j];
+        const size_t srcCol =
+          sourceMV.isConstantStride() ? j : sourceMV.whichVectors_[j];
+        dual_view_type dst_j =
+          Kokkos::subview<dual_view_type>( view_, rows, dstCol );
+        dual_view_type src_j =
+          Kokkos::subview<dual_view_type>( sourceMV.view_, rows, srcCol );
+        Kokkos::deep_copy( dst_j, src_j ); // Copy src_j into dest_j
       }
     }
 
