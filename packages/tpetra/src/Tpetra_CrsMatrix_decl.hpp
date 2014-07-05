@@ -1239,25 +1239,33 @@ namespace Tpetra {
     //! Indicates that the graph is static, so that new entries cannot be added to this matrix.
     bool isStaticGraph() const;
 
-    //! Returns the Frobenius norm of the matrix.
-    /** Computes and returns the Frobenius norm of the matrix, defined as:
-        \f$ \|A\|_F = \sqrt{\sum_{i,j} \|\a_{ij}\|^2} \f$
-
-        If the matrix is fill-complete, then the computed value is cached; the cache is cleared whenever resumeFill() is called.
-        Otherwise, the value is computed every time the method is called.
-    */
+    /// \brief Compute and return the Frobenius norm of the matrix.
+    ///
+    /// The Frobenius norm of the matrix is defined as
+    /// \f\[
+    ///   \|A\|_F = \sqrt{\sum_{i,j} \|\a_{ij}\|^2}.
+    /// \f\].
+    ///
+    /// If the matrix is fill complete, then the computed value is
+    /// cached; the cache is cleared whenever resumeFill() is called.
+    /// Otherwise, the value is computed every time the method is
+    /// called.
     typename ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const;
 
-
-    //! Returns \c true if getLocalRowView() and getGlobalRowView() are valid for this class
+    /// \brief Whether the matrix implements row views.
+    ///
+    /// If this returns \c true, you may call getLocalRowView() or
+    /// getGlobalRowView() to get views of the matrix's data.
+    /// Otherwise, you must call getLocalRowCopy() or
+    /// getGlobalRowCopy().
     virtual bool supportsRowViews() const;
 
     //! Extract a list of entries in a specified global row of this matrix. Put into pre-allocated storage.
     /*!
-      \param LocalRow - (In) Global row number for which indices are desired.
-      \param Indices - (Out) Global column indices corresponding to values.
-      \param Values - (Out) Matrix values.
-      \param NumEntries - (Out) Number of indices.
+      \param LocalRow [in] Global row number for which indices are desired.
+      \param Indices [out] Global column indices corresponding to values.
+      \param Values [out] Matrix values.
+      \param NumEntries [out] Number of indices.
 
       Note: A std::runtime_error exception is thrown if either \c Indices or \c Values is not large enough to hold the data associated
       with row \c GlobalRow. If \c GlobalRow does not belong to this node, then \c Indices and \c Values are unchanged and \c NumIndices is
@@ -1288,39 +1296,47 @@ namespace Tpetra {
                      const ArrayView<Scalar> &Values,
                      size_t &NumEntries) const;
 
-    //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
-    /*!
-      \param GlobalRow - (In) Global row number for which indices are desired.
-      \param Indices   - (Out) Global column indices corresponding to values.
-      \param Values    - (Out) Row values
-      \pre <tt>isLocallyIndexed() == false</tt>
-      \post <tt>indices.size() == getNumEntriesInGlobalRow(GlobalRow)</tt>
-
-      Note: If \c GlobalRow does not belong to this node, then \c indices is set to null.
-    */
+    /// \brief Get a constant, nonpersisting view of a row of this
+    ///   matrix, using global row and column indices.
+    ///
+    /// \param GlobalRow [in] Global index of the row to view.
+    /// \param indices [out] On output: view of the global column
+    ///   indices in the row.
+    /// \param values [out] On output: view of the values in the row.
+    ///
+    /// \pre <tt>isLocallyIndexed () == false</tt>
+    /// \post <tt>indices.size () == this->getNumEntriesInGlobalRow (GlobalRow)</tt>
+    ///
+    /// If \c GlobalRow is not a valid global row index on the calling
+    /// process, then \c indices is set to null.
     void
     getGlobalRowView (GlobalOrdinal GlobalRow,
                       ArrayView<const GlobalOrdinal> &indices,
                       ArrayView<const Scalar> &values) const;
 
-    //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
-    /*!
-      \param LocalRow - (In) Local row number for which indices are desired.
-      \param Indices  - (Out) Global column indices corresponding to values.
-      \param Values   - (Out) Row values
-      \pre <tt>isGloballyIndexed() == false</tt>
-      \post <tt>indices.size() == getNumEntriesInLocalRow(LocalRow)</tt>
-
-      Note: If \c LocalRow does not belong to this node, then \c indices is set to null.
-    */
+    /// \brief Get a constant, nonpersisting view of a row of this
+    ///   matrix, using local row and column indices.
+    ///
+    /// \param LocalRow [in] Local index of the row to view.
+    /// \param indices [out] On output: view of the local column
+    ///   indices in the row.
+    /// \param values [out] On output: view of the values in the row.
+    ///
+    /// \pre <tt>isGloballyIndexed () == false</tt>
+    /// \post <tt>indices.size () == this->getNumEntriesInLocalRow (LocalRow)</tt>
+    ///
+    /// If \c LocalRow is not a valid local row index on the calling
+    /// process, then \c indices is set to null.
     void
     getLocalRowView (LocalOrdinal LocalRow,
-                     ArrayView<const LocalOrdinal> &indices,
-                     ArrayView<const Scalar> &values) const;
+                     ArrayView<const LocalOrdinal>& indices,
+                     ArrayView<const Scalar>& values) const;
 
-    //! \brief Get a copy of the diagonal entries owned by this node, with local row indices.
-    /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the
-      the zero and non-zero diagonals owned by this node. */
+    /// \brief Get a copy of the diagonal entries of the matrix.
+    ///
+    /// This method returns a Vector with the same Map as this
+    /// matrix's row Map.  On each process, it contains the diagonal
+    /// entries owned by the calling process.
     void getLocalDiagCopy (Vector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& diag) const;
 
     /// \brief Get offsets of the diagonal entries in the matrix.
