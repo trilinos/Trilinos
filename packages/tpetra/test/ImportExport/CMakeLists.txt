@@ -12,6 +12,7 @@ IF(Kokkos_ENABLE_Cuda)
   CUDA_COMPILE(SMIT_OBJECTS_CUDA SubmapImport_CU.cu)
   CUDA_COMPILE(IB5430T_OBJECTS_CUDA ImportBug5430Test_CU.cu)
   CUDA_COMPILE(ETSGCM_OBJECTS_CUDA ExportToStaticGraphCrsMatrix_CU.cu)
+  CUDA_COMPILE(MAKEOPTCOLMAP_OBJECTS_CUDA MakeOptColMap_CU.cu)
 ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -80,6 +81,23 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ExportToStaticGraphCrsMatrix.cpp
     ${ETSGCM_OBJECTS_CUDA}
   COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 4
+  )
+
+# Test Tpetra::Details::makeOptimizedColMap and
+# Tpetra::Details::makeOptimizedColMapAndImport.
+#
+# This test really only makes sense with an MPI build, since
+# optimizing the column Map involves reordering remote indices.  The
+# test already exercises the case where there are no remote indices.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  MakeOptColMap
+  SOURCES
+    MakeOptColMap.cpp
+    ${MAKEOPTCOLMAP_OBJECTS_CUDA}
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM mpi
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 4
   )
