@@ -576,46 +576,93 @@ getLocalRowCopy (local_ordinal_type LocalRow,
                  const Teuchos::ArrayView<scalar_type> &Values,
                  size_t &NumEntries) const
 {
-  const size_t numRows = localRowMap_->getNodeNumElements ();
-  const int myRank = localRowMap_->getComm ()->getSize ();
+  typedef local_ordinal_type LO;
+  typedef global_ordinal_type GO;
 
-  if (LocalRow < localRowMap_->getMinLocalIndex () ||
-        static_cast<size_t> (LocalRow) >= numRows) {
-    std::ostringstream err;
-    err << "Ifpack2::LocalFilter::getLocalRowCopy: Invalid local row index "
-        << LocalRow << ".  The valid range of row indices on this process "
-        << myRank << " is ";
-    if (numRows == 0) {
-      err << "empty";
-    }
-    else {
-      err << "[0, " << (numRows - static_cast<size_t> (1)) << "]";
-    }
-    err << ".";
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, err.str ());
+  if (! A_->getRowMap ()->isNodeLocalElement (LocalRow)) {
+    // The calling process owns zero entries in the row.
+    NumEntries = 0;
+    return;
   }
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    (size_t) Indices.size() <  NumEntries_[LocalRow], std::runtime_error,
-    "Ifpack2::LocalFilter::getLocalRowCopy: Invalid output array length.  "
-    "The output arrays must each have length at least " << NumEntries_[LocalRow]
-    << " for local row " << LocalRow << " on process " << myRank << ".");
 
-  size_t A_NumEntries=0;
-  // Always extract using the object Values_ and localIndices_.  This is
-  // because I may need more space than that given by the user.  The
-  // users expects only the local (in the domain Map) column indices,
-  // but I have to extract both local and remote (not in the domain
-  // Map) column indices.
-  A_->getLocalRowCopy (LocalRow, localIndices_ (), Values_ (), A_NumEntries);
+  const size_t numEntInLclRow = NumEntries_[LocalRow];
+  if (static_cast<size_t> (Indices.size ()) < numEntInLclRow ||
+      static_cast<size_t> (Values.size ()) < numEntInLclRow) {
+    // FIXME (mfh 07 Jul 2014) Return an error code instead of
+    // throwing.  We should really attempt to fill as much space as
+    // we're given, in this case.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::runtime_error,
+      "Ifpack2::LocalFilter::getLocalRowCopy: Invalid output array length.  "
+      "The output arrays must each have length at least " << numEntInLclRow
+      << " for local row " << LocalRow << " on Process "
+      << localRowMap_->getComm ()->getRank () << ".");
+  }
+  else if (numEntInLclRow == static_cast<size_t> (0)) {
+    // getNumEntriesInLocalRow() returns zero if LocalRow is not owned
+    // by the calling process.  In that case, the calling process owns
+    // zero entries in the row.
+    NumEntries = 0;
+    return;
+  }
 
-  // populate the user's vectors
+  // Always extract using the temporary arrays Values_ and
+  // localIndices_.  This is because I may need more space than that
+  // given by the user.  The users expects only the local (in the
+  // domain Map) column indices, but I have to extract both local and
+  // remote (not in the domain Map) column indices.
+  //
+  // FIXME (mfh 07 Jul 2014) Use of temporary local storage is not
+  // conducive to thread parallelism.  A better way would be to change
+  // the interface so that it only extracts values for the "local"
+  // column indices.  CrsMatrix could take a set of column indices,
+  // and return their corresponding values.
+  size_t numEntInMat = 0;
+  A_->getLocalRowCopy (LocalRow, localIndices_ (), Values_ (), numEntInMat);
+
+  // Fill the user's arrays with the "local" indices and values in
+  // that row.  Note that the matrix might have a different column Map
+  // than the local filter.
+  const map_type& matrixDomMap = * (A_->getDomainMap ());
+  const map_type& matrixColMap = * (A_->getColMap ());
+
+  const size_t capacity = static_cast<size_t> (std::min (Indices.size (),
+                                                         Values.size ()));
   NumEntries = 0;
-  for (size_t j = 0 ; j < A_NumEntries; ++j) {
-    // only local indices
-    if ((size_t) localIndices_[j] < numRows) {
-      Indices[NumEntries] = localIndices_[j];
-      Values[NumEntries]  = Values_[j];
-      NumEntries++;
+  const size_t numRows = localRowMap_->getNodeNumElements (); // superfluous
+  const bool buggy = true; // mfh 07 Jul 2014: See FIXME below.
+  for (size_t j = 0; j < numEntInMat; ++j) {
+    // The LocalFilter only includes entries in the domain Map on
+    // the calling process.  We figure out whether an entry is in
+    // the domain Map by converting the (matrix column Map) index to
+    // a global index, and then asking whether that global index is
+    // in the domain Map.
+    const LO matrixLclCol = localIndices_[j];
+    const GO gblCol = matrixColMap.getGlobalElement (matrixLclCol);
+
+    // FIXME (mfh 07 Jul 2014) This is the likely center of Bug 5992
+    // and perhaps other bugs, like Bug 6117.  If 'buggy' is true,
+    // Ifpack2 tests pass; if 'buggy' is false, the tests don't pass.
+    // This suggests that Ifpack2 classes could be using LocalFilter
+    // incorrectly, perhaps by giving it an incorrect domain Map.
+    if (buggy) {
+      // only local indices
+      if ((size_t) localIndices_[j] < numRows) {
+        Indices[NumEntries] = localIndices_[j];
+        Values[NumEntries]  = Values_[j];
+        NumEntries++;
+      }
+    } else {
+      if (matrixDomMap.isNodeGlobalElement (gblCol)) {
+        // Don't fill more space than the user gave us.  It's an error
+        // for them not to give us enough space, but we still shouldn't
+        // overwrite memory that doesn't belong to us.
+        if (NumEntries < capacity) {
+          Indices[NumEntries] = matrixLclCol;
+          Values[NumEntries]  = Values_[j];
+        }
+        NumEntries++;
+      }
     }
   }
 }
