@@ -206,24 +206,6 @@ namespace MueLu {
     //! Setup the preconditioner
     void compute();
 
-    //! find rows associated with Dirichlet BCs
-    void findDirichletRows(Teuchos::RCP<XMat> A,
-			   std::vector<LocalOrdinal>& dirichletRows);
-
-    //! find cols associated with Dirichlet BCs
-    void findDirichletCols(Teuchos::RCP<XMat> A,
-			   std::vector<LocalOrdinal>& dirichletRows,
-			   std::vector<LocalOrdinal>& dirichletCols);
-
-    //! apply BCs to rows
-    void Apply_BCsToMatrixRows(Teuchos::RCP<XMat>& A, std::vector<LocalOrdinal>& dirichletRows);
-
-    //! apply BCs to cols
-    void Apply_BCsToMatrixCols(Teuchos::RCP<XMat>& A, std::vector<LocalOrdinal>& dirichletCols);
-
-    //! add 1's to the diagonal for zeroed out rows
-    void Remove_Zeroed_Rows(Teuchos::RCP<XMat>& A, double tol=1.0e-14);
-
     //! Setup the prolongator for the (1,1)-block
     void buildProlongator();
 

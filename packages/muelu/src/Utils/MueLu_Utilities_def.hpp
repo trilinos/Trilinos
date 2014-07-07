@@ -1398,6 +1398,133 @@ namespace MueLu {
     Teuchos::ScalarTraits<SC>::seedrandom(mySeed);
   }
 
+  template <class SC, class LO, class GO, class NO, class LMO>
+  void Utils<SC, LO, GO, NO, LMO>::findDirichletRows(Teuchos::RCP<Matrix> A,
+						     std::vector<LO>& dirichletRows) {
+    dirichletRows.resize(0);
+    for(size_t i=0; i<A->getNodeNumRows(); i++) {
+      Teuchos::ArrayView<const LO> indices;
+      Teuchos::ArrayView<const SC> values;
+      A->getLocalRowView(i,indices,values);
+      int nnz=0;
+      for (int j=0; j<indices.size(); j++) {
+	if (abs(values[j]) > 1.0e-16) {
+	  nnz++;
+	}
+      }
+      if (nnz == 1) {
+	dirichletRows.push_back(i);
+      }
+    }
+  }
+  
+  template<class SC, class LO, class GO, class NO, class LMO>
+  void Utils<SC, LO, GO, NO, LMO>::findDirichletCols(Teuchos::RCP<Matrix> A,
+						     std::vector<LO>& dirichletRows,
+						     std::vector<LO>& dirichletCols) {
+    Teuchos::RCP<const Map> domMap = A->getDomainMap();
+    Teuchos::RCP<const Map> colMap = A->getColMap();
+    Teuchos::RCP< Xpetra::Export<LO,GO,NO> > exporter
+      = Xpetra::ExportFactory<LO,GO,NO>::Build(colMap,domMap);
+    Teuchos::RCP<MultiVector> myColsToZero = MultiVectorFactory::Build(colMap,1);
+    Teuchos::RCP<MultiVector> globalColsToZero = MultiVectorFactory::Build(domMap,1);
+    myColsToZero->putScalar((SC)0.0);
+    globalColsToZero->putScalar((SC)0.0);
+    for(size_t i=0; i<dirichletRows.size(); i++) {
+      Teuchos::ArrayView<const LO> indices;
+      Teuchos::ArrayView<const SC> values;
+      A->getLocalRowView(dirichletRows[i],indices,values);
+      for(int j=0; j<indices.size(); j++)
+	myColsToZero->replaceLocalValue(indices[j],0,(SC)1.0);
+    }
+    globalColsToZero->doExport(*myColsToZero,*exporter,Xpetra::ADD);
+    myColsToZero->doImport(*globalColsToZero,*exporter,Xpetra::INSERT);
+    Teuchos::ArrayRCP<const SC> myCols = myColsToZero->getData(0);
+    dirichletCols.resize(colMap->getNodeNumElements());
+    for(size_t i=0; i<colMap->getNodeNumElements(); i++) {
+      if(abs(myCols[i])>0.0)
+	dirichletCols[i]=1;
+      else
+	dirichletCols[i]=0;
+    }
+  }
+
+  template<class SC, class LO, class GO, class NO, class LMO>
+  void Utils<SC, LO, GO, NO, LMO>::Apply_BCsToMatrixRows(Teuchos::RCP<Matrix>& A,
+							 std::vector<LO>& dirichletRows) {
+    for(size_t i=0; i<dirichletRows.size(); i++) {
+      Teuchos::ArrayView<const LO> indices;
+      Teuchos::ArrayView<const SC> values;
+      A->getLocalRowView(dirichletRows[i],indices,values);
+      std::vector<SC> vec;
+      vec.resize(indices.size());
+      Teuchos::ArrayView<SC> zerovalues(vec);
+      for(int j=0; j<indices.size(); j++)
+	zerovalues[j]=(SC)1.0e-32;
+      A->replaceLocalValues(dirichletRows[i],indices,zerovalues);
+    }
+  }
+
+  template<class SC, class LO, class GO, class NO, class LMO>
+  void Utils<SC, LO, GO, NO, LMO>::Apply_BCsToMatrixCols(Teuchos::RCP<Matrix>& A,
+							 std::vector<LO>& dirichletCols) {
+    for(size_t i=0; i<A->getNodeNumRows(); i++) {
+      Teuchos::ArrayView<const LO> indices;
+      Teuchos::ArrayView<const SC> values;
+      A->getLocalRowView(i,indices,values);
+      std::vector<SC> vec;
+      vec.resize(indices.size());
+      Teuchos::ArrayView<SC> zerovalues(vec);
+      for(int j=0; j<indices.size(); j++) {
+	if(dirichletCols[indices[j]]==1)
+	  zerovalues[j]=(SC)1.0e-32;
+	else
+	  zerovalues[j]=values[j];
+      }
+      A->replaceLocalValues(i,indices,zerovalues);
+    }
+  }
+
+  template<class SC, class LO, class GO, class NO, class LMO>
+  void Utils<SC, LO, GO, NO, LMO>::Remove_Zeroed_Rows(Teuchos::RCP<Matrix>& A,
+						      double tol) {
+    Teuchos::RCP<const Map> rowMap = A->getRowMap();
+    RCP<Matrix> DiagMatrix = MatrixFactory::Build(rowMap,1);
+    RCP<Matrix> NewMatrix = MatrixFactory::Build(rowMap,1);
+    for(size_t i=0; i<A->getNodeNumRows(); i++) {
+      Teuchos::ArrayView<const LO> indices;
+      Teuchos::ArrayView<const SC> values;
+      A->getLocalRowView(i,indices,values);
+      int nnz=0;
+      for (int j=0; j<indices.size(); j++) {
+	if (abs(values[j]) > tol) {
+	  nnz++;
+	}
+      }
+      SC one = (SC)1.0;
+      SC zero = (SC)0.0;
+      GO row = rowMap->getGlobalElement(i);
+      if (nnz == 0) {
+	DiagMatrix->insertGlobalValues(row,
+				       Teuchos::ArrayView<GO>(&row,1),
+				       Teuchos::ArrayView<SC>(&one,1));
+      }
+      else {
+	DiagMatrix->insertGlobalValues(row,
+				       Teuchos::ArrayView<GO>(&row,1),
+				       Teuchos::ArrayView<SC>(&zero,1));
+      }
+    }
+    DiagMatrix->fillComplete();
+    A->fillComplete();
+    // add matrices together
+    RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    Utils2<SC,LO,GO,NO,LMO>::TwoMatrixAdd(*DiagMatrix,false,(SC)1.0,*A,false,(SC)1.0,NewMatrix,*out);
+    NewMatrix->fillComplete();
+    A=NewMatrix;
+    
+  }
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Transpose(Matrix& Op, bool optimizeTranspose) {
    Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("YY Entire Transpose"));
@@ -1553,7 +1680,7 @@ namespace MueLu {
     ///////////////////////// EXPERIMENTAL
 
   } //Utils2::TwoMatrixAdd()
-
+  
 } //namespace MueLu
 
 #define MUELU_UTILITIES_SHORT

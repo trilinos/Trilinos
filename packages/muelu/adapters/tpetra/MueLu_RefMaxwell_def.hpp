@@ -97,11 +97,11 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::compute() {
   out.setShowProcRank(true);
 
   // clean rows associated with boundary conditions
-  findDirichletRows(SM_Matrix_,BCrows_);
-  findDirichletCols(D0_Matrix_,BCrows_,BCcols_);
+  Utils::findDirichletRows(SM_Matrix_,BCrows_);
+  Utils::findDirichletCols(D0_Matrix_,BCrows_,BCcols_);
   D0_Matrix_->resumeFill();
-  Apply_BCsToMatrixRows(D0_Matrix_,BCrows_);
-  Apply_BCsToMatrixCols(D0_Matrix_,BCcols_);
+  Utils::Apply_BCsToMatrixRows(D0_Matrix_,BCrows_);
+  Utils::Apply_BCsToMatrixCols(D0_Matrix_,BCcols_);
   D0_Matrix_->fillComplete(D0_Matrix_->getDomainMap(),D0_Matrix_->getRangeMap());
   //D0_Matrix_->describe(out,Teuchos::VERB_EXTREME);
 
@@ -111,7 +111,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::compute() {
   Xpetra::MatrixMatrix::Multiply(*SM_Matrix_,false,*D0_Matrix_,false,*C1,true,true);
   Xpetra::MatrixMatrix::Multiply(*D0_Matrix_,true,*C1,false,*TMT_Matrix_,true,true);
   TMT_Matrix_->resumeFill();
-  Remove_Zeroed_Rows(TMT_Matrix_,1.0e-16);
+  Utils::Remove_Zeroed_Rows(TMT_Matrix_,1.0e-16);
   TMT_Matrix_->SetFixedBlockSize(1);
   //TMT_Matrix_->describe(out,Teuchos::VERB_EXTREME);
 
@@ -141,7 +141,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::compute() {
   A22_=MatrixFactory::Build(D0_Matrix_->getDomainMap(),0);
   Xpetra::MatrixMatrix::Multiply(*D0_Matrix_,true,*C,false,*A22_,true,true);
   A22_->resumeFill();
-  Remove_Zeroed_Rows(A22_,1.0e-16);
+  Utils::Remove_Zeroed_Rows(A22_,1.0e-16);
   A22_->SetFixedBlockSize(1);
 
   // build stuff for hierarchies
@@ -194,133 +194,6 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::compute() {
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::findDirichletRows(Teuchos::RCP<XMat> A,
-										       std::vector<LocalOrdinal>& dirichletRows) {
-  dirichletRows.resize(0);
-  for(size_t i=0; i<A->getNodeNumRows(); i++) {
-    Teuchos::ArrayView<const LocalOrdinal> indices;
-    Teuchos::ArrayView<const Scalar> values;
-    A->getLocalRowView(i,indices,values);
-    int nnz=0;
-    for (int j=0; j<indices.size(); j++) {
-      if (abs(values[j]) > 1.0e-16) {
-	nnz++;
-      }
-    }
-    if (nnz == 1) {
-      dirichletRows.push_back(i);
-    }
-  }
-}
-
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::findDirichletCols(Teuchos::RCP<XMat> A,
-										       std::vector<LocalOrdinal>& dirichletRows,
-										       std::vector<LocalOrdinal>& dirichletCols) {
-  Teuchos::RCP<const XMap> domMap = A->getDomainMap();
-  Teuchos::RCP<const XMap> colMap = A->getColMap();
-  Teuchos::RCP< Xpetra::Export<LocalOrdinal,GlobalOrdinal,Node> > exporter
-    = Xpetra::ExportFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(colMap,domMap);
-  Teuchos::RCP<XMV> myColsToZero = MultiVectorFactory::Build(colMap,1);
-  Teuchos::RCP<XMV> globalColsToZero = MultiVectorFactory::Build(domMap,1);
-  myColsToZero->putScalar((Scalar)0.0);
-  globalColsToZero->putScalar((Scalar)0.0);
-  for(size_t i=0; i<dirichletRows.size(); i++) {
-    Teuchos::ArrayView<const LocalOrdinal> indices;
-    Teuchos::ArrayView<const Scalar> values;
-    A->getLocalRowView(dirichletRows[i],indices,values);
-    for(int j=0; j<indices.size(); j++)
-      myColsToZero->replaceLocalValue(indices[j],0,(Scalar)1.0);
-  }
-  globalColsToZero->doExport(*myColsToZero,*exporter,Xpetra::ADD);
-  myColsToZero->doImport(*globalColsToZero,*exporter,Xpetra::INSERT);
-  Teuchos::ArrayRCP<const Scalar> myCols = myColsToZero->getData(0);
-  dirichletCols.resize(colMap->getNodeNumElements());
-  for(size_t i=0; i<colMap->getNodeNumElements(); i++) {
-    if(abs(myCols[i])>0.0)
-      dirichletCols[i]=1;
-    else
-      dirichletCols[i]=0;
-  }
-}
-
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Apply_BCsToMatrixRows(Teuchos::RCP<XMat>& A,
-											   std::vector<LocalOrdinal>& dirichletRows) {
-  for(size_t i=0; i<dirichletRows.size(); i++) {
-    Teuchos::ArrayView<const LocalOrdinal> indices;
-    Teuchos::ArrayView<const Scalar> values;
-    A->getLocalRowView(dirichletRows[i],indices,values);
-    std::vector<Scalar> vec;
-    vec.resize(indices.size());
-    Teuchos::ArrayView<Scalar> zerovalues(vec);
-    for(int j=0; j<indices.size(); j++)
-      zerovalues[j]=(Scalar)1.0e-32;
-    A->replaceLocalValues(dirichletRows[i],indices,zerovalues);
-  }
-}
-
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Apply_BCsToMatrixCols(Teuchos::RCP<XMat>& A,
-											   std::vector<LocalOrdinal>& dirichletCols) {
-  for(size_t i=0; i<A->getNodeNumRows(); i++) {
-    Teuchos::ArrayView<const LocalOrdinal> indices;
-    Teuchos::ArrayView<const Scalar> values;
-    A->getLocalRowView(i,indices,values);
-    std::vector<Scalar> vec;
-    vec.resize(indices.size());
-    Teuchos::ArrayView<Scalar> zerovalues(vec);
-    for(int j=0; j<indices.size(); j++) {
-      if(dirichletCols[indices[j]]==1)
-	zerovalues[j]=(Scalar)1.0e-32;
-      else
-	zerovalues[j]=values[j];
-    }
-    A->replaceLocalValues(i,indices,zerovalues);
-  }
-}
-
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Remove_Zeroed_Rows(Teuchos::RCP<XMat>& A,
-											double tol) {
-  Teuchos::RCP<const XMap> rowMap = A->getRowMap();
-  RCP<XMat> DiagMatrix = MatrixFactory::Build(rowMap,1);
-  RCP<XMat> NewMatrix = MatrixFactory::Build(rowMap,1);
-  for(size_t i=0; i<A->getNodeNumRows(); i++) {
-    Teuchos::ArrayView<const LocalOrdinal> indices;
-    Teuchos::ArrayView<const Scalar> values;
-    A->getLocalRowView(i,indices,values);
-    int nnz=0;
-    for (int j=0; j<indices.size(); j++) {
-      if (abs(values[j]) > tol) {
-	nnz++;
-      }
-    }
-    Scalar one = (Scalar)1.0;
-    Scalar zero = (Scalar)0.0;
-    GlobalOrdinal row = rowMap->getGlobalElement(i);
-    if (nnz == 0) {
-      DiagMatrix->insertGlobalValues(row,
-				     Teuchos::ArrayView<GlobalOrdinal>(&row,1),
-				     Teuchos::ArrayView<Scalar>(&one,1));
-    }
-    else {
-      DiagMatrix->insertGlobalValues(row,
-				     Teuchos::ArrayView<GlobalOrdinal>(&row,1),
-				     Teuchos::ArrayView<Scalar>(&zero,1));
-    }
-  }
-  DiagMatrix->fillComplete();
-  A->fillComplete();
-  // add matrices together
-  RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  Utils2::TwoMatrixAdd(*DiagMatrix,false,(Scalar)1.0,*A,false,(Scalar)1.0,NewMatrix,*out);
-  NewMatrix->fillComplete();
-  A=NewMatrix;
-  
-}
-
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::buildProlongator() {
 
   Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
@@ -359,8 +232,8 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::buildProlon
   Teuchos::RCP<XMat> D0_Matrix_Abs=MatrixFactory2::BuildCopy(D0_Matrix_);
   D0_Matrix_Abs -> resumeFill();
   D0_Matrix_Abs -> setAllToScalar((Scalar)0.5);
-  Apply_BCsToMatrixRows(D0_Matrix_Abs,BCrows_);
-  Apply_BCsToMatrixCols(D0_Matrix_Abs,BCcols_);
+  Utils::Apply_BCsToMatrixRows(D0_Matrix_Abs,BCrows_);
+  Utils::Apply_BCsToMatrixCols(D0_Matrix_Abs,BCcols_);
   D0_Matrix_Abs -> fillComplete(D0_Matrix_->getDomainMap(),D0_Matrix_->getRangeMap());
   Teuchos::RCP<XMat> Ptent = MatrixFactory::Build(D0_Matrix_Abs->getRowMap(),0);
   Xpetra::MatrixMatrix::Multiply(*D0_Matrix_Abs,false,*P,false,*Ptent,true,true);
@@ -397,7 +270,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::buildProlon
   }
   Teuchos::RCP<XMap> blockCoarseMap
     = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(Ptent->getDomainMap(),dim);
-  Apply_BCsToMatrixRows(P11_,BCrows_);
+  Utils::Apply_BCsToMatrixRows(P11_,BCrows_);
   P11_->fillComplete(blockCoarseMap,SM_Matrix_->getDomainMap());
   //P11_->describe(out,Teuchos::VERB_EXTREME);
 
