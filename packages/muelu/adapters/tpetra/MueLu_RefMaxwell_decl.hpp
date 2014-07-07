@@ -114,7 +114,7 @@ namespace MueLu {
     RefMaxwell() :
       Hierarchy11_(Teuchos::null),
       Hierarchy22_(Teuchos::null),
-      disable_addon_(false),
+      disable_addon_(true),
       MaxCoarseSize_(1000),
       MaxLevels_(5),
       Cycles_(1),
@@ -143,6 +143,7 @@ namespace MueLu {
 	       Teuchos::RCP<TCRS> D0_Matrix,
 	       Teuchos::RCP<TCRS> M0inv_Matrix,
 	       Teuchos::RCP<TCRS> M1_Matrix,
+	       Teuchos::RCP<TMV>  Nullspace,
 	       Teuchos::RCP<TMV>  Coords,
 	       Teuchos::ParameterList& List,
 	       bool ComputePrec = true) :
@@ -169,7 +170,10 @@ namespace MueLu {
       Teuchos::RCP<XCRS> M1_tmp = Teuchos::rcp( new XTCRS(M1_Matrix) );
       M1_Matrix_ = Teuchos::rcp( new XCrsWrap(M1_tmp) );
       // convert Tpetra MultiVector to Xpetra
-      Coords_ = Xpetra::toXpetra(Coords);
+      if(Coords != Teuchos::null)
+	Coords_ = Xpetra::toXpetra(Coords);
+      if(Nullspace != Teuchos::null)
+	Nullspace_ = Xpetra::toXpetra(Nullspace);
       // compute preconditioner
       compute();
     }

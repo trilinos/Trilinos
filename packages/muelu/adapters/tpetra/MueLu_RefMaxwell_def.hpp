@@ -73,12 +73,12 @@ Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > RefMaxwell<Sca
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setParameters(Teuchos::ParameterList& list) {
 
-  disable_addon_  =  list.get("refmaxwell: disable add-on",false);
+  disable_addon_  =  list.get("refmaxwell: disable add-on",true);
   MaxCoarseSize_  =  list.get("refmaxwell: max coarse size",1000);
   MaxLevels_      =  list.get("refmaxwell: max levels",5);
   Cycles_         =  list.get("refmaxwell: cycles",1);
-  precType11_     =  list.get("refmaxwell: edge smoother","RELAXATION");
-  precType22_     =  list.get("refmaxwell: node smoother","RELAXATION");
+  precType11_     =  list.get("refmaxwell: edge smoother","CHEBYSHEV");
+  precType22_     =  list.get("refmaxwell: node smoother","CHEBYSHEV");
   mode_           =  list.get("refmaxwell: mode","additive");
 
   if(list.isSublist("refmaxwell: edge smoother list"))
@@ -115,9 +115,17 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::compute() {
   TMT_Matrix_->SetFixedBlockSize(1);
   //TMT_Matrix_->describe(out,Teuchos::VERB_EXTREME);
 
-  // build nullspace
-  Nullspace_ = MultiVectorFactory::Build(SM_Matrix_->getRowMap(),Coords_->getNumVectors()); 
-  D0_Matrix_->apply(*Coords_,*Nullspace_);
+  // build nullspace if necessary
+  if(Nullspace_ != Teuchos::null) {
+    // no need to do anything - nullspace is built
+  }
+  else if(Nullspace_ == Teuchos::null && Coords_ != Teuchos::null) {
+    Nullspace_ = MultiVectorFactory::Build(SM_Matrix_->getRowMap(),Coords_->getNumVectors()); 
+    D0_Matrix_->apply(*Coords_,*Nullspace_);
+  }
+  else {
+    std::cerr << "MueLu::RefMaxwell::compute(): either the nullspace or the nodal coordinates must be provided." << std::endl;
+  }
 
   // build special prolongator for (1,1)-block
   if(P11_==Teuchos::null) {
