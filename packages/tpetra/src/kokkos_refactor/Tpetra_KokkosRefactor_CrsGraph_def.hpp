@@ -1711,41 +1711,62 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getLocalRowCopy(LocalOrdinal localRow, const ArrayView<LocalOrdinal> &indices, size_t &NumIndices) const
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getLocalRowCopy(LocalOrdinal localRow, const ArrayView<LocalOrdinal> &indices, size_t& numEntries) const
   {
-    // can only do this if
-    // * we have local indices: isLocallyIndexed()
-    // or
-    // * we are capable of producing them: isGloballyIndexed() && hasColMap()
-    // short circuit if we aren't allocated
-    const char tfecfFuncName[] = "getLocalRowCopy(localRow,...)";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isGloballyIndexed() == true && hasColMap() == false, std::runtime_error, ": local indices cannot be produced.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(rowMap_->isNodeLocalElement(localRow) == false, std::runtime_error,
-        ": localRow (== " << localRow << ") is not valid on this node.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(hasRowInfo() == false, std::runtime_error, ": graph row information was deleted at fillComplete().");
-    const RowInfo rowinfo = getRowInfo(localRow);
-    NumIndices = rowinfo.numEntries;
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC((size_t)indices.size() < NumIndices, std::runtime_error,
-        ": specified storage (size==" << indices.size()
-        << ") is not large enough to hold all entries for this row (NumIndices == " << NumIndices << ").");
-    if (isLocallyIndexed()) {
-      ArrayView<const LocalOrdinal> lview = getLocalView(rowinfo);
-      std::copy( lview.begin(), lview.begin() + NumIndices, indices.begin());
+    using Teuchos::ArrayView;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      isGloballyIndexed () && ! hasColMap (), std::runtime_error,
+      "Tpetra::CrsGraph::getLocalRowCopy: The graph is globally indexed and "
+      "does not have a column Map yet.  That means we don't have local indices "
+      "for columns yet, so it doesn't make sense to call this method.  If the "
+      "graph doesn't have a column Map yet, you should call fillComplete on "
+      "it first.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! hasRowInfo(), std::runtime_error,
+      "Tpetra::CrsGraph::getLocalRowCopy: graph row information was deleted "
+      "at fillComplete().");
+
+    if (! getRowMap ()->isNodeLocalElement (localRow)) {
+      numEntries = 0;
+      return;
     }
-    else if (isGloballyIndexed()) {
-      ArrayView<const GlobalOrdinal> gview = getGlobalView(rowinfo);
-      for (size_t j=0; j < NumIndices; ++j) {
-        indices[j] = colMap_->getLocalElement(gview[j]);
+
+    const RowInfo rowinfo = getRowInfo (localRow);
+    const size_t theNumEntries = rowinfo.numEntries;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      static_cast<size_t> (indices.size ()) < theNumEntries,
+      std::runtime_error,
+      "Tpetra::CrsGraph::getLocalRowCopy: The given row " << localRow << " has "
+      << theNumEntries << " entries, but indices.size() = " << indices.size ()
+      << ", which does not suffice to store the row's indices.");
+
+    numEntries = theNumEntries;
+
+    if (isLocallyIndexed ()) {
+      ArrayView<const LO> lview = getLocalView (rowinfo);
+      std::copy (lview.begin (), lview.begin () + numEntries, indices.begin ());
+    }
+    else if (isGloballyIndexed ()) {
+      ArrayView<const GO> gview = getGlobalView (rowinfo);
+      const map_type& colMap = * (this->getColMap ());
+      for (size_t j = 0; j < numEntries; ++j) {
+        indices[j] = colMap.getLocalElement (gview[j]);
       }
     }
     else {
-#ifdef HAVE_TPETRA_DEBUG
-      // should have fallen in one of the above
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( indicesAreAllocated() == true, std::logic_error, ": Internal logic error. Please contact Tpetra team.");
-#endif
-      NumIndices = 0;
+      // If the graph on the calling process is neither locally nor
+      // globally indexed, that means it owns no column indices.
+      //
+      // FIXME (mfh 21 Oct 2013) It's not entirely clear to me whether
+      // we can reach this branch, given the checks above.  However,
+      // if that is the case, it should still be correct to call this
+      // function if the calling process owns no column indices.
+      numEntries = 0;
     }
-    return;
   }
 
 

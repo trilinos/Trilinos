@@ -1914,57 +1914,61 @@ namespace Tpetra {
                                 LocalOrdinal localRow,
                                 const ArrayView<LocalOrdinal> &indices,
                                 const ArrayView<Scalar>       &values,
-                                size_t &numEntries) const
+                                size_t& numEntries) const
   {
+    using Teuchos::ArrayView;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+
     TEUCHOS_TEST_FOR_EXCEPTION(
-      isGloballyIndexed() && ! hasColMap(),
-      std::runtime_error,
+      isGloballyIndexed () && ! hasColMap (), std::runtime_error,
       "Tpetra::CrsMatrix::getLocalRowCopy: The matrix is globally indexed and "
       "does not have a column Map yet.  That means we don't have local indices "
       "for columns yet, so it doesn't make sense to call this method.  If the "
       "matrix doesn't have a column Map yet, you should call fillComplete on "
       "it first.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! staticGraph_->hasRowInfo (), std::runtime_error,
+      "Tpetra::CrsMatrix::getLocalRowCopy: The graph's row information was "
+      "deleted at fillComplete().");
+
+    if (! this->getRowMap ()->isNodeLocalElement (localRow)) {
+      numEntries = 0;
+      return;
+    }
+
+    const RowInfo rowinfo = staticGraph_->getRowInfo(localRow);
+    const size_t theNumEntries = rowinfo.numEntries;
 
     TEUCHOS_TEST_FOR_EXCEPTION(
-      ! getRowMap ()->isNodeLocalElement (localRow),
-      std::runtime_error,
-      "Tpetra::CrsMatrix::getLocalRowCopy: The calling process "
-      << this->getComm ()->getRank () << " does not own the given local row "
-      << localRow << ".");
-    const RowInfo rowinfo = staticGraph_->getRowInfo(localRow);
-    numEntries = rowinfo.numEntries;
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      static_cast<size_t>(indices.size()) < numEntries ||
-      static_cast<size_t>(values.size()) < numEntries,
+      static_cast<size_t> (indices.size ()) < theNumEntries ||
+      static_cast<size_t> (values.size ()) < theNumEntries,
       std::runtime_error,
       "Tpetra::CrsMatrix::getLocalRowCopy: The given row " << localRow
-      << " has " << numEntries << " entries.  One or both of the given array "
-      "views are not long enough to store that many entries.  indices can "
-      "store " << indices.size() << " entries and values can store "
+      << " has " << theNumEntries << " entries.  One or both of the given "
+      "ArrayViews are not long enough to store that many entries.  indices "
+      "can store " << indices.size() << " entries and values can store "
       << values.size() << " entries.");
-    if (staticGraph_->isLocallyIndexed()) {
-      ArrayView<const LocalOrdinal> indrowview = staticGraph_->getLocalView(rowinfo);
-      ArrayView<const Scalar>       valrowview = getView(rowinfo);
-      std::copy( indrowview.begin(), indrowview.begin() + numEntries, indices.begin() );
-      std::copy( valrowview.begin(), valrowview.begin() + numEntries,  values.begin() );
+
+    numEntries = theNumEntries;
+
+    if (staticGraph_->isLocallyIndexed ()) {
+      ArrayView<const LO> indrowview = staticGraph_->getLocalView (rowinfo);
+      ArrayView<const Scalar> valrowview = getView (rowinfo);
+      std::copy (indrowview.begin (), indrowview.begin () + numEntries, indices.begin ());
+      std::copy (valrowview.begin (), valrowview.begin () + numEntries,  values.begin ());
     }
-    else if (staticGraph_->isGloballyIndexed()) {
-      ArrayView<const GlobalOrdinal> indrowview = staticGraph_->getGlobalView(rowinfo);
-      ArrayView<const Scalar>        valrowview = getView(rowinfo);
-      std::copy( valrowview.begin(), valrowview.begin() + numEntries, values.begin() );
+    else if (staticGraph_->isGloballyIndexed ()) {
+      ArrayView<const GO> indrowview = staticGraph_->getGlobalView (rowinfo);
+      ArrayView<const Scalar>        valrowview = getView (rowinfo);
+      std::copy (valrowview.begin (), valrowview.begin () + numEntries, values.begin ());
+
+      const map_type& colMap = * (this->getColMap ());
       for (size_t j=0; j < numEntries; ++j) {
-        indices[j] = getColMap()->getLocalElement(indrowview[j]);
+        indices[j] = colMap.getLocalElement (indrowview[j]);
       }
     }
     else {
-#ifdef HAVE_TPETRA_DEBUG
-      // should have fallen in one of the above if indices are allocated
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        staticGraph_->indicesAreAllocated(),
-        std::logic_error, "Tpetra::CrsMatrix::getLocalRowCopy: Control flow "
-        "should never reach here.  Please report this bug to the Tpetra "
-        "developers.");
-#endif // HAVE_TPETRA_DEBUG
       numEntries = 0;
     }
   }
