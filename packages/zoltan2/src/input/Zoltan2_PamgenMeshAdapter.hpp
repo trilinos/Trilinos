@@ -338,7 +338,17 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
   }
 
   std::vector<long long> start;
+  long long max_side_nodes = num_nodes_per_elem[0];
+  long long side_nodes[max_side_nodes];
+  long long mirror_nodes[max_side_nodes];
+
+  /* Allocate memory necessary for the adjacency */
   start.resize(num_nodes_);
+
+  for (int i=0; i < max_side_nodes; i++) {
+    side_nodes[i]=-999;
+    mirror_nodes[i]=-999;
+  }
 
 
 }
