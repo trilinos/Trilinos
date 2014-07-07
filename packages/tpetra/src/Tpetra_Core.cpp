@@ -45,9 +45,9 @@
 #else
 #  include <Teuchos_DefaultSerialComm.hpp>
 #endif // HAVE_TPETRA_MPI
-#ifdef HAVE_TPETRA_KOKKOSCORE
+#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
 #  include <Kokkos_Core.hpp>
-#endif // HAVE_TPETRA_KOKKOSCORE
+#endif // TPETRA_HAVE_KOKKOS_REFACTOR
 
 namespace Tpetra {
   namespace { // (anonymous)
@@ -118,10 +118,10 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_MPI
 
     if (! tpetraIsInitialized_) {
-#ifdef HAVE_TPETRA_KOKKOSCORE
+#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
       // Unlike MPI_Init, Kokkos promises not to modify argc and argv.
       Kokkos::initialize (*argc, *argv);
-#endif // HAVE_TPETRA_KOKKOSCORE
+#endif // TPETRA_HAVE_KOKKOS_REFACTOR
 
 #ifdef HAVE_TPETRA_MPI
       wrappedDefaultComm_ =
@@ -161,10 +161,10 @@ namespace Tpetra {
     wrappedDefaultComm_ = Teuchos::rcp (new Teuchos::MpiComm<int> (comm));
 
     if (! tpetraIsInitialized_) {
-#ifdef HAVE_TPETRA_KOKKOSCORE
+#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
       // Unlike MPI_Init, Kokkos promises not to modify argc and argv.
       Kokkos::initialize (*argc, *argv);
-#endif // HAVE_TPETRA_KOKKOSCORE
+#endif // TPETRA_HAVE_KOKKOS_REFACTOR
       tpetraIsInitialized_ = true;
     }
   }
@@ -199,10 +199,10 @@ namespace Tpetra {
     wrappedDefaultComm_ = comm;
 
     if (! tpetraIsInitialized_) {
-#ifdef HAVE_TPETRA_KOKKOSCORE
+#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
       // Unlike MPI_Init, Kokkos promises not to modify argc and argv.
       Kokkos::initialize (*argc, *argv);
-#endif // HAVE_TPETRA_KOKKOSCORE
+#endif // TPETRA_HAVE_KOKKOS_REFACTOR
       tpetraIsInitialized_ = true;
     }
   }
@@ -223,9 +223,9 @@ namespace Tpetra {
       return;
     }
 
-#ifdef HAVE_TPETRA_KOKKOSCORE
+#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
     Kokkos::finalize ();
-#endif // HAVE_TPETRA_KOKKOSCORE
+#endif // TPETRA_HAVE_KOKKOS_REFACTOR
 
     // Make sure that no outstanding references to the communicator
     // remain.  If users gave initialize() an MPI_Comm, _they_ are
