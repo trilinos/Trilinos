@@ -350,7 +350,15 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
     mirror_nodes[i]=-999;
   }
 
-
+  /* Find the adjacency for a nodal based decomposition */
+  size_t nadj = 0;
+  for(size_t ncnt=0; ncnt < num_nodes_; ncnt++) {
+    start[ncnt] = nadj;
+    for(size_t ecnt=0; ecnt < sur_elem[ncnt].size(); ecnt++) {
+      size_t elem = sur_elem[ncnt][ecnt];
+      int nnodes = ;
+    }
+  }
 }
 
   
