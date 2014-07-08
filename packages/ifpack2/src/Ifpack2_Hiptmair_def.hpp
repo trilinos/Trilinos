@@ -376,12 +376,14 @@ applyHiptmairSmoother(const Tpetra::MultiVector<typename MatrixType::scalar_type
   RCP<MV> res2 = rcp( new MV(PtAP_->getRowMap(),X.getNumVectors()) );
   RCP<MV> vec2 = rcp( new MV(PtAP_->getRowMap(),X.getNumVectors()) );
 
-  // apply initial relaxation to primary space
-  A_ -> apply(Y,*res1);
-  res1 -> update((scalar_type)1.0,X,(scalar_type)-1.0);
-  vec1 -> putScalar((scalar_type)0.0);
-  ifpack2_prec1_ -> apply(*res1,*vec1);
-  Y.update((scalar_type)1.0,*vec1,(scalar_type)1.0);
+  if(preOrPost_=="pre" || preOrPost_=="both") {
+    // apply initial relaxation to primary space
+    A_ -> apply(Y,*res1);
+    res1 -> update((scalar_type)1.0,X,(scalar_type)-1.0);
+    vec1 -> putScalar((scalar_type)0.0);
+    ifpack2_prec1_ -> apply(*res1,*vec1);
+    Y.update((scalar_type)1.0,*vec1,(scalar_type)1.0);
+  }
 
   // project to auxiliary space and smooth
   A_ -> apply(Y,*res1);
@@ -392,12 +394,14 @@ applyHiptmairSmoother(const Tpetra::MultiVector<typename MatrixType::scalar_type
   P_ -> apply(*vec2,*vec1,Teuchos::NO_TRANS);
   Y.update((scalar_type)1.0,*vec1,(scalar_type)1.0);
 
-  // smooth again on primary space
-  A_ -> apply(Y,*res1);
-  res1 -> update((scalar_type)1.0,X,(scalar_type)-1.0);
-  vec1 -> putScalar((scalar_type)0.0);
-  ifpack2_prec1_ -> apply(*res1,*vec1);
-  Y.update((scalar_type)1.0,*vec1,(scalar_type)1.0);
+  if(preOrPost_=="post" || preOrPost_=="both") {
+    // smooth again on primary space
+    A_ -> apply(Y,*res1);
+    res1 -> update((scalar_type)1.0,X,(scalar_type)-1.0);
+    vec1 -> putScalar((scalar_type)0.0);
+    ifpack2_prec1_ -> apply(*res1,*vec1);
+    Y.update((scalar_type)1.0,*vec1,(scalar_type)1.0);
+  }
 
 }
 

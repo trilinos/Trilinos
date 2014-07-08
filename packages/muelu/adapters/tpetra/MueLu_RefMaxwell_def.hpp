@@ -91,12 +91,14 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setParamete
   hiptmairPreList_.set("hiptmair: smoother type 2",precType22_);
   hiptmairPreList_.set("hiptmair: smoother list 1",precList11_);
   hiptmairPreList_.set("hiptmair: smoother list 2",precList22_);
+  hiptmairPreList_.set("hiptmair: pre or post","both");
   hiptmairPreList_.set("hiptmair: zero starting solution",true);
 
   hiptmairPostList_.set("hiptmair: smoother type 1",precType11_);
   hiptmairPostList_.set("hiptmair: smoother type 2",precType22_);
   hiptmairPostList_.set("hiptmair: smoother list 1",precList11_);
   hiptmairPostList_.set("hiptmair: smoother list 2",precList22_);
+  hiptmairPostList_.set("hiptmair: pre or post","both");
   hiptmairPostList_.set("hiptmair: zero starting solution",false);
 }
 
