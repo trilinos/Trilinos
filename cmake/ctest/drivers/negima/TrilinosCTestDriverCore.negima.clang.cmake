@@ -68,9 +68,9 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
   SET( CTEST_NOTES_FILES "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
 
-  SET( CTEST_BUILD_FLAGS "-j16 -i" )
+  SET( CTEST_BUILD_FLAGS "-j12 -i" )
 
-  SET_DEFAULT( CTEST_PARALLEL_LEVEL "16" )
+  SET_DEFAULT( CTEST_PARALLEL_LEVEL "12" )
 
   SET_DEFAULT( Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 
@@ -84,34 +84,27 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DTrilinos_ENABLE_Fortran=OFF"
 
     "-DTPL_ENABLE_SuperLU:BOOL=ON"
-    "-DSuperLU_INCLUDE_DIRS=/usr/local/superlu/SuperLU_4.3/include"
-    "-DSuperLU_LIBRARY_DIRS=/usr/local/superlu/SuperLU_4.3/lib"
+    "-DSuperLU_INCLUDE_DIRS=/home/aprokop/local/opt/superlu-4.3/include"
+    "-DSuperLU_LIBRARY_DIRS=/home/aprokop/local/opt/superlu-4.3/lib"
     "-DSuperLU_LIBRARY_NAMES=superlu_4.3"
-
-    "-DTPL_ENABLE_BLAS:BOOL=ON"
-    "-DBLAS_LIBRARY_DIRS=/usr/local/lapack/rhel6"
-    "-DBLAS_LIBRARY_NAMES=blas"
-    "-DTPL_ENABLE_LAPACK:BOOL=ON"
-    "-DLAPACK_LIBRARY_DIRS=/usr/local/lapack/rhel6"
-    "-DLAPACK_LIBRARY_NAMES=lapack"
     )
 
-  SET_DEFAULT(COMPILER_VERSION "Clang-3.3")
+  SET_DEFAULT(COMPILER_VERSION "Clang-3.4")
 
   #Ensuring that MPI is on for all parallel builds that might be run.
   IF(COMM_TYPE STREQUAL MPI)
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
          ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
          "-DTPL_ENABLE_MPI:BOOL=ON"
-         "-DMPI_BASE_DIR:PATH=/usr/local/mpich2/1.4.1p1_clang_3.3"
+         "-DMPI_BASE_DIR:PATH=/home/aprokop/local/opt/openmpi-1.8"
        )
 
   ELSE()
 
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DCMAKE_C_COMPILER:FILEPATH=/usr/local/bin/clang"
-      "-DCMAKE_CXX_COMPILER:FILEPATH=/usr/local/bin/clang++"
+      "-DCMAKE_C_COMPILER:FILEPATH=/home/aprokop/local/llvm-3.4/bin/clang"
+      "-DCMAKE_CXX_COMPILER:FILEPATH=/home/aprokop/local/llvm-3.4/bin/clang++"
       )
 
   ENDIF()
