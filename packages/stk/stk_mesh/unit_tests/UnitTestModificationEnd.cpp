@@ -288,7 +288,6 @@ TEST(BulkData, ModificationEnd)
         int nodeWhichShouldNoLongerBeSharedOnProc1 = 9;
 
         stk::mesh::EntityKey nodeEntityKey(stk::topology::NODE_RANK,nodeWhichShouldNoLongerBeSharedOnProc1);
-        stk::mesh::Entity node9Entity = stkMeshBulkData.get_entity(nodeEntityKey);
         makeSureEntityIsValidOnCommListAndBulkData(stkMeshBulkData, nodeEntityKey);
 
         stk::mesh::EntityKey elementToDestroyKey(stk::topology::ELEMENT_RANK, elementToDestroy);
@@ -523,19 +522,8 @@ TEST(BulkData, ModificationEnd_create_an_edge)
 
         stkMeshBulkData.my_internal_resolve_shared_membership();
 
-//        std::vector<std::string> meshAfter;
-//        getMeshLineByLine(stkMeshBulkData, meshAfter);
-//
-//        compareMeshes(stkMeshBulkData.parallel_rank(), meshBefore, meshAfter);
-
         stkMeshBulkData.my_internal_regenerate_aura();
 
-//        std::vector<std::string> meshAfterAura;
-//        getMeshLineByLine(stkMeshBulkData, meshAfterAura);
-////
-////        compareMeshes(stkMeshBulkData.parallel_rank(), meshStart, meshAfterAura);
-////        writeMesh(myProcId, "Before::", meshStart);
-//        writeMesh(myProcId, "After::", meshAfterAura);
         checkItAllForThisCase(stkMeshBulkData);
     }
 }
@@ -669,24 +657,7 @@ TEST(BulkData, ModificationEnd_create_an_edge_new)
             EXPECT_TRUE( is_entity_shared );
         }
 
-//        stkMeshBulkData.my_internal_resolve_shared_membership();
-
-//        std::vector<std::string> meshAfterAura;
-//        getMeshLineByLine(stkMeshBulkData, meshAfterAura);
-//        writeMesh(myProcId, "After::", meshAfterAura);
-
         checkItAllForThisCase(stkMeshBulkData);
-    }
-}
-
-void writeMesh(int myProcId, std::string label, const std::vector<std::string> &meshStart)
-{
-    std::ostringstream msg;
-    for (size_t i=0;i<meshStart.size();i++)
-    {
-        msg.str(std::string());
-        msg << "P[" << myProcId << "] " << label << "\t" << meshStart[i] << std::endl;
-        std::cerr << msg.str();
     }
 }
 
@@ -744,49 +715,6 @@ void getLineNumbersForItemsToFind(const std::vector<std::string>& items_to_find,
 
     ASSERT_EQ(foundCounter, items_to_find.size()) << "could not find " << items_to_find[foundCounter];
     line_numbers[foundCounter]=mesh_lines.size();
-}
-
-void compareMeshes(int my_proc_id, const std::vector<std::string>& mesh_before, const std::vector<std::string>& mesh_after)
-{
-    if ( my_proc_id == 0 )
-    {
-        std::vector<std::string> items_to_find;
-        fillItemsToFind(items_to_find);
-
-        std::vector<int> line_numbers_mesh1;
-        getLineNumbersForItemsToFind(items_to_find, mesh_before, line_numbers_mesh1);
-
-        std::vector<int> line_numbers_mesh2;
-        getLineNumbersForItemsToFind(items_to_find, mesh_after, line_numbers_mesh2);
-
-        EXPECT_EQ(mesh_before.size(), mesh_after.size());
-        ASSERT_EQ(line_numbers_mesh1.size(), line_numbers_mesh2.size());
-
-        for (size_t i=0;i<line_numbers_mesh1.size()-1;i++)
-        {
-            int numLinesMesh1 = line_numbers_mesh1[i+1]-line_numbers_mesh1[i];
-            int numLinesMesh2 = line_numbers_mesh2[i+1]-line_numbers_mesh2[i];
-            EXPECT_EQ(numLinesMesh1, numLinesMesh2) <<
-                    "[" << my_proc_id << "] Failed for " << items_to_find[i];
-            int count = std::min(numLinesMesh1, numLinesMesh2);
-            for (int j=0;j<count;j++)
-            {
-                EXPECT_EQ(mesh_before[line_numbers_mesh1[i]+j],
-                          mesh_after[line_numbers_mesh2[i]+j]) << "for proc [" << my_proc_id << "]";
-            }
-        }
-    }
-}
-
-void testElementMove(int fromProc, int toProc, int myProc, int elementToMoveId, stk::mesh::BulkData &stkMeshBulkData)
-{
-    stk::mesh::Entity elementToMove = stkMeshBulkData.get_entity(stk::topology::ELEMENT_RANK, elementToMoveId);
-    std::vector<std::pair<stk::mesh::Entity, int> > entityProcPairs;
-    if(myProc == fromProc)
-    {
-        entityProcPairs.push_back(std::make_pair(elementToMove, toProc));
-    }
-    stkMeshBulkData.change_entity_owner(entityProcPairs);
 }
 
 void populateBulkDataWithFile(const std::string& exodusFileName, MPI_Comm communicator, stk::mesh::BulkData& bulkData)
