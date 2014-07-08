@@ -1412,7 +1412,7 @@ namespace MueLu {
 	  nnz++;
 	}
       }
-      if (nnz == 1) {
+      if (nnz == 1 || nnz == 2) {
 	dirichletRows.push_back(i);
       }
     }
