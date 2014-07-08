@@ -30,6 +30,7 @@ export OMP_NUM_THREADS=2
 
 # Machine independent cron_driver:
 #
+openmpi-1.7-cuda6
 
 SCRIPT_DIR=`cd "\`dirname \"$0\"\`";pwd`
 $SCRIPT_DIR/../cron_driver.py
