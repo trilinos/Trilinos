@@ -113,6 +113,13 @@
   </parameter>
 
   <parameter>
+    <name>aggregation: mode</name>
+    <type>string</type>
+    <default>"old"</default>
+    <description>old = Tobias, new = ML</description>
+  </parameter>
+
+  <parameter>
     <name>smoother: pre or post</name>
     <type>string</type>
     <default>"both"</default>

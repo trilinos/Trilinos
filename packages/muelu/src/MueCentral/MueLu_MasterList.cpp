@@ -75,6 +75,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: max agg size\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"aggregation: Dirichlet threshold\" type=\"double\" value=\"0.0\"/>"
   "<Parameter name=\"aggregation: visualize\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"old\"/>"
   "<Parameter name=\"smoother: pre or post\" type=\"string\" value=\"both\"/>"
   "<Parameter name=\"smoother: type\" type=\"string\" value=\"gs\"/>"
   "<Parameter name=\"smoother: pre type\" type=\"string\" value=\"gs\"/>"
