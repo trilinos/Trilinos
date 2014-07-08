@@ -87,6 +87,17 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setParamete
   if(list.isSublist("refmaxwell: node smoother list"))
     precList22_     =  list.sublist("refmaxwell: node smoother list");
 
+  hiptmairPreList_.set("hiptmair: smoother type 1",precType11_);
+  hiptmairPreList_.set("hiptmair: smoother type 2",precType22_);
+  hiptmairPreList_.set("hiptmair: smoother list 1",precList11_);
+  hiptmairPreList_.set("hiptmair: smoother list 2",precList22_);
+  hiptmairPreList_.set("hiptmair: zero starting solution",true);
+
+  hiptmairPostList_.set("hiptmair: smoother type 1",precType11_);
+  hiptmairPostList_.set("hiptmair: smoother type 2",precType22_);
+  hiptmairPostList_.set("hiptmair: smoother list 1",precList11_);
+  hiptmairPostList_.set("hiptmair: smoother list 2",precList22_);
+  hiptmairPostList_.set("hiptmair: zero starting solution",false);
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -183,13 +194,18 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::compute() {
   Hierarchy22_ -> SetMaxCoarseSize( MaxCoarseSize_ );
   Hierarchy22_ -> Setup(*Manager22, 0, MaxLevels_ );
 
-  // build ifpack2 preconditioners for Hiptmair
+  // build ifpack2 preconditioners for pre and post smoothing
   Teuchos::RCP<const TCRS> EdgeMatrix = Utils::Op2NonConstTpetraCrs(SM_Matrix_ );
   Teuchos::RCP<const TCRS> NodeMatrix = Utils::Op2NonConstTpetraCrs(TMT_Matrix_);
-  edgePrec_ = Ifpack2::Factory::create(precType11_, EdgeMatrix);
-  nodePrec_ = Ifpack2::Factory::create(precType22_, NodeMatrix);
-  edgePrec_->setParameters(precList11_); edgePrec_->initialize(); edgePrec_->compute();
-  nodePrec_->setParameters(precList22_); nodePrec_->initialize(); nodePrec_->compute();
+  Teuchos::RCP<const TCRS> PMatrix    = Utils::Op2NonConstTpetraCrs(D0_Matrix_);
+  edgePreSmoother_  = Teuchos::rcp( new Ifpack2::Hiptmair<TCRS>(EdgeMatrix,NodeMatrix,PMatrix) );
+  edgePostSmoother_ = Teuchos::rcp( new Ifpack2::Hiptmair<TCRS>(EdgeMatrix,NodeMatrix,PMatrix) );
+  edgePreSmoother_ -> setParameters(hiptmairPreList_);
+  edgePreSmoother_ -> initialize();
+  edgePreSmoother_ -> compute();
+  edgePostSmoother_ -> setParameters(hiptmairPostList_);
+  edgePostSmoother_ -> initialize();
+  edgePostSmoother_ -> compute();
 
 }
 
@@ -329,42 +345,6 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::resetMatrix
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyHiptmairSmoother(const XTMV& RHS, XTMV& X) const {
-
-  RCP<XMV> edge_residual,  node_residual;
-  RCP<TMV> edge_tpetra1,   node_tpetra1;
-  RCP<TMV> edge_tpetra2,   node_tpetra2;
-
-  // apply initial relaxation to edge elements
-  edge_residual  =  Utils::Residual(*SM_Matrix_, X, RHS);
-  edge_tpetra1   =  Utils::MV2NonConstTpetraMV(edge_residual);
-  edge_tpetra2   =  rcp( new TMV(edge_tpetra1->getMap(),edge_tpetra1->getNumVectors()) );
-  edgePrec_->apply(*edge_tpetra1,*edge_tpetra2);
-  edge_residual  =  Xpetra::toXpetra(edge_tpetra2);
-  X.update((Scalar) 1.0, *edge_residual, (Scalar) 1.0);
-
-  // project to nodal space and smooth
-  edge_residual  =  Utils::Residual(*SM_Matrix_, X, RHS);
-  node_residual  =  MultiVectorFactory::Build(TMT_Matrix_->getRowMap(),RHS.getNumVectors());
-  D0_Matrix_->apply(*edge_residual,*node_residual,Teuchos::TRANS,(Scalar)1.0,(Scalar)0.0);
-  node_tpetra1   =  Utils::MV2NonConstTpetraMV(node_residual);
-  node_tpetra2   =  rcp( new TMV(node_tpetra1->getMap(),node_tpetra1->getNumVectors()) );
-  nodePrec_->apply(*node_tpetra1,*node_tpetra2);
-  node_residual  =  Xpetra::toXpetra(node_tpetra2);
-  D0_Matrix_->apply(*node_residual,*edge_residual,Teuchos::NO_TRANS,(Scalar)1.0,(Scalar)0.0);
-  X.update((Scalar) 1.0, *edge_residual, (Scalar) 1.0);
-
-  // smooth again on edge elements
-  edge_residual  =  Utils::Residual(*SM_Matrix_, X, RHS);
-  edge_tpetra1   =  Utils::MV2NonConstTpetraMV(edge_residual);
-  edge_tpetra2   =  rcp( new TMV(edge_tpetra1->getMap(),edge_tpetra1->getNumVectors()) );
-  edgePrec_->apply(*edge_tpetra1,*edge_tpetra2);
-  edge_residual  =  Xpetra::toXpetra(edge_tpetra2);
-  X.update((Scalar) 1.0, *edge_residual, (Scalar) 1.0);
-
-}
-
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyInverseAdditive(const XTMV& RHS, XTMV& X) const {
 
   // compute residuals
@@ -461,7 +441,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::apply(const
     tY.putScalar(Teuchos::ScalarTraits<Scalar>::zero());
 
     // apply pre-smoothing
-    applyHiptmairSmoother(tX,tY);
+    edgePreSmoother_->apply(X,Y);
 
     // do solve for the 2x2 block system
     if(mode_=="additive") 
@@ -474,7 +454,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::apply(const
       applyInverseAdditive(tX,tY);
     
     // apply post-smoothing
-    applyHiptmairSmoother(tX,tY);
+    edgePostSmoother_->apply(X,Y);
 
   } catch (std::exception& e) {
 

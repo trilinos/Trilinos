@@ -72,6 +72,7 @@
 #include "Ifpack2_Preconditioner.hpp"
 #include "Ifpack2_Factory_decl.hpp"
 #include "Ifpack2_Factory_def.hpp"
+#include "Ifpack2_Hiptmair.hpp"
 
 /*
   
@@ -215,9 +216,6 @@ namespace MueLu {
     //! Reset system matrix
     void resetMatrix(Teuchos::RCP<TCRS> SM_Matrix_new);
 
-    //! apply Hiptmair smoothing
-    void applyHiptmairSmoother(const XTMV& RHS, XTMV& X) const;
-
     //! apply additive algorithm for 2x2 solve
     void applyInverseAdditive(const XTMV& RHS, XTMV& X) const;
 
@@ -259,9 +257,9 @@ namespace MueLu {
     //! Nullspace
     Teuchos::RCP<XMV>  Nullspace_, Coords_;
     //! Parameter lists
-    Teuchos::ParameterList parameterList_, precList11_, precList22_;
-    //! Ifpack preconditioners for Hiptmair smoothing
-    Teuchos::RCP< Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > nodePrec_, edgePrec_;
+    Teuchos::ParameterList parameterList_, precList11_, precList22_, hiptmairPreList_, hiptmairPostList_;
+    //! Ifpack preconditioners for pre and post smoothing
+    Teuchos::RCP< Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > edgePreSmoother_, edgePostSmoother_;
     //! Some options
     bool disable_addon_;
     int MaxCoarseSize_, MaxLevels_, Cycles_;
