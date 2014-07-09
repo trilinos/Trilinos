@@ -428,6 +428,7 @@ void BulkData::write_entity_modification_entry_label(std::ostream& out, const st
     {
         out << convert_label_for_method_type(label, methodType) <<"["<<rank<<"], ";
     }
+    out << convert_label_for_method_type(label, methodType) << ", ";
 #endif
 }
 
@@ -464,10 +465,13 @@ void BulkData::write_entity_modification_entry(std::ostream& out,
                                                EntityModificationTypes entityModification)
 {
 #ifdef STK_MESH_MODIFICATION_COUNTERS
+    unsigned sum = 0;
     for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<mesh_meta_data().entity_rank_count(); rank++)
     {
         out << m_entity_modification_counters[methodType][rank][entityModification]<<", ";
+        sum += m_entity_modification_counters[methodType][rank][entityModification];
     }
+    out << sum << ", ";
 #endif
 }
 
