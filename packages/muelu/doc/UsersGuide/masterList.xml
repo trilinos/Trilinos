@@ -117,6 +117,7 @@
     <type>string</type>
     <default>"old"</default>
     <description>old = Tobias, new = ML</description>
+    <visible>false</visible>
   </parameter>
 
   <parameter>
@@ -283,6 +284,7 @@
     <type>bool</type>
     <default>true</default>
     <description>Postprocessing for partitioning to keep processor 0 from dropping out. The goal is to keep processor 0 of the original fine level communication even when we use level subcommunicators.</description>
+    <visible>false</visible>
   </parameter>
 
   <parameter>
@@ -291,7 +293,6 @@
     <default>true</default>
     <description>Do rebalancing of R and P during the setup. This speeds up the solve, but slows down the setup phases.</description>
   </parameter>
-
 
   <parameter>
     <name>sa: damping factor</name>
