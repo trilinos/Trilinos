@@ -134,7 +134,6 @@ public:
     }
 };
 
-void testElementMove(int fromProc, int toProc, int myProc, int elementToMoveId, stk::mesh::BulkData &stkMeshBulkData);
 void populateBulkDataWithFile(const std::string& exodusFileName, MPI_Comm communicator, stk::mesh::BulkData& bulkData);
 void checkCommListAndMap(const stk::mesh::BulkData& stkMeshBulkData, bool isAfterIGMD);
 
@@ -146,12 +145,7 @@ void checkThatMeshIsParallelConsistent(stk::mesh::BulkData& stkMeshBulkData);
 void mark_element3_as_modified(stk::mesh::BulkData& stkMeshBulkData);
 void makeSureEntityIsValidOnCommListAndBulkData(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::EntityKey &entityKey);
 void makeSureEntityIsValidOnCommListAndBut_NOT_BulkData(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::EntityKey &entityKey);
-void writeMesh(int myProcId, std::string label, const std::vector<std::string> &meshStart);
 void getMeshLineByLine(const stk::mesh::BulkData &stkMeshBulkData, std::vector<std::string> &output);
-void fillItemsToFind(std::vector<std::string> &items_to_find);
-void getLineNumbersForItemsToFind(const std::vector<std::string>& items_to_find, const std::vector<std::string>& mesh_lines,
-        std::vector<int>& line_numbers);
-void compareMeshes(int my_proc_id, const std::vector<std::string>& mesh_before, const std::vector<std::string>& mesh_after);
 void checkCommMapsAndLists(stk::mesh::BulkData& stkMeshBulkData);
 void destroy_element3_on_proc_1(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::EntityKey &elementToDestroyKey);
 void checkCommMapsAndListsAfterIRSMD(stk::mesh::BulkData& stkMeshBulkData);
@@ -672,49 +666,6 @@ void getMeshLineByLine(const stk::mesh::BulkData &stkMeshBulkData, std::vector<s
     {
         output.push_back(s);
     }
-}
-
-void fillItemsToFind(std::vector<std::string> &items_to_find)
-{
-    items_to_find.clear();
-    items_to_find.push_back("MetaData info");
-    items_to_find.push_back("Entity rank names:");
-    items_to_find.push_back("Special Parts:");
-    items_to_find.push_back("All parts:");
-    items_to_find.push_back("All fields:");
-    items_to_find.push_back("BulkData  info");
-    items_to_find.push_back("All NODE entities:");
-    items_to_find.push_back("All EDGE entities:");
-    items_to_find.push_back("All FACE entities:");
-    items_to_find.push_back("All ELEMENT entities:");
-}
-
-void getLineNumbersForItemsToFind(const std::vector<std::string>& items_to_find, const std::vector<std::string>& mesh_lines,
-        std::vector<int>& line_numbers)
-{
-    int myProcId=-1;
-    MPI_Comm_rank(MPI_COMM_WORLD, &myProcId);
-
-    line_numbers.clear();
-    line_numbers.resize(items_to_find.size()+1);
-
-    size_t foundCounter=0;
-
-    std::ostringstream msg;
-    for (size_t i=0;i<mesh_lines.size();i++)
-    {
-        msg << "[" << myProcId << "] mesh line: " <<  i << "\t" << mesh_lines[i] << std::endl;
-        // std::cerr << msg.str();
-        msg.str(std::string());
-        if ( foundCounter < items_to_find.size() && mesh_lines[i].find(items_to_find[foundCounter]) != std::string::npos )
-        {
-            line_numbers[foundCounter] = i;
-            ++foundCounter;
-        }
-    }
-
-    ASSERT_EQ(foundCounter, items_to_find.size()) << "could not find " << items_to_find[foundCounter];
-    line_numbers[foundCounter]=mesh_lines.size();
 }
 
 void populateBulkDataWithFile(const std::string& exodusFileName, MPI_Comm communicator, stk::mesh::BulkData& bulkData)
