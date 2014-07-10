@@ -1886,28 +1886,69 @@ namespace { // (anonymous)
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   subCopy (const Teuchos::Range1D &colRng) const
   {
-    // KR FIXME Create and return a MultiVector deep copy of a
-    // contiguous subset of columns.
-
     using Teuchos::RCP;
     using Teuchos::rcp;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal,
-      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > MV;
+    typedef typename dual_view_type::host_mirror_device_type
+      host_mirror_device_type;
+    typedef typename dual_view_type::t_host host_view_type;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> MV;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(colRng.size() == 0, std::runtime_error,
-        "Tpetra::MultiVector::subCopy(Range1D): range must include at least one vector.");
-    size_t numCopyVecs = colRng.size();
-    const bool zeroData = false;
-    RCP<Node> node = MVT::getNode(lclMV_);
-    // mv is allocated with constant stride
-    RCP<MV> mv = rcp (new MV (this->getMap (), numCopyVecs, zeroData));
-    // copy data from *this into mv
-    for (size_t js=colRng.lbound(), jd=0; jd<numCopyVecs; ++jd, ++js) {
-      node->template copyBuffers<Scalar> (getLocalLength (),
-                                          getSubArrayRCP (MVT::getValues (lclMV_), js),
-                                          MVT::getValuesNonConst (mv->lclMV_, jd));
+    // Sync the source MultiVector (*this) to host first.  Copy it to
+    // the output View on host, then sync the output View (only) to
+    // device.  Doing copies on host saves us the trouble of copying
+    // whichVecsSrc and whichVecsDst over to the device.
+    view_.template sync<host_mirror_device_type> ();
+
+    const size_t numRows = this->getLocalLength ();
+    const size_t numCols = this->getNumVectors ();
+    const std::pair<size_t, size_t> rowRange (0, numRows);
+    const std::pair<size_t, size_t> colRange (0, numCols);
+
+    // Range1D is an inclusive range.  If the upper bound is less then
+    // the lower bound, that signifies an invalid range, which we
+    // interpret as "copy zero columns."
+    const size_t numColsToCopy = (colRng.ubound () >= colRng.lbound ()) ?
+      static_cast<size_t> (colRng.size ()) :
+      static_cast<size_t> (0);
+
+    // Create a DualView which will be a contiguously stored deep copy of this MV's view.
+    dual_view_type dstView ("MV::dual_view", numRows, numColsToCopy);
+    Kokkos::View<int*, host_mirror_device_type> whichVecsDst ("whichVecsDst", numColsToCopy);
+    Kokkos::View<int*, host_mirror_device_type> whichVecsSrc ("whichVecsSrc", numColsToCopy);
+
+    if (! this->isConstantStride ()) {
+      for (size_t j = 0; j < numColsToCopy; ++j) {
+        const size_t col = static_cast<size_t> (colRng.lbound ()) + j;
+        whichVecsSrc(j) = static_cast<int> (this->whichVectors_[col]);
+      }
     }
-    return mv;
+    else {
+      for (size_t j = 0; j < numColsToCopy; ++j) {
+        const size_t col = static_cast<size_t> (colRng.lbound ()) + j;
+        whichVecsSrc(j) = static_cast<int> (col);
+      }
+    }
+    for (size_t j = 0; j < numColsToCopy; ++j) {
+      whichVecsDst(j) = static_cast<int> (j);
+    }
+
+    //
+    // Do the copy on host first.
+    //
+    // FIXME (mfh 10 Jul 2014) Exploit contiguity of the desired columns.
+    view_.template modify<host_mirror_device_type> ();
+    host_view_type srcView =
+      Kokkos::subview<host_view_type> (view_.h_view, rowRange, colRange);
+    DeepCopySelectedVectors<host_view_type,
+      host_view_type, host_mirror_device_type,
+      false, false> f (dstView.h_view, srcView, whichVecsDst, whichVecsSrc);
+    Kokkos::parallel_for (numRows, f);
+
+    // Sync the output DualView (only) back to device.
+    dstView.template sync<device_type> ();
+
+    // Create and return a MultiVector using the new DualView.
+    return rcp (new MV (this->getMap (), dstView));
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
