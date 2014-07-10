@@ -20,7 +20,6 @@ IF (TrilinosCouplings_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
     SOURCES BoxElemPart.cpp
             fenl_utils.cpp
     TESTONLY
-    DEPLIBS stokhos
     )
 
   SET(SOURCES fenl.cpp main.cpp)
@@ -70,7 +69,7 @@ IF (TrilinosCouplings_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
       fenl_ensemble
       SOURCES ${SOURCES}
       COMM serial mpi
-      DEPLIBS fenl kokkoscorelinalg kokkoscontainers kokkoscore
+      DEPLIBS fenl stokhos kokkoscorelinalg kokkoscontainers kokkoscore
       )
 
     SET( SOURCES fenl_functors_pce.hpp fenl_pce.cpp )
@@ -84,7 +83,7 @@ IF (TrilinosCouplings_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
       fenl_pce
       SOURCES ${SOURCES}
       COMM serial mpi
-      DEPLIBS fenl kokkoscorelinalg kokkoscontainers kokkoscore
+      DEPLIBS fenl stokhos kokkoscorelinalg kokkoscontainers kokkoscore
       )
 
   ENDIF()
