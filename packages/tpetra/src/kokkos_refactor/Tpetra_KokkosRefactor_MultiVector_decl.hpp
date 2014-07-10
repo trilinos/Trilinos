@@ -1001,6 +1001,10 @@ namespace Tpetra {
     typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<dot_type, T>::value), void >::type
     dot (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
          const Teuchos::ArrayView<T> &dots) const {
+      //
+      // KR FIXME Overload to take a Kokkos::View.
+      //
+
       const size_t sz = dots.size();
       Teuchos::Array<dot_type> dts(sz);
       dot(A, dts);
@@ -1081,6 +1085,9 @@ namespace Tpetra {
     template <typename T>
     typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type,T>::value), void >::type
     norm2 (const Teuchos::ArrayView<T> &norms) const {
+      //
+      // KR FIXME Overload to take a Kokkos::View.
+      //
       const size_t sz = norms.size();
       Teuchos::Array<mag_type> nrms(sz);
       norm2(nrms);

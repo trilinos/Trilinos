@@ -84,6 +84,8 @@ namespace Tpetra {
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
 
+    (void) zeroOut; // View allocation does first touch automatically.
+
     TEUCHOS_TEST_FOR_EXCEPTION(NumVectors < 1, std::invalid_argument,
       "Tpetra::MultiVector::MultiVector(): NumVectors must be strictly positive.");
     const size_t myLen = getLocalLength();
@@ -103,13 +105,6 @@ namespace Tpetra {
       view_.stride (stride);
       const size_t LDA = view_.dimension_1() > 1?stride[1]:view_.dimension_0();
       MVT::initializeValues(lclMV_,myLen,NumVectors,data,LDA);
-
-      // First touch was done by view allocation
-      /*if (zeroOut) {
-        // MVT uses the Kokkos Node's parallel_for in this case, for
-        // first-touch allocation (across rows).
-        MVT::Init(lclMV_, Teuchos::ScalarTraits<Scalar>::zero());
-      }*/
     }
     else {
       view_ = dual_view_type("MV::dual_view",0,NumVectors);
@@ -488,14 +483,11 @@ namespace Tpetra {
       size_t stride[8];
       view_.stride (stride);
       const size_t LDA = (view_.dimension_1 () > 1) ? stride[1] : view_.dimension_0 ();
-      const size_t LDA_C = lclMV_.getStride ();
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        LDA != LDA_C, std::logic_error, "Tpetra::MultiVector::getStride: "
-        "LDA from Kokkos::View != LDA from KokkosClassic.  First is " << LDA
-        << ", second is " << LDA_C << ".");
       return LDA;
     }
-    return 0;
+    else {
+      return static_cast<size_t> (0);
+    }
   }
 
 
@@ -861,10 +853,10 @@ namespace Tpetra {
   getNumVectors () const
   {
     if (isConstantStride ()) {
-      return MVT::getNumCols (lclMV_);
+      return static_cast<size_t> (view_.dimension_1 ());
     }
     else {
-      return whichVectors_.size ();
+      return static_cast<size_t> (whichVectors_.size ());
     }
   }
 
@@ -874,6 +866,8 @@ namespace Tpetra {
   dot (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &A,
        const Teuchos::ArrayView<dot_type> &dots) const
   {
+    // KR FIXME Overload this method to take a View.
+
     using Kokkos::ALL;
     using Kokkos::subview;
     using Teuchos::Array;
@@ -920,6 +914,8 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   norm2 (const Teuchos::ArrayView<mag_type>& norms) const
   {
+    // KR FIXME Overload this method to take a View.
+
     using Kokkos::ALL;
     using Kokkos::subview;
     using Teuchos::reduceAll;
@@ -977,6 +973,10 @@ namespace Tpetra {
   normWeighted (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& weights,
                 const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const
   {
+    // KR FIXME MVT::WeightedNorm (might already exist).
+    //
+    // KR FIXME Overload this method to take a View.
+
     using Teuchos::arcp_const_cast;
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
@@ -1048,6 +1048,10 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   norm1 (const ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const
   {
+    // KR FIXME MVT::Norm1 (might already exist).
+    //
+    // KR FIXME Overload this method to take a View.
+
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
     using Teuchos::arcp_const_cast;
@@ -1083,6 +1087,10 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   normInf (const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const
   {
+    // KR FIXME MVT::NormInf (might already exist).
+    //
+    // KR FIXME Overload this method to take a View.
+
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
     using Teuchos::arcp_const_cast;
@@ -1118,6 +1126,10 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   meanValue (const Teuchos::ArrayView<Scalar> &means) const
   {
+    // KR FIXME MVT::Sum (might already exist).
+    //
+    // KR FIXME Overload this method to take a View.
+
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
     using Teuchos::arcp_const_cast;
@@ -1170,6 +1182,9 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   randomize ()
   {
+    // KR FIXME *sigh* MVT::Random.  Hack around this for now by
+    // filling on the host.
+
     if (isConstantStride ()) {
       MVT::Random (lclMV_);
     }
@@ -1269,6 +1284,10 @@ namespace Tpetra {
 #endif // HAVE_TEUCHOS_DEBUG
 
     if (this->getMap ().is_null ()) { // current Map is null
+      // KR FIXME: If this->getMap() is null, that means that this
+      // MultiVector has already had replaceMap happen to it.  In that
+      // case, just reallocate the DualView with the right size.
+
       TEUCHOS_TEST_FOR_EXCEPTION(
         newMap.is_null (), std::invalid_argument,
         "Tpetra::MultiVector::replaceMap: both current and new Maps are null.  "
@@ -1290,6 +1309,11 @@ namespace Tpetra {
       }
     }
     else if (newMap.is_null ()) { // Case 2: current Map is nonnull, new Map is null
+
+      // KR FIXME: We're excluding this process from the MultiVector.
+      // Reallocate to have zero rows; keep the number of columns as
+      // before.
+
       // I am an excluded process.  Reinitialize my data so that I
       // have 0 rows.  Keep the number of columns as before.
       const size_t numVecs = getNumVectors ();
@@ -1304,6 +1328,10 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   scale (const Scalar &alpha)
   {
+    // KR FIXME Need MVT::Scale (in place): Kernels for this already exist.
+    //
+    // (*this) := alpha * (*this)
+
     using Teuchos::arcp_const_cast;
     using Teuchos::ArrayRCP;
 
@@ -1334,6 +1362,12 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   scale (Teuchos::ArrayView<const Scalar> alphas)
   {
+    // KR FIXME Need MVT::Scale (in place): Kernels for this already exist.
+    //
+    // (*this)(j) := alpha(j) * (*this)(j)
+    //
+    // KR FIXME Overload this method to take a Kokkos::View<const Scalar>.
+
     using Teuchos::arcp_const_cast;
     using Teuchos::ArrayRCP;
 
@@ -1367,6 +1401,10 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   scale (const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &A)
   {
+    // KR FIXME Need MVT::Scale: Kernels for this already exist.
+    //
+    // *this := alpha * A
+
     using Teuchos::arcp_const_cast;
     using Teuchos::ArrayRCP;
     using Teuchos::as;
@@ -1403,6 +1441,9 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   reciprocal (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &A)
   {
+    // KR FIXME Need MVT::Recip (assign the elementwise reciprocal of
+    // A to *this).
+
     using Teuchos::arcp_const_cast;
     using Teuchos::ArrayRCP;
     using Teuchos::as;
@@ -1444,6 +1485,9 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   abs (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& A)
   {
+    // KR FIXME Need MVT::Abs (assign the elementwise absolute value
+    // of A to *this).
+
     using Teuchos::arcp_const_cast;
     using Teuchos::ArrayRCP;
     const char tfecfFuncName[] = "abs";
@@ -1676,6 +1720,8 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   operator= (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& source)
   {
+    // KR FIXME This is just the assignment operator.
+
     if (this != &source) {
       base_type::operator= (source);
       //
@@ -1715,6 +1761,9 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   subCopy (const Teuchos::ArrayView<const size_t> &cols) const
   {
+    // KR FIXME Create and return a MultiVector deep copy of a
+    // noncontiguous subset of columns.
+
     using Teuchos::RCP;
     using Teuchos::rcp;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal,
@@ -1742,6 +1791,9 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   subCopy (const Teuchos::Range1D &colRng) const
   {
+    // KR FIXME Create and return a MultiVector deep copy of a
+    // contiguous subset of columns.
+
     using Teuchos::RCP;
     using Teuchos::rcp;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal,
@@ -1961,6 +2013,11 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   get1dCopy (Teuchos::ArrayView<Scalar> A, size_t LDA) const
   {
+    // KR FIXME This does a deep copy into A, which is column major
+    // with leading dimension LDA.  We assume A is big enough to hold
+    // everything.  Copy directly from host mirror of the data, if it
+    // exists.
+
     using Teuchos::ArrayRCP;
     using Teuchos::ArrayView;
     using Teuchos::RCP;
@@ -2280,6 +2337,8 @@ namespace Tpetra {
       const KMV &A_mv = Atmp->lclMV_;
       const KMV &B_mv = Btmp->lclMV_;
       // do the multiply (GEMM)
+      //
+      // KR FIXME Need GEMM wrapper
       MVT::GEMM(C_mv,transA,transB,alpha,A_mv,B_mv,beta_local);
     }
 
@@ -2325,6 +2384,7 @@ namespace Tpetra {
       B.getNumVectors() != this->getNumVectors(), std::runtime_error,
       ": MultiVectors 'this' and B must have the same number of vectors.");
     try {
+      // KR FIXME Need kernel for ElemMult.
       MVT::ElemMult (lclMV_, scalarThis, scalarAB, (const KMV&) A.lclMV_,
                      (const KMV&) B.lclMV_);
     }
@@ -2550,6 +2610,9 @@ namespace Tpetra {
   KokkosClassic::MultiVector<Scalar,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::getLocalMV () const
   {
+    // KR Creates the KokkosClassic thing on the fly.
+    // OK to leave this in place as backwards compat.
+
     KMV kmv (this->getMap ()->getNode ());
     size_t stride[8];
     view_.stride (stride);

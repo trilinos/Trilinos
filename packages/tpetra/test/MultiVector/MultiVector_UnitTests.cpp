@@ -2623,9 +2623,9 @@ namespace {
     const GO indexBase = 0;
     RCP<const map_type> map = rcp (new map_type (gblNumRows, lclNumRows, indexBase, comm, node));
     TEST_ASSERT( ! map.is_null () );
-    TEST_EQUALITY( map.getGlobalNumElements (), gblNumRows );
-    TEST_EQUALITY( map.getNodeNumElements (), lclNumRows );
-    TEST_EQUALITY( map.getIndexBase (), indexBase );
+    TEST_EQUALITY( map->getGlobalNumElements (), gblNumRows );
+    TEST_EQUALITY( map->getNodeNumElements (), lclNumRows );
+    TEST_EQUALITY( map->getIndexBase (), indexBase );
 
     //
     // Create a MultiVector with that Map.
@@ -2684,30 +2684,34 @@ namespace {
     }
 
 #ifdef TPETRA_HAVE_KOKKOS_REFACTOR
-    // Make sure that the Views have the right dimensions.
-    {
-      typedef typename MV::dual_view_type dual_view_type;
-      typedef typename dual_view_type::t_dev device_view_type;
-      typedef typename dual_view_type::t_host host_view_type;
+    // FIXME (mfh 10 Jul 2014) Just testing if Kokkos Refactor is
+    // enabled isn't enough; we have to make sure that the Node type
+    // is one of the new Kokkos Nodes.
 
-      device_view_type X_dev =
-        X.template getLocalView<typename device_view_type::device_type> ();
-      host_view_type X_host =
-        X.template getLocalView<typename host_view_type::device_type> ();
+    // // Make sure that the Views have the right dimensions.
+    // {
+    //   typedef typename MV::dual_view_type dual_view_type;
+    //   typedef typename dual_view_type::t_dev device_view_type;
+    //   typedef typename dual_view_type::t_host host_view_type;
 
-      if (comm->getRank () == 0) {
-        TEST_EQUALITY( X_dev.dimension_0 (), static_cast<size_t> (0) );
-        TEST_EQUALITY( X_dev.dimension_1 (), numCols );
-        TEST_EQUALITY( X_host.dimension_0 (), static_cast<size_t> (0) );
-        TEST_EQUALITY( X_host.dimension_1 (), numCols );
-      }
-      else { // my rank is not zero
-        TEST_EQUALITY( X_dev.dimension_0 (), lclNumRows );
-        TEST_EQUALITY( X_dev.dimension_1 (), numCols );
-        TEST_EQUALITY( X_host.dimension_0 (), lclNumRows );
-        TEST_EQUALITY( X_host.dimension_1 (), numCols );
-      }
-    }
+    //   device_view_type X_dev =
+    //     X.template getLocalView<typename device_view_type::device_type> ();
+    //   host_view_type X_host =
+    //     X.template getLocalView<typename host_view_type::device_type> ();
+
+    //   if (comm->getRank () == 0) {
+    //     TEST_EQUALITY( X_dev.dimension_0 (), static_cast<size_t> (0) );
+    //     TEST_EQUALITY( X_dev.dimension_1 (), numCols );
+    //     TEST_EQUALITY( X_host.dimension_0 (), static_cast<size_t> (0) );
+    //     TEST_EQUALITY( X_host.dimension_1 (), numCols );
+    //   }
+    //   else { // my rank is not zero
+    //     TEST_EQUALITY( X_dev.dimension_0 (), lclNumRows );
+    //     TEST_EQUALITY( X_dev.dimension_1 (), numCols );
+    //     TEST_EQUALITY( X_host.dimension_0 (), lclNumRows );
+    //     TEST_EQUALITY( X_host.dimension_1 (), numCols );
+    //   }
+    // }
 #endif // TPETRA_HAVE_KOKKOS_REFACTOR
 
     //
@@ -2723,22 +2727,26 @@ namespace {
     TEST_EQUALITY( X.getGlobalLength (), gblNumRows );
 
 #ifdef TPETRA_HAVE_KOKKOS_REFACTOR
-    // Make sure that the Views have the right dimensions.
-    {
-      typedef typename MV::dual_view_type dual_view_type;
-      typedef typename dual_view_type::t_dev device_view_type;
-      typedef typename dual_view_type::t_host host_view_type;
+    // FIXME (mfh 10 Jul 2014) Just testing if Kokkos Refactor is
+    // enabled isn't enough; we have to make sure that the Node type
+    // is one of the new Kokkos Nodes.
 
-      device_view_type X_dev =
-        X.template getLocalView<typename device_view_type::device_type> ();
-      host_view_type X_host =
-        X.template getLocalView<typename host_view_type::device_type> ();
+    // // Make sure that the Views have the right dimensions.
+    // {
+    //   typedef typename MV::dual_view_type dual_view_type;
+    //   typedef typename dual_view_type::t_dev device_view_type;
+    //   typedef typename dual_view_type::t_host host_view_type;
 
-      TEST_EQUALITY( X_dev.dimension_0 (), lclNumRows );
-      TEST_EQUALITY( X_dev.dimension_1 (), numCols );
-      TEST_EQUALITY( X_host.dimension_0 (), lclNumRows );
-      TEST_EQUALITY( X_host.dimension_1 (), numCols );
-    }
+    //   device_view_type X_dev =
+    //     X.template getLocalView<typename device_view_type::device_type> ();
+    //   host_view_type X_host =
+    //     X.template getLocalView<typename host_view_type::device_type> ();
+
+    //   TEST_EQUALITY( X_dev.dimension_0 (), lclNumRows );
+    //   TEST_EQUALITY( X_dev.dimension_1 (), numCols );
+    //   TEST_EQUALITY( X_host.dimension_0 (), lclNumRows );
+    //   TEST_EQUALITY( X_host.dimension_1 (), numCols );
+    // }
 #endif // TPETRA_HAVE_KOKKOS_REFACTOR
 
     // Make sure that the test passed on all processes, not just Proc 0.
