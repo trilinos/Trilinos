@@ -1824,28 +1824,60 @@ namespace { // (anonymous)
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   subCopy (const Teuchos::ArrayView<const size_t> &cols) const
   {
-    // KR FIXME Create and return a MultiVector deep copy of a
-    // noncontiguous subset of columns.
-
     using Teuchos::RCP;
     using Teuchos::rcp;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal,
-      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > MV;
+    typedef typename dual_view_type::host_mirror_device_type
+      host_mirror_device_type;
+    typedef typename dual_view_type::t_host host_view_type;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> MV;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(cols.size() < 1, std::runtime_error,
-        "Tpetra::MultiVector::subCopy(cols): cols must contain at least one column.");
-    size_t numCopyVecs = cols.size();
-    const bool zeroData = false;
-    RCP<Node> node = MVT::getNode(lclMV_);
-    // mv is allocated with constant stride
-    RCP<MV> mv = rcp (new MV (this->getMap (), numCopyVecs, zeroData));
-    // copy data from *this into mv
-    for (size_t j=0; j<numCopyVecs; ++j) {
-      node->template copyBuffers<Scalar> (getLocalLength (),
-                                          getSubArrayRCP (MVT::getValues (lclMV_), cols[j]),
-                                          MVT::getValuesNonConst (mv->lclMV_, j));
+    // Sync the source MultiVector (*this) to host first.  Copy it to
+    // the output View on host, then sync the output View (only) to
+    // device.  Doing copies on host saves us the trouble of copying
+    // whichVecsSrc and whichVecsDst over to the device.
+    view_.template sync<host_mirror_device_type> ();
+
+    const size_t numRows = this->getLocalLength ();
+    const size_t numCols = this->getNumVectors ();
+    const std::pair<size_t, size_t> rowRange (0, numRows);
+    const std::pair<size_t, size_t> colRange (0, numCols);
+    const size_t numColsToCopy = static_cast<size_t> (cols.size ());
+
+    // Create a DualView which will be a contiguously stored deep copy of this MV's view.
+    dual_view_type dstView ("MV::dual_view", numRows, numColsToCopy);
+    Kokkos::View<int*, host_mirror_device_type> whichVecsDst ("whichVecsDst", numColsToCopy);
+    Kokkos::View<int*, host_mirror_device_type> whichVecsSrc ("whichVecsSrc", numColsToCopy);
+
+    if (! this->isConstantStride ()) {
+      for (size_t j = 0; j < numColsToCopy; ++j) {
+        whichVecsSrc(j) = static_cast<int> (this->whichVectors_[cols[j]]);
+      }
     }
-    return mv;
+    else {
+      for (size_t j = 0; j < numColsToCopy; ++j) {
+        whichVecsSrc(j) = static_cast<int> (cols[j]);
+      }
+    }
+    for (size_t j = 0; j < numColsToCopy; ++j) {
+      whichVecsDst(j) = static_cast<int> (j);
+    }
+
+    //
+    // Do the copy on host first.
+    //
+    view_.template modify<host_mirror_device_type> ();
+    host_view_type srcView =
+      Kokkos::subview<host_view_type> (view_.h_view, rowRange, colRange);
+    DeepCopySelectedVectors<host_view_type,
+      host_view_type, host_mirror_device_type,
+      false, false> f (dstView.h_view, srcView, whichVecsDst, whichVecsSrc);
+    Kokkos::parallel_for (numRows, f);
+
+    // Sync the output DualView (only) back to device.
+    dstView.template sync<device_type> ();
+
+    // Create and return a MultiVector using the new DualView.
+    return rcp (new MV (this->getMap (), dstView));
   }
 
 
