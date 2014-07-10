@@ -798,6 +798,8 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
     "\n***"
     "\n*** Setting input options to default and reading from env ..."
     "\n***\n")
+
+  SET_DEFAULT_AND_FROM_ENV( CTEST_CONFIGURATION_UNIT_TESTING OFF )
   
   # The type of test (e.g. Nightly, Experimental, Continuous)
   SET_DEFAULT_AND_FROM_ENV( CTEST_TEST_TYPE Experimental )
@@ -1492,7 +1494,8 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
       #
     
       IF ("${CONFIGURE_RETURN_VAL}" EQUAL "0" AND
-        NOT CTEST_DEPENDENCY_HANDLING_UNIT_TESTING
+        NOT CTEST_DEPENDENCY_HANDLING_UNIT_TESTING AND
+        NOT CTEST_CONFIGURATION_UNIT_TESTING
         )
     
         # Start by trying to build just the libraries for the current package
