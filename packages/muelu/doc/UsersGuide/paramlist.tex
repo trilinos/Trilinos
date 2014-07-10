@@ -51,6 +51,8 @@
 
 \cbb{coarse: type}{string}{"SuperLU"}{Coarse solver. Possible values: see Table~\ref{t:coarse_solvers}.}
 
+\cbb{coarse: overlap}{int}{0}{Coarse solver subdomain overlap.}
+
 \cba{coarse: params}{\parameterlist}{Coarse solver parameters. \muelu passes them directly to coarse solver.}
 
 \cbb{coarse: max size}{int}{2000}{Maximum dimension of the coarse grid. \muelu will stop coarsening once it is achieved.}

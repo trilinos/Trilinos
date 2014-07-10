@@ -218,6 +218,13 @@
   </parameter>
 
   <parameter>
+    <name>coarse: overlap</name>
+    <type>int</type>
+    <default>0</default>
+    <description>Coarse solver subdomain overlap.</description>
+  </parameter>
+
+  <parameter>
     <name>coarse: params</name>
     <type>\parameterlist</type>
     <description>Coarse solver parameters. \muelu passes them directly to coarse solver.</description>

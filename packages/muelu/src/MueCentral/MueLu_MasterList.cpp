@@ -87,6 +87,7 @@ namespace MueLu {
   "<Parameter name=\"smoother: pre overlap\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"smoother: post overlap\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"coarse: type\" type=\"string\" value=\"SuperLU\"/>"
+  "<Parameter name=\"coarse: overlap\" type=\"int\" value=\"0\"/>"
   "<ParameterList name=\"coarse: params\"/>"
   "<Parameter name=\"coarse: max size\" type=\"int\" value=\"2000\"/>"
   "<Parameter name=\"repartition: enable\" type=\"bool\" value=\"false\"/>"
