@@ -178,8 +178,8 @@ namespace {
       TEST_EQUALITY_CONST( A2->isGloballyIndexed(), true );
       TEST_EQUALITY_CONST( A2->getCrsGraph()->getNodeAllocationSize(), (size_t)(numLocal*3-2) );
       TEST_EQUALITY( A2->getNodeNumEntries(), A1->getNodeNumEntries() );
-      TEST_NOTHROW( A2->insertGlobalValues(map1->getMaxLocalIndex(), tuple<GO>(map1->getMinLocalIndex()), tuple<SCALAR>(1.0)) );
-      TEST_NOTHROW( A2->insertGlobalValues(map1->getMinLocalIndex(), tuple<GO>(map1->getMaxLocalIndex()), tuple<SCALAR>(1.0)) );
+      TEST_NOTHROW( A2->insertGlobalValues(map1->getMaxGlobalIndex(), tuple<GO>(map1->getMinGlobalIndex()), tuple<SCALAR>(1.0)) );
+      TEST_NOTHROW( A2->insertGlobalValues(map1->getMinGlobalIndex(), tuple<GO>(map1->getMaxGlobalIndex()), tuple<SCALAR>(1.0)) );
       TEST_NOTHROW( A2->fillComplete() );
       TEST_EQUALITY_CONST( A2->getNodeNumEntries(), A1->getNodeNumEntries()+2 );
     }
