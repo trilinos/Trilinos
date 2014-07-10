@@ -2077,6 +2077,7 @@ namespace { // (anonymous)
   get1dCopy (Teuchos::ArrayView<Scalar> A, size_t LDA) const
   {
     typedef typename dual_view_type::host_mirror_device_type host_mirror_device_type;
+    // The user's array is column major ("LayoutLeft").
     typedef Kokkos::View<Scalar**, Kokkos::LayoutLeft,
       host_mirror_device_type, Kokkos::MemoryUnmanaged> input_view_type;
     typedef typename dual_view_type::t_host host_view_type;
@@ -2135,15 +2136,17 @@ namespace { // (anonymous)
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   get2dCopy (Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> > ArrayOfPtrs) const
   {
-    using Teuchos::as;
-    using Teuchos::ArrayRCP;
-    using Teuchos::ArrayView;
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-    const char tfecfFuncName[] = "get2dCopy";
+    typedef typename dual_view_type::host_mirror_device_type
+      host_mirror_device_type;
+    typedef typename dual_view_type::t_host host_view_type;
+    typedef Kokkos::View<Scalar**,
+      typename host_view_type::array_layout,
+      typename dual_view_type::host_mirror_device_type,
+      Kokkos::MemoryUnmanaged> unmanaged_host_view_type;
 
-    const size_t numRows = getLocalLength ();
-    const size_t numCols = getNumVectors ();
+    const char tfecfFuncName[] = "get2dCopy";
+    const size_t numRows = this->getLocalLength ();
+    const size_t numCols = this->getNumVectors ();
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       static_cast<size_t> (ArrayOfPtrs.size ()) != numCols,
@@ -2152,13 +2155,8 @@ namespace { // (anonymous)
       << ArrayOfPtrs.size () << " != getNumVectors() = " << numCols << ".");
 
     if (numRows != 0 && numCols != 0) {
-      // FIXME (mfh 12 May 2014) Should we synch to host first?
-      typedef typename dual_view_type::t_host host_view_type;
-
-      typedef Kokkos::View<Scalar**,
-        typename host_view_type::array_layout,
-        typename dual_view_type::host_mirror_device_type,
-        Kokkos::MemoryUnmanaged> unmanaged_host_view_type;
+      // Start by sync'ing to host.
+      view_.template sync<host_mirror_device_type> ();
 
       // No side effects until we've validated the input.
       for (size_t j = 0; j < numCols; ++j) {
@@ -2173,21 +2171,12 @@ namespace { // (anonymous)
       // We've validated the input, so it's safe to start copying.
       for (size_t j = 0; j < numCols; ++j) {
         const size_t col = isConstantStride () ? j : whichVectors_[j];
-
-        // [HCE 2014:06:30]
-        // host_view_type src = Kokkos::subview<host_view_type> (view_.d_view, Kokkos::ALL (), col);
-        host_view_type src = Kokkos::subview<host_view_type> (view_.h_view, Kokkos::ALL (), col);
-
+        host_view_type src =
+          Kokkos::subview<host_view_type> (view_.h_view, Kokkos::ALL (), col);
         unmanaged_host_view_type dst (ArrayOfPtrs[j].getRawPtr (),
                                       ArrayOfPtrs[j].size (),
                                       static_cast<size_t> (1));
-        try {
-          Kokkos::deep_copy (dst, src);
-        } catch (std::exception& e) {
-          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-            true, std::logic_error, ": Kokkos::deep_copy threw an exception "
-            "for column j = " << j << ":" << std::endl << e.what ());
-        }
+        Kokkos::deep_copy (dst, src);
       }
     }
   }
