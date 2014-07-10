@@ -101,14 +101,23 @@ struct init_c arith_c_fncts[] =
   {0, 0, 0, 0}				/* Last line must be 0, 0 */
 };
 
-//TODO
-#if 0  
-  {"option",         do_option, "option(?,?)","Internal"},
-  {"julday",         do_julday, "julday(mm, dd, yy)","Julian day corresponding to mm/dd/yy. "},
-  {"juldayhms",      do_juldayhms,"juldayhms(mm, dd, yy, hh, mm, ss)","Julian day corresponding to mm/dd/yy at hh:mm:ss "},
-  {0, 0, 0, 0}				/* Last line must be 0, 0 */
+struct init_cd arith_cd_fncts[] =
+{
+  {"option", do_option, "option(?,?)", "Internal"},
+  {0, 0, 0, 0} /* Last line must be 0, 0, 0, 0*/
 };
-#endif
+
+struct init_ddd arith_ddd_fncts[] =
+{
+  {"julday", do_julday, "julday(mm, dd, yy)", "Julian day corresponding to mm/dd/yy. "},
+  {0, 0, 0, 0} /* Last line must be 0, 0, 0, 0*/
+};
+
+struct init_dddddd arith_dddddd_fncts[] =
+{
+  {"juldayhms", do_juldayhms, "juldayhms(mm, dd, yy, hh, mm, ss)", "Julian day corresponding to mm/dd/yy at hh:mm:ss "},
+  {0, 0, 0, 0} /* Last line must be 0, 0, 0, 0*/
+};
 
 struct str_init string_fncts[] =
 {
@@ -294,6 +303,27 @@ struct svar_init svariables[] =
       ptr->value.fnctptr_c = arith_c_fncts[i].fnct;
       ptr->info = arith_c_fncts[i].description;
       ptr->syntax = arith_c_fncts[i].syntax;
+    }
+
+    for (int i = 0; arith_cd_fncts[i].fname != 0; i++) {
+      symrec *ptr = putsym(arith_cd_fncts[i].fname, FUNCTION, 1);
+      ptr->value.fnctptr_cd = arith_cd_fncts[i].fnct;
+      ptr->info = arith_cd_fncts[i].description;
+      ptr->syntax = arith_cd_fncts[i].syntax;
+    }
+
+    for (int i = 0; arith_ddd_fncts[i].fname != 0; i++) {
+      symrec *ptr = putsym(arith_ddd_fncts[i].fname, FUNCTION, 1);
+      ptr->value.fnctptr_ddd = arith_ddd_fncts[i].fnct;
+      ptr->info = arith_ddd_fncts[i].description;
+      ptr->syntax = arith_ddd_fncts[i].syntax;
+    }
+
+    for (int i = 0; arith_dddddd_fncts[i].fname != 0; i++) {
+      symrec *ptr = putsym(arith_dddddd_fncts[i].fname, FUNCTION, 1);
+      ptr->value.fnctptr_dddddd = arith_dddddd_fncts[i].fnct;
+      ptr->info = arith_dddddd_fncts[i].description;
+      ptr->syntax = arith_dddddd_fncts[i].syntax;
     }
 
     for (int i = 0; string_fncts[i].fname != 0; i++) {

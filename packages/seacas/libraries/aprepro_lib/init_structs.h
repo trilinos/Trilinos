@@ -21,6 +21,22 @@ struct init_dd
     const char *description;
   };
 
+struct init_cd
+{
+  const char *fname;
+  double (*fnct)(char*, double);
+  const char *syntax;
+  const char *description;
+};
+
+struct init_ddd
+  {
+    const char *fname;
+    double (*fnct)(double, double, double);
+    const char *syntax;
+    const char *description;
+  };
+
 struct init_dddd
   {
     const char *fname;
@@ -28,6 +44,14 @@ struct init_dddd
     const char *syntax;
     const char *description;
   };
+
+struct init_dddddd
+{
+  const char *fname;
+  double (*fnct)(double, double, double, double, double, double);
+  const char *syntax;
+  const char *description;
+};
 
 struct init_cc
   {

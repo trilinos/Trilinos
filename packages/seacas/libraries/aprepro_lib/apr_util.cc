@@ -178,6 +178,9 @@ namespace SEAMS {
     for (size_t i=0; i < allocations.size(); i++) {
       delete [] allocations[i];
     }
+
+    // Clear the vector to avoid stale pointers.
+    allocations.clear();
   }
 
   bool is_directory(const std::string &filepath)
