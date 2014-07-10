@@ -58,6 +58,53 @@
 
 namespace Tpetra {
 
+namespace { // (anonymous)
+  template<class DstType, class SrcType, class DeviceType,bool DstConstStride,bool SrcConstStride>
+  struct DeepCopySelectedVectors {
+    typedef DeviceType device_type;
+    DstType dst;
+    SrcType src;
+    Kokkos::View<int*,DeviceType> whichVectorDst;
+    Kokkos::View<int*,DeviceType> whichVectorSrc;
+    int n;
+
+    DeepCopySelectedVectors (DstType dst_,
+                             SrcType src_,
+                             Kokkos::View<int*,DeviceType> whichVectorDst_,
+                             Kokkos::View<int*,DeviceType> whichVectorSrc_):
+      dst (dst_),
+      src (src_),
+      whichVectorDst (whichVectorDst_),
+      whichVectorSrc (whichVectorSrc_),
+      n (whichVectorSrc_.dimension_0 ())
+    {}
+
+    void KOKKOS_INLINE_FUNCTION operator() (int i) const {
+      if (DstConstStride) {
+        if (SrcConstStride) {
+          for (int j = 0; j < n; ++j) {
+            dst(i,j) = src(i,j);
+          }
+        } else {
+          for (int j = 0; j < n; ++j) {
+            dst(i,j) = src(i,whichVectorSrc(j));
+          }
+        }
+      } else {
+        if (SrcConstStride) {
+          for (int j = 0; j < n; ++j) {
+            dst(i,whichVectorDst(j)) = src(i,j);
+          }
+        } else {
+          for (int j = 0; j < n; ++j) {
+            dst(i,whichVectorDst(j)) = src(i,whichVectorSrc(j));
+          }
+        }
+      }
+    }
+  };
+} // namespace (anonymous)
+
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   bool
@@ -2029,50 +2076,57 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   get1dCopy (Teuchos::ArrayView<Scalar> A, size_t LDA) const
   {
-    // KR FIXME This does a deep copy into A, which is column major
-    // with leading dimension LDA.  We assume A is big enough to hold
+    typedef typename dual_view_type::host_mirror_device_type host_mirror_device_type;
+    typedef Kokkos::View<Scalar**, Kokkos::LayoutLeft,
+      host_mirror_device_type, Kokkos::MemoryUnmanaged> input_view_type;
+    typedef typename dual_view_type::t_host host_view_type;
+
+    const size_t numRows = this->getLocalLength ();
+    const size_t numCols = this->getNumVectors ();
+    const std::pair<size_t, size_t> rowRange (0, numRows);
+    const std::pair<size_t, size_t> colRange (0, numCols);
+
+    const char tfecfFuncName[] = "get1dCopy";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      LDA < numRows, std::runtime_error,
+      ": LDA = " << LDA << " < numRows = " << numRows << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      numRows > static_cast<size_t> (0) &&
+      numCols > static_cast<size_t> (0) &&
+      static_cast<size_t> (A.size ()) < LDA * (numCols - 1) + numRows,
+      std::runtime_error,
+      ": A.size() = " << A.size () << ", but its size must be at least "
+      << LDA * (numCols - 1) * numRows << " to hold all the entries.");
+
+    // This does a deep copy into A, which is column major with
+    // leading dimension LDA.  We assume A is big enough to hold
     // everything.  Copy directly from host mirror of the data, if it
     // exists.
 
-    using Teuchos::ArrayRCP;
-    using Teuchos::ArrayView;
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-    const char tfecfFuncName[] = "get1dCopy(A,LDA)";
+    // Start by sync'ing to host.
+    view_.template sync<host_mirror_device_type> ();
 
-    const size_t numRows = getLocalLength ();
-    const size_t numCols = getNumVectors ();
+    input_view_type dstWholeView (A.getRawPtr (), LDA, numCols);
+    input_view_type dstView =
+      Kokkos::subview<input_view_type> (dstWholeView, rowRange, Kokkos::ALL ());
+    host_view_type srcView =
+      Kokkos::subview<host_view_type> (view_.h_view, rowRange, Kokkos::ALL ());
 
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      LDA < numRows, std::runtime_error,
-      ": specified stride is not large enough for local vector length.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      static_cast<size_t> (A.size ()) < LDA*(numCols - 1) + numRows,
-      std::runtime_error,
-      ": specified stride/storage is not large enough for the number of vectors.");
-    RCP<Node> node = MVT::getNode(lclMV_);
-    const size_t myStride = MVT::getStride(lclMV_);
-    if (numRows > 0) {
-      ArrayRCP<const Scalar> mydata = MVT::getValues(lclMV_);
-      ArrayRCP<const Scalar> myview = node->template viewBuffer<Scalar>(myStride*(numCols-1)+numRows,mydata);
-      typename ArrayView<Scalar>::iterator Aptr = A.begin();
-      for (size_t j=0; j<numCols; j++) {
-        ArrayRCP<const Scalar> myviewj = getSubArrayRCP(myview,j);
-        std::copy(myviewj,myviewj+numRows,Aptr);
-        Aptr += LDA;
-      }
-      myview = Teuchos::null;
-      mydata = Teuchos::null;
+    if (this->isConstantStride ()) {
+      Kokkos::deep_copy (dstView, srcView);
     }
-
-    // typedef Kokkos::View<const Scalar*, host_mirror_device_type,
-    //   Kokkos::MemoryUnmanaged> input_view_type;
-    // const std::pair<size_t, size_t> rowRange (0, this->getLocalLength ());
-    // input_view_type A_view (A.getRawPtr, LDA, this->getNumVectors ());
-    // input_view_type A_subview =
-    //   Kokkos::subview<input_view_type> (A_view, rowRange, Kokkos::ALL ());
-
-
+    else {
+      // FIXME (mfh 10 Jul 2014) Shouldn't we use size_t instead of int here?
+      Kokkos::View<int*, host_mirror_device_type> whichVecsDst ("whichVecsDst", numCols);
+      Kokkos::View<int*, host_mirror_device_type> whichVecsSrc ("whichVecsSrc", numCols);
+      for (size_t j = 0; j < numCols; ++j) {
+        whichVecsSrc(j) = static_cast<int> (this->whichVectors_[j]);
+        whichVecsDst(j) = static_cast<int> (j);
+      }
+      DeepCopySelectedVectors<input_view_type, host_view_type,
+        host_mirror_device_type, false, false> f (dstView, srcView, whichVecsDst, whichVecsSrc);
+      Kokkos::parallel_for (numRows, f);
+    }
   }
 
 
@@ -2882,39 +2936,6 @@ namespace Tpetra {
       true, std::logic_error, "Tpetra::createMultiVectorFromView: "
       "Not implemented for Node = KokkosDeviceWrapperNode.");
   }
-
-  template<class DstType, class SrcType, class DeviceType,bool DstConstStride,bool SrcConstStride>
-  struct DeepCopySelectedVectors {
-    typedef DeviceType device_type;
-    DstType dst;
-    SrcType src;
-    Kokkos::View<int*,DeviceType> whichVectorDst;
-    Kokkos::View<int*,DeviceType> whichVectorSrc;
-    int n;
-    DeepCopySelectedVectors(DstType dst_, SrcType src_,
-                            Kokkos::View<int*,DeviceType> whichVectorDst_,
-                            Kokkos::View<int*,DeviceType> whichVectorSrc_):
-      dst(dst_),src(src_),whichVectorDst(whichVectorDst_),whichVectorSrc(whichVectorSrc_),n(whichVectorSrc_.dimension_0()) {};
-    void KOKKOS_INLINE_FUNCTION operator()(int i) const {
-      if(DstConstStride ) {
-        if(SrcConstStride) {
-          for(int j = 0; j<n ; j++)
-            dst(i,j) = src(i,j);
-        } else {
-          for(int j = 0; j<n ; j++)
-            dst(i,j) = src(i,whichVectorSrc(j));
-        }
-      } else {
-        if(SrcConstStride) {
-          for(int j = 0; j<n ; j++)
-            dst(i,whichVectorDst(j)) = src(i,j);
-        } else {
-          for(int j = 0; j<n ; j++)
-            dst(i,whichVectorDst(j)) = src(i,whichVectorSrc(j));
-        }
-      }
-    }
-  };
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >
