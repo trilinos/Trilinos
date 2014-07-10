@@ -100,7 +100,8 @@ namespace Tpetra {
       // Allocate a DualView from new Kokkos, wrap its device data into an ArrayRCP
       view_ = dual_view_type("MV::dual_view",myLen,NumVectors);
       ArrayRCP<Scalar> data = Kokkos::Compat::persistingView(view_.d_view);
-      // getting stride of view: if second dimension is 0 stride might be 0, so take view_dimension instead
+      // getting stride of view: if second dimension is 0 stride might
+      // be 0, so take view_dimension instead
       size_t stride[8];
       view_.stride (stride);
       const size_t LDA = view_.dimension_1() > 1?stride[1]:view_.dimension_0();
@@ -1293,41 +1294,47 @@ namespace Tpetra {
 #endif // HAVE_TEUCHOS_DEBUG
 
     if (this->getMap ().is_null ()) { // current Map is null
-      // KR FIXME: If this->getMap() is null, that means that this
-      // MultiVector has already had replaceMap happen to it.  In that
-      // case, just reallocate the DualView with the right size.
+      // If this->getMap() is null, that means that this MultiVector
+      // has already had replaceMap happen to it.  In that case, just
+      // reallocate the DualView with the right size.
 
       TEUCHOS_TEST_FOR_EXCEPTION(
         newMap.is_null (), std::invalid_argument,
         "Tpetra::MultiVector::replaceMap: both current and new Maps are null.  "
         "This probably means that the input Map is incorrect.");
-      // Case 3: current Map is null, new Map is nonnull.
-      const size_t newNumRows = newMap->getNodeNumElements ();
-      const size_t origNumRows = lclMV_.getNumRows ();
-      const size_t numCols = getNumVectors ();
 
-      if (origNumRows != newNumRows) {
-        RCP<Node> node = newMap->getNode ();
-        ArrayRCP<Scalar> data = newNumRows == 0 ? Teuchos::null :
-          node->template allocBuffer<Scalar> (newNumRows * numCols);
+      // Case 3: current Map is null, new Map is nonnull.
+      // Reallocate the DualView with the right dimensions.
+      const size_t newNumRows = newMap->getNodeNumElements ();
+      const size_t origNumRows = view_.dimension_0 ();
+      const size_t numCols = this->getNumVectors ();
+
+      if (origNumRows != newNumRows || view_.dimension_1 () != numCols) {
+        view_ = dual_view_type ("MV::dual_view", newNumRows, numCols);
+
+        // KR FIXME (mfh 10 Jul 2014) Once MultiVector no longer needs
+        // lclMV_, remove the code below.
+        Teuchos::ArrayRCP<Scalar> data =
+          Kokkos::Compat::persistingView (view_.d_view);
         const size_t stride = newNumRows;
         MVT::initializeValues (lclMV_, newNumRows, numCols, data, stride);
-        if (newNumRows > 0) {
-          MVT::Init (lclMV_, Teuchos::ScalarTraits<Scalar>::zero ());
-        }
       }
     }
     else if (newMap.is_null ()) { // Case 2: current Map is nonnull, new Map is null
-
-      // KR FIXME: We're excluding this process from the MultiVector.
-      // Reallocate to have zero rows; keep the number of columns as
-      // before.
-
       // I am an excluded process.  Reinitialize my data so that I
       // have 0 rows.  Keep the number of columns as before.
-      const size_t numVecs = getNumVectors ();
-      MVT::initializeValues (lclMV_, 0, numVecs, Teuchos::null, 0);
+      const size_t newNumRows = static_cast<size_t> (0);
+      const size_t numCols = this->getNumVectors ();
+      view_ = dual_view_type ("MV::dual_view", newNumRows, numCols);
+
+      // KR FIXME (mfh 10 Jul 2014) Once MultiVector no longer needs
+      // lclMV_, remove the code below.
+      Teuchos::ArrayRCP<Scalar> data =
+        Kokkos::Compat::persistingView (view_.d_view);
+      const size_t stride = newNumRows;
+      MVT::initializeValues (lclMV_, newNumRows, numCols, data, stride);
     }
+
     this->map_ = newMap;
   }
 
@@ -2057,6 +2064,15 @@ namespace Tpetra {
       myview = Teuchos::null;
       mydata = Teuchos::null;
     }
+
+    // typedef Kokkos::View<const Scalar*, host_mirror_device_type,
+    //   Kokkos::MemoryUnmanaged> input_view_type;
+    // const std::pair<size_t, size_t> rowRange (0, this->getLocalLength ());
+    // input_view_type A_view (A.getRawPtr, LDA, this->getNumVectors ());
+    // input_view_type A_subview =
+    //   Kokkos::subview<input_view_type> (A_view, rowRange, Kokkos::ALL ());
+
+
   }
 
 
