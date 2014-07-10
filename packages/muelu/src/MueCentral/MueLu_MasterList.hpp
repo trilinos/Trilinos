@@ -59,6 +59,10 @@ namespace MueLu {
       return List()->get<T>(name);
     }
 
+    static const Teuchos::ParameterEntry& getEntry(const std::string& name) {
+      return List()->getEntry(name);
+    }
+
   private:
     MasterList();
     MasterList(const MasterList&);
