@@ -2673,10 +2673,10 @@ namespace {
     TEST_EQUALITY( X.getNumVectors (), numCols );
 
     if (comm->getRank () == 0) {
-      TEST_EQUALITY( X.getLocalLength (), lclNumRows );
+      TEST_EQUALITY( X.getLocalLength (), static_cast<size_t> (0) );
     }
     else { // my rank is not zero
-      TEST_EQUALITY( X.getLocalLength (), static_cast<size_t> (0) );
+      TEST_EQUALITY( X.getLocalLength (), lclNumRows );
       if (! subsetMap.is_null () && ! X.getMap ().is_null ()) {
         // This is a collective on the subset communicator.
         TEST_ASSERT( X.getMap ()->isSameAs (*subsetMap) );

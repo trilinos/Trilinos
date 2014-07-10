@@ -505,14 +505,25 @@ namespace Tpetra {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  size_t MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalLength() const {
-    return this->getMap()->getNodeNumElements();
+  size_t
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalLength() const
+  {
+    if (this->getMap ().is_null ()) { // possible, due to replaceMap().
+      return static_cast<size_t> (0);
+    } else {
+      return this->getMap ()->getNodeNumElements ();
+    }
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  global_size_t MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getGlobalLength() const {
-    return this->getMap()->getGlobalNumElements();
+  global_size_t MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getGlobalLength() const
+  {
+    if (this->getMap ().is_null ()) { // possible, due to replaceMap().
+      return static_cast<size_t> (0);
+    } else {
+      return this->getMap ()->getGlobalNumElements ();
+    }
   }
 
 

@@ -460,17 +460,26 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   size_t
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
-  getLocalLength () const {
-    return this->getMap ()->getNodeNumElements ();
+  getLocalLength () const
+  {
+    if (this->getMap ().is_null ()) { // possible, due to replaceMap().
+      return static_cast<size_t> (0);
+    } else {
+      return this->getMap ()->getNodeNumElements ();
+    }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   global_size_t
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
-  getGlobalLength () const {
-    return this->getMap ()->getGlobalNumElements ();
+  getGlobalLength () const
+  {
+    if (this->getMap ().is_null ()) { // possible, due to replaceMap().
+      return static_cast<size_t> (0);
+    } else {
+      return this->getMap ()->getGlobalNumElements ();
+    }
   }
-
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   size_t
