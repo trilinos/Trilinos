@@ -1115,21 +1115,26 @@ namespace { // (anonymous)
     using Teuchos::as;
     using Teuchos::reduceAll;
     using Teuchos::REDUCE_SUM;
+
+    using Kokkos::ALL;
+    using Kokkos::subview;
+
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
 
     const size_t numVecs = this->getNumVectors();
     TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(norms.size()) != numVecs, std::runtime_error,
         "Tpetra::MultiVector::norm1(norms): norms.size() must be as large as the number of vectors in *this.");
-    if (isConstantStride()) {
-      MVT::Norm1(lclMV_,norms);
+    if (isConstantStride ()) {
+      Kokkos::MV_Norm1 (&norms[0], view_.d_view, getLocalLength ());
     }
     else {
-      KMV v(MVT::getNode(lclMV_));
-      ArrayRCP<Scalar> vj;
-      for (size_t j=0; j < numVecs; ++j) {
-        vj = arcp_const_cast<Scalar> (MVT::getValues(lclMV_,whichVectors_[j]) );
-        MVT::initializeValues (v, MVT::getNumRows(lclMV_), 1, vj, MVT::getStride (lclMV_));
-        norms[j] = MVT::Norm1 ((const KMV&)v);
+      // FIXME (mfh 11 Mar 2014) Once we have strided Views, we won't
+      // have to write the explicit for loop over columns any more.
+      for (size_t k = 0; k < numVecs; ++k) {
+        typedef Kokkos::View<Scalar*,DeviceType> view_type;
+        const size_t curCol = whichVectors_[k];
+        view_type vector_k = subview<view_type> (view_.d_view, ALL (), curCol);
+        norms[k] = Kokkos::V_Norm1 (vector_k);
       }
     }
     if (this->isDistributed ()) {
@@ -1154,21 +1159,26 @@ namespace { // (anonymous)
     using Teuchos::as;
     using Teuchos::reduceAll;
     using Teuchos::REDUCE_MAX;
+
+    using Kokkos::ALL;
+    using Kokkos::subview;
+
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
 
     const size_t numVecs = this->getNumVectors();
     TEUCHOS_TEST_FOR_EXCEPTION(as<size_t>(norms.size()) != numVecs, std::runtime_error,
       "Tpetra::MultiVector::normInf(norms): norms.size() must be as large as the number of vectors in *this.");
     if (isConstantStride ()) {
-      MVT::NormInf(lclMV_,norms);
+      Kokkos::MV_NormInf (&norms[0], view_.d_view, getLocalLength ());
     }
     else {
-      KMV v(MVT::getNode(lclMV_));
-      ArrayRCP<Scalar> vj;
-      for (size_t j=0; j < numVecs; ++j) {
-        vj = Teuchos::arcp_const_cast<Scalar>( MVT::getValues(lclMV_,whichVectors_[j]) );
-        MVT::initializeValues(v,MVT::getNumRows(lclMV_), 1, vj, MVT::getStride(lclMV_));
-        norms[j] = MVT::NormInf((const KMV&)v);
+      // FIXME (mfh 11 Mar 2014) Once we have strided Views, we won't
+      // have to write the explicit for loop over columns any more.
+      for (size_t k = 0; k < numVecs; ++k) {
+        typedef Kokkos::View<Scalar*,DeviceType> view_type;
+        const size_t curCol = whichVectors_[k];
+        view_type vector_k = subview<view_type> (view_.d_view, ALL (), curCol);
+        norms[k] = Kokkos::V_NormInf (vector_k);
       }
     }
     if (this->isDistributed()) {
@@ -1194,24 +1204,29 @@ namespace { // (anonymous)
     using Teuchos::arcp_const_cast;
     using Teuchos::reduceAll;
     using Teuchos::REDUCE_SUM;
+
+    using Kokkos::ALL;
+    using Kokkos::subview;
+
     typedef Teuchos::ScalarTraits<Scalar> SCT;
 
     const size_t numVecs = getNumVectors();
-    const size_t myLen   = getLocalLength();
+
     TEUCHOS_TEST_FOR_EXCEPTION(as<size_t>(means.size()) != numVecs, std::runtime_error,
       "Tpetra::MultiVector::meanValue(): means.size() must be as large as the number of vectors in *this.");
     // compute local components of the means
     // sum these across all nodes
-    if (isConstantStride()) {
-      MVT::Sum(lclMV_,means);
+    if (isConstantStride ()) {
+      Kokkos::MV_Sum (&means[0], view_.d_view, getLocalLength ());
     }
     else {
-      KMV v(MVT::getNode(lclMV_));
-      ArrayRCP<Scalar> vptr = arcp_const_cast<Scalar>(MVT::getValues(lclMV_));
-      for (size_t j=0; j < numVecs; ++j) {
-        ArrayRCP<Scalar> vj =   getSubArrayRCP( vptr,j);
-        MVT::initializeValues(v,myLen, 1,  vj, myLen);
-        means[j] = MVT::Sum((const KMV &)v);
+      // FIXME (mfh 11 Mar 2014) Once we have strided Views, we won't
+      // have to write the explicit for loop over columns any more.
+      for (size_t k = 0; k < numVecs; ++k) {
+        typedef Kokkos::View<Scalar*,DeviceType> view_type;
+        const size_t curCol = whichVectors_[k];
+        view_type vector_k = subview<view_type> (view_.d_view, ALL (), curCol);
+        means[k] = Kokkos::V_Sum (vector_k);
       }
     }
     if (this->isDistributed()) {

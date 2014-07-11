@@ -16,6 +16,8 @@
 #include <Kokkos_InnerProductSpaceTraits.hpp>
 #include <ctime>
 
+#define MAX(a,b) (a<b?b:a)
+
 namespace Kokkos {
 
 
@@ -1416,6 +1418,220 @@ rVector MV_Dot(const rVector &r, const XVector & x, const YVector & y, int n = -
 }
 
 /*------------------------------------------------------------------------------------------
+ *-------------------------- Compute Sum -------------------------------------------------
+ *------------------------------------------------------------------------------------------*/
+template<class XVector>
+struct MV_Sum_Functor
+{
+  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::size_type            size_type;
+  typedef typename XVector::value_type          xvalue_type;
+  typedef Details::InnerProductSpaceTraits<xvalue_type> IPT;
+  typedef typename IPT::dot_type               value_type[];
+
+  typename XVector::const_type m_x ;
+  size_type value_count;
+
+  MV_Sum_Functor(XVector x):m_x(x),value_count(x.dimension_1()) {}
+  //--------------------------------------------------------------------------
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i, value_type sum ) const
+  {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+    for(size_type k=0;k<value_count;k++){
+      sum[k] += m_x(i,k);
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void init( value_type update) const
+  {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+    for(size_type k=0;k<value_count;k++)
+      update[k] = 0;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void join( volatile value_type  update ,
+                                    const volatile value_type  source ) const
+  {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+    for(size_type k=0;k<value_count;k++){
+      update[k] += source[k];
+    }
+  }
+};
+
+
+template<class normVector, class VectorType>
+normVector MV_Sum(const normVector &r, const VectorType & x, int n = -1)
+{
+    typedef typename VectorType::size_type            size_type;
+
+    if(n<0) n = x.dimension_0();
+
+    Kokkos::parallel_reduce( n , MV_Sum_Functor<VectorType>(x), r );
+    return r;
+}
+
+/*------------------------------------------------------------------------------------------
+ *-------------------------- Compute Norm1--------------------------------------------------
+ *------------------------------------------------------------------------------------------*/
+template<class XVector>
+struct MV_Norm1_Functor
+{
+  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::size_type            size_type;
+  typedef typename XVector::value_type          xvalue_type;
+  typedef Details::InnerProductSpaceTraits<xvalue_type> IPT;
+  typedef typename IPT::dot_type               value_type[];
+
+  typename XVector::const_type m_x ;
+  size_type value_count;
+
+  MV_Norm1_Functor(XVector x):m_x(x),value_count(x.dimension_1()) {}
+  //--------------------------------------------------------------------------
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i, value_type sum ) const
+  {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+    for(size_type k=0;k<value_count;k++){
+      sum[k] += Kokkos::Details::ArithTraits<typename XVector::non_const_value_type>::abs(m_x(i,k));
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void init( value_type update) const
+  {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+    for(size_type k=0;k<value_count;k++)
+      update[k] = 0;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void join( volatile value_type  update ,
+                                    const volatile value_type  source ) const
+  {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+    for(size_type k=0;k<value_count;k++){
+      update[k] += source[k];
+    }
+  }
+};
+
+template<class normVector, class VectorType>
+normVector MV_Norm1(const normVector &r, const VectorType & x, int n = -1)
+{
+    typedef typename VectorType::size_type            size_type;
+
+    if(n<0) n = x.dimension_0();
+
+    Kokkos::parallel_reduce( n , MV_Norm1_Functor<VectorType>(x), r );
+    return r;
+}
+
+/*------------------------------------------------------------------------------------------
+ *-------------------------- Compute NormInf--------------------------------------------------
+ *------------------------------------------------------------------------------------------*/
+template<class XVector>
+struct MV_NormInf_Functor
+{
+  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::size_type            size_type;
+  typedef typename XVector::value_type          xvalue_type;
+  typedef Details::InnerProductSpaceTraits<xvalue_type> IPT;
+  typedef typename IPT::dot_type               value_type[];
+
+  typename XVector::const_type m_x ;
+  size_type value_count;
+
+  MV_NormInf_Functor(XVector x):m_x(x),value_count(x.dimension_1()) {}
+  //--------------------------------------------------------------------------
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i, value_type sum ) const
+  {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+    for(size_type k=0;k<value_count;k++){
+      sum[k] = MAX(sum[k],Kokkos::Details::ArithTraits<typename XVector::non_const_value_type>::abs(m_x(i,k)));
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION void init( value_type update) const
+  {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+    for(size_type k=0;k<value_count;k++)
+      update[k] = 0;
+  }
+  KOKKOS_INLINE_FUNCTION void join( volatile value_type  update ,
+                                    const volatile value_type  source ) const
+  {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+    for(size_type k=0;k<value_count;k++){
+      update[k] = MAX(update[k],source[k]);
+    }
+  }
+};
+
+template<class normVector, class VectorType>
+normVector MV_NormInf(const normVector &r, const VectorType & x, int n = -1)
+{
+    typedef typename VectorType::size_type            size_type;
+
+    if(n<0) n = x.dimension_0();
+
+    Kokkos::parallel_reduce( n , MV_NormInf_Functor<VectorType>(x), r );
+    return r;
+}
+
+
+/*------------------------------------------------------------------------------------------
  *-------------------------- Multiply with scalar: y = a * x -------------------------------
  *------------------------------------------------------------------------------------------*/
 template<class RVector, class aVector, class XVector>
@@ -1734,6 +1950,153 @@ V_Dot( const XVector & x, const YVector & y, int n = -1)
   typename Functor::value_type ret_val;
   parallel_reduce(n,f,ret_val);
   return ret_val;
+}
+
+/*------------------------------------------------------------------------------------------
+ *-------------------------- Compute Sum -------------------------------------------------
+ *------------------------------------------------------------------------------------------*/
+template<class XVector>
+struct V_Sum_Functor
+{
+  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::size_type            size_type;
+  typedef typename XVector::value_type          xvalue_type;
+  typedef Details::InnerProductSpaceTraits<xvalue_type> IPT;
+  typedef typename IPT::dot_type               value_type;
+
+  typename XVector::const_type m_x ;
+
+  V_Sum_Functor(XVector x):m_x(x) {}
+  //--------------------------------------------------------------------------
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i, value_type& sum ) const
+  {
+      sum += m_x(i);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void init( value_type& update) const
+  {
+      update = 0;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void join( volatile value_type&  update ,
+                                    const volatile value_type&  source ) const
+  {
+      update += source;
+  }
+};
+
+
+template<class VectorType>
+typename Details::InnerProductSpaceTraits<typename VectorType::value_type>::dot_type
+V_Sum(const VectorType & x, int n = -1)
+{
+    typedef typename VectorType::size_type            size_type;
+
+    if(n<0) n = x.dimension_0();
+
+    typedef Details::InnerProductSpaceTraits<typename VectorType::value_type> IPT;
+    typedef typename IPT::dot_type               value_type;
+    value_type ret_val;
+    Kokkos::parallel_reduce( n , V_Sum_Functor<VectorType>(x), ret_val );
+    return ret_val;
+}
+
+/*------------------------------------------------------------------------------------------
+ *-------------------------- Compute Norm1--------------------------------------------------
+ *------------------------------------------------------------------------------------------*/
+template<class XVector>
+struct V_Norm1_Functor
+{
+  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::size_type            size_type;
+  typedef typename XVector::value_type          xvalue_type;
+  typedef Details::InnerProductSpaceTraits<xvalue_type> IPT;
+  typedef typename IPT::dot_type               value_type;
+
+  typename XVector::const_type m_x ;
+
+  V_Norm1_Functor(XVector x):m_x(x) {}
+  //--------------------------------------------------------------------------
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i, value_type& sum ) const
+  {
+    sum += Kokkos::Details::ArithTraits<typename XVector::non_const_value_type>::abs(m_x(i));
+  }
+  KOKKOS_INLINE_FUNCTION void init( value_type& update) const
+  {
+    update = 0;
+  }
+  KOKKOS_INLINE_FUNCTION void join( volatile value_type&  update ,
+                                    const volatile value_type&  source ) const
+  {
+    update += source;
+  }
+};
+
+template<class VectorType>
+typename Details::InnerProductSpaceTraits<typename VectorType::value_type>::dot_type
+V_Norm1( const VectorType & x, int n = -1)
+{
+    typedef typename VectorType::size_type            size_type;
+
+    if(n<0) n = x.dimension_0();
+
+    typedef Details::InnerProductSpaceTraits<typename VectorType::value_type> IPT;
+    typedef typename IPT::dot_type               value_type;
+    value_type ret_val;
+    Kokkos::parallel_reduce( n , V_Norm1_Functor<VectorType>(x), ret_val );
+    return ret_val;
+}
+/*------------------------------------------------------------------------------------------
+ *-------------------------- Compute NormInf--------------------------------------------------
+ *------------------------------------------------------------------------------------------*/
+template<class XVector>
+struct V_NormInf_Functor
+{
+  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::size_type            size_type;
+  typedef typename XVector::value_type          xvalue_type;
+  typedef Details::InnerProductSpaceTraits<xvalue_type> IPT;
+  typedef typename IPT::dot_type               value_type;
+
+  typename XVector::const_type m_x ;
+
+  V_NormInf_Functor(XVector x):m_x(x) {}
+  //--------------------------------------------------------------------------
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i, value_type& sum ) const
+  {
+    sum = MAX(sum,Kokkos::Details::ArithTraits<typename XVector::non_const_value_type>::abs(m_x(i)));
+  }
+
+  KOKKOS_INLINE_FUNCTION void init( value_type& update) const
+  {
+    update = 0;
+  }
+  KOKKOS_INLINE_FUNCTION void join( volatile value_type&  update ,
+                                    const volatile value_type&  source ) const
+  {
+    update = MAX(update,source);
+  }
+};
+
+template<class VectorType>
+typename Details::InnerProductSpaceTraits<typename VectorType::value_type>::dot_type
+V_NormInf( const VectorType & x, int n = -1)
+{
+    typedef typename VectorType::size_type            size_type;
+
+    if(n<0) n = x.dimension_0();
+
+    typedef Details::InnerProductSpaceTraits<typename VectorType::value_type> IPT;
+    typedef typename IPT::dot_type               value_type;
+    value_type ret_val;
+    Kokkos::parallel_reduce( n , V_NormInf_Functor<VectorType>(x), ret_val );
+    return ret_val;
 }
 
 /*------------------------------------------------------------------------------------------
