@@ -314,7 +314,7 @@ TEST( UnitTestCreateFaces , testCreateFaces3x3x3 )
           EXPECT_NE(face_owner, my_proc_id);
         }
 
-        const bool is_shared = fixture.m_bulk_data.in_aura(fixture.m_bulk_data.entity_key(face));
+        const bool is_shared = fixture.m_bulk_data.in_shared(fixture.m_bulk_data.entity_key(face));
         if (is_shared) elem_num_shared_faces += 1;
 
         const bool is_ghosted_or_shared = is_ghosted || is_shared;
@@ -433,7 +433,7 @@ TEST( UnitTestCreateFaces , testCreateTetFaces3x3x3 )
           EXPECT_NE(face_owner, my_proc_id);
         }
 
-        const bool is_shared = fixture.m_bulk_data.in_aura(fixture.m_bulk_data.entity_key(face));
+        const bool is_shared = fixture.m_bulk_data.in_shared(fixture.m_bulk_data.entity_key(face));
         if (is_shared) elem_num_shared_faces += 1;
 
         const bool is_ghosted_or_shared = is_ghosted || is_shared;

@@ -76,6 +76,7 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     Diagonal
     DiagonalFilter
     Factory
+    Hiptmair
     IdentitySolver
     ILUT
     Krylov

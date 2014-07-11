@@ -147,6 +147,10 @@ namespace ML_Epetra
     //! Smoother
     Teuchos::RCP<Epetra_Operator> Smoother_;
 
+    //! use ML's internal block Jacobi
+    bool use_mlsmoother_;
+    ML *ml_subproblem_;
+
     //! Smoother pre or post
     int pre_or_post;
 

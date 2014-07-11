@@ -1,6 +1,7 @@
 #ifndef STK_UTIL_PARALLEL_MPI_hpp
 #define STK_UTIL_PARALLEL_MPI_hpp
 
+#include <boost/static_assert.hpp>
 #include <stk_util/stk_config.h>
 #if defined ( STK_HAS_MPI )
 
@@ -11,6 +12,9 @@
 #include <iterator>                     // for iterator_traits, etc
 #include <stdexcept>                    // for runtime_error
 #include <vector>                       // for vector
+#include <iostream>
+#include <sys/types.h>
+#include <stdint.h>
 namespace sierra { namespace MPI { template <typename T> struct Datatype; } }
 
 namespace sierra {
@@ -31,6 +35,8 @@ void
     for (int i = 0; i < *len; ++i)
       complex_inout[i] += complex_in[i];
   }
+
+
 
 ///
 /// @addtogroup MPIDetail
@@ -53,6 +59,19 @@ MPI_Datatype float_complex_type();
  * @return	a <code>MPI_Datatype</code> value of the C++ complex MPI data type.
  */
 MPI_Datatype double_complex_type();
+
+/**
+ *MPI datatypes for MPI::Loc using 64-bits for index.
+ */
+
+
+
+MPI_Datatype int_int64_type();
+MPI_Datatype short_int64_type();
+MPI_Datatype long_int64_type();
+MPI_Datatype unsigned_long_int64_type();
+MPI_Datatype float_int64_type();
+MPI_Datatype double_int64_type();
 
 /**
  * @brief Function <code>double_complex_sum_op</code> returns a sum operation for the C++
@@ -104,22 +123,22 @@ MPI_Datatype double_double_int_type();
  * MAXLOC data types.
  *
  */
-template <typename T>
+
+
+template <typename T, typename IdType=int64_t>
 struct Loc
 {
-  Loc()
-    : m_value(),
-      m_loc(0)
-  {}
-
-  Loc(const T &value, int loc)
-    : m_value(value),
-      m_loc(loc)
-  {}
-
-  T		m_value;
-  int		m_loc;
+  T m_value;
+  IdType m_loc;
 };
+
+template <typename T>
+Loc<T> create_Loc(const T &value, int64_t loc){
+    Loc<T> mpi_loc;
+    mpi_loc.m_value = value;
+    mpi_loc.m_loc = loc;
+    return mpi_loc;
+  }
 
 struct TempLoc
 {
@@ -129,7 +148,7 @@ struct TempLoc
       m_loc(0)
   {}
 
-  TempLoc(double value, double other, int loc)
+  TempLoc(double value, double other, int64_t loc)
     : m_value(value),
       m_other(other),
       m_loc(loc)
@@ -137,9 +156,42 @@ struct TempLoc
 
   double        m_value;
   double        m_other;
-  int		m_loc;
+  int64_t	m_loc;
 };
 
+template<class T, class CompareOp, class IdType>
+inline
+void mpi_loc_global(void * invec, void * inoutvec, int * len, MPI_Datatype * datatype)
+{
+  CompareOp op;
+  Loc<T, IdType> *Loc_in = static_cast<Loc<T, IdType> *>(invec);
+  Loc<T, IdType> *Loc_inout = static_cast<Loc<T, IdType> *>(inoutvec);
+
+  for (int i = 0; i < *len; ++i)
+  {
+    if (op(Loc_in[i].m_value, Loc_inout[i].m_value))
+    {
+      Loc_inout[i].m_value = Loc_in[i].m_value;
+      Loc_inout[i].m_loc = Loc_in[i].m_loc;
+    }
+  }
+}
+
+
+template<class T, class CompareOp, class IdType>
+inline
+MPI_Op get_mpi_loc_op()
+{
+  static MPI_Op s_mpi_loc_global_op;
+  static bool initialized = false;
+
+  if (!initialized) {
+    initialized = true;
+
+    MPI_Op_create(mpi_loc_global<T, CompareOp, IdType>, true, &s_mpi_loc_global_op);
+  }
+  return s_mpi_loc_global_op;
+}
 
 /**
  * @brief Traits class <code>Datatype</code> implements a traits class containing two
@@ -222,25 +274,25 @@ struct Datatype<unsigned long>
   }
 };
 
-// #ifdef MPI_LONG_LONG_INT
-// template <>
-// struct Datatype<long long>
-// {
-//   static MPI_Datatype type() {
-//     return MPI_LONG_LONG_INT;
-//   }
-// };
-// #endif
+#ifdef MPI_LONG_LONG
+template <>
+struct Datatype<long long>
+{
+  static MPI_Datatype type() {
+    return MPI_LONG_LONG;
+  }
+};
+#endif
 
-// #ifdef MPI_UNSIGNED_LONG_LONG_INT
-// template <>
-// struct Datatype<unsigned long long>
-// {
-//   static MPI_Datatype type() {
-//     return MPI_UNSIGNED_LONG_LONG_INT;
-//   }
-// };
-// #endif
+#ifdef MPI_UNSIGNED_LONG_LONG
+template <>
+struct Datatype<unsigned long long>
+{
+  static MPI_Datatype type() {
+    return MPI_UNSIGNED_LONG_LONG;
+  }
+};
+#endif
 
 template <>
 struct Datatype<float>
@@ -257,7 +309,6 @@ struct Datatype<double>
     return MPI_DOUBLE;
   }
 };
-
 
 template <>
 struct Datatype<std::complex<float> >
@@ -277,59 +328,82 @@ struct Datatype<std::complex<double> >
 
 
 template <>
-struct Datatype<Loc<int> >
+struct Datatype<Loc<int, uint64_t> >
 {
   static MPI_Datatype type() {
-    return MPI_2INT;
+    return int_int64_type();
   }
 };
 
 template <>
-struct Datatype<Loc<short> >
+struct Datatype<Loc<short, uint64_t> >
 {
   static MPI_Datatype type() {
-    return MPI_SHORT_INT;
+    return short_int64_type();
   }
 };
 
 template <>
-struct Datatype<Loc<long> >
+struct Datatype<Loc<long, uint64_t> >
 {
   static MPI_Datatype type() {
-    return MPI_LONG_INT;
+    return long_int64_type();
   }
 };
 
 template <>
-struct Datatype<Loc<unsigned long> >
+struct Datatype<Loc<unsigned long, uint64_t> >
 {
   static MPI_Datatype type() {
-    return MPI_LONG_INT;
-  }
-};
-
-// #ifdef MPI_LONG_LONG_INT
-// template <>
-// struct Datatype<Loc<long long> >
-// {
-//   static MPI_Datatype type() {
-//     return long_long_int_int_type();
-//   }
-// };
-// #endif
-
-template <>
-struct Datatype<Loc<float> >
-{
-  static MPI_Datatype type() {
-    return MPI_FLOAT_INT;
+    return unsigned_long_int64_type();
   }
 };
 
 template <>
-struct Datatype<Loc<double> >
+struct Datatype<Loc<float, uint64_t> >
 {
   static MPI_Datatype type() {
+    return float_int64_type();
+  }
+};
+
+template <>
+struct Datatype<Loc<double, uint64_t> >
+{
+  static MPI_Datatype type() {
+    return double_int64_type();
+  }
+};
+
+template <>
+struct Datatype<Loc<double, int64_t> >
+{
+  static MPI_Datatype type() {
+    return double_int64_type();
+  }
+};
+
+template <>
+struct Datatype<Loc<int, int64_t> >
+{
+  static MPI_Datatype type() {
+    return int_int64_type();
+  }
+};
+
+template <>
+struct Datatype<Loc<double, int> >
+{
+  static MPI_Datatype type() {
+    return MPI_DOUBLE_INT;
+  }
+};
+
+template <>
+struct Datatype<Loc<size_t, int> >
+{
+  static MPI_Datatype type() {
+    BOOST_STATIC_ASSERT(sizeof(double) == sizeof(size_t));
     return MPI_DOUBLE_INT;
   }
 };

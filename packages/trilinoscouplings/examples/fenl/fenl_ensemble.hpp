@@ -49,8 +49,15 @@
 //----------------------------------------------------------------------------
 
 #include "Stokhos_Tpetra_MP_Vector.hpp"
+
+#if defined( HAVE_STOKHOS_BELOS )
 #include "Belos_TpetraAdapter_MP_Vector.hpp"
+#endif
+
+#if defined( HAVE_STOKHOS_MUELU )
 #include "Stokhos_MueLu_MP_Vector.hpp"
+#endif
+
 
 #include <fenl.hpp>
 

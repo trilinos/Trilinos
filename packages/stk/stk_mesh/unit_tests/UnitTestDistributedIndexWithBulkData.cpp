@@ -254,7 +254,7 @@ TEST(UnderstandingDistributedIndex, TestSharedAndGhostedAndOwnedEntitiesWithoutA
             stk::mesh::Entity sharedNode = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, sharedNodeIds[i]);
             stk::mesh::Bucket& bucket = stkMeshBulkData.bucket(sharedNode);
             EXPECT_TRUE(bucket.shared());
-            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map_aura(stkMeshBulkData.entity_key(sharedNode));
+            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map_shared(stkMeshBulkData.entity_key(sharedNode));
             EXPECT_TRUE(commStuff.size() == 1);
             EXPECT_TRUE((*commStuff.first).proc == otherProcId);
             size_t sharedButNotGhostedId = 0;
@@ -346,7 +346,7 @@ void testSharedNodesFor2x2x4MeshForTwoProcs(const int myProc, const stk::mesh::B
         stk::mesh::Entity sharedNode = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, sharedNodeIds[i]);
         stk::mesh::Bucket& bucket = stkMeshBulkData.bucket(sharedNode);
         EXPECT_TRUE(bucket.shared());
-        stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map_aura(stkMeshBulkData.entity_key(sharedNode));
+        stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map_shared(stkMeshBulkData.entity_key(sharedNode));
         EXPECT_TRUE(commStuff.size() == 1);
         EXPECT_TRUE((*commStuff.first).proc == otherProcId);
         size_t sharedButNotGhostedId = 0;

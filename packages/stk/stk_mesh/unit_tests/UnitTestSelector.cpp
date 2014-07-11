@@ -92,21 +92,6 @@ TEST(Verify, twoSelectorFixturesCreatedSequetiallyDoNotSegFault)
   EXPECT_TRUE(true);
 }
 
-TEST(DISABLE_Verify, selectorCapabilitiesNotVerified)
-{
-    /*
-     *   bool operator<=(const Selector& rhs) const {
-     *   bool operator>(const Selector& rhs) const {
-     *   bool operator>=(const Selector& rhs) const {
-     *
-     *   bool is_all_unions() const;
-     *   void get_parts(PartVector& parts) const;
-     *
-     *   bool operator()(const PartVector& parts) const;
-     *
-     *   bool is_subset(Selector const& lhs, Selector const& rhs);
-     */
-}
 
 TEST(Verify, partASelector)
 {

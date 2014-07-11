@@ -99,18 +99,18 @@ TEST( UnitTestGloballyShared, keyhole_3x1 )
     ASSERT_EQ( 4, num_element_1_edges );
     Entity element_1_edge_1 = element_1_edge_relations[1];
     ASSERT_TRUE( mesh.is_valid(element_1_edge_1) );
-    EXPECT_TRUE( mesh.in_aura(mesh.entity_key(element_1_edge_1)) );
+    EXPECT_TRUE( mesh.in_shared(mesh.entity_key(element_1_edge_1)) );
 
     stk::mesh::Entity const* element_3_edge_relations = mesh.begin_edges(element_3);
     const int num_element_3_edges = mesh.num_edges(element_3);
     ASSERT_EQ( 4, num_element_3_edges );
     Entity element_3_edge_3 = element_3_edge_relations[3];
     ASSERT_TRUE( mesh.is_valid(element_3_edge_3) );
-    EXPECT_TRUE( mesh.in_aura(mesh.entity_key(element_3_edge_3)) );
+    EXPECT_TRUE( mesh.in_shared(mesh.entity_key(element_3_edge_3)) );
 
-    EXPECT_FALSE( mesh.in_aura(mesh.entity_key(element_1)) );
-    EXPECT_FALSE( mesh.in_aura(mesh.entity_key(element_2)) );
-    EXPECT_FALSE( mesh.in_aura(mesh.entity_key(element_3)) );
+    EXPECT_FALSE( mesh.in_shared(mesh.entity_key(element_1)) );
+    EXPECT_FALSE( mesh.in_shared(mesh.entity_key(element_2)) );
+    EXPECT_FALSE( mesh.in_shared(mesh.entity_key(element_3)) );
   }
   else if (p_rank == 1) {
     ASSERT_TRUE( mesh.is_valid(element_1) );
@@ -132,20 +132,20 @@ TEST( UnitTestGloballyShared, keyhole_3x1 )
     Entity element_2_edge_2 = element_2_edge_relations[2];
     ASSERT_TRUE( mesh.is_valid(element_2_edge_2) );
 
-    EXPECT_FALSE( mesh.in_aura(mesh.entity_key(element_2_edge_0)) );
-    EXPECT_FALSE( mesh.in_aura(mesh.entity_key(element_2_edge_2)) );
+    EXPECT_FALSE( mesh.in_shared(mesh.entity_key(element_2_edge_0)) );
+    EXPECT_FALSE( mesh.in_shared(mesh.entity_key(element_2_edge_2)) );
 
     Entity element_2_edge_1 = element_2_edge_relations[1];
     ASSERT_TRUE( mesh.is_valid(element_2_edge_1) );
     Entity element_2_edge_3 = element_2_edge_relations[3];
     ASSERT_TRUE( mesh.is_valid(element_2_edge_3) );
 
-    EXPECT_TRUE( mesh.in_aura(mesh.entity_key(element_2_edge_1)) );
-    EXPECT_TRUE( mesh.in_aura(mesh.entity_key(element_2_edge_3)) );
+    EXPECT_TRUE( mesh.in_shared(mesh.entity_key(element_2_edge_1)) );
+    EXPECT_TRUE( mesh.in_shared(mesh.entity_key(element_2_edge_3)) );
 
-    EXPECT_FALSE( mesh.in_aura(mesh.entity_key(element_1)) );
-    EXPECT_FALSE( mesh.in_aura(mesh.entity_key(element_2)) );
-    EXPECT_FALSE( mesh.in_aura(mesh.entity_key(element_3)) );
+    EXPECT_FALSE( mesh.in_shared(mesh.entity_key(element_1)) );
+    EXPECT_FALSE( mesh.in_shared(mesh.entity_key(element_2)) );
+    EXPECT_FALSE( mesh.in_shared(mesh.entity_key(element_3)) );
   }
   else {
     EXPECT_TRUE( !mesh.is_valid(element_1) );

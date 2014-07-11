@@ -74,6 +74,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_SuperLU=ON"
 
   "-DTpetra_ENABLE_Kokkos_Refactor:BOOL=ON"
+  "-DTeptra_ENABLE_Kokkos_Refactor_Map:BOOL=ON"
   "-DTpetra_ENABLE_KokkosCompat:BOOL=ON"
   "-DTpetra_ENABLE_MPI_CUDA_RDMA:BOOL=OFF"
 

@@ -233,12 +233,12 @@ namespace stk {
 	       end = shared_face_map.end(); itr != end; ++itr ) {
 	  //find process that share this face;
 
-	  PairIterEntityComm left_shared = mesh.entity_comm_map_aura(itr->nodes[0]);
+	  PairIterEntityComm left_shared = mesh.entity_comm_map_shared(itr->nodes[0]);
 
 	  EntityCommInfoVector shared_processes(left_shared.first, left_shared.second);
 
 	  for (int i = 1; i < (int)itr->nodes.size(); ++i) {
-	    PairIterEntityComm right_shared = mesh.entity_comm_map_aura( itr->nodes[i] );
+	    PairIterEntityComm right_shared = mesh.entity_comm_map_shared( itr->nodes[i] );
 
 	    std::set_intersection( shared_processes.begin(), shared_processes.end(),
 				   right_shared.first, right_shared.second,

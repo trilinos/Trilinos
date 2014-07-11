@@ -81,7 +81,7 @@ namespace MueLu {
     coarseSolver_->Setup(currentLevel);
 
     if (SmootherPrototype::IsSetup() == true)
-      this->GetOStream(Warnings0) << "Warning: MueLu::ProjectorSmoother::Setup(): Setup() has already been called" << std::endl;
+      this->GetOStream(Warnings0) << "MueLu::ProjectorSmoother::Setup(): Setup() has already been called" << std::endl;
 
     RCP<Matrix>      A = Factory::Get< RCP<Matrix> >     (currentLevel, "A");
     RCP<MultiVector> B = Factory::Get< RCP<MultiVector> >(currentLevel, "Nullspace");
@@ -152,7 +152,7 @@ namespace MueLu {
       }
     }
 #else
-    this->GetOStream(Warnings0) << "Warning: MueLu::ProjectorSmoother::Setup(): disabling as it works only with Tpetra" << std::endl;
+    this->GetOStream(Warnings0) << "MueLu::ProjectorSmoother::Setup(): disabling as it works only with Tpetra" << std::endl;
 #endif
   }
 

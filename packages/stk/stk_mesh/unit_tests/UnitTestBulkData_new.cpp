@@ -196,7 +196,7 @@ TEST ( UnitTestBulkData_new , verifyDetectsNonOwnerChange )
   Entity shared_node = fixture.node(1 /*x*/, 1 /*y*/);
   // Assert that this node is shared
   if ( p_size > 1 && bulk.is_valid(shared_node) && (p_rank == 0 || p_rank == 1) ) {
-    ASSERT_GE(bulk.entity_comm_map_aura(bulk.entity_key(shared_node)).size(), 1u);
+    ASSERT_GE(bulk.entity_comm_map_shared(bulk.entity_key(shared_node)).size(), 1u);
   }
 
   bulk.modification_begin();
@@ -535,7 +535,7 @@ TEST ( UnitTestBulkData_new , verifyChangeGhostingGuards )
   }
 
   Ghosting &ghosting = bulk1.create_ghosting ( "Ghost 1" );
-  ASSERT_THROW ( bulk1.change_ghosting ( bulk1.aura() , to_send , empty_vector ) , std::runtime_error );
+  ASSERT_THROW ( bulk1.change_ghosting ( bulk1.aura_ghosting() , to_send , empty_vector ) , std::runtime_error );
 
   ghosting.receive_list(empty_vector);
   ghosting.send_list(to_send);
@@ -933,7 +933,7 @@ void new_insert_transitive_closure( BulkData& bulk_data, std::set<EntityProc,Ent
   // owned or shared by the receiving processor.
 
   if ( entry.second != bulk_data.parallel_owner_rank(entry.first) &&
-       ! bulk_data.in_aura( bulk_data.entity_key(entry.first), entry.second ) ) {
+       ! bulk_data.in_shared( bulk_data.entity_key(entry.first), entry.second ) ) {
 
     std::pair< std::set<EntityProc,EntityLess>::iterator , bool >
       result = new_send.insert( entry );

@@ -1,9 +1,8 @@
 #ifndef MUELU_EMINPFACTORY_DEF_HPP
 #define MUELU_EMINPFACTORY_DEF_HPP
 
-#include <Xpetra_CrsGraph_fwd.hpp>
-#include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_MultiVector_fwd.hpp>
+#include <Xpetra_Matrix.hpp>
+#include <Xpetra_StridedMapFactory.hpp>
 
 #include "MueLu_EminPFactory_decl.hpp"
 
@@ -20,7 +19,7 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const ParameterList> EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+  RCP<const ParameterList> EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     validParamList->set< RCP<const FactoryBase> >("A",                 Teuchos::null, "Generating factory for the matrix A used during internal iterations");

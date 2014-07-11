@@ -252,40 +252,6 @@ startup_preparallel_platform()
 #endif
 
 
-double
-wall_now()
-{
-  timeval tp;
-  struct timezone tz;
-  gettimeofday(&tp, &tz);
-  return (tp.tv_sec + ((static_cast<double>(tp.tv_usec))/1000000.0));
-}
-
-
-double
-cpu_now()
-{
-#if defined(REDS)
-  struct rusage my_rusage;
-
-  getrusage(RUSAGE_SELF, &my_rusage);
-
-  return static_cast<double>(my_rusage.ru_utime.tv_sec) +
-    static_cast<double>(my_rusage.ru_utime.tv_usec)*1.0e-6;
-
-#elif ! defined(__PGI)
-  struct rusage my_rusage;
-
-  getrusage(RUSAGE_SELF, &my_rusage);
-
-  return static_cast<double>(my_rusage.ru_utime.tv_sec + my_rusage.ru_stime.tv_sec) +
-    static_cast<double>(my_rusage.ru_utime.tv_usec + my_rusage.ru_stime.tv_usec)*1.0e-6;
-#else
-  return 0;
-#endif
-}
-
-
 void
 get_heap_info(
   size_t &		heap_size,
@@ -430,18 +396,6 @@ get_memory_info(
   }
 # endif
 #endif // defined(SIERRA_MEMORY_INFO)
-}
-
-
-double
-vm_now()
-{
-  size_t	memory_usage=0;
-  size_t	faults=0;
-
-  get_memory_info(memory_usage, faults);
-
-  return static_cast<double>(memory_usage);
 }
 
 

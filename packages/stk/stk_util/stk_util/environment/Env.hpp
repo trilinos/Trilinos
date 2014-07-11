@@ -223,17 +223,6 @@ double cpu_now();
 
 
 /**
- * @ingroup EnvRuntimeInformationDetail
- * @brief Member function <b>vm_now</b> returns the virtual memory in use for the
- * process as a double precision value in bytes.
- *
- * @return			a <b>double</b> value of the number of bytes of virtual
- *				memory currently in use.
- */
-double vm_now();
-
-
-/**
  * @ingroup EnvRuntimeInformationDetail, EnvOutputDetail
  * @brief Function <b>working_directory</b> returns the current working directory of
  * this application execution.

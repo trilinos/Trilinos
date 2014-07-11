@@ -96,6 +96,25 @@ void parallel_print_time_without_output_and_hwm(MPI_Comm comm, double time_on_th
   }
 }
 
+inline
+void parallel_print_time_for_performance_compare(MPI_Comm comm, double time_on_this_proc, std::ostream&out = std::cout)
+{
+  size_t hwm_max = 0, hwm_min = 0, hwm_avg = 0;
+  get_memory_high_water_mark_across_processors(comm, hwm_max, hwm_min, hwm_avg);
+
+  double max_time = 0.0, min_time = 0.0, avg_time = 0.0;
+  get_max_min_avg(comm, time_on_this_proc, max_time, min_time, avg_time);
+
+  int rank = stk::parallel_machine_rank(comm);
+
+  if (rank == 0) {
+    out << std::setw(6) << std::fixed << std::setprecision(1) << "### Total Wall Clock Run Time Used ###: " << max_time << std::endl;
+    out << std::setw(6) << std::fixed << std::setprecision(1) << "### Total Number of Steps Taken ###: " << 1 << std::endl;
+    out << std::setw(6) << std::fixed << std::setprecision(1) << "Total Memory In Use " << hwm_max << std::endl;
+  }
+
+}
+
 }
 
 #endif /* STK_PERF_UTIL_H */

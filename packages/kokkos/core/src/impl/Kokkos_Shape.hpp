@@ -98,7 +98,7 @@ bool operator == ( const Shape<xSize,xRank,xN0,xN1,xN2,xN3,xN4,xN5,xN6,xN7> & x 
   enum { same_rank = xRank == yRank };
 
   return same_size && same_rank &&
-         unsigned( x.N0 ) == unsigned( y.N0 ) &&
+         size_t( x.N0 )   == size_t( y.N0 ) &&
          unsigned( x.N1 ) == unsigned( y.N1 ) &&
          unsigned( x.N2 ) == unsigned( y.N2 ) &&
          unsigned( x.N3 ) == unsigned( y.N3 ) &&
@@ -139,14 +139,14 @@ void assert_counts_are_equal(
 void assert_shapes_are_equal_throw(
   const unsigned x_scalar_size ,
   const unsigned x_rank ,
-  const unsigned x_N0 , const unsigned x_N1 ,
+  const size_t   x_N0 , const unsigned x_N1 ,
   const unsigned x_N2 , const unsigned x_N3 ,
   const unsigned x_N4 , const unsigned x_N5 ,
   const unsigned x_N6 , const unsigned x_N7 ,
 
   const unsigned y_scalar_size ,
   const unsigned y_rank ,
-  const unsigned y_N0 , const unsigned y_N1 ,
+  const size_t   y_N0 , const unsigned y_N1 ,
   const unsigned y_N2 , const unsigned y_N3 ,
   const unsigned y_N4 , const unsigned y_N5 ,
   const unsigned y_N6 , const unsigned y_N7 );
@@ -189,7 +189,7 @@ void assert_shapes_equal_dimension(
 
   // Omit comparison of scalar_size.
   if ( unsigned( x.rank ) != unsigned( y.rank ) ||
-       unsigned( x.N0 ) != unsigned( y.N0 ) || 
+       size_t( x.N0 )   != size_t( y.N0 ) || 
        unsigned( x.N1 ) != unsigned( y.N1 ) || 
        unsigned( x.N2 ) != unsigned( y.N2 ) || 
        unsigned( x.N3 ) != unsigned( y.N3 ) ||
@@ -395,7 +395,7 @@ struct Shape< ScalarSize , Rank , 0,s1,s2,s3, s4,s5,s6,s7 >
   enum { rank_dynamic = 1 };
   enum { rank         = Rank };
 
-  unsigned N0 ;
+  size_t N0 ; // For 1 == dynamic_rank allow  N0 > 2^32
 
   enum { N1 = s1 };
   enum { N2 = s2 };
@@ -408,7 +408,7 @@ struct Shape< ScalarSize , Rank , 0,s1,s2,s3, s4,s5,s6,s7 >
   KOKKOS_INLINE_FUNCTION
   static
   void assign( Shape & s ,
-               unsigned n0 , unsigned = 0 , unsigned = 0 , unsigned = 0 ,
+               size_t n0 , unsigned = 0 , unsigned = 0 , unsigned = 0 ,
                unsigned = 0 , unsigned = 0 , unsigned = 0 , unsigned = 0 )
   { s.N0 = n0 ; }
 };
@@ -882,7 +882,7 @@ KOKKOS_INLINE_FUNCTION
 size_t cardinality_count(
   const Shape<ScalarSize,Rank,s0,s1,s2,s3,s4,s5,s6,s7> & shape )
 {
-  return shape.N0 * shape.N1 * shape.N2 * shape.N3 *
+  return size_t(shape.N0) * shape.N1 * shape.N2 * shape.N3 *
          shape.N4 * shape.N5 * shape.N6 * shape.N7 ;
 }
 

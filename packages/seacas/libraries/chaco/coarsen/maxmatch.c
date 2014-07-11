@@ -3,6 +3,7 @@
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
 #include <stdio.h>                      // for printf
+#include "structs.h"
 
 
 /* Find a maximal matching in a graph using one of several algorithms. */

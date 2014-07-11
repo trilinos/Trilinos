@@ -47,8 +47,6 @@ typedef Field<double> ScalarFieldType;
 
 namespace {
 
-const EntityRank NODE_RANK = stk::topology::NODE_RANK;
-
 TEST(UnitTestingOfBucket, testBucket)
 {
   // Unit test the Part functionality in isolation:

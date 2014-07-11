@@ -9,14 +9,14 @@
   <ParameterList name="Factories">
 
     <!-- Note that ParameterLists must be defined prior to being used -->
-      
+
     <ParameterList name="UncoupledAggregationFact">
       <Parameter name="factory"                             type="string" value="UncoupledAggregationFactory"/>
       <Parameter name="Ordering"                            type="string" value="Natural"/>
       <Parameter name="MaxNeighAlreadySelected"             type="int"    value="0"/>
       <Parameter name="MinNodesPerAggregate"                type="int"    value="2"/>
     </ParameterList>
-    
+
     <ParameterList name="myTentativePFact">
       <Parameter name="factory"                             type="string" value="TentativePFactory"/>
     </ParameterList>
@@ -36,7 +36,7 @@
       <!--<Parameter name="DofsPerNode"                         type="string" value="myCoalesceDropFact"/>-->
 	<Parameter name="Output filename"                   type="string" value="aggs_level%LEVELID_proc%PROCID.txt"/>
     </ParameterList>
-    
+
     <ParameterList name="myRAPFact">
       <Parameter name="factory"                             type="string" value="RAPFactory"/>
       <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
@@ -45,7 +45,7 @@
        <Parameter name="Visualization"                     type="string" value="myAggExportFact"/>
       </ParameterList>
     </ParameterList>
-    
+
 	<!-- =======================  REPARTITIONING  ======================= -->
 
 	<!-- amalgamation of coarse level matrix -->
@@ -94,7 +94,7 @@
       <Parameter name="factory"                             type="string" value="RebalanceAcFactory"/>
       <Parameter name="A"                                   type="string" value="myRAPFact"/>
     </ParameterList>
-    
+
     <!-- =======================  SMOOTHERS  ======================= -->
 
     <ParameterList name="Chebyshev">
@@ -119,7 +119,7 @@
         <Parameter name="relaxation: damping factor"        type="double" value="1.0"/>
       </ParameterList>
     </ParameterList>
-    
+
     <ParameterList name="SymGaussSeidel">
       <Parameter name="factory"                             type="string" value="TrilinosSmoother"/>
       <Parameter name="type"                                type="string" value="RELAXATION"/>

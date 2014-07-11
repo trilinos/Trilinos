@@ -197,21 +197,20 @@ namespace Details {
       dst, src, idx, col, numCols);
   }
 
-  template <typename Scalar>
   struct InsertOp {
+    template <typename Scalar>
     KOKKOS_INLINE_FUNCTION
     void operator() (Scalar& dest, const Scalar& src) const {
       Kokkos::atomic_assign(&dest, src);
     }
   };
-  template <typename Scalar>
   struct AddOp {
+    template <typename Scalar>
     KOKKOS_INLINE_FUNCTION
     void operator() (Scalar& dest, const Scalar& src) const {
       Kokkos::atomic_add(&dest, src);
     }
   };
-  template <typename Scalar>
   struct AbsMaxOp {
     // ETP:  Is this really what we want?  This seems very odd if
     // Scalar != SCT::mag_type (e.g., Scalar == std::complex<T>)
@@ -219,6 +218,7 @@ namespace Details {
     KOKKOS_INLINE_FUNCTION
     T max(const T& a, const T& b) const { return a > b ? a : b; }
 
+    template <typename Scalar>
     KOKKOS_INLINE_FUNCTION
     void operator() (Scalar& dest, const Scalar& src) const {
       typedef Kokkos::Details::ArithTraits<Scalar> SCT;

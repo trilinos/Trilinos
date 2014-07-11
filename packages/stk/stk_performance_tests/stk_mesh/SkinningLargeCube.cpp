@@ -217,7 +217,7 @@ void communicate_and_create_shared_nodes( stk::mesh::BulkData & mesh,
     stk::mesh::Entity node = nodes[i];
     stk::mesh::Entity new_node = new_nodes[i];
 
-    stk::mesh::PairIterEntityComm entity_comm = mesh.entity_comm_map_aura(mesh.entity_key(node));
+    stk::mesh::PairIterEntityComm entity_comm = mesh.entity_comm_map_shared(mesh.entity_key(node));
 
     for (; entity_comm.first != entity_comm.second; ++entity_comm.first) {
 
@@ -234,7 +234,7 @@ void communicate_and_create_shared_nodes( stk::mesh::BulkData & mesh,
     stk::mesh::Entity node = nodes[i];
     stk::mesh::Entity new_node = new_nodes[i];
 
-    stk::mesh::PairIterEntityComm entity_comm = mesh.entity_comm_map_aura(mesh.entity_key(node));
+    stk::mesh::PairIterEntityComm entity_comm = mesh.entity_comm_map_shared(mesh.entity_key(node));
 
     for (; entity_comm.first != entity_comm.second; ++entity_comm.first) {
 

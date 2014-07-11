@@ -68,8 +68,8 @@ namespace MueLu {
     LO minNodesPerAggregate = params.get<LO>("MinNodesPerAggregate");
     LO maxNodesPerAggregate = params.get<LO>("MaxNodesPerAggregate");
 
-    const LO  nRows  = graph.GetNodeNumVertices();
-    const int myRank = graph.GetComm()->getRank();
+    const LO  numRows = graph.GetNodeNumVertices();
+    const int myRank  = graph.GetComm()->getRank();
 
     ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
     ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()  ->getDataNonConst(0);
@@ -87,7 +87,7 @@ namespace MueLu {
     size_t           aggSize  =  0;
     std::vector<int> aggList(graph.getNodeMaxNumRowEntries());
 
-    for (LO rootCandidate = 0; rootCandidate < nRows; rootCandidate++) {
+    for (LO rootCandidate = 0; rootCandidate < numRows; rootCandidate++) {
       if (aggStat[rootCandidate] != READY)
         continue;
 

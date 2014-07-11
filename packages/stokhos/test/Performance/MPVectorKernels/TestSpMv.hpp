@@ -315,7 +315,6 @@ void performance_test_driver( const int nGrid,
             << "\"FEM Size\" , "
             << "\"FEM Graph Size\" , "
             << "\"Ensemble Size\" , "
-            << "\"Total Size\" , "
             << "\"Scalar SpMv Time\" , "
             << "\"Scalar SpMv Speedup\" , "
             << "\"Scalar SpMv GFLOPS\" , "

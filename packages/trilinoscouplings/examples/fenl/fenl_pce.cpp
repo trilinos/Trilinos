@@ -40,8 +40,14 @@
 */
 
 #include "Stokhos_Tpetra_UQ_PCE.hpp"
+
+#if defined( HAVE_STOKHOS_BELOS )
 #include "Belos_TpetraAdapter_UQ_PCE.hpp"
+#endif
+
+#if defined( HAVE_STOKHOS_MUELU )
 #include "Stokhos_MueLu_UQ_PCE.hpp"
+#endif
 
 #include <Kokkos_Threads.hpp>
 #include <Kokkos_OpenMP.hpp>

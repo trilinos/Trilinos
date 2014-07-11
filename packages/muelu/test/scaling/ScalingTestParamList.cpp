@@ -62,7 +62,6 @@
 #include <MueLu.hpp>
 #include <MueLu_Level.hpp>
 #include <MueLu_BaseClass.hpp>
-#include <MueLu_EasyParameterListInterpreter.hpp> // TODO: move into MueLu.hpp
 #include <MueLu_ParameterListInterpreter.hpp> // TODO: move into MueLu.hpp
 
 #include <MueLu_Utilities.hpp>
@@ -83,8 +82,9 @@
 int main(int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
 
-  using Teuchos::RCP; // reference count pointers
+  using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::ArrayRCP;
   using Teuchos::TimeMonitor;
   using Teuchos::ParameterList;
 
@@ -158,6 +158,7 @@ int main(int argc, char *argv[]) {
   RCP<TimeMonitor> tm                = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1 - Matrix Build")));
 
   RCP<Matrix>      A;
+  RCP<const Map>   map;
   RCP<MultiVector> coordinates;
   RCP<MultiVector> nullspace;
   if (matrixFile.empty()) {
@@ -177,7 +178,6 @@ int main(int argc, char *argv[]) {
     // Create map and coordinates
     // In the future, we hope to be able to first create a Galeri problem, and then request map and coordinates from it
     // At the moment, however, things are fragile as we hope that the Problem uses same map and coordinates inside
-    RCP<const Map> map;
     if (matrixType == "Laplace1D") {
       map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian1D", comm, galeriList);
       coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D", map, galeriList);
@@ -216,17 +216,15 @@ int main(int argc, char *argv[]) {
         Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(galeriParameters.GetMatrixType(), map, galeriList);
     A = Pr->BuildMatrix();
 
-    nullspace = MultiVectorFactory::Build(map, 1);
     if (matrixType == "Elasticity2D" ||
         matrixType == "Elasticity3D") {
       nullspace = Pr->BuildNullspace();
       A->SetFixedBlockSize((galeriParameters.GetMatrixType() == "Elasticity2D") ? 2 : 3);
-
-    } else {
-      nullspace->putScalar(one);
     }
+
   } else {
-    RCP<const Map> map = (mapFile.empty() ? Teuchos::null : Utils2::ReadMap(mapFile, xpetraParameters.GetLib(), comm));
+    if (!mapFile.empty())
+      map = Utils2::ReadMap(mapFile, xpetraParameters.GetLib(), comm);
     comm->barrier();
 
     if (lib == Xpetra::UseEpetra) {
@@ -248,12 +246,9 @@ int main(int argc, char *argv[]) {
 
     comm->barrier();
 
-    coordinates = Utils2::ReadMultiVector(coordFile, map);
-
-    nullspace = MultiVectorFactory::Build(map, 1);
-    nullspace->putScalar(one);
+    if (!coordFile.empty())
+      coordinates = Utils2::ReadMultiVector(coordFile, map);
   }
-  RCP<const Map> map = A->getRowMap();
 
   comm->barrier();
   tm = Teuchos::null;
@@ -275,6 +270,34 @@ int main(int argc, char *argv[]) {
     } else {
       mueluList = paramList;
       stop = true;
+    }
+
+    if (nullspace.is_null()) {
+      int blkSize = 1;
+      if (mueluList.isSublist("Matrix")) {
+        // Factory style parameter list
+        const Teuchos::ParameterList& operatorList = paramList.sublist("Matrix");
+        if (operatorList.isParameter("PDE equations"))
+          blkSize = operatorList.get<int>("PDE equations");
+
+      } else if (paramList.isParameter("number of equations")) {
+        // Easy style parameter list
+        blkSize = paramList.get<int>("number of equations");
+      }
+
+      nullspace = MultiVectorFactory::Build(map, blkSize);
+      for (int i = 0; i < blkSize; i++) {
+        RCP<const Map> domainMap = A->getDomainMap();
+        GO             indexBase = domainMap->getIndexBase();
+
+        ArrayRCP<SC> nsData = nullspace->getDataNonConst(i);
+        for (int j = 0; j < nsData.size(); j++) {
+          GO GID = domainMap->getGlobalElement(j) - indexBase;
+
+          if ((GID-i) % blkSize == 0)
+            nsData[j] = Teuchos::ScalarTraits<SC>::one();
+        }
+      }
     }
 
     int runCount = 1;
@@ -306,23 +329,18 @@ int main(int argc, char *argv[]) {
 
       // Instead of checking each time for rank, create a rank 0 stream
       RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-      Teuchos::FancyOStream& fancyout = *fancy;
-      fancyout.setOutputToRootOnly(0);
+      Teuchos::FancyOStream& out = *fancy;
+      out.setOutputToRootOnly(0);
 
-      fancyout << galeriStream.str();
+      out << galeriStream.str();
 
       // =========================================================================
       // Preconditioner construction
       // =========================================================================
       comm->barrier();
       tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1.5 - MueLu read XML")));
-      bool useEasy = !mueluList.isSublist("Hierarchy"); // XML files for the original interpreter always contain "Hierarchy" sublist
 
-      RCP<HierarchyManager> mueLuFactory;
-      if (useEasy == false)
-        mueLuFactory = rcp(new ParameterListInterpreter    (mueluList));
-      else
-        mueLuFactory = rcp(new EasyParameterListInterpreter(mueluList));
+      RCP<HierarchyManager> mueLuFactory = rcp(new ParameterListInterpreter(mueluList));
 
       comm->barrier();
       tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 2 - MueLu Setup")));
@@ -334,7 +352,8 @@ int main(int argc, char *argv[]) {
         H = mueLuFactory->CreateHierarchy();
         H->GetLevel(0)->Set("A",           A);
         H->GetLevel(0)->Set("Nullspace",   nullspace);
-        H->GetLevel(0)->Set("Coordinates", coordinates);
+        if (!coordinates.is_null())
+          H->GetLevel(0)->Set("Coordinates", coordinates);
         mueLuFactory->SetupHierarchy(*H);
       }
 
@@ -399,7 +418,7 @@ int main(int argc, char *argv[]) {
 
         bool set = belosProblem->setProblem();
         if (set == false) {
-          fancyout << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
+          out << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
           return EXIT_FAILURE;
         }
 
@@ -427,17 +446,17 @@ int main(int argc, char *argv[]) {
           ret = solver->solve();
 
           // Get the number of iterations for this solve.
-          fancyout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
+          out << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
 
         } catch(...) {
-          fancyout << std::endl << "ERROR:  Belos threw an error! " << std::endl;
+          out << std::endl << "ERROR:  Belos threw an error! " << std::endl;
         }
 
         // Check convergence
         if (ret != Belos::Converged)
-          fancyout << std::endl << "ERROR:  Belos did not converge! " << std::endl;
+          out << std::endl << "ERROR:  Belos did not converge! " << std::endl;
         else
-          fancyout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
+          out << std::endl << "SUCCESS:  Belos converged!" << std::endl;
 #endif //ifdef HAVE_MUELU_BELOS
       } else {
         throw MueLu::Exceptions::RuntimeError("Unknown solver type: \"" + solveType + "\"");

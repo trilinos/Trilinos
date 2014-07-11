@@ -122,7 +122,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const ParameterList> BraessSarazinSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+  RCP<const ParameterList> BraessSarazinSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
@@ -161,7 +161,7 @@ namespace MueLu {
     FactoryMonitor m(*this, "Setup blocked Braess-Sarazin Smoother", currentLevel);
 
     if (SmootherPrototype::IsSetup() == true)
-            this->GetOStream(Warnings0) << "Warning: MueLu::BreaessSarazinSmoother::Setup(): Setup() has already been called";
+      this->GetOStream(Warnings0) << "MueLu::BreaessSarazinSmoother::Setup(): Setup() has already been called";
 
     // extract blocked operator A from current level
     A_ = Factory::Get<RCP<Matrix> > (currentLevel, "A");

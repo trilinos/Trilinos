@@ -754,7 +754,7 @@ namespace Tpetra {
                        const ArrayView<const LocalOrdinal> &cols,
                        const ArrayView<const Scalar> &vals);
 
-    /// Replace one or more entries' values, using global indices.
+    /// \brief Replace one or more entries' values, using global indices.
     ///
     /// \param globalRow [in] Global index of the row in which to
     ///   replace the entries.  This row <i>must</i> be owned by the
@@ -772,12 +772,28 @@ namespace Tpetra {
     /// is duplicated in this matrix row (likely because it was
     /// inserted more than once and fillComplete() has not been called
     /// in the interim), the behavior of this method is not defined.
-    void
+    ///
+    /// \return The number of indices for which values were actually
+    ///   replaced; the number of "correct" indices.
+    ///
+    /// If the returned value N satisfies
+    ///
+    /// <tt>0 <= N < cols.size()</tt>,
+    ///
+    /// then <tt>cols.size() - N</tt> of the entries of <tt>cols</tt>
+    /// are not valid global column indices.  If the returned value is
+    /// Teuchos::OrdinalTraits<LocalOrdinal>::invalid(), then at least
+    /// one of the following is true:
+    ///   <ul>
+    ///   <li> <tt>! isFillActive ()</tt> </li>
+    ///   <li> <tt> cols.size () != vals.size ()</tt> </li>
+    ///   </ul>
+    LocalOrdinal
     replaceGlobalValues (GlobalOrdinal globalRow,
                          const ArrayView<const GlobalOrdinal>& cols,
                          const ArrayView<const Scalar>& vals);
 
-    /// Replace one or more entries' values, using global indices.
+    /// \brief Replace one or more entries' values, using local indices.
     ///
     /// \param localRow [in] local index of the row in which to
     ///   replace the entries.  This row <i>must</i> be owned by the
@@ -790,10 +806,27 @@ namespace Tpetra {
     /// at entry <tt>(localRow, cols[k])</tt> of the matrix with
     /// <tt>vals[k]</tt>.  That entry must exist in the matrix
     /// already.
-    void
-    replaceLocalValues (LocalOrdinal localRow,
-                        const ArrayView<const LocalOrdinal> &cols,
-                        const ArrayView<const Scalar>       &vals);
+    ///
+    /// \return The number of indices for which values were actually
+    ///   replaced; the number of "correct" indices.
+    ///
+    /// If the returned value N satisfies
+    ///
+    /// <tt>0 <= N < cols.size()</tt>,
+    ///
+    /// then <tt>cols.size() - N</tt> of the entries of <tt>cols</tt>
+    /// are not valid local column indices.  If the returned value is
+    /// Teuchos::OrdinalTraits<LocalOrdinal>::invalid(), then at least
+    /// one of the following is true:
+    ///   <ul>
+    ///   <li> <tt>! isFillActive ()</tt> </li>
+    ///   <li> <tt>! hasColMap ()</tt> </li>
+    ///   <li> <tt> cols.size () != vals.size ()</tt> </li>
+    ///   </ul>
+    LocalOrdinal
+    replaceLocalValues (const LocalOrdinal localRow,
+                        const ArrayView<const LocalOrdinal>&cols,
+                        const ArrayView<const Scalar>& vals);
 
     /// \brief Sum into one or more sparse matrix entries, using global indices.
     ///
@@ -802,13 +835,13 @@ namespace Tpetra {
     /// process, it may result in future communication in
     /// globalAssemble() (which is called by fillComplete()).
     ///
-    /// If globalRow is owned by the calling process, then this method
-    /// performs the sum-into operation right away.  Otherwise, if the
-    /// row is <i>not</i> owned by the calling process, this method
-    /// defers the sum-into operation until globalAssemble().  That
-    /// method communicates data for nonowned rows to the processes
-    /// that own those rows.  Then, globalAssemble() does one of the
-    /// following:
+    /// If \c globalRow is owned by the calling process, then this
+    /// method performs the sum-into operation right away.  Otherwise,
+    /// if the row is <i>not</i> owned by the calling process, this
+    /// method defers the sum-into operation until globalAssemble().
+    /// That method communicates data for nonowned rows to the
+    /// processes that own those rows.  Then, globalAssemble() does
+    /// one of the following:
     /// - It calls insertGlobalValues() for that data if the matrix
     ///   has a dynamic graph.
     /// - It calls sumIntoGlobalValues() for that data if the matrix
@@ -821,23 +854,35 @@ namespace Tpetra {
     /// \param vals [in] One or more values corresponding to those
     ///   column indices.  <tt>vals[k]</tt> corresponds to
     ///   <tt>cols[k]</tt>.
-    void
+    ///
+    /// \return The number of indices for which values were actually
+    ///   modified; the number of "correct" indices.
+    ///
+    /// This method has the same preconditions and return value
+    /// meaning as replaceGlobalValues() (which see).
+    LocalOrdinal
     sumIntoGlobalValues (const GlobalOrdinal globalRow,
                          const ArrayView<const GlobalOrdinal> &cols,
                          const ArrayView<const Scalar>        &vals);
 
     /// \brief Sum into one or more sparse matrix entries, using local indices.
     ///
-    /// \param localRow [in] Local index of a row.  This row must be
-    ///   owned by the calling process.
+    /// \param localRow [in] Local index of a row.  This row
+    ///   <i>must</i> be owned by the calling process.
     /// \param cols [in] Local indices of the columns whose entries we
     ///   want to modify.
     /// \param vals [in] Values corresponding to the above column
     ///   indices.  <tt>vals[k]</tt> corresponds to <tt>cols[k]</tt>.
-    void
+    ///
+    /// \return The number of indices for which values were actually
+    ///   modified; the number of "correct" indices.
+    ///
+    /// This method has the same preconditions and return value
+    /// meaning as replaceLocalValues() (which see).
+    LocalOrdinal
     sumIntoLocalValues (const LocalOrdinal localRow,
-                        const ArrayView<const LocalOrdinal>  &cols,
-                        const ArrayView<const Scalar>        &vals);
+                        const ArrayView<const LocalOrdinal>& cols,
+                        const ArrayView<const Scalar>& vals);
 
     //! Set all matrix entries equal to \c alpha.
     void setAllToScalar (const Scalar &alpha);
@@ -1239,25 +1284,33 @@ namespace Tpetra {
     //! Indicates that the graph is static, so that new entries cannot be added to this matrix.
     bool isStaticGraph() const;
 
-    //! Returns the Frobenius norm of the matrix.
-    /** Computes and returns the Frobenius norm of the matrix, defined as:
-        \f$ \|A\|_F = \sqrt{\sum_{i,j} \|\a_{ij}\|^2} \f$
-
-        If the matrix is fill-complete, then the computed value is cached; the cache is cleared whenever resumeFill() is called.
-        Otherwise, the value is computed every time the method is called.
-    */
+    /// \brief Compute and return the Frobenius norm of the matrix.
+    ///
+    /// The Frobenius norm of the matrix is defined as
+    /// \f\[
+    ///   \|A\|_F = \sqrt{\sum_{i,j} \|\a_{ij}\|^2}.
+    /// \f\].
+    ///
+    /// If the matrix is fill complete, then the computed value is
+    /// cached; the cache is cleared whenever resumeFill() is called.
+    /// Otherwise, the value is computed every time the method is
+    /// called.
     typename ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const;
 
-
-    //! Returns \c true if getLocalRowView() and getGlobalRowView() are valid for this class
+    /// \brief Whether the matrix implements row views.
+    ///
+    /// If this returns \c true, you may call getLocalRowView() or
+    /// getGlobalRowView() to get views of the matrix's data.
+    /// Otherwise, you must call getLocalRowCopy() or
+    /// getGlobalRowCopy().
     virtual bool supportsRowViews() const;
 
     //! Extract a list of entries in a specified global row of this matrix. Put into pre-allocated storage.
     /*!
-      \param LocalRow - (In) Global row number for which indices are desired.
-      \param Indices - (Out) Global column indices corresponding to values.
-      \param Values - (Out) Matrix values.
-      \param NumEntries - (Out) Number of indices.
+      \param LocalRow [in] Global row number for which indices are desired.
+      \param Indices [out] Global column indices corresponding to values.
+      \param Values [out] Matrix values.
+      \param NumEntries [out] Number of indices.
 
       Note: A std::runtime_error exception is thrown if either \c Indices or \c Values is not large enough to hold the data associated
       with row \c GlobalRow. If \c GlobalRow does not belong to this node, then \c Indices and \c Values are unchanged and \c NumIndices is
@@ -1288,39 +1341,47 @@ namespace Tpetra {
                      const ArrayView<Scalar> &Values,
                      size_t &NumEntries) const;
 
-    //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
-    /*!
-      \param GlobalRow - (In) Global row number for which indices are desired.
-      \param Indices   - (Out) Global column indices corresponding to values.
-      \param Values    - (Out) Row values
-      \pre <tt>isLocallyIndexed() == false</tt>
-      \post <tt>indices.size() == getNumEntriesInGlobalRow(GlobalRow)</tt>
-
-      Note: If \c GlobalRow does not belong to this node, then \c indices is set to null.
-    */
+    /// \brief Get a constant, nonpersisting view of a row of this
+    ///   matrix, using global row and column indices.
+    ///
+    /// \param GlobalRow [in] Global index of the row to view.
+    /// \param indices [out] On output: view of the global column
+    ///   indices in the row.
+    /// \param values [out] On output: view of the values in the row.
+    ///
+    /// \pre <tt>isLocallyIndexed () == false</tt>
+    /// \post <tt>indices.size () == this->getNumEntriesInGlobalRow (GlobalRow)</tt>
+    ///
+    /// If \c GlobalRow is not a valid global row index on the calling
+    /// process, then \c indices is set to null.
     void
     getGlobalRowView (GlobalOrdinal GlobalRow,
                       ArrayView<const GlobalOrdinal> &indices,
                       ArrayView<const Scalar> &values) const;
 
-    //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
-    /*!
-      \param LocalRow - (In) Local row number for which indices are desired.
-      \param Indices  - (Out) Global column indices corresponding to values.
-      \param Values   - (Out) Row values
-      \pre <tt>isGloballyIndexed() == false</tt>
-      \post <tt>indices.size() == getNumEntriesInLocalRow(LocalRow)</tt>
-
-      Note: If \c LocalRow does not belong to this node, then \c indices is set to null.
-    */
+    /// \brief Get a constant, nonpersisting view of a row of this
+    ///   matrix, using local row and column indices.
+    ///
+    /// \param LocalRow [in] Local index of the row to view.
+    /// \param indices [out] On output: view of the local column
+    ///   indices in the row.
+    /// \param values [out] On output: view of the values in the row.
+    ///
+    /// \pre <tt>isGloballyIndexed () == false</tt>
+    /// \post <tt>indices.size () == this->getNumEntriesInLocalRow (LocalRow)</tt>
+    ///
+    /// If \c LocalRow is not a valid local row index on the calling
+    /// process, then \c indices is set to null.
     void
     getLocalRowView (LocalOrdinal LocalRow,
-                     ArrayView<const LocalOrdinal> &indices,
-                     ArrayView<const Scalar> &values) const;
+                     ArrayView<const LocalOrdinal>& indices,
+                     ArrayView<const Scalar>& values) const;
 
-    //! \brief Get a copy of the diagonal entries owned by this node, with local row indices.
-    /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the
-      the zero and non-zero diagonals owned by this node. */
+    /// \brief Get a copy of the diagonal entries of the matrix.
+    ///
+    /// This method returns a Vector with the same Map as this
+    /// matrix's row Map.  On each process, it contains the diagonal
+    /// entries owned by the calling process.
     void getLocalDiagCopy (Vector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& diag) const;
 
     /// \brief Get offsets of the diagonal entries in the matrix.
@@ -2037,100 +2098,6 @@ namespace Tpetra {
                          const Teuchos::ArrayView<const Scalar> values,
                          const Tpetra::CombineMode combineMode);
 
-    /// \brief Transform CrsMatrix entries, using local indices.
-    ///
-    /// For every entry \f$A(i,j)\f$ to transform, if \f$v_{ij}\f$ is
-    /// the corresponding entry of the \c values array, then we apply
-    /// the binary function f to \f$A(i,j)\f$ as follows:
-    /// \f[
-    ///   A(i,j) := f(A(i,j), v_{ij}).
-    /// \f]
-    /// For example, BinaryFunction = std::plus<Scalar> does the same
-    /// thing as sumIntoLocalValues(), and BinaryFunction =
-    /// project2nd<Scalar,Scalar> does the same thing as
-    /// replaceLocalValues().
-    ///
-    /// \tparam BinaryFunction The type of binary function to apply.
-    ///   std::binary_function is a model for this.
-    ///
-    /// \pre The matrix must have a column Map.
-    ///
-    /// \param localRow [in] (Local) index of the row to modify.
-    ///   This row <i>must</i> be owned by the calling process.
-    ///
-    /// \param indices [in] (Local) indices in the row to modify.
-    ///   Indices not in the column Map and their corresponding values
-    ///   will be ignored.
-    ///
-    /// \param values [in] Values to use for modification.
-    ///
-    /// This method works whether indices are local or global.
-    /// However, it will cost more if indices are global, since it
-    /// will have to convert the local indices to global indices in
-    /// that case.
-    template<class BinaryFunction>
-    void
-    transformLocalValues (LocalOrdinal localRow,
-                          const Teuchos::ArrayView<const LocalOrdinal>& indices,
-                          const Teuchos::ArrayView<const Scalar>        & values,
-                          BinaryFunction f)
-    {
-      typedef LocalOrdinal LO;
-      typedef GlobalOrdinal GO;
-      typedef node_type NT;
-      using Teuchos::Array;
-      using Teuchos::ArrayView;
-
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        ! isFillActive (),
-        std::runtime_error,
-        "Tpetra::CrsMatrix::transformLocalValues: Fill must be active in order "
-        "to call this method.  That is, isFillActive() must return true.  If "
-        "you have already called fillComplete(), you need to call resumeFill() "
-        "before you can replace values.");
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        values.size () != indices.size (),
-        std::runtime_error,
-        "Tpetra::CrsMatrix::transformLocalValues: values.size () = "
-        << values.size () << " != indices.size () = " << indices.size ()
-        << ".");
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        ! this->hasColMap (),
-        std::runtime_error,
-        "Tpetra::CrsMatrix::transformLocalValues: We cannot transform local "
-        "indices without a column map.");
-      const bool isLocalRow = getRowMap ()->isNodeLocalElement (localRow);
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        ! isLocalRow,
-        std::runtime_error,
-        "Tpetra::CrsMatrix::transformLocalValues: The specified local row "
-        << localRow << " does not belong to this process "
-        << getRowMap ()->getComm ()->getRank () << ".");
-
-      RowInfo rowInfo = staticGraph_->getRowInfo (localRow);
-      if (indices.size () > 0) {
-        ArrayView<Scalar> curVals = this->getViewNonConst (rowInfo);
-        if (isLocallyIndexed ()) {
-          staticGraph_->template transformLocalValues<Scalar, BinaryFunction> (rowInfo, curVals, indices, values, f);
-        }
-        else if (isGloballyIndexed ()) {
-          // Convert the given local indices to global indices.
-          const Map<LO, GO, NT>& colMap = * (this->getColMap ());
-          Array<GO> gindices (indices.size ());
-          typename ArrayView<const LO>::iterator lindit = indices.begin();
-          typename Array<GO>::iterator           gindit = gindices.begin();
-          while (lindit != indices.end()) {
-            // There is no need to filter out indices not in the column
-            // Map.  Those that aren't will be mapped to invalid(),
-            // which transformGlobalValues() will ignore.
-            *gindit++ = colMap.getGlobalElement (*lindit++);
-          }
-          staticGraph_->template transformGlobalValues<Scalar, BinaryFunction> (rowInfo, curVals, gindices (), values, f);
-        }
-      }
-    }
-
-
     /// \brief Transform CrsMatrix entries, using global indices.
     ///
     /// For every entry \f$A(i,j)\f$ to transform, if \f$v_{ij}\f$ is
@@ -2161,7 +2128,7 @@ namespace Tpetra {
     /// have to convert the local indices to global indices in that
     /// case.
     template<class BinaryFunction>
-    void
+    LocalOrdinal
     transformGlobalValues (GlobalOrdinal globalRow,
                            const Teuchos::ArrayView<const GlobalOrdinal>& indices,
                            const Teuchos::ArrayView<const Scalar>        & values,
@@ -2169,60 +2136,64 @@ namespace Tpetra {
     {
       typedef LocalOrdinal LO;
       typedef GlobalOrdinal GO;
-      typedef node_type NT;
       using Teuchos::Array;
       using Teuchos::ArrayView;
+      typedef typename ArrayView<const GO>::size_type size_type;
 
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        ! isFillActive (),
-        std::runtime_error,
-        "Tpetra::CrsMatrix::transformGlobalValues: Fill must be active in order "
-        "to call this method.  That is, isFillActive() must return true.  If "
-        "you have already called fillComplete(), you need to call resumeFill() "
-        "before you can replace values.");
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        values.size () != indices.size (),
-        std::runtime_error,
-        "Tpetra::CrsMatrix::transformGlobalValues: values.size () = "
-        << values.size () << " != indices.size () = " << indices.size ()
-        << ".");
-
-      const LO lrow = this->getRowMap()->getLocalElement(globalRow);
-
-      if (lrow == OTL::invalid()) {
-        // FIXME (mfh 16 May 2013) We're using this exception to do
-        // sumIntoGlobalValues for nonowned rows, so we might want to
-        // avoid the overhead of constructing the fancy exception
-        // message each time if we don't plan to use it.
-
-        // The exception test macro doesn't let you pass an additional
-        // argument to the exception's constructor, so we don't use it.
-        std::ostringstream os;
-        os << "transformGlobalValues: The given global row index "
-           << globalRow << " is not owned by the calling process (rank "
-           << this->getRowMap()->getComm()->getRank() << ").";
-        throw Details::InvalidGlobalRowIndex<GO> (os.str (), globalRow);
+      if (! isFillActive ()) {
+        // Fill must be active in order to call this method.
+        return Teuchos::OrdinalTraits<LO>::invalid ();
+      }
+      else if (values.size () != indices.size ()) {
+        // The sizes of values and indices must match.
+        return Teuchos::OrdinalTraits<LO>::invalid ();
       }
 
-      RowInfo rowInfo = staticGraph_->getRowInfo (lrow);
-      if (indices.size () > 0) {
+      const LO lrow = this->getRowMap()->getLocalElement (globalRow);
+      if (lrow == Teuchos::OrdinalTraits<LO>::invalid ()) {
+        // We don't own the row, so we're not allowed to modify its values.
+        return Teuchos::OrdinalTraits<LO>::invalid ();
+      }
+
+      if (staticGraph_.is_null ()) {
+        return Teuchos::OrdinalTraits<LO>::invalid ();
+      }
+      const crs_graph_type& graph = *staticGraph_;
+      RowInfo rowInfo = graph.getRowInfo (lrow);
+      if (indices.size () == 0) {
+        return static_cast<LO> (0);
+      }
+      else {
         ArrayView<Scalar> curVals = this->getViewNonConst (rowInfo);
         if (isLocallyIndexed ()) {
-          // Convert global indices to local indices.
-          const Map<LO, GO, NT> &colMap = * (this->getColMap ());
-          Array<LO> lindices (indices.size ());
-          typename ArrayView<const GO>::iterator gindit = indices.begin();
-          typename Array<LO>::iterator           lindit = lindices.begin();
-          while (gindit != indices.end()) {
-            // There is no need to filter out indices not in the column
-            // Map.  Those that aren't will be mapped to invalid(),
-            // which transformLocalValues() will ignore.
-            *lindit++ = colMap.getLocalElement (*gindit++);
+          // Convert the given global indices to local indices.
+          //
+          // FIXME (mfh 08 Jul 2014) Why can't we ask the graph to do
+          // that?  It could do the conversions in place, so that we
+          // wouldn't need temporary storage.
+          const map_type& colMap = * (this->getColMap ());
+          const size_type numInds = indices.size ();
+          Array<LO> lclInds (numInds);
+          for (size_type k = 0; k < numInds; ++k) {
+            // There is no need to filter out indices not in the
+            // column Map.  Those that aren't will be mapped to
+            // invalid(), which the graph's transformGlobalValues()
+            // will filter out (but not count in its return value).
+            lclInds[k] = colMap.getLocalElement (indices[k]);
           }
-          staticGraph_->template transformLocalValues<Scalar, BinaryFunction> (rowInfo, curVals, lindices (), values, f);
+          return graph.template transformLocalValues<Scalar, BinaryFunction> (rowInfo, curVals,
+                                                                              lclInds (), values, f);
         }
         else if (isGloballyIndexed ()) {
-          staticGraph_->template transformGlobalValues<Scalar, BinaryFunction> (rowInfo, curVals, indices, values, f);
+          return graph.template transformGlobalValues<Scalar, BinaryFunction> (rowInfo, curVals,
+                                                                               indices, values, f);
+        }
+        else {
+          // If the graph is neither locally nor globally indexed on
+          // the calling process, that means that the calling process
+          // can't possibly have any entries in the owned row.  Thus,
+          // there are no entries to transform, so we return zero.
+          return static_cast<LO> (0);
         }
       }
     }

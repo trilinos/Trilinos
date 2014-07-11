@@ -134,7 +134,7 @@ TEST( UnitTestMetaData, testEntityRepository )
 
   bulk.entity_comm_map_clear_ghosting(bulk.entity_key(elem));
 
-  const stk::mesh::Ghosting & ghost = bulk.aura();
+  const stk::mesh::Ghosting & ghost = bulk.aura_ghosting();
 
   bulk.modification_end();
 

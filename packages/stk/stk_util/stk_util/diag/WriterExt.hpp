@@ -29,9 +29,9 @@
 #include <utility>                      // for pair
 #include <vector>                       // for vector
 #include "stk_util/util/FArray.hpp"     // for FArrayContainer, FArray
+#include <stk_util/parallel/MPI.hpp>
 #if defined ( STK_HAS_MPI )
 namespace sierra { namespace MPI { struct TempLoc; } }
-namespace sierra { namespace MPI { template <typename T> struct Loc; } }
 #endif
 
 

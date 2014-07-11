@@ -65,7 +65,7 @@
 
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_Utilities.hpp"
-#include "MueLu_EasyParameterListInterpreter.hpp"
+#include "MueLu_ParameterListInterpreter.hpp"
 
 namespace MueLuTests {
 
@@ -839,7 +839,7 @@ namespace MueLuTests {
     Utils::Write("A.mm", *A);
     comm->barrier();
 
-    RCP<HierarchyManager> mueLuFactory = rcp(new EasyParameterListInterpreter("testCoordinates.xml", *comm));
+    RCP<HierarchyManager> mueLuFactory = rcp(new ParameterListInterpreter("testCoordinates.xml", *comm));
     RCP<Hierarchy> H = mueLuFactory->CreateHierarchy();
     H->GetLevel(0)->Set("A", A);
     H->GetLevel(0)->Set("Coordinates", coordinates);
@@ -867,7 +867,7 @@ namespace MueLuTests {
     xcoords = Teuchos::null;
     ycoords = Teuchos::null;
 
-    mueLuFactory = rcp(new EasyParameterListInterpreter("testCoordinates.xml", *comm));
+    mueLuFactory = rcp(new ParameterListInterpreter("testCoordinates.xml", *comm));
     H = mueLuFactory->CreateHierarchy();
     H->GetLevel(0)->Set("A", A);
     H->GetLevel(0)->Set("Coordinates", badCoordinates);

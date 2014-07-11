@@ -358,7 +358,8 @@ usage (void)
    ECHO("--one_based_index or -1: Array indexing is one-based (default = zero-based)\n");
    ECHO("      --copyright or -C: Print copyright message                 \n");
    ECHO("          --quiet or -q: Do not output version info to stdout    \n");
-   ECHO("                var=val: Assign value 'val' to variable 'var'  \n\n");
+   ECHO("                var=val: Assign value 'val' to variable 'var'    \n");
+   ECHO("                         Use var=\\\"sval\\\" for a string variable\n\n");
    ECHO("\tEnter {DUMP_FUNC()} for list of functions recognized by aprepro\n");
    ECHO("\tEnter {DUMP_PREVAR()} for list of predefined variables in aprepro\n");
    ECHO("\t->->-> Send email to gdsjaar@sandia.gov for aprepro support.\n\n");

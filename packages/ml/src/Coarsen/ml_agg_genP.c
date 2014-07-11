@@ -3201,8 +3201,8 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
   if ( (ml->Pmat[level]).NumZDir      != -1) NumZDir     = (ml->Pmat[level]).NumZDir;
   if ( (ml->Pmat[level]).Zorientation != -1) Zorientation= (ml->Pmat[level]).Zorientation;
 
-  if (NumZDir == -7)  { 
-     if (ml->comm->ML_mypid == 0) {
+  if (NumZDir == -7 )  { 
+     if (ml->comm->ML_mypid == 0  && ag->semicoarsen_levels != -1) {
        printf("It appears that repartitioning has been performed and so further semicoarsening is aborted.\n");
        printf("Any further line smoothing is going to numerically act as point smoothing .\n");
      }

@@ -258,7 +258,8 @@ namespace {
                   const char suffix_separator, int *local_truth,
                   std::vector<Ioss::Field> &fields);
 
-  void add_map_fields(int exoid, Ioss::ElementBlock *block, int64_t my_element_count);
+  void add_map_fields(int exoid, Ioss::ElementBlock *block, int64_t my_element_count,
+		      size_t name_length);
 
   template <typename T>
   bool check_block_order(const std::vector<T*> &blocks);
@@ -1299,7 +1300,8 @@ namespace Iopx {
         add_results_fields(entity_type, io_block, iblk);
 
         if (entity_type == EX_ELEM_BLOCK) {
-          add_map_fields(get_file_pointer(), (Ioss::ElementBlock*)io_block, decomp->el_blocks[iblk].ioss_count());
+          add_map_fields(get_file_pointer(), (Ioss::ElementBlock*)io_block,
+			 decomp->el_blocks[iblk].ioss_count(), maximumNameLength);
         }
       }
     }
@@ -7062,7 +7064,8 @@ namespace Iopx {
       }
     }
 
-    void add_map_fields(int exoid, Ioss::ElementBlock *block, int64_t my_element_count)
+    void add_map_fields(int exoid, Ioss::ElementBlock *block,
+			int64_t my_element_count, size_t name_length)
     {
       // Check for optional element maps...
       int map_count = ex_inquire_int(exoid, EX_INQ_ELEM_MAP);
@@ -7070,8 +7073,7 @@ namespace Iopx {
         return;
 
       // Get the names of the maps...
-      int max_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
-      char **names = get_exodus_names(map_count, max_length);
+      char **names = get_exodus_names(map_count, name_length);
       int ierr = ex_get_names(exoid, EX_ELEM_MAP, names);
       if (ierr < 0)
         exodus_error(exoid, __LINE__, -1);

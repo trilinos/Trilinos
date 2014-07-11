@@ -43,13 +43,6 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * MueLu_PreserveDirichletAggregationAlgorithm_def.hpp
- *
- *  Created on: 12 Nov 2013
- *      Author: wiesner
- */
-
 #ifndef MUELU_PRESERVEDIRICHLETAGGREGATIONALGORITHM_DEF_HPP_
 #define MUELU_PRESERVEDIRICHLETAGGREGATIONALGORITHM_DEF_HPP_
 
@@ -71,28 +64,27 @@ namespace MueLu {
   void PreserveDirichletAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
 
-    Teuchos::ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
-    Teuchos::ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()  ->getDataNonConst(0);
+    const LO  numRows = graph.GetNodeNumVertices();
+    const int myRank  = graph.GetComm()->getRank();
 
-    const LO  nRows  = graph.GetNodeNumVertices();
-    const int myRank = graph.GetComm()->getRank();
+    ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
+    ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()  ->getDataNonConst(0);
 
-    LO nLocalAggregates = aggregates.GetNumAggregates();
-    for (LO iNode = 0; iNode < nRows; iNode++) {
-      if (aggStat[iNode] == BOUNDARY ||
-          (aggStat[iNode] != AGGREGATED && graph.getNeighborVertices(iNode).size() == 1)) {
-        // This is a boundary or an isolated node
-        aggregates.SetIsRoot(iNode);
+    LO numLocalAggregates = aggregates.GetNumAggregates();
 
-        aggStat[iNode]      = AGGREGATED;
-        vertex2AggId[iNode] = nLocalAggregates++;
-        procWinner[iNode]   = myRank;
+    for (LO i = 0; i < numRows; i++)
+      if (aggStat[i] == BOUNDARY) {
+        aggregates.SetIsRoot(i);
+
+        aggStat     [i] = IGNORED;
+        vertex2AggId[i] = numLocalAggregates++;
+        procWinner  [i] = myRank;
 
         numNonAggregatedNodes--;
       }
-    }
 
-    aggregates.SetNumAggregates(nLocalAggregates);
+    // update aggregate object
+    aggregates.SetNumAggregates(numLocalAggregates);
   }
 
 } // end namespace

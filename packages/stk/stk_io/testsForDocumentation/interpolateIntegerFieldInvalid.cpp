@@ -39,8 +39,9 @@ namespace {
       stk::mesh::put_field(integer_field, stkIo.meta_data().universal_part());
       stkIo.populate_bulk_data();
 
-      EXPECT_THROW(stkIo.add_input_field(stk::io::MeshField(integer_field, "int_field",
-			 stk::io::MeshField::LINEAR_INTERPOLATION)), std::exception);
+      EXPECT_ANY_THROW(stkIo.add_input_field(stk::io::MeshField(integer_field,
+								"int_field",
+				    stk::io::MeshField::LINEAR_INTERPOLATION)));
       //-END      
     }
     // ============================================================

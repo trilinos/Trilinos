@@ -125,14 +125,13 @@ int main(int argc, char *argv[]) {
   // Parameters initialization
   // =========================================================================
   Teuchos::CommandLineProcessor clp(false);
-  GO nx = 100, ny = 100;
-  clp.setOption("nx",                   &nx,              "mesh size in x direction");
-  clp.setOption("ny",                   &ny,              "mesh size in y direction");
-  std::string xmlFileName = "xml/s2a.xml"; clp.setOption("xml", &xmlFileName,     "read parameters from a file. Otherwise, this example uses by default 'tutorial1a.xml'");
-  int mgridSweeps = 1; clp.setOption("mgridSweeps", &mgridSweeps, "number of multigrid sweeps within Multigrid solver.");
-  std::string printTimings = "no";   clp.setOption("timings", &printTimings,     "print timings to screen [yes/no]");
-  double tol               = 1e-12;  clp.setOption("tol",                   &tol,              "solver convergence tolerance");
-  int importOldData = 0; clp.setOption("importOldData", &importOldData, "import map and matrix from previous run (highly experimental).");
+  GO nx                    = 100;           clp.setOption("nx",                       &nx, "mesh size in x direction");
+  GO ny                    = 100;           clp.setOption("ny",                       &ny, "mesh size in y direction");
+  std::string xmlFileName  = "xml/s2a.xml"; clp.setOption("xml",             &xmlFileName, "read parameters from a file");
+  int mgridSweeps          = 1;             clp.setOption("mgridSweeps",     &mgridSweeps, "number of multigrid sweeps within Multigrid solver.");
+  std::string printTimings = "no";          clp.setOption("timings",        &printTimings, "print timings to screen [yes/no]");
+  double tol               = 1e-12;         clp.setOption("tol",                     &tol, "solver convergence tolerance");
+  int importOldData = 0;                    clp.setOption("importOldData", &importOldData, "import map and matrix from previous run (highly experimental).");
 
   switch (clp.parse(argc,argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;

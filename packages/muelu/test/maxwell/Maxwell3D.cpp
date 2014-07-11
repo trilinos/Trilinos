@@ -201,7 +201,7 @@ int main(int argc, char *argv[]) {
   // construct preconditioner
   RCP<RefMaxwell> preconditioner
     = rcp( new RefMaxwell(SM_Matrix,D0_Matrix,M0inv_Matrix,
-			  M1_Matrix,coords,params) );
+			  M1_Matrix,Teuchos::null,coords,params) );
 
   // setup LHS, RHS
   RCP<TMV> vec = rcp( new TMV(edge_map,1) );
@@ -230,7 +230,7 @@ int main(int argc, char *argv[]) {
   solver -> setProblem( problem );
   Belos::ReturnType status = solver -> solve();
   int iters = solver -> getNumIters();
-  if(iters<10 && status == Belos::Converged) {
+  if(iters<20 && status == Belos::Converged) {
     if(commrank==0) {
       std::cout<<"SUCCESS! Belos converged in "<<iters<<" iterations."<<std::endl;
     }

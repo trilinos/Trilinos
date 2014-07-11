@@ -53,6 +53,7 @@
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
+#include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
 
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
@@ -71,6 +72,7 @@
 #include "Ifpack2_Preconditioner.hpp"
 #include "Ifpack2_Factory_decl.hpp"
 #include "Ifpack2_Factory_def.hpp"
+#include "Ifpack2_Hiptmair.hpp"
 
 /*
   
@@ -113,13 +115,13 @@ namespace MueLu {
     RefMaxwell() :
       Hierarchy11_(Teuchos::null),
       Hierarchy22_(Teuchos::null),
-      disable_addon_(false),
+      disable_addon_(true),
       MaxCoarseSize_(1000),
       MaxLevels_(5),
       Cycles_(1),
       precType11_("CHEBYSHEV"),
       precType22_("CHEBYSHEV"),
-      mode_("block jacobi")
+      mode_("additive")
     {
     }
     
@@ -133,7 +135,7 @@ namespace MueLu {
       Cycles_(1),
       precType11_("CHEBYSHEV"),
       precType22_("CHEBYSHEV"),
-      mode_("block jacobi")
+      mode_("additive")
     {
     }
 
@@ -142,6 +144,7 @@ namespace MueLu {
 	       Teuchos::RCP<TCRS> D0_Matrix,
 	       Teuchos::RCP<TCRS> M0inv_Matrix,
 	       Teuchos::RCP<TCRS> M1_Matrix,
+	       Teuchos::RCP<TMV>  Nullspace,
 	       Teuchos::RCP<TMV>  Coords,
 	       Teuchos::ParameterList& List,
 	       bool ComputePrec = true) :
@@ -154,7 +157,7 @@ namespace MueLu {
       Cycles_(1),
       precType11_("CHEBYSHEV"),
       precType22_("CHEBYSHEV"),
-      mode_("block jacobi")
+      mode_("additive")
     {
       // set parameters
       setParameters(List);
@@ -168,7 +171,10 @@ namespace MueLu {
       Teuchos::RCP<XCRS> M1_tmp = Teuchos::rcp( new XTCRS(M1_Matrix) );
       M1_Matrix_ = Teuchos::rcp( new XCrsWrap(M1_tmp) );
       // convert Tpetra MultiVector to Xpetra
-      Coords_ = Xpetra::toXpetra(Coords);
+      if(Coords != Teuchos::null)
+	Coords_ = Xpetra::toXpetra(Coords);
+      if(Nullspace != Teuchos::null)
+	Nullspace_ = Xpetra::toXpetra(Nullspace);
       // compute preconditioner
       compute();
     }
@@ -201,24 +207,6 @@ namespace MueLu {
     //! Setup the preconditioner
     void compute();
 
-    //! find rows associated with Dirichlet BCs
-    void findDirichletRows(Teuchos::RCP<XMat> A,
-			   std::vector<LocalOrdinal>& dirichletRows);
-
-    //! find cols associated with Dirichlet BCs
-    void findDirichletCols(Teuchos::RCP<XMat> A,
-			   std::vector<LocalOrdinal>& dirichletRows,
-			   std::vector<LocalOrdinal>& dirichletCols);
-
-    //! apply BCs to rows
-    void Apply_BCsToMatrixRows(Teuchos::RCP<XMat>& A, std::vector<LocalOrdinal>& dirichletRows);
-
-    //! apply BCs to cols
-    void Apply_BCsToMatrixCols(Teuchos::RCP<XMat>& A, std::vector<LocalOrdinal>& dirichletCols);
-
-    //! add 1's to the diagonal for zeroed out rows
-    void Remove_Zeroed_Rows(Teuchos::RCP<XMat>& A, double tol=1.0e-14);
-
     //! Setup the prolongator for the (1,1)-block
     void buildProlongator();
 
@@ -228,14 +216,14 @@ namespace MueLu {
     //! Reset system matrix
     void resetMatrix(Teuchos::RCP<TCRS> SM_Matrix_new);
 
-    //! apply Hiptmair smoothing
-    void applyHiptmairSmoother(const XTMV& RHS, XTMV& X) const;
+    //! apply additive algorithm for 2x2 solve
+    void applyInverseAdditive(const XTMV& RHS, XTMV& X) const;
 
-    //! apply block Jacobi for 2x2 solve
-    void applyBlockJacobi(const XTMV& RHS, XTMV& X) const;
+    //! apply 1-2-1 algorithm for 2x2 solve
+    void applyInverse121(const XTMV& RHS, XTMV& X) const;
 
-    //! apply block Gauss-Seidel for 2x2 solve
-    void applyBlockGaussSeidel(const XTMV& RHS, XTMV& X) const;
+    //! apply 2-1-2 algorithm for 2x2 solve
+    void applyInverse212(const XTMV& RHS, XTMV& X) const;
 
     //! Returns in Y the result of a Tpetra::Operator applied to a Tpetra::MultiVector X.
     //! \param[in]  X - Tpetra::MultiVector of dimension NumVectors to multiply with matrix.
@@ -269,9 +257,9 @@ namespace MueLu {
     //! Nullspace
     Teuchos::RCP<XMV>  Nullspace_, Coords_;
     //! Parameter lists
-    Teuchos::ParameterList parameterList_, precList11_, precList22_;
-    //! Ifpack preconditioners for Hiptmair smoothing
-    Teuchos::RCP< Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > nodePrec_, edgePrec_;
+    Teuchos::ParameterList parameterList_, precList11_, precList22_, hiptmairPreList_, hiptmairPostList_;
+    //! Ifpack preconditioners for pre and post smoothing
+    Teuchos::RCP< Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > edgePreSmoother_, edgePostSmoother_;
     //! Some options
     bool disable_addon_;
     int MaxCoarseSize_, MaxLevels_, Cycles_;

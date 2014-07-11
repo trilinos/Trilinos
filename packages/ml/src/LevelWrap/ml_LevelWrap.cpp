@@ -46,6 +46,8 @@ ML_Epetra::LevelWrap::LevelWrap(Teuchos::RCP<Epetra_CrsMatrix> A0,
 				const bool ComputePrec):
   use_pt_(true),
   user_A1_(false),
+  use_mlsmoother_(false),   // ML smoothing is experimental 
+  ml_subproblem_(NULL),
   pre_or_post(ML_BOTH),
   verbose_(false),
   NumApplications_(0),
@@ -70,6 +72,8 @@ ML_Epetra::LevelWrap::LevelWrap(Teuchos::RCP<Epetra_CrsMatrix> A0,
 				const bool ComputePrec):
   use_pt_(false),
   user_A1_(false),
+  use_mlsmoother_(false),   // ML smoothing is experimental 
+  ml_subproblem_(NULL),
   pre_or_post(ML_BOTH),
   verbose_(false),
   NumApplications_(0),
@@ -113,7 +117,34 @@ int ML_Epetra::LevelWrap::ComputePreconditioner(const bool CheckFiltering){
   else if(PreOrPostSmoother == "pre")  pre_or_post = ML_PRESMOOTHER;
   else if(PreOrPostSmoother == "both") pre_or_post = ML_BOTH;
 
-  Smoother_=rcp(ML_Gen_Smoother_Ifpack_Epetra(const_cast<Epetra_CrsMatrix*>(&*A0_),0,List_,"LevelWrap Smoother (level 0): ",verbose_));
+  if (use_mlsmoother_) {   // ML smoothing is experimental 
+    ML_Create(&ml_subproblem_,1);
+#ifdef HAVE_MPI
+    const Epetra_MpiComm *epcomm = dynamic_cast<const Epetra_MpiComm*>(&(A0_->Comm()));
+    // Get the MPI communicator, as it may not be MPI_COMM_W0RLD, and update the ML comm object
+   if (epcomm) ML_Comm_Set_UsrComm(ml_subproblem_->comm,epcomm->Comm());
+#endif
+    int numMyRows = A0_->NumMyRows();
+    int N_ghost   = A0_->NumMyCols() - numMyRows;
+    if (N_ghost < 0) N_ghost = 0;
+    const Epetra_Operator *Z = const_cast<Epetra_CrsMatrix*>(&*A0_);
+    const Epetra_RowMatrix *Arow=dynamic_cast<const Epetra_RowMatrix*>(Z);
+    ML_Init_Amatrix(ml_subproblem_,0,numMyRows, numMyRows,(void *) Arow);
+    ml_subproblem_->Amat[0].type = ML_TYPE_ROW_MATRIX;
+    ml_subproblem_->Amat[0].N_nonzeros = A0_->NumMyNonzeros();
+    ML_Set_Amatrix_Getrow(ml_subproblem_, 0, ML_Epetra_RowMatrix_getrow,
+                          ML_Epetra_comm_wrapper, numMyRows+N_ghost);
+    ML_Set_Amatrix_Matvec(ml_subproblem_, 0, ML_Epetra_matvec);
+    int Nparts =  List_.sublist("smoother: ifpack list").get("partitioner: local parts",-1);
+    if (Nparts == -1) { printf("must supply partitioner: local parts\n"); return(-1); }
+
+    ml_subproblem_->Amat[0].num_PDEs = numMyRows/Nparts;
+    ML_Gen_Smoother_BlockGaussSeidel(ml_subproblem_, 0, ML_PRESMOOTHER,
+                       1, 1.0 , ml_subproblem_->Amat[0].num_PDEs);
+  }
+  else Smoother_=rcp(ML_Gen_Smoother_Ifpack_Epetra(const_cast<Epetra_CrsMatrix*>(&*A0_),0,List_,"LevelWrap Smoother (level 0): ",verbose_));
+
+
 
   //********************
   // Setup A1
@@ -187,14 +218,26 @@ int ML_Epetra::LevelWrap::ApplyInverse(const Epetra_MultiVector& B, Epetra_Multi
   Epetra_MultiVector tmp1(P0_->DomainMap(),X_.NumVectors(),true);
   Epetra_MultiVector tmp2(P0_->DomainMap(),X_.NumVectors(),true);
 
+  double *Bptr, *Xptr;
+  int    BLDA, XLDA;
+
   // Pre Smoother
   if(pre_or_post==ML_BOTH || pre_or_post==ML_PRESMOOTHER){
-    Smoother_->ApplyInverse(B,X);
+    if (use_mlsmoother_) {   // ML smoothing is experimental 
+      B.ExtractView(&Bptr,&BLDA);
+      X.ExtractView(&Xptr,&XLDA);
+      ML_Smoother_Apply(&(ml_subproblem_->pre_smoother[0]),
+                        X.MyLength(), Xptr,
+                        X.MyLength(), Bptr, ML_ZERO);
+    }
+    else Smoother_->ApplyInverse(B,X);
+
+    A0_->Apply(X,tmp0);
+    tmp0.Update(1.0,B,-1.0);
   }
+  else  tmp0 = B;
 
   // Form coarse residual
-  A0_->Apply(X,tmp0);
-  tmp0.Update(1.0,B,-1.0);
   if(use_pt_) P0_->Multiply(true,tmp0,tmp1);
   else R0_->Multiply(false,tmp0,tmp1);
 
@@ -206,8 +249,21 @@ int ML_Epetra::LevelWrap::ApplyInverse(const Epetra_MultiVector& B, Epetra_Multi
   X.Update(1.0,tmp0,1.0);
 
   // Post Smoother
-  if(pre_or_post==ML_BOTH || pre_or_post==ML_PRESMOOTHER){
-    Smoother_->ApplyInverse(B,X);
+  if(pre_or_post==ML_BOTH || pre_or_post==ML_POSTSMOOTHER){
+    if (use_mlsmoother_) {   // ML smoothing is experimental 
+      Epetra_MultiVector tmp3(X_.Map(),X_.NumVectors(),true);
+
+      A0_->Apply(X,tmp0);
+      tmp0.Update(1.0,B,-1.0);
+      tmp3.PutScalar(0.0);
+      tmp0.ExtractView(&Bptr,&BLDA);
+      tmp3.ExtractView(&Xptr,&XLDA);
+
+      ML_Smoother_Apply(&(ml_subproblem_->pre_smoother[0]),X.MyLength(),Xptr,
+                        X.MyLength(), Bptr, ML_ZERO);
+      X.Update(1.0,tmp3,1.0);
+    }
+    else Smoother_->ApplyInverse(B,X);
   }
 
   // Copy to output
@@ -260,6 +316,8 @@ int ML_Epetra::LevelWrap::DestroyPreconditioner(){
 #else
   ML_Set_PrintLevel(printl);
 #endif
+
+  if (ml_subproblem_ != NULL) ML_Destroy(&ml_subproblem_);
   return 0;
 }
 

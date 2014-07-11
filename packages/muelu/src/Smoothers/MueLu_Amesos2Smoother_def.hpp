@@ -92,9 +92,9 @@ namespace MueLu {
                                      "a valid Amesos2 solver have to be specified explicitly.");
 #endif
       if (oldtype != "")
-        this->GetOStream(Warnings0) << "Warning: MueLu::Amesos2Smoother: \"" << oldtype << "\" is not available. Using \"" << type_ << "\" instead" << std::endl;
+        this->GetOStream(Warnings0) << "MueLu::Amesos2Smoother: \"" << oldtype << "\" is not available. Using \"" << type_ << "\" instead" << std::endl;
       else
-        this->GetOStream(Warnings0) << "MueLu::Amesos2Smoother: using \"" << type_ << "\"" << std::endl;
+        this->GetOStream(Runtime1) << "MueLu::Amesos2Smoother: using \"" << type_ << "\"" << std::endl;
     }
 
     // Check the validity of the solver type parameter
@@ -115,7 +115,7 @@ namespace MueLu {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
 
     if (SmootherPrototype::IsSetup() == true)
-      this->GetOStream(Warnings0) << "Warning: MueLu::Amesos2Smoother::Setup(): Setup() has already been called" << std::endl;
+      this->GetOStream(Warnings0) << "MueLu::Amesos2Smoother::Setup(): Setup() has already been called" << std::endl;
 
     RCP<Matrix> A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A");
 

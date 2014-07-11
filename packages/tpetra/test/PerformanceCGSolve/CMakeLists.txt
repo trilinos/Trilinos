@@ -17,6 +17,7 @@ APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 # for KokkosCompat instead of KokkosRefactor because the new Kokkos wrapper
 # nodes are enabled when KokkosCompat is enabled, regardless of KokkosRefactor.
 IF (KokkosClassic_ENABLE_KokkosCompat AND Kokkos_ENABLE_Cuda)
+  CUDA_INCLUDE_DIRECTORIES( ${Tpetra_INCLUDE_DIRS} )
   FOREACH(CPP_FILE ${SOURCES})
     # Strip .cpp and leading path
     STRING(REGEX REPLACE ".*/(.+).cpp" "\\1" BASE_FILE "${CPP_FILE}")

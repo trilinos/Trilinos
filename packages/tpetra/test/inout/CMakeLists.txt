@@ -5,7 +5,7 @@ IF(Kokkos_ENABLE_Cuda)
   #
   # Add subpackage include path dependencies for CUDA_COMPILE().
   CUDA_INCLUDE_DIRECTORIES( "." )
-  CUDA_INCLUDE_DIRECTORIES( "." )
+  CUDA_INCLUDE_DIRECTORIES( ${Tpetra_INCLUDE_DIRS} )
   CUDA_COMPILE(MM_T_CM_IOT_OBJECTS_CUDA MatrixMarket_Tpetra_CrsMatrix_InOutTest_CU.cu)
   CUDA_COMPILE(MM_T_MV_IOT_OBJECTS_CUDA MatrixMarket_Tpetra_MultiVector_InOutTest_CU.cu)
   CUDA_COMPILE(MM_T_M_OBJECTS_CUDA MatrixMarket_Tpetra_Map_InOutTest_CU.cu)

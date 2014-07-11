@@ -314,6 +314,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
   long long tnoct = 0;
   elemOffsets_    = new long long [num_elem_];
   telct_ = 0;
+  size_t max_nsur = 0;
 
   for (long long b = 0; b < num_elem_blk; b++) {
     for (long long i = 0; i < num_elem_this_blk[b]; i++) {
@@ -322,7 +323,43 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
 
       for (long long j = 0; j < num_nodes_per_elem[b]; j++) {
 	elemToNode_[tnoct] = connect[b][i*num_nodes_per_elem[b] + j]-1;
-	++tnolct;
+
+	if(sur_elem[tnoct].empty()) {
+	  printf("WARNING: Node = "ST_ZU" has no elements\n", tnoct+1);
+	} else {
+	  size_t nsur = sur_elem[tnoct].size();
+	  if (nsur > max_nsur)
+	    max_nsur = nsur;
+	}
+
+	++tnoct;
+      }
+    }
+  }
+
+  std::vector<long long> start;
+  long long nnodes_per_elem = num_nodes_per_elem[0];
+  long long max_side_nodes = nnodes_per_elem;
+  long long side_nodes[max_side_nodes];
+  long long mirror_nodes[max_side_nodes];
+
+  /* Allocate memory necessary for the adjacency */
+  start.resize(num_nodes_);
+
+  for (int i=0; i < max_side_nodes; i++) {
+    side_nodes[i]=-999;
+    mirror_nodes[i]=-999;
+  }
+
+  /* Find the adjacency for a nodal based decomposition */
+  size_t nadj = 0;
+  for(size_t ncnt=0; ncnt < num_nodes_; ncnt++) {
+    start[ncnt] = nadj;
+    for(size_t ecnt=0; ecnt < sur_elem[ncnt].size(); ecnt++) {
+      size_t elem = sur_elem[ncnt][ecnt];
+      int nnodes = nnodes_per_elem;
+      for(int i=0; i < nnodes; i++) {
+	;
       }
     }
   }

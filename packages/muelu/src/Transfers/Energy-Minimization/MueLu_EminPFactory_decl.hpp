@@ -47,6 +47,10 @@
 #define MUELU_EMINPFACTORY_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
+
+#include <Xpetra_Matrix_fwd.hpp>
+#include <Xpetra_StridedMapFactory_fwd.hpp>
+
 #include "MueLu_EminPFactory_fwd.hpp"
 
 #include "MueLu_Constraint_fwd.hpp"
@@ -83,7 +87,7 @@ namespace MueLu {
 
     //@}
 
-    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+    RCP<const ParameterList> GetValidParameterList() const;
 
     //! @name Input
     //@{

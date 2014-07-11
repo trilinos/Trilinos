@@ -250,7 +250,7 @@ double Tolerance::UlpsDiffDouble(double A, double B) const
   }
   
   // Find the difference in ULPs.
-  return abs(uA.i - uB.i);
+  return std::abs(uA.i - uB.i);
 }
 
     

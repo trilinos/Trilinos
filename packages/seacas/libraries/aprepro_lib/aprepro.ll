@@ -140,10 +140,7 @@ integer {D}+({E})?
     char *pt = strchr(yytext, ')');
     *pt = '\0';
     if (!check_valid_var(yytext)) {
-      std::cerr << "Aprepro: WARN: Invalid variable name syntax '"
-		<< yytext << "' (" << aprepro.ap_file_list.top().name
-		<< ", line " << aprepro.ap_file_list.top().lineno
-		<< ")\n";
+      aprepro.warning("Invalid variable name syntax '" + std::string(yytext) + "'");
       BEGIN(LOOP_SKIP);
     } else {
       s = aprepro.getsym(yytext);
@@ -272,7 +269,7 @@ integer {D}+({E})?
    * NOTE: if_lvl was not incremented, so don't need to decrement when
    *       endif found.
    */
-  {WS}"{"[Ee]"ndif}".*"\n"     { 
+  {WS}"{"[Ee]"nd"[Ii]"f}".*"\n"     {
     aprepro.ap_file_list.top().lineno++;  
     if (--if_skip_level == 0)
       BEGIN(IF_SKIP);
@@ -283,7 +280,7 @@ integer {D}+({E})?
     if_skip_level++;
   }
 
-  {WS}"{if"{WS}"(".*"\n"  { 
+  {WS}"{"[Ii]"f"{WS}"(".*"\n"  {
     aprepro.ap_file_list.top().lineno++;  
     if_skip_level++;
   }
@@ -311,7 +308,7 @@ integer {D}+({E})?
     BEGIN(IF_WHILE_SKIP);
   }
 
-  {WS}"{if"{WS}"("  { 
+  {WS}"{"[Ii]"f"{WS}"("  {
     if (aprepro.ap_options.debugging) 
       fprintf (stderr, "DEBUG IF: 'ifdef'  found while skipping at line %d\n",
 	       aprepro.ap_file_list.top().lineno);
@@ -353,7 +350,7 @@ integer {D}+({E})?
 }
 
 <IF_SKIP>{
-  {WS}"{"{WS}"elseif".*"\n"  { 
+  {WS}"{"{WS}[Ee]"lse"[Ii]"f".*"\n"  {
     /* If any previous 'block' of this if has executed, then
      * just skip this block; otherwise see if condition is
      * true and execute this block
@@ -383,7 +380,7 @@ integer {D}+({E})?
    }
 }
 
-{WS}"{"[Ee]"ndif}".*"\n"     { if (if_state[if_lvl] == IF_SKIP ||
+{WS}"{"[Ee]"nd"[Ii]"f}".*"\n"     { if (if_state[if_lvl] == IF_SKIP ||
 			       if_state[if_lvl] == INITIAL)
 			     BEGIN(INITIAL);
 			   /* If neither is true, this is a nested 
@@ -437,22 +434,17 @@ integer {D}+({E})?
 				 yytmp = aprepro.check_open_file(pt, "r");
 			       if (yytmp != NULL) {
 				 yyin = yytmp;
-				 if (aprepro.ap_options.info_msg == true) {
-				   std::cerr << "Aprepro: INFO: Included File: '"
-					     << pt << "' (" << aprepro.ap_file_list.top().name
-					     << ", line " << aprepro.ap_file_list.top().lineno
-					     << ")\n";
-				 }
+				 aprepro.info("Included File: '" +
+					      std::string(pt) + "'", true);
+
 				 SEAMS::file_rec new_file(pt, 0, false, 0);
 				 aprepro.ap_file_list.push(new_file);
 
 				 yyFlexLexer::yypush_buffer_state (
 				    yyFlexLexer::yy_create_buffer( yyin, YY_BUF_SIZE));
 			       } else {
-				 if (aprepro.ap_options.warning_msg == true) {
-				   std::cerr << "Aprepro: WARN: Can't open '"
-					     << yytext << "'\n";
-				 }
+				 aprepro.warning("Can't open '" +
+						 std::string(yytext) + "'", false);
 			       }
 			       aprepro.ap_file_list.top().lineno++;
 			     }
@@ -548,7 +540,7 @@ integer {D}+({E})?
 
 
 {id} |
-.                          { if (echo) ECHO; }
+.                          { if (echo && if_state[if_lvl] != IF_SKIP) ECHO; }
 
 "\n"                       { if (echo && !suppress_nl) ECHO; suppress_nl = false; 
                              aprepro.ap_file_list.top().lineno++; }
@@ -643,9 +635,7 @@ namespace SEAMS {
 
   void Scanner::yyerror (const char *s)
   {
-    std::cerr << "Aprepro: ERROR:  " << s << " ("
-	      << aprepro.ap_file_list.top().name<< ", line "
-	      << aprepro.ap_file_list.top().lineno + 1 << ")\n";
+    aprepro.error(s);
   }
 
   char *Scanner::execute (char string[])

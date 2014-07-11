@@ -105,11 +105,11 @@ RVector MV_MulScalar( const RVector & r, const typename Kokkos::View<DataType,La
   typedef	typename Kokkos::View<DataType,Layout,Device,MemoryManagement> aVector;
   if(r==x) {
     MV_MulScalarFunctorSelf<aVector,XVector> op ;
-	op.m_x = x ;
-	op.m_a = a ;
-	op.n = x.dimension(1);
-	Kokkos::parallel_for( x.dimension(0) , op );
-	return r;
+	  op.m_x = x ;
+	  op.m_a = a ;
+	  op.n = x.dimension(1);
+	  Kokkos::parallel_for( x.dimension(0) , op );
+	  return r;
   }
 
   MV_MulScalarFunctor<RVector,aVector,XVector> op ;
@@ -122,14 +122,14 @@ RVector MV_MulScalar( const RVector & r, const typename Kokkos::View<DataType,La
 }
 
 template<class RVector, class XVector>
-struct MV_MulScalarFunctor<RVector,typename XVector::value_type,XVector>
+struct MV_MulScalarFunctor<RVector,typename RVector::value_type,XVector>
 {
   typedef typename XVector::device_type        device_type;
   typedef typename XVector::size_type            size_type;
 
   RVector m_r;
   typename XVector::const_type m_x ;
-  typename XVector::value_type m_a ;
+  typename RVector::value_type m_a ;
   size_type n;
   MV_MulScalarFunctor() {n=1;}
   //--------------------------------------------------------------------------
@@ -170,13 +170,21 @@ struct MV_MulScalarFunctorSelf<typename XVector::value_type,XVector>
 template<class RVector, class XVector>
 RVector MV_MulScalar( const RVector & r, const typename XVector::value_type &a, const XVector & x)
 {
+  /*if(r.dimension_1()==1) {
+    typedef View<typename RVector::value_type*,typename RVector::device_type> RVector1D;
+    typedef View<typename XVector::const_value_type*,typename XVector::device_type> XVector1D;
+
+    RVector1D r_1d = Kokkos::subview< RVector1D >( r , ALL(),0 );
+    XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
+    return V_MulScalar(r_1d,a,x_1d);
+  }*/
   if(r==x) {
     MV_MulScalarFunctorSelf<typename XVector::value_type,XVector> op ;
-	op.m_x = x ;
-	op.m_a = a ;
-	op.n = x.dimension(1);
-	Kokkos::parallel_for( x.dimension(0) , op );
-	return r;
+	  op.m_x = x ;
+	  op.m_a = a ;
+	  op.n = x.dimension(1);
+	  Kokkos::parallel_for( x.dimension(0) , op );
+	  return r;
   }
 
   MV_MulScalarFunctor<RVector,typename XVector::value_type,XVector> op ;
@@ -187,6 +195,235 @@ RVector MV_MulScalar( const RVector & r, const typename XVector::value_type &a, 
   Kokkos::parallel_for( x.dimension(0) , op );
   return r;
 }
+
+/*------------------------------------------------------------------------------------------
+ *-------------------------- Reciprocal element wise: y[i] = 1/x[i] ------------------------
+ *------------------------------------------------------------------------------------------*/
+template<class RVector, class XVector>
+struct MV_ReciprocalFunctor
+{
+  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::size_type            size_type;
+
+  RVector m_r;
+  typename XVector::const_type m_x ;
+
+  const size_type m_n;
+  MV_ReciprocalFunctor(RVector r, XVector x, size_type n):m_r(r),m_x(x),m_n(n) {}
+  //--------------------------------------------------------------------------
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i) const
+  {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+  for(size_type k=0;k<m_n;k++)
+     m_r(i,k) = Kokkos::Details::ArithTraits<typename XVector::non_const_value_type>::one() / m_x(i,k);
+  }
+};
+
+template<class XVector>
+struct MV_ReciprocalSelfFunctor
+{
+  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::size_type            size_type;
+
+  XVector m_x ;
+
+  const size_type m_n;
+  MV_ReciprocalSelfFunctor(XVector x, size_type n):m_x(x),m_n(n) {}
+  //--------------------------------------------------------------------------
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i) const
+  {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+  for(size_type k=0;k<m_n;k++)
+     m_x(i,k) = Kokkos::Details::ArithTraits<typename XVector::non_const_value_type>::one() / m_x(i,k);
+  }
+};
+
+template<class RVector, class XVector>
+RVector MV_Reciprocal( const RVector & r, const XVector & x)
+{
+  // TODO: Add error check (didn't link for some reason?)
+  /*if(r.dimension_0() != x.dimension_0())
+    Kokkos::Impl::throw_runtime_exception("Kokkos::MV_Reciprocal -- dimension(0) of r and x don't match");
+  if(r.dimension_1() != x.dimension_1())
+    Kokkos::Impl::throw_runtime_exception("Kokkos::MV_Reciprocal -- dimension(1) of r and x don't match");*/
+
+  //TODO: Get 1D version done
+  /*if(r.dimension_1()==1) {
+    typedef View<typename RVector::value_type*,typename RVector::device_type> RVector1D;
+    typedef View<typename XVector::const_value_type*,typename XVector::device_type> XVector1D;
+
+    RVector1D r_1d = Kokkos::subview< RVector1D >( r , ALL(),0 );
+    XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
+    return V_MulScalar(r_1d,a,x_1d);
+  }*/
+  if(r==x) {
+    MV_ReciprocalSelfFunctor<XVector> op(x,x.dimension_1()) ;
+    Kokkos::parallel_for( x.dimension_0() , op );
+    return r;
+  }
+
+  MV_ReciprocalFunctor<RVector,XVector> op(r,x,x.dimension_1()) ;
+  Kokkos::parallel_for( x.dimension_0() , op );
+  return r;
+}
+
+/*------------------------------------------------------------------------------------------
+ *-------------------------- Abs element wise: y[i] = abs(x[i]) ------------------------
+ *------------------------------------------------------------------------------------------*/
+template<class RVector, class XVector>
+struct MV_AbsFunctor
+{
+  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::size_type            size_type;
+
+  RVector m_r;
+  typename XVector::const_type m_x ;
+
+  const size_type m_n;
+  MV_AbsFunctor(RVector r, XVector x, size_type n):m_r(r),m_x(x),m_n(n) {}
+  //--------------------------------------------------------------------------
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i) const
+  {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+  for(size_type k=0;k<m_n;k++)
+     m_r(i,k) = Kokkos::Details::ArithTraits<typename XVector::non_const_value_type>::abs(m_x(i,k));
+  }
+};
+
+template<class XVector>
+struct MV_AbsSelfFunctor
+{
+  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::size_type            size_type;
+
+  XVector m_x ;
+
+  const size_type m_n;
+  MV_AbsSelfFunctor(XVector x, size_type n):m_x(x),m_n(n) {}
+  //--------------------------------------------------------------------------
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i) const
+  {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+  for(size_type k=0;k<m_n;k++)
+     m_x(i,k) = Kokkos::Details::ArithTraits<typename XVector::non_const_value_type>::abs(m_x(i,k));
+  }
+};
+
+template<class RVector, class XVector>
+RVector MV_Abs( const RVector & r, const XVector & x)
+{
+  // TODO: Add error check (didn't link for some reason?)
+  /*if(r.dimension_0() != x.dimension_0())
+    Kokkos::Impl::throw_runtime_exception("Kokkos::MV_Abs -- dimension(0) of r and x don't match");
+  if(r.dimension_1() != x.dimension_1())
+    Kokkos::Impl::throw_runtime_exception("Kokkos::MV_Abs -- dimension(1) of r and x don't match");*/
+
+  //TODO: Get 1D version done
+  /*if(r.dimension_1()==1) {
+    typedef View<typename RVector::value_type*,typename RVector::device_type> RVector1D;
+    typedef View<typename XVector::const_value_type*,typename XVector::device_type> XVector1D;
+
+    RVector1D r_1d = Kokkos::subview< RVector1D >( r , ALL(),0 );
+    XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
+    return V_Abs(r_1d,x_1d);
+  }*/
+  if(r==x) {
+    MV_AbsSelfFunctor<XVector> op(x,x.dimension_1()) ;
+    Kokkos::parallel_for( x.dimension_0() , op );
+    return r;
+  }
+
+  MV_AbsFunctor<RVector,XVector> op(r,x,x.dimension_1()) ;
+  Kokkos::parallel_for( x.dimension_0() , op );
+  return r;
+}
+
+/*------------------------------------------------------------------------------------------
+ *------ ElementWiseMultiply element wise: C(i,j) = c*C(i,j) + ab*A(i)*B(i,j) --------------
+ *------------------------------------------------------------------------------------------*/
+template<class CVector, class AVector, class BVector>
+struct MV_ElementWiseMultiplyFunctor
+{
+  typedef typename CVector::device_type        device_type;
+  typedef typename CVector::size_type            size_type;
+
+  typename CVector::const_value_type m_c;
+  CVector m_C;
+  typename AVector::const_value_type m_ab;
+  typename AVector::const_type m_A ;
+  typename BVector::const_type m_B ;
+
+  const size_type m_n;
+  MV_ElementWiseMultiplyFunctor(
+      typename CVector::const_value_type c,
+      CVector C,
+      typename AVector::const_value_type ab,
+      typename AVector::const_type A,
+      typename BVector::const_type B,
+      const size_type n):
+      m_c(c),m_C(C),m_ab(ab),m_A(A),m_B(B),m_n(n)
+      {}
+  //--------------------------------------------------------------------------
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i) const
+  {
+    typename AVector::const_value_type Ai = m_A(i);
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+  for(size_type k=0;k<m_n;k++)
+     m_C(i,k) = m_c*m_C(i,k) + m_ab*Ai*m_B(i,k);
+  }
+};
+
+
+template<class CVector, class AVector, class BVector>
+CVector MV_ElementWiseMultiply(
+      typename CVector::const_value_type c,
+      CVector C,
+      typename AVector::const_value_type ab,
+      AVector A,
+      BVector B
+    )
+{
+  // TODO: Add error check (didn't link for some reason?)
+  /*if(r.dimension_0() != x.dimension_0())
+    Kokkos::Impl::throw_runtime_exception("Kokkos::MV_ElementWiseMultiply -- dimension(0) of r and x don't match");
+  if(r.dimension_1() != x.dimension_1())
+    Kokkos::Impl::throw_runtime_exception("Kokkos::MV_ElementWiseMultiply -- dimension(1) of r and x don't match");*/
+
+  //TODO: Get 1D version done
+  /*if(r.dimension_1()==1) {
+    typedef View<typename RVector::value_type*,typename RVector::device_type> RVector1D;
+    typedef View<typename XVector::const_value_type*,typename XVector::device_type> XVector1D;
+
+    RVector1D r_1d = Kokkos::subview< RVector1D >( r , ALL(),0 );
+    XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
+    return V_ElementWiseMultiply(r_1d,x_1d);
+  }*/
+
+  MV_ElementWiseMultiplyFunctor<CVector,AVector,BVector> op(c,C,ab,A,B,C.dimension_1()) ;
+  Kokkos::parallel_for( C.dimension_0() , op );
+  return C;
+}
+
 /*------------------------------------------------------------------------------------------
  *-------------------------- Vector Add: r = a*x + b*y -------------------------------------
  *------------------------------------------------------------------------------------------*/
@@ -1222,10 +1459,10 @@ RVector V_MulScalar( const RVector & r, const typename Kokkos::View<DataType,Lay
   typedef	typename Kokkos::View<DataType,Layout,Device,MemoryManagement> aVector;
   if(r==x) {
     V_MulScalarFunctorSelf<aVector,XVector> op ;
-	op.m_x = x ;
-	op.m_a = a ;
-	Kokkos::parallel_for( x.dimension(0) , op );
-	return r;
+	  op.m_x = x ;
+	  op.m_a = a ;
+	  Kokkos::parallel_for( x.dimension(0) , op );
+	  return r;
   }
 
   V_MulScalarFunctor<RVector,aVector,XVector> op ;
@@ -1276,11 +1513,11 @@ template<class RVector, class XVector>
 RVector V_MulScalar( const RVector & r, const typename XVector::value_type &a, const XVector & x)
 {
   if(r==x) {
-    V_MulScalarFunctorSelf<typename XVector::value_type,XVector> op ;
-	op.m_x = x ;
-	op.m_a = a ;
-	Kokkos::parallel_for( x.dimension(0) , op );
-	return r;
+    V_MulScalarFunctorSelf<typename RVector::value_type,RVector> op ;
+	  op.m_x = r ;
+	  op.m_a = a ;
+	  Kokkos::parallel_for( x.dimension(0) , op );
+	  return r;
   }
 
   V_MulScalarFunctor<RVector,typename XVector::value_type,XVector> op ;
@@ -1497,6 +1734,189 @@ V_Dot( const XVector & x, const YVector & y, int n = -1)
   typename Functor::value_type ret_val;
   parallel_reduce(n,f,ret_val);
   return ret_val;
+}
+
+/*------------------------------------------------------------------------------------------
+ *-------------------------- Reciprocal element wise: y[i] = 1/x[i] ------------------------
+ *------------------------------------------------------------------------------------------*/
+template<class RVector, class XVector>
+struct V_ReciprocalFunctor
+{
+  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::size_type            size_type;
+
+  RVector m_r;
+  typename XVector::const_type m_x ;
+
+  V_ReciprocalFunctor(RVector r, XVector x):m_r(r),m_x(x) {}
+  //--------------------------------------------------------------------------
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i) const
+  {
+    m_r(i) = Kokkos::Details::ArithTraits<typename XVector::non_const_value_type>::one() / m_x(i);
+  }
+};
+
+template<class XVector>
+struct V_ReciprocalSelfFunctor
+{
+  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::size_type            size_type;
+
+  XVector m_x ;
+
+  V_ReciprocalSelfFunctor(XVector x):m_x(x) {}
+  //--------------------------------------------------------------------------
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i) const
+  {
+     m_x(i) = Kokkos::Details::ArithTraits<typename XVector::non_const_value_type>::one() / m_x(i);
+  }
+};
+
+template<class RVector, class XVector>
+RVector V_Reciprocal( const RVector & r, const XVector & x)
+{
+  // TODO: Add error check (didn't link for some reason?)
+  /*if(r.dimension_0() != x.dimension_0())
+    Kokkos::Impl::throw_runtime_exception("Kokkos::MV_Reciprocal -- dimension(0) of r and x don't match");
+  */
+
+
+  if(r==x) {
+    V_ReciprocalSelfFunctor<XVector> op(x) ;
+    Kokkos::parallel_for( x.dimension_0() , op );
+    return r;
+  }
+
+  V_ReciprocalFunctor<RVector,XVector> op(r,x) ;
+  Kokkos::parallel_for( x.dimension_0() , op );
+  return r;
+}
+
+/*------------------------------------------------------------------------------------------
+ *-------------------------- Abs element wise: y[i] = abs(x[i]) ------------------------
+ *------------------------------------------------------------------------------------------*/
+template<class RVector, class XVector>
+struct V_AbsFunctor
+{
+  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::size_type            size_type;
+
+  RVector m_r;
+  typename XVector::const_type m_x ;
+
+  V_AbsFunctor(RVector r, XVector x):m_r(r),m_x(x) {}
+  //--------------------------------------------------------------------------
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i) const
+  {
+    m_r(i) = Kokkos::Details::ArithTraits<typename XVector::non_const_value_type>::abs(m_x(i));
+  }
+};
+
+template<class XVector>
+struct V_AbsSelfFunctor
+{
+  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::size_type            size_type;
+
+  XVector m_x ;
+
+  V_AbsSelfFunctor(XVector x):m_x(x) {}
+  //--------------------------------------------------------------------------
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i) const
+  {
+     m_x(i) = Kokkos::Details::ArithTraits<typename XVector::non_const_value_type>::abs(m_x(i));
+  }
+};
+
+template<class RVector, class XVector>
+RVector V_Abs( const RVector & r, const XVector & x)
+{
+  // TODO: Add error check (didn't link for some reason?)
+  /*if(r.dimension_0() != x.dimension_0())
+    Kokkos::Impl::throw_runtime_exception("Kokkos::MV_Abs -- dimension(0) of r and x don't match");
+  */
+
+
+  if(r==x) {
+    V_AbsSelfFunctor<XVector> op(x) ;
+    Kokkos::parallel_for( x.dimension_0() , op );
+    return r;
+  }
+
+  V_AbsFunctor<RVector,XVector> op(r,x) ;
+  Kokkos::parallel_for( x.dimension_0() , op );
+  return r;
+}
+
+/*------------------------------------------------------------------------------------------
+ *------ ElementWiseMultiply element wise: C(i) = c*C(i) + ab*A(i)*B(i) --------------
+ *------------------------------------------------------------------------------------------*/
+template<class CVector, class AVector, class BVector>
+struct V_ElementWiseMultiplyFunctor
+{
+  typedef typename CVector::device_type        device_type;
+  typedef typename CVector::size_type            size_type;
+
+  typename CVector::const_value_type m_c;
+  CVector m_C;
+  typename AVector::const_value_type m_ab;
+  typename AVector::const_type m_A ;
+  typename BVector::const_type m_B ;
+
+  V_ElementWiseMultiplyFunctor(
+      typename CVector::const_value_type c,
+      CVector C,
+      typename AVector::const_value_type ab,
+      typename AVector::const_type A,
+      typename BVector::const_type B):
+      m_c(c),m_C(C),m_ab(ab),m_A(A),m_B(B)
+      {}
+  //--------------------------------------------------------------------------
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i) const
+  {
+     m_C(i) = m_c*m_C(i) + m_ab*m_A(i)*m_B(i);
+  }
+};
+
+
+template<class CVector, class AVector, class BVector>
+CVector V_ElementWiseMultiply(
+      typename CVector::const_value_type c,
+      CVector C,
+      typename AVector::const_value_type ab,
+      AVector A,
+      BVector B
+    )
+{
+  // TODO: Add error check (didn't link for some reason?)
+  /*if(r.dimension_0() != x.dimension_0())
+    Kokkos::Impl::throw_runtime_exception("Kokkos::MV_ElementWiseMultiply -- dimension(0) of r and x don't match");
+  if(r.dimension_1() != x.dimension_1())
+    Kokkos::Impl::throw_runtime_exception("Kokkos::MV_ElementWiseMultiply -- dimension(1) of r and x don't match");*/
+
+  //TODO: Get 1D version done
+  /*if(r.dimension_1()==1) {
+    typedef View<typename RVector::value_type*,typename RVector::device_type> RVector1D;
+    typedef View<typename XVector::const_value_type*,typename XVector::device_type> XVector1D;
+
+    RVector1D r_1d = Kokkos::subview< RVector1D >( r , ALL(),0 );
+    XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
+    return V_ElementWiseMultiply(r_1d,x_1d);
+  }*/
+
+  V_ElementWiseMultiplyFunctor<CVector,AVector,BVector> op(c,C,ab,A,B) ;
+  Kokkos::parallel_for( C.dimension_0() , op );
+  return C;
 }
 }//end namespace Kokkos
 #endif /* KOKKOS_MULTIVECTOR_H_ */

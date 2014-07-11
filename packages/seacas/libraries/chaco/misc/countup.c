@@ -3,6 +3,7 @@
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
 #include <stdio.h>                      // for FILE
+#include "structs.h"
 
 /* Print metrics of partition quality. */
 

@@ -7,6 +7,7 @@
 #include "defs.h"                       // for FALSE, TRUE
 #include "params.h"                     // for MAXSETS
 #include "smalloc.h"                    // for sfree, smalloc_ret
+#include "structs.h"
 
 extern void reflect_input(int       nvtxs,          /* number of vertices in graph */
 			  int       nedges,         /* number of edges in graph */

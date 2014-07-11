@@ -46,6 +46,7 @@
 #include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Timer.hpp>
 #include <cstdio>
+#include <cstdlib>
 
 typedef Kokkos::View<double*> view_type;
 typedef Kokkos::View<const double*, Kokkos::MemoryRandomAccess> view_type_rnd;

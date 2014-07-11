@@ -100,8 +100,10 @@ Percent::operator()(
       strout << "(<0.01%)";
     else if (ratio >= 100.0)
       strout << "(" << std::setw(5) << std::setprecision(1) << std::fixed << ratio << "%)";
-    else
+    else if (ratio >= 10.0)
       strout << "(" << std::setw(5) << std::setprecision(2) << std::fixed << ratio << "%)";
+    else 
+      strout << "(" << std::setw(5) << std::setprecision(3) << std::fixed << ratio << "%)";
   }
 
   return os << strout.str();

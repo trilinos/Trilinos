@@ -1461,7 +1461,14 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   findGlobalIndex (RowInfo rowinfo, GlobalOrdinal ind, size_t hint) const
   {
+    using Teuchos::ArrayView;
     typedef typename ArrayView<const GlobalOrdinal>::iterator IT;
+
+    // Don't let an invalid global column index through.
+    if (ind == Teuchos::OrdinalTraits<GlobalOrdinal>::invalid ()) {
+      return Teuchos::OrdinalTraits<size_t>::invalid ();
+    }
+
     ArrayView<const GlobalOrdinal> indices = getGlobalView (rowinfo);
 
     // We don't actually require that the hint be a valid index.
@@ -1701,36 +1708,51 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   getLocalRowCopy (LocalOrdinal localRow,
                    const ArrayView<LocalOrdinal>& indices,
-                   size_t& NumIndices) const
+                   size_t& numEntries) const
   {
-    const char tfecfFuncName[] = "getLocalRowCopy";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+    using Teuchos::ArrayView;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
       isGloballyIndexed () && ! hasColMap (), std::runtime_error,
-      ": The graph is globally indexed, and does not have a column Map (yet), "
-      "so it is impossible to return local indices.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! rowMap_->isNodeLocalElement (localRow), std::runtime_error,
-      ": localRow (== " << localRow << ") is not valid on the calling process "
-      "with rank " << getComm ()->getRank () << ".");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! hasRowInfo (), std::runtime_error,
-      ": graph row information was deleted at fillComplete().");
+      "Tpetra::CrsGraph::getLocalRowCopy: The graph is globally indexed and "
+      "does not have a column Map yet.  That means we don't have local indices "
+      "for columns yet, so it doesn't make sense to call this method.  If the "
+      "graph doesn't have a column Map yet, you should call fillComplete on "
+      "it first.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! hasRowInfo(), std::runtime_error,
+      "Tpetra::CrsGraph::getLocalRowCopy: graph row information was deleted "
+      "at fillComplete().");
+
+
+    if (! getRowMap ()->isNodeLocalElement (localRow)) {
+      numEntries = 0;
+      return;
+    }
 
     const RowInfo rowinfo = getRowInfo (localRow);
-    NumIndices = rowinfo.numEntries;
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      static_cast<size_t> (indices.size ()) < NumIndices, std::runtime_error,
-      ": specified storage (size == " << indices.size () << ") does not suffice "
-      "to hold all entries for this row (NumIndices == " << NumIndices << ").");
+    const size_t theNumEntries = rowinfo.numEntries;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      static_cast<size_t> (indices.size ()) < theNumEntries,
+      std::runtime_error,
+      "Tpetra::CrsGraph::getLocalRowCopy: The given row " << localRow << " has "
+      << theNumEntries << " entries, but indices.size() = " << indices.size ()
+      << ", which does not suffice to store the row's indices.");
+
+    numEntries = theNumEntries;
 
     if (isLocallyIndexed ()) {
-      ArrayView<const LocalOrdinal> lview = getLocalView (rowinfo);
-      std::copy (lview.begin (), lview.begin () + NumIndices, indices.begin ());
+      ArrayView<const LO> lview = getLocalView (rowinfo);
+      std::copy (lview.begin (), lview.begin () + numEntries, indices.begin ());
     }
     else if (isGloballyIndexed ()) {
-      ArrayView<const GlobalOrdinal> gview = getGlobalView (rowinfo);
-      for (size_t j = 0; j < NumIndices; ++j) {
-        indices[j] = colMap_->getLocalElement (gview[j]);
+      ArrayView<const GO> gview = getGlobalView (rowinfo);
+      const map_type& colMap = * (this->getColMap ());
+      for (size_t j = 0; j < numEntries; ++j) {
+        indices[j] = colMap.getLocalElement (gview[j]);
       }
     }
     else {
@@ -1741,7 +1763,7 @@ namespace Tpetra {
       // we can reach this branch, given the checks above.  However,
       // if that is the case, it should still be correct to call this
       // function if the calling process owns no column indices.
-      NumIndices = 0;
+      numEntries = 0;
     }
   }
 

@@ -83,6 +83,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_KokkosMpiComm=ON"
   
   "-DTpetra_ENABLE_Kokkos_Refactor:BOOL=ON"
+  "-DTeptra_ENABLE_Kokkos_Refactor_Map:BOOL=ON"
   "-DTpetra_ENABLE_KokkosCompat:BOOL=ON"
   "-DTpetra_ENABLE_MPI_CUDA_RDMA:BOOL=ON"
 

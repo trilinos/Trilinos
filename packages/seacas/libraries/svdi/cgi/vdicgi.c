@@ -840,7 +840,11 @@ void vdbufl_ ()
 void vdstco_ (int *num, int index_array[],
 	      float color_array[][3], int *color_mod)
 {
-  int i, start_index, hld_colors_ptr, first, count;
+  int i=0;
+  int start_index=0;
+  int hld_colors_ptr=0;
+  int first = 0;
+  int count = 0;
   int hld_colors[768];
 
   if (*num < 1 || *num > dev_cap[3]) 

@@ -48,6 +48,7 @@
 #include "KokkosCore_config.h"
 #include "Kokkos_hwloc.hpp"
 #include "Kokkos_Threads.hpp"
+#include "Kokkos_OpenMP.hpp"
 #include "Kokkos_Cuda.hpp"
 
 // Utilities
@@ -106,10 +107,6 @@ int main(int argc, char *argv[])
     bool print = false;
     CLP.setOption("print", "no-print", &print, "Print debugging output");
     bool check = false;
-    CLP.setOption("check", "no-check", &check, "Check correctness");
-#ifdef KOKKOS_HAVE_PTHREAD
-    bool threads = true;
-    CLP.setOption("threads", "no-threads", &threads, "Enable Threads device");
     int num_cores = num_cores_per_socket * num_sockets;
     CLP.setOption("cores", &num_cores,
                   "Number of CPU cores to use (defaults to all)");
@@ -119,6 +116,14 @@ int main(int argc, char *argv[])
     int threads_per_vector = 1;
     CLP.setOption("threads_per_vector", &threads_per_vector,
                   "Number of threads to use within each vector");
+    CLP.setOption("check", "no-check", &check, "Check correctness");
+#ifdef KOKKOS_HAVE_PTHREAD
+    bool threads = true;
+    CLP.setOption("threads", "no-threads", &threads, "Enable Threads device");
+#endif
+#ifdef KOKKOS_HAVE_OPENMP
+    bool openmp = true;
+    CLP.setOption("openmp", "no-openmp", &openmp, "Enable OpenMP device");
 #endif
 #ifdef KOKKOS_HAVE_CUDA
     bool cuda = true;
@@ -132,8 +137,10 @@ int main(int argc, char *argv[])
     int num_cuda_blocks = 0;
     CLP.setOption("num_cuda_blocks", &num_cuda_blocks,
                   "Number of Cuda blocks (0 implies the default choice)");
-    int device_id = 0;
-    CLP.setOption("device", &device_id, "CUDA device ID");
+    int device_id = -1;
+    CLP.setOption("device", &device_id, "CUDA device ID.  Set to default of -1 to use the default device as determined by the local node MPI rank and --ngpus");
+    int ngpus = 1;
+    CLP.setOption("ngpus", &ngpus, "Number of GPUs per node for multi-GPU runs via MPI");
 #endif
     CLP.parse( argc, argv );
 
@@ -167,10 +174,53 @@ int main(int argc, char *argv[])
     }
 #endif
 
+#ifdef KOKKOS_HAVE_OPENMP
+    if (openmp) {
+      typedef Kokkos::OpenMP Device;
+      typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,1,Device> Storage;
+
+      Kokkos::OpenMP::initialize(num_cores*num_hyper_threads);
+
+      if (comm->getRank() == 0)
+        std::cout << std::endl
+                  << "OpenMP performance with " << comm->getSize()
+                  << " MPI ranks and " << num_cores*num_hyper_threads
+                  << " threads per rank:" << std::endl;
+
+      Kokkos::DeviceConfig dev_config(num_cores,
+                                       threads_per_vector,
+                                       num_hyper_threads / threads_per_vector);
+
+      mainHost<Storage>(comm, print, nIter, atomic, use_nodes, check,
+                        dev_config);
+
+      Kokkos::OpenMP::finalize();
+    }
+#endif
+
 #ifdef KOKKOS_HAVE_CUDA
     if (cuda) {
       typedef Kokkos::Cuda Device;
       typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,1,Device> Storage;
+
+      if (device_id == -1) {
+        int local_rank = 0;
+        char *str;
+        if ((str = std::getenv("SLURM_LOCALID")))
+          local_rank = std::atoi(str);
+        else if ((str = std::getenv("MV2_COMM_WORLD_LOCAL_RANK")))
+          local_rank = std::atoi(str);
+        else if ((str = getenv("OMPI_COMM_WORLD_LOCAL_RANK")))
+          local_rank = std::atoi(str);
+        device_id = local_rank % ngpus;
+
+        // Check device is valid
+        int num_device; cudaGetDeviceCount(&num_device);
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          device_id >= num_device, std::logic_error,
+          "Invalid device ID " << device_id << ".  You probably are trying" <<
+          " to run with too many GPUs per node");
+      }
 
       Kokkos::Cuda::host_mirror_device_type::initialize();
       Kokkos::Cuda::initialize(Kokkos::Cuda::SelectDevice(device_id));

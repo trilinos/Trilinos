@@ -9,12 +9,13 @@
 
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_size, etc
 #include <stk_util/parallel/ParallelComm.hpp>  // for CommAll
+#include <stk_util/parallel/MPI.hpp>
 #include <gtest/gtest.h>
 #include <vector>                       // for vector
 #include <stk_util/stk_config.h>
-#if defined ( STK_HAS_MPI )
-#  include <mpi.h>                        // for MPI_Comm
+#include <limits>
 
+#if defined ( STK_HAS_MPI )
 
 TEST(ParallelComm, CommAllDestructor)
 {
@@ -32,6 +33,91 @@ TEST(ParallelComm, CommAllDestructor)
         ASSERT_TRUE( recv_buffer != send_buffer );
     }
     // This should not produce a memory leak.
+}
+
+TEST(ParallelComm, CommunicateMPILocInt)
+{
+    MPI_Comm comm = MPI_COMM_WORLD;
+    stk::CommAll comm_all(comm);
+    
+    int myProcId = comm_all.parallel_rank();
+    int numProcs = comm_all.parallel_size();
+
+    int nvalues=5;
+    int64_t limit_32bit_integer = std::numeric_limits<int32_t>::max();
+
+    sierra::MPI::Loc<int> * const vin  = new sierra::MPI::Loc<int>[nvalues] ;
+    sierra::MPI::Loc<int> * const vout = new sierra::MPI::Loc<int>[nvalues] ;
+
+    for(int n = 0; n < nvalues; n++) {
+      vin[n].m_value = myProcId*numProcs+n;
+      vin[n].m_loc = limit_32bit_integer + myProcId*numProcs*numProcs+n; //Want to test when outside 32-bit range for index.
+    }
+
+    MPI_Allreduce( vin, vout, nvalues,
+               sierra::MPI::Datatype<sierra::MPI::Loc<int> >::type(),
+               sierra::MPI::get_mpi_loc_op<int, std::greater<int>, int64_t >(),
+               comm);
+
+    for(int n = 0; n < nvalues; n++) {
+      EXPECT_EQ((numProcs-1)*numProcs+n, vout[n].m_value);
+      EXPECT_EQ(limit_32bit_integer + (numProcs-1)*numProcs*numProcs+n, vout[n].m_loc);
+    }
+    
+    MPI_Allreduce( vin, vout, nvalues,
+               sierra::MPI::Datatype<sierra::MPI::Loc<int> >::type(),
+               sierra::MPI::get_mpi_loc_op<int, std::less<int>, int64_t>(),
+               comm);
+    for(int n = 0; n < nvalues; n++) {
+      EXPECT_EQ(n, vout[n].m_value);
+      EXPECT_EQ(limit_32bit_integer+n, vout[n].m_loc);
+    }
+
+    delete[] vin;
+    delete[] vout;
+}
+
+TEST(ParallelComm, CommunicateMPILocDouble)
+{
+    MPI_Comm comm = MPI_COMM_WORLD;
+    stk::CommAll comm_all(comm);
+    
+    int myProcId = comm_all.parallel_rank();
+    int numProcs = comm_all.parallel_size();
+
+    int nvalues=1;
+    double value_offset = 55.5;
+    int64_t limit_32bit_integer = std::numeric_limits<int32_t>::max();
+
+    sierra::MPI::Loc<double> * const vin  = new sierra::MPI::Loc<double>[nvalues] ;
+    sierra::MPI::Loc<double> * const vout = new sierra::MPI::Loc<double>[nvalues] ;
+
+    for(int n = 0; n < nvalues; n++) {
+      vin[n].m_value = value_offset+myProcId*numProcs+n;
+      vin[n].m_loc = limit_32bit_integer + myProcId*numProcs*numProcs+n; //Want to test when outside 32-bit range for index.
+    }
+
+    MPI_Allreduce( vin, vout, nvalues,
+               sierra::MPI::Datatype<sierra::MPI::Loc<double> >::type(),
+               sierra::MPI::get_mpi_loc_op<double, std::greater<double>, int64_t >(),
+               comm);
+
+    for(int n = 0; n < nvalues; n++) {
+      EXPECT_EQ(value_offset+double((numProcs-1)*numProcs+n), vout[n].m_value);
+      EXPECT_EQ(limit_32bit_integer + (numProcs-1)*numProcs*numProcs+n, vout[n].m_loc);
+    }
+    
+    MPI_Allreduce( vin, vout, nvalues,
+               sierra::MPI::Datatype<sierra::MPI::Loc<double> >::type(),
+               sierra::MPI::get_mpi_loc_op<double, std::less<double>, int64_t >(),
+               comm);
+    for(int n = 0; n < nvalues; n++) {
+      EXPECT_EQ(value_offset+n, vout[n].m_value);
+      EXPECT_EQ(limit_32bit_integer+n, vout[n].m_loc);
+    }
+
+    delete[] vin;
+    delete[] vout;
 }
 
 //DocTest1

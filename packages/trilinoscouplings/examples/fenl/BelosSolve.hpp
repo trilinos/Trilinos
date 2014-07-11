@@ -190,6 +190,7 @@ belos_solve(
   const Teuchos::RCP<Tpetra::Vector<SV,LO,GO,N> >& b,
   const Teuchos::RCP<Tpetra::Vector<SV,LO,GO,N> >& x,
   const int use_muelu,
+  const int use_mean_based,
   const unsigned max_iter = 200,
   const typename Kokkos::Details::ArithTraits<SV>::mag_type tolerance =
     Kokkos::Details::ArithTraits<SV>::epsilon())

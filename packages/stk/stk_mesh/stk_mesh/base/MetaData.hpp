@@ -504,6 +504,11 @@ public:
 
   Part &get_cell_topology_root_part(const CellTopology cell_topology) const;
 
+  /** \brief Return the topology part given a stk::topology.
+   */
+  Part &get_topology_root_part(stk::topology topology) const
+  { return get_cell_topology_root_part(stk::mesh::get_cell_topology(topology)); }
+
   /** \brief Return the cell topology associated with the given part.
    * The cell topology is set on a part through part subsetting with the root
    * cell topology part.

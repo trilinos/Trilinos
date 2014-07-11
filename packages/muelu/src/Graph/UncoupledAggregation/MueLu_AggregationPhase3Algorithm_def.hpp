@@ -75,7 +75,7 @@ namespace MueLu {
     LO numLocalAggregates = aggregates.GetNumAggregates();
 
     for (LO i = 0; i < numRows; i++) {
-      if (aggStat[i] == AGGREGATED)
+      if (aggStat[i] == AGGREGATED || aggStat[i] == IGNORED)
         continue;
 
        ArrayView<const LocalOrdinal> neighOfINode = graph.getNeighborVertices(i);
@@ -96,11 +96,6 @@ namespace MueLu {
             numNonAggregatedNodes--;
           }
        }
-
-       // One way or another, the node is aggregated (possibly into a singleton)
-       aggStat   [i] = AGGREGATED;
-       procWinner[i] = myRank;
-       numNonAggregatedNodes--;
 
        if (isNewAggregate) {
          // Create new aggregate (not singleton)
@@ -133,6 +128,12 @@ namespace MueLu {
            vertex2AggId[i] = numLocalAggregates++;
          }
        }
+
+       // One way or another, the node is aggregated (possibly into a singleton)
+       aggStat   [i] = AGGREGATED;
+       procWinner[i] = myRank;
+       numNonAggregatedNodes--;
+
      }
 
     // update aggregate object

@@ -2598,6 +2598,168 @@ namespace {
     TEST_ASSERT( sizeof (global_ordinal_type) >= sizeof (local_ordinal_type) );
   }
 
+
+  // Test MultiVector::replaceMap.
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, ReplaceMap, LO, GO, Scalar, Node )
+  {
+    using Teuchos::Comm;
+    using Teuchos::RCP;
+    using Teuchos::outArg;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+    using std::endl;
+    typedef Tpetra::global_size_t GST;
+    typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
+    typedef Tpetra::Map<LO,GO,Node> map_type;
+
+    //
+    // Create a Map, on which every process in the communicator has nonzero rows.
+    //
+    RCP<const Comm<int> > comm = getDefaultComm ();
+    RCP<Node> node = getNode<Node> ();
+    const size_t lclNumRows = 5;
+    //const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+    const GST gblNumRows = lclNumRows * static_cast<GST> (comm->getSize ());
+    const GO indexBase = 0;
+    RCP<const map_type> map = rcp (new map_type (gblNumRows, lclNumRows, indexBase, comm, node));
+    TEST_ASSERT( ! map.is_null () );
+    TEST_EQUALITY( map->getGlobalNumElements (), gblNumRows );
+    TEST_EQUALITY( map->getNodeNumElements (), lclNumRows );
+    TEST_EQUALITY( map->getIndexBase (), indexBase );
+
+    //
+    // Create a MultiVector with that Map.
+    //
+    const size_t numCols = 3;
+    MV X (map, numCols);
+    TEST_EQUALITY( X.getNumVectors (), numCols );
+    TEST_ASSERT( ! X.getMap ().is_null () );
+    if (! X.getMap ().is_null ()) {
+      TEST_ASSERT( X.getMap ()->isSameAs (*map) );
+    }
+
+    //
+    // Split the Comm, so that Proc 0 is in its own Comm, and the
+    // other processes are in the other Comm.
+    //
+    const int color = (comm->getRank () == 0) ? 0 : 1;
+    // Make the key the same on all processes with the same color, so
+    // that MPI_Comm_split will order the processes in the split
+    // communicators by their current rank.
+    const int key = 0;
+    RCP<const Comm<int> > subsetComm = comm->split (color, key);
+    TEST_ASSERT( ! subsetComm.is_null () );
+    if (! subsetComm.is_null ()) {
+      TEST_ASSERT( (comm->getRank () == 0 && subsetComm->getSize () == 1) ||
+                   (comm->getRank () != 0 && subsetComm->getSize () == comm->getSize () - 1) );
+    }
+
+    // Make a Map which exists on Processes 1 .. P-1, not on Proc 0.
+    // On Proc 0, we pass in a null input Comm, to tell the Map that
+    // we want to exclude that process.
+    RCP<const map_type> subsetMap =
+      map->replaceCommWithSubset (comm->getRank () == 0 ? Teuchos::null : subsetComm);
+    TEST_ASSERT( (comm->getRank () == 0 && subsetMap.is_null ()) ||
+                 (comm->getRank () != 0 && ! subsetMap.is_null ()) );
+
+    //
+    // Replace the MultiVector's original Map with a subset Map.
+    //
+    X.replaceMap (subsetMap);
+    TEST_ASSERT( (comm->getRank () == 0 && X.getMap ().is_null ()) ||
+                 (comm->getRank () != 0 && ! X.getMap ().is_null ()) );
+
+    // The number of columns must not change, even on excluded processes.
+    TEST_EQUALITY( X.getNumVectors (), numCols );
+
+    if (comm->getRank () == 0) {
+      TEST_EQUALITY( X.getLocalLength (), static_cast<size_t> (0) );
+    }
+    else { // my rank is not zero
+      TEST_EQUALITY( X.getLocalLength (), lclNumRows );
+      if (! subsetMap.is_null () && ! X.getMap ().is_null ()) {
+        // This is a collective on the subset communicator.
+        TEST_ASSERT( X.getMap ()->isSameAs (*subsetMap) );
+      }
+    }
+
+#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
+    // FIXME (mfh 10 Jul 2014) Just testing if Kokkos Refactor is
+    // enabled isn't enough; we have to make sure that the Node type
+    // is one of the new Kokkos Nodes.
+
+    // // Make sure that the Views have the right dimensions.
+    // {
+    //   typedef typename MV::dual_view_type dual_view_type;
+    //   typedef typename dual_view_type::t_dev device_view_type;
+    //   typedef typename dual_view_type::t_host host_view_type;
+
+    //   device_view_type X_dev =
+    //     X.template getLocalView<typename device_view_type::device_type> ();
+    //   host_view_type X_host =
+    //     X.template getLocalView<typename host_view_type::device_type> ();
+
+    //   if (comm->getRank () == 0) {
+    //     TEST_EQUALITY( X_dev.dimension_0 (), static_cast<size_t> (0) );
+    //     TEST_EQUALITY( X_dev.dimension_1 (), numCols );
+    //     TEST_EQUALITY( X_host.dimension_0 (), static_cast<size_t> (0) );
+    //     TEST_EQUALITY( X_host.dimension_1 (), numCols );
+    //   }
+    //   else { // my rank is not zero
+    //     TEST_EQUALITY( X_dev.dimension_0 (), lclNumRows );
+    //     TEST_EQUALITY( X_dev.dimension_1 (), numCols );
+    //     TEST_EQUALITY( X_host.dimension_0 (), lclNumRows );
+    //     TEST_EQUALITY( X_host.dimension_1 (), numCols );
+    //   }
+    // }
+#endif // TPETRA_HAVE_KOKKOS_REFACTOR
+
+    //
+    // Replace the MultiVector's subset Map with its original Map.
+    //
+    X.replaceMap (map);
+    TEST_ASSERT( ! X.getMap ().is_null () );
+    if (! X.getMap ().is_null ()) {
+      TEST_ASSERT( ! X.getMap ()->getComm ().is_null () );
+    }
+    TEST_EQUALITY( X.getNumVectors (), numCols );
+    TEST_EQUALITY( X.getLocalLength (), lclNumRows );
+    TEST_EQUALITY( X.getGlobalLength (), gblNumRows );
+
+#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
+    // FIXME (mfh 10 Jul 2014) Just testing if Kokkos Refactor is
+    // enabled isn't enough; we have to make sure that the Node type
+    // is one of the new Kokkos Nodes.
+
+    // // Make sure that the Views have the right dimensions.
+    // {
+    //   typedef typename MV::dual_view_type dual_view_type;
+    //   typedef typename dual_view_type::t_dev device_view_type;
+    //   typedef typename dual_view_type::t_host host_view_type;
+
+    //   device_view_type X_dev =
+    //     X.template getLocalView<typename device_view_type::device_type> ();
+    //   host_view_type X_host =
+    //     X.template getLocalView<typename host_view_type::device_type> ();
+
+    //   TEST_EQUALITY( X_dev.dimension_0 (), lclNumRows );
+    //   TEST_EQUALITY( X_dev.dimension_1 (), numCols );
+    //   TEST_EQUALITY( X_host.dimension_0 (), lclNumRows );
+    //   TEST_EQUALITY( X_host.dimension_1 (), numCols );
+    // }
+#endif // TPETRA_HAVE_KOKKOS_REFACTOR
+
+    // Make sure that the test passed on all processes, not just Proc 0.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    if (gblSuccess) {
+      out << "Test PASSED on all processes" << endl;
+    } else {
+      out << "Test FAILED on one or more processes" << endl;
+    }
+  }
+
 //
 // INSTANTIATIONS
 //
@@ -2624,14 +2786,14 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ZeroScaleUpdate   , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(      Vector, ZeroScaleUpdate   , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ScaleAndAssign    , LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, BadCombinations   , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, BadMultiply       , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, SingleVecNormalize, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Multiply          , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ElementWiseMultiply,LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, NonContigView     , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Describable       , LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Typedefs          , LO, GO, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Typedefs          , LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ReplaceMap        , LO, GO, SCALAR, NODE )
 
 
 #if defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)

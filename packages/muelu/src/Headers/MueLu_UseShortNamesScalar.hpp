@@ -86,10 +86,6 @@ typedef MueLu::DemoFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> D
 typedef MueLu::DirectSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> DirectSolver;
 #endif
 
-#ifdef MUELU_EASYPARAMETERLISTINTERPRETER_SHORT
-typedef MueLu::EasyParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> EasyParameterListInterpreter;
-#endif
-
 #ifdef MUELU_EMINPFACTORY_SHORT
 typedef MueLu::EminPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> EminPFactory;
 #endif

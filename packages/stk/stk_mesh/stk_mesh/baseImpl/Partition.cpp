@@ -140,7 +140,7 @@ bool Partition::add(Entity entity)
   Bucket *bucket = get_bucket_for_adds();
 
   bucket->add_entity(entity);
-  bucket->mesh().modified(entity);
+  bucket->mesh().mark_entity_and_upward_related_entities_as_modified(entity);
   ++m_size;
 
   m_updated_since_compress = m_updated_since_sort = true;
@@ -188,7 +188,7 @@ bool Partition::move_to(Entity entity, Partition &dst_partition)
                   << src_bucket->topology() << "to " << dst_bucket->topology() << "."
                   );
 
-  dst_bucket->mesh().modified(entity);
+  dst_bucket->mesh().mark_entity_and_upward_related_entities_as_modified(entity);
 
   // Copy the entity's data to the new bucket before removing the entity from its old bucket.
   dst_bucket->copy_entity(entity);

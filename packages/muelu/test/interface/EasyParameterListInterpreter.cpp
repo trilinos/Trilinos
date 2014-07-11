@@ -53,7 +53,7 @@
 #include <MueLu_Exceptions.hpp>
 #include <MueLu_TestHelpers.hpp>
 
-#include <MueLu_EasyParameterListInterpreter.hpp>
+#include <MueLu_ParameterListInterpreter.hpp>
 
 // These files must be included last
 #include <MueLu_UseDefaultTypes.hpp>
@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
     paramList.set("verbosity", "test");
 
     try {
-      EasyParameterListInterpreter mueluFactory(paramList);
+      ParameterListInterpreter mueluFactory(paramList);
 
       RCP<Hierarchy> H = mueluFactory.CreateHierarchy();
 

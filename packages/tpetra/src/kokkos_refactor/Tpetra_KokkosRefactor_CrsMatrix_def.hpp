@@ -1634,61 +1634,277 @@ namespace Tpetra {
 
   template<class Scalar,
            class LocalOrdinal,
-           class GlobalOrdinal, class DeviceType>
-  void
-  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
-  replaceLocalValues (LocalOrdinal localRow,
+           class GlobalOrdinal,
+           class DeviceType>
+  LocalOrdinal
+  CrsMatrix<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+    typename KokkosClassic::DefaultKernels<
+      Scalar, LocalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  replaceLocalValues (const LocalOrdinal localRow,
                       const ArrayView<const LocalOrdinal> &indices,
-                      const ArrayView<const Scalar> &values)
+                      const ArrayView<const Scalar>& values)
   {
+    using Teuchos::Array;
+    using Teuchos::ArrayView;
     // project2nd is a binary function that returns its second
     // argument.  This replaces entries in the given row with their
     // corresponding entry of values.
     typedef Tpetra::project2nd<Scalar, Scalar> f_type;
-    this->template transformLocalValues<f_type> (localRow, indices,
-                                                 values, f_type ());
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    typedef typename ArrayView<GO>::size_type size_type;
+
+    if (! isFillActive ()) {
+      // Fill must be active in order to call this method.
+      return Teuchos::OrdinalTraits<LO>::invalid ();
+    }
+    else if (! this->hasColMap ()) {
+      // There is no such thing as local column indices without a column Map.
+      return Teuchos::OrdinalTraits<LO>::invalid ();
+    }
+    else if (values.size () != indices.size ()) {
+      // The sizes of values and indices must match.
+      return Teuchos::OrdinalTraits<LO>::invalid ();
+    }
+    const bool isLocalRow = getRowMap ()->isNodeLocalElement (localRow);
+    if (! isLocalRow) {
+      // The calling process doesn't own the local row, so we can't
+      // insert into it.
+      return static_cast<LO> (0);
+    }
+
+    if (indices.size () == 0) {
+      return static_cast<LO> (0);
+    }
+    else {
+      RowInfo rowInfo = staticGraph_->getRowInfo (localRow);
+      ArrayView<Scalar> curVals = this->getViewNonConst (rowInfo);
+      if (isLocallyIndexed ()) {
+        return staticGraph_->template transformLocalValues<Scalar, f_type> (rowInfo, curVals,
+                                                                            indices, values,
+                                                                            f_type ());
+      }
+      else if (isGloballyIndexed ()) {
+        // Convert the given local indices to global indices.
+        //
+        // FIXME (mfh 27 Jun 2014) Why can't we ask the graph to do
+        // that?  It could do the conversions in place, so that we
+        // wouldn't need temporary storage.
+        const map_type& colMap = * (this->getColMap ());
+        const size_type numInds = indices.size ();
+
+        // mfh 27 Jun 2014: Some of the given local indices might be
+        // invalid.  That's OK, though, since the graph ignores them
+        // and their corresponding values in transformGlobalValues.
+        // Thus, we don't have to count how many indices are valid.
+        // We do so just as a sanity check.
+        Array<GO> gblInds (numInds);
+        size_type numValid = 0; // sanity check count of # valid indices
+        for (size_type k = 0; k < numInds; ++k) {
+          const GO gid = colMap.getGlobalElement (indices[k]);
+          gblInds[k] = gid;
+          if (gid != Teuchos::OrdinalTraits<GO>::invalid ()) {
+            ++numValid; // sanity check count of # valid indices
+          }
+        }
+        const LO numXformed =
+          staticGraph_->template transformGlobalValues<Scalar, f_type> (rowInfo,
+                                                                        curVals, // target
+                                                                        gblInds,
+                                                                        values, // source
+                                                                        f_type ());
+        if (static_cast<size_type> (numXformed) != numValid) {
+          return Teuchos::OrdinalTraits<LO>::invalid ();
+        } else {
+          return numXformed;
+        }
+      }
+      // NOTE (mfh 26 Jun 2014) In the current version of CrsMatrix,
+      // it's possible for a matrix (or graph) to be neither locally
+      // nor globally indexed on a process.  This means that the graph
+      // or matrix has no entries on that process.  Epetra also works
+      // like this.  It's related to lazy allocation (on first
+      // insertion, not at graph / matrix construction).  Lazy
+      // allocation will go away because it is not thread scalable.
+      return static_cast<LO> (0);
+    }
   }
 
 
   template<class Scalar,
            class LocalOrdinal,
            class GlobalOrdinal, class DeviceType>
-  void
+  LocalOrdinal
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   replaceGlobalValues (GlobalOrdinal globalRow,
                        const ArrayView<const GlobalOrdinal> &indices,
                        const ArrayView<const Scalar>        &values)
   {
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    using Teuchos::Array;
+    using Teuchos::ArrayView;
+    typedef typename ArrayView<const GO>::size_type size_type;
     // project2nd is a binary function that returns its second
     // argument.  This replaces entries in the given row with their
     // corresponding entry of values.
     typedef Tpetra::project2nd<Scalar, Scalar> f_type;
-    this->template transformGlobalValues<f_type> (globalRow, indices,
-                                                  values, f_type ());
+
+    if (! isFillActive ()) {
+      // Fill must be active in order to call this method.
+      return Teuchos::OrdinalTraits<LO>::invalid ();
+    }
+    else if (values.size () != indices.size ()) {
+      // The sizes of values and indices must match.
+      return Teuchos::OrdinalTraits<LO>::invalid ();
+    }
+
+    const LO lrow = this->getRowMap()->getLocalElement (globalRow);
+    if (lrow == Teuchos::OrdinalTraits<LO>::invalid ()) {
+      // We don't own the row, so we're not allowed to modify its values.
+      return Teuchos::OrdinalTraits<LO>::invalid ();
+    }
+
+    if (staticGraph_.is_null ()) {
+      return Teuchos::OrdinalTraits<LO>::invalid ();
+    }
+    const crs_graph_type& graph = *staticGraph_;
+    RowInfo rowInfo = graph.getRowInfo (lrow);
+    if (indices.size () == 0) {
+      return static_cast<LO> (0);
+    }
+    else {
+      ArrayView<Scalar> curVals = this->getViewNonConst (rowInfo);
+      if (isLocallyIndexed ()) {
+        // Convert the given global indices to local indices.
+        //
+        // FIXME (mfh 08 Jul 2014) Why can't we ask the graph to do
+        // that?  It could do the conversions in place, so that we
+        // wouldn't need temporary storage.
+        const map_type& colMap = * (this->getColMap ());
+        const size_type numInds = indices.size ();
+        Array<LO> lclInds (numInds);
+        for (size_type k = 0; k < numInds; ++k) {
+          // There is no need to filter out indices not in the
+          // column Map.  Those that aren't will be mapped to
+          // invalid(), which the graph's transformGlobalValues()
+          // will filter out (but not count in its return value).
+          lclInds[k] = colMap.getLocalElement (indices[k]);
+        }
+        return graph.template transformLocalValues<Scalar, f_type> (rowInfo,
+                                                                    curVals,
+                                                                    lclInds (),
+                                                                    values,
+                                                                    f_type ());
+      }
+      else if (isGloballyIndexed ()) {
+        return graph.template transformGlobalValues<Scalar, f_type> (rowInfo,
+                                                                     curVals,
+                                                                     indices,
+                                                                     values,
+                                                                     f_type ());
+      }
+      else {
+        // If the graph is neither locally nor globally indexed on
+        // the calling process, that means that the calling process
+        // can't possibly have any entries in the owned row.  Thus,
+        // there are no entries to transform, so we return zero.
+        return static_cast<LO> (0);
+      }
+    }
   }
 
 
   template<class Scalar,
            class LocalOrdinal,
            class GlobalOrdinal, class DeviceType>
-  void
+  LocalOrdinal
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   sumIntoGlobalValues (const GlobalOrdinal globalRow,
                        const ArrayView<const GlobalOrdinal> &indices,
                        const ArrayView<const Scalar>        &values)
 
   {
-    try {
-      typedef std::plus<Scalar> f_type;
-      this->template transformGlobalValues<f_type> (globalRow, indices,
-                                                    values, f_type ());
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    using Teuchos::Array;
+    using Teuchos::ArrayView;
+    typedef typename ArrayView<const GO>::size_type size_type;
+    typedef std::plus<Scalar> f_type;
+
+    if (! isFillActive ()) {
+      // Fill must be active in order to call this method.
+      return Teuchos::OrdinalTraits<LO>::invalid ();
     }
-    catch (Details::InvalidGlobalRowIndex<GlobalOrdinal>& e) {
-      // Since globalRow is not in the row Map, this will stash the
-      // data away in a separate data structure.  globalAssemble()
-      // (called during fillComplete()) will exchange that data and
-      // sum it in using sumIntoGlobalValues().
+    else if (values.size () != indices.size ()) {
+      // The sizes of values and indices must match.
+      return Teuchos::OrdinalTraits<LO>::invalid ();
+    }
+
+    const LO lrow = this->getRowMap()->getLocalElement (globalRow);
+    if (lrow == Teuchos::OrdinalTraits<LO>::invalid ()) {
+      // globalRow is not in the row Map, so stash the given entries
+      // away in a separate data structure.  globalAssemble() (called
+      // during fillComplete()) will exchange that data and sum it in
+      // using sumIntoGlobalValues().
       this->insertNonownedGlobalValues (globalRow, indices, values);
+      // FIXME (mfh 08 Jul 2014) It's not clear what to return here,
+      // since we won't know whether the given indices were valid
+      // until globalAssemble (called in fillComplete) is called.
+      // That's why insertNonownedGlobalValues doesn't return
+      // anything.  Just for consistency, I'll return the number of
+      // entries that the user gave us.
+      return static_cast<LO> (indices.size ());
+    }
+
+    if (staticGraph_.is_null ()) {
+      return Teuchos::OrdinalTraits<LO>::invalid ();
+    }
+    const crs_graph_type& graph = *staticGraph_;
+    RowInfo rowInfo = graph.getRowInfo (lrow);
+    if (indices.size () == 0) {
+      return static_cast<LO> (0);
+    }
+    else {
+      ArrayView<Scalar> curVals = this->getViewNonConst (rowInfo);
+      if (isLocallyIndexed ()) {
+        // Convert the given global indices to local indices.
+        //
+        // FIXME (mfh 08 Jul 2014) Why can't we ask the graph to do
+        // that?  It could do the conversions in place, so that we
+        // wouldn't need temporary storage.
+        const map_type& colMap = * (this->getColMap ());
+        const size_type numInds = indices.size ();
+        Array<LO> lclInds (numInds);
+        for (size_type k = 0; k < numInds; ++k) {
+          // There is no need to filter out indices not in the
+          // column Map.  Those that aren't will be mapped to
+          // invalid(), which the graph's transformGlobalValues()
+          // will filter out (but not count in its return value).
+          lclInds[k] = colMap.getLocalElement (indices[k]);
+        }
+        return graph.template transformLocalValues<Scalar, f_type> (rowInfo,
+                                                                    curVals,
+                                                                    lclInds (),
+                                                                    values,
+                                                                    f_type ());
+      }
+      else if (isGloballyIndexed ()) {
+        return graph.template transformGlobalValues<Scalar, f_type> (rowInfo,
+                                                                     curVals,
+                                                                     indices,
+                                                                     values,
+                                                                     f_type ());
+      }
+      else {
+        // If the graph is neither locally nor globally indexed on
+        // the calling process, that means that the calling process
+        // can't possibly have any entries in the owned row.  Thus,
+        // there are no entries to transform, so we return zero.
+        return static_cast<LO> (0);
+      }
     }
   }
 
@@ -1696,15 +1912,93 @@ namespace Tpetra {
   template <class Scalar,
             class LocalOrdinal,
             class GlobalOrdinal, class DeviceType>
-  void
+  LocalOrdinal
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   sumIntoLocalValues (const LocalOrdinal localRow,
-                      const ArrayView<const LocalOrdinal>  &indices,
-                      const ArrayView<const Scalar>        &values)
+                      const ArrayView<const LocalOrdinal>& indices,
+                      const ArrayView<const Scalar>& values)
   {
+    using Teuchos::Array;
+    using Teuchos::ArrayView;
     typedef std::plus<Scalar> f_type;
-    this->template transformLocalValues<f_type> (localRow, indices,
-                                                 values, f_type ());
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    typedef typename ArrayView<GO>::size_type size_type;
+
+    if (! isFillActive ()) {
+      // Fill must be active in order to call this method.
+      return Teuchos::OrdinalTraits<LO>::invalid ();
+    }
+    else if (! this->hasColMap ()) {
+      // There is no such thing as local column indices without a column Map.
+      return Teuchos::OrdinalTraits<LO>::invalid ();
+    }
+    else if (values.size () != indices.size ()) {
+      // The sizes of values and indices must match.
+      return Teuchos::OrdinalTraits<LO>::invalid ();
+    }
+    const bool isLocalRow = getRowMap ()->isNodeLocalElement (localRow);
+    if (! isLocalRow) {
+      // The calling process doesn't own the local row, so we can't
+      // insert into it.
+      return static_cast<LO> (0);
+    }
+
+    if (indices.size () == 0) {
+      return static_cast<LO> (0);
+    }
+    else {
+      RowInfo rowInfo = staticGraph_->getRowInfo (localRow);
+      ArrayView<Scalar> curVals = this->getViewNonConst (rowInfo);
+      if (isLocallyIndexed ()) {
+        return staticGraph_->template transformLocalValues<Scalar, f_type> (rowInfo, curVals,
+                                                                            indices, values,
+                                                                            f_type ());
+      }
+      else if (isGloballyIndexed ()) {
+        // Convert the given local indices to global indices.
+        //
+        // FIXME (mfh 27 Jun 2014) Why can't we ask the graph to do
+        // that?  It could do the conversions in place, so that we
+        // wouldn't need temporary storage.
+        const map_type& colMap = * (this->getColMap ());
+        const size_type numInds = indices.size ();
+
+        // mfh 27 Jun 2014: Some of the given local indices might be
+        // invalid.  That's OK, though, since the graph ignores them
+        // and their corresponding values in transformGlobalValues.
+        // Thus, we don't have to count how many indices are valid.
+        // We do so just as a sanity check.
+        Array<GO> gblInds (numInds);
+        size_type numValid = 0; // sanity check count of # valid indices
+        for (size_type k = 0; k < numInds; ++k) {
+          const GO gid = colMap.getGlobalElement (indices[k]);
+          gblInds[k] = gid;
+          if (gid != Teuchos::OrdinalTraits<GO>::invalid ()) {
+            ++numValid; // sanity check count of # valid indices
+          }
+        }
+        const LO numXformed =
+          staticGraph_->template transformGlobalValues<Scalar, f_type> (rowInfo,
+                                                                        curVals, // target
+                                                                        gblInds,
+                                                                        values, // source
+                                                                        f_type ());
+        if (static_cast<size_type> (numXformed) != numValid) {
+          return Teuchos::OrdinalTraits<LO>::invalid ();
+        } else {
+          return numXformed;
+        }
+      }
+      // NOTE (mfh 26 Jun 2014) In the current version of CrsMatrix,
+      // it's possible for a matrix (or graph) to be neither locally
+      // nor globally indexed on a process.  This means that the graph
+      // or matrix has no entries on that process.  Epetra also works
+      // like this.  It's related to lazy allocation (on first
+      // insertion, not at graph / matrix construction).  Lazy
+      // allocation will go away because it is not thread scalable.
+      return static_cast<LO> (0);
+    }
   }
 
 
@@ -1753,57 +2047,61 @@ namespace Tpetra {
                                 LocalOrdinal localRow,
                                 const ArrayView<LocalOrdinal> &indices,
                                 const ArrayView<Scalar>       &values,
-                                size_t &numEntries) const
+                                size_t& numEntries) const
   {
+    using Teuchos::ArrayView;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+
     TEUCHOS_TEST_FOR_EXCEPTION(
-      isGloballyIndexed() && ! hasColMap(),
-      std::runtime_error,
+      isGloballyIndexed () && ! hasColMap (), std::runtime_error,
       "Tpetra::CrsMatrix::getLocalRowCopy: The matrix is globally indexed and "
       "does not have a column Map yet.  That means we don't have local indices "
       "for columns yet, so it doesn't make sense to call this method.  If the "
       "matrix doesn't have a column Map yet, you should call fillComplete on "
       "it first.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! staticGraph_->hasRowInfo (), std::runtime_error,
+      "Tpetra::CrsMatrix::getLocalRowCopy: The graph's row information was "
+      "deleted at fillComplete().");
+
+    if (! this->getRowMap ()->isNodeLocalElement (localRow)) {
+      numEntries = 0;
+      return;
+    }
+
+    const RowInfo rowinfo = staticGraph_->getRowInfo(localRow);
+    const size_t theNumEntries = rowinfo.numEntries;
 
     TEUCHOS_TEST_FOR_EXCEPTION(
-      ! getRowMap ()->isNodeLocalElement (localRow),
-      std::runtime_error,
-      "Tpetra::CrsMatrix::getLocalRowCopy: The calling process "
-      << this->getComm ()->getRank () << " does not own the given local row "
-      << localRow << ".");
-    const RowInfo rowinfo = staticGraph_->getRowInfo(localRow);
-    numEntries = rowinfo.numEntries;
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      static_cast<size_t>(indices.size()) < numEntries ||
-      static_cast<size_t>(values.size()) < numEntries,
+      static_cast<size_t> (indices.size ()) < theNumEntries ||
+      static_cast<size_t> (values.size ()) < theNumEntries,
       std::runtime_error,
       "Tpetra::CrsMatrix::getLocalRowCopy: The given row " << localRow
-      << " has " << numEntries << " entries.  One or both of the given array "
-      "views are not long enough to store that many entries.  indices can "
-      "store " << indices.size() << " entries and values can store "
+      << " has " << theNumEntries << " entries.  One or both of the given "
+      "ArrayViews are not long enough to store that many entries.  indices "
+      "can store " << indices.size() << " entries and values can store "
       << values.size() << " entries.");
-    if (staticGraph_->isLocallyIndexed()) {
-      ArrayView<const LocalOrdinal> indrowview = staticGraph_->getLocalView(rowinfo);
-      ArrayView<const Scalar>       valrowview = getView(rowinfo);
-      std::copy( indrowview.begin(), indrowview.begin() + numEntries, indices.begin() );
-      std::copy( valrowview.begin(), valrowview.begin() + numEntries,  values.begin() );
+
+    numEntries = theNumEntries;
+
+    if (staticGraph_->isLocallyIndexed ()) {
+      ArrayView<const LO> indrowview = staticGraph_->getLocalView (rowinfo);
+      ArrayView<const Scalar> valrowview = getView (rowinfo);
+      std::copy (indrowview.begin (), indrowview.begin () + numEntries, indices.begin ());
+      std::copy (valrowview.begin (), valrowview.begin () + numEntries,  values.begin ());
     }
-    else if (staticGraph_->isGloballyIndexed()) {
-      ArrayView<const GlobalOrdinal> indrowview = staticGraph_->getGlobalView(rowinfo);
-      ArrayView<const Scalar>        valrowview = getView(rowinfo);
-      std::copy( valrowview.begin(), valrowview.begin() + numEntries, values.begin() );
+    else if (staticGraph_->isGloballyIndexed ()) {
+      ArrayView<const GO> indrowview = staticGraph_->getGlobalView (rowinfo);
+      ArrayView<const Scalar>        valrowview = getView (rowinfo);
+      std::copy (valrowview.begin (), valrowview.begin () + numEntries, values.begin ());
+
+      const map_type& colMap = * (this->getColMap ());
       for (size_t j=0; j < numEntries; ++j) {
-        indices[j] = getColMap()->getLocalElement(indrowview[j]);
+        indices[j] = colMap.getLocalElement (indrowview[j]);
       }
     }
     else {
-#ifdef HAVE_TPETRA_DEBUG
-      // should have fallen in one of the above if indices are allocated
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        staticGraph_->indicesAreAllocated(),
-        std::logic_error, "Tpetra::CrsMatrix::getLocalRowCopy: Control flow "
-        "should never reach here.  Please report this bug to the Tpetra "
-        "developers.");
-#endif // HAVE_TPETRA_DEBUG
       numEntries = 0;
     }
   }

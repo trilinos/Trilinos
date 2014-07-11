@@ -1163,6 +1163,7 @@ namespace {
       } else {
         out << "Clone FAILED on at least one process!" << endl;
       }
+      TEST_EQUALITY_CONST( gblSuccess , 1)
 
       if (gblSuccess == 1 && ! A2.is_null ()) {
         out << "Testing status of newly created graph" << endl;
@@ -1196,8 +1197,8 @@ namespace {
       TEST_EQUALITY_CONST( A2->isGloballyIndexed(), true );
       TEST_EQUALITY_CONST( A2->getNodeAllocationSize(), (size_t)(numLocal*3-2) );
       TEST_EQUALITY( A2->getNodeNumEntries(), A1->getNodeNumEntries() );
-      TEST_NOTHROW( A2->insertGlobalIndices( map1->getMaxLocalIndex(), tuple<GO>(map1->getMinLocalIndex()) ) );
-      TEST_NOTHROW( A2->insertGlobalIndices( map1->getMinLocalIndex(), tuple<GO>(map1->getMaxLocalIndex()) ) );
+      TEST_NOTHROW( A2->insertGlobalIndices( map1->getMaxGlobalIndex(), tuple<GO>(map1->getMinGlobalIndex()) ) );
+      TEST_NOTHROW( A2->insertGlobalIndices( map1->getMinGlobalIndex(), tuple<GO>(map1->getMaxGlobalIndex()) ) );
       TEST_NOTHROW( A2->fillComplete() );
       TEST_EQUALITY_CONST( A2->getNodeNumEntries(), A1->getNodeNumEntries()+2 );
     }
@@ -1242,7 +1243,7 @@ namespace {
       int lclSuccess = success ? 1 : 0;
       int gblSuccess = 1;
       reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-
+      TEST_EQUALITY_CONST( gblSuccess , 1)
       if (gblSuccess == 1) {
         out << "Test succeeded on all processes!" << endl;
       } else {

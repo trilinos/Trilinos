@@ -104,7 +104,14 @@ namespace MueLu {
   }
 
   Teuchos::FancyOStream & VerboseObject::GetOStream(MsgType type, int thisProcRankOnly) const {
-    return (IsPrint(type, thisProcRankOnly)) ? *getOStream() : *blackHole_;
+    if (!IsPrint(type, thisProcRankOnly))
+      return *blackHole_;
+
+    Teuchos::FancyOStream& os = *getOStream();
+    if (!(type & ((Extreme | Test) ^ Warnings)))
+      os << "\n******* WARNING *******" << std::endl;
+
+    return os;
   }
 
   Teuchos::FancyOStream& VerboseObject::GetBlackHole() const {

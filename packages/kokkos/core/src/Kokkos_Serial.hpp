@@ -220,7 +220,7 @@ public:
         result = (pointer_type ) Serial::resize_reduce_scratch( Reduce::value_size( functor ) );
       }
 
-      functor.init( Reduce::reference( result ) );
+      Reduce::init( functor , result );
 
       for ( size_t iwork = 0 ; iwork < work_count ; ++iwork ) {
         functor( iwork , Reduce::reference( result ) );
@@ -244,7 +244,7 @@ public:
   {
     pointer_type result = (pointer_type ) Serial::resize_reduce_scratch( Reduce::value_size( functor ) );
 
-    functor.init( Reduce::reference( result ) );
+    Reduce::init( functor , result );
 
     for ( size_t iwork = 0 ; iwork < work_count ; ++iwork ) {
       functor( iwork , Reduce::reference( result ) , true );

@@ -91,8 +91,8 @@ namespace MueLu {
     int levelID = LastLevelID() + 1; // ID of the inserted level
 
     if (level->GetLevelID() != -1 && (level->GetLevelID() != levelID))
-      GetOStream(Warnings1) << "Warning: Hierarchy::AddLevel(): Level with ID=" << level->GetLevelID() << " have been added at the end of the hierarchy" << std::endl
-                               << "         but its ID have been redefined because last level ID of the hierarchy was " << LastLevelID() << "." << std::endl;
+      GetOStream(Warnings1) << "Hierarchy::AddLevel(): Level with ID=" << level->GetLevelID() << " have been added at the end of the hierarchy" << std::endl
+          << "         but its ID have been redefined because last level ID of the hierarchy was " << LastLevelID() << "." << std::endl;
 
     Levels_.push_back(level);
     level->SetLevelID(levelID);
@@ -275,12 +275,36 @@ namespace MueLu {
 
     // Test if we reach the end of the hierarchy
     bool isOrigLastLevel = isLastLevel;
-    if (isLastLevel || Ac.is_null() || (Ac->getRowMap()->getGlobalNumElements() <= maxCoarseSize_)) {
+    if (isLastLevel || Ac.is_null() || (Ac->getGlobalNumRows() <= maxCoarseSize_)) {
       // This is definitely the last level, but reasons for it may be different:
       //   - we have achieved numDesiredLevels
       //   - we do not belong to the next subcommunicator
       //   - the size of the coarse matrix is too small
       isLastLevel = true;
+    }
+
+    if (!isFinestLevel) {
+      RCP<Matrix> A = Levels_[coarseLevelID-1]->template Get< RCP<Matrix> >("A");
+
+      const double maxCoarse2FineRatio = 0.8;
+      if (Ac.is_null() || Ac->getGlobalNumRows() > maxCoarse2FineRatio*A->getGlobalNumRows()) {
+        // Aggregation stagnated, aborting
+        GetOStream(Warnings0) << "Aggregation stagnated, aborting hierarchy construction.\n"
+            << "Please check your matrix and/or adjust your configuration file. Possible fixes:\n"
+            << "  - reduce the maximum number of levels\n"
+            << "  - enable repartitioning\n"
+            << "  - increase the minimum coarse size." << std::endl;
+
+        // We could abort here, but for now we simply notify user.
+        // Couple of additional points:
+        //   - if repartitioning is delayed until level K, but the aggregation
+        //     procedure stagnates between levels K-1 and K.  In this case,
+        //     repartitioning could enable faster coarsening once again, but the
+        //     hierarchy construction will abort due to the stagnation check.
+        //   - if the matrix is small enough, we could move it to one processor.
+
+        // isLastLevel = true;
+      }
     }
 
     if (isLastLevel) {
@@ -494,7 +518,7 @@ namespace MueLu {
           emptySolve = false;
         }
         if (emptySolve == true)
-          GetOStream(Warnings0) << "Warning: No coarse grid solver" << std::endl;
+          GetOStream(Warnings0) << "No coarse grid solver" << std::endl;
 
       } else {
         // On intermediate levels, we do cycles
@@ -509,7 +533,7 @@ namespace MueLu {
             RCP<SmootherBase> preSmoo = Fine->Get< RCP<SmootherBase> >("PreSmoother");
             preSmoo->Apply(X, B, zeroGuess);
           } else {
-            GetOStream(Warnings1) << "Warning: Level " <<  startLevel << ": No PreSmoother!" << std::endl;
+            GetOStream(Warnings1) << "Level " <<  startLevel << ": No PreSmoother!" << std::endl;
           }
         }
 
@@ -613,7 +637,7 @@ namespace MueLu {
             postSmoo->Apply(X, B, false);
 
           } else {
-            GetOStream(Warnings1) << "Warning: Level " <<  startLevel << ": No PostSmoother!" << std::endl;
+            GetOStream(Warnings1) << "Level " <<  startLevel << ": No PostSmoother!" << std::endl;
           }
         }
       }

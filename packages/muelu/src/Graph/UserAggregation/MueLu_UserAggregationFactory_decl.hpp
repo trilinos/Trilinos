@@ -79,7 +79,7 @@ public:
   //! Destructor.
   virtual ~UserAggregationFactory() { }
 
-  RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+  RCP<const ParameterList> GetValidParameterList() const;
 
   //@}
 

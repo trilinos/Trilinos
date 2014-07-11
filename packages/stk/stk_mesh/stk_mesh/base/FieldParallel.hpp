@@ -31,21 +31,6 @@ namespace mesh {
  * This file contains some helper functions that are part of the Field API.
  */
 
-/** Communicate field data from domain to range.
- *  The fields array must be identical on all processors.
- *  All fields and mesh entities must belong to the same mesh.
- *  If symmetric (domain == range) then from owned to not owned.
- *
- *  Note from ABW: there is no known usage of this function currently (8/19/2013). Possible candidate for deletion.
- *  If you are a developer considering using this function, please contact the STK team.
- */
-void communicate_field_data(
-  const BulkData& mesh,
-  ParallelMachine machine,
-  const std::vector<EntityProc> & domain ,
-  const std::vector<EntityProc> & range ,
-  const std::vector< const FieldBase *> & fields );
-
 /** Send field-data from entities to their ghosts, for a specified 'ghosting'.
  * For entities that are ghosted, this function updates field-data from the
  * original entity to the ghosts.
@@ -161,7 +146,6 @@ void parallel_data_exchange_t(std::vector< std::vector<T> > &send_lists,
 #if defined( STK_HAS_MPI)
   const int msg_tag = 10242;
   int num_procs = stk::parallel_machine_size(mpi_communicator);
-  int my_proc = stk::parallel_machine_rank(mpi_communicator);
 
   //PRECONDITION((unsigned int) num_procs == send_lists.size() && (unsigned int) num_procs == recv_lists.size());
   int class_size = sizeof(T);

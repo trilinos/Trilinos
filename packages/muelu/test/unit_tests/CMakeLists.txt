@@ -135,7 +135,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
 
     TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsTpetra_cp
       SOURCE_DIR ${MueLu_SOURCE_DIR}/test/unit_tests/Adapters
-      SOURCE_FILES test.xml testWithRebalance.xml testPDE.xml
+      SOURCE_FILES test.xml testWithRebalance.xml testPDE.xml testPDE1.xml
       )
 
     TRIBITS_ADD_TEST(

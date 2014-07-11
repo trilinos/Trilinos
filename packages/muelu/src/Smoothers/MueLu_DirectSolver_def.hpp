@@ -125,7 +125,7 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(Level& currentLevel) {
     if (SmootherPrototype::IsSetup() == true)
-      this->GetOStream(Warnings0) << "Warning: MueLu::DirectSolver::Setup(): Setup() has already been called";
+      this->GetOStream(Warnings0) << "MueLu::DirectSolver::Setup(): Setup() has already been called";
 
     s_->Setup(currentLevel);
 

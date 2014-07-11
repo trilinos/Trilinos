@@ -156,8 +156,7 @@ namespace Tpetra {
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, node_type> ())
   {
     typedef GlobalOrdinal GO;
-    typedef Kokkos::View<const GlobalOrdinal*, device_type,
-                         Kokkos::MemoryUnmanaged> host_view_type;
+    typedef Kokkos::View<const GlobalOrdinal*, typename device_type::host_mirror_device_type> host_view_type;
     typedef Kokkos::View<GlobalOrdinal*, device_type> device_view_type;
 
     // Copy the input GID list from host (we assume that
@@ -169,7 +168,7 @@ namespace Tpetra {
     // is viewing host or device memory.  Regardless, we don't own the
     // data and we will need a deep copy anyway, so we might as well
     // copy it.
-    host_view_type gidsHost (myGlobalIndices.getRawPtr (), myGlobalIndices.size ());
+    host_view_type gidsHost (Kokkos::ViewWithoutManaging(),myGlobalIndices.getRawPtr (), myGlobalIndices.size ());
     device_view_type gidsDevice ("GIDs", myGlobalIndices.size ());
     Kokkos::deep_copy (gidsDevice, gidsHost);
 
@@ -183,9 +182,13 @@ namespace Tpetra {
     // the device Map implementation.
     //
     // NOTE (mfh 06 Feb 2014) If we're using UVM, we don't really need
-    // the host and device Maps to be separate.
-    mapHost_ = host_impl_type (globalNumInds, gidsDevice, indexBase, *comm);
-
+    // the host and device Maps to be separate, but we need to create a compatible
+    // host view of the GIDs using the device ptr.
+#ifdef KOKKOS_USE_CUDA_UVM
+    const GlobalOrdinal* ptr = gidsDevice.ptr_on_device();
+    mapHost_ = host_impl_type (globalNumInds, host_view_type(Kokkos::ViewWithoutManaging(),ptr,myGlobalIndices.size ()), indexBase, *comm);
+#else
+#endif
     // Create the Directory on demand in getRemoteIndexList().
   }
 

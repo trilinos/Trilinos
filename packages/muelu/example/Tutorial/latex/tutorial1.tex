@@ -5,14 +5,14 @@ Welcome to \MueLu, the next generation multigrid package in Trilinos. This tutor
 The outline of this very first tutorial is as follows. In the next section we present a small test program for a 1D Laplace equation. We use this test program with different sets of multigrid parameters and show the basics of the xml input deck of \MueLu. In the last section we give an overview of the factories involved in generating smoothed aggregation transfer operators.
 
 \subsection{Test program}
-A rather general test program can be found in \texttt{tutorial1.cpp}. The purpose of this test program is to provide a framework to be able to test different multigrid parameters. The program first creates a 1D Laplace test problem, then builds a multigrid hierarchy using some parameters from user given xml parameter files and finally solves the problem using the multigrid solver or using a Krylov subspace method with the generated multigrid method as preconditioner. In the following paragraphs we shortly explain the different parts of the test program and give some common remarks on how to use \MueLu. 
+A rather general test program can be found in \texttt{tutorial1.cpp}. The purpose of this test program is to provide a framework to be able to test different multigrid parameters. The program first creates a 1D Laplace test problem, then builds a multigrid hierarchy using some parameters from user given xml parameter files and finally solves the problem using the multigrid solver or using a Krylov subspace method with the generated multigrid method as preconditioner. In the following paragraphs we shortly explain the different parts of the test program and give some common remarks on how to use \MueLu.
 
 \paragraph{Input variables}
 The minimum input that is needed to generate a multigrid hierarchy is a fine level matrix $A$ and the corresponding near null space (or near kernel) of the fine level matrix $A$. \MueLu~is completely based on \Xpetra, a thin wrapper for the linear algebra packages Epetra and Tpetra in Trilinos. That is, the input information for \MueLu~has to be an \Xpetra~matrix object for the fine level matrix $A$ as well as an \Xpetra~multi vector for the null space.
 
 Listing \ref{listing:galeri1dlaplace} gives an example how to generate a 1D Laplace example using the Galeri package. First, a global map has to be generated using the given communicator object. When creating the map, the user can choose either Epetra or Tpetra as underlying linear algebra framework. Then, the system matrix $A$ is generated using the global map. For a 1D Laplace example a constant vector is a good approximation for the near null space.
-\begin{Listing} 
-\begin{center} 
+\begin{Listing}
+\begin{center}
 \begin{lstlisting}[language=C++,label=listing:galeri1dlaplace]
 RCP<Matrix>      A;
 RCP<MultiVector> nullspace;
@@ -21,7 +21,7 @@ RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
 Teuchos::ParameterList galeriList;
 galeriList.set("nx", 100);
-    
+
 // generate map
 RCP<const Map> map = Galeri::Xpetra::CreateMap<LO, GO, Node> (Xpetra::UseEpetra, "Cartesian1D", comm, galeriList);
 
@@ -34,14 +34,14 @@ A = Pr->BuildMatrix();
 nullspace = MultiVectorFactory::Build(map, 1);
 nullspace->putScalar(Teuchos::ScalarTraits<SC>::one());
 \end{lstlisting}
-\caption{Generate 1D Laplace problem using Galeri::Xpetra.} 
+\caption{Generate 1D Laplace problem using Galeri::Xpetra.}
 \label{listing:galeri1dlaplace}
 \end{center}
 \end{Listing}
 
 In listing \ref{listing:epetra2xpetra} one can find how to transform given Epetra objects for the system matrix, right hand side as well as (near) null space to \Xpetra.
-\begin{Listing} 
-\begin{center} 
+\begin{Listing}
+\begin{center}
 \begin{lstlisting}[language=C++,label=listing:epetra2xpetra]
 RCP<Matrix>      A;
 RCP<MultiVector> nullspace;
@@ -63,7 +63,7 @@ nullspace = Teuchos::rcp(new Xpetra::EpetraMultiVector(epNS));
 // Epetra_Map -> Xpetra::Map
 const RCP< const Map> map = Xpetra::toXpetra(epA->RowMap());
 \end{lstlisting}
-\caption{Generate Xpetra objects from Epetra objects.} 
+\caption{Generate Xpetra objects from Epetra objects.}
 \label{listing:epetra2xpetra}
 \end{center}
 \end{Listing}
@@ -71,8 +71,8 @@ const RCP< const Map> map = Xpetra::toXpetra(epA->RowMap());
 \paragraph{Multigrid setup}
 Assuming the fine level matrix $A$ and the corresponding fine level near null space to be available we can generate the multigrid hiearchy. Following the code in listing \ref{listing:mueluhierarchy} we first create a \verb|ParameterListInterpreter| object which interprets some input parameters from the xml file "tutorial1.xml". A description of the xml parameter file follows in the next subsection.
 Once a \verb|Hierarchy| object has been created it is filled with the available fine level information. Finally the \verb|SetupHierarchy| function is called which actually generates the multigrid hierarchy.
-\begin{Listing} 
-\begin{center} 
+\begin{Listing}
+\begin{center}
 \begin{lstlisting}[language=C++,label=listing:epetra2xpetra]
 ParameterListInterpreter mueLuFactory("tutorial1.xml", *comm);
 RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
@@ -81,7 +81,7 @@ H->GetLevel(0)->Set("A",           A);
 H->GetLevel(0)->Set("Nullspace",   nullspace);
 mueLuFactory.SetupHierarchy(*H);
 \end{lstlisting}
-\caption{Build multigrid hierarchy} 
+\caption{Build multigrid hierarchy}
 \label{listing:mueluhierarchy}
 \end{center}
 \end{Listing}
@@ -89,13 +89,13 @@ mueLuFactory.SetupHierarchy(*H);
 \paragraph{Multigrid as solver}
 After the multigrid hierarchy object has been built and filled we can use it to solve a linear system.
 Listing \ref{amgassolver} demonstrates how to do $25$ sweeps with the previously generated multigrid method. Therein \verb|X| is a given vector with an initial guess for the solution. Finally it stores the solution vector. Vector \verb|B| is the right hand side vector.
-\begin{Listing} 
-\begin{center} 
+\begin{Listing}
+\begin{center}
 \begin{lstlisting}[language=C++,label=listing:AmgAsSolver]
 H->IsPreconditioner(false);
 H->Iterate(*B, *X, 25);
 \end{lstlisting}
-\caption{Use AMG as solver.} 
+\caption{Use AMG as solver.}
 \label{listing:amgassolver}
 \end{center}
 \end{Listing}
@@ -103,8 +103,8 @@ H->Iterate(*B, *X, 25);
 \paragraph{Multigrid as preconditioner}
 Another option is to use the \MueLu hierarchy as preconditioner within a Krylov subspace solver such as CG or GMRES. In listing \ref{listing:amgaspreconditioner} an example is shown how to use the \verb|Hierarchy| as a preconditioner for a CG method from the Belos package.
 Again \verb|X| is the solution vector with a given initial guess. Vector \verb|B| is the right hand side vector.
-\begin{Listing} 
-\begin{center} 
+\begin{Listing}
+\begin{center}
 \begin{lstlisting}[language=C++,label=listing:AmgAsPreconditioner]
 // Operator and Multivector type that will be used with Belos
 typedef MultiVector          MV;
@@ -123,8 +123,8 @@ belosProblem->setProblem();
 
 // Belos parameter list
 ParameterList belosList;
-belosList.set("Maximum Iterations",    200); 
-belosList.set("Convergence Tolerance", 1e-5);   
+belosList.set("Maximum Iterations",    200);
+belosList.set("Convergence Tolerance", 1e-5);
 belosList.set("Verbosity",             Belos::Errors );
 belosList.set("Output Frequency",      1);
 belosList.set("Output Style",          Belos::Brief);
@@ -138,7 +138,7 @@ Belos::ReturnType ret = Belos::Unconverged;
 ret = solver->solve();
 cout << "Number of iterations: " << solver->getNumIters() << endl;
 \end{lstlisting}
-\caption{Use AMG as preconditioner within Belos.} 
+\caption{Use AMG as preconditioner within Belos.}
 \label{listing:amgaspreconditioner}
 \end{center}
 \end{Listing}
@@ -149,8 +149,8 @@ The setup routine for the multigrid hiearchy is controled by the xml file used a
 Listing \ref{listing:minimalXML} gives a minimal example for a \MueLu XML input file. The most important part is the \textit{Hierarchy} section where basic parameters for the multigrid hierarchy are defined, such as the maximum allowed number of multigrid levels, the maximum allowed size of the coarse grid problem before coarsening stops or the verbosity level for screen output. In listing \ref{listing:minimalXML} the \textit{Factories} section is empty, i.e. default settings are assumed for building the multigrid hierarchy.
 Per default a smoothed aggregation algebraic multigrid method is used, that is designed for symmetric positive definite problems. A standard Galerkin product operator is used to build the coarse level matrices by computing the $RAP$ product (without load rebalancing). The restriction operator is the transposed of the smoothed prolongation operator that is generated using information from a coupled aggregation strategy. The coupled aggregation strategy allows aggregates which overlap processor boundaries. As multigrid level smoother one sweep with an undamped symmetric Gauss Seidel method is applied. On the coarsest level we use a direct solver.
 Even if the default settings are a good choice for most symmetric problems it is important to adapt the parameters to the underlaying problem. In the next sections we demonstrate how to change some parameters using the XML input deck.
-\begin{Listing} 
-\begin{center} 
+\begin{Listing}
+\begin{center}
 \begin{lstlisting}[language=XML,label=listing:minimalXML]
 <ParameterList name="MueLu">
 
@@ -174,14 +174,14 @@ Even if the default settings are a good choice for most symmetric problems it is
 </ParameterList>
 
 \end{lstlisting}
-\caption{Structure of XML input file for \MueLu} 
+\caption{Structure of XML input file for \MueLu}
 \label{listing:minimalXML}
 \end{center}
 \end{Listing}
 
 \subsection{Tutorial 1b: Level smoothers}
-\begin{Listing} 
-\begin{center} 
+\begin{Listing}
+\begin{center}
 \begin{lstlisting}[language=XML,label=listing:chebyXML]
 <ParameterList name="MueLu">
 
@@ -202,8 +202,8 @@ Even if the default settings are a good choice for most symmetric problems it is
   </ParameterList>
 
   <ParameterList name="Hierarchy">
-    <Parameter name="numDesiredLevel" type="int"      value="10"/> 
-    <Parameter name="maxCoarseSize" type="int"      value="10"/> 
+    <Parameter name="numDesiredLevel" type="int"      value="10"/>
+    <Parameter name="maxCoarseSize" type="int"      value="10"/>
     <Parameter name="verbosity" type="string"   value="Low"/>
     <ParameterList name="AllButCoarsestLevel">
       <Parameter name="startLevel" type="int"      value="0"/>
@@ -215,7 +215,7 @@ Even if the default settings are a good choice for most symmetric problems it is
   </ParameterList>
 </ParameterList>
 \end{lstlisting}
-\caption{Structure of XML input file for \MueLu with Chebyshev level smoother} 
+\caption{Structure of XML input file for \MueLu with Chebyshev level smoother}
 \label{listing:chebyXML}
 \end{center}
 \end{Listing}
@@ -228,8 +228,8 @@ Once we have defined our new smoother factory we have to use it within our multi
 The subsection "CoarsestLevel" can be used to define some special factories for the coarsest level. In our example we explicitely define the "CoarseSolver" variable to be a direct solver.
 
 \subsection{Tutorial 1c: More level smoothers}
-\begin{Listing} 
-\begin{center} 
+\begin{Listing}
+\begin{center}
 \begin{lstlisting}[language=XML,label=listing:sgsXML]
 <ParameterList name="MueLu">
 
@@ -247,8 +247,8 @@ The subsection "CoarsestLevel" can be used to define some special factories for 
   </ParameterList>
 
   <ParameterList name="Hierarchy">
-    <Parameter name="numDesiredLevel" type="int" value="10"/> 
-    <Parameter name="maxCoarseSize" type="int" value="10"/> 
+    <Parameter name="numDesiredLevel" type="int" value="10"/>
+    <Parameter name="maxCoarseSize" type="int" value="10"/>
     <ParameterList name="AllButCoarsestLevel">
       <Parameter name="startLevel" type="int" value="0"/>
       <Parameter name="Smoother" type="string" value="mySymGaussSeidel"/>
@@ -261,7 +261,7 @@ The subsection "CoarsestLevel" can be used to define some special factories for 
 </ParameterList>
 
 \end{lstlisting}
-\caption{Structure of XML input file for \MueLu~ with symmetric GaussSeidel level smoothers} 
+\caption{Structure of XML input file for \MueLu~ with symmetric GaussSeidel level smoothers}
 \label{listing:sgsXML}
 \end{center}
 \end{Listing}
@@ -270,8 +270,8 @@ Listing \ref{listing:sgsXML} is very similar to listing \ref{listing:chebyXML}. 
 
 
 \subsection{Tutorial 1d: Plain aggregation}
-\begin{Listing} 
-\begin{center} 
+\begin{Listing}
+\begin{center}
 \begin{lstlisting}[language=XML,label=listing:plainAggregationXML]
 <ParameterList name="MueLu">
   <ParameterList name="Factories">
@@ -280,7 +280,7 @@ Listing \ref{listing:sgsXML} is very similar to listing \ref{listing:chebyXML}. 
       <Parameter name="Ordering" type="string" value="Natural"/>
       <Parameter name="MaxNeighAlreadySelected" type="int" value="0"/>
       <Parameter name="MinNodesPerAggregate" type="int" value="2"/>
-    </ParameterList>  
+    </ParameterList>
     <ParameterList name="myTentativePFact">
       <Parameter name="factory" type="string" value="TentativePFactory"/>
     </ParameterList>
@@ -292,7 +292,7 @@ Listing \ref{listing:sgsXML} is very similar to listing \ref{listing:chebyXML}. 
 
   <ParameterList name="Hierarchy">
 
-    <Parameter name="numDesiredLevel" type="int"      value="10"/> 
+    <Parameter name="numDesiredLevel" type="int"      value="10"/>
     <Parameter name="maxCoarseSize" type="int"      value="10"/>
     <ParameterList name="AllButCoarsestLevel">
       <Parameter name="startLevel" type="int"      value="0"/>
@@ -304,7 +304,7 @@ Listing \ref{listing:sgsXML} is very similar to listing \ref{listing:chebyXML}. 
   </ParameterList>
 </ParameterList>
 \end{lstlisting}
-\caption{Structure of XML input file for \MueLu~ with plain aggregation transfer operators} 
+\caption{Structure of XML input file for \MueLu~ with plain aggregation transfer operators}
 \label{listing:plainAggregationXML}
 \end{center}
 \end{Listing}
@@ -368,7 +368,7 @@ A closer look to the "AllButCoarsestLevel" parameter section reveals, that besid
 \label{fig:generalworkflow}
 \end{figure}
 
-In figure \ref{fig:generalworkflow} we show the process of generating smoothed aggregation transfer operators. We start with an approximation of the fine level null space and the fine level matrix $A$. 
+In figure \ref{fig:generalworkflow} we show the process of generating smoothed aggregation transfer operators. We start with an approximation of the fine level null space and the fine level matrix $A$.
 First, the \textit{CoalesceDropFactory} builds the graph of the fine level matrix $A$. If requested by the user it is possible to apply some filtering strategy to the fine level matrix before the graph is built. The graph of matrix $A$ is then used to build aggregates. The fine level null space together with the aggregation information is needed to define the non-smoothed tentative prolongation operator with the \textit{TentativePFactory}. Be aware that there are some more connections between the \textit{CoalesceDropFactory} and the \textit{TentativePFactory}, which are not shown here for simplicity. In case of not just one DOF per node, the \textit{CoalesceDropFactory} makes use of a helper class \textit{AmalgamationFactory} which amalgamates the matrix for finding the amalgamated graph. The hidden \textit{AmalgamationFactory} provides some information which is used in the \textit{TentativePFactory} to reconstruct the unamalgamated transfer operators from the amalgamated aggregation information. More details follow in other tutorials with vector problems instead of scalar problems.
 
 Note, that the \textit{TentativePFactory} both generates the non-smoothed tentative transfer operator as well as the coarse level null space. Once the tentative prolongation operator is built, it is smoothed using the \textit{SaPFactory}. The \textit{TransPFacotry} builds the restriction operator just by transposing the smoothed prolongation operator. Finally, the \textit{RAPFactory} builds the coarse level matrix $A$.

@@ -1304,29 +1304,38 @@ namespace Tpetra {
     /// where k is the local index corresponding to
     /// <tt>inds[j]</tt>.  It ignores elements of \c inds that are
     /// not owned by the calling process.
+    ///
+    /// \return The number of valid local column indices.  In case of
+    ///   error other than one or more invalid column indices, this
+    ///   method returns
+    ///   Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
     template<class Scalar, class BinaryFunction>
-    void
+    LocalOrdinal
     transformLocalValues (RowInfo rowInfo,
                           const Teuchos::ArrayView<Scalar>& rowVals,
                           const Teuchos::ArrayView<const LocalOrdinal>& inds,
                           const Teuchos::ArrayView<const Scalar>& newVals,
                           BinaryFunction f) const
     {
-      const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid();
-      const size_t numElts = Teuchos::as<size_t> (inds.size ());
+      typedef typename Teuchos::ArrayView<Scalar>::size_type size_type;
+      const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
+      const size_type numElts = inds.size ();
       size_t hint = 0; // Guess for the current index k into rowVals
 
       // Get a view of the column indices in the row.  This amortizes
       // the cost of getting the view over all the entries of inds.
-      ArrayView<const LocalOrdinal> colInds = getLocalView (rowInfo);
+      Teuchos::ArrayView<const LocalOrdinal> colInds = getLocalView (rowInfo);
 
-      for (size_t j = 0; j < numElts; ++j) {
+      LocalOrdinal numValid = 0; // number of valid local column indices
+      for (size_type j = 0; j < numElts; ++j) {
         const size_t k = findLocalIndex (rowInfo, inds[j], colInds, hint);
         if (k != STINV) {
-          rowVals[k] = f( rowVals[k], newVals[j] );
+          rowVals[k] = f (rowVals[k], newVals[j]); // use binary function f
           hint = k+1;
+          ++numValid;
         }
       }
+      return numValid;
     }
 
     /// \brief Transform the given values using global indices.
@@ -1343,25 +1352,34 @@ namespace Tpetra {
     ///   It's probably OK for these to alias rowVals.
     ///
     /// \param f [in] A binary function used to transform rowVals.
+    ///
+    /// \return The number of valid local column indices.  In case of
+    ///   error other than one or more invalid column indices, this
+    ///   method returns
+    ///   Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
     template<class Scalar, class BinaryFunction>
-    void
+    LocalOrdinal
     transformGlobalValues (RowInfo rowInfo,
                            const Teuchos::ArrayView<Scalar>& rowVals,
                            const Teuchos::ArrayView<const GlobalOrdinal>& inds,
                            const Teuchos::ArrayView<const Scalar>& newVals,
                            BinaryFunction f) const
     {
-      const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid();
-      const size_t numElts = Teuchos::as<size_t> (inds.size ());
-      size_t hint = 0; // hint is a guess as to wheter the index is
+      typedef typename Teuchos::ArrayView<Scalar>::size_type size_type;
+      const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
+      const size_type numElts = inds.size ();
+      size_t hint = 0; // guess at the index's relative offset in the row
 
-      for (size_t j = 0; j < numElts; ++j) {
+      LocalOrdinal numValid = 0; // number of valid local column indices
+      for (size_type j = 0; j < numElts; ++j) {
         const size_t k = findGlobalIndex (rowInfo, inds[j], hint);
         if (k != STINV) {
-          rowVals[k] = f( rowVals[k], newVals[j] );
+          rowVals[k] = f (rowVals[k], newVals[j]); // use binary function f
           hint = k+1;
+          numValid++;
         }
       }
+      return numValid;
     }
 
     //@}

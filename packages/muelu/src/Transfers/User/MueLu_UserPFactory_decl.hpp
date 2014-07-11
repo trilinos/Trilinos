@@ -75,7 +75,7 @@ namespace MueLu {
     virtual ~UserPFactory() { }
     //@}
 
-    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+    RCP<const ParameterList> GetValidParameterList() const;
 
     //! Input
     //@{

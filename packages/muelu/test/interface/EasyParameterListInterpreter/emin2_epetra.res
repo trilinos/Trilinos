@@ -10,6 +10,7 @@ transpose: use implicit = 0   [default]
 smoother: pre or post = both   [default]
 aggregation: type = uncoupled   [default]
 emin: pattern = AkPtent   [default]
+problem: symmetric = 1   [default]
 aggregation: visualize = 0   [default]
 repartition: enable = 0   [default]
 
@@ -25,29 +26,27 @@ Level 1
    Build (MueLu::UncoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
     lightweight wrap = 1
-    aggregation threshold = 0
-    Dirichlet detection threshold = 0
-    algorithm = original
+    aggregation threshold = 0   [default]
+    Dirichlet detection threshold = 0   [default]
+    algorithm = original   [default]
     
-   mode = old
-   Ordering = 0
-   MaxNeighAlreadySelected = 0
-   MinNodesPerAggregate = 2
-   MaxNodesPerAggregate = 2147483647
-   UseOnePtAggregationAlgorithm = 0
-   UseSmallAggregatesAggregationAlgorithm = 0
-   UsePreserveDirichletAggregationAlgorithm = 0
-   UseUncoupledAggregationAlgorithm = 1
-   UseMaxLinkAggregationAlgorithm = 1
-   UseIsolatedNodeAggregationAlgorithm = 1
-   UseEmergencyAggregationAlgorithm = 1
-   aggregation: preserve Dirichlet points = 0   [unused]
-   aggregation: enable phase 1 = 1   [unused]
-   aggregation: enable phase 2a = 1   [unused]
-   aggregation: enable phase 2b = 1   [unused]
-   aggregation: enable phase 3 = 1   [unused]
-   OnePt aggregate map name = 
-   SmallAgg aggregate map name = 
+   mode = old   [default]
+   Ordering = 0   [default]
+   MaxNeighAlreadySelected = 0   [default]
+   MinNodesPerAggregate = 2   [default]
+   MaxNodesPerAggregate = 2147483647   [default]
+   UseOnePtAggregationAlgorithm = 0   [default]
+   UsePreserveDirichletAggregationAlgorithm = 0   [default]
+   UseUncoupledAggregationAlgorithm = 1   [default]
+   UseMaxLinkAggregationAlgorithm = 1   [default]
+   UseIsolatedNodeAggregationAlgorithm = 1   [default]
+   UseEmergencyAggregationAlgorithm = 1   [default]
+   aggregation: preserve Dirichlet points = 0   [default]
+   aggregation: enable phase 1 = 1   [default]
+   aggregation: enable phase 2a = 1   [default]
+   aggregation: enable phase 2b = 1   [default]
+   aggregation: enable phase 3 = 1   [default]
+   OnePt aggregate map name =    [default]
    
    Build (MueLu::AmalgamationFactory)
    [empty list]
@@ -64,27 +63,27 @@ Level 1
   
   Constraint (MueLu::ConstraintFactory)
    Ppattern (MueLu::PatternFactory)
-   k = 1
+   k = 1   [default]
    
   [empty list]
   
  emin: num iterations = 4
- emin: num reuse iterations = 1   [unused]
- P0 = Teuchos::RCP<Xpetra::Matrix<double, int, int, KokkosClassic::SerialNode, KokkosClassic::AltSparseOps<void, int, KokkosClassic::SerialNode, KokkosClassic::details::AltSparseOpsDefaultAllocator<int, KokkosClassic::SerialNode> > > >{ptr=0,node=0,strong_count=0,weak_count=0}   [unused]
- Keep P0 = 0
- Constraint0 = Teuchos::RCP<MueLu::Constraint<double, int, int, KokkosClassic::SerialNode, KokkosClassic::AltSparseOps<void, int, KokkosClassic::SerialNode, KokkosClassic::details::AltSparseOpsDefaultAllocator<int, KokkosClassic::SerialNode> > > >{ptr=0,node=0,strong_count=0,weak_count=0}   [unused]
- Keep Constraint0 = 0
  emin: iterative method = sd
+ emin: num reuse iterations = 1   [default]
+ P0 = Teuchos::RCP<Xpetra::Matrix<double, int, int, KokkosClassic::SerialNode, KokkosClassic::AltSparseOps<void, int, KokkosClassic::SerialNode, KokkosClassic::details::AltSparseOpsDefaultAllocator<int, KokkosClassic::SerialNode> > > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ Keep P0 = 0   [default]
+ Constraint0 = Teuchos::RCP<MueLu::Constraint<double, int, int, KokkosClassic::SerialNode, KokkosClassic::AltSparseOps<void, int, KokkosClassic::SerialNode, KokkosClassic::details::AltSparseOpsDefaultAllocator<int, KokkosClassic::SerialNode> > > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ Keep Constraint0 = 0   [default]
  
  Transpose P (MueLu::TransPFactory)
  [empty list]
  
  Computing Ac (MueLu::RAPFactory)
- Keep AP Pattern = 0
- Keep RAP Pattern = 0
  implicit transpose = 0
- CheckMainDiagonal = 0
- RepairMainDiagonal = 0
+ Keep AP Pattern = 0   [default]
+ Keep RAP Pattern = 0   [default]
+ CheckMainDiagonal = 0   [default]
+ RepairMainDiagonal = 0   [default]
  
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
  relaxation: type = symmetric Gauss-Seidel   [unused]
@@ -97,29 +96,27 @@ Level 2
    Build (MueLu::UncoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
     lightweight wrap = 1
-    aggregation threshold = 0
-    Dirichlet detection threshold = 0
-    algorithm = original
+    aggregation threshold = 0   [default]
+    Dirichlet detection threshold = 0   [default]
+    algorithm = original   [default]
     
-   mode = old
-   Ordering = 0
-   MaxNeighAlreadySelected = 0
-   MinNodesPerAggregate = 2
-   MaxNodesPerAggregate = 2147483647
-   UseOnePtAggregationAlgorithm = 0
-   UseSmallAggregatesAggregationAlgorithm = 0
-   UsePreserveDirichletAggregationAlgorithm = 0
-   UseUncoupledAggregationAlgorithm = 1
-   UseMaxLinkAggregationAlgorithm = 1
-   UseIsolatedNodeAggregationAlgorithm = 1
-   UseEmergencyAggregationAlgorithm = 1
-   aggregation: preserve Dirichlet points = 0   [unused]
-   aggregation: enable phase 1 = 1   [unused]
-   aggregation: enable phase 2a = 1   [unused]
-   aggregation: enable phase 2b = 1   [unused]
-   aggregation: enable phase 3 = 1   [unused]
-   OnePt aggregate map name = 
-   SmallAgg aggregate map name = 
+   mode = old   [default]
+   Ordering = 0   [default]
+   MaxNeighAlreadySelected = 0   [default]
+   MinNodesPerAggregate = 2   [default]
+   MaxNodesPerAggregate = 2147483647   [default]
+   UseOnePtAggregationAlgorithm = 0   [default]
+   UsePreserveDirichletAggregationAlgorithm = 0   [default]
+   UseUncoupledAggregationAlgorithm = 1   [default]
+   UseMaxLinkAggregationAlgorithm = 1   [default]
+   UseIsolatedNodeAggregationAlgorithm = 1   [default]
+   UseEmergencyAggregationAlgorithm = 1   [default]
+   aggregation: preserve Dirichlet points = 0   [default]
+   aggregation: enable phase 1 = 1   [default]
+   aggregation: enable phase 2a = 1   [default]
+   aggregation: enable phase 2b = 1   [default]
+   aggregation: enable phase 3 = 1   [default]
+   OnePt aggregate map name =    [default]
    
    Build (MueLu::AmalgamationFactory)
    [empty list]
@@ -136,27 +133,27 @@ Level 2
   
   Constraint (MueLu::ConstraintFactory)
    Ppattern (MueLu::PatternFactory)
-   k = 1
+   k = 1   [default]
    
   [empty list]
   
  emin: num iterations = 4
- emin: num reuse iterations = 1   [unused]
- P0 = Teuchos::RCP<Xpetra::Matrix<double, int, int, KokkosClassic::SerialNode, KokkosClassic::AltSparseOps<void, int, KokkosClassic::SerialNode, KokkosClassic::details::AltSparseOpsDefaultAllocator<int, KokkosClassic::SerialNode> > > >{ptr=0,node=0,strong_count=0,weak_count=0}   [unused]
- Keep P0 = 0
- Constraint0 = Teuchos::RCP<MueLu::Constraint<double, int, int, KokkosClassic::SerialNode, KokkosClassic::AltSparseOps<void, int, KokkosClassic::SerialNode, KokkosClassic::details::AltSparseOpsDefaultAllocator<int, KokkosClassic::SerialNode> > > >{ptr=0,node=0,strong_count=0,weak_count=0}   [unused]
- Keep Constraint0 = 0
  emin: iterative method = sd
+ emin: num reuse iterations = 1   [default]
+ P0 = Teuchos::RCP<Xpetra::Matrix<double, int, int, KokkosClassic::SerialNode, KokkosClassic::AltSparseOps<void, int, KokkosClassic::SerialNode, KokkosClassic::details::AltSparseOpsDefaultAllocator<int, KokkosClassic::SerialNode> > > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ Keep P0 = 0   [default]
+ Constraint0 = Teuchos::RCP<MueLu::Constraint<double, int, int, KokkosClassic::SerialNode, KokkosClassic::AltSparseOps<void, int, KokkosClassic::SerialNode, KokkosClassic::details::AltSparseOpsDefaultAllocator<int, KokkosClassic::SerialNode> > > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ Keep Constraint0 = 0   [default]
  
  Transpose P (MueLu::TransPFactory)
  [empty list]
  
  Computing Ac (MueLu::RAPFactory)
- Keep AP Pattern = 0
- Keep RAP Pattern = 0
  implicit transpose = 0
- CheckMainDiagonal = 0
- RepairMainDiagonal = 0
+ Keep AP Pattern = 0   [default]
+ Keep RAP Pattern = 0   [default]
+ CheckMainDiagonal = 0   [default]
+ RepairMainDiagonal = 0   [default]
  
  Setup Smoother (MueLu::AmesosSmoother{type = Superlu})
  presmoother -> 

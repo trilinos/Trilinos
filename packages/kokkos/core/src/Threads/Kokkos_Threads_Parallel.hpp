@@ -140,9 +140,8 @@ public:
   {
     const ParallelReduce & self = * ((const ParallelReduce *) arg );
 
-    typename Reduce::reference_type update = Reduce::reference( exec.reduce_base() );
-
-    self.m_func.init( update ); // Initialize thread-local value
+    // Initialize thread-local value
+    typename Reduce::reference_type update = Reduce::init( self.m_func , exec.reduce_base() );
 
     const std::pair<size_t,size_t> work = exec.work_range( self.m_work );
 
@@ -193,9 +192,8 @@ public:
   {
     const ParallelReduce & self = * ((const ParallelReduce *) arg );
 
-    typename Reduce::reference_type update = Reduce::reference( exec.reduce_base() );
-
-    self.m_func.init( update ); // Initialize thread-local value
+    // Initialize thread-local value
+    typename Reduce::reference_type update = Reduce::init( self.m_func , exec.reduce_base() );
 
     for ( ; exec.team_work_avail() ; exec.team_work_next() ) {
       self.m_func( Threads( exec ) , update );
@@ -257,9 +255,7 @@ public:
 
     const std::pair<size_t,size_t> work = exec.work_range( self.m_work );
 
-    typename Reduce::reference_type update = Reduce::reference( exec.reduce_base() );
-
-    self.m_func.init( update );
+    typename Reduce::reference_type update = Reduce::init( self.m_func , exec.reduce_base() );
 
     for ( size_t iwork = work.first, work_end = work.second ; iwork < work_end ; ++iwork ) {
       self.m_func( iwork , update , false );
@@ -332,7 +328,7 @@ private:
       }
 
     void init( Impl::ThreadsExec & exec_ ) const
-      { m_func.init( Reduce::reference( exec_.reduce_base() ) ); }
+      { Reduce::init( m_func , exec_.reduce_base() ); }
 
     void exec( Impl::ThreadsExec & exec_ ) const
       {

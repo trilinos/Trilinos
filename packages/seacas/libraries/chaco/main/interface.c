@@ -6,6 +6,7 @@
 #include <stdlib.h>                     // for free
 #include "defs.h"                       // for FALSE, TRUE
 #include "smalloc.h"                    // for sfree, smalloc_ret
+#include "structs.h"
 
 
 extern int submain(struct vtx_data **graph,

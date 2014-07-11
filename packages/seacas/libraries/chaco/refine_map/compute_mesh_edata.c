@@ -3,8 +3,7 @@
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
 #include "refine_map.h"                 // for refine_vdata, refine_edata
-struct vtx_data;
-
+#include "structs.h"
 
 double 
 compute_mesh_edata (

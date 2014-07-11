@@ -667,6 +667,13 @@ namespace Kokkos {
 namespace Impl {
 
 template< class FunctorType , class Enable = void >
+struct FunctorHasInit : public false_type {};
+
+template< class FunctorType >
+struct FunctorHasInit< FunctorType , typename enable_if< 0 < sizeof( & FunctorType::init ) >::type >
+  : public true_type {};
+
+template< class FunctorType , class Enable = void >
 struct FunctorHasJoin : public false_type {};
 
 template< class FunctorType >
@@ -735,6 +742,24 @@ struct ReduceAdapter
 
   template< class F >
   KOKKOS_INLINE_FUNCTION static
+  reference_type
+  init( const F & f ,
+        typename enable_if< ( is_same<F,FunctorType>::value &&
+                              FunctorHasInit<F>::value )
+                          >::type * p )
+    { f.init( *((ScalarType *) p ) );  return *((ScalarType *) p ); }
+
+  template< class F >
+  KOKKOS_INLINE_FUNCTION static
+  reference_type
+  init( const F & ,
+        typename enable_if< ( is_same<F,FunctorType>::value &&
+                              ! FunctorHasInit<F>::value )
+                          >::type * p )
+    { return *( new(p) ScalarType() ); }
+
+  template< class F >
+  KOKKOS_INLINE_FUNCTION static
   void final( const F & f ,
               typename enable_if< ( is_same<F,FunctorType>::value &&
                                     FunctorHasFinal<F>::value )
@@ -785,6 +810,29 @@ struct ReduceAdapter< FunctorType , ScalarType[] >
   KOKKOS_INLINE_FUNCTION static
   void join( const FunctorType & f , volatile void * update , volatile const void * input )
     { f.join( ((volatile ScalarType*)update) , ((volatile const ScalarType*)input) ); }
+
+  template< class F >
+  KOKKOS_INLINE_FUNCTION static
+  reference_type
+  init( const F & f ,
+        typename enable_if< ( is_same<F,FunctorType>::value &&
+                              FunctorHasInit<F>::value )
+                          >::type * p )
+    { f.init( ((ScalarType *) p ) ); return (ScalarType*) p ; }
+
+  template< class F >
+  KOKKOS_INLINE_FUNCTION static
+  reference_type
+  init( const F & f ,
+        typename enable_if< ( is_same<F,FunctorType>::value &&
+                              ! FunctorHasInit<F>::value )
+                          >::type * p )
+    {
+      for ( int i = 0 ; i < int(f.value_count) ; ++i ) {
+        new(((ScalarType*)p)+i) ScalarType();
+      }
+      return (ScalarType*)p ;
+    }
 
   template< class F >
   KOKKOS_INLINE_FUNCTION static

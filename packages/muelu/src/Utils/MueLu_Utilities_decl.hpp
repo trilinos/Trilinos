@@ -65,6 +65,7 @@
 #include <Xpetra_MultiVectorFactory_fwd.hpp>
 #include <Xpetra_Vector_fwd.hpp>
 #include <Xpetra_VectorFactory_fwd.hpp>
+#include <Xpetra_ExportFactory.hpp>
 
 #ifdef HAVE_MUELU_EPETRA
 namespace Xpetra {
@@ -390,6 +391,18 @@ namespace MueLu {
     */
 
     static void SetRandomSeed(const Teuchos::Comm<int> &comm);
+    
+    static void findDirichletRows(Teuchos::RCP<Matrix> A,
+				  std::vector<LO>& dirichletRows);
+    static void findDirichletCols(Teuchos::RCP<Matrix> A,
+				  std::vector<LO>& dirichletRows,
+				  std::vector<LO>& dirichletCols);
+    static void Apply_BCsToMatrixRows(Teuchos::RCP<Matrix>& A,
+				      std::vector<LO>& dirichletRows);
+    static void Apply_BCsToMatrixCols(Teuchos::RCP<Matrix>& A,
+				      std::vector<LO>& dirichletCols);
+    static void Remove_Zeroed_Rows(Teuchos::RCP<Matrix>& A, double tol=1.0e-14);
+
   }; // class Utils
 
 #ifdef HAVE_MUELU_EPETRA
@@ -504,6 +517,7 @@ namespace MueLu {
                                                      RCP<Matrix>& C,  Teuchos::FancyOStream & fos, bool AHasFixedNnzPerRow = false);
     static RCP<MultiVector> ReadMultiVector         (const std::string& fileName, const RCP<const Map>& map);
     static RCP<const Map>   ReadMap                 (const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm);
+
   };
 
 

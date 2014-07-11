@@ -4,6 +4,7 @@
 
 #include "defs.h"                       // for TRUE
 #include "smalloc.h"                    // for sfree, smalloc
+#include "structs.h"
 
 
 void 

@@ -110,7 +110,7 @@ TEST(UnitTestingOfRelation, testRelationNoGhosting)
   ring_bulk.modification_begin();
   for ( unsigned p = 0 ; p < p_size ; ++p ) {
     if ( p != p_rank ) {
-      ASSERT_EQ( ring_bulk.in_aura( ring_bulk.entity_key(elementnew) , p ), false );
+      ASSERT_EQ( ring_bulk.in_shared( ring_bulk.entity_key(elementnew) , p ), false );
       ASSERT_EQ( ring_bulk.in_send_ghost( ring_bulk.entity_key(elementnew) , p ), false );
     }
   }
@@ -119,7 +119,7 @@ TEST(UnitTestingOfRelation, testRelationNoGhosting)
   ASSERT_EQ( ring_bulk.in_send_ghost( ring_bulk.entity_key(elementnew) , p_rank+100 ), false );
 
   Entity node = ring_bulk.get_entity( stk::topology::NODE_RANK , mesh.m_node_ids[ nPerProc * p_rank ] );
-  ASSERT_EQ( ring_bulk.in_aura( ring_bulk.entity_key(node) , p_rank+100 ), false );
+  ASSERT_EQ( ring_bulk.in_shared( ring_bulk.entity_key(node) , p_rank+100 ), false );
 }
 
 TEST(UnitTestingOfRelation, testRelationWithGhosting)
@@ -160,7 +160,7 @@ TEST(UnitTestingOfRelation, testRelationWithGhosting)
     //not owned and not shared
     Entity node2 = bulk.get_entity( stk::topology::NODE_RANK , mesh.m_node_ids[ nPerProc * p_rank ] );
 
-    ASSERT_EQ( bulk.in_aura( bulk.entity_key(node2) , p_rank+100 ), false );
+    ASSERT_EQ( bulk.in_shared( bulk.entity_key(node2) , p_rank+100 ), false );
     ASSERT_EQ( bulk.in_send_ghost( bulk.entity_key(node) , p_rank+100 ), false );
   }
 }

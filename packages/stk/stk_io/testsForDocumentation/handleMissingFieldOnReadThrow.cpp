@@ -103,7 +103,7 @@ namespace {
       //+ If read the fields, but don't pass in the 'missing_fields'
       //+ vector, the code will print an error message and throw an
       //+ exception if it doesn't find all of the requested fields.
-      EXPECT_THROW(stkIo.read_defined_input_fields(2.0), std::exception);
+      EXPECT_ANY_THROW(stkIo.read_defined_input_fields(2.0));
 
       //+ If code throws due to missing field(s), it will NOT read
       //+ even the fields that exist.

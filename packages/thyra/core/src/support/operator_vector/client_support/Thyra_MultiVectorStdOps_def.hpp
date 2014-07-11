@@ -207,7 +207,7 @@ template<class Scalar>
 void Thyra::update( Scalar alpha, const MultiVectorBase<Scalar>& U,
   const Ptr<MultiVectorBase<Scalar> > &V )
 {
-  using Teuchos::tuple; using Teuchos::null;
+  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   RTOpPack::TOpAXPY<Scalar> axpy_op(alpha);
   applyOp<Scalar>( axpy_op, tuple(ptrInArg(U)), tuple(V), null );
 }

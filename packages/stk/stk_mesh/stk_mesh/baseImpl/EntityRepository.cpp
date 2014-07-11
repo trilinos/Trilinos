@@ -84,7 +84,7 @@ void EntityRepository::change_entity_bucket( Bucket & b, Entity e,
   const bool modified_parts = ! (b.mesh().bucket_ptr(e) != NULL) ||
                               ! b.in_same_partition( b.mesh().bucket(e) );
   if ( modified_parts ) {
-    b.mesh().modified(e);
+    b.mesh().mark_entity_and_upward_related_entities_as_modified(e);
   }
   b.mesh().set_mesh_index(e, &b, ordinal);
 }

@@ -310,7 +310,7 @@ public:
         for ( unsigned j = 0 ; j < count ; ++j ) { work_value[j] = src_value[j]; }
       }
       else {
-        f.init( Reduce::reference( work_value ) );
+        (void) Reduce::init( f , work_value );
       }
 
       //--------------------------------
@@ -369,7 +369,7 @@ public:
             f.join( Reduce::reference( ptr + count ), Reduce::reference( ptr ) );
           }
           else {
-            f.init( Reduce::reference( ptr ) );
+            (void) Reduce::init( f , ptr );
           }
           ptr_prev = ptr ;
         }

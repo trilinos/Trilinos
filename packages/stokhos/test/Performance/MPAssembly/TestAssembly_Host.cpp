@@ -45,6 +45,7 @@
 // Devices
 #include "KokkosCore_config.h"
 #include "Kokkos_Threads.hpp"
+#include "Kokkos_OpenMP.hpp"
 
 template <typename Storage>
 void mainHost(const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
@@ -73,4 +74,8 @@ void mainHost(const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
 
 #ifdef KOKKOS_HAVE_PTHREAD
 template void mainHost< Stokhos::StaticFixedStorage<int,double,1,Kokkos::Threads> >(const Teuchos::RCP<const Teuchos::Comm<int> >& comm , const int use_print , const int use_trials , const int use_atomic , const int use_nodes[] , const bool check , Kokkos::DeviceConfig dev_config);
+#endif
+
+#ifdef KOKKOS_HAVE_OPENMP
+template void mainHost< Stokhos::StaticFixedStorage<int,double,1,Kokkos::OpenMP> >(const Teuchos::RCP<const Teuchos::Comm<int> >& comm , const int use_print , const int use_trials , const int use_atomic , const int use_nodes[] , const bool check , Kokkos::DeviceConfig dev_config);
 #endif

@@ -53,6 +53,7 @@
 #define NUM_BYTES_PER_INT       4
 #define NUM_NODES_PER_ELEM      8
 
+#define EBLK_ID 100000
 #define EXODUSII_FILE_TYPE      ".e"
 
 typedef double realtyp;
@@ -635,13 +636,12 @@ void write_exo_mesh(
     }
 #if 1
     {
-      INT ids[1] = {100000};
+      INT ids[1] = {EBLK_ID};
       INT num_elem_per_block[1];
       char *names[1] = {"hex"};
       INT num_node_per_elem[1];
       INT num_attr_per_block[1];
       int write_map = num_domains > 1 ? EX_TRUE : EX_FALSE;
-      write_map = EX_TRUE;
       num_elem_per_block[0] = loc_num_elements;
       num_node_per_elem[0]  = NUM_NODES_PER_ELEM;
       num_attr_per_block[0] = 0;
@@ -660,9 +660,9 @@ void write_exo_mesh(
     }
 
     if (num_domains > 1) {
-      err = ex_put_elem_conn (exoid, 100000, loc_connect);
+      err = ex_put_elem_conn (exoid, EBLK_ID, loc_connect);
     } else {
-      err = ex_put_elem_conn (exoid, 100000, connect);
+      err = ex_put_elem_conn (exoid, EBLK_ID, connect);
     }
 
     if (err) {
@@ -791,7 +791,7 @@ void write_exo_mesh(
           }
         }
         for (j=0; j<num_element_fields; j++) {
-          err = ex_put_var (exoid, t+1, EX_ELEM_BLOCK, j+1, 100000, loc_num_elements, x);
+          err = ex_put_var (exoid, t+1, EX_ELEM_BLOCK, j+1, EBLK_ID, loc_num_elements, x);
           if (err) {
             fprintf(stderr, "after ex_put_element_var, error = %d\n", err);
             ex_close (exoid);

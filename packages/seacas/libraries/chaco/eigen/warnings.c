@@ -4,6 +4,7 @@
 
 #include <stdio.h>                      // for fprintf, NULL, FILE, stdout
 #include "defs.h"                       // for FALSE, TRUE
+#include "structs.h"
 
 /* Post various warnings about computation  */
 void 

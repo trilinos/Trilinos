@@ -9,7 +9,7 @@
   <ParameterList name="Factories">
 
     <!-- Note that ParameterLists must be defined prior to being used -->
-      
+
     <ParameterList name="myCoalesceDropFact">
       <Parameter name="factory"                             type="string" value="CoalesceDropFactory"/>
       <Parameter name="lightweight wrap"                    type="bool"   value="true"/>
@@ -21,12 +21,11 @@
       <Parameter name="Graph"                               type="string" value="myCoalesceDropFact"/>
       <Parameter name="DofsPerNode"                         type="string" value="myCoalesceDropFact"/>
       <Parameter name="Ordering"                            type="string" value="Natural"/>
-      <Parameter name="MaxNeighAlreadySelected"             type="int"    value="$MAXNEIGH"/>
       <Parameter name="MinNodesPerAggregate"                type="int"    value="$MINAGGS"/>
       <Parameter name="MaxNodesPerAggregate"                type="int"    value="$MAXAGGS"/>
     </ParameterList>
 
-    
+
     <ParameterList name="PA-AMG">
       <Parameter name="factory"                             type="string" value="TentativePFactory"/>
     </ParameterList>
@@ -35,13 +34,13 @@
       <Parameter name="factory"                             type="string" value="PgPFactory"/>
       <Parameter name="P"                                   type="string" value="PA-AMG"/>
     </ParameterList>
-  
+
     <ParameterList name="SA-AMG">
       <Parameter name="factory"                             type="string" value="SaPFactory"/>
       <Parameter name="P"                                   type="string" value="PA-AMG"/>
       <Parameter name="Damping factor"                      type="double" value="$SADAMPING"/>
-    </ParameterList>    
-    
+    </ParameterList>
+
     <ParameterList name="myPatternFact">
       <Parameter name="factory"                             type="string" value="PatternFactory"/>
       <Parameter name="P"                                   type="string" value="PA-AMG"/>
@@ -54,15 +53,15 @@
       <!-- <Parameter name="FineNullspace"                       type="string" value="myNullspaceFact"/> -->
       <!-- not sure about this -->
       <Parameter name="CoarseNullspace"                     type="string" value="PA-AMG"/>
-    </ParameterList>    
-    
+    </ParameterList>
+
     <ParameterList name="Emin">
       <Parameter name="factory"                             type="string" value="EminPFactory"/>
       <Parameter name="P"                                   type="string" value="PA-AMG"/>
       <Parameter name="Constraint"                          type="string" value="myConstraintFact"/>
       <Parameter name="emin: num iterations"                type="int" value="2"/>
     </ParameterList>
-    
+
     <ParameterList name="myRestrictorFact">
       <Parameter name="factory"                             type="string" value="$RESTRICTOR"/>
       <Parameter name="P"                                   type="string" value="$PROLONGATOR"/>
@@ -73,7 +72,7 @@
       <!--<Parameter name="DofsPerNode"                         type="string" value="myCoalesceDropFact"/>-->
 	<Parameter name="Output filename"                   type="string" value="aggs_level%LEVELID_proc%PROCID.txt"/>
     </ParameterList>
-    
+
     <ParameterList name="myRAPFact">
       <Parameter name="factory"                             type="string" value="RAPFactory"/>
       <Parameter name="P"                                   type="string" value="$PROLONGATOR"/>
@@ -82,7 +81,7 @@
        <Parameter name="Visualization"                     type="string" value="myAggExportFact"/>
      </ParameterList>
     </ParameterList>
-        
+
 	<!-- =======================  REPARTITIONING  ======================= -->
 
 	<!-- amalgamation of coarse level matrix -->
@@ -110,7 +109,7 @@
       <Parameter name="Partition"                           type="string" value="myRepartitionInterface"/>
       <Parameter name="minRowsPerProcessor"                 type="int"    value="800"/>
       <Parameter name="nonzeroImbalance"                    type="double" value="1.1"/>
-      <Parameter name="startLevel"                          type="int"    value="1"/>  
+      <Parameter name="startLevel"                          type="int"    value="1"/>
       <Parameter name="remapPartitions"                     type="bool"   value="false"/>
     </ParameterList>
 
@@ -132,7 +131,7 @@
       <Parameter name="factory"                             type="string" value="RebalanceAcFactory"/>
       <Parameter name="A"                                   type="string" value="myRAPFact"/>
     </ParameterList>
-    
+
     <!-- =======================  SMOOTHERS  ======================= -->
 
     <!-- not supported yet -->
@@ -169,7 +168,7 @@
       </ParameterList>
     </ParameterList>
 
-    
+
     <ParameterList name="Sym.Gauss-Seidel">
       <Parameter name="factory"                             type="string" value="TrilinosSmoother"/>
       <Parameter name="type"                                type="string" value="RELAXATION"/>
@@ -197,7 +196,7 @@
       <Parameter name="P"                                   type="string"   value="$MANAGER_PROLONGATOR"/>
       <Parameter name="R"                                   type="string"   value="$MANAGER_RESTRICTOR"/>
       <Parameter name="A"                                   type="string"   value="$MANAGER_RAP"/>
-      <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/>      
+      <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/>
       <Parameter name="Importer"                            type="string"   value="myRepartitionFact"/>
       <Parameter name="Graph"                               type="string"   value="myCoalesceDropFact"/>
     </ParameterList>

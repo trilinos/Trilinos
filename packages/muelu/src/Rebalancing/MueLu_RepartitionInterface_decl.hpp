@@ -57,7 +57,7 @@ namespace MueLu {
     virtual ~RepartitionInterface() { }
     //@}
 
-    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+    RCP<const ParameterList> GetValidParameterList() const;
 
     //! @name Input
     //@{

@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -48,76 +48,134 @@
 #include "Tpetra_MultiVector.hpp"
 #include "MueLu_CreateTpetraPreconditioner.hpp"
 #include "Kokkos_CrsMatrix.hpp"
-#include "mean_func.hpp"
-
 
 namespace Sacado {
   namespace UQ {
     template <typename Storage> class PCE;
   }
+  namespace MP {
+    template <typename Storage> class Vector;
+  }
 }
 
 namespace Kokkos {
-namespace Example {    
-  /*! 
+namespace Example {
+
+  //! Get mean values matrix for mean-based preconditioning
+  /*! Default implementation for all scalar types where "mean" is the same
+   * as the scalar type.
+   */
+  template <class ViewType>
+  class GetMeanValsFunc {
+  public:
+    typedef ViewType MeanViewType;
+    typedef typename ViewType::device_type device_type;
+    typedef typename ViewType::size_type size_type;
+
+    GetMeanValsFunc(const ViewType& vals)
+    {
+      mean_vals = ViewType("mean-values", vals.dimension_0());
+      Kokkos::deep_copy( mean_vals, vals );
+    }
+
+    MeanViewType getMeanValues() const { return mean_vals; }
+
+  private:
+    MeanViewType mean_vals;
+  };
+
+  //! Get mean values matrix for mean-based preconditioning
+  /*! Specialization for Sacado::UQ::PCE
+   */
+  template <class Storage, class Layout, class Memory, class Device>
+  class GetMeanValsFunc< Kokkos::View< Sacado::UQ::PCE<Storage>*,
+                                       Layout, Memory, Device > > {
+  public:
+    typedef Sacado::UQ::PCE<Storage> Scalar;
+    typedef Kokkos::View< Scalar*, Layout, Memory, Device > ViewType;
+    typedef ViewType MeanViewType;
+    typedef typename ViewType::device_type device_type;
+    typedef typename ViewType::size_type size_type;
+
+    GetMeanValsFunc(const ViewType& vals_) : vals(vals_)
+    {
+      const size_type nnz = vals.dimension_0();
+      mean_vals = ViewType("mean-values", vals.cijk(), nnz, 1);
+      Kokkos::parallel_for( nnz, *this );
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator() (const size_type i) const
+    {
+      mean_vals(i) = vals(i).fastAccessCoeff(0);
+    }
+
+     MeanViewType getMeanValues() const { return mean_vals; }
+
+  private:
+    MeanViewType mean_vals;
+    ViewType vals;
+  };
+
+  //! Get mean values matrix for mean-based preconditioning
+  /*! Specialization for Sacado::MP::Vector
+   */
+  template <class Storage, class Layout, class Memory, class Device>
+  class GetMeanValsFunc< Kokkos::View< Sacado::MP::Vector<Storage>*,
+                                       Layout, Memory, Device > > {
+  public:
+    typedef Sacado::MP::Vector<Storage> Scalar;
+    typedef Kokkos::View< Scalar*, Layout, Memory, Device > ViewType;
+    typedef ViewType MeanViewType;
+    typedef typename ViewType::device_type device_type;
+    typedef typename ViewType::size_type size_type;
+
+    GetMeanValsFunc(const ViewType& vals_) :
+      vals(vals_), vec_size(vals.sacado_size())
+    {
+      const size_type nnz = vals.dimension_0();
+      mean_vals = ViewType("mean-values", nnz, 1);
+      Kokkos::parallel_for( nnz, *this );
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator() (const size_type i) const
+    {
+      typename Scalar::value_type s = 0.0;
+      for (size_type j=0; j<vec_size; ++j)
+        s += vals(i).fastAccessCoeff(j);
+      mean_vals(i) = s;
+    }
+
+    MeanViewType getMeanValues() const { return mean_vals; }
+
+  private:
+    MeanViewType mean_vals;
+    ViewType vals;
+    const size_type vec_size;
+  };
+
+  /*!
    * \brief A stochastic preconditioner based on applying the inverse of the
    * mean.
    */
-  template<class S, class LO, class GO, class N>
-  class MeanBasedPreconditioner : 
-    public SGPreconditioner<S, LO, GO, N> {
-      
+  template<class Scalar, class LO, class GO, class N>
+  class MeanBasedPreconditioner : public SGPreconditioner<Scalar, LO, GO, N> {
   public:
 
-    //! Constructor 
-    MeanBasedPreconditioner() {}
-    
-    //! Destructor
-    virtual ~MeanBasedPreconditioner() {}
-
-    //! Setup preconditioner - construct a MueLu hierarchy with the given matrix
-    virtual 
-    Teuchos::RCP<Tpetra::Operator<S,LO,GO,N> > 
-    setupPreconditioner(const Teuchos::RCP<Tpetra::CrsMatrix<S,LO,GO,N> >& A, 
-			const std::string& xmlFileName){
-
-      typedef MueLu::TpetraOperator<S,LO,GO,N> PreconditionerType;
-      RCP<PreconditionerType> mueluPreconditioner;
-      mueluPreconditioner = MueLu::CreateTpetraPreconditioner(A,xmlFileName);
-      return mueluPreconditioner;
-
-    };
- 
-
-  private:
-    
-    //! Private to prohibit copying
-    MeanBasedPreconditioner(const MeanBasedPreconditioner&);
-    
-    //! Private to prohibit copying
-    MeanBasedPreconditioner& operator=(const MeanBasedPreconditioner&);
-    
-
-  }; // class MeanBasedPreconditioner
-
-  template<class Storage, class LO, class GO, class N>
-  class MeanBasedPreconditioner< Sacado::UQ::PCE<Storage>, LO, GO, N > :
-    public SGPreconditioner<Sacado::UQ::PCE<Storage>, LO, GO, N> {
- 
-  public:
-    typedef Sacado::UQ::PCE<Storage> Scalar;
- 
-    //! Constructor 
+    //! Constructor
     MeanBasedPreconditioner() {}
 
     //! Destructor
     virtual ~MeanBasedPreconditioner() {}
 
-    //! Setup preconditioner 
+    //! Setup preconditioner
     virtual
     Teuchos::RCP<Tpetra::Operator<Scalar,LO,GO,N> >
-    setupPreconditioner(const Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO,N> >& A,
-                        const std::string& xmlFileName){
+    setupPreconditioner(
+      const Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO,N> >& A,
+      const std::string& xmlFileName)
+    {
       using Teuchos::ArrayView;
       using Teuchos::Array;
       typedef Tpetra::CrsMatrix<Scalar,LO,GO,N> MatrixType;
@@ -127,29 +185,28 @@ namespace Example {
       typedef Kokkos::CrsMatrix<Scalar, LO, typename N::device_type, void, size_t> KokkosMatrixType;
 
       typedef typename KokkosMatrixType::StaticCrsGraphType KokkosGraphType;
-      typedef typename KokkosMatrixType::values_type KokkosMatrixValuesType; 
-      typedef typename KokkosMatrixValuesType::cijk_type cijk_type;
+      typedef typename KokkosMatrixType::values_type KokkosMatrixValuesType;
 
       RCP< const Map > rmap = A->getRowMap();
       RCP< const Map > cmap = A->getColMap();
 
       KokkosMatrixType  kokkos_matrix = A->getLocalMatrix();
-      size_t nnz = kokkos_matrix.nnz();
-      size_t ncols = kokkos_matrix.numCols();
       KokkosGraphType kokkos_graph = kokkos_matrix.graph;
-
-      cijk_type cijk = kokkos_matrix.values.cijk();
-
       KokkosMatrixValuesType matrix_values = kokkos_matrix.values;
-      KokkosMatrixValuesType mean_matrix_values =
-        KokkosMatrixValuesType("values", cijk, nnz, 1); 
+      const size_t ncols = kokkos_matrix.numCols();
 
-      Kokkos::Example::GetMeanValsFunc <KokkosMatrixValuesType > getmeanfunc(mean_matrix_values, matrix_values); 
-      Kokkos::parallel_for( nnz , getmeanfunc );
+      typedef GetMeanValsFunc <KokkosMatrixValuesType > MeanFunc;
+      typedef typename MeanFunc::MeanViewType KokkosMeanMatrixValuesType;
+      MeanFunc meanfunc(matrix_values);
+      KokkosMeanMatrixValuesType mean_matrix_values = meanfunc.getMeanValues();
 
+      // From here on we are assuming that
+      // KokkosMeanMatrixValuesType == KokkosMatrixValuestype
 
-      KokkosMatrixType mean_kokkos_matrix("mean-matrix", ncols, mean_matrix_values, kokkos_graph);
-      RCP < MatrixType > M = rcp( new MatrixType(rmap, cmap, mean_kokkos_matrix));
+      KokkosMatrixType mean_kokkos_matrix(
+        "mean-matrix", ncols, mean_matrix_values, kokkos_graph);
+      RCP < MatrixType > M =
+        rcp( new MatrixType(rmap, cmap, mean_kokkos_matrix) );
 
       RCP< PreconditionerType > mueluPreconditioner;
       mueluPreconditioner = MueLu::CreateTpetraPreconditioner(M,xmlFileName);
@@ -166,8 +223,6 @@ namespace Example {
 
 
   }; // class MeanBasedPreconditioner
-
-
 
 }
 }

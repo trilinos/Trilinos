@@ -1,7 +1,5 @@
 
 #include <stk_util/environment/FileUtils.hpp>
-#include <Ioss_FileInfo.h>              // for FileInfo
-#include <Ioss_Utils.h>                 // for Utils
 #include <stddef.h>                     // for size_t
 #include <algorithm>                    // for max
 #include <stk_util/environment/EnvData.hpp>  // for EnvData
@@ -14,6 +12,27 @@
 typedef std::vector<std::string> StringVector;
 
 namespace {
+  std::string tailname(const std::string &filename)
+  {
+    size_t ind = filename.find_last_of("/", filename.size());
+    if (ind != std::string::npos)
+      return filename.substr(ind+1, filename.size());
+    else
+      return filename; // No path, just return the filename
+  }
+
+  std::string basename(const std::string &filename)
+  {
+    std::string tail = tailname(filename);
+
+    // Strip off the extension
+    size_t ind = tail.find_last_of('.', tail.size());
+    if (ind != std::string::npos)
+      return tail.substr(0,ind);
+    else
+      return tail;
+  }
+
   std::string  get_input_file_basename()
   {
     std::string filename;
@@ -23,16 +42,15 @@ namespace {
       input_file_name = stk::EnvData::instance().m_inputFile;
     }
 
-    Ioss::FileInfo input_file(input_file_name);
-    std::string basename = input_file.basename();
+    std::string base = basename(input_file_name);
 
     // See if name contains ".aprepro"
-    size_t pos = basename.find(".aprepro");
+    size_t pos = base.find(".aprepro");
     if (pos != std::string::npos) {
       // Strip if off...
-      filename = basename.substr(0,pos) + basename.substr(pos+8);
+      filename = base.substr(0,pos) + base.substr(pos+8);
     } else {
-      filename = basename;
+      filename = base;
     }
     return filename;
   }
@@ -40,6 +58,13 @@ namespace {
 
 namespace stk {
   namespace util {
+    template <class T> static std::string to_string(const T & t)
+    {
+      std::ostringstream os;
+      os << t;
+      return os.str();
+    }
+
     void filename_substitution(std::string &filename)
     {
       // See if filename contains "%P" which is replaced by the number of processors...
@@ -50,7 +75,7 @@ namespace stk {
 	// Found the characters...  Replace with the processor count...
 	int num_proc = std::max(1, EnvData::instance().m_parallelSize);
 	std::string tmp(filename, 0, pos);
-	tmp += Ioss::Utils::to_string(num_proc);
+	tmp += to_string(num_proc);
 	tmp += filename.substr(pos+2);
 	filename = tmp;
       }

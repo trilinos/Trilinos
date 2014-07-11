@@ -6,6 +6,7 @@
 #include "defs.h"                       // for FALSE
 #include "params.h"                     // for MAXSETS
 #include "smalloc.h"                    // for sfree
+#include "structs.h"
 struct bilist;
 
 /* Think hard about space.
