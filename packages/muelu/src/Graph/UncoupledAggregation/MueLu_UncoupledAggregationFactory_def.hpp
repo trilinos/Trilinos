@@ -66,6 +66,7 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_GraphBase.hpp"
 #include "MueLu_Aggregates.hpp"
+#include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_Utilities.hpp"
@@ -81,11 +82,13 @@ namespace MueLu {
   RCP<const ParameterList> UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    // input parameters
+#define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
+    SET_VALID_ENTRY("aggregation: mode");
+    SET_VALID_ENTRY("aggregation: max agg size");
+    SET_VALID_ENTRY("aggregation: min agg size");
+#undef  SET_VALID_ENTRY
     validParamList->set< RCP<const FactoryBase> >("Graph",       null, "Generating factory of the graph");
     validParamList->set< RCP<const FactoryBase> >("DofsPerNode", null, "Generating factory for variable \'DofsPerNode\', usually the same as for \'Graph\'");
-
-    validParamList->set< std::string >           ("mode",       "old", "Old/new mode");
 
     typedef Teuchos::OrdinalTraits<LO> OTS;
 
@@ -95,8 +98,6 @@ namespace MueLu {
     validParamList->set<LO>      ("MaxNeighAlreadySelected",                   0, "Number of maximum neighbour nodes that are already aggregated already. "
                                   "If a new aggregate has some neighbours that are already aggregated, "
                                   "this node probably can be added to one of these aggregates. We don't need a new one.");
-    validParamList->set<LO>      ("MinNodesPerAggregate",                      2, "Minimum number of nodes for aggregate");
-    validParamList->set<LO>      ("MaxNodesPerAggregate",             OTS::max(), "Maximum number of nodes for aggregate");
 
     validParamList->set<bool> ("UseOnePtAggregationAlgorithm",             false, "Allow special nodes to be marked for one-to-one transfer to the coarsest level. (default = off)");
     validParamList->set<bool> ("UsePreserveDirichletAggregationAlgorithm", false, "Turn on/off aggregate Dirichlet (isolated nodes) into separate 1pt node aggregates (default = off)");
@@ -147,7 +148,7 @@ namespace MueLu {
 
     // TODO Can we keep different aggregation algorithms over more Build calls?
     algos_.clear();
-    if (pL.get<std::string>("mode") == "old") {
+    if (pL.get<std::string>("aggregation: mode") == "old") {
       if (pL.get<bool>("UseOnePtAggregationAlgorithm")             == true)   algos_.push_back(rcp(new OnePtAggregationAlgorithm             (graphFact)));
       if (pL.get<bool>("UsePreserveDirichletAggregationAlgorithm") == true)   algos_.push_back(rcp(new PreserveDirichletAggregationAlgorithm (graphFact)));
       if (pL.get<bool>("UseUncoupledAggregationAlgorithm")         == true)   algos_.push_back(rcp(new AggregationPhase1Algorithm            (graphFact)));

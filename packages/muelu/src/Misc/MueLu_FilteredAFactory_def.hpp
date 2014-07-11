@@ -53,6 +53,7 @@
 
 #include "MueLu_FactoryManager.hpp"
 #include "MueLu_Level.hpp"
+#include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 
 namespace MueLu {
@@ -61,11 +62,14 @@ namespace MueLu {
   RCP<const ParameterList> FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
+#define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
+    SET_VALID_ENTRY("filtered matrix: use lumping");
+    SET_VALID_ENTRY("filtered matrix: reuse graph");
+    SET_VALID_ENTRY("filtered matrix: reuse eigenvalue");
+#undef  SET_VALID_ENTRY
+
     validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A used for filtering");
     validParamList->set< RCP<const FactoryBase> >("Graph",          Teuchos::null, "Generating fatory for coalesced filtered graph");
-    validParamList->set< bool >                  ("lumping",                 true, "Use lumping for dropped values");
-    validParamList->set< bool > ("filtered matrix: reuse graph",             true, "Use zero values instead of constructing a new graph");
-    validParamList->set< bool > ("filtered matrix: reuse eigenvalue",        true, "Reuse eigenvalue from non-filtered matrix");
 
     return validParamList;
   }
@@ -90,7 +94,7 @@ namespace MueLu {
     }
 
     const ParameterList& pL = GetParameterList();
-    bool lumping = pL.get<bool>("lumping");
+    bool lumping = pL.get<bool>("filtered matrix: use lumping");
     if (lumping)
       GetOStream(Runtime0) << "Lumping dropped entries" << std::endl;
 

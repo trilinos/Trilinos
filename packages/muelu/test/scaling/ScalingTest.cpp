@@ -344,7 +344,7 @@ int main(int argc, char *argv[]) {
       if (!optExplicitR) {
         H->SetImplicitTranspose(true);
         ParameterList Aclist = *(AFact->GetValidParameterList());
-        Aclist.set("implicit transpose", true);
+        Aclist.set("transpose: use implicit", true);
         AFact->SetParameterList(Aclist);
         if (comm->getRank() == 0) std::cout << "\n\n* ***** USING IMPLICIT RESTRICTION OPERATOR ***** *\n" << std::endl;
       }
@@ -387,8 +387,8 @@ int main(int argc, char *argv[]) {
         RCP<Factory> RepartitionFact = rcp(new RepartitionFactory());
         {
           Teuchos::ParameterList paramList;
-          paramList.set("minRowsPerProcessor", optMinRowsPerProc);
-          paramList.set("nonzeroImbalance", optNnzImbalance);
+          paramList.set("repartition: min rows per proc", optMinRowsPerProc);
+          paramList.set("repartition: max imbalance", optNnzImbalance);
           RepartitionFact->SetParameterList(paramList);
         }
         RepartitionFact->SetFactory("A", AFact);

@@ -70,8 +70,8 @@ namespace MueLu {
 
     AggOptions::Ordering ordering    = params.get<AggOptions::Ordering>("Ordering");
     LO maxNeighAlreadySelected       = params.get<LO>                  ("MaxNeighAlreadySelected");
-    LO minNodesPerAggregate          = params.get<LO>                  ("MinNodesPerAggregate");
-    LO maxNodesPerAggregate          = params.get<LO>                  ("MaxNodesPerAggregate");
+    LO minNodesPerAggregate          = params.get<LO>                  ("aggregation: min agg size");
+    LO maxNodesPerAggregate          = params.get<LO>                  ("aggregation: max agg size");
 
     TEUCHOS_TEST_FOR_EXCEPTION(maxNodesPerAggregate < minNodesPerAggregate, Exceptions::RuntimeError,
                                "MueLu::UncoupledAggregationAlgorithm::BuildAggregates: minNodesPerAggregate must be smaller or equal to MaxNodePerAggregate!");

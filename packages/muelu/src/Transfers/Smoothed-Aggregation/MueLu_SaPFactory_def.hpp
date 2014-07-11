@@ -52,6 +52,7 @@
 
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Level.hpp"
+#include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
@@ -64,10 +65,12 @@ namespace MueLu {
   RCP<const ParameterList> SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set< Scalar >                ("Damping factor",          4./3, "Smoothed-Aggregation damping factor");
+#define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
+    SET_VALID_ENTRY("sa: damping factor");
+#undef  SET_VALID_ENTRY
+
     validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
     validParamList->set< RCP<const FactoryBase> >("P",              Teuchos::null, "Tentative prolongator factory");
-    // validParamList->set                       ("Diagonal view",      "current", "Diagonal view used during the prolongator smoothing process");
 
     return validParamList;
   }
@@ -112,17 +115,9 @@ namespace MueLu {
     //Build final prolongator
     RCP<Matrix> finalP; // output
 
-    //FIXME Xpetra::Matrix should calculate/stash max eigenvalue
-    //FIXME SC lambdaMax = A->GetDinvALambda();
-
     const ParameterList & pL = GetParameterList();
-    Scalar dampingFactor = pL.get<Scalar>("Damping factor");
+    Scalar dampingFactor = pL.get<Scalar>("sa: damping factor");
     if (dampingFactor != Teuchos::ScalarTraits<Scalar>::zero()) {
-
-      //Teuchos::ParameterList matrixList;
-      //RCP<Matrix> I = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsMatrixWrap>("Identity", Get< RCP<Matrix> >(fineLevel, "A")->getRowMap(), matrixList);
-      //RCP<Matrix> newPtent = Utils::TwoMatrixMultiply(I, false, Ptent, false);
-      //Ptent = newPtent; //I tried a checkout of the original Ptent, and it seems to be gone now (which is good)
 
       Scalar lambdaMax;
       {
@@ -184,14 +179,14 @@ namespace MueLu {
   // deprecated
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetDampingFactor(Scalar dampingFactor) {
-    SetParameter("Damping factor", ParameterEntry(dampingFactor)); // revalidate
+    SetParameter("sa: damping factor", ParameterEntry(dampingFactor)); // revalidate
   }
 
   // deprecated
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Scalar SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetDampingFactor() {
     const ParameterList & pL = GetParameterList();
-    return pL.get<Scalar>("Damping factor");
+    return pL.get<Scalar>("sa: damping factor");
   }
 
 } //namespace MueLu

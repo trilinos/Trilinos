@@ -69,6 +69,7 @@
 #include "MueLu_FactoryFactory.hpp"
 #include "MueLu_FilteredAFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"
+#include "MueLu_MasterList.hpp"
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_PatternFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
@@ -130,16 +131,17 @@ namespace MueLu {
   // If it is, it copies its value to the second list, possibly with a new name
   // Similar to the above macro, we all try to take a value from the default list
   // NOTE: this essentially converts UserAPI parameter names into MueLu internal ones
-#define MUELU_TEST_AND_SET_PARAM(listWrite, varNameWrite, paramList, defaultList, varNameRead, T) \
-  if      (paramList.isParameter(varNameRead)) { \
+#define MUELU_TEST_AND_SET_PARAM(listWrite, varName, paramList, defaultList, T) \
+  if      (paramList.isParameter(varName)) { \
     try { \
-      listWrite.set(varNameWrite, paramList.get<T>(varNameRead)); \
+      listWrite.set(varName, paramList.get<T>(varName)); \
     } \
     catch(Teuchos::Exceptions::InvalidParameterType) { \
-      TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true,Teuchos::Exceptions::InvalidParameterType,"Error: parameter \"" << varNameRead << "\" must be of type " << Teuchos::TypeNameTraits<T>::name()); \
+      TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true, Teuchos::Exceptions::InvalidParameterType, \
+                                          "Error: parameter \"" << varName << "\" must be of type " << Teuchos::TypeNameTraits<T>::name()); \
     } \
   } \
-  else if (defaultList.isParameter(varNameRead)) listWrite.set(varNameWrite, defaultList.get<T>(varNameRead));
+  else if (defaultList.isParameter(varName)) listWrite.set(varName, defaultList.get<T>(varName));
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetEasyParameterList(const Teuchos::ParameterList& constParamList) {
@@ -158,8 +160,8 @@ namespace MueLu {
       Cycle_ = cycleMap[cycleType];
     }
 
-    this->maxCoarseSize_    = paramList.get<int> ("coarse: max size",    Hierarchy::GetDefaultMaxCoarseSize());
-    this->numDesiredLevel_  = paramList.get<int> ("max levels",          Hierarchy::GetDefaultMaxLevels());
+    this->maxCoarseSize_    = paramList.get<int> ("coarse: max size",    MasterList::getDefault<int>("coarse: max size"));
+    this->numDesiredLevel_  = paramList.get<int> ("max levels",          MasterList::getDefault<int>("max levels"));
     this->graphOutputLevel_ = paramList.get<int> ("debug: graph level", -1);
     blockSize_              = paramList.get<int> ("number of equations", 1);
 
@@ -220,9 +222,9 @@ namespace MueLu {
 
     // Detect if we do implicit P and R rebalance
     if (paramList.isParameter("repartition: enable") && paramList.get<bool>("repartition: enable") == true)
-      this->doPRrebalance_ = paramList.get<bool>("repartition: rebalance P and R", Hierarchy::GetDefaultPRrebalance());
+      this->doPRrebalance_ = paramList.get<bool>("repartition: rebalance P and R", MasterList::getDefault<bool>("repartition: rebalance P and R"));
 
-    this->implicitTranspose_ = paramList.get<bool>("transpose: use implicit", Hierarchy::GetDefaultImplicitTranspose());
+    this->implicitTranspose_ = paramList.get<bool>("transpose: use implicit", MasterList::getDefault<bool>("transpose: use implicit"));
 
     // Create default manager
     RCP<FactoryManager> defaultManager = rcp(new FactoryManager());
@@ -439,12 +441,12 @@ namespace MueLu {
     RCP<CoalesceDropFactory> dropFactory = rcp(new CoalesceDropFactory());
     ParameterList dropParams;
     dropParams.set("lightweight wrap", true);
-    MUELU_TEST_AND_SET_PARAM(dropParams, "algorithm",                     paramList, defaultList, "aggregation: drop scheme",         std::string);
+    MUELU_TEST_AND_SET_PARAM(dropParams, "aggregation: drop scheme",         paramList, defaultList, std::string);
     // Rename classical to original
-    if (dropParams.isParameter("algorithm") && dropParams.get<std::string>("algorithm") == "classical")
-      dropParams.set("algorithm", "original");
-    MUELU_TEST_AND_SET_PARAM(dropParams, "aggregation threshold",         paramList, defaultList, "aggregation: drop tol",            double);
-    MUELU_TEST_AND_SET_PARAM(dropParams, "Dirichlet detection threshold", paramList, defaultList, "aggregation: Dirichlet threshold", double);
+    if (dropParams.isParameter("aggregation: drop scheme") && dropParams.get<std::string>("aggregation: drop scheme") == "classical")
+      dropParams.set("aggregation: drop scheme", "original");
+    MUELU_TEST_AND_SET_PARAM(dropParams, "aggregation: drop tol",            paramList, defaultList, double);
+    MUELU_TEST_AND_SET_PARAM(dropParams, "aggregation: Dirichlet threshold", paramList, defaultList, double);
 
     dropFactory->SetParameterList(dropParams);
     manager.SetFactory("Graph", dropFactory);
@@ -455,10 +457,10 @@ namespace MueLu {
     if      (aggType == "uncoupled") {
       aggFactory = rcp(new UncoupledAggregationFactory());
       ParameterList aggParams;
-      MUELU_TEST_AND_SET_PARAM(aggParams, "mode",                 paramList, defaultList, "aggregation: mode",          std::string);
-      MUELU_TEST_AND_SET_PARAM(aggParams, "MinNodesPerAggregate", paramList, defaultList, "aggregation: min agg size",  int);
-      MUELU_TEST_AND_SET_PARAM(aggParams, "MaxNodesPerAggregate", paramList, defaultList, "aggregation: max agg size",  int);
-      MUELU_TEST_AND_SET_PARAM(aggParams, "aggregation: preserve Dirichlet points", paramList, defaultList, "aggregation: preserve Dirichlet points", bool);
+      MUELU_TEST_AND_SET_PARAM(aggParams, "aggregation: mode",                      paramList, defaultList, std::string);
+      MUELU_TEST_AND_SET_PARAM(aggParams, "aggregation: min agg size",              paramList, defaultList, int);
+      MUELU_TEST_AND_SET_PARAM(aggParams, "aggregation: max agg size",              paramList, defaultList, int);
+      MUELU_TEST_AND_SET_PARAM(aggParams, "aggregation: preserve Dirichlet points", paramList, defaultList, bool);
       aggFactory->SetParameterList(aggParams);
 
     } else if (aggType == "coupled") {
@@ -493,14 +495,14 @@ namespace MueLu {
       // Smoothed aggregation
       RCP<SaPFactory> P = rcp(new SaPFactory());
       ParameterList Pparams;
-      MUELU_TEST_AND_SET_PARAM(Pparams, "Damping factor", paramList, defaultList, "sa: damping factor", double);
+      MUELU_TEST_AND_SET_PARAM(Pparams, "sa: damping factor", paramList, defaultList, double);
       P->SetParameterList(Pparams);
 
       if (paramList.isParameter("sa: use filtered matrix") && paramList.get<bool>("sa: use filtered matrix")) {
         // Filtering
         RCP<FilteredAFactory> filterFactory = rcp(new FilteredAFactory());
         ParameterList fParams;
-        MUELU_TEST_AND_SET_PARAM(fParams, "lumping", paramList, defaultList, "filtered matrix: use lumping", bool);
+        MUELU_TEST_AND_SET_PARAM(fParams, "filtered matrix: use lumping", paramList, defaultList, bool);
         filterFactory->SetParameterList(fParams);
         filterFactory->SetFactory("Graph", manager.GetFactory("Graph"));
         P->SetFactory("A", filterFactory);
@@ -516,7 +518,7 @@ namespace MueLu {
       // Pattern
       RCP<PatternFactory> patternFactory = rcp(new PatternFactory());
       ParameterList patternParams;
-      MUELU_TEST_AND_SET_PARAM(patternParams, "k", paramList, defaultList, "emin: pattern order", int);
+      MUELU_TEST_AND_SET_PARAM(patternParams, "emin: pattern order", paramList, defaultList, int);
       patternFactory->SetParameterList(patternParams);
       patternFactory->SetFactory("P", manager.GetFactory("Ptent"));
       manager.SetFactory("Ppattern", patternFactory);
@@ -530,8 +532,8 @@ namespace MueLu {
       // Energy minimization
       RCP<EminPFactory> P = rcp(new EminPFactory());
       ParameterList Pparams;
-      MUELU_TEST_AND_SET_PARAM(Pparams, "emin: num iterations",   paramList, defaultList, "emin: num iterations",   int);
-      MUELU_TEST_AND_SET_PARAM(Pparams, "emin: iterative method", paramList, defaultList, "emin: iterative method", std::string);
+      MUELU_TEST_AND_SET_PARAM(Pparams, "emin: num iterations",   paramList, defaultList, int);
+      MUELU_TEST_AND_SET_PARAM(Pparams, "emin: iterative method", paramList, defaultList, std::string);
       P->SetParameterList(Pparams);
       P->SetFactory("P",          manager.GetFactory("Ptent"));
       P->SetFactory("Constraint", manager.GetFactory("Constraint"));
@@ -566,7 +568,7 @@ namespace MueLu {
     // === RAP ===
     RCP<RAPFactory> RAP = rcp(new RAPFactory());
     ParameterList RAPparams;
-    RAPparams.set("implicit transpose", this->implicitTranspose_);
+    RAPparams.set("transpose: use implicit", this->implicitTranspose_);
     RAP->SetParameterList(RAPparams);
     RAP->SetFactory("P", manager.GetFactory("P"));
     if (!this->implicitTranspose_)
@@ -623,13 +625,14 @@ namespace MueLu {
       // Repartitioner
       RCP<RepartitionFactory> repartFactory = rcp(new RepartitionFactory());
       ParameterList repartParams;
-      MUELU_TEST_AND_SET_PARAM(repartParams, "startLevel",          paramList, defaultList, "repartition: start level",       int);
-      MUELU_TEST_AND_SET_PARAM(repartParams, "startLevel",          paramList, defaultList, "repartition: start level",       int);
-      MUELU_TEST_AND_SET_PARAM(repartParams, "minRowsPerProcessor", paramList, defaultList, "repartition: min rows per proc", int);
-      MUELU_TEST_AND_SET_PARAM(repartParams, "nonzeroImbalance",    paramList, defaultList, "repartition: max imbalance",     double);
-      MUELU_TEST_AND_SET_PARAM(repartParams, "remapPartitions",     paramList, defaultList, "repartition: remap parts",       bool);
-      MUELU_TEST_AND_SET_PARAM(repartParams, "alwaysKeepProc0",     paramList, defaultList, "repartition: keep proc 0",       bool);
-      MUELU_TEST_AND_SET_PARAM(repartParams, "repartition: print partition distribution", paramList, defaultList, "repartition: print partition distribution", bool);
+      MUELU_TEST_AND_SET_PARAM(repartParams, "repartition: start level",       paramList, defaultList, int);
+      MUELU_TEST_AND_SET_PARAM(repartParams, "repartition: start level",       paramList, defaultList, int);
+      MUELU_TEST_AND_SET_PARAM(repartParams, "repartition: min rows per proc", paramList, defaultList, int);
+      MUELU_TEST_AND_SET_PARAM(repartParams, "repartition: max imbalance",     paramList, defaultList, double);
+      MUELU_TEST_AND_SET_PARAM(repartParams, "repartition: keep proc 0",       paramList, defaultList, bool);
+      MUELU_TEST_AND_SET_PARAM(repartParams, "repartition: print partition distribution", paramList, defaultList, bool);
+      MUELU_TEST_AND_SET_PARAM(repartParams, "repartition: remap parts",       paramList, defaultList, bool);
+      MUELU_TEST_AND_SET_PARAM(repartParams, "repartition: remap num values",  paramList, defaultList, int);
       repartFactory->SetParameterList(repartParams);
       repartFactory->SetFactory("A",         manager.GetFactory("A"));
       repartFactory->SetFactory("Partition", manager.GetFactory("Partition"));
@@ -644,8 +647,8 @@ namespace MueLu {
       // Rebalanced P
       RCP<RebalanceTransferFactory> newP = rcp(new RebalanceTransferFactory());
       ParameterList newPparams;
-      newPparams.set("type",     "Interpolation");
-      newPparams.set("implicit", !this->doPRrebalance_);
+      newPparams.set("type",                           "Interpolation");
+      newPparams.set("repartition: rebalance P and R", this->doPRrebalance_);
       newP->  SetParameterList(newPparams);
       newP->  SetFactory("Importer",    manager.GetFactory("Importer"));
       newP->  SetFactory("P",           manager.GetFactory("P"));
@@ -657,9 +660,9 @@ namespace MueLu {
       // Rebalanced R
       RCP<RebalanceTransferFactory> newR = rcp(new RebalanceTransferFactory());
       ParameterList newRparams;
-      newRparams.set("type",               "Restriction");
-      newRparams.set("implicit",          !this->doPRrebalance_);
-      newRparams.set("implicit transpose", this->implicitTranspose_);
+      newRparams.set("type",                           "Restriction");
+      newRparams.set("repartition: rebalance P and R", this->doPRrebalance_);
+      newRparams.set("transpose: use implicit",        this->implicitTranspose_);
       newR->  SetParameterList(newRparams);
       newR->  SetFactory("Importer",       manager.GetFactory("Importer"));
       if (!this->implicitTranspose_) {
@@ -757,7 +760,7 @@ namespace MueLu {
     //     <ParameterList name="Matrix">
     //   </ParameterList>
     if (paramList.isSublist("Matrix"))
-      blockSize_ = paramList.sublist("Matrix").get<int>("PDE equations", 1);
+      blockSize_ = paramList.sublist("Matrix").get<int>("number of equations", 1);
 
     // Parameter List Parsing:
     // ---------
@@ -787,19 +790,19 @@ namespace MueLu {
       ParameterList hieraList = paramList.sublist("Hierarchy"); // copy because list temporally modified (remove 'id')
 
       // Get hierarchy options
-      if (hieraList.isParameter("numDesiredLevel")) {
-        this->numDesiredLevel_ = hieraList.get<int>("numDesiredLevel");
-        hieraList.remove("numDesiredLevel");
+      if (hieraList.isParameter("max levels")) {
+        this->numDesiredLevel_ = hieraList.get<int>("max levels");
+        hieraList.remove("max levels");
       }
 
-      if (hieraList.isParameter("maxCoarseSize")) {
-        this->maxCoarseSize_ = hieraList.get<int>("maxCoarseSize");
-        hieraList.remove("maxCoarseSize");
+      if (hieraList.isParameter("coarse: max size")) {
+        this->maxCoarseSize_ = hieraList.get<int>("coarse: max size");
+        hieraList.remove("coarse: max size");
       }
 
-      if (hieraList.isParameter("rebalance P and R")) {
-        this->doPRrebalance_ = hieraList.get<bool>("rebalance P and R");
-        hieraList.remove("rebalance P and R");
+      if (hieraList.isParameter("repartition: rebalance P and R")) {
+        this->doPRrebalance_ = hieraList.get<bool>("repartition: rebalance P and R");
+        hieraList.remove("repartition: rebalance P and R");
       }
 
       //TODO Move this its own class or MueLu::Utils?

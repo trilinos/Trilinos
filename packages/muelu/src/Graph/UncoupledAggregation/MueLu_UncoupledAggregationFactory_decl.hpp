@@ -110,7 +110,7 @@ public:
   }
   // deprecated
   void SetMinNodesPerAggregate(int minNodesPerAggregate) {
-    SetParameter("MinNodesPerAggregate", ParameterEntry(Teuchos::as<LocalOrdinal>(minNodesPerAggregate))); // revalidate
+    SetParameter("aggregation: min agg size", ParameterEntry(Teuchos::as<LocalOrdinal>(minNodesPerAggregate))); // revalidate
   }
   // set information about 1-node aggregates (map name and generating factory)
   void SetOnePtMapName(const std::string name, Teuchos::RCP<const FactoryBase> mapFact) {
@@ -132,7 +132,7 @@ public:
   // deprecated
   int GetMinNodesPerAggregate() const {
     const ParameterList& pL = GetParameterList();
-    return Teuchos::as<int>(pL.get<LocalOrdinal>("MinNodesPerAggregate"));
+    return Teuchos::as<int>(pL.get<LocalOrdinal>("aggregation: min agg size"));
   }
 
   //@}

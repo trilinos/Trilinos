@@ -16,26 +16,26 @@
 
   <ParameterList name="Hierarchy">
 
-    <Parameter name="numDesiredLevel" type="int" value="10"/>
-    <Parameter name="maxCoarseSize"   type="int" value="50"/>
+    <Parameter name="max levels"        type="int"      value="10"/>
+    <Parameter name="coarse: max size"  type="int"      value="50"/>
 
     <ParameterList name="FineLevel">
-      <Parameter name="startLevel" type="int" value="0"/>
-      <Parameter name="Smoother"   type="string" value="SymGaussSeidel"/>
+      <Parameter name="startLevel"      type="int"      value="0"/>
+      <Parameter name="Smoother"        type="string"   value="SymGaussSeidel"/>
     </ParameterList>
 
     <ParameterList name="OtherLevels">
-      <Parameter name="startLevel" type="int" value="1"/>
+      <Parameter name="startLevel"      type="int" value="1"/>
 
       <ParameterList name="P">
-        <Parameter name="factory" type="string" value="SaPFactory"/>
+        <Parameter name="factory"       type="string" value="SaPFactory"/>
 
         <ParameterList name="P">
-          <Parameter name="factory" type="string" value="TentativePFactory"/>
+          <Parameter name="factory"     type="string" value="TentativePFactory"/>
 
           <ParameterList name="Aggregates">
             <Parameter name="factory"              type="string" value="CoupledAggregationFactory"/>
-            <Parameter name="MinNodesPerAggregate" type="int"    value="1"/>
+            <Parameter name="aggregation: min agg size" type="int"    value="1"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>

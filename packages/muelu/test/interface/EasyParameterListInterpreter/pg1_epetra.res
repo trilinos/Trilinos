@@ -23,15 +23,15 @@ Level 1
    Build (MueLu::UncoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
     lightweight wrap = 1
-    aggregation threshold = 0   [default]
-    Dirichlet detection threshold = 0   [default]
-    algorithm = original   [default]
+    aggregation: drop tol = 0   [default]
+    aggregation: Dirichlet threshold = 0   [default]
+    aggregation: drop scheme = classical   [default]
 
-   mode = old   [default]
+   aggregation: mode = old   [default]
+   aggregation: max agg size = 2147483647   [default]
+   aggregation: min agg size = 2   [default]
    Ordering = 0   [default]
    MaxNeighAlreadySelected = 0   [default]
-   MinNodesPerAggregate = 2   [default]
-   MaxNodesPerAggregate = 2147483647   [default]
    UseOnePtAggregationAlgorithm = 0   [default]
    UsePreserveDirichletAggregationAlgorithm = 0   [default]
    UseUncoupledAggregationAlgorithm = 1   [default]
@@ -66,7 +66,7 @@ Level 1
  [empty list]
 
  Computing Ac (MueLu::RAPFactory)
- implicit transpose = 0
+ transpose: use implicit = 0
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
  CheckMainDiagonal = 0   [default]
@@ -83,15 +83,15 @@ Level 2
    Build (MueLu::UncoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
     lightweight wrap = 1
-    aggregation threshold = 0   [default]
-    Dirichlet detection threshold = 0   [default]
-    algorithm = original   [default]
+    aggregation: drop tol = 0   [default]
+    aggregation: Dirichlet threshold = 0   [default]
+    aggregation: drop scheme = classical   [default]
 
-   mode = old   [default]
+   aggregation: mode = old   [default]
+   aggregation: max agg size = 2147483647   [default]
+   aggregation: min agg size = 2   [default]
    Ordering = 0   [default]
    MaxNeighAlreadySelected = 0   [default]
-   MinNodesPerAggregate = 2   [default]
-   MaxNodesPerAggregate = 2147483647   [default]
    UseOnePtAggregationAlgorithm = 0   [default]
    UsePreserveDirichletAggregationAlgorithm = 0   [default]
    UseUncoupledAggregationAlgorithm = 1   [default]
@@ -126,7 +126,7 @@ Level 2
  [empty list]
 
  Computing Ac (MueLu::RAPFactory)
- implicit transpose = 0
+ transpose: use implicit = 0
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
  CheckMainDiagonal = 0   [default]

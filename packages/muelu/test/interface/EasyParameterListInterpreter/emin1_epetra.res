@@ -24,15 +24,15 @@ Level 1
    Build (MueLu::UncoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
     lightweight wrap = 1
-    aggregation threshold = 0   [default]
-    Dirichlet detection threshold = 0   [default]
-    algorithm = original   [default]
+    aggregation: drop tol = 0   [default]
+    aggregation: Dirichlet threshold = 0   [default]
+    aggregation: drop scheme = classical   [default]
     
-   mode = old   [default]
+   aggregation: mode = old   [default]
+   aggregation: max agg size = 2147483647   [default]
+   aggregation: min agg size = 2   [default]
    Ordering = 0   [default]
    MaxNeighAlreadySelected = 0   [default]
-   MinNodesPerAggregate = 2   [default]
-   MaxNodesPerAggregate = 2147483647   [default]
    UseOnePtAggregationAlgorithm = 0   [default]
    UsePreserveDirichletAggregationAlgorithm = 0   [default]
    UseUncoupledAggregationAlgorithm = 1   [default]
@@ -61,23 +61,23 @@ Level 1
   
   Constraint (MueLu::ConstraintFactory)
    Ppattern (MueLu::PatternFactory)
-   k = 1   [default]
+   emin: pattern order = 1   [default]
    
   [empty list]
   
  emin: num iterations = 2   [default]
  emin: num reuse iterations = 1   [default]
+ emin: iterative method = cg   [default]
  P0 = Teuchos::RCP<Xpetra::Matrix<double, int, int, KokkosClassic::SerialNode, KokkosClassic::AltSparseOps<void, int, KokkosClassic::SerialNode, KokkosClassic::details::AltSparseOpsDefaultAllocator<int, KokkosClassic::SerialNode> > > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  Keep P0 = 0   [default]
  Constraint0 = Teuchos::RCP<MueLu::Constraint<double, int, int, KokkosClassic::SerialNode, KokkosClassic::AltSparseOps<void, int, KokkosClassic::SerialNode, KokkosClassic::details::AltSparseOpsDefaultAllocator<int, KokkosClassic::SerialNode> > > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  Keep Constraint0 = 0   [default]
- emin: iterative method = cg   [default]
  
  Transpose P (MueLu::TransPFactory)
  [empty list]
  
  Computing Ac (MueLu::RAPFactory)
- implicit transpose = 0
+ transpose: use implicit = 0
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
  CheckMainDiagonal = 0   [default]
@@ -94,15 +94,15 @@ Level 2
    Build (MueLu::UncoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
     lightweight wrap = 1
-    aggregation threshold = 0   [default]
-    Dirichlet detection threshold = 0   [default]
-    algorithm = original   [default]
+    aggregation: drop tol = 0   [default]
+    aggregation: Dirichlet threshold = 0   [default]
+    aggregation: drop scheme = classical   [default]
     
-   mode = old   [default]
+   aggregation: mode = old   [default]
+   aggregation: max agg size = 2147483647   [default]
+   aggregation: min agg size = 2   [default]
    Ordering = 0   [default]
    MaxNeighAlreadySelected = 0   [default]
-   MinNodesPerAggregate = 2   [default]
-   MaxNodesPerAggregate = 2147483647   [default]
    UseOnePtAggregationAlgorithm = 0   [default]
    UsePreserveDirichletAggregationAlgorithm = 0   [default]
    UseUncoupledAggregationAlgorithm = 1   [default]
@@ -131,23 +131,23 @@ Level 2
   
   Constraint (MueLu::ConstraintFactory)
    Ppattern (MueLu::PatternFactory)
-   k = 1   [default]
+   emin: pattern order = 1   [default]
    
   [empty list]
   
  emin: num iterations = 2   [default]
  emin: num reuse iterations = 1   [default]
+ emin: iterative method = cg   [default]
  P0 = Teuchos::RCP<Xpetra::Matrix<double, int, int, KokkosClassic::SerialNode, KokkosClassic::AltSparseOps<void, int, KokkosClassic::SerialNode, KokkosClassic::details::AltSparseOpsDefaultAllocator<int, KokkosClassic::SerialNode> > > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  Keep P0 = 0   [default]
  Constraint0 = Teuchos::RCP<MueLu::Constraint<double, int, int, KokkosClassic::SerialNode, KokkosClassic::AltSparseOps<void, int, KokkosClassic::SerialNode, KokkosClassic::details::AltSparseOpsDefaultAllocator<int, KokkosClassic::SerialNode> > > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  Keep Constraint0 = 0   [default]
- emin: iterative method = cg   [default]
  
  Transpose P (MueLu::TransPFactory)
  [empty list]
  
  Computing Ac (MueLu::RAPFactory)
- implicit transpose = 0
+ transpose: use implicit = 0
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
  CheckMainDiagonal = 0   [default]

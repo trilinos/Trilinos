@@ -2,7 +2,7 @@
 
   <!-- Configuration of the Xpetra operator (fine level) -->
   <ParameterList name="Matrix">
-    <Parameter name="PDE equations"                         type="int" value="1"/> <!-- Number of PDE equations at each grid node.-->
+    <Parameter name="number of equations"                   type="int" value="1"/> <!-- Number of PDE equations at each grid node.-->
   </ParameterList>
 
   <!-- Factory collection -->
@@ -14,7 +14,7 @@
       <Parameter name="factory"                             type="string" value="CoalesceDropFactory"/>
       <Parameter name="lightweight wrap"                    type="bool"   value="true"/>
       <!--
-      <Parameter name="aggregation threshold"               type="double" value="0.02"/>
+      <Parameter name="aggregation: drop tol"               type="double" value="0.02"/>
       -->
     </ParameterList>
 
@@ -24,7 +24,7 @@
       <Parameter name="DofsPerNode"                         type="string" value="myCoalesceDropFact"/>
       <Parameter name="Ordering"                            type="string" value="Graph"/>
       <Parameter name="MaxNeighAlreadySelected"             type="int"    value="0"/>
-      <Parameter name="MinNodesPerAggregate"                type="int"    value="9"/>
+      <Parameter name="aggregation: min agg size"           type="int"    value="9"/>
     </ParameterList>
 
     <ParameterList name="CoupledAggregationFact">
@@ -32,7 +32,7 @@
       <Parameter name="Graph"                               type="string" value="myCoalesceDropFact"/>
       <Parameter name="Ordering"                            type="string" value="Graph"/>
       <Parameter name="MaxNeighAlreadySelected"             type="int"    value="0"/>
-      <Parameter name="MinNodesPerAggregate"                type="int"    value="3"/>
+      <Parameter name="aggregation: min agg size"           type="int"    value="3"/>
     </ParameterList>
 
     <ParameterList name="myTentativePFact">
@@ -42,7 +42,7 @@
     <ParameterList name="myProlongatorFact">
       <Parameter name="factory"                             type="string" value="SaPFactory"/>
       <Parameter name="P"                                   type="string" value="myTentativePFact"/>
-      <!-- <Parameter name="Damping factor"                      type="double" value="1.333"/> -->
+      <!-- <Parameter name="sa: damping factor"                  type="double" value="1.333"/> -->
     </ParameterList>
 
     <ParameterList name="myRestrictorFact">
@@ -119,8 +119,8 @@
   <!-- Definition of the multigrid preconditioner -->
   <ParameterList name="Hierarchy">
 
-    <Parameter name="numDesiredLevel"                       type="int"      value="3"/> <!-- Max number of levels -->
-    <Parameter name="maxCoarseSize"                         type="int"      value="10"/> <!-- Min number of rows on coarsest level -->
+    <Parameter name="max levels"                            type="int"      value="3"/> <!-- Max number of levels -->
+    <Parameter name="coarse: max size"                      type="int"      value="10"/> <!-- Min number of rows on coarsest level -->
     <Parameter name="verbosity"                             type="string"   value="Low"/>
 
     <ParameterList name="All">

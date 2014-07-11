@@ -75,17 +75,17 @@
 #include "Ifpack2_Hiptmair.hpp"
 
 /*
-  
+
   @class RefMaxwell
-  
+
   Preconditioner for Maxwell's equations in curl-curl form using a 2x2 block reformulation,
   wrapped as a Tpetra::Operator.
-  
+
   Reference:
   P. Bochev, J. Hu, C. Siefert, and R. Tuminaro. "An algebraic multigrid approach based on
   a compatible gauge reformulation of Maxwell's equations." SIAM Journal on Scientific
   Computing, 31(1), 557-583.
-  
+
 */
 
 namespace MueLu {
@@ -110,7 +110,7 @@ namespace MueLu {
     typedef Xpetra::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>                     XTCRS;
     typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>                              XMat;
     typedef Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>                       XCrsWrap;
-    
+
     //! Constructor
     RefMaxwell() :
       Hierarchy11_(Teuchos::null),
@@ -124,7 +124,7 @@ namespace MueLu {
       mode_("additive")
     {
     }
-    
+
     //! Constructor with Hierarchies
     RefMaxwell(Teuchos::RCP<Hierarchy> H11, Teuchos::RCP<Hierarchy> H22) :
       Hierarchy11_(H11),
@@ -203,7 +203,7 @@ namespace MueLu {
 
     //! Set parameters
     void setParameters(Teuchos::ParameterList& list);
-    
+
     //! Setup the preconditioner
     void compute();
 
@@ -212,7 +212,7 @@ namespace MueLu {
 
     //! Compute P11^{T}*A*P11 efficiently
     void formCoarseMatrix();
-    
+
     //! Reset system matrix
     void resetMatrix(Teuchos::RCP<TCRS> SM_Matrix_new);
 
@@ -233,7 +233,7 @@ namespace MueLu {
 	       Teuchos::ETransp mode = Teuchos::NO_TRANS,
 	       Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
 	       Scalar beta  = Teuchos::ScalarTraits<Scalar>::one()) const;
-    
+
     //! Indicates whether this operator supports applying the adjoint operator.
     bool hasTransposeApply() const;
 
@@ -246,7 +246,7 @@ namespace MueLu {
     }
 
   private:
-    
+
     //! Two hierarchies: one for the (1,1)-block, another for the (2,2)-block
     Teuchos::RCP<Hierarchy> Hierarchy11_, Hierarchy22_;
     //! Various matrices

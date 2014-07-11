@@ -21,13 +21,13 @@
 
 \cbb{aggregation: drop tol}{double}{0.0}{Aggregation dropping threshold.}
 
-\cbb{aggregation: min agg size}{int}{0}{Minimum size of an aggregate.}
+\cbb{aggregation: min agg size}{int}{2}{Minimum size of an aggregate.}
 
-\cbb{aggregation: max agg size}{int}{0}{Maximum size of an aggregate.}
+\cbb{aggregation: max agg size}{int}{2147483647}{Maximum size of an aggregate.}
 
-\cbb{aggregation: Dirichlet threshold}{double}{0.0}{???}
+\cbb{aggregation: Dirichlet threshold}{double}{0.0}{Threshold for determining whether entries are zero during Dirichlet row detection.}
 
-\cbb{aggregation: visualize}{bool}{false}{Visualized aggregates.}
+\cbb{aggregation: visualize}{bool}{false}{Visualize aggregates.}
 
 \cbb{smoother: pre or post}{string}{"both"}{Smoother combination. Possible values: "pre", "post", "both", "none".}
 
@@ -49,13 +49,13 @@
 
 \cbb{smoother: post overlap}{int}{0}{Post-smoother subdomain overlap.}
 
-\cbb{coarse: type}{string}{"SuperLU"}{Coarse solver. Possible values: see Table~\ref{t:coarse_solvers}.}
+\cbb{coarse: max size}{int}{2000}{Maximum dimension of the coarse grid. \muelu will stop coarsening once it is achieved.}
 
-\cbb{coarse: overlap}{int}{0}{Coarse solver subdomain overlap.}
+\cbb{coarse: type}{string}{"SuperLU"}{Coarse solver. Possible values: see Table~\ref{t:coarse_solvers}.}
 
 \cba{coarse: params}{\parameterlist}{Coarse solver parameters. \muelu passes them directly to coarse solver.}
 
-\cbb{coarse: max size}{int}{2000}{Maximum dimension of the coarse grid. \muelu will stop coarsening once it is achieved.}
+\cbb{coarse: overlap}{int}{0}{Coarse solver subdomain overlap.}
 
 \cbb{repartition: enable}{bool}{false}{Repartitioning on/off switch.}
 
@@ -73,7 +73,7 @@
 
 \cbb{repartition: rebalance P and R}{bool}{true}{Do rebalancing of R and P during the setup. This speeds up the solve, but slows down the setup phases.}
 
-\cbb{sa: damping factor}{double}{4/3}{Damping factor for smoothed aggregation.}
+\cbb{sa: damping factor}{double}{1.33333333}{Damping factor for smoothed aggregation.}
 
 \cbb{sa: use filtered matrix}{bool}{true}{Matrix to use for smoothing the tentative prolongator. The two options are: to use the original matrix, and to use the filtered matrix with filtering based on filtered graph used for aggregation.}
 
@@ -84,6 +84,8 @@
 \cbb{emin: iterative method}{string}{"cg"}{Iterative method to use for energy minimization of intial prolongator in energy-minimization. Possible values: "cg", "sd".}
 
 \cbb{emin: num iterations}{int}{2}{Number of iterations to minimize initial prolongator energy in energy-minimization.}
+
+\cbb{emin: num reuse iterations}{int}{1}{Number of iterations to minimize the reused prolongator energy in energy-minimization.}
 
 \cbb{emin: pattern}{string}{"AkPtent"}{Sparsity pattern to use for energy minization. Possible values: "AkPtent".}
 

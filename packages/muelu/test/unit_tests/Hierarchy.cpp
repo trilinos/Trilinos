@@ -263,7 +263,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, IterateWithImplicitRestriction)
   RCP<TransPFactory>      Rfact = rcp( new TransPFactory());
   RCP<RAPFactory>         Acfact = rcp( new RAPFactory() );
   ParameterList Aclist = *(Acfact->GetValidParameterList());
-  Aclist.set("implicit transpose", true);
+  Aclist.set("transpose: use implicit", true);
   Acfact->SetParameterList(Aclist);
 
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_AMESOS)

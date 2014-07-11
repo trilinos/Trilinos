@@ -225,7 +225,7 @@ namespace MueLu {
       CoupledAggFact2->SetParameter("UsePreserveDirichletAggregationAlgorithm", Teuchos::ParameterEntry(bKeepDirichletBcs));
       CoupledAggFact2->SetParameter("Ordering", Teuchos::ParameterEntry(MueLu::AggOptions::NATURAL));
       CoupledAggFact2->SetParameter("MaxNeighAlreadySelected", Teuchos::ParameterEntry(maxNbrAlreadySelected));
-      CoupledAggFact2->SetParameter("MinNodesPerAggregate", Teuchos::ParameterEntry(minPerAgg));
+      CoupledAggFact2->SetParameter("aggregation: min agg size", Teuchos::ParameterEntry(minPerAgg));
 
       CoupledAggFact = CoupledAggFact2;
     } else {
@@ -301,8 +301,8 @@ namespace MueLu {
       RepartitionFact = Teuchos::rcp(new RepartitionFactory());
       {
         Teuchos::ParameterList paramListRepFact;
-        paramListRepFact.set("minRowsPerProcessor", minperproc);
-        paramListRepFact.set("nonzeroImbalance", maxminratio);
+        paramListRepFact.set("repartition: min rows per proc", minperproc);
+        paramListRepFact.set("repartition: max imbalance", maxminratio);
         RepartitionFact->SetParameterList(paramListRepFact);
       }
       RepartitionFact->SetFactory("A", AcFact);

@@ -87,14 +87,14 @@
   <parameter>
     <name>aggregation: min agg size</name>
     <type>int</type>
-    <default>0</default>
+    <default>2</default>
     <description>Minimum size of an aggregate.</description>
   </parameter>
 
   <parameter>
     <name>aggregation: max agg size</name>
     <type>int</type>
-    <default>0</default>
+    <default>2147483647</default>
     <description>Maximum size of an aggregate.</description>
   </parameter>
 
@@ -102,14 +102,14 @@
     <name>aggregation: Dirichlet threshold</name>
     <type>double</type>
     <default>0.0</default>
-    <description>???</description>
+    <description>Threshold for determining whether entries are zero during Dirichlet row detection.</description>
   </parameter>
 
   <parameter>
     <name>aggregation: visualize</name>
     <type>bool</type>
     <default>false</default>
-    <description>Visualized aggregates.</description>
+    <description>Visualize aggregates.</description>
   </parameter>
 
   <parameter>
@@ -166,29 +166,6 @@
     <description>Post-smoother parameters. For standard smoothers, \muelu passes them directly to \stratimikos.</description>
   </parameter>
 
-<!--
-  <parameter>
-    <name>smoother: sweeps</name>
-    <type>int</type>
-    <default>2</default>
-    <description>Number of smoother sweeps for relaxation methods, or the order of polynomial for Chebyshev.</description>
-  </parameter>
-
-  <parameter>
-    <name>smoother: pre sweeps</name>
-    <type>int</type>
-    <default>2</default>
-    <description>Number of pre-smoother sweeps for relaxation methods, or the order of polynomial for Chebyshev.</description>
-  </parameter>
-
-  <parameter>
-    <name>smoother: post sweeps</name>
-    <type>int</type>
-    <default>2</default>
-    <description>Number of post-smoother sweeps for relaxation methods, or the order of polynomial for Chebyshev.</description>
-  </parameter>
--->
-
   <parameter>
     <name>smoother: overlap</name>
     <type>int</type>
@@ -211,17 +188,17 @@
   </parameter>
 
   <parameter>
+    <name>coarse: max size</name>
+    <type>int</type>
+    <default>2000</default>
+    <description>Maximum dimension of the coarse grid. \muelu will stop coarsening once it is achieved.</description>
+  </parameter>
+
+  <parameter>
     <name>coarse: type</name>
     <type>string</type>
     <default>"SuperLU"</default>
     <description>Coarse solver. Possible values: see Table~\ref{t:coarse_solvers}.</description>
-  </parameter>
-
-  <parameter>
-    <name>coarse: overlap</name>
-    <type>int</type>
-    <default>0</default>
-    <description>Coarse solver subdomain overlap.</description>
   </parameter>
 
   <parameter>
@@ -231,12 +208,11 @@
   </parameter>
 
   <parameter>
-    <name>coarse: max size</name>
+    <name>coarse: overlap</name>
     <type>int</type>
-    <default>2000</default>
-    <description>Maximum dimension of the coarse grid. \muelu will stop coarsening once it is achieved.</description>
+    <default>0</default>
+    <description>Coarse solver subdomain overlap.</description>
   </parameter>
-
 
   <parameter>
     <name>repartition: enable</name>
@@ -287,10 +263,26 @@
   </parameter>
 
   <parameter>
+    <name>repartition: remap num values</name>
+    <type>int</type>
+    <default>4</default>
+    <description>Number of maximum components from each processor used to construct partial bipartite graph.</description>
+    <visible>false</visible>
+  </parameter>
+
+  <parameter>
     <name>repartition: keep proc 0</name>
     <type>bool</type>
     <default>true</default>
     <description>Postprocessing for partitioning to keep processor 0 from dropping out. The goal is to keep processor 0 of the original fine level communication even when we use level subcommunicators.</description>
+    <visible>false</visible>
+  </parameter>
+
+  <parameter>
+    <name>repartition: print partition distribution</name>
+    <type>bool</type>
+    <default>false</default>
+    <description>Print partition distribution with '+' and '.'</description>
     <visible>false</visible>
   </parameter>
 
@@ -304,7 +296,7 @@
   <parameter>
     <name>sa: damping factor</name>
     <type>double</type>
-    <default>4/3</default>
+    <default>1.33333333</default>
     <description>Damping factor for smoothed aggregation.</description>
   </parameter>
 
@@ -330,6 +322,14 @@
   </parameter>
 
   <parameter>
+    <name>filtered matrix: reuse graph</name>
+    <type>bool</type>
+    <default>true</default>
+    <description>Set values to zero instead of constructing a new graph.</description>
+    <visible>false</visible>
+  </parameter>
+
+  <parameter>
     <name>emin: iterative method</name>
     <type>string</type>
     <default>"cg"</default>
@@ -341,6 +341,13 @@
     <type>int</type>
     <default>2</default>
     <description>Number of iterations to minimize initial prolongator energy in energy-minimization.</description>
+  </parameter>
+
+  <parameter>
+    <name>emin: num reuse iterations</name>
+    <type>int</type>
+    <default>1</default>
+    <description>Number of iterations to minimize the reused prolongator energy in energy-minimization.</description>
   </parameter>
 
   <parameter>

@@ -54,6 +54,9 @@
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
+#include "MueLu_RAPFactory_decl.hpp"
+
+#include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_RAPFactory_decl.hpp"
@@ -69,6 +72,9 @@ namespace MueLu {
   RCP<const ParameterList> RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
+#define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
+    SET_VALID_ENTRY("transpose: use implicit");
+#undef  SET_VALID_ENTRY
     validParamList->set< RCP<const FactoryBase> >("A",                   null, "Generating factory of the matrix A used during the prolongator smoothing process");
     validParamList->set< RCP<const FactoryBase> >("P",                   null, "Prolongator factory");
     validParamList->set< RCP<const FactoryBase> >("R",                   null, "Restrictor factory");
@@ -76,7 +82,6 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("RAP Pattern",         null, "RAP pattern factory");
     validParamList->set< bool >                  ("Keep AP Pattern",    false, "Keep the AP pattern (for reuse)");
     validParamList->set< bool >                  ("Keep RAP Pattern",   false, "Keep the RAP pattern (for reuse)");
-    validParamList->set< bool >                  ("implicit transpose", false, "Use implicit transpose for restriction");
 
     validParamList->set< bool >                  ("CheckMainDiagonal",  false, "Check main diagonal for zeros (default = false).");
     validParamList->set< bool >                  ("RepairMainDiagonal", false, "Repair zeros on main diagonal (default = false).");
@@ -87,7 +92,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
     const Teuchos::ParameterList& pL = GetParameterList();
-    if (pL.get<bool>("implicit transpose") == false)
+    if (pL.get<bool>("transpose: use implicit") == false)
       Input(coarseLevel, "R");
 
     Input(fineLevel,   "A");
@@ -140,7 +145,7 @@ namespace MueLu {
 
       const bool doTranspose    = true;
       const bool doFillComplete = true;
-      if (pL.get<bool>("implicit transpose") == true) {
+      if (pL.get<bool>("transpose: use implicit") == true) {
         SubFactoryMonitor m2(*this, "MxM: P' x (AP) (implicit)", coarseLevel);
         Ac = Utils::Multiply(*P,  doTranspose, *AP, !doTranspose, Ac, GetOStream(Statistics2), doFillComplete, doOptimizeStorage);
 

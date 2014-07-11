@@ -2,7 +2,7 @@
 
   <!-- Configuration of the Xpetra operator (fine level) -->
   <ParameterList name="Matrix">
-    <Parameter name="PDE equations" type="int" value="2"/> <!-- Number of PDE equations at each grid node.-->
+    <Parameter name="number of equations" type="int" value="2"/> <!-- Number of PDE equations at each grid node.-->
   </ParameterList>
 
   <!-- Factory collection
@@ -38,7 +38,7 @@
        Some notes about how this list is parsed.
        Each sublist takes effect in turn.  By default, each sublist is
        active for one level.  If you want it to be active for more than
-       one level, you must specify "numDesiredLevels" and "startLevel".
+       one level, you must specify "numDesiredLevels" and "repartition: start level".
 
        Note that "startLevel" must be consistent with the level number
        that the previous sublist controlled.
@@ -46,7 +46,7 @@
   <ParameterList name="Hierarchy">
 
     <!-- Max number of levels -->
-    <Parameter name="numDesiredLevel" type="int" value="10"/>
+    <Parameter name="max levels" type="int" value="10"/>
 
     <!-- active for levels 0 and 1 -->
     <ParameterList name="FineLevel">

@@ -186,7 +186,7 @@ namespace MueLuTests {
     transPFactory.Build(fineLevel,coarseLevel);
     RAPFactory rap;
     ParameterList rapList = *(rap.GetValidParameterList());
-    rapList.set("implicit transpose", true);
+    rapList.set("transpose: use implicit", true);
     rap.SetParameterList(rapList);
     rap.SetFactory("P", rcpFromRef(sapFactory));
     rap.SetFactory("R", rcpFromRef(transPFactory));

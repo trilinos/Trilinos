@@ -2,7 +2,7 @@
 
   <!-- Configuration of the Xpetra operator (fine level) -->
   <ParameterList name="Matrix">
-    <Parameter name="PDE equations"                         type="int" value="2"/> <!-- Number of PDE equations at each grid node.-->
+    <Parameter name="number of equations"                   type="int" value="2"/> <!-- Number of PDE equations at each grid node.-->
   </ParameterList>
 
   <!-- NOTE: you can embed factory definitions:
@@ -23,14 +23,14 @@
     <ParameterList name="myCoalesceDropFact">
       <Parameter name="factory"                             type="string" value="CoalesceDropFactory"/>
       <!-- <Parameter name="lightweight wrap"                    type="bool"   value="true"/> -->
-      <!-- <Parameter name="algorithm"                           type="string" value="laplacian"/> -->
-      <!-- <Parameter name="aggregation threshold"               type="double" value="0.00"/> -->
+      <!-- <Parameter name="aggregation: drop scheme"            type="string" value="laplacian"/> -->
+      <!-- <Parameter name="aggregation: drop tol"               type="double" value="0.00"/> -->
     </ParameterList>
 
     <ParameterList name="myFilteredAFact">
       <Parameter name="factory"                             type="string" value="FilteredAFactory"/>
       <Parameter name="Graph"                               type="string" value="myCoalesceDropFact"/>
-      <Parameter name="lumping"                             type="bool"   value="false"/>
+      <Parameter name="filtered matrix: use lumping"        type="bool"   value="false"/>
     </ParameterList>
 
     <!-- =======================  AGGREGATION  ======================= -->
@@ -41,7 +41,7 @@
       <Parameter name="MaxNeighAlreadySelected"             type="int"    value="0"/>
       <Parameter name="Phase3AggCreation"                   type="double" value="0.5"/>
       <!-- Keep it 2, otherwise nothing is aggregated -->
-      <Parameter name="MinNodesPerAggregate"                type="int"    value="2"/>
+      <Parameter name="aggregation: min agg size"           type="int"    value="2"/>
     </ParameterList>
 
     <ParameterList name="UncoupledAggregationFact">
@@ -51,7 +51,7 @@
       <Parameter name="Ordering"                            type="string" value="Natural"/>
       <Parameter name="MaxNeighAlreadySelected"             type="int"    value="0"/>
       <!-- Keep it 2, otherwise nothing is aggregated -->
-      <Parameter name="MinNodesPerAggregate"                type="int"    value="2"/>
+      <Parameter name="aggregation: min agg size"           type="int"    value="2"/>
     </ParameterList>
 
     <ParameterList name="UserAggregationFact">
@@ -143,8 +143,8 @@
   <!-- Definition of the multigrid preconditioner -->
   <ParameterList name="Hierarchy">
 
-    <Parameter name="numDesiredLevel"                       type="int"      value="6"/>         <!-- Max number of levels -->
-    <Parameter name="maxCoarseSize"                         type="int"      value="500"/>       <!-- Min number of rows on coarsest level -->
+    <Parameter name="max levels"                            type="int"      value="6"/>         <!-- Max number of levels -->
+    <Parameter name="coarse: max size"                      type="int"      value="500"/>       <!-- Min number of rows on coarsest level -->
     <Parameter name="verbosity"                             type="string"   value="High"/>
     <Parameter name="reuse"                                 type="bool"     value="true"/>      <!-- Allow factories to call Build method multiple times -->
     <!-- <Parameter name="dependencyOutputLevel"                 type="int"      value="0"/> -->

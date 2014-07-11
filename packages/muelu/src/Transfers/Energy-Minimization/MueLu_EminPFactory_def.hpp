@@ -9,6 +9,7 @@
 #include "MueLu_CGSolver.hpp"
 #include "MueLu_Constraint.hpp"
 #include "MueLu_FactoryManagerBase.hpp"
+#include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PatternFactory.hpp"
 #include "MueLu_PerfUtils.hpp"
@@ -22,23 +23,26 @@ namespace MueLu {
   RCP<const ParameterList> EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
+#define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
+    SET_VALID_ENTRY("emin: num iterations");
+    SET_VALID_ENTRY("emin: num reuse iterations");
+    SET_VALID_ENTRY("emin: iterative method");
+    {
+      typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
+      validParamList->getEntry("emin: iterative method").setValidator(
+        rcp(new validatorType(Teuchos::tuple<std::string>("cg", "sd"), "emin: iterative method")));
+    }
+#undef  SET_VALID_ENTRY
+
     validParamList->set< RCP<const FactoryBase> >("A",                 Teuchos::null, "Generating factory for the matrix A used during internal iterations");
     validParamList->set< RCP<const FactoryBase> >("P",                 Teuchos::null, "Generating factory for the initial guess");
     validParamList->set< RCP<const FactoryBase> >("Constraint",        Teuchos::null, "Generating factory for constraints");
-    validParamList->set< int >                   ("emin: num iterations",          2, "Number of iterations of the internal iterative method");
-    validParamList->set< int >                   ("emin: num reuse iterations",    1, "Number of iterations of the internal iterative method");
 
     validParamList->set< RCP<Matrix> >           ("P0",                Teuchos::null, "Initial guess at P");
     validParamList->set< bool >                  ("Keep P0",                   false, "Keep an initial P0 (for reuse)");
 
     validParamList->set< RCP<Constraint> >       ("Constraint0",       Teuchos::null, "Initial Constraint");
     validParamList->set< bool >                  ("Keep Constraint0",          false, "Keep an initial Constraint (for reuse)");
-
-    {
-      typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
-      RCP<validatorType> typeValidator = rcp (new validatorType(Teuchos::tuple<std::string>("cg", "sd"), "solver"));
-      validParamList->set                        ("emin: iterative method",     "cg", "Iterative procedure", typeValidator);
-    }
 
     return validParamList;
   }

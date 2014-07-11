@@ -4,7 +4,7 @@
   
   <!-- Configuration of the Xpetra operator (fine level) -->
   <ParameterList name="Matrix">
-    <Parameter name="PDE equations" type="int" value="1"/> <!-- Number of PDE equations at each grid node.-->
+    <Parameter name="number of equations" type="int" value="1"/> <!-- Number of PDE equations at each grid node.-->
   </ParameterList>
 
   <!-- Smoothers -->
@@ -28,7 +28,7 @@
   <!-- Definition of the multigrid preconditioner -->
   <ParameterList name="Hierarchy">
     
-    <Parameter name="numDesiredLevel" type="int" value="1"/> <!-- Max number of levels -->
+    <Parameter name="max levels" type="int" value="1"/> <!-- Max number of levels -->
 
     <ParameterList name="SingleLevel">
       <Parameter name="startLevel"                          type="int"      value="0"/>

@@ -355,8 +355,8 @@ int main(int argc, char *argv[]) {
     RCP<Factory> RepartitionFact = rcp(new RepartitionFactory());
     {
       Teuchos::ParameterList paramList;
-      paramList.set("minRowsPerProcessor", optMinRowsPerProc);
-      paramList.set("nonzeroImbalance", optNnzImbalance);
+      paramList.set("repartition: min rows per proc", optMinRowsPerProc);
+      paramList.set("repartition: max imbalance", optNnzImbalance);
       RepartitionFact->SetParameterList(paramList);
     }
     RepartitionFact->SetFactory("A", Acfact);
