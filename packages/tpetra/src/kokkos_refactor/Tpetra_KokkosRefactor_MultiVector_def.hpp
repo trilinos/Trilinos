@@ -1611,18 +1611,23 @@ namespace { // (anonymous)
     const size_t myLen = getLocalLength();
     const size_t numVecs = getNumVectors();
     if (isConstantStride() && A.isConstantStride()) {
-      MVT::Abs(lclMV_,(const KMV&)A.lclMV_);
+      view_.template sync<DeviceType>();
+      view_.template modify<DeviceType>();
+      Kokkos::MV_Abs(view_.d_view,A.view_.d_view);
     }
     else {
-      KMV v(MVT::getNode(lclMV_)), a(MVT::getNode(lclMV_));
-      ArrayRCP<Scalar> vptr = MVT::getValuesNonConst(lclMV_),
-                      avptr = arcp_const_cast<Scalar>(MVT::getValues(A.lclMV_));
-      for (size_t j=0; j < numVecs; ++j) {
-        ArrayRCP<Scalar> vj =   getSubArrayRCP( vptr,j),
-                        avj = A.getSubArrayRCP(avptr,j);
-        MVT::initializeValues(a,myLen, 1, avj, myLen);
-        MVT::initializeValues(v,myLen, 1,  vj, myLen);
-        MVT::Abs(v,(const KMV &)a);
+      typedef Kokkos::View<Scalar*, DeviceType> view_type;
+
+      view_.template sync<DeviceType>();
+      view_.template modify<DeviceType>();
+      A.view_.template sync<DeviceType>();
+      A.view_.template modify<DeviceType>();
+      for (size_t k=0; k < numVecs; ++k) {
+        const size_t this_col = isConstantStride () ? k : whichVectors_[k];
+        view_type vector_k = Kokkos::subview<view_type> (view_.d_view, Kokkos::ALL (), this_col);
+        const size_t A_col = isConstantStride () ? k : A.whichVectors_[k];
+        view_type vector_Ak = Kokkos::subview<view_type> (A.view_.d_view, Kokkos::ALL (), A_col);
+        Kokkos::V_Abs(vector_k, vector_Ak);
       }
     }
   }
@@ -2573,15 +2578,27 @@ namespace { // (anonymous)
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       B.getNumVectors() != this->getNumVectors(), std::runtime_error,
       ": MultiVectors 'this' and B must have the same number of vectors.");
-    try {
-      // KR FIXME Need kernel for ElemMult.
-      MVT::ElemMult (lclMV_, scalarThis, scalarAB, (const KMV&) A.lclMV_,
-                     (const KMV&) B.lclMV_);
+    const size_t myLen = getLocalLength();
+    const size_t numVecs = getNumVectors();
+    if (isConstantStride() && A.isConstantStride()) {
+      view_.template sync<DeviceType>();
+      view_.template modify<DeviceType>();
+      Kokkos::MV_ElementWiseMultiply(view_.d_view,A.view_.d_view);
     }
-    catch (std::runtime_error &e) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true,std::runtime_error,
-          ": caught exception from Kokkos:" << std::endl
-          << e.what() << std::endl);
+    else {
+      typedef Kokkos::View<Scalar*, DeviceType> view_type;
+
+      view_.template sync<DeviceType>();
+      view_.template modify<DeviceType>();
+      A.view_.template sync<DeviceType>();
+      A.view_.template modify<DeviceType>();
+      for (size_t k=0; k < numVecs; ++k) {
+        const size_t this_col = isConstantStride () ? k : whichVectors_[k];
+        view_type vector_k = Kokkos::subview<view_type> (view_.d_view, Kokkos::ALL (), this_col);
+        const size_t A_col = isConstantStride () ? k : A.whichVectors_[k];
+        view_type vector_Ak = Kokkos::subview<view_type> (A.view_.d_view, Kokkos::ALL (), A_col);
+        Kokkos::V_ElementWiseMultiply(vector_k, vector_Ak);
+      }
     }
   }
 
