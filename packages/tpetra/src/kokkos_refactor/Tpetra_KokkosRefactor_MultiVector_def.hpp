@@ -1405,16 +1405,18 @@ namespace { // (anonymous)
     if (alpha == Teuchos::ScalarTraits<Scalar>::one()) {
       // do nothing
     }
-    else if (isConstantStride()) {
-      MVT::Scale(lclMV_,alpha);
+    else if (isConstantStride ()) {
+      view_.sync<DeviceType>();
+      view_.modify<DeviceType>();
+      Kokkos::MV_MulScalar (view_.d_view, alpha, view_.d_view);
     }
     else {
-      KMV v(MVT::getNode(lclMV_));
-      ArrayRCP<Scalar> vj;
-      for (size_t j=0; j < numVecs; ++j) {
-        vj = arcp_const_cast<Scalar> (MVT::getValues(lclMV_, whichVectors_[j]));
-        MVT::initializeValues (v, MVT::getNumRows (lclMV_), 1, vj, MVT::getStride (lclMV_));
-        MVT::Scale (v, alpha);
+      typedef Kokkos::View<Scalar*, DeviceType> view_type;
+
+      for (size_t k = 0; k < numVecs; ++k) {
+        const size_t this_col = isConstantStride () ? k : whichVectors_[k];
+        view_type vector_k = Kokkos::subview<view_type> (view_.d_view, ALL (), this_col);
+        Kokkos::V_MulScalar (vector_k, alpha, vector_k);
       }
     }
   }
@@ -1440,20 +1442,65 @@ namespace { // (anonymous)
       "Tpetra::MultiVector::scale(alphas): alphas.size() must be as large as "
       "the number of vectors in *this.");
 
-    const size_t myLen = MVT::getNumRows (lclMV_);
+    const size_t myLen = view_.dimension_0();
     if (myLen == 0) {
       return;
     }
-    KMV vec (MVT::getNode (lclMV_));
-    ArrayRCP<Scalar> mybuf = MVT::getValuesNonConst (lclMV_);
-    for (size_t j = 0; j < numVecs; ++j) {
-      if (alphas[j] == Teuchos::ScalarTraits<Scalar>::one ()) {
-        // do nothing: NaN * 1.0 == NaN, Number*1.0 == Number
+
+    if (isConstantStride ()) {
+      Kokkos::DualView<Scalar*,device_type> k_alphas("Alphas::tmp",alphas.size());
+      for(int i=0; i<alphas.size(); i++)
+         k_alphas.h_view(i) = alphas[i];
+      k_alphas.modify<host_mirror_device_type>();
+      k_alphas.sync<device_type>();
+      view_.sync<DeviceType>();
+      view_.modify<DeviceType>();
+      Kokkos::MV_MulScalar (view_.d_view, k_alphas.d_view, view_.d_view);
+    }
+    else {
+      typedef Kokkos::View<Scalar*, DeviceType> view_type;
+
+      for (size_t k = 0; k < numVecs; ++k) {
+        const size_t this_col = isConstantStride () ? k : whichVectors_[k];
+        view_type vector_k = Kokkos::subview<view_type> (view_.d_view, ALL (), this_col);
+        Kokkos::V_MulScalar (vector_k, alphas[k], vector_k);
       }
-      else {
-        ArrayRCP<Scalar> mybufj = getSubArrayRCP(mybuf,j);
-        MVT::initializeValues(vec,myLen,1,mybufj,myLen);
-        MVT::Scale(vec,alphas[j]);
+    }
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  scale (Kokkos::View<const Scalar*, DeviceType> alphas)
+  {
+    using Teuchos::arcp_const_cast;
+    using Teuchos::ArrayRCP;
+
+    const size_t numVecs = this->getNumVectors();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      static_cast<size_t> (alphas.dimension_0()) != numVecs, std::invalid_argument,
+      "Tpetra::MultiVector::scale(alphas): alphas.size() must be as large as "
+      "the number of vectors in *this.");
+
+    const size_t myLen = view_.dimension_0();
+    if (myLen == 0) {
+      return;
+    }
+
+    if (isConstantStride ()) {
+      view_.sync<DeviceType>();
+      view_.modify<DeviceType>();
+      Kokkos::MV_MulScalar (view_.d_view, alphas, view_.d_view);
+    }
+    else {
+      typedef Kokkos::View<Scalar*, DeviceType> view_type;
+
+      Kokkos::View<const Scalar*, DeviceType>::HostMirror h_alphas = Kokkos::create_mirror_view(alphas);
+      Kokkos::deep_copy(h_alphas,alphas);
+      for (size_t k = 0; k < numVecs; ++k) {
+        const size_t this_col = isConstantStride () ? k : whichVectors_[k];
+        view_type vector_k = Kokkos::subview<view_type> (view_.d_view, ALL (), this_col);
+        Kokkos::V_MulScalar (vector_k, alphas(k), vector_k);
       }
     }
   }
@@ -1481,19 +1528,21 @@ namespace { // (anonymous)
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(A.getNumVectors() != numVecs, std::runtime_error,
       ": MultiVectors must have the same number of vectors.");
     if (isConstantStride() && A.isConstantStride()) {
-      // set me == alpha*A
-      MVT::Scale(lclMV_,alpha,(const KMV&)A.lclMV_);
+      view_.sync<DeviceType>();
+      view_.modify<DeviceType>();
+      Kokkos::MV_MulScalar (view_.d_view, alpha, A.view_.d_view);
     }
     else {
-      KMV v(MVT::getNode(lclMV_)), a(MVT::getNode(lclMV_));
-      ArrayRCP<Scalar> vptr  = MVT::getValuesNonConst (lclMV_);
-      ArrayRCP<Scalar> avptr = arcp_const_cast<Scalar> (MVT::getValues (A.lclMV_));
+      view_.sync<DeviceType>();
+      view_.modify<DeviceType>();
+      A.view_.sync<DeviceType>();
+      A.view_.modify<DeviceType>();
       for (size_t j=0; j < numVecs; ++j) {
-        ArrayRCP<Scalar>  vj =   getSubArrayRCP (vptr,  j);
-        ArrayRCP<Scalar> avj = A.getSubArrayRCP (avptr, j);
-        MVT::initializeValues (a,myLen, 1, avj, myLen);
-        MVT::initializeValues (v,myLen, 1,  vj, myLen);
-        MVT::Scale (v, alpha, (const KMV &)a);
+        const size_t this_col = isConstantStride () ? k : whichVectors_[k];
+        view_type vector_k = Kokkos::subview<view_type> (view_.d_view, ALL (), this_col);
+        const size_t A_col = isConstantStride () ? k : A.whichVectors_[k];
+        view_type vector_Ak = Kokkos::subview<view_type> (A.view_.d_view, ALL (), A_col);
+        Kokkos::V_MulScalar (vector_k, alpha, vector_Ak);
       }
     }
   }

@@ -102,14 +102,16 @@ struct MV_MulScalarFunctorSelf
 template<class RVector, class DataType,class Layout,class Device, class MemoryManagement,class Specialisation, class XVector>
 RVector MV_MulScalar( const RVector & r, const typename Kokkos::View<DataType,Layout,Device,MemoryManagement,Specialisation> & a, const XVector & x)
 {
+  if(r.dimension_1()==1)
+    return V_MulScalar(r,a,x);
   typedef	typename Kokkos::View<DataType,Layout,Device,MemoryManagement> aVector;
   if(r==x) {
     MV_MulScalarFunctorSelf<aVector,XVector> op ;
-	op.m_x = x ;
-	op.m_a = a ;
-	op.n = x.dimension(1);
-	Kokkos::parallel_for( x.dimension(0) , op );
-	return r;
+	  op.m_x = x ;
+	  op.m_a = a ;
+	  op.n = x.dimension(1);
+	  Kokkos::parallel_for( x.dimension(0) , op );
+	  return r;
   }
 
   MV_MulScalarFunctor<RVector,aVector,XVector> op ;
@@ -170,13 +172,15 @@ struct MV_MulScalarFunctorSelf<typename XVector::value_type,XVector>
 template<class RVector, class XVector>
 RVector MV_MulScalar( const RVector & r, const typename XVector::value_type &a, const XVector & x)
 {
+  if(r.dimension_1()==1)
+    return V_MulScalar(r,a,x);
   if(r==x) {
     MV_MulScalarFunctorSelf<typename XVector::value_type,XVector> op ;
-	op.m_x = x ;
-	op.m_a = a ;
-	op.n = x.dimension(1);
-	Kokkos::parallel_for( x.dimension(0) , op );
-	return r;
+	  op.m_x = x ;
+	  op.m_a = a ;
+	  op.n = x.dimension(1);
+	  Kokkos::parallel_for( x.dimension(0) , op );
+	  return r;
   }
 
   MV_MulScalarFunctor<RVector,typename XVector::value_type,XVector> op ;
@@ -1222,10 +1226,10 @@ RVector V_MulScalar( const RVector & r, const typename Kokkos::View<DataType,Lay
   typedef	typename Kokkos::View<DataType,Layout,Device,MemoryManagement> aVector;
   if(r==x) {
     V_MulScalarFunctorSelf<aVector,XVector> op ;
-	op.m_x = x ;
-	op.m_a = a ;
-	Kokkos::parallel_for( x.dimension(0) , op );
-	return r;
+	  op.m_x = x ;
+	  op.m_a = a ;
+	  Kokkos::parallel_for( x.dimension(0) , op );
+	  return r;
   }
 
   V_MulScalarFunctor<RVector,aVector,XVector> op ;
@@ -1277,10 +1281,10 @@ RVector V_MulScalar( const RVector & r, const typename XVector::value_type &a, c
 {
   if(r==x) {
     V_MulScalarFunctorSelf<typename XVector::value_type,XVector> op ;
-	op.m_x = x ;
-	op.m_a = a ;
-	Kokkos::parallel_for( x.dimension(0) , op );
-	return r;
+	  op.m_x = x ;
+	  op.m_a = a ;
+	  Kokkos::parallel_for( x.dimension(0) , op );
+	  return r;
   }
 
   V_MulScalarFunctor<RVector,typename XVector::value_type,XVector> op ;

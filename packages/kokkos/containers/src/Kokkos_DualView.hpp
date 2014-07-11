@@ -102,7 +102,7 @@ public:
   //@{
   typedef ViewTraits< DataType , Arg1Type , Arg2Type, Arg3Type > traits ;
 
-  //! The Kokkos Device type; same as the \c Device template parameter.
+  //! The Kokkos Host Device type;
   typedef typename traits::device_type::host_mirror_device_type host_mirror_device_type;
 
   //! The type of a Kokkos::View on the device.

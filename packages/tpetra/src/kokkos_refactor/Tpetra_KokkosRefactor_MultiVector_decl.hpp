@@ -351,6 +351,10 @@ namespace Tpetra {
     //! Type of the (new) Kokkos Device which implements parallel operations.
     typedef typename Node::device_type device_type;
 
+    //! Type of the (new) Kokkos Host Device which implements parallel operations.
+     typedef typename Node::device_type::host_mirror_device_type host_mirror_device_type;
+
+
     //! Kokkos::DualView specialization used by this class.
     typedef Kokkos::DualView<scalar_type**, Kokkos::LayoutLeft, device_type> dual_view_type;
 
@@ -1036,6 +1040,16 @@ namespace Tpetra {
     /// if \c *this contains NaN entries before calling this method,
     /// the NaN entries will remain after this method finishes.
     void scale (Teuchos::ArrayView<const Scalar> alpha);
+
+    /// \brief Scale each column in place: <tt>this[j] = alpha[j]*this[j]</tt>.
+    ///
+    /// Replace each column j of this MultiVector with
+    /// <tt>alpha[j]</tt> times the current column j of this
+    /// MultiVector.  This method will always multiply, even if all
+    /// the entries of alpha are zero.  That means, for example, that
+    /// if \c *this contains NaN entries before calling this method,
+    /// the NaN entries will remain after this method finishes.
+    void scale (Kokkos::View<const Scalar*, device_type> alpha);
 
     /// \brief Scale in place: <tt>this = alpha * A</tt>.
     ///
