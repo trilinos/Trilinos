@@ -102,8 +102,6 @@ struct MV_MulScalarFunctorSelf
 template<class RVector, class DataType,class Layout,class Device, class MemoryManagement,class Specialisation, class XVector>
 RVector MV_MulScalar( const RVector & r, const typename Kokkos::View<DataType,Layout,Device,MemoryManagement,Specialisation> & a, const XVector & x)
 {
-  if(r.dimension_1()==1)
-    return V_MulScalar(r,a,x);
   typedef	typename Kokkos::View<DataType,Layout,Device,MemoryManagement> aVector;
   if(r==x) {
     MV_MulScalarFunctorSelf<aVector,XVector> op ;
@@ -124,14 +122,14 @@ RVector MV_MulScalar( const RVector & r, const typename Kokkos::View<DataType,La
 }
 
 template<class RVector, class XVector>
-struct MV_MulScalarFunctor<RVector,typename XVector::value_type,XVector>
+struct MV_MulScalarFunctor<RVector,typename RVector::value_type,XVector>
 {
   typedef typename XVector::device_type        device_type;
   typedef typename XVector::size_type            size_type;
 
   RVector m_r;
   typename XVector::const_type m_x ;
-  typename XVector::value_type m_a ;
+  typename RVector::value_type m_a ;
   size_type n;
   MV_MulScalarFunctor() {n=1;}
   //--------------------------------------------------------------------------
@@ -172,8 +170,14 @@ struct MV_MulScalarFunctorSelf<typename XVector::value_type,XVector>
 template<class RVector, class XVector>
 RVector MV_MulScalar( const RVector & r, const typename XVector::value_type &a, const XVector & x)
 {
-  if(r.dimension_1()==1)
-    return V_MulScalar(r,a,x);
+  /*if(r.dimension_1()==1) {
+    typedef View<typename RVector::value_type*,typename RVector::device_type> RVector1D;
+    typedef View<typename XVector::const_value_type*,typename XVector::device_type> XVector1D;
+
+    RVector1D r_1d = Kokkos::subview< RVector1D >( r , ALL(),0 );
+    XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
+    return V_MulScalar(r_1d,a,x_1d);
+  }*/
   if(r==x) {
     MV_MulScalarFunctorSelf<typename XVector::value_type,XVector> op ;
 	  op.m_x = x ;
@@ -189,6 +193,85 @@ RVector MV_MulScalar( const RVector & r, const typename XVector::value_type &a, 
   op.m_a = a ;
   op.n = x.dimension(1);
   Kokkos::parallel_for( x.dimension(0) , op );
+  return r;
+}
+
+/*------------------------------------------------------------------------------------------
+ *-------------------------- Reciprocal element wise: y[i] = 1/x[i] ------------------------
+ *------------------------------------------------------------------------------------------*/
+template<class RVector, class XVector>
+struct MV_ReciprocalFunctor
+{
+  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::size_type            size_type;
+
+  RVector m_r;
+  typename XVector::const_type m_x ;
+
+  const size_type m_n;
+  MV_ReciprocalFunctor(RVector r, XVector x, size_type n):m_r(r),m_x(x),m_n(n) {}
+  //--------------------------------------------------------------------------
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i) const
+  {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+  for(size_type k=0;k<m_n;k++)
+     m_r(i,k) = Kokkos::Details::ArithTraits<typename XVector::non_const_value_type>::one() / m_x(i,k);
+  }
+};
+
+template<class XVector>
+struct MV_ReciprocalSelfFunctor
+{
+  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::size_type            size_type;
+
+  XVector m_x ;
+
+  const size_type m_n;
+  MV_ReciprocalSelfFunctor(XVector x, size_type n):m_x(x),m_n(n) {}
+  //--------------------------------------------------------------------------
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i) const
+  {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+  for(size_type k=0;k<m_n;k++)
+     m_x(i,k) = Kokkos::Details::ArithTraits<typename XVector::non_const_value_type>::one() / m_x(i,k);
+  }
+};
+
+template<class RVector, class XVector>
+RVector MV_Reciprocal( const RVector & r, const XVector & x)
+{
+  // TODO: Add error check (didn't link for some reason?)
+  /*if(r.dimension_0() != x.dimension_0())
+    Kokkos::Impl::throw_runtime_exception("Kokkos::MV_Reciprocal -- dimension(0) of r and x don't match");
+  if(r.dimension_1() != x.dimension_1())
+    Kokkos::Impl::throw_runtime_exception("Kokkos::MV_Reciprocal -- dimension(1) of r and x don't match");*/
+
+  //TODO: Get 1D version done
+  /*if(r.dimension_1()==1) {
+    typedef View<typename RVector::value_type*,typename RVector::device_type> RVector1D;
+    typedef View<typename XVector::const_value_type*,typename XVector::device_type> XVector1D;
+
+    RVector1D r_1d = Kokkos::subview< RVector1D >( r , ALL(),0 );
+    XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
+    return V_MulScalar(r_1d,a,x_1d);
+  }*/
+  if(r==x) {
+    MV_ReciprocalSelfFunctor<XVector> op(x,x.dimension_1()) ;
+    Kokkos::parallel_for( x.dimension_0() , op );
+    return r;
+  }
+
+  MV_ReciprocalFunctor<RVector,XVector> op(r,x,x.dimension_1()) ;
+  Kokkos::parallel_for( x.dimension_0() , op );
   return r;
 }
 /*------------------------------------------------------------------------------------------
@@ -1280,8 +1363,8 @@ template<class RVector, class XVector>
 RVector V_MulScalar( const RVector & r, const typename XVector::value_type &a, const XVector & x)
 {
   if(r==x) {
-    V_MulScalarFunctorSelf<typename XVector::value_type,XVector> op ;
-	  op.m_x = x ;
+    V_MulScalarFunctorSelf<typename RVector::value_type,RVector> op ;
+	  op.m_x = r ;
 	  op.m_a = a ;
 	  Kokkos::parallel_for( x.dimension(0) , op );
 	  return r;
@@ -1501,6 +1584,66 @@ V_Dot( const XVector & x, const YVector & y, int n = -1)
   typename Functor::value_type ret_val;
   parallel_reduce(n,f,ret_val);
   return ret_val;
+}
+
+/*------------------------------------------------------------------------------------------
+ *-------------------------- Reciprocal element wise: y[i] = 1/x[i] ------------------------
+ *------------------------------------------------------------------------------------------*/
+template<class RVector, class XVector>
+struct V_ReciprocalFunctor
+{
+  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::size_type            size_type;
+
+  RVector m_r;
+  typename XVector::const_type m_x ;
+
+  V_ReciprocalFunctor(RVector r, XVector x):m_r(r),m_x(x) {}
+  //--------------------------------------------------------------------------
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i) const
+  {
+    m_r(i) = Kokkos::Details::ArithTraits<typename XVector::non_const_value_type>::one() / m_x(i);
+  }
+};
+
+template<class XVector>
+struct V_ReciprocalSelfFunctor
+{
+  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::size_type            size_type;
+
+  XVector m_x ;
+
+  V_ReciprocalSelfFunctor(XVector x):m_x(x) {}
+  //--------------------------------------------------------------------------
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i) const
+  {
+     m_x(i) = Kokkos::Details::ArithTraits<typename XVector::non_const_value_type>::one() / m_x(i);
+  }
+};
+
+template<class RVector, class XVector>
+RVector V_Reciprocal( const RVector & r, const XVector & x)
+{
+  // TODO: Add error check (didn't link for some reason?)
+  /*if(r.dimension_0() != x.dimension_0())
+    Kokkos::Impl::throw_runtime_exception("Kokkos::MV_Reciprocal -- dimension(0) of r and x don't match");
+  */
+
+
+  if(r==x) {
+    V_ReciprocalSelfFunctor<XVector> op(x) ;
+    Kokkos::parallel_for( x.dimension_0() , op );
+    return r;
+  }
+
+  V_ReciprocalFunctor<RVector,XVector> op(r,x) ;
+  Kokkos::parallel_for( x.dimension_0() , op );
+  return r;
 }
 }//end namespace Kokkos
 #endif /* KOKKOS_MULTIVECTOR_H_ */

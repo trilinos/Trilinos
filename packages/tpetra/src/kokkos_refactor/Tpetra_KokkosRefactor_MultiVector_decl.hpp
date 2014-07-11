@@ -1049,7 +1049,7 @@ namespace Tpetra {
     /// the entries of alpha are zero.  That means, for example, that
     /// if \c *this contains NaN entries before calling this method,
     /// the NaN entries will remain after this method finishes.
-    void scale (Kokkos::View<const Scalar*, device_type> alpha);
+    void scale (const Kokkos::View<const Scalar*, device_type> alpha);
 
     /// \brief Scale in place: <tt>this = alpha * A</tt>.
     ///

@@ -1391,10 +1391,7 @@ namespace { // (anonymous)
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   scale (const Scalar &alpha)
   {
-    // KR FIXME Need MVT::Scale (in place): Kernels for this already exist.
-    //
-    // (*this) := alpha * (*this)
-
+    using Kokkos::ALL;
     using Teuchos::arcp_const_cast;
     using Teuchos::ArrayRCP;
 
@@ -1406,8 +1403,8 @@ namespace { // (anonymous)
       // do nothing
     }
     else if (isConstantStride ()) {
-      view_.sync<DeviceType>();
-      view_.modify<DeviceType>();
+      view_.template sync<DeviceType>();
+      view_.template modify<DeviceType>();
       Kokkos::MV_MulScalar (view_.d_view, alpha, view_.d_view);
     }
     else {
@@ -1427,12 +1424,7 @@ namespace { // (anonymous)
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   scale (Teuchos::ArrayView<const Scalar> alphas)
   {
-    // KR FIXME Need MVT::Scale (in place): Kernels for this already exist.
-    //
-    // (*this)(j) := alpha(j) * (*this)(j)
-    //
-    // KR FIXME Overload this method to take a Kokkos::View<const Scalar>.
-
+    using Kokkos::ALL;
     using Teuchos::arcp_const_cast;
     using Teuchos::ArrayRCP;
 
@@ -1451,10 +1443,10 @@ namespace { // (anonymous)
       Kokkos::DualView<Scalar*,device_type> k_alphas("Alphas::tmp",alphas.size());
       for(int i=0; i<alphas.size(); i++)
          k_alphas.h_view(i) = alphas[i];
-      k_alphas.modify<host_mirror_device_type>();
-      k_alphas.sync<device_type>();
-      view_.sync<DeviceType>();
-      view_.modify<DeviceType>();
+      k_alphas.template modify<host_mirror_device_type>();
+      k_alphas.template sync<device_type>();
+      view_.template sync<DeviceType>();
+      view_.template modify<DeviceType>();
       Kokkos::MV_MulScalar (view_.d_view, k_alphas.d_view, view_.d_view);
     }
     else {
@@ -1471,8 +1463,9 @@ namespace { // (anonymous)
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
-  scale (Kokkos::View<const Scalar*, DeviceType> alphas)
+  scale (const Kokkos::View<const Scalar*, device_type> alphas) 
   {
+    using Kokkos::ALL;
     using Teuchos::arcp_const_cast;
     using Teuchos::ArrayRCP;
 
@@ -1488,14 +1481,14 @@ namespace { // (anonymous)
     }
 
     if (isConstantStride ()) {
-      view_.sync<DeviceType>();
-      view_.modify<DeviceType>();
+      view_.template sync<DeviceType>();
+      view_.template modify<DeviceType>();
       Kokkos::MV_MulScalar (view_.d_view, alphas, view_.d_view);
     }
     else {
       typedef Kokkos::View<Scalar*, DeviceType> view_type;
 
-      Kokkos::View<const Scalar*, DeviceType>::HostMirror h_alphas = Kokkos::create_mirror_view(alphas);
+      typename Kokkos::View<const Scalar*, device_type>::HostMirror h_alphas = Kokkos::create_mirror_view(alphas);
       Kokkos::deep_copy(h_alphas,alphas);
       for (size_t k = 0; k < numVecs; ++k) {
         const size_t this_col = isConstantStride () ? k : whichVectors_[k];
@@ -1528,20 +1521,22 @@ namespace { // (anonymous)
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(A.getNumVectors() != numVecs, std::runtime_error,
       ": MultiVectors must have the same number of vectors.");
     if (isConstantStride() && A.isConstantStride()) {
-      view_.sync<DeviceType>();
-      view_.modify<DeviceType>();
+      view_.template sync<DeviceType>();
+      view_.template modify<DeviceType>();
       Kokkos::MV_MulScalar (view_.d_view, alpha, A.view_.d_view);
     }
     else {
-      view_.sync<DeviceType>();
-      view_.modify<DeviceType>();
-      A.view_.sync<DeviceType>();
-      A.view_.modify<DeviceType>();
-      for (size_t j=0; j < numVecs; ++j) {
+      typedef Kokkos::View<Scalar*, DeviceType> view_type;
+      
+      view_.template sync<DeviceType>();
+      view_.template modify<DeviceType>();
+      A.view_.template sync<DeviceType>();
+      A.view_.template modify<DeviceType>();
+      for (size_t k=0; k < numVecs; ++k) {
         const size_t this_col = isConstantStride () ? k : whichVectors_[k];
-        view_type vector_k = Kokkos::subview<view_type> (view_.d_view, ALL (), this_col);
+        view_type vector_k = Kokkos::subview<view_type> (view_.d_view, Kokkos::ALL (), this_col);
         const size_t A_col = isConstantStride () ? k : A.whichVectors_[k];
-        view_type vector_Ak = Kokkos::subview<view_type> (A.view_.d_view, ALL (), A_col);
+        view_type vector_Ak = Kokkos::subview<view_type> (A.view_.d_view, Kokkos::ALL (), A_col);
         Kokkos::V_MulScalar (vector_k, alpha, vector_Ak);
       }
     }
@@ -1569,18 +1564,23 @@ namespace { // (anonymous)
     const size_t myLen = getLocalLength();
     try {
       if (isConstantStride() && A.isConstantStride()) {
-        MVT::Recip(lclMV_,(const KMV&)A.lclMV_);
+        view_.template sync<DeviceType>();
+        view_.template modify<DeviceType>();
+        Kokkos::MV_Reciprocal(view_.d_view,A.view_.d_view);
       }
       else {
-        KMV v(MVT::getNode(lclMV_)), a(MVT::getNode(lclMV_));
-        ArrayRCP<Scalar> vptr = MVT::getValuesNonConst(lclMV_),
-                        avptr = arcp_const_cast<Scalar>(MVT::getValues(A.lclMV_));
-        for (size_t j=0; j < numVecs; ++j) {
-          ArrayRCP<Scalar> vj =   getSubArrayRCP( vptr,j),
-                          avj = A.getSubArrayRCP(avptr,j);
-          MVT::initializeValues(a,myLen, 1, avj, myLen);
-          MVT::initializeValues(v,myLen, 1,  vj, myLen);
-          MVT::Recip(v,(const KMV &)a);
+        typedef Kokkos::View<Scalar*, DeviceType> view_type;
+
+        view_.template sync<DeviceType>();
+        view_.template modify<DeviceType>();
+        A.view_.template sync<DeviceType>();
+        A.view_.template modify<DeviceType>();
+        for (size_t k=0; k < numVecs; ++k) {
+          const size_t this_col = isConstantStride () ? k : whichVectors_[k];
+          view_type vector_k = Kokkos::subview<view_type> (view_.d_view, Kokkos::ALL (), this_col);
+          const size_t A_col = isConstantStride () ? k : A.whichVectors_[k];
+          view_type vector_Ak = Kokkos::subview<view_type> (A.view_.d_view, Kokkos::ALL (), A_col);
+          Kokkos::V_Reciprocal(vector_k, vector_Ak);
         }
       }
     }
