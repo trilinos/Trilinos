@@ -1514,8 +1514,8 @@ namespace { // (anonymous)
 
     const char tfecfFuncName[] = "scale(alpha,A)";
 
-    const size_t numVecs = getNumVectors(),
-                 myLen   = getLocalLength();
+    const size_t numVecs = getNumVectors();
+
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( getLocalLength() != A.getLocalLength(), std::runtime_error,
       ": MultiVectors do not have the same local length.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(A.getNumVectors() != numVecs, std::runtime_error,
