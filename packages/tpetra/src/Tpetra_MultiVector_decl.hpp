@@ -1378,6 +1378,13 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   clone (const RCP<Node2> &node2) const
   {
+    // KR FIXME: Can't do partial specializations of a free function.
+    // Split off into a class, just like you did for CrsMatrix, etc.
+    // In fact, that could even be a class templated on "ObjectType",
+    // with partial specializations for MultiVector, CrsGraph,
+    // CrsMatrix, etc.  Use that class to implement clone().  Make
+    // that class a friend of each of the objects (?).
+
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
     using Teuchos::rcp;
