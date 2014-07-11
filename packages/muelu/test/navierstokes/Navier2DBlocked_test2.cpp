@@ -406,7 +406,7 @@ int main(int argc, char *argv[]) {
   UncoupledAggFact11->SetFactory("Graph", dropFact11);
   UncoupledAggFact11->SetMinNodesPerAggregate(9);
   UncoupledAggFact11->SetMaxNeighAlreadySelected(2);
-  UncoupledAggFact11->SetOrdering(MueLu::AggOptions::NATURAL);
+  UncoupledAggFact11->SetOrdering("natural");
 
   RCP<CoarseMapFactory> coarseMapFact11 = Teuchos::rcp(new CoarseMapFactory());
   coarseMapFact11->setStridingData(stridingInfo);

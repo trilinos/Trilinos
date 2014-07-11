@@ -458,8 +458,14 @@ namespace MueLu {
       aggFactory = rcp(new UncoupledAggregationFactory());
       ParameterList aggParams;
       MUELU_TEST_AND_SET_PARAM(aggParams, "aggregation: mode",                      paramList, defaultList, std::string);
+      MUELU_TEST_AND_SET_PARAM(aggParams, "aggregation: ordering",                  paramList, defaultList, std::string);
       MUELU_TEST_AND_SET_PARAM(aggParams, "aggregation: min agg size",              paramList, defaultList, int);
       MUELU_TEST_AND_SET_PARAM(aggParams, "aggregation: max agg size",              paramList, defaultList, int);
+      MUELU_TEST_AND_SET_PARAM(aggParams, "aggregation: max selected neighbors",    paramList, defaultList, int);
+      MUELU_TEST_AND_SET_PARAM(aggParams, "aggregation: enable phase 1",            paramList, defaultList, bool);
+      MUELU_TEST_AND_SET_PARAM(aggParams, "aggregation: enable phase 2a",           paramList, defaultList, bool);
+      MUELU_TEST_AND_SET_PARAM(aggParams, "aggregation: enable phase 2b",           paramList, defaultList, bool);
+      MUELU_TEST_AND_SET_PARAM(aggParams, "aggregation: enable phase 3",            paramList, defaultList, bool);
       MUELU_TEST_AND_SET_PARAM(aggParams, "aggregation: preserve Dirichlet points", paramList, defaultList, bool);
       aggFactory->SetParameterList(aggParams);
 
@@ -625,7 +631,6 @@ namespace MueLu {
       // Repartitioner
       RCP<RepartitionFactory> repartFactory = rcp(new RepartitionFactory());
       ParameterList repartParams;
-      MUELU_TEST_AND_SET_PARAM(repartParams, "repartition: start level",       paramList, defaultList, int);
       MUELU_TEST_AND_SET_PARAM(repartParams, "repartition: start level",       paramList, defaultList, int);
       MUELU_TEST_AND_SET_PARAM(repartParams, "repartition: min rows per proc", paramList, defaultList, int);
       MUELU_TEST_AND_SET_PARAM(repartParams, "repartition: max imbalance",     paramList, defaultList, double);

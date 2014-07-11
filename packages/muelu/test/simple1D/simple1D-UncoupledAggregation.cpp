@@ -177,9 +177,9 @@ int main(int argc, char *argv[]) {
   //UnCoupledAggFact->SetMinNodesPerAggregate(minPerAgg);
   //UnCoupledAggFact->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
   //UnCoupledAggFact->SetOrdering(MueLu::AggOptions::GRAPH);
-  UnCoupledAggFact->SetParameter("MaxNeighAlreadySelected",Teuchos::ParameterEntry(maxNbrAlreadySelected));
-  UnCoupledAggFact->SetParameter("aggregation: min agg size",Teuchos::ParameterEntry(minPerAgg));
-  UnCoupledAggFact->SetParameter("Ordering",Teuchos::ParameterEntry(MueLu::AggOptions::GRAPH));
+  UnCoupledAggFact->SetParameter("aggregation: max selected neighbors", Teuchos::ParameterEntry(maxNbrAlreadySelected));
+  UnCoupledAggFact->SetParameter("aggregation: min agg size",           Teuchos::ParameterEntry(minPerAgg));
+  UnCoupledAggFact->SetParameter("aggregation: ordering",               Teuchos::ParameterEntry(std::string("graph")));
 
   Finest->Request("Graph",dropFact.get());
   Finest->Request("DofsPerNode",dropFact.get());

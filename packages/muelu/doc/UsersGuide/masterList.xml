@@ -61,6 +61,13 @@
     <description>Aggregation scheme. Possible values: "uncoupled", "coupled".</description>
   </parameter>
 
+  <parameter>
+    <name>aggregation: ordering</name>
+    <type>string</type>
+    <default>"natural"</default>
+    <description>Ordering strategy. Possible values: "natrual", "graph", "random".</description>
+  </parameter>
+
 <!--
   <parameter>
     <name>aggregation: symmetrize</name>
@@ -99,10 +106,58 @@
   </parameter>
 
   <parameter>
+    <name>aggregation: max selected neighbors</name>
+    <type>int</type>
+    <default>0</default>
+    <description>Number of maximum neighbour nodes that are already aggregated already. If a new aggregate has some neighbours that are already aggregated, this node probably can be added to one of these aggregates. We don't need a new one.</description>
+    <visible>false</visible>
+  </parameter>
+
+  <parameter>
     <name>aggregation: Dirichlet threshold</name>
     <type>double</type>
     <default>0.0</default>
     <description>Threshold for determining whether entries are zero during Dirichlet row detection.</description>
+  </parameter>
+
+  <parameter>
+    <name>aggregation: enable phase 1</name>
+    <type>bool</type>
+    <default>true</default>
+    <description>Turn on/off phase 1 of aggregation</description>
+    <visible>false</visible>
+  </parameter>
+
+  <parameter>
+    <name>aggregation: enable phase 2a</name>
+    <type>bool</type>
+    <default>true</default>
+    <description>Turn on/off phase 2a of aggregation</description>
+    <visible>false</visible>
+  </parameter>
+
+  <parameter>
+    <name>aggregation: enable phase 2b</name>
+    <type>bool</type>
+    <default>true</default>
+    <description>Turn on/off phase 2b of aggregation</description>
+    <visible>false</visible>
+  </parameter>
+
+  <parameter>
+    <name>aggregation: enable phase 3</name>
+    <type>bool</type>
+    <default>true</default>
+    <description>Turn on/off phase 3 of aggregation</description>
+    <visible>false</visible>
+  </parameter>
+
+  <parameter>
+    <name>aggregation: preserve Dirichlet points</name>
+    <type>bool</type>
+    <default>false</default>
+    <description>Turn on/off Dirichlet points preservation</description>
+    <visible>false</visible>
   </parameter>
 
   <parameter>

@@ -306,15 +306,9 @@ int main(int argc, char *argv[]) {
       AggregationFact->SetMinNodesPerAggregate(optMinPerAgg);  //TODO should increase if run anything othpermRFacter than 1D
       AggregationFact->SetMaxNeighAlreadySelected(optMaxNbrSel);
       std::transform(optAggOrdering.begin(), optAggOrdering.end(), optAggOrdering.begin(), ::tolower);
-      if (optAggOrdering == "natural") {
-        *out << "aggregate ordering :                    NATURAL" << std::endl;
-        AggregationFact->SetOrdering(MueLu::AggOptions::NATURAL);
-      } else if (optAggOrdering == "random") {
-        *out << "aggregate ordering :                    RANDOM" << std::endl;
-        AggregationFact->SetOrdering(MueLu::AggOptions::RANDOM);
-      } else if (optAggOrdering == "graph") {
-        *out << "aggregate ordering :                    GRAPH" << std::endl;
-        AggregationFact->SetOrdering(MueLu::AggOptions::GRAPH);
+      if (optAggOrdering == "natural" || optAggOrdering == "random" || optAggOrdering == "graph") {
+        *out << "aggregate ordering :                    " << optAggOrdering << std::endl;
+        AggregationFact->SetOrdering(optAggOrdering);
       } else {
         std::string msg = "main: bad aggregation option """ + optAggOrdering + """.";
         throw(MueLu::Exceptions::RuntimeError(msg));

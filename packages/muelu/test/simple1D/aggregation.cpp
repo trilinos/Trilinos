@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
   aggOptions.SetPrintFlag(6);
   aggOptions.SetMinNodesPerAggregate(2);
   aggOptions.SetMaxNeighAlreadySelected(0);
-  aggOptions.SetOrdering(MueLu::AggOptions::NATURAL);
+  aggOptions.SetOrdering("natural");
   aggOptions.SetPhase3AggCreation(0.5);
   CoupledAggregationFactory aggFact(aggOptions);
   RCP<Graph> graph = rcp(new Graph(Op->getCrsGraph(), "someGraphLabel"));

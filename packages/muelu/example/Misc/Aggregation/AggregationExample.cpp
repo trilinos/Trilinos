@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
   RCP<CoupledAggregationFactory> AggFact = rcp(new CoupledAggregationFactory());
   AggFact->SetMinNodesPerAggregate(2);
   AggFact->SetMaxNeighAlreadySelected(5);
-  AggFact->SetOrdering(MueLu::AggOptions::GRAPH);
+  AggFact->SetOrdering("graph");
   //AggFact->SetPhase3AggCreation(0.5); TODO: error with explicit instantiation. I don't know why
 
 #ifdef JG_TO_UPDATE

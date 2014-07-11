@@ -28,3 +28,8 @@ sed -i 's/"numRemapValues"/"repartition: remap num values"/'                    
 sed -i 's/"alwaysKeepProc0"/"repartition: keep proc 0"/'                        $in
 sed -i 's/"Damping factor"/"sa: damping factor"/'                               $in
 sed -i 's/"lumping"/"filtered matrix: use lumping"/'                            $in
+sed -i 's/"Ordering"/"aggregation: ordering"/'                                  $in
+sed -i 's/value="Natural"/value="natural"/'                                     $in
+sed -i 's/value="Graph"/value="graph"/'                                         $in
+sed -i 's/value="Random"/value="random"/'                                       $in
+sed -i 's/"MaxNeighAlreadySelected"/"aggregation: max selected neighbors"/'     $in

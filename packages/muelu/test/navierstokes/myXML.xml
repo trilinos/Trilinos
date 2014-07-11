@@ -46,7 +46,7 @@
       <Parameter name="Graph" type="string" value="myDropFact1"/>
       <Parameter name="DofsPerNode" type="string" value="myDropFact1"/>
       <Parameter name="aggregation: min agg size" type="int" value="5"/>
-      <Parameter name="MaxNeighAlreadySelected" type="int" value="1"/>
+      <Parameter name="aggregation: max selected neighbors" type="int" value="1"/>
     </ParameterList>
 
     <ParameterList name="myCoarseMap1">

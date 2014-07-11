@@ -101,12 +101,12 @@ public:
   // Options shared by all aggregation algorithms
 
   // deprecated
-  void SetOrdering(AggOptions::Ordering ordering) {
-    SetParameter("Ordering", ParameterEntry(ordering)); // revalidate
+  void SetOrdering(const std::string& ordering) {
+    SetParameter("aggregation: ordering", ParameterEntry(ordering));
   }
   // deprecated
   void SetMaxNeighAlreadySelected(int maxNeighAlreadySelected) {
-    SetParameter("MaxNeighAlreadySelected", ParameterEntry(Teuchos::as<LocalOrdinal>(maxNeighAlreadySelected))); // revalidate
+    SetParameter("aggregation: max selected neighbors", ParameterEntry(Teuchos::as<LocalOrdinal>(maxNeighAlreadySelected))); // revalidate
   }
   // deprecated
   void SetMinNodesPerAggregate(int minNodesPerAggregate) {
@@ -119,15 +119,14 @@ public:
   }
 
   // deprecated
-  Ordering GetOrdering() const {
+  const std::string& GetOrdering() const {
     const ParameterList& pL = GetParameterList();
-    Ordering ordering = pL.get<Ordering>("Ordering");
-    return ordering;
+    return pL.get<std::string>("aggregation: ordering");
   }
   // deprecated
   int GetMaxNeighAlreadySelected() const {
     const ParameterList& pL = GetParameterList();
-    return Teuchos::as<int>(pL.get<LocalOrdinal>("MaxNeighAlreadySelected"));
+    return Teuchos::as<int>(pL.get<LocalOrdinal>("aggregation: max selected neighbors"));
   }
   // deprecated
   int GetMinNodesPerAggregate() const {

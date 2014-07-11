@@ -213,15 +213,9 @@ int main(int argc, char *argv[]) {
   CoupledAggFact->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
   CoupledAggFact->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
   std::transform(aggOrdering.begin(), aggOrdering.end(), aggOrdering.begin(), ::tolower);
-  if (aggOrdering == "natural") {
-    *out << "aggregate ordering :                    NATURAL" << std::endl;
-    CoupledAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
-  } else if (aggOrdering == "random") {
-    *out << "aggregate ordering :                    RANDOM" << std::endl;
-    CoupledAggFact->SetOrdering(MueLu::AggOptions::RANDOM);
-  } else if (aggOrdering == "graph") {
-    *out << "aggregate ordering :                    GRAPH" << std::endl;
-    CoupledAggFact->SetOrdering(MueLu::AggOptions::GRAPH);
+  if (aggOrdering == "natural" || aggOrdering == "random" || aggOrdering == "graph") {
+    *out << "aggregate ordering :                    " << aggOrdering << std::endl;
+    CoupledAggFact->SetOrdering(aggOrdering);
   } else {
     std::string msg = "main: bad aggregation option """ + aggOrdering + """.";
     throw(MueLu::Exceptions::RuntimeError(msg));

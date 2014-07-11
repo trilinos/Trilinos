@@ -268,7 +268,7 @@ namespace MueLu {
     // ======================================================================================================
     // From a user perspective, we want user to not care about remapping, thinking of it as only a performance feature.
     // There are two problems, however.
-    // (1) Next level aggregation depends on the order of GIDs in the vector, if one uses NATURAL or RANDOM orderings.
+    // (1) Next level aggregation depends on the order of GIDs in the vector, if one uses "natural" or "random" orderings.
     //     This also means that remapping affects next level aggregation, despite the fact that the _set_ of GIDs for
     //     each partition is the same.
     // (2) Even with the fixed order of GIDs, the remapping may influence the aggregation for the next-next level.

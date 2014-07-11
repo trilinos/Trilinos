@@ -22,16 +22,16 @@
       <Parameter name="factory"                             type="string" value="UncoupledAggregationFactory"/>
       <Parameter name="Graph"                               type="string" value="myCoalesceDropFact"/>
       <Parameter name="DofsPerNode"                         type="string" value="myCoalesceDropFact"/>
-      <Parameter name="Ordering"                            type="string" value="Graph"/>
-      <Parameter name="MaxNeighAlreadySelected"             type="int"    value="0"/>
+      <Parameter name="aggregation: ordering"                            type="string" value="graph"/>
+      <Parameter name="aggregation: max selected neighbors"             type="int"    value="0"/>
       <Parameter name="aggregation: min agg size"           type="int"    value="9"/>
     </ParameterList>
 
     <ParameterList name="CoupledAggregationFact">
       <Parameter name="factory"                             type="string" value="CoupledAggregationFactory"/>
       <Parameter name="Graph"                               type="string" value="myCoalesceDropFact"/>
-      <Parameter name="Ordering"                            type="string" value="Graph"/>
-      <Parameter name="MaxNeighAlreadySelected"             type="int"    value="0"/>
+      <Parameter name="aggregation: ordering"                            type="string" value="graph"/>
+      <Parameter name="aggregation: max selected neighbors"             type="int"    value="0"/>
       <Parameter name="aggregation: min agg size"           type="int"    value="3"/>
     </ParameterList>
 

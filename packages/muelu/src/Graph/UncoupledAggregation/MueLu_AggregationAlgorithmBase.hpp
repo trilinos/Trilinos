@@ -43,13 +43,6 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * MueLu_AggregationAlgorithmBase.hpp
- *
- *  Created on: Sep 17, 2012
- *      Author: Tobias Wiesner
- */
-
 #ifndef MUELU_AGGREGATIONALGORITHMBASE_HPP_
 #define MUELU_AGGREGATIONALGORITHMBASE_HPP_
 
@@ -58,14 +51,10 @@
 
 #include "MueLu_Aggregates_fwd.hpp"
 
-#include "MueLu_GraphBase.hpp"
 #include "MueLu_Aggregates.hpp"
-
-#include "MueLu_AggOptions.hpp"
+#include "MueLu_GraphBase.hpp"
 
 namespace MueLu {
-
-  using namespace AggOptions; // necessary
 
   // In the algorithm, aggStat[] = READY/NOTSEL/SELECTED indicates whether a node has been aggregated
   enum NodeState {

@@ -195,7 +195,7 @@ int main(int argc, char *argv[]) {
   RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
   CoupledAggFact->SetMinNodesPerAggregate(3);
   CoupledAggFact->SetMaxNeighAlreadySelected(0);
-  CoupledAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+  CoupledAggFact->SetOrdering("natural");
   CoupledAggFact->SetPhase3AggCreation(0.5);
 
   RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(CoupledAggFact));

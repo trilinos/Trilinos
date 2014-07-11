@@ -20,7 +20,7 @@
       <Parameter name="factory"                             type="string" value="UncoupledAggregationFactory"/>
       <Parameter name="Graph"                               type="string" value="myCoalesceDropFact"/>
       <Parameter name="DofsPerNode"                         type="string" value="myCoalesceDropFact"/>
-      <Parameter name="Ordering"                            type="string" value="Natural"/>
+      <Parameter name="aggregation: ordering"               type="string" value="Natural"/>
       <Parameter name="aggregation: min agg size"           type="int"    value="$MINAGGS"/>
       <Parameter name="aggregation: max agg size"           type="int"    value="$MAXAGGS"/>
     </ParameterList>

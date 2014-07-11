@@ -162,7 +162,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, Iterate)
   RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
   CoupledAggFact->SetMinNodesPerAggregate(3);
   CoupledAggFact->SetMaxNeighAlreadySelected(0);
-  CoupledAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+  CoupledAggFact->SetOrdering("natural");
   CoupledAggFact->SetPhase3AggCreation(0.5);
 
   RCP<CoalesceDropFactory> cdFact;
@@ -254,7 +254,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, IterateWithImplicitRestriction)
   RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
   CoupledAggFact->SetMinNodesPerAggregate(3);
   CoupledAggFact->SetMaxNeighAlreadySelected(0);
-  CoupledAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+  CoupledAggFact->SetOrdering("natural");
   CoupledAggFact->SetPhase3AggCreation(0.5);
   RCP<CoalesceDropFactory> cdFact;
   RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory());

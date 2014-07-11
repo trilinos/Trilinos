@@ -418,7 +418,7 @@ int main(int argc, char *argv[]) {
   UncoupledAggFact11->SetFactory("Graph", dropFact11);
   UncoupledAggFact11->SetMinNodesPerAggregate(9);
   UncoupledAggFact11->SetMaxNeighAlreadySelected(2);
-  UncoupledAggFact11->SetOrdering(MueLu::AggOptions::NATURAL);
+  UncoupledAggFact11->SetOrdering("natural");
 
   RCP<CoarseMapFactory> coarseMapFact11 = Teuchos::rcp(new CoarseMapFactory());
   coarseMapFact11->setStridingData(stridingInfo);
@@ -460,7 +460,7 @@ int main(int argc, char *argv[]) {
   UncoupledAggFact22->SetFactory("Graph", dropFact22);
   UncoupledAggFact22->SetMinNodesPerAggregate(6);
   UncoupledAggFact22->SetMaxNeighAlreadySelected(2);
-  UncoupledAggFact22->SetOrdering(MueLu::AggOptions::NATURAL);
+  UncoupledAggFact22->SetOrdering("natural");
 
   // connect null space and tentative PFactory
   Teuchos::RCP<NullspaceFactory> nspFact22 = Teuchos::rcp(new NullspaceFactory("Nullspace2"));

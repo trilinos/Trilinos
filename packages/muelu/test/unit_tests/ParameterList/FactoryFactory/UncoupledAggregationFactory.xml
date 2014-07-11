@@ -9,7 +9,7 @@
   <ParameterList name="Aggregates1">
     <Parameter name="factory"    type="string" value="UncoupledAggregationFactory"/>
 
-    <Parameter name="MaxNeighAlreadySelected" type="int" value="0"/>
+    <Parameter name="aggregation: max selected neighbors" type="int" value="0"/>
     <Parameter name="aggregation: min agg size" type="int" value="2"/>
   </ParameterList>
 
