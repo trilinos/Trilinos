@@ -86,6 +86,9 @@ namespace panzer_stk_classic {
     //! Map showing which cell averaged fields need to be written out for each element block
     std::map<std::string,std::vector<std::string> > blockIdToCellAvgFields_;
 
+    //! Map showing which cell averaged vector fields need to be written out for each element block
+    std::map<std::string,std::vector<std::string> > blockIdToCellAvgVectors_;
+
     //! Map showing which cell fields need to be written out for each element block
     std::map<std::string,std::vector<std::string> > blockIdToCellFields_;
 

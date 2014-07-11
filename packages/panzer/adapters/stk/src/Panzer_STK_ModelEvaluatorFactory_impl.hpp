@@ -166,6 +166,7 @@ namespace panzer_stk_classic {
       pl->sublist("Output").set("Write to Exodus",true);
       pl->sublist("Output").sublist("Cell Average Quantities").disableRecursiveValidation();
       pl->sublist("Output").sublist("Cell Quantities").disableRecursiveValidation();
+      pl->sublist("Output").sublist("Cell Average Vectors").disableRecursiveValidation();
       pl->sublist("Output").sublist("Nodal Quantities").disableRecursiveValidation();
       pl->sublist("Output").sublist("Allocate Nodal Quantities").disableRecursiveValidation();
 
@@ -299,6 +300,7 @@ namespace panzer_stk_classic {
     panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
     cm_factory.buildObjects(io_cm_builder);
 
+    // register cell averaged scalar fields
     Teuchos::ParameterList & cellAvgQuants = output_list.sublist("Cell Average Quantities");
     for(Teuchos::ParameterList::ConstIterator itr=cellAvgQuants.begin();
         itr!=cellAvgQuants.end();++itr) {
@@ -311,6 +313,26 @@ namespace panzer_stk_classic {
 
        for(std::size_t i=0;i<tokens.size();i++)
           mesh->addCellField(tokens[i],blockId);
+    }
+
+    // register cell averaged components of vector fields 
+    // just allocate space for the fields here. The actual calculation and writing 
+    // are done by panzer_stk_classic::ScatterCellAvgVector.
+    Teuchos::ParameterList & cellAvgVectors = output_list.sublist("Cell Average Vectors");
+    for(Teuchos::ParameterList::ConstIterator itr = cellAvgVectors.begin();
+        itr != cellAvgVectors.end(); ++itr) {
+       const std::string & blockId = itr->first;
+       const std::string & fields = Teuchos::any_cast<std::string>(itr->second.getAny());
+       std::vector<std::string> tokens;
+
+       // break up comma seperated fields
+       panzer::StringTokenizer(tokens,fields,",",true);
+
+       for(std::size_t i = 0; i < tokens.size(); i++) {
+          std::string d_mod[3] = {"X","Y","Z"};
+          for(std::size_t d = 0; d < mesh->getDimension(); d++) 
+              mesh->addCellField(tokens[i]+d_mod[d],blockId);  
+       }   
     }
 
     // register cell quantities

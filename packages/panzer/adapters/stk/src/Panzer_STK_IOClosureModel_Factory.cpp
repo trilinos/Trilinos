@@ -44,6 +44,7 @@
 #include "Panzer_Traits.hpp"
 #include "Panzer_STK_IOClosureModel_Factory.hpp"
 #include "Panzer_STK_ScatterCellAvgQuantity.hpp"
+#include "Panzer_STK_ScatterCellAvgVector.hpp"
 #include "Panzer_STK_ScatterCellQuantity.hpp"
 #include "Panzer_STK_ScatterFields.hpp"
 
@@ -95,6 +96,28 @@ buildClosureModels(const std::string& model_id,
         pl.set("Scatter Name", block_id+"_Cell_Avg_Fields");
         Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval
             = Teuchos::rcp(new panzer_stk_classic::ScatterCellAvgQuantity<panzer::Traits::Residual,panzer::Traits>(pl));
+        fm.registerEvaluator<panzer::Traits::Residual>(eval);
+        fm.requireField<panzer::Traits::Residual>(*eval->evaluatedFields()[0]);
+   
+        evaluators->push_back(eval);
+   
+        blockIdEvaluated_[block_id] = true;
+     } 
+
+     // if a requested field is found then add in cell avg vector evaluator
+     BlockIdToFields::const_iterator cellAvgVecItr = blockIdToCellAvgVectors_.find(block_id);
+     if(cellAvgVecItr != blockIdToCellAvgVectors_.end() ) {
+        justOnce = true;
+        Teuchos::RCP<std::vector<std::string> > fieldNames = Teuchos::rcp(new std::vector<std::string>(cellAvgVecItr->second));
+   
+        // setup cell average vectors
+        Teuchos::ParameterList pl;
+        pl.set("Mesh",mesh_);
+        pl.set("IR",ir);
+        pl.set("Field Names",fieldNames);
+        pl.set("Scatter Name", block_id+"_Cell_Avg_Vectors");
+        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval
+            = Teuchos::rcp(new panzer_stk_classic::ScatterCellAvgVector<panzer::Traits::Residual,panzer::Traits>(pl));
         fm.registerEvaluator<panzer::Traits::Residual>(eval);
         fm.requireField<panzer::Traits::Residual>(*eval->evaluatedFields()[0]);
    
