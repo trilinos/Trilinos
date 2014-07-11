@@ -358,6 +358,9 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
     for(size_t ecnt=0; ecnt < sur_elem[ncnt].size(); ecnt++) {
       size_t elem = sur_elem[ncnt][ecnt];
       int nnodes = nnodes_per_elem;
+      for(int i=0; i < nnodes; i++) {
+	;
+      }
     }
   }
 }
