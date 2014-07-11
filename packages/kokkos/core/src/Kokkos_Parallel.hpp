@@ -736,9 +736,25 @@ struct ReduceAdapter
   void copy( const FunctorType & , void * const dst , const void * const src )
     { *((scalar_type*)dst) = *((const scalar_type*)src); }
 
+  template< class F >
   KOKKOS_INLINE_FUNCTION static
-  void join( const FunctorType & f , volatile void * update , volatile const void * input )
+  void join( const F & f
+           , volatile void * update
+           , typename enable_if< is_same<F,FunctorType>::value &&
+                                 FunctorHasJoin<F>::value
+                               , volatile const void *
+                               >::type input )
     { f.join( *((volatile ScalarType*)update) , *((volatile const ScalarType*)input) ); }
+
+  template< class F >
+  KOKKOS_INLINE_FUNCTION static
+  void join( const F & f
+           , volatile void * update
+           , typename enable_if< is_same<F,FunctorType>::value &&
+                                 ! FunctorHasJoin<F>::value
+                               , volatile const void *
+                               >::type input )
+    { *((volatile ScalarType*)update) += *((volatile const ScalarType*)input); }
 
   template< class F >
   KOKKOS_INLINE_FUNCTION static
@@ -807,9 +823,30 @@ struct ReduceAdapter< FunctorType , ScalarType[] >
       }
     }
 
+  template< class F >
   KOKKOS_INLINE_FUNCTION static
-  void join( const FunctorType & f , volatile void * update , volatile const void * input )
+  void join( const F & f
+           , volatile void * const update
+           , typename enable_if< is_same<F,FunctorType>::value &&
+                                 FunctorHasJoin<F>::value
+                               , volatile const void * const
+                               >::type input )
     { f.join( ((volatile ScalarType*)update) , ((volatile const ScalarType*)input) ); }
+
+  template< class F >
+  KOKKOS_INLINE_FUNCTION static
+  void join( const F & f
+           , volatile void * const update
+           , typename enable_if< is_same<F,FunctorType>::value &&
+                                 ! FunctorHasJoin<F>::value
+                               , volatile const void * const
+                               >::type input )
+    {
+      for ( int i = 0 ; i < int(f.value_count) ; ++i ) {
+        ((volatile ScalarType*)update)[i] += ((volatile const ScalarType*)input)[i] ;
+      }
+    }
+
 
   template< class F >
   KOKKOS_INLINE_FUNCTION static

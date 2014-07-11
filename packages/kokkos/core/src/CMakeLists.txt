@@ -41,7 +41,6 @@ INSTALL(FILES ${HEADERS_THREADS} DESTINATION ${TRILINOS_INCDIR}/Threads/)
 
 #-----------------------------------------------------------------------------
 
-
 FILE(GLOB HEADERS_OPENMP OpenMP/*.hpp)
 FILE(GLOB SOURCES_OPENMP OpenMP/*.cpp)
 
@@ -50,6 +49,15 @@ LIST(APPEND SOURCES         ${SOURCES_OPENMP} )
 
 INSTALL(FILES ${HEADERS_OPENMP} DESTINATION ${TRILINOS_INCDIR}/OpenMP/)
 
+#-----------------------------------------------------------------------------
+
+FILE(GLOB HEADERS_QTHREAD Qthread/*.hpp)
+FILE(GLOB SOURCES_QTHREAD Qthread/*.cpp)
+
+LIST(APPEND HEADERS_PRIVATE ${HEADERS_QTHREAD} )
+LIST(APPEND SOURCES         ${SOURCES_QTHREAD} )
+
+INSTALL(FILES ${HEADERS_QTHREAD} DESTINATION ${TRILINOS_INCDIR}/Qthread/)
 
 #-----------------------------------------------------------------------------
 

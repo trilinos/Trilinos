@@ -53,11 +53,12 @@
 namespace Test {
 
 template< typename ScalarType , class DeviceType >
-class ReduceRequestFunctor
+class ReduceTeamFunctor
 {
 public:
-  typedef DeviceType  device_type ;
-  typedef typename device_type::size_type size_type ;
+  typedef DeviceType device_type ;
+  typedef Kokkos::ExecPolicyTeam< device_type >  policy_type ;
+  typedef typename device_type::size_type        size_type ;
 
   struct value_type {
     ScalarType value[3] ;
@@ -65,9 +66,9 @@ public:
 
   const size_type nwork ;
 
-  ReduceRequestFunctor( const size_type & arg_nwork ) : nwork( arg_nwork ) {}
+  ReduceTeamFunctor( const size_type & arg_nwork ) : nwork( arg_nwork ) {}
 
-  ReduceRequestFunctor( const ReduceRequestFunctor & rhs )
+  ReduceTeamFunctor( const ReduceTeamFunctor & rhs )
     : nwork( rhs.nwork ) {}
 
   KOKKOS_INLINE_FUNCTION
@@ -88,10 +89,10 @@ public:
   }
 
   KOKKOS_INLINE_FUNCTION
-  void operator()( device_type dev , value_type & dst ) const
+  void operator()( const typename policy_type::index_type ind , value_type & dst ) const
   {
-    const int thread_rank = dev.team_rank() + dev.team_size() * dev.league_rank();
-    const int thread_size = dev.team_size() * dev.league_size();
+    const int thread_rank = ind.team_rank() + ind.team_size() * ind.league_rank();
+    const int thread_size = ind.team_size() * ind.league_size();
     const int chunk = ( nwork + thread_size - 1 ) / thread_size ;
 
     size_type iwork = chunk * thread_rank ;
@@ -110,22 +111,23 @@ public:
 namespace {
 
 template< typename ScalarType , class DeviceType >
-class TestReduceRequest
+class TestReduceTeam
 {
 public:
   typedef DeviceType    device_type ;
-  typedef typename device_type::size_type size_type ;
+  typedef Kokkos::ExecPolicyTeam< device_type >  policy_type ;
+  typedef typename device_type::size_type        size_type ;
 
   //------------------------------------
 
-  TestReduceRequest( const size_type & nwork )
+  TestReduceTeam( const size_type & nwork )
   {
     run_test(nwork);
   }
 
   void run_test( const size_type & nwork )
   {
-    typedef Test::ReduceRequestFunctor< ScalarType , device_type > functor_type ;
+    typedef Test::ReduceTeamFunctor< ScalarType , device_type > functor_type ;
     typedef typename functor_type::value_type value_type ;
 
     enum { Count = 3 };
@@ -166,15 +168,17 @@ public:
 namespace Test {
 
 template< class DeviceType >
-class ScanRequestFunctor
+class ScanTeamFunctor
 {
 public:
   typedef DeviceType  device_type ;
+  typedef Kokkos::ExecPolicyTeam< device_type >  policy_type ;
+
   typedef long int    value_type ;
   Kokkos::View< value_type , device_type > accum ;
   Kokkos::View< value_type , device_type > total ;
 
-  ScanRequestFunctor() : accum("accum"), total("total") {}
+  ScanTeamFunctor() : accum("accum"), total("total") {}
 
   KOKKOS_INLINE_FUNCTION
   void init( value_type & error ) const { error = 0 ; }
@@ -185,49 +189,49 @@ public:
     { if ( input ) error = 1 ; }
 
   KOKKOS_INLINE_FUNCTION
-  void operator()( device_type dev , value_type & error ) const
+  void operator()( const typename policy_type::index_type ind , value_type & error ) const
   {
-    if ( 0 == dev.league_rank() && 0 == dev.team_rank() ) {
-      const long int thread_count = dev.league_size() * dev.team_size();
+    if ( 0 == ind.league_rank() && 0 == ind.team_rank() ) {
+      const long int thread_count = ind.league_size() * ind.team_size();
       *total = ( thread_count * ( thread_count + 1 ) ) / 2 ;
     }
 
     const long int answer =
-      ( dev.league_rank() + 1 ) * dev.team_rank() +
-      ( dev.team_rank() * ( dev.team_rank() + 1 ) ) / 2 ;
+      ( ind.league_rank() + 1 ) * ind.team_rank() +
+      ( ind.team_rank() * ( ind.team_rank() + 1 ) ) / 2 ;
     
     const long int result =
-      dev.team_scan( dev.league_rank() + 1 + dev.team_rank() + 1 );
+      ind.team_scan( ind.league_rank() + 1 + ind.team_rank() + 1 );
 
     const long int result2 =
-      dev.team_scan( dev.league_rank() + 1 + dev.team_rank() + 1 );
+      ind.team_scan( ind.league_rank() + 1 + ind.team_rank() + 1 );
 
     if ( answer != result || answer != result2 ) {
-      printf("ScanRequestFunctor[%d.%d of %d.%d] %ld != %ld or %ld\n",
-             dev.league_rank(), dev.team_rank(),
-             dev.league_size(), dev.team_size(),
+      printf("ScanTeamFunctor[%d.%d of %d.%d] %ld != %ld or %ld\n",
+             ind.league_rank(), ind.team_rank(),
+             ind.league_size(), ind.team_size(),
              answer,result,result2);
       error = 1 ;
     }
 
-    const long int thread_rank = dev.team_rank() +
-                                 dev.team_size() * dev.league_rank();
-    dev.team_scan( 1 + thread_rank , accum.ptr_on_device() );
+    const long int thread_rank = ind.team_rank() +
+                                 ind.team_size() * ind.league_rank();
+    ind.team_scan( 1 + thread_rank , accum.ptr_on_device() );
   }
 };
 
 template< class DeviceType >
-class TestScanRequest
+class TestScanTeam
 {
 public:
   typedef DeviceType  device_type ;
   typedef long int    value_type ;
 
-  typedef Test::ScanRequestFunctor<DeviceType> functor_type ;
+  typedef Test::ScanTeamFunctor<DeviceType> functor_type ;
 
   //------------------------------------
 
-  TestScanRequest( const size_t nteam )
+  TestScanTeam( const size_t nteam )
   {
     run_test(nteam);
   }
@@ -239,7 +243,7 @@ public:
 
     Kokkos::ParallelWorkRequest request ; 
 
-    request.team_size   = device_type::team_max();
+    request.team_size   = device_type::team_recommended();
     request.league_size = nteam ;
 
     functor_type functor ;
@@ -268,25 +272,19 @@ public:
 
 namespace Test {
 
-template< class Device >
-struct SharedRequestFunctor {
+template< class ExecSpace >
+struct SharedTeamFunctor {
 
-  typedef Device device_type ;
-  typedef int    value_type ;
-
-  KOKKOS_INLINE_FUNCTION
-  void init( value_type & update ) const
-  { update = 0 ; }
-
-  KOKKOS_INLINE_FUNCTION
-  void join( volatile value_type & update ,
-             volatile const value_type & input ) const
-  { update += input ; }
-  
+  typedef ExecSpace  device_type ;
+  typedef int        value_type ;
+  typedef Kokkos::ExecPolicyTeam< device_type >  policy_type ;
 
   enum { SHARED_COUNT = 1000 };
 
-  typedef Kokkos::View<int*,device_type,Kokkos::MemoryUnmanaged> shared_int_array_type ;
+  typedef typename ExecSpace::shared_memory_space shmem_space ;
+
+  // tbd: MemoryUnmanaged should be the default for shared memory space
+  typedef Kokkos::View<int*,shmem_space,Kokkos::MemoryUnmanaged> shared_int_array_type ;
 
   // Tell how much shared memory will be required by this functor:
   inline
@@ -296,19 +294,20 @@ struct SharedRequestFunctor {
   }
 
   KOKKOS_INLINE_FUNCTION
-  void operator()( device_type dev , value_type & update ) const
+  void operator()( const typename policy_type::index_type & ind , value_type & update ) const
   {
-    const shared_int_array_type shared( dev , SHARED_COUNT );
+    shmem_space space = ind.space();
+    const shared_int_array_type shared( space , SHARED_COUNT );
 
-    for ( int i = dev.team_rank() ; i < SHARED_COUNT ; i += dev.team_size() ) {
-      shared[i] = i + dev.league_rank();
+    for ( int i = ind.team_rank() ; i < SHARED_COUNT ; i += ind.team_size() ) {
+      shared[i] = i + ind.league_rank();
     }
 
-    dev.team_barrier();
+    ind.team_barrier();
 
-    if ( dev.team_rank() + 1 == dev.team_size() ) {
+    if ( ind.team_rank() + 1 == ind.team_size() ) {
       for ( int i = 0 ; i < SHARED_COUNT ; ++i ) {
-        if ( shared[i] != i + dev.league_rank() ) {
+        if ( shared[i] != i + ind.league_rank() ) {
           ++update ;
         }
       }
@@ -320,20 +319,20 @@ struct SharedRequestFunctor {
 
 namespace {
 
-template< class Device >
-struct TestSharedRequest {
+template< class ExecSpace >
+struct TestSharedTeam {
 
-  TestSharedRequest()
+  TestSharedTeam()
   { run(); }
 
   void run()
   {
-    typedef Test::SharedRequestFunctor<Device> Functor ;
+    typedef Test::SharedTeamFunctor<ExecSpace> Functor ;
 
     Kokkos::ParallelWorkRequest request ;
 
-    request.team_size   = Device::team_recommended();
-    request.league_size = 8192 / Device::team_recommended();
+    request.team_size   = ExecSpace::team_recommended();
+    request.league_size = 8192 / ExecSpace::team_recommended();
 
     int error_count = 0 ;
 

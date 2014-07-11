@@ -117,6 +117,11 @@ struct LayoutTag {};
 struct DeviceTag {};
 struct MemoryTraitsTag {};
 struct ViewTag {};
+
+struct ExecutionPolicyTag {};
+struct ExecutionSpaceTag {};
+struct MemorySpaceTag {};
+
 }
 
 template< class C , class Enable = void >

@@ -18,6 +18,10 @@ IF(Kokkos_ENABLE_OpenMP)
   LIST( APPEND SOURCES TestOpenMP.cpp )
 ENDIF()
 
+IF(Kokkos_ENABLE_QTHREAD)
+  LIST( APPEND SOURCES TestQthread.cpp )
+ENDIF()
+
 IF(Kokkos_ENABLE_Cuda)
 
   # Add subpackage include path dependencies for CUDA_COMPILE().
