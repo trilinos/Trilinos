@@ -355,57 +355,53 @@ RVector MV_Abs( const RVector & r, const XVector & x)
 }
 
 /*------------------------------------------------------------------------------------------
- *-------------------------- ElementWiseMultiply element wise: y[i] = abs(x[i]) ------------------------
+ *------ ElementWiseMultiply element wise: C(i,j) = c*C(i,j) + ab*A(i)*B(i,j) --------------
  *------------------------------------------------------------------------------------------*/
-template<class RVector, class XVector>
+template<class CVector, class AVector, class BVector>
 struct MV_ElementWiseMultiplyFunctor
 {
-  typedef typename XVector::device_type        device_type;
-  typedef typename XVector::size_type            size_type;
+  typedef typename CVector::device_type        device_type;
+  typedef typename CVector::size_type            size_type;
 
-  RVector m_r;
-  typename XVector::const_type m_x ;
+  typename CVector::const_value_type m_c;
+  CVector m_C;
+  typename AVector::const_value_type m_ab;
+  typename AVector::const_type m_A ;
+  typename BVector::const_type m_B ;
 
   const size_type m_n;
-  MV_ElementWiseMultiplyFunctor(RVector r, XVector x, size_type n):m_r(r),m_x(x),m_n(n) {}
+  MV_ElementWiseMultiplyFunctor(
+      typename CVector::const_value_type c,
+      CVector C,
+      typename AVector::const_value_type ab,
+      typename AVector::const_type A,
+      typename BVector::const_type B,
+      const size_type n):
+      m_c(c),m_C(C),m_ab(ab),m_A(A),m_B(B),m_n(n)
+      {}
   //--------------------------------------------------------------------------
 
   KOKKOS_INLINE_FUNCTION
   void operator()( const size_type i) const
   {
+    typename AVector::const_value_type Ai = m_A(i);
 #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
   for(size_type k=0;k<m_n;k++)
-     m_r(i,k) *= m_x(i,k);
+     m_C(i,k) = m_c*m_C(i,k) + m_ab*Ai*m_B(i,k);
   }
 };
 
-template<class XVector>
-struct MV_ElementWiseMultiplySelfFunctor
-{
-  typedef typename XVector::device_type        device_type;
-  typedef typename XVector::size_type            size_type;
 
-  XVector m_x ;
-
-  const size_type m_n;
-  MV_ElementWiseMultiplySelfFunctor(XVector x, size_type n):m_x(x),m_n(n) {}
-  //--------------------------------------------------------------------------
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()( const size_type i) const
-  {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-  for(size_type k=0;k<m_n;k++)
-     m_x(i,k) *= m_x(i,k);
-  }
-};
-
-template<class RVector, class XVector>
-RVector MV_ElementWiseMultiply( const RVector & r, const XVector & x)
+template<class CVector, class AVector, class BVector>
+CVector MV_ElementWiseMultiply(
+      typename CVector::const_value_type c,
+      CVector C,
+      typename AVector::const_value_type ab,
+      AVector A,
+      BVector B
+    )
 {
   // TODO: Add error check (didn't link for some reason?)
   /*if(r.dimension_0() != x.dimension_0())
@@ -422,15 +418,10 @@ RVector MV_ElementWiseMultiply( const RVector & r, const XVector & x)
     XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
     return V_ElementWiseMultiply(r_1d,x_1d);
   }*/
-  if(r==x) {
-    MV_ElementWiseMultiplySelfFunctor<XVector> op(x,x.dimension_1()) ;
-    Kokkos::parallel_for( x.dimension_0() , op );
-    return r;
-  }
 
-  MV_ElementWiseMultiplyFunctor<RVector,XVector> op(r,x,x.dimension_1()) ;
-  Kokkos::parallel_for( x.dimension_0() , op );
-  return r;
+  MV_ElementWiseMultiplyFunctor<CVector,AVector,BVector> op(c,C,ab,A,B,C.dimension_1()) ;
+  Kokkos::parallel_for( C.dimension_0() , op );
+  return C;
 }
 
 /*------------------------------------------------------------------------------------------
@@ -1866,63 +1857,66 @@ RVector V_Abs( const RVector & r, const XVector & x)
 }
 
 /*------------------------------------------------------------------------------------------
- *-------------------------- ElementWiseMultiply element wise: y[i] = abs(x[i]) ------------------------
+ *------ ElementWiseMultiply element wise: C(i) = c*C(i) + ab*A(i)*B(i) --------------
  *------------------------------------------------------------------------------------------*/
-template<class RVector, class XVector>
+template<class CVector, class AVector, class BVector>
 struct V_ElementWiseMultiplyFunctor
 {
-  typedef typename XVector::device_type        device_type;
-  typedef typename XVector::size_type            size_type;
+  typedef typename CVector::device_type        device_type;
+  typedef typename CVector::size_type            size_type;
 
-  RVector m_r;
-  typename XVector::const_type m_x ;
+  typename CVector::const_value_type m_c;
+  CVector m_C;
+  typename AVector::const_value_type m_ab;
+  typename AVector::const_type m_A ;
+  typename BVector::const_type m_B ;
 
-  V_ElementWiseMultiplyFunctor(RVector r, XVector x):m_r(r),m_x(x) {}
+  V_ElementWiseMultiplyFunctor(
+      typename CVector::const_value_type c,
+      CVector C,
+      typename AVector::const_value_type ab,
+      typename AVector::const_type A,
+      typename BVector::const_type B):
+      m_c(c),m_C(C),m_ab(ab),m_A(A),m_B(B)
+      {}
   //--------------------------------------------------------------------------
 
   KOKKOS_INLINE_FUNCTION
   void operator()( const size_type i) const
   {
-    m_r(i) *= m_x(i);
+     m_C(i) = m_c*m_C(i) + m_ab*m_A(i)*m_B(i);
   }
 };
 
-template<class XVector>
-struct V_ElementWiseMultiplySelfFunctor
-{
-  typedef typename XVector::device_type        device_type;
-  typedef typename XVector::size_type            size_type;
 
-  XVector m_x ;
-
-  V_ElementWiseMultiplySelfFunctor(XVector x):m_x(x) {}
-  //--------------------------------------------------------------------------
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()( const size_type i) const
-  {
-     m_x(i) *= m_x(i);
-  }
-};
-
-template<class RVector, class XVector>
-RVector V_ElementWiseMultiply( const RVector & r, const XVector & x)
+template<class CVector, class AVector, class BVector>
+CVector V_ElementWiseMultiply(
+      typename CVector::const_value_type c,
+      CVector C,
+      typename AVector::const_value_type ab,
+      AVector A,
+      BVector B
+    )
 {
   // TODO: Add error check (didn't link for some reason?)
   /*if(r.dimension_0() != x.dimension_0())
     Kokkos::Impl::throw_runtime_exception("Kokkos::MV_ElementWiseMultiply -- dimension(0) of r and x don't match");
-  */
+  if(r.dimension_1() != x.dimension_1())
+    Kokkos::Impl::throw_runtime_exception("Kokkos::MV_ElementWiseMultiply -- dimension(1) of r and x don't match");*/
 
+  //TODO: Get 1D version done
+  /*if(r.dimension_1()==1) {
+    typedef View<typename RVector::value_type*,typename RVector::device_type> RVector1D;
+    typedef View<typename XVector::const_value_type*,typename XVector::device_type> XVector1D;
 
-  if(r==x) {
-    V_ElementWiseMultiplySelfFunctor<XVector> op(x) ;
-    Kokkos::parallel_for( x.dimension_0() , op );
-    return r;
-  }
+    RVector1D r_1d = Kokkos::subview< RVector1D >( r , ALL(),0 );
+    XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
+    return V_ElementWiseMultiply(r_1d,x_1d);
+  }*/
 
-  V_ElementWiseMultiplyFunctor<RVector,XVector> op(r,x) ;
-  Kokkos::parallel_for( x.dimension_0() , op );
-  return r;
+  V_ElementWiseMultiplyFunctor<CVector,AVector,BVector> op(c,C,ab,A,B) ;
+  Kokkos::parallel_for( C.dimension_0() , op );
+  return C;
 }
 }//end namespace Kokkos
 #endif /* KOKKOS_MULTIVECTOR_H_ */

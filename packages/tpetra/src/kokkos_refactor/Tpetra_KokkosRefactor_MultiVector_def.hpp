@@ -1561,7 +1561,6 @@ namespace { // (anonymous)
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(A.getNumVectors() != this->getNumVectors(), std::runtime_error,
       ": MultiVectors must have the same number of vectors.");
     const size_t numVecs = getNumVectors();
-    const size_t myLen = getLocalLength();
     try {
       if (isConstantStride() && A.isConstantStride()) {
         view_.template sync<DeviceType>();
@@ -1608,7 +1607,7 @@ namespace { // (anonymous)
       ": MultiVectors do not have the same local length.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(A.getNumVectors() != this->getNumVectors(), std::runtime_error,
       ": MultiVectors must have the same number of vectors.");
-    const size_t myLen = getLocalLength();
+
     const size_t numVecs = getNumVectors();
     if (isConstantStride() && A.isConstantStride()) {
       view_.template sync<DeviceType>();
@@ -2578,26 +2577,36 @@ namespace { // (anonymous)
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       B.getNumVectors() != this->getNumVectors(), std::runtime_error,
       ": MultiVectors 'this' and B must have the same number of vectors.");
-    const size_t myLen = getLocalLength();
-    const size_t numVecs = getNumVectors();
-    if (isConstantStride() && A.isConstantStride()) {
-      view_.template sync<DeviceType>();
-      view_.template modify<DeviceType>();
-      Kokkos::MV_ElementWiseMultiply(view_.d_view,A.view_.d_view);
-    }
-    else {
-      typedef Kokkos::View<Scalar*, DeviceType> view_type;
 
+    const size_t numVecs = getNumVectors();
+
+    typedef Kokkos::View<Scalar*, DeviceType> view_type;
+
+    if (isConstantStride() && A.isConstantStride()) {
       view_.template sync<DeviceType>();
       view_.template modify<DeviceType>();
       A.view_.template sync<DeviceType>();
       A.view_.template modify<DeviceType>();
+      B.view_.template sync<DeviceType>();
+      B.view_.template modify<DeviceType>();
+      view_type vector_A = Kokkos::subview<view_type> (A.view_.d_view, Kokkos::ALL (), 0);
+      Kokkos::MV_ElementWiseMultiply(scalarThis,view_.d_view,
+                                     scalarAB,vector_A,B.view_.d_view);
+    }
+    else {
+      view_.template sync<DeviceType>();
+      view_.template modify<DeviceType>();
+      A.view_.template sync<DeviceType>();
+      A.view_.template modify<DeviceType>();
+      B.view_.template sync<DeviceType>();
+      B.view_.template modify<DeviceType>();
+      view_type vector_A = Kokkos::subview<view_type> (A.view_.d_view, Kokkos::ALL (), 0);
       for (size_t k=0; k < numVecs; ++k) {
         const size_t this_col = isConstantStride () ? k : whichVectors_[k];
         view_type vector_k = Kokkos::subview<view_type> (view_.d_view, Kokkos::ALL (), this_col);
-        const size_t A_col = isConstantStride () ? k : A.whichVectors_[k];
-        view_type vector_Ak = Kokkos::subview<view_type> (A.view_.d_view, Kokkos::ALL (), A_col);
-        Kokkos::V_ElementWiseMultiply(vector_k, vector_Ak);
+        const size_t B_col = isConstantStride () ? k : B.whichVectors_[k];
+        view_type vector_Bk = Kokkos::subview<view_type> (B.view_.d_view, Kokkos::ALL (), B_col);
+        Kokkos::V_ElementWiseMultiply(scalarThis,vector_k, scalarAB,vector_A,vector_Bk);
       }
     }
   }
