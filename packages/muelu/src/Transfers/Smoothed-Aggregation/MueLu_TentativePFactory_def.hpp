@@ -46,11 +46,6 @@
 #ifndef MUELU_TENTATIVEPFACTORY_DEF_HPP
 #define MUELU_TENTATIVEPFACTORY_DEF_HPP
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_Map.hpp>
 #include <Xpetra_CrsMatrix.hpp>
