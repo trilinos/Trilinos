@@ -996,6 +996,7 @@ namespace { // (anonymous)
       "number of vectors in *this.  norms.size() = " << norms.size () << ", but "
       "*this.getNumVectors() = " << numVecs << ".");
 
+    view_.template sync<DeviceType>();
     if (isConstantStride ()) {
       Kokkos::MV_Dot (&norms[0], view_.d_view, view_.d_view, getLocalLength ());
     }
@@ -1042,8 +1043,13 @@ namespace { // (anonymous)
     using Teuchos::reduceAll;
     using Teuchos::REDUCE_SUM;
     using Teuchos::ScalarTraits;
+
+    using Kokkos::ALL;
+    using Kokkos::subview;
+
     typedef ScalarTraits<Scalar> SCT;
     typedef typename SCT::magnitudeType Mag;
+    typedef typename Teuchos::ArrayView<Mag>::size_type size_type;
 
     const char tfecfFuncName[] = "normWeighted()";
 
@@ -1066,27 +1072,36 @@ namespace { // (anonymous)
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( getLocalLength() != weights.getLocalLength(), std::runtime_error,
       ": MultiVectors do not have the same local length.");
 #endif
-    const size_t myLen = getLocalLength();
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(as<size_t>(norms.size()) != numVecs, std::runtime_error,
       ": norms.size() must be as large as the number of vectors in *this.");
-    if (isConstantStride() && weights.isConstantStride()) {
-      MVT::WeightedNorm(lclMV_,weights.lclMV_,norms);
+    typedef Kokkos::View<Scalar*,DeviceType> view_type;
+    view_.template sync<DeviceType>();
+    weights.view_.template sync<DeviceType>();
+    if (isConstantStride ()) {
+      if(OneW) {
+        view_type weights_0 = subview<view_type> (weights.view_.d_view, ALL (), 0);
+        Kokkos::MV_DotWeighted (&norms[0], weights_0, view_.d_view, getLocalLength ());
+      } else
+        Kokkos::MV_DotWeighted (&norms[0], weights.view_.d_view , view_.d_view, getLocalLength ());
     }
     else {
-      KMV v(MVT::getNode(lclMV_)), w(MVT::getNode(lclMV_));
-      ArrayRCP<Scalar> vptr = arcp_const_cast<Scalar> (MVT::getValues (lclMV_));
-      ArrayRCP<Scalar> wptr = arcp_const_cast<Scalar> (MVT::getValues (weights.lclMV_));
-      ArrayRCP<Scalar> wj   = wptr.persistingView (0,myLen);
-      MVT::initializeValues (w,myLen, 1, wj, myLen);
-      for (size_t j=0; j < numVecs; ++j) {
-        ArrayRCP<Scalar> vj = getSubArrayRCP (vptr, j);
-        MVT::initializeValues(v,myLen, 1,  vj, myLen);
-        if (! OneW) {
-          wj = weights.getSubArrayRCP(wptr,j);
-          MVT::initializeValues (w, myLen, 1, wj, myLen);
+      // FIXME (mfh 11 Mar 2014) Once we have strided Views, we won't
+      // have to write the explicit for loop over columns any more.
+      if(OneW) {
+        view_type weights_0 = subview<view_type> (weights.view_.d_view, ALL (), 0);
+        for (size_t k = 0; k < numVecs; ++k) {
+          const size_t curCol = whichVectors_[k];
+          view_type vector_k = subview<view_type> (view_.d_view, ALL (), curCol);
+          norms[k] = Kokkos::V_DotWeighted (weights_0, vector_k,getLocalLength());
         }
-        norms[j] = MVT::WeightedNorm ((const KMV&)v, (const KMV &)w);
+      } else {
+        for (size_t k = 0; k < numVecs; ++k) {
+          const size_t curCol = whichVectors_[k];
+          view_type weights_k = subview<view_type> (weights.view_.d_view, ALL (), curCol);
+          view_type vector_k = subview<view_type> (view_.d_view, ALL (), curCol);
+          norms[k] = Kokkos::V_DotWeighted (weights_k, vector_k,getLocalLength());
+        }
       }
     }
     if (this->isDistributed ()) {
@@ -1124,6 +1139,7 @@ namespace { // (anonymous)
     const size_t numVecs = this->getNumVectors();
     TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(norms.size()) != numVecs, std::runtime_error,
         "Tpetra::MultiVector::norm1(norms): norms.size() must be as large as the number of vectors in *this.");
+    view_.template sync<DeviceType>();
     if (isConstantStride ()) {
       Kokkos::MV_Norm1 (&norms[0], view_.d_view, getLocalLength ());
     }
@@ -1168,6 +1184,7 @@ namespace { // (anonymous)
     const size_t numVecs = this->getNumVectors();
     TEUCHOS_TEST_FOR_EXCEPTION(as<size_t>(norms.size()) != numVecs, std::runtime_error,
       "Tpetra::MultiVector::normInf(norms): norms.size() must be as large as the number of vectors in *this.");
+    view_.template sync<DeviceType>();
     if (isConstantStride ()) {
       Kokkos::MV_NormInf (&norms[0], view_.d_view, getLocalLength ());
     }
@@ -1216,6 +1233,7 @@ namespace { // (anonymous)
       "Tpetra::MultiVector::meanValue(): means.size() must be as large as the number of vectors in *this.");
     // compute local components of the means
     // sum these across all nodes
+    view_.template sync<DeviceType>();
     if (isConstantStride ()) {
       Kokkos::MV_Sum (&means[0], view_.d_view, getLocalLength ());
     }

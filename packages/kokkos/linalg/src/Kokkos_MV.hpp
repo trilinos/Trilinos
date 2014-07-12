@@ -148,13 +148,13 @@ struct MV_MulScalarFunctor<RVector,typename RVector::value_type,XVector>
 };
 
 template<class XVector>
-struct MV_MulScalarFunctorSelf<typename XVector::value_type,XVector>
+struct MV_MulScalarFunctorSelf<typename XVector::non_const_value_type,XVector>
 {
   typedef typename XVector::device_type        device_type;
   typedef typename XVector::size_type            size_type;
 
   XVector m_x;
-  typename XVector::value_type   m_a ;
+  typename XVector::non_const_value_type m_a ;
   size_type n;
   //--------------------------------------------------------------------------
 
@@ -170,7 +170,7 @@ struct MV_MulScalarFunctorSelf<typename XVector::value_type,XVector>
 };
 
 template<class RVector, class XVector>
-RVector MV_MulScalar( const RVector & r, const typename XVector::value_type &a, const XVector & x)
+RVector MV_MulScalar( const RVector & r, const typename XVector::non_const_value_type &a, const XVector & x)
 {
   /*if(r.dimension_1()==1) {
     typedef View<typename RVector::value_type*,typename RVector::device_type> RVector1D;
@@ -181,7 +181,7 @@ RVector MV_MulScalar( const RVector & r, const typename XVector::value_type &a, 
     return V_MulScalar(r_1d,a,x_1d);
   }*/
   if(r==x) {
-    MV_MulScalarFunctorSelf<typename XVector::value_type,XVector> op ;
+    MV_MulScalarFunctorSelf<typename XVector::non_const_value_type,XVector> op ;
 	  op.m_x = x ;
 	  op.m_a = a ;
 	  op.n = x.dimension(1);
@@ -189,7 +189,7 @@ RVector MV_MulScalar( const RVector & r, const typename XVector::value_type &a, 
 	  return r;
   }
 
-  MV_MulScalarFunctor<RVector,typename XVector::value_type,XVector> op ;
+  MV_MulScalarFunctor<RVector,typename XVector::non_const_value_type,XVector> op ;
   op.m_r = r ;
   op.m_x = x ;
   op.m_a = a ;
@@ -626,7 +626,7 @@ struct MV_AddVectorFunctor
 /* Variants of Functors with a and b being scalars. */
 
 template<class RVector, class XVector, class YVector, int scalar_x, int scalar_y,int UNROLL>
-struct MV_AddUnrollFunctor<RVector,typename XVector::value_type, XVector, typename YVector::value_type,YVector,scalar_x,scalar_y,UNROLL>
+struct MV_AddUnrollFunctor<RVector,typename XVector::non_const_value_type, XVector, typename YVector::non_const_value_type,YVector,scalar_x,scalar_y,UNROLL>
 {
   typedef typename RVector::device_type        device_type;
   typedef typename RVector::size_type            size_type;
@@ -634,8 +634,8 @@ struct MV_AddUnrollFunctor<RVector,typename XVector::value_type, XVector, typena
   RVector   m_r ;
   XVector  m_x ;
   YVector   m_y ;
-  typename XVector::value_type m_a;
-  typename YVector::value_type m_b;
+  typename XVector::non_const_value_type m_a;
+  typename YVector::non_const_value_type m_b;
   size_type n;
   size_type start;
 
@@ -712,7 +712,7 @@ for(size_type k=0;k<UNROLL;k++)
 };
 
 template<class RVector, class XVector, class YVector, int scalar_x, int scalar_y>
-struct MV_AddVectorFunctor<RVector,typename XVector::value_type, XVector, typename YVector::value_type,YVector,scalar_x,scalar_y>
+struct MV_AddVectorFunctor<RVector,typename XVector::non_const_value_type, XVector, typename YVector::non_const_value_type,YVector,scalar_x,scalar_y>
 {
   typedef typename RVector::device_type        device_type;
   typedef typename RVector::size_type            size_type;
@@ -720,8 +720,8 @@ struct MV_AddVectorFunctor<RVector,typename XVector::value_type, XVector, typena
   RVector   m_r ;
   XVector  m_x ;
   YVector   m_y ;
-  typename XVector::value_type m_a;
-  typename YVector::value_type m_b;
+  typename XVector::non_const_value_type m_a;
+  typename YVector::non_const_value_type m_b;
   size_type n;
 
   MV_AddVectorFunctor() {n=1;}
@@ -1131,7 +1131,7 @@ RVector MV_Add( const RVector & r, const XVector & x, const YVector & y, int n =
     V_Add(r_1d,x_1d,y_1d,n);
     return r;
   } else {
-	  typename XVector::value_type a = 1.0;
+	  typename XVector::const_value_type a = 1.0;
     return MV_AddSpecialise(r,a,x,a,y,n,1,1);
   }
 }
@@ -1161,7 +1161,7 @@ struct MV_DotProduct_Right_FunctorVector
 {
   typedef typename XVector::device_type         device_type;
   typedef typename XVector::size_type             size_type;
-  typedef typename XVector::value_type          xvalue_type;
+  typedef typename XVector::non_const_value_type          xvalue_type;
   typedef Details::InnerProductSpaceTraits<xvalue_type> IPT;
   typedef typename IPT::dot_type               value_type[];
   size_type value_count;
@@ -1222,7 +1222,7 @@ struct MV_DotProduct_Right_FunctorUnroll
 {
   typedef typename XVector::device_type         device_type;
   typedef typename XVector::size_type             size_type;
-  typedef typename XVector::value_type          xvalue_type;
+  typedef typename XVector::non_const_value_type          xvalue_type;
   typedef Details::InnerProductSpaceTraits<xvalue_type> IPT;
   typedef typename IPT::dot_type               value_type[];
   size_type value_count;
@@ -1425,7 +1425,7 @@ struct MV_Sum_Functor
 {
   typedef typename XVector::device_type        device_type;
   typedef typename XVector::size_type            size_type;
-  typedef typename XVector::value_type          xvalue_type;
+  typedef typename XVector::non_const_value_type          xvalue_type;
   typedef Details::InnerProductSpaceTraits<xvalue_type> IPT;
   typedef typename IPT::dot_type               value_type[];
 
@@ -1498,7 +1498,7 @@ struct MV_Norm1_Functor
 {
   typedef typename XVector::device_type        device_type;
   typedef typename XVector::size_type            size_type;
-  typedef typename XVector::value_type          xvalue_type;
+  typedef typename XVector::non_const_value_type          xvalue_type;
   typedef Details::InnerProductSpaceTraits<xvalue_type> IPT;
   typedef typename IPT::dot_type               value_type[];
 
@@ -1570,7 +1570,7 @@ struct MV_NormInf_Functor
 {
   typedef typename XVector::device_type        device_type;
   typedef typename XVector::size_type            size_type;
-  typedef typename XVector::value_type          xvalue_type;
+  typedef typename XVector::non_const_value_type          xvalue_type;
   typedef Details::InnerProductSpaceTraits<xvalue_type> IPT;
   typedef typename IPT::dot_type               value_type[];
 
@@ -1619,6 +1619,7 @@ struct MV_NormInf_Functor
   }
 };
 
+
 template<class normVector, class VectorType>
 normVector MV_NormInf(const normVector &r, const VectorType & x, int n = -1)
 {
@@ -1630,6 +1631,133 @@ normVector MV_NormInf(const normVector &r, const VectorType & x, int n = -1)
     return r;
 }
 
+/*------------------------------------------------------------------------------------------
+ *-------------------------- Compute Weighted Dot-product (sum(x_i/w_i)^2)----------------------------------
+ *------------------------------------------------------------------------------------------*/
+template<class WeightVector, class XVector,int WeightsRanks>
+struct MV_DotWeighted_Functor{};
+
+template<class WeightVector, class XVector>
+struct MV_DotWeighted_Functor<WeightVector,XVector,1>
+{
+  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::size_type            size_type;
+  typedef typename XVector::non_const_value_type          xvalue_type;
+  typedef Details::InnerProductSpaceTraits<xvalue_type> IPT;
+  typedef typename IPT::dot_type               value_type[];
+
+  typename WeightVector::const_type m_w ;
+  typename XVector::const_type m_x ;
+  size_type value_count;
+
+  MV_DotWeighted_Functor(WeightVector w, XVector x):m_w(w),m_x(x),value_count(x.dimension_1()) {}
+  //--------------------------------------------------------------------------
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i, value_type sum ) const
+  {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+    for(size_type k=0;k<value_count;k++){
+      sum[k] += m_x(i,k)*m_x(i,k)/(m_w(i)*m_w(i));
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION void init( value_type update) const
+  {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+    for(size_type k=0;k<value_count;k++)
+      update[k] = 0;
+  }
+  KOKKOS_INLINE_FUNCTION void join( volatile value_type  update ,
+                                    const volatile value_type  source ) const
+  {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+    for(size_type k=0;k<value_count;k++){
+      update[k] += source[k];
+    }
+  }
+};
+
+template<class WeightVector, class XVector>
+struct MV_DotWeighted_Functor<WeightVector,XVector,2>
+{
+  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::size_type            size_type;
+  typedef typename XVector::non_const_value_type          xvalue_type;
+  typedef Details::InnerProductSpaceTraits<xvalue_type> IPT;
+  typedef typename IPT::dot_type               value_type[];
+
+  typename WeightVector::const_type m_w ;
+  typename XVector::const_type m_x ;
+  size_type value_count;
+
+  MV_DotWeighted_Functor(WeightVector w, XVector x):m_w(w),m_x(x),value_count(x.dimension_1()) {}
+  //--------------------------------------------------------------------------
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i, value_type sum ) const
+  {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+    for(size_type k=0;k<value_count;k++){
+      sum[k] += m_x(i,k)*m_x(i,k)/(m_w(i,k)*m_w(i,k));
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION void init( value_type update) const
+  {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+    for(size_type k=0;k<value_count;k++)
+      update[k] = 0;
+  }
+  KOKKOS_INLINE_FUNCTION void join( volatile value_type  update ,
+                                    const volatile value_type  source ) const
+  {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+    for(size_type k=0;k<value_count;k++){
+      update[k] += source[k];
+    }
+  }
+};
+
+template<class rVector, class WeightVector, class XVector>
+rVector MV_DotWeighted(const rVector &r, const WeightVector & w, const XVector & x, int n = -1)
+{
+  typedef typename XVector::size_type            size_type;
+
+  if(n<0) n = x.dimension_0();
+
+  Kokkos::parallel_reduce( n , MV_DotWeighted_Functor<WeightVector,XVector,WeightVector::Rank>(w,x), r );
+
+  return r;
+}
 
 /*------------------------------------------------------------------------------------------
  *-------------------------- Multiply with scalar: y = a * x -------------------------------
@@ -1690,7 +1818,7 @@ RVector V_MulScalar( const RVector & r, const typename Kokkos::View<DataType,Lay
 }
 
 template<class RVector, class XVector>
-struct V_MulScalarFunctor<RVector,typename XVector::value_type,XVector>
+struct V_MulScalarFunctor<RVector,typename XVector::non_const_value_type,XVector>
 {
   typedef typename XVector::device_type        device_type;
   typedef typename XVector::size_type            size_type;
@@ -1708,13 +1836,13 @@ struct V_MulScalarFunctor<RVector,typename XVector::value_type,XVector>
 };
 
 template<class XVector>
-struct V_MulScalarFunctorSelf<typename XVector::value_type,XVector>
+struct V_MulScalarFunctorSelf<typename XVector::non_const_value_type,XVector>
 {
   typedef typename XVector::device_type        device_type;
   typedef typename XVector::size_type            size_type;
 
   XVector m_x;
-  typename XVector::value_type   m_a ;
+  typename XVector::non_const_value_type m_a ;
   //--------------------------------------------------------------------------
 
   KOKKOS_INLINE_FUNCTION
@@ -1726,7 +1854,7 @@ struct V_MulScalarFunctorSelf<typename XVector::value_type,XVector>
 
 
 template<class RVector, class XVector>
-RVector V_MulScalar( const RVector & r, const typename XVector::value_type &a, const XVector & x)
+RVector V_MulScalar( const RVector & r, const typename XVector::non_const_value_type &a, const XVector & x)
 {
   if(r==x) {
     V_MulScalarFunctorSelf<typename RVector::value_type,RVector> op ;
@@ -1736,7 +1864,7 @@ RVector V_MulScalar( const RVector & r, const typename XVector::value_type &a, c
 	  return r;
   }
 
-  V_MulScalarFunctor<RVector,typename XVector::value_type,XVector> op ;
+  V_MulScalarFunctor<RVector,typename XVector::non_const_value_type,XVector> op ;
   op.m_r = r ;
   op.m_x = x ;
   op.m_a = a ;
@@ -1749,7 +1877,7 @@ struct V_AddVectorFunctor
 {
   typedef typename RVector::device_type        device_type;
   typedef typename RVector::size_type            size_type;
-  typedef typename XVector::value_type 	   value_type;
+  typedef typename XVector::non_const_value_type 	   value_type;
   RVector   m_r ;
   typename XVector::const_type  m_x ;
   typename YVector::const_type   m_y ;
@@ -1790,7 +1918,7 @@ struct V_AddVectorSelfFunctor
 {
   typedef typename RVector::device_type        device_type;
   typedef typename RVector::size_type            size_type;
-  typedef typename XVector::value_type      value_type;
+  typedef typename XVector::non_const_value_type      value_type;
   RVector   m_r ;
   typename XVector::const_type  m_x ;
   const value_type m_a;
@@ -1811,8 +1939,8 @@ struct V_AddVectorSelfFunctor
   }
 };
 template<class RVector, class XVector, class YVector, int doalpha, int dobeta>
-RVector V_AddVector( const RVector & r,const typename XVector::value_type &av,const XVector & x,
-		const typename XVector::value_type &bv, const YVector & y,int n=-1)
+RVector V_AddVector( const RVector & r,const typename XVector::non_const_value_type &av,const XVector & x,
+		const typename XVector::non_const_value_type &bv, const YVector & y,int n=-1)
 {
   if(n == -1) n = x.dimension_0();
   if(r.ptr_on_device()==x.ptr_on_device() && doalpha == 1) {
@@ -1829,8 +1957,8 @@ RVector V_AddVector( const RVector & r,const typename XVector::value_type &av,co
 }
 
 template<class RVector, class XVector, class YVector>
-RVector V_AddVector( const RVector & r,const typename XVector::value_type &av,const XVector & x,
-		const typename YVector::value_type &bv, const YVector & y, int n = -1,
+RVector V_AddVector( const RVector & r,const typename XVector::non_const_value_type &av,const XVector & x,
+		const typename YVector::non_const_value_type &bv, const YVector & y, int n = -1,
 		int a=2,int b=2)
 {
 	if(a==-1) {
@@ -1880,7 +2008,7 @@ RVector V_Add( const RVector & r, const XVector & x, const YVector & y, int n=-1
 }
 
 template<class RVector,class XVector,class YVector>
-RVector V_Add( const RVector & r, const XVector & x, const typename XVector::value_type  & bv, const YVector & y,int n=-1 )
+RVector V_Add( const RVector & r, const XVector & x, const typename XVector::non_const_value_type  & bv, const YVector & y,int n=-1 )
 {
   int b = 2;
   //if(bv == 0) b = 0;
@@ -1890,7 +2018,7 @@ RVector V_Add( const RVector & r, const XVector & x, const typename XVector::val
 }
 
 template<class RVector,class XVector,class YVector>
-RVector V_Add( const RVector & r, const typename XVector::value_type  & av, const XVector & x, const typename XVector::value_type  & bv, const YVector & y,int n=-1 )
+RVector V_Add( const RVector & r, const typename XVector::non_const_value_type  & av, const XVector & x, const typename XVector::non_const_value_type  & bv, const YVector & y,int n=-1 )
 {
   int a = 2;
   int b = 2;
@@ -1941,7 +2069,7 @@ struct V_DotFunctor
 };
 
 template<class XVector, class YVector>
-typename Details::InnerProductSpaceTraits<typename XVector::value_type>::dot_type
+typename Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::dot_type
 V_Dot( const XVector & x, const YVector & y, int n = -1)
 {
   typedef V_DotFunctor<XVector,YVector> Functor;
@@ -1949,6 +2077,55 @@ V_Dot( const XVector & x, const YVector & y, int n = -1)
   if (n<0) n = x.dimension_0();
   typename Functor::value_type ret_val;
   parallel_reduce(n,f,ret_val);
+  return ret_val;
+}
+
+template<class WeightVector, class XVector>
+struct V_DotWeighted_Functor
+{
+  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::size_type            size_type;
+  typedef typename XVector::non_const_value_type          xvalue_type;
+  typedef Details::InnerProductSpaceTraits<xvalue_type> IPT;
+  typedef typename IPT::dot_type               value_type;
+
+  typename WeightVector::const_type m_w ;
+  typename XVector::const_type m_x ;
+
+  V_DotWeighted_Functor(WeightVector w, XVector x):m_w(w),m_x(x) {}
+  //--------------------------------------------------------------------------
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i, value_type& sum ) const
+  {
+      sum += m_x(i)*m_x(i)/(m_w(i)*m_w(i));
+  }
+
+
+  KOKKOS_INLINE_FUNCTION void init( value_type & update) const
+  {
+      update = 0;
+  }
+  KOKKOS_INLINE_FUNCTION void join( volatile value_type & update ,
+                                    const volatile value_type & source ) const
+  {
+      update += source;
+  }
+};
+
+template<class WeightVector, class XVector>
+typename Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::dot_type
+V_DotWeighted(const WeightVector & w, const XVector & x, int n = -1)
+{
+  typedef typename XVector::size_type            size_type;
+
+  if(n<0) n = x.dimension_0();
+
+  typedef Details::InnerProductSpaceTraits<typename XVector::non_const_value_type> IPT;
+  typedef typename IPT::dot_type               value_type;
+  value_type ret_val;
+
+  Kokkos::parallel_reduce( n , V_DotWeighted_Functor<WeightVector,XVector>(w,x), ret_val );
+
   return ret_val;
 }
 
@@ -1960,7 +2137,7 @@ struct V_Sum_Functor
 {
   typedef typename XVector::device_type        device_type;
   typedef typename XVector::size_type            size_type;
-  typedef typename XVector::value_type          xvalue_type;
+  typedef typename XVector::non_const_value_type          xvalue_type;
   typedef Details::InnerProductSpaceTraits<xvalue_type> IPT;
   typedef typename IPT::dot_type               value_type;
 
@@ -1991,14 +2168,14 @@ struct V_Sum_Functor
 
 
 template<class VectorType>
-typename Details::InnerProductSpaceTraits<typename VectorType::value_type>::dot_type
+typename Details::InnerProductSpaceTraits<typename VectorType::non_const_value_type>::dot_type
 V_Sum(const VectorType & x, int n = -1)
 {
     typedef typename VectorType::size_type            size_type;
 
     if(n<0) n = x.dimension_0();
 
-    typedef Details::InnerProductSpaceTraits<typename VectorType::value_type> IPT;
+    typedef Details::InnerProductSpaceTraits<typename VectorType::non_const_value_type> IPT;
     typedef typename IPT::dot_type               value_type;
     value_type ret_val;
     Kokkos::parallel_reduce( n , V_Sum_Functor<VectorType>(x), ret_val );
@@ -2013,7 +2190,7 @@ struct V_Norm1_Functor
 {
   typedef typename XVector::device_type        device_type;
   typedef typename XVector::size_type            size_type;
-  typedef typename XVector::value_type          xvalue_type;
+  typedef typename XVector::non_const_value_type          xvalue_type;
   typedef Details::InnerProductSpaceTraits<xvalue_type> IPT;
   typedef typename IPT::dot_type               value_type;
 
@@ -2038,14 +2215,14 @@ struct V_Norm1_Functor
 };
 
 template<class VectorType>
-typename Details::InnerProductSpaceTraits<typename VectorType::value_type>::dot_type
+typename Details::InnerProductSpaceTraits<typename VectorType::non_const_value_type>::dot_type
 V_Norm1( const VectorType & x, int n = -1)
 {
     typedef typename VectorType::size_type            size_type;
 
     if(n<0) n = x.dimension_0();
 
-    typedef Details::InnerProductSpaceTraits<typename VectorType::value_type> IPT;
+    typedef Details::InnerProductSpaceTraits<typename VectorType::non_const_value_type> IPT;
     typedef typename IPT::dot_type               value_type;
     value_type ret_val;
     Kokkos::parallel_reduce( n , V_Norm1_Functor<VectorType>(x), ret_val );
@@ -2059,7 +2236,7 @@ struct V_NormInf_Functor
 {
   typedef typename XVector::device_type        device_type;
   typedef typename XVector::size_type            size_type;
-  typedef typename XVector::value_type          xvalue_type;
+  typedef typename XVector::non_const_value_type          xvalue_type;
   typedef Details::InnerProductSpaceTraits<xvalue_type> IPT;
   typedef typename IPT::dot_type               value_type;
 
@@ -2085,14 +2262,14 @@ struct V_NormInf_Functor
 };
 
 template<class VectorType>
-typename Details::InnerProductSpaceTraits<typename VectorType::value_type>::dot_type
+typename Details::InnerProductSpaceTraits<typename VectorType::non_const_value_type>::dot_type
 V_NormInf( const VectorType & x, int n = -1)
 {
     typedef typename VectorType::size_type            size_type;
 
     if(n<0) n = x.dimension_0();
 
-    typedef Details::InnerProductSpaceTraits<typename VectorType::value_type> IPT;
+    typedef Details::InnerProductSpaceTraits<typename VectorType::non_const_value_type> IPT;
     typedef typename IPT::dot_type               value_type;
     value_type ret_val;
     Kokkos::parallel_reduce( n , V_NormInf_Functor<VectorType>(x), ret_val );
