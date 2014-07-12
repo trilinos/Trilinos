@@ -19,7 +19,6 @@ ADD_SUBDIRECTORIES(
   BlockCrsGraph
   BlockMap
   BlockMultiVector
-  VbrMatrix
   RowMatrixTransposer
   MatrixMatrix
   TypeStack
