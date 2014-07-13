@@ -69,7 +69,7 @@ SET(CTEST_TEST_TIMEOUT 900)
 
 SET(Trilinos_PACKAGES Tpetra KokokosCore KokkosCompat KokkosContainers KokkosLinalg KokkosClassic)
 
-SET(CUDA_NVCC_FLAGS "-O3 -DKOKKOS_USE_UVM")
+SET(CUDA_NVCC_FLAGS "-O3")
 SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -gencode arch=compute_35,code=sm_35 -I/home/crtrott/lib/mpi/include")
 SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -Xcompiler -Wall,-ansi,-fopenmp")
 
@@ -81,6 +81,8 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_KokkosLinAlg=ON"
   "-DTrilinos_ENABLE_KokkosClassic=ON"
   "-DTrilinos_ENABLE_KokkosMpiComm=ON"
+  
+  "-DKokkos_ENABLE_Cuda_UVM:BOOL=ON" 
   
   "-DTpetra_ENABLE_Kokkos_Refactor:BOOL=ON"
   "-DTeptra_ENABLE_Kokkos_Refactor_Map:BOOL=ON"
