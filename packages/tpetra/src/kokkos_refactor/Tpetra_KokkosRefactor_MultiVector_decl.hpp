@@ -1004,7 +1004,8 @@ namespace Tpetra {
     template <typename T>
     typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<dot_type, T>::value), void >::type
     dot (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
-         const Teuchos::ArrayView<T> &dots) const {
+         const Teuchos::ArrayView<T> &dots) const
+    {
       //
       // KR FIXME Overload to take a Kokkos::View.
       //
@@ -1014,6 +1015,39 @@ namespace Tpetra {
       dot(A, dts);
       for (size_t i=0; i<sz; ++i)
         dots[i] = dts[i];
+    }
+
+    /// \brief Compute the dot product of each corresponding pair of
+    ///   vectors (columns) in A and B, storing the result in a device
+    ///   View.
+    ///
+    /// The "dot product" is the standard Euclidean inner product.  If
+    /// the type of entries of the vectors (scalar_type) is complex,
+    /// then A is transposed, not <tt>*this</tt>.  For example, if x
+    /// and y each have one column, then <tt>x.dot (y, dots)</tt>
+    /// computes \f$y^* x = \bar{y}^T x = \sum_i \bar{y}_i \cdot x_i\f$.
+    ///
+    /// \param A [in] MultiVector with which to dot \c *this.
+    /// \param dots [out] Device View with at least
+    ///   <tt>this->getNumVectors()</tt> entries.
+    ///
+    /// \pre <tt>this->getNumVectors () == A.getNumVectors ()</tt>
+    /// \pre <tt>dots.dimension_0 () >= A.getNumVectors ()</tt>
+    ///
+    /// \post <tt>dots[j] == (this->getVector[j])->dot (* (A.getVector[j]))</tt>
+    void
+    dot (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+         const Kokkos::View<dot_type*, device_type>& dots) const;
+
+    template <typename T>
+    typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<dot_type, T>::value), void >::type
+    dot (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+         const Kokkos::View<T*, device_type>& dots) const
+    {
+      Kokkos::View<dot_type*, device_type> dts ("MV::dot tmp", dots.dimension_0 ());
+      // Call overload that takes a Kokkos::View<dot_type*, device_type>.
+      this->dot (A, dts);
+      Kokkos::deep_copy (dots, dts);
     }
 
     //! Put element-wise absolute values of input Multi-vector in target: A = abs(this)
