@@ -105,7 +105,7 @@ namespace MueLu {
         Set(coarseLevel, "A", rebalancedAc);
       }
 
-      if (!rebalancedAc.is_null()) {
+      if (!rebalancedAc.is_null() && IsPrint(Statistics1)) {
         RCP<ParameterList> params = rcp(new ParameterList());
         params->set("printLoadBalancingInfo", true);
         params->set("printCommInfo",          true);
