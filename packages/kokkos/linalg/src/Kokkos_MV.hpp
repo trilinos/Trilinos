@@ -1218,7 +1218,10 @@ struct MV_DotProduct_Right_FunctorVector
 };
 
 
-
+// Implementation detail of Tpetra::MultiVector::dot, when both
+// MultiVectors in the dot product have constant stride.  Compute the
+// dot product of the local part of each corresponding vector (column)
+// in two MultiVectors.
 template<class MultiVecViewType>
 struct MultiVecDotFunctor {
   typedef typename MultiVecViewType::device_type device_type;
@@ -1231,16 +1234,26 @@ struct MultiVecDotFunctor {
   typedef typename MultiVecViewType::const_type mv_const_view_type;
   typedef Kokkos::View<typename IPT::dot_type*, device_type> dot_view_type;
 
-  size_type value_count;
   mv_const_view_type X_, Y_;
   dot_view_type dots_;
+  // Kokkos::parallel_reduce wants this, so it needs to be public.
+  size_type value_count;
 
   MultiVecDotFunctor (const mv_const_view_type& X,
                       const mv_const_view_type& Y,
                       const dot_view_type& dots) :
-    value_count (X_.dimension_1 ()),
-    X_ (X), Y_ (Y), dots_ (dots)
-  {}
+    X_ (X), Y_ (Y), dots_ (dots), value_count (X.dimension_1 ())
+  {
+    if (value_count != dots.dimension_0 ()) {
+      std::ostringstream os;
+      os << "Kokkos::MultiVecDotFunctor: value_count does not match the length "
+        "of 'dots'.  X is " << X.dimension_0 () << " x " << X.dimension_1 () <<
+        ", Y is " << Y.dimension_0 () << " x " << Y.dimension_1 () << ", "
+        "dots has length " << dots.dimension_0 () << ", and value_count = " <<
+        value_count << ".";
+      throw std::invalid_argument (os.str ());
+    }
+  }
 
   KOKKOS_INLINE_FUNCTION void
   operator() (const size_type i, value_type sum) const
@@ -1290,9 +1303,24 @@ struct MultiVecDotFunctor {
 
   // On device, write the reduction result to the output View.
   KOKKOS_INLINE_FUNCTION void
-  final (value_type dst) const
+  final (const value_type dst) const
   {
     const size_type numVecs = value_count;
+
+    // DEBUGGING ONLY
+    {
+      std::ostringstream os;
+      os << "numVecs: " << numVecs << ", dst: [";
+      for (size_t j = 0; j < numVecs; ++j) {
+        os << dst[j];
+        if (j + 1 < numVecs) {
+          os << ", ";
+        }
+      }
+      os << "]" << std::endl;
+      std::cerr << os.str ();
+    }
+
 #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
@@ -1302,10 +1330,125 @@ struct MultiVecDotFunctor {
     for (size_type k = 0; k < numVecs; ++k) {
       dots_(k) = dst[k];
     }
+
+    // DEBUGGING ONLY
+    {
+      std::ostringstream os;
+      os << "numVecs: " << numVecs << ", dots_: [";
+      for (size_t j = 0; j < numVecs; ++j) {
+        os << dots_(j);
+        if (j + 1 < numVecs) {
+          os << ", ";
+        }
+      }
+      os << "]" << std::endl;
+      std::cerr << os.str ();
+    }
   }
 };
 
 
+// Implementation detail of Tpetra::MultiVector::norm2, when the
+// MultiVector has constant stride.  Compute the square of the
+// two-norm of each column of a multivector.
+template<class MultiVecViewType>
+struct MultiVecNorm2SquaredFunctor {
+  typedef typename MultiVecViewType::device_type device_type;
+  typedef typename MultiVecViewType::size_type size_type;
+  typedef typename MultiVecViewType::value_type mv_value_type;
+  typedef Kokkos::Details::InnerProductSpaceTraits<mv_value_type> IPT;
+  typedef typename IPT::mag_type value_type[];
+
+  typedef MultiVecViewType mv_view_type;
+  typedef typename MultiVecViewType::const_type mv_const_view_type;
+  typedef Kokkos::View<typename IPT::mag_type*, device_type> norms_view_type;
+
+  mv_const_view_type X_;
+  norms_view_type norms_;
+  // Kokkos::parallel_reduce wants this, so it needs to be public.
+  size_type value_count;
+
+  MultiVecNorm2SquaredFunctor (const mv_const_view_type& X,
+                               const norms_view_type& norms) :
+    X_ (X), norms_ (norms), value_count (X.dimension_1 ())
+  {
+    if (value_count != norms.dimension_0 ()) {
+      std::ostringstream os;
+      os << "Kokkos::MultiVecNorm2SquaredFunctor: value_count does not match "
+        "the length of 'norms'.  X is " << X.dimension_0 () << " x " <<
+        X.dimension_1 () << ", norms has length " << norms.dimension_0 () <<
+        ", and value_count = " << value_count << ".";
+      throw std::invalid_argument (os.str ());
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION void
+  operator() (const size_type i, value_type sum) const
+  {
+    const size_type numVecs = value_count;
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+    for (size_type k = 0; k < numVecs; ++k) {
+      const typename IPT::mag_type tmp = IPT::norm (X_(i,k));
+      sum[k] += tmp * tmp;
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION void
+  init (value_type update) const
+  {
+    const size_type numVecs = value_count;
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+    for (size_type k = 0; k < numVecs; ++k) {
+      update[k] = Kokkos::Details::ArithTraits<typename IPT::mag_type>::zero ();
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION void
+  join (volatile value_type update,
+        const volatile value_type source) const
+  {
+    const size_type numVecs = value_count;
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+    for (size_type k = 0; k < numVecs; ++k) {
+      update[k] += source[k];
+    }
+  }
+
+  // On device, write the reduction result to the output View.
+  KOKKOS_INLINE_FUNCTION void
+  final (const value_type dst) const
+  {
+    const size_type numVecs = value_count;
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+    for (size_type k = 0; k < numVecs; ++k) {
+      norms_(k) = dst[k];
+    }
+  }
+};
+
+
+// Implementation detail of Tpetra::MultiVector::dot, for single
+// vectors (columns).
 template<class VecViewType>
 struct VecDotFunctor {
   typedef typename VecViewType::device_type device_type;
@@ -1348,6 +1491,82 @@ struct VecDotFunctor {
   }
 };
 
+
+// Compute the square of the two-norm of a single vector.
+template<class VecViewType>
+struct VecNorm2SquaredFunctor {
+  typedef typename VecViewType::device_type device_type;
+  typedef typename VecViewType::size_type size_type;
+  typedef typename VecViewType::value_type mv_value_type;
+  typedef Kokkos::Details::InnerProductSpaceTraits<mv_value_type> IPT;
+  typedef typename IPT::mag_type value_type;
+  typedef typename VecViewType::const_type vec_const_view_type;
+  // This is a nonconst scalar view.  It holds one mag_type instance.
+  typedef Kokkos::View<typename IPT::mag_type, device_type> norm_view_type;
+
+  vec_const_view_type x_;
+  norm_view_type norm_;
+
+  // Constructor
+  //
+  // x: the vector for which to compute the square of the two-norm.
+  // norm: scalar View into which to put the result.
+  VecNorm2SquaredFunctor (const vec_const_view_type& x,
+                          const norm_view_type& norm) :
+    x_ (x), norm_ (norm)
+  {}
+
+  KOKKOS_INLINE_FUNCTION void
+  operator() (const size_type i, value_type& sum) const {
+    const typename IPT::mag_type tmp = IPT::norm (x_(i));
+    sum += tmp * tmp;
+  }
+
+  KOKKOS_INLINE_FUNCTION void
+  init (value_type& update) const {
+    update = Kokkos::Details::ArithTraits<typename IPT::mag_type>::zero ();
+  }
+
+  KOKKOS_INLINE_FUNCTION void
+  join (volatile value_type& update,
+        const volatile value_type& source) const {
+    update += source;
+  }
+
+  // On device, write the reduction result to the output View.
+  KOKKOS_INLINE_FUNCTION void final (value_type& dst) const {
+    norm_ () = dst;
+  }
+};
+
+
+// parallel_for functor for computing the square root, in place, of a
+// one-dimensional View.  This is useful for following the MPI
+// all-reduce that computes the square of the two-norms of the local
+// columns of a Tpetra::MultiVector.
+//
+// mfh 14 Jul 2014: Carter says that, for now, the standard idiom for
+// operating on a single scalar value on the device, is to run in a
+// parallel_for with N = 1.
+//
+// FIXME (mfh 14 Jul 2014): If we could assume C++11, this functor
+// would go away.
+template<class ViewType>
+class SquareRootFunctor {
+public:
+  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::size_type size_type;
+
+  SquareRootFunctor (const ViewType& theView) : theView_ (theView) {}
+
+  KOKKOS_INLINE_FUNCTION void operator() (const size_type i) const {
+    typedef typename ViewType::value_type value_type;
+    theView_(i) = Kokkos::Details::ArithTraits<value_type>::sqrt (theView_(i));
+  }
+
+private:
+  ViewType theView_;
+};
 
 
 template<class XVector,class YVector,int UNROLL>
