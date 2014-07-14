@@ -116,6 +116,7 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
 
   // Compute gradient at x.
   Teuchos::RCP<Vector<Real> > g = x.clone();
+  this->update(x);
   this->gradient(*g, x, tol);
   Real dtg = d.dot(*g);
 
@@ -130,6 +131,7 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
     // Evaluate objective value at x+eta*d.
     xnew->set(x);
     xnew->axpy(eta, d);
+    this->update(*xnew);
     fval_at_xnew = this->value(*xnew,tol);
 
     // Compute gradient, finite-difference gradient, and absolute error.
@@ -181,6 +183,7 @@ std::vector<std::vector<Real> > Objective<Real>::checkHessVec( const Vector<Real
 
   // Compute gradient at x.
   Teuchos::RCP<Vector<Real> > g = x.clone();
+  this->update(x);
   this->gradient(*g, x, tol);
 
   // Compute (Hessian at x) times (vector v).
@@ -196,6 +199,7 @@ std::vector<std::vector<Real> > Objective<Real>::checkHessVec( const Vector<Real
     // Evaluate objective value at x+eta*d.
     xnew->set(x);
     xnew->axpy(eta, v);
+    this->update(*xnew);
     this->gradient(*gnew, *xnew, tol);
     gnew->axpy(-1.0, *g);
     gnew->scale(1.0/eta);
