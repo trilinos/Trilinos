@@ -21,10 +21,13 @@ export TDD_CTEST_TEST_TYPE=Nightly
 
 # Machine specific environment
 #
-
 export TDD_HTTP_PROXY="http://sonproxy.sandia.gov:80"
 export http_proxy="http://sonproxy.sandia.gov:80"
+
 export TDD_FORCE_CMAKE_INSTALL=1
+
+export OMPI_MPICC=/home/aprokop/local/opt/gcc-4.8.0/bin/gcc
+export OMPI_MPICXX=/home/aprokop/local/opt/gcc-4.8.0/bin/g++
 
 # Machine independent cron_driver:
 #
