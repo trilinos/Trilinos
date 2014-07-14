@@ -1332,38 +1332,18 @@ void checkCommMapsAndListsAfterIRGMD(BulkDataTester& stkMeshBulkData)
     }
 }
 
+
+
 void connectElementToEdge(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity element,
         stk::mesh::Entity edge, const std::vector<stk::mesh::EntityId>& nodeIdsForEdge)
 {
-    stk::mesh::OrdinalVector ordinal_scratch;
-    ordinal_scratch.reserve(64);
-    stk::mesh::PartVector part_scratch;
-    part_scratch.reserve(64);
-    stk::mesh::Permutation perm = static_cast<stk::mesh::Permutation>(0);
-
-    ASSERT_TRUE(stkMeshBulkData.is_valid(element));
-    stk::topology elem_top = stkMeshBulkData.bucket(element).topology();
-    std::vector<stk::mesh::EntityId> nodeIds(2);
-    std::vector<stk::mesh::EntityId> elementNodes(elem_top.num_nodes());
-    unsigned edge_ordinal = 100000;
-    stk::mesh::Entity const * elem_nodes = stkMeshBulkData.begin_nodes(element);
-    for (size_t k=0;k<elem_top.num_nodes();k++)
+    std::vector<stk::mesh::Entity> nodeIds(nodeIdsForEdge.size());
+    for (size_t i=0;i<nodeIdsForEdge.size();i++)
     {
-        elementNodes[k] =stkMeshBulkData.identifier(elem_nodes[k]);
+        stk::mesh::EntityKey nodeKey(stk::topology::NODE_RANK, nodeIdsForEdge[i]);
+        nodeIds[i] = stkMeshBulkData.get_entity(nodeKey);
     }
-
-    for (size_t k=0;k<elem_top.num_edges();k++)
-    {
-        elem_top.edge_nodes(elementNodes, k, nodeIds.begin());
-        stk::topology edge_top = elem_top.edge_topology();
-        if ( edge_top.equivalent(nodeIds, nodeIdsForEdge).first )
-        {
-            edge_ordinal = k;
-            break;
-        }
-    }
-    ASSERT_TRUE(edge_ordinal != 100000);
-    stkMeshBulkData.declare_relation(element, edge, edge_ordinal, perm, ordinal_scratch, part_scratch);
+    stk::mesh::connectEntityToEdge(stkMeshBulkData, element, edge, nodeIds);
 }
 
 void create_edges(BulkDataTester& stkMeshBulkData, std::vector<stk::mesh::EntityId>& edgeIds,
@@ -1456,54 +1436,6 @@ void connectEdgeToNodes(stk::mesh::BulkData &stkMeshBulkData, stk::mesh::Entity 
         EXPECT_TRUE(stkMeshBulkData.bucket(nodes[n]).member(edge_part));
     }
 }
-
-void fillElementsConnectedToNodes(stk::mesh::BulkData &stkMeshBulkData, std::vector<stk::mesh::Entity> &nodes,
-              std::vector<stk::mesh::Entity> & elementsConnectedToNodes)
-{
-    elementsConnectedToNodes.clear();
-    elementsConnectedToNodes.resize(10);
-    stk::mesh::Entity const * elemStartNode1 = stkMeshBulkData.begin_elements(nodes[0]);
-    stk::mesh::Entity const * elemEndNode1 = stkMeshBulkData.end_elements(nodes[0]);
-    stk::mesh::Entity const * elemStartNode2 = stkMeshBulkData.begin_elements(nodes[1]);
-    stk::mesh::Entity const * elemEndNode2 = stkMeshBulkData.end_elements(nodes[1]);
-
-    std::vector<stk::mesh::Entity> elems1(elemStartNode1, elemEndNode1);
-    std::sort(elems1.begin(), elems1.end());
-    std::vector<stk::mesh::Entity> elems2(elemStartNode2, elemEndNode2);
-    std::sort(elems2.begin(), elems2.end());
-
-    std::vector<stk::mesh::Entity>::iterator iter = std::set_intersection( elems1.begin(), elems1.end(),
-          elems2.begin(), elems2.end(), elementsConnectedToNodes.begin());
-
-    elementsConnectedToNodes.resize(iter-elementsConnectedToNodes.begin());
-}
-
-bool doesEdgeNeedGhostingCommunication(BulkDataTester &stkMeshBulkData, std::vector<stk::mesh::Entity>& connectedElements)
-{
-    bool communicate_edge_for_ghosting = false;
-    for (size_t j=0;j<connectedElements.size();j++)
-    {
-        bool isElementOwnedOnThisProc = stkMeshBulkData.bucket(connectedElements[j]).owned();
-        if ( isElementOwnedOnThisProc && stkMeshBulkData.is_ghosted_somewhere(stkMeshBulkData.entity_key(connectedElements[j])) )
-        {
-            communicate_edge_for_ghosting = true;
-            break;
-        }
-    }
-    return communicate_edge_for_ghosting;
-}
-
-void fillNodeEntitiesOfEdge(stk::mesh::BulkData& stkMeshBulkData, std::vector<stk::mesh::EntityId>& nodeIdsForEdge, std::vector<stk::mesh::Entity>& nodes)
-{
-    for (size_t n=0; n<nodeIdsForEdge.size(); ++n)
-    {
-        stk::mesh::EntityKey nodeEntityKey(stk::topology::NODE_RANK,nodeIdsForEdge[n]);
-        stk::mesh::Entity node = stkMeshBulkData.get_entity(nodeEntityKey);
-        ASSERT_TRUE(stkMeshBulkData.is_valid(node));
-        nodes[n] = node;
-    }
-}
-
 
 void checkResultsOfIRSMD_for_edges(stk::mesh::BulkData &stkMeshBulkData)
 {

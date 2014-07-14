@@ -69,6 +69,9 @@ std::vector<DynConnData> DynConnMetrics::m_data;
 #endif
 }
 
+
+///////////////////////////////////////////// Functions for creating edges
+
 struct shared_edge_type
 {
   stk::topology::topology_t topology;
@@ -188,7 +191,7 @@ void unpackEdgeInfromFromOtherProcsAndMarkEdgesAsSharedAndTrackProcessorsThatNee
     }
 }
 
-void setUniqueIdForEdgeAndCreateCommMapInfoForSharingProcs(stk::mesh::BulkData &mesh, std::vector<shared_edge_type> & shared_edge_map)
+void resolveUniqueIdForSharedEdgeAndCreateCommMapInfoForSharingProcs(stk::mesh::BulkData &mesh, std::vector<shared_edge_type> & shared_edge_map)
 {
    for(size_t i = 0, e = shared_edge_map.size(); i < e; ++i)
    {
@@ -215,32 +218,32 @@ void update_shared_edges_global_ids( BulkData & mesh, std::vector<shared_edge_ty
     CommAll comm(mesh.parallel());
     communicateSharedEdgeInfo(mesh, comm, shared_edges);
     unpackEdgeInfromFromOtherProcsAndMarkEdgesAsSharedAndTrackProcessorsThatNeedAlsoHaveEdge(comm, mesh, shared_edge_map);
-    setUniqueIdForEdgeAndCreateCommMapInfoForSharingProcs(mesh, shared_edge_map);
+    resolveUniqueIdForSharedEdgeAndCreateCommMapInfoForSharingProcs(mesh, shared_edge_map);
 }
 
 void markEdgesForResolvingSharingInfoUsingNodes(stk::mesh::BulkData &mesh, stk::mesh::EntityRank entityRank, std::vector<shared_edge_type>& shared_edges)
 {
     ThrowRequireMsg(stk::topology::EDGE_RANK == entityRank, "Program error. Please report to sierra-help.");
 
-    const stk::mesh::BucketVector& buckets = mesh.buckets(entityRank);
+    const stk::mesh::BucketVector& edge_buckets = mesh.buckets(entityRank);
 
-    for(size_t bucketIndex = 0; bucketIndex < buckets.size(); bucketIndex++)
+    for(size_t bucketIndex = 0; bucketIndex < edge_buckets.size(); bucketIndex++)
     {
-        const stk::mesh::Bucket& bucket = *buckets[bucketIndex];
+        const stk::mesh::Bucket& bucket = *edge_buckets[bucketIndex];
         stk::topology topology = bucket.topology();
         for(size_t entityIndex = 0; entityIndex < bucket.size(); entityIndex++)
         {
-            Entity entity = bucket[entityIndex];
-            const unsigned num_nodes_for_entity = bucket.num_nodes(entityIndex);
+            Entity edge = bucket[entityIndex];
+            const unsigned num_nodes_on_edge = bucket.num_nodes(entityIndex);
 
-            if ( num_nodes_for_entity > 1 )
+            if ( num_nodes_on_edge > 1 )
             {
-                if(stk::mesh::in_owned_closure(mesh, entity, mesh.parallel_rank()))
+                if(stk::mesh::in_owned_closure(mesh, edge, mesh.parallel_rank()))
                 {
-                    EntityVector edge_nodes(num_nodes_for_entity);
+                    EntityVector edge_nodes(num_nodes_on_edge);
 
                     Entity const * nodes = bucket.begin_nodes(entityIndex);
-                    edge_nodes.assign(nodes, nodes+num_nodes_for_entity);
+                    edge_nodes.assign(nodes, nodes+num_nodes_on_edge);
 
                     //sort edge nodes into lexicographical smallest permutation
                     if(EntityLess(mesh)(edge_nodes[1], edge_nodes[0]))
@@ -249,7 +252,7 @@ void markEdgesForResolvingSharingInfoUsingNodes(stk::mesh::BulkData &mesh, stk::
                     }
 
                     bool shared_edge = true;
-                    for(size_t n = 0; n < num_nodes_for_entity; ++n)
+                    for(size_t n = 0; n < num_nodes_on_edge; ++n)
                     {
                         Entity node = edge_nodes[n];
                         shared_edge = shared_edge && mesh.bucket(node).shared();
@@ -259,21 +262,41 @@ void markEdgesForResolvingSharingInfoUsingNodes(stk::mesh::BulkData &mesh, stk::
                     {
                         shared_edge_type sedge;
                         sedge.topology = topology;
-                        for(size_t n = 0; n < num_nodes_for_entity; ++n)
+                        for(size_t n = 0; n < num_nodes_on_edge; ++n)
                         {
                             sedge.nodes[n] = mesh.entity_key(edge_nodes[n]);
                         }
-                        const EntityKey &edge_key = mesh.entity_key(entity);
+                        const EntityKey &edge_key = mesh.entity_key(edge);
                         sedge.local_key = edge_key;
                         sedge.global_key = edge_key;
                         shared_edges.push_back(sedge);
-                        mesh.markEdge(entity, BulkData::POSSIBLY_SHARED);
+                        mesh.markEdge(edge, BulkData::POSSIBLY_SHARED);
                     }
                 }
             }
         }
     }
 }
+
+void resolve_edge_sharing(stk::mesh::BulkData &stkMeshBulkData, std::vector<EntityKey> &entity_keys)
+{
+    std::vector<shared_edge_type> shared_edges;
+    markEdgesForResolvingSharingInfoUsingNodes(stkMeshBulkData, stk::topology::EDGE_RANK, shared_edges);
+    update_shared_edges_global_ids( stkMeshBulkData, shared_edges );
+
+    for (size_t i=0; i<shared_edges.size();i++)
+    {
+        Entity entity = stkMeshBulkData.get_entity(shared_edges[i].global_key);
+        if ( stkMeshBulkData.isEdgeMarked(entity) == BulkData::IS_SHARED )
+        {
+            entity_keys.push_back(shared_edges[i].global_key);
+        }
+    }
+    std::sort(entity_keys.begin(), entity_keys.end());
+    std::fill(stkMeshBulkData.getMarkedEdges().begin(), stkMeshBulkData.getMarkedEdges().end(), static_cast<int>(BulkData::NOT_MARKED));
+}
+
+/////////////////////////////////////// End functions for create edges
 
 parallel::DistributedIndex::KeySpanVector
 convert_entity_keys_to_spans( const MetaData & meta )
@@ -4850,23 +4873,7 @@ void BulkData::internal_update_distributed_index(
 {
   Trace_("stk::mesh::BulkData::internal_update_distributed_index");
   std::vector<EntityKey> entity_keys;
-
-  std::vector<shared_edge_type> shared_edges;
-  markEdgesForResolvingSharingInfoUsingNodes(*this, stk::topology::EDGE_RANK, shared_edges);
-  update_shared_edges_global_ids( *this, shared_edges );
-
-  for (size_t i=0; i<shared_edges.size();i++)
-  {
-      Entity entity = get_entity(shared_edges[i].global_key);
-      if ( isEdgeMarked(entity) == BulkData::IS_SHARED )
-      {
-          entity_keys.push_back(shared_edges[i].global_key);
-      }
-  }
-
-  std::fill(m_mark_edge.begin(), m_mark_edge.end(), static_cast<int>(BulkData::NOT_MARKED));
-
-  std::sort(entity_keys.begin(), entity_keys.end());
+  resolve_edge_sharing(*this, entity_keys);
 
   shared_new.clear();
   shared_new.resize(entity_keys.size());
@@ -5905,6 +5912,8 @@ bool BulkData::internal_modification_end_for_edge_creation( bool regenerate_aura
   return true ;
 }
 
+//////////////////////////////////// Free funcions to help with modification end (exp) for edges
+
 void fillElementsConnectedToNodes(stk::mesh::BulkData &stkMeshBulkData, std::vector<stk::mesh::Entity> &nodes,
               std::vector<stk::mesh::Entity> & elementsConnectedToNodes)
 {
@@ -6078,6 +6087,98 @@ void determineEntitiesThatNeedGhosting(stk::mesh::BulkData &stkMeshBulkData, stk
     }
 }
 
+void connect_edges_to_ghosted_entities_and_fill_edges_to_ghost_onto_other_processors(stk::mesh::BulkData &stkMeshBulkata, std::set<EntityProc, EntityLess> &entitiesToGhostOntoOtherProcessors)
+{
+    const stk::mesh::BucketVector& edge_buckets = stkMeshBulkata.buckets(stk::topology::EDGE_RANK);
+
+    for(size_t bucketIndex = 0; bucketIndex < edge_buckets.size(); bucketIndex++)
+    {
+        const stk::mesh::Bucket& bucket = *edge_buckets[bucketIndex];
+        for(size_t entityIndex = 0; entityIndex < bucket.size(); entityIndex++)
+        {
+            Entity edge = bucket[entityIndex];
+            if ( stkMeshBulkata.state(edge) == Unchanged ) continue;
+
+            std::vector<stk::mesh::Entity> edge_nodes(2);
+            stk::mesh::Entity const *  nodes = stkMeshBulkata.begin_nodes(edge);
+            edge_nodes[0] = nodes[0];
+            edge_nodes[1] = nodes[1];
+
+            std::vector<stk::mesh::Entity> facesConnectedToNodes;
+            fillFacesConnectedToNodes(stkMeshBulkata, edge_nodes, facesConnectedToNodes);
+            connectGhostedEntitiesToEdge(stkMeshBulkata, facesConnectedToNodes, edge, edge_nodes);
+
+            std::vector<stk::mesh::Entity> elementsConnectedToNodes;
+            fillElementsConnectedToNodes(stkMeshBulkata, edge_nodes, elementsConnectedToNodes);
+            connectGhostedEntitiesToEdge(stkMeshBulkata, elementsConnectedToNodes, edge, edge_nodes);
+
+            if ( bucket.owned() || bucket.shared() )
+            {
+                determineEntitiesThatNeedGhosting(stkMeshBulkata, edge, facesConnectedToNodes, edge_nodes, entitiesToGhostOntoOtherProcessors);
+                determineEntitiesThatNeedGhosting(stkMeshBulkata, edge, elementsConnectedToNodes, edge_nodes, entitiesToGhostOntoOtherProcessors);
+            }
+        }
+    }
+
+    std::set< EntityKey > entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs;
+    comm_sync_send_recv(stkMeshBulkata, entitiesToGhostOntoOtherProcessors, entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs);
+}
+
+void connect_ghosted_edges_received_to_ghosted_faces_and_elements(stk::mesh::BulkData &stkMeshBulkData)
+{
+    if (!stkMeshBulkData.connectivity_map().valid(stk::topology::EDGE_RANK, stk::topology::FACE_RANK) )
+    {
+        const stk::mesh::BucketVector& edge_buckets = stkMeshBulkData.buckets(stk::topology::EDGE_RANK);
+        for(size_t bucketIndex = 0; bucketIndex < edge_buckets.size(); bucketIndex++)
+        {
+            const stk::mesh::Bucket& bucket = *edge_buckets[bucketIndex];
+            if ( bucket.in_aura() )
+            {
+                for(size_t entityIndex = 0; entityIndex < bucket.size(); entityIndex++)
+                {
+                    Entity edge = bucket[entityIndex];
+                    if ( stkMeshBulkData.state(edge) == Unchanged ) continue;
+
+                    std::vector<stk::mesh::Entity> edge_nodes(2);
+                    stk::mesh::Entity const *  nodes = stkMeshBulkData.begin_nodes(edge);
+                    edge_nodes[0] = nodes[0];
+                    edge_nodes[1] = nodes[1];
+
+                    std::vector<stk::mesh::Entity> facesConnectedToNodes;
+                    fillFacesConnectedToNodes(stkMeshBulkData, edge_nodes, facesConnectedToNodes);
+                    connectGhostedEntitiesToEdge(stkMeshBulkData, facesConnectedToNodes, edge, edge_nodes);
+                }
+            }
+        }
+    }
+
+    if (!stkMeshBulkData.connectivity_map().valid(stk::topology::EDGE_RANK, stk::topology::ELEMENT_RANK) )
+    {
+        const stk::mesh::BucketVector& edge_buckets = stkMeshBulkData.buckets(stk::topology::EDGE_RANK);
+        for(size_t bucketIndex = 0; bucketIndex < edge_buckets.size(); bucketIndex++)
+        {
+            const stk::mesh::Bucket& bucket = *edge_buckets[bucketIndex];
+            if ( bucket.in_aura() )
+            {
+                for(size_t entityIndex = 0; entityIndex < bucket.size(); entityIndex++)
+                {
+                    Entity edge = bucket[entityIndex];
+                    if ( stkMeshBulkData.state(edge) == Unchanged ) continue;
+
+                    std::vector<stk::mesh::Entity> edge_nodes(2);
+                    stk::mesh::Entity const *  nodes = stkMeshBulkData.begin_nodes(edge);
+                    edge_nodes[0] = nodes[0];
+                    edge_nodes[1] = nodes[1];
+
+                    std::vector<stk::mesh::Entity> elementsConnectedToNodes;
+                    fillElementsConnectedToNodes(stkMeshBulkData, edge_nodes, elementsConnectedToNodes);
+                    connectGhostedEntitiesToEdge(stkMeshBulkData, elementsConnectedToNodes, edge, edge_nodes);
+                }
+            }
+        }
+    }
+}
+
 bool BulkData::internal_modification_end_for_edge_creation_exp( bool regenerate_aura, modification_optimization opt )
 {
   Trace_("stk::mesh::BulkData::internal_modification_end");
@@ -6117,96 +6218,11 @@ bool BulkData::internal_modification_end_for_edge_creation_exp( bool regenerate_
 
     std::set<EntityProc, EntityLess> entitiesToGhostOntoOtherProcessors(EntityLess(*this));
 
-    const stk::mesh::BucketVector& edge_buckets = buckets(stk::topology::EDGE_RANK);
-
-    for(size_t bucketIndex = 0; bucketIndex < edge_buckets.size(); bucketIndex++)
-    {
-        const stk::mesh::Bucket& bucket = *edge_buckets[bucketIndex];
-        for(size_t entityIndex = 0; entityIndex < bucket.size(); entityIndex++)
-        {
-            Entity edge = bucket[entityIndex];
-            if ( state(edge) == Unchanged ) continue;
-
-            std::vector<stk::mesh::Entity> edge_nodes(2);
-            stk::mesh::Entity const *  nodes = begin_nodes(edge);
-            edge_nodes[0] = nodes[0];
-            edge_nodes[1] = nodes[1];
-
-            std::vector<stk::mesh::Entity> facesConnectedToNodes;
-            fillFacesConnectedToNodes(*this, edge_nodes, facesConnectedToNodes);
-            connectGhostedEntitiesToEdge(*this, facesConnectedToNodes, edge, edge_nodes);
-
-            std::vector<stk::mesh::Entity> elementsConnectedToNodes;
-            fillElementsConnectedToNodes(*this, edge_nodes, elementsConnectedToNodes);
-            connectGhostedEntitiesToEdge(*this, elementsConnectedToNodes, edge, edge_nodes);
-
-            if ( bucket.owned() || bucket.shared() )
-            {
-                determineEntitiesThatNeedGhosting(*this, edge, facesConnectedToNodes, edge_nodes, entitiesToGhostOntoOtherProcessors);
-                determineEntitiesThatNeedGhosting(*this, edge, elementsConnectedToNodes, edge_nodes, entitiesToGhostOntoOtherProcessors);
-            }
-        }
-    }
-
-    std::set< EntityKey > entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs;
-    comm_sync_send_recv(*this, entitiesToGhostOntoOtherProcessors, entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs);
-    // ThrowRequireMsg(entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs.empty(), "Program error. Contact sierra-help.");
+    connect_edges_to_ghosted_entities_and_fill_edges_to_ghost_onto_other_processors(*this, entitiesToGhostOntoOtherProcessors);
 
     ghost_entities_and_fields(aura_ghosting(), entitiesToGhostOntoOtherProcessors);
 
-    // Now that edges have been ghosted, check if edge to face and edge to element connectivity is there
-
-    if (!connectivity_map().valid(stk::topology::EDGE_RANK, stk::topology::FACE_RANK) )
-    {
-        const stk::mesh::BucketVector& edge_buckets = buckets(stk::topology::EDGE_RANK);
-        for(size_t bucketIndex = 0; bucketIndex < edge_buckets.size(); bucketIndex++)
-        {
-            const stk::mesh::Bucket& bucket = *edge_buckets[bucketIndex];
-            if ( bucket.in_aura() )
-            {
-                for(size_t entityIndex = 0; entityIndex < bucket.size(); entityIndex++)
-                {
-                    Entity edge = bucket[entityIndex];
-                    if ( state(edge) == Unchanged ) continue;
-
-                    std::vector<stk::mesh::Entity> edge_nodes(2);
-                    stk::mesh::Entity const *  nodes = begin_nodes(edge);
-                    edge_nodes[0] = nodes[0];
-                    edge_nodes[1] = nodes[1];
-
-                    std::vector<stk::mesh::Entity> facesConnectedToNodes;
-                    fillFacesConnectedToNodes(*this, edge_nodes, facesConnectedToNodes);
-                    connectGhostedEntitiesToEdge(*this, facesConnectedToNodes, edge, edge_nodes);
-                }
-            }
-        }
-    }
-
-    if (!connectivity_map().valid(stk::topology::EDGE_RANK, stk::topology::ELEMENT_RANK) )
-    {
-        const stk::mesh::BucketVector& edge_buckets = buckets(stk::topology::EDGE_RANK);
-        for(size_t bucketIndex = 0; bucketIndex < edge_buckets.size(); bucketIndex++)
-        {
-            const stk::mesh::Bucket& bucket = *edge_buckets[bucketIndex];
-            if ( bucket.in_aura() )
-            {
-                for(size_t entityIndex = 0; entityIndex < bucket.size(); entityIndex++)
-                {
-                    Entity edge = bucket[entityIndex];
-                    if ( state(edge) == Unchanged ) continue;
-
-                    std::vector<stk::mesh::Entity> edge_nodes(2);
-                    stk::mesh::Entity const *  nodes = begin_nodes(edge);
-                    edge_nodes[0] = nodes[0];
-                    edge_nodes[1] = nodes[1];
-
-                    std::vector<stk::mesh::Entity> elementsConnectedToNodes;
-                    fillElementsConnectedToNodes(*this, edge_nodes, elementsConnectedToNodes);
-                    connectGhostedEntitiesToEdge(*this, elementsConnectedToNodes, edge, edge_nodes);
-                }
-            }
-        }
-    }
+    connect_ghosted_edges_received_to_ghosted_faces_and_elements(*this);
 
 #ifndef NDEBUG
     std::ostringstream msg ;

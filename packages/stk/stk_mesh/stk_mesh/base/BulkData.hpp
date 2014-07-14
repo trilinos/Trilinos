@@ -1172,6 +1172,7 @@ public:
   //
   void get_entities(EntityRank rank, Selector const& selector, EntityVector& output_entities) const;
 
+  std::vector<int>& getMarkedEdges() { return m_mark_edge; }
 
 private:
 
@@ -2208,6 +2209,8 @@ struct EntityGhostData
 void get_ghost_data( const BulkData& bulkData, Entity entity, std::vector<EntityGhostData> & dataVector );
 void delete_shared_entities_which_are_no_longer_in_owned_closure( BulkData & mesh );
 bool comm_mesh_verify_parallel_consistency(BulkData & M , std::ostream & error_log );
+void connectEntityToEdge(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity entity,
+        stk::mesh::Entity edge, std::vector<stk::mesh::Entity> &nodes);
 
 } // namespace mesh
 } // namespace stk
