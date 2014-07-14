@@ -1156,6 +1156,8 @@ namespace { // (anonymous)
     //
     // KR FIXME Overload this method to take a View.
 
+    using Kokkos::ALL;
+    using Kokkos::subview;
     using Teuchos::arcp_const_cast;
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
@@ -1164,17 +1166,11 @@ namespace { // (anonymous)
     using Teuchos::reduceAll;
     using Teuchos::REDUCE_SUM;
     using Teuchos::ScalarTraits;
-
-    using Kokkos::ALL;
-    using Kokkos::subview;
-
-    typedef ScalarTraits<Scalar> SCT;
+    typedef Teuchos::ScalarTraits<Scalar> SCT;
     typedef typename SCT::magnitudeType Mag;
-    typedef typename Teuchos::ArrayView<Mag>::size_type size_type;
+    const char tfecfFuncName[] = "normWeighted";
 
-    const char tfecfFuncName[] = "normWeighted()";
-
-    const Mag OneOverN = ScalarTraits<Mag>::one() / getGlobalLength();
+    const Mag OneOverN = Teuchos::ScalarTraits<Mag>::one () / static_cast<Mag> (getGlobalLength ());
     bool OneW = false;
     const size_t numVecs = this->getNumVectors();
     if (weights.getNumVectors() == 1) {

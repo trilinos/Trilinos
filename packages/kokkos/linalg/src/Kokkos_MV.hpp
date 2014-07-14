@@ -1615,12 +1615,12 @@ struct MV_Sum_Functor
 template<class normVector, class VectorType>
 normVector MV_Sum(const normVector &r, const VectorType & x, int n = -1)
 {
-    typedef typename VectorType::size_type            size_type;
+  if (n < 0) {
+    n = x.dimension_0 ();
+  }
 
-    if(n<0) n = x.dimension_0();
-
-    Kokkos::parallel_reduce( n , MV_Sum_Functor<VectorType>(x), r );
-    return r;
+  Kokkos::parallel_reduce (n , MV_Sum_Functor<VectorType> (x), r);
+  return r;
 }
 
 /*------------------------------------------------------------------------------------------
@@ -1687,12 +1687,12 @@ struct MV_Norm1_Functor
 template<class normVector, class VectorType>
 normVector MV_Norm1(const normVector &r, const VectorType & x, int n = -1)
 {
-    typedef typename VectorType::size_type            size_type;
+  if (n < 0) {
+    n = x.dimension_0 ();
+  }
 
-    if(n<0) n = x.dimension_0();
-
-    Kokkos::parallel_reduce( n , MV_Norm1_Functor<VectorType>(x), r );
-    return r;
+  Kokkos::parallel_reduce (n , MV_Norm1_Functor<VectorType> (x), r);
+  return r;
 }
 
 /*------------------------------------------------------------------------------------------
@@ -1756,12 +1756,12 @@ struct MV_NormInf_Functor
 template<class normVector, class VectorType>
 normVector MV_NormInf(const normVector &r, const VectorType & x, int n = -1)
 {
-    typedef typename VectorType::size_type            size_type;
+  if (n < 0) {
+    n = x.dimension_0 ();
+  }
 
-    if(n<0) n = x.dimension_0();
-
-    Kokkos::parallel_reduce( n , MV_NormInf_Functor<VectorType>(x), r );
-    return r;
+  Kokkos::parallel_reduce (n , MV_NormInf_Functor<VectorType> (x), r);
+  return r;
 }
 
 /*------------------------------------------------------------------------------------------
@@ -1883,12 +1883,12 @@ struct MV_DotWeighted_Functor<WeightVector,XVector,2>
 template<class rVector, class WeightVector, class XVector>
 rVector MV_DotWeighted(const rVector &r, const WeightVector & w, const XVector & x, int n = -1)
 {
-  typedef typename XVector::size_type            size_type;
+  if (n < 0) {
+    n = x.dimension_0 ();
+  }
 
-  if(n<0) n = x.dimension_0();
-
-  Kokkos::parallel_reduce( n , MV_DotWeighted_Functor<WeightVector,XVector,WeightVector::Rank>(w,x), r );
-
+  typedef MV_DotWeighted_Functor<WeightVector, XVector, WeightVector::Rank> functor_type;
+  Kokkos::parallel_reduce (n , functor_type (w, x), r);
   return r;
 }
 
@@ -2249,16 +2249,16 @@ template<class WeightVector, class XVector>
 typename Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::dot_type
 V_DotWeighted(const WeightVector & w, const XVector & x, int n = -1)
 {
-  typedef typename XVector::size_type            size_type;
-
-  if(n<0) n = x.dimension_0();
+  if (n < 0) {
+    n = x.dimension_0 ();
+  }
 
   typedef Details::InnerProductSpaceTraits<typename XVector::non_const_value_type> IPT;
-  typedef typename IPT::dot_type               value_type;
+  typedef typename IPT::dot_type value_type;
   value_type ret_val;
 
-  Kokkos::parallel_reduce( n , V_DotWeighted_Functor<WeightVector,XVector>(w,x), ret_val );
-
+  typedef V_DotWeighted_Functor<WeightVector,XVector> functor_type;
+  Kokkos::parallel_reduce (n , functor_type (w, x), ret_val);
   return ret_val;
 }
 
@@ -2302,17 +2302,17 @@ struct V_Sum_Functor
 
 template<class VectorType>
 typename Details::InnerProductSpaceTraits<typename VectorType::non_const_value_type>::dot_type
-V_Sum(const VectorType & x, int n = -1)
+V_Sum (const VectorType& x, int n = -1)
 {
-    typedef typename VectorType::size_type            size_type;
+  if (n < 0) {
+    n = x.dimension_0 ();
+  }
 
-    if(n<0) n = x.dimension_0();
-
-    typedef Details::InnerProductSpaceTraits<typename VectorType::non_const_value_type> IPT;
-    typedef typename IPT::dot_type               value_type;
-    value_type ret_val;
-    Kokkos::parallel_reduce( n , V_Sum_Functor<VectorType>(x), ret_val );
-    return ret_val;
+  typedef Details::InnerProductSpaceTraits<typename VectorType::non_const_value_type> IPT;
+  typedef typename IPT::dot_type value_type;
+  value_type ret_val;
+  Kokkos::parallel_reduce (n, V_Sum_Functor<VectorType> (x), ret_val);
+  return ret_val;
 }
 
 /*------------------------------------------------------------------------------------------
@@ -2351,15 +2351,15 @@ template<class VectorType>
 typename Details::InnerProductSpaceTraits<typename VectorType::non_const_value_type>::dot_type
 V_Norm1( const VectorType & x, int n = -1)
 {
-    typedef typename VectorType::size_type            size_type;
+  if (n < 0) {
+    n = x.dimension_0 ();
+  }
 
-    if(n<0) n = x.dimension_0();
-
-    typedef Details::InnerProductSpaceTraits<typename VectorType::non_const_value_type> IPT;
-    typedef typename IPT::dot_type               value_type;
-    value_type ret_val;
-    Kokkos::parallel_reduce( n , V_Norm1_Functor<VectorType>(x), ret_val );
-    return ret_val;
+  typedef Details::InnerProductSpaceTraits<typename VectorType::non_const_value_type> IPT;
+  typedef typename IPT::dot_type value_type;
+  value_type ret_val;
+  Kokkos::parallel_reduce (n, V_Norm1_Functor<VectorType> (x), ret_val);
+  return ret_val;
 }
 /*------------------------------------------------------------------------------------------
  *-------------------------- Compute NormInf--------------------------------------------------
@@ -2396,17 +2396,17 @@ struct V_NormInf_Functor
 
 template<class VectorType>
 typename Details::InnerProductSpaceTraits<typename VectorType::non_const_value_type>::dot_type
-V_NormInf( const VectorType & x, int n = -1)
+V_NormInf (const VectorType& x, int n = -1)
 {
-    typedef typename VectorType::size_type            size_type;
+  if (n < 0) {
+    n = x.dimension_0 ();
+  }
 
-    if(n<0) n = x.dimension_0();
-
-    typedef Details::InnerProductSpaceTraits<typename VectorType::non_const_value_type> IPT;
-    typedef typename IPT::dot_type               value_type;
-    value_type ret_val;
-    Kokkos::parallel_reduce( n , V_NormInf_Functor<VectorType>(x), ret_val );
-    return ret_val;
+  typedef Details::InnerProductSpaceTraits<typename VectorType::non_const_value_type> IPT;
+  typedef typename IPT::dot_type value_type;
+  value_type ret_val;
+  Kokkos::parallel_reduce (n, V_NormInf_Functor<VectorType> (x), ret_val);
+  return ret_val;
 }
 
 /*------------------------------------------------------------------------------------------
