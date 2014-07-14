@@ -20,8 +20,8 @@ namespace {
 template< typename T >
 class DataTraitsClassPOD : public DataTraits {
 public:
-  DataTraitsClassPOD( const char * name , std::size_t n )
-  : DataTraits( typeid(T) , name , sizeof(T) , 1 )
+  DataTraitsClassPOD( const char * name_ , std::size_t n )
+  : DataTraits( typeid(T) , name_ , sizeof(T) , 1 )
   {
     is_pod = true ;
     is_class = true ;

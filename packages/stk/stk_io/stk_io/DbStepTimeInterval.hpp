@@ -9,8 +9,8 @@ namespace stk {
     class DBStepTimeInterval
     {
     public:
-      DBStepTimeInterval(Ioss::Region *region, double time)
-	: region(region),
+      DBStepTimeInterval(Ioss::Region *region_, double time)
+	: region(region_),
 	  t_analysis(time),
 	  t_before(-std::numeric_limits<double>::max()),
 	  t_after(std::numeric_limits<double>::max()),

@@ -51,6 +51,7 @@ MeshField::MeshField(stk::mesh::FieldBase &field,
     m_timeToRead(0.0),
     m_timeMatch(tmo),
     m_oneTimeOnly(false),
+    m_singleState(true),
     m_isActive(false)
 {
   if (db_name == "") {
