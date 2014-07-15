@@ -232,8 +232,7 @@ private:
                      int NumPermuteIDs,
                      int * PermuteToLIDs,
                      int * PermuteFromLIDs,
-                     const Epetra_OffsetIndex * Indexor,
-                     Epetra_CombineMode CombineMode = Zero);
+                     const Epetra_OffsetIndex * Indexor);
 
   // Perform any packing or preparation required for call to DoTransfer().
   int PackAndPrepare(const Epetra_SrcDistObject& Source,

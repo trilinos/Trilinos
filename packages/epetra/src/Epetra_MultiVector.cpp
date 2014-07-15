@@ -621,21 +621,9 @@ int Epetra_MultiVector::CopyAndPermute(const Epetra_SrcDistObject& Source,
                                        int NumPermuteIDs,
                                        int * PermuteToLIDs,
                                        int *PermuteFromLIDs,
-                                       const Epetra_OffsetIndex * Indexor,
-                                       Epetra_CombineMode CombineMode)
+                                       const Epetra_OffsetIndex * Indexor)
 {
   (void)Indexor;
-
-  if(    CombineMode != Add
-      && CombineMode != Zero
-      && CombineMode != Insert
-      && CombineMode != InsertAdd
-      && CombineMode != Average
-      && CombineMode != Epetra_Max
-      && CombineMode != Epetra_Min
-      && CombineMode != AbsMin
-      && CombineMode != AbsMax )
-      EPETRA_CHK_ERR(-1); //Unsupported CombinedMode, will default to Zero
 
   const Epetra_MultiVector & A = dynamic_cast<const Epetra_MultiVector &>(Source);
 
@@ -681,16 +669,9 @@ int Epetra_MultiVector::CopyAndPermute(const Epetra_SrcDistObject& Source,
   // Do copy first
   if (NumSameIDs>0)
     if (To!=From) {
-      for (int i=0; i < numVectors; i++) {
-      if (CombineMode==InsertAdd)                     for (int j=0; j<NumSameEntries; j++) To[i][j] = 0.0; // Zero out first
-      if (CombineMode==Add || CombineMode==InsertAdd) for (int j=0; j<NumSameEntries; j++) To[i][j] += From[i][j]; // Add to existing value
-      else if(CombineMode==Insert)                    for (int j=0; j<NumSameEntries; j++) To[i][j] = From[i][j];
-      else if(CombineMode==AbsMax)                    for (int j=0; j<NumSameEntries; j++) To[i][j] = EPETRA_MAX( To[i][j],std::abs(From[i][j]));
-      else if(CombineMode==AbsMin)                    for (int j=0; j<NumSameEntries; j++) To[i][j] = EPETRA_MIN( To[i][j],std::abs(From[i][j]));
-      else if(CombineMode==Epetra_Max)                for (int j=0; j<NumSameEntries; j++) To[i][j] = EPETRA_MAX( To[i][j],From[i][j]);
-      else if(CombineMode==Epetra_Min)                for (int j=0; j<NumSameEntries; j++) To[i][j] = EPETRA_MIN( To[i][j],From[i][j]);
-      else if(CombineMode==Average)                   for (int j=0; j<NumSameEntries; j++) {To[i][j] += From[i][j]; To[i][j] *= 0.5;} // Not a true avg if >2 occurance of an ID
-    }
+      for (int i=0; i < numVectors; i++)
+  for (int j=0; j<NumSameEntries; j++)
+    To[i][j] = From[i][j];
     }
   // Do local permutation next
   if (NumPermuteIDs>0) {
@@ -698,28 +679,16 @@ int Epetra_MultiVector::CopyAndPermute(const Epetra_SrcDistObject& Source,
     // Point entry case
     if (Case1) {
 
-      if (numVectors==1) {
-      if (CombineMode==InsertAdd)                     for (int j=0; j<NumPermuteIDs; j++) To[0][PermuteToLIDs[j]] = 0.0; // Zero out first
-      if (CombineMode==Add || CombineMode==InsertAdd) for (int j=0; j<NumPermuteIDs; j++) To[0][PermuteToLIDs[j]] += From[0][PermuteFromLIDs[j]]; // Add to existing value
-      else if(CombineMode==Insert)                    for (int j=0; j<NumPermuteIDs; j++) To[0][PermuteToLIDs[j]] = From[0][PermuteFromLIDs[j]];
-      else if(CombineMode==AbsMax)                    for (int j=0; j<NumPermuteIDs; j++) To[0][PermuteToLIDs[j]] = EPETRA_MAX( To[0][PermuteToLIDs[j]],std::abs(From[0][PermuteFromLIDs[j]]));
-      else if(CombineMode==AbsMin)                    for (int j=0; j<NumPermuteIDs; j++) To[0][PermuteToLIDs[j]] = EPETRA_MIN( To[0][PermuteToLIDs[j]],std::abs(From[0][PermuteFromLIDs[j]]));
-      else if(CombineMode==Epetra_Max)                for (int j=0; j<NumPermuteIDs; j++) To[0][PermuteToLIDs[j]] = EPETRA_MAX( To[0][PermuteToLIDs[j]],From[0][PermuteFromLIDs[j]]);
-      else if(CombineMode==Epetra_Min)                for (int j=0; j<NumPermuteIDs; j++) To[0][PermuteToLIDs[j]] = EPETRA_MIN( To[0][PermuteToLIDs[j]],From[0][PermuteFromLIDs[j]]);
-      else if(CombineMode==Average)                   for (int j=0; j<NumPermuteIDs; j++) {To[0][PermuteToLIDs[j]] += From[0][PermuteFromLIDs[j]]; To[0][PermuteToLIDs[j]] *= 0.5;} // Not a true avg if >2 occurance of an ID
-  }
+      if (numVectors==1)
+  for (int j=0; j<NumPermuteIDs; j++)
+    To[0][PermuteToLIDs[j]] = From[0][PermuteFromLIDs[j]];
+
       else {
   for (int j=0; j<NumPermuteIDs; j++) {
     jj = PermuteToLIDs[j];
     jjj = PermuteFromLIDs[j];
-      if (CombineMode==InsertAdd)                     for (int i=0; i<numVectors; i++) To[i][jj] = 0.0; // Zero out first
-      if (CombineMode==Add || CombineMode==InsertAdd) for (int i=0; i<numVectors; i++) To[i][jj] += From[i][jjj]; // Add to existing value
-      else if(CombineMode==Insert)                    for (int i=0; i<numVectors; i++) To[i][jj] = From[i][jjj];
-      else if(CombineMode==AbsMax)                    for (int i=0; i<numVectors; i++) To[i][jj] = EPETRA_MAX( To[i][jj],std::abs(From[i][jjj]));
-      else if(CombineMode==AbsMin)                    for (int i=0; i<numVectors; i++) To[i][jj] = EPETRA_MIN( To[i][jj],std::abs(From[i][jjj]));
-      else if(CombineMode==Epetra_Max)                for (int i=0; i<numVectors; i++) To[i][jj] = EPETRA_MAX( To[i][jj],From[i][jjj]);
-      else if(CombineMode==Epetra_Min)                for (int i=0; i<numVectors; i++) To[i][jj] = EPETRA_MIN( To[i][jj],From[i][jjj]);
-      else if(CombineMode==Average)                   for (int i=0; i<numVectors; i++) {To[i][jj] += From[i][jjj]; To[i][jj] *= 0.5;} // Not a true avg if >2 occurance of an ID
+    for (int i=0; i<numVectors; i++)
+      To[i][jj] = From[i][jjj];
   }
       }
     }
@@ -729,14 +698,9 @@ int Epetra_MultiVector::CopyAndPermute(const Epetra_SrcDistObject& Source,
       for (int j=0; j<NumPermuteIDs; j++) {
   jj = MaxElementSize*PermuteToLIDs[j];
   jjj = MaxElementSize*PermuteFromLIDs[j];
-      if (CombineMode==InsertAdd)                     for (int i=0; i<numVectors; i++) for (k=0; k<MaxElementSize; k++) To[i][jj+k] = 0.0; // Zero out first
-      if (CombineMode==Add || CombineMode==InsertAdd) for (int i=0; i<numVectors; i++) for (k=0; k<MaxElementSize; k++) To[i][jj+k] += From[i][jjj+k]; // Add to existing value
-      else if(CombineMode==Insert)                    for (int i=0; i<numVectors; i++) for (k=0; k<MaxElementSize; k++) To[i][jj+k] = From[i][jjj+k];
-      else if(CombineMode==AbsMax)                    for (int i=0; i<numVectors; i++) for (k=0; k<MaxElementSize; k++) To[i][jj+k] = EPETRA_MAX( To[i][jj+k],std::abs(From[i][jjj+k]));
-      else if(CombineMode==AbsMin)                    for (int i=0; i<numVectors; i++) for (k=0; k<MaxElementSize; k++) To[i][jj+k] = EPETRA_MIN( To[i][jj+k],std::abs(From[i][jjj+k]));
-      else if(CombineMode==Epetra_Max)                for (int i=0; i<numVectors; i++) for (k=0; k<MaxElementSize; k++) To[i][jj+k] = EPETRA_MAX( To[i][jj+k],From[i][jjj+k]);
-      else if(CombineMode==Epetra_Min)                for (int i=0; i<numVectors; i++) for (k=0; k<MaxElementSize; k++) To[i][jj+k] = EPETRA_MIN( To[i][jj+k],From[i][jjj+k]);
-      else if(CombineMode==Average)                   for (int i=0; i<numVectors; i++) for (k=0; k<MaxElementSize; k++) {To[i][jj+k] += From[i][jjj+k]; To[i][jj+k] *= 0.5;} // Not a true avg if >2 occurance of an ID
+  for (int i=0; i<numVectors; i++)
+    for (k=0; k<MaxElementSize; k++)
+      To[i][jj+k] = From[i][jjj+k];
       }
     }
 
@@ -747,14 +711,9 @@ int Epetra_MultiVector::CopyAndPermute(const Epetra_SrcDistObject& Source,
   jj = ToFirstPointInElementList[PermuteToLIDs[j]];
   jjj = FromFirstPointInElementList[PermuteFromLIDs[j]];
   int ElementSize = FromElementSizeList[PermuteFromLIDs[j]];
-      if (CombineMode==InsertAdd)                     for (int i=0; i<numVectors; i++) for (k=0; k<ElementSize; k++) To[i][jj+k] = 0.0; // Zero out first
-      if (CombineMode==Add || CombineMode==InsertAdd) for (int i=0; i<numVectors; i++) for (k=0; k<ElementSize; k++) To[i][jj+k] += From[i][jjj+k]; // Add to existing value
-      else if(CombineMode==Insert)                    for (int i=0; i<numVectors; i++) for (k=0; k<ElementSize; k++) To[i][jj+k] = From[i][jjj+k];
-      else if(CombineMode==AbsMax)                    for (int i=0; i<numVectors; i++) for (k=0; k<ElementSize; k++) To[i][jj+k] = EPETRA_MAX( To[i][jj+k],std::abs(From[i][jjj+k]));
-      else if(CombineMode==AbsMin)                    for (int i=0; i<numVectors; i++) for (k=0; k<ElementSize; k++) To[i][jj+k] = EPETRA_MIN( To[i][jj+k],std::abs(From[i][jjj+k]));
-      else if(CombineMode==Epetra_Max)                for (int i=0; i<numVectors; i++) for (k=0; k<ElementSize; k++) To[i][jj+k] = EPETRA_MAX( To[i][jj+k],From[i][jjj+k]);
-      else if(CombineMode==Epetra_Min)                for (int i=0; i<numVectors; i++) for (k=0; k<ElementSize; k++) To[i][jj+k] = EPETRA_MIN( To[i][jj+k],From[i][jjj+k]);
-      else if(CombineMode==Average)                   for (int i=0; i<numVectors; i++) for (k=0; k<ElementSize; k++) {To[i][jj+k] += From[i][jjj+k]; To[i][jj+k] *= 0.5;} // Not a true avg if >2 occurance of an ID
+  for (int i=0; i<numVectors; i++)
+    for (k=0; k<ElementSize; k++)
+      To[i][jj+k] = From[i][jjj+k];
       }
     }
   }
