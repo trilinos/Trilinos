@@ -1188,7 +1188,8 @@ void deep_copy( const View<DT,DL,DD,DM,Impl::ViewDefault> & dst ,
 
   if ( dst.ptr_on_device() != src.ptr_on_device() ) {
 
-    Impl::assert_shapes_are_equal( dst.shape() , src.shape() );
+    Impl::assert_shapes_are_equal( dst.shape() ,    src.shape() );
+    Impl::assert_counts_are_equal( dst.capacity() , src.capacity() );
 
     const size_t nbytes = sizeof(typename dst_type::value_type) * dst.capacity();
 

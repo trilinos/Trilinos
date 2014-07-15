@@ -170,10 +170,16 @@ integer {D}+({E})?
 <LOOP>{
   {WS}"{"[Ee]"nd"[Ll]"oop".*"\n" {
     aprepro.ap_file_list.top().lineno++;
-    if (--loop_lvl == 0) {
+    if(loop_lvl > 0)
+      --loop_lvl;
+
+    if (loop_lvl == 0) {
       BEGIN(INITIAL);
       tmp_file->close();
       delete tmp_file;
+
+      if(!aprepro.doLoopSubstitution)
+        yy_push_state(VERBATIM);
 				     
       yyin = aprepro.open_file(aprepro.ap_file_list.top().name, "r");
       yyFlexLexer::yypush_buffer_state (yyFlexLexer::yy_create_buffer( yyin, YY_BUF_SIZE));
@@ -198,7 +204,10 @@ integer {D}+({E})?
 <LOOP_SKIP>{
   {WS}"{"[Ee]"nd"[Ll]"oop".*"\n" {
     aprepro.ap_file_list.top().lineno++;
-    if (--loop_lvl == 0)
+    if(loop_lvl > 0)
+      --loop_lvl;
+
+    if (loop_lvl == 0)
       BEGIN(INITIAL);
   }
 
@@ -330,7 +339,10 @@ integer {D}+({E})?
   if (aprepro.ap_options.debugging) 
     fprintf (stderr, "DEBUG IF: 'else'   at level = %d at line %d\n",
 	     if_lvl, aprepro.ap_file_list.top().lineno);
-  if (if_state[if_lvl] == IF_SKIP) {
+  if(YY_START == VERBATIM) {
+    if(echo) ECHO;
+  }
+  else if (if_state[if_lvl] == IF_SKIP) {
     if (!if_case_run[if_lvl]) {
       BEGIN(INITIAL);
       if_state[if_lvl] = INITIAL;
@@ -380,20 +392,28 @@ integer {D}+({E})?
    }
 }
 
-{WS}"{"[Ee]"nd"[Ii]"f}".*"\n"     { if (if_state[if_lvl] == IF_SKIP ||
-			       if_state[if_lvl] == INITIAL)
-			     BEGIN(INITIAL);
+{WS}"{"[Ee]"nd"[Ii]"f}".*"\n"     {
+    aprepro.ap_file_list.top().lineno++;
+
+    if(YY_START == VERBATIM) {
+      if(echo) ECHO;
+    }
+    else {
+      if (if_state[if_lvl] == IF_SKIP ||
+          if_state[if_lvl] == INITIAL)
+            BEGIN(INITIAL);
 			   /* If neither is true, this is a nested 
 			      if that should be skipped */
-    if (aprepro.ap_options.debugging) 
-	printf ("DEBUG IF: 'endif'  at level = %d at line %d\n",
-		if_lvl, aprepro.ap_file_list.top().lineno);
-			   if (--if_lvl < 0) {
-			     if_lvl = 0;
-			     yyerror("Improperly Nested ifdef/ifndef statements");
-			   }
-			   aprepro.ap_file_list.top().lineno++;  
-			   /* Ignore endif if not skipping */ }
+      if (aprepro.ap_options.debugging)
+        printf ("DEBUG IF: 'endif'  at level = %d at line %d\n",
+                if_lvl, aprepro.ap_file_list.top().lineno);
+      if (--if_lvl < 0) {
+        if_lvl = 0;
+        yyerror("Improperly Nested ifdef/ifndef statements");
+      }
+      /* Ignore endif if not skipping */
+    }
+  }
 
 <INITIAL>{WS}"{"[Ii]"nclude"{WS}"("           { BEGIN(GET_FILENAME); 
                              file_must_exist = true; }
@@ -560,7 +580,12 @@ namespace SEAMS {
 		   std::ostream* out)
     : SEAMSFlexLexer(in, out), aprepro(aprepro_yyarg)
   {
-    aprepro.outputStream.push(out);
+    if (in) {
+      yyFlexLexer::yypush_buffer_state (yyFlexLexer::yy_create_buffer(in, YY_BUF_SIZE));
+    }
+    if (out) {
+      aprepro.outputStream.push(out);
+    }
   }
 
   Scanner::~Scanner()
@@ -578,6 +603,17 @@ namespace SEAMS {
 
   int Scanner::yywrap()
   {
+    // If we are using the string interactive method, we want to return to
+    // our original state if parsing was cutoff prematurely.
+    if(aprepro.string_interactive() && YY_START == PARSING)
+    {
+      if (switch_skip_to_endcase)
+        BEGIN(END_CASE_SKIP);
+      else
+        BEGIN(if_state[if_lvl]);
+    }
+
+
     if (aprepro.ap_file_list.size() <= 1) {		/* End of main file, not in nested include */
       return (1);
     }
@@ -597,6 +633,9 @@ namespace SEAMS {
           if (strcmp("_string_", aprepro.ap_file_list.top().name.c_str()) != 0) {
             if (!aprepro.ap_options.debugging)
               remove(aprepro.ap_file_list.top().name.c_str());	/* Delete file if temporary */
+
+            if(!aprepro.doLoopSubstitution)
+              yy_pop_state();
           }
 
           aprepro.ap_file_list.pop();
@@ -636,6 +675,20 @@ namespace SEAMS {
   void Scanner::yyerror (const char *s)
   {
     aprepro.error(s);
+  }
+
+  void Scanner::add_input_file(const std::string &filename)
+  {
+    std::fstream *in = aprepro.open_file(filename, "r");
+    if (in != NULL) {
+      add_input_stream(*in, filename);
+    }
+  }
+
+  void Scanner::add_input_stream(std::istream &in, const std::string &name)
+  {
+    aprepro.ap_file_list.push(SEAMS::file_rec(name, 0, false, 0));
+    yyFlexLexer::yypush_buffer_state (yyFlexLexer::yy_create_buffer(&in, YY_BUF_SIZE));
   }
 
   char *Scanner::execute (char string[])

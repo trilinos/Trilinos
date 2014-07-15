@@ -1110,7 +1110,9 @@ theTimerParser()
 
 
 TimerParser::TimerParser()
-  : sierra::OptionMaskParser()
+  : sierra::OptionMaskParser(),
+    m_metricsSetMask(0),
+    m_metricsMask(0)
 {
   mask("cpu", 0, "Display CPU times");
   mask("wall", 0, "Display wall times");

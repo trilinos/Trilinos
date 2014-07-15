@@ -118,6 +118,7 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   TBB             "cmake/TPLs/"    EX
   Pthread         "cmake/TPLs/"    SS
   HWLOC           "cmake/TPLs/"    SS
+  QTHREAD         "cmake/TPLs/"    SS
   BinUtils        "cmake/TPLs/"    SS
   ARPREC          "cmake/TPLs/"    SS
   QD              "cmake/TPLs/"    SS

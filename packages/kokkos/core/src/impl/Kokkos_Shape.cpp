@@ -53,8 +53,8 @@ namespace Kokkos {
 namespace Impl {
 
 void assert_counts_are_equal_throw(
-  const unsigned x_count ,
-  const unsigned y_count )
+  const size_t x_count ,
+  const size_t y_count )
 {
   std::ostringstream msg ;
 

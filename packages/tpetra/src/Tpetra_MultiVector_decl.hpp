@@ -952,23 +952,37 @@ namespace Tpetra {
             const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& B,
             const Scalar& gamma);
 
-    //! Compute 1-norm of each vector in multi-vector.
+    /// \brief Compute the one-norm of each vector (column).
+    ///
+    /// The one-norm of a vector is the sum of squares of the
+    /// magnitudes of the vector's entries.  On exit, norms[k] is the
+    /// one-norm of column k of this MultiVector.
     void norm1(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const;
 
-    //! Compute 2-norm of each vector in multi-vector.
-    //! The outcome of this routine is undefined for non-floating point scalar types (e.g., int).
+    /// \brief Compute the two-norm of each vector (column).
+    ///
+    /// The two-norm of a vector is the standard Euclidean norm, the
+    /// square root of the sum of squares of the magnitudes of the
+    /// vector's entries.  On exit, norms[k] is the two-norm of column
+    /// k of this MultiVector.
     void norm2(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const;
 
-    //! Compute Inf-norm of each vector in multi-vector.
-    void normInf(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const;
+    /// \brief Compute the infinity-norm of each vector (column).
+    ///
+    /// The infinity-norm of a vector is the maximum of the magnitudes
+    /// of the vector's entries.  On exit, norms[k] is the
+    /// infinity-norm of column k of this MultiVector.
+    void normInf (const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& norms) const;
 
     //! Compute Weighted 2-norm (RMS Norm) of each vector in multi-vector.
     //! The outcome of this routine is undefined for non-floating point scalar types (e.g., int).
-    void normWeighted(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &weights, const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const;
+    void
+    normWeighted (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& weights,
+                  const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& norms) const;
 
     //! \brief Compute mean (average) value of each vector in multi-vector.
     //! The outcome of this routine is undefined for non-floating point scalar types (e.g., int).
-    void meanValue(const Teuchos::ArrayView<Scalar> &means) const;
+    void meanValue (const Teuchos::ArrayView<Scalar>& means) const;
 
     /// \brief Matrix-matrix multiplication: <tt>this = beta*this + alpha*op(A)*op(B)</tt>.
     ///
@@ -1378,6 +1392,13 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   clone (const RCP<Node2> &node2) const
   {
+    // KR FIXME: Can't do partial specializations of a free function.
+    // Split off into a class, just like you did for CrsMatrix, etc.
+    // In fact, that could even be a class templated on "ObjectType",
+    // with partial specializations for MultiVector, CrsGraph,
+    // CrsMatrix, etc.  Use that class to implement clone().  Make
+    // that class a friend of each of the objects (?).
+
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
     using Teuchos::rcp;

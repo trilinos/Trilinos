@@ -123,13 +123,13 @@ bool operator != ( const Shape<xSize,xRank,xN0,xN1,xN2,xN3,xN4,xN5,xN6,xN7> & x 
 //----------------------------------------------------------------------------
 
 void assert_counts_are_equal_throw(
-  const unsigned x_count ,
-  const unsigned y_count );
+  const size_t x_count ,
+  const size_t y_count );
 
 inline
 void assert_counts_are_equal(
-  const unsigned x_count ,
-  const unsigned y_count )
+  const size_t x_count ,
+  const size_t y_count )
 {
   if ( x_count != y_count ) {
     assert_counts_are_equal_throw( x_count , y_count );

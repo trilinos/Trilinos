@@ -151,10 +151,10 @@ namespace SEAMS {
     int	  loop_count;
     bool  tmp_file;
 
-    file_rec(const char *my_name, int line_num, bool is_temp, int loop_cnt)
+    file_rec(const std::string &my_name, int line_num, bool is_temp, int loop_cnt)
       : name(my_name), lineno(line_num), loop_count(loop_cnt), tmp_file(is_temp) {}
     file_rec()
-      : name("STDIN"), lineno(0), loop_count(0), tmp_file(false) {}
+      : name("UNKNOWN_FILE_NAME"), lineno(0), loop_count(0), tmp_file(false) {}
   };
 
   /** The Aprepro class brings together all components. It creates an instance of
@@ -284,6 +284,10 @@ namespace SEAMS {
 
   public:
     bool stateImmutable;
+
+    // Flag to do Aprepro substitutions within loops. Default value is true. If set to
+    // false, content within the loop will be treated as verbatim text.
+    bool doLoopSubstitution;
   };
 
 } // namespace SEAMS

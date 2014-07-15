@@ -53,67 +53,19 @@
 # ************************************************************************
 # @HEADER
 
+INCLUDE(TribitsTplDeclareLibraries)
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
-
+#-----------------------------------------------------------------------------
+#  Hardware locality detection and control library.
 #
-# Platform/compiler specific options for negima using gcc
+#  Acquisition information:
+#    Date checked:  July 2014
+#    Checked by:    H. Carter Edwards <hcedwar AT sandia.gov>
+#    Source:        https://code.google.com/p/qthreads
 #
 
-MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
+TRIBITS_TPL_DECLARE_LIBRARIES( QTHREAD
+  REQUIRED_HEADERS qthread.h
+  REQUIRED_LIBS_NAMES "qthread"
+  )
 
-  # Base of Trilinos/cmake/ctest then BUILD_DIR_NAME
-
-  SET( CTEST_DASHBOARD_ROOT "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
-
-  SET( CTEST_NOTES_FILES "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
-
-  SET( CTEST_BUILD_FLAGS "-j12 -i" )
-
-  SET_DEFAULT( CTEST_PARALLEL_LEVEL "12" )
-
-  SET_DEFAULT( Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
-
-  # Only turn on PyTrilinos for shared libraries
-  SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES ${EXTRA_EXCLUDE_PACKAGES} TriKota Optika)
-
-  SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
-    "-DBUILD_SHARED_LIBS:BOOL=ON"
-    "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
-    "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS:BOOL=OFF"
-    "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
-
-    "-DTrilinos_ENABLE_Fortran=OFF"
-
-    "-DTPL_ENABLE_SuperLU:BOOL=ON"
-    "-DSuperLU_INCLUDE_DIRS=/home/aprokop/local/opt/superlu-4.3/include"
-    "-DSuperLU_LIBRARY_DIRS=/home/aprokop/local/opt/superlu-4.3/lib"
-    "-DSuperLU_LIBRARY_NAMES=superlu_4.3"
-    )
-
-  SET_DEFAULT(COMPILER_VERSION "GCC-4.8.0")
-
-  #Ensuring that MPI is on for all parallel builds that might be run.
-  IF(COMM_TYPE STREQUAL MPI)
-    SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
-         ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-         "-DTPL_ENABLE_MPI:BOOL=ON"
-         "-DMPI_BASE_DIR:PATH=/home/aprokop/local/opt/openmpi-1.8"
-       )
-
-    SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS
-        "--gen-suppressions=all --error-limit=no --log-file=nightly_suppressions.txt" ${CTEST_MEMORYCHECK_COMMAND_OPTIONS} )
-
-  ELSE()
-
-    SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
-      ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DCMAKE_CXX_COMPILER:FILEPATH=/home/aprokop/local/opt/gcc-4.8.0/bin/g++"
-      "-DCMAKE_C_COMPILER:FILEPATH=/home/aprokop/local/opt/gcc-4.8.0/bin/gcc"
-      )
-
-  ENDIF()
-
-  TRILINOS_CTEST_DRIVER()
-
-ENDMACRO()

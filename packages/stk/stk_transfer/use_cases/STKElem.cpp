@@ -82,7 +82,6 @@ void parametric(std::vector<std::vector<double> > &val,
           const mesh::BulkData&                   bulkData)
 {
   unsigned spatial_dimension = bulkData.mesh_meta_data().spatial_dimension();
-  typedef Intrepid::FieldContainer<double>   MDArray;
 
   const unsigned numIntrp   = 1; // FIXME
 

@@ -60,6 +60,8 @@
 #include <Kokkos_Threads.hpp>
 #endif
 
+#include <Kokkos_Serial.hpp>
+
 #include <Kokkos_View.hpp>
 #include <Kokkos_Vectorization.hpp>
 #include <Kokkos_Atomic.hpp>

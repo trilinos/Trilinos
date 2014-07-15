@@ -124,9 +124,11 @@ namespace MueLu {
     }
     Set(coarseLevel, "Coordinates", coarseCoords);
 
-    RCP<ParameterList> params = rcp(new ParameterList());
-    params->set("printLoadBalancingInfo", true);
-    GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*P, "P", params);
+    if (IsPrint(Statistics1)) {
+      RCP<ParameterList> params = rcp(new ParameterList());
+      params->set("printLoadBalancingInfo", true);
+      GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*P, "P", params);
+    }
   }
 
 

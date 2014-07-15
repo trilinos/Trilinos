@@ -15,7 +15,7 @@
 
 namespace {
   const unsigned int HASHSIZE = 5939;
-  const char* version_string = "4.11 (2014/07/02)";
+  const char* version_string = "4.12 (2014/07/08)";
   
   unsigned hash_symbol (const char *symbol)
   {
@@ -34,7 +34,7 @@ namespace SEAMS {
     : lexer(NULL), sym_table(HASHSIZE),
       stringInteractive(false), stringScanner(NULL),
       errorStream(&std::cerr), warningStream(&std::cerr), infoStream(&std::cerr),
-      stateImmutable(false)
+      stateImmutable(false), doLoopSubstitution(true)
   {
     ap_file_list.push(file_rec());
     init_table("#");
@@ -75,17 +75,13 @@ namespace SEAMS {
   {
     ap_file_list.top().name = in_name;
 
+    lexer = new Scanner(*this, &in, &parsingResults);
+
     if (!ap_options.include_file.empty()) {
-      file_rec include_file(ap_options.include_file.c_str(), 0, false, 0);
-      ap_file_list.push(include_file);
-      // File included on command line will be processed as immutable and no-echo
-      // Will revert to global settings at end of file.
+      lexer->add_input_file(ap_options.include_file);
       stateImmutable = true;
       echo = false;
     }
-
-    Scanner *scanner = new Scanner(*this, &in, &parsingResults);
-    this->lexer = scanner;
 
     Parser parser(*this);
     parser.set_debug_level(ap_options.trace_parsing);
@@ -109,22 +105,20 @@ namespace SEAMS {
   {
     stringInteractive = true;
 
-    if(ap_file_list.size() == 1)
-      ap_file_list.top().name == "interactive_input";
-
-    if (!ap_options.include_file.empty()) {
-      file_rec include_file(ap_options.include_file.c_str(), 0, false, 0);
-      ap_file_list.push(include_file);
-      // File included on command line will be processed as immutable and no-echo
-      // Will revert to global settings at end of file.
-      stateImmutable = true;
-      echo = false;
-    }
-
     if(!stringScanner)
       stringScanner = new Scanner(*this, &stringInput, &parsingResults);
 
-    this->lexer = stringScanner;
+    if (lexer) {
+      delete lexer;
+    }
+    
+    lexer = stringScanner;
+
+    if (!ap_options.include_file.empty()) {
+      lexer->add_input_file(ap_options.include_file);
+      stateImmutable = true;
+      echo = false;
+    }
 
     stringInput.str(input);
     stringInput.clear();

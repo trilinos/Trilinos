@@ -44,6 +44,7 @@
 */
 
 #include <Kokkos_Core.hpp>
+#include <impl/Kokkos_Error.hpp>
 #include <cctype>
 #include <cstring>
 #include <iostream>

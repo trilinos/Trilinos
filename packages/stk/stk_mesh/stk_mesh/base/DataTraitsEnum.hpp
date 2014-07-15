@@ -25,8 +25,8 @@ namespace {
 template< typename T >
 class DataTraitsEnum : public DataTraits {
 public:
-  DataTraitsEnum( const char * name , std::size_t n )
-  : DataTraits( typeid(T) , name , sizeof(T) , sizeof(T) )
+  DataTraitsEnum( const char * name_ , std::size_t n )
+  : DataTraits( typeid(T) , name_ , sizeof(T) , sizeof(T) )
   {
     is_pod  = true ;
     is_enum = true ;

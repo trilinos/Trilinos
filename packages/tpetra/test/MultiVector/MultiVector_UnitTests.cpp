@@ -1030,6 +1030,18 @@ namespace {
     std::fill(ans.begin(), ans.end(), as<Mag>(2*numImages));
     TEST_COMPARE_FLOATING_ARRAYS(norms1,ans,M0);
     TEST_COMPARE_FLOATING_ARRAYS(norms2,ans,M0);
+
+    // Make sure that the test passed on all processes, not just Proc 0.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    Teuchos::reduceAll<int, int> (*comm, Teuchos::REDUCE_MIN, lclSuccess,
+                                  Teuchos::outArg (gblSuccess));
+    if (gblSuccess) {
+      out << "Test PASSED on all processes" << endl;
+    } else {
+      out << "Test FAILED on one or more processes" << endl;
+      success = false;
+    }
   }
 
 
@@ -2205,6 +2217,20 @@ namespace {
     values[5] = as<Scalar>(2);
     MV mvec1(map,values(),2,numVectors),
        mvec2(map,values(),2,numVectors);
+
+    // Make sure that MultiVector construction succeeded on all processes.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    Teuchos::reduceAll<int, int> (*comm, Teuchos::REDUCE_MIN, lclSuccess,
+                                  Teuchos::outArg (gblSuccess));
+    if (gblSuccess) {
+      out << "Successfully constructed MultiVector on all processes" << endl;
+    } else {
+      out << "FAILED to construct MultiVector on one or more processes" << endl;
+      success = false;
+      return;
+    }
+
     Array<Scalar> dots1(numVectors), dots2(numVectors), answer(numVectors);
     answer[0] = as<Scalar>(0);
     answer[1] = as<Scalar>(2*numImages);
@@ -2215,6 +2241,18 @@ namespace {
     // check the answers
     TEST_COMPARE_FLOATING_ARRAYS(dots1,dots2,M0);
     TEST_COMPARE_FLOATING_ARRAYS(dots1,answer,M0);
+
+    // Make sure that the test passed on all processes, not just Proc 0.
+    lclSuccess = success ? 1 : 0;
+    gblSuccess = 1;
+    Teuchos::reduceAll<int, int> (*comm, Teuchos::REDUCE_MIN, lclSuccess,
+                                  Teuchos::outArg (gblSuccess));
+    if (gblSuccess) {
+      out << "Test PASSED on all processes" << endl;
+    } else {
+      out << "Test FAILED on one or more processes" << endl;
+      success = false;
+    }
   }
 
 
@@ -2265,37 +2303,71 @@ namespace {
     // check the answers
     TEST_COMPARE_FLOATING_ARRAYS(dots1,dots2,M0);
     TEST_COMPARE_FLOATING_ARRAYS(dots1,answer,M0);
+
+    // Make sure that the test passed on all processes, not just Proc 0.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    Teuchos::reduceAll<int, int> (*comm, Teuchos::REDUCE_MIN, lclSuccess,
+                                  Teuchos::outArg (gblSuccess));
+    if (gblSuccess) {
+      out << "Test PASSED on all processes" << endl;
+    } else {
+      out << "Test FAILED on one or more processes" << endl;
+      success = false;
+    }
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, CountNorm1, LO , GO , Scalar , Node )
   {
-    RCP<Node> node = getNode<Node>();
+    typedef Tpetra::global_size_t GST;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
-    typedef typename ScalarTraits<Scalar>::magnitudeType MT;
-    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    const MT M0 = ScalarTraits<MT>::zero();
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+
+
+
+    const MT M0 = Teuchos::ScalarTraits<MT>::zero ();
+
     // get a comm and node
-    RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<const Comm<int> > comm = getDefaultComm ();
+    RCP<Node> node = getNode<Node> ();
     const int numImages = comm->getSize();
+
     // create a Map
     const size_t numLocal = 2;
     const size_t numVectors = 3;
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
-    Array<Scalar> values(6);
+    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+    RCP<const Map<LO, GO, Node> > map =
+      createContigMapWithNode<LO, GO, Node> (INVALID, numLocal, comm, node);
+
     // values = {0, 0, 1, 1, 2, 2} = [0 1 2]
     //                               [0 1 2]
     // norm1(values) = [0 2 4]
     // over all procs, this is [0 2*nprocs 4*nprocs]
     // mean is [0 1 2]
+    Array<Scalar> values (6);
     values[0] = as<Scalar>(0);
     values[1] = as<Scalar>(0);
     values[2] = as<Scalar>(1);
     values[3] = as<Scalar>(1);
     values[4] = as<Scalar>(2);
     values[5] = as<Scalar>(2);
-    MV mvec(map,values(),2,numVectors);
+    MV mvec (map, values (), 2, numVectors);
+
+    // Make sure that all processes successfully constructed the MultiVector.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    Teuchos::reduceAll<int, int> (*comm, Teuchos::REDUCE_MIN, lclSuccess,
+                                  Teuchos::outArg (gblSuccess));
+    if (gblSuccess) {
+      out << "Successfully constructed the MultiVector on all processes" << endl;
+    } else {
+      out << "FAILED to construct the MultiVector on some process" << endl;
+      success = false;
+      return;
+    }
+
     // compute, check norms
     {
       Array<MT> norms(numVectors), answer(numVectors);
@@ -2316,6 +2388,18 @@ namespace {
       for (size_t j=0; j < numVectors; ++j) {
         TEST_EQUALITY( mvec.getVector(j)->meanValue(), answer[j] );
       }
+    }
+
+    // Make sure that the test passed on all processes, not just Proc 0.
+    lclSuccess = success ? 1 : 0;
+    gblSuccess = 1;
+    Teuchos::reduceAll<int, int> (*comm, Teuchos::REDUCE_MIN, lclSuccess,
+                                  Teuchos::outArg (gblSuccess));
+    if (gblSuccess) {
+      out << "Test PASSED on all processes" << endl;
+    } else {
+      out << "Test FAILED on one or more processes" << endl;
+      success = false;
     }
   }
 
@@ -2388,6 +2472,18 @@ namespace {
       TEST_ARRAY_ELE_EQUALITY(normsZero,i,M0);
     }
     success &= local_success;
+
+    // Make sure that the test passed on all processes, not just Proc 0.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    Teuchos::reduceAll<int, int> (*comm, Teuchos::REDUCE_MIN, lclSuccess,
+                                  Teuchos::outArg (gblSuccess));
+    if (gblSuccess) {
+      out << "Test PASSED on all processes" << endl;
+    } else {
+      out << "Test FAILED on one or more processes" << endl;
+      success = false;
+    }
   }
 
 
@@ -2757,6 +2853,7 @@ namespace {
       out << "Test PASSED on all processes" << endl;
     } else {
       out << "Test FAILED on one or more processes" << endl;
+      success = false;
     }
   }
 

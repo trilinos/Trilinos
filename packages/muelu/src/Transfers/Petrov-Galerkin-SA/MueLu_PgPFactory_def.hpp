@@ -212,7 +212,8 @@ namespace MueLu {
       // prolongation factory is in prolongation mode
       Set(coarseLevel, "P", P_smoothed);
 
-      GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*P_smoothed, "P", params);
+      if (IsPrint(Statistics1))
+        GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*P_smoothed, "P", params);
 
       // NOTE: EXPERIMENTAL
       if (Ptent->IsView("stridedMaps"))
@@ -223,7 +224,8 @@ namespace MueLu {
       RCP<Matrix> R = Utils2::Transpose(*P_smoothed, true); // use Utils2 -> specialization for double
       Set(coarseLevel, "R", R);
 
-      GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*R, "P", params);
+      if (IsPrint(Statistics1))
+        GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*R, "P", params);
 
       // NOTE: EXPERIMENTAL
       if (Ptent->IsView("stridedMaps"))

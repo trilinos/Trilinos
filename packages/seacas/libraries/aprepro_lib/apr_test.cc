@@ -83,8 +83,9 @@ int main(int argc, char *argv[])
     if (result) {
       std::string res_str = aprepro.parsing_results().str();
       std::cout << "         : " << res_str;
-      aprepro.clear_results();
     }
+
+    aprepro.clear_results();
 
     line.clear();
   }
