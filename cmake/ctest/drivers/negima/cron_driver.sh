@@ -26,6 +26,14 @@ export http_proxy="http://sonproxy.sandia.gov:80"
 
 export TDD_FORCE_CMAKE_INSTALL=1
 
+export CPATH=~/local/include:$CPATH
+export LIBRARY_PATH=~/local/lib:~/local/lib64:/opt/nvidia/cuda-5.0/lib64:/usr/lib64:/lib64:$LIBRARY_PATH
+export LD_LIBRARY_PATH=$LIBRARY_PATH
+export PYTHONPATH=~/local/lib64/python2.6/site-packages:$PYTHONPATH
+eval `~/bin/depend ~/.default_depend`
+export PATH=~/bin:/opt/bin:~/local/bin:/opt/nvidia/cuda-5.0/bin:$PATH
+export PKG_CONFIG_PATH=~/local:$PKG_CONFIG_PATH
+
 export OMPI_MPICC=/home/aprokop/local/opt/gcc-4.8.0/bin/gcc
 export OMPI_MPICXX=/home/aprokop/local/opt/gcc-4.8.0/bin/g++
 
