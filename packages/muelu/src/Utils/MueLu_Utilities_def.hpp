@@ -1395,7 +1395,18 @@ namespace MueLu {
       errStr << "Error detected with random seed = " << mySeed << ". It should be in the interval [1,2^31-2].";
       throw Exceptions::RuntimeError(errStr.str());
     }
+
+    std::srand(mySeed);
+
+    // Tpetra:
+    //   MultiVector::randomize() -> Kokkos::DefaultArithmetic::Random() -> ScalarTraits<Scalar>::random() -> std::rand()
+    // So, theoretically, we could skip this call
     Teuchos::ScalarTraits<SC>::seedrandom(mySeed);
+
+    // Epetra
+    //   MultiVector::Random() -> Epetra_Util::RandomDouble() -> Epetra_Utils::RandomInt()
+    // Its own random number generator, based on Seed_. Seed_ is initialized in Epetra_Util constructor with std::rand()
+    // So our setting std::srand() affects that too
   }
 
   template <class SC, class LO, class GO, class NO, class LMO>
