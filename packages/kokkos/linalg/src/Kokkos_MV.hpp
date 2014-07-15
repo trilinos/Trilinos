@@ -1594,7 +1594,10 @@ struct MultiVecNormInfFunctor {
       const typename IPT::mag_type newVal = IPT::norm (X_(i,k));
       // max(curVal, newVal).  Any comparison predicate involving NaN
       // evaluates to false.  Thus, this will never assign NaN to
-      // update[k], unless it contains NaN already.
+      // update[k], unless it contains NaN already.  The initial value
+      // is zero, so NaNs won't propagate.  (This definition makes NaN
+      // into an "invalid value," which is useful for statistics and
+      // other applications that use NaN to indicate a "hole.")
       if (curVal < newVal) {
         maxes[k] = newVal;
       }
@@ -1612,15 +1615,10 @@ struct MultiVecNormInfFunctor {
 #pragma vector always
 #endif
     for (size_type k = 0; k < numVecs; ++k) {
-      // Pick some reasonable default value.  We choose the first
-      // entry if it exists, else zero.  The latter is OK because the
-      // infinity-norm is a max over magnitudes, which by definition
-      // are nonnegative, so it's OK for MPI processes with zero rows
-      // to contribute a zero to the global max.
-      const typename IPT::mag_type defaultVal =
-        (X_.dimension_0 () > static_cast<size_t> (0)) ? X_(0,k) :
-        Kokkos::Details::ArithTraits<typename IPT::mag_type>::zero ();
-      update[k] = defaultVal;
+      // Zero is a good default value for magnitudes (which are
+      // nonnegative by definition).  That way, MPI processes with
+      // zero rows won't affect the global maximum.
+      update[k] = Kokkos::Details::ArithTraits<typename IPT::mag_type>::zero ();
     }
   }
 
@@ -1640,7 +1638,10 @@ struct MultiVecNormInfFunctor {
       const typename IPT::mag_type newVal = source[k];
       // max(curVal, newVal).  Any comparison predicate involving NaN
       // evaluates to false.  Thus, this will never assign NaN to
-      // update[k], unless it contains NaN already.
+      // update[k], unless it contains NaN already.  The initial value
+      // is zero, so NaNs won't propagate.  (This definition makes NaN
+      // into an "invalid value," which is useful for statistics and
+      // other applications that use NaN to indicate a "hole.")
       if (curVal < newVal) {
         update[k] = newVal;
       }
@@ -1834,7 +1835,10 @@ struct VecNormInfFunctor {
     const typename IPT::mag_type newVal = IPT::norm (x_(i));
     // max(curVal, newVal).  Any comparison predicate involving NaN
     // evaluates to false.  Thus, this will never assign NaN to
-    // update[k], unless it contains NaN already.
+    // update[k], unless it contains NaN already.  The initial value
+    // is zero, so NaNs won't propagate.  (This definition makes NaN
+    // into an "invalid value," which is useful for statistics and
+    // other applications that use NaN to indicate a "hole.")
     if (curVal < newVal) {
       curVal = newVal;
     }
@@ -1842,15 +1846,10 @@ struct VecNormInfFunctor {
 
   KOKKOS_INLINE_FUNCTION void
   init (value_type& update) const {
-    // Pick some reasonable default value.  We choose the first entry
-    // if it exists, else zero.  The latter is OK because the
-    // infinity-norm is a max over magnitudes, which by definition are
-    // nonnegative, so it's OK for MPI processes with zero rows to
-    // contribute a zero to the global max.
-    const typename IPT::mag_type defaultVal =
-      (x_.dimension_0 () > static_cast<size_t> (0)) ? x_(0) :
-      Kokkos::Details::ArithTraits<typename IPT::mag_type>::zero ();
-    update = defaultVal;
+    // Zero is a good default value for magnitudes (which are
+    // nonnegative by definition).  That way, MPI processes with
+    // zero rows won't affect the global maximum.
+    update = Kokkos::Details::ArithTraits<typename IPT::mag_type>::zero ();
   }
 
   KOKKOS_INLINE_FUNCTION void
@@ -1858,7 +1857,10 @@ struct VecNormInfFunctor {
         const volatile value_type& source) const {
     // max(update, source).  Any comparison predicate involving NaN
     // evaluates to false.  Thus, this will never assign NaN to
-    // update, unless it contains NaN already.
+    // update, unless it contains NaN already.  The initial value is
+    // zero, so NaNs won't propagate.  (This definition makes NaN into
+    // an "invalid value," which is useful for statistics and other
+    // applications that use NaN to indicate a "hole.")
     if (update < source) {
       update = source;
     }
