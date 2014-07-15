@@ -283,7 +283,7 @@ double NOX::LAPACK::Vector::innerProduct(const NOX::LAPACK::Vector& y) const
   return DDOT_F77(&n, &x[0], &i_one, &y[0], &i_one);
 }
 
-int NOX::LAPACK::Vector::length() const
+NOX::size_type NOX::LAPACK::Vector::length() const
 {
   return n;
 }

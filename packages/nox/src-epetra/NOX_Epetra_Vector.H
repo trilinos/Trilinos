@@ -226,7 +226,7 @@ class Vector : public virtual NOX::Abstract::Vector {
   //@}
 
   // derived
-  virtual int length() const;
+  virtual NOX::size_type length() const;
 
   // derived
   virtual void print(std::ostream& stream) const;

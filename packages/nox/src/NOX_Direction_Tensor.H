@@ -354,7 +354,7 @@ private:
   double dir0xsc;
 
   //! Problem size
-  int probSize;
+  NOX::size_type probSize;
 
   //! Maximum number of times to restart local solver
   int maxRestarts;

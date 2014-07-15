@@ -170,7 +170,7 @@ namespace NOX {
       //@}
 
       // derived
-      int length() const;
+      NOX::size_type length() const;
 
       //! Return the i-th element
       double& operator() (int i);

@@ -292,7 +292,7 @@ public:
     \note Even if the vector is distributed across processors, this
     should return the <em> global length </em> of the vector.
    */
-  virtual int length() const = 0;
+  virtual NOX::size_type length() const = 0;
 
   //! Print the vector.  To be used for debugging only.
   virtual void print(std::ostream& stream) const;

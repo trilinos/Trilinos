@@ -467,9 +467,10 @@ NOX::Epetra::MultiVector::multiply(
   B.Multiply('T', 'N', alpha, *(y.epetraMultiVec), *epetraMultiVec, 0.0);
 }
 
-int NOX::Epetra::MultiVector::length() const
+NOX::size_type
+NOX::Epetra::MultiVector::length() const
 {
-  return epetraMultiVec->GlobalLength();
+  return epetraMultiVec->GlobalLength64();
 }
 
 int NOX::Epetra::MultiVector::numVectors() const

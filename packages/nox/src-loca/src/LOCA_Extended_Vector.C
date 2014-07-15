@@ -397,10 +397,10 @@ LOCA::Extended::Vector::innerProduct(const NOX::Abstract::Vector& y) const
   return d;
 }
 
-int
+NOX::size_type
 LOCA::Extended::Vector::length() const
 {
-  int l = 0;
+  NOX::size_type l = 0;
   for (unsigned int i=0; i<vectorPtrs.size(); i++)
     l += vectorPtrs[i]->length();
   l += numScalars;

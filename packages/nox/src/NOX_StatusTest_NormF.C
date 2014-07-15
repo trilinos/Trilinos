@@ -169,7 +169,7 @@ double NOX::StatusTest::NormF::computeNorm(const NOX::Abstract::Group& grp)
     return -1.0;
 
   double norm;
-  int n = grp.getX().length();
+  NOX::size_type n = grp.getX().length();
 
   switch (normType)
   {
@@ -177,13 +177,13 @@ double NOX::StatusTest::NormF::computeNorm(const NOX::Abstract::Group& grp)
   case NOX::Abstract::Vector::TwoNorm:
     norm = grp.getNormF();
     if (scaleType == Scaled)
-      norm /= sqrt(1.0 * n);
+      norm /= sqrt(1.0 * static_cast<double>(n));
     break;
 
   default:
     norm = grp.getF().norm(normType);
     if (scaleType == Scaled)
-      norm /= n;
+      norm /= static_cast<double>(n);
     break;
 
   }

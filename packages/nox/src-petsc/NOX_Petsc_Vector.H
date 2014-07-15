@@ -169,7 +169,7 @@ class Vector : public Abstract::Vector {
 
   //@}
 
-  virtual int length() const;
+  virtual NOX::size_type length() const;
 
   std::string Name() { return name;};
 

@@ -357,7 +357,7 @@ innerProduct(const NOX::Abstract::Vector& y) const
   return thyraVec->space()->scalarProd(*thyraVec, *yy.thyraVec);
 }
 
-int
+NOX::size_type
 NOX::Thyra::Vector::
 length() const
 {

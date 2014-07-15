@@ -393,7 +393,7 @@ NOX::MultiVector::multiply(double alpha, const NOX::MultiVector& y,
   }
 }
 
-int
+NOX::size_type
 NOX::MultiVector::length() const
 {
   return vecs[0]->length();

@@ -342,9 +342,9 @@ double NOX::Epetra::Vector::innerProduct(const NOX::Epetra::Vector& y) const
   return vectorSpace->innerProduct(*epetraVec, y.getEpetraVector());
 }
 
-int NOX::Epetra::Vector::length() const
+NOX::size_type NOX::Epetra::Vector::length() const
 {
-  return epetraVec->GlobalLength();
+  return epetraVec->GlobalLength64();
 }
 
 void NOX::Epetra::Vector::print(std::ostream& stream) const
