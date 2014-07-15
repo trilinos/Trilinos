@@ -1447,6 +1447,224 @@ struct MultiVecNorm2SquaredFunctor {
 };
 
 
+// Implementation detail of Tpetra::MultiVector::norm1, when the
+// MultiVector has constant stride.  Compute the one-norm of each
+// column of a multivector.
+template<class MultiVecViewType>
+struct MultiVecNorm1Functor {
+  typedef typename MultiVecViewType::device_type device_type;
+  typedef typename MultiVecViewType::size_type size_type;
+  typedef typename MultiVecViewType::value_type mv_value_type;
+  typedef Kokkos::Details::InnerProductSpaceTraits<mv_value_type> IPT;
+  typedef typename IPT::mag_type value_type[];
+
+  typedef MultiVecViewType mv_view_type;
+  typedef typename MultiVecViewType::const_type mv_const_view_type;
+  typedef Kokkos::View<typename IPT::mag_type*, device_type> norms_view_type;
+
+  mv_const_view_type X_;
+  norms_view_type norms_;
+  // Kokkos::parallel_reduce wants this, so it needs to be public.
+  size_type value_count;
+
+  MultiVecNorm1Functor (const mv_const_view_type& X,
+                        const norms_view_type& norms) :
+    X_ (X), norms_ (norms), value_count (X.dimension_1 ())
+  {
+    if (value_count != norms.dimension_0 ()) {
+      std::ostringstream os;
+      os << "Kokkos::MultiVecNorm1Functor: value_count does not match the "
+         << "length of 'norms'.  X is " << X.dimension_0 () << " x "
+         << X.dimension_1 () << ", norms has length " << norms.dimension_0 ()
+         << ", and value_count = " << value_count << ".";
+      throw std::invalid_argument (os.str ());
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION void
+  operator() (const size_type i, value_type sum) const
+  {
+    const size_type numVecs = value_count;
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+    for (size_type k = 0; k < numVecs; ++k) {
+      sum[k] += IPT::norm (X_(i,k)); // absolute value
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION void
+  init (value_type update) const
+  {
+    const size_type numVecs = value_count;
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+    for (size_type k = 0; k < numVecs; ++k) {
+      update[k] = Kokkos::Details::ArithTraits<typename IPT::mag_type>::zero ();
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION void
+  join (volatile value_type update,
+        const volatile value_type source) const
+  {
+    const size_type numVecs = value_count;
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+    for (size_type k = 0; k < numVecs; ++k) {
+      update[k] += source[k];
+    }
+  }
+
+  // On device, write the reduction result to the output View.
+  KOKKOS_INLINE_FUNCTION void
+  final (const value_type dst) const
+  {
+    const size_type numVecs = value_count;
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+    for (size_type k = 0; k < numVecs; ++k) {
+      norms_(k) = dst[k];
+    }
+  }
+};
+
+
+// Implementation detail of Tpetra::MultiVector::normInf, when the
+// MultiVector has constant stride.  Compute the infinity-norm of each
+// column of a multivector.
+template<class MultiVecViewType>
+struct MultiVecNormInfFunctor {
+  typedef typename MultiVecViewType::device_type device_type;
+  typedef typename MultiVecViewType::size_type size_type;
+  typedef typename MultiVecViewType::value_type mv_value_type;
+  typedef Kokkos::Details::InnerProductSpaceTraits<mv_value_type> IPT;
+  typedef typename IPT::mag_type value_type[];
+
+  typedef MultiVecViewType mv_view_type;
+  typedef typename MultiVecViewType::const_type mv_const_view_type;
+  typedef Kokkos::View<typename IPT::mag_type*, device_type> norms_view_type;
+
+  mv_const_view_type X_;
+  norms_view_type norms_;
+  // Kokkos::parallel_reduce wants this, so it needs to be public.
+  size_type value_count;
+
+  MultiVecNormInfFunctor (const mv_const_view_type& X,
+                          const norms_view_type& norms) :
+    X_ (X), norms_ (norms), value_count (X.dimension_1 ())
+  {
+    if (value_count != norms.dimension_0 ()) {
+      std::ostringstream os;
+      os << "Kokkos::MultiVecNormInfFunctor: value_count does not match the "
+         << "length of 'norms'.  X is " << X.dimension_0 () << " x "
+         << X.dimension_1 () << ", norms has length " << norms.dimension_0 ()
+         << ", and value_count = " << value_count << ".";
+      throw std::invalid_argument (os.str ());
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION void
+  operator() (const size_type i, value_type maxes) const
+  {
+    const size_type numVecs = value_count;
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+    for (size_type k = 0; k < numVecs; ++k) {
+      const typename IPT::mag_type curVal = maxes[k];
+      const typename IPT::mag_type newVal = IPT::norm (X_(i,k));
+      // max(curVal, newVal).  Any comparison predicate involving NaN
+      // evaluates to false.  Thus, this will never assign NaN to
+      // update[k], unless it contains NaN already.
+      if (curVal < newVal) {
+        maxes[k] = newVal;
+      }
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION void
+  init (value_type update) const
+  {
+    const size_type numVecs = value_count;
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+    for (size_type k = 0; k < numVecs; ++k) {
+      // Pick some reasonable default value.  We choose the first
+      // entry if it exists, else zero.  The latter is OK because the
+      // infinity-norm is a max over magnitudes, which by definition
+      // are nonnegative, so it's OK for MPI processes with zero rows
+      // to contribute a zero to the global max.
+      const typename IPT::mag_type defaultVal =
+        (X_.dimension_0 () > static_cast<size_t> (0)) ? X_(0,k) :
+        Kokkos::Details::ArithTraits<typename IPT::mag_type>::zero ();
+      update[k] = defaultVal;
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION void
+  join (volatile value_type update,
+        const volatile value_type source) const
+  {
+    const size_type numVecs = value_count;
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+    for (size_type k = 0; k < numVecs; ++k) {
+      const typename IPT::mag_type curVal = update[k];
+      const typename IPT::mag_type newVal = source[k];
+      // max(curVal, newVal).  Any comparison predicate involving NaN
+      // evaluates to false.  Thus, this will never assign NaN to
+      // update[k], unless it contains NaN already.
+      if (curVal < newVal) {
+        update[k] = newVal;
+      }
+    }
+  }
+
+  // On device, write the reduction result to the output View.
+  KOKKOS_INLINE_FUNCTION void
+  final (const value_type dst) const
+  {
+    const size_type numVecs = value_count;
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+    for (size_type k = 0; k < numVecs; ++k) {
+      norms_(k) = dst[k];
+    }
+  }
+};
+
+
 // Implementation detail of Tpetra::MultiVector::dot, for single
 // vectors (columns).
 template<class VecViewType>
@@ -1538,6 +1756,120 @@ struct VecNorm2SquaredFunctor {
     norm_ () = dst;
   }
 };
+
+
+// Compute the square of the one-norm of a single vector.
+template<class VecViewType>
+struct VecNorm1Functor {
+  typedef typename VecViewType::device_type device_type;
+  typedef typename VecViewType::size_type size_type;
+  typedef typename VecViewType::value_type mv_value_type;
+  typedef Kokkos::Details::InnerProductSpaceTraits<mv_value_type> IPT;
+  typedef typename IPT::mag_type value_type;
+  typedef typename VecViewType::const_type vec_const_view_type;
+  // This is a nonconst scalar view.  It holds one mag_type instance.
+  typedef Kokkos::View<typename IPT::mag_type, device_type> norm_view_type;
+
+  vec_const_view_type x_;
+  norm_view_type norm_;
+
+  // Constructor
+  //
+  // x: the vector for which to compute the one-norm.
+  // norm: scalar View into which to put the result.
+  VecNorm1Functor (const vec_const_view_type& x,
+                   const norm_view_type& norm) :
+    x_ (x), norm_ (norm)
+  {}
+
+  KOKKOS_INLINE_FUNCTION void
+  operator() (const size_type i, value_type& sum) const {
+    sum += IPT::norm (x_(i)); // absolute value
+  }
+
+  KOKKOS_INLINE_FUNCTION void
+  init (value_type& update) const {
+    update = Kokkos::Details::ArithTraits<typename IPT::mag_type>::zero ();
+  }
+
+  KOKKOS_INLINE_FUNCTION void
+  join (volatile value_type& update,
+        const volatile value_type& source) const {
+    update += source;
+  }
+
+  // On device, write the reduction result to the output View.
+  KOKKOS_INLINE_FUNCTION void final (value_type& dst) const {
+    norm_ () = dst;
+  }
+};
+
+
+// Compute the square of the infinity-norm of a single vector.
+template<class VecViewType>
+struct VecNormInfFunctor {
+  typedef typename VecViewType::device_type device_type;
+  typedef typename VecViewType::size_type size_type;
+  typedef typename VecViewType::value_type mv_value_type;
+  typedef Kokkos::Details::InnerProductSpaceTraits<mv_value_type> IPT;
+  typedef typename IPT::mag_type value_type;
+  typedef typename VecViewType::const_type vec_const_view_type;
+  // This is a nonconst scalar view.  It holds one mag_type instance.
+  typedef Kokkos::View<typename IPT::mag_type, device_type> norm_view_type;
+
+  vec_const_view_type x_;
+  norm_view_type norm_;
+
+  // Constructor
+  //
+  // x: the vector for which to compute the infinity-norm.
+  // norm: scalar View into which to put the result.
+  VecNormInfFunctor (const vec_const_view_type& x,
+                     const norm_view_type& norm) :
+    x_ (x), norm_ (norm)
+  {}
+
+  KOKKOS_INLINE_FUNCTION void
+  operator() (const size_type i, value_type& curVal) const {
+    const typename IPT::mag_type newVal = IPT::norm (x_(i));
+    // max(curVal, newVal).  Any comparison predicate involving NaN
+    // evaluates to false.  Thus, this will never assign NaN to
+    // update[k], unless it contains NaN already.
+    if (curVal < newVal) {
+      curVal = newVal;
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION void
+  init (value_type& update) const {
+    // Pick some reasonable default value.  We choose the first entry
+    // if it exists, else zero.  The latter is OK because the
+    // infinity-norm is a max over magnitudes, which by definition are
+    // nonnegative, so it's OK for MPI processes with zero rows to
+    // contribute a zero to the global max.
+    const typename IPT::mag_type defaultVal =
+      (x_.dimension_0 () > static_cast<size_t> (0)) ? x_(0) :
+      Kokkos::Details::ArithTraits<typename IPT::mag_type>::zero ();
+    update = defaultVal;
+  }
+
+  KOKKOS_INLINE_FUNCTION void
+  join (volatile value_type& update,
+        const volatile value_type& source) const {
+    // max(update, source).  Any comparison predicate involving NaN
+    // evaluates to false.  Thus, this will never assign NaN to
+    // update, unless it contains NaN already.
+    if (update < source) {
+      update = source;
+    }
+  }
+
+  // On device, write the reduction result to the output View.
+  KOKKOS_INLINE_FUNCTION void final (value_type& dst) const {
+    norm_ () = dst;
+  }
+};
+
 
 
 // parallel_for functor for computing the square root, in place, of a

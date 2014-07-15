@@ -1134,7 +1134,45 @@ namespace Tpetra {
     /// The one-norm of a vector is the sum of squares of the
     /// magnitudes of the vector's entries.  On exit, norms[k] is the
     /// one-norm of column k of this MultiVector.
-    void norm1(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const;
+    void norm1 (const Teuchos::ArrayView<mag_type>& norms) const;
+
+    /// \brief Compute the one-norm of each vector (column).
+    /// \tparam T The output type of the norms.
+    ///
+    /// This method only exists if mag_type and T are different types.
+    /// For example, if Teuchos::ScalarTraits<Scalar>::magnitudeType
+    /// and mag_type differ, then this method ensures backwards
+    /// compatibility with the previous interface (that returned norms
+    /// products as Teuchos::ScalarTraits<Scalar>::magnitudeType
+    /// rather than as mag_type).  The complicated \c enable_if
+    /// expression just ensures that the method only exists if
+    /// mag_type and T are different types; the method still returns
+    /// \c void, as above.
+    template <typename T>
+    typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type,T>::value), void >::type
+    norm1 (const Teuchos::ArrayView<T>& norms) const
+    {
+      typedef typename Teuchos::ArrayView<T>::size_type size_type;
+      const size_type sz = norms.size ();
+      Teuchos::Array<mag_type> theNorms (sz);
+      this->norm1 (theNorms);
+      for (size_type i = 0; i < sz; ++i) {
+        norms[i] = theNorms[i];
+      }
+    }
+
+    /// \brief Compute the one-norm of each vector (column), storing
+    ///   the result in a device view.
+    ///
+    /// The one-norm of a vector is the sum of squares of the
+    /// magnitudes of the vector's entries.  On exit, norms(j) is the
+    /// one-norm of column j of this MultiVector.
+    ///
+    /// \param norms [out] Device View with getNumVectors() entries.
+    ///
+    /// \pre <tt>norms.dimension_0 () == this->getNumVectors ()</tt>
+    /// \post <tt>norms(j) == (this->getVector[j])->norm1 (* (A.getVector[j]))</tt>
+    void norm1 (const Kokkos::View<mag_type*, device_type>& norms) const;
 
     /// \brief Compute the two-norm of each vector (column).
     ///
