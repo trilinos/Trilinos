@@ -2,8 +2,17 @@
 Release Notes for Trilinos Package Ifpack2
 ------------------------------------------
 
-Dev version:
---------------
+Dev version (11.9):
+-------------------
+
+* Fixed bug in ReorderFilter (related to Bug 6117)
+
+ReorderFilter was computing the number of entries for the wrong row,
+which caused temporaries (either in Ifpack2::ReorderFilter or in
+MueLu) to be allocated with the wrong size.  This may be related to
+Bug 6117.
+
+* LocalFilter::apply now checks whether X aliases Y
 
 * Performance improvements to apply() of BlockRelaxation, LocalFilter,
   and Relaxation (10-11 Apr 2014)

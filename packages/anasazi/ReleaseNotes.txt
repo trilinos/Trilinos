@@ -2,6 +2,13 @@
 Release Notes for Trilinos Package Anasazi
 ------------------------------------------
 
+Dev version (11.9):
+-------------------
+
+* Improved examples and added more explanatory comments
+
+Thanks to Alicia Klinvex (Purdue) for review and suggestions.
+
 Trilinos 10.6:
 --------------
 
