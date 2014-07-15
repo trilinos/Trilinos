@@ -936,8 +936,7 @@ namespace MueLu {
           BuildFactoryMap(groupList, factoryMapIn, groupFactoryMap, factoryManagers);
 
           // do not store groupFactoryMap in factoryMapOut
-          // Create a factory manager object from groupFactoryMap and store it in
-          // ParameterListInterpreter::factoryManagers_
+          // Create a factory manager object from groupFactoryMap
           RCP<FactoryManagerBase> m = rcp(new FactoryManager(groupFactoryMap));
 
           factoryManagers[paramName] = m;
