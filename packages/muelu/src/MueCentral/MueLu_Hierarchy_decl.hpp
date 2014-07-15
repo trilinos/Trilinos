@@ -108,8 +108,8 @@ namespace MueLu {
     typedef typename STS::magnitudeType MagnitudeType;
 
     struct ConvData {
-      ConvData()                              : maxIts_(1),       tol_(-STS::one()) { }
-      ConvData(LO maxIts)                     : maxIts_(maxIts),  tol_(-STS::one()) { }
+      ConvData()                              : maxIts_(1),       tol_(-STS::magnitude(STS::one())) { }
+      ConvData(LO maxIts)                     : maxIts_(maxIts),  tol_(-STS::magnitude(STS::one())) { }
       ConvData(MagnitudeType tol)             : maxIts_(10000),   tol_(tol) { }
       ConvData(std::pair<LO,MagnitudeType> p) : maxIts_(p.first), tol_(p.second) { }
 

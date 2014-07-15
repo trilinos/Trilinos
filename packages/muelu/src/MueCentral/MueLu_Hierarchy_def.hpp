@@ -553,7 +553,7 @@ namespace MueLu {
     }
 
     // Print residual information before iterating
-    MagnitudeType prevNorm = STS::one(), curNorm = STS::one();
+    MagnitudeType prevNorm = STS::magnitude(STS::one()), curNorm = STS::magnitude(STS::one());
     rate_ = 1.0;
     if (startLevel == 0 && !isPreconditioner_ &&
         (IsPrint(Statistics1) || tol > 0)) {
