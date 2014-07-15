@@ -2918,7 +2918,6 @@ void pack_owned_verify( CommAll & all , const BulkData & mesh )
         // see if we also have ghosts
         unsigned ghost_count = 0 ;
         for ( size_t kk = 0 ; kk < comm.size() ; ++kk ) {
-          //stk::mesh::Entity entity = mesh.get_entity(i->key);
           if ( comm[kk].ghost_id == 1 && comm[kk].proc == share_proc )
           {
               std::cerr << "[" << mesh.parallel_rank() << "] bad news for entity " << i->key << " with id: " << mesh.identifier(i->entity) << std::endl;
@@ -6046,7 +6045,6 @@ void connectGhostedEntitiesToEdge(stk::mesh::BulkData &stkMeshBulkData, std::vec
 {
     for (size_t j=0; j<entitiesConnectedToNodes.size();j++)
     {
-        //stk::mesh::EntityKey entityKey = stkMeshBulkData.entity_key(entitiesConnectedToNodes[j]);
         bool isEntityGhostedOntoThisProc = stkMeshBulkData.in_receive_ghost(stkMeshBulkData.aura_ghosting(), stkMeshBulkData.entity_key(entitiesConnectedToNodes[j]));
 
         if ( isEntityGhostedOntoThisProc )
