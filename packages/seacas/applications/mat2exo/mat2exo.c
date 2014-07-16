@@ -71,8 +71,8 @@ mat_t *mat_file=0;  /* file for binary .mat input */
 static char *qainfo[] =
 {
   "mat2exo",
-  "2014/01/14",
-  "2.02",
+  "2014/07/16",
+  "2.03",
 };
 
 /**********************************************************************/
@@ -372,7 +372,7 @@ int main (int argc, char *argv[]){
 	sprintf(name,"nvar%02d",i+1);
 	matGetDbl(name,num_nodes,num_time_steps,nodal_var_vals);
 	for (j=0;j<num_time_steps;j++) {
-	  ex_put_var(exo_file,j+1,EX_NODAL,i+1,num_nodes,1,nodal_var_vals+num_nodes*j);
+	  ex_put_var(exo_file,j+1,EX_NODAL,i+1,0,num_nodes,nodal_var_vals+num_nodes*j);
 	}
 	free(nodal_var_vals); 
       }
