@@ -86,7 +86,7 @@ namespace MueLu {
     {
       typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
       validParamList->getEntry("aggregation: drop scheme").setValidator(
-        rcp(new validatorType(Teuchos::tuple<std::string>("original", "laplacian", "classical"), "aggregation: drop scheme")));
+        rcp(new validatorType(Teuchos::tuple<std::string>("original", "distance laplacian", "classical"), "aggregation: drop scheme")));
     }
 #undef  SET_VALID_ENTRY
     validParamList->set< bool >                  ("lightweight wrap",           false, "Experimental option for lightweight graph access");
@@ -107,7 +107,7 @@ namespace MueLu {
 
     const ParameterList& pL = GetParameterList();
     if (pL.get<bool>("lightweight wrap") == true) {
-      if (pL.get<std::string>("aggregation: drop scheme") == "laplacian")
+      if (pL.get<std::string>("aggregation: drop scheme") == "distance laplacian")
         Input(currentLevel, "Coordinates");
 
     } else {
@@ -138,7 +138,7 @@ namespace MueLu {
         algo = "original";
 
       TEUCHOS_TEST_FOR_EXCEPTION(predrop_ != null   && algo != "original", Exceptions::RuntimeError, "Dropping function must not be provided for \"" << algo << "\" algorithm");
-      TEUCHOS_TEST_FOR_EXCEPTION(algo != "original" && algo != "laplacian", Exceptions::RuntimeError, "\"algorithm\" must be one of (original|laplacian)");
+      TEUCHOS_TEST_FOR_EXCEPTION(algo != "original" && algo != "distance laplacian", Exceptions::RuntimeError, "\"algorithm\" must be one of (original|distance laplacian)");
 
       SC threshold = Teuchos::as<SC>(pL.get<SC>("aggregation: drop tol"));
       GetOStream(Runtime0) << "algorithm = \"" << algo << "\": threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << std::endl;
@@ -367,7 +367,7 @@ namespace MueLu {
           throw Exceptions::NotImplemented("Fast CoalesceDrop with multiple DOFs and dropping is not yet implemented.");
         }
 
-      } else if (algo == "laplacian") {
+      } else if (algo == "distance laplacian") {
         LO blkSize   = A->GetFixedBlockSize();
         GO indexBase = A->getRowMap()->getIndexBase();
 

@@ -23,7 +23,7 @@
     <ParameterList name="myCoalesceDropFact">
       <Parameter name="factory"                             type="string" value="CoalesceDropFactory"/>
       <!-- <Parameter name="lightweight wrap"                    type="bool"   value="true"/> -->
-      <!-- <Parameter name="aggregation: drop scheme"            type="string" value="laplacian"/> -->
+      <!-- <Parameter name="aggregation: drop scheme"            type="string" value="distance laplacian"/> -->
       <!-- <Parameter name="aggregation: drop tol"               type="double" value="0.00"/> -->
     </ParameterList>
 

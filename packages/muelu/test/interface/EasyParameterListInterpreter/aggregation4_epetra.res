@@ -1,4 +1,4 @@
-aggregation: drop scheme = laplacian
+aggregation: drop scheme = distance laplacian
 aggregation: drop tol = 0.05
 verbosity = test
 coarse: max size = 2000   [default]
@@ -10,7 +10,7 @@ smoother: pre or post = both   [default]
 aggregation: type = uncoupled   [default]
 multigrid algorithm = sa   [default]
 problem: symmetric = 1   [default]
-aggregation: visualize = 0   [default]
+aggregation: export visualization data = 0   [default]
 repartition: enable = 0   [default]
 
 Level 0
@@ -25,7 +25,7 @@ Level 1
    Build (MueLu::UncoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
     lightweight wrap = 1
-    aggregation: drop scheme = laplacian
+    aggregation: drop scheme = distance laplacian
     aggregation: drop tol = 0.05
     aggregation: Dirichlet threshold = 0   [default]
     
@@ -87,7 +87,7 @@ Level 2
    Build (MueLu::UncoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
     lightweight wrap = 1
-    aggregation: drop scheme = laplacian
+    aggregation: drop scheme = distance laplacian
     aggregation: drop tol = 0.05
     aggregation: Dirichlet threshold = 0   [default]
     

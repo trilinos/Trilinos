@@ -9,7 +9,7 @@ repartition: rebalance P and R = 1   [default]
 smoother: pre or post = both   [default]
 aggregation: type = uncoupled   [default]
 multigrid algorithm = sa   [default]
-aggregation: visualize = 0   [default]
+aggregation: export visualization data = 0   [default]
 repartition: partitioner = zoltan   [default]
 
 Level 0

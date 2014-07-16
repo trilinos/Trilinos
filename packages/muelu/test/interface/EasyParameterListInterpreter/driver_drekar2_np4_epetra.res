@@ -4,7 +4,7 @@ coarse: max size = 1000
 sa: use filtered matrix = 1
 filtered matrix: use lumping = 1
 smoother: type = CHEBYSHEV
-aggregation: drop scheme = laplacian
+aggregation: drop scheme = distance laplacian
 aggregation: drop tol = 0.02
 repartition: enable = 1
 repartition: min rows per proc = 2000
@@ -21,7 +21,7 @@ smoother: pre or post = both   [default]
 aggregation: type = uncoupled   [default]
 multigrid algorithm = sa   [default]
 problem: symmetric = 1   [default]
-aggregation: visualize = 0   [default]
+aggregation: export visualization data = 0   [default]
 smoother: params -> 
  chebyshev: degree = 2   [unused]
  chebyshev: ratio eigenvalue = 20   [unused]
@@ -47,7 +47,7 @@ Level 1
      Matrix filtering (MueLu::FilteredAFactory)
       Build (MueLu::CoalesceDropFactory)
       lightweight wrap = 1
-      aggregation: drop scheme = laplacian
+      aggregation: drop scheme = distance laplacian
       aggregation: drop tol = 0.02
       aggregation: Dirichlet threshold = 0   [default]
       
@@ -144,7 +144,7 @@ Level 2
      Matrix filtering (MueLu::FilteredAFactory)
       Build (MueLu::CoalesceDropFactory)
       lightweight wrap = 1
-      aggregation: drop scheme = laplacian
+      aggregation: drop scheme = distance laplacian
       aggregation: drop tol = 0.02
       aggregation: Dirichlet threshold = 0   [default]
       
@@ -241,7 +241,7 @@ Level 3
      Matrix filtering (MueLu::FilteredAFactory)
       Build (MueLu::CoalesceDropFactory)
       lightweight wrap = 1
-      aggregation: drop scheme = laplacian
+      aggregation: drop scheme = distance laplacian
       aggregation: drop tol = 0.02
       aggregation: Dirichlet threshold = 0   [default]
       

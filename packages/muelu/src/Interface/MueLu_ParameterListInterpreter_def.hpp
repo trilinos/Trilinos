@@ -166,8 +166,8 @@ namespace MueLu {
     blockSize_              = paramList.get<int> ("number of equations", 1);
 
     // Save level data
-    if (paramList.isSublist("print")) {
-      ParameterList printList = paramList.sublist("print");
+    if (paramList.isSublist("export data")) {
+      ParameterList printList = paramList.sublist("export data");
 
       if (printList.isParameter("A"))
         this->matricesToPrint_     = Teuchos::getArrayFromStringParameter<int>(printList, "A");
@@ -195,13 +195,13 @@ namespace MueLu {
     }
 
     // Detect if we need to transfer coordinates to coarse levels. We do that iff
-    //  - we use "laplacian" dropping on some level, or
+    //  - we use "distance laplacian" dropping on some level, or
     //  - we use repartitioning on some level
     // This is not ideal, as we may have "repartition: enable" turned on by default
     // and not present in the list, but it is better than nothing.
     useCoordinates_ = false;
     if ((paramList.isParameter("repartition: enable")      && paramList.get<bool>("repartition: enable")             == true) ||
-        (paramList.isParameter("aggregation: drop scheme") && paramList.get<std::string>("aggregation: drop scheme") == "laplacian")) {
+        (paramList.isParameter("aggregation: drop scheme") && paramList.get<std::string>("aggregation: drop scheme") == "distance laplacian")) {
       useCoordinates_ = true;
 
     } else {
@@ -212,7 +212,7 @@ namespace MueLu {
           const ParameterList& levelList = paramList.sublist(levelStr);
 
           if ((levelList.isParameter("repartition: enable")      && levelList.get<bool>("repartition: enable")             == true) ||
-              (levelList.isParameter("aggregation: drop scheme") && levelList.get<std::string>("aggregation: drop scheme") == "laplacian")) {
+              (levelList.isParameter("aggregation: drop scheme") && levelList.get<std::string>("aggregation: drop scheme") == "distance laplacian")) {
             useCoordinates_ = true;
             break;
           }
@@ -256,42 +256,44 @@ namespace MueLu {
     // FIXME: parameters passed to packages, like Ifpack2, are not touched by us, resulting in "[unused]" flag
     // being displayed. On the other hand, we don't want to simply iterate through them touching. I don't know
     // what a good solution looks like
-    this->GetOStream(static_cast<MsgType>(Runtime1 | Test), 0) << paramList << std::endl;
+    if (!(paramList.isParameter("print initial parameters") && paramList.get<bool>("print initial parameters") == false))
+      this->GetOStream(static_cast<MsgType>(Runtime1 | Test), 0) << paramList << std::endl;
 
+    if (!(paramList.isParameter("print unused parameters") && paramList.get<bool>("print unused parameters") == false)) {
+      // Check unused parameters
+      ParameterList unusedParamList;
 
-    // Check unused parameters
-    ParameterList unusedParamList;
+      // Check for unused parameters that aren't lists
+      for (ParameterList::ConstIterator it = paramList.begin(); it != paramList.end(); it++) {
+        const ParameterEntry& entry = paramList.entry(it);
 
-    // Check for unused parameters that aren't lists
-    for (ParameterList::ConstIterator it = paramList.begin(); it != paramList.end(); it++) {
-      const ParameterEntry& entry = paramList.entry(it);
+        if (!entry.isList() && !entry.isUsed())
+          unusedParamList.setEntry(paramList.name(it), entry);
+      }
 
-      if (!entry.isList() && !entry.isUsed())
-        unusedParamList.setEntry(paramList.name(it), entry);
-    }
+      // Check for unused parameters in level-specific sublists
+      for (int levelID = 0; levelID < this->numDesiredLevel_; levelID++) {
+        std::string levelStr = "level " + toString(levelID);
 
-    // Check for unused parameters in level-specific sublists
-    for (int levelID = 0; levelID < this->numDesiredLevel_; levelID++) {
-      std::string levelStr = "level " + toString(levelID);
+        if (paramList.isSublist(levelStr)) {
+          const ParameterList& levelList = paramList.sublist(levelStr);
 
-      if (paramList.isSublist(levelStr)) {
-        const ParameterList& levelList = paramList.sublist(levelStr);
+          for (ParameterList::ConstIterator itr = levelList.begin(); itr != levelList.end(); ++itr) {
+            const ParameterEntry& entry = levelList.entry(itr);
 
-        for (ParameterList::ConstIterator itr = levelList.begin(); itr != levelList.end(); ++itr) {
-          const ParameterEntry& entry = levelList.entry(itr);
-
-          if (!entry.isList() && !entry.isUsed())
-            unusedParamList.sublist(levelStr).setEntry(levelList.name(itr), entry);
+            if (!entry.isList() && !entry.isUsed())
+              unusedParamList.sublist(levelStr).setEntry(levelList.name(itr), entry);
+          }
         }
       }
-    }
 
-    if (unusedParamList.numParams() > 0) {
-      std::ostringstream unusedParamsStream;
-      int indent = 4;
-      unusedParamList.print(unusedParamsStream, indent);
+      if (unusedParamList.numParams() > 0) {
+        std::ostringstream unusedParamsStream;
+        int indent = 4;
+        unusedParamList.print(unusedParamsStream, indent);
 
-      this->GetOStream(Warnings1) << "The following parameters were not used:\n" << unusedParamsStream.str() << std::endl;
+        this->GetOStream(Warnings1) << "The following parameters were not used:\n" << unusedParamsStream.str() << std::endl;
+      }
     }
 
   }
@@ -579,7 +581,7 @@ namespace MueLu {
     RAP->SetFactory("P", manager.GetFactory("P"));
     if (!this->implicitTranspose_)
       RAP->SetFactory("R", manager.GetFactory("R"));
-    MUELU_READ_2LIST_PARAM(paramList, defaultList, "aggregation: visualize", bool, false, visAgg);
+    MUELU_READ_2LIST_PARAM(paramList, defaultList, "aggregation: export visualization data", bool, false, visAgg);
     if (visAgg) {
       RCP<AggregationExportFactory> aggExport = rcp(new AggregationExportFactory());
       aggExport->SetFactory("DofsPerNode", manager.GetFactory("Graph"));

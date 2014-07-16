@@ -35,9 +35,23 @@
   </parameter>
 
   <parameter>
-    <name>print</name>
+    <name>Export data</name>
     <type>\parameterlist</type>
-    <description>Saving a subset of the hierarchy data in a file. Currently, the list can contain any of three parameter names ("A", "P", "R") of type "string" and value "\{levels separated by commas\}". A matrix is saved in two files: a) data is saved in the MatrixMarket format in a file called "A\_level.mm", or similar; b) row map is saved in the MatrixMarket format in a file called "rowmap\_A\_level.mm", or similar.</description>
+    <description>Exporting a subset of the hierarchy data in a file. Currently, the list can contain any of three parameter names ("A", "P", "R") of type "string" and value "\{levels separated by commas\}". A matrix is saved in two files: a) data is saved in the MatrixMarket format in a file called "A\_level.mm", or similar; b) row map is saved in the MatrixMarket format in a file called "rowmap\_A\_level.mm", or similar.</description>
+  </parameter>
+
+  <parameter>
+    <name>print initial parameters</name>
+    <type>bool</type>
+    <default>true</default>
+    <description>Print parameters provided for a hierarchy construction.</description>
+  </parameter>
+
+  <parameter>
+    <name>print unused parameters</name>
+    <type>bool</type>
+    <default>true</default>
+    <description>Print parameters unused during a hierarchy construction.</description>
   </parameter>
 
   <parameter>
@@ -81,7 +95,7 @@
     <name>aggregation: drop scheme</name>
     <type>string</type>
     <default>"classical"</default>
-    <description>Aggregation connectivity dropping scheme. Possible values: "classical", "laplacian".</description>
+    <description>Aggregation connectivity dropping scheme. Possible values: "classical", "distance laplacian".</description>
   </parameter>
 
   <parameter>
@@ -96,6 +110,7 @@
     <type>int</type>
     <default>2</default>
     <description>Minimum size of an aggregate.</description>
+    <visible>true</visible>
   </parameter>
 
   <parameter>
@@ -103,6 +118,7 @@
     <type>int</type>
     <default>2147483647</default>
     <description>Maximum size of an aggregate.</description>
+    <visible>true</visible>
   </parameter>
 
   <parameter>
@@ -161,10 +177,10 @@
   </parameter>
 
   <parameter>
-    <name>aggregation: visualize</name>
+    <name>aggregation: export visualization data</name>
     <type>bool</type>
     <default>false</default>
-    <description>Visualize aggregates.</description>
+    <description>Export data for visualization post-processing.</description>
   </parameter>
 
   <parameter>

@@ -18,6 +18,7 @@ sed -i 's/"algorithm"/"aggregation: drop scheme"/'                              
 sed -i 's/"aggregation threshold"/"aggregation: drop tol"/'                     $in
 sed -i 's/"MinNodesPerAggregate"/"aggregation: min agg size"/'                  $in
 sed -i 's/"MaxNodesPerAggregate"/"aggregation: max agg size"/'                  $in
+sed -i 's/"MaxNeighAlreadySelected"/"aggregation: max selected neighbors"/'     $in
 sed -i 's/"Dirichlet detection threshold"/"aggregation: Dirichlet threshold"/'  $in
 sed -i 's/"maxCoarseSize"/"coarse: max size"/'                                  $in
 sed -i '/="0"/! s/"startLevel"/"repartition: start level"/'                     $in
@@ -32,4 +33,6 @@ sed -i 's/"Ordering"/"aggregation: ordering"/'                                  
 sed -i 's/value="Natural"/value="natural"/'                                     $in
 sed -i 's/value="Graph"/value="graph"/'                                         $in
 sed -i 's/value="Random"/value="random"/'                                       $in
-sed -i 's/"MaxNeighAlreadySelected"/"aggregation: max selected neighbors"/'     $in
+sed -i 's/"laplacian"/"distance laplacian"/'                                    $in
+sed -i 's/"aggregation: visualize"/"aggregation: export visualization data"/'   $in
+sed -i 's/"print"/"export data"/'                                               $in
