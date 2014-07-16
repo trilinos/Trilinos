@@ -6369,7 +6369,7 @@ Epetra_MultiVector > &source, NOX::CopyType type=NOX::DeepCopy,
 NOX::Epetra::MultiVector::MemoryType
 memoryType=NOX::Epetra::MultiVector::CreateCopy)
 
-Constructor that creates a COPY or VIEW of the Epetra_MultiVector.
+Constructor that creates a COPY or VIEW of the Epetra_MultiVector.";
 
 %feature("docstring")  NOX::MultiVector::MultiVector "NOX::MultiVector::MultiVector(const NOX::Abstract::Vector *const *vs,
 int numVecs, NOX::CopyType type=NOX::DeepCopy)
