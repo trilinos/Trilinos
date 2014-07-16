@@ -363,6 +363,23 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
       }
     }
   }
+
+  delete[] elem_blk_ids;
+  delete[] num_nodes_per_elem;
+  delete[] num_attr;
+  delete[] num_elem_this_blk;
+
+  for(long long i = 0; i < num_elem_blk; i++){
+    delete[] elem_type[i];
+  }
+
+  delete[] elem_type;
+
+  for(long long b = 0; b < num_elem_blk; b++) {
+    delete[] connect[b];
+  }
+
+  delete[] connect;
 }
 
   
