@@ -786,6 +786,7 @@ TEST(BulkDataModificationEnd, create_a_ghosted_edge_and_test_internal_modificati
     }
 }
 
+//BeginDocTest1
 TEST(BulkDataModificationEnd, create_a_ghosted_edge_using_only_needed_pieces)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
@@ -818,6 +819,9 @@ TEST(BulkDataModificationEnd, create_a_ghosted_edge_using_only_needed_pieces)
         edgeIds.push_back(100+myProcId);
         nodeIdsForEdge.resize(edgeIds.size());
         elementRelations.resize(edgeIds.size());
+
+        // Proc 0 creates an edge with id=100 on nodes 5 and 6 related to elements 1 and 2
+        // Proc 1 creates an edge with id=101 on nodes 13 and 14 related to elements 3 and 4
         for ( size_t i=0;i<edgeIds.size();i++)
         {
             nodeIdsForEdge[i].resize(2);
@@ -854,6 +858,7 @@ TEST(BulkDataModificationEnd, create_a_ghosted_edge_using_only_needed_pieces)
         checkItAllForThisGhostedCase(stkMeshBulkData);
     }
 }
+//EndDocTest1
 
 
 TEST(BulkDataModificationEnd, create_edges)
@@ -868,23 +873,12 @@ TEST(BulkDataModificationEnd, create_edges)
 
         const int spatialDim = 3;
         stk::mesh::MetaData stkMeshMetaData(spatialDim);
-//        BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator, stk::mesh::ConnectivityMap::minimal_upward_connectivity_map());
         BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
-
-
-        // Elements 1 and 2 on proc 0, Elements 3 and 4 on proc 1
-        // Elements 2 and 3 are shared because of nodes 9, 10, 11, 12
-        // Element 2 is ghosted onto Proc 1, and Element 0 is ghosted onto Proc 0
 
         std::string exodusFileName = getOption("-i", "generated:1x1x4");
         populateBulkDataWithFile(exodusFileName, communicator, stkMeshBulkData);
 
         checkThatMeshIsParallelConsistent(stkMeshBulkData);
-
-//        stk::mesh::Part& face_part = stkMeshBulkData.mesh_meta_data().declare_part("face_part", stk::topology::FACE_RANK);
-//        stk::mesh::PartVector partVec;
-//        partVec.push_back(&face_part);
-//        stk::mesh::skin_mesh(stkMeshBulkData, stkMeshBulkData.mesh_meta_data().universal_part(), partVec);
 
         stk::mesh::Part& edge_part = stkMeshBulkData.mesh_meta_data().declare_part("edge_part", stk::topology::EDGE_RANK);
         stk::mesh::create_edges(stkMeshBulkData, stkMeshBulkData.mesh_meta_data().universal_part(), &edge_part);
