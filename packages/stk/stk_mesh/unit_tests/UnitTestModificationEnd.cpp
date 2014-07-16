@@ -923,16 +923,16 @@ TEST(BulkDataModificationEnd, create_edges_with_min_map)
 }
 
 // Write out vector of strings using proc id and label via an ostringstream
-void writeMesh(int myProcId, std::string label, const std::vector<std::string> &meshStart)
-{
-    std::ostringstream msg;
-    for (size_t i=0;i<meshStart.size();i++)
-    {
-        msg.str(std::string());
-        msg << "P[" << myProcId << "] " << label << "\t" << meshStart[i] << std::endl;
-        std::cerr << msg.str();
-    }
-}
+//void writeMesh(int myProcId, std::string label, const std::vector<std::string> &meshStart)
+//{
+//    std::ostringstream msg;
+//    for (size_t i=0;i<meshStart.size();i++)
+//    {
+//        msg.str(std::string());
+//        msg << "P[" << myProcId << "] " << label << "\t" << meshStart[i] << std::endl;
+//        std::cerr << msg.str();
+//    }
+//}
 
 void getMeshLineByLine(const stk::mesh::BulkData &stkMeshBulkData, std::vector<std::string> &output)
 {
@@ -1413,21 +1413,6 @@ void create_edges(BulkDataTester& stkMeshBulkData, std::vector<stk::mesh::Entity
             stk::mesh::Entity element = stkMeshBulkData.get_entity(elementKey);
             connectElementToEdge(stkMeshBulkData, element, edge, nodeIdsForEdge[edge_index]);
         }
-    }
-}
-
-void connectEdgeToNodes(stk::mesh::BulkData &stkMeshBulkData, stk::mesh::Entity edge, std::vector<stk::mesh::Entity> &nodes, stk::mesh::Part& edge_part)
-{
-    stk::mesh::OrdinalVector ordinal_scratch;
-    ordinal_scratch.reserve(64);
-    stk::mesh::PartVector part_scratch;
-    part_scratch.reserve(64);
-    stk::mesh::Permutation perm = static_cast<stk::mesh::Permutation>(0);
-
-    for (size_t n=0; n<nodes.size(); ++n)
-    {
-        stkMeshBulkData.declare_relation(edge, nodes[n], n, perm, ordinal_scratch, part_scratch);
-        EXPECT_TRUE(stkMeshBulkData.bucket(nodes[n]).member(edge_part));
     }
 }
 
