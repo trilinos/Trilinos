@@ -78,7 +78,7 @@ struct findprimes {
   }
 
 };
- 
+
 int main() {
   Kokkos::initialize();
 
@@ -92,13 +92,14 @@ int main() {
   host_view_type h_data = Kokkos::create_mirror_view(data);
   host_view_type h_result = Kokkos::create_mirror_view(result);
   host_count_type h_count = Kokkos::create_mirror_view(count);
-  
-  for(int i = 0; i < data.dimension_0(); i++)
-      h_data(i) = rand()%100000;
+
+  typedef view_type::size_type size_type;
+  for (size_type i = 0; i < data.dimension_0(); ++i) {
+    h_data(i) = rand () % nnumbers;
+  }
 
   Kokkos::deep_copy(data,h_data);
 
-  int sum = 0;
   Kokkos::parallel_for(data.dimension_0(),findprimes(data,result,count));
   Kokkos::deep_copy(h_count,count);
 
