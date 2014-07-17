@@ -317,6 +317,20 @@ unsigned OpenMP::team_recommended()
 #endif
 }
 
+KOKKOS_INLINE_FUNCTION
+unsigned OpenMP::hardware_thread_id() {
+#ifndef __CUDA_ARCH__
+  return omp_get_thread_num();
+#endif
+}
+
+KOKKOS_INLINE_FUNCTION
+unsigned OpenMP::max_hardware_threads() {
+#ifndef __CUDA_ARCH__
+  return omp_get_max_threads();
+#endif
+}
+
 //----------------------------------------------------------------------------
 
 int OpenMP::is_initialized()

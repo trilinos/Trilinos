@@ -51,6 +51,8 @@
 
 #include <Kokkos_Atomic.hpp>
 
+#include <sys/types.h>
+
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
@@ -96,6 +98,8 @@ private:
 
   ThreadsExec * const * m_pool_base ; ///< Base for pool fan-in
   ThreadsExec * const * m_team_base ; ///< Base for team fan-in
+
+  pthread_t     m_pthread_id ;       ///< Pthread ID
 
   void        * m_alloc_reduce ;     ///< Reduction allocated memory
   void        * m_alloc_shared ;     ///< Team-shared allocated memory
@@ -507,8 +511,10 @@ public:
                      int work_league_size = 0 ,
                      int work_team_size = 0 );
 
-  static int team_max();
-  static int team_recommended();
+  static unsigned team_max();
+  static unsigned team_recommended();
+  static unsigned hardware_thread_id();
+  static unsigned max_hardware_threads();
 
   static int  in_parallel();
   static void fence();
@@ -554,6 +560,12 @@ KOKKOS_INLINE_FUNCTION unsigned Threads::team_max()
 
 KOKKOS_INLINE_FUNCTION unsigned Threads::team_recommended()
 { return Impl::ThreadsExec::team_recommended() ; }
+
+KOKKOS_INLINE_FUNCTION unsigned Threads::hardware_thread_id()
+{ return Impl::ThreadsExec::hardware_thread_id() ; }
+
+KOKKOS_INLINE_FUNCTION unsigned Threads::max_hardware_threads()
+{ return Impl::ThreadsExec::max_hardware_threads() ; }
 
 inline bool Threads::sleep()
 { return Impl::ThreadsExec::sleep() ; }
