@@ -107,5 +107,3 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCES}
   DEPLIBS muelu
   )
-
-set_target_properties(muelu-adapters PROPERTIES LINKER_LANGUAGE CXX)
