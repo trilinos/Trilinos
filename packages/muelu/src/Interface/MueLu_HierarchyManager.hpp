@@ -237,23 +237,6 @@ namespace MueLu {
 
   private:
 
-    template<class T>
-    void WriteData(Hierarchy& H, const Teuchos::Array<int>& data, const std::string& name) const {
-      for (int i = 0; i < data.size(); ++i) {
-        std::string fileName = name + "_" + toString(data[i]) + ".m";
-
-        if (data[i] < H.GetNumLevels()) {
-          RCP<Level> L = H.GetLevel(data[i]);
-
-          if (L->IsAvailable(name)) {
-            RCP<T> M = L->template Get< RCP<T> >(name);
-            if (!M.is_null())
-              Utils::Write(fileName,* M);
-          }
-        }
-      }
-    }
-
     // Levels
     Array<RCP<FactoryManagerBase> > levelManagers_;        // one FactoryManager per level (the last levelManager is used for all the remaining levels)
 

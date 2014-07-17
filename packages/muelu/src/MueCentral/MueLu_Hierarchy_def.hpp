@@ -920,6 +920,23 @@ namespace MueLu {
     }
   }
 
+  template<class T, class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void WriteData(Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>& H, const Teuchos::Array<int>& data, const std::string& name) {
+    for (int i = 0; i < data.size(); ++i) {
+      std::string fileName = name + "_" + toString(data[i]) + ".m";
+
+      if (data[i] < H.GetNumLevels()) {
+        RCP<Level> L = H.GetLevel(data[i]);
+
+        if (L->IsAvailable(name)) {
+          RCP<T> M = L->template Get< RCP<T> >(name);
+          if (!M.is_null())
+            Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write(fileName,* M);
+        }
+      }
+    }
+  }
+
 } //namespace MueLu
 
 // TODO: We need a Set/Get function to change the CycleType (for when Iterate() calls are embedded in a Belos Preconditionner for instance).
