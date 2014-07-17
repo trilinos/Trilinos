@@ -408,7 +408,7 @@ public:
            const size_t n5 = 0 ,
            const size_t n6 = 0 ,
            const size_t n7 = 0 ) {
-     realloc(d_view,n0,n1,n2,n3,n4,n5,n6,n7);
+    ::Kokkos::realloc(d_view,n0,n1,n2,n3,n4,n5,n6,n7);
 #if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM)
      h_view = d_view ;
 #else
@@ -432,7 +432,7 @@ public:
            const size_t n7 = 0 ) {
    if(modified_device() >= modified_host()) {
      /* Resize on Device */
-     resize(d_view,n0,n1,n2,n3,n4,n5,n6,n7);
+     ::Kokkos::resize(d_view,n0,n1,n2,n3,n4,n5,n6,n7);
 #if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM)
      h_view = d_view ;
 #else
@@ -445,7 +445,7 @@ public:
    } else {
      /* Realloc on Device */
 
-     realloc(d_view,n0,n1,n2,n3,n4,n5,n6,n7);
+     ::Kokkos::realloc(d_view,n0,n1,n2,n3,n4,n5,n6,n7);
 #if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM)
      t_host temp_view = d_view ;
 #else
