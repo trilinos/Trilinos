@@ -248,6 +248,7 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
     //Update iteration count
     nIter++;
 
+    prePostOperator.runPostIterate(*this);
     printUpdate();
     return status;
   }

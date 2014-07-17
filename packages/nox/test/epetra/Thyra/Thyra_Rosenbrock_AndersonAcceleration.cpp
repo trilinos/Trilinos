@@ -74,6 +74,7 @@
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 #include "Thyra_ScaledModelEvaluator.hpp"
 #include "ModelEvaluatorRosenbrock.hpp"
+#include "Observer_PrintTest.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 
@@ -147,6 +148,13 @@ TEUCHOS_UNIT_TEST(AndersonAcceleration, AA_Rosenbrock)
 
   // Enable row sum scaling
   nl_params->sublist("Thyra Group Options").set("Function Scaling", "Row Sum");
+
+  Teuchos::RCP<NOX::Abstract::PrePostOperator> observer;
+  {
+    NOX::Utils utils(printParams);
+    observer = Teuchos::rcp(new ObserverPrintTest(utils));
+    nl_params->sublist("Solver Options").set("User Defined Pre/Post Operator",observer);
+  }
 
   // Create Status Tests
   {
@@ -227,6 +235,11 @@ TEUCHOS_UNIT_TEST(AndersonAcceleration, AA_Rosenbrock)
   double tol = 1.0e-7;
   TEST_FLOATING_EQUALITY((*x_analytic)[0],local_values[0],tol);
   TEST_FLOATING_EQUALITY((*x_analytic)[1],local_values[1],tol);
+
+  TEST_EQUALITY(Teuchos::rcp_dynamic_cast<ObserverPrintTest>(observer)->getNumPreIterateCalls(),6);
+  TEST_EQUALITY(Teuchos::rcp_dynamic_cast<ObserverPrintTest>(observer)->getNumPostIterateCalls(),6);
+  TEST_EQUALITY(Teuchos::rcp_dynamic_cast<ObserverPrintTest>(observer)->getNumPreSolveCalls(),1);
+  TEST_EQUALITY(Teuchos::rcp_dynamic_cast<ObserverPrintTest>(observer)->getNumPostSolveCalls(),1);
 
   if (solve_status.solveStatus == ::Thyra::SOLVE_STATUS_CONVERGED)
     std::cout << "Test passed!" << std::endl;
