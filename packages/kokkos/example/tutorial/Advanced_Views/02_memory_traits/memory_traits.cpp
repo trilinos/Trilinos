@@ -75,9 +75,9 @@ struct localsum {
 
 int main(int narg, char* arg[]) {
   Kokkos::initialize(narg,arg);
-  
+
   int size = 1000000;
-  
+
   idx_type idx("Idx",size,64);
   idx_type_host h_idx = Kokkos::create_mirror_view(idx);
 
@@ -85,19 +85,19 @@ int main(int narg, char* arg[]) {
   view_type src("Src",size);
 
   srand(134231);
-  
+
   for(int i=0; i<size; i++) {
-    for(int j=0; j<h_idx.dimension_1(); j++)
+    for(view_type::size_type j=0; j<h_idx.dimension_1(); j++)
       h_idx(i,j) = (size + i + (rand()%500 - 250))%size;
   }
-  
+
   Kokkos::deep_copy(idx,h_idx);
   Kokkos::parallel_for(size,localsum<view_type,view_type_rnd>(idx,dest,src));
   Kokkos::fence();
 
   Kokkos::Impl::Timer time1;
   Kokkos::parallel_for(size,localsum<view_type,view_type_rnd>(idx,dest,src));
-  Kokkos::fence();  
+  Kokkos::fence();
   double sec1 = time1.seconds();
 
   Kokkos::Impl::Timer time2;
@@ -105,7 +105,7 @@ int main(int narg, char* arg[]) {
   Kokkos::fence();
   double sec2 = time2.seconds();
 
-  printf("Time with Trait RandomAccess: %lf with Plain: %lf \n",sec1,sec2);  
+  printf("Time with Trait RandomAccess: %lf with Plain: %lf \n",sec1,sec2);
 
   Kokkos::finalize();
 }
