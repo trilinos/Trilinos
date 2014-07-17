@@ -3167,26 +3167,49 @@ namespace Tpetra {
                 const RCP<const map_type> &rangeMap,
                 const RCP<ParameterList> &params)
   {
-    const char tfecfFuncName[] = "fillComplete()";
+    const char tfecfFuncName[] = "fillComplete";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ! isFillActive() || isFillComplete(),
       std::runtime_error, ": Matrix fill state must be active (isFillActive() "
       "must be true) before calling fillComplete().");
+    const int numProcs = getComm ()->getSize ();
+
+    //
+    // Read parameters from the input ParameterList.
+    //
 
     // If true, the caller promises that no process did nonlocal
     // changes since the last call to fillComplete.
     bool assertNoNonlocalInserts = false;
+    // If true, makeColMap sorts remote GIDs (within each remote
+    // process' group).
+    bool sortGhosts = true;
+
     if (! params.is_null ()) {
       assertNoNonlocalInserts = params->get ("No Nonlocal Changes",
                                              assertNoNonlocalInserts);
+      if (params->isParameter ("sort column map ghost gids")) {
+        sortGhosts = params->get ("sort column map ghost gids", sortGhosts);
+      }
+      else if (params->isParameter ("Sort column Map ghost GIDs")) {
+        sortGhosts = params->get ("Sort column Map ghost GIDs", sortGhosts);
+      }
     }
-    const int numProcs = getComm ()->getSize ();
     // We also don't need to do global assembly if there is only one
     // process in the communicator.
     const bool needGlobalAssemble = ! assertNoNonlocalInserts && numProcs > 1;
+    // This parameter only matters if this matrix owns its graph.
+    if (! myGraph_.is_null ()) {
+      myGraph_->sortGhostsAssociatedWithEachProcessor_ = sortGhosts;
+    }
 
     if (! getCrsGraph()->indicesAreAllocated()) {
-      // Allocate global, in case we do not have a column Map yet.
-      allocateValues (GlobalIndices, GraphNotYetAllocated);
+      if (hasColMap ()) {
+        // We have a column Map, so use local indices.
+        allocateValues (LocalIndices, GraphNotYetAllocated);
+      } else {
+        // We don't have a column Map, so use global indices.
+        allocateValues (GlobalIndices, GraphNotYetAllocated);
+      }
     }
     // Global assemble, if we need to.  This call only costs a single
     // all-reduce if we didn't need global assembly after all.
@@ -3242,27 +3265,29 @@ namespace Tpetra {
       // pointer), and the Export if the range Map has changed (is a
       // different pointer).
       myGraph_->setDomainRangeMaps (domainMap, rangeMap);
+
       // Make the graph's column Map, if necessary.
-      if (! myGraph_->hasColMap()) {
-        myGraph_->makeColMap();
+      if (! myGraph_->hasColMap ()) {
+        myGraph_->makeColMap ();
       }
-      // make indices local
-      if (myGraph_->isGloballyIndexed()) {
-        myGraph_->makeIndicesLocal();
+
+      // Make indices local, if necessary.  The method won't do
+      // anything if the graph is already locally indexed.
+      myGraph_->makeIndicesLocal ();
+
+      if (! myGraph_->isSorted ()) {
+        sortEntries ();
       }
-      if (! myGraph_->isSorted()) {
-        sortEntries();
-      }
-      if (! myGraph_->isMerged()) {
-        mergeRedundantEntries();
+      if (! myGraph_->isMerged ()) {
+        mergeRedundantEntries ();
       }
       // Make the Import and Export, if they haven't been made already.
-      myGraph_->makeImportExport();
-      myGraph_->computeGlobalConstants();
+      myGraph_->makeImportExport ();
+      myGraph_->computeGlobalConstants ();
       myGraph_->fillComplete_ = true;
-      myGraph_->checkInternalState();
+      myGraph_->checkInternalState ();
     }
-    computeGlobalConstants();
+    computeGlobalConstants ();
     // fill local objects; will fill and finalize local graph if appropriate
     if (myGraph_ != null) {
       // The matrix owns the graph, so fill the local graph at the
@@ -5607,7 +5632,6 @@ namespace Tpetra {
     // but it doesn't hurt.
     staticGraph_ = Teuchos::rcp_const_cast<const Graph> (myGraph_);
   }
-
 
   template <class Scalar,
             class LocalOrdinal,

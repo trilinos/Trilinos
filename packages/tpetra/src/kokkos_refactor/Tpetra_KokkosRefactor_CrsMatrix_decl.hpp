@@ -922,6 +922,19 @@ namespace Tpetra {
         any process did a nonlocal insert.  Nonlocal changes include
         any sumIntoGlobalValues or insertGlobalValues call with a row
         index that is not in the row Map of the calling process.
+
+      - "Sort column Map ghost GIDs" (\c bool): Default is true.
+        makeColMap() (which fillComplete may call) always groups
+        remote GIDs by process rank, so that all remote GIDs with the
+        same owning rank occur contiguously.  By default, it always
+        sorts remote GIDs in increasing order within those groups.
+        This behavior differs from Epetra, which does not sort remote
+        GIDs with the same owning process.  If you don't want to sort
+        (for compatibility with Epetra), set this parameter to \c
+        false.  This parameter only takes effect if the matrix owns
+        the graph.  This is an expert mode parameter ONLY.  We make no
+        promises about backwards compatibility of this parameter.  It
+        may change or disappear at any time.
     */
     void
     fillComplete (const RCP<const map_type>& domainMap,

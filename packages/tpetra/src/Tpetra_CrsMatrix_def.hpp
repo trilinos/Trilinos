@@ -2949,42 +2949,40 @@ namespace Tpetra {
                 const RCP<const map_type> &rangeMap,
                 const RCP<ParameterList> &params)
   {
-    //using std::cerr;
-    //using std::endl;
     const char tfecfFuncName[] = "fillComplete";
-    const int numProcs = getComm ()->getSize ();
-    //const int myRank = getComm ()->getRank ();
-
-    // {
-    //   std::ostringstream os;
-    //   os << "Proc " << myRank << ": CrsMatrix::fillComplete" << endl;
-    //   cerr << os.str ();
-    // }
-
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ! isFillActive() || isFillComplete(),
       std::runtime_error, ": Matrix fill state must be active (isFillActive() "
       "must be true) before calling fillComplete().");
+    const int numProcs = getComm ()->getSize ();
+
+    //
+    // Read parameters from the input ParameterList.
+    //
 
     // If true, the caller promises that no process did nonlocal
     // changes since the last call to fillComplete.
     bool assertNoNonlocalInserts = false;
+    // If true, makeColMap sorts remote GIDs (within each remote
+    // process' group).
+    bool sortGhosts = true;
+
     if (! params.is_null ()) {
       assertNoNonlocalInserts = params->get ("No Nonlocal Changes",
                                              assertNoNonlocalInserts);
+      if (params->isParameter ("sort column map ghost gids")) {
+        sortGhosts = params->get ("sort column map ghost gids", sortGhosts);
+      }
+      else if (params->isParameter ("Sort column Map ghost GIDs")) {
+        sortGhosts = params->get ("Sort column Map ghost GIDs", sortGhosts);
+      }
     }
-
     // We also don't need to do global assembly if there is only one
     // process in the communicator.
     const bool needGlobalAssemble = ! assertNoNonlocalInserts && numProcs > 1;
-
-    // {
-    //   std::ostringstream os;
-    //   os << "Proc " << myRank << ": CrsMatrix::fillComplete: "
-    //      << "Values are "
-    //      << (getCrsGraph ()->indicesAreAllocated () ? "" : "NOT ")
-    //      << "allocated." << endl;
-    //   cerr << os.str ();
-    // }
+    // This parameter only matters if this matrix owns its graph.
+    if (! myGraph_.is_null ()) {
+      myGraph_->sortGhostsAssociatedWithEachProcessor_ = sortGhosts;
+    }
 
     if (! getCrsGraph()->indicesAreAllocated()) {
       if (hasColMap ()) {
@@ -3052,54 +3050,26 @@ namespace Tpetra {
 
       // Make the graph's column Map, if necessary.
       if (! myGraph_->hasColMap ()) {
-        // {
-        //   std::ostringstream os;
-        //   os << "Proc " << myRank << ": CrsMatrix::fillComplete: "
-        //      << "Making column Map." << endl;
-        //   cerr << os.str ();
-        // }
         myGraph_->makeColMap ();
       }
-
-      // {
-      //   std::ostringstream os;
-      //   os << "Proc " << getComm ()->getRank () << ": CrsMatrix::fillComplete: "
-      //      << "myGraph_->isGloballyIndexed() == "
-      //      << (myGraph_->isGloballyIndexed() ? "true" : "false")
-      //      << ", myGraph_->isLocallyIndexed() == "
-      //      << (myGraph_->isLocallyIndexed() ? "true" : "false")
-      //      << endl;
-      //   cerr << os.str ();
-      // }
 
       // Make indices local, if necessary.  The method won't do
       // anything if the graph is already locally indexed.
       myGraph_->makeIndicesLocal ();
 
-      // {
-      //   std::ostringstream os;
-      //   os << "Proc " << getComm ()->getRank () << ": CrsMatrix::fillComplete: "
-      //      << "myGraph_->isGloballyIndexed() == "
-      //      << (myGraph_->isGloballyIndexed() ? "true" : "false")
-      //      << ", myGraph_->isLocallyIndexed() == "
-      //      << (myGraph_->isLocallyIndexed() ? "true" : "false")
-      //      << endl;
-      //   cerr << os.str ();
-      // }
-
-      if (! myGraph_->isSorted()) {
-        sortEntries();
+      if (! myGraph_->isSorted ()) {
+        sortEntries ();
       }
-      if (! myGraph_->isMerged()) {
-        mergeRedundantEntries();
+      if (! myGraph_->isMerged ()) {
+        mergeRedundantEntries ();
       }
       // Make the Import and Export, if they haven't been made already.
-      myGraph_->makeImportExport();
-      myGraph_->computeGlobalConstants();
+      myGraph_->makeImportExport ();
+      myGraph_->computeGlobalConstants ();
       myGraph_->fillComplete_ = true;
-      myGraph_->checkInternalState();
+      myGraph_->checkInternalState ();
     }
-    computeGlobalConstants();
+    computeGlobalConstants ();
     // fill local objects; will fill and finalize local graph if appropriate
     if (myGraph_ != null) {
       // The matrix owns the graph, so fill the local graph at the
@@ -5427,7 +5397,6 @@ namespace Tpetra {
     // but it doesn't hurt.
     staticGraph_ = Teuchos::rcp_const_cast<const Graph> (myGraph_);
   }
-
 
   template <class Scalar,
             class LocalOrdinal,

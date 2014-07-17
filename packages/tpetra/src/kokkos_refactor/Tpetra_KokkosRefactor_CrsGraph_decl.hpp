@@ -938,16 +938,8 @@ namespace Tpetra {
     //! \name Methods governing changes between global and local indices
     //@{
 
-    /// \brief Set collectively whether the graph uses global or local indices.
-    ///
-    /// If at least one process has set local indices, set all the
-    /// processes to use local indices.  Likewise, if at least one
-    /// process has set global indices, set all the processes to use
-    /// global indices.
-    ///
-    /// \note To developers: See this method's internal comments.
-    void computeIndexState();
-    void makeColMap (); //!< Make the column Map.
+    //! Make the graph's column Map, if it does not already have one.
+    void makeColMap ();
     void makeIndicesLocal ();
     void makeImportExport ();
 
@@ -958,7 +950,7 @@ namespace Tpetra {
     template<ELocalGlobal lg>
     size_t filterIndices (const SLocalGlobalNCViews &inds) const
     {
-      const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &cmap = *colMap_;
+      const map_type& cmap = *colMap_;
       Teuchos::CompileTimeAssert<lg != GlobalIndices && lg != LocalIndices> cta_lg;
       (void)cta_lg;
       size_t numFiltered = 0;
@@ -967,8 +959,8 @@ namespace Tpetra {
 #endif
       if (lg == GlobalIndices) {
         ArrayView<GlobalOrdinal> ginds = inds.ginds;
-        typename ArrayView<GlobalOrdinal>::iterator fend = ginds.begin(),
-          cptr = ginds.begin();
+        typename ArrayView<GlobalOrdinal>::iterator fend = ginds.begin();
+        typename ArrayView<GlobalOrdinal>::iterator cptr = ginds.begin();
         while (cptr != ginds.end()) {
           if (cmap.isNodeGlobalElement(*cptr)) {
             *fend++ = *cptr;
@@ -982,8 +974,8 @@ namespace Tpetra {
       }
       else if (lg == LocalIndices) {
         ArrayView<LocalOrdinal> linds = inds.linds;
-        typename ArrayView<LocalOrdinal>::iterator fend = linds.begin(),
-          cptr = linds.begin();
+        typename ArrayView<LocalOrdinal>::iterator fend = linds.begin();
+        typename ArrayView<LocalOrdinal>::iterator cptr = linds.begin();
         while (cptr != linds.end()) {
           if (cmap.isNodeLocalElement(*cptr)) {
             *fend++ = *cptr;
@@ -1582,7 +1574,23 @@ namespace Tpetra {
 
     bool haveRowInfo_;
 
-    inline bool hasRowInfo () const;
+    bool hasRowInfo () const;
+
+    /// \brief Whether to require makeColMap() (and therefore
+    ///   fillComplete()) to order column Map GIDs associated with
+    ///   each remote process in ascending order.
+    ///
+    /// makeColMap() always groups remote GIDs by process rank, so
+    /// that all remote GIDs with the same owning rank occur
+    /// contiguously.  By default, it always sorts remote GIDs in
+    /// increasing order within those groups.  This behavior differs
+    /// from Epetra, which does not sort remote GIDs with the same
+    /// owning process.
+    ///
+    /// This is \c true by default, which means "sort remote GIDs."
+    /// If you don't want to sort (for compatibility with Epetra),
+    /// call sortGhostColumnGIDsWithinProcessBlock(false).
+    bool sortGhostsAssociatedWithEachProcessor_;
 
   }; // class CrsGraph
 
