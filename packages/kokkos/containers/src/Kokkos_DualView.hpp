@@ -138,7 +138,7 @@ public:
   typedef View< typename traits::const_data_type ,
                 typename traits::array_layout ,
                 typename traits::device_type ,
-                Kokkos::MemoryRandomAccess > t_dev_const_randomread ;
+                MemoryRandomAccess > t_dev_const_randomread ;
 
   /// \typedef t_host_const_randomread
   /// \brief The type of a const, random-access View host mirror of
@@ -153,25 +153,25 @@ public:
   typedef View< typename traits::array_type ,
                 typename traits::array_layout ,
                 typename traits::device_type ,
-                Kokkos::MemoryUnmanaged> t_dev_um;
+                MemoryUnmanaged> t_dev_um;
 
   //! The type of an unmanaged View host mirror of \c t_dev_um.
   typedef View< typename t_host::array_type ,
                 typename t_host::array_layout ,
                 typename t_host::device_type ,
-                Kokkos::MemoryUnmanaged> t_host_um;
+                MemoryUnmanaged> t_host_um;
 
   //! The type of a const unmanaged View on the device.
   typedef View< typename traits::const_data_type ,
                 typename traits::array_layout ,
                 typename traits::device_type ,
-                Kokkos::MemoryUnmanaged> t_dev_const_um;
+                MemoryUnmanaged> t_dev_const_um;
 
   //! The type of a const unmanaged View host mirror of \c t_dev_const_um.
-  typedef Kokkos::View<typename t_host::const_data_type,
+  typedef View<typename t_host::const_data_type,
                        typename t_host::array_layout,
                        typename t_host::device_type,
-                       Kokkos::MemoryUnmanaged> t_host_const_um;
+                       MemoryUnmanaged> t_host_const_um;
 
   //@}
   //! \name The two View instances.
@@ -283,14 +283,14 @@ public:
   /// typename dual_view_type::t_host hostView = DV.view<host_device_type> ();
   /// \endcode
   template< class Device >
-  const typename Kokkos::Impl::if_c<
-    Kokkos::Impl::is_same<typename t_dev::memory_space,
+  const typename Impl::if_c<
+    Impl::is_same<typename t_dev::memory_space,
                           typename Device::memory_space>::value,
     t_dev,
     t_host>::type view () const
   {
-    return Kokkos::Impl::if_c<
-      Kokkos::Impl::is_same<
+    return Impl::if_c<
+      Impl::is_same<
         typename t_dev::memory_space,
         typename Device::memory_space>::value,
       t_dev,
@@ -321,8 +321,8 @@ public:
         , int >::type& = 0)
   {
     const unsigned int dev =
-      Kokkos::Impl::if_c<
-        Kokkos::Impl::is_same<
+      Impl::if_c<
+        Impl::is_same<
           typename t_dev::memory_space,
           typename Device::memory_space>::value ,
         unsigned int,
@@ -330,12 +330,12 @@ public:
 
     if (dev) { // if Device is the same as DualView's device type
       if ((modified_host () > 0) && (modified_host () >= modified_device ())) {
-        Kokkos::deep_copy (d_view, h_view);
+        deep_copy (d_view, h_view);
         modified_host() = modified_device() = 0;
       }
     } else { // hopefully Device is the same as DualView's host type
       if ((modified_device () > 0) && (modified_device () >= modified_host ())) {
-        Kokkos::deep_copy (h_view, d_view);
+        deep_copy (h_view, d_view);
         modified_host() = modified_device() = 0;
       }
     }
@@ -348,19 +348,19 @@ public:
       , int >::type& = 0 )
   {
     const unsigned int dev =
-      Kokkos::Impl::if_c<
-        Kokkos::Impl::is_same<
+      Impl::if_c<
+        Impl::is_same<
           typename t_dev::memory_space,
           typename Device::memory_space>::value,
         unsigned int,
         unsigned int>::select (1, 0);
     if (dev) { // if Device is the same as DualView's device type
       if ((modified_host () > 0) && (modified_host () >= modified_device ())) {
-        Kokkos::Impl::throw_runtime_exception("Calling sync on a DualView with a const datatype.");
+        Impl::throw_runtime_exception("Calling sync on a DualView with a const datatype.");
       }
     } else { // hopefully Device is the same as DualView's host type
       if ((modified_device () > 0) && (modified_device () >= modified_host ())) {
-        Kokkos::Impl::throw_runtime_exception("Calling sync on a DualView with a const datatype.");
+        Impl::throw_runtime_exception("Calling sync on a DualView with a const datatype.");
       }
     }
   }
@@ -372,8 +372,8 @@ public:
   template<class Device>
   void modify () {
     const unsigned int dev =
-      Kokkos::Impl::if_c<
-        Kokkos::Impl::is_same<
+      Impl::if_c<
+        Impl::is_same<
           typename t_dev::memory_space,
           typename Device::memory_space>::value,
         unsigned int,
@@ -407,7 +407,7 @@ public:
            const size_t n5 = 0 ,
            const size_t n6 = 0 ,
            const size_t n7 = 0 ) {
-     Kokkos::realloc(d_view,n0,n1,n2,n3,n4,n5,n6,n7);
+     realloc(d_view,n0,n1,n2,n3,n4,n5,n6,n7);
 #if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM)
      h_view = d_view ;
 #else
@@ -431,7 +431,7 @@ public:
            const size_t n7 = 0 ) {
    if(modified_device() >= modified_host()) {
      /* Resize on Device */
-     Kokkos::resize(d_view,n0,n1,n2,n3,n4,n5,n6,n7);
+     resize(d_view,n0,n1,n2,n3,n4,n5,n6,n7);
 #if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM)
      h_view = d_view ;
 #else
@@ -444,7 +444,7 @@ public:
    } else {
      /* Realloc on Device */
 
-     Kokkos::realloc(d_view,n0,n1,n2,n3,n4,n5,n6,n7);
+     realloc(d_view,n0,n1,n2,n3,n4,n5,n6,n7);
 #if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM)
      t_host temp_view = d_view ;
 #else
@@ -452,7 +452,7 @@ public:
 #endif
 
      /* Remap on Host */
-     Kokkos::Impl::ViewRemap< t_host , t_host >( temp_view , h_view );
+     Impl::ViewRemap< t_host , t_host >( temp_view , h_view );
      h_view = temp_view;
 
      /* Mark Host copy as modified */
@@ -663,10 +663,10 @@ deep_copy (DualView<DT,DL,DD,DM> dst, // trust me, this must not be a reference
            const DualView<ST,SL,SD,SM>& src )
 {
   if (src.modified_device () >= src.modified_host ()) {
-    Kokkos::deep_copy (dst.d_view, src.d_view);
+    deep_copy (dst.d_view, src.d_view);
     dst.template modify<typename DualView<DT,DL,DD,DM>::device_type> ();
   } else {
-    Kokkos::deep_copy (dst.h_view, src.h_view);
+    deep_copy (dst.h_view, src.h_view);
     dst.template modify<typename DualView<DT,DL,DD,DM>::host_mirror_device_type> ();
   }
 }
