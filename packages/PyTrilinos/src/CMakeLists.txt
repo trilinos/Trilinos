@@ -91,11 +91,12 @@ SET(HEADERS ${HEADERS}
 #
 # Core PyTrilinos headers and sources
 LIST(APPEND HEADERS
+  numpy_include.h
   PyTrilinos_NumPyImporter.h
   PyTrilinos_PythonException.h
   PyTrilinos_Util.h
   PyTrilinos_FILEstream.h
-  numpy_include.h
+  PyTrilinos_DAP.hpp
   )
 
 LIST(APPEND SOURCES
@@ -103,6 +104,7 @@ LIST(APPEND SOURCES
   PyTrilinos_PythonException.cpp
   PyTrilinos_Util.cpp
   PyTrilinos_FILEstream.cpp
+  PyTrilinos_DAP.cpp
   )
 
 #
@@ -174,6 +176,20 @@ IF(PyTrilinos_ENABLE_ML)
     )
 
 ENDIF(PyTrilinos_ENABLE_ML)
+
+#
+# PyTrilinos + Domi headers and sources
+# IF(PyTrilinos_ENABLE_Domi)
+
+#   LIST(APPEND HEADERS
+#     PyTrilinos_Domi_Util.hpp
+#     )
+
+#   LIST(APPEND SOURCES
+#     PyTrilinos_Domi_Util.cpp
+#     )
+
+# ENDIF(PyTrilinos_ENABLE_Domi)
 
 #
 # Define the target for the swig runtime header
