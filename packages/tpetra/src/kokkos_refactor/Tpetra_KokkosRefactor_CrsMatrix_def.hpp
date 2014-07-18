@@ -3618,6 +3618,21 @@ namespace Tpetra {
     using Teuchos::rcp_const_cast;
     using Teuchos::rcpFromRef;
 
+    // Take shortcuts for alpha == 0.
+    if (alpha == STS::zero ()) {
+      // Follow the Sparse BLAS convention by ignoring both the matrix
+      // and X_in, in this case.
+      if (beta == STS::zero ()) {
+        // Follow the Sparse BLAS convention by overwriting any Inf or
+        // NaN values in Y_in, in this case.
+        Y_in.putScalar (STS::zero ());
+      }
+      else {
+        Y_in.scale (beta);
+      }
+      return;
+    }
+
     const size_t numVectors = X_in.getNumVectors ();
 
     // We don't allow X_in and Y_in to alias one another.  It's hard
