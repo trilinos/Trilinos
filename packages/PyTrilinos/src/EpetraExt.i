@@ -461,7 +461,6 @@ std::vector<Epetra_IntVector>;
 %template (Xform_CrsGraph_MapColoring)
 EpetraExt::Transform<Epetra_CrsGraph, Epetra_MapColoring>;
 
-<<<<<<< HEAD
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 
 %template (Xform_CrsGraph_vecIntVector)
