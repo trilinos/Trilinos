@@ -13,6 +13,7 @@ IF(Kokkos_ENABLE_Cuda)
   CUDA_COMPILE(IB5430T_OBJECTS_CUDA ImportBug5430Test_CU.cu)
   CUDA_COMPILE(ETSGCM_OBJECTS_CUDA ExportToStaticGraphCrsMatrix_CU.cu)
   CUDA_COMPILE(MAKEOPTCOLMAP_OBJECTS_CUDA MakeOptColMap_CU.cu)
+  CUDA_COMPILE(BUG6170_OBJECTS_CUDA Bug6170_CU.cu)
 ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -102,6 +103,21 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 4
   )
 
-
-
-
+# mfh 18 Jul 2014: Bug 6170 test.  Thanks to Clark Dohrmann for
+# contributing this test.  I modified it slightly to avoid file I/O
+# and to catch and print exception messages on all processes.  The
+# test must be run with exactly 8 MPI processes.
+#
+# NOTE: The default behavior of the Trilinos test framework is to
+# exclude tests that require more than 4 MPI processes.  Thus, this
+# test will NOT run by default.  To change this, set the CMake option
+# MPI_EXEC_MAX_NUMPROCS to 8 or more in your Trilinos configuration.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Bug6170
+  SOURCES
+    Bug6170.cpp
+    ${BUG6170_OBJECTS_CUDA}
+  COMM mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 8
+  )
