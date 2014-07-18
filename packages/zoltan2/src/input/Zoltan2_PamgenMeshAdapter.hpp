@@ -365,21 +365,27 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
   }
 
   delete[] elem_blk_ids;
+  elem_blk_ids = NULL;
   delete[] num_nodes_per_elem;
+  num_nodes_per_elem = NULL;
   delete[] num_attr;
+  num_attr = NULL;
   delete[] num_elem_this_blk;
+  num_elem_this_blk = NULL;
 
   for(long long i = 0; i < num_elem_blk; i++){
     delete[] elem_type[i];
   }
 
   delete[] elem_type;
+  elem_type = NULL;
 
   for(long long b = 0; b < num_elem_blk; b++) {
     delete[] connect[b];
   }
 
   delete[] connect;
+  connect = NULL;
 }
 
   
