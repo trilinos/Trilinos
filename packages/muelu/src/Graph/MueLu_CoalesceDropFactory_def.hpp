@@ -140,11 +140,11 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(predrop_ != null   && algo != "original", Exceptions::RuntimeError, "Dropping function must not be provided for \"" << algo << "\" algorithm");
       TEUCHOS_TEST_FOR_EXCEPTION(algo != "original" && algo != "distance laplacian", Exceptions::RuntimeError, "\"algorithm\" must be one of (original|distance laplacian)");
 
-      SC threshold = Teuchos::as<SC>(pL.get<SC>("aggregation: drop tol"));
+      SC threshold = as<SC>(pL.get<double>("aggregation: drop tol"));
       GetOStream(Runtime0) << "algorithm = \"" << algo << "\": threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << std::endl;
       Set(currentLevel, "Filtering", (threshold != STS::zero()));
 
-      const typename STS::magnitudeType dirichletThreshold = STS::magnitude(pL.get<SC>("aggregation: Dirichlet threshold"));
+      const typename STS::magnitudeType dirichletThreshold = STS::magnitude(as<SC>(pL.get<double>("aggregation: Dirichlet threshold")));
 
       GO numDropped = 0, numTotal = 0;
       std::string graphType = "unamalgamated"; //for description purposes only

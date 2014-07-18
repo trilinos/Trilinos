@@ -279,7 +279,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::initi
   Manager_   -> SetFactory("Ptent", TentPfact_);
   Teuchos::ParameterList params;
   params.set("lightweight wrap",true);
-  params.set("algorithm","original");
+  params.set("aggregation: drop scheme","original");
   Dropfact_  -> SetParameterList(params);
   Manager_   -> SetFactory("Graph", Dropfact_);
   Manager_   -> SetFactory("Smoother", Teuchos::null);

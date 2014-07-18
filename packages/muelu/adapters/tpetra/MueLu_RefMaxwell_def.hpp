@@ -177,8 +177,8 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::compute() {
   Teuchos::RCP<UncoupledAggregationFactory> Aggfact22
     = Teuchos::rcp( new UncoupledAggregationFactory() );
   Teuchos::ParameterList params;
-  params.set("aggregation: drop tol",(Scalar)1.0e-16);
-  params.set("aggregation: Dirichlet threshold",(Scalar)1.0e-16);
+  params.set("aggregation: drop tol",1.0e-16);
+  params.set("aggregation: Dirichlet threshold",1.0e-16);
   Dropfact11->SetParameterList(params);
   Dropfact22->SetParameterList(params);
   Manager11->SetFactory("Aggregates",Aggfact11);
@@ -231,7 +231,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::buildProlon
   Teuchos::RCP<UncoupledAggregationFactory> Aggfact
     = Teuchos::rcp( new UncoupledAggregationFactory() );
   Teuchos::ParameterList params;
-  params.set("sa: damping factor",(Scalar)0.0);
+  params.set("sa: damping factor",0.0);
   Pfact      -> SetParameterList(params);
   auxManager -> SetFactory("P", Pfact);
   auxManager -> SetFactory("Ptent", TentPfact);

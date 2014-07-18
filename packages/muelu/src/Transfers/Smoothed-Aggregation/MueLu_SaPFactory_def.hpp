@@ -116,7 +116,7 @@ namespace MueLu {
     RCP<Matrix> finalP; // output
 
     const ParameterList & pL = GetParameterList();
-    Scalar dampingFactor = pL.get<Scalar>("sa: damping factor");
+    Scalar dampingFactor = as<Scalar>(pL.get<double>("sa: damping factor"));
     if (dampingFactor != Teuchos::ScalarTraits<Scalar>::zero()) {
 
       Scalar lambdaMax;
@@ -186,7 +186,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Scalar SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetDampingFactor() {
     const ParameterList & pL = GetParameterList();
-    return pL.get<Scalar>("sa: damping factor");
+    return as<Scalar>(pL.get<double>("sa: damping factor"));
   }
 
 } //namespace MueLu
