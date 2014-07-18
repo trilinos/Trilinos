@@ -182,6 +182,25 @@ int main (int argc, char *argv[])
     const GO indexBase = 0;
     RCP<const map_type> sourceMap =
       rcp (new map_type (INV, mySrcGids, indexBase, comm));
+    // The source Map of an Import must be one-to-one.  NOTE (mfh 18
+    // Jul 2014) Calling isOneToOne sets up the Map's Directory.  That
+    // could mask a bug.  On the other hand, I have run this test
+    // without calling isOneToOne.
+    bool srcIsOneToOne = true;
+    try {
+      srcIsOneToOne = sourceMap->isOneToOne ();
+    }
+    catch (std::exception& e) {
+      err << "Map::isOneToOne threw an exception: " << e.what () << endl;
+      cerr << "Map::isOneToOne threw an exception: " << e.what () << endl;
+      success = false;
+    }
+    catch (...) {
+      err << "Map::isOneToOne threw an exception of unknown type" << endl;
+      cerr << "Map::isOneToOne threw an exception of unknown type" << endl;
+      success = false;
+    }
+
     RCP<const map_type> targetMap =
       rcp (new map_type (INV, myTgtGids, indexBase, comm));
     vec_type sourceVec (sourceMap);

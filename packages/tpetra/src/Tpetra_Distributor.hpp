@@ -741,7 +741,7 @@ namespace Tpetra {
     doReversePosts (const Kokkos::View<const Packet*, Layout, Device, Mem> &exports,
                     const ArrayView<size_t> &numExportPacketsPerLID,
                     const Kokkos::View<Packet*, Layout, Device, Mem> &imports,
-                    const ArrayView<size_t> &numImportPacketsPerLID);    
+                    const ArrayView<size_t> &numImportPacketsPerLID);
 #endif
 
     /// \brief Information on the last call to do/doReverse
@@ -1189,13 +1189,18 @@ namespace Tpetra {
     size_t selfReceiveOffset = 0;
 
     // Each message has the same number of packets.
+    //
+    // FIXME (mfh 18 Jul 2014): Relaxing this test from strict
+    // inequality to a less-than seems to have fixed Bug 6170.  It's
+    // OK for the 'imports' array to be longer than it needs to be;
+    // I'm just curious why it would be.
     const size_t totalNumImportPackets = totalReceiveLength_ * numPackets;
     TEUCHOS_TEST_FOR_EXCEPTION(
-      static_cast<size_t> (imports.size ()) != totalNumImportPackets,
+      static_cast<size_t> (imports.size ()) < totalNumImportPackets,
       std::invalid_argument, "Tpetra::Distributor::doPosts<" <<
-      TypeNameTraits<Packet>::name () << ">(3 args): imports must be "
-      "large enough to store the imported data.  imports.size() = "
-      << imports.size() << ", but total number of import packets = "
+      TypeNameTraits<Packet>::name () << ">(3 args): The 'imports' array must "
+      "have enough entries to hold the number of expected import packets.  "
+      "imports.size() = " << imports.size () << " < totalNumImportPackets = "
       << totalNumImportPackets << ".");
 
     // MPI tag for nonblocking receives and blocking sends in this
@@ -1244,8 +1249,9 @@ namespace Tpetra {
       Teuchos::TimeMonitor timeMonRecvs (*timer_doPosts3_recvs_);
 #endif // TPETRA_DISTRIBUTOR_TIMERS
 
-      size_t curBufferOffset = 0;
+      size_t curBufOffset = 0;
       for (size_type i = 0; i < actualNumReceives; ++i) {
+        const size_t curBufLen = lengthsFrom_[i] * numPackets;
         if (imagesFrom_[i] != myImageID) {
           // If my process is receiving these packet(s) from another
           // process (not a self-receive):
@@ -1254,8 +1260,16 @@ namespace Tpetra {
           //    array, given the offset and size (total number of
           //    packets from process imagesFrom_[i]).
           // 2. Start the Irecv and save the resulting request.
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            curBufOffset + curBufLen > imports.size (),
+            std::logic_error, "Tpetra::Distributor::doPosts<" <<
+            TypeNameTraits<Packet>::name () << ">(3 args): Exceeded size of "
+            "'imports' array in packing loop on Process " << myImageID << ".  "
+            "imports.size() = " << imports.size () << " < offset + length = "
+            << (curBufOffset + curBufLen) << ".");
+
           ArrayRCP<Packet> recvBuf =
-            imports.persistingView (curBufferOffset, lengthsFrom_[i]*numPackets);
+            imports.persistingView (curBufOffset, curBufLen);
           requests_.push_back (ireceive<int, Packet> (recvBuf, imagesFrom_[i],
                                                       tag, *comm_));
           if (debug_) {
@@ -1268,9 +1282,9 @@ namespace Tpetra {
           }
         }
         else { // Receiving from myself
-          selfReceiveOffset = curBufferOffset; // Remember the self-recv offset
+          selfReceiveOffset = curBufOffset; // Remember the self-recv offset
         }
-        curBufferOffset += lengthsFrom_[i]*numPackets;
+        curBufOffset += curBufLen;
       }
     }
 
