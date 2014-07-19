@@ -310,7 +310,8 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
     }
   }
 
-  elemToNode_     = new long long [num_elem_ * num_nodes_per_elem[0]];
+  long long nnodes_per_elem = num_nodes_per_elem[0];
+  elemToNode_     = new long long [num_elem_ * nnodes_per_elem];
   long long tnoct = 0;
   elemOffsets_    = new long long [num_elem_];
   telct_ = 0;
@@ -338,7 +339,6 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
   }
 
   std::vector<long long> start;
-  long long nnodes_per_elem = num_nodes_per_elem[0];
   long long max_side_nodes = nnodes_per_elem;
   long long side_nodes[max_side_nodes];
   long long mirror_nodes[max_side_nodes];
