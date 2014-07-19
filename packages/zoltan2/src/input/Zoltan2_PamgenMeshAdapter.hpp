@@ -320,7 +320,6 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
   for (long long b = 0; b < num_elem_blk; b++) {
     for (long long i = 0; i < num_elem_this_blk[b]; i++) {
       elemOffsets_[telct_] = tnoct;
-      ++telct_;
 
       for (long long j = 0; j < num_nodes_per_elem[b]; j++) {
 	elemToNode_[tnoct] = connect[b][i*num_nodes_per_elem[b] + j]-1;
@@ -335,6 +334,8 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
 
 	++tnoct;
       }
+
+      ++telct_;
     }
   }
 
