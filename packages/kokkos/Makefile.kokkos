@@ -39,9 +39,10 @@ HWLOC ?= no
 LIBRT ?= no
 
 # CUDA specific options: use UVM (requires CUDA 6+); use LDG loads instead of 
-# texture fetches; 
+# texture fetches; compile for relocatable device code (function pointers) 
 CUDA_UVM ?= no
 CUDA_LDG ?= no
+CUDA_RELOC ?= yes
 
 # Settings for replacing generic linear algebra kernels of Kokkos with vendor
 # libraries.
@@ -141,6 +142,11 @@ endif
 
 ifeq ($(CUDA_LDG), yes)
 KOKKOS_INC += -DKOKKOS_USE_LDG_INTRINSIC
+endif
+
+ifeq ($(CUDA_RELOC), yes)
+KOKKOS_INC += -DKOKKOS_CUDA_USE_RELOCATABLE_DEVICE_CODE --relocatable-device-code=true
+KOKKOS_LINK += --relocatable-device-code=true
 endif
 
 OBJ_KOKKOS_TMP = $(SRC_KOKKOS:.cpp=.o)
