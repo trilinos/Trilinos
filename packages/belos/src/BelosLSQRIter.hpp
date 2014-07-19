@@ -361,7 +361,7 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
     //
     RCP<const MV> lhsMV = lp_->getLHS(); // contains initial guess,
 
-    bool debugSerialLSQR = false;
+    const bool debugSerialLSQR = false;
 
     if( debugSerialLSQR )
       {
@@ -463,7 +463,7 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
     AV = MVT::Clone( *U_, 1);
     Teuchos::RCP<MV> AtU; // used in applying A^TRANS to U_ respectively.
     AtU = MVT::Clone( *V_, 1);
-    bool debugSerialLSQR = false;
+    const bool debugSerialLSQR = false;
 
     // Get the current solution vector.
     Teuchos::RCP<MV> cur_soln_vec = lp_->getCurrLHSVec();

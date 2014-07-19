@@ -2107,7 +2107,7 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs1(int m,
   // Construct magnitude of each harmonic Ritz value
   this->sort(w, m, iperm);
 
-  bool scalarTypeIsComplex = Teuchos::ScalarTraits<ScalarType>::isComplex;
+  const bool scalarTypeIsComplex = Teuchos::ScalarTraits<ScalarType>::isComplex;
 
   // Select recycledBlocks_ smallest eigenvectors
   for( i=0; i<recycledBlocks_; ++i ) {
@@ -2116,7 +2116,7 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs1(int m,
     }
   }
 
-  if(scalarTypeIsComplex==false) {
+  if(!scalarTypeIsComplex) {
 
     // Determine exact size for PP (i.e., determine if we need to store an additional vector)
     if (wi[iperm[recycledBlocks_-1]] != 0.0) {
@@ -2255,7 +2255,7 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs2(int keffloc, int m,
   // Construct magnitude of each harmonic Ritz value
   this->sort(w,ld,iperm);
 
-  bool scalarTypeIsComplex = Teuchos::ScalarTraits<ScalarType>::isComplex;
+  const bool scalarTypeIsComplex = Teuchos::ScalarTraits<ScalarType>::isComplex;
 
   // Select recycledBlocks_ smallest eigenvectors
   for( i=0; i<recycledBlocks_; i++ ) {
@@ -2264,7 +2264,7 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs2(int keffloc, int m,
     }
   }
 
-  if(scalarTypeIsComplex==false) {
+  if(!scalarTypeIsComplex) {
 
     // Determine exact size for PP (i.e., determine if we need to store an additional vector)
     if (wi[iperm[ld-recycledBlocks_]] != 0.0) {
