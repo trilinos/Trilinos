@@ -366,8 +366,8 @@ bool Brusselator::evaluate(NOX::Epetra::Interface::Required::FillType fType,
 //  double beta = 2.0;
   double jac11, jac12, jac21, jac22;
   double xx[2];
-  double uu[2*NUMSPECIES]; // Use of the anonymous enum is needed for SGI builds
-  double uudot[2*NUMSPECIES];
+  double uu[2*NUMSPECIES] = {}; // Use of the anonymous enum is needed for SGI builds
+  double uudot[2*NUMSPECIES] = {};
   Basis basis(NumSpecies);
 
 

@@ -94,7 +94,7 @@ LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
   LOCA::LAPACK::Group* grp =
     dynamic_cast<LOCA::LAPACK::Group*>(&group);
 
-  bool hasMassMatrix = true;
+  const bool hasMassMatrix = true;
 
   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) {
     globalData->locaUtils->out()

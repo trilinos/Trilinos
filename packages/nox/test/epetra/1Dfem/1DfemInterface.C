@@ -364,7 +364,16 @@ bool Interface::initializeSoln()
 // Basis vector
 
 // Constructor
-Basis::Basis() {
+Basis::Basis():
+  uu(0.0),
+  xx(0.0),
+  duu(0.0),
+  eta(0.0),
+  wt(0.0),
+  dx(0.0),
+  uuold(0.0),
+  duuold(0.0)
+{
   phi = new double[2];
   dphide = new double[2];
 }

@@ -56,39 +56,45 @@
 
 int main(int argc, char *argv[]) {
 
-  // Set up the printing utilities
-  Teuchos::ParameterList noxParams;
-  Teuchos::ParameterList& printParams = noxParams.sublist("Printing");
-  printParams.set("Output Precision", 5);
-  if (argc > 1) {
-    if (argv[1][0]=='-' && argv[1][1]=='v')
-       printParams.set("Output Information",
-            NOX::Utils::OuterIteration +
-            NOX::Utils::OuterIterationStatusTest +
-            NOX::Utils::InnerIteration +
-            NOX::Utils::Parameters +
-            NOX::Utils::Details +
-            NOX::Utils::Warning +
-            NOX::Utils::TestDetails);
+  bool success = false;
+  bool verbose = false;
+  try {
+    // Set up the printing utilities
+    Teuchos::ParameterList noxParams;
+    Teuchos::ParameterList& printParams = noxParams.sublist("Printing");
+    printParams.set("Output Precision", 5);
+    if (argc > 1) {
+      if (argv[1][0]=='-' && argv[1][1]=='v')
+         printParams.set("Output Information",
+              NOX::Utils::OuterIteration +
+              NOX::Utils::OuterIterationStatusTest +
+              NOX::Utils::InnerIteration +
+              NOX::Utils::Parameters +
+              NOX::Utils::Details +
+              NOX::Utils::Warning +
+              NOX::Utils::TestDetails);
+      else
+         printParams.set("Output Information", NOX::Utils::Error);
+    }
+    NOX::Utils printing(printParams);
+
+    if (printing.isPrintType(NOX::Utils::TestDetails)) {
+      std::cout << "Starting lapack/NOX_Group/NOX_Group.exe" << std::endl;
+    }
+
+    int status = 0;
+
+    success = (status == 0);
+
+    // Begin real testing here!
+    if (success)
+      std::cout << "Test passed!" << std::endl;
     else
-       printParams.set("Output Information", NOX::Utils::Error);
+      std::cout << "Test failed!" << std::endl;
   }
-  NOX::Utils printing(printParams);
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-  if (printing.isPrintType(NOX::Utils::TestDetails)) {
-    std::cout << "Starting lapack/NOX_Group/NOX_Group.exe" << std::endl;
-  }
-
-  int status = 0;
-
-  // Begin real testing here!
-  if (status == 0)
-    std::cout << "Test passed!" << std::endl;
-  else
-    std::cout << "Test failed!" << std::endl;
-
-  // 0 is success
-  return status;
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
 
 /*

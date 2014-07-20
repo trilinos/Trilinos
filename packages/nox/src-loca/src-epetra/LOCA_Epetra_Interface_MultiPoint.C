@@ -71,7 +71,8 @@ MultiPoint(
   timeDomain(globalComm_->SubDomainRank()),
   conStep(0),
   rowStencil(0),
-  rowIndex(0)
+  rowIndex(0),
+  splitJacCrs(NULL)
 {
 
    if (globalComm->MyPID()==0) {
