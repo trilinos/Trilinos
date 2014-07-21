@@ -240,7 +240,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, initializationConstructor, Sca )
   MDMapRCP mdMap = rcp(new MDMap<>(mdComm, dims()));
 
   // Construct an MDArrayView with initialization values
-  typedef typename MDArray< Sca >::size_type size_type;
+  typedef typename Domi::size_type size_type;
   Array< dim_type > initDims;
   Sca scalar = 2;
   for (int axis = 0; axis < numDims; ++axis)

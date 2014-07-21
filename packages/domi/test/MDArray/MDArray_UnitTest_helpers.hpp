@@ -65,7 +65,7 @@ Domi::MDArray< T > generateMDArray(const int nrows_in,
   using Teuchos::tuple;
   using Teuchos::as;
 
-  typedef typename Domi::MDArray< T >::dim_type dim_type;
+  typedef typename Domi::dim_type dim_type;
 
   Domi::MDArray< T > a(tuple< dim_type >(nrows_in, ncols_in),
                        layout);
@@ -87,7 +87,7 @@ Domi::MDArray< T > generateMDArray(const int nrows_in,
   using Teuchos::tuple;
   using Teuchos::as;
 
-  typedef typename Domi::MDArray< T >::dim_type dim_type;
+  typedef typename Domi::dim_type dim_type;
 
   Domi::MDArray< T > a(tuple< dim_type >(nrows_in, ncols_in, nlevs_in),
                        layout);
@@ -110,7 +110,7 @@ Domi::MDArrayRCP< T > generateMDArrayRCP(const int nrows_in,
   using Teuchos::tuple;
   using Teuchos::as;
 
-  typedef typename Domi::MDArrayRCP< T >::dim_type dim_type;
+  typedef typename Domi::dim_type dim_type;
 
   Domi::MDArrayRCP< T > a(tuple< dim_type >(nrows_in, ncols_in),
                           layout);
@@ -132,7 +132,7 @@ Domi::MDArrayRCP< T > generateMDArrayRCP(const int nrows_in,
   using Teuchos::tuple;
   using Teuchos::as;
 
-  typedef typename Domi::MDArrayRCP< T >::dim_type dim_type;
+  typedef typename Domi::dim_type dim_type;
 
   Domi::MDArrayRCP< T > a(tuple< dim_type >(nrows_in, ncols_in, nlevs_in),
                           layout);

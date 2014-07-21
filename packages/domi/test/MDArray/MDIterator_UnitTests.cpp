@@ -56,7 +56,7 @@ using MDArrayUnitTestHelpers::generateMDArray;
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, MDArrayIteratorCtor, T )
 {
-  typedef typename MDArray< T >::dim_type dim_type;
+  typedef typename Domi::dim_type dim_type;
   MDArray< T > a(tuple< dim_type >(2,5));
   typename MDArray< T >::iterator it(a);
   TEST_EQUALITY_CONST(it.index(0), 0);
@@ -65,7 +65,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, MDArrayIteratorCtor, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, MDArrayViewIteratorCtor, T )
 {
-  typedef typename MDArrayView< T >::dim_type dim_type;
+  typedef typename Domi::dim_type dim_type;
   MDArray< T > a(tuple< dim_type >(3,4));
   MDArrayView< T > av = a();
   typename MDArrayView< T >::iterator it(av);
@@ -75,7 +75,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, MDArrayViewIteratorCtor, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, MDArrayRCPIteratorCtor, T )
 {
-  typedef typename MDArrayRCP< T >::dim_type dim_type;
+  typedef typename Domi::dim_type dim_type;
   MDArrayRCP< T > a(tuple< dim_type >(4,3));
   typename MDArrayRCP< T >::iterator it(a);
   TEST_EQUALITY_CONST(it.index(0), 0);
@@ -84,7 +84,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, MDArrayRCPIteratorCtor, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, MDArrayIteratorCtorEnd, T )
 {
-  typedef typename MDArray< T >::dim_type dim_type;
+  typedef typename Domi::dim_type dim_type;
   MDArray< T > a(tuple< dim_type >(2,5));
   typename MDArray< T >::iterator it(a,true);
   TEST_EQUALITY_CONST(it.index(0), 2);
@@ -93,7 +93,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, MDArrayIteratorCtorEnd, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, MDArrayViewIteratorCtorEnd, T )
 {
-  typedef typename MDArrayView< T >::dim_type dim_type;
+  typedef typename Domi::dim_type dim_type;
   MDArray< T > a(tuple< dim_type >(3,4));
   MDArrayView< T > av = a();
   typename MDArrayView< T >::iterator it(av,true);
@@ -103,7 +103,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, MDArrayViewIteratorCtorEnd, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, MDArrayRCPIteratorCtorEnd, T )
 {
-  typedef typename MDArrayRCP< T >::dim_type dim_type;
+  typedef typename Domi::dim_type dim_type;
   MDArrayRCP< T > a(tuple< dim_type >(4,3));
   typename MDArrayRCP< T >::iterator it(a,true);
   TEST_EQUALITY_CONST(it.index(0), 4);
@@ -112,7 +112,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, MDArrayRCPIteratorCtorEnd, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, MDArrayIteratorBegin, T )
 {
-  typedef typename MDArray< T >::dim_type dim_type;
+  typedef typename Domi::dim_type dim_type;
   MDArray< T > a(tuple< dim_type >(2,5));
   typename MDArray< T >::iterator it = a.begin();
   TEST_EQUALITY_CONST(it.index(0), 0);
@@ -121,7 +121,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, MDArrayIteratorBegin, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, MDArrayViewIteratorBegin, T )
 {
-  typedef typename MDArrayView< T >::dim_type dim_type;
+  typedef typename Domi::dim_type dim_type;
   MDArray< T > a(tuple< dim_type >(3,4));
   MDArrayView< T > av = a();
   typename MDArrayView< T >::iterator it = av.begin();
@@ -131,7 +131,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, MDArrayViewIteratorBegin, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, MDArrayRCPIteratorBegin, T )
 {
-  typedef typename MDArrayRCP< T >::dim_type dim_type;
+  typedef typename Domi::dim_type dim_type;
   MDArrayRCP< T > a(tuple< dim_type >(4,3));
   typename MDArrayRCP< T >::iterator it = a.begin();
   TEST_EQUALITY_CONST(it.index(0), 0);
@@ -140,7 +140,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, MDArrayRCPIteratorBegin, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, MDArrayIteratorEnd, T )
 {
-  typedef typename MDArray< T >::dim_type dim_type;
+  typedef typename Domi::dim_type dim_type;
   MDArray< T > a(tuple< dim_type >(2,5));
   typename MDArray< T >::iterator it = a.end();
   TEST_EQUALITY_CONST(it.index(0), 2);
@@ -149,7 +149,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, MDArrayIteratorEnd, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, MDArrayViewIteratorEnd, T )
 {
-  typedef typename MDArrayView< T >::dim_type dim_type;
+  typedef typename Domi::dim_type dim_type;
   MDArray< T > a(tuple< dim_type >(3,4));
   MDArrayView< T > av = a();
   typename MDArrayView< T >::iterator it = av.end();
@@ -159,7 +159,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, MDArrayViewIteratorEnd, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, MDArrayRCPIteratorEnd, T )
 {
-  typedef typename MDArrayRCP< T >::dim_type dim_type;
+  typedef typename Domi::dim_type dim_type;
   MDArrayRCP< T > a(tuple< dim_type >(4,3));
   typename MDArrayRCP< T >::iterator it = a.end();
   TEST_EQUALITY_CONST(it.index(0), 4);
@@ -168,7 +168,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, MDArrayRCPIteratorEnd, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, MDArrayIteratorIndex, T )
 {
-  typedef typename MDArray< T >::dim_type dim_type;
+  typedef typename Domi::dim_type dim_type;
   MDArray< T > a(tuple< dim_type >(2,5));
   Teuchos::ArrayView< dim_type > index = tuple< dim_type >(1,4);
   typename MDArray< T >::iterator it(a, index);
@@ -178,7 +178,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, MDArrayIteratorIndex, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, MDArrayViewIteratorIndex, T )
 {
-  typedef typename MDArrayView< T >::dim_type dim_type;
+  typedef typename Domi::dim_type dim_type;
   MDArray< T > a(tuple< dim_type >(3,4));
   MDArrayView< T > av = a();
   Teuchos::ArrayView< dim_type > index = tuple< dim_type >(2,3);
@@ -189,7 +189,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, MDArrayViewIteratorIndex, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, MDArrayRCPIteratorIndex, T )
 {
-  typedef typename MDArrayRCP< T >::dim_type dim_type;
+  typedef typename Domi::dim_type dim_type;
   MDArrayRCP< T > a(tuple< dim_type >(4,3));
   Teuchos::ArrayView< dim_type > index = tuple< dim_type >(3,2);
   typename MDArrayRCP< T >::iterator it(a, index);
@@ -199,7 +199,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, MDArrayRCPIteratorIndex, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, MDArrayViewAssign, T )
 {
-  typedef typename MDArray< T >::dim_type ord;
+  typedef typename Domi::dim_type ord;
   MDArray< T > a(tuple< ord >(8,5));
   // Initialize all of a to the value of 5.  This uses the
   // MDArray<T>::iterator
@@ -226,7 +226,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, MDArrayViewAssign, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, FirstIndexFastest, T )
 {
-  typedef typename MDArrayRCP< T >::dim_type ord;
+  typedef typename Domi::dim_type ord;
   MDArrayRCP< T > a(tuple< ord >(4,7), Domi::FIRST_INDEX_FASTEST);
   typename MDArrayRCP< T >::iterator it = a.begin();
   for (ord j = 0; j < 7; ++j)
@@ -240,7 +240,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, FirstIndexFastest, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, LastIndexFastest, T )
 {
-  typedef typename MDArrayRCP< T >::dim_type ord;
+  typedef typename Domi::dim_type ord;
   MDArrayRCP< T > a(tuple< ord >(5,6), Domi::LAST_INDEX_FASTEST);
   typename MDArrayRCP< T >::iterator it = a.begin();
   for (ord i = 0; i < 5; ++i)

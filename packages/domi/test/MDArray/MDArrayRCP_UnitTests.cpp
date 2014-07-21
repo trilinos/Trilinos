@@ -69,7 +69,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, defaultConstructor, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, arrayViewDimsConstructor, T )
 {
-  typedef typename MDArrayRCP< T >::dim_type dim_type;
+  typedef typename Domi::dim_type dim_type;
   Array< T > a(60);
   MDArrayRCP< T > mdar(a,tuple< dim_type >(3,4,5));
   TEST_EQUALITY(mdar.numDims()   ,  3);
@@ -85,14 +85,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, arrayViewDimsConstructor, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, arrayViewDimsConstructorBad, T )
 {
-  typedef typename MDArrayRCP< T >::dim_type dim_type;
+  typedef typename Domi::dim_type dim_type;
   Array< T > a(50);
   TEST_THROW(MDArrayRCP< T > mdar(a,tuple< dim_type >(8,8)), RangeError);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, arrayViewDimsOrderConstructor, T )
 {
-  typedef typename MDArrayRCP< T >::dim_type dim_type;
+  typedef typename Domi::dim_type dim_type;
   Array< T > a(60);
   MDArrayRCP< T > mdar(a,tuple< dim_type >(3,4,5),Domi::C_ORDER);
   TEST_EQUALITY(mdar.numDims()   ,  3);
@@ -108,7 +108,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, arrayViewDimsOrderConstructor, T 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, dimsConstructor, T )
 {
-  typedef typename MDArrayRCP< T >::dim_type dim_type;
+  typedef typename Domi::dim_type dim_type;
   MDArrayRCP< T > mdar(tuple< dim_type >(3,4,5));
   TEST_EQUALITY(mdar.numDims()   ,  3);
   TEST_EQUALITY(mdar.dimension(0),  3);
@@ -123,7 +123,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, dimsConstructor, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, dimsValConstructor, T )
 {
-  typedef typename MDArrayRCP< T >::dim_type dim_type;
+  typedef typename Domi::dim_type dim_type;
   MDArrayRCP< T > mdar(tuple< dim_type >(3,4), 12);
   TEST_EQUALITY(mdar.numDims()   ,  2);
   TEST_EQUALITY(mdar.dimension(0),  3);
@@ -148,7 +148,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, dimsValConstructor, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, copyConstructor, T )
 {
-  typedef typename MDArrayRCP< T >::dim_type dim_type;
+  typedef typename Domi::dim_type dim_type;
   MDArrayRCP< T > mdar1(tuple< dim_type >(2,3), 2);
   MDArrayRCP< T > mdar2(mdar1);
   TEST_EQUALITY(mdar1.numDims(),    mdar2.numDims()   );
@@ -218,7 +218,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, inequalityOperatorMDArrayView, T 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, assignmentOperator, T )
 {
-  typedef typename MDArrayRCP< T >::dim_type dim_type;
+  typedef typename Domi::dim_type dim_type;
   MDArrayRCP< T > mdar1(tuple< dim_type >(2,2,2), 8);
   MDArrayRCP< T > mdar2 = mdar1;
   TEST_EQUALITY(mdar1.numDims(),    mdar2.numDims()   );
@@ -473,7 +473,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, clearEmpty, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, resize, T )
 {
-  typedef typename MDArrayRCP< T >::dim_type dim_type;
+  typedef typename Domi::dim_type dim_type;
   MDArrayRCP< T > a = generateMDArrayRCP< T >(11,4);
   TEST_EQUALITY_CONST(a.numDims()   ,  2);
   TEST_EQUALITY_CONST(a.dimension(0), 11);
@@ -510,7 +510,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, toStringNull, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, toString1D, T )
 {
-  typedef typename MDArrayRCP< T >::dim_type dim_type;
+  typedef typename Domi::dim_type dim_type;
   T val = 3;
   MDArrayRCP< T > a(tuple< dim_type >(3), val);
   TEST_EQUALITY_CONST(a.toString(), "[3, 3, 3]");
