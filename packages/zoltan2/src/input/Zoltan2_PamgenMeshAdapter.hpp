@@ -213,7 +213,7 @@ private:
   long long dimension_, num_nodes_, num_elem_, *element_num_map_;
   long long *node_num_map_, *elemToNode_, tnoct_, *elemOffsets_;
   double *coords_, *Acoords_;
-  std::vector<long long> adj_;
+  std::vector<long long> start_, adj_;
 };
 
 ////////////////////////////////////////////////////////////////
@@ -352,13 +352,12 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
     }
   }
 
-  std::vector<long long> start;
   long long max_side_nodes = nnodes_per_elem;
   long long side_nodes[max_side_nodes];
   long long mirror_nodes[max_side_nodes];
 
   /* Allocate memory necessary for the adjacency */
-  start.resize(num_nodes_);
+  start_.resize(num_nodes_);
 
   for (int i=0; i < max_side_nodes; i++) {
     side_nodes[i]=-999;
@@ -368,7 +367,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
   /* Find the adjacency for a nodal based decomposition */
   size_t nadj = 0;
   for(size_t ncnt=0; ncnt < num_nodes_; ncnt++) {
-    start[ncnt] = nadj;
+    start_[ncnt] = nadj;
     for(size_t ecnt=0; ecnt < sur_elem[ncnt].size(); ecnt++) {
       size_t elem = sur_elem[ncnt][ecnt];
       int nnodes = nnodes_per_elem;
@@ -377,8 +376,8 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
 
 	if(ncnt != (size_t)entry &&
 	   in_list(entry,
-		   adj_.size()-start[ncnt],
-		   &adj_[start[ncnt]]) < 0) {
+		   adj_.size()-start_[ncnt],
+		   &adj_[start_[ncnt]]) < 0) {
 	  adj_.push_back(entry);
 	}
       }
