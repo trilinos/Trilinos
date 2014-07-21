@@ -213,6 +213,7 @@ private:
   long long dimension_, num_nodes_, num_elem_, *element_num_map_;
   long long *node_num_map_, *elemToNode_, tnoct_, *elemOffsets_;
   double *coords_, *Acoords_;
+  std::vector<long long> adj_;
 };
 
 ////////////////////////////////////////////////////////////////
@@ -366,7 +367,6 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
 
   /* Find the adjacency for a nodal based decomposition */
   size_t nadj = 0;
-  std::vector<long long> adj;
   for(size_t ncnt=0; ncnt < num_nodes_; ncnt++) {
     start[ncnt] = nadj;
     for(size_t ecnt=0; ecnt < sur_elem[ncnt].size(); ecnt++) {
@@ -377,9 +377,9 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
 
 	if(ncnt != (size_t)entry &&
 	   in_list(entry,
-		   adj.size()-start[ncnt],
-		   &adj[start[ncnt]]) < 0) {
-	  adj.push_back(entry);
+		   adj_.size()-start[ncnt],
+		   &adj_[start[ncnt]]) < 0) {
+	  adj_.push_back(entry);
 	}
       }
     }
