@@ -197,7 +197,7 @@ public:
   {
     if (MESH_REGION == source && MESH_VERTEX == target && 3 == dimension_ ||
 	MESH_FACE == source && MESH_VERTEX == target && 2 == dimension) {
-      offsets = elemOffsets;
+      offsets = elemOffsets_;
       adjacencyIds = elemToNode_;
     } else if (MESH_REGION == source && 2 == dimension_) {
       offsets = NULL;
@@ -379,7 +379,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
 	   in_list(entry,
 		   adj.size()-start[ncnt],
 		   &adj[start[ncnt]]) < 0) {
-	  ;
+	  adj.push_back(entry);
 	}
       }
     }
@@ -407,6 +407,13 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
 
   delete[] connect;
   connect = NULL;
+
+  for(long long b = 0; b < num_elem_; b++) {
+    delete[] reconnect[b];
+  }
+
+  delete[] reconnect;
+  reconnect = NULL;
 }
 
   
