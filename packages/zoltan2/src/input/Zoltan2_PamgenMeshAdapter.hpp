@@ -186,7 +186,7 @@ public:
   size_t getLocalNumAdjs(MeshEntityType source, MeshEntityType target) const
   {
     if (availAdjs(source, target)) {
-      return telct_;
+      return tnoct_;
     }
 
     return 0;
@@ -211,7 +211,7 @@ public:
 
 private:
   long long dimension_, num_nodes_, num_elem_, *element_num_map_;
-  long long *node_num_map_, *elemToNode_, telct_, *elemOffsets_;
+  long long *node_num_map_, *elemToNode_, tnoct_, *elemOffsets_;
   double *coords_, *Acoords_;
 };
 
@@ -321,33 +321,33 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
 
   long long nnodes_per_elem = num_nodes_per_elem[0];
   elemToNode_ = new long long [num_elem_ * nnodes_per_elem];
-  long long tnoct = 0;
+  long long telct = 0;
   elemOffsets_ = new long long [num_elem_];
-  telct_ = 0;
+  tnoct_ = 0;
   long long **reconnect = new long long * [num_elem_];
   size_t max_nsur = 0;
 
   for (long long b = 0; b < num_elem_blk; b++) {
     for (long long i = 0; i < num_elem_this_blk[b]; i++) {
-      elemOffsets_[telct_] = tnoct;
-      reconnect[telct_] = new long long [num_nodes_per_elem[b]];
+      elemOffsets_[telct] = tnoct_;
+      reconnect[telct] = new long long [num_nodes_per_elem[b]];
 
       for (long long j = 0; j < num_nodes_per_elem[b]; j++) {
-	elemToNode_[tnoct] = connect[b][i*num_nodes_per_elem[b] + j]-1;
-	reconnect[telct_][j] = connect[b][i*num_nodes_per_elem[b] + j]-1;
+	elemToNode_[tnoct_] = connect[b][i*num_nodes_per_elem[b] + j]-1;
+	reconnect[telct][j] = connect[b][i*num_nodes_per_elem[b] + j]-1;
 
-	if(sur_elem[tnoct].empty()) {
-	  printf("WARNING: Node = "ST_ZU" has no elements\n", tnoct+1);
+	if(sur_elem[tnoct_].empty()) {
+	  printf("WARNING: Node = "ST_ZU" has no elements\n", tnoct_+1);
 	} else {
-	  size_t nsur = sur_elem[tnoct].size();
+	  size_t nsur = sur_elem[tnoct_].size();
 	  if (nsur > max_nsur)
 	    max_nsur = nsur;
 	}
 
-	++tnoct;
+	++tnoct_;
       }
 
-      ++telct_;
+      ++telct;
     }
   }
 
