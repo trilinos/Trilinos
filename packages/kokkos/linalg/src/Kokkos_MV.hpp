@@ -1245,6 +1245,9 @@ struct MultiVecDotFunctor {
     X_ (X), Y_ (Y), dots_ (dots), value_count (X.dimension_1 ())
   {
     if (value_count != dots.dimension_0 ()) {
+#if defined(__CUDACC__) && defined(__CUDA_ARCH__)
+      cuda_abort("Kokkos::MultiVecDotFunctor: value_count does not match the length of 'dots'");
+#else
       std::ostringstream os;
       os << "Kokkos::MultiVecDotFunctor: value_count does not match the length "
         "of 'dots'.  X is " << X.dimension_0 () << " x " << X.dimension_1 () <<
@@ -1252,7 +1255,9 @@ struct MultiVecDotFunctor {
         "dots has length " << dots.dimension_0 () << ", and value_count = " <<
         value_count << ".";
       throw std::invalid_argument (os.str ());
+#endif
     }
+
   }
 
   KOKKOS_INLINE_FUNCTION void
@@ -1307,6 +1312,7 @@ struct MultiVecDotFunctor {
   {
     const size_type numVecs = value_count;
 
+#if !defined(__CUDA_ARCH__)
     // DEBUGGING ONLY
     {
       std::ostringstream os;
@@ -1320,6 +1326,7 @@ struct MultiVecDotFunctor {
       os << "]" << std::endl;
       std::cerr << os.str ();
     }
+#endif
 
 #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -1331,6 +1338,7 @@ struct MultiVecDotFunctor {
       dots_(k) = dst[k];
     }
 
+#if !defined(__CUDA_ARCH__)
     // DEBUGGING ONLY
     {
       std::ostringstream os;
@@ -1344,6 +1352,7 @@ struct MultiVecDotFunctor {
       os << "]" << std::endl;
       std::cerr << os.str ();
     }
+#endif
   }
 };
 
@@ -1373,12 +1382,16 @@ struct MultiVecNorm2SquaredFunctor {
     X_ (X), norms_ (norms), value_count (X.dimension_1 ())
   {
     if (value_count != norms.dimension_0 ()) {
+#if defined(__CUDACC__) && defined(__CUDA_ARCH__)
+      cuda_abort("Kokkos::MultiVecNorm2SquaredFunctor: value_count does not match the length of 'norms'");
+#else
       std::ostringstream os;
       os << "Kokkos::MultiVecNorm2SquaredFunctor: value_count does not match "
         "the length of 'norms'.  X is " << X.dimension_0 () << " x " <<
         X.dimension_1 () << ", norms has length " << norms.dimension_0 () <<
         ", and value_count = " << value_count << ".";
       throw std::invalid_argument (os.str ());
+#endif
     }
   }
 
@@ -1472,12 +1485,16 @@ struct MultiVecNorm1Functor {
     X_ (X), norms_ (norms), value_count (X.dimension_1 ())
   {
     if (value_count != norms.dimension_0 ()) {
+#if defined(__CUDACC__) && defined(__CUDA_ARCH__)
+      cuda_abort("Kokkos::MultiVecNorm1Functor: value_count does not match the length of 'norms'");
+#else
       std::ostringstream os;
       os << "Kokkos::MultiVecNorm1Functor: value_count does not match the "
          << "length of 'norms'.  X is " << X.dimension_0 () << " x "
          << X.dimension_1 () << ", norms has length " << norms.dimension_0 ()
          << ", and value_count = " << value_count << ".";
       throw std::invalid_argument (os.str ());
+#endif
     }
   }
 
@@ -1570,12 +1587,16 @@ struct MultiVecNormInfFunctor {
     X_ (X), norms_ (norms), value_count (X.dimension_1 ())
   {
     if (value_count != norms.dimension_0 ()) {
+#if defined(__CUDACC__) && defined(__CUDA_ARCH__)
+      cuda_abort("Kokkos::MultiVecNormInfFunctor: value_count does not match the length of 'norms'");
+#else
       std::ostringstream os;
       os << "Kokkos::MultiVecNormInfFunctor: value_count does not match the "
          << "length of 'norms'.  X is " << X.dimension_0 () << " x "
          << X.dimension_1 () << ", norms has length " << norms.dimension_0 ()
          << ", and value_count = " << value_count << ".";
       throw std::invalid_argument (os.str ());
+#endif
     }
   }
 

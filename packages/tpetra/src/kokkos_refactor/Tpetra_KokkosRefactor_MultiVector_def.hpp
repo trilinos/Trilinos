@@ -924,8 +924,8 @@ namespace { // (anonymous)
        const Teuchos::ArrayView<dot_type>& dots) const
   {
     typedef typename dual_view_type::host_mirror_device_type host_mirror_device_type;
-    typedef Kokkos::View<dot_type*, host_mirror_device_type, Kokkos::MemoryUnmanaged> host_dots_view_type;
     typedef Kokkos::View<dot_type*, device_type> dev_dots_view_type;
+    typedef Kokkos::View<dot_type*, typename dev_dots_view_type::array_layout, host_mirror_device_type, Kokkos::MemoryUnmanaged> host_dots_view_type;
 
     const size_t numDots = static_cast<size_t> (dots.size ());
     host_dots_view_type dotsHostView (dots.getRawPtr (), numDots);
@@ -984,7 +984,8 @@ namespace { // (anonymous)
     // All the "min"s here ensure that incorrect input won't segfault.
     const size_t numVecs = std::min (getNumVectors (), A.getNumVectors ());
     const size_t lclNumRows = std::min (getLocalLength (), A.getLocalLength ());
-    const size_t numDots = std::min (dots.dimension_0 (), numVecs);
+    const size_t numDots = std::min (static_cast<size_t>(dots.dimension_0 ()),
+                                     numVecs);
 
     // In case the input dimensions don't match, make sure that we
     // don't overwrite memory that doesn't belong to us, by using
@@ -1067,8 +1068,8 @@ namespace { // (anonymous)
   norm2 (const Teuchos::ArrayView<mag_type>& norms) const
   {
     typedef typename dual_view_type::host_mirror_device_type host_mirror_device_type;
-    typedef Kokkos::View<mag_type*, host_mirror_device_type, Kokkos::MemoryUnmanaged> host_norms_view_type;
     typedef Kokkos::View<mag_type*, device_type> dev_norms_view_type;
+    typedef Kokkos::View<mag_type*, typename dev_norms_view_type::array_layout, host_mirror_device_type, Kokkos::MemoryUnmanaged> host_norms_view_type;
 
     const size_t numNorms = static_cast<size_t> (norms.size ());
     host_norms_view_type normsHostView (norms.getRawPtr (), numNorms);
@@ -1299,8 +1300,8 @@ namespace { // (anonymous)
   norm1 (const Teuchos::ArrayView<mag_type>& norms) const
   {
     typedef typename dual_view_type::host_mirror_device_type host_mirror_device_type;
-    typedef Kokkos::View<mag_type*, host_mirror_device_type, Kokkos::MemoryUnmanaged> host_norms_view_type;
     typedef Kokkos::View<mag_type*, device_type> dev_norms_view_type;
+    typedef Kokkos::View<mag_type*, typename dev_norms_view_type::array_layout, host_mirror_device_type, Kokkos::MemoryUnmanaged> host_norms_view_type;
 
     const size_t numNorms = static_cast<size_t> (norms.size ());
     host_norms_view_type normsHostView (norms.getRawPtr (), numNorms);
@@ -1422,8 +1423,8 @@ namespace { // (anonymous)
   normInf (const Teuchos::ArrayView<mag_type>& norms) const
   {
     typedef typename dual_view_type::host_mirror_device_type host_mirror_device_type;
-    typedef Kokkos::View<mag_type*, host_mirror_device_type, Kokkos::MemoryUnmanaged> host_norms_view_type;
     typedef Kokkos::View<mag_type*, device_type> dev_norms_view_type;
+    typedef Kokkos::View<mag_type*, typename dev_norms_view_type::array_layout, host_mirror_device_type, Kokkos::MemoryUnmanaged> host_norms_view_type;
 
     const size_t numNorms = static_cast<size_t> (norms.size ());
     host_norms_view_type normsHostView (norms.getRawPtr (), numNorms);
