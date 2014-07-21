@@ -92,6 +92,14 @@ typedef Ordinal dim_type;
 */
 typedef Ordinal difference_type;
 
+/** \brief The Domi padding type simply encapsulates a lower padding
+ *         and upper padding along a single axis
+ *
+ * This is simply a Teuchos Tuple of length 2, with element 0
+ * referencing the lower pad and element 1 referencing the upper pad.
+ */
+typedef Teuchos::Tuple< int, 2 > padding_type;
+
 ////////////////////////////////////////////////////////////////////////
 
 /** \brief Layout enumeration, used to specify the order in which
