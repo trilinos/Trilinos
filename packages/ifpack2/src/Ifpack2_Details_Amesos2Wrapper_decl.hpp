@@ -152,6 +152,12 @@ public:
   typedef Tpetra::Map<local_ordinal_type,
                       global_ordinal_type,
                       node_type> map_type;
+
+  //! Type of the Tpetra::CrsMatrix specialization that this class uses.
+  typedef Tpetra::CrsMatrix<scalar_type,
+                            local_ordinal_type,
+                            global_ordinal_type,
+                            node_type> crs_matrix_type;
   //@}
   //! \name Constructors and destructor
   //@{
@@ -355,8 +361,27 @@ private:
   //! Amesos2 solver; it contains the factorization of the matrix A_.
   Teuchos::RCP<Amesos2::Solver<MatrixType, MV> > amesos2solver_;
 
-  //! The matrix to be preconditioned.
-  Teuchos::RCP<const MatrixType> A_;
+  /// \brief Return A, wrapped in a LocalFilter, if necessary.
+  ///
+  /// "If necessary" means that if A is already a LocalFilter, or if
+  /// its communicator only has one process, then we don't need to
+  /// wrap it, so we just return A.
+  static Teuchos::RCP<const row_matrix_type>
+  makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A);
+
+  //! The (original) input matrix to be preconditioned.
+  //Teuchos::RCP<const MatrixType> A_;
+  Teuchos::RCP<const row_matrix_type> A_;
+
+  /// \brief The matrix used to compute the Amesos2 preconditioner.
+  ///
+  /// If A_local (the local filter of the original input matrix) is a
+  /// Tpetra::CrsMatrix, then this is just A_local.  Otherwise, this
+  /// class reserves the right for A_local_crs_ to be a copy of
+  /// A_local.  This is because the current adapters in Amesos2
+  /// only accept a Tpetra::CrsMatrix.  That may change
+  /// in the future.
+  Teuchos::RCP<const crs_matrix_type> A_local_crs_;
 
   //@}
   // \name Parameters (set by setParameters())

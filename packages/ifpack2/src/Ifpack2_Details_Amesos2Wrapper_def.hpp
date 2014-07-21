@@ -62,6 +62,7 @@ namespace Details {
 template <class MatrixType>
 Amesos2Wrapper<MatrixType>::
 Amesos2Wrapper (const Teuchos::RCP<const row_matrix_type>& A) :
+  A_(A),
   Condest_ (-STM::one ()),
   InitializeTime_ (0.0),
   ComputeTime_ (0.0),
@@ -71,17 +72,7 @@ Amesos2Wrapper (const Teuchos::RCP<const row_matrix_type>& A) :
   NumApply_ (0),
   IsInitialized_ (false),
   IsComputed_ (false)
-{
-  // The input matrix A (an instance of Tpetra::RowMatrix) must have
-  // type MatrixType (a specialization of Tpetra::CrsMatrix).
-  Teuchos::RCP<const MatrixType> A_crs =
-    Teuchos::rcp_dynamic_cast<const MatrixType> (A);
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    A_crs.is_null (), std::invalid_argument, "Ifpack2::Details::Amesos2Wrapper "
-    "constructor: The input matrix A is not a Tpetra::CrsMatrix instance, "
-    "but it must be in order for Amesos2 to work correctly.");
-  A_ = A_crs;
-}
+{}
 
 template <class MatrixType>
 Amesos2Wrapper<MatrixType>::~Amesos2Wrapper()
@@ -211,24 +202,57 @@ void Amesos2Wrapper<MatrixType>::setMatrix (const Teuchos::RCP<const row_matrix_
     A_ = Teuchos::null;
   }
   else {
-    // The input matrix A (an instance of Tpetra::RowMatrix) must have
-    // type MatrixType (a specialization of Tpetra::CrsMatrix).
-    Teuchos::RCP<const MatrixType> A_crs =
-      Teuchos::rcp_dynamic_cast<const MatrixType> (A);
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      A_crs.is_null (), std::invalid_argument, "Ifpack2::Details::Amesos2Wrapper "
-      "constructor: The input matrix A is not a Tpetra::CrsMatrix instance, "
-      "but it must be in order for Amesos2 to work correctly.");
-    A_ = A_crs;
+    A_ = A;
   }
 
   // FIXME (mfh 10 Dec 2013) Currently, initialize() recreates
   // amesos2solver_ unconditionally, so this code won't have any
   // effect.  Once we fix initialize() so that it keeps
   // amesos2solver_, the code below will be effective.
-  if (! amesos2solver_.is_null ()) {
-    amesos2solver_->setA (A_);
+  //if (! amesos2solver_.is_null ()) {
+  //  amesos2solver_->setA (A_);
+  //}
+  // FIXME JJH 2014-July18 A_ might not be a locally filtered CRS matrix, which
+  // means we have to do that dance all over again before calling amesos2solver_->setA ....
+}
+
+template<class MatrixType>
+Teuchos::RCP<const typename Amesos2Wrapper<MatrixType>::row_matrix_type>
+Amesos2Wrapper<MatrixType>::makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::rcp_implicit_cast;
+
+  // If A_'s communicator only has one process, or if its column and
+  // row Maps are the same, then it is already local, so use it
+  // directly.
+  if (A->getRowMap ()->getComm ()->getSize () == 1 ||
+      A->getRowMap ()->isSameAs (* (A->getColMap ()))) {
+    return A;
   }
+
+  // If A_ is already a LocalFilter, then use it directly.  This
+  // should be the case if RILUK is being used through
+  // AdditiveSchwarz, for example.  There are (unfortunately) two
+  // kinds of LocalFilter, depending on the template parameter, so we
+  // have to test for both.
+  RCP<const LocalFilter<row_matrix_type> > A_lf_r =
+    rcp_dynamic_cast<const LocalFilter<row_matrix_type> > (A);
+  if (! A_lf_r.is_null ()) {
+    return rcp_implicit_cast<const row_matrix_type> (A_lf_r);
+  }
+  RCP<const LocalFilter<crs_matrix_type> > A_lf_c =
+    rcp_dynamic_cast<const LocalFilter<crs_matrix_type> > (A);
+  if (! A_lf_c.is_null ()) {
+    return rcp_implicit_cast<const row_matrix_type> (A_lf_c);
+  }
+
+  // A_'s communicator has more than one process, its row Map and
+  // its column Map differ, and A_ is not a LocalFilter.  Thus, we
+  // have to wrap it in a LocalFilter.
+  return rcp (new LocalFilter<row_matrix_type> (A));
 }
 
 
@@ -259,6 +283,40 @@ void Amesos2Wrapper<MatrixType>::initialize ()
     IsComputed_ = false;
     Condest_ = -STM::one ();
 
+    RCP<const row_matrix_type> A_local = makeLocalFilter (A_);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      A_local.is_null (), std::logic_error, "Ifpack2::AmesosWrapper::initialize: "
+      "makeLocalFilter returned null; it failed to compute A_local.  "
+      "Please report this bug to the Ifpack2 developers.");
+
+    {
+      // The matrix that Amesos2 will build the preconditioner on must be a Tpetra::Crs matrix.
+      // If A_local isn't, then we build one.
+      Teuchos::RCP<const MatrixType> A_local_crs = Teuchos::rcp_dynamic_cast<const MatrixType> (A_local);
+    
+      if (A_local_crs.is_null()) {
+        // FIXME (mfh 24 Jan 2014) It would be smarter to count up the
+        // number of elements in each row of A_local, so that we can
+        // create A_local_crs_nc using static profile.  The code below is
+        // correct but potentially slow.
+        RCP<crs_matrix_type> A_local_crs_nc = rcp (new crs_matrix_type (A_local->getRowMap (),
+                                                                        A_local->getColMap (), 0));
+        // FIXME (mfh 24 Jan 2014) This Import approach will only work
+        // if A_ has a one-to-one row Map.  This is generally the case
+        // with matrices given to Ifpack2.
+        //
+        // Source and destination Maps are the same in this case.
+        // That way, the Import just implements a copy.
+        typedef Tpetra::Import<local_ordinal_type, global_ordinal_type,
+          node_type> import_type;
+        import_type import (A_local->getRowMap (), A_local->getRowMap ());
+        A_local_crs_nc->doImport (*A_local, import, Tpetra::REPLACE);
+        A_local_crs_nc->fillComplete (A_local->getDomainMap (), A_local->getRangeMap ());
+        A_local_crs = Teuchos::rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
+      }
+      A_local_crs_ = A_local_crs;
+    }
+
     // FIXME (10 Dec 2013) This (the Amesos2 solver type) should be a
     // run-time parameter through the input ParameterList.
     // (9 May 2014) JJH Ifpack2 also shouldn't be checking the availability direct solvers.
@@ -287,7 +345,15 @@ void Amesos2Wrapper<MatrixType>::initialize ()
     // solver each time, since Amesos2::Solver has a setA() method.
     // See the implementation of setMatrix().
 
-    amesos2solver_ = Amesos2::create<MatrixType, MV> (solverType, A_);
+//RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+//fos->setOutputToRootOnly(-1);
+
+
+    //*fos << "=========== A_local_crs_ (Ifpack2::Details::Amesos2Wrapper::initialize()) ============" << std::endl;
+    //A_local_crs_->describe(*fos,Teuchos::VERB_EXTREME);
+    //*fos << "=========== end of A_local_crs_ (Ifpack2::Details::Amesos2Wrapper::initialize()) ============" << std::endl;
+
+    amesos2solver_ = Amesos2::create<MatrixType, MV> (solverType, A_local_crs_);
     amesos2solver_->preOrdering ();
 
     // The symbolic factorization properly belongs to initialize(),
@@ -357,6 +423,9 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
   using Teuchos::Time;
   using Teuchos::TimeMonitor;
 
+  // X = RHS
+  // Y = solution
+
   const std::string timerName ("Ifpack2::Amesos2Wrapper::apply");
   RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
   if (timer.is_null ()) {
@@ -400,9 +469,42 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
       X_temp = rcpFromRef (X);
     }
 
+    // Set up "local" views of X and Y.
+    RCP<const MV> X_local;
+    RCP<MV> Y_local;
+    const bool multipleProcs = (A_->getRowMap ()->getComm ()->getSize () >= 1);
+    if (multipleProcs) {
+      // Interpret X and Y as "local" multivectors, that is, in the
+      // local filter's domain resp. range Maps.  "Interpret" means that
+      // we create views with different Maps; we don't have to copy.
+      //std::cout << "Ifpack2::Details::Amesos2Solver::apply() : "
+      //          << "found multiple procs, creating new view w/ different map" << std::endl;
+      X_local = X_temp->offsetView (A_local_crs_->getDomainMap (), 0);
+      Y_local = Y_temp->offsetViewNonConst (A_local_crs_->getRangeMap (), 0);
+      if (A_->getRowMap ()->getComm ()->getRank ())  sleep(2);
+    }
+    else { // only one process in A_'s communicator
+      // X and Y are already "local"; no need to set up local views.
+      X_local = X_temp;
+      Y_local = Y_temp;
+    }
+
+
+    //RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    //fos->setOutputToRootOnly(-1);
+    //*fos << "=========== X_local [RHS] (Ifpack2::Details::DenseSolver::apply()) ============" << std::endl;
+    //X_local->describe(*fos,Teuchos::VERB_EXTREME);
+    //*fos << "=========== end of X_local [RHS] (Ifpack2::Details::DenseSolver::apply()) ============" << std::endl;
+
+    //*fos << "=========== Y_local (Ifpack2::Details::DenseSolver::apply()) ============" << std::endl;
+    //Y_local->describe(*fos,Teuchos::VERB_EXTREME);
+    //*fos << "=========== end of Y_local (Ifpack2::Details::DenseSolver::apply()) ============" << std::endl;
+
     // Use the precomputed factorization to solve.
-    amesos2solver_->setX (Y_temp);
-    amesos2solver_->setB (X_temp);
+    //amesos2solver_->setX (Y_temp);
+    //amesos2solver_->setB (X_temp);
+    amesos2solver_->setX (Y_local);
+    amesos2solver_->setB (X_local);
     amesos2solver_->solve ();
 
     if (alpha != STS::one () || beta != STS::zero ()) {
@@ -433,14 +535,17 @@ std::string Amesos2Wrapper<MatrixType>::description () const {
   os << "Initialized: " << (isInitialized () ? "true" : "false")
      << ", Computed: " << (isComputed () ? "true" : "false");
 
-  if (A_.is_null ()) {
+  if (A_local_crs_.is_null ()) {
     os << ", Matrix: null";
   }
   else {
-    os << ", Matrix: not null"
-       << ", Global matrix dimensions: ["
-       << A_->getGlobalNumRows () << ", " << A_->getGlobalNumCols () << "]";
+    os << ", Global matrix dimensions: ["
+       << A_local_crs_->getGlobalNumRows () << ", " << A_local_crs_->getGlobalNumCols () << "]";
   }
+  //describe the Amesos2 method being called
+  os << ", {";
+  amesos2solver_->description();
+  os << "}";
 
   os << "}";
   return os.str ();
@@ -485,7 +590,7 @@ describe (Teuchos::FancyOStream& out,
 
     if (vl > Teuchos::VERB_LOW) {
       out << "Matrix:" << endl;
-      A_->describe (out, vl);
+      A_local_crs_->describe (out, vl);
     }
   }
 }
