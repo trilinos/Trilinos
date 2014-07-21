@@ -209,19 +209,23 @@ public:
     }
   }
 
-  bool avail2ndAdjs()
+  bool avail2ndAdjs(MeshEntityType sourcetarget, MeshEntityType through)
   {
     ;
   }
 
-  size_t getLocalNum2ndAdjs() const
+  size_t getLocalNum2ndAdjs(MeshEntityType sourcetarget, 
+			    MeshEntityType through) const
   {
-    ;
+    return 0;
   }
 
-  void get2ndAdjsView() const
+  void get2ndAdjsView(MeshEntityType sourcetarget, MeshEntityType through, 
+		      const lno_t *&offsets, const gid_t *& adjacencyIds) const
   {
-    ;
+    offsets = NULL;
+    adjacencyIds = NULL;
+    Z2_THROW_NOT_IMPLEMENTED_ERROR
   }
 
 private:
