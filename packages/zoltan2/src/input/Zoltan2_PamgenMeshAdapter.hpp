@@ -219,6 +219,15 @@ private:
 // Definitions
 ////////////////////////////////////////////////////////////////
 
+  ssize_t in_list(const long long value, size_t count, long long *vector)
+  {
+    for(size_t i=0; i < count; i++) {
+      if(vector[i] == value)
+	return i;
+    }
+    return -1;
+  }
+
 template <typename User>
 PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
   dimension_(0)
@@ -367,7 +376,9 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
 	long long entry = reconnect[elem][i];
 
 	if(ncnt != (size_t)entry &&
-	   in_list(entry)) {
+	   in_list(entry,
+		   adj.size()-start[ncnt],
+		   &adj[start[ncnt]]) < 0) {
 	  ;
 	}
       }
