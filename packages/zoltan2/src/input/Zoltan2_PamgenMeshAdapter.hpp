@@ -383,6 +383,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
 	}
       }
     }
+    nadj++;
   }
 
   delete[] elem_blk_ids;
