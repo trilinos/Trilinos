@@ -59,7 +59,7 @@ namespace Thyra {
 
 template<class Scalar>
 DefaultProductVectorSpace<Scalar>::DefaultProductVectorSpace()
-  : numBlocks_(-1), dim_(-1)
+  : numBlocks_(-1), dim_(-1), isInCore_(false)
 {}
 
 

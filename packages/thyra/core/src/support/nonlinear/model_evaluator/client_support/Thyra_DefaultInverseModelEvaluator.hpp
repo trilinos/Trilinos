@@ -542,7 +542,9 @@ DefaultInverseModelEvaluator<Scalar>::DefaultInverseModelEvaluator()
   :usingObservationTargetAsParameter_(false), obs_idx_(-1),p_idx_(0),
    observationTargetAsParameter_(false),
    observationPassThrough_(ObservationPassThrough_default_),
-   localVerbLevel_(Teuchos::VERB_DEFAULT)
+   localVerbLevel_(Teuchos::VERB_DEFAULT),
+   observationMultiplier_(0.0),
+   parameterMultiplier_(0.0)
 {}
 
 
