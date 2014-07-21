@@ -357,6 +357,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
 
   /* Find the adjacency for a nodal based decomposition */
   size_t nadj = 0;
+  std::vector<long long> adj;
   for(size_t ncnt=0; ncnt < num_nodes_; ncnt++) {
     start[ncnt] = nadj;
     for(size_t ecnt=0; ecnt < sur_elem[ncnt].size(); ecnt++) {
@@ -365,6 +366,10 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
       for(int i=0; i < nnodes; i++) {
 	long long entry = reconnect[elem][i];
 
+	if(ncnt != (size_t)entry &&
+	   in_list(entry)) {
+	  ;
+	}
       }
     }
   }
