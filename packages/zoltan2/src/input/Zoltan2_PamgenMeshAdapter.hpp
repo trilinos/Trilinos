@@ -209,6 +209,21 @@ public:
     }
   }
 
+  bool avail2ndAdjs()
+  {
+    ;
+  }
+
+  size_t getLocalNum2ndAdjs() const
+  {
+    ;
+  }
+
+  void get2ndAdjsView() const
+  {
+    ;
+  }
+
 private:
   long long dimension_, num_nodes_, num_elem_, *element_num_map_;
   long long *node_num_map_, *elemToNode_, tnoct_, *elemOffsets_;
