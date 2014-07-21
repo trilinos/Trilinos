@@ -225,8 +225,8 @@ int main(int argc, char *argv[]) {
         std::vector<std::string> classes;
         classes.push_back("Xpetra::Matrix");
         classes.push_back("MueLu::Constraint");
-        for (size_t k = 0; k < classes.size(); k++) {
-          sed_cmd = sed_pref + "'s/" + classes[k] + "<.*>/" + classes[k] + "<ignored> >/' ";
+        for (size_t q = 0; q < classes.size(); q++) {
+          sed_cmd = sed_pref + "'s/" + classes[q] + "<.*>/" + classes[q] + "<ignored> >/' ";
           system((sed_cmd + baseFile + ".res").c_str());
           system((sed_cmd + baseFile + ".out").c_str());
         }
