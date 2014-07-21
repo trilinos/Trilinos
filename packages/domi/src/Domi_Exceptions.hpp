@@ -147,6 +147,20 @@ public:
   { }
 };
 
+/** \brief Bounds Error exception type
+ */
+class BoundsError : public std::runtime_error
+{
+public:
+  /** \brief Constructor
+   *
+   * \param msg [in] Error message
+   */
+  BoundsError(std::string msg) :
+    std::runtime_error(msg)
+  { }
+};
+
 }
 
 #endif
