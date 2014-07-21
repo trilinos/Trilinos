@@ -1576,8 +1576,7 @@ operator=(const MDVector< Scalar, Node > & source)
 
 template< class Scalar,
           class Node >
-MDVector< Scalar, Node >::
-~MDVector()
+MDVector< Scalar, Node >::~MDVector()
 {
 }
 
