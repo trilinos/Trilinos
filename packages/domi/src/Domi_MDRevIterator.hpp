@@ -103,10 +103,10 @@ public:
   //@{
 
   /** \brief Size type */
-  typedef typename MDARRAY::size_type  size_type;
+  //typedef typename MDARRAY::size_type  size_type;
 
   /** \brief Dim type */
-  typedef typename MDARRAY::dim_type dim_type;
+  //typedef typename MDARRAY::dim_type dim_type;
 
   /** \brief Value type */
   typedef typename MDARRAY::value_type value_type;
@@ -370,7 +370,7 @@ template< class MDARRAY >
 typename MDRevIterator< MDARRAY >::value_type &
 MDRevIterator< MDARRAY >::operator*()
 {
-  typename MDRevIterator< MDARRAY >::size_type offset = 0;
+  size_type offset = 0;
   for (_axis=0; _axis < _index.size(); ++_axis)
     offset += _index[_axis] * _strides[_axis];
   return _ptr[offset];
@@ -508,7 +508,7 @@ MDRevIterator< MDARRAY >::operator--(int)
 ////////////////////////////////////////////////////////////////////////
 
 template< class MDARRAY >
-typename MDRevIterator< MDARRAY >::dim_type
+dim_type
 MDRevIterator< MDARRAY >::
 index(int axis) const
 {
@@ -554,7 +554,7 @@ MDRevIterator< MDARRAY >::assign_end_index()
 template< class MDARRAY >
 void
 MDRevIterator< MDARRAY >::
-assert_index(typename MDRevIterator< MDARRAY >::dim_type i,
+assert_index(dim_type i,
              int axis) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(

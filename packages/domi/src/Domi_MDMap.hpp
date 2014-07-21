@@ -44,6 +44,7 @@
 
 // System includes
 #include <limits>
+#include <algorithm>
 
 // Domi includes
 #include "Domi_ConfigDefs.hpp"
@@ -54,6 +55,8 @@
 #include "Domi_MDArray.hpp"
 
 // Teuchos includes
+#include "Teuchos_Comm.hpp"
+#include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_Tuple.hpp"
 
 // Kokkos includes
@@ -139,10 +142,10 @@ class MDMap
 public:
 
   /** \brief Adopt the Domi <tt>size_type</tt> type */
-  typedef Domi::size_type size_type;
+  //typedef Domi::size_type size_type;
 
   /** \brief Adopt the Domi <tt>dim_type</tt> type */
-  typedef Domi::dim_type dim_type;
+  //typedef Domi::dim_type dim_type;
 
   /** \name Constructors and destructor */
   //@{
@@ -213,6 +216,27 @@ public:
    */
   MDMap(const MDCommRCP mdComm,
         Teuchos::ParameterList & plist,
+        const Teuchos::RCP< Node > & node =
+          Kokkos::DefaultNode::getDefaultNode());
+
+  /** \brief Constructor with global bounds for this processor
+   *
+   * \param mdComm [in] an RCP of an MDComm (multi-dimensional
+   *        communicator), on which the MDMap will be built
+   *
+   * \param myGlobalBounds [in] an array of Slices, one for each axis,
+   *        that represent the global indexes of the bounds on this
+   *        processor, excluding padding
+   *
+   * \param layout [in] the storage order of the map
+   *
+   * \param node [in] the Kokkos node of the map
+   */
+  MDMap(const MDCommRCP mdComm,
+        const Teuchos::ArrayView< Slice > & myGlobalBounds,
+        const Teuchos::ArrayView< padding_type > & padding =
+          Teuchos::ArrayView< padding_type >(),
+        const Layout layout = DEFAULT_ORDER,
         const Teuchos::RCP< Node > & node =
           Kokkos::DefaultNode::getDefaultNode());
 
@@ -806,11 +830,6 @@ public:
 
 private:
 
-  // Typedef for the exterior buffer padding type, a tuple that stores
-  // lower and upper padding sizes, which can be different due to
-  // processors on domain boundaries.
-  typedef Teuchos::Tuple< int, 2 > padding;
-
   // A private method for computing the bounds and local dimensions,
   // after the global dimensions, communication and boundary padding
   // have been properly assigned.
@@ -879,7 +898,7 @@ private:
   // The actual padding stored on this processor along each axis.  The
   // padding can be either communication padding or boundary padding
   // based on the processor position on the boundary of a domain.
-  Teuchos::Array< padding > _pad;
+  Teuchos::Array< padding_type > _pad;
 
   // The size of the boundary padding along each axis.
   Teuchos::Array< int > _bndryPadSizes;
@@ -889,7 +908,7 @@ private:
   // same as the corresponding value in _bndryPadSizes.  However, the
   // introduction of sub-maps creates the possibility of different
   // upper and lower boundary padding values.
-  Teuchos::Array< padding > _bndryPad;
+  Teuchos::Array< padding_type > _bndryPad;
 
   // The storage order
   Layout _layout;
@@ -1026,7 +1045,7 @@ MDMap(TeuchosCommRCP teuchosComm,
   _localBounds(),
   _localStrides(),
   _localMin(0),
-  _localMax(),
+  _localMax(0),
   _commPadSizes(),
   _pad(),
   _bndryPadSizes(),
@@ -1122,6 +1141,162 @@ MDMap(TeuchosCommRCP teuchosComm,
   // Compute the strides
   _globalStrides = computeStrides< size_type, dim_type >(_globalDims, _layout);
   _localStrides  = computeStrides< size_type, dim_type >(_localDims , _layout);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Node >
+MDMap< Node >::
+MDMap(const MDCommRCP mdComm,
+      const Teuchos::ArrayView< Slice > & myGlobalBounds,
+      const Teuchos::ArrayView< padding_type > & padding,
+      const Layout layout,
+      const Teuchos::RCP< Node > & node) :
+  _mdComm(mdComm),
+  _globalDims(mdComm->numDims()),
+  _globalBounds(mdComm->numDims()),
+  _globalRankBounds(mdComm->numDims()),
+  _globalStrides(mdComm->numDims()),
+  _globalMin(0),
+  _globalMax(0),
+  _localDims(mdComm->numDims(), 0),
+  _localBounds(mdComm->numDims()),
+  _localStrides(mdComm->numDims()),
+  _localMin(0),
+  _localMax(0),
+  _commPadSizes(mdComm->numDims(), 0),
+  _pad(mdComm->numDims(), Teuchos::tuple(0,0)),
+  _bndryPadSizes(mdComm->numDims(), 0),
+  _bndryPad(mdComm->numDims()),
+  _layout(layout),
+  _node(node)
+{
+  // Check that myGlobalBounds is the correct size
+  int numDims = _mdComm->numDims();
+  if (myGlobalBounds.size() < numDims)
+    throw InvalidArgument("MDMap: myGlobalBounds too small");
+
+  // Copy the padding to _pad
+  int maxAxis = std::min(numDims, (int)padding.size());
+  for (int axis = 0; axis < maxAxis; ++axis)
+    _pad[axis] = padding[axis];
+
+  // All of the required info for the MDMap is contained in the
+  // myGlobalBounds and padding arguments, but it is distributed.  We
+  // will do a gather so that each processor has the global bounds
+  // data from each other processor.
+
+  // Resize _globalRankBounds
+  for (int axis = 0; axis < numDims; ++axis)
+    _globalRankBounds[axis].resize(_mdComm->getCommDim(axis));
+
+  // Allocate and initialize the communication buffers
+  int numProc = _mdComm->getTeuchosComm()->getSize();
+  MDArray< dim_type > sendBuffer(Teuchos::tuple(5,numDims),
+                                 FIRST_INDEX_FASTEST);
+  MDArray< dim_type > recvBuffer(Teuchos::tuple(5,numDims,numProc),
+                                 FIRST_INDEX_FASTEST);
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    sendBuffer(0,axis) = mdComm->getCommIndex(axis);
+    sendBuffer(1,axis) = myGlobalBounds[axis].start();
+    sendBuffer(2,axis) = myGlobalBounds[axis].stop();
+    sendBuffer(3,axis) = _pad[axis][0];
+    sendBuffer(4,axis) = _pad[axis][1];
+  }
+
+  // Perform the gather all
+  Teuchos::gatherAll(*(_mdComm->getTeuchosComm()),
+                     (int)sendBuffer.size(),
+                     sendBuffer.getRawPtr(),
+                     (int)recvBuffer.size(),
+                     recvBuffer.getRawPtr());
+
+  // Extract _globalRankBounds and _bndryPad.  Because of the
+  // structure, there will be duplicate Slices and padding, and we
+  // will check to make sure they are the expected equivalent values.
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    for (int commIndex = 0; commIndex < _mdComm->getCommDim(axis); ++commIndex)
+    {
+      Slice bounds;
+      padding_type pad;
+      for (int rank = 0; rank < numProc; ++rank)
+      {
+        if (recvBuffer(0,axis,rank) == commIndex)
+        {
+          dim_type start = recvBuffer(1,axis,rank);
+          dim_type stop  = recvBuffer(2,axis,rank);
+          int      loPad = recvBuffer(3,axis,rank);
+          int      hiPad = recvBuffer(4,axis,rank);
+          if (bounds.start() == Slice::Default)
+          {
+            bounds = Slice(start, stop);
+            pad[0] = loPad;
+            pad[1] = hiPad;
+          }
+          else
+          {
+            if ((bounds.start() != start) || (bounds.stop() != stop))
+              throw BoundsError("Global rank bounds mismatch");
+            if ((pad[0] != loPad) || (pad[1] != hiPad))
+              throw BoundsError("Padding value mismatch");
+          }
+        }
+      }
+
+      // Extract the _bndryPad data
+      if (commIndex == 0                         ) _bndryPad[axis][0] = pad[0];
+      if (commIndex == mdComm->getCommDim(axis)-1) _bndryPad[axis][1] = pad[1];
+
+      // Extract the verified _globalRankBounds
+      _globalRankBounds[axis][commIndex] = bounds;
+    }
+  }
+
+  // Check the sanity of _globalRankBounds
+  for (int axis = 0; axis < numDims; ++axis)
+    for (int commIndex = 1; commIndex < _mdComm->getCommDim(axis); ++commIndex)
+      if (_globalRankBounds[axis][commIndex-1].stop() != 
+          _globalRankBounds[axis][commIndex  ].start())
+        throw MDMapNoncontiguousError("Global rank bounds are not contiguous");
+
+  // Set the global data
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    int commSize = _mdComm->getCommDim(axis);
+    dim_type start =
+      _globalRankBounds[axis][0         ].start() - _bndryPad[axis][0];
+    dim_type stop  =
+      _globalRankBounds[axis][commSize-1].stop()  + _bndryPad[axis][1];
+    _globalDims[axis]   = stop - start;
+    _globalBounds[axis] = Slice(start, stop);
+  }
+  _globalStrides = computeStrides< size_type, dim_type >(_globalDims, _layout);
+
+  // Set the global min and max
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    _globalMin += _globalBounds[axis].start() * _globalStrides[axis];
+    _globalMax += _globalBounds[axis].stop()  * _globalStrides[axis];
+  }
+
+  // Set the local data
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    int commIndex = _mdComm->getCommIndex(axis);
+    dim_type start =
+      _globalRankBounds[axis][commIndex].start() - _pad[axis][0];
+    dim_type stop  =
+      _globalRankBounds[axis][commIndex].stop()  + _pad[axis][1];
+    _localDims[axis]   = stop - start;
+    _localBounds[axis] = Slice(stop - start);
+  }
+  _localStrides = computeStrides< size_type, dim_type >(_localDims, _layout);
+
+  // Compute the local max
+  for (int axis = 0; axis < numDims; ++axis)
+    _localMax += (_localDims[axis] - 1) * _localStrides[axis];
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1998,7 +2173,7 @@ MDMap< Node >::getAugmentedMDMap(const dim_type leadingDim,
 
   // Adjust new MDMap arrays for a new leading dimension
   Slice slice = Slice(leadingDim);
-  padding pad(Teuchos::tuple(0,0));
+  padding_type pad(Teuchos::tuple(0,0));
   if (leadingDim > 0)
   {
     newMdMap->_globalDims.insert(newMdMap->_globalDims.begin(), leadingDim);

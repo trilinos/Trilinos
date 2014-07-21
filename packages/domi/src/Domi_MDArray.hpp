@@ -137,17 +137,17 @@ void swap(MDArray< T > & a1, MDArray< T > & a2);
  *
  * The <tt>MDArray</tt> class also provides efficient indexing of the
  * form <tt>a(i,j,k,...)</tt>, regardless of storage order.  Here,
- * <tt>i,j,k</tt> must all be ordinals of type <tt>size_type</tt>, and
+ * <tt>i,j,k</tt> must all be ordinals of type <tt>dim_type</tt>, and
  * the return type is <tt>T &</tt>, where <tt>T</tt> is the type of
  * data stored in the array.
  *
  * The square bracket operator, for which the C++ standard requires
- * one and only one argument, can take a <tt>size_type</tt> ordinal or
+ * one and only one argument, can take a <tt>dim_type</tt> ordinal or
  * a <tt>Slice</tt> struct and always returns an <tt>MDArrayView</tt>
  * object.  Providing a <tt>Slice</tt> argument (where a
  * <tt>Slice</tt> contains a start index, a stop index, and a step
  * interval) will return an <tt>MDArrayView</tt> object with the same
- * number of dimensions.  Providing a <tt>size_type</tt> argument will
+ * number of dimensions.  Providing a <tt>dim_type</tt> argument will
  * return an <tt>MDArrayView</tt> object with one fewer dimensions.
  * It is possible to mix ordinal indexes and slice indexes by
  * repeatedly using the square bracket operator.  For example, if
@@ -195,8 +195,8 @@ void swap(MDArray< T > & a1, MDArray< T > & a2);
  * <tt>MDArray</tt> originally took the following forms:
  *
  *     \code
- *     T & operator()(size_type i, ...);
- *     const T & operator()(size_type i, ...);
+ *     T & operator()(dim_type i, ...);
+ *     const T & operator()(dim_type i, ...);
  *     \endcode
  *
  * Functions and methods that take arbitrary arguments denoted by the
@@ -212,13 +212,13 @@ void swap(MDArray< T > & a1, MDArray< T > & a2);
  * of indexes:
  *
  *     \code
- *     T & operator()(size_type i);
- *     T & operator()(size_type i, size_type j);
- *     T & operator()(size_type i, size_type j, size_type k);
+ *     T & operator()(dim_type i);
+ *     T & operator()(dim_type i, dim_type j);
+ *     T & operator()(dim_type i, dim_type j, dim_type k);
  *     //...
- *     const T & operator()(size_type i);
- *     const T & operator()(size_type i, size_type j);
- *     const T & operator()(size_type i, size_type j, size_type k);
+ *     const T & operator()(dim_type i);
+ *     const T & operator()(dim_type i, dim_type j);
+ *     const T & operator()(dim_type i, dim_type j, dim_type k);
  *     //...
  *     \endcode
  *
@@ -248,14 +248,14 @@ void swap(MDArray< T > & a1, MDArray< T > & a2);
  * a reference to their values with the
  *
  *     \code
- *     const Teuchos::Array<size_type> & strides() const
+ *     const Teuchos::Array< size_type > & strides() const
  *     \endcode
  *
  * method.
  *
  * The remaining <tt>operator[]</tt> indexing operators each return an
  * <tt>MDArrayView</tt> object with a view into the calling
- * <tt>MDArray</tt>.  The <tt>operator[](size_type)</tt> operator
+ * <tt>MDArray</tt>.  The <tt>operator[](dim_type)</tt> operator
  * returns an <tt>MDArrayView</tt> object with one fewer dimensions.
  * The <tt>operator[](Slice)</tt> operator returns an
  * <tt>MDArrayView</tt> object with the same number of dimensions, but
@@ -290,13 +290,13 @@ public:
   //@{
 
   /** \brief Size type */
-  typedef Domi::size_type size_type;
+  //typedef Domi::size_type size_type;
 
   /** \brief Dim type */
-  typedef Domi::dim_type dim_type;
+  //typedef Domi::dim_type dim_type;
 
   /** \brief Difference type */
-  typedef Domi::difference_type difference_type;
+  //typedef Domi::difference_type difference_type;
 
   /** \brief Value type */
   typedef T value_type;
@@ -1194,7 +1194,7 @@ template< typename T >
 MDArrayView< const T >
 MDArray< T >::mdArrayViewConst()
 {
-  return MDArrayView< const T >(_array, _dimensions, _layout);
+  return MDArrayView< const T >(_array, _dimensions(), _layout);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1203,7 +1203,7 @@ template< typename T >
 const MDArrayView< const T >
 MDArray< T >::mdArrayViewConst() const
 {
-  return MDArrayView< const T >(_array, _dimensions, _layout);
+  return MDArrayView< const T >(_array, _dimensions(), _layout);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1286,7 +1286,7 @@ MDArray< T >::operator()() const
 
 template< typename T >
 T &
-MDArray< T >::operator()(typename MDArray< T >::dim_type i)
+MDArray< T >::operator()(dim_type i)
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1302,8 +1302,8 @@ MDArray< T >::operator()(typename MDArray< T >::dim_type i)
 
 template< typename T >
 T &
-MDArray< T >::operator()(typename MDArray< T >::dim_type i,
-                         typename MDArray< T >::dim_type j)
+MDArray< T >::operator()(dim_type i,
+                         dim_type j)
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1320,9 +1320,9 @@ MDArray< T >::operator()(typename MDArray< T >::dim_type i,
 
 template< typename T >
 T &
-MDArray< T >::operator()(typename MDArray< T >::dim_type i,
-                         typename MDArray< T >::dim_type j,
-                         typename MDArray< T >::dim_type k)
+MDArray< T >::operator()(dim_type i,
+                         dim_type j,
+                         dim_type k)
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1340,10 +1340,10 @@ MDArray< T >::operator()(typename MDArray< T >::dim_type i,
 
 template< typename T >
 T &
-MDArray< T >::operator()(typename MDArray< T >::dim_type i,
-                         typename MDArray< T >::dim_type j,
-                         typename MDArray< T >::dim_type k,
-                         typename MDArray< T >::dim_type m)
+MDArray< T >::operator()(dim_type i,
+                         dim_type j,
+                         dim_type k,
+                         dim_type m)
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1363,11 +1363,11 @@ MDArray< T >::operator()(typename MDArray< T >::dim_type i,
 
 template< typename T >
 T &
-MDArray< T >::operator()(typename MDArray< T >::dim_type i,
-                         typename MDArray< T >::dim_type j,
-                         typename MDArray< T >::dim_type k,
-                         typename MDArray< T >::dim_type m,
-                         typename MDArray< T >::dim_type n)
+MDArray< T >::operator()(dim_type i,
+                         dim_type j,
+                         dim_type k,
+                         dim_type m,
+                         dim_type n)
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1388,12 +1388,12 @@ MDArray< T >::operator()(typename MDArray< T >::dim_type i,
 
 template< typename T >
 T &
-MDArray< T >::operator()(typename MDArray< T >::dim_type i,
-                         typename MDArray< T >::dim_type j,
-                         typename MDArray< T >::dim_type k,
-                         typename MDArray< T >::dim_type m,
-                         typename MDArray< T >::dim_type n,
-                         typename MDArray< T >::dim_type p,
+MDArray< T >::operator()(dim_type i,
+                         dim_type j,
+                         dim_type k,
+                         dim_type m,
+                         dim_type n,
+                         dim_type p,
                          ...)
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
@@ -1428,7 +1428,7 @@ MDArray< T >::operator()(typename MDArray< T >::dim_type i,
 
 template< typename T >
 const T &
-MDArray< T >::operator()(typename MDArray< T >::dim_type i) const
+MDArray< T >::operator()(dim_type i) const
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1444,8 +1444,8 @@ MDArray< T >::operator()(typename MDArray< T >::dim_type i) const
 
 template< typename T >
 const T &
-MDArray< T >::operator()(typename MDArray< T >::dim_type i,
-                         typename MDArray< T >::dim_type j) const
+MDArray< T >::operator()(dim_type i,
+                         dim_type j) const
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1462,9 +1462,9 @@ MDArray< T >::operator()(typename MDArray< T >::dim_type i,
 
 template< typename T >
 const T &
-MDArray< T >::operator()(typename MDArray< T >::dim_type i,
-                         typename MDArray< T >::dim_type j,
-                         typename MDArray< T >::dim_type k) const
+MDArray< T >::operator()(dim_type i,
+                         dim_type j,
+                         dim_type k) const
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1482,10 +1482,10 @@ MDArray< T >::operator()(typename MDArray< T >::dim_type i,
 
 template< typename T >
 const T &
-MDArray< T >::operator()(typename MDArray< T >::dim_type i,
-                         typename MDArray< T >::dim_type j,
-                         typename MDArray< T >::dim_type k,
-                         typename MDArray< T >::dim_type m) const
+MDArray< T >::operator()(dim_type i,
+                         dim_type j,
+                         dim_type k,
+                         dim_type m) const
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1505,11 +1505,11 @@ MDArray< T >::operator()(typename MDArray< T >::dim_type i,
 
 template< typename T >
 const T &
-MDArray< T >::operator()(typename MDArray< T >::dim_type i,
-                         typename MDArray< T >::dim_type j,
-                         typename MDArray< T >::dim_type k,
-                         typename MDArray< T >::dim_type m,
-                         typename MDArray< T >::dim_type n) const
+MDArray< T >::operator()(dim_type i,
+                         dim_type j,
+                         dim_type k,
+                         dim_type m,
+                         dim_type n) const
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1530,12 +1530,12 @@ MDArray< T >::operator()(typename MDArray< T >::dim_type i,
 
 template< typename T >
 const T &
-MDArray< T >::operator()(typename MDArray< T >::dim_type i,
-                         typename MDArray< T >::dim_type j,
-                         typename MDArray< T >::dim_type k,
-                         typename MDArray< T >::dim_type m,
-                         typename MDArray< T >::dim_type n,
-                         typename MDArray< T >::dim_type p,
+MDArray< T >::operator()(dim_type i,
+                         dim_type j,
+                         dim_type k,
+                         dim_type m,
+                         dim_type n,
+                         dim_type p,
                          ...) const
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
@@ -1619,7 +1619,7 @@ MDArray< T >::at(dim_type i, ...) const
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-typename MDArray< T >::size_type
+size_type
 MDArray< T >::capacity() const
 {
   return _array.capacity();
@@ -1651,7 +1651,7 @@ MDArray< T >::empty() const
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-typename MDArray< T >::size_type
+size_type
 MDArray< T >::max_size() const
 {
   return _array.max_size();

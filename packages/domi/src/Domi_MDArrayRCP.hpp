@@ -158,13 +158,13 @@ public:
   //@{
 
   /** \brief Size type */
-  typedef Domi::size_type size_type;
+  //typedef Domi::size_type size_type;
 
   /** \brief Dim type */
-  typedef Domi::dim_type dim_type;
+  //typedef Domi::dim_type dim_type;
 
   /** \brief Difference type */
-  typedef Domi::difference_type difference_type;
+  //typedef Domi::difference_type difference_type;
 
   /** \brief Value type */
   typedef T value_type;
@@ -1268,7 +1268,7 @@ MDArrayRCP< T >::operator()() const
 
 template< typename T >
 T &
-MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::dim_type i)
+MDArrayRCP< T >::operator()(dim_type i)
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1284,8 +1284,8 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::dim_type i)
 
 template< typename T >
 T &
-MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::dim_type i,
-                            typename MDArrayRCP< T >::dim_type j)
+MDArrayRCP< T >::operator()(dim_type i,
+                            dim_type j)
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1302,9 +1302,9 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::dim_type i,
 
 template< typename T >
 T &
-MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::dim_type i,
-                            typename MDArrayRCP< T >::dim_type j,
-                            typename MDArrayRCP< T >::dim_type k)
+MDArrayRCP< T >::operator()(dim_type i,
+                            dim_type j,
+                            dim_type k)
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1322,10 +1322,10 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::dim_type i,
 
 template< typename T >
 T &
-MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::dim_type i,
-                            typename MDArrayRCP< T >::dim_type j,
-                            typename MDArrayRCP< T >::dim_type k,
-                            typename MDArrayRCP< T >::dim_type m)
+MDArrayRCP< T >::operator()(dim_type i,
+                            dim_type j,
+                            dim_type k,
+                            dim_type m)
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1345,11 +1345,11 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::dim_type i,
 
 template< typename T >
 T &
-MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::dim_type i,
-                            typename MDArrayRCP< T >::dim_type j,
-                            typename MDArrayRCP< T >::dim_type k,
-                            typename MDArrayRCP< T >::dim_type m,
-                            typename MDArrayRCP< T >::dim_type n)
+MDArrayRCP< T >::operator()(dim_type i,
+                            dim_type j,
+                            dim_type k,
+                            dim_type m,
+                            dim_type n)
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1370,12 +1370,12 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::dim_type i,
 
 template< typename T >
 T &
-MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::dim_type i,
-                            typename MDArrayRCP< T >::dim_type j,
-                            typename MDArrayRCP< T >::dim_type k,
-                            typename MDArrayRCP< T >::dim_type m,
-                            typename MDArrayRCP< T >::dim_type n,
-                            typename MDArrayRCP< T >::dim_type p,
+MDArrayRCP< T >::operator()(dim_type i,
+                            dim_type j,
+                            dim_type k,
+                            dim_type m,
+                            dim_type n,
+                            dim_type p,
                             ...)
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
@@ -1410,7 +1410,7 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::dim_type i,
 
 template< typename T >
 const T &
-MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::dim_type i) const
+MDArrayRCP< T >::operator()(dim_type i) const
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1426,8 +1426,8 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::dim_type i) const
 
 template< typename T >
 const T &
-MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::dim_type i,
-                            typename MDArrayRCP< T >::dim_type j) const
+MDArrayRCP< T >::operator()(dim_type i,
+                            dim_type j) const
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1444,9 +1444,9 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::dim_type i,
 
 template< typename T >
 const T &
-MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::dim_type i,
-                            typename MDArrayRCP< T >::dim_type j,
-                            typename MDArrayRCP< T >::dim_type k) const
+MDArrayRCP< T >::operator()(dim_type i,
+                            dim_type j,
+                            dim_type k) const
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1464,10 +1464,10 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::dim_type i,
 
 template< typename T >
 const T &
-MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::dim_type i,
-                            typename MDArrayRCP< T >::dim_type j,
-                            typename MDArrayRCP< T >::dim_type k,
-                            typename MDArrayRCP< T >::dim_type m) const
+MDArrayRCP< T >::operator()(dim_type i,
+                            dim_type j,
+                            dim_type k,
+                            dim_type m) const
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1487,11 +1487,11 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::dim_type i,
 
 template< typename T >
 const T &
-MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::dim_type i,
-                            typename MDArrayRCP< T >::dim_type j,
-                            typename MDArrayRCP< T >::dim_type k,
-                            typename MDArrayRCP< T >::dim_type m,
-                            typename MDArrayRCP< T >::dim_type n) const
+MDArrayRCP< T >::operator()(dim_type i,
+                            dim_type j,
+                            dim_type k,
+                            dim_type m,
+                            dim_type n) const
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1512,12 +1512,12 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::dim_type i,
 
 template< typename T >
 const T &
-MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::dim_type i,
-                            typename MDArrayRCP< T >::dim_type j,
-                            typename MDArrayRCP< T >::dim_type k,
-                            typename MDArrayRCP< T >::dim_type m,
-                            typename MDArrayRCP< T >::dim_type n,
-                            typename MDArrayRCP< T >::dim_type p,
+MDArrayRCP< T >::operator()(dim_type i,
+                            dim_type j,
+                            dim_type k,
+                            dim_type m,
+                            dim_type n,
+                            dim_type p,
                             ...) const
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
@@ -1633,7 +1633,7 @@ MDArrayRCP< T >::empty() const
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-typename MDArrayRCP< T >::size_type
+size_type
 MDArrayRCP< T >::max_size() const
 {
   return _array.max_size();

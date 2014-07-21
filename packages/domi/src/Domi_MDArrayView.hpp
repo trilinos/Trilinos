@@ -118,13 +118,13 @@ public:
   //@{
 
   /** \brief Size type */
-  typedef Domi::size_type size_type;
+  //typedef Domi::size_type size_type;
 
   /** \brief Dim type */
-  typedef Domi::dim_type dim_type;
+  //typedef Domi::dim_type dim_type;
 
   /** \brief Difference type */
-  typedef Domi::difference_type difference_type;
+  //typedef Domi::difference_type difference_type;
 
   /** \brief Value type */
   typedef T value_type;
@@ -1058,7 +1058,7 @@ MDArrayView< T >::getConst() const
 
 template< typename T >
 MDArrayView< T >
-MDArrayView< T >::operator[](MDArrayView< T >::dim_type i)
+MDArrayView< T >::operator[](dim_type i)
 {
   // Construct the new MDArrayView
   MDArrayView< T > result(*this, _next_axis, i);
@@ -1073,7 +1073,7 @@ MDArrayView< T >::operator[](MDArrayView< T >::dim_type i)
 
 template< typename T >
 const MDArrayView< T >
-MDArrayView< T >::operator[](MDArrayView< T >::dim_type i) const
+MDArrayView< T >::operator[](dim_type i) const
 {
   // Construct the new MDArrayView
   MDArrayView< T > result(*this, _next_axis, i);
@@ -1120,7 +1120,7 @@ MDArrayView< T >::operator[](Slice s) const
 
 template< typename T >
 T &
-MDArrayView< T >::operator()(typename MDArrayView< T >::dim_type i)
+MDArrayView< T >::operator()(dim_type i)
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1136,8 +1136,8 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::dim_type i)
 
 template< typename T >
 T &
-MDArrayView< T >::operator()(typename MDArrayView< T >::dim_type i,
-                             typename MDArrayView< T >::dim_type j)
+MDArrayView< T >::operator()(dim_type i,
+                             dim_type j)
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1154,9 +1154,9 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::dim_type i,
 
 template< typename T >
 T &
-MDArrayView< T >::operator()(typename MDArrayView< T >::dim_type i,
-                             typename MDArrayView< T >::dim_type j,
-                             typename MDArrayView< T >::dim_type k)
+MDArrayView< T >::operator()(dim_type i,
+                             dim_type j,
+                             dim_type k)
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1174,10 +1174,10 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::dim_type i,
 
 template< typename T >
 T &
-MDArrayView< T >::operator()(typename MDArrayView< T >::dim_type i,
-                             typename MDArrayView< T >::dim_type j,
-                             typename MDArrayView< T >::dim_type k,
-                             typename MDArrayView< T >::dim_type m)
+MDArrayView< T >::operator()(dim_type i,
+                             dim_type j,
+                             dim_type k,
+                             dim_type m)
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1197,11 +1197,11 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::dim_type i,
 
 template< typename T >
 T &
-MDArrayView< T >::operator()(typename MDArrayView< T >::dim_type i,
-                             typename MDArrayView< T >::dim_type j,
-                             typename MDArrayView< T >::dim_type k,
-                             typename MDArrayView< T >::dim_type m,
-                             typename MDArrayView< T >::dim_type n)
+MDArrayView< T >::operator()(dim_type i,
+                             dim_type j,
+                             dim_type k,
+                             dim_type m,
+                             dim_type n)
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1222,12 +1222,12 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::dim_type i,
 
 template< typename T >
 T &
-MDArrayView< T >::operator()(typename MDArrayView< T >::dim_type i,
-                             typename MDArrayView< T >::dim_type j,
-                             typename MDArrayView< T >::dim_type k,
-                             typename MDArrayView< T >::dim_type m,
-                             typename MDArrayView< T >::dim_type n,
-                             typename MDArrayView< T >::dim_type p,
+MDArrayView< T >::operator()(dim_type i,
+                             dim_type j,
+                             dim_type k,
+                             dim_type m,
+                             dim_type n,
+                             dim_type p,
                              ...)
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
@@ -1262,7 +1262,7 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::dim_type i,
 
 template< typename T >
 const T &
-MDArrayView< T >::operator()(typename MDArrayView< T >::dim_type i) const
+MDArrayView< T >::operator()(dim_type i) const
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1278,8 +1278,8 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::dim_type i) const
 
 template< typename T >
 const T &
-MDArrayView< T >::operator()(typename MDArrayView< T >::dim_type i,
-                             typename MDArrayView< T >::dim_type j) const
+MDArrayView< T >::operator()(dim_type i,
+                             dim_type j) const
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1296,9 +1296,9 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::dim_type i,
 
 template< typename T >
 const T &
-MDArrayView< T >::operator()(typename MDArrayView< T >::dim_type i,
-                             typename MDArrayView< T >::dim_type j,
-                             typename MDArrayView< T >::dim_type k) const
+MDArrayView< T >::operator()(dim_type i,
+                             dim_type j,
+                             dim_type k) const
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1316,10 +1316,10 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::dim_type i,
 
 template< typename T >
 const T &
-MDArrayView< T >::operator()(typename MDArrayView< T >::dim_type i,
-                             typename MDArrayView< T >::dim_type j,
-                             typename MDArrayView< T >::dim_type k,
-                             typename MDArrayView< T >::dim_type m) const
+MDArrayView< T >::operator()(dim_type i,
+                             dim_type j,
+                             dim_type k,
+                             dim_type m) const
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1339,11 +1339,11 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::dim_type i,
 
 template< typename T >
 const T &
-MDArrayView< T >::operator()(typename MDArrayView< T >::dim_type i,
-                             typename MDArrayView< T >::dim_type j,
-                             typename MDArrayView< T >::dim_type k,
-                             typename MDArrayView< T >::dim_type m,
-                             typename MDArrayView< T >::dim_type n) const
+MDArrayView< T >::operator()(dim_type i,
+                             dim_type j,
+                             dim_type k,
+                             dim_type m,
+                             dim_type n) const
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1364,12 +1364,12 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::dim_type i,
 
 template< typename T >
 const T &
-MDArrayView< T >::operator()(typename MDArrayView< T >::dim_type i,
-                             typename MDArrayView< T >::dim_type j,
-                             typename MDArrayView< T >::dim_type k,
-                             typename MDArrayView< T >::dim_type m,
-                             typename MDArrayView< T >::dim_type n,
-                             typename MDArrayView< T >::dim_type p,
+MDArrayView< T >::operator()(dim_type i,
+                             dim_type j,
+                             dim_type k,
+                             dim_type m,
+                             dim_type n,
+                             dim_type p,
                              ...) const
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
