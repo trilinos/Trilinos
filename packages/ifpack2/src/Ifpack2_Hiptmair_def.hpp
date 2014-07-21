@@ -229,10 +229,6 @@ void Hiptmair<MatrixType>::initialize ()
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
-  // typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
-  //                             global_ordinal_type, node_type> TMV;
-  // typedef Tpetra::Operator<scalar_type, local_ordinal_type,
-  //                          global_ordinal_type, node_type> TOP;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     A_.is_null (), std::runtime_error, "Ifpack2::Hiptmair::initialize: "
