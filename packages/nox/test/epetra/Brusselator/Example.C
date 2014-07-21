@@ -102,6 +102,7 @@
 #include "Epetra_Map.h"
 #include "Epetra_LinearProblem.h"
 #include "AztecOO.h"
+#include "Teuchos_StandardCatchMacros.hpp"
 
 // Added to allow timings
 #include "Epetra_Time.h"
@@ -135,22 +136,21 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  // Create and reset the Timer
-  Epetra_Time myTimer(Comm);
-  double startWallTime = myTimer.WallTime();
-
-  // Get the process ID and the total number of processors
-  int MyPID = Comm.MyPID();
-  int NumProc = Comm.NumProc();
-
-  // Check for verbose option
   bool verbose = false;
-  if (argc > 1)
-    if (argv[1][0]=='-' && argv[1][1]=='v')
-      verbose = true;
-
   bool success = false;
   try {
+    // Create and reset the Timer
+    Epetra_Time myTimer(Comm);
+    double startWallTime = myTimer.WallTime();
+
+    // Get the process ID and the total number of processors
+    int MyPID = Comm.MyPID();
+    int NumProc = Comm.NumProc();
+
+    // Check for verbose option
+    if (argc > 1)
+      if (argv[1][0]=='-' && argv[1][1]=='v')
+        verbose = true;
     // Set the problem size (1000 elements)
     int NumGlobalNodes = 1001;
 
@@ -399,7 +399,7 @@ int main(int argc, char *argv[])
     }
 #endif
 
-    success = (testStatus == 0):
+    success = (testStatus == 0);
     // Summarize test results
     if (success)
       utils.out() << "Test passed!" << std::endl;
