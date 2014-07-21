@@ -544,7 +544,7 @@ std::string Amesos2Wrapper<MatrixType>::description () const {
   }
   //describe the Amesos2 method being called
   os << ", {";
-  amesos2solver_->description();
+  os << amesos2solver_->description();
   os << "}";
 
   os << "}";
