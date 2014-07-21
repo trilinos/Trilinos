@@ -175,7 +175,7 @@ public:
   }
 
   bool availAdjs(MeshEntityType source, MeshEntityType target) {
-    if (MESH_REGION == source && MESH_VERTEX == target && 3 == dimension_
+    if (MESH_REGION == source && MESH_VERTEX == target && 3 == dimension_ ||
 	MESH_FACE == source && MESH_VERTEX == target && 2 == dimension_) {
       return TRUE;
     }
@@ -211,12 +211,21 @@ public:
 
   bool avail2ndAdjs(MeshEntityType sourcetarget, MeshEntityType through)
   {
-    ;
+    if (MESH_REGION==sourcetarget && MESH_VERTEX==through && 3==dimension_ ||
+	MESH_FACE==sourcetarget && MESH_VERTEX==through && 2==dimension_) {
+      return TRUE;
+    }
+
+    return FALSE;
   }
 
   size_t getLocalNum2ndAdjs(MeshEntityType sourcetarget, 
 			    MeshEntityType through) const
   {
+    if (avail2ndAdjs(sourcetarget, through)) {
+      return adj_.size();
+    }
+
     return 0;
   }
 
