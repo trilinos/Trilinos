@@ -394,18 +394,6 @@ namespace MueLu {
     return new_h;
   }
 
-  /*!
-    @brief Save Hierarchy matrices and grid transfers to file.
-
-    Function to save matrices and grid transfers from a Hierarchy to files.
-
-    @param[in] H     Hierarchy object
-    @param[in] data  Which level IDs you want to save data for.
-    @param[in] name  Can be "A", "P", or "R".
-  */
-  template<class T, class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void WriteData(Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>& H, const Teuchos::Array<int>& data, const std::string& name);
-
 } //namespace MueLu
 
 #define MUELU_HIERARCHY_SHORT
