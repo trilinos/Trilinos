@@ -43,16 +43,15 @@
 #define TPETRA_MULTIVECTOR_DEF_HPP
 
 #include <Kokkos_DefaultArithmetic.hpp>
-#include <Teuchos_as.hpp>
 #include <Tpetra_Util.hpp>
 #include <Tpetra_Vector.hpp>
 
 #if TPETRA_USE_KOKKOS_DISTOBJECT
-#include <Tpetra_Details_MultiVectorDistObjectKernels.hpp>
+#  include <Tpetra_Details_MultiVectorDistObjectKernels.hpp>
 #endif
 
 #ifdef DOXYGEN_USE_ONLY
-  #include "Tpetra_MultiVector_decl.hpp"
+#  include "Tpetra_MultiVector_decl.hpp"
 #endif
 
 namespace Tpetra {
@@ -255,7 +254,6 @@ namespace Tpetra {
     lclMV_ (map->getNode ()),
     hasViewSemantics_ (false) // for now, not for long though
   {
-    using Teuchos::as;
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
 
@@ -267,7 +265,7 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(LDA < myLen, std::invalid_argument,
       ": LDA must be large enough to accomodate the local entries.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      as<size_t> (view.size ()) < LDA*(NumVectors - 1) + myLen,
+      static_cast<size_t> (view.size ()) < LDA*(NumVectors - 1) + myLen,
       std::invalid_argument,
       ": view does not contain enough data to specify the entries in this.");
     MVT::initializeValues (lclMV_, myLen, NumVectors, view, myLen);
@@ -284,7 +282,6 @@ namespace Tpetra {
     lclMV_ (map->getNode ()),
     hasViewSemantics_ (false) // for now, not for long though
   {
-    using Teuchos::as;
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
 
@@ -294,7 +291,7 @@ namespace Tpetra {
     const size_t myLen = getLocalLength();
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      as<size_t> (data.size ()) < LDA*(NumVectors - 1) + myLen,
+      static_cast<size_t> (data.size ()) < LDA*(NumVectors - 1) + myLen,
       std::runtime_error,
       ": data does not contain enough data to specify the entries in this.");
 #endif
@@ -313,7 +310,6 @@ namespace Tpetra {
     whichVectors_ (WhichVectors),
     hasViewSemantics_ (false) // for now, not for long though
   {
-    using Teuchos::as;
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
 
@@ -324,7 +320,7 @@ namespace Tpetra {
       ": LDA must be large enough to accomodate the local entries.");
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      as<size_t> (data.size ()) < LDA * maxVector + myLen, std::runtime_error,
+      static_cast<size_t> (data.size ()) < LDA * maxVector + myLen, std::runtime_error,
       ": data does not contain enough data to specify the entries in this.");
 #endif
     if (WhichVectors.size () == 1) {
@@ -406,7 +402,6 @@ namespace Tpetra {
     lclMV_ (map->getNode ()),
     hasViewSemantics_ (false) // for now, not for long though
   {
-    using Teuchos::as;
     using Teuchos::ArrayRCP;
     using Teuchos::ArrayView;
     using Teuchos::RCP;
@@ -419,7 +414,7 @@ namespace Tpetra {
       ": LDA must be large enough to accomodate the local entries.");
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      as<size_t> (A.size ()) < LDA*(NumVectors - 1) + myLen,
+      static_cast<size_t> (A.size ()) < LDA*(NumVectors - 1) + myLen,
       std::runtime_error,
       ": A does not contain enough data to specify the entries in this.");
 #endif
@@ -457,14 +452,13 @@ namespace Tpetra {
     lclMV_ (map->getNode ()),
     hasViewSemantics_ (false) // for now, not for long though
   {
-    using Teuchos::as;
     using Teuchos::ArrayRCP;
     using Teuchos::ArrayView;
     using Teuchos::RCP;
 
     const char tfecfFuncName[] = "MultiVector(ArrayOfPtrs)";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      NumVectors < 1 || NumVectors != as<size_t>(ArrayOfPtrs.size()),
+      NumVectors < 1 || NumVectors != static_cast<size_t>(ArrayOfPtrs.size()),
       std::runtime_error,
       ": ArrayOfPtrs.size() must be strictly positive and as large as ArrayOfPtrs.");
     const size_t myLen = getLocalLength();
@@ -476,7 +470,7 @@ namespace Tpetra {
       for (size_t j = 0; j < NumVectors; ++j) {
 #ifdef HAVE_TPETRA_DEBUG
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          as<size_t>(ArrayOfPtrs[j].size()) != getLocalLength(),
+          static_cast<size_t>(ArrayOfPtrs[j].size()) != getLocalLength(),
           std::runtime_error,
           ": ArrayOfPtrs[" << j << "].size() (== " << ArrayOfPtrs[j].size()
           << ") is not equal to getLocalLength() (== " << getLocalLength());
@@ -684,7 +678,6 @@ namespace Tpetra {
   {
     using Teuchos::Array;
     using Teuchos::ArrayView;
-    using Teuchos::as;
     using Kokkos::Compat::getKokkosViewDeepCopy;
     typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
     typedef Array<size_t>::size_type size_type;
@@ -777,7 +770,6 @@ namespace Tpetra {
     CombineMode CM)
   {
     using Teuchos::ArrayView;
-    using Teuchos::as;
     using Kokkos::Compat::getKokkosViewDeepCopy;
     typedef Teuchos::ScalarTraits<Scalar> SCT;
     typedef typename ArrayView<const LocalOrdinal>::size_type size_type;
@@ -803,7 +795,7 @@ namespace Tpetra {
 
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      as<size_t> (imports.size()) != getNumVectors()*importLIDs.size(),
+      static_cast<size_t> (imports.size()) != getNumVectors()*importLIDs.size(),
       std::runtime_error,
       ": 'imports' buffer size must be consistent with the amount of data to "
       "be sent.  " << std::endl << "imports.size() = " << imports.size()
@@ -812,11 +804,11 @@ namespace Tpetra {
       << ".");
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      as<size_t> (constantNumPackets) == as<size_t> (0), std::runtime_error,
+      constantNumPackets == static_cast<size_t> (0), std::runtime_error,
       ": constantNumPackets input argument must be nonzero.");
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      as<size_t> (numVecs) != as<size_t> (constantNumPackets),
+      static_cast<size_t> (numVecs) != static_cast<size_t> (constantNumPackets),
       std::runtime_error, ": constantNumPackets must equal numVecs.");
 #endif // HAVE_TPETRA_DEBUG
 
@@ -1036,7 +1028,6 @@ namespace Tpetra {
   {
     using Teuchos::Array;
     using Teuchos::ArrayView;
-    using Teuchos::as;
     typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
     typedef Array<size_t>::size_type size_type;
 
@@ -1088,7 +1079,7 @@ namespace Tpetra {
       typename Array<Scalar>::iterator expptr = exports.begin ();
       if (sourceMV.isConstantStride ()) {
         for (size_type k = 0; k < numExportLIDs; ++k) {
-          const size_t localRow = as<size_t> (exportLIDs[k]);
+          const size_t localRow = static_cast<size_t> (exportLIDs[k]);
           for (size_t j = 0; j < numCols; ++j) {
             *expptr++ = srcView[localRow + j*stride];
           }
@@ -1097,7 +1088,7 @@ namespace Tpetra {
       else {
         ArrayView<const size_t> srcWhichVectors = sourceMV.whichVectors_ ();
         for (size_type k = 0; k < numExportLIDs; ++k) {
-          const size_t localRow = as<size_t> (exportLIDs[k]);
+          const size_t localRow = static_cast<size_t> (exportLIDs[k]);
           for (size_t j = 0; j < numCols; ++j) {
             *expptr++ = srcView[localRow + srcWhichVectors[j]*stride];
           }
@@ -1118,7 +1109,6 @@ namespace Tpetra {
                     CombineMode CM)
   {
     using Teuchos::ArrayView;
-    using Teuchos::as;
     typedef Teuchos::ScalarTraits<Scalar> SCT;
     typedef typename ArrayView<const LocalOrdinal>::size_type size_type;
     const char tfecfFuncName[] = "unpackAndCombine";
@@ -1139,7 +1129,7 @@ namespace Tpetra {
 
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      as<size_t> (imports.size()) != getNumVectors()*importLIDs.size(),
+      static_cast<size_t> (imports.size()) != getNumVectors()*importLIDs.size(),
       std::runtime_error,
       ": 'imports' buffer size must be consistent with the amount of data to "
       "be sent.  " << std::endl << "imports.size() = " << imports.size()
@@ -1148,11 +1138,11 @@ namespace Tpetra {
       << ".");
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      as<size_t> (constantNumPackets) == as<size_t> (0), std::runtime_error,
+      constantNumPackets == static_cast<size_t> (0), std::runtime_error,
       ": constantNumPackets input argument must be nonzero.");
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      as<size_t> (numVecs) != as<size_t> (constantNumPackets),
+      static_cast<size_t> (numVecs) != static_cast<size_t> (constantNumPackets),
       std::runtime_error, ": constantNumPackets must equal numVecs.");
 #endif // HAVE_TPETRA_DEBUG
 
@@ -1171,7 +1161,7 @@ namespace Tpetra {
       if (CM == INSERT || CM == REPLACE) {
         if (isConstantStride()) {
           for (size_type k = 0; k < numImportLIDs; ++k) {
-            const size_t localRow = as<size_t> (importLIDs[k]);
+            const size_t localRow = static_cast<size_t> (importLIDs[k]);
             for (size_t j = 0; j < numVecs; ++j) {
               destView[localRow + myStride*j] = *impptr++;
             }
@@ -1179,7 +1169,7 @@ namespace Tpetra {
         }
         else {
           for (size_type k = 0; k < numImportLIDs; ++k) {
-            const size_t localRow = as<size_t> (importLIDs[k]);
+            const size_t localRow = static_cast<size_t> (importLIDs[k]);
             for (size_t j = 0; j < numVecs; ++j) {
               destView[localRow + myStride*whichVectors_[j]] = *impptr++;
             }
@@ -1189,7 +1179,7 @@ namespace Tpetra {
       else if (CM == ADD) {
         if (isConstantStride()) {
           for (size_type k = 0; k < numImportLIDs; ++k) {
-            const size_t localRow = as<size_t> (importLIDs[k]);
+            const size_t localRow = static_cast<size_t> (importLIDs[k]);
             for (size_t j = 0; j < numVecs; ++j) {
               destView[localRow + myStride*j] += *impptr++;
             }
@@ -1197,7 +1187,7 @@ namespace Tpetra {
         }
         else {
           for (size_type k = 0; k < numImportLIDs; ++k) {
-            const size_t localRow = as<size_t> (importLIDs[k]);
+            const size_t localRow = static_cast<size_t> (importLIDs[k]);
             for (size_t j = 0; j < numVecs; ++j) {
               destView[localRow + myStride*whichVectors_[j]] += *impptr++;
             }
@@ -1207,7 +1197,7 @@ namespace Tpetra {
       else if (CM == ABSMAX) {
         if (isConstantStride()) {
           for (size_type k = 0; k < numImportLIDs; ++k) {
-            const size_t localRow = as<size_t> (importLIDs[k]);
+            const size_t localRow = static_cast<size_t> (importLIDs[k]);
             for (size_t j = 0; j < numVecs; ++j) {
               Scalar &curval       = destView[localRow + myStride*j];
               const Scalar &newval = *impptr++;
@@ -1217,7 +1207,7 @@ namespace Tpetra {
         }
         else {
           for (size_type k = 0; k < numImportLIDs; ++k) {
-            const size_t localRow = as<size_t> (importLIDs[k]);
+            const size_t localRow = static_cast<size_t> (importLIDs[k]);
             for (size_t j = 0; j < numVecs; ++j) {
               Scalar &curval       = destView[localRow + myStride*whichVectors_[j]];
               const Scalar &newval = *impptr++;
@@ -1256,7 +1246,6 @@ namespace Tpetra {
   {
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
-    using Teuchos::as;
     using Teuchos::arcp_const_cast;
 
     const char tfecfFuncName[] = "dot()";
@@ -1273,8 +1262,9 @@ namespace Tpetra {
 #endif
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(A.getNumVectors() != numVecs, std::runtime_error,
         ": MultiVectors must have the same number of vectors.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(dots.size()) != numVecs, std::runtime_error,
-        ": dots.size() must be as large as the number of vectors in *this and A.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      static_cast<size_t> (dots.size ()) != numVecs, std::runtime_error,
+      ": dots.size() must be as large as the number of vectors in *this and A.");
     if (isConstantStride() && A.isConstantStride()) {
       MVT::Dot(lclMV_,A.lclMV_,dots);
     }
@@ -1292,7 +1282,9 @@ namespace Tpetra {
     }
     if (this->isDistributed()) {
       Array<Scalar> ldots(dots);
-      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,as<int>(numVecs),ldots.getRawPtr(),dots.getRawPtr());
+      Teuchos::reduceAll (* (this->getMap ()->getComm ()), Teuchos::REDUCE_SUM,
+                          static_cast<int> (numVecs), ldots.getRawPtr (),
+                          dots.getRawPtr ());
     }
   }
 
@@ -1306,7 +1298,6 @@ namespace Tpetra {
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
     using Teuchos::ArrayView;
-    using Teuchos::as;
     using Teuchos::reduceAll;
     using Teuchos::REDUCE_SUM;
     using Teuchos::ScalarTraits;
@@ -1314,7 +1305,7 @@ namespace Tpetra {
     typedef ScalarTraits<MT> STM;
 
     const size_t numVecs = this->getNumVectors();
-    TEUCHOS_TEST_FOR_EXCEPTION(as<size_t>(norms.size()) != numVecs,
+    TEUCHOS_TEST_FOR_EXCEPTION(static_cast<size_t>(norms.size()) != numVecs,
       std::runtime_error,
       "Tpetra::MultiVector::norm2(norms): norms.size() must be as large as the number of vectors in *this.");
     if (isConstantStride ()) {
@@ -1334,8 +1325,9 @@ namespace Tpetra {
       // FIXME (mfh 25 Apr 2012) Somebody explain to me why we're
       // calling Teuchos::reduceAll when MultiVector has a perfectly
       // good reduce() function.
-      reduceAll (*this->getMap ()->getComm (), REDUCE_SUM, as<int> (numVecs),
-                 lnorms.getRawPtr (), norms.getRawPtr ());
+      reduceAll (*this->getMap ()->getComm (), REDUCE_SUM,
+                 static_cast<int> (numVecs), lnorms.getRawPtr (),
+                 norms.getRawPtr ());
     }
     for (typename ArrayView<MT>::iterator n = norms.begin(); n != norms.begin()+numVecs; ++n) {
       (*n) = STM::squareroot (*n);
@@ -1353,7 +1345,6 @@ namespace Tpetra {
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
     using Teuchos::ArrayView;
-    using Teuchos::as;
     using Teuchos::reduceAll;
     using Teuchos::REDUCE_SUM;
     using Teuchos::ScalarTraits;
@@ -1383,7 +1374,7 @@ namespace Tpetra {
 #endif
     const size_t myLen = getLocalLength();
 
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(as<size_t>(norms.size()) != numVecs, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(static_cast<size_t>(norms.size()) != numVecs, std::runtime_error,
       ": norms.size() must be as large as the number of vectors in *this.");
     if (isConstantStride() && weights.isConstantStride()) {
       MVT::WeightedNorm(lclMV_,weights.lclMV_,norms);
@@ -1406,8 +1397,9 @@ namespace Tpetra {
     }
     if (this->isDistributed ()) {
       Array<Mag> lnorms(norms);
-      reduceAll (*this->getMap ()->getComm (), REDUCE_SUM, as<int>(numVecs),
-                 lnorms.getRawPtr (), norms.getRawPtr ());
+      reduceAll (*this->getMap ()->getComm (), REDUCE_SUM,
+                 static_cast<int> (numVecs), lnorms.getRawPtr (),
+                 norms.getRawPtr ());
     }
     for (typename ArrayView<Mag>::iterator n = norms.begin(); n != norms.begin()+numVecs; ++n) {
       *n = ScalarTraits<Mag>::squareroot(*n * OneOverN);
@@ -1423,14 +1415,15 @@ namespace Tpetra {
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
     using Teuchos::arcp_const_cast;
-    using Teuchos::as;
     using Teuchos::reduceAll;
     using Teuchos::REDUCE_SUM;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
 
     const size_t numVecs = this->getNumVectors();
-    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(norms.size()) != numVecs, std::runtime_error,
-        "Tpetra::MultiVector::norm1(norms): norms.size() must be as large as the number of vectors in *this.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      static_cast<size_t>(norms.size()) != numVecs, std::runtime_error,
+      "Tpetra::MultiVector::norm1(norms): norms.size() must be as large "
+      "as the number of vectors in *this.");
     if (isConstantStride()) {
       MVT::Norm1(lclMV_,norms);
     }
@@ -1445,7 +1438,9 @@ namespace Tpetra {
     }
     if (this->isDistributed ()) {
       Array<Mag> lnorms (norms);
-      reduceAll (*this->getMap ()->getComm (), REDUCE_SUM, as<int> (numVecs), lnorms.getRawPtr (), norms.getRawPtr ());
+      reduceAll (*this->getMap ()->getComm (), REDUCE_SUM,
+                 static_cast<int> (numVecs), lnorms.getRawPtr (),
+                 norms.getRawPtr ());
     }
   }
 
@@ -1458,13 +1453,12 @@ namespace Tpetra {
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
     using Teuchos::arcp_const_cast;
-    using Teuchos::as;
     using Teuchos::reduceAll;
     using Teuchos::REDUCE_MAX;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
 
     const size_t numVecs = this->getNumVectors();
-    TEUCHOS_TEST_FOR_EXCEPTION(as<size_t>(norms.size()) != numVecs, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(static_cast<size_t>(norms.size()) != numVecs, std::runtime_error,
       "Tpetra::MultiVector::normInf(norms): norms.size() must be as large as the number of vectors in *this.");
     if (isConstantStride ()) {
       MVT::NormInf(lclMV_,norms);
@@ -1480,7 +1474,9 @@ namespace Tpetra {
     }
     if (this->isDistributed()) {
       Array<Mag> lnorms(norms);
-      reduceAll (*this->getMap ()->getComm (), REDUCE_MAX, as<int> (numVecs), lnorms.getRawPtr (), norms.getRawPtr ());
+      reduceAll (*this->getMap ()->getComm (), REDUCE_MAX,
+                 static_cast<int> (numVecs), lnorms.getRawPtr (),
+                 norms.getRawPtr ());
     }
   }
 
@@ -1493,15 +1489,13 @@ namespace Tpetra {
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
     using Teuchos::arcp_const_cast;
-    using Teuchos::as;
-    using Teuchos::arcp_const_cast;
     using Teuchos::reduceAll;
     using Teuchos::REDUCE_SUM;
     typedef Teuchos::ScalarTraits<Scalar> SCT;
 
     const size_t numVecs = getNumVectors();
     const size_t myLen   = getLocalLength();
-    TEUCHOS_TEST_FOR_EXCEPTION(as<size_t>(means.size()) != numVecs, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(static_cast<size_t>(means.size()) != numVecs, std::runtime_error,
       "Tpetra::MultiVector::meanValue(): means.size() must be as large as the number of vectors in *this.");
     // compute local components of the means
     // sum these across all nodes
@@ -1520,14 +1514,15 @@ namespace Tpetra {
     if (this->isDistributed()) {
       Array<Scalar> lmeans(means);
       // only combine if we are a distributed MV
-      reduceAll (*this->getMap ()->getComm (), REDUCE_SUM, as<int> (numVecs),
-                 lmeans.getRawPtr (), means.getRawPtr ());
+      reduceAll (*this->getMap ()->getComm (), REDUCE_SUM,
+                 static_cast<int> (numVecs), lmeans.getRawPtr (),
+                 means.getRawPtr ());
     }
     // mfh 12 Apr 2012: Don't take out the cast from the ordinal type
     // to the magnitude type, since operator/ (std::complex<T>, int)
     // isn't necessarily defined.
     const Scalar OneOverN =
-      SCT::one() / as<typename SCT::magnitudeType> (getGlobalLength ());
+      SCT::one() / static_cast<typename SCT::magnitudeType> (getGlobalLength ());
     for (typename ArrayView<Scalar>::iterator i = means.begin();
          i != means.begin() + numVecs;
          ++i)
@@ -1710,10 +1705,9 @@ namespace Tpetra {
   {
     using Teuchos::arcp_const_cast;
     using Teuchos::ArrayRCP;
-    using Teuchos::as;
 
     const size_t numVecs = this->getNumVectors();
-    TEUCHOS_TEST_FOR_EXCEPTION(as<size_t>(alphas.size()) != numVecs, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(static_cast<size_t>(alphas.size()) != numVecs, std::runtime_error,
       "Tpetra::MultiVector::scale(alphas): alphas.size() must be as large as the number of vectors in *this.");
 
     // Unfortunately, MVT doesn't have a Scale method that works on a
@@ -1782,7 +1776,6 @@ namespace Tpetra {
   {
     using Teuchos::arcp_const_cast;
     using Teuchos::ArrayRCP;
-    using Teuchos::as;
 
     const char tfecfFuncName[] = "scale(alpha,A)";
 
@@ -1825,7 +1818,6 @@ namespace Tpetra {
   {
     using Teuchos::arcp_const_cast;
     using Teuchos::ArrayRCP;
-    using Teuchos::as;
 
     const char tfecfFuncName[] = "reciprocal()";
 
@@ -1871,7 +1863,6 @@ namespace Tpetra {
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::abs(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A) {
     using Teuchos::arcp_const_cast;
     using Teuchos::ArrayRCP;
-    using Teuchos::as;
 
     const char tfecfFuncName[] = "abs()";
 #ifdef HAVE_TPETRA_DEBUG
@@ -1912,7 +1903,6 @@ namespace Tpetra {
   {
     using Teuchos::arcp_const_cast;
     using Teuchos::ArrayRCP;
-    using Teuchos::as;
 
     const char tfecfFuncName[] = "update()";
     // this = beta*this + alpha*A
@@ -1957,7 +1947,6 @@ namespace Tpetra {
   {
     using Teuchos::arcp_const_cast;
     using Teuchos::ArrayRCP;
-    using Teuchos::as;
 
     const char tfecfFuncName[] = "update()";
     // this = alpha*A + beta*B + gamma*this
@@ -2319,7 +2308,6 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   subViewNonConst (const ArrayView<const size_t> &cols)
   {
-    using Teuchos::as;
     using Teuchos::arcp_const_cast;
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
@@ -2334,7 +2322,7 @@ namespace Tpetra {
     }
     // else, lookup current whichVectors_ using cols
     Array<size_t> newcols(cols.size());
-    for (size_t j = 0; j < as<size_t> (cols.size ()); ++j) {
+    for (size_t j = 0; j < static_cast<size_t> (cols.size ()); ++j) {
       newcols[j] = whichVectors_[cols[j]];
     }
     return rcp (new MV (this->getMap (), MVT::getValuesNonConst (lclMV_), MVT::getStride (lclMV_), newcols (), COMPUTE_VIEW_CONSTRUCTOR));
@@ -2346,7 +2334,6 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   subViewNonConst (const Teuchos::Range1D &colRng)
   {
-    using Teuchos::as;
     using Teuchos::arcp_const_cast;
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
@@ -2433,8 +2420,10 @@ namespace Tpetra {
     const char tfecfFuncName[] = "get1dCopy(A,LDA)";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(LDA < getLocalLength(), std::runtime_error,
       ": specified stride is not large enough for local vector length.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(A.size()) < LDA*(getNumVectors()-1)+getLocalLength(), std::runtime_error,
-      ": specified stride/storage is not large enough for the number of vectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      static_cast<size_t> (A.size ()) < LDA * (getNumVectors() - 1) + getLocalLength (),
+      std::runtime_error, ": specified stride/storage is not large enough for "
+      "the number of vectors.");
     RCP<Node> node = MVT::getNode(lclMV_);
     const size_t myStride = MVT::getStride(lclMV_),
                   numCols = getNumVectors(),
@@ -2459,15 +2448,15 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   get2dCopy (Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> > ArrayOfPtrs) const
   {
-    using Teuchos::as;
     using Teuchos::ArrayRCP;
     using Teuchos::ArrayView;
     using Teuchos::RCP;
     using Teuchos::rcp;
 
     const char tfecfFuncName[] = "get2dCopy(ArrayOfPtrs)";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(ArrayOfPtrs.size()) != getNumVectors(), std::runtime_error,
-        ": Array of pointers must contain as many pointers as the MultiVector has rows.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      static_cast<size_t> (ArrayOfPtrs.size ()) != getNumVectors(), std::runtime_error,
+      ": Array of pointers must contain as many pointers as the MultiVector has rows.");
     RCP<Node> node = MVT::getNode(lclMV_);
     const size_t numCols = getNumVectors(),
                    myLen = getLocalLength();
@@ -2476,8 +2465,10 @@ namespace Tpetra {
       ArrayRCP<const Scalar> myview = node->template viewBuffer<Scalar>(mybuff.size(), mybuff);
       for (size_t j=0; j<numCols; ++j) {
 #ifdef HAVE_TPETRA_DEBUG
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(as<size_t>(ArrayOfPtrs[j].size()) != getLocalLength(), std::runtime_error,
-          ": The ArrayView provided in ArrayOfPtrs[" << j << "] was not large enough to contain the local entries.");
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+          static_cast<size_t> (ArrayOfPtrs[j].size ()) != getLocalLength (),
+          std::runtime_error, ": The ArrayView provided in ArrayOfPtrs[" << j
+          << "] was not large enough to contain the local entries.");
 #endif
         ArrayRCP<const Scalar> myviewj = getSubArrayRCP(myview,j);
         std::copy(myviewj,myviewj+myLen,ArrayOfPtrs[j].begin());
@@ -2622,7 +2613,6 @@ namespace Tpetra {
     using Teuchos::CONJ_TRANS;
     using Teuchos::null;
     using Teuchos::ScalarTraits;  // traits
-    using Teuchos::as;
     using Teuchos::RCP;
     using Teuchos::rcp;
     typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
@@ -2781,7 +2771,6 @@ namespace Tpetra {
     using Teuchos::Array;
     using Teuchos::ArrayView;
     using Teuchos::ArrayRCP;
-    using Teuchos::as;
     using Teuchos::RCP;
     using Teuchos::reduceAll;
     using Teuchos::REDUCE_SUM;
@@ -2825,7 +2814,7 @@ namespace Tpetra {
       target = tmparr();
     }
     // reduce
-    reduceAll<int,Scalar> (*comm, REDUCE_SUM, as<int> (numCols*myLen),
+    reduceAll<int,Scalar> (*comm, REDUCE_SUM, static_cast<int> (numCols*myLen),
                            sourceBuffer.getRawPtr (), target.getRawPtr ());
     if (! packed) {
       // copy tmparr back into view
@@ -2866,7 +2855,7 @@ namespace Tpetra {
 #endif
     const size_t colInd = isConstantStride () ?
       VectorIndex : whichVectors_[VectorIndex];
-    lclMV_.replaceLocalValue (Teuchos::as<size_t> (MyRow), colInd, ScalarValue);
+    lclMV_.replaceLocalValue (static_cast<size_t> (MyRow), colInd, ScalarValue);
   }
 
 
@@ -2895,7 +2884,7 @@ namespace Tpetra {
 #endif
     const size_t colInd = isConstantStride () ?
       VectorIndex : whichVectors_[VectorIndex];
-    lclMV_.sumIntoLocalValue (Teuchos::as<size_t> (MyRow), colInd, ScalarValue);
+    lclMV_.sumIntoLocalValue (static_cast<size_t> (MyRow), colInd, ScalarValue);
   }
 
 

@@ -42,15 +42,10 @@
 #ifndef TPETRA_KOKKOS_REFACTOR_MULTIVECTOR_DEF_HPP
 #define TPETRA_KOKKOS_REFACTOR_MULTIVECTOR_DEF_HPP
 
-#include <Kokkos_DefaultArithmetic.hpp>
-#include <Teuchos_as.hpp>
-#include <Tpetra_Util.hpp>
-#include <Tpetra_Vector.hpp>
-
 #include <Tpetra_KokkosRefactor_Details_MultiVectorDistObjectKernels.hpp>
 
 #ifdef DOXYGEN_USE_ONLY
-  #include "Tpetra_KokkosRefactor_MultiVector_decl.hpp"
+#  include "Tpetra_KokkosRefactor_MultiVector_decl.hpp"
 #endif
 
 #include <KokkosCompat_View.hpp>
@@ -244,7 +239,6 @@ namespace { // (anonymous)
     view_ (view),
     origView_ (view)
   {
-    using Teuchos::as;
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
     const char tfecfFuncName[] = "Tpetra::MultiVector(map,view)";
@@ -279,7 +273,6 @@ namespace { // (anonymous)
     view_ (view),
     origView_ (origView)
   {
-    using Teuchos::as;
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
     const char tfecfFuncName[] = "Tpetra::MultiVector(map,view,origView)";
@@ -320,7 +313,6 @@ namespace { // (anonymous)
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    using Teuchos::as;
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
     const char tfecfFuncName[] = "MultiVector(map,view,whichVectors)";
@@ -374,7 +366,6 @@ namespace { // (anonymous)
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    using Teuchos::as;
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
     const char tfecfFuncName[] = "MultiVector(map,view,whichVectors)";
@@ -463,14 +454,13 @@ namespace { // (anonymous)
     base_type (map),
     lclMV_ (map->getNode ())
   {
-    using Teuchos::as;
     using Teuchos::ArrayRCP;
     using Teuchos::ArrayView;
     using Teuchos::RCP;
     const char tfecfFuncName[] = "MultiVector(map,ArrayOfPtrs,NumVectors)";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      NumVectors < 1 || NumVectors != as<size_t>(ArrayOfPtrs.size()),
+      NumVectors < 1 || NumVectors != static_cast<size_t>(ArrayOfPtrs.size()),
       std::runtime_error,
       ": ArrayOfPtrs.size() must be strictly positive and as large as ArrayOfPtrs.");
     const size_t myLen = getLocalLength ();
@@ -689,7 +679,6 @@ namespace { // (anonymous)
   {
     using Teuchos::Array;
     using Teuchos::ArrayView;
-    using Teuchos::as;
     using Kokkos::Compat::getKokkosViewDeepCopy;
     typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > MV;
     //typedef Array<size_t>::size_type size_type; // unused
@@ -789,7 +778,6 @@ namespace { // (anonymous)
     CombineMode CM)
   {
     using Teuchos::ArrayView;
-    using Teuchos::as;
     using Kokkos::Compat::getKokkosViewDeepCopy;
     const char tfecfFuncName[] = "unpackAndCombine";
 
@@ -814,7 +802,7 @@ namespace { // (anonymous)
 
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      as<size_t> (imports.size()) != getNumVectors()*importLIDs.size(),
+      static_cast<size_t> (imports.size()) != getNumVectors()*importLIDs.size(),
       std::runtime_error,
       ": 'imports' buffer size must be consistent with the amount of data to "
       "be sent.  " << std::endl << "imports.size() = " << imports.size()
@@ -823,11 +811,11 @@ namespace { // (anonymous)
       << ".");
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      as<size_t> (constantNumPackets) == as<size_t> (0), std::runtime_error,
+      constantNumPackets == static_cast<size_t> (0), std::runtime_error,
       ": constantNumPackets input argument must be nonzero.");
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      as<size_t> (numVecs) != as<size_t> (constantNumPackets),
+      static_cast<size_t> (numVecs) != static_cast<size_t> (constantNumPackets),
       std::runtime_error, ": constantNumPackets must equal numVecs.");
 #endif // HAVE_TPETRA_DEBUG
 
@@ -923,15 +911,145 @@ namespace { // (anonymous)
   dot (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &A,
        const Teuchos::ArrayView<dot_type>& dots) const
   {
+    using Kokkos::ALL;
+    using Kokkos::subview;
+    using Teuchos::REDUCE_SUM;
+    using Teuchos::reduceAll;
+    // View of a MultiVector's local data (all columns).
+    typedef typename dual_view_type::t_dev mv_view_type;
+    // View of a single column of a MultiVector's local data.
+    //
+    // FIXME (mfh 14 Jul 2014) It would be better to get this typedef
+    // from mv_view_type itself, in case the layout changes.
+    typedef Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type> vec_view_type;
     typedef typename dual_view_type::host_mirror_device_type host_mirror_device_type;
-    typedef Kokkos::View<dot_type*, device_type> dev_dots_view_type;
-    typedef Kokkos::View<dot_type*, typename dev_dots_view_type::array_layout, host_mirror_device_type, Kokkos::MemoryUnmanaged> host_dots_view_type;
+    // View of all the dot product results.
+    typedef Kokkos::View<dot_type*, Kokkos::LayoutLeft,
+      host_mirror_device_type, Kokkos::MemoryUnmanaged> host_dots_view_type;
+    typedef Kokkos::View<dot_type*, Kokkos::LayoutLeft,
+      host_mirror_device_type> host_dots_managed_view_type;
+    const char tfecfFuncName[] = "Tpetra::MultiVector::dot";
 
+#ifdef HAVE_TPETRA_DEBUG
+    {
+      const bool compat = this->getMap ()->isCompatible (* (A.getMap ()));
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        ! compat, std::invalid_argument, "Tpetra::MultiVector::dot: *this is "
+        "not compatible with the input MultiVector A.  We only test for this "
+        "in a debug build.");
+    }
+#endif //  HAVE_TPETRA_DEBUG
+
+    // FIXME (mfh 11 Jul 2014) These exception tests may not
+    // necessarily be thrown on all processes consistently.  We should
+    // instead pass along error state with the inner product.  We
+    // could do this by setting an extra slot to
+    // Kokkos::Details::ArithTraits<dot_type>::one() on error.  The
+    // final sum should be
+    // Kokkos::Details::ArithTraits<dot_type>::zero() if not error.
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      getLocalLength () != A.getLocalLength (), std::runtime_error,
+      ": MultiVectors do not have the same local length.  "
+      "this->getLocalLength() = " << getLocalLength () << " != "
+      "A.getLocalLength() = " << A.getLocalLength () << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      getNumVectors () != A.getNumVectors (), std::runtime_error,
+      ": MultiVectors must have the same number of columns (vectors).  "
+      "this->getNumVectors() = " << getNumVectors () << " != "
+      "A.getNumVectors() = " << A.getNumVectors () << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      dots.size () != getNumVectors (), std::runtime_error, ": The output "
+      "array 'dots' must have the same number of entries as the number of "
+      "columns (vectors) in *this and A.  dots.size() = " << dots.size ()
+      << " != this->getNumVectors() = " << getNumVectors () << ".");
+
+    // const size_t numVecs = getNumVectors (); // not used
+    const size_t lclNumRows = getLocalLength ();
     const size_t numDots = static_cast<size_t> (dots.size ());
-    host_dots_view_type dotsHostView (dots.getRawPtr (), numDots);
-    dev_dots_view_type dotsDevView ("MV::dot tmp", numDots);
-    this->dot (A, dotsDevView); // Do the computation on the device.
-    Kokkos::deep_copy (dotsHostView, dotsDevView); // Bring back result to host
+
+    // We're computing using the device's data, so we need to make
+    // sure first that the device is in sync with the host.
+    A.view_.template sync<DeviceType> ();
+    view_.template sync<DeviceType> ();
+
+    // In case the input dimensions don't match, make sure that we
+    // don't overwrite memory that doesn't belong to us, by using
+    // subset views with the minimum dimensions over all input.
+    const std::pair<size_t, size_t> rowRng (0, lclNumRows);
+    const std::pair<size_t, size_t> colRng (0, numDots);
+    mv_view_type X = subview<mv_view_type> (view_.d_view, rowRng, colRng);
+    mv_view_type Y = subview<mv_view_type> (A.view_.d_view, rowRng, colRng);
+
+    if (numDots == 1) {
+      // Special case 1: Both MultiVectors only have a single column.
+      // The single-vector dot product kernel may be more efficient.
+      const size_t ZERO = static_cast<size_t> (0);
+      vec_view_type X_k = subview<vec_view_type> (X, ALL (), ZERO);
+      vec_view_type Y_k = subview<vec_view_type> (Y, ALL (), ZERO);
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        X_k.dimension_0 () != lclNumRows, std::logic_error, "Tpetra::Multi"
+        "Vector::dot: In the special single-vector case, X_k.dimension_0() = "
+        << X_k.dimension_0 () << " != lclNumRows = " << lclNumRows
+        << ".  Please report this bug to the Tpetra developers.");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        Y_k.dimension_0 () != lclNumRows, std::logic_error, "Tpetra::Multi"
+        "Vector::dot: In the special single-vector case, Y_k.dimension_0() = "
+        << Y_k.dimension_0 () << " != lclNumRows = " << lclNumRows
+        << ".  Please report this bug to the Tpetra developers.");
+
+      dots[0] = Kokkos::V_Dot<vec_view_type, vec_view_type> (X_k, Y_k, -1);
+    }
+    else if (isConstantStride () && A.isConstantStride ()) {
+      // Special case 2: Both MultiVectors have constant stride.
+      (void) Kokkos::MV_Dot (dots.getRawPtr (), X, Y, -1);
+    }
+    else {
+      // FIXME (mfh 14 Jul 2014) This does a kernel launch for every
+      // column.  It might be better to have a kernel that does the
+      // work all at once.  On the other hand, we don't prioritize
+      // performance of MultiVector views of noncontiguous columns.
+      for (size_t k = 0; k < numDots; ++k) {
+        const size_t X_col = isConstantStride () ? k : whichVectors_[k];
+        const size_t Y_col = A.isConstantStride () ? k : A.whichVectors_[k];
+        vec_view_type X_k = subview<vec_view_type> (X, ALL (), X_col);
+        vec_view_type Y_k = subview<vec_view_type> (Y, ALL (), Y_col);
+        dots[k] = Kokkos::V_Dot<vec_view_type, vec_view_type> (X_k, Y_k, -1);
+      }
+    }
+
+    // If the MultiVectors are distributed over multiple processes,
+    // sum the results across processes.  We assume that the MPI
+    // implementation can read from and write to device memory.
+    //
+    // replaceMap() may have removed some processes.  Those processes
+    // have a null Map.  They must not participate in any collective
+    // operations.  We ask first whether the Map is null, because
+    // isDistributed() defers that question to the Map.  We still
+    // compute and return local dot products for processes not
+    // participating in collective operations; those probably don't
+    // make any sense, but it doesn't hurt to do them, since it's
+    // illegal to call dot() on those processes anyway.
+    if (! this->getMap ().is_null () && this->isDistributed ()) {
+      host_dots_view_type theDots (dots.getRawPtr (), numDots);
+      // MPI doesn't allow aliasing of arguments, so we have to make a
+      // copy of the local sum.
+      host_dots_managed_view_type lclDots ("MV::dot lcl", numDots);
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        lclDots.dimension_0 () != theDots.dimension_0 (), std::logic_error,
+        "Tpetra::MultiVector::dot: lclDots and theDots have different sizes.  "
+        "lclDots.dimension_0 () = " << lclDots.dimension_0 () << " != "
+        "theDots.dimension_0 () = " << theDots.dimension_0 () << ".  "
+        "Please report this bug to the Tpetra developers.");
+
+      Kokkos::deep_copy (lclDots, theDots);
+      const Teuchos::Comm<int>& comm = * (this->getMap ()->getComm ());
+      const dot_type* const lclSum = lclDots.ptr_on_device ();
+      dot_type* const gblSum = theDots.ptr_on_device ();
+      reduceAll<int, dot_type> (comm, REDUCE_SUM, static_cast<int> (numDots),
+                                lclSum, gblSum);
+    }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -1258,7 +1376,6 @@ namespace { // (anonymous)
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
     using Teuchos::ArrayView;
-    using Teuchos::as;
     using Teuchos::reduceAll;
     using Teuchos::REDUCE_SUM;
     using Teuchos::ScalarTraits;
@@ -1286,7 +1403,8 @@ namespace { // (anonymous)
       ": MultiVectors do not have the same local length.");
 #endif
 
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(as<size_t>(norms.size()) != numVecs, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      static_cast<size_t> (norms.size ()) != numVecs, std::runtime_error,
       ": norms.size() must be as large as the number of vectors in *this.");
     typedef Kokkos::View<Scalar*,DeviceType> view_type;
     view_.template sync<DeviceType>();
@@ -1319,8 +1437,9 @@ namespace { // (anonymous)
     }
     if (this->isDistributed ()) {
       Array<Mag> lnorms(norms);
-      reduceAll (*this->getMap ()->getComm (), REDUCE_SUM, as<int>(numVecs),
-                 lnorms.getRawPtr (), norms.getRawPtr ());
+      reduceAll (*this->getMap ()->getComm (), REDUCE_SUM,
+                 static_cast<int> (numVecs), lnorms.getRawPtr (),
+                 norms.getRawPtr ());
     }
     for (typename ArrayView<Mag>::iterator n = norms.begin(); n != norms.begin()+numVecs; ++n) {
       *n = ScalarTraits<Mag>::squareroot(*n * OneOverN);
@@ -1591,8 +1710,6 @@ namespace { // (anonymous)
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
     using Teuchos::arcp_const_cast;
-    using Teuchos::as;
-    using Teuchos::arcp_const_cast;
     using Teuchos::reduceAll;
     using Teuchos::REDUCE_SUM;
 
@@ -1603,8 +1720,10 @@ namespace { // (anonymous)
 
     const size_t numVecs = getNumVectors();
 
-    TEUCHOS_TEST_FOR_EXCEPTION(as<size_t>(means.size()) != numVecs, std::runtime_error,
-      "Tpetra::MultiVector::meanValue(): means.size() must be as large as the number of vectors in *this.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      static_cast<size_t> (means.size ()) != numVecs, std::runtime_error,
+      "Tpetra::MultiVector::meanValue: means.size() must be as large as "
+      "the number of vectors in *this.");
     // compute local components of the means
     // sum these across all nodes
     view_.template sync<DeviceType>();
@@ -1624,14 +1743,14 @@ namespace { // (anonymous)
     if (this->isDistributed()) {
       Array<Scalar> lmeans(means);
       // only combine if we are a distributed MV
-      reduceAll (*this->getMap ()->getComm (), REDUCE_SUM, as<int> (numVecs),
+      reduceAll (*this->getMap ()->getComm (), REDUCE_SUM, static_cast<int> (numVecs),
                  lmeans.getRawPtr (), means.getRawPtr ());
     }
     // mfh 12 Apr 2012: Don't take out the cast from the ordinal type
     // to the magnitude type, since operator/ (std::complex<T>, int)
     // isn't necessarily defined.
     const Scalar OneOverN =
-      SCT::one() / as<typename SCT::magnitudeType> (getGlobalLength ());
+      SCT::one() / static_cast<typename SCT::magnitudeType> (getGlobalLength ());
     for (typename ArrayView<Scalar>::iterator i = means.begin();
          i != means.begin() + numVecs;
          ++i)
@@ -1917,7 +2036,6 @@ namespace { // (anonymous)
 
     using Teuchos::arcp_const_cast;
     using Teuchos::ArrayRCP;
-    using Teuchos::as;
 
     const char tfecfFuncName[] = "scale(alpha,A)";
 
@@ -1960,7 +2078,6 @@ namespace { // (anonymous)
 
     using Teuchos::arcp_const_cast;
     using Teuchos::ArrayRCP;
-    using Teuchos::as;
     const char tfecfFuncName[] = "reciprocal";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( getLocalLength() != A.getLocalLength(), std::runtime_error,
@@ -2609,18 +2726,24 @@ namespace { // (anonymous)
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   get1dCopy (Teuchos::ArrayView<Scalar> A, size_t LDA) const
   {
+    using Kokkos::ALL;
+    using Kokkos::subview;
     typedef typename dual_view_type::host_mirror_device_type host_mirror_device_type;
     // The user's array is column major ("LayoutLeft").
-    typedef Kokkos::View<Scalar**, Kokkos::LayoutLeft,
-      host_mirror_device_type, Kokkos::MemoryUnmanaged> input_view_type;
+    // typedef Kokkos::View<Scalar**, Kokkos::LayoutLeft,
+    //   host_mirror_device_type, Kokkos::MemoryUnmanaged> input_view_type;
+    typedef Kokkos::View<Scalar*, Kokkos::LayoutLeft,
+      host_mirror_device_type, Kokkos::MemoryUnmanaged> input_col_type;
     typedef typename dual_view_type::t_host host_view_type;
+    typedef Kokkos::View<Scalar*, typename host_view_type::array_layout,
+      device_type> host_col_type;
+    const char tfecfFuncName[] = "get1dCopy";
 
     const size_t numRows = this->getLocalLength ();
     const size_t numCols = this->getNumVectors ();
     const std::pair<size_t, size_t> rowRange (0, numRows);
     const std::pair<size_t, size_t> colRange (0, numCols);
 
-    const char tfecfFuncName[] = "get1dCopy";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       LDA < numRows, std::runtime_error,
       ": LDA = " << LDA << " < numRows = " << numRows << ".");
@@ -2640,26 +2763,51 @@ namespace { // (anonymous)
     // Start by sync'ing to host.
     view_.template sync<host_mirror_device_type> ();
 
-    input_view_type dstWholeView (A.getRawPtr (), LDA, numCols);
-    input_view_type dstView =
-      Kokkos::subview<input_view_type> (dstWholeView, rowRange, Kokkos::ALL ());
-    host_view_type srcView =
-      Kokkos::subview<host_view_type> (view_.h_view, rowRange, Kokkos::ALL ());
+    // FIXME (mfh 22 Jul 2014) These actually should be strided views.
+    // This causes a run-time error with deep copy.  The temporary fix
+    // is to copy one column at a time.
 
-    if (this->isConstantStride ()) {
-      Kokkos::deep_copy (dstView, srcView);
-    }
-    else {
-      // FIXME (mfh 10 Jul 2014) Shouldn't we use size_t instead of int here?
-      Kokkos::View<int*, host_mirror_device_type> whichVecsDst ("whichVecsDst", numCols);
-      Kokkos::View<int*, host_mirror_device_type> whichVecsSrc ("whichVecsSrc", numCols);
-      for (size_t j = 0; j < numCols; ++j) {
-        whichVecsSrc(j) = static_cast<int> (this->whichVectors_[j]);
-        whichVecsDst(j) = static_cast<int> (j);
-      }
-      DeepCopySelectedVectors<input_view_type, host_view_type,
-        host_mirror_device_type, false, false> f (dstView, srcView, whichVecsDst, whichVecsSrc);
-      Kokkos::parallel_for (numRows, f);
+    //input_view_type dstWholeView (A.getRawPtr (), LDA, numCols);
+    // input_view_type dstView =
+    //   Kokkos::subview<input_view_type> (dstWholeView, rowRange, Kokkos::ALL ());
+    // host_view_type srcView =
+    //   Kokkos::subview<host_view_type> (view_.h_view, rowRange, Kokkos::ALL ());
+
+    // if (this->isConstantStride ()) {
+    //   Kokkos::deep_copy (dstView, srcView);
+    // }
+    // else {
+    //   // FIXME (mfh 10 Jul 2014) Shouldn't we use size_t instead of int here?
+    //   Kokkos::View<int*, host_mirror_device_type> whichVecsDst ("whichVecsDst", numCols);
+    //   Kokkos::View<int*, host_mirror_device_type> whichVecsSrc ("whichVecsSrc", numCols);
+    //   for (size_t j = 0; j < numCols; ++j) {
+    //     whichVecsSrc(j) = static_cast<int> (this->whichVectors_[j]);
+    //     whichVecsDst(j) = static_cast<int> (j);
+    //   }
+    //   DeepCopySelectedVectors<input_view_type, host_view_type,
+    //     host_mirror_device_type, false, false> f (dstView, srcView, whichVecsDst, whichVecsSrc);
+    //   Kokkos::parallel_for (numRows, f);
+    // }
+
+    for (size_t j = 0; j < numCols; ++j) {
+      const size_t srcCol = this->isConstantStride () ? j : this->whichVectors_[j];
+      const size_t dstCol = j;
+      Scalar* const dstColRaw = A.getRawPtr () + LDA * dstCol;
+
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        static_cast<size_t> (A.size ()) < LDA * dstCol + numRows,
+        std::logic_error, ": The input ArrayView A is not big enough to hold "
+        "all the data.  Please report this bug to the Tpetra developers.");
+
+      input_col_type dstColView (dstColRaw, numRows);
+      host_col_type srcColView = subview<host_col_type> (view_.h_view, ALL (), srcCol);
+
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        dstColView.dimension_0 () != srcColView.dimension_0 (), std::logic_error,
+        ": srcColView and dstColView have different dimensions.  "
+        "Please report this bug to the Tpetra developers.");
+
+      Kokkos::deep_copy (dstColView, srcColView);
     }
   }
 
@@ -2841,7 +2989,6 @@ namespace { // (anonymous)
     using Teuchos::CONJ_TRANS;
     using Teuchos::null;
     using Teuchos::ScalarTraits;  // traits
-    using Teuchos::as;
     using Teuchos::RCP;
     using Teuchos::rcp;
     typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > MV;
