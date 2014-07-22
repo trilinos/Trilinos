@@ -47,7 +47,7 @@
 #include <sstream>
 #include <iostream>
 
-#include <Kokkos_ParallelReduce.hpp>
+#include <Kokkos_Parallel.hpp>
 
 /*--------------------------------------------------------------------------*/
 

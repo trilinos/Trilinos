@@ -46,9 +46,7 @@
 
 /*--------------------------------------------------------------------------*/
 
-#if ! defined( KOKKOS_DISABLE_ASM ) && \
-    ( defined( KOKKOS_COMPILER_GCC ) || \
-      defined( KOKKOS_COMPILER_INTEL ) )
+#if ( KOKKOS_ENABLE_ASM )
   #if defined( __arm__ )
     /* No-operation instruction to idle the thread. */
     #define YIELD   asm volatile("nop")

@@ -98,7 +98,7 @@ private:
 namespace Kokkos {
 
 inline __device__ 
-void * Cuda::get_shmem( const int size ) { return m_exec.get_shmem( size ); }
+void * Cuda::get_shmem( const int size ) const { return m_exec.get_shmem( size ); }
 
 } // namespace Kokkos
 
@@ -280,6 +280,9 @@ struct CudaParallelLaunch< DriverType , false > {
 
 } // namespace Impl
 } // namespace Kokkos
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 #endif /* defined( __CUDACC__ ) */
 

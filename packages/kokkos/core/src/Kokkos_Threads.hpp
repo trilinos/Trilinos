@@ -44,6 +44,8 @@
 #ifndef KOKKOS_THREADS_HPP
 #define KOKKOS_THREADS_HPP
 
+#include <Kokkos_Macros.hpp>
+
 #include <cstddef>
 #include <iosfwd>
 #include <Kokkos_Layout.hpp>
@@ -73,6 +75,7 @@ public:
 
   typedef Threads                  device_type ;
   typedef Kokkos::HostSpace        memory_space ;
+  typedef Threads                  scratch_memory_space ;
   typedef memory_space::size_type  size_type ;
   typedef Kokkos::LayoutRight      array_layout ;
   typedef Kokkos::Threads          host_mirror_device_type ;
@@ -123,6 +126,8 @@ public:
   static void print_configuration( std::ostream & , const bool detail = false );
 
   //@}
+  //--------------------------------------------------------------------------
+  //--------------------------------------------------------------------------
   //! \name Function for the functor device interface */
   //@{
 
@@ -153,11 +158,12 @@ public:
   template< typename TypeLocal , typename TypeGlobal >
   KOKKOS_INLINE_FUNCTION TypeGlobal team_scan( const TypeLocal & value , TypeGlobal * const global_accum );
 
-  KOKKOS_INLINE_FUNCTION void * get_shmem( const int size );
+  KOKKOS_INLINE_FUNCTION void * get_shmem( const int size ) const ;
 
   explicit inline Threads( Impl::ThreadsExec & );
 
   /**@} */
+  /*------------------------------------------------------------------------*/
   /*------------------------------------------------------------------------*/
   //! \name Device-specific functions
   //@{
@@ -186,6 +192,8 @@ public:
 
   static int is_initialized();
 
+  static Threads & instance( int = 0 );
+
   /** \brief  Maximum size of a single thread team.
    *
    *  If a parallel_{for,reduce,scan} operation requests a team_size that
@@ -211,12 +219,14 @@ private:
 
 } // namespace Kokkos
 
+#include <Kokkos_ExecPolicy.hpp>
 #include <Kokkos_Parallel.hpp>
 #include <Threads/Kokkos_ThreadsExec.hpp>
 #include <Threads/Kokkos_Threads_Parallel.hpp>
 
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
 #endif /* #define KOKKOS_THREADS_HPP */
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
 

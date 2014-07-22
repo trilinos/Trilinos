@@ -298,8 +298,6 @@ public:
   static void resize_worker_scratch( const int reduce_size , const int shared_size );
   static void clear_workers();
 
-  Qthread space() { return Qthread( *this ); }
-
   //----------------------------------------
 
   inline int worker_rank() const { return m_worker_rank ; }
@@ -317,8 +315,8 @@ public:
 
 namespace Kokkos {
 
-template<>
-class ExecPolicyTeam< Kokkos::Qthread > {
+template< class WorkArgTag >
+class TeamPolicy< Kokkos::Qthread , WorkArgTag > {
 private:
   const int m_league_size ;
   const int m_team_size ;
@@ -331,10 +329,10 @@ public:
 
 
   // One active team per shepherd
-  ExecPolicyTeam( Kokkos::Qthread & q
-                , const int league_size
-                , const int team_size
-                )
+  TeamPolicy( Kokkos::Qthread & q
+            , const int league_size
+            , const int team_size
+            )
     : m_league_size( league_size )
     , m_team_size( team_size < q.shepherd_worker_size()
                  ? team_size : q.shepherd_worker_size() )
@@ -342,7 +340,18 @@ public:
     {
     }
 
-  class index_type {
+  // One active team per shepherd
+  TeamPolicy( const int league_size
+            , const int team_size
+            )
+    : m_league_size( league_size )
+    , m_team_size( team_size < Qthread::instance().shepherd_worker_size()
+                 ? team_size : Qthread::instance().shepherd_worker_size() )
+    , m_shepherd_iter( ( league_size + Qthread::instance().shepherd_size() - 1 ) / Qthread::instance().shepherd_size() )
+    {
+    }
+
+  class member_type {
   private:
           Impl::QthreadExec   & m_exec ;
     const int                   m_team_size ;
@@ -353,7 +362,9 @@ public:
 
   public:
 
-    KOKKOS_INLINE_FUNCTION Qthread space() const { return m_exec.space(); }
+    KOKKOS_INLINE_FUNCTION
+    Kokkos::Qthread::scratch_memory_space team_shmem() const
+      { return Kokkos::Qthread::scratch_memory_space( m_exec ); }
 
     KOKKOS_INLINE_FUNCTION int league_rank() const { return m_league_rank ; }
     KOKKOS_INLINE_FUNCTION int league_size() const { return m_league_size ; }
@@ -386,10 +397,17 @@ public:
       { return m_exec.template shepherd_scan<Type>( m_team_size , value , global_accum ); }
 
     //----------------------------------------
-    // Private for the driver ( for ( index_type i(exec,team); i ; i.next_team() ) { ... }
+    // Private for the driver ( for ( member_type i(exec,team); i ; i.next_team() ) { ... }
 
     // Initialize
-    index_type( Impl::QthreadExec & exec , const ExecPolicyTeam & team );
+    member_type( Impl::QthreadExec & exec , const TeamPolicy & team )
+      : m_exec( exec )
+      , m_team_size(   team.m_team_size )
+      , m_team_rank(   exec.shepherd_worker_rank() )
+      , m_league_size( team.m_league_size )
+      , m_league_end(  team.m_league_size - team.m_shepherd_iter * ( exec.shepherd_size() - ( exec.shepherd_rank() + 1 ) ) )
+      , m_league_rank( m_league_end > team.m_shepherd_iter ? m_league_end - team.m_shepherd_iter : 0 )
+    {}
 
     // Continue
     operator bool () const { return m_league_rank < m_league_end ; }

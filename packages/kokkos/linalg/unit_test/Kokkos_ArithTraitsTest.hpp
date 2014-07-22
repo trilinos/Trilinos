@@ -56,7 +56,7 @@
 #ifndef KOKKOS_ARITHTRAITSTEST_HPP
 #define KOKKOS_ARITHTRAITSTEST_HPP
 
-#include <Kokkos_ParallelReduce.hpp>
+#include <Kokkos_Parallel.hpp>
 #include "Kokkos_ArithTraits.hpp"
 #include <limits> // std::numeric_limits
 #include <typeinfo> // typeid (T)

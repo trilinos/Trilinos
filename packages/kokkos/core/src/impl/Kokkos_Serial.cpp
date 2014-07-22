@@ -116,7 +116,7 @@ void * Serial::resize_shared_scratch( unsigned size )
   return s.m_shared ;
 }
 
-void * Serial::get_shmem( const int size )
+void * Serial::get_shmem( const int size ) const
 {
   static Sentinel & s = Sentinel::singleton();
 

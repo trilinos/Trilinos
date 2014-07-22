@@ -137,12 +137,10 @@ public:
     const unsigned long nsum = nw % 2 ? nw * (( nw + 1 )/2 )
                                       : (nw/2) * ( nw + 1 );
 
-    enum { TEAM_SIZE = 256 };
-
     Kokkos::ParallelWorkRequest request ; 
 
-    request.team_size   = TEAM_SIZE ;
-    request.league_size = ( nwork + TEAM_SIZE - 1 ) / TEAM_SIZE ;
+    request.team_size   = device_type::team_max() ;
+    request.league_size = ( nwork + request.team_size - 1 ) / request.team_size ;
 
     for ( unsigned i = 0 ; i < Repeat ; ++i ) {
       Kokkos::parallel_reduce( request , functor_type(nwork) , result[i] );
@@ -332,8 +330,8 @@ struct TestSharedRequest {
 
     Kokkos::ParallelWorkRequest request ;
 
-    request.team_size   = Device::team_recommended();
-    request.league_size = 8192 / Device::team_recommended();
+    request.team_size   = Device::team_max();
+    request.league_size = 8192 / Device::team_max();
 
     int error_count = 0 ;
 

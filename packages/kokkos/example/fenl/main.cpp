@@ -10,9 +10,12 @@
 #include <iostream>
 #include <iomanip>
 
-#include <KokkosCore_config.h>
+#include <Kokkos_Macros.hpp>
 #include <Kokkos_hwloc.hpp>
+
+#if defined( KOKKOS_HAVE_PTHREAD )
 #include <Kokkos_Threads.hpp>
+#endif
 
 #if defined( KOKKOS_HAVE_CUDA )
 #include <Kokkos_Cuda.hpp>

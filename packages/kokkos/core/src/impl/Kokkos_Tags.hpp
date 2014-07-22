@@ -48,67 +48,8 @@
 
 #include <impl/Kokkos_Traits.hpp>
 
-namespace Kokkos {
-#if   defined ( KOKKOS_HAVE_CUDA )
-class Cuda ;
-#endif
-#if   defined ( KOKKOS_HAVE_OPENMP )
-class OpenMP ;
-#endif
-#if   defined ( KOKKOS_HAVE_PTHREAD )
-class Threads ;
-#endif
-class Serial ;
-} // namespace Kokkos
-
-
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-
-/// Define DefaultDeviceType
-/// The DefaultDeviceType can either be set externally via
-/// KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_**** or is chosen according to the active
-/// Device types with following priority: Cuda,OpenMP,Threads,Serial
-
-namespace Kokkos {
-namespace Impl {
-  #if   defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_CUDA ) && \
-       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_OPENMP ) && \
-       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_THREADS ) && \
-       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_SERIAL )
-    typedef Cuda DefaultDeviceType;
-  #elif defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_OPENMP ) && \
-       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_CUDA ) && \
-       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_THREADS ) && \
-       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_SERIAL )
-    typedef OpenMP DefaultDeviceType;
-  #elif defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_THREADS ) && \
-       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_OPENMP ) && \
-       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_CUDA ) && \
-       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_SERIAL )
-    typedef Threads DefaultDeviceType;
-  #elif defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_SERIAL ) && \
-       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_OPENMP ) && \
-       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_THREADS ) && \
-       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_CUDA )
-    typedef Serial DefaultDeviceType;
-  #else
-    #if   defined ( KOKKOS_HAVE_CUDA )
-      typedef Kokkos::Cuda DefaultDeviceType;
-      #define KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_CUDA
-    #elif defined ( KOKKOS_HAVE_OPENMP )
-      typedef Kokkos::OpenMP DefaultDeviceType;
-      #define KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_OPENMP
-    #elif defined ( KOKKOS_HAVE_PTHREAD )
-      typedef Kokkos::Threads DefaultDeviceType;
-      #define KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_THREADS
-    #else
-      typedef Kokkos::Serial DefaultDeviceType;
-      #define KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_SERIAL
-    #endif
-  #endif
-}
-}
 
 namespace Kokkos {
 namespace Impl {
@@ -122,7 +63,22 @@ struct ExecutionPolicyTag {};
 struct ExecutionSpaceTag {};
 struct MemorySpaceTag {};
 
+template< class C , bool b = Impl::is_same< typename C::kokkos_tag , Impl::ExecutionPolicyTag >::value >
+struct is_execution_policy : public bool_< b > {};
+
+template< class C , bool b = Impl::is_same< typename C::kokkos_tag , Impl::ExecutionSpaceTag >::value >
+struct is_execution_space : public bool_< b > {};
+
+
+template< class C , bool b = Impl::is_same< typename C::kokkos_tag , Impl::MemorySpaceTag >::value >
+struct is_memory_space : public bool_< b > {};
+
 }
+
+
+
+
+
 
 template< class C , class Enable = void >
 struct is_layout : public Impl::false_type {};

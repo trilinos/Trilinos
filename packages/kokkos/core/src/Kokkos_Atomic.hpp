@@ -86,11 +86,13 @@
 // Choose the best implementation for the detected compiler.
 // Preference: GCC, INTEL, OMP31
 
-#if defined( __GNUC__ ) || defined( __GNUG__ ) || defined( __clang__ )
+#if defined( KOKKOS_COMPILER_GNU ) || \
+    defined( KOKKOS_COMPILER_CLANG )
 
 #define KOKKOS_ATOMICS_USE_GCC
 
-#elif defined( __INTEL_COMPILER ) || defined( _CRAYC)
+#elif defined( KOKKOS_COMPILER_INTEL ) || \
+      defined( KOKKOS_COMPILER_CRAYC )
 
 #define KOKKOS_ATOMICS_USE_INTEL
 

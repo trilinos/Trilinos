@@ -46,17 +46,20 @@
 #ifndef KOKKOS_CORE_HPP
 #define KOKKOS_CORE_HPP
 
+//----------------------------------------------------------------------------
+// Include the execution space header files for the enabled execution spaces.
+
 #include <Kokkos_Macros.hpp>
 
-#if defined KOKKOS_HAVE_CUDA
+#if defined( KOKKOS_HAVE_CUDA )
 #include <Kokkos_Cuda.hpp>
 #endif
 
-#if defined KOKKOS_HAVE_OPENMP
+#if defined( KOKKOS_HAVE_OPENMP )
 #include <Kokkos_OpenMP.hpp>
 #endif
 
-#if defined KOKKOS_HAVE_PTHREAD
+#if defined( KOKKOS_HAVE_PTHREAD )
 #include <Kokkos_Threads.hpp>
 #endif
 
@@ -67,6 +70,7 @@
 #include <Kokkos_Atomic.hpp>
 #include <Kokkos_hwloc.hpp>
 
+//----------------------------------------------------------------------------
 
 namespace Kokkos {
   void initialize();

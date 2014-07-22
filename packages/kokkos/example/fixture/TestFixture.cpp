@@ -42,12 +42,11 @@
 */
 
 #include <TestFixture.hpp>
-#include <Kokkos_Threads.hpp>
 
 namespace Kokkos {
 namespace Example {
 
-template void test_fixture<Kokkos::Threads>();
+template void test_fixture<HostExecSpace>();
 
 } /* namespace Example */
 } /* namespace Kokkos */

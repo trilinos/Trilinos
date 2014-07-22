@@ -41,6 +41,8 @@
 //@HEADER
 */
 
+#if 0
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -173,4 +175,6 @@ void Machine::print_configuration( std::ostream & msg ) const
 }
 
 }
+
+#endif /* #if 0 */
 

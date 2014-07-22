@@ -64,6 +64,7 @@
 #include <TestReduce.hpp>
 #include <TestScan.hpp>
 #include <TestRequest.hpp>
+#include <TestTeam.hpp>
 #include <TestMultiReduce.hpp>
 #include <TestAggregate.hpp>
 #include <TestCompilerMacros.hpp>
@@ -110,6 +111,15 @@ void test_device_cuda_crsarray() {
 void test_device_cuda_reduce() {
   TestReduce< long ,   Kokkos::Cuda >( 10000000 );
   TestReduce< double , Kokkos::Cuda >( 1000000 );
+}
+
+void test_device_cuda_reduce_team() {
+  TestReduceTeam< long ,   Kokkos::Cuda >( 10000000 );
+  TestReduceTeam< double , Kokkos::Cuda >( 1000000 );
+}
+
+void test_device_cuda_shared_team() {
+  TestSharedTeam< Kokkos::Cuda >();
 }
 
 void test_device_cuda_reduce_request() {
@@ -259,7 +269,9 @@ void test_device_cuda_scan()
 void test_device_cuda_team_scan()
 {
   TestScanRequest< Kokkos::Cuda >( 10 );
+  TestScanTeam< Kokkos::Cuda >( 10 );
   TestScanRequest< Kokkos::Cuda >( 10000 );
+  TestScanTeam< Kokkos::Cuda >( 10000 );
 }
 
 }

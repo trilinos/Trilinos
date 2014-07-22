@@ -74,6 +74,7 @@ public:
 
   typedef Qthread                  device_type ;
   typedef Kokkos::HostSpace        memory_space ;
+  typedef Qthread                  scratch_memory_space ;
   typedef memory_space::size_type  size_type ;
   typedef Kokkos::LayoutRight      array_layout ;
   typedef Kokkos::Qthread          host_mirror_device_type ;
@@ -111,14 +112,13 @@ public:
   static void fence();
 
   /*------------------------------------------------------------------------*/
-  // Temporary member until split of 'execution_space' and 'shared_memory_space'.
 
-  typedef Kokkos::Qthread  shared_memory_space ;
+  Qthread( Impl::QthreadExec & e ) : m_exec(e) {}
 
   void * get_shmem( const int ) const ;
 
-  static
-  int team_recommended();
+  static int team_recommended();
+  static int team_max();
 
   /*------------------------------------------------------------------------*/
 
@@ -133,12 +133,10 @@ public:
 
 private:
 
-  // Temporary member until split of 'execution_space' and 'shared_memory_space'.
   friend class Impl::QthreadExec ;
 
   Impl::QthreadExec & m_exec ;
 
-  Qthread( Impl::QthreadExec & e ) : m_exec(e) {}
 };
 
 /*--------------------------------------------------------------------------*/

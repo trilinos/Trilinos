@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,41 +35,27 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
 
-#ifndef KOKKOS_PARALLELREDUCE_HPP
-#define KOKKOS_PARALLELREDUCE_HPP
+#ifndef KOKKOS_EXAMPLE_HOST_EXECSPACE
+#define KOKKOS_EXAMPLE_HOST_EXECSPACE
 
-#include <cstddef>
-#include <sstream>
-#include <Kokkos_Parallel.hpp>
-#include <impl/Kokkos_Error.hpp>
+#include <Kokkos_Macros.hpp>
 
-namespace Kokkos {
+#if defined( KOKKOS_HAVE_PTHREAD )
+#include <Kokkos_Threads.hpp>
+typedef Kokkos::Threads HostExecSpace ;
+#elif defined( KOKKOS_HAVE_OPENMP )
+#include <Kokkos_OpenMP.hpp>
+typedef Kokkos::OpenMP HostExecSpace ;
+#else
+#include <Kokkos_Serial.hpp>
+typedef Kokkos::Serial HostExecSpace ;
+#endif
 
-//----------------------------------------------------------------------------
-
-template< class FunctorType >
-void vector_parallel_reduce( const size_t work_count ,
-                             const FunctorType & functor ,
-                             typename Impl::ReduceAdapter< FunctorType >::reference_type result )
-
-{
-  Impl::ParallelReduce< FunctorType, VectorParallel >
-    reduce( functor , work_count , Kokkos::Impl::ReduceAdapter< FunctorType >::pointer( result ) );
-
-  reduce.wait();
-}
-
-//----------------------------------------------------------------------------
-
-} // namespace Kokkos
-
-//----------------------------------------------------------------------------
-
-#endif /* KOKKOS_PARALLELREDUCE_HPP */
+#endif /* #ifndef KOKKOS_EXAMPLE_HOST_EXECSPACE */
 

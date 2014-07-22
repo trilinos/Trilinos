@@ -43,6 +43,10 @@
 
 #include <gtest/gtest.h>
 
+#include <Kokkos_Macros.hpp>
+
+#if defined( KOKKOS_HAVE_PTHREAD )
+
 #include <Kokkos_Threads.hpp>
 #include <Kokkos_hwloc.hpp>
 
@@ -62,7 +66,6 @@
 
 namespace Test {
 
-#ifdef KOKKOS_HAVE_PTHREAD
 class threads : public ::testing::Test {
 protected:
   static void SetUpTestCase()
@@ -145,7 +148,8 @@ THREADS_DUALVIEW_COMBINE_TEST( 10 )
 #undef THREADS_VECTOR_COMBINE_TEST
 #undef THREADS_DUALVIEW_COMBINE_TEST
 
-#endif
 } // namespace Test
 
+
+#endif /* #if defined( KOKKOS_HAVE_PTHREAD ) */
 

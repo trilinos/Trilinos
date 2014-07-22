@@ -47,7 +47,6 @@
 #include <vector>
 
 #include <Kokkos_Parallel.hpp>
-#include <Kokkos_ParallelReduce.hpp>
 
 #include <impl/Kokkos_StaticAssert.hpp>
 
@@ -71,7 +70,7 @@ public:
   // Function is called once by every concurrent thread.
   static void execute( QthreadExec & exec , const void * arg )
   {
-    typedef ExecPolicyRange< void , size_t > policy_range ;
+    typedef RangePolicy< Kokkos::Qthread , void , size_t > policy_range ;
 
     const ParallelFor & self = * ((const ParallelFor *) arg );
     const policy_range range( exec.worker_rank() , exec.worker_size() , 0 , self.m_work );
@@ -97,49 +96,6 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< class FunctorType >
-class ParallelFor< FunctorType , ParallelWorkRequest , Kokkos::Qthread >
-{
-public:
-
-  typedef ExecPolicyTeam< Kokkos::Qthread > policy_team ;
-
-  const FunctorType  m_func ;
-  const policy_team  m_team ;
-
-  static void execute( QthreadExec & exec , const void * arg )
-  {
-    const ParallelFor & self = * ((const ParallelFor *) arg );
-
-    typename policy_team::index_type team_index( exec , self.m_team );
-
-    while ( team_index ) {
-      exec.shared_reset();
-      self.m_func( team_index );
-      team_index.next_team();
-    }
-
-    exec.exec_all_barrier();
-  }
-
-  ParallelFor( const FunctorType & functor , const ParallelWorkRequest & work )
-    : m_func( functor )
-    , m_team( Qthread::instance() , work.league_size , work.team_size )
-    {
-      QthreadExec::resize_worker_scratch
-        ( /* reduction   memory */ 0  
-        , /* team shared memory */ FunctorShmemSize< FunctorType >::value( functor ) );
-      QthreadExec::exec_all( Qthread::instance() , & ParallelFor::execute , this );
-    }
-
-  inline void wait() {}
-
-  inline ~ParallelFor() { wait(); }
-};
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
 template< class FunctorType , class WorkSpec >
 class ParallelReduce< FunctorType , WorkSpec , Kokkos::Qthread >
 {
@@ -153,7 +109,7 @@ public:
 
   static void execute( QthreadExec & exec , const void * arg )
   {
-    typedef ExecPolicyRange< void , size_t > policy_range ;
+    typedef RangePolicy< Kokkos::Qthread , void , size_t > policy_range ;
 
     const ParallelReduce & self = * ((const ParallelReduce *) arg );
     const policy_range range( exec.worker_rank() , exec.worker_size() , 0 , self.m_work );
@@ -192,14 +148,16 @@ public:
   inline ~ParallelReduce() { wait(); }
 };
 
+//----------------------------------------------------------------------------
+
 template< class FunctorType >
-class ParallelReduce< FunctorType , ParallelWorkRequest , Kokkos::Qthread >
+class ParallelReduce< FunctorType , TeamPolicy< Kokkos::Qthread > , Kokkos::Qthread >
 {
 public:
 
-  typedef ReduceAdapter< FunctorType >      Reduce ;
-  typedef typename Reduce::pointer_type     pointer_type ;
-  typedef ExecPolicyTeam< Kokkos::Qthread > policy_team ;
+  typedef ReduceAdapter< FunctorType >   Reduce ;
+  typedef typename Reduce::pointer_type  pointer_type ;
+  typedef TeamPolicy< Kokkos::Qthread >  policy_team ;
 
   const FunctorType  m_func ;
   const policy_team  m_team ;
@@ -211,7 +169,7 @@ public:
     // Initialize thread-local value
     typename Reduce::reference_type update = Reduce::init( self.m_func , exec.exec_all_reduce_value() );
 
-    typename policy_team::index_type team_index( exec , self.m_team );
+    typename policy_team::member_type team_index( exec , self.m_team );
 
     while ( team_index ) {
       // Reset shared memory offset to beginning of reduction range.
@@ -224,11 +182,12 @@ public:
     exec.exec_all_reduce( self.m_func );
   }
 
+  template< class ViewType >
   ParallelReduce( const FunctorType & functor ,
-                  const ParallelWorkRequest & work ,
-                  const pointer_type  result_ptr = 0 )
+                  const policy_team & policy ,
+                  const ViewType    & result )
     : m_func( functor )
-    , m_team( Qthread::instance() , work.league_size , work.team_size )
+    , m_team( policy )
     {
       QthreadExec::resize_worker_scratch
         ( /* reduction   memory */ Reduce::value_size( functor )
@@ -240,10 +199,8 @@ public:
 
       Reduce::final( m_func , data );
 
-      if ( result_ptr ) {
-        const unsigned n = Reduce::value_count( m_func );
-        for ( unsigned i = 0 ; i < n ; ++i ) { result_ptr[i] = data[i]; }
-      }
+      const unsigned n = Reduce::value_count( m_func );
+      for ( unsigned i = 0 ; i < n ; ++i ) { result.ptr_on_device()[i] = data[i]; }
     }
 
   inline void wait() {}
@@ -267,7 +224,7 @@ public:
 
   static void execute( QthreadExec & exec , const void * arg )
   {
-    typedef ExecPolicyRange< void , size_t > policy_range ;
+    typedef RangePolicy< Kokkos::Qthread , void , size_t > policy_range ;
 
     const ParallelScan & self = * ((const ParallelScan *) arg );
     const policy_range range( exec.worker_rank() , exec.worker_size() , 0 , self.m_work );

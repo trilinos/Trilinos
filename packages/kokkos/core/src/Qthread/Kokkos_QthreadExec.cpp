@@ -48,6 +48,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
+#include <sstream>
 #include <utility>
 #include <Kokkos_Qthread.hpp>
 #include <Kokkos_Atomic.hpp>
@@ -187,6 +188,9 @@ void Qthread::fence()
 }
 
 int Qthread::team_recommended()
+{ return Impl::s_number_workers_per_shepherd ; }
+
+int Qthread::team_max()
 { return Impl::s_number_workers_per_shepherd ; }
 
 void * Qthread::get_shmem( const int size ) const
@@ -371,23 +375,6 @@ void * QthreadExec::exec_all_reduce_result()
 }
 
 } /* namespace Impl */
-} /* namespace Kokkos */
-
-//----------------------------------------------------------------------------
-
-namespace Kokkos {
-
-ExecPolicyTeam< Kokkos::Qthread >::index_type::index_type
-  (       Impl::QthreadExec & exec
-  , const ExecPolicyTeam    & team )
-  : m_exec( exec )
-  , m_team_size(   team.m_team_size )
-  , m_team_rank(   exec.shepherd_worker_rank() )
-  , m_league_size( team.m_league_size )
-  , m_league_end(  team.m_league_size - team.m_shepherd_iter * ( exec.shepherd_size() - ( exec.shepherd_rank() + 1 ) ) )
-  , m_league_rank( m_league_end > team.m_shepherd_iter ? m_league_end - team.m_shepherd_iter : 0 )
-{}
-
 } /* namespace Kokkos */
 
 //----------------------------------------------------------------------------

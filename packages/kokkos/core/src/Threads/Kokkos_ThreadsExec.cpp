@@ -41,14 +41,20 @@
 //@HEADER
 */
 
+#include <Kokkos_Macros.hpp>
+
+#if defined( KOKKOS_HAVE_PTHREAD ) || defined( KOKKOS_HAVE_WINTHREAD )
+
+#include <stdint.h>
 #include <limits>
 #include <utility>
 #include <iostream>
+#include <sstream>
 #include <Kokkos_Threads.hpp>
 #include <Kokkos_hwloc.hpp>
 #include <Kokkos_Atomic.hpp>
+#include <impl/Kokkos_Error.hpp>
 
-#include <stdint.h>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -436,6 +442,11 @@ void ThreadsExec::fence()
   s_current_team_size    = 0 ;
   s_current_team_alloc   = 0 ;
   s_current_league_size  = 0 ;
+}
+
+int ThreadsExec::team_alloc( int team_size )
+{
+  return s_threads_per_core * ( ( team_size + s_threads_per_core - 1 ) / s_threads_per_core );
 }
 
 /** \brief  Begin execution of the asynchronous functor */
@@ -869,4 +880,21 @@ void ThreadsExec::finalize()
 } /* namespace Impl */
 } /* namespace Kokkos */
 
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+
+Threads & Threads::instance(int)
+{
+  static Threads * const t = 0 ;
+  return *t ;
+}
+
+} /* namespace Kokkos */
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+#endif /* #if defined( KOKKOS_HAVE_PTHREAD ) || defined( KOKKOS_HAVE_WINTHREAD ) */
 
