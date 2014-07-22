@@ -912,8 +912,8 @@ textbookApplyImpl (const op_type& A,
 template<class ScalarType, class MV>
 typename Chebyshev<ScalarType, MV>::MT
 Chebyshev<ScalarType, MV>::maxNormInf (const MV& X) {
-  std::vector<MT> norms (X.getNumVectors ());
-  X.normInf (norms);
+  Teuchos::Array<MT> norms (X.getNumVectors ());
+  X.normInf (norms());
   return *std::max_element (norms.begin (), norms.end ());
 }
 
