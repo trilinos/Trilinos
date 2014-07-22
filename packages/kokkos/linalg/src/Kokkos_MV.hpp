@@ -1699,6 +1699,7 @@ struct VecDotFunctor {
   typedef typename VecViewType::const_type vec_const_view_type;
   // This is a nonconst scalar view.  It holds one dot_type instance.
   typedef Kokkos::View<typename IPT::dot_type, device_type> dot_view_type;
+  typedef Kokkos::View<typename IPT::dot_type*, device_type> dots_view_type;
 
   vec_const_view_type x_, y_;
   dot_view_type dot_;
@@ -1707,7 +1708,15 @@ struct VecDotFunctor {
                  const vec_const_view_type& y,
                  const dot_view_type& dot) :
     x_ (x), y_ (y), dot_ (dot)
-  {}
+  {
+    if (x.dimension_0 () != y.dimension_0 ()) {
+      std::ostringstream os;
+      os << "Kokkos::VecDotFunctor: The dimensions of x and y do not match.  "
+        "x.dimension_0() = " << x.dimension_0 ()
+         << " != y.dimension_0() = " << y.dimension_0 () << ".";
+      throw std::invalid_argument (os.str ());
+    }
+  }
 
   KOKKOS_INLINE_FUNCTION void
   operator() (const size_type i, value_type& sum) const {
@@ -1727,6 +1736,7 @@ struct VecDotFunctor {
 
   // On device, write the reduction result to the output View.
   KOKKOS_INLINE_FUNCTION void final (value_type& dst) const {
+    // BADNESS HERE
     dot_() = dst;
   }
 };

@@ -958,6 +958,16 @@ namespace { // (anonymous)
     typedef Kokkos::View<dot_type, device_type> dot_view_type;
     const char tfecfFuncName[] = "Tpetra::MultiVector::dot";
 
+#ifdef HAVE_TPETRA_DEBUG
+    {
+      const bool compat = this->getMap ()->isCompatible (* (A.getMap ()));
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        ! compat, std::invalid_argument, "Tpetra::MultiVector::dot: *this is "
+        "not compatible with the input MultiVector A.  We only test for this "
+        "in a debug build.");
+    }
+#endif //  HAVE_TPETRA_DEBUG
+
     // FIXME (mfh 11 Jul 2014) These exception tests may not
     // necessarily be thrown on all processes consistently.  We should
     // instead pass along error state with the inner product.  We
@@ -967,25 +977,29 @@ namespace { // (anonymous)
     // Kokkos::Details::ArithTraits<dot_type>::zero() if not error.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       getLocalLength () != A.getLocalLength (), std::runtime_error,
-      ": MultiVectors do not have the same local length.");
+      ": MultiVectors do not have the same local length.  "
+      "this->getLocalLength() = " << getLocalLength () << " != "
+      "A.getLocalLength() = " << A.getLocalLength () << ".");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       getNumVectors () != A.getNumVectors (), std::runtime_error,
-      ": MultiVectors must have the same number of columns (vectors).");
+      ": MultiVectors must have the same number of columns (vectors).  "
+      "this->getNumVectors() = " << getNumVectors () << " != "
+      "A.getNumVectors() = " << A.getNumVectors () << ".");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      dots.dimension_0 () < getNumVectors (), std::runtime_error, ": dots."
-      "dimension_0() must be at least as large as the number of columns "
-      "(vectors) in *this and A.");
+      dots.dimension_0 () != getNumVectors (), std::runtime_error,
+      ": The output array 'dots' must have the same number of entries as the "
+      "number of columns (vectors) in *this and A.  dots.dimension_0() = " <<
+      dots.dimension_0 () << " != this->getNumVectors() = " << getNumVectors ()
+      << ".");
 
     // We're computing using the device's data, so we need to make
     // sure first that the device is in sync with the host.
     A.view_.template sync<DeviceType> ();
     view_.template sync<DeviceType> ();
 
-    // All the "min"s here ensure that incorrect input won't segfault.
-    const size_t numVecs = std::min (getNumVectors (), A.getNumVectors ());
-    const size_t lclNumRows = std::min (getLocalLength (), A.getLocalLength ());
-    const size_t numDots = std::min (static_cast<size_t>(dots.dimension_0 ()),
-                                     numVecs);
+    // const size_t numVecs = getNumVectors (); // not used
+    const size_t lclNumRows = getLocalLength ();
+    const size_t numDots = dots.dimension_0 ();
 
     // In case the input dimensions don't match, make sure that we
     // don't overwrite memory that doesn't belong to us, by using
@@ -1012,6 +1026,18 @@ namespace { // (anonymous)
       vec_view_type X_k = subview<vec_view_type> (X, ALL (), ZERO);
       vec_view_type Y_k = subview<vec_view_type> (Y, ALL (), ZERO);
       dot_view_type dot_k = subview<dot_view_type> (theDots, ZERO);
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        X_k.dimension_0 () != lclNumRows, std::logic_error, "Tpetra::Multi"
+        "Vector::dot: In the special single-vector case, X_k.dimension_0() = "
+        << X_k.dimension_0 () << " != lclNumRows = " << lclNumRows
+        << ".  Please report this bug to the Tpetra developers.");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        Y_k.dimension_0 () != lclNumRows, std::logic_error, "Tpetra::Multi"
+        "Vector::dot: In the special single-vector case, Y_k.dimension_0() = "
+        << Y_k.dimension_0 () << " != lclNumRows = " << lclNumRows
+        << ".  Please report this bug to the Tpetra developers.");
+
       Kokkos::VecDotFunctor<vec_view_type> f (X_k, Y_k, dot_k);
       Kokkos::parallel_reduce (lclNumRows, f);
     }
@@ -1052,6 +1078,14 @@ namespace { // (anonymous)
       // MPI doesn't allow aliasing of arguments, so we have to make a
       // copy of the local sum.
       dots_view_type lclDots ("MV::dot lcl", numDots);
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        lclDots.dimension_0 () != theDots.dimension_0 (), std::logic_error,
+        "Tpetra::MultiVector::dot: lclDots and theDots have different sizes.  "
+        "lclDots.dimension_0 () = " << lclDots.dimension_0 () << " != "
+        "theDots.dimension_0 () = " << theDots.dimension_0 () << ".  "
+        "Please report this bug to the Tpetra developers.");
+
       Kokkos::deep_copy (lclDots, theDots);
       const Teuchos::Comm<int>& comm = * (this->getMap ()->getComm ());
       const dot_type* const lclSum = lclDots.ptr_on_device ();
@@ -1110,7 +1144,7 @@ namespace { // (anonymous)
     // final sum should be
     // Kokkos::Details::ArithTraits<mag_type>::zero() if not error.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      norms.dimension_0 () < getNumVectors (), std::runtime_error, ": "
+      norms.dimension_0 () != getNumVectors (), std::runtime_error, ": "
       "norms.dimension_0() must be at least as large as the number of "
       "columns (vectors) in *this.");
 
