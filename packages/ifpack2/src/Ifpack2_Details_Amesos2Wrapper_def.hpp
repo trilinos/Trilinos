@@ -92,7 +92,7 @@ void Amesos2Wrapper<MatrixType>::setParameters (const Teuchos::ParameterList& pa
     amesos2solver_->setParameters(Teuchos::rcpFromRef(subpl));
   } else {
     //Amesos2 silently ignores any list not called "Amesos2".  We'll throw an exception.
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "The Amesos2 ParameterList must be called \"Amesos2\".");
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "The ParameterList passed to Amesos2 must be called \"Amesos2\".");
   }
 
   //Teuchos::RCP<const Teuchos::ParameterList> pl = Teuchos::rcpFromRef(params);
