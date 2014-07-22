@@ -43,15 +43,12 @@
 #ifndef IFPACK2_DETAILS_AMESOS2WRAPPER_DEF_HPP
 #define IFPACK2_DETAILS_AMESOS2WRAPPER_DEF_HPP
 
-// // disable clang warnings
-// #ifdef __clang__
-// #pragma clang system_header
-// #endif
+#include <Teuchos_TimeMonitor.hpp>
+#include <Teuchos_TypeNameTraits.hpp>
 
 #include <Ifpack2_Heap.hpp>
 #include <Ifpack2_Condest.hpp>
-#include <Teuchos_TimeMonitor.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
+#include <Ifpack2_LocalFilter.hpp>
 
 #ifdef HAVE_IFPACK2_AMESOS2
 #include <Amesos2.hpp>
