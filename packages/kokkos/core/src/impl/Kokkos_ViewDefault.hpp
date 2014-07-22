@@ -479,7 +479,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
     dst.m_tracking      = src.m_tracking ;
     dst.m_offset_map.N0 = src.m_offset_map.N0 ;
     dst.m_offset_map.N1 = 1 ;
-    dst.m_offset_map.S0 = src.m_offset_map.S0 ;
+    dst.m_offset_map.S0 = src.m_offset_map.N0 ;
     dst.m_ptr_on_device = src.m_ptr_on_device + src.m_offset_map(0,i1);
 
     dst.m_tracking.increment( dst.m_ptr_on_device );
