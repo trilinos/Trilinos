@@ -998,7 +998,7 @@ namespace { // (anonymous)
         << Y_k.dimension_0 () << " != lclNumRows = " << lclNumRows
         << ".  Please report this bug to the Tpetra developers.");
 
-      dots[0] = Kokkos::V_Dot<vec_view_type, vec_view_type> (X_k, Y_k, -1);
+      dots[0] = Kokkos::V_Dot (X_k, Y_k, -1);
     }
     else if (isConstantStride () && A.isConstantStride ()) {
       // Special case 2: Both MultiVectors have constant stride.
@@ -1014,7 +1014,7 @@ namespace { // (anonymous)
         const size_t Y_col = A.isConstantStride () ? k : A.whichVectors_[k];
         vec_view_type X_k = subview<vec_view_type> (X, ALL (), X_col);
         vec_view_type Y_k = subview<vec_view_type> (Y, ALL (), Y_col);
-        dots[k] = Kokkos::V_Dot<vec_view_type, vec_view_type> (X_k, Y_k, -1);
+        dots[k] = Kokkos::V_Dot (X_k, Y_k, -1);
       }
     }
 
