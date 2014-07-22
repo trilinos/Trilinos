@@ -1161,7 +1161,8 @@ namespace MueLu {
     if (myPID == 0) {
       std::cout << "** Enter a character to continue > " << std::endl;
       char go = ' ';
-      scanf("%c", &go);
+      int r = scanf("%c", &go);
+      assert(r > 0);
     }
     comm->barrier();
   } //PauseForDebugger

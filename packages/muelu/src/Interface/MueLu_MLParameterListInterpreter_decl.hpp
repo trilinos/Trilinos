@@ -199,9 +199,6 @@ namespace MueLu {
     int     nullspaceDim_;
     double* nullspace_; //TODO: replace by Teuchos::ArrayRCP<>
 
-    //! export aggregates
-    bool    bExportAggregates_; //!< if set to true an AggregationExportFactory is used to export aggregation information (default = false)
-
     //! list of user-defined transfer Factories
     //! We use this vector to add some special user-given factories to the Hierarchy (RAPFactory)
     //! This way the user can extend the standard functionality of the MLParameterListInterpreter beyond the
