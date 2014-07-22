@@ -958,7 +958,7 @@ namespace { // (anonymous)
       "this->getNumVectors() = " << getNumVectors () << " != "
       "A.getNumVectors() = " << A.getNumVectors () << ".");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      dots.size () != getNumVectors (), std::runtime_error, ": The output "
+        static_cast<size_t> (dots.size () ) != getNumVectors (), std::runtime_error, ": The output "
       "array 'dots' must have the same number of entries as the number of "
       "columns (vectors) in *this and A.  dots.size() = " << dots.size ()
       << " != this->getNumVectors() = " << getNumVectors () << ".");
