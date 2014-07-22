@@ -6,13 +6,14 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <stk_util/environment/product_registry.h>
-#include <stk_util/environment/ProductRegistry.hpp>
+#include <stk_util/registry/product_registry.h>
+#include <stk_util/registry/ProductRegistry.hpp>
+#include <stk_util/environment/Env.hpp>
 #include <iostream>
 #ifdef STK_BUILT_IN_SIERRA
-#include <stk_util/environment/stk_version.hpp>
+#include <stk_util/registry/stk_version.hpp>
 #else
-#define STK_VERSION "0.1a"
+#define STK_VERSION "0.2a"
 #endif
 
 namespace stk {
@@ -199,3 +200,16 @@ product_registry_size()
 }
 
 } // extern "C"
+
+const std::string &
+executable_date()
+{
+  static std::string executable_date;
+
+  if (executable_date.empty())
+    executable_date = stk::ProductRegistry::instance().getProductAttribute(stk::EnvData::instance().m_productName, stk::ProductRegistry::BUILD_TIME);
+
+  return executable_date;
+}
+
+

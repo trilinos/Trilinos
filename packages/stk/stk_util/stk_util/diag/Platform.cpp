@@ -25,7 +25,6 @@
 #include <stk_util/environment/Env.hpp>
 #include <stk_util/diag/Platform.hpp>
 #include <stk_util/parallel/MPI.hpp>
-#include <stk_util/environment/ProductRegistry.hpp>
 
 #include <stk_util/util/Writer.hpp>
 #include <stk_util/diag/SlibDiagWriter.hpp>

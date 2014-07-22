@@ -7,9 +7,9 @@
  *    ------------------------------------------------------------
  */
 
-#include <stk_util/environment/RegisterProduct.hpp>
+#include <stk_util/registry/RegisterProduct.hpp>
 #include <map>                          // for map<>::mapped_type
-#include <stk_util/environment/ProductRegistry.hpp>
+#include <stk_util/registry/ProductRegistry.hpp>
 
 
 namespace sierra {

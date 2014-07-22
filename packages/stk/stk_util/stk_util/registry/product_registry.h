@@ -24,8 +24,8 @@
  *   be called from C++, C, or even FORTRAN.
  */
 
-#ifndef STK_UTIL_ENVIRONMENT_PRODUCT_REGISTRY_H
-#define STK_UTIL_ENVIRONMENT_PRODUCT_REGISTRY_H
+#ifndef STK_UTIL_REGISTRY_PRODUCT_REGISTRY_H
+#define STK_UTIL_REGISTRY_PRODUCT_REGISTRY_H
 #include <stddef.h>
 
 #if defined(__cplusplus)
@@ -72,4 +72,4 @@ extern size_t product_registry_size();
 #endif
 
 
-#endif /* STK_UTIL_ENVIRONMENT_PRODUCT_REGISTRY_H */
+#endif /* STK_UTIL_REGISTRY_PRODUCT_REGISTRY_H */
