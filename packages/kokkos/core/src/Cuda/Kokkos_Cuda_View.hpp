@@ -184,6 +184,7 @@ struct CudaTextureFetch {
     ~CudaTextureFetch() {
 #ifndef __CUDA_ARCH__
       if(ptr!=NULL) {
+        //printf("Release D: %p %p %i\n",this,ptr,ref_count[0]);
         int count = Kokkos::atomic_fetch_add(ref_count,-1);
         if(count == 1) {
           cuda_texture_object_release(obj);
@@ -197,10 +198,11 @@ struct CudaTextureFetch {
     CudaTextureFetch( const CudaTextureFetch & rhs ) {
 #ifndef __CUDA_ARCH__
       if(rhs.ptr != NULL) {
-        obj = cuda_texture_object_attach<AliasType>(rhs.ptr);
+        obj = rhs.obj;
         ptr = rhs.ptr;
         ref_count = rhs.ref_count;
         Kokkos::atomic_fetch_add(ref_count,1);
+        //printf("Attach C: %p %p %i\n",this,ptr,ref_count[0]);
       } else {
         obj = 0;
         ref_count = NULL;
@@ -217,6 +219,7 @@ struct CudaTextureFetch {
     CudaTextureFetch & operator = ( const CudaTextureFetch & rhs ) {
 #ifndef __CUDA_ARCH__
       if(ptr!=NULL) {
+        //printf("Release A: %p %p %i\n",this,ptr,ref_count[0]);
         int count = Kokkos::atomic_fetch_add(ref_count,-1);
         if(count == 1) {
           cuda_texture_object_release(obj);
@@ -224,10 +227,11 @@ struct CudaTextureFetch {
         }
       }
       if(rhs.ptr!=NULL) {
-        obj = cuda_texture_object_attach<AliasType>(rhs.ptr);
+        obj = rhs.obj;
         ptr = rhs.ptr;
         ref_count = rhs.ref_count;
         Kokkos::atomic_fetch_add(ref_count,1);
+        //printf("Attach A: %p %p %i\n",this,ptr,ref_count[0]);
       } else {
         obj = 0;
         ref_count = NULL;
@@ -249,6 +253,7 @@ struct CudaTextureFetch {
         ref_count = new int[1];
         ref_count[0] = 1;
         ptr = base_view_ptr;
+        //printf("Attach PC: %p %p %i\n",this,ptr,ref_count[0]);
       } else {
         obj = 0;
         ref_count = NULL;
@@ -263,6 +268,7 @@ struct CudaTextureFetch {
     CudaTextureFetch & operator = (const ValueType* base_view_ptr) {
 #ifndef __CUDA_ARCH__
       if(ptr!=NULL) {
+        //printf("Release P: %p %p %i\n",this,ptr,ref_count[0]);
         int count = Kokkos::atomic_fetch_add(ref_count,-1);
         if(count == 1) {
           cuda_texture_object_release(obj);
@@ -274,6 +280,7 @@ struct CudaTextureFetch {
         ref_count = new int[1];
         ref_count[0] = 1;
         ptr = base_view_ptr;
+        //printf("Attach P: %p %p %i\n",this,ptr,ref_count[0]);
       } else {
         obj = 0;
         ref_count = NULL;
@@ -308,122 +315,34 @@ struct CudaTextureFetch {
 
 template< typename ValueType >
 struct CudaTextureFetch< const ValueType, void > {
-private:
-
-  cuda_texture_object_type  obj ;
-
-  int* ref_count;
-
-public:
 
   const ValueType * ptr ;
 
   KOKKOS_INLINE_FUNCTION
-  CudaTextureFetch() : obj( 0 ) , ref_count( 0 ), ptr( 0 ) {}
+  CudaTextureFetch() : ptr(0) {};
 
   KOKKOS_INLINE_FUNCTION
   ~CudaTextureFetch() {
-#ifndef __CUDA_ARCH__
-      if(ptr!=NULL) {
-        int count = Kokkos::atomic_fetch_add(ref_count,-1);
-        if(count == 1) {
-          cuda_texture_object_release(obj);
-          delete [] ref_count;
-        }
-      }
-#endif
   }
 
   KOKKOS_INLINE_FUNCTION
-  CudaTextureFetch( const CudaTextureFetch & rhs ) {
-#ifndef __CUDA_ARCH__
-      if(rhs.ptr != NULL) {
-        obj = cuda_texture_object_attach<ValueType>(rhs.ptr);
-        ptr = rhs.ptr;
-        ref_count = rhs.ref_count;
-        Kokkos::atomic_fetch_add(ref_count,1);
-      } else {
-        obj = 0;
-        ref_count = NULL;
-        ptr = NULL;
-      }
-#else
-      obj = rhs.obj;
-      ref_count = rhs.ref_count;
-      ptr = rhs.ptr;
-#endif
-  }
+  CudaTextureFetch( const CudaTextureFetch & rhs ) : ptr(rhs.ptr) {}
 
   KOKKOS_INLINE_FUNCTION
   CudaTextureFetch & operator = ( const CudaTextureFetch & rhs ) {
-#ifndef __CUDA_ARCH__
-      if(ptr!=NULL) {
-        int count = Kokkos::atomic_fetch_add(ref_count,-1);
-        if(count == 1) {
-          cuda_texture_object_release(obj);
-          delete [] ref_count;
-        }
-      }
-      if(rhs.ptr!=NULL) {
-        obj = cuda_texture_object_attach<ValueType>(rhs.ptr);
-        ptr = rhs.ptr;
-        ref_count = rhs.ref_count;
-        Kokkos::atomic_fetch_add(ref_count,1);
-      } else {
-        obj = 0;
-        ref_count = NULL;
-        ptr = NULL;
-      }
-#else
-      obj = rhs.obj;
-      ref_count = rhs.ref_count;
-      ptr = rhs.ptr;
-#endif
+    ptr = rhs.ptr;
     return *this ;
   }
 
   explicit KOKKOS_INLINE_FUNCTION
   CudaTextureFetch( ValueType * const base_view_ptr ) {
-#ifndef __CUDA_ARCH__
-      if( base_view_ptr != NULL ) {
-        obj = cuda_texture_object_attach<ValueType>( base_view_ptr );
-        ref_count = new int[1];
-        ref_count[0] = 1;
-        ptr = base_view_ptr;
-      } else {
-        obj = 0;
-        ref_count = NULL;
-        ptr = NULL;
-      }
-#else
-      cuda_abort("ERROR: Trying to assign a non texture_fetch view to a texture_fetch view in a Device kernel\n.");
-#endif
+    ptr = base_view_ptr;
   }
 
   KOKKOS_INLINE_FUNCTION
   CudaTextureFetch & operator = (const ValueType* base_view_ptr) {
-#ifndef __CUDA_ARCH__
-      if(ptr!=NULL) {
-        int count = Kokkos::atomic_fetch_add(ref_count,-1);
-        if(count == 1) {
-          cuda_texture_object_release(obj);
-          delete [] ref_count;
-        }
-      }
-      if( base_view_ptr != NULL ) {
-        obj = cuda_texture_object_attach<ValueType>( base_view_ptr );
-        ref_count = new int[1];
-        ref_count[0] = 1;
-        ptr = base_view_ptr;
-      } else {
-        obj = 0;
-        ref_count = NULL;
-        ptr = NULL;
-      }
-#else
-      cuda_abort("ERROR: Trying to assign a non texture_fetch view to a texture_fetch view in a Device kernel\n.");
-#endif
-      return *this;
+    ptr = base_view_ptr;
+    return *this;
   }
 
   template< typename iType >

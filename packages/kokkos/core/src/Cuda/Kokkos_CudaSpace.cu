@@ -322,7 +322,7 @@ cuda_texture_object_attach(
 }
 
 int cuda_texture_object_release(::cudaTextureObject_t tex) {
-  return cudaDestroyTextureObject(tex);
+  return 0;//cudaDestroyTextureObject(tex);
 }
 
 } // namespace Impl
