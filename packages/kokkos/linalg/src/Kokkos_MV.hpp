@@ -16,6 +16,8 @@
 #include <Kokkos_InnerProductSpaceTraits.hpp>
 #include <ctime>
 
+#include <stdexcept> // For some recently added error handling
+
 #define MAX(a,b) (a<b?b:a)
 
 namespace Kokkos {
@@ -2143,8 +2145,7 @@ struct MV_Sum_Functor
   typedef typename XVector::device_type        device_type;
   typedef typename XVector::size_type            size_type;
   typedef typename XVector::non_const_value_type          xvalue_type;
-  typedef Details::InnerProductSpaceTraits<xvalue_type> IPT;
-  typedef typename IPT::dot_type               value_type[];
+  typedef xvalue_type                         value_type[];
 
   typename XVector::const_type m_x ;
   size_type value_count;
@@ -2360,8 +2361,10 @@ struct MV_DotWeighted_Functor<WeightVector,XVector,1>
   typedef typename XVector::device_type        device_type;
   typedef typename XVector::size_type            size_type;
   typedef typename XVector::non_const_value_type          xvalue_type;
-  typedef Details::InnerProductSpaceTraits<xvalue_type> IPT;
-  typedef typename IPT::dot_type               value_type[];
+  typedef typename WeightVector::non_const_value_type     wvalue_type;
+  typedef Details::InnerProductSpaceTraits<xvalue_type> XIPT;
+  typedef Details::InnerProductSpaceTraits<wvalue_type> WIPT;
+  typedef typename XIPT::dot_type               value_type[];
 
   typename WeightVector::const_type m_w ;
   typename XVector::const_type m_x ;
@@ -2379,7 +2382,7 @@ struct MV_DotWeighted_Functor<WeightVector,XVector,1>
 #pragma vector always
 #endif
     for(size_type k=0;k<value_count;k++){
-      sum[k] += m_x(i,k)*m_x(i,k)/(m_w(i)*m_w(i));
+      sum[k] += XIPT::dot( m_x(i,k), m_x(i,k) ) / WIPT::dot( m_w(i), m_w(i) );
     }
   }
 
@@ -2415,8 +2418,10 @@ struct MV_DotWeighted_Functor<WeightVector,XVector,2>
   typedef typename XVector::device_type        device_type;
   typedef typename XVector::size_type            size_type;
   typedef typename XVector::non_const_value_type          xvalue_type;
-  typedef Details::InnerProductSpaceTraits<xvalue_type> IPT;
-  typedef typename IPT::dot_type               value_type[];
+  typedef typename WeightVector::non_const_value_type     wvalue_type;
+  typedef Details::InnerProductSpaceTraits<xvalue_type> XIPT;
+  typedef Details::InnerProductSpaceTraits<wvalue_type> WIPT;
+  typedef typename XIPT::dot_type               value_type[];
 
   typename WeightVector::const_type m_w ;
   typename XVector::const_type m_x ;
@@ -2434,7 +2439,7 @@ struct MV_DotWeighted_Functor<WeightVector,XVector,2>
 #pragma vector always
 #endif
     for(size_type k=0;k<value_count;k++){
-      sum[k] += m_x(i,k)*m_x(i,k)/(m_w(i,k)*m_w(i,k));
+      sum[k] += XIPT::dot( m_x(i,k), m_x(i,k) ) / WIPT::dot( m_w(i,k), m_w(i,k) );
     }
   }
 
@@ -2803,8 +2808,10 @@ struct V_DotWeighted_Functor
   typedef typename XVector::device_type        device_type;
   typedef typename XVector::size_type            size_type;
   typedef typename XVector::non_const_value_type          xvalue_type;
-  typedef Details::InnerProductSpaceTraits<xvalue_type> IPT;
-  typedef typename IPT::dot_type               value_type;
+  typedef typename WeightVector::non_const_value_type     wvalue_type;
+  typedef Details::InnerProductSpaceTraits<xvalue_type> XIPT;
+  typedef Details::InnerProductSpaceTraits<wvalue_type> WIPT;
+  typedef typename XIPT::dot_type               value_type;
 
   typename WeightVector::const_type m_w ;
   typename XVector::const_type m_x ;
@@ -2814,7 +2821,7 @@ struct V_DotWeighted_Functor
   KOKKOS_INLINE_FUNCTION
   void operator()( const size_type i, value_type& sum ) const
   {
-      sum += m_x(i)*m_x(i)/(m_w(i)*m_w(i));
+    sum += XIPT::dot( m_x(i), m_x(i) )/ WIPT::dot( m_w(i), m_w(i) );
   }
 
 
@@ -2855,8 +2862,7 @@ struct V_Sum_Functor
   typedef typename XVector::device_type        device_type;
   typedef typename XVector::size_type            size_type;
   typedef typename XVector::non_const_value_type          xvalue_type;
-  typedef Details::InnerProductSpaceTraits<xvalue_type> IPT;
-  typedef typename IPT::dot_type               value_type;
+  typedef xvalue_type                           value_type;
 
   typename XVector::const_type m_x ;
 
@@ -2885,15 +2891,14 @@ struct V_Sum_Functor
 
 
 template<class VectorType>
-typename Details::InnerProductSpaceTraits<typename VectorType::non_const_value_type>::dot_type
+typename VectorType::non_const_value_type
 V_Sum (const VectorType& x, int n = -1)
 {
   if (n < 0) {
     n = x.dimension_0 ();
   }
 
-  typedef Details::InnerProductSpaceTraits<typename VectorType::non_const_value_type> IPT;
-  typedef typename IPT::dot_type value_type;
+  typedef typename VectorType::non_const_value_type value_type;
   value_type ret_val;
   Kokkos::parallel_reduce (n, V_Sum_Functor<VectorType> (x), ret_val);
   return ret_val;
