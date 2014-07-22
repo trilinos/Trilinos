@@ -42,7 +42,7 @@ LIBRT ?= no
 # texture fetches; compile for relocatable device code (function pointers) 
 CUDA_UVM ?= no
 CUDA_LDG ?= no
-CUDA_RELOC ?= yes
+CUDA_RELOC ?= no 
 
 # Settings for replacing generic linear algebra kernels of Kokkos with vendor
 # libraries.
@@ -131,7 +131,7 @@ ifeq ($(DEBUG), yes)
 ifeq ($(CUDA), yes)
 KOKKOS_INC += -G
 endif
-KOKKOS_INC += -g -DKOKKOSARRAY_EXPRESSION_CHECK -DENABLE_TRACEBACK
+KOKKOS_INC += -g -DKOKKOS_EXPRESSION_CHECK -DENABLE_TRACEBACK
 KOKKOS_LINK += -g -ldl
 endif
 
@@ -144,9 +144,11 @@ ifeq ($(CUDA_LDG), yes)
 KOKKOS_INC += -DKOKKOS_USE_LDG_INTRINSIC
 endif
 
+ifeq ($(CUDA), yes)
 ifeq ($(CUDA_RELOC), yes)
 KOKKOS_INC += -DKOKKOS_CUDA_USE_RELOCATABLE_DEVICE_CODE --relocatable-device-code=true
 KOKKOS_LINK += --relocatable-device-code=true
+endif
 endif
 
 OBJ_KOKKOS_TMP = $(SRC_KOKKOS:.cpp=.o)
