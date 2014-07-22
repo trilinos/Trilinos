@@ -1364,7 +1364,7 @@ namespace { // (anonymous)
   void
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   normWeighted (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& weights,
-                const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const
+                const Teuchos::ArrayView<mag_type> &norms) const
   {
     // KR FIXME MVT::WeightedNorm (might already exist).
     //
@@ -1379,8 +1379,7 @@ namespace { // (anonymous)
     using Teuchos::reduceAll;
     using Teuchos::REDUCE_SUM;
     using Teuchos::ScalarTraits;
-    typedef Teuchos::ScalarTraits<Scalar> SCT;
-    typedef typename SCT::magnitudeType Mag;
+    typedef mag_type Mag;
     const char tfecfFuncName[] = "normWeighted";
 
     const Mag OneOverN = Teuchos::ScalarTraits<Mag>::one () / static_cast<Mag> (getGlobalLength ());

@@ -1185,7 +1185,7 @@ namespace Tpetra {
     /// For example, if Teuchos::ScalarTraits<Scalar>::magnitudeType
     /// and mag_type differ, then this method ensures backwards
     /// compatibility with the previous interface (that returned norms
-    /// products as Teuchos::ScalarTraits<Scalar>::magnitudeType
+    /// as Teuchos::ScalarTraits<Scalar>::magnitudeType
     /// rather than as mag_type).  The complicated \c enable_if
     /// expression just ensures that the method only exists if
     /// mag_type and T are different types; the method still returns
@@ -1346,7 +1346,33 @@ namespace Tpetra {
     //! The outcome of this routine is undefined for non-floating point scalar types (e.g., int).
     void
     normWeighted (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& weights,
-                  const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& norms) const;
+                  const Teuchos::ArrayView<mag_type>& norms) const;
+
+    //! Compute Weighted 2-norm (RMS Norm) of each vector in multi-vector.
+    //! The outcome of this routine is undefined for non-floating point scalar types (e.g., int).
+    ///
+    /// This method only exists if mag_type and T are different types.
+    /// For example, if Teuchos::ScalarTraits<Scalar>::magnitudeType
+    /// and mag_type differ, then this method ensures backwards
+    /// compatibility with the previous interface (that returned norms
+    /// as Teuchos::ScalarTraits<Scalar>::magnitudeType
+    /// rather than as mag_type).  The complicated \c enable_if
+    /// expression just ensures that the method only exists if
+    /// mag_type and T are different types; the method still returns
+    /// \c void, as above.
+    template <typename T>
+    typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type,T>::value), void >::type
+    normWeighted (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& weights,
+                  const Teuchos::ArrayView<T>& norms) const
+    {
+      typedef typename Teuchos::ArrayView<T>::size_type size_type;
+      const size_type sz = norms.size ();
+      Teuchos::Array<mag_type> theNorms (sz);
+      this->normWeighted (weights, theNorms);
+      for (size_type i = 0; i < sz; ++i) {
+        norms[i] = theNorms[i];
+      }
+    }
 
     //! \brief Compute mean (average) value of each vector in multi-vector.
     //! The outcome of this routine is undefined for non-floating point scalar types (e.g., int).
