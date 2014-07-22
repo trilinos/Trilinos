@@ -81,8 +81,26 @@ Amesos2Wrapper<MatrixType>::~Amesos2Wrapper()
 template <class MatrixType>
 void Amesos2Wrapper<MatrixType>::setParameters (const Teuchos::ParameterList& params)
 {
-  // FIXME (mfh 10 Dec 2013) This class does not currently set parameters.
-  (void) params;
+  Teuchos::ParameterList pl(params);
+  Teuchos::RCP<Teuchos::ParameterList> rcppl = Teuchos::rcpFromRef(pl);
+  //Amesos2 requires that the ParameterList be called "Amesos2". 
+  if ( rcppl->name() == "Amesos2" ) {
+    //If the name of params is "Amesos2", pass params directly the Amesos2 concrete solver.
+    amesos2solver_->setParameters(rcppl);
+  } else if ( rcppl->isSublist("Amesos2") ) {
+    //next check whether params contains a sublist called "Amesos2".  If so, pass the sublist to
+    //the Amesos2 concrete solver.
+    Teuchos::ParameterList subpl = rcppl->sublist("Amesos2",true);
+    subpl.setName("Amesos2"); //FIXME hack until Teuchos sublist name bug is fixed
+    amesos2solver_->setParameters(Teuchos::rcpFromRef(subpl));
+  } else {
+    //Amesos2 silently ignores any list not called "Amesos2".  We'll throw an exception.
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "The Amesos2 ParameterList must be called \"Amesos2\".");
+  }
+
+  //Teuchos::RCP<const Teuchos::ParameterList> pl = Teuchos::rcpFromRef(params);
+  //Teuchos::RCP<Teuchos::ParameterList> nonConstpl = Teuchos::rcp_const_cast<Teuchos::ParameterList>(pl);
+  //amesos2solver_->setParameters(nonConstpl);
 }
 
 
