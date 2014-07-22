@@ -62,13 +62,13 @@
 //
 // mfh 24 Dec 2013: Temporary measure for testing; will go away.
 //
-#ifndef KOKKOS_DEVICE_FUNCTION
+#ifndef KOKKOS_FORCEINLINE_FUNCTION
 #  ifdef __CUDA_ARCH__
-#    define KOKKOS_DEVICE_FUNCTION inline __host__ __device__
+#    define KOKKOS_FORCEINLINE_FUNCTION inline __host__ __device__
 #  else
-#    define KOKKOS_DEVICE_FUNCTION
+#    define KOKKOS_FORCEINLINE_FUNCTION
 #  endif // __CUDA_ARCH__
-#endif // KOKKOS_DEVICE_FUNCTION
+#endif // KOKKOS_FORCEINLINE_FUNCTION
 
 namespace { // anonymous
 
@@ -81,7 +81,7 @@ namespace { // anonymous
 ///
 /// Use intPowSigned or intPowUnsigned for general y.
 template<class IntType>
-KOKKOS_DEVICE_FUNCTION IntType
+KOKKOS_FORCEINLINE_FUNCTION IntType
 intPowImpl (const IntType x, const IntType y)
 {
   // Recursion (unrolled into while loop): pow(x, 2y) = (x^y)^2
@@ -140,7 +140,7 @@ intPowImpl (const IntType x, const IntType y)
 /// result of this function is undefined.  However, this function will
 /// not throw an exception in that case.
 template<class IntType>
-KOKKOS_DEVICE_FUNCTION IntType
+KOKKOS_FORCEINLINE_FUNCTION IntType
 intPowSigned (const IntType x, const IntType y)
 {
   // It's not entirely clear what to return if x and y are both zero.
@@ -173,7 +173,7 @@ intPowSigned (const IntType x, const IntType y)
 /// result of this function is undefined.  However, this function will
 /// not throw an exception in that case.
 template<class IntType>
-KOKKOS_DEVICE_FUNCTION IntType
+KOKKOS_FORCEINLINE_FUNCTION IntType
 intPowUnsigned (const IntType x, const IntType y)
 {
   // It's not entirely clear what to return if x and y are both zero.
@@ -236,7 +236,7 @@ namespace Details {
 /// type T itself is suitable for parallel kernels.  In particular,
 /// specializations for types T that make sense to use on a CUDA
 /// device must mark all class methods as device (and host) functions,
-/// using the KOKKOS_DEVICE_FUNCTION macro.  All class methods must be
+/// using the KOKKOS_FORCEINLINE_FUNCTION macro.  All class methods must be
 /// callable both inside and outside a parallel kernel (for CUDA, this
 /// means they must be marked as both device and host functions).
 ///
@@ -358,7 +358,7 @@ public:
   /// Unfortunately we can't call this "isinf" (the equivalent C99
   /// function), because CUDA appears to implement that function using
   /// a macro, rather than using a function (as C++11 requires).
-  static KOKKOS_DEVICE_FUNCTION bool isInf (const T& x);
+  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const T& x);
 
   /// \brief Whether x is NaN (not a number).
   ///
@@ -369,43 +369,43 @@ public:
   /// Unfortunately we can't call this "isnan" (the equivalent C99
   /// function), because CUDA appears to implement that function using
   /// a macro, rather than using a function (as C++11 requires).
-  static KOKKOS_DEVICE_FUNCTION bool isNan (const T& x);
+  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const T& x);
 
   //! The absolute value (magnitude) of x.
-  static KOKKOS_DEVICE_FUNCTION mag_type abs (const T& x);
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const T& x);
 
   //! The zero value of T; the arithmetic identity.
-  static KOKKOS_DEVICE_FUNCTION T zero ();
+  static KOKKOS_FORCEINLINE_FUNCTION T zero ();
 
   //! The one value of T; the multiplicative identity.
-  static KOKKOS_DEVICE_FUNCTION T one ();
+  static KOKKOS_FORCEINLINE_FUNCTION T one ();
 
   /// \brief The minimum possible value of T.
   ///
   /// If T is a real floating-point type, then this is the minimum
   /// <i>positive</i> value, as with std::numeric_limits<T>::min().
-  static KOKKOS_DEVICE_FUNCTION T min ();
+  static KOKKOS_FORCEINLINE_FUNCTION T min ();
 
   //! The maximum possible value of T.
-  static KOKKOS_DEVICE_FUNCTION T max ();
+  static KOKKOS_FORCEINLINE_FUNCTION T max ();
 
   /// \brief The real part of x.
   ///
   /// If \c is_complex is false, then this just returns x.
-  static KOKKOS_DEVICE_FUNCTION mag_type real (const T& x);
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const T& x);
 
   /// \brief The imaginary part of x.
   ///
   /// If \c is_complex is false, then this just returns zero().
-  static KOKKOS_DEVICE_FUNCTION mag_type imag (const T&);
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const T&);
 
   /// \brief The complex conjugate of x.
   ///
   /// If \c is_complex is false, then this just returns x.
-  static KOKKOS_DEVICE_FUNCTION T conj (const T&);
+  static KOKKOS_FORCEINLINE_FUNCTION T conj (const T&);
 
   //! x raised to the power y.
-  static KOKKOS_DEVICE_FUNCTION T pow (const T& x, const T& y);
+  static KOKKOS_FORCEINLINE_FUNCTION T pow (const T& x, const T& y);
 
   /// \brief The square root of x.
   ///
@@ -418,7 +418,7 @@ public:
   /// exceptions in device functions.)  Implementations should return
   /// NaN if the type T supports this.  Of course, in that case, the
   /// square of the result will not equal x.
-  static KOKKOS_DEVICE_FUNCTION T sqrt (const T& x);
+  static KOKKOS_FORCEINLINE_FUNCTION T sqrt (const T& x);
 
   /// \brief The natural (base e) logarithm of x.
   ///
@@ -431,7 +431,7 @@ public:
   /// throwing exceptions in device functions.)  Implementations
   /// should return NaN if the type T supports this.  Of course, in
   /// that case, if y is the result, \f$e^y\f$ will not equal x.
-  static KOKKOS_DEVICE_FUNCTION T log (const T& x);
+  static KOKKOS_FORCEINLINE_FUNCTION T log (const T& x);
 
   /// \brief The base ten logarithm of the input.
   ///
@@ -444,20 +444,20 @@ public:
   /// throwing exceptions in device functions.)  Implementations
   /// should return NaN if the type T supports this.  Of course, in
   /// that case, if y is the result, \f$10^y\f$ will not equal x.
-  static KOKKOS_DEVICE_FUNCTION T log10 (const T& x);
+  static KOKKOS_FORCEINLINE_FUNCTION T log10 (const T& x);
 
   /// \brief Return a silent NaN, if appropriate for T.
   ///
   /// If T does <i>not</i> implement a silent NaN, the return value is
   /// undefined, but calling this method is still allowed.
-  static KOKKOS_DEVICE_FUNCTION T nan ();
+  static KOKKOS_FORCEINLINE_FUNCTION T nan ();
 
   /// \brief Machine epsilon.
   ///
   /// If T is an integer type (std::numeric_traits<T>::is_exact is
   /// true), then epsilon() returns 0.  Otherwise, if T is a
   /// floating-point type, it returns machine epsilon that T.
-  static KOKKOS_DEVICE_FUNCTION mag_type epsilon ();
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon ();
 
   //@{
   /// \name Traits defined for backwards compatibility with Teuchos::ScalarTraits
@@ -496,45 +496,45 @@ public:
   static const bool hasMachineParameters = false;
 
   //! Return relative machine precision.
-  static KOKKOS_DEVICE_FUNCTION mag_type eps ();
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type eps ();
 
   //! Return safe minimum (sfmin), such that 1/sfmin does not overflow.
-  static KOKKOS_DEVICE_FUNCTION mag_type sfmin ();
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type sfmin ();
 
   //! Return the base of the scalar type T.
-  static KOKKOS_DEVICE_FUNCTION int base ();
+  static KOKKOS_FORCEINLINE_FUNCTION int base ();
 
   //! Return <tt>eps*base</tt>.
-  static KOKKOS_DEVICE_FUNCTION mag_type prec ();
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type prec ();
 
   //! Returns the number of (base) digits in the significand.
-  static KOKKOS_DEVICE_FUNCTION int t ();
+  static KOKKOS_FORCEINLINE_FUNCTION int t ();
 
   //! 1.0 when rounding occurs in addition, else 0.0.
-  static KOKKOS_DEVICE_FUNCTION mag_type rnd ();
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type rnd ();
 
   //! Returns the minimum exponent before (gradual) underflow.
-  static KOKKOS_DEVICE_FUNCTION int emin ();
+  static KOKKOS_FORCEINLINE_FUNCTION int emin ();
 
   //! Returns the underflow threshold: <tt>base^(emin-1)</tt>
-  static KOKKOS_DEVICE_FUNCTION mag_type rmin ();
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type rmin ();
 
   //! Returns the largest exponent before overflow.
-  static KOKKOS_DEVICE_FUNCTION int emax ();
+  static KOKKOS_FORCEINLINE_FUNCTION int emax ();
 
   //! Overflow theshold: <tt>(base^emax)*(1-eps)</tt>
-  static KOKKOS_DEVICE_FUNCTION mag_type rmax ();
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type rmax ();
 
   //! Same as abs(); return the magnitude of x.
-  static KOKKOS_DEVICE_FUNCTION magnitudeType magnitude (const T& x);
+  static KOKKOS_FORCEINLINE_FUNCTION magnitudeType magnitude (const T& x);
 
   //! Same as conj(); return the complex conjugate of x.
-  static KOKKOS_DEVICE_FUNCTION T conjugate (const T& x);
+  static KOKKOS_FORCEINLINE_FUNCTION T conjugate (const T& x);
 
   /// \brief Whether x is (silent) NaN or Inf.
   ///
   /// This is the same as <tt>isNan(x) || isInf(x)</tt>.
-  static KOKKOS_DEVICE_FUNCTION bool isnaninf (const T& x);
+  static KOKKOS_FORCEINLINE_FUNCTION bool isnaninf (const T& x);
 
   /// \brief The string name of T.
   ///
@@ -542,7 +542,7 @@ public:
   static std::string name ();
 
   //! Same as sqrt(x); the square root of x.
-  static KOKKOS_DEVICE_FUNCTION T squareroot (const T& x);
+  static KOKKOS_FORCEINLINE_FUNCTION T squareroot (const T& x);
   //@}
 };
 
@@ -559,57 +559,57 @@ public:
   static const bool is_exact = false;
   static const bool is_complex = false;
 
-  static KOKKOS_DEVICE_FUNCTION bool isInf (const float x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const float x) {
 #ifdef __APPLE__
     return std::isinf (x);
 #else
     return isinf (x);
 #endif // __APPLE__
   }
-  static KOKKOS_DEVICE_FUNCTION bool isNan (const float x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const float x) {
 #ifdef __APPLE__
     return std::isnan (x);
 #else
     return isnan (x);
 #endif // __APPLE__
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type abs (const float x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const float x) {
     return ::fabs (x);
   }
-  static KOKKOS_DEVICE_FUNCTION float zero () {
+  static KOKKOS_FORCEINLINE_FUNCTION float zero () {
     return 0.0;
   }
-  static KOKKOS_DEVICE_FUNCTION float one () {
+  static KOKKOS_FORCEINLINE_FUNCTION float one () {
     return 1.0;
   }
-  static KOKKOS_DEVICE_FUNCTION float min () {
+  static KOKKOS_FORCEINLINE_FUNCTION float min () {
     return FLT_MIN;
   }
-  static KOKKOS_DEVICE_FUNCTION float max () {
+  static KOKKOS_FORCEINLINE_FUNCTION float max () {
     return FLT_MAX;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type real (const float x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const float x) {
     return x;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type imag (const float) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const float) {
     return 0.0;
   }
-  static KOKKOS_DEVICE_FUNCTION float conj (const float x) {
+  static KOKKOS_FORCEINLINE_FUNCTION float conj (const float x) {
     return x;
   }
-  static KOKKOS_DEVICE_FUNCTION float pow (const float x, const float y) {
+  static KOKKOS_FORCEINLINE_FUNCTION float pow (const float x, const float y) {
     return ::pow (x, y);
   }
-  static KOKKOS_DEVICE_FUNCTION float sqrt (const float x) {
+  static KOKKOS_FORCEINLINE_FUNCTION float sqrt (const float x) {
     return ::sqrt (x);
   }
-  static KOKKOS_DEVICE_FUNCTION float log (const float x) {
+  static KOKKOS_FORCEINLINE_FUNCTION float log (const float x) {
     return ::log (x);
   }
-  static KOKKOS_DEVICE_FUNCTION float log10 (const float x) {
+  static KOKKOS_FORCEINLINE_FUNCTION float log10 (const float x) {
     return ::log10 (x);
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type epsilon () {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon () {
     return FLT_EPSILON;
   }
 
@@ -623,22 +623,22 @@ public:
   static const bool isOrdinal = false;
   static const bool isComparable = true;
   static const bool hasMachineParameters = true;
-  static KOKKOS_DEVICE_FUNCTION bool isnaninf (const float x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isnaninf (const float x) {
     return isNan (x) || isInf (x);
   }
-  static KOKKOS_DEVICE_FUNCTION magnitudeType magnitude (const float x) {
+  static KOKKOS_FORCEINLINE_FUNCTION magnitudeType magnitude (const float x) {
     return abs (x);
   }
-  static KOKKOS_DEVICE_FUNCTION float conjugate (const float x) {
+  static KOKKOS_FORCEINLINE_FUNCTION float conjugate (const float x) {
     return conj (x);
   }
   static std::string name () {
     return "float";
   }
-  static KOKKOS_DEVICE_FUNCTION float squareroot (const float x) {
+  static KOKKOS_FORCEINLINE_FUNCTION float squareroot (const float x) {
     return sqrt (x);
   }
-  static KOKKOS_DEVICE_FUNCTION float nan () {
+  static KOKKOS_FORCEINLINE_FUNCTION float nan () {
 #ifdef __CUDA_ARCH__
     return CUDART_NAN_F;
     //return nan (); //this returns 0???
@@ -647,34 +647,34 @@ public:
     return strtof ("NAN()", (char**) NULL);
 #endif // __CUDA_ARCH__
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type eps () {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type eps () {
     return epsilon ();
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type sfmin () {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type sfmin () {
     return FLT_MIN; // ???
   }
-  static KOKKOS_DEVICE_FUNCTION int base () {
+  static KOKKOS_FORCEINLINE_FUNCTION int base () {
     return FLT_RADIX;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type prec () {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type prec () {
     return eps () * static_cast<mag_type> (base ());
   }
-  static KOKKOS_DEVICE_FUNCTION int t () {
+  static KOKKOS_FORCEINLINE_FUNCTION int t () {
     return FLT_MANT_DIG;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type rnd () {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type rnd () {
     return 1.0;
   }
-  static KOKKOS_DEVICE_FUNCTION int emin () {
+  static KOKKOS_FORCEINLINE_FUNCTION int emin () {
     return FLT_MIN_EXP;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type rmin () {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type rmin () {
     return FLT_MIN; // ??? // should be base^(emin-1)
   }
-  static KOKKOS_DEVICE_FUNCTION int emax () {
+  static KOKKOS_FORCEINLINE_FUNCTION int emax () {
     return FLT_MAX_EXP;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type rmax () {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type rmax () {
     return FLT_MAX; // ??? // should be (base^emax)*(1-eps)
   }
 };
@@ -829,57 +829,57 @@ public:
   static const bool is_exact = false;
   static const bool is_complex = false;
 
-  static KOKKOS_DEVICE_FUNCTION bool isInf (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
 #ifdef __APPLE__
     return std::isinf (x);
 #else
     return isinf (x);
 #endif // __APPLE__
   }
-  static KOKKOS_DEVICE_FUNCTION bool isNan (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type x) {
 #ifdef __APPLE__
     return std::isnan (x);
 #else
     return isnan (x);
 #endif // __APPLE__
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type abs (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
     return ::fabs (x);
   }
-  static KOKKOS_DEVICE_FUNCTION val_type zero () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type zero () {
     return 0.0;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type one () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type one () {
     return 1.0;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type min () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type min () {
     return DBL_MIN;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type max () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type max () {
     return DBL_MAX;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type real (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type x) {
     return x;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type imag (const val_type) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type) {
     return 0.0;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type conj (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conj (const val_type x) {
     return x;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type pow (const val_type x, const val_type y) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type pow (const val_type x, const val_type y) {
     return ::pow (x, y);
   }
-  static KOKKOS_DEVICE_FUNCTION val_type sqrt (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
     return ::sqrt (x);
   }
-  static KOKKOS_DEVICE_FUNCTION val_type log (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
     return ::log (x);
   }
-  static KOKKOS_DEVICE_FUNCTION val_type log10 (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
     return ::log10 (x);
   }
-  static KOKKOS_DEVICE_FUNCTION val_type nan () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type nan () {
 #ifdef __CUDA_ARCH__
     return CUDART_NAN;
     //return nan (); // this returns 0 ???
@@ -888,7 +888,7 @@ public:
     return strtod ("NAN", (char**) NULL);
 #endif // __CUDA_ARCH__
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type epsilon () {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon () {
     return DBL_EPSILON;
   }
 
@@ -907,46 +907,46 @@ public:
   static bool isnaninf (const val_type& x) {
     return isNan (x) || isInf (x);
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type magnitude (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type magnitude (const val_type x) {
     return abs (x);
   }
-  static KOKKOS_DEVICE_FUNCTION val_type conjugate (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conjugate (const val_type x) {
     return conj (x);
   }
   static std::string name () {
     return "double";
   }
-  static KOKKOS_DEVICE_FUNCTION val_type squareroot (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type squareroot (const val_type x) {
     return sqrt (x);
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type eps () {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type eps () {
     return epsilon ();
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type sfmin () {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type sfmin () {
     return DBL_MIN; // ???
   }
-  static KOKKOS_DEVICE_FUNCTION int base () {
+  static KOKKOS_FORCEINLINE_FUNCTION int base () {
     return FLT_RADIX; // same for float as for double
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type prec () {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type prec () {
     return eps () * static_cast<mag_type> (base ());
   }
-  static KOKKOS_DEVICE_FUNCTION int t () {
+  static KOKKOS_FORCEINLINE_FUNCTION int t () {
     return DBL_MANT_DIG;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type rnd () {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type rnd () {
     return 1.0;
   }
-  static KOKKOS_DEVICE_FUNCTION int emin () {
+  static KOKKOS_FORCEINLINE_FUNCTION int emin () {
     return DBL_MIN_EXP;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type rmin () {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type rmin () {
     return DBL_MIN; // ??? // should be base^(emin-1)
   }
-  static KOKKOS_DEVICE_FUNCTION int emax () {
+  static KOKKOS_FORCEINLINE_FUNCTION int emax () {
     return DBL_MAX_EXP;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type rmax () {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type rmax () {
     return DBL_MAX; // ??? // should be (base^emax)*(1-eps)
   }
 };
@@ -1099,40 +1099,40 @@ public:
   static const bool is_exact = true;
   static const bool is_complex = false;
 
-  static KOKKOS_DEVICE_FUNCTION bool isInf (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
     return false;
   }
-  static KOKKOS_DEVICE_FUNCTION bool isNan (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type x) {
     return false;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type abs (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
     // This may trigger a compiler warning if char is unsigned.  On
     // all platforms I have encountered, char is signed, but the C(++)
     // standard does not require this.
     return x >= 0 ? x : -x;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type zero () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type zero () {
     return 0;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type one () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type one () {
     return 1;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type min () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type min () {
     return CHAR_MIN;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type max () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type max () {
     return CHAR_MAX;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type real (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type x) {
     return x;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type imag (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type x) {
     return 0;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type conj (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conj (const val_type x) {
     return x;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type
+  static KOKKOS_FORCEINLINE_FUNCTION val_type
   pow (const val_type x, const val_type y) {
     if (is_signed) {
       return intPowSigned<val_type> (x, y);
@@ -1140,7 +1140,7 @@ public:
       return intPowUnsigned<val_type> (x, y);
     }
   }
-  static KOKKOS_DEVICE_FUNCTION val_type sqrt (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
     // C++11 defines std::sqrt for integer arguments.  However, we
     // currently can't assume C++11.
     //
@@ -1161,13 +1161,13 @@ public:
     // operator.
     return static_cast<val_type> ( ::sqrt (static_cast<float> (abs (x))));
   }
-  static KOKKOS_DEVICE_FUNCTION val_type log (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
     return static_cast<val_type> ( ::log (static_cast<float> (abs (x))));
   }
-  static KOKKOS_DEVICE_FUNCTION val_type log10 (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
     return static_cast<val_type> ( ::log10 (static_cast<float> (abs (x))));
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type epsilon () {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon () {
     return zero ();
   }
 
@@ -1180,19 +1180,19 @@ public:
   static const bool isOrdinal = true;
   static const bool isComparable = true;
   static const bool hasMachineParameters = false;
-  static KOKKOS_DEVICE_FUNCTION magnitudeType magnitude (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION magnitudeType magnitude (const val_type x) {
     return abs (x);
   }
-  static KOKKOS_DEVICE_FUNCTION val_type conjugate (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conjugate (const val_type x) {
     return conj (x);
   }
-  static KOKKOS_DEVICE_FUNCTION bool isnaninf (const val_type) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isnaninf (const val_type) {
     return false;
   }
   static std::string name () {
     return "char";
   }
-  static KOKKOS_DEVICE_FUNCTION val_type squareroot (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type squareroot (const val_type x) {
     return sqrt (x);
   }
 };
@@ -1210,50 +1210,50 @@ public:
   static const bool is_exact = true;
   static const bool is_complex = false;
 
-  static KOKKOS_DEVICE_FUNCTION bool isInf (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
     return false;
   }
-  static KOKKOS_DEVICE_FUNCTION bool isNan (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type x) {
     return false;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type abs (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
     return x >= 0 ? x : -x;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type zero () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type zero () {
     return 0;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type one () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type one () {
     return 1;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type min () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type min () {
     return SCHAR_MIN;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type max () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type max () {
     return SCHAR_MAX;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type real (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type x) {
     return x;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type imag (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type x) {
     return 0;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type conj (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conj (const val_type x) {
     return x;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type
+  static KOKKOS_FORCEINLINE_FUNCTION val_type
   pow (const val_type x, const val_type y) {
     return intPowSigned<val_type> (x, y);
   }
-  static KOKKOS_DEVICE_FUNCTION val_type sqrt (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
     return static_cast<val_type> ( ::sqrt (static_cast<float> (abs (x))));
   }
-  static KOKKOS_DEVICE_FUNCTION val_type log (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
     return static_cast<val_type> ( ::log (static_cast<float> (abs (x))));
   }
-  static KOKKOS_DEVICE_FUNCTION val_type log10 (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
     return static_cast<val_type> ( ::log10 (static_cast<float> (abs (x))));
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type epsilon () {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon () {
     return zero ();
   }
 
@@ -1266,19 +1266,19 @@ public:
   static const bool isOrdinal = true;
   static const bool isComparable = true;
   static const bool hasMachineParameters = false;
-  static KOKKOS_DEVICE_FUNCTION magnitudeType magnitude (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION magnitudeType magnitude (const val_type x) {
     return abs (x);
   }
-  static KOKKOS_DEVICE_FUNCTION val_type conjugate (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conjugate (const val_type x) {
     return conj (x);
   }
-  static KOKKOS_DEVICE_FUNCTION bool isnaninf (const val_type) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isnaninf (const val_type) {
     return false;
   }
   static std::string name () {
     return "signed char";
   }
-  static KOKKOS_DEVICE_FUNCTION val_type squareroot (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type squareroot (const val_type x) {
     return sqrt (x);
   }
 };
@@ -1296,54 +1296,54 @@ public:
   static const bool is_exact = true;
   static const bool is_complex = false;
 
-  static KOKKOS_DEVICE_FUNCTION bool isInf (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
     return false;
   }
-  static KOKKOS_DEVICE_FUNCTION bool isNan (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type x) {
     return false;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type abs (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
     return x; // it's unsigned, so it's positive
   }
-  static KOKKOS_DEVICE_FUNCTION val_type zero () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type zero () {
     return 0;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type one () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type one () {
     return 1;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type min () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type min () {
     return 0;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type max () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type max () {
     return UCHAR_MAX;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type real (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type x) {
     return x;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type imag (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type x) {
     return 0;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type conj (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conj (const val_type x) {
     return x;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type
+  static KOKKOS_FORCEINLINE_FUNCTION val_type
   pow (const val_type x, const val_type y) {
     return intPowUnsigned<val_type> (x, y);
   }
-  static KOKKOS_DEVICE_FUNCTION val_type sqrt (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
     // This will result in no loss of accuracy, though it might be
     // more expensive than it should, if we were clever about using
     // bit operations.
     return static_cast<val_type> ( ::sqrt (static_cast<float> (x)));
   }
 
-  static KOKKOS_DEVICE_FUNCTION val_type log (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
     return static_cast<val_type> ( ::log (static_cast<float> (x)));
   }
-  static KOKKOS_DEVICE_FUNCTION val_type log10 (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
     return static_cast<val_type> ( ::log10 (static_cast<float> (x)));
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type epsilon () {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon () {
     return zero ();
   }
 
@@ -1356,19 +1356,19 @@ public:
   static const bool isOrdinal = true;
   static const bool isComparable = true;
   static const bool hasMachineParameters = false;
-  static KOKKOS_DEVICE_FUNCTION magnitudeType magnitude (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION magnitudeType magnitude (const val_type x) {
     return abs (x);
   }
-  static KOKKOS_DEVICE_FUNCTION val_type conjugate (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conjugate (const val_type x) {
     return conj (x);
   }
-  static KOKKOS_DEVICE_FUNCTION bool isnaninf (const val_type) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isnaninf (const val_type) {
     return false;
   }
   static std::string name () {
     return "unsigned char";
   }
-  static KOKKOS_DEVICE_FUNCTION val_type squareroot (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type squareroot (const val_type x) {
     return sqrt (x);
   }
 };
@@ -1386,13 +1386,13 @@ public:
   static const bool is_exact = true;
   static const bool is_complex = false;
 
-  static KOKKOS_DEVICE_FUNCTION bool isInf (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
     return false;
   }
-  static KOKKOS_DEVICE_FUNCTION bool isNan (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type x) {
     return false;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type abs (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
     // std::abs appears to work with CUDA 5.5 at least, but I'll use
     // the ternary expression for maximum generality.  Note that this
     // expression does not necessarily obey the rules for fabs() with
@@ -1400,47 +1400,47 @@ public:
     // It's perfectly fine for signed integer types, though.
     return x >= 0 ? x : -x;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type zero () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type zero () {
     return 0;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type one () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type one () {
     return 1;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type min () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type min () {
     // Macros like this work with CUDA, but
     // std::numeric_limits<val_type>::min() does not, because it is
     // not marked as a __device__ function.
     return SHRT_MIN;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type max () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type max () {
     return SHRT_MAX;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type real (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type x) {
     return x;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type imag (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type x) {
     return 0;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type conj (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conj (const val_type x) {
     return x;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type pow (const val_type x, const val_type y) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type pow (const val_type x, const val_type y) {
     return intPowSigned<val_type> (x, y);
   }
   //! Integer square root returns a lower bound.
-  static KOKKOS_DEVICE_FUNCTION val_type sqrt (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
     // This will result in no loss of accuracy, though it might be
     // more expensive than it should, if we were clever about using
     // bit operations.
     return static_cast<val_type> ( ::sqrt (static_cast<float> (abs (x))));
   }
-  static KOKKOS_DEVICE_FUNCTION val_type log (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
     return static_cast<val_type> ( ::log (static_cast<float> (abs (x))));
   }
-  static KOKKOS_DEVICE_FUNCTION val_type log10 (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
     return static_cast<val_type> ( ::log10 (static_cast<float> (abs (x))));
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type epsilon () {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon () {
     return zero ();
   }
 
@@ -1453,19 +1453,19 @@ public:
   static const bool isOrdinal = true;
   static const bool isComparable = true;
   static const bool hasMachineParameters = false;
-  static KOKKOS_DEVICE_FUNCTION magnitudeType magnitude (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION magnitudeType magnitude (const val_type x) {
     return abs (x);
   }
-  static KOKKOS_DEVICE_FUNCTION val_type conjugate (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conjugate (const val_type x) {
     return conj (x);
   }
-  static KOKKOS_DEVICE_FUNCTION bool isnaninf (const val_type) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isnaninf (const val_type) {
     return false;
   }
   static std::string name () {
     return "short";
   }
-  static KOKKOS_DEVICE_FUNCTION val_type squareroot (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type squareroot (const val_type x) {
     return sqrt (x);
   }
 };
@@ -1483,53 +1483,53 @@ public:
   static const bool is_exact = true;
   static const bool is_complex = false;
 
-  static KOKKOS_DEVICE_FUNCTION bool isInf (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
     return false;
   }
-  static KOKKOS_DEVICE_FUNCTION bool isNan (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type x) {
     return false;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type abs (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
     return x; // it's unsigned, so it's positive
   }
-  static KOKKOS_DEVICE_FUNCTION val_type zero () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type zero () {
     return 0;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type one () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type one () {
     return 1;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type min () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type min () {
     return 0;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type max () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type max () {
     return USHRT_MAX;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type real (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type x) {
     return x;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type imag (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type x) {
     return 0;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type conj (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conj (const val_type x) {
     return x;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type
+  static KOKKOS_FORCEINLINE_FUNCTION val_type
   pow (const val_type x, const val_type y) {
     return intPowUnsigned<val_type> (x, y);
   }
-  static KOKKOS_DEVICE_FUNCTION val_type sqrt (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
     // This will result in no loss of accuracy, though it might be
     // more expensive than it should, if we were clever about using
     // bit operations.
     return static_cast<val_type> ( ::sqrt (static_cast<float> (x)));
   }
-  static KOKKOS_DEVICE_FUNCTION val_type log (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
     return static_cast<val_type> ( ::log (static_cast<float> (x)));
   }
-  static KOKKOS_DEVICE_FUNCTION val_type log10 (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
     return static_cast<val_type> ( ::log10 (static_cast<float> (x)));
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type epsilon () {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon () {
     return zero ();
   }
 
@@ -1542,19 +1542,19 @@ public:
   static const bool isOrdinal = true;
   static const bool isComparable = true;
   static const bool hasMachineParameters = false;
-  static KOKKOS_DEVICE_FUNCTION magnitudeType magnitude (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION magnitudeType magnitude (const val_type x) {
     return abs (x);
   }
-  static KOKKOS_DEVICE_FUNCTION val_type conjugate (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conjugate (const val_type x) {
     return conj (x);
   }
-  static KOKKOS_DEVICE_FUNCTION bool isnaninf (const val_type) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isnaninf (const val_type) {
     return false;
   }
   static std::string name () {
     return "unsigned short";
   }
-  static KOKKOS_DEVICE_FUNCTION val_type squareroot (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type squareroot (const val_type x) {
     return sqrt (x);
   }
 };
@@ -1572,13 +1572,13 @@ public:
   static const bool is_exact = true;
   static const bool is_complex = false;
 
-  static KOKKOS_DEVICE_FUNCTION bool isInf (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
     return false;
   }
-  static KOKKOS_DEVICE_FUNCTION bool isNan (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type x) {
     return false;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type abs (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
     // std::abs appears to work with CUDA 5.5 at least, but I'll use
     // the ternary expression for maximum generality.  Note that this
     // expression does not necessarily obey the rules for fabs() with
@@ -1586,47 +1586,47 @@ public:
     // It's perfectly fine for signed integer types, though.
     return x >= 0 ? x : -x;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type zero () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type zero () {
     return 0;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type one () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type one () {
     return 1;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type min () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type min () {
     // Macros like INT_MIN work with CUDA, but
     // std::numeric_limits<val_type>::min() does not, because it is
     // not marked as a __device__ function.
     return INT_MIN;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type max () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type max () {
     return INT_MAX;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type real (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type x) {
     return x;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type imag (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type x) {
     return 0;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type conj (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conj (const val_type x) {
     return x;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type
+  static KOKKOS_FORCEINLINE_FUNCTION val_type
   pow (const val_type x, const val_type y) {
     return intPowSigned<val_type> (x, y);
   }
-  static KOKKOS_DEVICE_FUNCTION val_type sqrt (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
     // This will result in no loss of accuracy, though it might be
     // more expensive than it should, if we were clever about using
     // bit operations.
     return static_cast<val_type> ( ::sqrt (static_cast<double> (abs (x))));
   }
-  static KOKKOS_DEVICE_FUNCTION val_type log (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
     return static_cast<val_type> ( ::log (static_cast<double> (abs (x))));
   }
-  static KOKKOS_DEVICE_FUNCTION val_type log10 (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
     return static_cast<val_type> ( ::log10 (static_cast<double> (abs (x))));
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type epsilon () {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon () {
     return zero ();
   }
 
@@ -1639,19 +1639,19 @@ public:
   static const bool isOrdinal = true;
   static const bool isComparable = true;
   static const bool hasMachineParameters = false;
-  static KOKKOS_DEVICE_FUNCTION magnitudeType magnitude (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION magnitudeType magnitude (const val_type x) {
     return abs (x);
   }
-  static KOKKOS_DEVICE_FUNCTION val_type conjugate (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conjugate (const val_type x) {
     return conj (x);
   }
-  static KOKKOS_DEVICE_FUNCTION bool isnaninf (const val_type) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isnaninf (const val_type) {
     return false;
   }
   static std::string name () {
     return "int";
   }
-  static KOKKOS_DEVICE_FUNCTION val_type squareroot (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type squareroot (const val_type x) {
     return sqrt (x);
   }
 };
@@ -1669,53 +1669,53 @@ public:
   static const bool is_exact = true;
   static const bool is_complex = false;
 
-  static KOKKOS_DEVICE_FUNCTION bool isInf (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
     return false;
   }
-  static KOKKOS_DEVICE_FUNCTION bool isNan (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type x) {
     return false;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type abs (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
     return x; // it's unsigned, so it's positive
   }
-  static KOKKOS_DEVICE_FUNCTION val_type zero () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type zero () {
     return 0;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type one () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type one () {
     return 1;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type min () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type min () {
     return 0;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type max () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type max () {
     return UINT_MAX;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type real (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type x) {
     return x;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type imag (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type x) {
     return 0;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type conj (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conj (const val_type x) {
     return x;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type
+  static KOKKOS_FORCEINLINE_FUNCTION val_type
   pow (const val_type x, const val_type y) {
     return intPowUnsigned<val_type> (x, y);
   }
-  static KOKKOS_DEVICE_FUNCTION val_type sqrt (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
     // This will result in no loss of accuracy, though it might be
     // more expensive than it should, if we were clever about using
     // bit operations.
     return static_cast<val_type> ( ::sqrt (static_cast<double> (x)));
   }
-  static KOKKOS_DEVICE_FUNCTION val_type log (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
     return static_cast<val_type> ( ::log (static_cast<double> (x)));
   }
-  static KOKKOS_DEVICE_FUNCTION val_type log10 (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
     return static_cast<val_type> ( ::log10 (static_cast<double> (x)));
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type epsilon () {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon () {
     return zero ();
   }
 
@@ -1728,19 +1728,19 @@ public:
   static const bool isOrdinal = true;
   static const bool isComparable = true;
   static const bool hasMachineParameters = false;
-  static KOKKOS_DEVICE_FUNCTION magnitudeType magnitude (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION magnitudeType magnitude (const val_type x) {
     return abs (x);
   }
-  static KOKKOS_DEVICE_FUNCTION val_type conjugate (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conjugate (const val_type x) {
     return conj (x);
   }
-  static KOKKOS_DEVICE_FUNCTION bool isnaninf (const val_type) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isnaninf (const val_type) {
     return false;
   }
   static std::string name () {
     return "unsigned int";
   }
-  static KOKKOS_DEVICE_FUNCTION val_type squareroot (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type squareroot (const val_type x) {
     return sqrt (x);
   }
 };
@@ -1758,54 +1758,54 @@ public:
   static const bool is_exact = true;
   static const bool is_complex = false;
 
-  static KOKKOS_DEVICE_FUNCTION bool isInf (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
     return false;
   }
-  static KOKKOS_DEVICE_FUNCTION bool isNan (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type x) {
     return false;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type abs (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
     return x >= 0 ? x : -x;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type zero () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type zero () {
     return 0;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type one () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type one () {
     return 1;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type min () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type min () {
     return LONG_MIN;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type max () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type max () {
     return LONG_MAX;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type real (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type x) {
     return x;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type imag (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type x) {
     return 0;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type conj (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conj (const val_type x) {
     return x;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type
+  static KOKKOS_FORCEINLINE_FUNCTION val_type
   pow (const val_type x, const val_type y) {
     return intPowSigned<val_type> (x, y);
   }
-  static KOKKOS_DEVICE_FUNCTION val_type sqrt (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
 #ifdef __CUDA_ARCH__
     return static_cast<val_type> ( ::sqrt (static_cast<double> (abs (x))));
 #else
     return static_cast<val_type> ( ::sqrt (static_cast<long double> (abs (x))));
 #endif // __CUDA_ARCH__
   }
-  static KOKKOS_DEVICE_FUNCTION val_type log (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
     return static_cast<val_type> ( ::log (static_cast<double> (abs (x))));
   }
-  static KOKKOS_DEVICE_FUNCTION val_type log10 (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
     return static_cast<val_type> ( ::log10 (static_cast<double> (abs (x))));
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type epsilon () {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon () {
     return zero ();
   }
 
@@ -1818,19 +1818,19 @@ public:
   static const bool isOrdinal = true;
   static const bool isComparable = true;
   static const bool hasMachineParameters = false;
-  static KOKKOS_DEVICE_FUNCTION magnitudeType magnitude (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION magnitudeType magnitude (const val_type x) {
     return abs (x);
   }
-  static KOKKOS_DEVICE_FUNCTION val_type conjugate (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conjugate (const val_type x) {
     return conj (x);
   }
-  static KOKKOS_DEVICE_FUNCTION bool isnaninf (const val_type) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isnaninf (const val_type) {
     return false;
   }
   static std::string name () {
     return "long";
   }
-  static KOKKOS_DEVICE_FUNCTION val_type squareroot (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type squareroot (const val_type x) {
     return sqrt (x);
   }
 };
@@ -1848,53 +1848,53 @@ public:
   static const bool is_exact = true;
   static const bool is_complex = false;
 
-  static KOKKOS_DEVICE_FUNCTION bool isInf (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
     return false;
   }
-  static KOKKOS_DEVICE_FUNCTION bool isNan (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type x) {
     return false;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type abs (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
     return x;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type zero () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type zero () {
     return 0;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type one () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type one () {
     return 1;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type min () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type min () {
     return 0;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type max () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type max () {
     return ULONG_MAX;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type real (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type x) {
     return x;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type imag (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type x) {
     return 0;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type conj (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conj (const val_type x) {
     return x;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type pow (const val_type x, const val_type y) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type pow (const val_type x, const val_type y) {
     return intPowUnsigned<val_type> (x, y);
   }
-  static KOKKOS_DEVICE_FUNCTION val_type sqrt (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
 #ifdef __CUDA_ARCH__
     return static_cast<val_type> ( ::sqrt (static_cast<double> (x)));
 #else
     return static_cast<val_type> ( ::sqrt (static_cast<long double> (x)));
 #endif // __CUDA_ARCH__
   }
-  static KOKKOS_DEVICE_FUNCTION val_type log (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
     return static_cast<long> ( ::log (static_cast<double> (x)));
   }
-  static KOKKOS_DEVICE_FUNCTION val_type log10 (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
     return static_cast<long> ( ::log10 (static_cast<double> (x)));
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type epsilon () {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon () {
     return zero ();
   }
 
@@ -1907,19 +1907,19 @@ public:
   static const bool isOrdinal = true;
   static const bool isComparable = true;
   static const bool hasMachineParameters = false;
-  static KOKKOS_DEVICE_FUNCTION magnitudeType magnitude (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION magnitudeType magnitude (const val_type x) {
     return abs (x);
   }
-  static KOKKOS_DEVICE_FUNCTION val_type conjugate (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conjugate (const val_type x) {
     return conj (x);
   }
-  static KOKKOS_DEVICE_FUNCTION bool isnaninf (const val_type) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isnaninf (const val_type) {
     return false;
   }
   static std::string name () {
     return "unsigned long";
   }
-  static KOKKOS_DEVICE_FUNCTION val_type squareroot (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type squareroot (const val_type x) {
     return sqrt (x);
   }
 };
@@ -1937,41 +1937,41 @@ public:
   static const bool is_exact = true;
   static const bool is_complex = false;
 
-  static KOKKOS_DEVICE_FUNCTION bool isInf (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
     return false;
   }
-  static KOKKOS_DEVICE_FUNCTION bool isNan (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type x) {
     return false;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type abs (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
     return x >= 0 ? x : -x;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type zero () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type zero () {
     return 0;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type one () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type one () {
     return 1;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type min () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type min () {
     return LLONG_MIN;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type max () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type max () {
     return LLONG_MAX;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type real (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type x) {
     return x;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type imag (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type x) {
     return 0;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type conj (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conj (const val_type x) {
     return x;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type
+  static KOKKOS_FORCEINLINE_FUNCTION val_type
   pow (const val_type x, const val_type y) {
     return intPowSigned<val_type> (x, y);
   }
-  static KOKKOS_DEVICE_FUNCTION val_type sqrt (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
 #ifdef __CUDA_ARCH__
     // Casting from a 64-bit integer type to double does result in a
     // loss of accuracy.  However, it gives us a good first
@@ -1992,13 +1992,13 @@ public:
     return static_cast<val_type> ( ::sqrt (static_cast<long double> (abs (x))));
 #endif // __CUDA_ARCH__
   }
-  static KOKKOS_DEVICE_FUNCTION val_type log (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
     return static_cast<val_type> ( ::log (static_cast<double> (abs (x))));
   }
-  static KOKKOS_DEVICE_FUNCTION val_type log10 (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
     return static_cast<val_type> ( ::log10 (static_cast<double> (abs (x))));
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type epsilon () {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon () {
     return zero ();
   }
 
@@ -2011,19 +2011,19 @@ public:
   static const bool isOrdinal = true;
   static const bool isComparable = true;
   static const bool hasMachineParameters = false;
-  static KOKKOS_DEVICE_FUNCTION magnitudeType magnitude (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION magnitudeType magnitude (const val_type x) {
     return abs (x);
   }
-  static KOKKOS_DEVICE_FUNCTION val_type conjugate (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conjugate (const val_type x) {
     return conj (x);
   }
-  static KOKKOS_DEVICE_FUNCTION bool isnaninf (const val_type) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isnaninf (const val_type) {
     return false;
   }
   static std::string name () {
     return "long long";
   }
-  static KOKKOS_DEVICE_FUNCTION val_type squareroot (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type squareroot (const val_type x) {
     return sqrt (x);
   }
 };
@@ -2041,54 +2041,54 @@ public:
   static const bool is_exact = true;
   static const bool is_complex = false;
 
-  static KOKKOS_DEVICE_FUNCTION bool isInf (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
     return false;
   }
-  static KOKKOS_DEVICE_FUNCTION bool isNan (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type x) {
     return false;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type abs (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
     return x; // unsigned integers are always nonnegative
   }
-  static KOKKOS_DEVICE_FUNCTION val_type zero () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type zero () {
     return 0;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type one () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type one () {
     return 1;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type min () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type min () {
     return 0;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type max () {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type max () {
     return ULLONG_MAX ;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type real (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type x) {
     return x;
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type imag (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type x) {
     return 0;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type conj (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conj (const val_type x) {
     return x;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type
+  static KOKKOS_FORCEINLINE_FUNCTION val_type
   pow (const val_type x, const val_type y) {
     return intPowUnsigned<val_type> (x, y);
   }
-  static KOKKOS_DEVICE_FUNCTION val_type sqrt (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
 #ifdef __CUDA_ARCH__
     return static_cast<val_type> ( ::sqrt (static_cast<double> (x)));
 #else
     return static_cast<val_type> ( ::sqrt (static_cast<long double> (x)));
 #endif // __CUDA_ARCH__
   }
-  static KOKKOS_DEVICE_FUNCTION val_type log (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
     return static_cast<val_type> ( ::log (static_cast<double> (x)));
   }
-  static KOKKOS_DEVICE_FUNCTION val_type log10 (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
     return static_cast<val_type> ( ::log10 (static_cast<double> (x)));
   }
-  static KOKKOS_DEVICE_FUNCTION mag_type epsilon () {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon () {
     return zero ();
   }
 
@@ -2101,19 +2101,19 @@ public:
   static const bool isOrdinal = true;
   static const bool isComparable = true;
   static const bool hasMachineParameters = false;
-  static KOKKOS_DEVICE_FUNCTION magnitudeType magnitude (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION magnitudeType magnitude (const val_type x) {
     return abs (x);
   }
-  static KOKKOS_DEVICE_FUNCTION val_type conjugate (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conjugate (const val_type x) {
     return conj (x);
   }
-  static KOKKOS_DEVICE_FUNCTION bool isnaninf (const val_type) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isnaninf (const val_type) {
     return false;
   }
   static std::string name () {
     return "unsigned long long";
   }
-  static KOKKOS_DEVICE_FUNCTION val_type squareroot (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION val_type squareroot (const val_type x) {
     return sqrt (x);
   }
 };
