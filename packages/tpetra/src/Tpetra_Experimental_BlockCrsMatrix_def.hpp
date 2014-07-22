@@ -263,6 +263,21 @@ namespace Experimental {
     }
   }
 
+  template<class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  setAllToScalar (const Scalar& alpha)
+  {
+    const LO numLocalMeshRows = static_cast<LO> (rowMeshMap_.getNodeNumElements ());
+    for (LO lclRow = 0; lclRow < numLocalMeshRows; ++lclRow) {
+      const size_t meshBeg = ptr_[lclRow];
+      const size_t meshEnd = ptr_[lclRow+1];
+      for (size_t absBlkOff = meshBeg; absBlkOff < meshEnd; ++absBlkOff) {
+        little_block_type A_cur = getNonConstLocalBlockFromAbsOffset (absBlkOff);
+        A_cur.fill (alpha);
+      }
+    }
+  }
 
   template<class Scalar, class LO, class GO, class Node>
   LO

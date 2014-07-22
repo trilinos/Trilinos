@@ -211,6 +211,9 @@ public:
     return false;
   }
 
+  //! Set all matrix entries equal to \c alpha.
+  void setAllToScalar (const Scalar &alpha);
+
   //@}
   //! \name Block operations
   //@{
