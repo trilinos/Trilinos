@@ -278,6 +278,26 @@ void markEdgesForResolvingSharingInfoUsingNodes(stk::mesh::BulkData &mesh, stk::
     }
 }
 
+
+void gather_shared_nodes(stk::mesh::BulkData & mesh, std::vector<EntityKey> & shared_nodes)
+{
+    const stk::mesh::BucketVector & node_buckets = mesh.buckets(stk::topology::NODE_RANK);
+
+    for(size_t nodeIndex = 0; nodeIndex < node_buckets.size(); ++nodeIndex)
+    {
+        const stk::mesh::Bucket & bucket = *node_buckets[nodeIndex];
+        stk::topology topology = bucket.topology();
+        for(size_t entityIndex = 0; entityIndex < bucket.size(); ++entityIndex)
+        {
+            Entity node = bucket[entityIndex];
+            if (mesh.isEntityMarked(node) == BulkData::IS_SHARED)
+            {
+                shared_nodes.push_back(mesh.entity_key(node));
+            }
+        }
+    }
+}
+
 void resolve_edge_sharing(stk::mesh::BulkData &stkMeshBulkData, std::vector<EntityKey> &entity_keys)
 {
     std::vector<shared_edge_type> shared_edges;
@@ -1193,6 +1213,16 @@ Entity BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id ,
 {
     INCREMENT_ENTITY_MODIFICATION_COUNTER(PUBLIC, ent_rank, DECLARE_ENTITY);
     return internal_declare_entity(ent_rank, ent_id, parts);
+}
+
+void BulkData::add_node_sharing( Entity node, int sharing_proc )
+{
+  // Only valid to specify sharing information for newly-created nodes
+  ThrowRequire(entity_rank(node) == stk::topology::NODE_RANK);
+  ThrowRequire(state(node) == Created);
+
+  markEntity(node, IS_SHARED);
+  entity_comm_map_insert(node, EntityCommInfo(stk::mesh::BulkData::SHARED, sharing_proc));
 }
 
 Entity BulkData::internal_declare_entity( EntityRank ent_rank , EntityId ent_id ,
@@ -4921,21 +4951,45 @@ void BulkData::internal_update_distributed_index(
     Trace_("stk::mesh::BulkData::internal_update_distributed_index");
     BABBLE_STK_PARALLEL_COMM(m_parallel_machine, "      entered internal_update_distributed_index");
 
+    // Scoop up a list of all nodes that have had their sharing information
+    // provided directly by the end-user.  These need special handling so
+    // that DistributedIndex isn't used to query sharing information.
+    //
+    std::vector<EntityKey> shared_nodes;
+    gather_shared_nodes(*this, shared_nodes);
+
     std::vector<shared_edge_type> shared_edges;
     markEdgesForResolvingSharingInfoUsingNodes(*this, stk::topology::EDGE_RANK, shared_edges);
 
-    parallel::DistributedIndex::KeyTypeVector local_created_or_modified ; // only store locally owned/shared entities
-
+    // Generate a list of all entities that have been created or modified
+    // locally, who must have their sharing information in the comm lists
+    // updated by making queries to DistributedIndex.  This list *does not*
+    // include nodes that have had their sharing information explicitly
+    // provided or edges that will have their sharing information resolved
+    // through node sharing.
+    //
+    parallel::DistributedIndex::KeyTypeVector local_created_or_modified;
     fillLocallyCreatedOrModifiedEntities(local_created_or_modified);
 
-    // Update distributed index. Note that the DistributedIndex only
-    // tracks ownership and sharing information.
-    parallel::DistributedIndex::KeyTypeVector::const_iterator begin = local_created_or_modified.begin();
-    parallel::DistributedIndex::KeyTypeVector::const_iterator end = local_created_or_modified.end();
+    // Update distributed index's ownership and sharing information with
+    // locally-owned/shared entities that have been created or modified.
+    // We need to manually insert the explicitly-shared nodes into this list
+    // so that DistributedIndex is notified about IDs that are now in use
+    // (since it manages available IDs).  These nodes will not have their
+    // sharing info updated through queries to DistributedIndex.
+    //
+    parallel::DistributedIndex::KeyTypeVector keys_requiring_update(local_created_or_modified);
+    keys_requiring_update.reserve(keys_requiring_update.size() + shared_nodes.size() );
+    keys_requiring_update.insert(keys_requiring_update.end(), shared_nodes.begin(), shared_nodes.end());
+
+    parallel::DistributedIndex::KeyTypeVector::const_iterator begin = keys_requiring_update.begin();
+    parallel::DistributedIndex::KeyTypeVector::const_iterator end = keys_requiring_update.end();
     m_entities_index.update_keys( begin, end );
 
-    std::vector<EntityKey> entity_keys;
-
+    // Update the sharing and ownership information in the comm maps for
+    // locally-created or modified entities through queries to DistributedIndex.
+    //
+    std::vector<EntityKey> entity_keys;  // List of shared and modified entities
     if (parallel_size() > 1)
     {
         // Retrieve data regarding which processes use the local_created_or_modified
@@ -4980,7 +5034,15 @@ void BulkData::internal_update_distributed_index(
 
     update_shared_edges_global_ids( *this, shared_edges );
 
-    for (size_t i=0; i<shared_edges.size();i++)
+    // Add the explicitly-shared nodes to our list of shared and modified entities.
+    //
+    entity_keys.reserve(entity_keys.size() + shared_nodes.size());
+    entity_keys.insert(entity_keys.end(), shared_nodes.begin(), shared_nodes.end());
+
+    // Add the edges that had their sharing information updated through
+    // node sharing to our list of shared and modified entities.
+    //
+    for (size_t i=0; i<shared_edges.size(); ++i)
     {
         Entity entity = get_entity(shared_edges[i].global_key);
         if ( isEntityMarked(entity) == BulkData::IS_SHARED )
@@ -4989,12 +5051,17 @@ void BulkData::internal_update_distributed_index(
         }
     }
 
+    // Reset our marking array for all entities now that all sharing information
+    // has been properly resolved.
+    //
     std::fill(m_mark_entity.begin(), m_mark_entity.end(), static_cast<int>(BulkData::NOT_MARKED));
-    std::sort(entity_keys.begin(), entity_keys.end());
 
+    // Return a list of all shared and modified entities, sorted by their entity key.
+    //
+    std::sort(entity_keys.begin(), entity_keys.end());
     shared_new.clear();
     shared_new.resize(entity_keys.size());
-    for (size_t i=0;i<entity_keys.size();i++)
+    for (size_t i=0; i<entity_keys.size(); ++i)
     {
         shared_new[i] = get_entity(entity_keys[i]);
     }

@@ -424,6 +424,15 @@ public:
    */
   Entity declare_entity( EntityRank ent_rank , EntityId ent_id);
 
+  /** \brief Add sharing information about a newly-created node
+   *
+   * All nodes that are shared between processors must have the same
+   * ID across all processors, and they must have this sharing information
+   * explicitly provided in the same modification cycle as it was created,
+   * on all sharing processors. Otherwise, the nodes will remain unique
+   * on different processors.
+   */
+  void add_node_sharing( Entity node, int sharing_proc );
 
   void change_entity_id( EntityId id, Entity entity);
 
