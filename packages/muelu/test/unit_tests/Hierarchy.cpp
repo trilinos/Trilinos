@@ -721,22 +721,27 @@ TEUCHOS_UNIT_TEST(Hierarchy, Write)
   // by using a matvec with a random vector.
   H.Write();
 
+  Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
+
+  out << "random status: " << rand() << std::endl;
   std::string infile = "A_0.m";
   Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
   RCP<Matrix> Ain = Utils::Read(infile, lib, comm);
   RCP<Vector> randomVec = VectorFactory::Build(A->getDomainMap(),false);
   randomVec->randomize();
+  out << "randomVec norm: " << randomVec->norm2() << std::endl;
   RCP<Vector> A_v = VectorFactory::Build(A->getRangeMap(),false);
   A->apply(*randomVec,*A_v,Teuchos::NO_TRANS,1,0);
+  out << "A_v norm: " << A_v->norm2() << std::endl;
 
   RCP<Vector> Ain_v = VectorFactory::Build(Ain->getRangeMap(),false);
   Ain->apply(*randomVec,*Ain_v,Teuchos::NO_TRANS,1,0);
+  out << "Ain_v norm: " << Ain_v->norm2() << std::endl;
 
   RCP<MultiVector> diff = VectorFactory::Build(A->getRangeMap());
   //diff = A_v + (-1.0)*(Ain_v) + 0*diff
   diff->update(1.0,*A_v,-1.0,*Ain_v,0.0);
 
-  Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
   diff->norm2(norms);
   out << "||diff|| = " << norms[0] << std::endl;
   TEST_EQUALITY(norms[0]<1e-15, true);
