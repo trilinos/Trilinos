@@ -665,9 +665,6 @@ IF (NOT TPL_ENABLE_MPI)
   SET(DEPLIBS simpi)
 ENDIF()
 
-# Add libm linking for ceil, floor and such.
-LIST(APPEND DEPLIBS m)
-
 TRIBITS_ADD_LIBRARY(
   zoltan
   HEADERS ${HEADERS}
