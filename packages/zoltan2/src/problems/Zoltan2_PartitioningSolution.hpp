@@ -425,120 +425,118 @@ public:
   }
 
 
-  /*! \brief set the Part Box boundaries as a result of geometric partitioning algorithm.
+  /*! \brief set the Part Box boundaries as a result of geometric partitioning.
    */
-  void setPartBoxes(RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, part_t> > > outPartBoxes){
-      this->partBoxes = outPartBoxes;
+  void setPartBoxes(
+    RCP<std::vector<
+             Zoltan2::coordinateModelPartBox<scalar_t, part_t> > > outPartBoxes)
+  {
+    this->partBoxes = outPartBoxes;
   }
 
   /*! \brief returns the part box boundary list.
    */
-  RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, part_t> > > getPartBoxes(){
-      return this->partBoxes;
+  RCP<std::vector<Zoltan2::coordinateModelPartBox<scalar_t, part_t> > > 
+  getPartBoxes()
+  {
+    return this->partBoxes;
   }
 
-  /*! \brief returns the communication graph as a result of geometric partitioning algorithm.
+  /*! \brief returns communication graph resulting from geometric partitioning.
    */
   void getCommunicationGraph(
           const Teuchos::Comm<int> *comm,
           ArrayRCP <part_t> &comXAdj,
-          ArrayRCP <part_t> &comAdj
-  ) {
-
-      if(comXAdj_.getRawPtr() == NULL && comAdj_.getRawPtr() == NULL){
-
-          part_t ntasks =  this->getActualGlobalNumberOfParts();
-          if (part_t (this->getTargetGlobalNumberOfParts()) > ntasks){
-              ntasks = this->getTargetGlobalNumberOfParts();
-          }
-          RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, part_t> > > pBoxes = this->getGlobalBoxBoundaries(comm);
-          int dim = (*pBoxes)[0].getDim();
-          GridHash < scalar_t, part_t> grid(
-                  pBoxes,
-                  ntasks,
-                  dim);
-          grid.getAdjArrays(comXAdj_, comAdj_);
-      }
-      comAdj = comAdj_;
-      comXAdj = comXAdj_;
-
-  }
-
-  RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, part_t> > > getGlobalBoxBoundaries(
-          const Teuchos::Comm<int> *comm){
+          ArrayRCP <part_t> &comAdj) 
+  {
+    if(comXAdj_.getRawPtr() == NULL && comAdj_.getRawPtr() == NULL){
 
       part_t ntasks =  this->getActualGlobalNumberOfParts();
       if (part_t (this->getTargetGlobalNumberOfParts()) > ntasks){
-          ntasks = this->getTargetGlobalNumberOfParts();
+        ntasks = this->getTargetGlobalNumberOfParts();
       }
-
-      RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, part_t> > > pBoxes = this->getPartBoxes();
-
+      RCP<std::vector<Zoltan2::coordinateModelPartBox<scalar_t, part_t> > > 
+      pBoxes = this->getGlobalBoxBoundaries(comm);
       int dim = (*pBoxes)[0].getDim();
-
-
-      scalar_t *localPartBoundaries = new scalar_t[ntasks * 2 *dim];
-
-      memset(localPartBoundaries, 0, sizeof(scalar_t) * ntasks * 2 *dim);
-
-      scalar_t *globalPartBoundaries = new scalar_t[ntasks * 2 *dim];
-      memset(globalPartBoundaries, 0, sizeof(scalar_t) * ntasks * 2 *dim);
-
-      scalar_t *localPartMins = localPartBoundaries;
-      scalar_t *localPartMaxs = localPartBoundaries + ntasks * dim;
-
-      scalar_t *globalPartMins = globalPartBoundaries;
-      scalar_t *globalPartMaxs = globalPartBoundaries + ntasks * dim;
-
-      part_t boxCount = pBoxes->size();
-      for (part_t i = 0; i < boxCount; ++i){
-          part_t pId = (*pBoxes)[i].getpId();
-          //cout << "me:" << comm->getRank() << " has:" << pId << endl;
-
-          scalar_t *lmins = (*pBoxes)[i].getlmins();
-          scalar_t *lmaxs = (*pBoxes)[i].getlmaxs();
-
-          for (int j = 0; j < dim; ++j){
-              localPartMins[dim * pId + j] = lmins[j];
-              localPartMaxs[dim * pId + j] = lmaxs[j];
-              /*
-              cout << "me:" << comm->getRank()  <<
-                      " dim * pId + j:"<< dim * pId + j <<
-                      " localMin:" << localPartMins[dim * pId + j] <<
-                      " localMax:" << localPartMaxs[dim * pId + j] << endl;
-                      */
-          }
-      }
-
-      Teuchos::Zoltan2_BoxBoundaries<int, scalar_t> reductionOp(ntasks * 2 *dim);
-
-      reduceAll<int, scalar_t>(*comm, reductionOp,
-              ntasks * 2 *dim, localPartBoundaries, globalPartBoundaries
-      );
-      RCP < std::vector <coordinateModelPartBox <scalar_t, part_t> > > pB(new std::vector <coordinateModelPartBox <scalar_t, part_t> > (), true) ;
-      for (part_t i = 0; i < ntasks; ++i){
-          Zoltan2::coordinateModelPartBox <scalar_t, part_t> tpb(
-                  i,
-                  dim,
-                  globalPartMins + dim * i,
-                  globalPartMaxs + dim * i);
-
-          /*
-          for (int j = 0; j < dim; ++j){
-              cout << "me:" << comm->getRank()  <<
-                      " dim * pId + j:"<< dim * i + j <<
-                      " globalMin:" << globalPartMins[dim * i + j] <<
-                      " globalMax:" << globalPartMaxs[dim * i + j] << endl;
-          }
-          */
-          pB->push_back(tpb);
-      }
-      delete []localPartBoundaries;
-      delete []globalPartBoundaries;
-      //RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, part_t> > > tmpRCPBox(pB, true);
-      this->partBoxes = pB;
-      return this->partBoxes;
+      GridHash<scalar_t, part_t> grid(pBoxes, ntasks, dim);
+      grid.getAdjArrays(comXAdj_, comAdj_);
+    }
+    comAdj = comAdj_;
+    comXAdj = comXAdj_;
   }
+
+  RCP<std::vector<Zoltan2::coordinateModelPartBox<scalar_t, part_t> > > 
+  getGlobalBoxBoundaries(const Teuchos::Comm<int> *comm) {
+    part_t ntasks =  this->getActualGlobalNumberOfParts();
+    if (part_t (this->getTargetGlobalNumberOfParts()) > ntasks){
+      ntasks = this->getTargetGlobalNumberOfParts();
+    }
+
+    RCP<std::vector<Zoltan2::coordinateModelPartBox<scalar_t, part_t> > > 
+    pBoxes = this->getPartBoxes();
+
+    int dim = (*pBoxes)[0].getDim();
+    scalar_t *localPartBoundaries = new scalar_t[ntasks * 2 *dim];
+
+    memset(localPartBoundaries, 0, sizeof(scalar_t) * ntasks * 2 *dim);
+
+    scalar_t *globalPartBoundaries = new scalar_t[ntasks * 2 *dim];
+    memset(globalPartBoundaries, 0, sizeof(scalar_t) * ntasks * 2 *dim);
+
+    scalar_t *localPartMins = localPartBoundaries;
+    scalar_t *localPartMaxs = localPartBoundaries + ntasks * dim;
+
+    scalar_t *globalPartMins = globalPartBoundaries;
+    scalar_t *globalPartMaxs = globalPartBoundaries + ntasks * dim;
+
+    part_t boxCount = pBoxes->size();
+    for (part_t i = 0; i < boxCount; ++i){
+      part_t pId = (*pBoxes)[i].getpId();
+      //cout << "me:" << comm->getRank() << " has:" << pId << endl;
+
+      scalar_t *lmins = (*pBoxes)[i].getlmins();
+      scalar_t *lmaxs = (*pBoxes)[i].getlmaxs();
+
+      for (int j = 0; j < dim; ++j){
+        localPartMins[dim * pId + j] = lmins[j];
+        localPartMaxs[dim * pId + j] = lmaxs[j];
+        /*
+        cout << "me:" << comm->getRank()  <<
+                " dim * pId + j:"<< dim * pId + j <<
+                " localMin:" << localPartMins[dim * pId + j] <<
+                " localMax:" << localPartMaxs[dim * pId + j] << endl;
+        */
+      }
+    }
+
+    Teuchos::Zoltan2_BoxBoundaries<int, scalar_t> reductionOp(ntasks * 2 *dim);
+
+    reduceAll<int, scalar_t>(*comm, reductionOp,
+              ntasks * 2 *dim, localPartBoundaries, globalPartBoundaries);
+    RCP<std::vector<coordinateModelPartBox<scalar_t, part_t> > > 
+    pB(new std::vector <coordinateModelPartBox <scalar_t, part_t> > (), true);
+    for (part_t i = 0; i < ntasks; ++i){
+      Zoltan2::coordinateModelPartBox <scalar_t, part_t> tpb(i, dim,
+                                                 globalPartMins + dim * i,
+                                                 globalPartMaxs + dim * i);
+
+      /*
+      for (int j = 0; j < dim; ++j){
+          cout << "me:" << comm->getRank()  <<
+                  " dim * pId + j:"<< dim * i + j <<
+                  " globalMin:" << globalPartMins[dim * i + j] <<
+                  " globalMax:" << globalPartMaxs[dim * i + j] << endl;
+      }
+      */
+      pB->push_back(tpb);
+    }
+    delete []localPartBoundaries;
+    delete []globalPartBoundaries;
+    //RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, part_t> > > tmpRCPBox(pB, true);
+    this->partBoxes = pB;
+    return this->partBoxes;
+  }
+
   /*! \brief Create an import list from the export list.
    *
    *  \param numExtra The amount of related information of type
