@@ -1124,7 +1124,6 @@ namespace Tpetra {
     }
 
   protected:
-
     // template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     // friend MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>
     // createCopy (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& src);
@@ -1385,39 +1384,107 @@ namespace Tpetra {
   deep_copy (MultiVector<DS,DL,DG,DN>& dst,
              const MultiVector<SS,SL,SG,SN>& src);
 
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  template <class Node2>
-  Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  clone (const RCP<Node2> &node2) const
-  {
-    // KR FIXME: Can't do partial specializations of a free function.
-    // Split off into a class, just like you did for CrsMatrix, etc.
-    // In fact, that could even be a class templated on "ObjectType",
-    // with partial specializations for MultiVector, CrsGraph,
-    // CrsMatrix, etc.  Use that class to implement clone().  Make
-    // that class a friend of each of the objects (?).
-
-    using Teuchos::ArrayRCP;
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-    typedef Map<LocalOrdinal, GlobalOrdinal, Node2> Map2;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> MV2;
-
-    ArrayRCP<ArrayRCP<const Scalar> > MV_view = this->get2dView ();
-    RCP<const Map2> clonedMap = this->getMap ()->template clone<Node2> (node2);
-    RCP<MV2> clonedMV = rcp (new MV2 (clonedMap, this->getNumVectors ()));
-    ArrayRCP<ArrayRCP<Scalar> > clonedMV_view = clonedMV->get2dViewNonConst ();
-    for (size_t j = 0; j < this->getNumVectors (); ++j) {
-      clonedMV_view[j].deepCopy (MV_view[j] ());
-    }
-    clonedMV_view = Teuchos::null;
-    return clonedMV;
-  }
-
-
   namespace Details {
+    /// \brief Implementation of ::Tpetra::MultiVector::clone().
+    ///
+    /// \tparam DstMultiVecType Specialization of
+    ///   ::Tpetra::MultiVector, which is the result of (is returned
+    ///   by) the clone() operation.
+    ///
+    /// \tparam SrcMultiVecType Specialization of
+    ///   ::Tpetra::MultiVector, which is the source (input) of the
+    ///   clone() operation.
+    ///
+    /// We provide partial specializations for the following cases:
+    /// <ol>
+    /// <li> Source and destination MultiVector types have the same
+    ///      Scalar type, but all their other template parameters
+    ///      might be different. </li>
+    /// <li> Source and destination MultiVector types are the
+    ///      same. </li>
+    /// <li> Source and destination MultiVector types are both Kokkos
+    ///      refactor types (we look at their Node types to determine
+    ///      this), and have the same Scalar types, but all their
+    ///      other template parameters might be different. </li>
+    /// <li> Source and destination MultiVector types are both Kokkos
+    ///      refactor types (we look at their Node types to determine
+    ///      this), and both the same. </li>
+    /// </ol>
+    template<class DstMultiVecType, class SrcMultiVecType>
+    struct MultiVectorCloner {
+      typedef DstMultiVecType dst_mv_type;
+      typedef SrcMultiVecType src_mv_type;
+
+      static Teuchos::RCP<dst_mv_type>
+      clone (const src_mv_type& X,
+             const Teuchos::RCP<typename dst_mv_type::node_type>& node2);
+    };
+
+    // Partial specialization of MultiVectorCloner for when the source
+    // and destination MultiVector types have the same Scalar type,
+    // but all their other template parameters might be different.
+    template<class ScalarType,
+             class DstLocalOrdinalType, class DstGlobalOrdinalType, class DstNodeType,
+             class SrcLocalOrdinalType, class SrcGlobalOrdinalType, class SrcNodeType>
+    struct MultiVectorCloner< ::Tpetra::MultiVector<ScalarType, DstLocalOrdinalType, DstGlobalOrdinalType, DstNodeType>,
+                              ::Tpetra::MultiVector<ScalarType, SrcLocalOrdinalType, SrcGlobalOrdinalType, SrcNodeType> >
+    {
+      typedef ::Tpetra::MultiVector<ScalarType, DstLocalOrdinalType, DstGlobalOrdinalType, DstNodeType> dst_mv_type;
+      typedef ::Tpetra::MultiVector<ScalarType, SrcLocalOrdinalType, SrcGlobalOrdinalType, SrcNodeType> src_mv_type;
+
+      static Teuchos::RCP<dst_mv_type>
+      clone (const src_mv_type& X,
+             const Teuchos::RCP<typename src_mv_type::node_type>& node2)
+      {
+        using Teuchos::ArrayRCP;
+        using Teuchos::RCP;
+        using Teuchos::rcp;
+        typedef typename src_mv_type::map_type src_map_type;
+        typedef typename dst_mv_type::map_type dst_map_type;
+        typedef typename dst_mv_type::node_type dst_node_type;
+
+        // Clone X's Map to have the new Node type.
+        RCP<const src_map_type> map1 = X.getMap ();
+        RCP<const dst_map_type> map2 = map1.is_null () ?
+          Teuchos::null : map1->template clone<dst_node_type> (node2);
+
+        const size_t lclNumRows = X.getLocalLength ();
+        const size_t numCols = X.getNumVectors ();
+        const size_t LDA = lclNumRows;
+
+        // Get a host deep copy of X's data.
+        ArrayRCP<ScalarType> data1 (LDA * numCols);
+        X.get1dCopy (data1 (), LDA);
+
+        // Create the destination MultiVector.  This might do another
+        // deep copy; I'm not really worried about that.  clone()
+        // doesn't have to be super fast; it just can't be too slow.
+        return rcp (new dst_mv_type (map2, data1 (), LDA, numCols));
+      }
+    };
+
+    // Partial specialization of MultiVectorCloner for when the source
+    // and destination MultiVector types are the same.
+    template<class ScalarType, class LocalOrdinalType, class GlobalOrdinalType, class NodeType>
+    struct MultiVectorCloner< ::Tpetra::MultiVector<ScalarType, LocalOrdinalType, GlobalOrdinalType, NodeType>,
+                              ::Tpetra::MultiVector<ScalarType, LocalOrdinalType, GlobalOrdinalType, NodeType> >
+    {
+      typedef ::Tpetra::MultiVector<ScalarType, LocalOrdinalType, GlobalOrdinalType, NodeType> dst_mv_type;
+      typedef dst_mv_type src_mv_type;
+
+      static Teuchos::RCP<dst_mv_type>
+      clone (const src_mv_type& X, const Teuchos::RCP<NodeType>& )
+      {
+        // Create a deep copy.
+        RCP<dst_mv_type> X_clone = rcp (new dst_mv_type (X, Teuchos::Copy));
+        // Set the cloned MultiVector to have the same copy-or-view
+        // semantics as the input MultiVector X.
+        X_clone->setCopyOrView (X.getCopyOrView ());
+
+        return X_clone;
+      }
+    };
+
     template<class MultiVectorType>
     Teuchos::RCP<MultiVectorType>
     CreateMultiVectorFromView<MultiVectorType>::
@@ -1438,6 +1505,20 @@ namespace Tpetra {
                                        LDA, numVectors, HOST_VIEW_CONSTRUCTOR));
     }
   } // namespace Details
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  template <class Node2>
+  Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  clone (const Teuchos::RCP<Node2>& node2) const
+  {
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> dst_mv_type;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> src_mv_type;
+    typedef Details::MultiVectorCloner<dst_mv_type, src_mv_type> cloner_type;
+    return cloner_type::clone (*this, node2);
+  }
+
 
   /// \brief Nonmember MultiVector constructor: make a MultiVector from a given Map.
   /// \relatesalso MultiVector

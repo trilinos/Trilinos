@@ -54,45 +54,46 @@
 namespace Tpetra {
 
 namespace { // (anonymous)
-  template<class DstType, class SrcType, class DeviceType,bool DstConstStride,bool SrcConstStride>
+  template<class DstType, class SrcType, class IndexType, class DeviceType,
+           const bool DstConstStride, const bool SrcConstStride>
   struct DeepCopySelectedVectors {
     typedef DeviceType device_type;
-    DstType dst;
-    SrcType src;
-    Kokkos::View<int*,DeviceType> whichVectorDst;
-    Kokkos::View<int*,DeviceType> whichVectorSrc;
-    int n;
+    DstType dst_;
+    SrcType src_;
+    Kokkos::View<const IndexType*, DeviceType> whichVectorDst_;
+    Kokkos::View<const IndexType*, DeviceType> whichVectorSrc_;
+    const IndexType numVecs_;
 
-    DeepCopySelectedVectors (DstType dst_,
-                             SrcType src_,
-                             Kokkos::View<int*,DeviceType> whichVectorDst_,
-                             Kokkos::View<int*,DeviceType> whichVectorSrc_):
-      dst (dst_),
-      src (src_),
-      whichVectorDst (whichVectorDst_),
-      whichVectorSrc (whichVectorSrc_),
-      n (whichVectorSrc_.dimension_0 ())
+    DeepCopySelectedVectors (DstType dst,
+                             SrcType src,
+                             const Kokkos::View<const IndexType*, DeviceType>& whichVectorDst,
+                             const Kokkos::View<const IndexType*, DeviceType>& whichVectorSrc) :
+      dst_ (dst),
+      src_ (src),
+      whichVectorDst_ (whichVectorDst),
+      whichVectorSrc_ (whichVectorSrc),
+      numVecs_ (whichVectorSrc_.dimension_0 ())
     {}
 
-    void KOKKOS_INLINE_FUNCTION operator() (int i) const {
+    void KOKKOS_INLINE_FUNCTION operator () (const IndexType i) const {
       if (DstConstStride) {
         if (SrcConstStride) {
-          for (int j = 0; j < n; ++j) {
-            dst(i,j) = src(i,j);
+          for (IndexType j = 0; j < numVecs_; ++j) {
+            dst_(i,j) = src_(i,j);
           }
         } else {
-          for (int j = 0; j < n; ++j) {
-            dst(i,j) = src(i,whichVectorSrc(j));
+          for (IndexType j = 0; j < numVecs_; ++j) {
+            dst_(i,j) = src_(i,whichVectorSrc_(j));
           }
         }
       } else {
         if (SrcConstStride) {
-          for (int j = 0; j < n; ++j) {
-            dst(i,whichVectorDst(j)) = src(i,j);
+          for (IndexType j = 0; j < numVecs_; ++j) {
+            dst_(i,whichVectorDst_(j)) = src_(i,j);
           }
         } else {
-          for (int j = 0; j < n; ++j) {
-            dst(i,whichVectorDst(j)) = src(i,whichVectorSrc(j));
+          for (IndexType j = 0; j < numVecs_; ++j) {
+            dst_(i,whichVectorDst_(j)) = src_(i,whichVectorSrc_(j));
           }
         }
       }
@@ -2436,21 +2437,21 @@ namespace { // (anonymous)
 
     // Create a DualView which will be a contiguously stored deep copy of this MV's view.
     dual_view_type dstView ("MV::dual_view", numRows, numColsToCopy);
-    Kokkos::View<int*, host_mirror_device_type> whichVecsDst ("whichVecsDst", numColsToCopy);
-    Kokkos::View<int*, host_mirror_device_type> whichVecsSrc ("whichVecsSrc", numColsToCopy);
+    Kokkos::View<LocalOrdinal*, host_mirror_device_type> whichVecsDst ("whichVecsDst", numColsToCopy);
+    Kokkos::View<LocalOrdinal*, host_mirror_device_type> whichVecsSrc ("whichVecsSrc", numColsToCopy);
 
     if (! this->isConstantStride ()) {
       for (size_t j = 0; j < numColsToCopy; ++j) {
-        whichVecsSrc(j) = static_cast<int> (this->whichVectors_[cols[j]]);
+        whichVecsSrc(j) = static_cast<LocalOrdinal> (this->whichVectors_[cols[j]]);
       }
     }
     else {
       for (size_t j = 0; j < numColsToCopy; ++j) {
-        whichVecsSrc(j) = static_cast<int> (cols[j]);
+        whichVecsSrc(j) = static_cast<LocalOrdinal> (cols[j]);
       }
     }
     for (size_t j = 0; j < numColsToCopy; ++j) {
-      whichVecsDst(j) = static_cast<int> (j);
+      whichVecsDst(j) = static_cast<LocalOrdinal> (j);
     }
 
     //
@@ -2458,9 +2459,9 @@ namespace { // (anonymous)
     //
     host_view_type srcView =
       Kokkos::subview<host_view_type> (view_.h_view, rowRange, colRange);
-    DeepCopySelectedVectors<host_view_type,
-      host_view_type, host_mirror_device_type,
-      false, false> f (dstView.h_view, srcView, whichVecsDst, whichVecsSrc);
+    DeepCopySelectedVectors<host_view_type, host_view_type, LocalOrdinal,
+      host_mirror_device_type, false, false> f (dstView.h_view, srcView,
+                                                whichVecsDst, whichVecsSrc);
     Kokkos::parallel_for (numRows, f);
 
     // Sync the output DualView (only) back to device.
@@ -2503,23 +2504,23 @@ namespace { // (anonymous)
 
     // Create a DualView which will be a contiguously stored deep copy of this MV's view.
     dual_view_type dstView ("MV::dual_view", numRows, numColsToCopy);
-    Kokkos::View<int*, host_mirror_device_type> whichVecsDst ("whichVecsDst", numColsToCopy);
-    Kokkos::View<int*, host_mirror_device_type> whichVecsSrc ("whichVecsSrc", numColsToCopy);
+    Kokkos::View<LocalOrdinal*, host_mirror_device_type> whichVecsDst ("whichVecsDst", numColsToCopy);
+    Kokkos::View<LocalOrdinal*, host_mirror_device_type> whichVecsSrc ("whichVecsSrc", numColsToCopy);
 
     if (! this->isConstantStride ()) {
       for (size_t j = 0; j < numColsToCopy; ++j) {
         const size_t col = static_cast<size_t> (colRng.lbound ()) + j;
-        whichVecsSrc(j) = static_cast<int> (this->whichVectors_[col]);
+        whichVecsSrc(j) = static_cast<LocalOrdinal> (this->whichVectors_[col]);
       }
     }
     else {
       for (size_t j = 0; j < numColsToCopy; ++j) {
         const size_t col = static_cast<size_t> (colRng.lbound ()) + j;
-        whichVecsSrc(j) = static_cast<int> (col);
+        whichVecsSrc(j) = static_cast<LocalOrdinal> (col);
       }
     }
     for (size_t j = 0; j < numColsToCopy; ++j) {
-      whichVecsDst(j) = static_cast<int> (j);
+      whichVecsDst(j) = static_cast<LocalOrdinal> (j);
     }
 
     //
@@ -2528,9 +2529,9 @@ namespace { // (anonymous)
     // FIXME (mfh 10 Jul 2014) Exploit contiguity of the desired columns.
     host_view_type srcView =
       Kokkos::subview<host_view_type> (view_.h_view, rowRange, colRange);
-    DeepCopySelectedVectors<host_view_type,
-      host_view_type, host_mirror_device_type,
-      false, false> f (dstView.h_view, srcView, whichVecsDst, whichVecsSrc);
+    DeepCopySelectedVectors<host_view_type, host_view_type, LocalOrdinal,
+      host_mirror_device_type, false, false> f (dstView.h_view, srcView,
+                                                whichVecsDst, whichVecsSrc);
     Kokkos::parallel_for (numRows, f);
 
     // Sync the output DualView (only) back to device.
@@ -2789,14 +2790,13 @@ namespace { // (anonymous)
     //   Kokkos::deep_copy (dstView, srcView);
     // }
     // else {
-    //   // FIXME (mfh 10 Jul 2014) Shouldn't we use size_t instead of int here?
-    //   Kokkos::View<int*, host_mirror_device_type> whichVecsDst ("whichVecsDst", numCols);
-    //   Kokkos::View<int*, host_mirror_device_type> whichVecsSrc ("whichVecsSrc", numCols);
+    //   Kokkos::View<LocalOrdinal*, host_mirror_device_type> whichVecsDst ("whichVecsDst", numCols);
+    //   Kokkos::View<LocalOrdinal*, host_mirror_device_type> whichVecsSrc ("whichVecsSrc", numCols);
     //   for (size_t j = 0; j < numCols; ++j) {
-    //     whichVecsSrc(j) = static_cast<int> (this->whichVectors_[j]);
-    //     whichVecsDst(j) = static_cast<int> (j);
+    //     whichVecsSrc(j) = static_cast<LocalOrdinal> (this->whichVectors_[j]);
+    //     whichVecsDst(j) = static_cast<LocalOrdinal> (j);
     //   }
-    //   DeepCopySelectedVectors<input_view_type, host_view_type,
+    //   DeepCopySelectedVectors<input_view_type, host_view_type, LocalOrdinal,
     //     host_mirror_device_type, false, false> f (dstView, srcView, whichVecsDst, whichVecsSrc);
     //   Kokkos::parallel_for (numRows, f);
     // }
@@ -3646,123 +3646,177 @@ namespace { // (anonymous)
   {
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> MV;
+    typedef LocalOrdinal LO;
 
     MV cpy (src.getMap (), src.getNumVectors ());
     if (src.isConstantStride ()) {
       Kokkos::deep_copy (cpy.getDualView (), src.getDualView ());
     }
     else {
-      const char viewName[] = "MultiVector::createCopy::WhichVectors";
+      const char viewName[] = "MV::createCopy::whichVecs";
+      const LO numWhichVecs = static_cast<LO> (src.whichVectors_.size ());
 
       if (src.getDualView ().modified_device >= src.getDualView ().modified_host) {
-        typedef typename DeviceType::size_type size_type;
-        typedef DeepCopySelectedVectors<typename MV::dual_view_type::t_dev,
-                                        typename MV::dual_view_type::t_dev,
-                                        DeviceType, true, false> functor_type;
+        typedef typename MV::dual_view_type::t_dev dev_view_type;
+        typedef DeepCopySelectedVectors<dev_view_type, dev_view_type,
+          LO, DeviceType, true, false> functor_type;
 
-        const size_type numWhichVectors = src.whichVectors_.size ();
-        Kokkos::View<int*, DeviceType> whichVectors (viewName, numWhichVectors);
-        for (size_type i = 0; i < numWhichVectors; ++i) {
-          whichVectors(i) = src.whichVectors_[i];
+        Kokkos::View<LO*, DeviceType> whichVectors (viewName, numWhichVecs);
+        // FIXME (mfh 23 Jul 2014) The following loop assumes CUDA UVM.
+        for (LO i = 0; i < numWhichVecs; ++i) {
+          whichVectors(i) = static_cast<LO> (src.whichVectors_[i]);
         }
-        Kokkos::parallel_for (src.getLocalLength (),
-                              functor_type (cpy.getDualView ().template view<DeviceType> (),
-                                            src.getDualView ().template view<DeviceType> (),
-                                            whichVectors, whichVectors));
-      } else {
-        typedef typename DeviceType::host_mirror_device_type host_mirror_device_type;
-        typedef typename host_mirror_device_type::size_type size_type;
-        typedef DeepCopySelectedVectors<typename MV::dual_view_type::t_host,
-                                        typename MV::dual_view_type::t_host,
-                                        host_mirror_device_type,
-                                        true, false> functor_type;
-
-        const size_type numWhichVectors = src.whichVectors_.size ();
-        Kokkos::View<int*, host_mirror_device_type> whichVectors (viewName, numWhichVectors);
-        for (size_type i = 0; i < numWhichVectors; ++i) {
-          whichVectors(i) = src.whichVectors_[i];
+        functor_type f (cpy.getDualView ().template view<DeviceType> (),
+                        src.getDualView ().template view<DeviceType> (),
+                        whichVectors, whichVectors);
+        Kokkos::parallel_for (src.getLocalLength (), f);
+      }
+      else {
+        typedef typename DeviceType::host_mirror_device_type host_dev_type;
+        typedef typename MV::dual_view_type::t_host host_view_type;
+        typedef DeepCopySelectedVectors<host_view_type, host_view_type,
+          LO, host_dev_type, true, false> functor_type;
+        Kokkos::View<LO*, host_dev_type> whichVectors (viewName, numWhichVecs);
+        for (LO i = 0; i < numWhichVecs; ++i) {
+          whichVectors(i) = static_cast<LO> (src.whichVectors_[i]);
         }
-        Kokkos::parallel_for (src.getLocalLength (),
-                              functor_type (cpy.getDualView ().template view<host_mirror_device_type> (),
-                                            src.getDualView ().template view<host_mirror_device_type> (),
-                                            whichVectors, whichVectors));
+        functor_type f (cpy.getDualView ().template view<host_dev_type> (),
+                        src.getDualView ().template view<host_dev_type> (),
+                        whichVectors, whichVectors);
+        Kokkos::parallel_for (src.getLocalLength (), f);
       }
     }
     return cpy;
   }
 
   template <class DS, class DL, class DG, class DD, class SS, class SL, class SG, class SD>
-  void deep_copy( MultiVector<DS,DL,DG,Kokkos::Compat::KokkosDeviceWrapperNode<DD> >& dst,
-                  const MultiVector<SS,SL,SG,Kokkos::Compat::KokkosDeviceWrapperNode<SD> >& src) {
+  void
+  deep_copy (MultiVector<DS,DL,DG,Kokkos::Compat::KokkosDeviceWrapperNode<DD> >& dst,
+             const MultiVector<SS,SL,SG,Kokkos::Compat::KokkosDeviceWrapperNode<SD> >& src)
+  {
+    using Kokkos::parallel_for;
     typedef MultiVector<DS,DL,DG,Kokkos::Compat::KokkosDeviceWrapperNode<DD> > MVD;
     typedef const MultiVector<SS,SL,SG,Kokkos::Compat::KokkosDeviceWrapperNode<SD> > MVS;
-    if(src.isConstantStride() && dst.isConstantStride()) {
-      Kokkos::deep_copy(dst.getDualView(),src.getDualView());
+
+    if (src.isConstantStride () && dst.isConstantStride ()) {
+      Kokkos::deep_copy (dst.getDualView (), src.getDualView ());
     }
     else {
-      if(dst.isConstantStride()) {
-        if(src.getDualView().modified_device>=src.getDualView().modified_host) {
-          Kokkos::View<int*,DD> whichVectors("MultiVector::createCopy::WhichVectors",src.whichVectors_.size());
-          for(int i = 0; i < src.whichVectors_.size(); i++)
-            whichVectors(i)=src.whichVectors_[i];
-          Kokkos::parallel_for(src.getLocalLength(),DeepCopySelectedVectors<typename MVD::dual_view_type::t_dev,typename MVS::dual_view_type::t_dev,DD,true,false>
-                                                    (dst.getDualView().template view<DD>(),
-                                                     src.getDualView().template view<DD>(),
-                                                     whichVectors,whichVectors));
-        } else {
-          Kokkos::View<int*,typename DD::host_mirror_device_type> whichVectors("MultiVector::createCopy::WhichVectors",src.whichVectors_.size());
-          for(int i = 0; i < src.whichVectors_.size(); i++)
-            whichVectors(i)=src.whichVectors_[i];
-          Kokkos::parallel_for(src.getLocalLength(),DeepCopySelectedVectors<typename MVD::dual_view_type::t_host,typename MVS::dual_view_type::t_host,typename DD::host_mirror_device_type,true,false>
-                                                    (dst.getDualView().template view<typename DD::host_mirror_device_type>(),
-                                                     src.getDualView().template view<typename DD::host_mirror_device_type>(),
-                                                     whichVectors,whichVectors));
-        }
-      } else {
-        if(src.isConstantStride()) {
-          if(src.getDualView().modified_device>=src.getDualView().modified_host) {
-            Kokkos::View<int*,DD> whichVectors("MultiVector::createCopy::WhichVectors",dst.whichVectors_.size());
-            for(int i = 0; i < dst.whichVectors_.size(); i++)
-              whichVectors(i)=dst.whichVectors_[i];
-            Kokkos::parallel_for(src.getLocalLength(),DeepCopySelectedVectors<typename MVD::dual_view_type::t_dev,typename MVS::dual_view_type::t_dev,DD,false,true>
-                                                      (dst.getDualView().template view<DD>(),
-                                                       src.getDualView().template view<DD>(),
-                                                       whichVectors,whichVectors));
-          } else {
-            Kokkos::View<int*,typename DD::host_mirror_device_type> whichVectors("MultiVector::createCopy::WhichVectors",dst.whichVectors_.size());
-            for(int i = 0; i < dst.whichVectors_.size(); i++)
-              whichVectors(i)=dst.whichVectors_[i];
-            Kokkos::parallel_for(src.getLocalLength(),DeepCopySelectedVectors<typename MVD::dual_view_type::t_host,typename MVS::dual_view_type::t_host,typename DD::host_mirror_device_type,false,true>
-                                                      (dst.getDualView().template view<typename DD::host_mirror_device_type>(),
-                                                       src.getDualView().template view<typename DD::host_mirror_device_type>(),
-                                                       whichVectors,whichVectors));
+      if (dst.isConstantStride ()) {
+        if (src.getDualView ().modified_device >= src.getDualView ().modified_host) {
+          Kokkos::View<SL*, DD> whichVectors ("MV::deep_copy::whichVecs",
+                                              src.whichVectors_.size ());
+          // FIXME (mfh 23 Jul 2014) This loop assumes CUDA UVM.
+          for (SL i = 0; i < static_cast<SL> (src.whichVectors_.size ()); ++i) {
+            whichVectors(i) = static_cast<SL> (src.whichVectors_[i]);
           }
-        } else {
-          if(src.getDualView().modified_device>=src.getDualView().modified_host) {
-            Kokkos::View<int*,DD> whichVectorsDst("MultiVector::createCopy::WhichVectors",dst.whichVectors_.size());
-            for(int i = 0; i < dst.whichVectors_.size(); i++)
-              whichVectorsDst(i)=dst.whichVectors_[i];
-            Kokkos::View<int*,DD> whichVectorsSrc("MultiVector::createCopy::WhichVectors",dst.whichVectors_.size());
-            for(int i = 0; i < dst.whichVectors_.size(); i++)
-              whichVectorsSrc(i)=src.whichVectors_[i];
-            Kokkos::parallel_for(src.getLocalLength(),DeepCopySelectedVectors<typename MVD::dual_view_type::t_dev,typename MVS::dual_view_type::t_dev,DD,false,false>
-                                                      (dst.getDualView().template view<DD>(),
-                                                       src.getDualView().template view<DD>(),
-                                                       whichVectorsDst,whichVectorsSrc));
-          } else {
-            Kokkos::View<int*,typename DD::host_mirror_device_type> whichVectorsDst("MultiVector::createCopy::WhichVectors",dst.whichVectors_.size());
-            for(int i = 0; i < dst.whichVectors_.size(); i++)
-              whichVectorsDst(i)=dst.whichVectors_[i];
-            Kokkos::View<int*,typename DD::host_mirror_device_type> whichVectorsSrc("MultiVector::createCopy::WhichVectors",dst.whichVectors_.size());
-            for(int i = 0; i < dst.whichVectors_.size(); i++)
+          typedef DeepCopySelectedVectors<typename MVD::dual_view_type::t_dev,
+            typename MVS::dual_view_type::t_dev, SL, DD, true, false> functor_type;
+          functor_type f (dst.getDualView().template view<DD> (),
+                          src.getDualView().template view<DD> (),
+                          whichVectors, whichVectors);
+          Kokkos::parallel_for (src.getLocalLength (), f);
+        }
+        else {
+          typedef typename DD::host_mirror_device_type host_dev_type;
+
+          Kokkos::View<SL*, host_dev_type> whichVectors ("MV::deep_copy::whichVecs",
+                                                         src.whichVectors_.size ());
+          for (SL i = 0; i < static_cast<SL> (src.whichVectors_.size ()); ++i) {
+            whichVectors(i) = static_cast<SL> (src.whichVectors_[i]);
+          }
+          typedef DeepCopySelectedVectors<typename MVD::dual_view_type::t_host,
+            typename MVS::dual_view_type::t_host, SL, host_dev_type,
+            true, false> functor_type;
+          functor_type f (dst.getDualView ().template view<host_dev_type> (),
+                          src.getDualView ().template view<host_dev_type> (),
+                          whichVectors, whichVectors);
+          Kokkos::parallel_for (src.getLocalLength (), f);
+        }
+      }
+      else {
+        if (src.isConstantStride ()) {
+          if (src.getDualView ().modified_device >= src.getDualView ().modified_host) {
+            Kokkos::View<DL*, DD> whichVectors ("MV::deep_copy::whichVecs",
+                                                dst.whichVectors_.size ());
+            // FIXME (mfh 23 Jul 2014) This loop assumes CUDA UVM.
+            for (DL i = 0; i < static_cast<DL> (dst.whichVectors_.size ()); ++i) {
+              whichVectors(i) = dst.whichVectors_[i];
+            }
+            typedef DeepCopySelectedVectors<typename MVD::dual_view_type::t_dev,
+              typename MVS::dual_view_type::t_dev, DL, DD, false, true> functor_type;
+            functor_type f (dst.getDualView ().template view<DD> (),
+                            src.getDualView ().template view<DD> (),
+                            whichVectors,whichVectors);
+            Kokkos::parallel_for (src.getLocalLength (), f);
+          }
+          else {
+            Kokkos::View<DL*, typename DD::host_mirror_device_type> whichVectors ("MV::deep_copy::whichVecs",
+                                                                                  dst.whichVectors_.size ());
+            // FIXME (mfh 23 Jul 2014) This loop assumes CUDA UVM.
+            for (DL i = 0; i < static_cast<DL> (dst.whichVectors_.size ()); ++i) {
+              whichVectors(i) = dst.whichVectors_[i];
+            }
+            typedef DeepCopySelectedVectors<typename MVD::dual_view_type::t_host,
+              typename MVS::dual_view_type::t_host,
+              DL, typename DD::host_mirror_device_type, false, true> functor_type;
+            functor_type f (dst.getDualView ().template view<typename DD::host_mirror_device_type> (),
+                            src.getDualView ().template view<typename DD::host_mirror_device_type> (),
+                            whichVectors, whichVectors);
+            Kokkos::parallel_for (src.getLocalLength (), f);
+          }
+        }
+        else {
+          if (src.getDualView ().modified_device >= src.getDualView ().modified_host) {
+
+            const DL dstNumWhichVecs = static_cast<DL> (dst.whichVectors_.size ());
+            Kokkos::View<DL*, DD> whichVectorsDst ("MV::deep_copy::whichVecs",
+                                                   dstNumWhichVecs);
+            // FIXME (mfh 23 Jul 2014) This loop assumes CUDA UVM.
+            for (DL i = 0; i < dstNumWhichVecs; ++i) {
+              whichVectorsDst(i) = static_cast<DL> (dst.whichVectors_[i]);
+            }
+
+            // Use the destination MultiVector's LocalOrdinal type here.
+            const DL srcNumWhichVecs = static_cast<DL> (src.whichVectors_.size ());
+            Kokkos::View<DL*, DD> whichVectorsSrc ("MV::deep_copy::whichVecs",
+                                                   srcNumWhichVecs);
+            // FIXME (mfh 23 Jul 2014) This loop assumes CUDA UVM.
+            for (DL i = 0; i < srcNumWhichVecs; ++i) {
+              whichVectorsSrc(i) = static_cast<DL> (src.whichVectors_[i]);
+            }
+
+            typedef DeepCopySelectedVectors<typename MVD::dual_view_type::t_dev,
+              typename MVS::dual_view_type::t_dev, DL, DD, false, false>
+              functor_type;
+            functor_type f (dst.getDualView ().template view<DD> (),
+                            src.getDualView ().template view<DD> (),
+                            whichVectorsDst, whichVectorsSrc);
+            Kokkos::parallel_for (src.getLocalLength (), f);
+          }
+          else {
+            typedef typename DD::host_mirror_device_type host_dev_type;
+
+            const DL dstNumWhichVecs = static_cast<DL> (dst.whichVectors_.size ());
+            Kokkos::View<DL*, host_dev_type> whichVectorsDst ("dstWhichVecs", dstNumWhichVecs);
+            for (DL i = 0; i < dstNumWhichVecs; ++i) {
+              whichVectorsDst(i) = dst.whichVectors_[i];
+            }
+
+            // Use the destination MultiVector's LocalOrdinal type here.
+            const DL srcNumWhichVecs = static_cast<DL> (src.whichVectors_.size ());
+            Kokkos::View<DL*, host_dev_type> whichVectorsSrc ("srcWhichVecs", srcNumWhichVecs);
+            for (DL i = 0; i < srcNumWhichVecs; ++i) {
               whichVectorsSrc(i) = src.whichVectors_[i];
-            Kokkos::parallel_for (src.getLocalLength(),
-                                  DeepCopySelectedVectors<typename MVD::dual_view_type::t_host,
-                                                          typename MVS::dual_view_type::t_host,
-                                                          typename DD::host_mirror_device_type, false, false>
-                                    (dst.getDualView ().template view<typename DD::host_mirror_device_type> (),
-                                     src.getDualView ().template view<typename DD::host_mirror_device_type> (),
-                                     whichVectorsDst, whichVectorsSrc));
+            }
+
+            typedef DeepCopySelectedVectors<typename MVD::dual_view_type::t_host,
+              typename MVS::dual_view_type::t_host,
+              DL, host_dev_type, false, false> functor_type;
+            functor_type f (dst.getDualView ().template view<host_dev_type> (),
+                            src.getDualView ().template view<host_dev_type> (),
+                            whichVectorsDst, whichVectorsSrc);
+            Kokkos::parallel_for (src.getLocalLength (), f);
           }
         }
       }
