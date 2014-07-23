@@ -67,8 +67,7 @@ NOX::LineSearch::Utils::Printing::~Printing()
 void NOX::LineSearch::Utils::Printing::
 reset(const Teuchos::RCP<NOX::Utils>& u)
 {
-  NOX::Utils* tmp = this;
-  tmp = u.get();
+  static_cast<NOX::Utils&>(*this) = *u;
 }
 
 void NOX::LineSearch::Utils::Printing::

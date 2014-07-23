@@ -1513,22 +1513,19 @@ or if the number of entries in this row exceed the Length parameter.
                      int NumPermuteIDs,
                      int* PermuteToLIDs,
                      int* PermuteFromLIDs,
-                     const Epetra_OffsetIndex * Indexor,
-                     Epetra_CombineMode CombineMode = Zero);
+                     const Epetra_OffsetIndex * Indexor);
   int CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix& A,
                               int NumSameIDs,
                               int NumPermuteIDs,
                               int* PermuteToLIDs,
                               int* PermuteFromLIDs,
-                              const Epetra_OffsetIndex * Indexor,
-                              Epetra_CombineMode CombineMode);
+                              const Epetra_OffsetIndex * Indexor);
   int CopyAndPermuteRowMatrix(const Epetra_RowMatrix& A,
                               int NumSameIDs,
                               int NumPermuteIDs,
                               int* PermuteToLIDs,
                               int* PermuteFromLIDs,
-                              const Epetra_OffsetIndex * Indexor,
-                              Epetra_CombineMode CombineMode);
+                              const Epetra_OffsetIndex * Indexor);
 
   int PackAndPrepare(const Epetra_SrcDistObject& Source,
                      int NumExportIDs,
@@ -1633,8 +1630,7 @@ private:
                               int NumPermuteIDs,
                               int* PermuteToLIDs,
                               int* PermuteFromLIDs,
-                              const Epetra_OffsetIndex * Indexor,
-                              Epetra_CombineMode CombineMode);
+                              const Epetra_OffsetIndex * Indexor);
 
   template<typename int_type>
     int TCopyAndPermuteRowMatrix(const Epetra_RowMatrix& A,
@@ -1642,8 +1638,7 @@ private:
                               int NumPermuteIDs,
                               int* PermuteToLIDs,
                               int* PermuteFromLIDs,
-                              const Epetra_OffsetIndex * Indexor,
-                              Epetra_CombineMode CombineMode);
+                              const Epetra_OffsetIndex * Indexor);
 
   template<typename int_type>
     int TUnpackAndCombine(const Epetra_SrcDistObject& Source,

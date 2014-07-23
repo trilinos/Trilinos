@@ -100,7 +100,7 @@ namespace MueLuTests {
         aggFact.SetPrintFlag(6);
         aggFact.SetMinNodesPerAggregate(2);
         aggFact.SetMaxNeighAlreadySelected(5);
-        aggFact.SetOrdering(MueLu::AggOptions::NATURAL);
+        aggFact.SetOrdering("natural");
         aggFact.SetPhase3AggCreation(0.5);
 
         RCP<Aggregates> aggregates;

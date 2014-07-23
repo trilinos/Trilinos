@@ -2,15 +2,15 @@
 
   <ParameterList name="CoalesceDrop">
     <Parameter name="lightweight wrap"                    type="bool"   value="true"/>
-    <Parameter name="algorithm"                    type="string"   value="original"/>
-    <Parameter name="aggregation threshold"               type="double" value="0.02"/>
+    <Parameter name="aggregation: drop scheme"            type="string" value="original"/>
+    <Parameter name="aggregation: drop tol"               type="double" value="0.02"/>
   </ParameterList>
 
   <ParameterList name="Aggregates">
   </ParameterList>
 
   <ParameterList name="Prolongator">
-    <Parameter name="Damping factor" type="double" value="1.3333"/>
+    <Parameter name="sa: damping factor" type="double" value="1.3333"/>
   </ParameterList>
 
 

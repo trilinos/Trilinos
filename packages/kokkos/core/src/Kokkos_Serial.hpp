@@ -147,6 +147,9 @@ public:
 
   static inline int team_max() { return 1 ; }
   static inline int team_recommended() { return 1 ; }
+  KOKKOS_INLINE_FUNCTION static unsigned hardware_thread_id() { return 0 ; }
+  KOKKOS_INLINE_FUNCTION static unsigned max_hardware_threads() { return 1 ; }
+
 
   //--------------------------------------------------------------------------
 

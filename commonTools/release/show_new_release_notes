@@ -1,0 +1,50 @@
+#! /bin/env bash
+
+
+previous_branch=""
+show_log=false
+
+while getopts "hlb:" OPTION
+do
+  case $OPTION in
+    b)
+      previous_branch_version=`echo $OPTARG |sed "s/\./-/g"`
+      previous_branch="root-of-trilinos-release-$previous_branch_version-branch"
+      ;;
+    l)
+      show_log=true
+      ;;
+    h | ?)
+      echo "Usage:"
+      echo " $0 -b <branch version> [options]"
+      echo
+      echo " -h: show help"
+      echo " -l: show most recent log of files updated"
+      echo " -b: Branch to start looking for changes since."
+      exit 0
+  esac
+done
+
+if [[ $previous_branch == "" ]]; then
+  echo "Must specify a branch to start from"
+  exit 1
+fi
+
+release_notes_files=`find . -iname "*release*note*" -printf "%P\n"`
+
+last_branch_sha1=`git log -1 --format=%h $previous_branch`
+last_branch_timestamp=`git log -1 --format=%ct $last_branch_sha1`
+
+for file in $release_notes_files
+do
+last_changed_timestamp=`git log -1 --format=%ct $file`
+
+if [[ $last_changed_timestamp > $last_branch_timestamp ]]; then
+  if [[ $show_log == true ]]; then
+    commit_log="("`git log -1 --format="%h %s %cd" $file`")"
+  fi
+  echo $file $commit_log
+fi
+
+done
+

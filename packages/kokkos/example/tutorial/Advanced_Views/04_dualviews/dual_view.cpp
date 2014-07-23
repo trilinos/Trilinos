@@ -95,26 +95,30 @@ int main(int narg, char* arg[]) {
 
   int size = 1000000;
 
-  // Create DualViews. This will allocate on both the device and its host_mirror_device
+  // Create DualViews. This will allocate on both the device and its
+  // host_mirror_device.
   idx_type idx("Idx",size,64);
   view_type dest("Dest",size);
   view_type src("Src",size);
 
   srand(134231);
 
-  // Get a reference to the host view of idx directly (equivalent to idx.view<idx_type::host_mirror_device_type>() )
+  // Get a reference to the host view of idx directly (equivalent to
+  // idx.view<idx_type::host_mirror_device_type>() )
   idx_type::t_host h_idx = idx.h_view;
-  for(int i=0; i<size; i++) {
-    for(int j=0; j<h_idx.dimension_1(); j++)
-      h_idx(i,j) = (size + i + (rand()%500 - 250))%size;
+  for (int i = 0; i < size; ++i) {
+    for (view_type::size_type j=0; j < h_idx.dimension_1 (); ++j) {
+      h_idx(i,j) = (size + i + (rand () % 500 - 250)) % size;
+    }
   }
 
-  // Mark idx as modified on the host_mirror_device_type so that a sync to the device will actually move data.
-  // The sync happens in the constructor of the functor
+  // Mark idx as modified on the host_mirror_device_type so that a
+  // sync to the device will actually move data.  The sync happens in
+  // the functor's constructor.
   idx.modify<idx_type::host_mirror_device_type>();
 
-  // Run on the device
-  // This will cause a sync of idx to the device since its marked as modified on the host
+  // Run on the device.  This will cause a sync of idx to the device,
+  // since it was marked as modified on the host.
   Kokkos::Impl::Timer timer;
   Kokkos::parallel_for(size,localsum<view_type::device_type>(idx,dest,src));
   Kokkos::fence();
@@ -125,10 +129,10 @@ int main(int narg, char* arg[]) {
   Kokkos::fence();
   double sec2_dev = timer.seconds();
 
-  // Run on the host (could be the same as device)
-  // This will cause a sync back to the host of dest
-  // Note that if the Device is CUDA: the data layout will not be optimal on host,
-  // so performance is lower than what it would be for a pure host compilation
+  // Run on the host (could be the same as device).  This will cause a
+  // sync back to the host of dest.  Note that if the Device is CUDA,
+  // the data layout will not be optimal on host, so performance is
+  // lower than what it would be for a pure host compilation.
   timer.reset();
   Kokkos::parallel_for(size,localsum<view_type::host_mirror_device_type>(idx,dest,src));
   Kokkos::fence();
@@ -138,8 +142,6 @@ int main(int narg, char* arg[]) {
   Kokkos::parallel_for(size,localsum<view_type::host_mirror_device_type>(idx,dest,src));
   Kokkos::fence();
   double sec2_host = timer.seconds();
-
-
 
   printf("Device Time with Sync: %lf without Sync: %lf \n",sec1_dev,sec2_dev);
   printf("Host   Time with Sync: %lf without Sync: %lf \n",sec1_host,sec2_host);

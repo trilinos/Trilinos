@@ -34,7 +34,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA AND
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Thyra_Rosenbrock_AndersonAcceleration
     SOURCES ${UNIT_TEST_DRIVER}  ModelEvaluatorRosenbrock.hpp ModelEvaluatorRosenbrock.cpp
-    Thyra_Rosenbrock_AndersonAcceleration.cpp
+    Thyra_Rosenbrock_AndersonAcceleration.cpp Observer_PrintTest.hpp Observer_PrintTest.cpp
     NUM_MPI_PROCS 1
     PASS_REGULAR_EXPRESSION "Test passed!"
     )

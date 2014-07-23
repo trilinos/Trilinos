@@ -163,7 +163,7 @@ DefaultEvaluationLoggerModelEvaluator<Scalar>::DefaultEvaluationLoggerModelEvalu
   const RCP<ModelEvaluator<Scalar> >   &thyraModel
   ,const RCP<std::ostream>             &tableOut
   )
-  :timer_(""),headerPrinted_(false)
+  :timer_(""),headerPrinted_(false), supports_f_(false), supports_W_(false)
 {
   initialize(thyraModel,tableOut);
 }

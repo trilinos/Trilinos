@@ -311,7 +311,7 @@ int main(int argc, char *argv[]) {
   CoupledAggFact11->SetFactory("Graph", dropFact11);
   CoupledAggFact11->SetMinNodesPerAggregate(5);
   CoupledAggFact11->SetMaxNeighAlreadySelected(1);
-  CoupledAggFact11->SetOrdering(MueLu::AggOptions::NATURAL);
+  CoupledAggFact11->SetOrdering("natural");
   //CoupledAggFact11->SetPhase3AggCreation(0.5);
 
   ///////////////////////////////////////// define transfer ops for A11

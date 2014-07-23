@@ -66,11 +66,10 @@
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MatrixFactory.hpp>
 
-#include <MueLu_CoupledAggregationCommHelper.hpp>
-
 #include "MueLu_Utilities.hpp"
 
 #include "MueLu_Level.hpp"
+#include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 
 namespace MueLu {
@@ -79,16 +78,15 @@ namespace MueLu {
  RCP<const ParameterList> RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set<int>        ("startLevel",                  2, "First level at which repartitioning can possibly occur. Repartitioning at finer levels is suppressed");
-    validParamList->set<LO>         ("minRowsPerProcessor",       800, "Minimum number of rows over all processes. If any process falls below this, repartitioning is initiated");
-    validParamList->set<double>     ("nonzeroImbalance",          1.2, "Imbalance threshold, below which repartitioning is initiated. Imbalance is measured by "
-                                                                       "ratio of maximum nonzeros over all processes to minimum number of nonzeros over all processes");
-
-    validParamList->set<bool>       ("remapPartitions",          true, "Perform partition remapping to minimize data movement");
-    validParamList->set<int>        ("numRemapValues",              4, "Number of maximum components from each processor used to construct partial bipartite graph");
-    validParamList->set<bool>       ("alwaysKeepProc0",          true, "Always keep processor 0 in subcommunicator");
-
-    validParamList->set<bool>       ("repartition: print partition distribution", false, "Print partition distribution with '+' and '.'");
+#define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
+    SET_VALID_ENTRY("repartition: start level");
+    SET_VALID_ENTRY("repartition: min rows per proc");
+    SET_VALID_ENTRY("repartition: max imbalance");
+    SET_VALID_ENTRY("repartition: keep proc 0");
+    SET_VALID_ENTRY("repartition: print partition distribution");
+    SET_VALID_ENTRY("repartition: remap parts");
+    SET_VALID_ENTRY("repartition: remap num values");
+#undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A",         Teuchos::null, "Factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("Partition", Teuchos::null, "Factory of the partition");
@@ -117,11 +115,11 @@ namespace MueLu {
     const Teuchos::ParameterList & pL = GetParameterList();
     // Access parameters here to make sure that we set the parameter entry flag to "used" even in case of short-circuit evaluation.
     // TODO (JG): I don't really know if we want to do this.
-    const int    startLevel          = pL.get<int>   ("startLevel");
-    const LO     minRowsPerProcessor = pL.get<LO>    ("minRowsPerProcessor");
-    const double nonzeroImbalance    = pL.get<double>("nonzeroImbalance");
-    const bool   remapPartitions     = pL.get<bool>  ("remapPartitions");
-    const bool   keepProc0           = pL.get<bool>  ("alwaysKeepProc0");
+    const int    startLevel          = pL.get<int>   ("repartition: start level");
+    const LO     minRowsPerProcessor = pL.get<LO>    ("repartition: min rows per proc");
+    const double nonzeroImbalance    = pL.get<double>("repartition: max imbalance");
+    const bool   remapPartitions     = pL.get<bool>  ("repartition: remap parts");
+    const bool   keepProc0           = pL.get<bool>  ("repartition: keep proc 0");
 
     // TODO: We only need a CrsGraph. This class does not have to be templated on Scalar types.
     RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
@@ -270,7 +268,7 @@ namespace MueLu {
     // ======================================================================================================
     // From a user perspective, we want user to not care about remapping, thinking of it as only a performance feature.
     // There are two problems, however.
-    // (1) Next level aggregation depends on the order of GIDs in the vector, if one uses NATURAL or RANDOM orderings.
+    // (1) Next level aggregation depends on the order of GIDs in the vector, if one uses "natural" or "random" orderings.
     //     This also means that remapping affects next level aggregation, despite the fact that the _set_ of GIDs for
     //     each partition is the same.
     // (2) Even with the fixed order of GIDs, the remapping may influence the aggregation for the next-next level.
@@ -574,7 +572,7 @@ namespace MueLu {
     // The idea is that we do not want to construct the full bipartite graph, but simply a subset of
     // it, which requires less communication. By selecting largest local edges we hope to achieve
     // similar results but at a lower cost.
-    const int maxLocal = pL.get<int>("numRemapValues");
+    const int maxLocal = pL.get<int>("repartition: remap num values");
     const int dataSize = 2*maxLocal;
 
     ArrayRCP<GO> decompEntries;

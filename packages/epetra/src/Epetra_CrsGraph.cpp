@@ -2342,8 +2342,7 @@ int Epetra_CrsGraph::CopyAndPermute(const Epetra_SrcDistObject& Source,
             int NumPermuteIDs,
             int* PermuteToLIDs,
             int* PermuteFromLIDs,
-            const Epetra_OffsetIndex * Indexor,
-            Epetra_CombineMode CombineMode)
+                                    const Epetra_OffsetIndex * Indexor)
 {
   if(!Source.Map().GlobalIndicesTypeMatch(RowMap()))
     throw ReportError("Epetra_CrsGraph::CopyAndPermute: Incoming global index type does not match the one for *this",-1);
@@ -2351,13 +2350,13 @@ int Epetra_CrsGraph::CopyAndPermute(const Epetra_SrcDistObject& Source,
   try {
     const Epetra_CrsGraph& A = dynamic_cast<const Epetra_CrsGraph&>(Source);
     EPETRA_CHK_ERR(CopyAndPermuteCrsGraph(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs,
-            PermuteFromLIDs,Indexor,CombineMode));
+            PermuteFromLIDs,Indexor));
   }
   catch(...) {
     try {
       const Epetra_RowMatrix& A = dynamic_cast<const Epetra_RowMatrix&>(Source);
       EPETRA_CHK_ERR(CopyAndPermuteRowMatrix(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs,
-               PermuteFromLIDs,Indexor,CombineMode));
+               PermuteFromLIDs,Indexor));
     }
     catch(...) {
       EPETRA_CHK_ERR(-1); // Incompatible SrcDistObject
@@ -2374,11 +2373,9 @@ int Epetra_CrsGraph::CopyAndPermuteRowMatrix(const Epetra_RowMatrix& A,
                int NumPermuteIDs,
                int* PermuteToLIDs,
                int* PermuteFromLIDs,
-               const Epetra_OffsetIndex * Indexor,
-               Epetra_CombineMode CombineMode)
+                                             const Epetra_OffsetIndex * Indexor)
 {
   (void)Indexor;
-  (void)CombineMode;
   int i;
   int j;
   int NumIndices;
@@ -2448,20 +2445,19 @@ int Epetra_CrsGraph::CopyAndPermuteRowMatrix(const Epetra_RowMatrix& A,
                int NumPermuteIDs,
                int* PermuteToLIDs,
                int* PermuteFromLIDs,
-               const Epetra_OffsetIndex * Indexor,
-               Epetra_CombineMode CombineMode)
+                                             const Epetra_OffsetIndex * Indexor)
 {
   if(!A.RowMatrixRowMap().GlobalIndicesTypeMatch(RowMap()))
     throw ReportError("Epetra_CrsGraph::CopyAndPermuteRowMatrix: Incoming global index type does not match the one for *this",-1);
 
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   if(A.RowMatrixRowMap().GlobalIndicesInt())
-    return CopyAndPermuteRowMatrix<int>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor,CombineMode);
+    return CopyAndPermuteRowMatrix<int>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor);
   else
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   if(A.RowMatrixRowMap().GlobalIndicesLongLong())
-    return CopyAndPermuteRowMatrix<long long>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor,CombineMode);
+    return CopyAndPermuteRowMatrix<long long>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor);
   else
 #endif
   throw ReportError("Epetra_CrsGraph::CopyAndPermuteRowMatrix: Unable to determine global index type of map", -1);
@@ -2474,11 +2470,9 @@ int Epetra_CrsGraph::CopyAndPermuteCrsGraph(const Epetra_CrsGraph& A,
               int NumPermuteIDs,
               int* PermuteToLIDs,
               int* PermuteFromLIDs,
-              const Epetra_OffsetIndex * Indexor,
-              Epetra_CombineMode CombineMode)
+                                            const Epetra_OffsetIndex * Indexor)
 {
   (void)Indexor;
-  (void)CombineMode;
   int i;
   int_type Row;
   int NumIndices;
@@ -2561,22 +2555,21 @@ int Epetra_CrsGraph::CopyAndPermuteCrsGraph(const Epetra_CrsGraph& A,
               int NumPermuteIDs,
               int* PermuteToLIDs,
               int* PermuteFromLIDs,
-              const Epetra_OffsetIndex * Indexor,
-              Epetra_CombineMode CombineMode)
+                                            const Epetra_OffsetIndex * Indexor)
 {
   if(!A.RowMap().GlobalIndicesTypeMatch(RowMap()))
     throw ReportError("Epetra_CrsGraph::CopyAndPermuteCrsGraph: Incoming global index type does not match the one for *this",-1);
 
   if(A.RowMap().GlobalIndicesInt())
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-    return CopyAndPermuteCrsGraph<int>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor, CombineMode);
+    return CopyAndPermuteCrsGraph<int>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor);
 #else
     throw ReportError("Epetra_CrsGraph::CopyAndPermuteCrsGraph: ERROR, GlobalIndicesInt but no API for it.",-1);
 #endif
 
   if(A.RowMap().GlobalIndicesLongLong())
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-    return CopyAndPermuteCrsGraph<long long>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor, CombineMode);
+    return CopyAndPermuteCrsGraph<long long>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor);
 #else
     throw ReportError("Epetra_CrsGraph::CopyAndPermuteCrsGraph: ERROR, GlobalIndicesLongLong but no API for it.",-1);
 #endif

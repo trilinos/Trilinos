@@ -122,7 +122,7 @@ namespace Details {
 /// type T itself is suitable for parallel kernels.  In particular,
 /// specializations for types T that make sense to use on a CUDA
 /// device must mark all class methods as device (and host) functions,
-/// using the KOKKOS_DEVICE_FUNCTION macro.  All class methods must be
+/// using the KOKKOS_FORCEINLINE_FUNCTION macro.  All class methods must be
 /// callable both inside and outside a parallel kernel (for CUDA, this
 /// means they must be marked as both device and host functions).
 ///
@@ -137,7 +137,7 @@ namespace Details {
 /// You must first add a specialization of ArithTraits<T>.  Please
 /// note that if CUDA does not support using T in device functions,
 /// then you must <i>not</t> mark norm() or dot() as device functions
-/// in your specialization.  (Simply omit the KOKKOS_DEVICE_FUNCTION
+/// in your specialization.  (Simply omit the KOKKOS_FORCEINLINE_FUNCTION
 /// macro.)  If CUDA <i>does</i> support using T in device functions,
 /// you <i>must</i> mark norm() and dot() as device functions in order
 /// to use them in device functions.
@@ -154,11 +154,11 @@ public:
   typedef T dot_type;
 
   //! The "norm" (absolute value or magnitude) of a value x of type T.
-  static KOKKOS_DEVICE_FUNCTION mag_type norm (const T& x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type norm (const T& x) {
     return ArithTraits<T>::abs (x);
   }
   //! The "dot product" of two values x and y of type T.
-  static KOKKOS_DEVICE_FUNCTION dot_type dot (const T& x, const T& y) {
+  static KOKKOS_FORCEINLINE_FUNCTION dot_type dot (const T& x, const T& y) {
     return x * y;
   }
 };

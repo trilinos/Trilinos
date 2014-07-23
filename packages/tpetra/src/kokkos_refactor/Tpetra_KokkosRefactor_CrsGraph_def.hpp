@@ -39,9 +39,6 @@
 // ************************************************************************
 // @HEADER
 
-// FINISH: can't use rowPtrs_ without checking that it exists
-// FINISH: add code to fillComplete() and CrsMatrix::fillComplete() to delete the Tpetra data
-
 #ifndef TPETRA_KOKKOSREFACTOR_CRSGRAPH_DEF_HPP
 #define TPETRA_KOKKOSREFACTOR_CRSGRAPH_DEF_HPP
 
@@ -85,6 +82,7 @@ namespace Tpetra {
   , haveLocalConstants_ (false)
   , haveGlobalConstants_ (false)
   , haveRowInfo_(true)
+  , sortGhostsAssociatedWithEachProcessor_(true)
   {
     typedef Teuchos::OrdinalTraits<size_t> OTST;
     staticAssertions();
@@ -121,6 +119,7 @@ namespace Tpetra {
   , haveLocalConstants_ (false)
   , haveGlobalConstants_ (false)
   , haveRowInfo_(true)
+  , sortGhostsAssociatedWithEachProcessor_(true)
   {
     typedef Teuchos::OrdinalTraits<size_t> OTST;
     staticAssertions();
@@ -156,6 +155,7 @@ namespace Tpetra {
   , haveLocalConstants_ (false)
   , haveGlobalConstants_ (false)
   , haveRowInfo_(true)
+  , sortGhostsAssociatedWithEachProcessor_(true)
   {
     typedef Teuchos::OrdinalTraits<size_t> OTST;
     const char tfecfFuncName[] = "CrsGraph(rowMap,NumEntriesPerRowToAlloc)";
@@ -200,6 +200,7 @@ namespace Tpetra {
   , haveLocalConstants_ (false)
   , haveGlobalConstants_ (false)
   , haveRowInfo_(true)
+  , sortGhostsAssociatedWithEachProcessor_(true)
   {
     typedef Teuchos::OrdinalTraits<size_t> OTST;
     const char tfecfFuncName[] = "CrsGraph(rowMap,colMap,NumEntriesPerRowToAlloc)";
@@ -243,6 +244,7 @@ namespace Tpetra {
   , haveLocalConstants_ (false)
   , haveGlobalConstants_ (false)
   , haveRowInfo_(true)
+  , sortGhostsAssociatedWithEachProcessor_(true)
   {
     staticAssertions();
     globalNumEntries_ = globalNumDiags_ = globalMaxNumRowEntries_ = OrdinalTraits<global_size_t>::invalid();
@@ -275,6 +277,7 @@ namespace Tpetra {
   , haveLocalConstants_ (false)
   , haveGlobalConstants_ (false)
   , haveRowInfo_(true)
+  , sortGhostsAssociatedWithEachProcessor_(true)
   {
     staticAssertions();
     globalNumEntries_ = globalNumDiags_ = globalMaxNumRowEntries_ = OrdinalTraits<global_size_t>::invalid();
@@ -315,6 +318,7 @@ namespace Tpetra {
     , haveLocalConstants_ (false)
     , haveGlobalConstants_ (false)
     , haveRowInfo_ (true)
+    , sortGhostsAssociatedWithEachProcessor_(true)
   {
     using Teuchos::arcp;
     using Teuchos::ArrayRCP;
@@ -2647,12 +2651,15 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
-  fillComplete (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &domainMap,
-                const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &rangeMap,
-                const RCP<ParameterList> &params)
+  CrsGraph<LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+    typename KokkosClassic::DefaultKernels<void, LocalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  fillComplete (const RCP<const map_type>& domainMap,
+                const RCP<const map_type>& rangeMap,
+                const RCP<ParameterList>& params)
   {
-    const char tfecfFuncName[] = "fillComplete()";
+    const char tfecfFuncName[] = "fillComplete";
 
 #ifdef HAVE_TPETRA_DEBUG
     rowMap_->getComm ()->barrier ();
@@ -2664,14 +2671,22 @@ namespace Tpetra {
 
     const int numProcs = getComm ()->getSize ();
 
-    // allocate if unallocated
-    if (! indicesAreAllocated()) {
-      if (hasColMap ()) {
-        // We have a column Map, so use local indices.
-        allocateIndices (LocalIndices);
-      } else {
-        // We don't have a column Map, so use global indices.
-        allocateIndices (GlobalIndices);
+    //
+    // Read and set parameters
+    //
+
+    // Does the caller want to sort remote GIDs (within those owned by
+    // the same process) in makeColMap()?
+    if (! params.is_null ()) {
+      if (params->isParameter ("sort column map ghost gids")) {
+        sortGhostsAssociatedWithEachProcessor_ =
+          params->get<bool> ("sort column map ghost gids",
+                             sortGhostsAssociatedWithEachProcessor_);
+      }
+      else if (params->isParameter ("Sort column Map ghost GIDs")) {
+        sortGhostsAssociatedWithEachProcessor_ =
+          params->get<bool> ("Sort column Map ghost GIDs",
+                             sortGhostsAssociatedWithEachProcessor_);
       }
     }
 
@@ -2682,13 +2697,29 @@ namespace Tpetra {
       assertNoNonlocalInserts =
         params->get<bool> ("No Nonlocal Changes", assertNoNonlocalInserts);
     }
-    // We also don't need to do global assembly if there is only one
-    // process in the communicator.
+
+    //
+    // Allocate indices, if they haven't already been allocated
+    //
+    if (! indicesAreAllocated ()) {
+      if (hasColMap ()) {
+        // We have a column Map, so use local indices.
+        allocateIndices (LocalIndices);
+      } else {
+        // We don't have a column Map, so use global indices.
+        allocateIndices (GlobalIndices);
+      }
+    }
+
+    //
+    // Do global assembly, if requested and if the communicator
+    // contains more than one process.
+    //
     const bool mayNeedGlobalAssemble = ! assertNoNonlocalInserts && numProcs > 1;
     if (mayNeedGlobalAssemble) {
       // This first checks if we need to do global assembly.
       // The check costs a single all-reduce.
-      globalAssemble();
+      globalAssemble ();
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -2697,8 +2728,10 @@ namespace Tpetra {
         "process, but there are nonlocal entries.  " << std::endl <<
         "This probably means that invalid entries were added to the graph.");
     }
-    // set domain/range map: may clear the import/export objects
-    setDomainRangeMaps(domainMap,rangeMap);
+
+    // Set domain and range Map.  This may clear the Import / Export
+    // objects if the new Maps differ from any old ones.
+    setDomainRangeMaps (domainMap, rangeMap);
 
     // If the graph does not already have a column Map (either from
     // the user constructor calling the version of the constructor
@@ -2712,28 +2745,28 @@ namespace Tpetra {
     // The method doesn't do any work if the indices are already local.
     makeIndicesLocal ();
 
-    if (! isSorted()) {
+    if (! isSorted ()) {
       // If this process has no indices, then CrsGraph considers it
       // already trivially sorted.  Thus, this method need not be
       // called on all processes in the row Map's communicator.
-      sortAllIndices();
+      sortAllIndices ();
     }
 
     if (! isMerged()) {
-      mergeAllIndices();
+      mergeAllIndices ();
     }
-
-    makeImportExport(); // Make Import and Export objects
-    computeGlobalConstants();
-    // fill local objects
-    fillLocalGraph(params);
-    //
+    makeImportExport (); // Make Import and Export objects, if necessary
+    computeGlobalConstants ();
+    fillLocalGraph (params);
     fillComplete_ = true;
+
 #ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( isFillActive() == true || isFillComplete() == false, std::logic_error, ": Violated stated post-conditions. Please contact Tpetra team.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      isFillActive() == true || isFillComplete() == false, std::logic_error,
+      ": Violated stated post-conditions. Please contact Tpetra team.");
 #endif
-    //
-    checkInternalState();
+
+    checkInternalState ();
   }
 
 
@@ -3286,105 +3319,6 @@ namespace Tpetra {
              void,
              LocalOrdinal,
              Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
-  computeIndexState ()
-  {
-    // FIXME (mfh 03 Mar 2013) It's not clear to me that we need to do
-    // an all-reduce.
-    //
-    // This method is _only_ called in makeIndicesLocal() and
-    // makeColMap().  makeIndicesLocal() calls makeColMap(), which is
-    // collective, so both methods must be called collectively.
-    //
-    // There are only two methods that modify indicesAreLocal_:
-    // allocateIndices(), and makeIndicesLocal().  makeIndicesLocal()
-    // always has the eponymous effect.  It must be called
-    // collectively, since it calls makeColMap(), which must be called
-    // collectively.
-    //
-    // allocateIndices(), on the other hand, could perhaps be called
-    // with lg=LocalIndices on one process, but with lg=GlobalIndices
-    // on another.  However, I will argue that CrsGraph cannot reach
-    // this state if used correctly.
-    //
-    // allocateIndices() specifically forbids an lg argument which
-    // does not correspond to the state of the graph.  The graph
-    // starts out locally indexed if its constructor was given a
-    // column Map; otherwise, it starts out neither locally nor
-    // globally indexed, and only gains one of these identities on the
-    // calling process ("locally") once the user inserts an entry.
-    // (This is the classic Epetra way to tell if a graph is empty.)
-    // It is an error to call different constructors for the same
-    // CrsGraph instance on different processes.  Thus, the initial
-    // local-or-global state before any insertions on any processes
-    // must be the same.
-    //
-    // Before inserting any entries, indicesAreLocal_ and
-    // indicesAreGlobal_ are both locally false.  They may be modified
-    // locally by calls to insertGlobalIndices() or
-    // insertLocalIndices().  These two methods only call
-    // allocateIndices() if no insertion method has yet been called on
-    // the graph.  Furthermore, these methods only allow indices to
-    // have the state matching their name.  insertLocalIndices()
-    // explicitly requires that the graph has a column Map.
-    // insertGlobalIndices() requires that the graph not be locally
-    // indexed, which currently means that the graph was not
-    // constructed with a column Map and that fillComplete() (which is
-    // collective) has not yet been called.
-    //
-    // Thus, before calling fillComplete() for the first time, it is
-    // possible that on some (but not necessarily all) processes,
-    // indicesAreLocal_ == false && indicesAreGlobal_ == false.
-    // However, on all processes p on which any one of these Booleans
-    // are true, the two Booleans must have the same values, for the
-    // reasons discussed in the previous paragraph.
-    //
-    // fillComplete() makes the column Map first (if it doesn't
-    // already exist) before making indices local, so there is a point
-    // in fillComplete() at which the graph has a column Map and is
-    // globally indexed.  However, makeIndicesLocal() fixes this state
-    // right away.  This intermediate state would never be exposed to
-    // users.  fillComplete() must be called collectively.
-    //
-    // resumeFill() does _not_ currently change the global vs. local
-    // indices state of the graph.  If we were to give users the
-    // option to do this in the future (e.g., they want to insert
-    // column indices not in the column Map, so that we would have to
-    // convert all the column indices back to global first and get rid
-    // of the existing column Map), then that would be a collective
-    // decision in any case.
-    //
-    // The only part of makeIndicesLocal() that is not a local
-    // operation is the call to makeColMap().  Everything else is
-    // local.  Thus, it suffices in that method to check the local
-    // state.  Furthermore, makeIndicesLocal() always makes indices
-    // local, so there is no need to check at the end of the method.
-    // One would only call makeColMap() if the graph does not have a
-    // column Map.  In that case, the graph must be globally indexed
-    // anyway.
-    int myIndices[2] = {0,0};
-    if (indicesAreLocal_)  myIndices[0] = 1;
-    if (indicesAreGlobal_) myIndices[1] = 1;
-    int allIndices[2];
-    Teuchos::reduceAll<int, int> (* (getComm()), Teuchos::REDUCE_MAX,
-                                  2, myIndices, allIndices);
-    // If indices are (local, global) on one process, they should be
-    // (local, global) on all processes.
-    indicesAreLocal_  = (allIndices[0]==1);
-    indicesAreGlobal_ = (allIndices[1]==1);
-  }
-
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void
-  CrsGraph<LocalOrdinal,
-           GlobalOrdinal,
-           Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
-           typename KokkosClassic::DefaultKernels<
-             void,
-             LocalOrdinal,
-             Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   sortAllIndices ()
   {
     TEUCHOS_TEST_FOR_EXCEPT(isGloballyIndexed()==true);   // this should be called only after makeIndicesLocal()
@@ -3426,7 +3360,6 @@ namespace Tpetra {
       return;
     }
 
-    computeIndexState ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       isLocallyIndexed (), std::runtime_error,
       ": The graph is locally indexed.  Calling makeColMap() to make the "
@@ -3472,6 +3405,8 @@ namespace Tpetra {
       // domain Map is remote (not local).
       Array<char> GIDisLocal (domainMap_->getNodeNumElements (), 0);
       std::set<GO> RemoteGIDSet;
+      // This preserves the not-sorted Epetra order of GIDs.
+      std::vector<GO> RemoteGIDUnorderedVector;
       const size_t myNumRows = getNodeNumRows ();
       for (size_t r = 0; r < myNumRows; ++r) {
         RowInfo rowinfo = getRowInfo (r);
@@ -3495,6 +3430,9 @@ namespace Tpetra {
             else {
               const bool notAlreadyFound = RemoteGIDSet.insert (gid).second;
               if (notAlreadyFound) { // gid did not exist in the set before
+                if (sortGhostsAssociatedWithEachProcessor_) {
+                  RemoteGIDUnorderedVector.push_back (gid);
+                }
                 ++numRemoteColGIDs;
               }
             }
@@ -3558,7 +3496,13 @@ namespace Tpetra {
       ArrayView<GO> RemoteColGIDs = myColumns (numLocalColGIDs, numRemoteColGIDs);
 
       // Copy the remote GIDs into myColumns
-      std::copy (RemoteGIDSet.begin(), RemoteGIDSet.end(), RemoteColGIDs.begin());
+      if (sortGhostsAssociatedWithEachProcessor_) {
+        std::copy (RemoteGIDSet.begin(), RemoteGIDSet.end(),
+                   RemoteColGIDs.begin());
+      } else {
+        std::copy (RemoteGIDUnorderedVector.begin(),
+                   RemoteGIDUnorderedVector.end(), RemoteColGIDs.begin());
+      }
 
       // Make a list of process ranks corresponding to the remote GIDs.
       Array<int> RemoteImageIDs (numRemoteColGIDs);
@@ -4263,7 +4207,6 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
     return haveRowInfo_;
   }
-
 
 } // namespace Tpetra
 

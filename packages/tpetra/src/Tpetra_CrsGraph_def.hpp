@@ -39,9 +39,6 @@
 // ************************************************************************
 // @HEADER
 
-// FINISH: can't use rowPtrs_ without checking that it exists
-// FINISH: add code to fillComplete() and CrsMatrix::fillComplete() to delete the Tpetra data
-
 #ifndef TPETRA_CRSGRAPH_DEF_HPP
 #define TPETRA_CRSGRAPH_DEF_HPP
 
@@ -83,6 +80,7 @@ namespace Tpetra {
   , haveLocalConstants_ (false)
   , haveGlobalConstants_ (false)
   , haveRowInfo_(true)
+  , sortGhostsAssociatedWithEachProcessor_(true)
   {
     typedef Teuchos::OrdinalTraits<size_t> OTST;
     staticAssertions();
@@ -119,6 +117,7 @@ namespace Tpetra {
   , haveLocalConstants_ (false)
   , haveGlobalConstants_ (false)
   , haveRowInfo_(true)
+  , sortGhostsAssociatedWithEachProcessor_(true)
   {
     typedef Teuchos::OrdinalTraits<size_t> OTST;
     staticAssertions();
@@ -154,6 +153,7 @@ namespace Tpetra {
   , haveLocalConstants_ (false)
   , haveGlobalConstants_ (false)
   , haveRowInfo_(true)
+  , sortGhostsAssociatedWithEachProcessor_(true)
   {
     typedef Teuchos::OrdinalTraits<size_t> OTST;
     const char tfecfFuncName[] = "CrsGraph(rowMap,NumEntriesPerRowToAlloc)";
@@ -198,6 +198,7 @@ namespace Tpetra {
   , haveLocalConstants_ (false)
   , haveGlobalConstants_ (false)
   , haveRowInfo_(true)
+  , sortGhostsAssociatedWithEachProcessor_(true)
   {
     typedef Teuchos::OrdinalTraits<size_t> OTST;
     const char tfecfFuncName[] = "CrsGraph(rowMap,colMap,NumEntriesPerRowToAlloc)";
@@ -241,6 +242,7 @@ namespace Tpetra {
   , haveLocalConstants_ (false)
   , haveGlobalConstants_ (false)
   , haveRowInfo_(true)
+  , sortGhostsAssociatedWithEachProcessor_(true)
   {
     staticAssertions();
     globalNumEntries_ = globalNumDiags_ = globalMaxNumRowEntries_ = OrdinalTraits<global_size_t>::invalid();
@@ -907,7 +909,7 @@ namespace Tpetra {
   template <ELocalGlobal lg>
   size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::filterIndices(const SLocalGlobalNCViews &inds) const
   {
-    const Map<LocalOrdinal,GlobalOrdinal,Node> &cmap = *colMap_;
+    const map_type& cmap = *colMap_;
     Teuchos::CompileTimeAssert<lg != GlobalIndices && lg != LocalIndices> cta_lg;
     (void)cta_lg;
     size_t numFiltered = 0;
@@ -916,8 +918,8 @@ namespace Tpetra {
 #endif
     if (lg == GlobalIndices) {
       ArrayView<GlobalOrdinal> ginds = inds.ginds;
-      typename ArrayView<GlobalOrdinal>::iterator fend = ginds.begin(),
-                                                  cptr = ginds.begin();
+      typename ArrayView<GlobalOrdinal>::iterator fend = ginds.begin();
+      typename ArrayView<GlobalOrdinal>::iterator cptr = ginds.begin();
       while (cptr != ginds.end()) {
         if (cmap.isNodeGlobalElement(*cptr)) {
           *fend++ = *cptr;
@@ -931,8 +933,8 @@ namespace Tpetra {
     }
     else if (lg == LocalIndices) {
       ArrayView<LocalOrdinal> linds = inds.linds;
-      typename ArrayView<LocalOrdinal>::iterator fend = linds.begin(),
-                                                 cptr = linds.begin();
+      typename ArrayView<LocalOrdinal>::iterator fend = linds.begin();
+      typename ArrayView<LocalOrdinal>::iterator cptr = linds.begin();
       while (cptr != linds.end()) {
         if (cmap.isNodeLocalElement(*cptr)) {
           *fend++ = *cptr;
@@ -2644,9 +2646,9 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  fillComplete (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap,
-                const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap,
-                const RCP<ParameterList> &params)
+  fillComplete (const RCP<const map_type>& domainMap,
+                const RCP<const map_type>& rangeMap,
+                const RCP<ParameterList> & params)
   {
     const char tfecfFuncName[] = "fillComplete";
 
@@ -2660,14 +2662,22 @@ namespace Tpetra {
 
     const int numProcs = getComm ()->getSize ();
 
-    // allocate if unallocated
-    if (! indicesAreAllocated()) {
-      if (hasColMap ()) {
-        // We have a column Map, so use local indices.
-        allocateIndices (LocalIndices);
-      } else {
-        // We don't have a column Map, so use global indices.
-        allocateIndices (GlobalIndices);
+    //
+    // Read and set parameters
+    //
+
+    // Does the caller want to sort remote GIDs (within those owned by
+    // the same process) in makeColMap()?
+    if (! params.is_null ()) {
+      if (params->isParameter ("sort column map ghost gids")) {
+        sortGhostsAssociatedWithEachProcessor_ =
+          params->get<bool> ("sort column map ghost gids",
+                             sortGhostsAssociatedWithEachProcessor_);
+      }
+      else if (params->isParameter ("Sort column Map ghost GIDs")) {
+        sortGhostsAssociatedWithEachProcessor_ =
+          params->get<bool> ("Sort column Map ghost GIDs",
+                             sortGhostsAssociatedWithEachProcessor_);
       }
     }
 
@@ -2678,13 +2688,29 @@ namespace Tpetra {
       assertNoNonlocalInserts =
         params->get<bool> ("No Nonlocal Changes", assertNoNonlocalInserts);
     }
-    // We also don't need to do global assembly if there is only one
-    // process in the communicator.
+
+    //
+    // Allocate indices, if they haven't already been allocated
+    //
+    if (! indicesAreAllocated ()) {
+      if (hasColMap ()) {
+        // We have a column Map, so use local indices.
+        allocateIndices (LocalIndices);
+      } else {
+        // We don't have a column Map, so use global indices.
+        allocateIndices (GlobalIndices);
+      }
+    }
+
+    //
+    // Do global assembly, if requested and if the communicator
+    // contains more than one process.
+    //
     const bool mayNeedGlobalAssemble = ! assertNoNonlocalInserts && numProcs > 1;
     if (mayNeedGlobalAssemble) {
       // This first checks if we need to do global assembly.
       // The check costs a single all-reduce.
-      globalAssemble();
+      globalAssemble ();
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -2693,8 +2719,10 @@ namespace Tpetra {
         "process, but there are nonlocal entries.  " << std::endl <<
         "This probably means that invalid entries were added to the graph.");
     }
-    // set domain/range map: may clear the import/export objects
-    setDomainRangeMaps(domainMap,rangeMap);
+
+    // Set domain and range Map.  This may clear the Import / Export
+    // objects if the new Maps differ from any old ones.
+    setDomainRangeMaps (domainMap, rangeMap);
 
     // If the graph does not already have a column Map (either from
     // the user constructor calling the version of the constructor
@@ -2708,23 +2736,27 @@ namespace Tpetra {
     // The method doesn't do any work if the indices are already local.
     makeIndicesLocal ();
 
-    if (! isSorted()) {
-      sortAllIndices();
+    if (! isSorted ()) {
+      // If this process has no indices, then CrsGraph considers it
+      // already trivially sorted.  Thus, this method need not be
+      // called on all processes in the row Map's communicator.
+      sortAllIndices ();
     }
-    if (! isMerged()) {
-      mergeAllIndices();
+    if (! isMerged ()) {
+      mergeAllIndices ();
     }
-    makeImportExport(); // Make Import and Export objects
-    computeGlobalConstants();
-    // fill local objects
-    fillLocalGraph(params);
-    //
+    makeImportExport(); // Make Import and Export objects, if necessary
+    computeGlobalConstants ();
+    fillLocalGraph (params);
     fillComplete_ = true;
+
 #ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( isFillActive() == true || isFillComplete() == false, std::logic_error, ": Violated stated post-conditions. Please contact Tpetra team.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      isFillActive() == true || isFillComplete() == false, std::logic_error,
+      ": Violated stated post-conditions. Please contact Tpetra team.");
 #endif
-    //
-    checkInternalState();
+
+    checkInternalState ();
   }
 
 
@@ -3169,7 +3201,7 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::makeColMap()
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::makeColMap ()
   {
     using std::endl;
     using Teuchos::REDUCE_MAX;
@@ -3229,6 +3261,8 @@ namespace Tpetra {
       // domain Map is remote (not local).
       Array<char> GIDisLocal (domainMap_->getNodeNumElements (), 0);
       std::set<GO> RemoteGIDSet;
+      // This preserves the not-sorted Epetra order of GIDs.
+      std::vector<GO> RemoteGIDUnorderedVector;
       const size_t myNumRows = getNodeNumRows ();
       for (size_t r = 0; r < myNumRows; ++r) {
         RowInfo rowinfo = getRowInfo (r);
@@ -3252,6 +3286,9 @@ namespace Tpetra {
             else {
               const bool notAlreadyFound = RemoteGIDSet.insert (gid).second;
               if (notAlreadyFound) { // gid did not exist in the set before
+                if (sortGhostsAssociatedWithEachProcessor_) {
+                  RemoteGIDUnorderedVector.push_back (gid);
+                }
                 ++numRemoteColGIDs;
               }
             }
@@ -3315,7 +3352,13 @@ namespace Tpetra {
       ArrayView<GO> RemoteColGIDs = myColumns (numLocalColGIDs, numRemoteColGIDs);
 
       // Copy the remote GIDs into myColumns
-      std::copy (RemoteGIDSet.begin(), RemoteGIDSet.end(), RemoteColGIDs.begin());
+      if (sortGhostsAssociatedWithEachProcessor_) {
+        std::copy (RemoteGIDSet.begin(), RemoteGIDSet.end(),
+                   RemoteColGIDs.begin());
+      } else {
+        std::copy (RemoteGIDUnorderedVector.begin(),
+                   RemoteGIDUnorderedVector.end(), RemoteColGIDs.begin());
+      }
 
       // Make a list of process ranks corresponding to the remote GIDs.
       Array<int> RemoteImageIDs (numRemoteColGIDs);
@@ -3431,6 +3474,10 @@ namespace Tpetra {
 
     const global_size_t gstInv =
       Teuchos::OrdinalTraits<global_size_t>::invalid ();
+    // FIXME (mfh 05 Mar 2014) Doesn't the index base of a Map have to
+    // be the same as the Map's min GID? If the first column is empty
+    // (contains no entries), then the column Map's min GID won't
+    // necessarily be the same as the domain Map's index base.
     const GO indexBase = domainMap_->getIndexBase ();
     colMap_ = rcp (new map_type (gstInv, myColumns, indexBase,
                                  domainMap_->getComm (),
@@ -3993,6 +4040,24 @@ namespace Tpetra {
     domainMap_ = domainMap;
     rangeMap_ = rangeMap;
     colMap_ = colMap;
+  }
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  bool
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  hasRowInfo () const
+  {
+#ifdef HAVE_TPETRA_DEBUG
+    bool actuallyHasRowInfo = true;
+    if (indicesAreAllocated() && getProfileType() == StaticProfile && rowPtrs_ == null) {
+      actuallyHasRowInfo = false;
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      actuallyHasRowInfo != haveRowInfo_,
+      std::logic_error, "Internal logic error. Please contact Tpetra team.");
+#endif // HAVE_TPETRA_DEBUG
+    return haveRowInfo_;
   }
 
 } // namespace Tpetra

@@ -74,7 +74,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, defaults)
 
    TEST_EQUALITY(mesh->getPeriodicBCVector().size(),0);
  
-   if(mesh->isWritable());
+   if(mesh->isWritable())
       mesh->writeToExodus("CubeHex.exo");
 
    // minimal requirements
@@ -133,7 +133,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, element_counts)
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
    TEST_ASSERT(mesh!=Teuchos::null);
  
-   if(mesh->isWritable());
+   if(mesh->isWritable())
       mesh->writeToExodus("CubeHex_oddelmt.exo");
 
    // minimal requirements
@@ -174,7 +174,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, allblock)
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
    TEST_ASSERT(mesh!=Teuchos::null);
  
-   if(mesh->isWritable());
+   if(mesh->isWritable())
       mesh->writeToExodus("CubeHex_allblock.exo");
 
    // minimal requirements
@@ -230,7 +230,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, two_block)
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
    TEST_ASSERT(mesh!=Teuchos::null);
  
-   if(mesh->isWritable());
+   if(mesh->isWritable())
       mesh->writeToExodus("CubeHex_2block.exo");
 
    // minimal requirements
@@ -275,7 +275,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, sub_two_block)
    }
    TEST_ASSERT(mesh!=Teuchos::null);
  
-   if(mesh->isWritable());
+   if(mesh->isWritable())
       mesh->writeToExodus("CubeHex_sub_2block.exo");
 
    // minimal requirements

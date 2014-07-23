@@ -66,6 +66,7 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_GraphBase.hpp"
 #include "MueLu_Aggregates.hpp"
+#include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_Utilities.hpp"
@@ -81,22 +82,29 @@ namespace MueLu {
   RCP<const ParameterList> UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    // input parameters
+    typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
+#define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
+    SET_VALID_ENTRY("aggregation: mode");
+    validParamList->getEntry("aggregation: mode").setValidator(
+      rcp(new validatorType(Teuchos::tuple<std::string>("new", "old"), "aggregation: mode")));
+    SET_VALID_ENTRY("aggregation: max agg size");
+    SET_VALID_ENTRY("aggregation: min agg size");
+    SET_VALID_ENTRY("aggregation: max selected neighbors");
+    SET_VALID_ENTRY("aggregation: ordering");
+    validParamList->getEntry("aggregation: ordering").setValidator(
+      rcp(new validatorType(Teuchos::tuple<std::string>("natural", "graph", "random"), "aggregation: ordering")));
+    SET_VALID_ENTRY("aggregation: enable phase 1");
+    SET_VALID_ENTRY("aggregation: enable phase 2a");
+    SET_VALID_ENTRY("aggregation: enable phase 2b");
+    SET_VALID_ENTRY("aggregation: enable phase 3");
+    SET_VALID_ENTRY("aggregation: preserve Dirichlet points");
+#undef  SET_VALID_ENTRY
+
     validParamList->set< RCP<const FactoryBase> >("Graph",       null, "Generating factory of the graph");
     validParamList->set< RCP<const FactoryBase> >("DofsPerNode", null, "Generating factory for variable \'DofsPerNode\', usually the same as for \'Graph\'");
 
-    validParamList->set< std::string >           ("mode",       "old", "Old/new mode");
-
-    typedef Teuchos::OrdinalTraits<LO> OTS;
-
     // Aggregation parameters (used in aggregation algorithms)
     // TODO introduce local member function for each aggregation algorithm such that each aggregation algorithm can define its own parameters
-    validParamList->set<Ordering>("Ordering", AggOptions::NATURAL, "Ordering strategy (NATURAL|GRAPH|RANDOM)");
-    validParamList->set<LO>      ("MaxNeighAlreadySelected",                   0, "Number of maximum neighbour nodes that are already aggregated already. "
-                                  "If a new aggregate has some neighbours that are already aggregated, "
-                                  "this node probably can be added to one of these aggregates. We don't need a new one.");
-    validParamList->set<LO>      ("MinNodesPerAggregate",                      2, "Minimum number of nodes for aggregate");
-    validParamList->set<LO>      ("MaxNodesPerAggregate",             OTS::max(), "Maximum number of nodes for aggregate");
 
     validParamList->set<bool> ("UseOnePtAggregationAlgorithm",             false, "Allow special nodes to be marked for one-to-one transfer to the coarsest level. (default = off)");
     validParamList->set<bool> ("UsePreserveDirichletAggregationAlgorithm", false, "Turn on/off aggregate Dirichlet (isolated nodes) into separate 1pt node aggregates (default = off)");
@@ -108,12 +116,6 @@ namespace MueLu {
                                "nodes during aggregation process. (default = on)");
     validParamList->set<bool> ("UseEmergencyAggregationAlgorithm",          true, "Turn on/off Emergency aggregation algorithm. Puts all left over nodes "
                                "into aggregates (including very small aggregates or one-point aggregates). (default = on)");
-
-    validParamList->set<bool> ("aggregation: preserve Dirichlet points",   false, "Enable Dirichlet points preservation");
-    validParamList->set<bool> ("aggregation: enable phase 1",               true, "Turn on/off phase 1  of aggregation");
-    validParamList->set<bool> ("aggregation: enable phase 2a",              true, "Turn on/off phase 2a of aggregation");
-    validParamList->set<bool> ("aggregation: enable phase 2b",              true, "Turn on/off phase 2b of aggregation");
-    validParamList->set<bool> ("aggregation: enable phase 3",               true, "Turn on/off phase 3  of aggregation");
 
     validParamList->set< std::string >           ("OnePt aggregate map name",         "", "Name of input map for single node aggregates. (default='')");
     validParamList->set< RCP<const FactoryBase> >("OnePt aggregate map factory",    null, "Generating factory of (DOF) map for single node aggregates.");
@@ -147,7 +149,7 @@ namespace MueLu {
 
     // TODO Can we keep different aggregation algorithms over more Build calls?
     algos_.clear();
-    if (pL.get<std::string>("mode") == "old") {
+    if (pL.get<std::string>("aggregation: mode") == "old") {
       if (pL.get<bool>("UseOnePtAggregationAlgorithm")             == true)   algos_.push_back(rcp(new OnePtAggregationAlgorithm             (graphFact)));
       if (pL.get<bool>("UsePreserveDirichletAggregationAlgorithm") == true)   algos_.push_back(rcp(new PreserveDirichletAggregationAlgorithm (graphFact)));
       if (pL.get<bool>("UseUncoupledAggregationAlgorithm")         == true)   algos_.push_back(rcp(new AggregationPhase1Algorithm            (graphFact)));

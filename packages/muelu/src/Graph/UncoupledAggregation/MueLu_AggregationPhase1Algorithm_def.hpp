@@ -68,16 +68,13 @@ namespace MueLu {
                   LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
 
-    AggOptions::Ordering ordering    = params.get<AggOptions::Ordering>("Ordering");
-    LO maxNeighAlreadySelected       = params.get<LO>                  ("MaxNeighAlreadySelected");
-    LO minNodesPerAggregate          = params.get<LO>                  ("MinNodesPerAggregate");
-    LO maxNodesPerAggregate          = params.get<LO>                  ("MaxNodesPerAggregate");
+    std::string ordering       = params.get<std::string>("aggregation: ordering");
+    LO maxNeighAlreadySelected = params.get<LO>         ("aggregation: max selected neighbors");
+    LO minNodesPerAggregate    = params.get<LO>         ("aggregation: min agg size");
+    LO maxNodesPerAggregate    = params.get<LO>         ("aggregation: max agg size");
 
     TEUCHOS_TEST_FOR_EXCEPTION(maxNodesPerAggregate < minNodesPerAggregate, Exceptions::RuntimeError,
                                "MueLu::UncoupledAggregationAlgorithm::BuildAggregates: minNodesPerAggregate must be smaller or equal to MaxNodePerAggregate!");
-
-    if (ordering != NATURAL && ordering != RANDOM && ordering != GRAPH)
-      throw Exceptions::RuntimeError("UncoupledAggregation::BuildAggregates : bad aggregation ordering option");
 
     const LO  numRows = graph.GetNodeNumVertices();
     const int myRank  = graph.GetComm()->getRank();
@@ -88,7 +85,7 @@ namespace MueLu {
     LO numLocalAggregates = aggregates.GetNumAggregates();
 
     ArrayRCP<LO> randomVector;
-    if (ordering == RANDOM) {
+    if (ordering == "random") {
       randomVector = arcp<LO>(numRows);
       for (LO i = 0; i < numRows; i++)
         randomVector[i] = i;
@@ -105,12 +102,12 @@ namespace MueLu {
     for (LO i = 0; i < numRows; i++) {
       // Step 1: pick the next node to aggregate
       LO rootCandidate = 0;
-      if      (ordering == NATURAL) rootCandidate = i;
-      else if (ordering == RANDOM)  rootCandidate = randomVector[i];
-      else if (ordering == GRAPH) {
+      if      (ordering == "natural") rootCandidate = i;
+      else if (ordering == "random")  rootCandidate = randomVector[i];
+      else if (ordering == "graph") {
 
         if (graphOrderQueue.size() == 0) {
-          // Current queue is empty for GRAPH ordering, populate with one READY node
+          // Current queue is empty for "graph" ordering, populate with one READY node
           for (LO jnode = 0; jnode < numRows; jnode++)
             if (aggStat[jnode] == READY) {
               graphOrderQueue.push(jnode);
@@ -136,9 +133,9 @@ namespace MueLu {
 
       // If the number of neighbors is less than the minimum number of nodes
       // per aggregate, we know this is not going to be a valid root, and we
-      // may skip it, but only for NATURAL and RANDOM (for GRAPH we still need
-      // to fetch the list of local neighbors to continue)
-      if ((ordering == NATURAL || ordering == RANDOM) &&
+      // may skip it, but only for "natural" and "random" (for "graph" we still
+      // need to fetch the list of local neighbors to continue)
+      if ((ordering == "natural" || ordering == "random") &&
           neighOfINode.size() < minNodesPerAggregate) {
         continue;
       }
@@ -188,12 +185,12 @@ namespace MueLu {
         // Aggregate is not accepted
         aggStat[rootCandidate] = NOTSEL;
 
-        // Need this for the GRAPH ordering below
+        // Need this for the "graph" ordering below
         // The original candidate is always aggList[0]
         aggSize = 1;
       }
 
-      if (ordering == GRAPH) {
+      if (ordering == "graph") {
         // Add candidates to the list of nodes
         // NOTE: the code have slightly different meanings depending on context:
         //  - if aggregate was accepted, we add neighbors of neighbors of the original candidate

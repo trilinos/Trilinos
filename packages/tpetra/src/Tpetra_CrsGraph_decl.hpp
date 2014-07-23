@@ -1747,18 +1747,24 @@ namespace Tpetra {
     /// we should dispense with both haveRowInfo_ and hasRowInfo().
     bool haveRowInfo_;
 
-    inline bool hasRowInfo() const {
-#ifdef HAVE_TPETRA_DEBUG
-      bool actuallyHasRowInfo = true;
-      if (indicesAreAllocated() && getProfileType() == StaticProfile && rowPtrs_ == null) {
-        actuallyHasRowInfo = false;
-      }
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        actuallyHasRowInfo != haveRowInfo_,
-        std::logic_error, "Internal logic error. Please contact Tpetra team.");
-#endif // HAVE_TPETRA_DEBUG
-      return haveRowInfo_;
-    }
+    bool hasRowInfo() const;
+
+    /// \brief Whether to require makeColMap() (and therefore
+    ///   fillComplete()) to order column Map GIDs associated with
+    ///   each remote process in ascending order.
+    ///
+    /// makeColMap() always groups remote GIDs by process rank, so
+    /// that all remote GIDs with the same owning rank occur
+    /// contiguously.  By default, it always sorts remote GIDs in
+    /// increasing order within those groups.  This behavior differs
+    /// from Epetra, which does not sort remote GIDs with the same
+    /// owning process.
+    ///
+    /// This is \c true by default, which means "sort remote GIDs."
+    /// If you don't want to sort (for compatibility with Epetra),
+    /// call sortGhostColumnGIDsWithinProcessBlock(false).
+    bool sortGhostsAssociatedWithEachProcessor_;
+
   }; // class CrsGraph
 
   /** \brief Non-member function to create an empty CrsGraph given a row map and a non-zero profile.

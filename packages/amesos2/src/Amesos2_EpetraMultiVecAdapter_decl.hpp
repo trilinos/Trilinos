@@ -227,7 +227,7 @@ namespace Amesos2 {
 
     /// Print a description of this adapter to the Fancy Output Stream.
     void describe( Teuchos::FancyOStream& os,
-		   const Teuchos::EVerbosityLevel verbLevel ) const;
+                   const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const;
 
 
   private:

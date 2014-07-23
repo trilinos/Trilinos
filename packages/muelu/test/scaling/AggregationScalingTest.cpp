@@ -64,7 +64,6 @@
 #include <MueLu_ParameterListInterpreter.hpp> // TODO: move into MueLu.hpp
 #include <MueLu_UncoupledAggregationFactory.hpp>
 #include <MueLu_CoupledAggregationFactory.hpp>
-#include <MueLu_AggOptions.hpp>
 
 #include <MueLu_UseDefaultTypes.hpp>
 
@@ -131,13 +130,10 @@ int main(int argc, char *argv[]) {
      //ucFact->SetParameterList(aggList);
      //FIXME hack until UCAgg uses PL interface
      std::string ordering = aggList.get<std::string>("Ordering");
-     MueLu::AggOptions::Ordering eordering;
-     if (ordering=="Natural") eordering = MueLu::AggOptions::NATURAL;
-     if (ordering=="Graph") eordering = MueLu::AggOptions::GRAPH;
-     if (ordering=="Random") eordering = MueLu::AggOptions::RANDOM;
-     ucFact->SetOrdering(eordering);
-     ucFact->SetMaxNeighAlreadySelected(aggList.get<int>("MaxNeighAlreadySelected"));
-     ucFact->SetMinNodesPerAggregate(aggList.get<int>("MinNodesPerAggregate"));
+     std::transform(ordering.begin(), ordering.end(), ordering.begin(), ::tolower);
+     ucFact->SetOrdering(ordering);
+     ucFact->SetMaxNeighAlreadySelected(aggList.get<int>("aggregation: max selected neighbors"));
+     ucFact->SetMinNodesPerAggregate(aggList.get<int>("aggregation: min agg size"));
      aggFact = ucFact;
 
   } else if (aggList.name() == "CoupledAggregationFactory") {
@@ -146,8 +142,8 @@ int main(int argc, char *argv[]) {
      //cFact->SetParameterList(aggList);
      //FIXME hack until CoupledAgg uses PL interface
      //cFact->SetOrdering(aggList.get<std::string>("Ordering"));
-     cFact->SetMaxNeighAlreadySelected(aggList.get<int>("MaxNeighAlreadySelected"));
-     cFact->SetMinNodesPerAggregate(aggList.get<int>("MinNodesPerAggregate"));
+     cFact->SetMaxNeighAlreadySelected(aggList.get<int>("aggregation: max selected neighbors"));
+     cFact->SetMinNodesPerAggregate(aggList.get<int>("aggregation: min agg size"));
      aggFact = cFact;
 
   } else {

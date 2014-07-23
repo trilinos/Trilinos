@@ -400,9 +400,9 @@ namespace MueLuTests {
 
     RCP<CoalesceDropFactory> dropFactory = rcp(new CoalesceDropFactory());
     ParameterList dropParams = *(dropFactory->GetValidParameterList());
-    dropParams.set("lightweight wrap",      true);
-    dropParams.set("algorithm",             "classical");
-    dropParams.set("aggregation threshold", dropTol);
+    dropParams.set("lightweight wrap",          true);
+    dropParams.set("aggregation: drop scheme",  "classical");
+    dropParams.set("aggregation: drop tol",     dropTol);
     // dropParams.set("Dirichlet detection threshold", <>);
     dropFactory->SetParameterList(dropParams);
     M.SetFactory("Graph",     dropFactory);
@@ -489,7 +489,7 @@ namespace MueLuTests {
 
     RCP<PatternFactory> patternFact = rcp(new PatternFactory);
     ParameterList patternParams = *(patternFact->GetValidParameterList());
-    patternParams.set("k", 0);
+    patternParams.set("emin: pattern order", 0);
     patternFact->SetParameterList(patternParams);
     patternFact->SetFactory("A", AFact);
     patternFact->SetFactory("P", Q2Q1Fact);

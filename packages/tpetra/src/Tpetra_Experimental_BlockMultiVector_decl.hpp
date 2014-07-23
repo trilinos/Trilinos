@@ -373,9 +373,8 @@ public:
   ///   point, using a local index.
   ///
   /// \param localRowIndex [in] Local index of the mesh point.
-  /// \param colIndex [in] Column (vector) to modify.
-  /// \param vals [in] Input values with which to replace whatever
-  ///   existing values are at the mesh point.
+  /// \param colIndex [in] Column (vector) to view.
+  /// \param vals [out] View of the entries at the given mesh point.
   ///
   /// \return true if successful, else false.  This method will
   ///   <i>not</i> succeed if the given local index of the mesh point
@@ -386,9 +385,8 @@ public:
   ///   point, using a global index.
   ///
   /// \param globalRowIndex [in] Global index of the mesh point.
-  /// \param colIndex [in] Column (vector) to modify.
-  /// \param vals [in] Input values with which to replace whatever
-  ///   existing values are at the mesh point.
+  /// \param colIndex [in] Column (vector) to view.
+  /// \param vals [out] View of the entries at the given mesh point.
   ///
   /// \return true if successful, else false.  This method will
   ///   <i>not</i> succeed if the given global index of the mesh point

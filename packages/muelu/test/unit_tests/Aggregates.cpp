@@ -76,7 +76,7 @@ namespace MueLuTests {
     aggFact->SetFactory("Graph", dropFact);
     aggFact->SetMinNodesPerAggregate(3);
     aggFact->SetMaxNeighAlreadySelected(0);
-    aggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+    aggFact->SetOrdering("natural");
     aggFact->SetPhase3AggCreation(0.5);
 
     level.Request("Aggregates", aggFact.get());

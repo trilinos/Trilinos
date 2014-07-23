@@ -117,9 +117,9 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setPr
 
   if(LinearProblem_!=Teuchos::null)
     LinearProblem_ -> setOperator ( TpetraA_ );
-  
+
 }
-  
+
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setProblemMatrix(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraA) {
 
@@ -143,7 +143,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setPr
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setPreconditioningMatrix(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraP) {
- 
+
   RCP< Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atmp
     = rcp( new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(TpetraP) );
   P_= rcp( new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Atmp) );
@@ -203,7 +203,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setda
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setdamp(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraC) {
-  
+
   RCP< Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atmp
     = rcp( new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(TpetraC) );
   C_= rcp( new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Atmp) );
@@ -279,7 +279,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::initi
   Manager_   -> SetFactory("Ptent", TentPfact_);
   Teuchos::ParameterList params;
   params.set("lightweight wrap",true);
-  params.set("algorithm","original");
+  params.set("aggregation: drop scheme","original");
   Dropfact_  -> SetParameterList(params);
   Manager_   -> SetFactory("Graph", Dropfact_);
   Manager_   -> SetFactory("Smoother", Teuchos::null);
@@ -510,7 +510,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   Manager_   -> SetFactory("Ptent", TentPfact_);
   Teuchos::ParameterList params;
   params.set("lightweight wrap",true);
-  params.set("algorithm","original");
+  params.set("aggregation: drop scheme","original");
   Dropfact_  -> SetParameterList(params);
   Manager_   -> SetFactory("Graph", Dropfact_);
   if(Aggregation_=="coupled") {

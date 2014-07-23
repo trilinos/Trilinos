@@ -2163,10 +2163,9 @@ int Epetra_CrsMatrix::CheckSizes(const Epetra_SrcDistObject & Source) {
 int Epetra_CrsMatrix::CopyAndPermute(const Epetra_SrcDistObject & Source,
              int NumSameIDs,
              int NumPermuteIDs,
-             int * PermuteToLIDs,
+                                     int * PermuteToLIDs,
              int *PermuteFromLIDs,
-             const Epetra_OffsetIndex * Indexor ,
-             Epetra_CombineMode CombineMode) {
+                                     const Epetra_OffsetIndex * Indexor ) {
 
   if(!Source.Map().GlobalIndicesTypeMatch(RowMap()))
     throw ReportError("Epetra_CrsMatrix::CopyAndPermute: Incoming global index type does not match the one for *this",-1);
@@ -2174,13 +2173,13 @@ int Epetra_CrsMatrix::CopyAndPermute(const Epetra_SrcDistObject & Source,
   try {
     const Epetra_CrsMatrix & A = dynamic_cast<const Epetra_CrsMatrix &>(Source);
     EPETRA_CHK_ERR(CopyAndPermuteCrsMatrix(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs,
-             PermuteFromLIDs,Indexor,CombineMode));
+             PermuteFromLIDs,Indexor));
   }
   catch (...) {
     try {
       const Epetra_RowMatrix & A = dynamic_cast<const Epetra_RowMatrix &>(Source);
       EPETRA_CHK_ERR(CopyAndPermuteRowMatrix(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs,
-               PermuteFromLIDs,Indexor,CombineMode));
+               PermuteFromLIDs,Indexor));
     }
     catch (...) {
       EPETRA_CHK_ERR(-1); // Incompatible SrcDistObject
@@ -2193,25 +2192,19 @@ int Epetra_CrsMatrix::CopyAndPermute(const Epetra_SrcDistObject & Source,
 //=========================================================================
 template<typename int_type>
 int Epetra_CrsMatrix::TCopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
-                int NumSameIDs,
+                                              int NumSameIDs,
                 int NumPermuteIDs,
-                int * PermuteToLIDs,
+                                              int * PermuteToLIDs,
                 int *PermuteFromLIDs,
-                const Epetra_OffsetIndex * Indexor,
-                Epetra_CombineMode CombineMode) {
+                                              const Epetra_OffsetIndex * Indexor) {
 
-  int i, ierr = -1;
+  int i, ierr;
 
   int_type Row;
   int NumEntries;
   int maxNumEntries = A.MaxNumEntries();
   int_type * Indices = 0;
   double * values = 0;
-
-  if (   CombineMode != Add
-   && CombineMode != Insert
-   && CombineMode != Zero )
-    EPETRA_CHK_ERR(-1); //Unsupported CombineMode, defaults to Zero
 
   if (maxNumEntries>0 && A.IndicesAreLocal() ) { //Need Temp Space
     Indices = new int_type[maxNumEntries];
@@ -2226,10 +2219,7 @@ int Epetra_CrsMatrix::TCopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
           for (i=0; i<NumSameIDs; i++) {
       Row = (int_type) GRID64(i);
       EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(Row, maxNumEntries, NumEntries, values, Indices)); // Set pointers
-            if (CombineMode==Add)
-              ierr = SumIntoOffsetValues(Row, NumEntries, values, Indexor->SameOffsets()[i]);
-            else if (CombineMode==Insert)
-              ierr = ReplaceOffsetValues(Row, NumEntries, values, Indexor->SameOffsets()[i]);
+            ierr = ReplaceOffsetValues(Row, NumEntries, values, Indexor->SameOffsets()[i]);
             if( ierr<0 ) EPETRA_CHK_ERR(ierr);
           }
         }
@@ -2237,10 +2227,7 @@ int Epetra_CrsMatrix::TCopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
           for (i=0; i<NumSameIDs; i++) {
       Row = (int_type) GRID64(i);
       EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(Row, maxNumEntries, NumEntries, values, Indices)); // Set pointers
-            if (CombineMode==Add)
-              ierr = SumIntoGlobalValues(Row, NumEntries, values, Indices);
-            else if (CombineMode==Insert)
-              ierr = ReplaceGlobalValues(Row, NumEntries, values, Indices);
+            ierr = ReplaceGlobalValues(Row, NumEntries, values, Indices);
             if( ierr<0 ) EPETRA_CHK_ERR(ierr);
           }
         }
@@ -2270,10 +2257,7 @@ int Epetra_CrsMatrix::TCopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
           for (i=0; i<NumSameIDs; i++) {
       Row = (int_type) GRID64(i);
       EPETRA_CHK_ERR(A.ExtractGlobalRowView(Row, NumEntries, values, Indices)); // Set pointers
-            if (CombineMode==Add)
-              ierr = SumIntoOffsetValues(Row, NumEntries, values, Indexor->SameOffsets()[i]);
-            else if (CombineMode==Insert)
-              ierr = ReplaceOffsetValues(Row, NumEntries, values, Indexor->SameOffsets()[i]);
+            ierr = ReplaceOffsetValues(Row, NumEntries, values, Indexor->SameOffsets()[i]);
             if( ierr<0 ) EPETRA_CHK_ERR(ierr);
           }
         }
@@ -2281,10 +2265,7 @@ int Epetra_CrsMatrix::TCopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
           for (i=0; i<NumSameIDs; i++) {
       Row = (int_type) GRID64(i);
       EPETRA_CHK_ERR(A.ExtractGlobalRowView(Row, NumEntries, values, Indices)); // Set pointers
-            if (CombineMode==Add)
-              ierr = SumIntoGlobalValues(Row, NumEntries, values, Indices);
-            else if (CombineMode==Insert)
-              ierr = ReplaceGlobalValues(Row, NumEntries, values, Indices);
+            ierr = ReplaceGlobalValues(Row, NumEntries, values, Indices);
             if( ierr<0 ) EPETRA_CHK_ERR(ierr);
           }
         }
@@ -2320,10 +2301,7 @@ int Epetra_CrsMatrix::TCopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
       FromRow = (int_type) A.GRID64(PermuteFromLIDs[i]);
       ToRow = (int_type) GRID64(PermuteToLIDs[i]);
       EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(FromRow, maxNumEntries, NumEntries, values, Indices)); // Set pointers
-            if (CombineMode==Add)
-              ierr = SumIntoOffsetValues(ToRow, NumEntries, values, Indexor->PermuteOffsets()[i]);
-            else if (CombineMode==Insert)
-              ierr = ReplaceOffsetValues(ToRow, NumEntries, values, Indexor->PermuteOffsets()[i]);
+      ierr = ReplaceOffsetValues(ToRow, NumEntries, values, Indexor->PermuteOffsets()[i]);
             if( ierr<0 ) EPETRA_CHK_ERR(ierr);
           }
         }
@@ -2332,10 +2310,7 @@ int Epetra_CrsMatrix::TCopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
       FromRow = (int_type) A.GRID64(PermuteFromLIDs[i]);
       ToRow = (int_type) GRID64(PermuteToLIDs[i]);
       EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(FromRow, maxNumEntries, NumEntries, values, Indices)); // Set pointers
-            if (CombineMode==Add)
-              ierr = SumIntoGlobalValues(ToRow, NumEntries, values, Indices);
-            else if (CombineMode==Insert)
-              ierr = ReplaceGlobalValues(ToRow, NumEntries, values, Indices);
+      ierr = ReplaceGlobalValues(ToRow, NumEntries, values, Indices);
             if( ierr<0 ) EPETRA_CHK_ERR(ierr);
           }
         }
@@ -2368,10 +2343,7 @@ int Epetra_CrsMatrix::TCopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
       FromRow = (int_type) A.GRID64(PermuteFromLIDs[i]);
       ToRow = (int_type) GRID64(PermuteToLIDs[i]);
       EPETRA_CHK_ERR(A.ExtractGlobalRowView(FromRow, NumEntries, values, Indices)); // Set pointers
-            if (CombineMode==Add)
-              ierr = SumIntoOffsetValues(ToRow, NumEntries, values, Indexor->PermuteOffsets()[i]);
-            else if (CombineMode==Insert)
-              ierr = ReplaceOffsetValues(ToRow, NumEntries, values, Indexor->PermuteOffsets()[i]);
+      ierr = ReplaceOffsetValues(ToRow, NumEntries, values, Indexor->PermuteOffsets()[i]);
       if (ierr<0) EPETRA_CHK_ERR(ierr);
           }
         }
@@ -2380,10 +2352,7 @@ int Epetra_CrsMatrix::TCopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
       FromRow = (int_type) A.GRID64(PermuteFromLIDs[i]);
       ToRow = (int_type) GRID64(PermuteToLIDs[i]);
       EPETRA_CHK_ERR(A.ExtractGlobalRowView(FromRow, NumEntries, values, Indices)); // Set pointers
-            if (CombineMode==Add)
-              ierr = SumIntoGlobalValues(ToRow, NumEntries, values, Indices);
-            else if (CombineMode==Insert)
-              ierr = ReplaceGlobalValues(ToRow, NumEntries, values, Indices);
+      ierr = ReplaceGlobalValues(ToRow, NumEntries, values, Indices);
       if (ierr<0) EPETRA_CHK_ERR(ierr);
           }
         }
@@ -2421,25 +2390,24 @@ int Epetra_CrsMatrix::TCopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
 
 int Epetra_CrsMatrix::CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
                                               int NumSameIDs,
-                                              int NumPermuteIDs,
+                int NumPermuteIDs,
                                               int * PermuteToLIDs,
-                                              int *PermuteFromLIDs,
-                                              const Epetra_OffsetIndex * Indexor,
-                                              Epetra_CombineMode CombineMode)
+                int *PermuteFromLIDs,
+                                              const Epetra_OffsetIndex * Indexor)
 {
   if(!A.RowMap().GlobalIndicesTypeMatch(RowMap()))
     throw ReportError("Epetra_CrsMatrix::CopyAndPermuteCrsMatrix: Incoming global index type does not match the one for *this",-1);
 
   if(A.RowMap().GlobalIndicesInt())
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-    return TCopyAndPermuteCrsMatrix<int>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor, CombineMode);
+    return TCopyAndPermuteCrsMatrix<int>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor);
 #else
     throw ReportError("Epetra_CrsMatrix::CopyAndPermuteCrsMatrix: ERROR, GlobalIndicesInt but no API for it.",-1);
 #endif
 
   if(A.RowMap().GlobalIndicesLongLong())
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-    return TCopyAndPermuteCrsMatrix<long long>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor, CombineMode);
+    return TCopyAndPermuteCrsMatrix<long long>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor);
 #else
     throw ReportError("Epetra_CrsMatrix::CopyAndPermuteCrsMatrix: ERROR, GlobalIndicesLongLong but no API for it.",-1);
 #endif
@@ -2450,12 +2418,11 @@ int Epetra_CrsMatrix::CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
 //=========================================================================
 template<typename int_type>
 int Epetra_CrsMatrix::TCopyAndPermuteRowMatrix(const Epetra_RowMatrix & A,
-                int NumSameIDs,
+                                              int NumSameIDs,
                 int NumPermuteIDs,
-                int * PermuteToLIDs,
+                                              int * PermuteToLIDs,
                 int *PermuteFromLIDs,
-                const Epetra_OffsetIndex * Indexor,
-                Epetra_CombineMode CombineMode) {
+                                              const Epetra_OffsetIndex * Indexor ) {
   int i, j, ierr;
 
   int_type Row, ToRow;
@@ -2465,11 +2432,6 @@ int Epetra_CrsMatrix::TCopyAndPermuteRowMatrix(const Epetra_RowMatrix & A,
   int_type * gen_Indices = 0; // gen = general (int or long long)
   int * int_Indices = 0;
   double * values = 0;
-
-  if (   CombineMode != Add
-   && CombineMode != Insert
-   && CombineMode != Zero )
-    EPETRA_CHK_ERR(-1); //Unsupported CombineMode, defaults to Zero
 
   if (maxNumEntries>0) {
     if(StaticGraph() || IndicesAreLocal() || Indexor) {
@@ -2604,26 +2566,25 @@ int Epetra_CrsMatrix::TCopyAndPermuteRowMatrix(const Epetra_RowMatrix & A,
 }
 
 int Epetra_CrsMatrix::CopyAndPermuteRowMatrix(const Epetra_RowMatrix & A,
-                int NumSameIDs,
+                                              int NumSameIDs,
                 int NumPermuteIDs,
-                int * PermuteToLIDs,
+                                              int * PermuteToLIDs,
                 int *PermuteFromLIDs,
-                const Epetra_OffsetIndex * Indexor,
-                Epetra_CombineMode CombineMode)
+                                              const Epetra_OffsetIndex * Indexor )
 {
   if(!A.Map().GlobalIndicesTypeMatch(RowMap()))
     throw ReportError("Epetra_CrsMatrix::CopyAndPermuteRowMatrix: Incoming global index type does not match the one for *this",-1);
 
   if(A.RowMatrixRowMap().GlobalIndicesInt())
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-    return TCopyAndPermuteRowMatrix<int>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor, CombineMode);
+    return TCopyAndPermuteRowMatrix<int>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor);
 #else
     throw ReportError("Epetra_CrsMatrix::CopyAndPermuteRowMatrix: ERROR, GlobalIndicesInt but no API for it.",-1);
 #endif
 
   if(A.RowMatrixRowMap().GlobalIndicesLongLong())
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-    return TCopyAndPermuteRowMatrix<long long>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor, CombineMode);
+    return TCopyAndPermuteRowMatrix<long long>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor);
 #else
     throw ReportError("Epetra_CrsMatrix::CopyAndPermuteRowMatrix: ERROR, GlobalIndicesLongLong but no API for it.",-1);
 #endif

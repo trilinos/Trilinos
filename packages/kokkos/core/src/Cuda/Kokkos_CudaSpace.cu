@@ -321,9 +321,23 @@ cuda_texture_object_attach(
   return entry->tex_obj ;
 }
 
+int cuda_texture_object_release(::cudaTextureObject_t tex) {
+  return 0;//cudaDestroyTextureObject(tex);
+}
+
 } // namespace Impl
 } // namespace Kokkos
 
 #endif
+
+namespace Kokkos {
+namespace Impl {
+
+int cuda_texture_object_release(const void* tex) {
+  return 0;
+}
+
+} // namespace Impl
+} // namespace Kokkos
 
 

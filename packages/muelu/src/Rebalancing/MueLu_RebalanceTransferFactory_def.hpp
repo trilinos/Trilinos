@@ -61,6 +61,7 @@
 #include "MueLu_RebalanceTransferFactory_decl.hpp"
 
 #include "MueLu_Level.hpp"
+#include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_Utilities.hpp"
@@ -70,6 +71,13 @@ namespace MueLu {
  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
  RCP<const ParameterList> RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
+
+#define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
+    SET_VALID_ENTRY("repartition: rebalance P and R");
+    SET_VALID_ENTRY("transpose: use implicit");
+#undef  SET_VALID_ENTRY
+    // The value of "useSubcomm" parameter here must be the same as in RebalanceAcFactory
+    validParamList->set< bool >                  ("useSubcomm",          true, "Construct subcommunicators");
 
     {
       typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
@@ -82,10 +90,6 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("Nullspace",           null, "Factory of the nullspace that need to be rebalanced (only used if type=Restriction)");
     validParamList->set< RCP<const FactoryBase> >("Coordinates",         null, "Factory of the coordinates that need to be rebalanced (only used if type=Restriction)");
     validParamList->set< RCP<const FactoryBase> >("Importer",            null, "Factory of the importer object used for the rebalancing");
-    validParamList->set< bool >                  ("implicit transpose", false, "Use implicit transpose for restriction");
-    // The value of "useSubcomm" parameter here must be the same as in RebalanceAcFactory
-    validParamList->set< bool >                  ("useSubcomm",          true, "Construct subcommunicators");
-    validParamList->set< bool >                  ("implicit",           false, "Do not rebalance P and R");
     validParamList->set< int >                   ("write start",           -1, "First level at which coordinates should be written to file");
     validParamList->set< int >                   ("write end",             -1, "Last level at which coordinates should be written to file");
 
@@ -107,7 +111,7 @@ namespace MueLu {
         Input(coarseLevel, "Coordinates");
 
     } else {
-      if (pL.get<bool>("implicit transpose") == false)
+      if (pL.get<bool>("transpose: use implicit") == false)
         Input(coarseLevel, "R");
     }
 
@@ -120,7 +124,7 @@ namespace MueLu {
 
     const ParameterList& pL = GetParameterList();
 
-    int implicit   = pL.get<bool>("implicit");
+    int implicit   = !pL.get<bool>("repartition: rebalance P and R");
     int writeStart = pL.get<int> ("write start");
     int writeEnd   = pL.get<int> ("write end");
 
@@ -274,7 +278,7 @@ namespace MueLu {
       }
 
     } else {
-      if (pL.get<bool>("implicit transpose") == false) {
+      if (pL.get<bool>("transpose: use implicit") == false) {
         RCP<Matrix> originalR = Get< RCP<Matrix> >(coarseLevel, "R");
 
         SubFactoryMonitor m2(*this, "Rebalancing restriction", coarseLevel);

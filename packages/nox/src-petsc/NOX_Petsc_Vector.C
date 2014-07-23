@@ -291,10 +291,10 @@ Vector::innerProduct(const Vector& y) const
   return dotprod;
 }
 
-int
+NOX::size_type
 Vector::length() const
 {
-  int size;
+  PetscInt size;
   VecGetSize(petscVec, &size);
   return size;
 }

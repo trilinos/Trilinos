@@ -47,21 +47,22 @@
 #define MUELU_HIERARCHY_DEF_HPP
 
 #include <sstream>
-#include "MueLu_BoostGraphviz.hpp"
 
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_Matrix.hpp>
 
 #include "MueLu_Hierarchy_decl.hpp"
-#include "MueLu_Level.hpp"
+
+#include "MueLu_BoostGraphviz.hpp"
+#include "MueLu_FactoryManager.hpp"
 #include "MueLu_HierarchyHelpers.hpp"
+#include "MueLu_Level.hpp"
+#include "MueLu_Monitor.hpp"
+#include "MueLu_PFactory.hpp"
 #include "MueLu_SmootherFactoryBase.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_SmootherBase.hpp"
-#include "MueLu_FactoryManager.hpp"
-#include "MueLu_PFactory.hpp"
 #include "MueLu_Utilities.hpp"
-#include "MueLu_Monitor.hpp"
 
 namespace MueLu {
 
@@ -151,14 +152,13 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(levelID != 0 && level.GetPreviousLevel() != Levels_[levelID-1], Exceptions::RuntimeError, "MueLu::Hierarchy::Setup(): wrong level parent");
   }
 
+  // The function uses three managers: fine, coarse and next coarse
+  // We construct the data for the coarse level, and do requests for the next coarse
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   bool Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(int coarseLevelID,
                                                                                 const Teuchos::Ptr<const FactoryManagerBase> fineLevelManager,
                                                                                 const Teuchos::Ptr<const FactoryManagerBase> coarseLevelManager,
                                                                                 const Teuchos::Ptr<const FactoryManagerBase> nextLevelManager) {
-    // The function uses three managers: fine, coarse and next coarse
-    // We construct the data for the coarse level, and do requests for the next coarse
-
     // Use PrintMonitor/TimerMonitor instead of just a FactoryMonitor to print "Level 0" instead of Hierarchy(0)
     // Print is done after the requests for next coarse level
     TimeMonitor m1(*this, this->ShortClassName() + ": " + "Setup (total)");
@@ -186,13 +186,18 @@ namespace MueLu {
     if (fineLevelManager == Teuchos::null) isFinestLevel = true;
     if (nextLevelManager == Teuchos::null) isLastLevel   = true;
 
-#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
-    // Record the communicator on the level (used for timers sync)
     if (isFinestLevel) {
-      RCP<Matrix> A = level.Get< RCP<Matrix> >("A");
-      level.SetComm(A->getRowMap()->getComm());
-    }
+      RCP<Matrix>                    A    = level.Get< RCP<Matrix> >("A");
+      RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+
+      // Initialize random seed for reproducibility
+      Utils::SetRandomSeed(*comm);
+
+#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
+      // Record the communicator on the level (used for timers sync)
+      level.SetComm(comm);
 #endif
+    }
 
     // Attach FactoryManager to the fine level
     RCP<SetFactoryManager> SFMFine;

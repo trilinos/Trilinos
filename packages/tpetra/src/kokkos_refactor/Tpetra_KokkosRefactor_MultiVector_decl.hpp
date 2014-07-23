@@ -1129,23 +1129,22 @@ namespace Tpetra {
             const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& B,
             const Scalar& gamma);
 
-    /// \brief Compute the one-norm of each vector (column).
+    /// \brief Compute the one-norm of each vector (column), storing
+    ///   the result in a device view.
     ///
     /// The one-norm of a vector is the sum of squares of the
-    /// magnitudes of the vector's entries.  On exit, norms[k] is the
-    /// one-norm of column k of this MultiVector.
-    void norm1(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const;
-
-    /// \brief Compute the two-norm of each vector (column).
+    /// magnitudes of the vector's entries.  On exit, norms(j) is the
+    /// one-norm of column j of this MultiVector.
     ///
-    /// The two-norm of a vector is the standard Euclidean norm, the
-    /// square root of the sum of squares of the magnitudes of the
-    /// vector's entries.  On exit, norms[k] is the two-norm of column
-    /// k of this MultiVector.
-    void norm2 (const Teuchos::ArrayView<mag_type>& norms) const;
+    /// \param norms [out] Device View with getNumVectors() entries.
+    ///
+    /// \pre <tt>norms.dimension_0 () == this->getNumVectors ()</tt>
+    /// \post <tt>norms(j) == (this->getVector[j])->norm1 (* (A.getVector[j]))</tt>
+    void norm1 (const Kokkos::View<mag_type*, device_type>& norms) const;
 
-    /// \brief Compute the two-norm of each vector (column).
-    /// \tparam T The output type of the norms.
+    /// \brief Compute the one-norm of each vector (column), storing
+    ///   the result in a device view.
+    /// \tparam T The output type of the dot products.
     ///
     /// This method only exists if mag_type and T are different types.
     /// For example, if Teuchos::ScalarTraits<Scalar>::magnitudeType
@@ -1157,13 +1156,48 @@ namespace Tpetra {
     /// mag_type and T are different types; the method still returns
     /// \c void, as above.
     template <typename T>
+    typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type, T>::value), void >::type
+    norm1 (const Kokkos::View<T*, device_type>& norms) const
+    {
+      const size_t numNorms = norms.dimension_0 ();
+      Kokkos::View<mag_type*, device_type> tmpNorms ("MV::norm1 tmp", numNorms);
+      // Call overload that takes a Kokkos::View<mag_type*, device_type>.
+      this->norm1 (tmpNorms);
+      // FIXME (mfh 15 Jul 2014) Does this actually work if mag_type
+      // and T differ?  We would need a test for this, but only the
+      // Sacado and Stokhos packages are likely to care about this use
+      // case.
+      Kokkos::deep_copy (norms, tmpNorms);
+    }
+
+
+    /// \brief Compute the one-norm of each vector (column).
+    ///
+    /// The one-norm of a vector is the sum of squares of the
+    /// magnitudes of the vector's entries.  On exit, norms[j] is the
+    /// one-norm of column j of this MultiVector.
+    void norm1 (const Teuchos::ArrayView<mag_type>& norms) const;
+
+    /// \brief Compute the one-norm of each vector (column).
+    /// \tparam T The output type of the norms.
+    ///
+    /// This method only exists if mag_type and T are different types.
+    /// For example, if Teuchos::ScalarTraits<Scalar>::magnitudeType
+    /// and mag_type differ, then this method ensures backwards
+    /// compatibility with the previous interface (that returned norms
+    /// as Teuchos::ScalarTraits<Scalar>::magnitudeType
+    /// rather than as mag_type).  The complicated \c enable_if
+    /// expression just ensures that the method only exists if
+    /// mag_type and T are different types; the method still returns
+    /// \c void, as above.
+    template <typename T>
     typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type,T>::value), void >::type
-    norm2 (const Teuchos::ArrayView<T>& norms) const
+    norm1 (const Teuchos::ArrayView<T>& norms) const
     {
       typedef typename Teuchos::ArrayView<T>::size_type size_type;
       const size_type sz = norms.size ();
       Teuchos::Array<mag_type> theNorms (sz);
-      this->norm2 (theNorms);
+      this->norm1 (theNorms);
       for (size_type i = 0; i < sz; ++i) {
         norms[i] = theNorms[i];
       }
@@ -1209,18 +1243,136 @@ namespace Tpetra {
       Kokkos::deep_copy (norms, theNorms);
     }
 
+    /// \brief Compute the two-norm of each vector (column).
+    ///
+    /// The two-norm of a vector is the standard Euclidean norm, the
+    /// square root of the sum of squares of the magnitudes of the
+    /// vector's entries.  On exit, norms[k] is the two-norm of column
+    /// k of this MultiVector.
+    void norm2 (const Teuchos::ArrayView<mag_type>& norms) const;
+
+    /// \brief Compute the two-norm of each vector (column).
+    /// \tparam T The output type of the norms.
+    ///
+    /// This method only exists if mag_type and T are different types.
+    /// For example, if Teuchos::ScalarTraits<Scalar>::magnitudeType
+    /// and mag_type differ, then this method ensures backwards
+    /// compatibility with the previous interface (that returned norms
+    /// products as Teuchos::ScalarTraits<Scalar>::magnitudeType
+    /// rather than as mag_type).  The complicated \c enable_if
+    /// expression just ensures that the method only exists if
+    /// mag_type and T are different types; the method still returns
+    /// \c void, as above.
+    template <typename T>
+    typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type,T>::value), void >::type
+    norm2 (const Teuchos::ArrayView<T>& norms) const
+    {
+      typedef typename Teuchos::ArrayView<T>::size_type size_type;
+      const size_type sz = norms.size ();
+      Teuchos::Array<mag_type> theNorms (sz);
+      this->norm2 (theNorms);
+      for (size_type i = 0; i < sz; ++i) {
+        norms[i] = theNorms[i];
+      }
+    }
+
+    /// \brief Compute the infinity-norm of each vector (column),
+    ///   storing the result in a device view.
+    ///
+    /// The infinity-norm of a vector is the maximum of the magnitudes
+    /// of the vector's entries.  On exit, norms(j) is the
+    /// infinity-norm of column j of this MultiVector.
+    void normInf (const Kokkos::View<mag_type*, device_type>& norms) const;
+
+    /// \brief Compute the two-norm of each vector (column), storing
+    ///   the result in a device view.
+    ///
+    /// This method only exists if mag_type and T are different types.
+    /// For example, if Teuchos::ScalarTraits<Scalar>::magnitudeType
+    /// and mag_type differ, then this method ensures backwards
+    /// compatibility with the previous interface (that returned norms
+    /// as Teuchos::ScalarTraits<Scalar>::magnitudeType rather than as
+    /// mag_type).  The complicated \c enable_if expression just
+    /// ensures that the method only exists if mag_type and T are
+    /// different types; the method still returns \c void, as above.
+    template<typename T>
+    typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type, T>::value), void >::type
+    normInf (const Kokkos::View<T*, device_type>& norms) const
+    {
+      const size_t numNorms = norms.dimension_0 ();
+      Kokkos::View<mag_type*, device_type> theNorms ("MV::normInf tmp", numNorms);
+      // Call overload that takes a Kokkos::View<mag_type*, device_type>.
+      this->normInf (theNorms);
+      // FIXME (mfh 15 Jul 2014) Does this actually work if mag_type
+      // and T differ?  We would need a test for this, but only the
+      // Sacado and Stokhos packages are likely to care about this use
+      // case.
+      Kokkos::deep_copy (norms, theNorms);
+    }
+
     /// \brief Compute the infinity-norm of each vector (column).
     ///
     /// The infinity-norm of a vector is the maximum of the magnitudes
-    /// of the vector's entries.  On exit, norms[k] is the
-    /// infinity-norm of column k of this MultiVector.
-    void normInf (const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& norms) const;
+    /// of the vector's entries.  On exit, norms[j] is the
+    /// infinity-norm of column j of this MultiVector.
+    void normInf (const Teuchos::ArrayView<mag_type>& norms) const;
+
+    /// \brief Compute the infinity-norm of each vector (column).
+    /// \tparam T The output type of the norms.
+    ///
+    /// This method only exists if mag_type and T are different types.
+    /// For example, if Teuchos::ScalarTraits<Scalar>::magnitudeType
+    /// and mag_type differ, then this method ensures backwards
+    /// compatibility with the previous interface (that returned norms
+    /// products as Teuchos::ScalarTraits<Scalar>::magnitudeType
+    /// rather than as mag_type).  The complicated \c enable_if
+    /// expression just ensures that the method only exists if
+    /// mag_type and T are different types; the method still returns
+    /// \c void, as above.
+    template <typename T>
+    typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type,T>::value), void >::type
+    normInf (const Teuchos::ArrayView<T>& norms) const
+    {
+      typedef typename Teuchos::ArrayView<T>::size_type size_type;
+      const size_type sz = norms.size ();
+      Teuchos::Array<mag_type> theNorms (sz);
+      this->norm2 (theNorms);
+      for (size_type i = 0; i < sz; ++i) {
+        norms[i] = theNorms[i];
+      }
+    }
 
     //! Compute Weighted 2-norm (RMS Norm) of each vector in multi-vector.
     //! The outcome of this routine is undefined for non-floating point scalar types (e.g., int).
     void
     normWeighted (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& weights,
-                  const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& norms) const;
+                  const Teuchos::ArrayView<mag_type>& norms) const;
+
+    //! Compute Weighted 2-norm (RMS Norm) of each vector in multi-vector.
+    //! The outcome of this routine is undefined for non-floating point scalar types (e.g., int).
+    ///
+    /// This method only exists if mag_type and T are different types.
+    /// For example, if Teuchos::ScalarTraits<Scalar>::magnitudeType
+    /// and mag_type differ, then this method ensures backwards
+    /// compatibility with the previous interface (that returned norms
+    /// as Teuchos::ScalarTraits<Scalar>::magnitudeType
+    /// rather than as mag_type).  The complicated \c enable_if
+    /// expression just ensures that the method only exists if
+    /// mag_type and T are different types; the method still returns
+    /// \c void, as above.
+    template <typename T>
+    typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type,T>::value), void >::type
+    normWeighted (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& weights,
+                  const Teuchos::ArrayView<T>& norms) const
+    {
+      typedef typename Teuchos::ArrayView<T>::size_type size_type;
+      const size_type sz = norms.size ();
+      Teuchos::Array<mag_type> theNorms (sz);
+      this->normWeighted (weights, theNorms);
+      for (size_type i = 0; i < sz; ++i) {
+        norms[i] = theNorms[i];
+      }
+    }
 
     //! \brief Compute mean (average) value of each vector in multi-vector.
     //! The outcome of this routine is undefined for non-floating point scalar types (e.g., int).

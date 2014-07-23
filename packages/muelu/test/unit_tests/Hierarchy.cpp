@@ -162,7 +162,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, Iterate)
   RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
   CoupledAggFact->SetMinNodesPerAggregate(3);
   CoupledAggFact->SetMaxNeighAlreadySelected(0);
-  CoupledAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+  CoupledAggFact->SetOrdering("natural");
   CoupledAggFact->SetPhase3AggCreation(0.5);
 
   RCP<CoalesceDropFactory> cdFact;
@@ -254,7 +254,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, IterateWithImplicitRestriction)
   RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
   CoupledAggFact->SetMinNodesPerAggregate(3);
   CoupledAggFact->SetMaxNeighAlreadySelected(0);
-  CoupledAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+  CoupledAggFact->SetOrdering("natural");
   CoupledAggFact->SetPhase3AggCreation(0.5);
   RCP<CoalesceDropFactory> cdFact;
   RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory());
@@ -263,7 +263,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, IterateWithImplicitRestriction)
   RCP<TransPFactory>      Rfact = rcp( new TransPFactory());
   RCP<RAPFactory>         Acfact = rcp( new RAPFactory() );
   ParameterList Aclist = *(Acfact->GetValidParameterList());
-  Aclist.set("implicit transpose", true);
+  Aclist.set("transpose: use implicit", true);
   Acfact->SetParameterList(Aclist);
 
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_AMESOS)
@@ -721,22 +721,27 @@ TEUCHOS_UNIT_TEST(Hierarchy, Write)
   // by using a matvec with a random vector.
   H.Write();
 
+  Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
+
+  out << "random status: " << rand() << std::endl;
   std::string infile = "A_0.m";
   Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
   RCP<Matrix> Ain = Utils::Read(infile, lib, comm);
   RCP<Vector> randomVec = VectorFactory::Build(A->getDomainMap(),false);
   randomVec->randomize();
+  out << "randomVec norm: " << randomVec->norm2() << std::endl;
   RCP<Vector> A_v = VectorFactory::Build(A->getRangeMap(),false);
   A->apply(*randomVec,*A_v,Teuchos::NO_TRANS,1,0);
+  out << "A_v norm: " << A_v->norm2() << std::endl;
 
   RCP<Vector> Ain_v = VectorFactory::Build(Ain->getRangeMap(),false);
   Ain->apply(*randomVec,*Ain_v,Teuchos::NO_TRANS,1,0);
+  out << "Ain_v norm: " << Ain_v->norm2() << std::endl;
 
   RCP<MultiVector> diff = VectorFactory::Build(A->getRangeMap());
   //diff = A_v + (-1.0)*(Ain_v) + 0*diff
   diff->update(1.0,*A_v,-1.0,*Ain_v,0.0);
 
-  Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
   diff->norm2(norms);
   out << "||diff|| = " << norms[0] << std::endl;
   TEST_EQUALITY(norms[0]<1e-15, true);

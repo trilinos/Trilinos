@@ -198,7 +198,7 @@ public:
 
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm1; // overloading, not hiding
   //! Return 1-norm of this Vector.
-  typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm1() const;
+  mag_type norm1() const;
 
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm2; // overloading, not hiding
   //! Compute 2-norm of this Vector.
@@ -206,11 +206,11 @@ public:
 
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normInf; // overloading, not hiding
   //! Compute Inf-norm of this Vector.
-  typename Teuchos::ScalarTraits<Scalar>::magnitudeType normInf() const;
+  mag_type normInf() const;
 
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normWeighted; // overloading, not hiding
   //! Compute Weighted 2-norm (RMS Norm) of this Vector.
-  typename Teuchos::ScalarTraits<Scalar>::magnitudeType normWeighted(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &weights) const;
+  mag_type normWeighted(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &weights) const;
 
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::meanValue; // overloading, not hiding
   //! Compute mean (average) value of this Vector.

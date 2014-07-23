@@ -363,12 +363,12 @@ int main(int argc, char *argv[]) {
   RCP<Factory> RepartitionFact = rcp(new RepartitionFactory());
   {
     Teuchos::ParameterList paramList;
-    paramList.set("minRowsPerProcessor", 200);
-    paramList.set("nonzeroImbalance", 1.3);
+    paramList.set("repartition: min rows per proc", 200);
+    paramList.set("repartition: max imbalance", 1.3);
     if(rebalanceBlock0 == 1)
-      paramList.set("startLevel",1);
+      paramList.set("repartition: start level",1);
     else
-      paramList.set("startLevel",10); // supress rebalancing
+      paramList.set("repartition: start level",10); // supress rebalancing
     RepartitionFact->SetParameterList(paramList);
   }
   RepartitionFact->SetFactory("A", rebA11Fact);
@@ -392,12 +392,12 @@ int main(int argc, char *argv[]) {
   RCP<Factory> RepartitionFact2 = rcp(new RepartitionFactory());
   {
     Teuchos::ParameterList paramList;
-    paramList.set("minRowsPerProcessor", 100);
-    paramList.set("nonzeroImbalance", 1.2);
+    paramList.set("repartition: min rows per proc", 100);
+    paramList.set("repartition: max imbalance", 1.2);
     if(rebalanceBlock1 == 1)
-      paramList.set("startLevel",1);
+      paramList.set("repartition: start level",1);
     else
-      paramList.set("startLevel",10); // supress rebalancing
+      paramList.set("repartition: start level",10); // supress rebalancing
     RepartitionFact2->SetParameterList(paramList);
   }
   RepartitionFact2->SetFactory("A", rebA22Fact);
@@ -418,7 +418,7 @@ int main(int argc, char *argv[]) {
   UncoupledAggFact11->SetFactory("Graph", dropFact11);
   UncoupledAggFact11->SetMinNodesPerAggregate(9);
   UncoupledAggFact11->SetMaxNeighAlreadySelected(2);
-  UncoupledAggFact11->SetOrdering(MueLu::AggOptions::NATURAL);
+  UncoupledAggFact11->SetOrdering("natural");
 
   RCP<CoarseMapFactory> coarseMapFact11 = Teuchos::rcp(new CoarseMapFactory());
   coarseMapFact11->setStridingData(stridingInfo);
@@ -460,7 +460,7 @@ int main(int argc, char *argv[]) {
   UncoupledAggFact22->SetFactory("Graph", dropFact22);
   UncoupledAggFact22->SetMinNodesPerAggregate(6);
   UncoupledAggFact22->SetMaxNeighAlreadySelected(2);
-  UncoupledAggFact22->SetOrdering(MueLu::AggOptions::NATURAL);
+  UncoupledAggFact22->SetOrdering("natural");
 
   // connect null space and tentative PFactory
   Teuchos::RCP<NullspaceFactory> nspFact22 = Teuchos::rcp(new NullspaceFactory("Nullspace2"));

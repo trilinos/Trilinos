@@ -117,7 +117,6 @@ namespace MueLu {
     LocalOrdinal nColEle = Teuchos::as<LocalOrdinal>(globalColDofs.size());
     RCP<std::vector<GlobalOrdinal> > gNodeIds; // contains global node ids on current proc
     gNodeIds = Teuchos::rcp(new std::vector<GlobalOrdinal>);
-    gNodeIds->empty();
     for (LocalOrdinal i = 0; i < nColEle; i++) {
       GlobalOrdinal gDofId = globalColDofs[i];
       GlobalOrdinal gNodeId = DOFGid2NodeId(gDofId, fullblocksize, offset, indexBase);

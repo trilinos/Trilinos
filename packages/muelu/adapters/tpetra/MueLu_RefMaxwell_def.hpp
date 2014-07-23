@@ -133,7 +133,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::compute() {
     // no need to do anything - nullspace is built
   }
   else if(Nullspace_ == Teuchos::null && Coords_ != Teuchos::null) {
-    Nullspace_ = MultiVectorFactory::Build(SM_Matrix_->getRowMap(),Coords_->getNumVectors()); 
+    Nullspace_ = MultiVectorFactory::Build(SM_Matrix_->getRowMap(),Coords_->getNumVectors());
     D0_Matrix_->apply(*Coords_,*Nullspace_);
   }
   else {
@@ -177,8 +177,8 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::compute() {
   Teuchos::RCP<UncoupledAggregationFactory> Aggfact22
     = Teuchos::rcp( new UncoupledAggregationFactory() );
   Teuchos::ParameterList params;
-  params.set("aggregation threshold",(Scalar)1.0e-16);
-  params.set("Dirichlet detection threshold",(Scalar)1.0e-16);
+  params.set("aggregation: drop tol",1.0e-16);
+  params.set("aggregation: Dirichlet threshold",1.0e-16);
   Dropfact11->SetParameterList(params);
   Dropfact22->SetParameterList(params);
   Manager11->SetFactory("Aggregates",Aggfact11);
@@ -231,7 +231,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::buildProlon
   Teuchos::RCP<UncoupledAggregationFactory> Aggfact
     = Teuchos::rcp( new UncoupledAggregationFactory() );
   Teuchos::ParameterList params;
-  params.set("Damping factor",(Scalar)0.0);
+  params.set("sa: damping factor",0.0);
   Pfact      -> SetParameterList(params);
   auxManager -> SetFactory("P", Pfact);
   auxManager -> SetFactory("Ptent", TentPfact);
@@ -245,7 +245,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::buildProlon
   // pull out tentative P
   Teuchos::RCP<Level> Level1 = auxHierarchy -> GetLevel(1);
   Teuchos::RCP<XMat> P = Level1 -> Get< Teuchos::RCP<XMat> >("P",Pfact.get());
-  
+
   // make weighting matrix
   Teuchos::RCP<XMat> D0_Matrix_Abs=MatrixFactory2::BuildCopy(D0_Matrix_);
   D0_Matrix_Abs -> resumeFill();
@@ -262,13 +262,13 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::buildProlon
   Teuchos::RCP<XMap> BlockColMap
     = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(Ptent->getColMap(),dim);
   P11_ = Xpetra::MatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Build(Ptent->getRowMap(),BlockColMap,0);
-  
+
   std::vector< Teuchos::ArrayRCP<const Scalar> > nullspace(dim);
   for(size_t i=0; i<dim; i++) {
     Teuchos::ArrayRCP<const Scalar> datavec = Nullspace_->getData(i);
     nullspace[i]=datavec;
   }
-  
+
   for(size_t i=0; i<numLocalRows; i++) {
     Teuchos::ArrayView<const LocalOrdinal> localCols;
     Teuchos::ArrayView<const Scalar>       localVals;
@@ -357,11 +357,11 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyInvers
   RCP<XMV> D0x       = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(),X.getNumVectors());
   P11_->apply(*residual,*P11res,Teuchos::TRANS);
   D0_Matrix_->apply(*residual,*D0res,Teuchos::TRANS);
-  
+
   // block diagonal preconditioner on 2x2 (V-cycle for diagonal blocks)
   Hierarchy11_->Iterate(*P11res, *P11x, Cycles_, true);
   Hierarchy22_->Iterate(*D0res,  *D0x,  Cycles_, true);
-  
+
   // update current solution
   P11_->apply(*P11x,*residual,Teuchos::NO_TRANS);
   D0_Matrix_->apply(*D0x,*residual,Teuchos::NO_TRANS,(Scalar)1.0,(Scalar)1.0);
@@ -446,7 +446,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::apply(const
     edgePreSmoother_->apply(X,Y);
 
     // do solve for the 2x2 block system
-    if(mode_=="additive") 
+    if(mode_=="additive")
       applyInverseAdditive(tX,tY);
     else if(mode_=="121")
       applyInverse121(tX,tY);
@@ -454,7 +454,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::apply(const
       applyInverse212(tX,tY);
     else
       applyInverseAdditive(tX,tY);
-    
+
     // apply post-smoothing
     edgePostSmoother_->apply(X,Y);
 

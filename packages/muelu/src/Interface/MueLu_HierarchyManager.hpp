@@ -54,13 +54,12 @@
 #include <Xpetra_Matrix.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_HierarchyFactory.hpp"
 
-#include "MueLu_Hierarchy.hpp"
 #include "MueLu_Exceptions.hpp"
-
+#include "MueLu_Hierarchy.hpp"
+#include "MueLu_HierarchyFactory.hpp"
 #include "MueLu_Level.hpp"
-
+#include "MueLu_MasterList.hpp"
 #include "MueLu_Utilities.hpp"
 
 namespace MueLu {
@@ -79,8 +78,13 @@ namespace MueLu {
 
     //!
     // TODO: default values should be query from Hierarchy class to avoid duplication
-    HierarchyManager() : numDesiredLevel_(Hierarchy::GetDefaultMaxLevels()), maxCoarseSize_(Hierarchy::GetDefaultMaxCoarseSize()),
-    verbosity_(Medium), doPRrebalance_(Hierarchy::GetDefaultPRrebalance()), implicitTranspose_(Hierarchy::GetDefaultImplicitTranspose()), graphOutputLevel_(-1) { }
+    HierarchyManager() :
+        numDesiredLevel_(MasterList::getDefault<int>("max levels")),
+        maxCoarseSize_(MasterList::getDefault<int>("coarse: max size")),
+        verbosity_(Medium),
+        doPRrebalance_(MasterList::getDefault<bool>("repartition: rebalance P and R")),
+        implicitTranspose_(MasterList::getDefault<bool>("transpose: use implicit")),
+        graphOutputLevel_(-1) { }
 
     //!
     virtual ~HierarchyManager() { }

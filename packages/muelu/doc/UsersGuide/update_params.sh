@@ -1,6 +1,7 @@
 #!/bin/sh
 
 xsltproc tex.xsl masterList.xml > paramlist.tex
+xsltproc tex_hidden.xsl masterList.xml > paramlist_hidden.tex
 
 
 code_file="../../src/MueCentral/MueLu_MasterList.cpp"

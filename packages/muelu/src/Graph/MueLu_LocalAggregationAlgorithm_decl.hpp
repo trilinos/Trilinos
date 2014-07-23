@@ -55,11 +55,7 @@
 #include "MueLu_GraphBase.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 
-#include "MueLu_AggOptions.hpp" // includes Ordering enum
-
 namespace MueLu {
-
-  using namespace AggOptions; // necessary
 
   /* ************************************************************************* */
   /* definition of the structure from ML for holding aggregate information     */
@@ -119,13 +115,13 @@ namespace MueLu {
     //! @name Set/get methods.
     //@{
 
-    void SetOrdering(Ordering ordering)                          { ordering_                = ordering;                }
+    void SetOrdering(const std::string& ordering)                { ordering_                = ordering;                }
     void SetMinNodesPerAggregate(int minNodesPerAggregate)       { minNodesPerAggregate_    = minNodesPerAggregate;    }
     void SetMaxNeighAlreadySelected(int maxNeighAlreadySelected) { maxNeighAlreadySelected_ = maxNeighAlreadySelected; }
 
-    Ordering GetOrdering()                const { return ordering_;                }
-    int      GetMinNodesPerAggregate()    const { return minNodesPerAggregate_;    }
-    int      GetMaxNeighAlreadySelected() const { return maxNeighAlreadySelected_; }
+    const std::string& GetOrdering()                const { return ordering_;                }
+    int                GetMinNodesPerAggregate()    const { return minNodesPerAggregate_;    }
+    int                GetMaxNeighAlreadySelected() const { return maxNeighAlreadySelected_; }
 
     //@}
 
@@ -137,9 +133,9 @@ namespace MueLu {
 
   private:
     //! Aggregation options (TODO: Teuchos::ParameterList?)
-    Ordering ordering_;                /**<  natural, random, graph           */
-    int      minNodesPerAggregate_;    /**<  aggregate size control           */
-    int      maxNeighAlreadySelected_; /**<  complexity control               */
+    std::string ordering_;                /**<  natural, random, graph           */
+    int         minNodesPerAggregate_;    /**<  aggregate size control           */
+    int         maxNeighAlreadySelected_; /**<  complexity control               */
 
     //! @name Utilities
     //@{

@@ -73,7 +73,7 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshFactory, defaults)
    SquareTriMeshFactory factory; 
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
  
-   if(mesh->isWritable());
+   if(mesh->isWritable())
       mesh->writeToExodus("square-tri.exo");
 
    // minimal requirements

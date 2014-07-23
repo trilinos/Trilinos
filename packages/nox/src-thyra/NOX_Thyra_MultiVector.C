@@ -363,7 +363,7 @@ multiply(double alpha,
                    bb.ptr(), alpha, 0.0);
 }
 
-int
+NOX::size_type
 NOX::Thyra::MultiVector::
 length() const
 {

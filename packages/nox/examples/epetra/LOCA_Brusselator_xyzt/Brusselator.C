@@ -68,7 +68,9 @@ Brusselator::Brusselator(int numGlobalNodes, Epetra_Comm& comm,
   AA(0),
   A(0),
   alpha(0.6),
-  beta(2.0)
+  beta(2.0),
+  flag(ALL),
+  rhs(NULL)
 {
 
   // Commonly used variables

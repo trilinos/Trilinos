@@ -194,6 +194,8 @@ public:
    */
   KOKKOS_INLINE_FUNCTION static unsigned team_max();
   KOKKOS_INLINE_FUNCTION static unsigned team_recommended();
+  KOKKOS_INLINE_FUNCTION static unsigned hardware_thread_id();
+  KOKKOS_INLINE_FUNCTION static unsigned max_hardware_threads();
 
   //@}
   /*------------------------------------------------------------------------*/

@@ -64,28 +64,14 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   LocalAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::LocalAggregationAlgorithm()
-    : ordering_(NATURAL), minNodesPerAggregate_(1), maxNeighAlreadySelected_(0)
+    : ordering_("natural"), minNodesPerAggregate_(1), maxNeighAlreadySelected_(0)
   { }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void LocalAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CoarsenUncoupled(GraphBase const & graph, Aggregates & aggregates) const {
     Monitor m(*this, "Coarsen Uncoupled");
 
-    std::string orderingType;
-    switch(ordering_) {
-      case NATURAL:
-        orderingType="Natural";
-        break;
-      case RANDOM:
-        orderingType="Random";
-        break;
-      case GRAPH:
-        orderingType="Graph";
-        break;
-      default:
-        break;
-    }
-    GetOStream(Runtime1) << "Ordering:                  " << orderingType << std::endl;
+    GetOStream(Runtime1) << "Ordering:                  " << ordering_ << std::endl;
     GetOStream(Runtime1) << "Min nodes per aggregate:   " << minNodesPerAggregate_ << std::endl;
     GetOStream(Runtime1) << "Max nbrs already selected: " << maxNeighAlreadySelected_ << std::endl;
 
@@ -113,11 +99,11 @@ namespace MueLu {
 
     /* some general variable declarations */
     Teuchos::ArrayRCP<LO> randomVector;
-    RCP<MueLu::LinkedList> nodeList; /* list storing the next node to pick as a root point for ordering_ == GRAPH */
+    RCP<MueLu::LinkedList> nodeList; /* list storing the next node to pick as a root point for ordering_ == "graph" */
     MueLu_SuperNode  *aggHead=NULL, *aggCurrent=NULL, *supernode=NULL;
     /**/
 
-    if ( ordering_ == RANDOM )       /* random ordering */
+    if ( ordering_ == "random" )       /* random ordering */
       {
         //TODO: could be stored in a class that respect interface of LinkedList
 
@@ -125,7 +111,7 @@ namespace MueLu {
         for (my_size_t i = 0; i < nRows; ++i) randomVector[i] = i;
         RandomReorder(randomVector);
       }
-    else if ( ordering_ == GRAPH )  /* graph ordering */
+    else if ( ordering_ == "graph" )  /* graph ordering */
       {
         nodeList = rcp(new MueLu::LinkedList());
         nodeList->Add(0);
@@ -145,9 +131,9 @@ namespace MueLu {
           /* pick the next node to aggregate                       */
           /*------------------------------------------------------ */
 
-          if      ( ordering_ == NATURAL ) iNode = iNode2++;
-          else if ( ordering_ == RANDOM )  iNode = randomVector[iNode2++];
-          else if ( ordering_ == GRAPH )
+          if      ( ordering_ == "natural" ) iNode = iNode2++;
+          else if ( ordering_ == "random" )  iNode = randomVector[iNode2++];
+          else if ( ordering_ == "graph" )
             {
               if ( nodeList->IsEmpty() )
                 {
@@ -229,7 +215,7 @@ namespace MueLu {
                 {
                   aggStat[iNode] = CA_NOTSEL;
                   delete supernode;
-                  if ( ordering_ == GRAPH ) /* if graph ordering */
+                  if ( ordering_ == "graph" ) /* if graph ordering */
                     {
                       for (typename Teuchos::ArrayView<const LO>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it)
                         {
@@ -249,7 +235,7 @@ namespace MueLu {
                       int jNode = supernode->list[j];
                       aggStat[jNode] = CA_SELECTED;
                       vertex2AggId[jNode] = nAggregates;
-                      if ( ordering_ == GRAPH ) /* if graph ordering */
+                      if ( ordering_ == "graph" ) /* if graph ordering */
                         {
 
                           Teuchos::ArrayView<const LO> neighOfJNode = graph.getNeighborVertices(jNode);

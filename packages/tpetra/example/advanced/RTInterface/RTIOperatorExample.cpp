@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
        y = Tpetra::createVector<double>(map);
 
   // Create a simple diagonal operator using lambda function
-  auto fTwoOp = Tpetra::RTI::binaryOp<double>( [](double /*y*/, double x) { return 2.0 * x; } , map );
+  auto fTwoOp = Tpetra::RTI::binaryOp<double>( [](double /*y*/, double xx) { return 2.0 * xx; } , map );
   // y = 3*fTwoOp*x + 2*y = 3*2*1 + 2*1 = 8
   x->putScalar(1.0);
   y->putScalar(1.0);

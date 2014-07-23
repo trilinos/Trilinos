@@ -265,8 +265,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MapColoring: public Epetra_DistObject {
                      int NumPermuteIDs,
                      int * PermuteToLIDs,
                      int * PermuteFromLIDs,
-                     const Epetra_OffsetIndex * Indexor,
-                     Epetra_CombineMode CombineMode = Zero);
+                     const Epetra_OffsetIndex * Indexor);
 
   int PackAndPrepare(const Epetra_SrcDistObject & Source,
                      int NumExportIDs,

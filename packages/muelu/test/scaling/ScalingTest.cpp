@@ -306,15 +306,9 @@ int main(int argc, char *argv[]) {
       AggregationFact->SetMinNodesPerAggregate(optMinPerAgg);  //TODO should increase if run anything othpermRFacter than 1D
       AggregationFact->SetMaxNeighAlreadySelected(optMaxNbrSel);
       std::transform(optAggOrdering.begin(), optAggOrdering.end(), optAggOrdering.begin(), ::tolower);
-      if (optAggOrdering == "natural") {
-        *out << "aggregate ordering :                    NATURAL" << std::endl;
-        AggregationFact->SetOrdering(MueLu::AggOptions::NATURAL);
-      } else if (optAggOrdering == "random") {
-        *out << "aggregate ordering :                    RANDOM" << std::endl;
-        AggregationFact->SetOrdering(MueLu::AggOptions::RANDOM);
-      } else if (optAggOrdering == "graph") {
-        *out << "aggregate ordering :                    GRAPH" << std::endl;
-        AggregationFact->SetOrdering(MueLu::AggOptions::GRAPH);
+      if (optAggOrdering == "natural" || optAggOrdering == "random" || optAggOrdering == "graph") {
+        *out << "aggregate ordering :                    " << optAggOrdering << std::endl;
+        AggregationFact->SetOrdering(optAggOrdering);
       } else {
         std::string msg = "main: bad aggregation option """ + optAggOrdering + """.";
         throw(MueLu::Exceptions::RuntimeError(msg));
@@ -344,7 +338,7 @@ int main(int argc, char *argv[]) {
       if (!optExplicitR) {
         H->SetImplicitTranspose(true);
         ParameterList Aclist = *(AFact->GetValidParameterList());
-        Aclist.set("implicit transpose", true);
+        Aclist.set("transpose: use implicit", true);
         AFact->SetParameterList(Aclist);
         if (comm->getRank() == 0) std::cout << "\n\n* ***** USING IMPLICIT RESTRICTION OPERATOR ***** *\n" << std::endl;
       }
@@ -387,8 +381,8 @@ int main(int argc, char *argv[]) {
         RCP<Factory> RepartitionFact = rcp(new RepartitionFactory());
         {
           Teuchos::ParameterList paramList;
-          paramList.set("minRowsPerProcessor", optMinRowsPerProc);
-          paramList.set("nonzeroImbalance", optNnzImbalance);
+          paramList.set("repartition: min rows per proc", optMinRowsPerProc);
+          paramList.set("repartition: max imbalance", optNnzImbalance);
           RepartitionFact->SetParameterList(paramList);
         }
         RepartitionFact->SetFactory("A", AFact);

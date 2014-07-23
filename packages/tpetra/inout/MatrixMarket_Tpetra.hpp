@@ -5297,12 +5297,16 @@ namespace Tpetra {
         writeSparse (out, pMatrix, "", "", debug);
       }
 
-      /// \brief Print the multivector in Matrix Market format, with comments.
+      /// \brief Print the multivector in Matrix Market format, with
+      ///   matrix name and description.
       ///
       /// Write the given Tpetra::MultiVector matrix to the given
       /// file, using the Matrix Market "array" format for dense
-      /// matrices.  MPI Proc 0 is the only MPI process that opens or
-      /// writes to the file.
+      /// matrices.  MPI Process 0 is the only MPI process that opens
+      /// or writes to the file.
+      ///
+      /// This is the preferred overload of writeDenseFile.  It is
+      /// used to implement all other overloads of writeDenseFile.
       ///
       /// \param filename [in] Name of the output file to create (on
       ///   MPI Proc 0 only).
@@ -5318,66 +5322,98 @@ namespace Tpetra {
       ///   in the comments section of the output file.  If empty, we
       ///   don't print anything (not even an empty line).
       ///
-      /// \warning The current implementation gathers the whole matrix
-      ///   onto MPI Proc 0.  This will cause out-of-memory errors if
-      ///   the matrix is too big to fit on one process.  This will be
-      ///   fixed in the future.
+      /// \param err [out] If nonnull, print any error messages to it.
       ///
+      /// \param dbg [out] If nonnull, print copious debugging output to it.
       static void
       writeDenseFile (const std::string& filename,
-                      const RCP<const multivector_type>& X,
+                      const multivector_type& X,
                       const std::string& matrixName,
-                      const std::string& matrixDescription)
+                      const std::string& matrixDescription,
+                      const Teuchos::RCP<Teuchos::FancyOStream>& err = Teuchos::null,
+                      const Teuchos::RCP<Teuchos::FancyOStream>& dbg = Teuchos::null)
       {
-        const int myRank = Teuchos::rank (*(X->getMap()->getComm()));
+        const int myRank = X.getMap ()->getComm ()->getRank ();
         std::ofstream out;
 
-        if (myRank == 0) // Only open the file on Rank 0.
+        if (myRank == 0) { // Only open the file on Process 0.
           out.open (filename.c_str());
+        }
 
-        writeDense (out, X, matrixName, matrixDescription);
+        writeDense (out, X, matrixName, matrixDescription, err, dbg);
         // We can rely on the destructor of the output stream to close
         // the file on scope exit, even if writeDense() throws an
         // exception.
       }
 
-      /// \brief Print the multivector in Matrix Market format.
+      /// \brief Print the multivector in Matrix Market format, with
+      ///   matrix name and description.
       ///
-      /// Write the given Tpetra::MultiVector matrix to the given
-      /// file, using the Matrix Market "array" format for dense
-      /// matrices.  MPI Proc 0 is the only MPI process that opens or
-      /// writes to the file.
-      ///
-      /// \param filename [in] Name of the output file to create (on
-      ///   MPI Proc 0 only).
-      ///
-      /// \param X [in] The dense matrix (stored as a multivector) to
-      ///   write to the output file.
-      ///
-      /// \warning The current implementation gathers the whole matrix
-      ///   onto MPI Proc 0.  This will cause out-of-memory errors if
-      ///   the matrix is too big to fit on one process.  This will be
-      ///   fixed in the future.
-      ///
+      /// See the documentation of the above six-argument version of
+      /// writeDenseFile().
       static void
       writeDenseFile (const std::string& filename,
-                      const RCP<const multivector_type>& X)
+                      const Teuchos::RCP<const multivector_type>& X,
+                      const std::string& matrixName,
+                      const std::string& matrixDescription,
+                      const Teuchos::RCP<Teuchos::FancyOStream>& err = Teuchos::null,
+                      const Teuchos::RCP<Teuchos::FancyOStream>& dbg = Teuchos::null)
       {
-        writeDenseFile (filename, X, "", "");
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          X.is_null (), std::invalid_argument, "Tpetra::MatrixMarket::"
+          "writeDenseFile: The input MultiVector X is null.");
+        writeDenseFile (filename, *X, matrixName, matrixDescription, err, dbg);
       }
 
-      /// \brief Print the multivector in Matrix Market format.
+      /// \brief Print the multivector in Matrix Market format, with
+      ///   no matrix name or description.
+      ///
+      /// See the documentation of the above six-argument version of
+      /// writeDenseFile().
+      static void
+      writeDenseFile (const std::string& filename,
+                      const multivector_type& X,
+                      const Teuchos::RCP<Teuchos::FancyOStream>& err = Teuchos::null,
+                      const Teuchos::RCP<Teuchos::FancyOStream>& dbg = Teuchos::null)
+      {
+        writeDenseFile (filename, X, "", "", err, dbg);
+      }
+
+      /// \brief Print the multivector in Matrix Market format, with
+      ///   no matrix name or description.
+      ///
+      /// See the documentation of the above six-argument version of
+      /// writeDenseFile().
+      static void
+      writeDenseFile (const std::string& filename,
+                      const RCP<const multivector_type>& X,
+                      const Teuchos::RCP<Teuchos::FancyOStream>& err = Teuchos::null,
+                      const Teuchos::RCP<Teuchos::FancyOStream>& dbg = Teuchos::null)
+      {
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          X.is_null (), std::invalid_argument, "Tpetra::MatrixMarket::"
+          "writeDenseFile: The input MultiVector X is null.");
+        writeDenseFile (filename, *X, err, dbg);
+      }
+
+
+      /// \brief Print the multivector in Matrix Market format, with
+      ///   matrix name and description.
       ///
       /// Write the given Tpetra::MultiVector matrix to an output
       /// stream, using the Matrix Market "array" format for dense
-      /// matrices.  MPI Proc 0 is the only MPI process that writes to
-      /// the output stream.
+      /// matrices.  MPI Process 0 is the only MPI process that writes
+      /// to the output stream.
+      ///
+      /// This is the preferred overload of writeDense().  It is used
+      /// to implement all other overloads of writeDense(), and is
+      /// also used to implement all overloads of writeDenseFile.
       ///
       /// \param out [out] The output stream to which to write (on MPI
-      ///   Proc 0 only).
+      ///   Process 0 only).
       ///
       /// \param X [in] The dense matrix (stored as a multivector) to
-      ///   write to the output stream.
+      ///   write to the output file.
       ///
       /// \param matrixName [in] Name of the matrix, to print in the
       ///   comments section of the output stream.  If empty, we don't
@@ -5387,43 +5423,629 @@ namespace Tpetra {
       ///   in the comments section of the output stream.  If empty,
       ///   we don't print anything (not even an empty line).
       ///
-      /// \warning The current implementation gathers the whole matrix
-      ///   onto MPI Proc 0.  This will cause out-of-memory errors if
-      ///   the matrix is too big to fit on one process.  This will be
-      ///   fixed in the future.
+      /// \param err [out] If nonnull, print any error messages to it.
       ///
+      /// \param dbg [out] If nonnull, print copious debugging output to it.
+      static void
+      writeDense (std::ostream& out,
+                  const multivector_type& X,
+                  const std::string& matrixName,
+                  const std::string& matrixDescription,
+                  const Teuchos::RCP<Teuchos::FancyOStream>& err = Teuchos::null,
+                  const Teuchos::RCP<Teuchos::FancyOStream>& dbg = Teuchos::null)
+      {
+        using Teuchos::arcp;
+        using Teuchos::ArrayRCP;
+        using Teuchos::ArrayView;
+        using Teuchos::CommRequest;
+        using Teuchos::ireceive;
+        using Teuchos::isend;
+        using Teuchos::outArg;
+        using Teuchos::REDUCE_MAX;
+        using Teuchos::reduceAll;
+        using Teuchos::RCP;
+        using Teuchos::TypeNameTraits;
+        using Teuchos::wait;
+        using std::endl;
+        typedef typename multivector_type::scalar_type scalar_type;
+        typedef Teuchos::ScalarTraits<scalar_type> STS;
+
+        const Comm<int>& comm = * (X.getMap ()->getComm ());
+        const int myRank = comm.getRank ();
+        const int numProcs = comm.getSize ();
+        int lclErr = 0; // whether this MPI process has seen an error
+        int gblErr = 0; // whether we know if some MPI process has seen an error
+
+        // If the caller provides a nonnull debug output stream, we
+        // print debugging output to it.  This is a local thing; we
+        // don't have to check across processes.
+        const bool debug = ! dbg.is_null ();
+
+        if (debug) {
+          dbg->pushTab ();
+          std::ostringstream os;
+          os << myRank << ": writeDense" << endl;
+          *dbg << os.str ();
+          dbg->pushTab ();
+        }
+
+        const size_t myNumRows = X.getLocalLength ();
+        const size_t numCols = X.getNumVectors ();
+        // Use a different tag for the "size" messages than for the
+        // "data" messages, in order to help us debug any mix-ups.
+        const int sizeTag = 1337;
+        const int dataTag = 1338;
+
+        // Process 0 pipelines nonblocking receives with file output.
+        //
+        // Constraints:
+        //   - Process 0 can't post a receive for another process'
+        //     actual data, until it posts and waits on the receive
+        //     from that process with the amount of data to receive.
+        //     (We could just post receives with a max data size, but
+        //     I feel uncomfortable about that.)
+        //   - The C++ standard library doesn't allow nonblocking
+        //     output to an std::ostream.
+        //
+        // Process 0: Post receive-size receives from Processes 1 and 2.
+        // Process 1: Post send-size send to Process 0.
+        // Process 2: Post send-size send to Process 0.
+        //
+        // All processes: Pack my entries.
+        //
+        // Process 1:
+        //   - Post send-data send to Process 0.
+        //   - Wait on my send-size send to Process 0.
+        //
+        // Process 0:
+        //   - Print MatrixMarket header.
+        //   - Print my entries.
+        //   - Wait on receive-size receive from Process 1.
+        //   - Post receive-data receive from Process 1.
+        //
+        // For each process p = 1, 2, ... numProcs-1:
+        //   If I am Process 0:
+        //     - Post receive-size receive from Process p + 2
+        //     - Wait on receive-size receive from Process p + 1
+        //     - Post receive-data receive from Process p + 1
+        //     - Wait on receive-data receive from Process p
+        //     - Write data from Process p.
+        //   Else if I am Process p:
+        //     - Wait on my send-data send.
+        //   Else if I am Process p+1:
+        //     - Post send-data send to Process 0.
+        //     - Wait on my send-size send.
+        //   Else if I am Process p+2:
+        //     - Post send-size send to Process 0.
+        //
+        // Pipelining has three goals here:
+        //   1. Overlap communication (the receives) with file I/O
+        //   2. Give Process 0 a chance to prepost some receives,
+        //      before sends show up, by packing local data before
+        //      posting sends
+        //   3. Don't post _all_ receives or _all_ sends, because that
+        //      wouldn't be memory scalable.  (Just because we can't
+        //      see how much memory MPI consumes, doesn't mean that it
+        //      doesn't consume any!)
+
+        // These are used on every process.  sendReqSize[0] holds the
+        // number of rows on this process, and sendReqBuf holds this
+        // process' data.  Process 0 packs into sendReqBuf, but
+        // doesn't send; it only uses that for printing.  All other
+        // processes send both of these to Process 0.
+        RCP<CommRequest<int> > sendReqSize, sendReqData;
+
+        // These are used only on Process 0, for received data.  Keep
+        // 3 of each, and treat the arrays as circular buffers.  When
+        // receiving from Process p, the corresponding array index
+        // here is p % 3.
+        Array<ArrayRCP<size_t> > recvSizeBufs (3);
+        Array<ArrayRCP<scalar_type> > recvDataBufs (3);
+        Array<RCP<CommRequest<int> > > recvSizeReqs (3);
+        Array<RCP<CommRequest<int> > > recvDataReqs (3);
+
+        // Buffer for nonblocking send of the "send size."
+        ArrayRCP<size_t> sendDataSize (1);
+        sendDataSize[0] = myNumRows;
+
+        if (myRank == 0) {
+          if (debug) {
+            std::ostringstream os;
+            os << myRank << ": Post receive-size receives from "
+              "Procs 1 and 2: tag = " << sizeTag << endl;
+            *dbg << os.str ();
+          }
+          // Process 0: Post receive-size receives from Processes 1 and 2.
+          recvSizeBufs[0].resize (1);
+          // Set these three to an invalid value as a flag.  If we
+          // don't get these messages, then the invalid value will
+          // remain, so we can test for it.
+          (recvSizeBufs[0])[0] = Teuchos::OrdinalTraits<size_t>::invalid ();
+          recvSizeBufs[1].resize (1);
+          (recvSizeBufs[1])[0] = Teuchos::OrdinalTraits<size_t>::invalid ();
+          recvSizeBufs[2].resize (1);
+          (recvSizeBufs[2])[0] = Teuchos::OrdinalTraits<size_t>::invalid ();
+          if (numProcs > 1) {
+            recvSizeReqs[1] =
+              ireceive<int, size_t> (recvSizeBufs[1], 1, sizeTag, comm);
+          }
+          if (numProcs > 2) {
+            recvSizeReqs[2] =
+              ireceive<int, size_t> (recvSizeBufs[2], 2, sizeTag, comm);
+          }
+        }
+        else if (myRank == 1 || myRank == 2) {
+          if (debug) {
+            std::ostringstream os;
+            os << myRank << ": Post send-size send: size = "
+               << sendDataSize[0] << ", tag = " << sizeTag << endl;
+            *dbg << os.str ();
+          }
+          // Prime the pipeline by having Processes 1 and 2 start
+          // their send-size sends.  We don't want _all_ the processes
+          // to start their send-size sends, because that wouldn't be
+          // memory scalable.
+          sendReqSize = isend<int, size_t> (sendDataSize, 0, sizeTag, comm);
+        }
+        else {
+          if (debug) {
+            std::ostringstream os;
+            os << myRank << ": Not posting my send-size send yet" << endl;
+            *dbg << os.str ();
+          }
+        }
+
+        //
+        // Pack my entries, in column-major order.
+        //
+        if (debug) {
+          std::ostringstream os;
+          os << myRank << ": Pack my entries" << endl;
+          *dbg << os.str ();
+        }
+        ArrayRCP<scalar_type> sendDataBuf;
+        try {
+          sendDataBuf = arcp<scalar_type> (myNumRows * numCols);
+          X.get1dCopy (sendDataBuf (), myNumRows);
+        }
+        catch (std::exception& e) {
+          lclErr = 1;
+          if (! err.is_null ()) {
+            std::ostringstream os;
+            os << "Process " << myRank << ": Attempt to pack my MultiVector "
+              "entries threw an exception: " << e.what () << endl;
+            *err << os.str ();
+          }
+        }
+        if (debug) {
+          std::ostringstream os;
+          os << myRank << ": Done packing my entries" << endl;
+          *dbg << os.str ();
+        }
+
+        //
+        // Process 1: post send-data send to Process 0.
+        //
+        if (myRank == 1) {
+          if (debug) {
+            *dbg << myRank << ": Post send-data send: tag = " << dataTag
+                 << endl;
+          }
+          sendReqData = isend<int, scalar_type> (sendDataBuf, 0, dataTag, comm);
+        }
+
+        //
+        // Process 0: Write the MatrixMarket header.
+        //
+        if (myRank == 0) {
+          if (debug) {
+            *dbg << myRank << ": Write MatrixMarket header" << endl;
+          }
+          // Print the Matrix Market header.  MultiVector stores data
+          // nonsymmetrically, hence "general" in the banner line.
+          // Print first to a temporary string output stream, and then
+          // write it to the main output stream, so that at least the
+          // header output has transactional semantics.  We can't
+          // guarantee transactional semantics for the whole output,
+          // since that would not be memory scalable.  (This could be
+          // done in the file system by using a temporary file; we
+          // don't do this, but users could.)
+          std::ostringstream hdr;
+          {
+            std::string dataType;
+            if (STS::isComplex) {
+              dataType = "complex";
+            } else if (STS::isOrdinal) {
+              dataType = "integer";
+            } else {
+              dataType = "real";
+            }
+            hdr << "%%MatrixMarket matrix array " << dataType << " general"
+                << endl;
+          }
+
+          // Print comments (the matrix name and / or description).
+          if (matrixName != "") {
+            printAsComment (hdr, matrixName);
+          }
+          if (matrixDescription != "") {
+            printAsComment (hdr, matrixDescription);
+          }
+          // Print the Matrix Market dimensions header for dense matrices.
+          hdr << X.getGlobalLength () << " " << X.getNumVectors () << endl;
+
+          // Write the MatrixMarket header to the output stream.
+          out << hdr.str ();
+
+          if (debug) {
+            std::ostringstream os;
+            os << myRank << ": Write my entries" << endl;
+            *dbg << os.str ();
+          }
+
+          // Write Process 0's data to the output stream.
+          // Matrix Market prints dense matrices in column-major order.
+          const size_t printNumRows = myNumRows;
+          ArrayView<const scalar_type> printData = sendDataBuf ();
+          const size_t printStride = printNumRows;
+          if (static_cast<size_t> (printData.size ()) < printStride * numCols) {
+            lclErr = 1;
+            if (! err.is_null ()) {
+              std::ostringstream os;
+              os << "Process " << myRank << ": My MultiVector data's size "
+                 << printData.size () << " does not match my local dimensions "
+                 << printStride << " x " << numCols << "." << endl;
+              *err << os.str ();
+            }
+          }
+          else {
+            for (size_t row = 0; row < printNumRows; ++row) {
+              for (size_t col = 0; col < numCols; ++col) {
+                out << printData[row + col * printStride];
+                if (col + 1 < numCols) {
+                  out << " ";
+                }
+              }
+              out << endl;
+            }
+          }
+        }
+
+        if (myRank == 0) {
+          // Wait on receive-size receive from Process 1.
+          const int recvRank = 1;
+          const int circBufInd = recvRank % 3;
+          if (debug) {
+            std::ostringstream os;
+            os << myRank << ": Wait on receive-size receive from Process "
+               << recvRank << endl;
+            *dbg << os.str ();
+          }
+          if (numProcs > 1) {
+            wait<int> (comm, outArg (recvSizeReqs[circBufInd]));
+
+            // We received the number of rows of data.  (The data
+            // come in two columns.)
+            size_t recvNumRows = (recvSizeBufs[circBufInd])[0];
+            if (recvNumRows == Teuchos::OrdinalTraits<size_t>::invalid ()) {
+              lclErr = 1;
+              if (! err.is_null ()) {
+                std::ostringstream os;
+                os << myRank << ": Result of receive-size receive from Process "
+                   << recvRank << " is Teuchos::OrdinalTraits<size_t>::invalid() "
+                   << "= " << Teuchos::OrdinalTraits<size_t>::invalid () << ".  "
+                  "This should never happen, and suggests that the receive never "
+                  "got posted.  Please report this bug to the Tpetra developers."
+                   << endl;
+                *err << os.str ();
+              }
+
+              // If we're going to continue after error, set the
+              // number of rows to receive to a reasonable size.  This
+              // may cause MPI_ERR_TRUNCATE if the sending process is
+              // sending more than 0 rows, but that's better than MPI
+              // overflowing due to the huge positive value that is
+              // Teuchos::OrdinalTraits<size_t>::invalid().
+              recvNumRows = 0;
+            }
+
+            // Post receive-data receive from Process 1.
+            recvDataBufs[circBufInd].resize (recvNumRows * numCols);
+            if (debug) {
+              std::ostringstream os;
+              os << myRank << ": Post receive-data receive from Process "
+                 << recvRank << ": tag = " << dataTag << ", buffer size = "
+                 << recvDataBufs[circBufInd].size () << endl;
+              *dbg << os.str ();
+            }
+            if (! recvSizeReqs[circBufInd].is_null ()) {
+              lclErr = 1;
+              if (! err.is_null ()) {
+                std::ostringstream os;
+                os << myRank << ": recvSizeReqs[" << circBufInd << "] is not "
+                  "null, before posting the receive-data receive from Process "
+                   << recvRank << ".  This should never happen.  Please report "
+                  "this bug to the Tpetra developers." << endl;
+                *err << os.str ();
+              }
+            }
+            recvDataReqs[circBufInd] =
+              ireceive<int, scalar_type> (recvDataBufs[circBufInd],
+                                          recvRank, dataTag, comm);
+          } // numProcs > 1
+        }
+        else if (myRank == 1) {
+          // Wait on my send-size send.
+          if (debug) {
+            std::ostringstream os;
+            os << myRank << ": Wait on my send-size send" << endl;
+            *dbg << os.str ();
+          }
+          wait<int> (comm, outArg (sendReqSize));
+        }
+
+        //
+        // Pipeline loop
+        //
+        for (int p = 1; p < numProcs; ++p) {
+          if (myRank == 0) {
+            if (p + 2 < numProcs) {
+              // Post receive-size receive from Process p + 2.
+              const int recvRank = p + 2;
+              const int circBufInd = recvRank % 3;
+              if (debug) {
+                std::ostringstream os;
+                os << myRank << ": Post receive-size receive from Process "
+                   << recvRank << ": tag = " << sizeTag << endl;
+                *dbg << os.str ();
+              }
+              if (! recvSizeReqs[circBufInd].is_null ()) {
+                lclErr = 1;
+                if (! err.is_null ()) {
+                  std::ostringstream os;
+                  os << myRank << ": recvSizeReqs[" << circBufInd << "] is not "
+                     << "null, for the receive-size receive from Process "
+                     << recvRank << "!  This may mean that this process never "
+                     << "finished waiting for the receive from Process "
+                     << (recvRank - 3) << "." << endl;
+                  *err << os.str ();
+                }
+              }
+              recvSizeReqs[circBufInd] =
+                ireceive<int, size_t> (recvSizeBufs[circBufInd],
+                                       recvRank, sizeTag, comm);
+            }
+
+            if (p + 1 < numProcs) {
+              const int recvRank = p + 1;
+              const int circBufInd = recvRank % 3;
+
+              // Wait on receive-size receive from Process p + 1.
+              if (debug) {
+                std::ostringstream os;
+                os << myRank << ": Wait on receive-size receive from Process "
+                   << recvRank << endl;
+                *dbg << os.str ();
+              }
+              wait<int> (comm, outArg (recvSizeReqs[circBufInd]));
+
+              // We received the number of rows of data.  (The data
+              // come in two columns.)
+              size_t recvNumRows = (recvSizeBufs[circBufInd])[0];
+              if (recvNumRows == Teuchos::OrdinalTraits<size_t>::invalid ()) {
+                lclErr = 1;
+                if (! err.is_null ()) {
+                  std::ostringstream os;
+                  os << myRank << ": Result of receive-size receive from Process "
+                     << recvRank << " is Teuchos::OrdinalTraits<size_t>::invalid() "
+                     << "= " << Teuchos::OrdinalTraits<size_t>::invalid () << ".  "
+                    "This should never happen, and suggests that the receive never "
+                    "got posted.  Please report this bug to the Tpetra developers."
+                     << endl;
+                  *err << os.str ();
+                }
+                // If we're going to continue after error, set the
+                // number of rows to receive to a reasonable size.
+                // This may cause MPI_ERR_TRUNCATE if the sending
+                // process sends more than 0 rows, but that's better
+                // than MPI overflowing due to the huge positive value
+                // Teuchos::OrdinalTraits<size_t>::invalid().
+                recvNumRows = 0;
+              }
+
+              // Post receive-data receive from Process p + 1.
+              recvDataBufs[circBufInd].resize (recvNumRows * numCols);
+              if (debug) {
+                std::ostringstream os;
+                os << myRank << ": Post receive-data receive from Process "
+                   << recvRank << ": tag = " << dataTag << ", buffer size = "
+                   << recvDataBufs[circBufInd].size () << endl;
+                *dbg << os.str ();
+              }
+              if (! recvDataReqs[circBufInd].is_null ()) {
+                lclErr = 1;
+                if (! err.is_null ()) {
+                  std::ostringstream os;
+                  os << myRank << ": recvDataReqs[" << circBufInd << "] is not "
+                     << "null, for the receive-data receive from Process "
+                     << recvRank << "!  This may mean that this process never "
+                     << "finished waiting for the receive from Process "
+                     << (recvRank - 3) << "." << endl;
+                  *err << os.str ();
+                }
+              }
+              recvDataReqs[circBufInd] =
+                ireceive<int, scalar_type> (recvDataBufs[circBufInd],
+                                            recvRank, dataTag, comm);
+            }
+
+            // Wait on receive-data receive from Process p.
+            const int recvRank = p;
+            const int circBufInd = recvRank % 3;
+            if (debug) {
+              std::ostringstream os;
+              os << myRank << ": Wait on receive-data receive from Process "
+                 << recvRank << endl;
+              *dbg << os.str ();
+            }
+            wait<int> (comm, outArg (recvDataReqs[circBufInd]));
+
+            // Write Process p's data.  Number of rows lives in
+            // recvSizeBufs[circBufInd], and the actual data live in
+            // recvDataBufs[circBufInd].  Do this after posting receives,
+            // in order to expose overlap of comm. with file I/O.
+            if (debug) {
+              std::ostringstream os;
+              os << myRank << ": Write entries from Process " << recvRank
+                 << endl;
+              *dbg << os.str () << endl;
+            }
+            size_t printNumRows = (recvSizeBufs[circBufInd])[0];
+            if (printNumRows == Teuchos::OrdinalTraits<size_t>::invalid ()) {
+              lclErr = 1;
+              if (! err.is_null ()) {
+                std::ostringstream os;
+                os << myRank << ": Result of receive-size receive from Process "
+                   << recvRank << " was Teuchos::OrdinalTraits<size_t>::"
+                  "invalid() = " << Teuchos::OrdinalTraits<size_t>::invalid ()
+                   << ".  This should never happen, and suggests that its "
+                  "receive-size receive was never posted.  "
+                  "Please report this bug to the Tpetra developers." << endl;
+                *err << os.str ();
+              }
+              // If we're going to continue after error, set the
+              // number of rows to print to a reasonable size.
+              printNumRows = 0;
+            }
+            if (printNumRows > 0 && recvDataBufs[circBufInd].is_null ()) {
+              lclErr = 1;
+              if (! err.is_null ()) {
+                std::ostringstream os;
+                os << myRank << ": Result of receive-size receive from Proc "
+                   << recvRank << " was " << printNumRows << " > 0, but "
+                  "recvDataBufs[" << circBufInd << "] is null.  This should "
+                  "never happen.  Please report this bug to the Tpetra "
+                  "developers." << endl;
+                *err << os.str ();
+              }
+              // If we're going to continue after error, set the
+              // number of rows to print to a reasonable size.
+              printNumRows = 0;
+            }
+
+            // Write the received data to the output stream.
+            // Matrix Market prints dense matrices in column-major order.
+            ArrayView<const scalar_type> printData = (recvDataBufs[circBufInd]) ();
+            const size_t printStride = printNumRows;
+            for (size_t row = 0; row < printNumRows; ++row) {
+              for (size_t col = 0; col < numCols; ++col) {
+                out << printData[row + col * printStride];
+                if (col + 1 < numCols) {
+                  out << " ";
+                }
+              }
+              out << endl;
+            }
+          }
+          else if (myRank == p) { // Process p
+            // Wait on my send-data send.
+            if (debug) {
+              std::ostringstream os;
+              os << myRank << ": Wait on my send-data send" << endl;
+              *dbg << os.str ();
+            }
+            wait<int> (comm, outArg (sendReqData));
+          }
+          else if (myRank == p + 1) { // Process p + 1
+            // Post send-data send to Process 0.
+            if (debug) {
+              std::ostringstream os;
+              os << myRank << ": Post send-data send: tag = " << dataTag
+                 << endl;
+              *dbg << os.str ();
+            }
+            sendReqData = isend<int, scalar_type> (sendDataBuf, 0, dataTag, comm);
+            // Wait on my send-size send.
+            if (debug) {
+              std::ostringstream os;
+              os << myRank << ": Wait on my send-size send" << endl;
+              *dbg << os.str ();
+            }
+            wait<int> (comm, outArg (sendReqSize));
+          }
+          else if (myRank == p + 2) { // Process p + 2
+            // Post send-size send to Process 0.
+            if (debug) {
+              std::ostringstream os;
+              os << myRank << ": Post send-size send: size = "
+                 << sendDataSize[0] << ", tag = " << sizeTag << endl;
+              *dbg << os.str ();
+            }
+            sendReqSize = isend<int, size_t> (sendDataSize, 0, sizeTag, comm);
+          }
+        }
+
+        // Establish global agreement on the error state.
+        reduceAll<int, int> (comm, REDUCE_MAX, lclErr, outArg (gblErr));
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          gblErr == 1, std::runtime_error, "Tpetra::MatrixMarket::writeDense "
+          "experienced some kind of error and was unable to complete.");
+
+        if (debug) {
+          dbg->popTab ();
+          *dbg << myRank << ": writeMap: Done" << endl;
+          dbg->popTab ();
+        }
+      }
+
+      /// \brief Print the multivector in Matrix Market format, with
+      ///   matrix name and or description.
+      ///
+      /// See the documentation of the above six-argument version of
+      /// writeDense().
       static void
       writeDense (std::ostream& out,
                   const RCP<const multivector_type>& X,
                   const std::string& matrixName,
-                  const std::string& matrixDescription)
+                  const std::string& matrixDescription,
+                  const Teuchos::RCP<Teuchos::FancyOStream>& err = Teuchos::null,
+                  const Teuchos::RCP<Teuchos::FancyOStream>& dbg = Teuchos::null)
       {
-        writeDenseImpl<scalar_type> (out, *X, matrixName, matrixDescription);
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          X.is_null (), std::invalid_argument, "Tpetra::MatrixMarket::"
+          "writeDense: The input MultiVector X is null.");
+        writeDense (out, *X, matrixName, matrixDescription, err, dbg);
       }
 
-      /// \brief Print the multivector in Matrix Market format.
+      /// \brief Print the multivector in Matrix Market format, with
+      ///   no matrix name or description.
       ///
-      /// Write the given Tpetra::MultiVector matrix to an output
-      /// stream, using the Matrix Market "array" format for dense
-      /// matrices.  MPI Proc 0 is the only MPI process that writes to
-      /// the output stream.
-      ///
-      /// \param out [out] The output stream to which to write (on MPI
-      ///   Proc 0 only).
-      ///
-      /// \param X [in] The dense matrix (stored as a multivector) to
-      ///   write to the output stream.
-      ///
-      /// \warning The current implementation gathers the whole matrix
-      ///   onto MPI Proc 0.  This will cause out-of-memory errors if
-      ///   the matrix is too big to fit on one process.  This will be
-      ///   fixed in the future.
-      ///
+      /// See the documentation of the above six-argument version of
+      /// writeDense().
       static void
       writeDense (std::ostream& out,
-                  const RCP<const multivector_type>& X)
+                  const multivector_type& X,
+                  const Teuchos::RCP<Teuchos::FancyOStream>& err = Teuchos::null,
+                  const Teuchos::RCP<Teuchos::FancyOStream>& dbg = Teuchos::null)
       {
-        writeDense (out, X, "", "");
+        writeDense (out, *X, "", "", err, dbg);
+      }
+
+      /// \brief Print the multivector in Matrix Market format, with
+      ///   no matrix name or description.
+      ///
+      /// See the documentation of the above six-argument version of
+      /// writeDense().
+      static void
+      writeDense (std::ostream& out,
+                  const RCP<const multivector_type>& X,
+                  const Teuchos::RCP<Teuchos::FancyOStream>& err = Teuchos::null,
+                  const Teuchos::RCP<Teuchos::FancyOStream>& dbg = Teuchos::null)
+      {
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          X.is_null (), std::invalid_argument, "Tpetra::MatrixMarket::"
+          "writeDense: The input MultiVector X is null.");
+        writeDense (out, *X, "", "", err, dbg);
       }
 
       /// \brief Print the Map to the given output stream.
@@ -5976,217 +6598,6 @@ namespace Tpetra {
       }
 
     private:
-      /// \brief Print the multivector in Matrix Market format.
-      ///
-      /// Write the given Tpetra::MultiVector matrix to an output
-      /// stream, using the Matrix Market "array" format for dense
-      /// matrices.  Process 0 is the only MPI process that writes to
-      /// the output stream.
-      ///
-      /// \param out [out] The output stream to which to write (on
-      ///   Process 0 only).
-      ///
-      /// \param X [in] The dense matrix (stored as a multivector) to
-      ///   write to the output stream.
-      ///
-      /// \param matrixName [in] Name of the matrix, to print in the
-      ///   comments section of the output stream.  If empty, we don't
-      ///   print anything (not even an empty line).
-      ///
-      /// \param matrixDescription [in] Matrix description, to print
-      ///   in the comments section of the output stream.  If empty,
-      ///   we don't print anything (not even an empty line).
-      ///
-      /// \param err [in/out] Output stream for debugging output.
-      ///   Only referenced if \c debug is true.
-      ///
-      /// \param debug [in] If true, print copious debugging output to
-      ///   \c err on every process in X's communicator.
-      ///
-      /// \warning The current implementation gathers the whole matrix
-      ///   onto Process 0.  This will cause out-of-memory errors if
-      ///   the matrix is too big to fit on one process.  This will be
-      ///   fixed in the future.
-      template<class MultiVectorScalarType>
-      static void
-      writeDenseImpl (std::ostream& out,
-                      const Tpetra::MultiVector<MultiVectorScalarType, local_ordinal_type, global_ordinal_type, node_type>& X,
-                      const std::string& matrixName,
-                      const std::string& matrixDescription,
-                      const Teuchos::RCP<Teuchos::FancyOStream>& err=Teuchos::null,
-                      const bool debug=false)
-      {
-        using Tpetra::createOneToOne;
-        using Tpetra::createNonContigMapWithNode;
-        using Teuchos::as;
-        using Teuchos::rcp;
-        using Teuchos::rcp_const_cast;
-        using Teuchos::rcp_dynamic_cast;
-        using std::endl;
-
-        typedef MultiVectorScalarType ST;
-        typedef local_ordinal_type LO;
-        typedef global_ordinal_type GO;
-        typedef node_type NT;
-
-        typedef typename Teuchos::ScalarTraits<ST> STS;
-        typedef Tpetra::MultiVector<ST, LO, GO, NT> MV;
-
-        RCP<const map_type> map = X.getMap ();
-        RCP<const Comm<int> > comm = map->getComm ();
-        const int myRank = comm->getRank ();
-
-        if (! err.is_null ()) {
-          err->pushTab ();
-        }
-        if (debug) {
-          std::ostringstream os;
-          os << myRank << ": writeDenseImpl" << endl;
-          *err << os.str ();
-        }
-        if (! err.is_null ()) {
-          err->pushTab ();
-        }
-
-        // Make the output stream write floating-point numbers in
-        // scientific notation.  It will politely put the output
-        // stream back to its state on input, when this scope
-        // terminates.
-        Teuchos::MatrixMarket::details::SetScientific<ST> sci (out);
-
-        const global_size_t numRows = map->getGlobalNumElements ();
-        // Promote to global_size_t.
-        const global_size_t numCols = as<global_size_t> (X.getNumVectors ());
-
-        if (debug) {
-          std::ostringstream os;
-          os << myRank << ": writeDenseImpl: Computing gather Map" << endl;
-          *err << os.str ();
-        }
-
-        // Make the "gather" map, where Proc 0 owns all rows of X, and
-        // the other procs own no rows.
-        RCP<NT> node = map->getNode();
-        RCP<const map_type> gatherMap =
-          Details::computeGatherMap<map_type> (map, err, debug);
-
-        if (debug) {
-          std::ostringstream os;
-          os << myRank << ": writeDenseImpl: Computing Import" << endl;
-          *err << os.str ();
-        }
-
-        // Create an Import object to import X's data into a
-        // multivector Y owned entirely by Proc 0.  In the Import
-        // constructor, X's map is the source map, and the "gather
-        // map" is the target map.
-        Import<LO, GO, NT> importer (map, gatherMap, err);
-
-        if (debug) {
-          std::ostringstream os;
-          os << myRank << ": writeDenseImpl: Creating target MultiVector" << endl;
-          *err << os.str ();
-        }
-
-        // Create a new multivector Y to hold the result of the import.
-        RCP<MV> Y = createMultiVector<ST, LO, GO, NT> (gatherMap, numCols);
-
-        if (debug) {
-          std::ostringstream os;
-          os << myRank << ": writeDenseImpl: Doing Import" << endl;
-          *err << os.str ();
-        }
-
-        // Import the multivector onto Proc 0.
-        Y->doImport (X, importer, INSERT);
-
-        if (debug) {
-          std::ostringstream os;
-          os << myRank << ": writeDenseImpl: Writing data to out" << endl;
-          *err << os.str ();
-        }
-
-        //
-        // Print the matrix in Matrix Market format on Proc 0.
-        //
-        std::ostringstream exMsg; // for exception messages on Proc 0
-        int localWriteSuccess = 1; // whether the write succeeded on Proc 0
-        if (myRank == 0) {
-          try {
-            std::string dataType;
-            if (STS::isComplex) {
-              dataType = "complex";
-            } else if (STS::isOrdinal) {
-              dataType = "integer";
-            } else {
-              dataType = "real";
-            }
-
-            // Print the Matrix Market banner line.  MultiVector
-            // stores data nonsymmetrically, hence "general".
-            out << "%%MatrixMarket matrix array "
-                << dataType << " general" << endl;
-
-            // Print comments (the matrix name and / or description).
-            if (matrixName != "") {
-              printAsComment (out, matrixName);
-            }
-            if (matrixDescription != "") {
-              printAsComment (out, matrixDescription);
-            }
-            // Print the Matrix Market dimensions header for dense matrices.
-            out << numRows << " " << numCols << endl;
-
-            // Get a read-only view of the entries of Y.
-            // Rank 0 owns all of the entries of Y.
-            ArrayRCP<ArrayRCP<const ST> > Y_view = Y->get2dView ();
-            TEUCHOS_TEST_FOR_EXCEPTION(
-              as<global_size_t> (Y_view.size ()) < numCols, std::logic_error,
-              "Y_view has size " << Y_view.size () << " < numCols = "
-              << numCols << ".");
-
-            // Print the entries of the matrix, in column-major order.
-            for (global_size_t j = 0; j < numCols; ++j) {
-              ArrayRCP<const ST> Y_j = Y_view[j];
-              TEUCHOS_TEST_FOR_EXCEPTION(
-                as<global_size_t> (Y_j.size ()) < numRows, std::logic_error,
-                "The current column's data has length " << Y_j.size ()
-                << " < numRows=" << numRows << ".");
-              for (global_size_t i = 0; i < numRows; ++i) {
-                const ST Y_ij = Y_j[i];
-                if (STS::isComplex) {
-                  out << STS::real (Y_ij) << " " << STS::imag (Y_ij) << endl;
-                } else {
-                  out << Y_ij << endl;
-                }
-              }
-            }
-          } catch (std::exception& e) {
-            exMsg << e.what ();
-            localWriteSuccess = 0;
-          }
-        } // if (myRank == 0)
-
-        // Synchronize on error.  This is not necessary here, but it
-        // will prevent later code from hanging in Proc 0 threw an
-        // exception above.
-        int globalWriteSuccess = localWriteSuccess;
-        Teuchos::broadcast (*comm, 0, outArg (globalWriteSuccess));
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          globalWriteSuccess == 0, std::runtime_error,
-          "Failed to write data: " << exMsg.str ());
-
-        if (! err.is_null ()) {
-          err->popTab ();
-        }
-        if (debug) {
-          *err << myRank << ": writeDenseImpl: done" << endl;
-        }
-        if (! err.is_null ()) {
-          err->popTab ();
-        }
-      }
-
       /// \brief Print the given possibly multiline string as a comment.
       ///
       /// If the string is empty, don't print anything (not even an

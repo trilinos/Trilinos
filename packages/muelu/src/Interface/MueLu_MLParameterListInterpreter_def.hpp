@@ -219,13 +219,13 @@ namespace MueLu {
       RCP<UncoupledAggregationFactory> CoupledAggFact2 = rcp(new UncoupledAggregationFactory());
       /*CoupledAggFact2->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
       CoupledAggFact2->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
-      CoupledAggFact2->SetOrdering(MueLu::AggOptions::NATURAL);*/
+      CoupledAggFact2->SetOrdering("natural");*/
       CoupledAggFact2->SetFactory("Graph", dropFact);
       CoupledAggFact2->SetFactory("DofsPerNode", dropFact);
       CoupledAggFact2->SetParameter("UsePreserveDirichletAggregationAlgorithm", Teuchos::ParameterEntry(bKeepDirichletBcs));
-      CoupledAggFact2->SetParameter("Ordering", Teuchos::ParameterEntry(MueLu::AggOptions::NATURAL));
-      CoupledAggFact2->SetParameter("MaxNeighAlreadySelected", Teuchos::ParameterEntry(maxNbrAlreadySelected));
-      CoupledAggFact2->SetParameter("MinNodesPerAggregate", Teuchos::ParameterEntry(minPerAgg));
+      CoupledAggFact2->SetParameter("aggregation: ordering",                Teuchos::ParameterEntry(std::string("natural")));
+      CoupledAggFact2->SetParameter("aggregation: max selected neighbors",  Teuchos::ParameterEntry(maxNbrAlreadySelected));
+      CoupledAggFact2->SetParameter("aggregation: min agg size",            Teuchos::ParameterEntry(minPerAgg));
 
       CoupledAggFact = CoupledAggFact2;
     } else {
@@ -233,7 +233,7 @@ namespace MueLu {
       RCP<CoupledAggregationFactory> CoupledAggFact2 = rcp(new CoupledAggregationFactory());
       CoupledAggFact2->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
       CoupledAggFact2->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
-      CoupledAggFact2->SetOrdering(MueLu::AggOptions::NATURAL);
+      CoupledAggFact2->SetOrdering("natural");
       CoupledAggFact2->SetPhase3AggCreation(0.5);
       CoupledAggFact2->SetFactory("Graph", dropFact);
       CoupledAggFact2->SetFactory("DofsPerNode", dropFact);
@@ -243,7 +243,7 @@ namespace MueLu {
       *out << "========================= Aggregate option summary  =========================" << std::endl;
       *out << "min Nodes per aggregate :               " << minPerAgg << std::endl;
       *out << "min # of root nbrs already aggregated : " << maxNbrAlreadySelected << std::endl;
-      *out << "aggregate ordering :                    NATURAL" << std::endl;
+      *out << "aggregate ordering :                    natural" << std::endl;
       *out << "=============================================================================" << std::endl;
     }
 
@@ -301,8 +301,8 @@ namespace MueLu {
       RepartitionFact = Teuchos::rcp(new RepartitionFactory());
       {
         Teuchos::ParameterList paramListRepFact;
-        paramListRepFact.set("minRowsPerProcessor", minperproc);
-        paramListRepFact.set("nonzeroImbalance", maxminratio);
+        paramListRepFact.set("repartition: min rows per proc", minperproc);
+        paramListRepFact.set("repartition: max imbalance", maxminratio);
         RepartitionFact->SetParameterList(paramListRepFact);
       }
       RepartitionFact->SetFactory("A", AcFact);

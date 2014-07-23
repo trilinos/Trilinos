@@ -131,7 +131,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, nonsymExample)
   RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
   CoupledAggFact->SetMinNodesPerAggregate(3);
   CoupledAggFact->SetMaxNeighAlreadySelected(0);
-  CoupledAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+  CoupledAggFact->SetOrdering("natural");
   CoupledAggFact->SetPhase3AggCreation(0.5);
 
   RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());
@@ -350,7 +350,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, NonStandardMaps)
   RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
   CoupledAggFact->SetMinNodesPerAggregate(3);
   CoupledAggFact->SetMaxNeighAlreadySelected(0);
-  CoupledAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+  CoupledAggFact->SetOrdering("natural");
   CoupledAggFact->SetPhase3AggCreation(0.5);
 
   RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());
@@ -496,7 +496,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, ColumnBasedOmegas)
   RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
   CoupledAggFact->SetMinNodesPerAggregate(3);
   CoupledAggFact->SetMaxNeighAlreadySelected(0);
-  CoupledAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+  CoupledAggFact->SetOrdering("natural");
   CoupledAggFact->SetPhase3AggCreation(0.5);
 
   RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory(CoupledAggFact));
@@ -656,7 +656,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, ReUseOmegas)
   RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
   CoupledAggFact->SetMinNodesPerAggregate(3);
   CoupledAggFact->SetMaxNeighAlreadySelected(0);
-  CoupledAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+  CoupledAggFact->SetOrdering("natural");
   CoupledAggFact->SetPhase3AggCreation(0.5);
 
   RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());
@@ -824,7 +824,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, ReUseOmegasTransP)
   RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
   CoupledAggFact->SetMinNodesPerAggregate(3);
   CoupledAggFact->SetMaxNeighAlreadySelected(0);
-  CoupledAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+  CoupledAggFact->SetOrdering("natural");
   CoupledAggFact->SetPhase3AggCreation(0.5);
 
   RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());
@@ -1005,7 +1005,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, EpetraVsTpetra)
       RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
       CoupledAggFact->SetMinNodesPerAggregate(3);
       CoupledAggFact->SetMaxNeighAlreadySelected(0);
-      CoupledAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+      CoupledAggFact->SetOrdering("natural");
       CoupledAggFact->SetPhase3AggCreation(0.5);
 
       RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());

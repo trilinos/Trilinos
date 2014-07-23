@@ -182,7 +182,7 @@ int main(int argc, char *argv[]) {
       RFact = rcp(new TransPFactory());
 
       ParameterList Aclist = *(AcFact.GetValidParameterList());
-      Aclist.set("implicit transpose", optImplicitTranspose);
+      Aclist.set("transpose: use implicit", optImplicitTranspose);
       AcFact.SetParameterList(Aclist);
 
       AcFact.SetFactory("P", PFact);

@@ -121,14 +121,13 @@ GlobalMPISession::GlobalMPISession( int* argc, char*** argv, std::ostream *out )
 GlobalMPISession::~GlobalMPISession()
 {
   haveMPIState_ = false;
-  mpiIsFinalized_ = true;
 #ifdef HAVE_MPI
-  int mpierr = ::MPI_Finalize();
-  TEUCHOS_TEST_FOR_EXCEPTION_PRINT(
-    mpierr != 0, std::runtime_error
-    ,"Error code=" << mpierr << " detected in MPI_Finalize()"
-    ,&std::cerr
-    );
+  const int mpierr = ::MPI_Finalize();
+  mpiIsFinalized_ = (mpierr == 0);
+  if (mpierr != 0)
+    std::cerr << "Error code " << mpierr << " returned from MPI_Finalize()\n";
+#else
+  mpiIsFinalized_ = true;
 #endif
 }
 

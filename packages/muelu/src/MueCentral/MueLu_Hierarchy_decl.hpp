@@ -62,19 +62,20 @@
 
 #include "MueLu_Types.hpp"
 
-#include "MueLu_Level_fwd.hpp"
-#include "MueLu_FactoryManager.hpp" // no fwd declaration because constructor of FactoryManager is used as a default parameter of Setup()
 #include "MueLu_FactoryBase_fwd.hpp"
-#include "MueLu_TwoLevelFactoryBase_fwd.hpp"
+#include "MueLu_FactoryManager.hpp" // no fwd declaration because constructor of FactoryManager is used as a default parameter of Setup()
+#include "MueLu_HierarchyHelpers_fwd.hpp"
+#include "MueLu_KeepType.hpp"
+#include "MueLu_Level_fwd.hpp"
+#include "MueLu_MasterList.hpp"
+#include "MueLu_NoFactory.hpp"
 #include "MueLu_PFactory_fwd.hpp"
 #include "MueLu_RFactory_fwd.hpp"
+#include "MueLu_SmootherBase_fwd.hpp"
 #include "MueLu_SmootherFactoryBase_fwd.hpp"
 #include "MueLu_SmootherFactory_fwd.hpp"
-#include "MueLu_SmootherBase_fwd.hpp"
-#include "MueLu_HierarchyHelpers_fwd.hpp"
+#include "MueLu_TwoLevelFactoryBase_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
-#include "MueLu_NoFactory.hpp"
-#include "MueLu_KeepType.hpp"
 
 namespace MueLu {
   /*!
@@ -112,11 +113,11 @@ namespace MueLu {
     //@{
 
     //!
-    static CycleType             GetDefaultCycle()                                     { return VCYCLE; }
-    static bool                  GetDefaultImplicitTranspose()                         { return false;  }
-    static Xpetra::global_size_t GetDefaultMaxCoarseSize()                             { return 2000;   }
-    static int                   GetDefaultMaxLevels()                                 { return 10;     }
-    static bool                  GetDefaultPRrebalance()                               { return true;   }
+    static CycleType             GetDefaultCycle()                                     { return MasterList::getDefault<std::string>("cycle type") == "V" ? VCYCLE : WCYCLE; }
+    static bool                  GetDefaultImplicitTranspose()                         { return MasterList::getDefault<bool>("transpose: use implicit");  }
+    static Xpetra::global_size_t GetDefaultMaxCoarseSize()                             { return MasterList::getDefault<int>("coarse: max size");   }
+    static int                   GetDefaultMaxLevels()                                 { return MasterList::getDefault<int>("max levels");     }
+    static bool                  GetDefaultPRrebalance()                               { return MasterList::getDefault<bool>("repartition: rebalance P and R");   }
 
     Xpetra::global_size_t        GetMaxCoarseSize() const                              { return maxCoarseSize_; }
 

@@ -64,6 +64,17 @@
 #include <Tpetra_Experimental_BlockVector.hpp>
 
 namespace {
+  using Tpetra::TestingUtilities::getNode;
+  using Tpetra::TestingUtilities::getDefaultComm;
+  using Teuchos::Array;
+  using Teuchos::Comm;
+  using Teuchos::outArg;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::REDUCE_MIN;
+  using Teuchos::reduceAll;
+  using std::endl;
+  typedef Tpetra::global_size_t GST;
 
   //
   // UNIT TESTS
@@ -72,17 +83,10 @@ namespace {
   // Test BlockCrsMatrix's constructors.
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ExpBlockCrsMatrix, ctor, Scalar, LO, GO, Node )
   {
-    using Tpetra::TestingUtilities::getNode;
-    using Tpetra::TestingUtilities::getDefaultComm;
-    using Teuchos::Comm;
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-    using std::endl;
     typedef Tpetra::Experimental::BlockMultiVector<Scalar, LO, GO, Node> BMV;
     typedef Tpetra::Experimental::BlockCrsMatrix<Scalar, LO, GO, Node> BCM;
     typedef Tpetra::CrsGraph<LO, GO, Node> graph_type;
     typedef Tpetra::Map<LO, GO, Node> map_type;
-    typedef Tpetra::global_size_t GST;
 
     out << "Testing Tpetra::Experimental::BlockCrsMatrix" << endl;
     Teuchos::OSTab tab0 (out);
@@ -149,6 +153,11 @@ namespace {
     // Test the four-argument constructor.
     out << "Testing four-argument constructor" << endl;
     TEST_NOTHROW( blockMat = BCM (graph, pointDomainMap, pointRangeMap, blockSize ) );
+
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY_CONST( gblSuccess, 1 );
   }
 
   // Test for basic functionality of a BlockCrsMatrix.  We create a
@@ -156,13 +165,6 @@ namespace {
   // and replaceLocalValues, and test applyBlock and apply.
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ExpBlockCrsMatrix, basic, Scalar, LO, GO, Node )
   {
-    using Tpetra::TestingUtilities::getNode;
-    using Tpetra::TestingUtilities::getDefaultComm;
-    using Teuchos::Array;
-    using Teuchos::Comm;
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-    using std::endl;
     typedef Tpetra::Experimental::BlockMultiVector<Scalar, LO, GO, Node> BMV;
     typedef Tpetra::Experimental::BlockVector<Scalar, LO, GO, Node> BV;
     typedef Tpetra::Experimental::BlockCrsMatrix<Scalar, LO, GO, Node> BCM;
@@ -170,7 +172,6 @@ namespace {
     typedef Tpetra::Vector<Scalar, LO, GO, Node> vec_type;
     typedef Tpetra::CrsGraph<LO, GO, Node> graph_type;
     typedef Tpetra::Map<LO, GO, Node> map_type;
-    typedef Tpetra::global_size_t GST;
     // The typedef below is also a test.  BlockCrsMatrix must have
     // this typedef, or this test won't compile.
     typedef typename BCM::little_block_type little_block_type;
@@ -791,12 +792,128 @@ namespace {
       } // for each local (mesh) row of the output BlockMultiVector
     } // done with multiple-vector apply test
 
-    // Finishing with a barrier ensures that the test won't finish on
-    // Process 0 (and therefore report a "pass") if there is deadlock
-    // somewhere.
-    comm->barrier ();
+    // Finishing with an all-reduce ensures that the test won't run to
+    // completion on Process 0 (and therefore report a "pass") if
+    // there is deadlock somewhere.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
     out << "Hooray, got to the end of the BlockCrsMatrix test!" << std::endl;
+    TEST_EQUALITY_CONST( gblSuccess, 1 );
   }
+
+
+  // Test BlockCrsMatrix::setAllToScalar.
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ExpBlockCrsMatrix, SetAllToScalar, Scalar, LO, GO, Node )
+  {
+    typedef Tpetra::Experimental::BlockMultiVector<Scalar, LO, GO, Node> BMV;
+    typedef Tpetra::Experimental::BlockCrsMatrix<Scalar, LO, GO, Node> BCM;
+    typedef Tpetra::CrsGraph<LO, GO, Node> graph_type;
+    typedef Tpetra::Map<LO, GO, Node> map_type;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+
+    out << "Testing Tpetra::Experimental::BlockCrsMatrix::setAllToScalar" << endl;
+    Teuchos::OSTab tab0 (out);
+
+    RCP<const Comm<int> > comm = getDefaultComm ();
+    RCP<Node> node = getNode<Node> ();
+    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+
+    out << "Creating mesh row Map" << endl;
+
+    const size_t numLocalMeshPoints = 12;
+    const GO indexBase = 0;
+    // mfh 16 May 2014: Tpetra::CrsGraph still needs the row Map as an
+    // RCP.  Later interface changes will let us pass in the Map by
+    // const reference and assume view semantics.
+    RCP<const map_type> meshRowMapPtr =
+      rcp (new map_type (INVALID, numLocalMeshPoints, indexBase, comm, node));
+    const GO numGlobalMeshPoints = meshRowMapPtr->getGlobalNumElements ();
+    const LO blockSize = 4;
+
+    // Make a graph.  It happens to have two entries per row.
+    out << "Creating mesh graph" << endl;
+    graph_type graph (meshRowMapPtr, 2, Tpetra::StaticProfile);
+
+    if (meshRowMapPtr->getNodeNumElements () > 0) {
+      const GO myMinGblRow = meshRowMapPtr->getMinGlobalIndex ();
+      const GO myMaxGblRow = meshRowMapPtr->getMaxGlobalIndex ();
+      for (GO gblRow = myMinGblRow; gblRow <= myMaxGblRow; ++gblRow) {
+        // Insert two entries, neither of which are on the diagonal.
+        Teuchos::Array<GO> gblCols (2);
+        gblCols[0] = (gblRow + 1) % numGlobalMeshPoints;
+        gblCols[1] = (gblRow + 2) % numGlobalMeshPoints;
+        graph.insertGlobalIndices (gblRow, gblCols ());
+      }
+    }
+    graph.fillComplete ();
+
+    out << "Calling BlockCrsMatrix two-argument constructor" << endl;
+    BCM blockMat (graph, blockSize);
+
+    // Test that the point domain and range Maps are correct.
+    map_type pointDomainMap = BMV::makePointMap (* (graph.getDomainMap ()), blockSize);
+    TEST_ASSERT( ! blockMat.getDomainMap ().is_null () &&
+                 pointDomainMap.isSameAs (* (blockMat.getDomainMap ())) );
+    map_type pointRangeMap = BMV::makePointMap (* (graph.getRangeMap ()), blockSize);
+    TEST_ASSERT( ! blockMat.getRangeMap ().is_null () &&
+                 pointRangeMap.isSameAs (* (blockMat.getRangeMap ())) );
+
+    // Test that the result of getGraph() has the same Maps.
+    {
+      graph_type graph2 = blockMat.getGraph ();
+      TEST_ASSERT( ! graph.getDomainMap ().is_null () &&
+                   ! graph2.getDomainMap ().is_null () &&
+                   graph.getDomainMap ()->isSameAs (* (graph2.getDomainMap ())) );
+      TEST_ASSERT( ! graph.getRangeMap ().is_null () &&
+                   ! graph2.getRangeMap ().is_null () &&
+                   graph.getRangeMap ()->isSameAs (* (graph2.getRangeMap ())) );
+      TEST_ASSERT( ! graph.getRowMap ().is_null () &&
+                   ! graph2.getRowMap ().is_null () &&
+                   graph.getRowMap ()->isSameAs (* (graph2.getRowMap ())) );
+      TEST_ASSERT( ! graph.getColMap ().is_null () &&
+                   ! graph2.getColMap ().is_null () &&
+                   graph.getColMap ()->isSameAs (* (graph2.getColMap ())) );
+    }
+
+    // Fill all entries of the matrix with 3.
+    const Scalar three = STS::one () + STS::one () + STS::one ();
+    blockMat.setAllToScalar (three);
+
+    // Y := A*X, where X is a block multivector (with one column) full
+    // of 1s.  Since there are two block entries per row, each of
+    // which is all 3s, we know that each entry of the result Y will
+    // be 6*blockSize.
+    const Scalar requiredValue = static_cast<Scalar> (6 * blockSize);
+    BMV X (* (graph.getDomainMap ()), pointDomainMap, blockSize, static_cast<LO> (1));
+    X.putScalar (STS::one ());
+    BMV Y (* (graph.getRangeMap ()), pointRangeMap, blockSize, static_cast<LO> (1));
+    blockMat.applyBlock (X, Y, Teuchos::NO_TRANS, STS::one (), STS::zero ());
+
+    const LO myMinLclMeshRow = Y.getMap ()->getMinLocalIndex ();
+    const LO myMaxLclMeshRow = Y.getMap ()->getMaxLocalIndex ();
+    for (LO lclMeshRow = myMinLclMeshRow; lclMeshRow <= myMaxLclMeshRow; ++lclMeshRow) {
+      typename BMV::little_vec_type Y_lcl = Y.getLocalBlock (lclMeshRow, 0);
+      for (LO i = 0; i < blockSize; ++i) {
+        TEST_EQUALITY( Y_lcl(i), requiredValue );
+      }
+    }
+
+    TEST_NOTHROW( blockMat.setAllToScalar (STS::zero ()) );
+    blockMat.applyBlock (X, Y, Teuchos::NO_TRANS, STS::one (), STS::zero ());
+    for (LO lclMeshRow = myMinLclMeshRow; lclMeshRow <= myMaxLclMeshRow; ++lclMeshRow) {
+      typename BMV::little_vec_type Y_lcl = Y.getLocalBlock (lclMeshRow, 0);
+      for (LO i = 0; i < blockSize; ++i) {
+        TEST_EQUALITY( Y_lcl(i), STS::zero () );
+      }
+    }
+
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY_CONST( gblSuccess, 1 );
+  }
+
 
 //
 // INSTANTIATIONS
@@ -804,7 +921,8 @@ namespace {
 
 #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, ctor, SCALAR, LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, basic, SCALAR, LO, GO, NODE )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, basic, SCALAR, LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, SetAllToScalar, SCALAR, LO, GO, NODE )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 

@@ -19,8 +19,9 @@ KOKKOS_PATH ?= /usr/local/kokkos
 CUDA_PATH ?= /usr/local/cuda
 HWLOC_PATH ?= /usr/local/hwloc/default
 
-# Device options: enable OpenMP and/or CUDA device (if none is enabled the Threads 
-# device will be used, which expects pthreads to be available)
+# Device options: enable Pthreads, OpenMP and/or CUDA device (if none is enabled 
+# the Serial device will be used)
+PTHREADS ?= yes
 OMP ?= yes
 CUDA ?= no
 
@@ -38,9 +39,10 @@ HWLOC ?= no
 LIBRT ?= no
 
 # CUDA specific options: use UVM (requires CUDA 6+); use LDG loads instead of 
-# texture fetches; 
+# texture fetches; compile for relocatable device code (function pointers) 
 CUDA_UVM ?= no
 CUDA_LDG ?= no
+CUDA_RELOC ?= no 
 
 # Settings for replacing generic linear algebra kernels of Kokkos with vendor
 # libraries.
@@ -49,7 +51,7 @@ CUBLAS ?= no
 
 #Typically nothing should be changed after this point
 
-KOKKOS_INC = -I$(KOKKOS_PATH)/core/src -I$(KOKKOS_PATH)/containers/src -I../ -DKOKKOS_DONT_INCLUDE_CORE_CONFIG_H 
+KOKKOS_INC = -I$(KOKKOS_PATH)/core/src -I$(KOKKOS_PATH)/containers/src -I$(KOKKOS_PATH)/algorithms/src -I../ -DKOKKOS_DONT_INCLUDE_CORE_CONFIG_H 
 
 KOKKOS_HEADERS = $(wildcard $(KOKKOS_PATH)/core/src/*.hpp)
 KOKKOS_HEADERS += $(wildcard $(KOKKOS_PATH)/core/src/impl/*.hpp)
@@ -97,7 +99,12 @@ endif
 KOKKOS_LINK += -mavx
 endif
 
-
+ifeq ($(PTHREADS),yes)
+KOKKOS_INC += -DKOKKOS_HAVE_PTHREAD
+KOKKOS_LIB += -lpthread
+SRC_KOKKOS += $(wildcard $(KOKKOS_PATH)/core/src/Threads/*.cpp)
+KOKKOS_HEADERS += $(wildcard $(KOKKOS_PATH)/core/src/Threads/*.hpp)
+endif
 
 ifeq ($(OMP),yes)
 KOKKOS_INC += -DKOKKOS_HAVE_OPENMP 
@@ -109,11 +116,6 @@ else
 KOKKOS_INC += -fopenmp
 endif
 KOKKOS_LINK += -fopenmp
-else
-KOKKOS_INC += -DKOKKOS_HAVE_PTHREAD
-KOKKOS_LIB += -lpthread
-SRC_KOKKOS += $(wildcard $(KOKKOS_PATH)/core/src/Threads/*.cpp)
-KOKKOS_HEADERS += $(wildcard $(KOKKOS_PATH)/core/src/Threads/*.hpp)
 endif
 
 ifeq ($(HWLOC),yes)
@@ -129,7 +131,7 @@ ifeq ($(DEBUG), yes)
 ifeq ($(CUDA), yes)
 KOKKOS_INC += -G
 endif
-KOKKOS_INC += -g -DKOKKOSARRAY_EXPRESSION_CHECK -DENABLE_TRACEBACK
+KOKKOS_INC += -g -DKOKKOS_EXPRESSION_CHECK -DENABLE_TRACEBACK
 KOKKOS_LINK += -g -ldl
 endif
 
@@ -140,6 +142,13 @@ endif
 
 ifeq ($(CUDA_LDG), yes)
 KOKKOS_INC += -DKOKKOS_USE_LDG_INTRINSIC
+endif
+
+ifeq ($(CUDA), yes)
+ifeq ($(CUDA_RELOC), yes)
+KOKKOS_INC += -DKOKKOS_CUDA_USE_RELOCATABLE_DEVICE_CODE --relocatable-device-code=true
+KOKKOS_LINK += --relocatable-device-code=true
+endif
 endif
 
 OBJ_KOKKOS_TMP = $(SRC_KOKKOS:.cpp=.o)

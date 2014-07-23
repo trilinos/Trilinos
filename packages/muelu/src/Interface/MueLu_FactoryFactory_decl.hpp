@@ -334,31 +334,20 @@ namespace MueLu {
     }
 
     //! CoupledAggregationFactory
-    RCP<FactoryBase> BuildCoupledAggregationFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
+    RCP<FactoryBase> BuildCoupledAggregationFactory(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
       RCP<CoupledAggregationFactory> factory = Build<CoupledAggregationFactory>(paramList, factoryMapIn, factoryManagersIn);
 
-      if(paramList.isParameter("Ordering")) {
-        std::string orderingStr = paramList.get<std::string>("Ordering");
-        Ordering ordering;
-        if (orderingStr == "Natural")
-          ordering = NATURAL;
-        else if (orderingStr == "Random")
-          ordering = RANDOM;
-        else if (orderingStr == "Graph")
-          ordering = GRAPH;
-        else TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory::BuildCoupledAggregationFactory()::Unknown Ordering type");
+      if (paramList.isParameter("aggregation: ordering"))
+        factory->SetOrdering(paramList.get<std::string>("aggregation: ordering"));
 
-        factory->SetOrdering(ordering);
-      }
-
-      if (paramList.isParameter("MaxNeighAlreadySelected"))
-        factory->SetMaxNeighAlreadySelected(paramList.get<int>("MaxNeighAlreadySelected"));
+      if (paramList.isParameter("aggregation: max selected neighbors"))
+        factory->SetMaxNeighAlreadySelected(paramList.get<int>("aggregation: max selected neighbors"));
 
       if (paramList.isParameter("Phase3AggCreation"))
         factory->SetPhase3AggCreation(paramList.get<double>("Phase3AggCreation"));
 
-      if(paramList.isParameter("MinNodesPerAggregate"))
-        factory->SetMinNodesPerAggregate(paramList.get<int>("MinNodesPerAggregate"));
+      if(paramList.isParameter("aggregation: min agg size"))
+        factory->SetMinNodesPerAggregate(paramList.get<int>("aggregation: min agg size"));
 
       return factory;
     }
@@ -367,45 +356,8 @@ namespace MueLu {
     RCP<FactoryBase> BuildUncoupledAggregationFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
       RCP<UncoupledAggregationFactory> factory = Build<UncoupledAggregationFactory>(paramList, factoryMapIn, factoryManagersIn);
 
-      /*if(paramList.isParameter("Ordering")) {
-        std::string orderingStr = paramList.get<std::string>("Ordering");
-        Ordering ordering;
-        if (orderingStr == "Natural")
-          ordering = NATURAL;
-        else if (orderingStr == "Random")
-          ordering = RANDOM;
-        else if (orderingStr == "Graph")
-          ordering = GRAPH;
-        else TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory::BuildUncoupledAggregationFactory()::Unknown Ordering type");
-
-        factory->SetOrdering(ordering);
-      }*/
-
-      /*if(paramList.isParameter("MaxNeighAlreadySelected")) {
-        factory->SetMaxNeighAlreadySelected(paramList.get<int>("MaxNeighAlreadySelected"));
-      }
-
-      if(paramList.isParameter("MinNodesPerAggregate")) {
-        factory->SetMinNodesPerAggregate(paramList.get<int>("MinNodesPerAggregate"));
-      }*/
-
       ParameterList paramListWithFactories(paramList); // copy  (*might* also avoid indicating that parameter entry is used)
       paramListWithFactories.remove("factory", false);
-      paramListWithFactories.remove("Ordering", false);
-      if(paramList.isParameter("Ordering")) {
-        std::string orderingStr = paramList.get<std::string>("Ordering");
-        Ordering ordering;
-        if (orderingStr == "Natural")
-          ordering = NATURAL;
-        else if (orderingStr == "Random")
-          ordering = RANDOM;
-        else if (orderingStr == "Graph")
-          ordering = GRAPH;
-        else TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory::BuildUncoupledAggregationFactory()::Unknown Ordering type");
-
-        paramListWithFactories.set("Ordering",ordering);
-        //factory->SetOrdering(ordering);
-      }
 
       // Read the RCP<Factory> parameters of the class T
       RCP<const ParameterList> validParamList = factory->GetValidParameterList();

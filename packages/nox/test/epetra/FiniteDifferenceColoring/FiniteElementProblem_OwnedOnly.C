@@ -119,9 +119,7 @@ FiniteElementProblem::FiniteElementProblem(int numGlobalElements, Epetra_Comm& c
 
   // Do setup for linear unknown info
   int NumMyElements = StandardMap->NumMyElements();
-  int MinMyGID;
-  if (MyPID==0) MinMyGID = StandardMap->MinMyGID();
-  else MinMyGID = StandardMap->MinMyGID();
+  int MinMyGID = StandardMap->MinMyGID();
 
   double dx=1.0/((double) NumGlobalElements-1);
   int lid=0;

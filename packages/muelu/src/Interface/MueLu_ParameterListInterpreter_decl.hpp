@@ -138,9 +138,6 @@ namespace MueLu {
     typedef std::map<std::string, RCP<FactoryManagerBase> > FactoryManagerMap;
 
     void BuildFactoryMap(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, FactoryMap& factoryMapOut, FactoryManagerMap& factoryManagers) const;
-
-    //! Matrix configuration storage
-    Teuchos::ParameterList operatorList_; //TODO: should it be stored in another format to avoid xml parsing in SetupMatrix()?
     //@}
   };
 

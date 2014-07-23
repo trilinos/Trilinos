@@ -175,7 +175,7 @@ public:
   }
 
   bool availAdjs(MeshEntityType source, MeshEntityType target) {
-    if (MESH_REGION == source && MESH_VERTEX == target && 3 == dimension_
+    if (MESH_REGION == source && MESH_VERTEX == target && 3 == dimension_ ||
 	MESH_FACE == source && MESH_VERTEX == target && 2 == dimension_) {
       return TRUE;
     }
@@ -186,7 +186,7 @@ public:
   size_t getLocalNumAdjs(MeshEntityType source, MeshEntityType target) const
   {
     if (availAdjs(source, target)) {
-      return telct_;
+      return tnoct_;
     }
 
     return 0;
@@ -197,7 +197,7 @@ public:
   {
     if (MESH_REGION == source && MESH_VERTEX == target && 3 == dimension_ ||
 	MESH_FACE == source && MESH_VERTEX == target && 2 == dimension) {
-      offsets = elemOffsets;
+      offsets = elemOffsets_;
       adjacencyIds = elemToNode_;
     } else if (MESH_REGION == source && 2 == dimension_) {
       offsets = NULL;
@@ -209,15 +209,62 @@ public:
     }
   }
 
+  bool avail2ndAdjs(MeshEntityType sourcetarget, MeshEntityType through)
+  {
+    if (MESH_REGION==sourcetarget && MESH_VERTEX==through && 3==dimension_ ||
+	MESH_FACE==sourcetarget && MESH_VERTEX==through && 2==dimension_) {
+      return TRUE;
+    }
+
+    return FALSE;
+  }
+
+  size_t getLocalNum2ndAdjs(MeshEntityType sourcetarget, 
+			    MeshEntityType through) const
+  {
+    if (avail2ndAdjs(sourcetarget, through)) {
+      return adj_.size();
+    }
+
+    return 0;
+  }
+
+  void get2ndAdjsView(MeshEntityType sourcetarget, MeshEntityType through, 
+		      const lno_t *&offsets, const gid_t *& adjacencyIds) const
+  {
+    if (MESH_REGION==sourcetarget && MESH_VERTEX==through && 3==dimension_ ||
+	MESH_FACE==sourcetarget && MESH_VERTEX==through && 2==dimension_) {
+      offsets = start_;
+      adjacencyIds = adj_;
+    } else if (MESH_REGION == sourcetarget && 2 == dimension_) {
+      offsets = NULL;
+      adjacencyIds = NULL;
+    } else {
+      offsets = NULL;
+      adjacencyIds = NULL;
+      Z2_THROW_NOT_IMPLEMENTED_ERROR
+    }
+  }
+
 private:
   long long dimension_, num_nodes_, num_elem_, *element_num_map_;
-  long long *node_num_map_, *elemToNode_, telct_, *elemOffsets_;
+  long long *node_num_map_, *elemToNode_, tnoct_, *elemOffsets_;
   double *coords_, *Acoords_;
+  std::vector<long long> start_, adj_;
 };
 
 ////////////////////////////////////////////////////////////////
 // Definitions
 ////////////////////////////////////////////////////////////////
+
+  ssize_t in_list(const long long value, size_t count, long long *vector)
+  {
+    for(size_t i=0; i < count; i++) {
+      if(vector[i] == value)
+	return i;
+    }
+    return -1;
+  }
 
 template <typename User>
 PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
@@ -310,41 +357,44 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
     }
   }
 
-  elemToNode_     = new long long [num_elem_ * num_nodes_per_elem[0]];
-  long long tnoct = 0;
-  elemOffsets_    = new long long [num_elem_];
-  telct_ = 0;
+  long long nnodes_per_elem = num_nodes_per_elem[0];
+  elemToNode_ = new long long [num_elem_ * nnodes_per_elem];
+  long long telct = 0;
+  elemOffsets_ = new long long [num_elem_];
+  tnoct_ = 0;
+  long long **reconnect = new long long * [num_elem_];
   size_t max_nsur = 0;
 
   for (long long b = 0; b < num_elem_blk; b++) {
     for (long long i = 0; i < num_elem_this_blk[b]; i++) {
-      elemOffsets_[telct_] = tnoct;
-      ++telct_;
+      elemOffsets_[telct] = tnoct_;
+      reconnect[telct] = new long long [num_nodes_per_elem[b]];
 
       for (long long j = 0; j < num_nodes_per_elem[b]; j++) {
-	elemToNode_[tnoct] = connect[b][i*num_nodes_per_elem[b] + j]-1;
+	elemToNode_[tnoct_] = connect[b][i*num_nodes_per_elem[b] + j]-1;
+	reconnect[telct][j] = connect[b][i*num_nodes_per_elem[b] + j]-1;
 
-	if(sur_elem[tnoct].empty()) {
-	  printf("WARNING: Node = "ST_ZU" has no elements\n", tnoct+1);
+	if(sur_elem[tnoct_].empty()) {
+	  printf("WARNING: Node = "ST_ZU" has no elements\n", tnoct_+1);
 	} else {
-	  size_t nsur = sur_elem[tnoct].size();
+	  size_t nsur = sur_elem[tnoct_].size();
 	  if (nsur > max_nsur)
 	    max_nsur = nsur;
 	}
 
-	++tnoct;
+	++tnoct_;
       }
+
+      ++telct;
     }
   }
 
-  std::vector<long long> start;
-  long long nnodes_per_elem = num_nodes_per_elem[0];
   long long max_side_nodes = nnodes_per_elem;
   long long side_nodes[max_side_nodes];
   long long mirror_nodes[max_side_nodes];
 
   /* Allocate memory necessary for the adjacency */
-  start.resize(num_nodes_);
+  start_.resize(num_nodes_);
 
   for (int i=0; i < max_side_nodes; i++) {
     side_nodes[i]=-999;
@@ -354,15 +404,53 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
   /* Find the adjacency for a nodal based decomposition */
   size_t nadj = 0;
   for(size_t ncnt=0; ncnt < num_nodes_; ncnt++) {
-    start[ncnt] = nadj;
+    start_[ncnt] = nadj;
     for(size_t ecnt=0; ecnt < sur_elem[ncnt].size(); ecnt++) {
       size_t elem = sur_elem[ncnt][ecnt];
       int nnodes = nnodes_per_elem;
       for(int i=0; i < nnodes; i++) {
-	;
+	long long entry = reconnect[elem][i];
+
+	if(ncnt != (size_t)entry &&
+	   in_list(entry,
+		   adj_.size()-start_[ncnt],
+		   &adj_[start_[ncnt]]) < 0) {
+	  adj_.push_back(entry);
+	}
       }
     }
+    nadj++;
   }
+
+  delete[] elem_blk_ids;
+  elem_blk_ids = NULL;
+  delete[] num_nodes_per_elem;
+  num_nodes_per_elem = NULL;
+  delete[] num_attr;
+  num_attr = NULL;
+  delete[] num_elem_this_blk;
+  num_elem_this_blk = NULL;
+
+  for(long long i = 0; i < num_elem_blk; i++){
+    delete[] elem_type[i];
+  }
+
+  delete[] elem_type;
+  elem_type = NULL;
+
+  for(long long b = 0; b < num_elem_blk; b++) {
+    delete[] connect[b];
+  }
+
+  delete[] connect;
+  connect = NULL;
+
+  for(long long b = 0; b < num_elem_; b++) {
+    delete[] reconnect[b];
+  }
+
+  delete[] reconnect;
+  reconnect = NULL;
 }
 
   

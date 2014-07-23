@@ -609,10 +609,10 @@ LOCA::Extended::MultiVector::multiply(
 
 }
 
-int
+NOX::size_type
 LOCA::Extended::MultiVector::length() const
 {
-  int len = 0;
+  NOX::size_type len = 0;
 
   // Sum lengths of all multivec block rows
   for (int i=0; i<numMultiVecRows; i++)

@@ -55,7 +55,13 @@
 #include "NOX_Config.h"
 #endif
 
+#include "Teuchos_ConfigDefs.hpp"
+
 #define NOX_MAX(a,b) ((a)>(b)) ? (a) : (b)
 #define NOX_MIN(a,b) ((a)<(b)) ? (a) : (b)
+
+namespace NOX {
+  typedef Teuchos::Ordinal size_type;
+}
 
 #endif

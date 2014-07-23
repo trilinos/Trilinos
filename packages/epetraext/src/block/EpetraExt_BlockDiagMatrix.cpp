@@ -388,8 +388,7 @@ int EpetraExt_BlockDiagMatrix::CopyAndPermute(const Epetra_SrcDistObject& Source
                                            int NumPermuteIDs,
                                            int * PermuteToLIDs,
                                            int * PermuteFromLIDs,
-                                           const Epetra_OffsetIndex * Indexor,
-                                           Epetra_CombineMode CombineMode){
+                                           const Epetra_OffsetIndex * Indexor){
   (void)Indexor;
 
   const EpetraExt_BlockDiagMatrix & A = dynamic_cast<const EpetraExt_BlockDiagMatrix &>(Source);
@@ -416,13 +415,6 @@ int EpetraExt_BlockDiagMatrix::CopyAndPermute(const Epetra_SrcDistObject& Source
   bool Case2 = false;
   // bool Case3 = false;
 
-  if(    CombineMode != Add
-      && CombineMode != Zero
-      && CombineMode != Insert
-      && CombineMode != Average
-      && CombineMode != AbsMax )
-    EPETRA_CHK_ERR(-1); //Unsupported CombinedMode, will default to Zero
-
   if (MaxElementSize==1) {
     Case1 = true;
     NumSameEntries = NumSameIDs;
@@ -442,10 +434,8 @@ int EpetraExt_BlockDiagMatrix::CopyAndPermute(const Epetra_SrcDistObject& Source
   // Do copy first
   if (NumSameIDs>0)
     if (To!=From) {
-      if (CombineMode==Add)         for (int j=0; j<NumSameEntries; j++) To[j] += From[j]; // Add to existing value
-      else if(CombineMode==Insert)  for (int j=0; j<NumSameEntries; j++) To[j] = From[j];
-      else if(CombineMode==AbsMax)  for (int j=0; j<NumSameEntries; j++) To[j] = EPETRA_MAX( To[j],std::abs(From[j]));
-      else if(CombineMode==Average) for (int j=0; j<NumSameEntries; j++) {To[j] += From[j]; To[j] *= 0.5;} // Not a true avg if >2 occurance of an ID
+	for (j=0; j<NumSameEntries; j++)
+	  To[j] = From[j];
     }
   // Do local permutation next
   if (NumPermuteIDs>0) {
@@ -453,10 +443,8 @@ int EpetraExt_BlockDiagMatrix::CopyAndPermute(const Epetra_SrcDistObject& Source
     // Point entry case
     if (Case1) {
       
-      if (CombineMode==Add)         for (int j=0; j<NumPermuteIDs; j++) To[PermuteToLIDs[j]] += From[PermuteFromLIDs[j]]; // Add to existing value
-      else if(CombineMode==Insert)  for (int j=0; j<NumPermuteIDs; j++) To[PermuteToLIDs[j]] = From[PermuteFromLIDs[j]];
-      else if(CombineMode==AbsMax)  for (int j=0; j<NumPermuteIDs; j++) To[PermuteToLIDs[j]] = EPETRA_MAX( To[PermuteToLIDs[j]],std::abs(From[PermuteFromLIDs[j]]));
-      else if(CombineMode==Average) for (int j=0; j<NumPermuteIDs; j++) {To[PermuteToLIDs[j]] += From[PermuteFromLIDs[j]]; To[PermuteToLIDs[j]] *= 0.5;} // Not a true avg if >2 occurance of an ID
+      for (j=0; j<NumPermuteIDs; j++) 
+	To[PermuteToLIDs[j]] = From[PermuteFromLIDs[j]];
     }
     // constant element size case
     else if (Case2) {
@@ -464,10 +452,8 @@ int EpetraExt_BlockDiagMatrix::CopyAndPermute(const Epetra_SrcDistObject& Source
       for (j=0; j<NumPermuteIDs; j++) {
 	jj = MaxElementSize*PermuteToLIDs[j];
 	jjj = MaxElementSize*PermuteFromLIDs[j];
-      if (CombineMode==Add)         for (k=0; k<MaxElementSize; k++) To[jj+k] += From[jjj+k]; // Add to existing value
-      else if(CombineMode==Insert)  for (k=0; k<MaxElementSize; k++) To[jj+k] = From[jjj+k];
-      else if(CombineMode==AbsMax)  for (k=0; k<MaxElementSize; k++) To[jj+k] = EPETRA_MAX( To[jj+k],std::abs(From[jjj+k]));
-      else if(CombineMode==Average) for (k=0; k<MaxElementSize; k++) {To[jj+k] += From[jjj+k]; To[jj+k] *= 0.5;} // Not a true avg if >2 occurance of an ID
+	  for (k=0; k<MaxElementSize; k++)
+	    To[jj+k] = From[jjj+k];
       }
     }
     
@@ -478,10 +464,8 @@ int EpetraExt_BlockDiagMatrix::CopyAndPermute(const Epetra_SrcDistObject& Source
 	jj = ToFirstPointInElementList[PermuteToLIDs[j]];
 	jjj = FromFirstPointInElementList[PermuteFromLIDs[j]];
 	int ElementSize = FromElementSizeList[PermuteFromLIDs[j]];
-      if (CombineMode==Add)         for (k=0; k<ElementSize; k++) To[jj+k] += From[jjj+k]; // Add to existing value
-      else if(CombineMode==Insert)  for (k=0; k<ElementSize; k++) To[jj+k] = From[jjj+k];
-      else if(CombineMode==AbsMax)  for (k=0; k<ElementSize; k++) To[jj+k] = EPETRA_MAX( To[jj+k],std::abs(From[jjj+k]));
-      else if(CombineMode==Average) for (k=0; k<ElementSize; k++) {To[jj+k] += From[jjj+k]; To[jj+k] *= 0.5;} // Not a true avg if >2 occurance of an ID
+	  for (k=0; k<ElementSize; k++)
+	    To[jj+k] = From[jjj+k];
       }
     }
   }

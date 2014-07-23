@@ -87,6 +87,19 @@ void order( PartVector & v )
   v.erase( iv , ev );
 }
 
+bool insert( ConstPartVector & v , const Part & part )
+{
+  const ConstPartVector::iterator e = v.end();
+        ConstPartVector::iterator i = v.begin();
+
+  i = std::lower_bound( i , e , part , PartLess() );
+
+  const bool new_member = i == e || *i != & part ;
+
+  if ( new_member ) { v.insert( i , &part ); }
+  return new_member ;
+}
+
 bool insert( PartVector & v , Part & part )
 {
   const PartVector::iterator e = v.end();
@@ -100,6 +113,16 @@ bool insert( PartVector & v , Part & part )
   return new_member ;
 }
 
+void get_part_and_all_subsets(const Part& part, ConstPartVector& part_and_all_subsets)
+{
+  insert(part_and_all_subsets, part);
+  
+  const PartVector& subsets = part.subsets();
+  for(size_t i=0; i<subsets.size(); ++i) {
+    get_part_and_all_subsets(*subsets[i], part_and_all_subsets);
+  }
+}
+
 void remove( PartVector & v , Part & part )
 {
   const PartVector::iterator e = v.end();
@@ -108,6 +131,16 @@ void remove( PartVector & v , Part & part )
   i = std::lower_bound( i , e , part , PartLess() );
 
   if ( i != e && *i == & part ) { v.erase( i ); }
+}
+
+bool contain( const ConstPartVector & v , const Part & part )
+{
+  ConstPartVector::const_iterator e = v.end();
+  ConstPartVector::const_iterator i = v.begin();
+
+  i = std::lower_bound( i , e , part , PartLess() );
+
+  return i != e && *i == & part ;
 }
 
 bool contain( const PartVector & v , const Part & part )

@@ -118,20 +118,20 @@ StatusType NormUpdate::checkStatus(const Solver::Generic& problem,
 
   updateVectorPtr->update(1.0, curSoln, -1.0, oldSoln, 0.0);
 
-  int n = (scaleType == Scaled) ? updateVectorPtr->length() : 0;
+  NOX::size_type n = (scaleType == Scaled) ? updateVectorPtr->length() : 0;
 
   switch (normType) {
 
   case NOX::Abstract::Vector::TwoNorm:
     normUpdate = updateVectorPtr->norm();
     if (scaleType == Scaled)
-      normUpdate /= sqrt(1.0 * n);
+      normUpdate /= sqrt(1.0 * static_cast<double>(n));
     break;
 
   default:
     normUpdate = updateVectorPtr->norm(normType);
     if (scaleType == Scaled)
-      normUpdate /= n;
+      normUpdate /= static_cast<double>(n);
     break;
 
   }

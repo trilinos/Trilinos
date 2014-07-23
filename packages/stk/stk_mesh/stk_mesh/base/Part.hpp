@@ -189,6 +189,7 @@ void order( OrdinalVector & v )
 /** \brief  Insert a part into a properly ordered collection of parts.
  *          Returns true if this is a new insertion.
  */
+bool insert( ConstPartVector & , const Part & );
 bool insert( PartVector & , Part & );
 
 inline
@@ -206,6 +207,8 @@ bool insert_ordinal( OrdinalVector & v , unsigned part_ordinal )
   return true ;
 }
 
+void get_part_and_all_subsets(const Part& part, ConstPartVector& part_and_all_subsets);
+
 /** \brief  Remove a part from a properly ordered collection of parts. */
 void remove( PartVector & , Part & );
 
@@ -213,6 +216,7 @@ void remove( PartVector & , Part & );
 Part * find( const PartVector & , const std::string & );
 
 /** \brief  Query containment within properly ordered PartVector */
+bool contain( const ConstPartVector & , const Part & );
 bool contain( const PartVector & , const Part & );
 
 template<class Iterator>

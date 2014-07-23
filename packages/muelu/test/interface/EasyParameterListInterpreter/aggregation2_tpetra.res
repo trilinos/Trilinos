@@ -8,7 +8,7 @@ transpose: use implicit = 0   [default]
 smoother: pre or post = both   [default]
 multigrid algorithm = sa   [default]
 problem: symmetric = 1   [default]
-aggregation: visualize = 0   [default]
+aggregation: export visualization data = 0   [default]
 repartition: enable = 0   [default]
 
 Level 0
@@ -31,9 +31,9 @@ Level 1
    Build (MueLu::CoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
     lightweight wrap = 1
-    aggregation threshold = 0   [default]
-    Dirichlet detection threshold = 0   [default]
-    algorithm = original   [default]
+    aggregation: drop tol = 0   [default]
+    aggregation: Dirichlet threshold = 0   [default]
+    aggregation: drop scheme = classical   [default]
     
    [empty list]
    
@@ -50,13 +50,13 @@ Level 1
    
   [empty list]
   
- Damping factor = 1.33333   [default]
+ sa: damping factor = 1.33333   [default]
  
  Transpose P (MueLu::TransPFactory)
  [empty list]
  
  Computing Ac (MueLu::RAPFactory)
- implicit transpose = 0
+ transpose: use implicit = 0
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
  CheckMainDiagonal = 0   [default]
@@ -81,9 +81,9 @@ Level 2
    Build (MueLu::CoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
     lightweight wrap = 1
-    aggregation threshold = 0   [default]
-    Dirichlet detection threshold = 0   [default]
-    algorithm = original   [default]
+    aggregation: drop tol = 0   [default]
+    aggregation: Dirichlet threshold = 0   [default]
+    aggregation: drop scheme = classical   [default]
     
    [empty list]
    
@@ -100,13 +100,13 @@ Level 2
    
   [empty list]
   
- Damping factor = 1.33333   [default]
+ sa: damping factor = 1.33333   [default]
  
  Transpose P (MueLu::TransPFactory)
  [empty list]
  
  Computing Ac (MueLu::RAPFactory)
- implicit transpose = 0
+ transpose: use implicit = 0
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
  CheckMainDiagonal = 0   [default]

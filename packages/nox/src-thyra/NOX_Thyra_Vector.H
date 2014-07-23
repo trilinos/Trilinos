@@ -201,7 +201,7 @@ namespace NOX {
       //@}
 
       //! Return the length of vector.
-      int length() const;
+      NOX::size_type length() const;
 
       //! Print the vector.  To be used for debugging only.
       void print(std::ostream& stream) const;

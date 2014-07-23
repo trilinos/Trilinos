@@ -220,7 +220,7 @@ namespace LOCA {
        * \brief NOX::Abstract::Vector length function.  Computes sum of
        * lengths of stored vectors plus number of scalars
        */
-      virtual int
+      virtual NOX::size_type
       length() const;
 
       /*!

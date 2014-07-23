@@ -66,6 +66,7 @@
 #include "MueLu_GraphBase.hpp"
 #include "MueLu_Graph.hpp"
 #include "MueLu_LWGraph.hpp"
+#include "MueLu_MasterList.hpp"
 #include "MueLu_PreDropFunctionBaseClass.hpp"
 #include "MueLu_PreDropFunctionConstVal.hpp"
 #include "MueLu_Monitor.hpp"
@@ -78,19 +79,21 @@ namespace MueLu {
   RCP<const ParameterList> CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+#define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
+    SET_VALID_ENTRY("aggregation: drop tol");
+    SET_VALID_ENTRY("aggregation: Dirichlet threshold");
+    SET_VALID_ENTRY("aggregation: drop scheme");
+    {
+      typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
+      validParamList->getEntry("aggregation: drop scheme").setValidator(
+        rcp(new validatorType(Teuchos::tuple<std::string>("original", "distance laplacian", "classical"), "aggregation: drop scheme")));
+    }
+#undef  SET_VALID_ENTRY
+    validParamList->set< bool >                  ("lightweight wrap",           false, "Experimental option for lightweight graph access");
 
     validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Generating factory for UnAmalgamationInfo");
     validParamList->set< RCP<const FactoryBase> >("Coordinates",        Teuchos::null, "Generating factory for Coordinates");
-    validParamList->set< bool >                  ("lightweight wrap",           false, "Experimental option for lightweight graph access");
-    validParamList->set< SC >                    ("aggregation threshold",       zero, "Aggregation dropping threshold");
-    validParamList->set< SC >                    ("Dirichlet detection threshold", zero, "Threshold for determining whether entries are zero during Dirichlet row detection");
-    {
-      typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
-      RCP<validatorType> typeValidator = rcp(new validatorType(Teuchos::tuple<std::string>("original", "laplacian", "classical"), "algorithm"));
-      validParamList->set< std::string >         ("algorithm",             "original", "Dropping algorithm", typeValidator);
-    }
 
     return validParamList;
   }
@@ -104,7 +107,7 @@ namespace MueLu {
 
     const ParameterList& pL = GetParameterList();
     if (pL.get<bool>("lightweight wrap") == true) {
-      if (pL.get<std::string>("algorithm") == "laplacian")
+      if (pL.get<std::string>("aggregation: drop scheme") == "distance laplacian")
         Input(currentLevel, "Coordinates");
 
     } else {
@@ -130,21 +133,21 @@ namespace MueLu {
     GetOStream(Parameters0) << "lightweight wrap = " << doExperimentalWrap << std::endl;
 
     if (doExperimentalWrap) {
-      std::string algo = pL.get<std::string>("algorithm");
+      std::string algo = pL.get<std::string>("aggregation: drop scheme");
       if (algo == "classical")
         algo = "original";
 
       TEUCHOS_TEST_FOR_EXCEPTION(predrop_ != null   && algo != "original", Exceptions::RuntimeError, "Dropping function must not be provided for \"" << algo << "\" algorithm");
-      TEUCHOS_TEST_FOR_EXCEPTION(algo != "original" && algo != "laplacian", Exceptions::RuntimeError, "\"algorithm\" must be one of (original|laplacian)");
+      TEUCHOS_TEST_FOR_EXCEPTION(algo != "original" && algo != "distance laplacian", Exceptions::RuntimeError, "\"algorithm\" must be one of (original|distance laplacian)");
 
-      SC threshold = Teuchos::as<SC>(pL.get<SC>("aggregation threshold"));
+      SC threshold = as<SC>(pL.get<double>("aggregation: drop tol"));
       GetOStream(Runtime0) << "algorithm = \"" << algo << "\": threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << std::endl;
       Set(currentLevel, "Filtering", (threshold != STS::zero()));
 
-      const typename STS::magnitudeType dirichletThreshold = STS::magnitude(pL.get<SC>("Dirichlet detection threshold"));
+      const typename STS::magnitudeType dirichletThreshold = STS::magnitude(as<SC>(pL.get<double>("aggregation: Dirichlet threshold")));
 
       GO numDropped = 0, numTotal = 0;
-      std::string graphType="unamalgamated"; //for description purposes only
+      std::string graphType = "unamalgamated"; //for description purposes only
       if (algo == "original") {
         if (predrop_ == null) {
           // ap: this is a hack: had to declare predrop_ as mutable
@@ -364,7 +367,7 @@ namespace MueLu {
           throw Exceptions::NotImplemented("Fast CoalesceDrop with multiple DOFs and dropping is not yet implemented.");
         }
 
-      } else if (algo == "laplacian") {
+      } else if (algo == "distance laplacian") {
         LO blkSize   = A->GetFixedBlockSize();
         GO indexBase = A->getRowMap()->getIndexBase();
 

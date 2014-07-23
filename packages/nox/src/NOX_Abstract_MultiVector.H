@@ -225,7 +225,7 @@ namespace NOX {
       //@}
 
       //! Return the length of multi-vector.
-      virtual int length() const = 0;
+      virtual NOX::size_type length() const = 0;
 
       //! Return the number of vectors in the multi-vector.
       virtual int numVectors() const = 0;

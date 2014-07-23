@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -56,8 +56,8 @@ public:
   ~TestMemoryTrackingEntry();
 
   template< class T >
-  TestMemoryTrackingEntry( const T * ptr , const unsigned length , const std::string & label )
-    : Kokkos::Impl::MemoryTrackingEntry( label , typeid(T) , ptr , sizeof(T) * length )
+  TestMemoryTrackingEntry( const T * ptr , const unsigned length , const std::string & theLabel )
+    : Kokkos::Impl::MemoryTrackingEntry( theLabel , typeid(T) , ptr , sizeof(T) * length )
     {}
 };
 
@@ -98,11 +98,11 @@ public:
     ASSERT_TRUE( info_a->label   == std::string("a") );
     ASSERT_TRUE( info_a->type    == typeid( int ) );
     ASSERT_TRUE( info_a->count() == 1 );
-    
+
     ASSERT_TRUE( info_b->label   == std::string("b") );
     ASSERT_TRUE( info_b->type    == typeid( double ) );
     ASSERT_TRUE( info_b->count() == 1 );
-    
+
     ASSERT_TRUE( info_c->label   == std::string("c[10]") );
     ASSERT_TRUE( info_c->type    == typeid( long ) );
     ASSERT_TRUE( info_c->count() == 1 );
