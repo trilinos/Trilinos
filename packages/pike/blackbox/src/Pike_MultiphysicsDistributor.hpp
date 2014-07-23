@@ -13,6 +13,19 @@
 
 namespace pike {
 
+  /** \brief Translates rank on comm A to its corresponding rank on comm B.
+      
+      @param rankA Rank of a process on Comm A
+      @param commA MPI communicator A
+      @param commB MPI communicator B
+      @returns Rerturn the rank of rankA in the Comm B space
+
+      \relates pike::MultiphysicsDistributor
+   */
+  int translateMpiRank(const int& rankA, 
+		       const Teuchos::Comm<int>& commA,
+		       const Teuchos::Comm<int>& commB);
+
   /** \brief Multiphysics driver utility that builds MPI
       sub-communicators and specialized ostreams for applications and
       data transfers.

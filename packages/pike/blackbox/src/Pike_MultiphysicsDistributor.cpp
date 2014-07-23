@@ -10,6 +10,31 @@
 #include "Pike_MultiphysicsDistributor.hpp"
 
 namespace pike {
+  int translateMpiRank(const int& rankA, 
+		       const Teuchos::Comm<int>& commA,
+		       const Teuchos::Comm<int>& commB)
+  {
+    MPI_Group groupA;
+    {
+      const Teuchos::MpiComm<int>* teuchosMpiCommA = dynamic_cast<const Teuchos::MpiComm<int>* >(&commA);
+      TEUCHOS_ASSERT(teuchosMpiCommA != 0);
+      MPI_Comm rawMpiCommA = (*teuchosMpiCommA->getRawMpiComm())();
+      MPI_Comm_group(rawMpiCommA,&groupA);
+    }
+    
+    MPI_Group groupB;
+    {
+      const Teuchos::MpiComm<int>* teuchosMpiCommB = dynamic_cast<const Teuchos::MpiComm<int>* >(&commB);
+      TEUCHOS_ASSERT(teuchosMpiCommB != 0);
+      MPI_Comm rawMpiCommB = (*teuchosMpiCommB->getRawMpiComm())();
+      MPI_Comm_group(rawMpiCommB,&groupB);
+    }
+    
+    int rankB = -1;
+    MPI_Group_translate_ranks(groupA,1,&rankA,groupB,&rankB);
+    
+    return rankB;
+  }
 
   MultiphysicsDistributor::MultiphysicsDistributor(const std::string& distributorName) :
     myName_(distributorName),

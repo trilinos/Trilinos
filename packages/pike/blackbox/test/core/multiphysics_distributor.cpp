@@ -111,6 +111,21 @@ namespace pike {
     *dist.getApplicationOStream(Peregrine) << "APPLICATION OSTREAM TEST!" << std::endl;
     *pout << "PARALLEL OSTREAM TEST!" << std::endl;
 
+
+
+    // Test the translate ranks function.
+    if (dist.transferExistsOnProcess(Insilico_Peregrine)) {
+      int transferRankI = pike::translateMpiRank(dist.getPrintRank(Insilico),
+      						*dist.getGlobalComm(),
+						 *dist.getTransferComm(Insilico_Peregrine));
+      TEST_EQUALITY(transferRankI, 0);
+      
+      int transferRankP = pike::translateMpiRank(dist.getPrintRank(Peregrine),
+      						*dist.getGlobalComm(),
+						 *dist.getTransferComm(Insilico_Peregrine));
+      TEST_EQUALITY(transferRankP, 3);
+    }
+
   }
 
   TEUCHOS_UNIT_TEST(MultiphysicsDistributor, overlapping_apps)
