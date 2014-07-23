@@ -171,7 +171,7 @@ public:
   typedef typename base_type::value_type value_type ;
   typedef long scalar_type ;
 
-  RuntimeReduceFunctorFinal( const size_t nwork , const size_t count ) : base_type(nwork,count) {}
+  RuntimeReduceFunctorFinal( const size_t theNwork , const size_t count ) : base_type(theNwork,count) {}
 
   KOKKOS_INLINE_FUNCTION
   void final( value_type dst ) const

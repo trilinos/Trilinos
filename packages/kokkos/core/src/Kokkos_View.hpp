@@ -597,12 +597,12 @@ public:
         const size_t >::type n8 = 0 )
     : m_ptr_on_device(0)
     {
-      typedef typename traits::memory_space  memory_space_ ;
-      typedef typename traits::value_type    value_type_ ;
+      // typedef typename traits::memory_space  memory_space_ ; // unused
+      // typedef typename traits::value_type    value_type_ ; // unused
 
       m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7, n8 );
       m_offset_map.set_padding();
-     
+
       m_ptr_on_device = data_handle_type::allocate( label , m_offset_map.capacity() );
 
       (void) Impl::ViewFill< View >( *this , typename traits::value_type() );
@@ -627,8 +627,8 @@ public:
         const size_t >::type n8 = 0 )
     : m_ptr_on_device(0)
     {
-      typedef typename traits::memory_space  memory_space_ ;
-      typedef typename traits::value_type    value_type_ ;
+      // typedef typename traits::memory_space  memory_space_ ; // unused
+      // typedef typename traits::value_type    value_type_ ; // unused
 
       m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7, n8 );
       m_offset_map.set_padding();
@@ -647,8 +647,8 @@ public:
         const typename traits::array_layout >::type layout )
     : m_ptr_on_device(0)
     {
-      typedef typename traits::memory_space  memory_space_ ;
-      typedef typename traits::value_type    value_type_ ;
+      // typedef typename traits::memory_space  memory_space_ ; // unused
+      // typedef typename traits::value_type    value_type_ ; // unused
 
       m_offset_map.assign( layout );
       m_offset_map.set_padding();
@@ -666,8 +666,8 @@ public:
         ), typename traits::array_layout const & >::type layout )
     : m_ptr_on_device(0)
     {
-      typedef typename traits::memory_space  memory_space_ ;
-      typedef typename traits::value_type    value_type_ ;
+      // typedef typename traits::memory_space  memory_space_ ; // unused
+      // typedef typename traits::value_type    value_type_ ; // unused
 
       m_offset_map.assign( layout );
       m_offset_map.set_padding();
@@ -738,8 +738,8 @@ public:
     }
 
   explicit KOKKOS_INLINE_FUNCTION
-  View( const ViewWithoutManaging & 
-      , typename traits::value_type * ptr 
+  View( const ViewWithoutManaging &
+      , typename traits::value_type * ptr
       , typename traits::array_layout const & layout )
     : m_ptr_on_device(ptr)
     {
