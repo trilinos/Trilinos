@@ -1334,28 +1334,28 @@ namespace { // (anonymous)
       mag_type* const gblSum = theNorms.ptr_on_device ();
       reduceAll<int, mag_type> (comm, REDUCE_SUM, static_cast<int> (numNorms),
                                 lclSum, gblSum);
+    }
 
-      // Replace the norm-squared results with their square roots in
-      // place, to get the final output.  If the device memory and the
-      // host memory are the same, it probably doesn't pay to launch a
-      // parallel kernel for that, since there isn't enough
-      // parallelism for the typical MultiVector case.
-      typedef typename device_type::host_mirror_device_type host_mirror_device_type;
-      const bool inHostMemory = Kokkos::Impl::is_same<typename device_type::memory_space,
-        typename host_mirror_device_type::memory_space>::value;
-      if (inHostMemory) {
-        for (size_t j = 0; j < numNorms; ++j) {
-          theNorms(j) = Kokkos::Details::ArithTraits<mag_type>::sqrt (theNorms(j));
-        }
+    // Replace the norm-squared results with their square roots in
+    // place, to get the final output.  If the device memory and the
+    // host memory are the same, it probably doesn't pay to launch a
+    // parallel kernel for that, since there isn't enough
+    // parallelism for the typical MultiVector case.
+    typedef typename device_type::host_mirror_device_type host_mirror_device_type;
+    const bool inHostMemory = Kokkos::Impl::is_same<typename device_type::memory_space,
+      typename host_mirror_device_type::memory_space>::value;
+    if (inHostMemory) {
+      for (size_t j = 0; j < numNorms; ++j) {
+        theNorms(j) = Kokkos::Details::ArithTraits<mag_type>::sqrt (theNorms(j));
       }
-      else {
-        // There's not as much parallelism now, but that's OK.  The
-        // point of doing parallel dispatch here is to keep the norm
-        // results on the device, thus avoiding a copy to the host and
-        // back again.
-        Kokkos::SquareRootFunctor<norms_view_type> f (theNorms);
-        Kokkos::parallel_for (numNorms, f);
-      }
+    }
+    else {
+      // There's not as much parallelism now, but that's OK.  The
+      // point of doing parallel dispatch here is to keep the norm
+      // results on the device, thus avoiding a copy to the host and
+      // back again.
+      Kokkos::SquareRootFunctor<norms_view_type> f (theNorms);
+      Kokkos::parallel_for (numNorms, f);
     }
   }
 
