@@ -831,13 +831,24 @@ namespace Tpetra {
         }
         return true;
       }
-      else { // neither *this nor map are contiguous
-        // std::equal requires that the latter range is as large as
-        // the former.  We know the ranges have equal length, because
-        // they have the same number of local entries.
-        ArrayView<const GO> lhsElts =     getNodeElementList ();
-        ArrayView<const GO> rhsElts = map.getNodeElementList ();
-        return std::equal (lhsElts.begin (), lhsElts.end (), rhsElts.begin ());
+      else if (this->lgMap_.getRawPtr () == map.lgMap_.getRawPtr ()) {
+        // Pointers to LID->GID "map" (actually just an array) are the
+        // same, and the number of GIDs are the same.
+        return this->getNodeNumElements () == map.getNodeNumElements ();
+      }
+      else { // we actually have to compare the GIDs
+        if (this->getNodeNumElements () != map.getNodeNumElements ()) {
+          return false; // We already checked above, but check just in case
+        }
+        else {
+          ArrayView<const GO> lhsElts =     getNodeElementList ();
+          ArrayView<const GO> rhsElts = map.getNodeElementList ();
+
+          // std::equal requires that the latter range is as large as
+          // the former.  We know the ranges have equal length, because
+          // they have the same number of local entries.
+          return std::equal (lhsElts.begin (), lhsElts.end (), rhsElts.begin ());
+        }
       }
     }
   }
