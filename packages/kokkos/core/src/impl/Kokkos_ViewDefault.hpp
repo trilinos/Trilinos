@@ -378,7 +378,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
   }
 
   //------------------------------------
-  /** \brief  Extract Rank-1 array from LayoutLeft Rank-2 array. */
+  /** \brief  Extract Rank-1 array from LayoutLeft Rank-2 array, using ALL as first argument. */
   template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM >
   KOKKOS_INLINE_FUNCTION
@@ -405,6 +405,45 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
 
     dst.m_tracking.increment( dst.ptr_on_device() );
   }
+
+
+  //------------------------------------
+  /** \brief  Extract Rank-1 array from LayoutLeft Rank-2 array, using a row range as first argument. */
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM ,
+            typename IndexType >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
+                  const View<ST,SL,SD,SM,Specialize> & src ,
+                  const std::pair<IndexType, IndexType>& rowRange,
+                  const typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
+                    &&
+                    is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutLeft >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 2 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank == 1 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 1 )
+                  ), IndexType >::type columnIndex )
+  {
+    dst.m_tracking.decrement( dst.ptr_on_device() );
+
+    if (rowRange.first < rowRange.second) { // valid row range
+      dst.m_tracking = src.m_tracking;
+      dst.m_offset_map.N0 = rowRange.second - rowRange.first;
+      dst.m_ptr_on_device = src.ptr_on_device () +
+        src.m_offset_map (rowRange.first, columnIndex);
+
+      dst.m_tracking.increment( dst.ptr_on_device() );
+    }
+    else { // not a valid row range
+      dst.m_offset_map.N0 = 0;
+      dst.m_ptr_on_device = 0;
+    }
+  }
+
 
   //------------------------------------
   /** \brief  Extract Rank-1 array from LayoutRight Rank-2 array. */
