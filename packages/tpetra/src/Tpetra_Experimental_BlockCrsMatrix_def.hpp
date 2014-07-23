@@ -935,7 +935,7 @@ namespace Experimental {
         ! this->graph_.isFillComplete () ||
         src->graph_.getColMap ().is_null () ||
         this->graph_.getColMap ().is_null ()) {
-      *localError_ = true;
+      * (const_cast<this_type*> (this)->localError_) = true;
       if ((*errs_).is_null ()) {
         *errs_ = Teuchos::rcp (new std::ostringstream ());
       }
@@ -977,12 +977,7 @@ namespace Experimental {
       }
     }
 
-    // FIXME (mfh 19 May 2014) Return false for now, as a way to
-    // signal that the DistObject functions haven't been tested yet.
-    // Returning false tells the Import or Export not to proceed.
-    // Once we finish and test those functions, we need to change this
-    // to return true.
-    return false;
+    return ! (* (this->localError_));
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -1014,40 +1009,103 @@ namespace Experimental {
 
     // Copy the initial sequence of rows that are the same.
     //
-    // FIXME (mfh 20 May 2014) The two graphs might have different
-    // column Maps, so we need to do this using global column indices.
-    for (size_t localRow = 0; localRow < numSameIDs; ++localRow) {
-      const LO* localCols;
-      Scalar* vals;
-      LO numEntries;
-      // If this call fails, that means the mesh row local index is
-      // invalid.  That means the Import or Export is invalid somehow.
-      LO err = src->getLocalRowView (localRow, localCols, vals, numEntries);
-      if (err != 0) {
-        srcInvalidRow = true;
+    // The two graphs might have different column Maps, so we need to
+    // do this using global column indices.  This is purely local, so
+    // we only need to check for local sameness of the two column
+    // Maps.
+
+    const map_type& srcMap = * (src->graph_.getColMap ());
+    const map_type& tgtMap = * (this->graph_.getColMap ());
+    const bool canUseLocalColumnIndices = srcMap.locallySameAs (tgtMap);
+    const size_t numPermute =
+      std::min (permuteToLIDs.size (), permuteFromLIDs.size ());
+
+    if (canUseLocalColumnIndices) {
+      // Copy local rows that are the "same" in both source and target.
+      for (size_t localRow = 0; localRow < numSameIDs; ++localRow) {
+        const LO* lclSrcCols;
+        Scalar* vals;
+        LO numEntries;
+        // If this call fails, that means the mesh row local index is
+        // invalid.  That means the Import or Export is invalid somehow.
+        LO err = src->getLocalRowView (localRow, lclSrcCols, vals, numEntries);
+        if (err != 0) {
+          srcInvalidRow = true;
+        }
+        else {
+          err = this->replaceLocalValues (localRow, lclSrcCols, vals, numEntries);
+          if (err != numEntries) {
+            dstInvalidCol = true;
+          }
+        }
       }
-      else {
-        err = this->replaceLocalValues (localRow, localCols, vals, numEntries);
-        if (err != numEntries) {
-          dstInvalidCol = true;
+
+      // Copy the "permute" local rows.
+      for (size_t k = 0; k < numPermute; ++k) {
+        const LO* lclSrcCols;
+        Scalar* vals;
+        LO numEntries;
+        LO err = src->getLocalRowView (permuteFromLIDs[k], lclSrcCols, vals, numEntries);
+        if (err != 0) {
+          srcInvalidRow = true;
+        }
+        else {
+          err = this->replaceLocalValues (permuteFromLIDs[k], lclSrcCols, vals, numEntries);
+          if (err != numEntries) {
+            dstInvalidCol = true;
+          }
         }
       }
     }
+    else {
+      // Reserve space to store the destination matrix's local column indices.
+      Teuchos::Array<LO> lclDstCols (src->graph_.getNodeMaxNumRowEntries ());
 
-    const size_t numPermute =
-      std::min (permuteToLIDs.size (), permuteFromLIDs.size ());
-    for (size_t k = 0; k < numPermute; ++k) {
-      const LO* localCols;
-      Scalar* vals;
-      LO numEntries;
-      LO err = src->getLocalRowView (permuteFromLIDs[k], localCols, vals, numEntries);
-      if (err != 0) {
-        srcInvalidRow = true;
+      // Copy local rows that are the "same" in both source and target.
+      for (size_t localRow = 0; localRow < numSameIDs; ++localRow) {
+        const LO* lclSrcCols;
+        Scalar* vals;
+        LO numEntries;
+        // If this call fails, that means the mesh row local index is
+        // invalid.  That means the Import or Export is invalid somehow.
+        LO err = src->getLocalRowView (localRow, lclSrcCols, vals, numEntries);
+        if (err != 0) {
+          srcInvalidRow = true;
+        }
+        else {
+          // Convert the source matrix's local column indices to the
+          // destination matrix's local column indices.
+          Teuchos::ArrayView<LO> lclDstColsView = lclDstCols.view (0, numEntries);
+          for (LO k = 0; k < numEntries; ++k) {
+            lclDstColsView[k] = tgtMap.getLocalElement (srcMap.getGlobalElement (lclSrcCols[k]));
+          }
+          err = this->replaceLocalValues (localRow, lclDstColsView.getRawPtr (), vals, numEntries);
+          if (err != numEntries) {
+            dstInvalidCol = true;
+          }
+        }
       }
-      else {
-        err = this->replaceLocalValues (permuteFromLIDs[k], localCols, vals, numEntries);
-        if (err != numEntries) {
-          dstInvalidCol = true;
+
+      // Copy the "permute" local rows.
+      for (size_t k = 0; k < numPermute; ++k) {
+        const LO* lclSrcCols;
+        Scalar* vals;
+        LO numEntries;
+        LO err = src->getLocalRowView (permuteFromLIDs[k], lclSrcCols, vals, numEntries);
+        if (err != 0) {
+          srcInvalidRow = true;
+        }
+        else {
+          // Convert the source matrix's local column indices to the
+          // destination matrix's local column indices.
+          Teuchos::ArrayView<LO> lclDstColsView = lclDstCols.view (0, numEntries);
+          for (LO j = 0; j < numEntries; ++j) {
+            lclDstColsView[j] = tgtMap.getLocalElement (srcMap.getGlobalElement (lclSrcCols[j]));
+          }
+          err = this->replaceLocalValues (permuteFromLIDs[k], lclDstColsView.getRawPtr (), vals, numEntries);
+          if (err != numEntries) {
+            dstInvalidCol = true;
+          }
         }
       }
     }
@@ -1298,7 +1356,7 @@ namespace Experimental {
                     Tpetra::Distributor& /* distor */,
                     Tpetra::CombineMode CM)
   {
-    if (CM == ADD && CM != INSERT && CM != REPLACE && CM != ABSMAX && CM != ZERO) {
+    if (CM != ADD && CM != INSERT && CM != REPLACE && CM != ABSMAX && CM != ZERO) {
       * (this->localError_) = true;
       if ((*errs_).is_null ()) {
         *errs_ = Teuchos::rcp (new std::ostringstream ());
@@ -1415,6 +1473,206 @@ namespace Experimental {
         * (localError_) = true;
       }
     }
+  }
+
+
+  template<class Scalar, class LO, class GO, class Node>
+  std::string
+  BlockCrsMatrix<Scalar, LO, GO, Node>::description () const
+  {
+    using Teuchos::TypeNameTraits;
+    std::ostringstream os;
+    os << "\"Tpetra::BlockCrsMatrix\": { "
+       << "Template parameters: { "
+       << "Scalar: " << TypeNameTraits<Scalar>::name ()
+       << "LO: " << TypeNameTraits<LO>::name ()
+       << "GO: " << TypeNameTraits<GO>::name ()
+       << "Node: " << TypeNameTraits<Node>::name ()
+       << " }"
+       << ", Label: \"" << this->getObjectLabel () << "\""
+       << ", Global dimensions: ["
+       << graph_.getDomainMap ()->getGlobalNumElements () << ", "
+       << graph_.getRangeMap ()->getGlobalNumElements () << "]"
+       << ", Block size: " << getBlockSize ()
+       << " }";
+    return os.str ();
+  }
+
+
+  template<class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  describe (Teuchos::FancyOStream& out,
+            const Teuchos::EVerbosityLevel verbLevel) const
+  {
+    using Teuchos::ArrayRCP;
+    using Teuchos::CommRequest;
+    using Teuchos::FancyOStream;
+    using Teuchos::getFancyOStream;
+    using Teuchos::ireceive;
+    using Teuchos::isend;
+    using Teuchos::outArg;
+    using Teuchos::TypeNameTraits;
+    using Teuchos::VERB_DEFAULT;
+    using Teuchos::VERB_NONE;
+    using Teuchos::VERB_LOW;
+    // using Teuchos::VERB_MEDIUM;
+    // using Teuchos::VERB_HIGH;
+    using Teuchos::VERB_EXTREME;
+    using Teuchos::RCP;
+    using Teuchos::wait;
+    using std::endl;
+
+    // Set default verbosity if applicable.
+    const Teuchos::EVerbosityLevel vl =
+      (verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
+
+    if (vl == VERB_NONE) {
+      return; // print nothing
+    }
+
+    // describe() always starts with a tab before it prints anything.
+    Teuchos::OSTab tab0 (out);
+
+    out << "\"Tpetra::BlockCrsMatrix\":" << endl;
+    Teuchos::OSTab tab1 (out);
+
+    out << "Template parameters:" << endl;
+    {
+      Teuchos::OSTab tab2 (out);
+      out << "Scalar: " << TypeNameTraits<Scalar>::name () << endl
+          << "LO: " << TypeNameTraits<LO>::name () << endl
+          << "GO: " << TypeNameTraits<GO>::name () << endl
+          << "Node: " << TypeNameTraits<Node>::name () << endl;
+    }
+    out << "Label: \"" << this->getObjectLabel () << "\"" << endl
+        << "Global dimensions: ["
+        << graph_.getDomainMap ()->getGlobalNumElements () << ", "
+        << graph_.getRangeMap ()->getGlobalNumElements () << "]" << endl;
+
+    const LO blockSize = getBlockSize ();
+    out << "Block size: " << blockSize << endl;
+
+    if (vl >= VERB_EXTREME) {
+      const Teuchos::Comm<int>& comm = * (graph_.getMap ()->getComm ());
+      const int myRank = comm.getRank ();
+      const int numProcs = comm.getSize ();
+
+      // Print the calling process' data to the given output stream.
+      RCP<std::ostringstream> lclOutStrPtr (new std::ostringstream ());
+      RCP<FancyOStream> osPtr = getFancyOStream (lclOutStrPtr);
+      FancyOStream& os = *osPtr;
+      os << "Process " << myRank << ":" << endl;
+      Teuchos::OSTab tab2 (os);
+
+      const map_type& meshRowMap = * (graph_.getRowMap ());
+      const map_type& meshColMap = * (graph_.getColMap ());
+      for (LO meshLclRow = meshRowMap.getMinLocalIndex ();
+           meshLclRow <= meshRowMap.getMaxLocalIndex ();
+           ++meshLclRow) {
+        const GO meshGblRow = meshRowMap.getGlobalElement (meshLclRow);
+        os << "Row " << meshGblRow << ": {";
+
+        const LO* lclColInds = NULL;
+        Scalar* vals = NULL;
+        LO numInds = 0;
+        this->getLocalRowView (meshLclRow, lclColInds, vals, numInds);
+
+        for (LO k = 0; k < numInds; ++k) {
+          const GO gblCol = meshColMap.getGlobalElement (lclColInds[k]);
+
+          os << "Col " << gblCol << ": [";
+          for (LO i = 0; i < blockSize; ++i) {
+            for (LO j = 0; j < blockSize; ++j) {
+              os << vals[blockSize*blockSize*k + i*blockSize + j];
+              if (j + 1 < blockSize) {
+                os << ", ";
+              }
+            }
+            if (i + 1 < blockSize) {
+              os << "; ";
+            }
+          }
+          os << "]";
+          if (k + 1 < numInds) {
+            os << ", ";
+          }
+        }
+        os << "}" << endl;
+      }
+
+      // Print data on Process 0.  This will automatically respect the
+      // current indentation level.
+      if (myRank == 0) {
+        out << lclOutStrPtr->str ();
+        lclOutStrPtr = Teuchos::null; // clear it to save space
+      }
+
+      const int sizeTag = 1337;
+      const int dataTag = 1338;
+
+      ArrayRCP<char> recvDataBuf; // only used on Process 0
+
+      // Send string sizes and data from each process in turn to
+      // Process 0, and print on that process.
+      for (int p = 1; p < numProcs; ++p) {
+        if (myRank == 0) {
+          // Receive the incoming string's length.
+          ArrayRCP<size_t> recvSize (1);
+          recvSize[0] = 0;
+          RCP<CommRequest<int> > recvSizeReq =
+            ireceive<int, size_t> (recvSize, p, sizeTag, comm);
+          wait<int> (comm, outArg (recvSizeReq));
+          const size_t numCharsToRecv = recvSize[0];
+
+          // Allocate space for the string to receive.  Reuse receive
+          // buffer space if possible.  We can do this because in the
+          // current implementation, we only have one receive in
+          // flight at a time.  Leave space for the '\0' at the end,
+          // in case the sender doesn't send it.
+          if (recvDataBuf.size () < numCharsToRecv + 1) {
+            recvDataBuf.resize (numCharsToRecv + 1);
+          }
+          ArrayRCP<char> recvData = recvDataBuf.persistingView (0, numCharsToRecv);
+          // Post the receive of the actual string data.
+          RCP<CommRequest<int> > recvDataReq =
+            ireceive<int, char> (recvData, p, dataTag, comm);
+          wait<int> (comm, outArg (recvDataReq));
+
+          // Print the received data.  This will respect the current
+          // indentation level.  Make sure that the string is
+          // null-terminated.
+          recvDataBuf[numCharsToRecv] = '\0';
+          out << recvDataBuf.getRawPtr ();
+        }
+        else if (myRank == p) { // if I am not Process 0, and my rank is p
+          // This deep-copies the string at most twice, depending on
+          // whether std::string reference counts internally (it
+          // generally does, so this won't deep-copy at all).
+          const std::string stringToSend = lclOutStrPtr->str ();
+          lclOutStrPtr = Teuchos::null; // clear original to save space
+
+          // Send the string's length to Process 0.
+          const size_t numCharsToSend = stringToSend.size ();
+          ArrayRCP<size_t> sendSize (1);
+          sendSize[0] = numCharsToSend;
+          RCP<CommRequest<int> > sendSizeReq =
+            isend<int, size_t> (sendSize, 0, sizeTag, comm);
+          wait<int> (comm, outArg (sendSizeReq));
+
+          // Send the actual string to Process 0.  We know that the
+          // string has length > 0, so it's save to take the address
+          // of the first entry.  Make a nonowning ArrayRCP to hold
+          // the string.  Process 0 will add a null termination
+          // character at the end of the string, after it receives the
+          // message.
+          ArrayRCP<const char> sendData (&stringToSend[0], 0, numCharsToSend, false);
+          RCP<CommRequest<int> > sendDataReq =
+            isend<int, char> (sendData, 0, dataTag, comm);
+          wait<int> (comm, outArg (sendDataReq));
+        }
+      } // for each process rank p other than 0
+    } // extreme verbosity level (print the whole matrix)
   }
 
 } // namespace Experimental

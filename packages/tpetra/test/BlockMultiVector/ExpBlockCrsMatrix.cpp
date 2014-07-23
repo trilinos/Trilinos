@@ -915,6 +915,172 @@ namespace {
   }
 
 
+  // Test BlockCrsMatrix::Import for same row and column Maps, with
+  // the same graphs.  This is really just a test of the "copy" part
+  // of copyAndPermute.
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ExpBlockCrsMatrix, ImportCopy, Scalar, LO, GO, Node )
+  {
+    typedef Tpetra::Experimental::BlockMultiVector<Scalar, LO, GO, Node> BMV;
+    typedef Tpetra::Experimental::BlockCrsMatrix<Scalar, LO, GO, Node> BCM;
+    typedef Tpetra::CrsGraph<LO, GO, Node> graph_type;
+    typedef Tpetra::Map<LO, GO, Node> map_type;
+    typedef Tpetra::Import<LO, GO, Node> import_type;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+
+    out << "Testing Tpetra::Experimental::BlockCrsMatrix Import with same row "
+      "and column Maps and ADD combine mode" << endl;
+    Teuchos::OSTab tab0 (out);
+
+    RCP<const Comm<int> > comm = getDefaultComm ();
+    const int myRank = comm->getRank ();
+    const int numProcs = comm->getSize ();
+    RCP<Node> node = getNode<Node> ();
+    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+
+    out << "Creating mesh row Map" << endl;
+
+    const size_t numLocalMeshPoints = 12;
+    const GO indexBase = 0;
+    // mfh 16 May 2014: Tpetra::CrsGraph still needs the row Map as an
+    // RCP.  Later interface changes will let us pass in the Map by
+    // const reference and assume view semantics.
+    RCP<const map_type> meshRowMapPtr =
+      rcp (new map_type (INVALID, numLocalMeshPoints, indexBase, comm, node));
+    const GO numGlobalMeshPoints = meshRowMapPtr->getGlobalNumElements ();
+    const LO blockSize = 4;
+
+    // Make a graph.  It happens to have two entries per row.
+    out << "Creating mesh graph" << endl;
+    graph_type graph (meshRowMapPtr, 2, Tpetra::StaticProfile);
+
+    if (meshRowMapPtr->getNodeNumElements () > 0) {
+      const GO myMinGblRow = meshRowMapPtr->getMinGlobalIndex ();
+      const GO myMaxGblRow = meshRowMapPtr->getMaxGlobalIndex ();
+      for (GO gblRow = myMinGblRow; gblRow <= myMaxGblRow; ++gblRow) {
+        // Insert two entries, neither of which are on the diagonal.
+        Teuchos::Array<GO> gblCols (2);
+        gblCols[0] = (gblRow + 1) % numGlobalMeshPoints;
+        gblCols[1] = (gblRow + 2) % numGlobalMeshPoints;
+        graph.insertGlobalIndices (gblRow, gblCols ());
+      }
+    }
+    graph.fillComplete ();
+
+    // Create the two matrices.  They happen to have the same graph.
+    out << "Create the matrices" << endl;
+    BCM A1 (graph, blockSize);
+    // We don't have to create the domain and range Maps all over
+    // again.  Just reuse those of A1.
+    BCM A2 (graph, * (A1.getDomainMap ()), * (A1.getRangeMap ()), blockSize);
+
+    // Fill all entries of the first matrix with 3.
+    const Scalar three = STS::one () + STS::one () + STS::one ();
+    A1.setAllToScalar (three);
+
+    out << "The matrix A1, after construction:" << endl;
+    A1.describe (out, Teuchos::VERB_EXTREME);
+
+    // Fill all entries of the first matrix with -2.
+    const Scalar minusTwo = -STS::one () - STS::one ();
+    A2.setAllToScalar (minusTwo);
+
+    out << "The matrix A2, after construction:" << endl;
+    A2.describe (out, Teuchos::VERB_EXTREME);
+
+    out << "Create the Import" << endl;
+    import_type imp (graph.getMap (), graph.getMap ());
+
+    out << "Import A1 into A2" << endl;
+    bool importSuccess = true;
+    try {
+      // The CombineMode doesn't matter for this example, since it
+      // amounts to a matrix copy.  We use ADD arbitrarily.
+      A2.doImport (A1, imp, Tpetra::ADD);
+    } catch (std::exception& e) {
+      importSuccess = false;
+      if (myRank == 0) {
+        out << "Import FAILED by throwing an exception" << endl;
+      }
+      for (int p = 0; p < numProcs; ++p) {
+        if (p == myRank) {
+          std::ostringstream os;
+          os << "Process " << myRank << ": error messages from A1: "
+             << A1.errorMessages () << endl
+             << "Process " << myRank << ": error messages from A2: "
+             << A2.errorMessages () << endl;
+          std::cerr << os.str ();
+        }
+        comm->barrier (); // give time for output to complete
+        comm->barrier ();
+        comm->barrier ();
+      }
+    }
+    if (A1.localError () || A2.localError ()) {
+      if (myRank == 0) {
+        out << "Import FAILED by reporting local error" << endl;
+      }
+      importSuccess = false;
+    }
+
+    TEST_ASSERT( importSuccess );
+
+    int lclImportSuccess = importSuccess ? 1 : 0;
+    int gblImportSuccess = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclImportSuccess, outArg (gblImportSuccess));
+    importSuccess = (gblImportSuccess == 1);
+
+    if (! importSuccess) {
+      for (int p = 0; p < numProcs; ++p) {
+        if (p == myRank) {
+          std::ostringstream os;
+          os << "Process " << myRank << ": error messages from A1: "
+             << A1.errorMessages () << endl
+             << "Process " << myRank << ": error messages from A2: "
+             << A2.errorMessages () << endl;
+          std::cerr << os.str ();
+        }
+        comm->barrier (); // give time for output to complete
+        comm->barrier ();
+        comm->barrier ();
+      }
+    }
+    else { // doImport claims that it succeeded
+      out << "Import claims that it succeeded; test the matrix" << endl;
+
+      // Y := A2*X, where X is a block multivector (with one column)
+      // full of 1s.  Since there are two block entries per row, each
+      // of which is all 3s, we know that each entry of the result Y
+      // will be 3*2*blockSize = 6*blockSize.
+      const Scalar requiredValue = static_cast<Scalar> (6 * blockSize);
+      BMV X (* (graph.getDomainMap ()), * (A2.getDomainMap ()), blockSize, static_cast<LO> (1));
+      X.putScalar (STS::one ());
+      BMV Y (* (graph.getRangeMap ()), * (A2.getRangeMap ()), blockSize, static_cast<LO> (1));
+      A2.applyBlock (X, Y, Teuchos::NO_TRANS, STS::one (), STS::zero ());
+
+      const LO myMinLclMeshRow = Y.getMap ()->getMinLocalIndex ();
+      const LO myMaxLclMeshRow = Y.getMap ()->getMaxLocalIndex ();
+      bool valsMatch = true;
+      for (LO lclMeshRow = myMinLclMeshRow; lclMeshRow <= myMaxLclMeshRow; ++lclMeshRow) {
+        typename BMV::little_vec_type Y_lcl = Y.getLocalBlock (lclMeshRow, 0);
+        for (LO i = 0; i < blockSize; ++i) {
+          if (Y_lcl(i) != requiredValue) {
+            valsMatch = false;
+          }
+        }
+      }
+      TEST_ASSERT( valsMatch );
+    }
+
+    out << "The matrix A2, after Import (should be same as A1):" << endl;
+    A2.describe (out, Teuchos::VERB_EXTREME);
+
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY_CONST( gblSuccess, 1 );
+  }
+
+
 //
 // INSTANTIATIONS
 //
@@ -922,7 +1088,8 @@ namespace {
 #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, ctor, SCALAR, LO, GO, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, basic, SCALAR, LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, SetAllToScalar, SCALAR, LO, GO, NODE )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, SetAllToScalar, SCALAR, LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, ImportCopy, SCALAR, LO, GO, NODE )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
