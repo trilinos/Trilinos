@@ -232,9 +232,18 @@ public:
   void get2ndAdjsView(MeshEntityType sourcetarget, MeshEntityType through, 
 		      const lno_t *&offsets, const gid_t *& adjacencyIds) const
   {
-    offsets = NULL;
-    adjacencyIds = NULL;
-    Z2_THROW_NOT_IMPLEMENTED_ERROR
+    if (MESH_REGION==sourcetarget && MESH_VERTEX==through && 3==dimension_ ||
+	MESH_FACE==sourcetarget && MESH_VERTEX==through && 2==dimension_) {
+      offsets = start_;
+      adjacencyIds = adj_;
+    } else if (MESH_REGION == sourcetarget && 2 == dimension_) {
+      offsets = NULL;
+      adjacencyIds = NULL;
+    } else {
+      offsets = NULL;
+      adjacencyIds = NULL;
+      Z2_THROW_NOT_IMPLEMENTED_ERROR
+    }
   }
 
 private:
