@@ -31,7 +31,7 @@ namespace pike {
     }
     
     int rankB = -1;
-    MPI_Group_translate_ranks(groupA,1,&rankA,groupB,&rankB);
+    MPI_Group_translate_ranks(groupA,1,const_cast<int*>(&rankA),groupB,&rankB);
     
     return rankB;
   }
