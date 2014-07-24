@@ -74,7 +74,7 @@
  *  original runtime, logic or bad_alloc exception gets passed up.
  *  For example, if a runtime_error is caught as a std::exception,
  *  it gets passed up as a std::exception and the \c what() message
- *  is lost. 
+ *  is not lost. 
  */
 
 #define Z2_FORWARD_EXCEPTIONS \
