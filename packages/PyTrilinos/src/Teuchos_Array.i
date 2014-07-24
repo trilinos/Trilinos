@@ -121,9 +121,38 @@ using Teuchos::ArrayView;
   $1 = Teuchos::arrayView( (TYPE*) array_data(npArray), array_size(npArray, 0));
 }
 
-// If an ArrayView is output, with either a const or non-const TYPE,
-// convert the underlying data to a NumPy array of correct type.
+// If an Array or ArrayView is output, with either a const or
+// non-const TYPE, convert the underlying data to a NumPy array of
+// correct type.
+%typemap(out) Teuchos::Array< TYPE >
+{
+  npy_intp dims[1] = { $1.size() };
+  $result = PyArray_SimpleNewFromData(1, dims, TYPECODE, (void*) $1.getRawPtr());
+  if (!$result) SWIG_fail;
+}
+
 %typemap(out) Teuchos::ArrayView< TYPE >
+{
+  npy_intp dims[1] = { $1.size() };
+  $result = PyArray_SimpleNewFromData(1, dims, TYPECODE, (void*) $1.getRawPtr());
+  if (!$result) SWIG_fail;
+}
+
+%typemap(out) Teuchos::Array< TYPE > const &
+{
+  npy_intp dims[1] = { $1->size() };
+  $result = PyArray_SimpleNewFromData(1, dims, TYPECODE, (void*) $1->getRawPtr());
+  if (!$result) SWIG_fail;
+}
+
+%typemap(out) Teuchos::ArrayView< TYPE > const &
+{
+  npy_intp dims[1] = { $1->size() };
+  $result = PyArray_SimpleNewFromData(1, dims, TYPECODE, (void*) $1->getRawPtr());
+  if (!$result) SWIG_fail;
+}
+
+%typemap(out) Teuchos::Array< const TYPE >
 {
   npy_intp dims[1] = { $1.size() };
   $result = PyArray_SimpleNewFromData(1, dims, TYPECODE, (void*) $1.getRawPtr());
