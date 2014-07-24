@@ -61,6 +61,15 @@
 
 namespace {
 
+  template <typename T>
+  bool is_index_valid(const std::vector<T> &file_vector, size_t input_file_index)
+  {
+    bool invalid = file_vector.empty() ||
+      input_file_index >= file_vector.size() ||
+      Teuchos::is_null(file_vector[input_file_index]);
+    return !invalid;
+  }
+
   bool fieldOrdinalSort(const stk::io::FieldAndName& f1, const stk::io::FieldAndName &f2) {
     return f1.field()->mesh_meta_data_ordinal() < f2.field()->mesh_meta_data_ordinal();
   }
@@ -1143,21 +1152,39 @@ namespace stk {
       return index_of_input_file;
     }
     
-      Teuchos::RCP<Ioss::Region> StkMeshIoBroker::get_input_io_region()
-      {
-	if (m_input_files.empty()) {
-	  return Teuchos::RCP<Ioss::Region>();
-	} else {
-	  validate_input_file_index(m_active_mesh_index);
-	  return m_input_files[m_active_mesh_index]->get_input_io_region();
-	}
+    Teuchos::RCP<Ioss::Region> StkMeshIoBroker::get_input_io_region()
+    {
+      if (is_index_valid(m_input_files, m_active_mesh_index)) {
+	return m_input_files[m_active_mesh_index]->get_input_io_region();
       }
+      else {
+	return Teuchos::RCP<Ioss::Region>();
+      }
+    }
 
     InputFile &StkMeshIoBroker::get_mesh_database(size_t input_file_index)
     {
       validate_input_file_index(input_file_index);
       return *m_input_files[input_file_index];
     }
+
+    void StkMeshIoBroker::remove_mesh_database(size_t input_file_index)
+    {
+      validate_input_file_index(input_file_index);
+      // It would be nice to be able to just delete the database, but
+      // its io_region may be being used by one or more output files
+      // in the Ioss::Region::synchronize... function.  Therefore, we
+      // need to keep it around (Could also use some shared pointers,
+      // but not allowed to use C++11 yet).  But, we want this database to be
+      // inaccessible and close the file associated with the database.  Therefore,
+      // we add an empty InputFile to the end of 'm_input_files' and then swap it with
+      // this one--That way the 'input_file_index' points to an invalid InputFile class as
+      // it should.
+      m_input_files[input_file_index]->get_input_io_region()->get_database()->closeDatabase();
+      m_input_files.push_back(m_input_files[input_file_index]);
+      m_input_files[input_file_index] = Teuchos::RCP<InputFile>();
+      assert(Teuchos::is_null(m_input_files[input_file_index]));
+  }
 
     size_t StkMeshIoBroker::set_active_mesh(size_t input_file_index)
     {
@@ -1226,7 +1253,7 @@ namespace stk {
 	std::string out_filename = filename;
 	stk::util::filename_substitution(out_filename);
 	Ioss::Region *input_region = NULL;
-	if (!m_input_files.empty()) {
+	if (is_index_valid(m_input_files, m_active_mesh_index)) {
 	  input_region = get_input_io_region().get();
 	}
 	Teuchos::RCP<OutputFile> output_file = Teuchos::rcp(new OutputFile(out_filename, m_communicator, db_type,
@@ -1341,6 +1368,7 @@ namespace stk {
 	if (!meta_data().is_commit())
 	  meta_data().commit();
 
+	validate_input_file_index(m_active_mesh_index);
 	ThrowErrorMsgIf (Teuchos::is_null(m_input_files[m_active_mesh_index]->get_input_io_region()),
 			 "There is no Input mesh region associated with this Mesh Data.");
 
@@ -1394,7 +1422,7 @@ namespace stk {
 
       void StkMeshIoBroker::validate_output_file_index(size_t output_file_index) const
       {
-	ThrowErrorMsgIf(m_output_files.empty() || output_file_index >= m_output_files.size(),
+	ThrowErrorMsgIf(!is_index_valid(m_output_files, output_file_index),
 			"StkMeshIoBroker::validate_output_file_index: invalid output file index of "
 			<< output_file_index << ".");
       
@@ -1404,7 +1432,7 @@ namespace stk {
 
       void StkMeshIoBroker::validate_input_file_index(size_t input_file_index) const
       {
-	ThrowErrorMsgIf(m_input_files.empty() || input_file_index >= m_input_files.size(),
+	ThrowErrorMsgIf(!is_index_valid(m_input_files, input_file_index),
 			"StkMeshIoBroker::validate_input_file_index: invalid input file index of "
 			<< input_file_index << ".");
       }
