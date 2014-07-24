@@ -69,6 +69,13 @@ LOCA.Epetra.Interface supports the following classes:
 #include "PyTrilinos_Teuchos_Util.h"
 #include "PyTrilinos_Epetra_Util.h"
 
+// Teuchos includes
+#include "Teuchos_Comm.hpp"
+#include "Teuchos_DefaultSerialComm.hpp"
+#ifdef HAVE_MPI
+#include "Teuchos_DefaultMpiComm.hpp"
+#endif
+
 // Local Epetra includes
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"

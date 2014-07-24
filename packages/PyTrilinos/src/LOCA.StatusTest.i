@@ -49,7 +49,12 @@ python version of LOCA.StatusTest supports the following classes:
         docstring = %loca_statustest_docstring) StatusTest
 
 %{
-// PyTrilinos include
+// Teuchos include
+#include "Teuchos_Comm.hpp"
+#include "Teuchos_DefaultSerialComm.hpp"
+#ifdef HAVE_MPI
+#include "Teuchos_DefaultMpiComm.hpp"
+#endif
 #include "PyTrilinos_Teuchos_Util.h"
 
 // LOCA includes

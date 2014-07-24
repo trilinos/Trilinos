@@ -50,6 +50,13 @@ following classes:
         docstring = %loca_pitchfork_minimallyaugmented_docstring) MinimallyAugmented
 
 %{
+// Teuchos includes
+#include "Teuchos_Comm.hpp"
+#include "Teuchos_DefaultSerialComm.hpp"
+#ifdef HAVE_MPI
+#include "Teuchos_DefaultMpiComm.hpp"
+#endif
+
 // LOCA includes
 #include "LOCA.H"
 

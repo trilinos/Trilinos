@@ -30,6 +30,11 @@
 
 %{
 // Teuchos includes
+#include "Teuchos_Comm.hpp"
+#include "Teuchos_DefaultSerialComm.hpp"
+#ifdef HAVE_MPI
+#include "Teuchos_DefaultMpiComm.hpp"
+#endif
 #include "PyTrilinos_Teuchos_Util.h"
 
 // LOCA includes

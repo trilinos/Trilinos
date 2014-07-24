@@ -53,6 +53,13 @@ the following classes:
 // System includes
 #include <vector>
 
+// Teuchos includes
+#include "Teuchos_Comm.hpp"
+#include "Teuchos_DefaultSerialComm.hpp"
+#ifdef HAVE_MPI
+#include "Teuchos_DefaultMpiComm.hpp"
+#endif
+
 // PyTrilinos includes
 #include "PyTrilinos_Teuchos_Util.h"
 #include "PyTrilinos_Epetra_Util.h"

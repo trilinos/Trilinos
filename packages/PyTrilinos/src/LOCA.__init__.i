@@ -90,6 +90,13 @@ and classes:
 #include "PyTrilinos_PythonException.h"
 #include "PyTrilinos_Teuchos_Util.h"
 
+// Teuchos includes
+#include "Teuchos_Comm.hpp"
+#include "Teuchos_DefaultSerialComm.hpp"
+#ifdef HAVE_MPI
+#include "Teuchos_DefaultMpiComm.hpp"
+#endif
+
 // LOCA includes
 #include "LOCA.H"
 #include "LOCA_Hopf_MinimallyAugmented_ExtendedGroup.H"
