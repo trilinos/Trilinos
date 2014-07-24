@@ -1416,6 +1416,51 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
   //------------------------------------
   /** \brief  Extract Rank-1 array from LayoutLeft Rank-2 array. */
   template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM ,
+            typename iType >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,specialize> & dst ,
+                  const View<ST,SL,SD,SM,specialize> & src ,
+                  const std::pair<iType,iType> & range ,
+                  const typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
+                    &&
+                    is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutLeft >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 2 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank == 1 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 1 )
+                  ), unsigned >::type i1 )
+  {
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+
+    dst.m_offset_map.assign(0,0,0,0,0,0,0,0);
+    dst.m_stride        = 0 ;
+    dst.m_ptr_on_device = 0 ;
+
+    if ( range.first < range.second ) {
+      assert_shape_bounds( src.m_offset_map , 2 , range.first , i1 );
+      assert_shape_bounds( src.m_offset_map , 2 , range.second - 1 , i1 );
+
+      dst.m_tracking      = src.m_tracking ;
+      dst.m_offset_map.N0 = range.second - range.first ;
+      dst.m_ptr_on_device =
+        src.m_ptr_on_device + src.m_offset_map(range.first,i1);
+      dst.m_allocation.m_scalar_ptr_on_device =
+        src.m_allocation.m_scalar_ptr_on_device + src.m_offset_map(range.first,i1) * src.m_storage_size ;
+       dst.m_stride      = src.m_stride ;
+      dst.m_storage_size = src.m_storage_size ;
+      dst.m_sacado_size  = src.m_sacado_size;
+
+      dst.m_tracking.increment( dst.m_ptr_on_device );
+    }
+  }
+
+  //------------------------------------
+  /** \brief  Extract Rank-1 array from LayoutLeft Rank-2 array. */
+  template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM >
   KOKKOS_INLINE_FUNCTION
   ViewAssignment(       View<DT,DL,DD,DM,specialize> & dst ,

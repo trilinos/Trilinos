@@ -131,13 +131,11 @@ namespace Kokkos {
 class Serial ;    ///< Execution space for serial on CPU
 class HostSpace ; ///< Memory space for Serial, Threads, and OpenMP
 
+class Threads ; ///< Pthreads execution space
+
 #if defined( KOKKOS_HAVE_CUDA )
 class CudaSpace ; ///< Cuda memory space
 class Cuda ;      ///< Cuda execution space
-#endif
-
-#if defined( KOKKOS_HAVE_PTHREAD )
-class Threads ; ///< Pthreads execution space
 #endif
 
 #if defined( KOKKOS_HAVE_OPENMP )
