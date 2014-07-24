@@ -172,16 +172,6 @@ const std::string &executable_file();
 
 /**
  * @ingroup EnvRuntimeInformationDetail
- * @brief Function <b>executable_date</b> returns the build date of the executable
- * file as a string in the form Mmm dd yyyy hh:mm::ss.
- *
- * @return			a <b>std::string</b> const reference to the executable
- *				file's build date and time.
- */
-const std::string &executable_date();
-
-/**
- * @ingroup EnvRuntimeInformationDetail
  * @brief Function <b>startup_date</b> returns the startup date of this application
  * execution.
  *

@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
@@ -55,7 +55,7 @@
 
 //! Class to demonstrate a simple, finite-different type tridiagonal stencil.
 template <class S>
-class FDStencil : public Tpetra::RTI::detail::StdOpKernel<S> 
+class FDStencil : public Tpetra::RTI::detail::StdOpKernel<S>
 {
   protected:
     int _myImageID, _numImages;
@@ -64,7 +64,7 @@ class FDStencil : public Tpetra::RTI::detail::StdOpKernel<S>
   public:
     FDStencil(int myImageID, int numImages, int n, const S &sub, const S &diag, const S &super) : _myImageID(myImageID), _numImages(numImages), _n(n), _sub(sub), _diag(diag), _super(super) {}
     inline void execute(int i) const
-    { 
+    {
       S res = _diag * this->_vec_in2[i];
       if (i >  0 || _myImageID != 0           ) res +=   _sub * this->_vec_in2[i-1];
       if (i < _n || _myImageID != _numImages-1) res += _super * this->_vec_in2[i+1];
@@ -85,7 +85,7 @@ class ScaleKernel : public Tpetra::RTI::detail::StdOpKernel<S>
     S _gamma;
   public:
     ScaleKernel(const S & gamma) : _gamma(gamma) {}
-    inline void execute(int i) { 
+    inline void execute(int i) {
       if (this->_alpha == Teuchos::ScalarTraits<S>::one() && this->_beta == Teuchos::ScalarTraits<S>::zero()) {
         this->_vec_inout[i] = _gamma * this->_vec_in2[i];
       }
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
 
-  // 
+  //
   // Get the default communicator and node
   //
   auto &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
   const int numImages = comm->getSize();
   const bool verbose = (myImageID==0);
 
-  // 
+  //
   // Say hello, print some communicator info
   //
   if (verbose) {
@@ -120,16 +120,16 @@ int main(int argc, char *argv[])
     std::cout << std::endl;
   }
 
-  // 
+  //
   // Create a simple map for domain and range
-  // 
+  //
   Tpetra::global_size_t numGlobalRows = 1000*numImages;
   auto map = Tpetra::createUniformContigMapWithNode<int,int>(numGlobalRows, comm, node);
   auto x = Tpetra::createVector<double>(map),
        y = Tpetra::createVector<double>(map);
 
   // Create a simple diagonal operator using lambda function
-  auto fTwoOp = Tpetra::RTI::binaryOp<double>( [](double /*y*/, double x) { return 2.0 * x; } , map );
+  auto fTwoOp = Tpetra::RTI::binaryOp<double>( [](double /*y*/, double xx) { return 2.0 * xx; } , map );
   // y = 3*fTwoOp*x + 2*y = 3*2*1 + 2*1 = 8
   x->putScalar(1.0);
   y->putScalar(1.0);
@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
   double norm = y->norm1();
   if (verbose) {
     std::cout << "Tpetra::RTI::binaryOp" << std::endl
-              << "norm(y) result == " << std::setprecision(2) << std::scientific << norm 
+              << "norm(y) result == " << std::setprecision(2) << std::scientific << norm
               << ", expected value is " << numGlobalRows * 8.0 << std::endl;
   }
 
@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
   if (verbose) {
     std::cout << std::endl
               << "TpetraExamples::FDStencil" << std::endl
-              << "norm(y) result == " << std::setprecision(2) << std::scientific << norm 
+              << "norm(y) result == " << std::setprecision(2) << std::scientific << norm
               << ", expected value is " << 2.0 << std::endl;
   }
 

@@ -40,7 +40,7 @@
 
 ##############################################################################
 #
-# CMake variable for use by ${PROJECT_NAME}/${PACKAGE_NAME} clients. 
+# CMake variable for use by ${PROJECT_NAME}/${PACKAGE_NAME} clients.
 #
 # ${DISCOURAGE_EDITING}
 #
@@ -67,7 +67,7 @@ SET(${EXPORT_FILE_VAR_PREFIX}_FORTRAN_COMPILER "${CMAKE_Fortran_COMPILER}")
 ## ---------------------------------------------------------------------------
 
 ## Set compiler flags, including those determined by build type
-SET(${EXPORT_FILE_VAR_PREFIX}_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}}")
+SET(${EXPORT_FILE_VAR_PREFIX}_CXX_FLAGS "${CMAKE_CXX_FLAGS_ESCAPED} ${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}}")
 
 SET(${EXPORT_FILE_VAR_PREFIX}_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE}}")
 
@@ -77,7 +77,7 @@ SET(${EXPORT_FILE_VAR_PREFIX}_FORTRAN_FLAGS "${CMAKE_FORTRAN_FLAGS} ${CMAKE_Fort
 SET(${EXPORT_FILE_VAR_PREFIX}_EXTRA_LD_FLAGS "${${PROJECT_NAME}_EXTRA_LINK_FLAGS}")
 
 ## This is the command-line entry used for setting rpaths. In a build
-## with static libraries it will be empty. 
+## with static libraries it will be empty.
 SET(${EXPORT_FILE_VAR_PREFIX}_SHARED_LIB_RPATH_COMMAND "${SHARED_LIB_RPATH_COMMAND}")
 SET(${EXPORT_FILE_VAR_PREFIX}_BUILD_SHARED_LIBS "${BUILD_SHARED_LIBS}")
 
@@ -85,7 +85,7 @@ SET(${EXPORT_FILE_VAR_PREFIX}_LINKER ${CMAKE_LINKER})
 SET(${EXPORT_FILE_VAR_PREFIX}_AR ${CMAKE_AR})
 
 ## ---------------------------------------------------------------------------
-## Set library specifications and paths 
+## Set library specifications and paths
 ## ---------------------------------------------------------------------------
 
 ## List of package include dirs
@@ -120,7 +120,7 @@ SET(${EXPORT_FILE_VAR_PREFIX}_MPI_EXEC_MAX_NUMPROCS "${MPI_EXEC_MAX_NUMPROCS}")
 SET(${EXPORT_FILE_VAR_PREFIX}_MPI_EXEC_NUMPROCS_FLAG "${MPI_EXEC_NUMPROCS_FLAG}")
 
 ## ---------------------------------------------------------------------------
-## Set useful general variables 
+## Set useful general variables
 ## ---------------------------------------------------------------------------
 
 ## The packages enabled for this project

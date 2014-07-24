@@ -6,8 +6,8 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#ifndef STK_UTIL_ENVIRONMENT_PRODUCTREGISTRY_HPP
-#define STK_UTIL_ENVIRONMENT_PRODUCTREGISTRY_HPP
+#ifndef STK_UTIL_REGISTRY_PRODUCTREGISTRY_HPP
+#define STK_UTIL_REGISTRY_PRODUCTREGISTRY_HPP
 
 #include <map>
 #include <string>
@@ -76,6 +76,16 @@ public:
   void setRegistryInvalid() {
     m_registryOK = false;
   }
+
+  /**
+   * @ingroup EnvRuntimeInformationDetail
+   * @brief Function <b>executable_date</b> returns the build date of the executable
+   * file as a string in the form Mmm dd yyyy hh:mm::ss.
+   *
+   * @return			a <b>std::string</b> const reference to the executable
+   *				file's build date and time.
+   */
+  static const std::string &executable_date();
 
   /**
    * @brief Member function <b>isRegistryOK</b> returns true if the registry has not
@@ -255,4 +265,4 @@ typedef stk::ProductRegistry ProductRegistry;
 #endif // STK_BUILT_IN_SIERRA
 
 
-#endif // STK_UTIL_ENVIRONMENT_PRODUCTREGISTRY_HPP
+#endif // STK_UTIL_REGISTRY_PRODUCTREGISTRY_HPP

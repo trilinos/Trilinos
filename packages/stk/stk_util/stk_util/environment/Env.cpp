@@ -21,7 +21,6 @@
 #include <sstream>                      // for basic_ostream, operator<<, etc
 #include <stk_util/util/Signal.hpp>     // for HUP_received
 #include <stk_util/environment/EnvData.hpp>  // for EnvData, etc
-#include <stk_util/environment/ProductRegistry.hpp>
 #include <stk_util/environment/ProgramOptions.hpp>
 #include <stk_util/environment/RuntimeMessage.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>  // for all_write_string
@@ -87,18 +86,6 @@ const std::string &
 executable_file()
 {
   return stk::EnvData::instance().m_executablePath;
-}
-
-
-const std::string &
-executable_date()
-{
-  static std::string executable_date;
-
-  if (executable_date.empty())
-    executable_date = stk::ProductRegistry::instance().getProductAttribute(stk::EnvData::instance().m_productName, stk::ProductRegistry::BUILD_TIME);
-
-  return executable_date;
 }
 
 

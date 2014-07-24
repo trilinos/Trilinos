@@ -1679,6 +1679,56 @@ namespace Tpetra {
 
   namespace Details {
 
+    // Partial specialization of MultiVectorCloner, for when the
+    // source and destination MultiVector types are both Kokkos
+    // refactor types, and when they both have the same Scalar type,
+    // but all their other template parameters might be different.
+    template<class ScalarType,
+             class DstLocalOrdinalType, class DstGlobalOrdinalType, class DstDeviceType,
+             class SrcLocalOrdinalType, class SrcGlobalOrdinalType, class SrcDeviceType>
+    struct MultiVectorCloner< ::Tpetra::MultiVector<ScalarType,
+                                                    DstLocalOrdinalType,
+                                                    DstGlobalOrdinalType,
+                                                    Kokkos::Compat::KokkosDeviceWrapperNode<DstDeviceType> >,
+                              ::Tpetra::MultiVector<ScalarType,
+                                                    SrcLocalOrdinalType,
+                                                    SrcGlobalOrdinalType,
+                                                    Kokkos::Compat::KokkosDeviceWrapperNode<SrcDeviceType> > >
+    {
+      typedef Kokkos::Compat::KokkosDeviceWrapperNode<DstDeviceType> dst_node_type;
+      typedef Kokkos::Compat::KokkosDeviceWrapperNode<SrcDeviceType> src_node_type;
+      typedef ::Tpetra::MultiVector<ScalarType, DstLocalOrdinalType,
+                                    DstGlobalOrdinalType,
+                                    dst_node_type> dst_mv_type;
+      typedef ::Tpetra::MultiVector<ScalarType, SrcLocalOrdinalType,
+                                    SrcGlobalOrdinalType,
+                                    src_node_type> src_mv_type;
+
+      static Teuchos::RCP<dst_mv_type>
+      clone (const src_mv_type& X, const Teuchos::RCP<dst_node_type>& node2)
+      {
+        typedef typename src_mv_type::map_type src_map_type;
+        typedef typename dst_mv_type::map_type dst_map_type;
+        typedef typename dst_mv_type::node_type dst_node_type;
+        typedef typename src_mv_type::dual_view_type src_dual_view_type;
+        typedef typename dst_mv_type::dual_view_type dst_dual_view_type;
+
+        // Clone X's Map to have the new Node type.
+        RCP<const src_map_type> map1 = X.getMap ();
+        RCP<const dst_map_type> map2 = map1.is_null () ?
+          Teuchos::null : map1->template clone<dst_node_type> (node2);
+
+        const size_t lclNumRows = X.getLocalLength ();
+        const size_t numCols = X.getNumVectors ();
+        src_dual_view_type X_view = X.getDualView ();
+        dst_dual_view_type Y_view ("MV::dual_view", lclNumRows, numCols);
+
+        RCP<dst_mv_type> Y = rcp (new dst_mv_type (map2, Y_view));
+        // Let deep_copy do the work for us, to avoid code duplication.
+        ::Tpetra::deep_copy (Y, X);
+      }
+    };
+
     // Partial specialization for the Kokkos refactor specialization
     // of Tpetra::MultiVector.
     template<class S, class LO, class GO, class DeviceType>
