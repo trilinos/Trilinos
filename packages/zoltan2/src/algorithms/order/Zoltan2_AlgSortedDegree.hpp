@@ -45,6 +45,7 @@
 #ifndef _ZOLTAN2_SORTEDDEGREE_HPP_
 #define _ZOLTAN2_SORTEDDEGREE_HPP_
 
+#include <Zoltan2_Algorithm.hpp>
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_OrderingSolution.hpp>
 #include <Zoltan2_Sort.hpp>
@@ -59,7 +60,7 @@
 namespace Zoltan2{
 
 template <typename Adapter>
-class AlgSortedDegree
+class AlgSortedDegree : public Algorithm<Adapter>
 {
   private:
     typedef typename Adapter::lno_t lno_t;

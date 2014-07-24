@@ -45,6 +45,7 @@
 #ifndef _ZOLTAN2_ALGNATURAL_HPP_
 #define _ZOLTAN2_ALGNATURAL_HPP_
 
+#include <Zoltan2_Algorithm.hpp>
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_OrderingSolution.hpp>
 
@@ -57,7 +58,7 @@ namespace Zoltan2{
 //! \brief Mainly useful for testing "no ordering"
 
 template <typename Adapter>
-class AlgNatural
+class AlgNatural : public Algorithm<Adapter>
 {
   public:
 

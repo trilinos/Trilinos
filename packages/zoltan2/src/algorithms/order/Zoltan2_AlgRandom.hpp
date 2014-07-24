@@ -45,6 +45,7 @@
 #ifndef _ZOLTAN2_ALGRANDOM_HPP_
 #define _ZOLTAN2_ALGRANDOM_HPP_
 
+#include <Zoltan2_Algorithm.hpp>
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_OrderingSolution.hpp>
 
@@ -57,7 +58,7 @@ namespace Zoltan2{
 //! \brief TODO: Only local permutation, could add global option.
 
 template <typename Adapter>
-class AlgRandom
+class AlgRandom : public Algorithm<Adapter>
 {
   public:
 

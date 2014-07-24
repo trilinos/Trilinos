@@ -142,6 +142,57 @@ public:
 
   void solve(bool updateInputData=true );
  
+  //!  \brief Return the part overlapping a given point in space; 
+  //          when a point lies on a part boundary, the lowest part
+  //          number on that boundary is returned.
+  //          Note that not all partitioning algorithms will support
+  //          this method.
+  //
+  //   \param dim : the number of dimensions specified for the point in space
+  //   \param point : the coordinates of the point in space; array of size dim
+  //   \return the part number of a part overlapping the given point
+  //
+  //   TODO:  This method might be more appropriate in a partitioning solution
+  //   TODO:  But then the solution would need to know about the algorithm.
+  //   TODO:  Consider moving the algorithm to the partitioning solution.
+  part_t pointAssign(int dim, scalar_t *point) 
+  {
+#ifdef KDD_READY
+    part_t pret;
+    try {
+      pret = alg_->pointAssign(dim, point); 
+    }
+    catch(){// KDD FIGURE THIS OUT}
+    return pret;
+#endif
+  }
+
+  //!  \brief Return an array of all parts overlapping a given box in space.
+  //   This method allocates memory for the return argument, but does not
+  //   control that memory.  The user is responsible for freeing the 
+  //   memory.
+  //
+  //   \param dim : (in) the number of dimensions specified for the box
+  //   \param lower : (in) the coordinates of the lower corner of the box; 
+  //                   array of size dim
+  //   \param upper : (in) the coordinates of the upper corner of the box; 
+  //                   array of size dim
+  //   \param nPartsFound : (out) the number of parts overlapping the box
+  //   \param partsFound :  (out) array of parts overlapping the box
+  //   TODO:  This method might be more appropriate in a partitioning solution
+  //   TODO:  But then the solution would need to know about the algorithm.
+  //   TODO:  Consider moving the algorithm to the partitioning solution.
+  void boxAssign(int dim, scalar_t *lower, scalar_t *upper,
+                 size_t &nPartsFound, part_t **partsFound) 
+  {
+#ifdef KDD_READY
+    try {
+      alg_->boxAssign(dim, lower, upper, nParts, parts); 
+    }
+    catch(){// KDD FIGURE THIS OUT}
+#endif
+  }
+
   //!  \brief Get the solution to the problem.
   //
   //   \return  a reference to the solution to the most recent solve().
@@ -546,11 +597,12 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
   try {
     if (algorithm_ == std::string("scotch")){
-      AlgPTScotch<Adapter>(this->envConst_, problemComm_,
+      AlgPTScotch<Adapter> algscotch(this->envConst_, problemComm_,
 #ifdef HAVE_ZOLTAN2_MPI
         mpiComm_,
 #endif
         this->graphModel_, solution_);
+      algscotch.partition();
     }
     else if (algorithm_ == std::string("block")){
       AlgBlock<Adapter> algblock(this->envConst_, problemComm_,

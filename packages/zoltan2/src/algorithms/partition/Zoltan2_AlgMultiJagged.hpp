@@ -53,6 +53,8 @@
 #include <Zoltan2_MultiJagged_ReductionOps.hpp>
 #include <Zoltan2_CoordinateModel.hpp>
 #include <Zoltan2_Parameters.hpp>
+#include <Zoltan2_Algorithm.hpp>
+
 #include <Tpetra_Distributor.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Zoltan2_CoordinatePartitioningGraph.hpp>
@@ -343,7 +345,8 @@ void uqsort(IT n, uSortItem<IT, WT> * arr)
  */
 template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
           typename mj_part_t>
-class AlgMJ{
+class AlgMJ
+{
 private:
 
     RCP<const Environment> mj_env; //the environment object
@@ -5957,7 +5960,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::multi_jagged_part(
  *
  */
 template <typename Adapter>
-class Zoltan2_AlgMJ{
+class Zoltan2_AlgMJ : public Algorithm<Adapter>
+{
 private:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS

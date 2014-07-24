@@ -45,6 +45,7 @@
 #ifndef _ZOLTAN2_ALGSPECTRAL_HPP_
 #define _ZOLTAN2_ALGSPECTRAL_HPP_
 
+#include <Zoltan2_Algorithm.hpp>
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_OrderingSolution.hpp>
 

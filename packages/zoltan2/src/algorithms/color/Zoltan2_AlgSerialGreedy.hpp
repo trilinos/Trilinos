@@ -45,6 +45,7 @@
 #ifndef _ZOLTAN2_ALGSERIALGREEDY_HPP_
 #define _ZOLTAN2_ALGSERIALGREEDY_HPP_
 
+#include <Zoltan2_Algorithm.hpp>
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_ColoringSolution.hpp>
 
@@ -55,7 +56,7 @@
 namespace Zoltan2{
 
 template <typename Adapter>
-class AlgSerialGreedy
+class AlgSerialGreedy : public Algorithm<Adapter>
 {
   private:
     typedef typename Adapter::lno_t lno_t;

@@ -46,54 +46,20 @@
 #define _ZOLTAN2_ALGSCOTCH_HPP_
 
 #include <Zoltan2_GraphModel.hpp>
+#include <Zoltan2_Algorithm.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_Util.hpp>
 
-
-#ifndef HAVE_ZOLTAN2_SCOTCH
-
-// Error handling for when Scotch is requested
-// but Zoltan2 not built with Scotch.
+////////////////////////////////////////////////////////////////////////
+//! \file Zoltan2_Scotch.hpp
+//! \brief Parallel graph partitioning using Scotch.
 
 namespace Zoltan2 {
 
 
-/*! Scotch partitioning method.
- *
- *  \param env  parameters for the problem and library configuration
- *  \param problemComm  the communicator for the problem
- *  \param model a graph
- *  \param solution  a Solution object
- *
- *  Preconditions: The parameters in the environment have been
- *    processed (committed).
- */
-
-
-
-template <typename Adapter>
-void AlgPTScotch(
-  const RCP<const Environment> &env,
-  const RCP<const Comm<int> > &problemComm,
-#ifdef HAVE_ZOLTAN2_MPI
-  MPI_Comm mpicomm,
-#endif
-  const RCP<GraphModel<typename Adapter::base_adapter_t> > &model,
-  RCP<PartitioningSolution<Adapter> > &solution
-
-)
-{
-  throw std::runtime_error(
-        "BUILD ERROR:  Scotch requested but not compiled into Zoltan2.\n"
-        "Please set CMake flag Zoltan2_ENABLE_Scotch:BOOL=ON.");
-}
-}
-
-#else  //HAVE_ZOLTAN2_SCOTCH
-
+#ifdef HAVE_ZOLTAN2_SCOTCH
 
 // stdint.h for int64_t in scotch header
-
 #include <stdint.h>
 #ifndef HAVE_ZOLTAN2_MPI
 #include "scotch.h"
@@ -115,84 +81,28 @@ void AlgPTScotch(
 // and compile scotch with -DCOMMON_MEMORY_TRACE
 //
 #ifdef HAVE_SCOTCH_GETMEMORYMAX
-
-extern "C"{
-extern size_t SCOTCH_getMemoryMax();
-}
-
+  extern "C"{
+    extern size_t SCOTCH_getMemoryMax();
+  }
 #else
-
 #error "Either turn off ZOLTAN2_ENABLE_SCOTCH_MEMORY_REPORT in cmake configure, or see SHOW_ZOLTAN2_SCOTCH_MEMORY comment in Zoltan2_AlgScotch.hpp"
-
-#endif
-
-#endif
+#endif  // HAVE_SCOTCH_GETMEMORYMAX
+#endif  // SHOW_ZOLTAN2_SCOTCH_MEMORY
 
 
-////////////////////////////////////////////////////////////////////////
-//! \file Zoltan2_Scotch.hpp
-//! \brief Parallel graph partitioning using Scotch.
 
-namespace Zoltan2{
+/*! Scotch partitioning method.
+ *
+ *  \param env  parameters for the problem and library configuration
+ *  \param problemComm  the communicator for the problem
+ *  \param model a graph
+ *  \param solution  a Solution object
+ *
+ *  Preconditions: The parameters in the environment have been
+ *    processed (committed).
+ */
 
-// Scale and round scalar_t weights (typically float or double) to 
-// SCOTCH_Num (typically int or long).
-// subject to sum(weights) <= max_wgt_sum.
-// Only scale if deemed necessary.
-//
-// Note that we use ceil() instead of round() to avoid
-// rounding to zero weights.
-// Based on Zoltan's scale_round_weights, mode 1.
 
-template <typename lno_t, typename scalar_t>
-static void scale_weights(
-  size_t n,
-  StridedData<lno_t, scalar_t> &fwgts,
-  SCOTCH_Num *iwgts,
-  const RCP<const Comm<int> > &problemComm
-)
-{
-  const double INT_EPSILON = 1e-5;
-
-  SCOTCH_Num nonint, nonint_local = 0;
-  double sum_wgt, sum_wgt_local = 0.;
-  double max_wgt, max_wgt_local = 0.;
-
-  // Compute local sums of the weights 
-  // Check whether all weights are integers
-  for (size_t i = 0; i < n; i++) {
-    double fw = double(fwgts[i]);
-    if (!nonint_local){
-      SCOTCH_Num tmp = (SCOTCH_Num) floor(fw + .5); /* Nearest int */
-      if (fabs((double)tmp-fw) > INT_EPSILON) {
-        nonint_local = 1;
-      }
-    }
-    sum_wgt_local += fw;
-    if (fw > max_wgt_local) max_wgt_local = fw;
-  }
-
-  Teuchos::reduceAll<int,int>(*problemComm, Teuchos::REDUCE_MAX, 1,
-                              &nonint_local,  &nonint);
-  Teuchos::reduceAll<int,double>(*problemComm, Teuchos::REDUCE_SUM, 1,
-                                 &sum_wgt_local, &sum_wgt);
-  Teuchos::reduceAll<int,double>(*problemComm, Teuchos::REDUCE_MAX, 1,
-                                 &max_wgt_local, &max_wgt);
-
-  double scale = 1.;
-  const double max_wgt_sum = double(SCOTCH_NUMMAX/8);
-
-  // Scaling needed if weights are not integers or weights' range is not sufficient
-  if (nonint || (max_wgt <= INT_EPSILON) || (sum_wgt > max_wgt_sum)) {
-    /* Calculate scale factor */
-    if (sum_wgt != 0.) scale = max_wgt_sum/sum_wgt;
-  }
-
-  /* Convert weights to positive integers using the computed scale factor */
-  for (size_t i = 0; i < n; i++)
-    iwgts[i] = (SCOTCH_Num) ceil(double(fwgts[i])*scale);
-
-}
 
 /////////////////////////////////////////////////////////////////////////////
 //  Traits struct to handle conversions between gno_t/lno_t and SCOTCH_Num.
@@ -280,34 +190,64 @@ struct SCOTCH_Num_Traits<SCOTCH_Num> {
 // Now, the actual Scotch algorithm.
 ///////////////////////////////////////////////////////////////////////
 
-/*! Scotch partitioning method.
- *
- *  \param env  parameters for the problem and library configuration
- *  \param problemComm  the communicator for the problem
- *  \param model a graph
- *  \param solution  a Solution object
- *
- *  Preconditions: The parameters in the environment have been
- *    processed (committed).
- */
-
 template <typename Adapter>
-void AlgPTScotch(
-  const RCP<const Environment> &env,        // parameters & app comm
-  const RCP<const Comm<int> > &problemComm, // problem comm
-#ifdef HAVE_ZOLTAN2_MPI
-  MPI_Comm mpicomm,
-#endif
-  const RCP<GraphModel<typename Adapter::base_adapter_t> > &model, // the graph
-  RCP<PartitioningSolution<Adapter> > &solution
-)
+class AlgPTScotch : public Algorithm<Adapter>
 {
-  HELLO;
+public:
 
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::part_t part_t;
+
+  /*! Scotch constructor
+   *  \param env  parameters for the problem and library configuration
+   *  \param problemComm  the communicator for the problem
+   *  \param model a graph
+   *  \param solution  a Solution object
+   *
+   *  Preconditions: The parameters in the environment have been processed.
+   *  TODO:  THIS IS A MINIMAL CONSTRUCTOR FOR NOW.
+   *  TODO:  WHEN ADD SCOTCH ORDERING OR MAPPING, MOVE SCOTCH GRAPH CONSTRUCTION
+   *  TODO:  TO THE CONSTRUCTOR SO THAT CODE MAY BE SHARED.
+   */
+  AlgPTScotch(const RCP<const Environment> &env__,
+              const RCP<const Comm<int> > &problemComm__,
+#ifdef HAVE_ZOLTAN2_MPI
+              MPI_Comm mpicomm__,
+#endif
+              const RCP<GraphModel<typename Adapter::base_adapter_t> > &model__,
+              RCP<PartitioningSolution<Adapter> > &solution__) :
+     env(env__), problemComm(problemComm__), 
+#ifdef HAVE_ZOLTAN2_MPI
+    mpicomm(mpicomm__),
+#endif
+    model(model__), solution(solution__)
+  {
+  }
+
+  void partition();
+
+private:
+
+  const RCP<const Environment> env;
+  const RCP<const Comm<int> > problemComm;
+#ifdef HAVE_ZOLTAN2_MPI
+  MPI_Comm mpicomm;
+#endif
+  const RCP<GraphModel<typename Adapter::base_adapter_t> > model;
+  RCP<PartitioningSolution<Adapter> > solution;
+
+  void scale_weights(size_t n, StridedData<lno_t, scalar_t> &fwgts,
+                     SCOTCH_Num *iwgts);
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+template <typename Adapter>
+void AlgPTScotch<Adapter>::partition()
+{
+  HELLO;
 
   size_t numGlobalParts = solution->getTargetGlobalNumberOfParts();
 
@@ -386,13 +326,13 @@ void AlgPTScotch(
   if (nVwgts) {
     velotab = new SCOTCH_Num[nVtx+1];  // +1 since Scotch wants all procs 
                                        // to have non-NULL arrays
-    scale_weights<lno_t, scalar_t>(nVtx, vwgts[0], velotab, problemComm);
+    scale_weights(nVtx, vwgts[0], velotab);
   }
 
   if (nEwgts) {
     edlotab = new SCOTCH_Num[nEdge+1];  // +1 since Scotch wants all procs 
                                          // to have non-NULL arrays
-    scale_weights<lno_t, scalar_t>(nEdge, ewgts[0], edlotab, problemComm);
+    scale_weights(nEdge, ewgts[0], edlotab);
   }
 
   // Build PTScotch distributed data structure
@@ -515,6 +455,94 @@ void AlgPTScotch(
 #endif // DO NOT HAVE_MPI
 }
 
+/////////////////////////////////////////////////////////////////////////////
+// Scale and round scalar_t weights (typically float or double) to 
+// SCOTCH_Num (typically int or long).
+// subject to sum(weights) <= max_wgt_sum.
+// Only scale if deemed necessary.
+//
+// Note that we use ceil() instead of round() to avoid
+// rounding to zero weights.
+// Based on Zoltan's scale_round_weights, mode 1.
+
+template <typename Adapter>
+void AlgPTScotch<Adapter>::scale_weights(
+  size_t n,
+  StridedData<typename Adapter::lno_t, typename Adapter::scalar_t> &fwgts,
+  SCOTCH_Num *iwgts
+)
+{
+  const double INT_EPSILON = 1e-5;
+
+  SCOTCH_Num nonint, nonint_local = 0;
+  double sum_wgt, sum_wgt_local = 0.;
+  double max_wgt, max_wgt_local = 0.;
+
+  // Compute local sums of the weights 
+  // Check whether all weights are integers
+  for (size_t i = 0; i < n; i++) {
+    double fw = double(fwgts[i]);
+    if (!nonint_local){
+      SCOTCH_Num tmp = (SCOTCH_Num) floor(fw + .5); /* Nearest int */
+      if (fabs((double)tmp-fw) > INT_EPSILON) {
+        nonint_local = 1;
+      }
+    }
+    sum_wgt_local += fw;
+    if (fw > max_wgt_local) max_wgt_local = fw;
+  }
+
+  Teuchos::reduceAll<int,int>(*problemComm, Teuchos::REDUCE_MAX, 1,
+                              &nonint_local,  &nonint);
+  Teuchos::reduceAll<int,double>(*problemComm, Teuchos::REDUCE_SUM, 1,
+                                 &sum_wgt_local, &sum_wgt);
+  Teuchos::reduceAll<int,double>(*problemComm, Teuchos::REDUCE_MAX, 1,
+                                 &max_wgt_local, &max_wgt);
+
+  double scale = 1.;
+  const double max_wgt_sum = double(SCOTCH_NUMMAX/8);
+
+  // Scaling needed if weights are not integers or weights' 
+  // range is not sufficient
+  if (nonint || (max_wgt <= INT_EPSILON) || (sum_wgt > max_wgt_sum)) {
+    /* Calculate scale factor */
+    if (sum_wgt != 0.) scale = max_wgt_sum/sum_wgt;
+  }
+
+  /* Convert weights to positive integers using the computed scale factor */
+  for (size_t i = 0; i < n; i++)
+    iwgts[i] = (SCOTCH_Num) ceil(double(fwgts[i])*scale);
+
 }
+
+////////////////////////////////////////////////////////////////////////
+#else // DO NOT HAVE_ZOLTAN2_SCOTCH
+
+// Error handling for when Scotch is requested
+// but Zoltan2 not built with Scotch.
+
+template <typename Adapter>
+class AlgPTScotch : public Algorithm<Adapter>
+{
+  AlgPTScotch(const RCP<const Environment> &env,
+              const RCP<const Comm<int> > &problemComm,
+#ifdef HAVE_ZOLTAN2_MPI
+              MPI_Comm mpicomm,
+#endif
+              const RCP<GraphModel<typename Adapter::base_adapter_t> > &model,
+              RCP<PartitioningSolution<Adapter> > &solution
+             )
+  {
+    throw std::runtime_error(
+          "BUILD ERROR:  Scotch requested but not compiled into Zoltan2.\n"
+          "Please set CMake flag Zoltan2_ENABLE_Scotch:BOOL=ON.");
+  }
+}
+
 #endif // HAVE_ZOLTAN2_SCOTCH
+
+////////////////////////////////////////////////////////////////////////
+
+} // namespace Zoltan2
+
 #endif

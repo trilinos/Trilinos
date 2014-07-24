@@ -47,6 +47,7 @@
 
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
+#include <Zoltan2_Algorithm.hpp>
 
 #include <sstream>
 #include <string>
@@ -88,7 +89,8 @@ enum blockParams{
 
 
 template <typename Adapter>
-class AlgBlock {
+class AlgBlock : public Algorithm<Adapter>
+{
 
 private:
   const RCP<const Environment> env;
@@ -97,6 +99,11 @@ private:
   RCP<PartitioningSolution<Adapter> > solution;
 
 public:
+  typedef typename Adapter::lno_t lno_t;     // local ids
+  typedef typename Adapter::gno_t gno_t;     // global ids
+  typedef typename Adapter::scalar_t scalar_t;   // scalars
+  typedef typename Adapter::part_t part_t;   // part numbers
+
   // Constructor
   AlgBlock(
     const RCP<const Environment> &env_,
@@ -112,11 +119,6 @@ public:
   {
     using std::string;
     using std::ostringstream;
-
-    typedef typename Adapter::lno_t lno_t;     // local ids
-    typedef typename Adapter::gno_t gno_t;     // global ids
-    typedef typename Adapter::scalar_t scalar_t;   // scalars
-    typedef typename Adapter::part_t part_t;   // part numbers
 
     env->debug(DETAILED_STATUS, string("Entering AlgBlock"));
 

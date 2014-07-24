@@ -50,6 +50,7 @@
 #ifndef _ZOLTAN2_ALGAMD_HPP_
 #define _ZOLTAN2_ALGAMD_HPP_
 
+#include <Zoltan2_Algorithm.hpp>
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_OrderingSolution.hpp>
 
@@ -98,7 +99,7 @@ class AMDTraits<long>
 namespace Zoltan2{
 
 template <typename Adapter>
-class AlgAMD
+class AlgAMD : public Algorithm<Adapter>
 {
     public:
 

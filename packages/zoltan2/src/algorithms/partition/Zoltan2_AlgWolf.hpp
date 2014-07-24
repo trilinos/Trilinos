@@ -47,6 +47,7 @@
 
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
+#include <Zoltan2_Algorithm.hpp>
 #include <Zoltan2_AlgRCB.hpp>
 
 #include <sstream>
@@ -86,7 +87,7 @@ namespace Zoltan2
  */
 ////////////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
-class AlgWolf 
+class AlgWolf : public Algorithm<Adapter>
 {
 
 private:
