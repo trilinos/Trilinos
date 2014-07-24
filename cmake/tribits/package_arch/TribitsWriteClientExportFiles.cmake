@@ -420,6 +420,12 @@ ENDIF()
       )
     ENDIF()
 
+    IF ("${CMAKE_CXX_FLAGS}" STREQUAL "")
+      SET(CMAKE_CXX_FLAGS_ESCAPED "")
+    ELSE()
+      # Replace " by \".
+      STRING(REGEX REPLACE "\"" "\\\\\"" CMAKE_CXX_FLAGS_ESCAPED ${CMAKE_CXX_FLAGS})
+    ENDIF()
     CONFIGURE_FILE(
       ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsPackageConfigTemplate.cmake.in
       "${PARSE_WRITE_CMAKE_CONFIG_FILE}"
