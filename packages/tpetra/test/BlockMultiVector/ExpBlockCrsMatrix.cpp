@@ -915,9 +915,8 @@ namespace {
   }
 
 
-  // Test BlockCrsMatrix::Import for same row and column Maps, with
-  // the same graphs.  This is really just a test of the "copy" part
-  // of copyAndPermute.
+  // Test BlockCrsMatrix Import for the same graphs.  This is really
+  // just a test of the "copy" part of copyAndPermute.
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ExpBlockCrsMatrix, ImportCopy, Scalar, LO, GO, Node )
   {
     typedef Tpetra::Experimental::BlockMultiVector<Scalar, LO, GO, Node> BMV;
@@ -927,8 +926,8 @@ namespace {
     typedef Tpetra::Import<LO, GO, Node> import_type;
     typedef Teuchos::ScalarTraits<Scalar> STS;
 
-    out << "Testing Tpetra::Experimental::BlockCrsMatrix Import with same row "
-      "and column Maps and ADD combine mode" << endl;
+    out << "Testing Tpetra::Experimental::BlockCrsMatrix Import with same "
+      "graphs" << endl;
     Teuchos::OSTab tab0 (out);
 
     RCP<const Comm<int> > comm = getDefaultComm ();
@@ -980,7 +979,7 @@ namespace {
     out << "The matrix A1, after construction:" << endl;
     A1.describe (out, Teuchos::VERB_EXTREME);
 
-    // Fill all entries of the first matrix with -2.
+    // Fill all entries of the second matrix with -2.
     const Scalar minusTwo = -STS::one () - STS::one ();
     A2.setAllToScalar (minusTwo);
 
@@ -1080,6 +1079,206 @@ namespace {
     TEST_EQUALITY_CONST( gblSuccess, 1 );
   }
 
+  // Test BlockCrsMatrix Export for different graphs with different
+  // row Maps.  This tests packAndPrepare and unpackAndCombine.
+  //
+  // FIXME (mfh 24 Jul 2014) On running this test in its entirety, it
+  // hangs in or after packAndPrepare, due to a thrown exception.
+  // This is why the test returns early.
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ExpBlockCrsMatrix, ExportDiffRowMaps, Scalar, LO, GO, Node )
+  {
+    // typedef Tpetra::Experimental::BlockMultiVector<Scalar, LO, GO, Node> BMV;
+    typedef Tpetra::Experimental::BlockCrsMatrix<Scalar, LO, GO, Node> BCM;
+    typedef Tpetra::CrsGraph<LO, GO, Node> graph_type;
+    typedef Tpetra::Map<LO, GO, Node> map_type;
+    typedef Tpetra::Export<LO, GO, Node> export_type;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+
+    out << "Testing Tpetra::Experimental::BlockCrsMatrix Import "
+      "with different graphs with different row Maps" << endl;
+    Teuchos::OSTab tab0 (out);
+
+    // FIXME (mfh 24 Jul 2014) On running this test in its entirety, it
+    // hangs in or after packAndPrepare, due to a thrown exception.
+    // This is why the test returns early.
+    return;
+
+    RCP<const Comm<int> > comm = getDefaultComm ();
+    const int myRank = comm->getRank ();
+    const int numProcs = comm->getSize ();
+    RCP<Node> node = getNode<Node> ();
+    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+
+    out << "Create nonoverlapping mesh row Map" << endl;
+    const size_t numLocalMeshPoints = 12;
+    const GO indexBase = 0;
+    // mfh 16 May 2014: Tpetra::CrsGraph still needs the row Map as an
+    // RCP.  Later interface changes will let us pass in the Map by
+    // const reference and assume view semantics.
+    RCP<const map_type> meshRowMapPtr =
+      rcp (new map_type (INVALID, numLocalMeshPoints, indexBase, comm, node));
+    const GO numGlobalMeshPoints = meshRowMapPtr->getGlobalNumElements ();
+    const LO blockSize = 4;
+
+    RCP<const map_type> meshDomainMapPtr = meshRowMapPtr;
+    RCP<const map_type> meshRangeMapPtr = meshRowMapPtr;
+
+    out << "Create overlapping mesh row Map" << endl;
+    const size_t numRemoteMeshPoints = 2;
+    // Put the "remote" indices at the beginning.  This makes the test
+    // exercise the "permute" part of copyAndPermute.  We've already
+    // exercised the "copy" part in the previous test.  Also, make
+    // sure that the remote indices aren't necessarily consecutive or
+    // in order.
+    Array<GO> overlapMeshRowIndices (numLocalMeshPoints + numRemoteMeshPoints);
+    for (size_t k = 0; k < numRemoteMeshPoints; ++k) {
+      overlapMeshRowIndices[k] =
+        (meshRowMapPtr->getMinGlobalIndex () - static_cast<GO> (2*k)) %
+        numGlobalMeshPoints;
+    }
+    const size_t numOverlapMeshPoints = numLocalMeshPoints + numRemoteMeshPoints;
+    RCP<const map_type> overlapMeshRowMapPtr =
+      rcp (new map_type (INVALID, numOverlapMeshPoints, indexBase, comm, node));
+
+    out << "Create graph with overlapping mesh row Map" << endl;
+    // Make a graph.  It happens to have two entries per row.
+    graph_type overlapGraph (overlapMeshRowMapPtr, 2, Tpetra::StaticProfile);
+    if (overlapMeshRowMapPtr->getNodeNumElements () > 0) {
+      const GO myMinGblRow = overlapMeshRowMapPtr->getMinGlobalIndex ();
+      const GO myMaxGblRow = overlapMeshRowMapPtr->getMaxGlobalIndex ();
+      for (GO gblRow = myMinGblRow; gblRow <= myMaxGblRow; ++gblRow) {
+        // Insert two entries, neither of which are on the diagonal.
+        Teuchos::Array<GO> gblCols (2);
+        gblCols[0] = (gblRow + 1) % numGlobalMeshPoints;
+        gblCols[1] = (gblRow + 2) % numGlobalMeshPoints;
+        overlapGraph.insertGlobalIndices (gblRow, gblCols ());
+      }
+    }
+    overlapGraph.fillComplete (meshDomainMapPtr, meshRangeMapPtr);
+
+    out << "Create empty graph with nonoverlapping mesh row Map" << endl;
+    graph_type graph (meshRowMapPtr, 0, Tpetra::DynamicProfile);
+
+    out << "Create Export from overlap to nonoverlap mesh row Map" << endl;
+    export_type theExport (overlapMeshRowMapPtr, meshRowMapPtr);
+
+    out << "Import overlap graph into nonoverlap graph" << endl;
+    graph.doExport (overlapGraph, theExport, Tpetra::INSERT);
+
+    out << "Call fillComplete on nonoverlap graph" << endl;
+    graph.fillComplete (meshDomainMapPtr, meshRangeMapPtr);
+
+    std::cerr << "PAST GRAPH FILL COMPLETE" << endl;
+
+    // Create the two matrices.
+    out << "Create matrix with overlapping mesh row Map" << endl;
+    BCM A_overlap (overlapGraph, blockSize);
+    out << "Create matrix with nonoverlapping mesh row Map" << endl;
+    BCM A (graph, blockSize);
+
+    std::cerr << "CREATED MATRICES" << endl;
+
+    // Fill all entries of the first matrix with 3.
+    const Scalar three = STS::one () + STS::one () + STS::one ();
+    A_overlap.setAllToScalar (three);
+
+    out << "The matrix A_overlap, after construction:" << endl;
+    A_overlap.describe (out, Teuchos::VERB_EXTREME);
+
+    // Fill all entries of the second matrix with -2.
+    const Scalar minusTwo = -STS::one () - STS::one ();
+    A.setAllToScalar (minusTwo);
+
+    std::cerr << "FILLED MATRICES" << endl;
+
+    out << "The matrix A, after construction:" << endl;
+    A.describe (out, Teuchos::VERB_EXTREME);
+
+    out << "Export A_overlap into A" << endl;
+    bool exportSuccess = true;
+    try {
+      A.doExport (A_overlap, theExport, Tpetra::REPLACE);
+    } catch (std::exception& e) {
+      exportSuccess = false;
+      if (myRank == 0) {
+        out << "Export FAILED by throwing an exception: " << e.what () << endl;
+      }
+      std::ostringstream os;
+      os << "Proc " << myRank << ": Export FAILED by throwing an exception: "
+         << e.what () << endl;
+      std::cerr << os.str ();
+    }
+
+    {
+      std::ostringstream os;
+      os << "Proc " << myRank << ": RETURNED FROM EXPORT" << endl;
+      std::cerr << os.str ();
+    }
+
+    if (A_overlap.localError () || A.localError ()) {
+      if (myRank == 0) {
+        out << "Export FAILED by reporting local error" << endl;
+      }
+      exportSuccess = false;
+    }
+
+    TEST_ASSERT( exportSuccess );
+
+    int lclExportSuccess = exportSuccess ? 1 : 0;
+    int gblExportSuccess = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclExportSuccess, outArg (gblExportSuccess));
+    exportSuccess = (gblExportSuccess == 1);
+
+    if (! exportSuccess) {
+      for (int p = 0; p < numProcs; ++p) {
+        if (p == myRank) {
+          std::ostringstream os;
+          os << "Process " << myRank << ": error messages from A_overlap: "
+             << A_overlap.errorMessages () << endl
+             << "Process " << myRank << ": error messages from A: "
+             << A.errorMessages () << endl;
+          std::cerr << os.str ();
+        }
+        comm->barrier (); // give time for output to complete
+        comm->barrier ();
+        comm->barrier ();
+      }
+    }
+    else { // doExport claims that it succeeded
+      out << "Export claims that it succeeded" << endl;
+
+      // // Y := A2*X, where X is a block multivector (with one column)
+      // // full of 1s.  Since there are two block entries per row, each
+      // // of which is all 3s, we know that each entry of the result Y
+      // // will be 3*2*blockSize = 6*blockSize.
+      // const Scalar requiredValue = static_cast<Scalar> (6 * blockSize);
+      // BMV X (* (graph.getDomainMap ()), * (A2.getDomainMap ()), blockSize, static_cast<LO> (1));
+      // X.putScalar (STS::one ());
+      // BMV Y (* (graph.getRangeMap ()), * (A2.getRangeMap ()), blockSize, static_cast<LO> (1));
+      // A2.applyBlock (X, Y, Teuchos::NO_TRANS, STS::one (), STS::zero ());
+
+      // const LO myMinLclMeshRow = Y.getMap ()->getMinLocalIndex ();
+      // const LO myMaxLclMeshRow = Y.getMap ()->getMaxLocalIndex ();
+      // bool valsMatch = true;
+      // for (LO lclMeshRow = myMinLclMeshRow; lclMeshRow <= myMaxLclMeshRow; ++lclMeshRow) {
+      //   typename BMV::little_vec_type Y_lcl = Y.getLocalBlock (lclMeshRow, 0);
+      //   for (LO i = 0; i < blockSize; ++i) {
+      //     if (Y_lcl(i) != requiredValue) {
+      //       valsMatch = false;
+      //     }
+      //   }
+      // }
+      // TEST_ASSERT( valsMatch );
+    }
+
+    // out << "The matrix A2, after Export (should be same as A1):" << endl;
+    // A2.describe (out, Teuchos::VERB_EXTREME);
+
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY_CONST( gblSuccess, 1 );
+  }
 
 //
 // INSTANTIATIONS
@@ -1089,7 +1288,8 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, ctor, SCALAR, LO, GO, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, basic, SCALAR, LO, GO, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, SetAllToScalar, SCALAR, LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, ImportCopy, SCALAR, LO, GO, NODE )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, ImportCopy, SCALAR, LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, ExportDiffRowMaps, SCALAR, LO, GO, NODE )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 

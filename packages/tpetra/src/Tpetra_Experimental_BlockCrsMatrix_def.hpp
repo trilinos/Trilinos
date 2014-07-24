@@ -1138,7 +1138,9 @@ namespace Experimental {
                   Tpetra::Distributor& /* distor */)
   {
     typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
+    const bool debug = true;
     const this_type* src = dynamic_cast<const this_type* > (&source);
+
     // Should have checked for this case in checkSizes().
     TEUCHOS_TEST_FOR_EXCEPTION(
       src == NULL, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::"
@@ -1146,6 +1148,13 @@ namespace Experimental {
       "not a BlockCrsMatrix, or does not have the right template parameters.  "
       "checkSizes() should have caught this.  "
       "Please report this bug to the Tpetra developers.");
+
+    if (debug) {
+      const int myRank = graph_.getComm ()->getRank ();
+      std::ostringstream os;
+      os << "Proc " << myRank << ": packAndPrepare" << std::endl;
+      std::cerr << os.str ();
+    }
 
     const crs_graph_type& srcGraph = src->graph_;
     const size_t blockSize = static_cast<size_t> (src->getBlockSize ());
@@ -1229,6 +1238,14 @@ namespace Experimental {
           sizeof (GO) - rem;
         totalBufSize += padding;
       }
+    }
+
+    if (debug) {
+      const int myRank = graph_.getComm ()->getRank ();
+      std::ostringstream os;
+      os << "Proc " << myRank << ": packAndPrepare: totalBufSize = "
+         << totalBufSize << std::endl;
+      std::cerr << os.str ();
     }
 
     {
@@ -1343,6 +1360,14 @@ namespace Experimental {
         exportsOffset += padding;
       }
     } // for each LID (of a row) to send
+
+
+    {
+      const int myRank = graph_.getComm ()->getRank ();
+      std::ostringstream os;
+      os << "Proc " << myRank << ": packAndPrepare done" << std::endl;
+      std::cerr << os.str ();
+    }
   }
 
 
