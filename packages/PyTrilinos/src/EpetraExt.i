@@ -1023,7 +1023,11 @@ class OutArgs(PropertyBase):
 //
 %feature("director") EpetraExt::ModelEvaluator;
 
-namespace EpetraExt {
+%teuchos_rcp(EpetraExt::ModelEvaluator)
+
+namespace EpetraExt
+{
+
 class ModelEvaluator : virtual public Teuchos::Describable
 {
 public:
