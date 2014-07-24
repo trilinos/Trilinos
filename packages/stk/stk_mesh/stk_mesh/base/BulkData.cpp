@@ -184,7 +184,7 @@ void unpackEdgeInfromFromOtherProcsAndMarkEdgesAsSharedAndTrackProcessorsThatNee
                     {
                         shared_itr->global_key = sedge.global_key;
                     }
-                    mesh.markEdge(entity, BulkData::IS_SHARED);
+                    mesh.markEntity(entity, BulkData::IS_SHARED);
                 }
             }
         }
@@ -270,7 +270,7 @@ void markEdgesForResolvingSharingInfoUsingNodes(stk::mesh::BulkData &mesh, stk::
                         sedge.local_key = edge_key;
                         sedge.global_key = edge_key;
                         shared_edges.push_back(sedge);
-                        mesh.markEdge(edge, BulkData::POSSIBLY_SHARED);
+                        mesh.markEntity(edge, BulkData::POSSIBLY_SHARED);
                     }
                 }
             }
@@ -287,13 +287,13 @@ void resolve_edge_sharing(stk::mesh::BulkData &stkMeshBulkData, std::vector<Enti
     for (size_t i=0; i<shared_edges.size();i++)
     {
         Entity entity = stkMeshBulkData.get_entity(shared_edges[i].global_key);
-        if ( stkMeshBulkData.isEdgeMarked(entity) == BulkData::IS_SHARED )
+        if ( stkMeshBulkData.isEntityMarked(entity) == BulkData::IS_SHARED )
         {
             entity_keys.push_back(shared_edges[i].global_key);
         }
+        stkMeshBulkData.markEntity(entity, BulkData::NOT_MARKED);
     }
     std::sort(entity_keys.begin(), entity_keys.end());
-    std::fill(stkMeshBulkData.getMarkedEdges().begin(), stkMeshBulkData.getMarkedEdges().end(), static_cast<int>(BulkData::NOT_MARKED));
 }
 
 /////////////////////////////////////// End functions for create edges
@@ -368,7 +368,7 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
     m_mesh_indexes(),
     m_entity_keys(),
     m_entity_states(),
-    m_mark_edge(),
+    m_mark_entity(),
     m_closure_count(),
     m_entity_sync_counts(),
     m_local_ids(),
@@ -1097,7 +1097,7 @@ size_t BulkData::generate_next_local_offset(size_t preferred_offset)
     m_mesh_indexes.push_back(mesh_index);
     m_entity_keys.push_back(invalid_key);
     m_entity_states.push_back(Created);
-    m_mark_edge.push_back(0);
+    m_mark_entity.push_back(NOT_MARKED);
     m_closure_count.push_back(static_cast<uint16_t>(0));
     m_entity_sync_counts.push_back(0);
     m_local_ids.push_back(stk::mesh::GetInvalidLocalId());
@@ -1116,7 +1116,7 @@ size_t BulkData::generate_next_local_offset(size_t preferred_offset)
 
     m_mesh_indexes[new_local_offset] = mesh_index;
     m_entity_keys[new_local_offset] = invalid_key;
-    m_mark_edge[new_local_offset] = 0;
+    m_mark_entity[new_local_offset] = NOT_MARKED;
     m_entity_states[new_local_offset] = Created;
     m_closure_count[new_local_offset] = static_cast<uint16_t>(0);
     m_entity_sync_counts[new_local_offset] = 0;
@@ -1151,7 +1151,7 @@ void BulkData::initialize_arrays()
   m_entity_keys.push_back(invalid_key);
 
   m_entity_states.push_back(Deleted);
-  m_mark_edge.push_back(0);
+  m_mark_entity.push_back(NOT_MARKED);
   m_closure_count.push_back(static_cast<uint16_t>(0));
   m_entity_sync_counts.push_back(0);
   m_local_ids.push_back(stk::mesh::GetInvalidLocalId());
@@ -1371,7 +1371,7 @@ bool BulkData::internal_destroy_entity( Entity entity, bool was_ghost )
   bucket(entity).getPartition()->remove(entity);
   m_entity_repo.destroy_entity(key, entity );
   m_entity_states[entity.local_offset()] = Deleted;
-  m_mark_edge[entity.local_offset()] = 0;
+  m_mark_entity[entity.local_offset()] = NOT_MARKED;
   m_closure_count[entity.local_offset()] = static_cast<uint16_t>(0u);
   if ( !ghost ) {
     m_deleted_entities_current_modification_cycle.push_front(entity.local_offset());
@@ -4891,7 +4891,7 @@ void BulkData::fillLocallyCreatedOrModifiedEntities(parallel::DistributedIndex::
   {
     Entity entity = i->second ;
 
-    if ( state(entity) != Unchanged &&  isEdgeMarked(entity)==BulkData::NOT_MARKED &&
+    if ( state(entity) != Unchanged &&  isEntityMarked(entity)==BulkData::NOT_MARKED &&
          in_owned_closure( *this, entity , m_parallel_rank ) )
     {
       // Has been changed and is in owned closure, may be shared
@@ -4906,7 +4906,7 @@ void BulkData::fillLocallyCreatedOrModifiedEntities(parallel::DistributedIndex::
   {
     Entity entity = i->second ;
 
-    if ( state(entity) != Unchanged &&  isEdgeMarked(entity)==BulkData::NOT_MARKED &&
+    if ( state(entity) != Unchanged &&  isEntityMarked(entity)==BulkData::NOT_MARKED &&
          in_owned_closure(*this, entity , m_parallel_rank ) )
     {
       // Has been changed and is in owned closure, may be shared
@@ -4972,7 +4972,7 @@ void BulkData::internal_update_distributed_index(
                     }
 
                     // Add the other_process to the entity's sharing info.
-                    entity_comm_map_insert(entity, EntityCommInfo( 0 /*sharing*/, modifying_proc ));
+                    entity_comm_map_insert(entity, EntityCommInfo( stk::mesh::BulkData::SHARED, modifying_proc ));
                 }
             }
         }
@@ -4983,13 +4983,13 @@ void BulkData::internal_update_distributed_index(
     for (size_t i=0; i<shared_edges.size();i++)
     {
         Entity entity = get_entity(shared_edges[i].global_key);
-        if ( isEdgeMarked(entity) == BulkData::IS_SHARED )
+        if ( isEntityMarked(entity) == BulkData::IS_SHARED )
         {
             entity_keys.push_back(shared_edges[i].global_key);
         }
     }
 
-    std::fill(m_mark_edge.begin(), m_mark_edge.end(), static_cast<int>(BulkData::NOT_MARKED));
+    std::fill(m_mark_entity.begin(), m_mark_entity.end(), static_cast<int>(BulkData::NOT_MARKED));
     std::sort(entity_keys.begin(), entity_keys.end());
 
     shared_new.clear();
