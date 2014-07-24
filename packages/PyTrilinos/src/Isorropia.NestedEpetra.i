@@ -50,6 +50,11 @@ The purpose of Isorropia.Epetra is to ....
 
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_Comm.hpp"
+#include "Teuchos_DefaultSerialComm.hpp"
+#ifdef HAVE_MPI
+#include "Teuchos_DefaultMpiComm.hpp"
+#endif
 
 // Epetra includes
 #include "Epetra_LocalMap.h"
