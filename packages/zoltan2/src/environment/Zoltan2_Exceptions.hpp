@@ -55,20 +55,6 @@
 #include <sstream>
 #include <string>
 
-/*!  \brief Throw an error for input adapter functions that have been
- *   called by the model but not implemented in the adapter.
- */
-
-#define Z2_THROW_NOT_IMPLEMENTED_ERROR \
-  { \
-    std::ostringstream emsg; \
-    emsg << __FILE__ << "," << __LINE__ \
-         << " error:  " << __func__ << " not implemented in adapter "  \
-         << std::endl; \
-    throw std::runtime_error(emsg.str()); \
-  }
-
-
 /*!  \brief Throw an error returned from outside the Zoltan2 library.
  *
  *   A \c try block that calls another library should be followed

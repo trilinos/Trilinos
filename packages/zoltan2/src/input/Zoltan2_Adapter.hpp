@@ -54,6 +54,17 @@
 #include <Zoltan2_InputTraits.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 
+//  Throw an error for input adapter functions that have been
+//  called by the model but not implemented in the adapter.
+#define Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER \
+  { \
+    std::ostringstream emsg; \
+    emsg << __FILE__ << "," << __LINE__ \
+         << " error:  " << __func__ << " not implemented in adapter "  \
+         << std::endl; \
+    throw std::runtime_error(emsg.str()); \
+  }
+
 namespace Zoltan2 {
 
 /*! \brief An enum to identify general types of adapters.
@@ -163,7 +174,7 @@ public:
     void applyPartitioningSolution(const User &in, User *&out,
       const PartitioningSolution<Adapter> &solution) const
   {
-    Z2_THROW_NOT_IMPLEMENTED_ERROR
+    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
   }
 
 };

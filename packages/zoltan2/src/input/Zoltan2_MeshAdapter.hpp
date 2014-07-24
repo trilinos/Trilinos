@@ -166,7 +166,7 @@ public:
   {
     weights = NULL;
     stride = 0;
-    Z2_THROW_NOT_IMPLEMENTED_ERROR
+    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
   }
 
 
@@ -195,7 +195,7 @@ public:
   {
     coords = NULL;
     stride = 0;
-    Z2_THROW_NOT_IMPLEMENTED_ERROR
+    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
   }
 
 
@@ -228,7 +228,7 @@ public:
   {
     offsets = NULL;
     adjacencyIds = NULL;
-    Z2_THROW_NOT_IMPLEMENTED_ERROR
+    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
   }
 
 
@@ -268,7 +268,7 @@ public:
   {
     offsets = NULL;
     adjacencyIds = NULL;
-    Z2_THROW_NOT_IMPLEMENTED_ERROR
+    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
   }
 
 
@@ -295,7 +295,7 @@ public:
   {
     weights = NULL;
     stride = 0;
-    Z2_THROW_NOT_IMPLEMENTED_ERROR
+    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
   }
 
 //KDD What if we wanted to provide weights with respect to first adjacencies?

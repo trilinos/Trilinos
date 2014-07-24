@@ -170,7 +170,7 @@ public:
     } else {
       coords = NULL;
       stride = 0;
-      Z2_THROW_NOT_IMPLEMENTED_ERROR
+      Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
     }
   }
 
@@ -205,7 +205,7 @@ public:
     } else {
       offsets = NULL;
       adjacencyIds = NULL;
-      Z2_THROW_NOT_IMPLEMENTED_ERROR
+      Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
     }
   }
 
@@ -242,7 +242,7 @@ public:
     } else {
       offsets = NULL;
       adjacencyIds = NULL;
-      Z2_THROW_NOT_IMPLEMENTED_ERROR
+      Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
     }
   }
 
