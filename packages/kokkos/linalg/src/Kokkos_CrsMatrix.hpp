@@ -78,6 +78,8 @@
 #endif // KOKKOS_USE_MKL
 
 #include <Kokkos_Vectorization.hpp>
+#include <impl/Kokkos_Error.hpp>
+
 namespace Kokkos {
 
 /// \class SparseRowView

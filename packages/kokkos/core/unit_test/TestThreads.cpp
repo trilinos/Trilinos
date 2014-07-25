@@ -305,7 +305,7 @@ TEST_F( threads , compiler_macros )
 
 
 //----------------------------------------------------------------------------
-#if defined( KOKKOS_HAVE_CXX11 )
+#if defined( KOKKOS_HAVE_CXX11 ) && defined( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_THREADS )
 TEST_F( threads , cxx11 )
 {
   if ( Kokkos::Impl::is_same< Kokkos::DefaultExecutionSpace , Kokkos::Threads >::value ) {

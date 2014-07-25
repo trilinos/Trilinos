@@ -63,7 +63,6 @@
 #include <TestMultiReduce.hpp>
 #include <TestAggregate.hpp>
 #include <TestCompilerMacros.hpp>
-#include <TestCXX11.hpp>
 
 namespace Test {
 

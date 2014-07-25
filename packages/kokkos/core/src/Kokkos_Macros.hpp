@@ -172,12 +172,16 @@ namespace Kokkos {
 #elif defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_SERIAL )
   typedef Serial DefaultExecutionSpace ;
 #elif  defined ( KOKKOS_HAVE_CUDA )
+  #define KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_CUDA
   typedef Kokkos::Cuda DefaultExecutionSpace ;
 #elif defined ( KOKKOS_HAVE_OPENMP )
+  #define KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_OPENMP
   typedef Kokkos::OpenMP DefaultExecutionSpace ;
 #elif defined ( KOKKOS_HAVE_PTHREAD )
+  #define KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_THREADS
   typedef Kokkos::Threads DefaultExecutionSpace ;
 #else
+  #define KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_SERIAL
   typedef Kokkos::Serial DefaultExecutionSpace ;
 #endif
 

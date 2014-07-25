@@ -463,9 +463,11 @@ void ThreadsExec::start( void (*func)( ThreadsExec & , const void * ) , const vo
   }
 
   if ( work_spec ) {
-    s_current_team_size    = work_team_size ? std::min( s_threads_per_numa , unsigned(work_team_size) ) : s_threads_per_numa ;
-    s_current_team_alloc   = s_threads_per_core * ( ( s_current_team_size + s_threads_per_core - 1 ) / s_threads_per_core );
-    s_current_league_size  = work_league_size ;
+    s_current_team_size       = work_team_size ? std::min( s_threads_per_numa , unsigned(work_team_size) ) : s_threads_per_numa ;
+    unsigned team_alloc_core  = s_threads_per_core * ( ( s_current_team_size + s_threads_per_core - 1 ) / s_threads_per_core );
+    unsigned team_per_numa    = s_threads_per_numa / team_alloc_core ;
+    s_current_team_alloc      = s_threads_per_numa / team_per_numa ;
+    s_current_league_size     = work_league_size ;
   }
 
   s_current_function     = func ;

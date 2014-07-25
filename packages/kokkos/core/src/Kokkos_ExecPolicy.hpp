@@ -105,7 +105,17 @@ public:
 
 namespace Kokkos {
 
-/** \brief  Execution policy for work over a league of teams of threads.
+/** \brief  Execution policy for parallel work over a league of teams of threads.
+ *
+ *  The work functor is called for each thread of each team such that
+ *  the team's member threads are guaranteed to be concurrent.
+ *
+ *  The team's threads have access to team shared scratch memory and
+ *  team collective operations.
+ *
+ *  If the WorkArgTag is non-void then the first calling argument of the
+ *  work functor's parentheses operator is 'const WorkArgTag &'.
+ *  This allows a functor to have multiple work member functions.
  */
 template< class ExecSpace  = DefaultExecutionSpace
         , class WorkArgTag = void >
@@ -115,20 +125,49 @@ public:
   typedef Impl::ExecutionPolicyTag   kokkos_tag ;      ///< Concept tag
   typedef ExecSpace                  execution_space ; ///< Execution space
 
-  TeamPolicy( int league_size , int team_size );
-  TeamPolicy( execution_space & , int league_size , int team_size );
+  /** \brief  Construct policy with the given instance of the execution space */
+  TeamPolicy( execution_space & , int league_size_request , int team_size_request );
 
+  /** \brief  Construct policy with the default instance of the execution space */
+  TeamPolicy( int league_size_request , int team_size_request );
+
+  /** \brief  The actual league size (number of teams) of the policy.
+   *
+   *  This may be smaller than the requested league size due to limitations
+   *  of the execution space.
+   */
+  KOKKOS_INLINE_FUNCTION int league_size() const ;
+
+  /** \brief  The actual team size (number of threads per team) of the policy.
+   *
+   *  This may be smaller than the requested team size due to limitations
+   *  of the execution space.
+   */
+  KOKKOS_INLINE_FUNCTION int team_size() const ;
+
+  /** \brief  Parallel execution of a functor calls the functor once with
+   *          each member of the execution policy.
+   */
   struct member_type {
 
+    /** \brief  Handle to the currently executing team shared scratch memory */
     KOKKOS_INLINE_FUNCTION
-    typename execution_space::scratch_memory_space shmem() const ;
+    typename execution_space::scratch_memory_space team_shmem() const ;
 
+    /** \brief  Rank of this team within the league of teams */
     KOKKOS_INLINE_FUNCTION int league_rank() const ;
+
+    /** \brief  Number of teams in the league */
     KOKKOS_INLINE_FUNCTION int league_size() const ;
+
+    /** \brief  Rank of this thread within this team */
     KOKKOS_INLINE_FUNCTION int team_rank() const ;
+
+    /** \brief  Number of threads in this team */
     KOKKOS_INLINE_FUNCTION int team_size() const ;
 
-    KOKKOS_INLINE_FUNCTION void barrier();
+    /** \brief  Barrier among the threads of this team */
+    KOKKOS_INLINE_FUNCTION void team_barrier();
 
     /** \brief  Intra-team exclusive prefix sum with team_rank() ordering.
      *
@@ -136,7 +175,7 @@ public:
      *    reduction_total = dev.team_scan( value ) + value ;
      */
     template< typename Type >
-    KOKKOS_INLINE_FUNCTION Type scan( const Type & value );
+    KOKKOS_INLINE_FUNCTION Type team_scan( const Type & value );
 
     /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
      *          with intra-team non-deterministic ordering accumulation.
@@ -148,7 +187,7 @@ public:
      *  non-deterministic.
      */
     template< typename Type >
-    KOKKOS_INLINE_FUNCTION Type scan( const Type & value , Type * const global_accum );
+    KOKKOS_INLINE_FUNCTION Type team_scan( const Type & value , Type * const global_accum );
   };
 };
 
