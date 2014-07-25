@@ -86,6 +86,8 @@ struct LocalViewTraits {
   { return v; }
 };
 
+#if defined( KOKKOS_HAVE_CUDA )
+
 template <typename T, typename L, typename M>
 struct LocalViewTraits< Kokkos::View<T,L,Kokkos::Cuda,M,Kokkos::Impl::ViewMPVectorContiguous> > {
   typedef Kokkos::Impl::ViewMPVectorContiguous Specialize;
@@ -122,6 +124,8 @@ struct LocalViewTraits< Kokkos::View<T,Kokkos::Cuda,M,V,Kokkos::Impl::ViewMPVect
   }
 };
 
+#endif /* #if defined( KOKKOS_HAVE_CUDA ) */
+
 // Compute DeviceConfig struct's based on scalar type
 template <typename ScalarType>
 struct CreateDeviceConfigs {
@@ -142,7 +146,12 @@ struct CreateDeviceConfigs< Sacado::MP::Vector<StorageType> > {
                     Kokkos::DeviceConfig& dev_config_gath,
                     Kokkos::DeviceConfig& dev_config_bc ) {
     static const unsigned VectorSize = StorageType::static_size;
-    if ( Kokkos::Impl::is_same< device_type, Kokkos::Cuda >::value ) {
+#if defined( KOKKOS_HAVE_CUDA )
+    enum { is_cuda = Kokkos::Impl::is_same< device_type, Kokkos::Cuda >::value };
+#else
+    enum { is_cuda = false };
+#endif /* #if defined( KOKKOS_HAVE_CUDA ) */
+    if ( is_cuda ) {
       dev_config_elem = Kokkos::DeviceConfig( 0 , VectorSize , 64/VectorSize  );
       dev_config_gath = Kokkos::DeviceConfig( 0 , VectorSize , 128/VectorSize );
       dev_config_bc   = Kokkos::DeviceConfig( 0 , VectorSize , 256/VectorSize );

@@ -199,7 +199,12 @@ public:
     }
 
     // Align entry_count
+#if defined( KOKKOS_HAVE_CUDA )
     enum { Align = Kokkos::Impl::is_same<DeviceType,Kokkos::Cuda>::value ? 32 : 1 };
+#else
+    enum { Align = 1 };
+#endif
+
     entry_count = (entry_count+Align-1) & ~(Align-1);
     TEUCHOS_ASSERT(entry_count % Align == 0);
 
@@ -379,7 +384,12 @@ public:
     }
 
     // Align entry_count
+#if defined( KOKKOS_HAVE_CUDA )
     enum { Align = Kokkos::Impl::is_same<DeviceType,Kokkos::Cuda>::value ? 32 : 1 };
+#else
+    enum { Align = 1 };
+#endif
+
     entry_count = (entry_count+Align-1) & ~(Align-1);
     TEUCHOS_ASSERT(entry_count % Align == 0);
 

@@ -56,6 +56,14 @@ namespace Tpetra {
 namespace KokkosRefactor {
 namespace Details {
 
+#if defined( KOKKOS_HAVE_CUDA )
+  template< class D >
+  struct device_is_cuda : public Kokkos::Impl::is_same<D,Kokkos::Cuda> {};
+#else
+  template< class D >
+  struct device_is_cuda : public Kokkos::Impl::false_type {};
+#endif
+
   // Functors for implementing packAndPrepare and unpackAndCombine
   // through parallel_for
 
@@ -98,7 +106,7 @@ namespace Details {
                      const SrcView& src,
                      const IdxView& idx,
                      size_t col) {
-      if ( Kokkos::Impl::is_same<device_type,Kokkos::Cuda>::value )
+      if ( Details::device_is_cuda<device_type>::value )
         Kokkos::parallel_for(
           Kokkos::MPVectorWorkConfig( idx.size(), dst.sacado_size() ),
           PackArraySingleColumn(dst,src,idx,col) );
@@ -154,7 +162,7 @@ namespace Details {
                      const SrcView& src,
                      const IdxView& idx,
                      size_t numCols) {
-      if ( Kokkos::Impl::is_same<device_type,Kokkos::Cuda>::value )
+      if ( Details::device_is_cuda<device_type>::value )
         Kokkos::parallel_for(
           Kokkos::MPVectorWorkConfig( idx.size(), dst.sacado_size() ),
           PackArrayMultiColumn(dst,src,idx,numCols) );
@@ -215,7 +223,7 @@ namespace Details {
                      const IdxView& idx,
                      const ColView& col,
                      size_t numCols) {
-      if ( Kokkos::Impl::is_same<device_type,Kokkos::Cuda>::value )
+      if ( Details::device_is_cuda<device_type>::value )
         Kokkos::parallel_for(
           Kokkos::MPVectorWorkConfig( idx.size(), dst.sacado_size() ),
           PackArrayMultiColumnVariableStride(dst,src,idx,col,numCols) );
@@ -276,7 +284,7 @@ namespace Details {
                        const IdxView& idx,
                        const Op& op,
                        size_t numCols) {
-      if ( Kokkos::Impl::is_same<device_type,Kokkos::Cuda>::value )
+      if ( Details::device_is_cuda<device_type>::value )
         Kokkos::parallel_for(
           Kokkos::MPVectorWorkConfig( idx.size(), dst.sacado_size() ),
           UnpackArrayMultiColumn(dst,src,idx,op,numCols) );
@@ -340,7 +348,7 @@ namespace Details {
                        const ColView& col,
                        const Op& op,
                        size_t numCols) {
-      if ( Kokkos::Impl::is_same<device_type,Kokkos::Cuda>::value )
+      if ( Details::device_is_cuda<device_type>::value )
         Kokkos::parallel_for(
           Kokkos::MPVectorWorkConfig( idx.size(), dst.sacado_size() ),
           UnpackArrayMultiColumnVariableStride(dst,src,idx,col,op,numCols) );
@@ -403,7 +411,7 @@ namespace Details {
                         const SrcIdxView& src_idx,
                         size_t numCols) {
       const size_type n = std::min( dst_idx.size(), src_idx.size() );
-      if ( Kokkos::Impl::is_same<device_type,Kokkos::Cuda>::value )
+      if ( Details::device_is_cuda<device_type>::value )
         Kokkos::parallel_for(
           Kokkos::MPVectorWorkConfig( n, dst.sacado_size() ),
           PermuteArrayMultiColumn(dst,src,dst_idx,src_idx,numCols) );
@@ -473,7 +481,7 @@ namespace Details {
                         const SrcColView& src_col,
                         size_t numCols) {
       const size_type n = std::min( dst_idx.size(), src_idx.size() );
-      if ( Kokkos::Impl::is_same<device_type,Kokkos::Cuda>::value )
+      if ( Details::device_is_cuda<device_type>::value )
         Kokkos::parallel_for(
           Kokkos::MPVectorWorkConfig( n, dst.sacado_size() ),
           PermuteArrayMultiColumnVariableStride(

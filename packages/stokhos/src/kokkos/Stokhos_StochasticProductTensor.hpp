@@ -132,7 +132,11 @@ public:
   KOKKOS_INLINE_FUNCTION
   size_type aligned_dimension() const {
     const bool is_cuda =
+#if defined( KOKKOS_HAVE_CUDA )
       Kokkos::Impl::is_same<device_type,Kokkos::Cuda>::value;
+#else
+      false ;
+#endif
     const size_type AlignBytes = is_cuda ? 128 : 64;
     const size_type NumAlign = AlignBytes/sizeof(value_type);
     return (dimension() + NumAlign-1) & ~(NumAlign-1);

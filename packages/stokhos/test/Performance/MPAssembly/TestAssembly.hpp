@@ -429,7 +429,11 @@ struct PerformanceDriverOp {
 
     ensemble_vector_type ensemble_residual;
     Kokkos::DeviceConfig ensemble_dev_config = dev_config;
+#if defined( KOKKOS_HAVE_CUDA )
     const bool is_cuda = Kokkos::Impl::is_same<Device,Kokkos::Cuda>::value;
+#else
+    const bool is_cuda = false ;
+#endif
     if (is_cuda) {
       const size_t block_size = dev_config.block_dim.x * dev_config.block_dim.y;
       ensemble_dev_config.block_dim.x = ensemble;

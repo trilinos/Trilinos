@@ -1676,7 +1676,12 @@ void performance_test_driver_poly( const int pdeg ,
 
     std::vector<double> perf_original_mat_free_block;
 #if defined(HAVE_STOKHOS_KOKKOSLINALG)
-    if (Kokkos::Impl::is_same<Device,Kokkos::Cuda>::value)
+#if defined( KOKKOS_HAVE_CUDA )
+    enum { is_cuda = Kokkos::Impl::is_same<Device,Kokkos::Cuda>::value };
+#else
+    enum { is_cuda = false };
+#endif
+    if ( is_cuda )
       perf_original_mat_free_block =
         test_original_matrix_free_kokkos<Scalar,Device>(
           var_degree , nGrid , nIter , test_block , symmetric );

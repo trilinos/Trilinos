@@ -120,9 +120,9 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, NoInteraction ) {
     TEST_EQUALITY( xView[k], x[k+3] );
   }
 
-  typedef Kokkos::View<double*, Kokkos::Threads> ka_view_type;
+  typedef Kokkos::View<double*, Kokkos::DefaultExecutionSpace> ka_view_type;
   ka_view_type y ("y", numElts);
-  Kokkos::parallel_for (y.dimension_0 (), FillFunctor<Kokkos::Threads> (y));
+  Kokkos::parallel_for (y.dimension_0 (), FillFunctor<Kokkos::DefaultExecutionSpace> (y));
 }
 
 
@@ -130,11 +130,11 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, NoInteraction ) {
 // it points to the same data.
 TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayViewOfView ) {
   typedef Teuchos::Array<double>::size_type size_type;
-  typedef Kokkos::View<double*, Kokkos::LayoutLeft, Kokkos::Threads> ka_view_type;
+  typedef Kokkos::View<double*, Kokkos::LayoutLeft, Kokkos::DefaultExecutionSpace> ka_view_type;
 
   const size_type numElts = 10;
   ka_view_type y ("y", numElts);
-  Kokkos::parallel_for (y.dimension_0 (), FillFunctor<Kokkos::Threads> (y));
+  Kokkos::parallel_for (y.dimension_0 (), FillFunctor<Kokkos::DefaultExecutionSpace> (y));
 
   // It's possible to get the View's raw pointer because we know its
   // layout.  Not every kind of View necessarily implements the
@@ -161,8 +161,8 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayViewOfView ) {
 // Tpetra::MultiVector methods get1dCopy and get2dCopy.
 TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ViewOfArrayView ) {
   typedef Teuchos::Array<double>::size_type size_type;
-  typedef Kokkos::View<double*, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::MemoryUnmanaged> ka_view_type;
-  typedef Kokkos::View<const double*, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::MemoryUnmanaged> ka_const_view_type;
+  typedef Kokkos::View<double*, Kokkos::LayoutLeft, Kokkos::DefaultExecutionSpace, Kokkos::MemoryUnmanaged> ka_view_type;
+  typedef Kokkos::View<const double*, Kokkos::LayoutLeft, Kokkos::DefaultExecutionSpace, Kokkos::MemoryUnmanaged> ka_const_view_type;
 
   const size_type numElts = 10;
   Teuchos::Array<double> x (numElts);
@@ -197,7 +197,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ViewOfArrayView ) {
 // will be useful for implementing Tpetra::MultiVector's getData,
 // getDataNonConst, get1dView, and get1dViewNonConst methods.
 TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP1D_of_2DView ) {
-  typedef Kokkos::View<double**, Kokkos::LayoutLeft, Kokkos::Threads> ka_view_type;
+  typedef Kokkos::View<double**, Kokkos::LayoutLeft, Kokkos::DefaultExecutionSpace> ka_view_type;
 
   const size_t numRows = 75;
   const size_t numCols = 5;
@@ -260,7 +260,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP2D_of_2DView ) {
   // multivector still needs to be a View<double**, ...>, and we have
   // to use the subview() overload that takes two ranges of row and
   // column indices.
-  typedef Kokkos::View<double**, Kokkos::LayoutLeft, Kokkos::Threads> ka_view_type;
+  typedef Kokkos::View<double**, Kokkos::LayoutLeft, Kokkos::DefaultExecutionSpace> ka_view_type;
 
   const size_t numRows = 75;
   const size_t numCols = 5;
@@ -336,7 +336,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP2D_of_2DView ) {
 // process will start by changing the internal data storage from
 // KokkosClassic::MultiVector to View.
 TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, KMV_of_2DView ) {
-  typedef Kokkos::View<double**, Kokkos::LayoutLeft, Kokkos::Threads> ka_view_type;
+  typedef Kokkos::View<double**, Kokkos::LayoutLeft, Kokkos::DefaultExecutionSpace> ka_view_type;
   typedef KokkosClassic::MultiVector<double, KokkosClassic::SerialNode> KMV;
 
   const size_t numRows = 75;

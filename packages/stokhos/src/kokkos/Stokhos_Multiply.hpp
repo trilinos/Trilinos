@@ -129,8 +129,13 @@ compute_work_range( const device_type device,
                     const size_type thread_count,
                     const size_type thread_rank)
 {
+#if defined( KOKKOS_HAVE_CUDA )
   enum { cache_line =
          Kokkos::Impl::is_same<device_type,Kokkos::Cuda>::value ? 128 : 64 };
+#else
+  enum { cache_line = 64 };
+#endif
+
   enum { work_align = cache_line / sizeof(scalar_type) };
   enum { work_shift = Kokkos::Impl::power_of_two< work_align >::value };
   enum { work_mask  = work_align - 1 };

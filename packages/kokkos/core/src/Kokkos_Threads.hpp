@@ -46,6 +46,8 @@
 
 #include <Kokkos_Macros.hpp>
 
+#if defined( KOKKOS_HAVE_PTHREAD )
+
 #include <cstddef>
 #include <iosfwd>
 #include <Kokkos_Layout.hpp>
@@ -227,6 +229,7 @@ private:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
+#endif /* #if defined( KOKKOS_HAVE_PTHREAD ) */
 #endif /* #define KOKKOS_THREADS_HPP */
 
 
