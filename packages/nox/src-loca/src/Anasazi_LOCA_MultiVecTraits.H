@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -58,9 +58,9 @@
 #include "NOX_Abstract_MultiVector.H"
 
 namespace Anasazi {
-  
+
   /*!
-   * \brief Implementation of the Anasazi::MultiVecTraits for 
+   * \brief Implementation of the Anasazi::MultiVecTraits for
    * NOX::Abstract::MultiVectors.
    */
   /*!
@@ -80,66 +80,66 @@ namespace Anasazi {
 
     //@{ \name Creation methods
 
-    /*! 
+    /*!
      * \brief Creates a new empty \c MV containing \c numvecs columns.
      *
      * \return Reference-counted pointer to the new multivector of type \c MV.
      */
-    static Teuchos::RCP<MV> Clone( const MV& mv, const int numvecs ) 
+    static Teuchos::RCP<MV> Clone( const MV& mv, const int numvecs )
     {
       return mv.clone(numvecs);
     }
-      
-    /*! 
-     * \brief Creates a new \c MV and copies contents of \c mv into the new 
+
+    /*!
+     * \brief Creates a new \c MV and copies contents of \c mv into the new
      * vector (deep copy).
      *
      * \return Reference-counted pointer to the new multivector of type \c MV.
      */
-    static Teuchos::RCP<MV> CloneCopy( const MV& mv ) 
+    static Teuchos::RCP<MV> CloneCopy( const MV& mv )
     {
       return mv.clone(NOX::DeepCopy);
     }
 
-    /*! 
-     * \brief Creates a new \c MV and copies the selected contents of \c mv 
-     * into the new vector (deep copy).  
+    /*!
+     * \brief Creates a new \c MV and copies the selected contents of \c mv
+     * into the new vector (deep copy).
      *
-     * The copied vectors from \c mv are indicated by the \c index.size() 
-     * indices in \c index.      
+     * The copied vectors from \c mv are indicated by the \c index.size()
+     * indices in \c index.
      * \return Reference-counted pointer to the new multivector of type \c MV.
      */
-    static Teuchos::RCP<MV> CloneCopy( const MV& mv, 
-					       const std::vector<int>& index )
+    static Teuchos::RCP<MV> CloneCopy( const MV& mv,
+                           const std::vector<int>& index )
     {
       return mv.subCopy(index);
     }
 
-    /*! 
-     * \brief Creates a new \c MV that shares the selected contents of 
+    /*!
+     * \brief Creates a new \c MV that shares the selected contents of
      * \c mv (shallow copy).
-     * 
-     * The index of the \c numvecs vectors shallow copied from \c mv are 
+     *
+     * The index of the \c numvecs vectors shallow copied from \c mv are
      * indicated by the indices given in \c index.
      * \return Reference-counted pointer to the new multivector of type \c MV.
-     */      
-    static Teuchos::RCP<MV> CloneViewNonConst( MV& mv, 
-					       const std::vector<int>& index )
+     */
+    static Teuchos::RCP<MV> CloneViewNonConst( MV& mv,
+                           const std::vector<int>& index )
     {
       return mv.subView(index);
     }
 
-    /*! 
-     * \brief Creates a new const \c MV that shares the selected contents of 
+    /*!
+     * \brief Creates a new const \c MV that shares the selected contents of
      * \c mv (shallow copy).
      *
-     * The index of the \c numvecs vectors shallow copied from \c mv are 
+     * The index of the \c numvecs vectors shallow copied from \c mv are
      * indicated by the indices given in \c index.
-     * \return Reference-counted pointer to the new const multivector of 
+     * \return Reference-counted pointer to the new const multivector of
      * type \c MV.
-     */      
-    static Teuchos::RCP<const MV> CloneView( const MV& mv, 
-						     const std::vector<int>& index ) 
+     */
+    static Teuchos::RCP<const MV> CloneView( const MV& mv,
+                             const std::vector<int>& index )
     {
       return mv.subView(index).getConst();
     }
@@ -149,13 +149,13 @@ namespace Anasazi {
     //@{ \name Attribute methods
 
     //! Obtain the vector length of \c mv.
-    static int GetVecLength( const MV& mv ) 
+    static int GetVecLength( const MV& mv )
     {
       return mv.length();
     }
 
     //! Obtain the number of vectors in \c mv
-    static int GetNumberVecs( const MV& mv ) 
+    static int GetNumberVecs( const MV& mv )
     {
       return mv.numVectors();
     }
@@ -164,75 +164,75 @@ namespace Anasazi {
 
     //@{ \name Update methods
 
-    /*! 
+    /*!
      * \brief Update \c mv with \f$ \alpha AB + \beta mv \f$.
      */
-    static void MvTimesMatAddMv( const ScalarType alpha, const MV& A, 
-				 const Teuchos::SerialDenseMatrix<int,ScalarType>& B, 
-				 const ScalarType beta, MV& mv ) 
+    static void MvTimesMatAddMv( const ScalarType alpha, const MV& A,
+                 const Teuchos::SerialDenseMatrix<int,ScalarType>& B,
+                 const ScalarType beta, MV& mv )
     {
       mv.update(Teuchos::NO_TRANS, alpha, A, B, beta);
     }
 
-    /*! 
+    /*!
      * \brief Replace \c mv with \f$\alpha A + \beta B\f$.
      */
-    static void MvAddMv( const ScalarType alpha, const MV& A, 
-			 const ScalarType beta, const MV& B, MV& mv ) 
+    static void MvAddMv( const ScalarType alpha, const MV& A,
+             const ScalarType beta, const MV& B, MV& mv )
     {
       mv.update(alpha, A, beta, B);
     }
 
-    /*! 
-     * \brief Compute a dense matrix \c B through the matrix-matrix multiply 
+    /*!
+     * \brief Compute a dense matrix \c B through the matrix-matrix multiply
      * \f$ \alpha A^Hmv \f$.
      */
-    static void MvTransMv( const ScalarType alpha, const MV& A, const MV& mv, 
-			   Teuchos::SerialDenseMatrix<int,ScalarType>& B) 
+    static void MvTransMv( const ScalarType alpha, const MV& A, const MV& mv,
+               Teuchos::SerialDenseMatrix<int,ScalarType>& B)
     {
       mv.multiply(alpha, A, B);
     }
-    
-    /*! 
-     * \brief Compute a vector \c b where the components are the individual 
+
+    /*!
+     * \brief Compute a vector \c b where the components are the individual
      * dot-products of the \c i-th columns of \c A and \c mv, i.e.
      * \f$b[i] = A[i]^Hmv[i]\f$.
      */
-    static void MvDot ( const MV& mv, const MV& A, 
-			std::vector<ScalarType> &b) 
+    static void MvDot ( const MV& mv, const MV& A,
+            std::vector<ScalarType> &b)
     {
       for (unsigned int i=0; i<b.size(); i++)
         b[i] = A[i].innerProduct(mv[i]);
     }
 
-    /*! 
+    /*!
      * \brief Scale each element of the vectors in \c *this with \c alpha.
      */
     static void MvScale ( MV& mv, const ScalarType alpha )
-    { 
-      mv.scale(alpha); 
-    }     
-    
-    /*! 
-     * \brief Scale each element of the \c i-th vector in \c *this with 
+    {
+      mv.scale(alpha);
+    }
+
+    /*!
+     * \brief Scale each element of the \c i-th vector in \c *this with
      * \c alpha[i].
      */
     static void MvScale ( MV& mv, const std::vector<ScalarType>& alpha )
-    { 
+    {
       for (unsigned int i=0; i<alpha.size(); i++)
-	mv[i].scale(alpha[i]);
-    } 
+    mv[i].scale(alpha[i]);
+    }
 
     //@}
     //@{ \name Norm method
 
-    /*! 
-     * \brief Compute the 2-norm of each individual vector of \c mv.  
-     * Upon return, \c normvec[i] holds the value of \f$||mv_i||_2\f$, 
+    /*!
+     * \brief Compute the 2-norm of each individual vector of \c mv.
+     * Upon return, \c normvec[i] holds the value of \f$||mv_i||_2\f$,
      * the \c i-th column of \c mv.
      */
-    static void MvNorm( const MV& mv, 
-			std::vector<double> &normvec ) 
+    static void MvNorm( const MV& mv,
+            std::vector<double> &normvec )
     {
       mv.norm(normvec);
     }
@@ -241,11 +241,11 @@ namespace Anasazi {
 
     //@{ \name Initialization methods
 
-    /*! 
-     * \brief Copy the vectors in \c A to a set of vectors in \c mv indicated 
+    /*!
+     * \brief Copy the vectors in \c A to a set of vectors in \c mv indicated
      * by the indices given in \c index.
      *
-     * The \c numvecs vectors in \c A are copied to a subset of vectors in 
+     * The \c numvecs vectors in \c A are copied to a subset of vectors in
      * \c mv indicated by the indices given in \c index,
      * i.e.<tt> mv[index[i]] = A[i]</tt>.
      */
@@ -254,19 +254,19 @@ namespace Anasazi {
       mv.setBlock(A, index);
     }
 
-    /*! 
+    /*!
      * \brief Replace the vectors in \c mv with random vectors.
      */
-    static void MvRandom( MV& mv ) 
+    static void MvRandom( MV& mv )
     {
       mv.random();
     }
 
-    /*! 
+    /*!
      * \brief Replace each element of the vectors in \c mv with \c alpha.
      */
-    static void MvInit( MV& mv, 
-			const ScalarType alpha = 0.0 ) 
+    static void MvInit( MV& mv,
+            const ScalarType alpha = 0.0 )
     {
       mv.init(alpha);
     }
@@ -275,10 +275,10 @@ namespace Anasazi {
 
     //@{ \name Print method
 
-    /*! 
+    /*!
      * \brief Print the \c mv multi-vector to the \c os output stream.
      */
-    static void MvPrint( const MV& mv, std::ostream& os ) 
+    static void MvPrint( const MV& mv, std::ostream& os )
     {
       mv.print(os);
     }
@@ -287,4 +287,4 @@ namespace Anasazi {
   }; // class MultiVecTraits
 } // namespace Anasazi
 
-#endif 
+#endif

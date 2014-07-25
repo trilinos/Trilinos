@@ -172,7 +172,7 @@ int main(int argc, char *argv[]) {
   RCP<Vector> mueluX = rcp(new Xpetra::EpetraVector(X));
   RCP<Vector> mueluB = rcp(new Xpetra::EpetraVector(B));
 
-  H->Iterate(*mueluB, nIts, *mueluX);
+  H->Iterate(*mueluB, *mueluX, nIts);
 
   // Print relative residual norm
   Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = Utils::ResidualNorm(*mueluA, *mueluX, *mueluB)[0];

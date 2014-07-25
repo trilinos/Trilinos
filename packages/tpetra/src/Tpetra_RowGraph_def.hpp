@@ -42,6 +42,9 @@
 #ifndef TPETRA_ROWGRAPH_DEF_HPP
 #define TPETRA_ROWGRAPH_DEF_HPP
 
+#include <Tpetra_RowGraph_decl.hpp>
+#include <Tpetra_Distributor.hpp> // avoid error C2027: use of undefined type 'Tpetra::Distributor' at (void) distor below
+
 namespace Tpetra {
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   void

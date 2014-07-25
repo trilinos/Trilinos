@@ -61,7 +61,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
@@ -322,6 +322,83 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test2, Scalar, LocalOr
 
   TEST_COMPARE_FLOATING_ARRAYS(yview, zview, 4*Teuchos::ScalarTraits<Scalar>::eps());
 }
+
+
+// Test RILUK as subdomain solver for AdditiveSchwarz.
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test3, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+  using std::endl;
+
+//we are now in a class method declared by the above macro, and
+//that method has these input arguments:
+//Teuchos::FancyOStream& out, bool& success
+
+  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> CrsType;
+
+  std::string version = Ifpack2::Version();
+  out << "Ifpack2::Version(): " << version << endl;
+
+  global_size_t num_rows_per_proc = 5;
+
+  out << "Creating row Map and CrsMatrix" << endl;
+
+  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap =
+    tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+  Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix =
+    tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
+
+  out << "Creating AdditiveSchwarz instance" << endl;
+
+  Ifpack2::AdditiveSchwarz<CrsType> prec (crsmatrix);
+  Teuchos::ParameterList params, zlist;
+
+  out << "Filling in ParameterList for AdditiveSchwarz" << endl;
+
+#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+  params.set ("schwarz: use reordering", true);
+#else
+  params.set ("schwarz: use reordering", false);
+#endif
+  params.set ("inner preconditioner name", "RILUK");
+
+  out << "Setting AdditiveSchwarz's parameters" << endl;
+
+  TEST_NOTHROW(prec.setParameters(params));
+
+  out << "Testing domain and range Maps of AdditiveSchwarz" << endl;
+
+  //trivial tests to insist that the preconditioner's domain/range maps are
+  //identically those of the matrix:
+  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>* mtx_dom_map_ptr = &*crsmatrix->getDomainMap();
+  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>* mtx_rng_map_ptr = &*crsmatrix->getRangeMap();
+  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>* prec_dom_map_ptr = &*prec.getDomainMap();
+  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>* prec_rng_map_ptr = &*prec.getRangeMap();
+  TEST_EQUALITY( prec_dom_map_ptr, mtx_dom_map_ptr );
+  TEST_EQUALITY( prec_rng_map_ptr, mtx_rng_map_ptr );
+
+  out << "Calling AdditiveSchwarz's initialize()" << endl;
+  prec.initialize();
+
+  out << "Calling AdditiveSchwarz's compute()" << endl;
+  prec.compute();
+
+  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap,2), y(rowmap,2), z(rowmap,2);
+  x.putScalar(1);
+
+  out << "Applying AdditiveSchwarz to a multivector" << endl;
+  prec.apply (x, y);
+
+  out << "Testing result of AdditiveSchwarz's apply" << endl;
+
+  // The solution should now be full of 1/2s
+  z.putScalar(0.5);
+
+  Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
+  Teuchos::ArrayRCP<const Scalar> zview = z.get1dView();
+
+  TEST_COMPARE_FLOATING_ARRAYS(yview, zview, 4*Teuchos::ScalarTraits<Scalar>::eps());
+}
+
 
 // ///////////////////////////////////////////////////////////////////// //
 

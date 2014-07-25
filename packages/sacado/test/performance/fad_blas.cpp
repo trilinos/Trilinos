@@ -21,7 +21,7 @@
 //  
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 // (etphipp@sandia.gov).
@@ -114,7 +114,7 @@ do_time_teuchos_double_dot(unsigned int m, unsigned int nloop)
   timer.start(true);
   double z;
   for (unsigned int j=0; j<nloop; j++) {
-    z = blas.DOT(m, &X[0], 1, &Y[0], 1);
+    z += blas.DOT(m, &X[0], 1, &Y[0], 1);
   }
   timer.stop();
 

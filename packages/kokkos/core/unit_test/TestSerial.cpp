@@ -59,9 +59,13 @@
 #include <TestViewAPI.hpp>
 #include <TestAtomic.hpp>
 #include <TestTile.hpp>
+#include <TestTeam.hpp>
 #include <TestCrsArray.hpp>
 #include <TestReduce.hpp>
+#include <TestScan.hpp>
 #include <TestAggregate.hpp>
+#include <TestCompilerMacros.hpp>
+#include <TestCXX11.hpp>
 
 namespace Test {
 
@@ -107,6 +111,31 @@ TEST_F( serial, double_reduce_dynamic ) {
 TEST_F( serial, long_reduce_dynamic_view ) {
   TestReduceDynamicView< long ,   Kokkos::Serial >( 1000000 );
 }
+
+TEST_F( serial , scan )
+{
+  TestScan< Kokkos::Serial >( 10 );
+  TestScan< Kokkos::Serial >( 10000 );
+}
+
+TEST_F( serial , team_long_reduce) {
+  TestReduceTeam< long ,   Kokkos::Serial >( 100000 );
+}
+
+TEST_F( serial , team_double_reduce) {
+  TestReduceTeam< double ,   Kokkos::Serial >( 100000 );
+}
+
+TEST_F( serial , team_shared_request) {
+  TestSharedTeam< Kokkos::Serial >();
+}
+
+TEST_F( serial  , team_scan )
+{
+  TestScanTeam< Kokkos::Serial >( 10 );
+  TestScanTeam< Kokkos::Serial >( 10000 );
+}
+
 
 TEST_F( serial , view_remap )
 {
@@ -252,6 +281,28 @@ TEST_F( serial, tile_16x16)
   Kokkos::parallel_reduce(dim, functor_type(array) , errors );
   EXPECT_EQ( errors, ptrdiff_t(0) );
 }
+
+//----------------------------------------------------------------------------
+
+TEST_F( serial , compiler_macros )
+{
+  ASSERT_TRUE( ( TestCompilerMacros::Test< Kokkos::Serial >() ) );
+}
+
+
+
+//----------------------------------------------------------------------------
+#if defined( KOKKOS_HAVE_CXX11 ) && defined( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_SERIAL )
+TEST_F( serial , cxx11 )
+{
+  if ( Kokkos::Impl::is_same< Kokkos::DefaultExecutionSpace , Kokkos::Serial >::value ) {
+    ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Serial >(1) ) );
+    ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Serial >(2) ) );
+    ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Serial >(3) ) );
+    ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Serial >(4) ) );
+  }
+}
+#endif
 
 } // namespace test
 

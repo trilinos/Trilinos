@@ -2,8 +2,7 @@
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
-#include <stdio.h>
-#include "defs.h"
+#include <stdio.h>                      // for fprintf, printf, NULL, FILE
 #include "structs.h"
 
 /* Check an extended eigenpair of A by direct multiplication. Uses

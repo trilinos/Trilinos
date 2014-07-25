@@ -53,6 +53,7 @@
 #include <Kokkos_Layout.hpp>
 #include <Kokkos_HostSpace.hpp>
 #include <Kokkos_MemoryTraits.hpp>
+#include <impl/Kokkos_Tags.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -75,12 +76,15 @@ public:
   //! \name Type declarations that all Kokkos devices must provide.
   //@{
 
+  //! The tag (what type of kokkos_object is this).
+  typedef Impl::DeviceTag       kokkos_tag ;
   //! The device type (same as this class).
   typedef Serial                device_type ;
   //! The size_type typedef best suited for this device.
   typedef HostSpace::size_type  size_type ;
   //! This device's preferred memory space.
   typedef HostSpace             memory_space ;
+  typedef Serial                scratch_memory_space ;
   //! This device's preferred array layout.
   typedef LayoutRight           array_layout ;
   /// \brief This device's host mirror type.
@@ -127,7 +131,10 @@ public:
   /// device have completed.
   static void fence() {}
 
-  static void initialize() {}
+  static void initialize( unsigned threads_count = 1 ,
+                          unsigned use_numa_count = 0 ,
+                          unsigned use_cores_per_numa = 0 ,
+                          bool allow_asynchronous_threadpool = false) {}
 
   static int is_initialized() { return 1 ; }
 
@@ -137,22 +144,50 @@ public:
   //! Print configuration information to the given output stream.
   static void print_configuration( std::ostream & , const bool detail = false );
 
-  inline static void memory_fence() {};
+  //--------------------------------------------------------------------------
 
-  inline int league_rank() const { return 0 ; }
-  inline int league_size() const { return 1 ; }
+  static inline int team_max() { return 1 ; }
+  static inline int team_recommended() { return 1 ; }
+  KOKKOS_INLINE_FUNCTION static unsigned hardware_thread_id() { return 0 ; }
+  KOKKOS_INLINE_FUNCTION static unsigned max_hardware_threads() { return 1 ; }
+
+
+  //--------------------------------------------------------------------------
+
+  inline int league_rank() const { return m_league_rank ; }
+  inline int league_size() const { return m_league_size ; }
   inline int team_rank() const { return 0 ; }
   inline int team_size() const { return 1 ; }
 
   inline void team_barrier() {}
 
-  inline std::pair<size_t,size_t> work_range( size_t n ) const 
+  template< class ArgType >
+  KOKKOS_INLINE_FUNCTION
+  ArgType team_scan( const ArgType & value , ArgType * const global_accum = 0 )
+    {
+      const ArgType tmp = global_accum ? *global_accum : ArgType(0) ;
+      if ( global_accum ) { *global_accum += value ; }
+      return tmp ;
+    }
+
+  inline std::pair<size_t,size_t> work_range( size_t n ) const
     { return std::pair<size_t,size_t>(0,n); }
 
-  template< typename T >
-  inline T * get_shmem( const int count );
+  void * get_shmem( const int size ) const ;
 
   static void * resize_reduce_scratch( const unsigned );
+  static void * resize_shared_scratch( const unsigned );
+
+  Serial( const int rank , const int size )
+    : m_league_rank(rank) , m_league_size(size) , m_shmem_iter(0) {}
+
+  Serial()
+    : m_league_rank(0) , m_league_size(0) , m_shmem_iter(0) {}
+
+private:
+  int m_league_rank ;
+  int m_league_size ;
+  mutable int m_shmem_iter ;
 };
 
 } // namespace Kokkos
@@ -164,7 +199,6 @@ namespace Kokkos {
 namespace Impl {
 
 //----------------------------------------------------------------------------
-//TODO: Needs constructor for Kokkos::ParallelWorkRequest CRT
 
 template< class FunctorType , class WorkSpec >
 class ParallelFor< FunctorType , WorkSpec , Serial > {
@@ -193,7 +227,7 @@ public:
         result = (pointer_type ) Serial::resize_reduce_scratch( Reduce::value_size( functor ) );
       }
 
-      functor.init( Reduce::reference( result ) );
+      Reduce::init( functor , result );
 
       for ( size_t iwork = 0 ; iwork < work_count ; ++iwork ) {
         functor( iwork , Reduce::reference( result ) );
@@ -205,7 +239,209 @@ public:
   void wait() {}
 };
 
+template< class FunctorType , class WorkSpec >
+class ParallelScan< FunctorType , WorkSpec , Kokkos::Serial >
+{
+public:
+  typedef ReduceAdapter< FunctorType >   Reduce ;
+  typedef typename Reduce::pointer_type  pointer_type ;
+
+  inline
+  ParallelScan( const FunctorType & functor , const size_t work_count )
+  {
+    pointer_type result = (pointer_type ) Serial::resize_reduce_scratch( Reduce::value_size( functor ) );
+
+    Reduce::init( functor , result );
+
+    for ( size_t iwork = 0 ; iwork < work_count ; ++iwork ) {
+      functor( iwork , Reduce::reference( result ) , true );
+    }
+  }
+
+  void wait() {}
+};
+
 //----------------------------------------------------------------------------
+
+template< class FunctorType >
+class ParallelFor< FunctorType , ParallelWorkRequest , Serial > {
+public:
+
+  ParallelFor( const FunctorType         & functor
+             , const ParallelWorkRequest & work )
+    {
+      Serial::resize_shared_scratch( FunctorShmemSize< FunctorType >::value( functor ) );
+
+      for ( size_t iwork = 0 ; iwork < work.league_size ; ++iwork ) {
+        functor( Serial(iwork,work.league_size) );
+      }
+    }
+};
+
+template< class FunctorType >
+class ParallelReduce< FunctorType , ParallelWorkRequest , Serial > {
+public:
+
+  typedef ReduceAdapter< FunctorType >  Reduce ;
+  typedef typename Reduce::pointer_type pointer_type ;
+
+  ParallelReduce( const FunctorType         & functor
+                , const ParallelWorkRequest & work
+                ,       pointer_type          result_ptr = 0
+                )
+    {
+      Serial::resize_shared_scratch( FunctorShmemSize< FunctorType >::value( functor ) );
+
+      if ( ! result_ptr ) {
+        result_ptr = (pointer_type) Serial::resize_reduce_scratch( Reduce::value_size( functor ) );
+      }
+
+      typename Reduce::reference_type update = Reduce::init( functor , result_ptr );
+      
+      for ( size_t iwork = 0 ; iwork < work.league_size ; ++iwork ) {
+        functor( Serial(iwork,work.league_size) , update );
+      }
+
+      Reduce::final( functor , result_ptr );
+    }
+
+  inline
+  void wait() const {}
+};
+
+} // namespace Impl
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+
+template < class WorkArgTag >
+class TeamPolicy< Kokkos::Serial , WorkArgTag > {
+private:
+
+  const int m_league_size ;
+
+public:
+
+  typedef Impl::ExecutionPolicyTag   kokkos_tag ;      ///< Concept tag
+  typedef Kokkos::Serial             execution_space ; ///< Execution space
+
+  inline int team_size() const { return 1 ; }
+  inline int league_size() const { return m_league_size ; }
+
+  /** \brief  Specify league size, request team size */
+  TeamPolicy( execution_space & , int league_size_request , int /* team_size_request */ )
+    : m_league_size( league_size_request )
+    { }
+
+  TeamPolicy( int league_size_request , int /* team_size_request */ )
+    : m_league_size( league_size_request )
+    { }
+
+  class member_type {
+  private:
+    const int m_league_rank ;
+    const int m_league_size ;
+  public:
+
+    KOKKOS_INLINE_FUNCTION
+    execution_space::scratch_memory_space  team_shmem() const
+      { return execution_space::scratch_memory_space(); }
+
+    KOKKOS_INLINE_FUNCTION int league_rank() const { return m_league_rank ; }
+    KOKKOS_INLINE_FUNCTION int league_size() const { return m_league_size ; }
+    KOKKOS_INLINE_FUNCTION int team_rank() const { return 0 ; }
+    KOKKOS_INLINE_FUNCTION int team_size() const { return 1 ; }
+
+    KOKKOS_INLINE_FUNCTION void team_barrier() const {}
+
+    /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
+     *          with intra-team non-deterministic ordering accumulation.
+     *
+     *  The global inter-team accumulation value will, at the end of the
+     *  league's parallel execution, be the scan's total.
+     *  Parallel execution ordering of the league's teams is non-deterministic.
+     *  As such the base value for each team's scan operation is similarly
+     *  non-deterministic.
+     */
+    template< typename Type >
+    KOKKOS_INLINE_FUNCTION Type team_scan( const Type & value , Type * const global_accum ) const
+      {
+        const Type tmp = global_accum ? *global_accum : Type(0) ;
+        if ( global_accum ) { *global_accum += value ; }
+        return tmp ;
+      }
+
+    /** \brief  Intra-team exclusive prefix sum with team_rank() ordering.
+     *
+     *  The highest rank thread can compute the reduction total as
+     *    reduction_total = dev.team_scan( value ) + value ;
+     */
+    template< typename Type >
+    KOKKOS_INLINE_FUNCTION Type team_scan( const Type & ) const
+      { return Type(0); }
+
+    //----------------------------------------
+
+    member_type( int rank , int size ) : m_league_rank(rank), m_league_size(size) {}
+  };
+};
+
+}
+
+namespace Kokkos {
+namespace Impl {
+
+template< class FunctorType >
+class ParallelFor< FunctorType , Kokkos::TeamPolicy< Kokkos::Serial , void > , Kokkos::Serial >
+{
+public:
+  typedef Kokkos::TeamPolicy< Kokkos::Serial , void > Policy ;
+
+  ParallelFor( const FunctorType & functor
+             , const Policy      & policy )
+    {
+      Serial::resize_shared_scratch( FunctorShmemSize< FunctorType >::value( functor ) );
+
+      for ( int ileague = 0 ; ileague < policy.league_size() ; ++ileague ) {
+        functor( typename Policy::member_type(ileague,policy.league_size()) );
+      }
+    }
+};
+
+template< class FunctorType >
+class ParallelReduce< FunctorType , Kokkos::TeamPolicy< Kokkos::Serial , void > , Kokkos::Serial > {
+public:
+
+  typedef Kokkos::TeamPolicy< Kokkos::Serial , void > Policy ;
+  typedef ReduceAdapter< FunctorType >  Reduce ;
+  typedef typename Reduce::pointer_type pointer_type ;
+
+  template< class ViewType >
+  ParallelReduce( const FunctorType  & functor
+                , const Policy       & policy
+                , const ViewType     & result
+                )
+    {
+      Serial::resize_shared_scratch( FunctorShmemSize< FunctorType >::value( functor ) );
+
+      pointer_type result_ptr = result.ptr_on_device();
+
+      if ( ! result_ptr ) {
+        result_ptr = (pointer_type) Serial::resize_reduce_scratch( Reduce::value_size( functor ) );
+      }
+
+      typename Reduce::reference_type update = Reduce::init( functor , result_ptr );
+      
+      for ( int ileague = 0 ; ileague < policy.league_size() ; ++ileague ) {
+        functor( typename Policy::member_type(ileague,policy.league_size()) , update );
+      }
+
+      Reduce::final( functor , result_ptr );
+    }
+};
 
 } // namespace Impl
 } // namespace Kokkos

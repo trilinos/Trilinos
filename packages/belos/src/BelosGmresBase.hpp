@@ -282,6 +282,9 @@ namespace Belos {
 	       const int maxIterCount,
 	       const bool flexible);
 
+    /// Destructor -- need to have it because class is polymorphic
+    virtual ~GmresBase() {}
+
     //! Whether it is legal to call advance()
     bool canAdvance () const { return canExtendBasis(); }
 

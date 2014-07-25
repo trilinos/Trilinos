@@ -84,6 +84,13 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
     DEPLIBS muelu xpetra muelu-adapters
     )
 
+#  TRIBITS_ADD_EXECUTABLE(
+#    CoalesceDropTest
+#    SOURCES CoalesceDropTest.cpp
+#    COMM serial mpi
+#    DEPLIBS muelu xpetra muelu-adapters
+#    )
+
   TRIBITS_ADD_EXECUTABLE(
     TransposeTest
     SOURCES TransposeTest.cpp
@@ -119,7 +126,7 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
   ENDIF()
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(ScalingTestParamList_cp
-    SOURCE_FILES scalingTest.xml scalingTestIsorropia.xml coupled.xml uncoupled.xml emin.xml isotropicPoisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml pfact.xml
+    SOURCE_FILES scalingTestEasy.xml scalingTest.xml scalingTestIsorropia.xml coupled.xml uncoupled.xml emin.xml isotropicPoisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml sa_with_ilu.xml
    )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(ReadMatrix_cp
@@ -189,7 +196,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PAC
   TRIBITS_ADD_TEST(
     ProlongatorScalingTest
     NAME "ProlongatorScalingTestEpetra"
-    ARGS "--linAlgebra=Epetra --xml=pfact.xml"
+    ARGS "--linAlgebra=Epetra"
     NUM_MPI_PROCS 4
     COMM serial mpi
     )
@@ -231,6 +238,14 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
       NUM_MPI_PROCS 4
       COMM mpi # HAVE_MPI required
       )
+
+    TRIBITS_ADD_TEST(
+      ScalingTestParamList
+      NAME "ScalingTestParamListTpetraILU"
+      ARGS "--linAlgebra=Tpetra --xml=sa_with_ilu.xml"
+      NUM_MPI_PROCS 4
+      COMM mpi # HAVE_MPI required
+      )
   ENDIF()
 
   IF (${PACKAGE_NAME}_ENABLE_Zoltan2)
@@ -254,7 +269,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
   TRIBITS_ADD_TEST(
     ProlongatorScalingTest
     NAME "ProlongatorScalingTestTpetra"
-    ARGS "--linAlgebra=Tpetra --xml=pfact.xml"
+    ARGS "--linAlgebra=Tpetra"
     NUM_MPI_PROCS 4
     COMM serial mpi
     )
@@ -273,14 +288,6 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
     ARGS "--linAlgebra=Tpetra --nx=10 --ny=10 --sweeps=30"
     NUM_MPI_PROCS 4
     COMM serial mpi
-    )
-
-  TRIBITS_ADD_TEST(
-    ScalingTestParamList
-    NAME "ScalingTestParamListTpetra"
-    ARGS "--linAlgebra=Tpetra"
-    NUM_MPI_PROCS 4
-    COMM mpi # HAVE_MPI required
     )
 
   TRIBITS_ADD_TEST(

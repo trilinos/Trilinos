@@ -21,7 +21,7 @@
 //  
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 // (etphipp@sandia.gov).
@@ -55,7 +55,7 @@ void func(ScalarT& f, const ScalarT& x) {
 int main(int argc, char **argv)
 {
   double x0 = 1.0;                      // Initial condition
-  unsigned int deg = 40;                // Degree of Taylor series solution
+  int deg = 40;                // Degree of Taylor series solution
 
   Sacado::Tay::Taylor<double> x = x0;   // Taylor polynomial for independent
   Sacado::Tay::Taylor<double> f;        // Taylor polynomial for dependent
@@ -64,7 +64,7 @@ int main(int argc, char **argv)
   x.reserve(deg);
 
   // Compute Taylor series solution to dx/dt = f(x)
-  for (unsigned int k=0; k<deg; k++) {
+  for (int k=0; k<deg; k++) {
     func(f, x);
 
     // Set next coefficient
@@ -92,7 +92,7 @@ int main(int argc, char **argv)
   // Compute maximum relative error
   double max_err = 0.0;
   double err = 0.0;
-  for (unsigned int k=0; k<=deg; k++) {
+  for (int k=0; k<=deg; k++) {
     err = std::fabs(x.coeff(k) - u.coeff(k)) / (1.0 + fabs(u.coeff(k)));
     if (err > max_err) max_err = err;
   }

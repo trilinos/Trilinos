@@ -50,8 +50,7 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include "exodusII.h"                   // for ex_put_set, void_int, etc
 
 /*!
  * writes the side set element list and side set side list for a single side set

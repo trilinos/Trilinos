@@ -12,7 +12,7 @@
  *
  * For serial solvers, Amesos will take care to redistribute all required data
  * to process 0, solve the linear system on process 0, then broadcast the
- * solution back to all the processes. 
+ * solution back to all the processes.
  *
  * For parallel solvers (like SuperLU_DIST and MUMPS), the user can tell
  * Amesos how many processes should be used for the coarse solution. This
@@ -26,7 +26,7 @@
  *
  * In its current implementation, ML/Amesos converts the ML_Operator for the
  * coarse level to and Epetra matrix ("heavy conversion").
- * 
+ *
  * \note If \c ML_AMESOS_DEBUG is defined, some checks are performed to verify
  * that the linear system has been solved up to machine precision.
  *
@@ -38,7 +38,7 @@
  */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #ifndef _MLAMESOSWRAP_
@@ -77,11 +77,11 @@ extern "C" {
     \param Amesos_Handle (Out) : it will contain a pointer to the Amesos object (casted
     to void *).
 
-    If the required solver is not available, ML_Amesos_Gen will create 
+    If the required solver is not available, ML_Amesos_Gen will create
     a KLU solver. KLU is distributed with Amesos, and is enabled by default.
-    
+
   */
-  int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs, 
+  int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
                     double AddToDiag, Amesos_Handle_Type *Amesos_Handle);
 
   /** Solves using Amesos, and the factorization computed by ML_Amesos_Gen. */

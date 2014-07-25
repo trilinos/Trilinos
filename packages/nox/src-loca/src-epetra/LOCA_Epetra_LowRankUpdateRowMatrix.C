@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -60,13 +60,13 @@
 LOCA::Epetra::LowRankUpdateRowMatrix::
 LowRankUpdateRowMatrix(
         const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	const Teuchos::RCP<Epetra_RowMatrix>& jacRowMatrix, 
-	const Teuchos::RCP<Epetra_MultiVector>& U_multiVec, 
-	const Teuchos::RCP<Epetra_MultiVector>& V_multiVec,
-	bool setup_for_solve,
-	bool include_UV_terms) :
+    const Teuchos::RCP<Epetra_RowMatrix>& jacRowMatrix,
+    const Teuchos::RCP<Epetra_MultiVector>& U_multiVec,
+    const Teuchos::RCP<Epetra_MultiVector>& V_multiVec,
+    bool setup_for_solve,
+    bool include_UV_terms) :
   LOCA::Epetra::LowRankUpdateOp(global_data, jacRowMatrix, U_multiVec,
-				V_multiVec, setup_for_solve),
+                V_multiVec, setup_for_solve),
   J_rowMatrix(jacRowMatrix),
   nonconst_U(U_multiVec),
   nonconst_V(V_multiVec),
@@ -106,12 +106,12 @@ MaxNumEntries() const
 
 int
 LOCA::Epetra::LowRankUpdateRowMatrix::
-ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values, 
-		 int * Indices) const
+ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values,
+         int * Indices) const
 {
   // Get row of J
-  int res = J_rowMatrix->ExtractMyRowCopy(MyRow, Length, NumEntries, Values, 
-					  Indices);
+  int res = J_rowMatrix->ExtractMyRowCopy(MyRow, Length, NumEntries, Values,
+                      Indices);
 
   if (!includeUV)
     return res;
@@ -123,6 +123,7 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values,
     int jac_col_gid = Indices[col];                // Global col of J
     if (V_map.MyGID(jac_col_gid)) {
       int v_row_lid = V_map.LID(jac_col_gid);      // Local row of V
+      TEUCHOS_ASSERT_INEQUALITY(v_row_lid, >=, 0);
       Values[col] += computeUV(u_row_lid, v_row_lid);
     }
   }
@@ -146,6 +147,7 @@ ExtractDiagonalCopy(Epetra_Vector & Diagonal) const
     int jac_row_gid = row_map.GID(row);
     int u_row_lid = U_map.LID(jac_row_gid);
     int v_row_lid = V_map.LID(jac_row_gid);
+    TEUCHOS_ASSERT_INEQUALITY(v_row_lid, >=, 0);
     Diagonal[row] += computeUV(u_row_lid, v_row_lid);
   }
 
@@ -191,7 +193,7 @@ Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
 int
 LOCA::Epetra::LowRankUpdateRowMatrix::
-Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_MultiVector& X, 
+Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_MultiVector& X,
       Epetra_MultiVector& Y) const
 {
   // We just ignore the U*V^T terms here
@@ -243,7 +245,7 @@ LOCA::Epetra::LowRankUpdateRowMatrix::
 LeftScale(const Epetra_Vector& x)
 {
 
-  
+
   int res;
   if (J_rowMatrix->UseTranspose())
     res = J_rowMatrix->RightScale(x); // Right scale J^T
@@ -252,7 +254,7 @@ LeftScale(const Epetra_Vector& x)
 
   // Now scale U
   for (int j=0; j<m; j++)
-    (*nonconst_U)(j)->Multiply(1.0, x, *((*nonconst_U)(j)), 0.0); 
+    (*nonconst_U)(j)->Multiply(1.0, x, *((*nonconst_U)(j)), 0.0);
 
   return res;
 }
@@ -310,7 +312,7 @@ RightScale(const Epetra_Vector& x)
 
   // Now scale V
   for (int j=0; j<m; j++)
-    (*nonconst_V)(j)->Multiply(1.0, x, *((*nonconst_V)(j)), 0.0); 
+    (*nonconst_V)(j)->Multiply(1.0, x, *((*nonconst_V)(j)), 0.0);
 
   return res;
 }
@@ -333,7 +335,7 @@ NormInf() const
   InvRowSums(tmp);
   tmp.Reciprocal(tmp);
 
-  double val;
+  double val = 0.0;
   tmp.MaxValue(&val);
 
   return val;
@@ -350,7 +352,7 @@ NormOne() const
   InvColSums(tmp);
   tmp.Reciprocal(tmp);
 
-  double val;
+  double val = 0.0;
   tmp.MaxValue(&val);
 
   return val;
@@ -482,7 +484,7 @@ LOCA::Epetra::LowRankUpdateRowMatrix::
 computeUV(int u_row_lid, int v_row_lid) const
 {
   double val = 0.0;
-      
+
   // val = sum_{k=0}^m U(i,k)*V(j,k)
   for (int k=0; k<m; k++)
     val += (*U)[k][u_row_lid] * (*V)[k][v_row_lid];

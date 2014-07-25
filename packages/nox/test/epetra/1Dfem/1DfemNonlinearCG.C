@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,27 +44,27 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                    
+
 // 1D Finite Element NonlinearCG Test Problem
 /* Solves the nonlinear equation:
  *
- * d2u 
+ * d2u
  * --- - k * u**2 = 0
  * dx2
  *
  * subject to @ x=0, u=1
-*
-* using nonlinear CG direction and linesearch methods.
+ *
+ * using nonlinear CG direction and linesearch methods.
 
-  This problem is not challenging but serves primarily to demonstrate
-  use of NonlinearCG as well as ensure it is not broken.
+ This problem is not challenging but serves primarily to demonstrate
+ use of NonlinearCG as well as ensure it is not broken.
 
-  Preconditioning is performed using 5 gmres iterations with the 
-  analytic jacobian matrix for the problem.  Note that solving these
-  linear systems completely, omitting orthogonalization
-  and using a full step (1.0) is equivalent to using Newton's method.
+ Preconditioning is performed using 5 gmres iterations with the
+ analytic jacobian matrix for the problem.  Note that solving these
+ linear systems completely, omitting orthogonalization
+ and using a full step (1.0) is equivalent to using Newton's method.
 
- */
+*/
 
 // NOX Objects
 #include "NOX.H"
@@ -84,17 +84,18 @@
 #include "Epetra_LinearProblem.h"
 #include "AztecOO.h"
 
-// User's application specific files 
-#include "1DfemInterface.H" 
+// User's application specific files
+#include "1DfemInterface.H"
 #include "1DfemPrePostOperator.H"
 
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 
 using namespace std;
 
 int main(int argc, char *argv[])
 {
- 
+
   // Initialize MPI
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
@@ -123,185 +124,194 @@ int main(int argc, char *argv[])
     NumGlobalElements = atoi(argv[2]) + 1;
   else if ((argc > 1) && (!verbose))
     NumGlobalElements = atoi(argv[1]) + 1;
-  else 
+  else
     NumGlobalElements = 101;
 
-  // The number of unknowns must be at least equal to the number of processors.
-  if (NumGlobalElements < NumProc) 
-  {
-    std::cout << "numGlobalBlocks = " << NumGlobalElements << " cannot be < number of processors = " 
-         << NumProc << std::endl;
-    std::cout << "Test failed!" << std::endl;
-    throw "NOX Error";
-  }
+  bool success = false;
 
-  // Create the interface between NOX and the application
-  // This object is derived from NOX::Epetra::Interface
-  Teuchos::RCP<Interface> interface = Teuchos::rcp(new Interface(NumGlobalElements, Comm));
+  try {
+    // The number of unknowns must be at least equal to the number of
+    // processors.
+    if (NumGlobalElements < NumProc)
+    {
+      std::cout << "numGlobalBlocks = " << NumGlobalElements << " cannot be < number of processors = "
+        << NumProc << std::endl;
+      std::cout << "Test failed!" << std::endl;
+      throw "NOX Error";
+    }
 
-  // Get the vector from the Problem
-  Teuchos::RCP<Epetra_Vector> soln = interface->getSolution();
-  Teuchos::RCP<NOX::Epetra::Vector> noxSoln = 
-    Teuchos::rcp(new NOX::Epetra::Vector(soln, NOX::Epetra::Vector::CreateView));
+    // Create the interface between NOX and the application
+    // This object is derived from NOX::Epetra::Interface
+    Teuchos::RCP<Interface> interface =
+      Teuchos::rcp(new Interface(NumGlobalElements, Comm));
 
-  // Set the PDE factor (for nonlinear forcing term).  This could be specified
-  // via user input.
-  interface->setPDEfactor(1000.0);
+    // Get the vector from the Problem
+    Teuchos::RCP<Epetra_Vector> soln = interface->getSolution();
+    Teuchos::RCP<NOX::Epetra::Vector> noxSoln =
+      Teuchos::rcp(new NOX::Epetra::Vector(soln, NOX::Epetra::Vector::CreateView));
 
-  // Set the initial guess 
-  soln->PutScalar(1.0);
+    // Set the PDE factor (for nonlinear forcing term).  This could be
+    // specified via user input.
+    interface->setPDEfactor(1000.0);
 
-  // Begin Nonlinear Solver ************************************
+    // Set the initial guess
+    soln->PutScalar(1.0);
 
-  // Create the top level parameter list
-  Teuchos::RCP<Teuchos::ParameterList> nlParamsPtr = Teuchos::rcp(new Teuchos::ParameterList);
-  Teuchos::ParameterList& nlParams = *(nlParamsPtr.get());
+    // Begin Nonlinear Solver ************************************
 
-  // Set the nonlinear solver method
-  nlParams.set("Nonlinear Solver", "Line Search Based");
+    // Create the top level parameter list
+    Teuchos::RCP<Teuchos::ParameterList> nlParamsPtr =
+      Teuchos::rcp(new Teuchos::ParameterList);
+    Teuchos::ParameterList& nlParams = *(nlParamsPtr.get());
 
-  // Set the printing parameters in the "Printing" sublist
-  Teuchos::ParameterList& printParams = nlParams.sublist("Printing");
-  printParams.set("MyPID", MyPID); 
-  printParams.set("Output Precision", 3);
-  printParams.set("Output Processor", 0);
-  if (verbose)
-    printParams.set("Output Information", 
-			     NOX::Utils::OuterIteration + 
-			     NOX::Utils::OuterIterationStatusTest + 
-			     NOX::Utils::InnerIteration +
-			     NOX::Utils::LinearSolverDetails +
-			     NOX::Utils::Parameters + 
-			     NOX::Utils::Details + 
-			     NOX::Utils::Warning +
-                             NOX::Utils::Debug +
-			     NOX::Utils::TestDetails +
-			     NOX::Utils::Error);
-  else
-    printParams.set("Output Information", NOX::Utils::Error +
-			     NOX::Utils::TestDetails);
+    // Set the nonlinear solver method
+    nlParams.set("Nonlinear Solver", "Line Search Based");
 
-  // Create a print class for controlling output below
-  NOX::Utils printing(printParams);
+    // Set the printing parameters in the "Printing" sublist
+    Teuchos::ParameterList& printParams = nlParams.sublist("Printing");
+    printParams.set("MyPID", MyPID);
+    printParams.set("Output Precision", 3);
+    printParams.set("Output Processor", 0);
+    if (verbose)
+      printParams.set("Output Information",
+          NOX::Utils::OuterIteration +
+          NOX::Utils::OuterIterationStatusTest +
+          NOX::Utils::InnerIteration +
+          NOX::Utils::LinearSolverDetails +
+          NOX::Utils::Parameters +
+          NOX::Utils::Details +
+          NOX::Utils::Warning +
+          NOX::Utils::Debug +
+          NOX::Utils::TestDetails +
+          NOX::Utils::Error);
+    else
+      printParams.set("Output Information", NOX::Utils::Error +
+          NOX::Utils::TestDetails);
 
-  // Sublist for line search 
-  Teuchos::ParameterList& searchParams = nlParams.sublist("Line Search");
-  searchParams.set("Method", "NonlinearCG"); // "Full Step" can also work well sometimes
+    // Create a print class for controlling output below
+    NOX::Utils printing(printParams);
 
-  // Sublist for direction
-  Teuchos::ParameterList& dirParams = nlParams.sublist("Direction");
-  dirParams.set("Method", "NonlinearCG");
-  Teuchos::ParameterList& nonlinearcg = dirParams.sublist("Nonlinear CG");
+    // Sublist for line search
+    Teuchos::ParameterList& searchParams = nlParams.sublist("Line Search");
+    searchParams.set("Method", "NonlinearCG"); // "Full Step" can also work well sometimes
+
+    // Sublist for direction
+    Teuchos::ParameterList& dirParams = nlParams.sublist("Direction");
+    dirParams.set("Method", "NonlinearCG");
+    Teuchos::ParameterList& nonlinearcg = dirParams.sublist("Nonlinear CG");
     nonlinearcg.set("Restart Frequency", 100);
     nonlinearcg.set("Precondition", "On");
     nonlinearcg.set("Orthogonalize", "Fletcher-Reeves"); // or "Polak-Ribiere"
 
-  // Sublist for linear solver for the Newton method
-  Teuchos::ParameterList& lsParams = nonlinearcg.sublist("Linear Solver");
-  lsParams.set("Aztec Solver", "GMRES");  
-  //lsParams.set("Preconditioner Operator", "Use Jacobian");
-  lsParams.set("Preconditioner", "AztecOO");
-  lsParams.set("AztecOO Preconditioner Iterations", 15);
-  lsParams.set("Preconditioner Reuse Policy", "Recompute");
+    // Sublist for linear solver for the Newton method
+    Teuchos::ParameterList& lsParams = nonlinearcg.sublist("Linear Solver");
+    lsParams.set("Aztec Solver", "GMRES");
+    //lsParams.set("Preconditioner Operator", "Use Jacobian");
+    lsParams.set("Preconditioner", "AztecOO");
+    lsParams.set("AztecOO Preconditioner Iterations", 15);
+    lsParams.set("Preconditioner Reuse Policy", "Recompute");
 
-  // Let's force all status tests to do a full check
-  nlParams.sublist("Solver Options").set("Status Test Check Type", "Complete");
+    // Let's force all status tests to do a full check
+    nlParams.sublist("Solver Options").set("Status Test Check Type", "Complete");
 
-  // 1. User supplied (Epetra_RowMatrix)
-  Teuchos::RCP<Epetra_RowMatrix> Analytic = interface->getJacobian();
+    // 1. User supplied (Epetra_RowMatrix)
+    Teuchos::RCP<Epetra_RowMatrix> Analytic = interface->getJacobian();
 
-  // Create the linear system
-  Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = interface;
-  Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = interface;
-  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = 
-    Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
-						      interface, 
-						      iJac, Analytic, 
-						      *soln));
-  
-  // Create the Group
-  NOX::Epetra::Vector initialGuess(soln, NOX::Epetra::Vector::CreateView);
-  Teuchos::RCP<NOX::Epetra::Group> grpPtr = 
-    Teuchos::rcp(new NOX::Epetra::Group(printParams, 
-					iReq, 
-					initialGuess, 
-					linSys));  
+    // Create the linear system
+    Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = interface;
+    Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = interface;
+    Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys =
+      Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
+            interface,
+            iJac, Analytic,
+            *soln));
 
-  // Create the convergence tests
-  Teuchos::RCP<NOX::StatusTest::NormF> absresid = 
-    Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
-  Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters = 
-    Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
-  Teuchos::RCP<NOX::StatusTest::FiniteValue> fv =
-    Teuchos::rcp(new NOX::StatusTest::FiniteValue);
-  Teuchos::RCP<NOX::StatusTest::Combo> combo = 
-    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
-  combo->addStatusTest(fv);
-  combo->addStatusTest(absresid);
-  combo->addStatusTest(maxiters);
+    // Create the Group
+    NOX::Epetra::Vector initialGuess(soln, NOX::Epetra::Vector::CreateView);
+    Teuchos::RCP<NOX::Epetra::Group> grpPtr =
+      Teuchos::rcp(new NOX::Epetra::Group(printParams,
+            iReq,
+            initialGuess,
+            linSys));
 
-  // Create the solver
-  Teuchos::RCP<NOX::Solver::Generic> solver = 
-    NOX::Solver::buildSolver(grpPtr, combo, nlParamsPtr);
-  NOX::StatusTest::StatusType solvStatus = solver->solve();
+    // Create the convergence tests
+    Teuchos::RCP<NOX::StatusTest::NormF> absresid =
+      Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
+    Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters =
+      Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
+    Teuchos::RCP<NOX::StatusTest::FiniteValue> fv =
+      Teuchos::rcp(new NOX::StatusTest::FiniteValue);
+    Teuchos::RCP<NOX::StatusTest::Combo> combo =
+      Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
+    combo->addStatusTest(fv);
+    combo->addStatusTest(absresid);
+    combo->addStatusTest(maxiters);
 
-  // End Nonlinear Solver **************************************
+    // Create the solver
+    Teuchos::RCP<NOX::Solver::Generic> solver =
+      NOX::Solver::buildSolver(grpPtr, combo, nlParamsPtr);
+    NOX::StatusTest::StatusType solvStatus = solver->solve();
 
-  // Get the Epetra_Vector with the final solution from the solver
-  const NOX::Epetra::Group& finalGroup = 
-    dynamic_cast<const NOX::Epetra::Group&>(solver->getSolutionGroup());
-  const Epetra_Vector& finalSolution = 
-    (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).
-    getEpetraVector();
+    // End Nonlinear Solver **************************************
 
-  // Output the parameter list
-  if (verbose) 
-  {
-    if (printing.isPrintType(NOX::Utils::Parameters)) {
-      printing.out() << std::endl << "Final Parameters" << std::endl
-	   << "****************" << std::endl;
-      solver->getList().print(printing.out());
-      printing.out() << std::endl;
+    // Get the Epetra_Vector with the final solution from the solver
+    const NOX::Epetra::Group& finalGroup =
+      dynamic_cast<const NOX::Epetra::Group&>(solver->getSolutionGroup());
+    const Epetra_Vector& finalSolution =
+      (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).
+      getEpetraVector();
+
+    // Output the parameter list
+    if (verbose)
+    {
+      if (printing.isPrintType(NOX::Utils::Parameters)) {
+        printing.out() << std::endl << "Final Parameters" << std::endl
+          << "****************" << std::endl;
+        solver->getList().print(printing.out());
+        printing.out() << std::endl;
+      }
     }
-  }
 
-  // Print solution
-  char file_name[25];
-  FILE *ifp;
-  int NumMyElements = soln->Map().NumMyElements();
-  (void) sprintf(file_name, "output.%d",MyPID);
-  ifp = fopen(file_name, "w");
-  for (int i=0; i<NumMyElements; i++)
-    fprintf(ifp, "%d  %E\n", soln->Map().MinMyGID()+i, finalSolution[i]);
-  fclose(ifp);
+    // Print solution
+    char file_name[25];
+    FILE *ifp;
+    int NumMyElements = soln->Map().NumMyElements();
+    (void) sprintf(file_name, "output.%d",MyPID);
+    ifp = fopen(file_name, "w");
+    for (int i=0; i<NumMyElements; i++)
+      fprintf(ifp, "%d  %E\n", soln->Map().MinMyGID()+i, finalSolution[i]);
+    fclose(ifp);
 
 
-  // Tests
-  int status = 0; // Converged
-  
-  // 1. Convergence
-  if (solvStatus != NOX::StatusTest::Converged) 
-  {
+    // Tests
+    int status = 0; // Converged
+
+    // 1. Convergence
+    if (solvStatus != NOX::StatusTest::Converged)
+    {
       status = 1;
       if (printing.isPrintType(NOX::Utils::Error))
-	printing.out() << "Nonlinear solver failed to converge!" << std::endl;
-  }
-  // 2. Nonlinear solve iterations (10)
-  if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Output").get("Nonlinear Iterations", 0) > 13)
-    status = 2;
+        printing.out() << "Nonlinear solver failed to converge!" << std::endl;
+    }
+    // 2. Nonlinear solve iterations (10)
+    if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Output").get("Nonlinear Iterations", 0) > 13)
+      status = 2;
 
-  // Summarize test results 
-  if (status == 0)
-    printing.out() << "Test passed!" << std::endl;
-  else 
-    printing.out() << "Test failed!" << std::endl;
-  
+    success = status==0;
+
+    // Summarize test results
+    if (success)
+      printing.out() << "Test passed!" << std::endl;
+    else
+      printing.out() << "Test failed!" << std::endl;
+
+    printing.out() << "Status = " << status << std::endl;
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
+
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
-  printing.out() << "Status = " << status << std::endl;
-
-  // Final return value (0 = successfull, non-zero = failure)
-  return status;
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }

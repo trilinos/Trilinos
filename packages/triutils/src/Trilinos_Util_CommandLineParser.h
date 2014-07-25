@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                 TriUtils: Trilinos Utilities Package
 //                 Copyright (2011) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -46,14 +46,11 @@
 #include <string>
 #include <map>
 
-using namespace std;
-
 class Trilinos_Util_Map {
 
 public:
 
 
-  
   Trilinos_Util_Map();
 
   virtual ~Trilinos_Util_Map()
@@ -62,39 +59,39 @@ public:
   //@}
 
   //@{ \name Insertion/Removal methods.
-  
+
   //! Gets the value of the specified option as an integer. If not found, returns the specified default value.
-  virtual int    Get( const string input, const int def_value) ;
+  virtual int    Get( const std::string input, const int def_value) ;
 
   //! Gets the value of the specified option as a double. If not found, returns the specified default value.
-  virtual double Get( const string input, const double def_value) ;
+  virtual double Get( const std::string input, const double def_value) ;
 
- //! Gets the value of the specified option as a string. If not found, returns the specified default value.
-  virtual string Get( const string input, const string def_value ) ;
+ //! Gets the value of the specified option as a std::string. If not found, returns the specified default value.
+  virtual std::string Get( const std::string input, const std::string def_value ) ;
 
   //! Modify the value of a database entry.
   /*!  This method modifies the value of a database entry. If the entry
     does not exist in the database, return \c false. Otherwise, returns
     \c true.
   */
-  virtual bool Set(const string input, const char * value);  
-  virtual bool Set(const string input, const string value);
-  virtual bool Set(const string input, const int value);
-  virtual bool Set(const string input, const double value);
+  virtual bool Set(const std::string input, const char * value);
+  virtual bool Set(const std::string input, const std::string value);
+  virtual bool Set(const std::string input, const int value);
+  virtual bool Set(const std::string input, const double value);
 
   //! Add an entry to the databse
   /*!  This method add an entry to the databse. First, it checks that
     this entry does not exist. If it exists, the method returns \c
     false. Otherwise, it adds the entry and returns \c true.
   */
-  virtual bool   Add( const string input, const string value );
-    
-  inline bool SetLabel(string Label) {
+  virtual bool   Add( const std::string input, const std::string value );
+
+  inline bool SetLabel(std::string Label) {
     Label_ = Label;
     return true;
   }
-  
-  inline string GetLabel(string Label) {
+
+  inline std::string GetLabel(std::string Label) {
     return( Label_ );
   }
 
@@ -103,11 +100,11 @@ public:
   //@{ \name Query methods.
 
   /*! \brief Check wheter an option is in the database or not
-    
+
   This method checks whether option \c input is in the databse or not.
   It returns \c true if it is, \c false otherwise.
   */
-  virtual bool Has(const string input);
+  virtual bool Has(const std::string input);
 
   //@}
 
@@ -120,23 +117,23 @@ public:
   virtual void    ShowReallyAll() const;
 
   virtual void Reset(void);
-  
+
   //@}
 
   //@{ \name Friend functions .
 
-  friend ostream & operator << (ostream & os,
-				const Trilinos_Util_Map & S);
+  friend std::ostream & operator << (std::ostream & os,
+        const Trilinos_Util_Map & S);
 
   //@}
-  
+
 private:
 
-  string Label_;
-  
+  std::string Label_;
+
   // map containing the arguments
-  map<string,string> Map_;
-  
+  std::map<std::string,std::string> Map_;
+
 };
 
 //! Trilinos_Util::CommandLineParser: A class for managing the input arguments and variables.
@@ -146,12 +143,12 @@ private:
  \class Trilinos_Util::CommandLineParser
 
  Using Trilinos_Util::CommandLineParser, it is easy to handle input line arguments and shell
- varibles. For instance, the user can write
+ variables. For instance, the user can write
  \verbatim
  $ ./a.out -nx 10 -tol 1e-6 -solver=cg
  \endverbatim
  and then easily retrive the value of \c nx, \c tol, and \c solver.
- 
+
  A simple code using this class is as follows:
  \verbatim
  int main(int argc, char *argv[])
@@ -161,7 +158,7 @@ private:
    int nx = CLP.GetInt("-nx", 123);
    int ny = CLP.GetInt("-ny", 145);
    double tol = CLP.GetDouble("-tol", 1e-12);
-   string solver = CLP.GetInt("-solver");
+   std::string solver = CLP.GetInt("-solver");
 
    cout << "nx = " << nx << endl;
    cout << "ny = " << ny << " (default value)" << endl;
@@ -169,7 +166,7 @@ private:
    cout << "solver = " << solver << endl;
 
    return 0;
-   
+
  }
  \endverbatim
 
@@ -188,7 +185,7 @@ private:
   $ ./a.out value1 value2 value 3 -nx 10 -tol 1e-6 -solver=cg
   \endverbatim
  Here, \c valueX, (X=1,...,9) is stored in the database entry
- \c ARGV_X. 
+ \c ARGV_X.
 
  To use this class, the user has to build the database using the \c
  argc,argv input arguments. Then, to retrive the option value, the user
@@ -196,9 +193,9 @@ private:
  - GetInt
  - GetDouble
  - GetString
- 
+
  If option name is not found in the database, a value of 0, 0.0 or an
- empty string is returned. If needed, the user can also specify a
+ empty std::string is returned. If needed, the user can also specify a
  default value to return when the option name is not found in the
  database. Method \c HaveOption can be used to query the database for
  an option.
@@ -209,15 +206,15 @@ private:
 
  (GetInt, GetDouble, GetString, Set and Add are derived from the base class,
  Trilinos_Util_Map).
- 
- Finally, the user can retrive the integer, double or string value of a
+
+ Finally, the user can retrive the integer, double or std::string value of a
  shell environmental variable using:
  - GetIntShellVariable
  - GetDoubleShellVariable
  - GetStringShellVariable
- 
+
  \date Albuquerque, 19-Jan-04
- 
+
  \author Marzio Sala, SNL 9214
 
 */
@@ -225,7 +222,7 @@ private:
 
 namespace Trilinos_Util {
 
-class CommandLineParser : public Trilinos_Util_Map 
+class CommandLineParser : public Trilinos_Util_Map
 {
 
  public:
@@ -237,40 +234,40 @@ class CommandLineParser : public Trilinos_Util_Map
   // ============= //
   // query and add //
   // ------------- //
-  
+
   //@}
 
   //@{ \name Query methods.
 
-  //!  Returns the name of the program as a C++ string.
-  virtual string GetProgramName(void);
+  //!  Returns the name of the program as a C++ std::string.
+  virtual std::string GetProgramName(void);
 
   // =============== //
   // shell variables //
   // --------------- //
-  
+
   //!Returns the value of the environmenta variable \c str as an integer.
   /*! This methods returns the value of the environmental variable \c
     str. If the variable does not exists, returns \c 0. */
   virtual int    GetIntShellVariable( const char *str );
-  
+
   //!Returns the value of the environmenta variable \c str as an double.
   /*! This methods returns the value of the environmenta variable \c
     str. If the variable does not exists, returns \c 0.0. */
   virtual double GetDoubleShellVariable( const char *str );
 
-  //!Returns the value of the environmenta variable \c str as a C++ string.
+  //!Returns the value of the environmenta variable \c str as a C++ std::string.
   /*! This methods returns the value of the environmenta variable \c
     str. If the variable does not exists, returns \c "". */
-  virtual string GetStringShellVariable( const char *str );
+  virtual std::string GetStringShellVariable( const char *str );
 
   //@}
-  
+
 };
 
 // ================================================ ====== ==== ==== == =
 
-class InputFileReader : public Trilinos_Util_Map 
+class InputFileReader : public Trilinos_Util_Map
 {
 
  public:
@@ -278,21 +275,21 @@ class InputFileReader : public Trilinos_Util_Map
   InputFileReader(const char FileName[] );
   ~InputFileReader();
 
-  virtual string GetFileName(void) const;
+  virtual std::string GetFileName(void) const;
 
   //  virtual bool SetCommentChar(char c);
-  virtual void SetCommentChars(const string c);
+  virtual void SetCommentChars(const std::string c);
 
   //  virtual bool SetSeparationChar(char c);
-  virtual void SetSeparationChars(const string c);
+  virtual void SetSeparationChars(const std::string c);
 
   virtual int ReadFile();
   virtual int ReadFile(const char FileName[]);
 
 private:
-  string FileName_;
-  string CommentChars_;
-  string SeparationChars_;
+  std::string FileName_;
+  std::string CommentChars_;
+  std::string SeparationChars_;
   bool FileHasBeenRead_;
 };
 

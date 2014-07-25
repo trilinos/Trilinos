@@ -86,9 +86,11 @@ public:
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
+  typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef VectorAdapter<User>       base_adapter_t;
   typedef User user_t;
+  typedef User userCoord_t;
 
   typedef Xpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> x_mvector_t;
   typedef Xpetra::TpetraMultiVector<
@@ -107,7 +109,7 @@ public:
    *      The number of weights per multivector element is assumed to be
    *      \c weights.size().
    *  \param weightStrides  a list of strides for the \c weights.
-   *     The weight for weight dimension \c n for multivector element
+   *     The weight for weight index \c n for multivector element
    *     \c k should be found at <tt>weights[n][weightStrides[n] * k]</tt>.
    *     If \c weightStrides.size() is zero, it is assumed all strides are one.
    *
@@ -116,7 +118,7 @@ public:
    */
 
   XpetraMultiVectorAdapter(const RCP<const User> &invector,
-    vector<const scalar_t *> &weights, vector<int> &weightStrides);
+    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides);
 
   /*! \brief Constructor for case when weights are not being used.
    *
@@ -178,7 +180,7 @@ private:
 template <typename User>
   XpetraMultiVectorAdapter<User>::XpetraMultiVectorAdapter(
     const RCP<const User> &invector,
-    vector<const scalar_t *> &weights, vector<int> &weightStrides):
+    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides):
       invector_(invector), vector_(), map_(), 
       env_(rcp(new Environment)), base_(),
       numWeights_(weights.size()), weights_(weights.size())
@@ -246,7 +248,7 @@ template <typename User>
     }
   }
   else{
-    throw logic_error("invalid underlying lib");
+    throw std::logic_error("invalid underlying lib");
   }
 }
 
@@ -258,9 +260,9 @@ template <typename User>
 {
   size_t len = solution.getLocalNumberOfIds();
   const gid_t *gids = solution.getIdList();
-  const partId_t *parts = solution.getPartList();
+  const part_t *parts = solution.getPartList();
   ArrayRCP<gid_t> gidList = arcp(const_cast<gid_t *>(gids), 0, len, false);
-  ArrayRCP<partId_t> partList = arcp(const_cast<partId_t *>(parts), 0, len, 
+  ArrayRCP<part_t> partList = arcp(const_cast<part_t *>(parts), 0, len, 
     false);
   ArrayRCP<lno_t> dummyIn;
   ArrayRCP<gid_t> importList;

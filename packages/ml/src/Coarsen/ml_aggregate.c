@@ -101,6 +101,9 @@ int ML_Aggregate_Create( ML_Aggregate **ag )
    (*ag)->minimizing_energy          = 0;
    (*ag)->minimizing_energy_droptol  = 0.0;
    (*ag)->cheap_minimizing_energy    = 0;
+   (*ag)->coarsen_rate               = -1;
+   (*ag)->semicoarsen_levels         = -1;
+
 
 #if defined(AZTEC) && defined(ML_AGGR_READINFO)
    ML_Aggregate_AztecRead(*ag);
@@ -119,27 +122,27 @@ int ML_Aggregate_Destroy( ML_Aggregate **ag )
 
    if (*ag != NULL)
    {
-      if ( (*ag)->ML_id != ML_ID_AGGRE ) 
+      if ( (*ag)->ML_id != ML_ID_AGGRE )
       {
          printf("ML_Aggregate_Destroy : wrong object. \n");
          exit(-1);
       }
-      if ((*ag)->nullspace_vect != NULL) 
+      if ((*ag)->nullspace_vect != NULL)
       {
          ML_memory_free((void **)&((*ag)->nullspace_vect));
       }
-      if ((*ag)->aggr_info != NULL) 
+      if ((*ag)->aggr_info != NULL)
       {
          for ( i = 0; i < (*ag)->max_levels; i++ )
-            if ((*ag)->aggr_info[i] != NULL) 
+            if ((*ag)->aggr_info[i] != NULL)
                ML_memory_free((void **)&((*ag)->aggr_info[i]));
          ML_memory_free((void **)&((*ag)->aggr_info));
-      } 
-      if ((*ag)->aggr_count != NULL) 
+      }
+      if ((*ag)->aggr_count != NULL)
       {
          ML_memory_free((void **)&((*ag)->aggr_count));
-      } 
-      if ( (*ag)->P_tentative != NULL) 
+      }
+      if ( (*ag)->P_tentative != NULL)
 	ML_Operator_ArrayDestroy( (*ag)->P_tentative, (*ag)->max_levels);
 
 /*MS*/
@@ -154,12 +157,12 @@ int ML_Aggregate_Destroy( ML_Aggregate **ag )
       /* aggr_viz_and_stats is cleaned by calling the function
 	 `ML_Aggregate_Viz_Stats_Clean', in file "Utils/ml_agg_info.c" */
 
-      if ((*ag)->field_of_values != NULL) 
+      if ((*ag)->field_of_values != NULL)
 	ML_free((*ag)->field_of_values);
       if ((*ag)->nodal_coord != NULL) {
         /* MS start from 1 because we do not
          * free the finest-level coordinates (given by the
-         * user). Recall that in nodal_coord the finest level is 
+         * user). Recall that in nodal_coord the finest level is
          * always in position 0. */
         for (i = 1 ; i < (*ag)->max_levels ; ++i) {
           if ((*ag)->nodal_coord[i] != NULL)
@@ -188,12 +191,12 @@ int ML_Aggregate_Destroy( ML_Aggregate **ag )
 
 
 
-/* Steers how the MIS  and Uncoupled handle phase 3 of aggregation.  
- * Values near 0 create few additional aggregates.Large values create 
- * many additional aggregates. Convergence can be improve convergence 
+/* Steers how the MIS  and Uncoupled handle phase 3 of aggregation.
+ * Values near 0 create few additional aggregates.Large values create
+ * many additional aggregates. Convergence can be improve convergence
  * by new aggregates but nonzero fill-in increases on coarse meshes.
  * Default: .5. The basic idea is that the ratio of vertex neighbors
- * that are already aggregated to the total number of vertex neighbors 
+ * that are already aggregated to the total number of vertex neighbors
  * is compared with alpha^factor where alpha is the ratio of vertices
  * aggregated in phase 1 to the total number of vertices. This is used
  * to see if a new aggregate should be created.
@@ -201,7 +204,7 @@ int ML_Aggregate_Destroy( ML_Aggregate **ag )
 int ML_Aggregate_Set_Phase3AggregateCreationAggressiveness(
 			   ML_Aggregate *ag, double factor) {
 
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Set_Phase3AggregateCreationAggressiveness: wrong object. \n");
       exit(-1);
@@ -220,7 +223,7 @@ int ML_Aggregate_Set_Phase3AggregateCreationAggressiveness(
 
 int ML_Aggregate_Set_MinNodesPerAggregate( ML_Aggregate *ag, int nnodes )
 {
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Set_MinNodesPerAggregate : wrong object. \n");
       exit(-1);
@@ -235,7 +238,7 @@ int ML_Aggregate_Set_MinNodesPerAggregate( ML_Aggregate *ag, int nnodes )
 
 int ML_Aggregate_Set_BlockDiagScaling( ML_Aggregate *ag)
 {
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Set_BlockDiagScaling : wrong object. \n");
       exit(-1);
@@ -245,7 +248,7 @@ int ML_Aggregate_Set_BlockDiagScaling( ML_Aggregate *ag)
 }
 int ML_Aggregate_KeepInfo(ML_Aggregate *ag, int value)
 {
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Set_BlockDiagScaling : wrong object. \n");
       exit(-1);
@@ -261,7 +264,7 @@ int ML_Aggregate_KeepInfo(ML_Aggregate *ag, int value)
 
 int ML_Aggregate_Set_PointDiagScaling( ML_Aggregate *ag)
 {
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Set_BlockDiagScaling : wrong object. \n");
       exit(-1);
@@ -277,7 +280,7 @@ int ML_Aggregate_Set_PointDiagScaling( ML_Aggregate *ag)
 
 int ML_Aggregate_Set_OutputLevel( ML_Aggregate *ag, double level )
 {
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Set_OutputLevel : wrong object. \n");
       exit(-1);
@@ -288,7 +291,7 @@ int ML_Aggregate_Set_OutputLevel( ML_Aggregate *ag, double level )
 
 int ML_Aggregate_Set_Reuse(ML_Aggregate *ag)
 {
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Set_Reuse : wrong object. \n");
       exit(-1);
@@ -303,7 +306,7 @@ int ML_Aggregate_Set_Reuse(ML_Aggregate *ag)
 
 int ML_Aggregate_Set_NaturalOrdering( ML_Aggregate *ag )
 {
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Set_NaturalOrdering : wrong object. \n");
       exit(-1);
@@ -316,7 +319,7 @@ int ML_Aggregate_Set_NaturalOrdering( ML_Aggregate *ag )
 
 int ML_Aggregate_Set_RandomOrdering( ML_Aggregate *ag )
 {
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Set_RandomOrdering : wrong object. \n");
       exit(-1);
@@ -329,7 +332,7 @@ int ML_Aggregate_Set_RandomOrdering( ML_Aggregate *ag )
 
 int ML_Aggregate_Set_GraphOrdering( ML_Aggregate *ag )
 {
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Set_GraphOrdering : wrong object. \n");
       exit(-1);
@@ -344,7 +347,7 @@ int ML_Aggregate_Set_GraphOrdering( ML_Aggregate *ag )
 
 int ML_Aggregate_Set_AttachScheme_MaxLink( ML_Aggregate *ag  )
 {
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Set_AttachScheme_MaxLink : wrong object. \n");
       exit(-1);
@@ -357,7 +360,7 @@ int ML_Aggregate_Set_AttachScheme_MaxLink( ML_Aggregate *ag  )
 
 int ML_Aggregate_Set_AttachScheme_MinRank( ML_Aggregate *ag  )
 {
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Set_AttachScheme_MinRank : wrong object. \n");
       exit(-1);
@@ -372,7 +375,7 @@ int ML_Aggregate_Set_AttachScheme_MinRank( ML_Aggregate *ag  )
 
 int ML_Aggregate_Set_MaxCoarseSize( ML_Aggregate *ag, int size  )
 {
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Set_MaxCoarseSize : wrong object. \n");
       exit(-1);
@@ -387,7 +390,7 @@ int ML_Aggregate_Set_MaxCoarseSize( ML_Aggregate *ag, int size  )
 
 int ML_Aggregate_Set_CoarsenScheme_Uncoupled( ML_Aggregate *ag  )
 {
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Set_CoarsenScheme_Uncoupled : wrong object. \n");
       exit(-1);
@@ -400,7 +403,7 @@ int ML_Aggregate_Set_CoarsenScheme_Uncoupled( ML_Aggregate *ag  )
 
 int ML_Aggregate_Set_CoarsenScheme_Coupled( ML_Aggregate *ag  )
 {
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Set_CoarsenScheme_Coupled : wrong object. \n");
       exit(-1);
@@ -413,7 +416,7 @@ int ML_Aggregate_Set_CoarsenScheme_Coupled( ML_Aggregate *ag  )
 
 int ML_Aggregate_Set_CoarsenScheme_MIS( ML_Aggregate *ag  )
 {
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Set_CoarsenScheme_MIS : wrong object. \n");
       exit(-1);
@@ -426,7 +429,7 @@ int ML_Aggregate_Set_CoarsenScheme_MIS( ML_Aggregate *ag  )
 
 int ML_Aggregate_Set_CoarsenScheme_UncoupledMIS( ML_Aggregate *ag  )
 {
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Set_CoarsenScheme_UncoupledMIS : wrong object. \n");
       exit(-1);
@@ -439,7 +442,7 @@ int ML_Aggregate_Set_CoarsenScheme_UncoupledMIS( ML_Aggregate *ag  )
 
 int ML_Aggregate_Set_CoarsenScheme_UncoupledCoupled( ML_Aggregate *ag  )
 {
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Set_CoarsenScheme_UncoupledCoupled:wrong object\n");
       exit(-1);
@@ -452,7 +455,7 @@ int ML_Aggregate_Set_CoarsenScheme_UncoupledCoupled( ML_Aggregate *ag  )
 
 int ML_Aggregate_Set_CoarsenScheme_DD( ML_Aggregate *ag  )
 {
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Set_CoarsenScheme_DD : wrong object. \n");
       exit(-1);
@@ -466,7 +469,7 @@ int ML_Aggregate_Set_CoarsenScheme_DD( ML_Aggregate *ag  )
 
 int ML_Aggregate_Set_CoarsenScheme_METIS( ML_Aggregate *ag  )
 {
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Set_CoarsenScheme_METIS : wrong object. \n");
       exit(-1);
@@ -479,7 +482,7 @@ int ML_Aggregate_Set_CoarsenScheme_METIS( ML_Aggregate *ag  )
 
 int ML_Aggregate_Set_CoarsenScheme_ParMETIS( ML_Aggregate *ag  )
 {
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Set_CoarsenScheme_ParMETIS : wrong object. \n");
       exit(-1);
@@ -492,7 +495,7 @@ int ML_Aggregate_Set_CoarsenScheme_ParMETIS( ML_Aggregate *ag  )
 
 int ML_Aggregate_Set_CoarsenScheme_Zoltan( ML_Aggregate *ag  )
 {
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Set_CoarsenScheme_Zoltan : wrong object. \n");
       exit(-1);
@@ -505,7 +508,7 @@ int ML_Aggregate_Set_CoarsenScheme_Zoltan( ML_Aggregate *ag  )
 
 int ML_Aggregate_Set_CoarsenScheme_User( ML_Aggregate *ag  )
 {
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Set_CoarsenScheme_Zoltan : wrong object. \n");
       exit(-1);
@@ -518,7 +521,7 @@ int ML_Aggregate_Set_CoarsenScheme_User( ML_Aggregate *ag  )
 
 int ML_Aggregate_Get_CoarsenScheme( ML_Aggregate *ag  )
 {
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
       pr_error("ML_Aggregate_Get_CoarsenScheme: wrong object. \n");
    return ag->coarsen_scheme;
 }
@@ -532,7 +535,7 @@ int ML_Aggregate_Set_CoarsenSchemeLevel( int level, int MaxLevels,
 
   int i;
 
-  if ( ag->ML_id != ML_ID_AGGRE ) 
+  if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Set_CoarsenScheme_METIS : wrong object. \n");
       exit(-1);
@@ -560,7 +563,7 @@ int ML_Aggregate_Set_CoarsenSchemeLevel( int level, int MaxLevels,
    } else {
      ag->coarsen_scheme_level[level] = choice;
    }
-   
+
    return 0;
 }
 
@@ -643,7 +646,7 @@ int ML_Aggregate_Set_CoarsenSchemeLevel_Zoltan( int level, int MaxLevels,
 
 int ML_Aggregate_Set_Threshold( ML_Aggregate *ag, double epsilon )
 {
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Set_Threshold : wrong object. \n");
       exit(-1);
@@ -660,7 +663,7 @@ int ML_Aggregate_Set_Threshold( ML_Aggregate *ag, double epsilon )
 
 int ML_Aggregate_Reset_Threshold( ML_Aggregate *ag )
 {
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Reset_Threshold : wrong object. \n");
       exit(-1);
@@ -670,12 +673,12 @@ int ML_Aggregate_Reset_Threshold( ML_Aggregate *ag )
 }
 
 /* ************************************************************************* */
-/* Set flag controlling whether to use existing tentative prolongator.       */ 
+/* Set flag controlling whether to use existing tentative prolongator.       */
 /* ************************************************************************* */
 
 int ML_Aggregate_Set_Flag_SmoothExistingTentativeP( ML_Aggregate *ag, int flag)
 {
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Set_DampingFactor : wrong object. \n");
       exit(-1);
@@ -685,12 +688,12 @@ int ML_Aggregate_Set_Flag_SmoothExistingTentativeP( ML_Aggregate *ag, int flag)
 }
 
 /* ************************************************************************* */
-/* Retrieve flag controlling whether to use existing tentative prolongator.  */ 
+/* Retrieve flag controlling whether to use existing tentative prolongator.  */
 /* ************************************************************************* */
 
 int ML_Aggregate_Get_Flag_SmoothExistingTentativeP( ML_Aggregate *ag)
 {
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Set_DampingFactor : wrong object. \n");
       exit(-1);
@@ -705,7 +708,7 @@ int ML_Aggregate_Get_Flag_SmoothExistingTentativeP( ML_Aggregate *ag)
 
 int ML_Aggregate_Set_DampingFactor( ML_Aggregate *ag, double factor )
 {
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Set_DampingFactor : wrong object. \n");
       exit(-1);
@@ -721,7 +724,7 @@ int ML_Aggregate_Set_DampingFactor( ML_Aggregate *ag, double factor )
 
 int ML_Aggregate_Set_DampingSweeps( ML_Aggregate *ag, int numSweeps, int level )
 {
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Set_DampingFactor : wrong object. \n");
       exit(-1);
@@ -744,7 +747,7 @@ int ML_Aggregate_Set_DampingSweeps( ML_Aggregate *ag, int numSweeps, int level )
 
 int ML_Aggregate_Get_DampingSweeps( ML_Aggregate *ag, int level)
 {
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
      pr_error("ML_Aggregate_Set_DampingFactor : wrong object. \n");
    if (level >= ag->max_levels)
      pr_error("ML_Aggregate_Get_DampingSweeps: largest allowable level = %d\n",
@@ -758,7 +761,7 @@ int ML_Aggregate_Get_DampingSweeps( ML_Aggregate *ag, int level)
 
 int ML_Aggregate_Set_PSmootherType( ML_Aggregate *ag, int stype )
 {
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Set_PSmootherType : wrong object. \n");
       exit(-1);
@@ -776,7 +779,7 @@ int ML_Aggregate_Set_MaxLevels( ML_Aggregate *ag, int level )
 {
    int i;
 
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Set_MaxLevels : wrong object. \n");
       exit(-1);
@@ -812,7 +815,7 @@ int ML_Aggregate_Set_MaxLevels( ML_Aggregate *ag, int level )
 
 int ML_Aggregate_Set_CurrentLevel( ML_Aggregate *ag, int level )
 {
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Set_CurrentLevel : wrong object. \n");
       exit(-1);
@@ -825,7 +828,7 @@ int ML_Aggregate_Set_CurrentLevel( ML_Aggregate *ag, int level )
 
 int ML_Aggregate_Set_StartLevel( ML_Aggregate *ag, int level )
 {
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Set_StartLevel : wrong object. \n");
       exit(-1);
@@ -840,12 +843,12 @@ int ML_Aggregate_Set_StartLevel( ML_Aggregate *ag, int level )
 
 int ML_Aggregate_Get_AggrCount( ML_Aggregate *ag, int level )
 {
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Get_AggrCount : wrong object. \n");
       exit(-1);
    }
-   if ( level < -1 || level >= ag->max_levels ) 
+   if ( level < -1 || level >= ag->max_levels )
    {
       printf("ML_Aggregate_Get_AggrCount : level number not valid. \n");
       exit(-1);
@@ -858,12 +861,12 @@ int ML_Aggregate_Get_AggrCount( ML_Aggregate *ag, int level )
 int ML_Aggregate_Get_AggrMap( ML_Aggregate *ag, int level, int **map )
 {
 
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Get_AggrMap : wrong object. \n");
       exit(-1);
    }
-   if ( level < 0 || level >= ag->max_levels ) 
+   if ( level < 0 || level >= ag->max_levels )
    {
       printf("ML_Aggregate_Get_AggrMap : level number not valid. \n");
       exit(-1);
@@ -879,7 +882,7 @@ int ML_Aggregate_Get_AggrMap( ML_Aggregate *ag, int level, int **map )
 /* coarsest level                                                            */
 /* ------------------------------------------------------------------------- */
 
-int ML_Aggregate_Set_NullSpace(ML_Aggregate *ag, int num_PDE_eqns, 
+int ML_Aggregate_Set_NullSpace(ML_Aggregate *ag, int num_PDE_eqns,
                                int null_dim, double *null_vect, int leng)
 {
    int nbytes, i;
@@ -888,7 +891,7 @@ int ML_Aggregate_Set_NullSpace(ML_Aggregate *ag, int num_PDE_eqns,
    char fname[100];
 #endif
 
-   if ((null_vect == NULL) && (num_PDE_eqns != null_dim)) 
+   if ((null_vect == NULL) && (num_PDE_eqns != null_dim))
    {
       printf("WARNING:  When no nullspace vector is specified, the number\n");
       printf("of PDE equations must equal the nullspace dimension.\n");
@@ -917,7 +920,7 @@ int ML_Aggregate_Set_NullSpace(ML_Aggregate *ag, int num_PDE_eqns,
    fp = fopen(fname, "w");
 #endif
 
-   if (null_vect != NULL) 
+   if (null_vect != NULL)
    {
      /* If the fine grid operator has no null space, indicate */
      /* that the fine grid nullspace has not been corrupted.  */
@@ -926,7 +929,7 @@ int ML_Aggregate_Set_NullSpace(ML_Aggregate *ag, int num_PDE_eqns,
        ag->nullspace_corrupted = ML_NO;
 
       nbytes = leng * null_dim * sizeof(double);
-	
+
       ML_memory_alloc((void **)&(ag->nullspace_vect), (unsigned int) nbytes, "ns");
 
       for (i=0; i < leng*null_dim; i++)
@@ -967,7 +970,7 @@ int ML_Aggregate_Scale_NullSpace(ML_Aggregate *ag, double *scale_vect,
    null_vect    = ag->nullspace_vect;
 
 
-   if ((null_vect == NULL) && (num_PDE_eqns != null_dim)) 
+   if ((null_vect == NULL) && (num_PDE_eqns != null_dim))
    {
       printf("WARNING:  When no nullspace vector is specified, the number\n");
       printf("of PDE equations must equal the nullspace dimension.\n");
@@ -979,7 +982,7 @@ int ML_Aggregate_Scale_NullSpace(ML_Aggregate *ag, double *scale_vect,
 
    if (null_vect == NULL) {
      nbytes = length * null_dim * sizeof(double);
-	
+
      ML_memory_alloc((void **)&(ag->nullspace_vect), (unsigned int) nbytes, "ns");
      null_vect = ag->nullspace_vect;
 
@@ -1007,7 +1010,7 @@ int ML_Aggregate_Scale_NullSpace(ML_Aggregate *ag, double *scale_vect,
 /* ************************************************************************* */
 /* Coarsening routine                                                        */
 /* ------------------------------------------------------------------------- */
-int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix, 
+int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
                           ML_Operator **Pmatrix, ML_Comm *comm)
 {
    int i=1, ndofs, Ncoarse, coarsen_scheme, status;
@@ -1020,9 +1023,9 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
 #endif
 
    label = ML_memory_check(NULL);
-   if (label != NULL) 
+   if (label != NULL)
      if ( label[0] == 'L')
-       if ( ( label[2] == ':') || ( label[3] == ':') ) 
+       if ( ( label[2] == ':') || ( label[3] == ':') )
 	 sscanf(&(label[1]),"%d",&i);
 
    if (i != 1) ML_memory_check("L%d: agg start",i);
@@ -1030,13 +1033,13 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
 
    mypid = comm->ML_mypid;
 
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Coarsen : wrong object. \n");
       exit(-1);
    }
 
-   if (mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
+   if (mypid == 0 && ag->print_flag < ML_Get_PrintLevel())
       printf("ML_Aggregate_Coarsen (level %d) begins\n", ag->cur_level);
 
 /* #### moved this somewhere else ?? */
@@ -1066,49 +1069,49 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
       printf("Smallest Amatrix->outvec_leng = %d\n", (int) (-1 * gmin));
    */
    nprocs = comm->ML_nprocs;
-   if ( ndofs == nprocs ) 
+   if ( ndofs == nprocs )
    {
-      if (coarsen_scheme == ML_AGGR_UNCOUPLED) 
+      if (coarsen_scheme == ML_AGGR_UNCOUPLED)
          coarsen_scheme = ML_AGGR_UNCOUPLED;
-      else if (coarsen_scheme == ML_AGGR_COUPLED) 
+      else if (coarsen_scheme == ML_AGGR_COUPLED)
          coarsen_scheme = ML_AGGR_COUPLED;
-      else if (coarsen_scheme == ML_AGGR_MIS) 
+      else if (coarsen_scheme == ML_AGGR_MIS)
          coarsen_scheme = ML_AGGR_MIS;
-      else if (coarsen_scheme == ML_AGGR_HYBRIDUC) 
+      else if (coarsen_scheme == ML_AGGR_HYBRIDUC)
          coarsen_scheme = ML_AGGR_UNCOUPLED;
-      else if (coarsen_scheme == ML_AGGR_HYBRIDUM) 
+      else if (coarsen_scheme == ML_AGGR_HYBRIDUM)
          coarsen_scheme = ML_AGGR_UNCOUPLED;
 /*MS*/
-      else if (coarsen_scheme == ML_AGGR_METIS) 
+      else if (coarsen_scheme == ML_AGGR_METIS)
          coarsen_scheme = ML_AGGR_METIS;
-      else if (coarsen_scheme == ML_AGGR_PARMETIS) 
+      else if (coarsen_scheme == ML_AGGR_PARMETIS)
 	coarsen_scheme = ML_AGGR_PARMETIS;
-      else if (coarsen_scheme == ML_AGGR_ZOLTAN) 
+      else if (coarsen_scheme == ML_AGGR_ZOLTAN)
 	coarsen_scheme = ML_AGGR_ZOLTAN;
-      else if (coarsen_scheme == ML_AGGR_USER) 
+      else if (coarsen_scheme == ML_AGGR_USER)
 	coarsen_scheme = ML_AGGR_USER;
 /*ms*/
 /*mgee*/
-      else if (coarsen_scheme == ML_AGGR_VBMETIS) 
+      else if (coarsen_scheme == ML_AGGR_VBMETIS)
          coarsen_scheme = ML_AGGR_VBMETIS;
-      else 
+      else
          coarsen_scheme = ML_AGGR_UNCOUPLED;
    }
-   else 
+   else
    {
 /* JJH why????????????????????? */
 /*#ifdef ML_repartition*/
-      if (coarsen_scheme == ML_AGGR_UNCOUPLED) 
+      if (coarsen_scheme == ML_AGGR_UNCOUPLED)
          coarsen_scheme = ML_AGGR_UNCOUPLED;
-      else 
+      else
 /*#endif*/
-      if (coarsen_scheme == ML_AGGR_COUPLED) 
+      if (coarsen_scheme == ML_AGGR_COUPLED)
          coarsen_scheme = ML_AGGR_COUPLED;
-      else if (coarsen_scheme == ML_AGGR_MIS) 
+      else if (coarsen_scheme == ML_AGGR_MIS)
          coarsen_scheme = ML_AGGR_MIS;
-      else if (coarsen_scheme == ML_AGGR_HYBRIDUC) 
+      else if (coarsen_scheme == ML_AGGR_HYBRIDUC)
          coarsen_scheme = ML_AGGR_COUPLED;
-      else if (coarsen_scheme == ML_AGGR_HYBRIDUM) 
+      else if (coarsen_scheme == ML_AGGR_HYBRIDUM)
          coarsen_scheme = ML_AGGR_MIS;
 /*MS*/
       else if (coarsen_scheme == ML_AGGR_METIS)
@@ -1122,7 +1125,7 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
 /*ms*/
       else
       {
-         /* The following can cause a memory leak.  This is now 
+         /* The following can cause a memory leak.  This is now
             freed in ML_AGG_Gen_Prolongator() in ml_agg_genP.c. */
          /*(*Pmatrix) = NULL;*/
          return 0;
@@ -1134,8 +1137,8 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
       if (ML_Get_PrintLevel()  >= 10) i = mypid;
       status = ML_CommInfoOP_Deficient_GhostBlk_Check(
                 Amatrix->getrow->pre_comm, Amatrix->num_PDEs,i);
-      if (status != -1) status = 0; 
-      else status = 1; 
+      if (status != -1) status = 0;
+      else status = 1;
       ML_gsum_scalar_int(&status, &i, comm);
       if ( (mypid == 0) && (status != 0)) {
          printf("**********************************************************\n");
@@ -1186,7 +1189,7 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
    /* prolongator, and permute everything back so that it works with the     */
    /* original A.                                                            */
 
-   switch ( coarsen_scheme ) 
+   switch ( coarsen_scheme )
    {
       case ML_AGGR_UNCOUPLED :
            Ncoarse = ML_Aggregate_CoarsenUncoupled(ag,Amatrix,Pmatrix,comm);
@@ -1207,7 +1210,7 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
       case ML_AGGR_METIS :
            Ncoarse = ML_Aggregate_CoarsenMETIS(ag,Amatrix,Pmatrix,comm);
            break;
-	   
+
       case ML_AGGR_PARMETIS :
            Ncoarse = ML_Aggregate_CoarsenParMETIS(ag,Amatrix,Pmatrix,comm);
            break;
@@ -1224,18 +1227,18 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
       case ML_AGGR_VBMETIS :
            Ncoarse = ML_Aggregate_CoarsenVBMETIS(ag,Amatrix,Pmatrix,comm);
            break;
-	   
+
    default :
            if (mypid == 0) printf("ML_Aggregate_Coarsen : invalid scheme.\n");
            exit(1);
            break;
-   } 
+   }
 
 
 #ifdef ML_DEBUG
    i = 0;
    i = ML_gmax_int(i, comm);
-   if ( mypid == 0 && ag->print_flag  < ML_Get_PrintLevel()) 
+   if ( mypid == 0 && ag->print_flag  < ML_Get_PrintLevel())
       printf("ML_Aggregate_Coarsen ends.\n");
 #endif
 #ifdef ML_TIMING
@@ -1248,16 +1251,16 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
 
    i = -1;
    label = ML_memory_check(NULL);
-   if (label != NULL) 
+   if (label != NULL)
      if ( label[0] == 'L')
-       if ( ( label[2] == ':') || ( label[3] == ':') ) 
+       if ( ( label[2] == ':') || ( label[3] == ':') )
 	 sscanf(&(label[1]),"%d",&i);
 
    if (ag->keep_agg_information != 1) {
       if ((ag)->aggr_info != NULL) {
-	  if ((ag)->aggr_info[ag->cur_level] != NULL) 
+	  if ((ag)->aggr_info[ag->cur_level] != NULL)
 	    ML_memory_free((void **)&((ag)->aggr_info[ag->cur_level]));
-      } 
+      }
    }
    if (i != 1) ML_memory_check("L%d: agg end",i);
    else ML_memory_check("agg end");
@@ -1298,7 +1301,7 @@ int ML_Aggregate_Print( ML_Aggregate *ag )
            printf("ML_Aggregate : attach scheme      = MINRANK\n");
            break;
    }
-   /* MS comment this out because it doesn't always work 
+   /* MS comment this out because it doesn't always work
    switch (ag->coarsen_scheme)
    {
       case ML_AGGR_UNCOUPLED :
@@ -1310,11 +1313,11 @@ int ML_Aggregate_Print( ML_Aggregate *ag )
    }
    */
    printf("ML_Aggregate : strong threshold   = %e\n", ag->threshold);
-   printf("ML_Aggregate : P damping factor   = %e\n", 
+   printf("ML_Aggregate : P damping factor   = %e\n",
                                 ag->smoothP_damping_factor);
    printf("ML_Aggregate : number of PDEs     = %d\n", ag->num_PDE_eqns);
    printf("ML_Aggregate : number of null vec = %d\n", ag->nullspace_dim);
-   printf("ML_Aggregate : smoother drop tol  = %e\n", 
+   printf("ML_Aggregate : smoother drop tol  = %e\n",
           ag->drop_tol_for_smoothing);
    printf("ML_Aggregate : max coarse size    = %d\n", ag->max_coarse_size);
    printf("ML_Aggregate : max no. of levels  = %d\n", ag->max_levels);
@@ -1346,7 +1349,7 @@ int ML_Aggregate_ExchangeBdry(double *vec_data, void *in_comm)
    int     N_recv_neighbors, fromproc, nbytes;
    int     i, total_send_leng, toproc;
    double  *send_buf = NULL;
-   USR_REQ *request; 
+   USR_REQ *request;
    ML_Comm *comm;
    ML_Aggregate_Comm *aggr_comm;
 
@@ -1360,20 +1363,20 @@ int ML_Aggregate_ExchangeBdry(double *vec_data, void *in_comm)
    if (nbytes > 0) ML_memory_alloc( (void **) &request, (unsigned int) nbytes, "AE1" );
    else            request = NULL;
    total_send_leng = 0;
-   for ( i = 0; i < N_send_neighbors; i++ ) 
+   for ( i = 0; i < N_send_neighbors; i++ )
       total_send_leng += aggr_comm->send_leng[i];
    nbytes = total_send_leng * sizeof(double);
    if (nbytes > 0) ML_memory_alloc( (void **) &send_buf, (unsigned int) nbytes, "AE2" );
    else            send_buf = NULL;
-   for ( i = 0; i < total_send_leng; i++ )  
+   for ( i = 0; i < total_send_leng; i++ )
    {
-      send_buf[i] = vec_data[aggr_comm->send_list[i]]; 
+      send_buf[i] = vec_data[aggr_comm->send_list[i]];
    }
 
    /* post receives for all messages */
 
    offset = aggr_comm->local_nrows;
-   for (i = 0; i < N_recv_neighbors; i++) 
+   for (i = 0; i < N_recv_neighbors; i++)
    {
       msgtype = 1999;
       length  = aggr_comm->recv_leng[i] * sizeof(double);
@@ -1387,11 +1390,11 @@ int ML_Aggregate_ExchangeBdry(double *vec_data, void *in_comm)
 
    offset = 0;
    msgtype = 1999;
-   for (i = 0; i < N_send_neighbors; i++) 
+   for (i = 0; i < N_send_neighbors; i++)
    {
       length = aggr_comm->send_leng[i] * sizeof(double);
       toproc = aggr_comm->send_neighbors[i];
-      comm->USR_sendbytes((void *) &(send_buf[offset]), (unsigned int) length, toproc, 
+      comm->USR_sendbytes((void *) &(send_buf[offset]), (unsigned int) length, toproc,
                            msgtype, comm->USR_comm);
       offset += aggr_comm->send_leng[i];
    }
@@ -1399,7 +1402,7 @@ int ML_Aggregate_ExchangeBdry(double *vec_data, void *in_comm)
    /* wait for all messages */
 
    offset = aggr_comm->local_nrows;
-   for (i = 0; i < N_recv_neighbors; i++) 
+   for (i = 0; i < N_recv_neighbors; i++)
    {
       msgtype = 1999;
       length  = aggr_comm->recv_leng[i] * sizeof(double);
@@ -1419,13 +1422,13 @@ int ML_Aggregate_ExchangeBdry(double *vec_data, void *in_comm)
 /* ------------------------------------------------------------------------- */
 
 int ML_Aggregate_ExchangeData(char *recvbuf, char *sendbuf, int N_neighbors,
-              int *neighbors, int *recv_leng, int *send_leng, int msgid, 
+              int *neighbors, int *recv_leng, int *send_leng, int msgid,
               int datatype, ML_Comm *comm)
 {
    int     i, nbytes, fromproc, length, typeleng, msgtype, offset;
    USR_REQ *Request;
 
-   switch ( datatype ) 
+   switch ( datatype )
    {
       case ML_CHAR    : typeleng = sizeof(char);   break;
       case ML_INT     : typeleng = sizeof(int);    break;
@@ -1438,7 +1441,7 @@ int ML_Aggregate_ExchangeData(char *recvbuf, char *sendbuf, int N_neighbors,
    else              Request = NULL;
    offset = 0;
    msgtype = msgid;
-   for ( i = 0; i < N_neighbors; i++ ) 
+   for ( i = 0; i < N_neighbors; i++ )
    {
       fromproc = neighbors[i];
       length = recv_leng[i] * typeleng;
@@ -1452,7 +1455,7 @@ int ML_Aggregate_ExchangeData(char *recvbuf, char *sendbuf, int N_neighbors,
    }
    offset = 0;
    msgtype = msgid;
-   for ( i = 0; i < N_neighbors; i++ ) 
+   for ( i = 0; i < N_neighbors; i++ )
    {
       length = send_leng[i] * typeleng;
       comm->USR_sendbytes((void*) &sendbuf[offset*typeleng], (unsigned int) length,
@@ -1460,7 +1463,7 @@ int ML_Aggregate_ExchangeData(char *recvbuf, char *sendbuf, int N_neighbors,
       offset += send_leng[i];
    }
    offset = 0;
-   for ( i = 0; i < N_neighbors; i++ ) 
+   for ( i = 0; i < N_neighbors; i++ )
    {
       fromproc = neighbors[i];
       length = recv_leng[i] * typeleng;
@@ -1486,7 +1489,7 @@ void ML_CSR_MSR_ML_memorydata_Destroy(void *data)
    struct ML_CSR_MSRdata *temp;
 
    temp = (struct ML_CSR_MSRdata *) data;
-   if (temp != NULL) 
+   if (temp != NULL)
    {
       if (temp->columns != NULL) ML_memory_free( (void**) &(temp->columns));
       if (temp->values  != NULL) ML_memory_free( (void**) &(temp->values));
@@ -1499,7 +1502,7 @@ void ML_CSR_MSR_ML_memorydata_Destroy(void *data)
 /* get the aggregation information                                           */
 /* ------------------------------------------------------------------------- */
 
-int ML_Gen_Blocks_Aggregates(ML_Aggregate *ag, int level, int *nblocks, 
+int ML_Gen_Blocks_Aggregates(ML_Aggregate *ag, int level, int *nblocks,
                              int **block_list)
 {
    *nblocks = ML_Aggregate_Get_AggrCount( ag, level );
@@ -1520,14 +1523,14 @@ int local_to_global_row(int row)
    /* global_mapping is an Nrows x 2 array, where the first column
       is the global number of a row and the second column is the local
       number of that row */
-				
+
    int i, glob_row;
 
    glob_row=-1;
    i=0;
-   while ( i < global_nrows ) 
+   while ( i < global_nrows )
    {
-      if (global_mapping[i][1] == row) 
+      if (global_mapping[i][1] == row)
       {
          glob_row = global_mapping[i][0];
          break;
@@ -1547,12 +1550,12 @@ int ML_modified_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[
    ML_CommInfoOP     *getrow_comm;
    ML_Operator       *Amat;
    ML_Comm           *comm;
-   int allocated_space = 0; 
+   int allocated_space = 0;
    int *cols = NULL;
    double *vals = NULL;
    int length;
    double *dtemp, diag, best;
-   
+
 
    ML_avoid_unused_param((void *) &ilen);
 
@@ -1643,7 +1646,7 @@ int ML_random_global_subset(ML_Operator *Amat, double reduction,
     ML_az_sort(rand_list, iNtarget, NULL, NULL);
     ML_rm_duplicates(rand_list, &iNtarget);
   }
-  else { 
+  else {
     for (i = 0; i < iNtarget; i++) rand_list[i] = 0;
     iNtarget = 0;
   }
@@ -1715,10 +1718,10 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
  ML_Operator *permt_mat = NULL, *perm_mat = NULL, *permuted_Amat = NULL;
  struct ML_CSR_MSRdata *temp = NULL;
  double *dvec, *values = NULL;
- USR_REQ *request = NULL; 
+ USR_REQ *request = NULL;
  ML_Comm *comm;
 #if defined(HAVE_ML_PARMETIS) || defined(HAVE_ML_ZOLTAN) || defined(HAVE_ML_JOSTLE)
- int *block_list; 
+ int *block_list;
 #endif
 
  comm = mat->comm;
@@ -1745,7 +1748,7 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
      ML_Operator_UnAmalgamateAndDropWeak(mat, num_PDE_eqns, 0.);
 
    dvec = (double *) ML_allocate(sizeof(double)*mat->outvec_leng);
-   for (i = 0; i < mat->outvec_leng/num_PDE_eqns; i++) 
+   for (i = 0; i < mat->outvec_leng/num_PDE_eqns; i++)
      for (j = 0; j < num_PDE_eqns; j++)
        dvec[j+i*num_PDE_eqns] = (double) ( block_list[i] + 1);
 
@@ -1757,14 +1760,14 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
   if (Nglobal/num_PDE_eqns >= 12*nprocs) return 1;
 
   /* Choose a random subset of global unknowns. These will become root nodes */
-  /* for a very simple aggregation scheme. These aggregates/subdomains are   */ 
+  /* for a very simple aggregation scheme. These aggregates/subdomains are   */
   /* later assigned to processors defining the new partitioning.             */
 
   ML_random_global_subset(mat, 5.,&the_list, &the_length, num_PDE_eqns);
   for (i = 0; i < the_length; i++) the_list[i] *= num_PDE_eqns;
 #ifdef DEBUG
   if (mypid == 0) {
-    for (i = 0; i < the_length; i++) 
+    for (i = 0; i < the_length; i++)
       printf("%d: ML_reparition_matrix: root_node(%d) = %d\n",mypid,i,the_list[i]);
   }
   fflush(stdout);
@@ -1794,7 +1797,7 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
   remote_offsets[nprocs] = Nglobal;
   offset = remote_offsets[mypid];
 #ifdef DEBUG
-  if (mypid == 0) 
+  if (mypid == 0)
     for (i = 0; i <= nprocs; i++)
       printf("ML_repartition_matrix: REMOTE OFFSET(%d) = %d\n",i,remote_offsets[i]);
   fflush(stdout);
@@ -1810,7 +1813,7 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
 
   /* Make sure there is enough space for ghost nodes.     */
   i = mat->invec_leng + 1;
-  if (mat->getrow->pre_comm != NULL) 
+  if (mat->getrow->pre_comm != NULL)
     i += mat->getrow->pre_comm->minimum_vec_size;
 
   dvec = (double *) ML_allocate(sizeof(double)*i);
@@ -1821,7 +1824,7 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
   for (i = 0; i < the_length; i++) {
     if ( (the_list[i] >= offset) &&
 	 (the_list[i] < offset + mat->invec_leng)){
-      for (j = 0 ; j < num_PDE_eqns; j++) 
+      for (j = 0 ; j < num_PDE_eqns; j++)
 	dvec[the_list[i]-offset+j] = (double ) (i + 1);
     }
   }
@@ -1839,7 +1842,7 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
 
   oldNnonzero = 0;
   while ( (Nglobal - Nnonzero > 0) && (Nnonzero > oldNnonzero)) {
-    ML_modified_matvec( mat, mat->invec_leng, dvec, 
+    ML_modified_matvec( mat, mat->invec_leng, dvec,
 			mat->outvec_leng, d2vec, num_PDE_eqns);
     oldNnonzero = Nnonzero;
     Nnonzero = 0;
@@ -1858,7 +1861,7 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
   }
 
 #ifdef DEBUG
-  for (i = 0; i < mat->outvec_leng; i++) 
+  for (i = 0; i < mat->outvec_leng; i++)
     printf("%d: ML_repartition_matrix: domain_assignment(%d) = %e\n",mypid,i,dvec[i]);
   fflush(stdout);
 #endif
@@ -1871,7 +1874,7 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
   /* Compute the number of processors (not including myself) */
   /* owning rows in the unpermuted system that correspond    */
   /* to rows that I will now own in the permuted system.     */
-  
+
   iwork  = (int *) ML_allocate(sizeof(int)*nprocs);
   ttemp  = (int *) ML_allocate(sizeof(int)*nprocs);
   for (i = 0; i < nprocs; i++) iwork[i] = 0;
@@ -1879,7 +1882,7 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
     j = (int) dvec[i];
     j--;
     if (j < 0) j = 0;
-    if ( j > nprocs) 
+    if ( j > nprocs)
       pr_error("%d: dvec > Nprocs?  %d\n",mypid,(int) dvec[i]);
     iwork[j] = 1;
   }
@@ -1891,9 +1894,9 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
 
 
   /* Compute the # of my unpermuted rows that will be   */
-  /* assigned to each processor in the permuted system. */     
+  /* assigned to each processor in the permuted system. */
 
-  if (Nprocs_WhoGive_TheirUnPermuted_Rows > 0) 
+  if (Nprocs_WhoGive_TheirUnPermuted_Rows > 0)
     request = (USR_REQ *) ML_allocate(Nprocs_WhoGive_TheirUnPermuted_Rows*
 				      sizeof(USR_REQ));
   else            request = NULL;
@@ -1913,7 +1916,7 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
   Nrows_In_Both_Permuted_And_UnPermuted = N_UnPermutedRows_ToSend[mypid];
 
   /* Now send the # of my unpermuted rows that will be    */
-  /* assigned to other processors in the permuted system. */     
+  /* assigned to other processors in the permuted system. */
 
   for (i = 0; i < Nprocs_WhoGive_TheirUnPermuted_Rows; i++)    {
     msgtype = 1794;
@@ -1952,7 +1955,7 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
 	     Nprocs_WhoGive_TheirUnPermuted_Rows,NRows_IGet_ForPermuted,NULL);
 
   Nrows_Permuted = 0;
-  for (i = 0; i < Nprocs_WhoGive_TheirUnPermuted_Rows; i++) 
+  for (i = 0; i < Nprocs_WhoGive_TheirUnPermuted_Rows; i++)
     Nrows_Permuted += NRows_IGet_ForPermuted[i];
   Nrows_Permuted += Nrows_In_Both_Permuted_And_UnPermuted;
   max_per_processor = ML_gmax_int(Nrows_Permuted, comm);
@@ -1988,7 +1991,7 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
       MyGlobal_Id += Nrows_In_Both_Permuted_And_UnPermuted;
     }
     prev = toproc;
-    comm->USR_sendbytes((void *) &MyGlobal_Id, sizeof(int), toproc, 
+    comm->USR_sendbytes((void *) &MyGlobal_Id, sizeof(int), toproc,
 			msgtype, comm->USR_comm);
     MyGlobal_Id += NRows_IGet_ForPermuted[i];
     if (toproc < mypid) {
@@ -1996,7 +1999,7 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
     }
   }
   if (NRows_IGet_ForPermuted != NULL) ML_free(NRows_IGet_ForPermuted);
-  if (Procs_WhoGive_TheirUnPermuted_Rows != NULL) 
+  if (Procs_WhoGive_TheirUnPermuted_Rows != NULL)
     ML_free(Procs_WhoGive_TheirUnPermuted_Rows);
 
   for (i = 0; i < Nprocs_WhoGet_MyUnpermutedRows; i++)    {
@@ -2201,7 +2204,7 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
 
   StartTimer(&t0);
 
-  
+
   if (ML_Repartition_Status(ml) == ML_FALSE)
     return NULL;
 
@@ -2209,7 +2212,7 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
   Rmat = &(ml->Rmat[fine]);
   Pmat = &(ml->Pmat[coarse]);
 
-  if ((ml->MinPerProc_repartition == -1) && 
+  if ((ml->MinPerProc_repartition == -1) &&
       (ml->LargestMinMaxRatio_repartition == -1.) &&
       (ml->PutOnSingleProc_repartition == -1.))
     return NULL;
@@ -2221,12 +2224,12 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
                                       /* empty processors */
   ml_gmin = ML_gmin_int(ml_gmin,ml->comm);
   ml_gsum = ML_gsum_double((double)Amatrix->invec_leng,ml->comm);
- 
+
   if ( (ml->MinPerProc_repartition != -1) &&
        (ml_gmin < ml->MinPerProc_repartition))
     flag = 1;
   else if ((ml->LargestMinMaxRatio_repartition != -1.) &&
-         ((((double) ml_gmax)/((double) ml_gmin)) > 
+         ((((double) ml_gmax)/((double) ml_gmin)) >
           ml->LargestMinMaxRatio_repartition))
     flag = 1;
 
@@ -2256,7 +2259,7 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
     printf("Repartitioning (level %d): max #rows (global) that fits on one proc = %d\n",coarse,ml->PutOnSingleProc_repartition);
     printf("Repartitioning (level %d): #proc to use in repartitioning = %d\n",coarse,Nprocs_ToUse);
   }
-  
+
   grid_info = (ML_Aggregate_Viz_Stats *) ml->Grid[coarse].Grid;
   which_partitioner = ML_Repartition_Get_Partitioner(ml);
   /* no coordinates supplied */
@@ -2291,6 +2294,13 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
       if ((ml->comm->ML_mypid == 0) && (ML_Get_PrintLevel() > 0))
         printf("ML*WRN* ML_repartition_Acoarse: problem dimension was not previously set.\nML*WRN* Now setting dimension to %d.\n",N_dimensions);
     }
+    if(ag != NULL){
+      if (ag->N_dimensions != N_dimensions) {
+	N_dimensions = ag->N_dimensions;
+	if  (N_dimensions < 3)  zcoord = NULL;
+	if  (N_dimensions < 2)  ycoord = NULL;
+      }
+    }
   }
 
   /* Turn off implicit transpose because the getrow is needed to apply
@@ -2298,8 +2308,8 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
   if (ReturnPerm == ML_TRUE) UseImplicitTranspose = ML_FALSE;
   else UseImplicitTranspose = ML_TRUE;
 
-  status = ML_repartition_matrix(Amatrix, &newA, &perm, &permt, 
-                 Amatrix->num_PDEs, Nprocs_ToUse, 
+  status = ML_repartition_matrix(Amatrix, &newA, &perm, &permt,
+                 Amatrix->num_PDEs, Nprocs_ToUse,
                  xcoord, ycoord, zcoord, UseImplicitTranspose,
                                  which_partitioner);
 
@@ -2316,8 +2326,8 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
        offset2 = 0;
        for (j = 0; j < ag->nullspace_dim; j++)
        {
-         ML_Operator_Apply(perm, perm->invec_leng, 
-               &((ag->nullspace_vect)[offset1]), 
+         ML_Operator_Apply(perm, perm->invec_leng,
+               &((ag->nullspace_vect)[offset1]),
                perm->outvec_leng, &(new_null[offset2]));
 
          offset1 += perm->invec_leng;
@@ -2339,7 +2349,7 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
          tmp_coord[i] = xcoord[i/Amatrix->num_PDEs];
       }
 
-      ML_Operator_Apply(perm, perm->invec_leng, 
+      ML_Operator_Apply(perm, perm->invec_leng,
             tmp_coord, perm->outvec_leng, new_xcoord);
       ML_free(grid_info->x);
       grid_info->x = new_xcoord;
@@ -2388,7 +2398,7 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
         {
           newP = ML_Operator_Create(Pmat->comm);
           ML_Operator_Set_Label(ag->P_tentative[coarse],"rebalance Ptentative");
-          ML_2matmult(ag->P_tentative[coarse], permt, newP, ML_CSR_MATRIX); 
+          ML_2matmult(ag->P_tentative[coarse], permt, newP, ML_CSR_MATRIX);
           ML_Operator_Destroy(&(ag->P_tentative[coarse]));
           ag->P_tentative[coarse] = newP;
           newP = NULL;
@@ -2401,10 +2411,20 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
     /* unpartitioned matrix.                              */
 
     newP = ML_Operator_Create(Pmat->comm);
-    ML_2matmult(Pmat, permt, newP, ML_CSR_MATRIX); 
+    ML_2matmult(Pmat, permt, newP, ML_CSR_MATRIX);
     ML_Operator_Copy_Statistics(Pmat,newP);
     ML_Operator_Move2HierarchyAndDestroy(&newP, Pmat);
-    
+
+    /* used to print error message for those         */
+    /* attempting to semicoarsen afer repartiitoning.*/
+    if (ml->ML_finest_level == 0) {
+      for (i=coarse; i < ml->ML_num_levels; i++) {(ml->Pmat)[i].NumZDir = -7;(ml->Pmat)[i].Zorientation= 1;}
+    }
+    else {
+      for (i=coarse; i >= 0; i--) {(ml->Pmat)[i].NumZDir = -7;(ml->Pmat)[i].Zorientation= 1;}
+    }
+
+
     if (R_is_Ptranspose == ML_TRUE) {
       newR = ML_Operator_Create(Rmat->comm);
       ML_Operator_Transpose(Pmat, newR);
@@ -2413,7 +2433,7 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
     else if (Rmat->getrow->post_comm == NULL) {
       newR = ML_Operator_Create(Rmat->comm);
       ML_Operator_Set_Label(perm,"rebalance R");
-      ML_2matmult(perm, Rmat, newR, ML_CSR_MATRIX); 
+      ML_2matmult(perm, Rmat, newR, ML_CSR_MATRIX);
       ML_Operator_Copy_Statistics(Rmat,newR);
       ML_Operator_Move2HierarchyAndDestroy(&newR, Rmat);
     }

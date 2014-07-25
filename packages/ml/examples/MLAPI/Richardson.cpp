@@ -1,7 +1,7 @@
 
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_config.h"
@@ -25,7 +25,7 @@ using namespace MLAPI;
 
 int main(int argc, char *argv[])
 {
-  
+
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
 #endif
@@ -33,26 +33,26 @@ int main(int argc, char *argv[])
   try {
 
     // Initialize the workspace and set the output level
-    
+
     Init();
 
     // global dimension of the problem
-    
+
     int NumGlobalElements = 10000;
 
     // define the space for fine level vectors and operators.
-    
+
     Space S(NumGlobalElements);
 
     // define the linear system matrix.
-    
+
     Operator A = Gallery("Laplace2D", S);
 
     // set parameters for aggregation and smoothers
     // NOTE: only a limited subset of the parameters accepted by
     // class ML_Epetra::MultiLevelPreconditioner is supported
     // by MLAPI::MultiLevelSA
-    
+
     Teuchos::ParameterList MLList;
     MLList.set("max levels",3);
     MLList.set("aggregation: type", "Uncoupled");
@@ -68,8 +68,8 @@ int main(int argc, char *argv[])
     // Here we define a simple Richardson method for the
     // solution of A x = b. The preconditioner is P,
     // the exact solution (x_ex) is a random vector, the
-    // starting solution (x) is the zero vector. 
-    
+    // starting solution (x) is the zero vector.
+
     MultiVector x_ex(S);
     MultiVector x(S);
     MultiVector b(S);
@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
     x_ex.Random();
     b = A * x_ex;
     x = 0.0;
-    
+
     double OldNorm   = 1.0;
     double Tolerance = 1e-13;
     int    MaxIters  = 30;
@@ -114,13 +114,13 @@ int main(int argc, char *argv[])
     }
 
     // finalize the MLAPI workspace
-    
+
     Finalize();
 
   }
   catch (const int e) {
     std::cout << "Caught integer exception, code = " << e << std::endl;
-  } 
+  }
   catch (...) {
     std::cout << "problems here..." << std::endl;
   }

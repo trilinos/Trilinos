@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,10 +44,10 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                                
+
 //  Problem description goes here.
 
-static char help[] = 
+static char help[] =
        "1D Finite Difference example problem in parallel.\n\n";
 
 
@@ -75,9 +75,9 @@ static char help[] =
 #include "NOX_Petsc_Group.H"
 #include "NOX_Petsc_Options.H"
 
-// User's application specific files 
+// User's application specific files
 #include "Problem_Interface.H" // Interface to NOX
-#include "FiniteDifference.H"  // The PDE class used for fills 
+#include "FiniteDifference.H"  // The PDE class used for fills
 
 /*
    User-defined routines.  Note that immediately before each routine below,
@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
      Get local grid boundaries (for 1-dimensional DA):
        xs, xm - starting grid index, width of local grid (no ghost points)
   */
-  int xs, xm; 
+  int xs, xm;
   ierr = DAGetCorners(ctx.da,&xs,PETSC_NULL,PETSC_NULL,&xm,PETSC_NULL,PETSC_NULL);CHKERRQ(ierr);
 
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -210,7 +210,7 @@ int main(int argc, char *argv[])
   grp->computeF(); // Needed to establish the initial convergence state
 
   // Create the method and solve
-  Teuchos::RCP<NOX::Solver::Generic> solver = 
+  Teuchos::RCP<NOX::Solver::Generic> solver =
     NOX::Solver::buildSolver(grp, optionHandler.getStatusTest(), nlParamsPtr);
   NOX::StatusTest::StatusType status = solver->solve();
 
@@ -218,7 +218,7 @@ int main(int argc, char *argv[])
     std::cout << "Nonlinear solver failed to converge!" << std::endl;
 
   // Get the Petsc_Vector with the final solution from the solver
-  const NOX::Petsc::Group& finalGroup = 
+  const NOX::Petsc::Group& finalGroup =
       dynamic_cast<const NOX::Petsc::Group&>(solver->getSolutionGroup());
   const Vec& finalSolution = (dynamic_cast<const NOX::Petsc::Vector&>
         (finalGroup.getX())).getPetscVector();

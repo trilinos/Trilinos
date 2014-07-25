@@ -111,20 +111,6 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="Sacado" dir="packages/sacado" type="PS">
-    <LIB_REQUIRED_DEP_PACKAGES/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Teuchos"/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS value="ADOLC,ADIC,CppUnit"/>
-    <EmailAddresses>
-      <Regression address="sacado-regression@software.sandia.gov"/>
-    </EmailAddresses>
-    <ParentPackage value=""/>
-  </Package>
   <Package name="RTOp" dir="packages/rtop" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
@@ -139,9 +125,65 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
+  <Package name="Gtest" dir="commonTools/gtest" type="SS">
+    <LIB_REQUIRED_DEP_PACKAGES/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="gtest-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value=""/>
+  </Package>
+  <Package name="KokkosTPL" dir="packages/kokkos/TPL" type="PS">
+    <LIB_REQUIRED_DEP_PACKAGES/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS value="CUDA"/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="kokkos-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="Kokkos"/>
+  </Package>
+  <Package name="KokkosCore" dir="packages/kokkos/core" type="EX">
+    <LIB_REQUIRED_DEP_PACKAGES value="KokkosTPL"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES value="Gtest"/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS value="Pthread,CUDA,HWLOC"/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS value="CUSPARSE,Pthread"/>
+    <EmailAddresses>
+      <Regression address="kokkos-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="Kokkos"/>
+  </Package>
+  <Package name="KokkosCompat" dir="packages/kokkos/compat" type="EX">
+    <LIB_REQUIRED_DEP_PACKAGES value="KokkosCore,Teuchos"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="ThreadPool"/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS value="TBB,Thrust,Cusp,MKL"/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS value="CUSPARSE,Pthread"/>
+    <EmailAddresses>
+      <Regression address="kokkos-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="Kokkos"/>
+  </Package>
   <Package name="KokkosClassic" dir="packages/kokkos/classic" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="ThreadPool"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="ThreadPool,KokkosCore,KokkosCompat"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
@@ -153,10 +195,66 @@
     </EmailAddresses>
     <ParentPackage value="Kokkos"/>
   </Package>
-  <Package name="KokkosArray" dir="packages/kokkos/array" type="EX">
-    <LIB_REQUIRED_DEP_PACKAGES/>
+  <Package name="KokkosContainers" dir="packages/kokkos/containers" type="EX">
+    <LIB_REQUIRED_DEP_PACKAGES value="KokkosCore"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES value="KokkosCore,Gtest"/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS value="Pthread,CUDA,HWLOC"/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS value="CUSPARSE,Pthread"/>
+    <EmailAddresses>
+      <Regression address="kokkos-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="Kokkos"/>
+  </Package>
+  <Package name="KokkosLinAlg" dir="packages/kokkos/linalg" type="EX">
+    <LIB_REQUIRED_DEP_PACKAGES value="KokkosCore,KokkosContainers"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES value="Gtest"/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="kokkos-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="Kokkos"/>
+  </Package>
+  <Package name="KokkosExample" dir="packages/kokkos/example" type="EX">
+    <LIB_REQUIRED_DEP_PACKAGES value="KokkosCore,KokkosContainers,KokkosLinAlg"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS value="CUSPARSE,MKL"/>
+    <EmailAddresses>
+      <Regression address="kokkos-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="Kokkos"/>
+  </Package>
+  <Package name="KokkosMpiComm" dir="packages/kokkos/mpicomm" type="EX">
+    <LIB_REQUIRED_DEP_PACKAGES value="KokkosCore,KokkosCompat,TeuchosComm"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS value="MPI"/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="kokkos-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="Kokkos"/>
+  </Package>
+  <Package name="KokkosTask" dir="packages/kokkos/task" type="EX">
+    <LIB_REQUIRED_DEP_PACKAGES value="KokkosCore"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES value="KokkosCore,Gtest"/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS value="Pthread,CUDA,HWLOC"/>
@@ -169,7 +267,7 @@
   </Package>
   <Package name="Kokkos" dir="packages/kokkos" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="KokkosClassic,KokkosArray"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="KokkosTPL,KokkosCore,KokkosCompat,KokkosClassic,KokkosContainers,KokkosLinAlg,KokkosExample,KokkosMpiComm,KokkosTask"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
@@ -181,9 +279,23 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
+  <Package name="Sacado" dir="packages/sacado" type="PS">
+    <LIB_REQUIRED_DEP_PACKAGES/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Teuchos,KokkosCore"/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS value="ADOLC,ADIC,CppUnit"/>
+    <EmailAddresses>
+      <Regression address="sacado-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value=""/>
+  </Package>
   <Package name="Epetra" dir="packages/epetra" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Teuchos"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS value="BLAS,LAPACK"/>
@@ -253,7 +365,7 @@
   </Package>
   <Package name="Tpetra" dir="packages/tpetra" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,KokkosClassic"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Epetra"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Epetra,KokkosCore,KokkosCompat,KokkosLinAlg,KokkosContainers,KokkosMpiComm"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
@@ -447,13 +559,13 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="Amesos2" dir="packages/amesos2" type="EX">
+  <Package name="Amesos2" dir="packages/amesos2" type="SS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Tpetra"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS value="MPI,SuperLU,SuperLUMT,SuperLUDist,PARDISO_MKL,ParMETIS,METIS"/>
+    <LIB_OPTIONAL_DEP_TPLS value="MPI,SuperLU,SuperLUMT,SuperLUDist,PARDISO_MKL,ParMETIS,METIS,Cholmod"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
@@ -533,7 +645,7 @@
   </Package>
   <Package name="SEACASIoss" dir="packages/seacas/libraries/ioss" type="SS">
     <LIB_REQUIRED_DEP_PACKAGES/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="SEACASExodus,SEACASNemesis,Pamgen"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="SEACASExodus,Pamgen"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
@@ -601,6 +713,34 @@
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
   </Package>
+  <Package name="SEACASSVDI" dir="packages/seacas/libraries/svdi" type="SS">
+    <LIB_REQUIRED_DEP_PACKAGES/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS value="X11"/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="seacas-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="SEACAS"/>
+  </Package>
+  <Package name="SEACASPLT" dir="packages/seacas/libraries/plt" type="SS">
+    <LIB_REQUIRED_DEP_PACKAGES value="SEACASSuplib,SEACASSVDI"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="seacas-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="SEACAS"/>
+  </Package>
   <Package name="SEACASAlgebra" dir="packages/seacas/applications/algebra" type="SS">
     <LIB_REQUIRED_DEP_PACKAGES value="SEACASSupes,SEACASSuplib,SEACASExodus_for"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
@@ -617,6 +757,20 @@
   </Package>
   <Package name="SEACASAprepro" dir="packages/seacas/applications/aprepro" type="SS">
     <LIB_REQUIRED_DEP_PACKAGES value="SEACASSuplib"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="seacas-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="SEACAS"/>
+  </Package>
+  <Package name="SEACASBlot" dir="packages/seacas/applications/blot" type="SS">
+    <LIB_REQUIRED_DEP_PACKAGES value="SEACASSupes,SEACASSuplib,SEACASExodus_for,SEACASPLT"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
@@ -715,6 +869,20 @@
   </Package>
   <Package name="SEACASExotxt" dir="packages/seacas/applications/exotxt" type="SS">
     <LIB_REQUIRED_DEP_PACKAGES value="SEACASSupes,SEACASSuplib,SEACASExodus_for"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="seacas-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="SEACAS"/>
+  </Package>
+  <Package name="SEACASFastq" dir="packages/seacas/applications/fastq" type="SS">
+    <LIB_REQUIRED_DEP_PACKAGES value="SEACASSupes,SEACASSuplib,SEACASExodus_for,SEACASPLT"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
@@ -854,7 +1022,7 @@
     <ParentPackage value="SEACAS"/>
   </Package>
   <Package name="SEACASNemslice" dir="packages/seacas/applications/nem_slice" type="SS">
-    <LIB_REQUIRED_DEP_PACKAGES value="SEACASExodus,SEACASNemesis,SEACASChaco,SEACASSuplib"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="SEACASExodus,SEACASChaco,SEACASSuplib"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Zoltan"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
@@ -868,7 +1036,21 @@
     <ParentPackage value="SEACAS"/>
   </Package>
   <Package name="SEACASNemspread" dir="packages/seacas/applications/nem_spread" type="SS">
-    <LIB_REQUIRED_DEP_PACKAGES value="SEACASExodus,SEACASNemesis,SEACASSuplib"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="SEACASExodus,SEACASSuplib"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="seacas-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="SEACAS"/>
+  </Package>
+  <Package name="SEACASNumbers" dir="packages/seacas/applications/numbers" type="SS">
+    <LIB_REQUIRED_DEP_PACKAGES value="SEACASSupes,SEACASSuplib,SEACASExodus_for"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
@@ -896,8 +1078,8 @@
     <ParentPackage value="SEACAS"/>
   </Package>
   <Package name="SEACAS" dir="packages/seacas" type="SS">
-    <LIB_REQUIRED_DEP_PACKAGES value="SEACASExodus,SEACASExodus_for,SEACASNemesis,SEACASIoss,SEACASChaco,SEACASAprepro_lib,SEACASSupes,SEACASSuplib,SEACASAlgebra,SEACASAprepro,SEACASConjoin,SEACASEjoin,SEACASEpu,SEACASExodiff,SEACASExomatlab,SEACASExotxt,SEACASGjoin,SEACASGen3D,SEACASGenshell,SEACASGrepos,SEACASGrope,SEACASMapvarlib,SEACASMapvar,SEACASMapvar-kd,SEACASNemslice,SEACASNemspread,SEACASTxtexo"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="SEACASExo2mat,SEACASMat2exo"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="SEACASExodus,SEACASExodus_for,SEACASNemesis,SEACASIoss,SEACASChaco,SEACASAprepro_lib,SEACASSupes,SEACASSuplib,SEACASAlgebra,SEACASAprepro,SEACASConjoin,SEACASEjoin,SEACASEpu,SEACASExodiff,SEACASExomatlab,SEACASExotxt,SEACASGjoin,SEACASGen3D,SEACASGenshell,SEACASGrepos,SEACASGrope,SEACASMapvarlib,SEACASMapvar,SEACASMapvar-kd,SEACASNemslice,SEACASNemspread,SEACASNumbers,SEACASTxtexo"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="SEACASSVDI,SEACASPLT,SEACASBlot,SEACASExo2mat,SEACASFastq,SEACASMat2exo"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
@@ -943,7 +1125,7 @@
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS value="CrayPortals,Portals,Gemini,InfiniBand,HPCToolkit"/>
+    <LIB_OPTIONAL_DEP_TPLS value="CrayPortals,Portals,Gemini,InfiniBand,BGPDCMF,HPCToolkit"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
@@ -966,12 +1148,12 @@
     <ParentPackage value="Trios"/>
   </Package>
   <Package name="Triosprograms" dir="packages/trios/programs" type="EX">
-    <LIB_REQUIRED_DEP_PACKAGES value="Triosnssi,Teuchos"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Triosnssi,TeuchosCore"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS value="LibTopoMap,ParMETIS,METIS,gpcd"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
@@ -980,7 +1162,7 @@
     <ParentPackage value="Trios"/>
   </Package>
   <Package name="Triosexamples" dir="packages/trios/examples" type="EX">
-    <LIB_REQUIRED_DEP_PACKAGES value="Triosnssi,Teuchos"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Triosnssi,TeuchosCore"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
@@ -994,7 +1176,7 @@
     <ParentPackage value="Trios"/>
   </Package>
   <Package name="Triostests" dir="packages/trios/tests" type="EX">
-    <LIB_REQUIRED_DEP_PACKAGES value="Triosnssi,Teuchos"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Triosnssi,TeuchosCore"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
@@ -1008,7 +1190,7 @@
     <ParentPackage value="Trios"/>
   </Package>
   <Package name="Triosnetcdf-service" dir="packages/trios/services/netcdf" type="EX">
-    <LIB_REQUIRED_DEP_PACKAGES value="Triosnssi,Teuchos"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Triosnssi,TeuchosCore"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
@@ -1023,11 +1205,11 @@
   </Package>
   <Package name="Trios" dir="packages/trios" type="EX">
     <LIB_REQUIRED_DEP_PACKAGES/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Teuchos,Trioscommsplitter,Triossupport,Triosnnti,Triosnssi,Triosprograms,Triosexamples,Triostests,Triosnetcdf-service"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="TeuchosCore,Trioscommsplitter,Triossupport,Triosnnti,Triosnssi,Triosprograms,Triosexamples,Triostests,Triosnetcdf-service"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS value="MPI,Netcdf,Pnetcdf,Pthread,CrayPortals,Portals,Gemini,InfiniBand,Pablo,PAPI,HPCToolkit"/>
+    <LIB_OPTIONAL_DEP_TPLS value="BGQPAMI,BGPDCMF,MPI,Netcdf,Pnetcdf,Pthread,CrayPortals,Portals,Gemini,InfiniBand,Pablo,PAPI,HPCToolkit"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
@@ -1037,11 +1219,11 @@
   </Package>
   <Package name="Ifpack" dir="packages/ifpack" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Amesos,AztecOO,EpetraExt"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Amesos,EpetraExt,AztecOO"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES value="Galeri"/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS value="HYPRE,HIPS,SuperLU,SPARSKIT"/>
+    <LIB_OPTIONAL_DEP_TPLS value="HYPRE,HIPS,SuperLU,SPARSKIT,Boost"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS value="HYPRE,SuperLU,SPARSKIT"/>
     <EmailAddresses>
@@ -1105,23 +1287,9 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="IQR" dir="packages/iqr" type="EX">
-    <LIB_REQUIRED_DEP_PACKAGES value="Epetra"/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
-    <TEST_REQUIRED_DEP_PACKAGES value="Epetra,EpetraExt,Galeri,Teuchos,Anasazi"/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-    <EmailAddresses>
-      <Regression address="iqr-regression@software.sandia.gov"/>
-    </EmailAddresses>
-    <ParentPackage value=""/>
-  </Package>
   <Package name="Zoltan2" dir="packages/zoltan2" type="SS">
     <LIB_REQUIRED_DEP_PACKAGES value="Tpetra,KokkosClassic,Epetra,Teuchos,Xpetra"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Anasazi"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Anasazi,Zoltan"/>
     <TEST_REQUIRED_DEP_PACKAGES value="Tpetra,KokkosClassic,Epetra,Teuchos,Xpetra,Galeri"/>
     <TEST_OPTIONAL_DEP_PACKAGES value="Zoltan"/>
     <LIB_REQUIRED_DEP_TPLS/>
@@ -1135,11 +1303,11 @@
   </Package>
   <Package name="Ifpack2" dir="packages/ifpack2" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES value="Belos,Teuchos,Tpetra,KokkosClassic"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Xpetra,Zoltan2"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Xpetra,Zoltan2,ThyraTpetraAdapters,Amesos2"/>
     <TEST_REQUIRED_DEP_PACKAGES value="Belos,Triutils,Galeri"/>
-    <TEST_OPTIONAL_DEP_PACKAGES value="Anasazi"/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="Anasazi,Amesos2"/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS value="Cholmod,Lemon"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS value="QD"/>
     <EmailAddresses>
@@ -1148,7 +1316,7 @@
     <ParentPackage value=""/>
   </Package>
   <Package name="ShyLU" dir="packages/shylu" type="EX">
-    <LIB_REQUIRED_DEP_PACKAGES value="IQR,Epetra,Isorropia,AztecOO,Belos,Ifpack,Amesos,Teuchos,Anasazi"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Epetra,Isorropia,AztecOO,Belos,Ifpack,Amesos,Teuchos,Anasazi"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES value="ML"/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
@@ -1191,7 +1359,7 @@
   </Package>
   <Package name="Teko" dir="packages/teko" type="SS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Thyra,ThyraEpetraAdapters,ThyraEpetraExtAdapters,Stratimikos,AztecOO,Anasazi,ML,Ifpack,Amesos"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Isorropia"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Isorropia,Ifpack2,ThyraTpetraAdapters,Tpetra"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
@@ -1237,7 +1405,7 @@
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt,Amesos,Pamgen"/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS value="Boost"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
@@ -1248,7 +1416,7 @@
   <Package name="STK" dir="packages/stk" type="SS">
     <LIB_REQUIRED_DEP_PACKAGES value="Shards,Teuchos"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="SEACASIoss,FEI,AztecOO,ThreadPool,Zoltan,Intrepid,Sacado"/>
-    <TEST_REQUIRED_DEP_PACKAGES value="SEACASExodus,SEACASNemesis"/>
+    <TEST_REQUIRED_DEP_PACKAGES value="SEACASExodus"/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS value="Boost"/>
     <LIB_OPTIONAL_DEP_TPLS value="BoostLib,OpenNURBS"/>
@@ -1315,17 +1483,17 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="TrilinosCouplings" dir="packages/trilinoscouplings" type="SS">
-    <LIB_REQUIRED_DEP_PACKAGES/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="EpetraExt,Isorropia,Amesos,AztecOO,Belos,Ifpack,ML,NOX,Zoltan,STK"/>
+  <Package name="MueLu" dir="packages/muelu" type="SS">
+    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Xpetra"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Amesos,Amesos2,Epetra,EpetraExt,KokkosClassic,Ifpack,Ifpack2,ML,Tpetra,Zoltan,Zoltan2,Stratimikos,ThyraTpetraAdapters,Isorropia"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES value="Amesos,Isorropia,Epetra,EpetraExt,Ifpack,Intrepid,Pamgen,AztecOO,ML,Zoltan,STK,Teko,Tpetra"/>
-    <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="AztecOO,Epetra,EpetraExt,Galeri,Tpetra,Belos"/>
+    <LIB_REQUIRED_DEP_TPLS value="BLAS,LAPACK"/>
+    <LIB_OPTIONAL_DEP_TPLS value="Boost"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
-      <Regression address="trilinoscouplings-regression@software.sandia.gov"/>
+      <Regression address="muelu-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
@@ -1371,27 +1539,13 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="MueLu" dir="packages/muelu" type="SS">
-    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Xpetra"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Amesos,Amesos2,Epetra,EpetraExt,KokkosClassic,Ifpack,Ifpack2,ML,Tpetra,Zoltan,Zoltan2,Stratimikos"/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES value="AztecOO,Epetra,EpetraExt,Galeri,Tpetra,Belos"/>
-    <LIB_REQUIRED_DEP_TPLS value="BLAS,LAPACK"/>
-    <LIB_OPTIONAL_DEP_TPLS value="Boost"/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-    <EmailAddresses>
-      <Regression address="muelu-regression@software.sandia.gov"/>
-    </EmailAddresses>
-    <ParentPackage value=""/>
-  </Package>
   <Package name="Stokhos" dir="packages/stokhos" type="SS">
-    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,EpetraExt"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Ifpack,ML,TriKota,Anasazi,Sacado,NOX,Isorropia,KokkosClassic,KokkosArray,Tpetra,Ifpack2,MueLu,Belos"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="EpetraExt,Ifpack,ML,TriKota,Anasazi,Sacado,NOX,Isorropia,KokkosClassic,KokkosCore,KokkosLinAlg,KokkosMpiComm,Tpetra,Ifpack2,MueLu,Belos,Amesos2"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES value="AztecOO,Stratimikos"/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="AztecOO,Stratimikos,Zoltan"/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS value="ForUQTK,CUDA,Thrust,Clp,GLPK,qpOASES,Boost,MATLABLib"/>
+    <LIB_OPTIONAL_DEP_TPLS value="ForUQTK,CUDA,Thrust,Cusp,CUSPARSE,Clp,GLPK,qpOASES,Boost,MATLABLib,MKL"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
@@ -1414,8 +1568,8 @@
     <ParentPackage value=""/>
   </Package>
   <Package name="Panzer" dir="packages/panzer" type="SS">
-    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Kokkos,Sacado,Phalanx,Intrepid,FEI,ThyraCore,ThyraTpetraAdapters,ThyraEpetraAdapters,Tpetra,Epetra,EpetraExt"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="STK,SEACASIoss,SEACASExodus,Teko,Stokhos,MueLu"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Kokkos,Sacado,Phalanx,Intrepid,FEI,ThyraCore,ThyraTpetraAdapters,ThyraEpetraAdapters,Tpetra,Epetra,EpetraExt,Zoltan,Stratimikos,Piro,NOX,Rythmos"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="STK,SEACASIoss,SEACASExodus,Teko,Stokhos,MueLu,Ifpack2"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES value="Stratimikos,Piro,NOX,Rythmos"/>
     <LIB_REQUIRED_DEP_TPLS value="MPI,Boost"/>
@@ -1547,7 +1701,7 @@
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS value="ExodusII"/>
     <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS value="CppUnit"/>
     <EmailAddresses>
       <Regression address="mesquite-regression@software.sandia.gov"/>
     </EmailAddresses>
@@ -1564,6 +1718,20 @@
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
       <Regression address="meshinggenie-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value=""/>
+  </Package>
+  <Package name="TrilinosCouplings" dir="packages/trilinoscouplings" type="SS">
+    <LIB_REQUIRED_DEP_PACKAGES/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="EpetraExt,Isorropia,Amesos,AztecOO,Belos,Ifpack,ML,NOX,Zoltan,STK"/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="Amesos,Isorropia,Epetra,EpetraExt,Ifpack,Intrepid,Pamgen,AztecOO,ML,Zoltan,STK,Teko,Tpetra,MueLu,KokkosCore,KokkosLinAlg,KokkosCompat,KokkosContainers,KokkosMpiComm,Stokhos"/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="trilinoscouplings-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>

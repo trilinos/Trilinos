@@ -209,3 +209,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 2
   COMM mpi serial
   )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  MultiVector_RowStatScaledOp_UnitTests
+  SOURCES
+    MultiVector_RowStatScaledOp_UnitTests.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 2
+  COMM mpi serial
+  XHOST KALLIKRATES
+  )

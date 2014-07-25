@@ -93,7 +93,7 @@ namespace Xpetra {
     }
 
     static RCP<StridedMap> Build(const RCP<const Map>& map, std::vector<size_t>& stridingInfo, LocalOrdinal stridedBlockId = -1, GlobalOrdinal offset = 0) {
-      return rcp(new StridedMap(map, stridingInfo, stridedBlockId, offset));
+      return rcp(new StridedMap(map, stridingInfo, map->getIndexBase(), stridedBlockId, offset));
     }
 
     // special constructor for generating a given subblock of a strided map
@@ -140,7 +140,7 @@ namespace Xpetra {
       std::vector<size_t> strData = map.getStridingData();
       return rcp(new StridedMap(map.lib(), map.getGlobalNumElements(), newElements, map.getIndexBase(), strData, map.getComm(), map.getStridedBlockId(), map.getNode()));
 
-      XPETRA_FACTORY_END;
+      //XPETRA_FACTORY_END;
     }
 
     //! Map constructor with a user-defined contiguous distribution. (for experts only. There is no special check whether the generated strided maps are valid)

@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -49,19 +49,19 @@
 #define NOX_MULTIPHYSICS_DATAEXCHANGE_INTERFACE_H
 
 #include "NOX_Common.H"
-  
+
 namespace NOX {
 namespace Multiphysics {
 namespace DataExchange {
 
-  /*! 
+  /*!
     \brief Provides a set of interfaces for users to provide information about exchanging data between registered NOX solvers
   */
 
 class Interface {
 
 public:
- 
+
   //! Constructor
   Interface() {};
 
@@ -70,10 +70,10 @@ public:
 
   //! Exchange data for all registered problems
   virtual bool exchangeAllData() = 0;
-  
+
   //! Exchange data for a specified problem - brings needed data from others to this problem
   virtual bool exchangeDataTo(int solverId) = 0;
-  
+
 };
 } // namespace DataExchange
 } // namespace Multiphysics

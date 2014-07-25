@@ -51,35 +51,31 @@
 #include <Teuchos_ParameterList.hpp>
 
 // Headers for factories used by default:
-#include "MueLu_NoFactory.hpp"
-#include "MueLu_TentativePFactory.hpp"
-#include "MueLu_SaPFactory.hpp"
-#include "MueLu_RAPFactory.hpp"
-#include "MueLu_NullspaceFactory.hpp"
-#include "MueLu_TransPFactory.hpp"
-#include "MueLu_SmootherFactory.hpp"
-#include "MueLu_TrilinosSmoother.hpp"
-#include "MueLu_DirectSolver.hpp"
-#include "MueLu_CoupledAggregationFactory.hpp"
-#include "MueLu_CoalesceDropFactory.hpp"
-#include "MueLu_RepartitionFactory.hpp"
-#include "MueLu_ZoltanInterface.hpp"
-#include "MueLu_MultiVectorTransferFactory.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
+#include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
-
-#ifdef HAVE_MUELU_EXPERIMENTAL
-#include "MueLu_PatternFactory.hpp"
 #include "MueLu_ConstraintFactory.hpp"
-#endif
-
+#include "MueLu_CoupledAggregationFactory.hpp"
+#include "MueLu_DirectSolver.hpp"
+#include "MueLu_MultiVectorTransferFactory.hpp"
+#include "MueLu_NoFactory.hpp"
+#include "MueLu_NullspaceFactory.hpp"
+#include "MueLu_PatternFactory.hpp"
+#include "MueLu_RAPFactory.hpp"
+#include "MueLu_RepartitionFactory.hpp"
+#include "MueLu_SaPFactory.hpp"
+#include "MueLu_SmootherFactory.hpp"
+#include "MueLu_TentativePFactory.hpp"
+#include "MueLu_TransPFactory.hpp"
+#include "MueLu_TrilinosSmoother.hpp"
+#include "MueLu_ZoltanInterface.hpp"
 
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetFactory(const std::string& varName, const RCP<const FactoryBase>& factory) {
     if (factoryTable_.count(varName))
-      GetOStream(Warnings1, 0) << "Warning: FactoryManager::SetFactory(): Changing an already defined factory for '" << varName << "'" << std::endl;
+      GetOStream(Runtime1) << "FactoryManager::SetFactory(): Changing an already defined factory for '" << varName << "'" << std::endl;
 
     factoryTable_[varName] = factory;
   }
@@ -132,7 +128,6 @@ namespace MueLu {
                                                         return SetAndReturnDefaultFactory(varName, NoFactory::getRCP());
 #endif
       }
-      if (varName == "number of partitions")            return GetFactory("Importer");
 
       if (varName == "Graph")                           return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
       if (varName == "UnAmalgamationInfo")              return SetAndReturnDefaultFactory(varName, rcp(new AmalgamationFactory())); //GetFactory("Graph"));
@@ -145,14 +140,12 @@ namespace MueLu {
       if (varName == "PreSmoother")                     return GetFactory("Smoother");
       if (varName == "PostSmoother")                    return GetFactory("Smoother");
 
-#ifdef HAVE_MUELU_EXPERIMENTAL
       if (varName == "Ppattern") {
         RCP<PatternFactory> PpFact = rcp(new PatternFactory);
         PpFact->SetFactory("P", GetFactory("Ptent"));
         return SetAndReturnDefaultFactory(varName, PpFact);
       }
       if (varName == "Constraint")                      return SetAndReturnDefaultFactory(varName, rcp(new ConstraintFactory()));
-#endif
 
       if (varName == "Smoother") {
         Teuchos::ParameterList smootherParamList;
@@ -171,7 +164,7 @@ namespace MueLu {
   const RCP<const FactoryBase> FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetAndReturnDefaultFactory(const std::string& varName, const RCP<const FactoryBase>& factory) const {
     TEUCHOS_TEST_FOR_EXCEPTION(factory.is_null(), Exceptions::RuntimeError, "The default factory for building '" << varName << "' is null");
 
-    GetOStream(Warnings1, 0) << "Using default factory (" << factory->description() << ") for building '" << varName << "'." << std::endl;
+    GetOStream(Runtime1) << "Using default factory (" << factory->description() << ") for building '" << varName << "'." << std::endl;
 
     defaultFactoryTable_[varName] = factory;
 
@@ -182,7 +175,7 @@ namespace MueLu {
   void FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Print() const {
     std::map<std::string, RCP<const FactoryBase> >::const_iterator it;
 
-    Teuchos::FancyOStream& fancy = GetOStream(Debug, 0);
+    Teuchos::FancyOStream& fancy = GetOStream(Debug);
 
     fancy << "Users factory table (factoryTable_):" << std::endl;
     for (it = factoryTable_.begin(); it != factoryTable_.end(); it++)
@@ -192,6 +185,21 @@ namespace MueLu {
     for (it = defaultFactoryTable_.begin(); it != defaultFactoryTable_.end(); it++)
       fancy << "  " << it->first << " -> " << Teuchos::toString(it->second.get()) << std::endl;
   }
+
+#ifdef HAVE_MUELU_DEBUG
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ResetDebugData() const {
+    std::map<std::string, RCP<const FactoryBase> >::const_iterator it;
+
+    for (it = factoryTable_.begin(); it != factoryTable_.end(); it++)
+      if (!it->second.is_null())
+        it->second->ResetDebugData();
+
+    for (it = defaultFactoryTable_.begin(); it != defaultFactoryTable_.end(); it++)
+      if (!it->second.is_null())
+        it->second->ResetDebugData();
+  }
+#endif
 
 } // namespace MueLu
 

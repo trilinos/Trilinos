@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ************************************************************************* */
@@ -42,14 +42,14 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
 /* ********************************************************************** */
 /*! \file ml_agg_VBMETIS.c: functions to decompose a local graph using METIS
 
-   \note metis.h is required to properly define indextype, and to declare the     
-   function `METIS_PartGraphRecursive' or `METIS_PartGraphKway'.          
-   By default, indextype is defined as int, so in principle you can         
-   compile also without including metis.h. However, to be sure            
-   that use has specified include and library, I require ML_METIS         
-   to be defined at compilation time.                                     
+   \note metis.h is required to properly define indextype, and to declare the
+   function `METIS_PartGraphRecursive' or `METIS_PartGraphKway'.
+   By default, indextype is defined as int, so in principle you can
+   compile also without including metis.h. However, to be sure
+   that use has specified include and library, I require ML_METIS
+   to be defined at compilation time.
 
-   \warning without metis this function compiles, but does not do any  job.  
+   \warning without metis this function compiles, but does not do any  job.
  ********************************************************************** */
 
 #ifdef HAVE_ML_METIS
@@ -80,12 +80,12 @@ static int ML_DecomposeGraph_with_VBMETIS( ML_Operator *Amatrix,
 
 #ifdef EXTREME_DEBUGGING
 static int MyPID_ = 0;
-void set_print(int MyPID ) 
+void set_print(int MyPID )
 {
   MyPID_ = MyPID;
 }
 #include <stdarg.h>
-void print(char * str, ...) 
+void print(char * str, ...)
 {
 
   va_list ArgList;
@@ -103,7 +103,7 @@ void print(char * str, ...)
 
 */
 /* ------------------------------------------------------------------------ */
-static int find_max(int length, int vector[] ) 
+static int find_max(int length, int vector[] )
 {
   int max = -1;
   int pos = -1, i;
@@ -138,7 +138,7 @@ static int find_index( int key, int list[], int N )
 
 /* ------------------------------------------------------------------------ */
 /*!
- \brief sets the coarsening scheme to variable block METIS 
+ \brief sets the coarsening scheme to variable block METIS
  <pre>
 
     Author:  Michael W. Gee, Org. 9214, November 2004
@@ -152,7 +152,7 @@ static int find_index( int key, int list[], int N )
 /* ------------------------------------------------------------------------ */
 int ML_Aggregate_Set_CoarsenScheme_VBMETIS( ML_Aggregate *ag  )
 {
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       printf("ML_Aggregate_Set_CoarsenScheme_METIS : wrong object. \n");
       fprintf(stderr,"file %s, line %d\n",__FILE__,__LINE__);
@@ -183,18 +183,18 @@ int ML_Aggregate_Set_CoarsenScheme_VBMETIS( ML_Aggregate *ag  )
      ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS
 */
 /* ------------------------------------------------------------------------ */
-int ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS( ML_Aggregate *ag, 
+int ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS( ML_Aggregate *ag,
                                                     const int level,
-                                                    const int N_levels, 
-                                                    const int nblocks, 
-                                                    const int *blocks, 
+                                                    const int N_levels,
+                                                    const int nblocks,
+                                                    const int *blocks,
                                                     const int *block_pde,
                                                     const int block_dim)
 {
    struct aggr_vblock* temp = NULL;
    int i,nbyte;
 
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       fprintf(stderr,"ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS : wrong object. \n");
       fprintf(stderr,"file %s, line %d\n",__FILE__,__LINE__);
@@ -229,7 +229,7 @@ int ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS( ML_Aggregate *ag,
          fprintf(stderr,"ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS: not enough space\n");
          fprintf(stderr,"file %s, line %d\n",__FILE__,__LINE__);
          fflush(stderr); exit(EXIT_FAILURE);
-      }   
+      }
 
       for (i=0; i<N_levels; i++)
       {
@@ -307,10 +307,10 @@ int ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS( ML_Aggregate *ag,
  \brief Modify matrix so that it uses a getrow wrapper
  <pre>
 
-    Modify matrix so that it uses a getrow wrapper that will effectively 
-    drop small values and will collapse several rows into a block row.   
+    Modify matrix so that it uses a getrow wrapper that will effectively
+    drop small values and will collapse several rows into a block row.
     this routine is derived from ML_Operator_AmalgamateAndDropWeak_VBlocks
-    but  can handle variable block sizes                                 
+    but  can handle variable block sizes
 
     Author:  Michael W. Gee, Org. 9214, November 2004
 
@@ -327,7 +327,7 @@ int ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS( ML_Aggregate *ag,
      ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS ML_Operator_UnAmalgamateAndDropWeak_Vblocks
 */
 /* ------------------------------------------------------------------------ */
-int ML_Operator_AmalgamateAndDropWeak_VBlocks(ML_Operator *Amat, int block_size, 
+int ML_Operator_AmalgamateAndDropWeak_VBlocks(ML_Operator *Amat, int block_size,
                                 double drop_tolerance, int nblocks, int* blocks)
 {
    struct amalg_drop  *new_data;
@@ -385,7 +385,7 @@ int ML_Operator_AmalgamateAndDropWeak_VBlocks(ML_Operator *Amat, int block_size,
      }
      new_data->blk_inds   = (int    *) ML_allocate(sizeof(int)* i );
      dtemp                = (double *) ML_allocate(sizeof(double)* i );
-     if (dtemp == NULL) 
+     if (dtemp == NULL)
         pr_error("ML_Operator_AmalgamateAndDropWeak_VBlocks: out of space\n");
 
      for (i = 0; i < Amat->invec_leng; i++)
@@ -397,7 +397,7 @@ int ML_Operator_AmalgamateAndDropWeak_VBlocks(ML_Operator *Amat, int block_size,
      }
 
 /*
-renumber the blocks consecutively starting from 0 on each proc 
+renumber the blocks consecutively starting from 0 on each proc
 including the ghost blocks
 */
      block_count = 0;
@@ -426,7 +426,7 @@ including the ghost blocks
      for (i = 0; i < Nneigh; i++) {
        rcvleng = ML_CommInfoOP_Get_Nrcvlist(Amat->getrow->pre_comm,
                                                 neighbors[i]);
-       newrcv = ML_CommInfoOP_Get_rcvlist(Amat->getrow->pre_comm, 
+       newrcv = ML_CommInfoOP_Get_rcvlist(Amat->getrow->pre_comm,
                                               neighbors[i]);
 
        for (j = 0; j < rcvleng; j++) {
@@ -457,7 +457,7 @@ including the ghost blocks
         for (i = 0; i < Nneigh; i++) {
            rcvleng = ML_CommInfoOP_Get_Nrcvlist(Amat->getrow->pre_comm,
                                                 neighbors[i]);
-           newrcv = ML_CommInfoOP_Get_rcvlist(Amat->getrow->pre_comm, 
+           newrcv = ML_CommInfoOP_Get_rcvlist(Amat->getrow->pre_comm,
                                               neighbors[i]);
            for (j = 0; j < rcvleng; j++) {
               if (newrcv[j] > Nghost + Nrows - 1)
@@ -479,7 +479,7 @@ including the ghost blocks
 
         for (i = 0 ; i < Nrows; i++) {
            ML_get_matrix_row(Amat,1,&i,&allocated,&bindx,&val,&row_length,0);
-           for (j = 0; j < row_length; j++) 
+           for (j = 0; j < row_length; j++)
               if (bindx[j] == i) break;
 
            scaled_diag[i] = 0.0;
@@ -491,7 +491,7 @@ including the ghost blocks
         ML_free(bindx);
 
         if ( Amat->getrow->pre_comm != NULL )
-           ML_exchange_bdry(scaled_diag,Amat->getrow->pre_comm,Nrows, comm, 
+           ML_exchange_bdry(scaled_diag,Amat->getrow->pre_comm,Nrows, comm,
                             ML_OVERWRITE,NULL);
 
         new_data->scaled_diag = scaled_diag;
@@ -521,8 +521,8 @@ including the ghost blocks
      ML_Operator_Set_Getrow(Amat,nblocks,ML_amalg_drop_getrow_VBlocks);
 
      /* amalgamation needs a new communication structure. Let's create a new */
-     /* communication object and modify it if we are doing amalgmation.     */                   
-     ML_CommInfoOP_Clone( &(Amat->getrow->pre_comm),  
+     /* communication object and modify it if we are doing amalgmation.     */
+     ML_CommInfoOP_Clone( &(Amat->getrow->pre_comm),
                           new_data->original_getrow->pre_comm);
 
      if (block_size > 1) {
@@ -531,23 +531,23 @@ including the ghost blocks
 
 
         for (i = 0; i < Nneigh; i++) {
-           sendleng = ML_CommInfoOP_Get_Nsendlist(Amat->getrow->pre_comm, 
+           sendleng = ML_CommInfoOP_Get_Nsendlist(Amat->getrow->pre_comm,
                                                   neighbors[i]);
-           newsend = ML_CommInfoOP_Get_sendlist(Amat->getrow->pre_comm, 
+           newsend = ML_CommInfoOP_Get_sendlist(Amat->getrow->pre_comm,
                                                 neighbors[i]);
            sendcount = 0;
            for (j = 0 ; j < sendleng; j++) {
               temp = new_data->blk_inds[newsend[j]];
 
               /* search to see if it is already in the list */
-              for (k = 0; k < sendcount; k++) 
+              for (k = 0; k < sendcount; k++)
                  if ( newsend[k] == temp) break;
 
               if (k == sendcount) newsend[sendcount++] = temp;
            }
 
 
-           rcvleng = ML_CommInfoOP_Get_Nrcvlist(Amat->getrow->pre_comm, 
+           rcvleng = ML_CommInfoOP_Get_Nrcvlist(Amat->getrow->pre_comm,
                                                 neighbors[i]);
            newrcv = ML_CommInfoOP_Get_rcvlist(Amat->getrow->pre_comm, neighbors[i]);
            rcvcount = 0;
@@ -555,15 +555,15 @@ including the ghost blocks
               temp = new_data->blk_inds[newrcv[j]];
 
               /* search to see if it is already in the list */
-              for (k = 0; k < rcvcount; k++) 
+              for (k = 0; k < rcvcount; k++)
                  if ( newrcv[k] == temp) break;
 
               if (k == rcvcount) newrcv[rcvcount++] = temp;
            }
            ML_CommInfoOP_Set_exch_info(Amat->getrow->pre_comm, neighbors[i],
                       rcvcount, newrcv,sendcount, newsend);
-           ML_free(newrcv); 
-           ML_free(newsend); 
+           ML_free(newrcv);
+           ML_free(newsend);
         }
         if (neighbors != NULL) ML_free(neighbors);
      }
@@ -576,7 +576,7 @@ including the ghost blocks
  \brief Restores a matrix that has been modified via ML_Operator_AmalgamateAndDropWeak_Vblocks
  <pre>
 
-    Restores a matrix that has been modified via                         
+    Restores a matrix that has been modified via
     ML_Operator_AmalgamateAndDropWeak_Vblocks back to its original form
 
     Author:  Michael W. Gee, Org. 9214, November 2004
@@ -622,12 +622,12 @@ int ML_Operator_UnAmalgamateAndDropWeak_Vblocks(ML_Operator *Amat, int block_siz
  \brief Getrow function for amalgamteded variable block row matrix
  <pre>
 
-    Getrow function that is used to drop matrix elements and to collapse 
-    several rows into a block. It is assumed that                        
-    ML_Operator_AmalgamateAndDropWeak_VBlocks() was previously called to 
-    properly set up the data structure (data).                           
-    This function is derived from ML_amalg_drop_getrow                   
-    of which it is the variable block version                            
+    Getrow function that is used to drop matrix elements and to collapse
+    several rows into a block. It is assumed that
+    ML_Operator_AmalgamateAndDropWeak_VBlocks() was previously called to
+    properly set up the data structure (data).
+    This function is derived from ML_amalg_drop_getrow
+    of which it is the variable block version
 
     Author:  Michael W. Gee, Org. 9214, November 2004
 
@@ -647,8 +647,8 @@ int ML_Operator_UnAmalgamateAndDropWeak_Vblocks(ML_Operator *Amat, int block_siz
 */
 /* ------------------------------------------------------------------------ */
 
-int ML_amalg_drop_getrow_VBlocks(ML_Operator *data, int N_requested_rows, 
-   int requested_rows[],int allocated_space, int columns[], double values[], 
+int ML_amalg_drop_getrow_VBlocks(ML_Operator *data, int N_requested_rows,
+   int requested_rows[],int allocated_space, int columns[], double values[],
    int row_lengths[])
 {
    struct amalg_drop  *temp;
@@ -720,7 +720,7 @@ int ML_amalg_drop_getrow_VBlocks(ML_Operator *data, int N_requested_rows,
       }
       bsize = index2 - index1;
    }
-   else 
+   else
       bsize = nrows - index1;
 
    if (bsize==0)
@@ -733,8 +733,8 @@ int ML_amalg_drop_getrow_VBlocks(ML_Operator *data, int N_requested_rows,
    offset = 0;
    for (i = 0; i < bsize; i++) {
       row = index1+i;
-      status = ML_Operator_Getrow(Amat, N_requested_rows, &row, 
-                                  tallocated_space, &(tcolumns[offset]), 
+      status = ML_Operator_Getrow(Amat, N_requested_rows, &row,
+                                  tallocated_space, &(tcolumns[offset]),
                                   &(tvalues[offset]), &size );
       if (status == 0) {
          ML_free(tvalues); ML_free(tcolumns);
@@ -768,7 +768,7 @@ int ML_amalg_drop_getrow_VBlocks(ML_Operator *data, int N_requested_rows,
 
    for (j = 0; j < offset; j++) {
       tcol = temp->blk_inds[tcolumns[j]];
-      for (k = 0; k < row_lengths[0]; k++) 
+      for (k = 0; k < row_lengths[0]; k++)
          if (tcol == columns[k]) break;
 
       if (k == row_lengths[0]) {
@@ -814,17 +814,17 @@ int ML_amalg_drop_getrow_VBlocks(ML_Operator *data, int N_requested_rows,
      ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS
 */
 /* ------------------------------------------------------------------------ */
-int ML_Aggregate_Get_Vblocks_CoarsenScheme_VBMETIS( const ML_Aggregate *ag, 
+int ML_Aggregate_Get_Vblocks_CoarsenScheme_VBMETIS( const ML_Aggregate *ag,
                                                     const int level,
-                                                    const int N_levels, 
-                                                          int *nblocks, 
-                                                          int **blocks, 
+                                                    const int N_levels,
+                                                          int *nblocks,
+                                                          int **blocks,
                                                           int **block_pde)
 {
    struct aggr_vblock* temp = NULL;
    int i,start;
 
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       fprintf(stderr,"ML_Aggregate_Get_Vblocks_CoarsenScheme_VBMETIS : wrong object. \n");
       fprintf(stderr,"file %s, line %d\n",__FILE__,__LINE__);
@@ -909,12 +909,12 @@ int ML_Aggregate_Get_Vblocks_CoarsenScheme_VBMETIS( const ML_Aggregate *ag,
      ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS
 */
 /* ------------------------------------------------------------------------ */
-int ML_Aggregate_Destroy_Vblocks_CoarsenScheme_VBMETIS( const ML_Aggregate *ag, 
+int ML_Aggregate_Destroy_Vblocks_CoarsenScheme_VBMETIS( const ML_Aggregate *ag,
                                                         const int level)
 {
    struct aggr_vblock* temp = NULL;
 
-   if ( ag->ML_id != ML_ID_AGGRE ) 
+   if ( ag->ML_id != ML_ID_AGGRE )
    {
       fprintf(stderr,"ML_Aggregate_Destroy_Vblocks_CoarsenScheme_VBMETIS : wrong object. \n");
       fprintf(stderr,"file %s, line %d\n",__FILE__,__LINE__);
@@ -953,13 +953,13 @@ int ML_Aggregate_Destroy_Vblocks_CoarsenScheme_VBMETIS( const ML_Aggregate *ag,
 /*!
  \brief create non-smoothed aggregates using METIS
  <pre>
-    In order to use this function, the user has to define the number of aggregate 
-    (or the # of nodes in each aggregate) using the functions 
-    \c ML_Aggregate_Set_LocalNumber or \c ML_Aggregate_Set . 
+    In order to use this function, the user has to define the number of aggregate
+    (or the # of nodes in each aggregate) using the functions
+    \c ML_Aggregate_Set_LocalNumber or \c ML_Aggregate_Set .
 
-    Difference between ML_Aggregate_CoarsenMETIS and this routine is that 
-    this one respects variable sized blocks in the aggregation process. 
-    It guarantees that all rows of a variable block belong to the same 
+    Difference between ML_Aggregate_CoarsenMETIS and this routine is that
+    this one respects variable sized blocks in the aggregation process.
+    It guarantees that all rows of a variable block belong to the same
     aggregate.
 
     Author:  Michael W. Gee, Org. 9214, November 2004
@@ -977,13 +977,14 @@ int ML_Aggregate_Destroy_Vblocks_CoarsenScheme_VBMETIS( const ML_Aggregate *ag,
 
 */
 /* ------------------------------------------------------------------------ */
-int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix, 
+int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
                                  ML_Operator **Pmatrix, ML_Comm *comm)
 {
   unsigned int nbytes, length;
    int     i, j,  k, Nrows, exp_Nrows;
    int     diff_level;
-   int     aggr_count, index = 0, mypid, num_PDE_eqns;
+   int     aggr_count = 0;
+   int     index = 0, mypid, num_PDE_eqns;
    int     *aggr_index = NULL, nullspace_dim;
    int     Ncoarse, count;
    int     *new_ia = NULL, *new_ja = NULL, new_Nrows;
@@ -1229,7 +1230,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
          }
          aggr_count = 1;
 
-       } else { 
+       } else {
 
          mod = aggr_count % Nprocs;
 
@@ -1374,7 +1375,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      printf("%s %d (variable block) aggregates (globally)\n",
             str,
             j );
-   }   
+   }
 
    /* ********************************************************************** */
    /* I allocate room to copy aggr_index and pass this value to the user,    */
@@ -1447,7 +1448,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
          {
             fprintf( stderr,
                      "*ML*ERR* check the code for blockrow %d\n*ML*ERR* (file %s, line %d)\n",
-                     i,__FILE__,__LINE__ ); 
+                     i,__FILE__,__LINE__ );
                       fflush(stderr); exit( EXIT_FAILURE );
          }
          aggr_index[j] = aggr_index[i];
@@ -1465,7 +1466,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
 #ifdef EXTREME_DEBUGGING
    print("After `ML_Operator_UnAmalgamateAndDropWeak_Vblocks'\n");
-#endif   
+#endif
 
    Nrows      = oldNrows;
    exp_Nrows  = oldNrows;
@@ -1478,7 +1479,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    {
       fprintf( stderr,
                "*ML*ERR* not enough space\n*ML*ERR* (file %s, line %d)\n",
-               __FILE__,__LINE__ ); 
+               __FILE__,__LINE__ );
                 fflush(stderr); exit( EXIT_FAILURE );
    }
    for (i = 0; i < aggr_count ; i++) aggr_cnt_array[i] = 0;
@@ -1512,12 +1513,12 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    nbytes = (Nrows+1) * sizeof( int );
    ML_memory_alloc((void**) &(ml_ag->aggr_info[level]), nbytes, "AGl");
    count = aggr_count;
-   for ( i = 0; i < Nrows; i++ ) 
+   for ( i = 0; i < Nrows; i++ )
    {
       if ( aggr_index[i] >= 0 )
       {
             ml_ag->aggr_info[level][i] = aggr_index[i];
-         if (aggr_index[i] >= count) 
+         if (aggr_index[i] >= count)
          {
             fprintf(stderr,
                     "**WRNG** %d : aggr_index[%d]=%d >= count=%d\n**WRNG** (file %s, line %d)\n",
@@ -1533,7 +1534,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
           fflush(stderr); exit(EXIT_FAILURE);
       }
    }
-   ml_ag->aggr_count[level] = count; /* for relaxing boundary points */ 
+   ml_ag->aggr_count[level] = count; /* for relaxing boundary points */
 
    /* ============================================================= */
    /* set up the new operator                                       */
@@ -1547,20 +1548,20 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    new_Nrows   = Nrows;
    exp_Ncoarse = Nrows;
 
-   for ( i = 0; i < new_Nrows; i++ ) 
+   for ( i = 0; i < new_Nrows; i++ )
    {
-      if ( aggr_index[i] >= exp_Ncoarse ) 
+      if ( aggr_index[i] >= exp_Ncoarse )
       {
          fprintf(stderr,"*ML*WRN* index out of bound %d = %d(%d)\n",
-                i, aggr_index[i], 
+                i, aggr_index[i],
                 exp_Ncoarse); fflush(stderr);
       }
    }
-   nbytes = ( new_Nrows+1 ) * sizeof(int); 
+   nbytes = ( new_Nrows+1 ) * sizeof(int);
    ML_memory_alloc((void**)&(new_ia), nbytes, "AIA");
-   nbytes = ( new_Nrows+1)  * nullspace_dim * sizeof(int); 
+   nbytes = ( new_Nrows+1)  * nullspace_dim * sizeof(int);
    ML_memory_alloc((void**)&(new_ja), nbytes, "AJA");
-   nbytes = ( new_Nrows+1)  * nullspace_dim * sizeof(double); 
+   nbytes = ( new_Nrows+1)  * nullspace_dim * sizeof(double);
    ML_memory_alloc((void**)&(new_val), nbytes, "AVA");
    for ( i = 0; i < new_Nrows*nullspace_dim; i++ ) new_val[i] = 0.0;
 
@@ -1571,7 +1572,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    nbytes = (Ncoarse+1) * nullspace_dim * nullspace_dim * sizeof(double);
    ML_memory_alloc((void**)&(new_null),nbytes,"AGr");
 
-   for (i = 0; i < Ncoarse*nullspace_dim*nullspace_dim; i++) 
+   for (i = 0; i < Ncoarse*nullspace_dim*nullspace_dim; i++)
       new_null[i] = 0.0;
 
    /* ------------------------------------------------------------- */
@@ -1610,7 +1611,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      aggr_cnt_array[i] = 0;
    }
 
-   for (i = 0; i < exp_Nrows; i++) 
+   for (i = 0; i < exp_Nrows; i++)
    {
       if ( aggr_index[i] >= 0 && aggr_index[i] < aggr_count)
       {
@@ -1627,7 +1628,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* ------------------------------------------------------------- */
 
    max_agg_size = 0;
-   for (i = 0; i < aggr_count; i++) 
+   for (i = 0; i < aggr_count; i++)
    {
       if (aggr_cnt_array[i] > max_agg_size) max_agg_size = aggr_cnt_array[i];
    }
@@ -1643,13 +1644,13 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* ------------------------------------------------------------- */
    /* perform block QR decomposition                                */
    /* ------------------------------------------------------------- */
-   for (i = 0; i < aggr_count; i++) 
+   for (i = 0; i < aggr_count; i++)
    {
       /* ---------------------------------------------------------- */
       /* set up the matrix we want to decompose into Q and R:       */
       /* ---------------------------------------------------------- */
       length = aggr_cnt_array[i];
-      if (nullspace_vect == NULL) 
+      if (nullspace_vect == NULL)
       {
          for (j = 0; j < (int) length; j++)
          {
@@ -1660,15 +1661,15 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
                 qr_tmp[k*length+j] = 0.;
                else
                {
-                  if (block_pde[index] == k)     
+                  if (block_pde[index] == k)
                      qr_tmp[k*length+j] = 1.0;
-                  else                           
+                  else
                      qr_tmp[k*length+j] = 0.0;
                }
             }
          }
       }
-      else 
+      else
       {
          for (k = 0; k < nullspace_dim; k++)
          {
@@ -1735,7 +1736,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
          }
          fflush(stdout);
       }
-#endif      
+#endif
       /* ---------------------------------------------------------- */
       /* ---------------------------------------------------------- */
       /* now calculate QR using an LAPACK routine                   */
@@ -1743,15 +1744,15 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
       if (aggr_cnt_array[i] >= nullspace_dim) {
 
-        DGEQRF_F77(&(aggr_cnt_array[i]), &nullspace_dim, qr_tmp, 
+        DGEQRF_F77(&(aggr_cnt_array[i]), &nullspace_dim, qr_tmp,
                           &(aggr_cnt_array[i]), tmp_vect, work, &lwork, &info);
         if (info != 0)
           pr_error("%s **ERR** dgeqrf returned a non-zero %d %d\n",str,
                    aggr_cnt_array[i],i);
 
-        if (work[0] > lwork) 
+        if (work[0] > lwork)
           {
-            lwork=(int) work[0]; 
+            lwork=(int) work[0];
             ML_memory_free((void**) &work);
             ML_memory_alloc((void**) &work, sizeof(double)*lwork, "AGx");
           }
@@ -1764,7 +1765,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
         for (j = 0; j < nullspace_dim; j++)
           for (k = j; k < nullspace_dim; k++)
-            new_null[i*nullspace_dim+j+k*Ncoarse*nullspace_dim] = 
+            new_null[i*nullspace_dim+j+k*Ncoarse*nullspace_dim] =
               qr_tmp[j+aggr_cnt_array[i]*k];
 
 #if 0 /* for debugging purpose */
@@ -1783,7 +1784,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
            }
            fflush(stdout);
         }
-#endif      
+#endif
         /* ---------------------------------------------------------- */
         /* to get this block of P, need to run qr_tmp through another */
         /* LAPACK function:                                           */
@@ -1795,18 +1796,18 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
           printf("ERROR : performing QR on a MxN matrix where M<N.\n");
           fflush(stdout);
         }
-        DORGQR_F77(&(aggr_cnt_array[i]), &nullspace_dim, &nullspace_dim, 
+        DORGQR_F77(&(aggr_cnt_array[i]), &nullspace_dim, &nullspace_dim,
                           qr_tmp, &(aggr_cnt_array[i]), tmp_vect, work, &lwork, &info);
         if (info != 0) {
           printf("Error in dorgqr on %d row (dims are %d, %d)\n(file %s, line %d)\n",
                  i,aggr_cnt_array[i],nullspace_dim,__FILE__,__LINE__ );
-          fflush(stdout);       
+          fflush(stdout);
           pr_error("Error in CoarsenMIS: dorgqr returned a non-zero\n");
         }
 
-        if (work[0] > lwork) 
+        if (work[0] > lwork)
           {
-            lwork=(int) work[0]; 
+            lwork=(int) work[0];
             ML_memory_free((void**) &work);
             ML_memory_alloc((void**) &work, sizeof(double)*lwork, "AGy");
           }
@@ -1829,13 +1830,13 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
             if ( index < Nrows )
               {
                 index3 = new_ia[index];
-                for (k = 0; k < nullspace_dim; k++) 
+                for (k = 0; k < nullspace_dim; k++)
                   {
                     new_ja [index3+k] = i * nullspace_dim + k;
                     new_val[index3+k] = qr_tmp[ k*aggr_cnt_array[i]+j];
                   }
               }
-            else 
+            else
               {
              fprintf( stderr,
                       "*ML*ERR* in QR: index out of bounds (%d)\n*ML*ERR* (file %s, line %d)\n",
@@ -1858,7 +1859,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
            fflush(stdout);
            exit(0);
         }
-#endif      
+#endif
       }
       else {
         /* We have a small aggregate such that the QR factorization can not */
@@ -1872,7 +1873,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
         for (j = 0; j < nullspace_dim; j++)
           for (k = 0; k < nullspace_dim; k++)
-            new_null[i*nullspace_dim+j+k*Ncoarse*nullspace_dim] = 
+            new_null[i*nullspace_dim+j+k*Ncoarse*nullspace_dim] =
               qr_tmp[j+aggr_cnt_array[i]*k];
         for (j = 0; j < aggr_cnt_array[i]; j++) {
           index = rows_in_aggs[i][j];
@@ -1888,7 +1889,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
    } /*  for (i = 0; i < aggr_count; i++) */
 
-   ML_Aggregate_Set_NullSpace(ml_ag, num_PDE_eqns, nullspace_dim, 
+   ML_Aggregate_Set_NullSpace(ml_ag, num_PDE_eqns, nullspace_dim,
                               new_null, Ncoarse*nullspace_dim);
    ML_memory_free( (void **) &new_null);
 
@@ -1947,7 +1948,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    csr_data->columns = new_ja;
    csr_data->values  = new_val;
 
-   ML_Operator_Set_ApplyFuncData( *Pmatrix, nullspace_dim*Ncoarse, Nrows, 
+   ML_Operator_Set_ApplyFuncData( *Pmatrix, nullspace_dim*Ncoarse, Nrows,
                                   csr_data, Nrows, NULL, 0);
    (*Pmatrix)->data_destroy = ML_CSR_MSR_ML_memorydata_Destroy;
    (*Pmatrix)->getrow->pre_comm = ML_CommInfoOP_Create();
@@ -1970,7 +1971,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    if (unamalg_bdry) ML_free(unamalg_bdry);
    ML_memory_free((void**)&aggr_index);
    if (aggr_cnt_array) ML_free(aggr_cnt_array);
-   for (i = 0; i < aggr_count; i++) 
+   for (i = 0; i < aggr_count; i++)
    if (rows_in_aggs[i]) ML_free(rows_in_aggs[i]);
    ML_memory_free((void**)&rows_in_aggs);
    ML_memory_free((void**)&qr_tmp);
@@ -1978,7 +1979,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    ML_memory_free((void**)&work);
 
    aggr_curr = aggr_head;
-   while ( aggr_curr != NULL ) 
+   while ( aggr_curr != NULL )
    {
       supernode = aggr_curr;
       aggr_curr = aggr_curr->next;
@@ -1996,14 +1997,14 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
    sprintf(fname,"PP%d_%d",comm->ML_mypid,level_count);
    fp = fopen(fname,"w");
-   ML_Operator_Apply(*Pmatrix, (*Pmatrix)->invec_leng, dtemp, 
+   ML_Operator_Apply(*Pmatrix, (*Pmatrix)->invec_leng, dtemp,
                      (*Pmatrix)->outvec_leng, d2temp);
    for (i = 0; i < Nrows; i++) {
 #ifndef MAXWELL
 #ifdef ALEGRA
-      if (level_count == 1) { j = i; k = i;} 
+      if (level_count == 1) { j = i; k = i;}
 #else
-      if (level_count == 1) { j = update_index[i]; k = update[i];} 
+      if (level_count == 1) { j = update_index[i]; k = update[i];}
 #endif
 #else
       if (level_count == 1) { j = reordered_glob_nodes[i]; k = global_node_inds[i];}
@@ -2038,10 +2039,10 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 /*!
  \brief calls METIS to decompose the graph of the local matrix
  <pre>
-    This function calls METIS to decompose the graph of the local matrix      
-    (that is, ignoring any inter-domain connections)                          
-    this function is derived from ML_DecomposeGraph_with_METIS of which it is 
-    the variable block version                                                
+    This function calls METIS to decompose the graph of the local matrix
+    (that is, ignoring any inter-domain connections)
+    this function is derived from ML_DecomposeGraph_with_METIS of which it is
+    the variable block version
 
     Author:  Michael W. Gee, Org. 9214, November 2004
 
@@ -2129,18 +2130,18 @@ static int ML_DecomposeGraph_with_VBMETIS( ML_Operator *Amatrix,
      Also, define the set of boundary nodes. NOTE: the computation of
      nonzero elements is not really needed (ML_Operator usually have
      this number already compuuted. However, I still need to
-     define the boundary nodes, and to handle epetra matrices.) 
+     define the boundary nodes, and to handle epetra matrices.)
      Finally, I need to compute the number of rows to give in input to
      METIS. Those do not include Dirichlet rows. */
 
 
-  /* check row with only main diagonal entry -> boundry nodes */   
+  /* check row with only main diagonal entry -> boundry nodes */
   N_nonzeros = 0;
   NrowsMETIS = 0;
   ptrToBdry = ML_Operator_IdentifyDirichletRows(Amatrix);
   /* TODO  Note that N_nonzeros could be greater than what was previously
      calculated in the code that this replaces.  I don't know if this will
-     be a problem.... */ 
+     be a problem.... */
   N_nonzeros = ML_Operator_ComputeNumNzs(Amatrix);
   for (i=0; i<Nrows; i++) {
     bdry_nodes[i] = ptrToBdry[i];
@@ -2212,7 +2213,7 @@ static int ML_DecomposeGraph_with_VBMETIS( ML_Operator *Amatrix,
         }
       }
       count2++;
-    }      
+    }
   }
 
   *total_nz = count;
@@ -2376,7 +2377,7 @@ static int ML_DecomposeGraph_with_VBMETIS( ML_Operator *Amatrix,
         if( j<0 || j>= N_parts ) {
           ok = 0;
           break;
-        } 
+        }
         else nodes_per_aggre[j]++;
       }
 
@@ -2463,7 +2464,7 @@ static int ML_DecomposeGraph_with_VBMETIS( ML_Operator *Amatrix,
 
   for( i=0 ; i<Nrows ; i++ ) {
     j = perm[i];
-    if( j != -1 ) 
+    if( j != -1 )
       graph_decomposition[i] = (int)part[j];
     else
       graph_decomposition[i] = -1;
@@ -2482,7 +2483,7 @@ static int ML_DecomposeGraph_with_VBMETIS( ML_Operator *Amatrix,
     fprintf( stderr,
          "%s **WRN** on proc %d, global indizes not checked for variable blocks\n"
          "good luck! file %s, line %d\n",str,
-         comm->ML_mypid,__FILE__,__LINE__);fflush(stderr);    
+         comm->ML_mypid,__FILE__,__LINE__);fflush(stderr);
     ML_DecomposeGraph_BuildOffsets( N_parts, offsets, comm->ML_nprocs,
                                     Amatrix->comm->USR_comm );
   }
@@ -2491,7 +2492,7 @@ static int ML_DecomposeGraph_with_VBMETIS( ML_Operator *Amatrix,
 
   ML_free(rowi_col); ML_free(rowi_val);
   rowi_col = NULL; rowi_val = NULL;
-  allocated = 0; 
+  allocated = 0;
 
   if( wgtflag != NULL ) ML_free( wgtflag );
   if( adjncy != NULL  ) ML_free( adjncy  );

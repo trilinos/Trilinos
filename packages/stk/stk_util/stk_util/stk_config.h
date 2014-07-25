@@ -14,9 +14,23 @@
 #else
 // This file gets created by cmake during a Trilinos build
 // and will not be present in a sierra build using bjam or associated wrappers
-#include <STK_config.h>
+#include <stk_util/STK_config.h>
 #ifdef HAVE_MPI
 #define STK_HAS_MPI
+#else
+
+#ifndef MPI_Comm
+#define MPI_Comm int
+#endif
+
+#ifndef MPI_COMM_NULL
+#define MPI_COMM_NULL 0
+#endif
+
+#ifndef MPI_COMM_SELF
+#define MPI_COMM_SELF 0
+#endif
+
 #endif
 #endif
 

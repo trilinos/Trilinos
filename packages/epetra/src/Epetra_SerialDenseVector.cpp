@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -85,17 +85,17 @@ int Epetra_SerialDenseVector::Random() {
 
 //=========================================================================
 double  Epetra_SerialDenseVector::Dot(const Epetra_SerialDenseVector & x) const {
-  
+
 #ifdef HAVE_EPETRA_ARRAY_BOUNDS_CHECK
-  if (Length()!=x.Length()) 
-    throw ReportError("Length of this object = " + 
+  if (Length()!=x.Length())
+    throw ReportError("Length of this object = " +
 		      toString(Length()) + " is not equal to length of x = "  + toString(x.Length()), -1);
 #endif
 
   // dot-product of this and x.
-    
+
   double result = DOT(Length(), Values(), x.Values());
-  
+
   UpdateFlops(2*Length());
 
   return(result);
@@ -103,11 +103,11 @@ double  Epetra_SerialDenseVector::Dot(const Epetra_SerialDenseVector & x) const 
 
 //=========================================================================
 double  Epetra_SerialDenseVector::Norm1() const {
-  
+
   // 1-norm of vector
-    
+
   double result = ASUM(Length(), Values());
-  
+
   UpdateFlops(2*Length());
 
   return(result);
@@ -115,24 +115,24 @@ double  Epetra_SerialDenseVector::Norm1() const {
 
 //=========================================================================
 double  Epetra_SerialDenseVector::Norm2() const {
-  
+
   // 2-norm of vector
-    
+
   double result = NRM2(Length(), Values());
-  
+
   UpdateFlops(2*Length());
 
   return(result);
 }
 //=========================================================================
 double  Epetra_SerialDenseVector::NormInf() const {
-  
+
   // Inf-norm of vector
   double result = 0.0;
   int j = IAMAX(Length(), Values()); // Location of max (-1) if length zero
 
   if (j>-1) result = std::abs( (*this)[j]);
-  
+
   // UpdateFlops(2*Length()); // Technically there are no FLOPS
 
   return(result);

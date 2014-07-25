@@ -10,7 +10,7 @@
 */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #ifndef ML_IFPACK_WRAP
@@ -34,7 +34,7 @@ void ML_Smoother_Clean_Ifpack(void * Ifpack_Handle);
 
 /** Generate the Ifpack smoother */
 int ML_Gen_Smoother_Ifpack(ML *ml, const char* Type, int Overlap,
-                           int nl, int pre_or_post, 
+                           int nl, int pre_or_post,
                            void *List,
                            void *Comm);
 

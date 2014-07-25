@@ -33,16 +33,16 @@
 #ifndef IOSS_Ioss_Field_h
 #define IOSS_Ioss_Field_h
 
-#include <Ioss_CodeTypes.h>
-#include <string>
+#include <stddef.h>                     // for size_t
+#include <string>                       // for string
+#include <vector>                       // for vector
+namespace Ioss { class Transform; }
+namespace Ioss { class VariableType; }
 
-#include <vector>
 
 namespace Ioss {
 
-  class VariableType;
   class GroupingEntity;
-  class Transform;
 
   class Field {
   public:

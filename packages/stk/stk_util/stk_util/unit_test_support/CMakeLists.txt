@@ -5,8 +5,6 @@ INCLUDE(TribitsLibraryMacros)
 # A) Package-specific configuration options
 #
 
-# TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
-
 #
 # B) Define the header and source files (and directories)
 #
@@ -19,7 +17,6 @@ SET(HEADERS "")
 SET(SOURCES "")
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../)
 
 #
 # Core headers
@@ -29,7 +26,6 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
 GeneratedMesh.hpp
-stk_utest_macros.hpp
 )
 
 APPEND_SET(SOURCES
@@ -51,4 +47,4 @@ TRIBITS_ADD_LIBRARY(
   )
 
 INSTALL(FILES ${HEADERS} DESTINATION
-    ${CMAKE_INSTALL_PREFIX}/${Trilinos_INSTALL_INCLUDE_DIR}/stk_util/unit_test_support/)
+    ${CMAKE_INSTALL_PREFIX}/include/stk_util/unit_test_support/)

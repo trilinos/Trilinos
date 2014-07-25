@@ -56,7 +56,7 @@
 #ifndef KOKKOS_ARITHTRAITSTEST_HPP
 #define KOKKOS_ARITHTRAITSTEST_HPP
 
-#include <Kokkos_ParallelReduce.hpp>
+#include <Kokkos_Parallel.hpp>
 #include "Kokkos_ArithTraits.hpp"
 #include <limits> // std::numeric_limits
 #include <typeinfo> // typeid (T)
@@ -155,6 +155,14 @@ public:
 
     // Make sure that the typedef exists.
     typedef typename AT::mag_type mag_type;
+
+    // mfh 14 Feb 2014: In order to avoid a warning for an unused by
+    // declared typedef, we declare an instance of mag_type, and mark
+    // it with "(void)" to prevent a warning for the unused variable.
+    {
+      mag_type thing;
+      (void) thing;
+    }
 
     // ArithTraits should not even compile if it's not specialized for
     // T, but we check for this int constant for compatibility with
@@ -360,6 +368,14 @@ public:
 
     // Make sure that the typedef exists.
     typedef typename AT::mag_type mag_type;
+
+    // mfh 14 Feb 2014: In order to avoid a warning for an unused by
+    // declared typedef, we declare an instance of mag_type, and mark
+    // it with "(void)" to prevent a warning for the unused variable.
+    {
+      mag_type thing;
+      (void) thing;
+    }
 
     // ArithTraits should not even compile if it's not specialized for
     // T, but we check for this int constant for compatibility with

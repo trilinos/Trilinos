@@ -68,7 +68,7 @@ namespace MueLu {
     //! Constructor.
     Factory()
 #ifdef HAVE_MUELU_DEBUG
-      : multipleCallCheck_(FIRSTCALL), lastLevel_(NULL)
+      : multipleCallCheck_(FIRSTCALL), lastLevelID_(-1)
 #endif
     { }
 
@@ -126,28 +126,16 @@ namespace MueLu {
 
     //@}
 
-    virtual RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const {
+    virtual RCP<const ParameterList> GetValidParameterList() const {
       return Teuchos::null;  // Teuchos::null == GetValidParameterList() not implemented == skip validation and no default values (dangerous)
     }
-
-#ifdef HAVE_MUELU_DEBUG
-    void EnableMultipleCallCheck() const       { multipleCallCheck_       = ENABLED;  }
-    void DisableMultipleCallCheck() const      { multipleCallCheck_       = DISABLED; }
-    static void EnableMultipleCheckGlobally()  { multipleCallCheckGlobal_ = ENABLED;  }
-    static void DisableMultipleCheckGlobally() { multipleCallCheckGlobal_ = DISABLED; }
-#else
-    void EnableMultipleCallCheck() const       { }
-    void DisableMultipleCallCheck() const      { }
-    static void EnableMultipleCheckGlobally()  { }
-    static void DisableMultipleCheckGlobally() { }
-#endif
 
   protected:
 
     void Input(Level& level, const std::string& varName) const {
       level.DeclareInput(varName, GetFactory(varName).get(), this);
     }
-    // Similar to Input, but we have an alias (varParamName) to the generated data name (varName)
+    // Similar to the other Input, but we have an alias (varParamName) to the generated data name (varName)
     void Input(Level& level, const std::string& varName, const std::string& varParamName) const {
       level.DeclareInput(varName, GetFactory(varParamName).get(), this);
     }
@@ -156,7 +144,7 @@ namespace MueLu {
     T Get(Level& level, const std::string& varName) const {
       return level.Get<T>(varName, GetFactory(varName).get());
     }
-    // Similar to Input, but we have an alias (varParamName) to the generated data name (varName)
+    // Similar to the other Get, but we have an alias (varParamName) to the generated data name (varName)
     template <class T>
     T Get(Level& level, const std::string& varName, const std::string& varParamName) const {
       return level.Get<T>(varName, GetFactory(varParamName).get());
@@ -174,12 +162,28 @@ namespace MueLu {
 #ifdef HAVE_MUELU_DEBUG
   public:
     enum           multipleCallCheckEnum { ENABLED, DISABLED, FIRSTCALL };
+
+    void EnableMultipleCallCheck() const       { multipleCallCheck_       = ENABLED;  }
+    void DisableMultipleCallCheck() const      { multipleCallCheck_       = DISABLED; }
+    void ResetDebugData() const {
+      multipleCallCheck_ = FIRSTCALL;
+      lastLevelID_       = -1;
+    }
+    static void EnableMultipleCheckGlobally()  { multipleCallCheckGlobal_ = ENABLED;  }
+    static void DisableMultipleCheckGlobally() { multipleCallCheckGlobal_ = DISABLED; }
+
   protected:
     mutable        multipleCallCheckEnum multipleCallCheck_;
     static         multipleCallCheckEnum multipleCallCheckGlobal_;
-    mutable Level* lastLevel_; // can be a dangling pointers. DO NOT dereference.
+    mutable int    lastLevelID_;
+#else
+  public:
+    void EnableMultipleCallCheck() const       { }
+    void DisableMultipleCallCheck() const      { }
+    void ResetDebugData() const                { }
+    static void EnableMultipleCheckGlobally()  { }
+    static void DisableMultipleCheckGlobally() { }
 #endif
-
   }; //class Factory
 
 } //namespace MueLu

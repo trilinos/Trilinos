@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -109,10 +109,10 @@ DeflatedGroup(
     isBordered(false)
 {
   // Set up multi-vector views
-  setupViews(); 
+  setupViews();
 
   // Set the homotopy parameter as a parameter in the ParameterVector.
-  // This will allow us to do an invasive homotopy since the app can now 
+  // This will allow us to do an invasive homotopy since the app can now
   // get access to the homotopy continuation parameter.
   paramVec.addParameter(conParamLabel, conParam);
   grpPtr->setParams(paramVec);
@@ -137,11 +137,11 @@ DeflatedGroup(
 
   // Instantiate bordered solver
   borderedSolver = globalData->locaFactory->createBorderedSolverStrategy(
-				   parsedParams,
-				   homotopyParams);
+                   parsedParams,
+                   homotopyParams);
 
   // Determine if underlying group is bordered
-  bordered_grp = 
+  bordered_grp =
     Teuchos::rcp_dynamic_cast<LOCA::BorderedSystem::AbstractGroup>(grpPtr);
   isBordered = (bordered_grp != Teuchos::null);
 
@@ -151,7 +151,7 @@ DeflatedGroup(
 
 LOCA::Homotopy::DeflatedGroup::
 DeflatedGroup(const LOCA::Homotopy::DeflatedGroup& source,
-	      NOX::CopyType type)
+          NOX::CopyType type)
   : globalData(source.globalData),
     parsedParams(source.parsedParams),
     homotopyParams(source.homotopyParams),
@@ -194,8 +194,8 @@ DeflatedGroup(const LOCA::Homotopy::DeflatedGroup& source,
 
   // Instantiate bordered solver
   borderedSolver = globalData->locaFactory->createBorderedSolverStrategy(
-				   parsedParams,
-				   homotopyParams);
+                   parsedParams,
+                   homotopyParams);
 
   if (type == NOX::ShapeCopy) {
     isValidF = false;
@@ -205,7 +205,7 @@ DeflatedGroup(const LOCA::Homotopy::DeflatedGroup& source,
   }
 
   // Determine if underlying group is bordered
-  bordered_grp = 
+  bordered_grp =
     Teuchos::rcp_dynamic_cast<LOCA::BorderedSystem::AbstractGroup>(grpPtr);
   isBordered = (bordered_grp != Teuchos::null);
 
@@ -214,19 +214,19 @@ DeflatedGroup(const LOCA::Homotopy::DeflatedGroup& source,
 
   // Set blocks in bordered solver
   if (isValidJacobian) {
-    borderedSolver->setMatrixBlocksMultiVecConstraint(jacOp, 
-						      underlyingF,
-						      totalDistMultiVec,
-						      minusOne);
+    borderedSolver->setMatrixBlocksMultiVecConstraint(jacOp,
+                              underlyingF,
+                              totalDistMultiVec,
+                              minusOne);
     NOX::Abstract::Group::ReturnType status = borderedSolver->initForSolve();
-    globalData->locaErrorCheck->checkReturnType(status, 
-						"LOCA::Homotopy::DeflatedGroup()");
+    globalData->locaErrorCheck->checkReturnType(status,
+                        "LOCA::Homotopy::DeflatedGroup()");
   }
 }
 
 
 LOCA::Homotopy::DeflatedGroup::
-~DeflatedGroup() 
+~DeflatedGroup()
 {
 }
 
@@ -254,9 +254,9 @@ clone(NOX::CopyType type) const
 
 void
 LOCA::Homotopy::DeflatedGroup::
-setX(const NOX::Abstract::Vector& y)  
+setX(const NOX::Abstract::Vector& y)
 {
-  const LOCA::MultiContinuation::ExtendedVector& my = 
+  const LOCA::MultiContinuation::ExtendedVector& my =
     dynamic_cast<const LOCA::MultiContinuation::ExtendedVector&>(y);
 
   grpPtr->setX( *(my.getXVec()) );
@@ -267,13 +267,13 @@ setX(const NOX::Abstract::Vector& y)
 
 void
 LOCA::Homotopy::DeflatedGroup::
-computeX(const NOX::Abstract::Group& g, 
-	 const NOX::Abstract::Vector& d,
-	 double step) 
+computeX(const NOX::Abstract::Group& g,
+     const NOX::Abstract::Vector& d,
+     double step)
 {
-  const LOCA::Homotopy::DeflatedGroup& mg = 
+  const LOCA::Homotopy::DeflatedGroup& mg =
     dynamic_cast<const LOCA::Homotopy::DeflatedGroup&>(g);
-  const LOCA::MultiContinuation::ExtendedVector& md = 
+  const LOCA::MultiContinuation::ExtendedVector& md =
     dynamic_cast<const LOCA::MultiContinuation::ExtendedVector&>(d);
 
   grpPtr->computeX(*(mg.grpPtr), *(md.getXVec()), step);
@@ -284,12 +284,12 @@ computeX(const NOX::Abstract::Group& g,
 
 NOX::Abstract::Group::ReturnType
 LOCA::Homotopy::DeflatedGroup::
-computeF() 
+computeF()
 {
   if (isValidF)
     return NOX::Abstract::Group::Ok;
 
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::Homotopy::DeflatedGroup::computeF()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -297,10 +297,10 @@ computeF()
   // Compute underlying F
   if (!grpPtr->isF()) {
     status = grpPtr->computeF();
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							      finalStatus,
-							      callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                  finalStatus,
+                                  callingFunction);
   }
 
   distProd = 1.0;
@@ -310,8 +310,8 @@ computeF()
     distProd *= distances[i];
   }
   distVec->update(identitySign, grpPtr->getX(), -identitySign, *startVec, 0.0);
-  fVec->getXVec()->update(conParam / distProd, grpPtr->getF(), 
-			  1.0 - conParam, *distVec, 0.0);
+  fVec->getXVec()->update(conParam / distProd, grpPtr->getF(),
+              1.0 - conParam, *distVec, 0.0);
   fVec->getScalar(0) = 0.0;
   (*underlyingF)[0] = grpPtr->getF();
 
@@ -322,12 +322,12 @@ computeF()
 
 NOX::Abstract::Group::ReturnType
 LOCA::Homotopy::DeflatedGroup::
-computeJacobian() 
+computeJacobian()
 {
   if (isValidJacobian)
     return NOX::Abstract::Group::Ok;
 
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::Homotopy::DeflatedGroup::computeJacobian()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -335,10 +335,10 @@ computeJacobian()
   // Compute underlying Jacobian
   if (!grpPtr->isJacobian()) {
     status = grpPtr->computeJacobian();
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
   }
 
   distProd = 1.0;
@@ -351,24 +351,24 @@ computeJacobian()
   }
   totalDistVec->scale(conParam / distProd);
 
-  NOX::Abstract::Group::ReturnType augHomTest = 
+  NOX::Abstract::Group::ReturnType augHomTest =
     grpPtr->augmentJacobianForHomotopy(conParam/distProd, identitySign*(1.0-conParam));
 
-  // If it is not implemented, augment the Jacobian during the 
+  // If it is not implemented, augment the Jacobian during the
   // applyJacobian() call.
   if (augHomTest == NOX::Abstract::Group::NotDefined)
     augmentJacForHomotopyNotImplemented = true;
 
   // Set blocks in bordered solver
-  borderedSolver->setMatrixBlocksMultiVecConstraint(jacOp, 
-						    underlyingF, 
-						    totalDistMultiVec,
-						    minusOne);
+  borderedSolver->setMatrixBlocksMultiVecConstraint(jacOp,
+                            underlyingF,
+                            totalDistMultiVec,
+                            minusOne);
   status = borderedSolver->initForSolve();
-  finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+  finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
 
   isValidJacobian = true;
 
@@ -377,12 +377,12 @@ computeJacobian()
 
 NOX::Abstract::Group::ReturnType
 LOCA::Homotopy::DeflatedGroup::
-computeGradient() 
+computeGradient()
 {
   if (isValidGradient)
     return NOX::Abstract::Group::Ok;
 
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::Homotopy::DeflatedGroup::computeGradient()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -390,41 +390,41 @@ computeGradient()
   // Make sure F is valid
   if (!isF()) {
     status = computeF();
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							      finalStatus,
-							      callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                  finalStatus,
+                                  callingFunction);
   }
-  
+
   // Make sure Jacobian is valid
   if (!isJacobian()) {
     status = computeJacobian();
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							      finalStatus,
-							      callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                  finalStatus,
+                                  callingFunction);
   }
 
   // Compute J^T*f for homotopy group
   status = applyJacobianTranspose(*fVec, *gradientVec);
-  finalStatus = 
-    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							   finalStatus,
-							   callingFunction);
+  finalStatus =
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                               finalStatus,
+                               callingFunction);
 
   isValidGradient = true;
 
   return finalStatus;
 }
-   
+
 NOX::Abstract::Group::ReturnType
 LOCA::Homotopy::DeflatedGroup::
-computeNewton(Teuchos::ParameterList& params) 
+computeNewton(Teuchos::ParameterList& params)
 {
   if (isValidNewton)
     return NOX::Abstract::Group::Ok;
 
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::Homotopy::DeflatedGroup::computeNewton()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -432,30 +432,30 @@ computeNewton(Teuchos::ParameterList& params)
   // Make sure F is valid
   if (!isF()) {
     status = computeF();
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							      finalStatus,
-							      callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                  finalStatus,
+                                  callingFunction);
   }
-  
+
   // Make sure Jacobian is valid
   if (!isJacobian()) {
     status = computeJacobian();
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							      finalStatus,
-							      callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                  finalStatus,
+                                  callingFunction);
   }
 
   // zero out newton vec -- used as initial guess for some linear solvers
   newtonMultiVec.init(0.0);
 
-  status = applyJacobianInverseMultiVector(params, fMultiVec, 
-					   newtonMultiVec);
-  finalStatus = 
-    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							   finalStatus,
-							   callingFunction);
+  status = applyJacobianInverseMultiVector(params, fMultiVec,
+                       newtonMultiVec);
+  finalStatus =
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                               finalStatus,
+                               callingFunction);
 
   newtonMultiVec.scale(-1.0);
 
@@ -467,16 +467,16 @@ computeNewton(Teuchos::ParameterList& params)
 NOX::Abstract::Group::ReturnType
 LOCA::Homotopy::DeflatedGroup::
 applyJacobian(const NOX::Abstract::Vector& input,
-	      NOX::Abstract::Vector& result) const 
+          NOX::Abstract::Vector& result) const
 {
   // Convert input, result to multivectors
-  Teuchos::RCP<NOX::Abstract::MultiVector> mv_input = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> mv_input =
     input.createMultiVector(1, NOX::DeepCopy);
-  Teuchos::RCP<NOX::Abstract::MultiVector> mv_result = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> mv_result =
     result.createMultiVector(1, NOX::DeepCopy);
 
   // Call multivector version of applyJacobian
-  NOX::Abstract::Group::ReturnType status = 
+  NOX::Abstract::Group::ReturnType status =
     applyJacobianMultiVector(*mv_input, *mv_result);
 
   // Copy result
@@ -488,16 +488,16 @@ applyJacobian(const NOX::Abstract::Vector& input,
 NOX::Abstract::Group::ReturnType
 LOCA::Homotopy::DeflatedGroup::
 applyJacobianTranspose(const NOX::Abstract::Vector& input,
-		       NOX::Abstract::Vector& result) const 
+               NOX::Abstract::Vector& result) const
 {
   // Convert input, result to multivectors
-  Teuchos::RCP<NOX::Abstract::MultiVector> mv_input = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> mv_input =
     input.createMultiVector(1, NOX::DeepCopy);
-  Teuchos::RCP<NOX::Abstract::MultiVector> mv_result = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> mv_result =
     result.createMultiVector(1, NOX::DeepCopy);
 
   // Call multivector version of applyJacobianTranspose
-  NOX::Abstract::Group::ReturnType status = 
+  NOX::Abstract::Group::ReturnType status =
     applyJacobianTransposeMultiVector(*mv_input, *mv_result);
 
   // Copy result
@@ -508,18 +508,18 @@ applyJacobianTranspose(const NOX::Abstract::Vector& input,
 
 NOX::Abstract::Group::ReturnType
 LOCA::Homotopy::DeflatedGroup::
-applyJacobianInverse(Teuchos::ParameterList& params, 
-		     const NOX::Abstract::Vector& input,
-		     NOX::Abstract::Vector& result) const 
+applyJacobianInverse(Teuchos::ParameterList& params,
+             const NOX::Abstract::Vector& input,
+             NOX::Abstract::Vector& result) const
 {
   // Convert input, result to multivectors
-  Teuchos::RCP<NOX::Abstract::MultiVector> mv_input = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> mv_input =
     input.createMultiVector(1, NOX::DeepCopy);
-  Teuchos::RCP<NOX::Abstract::MultiVector> mv_result = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> mv_result =
     result.createMultiVector(1, NOX::DeepCopy);
 
   // Call multivector version of applyJacobianInverse
-  NOX::Abstract::Group::ReturnType status = 
+  NOX::Abstract::Group::ReturnType status =
     applyJacobianInverseMultiVector(params, *mv_input, *mv_result);
 
   // Copy result
@@ -531,34 +531,34 @@ applyJacobianInverse(Teuchos::ParameterList& params,
 NOX::Abstract::Group::ReturnType
 LOCA::Homotopy::DeflatedGroup::
 applyJacobianMultiVector(const NOX::Abstract::MultiVector& input,
-			 NOX::Abstract::MultiVector& result) const 
+             NOX::Abstract::MultiVector& result) const
 {
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::Homotopy::DeflatedGroup::applyJacobianMultiVector()";
-  
+
   if (!isJacobian()) {
     globalData->locaErrorCheck->throwError(callingFunction,
-					    "Called with invalid Jacobian!");
+                        "Called with invalid Jacobian!");
   }
 
   // Cast inputs to continuation multivectors
-  const LOCA::MultiContinuation::ExtendedMultiVector& c_input = 
+  const LOCA::MultiContinuation::ExtendedMultiVector& c_input =
     dynamic_cast<const LOCA::MultiContinuation::ExtendedMultiVector&>(input);
-  LOCA::MultiContinuation::ExtendedMultiVector& c_result = 
+  LOCA::MultiContinuation::ExtendedMultiVector& c_result =
     dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector&>(result);
 
   // Get x, param componenets of input vector
-  Teuchos::RCP<const NOX::Abstract::MultiVector> input_x = 
+  Teuchos::RCP<const NOX::Abstract::MultiVector> input_x =
     c_input.getXMultiVec();
   Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix> input_param = c_input.getScalars();
 
   // Get references to x, param components of result vector
-  Teuchos::RCP<NOX::Abstract::MultiVector> result_x = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> result_x =
     c_result.getXMultiVec();
-  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> result_param = 
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> result_param =
     c_result.getScalars();
 
-  NOX::Abstract::Group::ReturnType status = 
+  NOX::Abstract::Group::ReturnType status =
     grpPtr->applyJacobianMultiVector(*input_x, *result_x);
 
   // If the Jacobian is not augmented for homotopy (i.e. using MFNK)
@@ -582,34 +582,34 @@ applyJacobianMultiVector(const NOX::Abstract::MultiVector& input,
 NOX::Abstract::Group::ReturnType
 LOCA::Homotopy::DeflatedGroup::
 applyJacobianTransposeMultiVector(const NOX::Abstract::MultiVector& input,
-				  NOX::Abstract::MultiVector& result) const 
+                  NOX::Abstract::MultiVector& result) const
 {
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::Homotopy::DeflatedGroup::applyJacobianTransposeMultiVector()";
-  
+
   if (!isJacobian()) {
     globalData->locaErrorCheck->throwError(callingFunction,
-					    "Called with invalid Jacobian!");
+                        "Called with invalid Jacobian!");
   }
 
   // Cast inputs to continuation multivectors
-  const LOCA::MultiContinuation::ExtendedMultiVector& c_input = 
+  const LOCA::MultiContinuation::ExtendedMultiVector& c_input =
     dynamic_cast<const LOCA::MultiContinuation::ExtendedMultiVector&>(input);
-  LOCA::MultiContinuation::ExtendedMultiVector& c_result = 
+  LOCA::MultiContinuation::ExtendedMultiVector& c_result =
     dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector&>(result);
 
   // Get x, param componenets of input vector
-  Teuchos::RCP<const NOX::Abstract::MultiVector> input_x = 
+  Teuchos::RCP<const NOX::Abstract::MultiVector> input_x =
     c_input.getXMultiVec();
   Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix> input_param = c_input.getScalars();
 
   // Get references to x, param components of result vector
-  Teuchos::RCP<NOX::Abstract::MultiVector> result_x = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> result_x =
     c_result.getXMultiVec();
-  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> result_param = 
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> result_param =
     c_result.getScalars();
 
-  NOX::Abstract::Group::ReturnType status = 
+  NOX::Abstract::Group::ReturnType status =
     grpPtr->applyJacobianTransposeMultiVector(*input_x, *result_x);
 
   // If the Jacobian is not augmented for homotopy (i.e. using MFNK)
@@ -633,43 +633,43 @@ applyJacobianTransposeMultiVector(const NOX::Abstract::MultiVector& input,
 NOX::Abstract::Group::ReturnType
 LOCA::Homotopy::DeflatedGroup::
 applyJacobianInverseMultiVector(Teuchos::ParameterList& params,
-				const NOX::Abstract::MultiVector& input,
-				NOX::Abstract::MultiVector& result) const 
+                const NOX::Abstract::MultiVector& input,
+                NOX::Abstract::MultiVector& result) const
 {
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::Homotopy::DeflatedGroup::applyJacobianInverseMultiVector()";
-  
+
   if (!isJacobian()) {
     globalData->locaErrorCheck->throwError(callingFunction,
-					    "Called with invalid Jacobian!");
+                        "Called with invalid Jacobian!");
   }
 
   // Cast inputs to continuation multivectors
-  const LOCA::MultiContinuation::ExtendedMultiVector& c_input = 
+  const LOCA::MultiContinuation::ExtendedMultiVector& c_input =
     dynamic_cast<const LOCA::MultiContinuation::ExtendedMultiVector&>(input);
-  LOCA::MultiContinuation::ExtendedMultiVector& c_result = 
+  LOCA::MultiContinuation::ExtendedMultiVector& c_result =
     dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector&>(result);
 
   // Get x, param componenets of input vector
-  Teuchos::RCP<const NOX::Abstract::MultiVector> input_x = 
+  Teuchos::RCP<const NOX::Abstract::MultiVector> input_x =
     c_input.getXMultiVec();
   Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix> input_param = c_input.getScalars();
 
   // Get references to x, param components of result vector
-  Teuchos::RCP<NOX::Abstract::MultiVector> result_x = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> result_x =
     c_result.getXMultiVec();
-  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> result_param = 
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> result_param =
     c_result.getScalars();
 
   NOX::Abstract::Group::ReturnType status;
   if (numSolns > 0) {
     // Call bordered solver applyInverse method
-    status = 
-      borderedSolver->applyInverse(params, input_x.get(), input_param.get(), 
-				   *result_x, *result_param);
+    status =
+      borderedSolver->applyInverse(params, input_x.get(), input_param.get(),
+                   *result_x, *result_param);
   }
   else {
-    status = 
+    status =
       grpPtr->applyJacobianInverseMultiVector(params, *input_x, *result_x);
     result_param->putScalar(0.0);
   }
@@ -679,104 +679,104 @@ applyJacobianInverseMultiVector(Teuchos::ParameterList& params,
 
 bool
 LOCA::Homotopy::DeflatedGroup::
-isF() const 
+isF() const
 {
   return isValidF;
 }
 
 bool
 LOCA::Homotopy::DeflatedGroup::
-isJacobian() const 
+isJacobian() const
 {
   return isValidJacobian;
 }
 
 bool
 LOCA::Homotopy::DeflatedGroup::
-isGradient() const 
+isGradient() const
 {
   return isValidGradient;
 }
 
 bool
 LOCA::Homotopy::DeflatedGroup::
-isNewton() const 
+isNewton() const
 {
   return isValidNewton;
 }
-  
+
 const NOX::Abstract::Vector&
 LOCA::Homotopy::DeflatedGroup::
-getX() const 
+getX() const
 {
   return *xVec;
 }
 
 const NOX::Abstract::Vector&
 LOCA::Homotopy::DeflatedGroup::
-getF() const 
+getF() const
 {
   return *fVec;
 }
 
 double
 LOCA::Homotopy::DeflatedGroup::
-getNormF() const 
+getNormF() const
 {
   return fVec->norm();
 }
 
 const NOX::Abstract::Vector&
 LOCA::Homotopy::DeflatedGroup::
-getGradient() const 
+getGradient() const
 {
   return *gradientVec;
 }
 
 const NOX::Abstract::Vector&
 LOCA::Homotopy::DeflatedGroup::
-getNewton() const 
+getNewton() const
 {
   return *newtonVec;
 }
-  
+
 Teuchos::RCP< const NOX::Abstract::Vector >
 LOCA::Homotopy::DeflatedGroup::
-getXPtr() const 
+getXPtr() const
 {
   return xVec;
 }
 
 Teuchos::RCP< const NOX::Abstract::Vector >
 LOCA::Homotopy::DeflatedGroup::
-getFPtr() const 
+getFPtr() const
 {
   return fVec;
 }
 
 Teuchos::RCP< const NOX::Abstract::Vector >
 LOCA::Homotopy::DeflatedGroup::
-getGradientPtr() const 
+getGradientPtr() const
 {
   return gradientVec;
 }
 
 Teuchos::RCP< const NOX::Abstract::Vector >
 LOCA::Homotopy::DeflatedGroup::
-getNewtonPtr() const 
+getNewtonPtr() const
 {
   return newtonVec;
 }
 
 double
 LOCA::Homotopy::DeflatedGroup::
-getNormNewtonSolveResidual() const 
+getNormNewtonSolveResidual() const
 {
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::Homotopy::DeflatedGroup::getNormNewtonSolveResidual()";
   NOX::Abstract::Group::ReturnType finalStatus;
   LOCA::MultiContinuation::ExtendedVector residual = *fVec;
-  
+
   finalStatus = applyJacobian(*newtonVec, residual);
   globalData->locaErrorCheck->checkReturnType(finalStatus, callingFunction);
 
@@ -800,10 +800,10 @@ getUnderlyingGroup()
 
 void
 LOCA::Homotopy::DeflatedGroup::
-copy(const NOX::Abstract::Group& src) 
+copy(const NOX::Abstract::Group& src)
 {
 
-  const LOCA::Homotopy::DeflatedGroup& source = 
+  const LOCA::Homotopy::DeflatedGroup& source =
     dynamic_cast<const LOCA::Homotopy::DeflatedGroup&>(src);
 
   // Protect against A = A
@@ -839,27 +839,27 @@ copy(const NOX::Abstract::Group& src)
     setupViews();
 
     // Instantiate bordered solver
-    borderedSolver = 
+    borderedSolver =
       globalData->locaFactory->createBorderedSolverStrategy(parsedParams,
-							    homotopyParams);
+                                homotopyParams);
 
     // Set blocks in bordered solver
     if (isValidJacobian) {
-      borderedSolver->setMatrixBlocksMultiVecConstraint(jacOp, 
-							underlyingF,
-							totalDistMultiVec,
-							minusOne);
+      borderedSolver->setMatrixBlocksMultiVecConstraint(jacOp,
+                            underlyingF,
+                            totalDistMultiVec,
+                            minusOne);
       NOX::Abstract::Group::ReturnType status = borderedSolver->initForSolve();
-      globalData->locaErrorCheck->checkReturnType(status, 
-						  "LOCA::Homotopy::copy()");
+      globalData->locaErrorCheck->checkReturnType(status,
+                          "LOCA::Homotopy::copy()");
     }
   }
 }
 
 void
 LOCA::Homotopy::DeflatedGroup::
-setParamsMulti(const std::vector<int>& paramIDs, 
-	       const NOX::Abstract::MultiVector::DenseMatrix& vals)
+setParamsMulti(const std::vector<int>& paramIDs,
+           const NOX::Abstract::MultiVector::DenseMatrix& vals)
 {
   grpPtr->setParamsMulti(paramIDs, vals);
 
@@ -924,28 +924,28 @@ getParam(std::string paramID) const
 
 NOX::Abstract::Group::ReturnType
 LOCA::Homotopy::DeflatedGroup::
-computeDfDpMulti(const std::vector<int>& paramIDs, 
-		 NOX::Abstract::MultiVector& dfdp, 
-		 bool isValid_F)
+computeDfDpMulti(const std::vector<int>& paramIDs,
+         NOX::Abstract::MultiVector& dfdp,
+         bool isValid_F)
 {
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::Homotopy::DeflatedGroup::computeDfDpMulti()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
 
   // Cast dfdp to an extended multi-vec
-  LOCA::MultiContinuation::ExtendedMultiVector& e_dfdp = 
+  LOCA::MultiContinuation::ExtendedMultiVector& e_dfdp =
     dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector&>(dfdp);
 
-  Teuchos::RCP<NOX::Abstract::MultiVector> dfdp_x = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> dfdp_x =
     e_dfdp.getXMultiVec();
 
   if (!isValid_F) {
     status = grpPtr->computeF();
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
     (*dfdp_x)[0].update(conParam / distProd, grpPtr->getF(), 0.0);
   }
 
@@ -964,17 +964,17 @@ computeDfDpMulti(const std::vector<int>& paramIDs,
   if (index_c.size() > 0) {
     dfdp_c = dfdp_x->subView(index_c);
     distVec->update(1.0, grpPtr->getX(), -1.0, *startVec, 0.0);
-    
+
     (*dfdp_c)[0].update(1.0/distProd, grpPtr->getF(), -1.0, *distVec, 0.0);
   }
 
   if (index_p.size() > 1) {
     dfdp_p = dfdp_x->subView(index_p);
     status = grpPtr->computeDfDpMulti(p_IDs, *(dfdp_p), true);
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
     for (unsigned int i=0; i<p_IDs.size(); i++) {
       (*dfdp_p)[i+1].scale(conParam / distProd);
     }
@@ -1003,9 +1003,9 @@ postProcessContinuationStep(LOCA::Abstract::Iterator::StepStatus stepStatus)
 void
 LOCA::Homotopy::DeflatedGroup::
 projectToDraw(const NOX::Abstract::Vector& x,
-	      double *px) const
+          double *px) const
 {
-  const LOCA::MultiContinuation::ExtendedVector& mx = 
+  const LOCA::MultiContinuation::ExtendedVector& mx =
     dynamic_cast<const LOCA::MultiContinuation::ExtendedVector&>(x);
 
   grpPtr->projectToDraw(*mx.getXVec(), px);
@@ -1022,11 +1022,11 @@ projectToDrawDimension() const
 double
 LOCA::Homotopy::DeflatedGroup::
 computeScaledDotProduct(const NOX::Abstract::Vector& a,
-			const NOX::Abstract::Vector& b) const
+            const NOX::Abstract::Vector& b) const
 {
-  const LOCA::MultiContinuation::ExtendedVector& ma = 
+  const LOCA::MultiContinuation::ExtendedVector& ma =
     dynamic_cast<const LOCA::MultiContinuation::ExtendedVector&>(a);
-  const LOCA::MultiContinuation::ExtendedVector& mb = 
+  const LOCA::MultiContinuation::ExtendedVector& mb =
     dynamic_cast<const LOCA::MultiContinuation::ExtendedVector&>(b);
 
   double val = grpPtr->computeScaledDotProduct(*ma.getXVec(), *mb.getXVec());
@@ -1040,8 +1040,8 @@ LOCA::Homotopy::DeflatedGroup::
 printSolution(const double conParam_) const
 {
   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
-    globalData->locaUtils->out() << 
-      "\tPrinting Solution Vector for homotopy parameter = " << 
+    globalData->locaUtils->out() <<
+      "\tPrinting Solution Vector for homotopy parameter = " <<
       globalData->locaUtils->sciformat(conParam_) << std::endl;
   }
   grpPtr->printSolution(conParam_);
@@ -1051,11 +1051,11 @@ printSolution(const double conParam_) const
 void
 LOCA::Homotopy::DeflatedGroup::
 printSolution(const NOX::Abstract::Vector& x,
-	      const double conParam_) const
+          const double conParam_) const
 {
   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
-    globalData->locaUtils->out() << 
-      "\tPrinting Solution Vector for homotopy parameter = " << 
+    globalData->locaUtils->out() <<
+      "\tPrinting Solution Vector for homotopy parameter = " <<
       globalData->locaUtils->sciformat(conParam_) << std::endl;
   }
   grpPtr->printSolution(x, conParam_);
@@ -1066,7 +1066,7 @@ void
 LOCA::Homotopy::DeflatedGroup::
 scaleVector(NOX::Abstract::Vector& x) const
 {
-  LOCA::MultiContinuation::ExtendedVector& mx = 
+  LOCA::MultiContinuation::ExtendedVector& mx =
     dynamic_cast<LOCA::MultiContinuation::ExtendedVector&>(x);
 
   grpPtr->scaleVector(*mx.getXVec());
@@ -1097,32 +1097,32 @@ bool
 LOCA::Homotopy::DeflatedGroup::
 isCombinedAZero() const
 {
-  return false;  // A is always considered non-zero 
+  return false;  // A is always considered non-zero
 }
 
 bool
 LOCA::Homotopy::DeflatedGroup::
 isCombinedBZero() const
 {
-  return false; // B is always considered non-zero 
+  return false; // B is always considered non-zero
 }
 
 bool
 LOCA::Homotopy::DeflatedGroup::
 isCombinedCZero() const
 {
-  return false;  // C is always considered non-zero 
+  return false;  // C is always considered non-zero
 }
 
 void
 LOCA::Homotopy::DeflatedGroup::
 extractSolutionComponent(const NOX::Abstract::MultiVector& v,
-			 NOX::Abstract::MultiVector& v_x) const
+             NOX::Abstract::MultiVector& v_x) const
 {
   // cast v to an extended multi-vec
-  const LOCA::MultiContinuation::ExtendedMultiVector& mc_v = 
+  const LOCA::MultiContinuation::ExtendedMultiVector& mc_v =
     dynamic_cast<const LOCA::MultiContinuation::ExtendedMultiVector&>(v);
-  
+
   // get solution component
   Teuchos::RCP<const NOX::Abstract::MultiVector> mc_v_x =
     mc_v.getXMultiVec();
@@ -1140,13 +1140,13 @@ extractSolutionComponent(const NOX::Abstract::MultiVector& v,
 void
 LOCA::Homotopy::DeflatedGroup::
 extractParameterComponent(bool use_transpose,
-			  const NOX::Abstract::MultiVector& v,
-			  NOX::Abstract::MultiVector::DenseMatrix& v_p) const
+              const NOX::Abstract::MultiVector& v,
+              NOX::Abstract::MultiVector::DenseMatrix& v_p) const
 {
   // cast v to an extended multi-vec
-  const LOCA::MultiContinuation::ExtendedMultiVector& mc_v = 
+  const LOCA::MultiContinuation::ExtendedMultiVector& mc_v =
     dynamic_cast<const LOCA::MultiContinuation::ExtendedMultiVector&>(v);
-  
+
   // get solution and parameter components
   Teuchos::RCP<const NOX::Abstract::MultiVector> mc_v_x =
     mc_v.getXMultiVec();
@@ -1159,8 +1159,8 @@ extractParameterComponent(bool use_transpose,
       v_p.assign(*mc_v_p);
     else
       for (int j=0; j<v_p.numCols(); j++)
-	for (int i=0; i<v_p.numRows(); i++)
-	  v_p(i,j) = (*mc_v_p)(j,i);
+    for (int i=0; i<v_p.numRows(); i++)
+      v_p(i,j) = (*mc_v_p)(j,i);
     return;
   }
 
@@ -1170,39 +1170,39 @@ extractParameterComponent(bool use_transpose,
     // to store mc_v_p
     int num_cols = v_p.numCols();
     NOX::Abstract::MultiVector::DenseMatrix v_p_1(Teuchos::View, v_p,
-						  w, num_cols, 0, 0);
+                          w, num_cols, 0, 0);
     NOX::Abstract::MultiVector::DenseMatrix v_p_2(Teuchos::View, v_p,
-						  1, num_cols, w, 0);
+                          1, num_cols, w, 0);
 
     // Decompose mc_v_x
     bordered_grp->extractParameterComponent(use_transpose,*mc_v_x, v_p_1);
     v_p_2.assign(*mc_v_p);
   }
   else {
-    // Split v_p into 2 block columns, the first to store mc_v_x_p^t and the 
+    // Split v_p into 2 block columns, the first to store mc_v_x_p^t and the
     // the second to store mc_v_p^T
     int num_rows = v_p.numRows();
     NOX::Abstract::MultiVector::DenseMatrix v_p_1(Teuchos::View, v_p,
-						  num_rows, w, 0, 0);
+                          num_rows, w, 0, 0);
     NOX::Abstract::MultiVector::DenseMatrix v_p_2(Teuchos::View, v_p,
-						  num_rows, 1, 0, w);
+                          num_rows, 1, 0, w);
 
     // Decompose mc_v_x
     bordered_grp->extractParameterComponent(use_transpose,*mc_v_x, v_p_1);
     for (int j=0; j<1; j++)
       for (int i=0; i<num_rows; i++)
-	v_p_2(i,j) = (*mc_v_p)(j,i);
+    v_p_2(i,j) = (*mc_v_p)(j,i);
   }
 }
 
 void
 LOCA::Homotopy::DeflatedGroup::
 loadNestedComponents(const NOX::Abstract::MultiVector& v_x,
-		     const NOX::Abstract::MultiVector::DenseMatrix& v_p,
-		     NOX::Abstract::MultiVector& v) const
+             const NOX::Abstract::MultiVector::DenseMatrix& v_p,
+             NOX::Abstract::MultiVector& v) const
 {
   // cast X to an extended multi-vec
-  LOCA::MultiContinuation::ExtendedMultiVector& mc_v = 
+  LOCA::MultiContinuation::ExtendedMultiVector& mc_v =
     dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector&>(v);
 
   // get solution and parameter components
@@ -1222,9 +1222,9 @@ loadNestedComponents(const NOX::Abstract::MultiVector& v_x,
   int num_cols = v_p.numCols();
   int w = bordered_grp->getBorderedWidth();
   NOX::Abstract::MultiVector::DenseMatrix v_p_1(Teuchos::View, v_p,
-						w, num_cols, 0, 0);
+                        w, num_cols, 0, 0);
   NOX::Abstract::MultiVector::DenseMatrix v_p_2(Teuchos::View, v_p,
-						1, num_cols, w, 0);
+                        1, num_cols, w, 0);
 
   // load v_x, v_p_1 into mc_v_x
   bordered_grp->loadNestedComponents(v_x, v_p_1, *mc_v_x);
@@ -1237,10 +1237,10 @@ void
 LOCA::Homotopy::DeflatedGroup::
 fillA(NOX::Abstract::MultiVector& A) const
 {
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::Homotopy::DeflatedGroup::fillA";
 
-  Teuchos::RCP<const NOX::Abstract::MultiVector> my_A = 
+  Teuchos::RCP<const NOX::Abstract::MultiVector> my_A =
     underlyingF;
 
   // If the underlying system isn't bordered, we're done
@@ -1254,7 +1254,7 @@ fillA(NOX::Abstract::MultiVector& A) const
   std::vector<int> idx1(w);
   for (int i=0; i<w; i++)
     idx1[i] = i;
-  Teuchos::RCP<NOX::Abstract::MultiVector> underlyingA = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> underlyingA =
     A.subView(idx1);
 
   // Fill A block in underlying group
@@ -1264,7 +1264,7 @@ fillA(NOX::Abstract::MultiVector& A) const
   std::vector<int> idx2(1);
   for (int i=0; i<1; i++)
     idx2[i] = w+i;
-  Teuchos::RCP<NOX::Abstract::MultiVector> my_A_x = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> my_A_x =
     A.subView(idx2);
 
   // Extract solution component from my_A and store in A
@@ -1275,7 +1275,7 @@ void
 LOCA::Homotopy::DeflatedGroup::
 fillB(NOX::Abstract::MultiVector& B) const
 {
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::Homotopy::DeflatedGroup::fillB";
 
   Teuchos::RCP<const NOX::Abstract::MultiVector> my_B =
@@ -1292,7 +1292,7 @@ fillB(NOX::Abstract::MultiVector& B) const
   std::vector<int> idx1(w);
   for (int i=0; i<w; i++)
     idx1[i] = i;
-  Teuchos::RCP<NOX::Abstract::MultiVector> underlyingB = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> underlyingB =
     B.subView(idx1);
 
   // Combine blocks in underlying group
@@ -1302,7 +1302,7 @@ fillB(NOX::Abstract::MultiVector& B) const
   std::vector<int> idx2(2);
   for (int i=0; i<1; i++)
     idx2[i] = w+i;
-  Teuchos::RCP<NOX::Abstract::MultiVector> my_B_x = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> my_B_x =
     B.subView(idx2);
 
   // Extract solution component from my_B and store in B
@@ -1313,10 +1313,10 @@ void
 LOCA::Homotopy::DeflatedGroup::
 fillC(NOX::Abstract::MultiVector::DenseMatrix& C) const
 {
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::Homotopy::DeflatedGroup::fillC";
 
-  Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix> my_C = 
+  Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix> my_C =
     minusOne;
 
   // If the underlying system isn't bordered, we're done
@@ -1325,27 +1325,27 @@ fillC(NOX::Abstract::MultiVector::DenseMatrix& C) const
     return;
   }
 
-  Teuchos::RCP<const NOX::Abstract::MultiVector> my_B = 
+  Teuchos::RCP<const NOX::Abstract::MultiVector> my_B =
     totalDistMultiVec;
 
-  Teuchos::RCP<const NOX::Abstract::MultiVector> my_A = 
+  Teuchos::RCP<const NOX::Abstract::MultiVector> my_A =
     underlyingF;
-  
+
   // Create views for underlying group
   int w = bordered_grp->getBorderedWidth();
   NOX::Abstract::MultiVector::DenseMatrix underlyingC(Teuchos::View, C,
-						      w, w, 0, 0);
+                              w, w, 0, 0);
 
   // Combine blocks in underlying group
   bordered_grp->fillC(underlyingC);
 
   // Create views for my blocks
   NOX::Abstract::MultiVector::DenseMatrix my_A_p(Teuchos::View, C,
-						 w, 1, 0, w);
+                         w, 1, 0, w);
   NOX::Abstract::MultiVector::DenseMatrix my_B_p(Teuchos::View, C,
-						 1, w, w, 0);
+                         1, w, w, 0);
   NOX::Abstract::MultiVector::DenseMatrix my_CC(Teuchos::View, C,
-						1, 1, w, w);
+                        1, 1, w, w);
 
   // Extract solution component from my_A and store in my_A_p
   bordered_grp->extractParameterComponent(false, *my_A, my_A_p);
@@ -1359,7 +1359,7 @@ fillC(NOX::Abstract::MultiVector::DenseMatrix& C) const
 
 void
 LOCA::Homotopy::DeflatedGroup::
-resetIsValid() 
+resetIsValid()
 {
   isValidF = false;
   isValidJacobian = false;
@@ -1382,7 +1382,7 @@ setupViews()
 
 void
 LOCA::Homotopy::DeflatedGroup::
-setHomotopyParam(double val) 
+setHomotopyParam(double val)
 {
   xVec->getScalar(0) = val;
   paramVec[conParamID] = val;
@@ -1395,7 +1395,7 @@ LOCA::Homotopy::DeflatedGroup::
 setStepperParameters(Teuchos::ParameterList& topParams)
 {
   Teuchos::ParameterList& params = topParams.sublist("LOCA");
-  
+
   // Create the stepper sublist
   Teuchos::ParameterList& stepperList = params.sublist("Stepper");
   stepperList.set("Continuation Method", "Natural");

@@ -74,7 +74,7 @@ namespace Ifpack2 {
 /// represented as a Tpetra::RowMatrix.
 ///
 /// \warning Do not attempt to use this class unless Trilinos was
-///   built with support for the Boost and Cholmod third-party
+///   built with support for the Lemon and Cholmod third-party
 ///   libraries.
 ///
 /// \warning This class will not be installed unless the CMake option

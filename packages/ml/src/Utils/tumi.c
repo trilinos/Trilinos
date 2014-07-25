@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #define AZ_MPI
 #ifdef AZ_MPI
@@ -28,7 +28,7 @@ struct wrap_greg_data {
 };
 extern void aztec_matvec_wrap_of_greg(double *, double *, AZ_MATRIX *, int *);
 extern int  aztec_comm_wrap_of_greg  (double *, AZ_MATRIX *);
-extern int  aztec_getrow_wrap_of_greg(int *, double *, int *, AZ_MATRIX *, 
+extern int  aztec_getrow_wrap_of_greg(int *, double *, int *, AZ_MATRIX *,
 				      int , int *, int );
 extern int ml_grad_matvec_wrap_of_greg(void *, int , double *, int, double *);
 extern int ml_grad_comm_wrap_of_greg( double *x, void *data);
@@ -70,9 +70,9 @@ ML_Operator *globbie;     /*T transpose */
 /* form Aztec matrix and then invoke Aztec using ML as a preoconditioner     */
 /*****************************************************************************/
 int *update_index, *update, *extern_index, *external;
-ML_JANUS_FORT(void wrappers_for_mg_)(double **ca, int **index, int mcol[], int *Nedges, 
-		      int nodes[], int nput[], int nget[], 
-		      int **nsol, int *proc, double **ca_imag, 
+ML_JANUS_FORT(void wrappers_for_mg_)(double **ca, int **index, int mcol[], int *Nedges,
+		      int nodes[], int nput[], int nget[],
+		      int **nsol, int *proc, double **ca_imag,
 		      double complex_x[], double complex_rhs[],
 		      int *Nnodes, int nodespot[], int nputpot[],
 		      int ngetpot[], int **nsolpot, double **grad_mat,
@@ -194,7 +194,7 @@ char str [80];
   double imag_eigenval;
   double realsav, imagsav;
   char c[10];                    /* arpack option */
-  
+
 
   /************************* start of execution *****************************/
 
@@ -255,7 +255,7 @@ char str [80];
   /* First bundle greg's data into one structure, then supply a        */
   /* matvec-wrapper that just calls Greg's routine.                    */
 
-  wrap_real_greg_data = (struct wrap_greg_data *) 
+  wrap_real_greg_data = (struct wrap_greg_data *)
                            malloc(sizeof(struct wrap_greg_data));
   wrap_real_greg_data->ca    = ca;
   wrap_real_greg_data->index = index;
@@ -271,15 +271,15 @@ char str [80];
 
   Ke = AZ_matrix_create( *Nedges );
   AZ_set_MATFREE(Ke, wrap_real_greg_data, aztec_matvec_wrap_of_greg);
-  AZ_set_MATFREE_getrow(Ke, (void *) wrap_real_greg_data, 
-			aztec_getrow_wrap_of_greg, aztec_comm_wrap_of_greg, 
+  AZ_set_MATFREE_getrow(Ke, (void *) wrap_real_greg_data,
+			aztec_getrow_wrap_of_greg, aztec_comm_wrap_of_greg,
 			Nghost, proc_config);
 
   /* Build aztec version of the imag part (mass) of Greg's matrix      */
   /* First bundle greg's data into one structure, then supply a        */
   /* matvec-wrapper that just calls Greg's routine.                    */
 
-  wrap_imag_greg_data = (struct wrap_greg_data *) 
+  wrap_imag_greg_data = (struct wrap_greg_data *)
                            malloc(sizeof(struct wrap_greg_data));
   wrap_imag_greg_data->ca    = ca_imag;
   wrap_imag_greg_data->index = index;
@@ -295,7 +295,7 @@ char str [80];
 
   M = AZ_matrix_create( *Nedges );
   AZ_set_MATFREE(M, wrap_imag_greg_data, aztec_matvec_wrap_of_greg);
-  AZ_set_MATFREE_getrow(M, (void *) wrap_imag_greg_data, 
+  AZ_set_MATFREE_getrow(M, (void *) wrap_imag_greg_data,
 			aztec_getrow_wrap_of_greg, NULL, Nghost, proc_config);
 
   /* Build aztec version of the equivalent real form. First build a    */
@@ -303,7 +303,7 @@ char str [80];
   /* a block matrix routine that invokes the matvecs of the subblocks  */
   /* and glues them together appropriately.                            */
 
-  AZ_MAT_blockmat_data         = (struct AZ_MAT_blockmat_data *) 
+  AZ_MAT_blockmat_data         = (struct AZ_MAT_blockmat_data *)
                                    malloc(sizeof(struct AZ_MAT_blockmat_data));
   AZ_MAT_blockmat_data->N      = *Nedges;
   AZ_MAT_blockmat_data->Ke     = Ke;
@@ -311,7 +311,7 @@ char str [80];
   AZ_MAT_blockmat_data->Nghost = Nghost;
   ERF_AZmat = AZ_matrix_create( (*Nedges)*2 );
   AZ_set_MATFREE(ERF_AZmat, AZ_MAT_blockmat_data, AZ_block_matvec);
-  AZ_set_MATFREE_getrow(ERF_AZmat, (void *) AZ_MAT_blockmat_data, 
+  AZ_set_MATFREE_getrow(ERF_AZmat, (void *) AZ_MAT_blockmat_data,
 			NULL, NULL, Nghost, proc_config);
 
   /* Start building the ML operators */
@@ -321,8 +321,8 @@ char str [80];
    /* Take Aztec matrix 'Ke', convert it to an ML matrix and put */
    /* it in level 'MaxMgLevels-1' in the multigrid hierarchy.    */
 
-   AZ_ML_Set_Amat(ml_edges, MaxMgLevels-1, Nlocal_edges, Nlocal_edges, 
-		  Ke, proc_config); 
+   AZ_ML_Set_Amat(ml_edges, MaxMgLevels-1, Nlocal_edges, Nlocal_edges,
+		  Ke, proc_config);
 
    M_mat = ML_Operator_Create(ml_edges->comm);
    AZ_convert_aztec_matrix_2ml_matrix(M, M_mat, proc_config);
@@ -334,7 +334,7 @@ char str [80];
    /* greg's data into one structure, then supply a matvec    */
    /* wrapper that calls Greg's routine.                      */
 
-   wrap_grad_greg_data = (struct wrap_greg_data *) 
+   wrap_grad_greg_data = (struct wrap_greg_data *)
                            malloc(sizeof(struct wrap_greg_data));
    wrap_grad_greg_data->ca    = grad_mat;
    wrap_grad_greg_data->index = indexpot;
@@ -347,18 +347,18 @@ char str [80];
    wrap_grad_greg_data->nsol  = nsolpot;
    wrap_grad_greg_data->proc  = proc;
    wrap_grad_greg_data->Nghost= Nghost_node;
-   
+
    Tmat = ML_Operator_Create(ml_edges->comm);
-   
-   ML_Operator_Set_ApplyFuncData(Tmat, *Nnodes, *Nedges, 
+
+   ML_Operator_Set_ApplyFuncData(Tmat, *Nnodes, *Nedges,
 				 (void *) wrap_grad_greg_data, *Nedges,
 				 ml_grad_matvec_wrap_of_greg, 0);
-   
+
    ML_Operator_Set_Getrow(Tmat,*Nedges,ml_grad_getrow_wrap_of_greg);
    ML_CommInfoOP_Generate(&(Tmat->getrow->pre_comm),ml_grad_comm_wrap_of_greg,
 			  wrap_grad_greg_data, ml_edges->comm,Tmat->invec_leng,
 			  Nghost_node);
-   
+
    /* Zero out rows of T that correspond to Dirichlet points */
    /* I think we also zero out columns of Ke                 */
 
@@ -369,7 +369,7 @@ char str [80];
 			colVal,&ncnt);
      if ( ncnt == 1) { mcolpot[i] = 0; Dir_bdry[i] = 1.; }
   }
-   
+
 #ifdef out
   sprintf(str,"greg_x%d",*proc);
   fp = fopen(str,"w");
@@ -384,21 +384,21 @@ char str [80];
   fflush(fp);  fclose(fp);
   fflush(fp1);  fclose(fp1);
   printf("finished\n");
-  fflush(stdout); 
+  fflush(stdout);
   while(1 == 1);
 #endif
 
    /* Get diagonal of M */
    for (i = 0; i < Nlocal_edges; i++) complex_x[i] = 1.;
    diag_of_M = &(complex_x[Nlocal_edges]); /* complex_x currently unused */
-   ML_Operator_Apply(M_mat, M_mat->invec_leng, complex_x, 
+   ML_Operator_Apply(M_mat, M_mat->invec_leng, complex_x,
 		     M_mat->outvec_leng, diag_of_M);
 
    /* Need to make a copy of the first half of 'ERF_x' as there is */
    /* not enough room for ghost variables at the end of vector */
 
    copy_ERF_x = complex_x; /* complex_x currently unused */
-   for (i = 0; i < Nlocal_edges; i++) copy_ERF_x[i] = ERF_x[i]; 
+   for (i = 0; i < Nlocal_edges; i++) copy_ERF_x[i] = ERF_x[i];
 
   ML_JANUS_FORT(zero_dir_)(wrap_real_greg_data->ca, Dir_bdry, wrap_real_greg_data->index,
 	     wrap_real_greg_data->mcol,  wrap_real_greg_data->nrows,
@@ -459,7 +459,7 @@ char str [80];
 
   ML_Set_Tolerance(ml_edges, 1.0e-8);
   ML_Aggregate_Create( &ag );
-   ML_Aggregate_Set_CoarsenScheme_Uncoupled(ag); 
+   ML_Aggregate_Set_CoarsenScheme_Uncoupled(ag);
    /*ML_Aggregate_Set_CoarsenScheme_UncoupledMIS(ag);*/
   /* ML_Aggregate_Set_CoarsenScheme_MIS(ag); */
   ML_Aggregate_Set_DampingFactor(ag, 0.0); /* must use 0 for maxwell */
@@ -473,8 +473,8 @@ char str [80];
   /*  setup_agg_MIS_dump(&(ml_nodes->Amat[MaxMgLevels-1]), Nghost_node);*/
   Nlevels=ML_Gen_MGHierarchy_UsingReitzinger(ml_edges, ml_nodes,MaxMgLevels-1,
                                              ML_DECREASING,ag,NULL,NULL<
-                                             Tmat,Tmat_trans, 
-                                             &Tmat_array,&Tmat_trans_array, 
+                                             Tmat,Tmat_trans,
+                                             &Tmat_array,&Tmat_trans_array,
                                              smoothPe_flag, 1.5, ML_DDEFAULT);
   ML_Gen_Hierarchy_ComplexMaxwell(ml_edges, &ml_ERF, M_mat);
   /* ray_matvec( &(ml_ERF->Amat[MaxMgLevels-1]), ERF_x, ERF_y); */
@@ -484,7 +484,7 @@ char str [80];
   /*
   if (ml_edges->comm->ML_mypid == 0) printf("Skipping calls to Arpack\n");
   */
-/*  --ARPACK calls follow 
+/*  --ARPACK calls follow
   sprintf(c,"%s","LR");
   io_flag = 0;
 
@@ -534,7 +534,7 @@ char str [80];
      ML_Krylov_Set_Amatrix(kdata, block_data->Ke_mat );
 
      ML_Krylov_Solve(kdata, block_data->Ke_mat->outvec_leng, NULL, NULL);
-     ml_edges->Amat[j].lambda_max = 
+     ml_edges->Amat[j].lambda_max =
                       ML_Krylov_Get_MaxEigenvalue(kdata);
      ML_Krylov_Destroy( &kdata );
 
@@ -620,7 +620,7 @@ char str [80];
 
 
   /***************************************************************
-  * Set up smoothers for all levels. For the MLS polynomial pick 
+  * Set up smoothers for all levels. For the MLS polynomial pick
   * parameters based on the coarsening rate. See paper 'Parallel
   * Multigrid Smoothing: Polynomial Versus Gauss-Seidel' by Adams,
   * Brezina, Hu, Tuminaro
@@ -646,7 +646,7 @@ char str [80];
       if (level != coarsest_level) {
         Ncoarse_node = Tmat_array[level-1]->invec_leng;
         ML_gsum_scalar_int(&Ncoarse_node, &itmp, ml_ERF->comm);
-        node_coarsening_rate =  2.*((double) Nfine_node)/ 
+        node_coarsening_rate =  2.*((double) Nfine_node)/
                                    ((double) Ncoarse_node);
       }
       else node_coarsening_rate = (double) Nfine_node;
@@ -659,7 +659,7 @@ char str [80];
     }
     ML_Gen_Smoother_BlockHiptmair(ml_ERF, level, ML_PRESMOOTHER,
                              Nits_per_presmooth,
-                             Tmat_array, Tmat_trans_array, NULL, 
+                             Tmat_array, Tmat_trans_array, NULL,
                              edge_smoother, edge_args, nodal_smoother,
                              nodal_args, hiptmair_type);
   }
@@ -670,7 +670,7 @@ char str [80];
   Nits_per_presmooth = 6;
   ML_Gen_Smoother_BlockHiptmair(ml_ERF, level, ML_PRESMOOTHER,
                              Nits_per_presmooth,
-                             Tmat_array, Tmat_trans_array, NULL, 
+                             Tmat_array, Tmat_trans_array, NULL,
                              edge_smoother, edge_args, nodal_smoother,
                              nodal_args, hiptmair_type);
 */
@@ -679,7 +679,7 @@ char str [80];
 
   /* Must be called before invoking the preconditioner */
 
-  ML_Gen_Solver(ml_ERF, ML_MGV, MaxMgLevels-1, coarsest_level); 
+  ML_Gen_Solver(ml_ERF, ML_MGV, MaxMgLevels-1, coarsest_level);
 
 
    /* initialize AZTEC options */
@@ -703,8 +703,8 @@ char str [80];
    }
 */
 
-   
-  AZ_set_ML_preconditioner(&Prec, ERF_AZmat, ml_ERF, options); 
+
+  AZ_set_ML_preconditioner(&Prec, ERF_AZmat, ml_ERF, options);
 /*    dump_greg(&(ml_edges->Amat[MaxMgLevels-1]),
   	  &(ml_nodes->Amat[MaxMgLevels-1]), M_mat,
     Tmat, Nghost_node, Nghost, ERF_x, ERF_y); */
@@ -763,7 +763,7 @@ char str [80];
 
   /* solve */
   /*time_it_(&(ml_edges->comm->ML_mypid));*/
-  AZ_iterate(ERF_x, ERF_y, options, params, status,proc_config, 
+  AZ_iterate(ERF_x, ERF_y, options, params, status,proc_config,
   	         ERF_AZmat, Prec, NULL);
   /*time_it_(&(ml_edges->comm->ML_mypid));*/
 
@@ -899,11 +899,11 @@ int aztec_comm_wrap_of_greg( double *x, AZ_MATRIX *Amat)
   int k;
 
   wrap_greg_data = (struct wrap_greg_data *) AZ_get_matvec_data(Amat);
-  k = Amat->data_org[AZ_N_internal] + Amat->data_org[AZ_N_border] 
+  k = Amat->data_org[AZ_N_internal] + Amat->data_org[AZ_N_border]
                                     + wrap_greg_data->Nghost;
 
   ML_JANUS_FORT(com_dbl_real_)(x, wrap_greg_data->proc, wrap_greg_data->nodes,
-	       wrap_greg_data->nput, wrap_greg_data->nget, 
+	       wrap_greg_data->nput, wrap_greg_data->nget,
 	       wrap_greg_data->nsol, &k);
   return 1;
 }
@@ -943,10 +943,10 @@ int  aztec_getrow_wrap_of_greg( int columns[], double values[],
   wrap_greg_data = (struct wrap_greg_data *) AZ_get_matvec_data(Amat);
 
   if (allocated_space < 13) return 0;
-  
+
   ML_JANUS_FORT(greg_getrow_)(requested_rows, columns, values, row_lengths,
 	       wrap_greg_data->ca,    wrap_greg_data->index,
-	       wrap_greg_data->mcol);  
+	       wrap_greg_data->mcol);
 
   return 1;
 }
@@ -989,14 +989,14 @@ int ml_grad_comm_wrap_of_greg( double *x, void *data) {
   k = *(wrap_greg_data->ncols) + wrap_greg_data->Nghost;
 
   ML_JANUS_FORT(com_pot_real_)(x, wrap_greg_data->proc, wrap_greg_data->nodes,
-	       wrap_greg_data->nput, wrap_greg_data->nget, 
+	       wrap_greg_data->nput, wrap_greg_data->nget,
 	       wrap_greg_data->nsol, &k);
 
   return 0;
 }
 int ml_grad_getrow_wrap_of_greg(void *data, int N_requested,
 			  int requested_rows[], int allocated,
-			  int columns[], double values[], 
+			  int columns[], double values[],
 			  int row_lengths[])
 {
   struct wrap_greg_data *wrap_greg_data;
@@ -1007,10 +1007,10 @@ int ml_grad_getrow_wrap_of_greg(void *data, int N_requested,
   wrap_greg_data = (struct wrap_greg_data *) ML_Get_MyGetrowData(mat_in);
 
   if (allocated < 13) return 0;
-  
+
   ML_JANUS_FORT(greg_getrow_)(requested_rows, columns, values, row_lengths,
 	       wrap_greg_data->ca,    wrap_greg_data->index,
-	       wrap_greg_data->mcol);  
+	       wrap_greg_data->mcol);
 
 
   return 1;
@@ -1021,7 +1021,7 @@ struct ml_Tmat_wrap {
 };
 
 
-int  ML_Gen_MGHierarchy_viaReitzinger(ML *ml_edges, ML* ml_nodes, 
+int  ML_Gen_MGHierarchy_viaReitzinger(ML *ml_edges, ML* ml_nodes,
                     int fine_level, int incr_or_decrease,
                     ML_Aggregate *ag, ML_Operator *Tmat,
                     int smooth_flag, double smooth_factor)
@@ -1030,7 +1030,7 @@ int  ML_Gen_MGHierarchy_viaReitzinger(ML *ml_edges, ML* ml_nodes,
 
 struct ml_Tmat_wrap *ml_Tmat_wrap;
 
-  
+
   ml_Tmat_wrap = (struct ml_Tmat_wrap *) ML_allocate(sizeof(
                                              struct ml_Tmat_wrap));
   ml_edges->void_options = (void *) ml_Tmat_wrap;
@@ -1042,7 +1042,7 @@ struct ml_Tmat_wrap *ml_Tmat_wrap;
   ml_Tmat_wrap->Tmat_trans = ML_Operator_Create(ml_edges->comm);
   ML_Operator_Transpose_byrow(Tmat, ml_Tmat_wrap->Tmat_trans);
 
-  ML_2matmult(ml_Tmat_wrap->Tmat_trans, Tmat, 
+  ML_2matmult(ml_Tmat_wrap->Tmat_trans, Tmat,
 		&(ml_nodes->Amat[fine_level]),
                 ML_CSR_MATRIX);
 
@@ -1053,15 +1053,15 @@ struct ml_Tmat_wrap *ml_Tmat_wrap;
 
   return(ML_Gen_MGHierarchy_UsingReitzinger(ml_edges, ml_nodes,fine_level,
 					    incr_or_decrease,ag,Tmat,
-					    ml_Tmat_wrap->Tmat_trans, 
+					    ml_Tmat_wrap->Tmat_trans,
                                             &(ml_Tmat_wrap->Tmat_array),
-		    		            &(ml_Tmat_wrap->Tmat_trans_array), 
+		    		            &(ml_Tmat_wrap->Tmat_trans_array),
                                             smooth_flag, smooth_factor));
 }
 
 
-int ML_Gen_Smoother_wrapBlockHiptmair(ML *ml_edges, int nl, int pre_or_post, 
-			 int ntimes, 
+int ML_Gen_Smoother_wrapBlockHiptmair(ML *ml_edges, int nl, int pre_or_post,
+			 int ntimes,
 			 void *edge_smoother, void **edge_args,
 			 void *nodal_smoother, void **nodal_args, int type,
 			 int nodal_its, double nodal_omega, int edge_its,
@@ -1106,7 +1106,7 @@ int ML_Gen_Smoother_wrapBlockHiptmair(ML *ml_edges, int nl, int pre_or_post,
   }
 
   /***************************************************************
-  * Set up smoothers for all levels. For the MLS polynomial pick 
+  * Set up smoothers for all levels. For the MLS polynomial pick
   * parameters based on the coarsening rate. See paper 'Parallel
   * Multigrid Smoothing: Polynomial Versus Gauss-Seidel' by Adams,
   * Brezina, Hu, Tuminaro
@@ -1129,7 +1129,7 @@ int ML_Gen_Smoother_wrapBlockHiptmair(ML *ml_edges, int nl, int pre_or_post,
       if (level != coarsest_level) {
         Ncoarse_node = Tmat_array[level-1]->invec_leng;
         ML_gsum_scalar_int(&Ncoarse_node, &itmp, ml_edges->comm);
-        node_coarsening_rate =  2.*((double) Nfine_node)/ 
+        node_coarsening_rate =  2.*((double) Nfine_node)/
                                    ((double) Ncoarse_node);
       }
       else node_coarsening_rate = (double) Nfine_node;
@@ -1138,7 +1138,7 @@ int ML_Gen_Smoother_wrapBlockHiptmair(ML *ml_edges, int nl, int pre_or_post,
       Nfine_node = Ncoarse_node;
     }
     ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_PRESMOOTHER, Nits_per_presmooth,
-                             Tmat_array, Tmat_trans_array, NULL, 
+                             Tmat_array, Tmat_trans_array, NULL,
                              edge_smoother, edge_args, nodal_smoother,
                              nodal_args, type);
   }
@@ -1157,7 +1157,7 @@ int dump_greg(ML_Operator *Ke, ML_Operator *Kn, ML_Operator *M_mat,
   FILE *fid;
   ML_Comm *comm;
   int Nedges_global;
-  
+
   comm = Ke->comm;
 
   if (comm->ML_mypid == 0) printf("DUMPING GREG's MATRICES\n");
@@ -1182,11 +1182,11 @@ int dump_greg(ML_Operator *Ke, ML_Operator *Kn, ML_Operator *M_mat,
   for (i = 0 ; i < Nghost_nodes; i++) global_Tnodes[i+N_nodes] = -1;
   for (i = 0 ; i < Nghost_edges; i++) global_edges[i+N_edges] = -1;
 
-  ML_exchange_bdry(global_Tnodes,T_mat->getrow->pre_comm, 
+  ML_exchange_bdry(global_Tnodes,T_mat->getrow->pre_comm,
  		 Kn->invec_leng,comm,ML_OVERWRITE,NULL);
-  ML_exchange_bdry(global_Knodes,Kn->getrow->pre_comm, 
+  ML_exchange_bdry(global_Knodes,Kn->getrow->pre_comm,
  		 Kn->invec_leng,comm,ML_OVERWRITE,NULL);
-  ML_exchange_bdry(global_edges,Ke->getrow->pre_comm, 
+  ML_exchange_bdry(global_edges,Ke->getrow->pre_comm,
  		 Ke->invec_leng,comm,ML_OVERWRITE,NULL);
 
   /* spit out Kn */
@@ -1284,7 +1284,7 @@ int setup_agg_MIS_dump(ML_Operator *Kn, int Nghost_nodes)
   double *dupdate;
   int     N_nodes, node_offset;
   int     i;
-  
+
 
   N_nodes = Kn->outvec_leng;
 
@@ -1296,7 +1296,7 @@ int setup_agg_MIS_dump(ML_Operator *Kn, int Nghost_nodes)
 
   for (i = 0 ; i < Nghost_nodes; i++) dupdate[i+N_nodes] = -1.;
 
-  ML_exchange_bdry(dupdate,Kn->getrow->pre_comm, 
+  ML_exchange_bdry(dupdate,Kn->getrow->pre_comm,
  		 Kn->invec_leng, Kn->comm, ML_OVERWRITE, NULL);
 
   update =(int *) ML_allocate(sizeof(int)*(N_nodes));

@@ -45,12 +45,13 @@
   \brief Templated class for solving dense linear problems.
 */
 
+#include <new>
 #include "Teuchos_SerialQRDenseSolver.hpp"
 
-#include "Stokhos_Sacado_Kokkos.hpp"
+#include "Sacado_MP_Vector.hpp"
 
 /*! \class Teuchos::SerialQRDenseSolver
-  \brief Specialization for Sacado::MP::Vector< StaticFixedStorage<...> >
+  \brief Specialization for Sacado::MP::Vector< Storage<...> >
 */
 
 namespace Teuchos {
@@ -65,7 +66,6 @@ namespace Teuchos {
 
     typedef Sacado::MP::Vector<Storage> ScalarType;
     typedef typename ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
-    static const int StorageNum = Storage::static_size;
 
     //! @name Constructor/Destructor Methods
     //@{
@@ -267,6 +267,7 @@ namespace Teuchos {
 
     OrdinalType M_;
     OrdinalType N_;
+    OrdinalType SacadoSize_;
 
     RCP<MatrixType> Matrix_;
     RCP<MatrixType> LHS_;
@@ -289,6 +290,53 @@ namespace Teuchos {
     SerialQRDenseSolver & operator=(const SerialQRDenseSolver& Source);
 
   };
+
+  namespace details {
+
+    // Helper traits class for converting between arrays of
+    // Sacado::MP::Vector and its corresponding value type
+    template <typename Storage> struct MPVectorArrayHelper;
+
+    template <typename Ordinal, typename Value, typename Device>
+    struct MPVectorArrayHelper< Stokhos::DynamicStorage<Ordinal,Value,Device> >
+    {
+      typedef Stokhos::DynamicStorage<Ordinal,Value,Device> Storage;
+      typedef Sacado::MP::Vector<Storage> Vector;
+
+      static Value* getValueArray(Vector* v, Ordinal len) {
+        if (len == 0)
+          return 0;
+        return v[0].coeff(); // Assume data is contiguous
+      }
+
+      static Vector* getVectorArray(Value *v, Ordinal len, Ordinal vector_size){
+        if (len == 0)
+          return 0;
+        Vector* v_vec = static_cast<Vector*>(operator new(len*sizeof(Vector)));
+        for (Ordinal i=0; i<len; ++i)
+          new (v_vec+i) Vector(vector_size, v+i*vector_size, false);
+        return v_vec;
+      }
+
+    };
+
+    template <typename Ordinal, typename Value, typename Device, int Num>
+    struct MPVectorArrayHelper< Stokhos::StaticFixedStorage<Ordinal,Value,Num,Device> > {
+      typedef Stokhos::StaticFixedStorage<Ordinal,Value,Num,Device> Storage;
+      typedef Sacado::MP::Vector<Storage> Vector;
+
+      static Value* getValueArray(Vector* v, Ordinal len)
+      {
+        return reinterpret_cast<Value*>(v);
+      }
+
+      static Vector* getVectorArray(Value *v, Ordinal len, Ordinal vector_size)
+      {
+        return reinterpret_cast<Vector*>(v);
+      }
+    };
+
+  }
 
   // Helper traits to distinguish work arrays for real and complex-valued datatypes.
   using namespace details;
@@ -334,12 +382,13 @@ createBaseMatrix(
   const RCP<SerialDenseMatrix<OrdinalType,ScalarType> >& mat) const
 {
   BaseScalarType* base_ptr =
-    reinterpret_cast<BaseScalarType*>(mat->values());
+    MPVectorArrayHelper<Storage>::getValueArray(
+      mat->values(), mat->stride()*mat->numCols());
   RCP<BaseMatrixType> base_mat =
     rcp(new BaseMatrixType(Teuchos::View,
                            base_ptr,
-                           mat->stride()*StorageNum,
-                           mat->numRows()*StorageNum,
+                           mat->stride()*SacadoSize_,
+                           mat->numRows()*SacadoSize_,
                            mat->numCols()));
   return base_mat;
 }
@@ -352,12 +401,13 @@ createMatrix(
   const RCP<SerialDenseMatrix<OrdinalType,BaseScalarType> >& base_mat) const
 {
   ScalarType* ptr =
-    reinterpret_cast<ScalarType*>(base_mat->values());
+    MPVectorArrayHelper<Storage>::getVectorArray(
+      base_mat->values(), base_mat->stride()*base_mat->numCols(), SacadoSize_);
   RCP<MatrixType> mat =
     rcp(new MatrixType(Teuchos::View,
                        ptr,
-                       base_mat->stride()/StorageNum,
-                       base_mat->numRows()/StorageNum,
+                       base_mat->stride()/SacadoSize_,
+                       base_mat->numRows()/SacadoSize_,
                        base_mat->numCols()));
   return mat;
 }
@@ -378,6 +428,12 @@ setMatrix(const RCP<SerialDenseMatrix<OrdinalType,ScalarType> >& A)
   FactorR_ = A;
   M_ = A->numRows();
   N_ = A->numCols();
+  if (Storage::is_static)
+    SacadoSize_ = Storage::static_size;
+  else if (M_ > 0 && N_ > 0)
+    SacadoSize_ = (*A)(0,0).size();
+  else
+    SacadoSize_ = 0;
 
   return base_QR_.setMatrix( createBaseMatrix(A) );
 }

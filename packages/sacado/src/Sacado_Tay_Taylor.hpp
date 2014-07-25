@@ -21,7 +21,7 @@
 //  
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 // (etphipp@sandia.gov).
@@ -84,13 +84,13 @@ namespace Sacado {
       /*!
        * Initializes first coeffienct to \c x and of a polynomial of degree d
        */
-      Taylor(unsigned int d, const T & x);
+      Taylor(int d, const T & x);
 
       //! Constructor with degree d
       /*!
        * Initializes all components to zero
        */
-      Taylor(unsigned int d);
+      Taylor(int d);
 
       //! Copy constructor
       Taylor(const Taylor& x);
@@ -103,13 +103,13 @@ namespace Sacado {
        * Coefficients are preserved if \c keep_coeffs is \c true, otherwise 
        * all coefficients are reset to zero.
        */
-      void resize(unsigned int d, bool keep_coeffs);
+      void resize(int d, bool keep_coeffs);
 
       //! Reserve space for a degree d polynomial
       /*!
        * Coefficients are preserved.
        */
-      void reserve(unsigned int d);
+      void reserve(int d);
 
       //! Prepare polynomial for writing 
       /*!
@@ -128,7 +128,7 @@ namespace Sacado {
 	typedef IsEqual<value_type> IE;
 	if (x.degree() != this->degree()) return false;
 	bool eq = true;
-	for (unsigned int i=0; i<=this->degree(); i++)
+	for (int i=0; i<=this->degree(); i++)
 	  eq = eq && IE::eval(x.coeff(i), this->coeff(i));
 	return eq;
       }
@@ -172,10 +172,10 @@ namespace Sacado {
       //@{
 
       //! Returns degree of polynomial
-      unsigned int degree() const { return th->deg_;}
+      int degree() const { return th->deg_;}
 
       //! Returns true if polynomial has degree >= d
-      bool hasFastAccess(unsigned int d) const { return th->deg_>=d;}
+      bool hasFastAccess(int d) const { return th->deg_>=d;}
 
       //! Returns Taylor coefficient array
       const T* coeff() const { return th->coeff_;}
@@ -184,14 +184,14 @@ namespace Sacado {
       T* coeff() { return th->coeff_;}
 
       //! Returns degree \c i term with bounds checking
-      T coeff(unsigned int i) const { 
+      T coeff(int i) const { 
 	T tmp= i<=th->deg_ ? th->coeff_[i]:T(0.); return tmp;}
     
       //! Returns degree \c i term without bounds checking
-      T& fastAccessCoeff(unsigned int i) { return th->coeff_[i];}
+      T& fastAccessCoeff(int i) { return th->coeff_[i];}
 
       //! Returns degree \c i term without bounds checking
-      const T& fastAccessCoeff(unsigned int i) const { return th->coeff_[i];}
+      const T& fastAccessCoeff(int i) const { return th->coeff_[i];}
     
       //@}
 
@@ -235,10 +235,10 @@ namespace Sacado {
     protected:
 
       //! Return length of array
-      unsigned int length() const { return th->len_; }
+      int length() const { return th->len_; }
 
       //! Resize coefficient array to new size
-      void resizeCoeffs(unsigned int len);
+      void resizeCoeffs(int len);
 
     protected:
 
@@ -248,10 +248,10 @@ namespace Sacado {
 	T* coeff_;
 
 	//! Degree of polynomial
-	unsigned int deg_;
+	int deg_;
 
 	//! Length of allocated polynomial array
-	unsigned int len_;
+	int len_;
 
 	//! Default constructor
 	TaylorData();
@@ -260,13 +260,13 @@ namespace Sacado {
 	TaylorData(const T& x);
 
 	//! Constructor with degree d and value \c x
-	TaylorData(unsigned int d, const T & x);
+	TaylorData(int d, const T & x);
 
 	//! Constructor with degree d
-	TaylorData(unsigned int d);
+	TaylorData(int d);
 
 	//! Constructor with degree d and length l
-	TaylorData(unsigned int d, unsigned int l);
+	TaylorData(int d, int l);
 
 	//! Copy constructor
 	TaylorData(const TaylorData& x);

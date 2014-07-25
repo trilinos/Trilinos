@@ -33,9 +33,13 @@
 #ifndef IOSS_Ioxf_IOFactory_h
 #define IOSS_Ioxf_IOFactory_h
 
-#include <Ioss_IOFactory.h>
-#include <Ioss_DBUsage.h>
-#include <string>
+#include <Ioss_DBUsage.h>               // for DatabaseUsage
+#include <Ioss_IOFactory.h>             // for IOFactory
+#include <string>                       // for string
+#include "Ioss_DatabaseIO.h"            // for DatabaseIO
+#include <Ioss_CodeTypes.h>
+
+namespace Ioss { class PropertyManager; }
 
 namespace Ioxf {
 

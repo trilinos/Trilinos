@@ -53,10 +53,9 @@
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-#include <stdio.h>
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_get_partial_attr, etc
 
-#include "exodusII.h"
-#include "exodusII_int.h"
 
 /*!
  * \deprecated Use ex_get_partial_attr() instead.

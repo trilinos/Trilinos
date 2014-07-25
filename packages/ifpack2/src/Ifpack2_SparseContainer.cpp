@@ -53,17 +53,25 @@
 
 // Note: Add similar explicit instantiation for ILU when we get one of those.
 
-#define IFPACK2_INST_ILUT(S,LO,GO)					\
-  template class SparseContainer<Tpetra::CrsMatrix<S,LO,GO>,		\
-				 Ifpack2::ILUT<Tpetra::CrsMatrix<S,LO,GO> > >;
+// Explicit instantiation macro for SparseContainer.
+// Only instantiate in the Ifpack2 namespace.
+#define LCLINST(S,LO,GO) template class SparseContainer<Tpetra::CrsMatrix<S,LO,GO>, ILUT<Tpetra::CrsMatrix<S,LO,GO> > >;
 
 namespace Ifpack2 {
 
   IFPACK2_ETI_MANGLING_TYPEDEFS()
 
-  IFPACK2_INSTANTIATE_SLG(IFPACK2_INST_ILUT)
+  IFPACK2_INSTANTIATE_SLG(LCLINST)
+
+  // FIXME (mfh 24 May 2014) This will result in a duplicate symbol if
+  // the default Node type is TPINode.  See the definition of LCLINST
+  // above.
+#  if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
+
+  template class SparseContainer<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode>, ILUT<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> > >;
+
+#  endif // defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
 
 }
 
-#endif
-
+#endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION

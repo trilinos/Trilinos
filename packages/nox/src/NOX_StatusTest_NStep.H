@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -51,7 +51,7 @@
 #ifndef NOX_STATUSTEST_NSTEP_H
 #define NOX_STATUSTEST_NSTEP_H
 
-#include "NOX_StatusTest_Generic.H"	// base class
+#include "NOX_StatusTest_Generic.H"    // base class
 #include "NOX_Abstract_Vector.H"        // for NormType
 #include "NOX_Utils.H"                  // for std::cerr
 
@@ -71,7 +71,7 @@ namespace StatusTest {
    This test is used to control an N-step Newton method.  The test
    declares convergence once n nonlinear iterations have been taken.
    Optionally, an initial phase with a different number of steps can
-   be taken.  
+   be taken.
 
    This is used where the time steps in a transient method are small
    enough that the step is essentially linear.  The typical use case
@@ -98,15 +98,15 @@ public:
     time steps.
 
   */
-  NStep(int numberOfStepsForConvergence, 
-	int numberOfNonlinearSolvesInRampingPhase = 0, 
-	int rampingPhaseNumberOfStepsForConvergence = 10,
-	const NOX::Utils* u = NULL);
+  NStep(int numberOfStepsForConvergence,
+    int numberOfNonlinearSolvesInRampingPhase = 0,
+    int rampingPhaseNumberOfStepsForConvergence = 10,
+    const NOX::Utils* u = NULL);
 
   // derived
-  virtual NOX::StatusTest::StatusType 
+  virtual NOX::StatusTest::StatusType
   checkStatus(const NOX::Solver::Generic& problem,
-	      NOX::StatusTest::CheckType checkType);
+          NOX::StatusTest::CheckType checkType);
 
   // derived
   virtual NOX::StatusTest::StatusType getStatus() const;
@@ -119,9 +119,9 @@ private:
 
   //! Ostream used to print errors
   NOX::Utils utils_;
-  
+
   int numberOfStepsForConvergence_;
-  int numberOfNonlinearSolvesInRampingPhase_; 
+  int numberOfNonlinearSolvesInRampingPhase_;
   int rampingPhaseNumberOfStepsForConvergence_;
 
   int currentNumberOfSteps_;

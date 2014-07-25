@@ -22,8 +22,16 @@ TRIBITS_ADD_EXECUTABLE(
   )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(main_driver_files
-  SOURCE_FILES energy-ss.xml energy-ss-tp.xml energy-transient.xml energy-ss-blocked.xml
-energy-transient-blocked.xml energy-neumann.xml energy-ss-blocked-tp.xml
+  SOURCE_FILES
+    energy-ss.xml
+    energy-ss-tp.xml
+    energy-ss-loca-eigenvalue.xml
+    energy-transient.xml
+    energy-ss-blocked.xml
+    energy-transient-blocked.xml
+    energy-neumann.xml
+    energy-ss-blocked-tp.xml
+meshmotion.xml
   EXEDEPS main_driver
   )
 
@@ -56,6 +64,14 @@ TRIBITS_ADD_ADVANCED_TEST(
   )
 
 TRIBITS_ADD_ADVANCED_TEST(
+  main_driver_energy-ss-loca-eigenvalue
+  TEST_0 EXEC main_driver 
+    ARGS  --i=energy-ss-loca-eigenvalue.xml
+    PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
+    XHOST trilinos-test.sandia.gov trilinos-test2.sandia.gov zan.sandia.gov
+  )
+
+TRIBITS_ADD_ADVANCED_TEST(
   main_driver_energy-ss-blocked-tp
   TEST_0 EXEC main_driver 
     ARGS  --i=energy-ss-blocked-tp.xml
@@ -70,6 +86,14 @@ TRIBITS_ADD_ADVANCED_TEST(
     PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
     NUM_MPI_PROCS 1
     XHOST trilinos-test.sandia.gov trilinos-test2.sandia.gov zan.sandia.gov
+  )
+
+TRIBITS_ADD_ADVANCED_TEST(
+  main_driver_meshmotion
+  TEST_0 EXEC main_driver 
+    ARGS  --i=meshmotion.xml
+    PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
+    NUM_MPI_PROCS 2
   )
 
 IF(${PACKAGE_NAME}_ENABLE_Teko)

@@ -94,7 +94,7 @@ TEUCHOS_UNIT_TEST( Map, replaceCommWithSubset )
 {
   typedef int local_ordinal_type;
   typedef long global_ordinal_type;
-  typedef KokkosClassic::SerialNode node_type;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
   typedef Array<global_ordinal_type>::size_type size_type;
 
@@ -144,11 +144,11 @@ TEUCHOS_UNIT_TEST( Map, replaceCommWithSubset )
       err << "removeEmptyProcesses() should not have returned null, but did."
           << endl;
     } else {
-      RCP<const Comm<int> > newComm = newMap->getComm ();
-      if (newComm->getSize () != numProcs - 1) {
+      RCP<const Comm<int> > theNewComm = newMap->getComm ();
+      if (theNewComm->getSize () != numProcs - 1) {
         localSuccess = 0;
         err << "New communicator should have " << (numProcs - 1)
-            << " processes, but has " << newComm->getSize ()
+            << " processes, but has " << theNewComm->getSize ()
             << " processes instead." << endl;
       }
 

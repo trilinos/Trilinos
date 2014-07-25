@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -40,7 +40,12 @@
 
 INCLUDE(TribitsSetupStrongCompileWarnings)
 INCLUDE(PrependCmndlineArgs)
+INCLUDE(DualScopeAppendCmndlineArgs)
 
+
+#
+# Helper macros and functions
+#
 
 
 MACRO(TRIBITS_APPLY_WARNINGS_AS_ERROR_FLAGS_LANG LANG)
@@ -51,6 +56,69 @@ MACRO(TRIBITS_APPLY_WARNINGS_AS_ERROR_FLAGS_LANG LANG)
     PRINT_VAR(CMAKE_${LANG}_FLAGS)
   ENDIF()
 ENDMACRO()
+
+
+MACRO(TRIBITS_SET_PACKAGE_LANGUAGE_FLAGS LANG)
+
+  #MESSAGE("Entering TRIBITS_SET_PACKAGE_LANGUAGE_FLAGS(${LANG})")
+  #PRINT_VAR(${PROJECT_NAME}_ENABLE_STRONG_${LANG}_COMPILE_WARNINGS)
+  
+  IF (${PACKAGE_NAME}_${LANG}_FLAGS)
+    DUAL_SCOPE_APPEND_CMNDLINE_ARGS(CMAKE_${LANG}_FLAGS
+      "${${PACKAGE_NAME}_${LANG}_FLAGS}")
+  ENDIF()
+  
+  IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    MESSAGE(STATUS "Adding strong ${LANG} warning flags \"${${LANG}_STRONG_COMPILE_WARNING_FLAGS}\"")
+    PRINT_VAR(CMAKE_${LANG}_FLAGS)
+  ENDIF()
+
+ENDMACRO()
+
+
+FUNCTION(TRIBITS_SETUP_ADD_PACKAGE_COMPILE_FLAGS)
+
+  #MESSAGE("Entering TRIBITS_SETUP_ADD_PACKAGE_COMPILE_FLAGS()")
+
+  #
+  # C compiler options
+  #
+
+  ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_C CMAKE_C_COMPILER_ID)
+  IF (${PROJECT_NAME}_ENABLE_C)
+    TRIBITS_SET_PACKAGE_LANGUAGE_FLAGS(C)
+  ENDIF()
+
+  #
+  # C++ compiler options
+  #
+
+  ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_CXX CMAKE_CXX_COMPILER_ID)
+  IF (${PROJECT_NAME}_ENABLE_CXX)
+    TRIBITS_SET_PACKAGE_LANGUAGE_FLAGS(CXX)
+  ENDIF()
+
+  #
+  # Fortran compiler options
+  #
+
+  ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_Fortran)
+  IF (${PROJECT_NAME}_ENABLE_Fortran)
+    TRIBITS_SET_PACKAGE_LANGUAGE_FLAGS(Fortran)
+  ENDIF()
+  
+ENDFUNCTION()
+
+
+
+
+
+
+
+
+
+
+
 
 
 #
@@ -80,6 +148,9 @@ MACRO(TRIBITS_SETUP_COMPILER_FLAGS  PACKAGE_NAME_IN)
   IF (PARSE_CLEANED AND ${PROJECT_NAME}_ENABLE_STRONG_CXX_COMPILE_WARNINGS)
     TRIBITS_APPLY_WARNINGS_AS_ERROR_FLAGS_LANG(CXX)
   ENDIF()
+
+  # Append package specific options
+  TRIBITS_SETUP_ADD_PACKAGE_COMPILE_FLAGS()
 
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
     MESSAGE("Final compiler flags:")

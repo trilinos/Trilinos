@@ -111,13 +111,14 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   MKL             "cmake/TPLs/"    EX
   yaml-cpp        "cmake/TPLs/"    EX
   Peano           "cmake/TPLs/"    EX
-  CUDA            "cmake/TPLs/"    SS
+  CUDA            "${${PROJECT_NAME}_TRIBITS_DIR}/tpls/"    SS
   CUSPARSE        "cmake/TPLs/"    SS
   Thrust          "cmake/TPLs/"    SS
   Cusp            "cmake/TPLs/"    SS
   TBB             "cmake/TPLs/"    EX
   Pthread         "cmake/TPLs/"    SS
   HWLOC           "cmake/TPLs/"    SS
+  QTHREAD         "cmake/TPLs/"    SS
   BinUtils        "cmake/TPLs/"    SS
   ARPREC          "cmake/TPLs/"    SS
   QD              "cmake/TPLs/"    SS
@@ -131,6 +132,7 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   METIS           "cmake/TPLs/"    TS
   ParMETIS        "cmake/TPLs/"    SS
   LibTopoMap      "cmake/TPLs/"    SS
+  LibM            "cmake/TPLs/"    SS
   PaToH           "cmake/TPLs/"    SS
   CppUnit         "cmake/TPLs/"    SS
   ADOLC           "cmake/TPLs/"    SS
@@ -189,6 +191,8 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   MATLABLib       "cmake/TPLs/"    EX
   Eigen           "cmake/TPLs/"    EX
   X11             "cmake/TPLs/"    SS
+  Lemon           "cmake/TPLs/"    EX
+  GLM             "cmake/TPLs/"    EX
   )
 
 # NOTES:

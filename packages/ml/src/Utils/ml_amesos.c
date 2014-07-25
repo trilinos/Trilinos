@@ -58,7 +58,7 @@ void ML_Smoother_Clean_Amesos(void *Amesos_Handle)
   exit( EXIT_FAILURE );
 #endif
   return;
-  
+
 } /* ML_Smoother_Clean_Amesos */
 
 
@@ -81,15 +81,15 @@ int ML_Gen_Smoother_Amesos(ML *ml, int nl, int AmesosSolver,
       printf("ML_Gen_Smoother_Amesos: cannot set smoother on level %d\n",nl );
       return 1;
    }
-	
+
    {
 
      fun1 = ML_Smoother_Amesos;
 
      Amesos_Handle = (Amesos_Handle_Type*) ML_allocate(sizeof(Amesos_Handle_Type));
      status = ML_Amesos_Gen(ml, nl, AmesosSolver, MaxProcs, AddToDiag,
-                            Amesos_Handle) ; 
-     assert( status == 0 ) ; 
+                            Amesos_Handle) ;
+     assert( status == 0 ) ;
 
      switch( AmesosSolver ) {
      case ML_AMESOS_KLU:
@@ -111,11 +111,11 @@ int ML_Gen_Smoother_Amesos(ML *ml, int nl, int AmesosSolver,
       sprintf( str, "Amesos_%d", nl );
       break;
 
-     } 
+     }
 
-     status = ML_Smoother_Set(&(ml->post_smoother[nl]), 
+     status = ML_Smoother_Set(&(ml->post_smoother[nl]),
 			      (void *) Amesos_Handle, fun1, 1, 0.0,str);
-     assert( status == 0 ) ; 
+     assert( status == 0 ) ;
      ml->post_smoother[nl].data_destroy = ML_Smoother_Clean_Amesos;
 
 #ifdef ML_TIMING

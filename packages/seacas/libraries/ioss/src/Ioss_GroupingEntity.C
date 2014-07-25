@@ -170,12 +170,14 @@ void Ioss::GroupingEntity::field_add(const Ioss::Field& new_field)
   size_t entity_size = get_property("entity_count").get_int();
   size_t field_size  = new_field.raw_count();
   if (entity_size != field_size && type() != REGION) {
+    std::string filename = get_database()->get_filename();
     std::ostringstream errmsg;
     errmsg << "IO System error: The " << type_string() << " '"
 	   << name() << "' has a size of "
 	   << entity_size << ",\nbut the field '" << new_field.get_name()
 	   << "' which is being output on that entity has a size of " << field_size
-	   << ".\nThe sizes must match.  This is an internal error that should be reported.";
+	   << "\non database '" << filename
+	   << "'.\nThe sizes must match.  This is an application error that should be reported.";
     IOSS_ERROR(errmsg);
   }
   fields.add(new_field);
@@ -184,12 +186,7 @@ void Ioss::GroupingEntity::field_add(const Ioss::Field& new_field)
 int Ioss::GroupingEntity::get_field_data(const std::string& field_name,
 					void *data, size_t data_size) const
 {
-  if (!field_exists(field_name)) {
-    std::ostringstream errmsg;
-    errmsg << "\nERROR: Field '" << field_name << "' does not exist for input on "
-	   << type_string() << " " << name() << "\n\n";
-    IOSS_ERROR(errmsg);
-  }
+  verify_field_exists(field_name, "input");
 
   Ioss::Field field = get_field(field_name);
   int retval = internal_get_field_data(field, data, data_size);
@@ -204,12 +201,7 @@ int Ioss::GroupingEntity::get_field_data(const std::string& field_name,
 int Ioss::GroupingEntity::put_field_data(const std::string& field_name,
 					void *data, size_t data_size) const
 {
-  if (!field_exists(field_name)) {
-    std::ostringstream errmsg;
-    errmsg << "\nERROR: Field '" << field_name << "' does not exist for output on "
-	   << type_string() << " " << name() << "\n\n";
-    IOSS_ERROR(errmsg);
-  }
+  verify_field_exists(field_name, "input");
 
   Ioss::Field field = get_field(field_name);
   field.transform(data);
@@ -219,12 +211,7 @@ int Ioss::GroupingEntity::put_field_data(const std::string& field_name,
 int Ioss::GroupingEntity::get_field_data(const std::string& field_name,
 					 std::vector<double>    &data) const
 {
-  if (!field_exists(field_name)) {
-    std::ostringstream errmsg;
-    errmsg << "\nERROR: Field '" << field_name << "' does not exist for input on "
-	   << type_string() << " " << name() << "\n\n";
-    IOSS_ERROR(errmsg);
-  }
+  verify_field_exists(field_name, "input");
 
   Ioss::Field field = get_field(field_name);
   field.check_type(Ioss::Field::REAL);
@@ -243,12 +230,7 @@ int Ioss::GroupingEntity::get_field_data(const std::string& field_name,
 int Ioss::GroupingEntity::get_field_data(const std::string& field_name,
 					 std::vector<int>     &data) const
 {
-  if (!field_exists(field_name)) {
-    std::ostringstream errmsg;
-    errmsg << "\nERROR: Field '" << field_name << "' does not exist for input on "
-	      << type_string() << " " << name() << "\n\n";
-    IOSS_ERROR(errmsg);
-  }
+  verify_field_exists(field_name, "input");
 
   Ioss::Field field = get_field(field_name);
   field.check_type(Ioss::Field::INTEGER);
@@ -267,12 +249,7 @@ int Ioss::GroupingEntity::get_field_data(const std::string& field_name,
 int Ioss::GroupingEntity::get_field_data(const std::string& field_name,
 					 std::vector<int64_t> &data) const
 {
-  if (!field_exists(field_name)) {
-    std::ostringstream errmsg;
-    errmsg << "\nERROR: Field '" << field_name << "' does not exist for input on "
-	      << type_string() << " " << name() << "\n\n";
-    IOSS_ERROR(errmsg);
-  }
+  verify_field_exists(field_name, "input");
 
   Ioss::Field field = get_field(field_name);
   field.check_type(Ioss::Field::INT64);
@@ -291,12 +268,7 @@ int Ioss::GroupingEntity::get_field_data(const std::string& field_name,
 int Ioss::GroupingEntity::get_field_data(const std::string& field_name,
 					 std::vector<char>     &data) const
 {
-  if (!field_exists(field_name)) {
-    std::ostringstream errmsg;
-    errmsg << "\nERROR: Field '" << field_name << "' does not exist for input on "
-	      << type_string() << " " << name() << "\n\n";
-    IOSS_ERROR(errmsg);
-  }
+  verify_field_exists(field_name, "input");
 
   Ioss::Field field = get_field(field_name);
   field.check_type(Ioss::Field::CHARACTER);
@@ -316,12 +288,7 @@ int Ioss::GroupingEntity::get_field_data(const std::string& field_name,
 					 std::vector<Complex> &data) const
 
 {
-  if (!field_exists(field_name)) {
-    std::ostringstream errmsg;
-    errmsg << "\nERROR: Field '" << field_name << "' does not exist for input on "
-	      << type_string() << " " << name() << "\n\n";
-    IOSS_ERROR(errmsg);
-  }
+  verify_field_exists(field_name, "input");
 
   Ioss::Field field = get_field(field_name);
   field.check_type(Ioss::Field::COMPLEX);
@@ -340,12 +307,7 @@ int Ioss::GroupingEntity::get_field_data(const std::string& field_name,
 int Ioss::GroupingEntity::put_field_data(const std::string& field_name,
 					 std::vector<double> &data) const
 {
-  if (!field_exists(field_name)) {
-    std::ostringstream errmsg;
-    errmsg << "\nERROR: Field '" << field_name << "' does not exist for output on "
-	      << type_string() << " " << name() << "\n\n";
-    IOSS_ERROR(errmsg);
-  }
+  verify_field_exists(field_name, "output");
 
   Ioss::Field field = get_field(field_name);
   field.check_type(Ioss::Field::REAL);
@@ -357,12 +319,7 @@ int Ioss::GroupingEntity::put_field_data(const std::string& field_name,
 int Ioss::GroupingEntity::put_field_data(const std::string& field_name,
 					 std::vector<int> &data) const
 {
-  if (!field_exists(field_name)) {
-    std::ostringstream errmsg;
-    errmsg << "\nERROR: Field '" << field_name << "' does not exist for output on "
-	      << type_string() << " " << name() << "\n\n";
-    IOSS_ERROR(errmsg);
-  }
+  verify_field_exists(field_name, "output");
 
   Ioss::Field field = get_field(field_name);
   field.check_type(Ioss::Field::INTEGER);
@@ -374,12 +331,7 @@ int Ioss::GroupingEntity::put_field_data(const std::string& field_name,
 int Ioss::GroupingEntity::put_field_data(const std::string& field_name,
 					 std::vector<int64_t> &data) const
 {
-  if (!field_exists(field_name)) {
-    std::ostringstream errmsg;
-    errmsg << "\nERROR: Field '" << field_name << "' does not exist for output on "
-	      << type_string() << " " << name() << "\n\n";
-    IOSS_ERROR(errmsg);
-  }
+  verify_field_exists(field_name, "output");
 
   Ioss::Field field = get_field(field_name);
   field.check_type(Ioss::Field::INT64);
@@ -391,12 +343,7 @@ int Ioss::GroupingEntity::put_field_data(const std::string& field_name,
 int Ioss::GroupingEntity::put_field_data(const std::string& field_name,
 					 std::vector<char> &data) const
 {
-  if (!field_exists(field_name)) {
-    std::ostringstream errmsg;
-    errmsg << "\nERROR: Field '" << field_name << "' does not exist for output on "
-	      << type_string() << " " << name() << "\n\n";
-    IOSS_ERROR(errmsg);
-  }
+  verify_field_exists(field_name, "output");
 
   Ioss::Field field = get_field(field_name);
   field.check_type(Ioss::Field::CHARACTER);
@@ -408,18 +355,20 @@ int Ioss::GroupingEntity::put_field_data(const std::string& field_name,
 int Ioss::GroupingEntity::put_field_data(const std::string& field_name,
 					 std::vector<Complex> &data) const
 {
-  if (!field_exists(field_name)) {
-    std::ostringstream errmsg;
-    errmsg << "\nERROR: Field '" << field_name << "' does not exist for output on "
-	   << type_string() << " " << name() << "\n\n";
-    IOSS_ERROR(errmsg);
-  }
+  verify_field_exists(field_name, "output");
 
   Ioss::Field field = get_field(field_name);
   field.check_type(Ioss::Field::COMPLEX);
   size_t data_size = data.size() * sizeof(Complex);
   field.transform(TOPTR(data));
   return internal_put_field_data(field, TOPTR(data), data_size);
+}
+
+size_t Ioss::GroupingEntity::field_count(Ioss::Field::RoleType role) const
+{
+  Ioss::NameList names;
+  fields.describe(role, &names);
+  return names.size();
 }
 
 void Ioss::GroupingEntity::count_attributes() const
@@ -444,3 +393,14 @@ void Ioss::GroupingEntity::count_attributes() const
   }
 }
 
+void Ioss::GroupingEntity::verify_field_exists(const std::string &field_name, const std::string &inout) const
+{
+  if (!field_exists(field_name)) {
+    std::string filename = get_database()->get_filename();
+    std::ostringstream errmsg;
+    errmsg << "\nERROR: On database '" << filename << "', Field '" << field_name
+	   << "' does not exist for " << inout << " on "
+	      << type_string() << " " << name() << "\n\n";
+    IOSS_ERROR(errmsg);
+  }
+}

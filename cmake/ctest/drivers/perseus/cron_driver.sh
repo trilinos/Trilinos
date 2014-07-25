@@ -25,9 +25,12 @@ export TDD_CTEST_TEST_TYPE=Nightly
 export TDD_HTTP_PROXY="http://sonproxy.sandia.gov:80"
 export http_proxy="http://sonproxy.sandia.gov:80"
 export TDD_FORCE_CMAKE_INSTALL=1
+export CUDA_LAUNCH_BLOCKING=1
+export OMP_NUM_THREADS=2
 
 # Machine independent cron_driver:
 #
+openmpi-1.7-cuda6
 
 SCRIPT_DIR=`cd "\`dirname \"$0\"\`";pwd`
 $SCRIPT_DIR/../cron_driver.py

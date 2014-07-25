@@ -76,7 +76,7 @@ namespace MueLuTests {
     aggFact->SetFactory("Graph", dropFact);
     aggFact->SetMinNodesPerAggregate(3);
     aggFact->SetMaxNeighAlreadySelected(0);
-    aggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+    aggFact->SetOrdering("natural");
     aggFact->SetPhase3AggCreation(0.5);
 
     level.Request("Aggregates", aggFact.get());
@@ -90,52 +90,6 @@ namespace MueLuTests {
     level.Release("Aggregates", aggFact.get());
     return aggregates;
   }  // gimmeAggregates
-
-  void ComputeAggregateSizes(const Aggregates & aggregates, const AmalgamationInfo & amalgInfo, Teuchos::ArrayRCP<LocalOrdinal> & aggSizes) {
-    int myPid = aggregates.GetMap()->getComm()->getRank();
-    Teuchos::ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
-    Teuchos::ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
-    LO size = procWinner.size();
-
-    for (LO i = 0; i< aggregates.GetNumAggregates(); ++i) aggSizes[i] = 0;
-    for (LO lnode = 0; lnode < size; ++lnode) {
-      LO myAgg = vertex2AggId[lnode];
-      if (procWinner[lnode] == myPid) {
-        GO gnodeid = aggregates.GetMap()->getGlobalElement(lnode);
-
-        std::vector<GO> gDofIds = (*(amalgInfo.GetGlobalAmalgamationParams()))[gnodeid];
-        aggSizes[myAgg] += Teuchos::as<LO>(gDofIds.size());
-      }
-    }
-  }
-
-  void ComputeAggregateToRowMap(const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, const Teuchos::ArrayRCP<LocalOrdinal> & aggSizes, Teuchos::ArrayRCP<Teuchos::ArrayRCP<GlobalOrdinal> > & aggToRowMap) {
-    int myPid = aggregates.GetMap()->getComm()->getRank();
-    Teuchos::ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
-    Teuchos::ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
-    LO size = procWinner.size();
-
-    // initialize array aggToRowMap with empty arrays for each aggregate (with correct aggSize)
-    LO t = 0;
-    for (ArrayRCP<ArrayRCP<GO> >::iterator a2r = aggToRowMap.begin(); a2r!=aggToRowMap.end(); ++a2r) {
-      *a2r = ArrayRCP<GO>(aggSizes[t++]);
-    }
-
-    // count, how many dofs have been recorded for each aggregate
-    ArrayRCP<LO> numDofs(aggregates.GetNumAggregates(),0); // empty array with number of Dofs for each aggregate
-
-    for (LO lnode = 0; lnode < size; ++lnode) {
-      LO myAgg = vertex2AggId[lnode];
-      if (procWinner[lnode] == myPid) {
-        GO gnodeid = aggregates.GetMap()->getGlobalElement(lnode);
-        std::vector<GO> gDofIds = (*(amalgInfo.GetGlobalAmalgamationParams()))[gnodeid];
-        for (LO gDofId=0; gDofId < Teuchos::as<LO>(gDofIds.size()); gDofId++) {
-          aggToRowMap[ myAgg ][ numDofs[myAgg] ] = gDofIds[gDofId]; // fill aggToRowMap structure
-          ++(numDofs[myAgg]);
-        }
-      }
-    }
-  }
 
   TEUCHOS_UNIT_TEST(Aggregates, JustAggregation)
   {
@@ -160,7 +114,11 @@ namespace MueLuTests {
       RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
       ArrayRCP<LO> aggSizes = Teuchos::ArrayRCP<LO>(numAggs);
-      ComputeAggregateSizes(*aggregates, *amalgInfo, aggSizes);
+      ArrayRCP<LO> aggStart;
+      ArrayRCP<GO> aggToRowMap;
+      amalgInfo->UnamalgamateAggregates(*aggregates, aggStart, aggToRowMap);
+      for (LO i = 0; i < numAggs; ++i)
+        aggSizes[i] = aggStart[i+1] - aggStart[i];
 
       bool foundAggNotSize3=false;
       for (int i=0; i<aggSizes.size(); ++i)
@@ -198,18 +156,17 @@ namespace MueLuTests {
            break;
       }
 
-      ArrayRCP< ArrayRCP<GO> > aggToRowMap(numAggs);
-      ComputeAggregateToRowMap(*aggregates, *amalgInfo, aggSizes, aggToRowMap);
+      //ArrayRCP< ArrayRCP<GO> > aggToRowMap(numAggs);
       int root = out.getOutputToRootOnly();
       out.setOutputToRootOnly(-1);
       for (int j=0; j<comm->getSize(); ++j) {
         if (comm->getRank() == j) {
             out << "++ pid " << j << " ++" << std::endl;
             out << "   num local DOFs = " << rowmap->getNodeNumElements() << std::endl;
-          for (int i=0; i< aggToRowMap.size(); ++i) {
+          for (int i=0; i< numAggs; ++i) {
             out << "   aggregate " << i << ": ";
-            for (int k=0; k< aggToRowMap[i].size(); ++k)
-              out << aggToRowMap[i][k] << " ";
+            for (int k=aggStart[i]; k< aggStart[i+1]; ++k)
+              out << aggToRowMap[k] << " ";
             out << std::endl;
           }
         }

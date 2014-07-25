@@ -47,11 +47,14 @@
 
 // Add my equation sets here
 #include "user_app_EquationSet_Energy.hpp"
+#include "user_app_EquationSet_MeshCoords.hpp"
 
 namespace user_app {
 
   PANZER_DECLARE_EQSET_TEMPLATE_BUILDER("Energy", user_app::EquationSet_Energy,
 					EquationSet_Energy)
+  PANZER_DECLARE_EQSET_TEMPLATE_BUILDER("MeshCoords", user_app::EquationSet_MeshCoords,
+					EquationSet_MeshCoords)
 
   class MyFactory : public panzer::EquationSetFactory {
 
@@ -71,6 +74,8 @@ namespace user_app {
       
       PANZER_BUILD_EQSET_OBJECTS("Energy", my_app::EquationSet_Energy,
 				 EquationSet_Energy)
+      PANZER_BUILD_EQSET_OBJECTS("MeshCoords", my_app::EquationSet_MeshCoords,
+				 EquationSet_MeshCoords)
       
       if (!found) {
 	std::string msg = "Error - the \"Equation Set\" with \"Type\" = \"" + params->get<std::string>("Type") +
@@ -84,4 +89,3 @@ namespace user_app {
   };
 
 }
-

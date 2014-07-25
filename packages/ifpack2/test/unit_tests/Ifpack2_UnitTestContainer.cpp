@@ -61,7 +61,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
@@ -270,7 +270,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(DenseContainer, FullMatrixSameScalar, Scalar, 
   out << "DenseContainer constructor" << endl;
   RCP<container_type> MyContainer;
   try {
-    MyContainer = rcp (new container_type (A, localRows));
+    MyContainer = Teuchos::rcp (new container_type (A, localRows));
     localSuccess = 1;
   } catch (std::exception& e) {
     localSuccess = 0;

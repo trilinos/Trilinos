@@ -47,6 +47,14 @@
 #include <KokkosCompat_TMM.hpp>
 #include <Teuchos_Array.hpp>
 
+// CMakeList.txt is not set up for compiling Cuda
+// so choose an appropriate non-cuda device:
+#if defined( KOKKOS_HAVE_CUDA )
+typedef Kokkos::Cuda::host_mirror_device_type TestDevice ;
+#else
+typedef Kokkos::DefaultExecutionSpace TestDevice ;
+#endif
+
 // FIXME (mfh 04 Dec 2013) Disable dependency on KokkosClassic for now
 // to make this test build correctly, given that we are reversing Kokkos
 // subpackage dependencies so that KokkosClassic has an optional dependency
@@ -120,9 +128,9 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, NoInteraction ) {
     TEST_EQUALITY( xView[k], x[k+3] );
   }
 
-  typedef Kokkos::View<double*, Kokkos::Threads> ka_view_type;
+  typedef Kokkos::View<double*, TestDevice> ka_view_type;
   ka_view_type y ("y", numElts);
-  Kokkos::parallel_for (y.dimension_0 (), FillFunctor<Kokkos::Threads> (y));
+  Kokkos::parallel_for (y.dimension_0 (), FillFunctor<TestDevice> (y));
 }
 
 
@@ -130,11 +138,11 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, NoInteraction ) {
 // it points to the same data.
 TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayViewOfView ) {
   typedef Teuchos::Array<double>::size_type size_type;
-  typedef Kokkos::View<double*, Kokkos::LayoutLeft, Kokkos::Threads> ka_view_type;
+  typedef Kokkos::View<double*, Kokkos::LayoutLeft, TestDevice> ka_view_type;
 
   const size_type numElts = 10;
   ka_view_type y ("y", numElts);
-  Kokkos::parallel_for (y.dimension_0 (), FillFunctor<Kokkos::Threads> (y));
+  Kokkos::parallel_for (y.dimension_0 (), FillFunctor<TestDevice> (y));
 
   // It's possible to get the View's raw pointer because we know its
   // layout.  Not every kind of View necessarily implements the
@@ -161,8 +169,8 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayViewOfView ) {
 // Tpetra::MultiVector methods get1dCopy and get2dCopy.
 TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ViewOfArrayView ) {
   typedef Teuchos::Array<double>::size_type size_type;
-  typedef Kokkos::View<double*, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::MemoryUnmanaged> ka_view_type;
-  typedef Kokkos::View<const double*, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::MemoryUnmanaged> ka_const_view_type;
+  typedef Kokkos::View<double*, Kokkos::LayoutLeft, TestDevice, Kokkos::MemoryUnmanaged> ka_view_type;
+  typedef Kokkos::View<const double*, Kokkos::LayoutLeft, TestDevice, Kokkos::MemoryUnmanaged> ka_const_view_type;
 
   const size_type numElts = 10;
   Teuchos::Array<double> x (numElts);
@@ -197,7 +205,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ViewOfArrayView ) {
 // will be useful for implementing Tpetra::MultiVector's getData,
 // getDataNonConst, get1dView, and get1dViewNonConst methods.
 TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP1D_of_2DView ) {
-  typedef Kokkos::View<double**, Kokkos::LayoutLeft, Kokkos::Threads> ka_view_type;
+  typedef Kokkos::View<double**, Kokkos::LayoutLeft, TestDevice> ka_view_type;
 
   const size_t numRows = 75;
   const size_t numCols = 5;
@@ -260,7 +268,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP2D_of_2DView ) {
   // multivector still needs to be a View<double**, ...>, and we have
   // to use the subview() overload that takes two ranges of row and
   // column indices.
-  typedef Kokkos::View<double**, Kokkos::LayoutLeft, Kokkos::Threads> ka_view_type;
+  typedef Kokkos::View<double**, Kokkos::LayoutLeft, TestDevice> ka_view_type;
 
   const size_t numRows = 75;
   const size_t numCols = 5;
@@ -269,14 +277,16 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP2D_of_2DView ) {
 
   ka_view_type X ("X", stride, numCols);
   ka_view_type X_view = Kokkos::subview<ka_view_type> (X, std::make_pair (ZERO, numRows), std::make_pair (ZERO, numCols));
+  TEST_EQUALITY( & X(0,0) , & X_view(0,0) );
   TEST_EQUALITY(X_view.dimension_0(), numRows);
   TEST_EQUALITY(X_view.dimension_1(), numCols);
 
   // Test that the strides of X_view are correct, for size_t.
   {
-    size_t strides[2];
+    size_t strides[3]; // stride[rank] is the maximum span
     strides[0] = static_cast<size_t> (0);
     strides[1] = static_cast<size_t> (0);
+    strides[2] = static_cast<size_t> (0);
     X_view.stride (strides);
     TEST_EQUALITY_CONST(strides[0], static_cast<size_t>(1)); // stride between X_view(i,j) and X_view(i+1,j)
     // The stride must be at least as given, but can be greater (due to possible padding for alignment).
@@ -288,14 +298,16 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP2D_of_2DView ) {
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > Y_2D (X_view.dimension_1 ());
   for (size_t j = 0; j < static_cast<size_t> (X_view.dimension_1 ()); ++j) {
     ka_view_type X_j = Kokkos::subview<ka_view_type> (X_view, std::make_pair (ZERO, numRows), std::make_pair (j, j+1));
+    TEST_EQUALITY( & X_view(0,j) , & X_j(0,0) );
     TEST_EQUALITY(static_cast<size_t>(X_j.dimension_0()), numRows);
     TEST_EQUALITY_CONST(X_j.dimension_1(), 1);
 
     // Test that the strides of X_j are correct.
     {
-      size_t strides[2];
+      size_t strides[3]; // stride[rank] is the maximum span
       strides[0] = static_cast<size_t> (0);
-      strides[1] = static_cast<size_t> (1);
+      strides[1] = static_cast<size_t> (0);
+      strides[2] = static_cast<size_t> (0);
       X_j.stride (strides);
       TEST_EQUALITY_CONST(strides[0], static_cast<size_t>(1)); // stride between X_j(i,j) and X_j(i+1,j)
       // Stride between X_j(i,j) and X_j(i,j+1), even though X_j only
@@ -332,7 +344,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP2D_of_2DView ) {
 // process will start by changing the internal data storage from
 // KokkosClassic::MultiVector to View.
 TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, KMV_of_2DView ) {
-  typedef Kokkos::View<double**, Kokkos::LayoutLeft, Kokkos::Threads> ka_view_type;
+  typedef Kokkos::View<double**, Kokkos::LayoutLeft, TestDevice> ka_view_type;
   typedef KokkosClassic::MultiVector<double, KokkosClassic::SerialNode> KMV;
 
   const size_t numRows = 75;

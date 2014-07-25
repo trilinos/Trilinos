@@ -12,7 +12,7 @@
 */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 //#include "ml_lapack.h"
@@ -82,14 +82,14 @@ private:
   {
     return(*this);
   }
-  
+
   double* ptr_;
   bool    ownership_;
 };
 
 class MultiVector;
 
-    
+
 /*!
 \class MultiVector
 
@@ -107,8 +107,8 @@ public:
   //@{ \name Constructors and destructors
 
   //! Default constructor.
-  MultiVector() 
-  { 
+  MultiVector()
+  {
     NumVectors_ = 0;
   }
 
@@ -161,7 +161,7 @@ public:
   }
 
   //! Constructor with a given Space, and user-provided array of values.
-  MultiVector(const Space& VectorSpace, 
+  MultiVector(const Space& VectorSpace,
               std::vector<Teuchos::RefCountPtr<DoubleVector> > RCPValues)
   {
     StackPush();
@@ -186,7 +186,7 @@ public:
   }
 
   //! Destructor.
-  ~MultiVector() 
+  ~MultiVector()
   {
     for (int v = 0 ; v < GetNumVectors() ; ++v)
       SetRCPValues(Teuchos::null, v);
@@ -194,7 +194,7 @@ public:
 
   // @}
   // @{ \name Reshape methods
-  
+
   //! Resets \c this object.
   void Reshape()
   {
@@ -248,9 +248,9 @@ public:
       }
     }
   }
-   
+
   //! Appends a new vector.
-  void Append(MultiVector rhs)
+  void Append(const MultiVector & rhs)
   {
     StackPush();
 
@@ -289,7 +289,7 @@ public:
   // @{ \name Overloaded operators
 
   //! Sets all elements of this vector to \c rhs.
-  MultiVector& operator=(double rhs) 
+  MultiVector& operator=(double rhs)
   {
     StackPush();
 
@@ -303,7 +303,7 @@ public:
   }
 
   //! Copies the \c rhs into \c this object.
-  MultiVector& operator=(const MultiVector& rhs) 
+  MultiVector& operator=(const MultiVector& rhs)
   {
     StackPush();
 
@@ -356,7 +356,7 @@ public:
   }
 
   //! Returns the value of local element \c i (non-const version).
-  inline double& operator() (const int i) 
+  inline double& operator() (const int i)
   {
     CheckSingleVector();
     CheckEntry(i);
@@ -366,7 +366,7 @@ public:
   }
 
   //! Returns the value of local element \c i.
-  inline const double& operator()(const int i, const int v) const 
+  inline const double& operator()(const int i, const int v) const
   {
     CheckEntry(i);
     CheckVector(v);
@@ -375,7 +375,7 @@ public:
   }
 
   //! Returns the value of local element \c i (non-const version)
-  inline double& operator()(const int i, const int v) 
+  inline double& operator()(const int i, const int v)
   {
     CheckEntry(i);
     CheckVector(v);
@@ -385,15 +385,15 @@ public:
 
   // @}
   // @{ \name Set and Get methods
-  
+
   //! Returns the Space on which \c this vector is defined.
-  inline const Space& GetVectorSpace() const 
+  inline const Space& GetVectorSpace() const
   {
     return(VectorSpace_);
   }
 
   //! Returns the Space on which \c this vector is defined (non-const)
-  inline Space& GetVectorSpace() 
+  inline Space& GetVectorSpace()
   {
     return(VectorSpace_);
   }
@@ -426,9 +426,9 @@ public:
   {
     return(RCPValues_[v].get()->Values());
   }
-  
+
   //! Returns a pointer to the double array (non-const version)
-  inline Teuchos::RefCountPtr<DoubleVector>& GetRCPValues(const int v) 
+  inline Teuchos::RefCountPtr<DoubleVector>& GetRCPValues(const int v)
   {
     CheckVector(v);
 
@@ -454,7 +454,7 @@ public:
 
   // @}
   // @{ \name Mathematical methods
-  
+
   //! Sets this(v) = rhs
   void Update(const double alpha, int v = -1)
   {
@@ -491,7 +491,7 @@ public:
     StackPop();
     UpdateTime();
   }
-  
+
   //! Sets this = alpha * rhs.
   void Update(double alpha, const MultiVector& rhs)
   {
@@ -556,7 +556,7 @@ public:
     CheckSpaces(rhs);
     CheckNumVectors(rhs.GetNumVectors());
 
-    for (int v = 0 ; v < GetNumVectors() ; ++v) 
+    for (int v = 0 ; v < GetNumVectors() ; ++v)
     {
       double* ptr_this = GetValues(v);
       double* ptr_rhs  = (double*)(rhs.GetValues(v));
@@ -582,19 +582,19 @@ public:
       {
         for (int i = 0 ; i < GetMyLength() ; ++i)
           ptr_this[i] = ptr_rhs[i] - ptr_this[i];
-        UpdateFlops(GetGlobalLength()); 
+        UpdateFlops(GetGlobalLength());
       }
       else if (alpha == -1.0 && beta == 1.0)
       {
         for (int i = 0 ; i < GetMyLength() ; ++i)
           ptr_this[i] -= ptr_rhs[i];
-        UpdateFlops(GetGlobalLength()); 
+        UpdateFlops(GetGlobalLength());
       }
       else
       {
         for (int i = 0 ; i < GetMyLength() ; ++i)
           ptr_this[i] = ptr_rhs[i] * alpha + ptr_this[i] * beta;
-        UpdateFlops(3.0 * GetGlobalLength()); 
+        UpdateFlops(3.0 * GetGlobalLength());
       }
     }
 
@@ -612,7 +612,7 @@ public:
 #endif
 
   //! Computes the dot product between \c this vector and \c rhs.
-  inline double DotProduct(const MultiVector& rhs, int v = -1) const 
+  inline double DotProduct(const MultiVector& rhs, int v = -1) const
   {
     ResetTimer();
     StackPush();
@@ -622,7 +622,7 @@ public:
     }
 
     CheckNumVectors(rhs.GetNumVectors());
-    
+
     if (v == -1) {
       CheckSingleVector();
       v = 0;
@@ -645,7 +645,7 @@ public:
   }
 
   //! Computes the 2-norm of \c this vector.
-  inline double Norm2(int v = -1) const 
+  inline double Norm2(int v = -1) const
   {
     ResetTimer();
     StackPush();
@@ -662,7 +662,7 @@ public:
     double* ptr     = (double*)GetValues(v);
     MyResult        = DDOT_F77(&n, ptr, &incr, ptr, &incr);
     Result          = ML_Comm_GsumDouble(GetML_Comm(),MyResult);
-    
+
     StackPop();
     UpdateFlops(2.0 * GetGlobalLength()); // DDOT
     UpdateTime();
@@ -671,7 +671,7 @@ public:
   }
 
   //! Computes the infinite norm of \c this vector.
-  inline double NormInf(int v = -1) const 
+  inline double NormInf(int v = -1) const
   {
     ResetTimer();
     StackPush();
@@ -691,7 +691,7 @@ public:
     // FIXME: delete below
     /*
     for (int i = 0 ; i < n ; ++i)
-      if (MyResult < fabs(ptr[i])) 
+      if (MyResult < fabs(ptr[i]))
         MyResult = fabs(ptr[i]);
         */
 
@@ -703,7 +703,7 @@ public:
   }
 
   //! Computes the one norm of \c this vector.
-  inline double NormOne(int v = -1) const 
+  inline double NormOne(int v = -1) const
   {
     ResetTimer();
     StackPush();
@@ -727,11 +727,11 @@ public:
   }
 
   //! Replaces each element of the vector with its reciprocal.
-  inline void Reciprocal(int v = -1) 
+  inline void Reciprocal(int v = -1)
   {
     ResetTimer();
     StackPush();
-    
+
     if (v == -1) {
       CheckSingleVector();
       v = 0;
@@ -749,7 +749,7 @@ public:
   }
 
   //! Scales each element by the specified factor.
-  inline void Scale(const double Factor, int v = -1) 
+  inline void Scale(const double Factor, int v = -1)
   {
     ResetTimer();
     StackPush();
@@ -767,7 +767,7 @@ public:
 
     StackPop();
 
-    UpdateFlops(1.0 * GetGlobalLength()); 
+    UpdateFlops(1.0 * GetGlobalLength());
     UpdateTime();
   }
 
@@ -775,7 +775,7 @@ public:
   // @{ \name Miscellanous methods
 
   //! Populates the vector with random elements.
-  inline void Random(int v = -1) 
+  inline void Random(int v = -1)
   {
     ResetTimer();
     StackPush();
@@ -859,7 +859,7 @@ public:
         }
         os << std::endl << std::endl;
       }
-      
+
       for (int iproc = 0 ; iproc < GetNumProcs() ; ++iproc) {
 
         if (GetMyPID() == iproc) {
@@ -922,7 +922,7 @@ private:
   }
 
   //! Verifies that \c rhs is compatible with \c this, and not its alias.
-  void CheckSpaces(const MultiVector rhs)  const
+  void CheckSpaces(const MultiVector & rhs)  const
   {
     if (rhs.GetVectorSpace() != GetVectorSpace()) {
       ML_THROW("rhs.GetVectorSpace() is not equal to this->GetVectorSpace()", -1);

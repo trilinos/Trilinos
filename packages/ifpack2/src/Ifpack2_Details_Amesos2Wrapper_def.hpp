@@ -261,6 +261,9 @@ void Amesos2Wrapper<MatrixType>::initialize ()
 
     // FIXME (10 Dec 2013) This (the Amesos2 solver type) should be a
     // run-time parameter through the input ParameterList.
+    // (9 May 2014) JJH Ifpack2 also shouldn't be checking the availability direct solvers.
+    // It's up to Amesos2 to test for this and throw an exception
+    // (which it does in Amesos2::Factory::create).
 
     std::string solverType;
 
@@ -274,6 +277,10 @@ void Amesos2Wrapper<MatrixType>::initialize ()
     solverType = "cholmod";
 #elif defined(HAVE_AMESOS2_LAPACK)
     solverType = "lapack";
+#else
+    // FIXME (9 May 2014) JJH Amesos2 does not yet expose KLU2, its internal direct solver.
+    // This means there's no fallback option, thus we throw an exception here.
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Amesos2 has not been configured with any direct solver support.");
 #endif
 
     // FIXME (10 Dec 2013) It shouldn't be necessary to recreate the
@@ -388,7 +395,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
     // when computing the output.  Otherwise, alias X_temp to X.
     RCP<const MV> X_temp;
     if (X.getLocalMV ().getValues () == Y.getLocalMV ().getValues ()) {
-      X_temp = rcp (new MV (X));
+      X_temp = rcp (new MV (createCopy(X)));
     } else {
       X_temp = rcpFromRef (X);
     }
@@ -412,28 +419,31 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
 
 
 template <class MatrixType>
-std::string Amesos2Wrapper<MatrixType>::description() const {
+std::string Amesos2Wrapper<MatrixType>::description () const {
   using Teuchos::TypeNameTraits;
   std::ostringstream os;
 
+  // Output is a valid YAML dictionary in flow style.  If you don't
+  // like everything on a single line, you should call describe()
+  // instead.
   os << "\"Ifpack2::Amesos2Wrapper\": {";
   if (this->getObjectLabel () != "") {
     os << "Label: \"" << this->getObjectLabel () << "\", ";
   }
   os << "Initialized: " << (isInitialized () ? "true" : "false")
-     << ", "
-     << "Computed: " << (isComputed () ? "true" : "false");
+     << ", Computed: " << (isComputed () ? "true" : "false");
 
   if (A_.is_null ()) {
     os << ", Matrix: null";
   }
   else {
     os << ", Matrix: not null"
-       << ", Number of rows: " << A_->getGlobalNumRows ()
-       << ", Number of columns: " << A_->getGlobalNumCols ();
+       << ", Global matrix dimensions: ["
+       << A_->getGlobalNumRows () << ", " << A_->getGlobalNumCols () << "]";
   }
+
   os << "}";
-  return os.str();
+  return os.str ();
 }
 
 
@@ -482,6 +492,9 @@ describe (Teuchos::FancyOStream& out,
 
 } // namespace Details
 } // namespace Ifpack2
+
+#define IFPACK2_DETAILS_AMESOS2WRAPPER_INSTANT(S,LO,GO,N) \
+  template class Ifpack2::Details::Amesos2Wrapper< Tpetra::CrsMatrix<S, LO, GO, N> >;
 
 #endif // HAVE_IFPACK2_AMESOS2
 #endif // IFPACK2_DETAILS_AMESOS2WRAPPER_DEF_HPP

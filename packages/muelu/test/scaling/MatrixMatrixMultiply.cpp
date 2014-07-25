@@ -44,7 +44,9 @@
 //
 // @HEADER
 #include <iostream>
+#ifndef _MSC_VER
 #include <sys/time.h>
+#endif
 
 #include <Xpetra_MultiVectorFactory.hpp>
 

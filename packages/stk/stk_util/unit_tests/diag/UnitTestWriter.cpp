@@ -6,26 +6,27 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <boost/regex.hpp>
+#include <bitset>                       // for bitset, bitset<>::reference
+#include <functional>                   // for less
+#include <list>                         // for list, _List_iterator, etc
+#include <map>                          // for multimap, map, etc
+#include <memory>                       // for auto_ptr
+#include <set>                          // for multiset, set, etc
+#include <sstream>                      // for ostringstream, ostream, etc
+#include <stk_util/diag/WriterExt.hpp>  // for operator<<
+#include <gtest/gtest.h>
+#include <stk_util/util/IndentStreambuf.hpp>  // for indent_streambuf
+#include <stk_util/util/Writer.hpp>     // for Writer, operator<<, dendl, etc
+#include <stk_util/util/WriterManip.hpp>  // for operator<<, setw, etc
+#include <string>                       // for operator==, string, etc
+#include <utility>                      // for pair
+#include <vector>                       // for vector, vector<>::iterator
+#include "stk_util/diag/WriterOStream.hpp"  // for operator<<
+#include "stk_util/util/Writer_fwd.hpp"  // for LogMask::LOG_ALWAYS, etc
 
-#include <iostream>
-#include <iomanip>
-#include <sstream>
 
-#include <utility>
-#include <vector>
-#include <map>
-#include <set>
-#include <list>
-#include <bitset>
-#include <memory>
 
-#include <stk_util/util/IndentStreambuf.hpp>
-#include <stk_util/diag/Writer.hpp>
-#include <stk_util/diag/WriterManip.hpp>
-#include <stk_util/diag/WriterExt.hpp>
 
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
 using namespace stk::diag;
 
@@ -69,18 +70,18 @@ dw()
   return s_diagWriter;
 }
 
-STKUNIT_UNIT_TEST(UnitTestWriter, UnitTest)
+TEST(UnitTestWriter, UnitTest)
 {
   dw() << "This is a test" << dendl << dflush;
 
-  STKUNIT_ASSERT_EQUAL((std::string("This is a test\n") == oss().str()), true);
+  ASSERT_EQ((std::string("This is a test\n") == oss().str()), true);
   
   oss().str("");
   dw() << "Level 0" << push << dendl
        << "This is a test" << dendl
        << pop << dendl;
 
-  STKUNIT_ASSERT_EQUAL((std::string("Level 0 {\n  This is a test\n}\n") == oss().str()), true);
+  ASSERT_EQ((std::string("Level 0 {\n  This is a test\n}\n") == oss().str()), true);
 
   oss().str("");
   {
@@ -94,7 +95,7 @@ STKUNIT_UNIT_TEST(UnitTestWriter, UnitTest)
          << pop << dendl;  
   }
   dw() << dendl;
-  STKUNIT_ASSERT_EQUAL((std::string("Level 0 {\n  Level 1 {\n    Level 2 {\n      Level 3 {\n        This is a test\n      }\n    }\n  }\n}\n") == oss().str()), true);
+  ASSERT_EQ((std::string("Level 0 {\n  Level 1 {\n    Level 2 {\n      Level 3 {\n        This is a test\n      }\n    }\n  }\n}\n") == oss().str()), true);
 
   oss().str("");
   {
@@ -106,9 +107,9 @@ STKUNIT_UNIT_TEST(UnitTestWriter, UnitTest)
     unsigned long       x6 = 7;
     long long           x7 = 7;
     unsigned long long  x8 = 7;
-    char                x9 = '\x7';
-    signed char         x10 = '\x7';
-    unsigned char       x11 = '\x7';
+    char                x9 = '7';
+    signed char         x10 = '7';
+    unsigned char       x11 = '7';
     
     dw() << x1 << dendl;
     dw() << x2 << dendl;
@@ -127,7 +128,8 @@ STKUNIT_UNIT_TEST(UnitTestWriter, UnitTest)
     dw() << "This is a test" << dendl;
     dw() << std::string("This is a test") << dendl;    
   }
-  STKUNIT_ASSERT_EQUAL((std::string("7\n7\n7\n7\n7\n7\n7\n7\n7\n7\n7\n7\n7\n7\nThis is a test\nThis is a test\n") == oss().str()), true);
+  std::string actual = oss().str();
+  ASSERT_EQ((std::string("7\n7\n7\n7\n7\n7\n7\n7\n7\n7\n7\n7\n7\n7\nThis is a test\nThis is a test\n") == oss().str()), true);
   
   oss().str("");
   dw() << std::hex << 16 << dendl;
@@ -145,7 +147,7 @@ STKUNIT_UNIT_TEST(UnitTestWriter, UnitTest)
   dw() << stk::diag::setiosflags(std::ios::fixed) << 3.14159265 << dendl;
   dw() << stk::diag::resetiosflags(std::ios::fixed) << 3.14159265 << dendl;
   dw() << stk::diag::setfill('#') << stk::diag::setw(10) << "x" << dendl;
-  STKUNIT_ASSERT_EQUAL((std::string("10\n20\n16\n3.141593\n3.141593e+00\n10\n20\n16\n3.141593\n3.141593e+00\n3.141593e+00\n3.14159e+00\n3.1416\n3.14159e+00\n#########x\n") == oss().str()), true);
+  ASSERT_EQ((std::string("10\n20\n16\n3.141593\n3.141593e+00\n10\n20\n16\n3.141593\n3.141593e+00\n3.141593e+00\n3.14159e+00\n3.1416\n3.14159e+00\n#########x\n") == oss().str()), true);
 
   oss().str("");
   {
@@ -250,7 +252,7 @@ STKUNIT_UNIT_TEST(UnitTestWriter, UnitTest)
       delete *curmsp;
     
   }
-//  STKUNIT_ASSERT_EQUAL(std::string("int\n(5:7)\nstd::vector<int, std::allocator<int> >, size 3 {\n  1 2 3 \n}\nstd::vector<int*, std::allocator<int*> >, size 3 {\n  [0] (pointer 0x53b040), 1\n  [1] (pointer 0x53b770), 2\n  [2] (pointer 0x53b750), 3\n}\nstd::list<int, std::allocator<int> >, size 3 {\n  [0] 1\n  [1] 2\n  [2] 3\n}\nstd::list<int*, std::allocator<int*> >, size 3 {\n  [0] (pointer 0x53b820), 1\n  [1] (pointer 0x53b8a0), 2\n  [2] (pointer 0x53b8e0), 3\n}\nstd::map<int, int, std::less<int>, std::allocator<std::pair<int const, int> > >, size 3 {\n  [1] 2\n  [2] 3\n  [3] 4\n}\nstd::map<int, int*, std::less<int>, std::allocator<std::pair<int const, int*> > >, size 3 {\n  [1] 0x53b9f0\n  [2] 0x53ba50\n  [3] 0x53bab0\n}\nstd::multimap<int, int, std::less<int>, std::allocator<std::pair<int const, int> > >, size 3 {\n  [1] 2\n  [1] 3\n  [2] 4\n}\nstd::multimap<int, int*, std::less<int>, std::allocator<std::pair<int const, int*> > >, size 3 {\n  [1] 0x53bb60\n  [1] 0x53bbc0\n  [2] 0x53bc20\n}\nstd::set<int, std::less<int>, std::allocator<int> >, size 3 {\n  2\n  3\n  4\n}\nstd::set<int*, std::less<int*>, std::allocator<int*> >, size 3 {\n  0x53bd10\n  0x53bd60\n  0x53bdb0\n}\nstd::multiset<int, std::less<int>, std::allocator<int> >, size 3 {\n  2\n  2\n  4\n}\nstd::multiset<int*, std::less<int*>, std::allocator<int*> >, size 3 {\n  0x53be90\n  0x53bee0\n  0x53bf30\n}\n00001010\n"), oss().str());  
+//  ASSERT_EQ(std::string("int\n(5:7)\nstd::vector<int, std::allocator<int> >, size 3 {\n  1 2 3 \n}\nstd::vector<int*, std::allocator<int*> >, size 3 {\n  [0] (pointer 0x53b040), 1\n  [1] (pointer 0x53b770), 2\n  [2] (pointer 0x53b750), 3\n}\nstd::list<int, std::allocator<int> >, size 3 {\n  [0] 1\n  [1] 2\n  [2] 3\n}\nstd::list<int*, std::allocator<int*> >, size 3 {\n  [0] (pointer 0x53b820), 1\n  [1] (pointer 0x53b8a0), 2\n  [2] (pointer 0x53b8e0), 3\n}\nstd::map<int, int, std::less<int>, std::allocator<std::pair<int const, int> > >, size 3 {\n  [1] 2\n  [2] 3\n  [3] 4\n}\nstd::map<int, int*, std::less<int>, std::allocator<std::pair<int const, int*> > >, size 3 {\n  [1] 0x53b9f0\n  [2] 0x53ba50\n  [3] 0x53bab0\n}\nstd::multimap<int, int, std::less<int>, std::allocator<std::pair<int const, int> > >, size 3 {\n  [1] 2\n  [1] 3\n  [2] 4\n}\nstd::multimap<int, int*, std::less<int>, std::allocator<std::pair<int const, int*> > >, size 3 {\n  [1] 0x53bb60\n  [1] 0x53bbc0\n  [2] 0x53bc20\n}\nstd::set<int, std::less<int>, std::allocator<int> >, size 3 {\n  2\n  3\n  4\n}\nstd::set<int*, std::less<int*>, std::allocator<int*> >, size 3 {\n  0x53bd10\n  0x53bd60\n  0x53bdb0\n}\nstd::multiset<int, std::less<int>, std::allocator<int> >, size 3 {\n  2\n  2\n  4\n}\nstd::multiset<int*, std::less<int*>, std::allocator<int*> >, size 3 {\n  0x53be90\n  0x53bee0\n  0x53bf30\n}\n00001010\n"), oss().str());  
 
   oss().str("");
   {
@@ -262,5 +264,5 @@ STKUNIT_UNIT_TEST(UnitTestWriter, UnitTest)
     dw() << a0 << dendl;
     dw() << a1 << dendl;    
   }
-//  STKUNIT_ASSERT_EQUAL(std::string("std::auto_ptr<int>, 0x53b8c0, 1\n std::auto_ptr<int>, <not created or not owner>\n std::auto_ptr<int>, <not created or not owner>\n std::auto_ptr<int>, 0x53b8c0, 1\n"), oss().str());
+//  ASSERT_EQ(std::string("std::auto_ptr<int>, 0x53b8c0, 1\n std::auto_ptr<int>, <not created or not owner>\n std::auto_ptr<int>, <not created or not owner>\n std::auto_ptr<int>, 0x53b8c0, 1\n"), oss().str());
 }

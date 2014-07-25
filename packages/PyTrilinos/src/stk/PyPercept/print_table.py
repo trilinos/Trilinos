@@ -19,7 +19,7 @@ locale.setlocale(locale.LC_NUMERIC, "")
 def format_num(num):
     """Format a number according to given places.
     Adds commas, etc.
-    
+
     Will truncate floats into ints!"""
 
     try:
@@ -32,20 +32,20 @@ def format_num(num):
 def get_max_width(table, index):
     """Get the maximum width of the given column index
     """
-    
+
     return max([len(format_num(row[index])) for row in table])
 
 def print_table(out, table):
     """Prints out a table of data, padded for alignment
-    
+
     @param out: Output stream ("file-like object")
     @param table: The table to print. A list of lists. Each row must have the same
     number of columns.
-    
+
     """
 
     col_paddings = []
-    
+
     for i in range(len(table[0])):
         col_paddings.append(get_max_width(table, i))
 
@@ -63,7 +63,7 @@ if __name__ == "__main__":
         ["spam", 300101, 4, 1003],
         ["eggs", 105, 13, 42],
         ["lumberjacks", 13, 105, 10]]
-    
+
     import sys
     out = sys.stdout
     pprint_table(out, table)

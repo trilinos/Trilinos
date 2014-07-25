@@ -44,7 +44,7 @@
 #include "Teuchos_UnitTestRepository.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "Stokhos_Sacado_Kokkos.hpp"
+#include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 #include "Stokhos_UnitTestHelpers.hpp"
 
 #include <Kokkos_Threads.hpp>
@@ -439,15 +439,6 @@ namespace StaticFixedVecTest {
   typedef UnitTestSetup<vec_type> UTS;
   UTS setup;
   VECTOR_UNIT_TESTS(StaticFixedVector)
-}
-
-namespace LocalVecTest {
-  typedef Kokkos::Threads device_type;
-  typedef Stokhos::LocalStorage<int,double,8,device_type> storage_type;
-  typedef Sacado::MP::Vector<storage_type> vec_type;
-  typedef UnitTestSetup<vec_type> UTS;
-  UTS setup;
-  VECTOR_UNIT_TESTS(LocalVector)
 }
 
 int main( int argc, char* argv[] ) {

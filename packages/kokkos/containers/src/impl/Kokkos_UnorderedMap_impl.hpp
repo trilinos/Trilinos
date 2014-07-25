@@ -41,64 +41,20 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_UNORDERED_MAP2_IMPL_HPP
-#define KOKKOS_UNORDERED_MAP2_IMPL_HPP
+#ifndef KOKKOS_UNORDERED_MAP_IMPL_HPP
+#define KOKKOS_UNORDERED_MAP_IMPL_HPP
 
 #include <Kokkos_Macros.hpp>
 #include <stdint.h>
 
 #include <cstdio>
 #include <climits>
+#include <iostream>
+#include <iomanip>
 
 namespace Kokkos { namespace Impl {
 
 uint32_t find_hash_size( uint32_t size );
-
-// find the first set bit of the integer
-KOKKOS_FORCEINLINE_FUNCTION
-int find_first_set(uint32_t i)
-{
-#if defined( __CUDA_ARCH__ )
-  return __ffs(i);
-#elif defined( __INTEL_COMPILER ) && not defined(__CUDACC__)
-  return i ? _bit_scan_forward(i) + 1 : 0;
-#elif defined( __GNUC__ ) || defined( __GNUG__ )
-  return __builtin_ffs(i);
-#else
-  if(!i)
-    return 0;
-  uint32_t t = 1;
-  int r = 1;
-  while (i & t == 0)
-  {
-    t <<= 1;
-    ++r;
-  }
-  return r;
-#endif
-}
-
-// count the bits set
-// http://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetNaive
-KOKKOS_FORCEINLINE_FUNCTION
-int popcount(uint32_t i)
-{
-  i = i - ((i >> 1) & (uint32_t)~(uint32_t)0/3);                                     // temp
-  i = (i & (uint32_t)~(uint32_t)0/15*3) + ((i >> 2) & (uint32_t)~(uint32_t)0/15*3);  // temp
-  i = (i + (i >> 4)) & (uint32_t)~(uint32_t)0/255*15;                                // temp
-  return (int)((uint32_t)(i * ((uint32_t)~(uint32_t)0/255)) >> (sizeof(uint32_t) - 1) * CHAR_BIT); // count
-}
-
-struct UnorderedMapScalars
-{
-  bool modified;
-  bool erasable;
-  bool has_failed_inserts;
-  uint32_t size;
-  uint32_t failed_inserts;
-};
-
-
 
 template <typename Map>
 struct UnorderedMapRehash
@@ -130,126 +86,6 @@ struct UnorderedMapRehash
 };
 
 template <typename UMap>
-struct UnorderedMapSize
-{
-  typedef UMap map_type;
-  typedef typename map_type::device_type device_type;
-  typedef typename map_type::size_type size_type;
-  typedef uint32_t value_type;
-
-  map_type m_map;
-
-  UnorderedMapSize( map_type const& map)
-    : m_map(map)
-  {}
-
-  void apply() const
-  {
-    parallel_reduce(m_map.m_available_indexes.size(), *this);
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  static void init( value_type & size)
-  {
-    size = 0;
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  static void join( volatile value_type & size, const volatile size_type & incr )
-  {
-    size += incr;
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()( size_type i, value_type & size) const
-  {
-    size += popcount(~m_map.m_available_indexes[i]);
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  void final( value_type & size ) const
-  {
-    m_map.m_scalars().modified = false;
-    m_map.m_scalars().size = size;
-  }
-};
-
-template <typename UMap>
-struct UnorderedMapPrint
-{
-  typedef UMap map_type;
-  typedef typename map_type::device_type device_type;
-  typedef typename map_type::size_type size_type;
-
-  map_type m_map;
-
-  UnorderedMapPrint( map_type const& map)
-    : m_map(map)
-  {}
-
-  void apply() const
-  {
-    parallel_for(m_map.m_hash_lists.size(), *this);
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()(size_type i) const
-  {
-    const size_type invalid_index = map_type::invalid_index;
-    size_type curr = m_map.m_hash_lists(i);
-    while (curr != invalid_index) {
-      printf("%d %d\n", m_map.m_keys[curr], i);
-      curr = m_map.m_next_index[curr];
-    }
-  }
-};
-
-template <typename UMap>
-struct UnorderedMapCountFailedInserts
-{
-  typedef UMap map_type;
-  typedef typename map_type::device_type device_type;
-  typedef typename map_type::size_type size_type;
-  typedef uint32_t value_type;
-
-  map_type m_map;
-
-  UnorderedMapCountFailedInserts( map_type const& map)
-    : m_map(map)
-  {}
-
-  void apply() const
-  {
-    parallel_reduce(m_map.m_failed_insert_scratch.size(), *this);
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  static void init( value_type & failed_inserts)
-  {
-    failed_inserts = 0;
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  static void join( volatile value_type & failed_inserts, const volatile size_type & incr )
-  {
-    failed_inserts += incr;
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()( size_type i, value_type & failed_inserts) const
-  {
-    failed_inserts += m_map.m_failed_insert_scratch[i];
-    m_map.m_failed_insert_scratch[i] = 0;
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  void final( value_type & failed_inserts ) const
-  {
-    m_map.m_scalars().failed_inserts = failed_inserts;
-  }
-};
-
-template <typename UMap>
 struct UnorderedMapErase
 {
   typedef UMap map_type;
@@ -257,7 +93,6 @@ struct UnorderedMapErase
   typedef typename map_type::size_type size_type;
   typedef typename map_type::key_type key_type;
   typedef typename map_type::impl_value_type value_type;
-
 
   map_type m_map;
 
@@ -311,6 +146,136 @@ struct UnorderedMapErase
   }
 };
 
+template <typename UMap>
+struct UnorderedMapHistogram
+{
+  typedef UMap map_type;
+  typedef typename map_type::device_type device_type;
+  typedef typename map_type::size_type size_type;
+
+  typedef View<int[100], device_type> histogram_view;
+  typedef typename histogram_view::HostMirror host_histogram_view;
+
+  map_type m_map;
+  histogram_view m_length;
+  histogram_view m_distance;
+  histogram_view m_block_distance;
+
+  UnorderedMapHistogram( map_type const& map)
+    : m_map(map)
+    , m_length("UnorderedMap Histogram")
+    , m_distance("UnorderedMap Histogram")
+    , m_block_distance("UnorderedMap Histogram")
+  {}
+
+  void calculate()
+  {
+    parallel_for(m_map.m_hash_lists.size(), *this);
+  }
+
+  void clear()
+  {
+    Kokkos::deep_copy(m_length, 0);
+    Kokkos::deep_copy(m_distance, 0);
+    Kokkos::deep_copy(m_block_distance, 0);
+  }
+
+  void print_length(std::ostream &out)
+  {
+    host_histogram_view host_copy = create_mirror_view(m_length);
+    Kokkos::deep_copy(host_copy, m_length);
+
+    for (int i=0, size = host_copy.size(); i<size; ++i)
+    {
+      out << host_copy[i] << " , ";
+    }
+    out << "\b\b\b   " << std::endl;
+  }
+
+  void print_distance(std::ostream &out)
+  {
+    host_histogram_view host_copy = create_mirror_view(m_distance);
+    Kokkos::deep_copy(host_copy, m_distance);
+
+    for (int i=0, size = host_copy.size(); i<size; ++i)
+    {
+      out << host_copy[i] << " , ";
+    }
+    out << "\b\b\b   " << std::endl;
+  }
+
+  void print_block_distance(std::ostream &out)
+  {
+    host_histogram_view host_copy = create_mirror_view(m_block_distance);
+    Kokkos::deep_copy(host_copy, m_block_distance);
+
+    for (int i=0, size = host_copy.size(); i<size; ++i)
+    {
+      out << host_copy[i] << " , ";
+    }
+    out << "\b\b\b   " << std::endl;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( size_type i ) const
+  {
+    const size_type invalid_index = map_type::invalid_index;
+
+    uint32_t length = 0;
+    size_type min_index = ~0u, max_index = 0;
+    for (size_type curr = m_map.m_hash_lists(i); curr != invalid_index; curr = m_map.m_next_index[curr]) {
+      ++length;
+      min_index = (curr < min_index) ? curr : min_index;
+      max_index = (max_index < curr) ? curr : max_index;
+    }
+
+    size_type distance = (0u < length) ? max_index - min_index : 0u;
+    size_type blocks = (0u < length) ? max_index/32u - min_index/32u : 0u;
+
+    // normalize data
+    length   = length   < 100u ? length   : 99u;
+    distance = distance < 100u ? distance : 99u;
+    blocks   = blocks   < 100u ? blocks   : 99u;
+
+    if (0u < length)
+    {
+      atomic_fetch_add( &m_length(length), 1);
+      atomic_fetch_add( &m_distance(distance), 1);
+      atomic_fetch_add( &m_block_distance(blocks), 1);
+    }
+  }
+};
+
+template <typename UMap>
+struct UnorderedMapPrint
+{
+  typedef UMap map_type;
+  typedef typename map_type::device_type device_type;
+  typedef typename map_type::size_type size_type;
+
+  map_type m_map;
+
+  UnorderedMapPrint( map_type const& map)
+    : m_map(map)
+  {}
+
+  void apply()
+  {
+    parallel_for(m_map.m_hash_lists.size(), *this);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( size_type i ) const
+  {
+    const size_type invalid_index = map_type::invalid_index;
+
+    uint32_t list = m_map.m_hash_lists(i);
+    for (size_type curr = list, ii=0; curr != invalid_index; curr = m_map.m_next_index[curr], ++ii) {
+      printf("%d[%d]: %d->%d\n", list, ii, m_map.key_at(curr), m_map.value_at(curr));
+    }
+  }
+};
+
 template <typename DKey, typename DValue, typename SKey, typename SValue>
 struct UnorderedMapCanAssign : public false_ {};
 
@@ -329,4 +294,4 @@ struct UnorderedMapCanAssign<const Key,const Value,const Key,Value> : public tru
 
 }} //Kokkos::Impl
 
-#endif // KOKKOS_UNORDERED_MAP2_IMPL_HPP
+#endif // KOKKOS_UNORDERED_MAP_IMPL_HPP

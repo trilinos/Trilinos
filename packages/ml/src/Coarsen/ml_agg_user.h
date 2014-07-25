@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #ifndef ML_AGG_USER_H
 #define ML_AGG_USER_H
@@ -21,7 +21,7 @@ int ML_SetUserPartitions(int (user)(ML_Operator* Amat, char* bdry_nodes,
                                     int* partitions, int* LocalNonzeros));
 
 extern int ML_Aggregate_CoarsenUser( ML_Aggregate *ml_ag,
-                                    ML_Operator *Amatrix, 
+                                    ML_Operator *Amatrix,
                                     ML_Operator **Pmatrix, ML_Comm *comm);
 
 #ifndef ML_CPP

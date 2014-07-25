@@ -128,9 +128,13 @@ int main(int argc, char *argv[]) {
   supportedTopologies.push_back(shards::getCellTopologyData<Tetrahedron<4> >() );
   supportedTopologies.push_back(shards::getCellTopologyData<Tetrahedron<10> >() );
   supportedTopologies.push_back(shards::getCellTopologyData<Hexahedron<8> >() );
+  supportedTopologies.push_back(shards::getCellTopologyData<Hexahedron<20> >() );
   supportedTopologies.push_back(shards::getCellTopologyData<Hexahedron<27> >() );
   supportedTopologies.push_back(shards::getCellTopologyData<Wedge<6> >() );
+  supportedTopologies.push_back(shards::getCellTopologyData<Wedge<15> >() );
   supportedTopologies.push_back(shards::getCellTopologyData<Wedge<18> >() );
+  supportedTopologies.push_back(shards::getCellTopologyData<Pyramid<5> >() );
+  supportedTopologies.push_back(shards::getCellTopologyData<Pyramid<13> >() );
   
   // Declare iterator to loop over the cell topologies
   std::vector<shards::CellTopology>::iterator topo_iterator;
@@ -177,17 +181,17 @@ int main(int argc, char *argv[]) {
       cubPoints.resize(numPts, cubDim);
       cubWeights.resize(numPts);
       cellCubature -> getCubature(cubPoints, cubWeights);
-             
+
       // 2.   Define a cell workset by perturbing the cellWorkset of the reference cell with the specified topology
       // 2.1  Resize dimensions of the rank-3 (C,N,D) cell workset array for the current topology
       int numNodes = (*topo_iterator).getNodeCount();
       int cellDim  = (*topo_iterator).getDimension();
       cellWorkset.resize(numCells, numNodes, cellDim);
-      
+
       // 2.2  Copy cellWorkset of the reference cell with the same topology to temp rank-2 (N,D) array
       FieldContainer<double> refCellNodes(numNodes, cellDim );
       CellTools::getReferenceSubcellNodes(refCellNodes, cellDim, 0, (*topo_iterator) );
-      
+
       // 2.3  Create randomly perturbed version of the reference cell and save in the cell workset array
       for(int cellOrd = 0; cellOrd < numCells; cellOrd++){
         
@@ -209,7 +213,7 @@ int main(int argc, char *argv[]) {
       
       *outStream 
         << " Mapping a set of " << numPts << " points to one cell in a workset of " << numCells << " " 
-        << (*topo_iterator).getName() << " cells. \n"; 
+        << (*topo_iterator).getName() << " cells. \n";
       
       for(int cellOrd = 0; cellOrd < numCells; cellOrd++){
         
@@ -462,7 +466,7 @@ int main(int argc, char *argv[]) {
       
       *outStream 
         << " Mapping a set of " << numPts << " points to all cells in workset of " << numCells << " " 
-        << (*topo_iterator).getName() << " cells. \n"; 
+        << (*topo_iterator).getName() << " cells. \n";
       
       // Forward map: do not specify cell ordinal
       CellTools::mapToPhysicalFrame(physPoints, cubPoints, cellWorkset, (*topo_iterator));

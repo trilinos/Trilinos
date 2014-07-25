@@ -69,9 +69,9 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcpFromRef;
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
-Teuchos::RCP<panzer_stk::STK_Interface> buildQuadMesh(stk::ParallelMachine comm,int xelmts,int yelmts,int zelmts,
+Teuchos::RCP<panzer_stk_classic::STK_Interface> buildQuadMesh(stk_classic::ParallelMachine comm,int xelmts,int yelmts,int zelmts,
                                                                                     int xblocks,int yblocks,int zblocks)
 {
    Teuchos::ParameterList pl;
@@ -82,10 +82,10 @@ Teuchos::RCP<panzer_stk::STK_Interface> buildQuadMesh(stk::ParallelMachine comm,
    pl.set<int>("Y Blocks",yblocks);
    pl.set<int>("Z Blocks",zblocks);
 
-   panzer_stk::CubeHexMeshFactory meshFact;
+   panzer_stk_classic::CubeHexMeshFactory meshFact;
    meshFact.setParameterList(Teuchos::rcpFromRef(pl));
    
-   Teuchos::RCP<panzer_stk::STK_Interface> mesh = meshFact.buildMesh(comm);
+   Teuchos::RCP<panzer_stk_classic::STK_Interface> mesh = meshFact.buildMesh(comm);
    mesh->writeToExodus("whatish.exo");
    return mesh;
 }
@@ -104,13 +104,13 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex)
 {
    // build global (or serial communicator)
    #ifdef HAVE_MPI
-      stk::ParallelMachine Comm = MPI_COMM_WORLD;
+      stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
    #else
-      stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
+      stk_classic::ParallelMachine Comm = WHAT_TO_DO_COMM;
    #endif
 
-   int numProcs = stk::parallel_machine_size(Comm);
-   int myRank = stk::parallel_machine_rank(Comm);
+   int numProcs = stk_classic::parallel_machine_size(Comm);
+   int myRank = stk_classic::parallel_machine_rank(Comm);
 
    TEUCHOS_ASSERT(numProcs<=2);
 
@@ -118,9 +118,9 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex)
    RCP<const panzer::FieldPattern> patternC1 
          = buildFieldPattern<Intrepid::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer> >();
 
-   Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildQuadMesh(Comm,2,2,2,1,1,1);
+   Teuchos::RCP<panzer_stk_classic::STK_Interface> mesh = buildQuadMesh(Comm,2,2,2,1,1,1);
    RCP<panzer::ConnManager<int,int> > connManager 
-         = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+         = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
    RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
 
    TEST_EQUALITY(dofManager->getOrientationsRequired(),false);
@@ -198,6 +198,27 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex)
       TEST_EQUALITY(gids[2],5); TEST_EQUALITY(gids[3],4);
       TEST_EQUALITY(gids[4],10); TEST_EQUALITY(gids[5],11);  
       TEST_EQUALITY(gids[6],14); TEST_EQUALITY(gids[7],13);
+   }
+
+   // check that owned is_subset owned_and_ghosted
+   //////////////////////////////////////////////////////////////////////////
+   std::vector<int> owned, owned_and_shared;
+   dofManager->getOwnedIndices(owned);
+   dofManager->getOwnedAndSharedIndices(owned_and_shared);
+
+   if(numProcs==1) {
+     TEST_EQUALITY(owned.size(),owned_and_shared.size());
+   }
+   else  {
+     out << "owned size = " << owned.size() << std::endl;
+     out << "owned_and_shared size = " << owned_and_shared.size() << std::endl;
+     TEST_ASSERT(owned.size()<=owned_and_shared.size());
+   }
+   for(std::size_t i=0;i<owned.size();i++) {
+     TEST_EQUALITY(owned[i],owned_and_shared[i]);
+   }
+   for(std::size_t i=owned.size();i<owned_and_shared.size();i++) {
+     TEST_ASSERT(std::find(owned.begin(),owned.end(),owned_and_shared[i])==owned.end());
    }
 }
 

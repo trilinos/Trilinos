@@ -138,6 +138,9 @@ int main(int argc, char *argv[])
     Teuchos::updateParametersFromXmlFileAndBroadcast(input_file_name, input_params.ptr(), *comm);
     
     *out << *input_params << std::endl;
+
+    Teuchos::ParameterList solver_factories = input_params->sublist("Solver Factories");
+    input_params->remove("Solver Factories");
     
     // Add in the application specific equation set factory
     Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
@@ -170,31 +173,7 @@ int main(int argc, char *argv[])
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory;
     std::map<int,std::string> responseIndexToName;
     {
-      panzer_stk::ModelEvaluatorFactory<double> me_factory;
-      
-      // Add in the application specific observer factories
-      {
-	// Rythmos
-	{
-	  Teuchos::RCP<const panzer_stk::RythmosObserverFactory> rof = 
-	    Teuchos::rcp(new user_app::RythmosObserverFactory(stkIOResponseLibrary));
-	  me_factory.setRythmosObserverFactory(rof);
-	}
-	
-	// NOX
-	{
-	  Teuchos::RCP<user_app::NOXObserverFactory> nof = 
-	    Teuchos::rcp(new user_app::NOXObserverFactory(stkIOResponseLibrary));
-	  
-	  Teuchos::RCP<Teuchos::ParameterList> observers_to_build = 
-	    Teuchos::parameterList(input_params->sublist("Solver Factories").sublist("NOX Observers"));
-	  
-	  nof->setParameterList(observers_to_build);
-	  me_factory.setNOXObserverFactory(nof);
-	}
-	
-	input_params->remove("Solver Factories");
-      } 
+      panzer_stk_classic::ModelEvaluatorFactory<double> me_factory;
 
       me_factory.setParameterList(input_params);
       me_factory.buildObjects(comm,global_data,eqset_factory,bc_factory,cm_factory);
@@ -228,11 +207,46 @@ int main(int argc, char *argv[])
       // enusre all the responses are built
       me_factory.buildResponses(cm_factory);
 
-      physics = me_factory.getPhysicsModelEvaluator();
-      solver = me_factory.getResponseOnlyModelEvaluator();
-      rLibrary = me_factory.getResponseLibrary();
       physicsBlocks = me_factory.getPhysicsBlocks();
+      physics = me_factory.getPhysicsModelEvaluator();
+      rLibrary = me_factory.getResponseLibrary();
       linObjFactory = me_factory.getLinearObjFactory();
+
+      // Add in the application specific observer factories
+      {
+        // see if field coordinates are required, if so reset the workset container
+        // and set the coordinates to be associated with a field in the mesh
+        bool useCoordinateUpdate = false;
+        for(std::size_t p=0;p<physicsBlocks.size();p++) {
+           if(physicsBlocks[p]->getCoordinateDOFs().size()>0) {
+              useCoordinateUpdate = true;
+              break;
+           }
+        }
+
+	// Rythmos
+        Teuchos::RCP<const panzer_stk_classic::RythmosObserverFactory> rof;
+	{
+          rof = Teuchos::rcp(new user_app::RythmosObserverFactory(stkIOResponseLibrary,rLibrary->getWorksetContainer(),useCoordinateUpdate));
+	  // me_factory.setRythmosObserverFactory(rof);
+	}
+	
+	// NOX
+	Teuchos::RCP<user_app::NOXObserverFactory> nof;
+	{
+          nof = Teuchos::rcp(new user_app::NOXObserverFactory(stkIOResponseLibrary));
+	  
+	  Teuchos::RCP<Teuchos::ParameterList> observers_to_build = 
+	    Teuchos::parameterList(solver_factories.sublist("NOX Observers"));
+	  
+	  nof->setParameterList(observers_to_build);
+	  // me_factory.setNOXObserverFactory(nof);
+	}
+
+        // solver = me_factory.getResponseOnlyModelEvaluator();
+        solver = me_factory.buildResponseOnlyModelEvaluator(physics,global_data,Teuchos::null,nof.ptr(),rof.ptr());
+      } 
+
     }
     
     // setup outputs to mesh on the stkIOResponseLibrary

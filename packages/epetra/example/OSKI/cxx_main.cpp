@@ -50,10 +50,10 @@ ${ROOT}.o: ${ROOT}.cpp
 
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -84,8 +84,8 @@ ${ROOT}.o: ${ROOT}.cpp
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
 #   endif
     exit(EXIT_FAILURE);
   }
-    
+
   // Strip off header lines (which start with "%")
   do {
     if(fgets(line, lineLength, handle)==0) {if (handle!=0) fclose(handle);}
@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
   // Get problem dimensions: #global rows, #global cols, #global nonzeros
   if(sscanf(line,"%d %d %d", &Nrows, &Ncols, &NZ)==0) {if (handle!=0) fclose(handle);}
   fclose(handle);
-  
+
   Epetra_Map* rowmap;
   Epetra_Map* colmap;
 
@@ -188,8 +188,8 @@ int main(int argc, char *argv[])
   Epetra_MultiVector Y(Amat->RowMap(), 5); Y.Random();
 
   //begin example oski code
-  
-   
+
+
   Epetra_OskiUtils object; //Create an Oski utility object
   object.Init();  //Initialize Oski now we can make Oski matrices and vectors
 
@@ -200,7 +200,7 @@ int main(int argc, char *argv[])
   Epetra_OskiMatrix* OskiAmat = new Epetra_OskiMatrix(*Amat, List); //Create an OskiMatrix from an Epetra Matrix
   OskiAmat->Multiply(false, x, y);  //Perform y = A*x using OSKI multiply with Epetra Vectors
   OskiAmat->Multiply(true, y, x, 2, 1);  //Perform x = 2*A^T*y + x using OSKI multiply with Epetra Vectors
-  
+
   //Create OskiVectors
   Epetra_OskiVector Oskix(x);
   Epetra_OskiVector Oskiy(y);
@@ -209,7 +209,7 @@ int main(int argc, char *argv[])
 
   OskiAmat->Multiply(false, Oskix, Oskiy);  //Perform y = A*x using OSKI multiply with Oski Vectors
   OskiAmat->Multiply(true, Oskiy, Oskix, 2, 1);  //Perform x = 2*A^T*y + x using OSKI multiply with Oski Vectors
-  
+
   //Create OskiMultiVectors
   Epetra_OskiMultiVector OskiX(X);
   Epetra_OskiMultiVector OskiY(Y);
@@ -219,13 +219,13 @@ int main(int argc, char *argv[])
 
   //Tune Multiply aggressively
   List2.set("singleblocksize", true); //Set machine specific hints here for blocks
-  List2.set("row", 3); 
-  List2.set("col", 3); 
-  List2.set("alignedblocks", true); 
+  List2.set("row", 3);
+  List2.set("col", 3);
+  List2.set("alignedblocks", true);
   OskiAmat->SetHintMultiply(false, 1.0, Oskix, 0.0, Oskiy, ALWAYS_TUNE_AGGRESSIVELY, List); //Pass routine specific hints
   OskiAmat->SetHint(List2); //Pass matrix specific hints
   OskiAmat->TuneMatrix();  //Tune matrix
-  char* trans;  
+  char* trans;
   trans = OskiAmat->GetMatrixTransforms();  //Get and print out transforms performed
   std::cout << "Aggressive transforms performed are: " << trans << "\n";
   OskiAmat->Multiply(false, Oskix, Oskiy); //Perform the tuned multiply
@@ -268,7 +268,7 @@ int main(int argc, char *argv[])
   OskiAmat->MatTransMatMultiply(false, Oskiy, Oskiz, NULL); //Same as above
   OskiAmat->SetHintMatTransMatMultiply(false, 1.0, Oskiy, 0.0, Oskiz, Oskiy, ALWAYS_TUNE, List); //This time lets store the intermediate value.
   OskiAmat->TuneMatrix();  //Call the tune function
-  OskiAmat->MatTransMatMultiply(false, Oskiy, Oskiz, &Oskix);  //Store the intermediate.  
+  OskiAmat->MatTransMatMultiply(false, Oskiy, Oskiz, &Oskix);  //Store the intermediate.
 
   //2Mult
   OskiAmat->MultiplyAndMatTransMultiply(true, Oskix, Oskiy, Oskiz, Oskiw);  //Perform the two multiply routine.
@@ -278,7 +278,7 @@ int main(int argc, char *argv[])
 
   OskiAmat->MultiplyAndMatTransMultiply(false, Oskix, Oskiy, Oskiw, Oskiz); //Don't transpose the second calculation.
 
-  delete OskiAmat; 
+  delete OskiAmat;
   object.Close(); //close the OSKI object allows OSKI to do any garbage collection or freeing it needs.
   delete rowmap;
   free(trans);

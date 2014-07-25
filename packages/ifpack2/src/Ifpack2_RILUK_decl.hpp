@@ -46,81 +46,105 @@
 #ifndef IFPACK2_CRSRILUK_DECL_HPP
 #define IFPACK2_CRSRILUK_DECL_HPP
 
-#include "Ifpack2_ConfigDefs.hpp"
+#include <Ifpack2_ConfigDefs.hpp>
+#include <Ifpack2_Preconditioner.hpp>
+#include <Ifpack2_Details_CanChangeMatrix.hpp>
+#include <Tpetra_CrsMatrix.hpp>
+
 #include "Ifpack2_ScalingType.hpp"
 #include "Ifpack2_IlukGraph.hpp"
-#include "Ifpack2_Preconditioner.hpp"
-#include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_MultiVector.hpp"
 
 namespace Teuchos {
-  class ParameterList;
+  class ParameterList; // forward declaration
 }
 
 namespace Ifpack2 {
 
 /** \class RILUK
-\brief ILU(k) (incomplete LU with fill level k) factorization of a given Tpetra::RowMatrix.
+\brief ILU(k) factorization of a given Tpetra::RowMatrix.
 \tparam MatrixType A specialization of Tpetra::RowMatrix.
 
-This class implements a "relaxed" incomplete ILU (ILU) factorization with level k fill.
+This class implements a "relaxed" incomplete ILU (ILU) factorization with level k fill.  It is based upon the ILU algorithms
+outlined in Yousef Saad's "Iterative Methods for Sparse Linear Systems", 2nd edition, Chapter 10.
 
 \section Ifpack2_RILUK_Parameters Parameters
 
 For a complete list of valid parameters, see the documentation of setParameters().
 
 The computed factorization is a function of several parameters:
-<ol>
-  <li> The pattern of the matrix - All fill is derived from the original matrix nonzero structure.  Level zero fill
-       is defined as the original matrix pattern (nonzero structure), even if the matrix value at an entry is stored
-       as a zero. (Thus it is possible to add entries to the ILU factors by adding zero entries to the original matrix.)
+<ul>
+<li>
+The graph structure (sparsity pattern) of the matrix: All fill is
+derived from the original matrix nonzero structure.  Level zero fill
+is defined as the original matrix pattern (nonzero structure), even if
+the matrix value at an entry is stored as a zero. (Thus it is possible
+to add entries to the ILU factors by adding zero entries to the
+original matrix.)
+</li>
 
-  <li> Level of fill - Starting with the original matrix pattern as level fill of zero, the next level of fill is
-       determined by analyzing the graph of the previous level and determining nonzero fill that is a result of combining
-       entries that were from previous level only (not the current level).  This rule limits fill to entries that
-       are direct decendents from the previous level graph.  Fill for level k is determined by applying this rule
-       recursively.  For sufficiently large values of k, the fill would eventually be complete and an exact LU
-       factorization would be computed.
+<li>
+Level of fill: Starting with the original matrix pattern as level
+fill of zero, the next level of fill is determined by analyzing the
+graph of the previous level and determining nonzero fill that is a
+result of combining entries that were from previous level only (not
+the current level).  This rule limits fill to entries that are direct
+decendents from the previous level graph.  Fill for level k is
+determined by applying this rule recursively.  For sufficiently large
+values of k, the fill would eventually be complete and an exact LU
+factorization would be computed.
+</li>
 
-  <li> Level of overlap - All Ifpack2 preconditioners work on parallel distributed-memory computers by using
-       the row partitioning the user input matrix to determine the partitioning for local ILU factors.  If the level of
-       overlap is set to zero,
-       the rows of the user matrix that are stored on a given processor are treated as a self-contained local matrix
-       and all column entries that reach to off-processor entries are ignored.  Setting the level of overlap to one
-       tells Ifpack to increase the size of the local matrix by adding rows that are reached to by rows owned by this
-       processor.  Increasing levels of overlap are defined recursively in the same way.  For sufficiently large levels
-       of overlap, the entire matrix would be part of each processor's local ILU factorization process.
-       Level of overlap is defined during the construction of the Ifpack2_IlukGraph object.
+<li>
+Fraction of relaxation: Ifpack2::RILUK computes the ILU factorization
+row-by-row.  As entries at a given row are computed, some number of
+them will be dropped because they do match the prescribed sparsity
+pattern.  The relaxation factor determines how these dropped values
+will be handled.  If the factor is zero, then these extra entries will
+by dropped.  This is a classical ILU approach.  If the RelaxValue is
+1, then the sum of the extra entries will be added to the diagonal.
+This is a classical Modified ILU (MILU) approach.  If RelaxValue is
+between 0 and 1, then the factor times the sum of extra entries will
+be added to the diagonal.
 
-       Once the factorization is computed, applying the factorization \(LUy = x\)
-       results in redundant approximations for any elements of y that correspond to
-       rows that are part of more than one local ILU factor.  The OverlapMode (changed by calling SetOverlapMode())
-       defines how these redundancies are
-       handled using the Tpetra::CombineMode enum.  The default is to zero out all values of y for rows that
-       were not part of the original matrix row distribution.
+For most situations, the relaxation factor should be set to zero.  For
+certain kinds of problems, e.g., reservoir modeling, there is a
+conservation principle involved such that any operator should obey a
+zero row-sum property.  MILU was designed for these cases and you
+should set the relaxation factor to 1.  For other situations, setting
+RelaxValue to some nonzero value may improve the stability of
+factorization, and can be used if the computed ILU factors are poorly
+conditioned.
+</li>
 
-  <li> Fraction of relaxation - Ifpack2_RILUK computes the ILU factorization row-by-row.  As entries at a given
-       row are computed, some number of them will be dropped because they do match the prescribed sparsity pattern.
-       The relaxation factor determines how these dropped values will be handled.  If the RelaxValue (changed by calling
-       setRelaxValue()) is zero, then these extra entries will by dropped.  This is a classical ILU approach.
-       If the RelaxValue is 1, then the sum
-       of the extra entries will be added to the diagonal.  This is a classical Modified ILU (MILU) approach.  If
-       RelaxValue is between 0 and 1, then RelaxValue times the sum of extra entries will be added to the diagonal.
+<li>
+Diagonal perturbation: Prior to computing the factorization, it is
+possible to modify the diagonal entries of the matrix for which the
+factorization will be computing.  If the absolute and relative
+perturbation values are zero and one, respectively, the factorization
+will be compute for the original user matrix A.  Otherwise, the
+factorization will computed for a matrix that differs from the
+original user matrix in the diagonal values only.  Below we discuss
+the details of diagonal perturbations.
+</li>
 
-       For most situations, RelaxValue should be set to zero.  For certain kinds of problems, e.g., reservoir modeling,
-       there is a conservation principle involved such that any operator should obey a zero row-sum property.  MILU
-       was designed for these cases and you should set the RelaxValue to 1.  For other situations, setting RelaxValue to
-       some nonzero value may improve the stability of factorization, and can be used if the computed ILU factors
-       are poorly conditioned.
+</ul>
 
-  <li> Diagonal perturbation - Prior to computing the factorization, it is possible to modify the diagonal entries of the matrix
-       for which the factorization will be computing.  If the absolute and relative perturbation values are zero and one,
-       respectively, the
-       factorization will be compute for the original user matrix A.  Otherwise, the factorization
-       will computed for a matrix that differs from the original user matrix in the diagonal values only.  Below we discuss
-       the details of diagonal perturbations.
-       The absolute and relative threshold values are set by calling SetAbsoluteThreshold() and SetRelativeThreshold(), respectively.
-</ol>
+\section Ifpack2_RILUK_GlobalOrdering An important note about ordering
+
+Note that the factorization is calculated based upon local ordering.   This means
+that the ordering of the GIDs in the row map is ignored.
+Initial entries in \f$L\f$, the strictly lower triangular part of A, and \f$U\f$, the strictly upper
+triangular part of A, are given by
+
+\f$L(i,j) = A(i,j)\f$ if \f$j < i\f$, for local IDs \f$i\f$ and \f$j\f$, even if GID\f$(j)\f$ \f$>\f$ GID\f$(i)\f$,
+
+and
+
+\f$U(i,j) = A(i,j)\f$ if \f$i < j\f$, for local IDs \f$i\f$ and \f$j\f$, even if GID\f$(j)\f$ \f$<\f$ GID\f$(i)\f$.
+
+In particular, if the row map GIDs are not in ascending
+order on processor, then the incomplete factors will be different than those produced by ILU(k) using global IDs.
+If the row map GIDs are in ascending order, then the factors produced based on LID and GID ordering are the same.
 
 \section Ifpack2_RILUK_CondEst Estimating preconditioner condition numbers
 
@@ -142,23 +166,22 @@ the accuracy of a given floating point number system, about 15 decimal
 digits in IEEE double precision, means that any results involving
 \f$B\f$ or \f$B^{-1}\f$ may be meaningless.
 
-The \f$\infty\f$-norm of a vector \f$y\f$ is defined as the maximum of the
-absolute values of the vector entries, and the \f$\infty\f$-norm of a
-matrix C is defined as
-\f$\|C\|_\infty = \max_{\|y\|_\infty = 1} \|Cy\|_\infty\f$.
-A crude lower bound for the \f$cond_\infty(C)\f$ is
+The \f$\infty\f$-norm of a vector \f$y\f$ is defined as the maximum of
+the absolute values of the vector entries, and the \f$\infty\f$-norm
+of a matrix C is defined as \f$\|C\|_\infty = \max_{\|y\|_\infty = 1}
+\|Cy\|_\infty\f$.  A crude lower bound for the \f$cond_\infty(C)\f$ is
 \f$\|C^{-1}e\|_\infty\f$ where \f$e = (1, 1, \ldots, 1)^T\f$.  It is a
 lower bound because \f$cond_\infty(C) = \|C\|_\infty\|C^{-1}\|_\infty
 \ge \|C^{-1}\|_\infty \ge |C^{-1}e\|_\infty\f$.
 
-For our purposes, we want to estimate \f$cond_\infty(LU)\f$, where \f$L\f$ and
-\f$U\f$ are our incomplete factors.  Edmond in his Ph.D. thesis demonstrates that
-\f$\|(LU)^{-1}e\|_\infty\f$ provides an effective estimate for
-\f$cond_\infty(LU)\f$.  Furthermore, since finding \f$z\f$ such that \f$LUz = y\f$
-is a basic kernel for applying the preconditioner, computing this
-estimate of \f$cond_\infty(LU)\f$ is performed by setting \f$y = e\f$, calling
-the solve kernel to compute \f$z\f$ and then
-computing \f$\|z\|_\infty\f$.
+For our purposes, we want to estimate \f$cond_\infty(LU)\f$, where
+\f$L\f$ and \f$U\f$ are our incomplete factors.  Edmond in his
+Ph.D. thesis demonstrates that \f$\|(LU)^{-1}e\|_\infty\f$ provides an
+effective estimate for \f$cond_\infty(LU)\f$.  Furthermore, since
+finding \f$z\f$ such that \f$LUz = y\f$ is a basic kernel for applying
+the preconditioner, computing this estimate of \f$cond_\infty(LU)\f$
+is performed by setting \f$y = e\f$, calling the solve kernel to
+compute \f$z\f$ and then computing \f$\|z\|_\infty\f$.
 
 \section Ifpack2_RILUK_DiagPerturb A priori diagonal perturbations
 
@@ -173,20 +196,22 @@ first step in computing the incomplete factors is to copy the matrix
 \f$A\f$ into the memory space for the incomplete factors.  We simply
 compute the perturbed diagonal at this point.
 
-The actual perturbation values we use are the diagonal values \f$(d_1, d_2, \ldots, d_n)\f$
-with \f$d_i = sgn(d_i)\alpha + d_i\rho\f$, \f$i=1, 2, \ldots, n\f$, where
-\f$n\f$ is the matrix dimension and \f$sgn(d_i)\f$ returns
-the sign of the diagonal entry.  This has the effect of
-forcing the diagonal values to have minimal magnitude of \f$\alpha\f$ and
-to increase each by an amount proportional to \f$\rho\f$, and still keep
-the sign of the original diagonal entry.
+The actual perturbation values we use are the diagonal values \f$(d_1,
+d_2, \ldots, d_n)\f$ with \f$d_i = sgn(d_i)\alpha + d_i\rho\f$,
+\f$i=1, 2, \ldots, n\f$, where \f$n\f$ is the matrix dimension and
+\f$sgn(d_i)\f$ returns the sign of the diagonal entry.  This has the
+effect of forcing the diagonal values to have minimal magnitude of
+\f$\alpha\f$ and to increase each by an amount proportional to
+\f$\rho\f$, and still keep the sign of the original diagonal entry.
 
 \section Ifpack2_RILUK_Phases Phases of computation
 
 Every Ifpack2 preconditioner has the following phases of computation:
-1. initialize()
-2. compute()
-3. apply()
+<ol>
+  <li> initialize() </li>
+  <li> compute() </li>
+  <li> apply() </li>
+</ol>
 
 RILUK constructs the symbolic incomplete factorization (that is, the
 structure of the incomplete factors) in the initialize() phase.  It
@@ -200,12 +225,12 @@ given multivector using two triangular solves.
 Each RILUK object keeps track of both the time required for various
 operations, and the number of times those operations have been applied
 for that object.  The operations tracked include:
-- initialize() (via getNumInitialize() and getInitializeTime())
-- compute() (via getNumCompute() and getComputeTime())
-- apply() (via getNumApply() and getApplyTime())
+  - initialize() (via getNumInitialize() and getInitializeTime())
+  - compute() (via getNumCompute() and getComputeTime())
+  - apply() (via getNumApply() and getApplyTime())
 
 The <tt>getNum*</tt> methods return the number of times that operation
-was called.  The <tt>get*Time</tt> methods return the number of
+was called.  The <tt>get*Time</tt> methods return the total number of
 seconds spent in <i>all</i> invocations of that operation.  For
 example, getApplyTime() returns the number of seconds spent in all
 apply() calls.  For an average time per apply() call, divide by
@@ -216,7 +241,11 @@ class RILUK:
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
                                            typename MatrixType::local_ordinal_type,
                                            typename MatrixType::global_ordinal_type,
-                                           typename MatrixType::node_type>
+                                           typename MatrixType::node_type>,
+    virtual public Ifpack2::Details::CanChangeMatrix<Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                                                                       typename MatrixType::local_ordinal_type,
+                                                                       typename MatrixType::global_ordinal_type,
+                                                                       typename MatrixType::node_type> >
 {
  public:
   //! The type of the entries of the input MatrixType.
@@ -280,54 +309,67 @@ class RILUK:
   /// \param A_in [in] The input matrix.
   RILUK (const Teuchos::RCP<const crs_matrix_type>& A_in);
 
-
  private:
-
-  //! Copy constructor.
+  /// \brief Copy constructor: declared private but not defined, so
+  ///   that calling it is syntactically forbidden.
   RILUK (const RILUK<MatrixType> & src);
 
  public:
-  //! Clone preconditioner to a new node type
+  /// \brief Clone preconditioner to a new node type.
+  ///
+  /// This method makes a deep copy of the original preconditioner
+  /// (and matrix), into objects with the Node type
+  /// <tt>NewMatrixType::node_type</tt>.
   template <typename NewMatrixType>
   Teuchos::RCP< RILUK< NewMatrixType > >
   clone (const Teuchos::RCP<const NewMatrixType>& A_newnode) const;
 
-  //! Destructor
-  virtual ~RILUK();
+  //! Destructor (declared virtual for memory safety).
+  virtual ~RILUK ();
 
-  //! Set RILU(k) relaxation parameter
-  void SetRelaxValue( magnitude_type RelaxValue) {RelaxValue_ = RelaxValue;}
-
-  //! Set absolute threshold value
-  void SetAbsoluteThreshold( magnitude_type Athresh) {Athresh_ = Athresh;}
-
-  //! Set relative threshold value
-  void SetRelativeThreshold( magnitude_type Rthresh) {Rthresh_ = Rthresh;}
-
-  //! Set overlap mode type
-  void SetOverlapMode( Tpetra::CombineMode OverlapMode) {OverlapMode_ = OverlapMode;}
+  /// \brief Set RILU(k) relaxation parameter
+  ///
+  /// This method is DEPRECATED.  If you want to change the value of
+  /// this parameter, you should instead call setParameters().
+  void TEUCHOS_DEPRECATED SetRelaxValue (const magnitude_type RelaxValue) {
+    RelaxValue_ = RelaxValue;
+  }
+  /// \brief Set absolute threshold value
+  ///
+  /// This method is DEPRECATED.  If you want to change the value of
+  /// this parameter, you should instead call setParameters().
+  void TEUCHOS_DEPRECATED SetAbsoluteThreshold (const magnitude_type Athresh) {
+    Athresh_ = Athresh;
+  }
+  /// \brief Set relative threshold value
+  ///
+  /// This method is DEPRECATED.  If you want to change the value of
+  /// this parameter, you should instead call setParameters().
+  void TEUCHOS_DEPRECATED SetRelativeThreshold (const magnitude_type Rthresh) {
+    Rthresh_ = Rthresh;
+  }
+  /// \brief Set overlap mode type
+  ///
+  /// This method is DEPRECATED.  If you want to change the value of
+  /// this parameter, you should instead call setParameters().
+  void TEUCHOS_DEPRECATED SetOverlapMode (const Tpetra::CombineMode OverlapMode) {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "Ifpack2::RILUK::SetOverlapMode: "
+      "RILUK no longer implements overlap on its own.  "
+      "Use RILUK with AdditiveSchwarz if you want overlap.");
+  }
 
   /// Set parameters for the incomplete factorization.
   ///
   /// This preconditioner supports the following parameters:
-  /// - "fact: iluk level-of-fill" (int)
-  /// - "fact: absolute threshold" (magnitude_type)
-  /// - "fact: relative threshold" (magnitude_type)
-  /// - "fact: relax value" (magnitude_type)
-  ///
-  /// It will eventually also support the following parameter,
-  /// although it currently does not:
-  /// - "fact: iluk level-of-overlap" (int)
-  void setParameters(const Teuchos::ParameterList& params);
+  ///   - "fact: iluk level-of-fill" (int)
+  ///   - "fact: absolute threshold" (magnitude_type)
+  ///   - "fact: relative threshold" (magnitude_type)
+  ///   - "fact: relax value" (magnitude_type)
+  void setParameters (const Teuchos::ParameterList& params);
 
   //! Initialize by computing the symbolic incomplete factorization.
-  void initialize();
-
-  //! Whether initialize() has been called.
-  bool isInitialized() const {return isInitialized_;}
-
-  //! How many times initialize() has been called for this object.
-  int getNumInitialize() const {return numInitialize_;}
+  void initialize ();
 
   /// \brief Compute the (numeric) incomplete factorization.
   ///
@@ -337,29 +379,107 @@ class RILUK:
   /// - Value for the a priori diagonal threshold values.
   ///
   /// initialize() must be called first, before this method may be called.
-  void compute();
+  void compute ();
 
-  //! Whether compute() has been called.
-  bool isComputed() const { return isComputed_; }
+  //! Whether initialize() has been called on this object.
+  bool isInitialized () const {
+    return isInitialized_;
+  }
+  //! Whether compute() has been called on this object.
+  bool isComputed () const {
+    return isComputed_;
+  }
 
-  //! How many times compute() has been called for this object.
-  int getNumCompute() const { return numCompute_; }
+  //! Number of successful initialize() calls for this object.
+  int getNumInitialize () const {
+    return numInitialize_;
+  }
+  //! Number of successful compute() calls for this object.
+  int getNumCompute () const {
+    return numCompute_;
+  }
+  //! Number of successful apply() calls for this object.
+  int getNumApply () const {
+    return numApply_;
+  }
 
-  //! How many times apply() has been called for this object.
-  int getNumApply() const {return numApply_;}
+  //! Total time in seconds taken by all successful initialize() calls for this object.
+  double getInitializeTime () const {
+    return initializeTime_;
+  }
+  //! Total time in seconds taken by all successful compute() calls for this object.
+  double getComputeTime () const {
+    return computeTime_;
+  }
+  //! Total time in seconds taken by all successful apply() calls for this object.
+  double getApplyTime () const {
+    return applyTime_;
+  }
 
-  double getInitializeTime() const {return -1.0;}
-  double getComputeTime() const {return -1.0;}
-  double getApplyTime() const {return -1.0;}
+  //! \name Implementation of Ifpack2::Details::CanChangeMatrix
+  //@{
 
-  // Mathematical functions.
+  /// \brief Change the matrix to be preconditioned.
+  ///
+  /// \param A [in] The new matrix.
+  ///
+  /// \post <tt>! isInitialized ()</tt>
+  /// \post <tt>! isComputed ()</tt>
+  ///
+  /// Calling this method resets the preconditioner's state.  After
+  /// calling this method with a nonnull input, you must first call
+  /// initialize() and compute() (in that order) before you may call
+  /// apply().
+  ///
+  /// You may call this method with a null input.  If A is null, then
+  /// you may not call initialize() or compute() until you first call
+  /// this method again with a nonnull input.  This method invalidates
+  /// any previous factorization whether or not A is null, so calling
+  /// setMatrix() with a null input is one way to clear the
+  /// preconditioner's state (and free any memory that it may be
+  /// using).
+  ///
+  /// The new matrix A need not necessarily have the same Maps or even
+  /// the same communicator as the original matrix.
+  virtual void
+  setMatrix (const Teuchos::RCP<const row_matrix_type>& A);
+
+  //@}
+  //! @name Implementation of Teuchos::Describable interface
+  //@{
+
+  //! A one-line description of this object.
+  std::string description () const;
+
+  //@}
+  //! \name Implementation of Tpetra::Operator
+  //@{
+
+  //! Returns the Tpetra::Map object associated with the domain of this operator.
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >
+  getDomainMap () const;
+
+  //! Returns the Tpetra::Map object associated with the range of this operator.
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >
+  getRangeMap () const;
 
   /// \brief Apply the (inverse of the) incomplete factorization to X, resulting in Y.
   ///
-  /// In Matlab(tm) notation, if the incomplete factorization is \f$A \approx LDU\f$,
-  /// this method computes <tt>Y = beta*Y + alpha*(U \ (D \ (L \ X)))</tt> if mode=Teuchos::NO_TRANS, or
-  /// <tt>Y = beta*Y + alpha*(L^T \ (D^T \ (U^T \ X)))</tt> if mode=Teuchos::TRANS, or
-  /// <tt>Y = beta*Y + alpha*(L^* \ (D^* \ (U^* \ X)))</tt> if mode=Teuchos::CONJ_TRANS.
+  /// For an incomplete factorization \f$A \approx LDU\f$, this method
+  /// computes the following, depending on the value of \c mode:
+  /// <ul>
+  /// <li> If mode = Teuchos::NO_TRANS, it computes
+  ///      <tt>Y = beta*Y + alpha*(U \ (D \ (L \ X)))</tt> </li>
+  /// <li> If mode = Teuchos::TRANS, it computes
+  ///      <tt>Y = beta*Y + alpha*(L^T \ (D^T \ (U^T \ X)))</tt> </li>
+  /// <li> If mode = Teuchos::CONJ_TRANS, it computes
+  ///      <tt>Y = beta*Y + alpha*(L^* \ (D^* \ (U^* \ X)))</tt>,
+  ///      where the asterisk indicates the conjugate transpose. </li>
+  /// </ul>
+  /// If alpha is zero, then the result of applying the operator to a
+  /// vector is ignored.  This matters because zero times NaN (not a
+  /// number) is NaN, not zero.  Analogously, if beta is zero, then
+  /// any values in Y on input are ignored.
   ///
   /// \param X [in] The input multivector.
   ///
@@ -372,31 +492,41 @@ class RILUK:
   /// \param alpha [in] Scaling factor for the result of applying the preconditioner.
   ///
   /// \param beta [in] Scaling factor for the initial value of Y.
-  void apply(
-      const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-            Teuchos::ETransp mode = Teuchos::NO_TRANS,
-               scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-               scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
+  void
+  apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+         Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+         Teuchos::ETransp mode = Teuchos::NO_TRANS,
+         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one (),
+         scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero ()) const;
+  //@}
 
-
+private:
   /// \brief Apply the incomplete factorization (as a product) to X, resulting in Y.
   ///
-  /// In Matlab(tm) notation, if the incomplete factorization is \f$A \approx LDU\f$,
-  /// this method computes <tt>Y = beta*Y + alpha*(L \ (D \ (U \ X)))</tt> mode=Teuchos::NO_TRANS, or
-  /// <tt>Y = beta*Y + alpha*(U^T \ (D^T \ (L^T \ X)))</tt> if mode=Teuchos::TRANS, or
-  /// <tt>Y = beta*Y + alpha*(U^* \ (D^* \ (L^* \ X)))</tt> if mode=Teuchos::CONJ_TRANS.
+  /// Given an incomplete factorization is \f$A \approx LDU\f$, this
+  /// method computes the following, depending on the value of \c mode:
+  ///
+  ///   - If mode = Teuchos::NO_TRANS, it computes
+  ///     <tt>Y = beta*Y + alpha*(L \ (D \ (U \ X)))</tt>
+  ///   - If mode = Teuchos::TRANS, it computes
+  ///     <tt>Y = beta*Y + alpha*(U^T \ (D^T \ (L^T \ X)))</tt>
+  ///   - If mode = Teuchos::CONJ_TRANS, it computes
+  ///     <tt>Y = beta*Y + alpha*(U^* \ (D^* \ (L^* \ X)))</tt>,
+  ///     where the asterisk indicates the conjugate transpose.
   ///
   /// \param X [in] The input multivector.
   ///
   /// \param Y [in/out] The output multivector.
   ///
   /// \param mode [in] If Teuchos::TRANS resp. Teuchos::CONJ_TRANS,
-  ///   apply the transpose resp. conjugate transpose of the incomplete
-  ///   factorization.  Otherwise, don't apply the tranpose.
-  int Multiply(const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-                     Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-               Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
+  ///   apply the transpose resp. conjugate transpose of the
+  ///   incomplete factorization.  Otherwise, don't apply the
+  ///   transpose.
+  void
+  multiply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+            const Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
+public:
 
   /// \brief Compute the condition number estimate and return its value.
   ///
@@ -422,71 +552,57 @@ class RILUK:
   computeCondEst (CondestType CT = Ifpack2::Cheap,
                   local_ordinal_type MaxIters = 1550,
                   magnitude_type Tol = 1e-9,
-                  const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &Matrix = Teuchos::null);
+                  const Teuchos::Ptr<const row_matrix_type>& Matrix = Teuchos::null);
 
-  magnitude_type getCondEst() const { return Condest_; }
+  magnitude_type getCondEst () const { return Condest_; }
 
+  //! Get the input matrix.
   Teuchos::RCP<const row_matrix_type> getMatrix () const;
 
   // Attribute access functions
 
   //! Get RILU(k) relaxation parameter
-  magnitude_type getRelaxValue() const { return RelaxValue_; }
+  magnitude_type getRelaxValue () const { return RelaxValue_; }
 
   //! Get absolute threshold value
-  magnitude_type getAbsoluteThreshold() const { return Athresh_; }
+  magnitude_type getAbsoluteThreshold () const { return Athresh_; }
 
   //! Get relative threshold value
-  magnitude_type getRelativeThreshold() const {return Rthresh_;}
+  magnitude_type getRelativeThreshold () const {return Rthresh_;}
 
-  int getLevelOfFill() const { return LevelOfFill_; }
+  //! Get level of fill (the "k" in ILU(k)).
+  int getLevelOfFill () const { return LevelOfFill_; }
 
   //! Get overlap mode type
-  Tpetra::CombineMode getOverlapMode() {return OverlapMode_;}
+  Tpetra::CombineMode getOverlapMode () {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "Ifpack2::RILUK::SetOverlapMode: "
+      "RILUK no longer implements overlap on its own.  "
+      "Use RILUK with AdditiveSchwarz if you want overlap.");
+  }
 
   //! Returns the number of nonzero entries in the global graph.
-  int getGlobalNumEntries() const {
+  Tpetra::global_size_t getGlobalNumEntries () const {
     return getL ().getGlobalNumEntries () + getU ().getGlobalNumEntries ();
   }
 
-  //! Returns the Ifpack2::IlukGraph associated with this factored matrix.
-  // const Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,node_type,mat_vec_type> > >& getGraph() const {return(Graph_);}
-  const Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,node_type> > >& getGraph() const {return(Graph_);}
-
-  //! Returns the L factor associated with this factored matrix.
-  const crs_matrix_type& getL () const {
-    return *L_;
+  //! Return the Ifpack2::IlukGraph associated with this factored matrix.
+  Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,node_type> > > getGraph () const {
+    return Graph_;
   }
 
-  //! Returns the D factor associated with this factored matrix.
+  //! Return the L factor of the ILU factorization.
+  const crs_matrix_type& getL () const;
+
+  //! Return the diagonal entries of the ILU factorization.
   const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>&
-  getD () const {
-    return *D_;
-  }
+  getD () const;
 
-  //! Returns the U factor associated with this factored matrix.
-  const crs_matrix_type& getU () const {
-    return *U_;
-  }
+  //! Return the U factor of the ILU factorization.
+  const crs_matrix_type& getU () const;
 
   //! Return the input matrix A as a Tpetra::CrsMatrix, if possible; else throws.
   Teuchos::RCP<const crs_matrix_type> getCrsMatrix () const;
-
-  //@{ \name Additional methods required to support the Tpetra::Operator interface.
-
-  //! Returns the Tpetra::Map object associated with the domain of this operator.
-  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >
-  getDomainMap () const {
-    return Graph_->getL_Graph ()->getDomainMap ();
-  }
-
-  //! Returns the Tpetra::Map object associated with the range of this operator.
-  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >
-  getRangeMap () const {
-    return Graph_->getU_Graph ()->getRangeMap ();
-  }
-
-  //@}
 
 private:
   typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
@@ -495,28 +611,32 @@ private:
   typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
   void allocate_L_and_U();
-  void initAllValues (const row_matrix_type& overlapA);
+  void initAllValues (const row_matrix_type& A);
 
-  void
-  generateXY (Teuchos::ETransp mode,
-              const MV& Xin,
-              const MV& Yin,
-              Teuchos::RCP<const MV>& Xout,
-              Teuchos::RCP<MV>& Yout) const;
-
-  Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,node_type> > > Graph_;
+  /// \brief Return A, wrapped in a LocalFilter, if necessary.
+  ///
+  /// "If necessary" means that if A is already a LocalFilter, or if
+  /// its communicator only has one process, then we don't need to
+  /// wrap it, so we just return A.
+  static Teuchos::RCP<const row_matrix_type>
+  makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A);
 
   //! The (original) input matrix for which to compute ILU(k).
   Teuchos::RCP<const row_matrix_type> A_;
 
+  //! The ILU(k) graph.
+  Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,
+                                                   global_ordinal_type,
+                                                   node_type> > > Graph_;
   /// \brief The matrix used to to compute ILU(k).
   ///
-  /// If A_ (the original input matrix) is a Tpetra::CrsMatrix, then
-  /// this is just A_.  Otherwise, this class reserves the right for
-  /// A_crs_ to be a copy of A_.  This is because the current
-  /// implementation of ILU(k) only knows how to factor a
-  /// Tpetra::CrsMatrix.  That may change in the future.
-  Teuchos::RCP<const crs_matrix_type> A_crs_;
+  /// If A_local (the local filter of the original input matrix) is a
+  /// Tpetra::CrsMatrix, then this is just A_local.  Otherwise, this
+  /// class reserves the right for A_local_crs_ to be a copy of
+  /// A_local.  This is because the current implementation of ILU(k)
+  /// only knows how to factor a Tpetra::CrsMatrix.  That may change
+  /// in the future.
+  Teuchos::RCP<const crs_matrix_type> A_local_crs_;
 
   //! The L (lower triangular) factor of ILU(k).
   Teuchos::RCP<crs_matrix_type> L_;
@@ -525,28 +645,25 @@ private:
   //! The diagonal entries of the ILU(k) factorization.
   Teuchos::RCP<vec_type> D_;
 
-  bool isOverlapped_;
-
   int LevelOfFill_;
-  int LevelOfOverlap_;
 
   bool isAllocated_;
   bool isInitialized_;
   bool isComputed_;
 
-  mutable int numInitialize_;
-  mutable int numCompute_;
+  int numInitialize_;
+  int numCompute_;
   mutable int numApply_;
+
+  double initializeTime_;
+  double computeTime_;
+  mutable double applyTime_;
 
   magnitude_type RelaxValue_;
   magnitude_type Athresh_;
   magnitude_type Rthresh_;
 
   mutable magnitude_type Condest_;
-
-  mutable Teuchos::RCP<MV> OverlapX_;
-  mutable Teuchos::RCP<MV> OverlapY_;
-  Tpetra::CombineMode OverlapMode_;
 };
 
 //Set necessary local solve parameters when using ThrustGPU node
@@ -597,9 +714,7 @@ clone (const Teuchos::RCP<const NewMatrixType>& A_newnode) const
   new_riluk->U_ = U_->clone (new_node, plClone);
   new_riluk->D_ = D_->clone (new_node);
 
-  new_riluk->isOverlapped_ = isOverlapped_;
   new_riluk->LevelOfFill_ = LevelOfFill_;
-  new_riluk->LevelOfOverlap_ = LevelOfOverlap_;
 
   new_riluk->isAllocated_ = isAllocated_;
   new_riluk->isInitialized_ = isInitialized_;
@@ -613,7 +728,6 @@ clone (const Teuchos::RCP<const NewMatrixType>& A_newnode) const
   new_riluk->Athresh_ = Athresh_;
   new_riluk->Rthresh_ = Rthresh_;
   new_riluk->Condest_ = Condest_;
-  new_riluk->OverlapMode_ = OverlapMode_;
 
   return new_riluk;
 }

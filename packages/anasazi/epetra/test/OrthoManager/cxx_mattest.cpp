@@ -19,14 +19,14 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
 // ***********************************************************************
 // @HEADER
 //
-//  This test is for the MatOrthoManager interface to ICGSOrthoManager, 
+//  This test is for the MatOrthoManager interface to ICGSOrthoManager,
 //  SVQBOrthoManager and BasicOrthoManager
 //
 #include "AnasaziConfigDefs.hpp"
@@ -76,13 +76,13 @@ int testProjectAndNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM, RCP<const MV>
 
 double MVDiff(const MV &X, const MV &Y);
 
-int main(int argc, char *argv[]) 
+int main(int argc, char *argv[])
 {
   typedef MultiVecTraits<double,MV>    MVT;
-  typedef OperatorTraits<double,MV,OP> OPT;
+  //typedef OperatorTraits<double,MV,OP> OPT; // unused
   typedef ScalarTraits<double>         SCT;
   typedef SCT::magnitudeType           MT;
-  
+
   const ST ONE = SCT::one();
   const MT ZERO = SCT::magnitude(SCT::zero());
 #ifdef EPETRA_MPI
@@ -191,8 +191,8 @@ int main(int argc, char *argv[])
       // X1
       MVT::MvRandom(*X1);
       dummy = OM->normalize(*X1);
-      TEUCHOS_TEST_FOR_EXCEPTION(dummy != sizeX1, std::runtime_error, 
-          "normalize(X1) returned rank " << dummy << " from " 
+      TEUCHOS_TEST_FOR_EXCEPTION(dummy != sizeX1, std::runtime_error,
+          "normalize(X1) returned rank " << dummy << " from "
           << sizeX1 << " vectors. Cannot continue.");
       err = OM->orthonormError(*X1);
       TEUCHOS_TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
@@ -201,8 +201,8 @@ int main(int argc, char *argv[])
       // X2
       MVT::MvRandom(*X2);
       dummy = OM->projectAndNormalize(*X2,tuple<RCP<const MV> >(X1));
-      TEUCHOS_TEST_FOR_EXCEPTION(dummy != sizeX2, std::runtime_error, 
-          "projectAndNormalize(X2,X1) returned rank " << dummy << " from " 
+      TEUCHOS_TEST_FOR_EXCEPTION(dummy != sizeX2, std::runtime_error,
+          "projectAndNormalize(X2,X1) returned rank " << dummy << " from "
           << sizeX2 << " vectors. Cannot continue.");
       err = OM->orthonormError(*X2);
       TEUCHOS_TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
@@ -219,7 +219,7 @@ int main(int argc, char *argv[])
     {
       // just a random multivector
       MVT::MvRandom(*S);
-      
+
       MyOM->stream(Errors) << " projectMat(): testing on random multivector " << endl;
       numFailed += testProjectMat(OM,S,X1,X2);
     }
@@ -227,14 +227,14 @@ int main(int argc, char *argv[])
 
     {
       // run a X1,X2 range multivector against P_X1 P_X2
-      // note, this is allowed under the restrictions on projectMat, 
+      // note, this is allowed under the restrictions on projectMat,
       // because <X1,X2> = 0
       SerialDenseMatrix<int,ST> C1(sizeX1,sizeS), C2(sizeX2,sizeS);
       C1.random();
       C2.random();
       MVT::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
       MVT::MvTimesMatAddMv(ONE,*X2,C2,ONE,*S);
-      
+
       MyOM->stream(Errors) << " projectMat(): testing [X1 X2]-range multivector against P_X1 P_X2 " << endl;
       numFailed += testProjectMat(OM,S,X1,X2);
     }
@@ -245,10 +245,10 @@ int main(int argc, char *argv[])
       RCP<MV> mid = MVT::Clone(*S,1);
       SerialDenseMatrix<int,ST> c(sizeS,1);
       MVT::MvTimesMatAddMv(ONE,*S,c,ZERO,*mid);
-      std::vector<int> ind(1); 
+      std::vector<int> ind(1);
       ind[0] = sizeS-1;
       MVT::SetBlock(*mid,ind,*S);
-      
+
       MyOM->stream(Errors) << " normalizeMat(): testing on rank-deficient multivector " << endl;
       numFailed += testNormalizeMat(OM,S);
     }
@@ -260,21 +260,21 @@ int main(int argc, char *argv[])
       MVT::MvRandom(*one);
       // put multiple of column 0 in columns 0:sizeS-1
       for (int i=0; i<sizeS; i++) {
-        std::vector<int> ind(1); 
+        std::vector<int> ind(1);
         ind[0] = i;
         RCP<MV> Si = MVT::CloneViewNonConst(*S,ind);
         MVT::MvAddMv(SCT::random(),*one,ZERO,*one,*Si);
       }
-      
+
       MyOM->stream(Errors) << " normalizeMat(): testing on rank-1 multivector " << endl;
       numFailed += testNormalizeMat(OM,S);
     }
 
 
     {
-      std::vector<int> ind(1); 
+      std::vector<int> ind(1);
       MVT::MvRandom(*S);
-      
+
       MyOM->stream(Errors) << " projectAndNormalizeMat(): testing on random multivector " << endl;
       numFailed += testProjectAndNormalizeMat(OM,S,X1,X2);
     }
@@ -283,16 +283,16 @@ int main(int argc, char *argv[])
     {
       // run a X1,X2 range multivector against P_X1 P_X2
       // this is allowed as <X1,X2> == 0
-      // it should require randomization, as 
+      // it should require randomization, as
       // P_X1 P_X2 (X1*C1 + X2*C2) = P_X1 X1*C1 = 0
-      // and 
+      // and
       // P_X2 P_X1 (X2*C2 + X1*C1) = P_X2 X2*C2 = 0
       SerialDenseMatrix<int,ST> C1(sizeX1,sizeS), C2(sizeX2,sizeS);
       C1.random();
       C2.random();
       MVT::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
       MVT::MvTimesMatAddMv(ONE,*X2,C2,ONE,*S);
-      
+
       MyOM->stream(Errors) << " projectAndNormalizeMat(): testing [X1 X2]-range multivector against P_X1 P_X2 " << endl;
       numFailed += testProjectAndNormalizeMat(OM,S,X1,X2);
     }
@@ -303,10 +303,10 @@ int main(int argc, char *argv[])
       RCP<MV> mid = MVT::Clone(*S,1);
       SerialDenseMatrix<int,ST> c(sizeS,1);
       MVT::MvTimesMatAddMv(ONE,*S,c,ZERO,*mid);
-      std::vector<int> ind(1); 
+      std::vector<int> ind(1);
       ind[0] = sizeS-1;
       MVT::SetBlock(*mid,ind,*S);
-      
+
       MyOM->stream(Errors) << " projectAndNormalizeMat(): testing on rank-deficient multivector " << endl;
       numFailed += testProjectAndNormalizeMat(OM,S,X1,X2);
     }
@@ -318,12 +318,12 @@ int main(int argc, char *argv[])
       MVT::MvRandom(*one);
       // put multiple of column 0 in columns 0:sizeS-1
       for (int i=0; i<sizeS; i++) {
-        std::vector<int> ind(1); 
+        std::vector<int> ind(1);
         ind[0] = i;
         RCP<MV> Si = MVT::CloneViewNonConst(*S,ind);
         MVT::MvAddMv(SCT::random(),*one,ZERO,*one,*Si);
       }
-      
+
       MyOM->stream(Errors) << " projectAndNormalizeMat(): testing on rank-1 multivector " << endl;
       numFailed += testProjectAndNormalizeMat(OM,S,X1,X2);
     }
@@ -354,9 +354,9 @@ int main(int argc, char *argv[])
 
 
 ////////////////////////////////////////////////////////////////////////////
-int testProjectAndNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM, 
-                               RCP<const MV> S, 
-                               RCP<const MV> X1, RCP<const MV> X2) 
+int testProjectAndNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
+                               RCP<const MV> S,
+                               RCP<const MV> X1, RCP<const MV> X2)
 {
   typedef MultiVecTraits<double,MV>    MVT;
   typedef OperatorTraits<double,MV,OP> OPT;
@@ -378,7 +378,7 @@ int testProjectAndNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
   //   <S_out,X1> = 0
   //   <S_out,X2> = 0
   //   S_in = S_out B + X1 C1 + X2 C2
-  // 
+  //
   // we will loop over an integer specifying the test combinations
   // the bit pattern for the different tests is listed in parenthesis
   //
@@ -393,9 +393,9 @@ int testProjectAndNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
   // for each of these, we should test with C1, C2 and B
   //
   // if hasM:
-  // with and without MX1   (1--) 
-  // with and without MX2  (1---) 
-  // with and without MS  (1----) 
+  // with and without MX1   (1--)
+  // with and without MX2  (1---)
+  // with and without MS  (1----)
   //
   // as hasM controls the upper level bits, we need only run test cases 0-3 if hasM==false
   // otherwise, we run test cases 0-31
@@ -466,7 +466,7 @@ int testProjectAndNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
       // X1 and X2, and the reverse.
       theX = tuple(X1,X2);
       theMX = tuple(lclMX1,lclMX2);
-      C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)), 
+      C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)),
                  rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
     }
 
@@ -505,7 +505,7 @@ int testProjectAndNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
         break;
       }
       ret_out.push_back(ret);
-      // projectAndNormalizeMat() is only required to return a 
+      // projectAndNormalizeMat() is only required to return a
       // basis of rank "ret"
       // this is what we will test:
       //   the first "ret" columns in Scopy, MScopy
@@ -564,7 +564,7 @@ int testProjectAndNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
           break;
         }
         ret_out.push_back(ret);
-        // projectAndNormalizeMat() is only required to return a 
+        // projectAndNormalizeMat() is only required to return a
         // basis of rank "ret"
         // this is what we will test:
         //   the first "ret" columns in Scopy, MScopy
@@ -712,7 +712,7 @@ int testNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM, RCP<const MV> S)
   // output tests:
   //   <S_out,S_out> = I
   //   S_in = S_out B
-  // 
+  //
   // we will loop over an integer specifying the test combinations
   // the bit pattern for the different tests is listed in parenthesis
   //
@@ -770,7 +770,7 @@ int testNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM, RCP<const MV> S)
         numerr++;
         break;
       }
-      // normalizeMat() is only required to return a 
+      // normalizeMat() is only required to return a
       // basis of rank "ret"
       // this is what we will test:
       //   the first "ret" columns in Scopy, MScopy
@@ -840,9 +840,9 @@ int testNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM, RCP<const MV> S)
 
 
 ////////////////////////////////////////////////////////////////////////////
-int testProjectMat(RCP<MatOrthoManager<ST,MV,OP> > OM, 
-                   RCP<const MV> S, 
-                   RCP<const MV> X1, RCP<const MV> X2) 
+int testProjectMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
+                   RCP<const MV> S,
+                   RCP<const MV> X1, RCP<const MV> X2)
 {
   typedef MultiVecTraits<double,MV>    MVT;
   typedef OperatorTraits<double,MV,OP> OPT;
@@ -862,7 +862,7 @@ int testProjectMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
   //   <S_out,X1> = 0
   //   <S_out,X2> = 0
   //   S_in = S_out + X1 C1 + X2 C2
-  // 
+  //
   // we will loop over an integer specifying the test combinations
   // the bit pattern for the different tests is listed in parenthesis
   //
@@ -874,13 +874,13 @@ int testProjectMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
   // P_X2 P_X1         (11)
   // the latter two should be tested to give the same answer
   //
-  // for each of these, we should test 
+  // for each of these, we should test
   // with C1 and C2
   //
   // if hasM:
-  // with and without MX1   (1--) 
-  // with and without MX2  (1---) 
-  // with and without MS  (1----) 
+  // with and without MX1   (1--)
+  // with and without MX2  (1---)
+  // with and without MS  (1----)
   //
   // as hasM controls the upper level bits, we need only run test cases 0-3 if hasM==false
   // otherwise, we run test cases 0-31
@@ -950,7 +950,7 @@ int testProjectMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
       // X1 and X2, and the reverse.
       theX = tuple(X1,X2);
       theMX = tuple(lclMX1,lclMX2);
-      C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)), 
+      C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)),
                  rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
     }
 
@@ -1011,7 +1011,7 @@ int testProjectMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
         // however, save copies of the C
         S_outs.push_back( Scopy );
         MS_outs.push_back( MScopy );
-        // we are in a special case: P_X1 and P_X2, so we know we applied 
+        // we are in a special case: P_X1 and P_X2, so we know we applied
         // two projectors, and therefore have two C[i]
         C_outs.push_back( Array<RCP<SerialDenseMatrix<int,ST> > >() );
         // reverse the Cs to compensate for the reverse projectors
@@ -1078,10 +1078,10 @@ int testProjectMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
       //    output 1 == output 2
       for (unsigned int o1=0; o1<S_outs.size(); o1++) {
         for (unsigned int o2=o1+1; o2<S_outs.size(); o2++) {
-          // don't need to check MS_outs because we check 
+          // don't need to check MS_outs because we check
           //   S_outs and MS_outs = M*S_outs
           // don't need to check C_outs either
-          //   
+          //
           // check that S_outs[o1] == S_outs[o2]
           MT err = MVDiff(*S_outs[o1],*S_outs[o2]);
           if (err > TOL) {
@@ -1110,7 +1110,7 @@ int testProjectMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
 
 
 
-double MVDiff(const MV &X, const MV &Y) 
+double MVDiff(const MV &X, const MV &Y)
 {
   typedef MultiVecTraits<double,MV>    MVT;
   typedef OperatorTraits<double,MV,OP> OPT;

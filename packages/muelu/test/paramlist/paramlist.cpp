@@ -27,11 +27,8 @@ namespace MueLu {
 
     virtual ~MyFactory() { }
 
-    RCP<const ParameterList> GetValidParameterList(const ParameterList& pL = ParameterList()) const {
-      //std::cout << "MyFactory::getValidParameters()" << std::endl;
-
-      Teuchos::ParameterList paramList(pL); // make a copy to avoid setting [use]/[unused] flags here. Even if the input list is const, these flags are modified!
-      RCP<ParameterList> validParamList = rcp(new ParameterList()); // output list
+    RCP<const ParameterList> GetValidParameterList() const {
+      RCP<ParameterList> validParamList = rcp(new ParameterList());
 
       validParamList->set("ParamA", 0.1, "Documentation string for param A");
       validParamList->set("ParamB", 0.2, "Documentation string for param B");

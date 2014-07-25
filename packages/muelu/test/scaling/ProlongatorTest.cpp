@@ -62,6 +62,7 @@
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
+#include "MueLu_TentativePFactory.hpp"
 
 #include <MueLu_UseDefaultTypes.hpp>
 
@@ -97,9 +98,10 @@ int main(int argc, char *argv[]) {
   Galeri::Xpetra::Parameters<GO> matrixParameters(clp, nx, ny, nz, "Laplace2D"); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
 
-  //int  optNraps   = 5;      clp.setOption("nraps",                &optNraps,     "number of RAPS to perform");
+  int  optNits   = 5;      clp.setOption("nits",                &optNits,     "number of kernel operations to perform");
   bool optTimings = true;   clp.setOption("timings", "notimings", &optTimings,   "print timings to screen");
   std::string xmlFileName;  clp.setOption("xml",                  &xmlFileName,  "xml option file");
+  Scalar optDampingFactor = 0.;  clp.setOption("omega",           &optDampingFactor,   "smoothed prolongator damping factor");
 
   switch (clp.parse(argc, argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -174,6 +176,8 @@ int main(int argc, char *argv[]) {
 
     Level fineLevel, coarseLevel;
 
+    //RCP<SaPFactory> PFact;
+    RCP<TentativePFactory> PFact;
     {
       timerName = testName + ": 2 - Setup";
       TimeMonitor tm(*TimeMonitor::getNewTimer(timerName));
@@ -188,7 +192,8 @@ int main(int argc, char *argv[]) {
 
       RCP<CoalesceDropFactory>         cdFact    = rcp( new CoalesceDropFactory());
       RCP<UncoupledAggregationFactory> aggFact   = rcp( new UncoupledAggregationFactory());
-      RCP<SaPFactory>                  PFact     = rcp( new SaPFactory());
+      //PFact                                      = rcp( new SaPFactory());
+      PFact                                      = rcp( new TentativePFactory());
 
       // set factory options according to the XML input file
       Teuchos::ParameterList cdList = paramList.sublist("CoalesceDrop");
@@ -208,22 +213,22 @@ int main(int argc, char *argv[]) {
       // IMPORTANT:  The request for P must occur *after* setting the coarse level's FactoryManager.
       coarseLevel.Request("P", PFact.get());
       PFact->Build(fineLevel, coarseLevel);
+      coarseLevel.Release("P", PFact.get());
 
     } //setup
 
-#ifdef NOT_YET_IMPLEMENTED
     timerName = testName + ": 3 - kernel";
     RCP<Time> kernelTimer = TimeMonitor::getNewTimer(timerName); // re-use the same timer in the loop
 
-    for (int i=0; i<optNraps; ++i) {
-      coarseLevel.Request("A", &AcFact);
+
+    for (int i=0; i<optNits; ++i) {
+      coarseLevel.Request("P", PFact.get());
       {
         TimeMonitor tm(*kernelTimer);
-        RCP<Matrix> Ac = coarseLevel.Get< RCP<Matrix> >("A", &AcFact);
+        PFact->Build(fineLevel, coarseLevel);
       }
-      coarseLevel.Release("A", &AcFact);
+      coarseLevel.Release("P", PFact.get());
     } //kernel apply
-#endif
 
   } // end of globalTimeMonitor
 

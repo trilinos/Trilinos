@@ -46,26 +46,24 @@
 #ifndef MUELU_TRANSPFACTORY_DEF_HPP
 #define MUELU_TRANSPFACTORY_DEF_HPP
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_Time.hpp>
 
 #include <Xpetra_Matrix.hpp>
 
 #include "MueLu_TransPFactory_decl.hpp"
-#include "MueLu_Utilities.hpp"
-#include "MueLu_Monitor.hpp"
-#include "MueLu_FactoryManagerBase.hpp"
+
 #include "MueLu_DisableMultipleCallCheck.hpp"
+
+#include "MueLu_FactoryManagerBase.hpp"
+#include "MueLu_Monitor.hpp"
+#include "MueLu_PerfUtils.hpp"
+#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const ParameterList> TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+  RCP<const ParameterList> TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
     validParamList->set< RCP<const FactoryBase> >("P", Teuchos::null, "Generating factory of the matrix P");
     return validParamList;
@@ -99,6 +97,12 @@ namespace MueLu {
     //      RCP<Matrix> R = Utils::TwoMatrixMultiply(I, false, P, true);
 
     RCP<Matrix> R = Utils2::Transpose(*P, true);
+
+    RCP<ParameterList> params = rcp(new ParameterList());;
+    params->set("printLoadBalancingInfo", true);
+    params->set("printCommInfo",          true);
+    if (IsPrint(Statistics1))
+      GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*R, "R", params);
 
     Set(coarseLevel, "R", R);
 

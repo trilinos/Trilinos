@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -59,14 +59,14 @@ int ML_BICGSTABL_Solve(ML_Krylov *data,int length,double *rhs,double *sol)
    /* -----------------------------------------------------------------*/
 
    ML_Operator_Apply(matrix, length, sol, length, r);
-   for ( i = 0; i < length; i++ ) r[i] = rhs[i] - r[i]; 
+   for ( i = 0; i < length; i++ ) r[i] = rhs[i] - r[i];
    res_norm = sqrt(ML_gdot(length, r, r, comm));
    init_norm = res_norm;
    if (comm->ML_mypid == 0 && print_freq < 1000 )
        printf("ML_BICGSTABL initial residual norm = %e \n", init_norm);
    if ( init_norm == 0.0 )
    {
-      ML_free(r); 
+      ML_free(r);
       return 1;
    }
 
@@ -81,7 +81,7 @@ int ML_BICGSTABL_Solve(ML_Krylov *data,int length,double *rhs,double *sol)
    gammapp = (double *) ML_allocate( sizeof(double) * (blen+1));
    mat     = (double **) ML_allocate( sizeof(double*) * (blen+1));
    tau     = (double **) ML_allocate( sizeof(double*) * (blen+1));
-   for (i=1; i<=blen; i++) 
+   for (i=1; i<=blen; i++)
    {
       mat[i] = (double *) ML_allocate(sizeof(double)*(blen+1));
       tau[i] = (double *) ML_allocate(sizeof(double)*(blen+1));
@@ -92,16 +92,16 @@ int ML_BICGSTABL_Solve(ML_Krylov *data,int length,double *rhs,double *sol)
    /* -----------------------------------------------------------------*/
 
    its = 0;
-   while (converged == 0) 
+   while (converged == 0)
    {
-      for ( i = 0; i < length; i++ ) 
+      for ( i = 0; i < length; i++ )
       {
-         rh[i] = r[i]; 
+         rh[i] = r[i];
          ut[i] = 0.0;
          xh[i] = sol[i];
-         rt[i] = r[i]; 
+         rt[i] = r[i];
       }
-      omega = rho = 1.0; alpha = 0.0; 
+      omega = rho = 1.0; alpha = 0.0;
       while (res_norm > eps1 && its < maxiter) {
          its = its + blen;
          for (i=0; i<length; i++)
@@ -115,7 +115,7 @@ int ML_BICGSTABL_Solve(ML_Krylov *data,int length,double *rhs,double *sol)
             beta = alpha * rho1 / rho;
             rho = rho1;
             dtmp = -beta;
-            for (k=0; k<=j; k++) 
+            for (k=0; k<=j; k++)
             {
                offset = (k+1) * length;
                for (i=0; i<length; i++)
@@ -123,14 +123,14 @@ int ML_BICGSTABL_Solve(ML_Krylov *data,int length,double *rhs,double *sol)
                   ut[offset+i] = dtmp * ut[offset+i] + rt[offset+i];
                }
             }
-            if ( precon != NULL ) 
+            if ( precon != NULL )
                precfcn(precon,length,t, length, ut+(j+1)*length);
             else
-               for (i=0; i<length; i++) t[i] = ut[(j+1)*length+i]; 
+               for (i=0; i<length; i++) t[i] = ut[(j+1)*length+i];
             ML_Operator_Apply(matrix, length, t, length, ut+(j+2)*length);
             gamma = ML_gdot(length, rh, ut+length*(j+2), comm);
             alpha = rho / gamma; dtmp = -alpha;
-            for (k=0; k<=j; k++) 
+            for (k=0; k<=j; k++)
             {
                offset = (k+1)*length;
                for (i=0; i<length; i++)
@@ -140,20 +140,20 @@ int ML_BICGSTABL_Solve(ML_Krylov *data,int length,double *rhs,double *sol)
             }
             if (precon != NULL) precfcn(precon,length,t,length,rt+(j+1)*length);
             else
-               for (i=0; i<length; i++) t[i] = rt[(j+1)*length+i]; 
+               for (i=0; i<length; i++) t[i] = rt[(j+1)*length+i];
             ML_Operator_Apply(matrix, length, t, length, rt+(j+2)*length);
             for (i=0; i<length; i++) xh[i] += (alpha * ut[length+i]);
          }
-         for (j=1; j<=blen; j++) 
-            for (k=1; k<=blen; k++) mat[k][j] = 0.0; 
-         for (j=1; j<=blen; j++) 
-         { 
+         for (j=1; j<=blen; j++)
+            for (k=1; k<=blen; k++) mat[k][j] = 0.0;
+         for (j=1; j<=blen; j++)
+         {
             for (k=1; k<=j-1; k++) {
                dtmp = ML_gdot(length, rt+(k+1)*length, rt+length*(j+1),comm);
                tau[k][j] = dtmp / sigma[k];
                mat[k][j] = tau[k][j] * sigma[k];
                dtmp = -tau[k][j];
-               for (i=0; i<length; i++) 
+               for (i=0; i<length; i++)
                   rt[(j+1)*length+i] += (dtmp * rt[(k+1)*length+i]);
             }
             darray[0] = ML_gdot(length, rt+(j+1)*length,rt+(j+1)*length,comm);
@@ -164,32 +164,32 @@ int ML_BICGSTABL_Solve(ML_Krylov *data,int length,double *rhs,double *sol)
          }
          gammanp[blen] = gammap[blen];
          omega = gammanp[blen];
-         for (j=blen-1; j>=1; j--) { 
+         for (j=blen-1; j>=1; j--) {
             gammanp[j] = gammap[j];
-            for (k=j+1; k<=blen; k++) 
+            for (k=j+1; k<=blen; k++)
                gammanp[j] = gammanp[j] - tau[j][k] * gammanp[k];
          }
-         for (j=1; j<=blen-1; j++) { 
+         for (j=1; j<=blen-1; j++) {
             gammapp[j] = gammanp[j+1];
-            for (k=j+1; k<=blen-1; k++) 
+            for (k=j+1; k<=blen-1; k++)
                gammapp[j] = gammapp[j] + tau[j][k] * gammanp[k+1];
          }
          dtmp = gammanp[1];
          for (i=0; i<length; i++) xh[i] += (dtmp * rt[length+i]);
          dtmp = - gammap[blen];
-         for (i=0; i<length; i++) 
+         for (i=0; i<length; i++)
             rt[length+i] += (dtmp * rt[(1+blen)*length+i]);
          dtmp = - gammanp[blen];
-         for (i=0; i<length; i++) 
+         for (i=0; i<length; i++)
             ut[length+i] += (dtmp * ut[(1+blen)*length+i]);
-         for (j=1; j<=blen-1; j++) { 
-            dtmp = - gammanp[j]; 
-            for (i=0; i<length; i++) 
+         for (j=1; j<=blen-1; j++) {
+            dtmp = - gammanp[j];
+            for (i=0; i<length; i++)
                ut[length+i] += (dtmp * ut[(1+j)*length+i]);
-            dtmp = gammapp[j]; 
+            dtmp = gammapp[j];
             for (i=0; i<length; i++) xh[i] += (dtmp * rt[(1+j)*length+i]);
-            dtmp = - gammap[j];  
-            for (i=0; i<length; i++) 
+            dtmp = - gammap[j];
+            for (i=0; i<length; i++)
                rt[length+i] += (dtmp * rt[(1+j)*length+i]);
          }
          for (i=0; i<length; i++)
@@ -202,7 +202,7 @@ int ML_BICGSTABL_Solve(ML_Krylov *data,int length,double *rhs,double *sol)
          if (comm->ML_mypid == 0 && its % print_freq == 0 )
             printf(" BiCGSTAB(L) : iter %4d - res. norm = %e \n", its, res_norm);
       }
-      if ( precon != NULL ) 
+      if ( precon != NULL )
       {
          precfcn(precon,length,t,length,sol);
          for (i=0; i<length; i++) sol[i] = t[i];
@@ -213,7 +213,7 @@ int ML_BICGSTABL_Solve(ML_Krylov *data,int length,double *rhs,double *sol)
       /* ---------------------------------------------------------------*/
 
       ML_Operator_Apply(matrix, length, sol, length, r);
-      for ( i = 0; i < length; i++ ) r[i] = rhs[i] - r[i]; 
+      for ( i = 0; i < length; i++ ) r[i] = rhs[i] - r[i];
       res_norm = sqrt(ML_gdot(length, r, r, comm));
 
       if (comm->ML_mypid == 0 && print_freq < 1000 )

@@ -109,199 +109,83 @@ struct ViewAssignable
 namespace Kokkos {
 namespace Impl {
 
-template< class ShapeType , class LayoutType , class Enable = void >
-class LayoutStride ;
-
-/* Arrays with rank <= 1 have no stride */
-template< class ShapeType , class LayoutType >
-class LayoutStride< ShapeType , LayoutType ,
-                    typename enable_if< ShapeType::rank <= 1 >::type >
-{
-public:
-
-  enum { dynamic = false };
-  enum { value = 0 };
-
-  KOKKOS_INLINE_FUNCTION static
-  void assign( LayoutStride & , const unsigned ) {}
-
-  KOKKOS_INLINE_FUNCTION static
-  void assign_no_padding( LayoutStride & , const ShapeType & ) {}
-
-  KOKKOS_INLINE_FUNCTION static
-  void assign_with_padding( LayoutStride & , const ShapeType & ) {}
-};
-
-/* Array with LayoutLeft and 0 == rank_dynamic have static stride that are is not padded. */
-template< class ShapeType >
-class LayoutStride< ShapeType , LayoutLeft ,
-                    typename enable_if<(
-                      ( 1 <  ShapeType::rank ) &&
-                      ( 0 == ShapeType::rank_dynamic )
-                    )>::type >
-{
-public:
-
-  enum { dynamic = false };
-  enum { value   = ShapeType::N0 };
-
-  KOKKOS_INLINE_FUNCTION static
-  void assign( LayoutStride & , const unsigned ) {}
-
-  KOKKOS_INLINE_FUNCTION static
-  void assign_no_padding( LayoutStride & , const ShapeType & ) {}
-
-  KOKKOS_INLINE_FUNCTION static
-  void assign_with_padding( LayoutStride & , const ShapeType & ) {}
-};
-
-/* Array with LayoutRight and 1 >= rank_dynamic have static stride that is not padded */
-template< class ShapeType >
-class LayoutStride< ShapeType , LayoutRight ,
-                    typename enable_if<(
-                      ( 1 <  ShapeType::rank ) &&
-                      ( 1 >= ShapeType::rank_dynamic )
-                    )>::type >
-{
-public:
-
-  enum { dynamic = false };
-  enum { value   = ShapeType::N1 * ShapeType::N2 * ShapeType::N3 *
-                   ShapeType::N4 * ShapeType::N5 * ShapeType::N6 * ShapeType::N7 };
-
-  KOKKOS_INLINE_FUNCTION static
-  void assign( LayoutStride & , const unsigned ) {}
-
-  KOKKOS_INLINE_FUNCTION static
-  void assign_no_padding( LayoutStride & , const ShapeType & ) {}
-
-  KOKKOS_INLINE_FUNCTION static
-  void assign_with_padding( LayoutStride & , const ShapeType & ) {}
-};
-
-
-/* Otherwise array has runtime stride that is padded. */
-template< class ShapeType , class LayoutType , class Enable >
-class LayoutStride
-{
-public:
-
-  enum { dynamic = true };
-
-  unsigned value ;
-
-  KOKKOS_INLINE_FUNCTION static
-  void assign( LayoutStride & stride , const unsigned n ) { stride.value = n ; }
-
-  KOKKOS_INLINE_FUNCTION static
-  void assign_no_padding( LayoutStride & vs , const ShapeType & sh )
-    {
-      enum { left = is_same< LayoutType , LayoutLeft >::value };
-
-      // Left  layout arrays are aligned on the first dimension.
-      // Right layout arrays are aligned on blocks of the 2-8th dimensions.
-      vs.value = ShapeType::rank <= 1 ? 0 : (
-                 left ? sh.N0
-                      : sh.N1 * sh.N2 * sh.N3 * sh.N4 * sh.N5 * sh.N6 * sh.N7 );
-    }
-
-  KOKKOS_INLINE_FUNCTION static
-  void assign_with_padding( LayoutStride & vs , const ShapeType & sh )
-    {
-      enum { div   = MEMORY_ALIGNMENT / ShapeType::scalar_size };
-      enum { mod   = MEMORY_ALIGNMENT % ShapeType::scalar_size };
-      enum { align = 0 == mod ? div : 0 };
-
-      assign_no_padding( vs , sh );
-
-      if ( align && MEMORY_ALIGNMENT_THRESHOLD * align < vs.value ) {
-
-        const unsigned count_mod = vs.value % ( div ? div : 1 );
-
-        if ( count_mod ) { vs.value += align - count_mod ; }
-      }
-    }
-};
-
-template< class ShapeType , class LayoutType >
-KOKKOS_INLINE_FUNCTION
-size_t capacity( const ShapeType & shape ,
-                 const LayoutStride< ShapeType , LayoutType > & stride )
-{
-  enum { left = is_same< LayoutType , LayoutLeft >::value };
-
-  return ShapeType::rank <= 1 ? size_t(shape.N0) : (
-         left ? size_t( stride.value * shape.N1 * shape.N2 * shape.N3 * shape.N4 * shape.N5 * shape.N6 * shape.N7 )
-              : size_t( stride.value * shape.N0 ));
-}
-
-template< typename iType , class ShapeType , class LayoutType >
-KOKKOS_INLINE_FUNCTION
-void stride( iType * const s , const ShapeType & shape ,
-                               const LayoutStride< ShapeType , LayoutType > & stride )
-{
-  enum { rank = ShapeType::rank };
-  enum { left = is_same< LayoutType , LayoutLeft >::value };
-
-  if ( 0 < rank ) {
-    if ( 1 == rank ) {
-      s[0] = 1 ;
-    }
-    else if ( left ) {
-      s[0] = 1 ;
-      s[1] = stride.value ;
-      if ( 2 < rank ) { s[2] = s[1] * shape.N1 ; }
-      if ( 3 < rank ) { s[3] = s[2] * shape.N2 ; }
-      if ( 4 < rank ) { s[4] = s[3] * shape.N3 ; }
-      if ( 5 < rank ) { s[5] = s[4] * shape.N4 ; }
-      if ( 6 < rank ) { s[6] = s[5] * shape.N5 ; }
-      if ( 7 < rank ) { s[7] = s[6] * shape.N6 ; }
-    }
-    else {
-      s[rank-1] = 1 ;
-      if ( 7 < rank ) { s[6] = s[7] * shape.N7 ; }
-      if ( 6 < rank ) { s[5] = s[6] * shape.N6 ; }
-      if ( 5 < rank ) { s[4] = s[5] * shape.N5 ; }
-      if ( 4 < rank ) { s[3] = s[4] * shape.N4 ; }
-      if ( 3 < rank ) { s[2] = s[3] * shape.N3 ; }
-      if ( 2 < rank ) { s[1] = s[2] * shape.N2 ; }
-      s[0] = stride.value ;
-    }
-  }
-}
-
-} // namespace Impl
-} // namespace Kokkos
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-namespace Kokkos {
-namespace Impl {
-
 /** \brief  View tracking increment/decrement only happens when
  *          view memory is managed and executing in the host space.
  */
 template< class ViewTraits , class Enable = void >
 struct ViewTracking {
-  KOKKOS_INLINE_FUNCTION static void increment( const void * ) {}
-  KOKKOS_INLINE_FUNCTION static void decrement( const void * ) {}
+  KOKKOS_INLINE_FUNCTION void increment( const void * ) const {}
+  KOKKOS_INLINE_FUNCTION void decrement( const void * ) const {}
+
+  KOKKOS_INLINE_FUNCTION
+  ViewTracking & operator = ( const ViewTracking & ) { return *this ; }
+
+  template< class T >
+  KOKKOS_INLINE_FUNCTION
+  ViewTracking & operator = ( const ViewTracking<T> & ) { return *this ; }
+
+  KOKKOS_INLINE_FUNCTION
+  ViewTracking & operator = ( const bool ) { return *this ; }
+
+  KOKKOS_INLINE_FUNCTION
+  operator bool() const { return false ; }
 };
 
 template< class ViewTraits >
-struct ViewTracking< ViewTraits ,
-                     typename enable_if<(
-                       ViewTraits::is_managed &&
-                       Impl::is_same< HostSpace , ExecutionSpace >::value
-                     )>::type >
+struct ViewTracking< ViewTraits , typename enable_if< ViewTraits::is_managed >::type >
 {
+private:
+
+  enum { is_host_space = is_same< HostSpace , ExecutionSpace >::value };
+
+  bool m_flag ;
+
+  struct NoType {};
+
+public:
+
   typedef typename ViewTraits::memory_space memory_space ;
 
-  KOKKOS_INLINE_FUNCTION static void increment( const void * ptr )
-    { memory_space::increment( ptr ); }
+  template< class T >
+  KOKKOS_INLINE_FUNCTION
+  void increment( const T * ptr
+                , typename enable_if<( ! is_same<T,NoType>::value && is_host_space )>::type * = 0 ) const
+    { if ( m_flag ) memory_space::increment( ptr ); }
 
-  KOKKOS_INLINE_FUNCTION static void decrement( const void * ptr )
-    { memory_space::decrement( ptr ); }
+  template< class T >
+  KOKKOS_INLINE_FUNCTION
+  void increment( const T *
+                , typename enable_if<( ! is_same<T,NoType>::value && ! is_host_space )>::type * = 0 ) const
+    {}
+
+  template< class T >
+  KOKKOS_INLINE_FUNCTION
+  void decrement( const T * ptr
+                , typename enable_if<( ! is_same<T,NoType>::value && is_host_space )>::type * = 0 ) const
+    { if ( m_flag ) memory_space::decrement( ptr ); }
+
+  template< class T >
+  KOKKOS_INLINE_FUNCTION
+  void decrement( const T *
+                , typename enable_if<( ! is_same<T,NoType>::value && ! is_host_space )>::type * = 0 ) const
+    {}
+
+  KOKKOS_INLINE_FUNCTION
+  ViewTracking() : m_flag( true ) {}
+
+  template< class T >
+  KOKKOS_INLINE_FUNCTION
+  ViewTracking & operator = ( const ViewTracking & rhs ) { m_flag = rhs.m_flag ; return *this ; }
+
+  template< class T >
+  KOKKOS_INLINE_FUNCTION
+  ViewTracking & operator = ( const ViewTracking<T> & rhs ) { m_flag = rhs.operator bool(); return *this ; }
+
+  KOKKOS_INLINE_FUNCTION
+  ViewTracking & operator = ( const bool rhs ) { m_flag = rhs ; return *this ; }
+
+  KOKKOS_INLINE_FUNCTION
+  operator bool() const { return m_flag ; }
 };
 
 } // namespace Impl

@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,7 +44,7 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                                
+
 // NOX include (for iostream, cmath, etc...)
 #include "NOX_Common.H"
 
@@ -63,10 +63,10 @@
 #include "Epetra_RowMatrix.h"
 #include "Epetra_CrsMatrix.h"
 
-ModelEvaluatorInterface::ModelEvaluatorInterface(int numGlobalElements, 
-						 Epetra_Comm& comm, 
-						 double xmin_,
-						 double xmax_) :
+ModelEvaluatorInterface::ModelEvaluatorInterface(int numGlobalElements,
+                         Epetra_Comm& comm,
+                         double xmin_,
+                         double xmax_) :
   NumGlobalElements(numGlobalElements),
   NumMyElements(0),  // gets set after map creation
   MyPID(comm.MyPID()),
@@ -80,7 +80,7 @@ ModelEvaluatorInterface::ModelEvaluatorInterface(int numGlobalElements,
   Graph(0)
 {
 
-  // Construct a Source Map that puts approximately the same 
+  // Construct a Source Map that puts approximately the same
   // Number of equations on each processor in uniform global ordering
   StandardMap = Teuchos::rcp(new Epetra_Map(NumGlobalElements, 0, *Comm));
 
@@ -96,28 +96,28 @@ ModelEvaluatorInterface::ModelEvaluatorInterface(int numGlobalElements,
     int OverlapNumMyElements;
     int OverlapMinMyGID;
     OverlapNumMyElements = NumMyElements + 2;
-    if ((MyPID == 0) || (MyPID == NumProc - 1)) 
+    if ((MyPID == 0) || (MyPID == NumProc - 1))
       OverlapNumMyElements --;
-    
-    if (MyPID==0) 
+
+    if (MyPID==0)
       OverlapMinMyGID = StandardMap->MinMyGID();
-    else 
+    else
       OverlapMinMyGID = StandardMap->MinMyGID() - 1;
-    
+
     int* OverlapMyGlobalElements = new int[OverlapNumMyElements];
-    
-    for (int i = 0; i < OverlapNumMyElements; i ++) 
+
+    for (int i = 0; i < OverlapNumMyElements; i ++)
       OverlapMyGlobalElements[i] = OverlapMinMyGID + i;
-    
-    OverlapMap = Teuchos::rcp(new Epetra_Map(-1, OverlapNumMyElements, 
-					     OverlapMyGlobalElements, 0, 
-					     *Comm));
+
+    OverlapMap = Teuchos::rcp(new Epetra_Map(-1, OverlapNumMyElements,
+                         OverlapMyGlobalElements, 0,
+                         *Comm));
 
     delete [] OverlapMyGlobalElements;
 
   } // End Overlap map construction *************************************
 
-  // Construct Linear Objects  
+  // Construct Linear Objects
   Importer = new Epetra_Import(*OverlapMap, *StandardMap);
   initialSolution = Teuchos::rcp(new Epetra_Vector(*StandardMap));
 
@@ -127,7 +127,7 @@ ModelEvaluatorInterface::ModelEvaluatorInterface(int numGlobalElements,
   // Construct a matrix
   jacobian = Teuchos::rcp(new Epetra_CrsMatrix (Copy, *Graph));
 
-  // Clean-up 
+  // Clean-up
   jacobian->FillComplete();
 
   // Create the nodal coordinates
@@ -137,9 +137,9 @@ ModelEvaluatorInterface::ModelEvaluatorInterface(int numGlobalElements,
   for (int i=0; i < NumMyElements; i++) {
     (*xptr)[i] = xmin + dx*((double) StandardMap->MinMyGID()+i);
   }
-  
+
   initializeSoln();
-  
+
 }
 
 ModelEvaluatorInterface::~ModelEvaluatorInterface()
@@ -148,20 +148,20 @@ ModelEvaluatorInterface::~ModelEvaluatorInterface()
   delete Importer;
 }
 
-void ModelEvaluatorInterface::evalModel(const InArgs& inArgs, 
-					const OutArgs& outArgs) const
-{    
+void ModelEvaluatorInterface::evalModel(const InArgs& inArgs,
+                    const OutArgs& outArgs) const
+{
   Epetra_RowMatrix* tmp = dynamic_cast<Epetra_RowMatrix*>
     (outArgs.get_W().get());
-  
+
   this->evaluate( inArgs.get_x().get(), outArgs.get_f().get(), tmp );
 
   return;
 }
 
-bool ModelEvaluatorInterface::evaluate(const Epetra_Vector* soln, 
-				       Epetra_Vector* tmp_rhs, 
-				       Epetra_RowMatrix* tmp_matrix) const
+bool ModelEvaluatorInterface::evaluate(const Epetra_Vector* soln,
+                       Epetra_Vector* tmp_rhs,
+                       Epetra_RowMatrix* tmp_matrix) const
 {
   //Determine what to fill (F or Jacobian)
   bool fillF = false;
@@ -197,58 +197,58 @@ bool ModelEvaluatorInterface::evaluate(const Epetra_Vector* soln,
   Basis basis;
 
   // Zero out the objects that will be filled
-  if (fillF) 
+  if (fillF)
     rhs->PutScalar(0.0);
-  if (fillMatrix) 
+  if (fillMatrix)
     jacobian->PutScalar(0.0);
 
   // Loop Over # of Finite Elements on Processor
   for (int ne=0; ne < OverlapNumMyElements-1; ne++) {
-    
+
     // Loop Over Gauss Points
     for(int gp=0; gp < 2; gp++) {
-      // Get the solution and coordinates at the nodes 
+      // Get the solution and coordinates at the nodes
       xx[0]=x[ne];
       xx[1]=x[ne+1];
       uu[0]=u[ne];
       uu[1]=u[ne+1];
       // Calculate the basis function at the gauss point
       basis.computeBasis(gp, xx, uu);
-	            
+
       // Loop over Nodes in Element
       for (int i=0; i< 2; i++) {
-	row=OverlapMap->GID(ne+i);
-	//printf("Proc=%d GlobalRow=%d LocalRow=%d Owned=%d\n",
-	//     MyPID, row, ne+i,StandardMap.MyGID(row));
-	if (StandardMap->MyGID(row)) {
-	  if (fillF) {
-	    (*rhs)[StandardMap->LID(OverlapMap->GID(ne+i))]+=
-	      +basis.wt*basis.dx
-	      *((1.0/(basis.dx*basis.dx))*basis.duu*
-		basis.dphide[i]+factor*basis.uu*basis.uu*basis.phi[i]);
-	  }
-	}
-	// Loop over Trial Functions
-	if (fillMatrix) {
-	  for(int j=0;j < 2; j++) {
-	    if (StandardMap->MyGID(row)) {
-	      column=OverlapMap->GID(ne+j);
-	      jac=basis.wt*basis.dx*((1.0/(basis.dx*basis.dx))*
-				     basis.dphide[j]*basis.dphide[i]
-				     +2.0*factor*basis.uu*basis.phi[j]*
-				     basis.phi[i]);  
-	      ierr=jacobian->SumIntoGlobalValues(row, 1, &jac, &column);
-	    }
-	  }
-	}
+    row=OverlapMap->GID(ne+i);
+    //printf("Proc=%d GlobalRow=%d LocalRow=%d Owned=%d\n",
+    //     MyPID, row, ne+i,StandardMap.MyGID(row));
+    if (StandardMap->MyGID(row)) {
+      if (fillF) {
+        (*rhs)[StandardMap->LID(OverlapMap->GID(ne+i))]+=
+          +basis.wt*basis.dx
+          *((1.0/(basis.dx*basis.dx))*basis.duu*
+        basis.dphide[i]+factor*basis.uu*basis.uu*basis.phi[i]);
       }
     }
-  } 
+    // Loop over Trial Functions
+    if (fillMatrix) {
+      for(int j=0;j < 2; j++) {
+        if (StandardMap->MyGID(row)) {
+          column=OverlapMap->GID(ne+j);
+          jac=basis.wt*basis.dx*((1.0/(basis.dx*basis.dx))*
+                     basis.dphide[j]*basis.dphide[i]
+                     +2.0*factor*basis.uu*basis.phi[j]*
+                     basis.phi[i]);
+          ierr=jacobian->SumIntoGlobalValues(row, 1, &jac, &column);
+        }
+      }
+    }
+      }
+    }
+  }
 
   // Insert Boundary Conditions and modify Jacobian and function (F)
   // U(0)=1
   if (MyPID==0) {
-    if (fillF) 
+    if (fillF)
       (*rhs)[0]= (*soln)[0] - 1.0;
     if (fillMatrix) {
       column=0;
@@ -262,7 +262,7 @@ bool ModelEvaluatorInterface::evaluate(const Epetra_Vector* soln,
 
   // Sync up processors to be safe
   Comm->Barrier();
- 
+
   jacobian->FillComplete();
 
   return true;
@@ -273,25 +273,25 @@ get_x_map() const
 {
   return StandardMap;
 }
-  
+
 Teuchos::RCP<const Epetra_Map> ModelEvaluatorInterface::
 get_f_map() const
 {
   return StandardMap;
 }
-  
+
 Teuchos::RCP<const Epetra_Vector> ModelEvaluatorInterface::
 get_x_init() const
 {
   return initialSolution;
 }
-  
+
 Teuchos::RCP<Epetra_Operator> ModelEvaluatorInterface::
 create_W() const
 {
   return jacobian;
 }
-  
+
 EpetraExt::ModelEvaluator::InArgs ModelEvaluatorInterface::
 createInArgs() const
 {
@@ -325,7 +325,7 @@ bool ModelEvaluatorInterface::createGraph()
     Graph = 0;
   }
 
-  // Create the shell for the 
+  // Create the shell for the
   Graph = new Epetra_CrsGraph(Copy, *StandardMap, 5);
 
   // Declare required variables
@@ -334,23 +334,23 @@ bool ModelEvaluatorInterface::createGraph()
   int OverlapMinMyGID;
   if (MyPID==0) OverlapMinMyGID = StandardMap->MinMyGID();
   else OverlapMinMyGID = StandardMap->MinMyGID()-1;
-  
+
   // Loop Over # of Finite Elements on Processor
   for (int ne=0; ne < OverlapNumMyElements-1; ne++) {
-          
+
     // Loop over Nodes in Element
     for (int i=0; i< 2; i++) {
       row=OverlapMap->GID(ne+i);
-      
+
       // Loop over Trial Functions
       for(int j=0;j < 2; j++) {
-	
-	// If this row is owned by current processor, add the index
-	if (StandardMap->MyGID(row)) {
-	  column=OverlapMap->GID(ne+j);
-	  Graph->InsertGlobalIndices(row, 1, &column);
-	}
-      } 	
+
+    // If this row is owned by current processor, add the index
+    if (StandardMap->MyGID(row)) {
+      column=OverlapMap->GID(ne+j);
+      Graph->InsertGlobalIndices(row, 1, &column);
+    }
+      }
     }
   }
   Graph->FillComplete();
@@ -390,7 +390,7 @@ void Basis::computeBasis(int gp, double *x, double *u, double *uold) {
   phi[1]=(1.0+eta)/2.0;
   dphide[0]=-0.5;
   dphide[1]=0.5;
-  
+
   // Caculate basis function and derivative at GP.
   dx=0.5*(x[1]-x[0]);
   xx=0.0;

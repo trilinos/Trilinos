@@ -73,7 +73,7 @@ private:
     typedef View<DT,DL,DD,DM,ViewTileLeftFast>  DstViewType ;
     typedef typename DstViewType::memory_space  memory_space ;
 
-    ViewTracking< DstViewType >::decrement( dst.m_ptr_on_device );
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     dst.m_ptr_on_device = (typename DstViewType::value_type *)
       memory_space::allocate( label ,
@@ -142,17 +142,18 @@ struct ViewAssignment< ViewTileLeftFast , ViewTileLeftFast, void >
   {
     typedef View<DT,DL,DD,DM,ViewTileLeftFast> DstViewType ;
     typedef typename DstViewType::shape_type    shape_type ;
-    typedef typename DstViewType::memory_space  memory_space ;
-    typedef typename DstViewType::memory_traits memory_traits ;
+    //typedef typename DstViewType::memory_space  memory_space ; // unused
+    //typedef typename DstViewType::memory_traits memory_traits ; // unused
 
-    ViewTracking< DstViewType >::decrement( dst.m_ptr_on_device );
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     shape_type::assign( dst.m_shape, src.m_shape.N0 , src.m_shape.N1 );
 
+    dst.m_tracking       = src.m_tracking ;
     dst.m_tile_N0       = src.m_tile_N0 ;
     dst.m_ptr_on_device = src.m_ptr_on_device ;
 
-    ViewTracking< DstViewType >::increment( dst.m_ptr_on_device );
+    dst.m_tracking.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -210,12 +211,12 @@ struct ViewAssignment< ViewDefault , ViewTileLeftFast, void >
                              typename View<ST,SL,SD,SM,ViewTileLeftFast>::tile_type >::value
                   ), unsigned >::type i1 )
   {
-    typedef View<DT,DL,DD,DM,ViewDefault> DstViewType ;
-    typedef typename DstViewType::shape_type    shape_type ;
-    typedef typename DstViewType::memory_space  memory_space ;
-    typedef typename DstViewType::memory_traits memory_traits ;
+    //typedef View<DT,DL,DD,DM,ViewDefault> DstViewType ; // unused
+    //typedef typename DstViewType::shape_type    shape_type ; // unused
+    //typedef typename DstViewType::memory_space  memory_space ; // unused
+    //typedef typename DstViewType::memory_traits memory_traits ; // unused
 
-    ViewTracking< DstViewType >::decrement( dst.m_ptr_on_device );
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     enum { N0 = SL::N0 };
     enum { N1 = SL::N1 };
@@ -225,9 +226,10 @@ struct ViewAssignment< ViewDefault , ViewTileLeftFast, void >
 
     const unsigned NT0 = ( src.dimension_0() + MASK_0 ) >> SHIFT_0 ;
 
+    dst.m_tracking      = src.m_tracking ;
     dst.m_ptr_on_device = src.m_ptr_on_device + (( i0 + i1 * NT0 ) << ( SHIFT_0 + SHIFT_1 ));
 
-    ViewTracking< DstViewType >::increment( dst.m_ptr_on_device );
+    dst.m_tracking.increment( dst.m_ptr_on_device );
   }
 };
 
@@ -243,6 +245,8 @@ template< class DataType , class Arg1Type , class Arg2Type , class Arg3Type >
 class View< DataType , Arg1Type , Arg2Type , Arg3Type , Impl::ViewTileLeftFast >
   : public ViewTraits< DataType , Arg1Type , Arg2Type , Arg3Type >
 {
+public:
+  typedef Impl::ViewTag kokkos_tag;
 private:
   template< class , class , class > friend struct Impl::ViewAssignment ;
 
@@ -256,6 +260,7 @@ private:
   typename traits::value_type * m_ptr_on_device ;
   typename traits::shape_type   m_shape ;
   unsigned                      m_tile_N0 ;
+  Impl::ViewTracking< traits >  m_tracking ;
 
   typedef typename traits::array_layout layout ;
 
@@ -294,7 +299,7 @@ public:
   View() : m_ptr_on_device(0) {}
 
   KOKKOS_INLINE_FUNCTION
-  ~View() { Impl::ViewTracking< traits >::decrement( m_ptr_on_device ); }
+  ~View() { m_tracking.decrement( m_ptr_on_device ); }
 
   KOKKOS_INLINE_FUNCTION
   View( const View & rhs ) : m_ptr_on_device(0) { (void)assign( *this , rhs ); }

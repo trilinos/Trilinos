@@ -9,6 +9,7 @@ SET(SOURCES "")
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_GLOB(SOURCES ${DIR}/src/*.c ${DIR}/src/*.F)
+LIST(REMOVE_ITEM SOURCES "${DIR}/src/exo_jack-windows.c")
 
 SET(HEADERS
   include/exodusII.inc

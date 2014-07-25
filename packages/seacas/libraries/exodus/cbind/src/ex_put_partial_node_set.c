@@ -52,11 +52,14 @@
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-#include <stdio.h>
-#include <stdlib.h>
+#include <inttypes.h>                   // for PRId64
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf, fprintf, stderr
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_err, exerrval, etc
+#include "exodusII_int.h"               // for EX_FATAL, ex_id_lkup, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_inq_dimid, etc
 
-#include "exodusII.h"
-#include "exodusII_int.h"
 
 /*
  * writes the node list for a single node set

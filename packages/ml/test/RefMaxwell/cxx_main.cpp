@@ -1,4 +1,4 @@
-/* 
+/*
  * Goal of this test:
  * - verify that the RefMaxwell Solver functions correctly
  *
@@ -51,7 +51,7 @@ int dim=3;
 Teuchos::ParameterList Build_Teuchos_List(int LDA, double *coord_ptr,const char *str_tag, const char* str_val,const char *int_tag, int int_val,
 					  const char *double_tag=0, double double_val=0,  const char *bool_tag=0, bool bool_val=0) {
   Teuchos::ParameterList List_Coarse, RMList;
-  
+
   /* Pass in given options */
   List_Coarse.set("x-coordinates",&coord_ptr[0]);
   List_Coarse.set("y-coordinates",&coord_ptr[LDA]);
@@ -62,8 +62,8 @@ Teuchos::ParameterList Build_Teuchos_List(int LDA, double *coord_ptr,const char 
   if(bool_tag) List_Coarse.set(bool_tag,bool_val);
   List_Coarse.set("ML output",10);
   List_Coarse.set("coarse: type","Amesos-KLU");
-  
-  Teuchos::ParameterList List11(List_Coarse), List11c(List_Coarse), List22(List_Coarse);  
+
+  Teuchos::ParameterList List11(List_Coarse), List11c(List_Coarse), List22(List_Coarse);
 
   /* Set other necessary parameters */
   List11.set("smoother: sweeps",0);
@@ -72,7 +72,7 @@ Teuchos::ParameterList Build_Teuchos_List(int LDA, double *coord_ptr,const char 
 
   /* Only needed because this problem is *really* small */
   //  List22.set("smoother: sweeps (level 0)",2);
-  
+
   /* Setup basic list structure */
   List11.set("edge matrix free: coarse",List11c);
   RMList.setName("refmaxwell list");
@@ -94,7 +94,6 @@ void rpc_test_additive(Epetra_ActiveComm &Comm,
                        const Epetra_CrsMatrix &M1,
                        const Epetra_CrsMatrix &M0inv,
                        const Epetra_CrsMatrix &D0,
-                       const Epetra_MultiVector &coords,
                        const Epetra_Vector &x_exact,
                        const Epetra_Vector &x0,
                        const Epetra_Vector &b,
@@ -113,8 +112,8 @@ void rpc_test_additive(Epetra_ActiveComm &Comm,
   AztecOO solver(Problem);
   solver.SetPrecOperator(&PrecRF);
 
-  if(run_gmres) solver.SetAztecOption(AZ_solver, AZ_gmres);  
-  else solver.SetAztecOption(AZ_solver, AZ_cg);  
+  if(run_gmres) solver.SetAztecOption(AZ_solver, AZ_gmres);
+  else solver.SetAztecOption(AZ_solver, AZ_cg);
   solver.SetAztecOption(AZ_conv,AZ_r0);
   solver.SetAztecOption(AZ_output,1);
   solver.Iterate(100,1e-9);
@@ -126,8 +125,8 @@ void rpc_test_additive(Epetra_ActiveComm &Comm,
   diff.Update(1.0,x0_,-1.0);
   diff.Norm2(&nd);
   if(Comm.MyPID()==0) printf("||sol-exact||/||exact||=%6.4e\n",nd/nxe);
-  if(nd/nxe > 1e-8) exit(1);  
-  
+  if(nd/nxe > 1e-8) exit(1);
+
 
   delete Ms;
 }
@@ -185,13 +184,29 @@ void matrix_read(Epetra_ActiveComm &Comm){
   Epetra_CrsMatrix * M0inv=dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(M0inve,M0inv_CMT));
   M0inv->FillComplete();
 
-  /* Read in coordinates*/
+  /* Read in nodal coordinates */
   int N;
   double *coord_ptr;
   Epetra_MultiVector *coords=0;
   MatlabFileToMultiVector("coord_node.dat",NodeMap,dim,coords);
   coords->ExtractView(&coord_ptr,&N);
- 
+
+  /* Build the edge coordinates */
+  Epetra_MultiVector n_coords_ghost(D0->ColMap(),dim);  
+  if(D0->Importer()) n_coords_ghost.Import(*coords,*D0->Importer(),Add);
+  else n_coords_ghost = *coords;
+
+  Epetra_MultiVector e_coords(D0->RowMap(),dim);
+  for(int i=0; i<D0->NumMyRows(); i++) { 
+    int NumEntries;
+    int * Indices;
+    double * Values;      
+    D0->ExtractMyRowView(i,NumEntries,Values,Indices);
+    for(int j=0; j<NumEntries; j++)
+      for (int k=0; k<dim; k++)
+	e_coords[k][i] += n_coords_ghost[k][Indices[j]] / NumEntries;
+  }     
+
   /* Build Lists */
   Teuchos::ParameterList List_2level = Build_Teuchos_List(N,coord_ptr,"coarse: type","Amesos-KLU","max levels",1);
   Teuchos::ParameterList List_SGS    = Build_Teuchos_List(N,coord_ptr,"smoother: type","symmetric Gauss-Seidel",0,1);
@@ -203,20 +218,31 @@ void matrix_read(Epetra_ActiveComm &Comm){
   Teuchos::ParameterList List_Aux    = Build_Teuchos_List(N,coord_ptr,"smoother: type","Chebyshev",0,1,
 							  "aggregation: aux: threshold",0.01, "aggregation: aux: enable",true);
 
+  Teuchos::ParameterList List_LineSGS = Build_Teuchos_List(N,coord_ptr,"smoother: type","line Gauss-Seidel",
+							   "coarse: max size",10,"smoother: line detection threshold",0.1);
+  List_LineSGS.set("smoother: type","symmetric block Gauss-Seidel");
+  List_LineSGS.set("smoother: line detection threshold",0.1);
+  if(dim >= 1) List_LineSGS.set("x-coordinates",&e_coords[0][0]);
+  if(dim >= 2) List_LineSGS.set("y-coordinates",&e_coords[1][0]);
+  if(dim == 3) List_LineSGS.set("z-coordinates",&e_coords[2][0]);
+
+
   /* Do Tests */
   Epetra_Vector lhs(EdgeMap,true);
-  rpc_test_additive(Comm,List_2level,*SM,*M1,*M0inv,*D0,*coords,x_exact,lhs,rhs,false);
+  rpc_test_additive(Comm,List_2level,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
   lhs.PutScalar(0.0);
-  rpc_test_additive(Comm,List_SGS,*SM,*M1,*M0inv,*D0,*coords,x_exact,lhs,rhs,false);
+  rpc_test_additive(Comm,List_SGS,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
   lhs.PutScalar(0.0);
-  rpc_test_additive(Comm,List_Cheby,*SM,*M1,*M0inv,*D0,*coords,x_exact,lhs,rhs,false);  
+  rpc_test_additive(Comm,List_Cheby,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
   lhs.PutScalar(0.0);
-  rpc_test_additive(Comm,List_SORa,*SM,*M1,*M0inv,*D0,*coords,x_exact,lhs,rhs,true); 
+  rpc_test_additive(Comm,List_SORa,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,true);
   lhs.PutScalar(0.0);
-  rpc_test_additive(Comm,List_Aux,*SM,*M1,*M0inv,*D0,*coords,x_exact,lhs,rhs,false);  
-
-
+  rpc_test_additive(Comm,List_Aux,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
+  lhs.PutScalar(0.0);
+  rpc_test_additive(Comm,List_LineSGS,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
   
+
+
   delete M0; delete M1e;
   delete D0e;delete Se;
   delete SM;
@@ -235,7 +261,7 @@ int main(int argc, char* argv[]){
 #else
   Epetra_SerialComm Comm;
 #endif
-  
+
   matrix_read(Comm);
 
 #ifdef HAVE_MPI
@@ -269,7 +295,7 @@ int MatlabFileToMultiVector( const char *filename, const Epetra_BlockMap & map, 
   map.Comm().ScanSum(&numMyPoints, &offset, 1); // ScanSum will compute offsets for us
   offset -= numMyPoints; // readjust for my PE
   if(map.Comm().NumProc() == 1) offset=0;//CMS
-  
+
   // Now construct vector/multivector
   if (N==1)
     A = new Epetra_Vector(map);
@@ -282,8 +308,8 @@ int MatlabFileToMultiVector( const char *filename, const Epetra_BlockMap & map, 
   for (int i=0; i<offset; i++)
     if(fgets(line, lineLength, handle)==0) return(-3);
   for (int j=0; j<N; j++) {
-    double * v = Ap[j];    
-    for (int i=0; i<numMyPoints; i++) {   
+    double * v = Ap[j];
+    for (int i=0; i<numMyPoints; i++) {
       // Now read in each value and store to the local portion of the the  if the row is owned.
       double V;
       if(fscanf(handle, "%le ", &V)==0) return(-5);
@@ -292,12 +318,12 @@ int MatlabFileToMultiVector( const char *filename, const Epetra_BlockMap & map, 
   }
 
   if (fclose(handle)) return(-1);
-  
+
   return(0);
 }
 
 
-  
+
 
 #else
 
@@ -309,9 +335,9 @@ int main(int argc, char *argv[])
 {
 
 #ifdef HAVE_MPI
-  MPI_Init(&argc, &argv); 
+  MPI_Init(&argc, &argv);
 #endif
-  
+
   puts("This test requires:");
   puts("--enable-epetra");
   puts("--enable-aztecoo");

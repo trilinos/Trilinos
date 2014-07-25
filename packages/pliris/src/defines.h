@@ -49,7 +49,7 @@
 #undef DEBUG
 #define  OVERLAP
 #undef  PRINT_STATUS
-#undef   TIMING0 
+#undef   TIMING0
 
 
 #ifdef DREAL
@@ -59,7 +59,7 @@
 #ifdef SREAL
 #define MPI_DATA_TYPE MPI_FLOAT
 #define MPI_DATA_TYPE2 MPI_FLOAT_INT
-#endif  
+#endif
 
 /*  ------------------ Define Data Types -------------------------- */
 #ifdef ZCPLX
@@ -89,17 +89,17 @@
 #define DATA_TYPE double
 #undef COMPLEX
 #endif
- 
+
 #ifdef SREAL
 
 #define DATA_TYPE float
-#undef COMPLEX 
+#undef COMPLEX
 #endif
 
 
 /*  ------------------ Define Constants and Operations ------------ */
 
-#ifdef ZCPLX 
+#ifdef ZCPLX
 
 #define CONST_ONE {1.0, 0.0}
 #define CONST_MINUS_ONE {-1.0, 0.0}
@@ -126,7 +126,7 @@
 #endif
 
 
-#ifdef DREAL 
+#ifdef DREAL
 
 #define CONST_ONE 1.0
 #define CONST_MINUS_ONE -1.0
@@ -139,7 +139,7 @@
 
 #endif
 
-#ifdef SREAL 
+#ifdef SREAL
 
 #define CONST_ONE 1.0
 #define CONST_MINUS_ONE -1.0

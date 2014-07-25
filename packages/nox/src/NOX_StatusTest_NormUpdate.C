@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -81,8 +81,8 @@ NormUpdate::~NormUpdate()
 
 }
 
-StatusType NormUpdate::checkStatus(const Solver::Generic& problem, 
-				   NOX::StatusTest::CheckType checkType)
+StatusType NormUpdate::checkStatus(const Solver::Generic& problem,
+                   NOX::StatusTest::CheckType checkType)
 {
   if (checkType == None)
   {
@@ -92,15 +92,15 @@ StatusType NormUpdate::checkStatus(const Solver::Generic& problem,
   }
 
   // On the first iteration, the old and current solution are the same so
-  // we should return the test as unconverged until there is a valid 
+  // we should return the test as unconverged until there is a valid
   // old solution (i.e. the number of iterations is greater than zero).
   int niters = problem.getNumIterations();
-  if (niters == 0) 
+  if (niters == 0)
   {
     status = Unconverged;
     normUpdate = -1.0;
     return status;
-  } 
+  }
 
   // Check that F exists!
   if (!problem.getSolutionGroup().isF())
@@ -108,30 +108,30 @@ StatusType NormUpdate::checkStatus(const Solver::Generic& problem,
     status = Unconverged;
     normUpdate = -1.0;
     return status;
-  } 
+  }
 
   const Abstract::Vector& oldSoln = problem.getPreviousSolutionGroup().getX();
   const Abstract::Vector& curSoln = problem.getSolutionGroup().getX();
 
-  if (Teuchos::is_null(updateVectorPtr)) 
+  if (Teuchos::is_null(updateVectorPtr))
     updateVectorPtr = curSoln.clone();
 
-  updateVectorPtr->update(1.0, curSoln, -1.0, oldSoln, 0.0); 
+  updateVectorPtr->update(1.0, curSoln, -1.0, oldSoln, 0.0);
 
-  int n = (scaleType == Scaled) ? updateVectorPtr->length() : 0;
+  NOX::size_type n = (scaleType == Scaled) ? updateVectorPtr->length() : 0;
 
   switch (normType) {
-    
+
   case NOX::Abstract::Vector::TwoNorm:
     normUpdate = updateVectorPtr->norm();
     if (scaleType == Scaled)
-      normUpdate /= sqrt(1.0 * n);
+      normUpdate /= sqrt(1.0 * static_cast<double>(n));
     break;
 
   default:
     normUpdate = updateVectorPtr->norm(normType);
     if (scaleType == Scaled)
-      normUpdate /= n;
+      normUpdate /= static_cast<double>(n);
     break;
 
   }
@@ -150,8 +150,8 @@ std::ostream& NormUpdate::print(std::ostream& stream, int indent) const
   for (int j = 0; j < indent; j ++)
     stream << ' ';
   stream << status;
-  stream << "Absolute Update-Norm = " << Utils::sciformat(normUpdate, 3) 
-	 << " < " << Utils::sciformat(tolerance, 3) << std::endl;
+  stream << "Absolute Update-Norm = " << Utils::sciformat(normUpdate, 3)
+     << " < " << Utils::sciformat(tolerance, 3) << std::endl;
   return stream;
 }
 

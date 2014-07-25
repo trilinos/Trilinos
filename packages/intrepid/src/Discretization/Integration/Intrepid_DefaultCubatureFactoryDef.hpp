@@ -120,12 +120,25 @@ Teuchos::RCP<Cubature<Scalar,ArrayPoint,ArrayWeight> > DefaultCubatureFactory<Sc
       }
       break;
 
+    case shards::Pyramid<>::key:
+	  TEUCHOS_TEST_FOR_EXCEPTION( (degree.size() < 3), std::invalid_argument,
+						  ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
+	  {
+	  std::vector< Teuchos::RCP< Cubature<Scalar,ArrayPoint,ArrayWeight> > > lineCubs(3);
+	  lineCubs[0]  = Teuchos::rcp(new CubatureDirectLineGauss<Scalar,ArrayPoint,ArrayWeight>(degree[0]));
+	  lineCubs[1]  = Teuchos::rcp(new CubatureDirectLineGauss<Scalar,ArrayPoint,ArrayWeight>(degree[1]));
+	  lineCubs[2]  = Teuchos::rcp(new CubatureDirectLineGaussJacobi20<Scalar,ArrayPoint,ArrayWeight>(degree[2]));
+	  pickCubature = Teuchos::rcp(new CubatureTensorPyr<Scalar,ArrayPoint,ArrayWeight>(lineCubs));
+	  }
+	  break;
+
     default:
       TEUCHOS_TEST_FOR_EXCEPTION( ( (cellTopology.getBaseCellTopologyData()->key != shards::Line<>::key)             &&
                             (cellTopology.getBaseCellTopologyData()->key != shards::Triangle<>::key)         &&
                             (cellTopology.getBaseCellTopologyData()->key != shards::Quadrilateral<>::key)    &&
                             (cellTopology.getBaseCellTopologyData()->key != shards::Tetrahedron<>::key)      &&
                             (cellTopology.getBaseCellTopologyData()->key != shards::Hexahedron<>::key)       &&
+                            (cellTopology.getBaseCellTopologyData()->key != shards::Pyramid<>::key)       &&
                             (cellTopology.getBaseCellTopologyData()->key != shards::Wedge<>::key) ),
                           std::invalid_argument,
                           ">>> ERROR (DefaultCubatureFactory): Invalid cell topology prevents cubature creation.");

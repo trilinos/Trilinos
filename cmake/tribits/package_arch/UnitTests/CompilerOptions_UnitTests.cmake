@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -63,7 +63,7 @@ INCLUDE(GlobalSet)
 # Set up unit test functions that will be called below to actually run the
 # unit tests.
 #
-# The reason that we use functions is so that we can change varibles just
+# The reason that we use functions is so that we can change variables just
 # inside of the functions that have their own variable scoping.  In that way,
 # we can keep variables that are set in one unit test from affecting the
 # others.
@@ -322,6 +322,76 @@ FUNCTION(UNITEST_GCC_NO_PACKAGE_STRONG_WARNINGS_OPTIONS)
   UNITTEST_COMPARE_CONST( CMAKE_Fortran_FLAGS_RELEASE "" )
 
 ENDFUNCTION()
+
+
+FUNCTION(UNITEST_GCC_PACKAGE_COMPILER_FLAGS)
+
+  MESSAGE("\n***")
+  MESSAGE("*** Testing setting package-specific compiler options")
+  MESSAGE("***\n")
+
+  SET(PACKAGE_NAME "MyPackage")
+
+  TRIBITS_SET_ALL_COMPILER_ID(GNU)
+  SET(${PACKAGE_NAME}_DISABLE_STRONG_WARNINGS TRUE)
+
+  SET(${PACKAGE_NAME}_C_FLAGS "--pkg-c-flags1 --pkg-c-flags2")
+  SET(${PACKAGE_NAME}_CXX_FLAGS "--pkg-cxx-flags1 --pkg-cxx-flags2")
+  SET(${PACKAGE_NAME}_Fortran_FLAGS "--pkg-f-flags1 --pkg-f-flags2")
+
+  TRIBITS_COMPILE_OPTIONS_COMMON_ACTIONS()
+
+  UNITTEST_COMPARE_CONST( CMAKE_C_FLAGS "--pkg-c-flags1 --pkg-c-flags2" )
+  UNITTEST_COMPARE_CONST( CMAKE_CXX_FLAGS "--pkg-cxx-flags1 --pkg-cxx-flags2" )
+  UNITTEST_COMPARE_CONST( CMAKE_Fortran_FLAGS "--pkg-f-flags1 --pkg-f-flags2" )
+  UNITTEST_COMPARE_CONST( CMAKE_C_FLAGS_DEBUG "-g -O0" )
+  UNITTEST_COMPARE_CONST( CMAKE_CXX_FLAGS_DEBUG "-g -O0" )
+  UNITTEST_COMPARE_CONST( CMAKE_Fortran_FLAGS_DEBUG "" )
+  UNITTEST_COMPARE_CONST( CMAKE_C_FLAGS_RELEASE "-O3" )
+  UNITTEST_COMPARE_CONST( CMAKE_CXX_FLAGS_RELEASE "-O3" )
+  UNITTEST_COMPARE_CONST( CMAKE_Fortran_FLAGS_RELEASE "" )
+
+ENDFUNCTION()
+
+
+FUNCTION(UNITEST_GCC_GLOBAL_AND_PACKAGE_COMPILER_FLAGS)
+
+  MESSAGE("\n***")
+  MESSAGE("*** Testing setting global and package-specific compiler options")
+  MESSAGE("***\n")
+
+  SET(PACKAGE_NAME "MyPackage")
+
+  TRIBITS_SET_ALL_COMPILER_ID(GNU)
+  SET(${PACKAGE_NAME}_DISABLE_STRONG_WARNINGS TRUE)
+
+  SET(CMAKE_C_FLAGS "--global-c-flags1 --global-c-flags2")
+  SET(CMAKE_CXX_FLAGS "--global-cxx-flags1 --global-cxx-flags2")
+  SET(CMAKE_Fortran_FLAGS "--global-f-flags1 --global-f-flags2")
+  SET(${PACKAGE_NAME}_C_FLAGS "--pkg-c-flags1 --pkg-c-flags2")
+  SET(${PACKAGE_NAME}_CXX_FLAGS "--pkg-cxx-flags1 --pkg-cxx-flags2")
+  SET(${PACKAGE_NAME}_Fortran_FLAGS "--pkg-f-flags1 --pkg-f-flags2")
+
+  TRIBITS_COMPILE_OPTIONS_COMMON_ACTIONS()
+
+  UNITTEST_COMPARE_CONST( CMAKE_C_FLAGS
+    "  --global-c-flags1 --global-c-flags2 --pkg-c-flags1 --pkg-c-flags2" )
+  UNITTEST_COMPARE_CONST( CMAKE_CXX_FLAGS
+    "  --global-cxx-flags1 --global-cxx-flags2 --pkg-cxx-flags1 --pkg-cxx-flags2" )
+  UNITTEST_COMPARE_CONST( CMAKE_Fortran_FLAGS
+    "  --global-f-flags1 --global-f-flags2 --pkg-f-flags1 --pkg-f-flags2" )
+  UNITTEST_COMPARE_CONST( CMAKE_C_FLAGS_DEBUG "-g -O0" )
+  UNITTEST_COMPARE_CONST( CMAKE_CXX_FLAGS_DEBUG "-g -O0" )
+  UNITTEST_COMPARE_CONST( CMAKE_Fortran_FLAGS_DEBUG "" )
+  UNITTEST_COMPARE_CONST( CMAKE_C_FLAGS_RELEASE "-O3" )
+  UNITTEST_COMPARE_CONST( CMAKE_CXX_FLAGS_RELEASE "-O3" )
+  UNITTEST_COMPARE_CONST( CMAKE_Fortran_FLAGS_RELEASE "" )
+
+ENDFUNCTION()
+
+
+
+
 
 
 FUNCTION(UNITEST_GCC_WITH_SHADOW_CLEANED_CHECKED_STL_COVERAGE_OPTIONS)
@@ -621,6 +691,8 @@ UNITEST_GCC_WITH_CHECKED_STL_OPTIONS()
 UNITEST_GCC_WITH_CLEANED_OPTIONS()
 UNITEST_GCC_NO_STRONG_WARNINGS_OPTIONS()
 UNITEST_GCC_NO_PACKAGE_STRONG_WARNINGS_OPTIONS()
+UNITEST_GCC_PACKAGE_COMPILER_FLAGS()
+UNITEST_GCC_GLOBAL_AND_PACKAGE_COMPILER_FLAGS()
 UNITEST_GCC_WITH_SHADOW_CLEANED_CHECKED_STL_COVERAGE_OPTIONS()
 UNITEST_GCC_ADDITIONAL_USER_OPTIONS()
 UNITEST_GCC_USER_DEBUG_OVERRIDE_OPTIONS()
@@ -631,4 +703,4 @@ UNITEST_OTHER_BASE_OPTIONS()
 UNITEST_OTHER_WITH_SHADOW_CLEANED_CHECKED_STL_COVERAGE_OPTIONS()
 
 # Pass in the number of expected tests that must pass!
-UNITTEST_FINAL_RESULT(144)
+UNITTEST_FINAL_RESULT(162)

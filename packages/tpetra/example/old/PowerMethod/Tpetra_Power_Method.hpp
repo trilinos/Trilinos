@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
@@ -53,7 +53,7 @@ namespace TpetraExamples {
   /** \brief Simple power iteration eigensolver for a Tpetra::Operator.
    */
   template <class Scalar, class Ordinal>
-  Scalar powerMethod(const Teuchos::RCP<const Tpetra::Operator<Scalar,Ordinal> > &A, int niters, typename Teuchos::ScalarTraits<Scalar>::magnitudeType tolerance, bool verbose) 
+  Scalar powerMethod(const Teuchos::RCP<const Tpetra::Operator<Scalar,Ordinal> > &A, int niters, typename Teuchos::ScalarTraits<Scalar>::magnitudeType tolerance, bool verbose)
   {
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
     typedef Tpetra::Vector<Scalar,Ordinal> Vector;
@@ -67,7 +67,7 @@ namespace TpetraExamples {
     r = Tpetra::createVector<Scalar>(A->getRangeMap());
     z = Tpetra::createVector<Scalar>(A->getRangeMap());
     z->randomize();
-    // 
+    //
     Scalar lambda = 0.0;
     Magnitude normz, residual = 0.0;
     // power iteration
@@ -80,12 +80,12 @@ namespace TpetraExamples {
         r->update(1.0, *z, -lambda, *q, 0.0);         // Compute A*q - lambda*q
         residual = Teuchos::ScalarTraits<Scalar>::magnitude(r->norm2() / lambda);
         if (verbose) {
-          std::cout << "Iter = " << iter 
-                    << "  Lambda = " << lambda 
-                    << "  Residual of A*q - lambda*q = " << residual 
+          std::cout << "Iter = " << iter
+                    << "  Lambda = " << lambda
+                    << "  Residual of A*q - lambda*q = " << residual
                     << std::endl;
         }
-      } 
+      }
       if (residual < tolerance) {
         break;
       }
@@ -96,11 +96,11 @@ namespace TpetraExamples {
 } // end of namespace TpetraExamples
 
 /** \example Tpetra_Power_Method_From_File.cpp
-    Demonstrate reading a Harwell-Boeing file into a Tpetra::CrsMatrix and computing its leading eigenvalue using the TpetraExamples::powerMethod() function.
-  */
+    \brief Power method example with reading a file.
 
-/** \example Tpetra_Power_Method.cpp
-    Demonstrate building a simple sparse matrix and computing its leading eigenvalue using the TpetraExamples::powerMethod() function.
+    Read a Harwell-Boeing file into a Tpetra::CrsMatrix sparse matrix,
+    and compute the matrix's leading eigenvalue using
+    TpetraExamples::powerMethod().
   */
 
 #endif

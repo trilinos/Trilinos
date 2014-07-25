@@ -23,14 +23,14 @@
 #include "Galeri_CrsMatrices.h"
 
 
-void PrintLine() 
+void PrintLine()
 {
   cout << endl;
   for( int i=0 ; i<80 ; ++i )
     cout << "=";
   cout << endl;
   cout << endl;
-  
+
   return;
 }
 
@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
   // ===================== //
   // create linear problem //
   // ===================== //
-  
+
   ParameterList GaleriList;
   GaleriList.set("nx", 10);
   GaleriList.set("ny", 10);
@@ -69,27 +69,27 @@ int main(int argc, char *argv[]) {
 
   bool TestPassed = true;
 
-  vector<string> TestList;
+  std::vector<string> TestList;
   TestList.push_back("Jacobi");
   TestList.push_back("Gauss-Seidel");
   TestList.push_back("symmetric Gauss-Seidel");
 
-  vector<string> PreOrPost;
+  std::vector<string> PreOrPost;
   PreOrPost.push_back("pre");
   PreOrPost.push_back("post");
   PreOrPost.push_back("both");
 
-  vector<double> Damping;
+  std::vector<double> Damping;
   Damping.push_back(0.67);
   Damping.push_back(1.00);
 
-  for (int sweeps = 1 ; sweeps < 5 ; sweeps += 2) 
+  for (int sweeps = 1 ; sweeps < 5 ; sweeps += 2)
   {
-    for (unsigned int i = 0; i < TestList.size(); ++i) 
+    for (unsigned int i = 0; i < TestList.size(); ++i)
     {
-      for (unsigned int j = 0; j < PreOrPost.size(); ++j) 
+      for (unsigned int j = 0; j < PreOrPost.size(); ++j)
       {
-        for (unsigned int k = 0; k < Damping.size(); ++k) 
+        for (unsigned int k = 0; k < Damping.size(); ++k)
         {
           if (Comm.MyPID() == 0)
           {
@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
 
           Epetra_Time Time(Comm);
 
-          MultiLevelPreconditioner* MLPrec = 
+          MultiLevelPreconditioner* MLPrec =
             new MultiLevelPreconditioner(*A, MLList);
 
           // tell AztecOO to use this preconditioner, then solve
@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
           // build ML with IFPACK smoother //
           // ============================= //
 
-          // reset the options, and stick IFPACK parameters list as 
+          // reset the options, and stick IFPACK parameters list as
           // needed by ML
           SetDefaults("SA",MLList);
           MLList.set("smoother: sweeps", 1);
@@ -221,7 +221,7 @@ int main(int argc, char *argv[]) {
     MLList.set("smoother: sweeps", degree);
     MLList.set("ML output", 0);
 
-    MultiLevelPreconditioner* MLPrec = 
+    MultiLevelPreconditioner* MLPrec =
       new MultiLevelPreconditioner(*A, MLList);
 
     solver.SetPrecOperator(MLPrec);
@@ -287,7 +287,7 @@ int main(int argc, char *argv[]) {
   MPI_Finalize();
 #endif
 
-  if (Comm.MyPID() == 0) 
+  if (Comm.MyPID() == 0)
     cout << "Test `IFPACKSmoothers.exe' passed!" << endl;
   return (EXIT_SUCCESS);
 }
@@ -307,7 +307,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
 #endif
-    
+
   puts("Please configure ML with --enable-epetra --enable-teuchos");
   puts("--enable-aztecoo --enable-galeri --enable-ifpack");
 

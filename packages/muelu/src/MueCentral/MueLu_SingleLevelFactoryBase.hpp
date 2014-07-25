@@ -47,9 +47,11 @@
 #define MUELU_SINGLELEVELFACTORY_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_Factory.hpp"
 
+#include "MueLu_Factory.hpp"
 #include "MueLu_Level_fwd.hpp"
+#include "MueLu_TimeMonitor.hpp"
+#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
@@ -92,18 +94,50 @@ namespace MueLu {
     virtual void Build(Level & currentLevel) const = 0;
 
     //!
-    virtual void CallBuild(Level & requestedLevel) const {
+    virtual void CallBuild(Level& requestedLevel) const {
 #ifdef HAVE_MUELU_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION((multipleCallCheck_ == ENABLED) && (multipleCallCheckGlobal_ == ENABLED) && (lastLevel_ == &requestedLevel),
+      // We cannot call Build method twice for the same level, but we can call it multiple times for different levels
+      int levelID = requestedLevel.GetLevelID();
+      TEUCHOS_TEST_FOR_EXCEPTION((multipleCallCheck_ == ENABLED) && (multipleCallCheckGlobal_ == ENABLED) && (lastLevelID_ == levelID),
                                  Exceptions::RuntimeError,
-                                 this->ShortClassName() << "::Build() called twice for the same level (levelID=" << requestedLevel.GetLevelID()
+                                 this->ShortClassName() << "::Build() called twice for the same level (levelID=" << levelID
                                  << "). This is likely due to a configuration error.");
-      if (multipleCallCheck_ == FIRSTCALL) multipleCallCheck_ = ENABLED;
-      lastLevel_ = &requestedLevel;
+      if (multipleCallCheck_ == FIRSTCALL)
+        multipleCallCheck_ = ENABLED;
+
+      lastLevelID_ = levelID;
 #endif
+
+#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
+      RCP<const Teuchos::Comm<int> > comm = requestedLevel.GetComm();
+      if (comm.is_null()) {
+        // Some factories are called before we constructed Ac, and therefore,
+        // before we set the level communicator. For such factories we can get
+        // the comm from the previous level, as all processes go there
+        RCP<Level>& prevLevel = requestedLevel.GetPreviousLevel();
+        if (!prevLevel.is_null())
+          comm = prevLevel->GetComm();
+      }
+
+      // Synchronization timer
+      std::string syncTimer = this->ShortClassName() + ": Build sync (level=" + toString(requestedLevel.GetLevelID()) + ")";
+      if (!comm.is_null()) {
+        TimeMonitor timer(*this, syncTimer);
+        comm->barrier();
+      }
+#endif
+
       Build(requestedLevel);
 
-      GetOStream(Test,0) << *RemoveFactoriesFromList(GetParameterList()) << std::endl;;
+#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
+      // Synchronization timer
+      if (!comm.is_null()) {
+        TimeMonitor timer(*this, syncTimer);
+        comm->barrier();
+      }
+#endif
+
+      GetOStream(Test) << *RemoveFactoriesFromList(GetParameterList()) << std::endl;;
     }
 
     //!

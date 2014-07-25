@@ -113,11 +113,13 @@ ENDIF()
 
 IF (Stokhos_ENABLE_EpetraExt)
 
-  TRIBITS_ADD_EXECUTABLE(
-    sparsity_example
-    SOURCES cijk/sparsity_example.cpp
-    DEPLIBS stokhos
-    )
+  IF (Stokhos_ENABLE_Ifpack)
+    TRIBITS_ADD_EXECUTABLE(
+      sparsity_example
+      SOURCES cijk/sparsity_example.cpp
+      DEPLIBS stokhos
+      )
+  ENDIF()
 
   TRIBITS_ADD_EXECUTABLE(
     sparsity_slice_example

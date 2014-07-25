@@ -98,9 +98,11 @@ namespace Xpetra {
     //** \warning This is an expert-only routine and should not be called from user code. */
     virtual void allocateAllValues(size_t numNonZeros,ArrayRCP<size_t> & rowptr, ArrayRCP<LocalOrdinal> & colind, ArrayRCP<Scalar> & values)=0;
 
-    //! Sets the matrix's structure from the Crs arrays
-    //** \warning This is an expert-only routine and should not be called from user code. */
+    //! Sets the 1D pointer arrays of the graph.
     virtual void setAllValues(const ArrayRCP<size_t> & rowptr, const ArrayRCP<LocalOrdinal> & colind, const ArrayRCP<Scalar> & values)=0;
+
+    //! Gets the 1D pointer arrays of the graph.
+    virtual void getAllValues(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind, ArrayRCP<const Scalar>& values) const = 0;
 
     //@}
 
@@ -190,11 +192,20 @@ namespace Xpetra {
     //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
     virtual void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView< const GlobalOrdinal > &indices, ArrayView< const Scalar > &values) const = 0;
 
+    //! Extract a list of entries in a specified global row of this matrix. Put into pre-allocated storage.
+    virtual void getGlobalRowCopy(GlobalOrdinal GlobalRow, const ArrayView<GlobalOrdinal> &indices, const ArrayView<Scalar> &values, size_t &numEntries) const = 0;
+
     //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
     virtual void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices, ArrayView< const Scalar > &values) const = 0;
 
     //! Get a copy of the diagonal entries owned by this node, with local row indices.
     virtual void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const = 0;
+
+    //! Get offsets of the diagonal entries in the matrix.
+    virtual void getLocalDiagOffsets(Teuchos::ArrayRCP<size_t> &offsets) const = 0;
+
+    //! Get a copy of the diagonal entries owned by this node, with local row indices, using row offsets.
+    virtual void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const = 0;
 
     virtual void removeEmptyProcessesInPlace(const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap) = 0;
 

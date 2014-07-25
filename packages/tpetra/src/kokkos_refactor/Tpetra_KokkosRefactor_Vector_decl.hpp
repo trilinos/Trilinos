@@ -67,8 +67,18 @@ private:
   friend class MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 
 public:
-  typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::view_type view_type;
-  
+  typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type dual_view_type;
+
+  /// \brief The type of an inner ("dot") product result.
+  ///
+  /// This is usually the same as \c scalar_type, but may differ if
+  /// \c Scalar is e.g., an uncertainty quantification type from the
+  /// Stokhos package.
+  typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dot_type dot_type;
+
+    //! The type of the magnitude (absolute value) of a \c scalar_type value.
+  typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mag_type mag_type;
+
   //! @name Constructor/Destructor Methods
   //@{
 
@@ -81,29 +91,57 @@ public:
   //! \brief Set vector values from an existing array (copy)
   Vector(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const ArrayView<const Scalar> &A);
 
-  /// \brief Expert mode constructor.
+  /// \brief Expert mode constructor, that takes a Kokkos::DualView of
+  ///   the Vector's data, and returns a Vector that views those data.
   ///
   /// \warning This constructor is only for expert users.  We make
   ///   no promises about backwards compatibility for this interface.
   ///   It may change or go away at any time.
   ///
+  /// See the documentation of the MultiVector (parent class)
+  /// constructor that takes the same arguments.
+  ///
   /// \param map [in] Map describing the distribution of rows.
-  /// \param view [in] Device view to the data (shallow copy)
+  /// \param view [in] View of the data (shallow copy).
   Vector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
-          const view_type view);
+          const dual_view_type& view);
+
+  /// \brief Expert mode constructor, that takes a Kokkos::DualView of
+  ///   the Vector's data and the "original" Kokkos::DualView of the
+  ///   data, and returns a Vector that views those data.
+  ///
+  /// \warning This constructor is only for expert users.  We make
+  ///   no promises about backwards compatibility for this interface.
+  ///   It may change or go away at any time.
+  ///
+  /// See the documentation of the MultiVector (parent class)
+  /// constructor that takes the same arguments.
+  ///
+  /// \param map [in] Map describing the distribution of rows.
+  /// \param view [in] View of the data (shallow copy).
+  /// \param origView [in] "Original" view of the data (shallow copy).
+  Vector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+          const dual_view_type& view,
+          const dual_view_type& origView);
 
   //! Destructor.
   virtual ~Vector();
 
   //@}
-  //! @name Post-construction modification routines
+  //! \name Clone method
   //@{
 
-  //!Create a cloned Vector for a different node type
+  /// \brief Return a deep copy of <tt>*this</tt> with a different Node type.
+  /// \tparam Node2 The returned Vector's Node type.
+  ///
+  /// \param node2 [in] The returned Vector's Kokkos Node instance.
   template <class Node2>
   RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
-  clone(const RCP<Node2> &node2);
+  clone (const RCP<Node2> &node2);
 
+  //@}
+  //! @name Post-construction modification routines
+  //@{
 
   //! Replace current value at the specified location with specified value.
   /** \pre \c globalRow must be a valid global element on this node, according to the row map.
@@ -142,30 +180,37 @@ public:
   //! Const view of the local values of this vector.
   Teuchos::ArrayRCP<const Scalar> getData() const { return getData(0); }
 
-  //@}
+  Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  offsetView (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& subMap,
+              size_t offset) const;
 
+  Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  offsetViewNonConst (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &subMap,
+                      size_t offset);
+
+  //@}
   //! @name Mathematical methods
   //@{
 
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dot; // overloading, not hiding
   //! Computes dot product of this Vector against input Vector x.
-  Scalar dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &a) const;
+  dot_type dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &a) const;
 
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm1; // overloading, not hiding
   //! Return 1-norm of this Vector.
-  typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm1() const;
+  mag_type norm1() const;
 
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm2; // overloading, not hiding
   //! Compute 2-norm of this Vector.
-  typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm2() const;
+  mag_type norm2() const;
 
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normInf; // overloading, not hiding
   //! Compute Inf-norm of this Vector.
-  typename Teuchos::ScalarTraits<Scalar>::magnitudeType normInf() const;
+  mag_type normInf() const;
 
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normWeighted; // overloading, not hiding
   //! Compute Weighted 2-norm (RMS Norm) of this Vector.
-  typename Teuchos::ScalarTraits<Scalar>::magnitudeType normWeighted(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &weights) const;
+  mag_type normWeighted(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &weights) const;
 
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::meanValue; // overloading, not hiding
   //! Compute mean (average) value of this Vector.
@@ -219,6 +264,17 @@ createVectorFromView (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Com
     true, std::logic_error, "Tpetra::createVectorFromView: "
     "Not implemented for Node = KokkosDeviceWrapperNode");
 }
+
+/// \brief Return a deep copy of the Vector \c src.
+///
+/// This is the preferred way to make a deep copy of a Vector.  The
+/// new Kokkos refactor implementations of Tpetra objects have view
+/// semantics, which means that the copy constructor and assignment
+/// operator (operator=) make shallow copies.  To make a deep copy,
+/// call the nonmember function createCopy().
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >
+createCopy (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& src);
 
 /*template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 template <class Node2>

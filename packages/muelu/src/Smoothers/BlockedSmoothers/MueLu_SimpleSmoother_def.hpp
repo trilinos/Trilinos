@@ -1,3 +1,48 @@
+// @HEADER
+//
+// ***********************************************************************
+//
+//        MueLu: A package for multigrid based preconditioning
+//                  Copyright 2012 Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact
+//                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
+//                    Ray Tuminaro      (rstumin@sandia.gov)
+//
+// ***********************************************************************
+//
+// @HEADER
 /*
  * MueLu_SimpleSmoother_def.hpp
  *
@@ -36,9 +81,17 @@
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  SimpleSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SimpleSmoother(LocalOrdinal sweeps, Scalar omega, bool SIMPLEC)
-    : type_("SIMPLE"), bSIMPLEC_(SIMPLEC), nSweeps_(sweeps), omega_(omega), A_(Teuchos::null)
+  SimpleSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SimpleSmoother()
+    : type_("SIMPLE"), A_(Teuchos::null)
   {
+    //Factory::SetParameter("Sweeps", Teuchos::ParameterEntry(sweeps));
+    //Factory::SetParameter("Damping factor",Teuchos::ParameterEntry(omega));
+    //Factory::SetParameter("UseSIMPLEC", Teuchos::ParameterEntry(SIMPLEC));
+
+#if 0
+    // when declaring default factories without overwriting them leads to a multipleCallCheck exception
+    // TODO: debug into this
+    // workaround: always define your factory managers outside either using the C++ API or the XML files
     RCP<SchurComplementFactory> SchurFact = Teuchos::rcp(new SchurComplementFactory());
     SchurFact->SetParameter("omega",Teuchos::ParameterEntry(omega));
     SchurFact->SetParameter("lumping",Teuchos::ParameterEntry(SIMPLEC));
@@ -52,10 +105,10 @@ namespace MueLu {
 
     RCP<SmootherFactory> SmooSCFact = rcp( new SmootherFactory(smoProtoSC) );
 
-    schurFactManager_ = rcp(new FactoryManager());
-    schurFactManager_->SetFactory("A", SchurFact);
-    schurFactManager_->SetFactory("Smoother", SmooSCFact);
-    schurFactManager_->SetIgnoreUserData(true);
+    RCP<FactoryManager> schurFactManager = rcp(new FactoryManager());
+    schurFactManager->SetFactory("A", SchurFact);
+    schurFactManager->SetFactory("Smoother", SmooSCFact);
+    schurFactManager->SetIgnoreUserData(true);
 
     // define smoother/solver for velocity prediction
     RCP<SubBlockAFactory> A00Fact = Teuchos::rcp(new SubBlockAFactory(/*this->GetFactory("A"), 0, 0*/));
@@ -68,36 +121,79 @@ namespace MueLu {
     smoProtoPredict->SetFactory("A", A00Fact);
     RCP<SmootherFactory> SmooPredictFact = rcp( new SmootherFactory(smoProtoPredict) );
 
-    velpredictFactManager_ = rcp(new FactoryManager());
-    velpredictFactManager_->SetFactory("A", A00Fact);
-    velpredictFactManager_->SetFactory("Smoother", SmooPredictFact);
-    velpredictFactManager_->SetIgnoreUserData(true);
+    RCP<FactoryManager> velpredictFactManager = rcp(new FactoryManager());
+    velpredictFactManager->SetFactory("A", A00Fact);
+    velpredictFactManager->SetFactory("Smoother", SmooPredictFact);
+    velpredictFactManager->SetIgnoreUserData(true);
 
+    AddFactoryManager(velpredictFactManager, 0);
+    AddFactoryManager(schurFactManager, 1);
+#endif
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   SimpleSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~SimpleSmoother() {}
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  RCP<const ParameterList> SimpleSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
+    RCP<ParameterList> validParamList = rcp(new ParameterList());
+
+    validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
+    validParamList->set< Scalar >                ("Damping factor",     1.0, "Damping/Scaling factor in SIMPLE");
+    validParamList->set< LocalOrdinal >          ("Sweeps",             1, "Number of SIMPLE sweeps (default = 1)");
+    validParamList->set< bool >                  ("UseSIMPLEC",         false, "Use SIMPLEC instead of SIMPLE (default = false)");
+
+    return validParamList;
+  }
+
+  //! Add a factory manager at a specific position
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void SimpleSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AddFactoryManager(RCP<const FactoryManagerBase> FactManager, int pos) {
+    TEUCHOS_TEST_FOR_EXCEPTION(pos < 0, Exceptions::RuntimeError, "MueLu::SimpleSmoother::AddFactoryManager: parameter \'pos\' must not be negative! error.");
+
+    size_t myPos = Teuchos::as<size_t>(pos);
+
+    if (myPos < FactManager_.size()) {
+      // replace existing entris in FactManager_ vector
+      FactManager_.at(myPos) = FactManager;
+    } else if( myPos == FactManager_.size()) {
+      // add new Factory manager in the end of the vector
+      FactManager_.push_back(FactManager);
+    } else { // if(myPos > FactManager_.size())
+      RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      *out << "Warning: cannot add new FactoryManager at proper position " << pos << ". The FactoryManager is just appended to the end. Check this!" << std::endl;
+
+      // add new Factory manager in the end of the vector
+      FactManager_.push_back(FactManager);
+    }
+
+  }
+
+
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void SimpleSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetVelocityPredictionFactoryManager(RCP<FactoryManager> FactManager) {
-    velpredictFactManager_ = FactManager;
+    AddFactoryManager(FactManager, 0); // overwrite factory manager for predicting the primary variable
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void SimpleSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetSchurCompFactoryManager(RCP<FactoryManager> FactManager) {
-    schurFactManager_ = FactManager;
+    AddFactoryManager(FactManager, 1); // overwrite factory manager for SchurComplement
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void SimpleSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    //this->Input(currentLevel, "A");
     currentLevel.DeclareInput("A",this->GetFactory("A").get());
 
-    TEUCHOS_TEST_FOR_EXCEPTION(velpredictFactManager_ == Teuchos::null, Exceptions::RuntimeError, "MueLu::SimpleSmoother::DeclareInput: velpredictFactManager_ must not be Teuchos::null! error.");
-    currentLevel.DeclareInput("PreSmoother",velpredictFactManager_->GetFactory("PreSmoother").get());
+    TEUCHOS_TEST_FOR_EXCEPTION(FactManager_.size() != 2, Exceptions::RuntimeError,"MueLu::SimpleSmoother::DeclareInput: You have to declare two FactoryManagers with a \"Smoother\" object: One for predicting the primary variable and one for the SchurComplement system. The smoother for the SchurComplement system needs a SchurComplementFactory as input for variable \"A\". make sure that you use the same proper damping factors for omega both in the SchurComplementFactory and in the SIMPLE smoother!");
 
-    TEUCHOS_TEST_FOR_EXCEPTION(schurFactManager_ == Teuchos::null, Exceptions::RuntimeError, "MueLu::SimpleSmoother::DeclareInput: schurFactManager_ must not be Teuchos::null! error.");
-    currentLevel.DeclareInput("PreSmoother",schurFactManager_->GetFactory("PreSmoother").get());
+    // loop over all factory managers for the subblocks of blocked operator A
+    std::vector<Teuchos::RCP<const FactoryManagerBase> >::const_iterator it;
+    for(it = FactManager_.begin(); it!=FactManager_.end(); ++it) {
+      SetFactoryManager currentSFM  (rcpFromRef(currentLevel),   *it);
+
+      // request "Smoother" for current subblock row.
+      currentLevel.DeclareInput("PreSmoother",(*it)->GetFactory("Smoother").get());
+    }
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -112,7 +208,7 @@ namespace MueLu {
     FactoryMonitor m(*this, "Setup blocked SIMPLE Smoother", currentLevel);
 
     if (SmootherPrototype::IsSetup() == true)
-            this->GetOStream(Warnings0, 0) << "Warning: MueLu::SimpleSmoother::Setup(): Setup() has already been called";
+      this->GetOStream(Warnings0) << "MueLu::SimpleSmoother::Setup(): Setup() has already been called";
 
     // extract blocked operator A from current level
     A_ = Factory::Get<RCP<Matrix> > (currentLevel, "A");
@@ -146,9 +242,12 @@ namespace MueLu {
     D_->CreateView("stridedMaps", bA->getRangeMap(1), bA->getDomainMap(0));
     Z_->CreateView("stridedMaps", bA->getRangeMap(1), bA->getDomainMap(1));
 
+    const ParameterList & pL = Factory::GetParameterList();
+    bool bSIMPLEC = pL.get<bool>("UseSIMPLEC");
+
     // Create the inverse of the diagonal of F
     RCP<Vector> diagFVector = VectorFactory::Build(F_->getRowMap());
-    if(!bSIMPLEC_) {
+    if(!bSIMPLEC) {
       F_->getLocalDiagCopy(*diagFVector);       // extract diagonal of F
       diagFVector->reciprocal(*diagFVector);    // build reciprocal
     } else {
@@ -170,8 +269,17 @@ namespace MueLu {
     diagFinv_ = diagFVector;
 
     // Set the Smoother
-    velPredictSmoo_ = currentLevel.Get<RCP<SmootherBase> > ("PreSmoother", velpredictFactManager_->GetFactory("PreSmoother").get());
-    schurCompSmoo_  = currentLevel.Get<RCP<SmootherBase> > ("PreSmoother", schurFactManager_->GetFactory("PreSmoother").get());
+    // carefully switch to the SubFactoryManagers (defined by the users)
+    {
+      RCP<const FactoryManagerBase> velpredictFactManager = FactManager_.at(0);
+      SetFactoryManager currentSFM  (rcpFromRef(currentLevel), velpredictFactManager);
+      velPredictSmoo_ = currentLevel.Get< RCP<SmootherBase> >("PreSmoother",velpredictFactManager->GetFactory("Smoother").get());
+    }
+    {
+      RCP<const FactoryManagerBase> schurFactManager = FactManager_.at(1);
+      SetFactoryManager currentSFM  (rcpFromRef(currentLevel), schurFactManager);
+      schurCompSmoo_ = currentLevel.Get< RCP<SmootherBase> >("PreSmoother", schurFactManager->GetFactory("Smoother").get());
+    }
 
     SmootherPrototype::IsSetup(true);
   }
@@ -179,11 +287,16 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void SimpleSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::BraessSarazinSmoother::Apply(): Setup() has not been called");
+    TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::SimpleSmoother::Apply(): Setup() has not been called");
 
     Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
 
     SC zero = Teuchos::ScalarTraits<SC>::zero(), one = Teuchos::ScalarTraits<SC>::one();
+
+    // extract parameters from internal parameter list
+    const ParameterList & pL = Factory::GetParameterList();
+    LocalOrdinal nSweeps = pL.get<LocalOrdinal>("Sweeps");
+    Scalar omega = pL.get<Scalar>("Damping factor");
 
     // wrap current solution vector in RCP
     RCP<MultiVector> rcpX = Teuchos::rcpFromRef(X);
@@ -193,7 +306,7 @@ namespace MueLu {
     RCP<MultiVector> residual = MultiVectorFactory::Build(B.getMap(), B.getNumVectors());
 
     // incrementally improve solution vector X
-    for (LocalOrdinal run = 0; run < nSweeps_; ++run) {
+    for (LocalOrdinal run = 0; run < nSweeps; ++run) {
       // 1) calculate current residual
       residual->update(one,B,zero); // residual = B
       A_->apply(*rcpX, *residual, Teuchos::NO_TRANS, -one, one);
@@ -223,13 +336,13 @@ namespace MueLu {
       // 5) scale xtilde2 with omega
       //    store this in xhat2
       RCP<MultiVector> xhat2 = MultiVectorFactory::Build(Z_->getRowMap(),1);
-      xhat2->update(omega_,*xtilde2,zero);
+      xhat2->update(omega,*xtilde2,zero);
 
       // 6) calculate xhat1
       RCP<MultiVector> xhat1      = MultiVectorFactory::Build(F_->getRowMap(),1);
       RCP<MultiVector> xhat1_temp = MultiVectorFactory::Build(F_->getRowMap(),1);
       G_->apply(*xhat2,*xhat1_temp); // store result temporarely in xtilde1_temp
-      xhat1->elementWiseMultiply(one/omega_,*diagFinv_,*xhat1_temp,zero);
+      xhat1->elementWiseMultiply(one/*/omega*/,*diagFinv_,*xhat1_temp,zero);
       xhat1->update(one,*xtilde1,-one);
 
       // 7) extract parts of solution vector X
@@ -239,7 +352,7 @@ namespace MueLu {
       // 8) update solution vector with increments xhat1 and xhat2
       //    rescale increment for x2 with omega_
       x1->update(one,*xhat1,one);    // x1 = x1_old + xhat1
-      x2->update(omega_,*xhat2,one); // x2 = x2_old + omega xhat2
+      x2->update(/*omega*/ one,*xhat2,one); // x2 = x2_old + omega xhat2
 
       // write back solution in global vector X
       domainMapExtractor_->InsertVector(x1, 0, rcpX);

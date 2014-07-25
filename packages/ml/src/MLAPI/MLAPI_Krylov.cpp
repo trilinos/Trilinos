@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #include "ml_common.h"
 #ifdef HAVE_ML_MLAPI
@@ -21,9 +21,9 @@
 
 namespace MLAPI {
 
-// ====================================================================== 
+// ======================================================================
 void Krylov(const Operator& A, const MultiVector& LHS,
-            const MultiVector& RHS, const BaseOperator& Prec, 
+            const MultiVector& RHS, const BaseOperator& Prec,
             Teuchos::ParameterList& List)
 {
 #ifndef HAVE_ML_AZTECOO
@@ -58,7 +58,7 @@ void Krylov(const Operator& A, const MultiVector& LHS,
   double Tol      = List.get("krylov: tolerance", 1e-9);
   std::string type     = List.get("krylov: type", "gmres");
   int    output   = List.get("krylov: output level", GetPrintLevel());
-    
+
   // set options in `solver'
   if (type == "cg")
     solver.SetAztecOption(AZ_solver, AZ_cg);
@@ -73,7 +73,7 @@ void Krylov(const Operator& A, const MultiVector& LHS,
   else
     ML_THROW("krylov: type has incorrect value (" +
              type + ")", -1);
-      
+
   solver.SetAztecOption(AZ_output, output);
   solver.Iterate(NumIters, Tol);
 #endif

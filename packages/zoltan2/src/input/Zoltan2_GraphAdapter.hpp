@@ -52,6 +52,7 @@
 #define _ZOLTAN2_GRAPHADAPTER_HPP_
 
 #include <Zoltan2_Adapter.hpp>
+#include <Zoltan2_VectorAdapter.hpp>
 
 namespace Zoltan2 {
 
@@ -98,7 +99,7 @@ enum GraphEntityType {
 
 */
 
-template <typename User>
+template <typename User, typename UserCoord=User>
   class GraphAdapter : public BaseAdapter<User> {
 private:
   enum GraphEntityType primaryEntityType; // Entity (vertex or edge) to
@@ -108,6 +109,12 @@ private:
                                             // describing adjacencies;
                                             // typically opposite of
                                             // primaryEntityType.
+  VectorAdapter<UserCoord> *coordinateInput_;  // A VectorAdapter containing
+                                               // coordinates of the objects
+                                               // with primaryEntityType;
+                                               // optional.
+  bool haveCoordinateInput_;                   // Flag indicating whether
+                                               // coordinateInput_ is provided.
 
 public:
 
@@ -118,6 +125,7 @@ public:
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef User user_t;
+  typedef UserCoord userCoord_t;
 #endif
 
   enum BaseAdapterType adapterType() const {return GraphAdapterType;}
@@ -128,7 +136,9 @@ public:
 
   // Default GraphEntityType is GRAPH_VERTEX.
   GraphAdapter() : primaryEntityType(GRAPH_VERTEX),
-                   adjacencyEntityType(GRAPH_EDGE) {};
+                   adjacencyEntityType(GRAPH_EDGE),
+                   coordinateInput_(),
+                   haveCoordinateInput_(false) {}
 
   ////////////////////////////////////////////////////////////////////////////
   // Methods to be defined in derived classes.
@@ -155,18 +165,16 @@ public:
       \param adjIds on return will point to the array of adjacent vertices for
          for each vertex.
    */
-  virtual void getEdgeView(const lno_t *&offsets,
-                           const gid_t *&adjIds) const = 0;
+  virtual void getEdgesView(const lno_t *&offsets,
+                            const gid_t *&adjIds) const = 0;
        
-  /*! \brief Returns the dimension (0 or greater) of vertex weights.
+  /*! \brief Returns the number (0 or greater) of weights per vertex
    */
   virtual int getNumWeightsPerVertex() const { return 0; }
 
   /*! \brief  Provide a pointer to the vertex weights, if any.
-      \param weights is the list of weights of the given dimension for
-           the vertices returned in getVertexIDsView().  If weights for
-           this dimension are to be uniform for all vertices in the
-           global problem, the \c weights should be a NULL pointer.
+      \param weights is the list of weights of the given index for
+           the vertices returned in getVertexIDsView().  
       \param stride The k'th weight is located at weights[stride*k]
       \param idx ranges from zero to one less than getNumWeightsPerVertex().
    */
@@ -178,7 +186,16 @@ public:
     Z2_THROW_NOT_IMPLEMENTED_ERROR
   }
 
-  /*! \brief Returns the dimension (0 or greater) of vertex weights.
+
+  /*! \brief Indicate whether vertex weight with index idx should be the
+   *         global degree of the vertex
+   */
+  virtual bool useDegreeAsVertexWeight(int idx) const
+  { 
+    Z2_THROW_NOT_IMPLEMENTED_ERROR
+  }
+
+  /*! \brief Returns the number (0 or greater) of edge weights.
    */
   virtual int getNumWeightsPerEdge() const { return 0; }
 
@@ -197,36 +214,31 @@ public:
   }
 
 
-  /*! \brief Returns the dimension of the geometry, if any.
-   *  Some algorithms can use geometric coordinate information if it is present.
-   *  Since coordinate information is optional, we provide a default definition
-   *  that does not return coordinate info.  Individual graph adapters can
-   *  override this definition.
+  /*! \brief Allow user to provide additional data that contains coordinate
+   *         info associated with the MatrixAdapter's primaryEntityType.
+   *         Associated data must have the same parallel distribution and
+   *         ordering of entries as the primaryEntityType.
+   *
+   *  \param coordData is a pointer to a VectorAdapter with the user's
+   *         coordinate data.
    */
-  virtual int getCoordinateDimension() const { return 0; }
-
-  /*! \brief Provide a pointer to one dimension of vertex coordinates.
-   *  \param ent is the entity for which coordinate information is requested
-   *         Valid values are GRAPH_VERTEX and GRAPH_EDGE.
-   *  \param coordDim  is a value from 0 to one less than
-   *     getDimension() specifying which dimension is
-   *     being provided in the coords list.
-   *  \param coords  points to a list of coordinate values for the dimension.
-   *  \param stride  describes the layout of the coordinate values in
-   *          the coords list.  If stride is one, then the ith coordinate
-   *          value is coords[i], but if stride is two, then the
-   *          ith coordinate value is coords[2*i].
-   *  Since coordinate information is optional, we provide a default definition
-   *  that does not return coordinate info.  Individual graph adapters can
-   *  override this definition.
-   */
-
-  virtual void getVertexCoordinatesView(const scalar_t *&coords, int &stride,
-                                          int idx) const
+  void setCoordinateInput(VectorAdapter<UserCoord> *coordData)
   {
-    coords = NULL;
-    stride = 0;
-    Z2_THROW_NOT_IMPLEMENTED_ERROR
+    coordinateInput_ = coordData;
+    haveCoordinateInput_ = true;
+  }
+
+  /*! \brief Indicate whether coordinate information has been set for this
+   *         MatrixAdapter
+   */
+  bool coordinatesAvailable() const { return haveCoordinateInput_; }
+
+  /*! \brief Obtain the coordinate data registered by the user.
+   *  \return pointer a VectorAdapter with the user's coordinate data.
+   */
+  VectorAdapter<UserCoord> *getCoordinateInput() const
+  {
+    return coordinateInput_;
   }
 
   ////////////////////////////////////////////////////////////////////////////
@@ -244,7 +256,7 @@ public:
    *  Also sets to adjacencyEntityType to something reasonable:  opposite of
    *  primaryEntityType.
    */
-  void setPrimaryEntityType(string typestr) {
+  void setPrimaryEntityType(std::string typestr) {
     if (typestr == "vertex") {
       this->primaryEntityType = GRAPH_VERTEX;
       this->adjacencyEntityType = GRAPH_EDGE;
@@ -275,7 +287,7 @@ public:
    *  Also sets to primaryEntityType to something reasonable:  opposite of
    *  adjacencyEntityType.
    */
-  void setAdjacencyEntityType(string typestr) {
+  void setAdjacencyEntityType(std::string typestr) {
     if (typestr == "vertex") {
       this->adjacencyEntityType = GRAPH_VERTEX;
       this->primaryEntityType = GRAPH_EDGE;
@@ -331,6 +343,19 @@ public:
       std::ostringstream emsg;
       emsg << __FILE__ << "," << __LINE__
            << " error:  getWeightsView not yet supported for graph edges." 
+           << std::endl;
+      throw std::runtime_error(emsg.str());
+    }
+  }
+
+  bool useDegreeAsWeight(int idx) const
+  {
+    if (this->getPrimaryEntityType() == GRAPH_VERTEX)
+      return useDegreeAsVertexWeight(idx);
+    else {
+      std::ostringstream emsg;
+      emsg << __FILE__ << "," << __LINE__
+           << " error:  useDegreeAsWeight is supported only for vertices"
            << std::endl;
       throw std::runtime_error(emsg.str());
     }

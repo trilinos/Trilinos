@@ -1,7 +1,7 @@
 
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 // Goal of this example is to present the visualization capabilities of
@@ -51,7 +51,7 @@ using namespace Galeri;
 
 int main(int argc, char *argv[])
 {
-  
+
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
 #endif
 
   // Create the linear problem using the Galeri package.
-  
+
   int NumPDEEqns = 5;
 
   Teuchos::ParameterList GaleriList;
@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
   AztecOO solver(Problem);
 
   // =========================== definition of coordinates =================
-  
+
   // use the following Galeri function to get the
   // coordinates for a Cartesian grid. Note however that the
   // visualization capabilites of Trilinos accept non-structured grid as
@@ -93,9 +93,9 @@ int main(int argc, char *argv[])
                                                          GaleriList);
   double* x_coord = (*Coord)[0];
   double* y_coord = (*Coord)[1];
-  
+
   // =========================== begin of ML part ===========================
-  
+
   // create a parameter list for ML options
   ParameterList MLList;
   int *options    = new int[AZ_OPTIONS_SIZE];
@@ -103,48 +103,48 @@ int main(int argc, char *argv[])
 
   // set defaults
   ML_Epetra::SetDefaults("SA",MLList, options, params);
-  
+
   // overwrite some parameters. Please refer to the user's guide
   // for more information
   // some of the parameters do not differ from their default value,
   // and they are here reported for the sake of clarity
-  
+
   // maximum number of levels
   MLList.set("max levels",3);
   MLList.set("increasing or decreasing","increasing");
   MLList.set("smoother: type", "symmetric Gauss-Seidel");
 
   // aggregation scheme set to Uncoupled. Note that the aggregates
-  // created by MIS can be visualized for serial runs only, while 
+  // created by MIS can be visualized for serial runs only, while
   // Uncoupled, METIS for both serial and parallel runs.
   MLList.set("aggregation: type", "Uncoupled");
 
   // ======================== //
   // visualization parameters //
   // ======================== //
-  // 
+  //
   // - set "viz: enable" to `false' to disable visualization and
   //   statistics.
   // - set "x-coordinates" to the pointer of x-coor
-  // - set "viz: equation to plot" to the number of equation to 
+  // - set "viz: equation to plot" to the number of equation to
   //   be plotted (for vector problems only). Default is -1 (that is,
   //   plot all the equations)
-  // - set "viz: print starting solution" to print on file 
+  // - set "viz: print starting solution" to print on file
   //   the starting solution vector, that was used for pre-
   //   and post-smoothing, and for the cycle. This may help to
-  //   understand whether the smoothed solution is "smooth" 
+  //   understand whether the smoothed solution is "smooth"
   //   or not.
   //
   // NOTE: visualization occurs *after* the creation of the ML preconditioner,
   // by calling VisualizeAggregates(), VisualizeSmoothers(), and
-  // VisualizeCycle(). However, the user *must* enable visualization 
+  // VisualizeCycle(). However, the user *must* enable visualization
   // *before* creating the ML object. This is because ML must store some
   // additional information about the aggregates.
-  // 
+  //
   // NOTE: the options above work only for "viz: output format" == "xyz"
   // (default value) or "viz: output format" == "vtk".
   // If "viz: output format" == "dx", the user
-  // can only plot the aggregates. 
+  // can only plot the aggregates.
 
   MLList.set("viz: output format", "vtk");
   MLList.set("viz: enable", true);
@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
 
   // create the preconditioner object and compute hierarchy
 
-  ML_Epetra::MultiLevelPreconditioner * MLPrec = 
+  ML_Epetra::MultiLevelPreconditioner * MLPrec =
     new ML_Epetra::MultiLevelPreconditioner(*A, MLList);
 
   // ============= //
@@ -169,7 +169,7 @@ int main(int argc, char *argv[])
   // 1.- print out the shape of the aggregates, plus some
   //     statistics
   // 2.- print out the effect of presmoother and postsmoother
-  //     on a random vector. Input integer number represent 
+  //     on a random vector. Input integer number represent
   //     the number of applications of presmoother and postmsoother,
   //     respectively
   // 3.- print out the effect of the ML cycle on a random vector.
@@ -189,10 +189,10 @@ int main(int argc, char *argv[])
 
   // destroy the preconditioner
   delete MLPrec;
-  
+
   delete [] options;
   delete [] params;
-  
+
   delete A;
   delete Coord;
   delete Map;
@@ -227,7 +227,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-  
+
   return(EXIT_SUCCESS);
 }
 

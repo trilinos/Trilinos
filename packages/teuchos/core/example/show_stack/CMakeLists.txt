@@ -1,6 +1,3 @@
-INCLUDE(TribitsAddExecutable)
-INCLUDE(TribitsAddAdvancedTest)
-
 TRIBITS_ADD_EXECUTABLE(
   show_stack
   SOURCES cxx_main.cpp

@@ -107,3 +107,6 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCES}
   DEPLIBS muelu
   )
+
+# Set linker language explicitly for CUDA builds.
+set_target_properties(muelu-adapters PROPERTIES LINKER_LANGUAGE CXX)

@@ -4,8 +4,11 @@ coarse: max size = 2000   [default]
 max levels = 10   [default]
 debug: graph level = -1   [default]
 number of equations = 1   [default]
+transpose: use implicit = 0   [default]
 smoother: pre or post = both   [default]
 multigrid algorithm = sa   [default]
+problem: symmetric = 1   [default]
+aggregation: export visualization data = 0   [default]
 repartition: enable = 0   [default]
 
 Level 0
@@ -28,9 +31,9 @@ Level 1
    Build (MueLu::CoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
     lightweight wrap = 1
-    aggregation threshold = 0
-    Dirichlet detection threshold = 0
-    algorithm = original
+    aggregation: drop tol = 0   [default]
+    aggregation: Dirichlet threshold = 0   [default]
+    aggregation: drop scheme = classical   [default]
     
    [empty list]
    
@@ -43,15 +46,17 @@ Level 1
    Build (MueLu::CoarseMapFactory)
    Striding info = {}   [default]
    Strided block id = -1   [default]
+   Domain GID offsets = {0}   [default]
    
   [empty list]
   
- Damping factor = 1.33333
+ sa: damping factor = 1.33333   [default]
  
  Transpose P (MueLu::TransPFactory)
  [empty list]
  
  Computing Ac (MueLu::RAPFactory)
+ transpose: use implicit = 0
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
  CheckMainDiagonal = 0   [default]
@@ -76,9 +81,9 @@ Level 2
    Build (MueLu::CoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
     lightweight wrap = 1
-    aggregation threshold = 0
-    Dirichlet detection threshold = 0
-    algorithm = original
+    aggregation: drop tol = 0   [default]
+    aggregation: Dirichlet threshold = 0   [default]
+    aggregation: drop scheme = classical   [default]
     
    [empty list]
    
@@ -91,15 +96,17 @@ Level 2
    Build (MueLu::CoarseMapFactory)
    Striding info = {}   [default]
    Strided block id = -1   [default]
+   Domain GID offsets = {0}   [default]
    
   [empty list]
   
- Damping factor = 1.33333
+ sa: damping factor = 1.33333   [default]
  
  Transpose P (MueLu::TransPFactory)
  [empty list]
  
  Computing Ac (MueLu::RAPFactory)
+ transpose: use implicit = 0
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
  CheckMainDiagonal = 0   [default]
@@ -123,9 +130,9 @@ Level 2
  A 1    3333   9997     3.00  1
  A 2    1111   3331     3.00  1
  
- Smoother (level 0) both : "Ifpack2::Relaxation": { MatrixType: "Tpetra::CrsMatrix<double, int, int, KokkosClassic::SerialNode, KokkosClassic::AltSparseOps<void, int, KokkosClassic::SerialNode, KokkosClassic::details::AltSparseOpsDefaultAllocator<int, KokkosClassic::SerialNode> > >", Status: initialized, computed, "relaxation: type": Symmetric Gauss-Seidel, "relaxation: sweeps": 1, "relaxation: damping factor": 1, "Global number of rows": 9999, "Global number of columns": 9999 }
+ Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
  
- Smoother (level 1) both : "Ifpack2::Relaxation": { MatrixType: "Tpetra::CrsMatrix<double, int, int, KokkosClassic::SerialNode, KokkosClassic::AltSparseOps<void, int, KokkosClassic::SerialNode, KokkosClassic::details::AltSparseOpsDefaultAllocator<int, KokkosClassic::SerialNode> > >", Status: initialized, computed, "relaxation: type": Symmetric Gauss-Seidel, "relaxation: sweeps": 1, "relaxation: damping factor": 1, "Global number of rows": 3333, "Global number of columns": 3333 }
+ Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
  
  Smoother (level 2) pre  : SuperLU solver interface
  Smoother (level 2) post : no smoother

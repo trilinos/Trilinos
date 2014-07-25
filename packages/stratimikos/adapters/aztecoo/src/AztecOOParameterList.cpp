@@ -48,7 +48,7 @@ namespace {
 
 //
 // Define the names of the different parameters.  Since the name of a
-// parameter is used several times, it is a good idea to define a varible that
+// parameter is used several times, it is a good idea to define a variable that
 // stores the std::string name so that typing errors get caught at compile-time.
 //
 

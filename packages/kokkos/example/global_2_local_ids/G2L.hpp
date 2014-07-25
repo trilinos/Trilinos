@@ -2,7 +2,6 @@
 #define KOKKOS_GLOBAL_TO_LOCAL_IDS_HPP
 
 #include <Kokkos_Parallel.hpp>
-#include <Kokkos_ParallelReduce.hpp>
 #include <Kokkos_View.hpp>
 
 #include <Kokkos_UnorderedMap.hpp>
@@ -179,7 +178,7 @@ size_t test_global_to_local_ids(unsigned num_ids, unsigned capacity, unsigned nu
   timer.reset();
 
 
-  size_t num_errors = global_2_local.failed_inserts();
+  size_t num_errors = global_2_local.failed_insert();
 
   if (num_errors == 0u) {
     for (unsigned i=0; i<num_find_iterations; ++i)

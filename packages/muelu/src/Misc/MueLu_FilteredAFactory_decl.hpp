@@ -51,9 +51,9 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_FilteredAFactory_fwd.hpp"
 
+#include "MueLu_GraphBase.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
-#include "MueLu_GraphBase.hpp"
 
 namespace MueLu {
 
@@ -77,7 +77,7 @@ namespace MueLu {
     //! Destructor.
     virtual ~FilteredAFactory() { }
 
-    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+    RCP<const ParameterList> GetValidParameterList() const;
 
     //@}
 
@@ -99,6 +99,9 @@ namespace MueLu {
     void Build(Level& currentLevel) const;
 
     //@}
+  private:
+    void BuildReuse(const Matrix& A, const GraphBase& G, const bool lumping, Matrix& filteredA) const;
+    void BuildNew  (const Matrix& A, const GraphBase& G, const bool lumping, Matrix& filteredA) const;
 
   }; //class FilteredAFactory
 

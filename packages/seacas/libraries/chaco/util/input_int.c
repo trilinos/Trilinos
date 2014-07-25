@@ -2,10 +2,9 @@
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
-#include	<stdio.h>
-#include	<string.h>
-#include	"defs.h"
-#include	"params.h"
+#include <stdio.h>                      // for getchar, sscanf
+#include "defs.h"                       // for FALSE, TRUE
+#include "params.h"                     // for LINE_LENGTH
 
 /* Robust routine to read an integer */
 int       input_int(void)

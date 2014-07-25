@@ -21,7 +21,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact Bill Spotz (wfspotz@sandia.gov)
 //
@@ -359,7 +359,7 @@ using namespace NOX::Epetra;
 %{
 import sys, os.path as op
 parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
-if parentDir not in sys.path: sys.path.append(parentDir)
+if not parentDir in sys.path: sys.path.append(parentDir)
 del sys, op
 %}
 %import "NOX.Abstract_RelPath.i"
@@ -453,6 +453,7 @@ namespace Epetra
 // arguments that conflict with a SWIG director method argument
 #define result nox_result
 %include "NOX_Epetra_LinearSystem.H"
+#undef result
 
 ////////////////////////////////////////////
 // NOX.Epetra.LinearSystemAztecOO support //

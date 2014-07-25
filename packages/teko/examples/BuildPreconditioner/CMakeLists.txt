@@ -11,3 +11,12 @@ TRIBITS_ADD_EXECUTABLE(
       example-driver.cpp
    COMM mpi
    )
+
+IF(${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Tpetra)
+  TRIBITS_ADD_EXECUTABLE(
+     BuildPreconditioner_Driver_Example-Belos
+     SOURCES 
+        example-driver-belos.cpp
+     COMM mpi
+     )
+ENDIF()

@@ -73,6 +73,7 @@ SET(EXTRA_EXCLUDE_PACKAGES Sundance PyTrilinos STK Panzer)
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
   "-DTPL_ENABLE_Boost:BOOL=ON"
+  "-DTPL_ENABLE_X11:BOOL=OFF"
   "-DNetcdf_LIBRARY_DIRS=/Users/trilinos/tpl/gcc/netcdf_4.2/lib"
   "-DNetcdf_INCLUDE_DIRS=/Users/trilinos/tpl/gcc/netcdf_4.2/include"
   "-DHDF5_LIBRARY_DIRS=/Users/trilinos/tpl/gcc/hdf5-1.8.6/lib"

@@ -56,7 +56,7 @@ namespace panzer {
   class InputEquationSet;
 }
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
   template<typename EvalT>
   class IOClosureModelFactory : public panzer::ClosureModelFactory<EvalT> {
@@ -86,8 +86,14 @@ namespace panzer_stk {
     //! Map showing which cell averaged fields need to be written out for each element block
     std::map<std::string,std::vector<std::string> > blockIdToCellAvgFields_;
 
+    //! Map showing which cell averaged vector fields need to be written out for each element block
+    std::map<std::string,std::vector<std::string> > blockIdToCellAvgVectors_;
+
     //! Map showing which cell fields need to be written out for each element block
     std::map<std::string,std::vector<std::string> > blockIdToCellFields_;
+
+    //! Map showing which nodal fields need to be written out for each element block
+    std::map<std::string,std::vector<std::string> > blockIdToNodalFields_;
 
     /** Map stating if an evaluator for a particular block ID has been included.
       *
@@ -105,7 +111,7 @@ namespace panzer_stk {
 
   template < >
   Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > >
-  panzer_stk::IOClosureModelFactory<panzer::Traits::Residual>::buildClosureModels(const std::string& model_id,
+  panzer_stk_classic::IOClosureModelFactory<panzer::Traits::Residual>::buildClosureModels(const std::string& model_id,
 		       const Teuchos::ParameterList& models,
 		       const panzer::FieldLayoutLibrary& fl,
 		       const Teuchos::RCP<panzer::IntegrationRule>& ir,

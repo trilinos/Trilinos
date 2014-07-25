@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -66,22 +66,22 @@ XferOp::XferOp(GenericEpetraProblem& probA, const GenericEpetraProblem& probB)
   // The following assumes that 1D elements exist such that an element is
   // defined by a left and right end-node which are sequentially numbered.
   double tol(1.e-8);
-  for( int i = 0; i < meshA.MyLength(); i++) 
+  for( int i = 0; i < meshA.MyLength(); i++)
   {
     double xlocA = meshA[i];
-    for( int j = 0; j < (meshB.MyLength()-1); ++j ) 
+    for( int j = 0; j < (meshB.MyLength()-1); ++j )
     {
       double xlocB_left  = meshB[j]   ;
       double xlocB_right = meshB[j+1] ;
       // First check for what we choose to define as a direct match (within tol)
-      if( fabs(xlocB_left - xlocA) <= tol ) 
+      if( fabs(xlocB_left - xlocA) <= tol )
       {
         dependentNodes.insert( multimap<int,int>::value_type(i, j) );
         dependentWeights.insert( multimap<int,double>::value_type(i, double(1.0)) );
         break;
       }
       // Next determine which two nodes of meshB xlocA lies between
-      else if( (xlocA > xlocB_left) && (xlocA < xlocB_right) ) 
+      else if( (xlocA > xlocB_left) && (xlocA < xlocB_right) )
       {
         dependentNodes.insert( multimap<int,int>::value_type(i, j) );
         dependentNodes.insert( multimap<int,int>::value_type(i, j+1) );
@@ -92,7 +92,7 @@ XferOp::XferOp(GenericEpetraProblem& probA, const GenericEpetraProblem& probB)
         break;
       }
       // Finally check for a direct match of the right node
-      else if( fabs(xlocB_right - xlocA) <= tol ) 
+      else if( fabs(xlocB_right - xlocA) <= tol )
       {
         dependentNodes.insert( multimap<int,int>::value_type(i, j+1) );
         dependentWeights.insert( multimap<int,double>::value_type(i, double(1.0)) );
@@ -100,60 +100,60 @@ XferOp::XferOp(GenericEpetraProblem& probA, const GenericEpetraProblem& probB)
       }
     }
     if( !dependentNodes.count(i) )
-      std::cout << "WARNING: Node " << i << " at position " << xlocA 
+      std::cout << "WARNING: Node " << i << " at position " << xlocA
            << " not interpolated to transfer mesh !!" << std::endl;
   }
 
 #ifdef DEBUG_TRANSFER_OPERATOR
-  for( int i = 0; i < meshA.MyLength(); i++) 
+  for( int i = 0; i < meshA.MyLength(); i++)
   {
     std::cout << "meshA node " << i << " at loc --> " << meshA[i]
          << " needs node(s) from meshB: ";
-    pair< multimap<int, int>::iterator, 
-          multimap<int, int>::iterator > rangeN 
-		  = dependentNodes.equal_range(i);
-    pair< multimap<int, double>::iterator, 
-          multimap<int, double>::iterator > rangeW 
-		  = dependentWeights.equal_range(i);
+    pair< multimap<int, int>::iterator,
+          multimap<int, int>::iterator > rangeN
+          = dependentNodes.equal_range(i);
+    pair< multimap<int, double>::iterator,
+          multimap<int, double>::iterator > rangeW
+          = dependentWeights.equal_range(i);
     multimap<int, int>::iterator iterN;
     multimap<int, double>::iterator iterW;
     int j;
     for( j = 0, iterN = rangeN.first, iterW = rangeW.first;
-		   iterN != rangeN.second; j++, iterN++, iterW++)
+           iterN != rangeN.second; j++, iterN++, iterW++)
       std::cout << "(" << (*iterN).second << ", " << (*iterW).second << ")   ";
     std::cout << std::endl;
   }
 #endif
-    
+
 }
 
 //-----------------------------------------------------------------------------
 
 // Destructor
-XferOp::~XferOp() 
-{ 
+XferOp::~XferOp()
+{
 }
 
 //-----------------------------------------------------------------------------
 
-void 
+void
 XferOp::transferField(Epetra_Vector& vecTo, Epetra_Vector& vecFrom)
 {
   // Do the transfer using Epetra_Vectors
-  for( int i = 0; i < vecTo.MyLength(); i++) 
+  for( int i = 0; i < vecTo.MyLength(); i++)
   {
     vecTo[i] = 0.0;
-    pair< multimap<int, int>::iterator, 
-          multimap<int, int>::iterator > rangeN 
-		  = dependentNodes.equal_range(i);
-    pair< multimap<int, double>::iterator, 
-          multimap<int, double>::iterator > rangeW 
-		  = dependentWeights.equal_range(i);
+    pair< multimap<int, int>::iterator,
+          multimap<int, int>::iterator > rangeN
+          = dependentNodes.equal_range(i);
+    pair< multimap<int, double>::iterator,
+          multimap<int, double>::iterator > rangeW
+          = dependentWeights.equal_range(i);
     multimap<int, int>::iterator iterN;
     multimap<int, double>::iterator iterW;
     int j;
     for( j = 0, iterN = rangeN.first, iterW = rangeW.first;
-		   iterN != rangeN.second; j++, iterN++, iterW++)
+           iterN != rangeN.second; j++, iterN++, iterW++)
       vecTo[i] += (*iterW).second * vecFrom[(*iterN).second];
   }
 }

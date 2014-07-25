@@ -21,7 +21,7 @@
 #
 # You should have received a copy of the GNU Lesser General Public
 # License along with this library; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 # USA
 # Questions? Contact Bill Spotz (wfspotz@sandia.gov)
 #
@@ -77,9 +77,9 @@ SET_DIRECTORY_PROPERTIES(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${clean_files}"
 
 # The Isorropia module employs namespaces, so include the Isorropia
 # directory
-IF(PyTrilinos_NABLE_Isorropia)
+IF(PyTrilinos_ENABLE_Isorropia)
   ADD_SUBDIRECTORY(Isorropia)
-ENDIF(PyTrilinos_NABLE_Isorropia)
+ENDIF(PyTrilinos_ENABLE_Isorropia)
 
 # The NOX module employs namespaces, so include the NOX directory
 IF(PyTrilinos_ENABLE_NOX)

@@ -16,6 +16,12 @@
 /* ******************************************************************** */
 /* data structure type definition                                       */
 /* ******************************************************************** */
+typedef enum {ML_GS_standard=0,ML_GS_symmetric,ML_GS_efficient_symmetric} ML_GS_SWEEP_TYPE;
+/* 0 - Standard G-S or Block G-S
+   1 - Symmetric G-S or Block G-S
+   2 - Efficient Symmetric G-S or Block G-S
+   (i.e. pre=forward, post=backward) */
+
 
 typedef struct ML_SmootherFunc_Struct ML_SmootherFunc;
 typedef struct ML_Smoother_Struct ML_Smoother;
@@ -49,7 +55,7 @@ typedef struct ML_Sm_BlockHiptmair_Data_Struct ML_Sm_BlockHiptmair_Data;
 /* These data structures define the smoother object.                    */
 /* -------------------------------------------------------------------- */
 
-struct ML_SmootherFunc_Struct 
+struct ML_SmootherFunc_Struct
 {
    int ML_id;
    int (*func_ptr)(ML_Smoother *, int, double *, int, double *);
@@ -62,13 +68,8 @@ struct ML_SmootherFunc_Struct
    envelope         message-passing information that is used in
                     ML_exchange_bdry
 *******************************************************************************/
-typedef enum {ML_GS_standard=0,ML_GS_symmetric,ML_GS_efficient_symmetric} ML_GS_SWEEP_TYPE;
-/* 0 - Standard G-S or Block G-S
-   1 - Symmetric G-S or Block G-S
-   2 - Efficient Symmetric G-S or Block G-S
-   (i.e. pre=forward, post=backward) */
 
-struct ML_Smoother_Struct 
+struct ML_Smoother_Struct
 {
    int                     ML_id;
    struct ML_1Level_Struct *my_level;
@@ -88,7 +89,7 @@ struct ML_Smoother_Struct
 
 };
 
-struct ML_Sm_BGS_Data_Struct 
+struct ML_Sm_BGS_Data_Struct
 {
    double ** blockfacts;
    int    ** perms;
@@ -105,7 +106,7 @@ struct ML_Sm_BGS_Data_Struct
    int    **trid_ipiv;
 };
 
-struct ML_Sm_ILUT_Data_Struct 
+struct ML_Sm_ILUT_Data_Struct
 {
    int           Nrows;
    int           *mat_ia;
@@ -133,7 +134,7 @@ struct DinvA_widget {
 #endif
 typedef struct ML_Sm_Schwarz_Data_Struct ML_Sm_Schwarz_Data;
 
-struct ML_Sm_Schwarz_Data_Struct 
+struct ML_Sm_Schwarz_Data_Struct
 {
    int           Nrows;
    int           **bmat_ia;
@@ -159,7 +160,7 @@ struct ML_Sm_Schwarz_Data_Struct
 
 /*******************************************************************************
 Hiptmair Smoother data structure
-    sm_nodal    pointer to nodal smoother structure 
+    sm_nodal    pointer to nodal smoother structure
     max_eig     eigenvalue calculated for damping parameter
     omega       damping parameter for edge and/or nodal smoother inside
                 Hiptmair smoother
@@ -182,7 +183,7 @@ struct ML_Sm_Hiptmair_Data_Struct
    int   external_TtATmat; /* Set if T^TAT is generated elsewhere */
 };
 
-#define FULL_HIPTMAIR 0  
+#define FULL_HIPTMAIR 0
              /* smoothes on edges, nodes and then edges */
 
 #define HALF_HIPTMAIR 1
@@ -265,7 +266,7 @@ extern int ML_Cheby(ML_Smoother *sm, int inlen, double x[], int outlen, double r
 extern int ML_Cheby_WKC(void *sm, int inlen, double *x, int outlen, double *rhs);
 #endif
 
-extern int ML_complex_Cheby(ML_Smoother *sm, int inlen, double x[], int outlen, 
+extern int ML_complex_Cheby(ML_Smoother *sm, int inlen, double x[], int outlen,
 			    double rhs[]);
 extern int ML_DiagScaled_1stepKrylov(ML_Smoother *sm, int inlen, double x[],
 				     int outlen, double rhs[]);
@@ -286,16 +287,16 @@ extern  int ML_Smoother_BlockHiptmair(ML_Smoother *, int, double *, int, double 
 extern int ML_Smoother_ApplySubdomainOverlap(ML_Smoother *sm, int inlen,
 					    double x[],int outlen, double b[]);
 #ifdef HAVE_PETSC
-extern int ML_Smoother_Petsc(ML_Smoother *sm, int inlen, double x[], int outlen, 
+extern int ML_Smoother_Petsc(ML_Smoother *sm, int inlen, double x[], int outlen,
                       double rhs[]);
 #endif
 
 extern void ML_Smoother_DestroySubdomainOverlap(void *data);
 
-extern int ML_EyeMinusIterationOperator_Matvec(ML_Operator *Amat, int ilen, 
+extern int ML_EyeMinusIterationOperator_Matvec(ML_Operator *Amat, int ilen,
 		       double p[], int olen, double ap[]);
 
-extern int ML_Smoother_ComputeOmegaViaSpectralradius(ML_Operator *Amat, 
+extern int ML_Smoother_ComputeOmegaViaSpectralradius(ML_Operator *Amat,
     int (*smoothing_function)(ML_Smoother *, int, double *, int, double *),
     void *data, double *spectral_radius, double *omega);
 
@@ -317,7 +318,7 @@ extern  int ML_Smoother_Gen_BlockHiptmair_Data(ML_Sm_BlockHiptmair_Data**,
                          ML_Operator*, int, int*, void *, void **,
 					  void *, void **);
 extern int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
-					   ML_Operator *Amat, void *smoother, 
+					   ML_Operator *Amat, void *smoother,
 						  void **args, double default_omega);
 
 extern void ML_Smoother_Destroy_Hiptmair_Data(void *data);
@@ -327,8 +328,8 @@ extern void ML_Smoother_Destroy_BGS_Data(void *data);
 extern void ML_Smoother_Clean_BGS_Data(void *data);
 extern  int ML_Smoother_Create_ILUT_Data(ML_Sm_ILUT_Data **data);
 extern void ML_Smoother_Destroy_ILUT_Data(void *data);
-extern  int ML_Smoother_Gen_BGSFacts(ML_Sm_BGS_Data **, ML_Operator *,int); 
-extern  int ML_Smoother_Gen_VBGSFacts(ML_Sm_BGS_Data**,ML_Operator*,int,int*); 
+extern  int ML_Smoother_Gen_BGSFacts(ML_Sm_BGS_Data **, ML_Operator *,int);
+extern  int ML_Smoother_Gen_VBGSFacts(ML_Sm_BGS_Data**,ML_Operator*,int,int*);
 extern  int ML_Smoother_Gen_LineSmootherFacts(ML_Sm_BGS_Data**, ML_Operator*, int, int*, int*);
 extern void ML_Smoother_Destroy_Schwarz_Data(void *data);
 extern void ML_Smoother_Clean_ParaSails(void *data);
@@ -344,25 +345,25 @@ extern int ML_Smoother_Arglist_Nargs(void **arglist);
 
 
 
-extern  int ML_Smoother_ILUTDecomposition(ML_Sm_ILUT_Data *, ML_Operator *, 
+extern  int ML_Smoother_ILUTDecomposition(ML_Sm_ILUT_Data *, ML_Operator *,
                     ML_Comm *, int, int *,int*,double *,int *, int *,int);
 #ifdef out
 extern  int ML_Smoother_Create_Schwarz_Data(ML_Sm_Schwarz_Data **data);
-extern  int ML_Smoother_VBlockSchwarzDecomposition(ML_Sm_Schwarz_Data *, 
-                    ML_Operator *, ML_Comm *, int, int *,int*,double *,int *, 
+extern  int ML_Smoother_VBlockSchwarzDecomposition(ML_Sm_Schwarz_Data *,
+                    ML_Operator *, ML_Comm *, int, int *,int*,double *,int *,
                     int *,int);
 #endif
 
-extern  int ML_Smoother_GetOffProcRows(ML_CommInfoOP *, ML_Comm *, 
+extern  int ML_Smoother_GetOffProcRows(ML_CommInfoOP *, ML_Comm *,
                   ML_Operator *,int,int *,int,int *,int **,double **);
-extern  int ML_Smoother_GetRowLengths(ML_CommInfoOP *, ML_Comm *, 
+extern  int ML_Smoother_GetRowLengths(ML_CommInfoOP *, ML_Comm *,
                   ML_Operator *, int *, int **);
 extern  int ML_Smoother_ComposeOverlappedMatrix(ML_Operator *, ML_Comm *,
                   int *, int **, int **, double **, int **, int **, int *);
 extern  ML *ML_Smoother_Get_Hiptmair_nodal(ML *ml, int level, int);
-extern  int ML_dgetrs_special(int blocksize, double *ablock, int *ipiv, 
+extern  int ML_dgetrs_special(int blocksize, double *ablock, int *ipiv,
 			      double *correc);
-extern  int ML_dgetrs_trans_special(int blocksize, double *ablock, int *ipiv, 
+extern  int ML_dgetrs_trans_special(int blocksize, double *ablock, int *ipiv,
 			      double *correc);
 extern  int ML_permute_for_dgetrs_special(double *Z[], int Nblocks, int blocksize,
                                ML_Sm_BGS_Data *block_data_widget);

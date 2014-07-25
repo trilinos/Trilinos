@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -48,7 +48,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "petscvec.h" // Petsc Vec header 
+#include "petscvec.h" // Petsc Vec header
 
 #include "NOX_Common.H"
 #include "NOX_Petsc_Vector.H"
@@ -76,14 +76,14 @@ Vector::~Vector()
 {
   if(isAlloc)
   {
-    //cout << "\n\t\tVecDestroy called ....  " << name << "  " << this << "   " 
+    //cout << "\n\t\tVecDestroy called ....  " << name << "  " << this << "   "
     //     << &petscVec << std::endl;
     //VecDestroy(petscVec);
     isAlloc = false;
   }
 }
 
-Abstract::Vector& 
+Abstract::Vector&
 Vector::operator=(const Vec& source)
 {
   VecCopy(source, petscVec);
@@ -92,13 +92,13 @@ Vector::operator=(const Vec& source)
   return *this;
 }
 
-Abstract::Vector& 
+Abstract::Vector&
 Vector::operator=(const Abstract::Vector& source)
 {
   return operator=(dynamic_cast<const Vector&>(source));
 }
 
-Abstract::Vector& 
+Abstract::Vector&
 Vector::operator=(const Vector& source)
 {
   VecCopy(source.getPetscVector(), petscVec);
@@ -107,10 +107,10 @@ Vector::operator=(const Vector& source)
   return *this;
 }
 
-int 
+int
 Vector::allocate(const Vec& source, CopyType type)
 {
- 
+
   int ierr = VecDuplicate(source, &petscVec);
   isAlloc = true;
 
@@ -133,32 +133,32 @@ Vector::allocate(const Vec& source, CopyType type)
   return ierr;
 }
 
-Vec& 
+Vec&
 Vector::getPetscVector()
 {
   return petscVec;
 }
 
-const Vec& 
+const Vec&
 Vector::getPetscVector() const
 {
   return petscVec;
 }
 
-Abstract::Vector& 
+Abstract::Vector&
 Vector::init(double value)
 {
   VecSet(petscVec, value);
   return *this;
 }
 
-Abstract::Vector& 
+Abstract::Vector&
 Vector::abs(const Abstract::Vector& base)
 {
   return abs(dynamic_cast<const Vector&>(base));
 }
 
-Abstract::Vector& 
+Abstract::Vector&
 Vector::abs(const Vector& base)
 {
   VecCopy(base.getPetscVector(), petscVec);
@@ -166,13 +166,13 @@ Vector::abs(const Vector& base)
   return *this;
 }
 
-Abstract::Vector& 
+Abstract::Vector&
 Vector::reciprocal(const Abstract::Vector& base)
 {
   return reciprocal(dynamic_cast<const Vector&>(base));
 }
 
-Abstract::Vector& 
+Abstract::Vector&
 Vector::reciprocal(const Vector& base)
 {
   VecCopy(base.getPetscVector(), petscVec);
@@ -180,54 +180,54 @@ Vector::reciprocal(const Vector& base)
   return *this;
 }
 
-Abstract::Vector& 
+Abstract::Vector&
 Vector::scale(double alpha)
 {
   VecScale(petscVec, alpha);
   return *this;
 }
 
-Abstract::Vector& 
+Abstract::Vector&
 Vector::scale(const Abstract::Vector& a)
 {
   return scale(dynamic_cast<const Petsc::Vector&>(a));
 }
-  
-Abstract::Vector& 
+
+Abstract::Vector&
 Vector::scale(const Vector& a)
 {
   VecPointwiseMult(petscVec, a.getPetscVector(), petscVec);
   return *this;
-} 
-  
-Abstract::Vector& 
-Vector::update(double alpha, const Abstract::Vector& a, 
-				 double gammaval)
+}
+
+Abstract::Vector&
+Vector::update(double alpha, const Abstract::Vector& a,
+                 double gammaval)
 {
   return update(alpha, dynamic_cast<const Vector&>(a), gammaval);
 }
 
-Abstract::Vector& 
-Vector::update(double alpha, const Vector& a, 
-				 double gammaval)
+Abstract::Vector&
+Vector::update(double alpha, const Vector& a,
+                 double gammaval)
 {
   VecAXPBY(petscVec, alpha, gammaval, a.getPetscVector());
   return *this;
 }
 
-Abstract::Vector& 
-Vector::update(double alpha, const Abstract::Vector& a, 
-				 double beta, const Abstract::Vector& b,
-				 double gammaval)
+Abstract::Vector&
+Vector::update(double alpha, const Abstract::Vector& a,
+                 double beta, const Abstract::Vector& b,
+                 double gammaval)
 {
-  return update(alpha, dynamic_cast<const Vector&>(a), 
-		beta, dynamic_cast<const Vector&>(b), gammaval);
+  return update(alpha, dynamic_cast<const Vector&>(a),
+        beta, dynamic_cast<const Vector&>(b), gammaval);
 }
 
-Abstract::Vector& 
-Vector::update(double alpha, const Vector& a, 
-				 double beta, const Vector& b,
-				 double gammaval)
+Abstract::Vector&
+Vector::update(double alpha, const Vector& a,
+                 double beta, const Vector& b,
+                 double gammaval)
 {
   VecAXPBY(petscVec, alpha, gammaval, a.getPetscVector());
   VecAXPY(petscVec, beta, b.getPetscVector());
@@ -235,15 +235,15 @@ Vector::update(double alpha, const Vector& a,
 }
 
 
-Teuchos::RCP<NOX::Abstract::Vector> 
+Teuchos::RCP<NOX::Abstract::Vector>
 Vector::clone(CopyType type) const
 {
-  Teuchos::RCP<NOX::Abstract::Vector> newVec = 
+  Teuchos::RCP<NOX::Abstract::Vector> newVec =
     Teuchos::rcp(new NOX::Petsc::Vector(petscVec, type));
   return newVec;
 }
 
-double 
+double
 Vector::norm(Abstract::Vector::NormType type) const
 {
   double n;
@@ -262,13 +262,13 @@ Vector::norm(Abstract::Vector::NormType type) const
   return n;
 }
 
-double 
+double
 Vector::norm(const Abstract::Vector& weights) const
 {
   return norm(dynamic_cast<const Vector&>(weights));
 }
 
-double 
+double
 Vector::norm(const Vector& weights) const
 {
   double n = 0.0;
@@ -277,13 +277,13 @@ Vector::norm(const Vector& weights) const
   return n;
 }
 
-double 
+double
 Vector::innerProduct(const Abstract::Vector& y) const
 {
   return innerProduct(dynamic_cast<const Vector&>(y));
 }
 
-double 
+double
 Vector::innerProduct(const Vector& y) const
 {
   double dotprod;
@@ -291,10 +291,10 @@ Vector::innerProduct(const Vector& y) const
   return dotprod;
 }
 
-int 
+NOX::size_type
 Vector::length() const
 {
-  int size;
+  PetscInt size;
   VecGetSize(petscVec, &size);
   return size;
 }

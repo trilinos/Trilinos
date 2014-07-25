@@ -44,10 +44,40 @@
 
 #include "Amesos2_Solver.hpp"
 #include "Amesos2_Factory.hpp"
-#include "Stokhos_Sacado_Kokkos.hpp"
+#include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 #include "Stokhos_Tpetra_Utilities_MP_Vector.hpp"
 
 namespace Amesos2 {
+
+  template <class S, class LO, class GO, class N, class LMO>
+  LO get_mp_vector_size(
+    const Teuchos::RCP<const Tpetra::CrsMatrix<Sacado::MP::Vector<S>, LO, GO, N, LMO> >& A = Teuchos::null,
+    const Teuchos::RCP<Tpetra::MultiVector<Sacado::MP::Vector<S>, LO, GO, N> >& X = Teuchos::null,
+    const Teuchos::RCP<const Tpetra::MultiVector<Sacado::MP::Vector<S>, LO, GO, N> >& B = Teuchos::null)
+  {
+    // Without KokkosRefactor, can only do static
+    return S::static_size;
+  }
+
+#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  template <class S, class LO, class GO, class D, class LMO>
+  LO get_mp_vector_size(
+    const Teuchos::RCP<const Tpetra::CrsMatrix<Sacado::MP::Vector<S>, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D>, LMO> >& A = Teuchos::null,
+    const Teuchos::RCP<Tpetra::MultiVector<Sacado::MP::Vector<S>, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D> > >& X = Teuchos::null,
+    const Teuchos::RCP<const Tpetra::MultiVector<Sacado::MP::Vector<S>, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D> > >& B = Teuchos::null)
+  {
+    if (A != Teuchos::null) {
+      return A->getLocalValuesView().sacado_size();
+    }
+    else if (X != Teuchos::null) {
+      return X->template getLocalView<D>().sacado_size();
+    }
+    else if (B != Teuchos::null) {
+      return B->template getLocalView<D>().sacado_size();
+    }
+    return 0;
+  }
+#endif
 
   /// \brief Amesos2 solver adapter for MP::Vector scalar type
   ///
@@ -92,13 +122,13 @@ namespace Amesos2 {
       const Teuchos::RCP<Vector>& X_,
       const Teuchos::RCP<const Vector>& B_) :
       A(A_), X(X_), B(B_) {
-      const LocalOrdinal mp_size = Storage::static_size;
+      const LocalOrdinal mp_size = get_mp_vector_size(A, X, B);
       flat_graph = Stokhos::create_flat_mp_graph(*(A->getCrsGraph()),
                                                  flat_X_map,
                                                  flat_B_map,
                                                  mp_size);
       if (A != Teuchos::null)
-        flat_A = Stokhos::create_flat_matrix(*A, flat_graph);
+        flat_A = Stokhos::create_flat_matrix(*A, flat_graph, mp_size);
       if (X != Teuchos::null)
         flat_X = Stokhos::create_flat_vector_view(*X, flat_X_map);
       if (B != Teuchos::null)
@@ -277,19 +307,18 @@ namespace Amesos2 {
       A = a;
 
       // Rebuild flat matrix/graph
+      const LocalOrdinal mp_size = get_mp_vector_size(A);
       if (keep_phase <= CLEAN) {
         flat_X_map = Teuchos::null;
         flat_B_map = Teuchos::null;
         flat_graph = Teuchos::null;
-
-        const LocalOrdinal mp_size = Storage::static_size;
         flat_graph = Stokhos::create_flat_mp_graph(*(A->getCrsGraph()),
                                                    flat_X_map,
                                                    flat_B_map,
                                                    mp_size);
       }
       if (keep_phase <= SYMBFACT) // should this by NUMFACT???
-        flat_A = Stokhos::create_flat_matrix(*a, flat_graph);
+        flat_A = Stokhos::create_flat_matrix(*a, flat_graph, mp_size);
 
       flat_solver->setA(flat_A, keep_phase);
     }

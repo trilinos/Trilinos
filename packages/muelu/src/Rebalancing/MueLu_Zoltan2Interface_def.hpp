@@ -46,11 +46,6 @@
 #ifndef MUELU_ZOLTAN2INTERFACE_DEF_HPP
 #define MUELU_ZOLTAN2INTERFACE_DEF_HPP
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 #include <sstream>
 #include <set>
 
@@ -79,12 +74,11 @@ namespace MueLu {
  }
 
  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
- RCP<const ParameterList> Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+ RCP<const ParameterList> Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     validParamList->set< RCP<const FactoryBase> >   ("A",                      Teuchos::null, "Factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >   ("Coordinates",            Teuchos::null, "Factory of the coordinates");
-    validParamList->set< RCP<const FactoryBase> >   ("number of partitions",   Teuchos::null, "(advanced) Factory computing the number of partitions");
     validParamList->set< int >                      ("rowWeight",                          0, "Default weight to rows (total weight = nnz + rowWeight");
     validParamList->set< RCP<const ParameterList> > ("ParameterList",          Teuchos::null, "Zoltan2 parameters");
 
@@ -93,22 +87,23 @@ namespace MueLu {
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level & currentLevel) const {
+  void Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& currentLevel) const {
     Input(currentLevel, "A");
     Input(currentLevel, "Coordinates");
-    Input(currentLevel, "number of partitions");
-  } //DeclareInput()
+  }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &level) const {
+  void Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& level) const {
     FactoryMonitor m(*this, "Build", level);
 
-    RCP<Matrix>           A = Get< RCP<Matrix> >     (level, "A");
-    RCP<MultiVector> coords = Get< RCP<MultiVector> >(level, "Coordinates");
-    GO             numParts = Get<GO>                (level, "number of partitions");
+    RCP<Matrix>      A        = Get< RCP<Matrix> >     (level, "A");
+    RCP<const Map>   rowMap   = A->getRowMap();
 
-    RCP<const Map> rowMap = A->getRowMap();
-    RCP<const Map> map    = coords->getMap();
+    RCP<MultiVector> coords   = Get< RCP<MultiVector> >(level, "Coordinates");
+    RCP<const Map>   map      = coords->getMap();
+
+    GO               numParts = level.Get<GO>("number of partitions");
+
     TEUCHOS_TEST_FOR_EXCEPTION(rowMap->lib() == Xpetra::UseEpetra, Exceptions::RuntimeError,
                                "Zoltan2 does not work with Epetra at the moment. Please use Zoltan through ZoltanInterface");
 
@@ -121,7 +116,7 @@ namespace MueLu {
                                + toString(rowMap->getNodeNumElements()/blkSize) + "The vector length should be the same as the number of mesh points.");
 #ifdef HAVE_MUELU_DEBUG
     GO indexBase = rowMap->getIndexBase();
-    GetOStream(Runtime0,0) << "Checking consistence of row and coordinates maps" << std::endl;
+    GetOStream(Runtime0) << "Checking consistence of row and coordinates maps" << std::endl;
     // Make sure that logical blocks in row map coincide with logical nodes in coordinates map
     ArrayView<const GO> rowElements    = rowMap->getNodeElementList();
     ArrayView<const GO> coordsElements = map   ->getNodeElementList();
@@ -147,7 +142,7 @@ namespace MueLu {
 
     const ParameterList& pL = GetParameterList();
     int rowWeight = pL.get<int>("rowWeight");
-    GetOStream(Runtime0,0) << "Using weights formula: nnz + " << rowWeight << std::endl;
+    GetOStream(Runtime0) << "Using weights formula: nnz + " << rowWeight << std::endl;
 
     Array<SC> weightsPerRow(numElements);
     for (LO i = 0; i < numElements; i++) {
@@ -178,7 +173,7 @@ namespace MueLu {
     }
     Zoltan2Params.set("num_global_parts", Teuchos::as<int>(numParts));
 
-    GetOStream(Runtime0,0) << "Zoltan2 parameters:" << std::endl << "----------" << std::endl << Zoltan2Params << "----------" << std::endl;
+    GetOStream(Runtime0) << "Zoltan2 parameters:" << std::endl << "----------" << std::endl << Zoltan2Params << "----------" << std::endl;
 
     const std::string& algo = Zoltan2Params.get<std::string>("algorithm");
     TEUCHOS_TEST_FOR_EXCEPTION(algo != "multijagged" &&
@@ -203,7 +198,7 @@ namespace MueLu {
     RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(rowMap, false);
     ArrayRCP<GO>                      decompEntries = decomposition->getDataNonConst(0);
 
-    const zoltan2_partId_t * parts = problem->getSolution().getPartList();
+    const typename InputAdapterType::part_t * parts = problem->getSolution().getPartList();
 
     // K. Devine comment:
     //   At present, Zoltan2 does not guarantee that the parts in getPartList() are listed

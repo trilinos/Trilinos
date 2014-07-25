@@ -77,7 +77,7 @@ int main(int argc, char** argv) {
   int ny = -1;
   int nz = -1;
 
-  int neighbor_size = 1.5; // Default bin size for neighbor list construction
+  int neighbor_size = 1; // Default bin size for neighbor list construction
 
   double rho = 0.8442; // Number density of the system
   double delta = 0; // Scaling factor for random offsets of atom positions
@@ -150,6 +150,7 @@ int main(int argc, char** argv) {
   printf("-> Init Device\n");
 
 #ifdef KOKKOS_HAVE_CUDA
+  Kokkos::Cuda::host_mirror_device_type::initialize(teams*num_threads);
   Kokkos::Cuda::SelectDevice select_device(device);
   Kokkos::Cuda::initialize(select_device);
 #else

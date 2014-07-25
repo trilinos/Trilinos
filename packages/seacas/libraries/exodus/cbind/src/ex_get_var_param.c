@@ -49,10 +49,8 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include "exodusII.h"                   // for ex_get_variable_param, etc
 
-#include <ctype.h>
 
 /*!
  * reads the number of global, nodal, or element variables that are 

@@ -78,7 +78,7 @@ namespace MueLu {
 
     bool useTpetra = (A->getRowMap()->lib() == Xpetra::UseTpetra);
 
-    Teuchos::FancyOStream& mmfancy = this->GetOStream(Statistics2, 0);
+    Teuchos::FancyOStream& mmfancy = this->GetOStream(Statistics2);
 
     // T is used only for projecting onto
     RCP<CrsMatrix> T_ = CrsMatrixFactory::Build(C.GetPattern());

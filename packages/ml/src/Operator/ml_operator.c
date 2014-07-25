@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -76,7 +76,7 @@ int ML_Operator_Init( ML_Operator *mat, ML_Comm *comm)
    mat->invec_leng          = 0;
    mat->outvec_leng         = 0;
    mat->data                = NULL;
-   mat->diagonal            = NULL;      
+   mat->diagonal            = NULL;
    mat->N_nonzeros          = -1;
    mat->blocks              = -1;
    mat->max_nz_per_row      = 0;
@@ -99,6 +99,12 @@ int ML_Operator_Init( ML_Operator *mat, ML_Comm *comm)
    mat->subspace            = NULL;
    mat->spectral_radius_scheme = ML_USE_CG;
    mat->spectral_radius_max_iters = 10;
+   mat->NumZDir             = -1;
+   mat->Zorientation        = -1;  /* -1: not specified */
+                                   /*  1: vertical      */
+                                   /*  2: horizontal    */
+
+
    ML_Aux_Data_Create(&(mat->aux_data));
    mat->type                = ML_TYPE_UNKNOWN;
 
@@ -138,9 +144,9 @@ int ML_Operator_Clean( ML_Operator *mat)
    mypid = mat->comm->ML_mypid;
    if ( (mat->label != NULL) && (NumActiveProc>0) && ML_Get_PrintLevel()>10)
    {
-      i = mat->invec_leng; 
+      i = mat->invec_leng;
       Nglobcols = ML_gsum_double((double)i, mat->comm);
-      i = mat->outvec_leng; 
+      i = mat->outvec_leng;
       Nglobrows = ML_gsum_double((double)i, mat->comm);
       nnz = ML_Comm_GsumDouble(mat->comm, (double) mat->N_nonzeros);
       if (mypid == 0)
@@ -211,7 +217,7 @@ int ML_Operator_Clean( ML_Operator *mat)
        printf(" Mflop rating for %s (min, avg, max) \t= %e  %e  %e\n",
               mat->label,minfl,avgfl,maxfl);
    }
-#endif   
+#endif
 #endif
 
 #ifdef ML_TIMING_DETAILED
@@ -276,7 +282,7 @@ int ML_Operator_Clean( ML_Operator *mat)
       ML_CommInfoOP_Destroy(&(mat->getrow->post_comm));
       ML_mylabel = NULL;
 
-      if (mat->getrow->loc_glob_map != NULL) 
+      if (mat->getrow->loc_glob_map != NULL)
          ML_free(mat->getrow->loc_glob_map);
    }
    ML_memory_free((void**)&(mat->matvec));
@@ -286,7 +292,7 @@ int ML_Operator_Clean( ML_Operator *mat)
    mat->halfclone           = ML_FALSE;
 
    /* MS * Added on 18-Mar-05 */
-   if (mat->aux_data != NULL) 
+   if (mat->aux_data != NULL)
    {
      ML_Aux_Data_Destroy(&(mat->aux_data));
      mat->aux_data = NULL;
@@ -358,6 +364,11 @@ int ML_Operator_halfClone_Init(ML_Operator *mat,
    mat->from_an_ml_operator = original->from_an_ml_operator;
    mat->spectral_radius_scheme = original->spectral_radius_scheme;
    mat->spectral_radius_max_iters = original->spectral_radius_max_iters;
+   mat->NumZDir             = original->NumZDir;
+   mat->Zorientation        = original->Zorientation;
+                                   /* -1: not specified */
+                                   /*  1: vertical      */
+                                   /*  2: horizontal    */
    mat->data_destroy        = NULL;
    mat->build_time          = 0.0;
    mat->apply_time          = 0.0;
@@ -368,7 +379,7 @@ int ML_Operator_halfClone_Init(ML_Operator *mat,
       allocated. */
    if (mat->label != NULL) ML_free(mat->label);
    if (original->label != NULL) {
-     sprintf(str,"Clone of %s",original->label); 
+     sprintf(str,"Clone of %s",original->label);
      ML_Operator_Set_Label(mat,str);
    }
    mat->comm                = original->comm;
@@ -449,14 +460,14 @@ int ML_Operator_Set_BdryPts(ML_Operator *mat, ML_BdryPts *bc)
    }
    mat->BCs = bc;
    return 0;
-} 
+}
 
 /* ******************************************************************** */
 /* Set the matvec information                                           */
 /* ******************************************************************** */
 
 int ML_Operator_Set_ApplyFuncData(ML_Operator *mat, int inlen, int outlen,
-            void *data, int nrows, 
+            void *data, int nrows,
             int (*func)(ML_Operator*,int,double*,int,double*), int flag)
 {
    if ( mat->ML_id != ML_ID_OP ) {
@@ -464,7 +475,7 @@ int ML_Operator_Set_ApplyFuncData(ML_Operator *mat, int inlen, int outlen,
       exit(-1);
    }
 /* newly added : 8/17/00 */
-   if ( mat->data != NULL && mat->data_destroy != NULL ) 
+   if ( mat->data != NULL && mat->data_destroy != NULL )
    {
       mat->data_destroy(mat->data);
       mat->data = NULL;
@@ -484,7 +495,7 @@ int ML_Operator_Set_ApplyFuncData(ML_Operator *mat, int inlen, int outlen,
 /* Set the matvec information                                           */
 /************************************************************************/
 
-int ML_Operator_Set_ApplyFunc(ML_Operator *Op, 
+int ML_Operator_Set_ApplyFunc(ML_Operator *Op,
                        int (*func)(ML_Operator *, int, double *, int, double *))
 {
   Op->matvec->func_ptr = func;
@@ -514,7 +525,7 @@ int ML_Operator_Set_Diag(ML_Operator *Op, int size, double diagonal[])
 /* set getrow function                                                  */
 /* ******************************************************************** */
 
-int ML_Operator_Set_Getrow(ML_Operator *Op, 
+int ML_Operator_Set_Getrow(ML_Operator *Op,
         int size, int (*func)(ML_Operator *,int,int*,int,int*,double*,int*))
 {
   Op->getrow->func_ptr = func;
@@ -529,14 +540,14 @@ int ML_Operator_Set_Getrow(ML_Operator *Op,
 /* get a requested row from the operator                                */
 /* ******************************************************************** */
 
-int ML_Operator_Getrow(ML_Operator *Amat, int N_requested_rows, 
-                int requested_rows[], int allocated_space, int columns[], 
+int ML_Operator_Getrow(ML_Operator *Amat, int N_requested_rows,
+                int requested_rows[], int allocated_space, int columns[],
                 double values[], int row_lengths[])
 {
-   if (Amat->getrow->func_ptr == NULL) 
+   if (Amat->getrow->func_ptr == NULL)
       pr_error("ML_Operator_Getrow : Amat getrow not defined\n");
 
-   return(Amat->getrow->func_ptr(Amat,N_requested_rows, requested_rows, 
+   return(Amat->getrow->func_ptr(Amat,N_requested_rows, requested_rows,
 			 allocated_space, columns, values, row_lengths));
 
 }
@@ -560,7 +571,7 @@ int ML_Operator_Get_Diag(ML_Operator *Amat, int length, double **diag)
          cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
          vals = (double *) ML_allocate(allocated_space*sizeof(double));
          tdiag = (double *) ML_allocate(length*sizeof(double));
-         if (tdiag == NULL) 
+         if (tdiag == NULL)
             pr_error("Error(ML_Operator_Get_Diag): not enough space\n");
          for (i = 0; i < length; i++) tdiag[i] = 0.;
          for (i = 0; i < length; i++)
@@ -622,7 +633,7 @@ int ML_Operator_Apply(ML_Operator *Op, int inlen, double din[], int olen,
 /* apply the operator to a vector and apply boundary conditions         */
 /************************************************************************/
 
-int ML_Operator_ApplyAndResetBdryPts(ML_Operator *Op, int inlen, 
+int ML_Operator_ApplyAndResetBdryPts(ML_Operator *Op, int inlen,
                       double din[], int olen, double dout[])
 {
    int i, length, *list;
@@ -631,7 +642,7 @@ int ML_Operator_ApplyAndResetBdryPts(ML_Operator *Op, int inlen,
 
    t0 = GetClock();
 #endif
-   if (Op->matvec->func_ptr == NULL) 
+   if (Op->matvec->func_ptr == NULL)
       pr_error("ML_Operator_ApplyAndRestBdryPts : matvec not defined.\n");
 
    /* apply grid transfer */
@@ -762,7 +773,7 @@ int ML_Operator_Print(ML_Operator *matrix, const char label[])
 */
          fprintf(fid,"%d   %d     %20.13e\n",i+1,bindx[j]+1, val[j]);
       }
-      if (row_length == 0) 
+      if (row_length == 0)
          fprintf(fid,"%d   1      0.\n",i+1);
    }
    fclose(fid);
@@ -871,7 +882,7 @@ int ML_amalg_drop_getrow(ML_Operator *data, int N_requested_rows, int requested_
    int offset, status = 1;
    struct ML_GetrowFunc_Struct *amalg_getrow;
    ML_Operator *Amat;
- 
+
    if (N_requested_rows > 1) {
       printf("ML_amalg_drop_getrow: Not implemented for > 1 row at a time\n");
       exit(1);
@@ -911,8 +922,8 @@ int ML_amalg_drop_getrow(ML_Operator *data, int N_requested_rows, int requested_
    offset = 0;
    for (i = 0; i < block_size; i++) {
       row = requested_rows[0]*block_size+i;
-      status = ML_Operator_Getrow(Amat, N_requested_rows, &row, 
-                                  tallocated_space, &(tcolumns[offset]), 
+      status = ML_Operator_Getrow(Amat, N_requested_rows, &row,
+                                  tallocated_space, &(tcolumns[offset]),
 				  &(tvalues[offset]), &size );
       if (status == 0) {
          ML_free(tvalues); ML_free(tcolumns);
@@ -944,7 +955,7 @@ int ML_amalg_drop_getrow(ML_Operator *data, int N_requested_rows, int requested_
 
    for (j = 0; j < offset; j++) {
       tcol = temp->blk_inds[tcolumns[j]];
-      for (k = 0; k < row_lengths[0]; k++) 
+      for (k = 0; k < row_lengths[0]; k++)
          if (tcol == columns[k]) break;
 
       if (k == row_lengths[0]) {
@@ -966,8 +977,8 @@ int ML_amalg_drop_getrow(ML_Operator *data, int N_requested_rows, int requested_
        values[i] = 0.0;
      for (j = 0; j < offset ; ++j) {
        tcol = temp->blk_inds[tcolumns[j]];
-       for (k = 0; k < row_lengths[0]; k++) 
-         if (tcol == columns[k]) 
+       for (k = 0; k < row_lengths[0]; k++)
+         if (tcol == columns[k])
            values[k] += tvalues[j];
      }
      for (i = 0 ; i < row_lengths[0] ; ++i) {
@@ -991,15 +1002,15 @@ int ML_amalg_drop_getrow(ML_Operator *data, int N_requested_rows, int requested_
 /* ******************************************************************** */
 
 
-int ML_implicitscale_Getrow(ML_Operator *data, int N_requested_rows, 
-			       int requested_rows[], int allocated_space, 
-			       int columns[], double values[], 
+int ML_implicitscale_Getrow(ML_Operator *data, int N_requested_rows,
+			       int requested_rows[], int allocated_space,
+			       int columns[], double values[],
 			       int row_lengths[])
 {
    struct ml_matscale *temp;
    double scalar;
    int    i, status = 1, size = 0;
- 
+
    if (N_requested_rows > 1) {
       printf("ML_implicitmatscale_getrow: Not implemented for > 1 row at a time\n");
       exit(1);
@@ -1016,7 +1027,7 @@ int ML_implicitscale_Getrow(ML_Operator *data, int N_requested_rows,
    return(status);
 }
 
-int ML_implicitscale_Matvec(ML_Operator *Amat_in, int ilen, double p[], 
+int ML_implicitscale_Matvec(ML_Operator *Amat_in, int ilen, double p[],
 			    int olen, double ap[])
 {
   struct ml_matscale *temp;
@@ -1037,15 +1048,15 @@ int ML_implicitscale_Matvec(ML_Operator *Amat_in, int ilen, double p[],
 /* properly set up the data structure (data).                           */
 /* ******************************************************************** */
 
-int ML_implicitvscale_Getrow(ML_Operator *data, int N_requested_rows, 
-			       int requested_rows[], int allocated_space, 
-			       int columns[], double values[], 
+int ML_implicitvscale_Getrow(ML_Operator *data, int N_requested_rows,
+			       int requested_rows[], int allocated_space,
+			       int columns[], double values[],
 			       int row_lengths[])
 {
    struct ml_matvscale *temp;
    double* scale;
    int    i, status = 1, size = 0;
- 
+
    if (N_requested_rows > 1) {
       printf("ML_implicitvscale_getrow: Not implemented for > 1 row at a time\n");
       exit(1);
@@ -1062,13 +1073,13 @@ int ML_implicitvscale_Getrow(ML_Operator *data, int N_requested_rows,
    return(status);
 }
 
-int ML_implicitvscale_Matvec(ML_Operator *Amat_in, int ilen, double p[], 
+int ML_implicitvscale_Matvec(ML_Operator *Amat_in, int ilen, double p[],
 			    int olen, double ap[])
 {
 /*
- * Implemented by Jacob Schroder, as this is my first day coding in ML, 
- * Don't assume that this function works!  Although my tests indicated that 
- * it does work in serial. 
+ * Implemented by Jacob Schroder, as this is my first day coding in ML,
+ * Don't assume that this function works!  Although my tests indicated that
+ * it does work in serial.
 */
   double * scale_vec;
   int    status = 1, i;
@@ -1080,9 +1091,9 @@ int ML_implicitvscale_Matvec(ML_Operator *Amat_in, int ilen, double p[],
   scale_vec = tempdata->scale;
 
   status = ML_Operator_Apply(tempdata->Amat, ilen, p, olen, ap);
-  
+
   /* Apply Diagonal scaling */
-  for (i = 0; i < olen; i++) ap[i] *= scale_vec[i]; 
+  for (i = 0; i < olen; i++) ap[i] *= scale_vec[i];
 
   return(status);
 }
@@ -1093,15 +1104,15 @@ int ML_implicitvscale_Matvec(ML_Operator *Amat_in, int ilen, double p[],
 /* properly set up the data structure (data).                           */
 /* ******************************************************************** */
 
-int ML_implicitvcscale_Getrow(ML_Operator *data, int N_requested_rows, 
-			       int requested_rows[], int allocated_space, 
-			       int columns[], double values[], 
+int ML_implicitvcscale_Getrow(ML_Operator *data, int N_requested_rows,
+			       int requested_rows[], int allocated_space,
+			       int columns[], double values[],
 			       int row_lengths[])
 {
    struct ml_matvscale *temp;
    double* scale;
    int    i, status = 1, size = 0;
- 
+
    if (N_requested_rows > 1) {
       printf("ML_implicitvscale_getrow: Not implemented for > 1 row at a time\n");
       exit(1);
@@ -1127,7 +1138,7 @@ int ML_Operator_UnAmalgamateAndDropWeak(ML_Operator *Amat, int block_size,
 	double drop_tolerance)
 {
    struct amalg_drop *temp;
- 
+
    if ( (block_size > 1) || (drop_tolerance >= 0.0)) {
       temp = (struct amalg_drop *) Amat->data;
       ML_CommInfoOP_Destroy(&(Amat->getrow->pre_comm));
@@ -1143,13 +1154,13 @@ int ML_Operator_UnAmalgamateAndDropWeak(ML_Operator *Amat, int block_size,
    }
    return 0;
 }
-   
+
 /* ******************************************************************** */
 /* Modify matrix so that it uses a getrow wrapper that will effectively */
 /* drop small values and will collapse several rows into a block row.   */
 /* ******************************************************************** */
 
-int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size, 
+int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size,
                double drop_tolerance)
 {
    struct amalg_drop  *new_data;
@@ -1187,9 +1198,9 @@ int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size,
      }
      new_data->blk_inds   = (int    *) ML_allocate(sizeof(int)* i );
      dtemp                = (double *) ML_allocate(sizeof(double)* i );
-     if (dtemp == NULL) 
+     if (dtemp == NULL)
         pr_error("ML_Operator_AmalgamateAndDropWeak: out of space\n");
-                                        
+
      for (i = 0; i < Amat->invec_leng; i++)
         dtemp[i] = (double) (i/block_size);
 
@@ -1207,7 +1218,7 @@ int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size,
      for (i = 0; i < Nneigh; i++) {
        rcvleng = ML_CommInfoOP_Get_Nrcvlist(Amat->getrow->pre_comm,
                                                 neighbors[i]);
-       newrcv = ML_CommInfoOP_Get_rcvlist(Amat->getrow->pre_comm, 
+       newrcv = ML_CommInfoOP_Get_rcvlist(Amat->getrow->pre_comm,
                                               neighbors[i]);
        for (j = 0; j < rcvleng; j++) {
           current = (int) dtemp[ newrcv[j] ];
@@ -1237,7 +1248,7 @@ int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size,
         for (i = 0; i < Nneigh; i++) {
            rcvleng = ML_CommInfoOP_Get_Nrcvlist(Amat->getrow->pre_comm,
                                                 neighbors[i]);
-           newrcv = ML_CommInfoOP_Get_rcvlist(Amat->getrow->pre_comm, 
+           newrcv = ML_CommInfoOP_Get_rcvlist(Amat->getrow->pre_comm,
                                               neighbors[i]);
            for (j = 0; j < rcvleng; j++) {
               if (newrcv[j] > Nghost + Nrows - 1)
@@ -1258,7 +1269,7 @@ int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size,
 
         for (i = 0 ; i < Nrows; i++) {
            ML_get_matrix_row(Amat,1,&i,&allocated,&bindx,&val,&row_length,0);
-           for (j = 0; j < row_length; j++) 
+           for (j = 0; j < row_length; j++)
               if (bindx[j] == i) break;
 
            scaled_diag[i] = 0.0;
@@ -1268,9 +1279,9 @@ int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size,
         }
         ML_free(val);
         ML_free(bindx);
-      
+
         if ( Amat->getrow->pre_comm != NULL )
-           ML_exchange_bdry(scaled_diag,Amat->getrow->pre_comm,Nrows, comm, 
+           ML_exchange_bdry(scaled_diag,Amat->getrow->pre_comm,Nrows, comm,
                             ML_OVERWRITE,NULL);
 
         new_data->scaled_diag = scaled_diag;
@@ -1294,13 +1305,13 @@ int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size,
      Amat->getrow->use_loc_glob_map = ML_NO;
      Amat->getrow->loc_glob_map     = NULL;
      Amat->getrow->row_map          = NULL;
-     ML_Operator_Set_Getrow(Amat, 
+     ML_Operator_Set_Getrow(Amat,
                             new_data->original_getrow->Nrows/block_size,
                             ML_amalg_drop_getrow);
 
      /* amalgmation needs a new communication structure. Let's create a new */
-     /* communication object and modify it if we are doing amalgmation.     */                   
-     ML_CommInfoOP_Clone( &(Amat->getrow->pre_comm),  
+     /* communication object and modify it if we are doing amalgmation.     */
+     ML_CommInfoOP_Clone( &(Amat->getrow->pre_comm),
                           new_data->original_getrow->pre_comm);
 
      if (block_size > 1) {
@@ -1309,21 +1320,21 @@ int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size,
 
 
         for (i = 0; i < Nneigh; i++) {
-           sendleng = ML_CommInfoOP_Get_Nsendlist(Amat->getrow->pre_comm, 
+           sendleng = ML_CommInfoOP_Get_Nsendlist(Amat->getrow->pre_comm,
                                                   neighbors[i]);
-           newsend = ML_CommInfoOP_Get_sendlist(Amat->getrow->pre_comm, 
+           newsend = ML_CommInfoOP_Get_sendlist(Amat->getrow->pre_comm,
                                                 neighbors[i]);
            sendcount = 0;
            for (j = 0 ; j < sendleng; j++) {
               temp = new_data->blk_inds[newsend[j]];
 
               /* search to see if it is already in the list */
-              for (k = 0; k < sendcount; k++) 
+              for (k = 0; k < sendcount; k++)
                  if ( newsend[k] == temp) break;
 
               if (k == sendcount) newsend[sendcount++] = temp;
            }
-           rcvleng = ML_CommInfoOP_Get_Nrcvlist(Amat->getrow->pre_comm, 
+           rcvleng = ML_CommInfoOP_Get_Nrcvlist(Amat->getrow->pre_comm,
                                                 neighbors[i]);
            newrcv = ML_CommInfoOP_Get_rcvlist(Amat->getrow->pre_comm, neighbors[i]);
            rcvcount = 0;
@@ -1331,15 +1342,15 @@ int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size,
               temp = new_data->blk_inds[newrcv[j]];
 
               /* search to see if it is already in the list */
-              for (k = 0; k < rcvcount; k++) 
+              for (k = 0; k < rcvcount; k++)
                  if ( newrcv[k] == temp) break;
 
               if (k == rcvcount) newrcv[rcvcount++] = temp;
            }
            ML_CommInfoOP_Set_exch_info(Amat->getrow->pre_comm, neighbors[i],
                       rcvcount, newrcv,sendcount, newsend);
-           ML_free(newrcv); 
-           ML_free(newsend); 
+           ML_free(newrcv);
+           ML_free(newsend);
         }
         if (neighbors != NULL) ML_free(neighbors);
      }
@@ -1347,7 +1358,7 @@ int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size,
   return 0;
 }
 
-   
+
 /* ******************************************************************** */
 /* Modify matrix so that it uses a getrow wrapper that will effectively */
 /* scale the matrix.                                                    */
@@ -1371,7 +1382,7 @@ ML_Operator *ML_Operator_ImplicitlyScale(ML_Operator *Amat, double scalar,
   new_data->Amat          = Amat;
   new_data->scalar        = scalar;
   new_data->destroy_child = 0;
-  ML_Operator_Set_ApplyFuncData(matrix,Amat->invec_leng, 
+  ML_Operator_Set_ApplyFuncData(matrix,Amat->invec_leng,
 				Amat->outvec_leng,new_data,
 				Amat->matvec->Nrows, ML_implicitscale_Matvec,
 				Amat->from_an_ml_operator);
@@ -1385,8 +1396,8 @@ ML_Operator *ML_Operator_ImplicitlyScale(ML_Operator *Amat, double scalar,
   /* wrapper does not invoke communication as it is already contained */
   /* in the lower level (unscaled) matvec function.                   */
 
-  if (Amat->getrow->pre_comm != NULL) 
-    ML_CommInfoOP_Clone( &(matrix->getrow->pre_comm),Amat->getrow->pre_comm); 
+  if (Amat->getrow->pre_comm != NULL)
+    ML_CommInfoOP_Clone( &(matrix->getrow->pre_comm),Amat->getrow->pre_comm);
 
   return matrix;
 }
@@ -1425,7 +1436,7 @@ ML_Operator *ML_Operator_ImplicitlyVScale(ML_Operator *Amat, double* scale,
   new_data->Amat          = Amat;
   new_data->scale         = scale;
   new_data->destroy_child = 0;
-  ML_Operator_Set_ApplyFuncData(matrix,Amat->invec_leng, 
+  ML_Operator_Set_ApplyFuncData(matrix,Amat->invec_leng,
 				Amat->outvec_leng,new_data,
 				Amat->matvec->Nrows, ML_implicitvscale_Matvec,
 				Amat->from_an_ml_operator);
@@ -1439,13 +1450,13 @@ ML_Operator *ML_Operator_ImplicitlyVScale(ML_Operator *Amat, double* scale,
   /* wrapper does not invoke communication as it is already contained */
   /* in the lower level (unscaled) matvec function.                   */
 
-  if (Amat->getrow->pre_comm != NULL) 
-    ML_CommInfoOP_Clone( &(matrix->getrow->pre_comm),Amat->getrow->pre_comm); 
+  if (Amat->getrow->pre_comm != NULL)
+    ML_CommInfoOP_Clone( &(matrix->getrow->pre_comm),Amat->getrow->pre_comm);
 
 
   return matrix;
 }
-int ML_Operator_ExplicitDinvA(int BlockSize, struct MLSthing *Dinv, 
+int ML_Operator_ExplicitDinvA(int BlockSize, struct MLSthing *Dinv,
 			      ML_Operator *A)
 {
   int NRows, NCols, NBlockRows, MaxCols;
@@ -1513,7 +1524,7 @@ int ML_Operator_ExplicitDinvA(int BlockSize, struct MLSthing *Dinv,
 	}
       }
     }
-    for (kk = 0; kk < NColsInBlockRow; kk++) 
+    for (kk = 0; kk < NColsInBlockRow; kk++)
       ColMarker[ColIndices[kk]] = 'o';
     AllCols[BlockRow] = ColIndices;
     NTotalCols += NColsInBlockRow;
@@ -1555,7 +1566,7 @@ int ML_Operator_ExplicitDinvA(int BlockSize, struct MLSthing *Dinv,
       }
     }
 
-    
+
     /* Apply Dinv to each column stored in 'scratch'. */
 
 
@@ -1566,16 +1577,16 @@ int ML_Operator_ExplicitDinvA(int BlockSize, struct MLSthing *Dinv,
       for (kk = 0; kk < NColsInBlockRow; kk++) {
         DGETRS_F77(N,&BlockSize,&one,blockdata[BlockRow],&BlockSize,
 		   perms[BlockRow], &(scratch[kk*BlockSize]),
-		   &BlockSize, &info);                                
+		   &BlockSize, &info);
 	if ( info != 0 ) {
-	  printf("dgetrs returns with %d at block %d\n",info,BlockRow); 
+	  printf("dgetrs returns with %d at block %d\n",info,BlockRow);
 	  exit(1);
 	}
       }
     }
     else {
       for (kk = 0; kk < NColsInBlockRow; kk++) {
-	ML_dgetrs_special(BlockSize, blockdata[BlockRow], perms[BlockRow], 
+	ML_dgetrs_special(BlockSize, blockdata[BlockRow], perms[BlockRow],
 			  &(scratch[kk*BlockSize]));
       }
     }
@@ -1592,7 +1603,7 @@ int ML_Operator_ExplicitDinvA(int BlockSize, struct MLSthing *Dinv,
     }
 
   }
-  csr_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct 
+  csr_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct
 							  ML_CSR_MSRdata));
   csr_data->rowptr  = newrowptr;
   csr_data->values  = newvals;
@@ -1602,7 +1613,7 @@ int ML_Operator_ExplicitDinvA(int BlockSize, struct MLSthing *Dinv,
       A->data_destroy(A->data);
       A->data = NULL;
   }
-  ML_Operator_Set_ApplyFuncData(A,A->invec_leng, 
+  ML_Operator_Set_ApplyFuncData(A,A->invec_leng,
 				A->outvec_leng,csr_data,
 				A->matvec->Nrows, CSR_matvec,
 				A->from_an_ml_operator);
@@ -1620,7 +1631,7 @@ int ML_Operator_ExplicitDinvA(int BlockSize, struct MLSthing *Dinv,
 
   return 0;
 }
-      
+
 
 
 /* ******************************************************************** */
@@ -1639,7 +1650,7 @@ ML_Operator *ML_Operator_ImplicitlyBlockDinvScale(ML_Operator *Amat)
   ML_Smoother_Create_BGS_Data(&data);
   ML_Smoother_Gen_BGSFacts(&data, Amat, Amat->num_PDEs);
 
-  ML_permute_for_dgetrs_special(data->blockfacts, 
+  ML_permute_for_dgetrs_special(data->blockfacts,
 				Amat->invec_leng/Amat->num_PDEs,Amat->num_PDEs,data);
 
   widget->unscaled_matrix = Amat;
@@ -1682,7 +1693,7 @@ ML_Operator *ML_Operator_ImplicitlyVCScale(ML_Operator *Amat, double* scale,
   new_data->Amat          = Amat;
   new_data->scale         = scale;
   new_data->destroy_child = 0;
-  ML_Operator_Set_ApplyFuncData(matrix,Amat->invec_leng, 
+  ML_Operator_Set_ApplyFuncData(matrix,Amat->invec_leng,
 				Amat->outvec_leng,new_data,
 				Amat->matvec->Nrows, ML_implicitvscale_Matvec,
 				Amat->from_an_ml_operator);
@@ -1709,7 +1720,7 @@ ML_Operator *ML_Operator_ImplicitlyVCScale(ML_Operator *Amat, double* scale,
 /* appear as a ghost node.                                              */
 /* ******************************************************************** */
 
-int ML_Operator_Amalgamate_Vec_Trans(ML_Operator *Amat, int *blocked, 
+int ML_Operator_Amalgamate_Vec_Trans(ML_Operator *Amat, int *blocked,
                                      int **unblocked, int *size)
 {
    struct amalg_drop  *temp;
@@ -1734,7 +1745,7 @@ int ML_Operator_Amalgamate_Vec_Trans(ML_Operator *Amat, int *blocked,
 /* ******************************************************************** */
 
 int ML_Operator_GetDistributedDiagBlocks(ML_Operator *Amat, int *blkinfo,
-                                         int **new_ja, double **new_aa) 
+                                         int **new_ja, double **new_aa)
 {
    int            i, j, row_leng, buf_leng, nrows, blk_num;
    int            total_nnz, allocated, *col_ind=NULL, *mat_ja;
@@ -1748,7 +1759,7 @@ int ML_Operator_GetDistributedDiagBlocks(ML_Operator *Amat, int *blkinfo,
    comm     = Amat->comm;
    nrows    = Amat->invec_leng;
    buf_leng = nrows + 1;
-   if (Amat->getrow->pre_comm != NULL) 
+   if (Amat->getrow->pre_comm != NULL)
       buf_leng += Amat->getrow->pre_comm->total_rcv_length;
 
    /* ----------------------------------------------------------------- */
@@ -1756,9 +1767,9 @@ int ML_Operator_GetDistributedDiagBlocks(ML_Operator *Amat, int *blkinfo,
    /* ----------------------------------------------------------------- */
 
    dbuf = (double *) ML_allocate(sizeof(double) * buf_leng);
-   if (dbuf == NULL) 
+   if (dbuf == NULL)
       pr_error("ML_Operator_BlockFilter : out of space\n");
-                                        
+
    for (i = 0; i < nrows; i++) dbuf[i] = (double) blkinfo[i];
 
    if (Amat->getrow->pre_comm != NULL)
@@ -1771,7 +1782,7 @@ int ML_Operator_GetDistributedDiagBlocks(ML_Operator *Amat, int *blkinfo,
    allocated = 100;
    col_ind = (int    *) ML_allocate(allocated*sizeof(int   ));
    col_val = (double *) ML_allocate(allocated*sizeof(double));
-   if ( col_val == NULL ) 
+   if ( col_val == NULL )
    {
       printf("ML_Operator_BlockFilter: out of space\n");
       exit(1);
@@ -1782,10 +1793,10 @@ int ML_Operator_GetDistributedDiagBlocks(ML_Operator *Amat, int *blkinfo,
    /* ----------------------------------------------------------------- */
 
    total_nnz = nrows + 1;
-   for (i = 0 ; i < nrows; i++) 
+   for (i = 0 ; i < nrows; i++)
    {
       ML_get_matrix_row(Amat,1,&i,&allocated,&col_ind,&col_val,&row_leng,0);
-      for (j = 0; j < row_leng; j++) 
+      for (j = 0; j < row_leng; j++)
       {
          if ( col_ind[j] != i )
          {
@@ -1798,7 +1809,7 @@ int ML_Operator_GetDistributedDiagBlocks(ML_Operator *Amat, int *blkinfo,
          }
       }
    }
-      
+
    /* ----------------------------------------------------------------- */
    /* allocate buffers for the new matrix                               */
    /* ----------------------------------------------------------------- */
@@ -1814,16 +1825,16 @@ int ML_Operator_GetDistributedDiagBlocks(ML_Operator *Amat, int *blkinfo,
 
    total_nnz = nrows + 1;
    mat_ja[0] = total_nnz;
-   for (i = 0 ; i < nrows; i++) 
+   for (i = 0 ; i < nrows; i++)
    {
       ML_get_matrix_row(Amat,1,&i,&allocated,&col_ind,&col_val,&row_leng,0);
-      for (j = 0; j < row_leng; j++) 
+      for (j = 0; j < row_leng; j++)
       {
-         if ( col_ind[j] == i ) 
+         if ( col_ind[j] == i )
          {
             mat_aa[i] = col_val[j];
-         } 
-         else if ( col_ind[j] < nrows ) 
+         }
+         else if ( col_ind[j] < nrows )
          {
             mat_ja[total_nnz] = col_ind[j];
             mat_aa[total_nnz++] = col_val[j];
@@ -1831,7 +1842,7 @@ int ML_Operator_GetDistributedDiagBlocks(ML_Operator *Amat, int *blkinfo,
          else
          {
             blk_num = (int) dbuf[col_ind[j]];
-            if ( blkinfo[i] == blk_num ) 
+            if ( blkinfo[i] == blk_num )
             {
                mat_ja[total_nnz] = col_ind[j];
                mat_aa[total_nnz++] = col_val[j];
@@ -1882,10 +1893,10 @@ int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C,
   int count;
 #endif
 
-  if (A->getrow == NULL) 
+  if (A->getrow == NULL)
     pr_error("ML_Operator_Add: A does not have a getrow function.\n");
 
-  if (B->getrow == NULL) 
+  if (B->getrow == NULL)
     pr_error("ML_Operator_Add: B does not have a getrow function.\n");
 
   if (A->getrow->Nrows != B->getrow->Nrows) {
@@ -2061,7 +2072,7 @@ int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C,
     temp->columns = columns;
     temp->values  = values;
     temp->rowptr   = rowptr;
- 
+
     /* ---------------------------------------------------------------------*/
     /* ---------------------  Added by JBS ---------------------------------*/
     /* Allow the user to write to matrix A or B, i.e. allow for A = A + B   */
@@ -2074,8 +2085,8 @@ int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C,
 
 	ML_Operator_Clean(C);
 	ML_Operator_Init(C, temp_comm);
-	
-	ML_Operator_Set_ApplyFuncData(C, invector_length, outvector_length, 
+
+	ML_Operator_Set_ApplyFuncData(C, invector_length, outvector_length,
 				  temp, outvector_length, NULL,0);
 	ML_Operator_Set_Getrow(C, outvector_length, CSR_getrow);
 
@@ -2083,7 +2094,7 @@ int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C,
     /* ---------------------------------------------------------------------*/
     else
     {
-       ML_Operator_Set_ApplyFuncData(C, B->invec_leng, A->outvec_leng, 
+       ML_Operator_Set_ApplyFuncData(C, B->invec_leng, A->outvec_leng,
 				  temp,A->outvec_leng, NULL,0);
        ML_Operator_Set_Getrow(C, A->outvec_leng, CSR_getrow);
     }
@@ -2097,7 +2108,7 @@ int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C,
   }
 #ifdef ML_WITH_EPETRA
   else {
-    ML_free(rowptr); 
+    ML_free(rowptr);
     ML_free(columns);
     ML_free(values);
   }
@@ -2194,7 +2205,7 @@ int ML_Operator_SetSubspace(ML *ml, double **vectors, int numvecs, int vecleng)
    return 0;
 }
 
-int ML_Operator_MoveFromHierarchyAndClean(ML_Operator *newmat, 
+int ML_Operator_MoveFromHierarchyAndClean(ML_Operator *newmat,
 						 ML_Operator *hier)
 {
   ML_Operator_Clean(newmat);
@@ -2223,7 +2234,7 @@ int ML_Operator_MoveFromHierarchyAndClean(ML_Operator *newmat,
   return 0;
 }
 
-int ML_Operator_Move2HierarchyAndDestroy(ML_Operator **newmat, 
+int ML_Operator_Move2HierarchyAndDestroy(ML_Operator **newmat,
 						 ML_Operator *hier)
 {
   (*newmat)->label = hier->label;
@@ -2305,8 +2316,8 @@ void ML_Operator_Copy_Statistics(ML_Operator *source, ML_Operator *target)
 /************************************************************************/
 /* NOT BLOCKED ZZZZZZ */
 #include "ml_epetra_utils.h"
-int ML_Operator_ApplyAndResetBdryPts(ML_Operator *Op, int inlen, 
-                      Epetra_MultiVector &ep_din, int olen, 
+int ML_Operator_ApplyAndResetBdryPts(ML_Operator *Op, int inlen,
+                      Epetra_MultiVector &ep_din, int olen,
                       Epetra_MultiVector &ep_dout )
 {
 
@@ -2319,7 +2330,7 @@ int ML_Operator_ApplyAndResetBdryPts(ML_Operator *Op, int inlen,
       double *din = pp_din[KK];
       double *dout = pp_dout[KK];
 
- 
+
 
    int i, length, *list;
 #if defined(ML_TIMING) || defined(ML_FLOPS)
@@ -2327,7 +2338,7 @@ int ML_Operator_ApplyAndResetBdryPts(ML_Operator *Op, int inlen,
 
    t0 = GetClock();
 #endif
-   if (Op->matvec->func_ptr == NULL) 
+   if (Op->matvec->func_ptr == NULL)
       pr_error("ML_Operator_ApplyAndRestBdryPts : matvec not defined.\n");
 
    /* apply grid transfer */
@@ -2353,7 +2364,7 @@ int ML_Operator_ApplyAndResetBdryPts(ML_Operator *Op, int inlen,
 /* ******************************************************************** */
 /* apply the operator to a vector                                       */
 /************************************************************************/
-int ML_Operator_Apply(ML_Operator *Op, int inlen, Epetra_MultiVector &ep_din, 
+int ML_Operator_Apply(ML_Operator *Op, int inlen, Epetra_MultiVector &ep_din,
                       int olen, Epetra_MultiVector &ep_dout )
 {
 

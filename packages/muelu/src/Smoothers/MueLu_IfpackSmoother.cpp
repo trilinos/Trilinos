@@ -113,7 +113,7 @@ namespace MueLu {
   void IfpackSmoother::Setup(Level &currentLevel) {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
     if (SmootherPrototype::IsSetup() == true)
-      GetOStream(Warnings0, 0) << "Warning: MueLu::IfpackSmoother::Setup(): Setup() has already been called";
+      GetOStream(Warnings0) << "MueLu::IfpackSmoother::Setup(): Setup() has already been called";
 
     A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A");
 
@@ -124,13 +124,13 @@ namespace MueLu {
 
       try {
         lambdaMax = Teuchos::getValue<Scalar>(this->GetParameter(maxEigString));
-        this->GetOStream(Statistics1, 0) << maxEigString << " (cached with smoother parameter list) = " << lambdaMax << std::endl;
+        this->GetOStream(Statistics1) << maxEigString << " (cached with smoother parameter list) = " << lambdaMax << std::endl;
 
       } catch (Teuchos::Exceptions::InvalidParameterName) {
         lambdaMax = A_->GetMaxEigenvalueEstimate();
 
         if (lambdaMax != -1.0) {
-          this->GetOStream(Statistics1, 0) << maxEigString << " (cached with matrix) = " << lambdaMax << std::endl;
+          this->GetOStream(Statistics1) << maxEigString << " (cached with matrix) = " << lambdaMax << std::endl;
           this->SetParameter(maxEigString, ParameterEntry(lambdaMax));
         }
       }
@@ -157,7 +157,7 @@ namespace MueLu {
 
         ratio = std::max(ratio, as<Scalar>(nRowsFine)/nRowsCoarse);
 
-        this->GetOStream(Statistics1, 0) << eigRatioString << " (computed) = " << ratio << std::endl;
+        this->GetOStream(Statistics1) << eigRatioString << " (computed) = " << ratio << std::endl;
         this->SetParameter(eigRatioString, ParameterEntry(ratio));
       }
     }
@@ -177,39 +177,47 @@ namespace MueLu {
       if (chebyPrec != Teuchos::null) {
         lambdaMax = chebyPrec->GetLambdaMax();
         A_->SetMaxEigenvalueEstimate(lambdaMax);
-        this->GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue (calculated by Ifpack)" << " = " << lambdaMax << std::endl;
+        this->GetOStream(Statistics1) << "chebyshev: max eigenvalue (calculated by Ifpack)" << " = " << lambdaMax << std::endl;
       }
       TEUCHOS_TEST_FOR_EXCEPTION(lambdaMax == -1.0, Exceptions::RuntimeError, "MueLu::IfpackSmoother::Setup(): no maximum eigenvalue estimate");
     }
 
-    this->GetOStream(Statistics0, 0) << description() << std::endl;
+    this->GetOStream(Statistics0) << description() << std::endl;
   }
 
   void IfpackSmoother::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
     TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::IfpackSmoother::Apply(): Setup() has not been called");
 
     // Forward the InitialGuessIsZero option to Ifpack
-    Teuchos::ParameterList  paramList;
-    if (type_ == "Chebyshev")
+    Teuchos::ParameterList paramList;
+    bool supportInitialGuess = false;
+    if (type_ == "Chebyshev") {
       paramList.set("chebyshev: zero starting solution",  InitialGuessIsZero);
+      supportInitialGuess = true;
 
-    else if (type_ == "point relaxation stand-alone")
+    } else if (type_ == "point relaxation stand-alone") {
       paramList.set("relaxation: zero starting solution", InitialGuessIsZero);
+      supportInitialGuess = true;
+    }
 
     SetPrecParameters(paramList);
 
     // Apply
-    if (InitialGuessIsZero) {
+    if (InitialGuessIsZero || supportInitialGuess) {
       Epetra_MultiVector&       epX = Utils::MV2NonConstEpetraMV(X);
       const Epetra_MultiVector& epB = Utils::MV2EpetraMV(B);
+
       prec_->ApplyInverse(epB, epX);
 
     } else {
-      RCP<MultiVector> Residual = Utils::Residual(*A_,X,B);
+      RCP<MultiVector> Residual   = Utils::Residual(*A_, X, B);
       RCP<MultiVector> Correction = MultiVectorFactory::Build(A_->getDomainMap(), X.getNumVectors());
+
       Epetra_MultiVector&       epX = Utils::MV2NonConstEpetraMV(*Correction);
       const Epetra_MultiVector& epB = Utils::MV2EpetraMV(*Residual);
+
       prec_->ApplyInverse(epB, epX);
+
       X.update(1.0, *Correction, 1.0);
     }
   }
@@ -222,8 +230,14 @@ namespace MueLu {
 
   std::string IfpackSmoother::description() const {
     std::ostringstream out;
-    out << SmootherPrototype::description();
-    out << "{type = " << type_ << "}";
+    // The check "GetVerbLevel() == Test" is to avoid
+    // failures in the EasyInterface test.
+    if (prec_ == Teuchos::null || GetVerbLevel() == Test) {
+      out << SmootherPrototype::description();
+      out << "{type = " << type_ << "}";
+    } else {
+      out << prec_->Label();
+    }
     return out.str();
   }
 

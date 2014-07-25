@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -155,7 +155,7 @@ Perf fenl(
   const int use_print ,
   const int use_trials ,
   const int use_atomic ,
-  const int use_nodes[] )
+  const int use_elems[] )
 {
   typedef Kokkos::Example::BoxElemFixture< Device , ElemOrder > FixtureType ;
 
@@ -165,7 +165,7 @@ Perf fenl(
   typedef typename SparseMatrixType::StaticCrsGraphType
     SparseGraphType ;
 
-  typedef Kokkos::Example::FENL::NodeNodeGraph< typename FixtureType::elem_node_type , SparseGraphType , FixtureType::ElemNode > 
+  typedef Kokkos::Example::FENL::NodeNodeGraph< typename FixtureType::elem_node_type , SparseGraphType , FixtureType::ElemNode >
      NodeNodeGraphType ;
 
   typedef Kokkos::Example::FENL::ElementComputation< FixtureType , SparseMatrixType >
@@ -208,7 +208,7 @@ Perf fenl(
   const float bubble_z = 1.0 ;
 
   const FixtureType fixture( BoxElemPart::DecomposeNode , comm_size , comm_rank ,
-                             use_nodes[0] , use_nodes[1] , use_nodes[2] ,
+                             use_elems[0] , use_elems[1] , use_elems[2] ,
                              bubble_x , bubble_y , bubble_z );
 
   //------------------------------------
@@ -218,7 +218,7 @@ Perf fenl(
     fixture.recv_node() ,
     fixture.send_node() ,
     fixture.send_nodeid() ,
-    fixture.node_count_owned() , 
+    fixture.node_count_owned() ,
     fixture.node_count() - fixture.node_count_owned() );
 
   //------------------------------------
@@ -231,37 +231,80 @@ Perf fenl(
 
   //------------------------------------
 
-  if ( print_flag ) {
-    std::cout << "Manufactured solution"
-              << " a[" << manufactured_solution.a << "]"
-              << " b[" << manufactured_solution.b << "]"
-              << " K[" << manufactured_solution.K << "]"
-              << " {" ;
-    for ( unsigned inode = 0 ; inode < fixture.node_count() ; ++inode ) {
-      std::cout << " " << manufactured_solution( fixture.node_coord( inode , 2 ) );
-    }
-    std::cout << " }" << std::endl ;
+  for ( int k = 0 ; k < comm_size && use_print ; ++k ) {
+    if ( k == comm_rank ) {
+      typename FixtureType::node_grid_type::HostMirror
+        h_node_grid = Kokkos::create_mirror_view( fixture.node_grid() );
 
-    std::cout << "ElemNode {" << std::endl ;
-    for ( unsigned ielem = 0 ; ielem < fixture.elem_count() ; ++ielem ) {
-      std::cout << "  elem[" << ielem << "]{" ;
-      for ( unsigned inode = 0 ; inode < FixtureType::ElemNode ; ++inode ) {
-        std::cout << " " << fixture.elem_node(ielem,inode);
+      typename FixtureType::node_coord_type::HostMirror
+        h_node_coord = Kokkos::create_mirror_view( fixture.node_coord() );
+
+      typename FixtureType::elem_node_type::HostMirror
+        h_elem_node = Kokkos::create_mirror_view( fixture.elem_node() );
+
+      Kokkos::deep_copy( h_node_grid , fixture.node_grid() );
+      Kokkos::deep_copy( h_node_coord , fixture.node_coord() );
+      Kokkos::deep_copy( h_elem_node , fixture.elem_node() );
+
+      std::cout << "MPI[" << comm_rank << "]" << std::endl ;
+      std::cout << "Node grid {" ;
+      for ( unsigned inode = 0 ; inode < fixture.node_count() ; ++inode ) {
+        std::cout << " (" << h_node_grid(inode,0)
+                  << "," << h_node_grid(inode,1)
+                  << "," << h_node_grid(inode,2)
+                  << ")" ;
       }
       std::cout << " }" << std::endl ;
+  
+      std::cout << "Node coord {" ;
+      for ( unsigned inode = 0 ; inode < fixture.node_count() ; ++inode ) {
+        std::cout << " (" << h_node_coord(inode,0)
+                  << "," << h_node_coord(inode,1)
+                  << "," << h_node_coord(inode,2)
+                  << ")" ;
+      }
+      std::cout << " }" << std::endl ;
+
+      std::cout << "Manufactured solution"
+                << " a[" << manufactured_solution.a << "]"
+                << " b[" << manufactured_solution.b << "]"
+                << " K[" << manufactured_solution.K << "]"
+                << " {" ;
+      for ( unsigned inode = 0 ; inode < fixture.node_count() ; ++inode ) {
+        std::cout << " " << manufactured_solution( h_node_coord( inode , 2 ) );
+      }
+      std::cout << " }" << std::endl ;
+
+      std::cout << "ElemNode {" << std::endl ;
+      for ( unsigned ielem = 0 ; ielem < fixture.elem_count() ; ++ielem ) {
+        std::cout << "  elem[" << ielem << "]{" ;
+        for ( unsigned inode = 0 ; inode < FixtureType::ElemNode ; ++inode ) {
+          std::cout << " " << h_elem_node(ielem,inode);
+        }
+        std::cout << " }{" ;
+        for ( unsigned inode = 0 ; inode < FixtureType::ElemNode ; ++inode ) {
+          std::cout << " (" << h_node_grid(h_elem_node(ielem,inode),0)
+                    << "," << h_node_grid(h_elem_node(ielem,inode),1)
+                    << "," << h_node_grid(h_elem_node(ielem,inode),2)
+                    << ")" ;
+        }
+        std::cout << " }" << std::endl ;
+      }
+      std::cout << "}" << std::endl ;
     }
-    std::cout << "}" << std::endl ;
+    std::cout.flush();
+    MPI_Barrier( comm );
   }
 
   //------------------------------------
 
   Kokkos::Impl::Timer wall_clock ;
 
-  Perf perf_stats ;
+  Perf perf_stats = Perf() ;
 
   for ( int itrial = 0 ; itrial < use_trials ; ++itrial ) {
 
-    Kokkos::Example::FENL::Perf perf ;
+    Perf perf = Perf() ;
 
     perf.global_elem_count = fixture.elem_count_global();
     perf.global_node_count = fixture.node_count_global();
@@ -271,49 +314,62 @@ Perf fenl(
     // from the element->to->node identifier array.
     // The graph only has rows for the owned nodes.
 
-    wall_clock.reset();
+    typename NodeNodeGraphType::Times graph_times;
 
     const NodeNodeGraphType
-      mesh_to_graph( fixture.elem_node() , fixture.node_count_owned() );
+      mesh_to_graph( fixture.elem_node() , fixture.node_count_owned(), graph_times );
 
+    perf.map_ratio          = maximum(comm, graph_times.ratio);
+    perf.fill_node_set      = maximum(comm, graph_times.fill_node_set);
+    perf.scan_node_count    = maximum(comm, graph_times.scan_node_count);
+    perf.fill_graph_entries = maximum(comm, graph_times.fill_graph_entries);
+    perf.sort_graph_entries = maximum(comm, graph_times.sort_graph_entries);
+    perf.fill_element_graph = maximum(comm, graph_times.fill_element_graph);
+
+    wall_clock.reset();
     // Create the sparse matrix from the graph:
 
     SparseMatrixType jacobian( "jacobian" , mesh_to_graph.graph );
 
     Device::fence();
 
-    perf.graph_time = maximum( comm , wall_clock.seconds() );
+    perf.create_sparse_matrix = maximum( comm , wall_clock.seconds() );
 
     //----------------------------------
 
-    if ( print_flag ) {
-      const unsigned nrow = jacobian.numRows();
-      std::cout << "JacobianGraph[ "
-                << jacobian.numRows() << " x " << jacobian.numCols()
-                << " ] {" << std::endl ;
-      for ( unsigned irow = 0 ; irow < nrow ; ++irow ) {
-        std::cout << "  row[" << irow << "]{" ;
-        const unsigned entry_end = jacobian.graph.row_map(irow+1);
-        for ( unsigned entry = jacobian.graph.row_map(irow) ; entry < entry_end ; ++entry ) {
-          std::cout << " " << jacobian.graph.entries(entry);
-        }
-        std::cout << " }" << std::endl ;
-      }
-      std::cout << "}" << std::endl ;
-
-      std::cout << "ElemGraph {" << std::endl ;
-      for ( unsigned ielem = 0 ; ielem < mesh_to_graph.elem_graph.dimension_0() ; ++ielem ) {
-        std::cout << "  elem[" << ielem << "]{" ;
-        for ( unsigned irow = 0 ; irow < mesh_to_graph.elem_graph.dimension_1() ; ++irow ) {
-          std::cout << " {" ;
-          for ( unsigned icol = 0 ; icol < mesh_to_graph.elem_graph.dimension_2() ; ++icol ) {
-            std::cout << " " << mesh_to_graph.elem_graph(ielem,irow,icol);
+    for ( int k = 0 ; k < comm_size && print_flag ; ++k ) {
+      if ( k == comm_rank ) {
+        const unsigned nrow = jacobian.numRows();
+        std::cout << "MPI[" << comm_rank << "]" << std::endl ;
+        std::cout << "JacobianGraph[ "
+                  << jacobian.numRows() << " x " << jacobian.numCols()
+                  << " ] {" << std::endl ;
+        for ( unsigned irow = 0 ; irow < nrow ; ++irow ) {
+          std::cout << "  row[" << irow << "]{" ;
+          const unsigned entry_end = jacobian.graph.row_map(irow+1);
+          for ( unsigned entry = jacobian.graph.row_map(irow) ; entry < entry_end ; ++entry ) {
+            std::cout << " " << jacobian.graph.entries(entry);
           }
-          std::cout << " }" ;
+          std::cout << " }" << std::endl ;
         }
-        std::cout << " }" << std::endl ;
+        std::cout << "}" << std::endl ;
+
+        std::cout << "ElemGraph {" << std::endl ;
+        for ( unsigned ielem = 0 ; ielem < mesh_to_graph.elem_graph.dimension_0() ; ++ielem ) {
+          std::cout << "  elem[" << ielem << "]{" ;
+          for ( unsigned irow = 0 ; irow < mesh_to_graph.elem_graph.dimension_1() ; ++irow ) {
+            std::cout << " {" ;
+            for ( unsigned icol = 0 ; icol < mesh_to_graph.elem_graph.dimension_2() ; ++icol ) {
+              std::cout << " " << mesh_to_graph.elem_graph(ielem,irow,icol);
+            }
+            std::cout << " }" ;
+          }
+          std::cout << " }" << std::endl ;
+        }
+        std::cout << "}" << std::endl ;
       }
-      std::cout << "}" << std::endl ;
+      std::cout.flush();
+      MPI_Barrier( comm );
     }
 
     //----------------------------------
@@ -342,8 +398,8 @@ Perf fenl(
     const DirichletComputationType dirichlet(
       fixture , nodal_solution , jacobian , nodal_residual ,
       2 /* apply at 'z' ends */ ,
-      manufactured_solution.T_zmin , 
-      manufactured_solution.T_zmax ); 
+      manufactured_solution.T_zmin ,
+      manufactured_solution.T_zmax );
 
     //----------------------------------
     // Nonlinear Newton iteration:
@@ -370,7 +426,7 @@ Perf fenl(
 
       if ( ! use_atomic ) {
         gatherfill.apply();
-      } 
+      }
 
       Device::fence();
       perf.fill_time = maximum( comm , wall_clock.seconds() );
@@ -411,6 +467,7 @@ Perf fenl(
       Kokkos::V_Add( nodal_solution , -1.0 , nodal_delta , 1.0 , nodal_solution );
 
       perf.cg_iter_count += cgsolve.iteration ;
+      perf.matvec_time   += cgsolve.matvec_time ;
       perf.cg_time       += cgsolve.iter_time ;
 
       //--------------------------------
@@ -421,49 +478,57 @@ Perf fenl(
             Kokkos::Example::all_reduce(
               Kokkos::V_Dot( nodal_delta, nodal_delta ) , comm ) );
 
-        std::cout << "Newton iteration[" << perf.newton_iter_count << "]"
-                  << " residual[" << perf.newton_residual << "]"
-                  << " update[" << delta_norm << "]"
-                  << " cg_iteration[" << cgsolve.iteration << "]"
-                  << " cg_residual[" << cgsolve.norm_res << "]"
-                  << std::endl ;
-
-        const unsigned nrow = jacobian.numRows();
-
-        std::cout << "Residual {" ;
-        for ( unsigned irow = 0 ; irow < nrow ; ++irow ) {
-          std::cout << " " << nodal_residual(irow);
+        if ( 0 == comm_rank ) {
+          std::cout << "Newton iteration[" << perf.newton_iter_count << "]"
+                    << " residual[" << perf.newton_residual << "]"
+                    << " update[" << delta_norm << "]"
+                    << " cg_iteration[" << cgsolve.iteration << "]"
+                    << " cg_residual[" << cgsolve.norm_res << "]"
+                    << std::endl ;
         }
-        std::cout << " }" << std::endl ;
 
-        std::cout << "Delta {" ;
-        for ( unsigned irow = 0 ; irow < nrow ; ++irow ) {
-          std::cout << " " << nodal_delta(irow);
-        }
-        std::cout << " }" << std::endl ;
+        for ( int k = 0 ; k < comm_size ; ++k ) {
+          if ( k == comm_rank ) {
+            const unsigned nrow = jacobian.numRows();
 
-        std::cout << "Solution {" ;
-        for ( unsigned irow = 0 ; irow < nrow ; ++irow ) {
-          std::cout << " " << nodal_solution(irow);
-        }
-        std::cout << " }" << std::endl ;
+            std::cout << "MPI[" << comm_rank << "]" << std::endl ;
+            std::cout << "Residual {" ;
+            for ( unsigned irow = 0 ; irow < nrow ; ++irow ) {
+              std::cout << " " << nodal_residual(irow);
+            }
+            std::cout << " }" << std::endl ;
 
-        std::cout << "Jacobian[ "
-                  << jacobian.numRows() << " x " << jacobian.numCols()
-                  << " ] {" << std::endl ;
-        for ( unsigned irow = 0 ; irow < nrow ; ++irow ) {
-          std::cout << "  {" ;
-          const unsigned entry_end = jacobian.graph.row_map(irow+1);
-          for ( unsigned entry = jacobian.graph.row_map(irow) ; entry < entry_end ; ++entry ) {
-            std::cout << " (" << jacobian.graph.entries(entry)
-                      << "," << jacobian.values(entry)
-                      << ")" ;
+            std::cout << "Delta {" ;
+            for ( unsigned irow = 0 ; irow < nrow ; ++irow ) {
+              std::cout << " " << nodal_delta(irow);
+            }
+            std::cout << " }" << std::endl ;
+
+            std::cout << "Solution {" ;
+            for ( unsigned irow = 0 ; irow < nrow ; ++irow ) {
+              std::cout << " " << nodal_solution(irow);
+            }
+            std::cout << " }" << std::endl ;
+
+            std::cout << "Jacobian[ "
+                      << jacobian.numRows() << " x " << jacobian.numCols()
+                      << " ] {" << std::endl ;
+            for ( unsigned irow = 0 ; irow < nrow ; ++irow ) {
+              std::cout << "  {" ;
+              const unsigned entry_end = jacobian.graph.row_map(irow+1);
+              for ( unsigned entry = jacobian.graph.row_map(irow) ; entry < entry_end ; ++entry ) {
+                std::cout << " (" << jacobian.graph.entries(entry)
+                          << "," << jacobian.values(entry)
+                          << ")" ;
+              }
+              std::cout << " }" << std::endl ;
+            }
+            std::cout << "}" << std::endl ;
           }
-          std::cout << " }" << std::endl ;
+          std::cout.flush();
+          MPI_Barrier( comm );
         }
-        std::cout << "}" << std::endl ;
       }
-
       //--------------------------------
     }
 
@@ -478,7 +543,7 @@ Perf fenl(
 
       Kokkos::deep_copy( h_node_coord , fixture.node_coord() );
       Kokkos::deep_copy( h_nodal_solution , nodal_solution );
-    
+
       double error_max = 0 ;
       for ( unsigned inode = 0 ; inode < fixture.node_count_owned() ; ++inode ) {
         const double answer = manufactured_solution( h_node_coord( inode , 2 ) );
@@ -491,7 +556,12 @@ Perf fenl(
       perf_stats = perf ;
     }
     else {
-      perf_stats.graph_time = std::min( perf_stats.graph_time , perf.graph_time );
+      perf_stats.fill_node_set = std::min( perf_stats.fill_node_set , perf.fill_node_set );
+      perf_stats.scan_node_count = std::min( perf_stats.scan_node_count , perf.scan_node_count );
+      perf_stats.fill_graph_entries = std::min( perf_stats.fill_graph_entries , perf.fill_graph_entries );
+      perf_stats.sort_graph_entries = std::min( perf_stats.sort_graph_entries , perf.sort_graph_entries );
+      perf_stats.fill_element_graph = std::min( perf_stats.fill_element_graph , perf.fill_element_graph );
+      perf_stats.create_sparse_matrix = std::min( perf_stats.create_sparse_matrix , perf.create_sparse_matrix );
       perf_stats.fill_time = std::min( perf_stats.fill_time , perf.fill_time );
       perf_stats.bc_time = std::min( perf_stats.bc_time , perf.bc_time );
       perf_stats.cg_time = std::min( perf_stats.cg_time , perf.cg_time );

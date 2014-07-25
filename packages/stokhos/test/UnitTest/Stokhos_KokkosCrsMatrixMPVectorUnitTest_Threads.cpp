@@ -50,18 +50,16 @@
 
 // Instantiate test for Threads device
 using Kokkos::Threads;
-CRSMATRIX_MP_VECTOR_TESTS_SCALAR_ORDINAL_DEVICE( double, int, Threads )
+CRSMATRIX_MP_VECTOR_TESTS_DEVICE( Threads )
 
-template <typename Ordinal, typename Scalar, typename MultiplyOp,
+template <typename Storage, typename Ordinal, typename MultiplyOp,
           Ordinal NumPerThread, Ordinal ThreadsPerVector>
-bool test_host_static_fixed_embedded_vector(Ordinal num_hyper_threads,
-                                            Ordinal num_cores,
-                                            Teuchos::FancyOStream& out) {
-  typedef Kokkos::Threads Device;
-
+bool test_host_embedded_vector(Ordinal num_hyper_threads,
+                               Ordinal num_cores,
+                               Teuchos::FancyOStream& out) {
   const Ordinal VectorSize = NumPerThread * ThreadsPerVector;
-  typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,VectorSize,Device> Storage;
-  typedef Sacado::MP::Vector<Storage> Vector;
+  typedef typename Storage::template apply_N<VectorSize>::type storage_type;
+  typedef Sacado::MP::Vector<storage_type> Vector;
 
   const Ordinal nGrid = 5;
 
@@ -78,53 +76,52 @@ bool test_host_static_fixed_embedded_vector(Ordinal num_hyper_threads,
 
 size_t num_cores, num_hyper_threads;
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
-  Kokkos_CrsMatrix_MP, Multiply_1, Ordinal, Scalar, MultiplyOp )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(
+  Kokkos_CrsMatrix_MP, Multiply_1, Storage, MultiplyOp )
 {
-  const Ordinal NumPerThread = 3;
+  typedef typename Storage::ordinal_type Ordinal;
+  const Ordinal NumPerThread = 16;
   const Ordinal ThreadsPerVector = 1;
   success =
-    test_host_static_fixed_embedded_vector<Ordinal,Scalar,MultiplyOp,NumPerThread,ThreadsPerVector>(num_hyper_threads, num_cores, out);
+    test_host_embedded_vector<Storage,Ordinal,MultiplyOp,NumPerThread,ThreadsPerVector>(num_hyper_threads, num_cores, out);
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
-  Kokkos_CrsMatrix_MP, Multiply_2, Ordinal, Scalar, MultiplyOp )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(
+  Kokkos_CrsMatrix_MP, Multiply_2, Storage, MultiplyOp )
 {
-  const Ordinal NumPerThread = 3;
+  typedef typename Storage::ordinal_type Ordinal;
+  const Ordinal NumPerThread = 8;
   const Ordinal ThreadsPerVector = 2;
   success =
-    test_host_static_fixed_embedded_vector<Ordinal,Scalar,MultiplyOp,NumPerThread,ThreadsPerVector>(num_hyper_threads, num_cores, out);
+    test_host_embedded_vector<Storage,Ordinal,MultiplyOp,NumPerThread,ThreadsPerVector>(num_hyper_threads, num_cores, out);
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
-  Kokkos_CrsMatrix_MP, Multiply_4, Ordinal, Scalar, MultiplyOp )
-{
-  const Ordinal NumPerThread = 3;
-  const Ordinal ThreadsPerVector = 4;
-  success =
-    test_host_static_fixed_embedded_vector<Ordinal,Scalar,MultiplyOp,NumPerThread,ThreadsPerVector>(num_hyper_threads, num_cores, out);
-}
+#define CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_STORAGE_OP( STORAGE, OP )   \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
+    Kokkos_CrsMatrix_MP, Multiply_1, STORAGE, OP )                      \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
+    Kokkos_CrsMatrix_MP, Multiply_2, STORAGE, OP )
 
-#define CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_ORDINAL_SCALAR_OP( ORDINAL, SCALAR, OP ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(                                 \
-    Kokkos_CrsMatrix_MP, Multiply_1,  ORDINAL, SCALAR, OP )             \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(                                 \
-    Kokkos_CrsMatrix_MP, Multiply_2,  ORDINAL, SCALAR, OP )             \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(                                 \
-    Kokkos_CrsMatrix_MP, Multiply_4,  ORDINAL, SCALAR, OP )
+// Notes:  SFS, DS are defined in main test header (we are also being lazy
+// and not putting ordinal/scalar/device in the names, assuming we will only
+// do one combination).  We can't do DefaultMultiply for DS because it
+// uses partitioning
+#define CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_ORDINAL_SCALAR_DEVICE( ORDINAL, SCALAR, DEVICE ) \
+  CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_STORAGE_OP( SFS, DefaultMultiply ) \
+  CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_STORAGE_OP( SFS, KokkosMultiply ) \
+  CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_STORAGE_OP( DS, DefaultMultiply ) \
+  CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_STORAGE_OP( DS, KokkosMultiply )
 
-CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_ORDINAL_SCALAR_OP(int, double, DefaultMultiply)
-CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_ORDINAL_SCALAR_OP(int, double, EnsembleMultiply)
-CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_ORDINAL_SCALAR_OP(int, double, KokkosMultiply)
+CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_ORDINAL_SCALAR_DEVICE(int, double, Threads)
 
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // Initialize threads
-  size_t num_cores =
+  num_cores =
     Kokkos::hwloc::get_available_numa_count() *
     Kokkos::hwloc::get_available_cores_per_numa();
-  size_t num_hyper_threads =
+  num_hyper_threads =
     Kokkos::hwloc::get_available_threads_per_core();
   Kokkos::Threads::initialize(num_cores * num_hyper_threads);
   Kokkos::Threads::print_configuration(std::cout);

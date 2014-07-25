@@ -58,13 +58,16 @@ namespace Zoltan2 {
 
 /*! \brief An identifier for the general type of model.
  */
-enum ModelType {
-  InvalidModel = 0,
+enum ModelType 
+{
   HypergraphModelType,
   GraphModelType,
   CoordinateModelType,
-  IdentifierModelType
-} ;
+  IdentifierModelType,
+  MAX_NUM_MODEL_TYPES
+};
+
+
 
 /*! \brief Flags are set by a Problem to tell a Model what transformations
  *          it may need to do on the user's input.
@@ -109,11 +112,12 @@ class Model
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  typedef typename Adapter::lno_t    lno_t;
-  typedef typename Adapter::gno_t    gno_t;
-  typedef typename Adapter::gid_t    gid_t;
+  typedef typename Adapter::lno_t       lno_t;
+  typedef typename Adapter::gno_t       gno_t;
+  typedef typename Adapter::gid_t       gid_t;
   typedef typename Adapter::scalar_t    scalar_t;
-  typedef typename Adapter::user_t    user_t;
+  typedef typename Adapter::user_t      user_t;
+  typedef typename Adapter::userCoord_t userCoord_t;
   typedef IdentifierMap<user_t> idmap_t;
 #endif
 
@@ -123,7 +127,7 @@ public:
 
   /*! Constructor
    */
-  Model() : idMap_(), weightDim_(0), uniform_() {}
+  Model() : idMap_() {}
 
    /*! \brief Return the map from user global identifiers to internal
    *                Zoltan2 global numbers.
@@ -133,22 +137,6 @@ public:
    *  identical to the application's global IDs.
    */
   RCP<const idmap_t > getIdentifierMap() const { return idMap_; }
-
-  /*! \brief Return the number of weights supplied for each object.
-   *   If the user supplied no weights, dimension one is returned, because
-   *   one dimension of uniform weights is implied.
-   *
-   *   The concrete subclasses, however, return the number of weights
-   *   supplied by the user.
-   */
-  int getNumWeights() const { return weightDim_;}
-
-  /*! \brief Return whether the weights are uniform or not.
-   *  \param weightDim a value from 0 to one less than the number of weights.
-   *  \return 1 if the weights for that dimension are uniform, 0 if there
-   *          is a list of differing weights for that dimension.
-   */
-  bool uniformWeight(int weightDim) const { return uniform_[weightDim];}
 
   /*!  \brief Return the local number of objects.
    *
@@ -176,110 +164,10 @@ protected:
    */
   void setIdentifierMap(RCP<const idmap_t> &map) { idMap_ = map; }
 
-  /*! \brief Set the length of each weight array.  
-   * The Model calls this in the constructor so we know which
-   * weights are uniform.  If lengths for a given weight dimension
-   * are zero on all processes, then we know that uniform weights are implied.
-   *
-   * This method must be called by all processes.
-   */
-  void setWeightArrayLengths(const Array<lno_t> &len, 
-    const Teuchos::Comm<int> &comm)
-  {
-    weightDim_ = len.size();
-
-    int lvalsize = (weightDim_ > 0 ? weightDim_ : 1);
-    int *lval = new int [lvalsize];
-    uniform_ = arcp(lval, 0, lvalsize);
-
-    if (weightDim_ < 1){
-      uniform_[0] = 1;
-      return;
-    }
-
-    for (int i=0; i < weightDim_; i++){
-      if (len[i] > 0)
-        lval[i] = 1;
-      else
-        lval[i] = 0;
-    }
-
-    int *rval = new int [weightDim_];
-
-    try{
-      reduceAll<int, int>(comm, Teuchos::REDUCE_MAX, weightDim_, lval, rval);
-    }
-    Z2_FORWARD_EXCEPTIONS
-
-    for (int i=0; i < weightDim_; i++){
-      if (rval[i] > 0)
-        uniform_[i] = 0;
-      else
-        uniform_[i] = 1;
-    }
- 
-    delete [] rval;
-  }
-
-  /*! \brief Get the global maximum for each of an array of values.
-   *
-   *   Certain counts may not be available from processes that have
-   *   no data.  Models should find the maximum value of the count
-   *   across all processes to get the correct count.  (Examples
-   *   are coordinate dimension and weight dimension.)
-   */
-  template <typename T>
-    static void maxCount(const Comm<int> &comm, Array<T> &countValues)
-  {
-    size_t len = countValues.size();
-    if (comm.getSize() < 2 || len < 1)
-      return;
-    Array<T> globalValues(len);
-    Teuchos::reduceAll<int, T>(comm, Teuchos::REDUCE_MAX, len,
-      countValues.getRawPtr(), globalValues.getRawPtr());
-
-    countValues = globalValues;
-  }
-
-  /*! \brief Get the global maximum for a value.
-   *
-   *   Certain counts may not be available from processes that have
-   *   no data.  Models should find the maximum value of the count
-   *   across all processes to get the correct count.  (Examples
-   *   are coordinate dimension and weight dimension.)
-   */
-  template <typename T>
-    static void maxCount(const Comm<int> &comm, T &value1)
-  {
-    Array<T> values(1, value1);
-    maxCount<T>(comm, values);
-    value1 = values[0];
-  }
-
-  /*! \brief Get the global maximums for each of two values.
-   *
-   *   Certain counts may not be available from processes that have
-   *   no data.  Models should find the maximum value of the count
-   *   across all processes to get the correct count.  (Examples
-   *   are coordinate dimension and weight dimension.)
-   */
-  template <typename T>
-    static void maxCount(const Comm<int> &comm, T &value1, T &value2)
-  {
-    Array<T> values(2);
-    values[0] = value1;
-    values[1] = value2;
-    maxCount<T>(comm, values);
-    value1 = values[0];
-    value2 = values[1];
-  }
-
 private:
 
   RCP<const idmap_t> idMap_;
 
-  int weightDim_;       /*!< Minimum of 1 or number of user-supplied weights */
-  ArrayRCP<int> uniform_;   /*!< weightDim_ flags, 1 if uniform, 0 if not.   */
 };
 
 }   //  namespace Zoltan2

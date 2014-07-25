@@ -66,6 +66,25 @@ namespace Tpetra {
           "EDistributorSendType enum value " << sendType << ".");
       }
     }
+
+    std::string
+    DistributorHowInitializedEnumToString (EDistributorHowInitialized how)
+    {
+      switch (how) {
+      case Details::DISTRIBUTOR_NOT_INITIALIZED:
+        return "Not initialized yet";
+      case Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS:
+        return "By createFromSends";
+      case Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_RECVS:
+        return "By createFromRecvs";
+      case Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE:
+        return "By createReverseDistributor";
+      case Details::DISTRIBUTOR_INITIALIZED_BY_COPY:
+        return "By copy constructor";
+      default:
+        return "INVALID";
+      }
+    }
   } // namespace Details
 
   Array<std::string>
@@ -155,6 +174,7 @@ namespace Tpetra {
   Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
     : comm_ (comm)
     , out_  (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)))
+    , howInitialized_ (Details::DISTRIBUTOR_NOT_INITIALIZED)
     , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (barrierBetween_default)
     , debug_ (tpetraDistributorDebugDefault)
@@ -165,6 +185,8 @@ namespace Tpetra {
     , maxSendLength_ (0)
     , numReceives_ (0)
     , totalReceiveLength_ (0)
+    , lastRoundBytesSend_ (0)
+    , lastRoundBytesRecv_ (0)
     , useDistinctTags_ (useDistinctTags_default)
   {
     init (comm, Teuchos::null);
@@ -174,6 +196,7 @@ namespace Tpetra {
                             const Teuchos::RCP<Teuchos::FancyOStream>& out)
     : comm_ (comm)
     , out_ (out.is_null () ? Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) : out)
+    , howInitialized_ (Details::DISTRIBUTOR_NOT_INITIALIZED)
     , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (barrierBetween_default)
     , debug_ (tpetraDistributorDebugDefault)
@@ -184,6 +207,8 @@ namespace Tpetra {
     , maxSendLength_ (0)
     , numReceives_ (0)
     , totalReceiveLength_ (0)
+    , lastRoundBytesSend_ (0)
+    , lastRoundBytesRecv_ (0)
     , useDistinctTags_ (useDistinctTags_default)
   {
     init (comm, Teuchos::null);
@@ -193,6 +218,7 @@ namespace Tpetra {
                             const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : comm_ (comm)
     , out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)))
+    , howInitialized_ (Details::DISTRIBUTOR_NOT_INITIALIZED)
     , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (barrierBetween_default)
     , debug_ (tpetraDistributorDebugDefault)
@@ -203,6 +229,8 @@ namespace Tpetra {
     , maxSendLength_ (0)
     , numReceives_ (0)
     , totalReceiveLength_ (0)
+    , lastRoundBytesSend_ (0)
+    , lastRoundBytesRecv_ (0)
     , useDistinctTags_ (useDistinctTags_default)
   {
     init (comm, plist);
@@ -213,6 +241,7 @@ namespace Tpetra {
                             const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : comm_ (comm)
     , out_ (out.is_null () ? Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) : out)
+    , howInitialized_ (Details::DISTRIBUTOR_NOT_INITIALIZED)
     , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (barrierBetween_default)
     , debug_ (tpetraDistributorDebugDefault)
@@ -223,6 +252,8 @@ namespace Tpetra {
     , maxSendLength_ (0)
     , numReceives_ (0)
     , totalReceiveLength_ (0)
+    , lastRoundBytesSend_ (0)
+    , lastRoundBytesRecv_ (0)
     , useDistinctTags_ (useDistinctTags_default)
   {
     init (comm, plist);
@@ -231,6 +262,7 @@ namespace Tpetra {
   Distributor::Distributor (const Distributor & distributor)
     : comm_ (distributor.comm_)
     , out_ (distributor.out_)
+    , howInitialized_ (Details::DISTRIBUTOR_INITIALIZED_BY_COPY)
     , sendType_ (distributor.sendType_)
     , barrierBetween_ (distributor.barrierBetween_)
     , debug_ (distributor.debug_)
@@ -250,6 +282,8 @@ namespace Tpetra {
     , startsFrom_ (distributor.startsFrom_)
     , indicesFrom_ (distributor.indicesFrom_)
     , reverseDistributor_ (distributor.reverseDistributor_)
+    , lastRoundBytesSend_ (distributor.lastRoundBytesSend_)
+    , lastRoundBytesRecv_ (distributor.lastRoundBytesRecv_)
     , useDistinctTags_ (distributor.useDistinctTags_)
   {
     using Teuchos::ParameterList;
@@ -293,6 +327,7 @@ namespace Tpetra {
 
     std::swap (comm_, rhs.comm_);
     std::swap (out_, rhs.out_);
+    std::swap (howInitialized_, rhs.howInitialized_);
     std::swap (sendType_, rhs.sendType_);
     std::swap (barrierBetween_, rhs.barrierBetween_);
     std::swap (debug_, rhs.debug_);
@@ -312,6 +347,8 @@ namespace Tpetra {
     std::swap (startsFrom_, rhs.startsFrom_);
     std::swap (indicesFrom_, rhs.indicesFrom_);
     std::swap (reverseDistributor_, rhs.reverseDistributor_);
+    std::swap (lastRoundBytesSend_, rhs.lastRoundBytesSend_);
+    std::swap (lastRoundBytesRecv_, rhs.lastRoundBytesRecv_);
     std::swap (useDistinctTags_, rhs.useDistinctTags_);
 
     // Swap verbosity levels.
@@ -530,6 +567,8 @@ namespace Tpetra {
     reverseDistributor_->selfMessage_ = selfMessage_;
     reverseDistributor_->maxSendLength_ = maxReceiveLength;
     reverseDistributor_->totalReceiveLength_ = totalSendLength;
+    reverseDistributor_->howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE;
+
     // Note: technically, I am my reverse distributor's reverse distributor, but
     //       we will not set this up, as it gives us an opportunity to test
     //       that reverseDistributor is an inverse operation w.r.t. value semantics of distributors
@@ -611,10 +650,28 @@ namespace Tpetra {
     }
   }
 
-  std::string Distributor::description() const {
-    std::ostringstream oss;
-    oss << Teuchos::Describable::description();
-    return oss.str();
+  std::string Distributor::description () const {
+    std::ostringstream out;
+
+    out << "\"Tpetra::Distributor\": {";
+    const std::string label = this->getObjectLabel ();
+    if (label != "") {
+      out << "Label: " << label << ", ";
+    }
+    out << "How initialized: "
+        << Details::DistributorHowInitializedEnumToString (howInitialized_)
+        << ", Parameters: {"
+        << "Send type: "
+        << DistributorSendTypeEnumToString (sendType_)
+        << ", Barrier between receives and sends: "
+        << (barrierBetween_ ? "true" : "false")
+        << ", Use distinct tags: "
+        << (useDistinctTags_ ? "true" : "false")
+        << ", Debug: " << (debug_ ? "true" : "false")
+        << ", Enable MPI CUDA RDMA support: "
+        << (enable_cuda_rdma_ ? "true" : "false")
+        << "}}";
+    return out.str ();
   }
 
   void
@@ -648,7 +705,9 @@ namespace Tpetra {
         if (label != "") {
           out << "Label: " << label << endl;
         }
-        out << "Parameters: " << endl;
+        out << "How initialized: "
+            << Details::DistributorHowInitializedEnumToString (howInitialized_)
+            << endl << "Parameters: " << endl;
         {
           Teuchos::OSTab tab3 (out);
           out << "\"Send type\": "
@@ -859,7 +918,11 @@ namespace Tpetra {
 
     // Teuchos::Comm treats a negative process ID as MPI_ANY_SOURCE
     // (receive data from any process).
+#ifdef HAVE_MPI
+    const int anySourceProc = MPI_ANY_SOURCE;
+#else
     const int anySourceProc = -1;
+#endif
 
     if (debug_) {
       std::ostringstream os;
@@ -1033,6 +1096,16 @@ namespace Tpetra {
 
     // Set up data structures for quick traversal of arrays.
     // This contains the number of sends for each process ID.
+    //
+    // FIXME (mfh 20 Mar 2014) This is one of a few places in Tpetra
+    // that create an array of length the number of processes in the
+    // communicator (plus one).  Given how this code uses this array,
+    // it should be straightforward to replace it with a hash table or
+    // some other more space-efficient data structure.  In practice,
+    // most of the entries of starts should be zero for a sufficiently
+    // large process count, unless the communication pattern is dense.
+    // Note that it's important to be able to iterate through keys (i
+    // for which starts[i] is nonzero) in increasing order.
     Teuchos::Array<size_t> starts (numImages + 1, 0);
 
     // numActive is the number of sends that are not Null
@@ -1043,7 +1116,7 @@ namespace Tpetra {
     int badID = -1; // only used in a debug build
 #endif // HAVE_TPETRA_DEBUG
     for (size_t i = 0; i < numExports_; ++i) {
-      int exportID = exportNodeIDs[i];
+      const int exportID = exportNodeIDs[i];
       if (exportID >= numImages) {
 #ifdef HAVE_TPETRA_DEBUG
         badID = myImageID;
@@ -1289,6 +1362,11 @@ namespace Tpetra {
       os << myImageID << ": createFromSends: done" << endl;
       *out_ << os.str ();
     }
+
+    // createFromRecvs() calls createFromSends(), but will set
+    // howInitialized_ again after calling createFromSends().
+    howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS;
+
     return totalReceiveLength_;
   }
 

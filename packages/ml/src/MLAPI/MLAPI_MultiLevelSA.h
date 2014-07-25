@@ -12,7 +12,7 @@
 */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_common.h"
@@ -51,7 +51,7 @@ public:
   // @{ \name Constructors and destructors
 
   //! Constructs the hierarchy for given Operator and parameters.
-  MultiLevelSA(const Operator FineMatrix, Teuchos::ParameterList& List,
+  MultiLevelSA(const Operator & FineMatrix, Teuchos::ParameterList& List,
                const bool ConstructNow = true) :
     IsComputed_(false)
   {
@@ -68,25 +68,25 @@ public:
   // @{ \name Set and Get methods
 
   //! Returns a copy of the internally stored domain space.
-  const Space GetOperatorDomainSpace() const 
+  const Space GetOperatorDomainSpace() const
   {
     return(FineMatrix_.GetDomainSpace());
   }
 
   //! Returns a copy of the internally stored range space.
-  const Space GetOperatorRangeSpace() const 
+  const Space GetOperatorRangeSpace() const
   {
     return(FineMatrix_.GetRangeSpace());
   }
 
   //! Returns a copy of the internally stored domain space.
-  inline const Space GetDomainSpace() const 
+  inline const Space GetDomainSpace() const
   {
     return(FineMatrix_.GetDomainSpace());
   }
 
   //! Returns a copy of the internally stored range space.
-  inline const Space GetRangeSpace() const 
+  inline const Space GetRangeSpace() const
   {
     return(FineMatrix_.GetRangeSpace());
   }
@@ -131,7 +131,7 @@ public:
   // @{ \name Mathematical methods
 
   //! Computes the hierarchy.
-  void Compute() 
+  void Compute()
   {
     ResetTimer();
     StackPush();
@@ -147,7 +147,7 @@ public:
     int         NumPDEEqns    = List_.get("PDE equations", 1);
     std::string      SmootherType  = List_.get("smoother: type", "symmetric Gauss-Seidel");
     std::string      CoarseType    = List_.get("coarse: type", "Amesos-KLU");
-    
+
     // build up the default null space
     if (ThisNS.GetNumVectors() == 0) {
       ThisNS.Reshape(FineMatrix_.GetDomainSpace(),NumPDEEqns);
@@ -207,7 +207,7 @@ public:
 
       GetPtent(Aop, List_, ThisNS, Ptent, NextNS);
       ThisNS = NextNS;
-      
+
       if (Damping) {
 
         if (EigenAnalysis == "Anorm")
@@ -287,7 +287,7 @@ public:
 
     IsComputed_ = true;
     StackPop();
-    
+
     // FIXME: update flops!
     UpdateTime();
 
@@ -309,7 +309,7 @@ public:
   }
 
   //! Recursively called core of the multi level preconditioner.
-  int SolveMultiLevelSA(const MultiVector& b_f,MultiVector& x_f, int level) const 
+  int SolveMultiLevelSA(const MultiVector& b_f,MultiVector& x_f, int level) const
   {
     if (level == MaxLevels_ - 1) {
       x_f = S(level) * b_f;
@@ -325,7 +325,7 @@ public:
     A(level).SetFlops(0.0);
     R(level).SetFlops(0.0);
     P(level).SetFlops(0.0);
-    
+
     // apply pre-smoother
     x_f = S(level) * b_f;
     // new residual
@@ -337,14 +337,14 @@ public:
     // prolongate back and add to solution
     x_f = x_f + P(level) * z_c;
     // apply post-smoother
-    S(level).Apply(b_f,x_f); 
+    S(level).Apply(b_f,x_f);
 
     UpdateFlops(2.0 * S(level).GetFlops());
     UpdateFlops(A(level).GetFlops());
     UpdateFlops(R(level).GetFlops());
     UpdateFlops(P(level).GetFlops());
     UpdateFlops(2.0 * x_f.GetGlobalLength());
-    
+
     return(0);
   }
 
@@ -352,7 +352,7 @@ public:
   // @{ \name Miscellaneous methods
 
   //! Prints basic information about \c this preconditioner.
-  std::ostream& Print(std::ostream& os, 
+  std::ostream& Print(std::ostream& os,
                       const bool verbose = true) const
   {
     if (GetMyPID() == 0) {

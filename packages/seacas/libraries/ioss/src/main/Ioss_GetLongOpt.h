@@ -20,7 +20,7 @@ namespace Ioss {
       const char *opt_value;	// If optional value and value not entered, assign opt_value to value
       Cell *next;		// pointer to the next cell
       
-      Cell() { option = description = value = 0; next = 0; }
+      Cell() { option = description = value = opt_value = 0; next = 0; type = NoValue; }
     };
   private:
     Cell *table;		// option table

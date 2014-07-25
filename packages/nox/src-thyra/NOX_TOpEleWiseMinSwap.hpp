@@ -1,13 +1,13 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 // RTOp: Interfaces and Support Software for Vector Reduction Transformation
 //       Operations
 //                Copyright (2006) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -58,12 +58,12 @@ public:
   void operator()( const Scalar &v0, Scalar &z0 ) const
     {
       if (std::abs(z0) > v0)
-	z0 = v0 * (z0/std::abs(z0));
+    z0 = v0 * (z0/std::abs(z0));
     }
 };
 
 
-/** \brief Element-wise product update transformation operator: 
+/** \brief Element-wise product update transformation operator:
  * <tt>z0[i] *= min(v0[i],abs(z0[i]) * z0[i]/abs(z0[i]), i=0...n-1</tt>.
  */
 template<class Scalar>
@@ -93,7 +93,7 @@ namespace Thyra {
  */
 template<class Scalar>
 void ele_wise_min_swap( const ::Thyra::VectorBase<Scalar>& x,
-			const Teuchos::Ptr< ::Thyra::VectorBase<Scalar> > &y )
+            const Teuchos::Ptr< ::Thyra::VectorBase<Scalar> > &y )
 {
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   RTOpPack::TOpEleWiseMinSwap<Scalar> ele_wise_min_swap_op;

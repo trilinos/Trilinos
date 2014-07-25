@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -52,12 +52,12 @@
 #include "LOCA_Hopf_MooreSpence_ExtendedMultiVector.H"
 
 LOCA::Hopf::MooreSpence::ExtendedVector::ExtendedVector(
-		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
-		    const NOX::Abstract::Vector& xVec,
-		    const NOX::Abstract::Vector& realEigenVec,
-		    const NOX::Abstract::Vector& imagEigenVec,
-		    double frequency,
-		    double bifParam) :
+            const Teuchos::RCP<LOCA::GlobalData>& global_data,
+            const NOX::Abstract::Vector& xVec,
+            const NOX::Abstract::Vector& realEigenVec,
+            const NOX::Abstract::Vector& imagEigenVec,
+            double frequency,
+            double bifParam) :
   LOCA::Extended::Vector(global_data,3,2)
 {
   setVector(0, xVec);
@@ -69,7 +69,7 @@ LOCA::Hopf::MooreSpence::ExtendedVector::ExtendedVector(
 
 LOCA::Hopf::MooreSpence::ExtendedVector::ExtendedVector(
                     const LOCA::Hopf::MooreSpence::ExtendedVector& source,
-		    NOX::CopyType type) :
+            NOX::CopyType type) :
   LOCA::Extended::Vector(source, type)
 {
 }
@@ -79,42 +79,42 @@ LOCA::Hopf::MooreSpence::ExtendedVector::~ExtendedVector()
 {
 }
 
-NOX::Abstract::Vector& 
+NOX::Abstract::Vector&
 LOCA::Hopf::MooreSpence::ExtendedVector::operator=(
-					      const NOX::Abstract::Vector& y)
+                          const NOX::Abstract::Vector& y)
 {
   return operator=(dynamic_cast<const LOCA::Hopf::MooreSpence::ExtendedVector&>(y));
 }
 
-LOCA::Extended::Vector& 
+LOCA::Extended::Vector&
 LOCA::Hopf::MooreSpence::ExtendedVector::operator=(
-					      const LOCA::Extended::Vector& y)
+                          const LOCA::Extended::Vector& y)
 {
   return operator=(dynamic_cast<const LOCA::Hopf::MooreSpence::ExtendedVector&>(y));
 }
 
-LOCA::Hopf::MooreSpence::ExtendedVector& 
+LOCA::Hopf::MooreSpence::ExtendedVector&
 LOCA::Hopf::MooreSpence::ExtendedVector::operator=(
                          const LOCA::Hopf::MooreSpence::ExtendedVector& y)
-{ 
+{
   LOCA::Extended::Vector::operator=(y);
   return *this;
 }
 
-Teuchos::RCP<NOX::Abstract::Vector> 
+Teuchos::RCP<NOX::Abstract::Vector>
 LOCA::Hopf::MooreSpence::ExtendedVector::clone(NOX::CopyType type) const
 {
-  return 
+  return
     Teuchos::rcp(new LOCA::Hopf::MooreSpence::ExtendedVector(*this, type));
 }
 
-void 
+void
 LOCA::Hopf::MooreSpence::ExtendedVector::setVec(
-			       const NOX::Abstract::Vector& xVec,
-			       const NOX::Abstract::Vector& realEigenVec,
-			       const NOX::Abstract::Vector& imagEigenVec,
-			       double frequency,
-			       double bifPar)
+                   const NOX::Abstract::Vector& xVec,
+                   const NOX::Abstract::Vector& realEigenVec,
+                   const NOX::Abstract::Vector& imagEigenVec,
+                   double frequency,
+                   double bifPar)
 {
   setVector(0, xVec);
   setVector(1, realEigenVec);
@@ -141,13 +141,13 @@ LOCA::Hopf::MooreSpence::ExtendedVector::getImagEigenVec() const
   return getVector(2);
 }
 
-double 
+double
 LOCA::Hopf::MooreSpence::ExtendedVector::getFrequency() const
 {
   return getScalar(0);
 }
 
-double 
+double
 LOCA::Hopf::MooreSpence::ExtendedVector::getBifParam() const
 {
   return getScalar(1);
@@ -171,31 +171,31 @@ LOCA::Hopf::MooreSpence::ExtendedVector::getImagEigenVec()
   return getVector(2);
 }
 
-double& 
+double&
 LOCA::Hopf::MooreSpence::ExtendedVector::getFrequency()
 {
   return getScalar(0);
 }
 
-double& 
+double&
 LOCA::Hopf::MooreSpence::ExtendedVector::getBifParam()
 {
   return getScalar(1);
 }
 
 LOCA::Hopf::MooreSpence::ExtendedVector::ExtendedVector(
-		  const Teuchos::RCP<LOCA::GlobalData>& global_data) :
+          const Teuchos::RCP<LOCA::GlobalData>& global_data) :
   LOCA::Extended::Vector(global_data,3,2)
 {
 }
 
 Teuchos::RCP<LOCA::Extended::MultiVector>
 LOCA::Hopf::MooreSpence::ExtendedVector::generateMultiVector(
-							int nColumns, 
-							int nVectorRows, 
-							int nScalarRows) const
+                            int nColumns,
+                            int nVectorRows,
+                            int nScalarRows) const
 {
-  return 
+  return
     Teuchos::rcp(new LOCA::Hopf::MooreSpence::ExtendedMultiVector(globalData,
-								  nColumns));
+                                  nColumns));
 }

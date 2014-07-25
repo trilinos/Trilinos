@@ -43,13 +43,6 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * MueLu_PreserveDirichletAggregationAlgorithm_decl.hpp
- *
- *  Created on: 12 Nov 2013
- *      Author: wiesner
- */
-
 #ifndef MUELU_PRESERVEDIRICHLETAGGREGATIONALGORITHM_DECL_HPP_
 #define MUELU_PRESERVEDIRICHLETAGGREGATIONALGORITHM_DECL_HPP_
 
@@ -59,7 +52,6 @@
 
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
-//#include "MueLu_Graph_fwd.hpp"
 #include "MueLu_GraphBase.hpp"
 
 namespace MueLu {
@@ -94,6 +86,8 @@ namespace MueLu {
 
     void BuildAggregates(const Teuchos::ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const;
     //@}
+
+    std::string description() const { return "Phase - (Dirichlet)"; }
 
   }; //class PreserveDirichletAggregationAlgorithm
 

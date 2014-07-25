@@ -62,6 +62,7 @@ ENDIF()
 
 
 IF (${PACKAGE_NAME}_Netcdf_EXECUTABLE_NCDUMP)
+  SET(NETCDF_NCDUMP ${${PACKAGE_NAME}_Netcdf_EXECUTABLE_NCDUMP})
   SET( cbind_OLDTESTS
     testwt
     testwtd
@@ -109,13 +110,13 @@ IF (${PACKAGE_NAME}_Netcdf_EXECUTABLE_NCDUMP)
   #       when built with shareable libraries on some platforms....
 
   FOREACH ( testName ${cbind_OLDTESTS} )
-    TRIBITS_ADD_EXECUTABLE( ${testName} NOEXEPREFIX SOURCES ${testName}.c LINKER_LANGUAGE CXX DEPLIBS exodus)
+    TRIBITS_ADD_EXECUTABLE( ${testName} NOEXEPREFIX NOEXESUFFIX SOURCES ${testName}.c LINKER_LANGUAGE CXX DEPLIBS exodus)
   ENDFOREACH ( testName )
 
   TRIBITS_ADD_ADVANCED_TEST(
    exodus_unit_tests
    TEST_0 CMND /bin/csh ARGS ${CMAKE_CURRENT_BINARY_DIR}/testall
-	  OUTPUT_FILE exodus_unit_tests.out
+	  OUTPUT_QUIET ERROR_FILE exodus_unit_tests.out
 	  PASS_ANY
    TEST_1 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/exodus_unit_tests.gold 
 		         ${CMAKE_CURRENT_BINARY_DIR}/exodus_unit_tests.out

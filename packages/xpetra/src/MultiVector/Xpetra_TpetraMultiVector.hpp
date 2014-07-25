@@ -77,7 +77,7 @@ namespace Xpetra {
 
   // Because we aren't including the header...
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node > > toXpetra(RCP<Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > vec);
+  RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node > >       toXpetra(RCP<Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > vec);
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node > > toXpetra(RCP<const Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > vec);
@@ -102,7 +102,7 @@ namespace Xpetra {
 
     //! Copy constructor (performs a deep copy).
     TpetraMultiVector(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source)
-      : vec_(Teuchos::rcp(new Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >(toTpetra(source)))) {  }
+      : vec_(Teuchos::rcp(new Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >(Tpetra::createCopy(toTpetra(source))))) {  }
 
     //! Create multivector by copying two-dimensional array of local data.
     TpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Scalar > &A, size_t LDA, size_t NumVectors)
@@ -112,7 +112,7 @@ namespace Xpetra {
     TpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > &ArrayOfPtrs, size_t NumVectors)
       : vec_(Teuchos::rcp(new Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >(toTpetra(map), ArrayOfPtrs, NumVectors))) {  }
 
-    
+
     //! Destructor (virtual for memory safety of derived classes).
     virtual ~TpetraMultiVector() {  }
 
@@ -265,7 +265,7 @@ namespace Xpetra {
     //{@
     // Implements DistObject interface
 
-    const Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > getMap() const { XPETRA_MONITOR("TpetraMultiVector::getMap"); return toXpetra(vec_->getMap()); }
+    Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > getMap() const { XPETRA_MONITOR("TpetraMultiVector::getMap"); return toXpetra(vec_->getMap()); }
 
     void doImport(const DistObject< Scalar, LocalOrdinal,GlobalOrdinal,Node> &source, const Import<LocalOrdinal,GlobalOrdinal,Node> &importer, CombineMode CM) {
       XPETRA_MONITOR("TpetraMultiVector::doImport");
@@ -309,7 +309,7 @@ namespace Xpetra {
     template<class Node2>
     RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> > clone(const RCP<Node2> &node2) const {
       return RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >(new TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node2>(vec_->clone(node2)));
-	//toXpetra(vec_->clone(node2));
+        //toXpetra(vec_->clone(node2));
     }
 
     //@}
@@ -328,8 +328,44 @@ namespace Xpetra {
 
     //@}
 
-  private:
+  protected:
+    /// \brief Implementation of the assignment operator (operator=);
+    ///   does a deep copy.
+    virtual void
+    assign (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs)
+    {
+      typedef TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> this_type;
+      const this_type* rhsPtr = dynamic_cast<const this_type*> (&rhs);
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        rhsPtr == NULL, std::invalid_argument, "Xpetra::MultiVector::operator=:"
+        " The left-hand side (LHS) of the assignment has a different type than "
+        "the right-hand side (RHS).  The LHS has type Xpetra::TpetraMultiVector"
+        " (which means it wraps a Tpetra::MultiVector), but the RHS has some "
+        "other type.  This probably means that the RHS wraps an "
+        "Epetra_MultiVector.  Xpetra::MultiVector does not currently implement "
+        "assignment from an Epetra object to a Tpetra object, though this could"
+        " be added with sufficient interest.");
 
+      typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TMV;
+      RCP<const TMV> rhsImpl = rhsPtr->getTpetra_MultiVector ();
+      RCP<TMV> lhsImpl = this->getTpetra_MultiVector ();
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        rhsImpl.is_null (), std::logic_error, "Xpetra::MultiVector::operator= "
+        "(in Xpetra::TpetraMultiVector::assign): *this (the right-hand side of "
+        "the assignment) has a null RCP<Tpetra::MultiVector> inside.  Please "
+        "report this bug to the Xpetra developers.");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        lhsImpl.is_null (), std::logic_error, "Xpetra::MultiVector::operator= "
+        "(in Xpetra::TpetraMultiVector::assign): The left-hand side of the "
+        "assignment has a null RCP<Tpetra::MultiVector> inside.  Please report "
+        "this bug to the Xpetra developers.");
+
+      Tpetra::deep_copy (*lhsImpl, *rhsImpl);
+    }
+
+  private:
+    //! The Tpetra::MultiVector which this class wraps.
     RCP< Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node> > vec_;
 
   }; // TpetraMultiVector class
@@ -353,12 +389,20 @@ namespace Xpetra {
 
   // Things we actually need
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node > > toXpetra(RCP<Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > vec)
-  {return rcp(new TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node >(vec));}
+  RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node > > toXpetra(RCP<Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > vec) {
+    if (!vec.is_null())
+      return rcp(new TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node >(vec));
+
+    return Teuchos::null;
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node > > toXpetra(RCP<const Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > vec)
-  {return rcp(new TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node >(vec));}
+  RCP<const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node > > toXpetra(RCP<const Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > vec) {
+    if (!vec.is_null())
+      return rcp(new TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node >(vec));
+
+    return Teuchos::null;
+  }
 
 } // Xpetra namespace
 

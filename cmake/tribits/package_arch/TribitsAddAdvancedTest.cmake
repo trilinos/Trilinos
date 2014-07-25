@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -45,16 +45,13 @@ INCLUDE(PrintVar)
 
 
 #
-# TRIBITS_ADD_ADVANCED_TEST(...)
+# @FUNCTION: TRIBITS_ADD_ADVANCED_TEST()
 # 
-# Function that creates an advanced test defined using one or more executable
-# commands that is run as a separate CMake script.
+# Function that creates an advanced test defined by stringing together one or
+# more executables and/or commands that is run as a ``cmake -P`` script with
+# very flexible pass/fail criteria.
 #
-# This function allows you to add a single CTest test as a single unit that is
-# actually a sequence of one or more separate commands strung together in some
-# way to define the final pass/fail.
-#
-# An advanced test is defined as:
+# Usage::
 #
 #   TRIBITS_ADD_ADVANCED_TEST(
 #     <testName>
@@ -67,24 +64,33 @@ INCLUDE(PrintVar)
 #     [KEYWORDS <keyword1> <keyword2> ...]
 #     [COMM [serial] [mpi]]
 #     [OVERALL_NUM_MPI_PROCS <overallNumProcs>]
-#     [CATEGORIES <category1> <category2> ...]
-#     [HOST <host1> <host2> ...]
-#     [XHOST <host1> <host2> ...]
-#     [HOSTTYPE <hosttype1> <hosttype2> ...]
-#     [XHOSTTYPE <hosttype1> <hosttype2> ...]
-#     [FINAL_PASS_REGULAR_EXPRESSION <regex> | FINAL_FAIL_REGULAR_EXPRESSION <regex>]
+#     [CATEGORIES <category0> <category1> ...]
+#     [HOST <host0> <host1> ...]
+#     [XHOST <host0> <host1> ...]
+#     [HOSTTYPE <hosttype0> <hosttype1> ...]
+#     [XHOSTTYPE <hosttype0> <hosttype1> ...]
+#     [FINAL_PASS_REGULAR_EXPRESSION <regex> |
+#       FINAL_FAIL_REGULAR_EXPRESSION <regex>]
 #     [ENVIRONMENT <var1>=<value1> <var2>=<value2> ...]
+#     [TIMEOUT <maxSeconds>]
 #     )
 #
-# Each and every atomic test or command needs to pass (as defined below) in
-# order for the overall test to pass
+# This function allows one to add a single CTest test that is actually a
+# sequence of one or more separate commands strung together in some way to
+# define the final pass/fail. One will want to use this function to add a test
+# instead of `TRIBITS_ADD_TEST()`_ when one needs to run more than one
+# command, or one needs more sophisticated checking of the test result other
+# than just grepping STDOUT (e.g. by running separate post-processing programs
+# to examine output files).
 #
 # Each atomic test case is either a package-built executable or just a basic
-# command.  An atomic test command takes the form:
+# command.  An atomic test command block ``TEST_<idx>`` (i.e. ``TEST_0``,
+# ``TEST_1``, ...) takes the form::
 #
-#   TEST_<i>
-#      EXEC <execTarget> [NOEXEPREFIX] [NOEXESUFFIX] [ADD_DIR_TO_NAME] [DIRECTORY <directory>]
-#         | CMND <cmndExec>
+#   TEST_<idx>
+#      (EXEC <exeRootName> [NOEXEPREFIX] [NOEXESUFFIX] [ADD_DIR_TO_NAME]
+#             [DIRECTORY <dir>]
+#         | CMND <cmndExec>)
 #      [ARGS <arg1> <arg2> ... <argn>]
 #      [MESSAGE "<message>"]
 #      [WORKING_DIRECTORY <workingDir>]
@@ -98,194 +104,371 @@ INCLUDE(PrintVar)
 #        | STANDARD_PASS_OUTPUT
 #        ]
 #
-# ToDO: Add documnetation for [X]HOST[TYPE]
+# By default, each and every atomic test or command needs to pass (as defined below) in
+# order for the overall test to pass.
 #
-# Some overall arguments are:
+# *Sections:*
+# 
+# * `Overall Arguments (TRIBITS_ADD_ADVANCED_TEST())`_
+# * `TEST_<idx> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())`_
+# * `Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST())`_
+# * `Argument Parsing and Ordering (TRIBITS_ADD_ADVANCED_TEST())`_
+# * `Implementation Details (TRIBITS_ADD_ADVANCED_TEST())`_
+# * `Setting Additional Test Properties (TRIBITS_ADD_ADVANCED_TEST())`_
+# * `Running multiple tests at the same time (TRIBITS_ADD_ADVANCED_TEST())`_
+# * `Disabling Tests Externally (TRIBITS_ADD_ADVANCED_TEST())`_
+# * `Debugging and Examining Test Generation (TRIBITS_ADD_ADVANCED_TEST())`_
 #
-#   <testName>
+# .. _Overall Arguments (TRIBITS_ADD_ADVANCED_TEST()):
 #
-#     The name of the test (which will have ${PACKAGE_NAME}_
-#     appended) that will be used to name the output CMake script file as well as
-#     the CTest test name passed into ADD_TEST(...).
+# **Overall Arguments (TRIBITS_ADD_ADVANCED_TEST())**
 #
-#   TEST_<i> (EXEC <execTarget0> | CMND <cmndExec0>) ...
+# Below, some of the overall arguments are described.  The rest of the overall
+# arguments that control overall pass/fail are described in `Overall Pass/Fail
+# (TRIBITS_ADD_ADVANCED_TEST())`_.  (NOTE: All of these arguments must be
+# listed outside of the ``TEST_<idx>`` blocks, see `Argument Parsing and
+# Ordering (TRIBITS_ADD_ADVANCED_TEST())`_).
 #
-#     Defines test command <i>.  Each of these test commands must be in
-#     sequential order.  The details for each atomic test are given below.
+#   ``<testName>``
 #
-#   OVERALL_WORKING_DIRECTORY <overallWorkingDir>
+#     The name of the test (which will have ``${PACKAGE_NAME}_`` prepended to
+#     the name) that will be used to name the output CMake script file as well
+#     as the CTest test name passed into ``ADD_TEST()``.  This must be the
+#     first argument to this function.
 #
-#     If specified, then the working directory <overallWorkingDir> will be
+#   ``OVERALL_WORKING_DIRECTORY <overallWorkingDir>``
+#
+#     If specified, then the working directory ``<overallWorkingDir>`` will be
 #     created and all of the test commands by default will be run from within
-#     this directory.  If the value <overallWorkingDir> = TEST_NAME is given,
-#     then the working directory will be given the name
-#     ${PACKAGE_NAME}_<testName>.  If the directory <overallWorkingDir> exists
-#     before the test runs, it will be deleted and created again.  Therefore,
-#     if you want to preserve the contents of this directory between test runs
-#     you need to copy it somewhere else.
+#     this directory.  If the value ``<overallWorkingDir>=TEST_NAME`` is
+#     given, then the working directory will be given the name
+#     ``${PACKAGE_NAME}_<testName>``.  If the directory
+#     ``<overallWorkingDir>`` exists before the test runs, it will be deleted
+#     and created again.  Therefore, if one wants to preserve the contents of
+#     this directory between test runs then one needs to copy the files it
+#     contains somewhere else.  This is a good option to use if the commands
+#     create intermediate files and one wants to make sure they get deleted
+#     before the test cases are run again.  This is also a very useful option
+#     to use if multiple tests are defined in the same ``CMakeLists.txt`` file
+#     that read/write files with the same name.
 #
-#   KEYWORDS <keyword1> <keyword2> ...
-#
-#     If specified, gives a list of keywords added to a test.  These keywords
-#     can then be used to select tests to be run with 'ctest'.
-#
-#   FAIL_FAST
+#   ``FAIL_FAST``
 #
 #     If specified, then the remaining test commands will be aborted when any
 #     test command fails.  Otherwise, all of the test cases will be run.
 #
-#   RUN_SERIAL
+#   ``RUN_SERIAL``
 #
 #     If specified then no other tests will be allowed to run while this test
-#     is running. This is useful for devices(like cuda cards) that require
-#     exclusive access for processes/threads.
+#     is running.  This is useful for devices (like CUDA cards) that require
+#     exclusive access for processes/threads.  This just sets the CTest test
+#     property ``RUN_SERIAL`` using the built-in CMake function
+#     ``SET_TESTS_PROPERTIES()``.
 #
-#   COMM [serial] [mpi]
+#   ``COMM [serial] [mpi]``
 #
 #     If specified, selects if the test will be added in serial and/or MPI
-#     mode.  If the COMM argument is missing, the test will be added in both
-#     serial and MPI builds of the code.  See the COMM argument in the script
-#     TRIBITS_ADD_TEST(...) for more details.
+#     mode.  See the ``COMM`` argument in the script
+#     `TRIBITS_ADD_TEST()`_ for more details.
 #
-#   OVERALL_NUM_MPI_PROCS <overallNumProcs>
+#   ``OVERALL_NUM_MPI_PROCS <overallNumProcs>``
 #
-#     If specified, gives the default number of processes that each executable
-#     command run on and can also result in the test being exluded all
-#     together based on comparison to MPI_EXEC_MAX_NUMPROCS.  See the COMM
-#     argument in the script TRIBITS_ADD_TEST(...) for more details.
+#     If specified, gives the default number of MPI processes that each
+#     executable command runs on.  If ``<numProcs>`` is greater than
+#     ``${MPI_EXEC_MAX_NUMPROCS}`` then the test will be excluded.  If not
+#     specified, then the default number of processes for an MPI build will be
+#     ``${MPI_EXEC_DEFAULT_NUMPROCS}``.  For serial builds, this argument is
+#     ignored.  This also results in the test property ``PROCESSORS`` being
+#     set to ``<overallNumProcs>`` (see `Running multiple tests at the same
+#     time (TRIBITS_ADD_ADVANCED_TEST())`_).  **WARNING!** If just running a
+#     serial script or other command, then the property ``PROCESSORS`` will
+#     still get set to ``${MPI_EXEC_DEFAULT_NUMPROCS}`` so in order to avoid
+#     CTest unnecessarily resolving ``${MPI_EXEC_DEFAULT_NUMPROCS}`` processes
+#     for a serial non-MPI test, then one must explicitly pass in
+#     ``MPI_EXEC_DEFAULT_NUMPROCS 1``!
 #
-#   CATEGORIES <category1> <category2> ...
+#   ``CATEGORIES <category0> <category1> ...``
 #
-#     Gives the test categories this test will be added.  See
-#     TRIBITS_ADD_TEST(...) for more details.
+#     Gives the `Test Test Categories`_ for which this test will be added.
+#     See `TRIBITS_ADD_TEST()`_ for more details.
 #
-# Each test command is either package-built test executable or some general
-# command executable and is defined as either:
+#   ``HOST <host0> <host1> ...``
 #
-#   EXEC <execTarget>
+#     The list of hosts for which to enable the test (see
+#     `TRIBITS_ADD_TEST()`_).
 #
-#     If specified, then <execTarget> gives the the name of an executable
-#     target that will be run as the command.  The value <execTarget> is same
-#     string that was passed in as the first argument to
-#     TRIBITS_ADD_EXECUTABLE( <execTarget>...) used to define the executable.
-#     If this is an MPI build, then <execTarget> will be run with MPI using
-#     NUM_MPI_PROCS <numProcs> or OVERALL_NUM_MPI_PROCS <overallNumProcs> (if
-#     NUM_MPI_PROCS is not set for this test case).  If the number of maximum
-#     MPI processes allowed is less than this number of MPI processes, then
-#     the test will *not* be run.  If NOEXEPREFIX is specified, then
-#     ${PACKAGE_NAME}_ will not be added the the beginning.  If NOEXESUFFIX is
-#     specified, then '.exe' will not be added to the end.  Note that EXEC
-#     <execTarget> is basically equivalent to CMND <cmndExec> when NOEXEPREFIX
-#     and NOEXESUFFIX are specified.  In this case, you can pass in
-#     <execTarget> to any command you would like and it will get run with MPI
-#     in MPI mode just link any other command.
+#   ``XHOST <host0> <host1> ...``
 #
-#   CMND <cmndExec>
+#     The list of hosts for which **not** to enable the test (see
+#     `TRIBITS_ADD_TEST()`_).
 #
-#     If specified, then <cmndExec> gives the executable for a command to be
-#     run.  In this case, MPI will never be used to run the executable even
-#     when configured in MPI mode (i.e. TPL_ENABLE_MPI=ON).
+#   ``HOSTTYPE <hosttype0> <hosttype1> ...``
 #
-# By defualt, the output (stdout/stderr) for each test command is captured and
+#     The list of host types for which to enable the test (see
+#     `TRIBITS_ADD_TEST()`_).
+#
+#   ``XHOSTTYPE <hosttype0> <hosttype1> ...``
+#
+#     The list of host types for which **not** to enable the test (see
+#     `TRIBITS_ADD_TEST()`_).
+#
+#   ``ENVIRONMENT <var1>=<value1> <var2>=<value2> ..``.
+#
+#     If passed in, the listed environment variables will be set before
+#     calling the test.  This is set using the built-in CTest test property
+#     ``ENVIRONMENT``.
+#
+#   ``TIMEOUT <maxSeconds>``
+#
+#     If passed in, gives maximum number of seconds the test will be allowed
+#     to run before being timed-out (see `TRIBITS_ADD_TEST()`_).  This is for
+#     the full CTest test, not individual ``TEST_<idx>`` commands!
+#
+# .. _TEST_<idx> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST()):
+# 
+# **TEST_<idx> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())**
+#
+# Each test command block ``TEST_<idx>`` runs either a package-built test
+# executable or some general command executable and is defined as either
+# ``EXEC <exeRootName>`` or ``CMND <cmndExec>`` with the arguments:
+#
+#   ``EXEC <exeRootName> [NOEXEPREFIX] [NOEXESUFFIX] [ADD_DIR_TO_NAME]
+#   [DIRECTORY <dir>]``
+#
+#     If ``EXEC`` is specified, then ``<exeRootName>`` gives the root name of
+#     an executable target that will be run as the command.  The full
+#     executable name and path is determined in exactly the same way it is in
+#     the `TRIBITS_ADD_TEST()`_ function (see `Determining the Executable or
+#     Command to Run (TRIBITS_ADD_TEST())`_).  If this is an MPI build, then
+#     the executable will be run with MPI using ``NUM_MPI_PROCS <numProcs>``
+#     or ``OVERALL_NUM_MPI_PROCS <overallNumProcs>`` (if ``NUM_MPI_PROCS`` is
+#     not set for this test case).  If the maximum number of MPI processes
+#     allowed is less than this number of MPI processes, then the test will
+#     *not* be run.  Note that ``EXEC <exeRootName>`` when ``NOEXEPREFIX`` and
+#     ``NOEXESUFFIX`` are specified is basically equivalent to ``CMND
+#     <cmndExec>`` except that in an MPI build, ``<exeRootName>`` is always
+#     run using MPI.  In this case, one can pass in ``<exeRootName>`` to any
+#     command one would like and it will get run with MPI in MPI mode just
+#     link any other MPI-enabled built executable.
+#
+#   ``CMND <cmndExec>``
+#
+#     If ``CMND`` is specified, then ``<cmndExec>`` gives the executable for a
+#     command to be run.  In this case, MPI will never be used to run the
+#     executable even when configured in MPI mode
+#     (i.e. ``TPL_ENABLE_MPI=ON``).  If one wants to run an arbitrary command
+#     using MPI, use ``EXEC <fullPathToCmndExec> NOEXEPREFIX NOEXESUFFIX``
+#     instead.
+#
+# By default, the output (stdout/stderr) for each test command is captured and
 # is then echoed to stdout for the overall test.  This is done in order to be
 # able to grep the result to determine pass/fail.
 #
-# Other miscellaneous arguments include:
+# Other miscellaneous arguments for each ``TEST_<idx>`` block include:
 #
-#   DIRECTORY <directory>
+#   ``DIRECTORY <dir>``
 #
 #     If specified, then the executable is assumed to be in the directory
-#     given by relative <directory>.
+#     given by relative ``<dir>``.  See `TRIBITS_ADD_TEST()`_.
 #
-#   MESSAGE "<message>"
+#   ``MESSAGE "<message>"``
 #
-#     If specified, then the string in <message> will be print before this
-#     test command is run.
+#     If specified, then the string in ``"<message>"`` will be printed before
+#     this test command is run.  This allows adding some documentation about
+#     each individual test invocation to make the test output more
+#     understandable.
 #
-#   WORKING_DIRECTORY <workingDir>
+#   ``WORKING_DIRECTORY <workingDir>``
 #
-#     If specified, then the working directory <workingDir> will be created
-#     and the test will be run from within this directory.  If the value
-#     <workingDir> = TEST_NAME is given, then the working directory will be
-#     given the name ${PACKAGE_NAME}_<testName>.  If the directory
-#     <workingDir> exists before the test runs, it will be deleted and created
-#     again.  Therefore, if you want to preserve the contents of this
-#     directory between test runs you need to copy it somewhere else.
+#     If specified, then the working directory ``<workingDir>`` will be
+#     created and the test will be run from within this directory.  If the
+#     value ``<workingDir> = TEST_NAME`` is given, then the working directory
+#     will be given the name ``${PACKAGE_NAME}_<testName>``.  If the directory
+#     ``<workingDir>`` exists before the test runs, it will be deleted and
+#     created again.  Therefore, if one wants to preserve the contents of this
+#     directory between test runs then one needs to copy the given file
+#     somewhere else.  Using a different ``WORKING_DIRECTORY`` for individual
+#     test commands allows creating independent working directories for each
+#     test case.  This would be useful if a single
+#     ``OVERALL_WORKING_DIRECTORY`` was not sufficient for some reason.
 #
-#   NUM_MPI_PROCS <numProcs>
+#   ``NUM_MPI_PROCS <numProcs>``
 #
-#     If specified, then <numProcs> is the number of processors used for MPI
-#     executables.  If not specified, this will default to <overallNumProcs>
-#     from OVERALL_NUM_MPI_PROCS <overallNumProcs>.
+#     If specified, then ``<numProcs>`` is the number of processors used for
+#     MPI executables.  If not specified, this will default to
+#     ``<overallNumProcs>`` from ``OVERALL_NUM_MPI_PROCS <overallNumProcs>``.
 #
-#   OUTPUT_FILE <outputFile>
+#   ``OUTPUT_FILE <outputFile>``
 #
-#     If specified, then stdout and stderr will be sent to <outputFile>.
+#     If specified, then stdout and stderr for the test case will be sent to
+#     ``<outputFile>``.  By default, the contents of this file will **also**
+#     be printed to STDOUT unless ``NO_ECHO_OUT`` is passed as well.
 #
-#   NO_ECHO_OUTPUT
+#   ``NO_ECHO_OUTPUT``
 #
 #     If specified, then the output for the test command will not be echoed to
 #     the output for the entire test command.
 #
-#   ENVIRONMENT <var1>=<value1> <var2>=<value2> ...
+# By default, an atomic test line is assumed to pass if the executable or
+# commands returns a non-zero value to the shell.  However, a test case can
+# also be defined to pass based on:
 #
-#     If passed in, set the environment varaibles before calling the test.
+#   ``PASS_ANY``
 #
-# By default, an atomic test line is assumed to pass if the executable returns
-# a non-zero value.  However, a test case can also be defined to pass based
-# on:
+#     If specified, the test command will be assumed to pass regardless of
+#     the return value or any other output.  This would be used when a command
+#     that is to follow will determine pass or fail based on output from this
+#     command in some way.
 #
-#   PASS_ANY
+#   ``PASS_REGULAR_EXPRESSION "<regex>"``
 #
-#     If specified, the test command 'i' will be assumed to pass reguardless
-#     of the return value or any other output.  This would be used when a
-#     command that is to follow will determine pass or fail based on output
-#     from this command in some way.
+#     If specified, the test command will be assumed to pass if it matches the
+#     given regular expression.  Otherwise, it is assumed to fail.
 #
-#   PASS_REGULAR_EXPRESSION "<regex>"
+#   ``PASS_REGULAR_EXPRESSION_ALL "<regex1>" "<regex2>" ... "<regexn>"``
 #
-#     If specified, the test command 'i' will be assumed to pass if it matches
-#     the given regular expression.  Otherwise, it is assumed to fail.
+#     If specified, the test command will be assumed to pass if the output
+#     matches all of the provided regular expressions.  Note that this is not
+#     a capability of raw ctest and represents an extension provided by
+#     TriBITS.
 #
-#   PASS_REGULAR_EXPRESSION_ALL "<regex1>" "<regex2>" ... "<regexn>"
+#   ``FAIL_REGULAR_EXPRESSION "<regex>"``
 #
-#     If specified, the test command 'i' will be assumed to pas if the output
-#     matches all of the provided regular expressions.
+#     If specified, the test command will be assumed to fail if it matches the
+#     given regular expression.  Otherwise, it is assumed to pass.
 #
-#   FAIL_REGULAR_EXPRESSION "<regex>"
+#   ``STANDARD_PASS_OUTPUT``
 #
-#     If specified, the test command 'i' will be assumed to fail if it matches
-#     the given regular expression.  Otherwise, it is assumed to pass.
+#     If specified, the test command will be assumed to pass if the string
+#     expression "Final Result: PASSED" is found in the output for the test.
 #
-#   STANDARD_PASS_OUTPUT
+# All of the arguments for a test block ``TEST_<idx>`` must appear directly
+# below their ``TEST_<idx>`` argument and before the next test block (see
+# `Argument Parsing and Ordering (TRIBITS_ADD_ADVANCED_TEST())`_).
 #
-#     If specified, the test command 'i' will be assumed to pass if the string
-#     expression "Final Result: PASSED" is found in the ouptut for the test.
+# .. _Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST()):
+# 
+# **Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST())**
 #
-# By default, the overall test will be assumed to pass if it prints:
+# By default, the overall test will be assumed to pass if it prints::
 #
-#  "OVERALL FINAL RESULT: TEST PASSED"
+#   "OVERALL FINAL RESULT: TEST PASSED"
 #
 # However, this can be changed by setting one of the following optional arguments:
 #
-#   FINAL_PASS_REGULAR_EXPRESSION <regex>
+#   ``FINAL_PASS_REGULAR_EXPRESSION <regex>``
 #
 #     If specified, the test will be assumed to pass if the output matches
-#     <regex>.  Otherwise, it will be assumed to fail.
+#     ``<regex>``.  Otherwise, it will be assumed to fail.
 #
-#   FINAL_FAIL_REGULAR_EXPRESSION <regex>
+#   ``FINAL_FAIL_REGULAR_EXPRESSION <regex>``
 #
 #     If specified, the test will be assumed to fail if the output matches
-#     <regex>.  Otherwise, it will be assumed to fail.
+#     ``<regex>``.  Otherwise, it will be assumed to fail.
 #
-# NOTES:
+# .. _Argument Parsing and Ordering (TRIBITS_ADD_ADVANCED_TEST()):
+# 
+# **Argument Parsing and Ordering (TRIBITS_ADD_ADVANCED_TEST())**
 #
-# 1) The test can be disabled by setting the variable
-# ${PACKAGE_NAME}_<testName>_DISABLE=ON (perhaps in the cache).  This allows
-# tests to be disable on a case-by-case basis.  This is the name that shows up
-# in 'ctest -N' when running the test.
+# The basic tool used for parsing the arguments to this function is the macro
+# `PARSE_ARGUMENTS()`_ which has a certain set of behaviors.  The parsing
+# using `PARSE_ARGUMENTS()`_ is actually done in two phases.  There is a
+# top-level parsing of the "overall" arguments listed in `Overall Arguments
+# (TRIBITS_ADD_ADVANCED_TEST())`_ that also pulls out the test blocks.  Then
+# there is a second level of parsing using ``PARSE_ARGUMENTS()`` for each of
+# the ``TEST_<idx>`` blocks.  Because of this usage, there are a few
+# restrictions that one needs to be aware of when using
+# ``TRIBITS_ADD_ADVANCED_TEST()``.  This short sections tries to explain the
+# behaviors and what is allowed and what is not allowed.
 #
-
+# For the most part, the "overall" arguments and the arguments inside of any
+# individual ``TEST_<idx>`` blocks can be listed can appear in any order but
+# there are restrictions related to the grouping of overall arguments and
+# ``TEST_<idx>`` blocks which are as follows:
+#
+# * The ``<testName>`` argument must be the first listed (it is the only
+#   positional argument).
+#
+# * The test cases ``TEST_<idx>`` must be listed in order (i.e. ``TEST_0
+#   ... TEST_1 ...``) and the test cases must be consecutive integers
+#   (e.g. can't jump from ``TEST_5`` to ``TEST_7``).
+#
+# * All of the arguments for a test case must appear directly below its
+#   ``TEST_<idx>`` keyword and before the next ``TEST_<idx+1>`` keyword or
+#   before any trailing overall keyword arguments.
+#
+# * None of the overall arguments (e.g. ``CATEGORIES``) can be listed inside
+#   of a ``TEST_<idx>`` block but otherwise can be listed before or after all
+#   of the ``TEST_<idx>`` blocks.  (NOTE: The current implementation will
+#   actually allow overall arguments to be listed after all of the local
+#   arguments before the next TEST_<idx> block but this is confusing and will
+#   not be allowed in a future implementation).
+#
+# Other than that, the keyword arguments and options can appear in any order.
+#
+# .. ToDo: Add some examples of bad argument ordering and what will happen.
+#
+# .. _Implementation Details (TRIBITS_ADD_ADVANCED_TEST()):
+#
+# **Implementation Details (TRIBITS_ADD_ADVANCED_TEST())**
+#
+# Since raw CTest does not support the features provided by this function, the
+# way an advanced test is implemented is that a ``cmake -P`` script with the
+# name ``${PACKAGE_NAME}_<testName>.cmake`` gets created in the current binary
+# directory that then gets added to CTest using::
+#
+#   ADD_TEST(${PACKAGE_NAME}_<testName>
+#     cmake [other options] -P ${PACKAGE_NAME}_<testName>.cmake)
+#
+# This ``cmake -P`` script then runs the various test cases and checks the
+# pass/fail for each case to determine overall pass/fail and implement other
+# functionality described above.
+#
+# .. _Setting Additional Test Properties (TRIBITS_ADD_ADVANCED_TEST()):
+#
+# **Setting Additional Test Properties (TRIBITS_ADD_ADVANCED_TEST())**
+#
+# After this function returns, if the test gets added using ``ADD_TEST()``,
+# then additional properties can be set and changed using
+# ``SET_TEST_PROPERTIES(${PACKAGE_NAME}_<testName> ...)``.  Therefore, any
+# tests properties that are not directly supported by this function and passed
+# through the argument list to this wrapper function can be set in the outer
+# ``CMakeLists.txt`` file after the call to ``TRIBITS_ADD_ADVANCED_TEST()``.
+#
+# .. _Running multiple tests at the same time (TRIBITS_ADD_ADVANCED_TEST()):
+#
+# **Runnning multiple tests at the same time (TRIBITS_ADD_ADVANCED_TEST())**
+#
+# Just as with `TRIBITS_ADD_TEST()`_, setting ``NUM_MPI_PROCS <numProcs>`` or
+# ``OVERALL_NUM_MPI_PROCS <numOverallProcs>`` will set the ``PROCESSORS``
+# CTest property to allow CTest to schedule and run mutiple tests at the same
+# time when ``'ctest -j<N>'`` is used (see `Running multiple tests at the same
+# time (TRIBITS_ADD_TEST())`_).
+#
+# .. _Disabling Tests Externally (TRIBITS_ADD_ADVANCED_TEST()):
+#
+# **Disabling Tests Externally (TRIBITS_ADD_ADVANCED_TEST())**
+#
+# The test can be disabled externally by setting the CMake cache variable
+# ``${FULL_TEST_NAME}_DISABLE=TRUE``.  This allows tests to be disabled on a
+# case-by-case basis.  The name ``${FULL_TEST_NAME}`` must be the *exact* name
+# that shows up in ``ctest -N`` when running the test.
+#
+# .. _Debugging and Examining Test Generation (TRIBITS_ADD_ADVANCED_TEST()):
+#
+# **Debugging and Examining Test Generation (TRIBITS_ADD_ADVANCED_TEST())**
+#
+# In order to see if the test gets added and to debug some issues in test
+# creation, one can set the cache variable
+# ``${PROJECT_NAME}_VERBOSE_CONFIGURE=ON``.  This will result in the printout
+# of some information about the test getting added or not.
+#
+# Likely the best way to debugging test generation using this function is to
+# examine the generated file ``${PACKAGE_NAME}_<testName>.cmake`` in the
+# current binary directory (see `Implementation Details
+# (TRIBITS_ADD_ADVANCED_TEST())`_) and the generated ``CTestTestfile.cmake``
+# file that should list this test case.
+#
 FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
 
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
@@ -621,8 +804,8 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
     # Tell CTest to run our script for this test.  Pass the test-time
     # configuration name to the script in the TEST_CONFIG variable.
     ADD_TEST( ${TEST_NAME}
-      ${CMAKE_COMMAND} "-DTEST_CONFIG=\${CTEST_CONFIGURATION_TYPE}" -P "${TEST_SCRIPT_FILE}"
-      )
+      ${CMAKE_COMMAND} "-DTEST_CONFIG=\${CTEST_CONFIGURATION_TYPE}"
+        -P "${TEST_SCRIPT_FILE}")
     LIST(REMOVE_DUPLICATES TEST_EXE_LIST)
     SET_PROPERTY(TEST ${TEST_NAME} PROPERTY REQUIRED_FILES ${TEST_EXE_LIST})
 
@@ -661,3 +844,13 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
   ENDIF()
 
 ENDFUNCTION()
+
+# PERFORMANCE NOTES:
+#
+# We might be able to improve the performance of the parsing by limiting the
+# number of TEST_<I> blocks up front by setting a varible that will fix it.
+# This might just be set as a local variable in the CMakeLists.txt file where
+# this function is called from.  The other option is to just read through the
+# input arguments to parse first and look for the highest TEST_<idx> and use
+# that instead to build the list of tests.  This would just be a linear search
+# it could be a big pay off for very long lists.

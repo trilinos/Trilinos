@@ -40,10 +40,11 @@
 #include <stdexcept>
 #include <limits>
 
-#include <stk_util/diag/Writer.hpp>
+#include <boost/shared_ptr.hpp>
+
+#include <stk_util/util/Writer.hpp>
 #include <stk_util/diag/Timer.hpp>
 #include <stk_util/diag/PrintTable.hpp>
-#include <stk_util/diag/Env.hpp>
 #include <stk_util/parallel/MPI.hpp>
 
 #include <stk_util/util/string_case_compare.hpp>
@@ -1109,7 +1110,9 @@ theTimerParser()
 
 
 TimerParser::TimerParser()
-  : sierra::OptionMaskParser()
+  : sierra::OptionMaskParser(),
+    m_metricsSetMask(0),
+    m_metricsMask(0)
 {
   mask("cpu", 0, "Display CPU times");
   mask("wall", 0, "Display wall times");

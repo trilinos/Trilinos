@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -47,8 +47,12 @@
 #include <impl/Kokkos_Traits.hpp>
 #include <impl/Kokkos_spinwait.hpp>
 
+#include <Kokkos_Atomic.hpp>
+
 namespace Kokkos {
 namespace Impl {
+
+class OpenMPexecTeamIndex ;
 
 //----------------------------------------------------------------------------
 /** \brief  Data for OpenMP thread execution */
@@ -149,11 +153,14 @@ public:
 
   //----------------------------------------------------------------------
 
+  KOKKOS_FUNCTION
   void * get_shmem( const int );
 
+  KOKKOS_INLINE_FUNCTION
   void team_barrier()
     {
-     const int rank_rev = m_team_size - ( m_team_rank + 1 );
+      if(m_team_size==1) return;
+      const int rank_rev = m_team_size - ( m_team_rank + 1 );
 
       for ( int i = 0 ; i < m_team_fan_size ; ++i ) {
         Impl::spinwait( m_team_base[ rank_rev + (1<<i) ]->m_barrier_state , OpenMPexec::Active );
@@ -168,7 +175,7 @@ public:
     }
 
   template< class ArgType >
-  inline
+  KOKKOS_INLINE_FUNCTION
   ArgType team_scan( const ArgType & value , ArgType * const global_accum = 0 )
     {
       // Sequence of m_scan_state states:
@@ -187,6 +194,7 @@ public:
       // OpenMPexec::Active == m_scan_state
 
       work_value[0] = value ;
+      memory_fence();
 
       // Fan-in reduction, wait for source thread to complete it's fan-in reduction.
       for ( int i = 0 ; i < m_team_fan_size ; ++i ) {
@@ -196,9 +204,11 @@ public:
         Impl::spinwait( th.m_scan_state , OpenMPexec::Active );
         // Source thread is 'ReductionAvailable' or 'ScanAvailable'
         work_value[0] += ((volatile type*)th.reduce_team())[0];
+        memory_fence();
       }
 
       work_value[1] = work_value[0] ;
+      memory_fence();
 
       if ( rank_rev ) {
 
@@ -214,6 +224,7 @@ public:
           Impl::spinwait( th.m_scan_state , OpenMPexec::ReductionAvailable );
 
           work_value[1] += ((volatile type*)th.reduce_team())[1] ;
+          memory_fence();
         }
 
         m_scan_state = OpenMPexec::ScanAvailable ; // Scan value is available.
@@ -242,6 +253,7 @@ public:
       for ( int i = 0 ; i < m_team_fan_size ; ++i ) {
         OpenMPexec & th = *m_team_base[ rank_rev + (1<<i) ];
         ((volatile type*)th.reduce_team())[0] = global_val ;
+        memory_fence();
         th.m_scan_state = OpenMPexec::Active ;
       }
       // Exclusive scan, subtract contributed value
@@ -257,6 +269,8 @@ public:
   inline
   void team_work_next()
     { if ( ++m_league_rank < m_league_end ) team_barrier(); }
+
+  friend class OpenMPexecTeamIndex ;
 };
 
 } // namespace Impl
@@ -266,24 +280,140 @@ public:
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
+namespace Impl {
 
-inline OpenMP::OpenMP( Impl::OpenMPexec & e ) : m_exec(e) {}
+class OpenMPexecTeamIndex {
+private:
 
-inline int OpenMP::league_rank() const { return m_exec.m_league_rank ; }
-inline int OpenMP::league_size() const { return m_exec.m_league_size ; }
-inline int OpenMP::team_rank() const { return m_exec.m_team_rank ; }
-inline int OpenMP::team_size() const { return m_exec.m_team_size ; }
+  Impl::OpenMPexec & m_exec ;
 
-inline void OpenMP::team_barrier() { m_exec.team_barrier() ; }
+  typedef Kokkos::OpenMP execution_space ;
 
-inline void * OpenMP::get_shmem( const int size ) { return m_exec.get_shmem(size) ; }
+public:
+
+  KOKKOS_INLINE_FUNCTION
+  execution_space::scratch_memory_space  team_shmem() const
+    { return execution_space::scratch_memory_space( m_exec ); }
+
+  KOKKOS_INLINE_FUNCTION int league_rank() const { return m_exec.m_league_rank ; }
+  KOKKOS_INLINE_FUNCTION int league_size() const { return m_exec.m_league_size ; }
+  KOKKOS_INLINE_FUNCTION int team_rank() const { return m_exec.m_team_rank ; }
+  KOKKOS_INLINE_FUNCTION int team_size() const { return m_exec.m_team_size ; }
+
+  KOKKOS_INLINE_FUNCTION void team_barrier() const
+    { m_exec.team_barrier(); }
+
+  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
+   *          with intra-team non-deterministic ordering accumulation.
+   *
+   *  The global inter-team accumulation value will, at the end of the
+   *  league's parallel execution, be the scan's total.
+   *  Parallel execution ordering of the league's teams is non-deterministic.
+   *  As such the base value for each team's scan operation is similarly
+   *  non-deterministic.
+   */
+  template< typename Type >
+  KOKKOS_INLINE_FUNCTION Type team_scan( const Type & value , Type * const global_accum ) const
+    { return m_exec.template team_scan<Type>( value , global_accum ); }
+
+  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering.
+   *
+   *  The highest rank thread can compute the reduction total as
+   *    reduction_total = dev.team_scan( value ) + value ;
+   */
+  template< typename Type >
+  KOKKOS_INLINE_FUNCTION Type team_scan( const Type & value ) const
+    { return m_exec.template team_scan<Type>( value , 0 ); }
+
+  //----------------------------------------
+  // Private for the driver
+
+  template< class WorkArgTag >
+  OpenMPexecTeamIndex( Impl::OpenMPexec & exec , const TeamPolicy< execution_space , WorkArgTag > & team )
+    : m_exec( exec )
+    {}
+
+  void reset_scratch_space()
+    { m_exec.m_team_shared_iter = 0 ; }
+
+  bool valid_team() const
+    { return m_exec.m_league_rank < m_exec.m_league_end ; }
+
+  void next_team()
+    { if ( ++m_exec.m_league_rank < m_exec.m_league_end ) m_exec.team_barrier(); }
+};
+
+} // namespace Impl
+} // namespace Kokkos
+
+namespace Kokkos {
+
+template < class WorkArgTag >
+class TeamPolicy< Kokkos::OpenMP , WorkArgTag > {
+private:
+
+  const int m_league_size ;
+  const int m_team_size ;
+
+public:
+
+  typedef Impl::ExecutionPolicyTag   kokkos_tag ;      ///< Concept tag
+  typedef Kokkos::OpenMP             execution_space ; ///< Execution space
+
+  inline int team_size() const { return m_team_size ; }
+  inline int league_size() const { return m_league_size ; }
+
+  /** \brief  Specify league size, request team size */
+  TeamPolicy( execution_space & , int league_size_request , int team_size_request )
+    : m_league_size( league_size_request )
+    , m_team_size( team_size_request < int(execution_space::team_max())
+                 ? team_size_request : int(execution_space::team_max()) )
+    { }
+
+  TeamPolicy( int league_size_request , int team_size_request )
+    : m_league_size( league_size_request )
+    , m_team_size( team_size_request < int(execution_space::team_max())
+                 ? team_size_request : int(execution_space::team_max()) )
+    { }
+
+  typedef Impl::OpenMPexecTeamIndex member_type ;
+
+  friend class Impl::OpenMPexecTeamIndex ;
+};
+
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+
+KOKKOS_INLINE_FUNCTION
+OpenMP::OpenMP( Impl::OpenMPexec & e ) : m_exec(e) {}
+
+KOKKOS_INLINE_FUNCTION
+int OpenMP::league_rank() const { return m_exec.m_league_rank ; }
+KOKKOS_INLINE_FUNCTION
+int OpenMP::league_size() const { return m_exec.m_league_size ; }
+KOKKOS_INLINE_FUNCTION
+int OpenMP::team_rank() const { return m_exec.m_team_rank ; }
+KOKKOS_INLINE_FUNCTION
+int OpenMP::team_size() const { return m_exec.m_team_size ; }
+
+KOKKOS_INLINE_FUNCTION
+void OpenMP::team_barrier() { m_exec.team_barrier() ; }
+
+KOKKOS_INLINE_FUNCTION
+void * OpenMP::get_shmem( const int size ) const { return m_exec.get_shmem(size) ; }
 
 template< typename Type >
-inline Type OpenMP::team_scan( const Type & value )
+KOKKOS_INLINE_FUNCTION
+Type OpenMP::team_scan( const Type & value )
 { return m_exec.team_scan( value ); }
 
 template< typename TypeLocal , typename TypeGlobal >
-inline TypeGlobal OpenMP::team_scan( const TypeLocal & value , TypeGlobal * const global_accum )
+KOKKOS_INLINE_FUNCTION
+TypeGlobal OpenMP::team_scan( const TypeLocal & value , TypeGlobal * const global_accum )
 { return m_exec.template team_scan< TypeGlobal >( value , global_accum ); }
 
 } // namespace Kokkos

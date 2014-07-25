@@ -79,10 +79,7 @@ namespace MueLu {
     @ingroup MueLuBaseClasses
 
   */
-  class VerboseObject
-    : public Teuchos::VerboseObject<VerboseObject>
-  {
-
+  class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
   public:
 
     //! @name Constructors/Destructors.
@@ -112,7 +109,7 @@ namespace MueLu {
     bool IsPrint(MsgType type, int thisProcRankOnly = -1) const;
 
     //! Get an output stream for outputting the input message type.
-    Teuchos::FancyOStream & GetOStream(MsgType type, int thisProcRankOnly = -1) const;
+    Teuchos::FancyOStream & GetOStream(MsgType type, int thisProcRankOnly = 0) const;
 
     Teuchos::FancyOStream & GetBlackHole() const;
 

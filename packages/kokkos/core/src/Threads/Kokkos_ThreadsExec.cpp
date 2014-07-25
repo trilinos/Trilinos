@@ -41,14 +41,20 @@
 //@HEADER
 */
 
+#include <Kokkos_Macros.hpp>
+
+#if defined( KOKKOS_HAVE_PTHREAD ) || defined( KOKKOS_HAVE_WINTHREAD )
+
+#include <stdint.h>
 #include <limits>
 #include <utility>
 #include <iostream>
+#include <sstream>
 #include <Kokkos_Threads.hpp>
 #include <Kokkos_hwloc.hpp>
 #include <Kokkos_Atomic.hpp>
+#include <impl/Kokkos_Error.hpp>
 
-#include <stdint.h>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -220,6 +226,7 @@ ThreadsExec::ThreadsExec()
       m_pool_size     = s_threads_count ;
       m_pool_fan_size = fan_size( m_pool_rank , m_pool_size );
       m_pool_state    = ThreadsExec::Active ;
+      m_pthread_id = pthread_self();
 
       // Inform spawning process that the threads_exec entry has been set.
       s_threads_process.m_pool_state = ThreadsExec::Active ;
@@ -234,6 +241,7 @@ ThreadsExec::ThreadsExec()
     m_pool_rank  = 0 ;
     m_pool_size  = 1 ;
     m_pool_state = ThreadsExec::Inactive ;
+    m_pthread_id = pthread_self();
   }
 }
 
@@ -436,6 +444,11 @@ void ThreadsExec::fence()
   s_current_league_size  = 0 ;
 }
 
+int ThreadsExec::team_alloc( int team_size )
+{
+  return s_threads_per_core * ( ( team_size + s_threads_per_core - 1 ) / s_threads_per_core );
+}
+
 /** \brief  Begin execution of the asynchronous functor */
 void ThreadsExec::start( void (*func)( ThreadsExec & , const void * ) , const void * arg ,
                          int work_league_size ,
@@ -450,9 +463,11 @@ void ThreadsExec::start( void (*func)( ThreadsExec & , const void * ) , const vo
   }
 
   if ( work_spec ) {
-    s_current_team_size    = work_team_size ? std::min( s_threads_per_numa , unsigned(work_team_size) ) : s_threads_per_numa ;
-    s_current_team_alloc   = s_threads_per_core * ( ( s_current_team_size + s_threads_per_core - 1 ) / s_threads_per_core );
-    s_current_league_size  = work_league_size ;
+    s_current_team_size       = work_team_size ? std::min( s_threads_per_numa , unsigned(work_team_size) ) : s_threads_per_numa ;
+    unsigned team_alloc_core  = s_threads_per_core * ( ( s_current_team_size + s_threads_per_core - 1 ) / s_threads_per_core );
+    unsigned team_per_numa    = s_threads_per_numa / team_alloc_core ;
+    s_current_team_alloc      = s_threads_per_numa / team_per_numa ;
+    s_current_league_size     = work_league_size ;
   }
 
   s_current_function     = func ;
@@ -598,6 +613,11 @@ void ThreadsExec::print_configuration( std::ostream & s , const bool detail )
   const unsigned cores_per_numa   = Kokkos::hwloc::get_available_cores_per_numa();
   const unsigned threads_per_core = Kokkos::hwloc::get_available_threads_per_core();
 
+  // Forestall compiler warnings for unused variables.
+  (void) numa_count;
+  (void) cores_per_numa;
+  (void) threads_per_core;
+
   s << "Kokkos::Threads" ;
 
 #if defined( KOKKOS_HAVE_PTHREAD )
@@ -664,12 +684,25 @@ void ThreadsExec::print_configuration( std::ostream & s , const bool detail )
 
 //----------------------------------------------------------------------------
 
-int ThreadsExec::league_max()
-{ return std::numeric_limits<int>::max(); }
-
-int ThreadsExec::team_max()
+unsigned ThreadsExec::team_max()
 { return s_threads_per_numa ; }
 
+unsigned ThreadsExec::team_recommended()
+{ return s_threads_per_core ; }
+
+unsigned ThreadsExec::hardware_thread_id() {
+   const pthread_t pid = pthread_self();
+   int i = 0;
+   while( ( i   <  ThreadsExec::MAX_THREAD_COUNT) &&
+          ( pid != (s_threads_exec[i]!=NULL?s_threads_exec[i]->m_pthread_id:0))) {
+     i++;
+   }
+   return s_threads_exec[i]->m_pool_rank;
+}
+
+unsigned ThreadsExec::max_hardware_threads() {
+  return s_threads_exec[0]->m_pool_size;
+}
 //----------------------------------------------------------------------------
 
 int ThreadsExec::is_initialized()
@@ -685,6 +718,9 @@ void ThreadsExec::initialize( unsigned thread_count ,
   const bool is_initialized = 0 != s_threads_count ;
 
   unsigned thread_spawn_failed = 0 ;
+
+  for ( int i = 0; i < ThreadsExec::MAX_THREAD_COUNT ; i++)
+    s_threads_exec[i] = NULL;
 
   if ( ! is_initialized ) {
 
@@ -846,4 +882,21 @@ void ThreadsExec::finalize()
 } /* namespace Impl */
 } /* namespace Kokkos */
 
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+
+Threads & Threads::instance(int)
+{
+  static Threads * const t = 0 ;
+  return *t ;
+}
+
+} /* namespace Kokkos */
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+#endif /* #if defined( KOKKOS_HAVE_PTHREAD ) || defined( KOKKOS_HAVE_WINTHREAD ) */
 

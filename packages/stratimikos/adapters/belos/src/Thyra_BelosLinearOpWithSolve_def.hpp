@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //         Stratimikos: Thyra-based strategies for linear solvers
 //                Copyright (2006) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov)
+//
 // ***********************************************************************
 // @HEADER
 */
@@ -51,6 +51,7 @@
 #include "Teuchos_DebugDefaultAsserts.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_TypeTraits.hpp"
 
 namespace {
   // Set the Belos solver's parameter list to scale its residual norms
@@ -98,8 +99,8 @@ namespace {
   //   currently uses, though Belos offers other options).
   void
   setResidualScalingType (const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
-			  const Teuchos::RCP<const Teuchos::ParameterList>& solverValidParams,
-			  const std::string& residualScalingType)
+                          const Teuchos::RCP<const Teuchos::ParameterList>& solverValidParams,
+                          const std::string& residualScalingType)
   {
     // Many Belos solvers (especially the GMRES variants) define both
     // "Implicit Residual Scaling" and "Explicit Residual Scaling"
@@ -107,7 +108,7 @@ namespace {
     //
     // "Implicit" means "the left-preconditioned approximate
     // a.k.a. 'recursive' residual as computed by the Krylov method."
-    // 
+    //
     // "Explicit" means ||B - A*X||, the unpreconditioned, "exact"
     // residual.
     //
@@ -124,7 +125,7 @@ namespace {
     // Scaling" getting the same setting, then the implicit residual
     // test will be using a radically different scaling factor than
     // the user wanted.
-    // 
+    //
     // Not all Belos solvers support both options.  We check the
     // solver's valid parameter list first before attempting to set
     // the option.
@@ -150,7 +151,7 @@ BelosLinearOpWithSolve<Scalar>::BelosLinearOpWithSolve()
   :convergenceTestFrequency_(-1),
   isExternalPrec_(false),
   supportSolveUse_(SUPPORT_SOLVE_UNSPECIFIED),
-  defaultTol_(-1.0)
+  defaultTol_ (-1.0)
 {}
 
 
@@ -167,6 +168,11 @@ void BelosLinearOpWithSolve<Scalar>::initialize(
   const int convergenceTestFrequency
   )
 {
+  using Teuchos::as;
+  using Teuchos::TypeNameTraits;
+  using Teuchos::Exceptions::InvalidParameterType;
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+
   this->setLinePrefix("BELOS/T");
   // ToDo: Validate input
   lp_ = lp;
@@ -182,13 +188,79 @@ void BelosLinearOpWithSolve<Scalar>::initialize(
   // not, use the default from the solver.
   if ( !is_null(solverPL_) ) {
     if (solverPL_->isParameter("Convergence Tolerance")) {
-      defaultTol_ = solverPL_->get<double>("Convergence Tolerance");
+
+      // Stratimikos prefers tolerances as double, no matter the
+      // Scalar type.  However, we also want it to accept the
+      // tolerance as magnitude_type, for example float if the Scalar
+      // type is float or std::complex<float>.
+      if (solverPL_->isType<double> ("Convergence Tolerance")) {
+        defaultTol_ =
+          as<magnitude_type> (solverPL_->get<double> ("Convergence Tolerance"));
+      }
+      else if (Teuchos::TypeTraits::is_same<double, magnitude_type>::value) {
+        // magnitude_type == double in this case, and we've already
+        // checked double above.
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          true, std::invalid_argument, "BelosLinearOpWithSolve::initialize: "
+          "The \"Convergence Tolerance\" parameter, which you provided, must "
+          "have type double (the type of the magnitude of Scalar = double).");
+      }
+      else if (solverPL_->isType<magnitude_type> ("Convergence Tolerance")) {
+        defaultTol_ = solverPL_->get<magnitude_type> ("Convergence Tolerance");
+      }
+      else {
+        // Throwing InvalidParameterType ensures that the exception's
+        // type is consistent both with what this method would have
+        // thrown before for an unrecognized type, and with what the
+        // user expects in general when the parameter doesn't have the
+        // right type.
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          true, InvalidParameterType, "BelosLinearOpWithSolve::initialize: "
+          "The \"Convergence Tolerance\" parameter, which you provided, must "
+          "have type double (preferred) or the type of the magnitude of Scalar "
+          "= " << TypeNameTraits<Scalar>::name () << ", which is " <<
+          TypeNameTraits<magnitude_type>::name () << " in this case.  You can "
+          "find that type using Teuchos::ScalarTraits<Scalar>::magnitudeType.");
+      }
     }
   }
   else {
     RCP<const Teuchos::ParameterList> defaultPL =
       iterativeSolver->getValidParameters();
-    defaultTol_ = defaultPL->get<double>("Convergence Tolerance");
+
+    // Stratimikos prefers tolerances as double, no matter the
+    // Scalar type.  However, we also want it to accept the
+    // tolerance as magnitude_type, for example float if the Scalar
+    // type is float or std::complex<float>.
+    if (defaultPL->isType<double> ("Convergence Tolerance")) {
+      defaultTol_ =
+        as<magnitude_type> (defaultPL->get<double> ("Convergence Tolerance"));
+    }
+    else if (Teuchos::TypeTraits::is_same<double, magnitude_type>::value) {
+      // magnitude_type == double in this case, and we've already
+      // checked double above.
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        true, std::invalid_argument, "BelosLinearOpWithSolve::initialize: "
+        "The \"Convergence Tolerance\" parameter, which you provided, must "
+        "have type double (the type of the magnitude of Scalar = double).");
+    }
+    else if (defaultPL->isType<magnitude_type> ("Convergence Tolerance")) {
+      defaultTol_ = defaultPL->get<magnitude_type> ("Convergence Tolerance");
+    }
+    else {
+      // Throwing InvalidParameterType ensures that the exception's
+      // type is consistent both with what this method would have
+      // thrown before for an unrecognized type, and with what the
+      // user expects in general when the parameter doesn't have the
+      // right type.
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        true, InvalidParameterType, "BelosLinearOpWithSolve::initialize: "
+        "The \"Convergence Tolerance\" parameter, which you provided, must "
+        "have type double (preferred) or the type of the magnitude of Scalar "
+        "= " << TypeNameTraits<Scalar>::name () << ", which is " <<
+        TypeNameTraits<magnitude_type>::name () << " in this case.  You can "
+        "find that type using Teuchos::ScalarTraits<Scalar>::magnitudeType.");
+    }
   }
 }
 
@@ -339,11 +411,12 @@ void BelosLinearOpWithSolve<Scalar>::describe(
   RCP<FancyOStream> out = rcp(&out_arg,false);
   OSTab tab(out);
   switch (verbLevel) {
-    case Teuchos::VERB_DEFAULT:
     case Teuchos::VERB_LOW:
+      break;
+    case Teuchos::VERB_DEFAULT:
+    case Teuchos::VERB_MEDIUM:
       *out << this->description() << std::endl;
       break;
-    case Teuchos::VERB_MEDIUM:
     case Teuchos::VERB_HIGH:
     case Teuchos::VERB_EXTREME:
     {
@@ -556,9 +629,10 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
 
   Belos::ReturnType belosSolveStatus;
   {
+    // Write detailed convergence information if requested for levels >= VERB_LOW
     RCP<std::ostream>
       outUsed =
-      ( static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_LOW)
+      ( static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW)
         ? out
         : rcp(new FancyOStream(rcp(new Teuchos::oblackholestream())))
         );
@@ -568,7 +642,12 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
     if (nonnull(generalSolveCriteriaBelosStatusTest)) {
       iterativeSolver_->setUserConvStatusTest(generalSolveCriteriaBelosStatusTest);
     }
-    belosSolveStatus = iterativeSolver_->solve();
+    try {
+      belosSolveStatus = iterativeSolver_->solve();
+    }
+    catch (Belos::BelosError&) {
+      belosSolveStatus = Belos::Unconverged;
+    }
   }
 
   //
@@ -590,22 +669,22 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
       // small increase in the maximum iteration count might be
       // helpful next time.
       try {
-	// Some solvers might not have implemented achievedTol(). 
-	// The default implementation throws std::runtime_error.
-	solveStatus.achievedTol = iterativeSolver_->achievedTol();
+        // Some solvers might not have implemented achievedTol().
+        // The default implementation throws std::runtime_error.
+        solveStatus.achievedTol = iterativeSolver_->achievedTol();
       } catch (std::runtime_error&) {
-	// Do nothing; use the default value of achievedTol.
+        // Do nothing; use the default value of achievedTol.
       }
       break;
     }
     case Belos::Converged: {
       solveStatus.solveStatus = SOLVE_STATUS_CONVERGED;
       if (nonnull(generalSolveCriteriaBelosStatusTest)) {
-	// The user set a custom status test.  This means that we
-	// should ask the custom status test itself, rather than the
-	// Belos solver, what the final achieved convergence tolerance
-	// was.
-        const ArrayView<const ScalarMag> achievedTol = 
+        // The user set a custom status test.  This means that we
+        // should ask the custom status test itself, rather than the
+        // Belos solver, what the final achieved convergence tolerance
+        // was.
+        const ArrayView<const ScalarMag> achievedTol =
           generalSolveCriteriaBelosStatusTest->achievedTol();
         solveStatus.achievedTol = ST::zero();
         for (Ordinal i = 0; i < achievedTol.size(); ++i) {
@@ -613,15 +692,15 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
         }
       }
       else {
-	try {
-	  // Some solvers might not have implemented achievedTol(). 
-	  // The default implementation throws std::runtime_error.
-	  solveStatus.achievedTol = iterativeSolver_->achievedTol();
-	} catch (std::runtime_error&) {
-	  // Use the default convergence tolerance.  This is a correct
-	  // upper bound, since we did actually converge.
-	  solveStatus.achievedTol = tmpPL->get("Convergence Tolerance", defaultTol_);
-	}
+        try {
+          // Some solvers might not have implemented achievedTol().
+          // The default implementation throws std::runtime_error.
+          solveStatus.achievedTol = iterativeSolver_->achievedTol();
+        } catch (std::runtime_error&) {
+          // Use the default convergence tolerance.  This is a correct
+          // upper bound, since we did actually converge.
+          solveStatus.achievedTol = tmpPL->get("Convergence Tolerance", defaultTol_);
+        }
       }
       break;
     }
@@ -634,7 +713,7 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
     <<"\" returned a solve status of \""<< toString(solveStatus.solveStatus) << "\""
     << " in " << iterativeSolver_->getNumIters() << " iterations"
     << " with total CPU time of " << totalTimer.totalElapsedTime() << " sec" ;
-  if (out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
+  if (out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_LOW))
     *out << "\n" << ossmessage.str() << "\n";
 
   solveStatus.message = ossmessage.str();
@@ -645,31 +724,31 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
   if (solveStatus.extraParameters.is_null()) {
     solveStatus.extraParameters = parameterList ();
   }
-  solveStatus.extraParameters->set ("Belos/Iteration Count", 
-				    iterativeSolver_->getNumIters());\
+  solveStatus.extraParameters->set ("Belos/Iteration Count",
+                                    iterativeSolver_->getNumIters());\
   // package independent version of the same
-  solveStatus.extraParameters->set ("Iteration Count", 
-				    iterativeSolver_->getNumIters());\
+  solveStatus.extraParameters->set ("Iteration Count",
+                                    iterativeSolver_->getNumIters());\
   // NOTE (mfh 13 Dec 2011) Though the most commonly used Belos
   // solvers do implement achievedTol(), some Belos solvers currently
   // do not.  In the latter case, if the solver did not converge, the
   // reported achievedTol() value may just be the default "invalid"
   // value -1, and if the solver did converge, the reported value will
   // just be the convergence tolerance (a correct upper bound).
-  solveStatus.extraParameters->set ("Belos/Achieved Tolerance", 
-				    solveStatus.achievedTol);
+  solveStatus.extraParameters->set ("Belos/Achieved Tolerance",
+                                    solveStatus.achievedTol);
 
 //  This information is in the previous line, which is printed anytime the verbosity
 //  is not set to Teuchos::VERB_NONE, so I'm commenting this out for now.
 //  if (out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
 //    *out << "\nTotal solve time in Belos = "<<totalTimer.totalElapsedTime()<<" sec\n";
-  
+
   return solveStatus;
 
 }
 
 
-}	// end namespace Thyra
+}       // end namespace Thyra
 
 
 #endif // THYRA_BELOS_LINEAR_OP_WITH_SOLVE_HPP

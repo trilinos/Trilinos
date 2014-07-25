@@ -48,8 +48,7 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include "exodusII.h"                   // for ex_get_truth_table, etc
 
 /*!
  * reads the EXODUS II sideset variable truth table from the database

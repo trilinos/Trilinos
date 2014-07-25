@@ -3,8 +3,8 @@ dimensions:
 	len_string = 33 ;
 	len_line = 81 ;
 	four = 4 ;
-	time_step = UNLIMITED ; // (0 currently)
 	len_name = 33 ;
+	time_step = UNLIMITED ; // (0 currently)
 	num_dim = 3 ;
 	num_nodes = 33 ;
 	num_elem = 7 ;
@@ -128,9 +128,9 @@ variables:
 // global attributes:
 		:floating_point_word_size = 8 ;
 		:file_size = 1 ;
+		:maximum_name_length = 32 ;
 		:int64_status = 0 ;
 		:title = "This is a test" ;
-		:maximum_name_length = 32 ;
 data:
 
  eb_status = 1, 1, 1, 1, 1, 1, 1 ;

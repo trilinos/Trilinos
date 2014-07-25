@@ -59,7 +59,7 @@
    #include "Epetra_SerialComm.h"
 #endif
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 TEUCHOS_UNIT_TEST(tLineMeshFactory, defaults)
 {
@@ -73,7 +73,7 @@ TEUCHOS_UNIT_TEST(tLineMeshFactory, defaults)
 
    TEST_EQUALITY(mesh->getPeriodicBCVector().size(),0);
  
-   if(mesh->isWritable());
+   if(mesh->isWritable())
       mesh->writeToExodus("Line.exo");
 
    // minimal requirements
@@ -102,7 +102,7 @@ TEUCHOS_UNIT_TEST(tLineMeshFactory, element_counts)
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
    TEST_ASSERT(mesh!=Teuchos::null);
  
-   if(mesh->isWritable());
+   if(mesh->isWritable())
       mesh->writeToExodus("Line_oddelmt.exo");
 
    // minimal requirements
@@ -136,7 +136,7 @@ TEUCHOS_UNIT_TEST(tLineMeshFactory, allblock)
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
    TEST_ASSERT(mesh!=Teuchos::null);
  
-   if(mesh->isWritable());
+   if(mesh->isWritable())
       mesh->writeToExodus("Line_allblock.exo");
 
    // minimal requirements
@@ -165,7 +165,7 @@ TEUCHOS_UNIT_TEST(tLineMeshFactory, two_block)
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
    TEST_ASSERT(mesh!=Teuchos::null);
  
-   if(mesh->isWritable());
+   if(mesh->isWritable())
       mesh->writeToExodus("Line_2block.exo");
 
    // minimal requirements

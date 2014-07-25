@@ -21,6 +21,9 @@
 #include <Kokkos_Threads.hpp>
 #endif
 
+#include <Kokkos_Serial.hpp>
+
+
 #include <KokkosCompat_View.hpp>
 /*namespace KokkosClassic {
       enum ReadWriteOption {
@@ -50,36 +53,40 @@ namespace Kokkos {
         Teuchos::ParameterList params = getDefaultParameters();
         params.setParameters(pl);
         const int curNumThreads = params.get<int>("Num Threads");
-        const int curNumTeams = params.get<int>("Num Teams");
+        const int curNumNUMA = params.get<int>("Num NUMA");
+        const int curNumCoresPerNUMA = params.get<int>("Num CoresPerNUMA");
         const int curDevice = params.get<int>("Device");
         int verboseInt = params.get<int>("Verbose");
         bool verbose = (verboseInt != 0);
         if (verbose) {
           std::cout << "DeviceWrapperNode initializing with \"numthreads\" = "
-                    << curNumThreads << ", \"numteams\" = " << curNumTeams
+                    << curNumThreads << ", \"numNUMA\" = " << curNumNUMA
+                    << ", \"numCorePerNUMA\" = " << curNumCoresPerNUMA
                     << " \"device\" = " << curDevice << std::endl;
         }
         if(count==0)
-          init (curNumTeams,curNumThreads,curDevice);
+          init (curNumThreads,curNumNUMA,curNumCoresPerNUMA,curDevice);
         count++;
       }
 
       KokkosDeviceWrapperNode() {
         Teuchos::ParameterList params = getDefaultParameters();
         const int curNumThreads = params.get<int>("Num Threads");
-        const int curNumTeams = params.get<int>("Num Teams");
+        const int curNumNUMA = params.get<int>("Num NUMA");
+        const int curNumCoresPerNUMA = params.get<int>("Num CoresPerNUMA");
         const int curDevice = params.get<int>("Device");
         int verboseInt = params.get<int>("Verbose");
         bool verbose = (verboseInt != 0);
         if (verbose) {
           std::cout << "DeviceWrapperNode initializing with \"numthreads\" = "
-              << curNumThreads << ", \"numteams\" = " << curNumTeams
+              << curNumThreads << ", \"numNUMA\" = " << curNumNUMA
+              << ", \"numCorePerNUMA\" = " << curNumCoresPerNUMA
               << " \"device\" = " << curDevice << std::endl;
         }
         if(count==0)
-          init (curNumTeams,curNumThreads,curDevice);
+          init (curNumThreads,curNumNUMA,curNumCoresPerNUMA,curDevice);
         count++;
-      };
+      }
 
       ~KokkosDeviceWrapperNode();
 
@@ -87,12 +94,13 @@ namespace Kokkos {
         Teuchos::ParameterList params;
         params.set("Verbose",     0);
         params.set("Num Threads", 1);
-        params.set("Num Teams", 1);
+        params.set("Num NUMA", -1);
+        params.set("Num CoresPerNUMA", -1);
         params.set("Device", 0);
         return params;
       }
 
-      void init(int numteams, int numthreads, int device);
+      void init(int numthreads, int numnuma, int numcorespernuma, int device);
 
       template <class WDP>
       struct FunctorParallelFor {
@@ -101,11 +109,13 @@ namespace Kokkos {
         const WDP _c;
         const int _beg;
 
-        FunctorParallelFor(int beg, WDP wd):_beg(beg),_c(wd) {};
+        FunctorParallelFor (const int beg, const WDP wd) :
+          _c (wd), _beg (beg)
+        {}
 
         KOKKOS_INLINE_FUNCTION
         void operator() (const int & i) const {
-          _c.execute(i+_beg);
+          _c.execute (i + _beg);
         }
       };
 
@@ -123,7 +133,8 @@ namespace Kokkos {
 
         WDP _c;
         const int _beg;
-        FunctorParallelReduce(int beg, WDP wd):_beg(beg),_c(wd) {};
+        FunctorParallelReduce (const int beg, WDP wd) :
+          _c (wd), _beg (beg) {}
 
         KOKKOS_INLINE_FUNCTION
         void operator() (const int & i, volatile value_type& value) const {
@@ -258,7 +269,8 @@ namespace Kokkos {
       ///
       /// \param rw [in] 0 if read-only, 1 if read-write.  This is an int and not a KokkosClassic::ReadWriteOption, in order to avoid a circular dependency between KokkosCompat and KokkosClassic.
       template <class T> inline
-      Teuchos::ArrayRCP<T> viewBufferNonConst (const int rw, size_t size, const Teuchos::ArrayRCP<T> &buff) {
+      Teuchos::ArrayRCP<T>
+      viewBufferNonConst (const int rw, size_t size, const Teuchos::ArrayRCP<T> &buff) {
         (void) rw; // Silence "unused parameter" compiler warning
         if (isHostNode == false) {
           CHECK_COMPUTE_BUFFER(buff);
@@ -266,7 +278,10 @@ namespace Kokkos {
         return buff.persistingView(0,size);
       }
 
-      inline void readyBuffers(Teuchos::ArrayView<Teuchos::ArrayRCP<const char> > buffers, Teuchos::ArrayView<Teuchos::ArrayRCP<char> > ncBuffers) {
+      inline void
+      readyBuffers (Teuchos::ArrayView<Teuchos::ArrayRCP<const char> > buffers,
+                    Teuchos::ArrayView<Teuchos::ArrayRCP<char> > ncBuffers)
+    {
 #ifdef HAVE_KOKKOSCLASSIC_DEBUG
         if (isHostNode == false) {
           for (size_t i=0; i < (size_t)buffers.size(); ++i) {
@@ -277,10 +292,14 @@ namespace Kokkos {
           }
         }
 #endif
-        (void)buffers;
-        (void)ncBuffers;
+        (void) buffers;
+        (void) ncBuffers;
       }
 
+      /// \brief Return the human-readable name of this Node.
+      ///
+      /// See \ref kokkos_node_api "Kokkos Node API"
+      static std::string name();
 
       //@}
   };
@@ -296,6 +315,8 @@ namespace Kokkos {
   #ifdef KOKKOS_HAVE_PTHREAD
     typedef  KokkosDeviceWrapperNode<Kokkos::Threads> KokkosThreadsWrapperNode;
   #endif
+
+    typedef  KokkosDeviceWrapperNode<Kokkos::Serial> KokkosSerialWrapperNode;
   }
 } // end of namespace Kokkos
 #endif

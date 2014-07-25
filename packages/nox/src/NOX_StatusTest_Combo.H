@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -52,7 +52,7 @@
 #define NOX_STATUSTEST_COMBO_H
 
 #include "NOX_StatusTest_Generic.H" // base class
-#include "NOX_Common.H"		    // class data element (vector)
+#include "NOX_Common.H"            // class data element (vector)
 #include "NOX_Utils.H"              // class data element
 
 namespace NOX {
@@ -84,13 +84,13 @@ class Combo : public Generic {
 
 public:
 
-  /*! 
+  /*!
     \brief The test can be either the AND of all the component tests,
     or the OR of all the component tests.
   */
   enum ComboType {
     //! Logically "AND" together the results of the tests in this combination
-    AND, 
+    AND,
     //! Logically "OR" together the results of the tests in this combination
     OR
   };
@@ -100,14 +100,14 @@ public:
 
   //! Constructor with a single test.
   Combo(ComboType t, const Teuchos::RCP<Generic>& a,
-	const NOX::Utils* u = NULL);
+    const NOX::Utils* u = NULL);
 
   //! Constructor with two tests.
-  Combo(ComboType t, const Teuchos::RCP<Generic>& a, 
-	const Teuchos::RCP<Generic>& b,
-	const NOX::Utils* u = NULL);
+  Combo(ComboType t, const Teuchos::RCP<Generic>& a,
+    const Teuchos::RCP<Generic>& b,
+    const NOX::Utils* u = NULL);
 
-  //! Add another test to this combination. 
+  //! Add another test to this combination.
   /*!
     Calls isSafe() to determine if it is safe to add \c a to the combination.
   */
@@ -118,20 +118,20 @@ public:
 
   /*!
     \brief Tests stopping criterion.
-    
+
     See addOp() and orOp() for details.
   */
-  virtual StatusType checkStatus(const NOX::Solver::Generic& problem, 
-				 NOX::StatusTest::CheckType checkType);
+  virtual StatusType checkStatus(const NOX::Solver::Generic& problem,
+                 NOX::StatusTest::CheckType checkType);
 
   virtual StatusType getStatus() const;
 
   virtual std::ostream& print(std::ostream& stream, int indent = 0) const;
-  
+
 protected:
 
   //! Use this for checkStatus when this is an OR type combo. Updates NOX::StatusTest::Combo::status.
-  /*!  
+  /*!
     If there is a combination of NOX::StatusTest::Failed and
     NOX::StatusTest::Converged in the tests that are OR'd together,
     the value of status for this test is set to the status of the
@@ -144,11 +144,11 @@ protected:
     this combination test without that check.
 
   */
-  virtual void orOp(const Solver::Generic& problem, 
-		    NOX::StatusTest::CheckType checkType);
+  virtual void orOp(const Solver::Generic& problem,
+            NOX::StatusTest::CheckType checkType);
 
   //! Use this for checkStatus when this is an AND type combo. Updates NOX::StatusTest::Combo::status.
-  /*!  
+  /*!
 
     If any tests are NOX::StatusTest::Unconverged, then the status of
     this test is NOX::StatusTest::Unconverged.  If there is a
@@ -162,13 +162,13 @@ protected:
     the sake of completeness, even if we could determine the status of
     this combination test without that check.
   */
-  virtual void andOp(const Solver::Generic& problem, 
-		     NOX::StatusTest::CheckType checkType);
+  virtual void andOp(const Solver::Generic& problem,
+             NOX::StatusTest::CheckType checkType);
 
   /*! \brief Check whether or not it is safe to add \c a to this list
    of tests.
 
-   This is necessary to avoid any infinite recursions 
+   This is necessary to avoid any infinite recursions
    (i.e., a test cannot own a copy of itself).
   */
   bool isSafe(Generic& a);

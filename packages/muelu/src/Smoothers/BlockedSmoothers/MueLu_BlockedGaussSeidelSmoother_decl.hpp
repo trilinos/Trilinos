@@ -125,7 +125,7 @@ namespace MueLu {
 
     /*! @brief Constructor
     */
-    BlockedGaussSeidelSmoother(const LocalOrdinal sweeps = 1, const Scalar omega = 1.0);
+    BlockedGaussSeidelSmoother();
 
     //! Destructor
     virtual ~BlockedGaussSeidelSmoother();
@@ -133,12 +133,16 @@ namespace MueLu {
 
     //! Input
     //@{
+    RCP<const ParameterList> GetValidParameterList() const;
 
     void DeclareInput(Level &currentLevel) const;
 
-
     //! Add a factory manager
-    void AddFactoryManager(RCP<const FactoryManagerBase> FactManager);
+    //void AddFactoryManager(RCP<const FactoryManagerBase> FactManager);
+
+    //! Add a factory manager at a specific position
+    void AddFactoryManager(RCP<const FactoryManagerBase> FactManager, int pos);
+
 
     //@}
 
@@ -185,10 +189,6 @@ namespace MueLu {
 
     //! vector of smoother/solver factories
     std::vector<Teuchos::RCP<const SmootherBase> > Inverse_;
-
-    //! BGS parameters
-    const LocalOrdinal nSweeps_;       // < ! BGS sweeps
-    const Scalar omega_;               // < ! relaxation parameter
 
     //! A Factory
     RCP<FactoryBase> AFact_;

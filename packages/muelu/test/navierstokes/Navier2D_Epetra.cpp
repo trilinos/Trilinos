@@ -267,15 +267,9 @@ int main(int argc, char *argv[]) {
   CoupledAggFact->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
   CoupledAggFact->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
   std::transform(aggOrdering.begin(), aggOrdering.end(), aggOrdering.begin(), ::tolower);
-  if (aggOrdering == "natural") {
-    *out << "aggregate ordering :                    NATURAL" << std::endl;
-    CoupledAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
-  } else if (aggOrdering == "random") {
-    *out << "aggregate ordering :                    RANDOM" << std::endl;
-    CoupledAggFact->SetOrdering(MueLu::AggOptions::RANDOM);
-  } else if (aggOrdering == "graph") {
-    *out << "aggregate ordering :                    GRAPH" << std::endl;
-    CoupledAggFact->SetOrdering(MueLu::AggOptions::GRAPH);
+  if (aggOrdering == "natural" || aggOrdering == "random" || aggOrdering == "graph") {
+    *out << "aggregate ordering :                    " << aggOrdering << std::endl;
+    CoupledAggFact->SetOrdering(aggOrdering);
   } else {
     std::string msg = "main: bad aggregation option """ + aggOrdering + """.";
     throw(MueLu::Exceptions::RuntimeError(msg));
@@ -350,14 +344,13 @@ int main(int argc, char *argv[]) {
     RCP<MueLu::RepartitionInterface<LO, GO, NO, LMO> > repInterface = rcp(new MueLu::RepartitionInterface<LO, GO, NO, LMO>());
     repInterface->SetFactory("A", Acfact);
     repInterface->SetFactory("AmalgamatedPartition", isoInterface);
-    repInterface->SetFactory("UnAmalgamationInfo", rebAmalgFact);
 
     // Repartitioning (creates "Importer" from "Partition")
     RCP<Factory> RepartitionFact = rcp(new RepartitionFactory());
     {
       Teuchos::ParameterList paramList;
-      paramList.set("minRowsPerProcessor", optMinRowsPerProc);
-      paramList.set("nonzeroImbalance", optNnzImbalance);
+      paramList.set("repartition: min rows per proc", optMinRowsPerProc);
+      paramList.set("repartition: max imbalance", optNnzImbalance);
       RepartitionFact->SetParameterList(paramList);
     }
     RepartitionFact->SetFactory("A", Acfact);
@@ -367,12 +360,12 @@ int main(int argc, char *argv[]) {
     RCP<Factory> RebalancedPFact = rcp(new RebalanceTransferFactory());
     RebalancedPFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Interpolation")));
     RebalancedPFact->SetFactory("P", Pfact);
+    RebalancedPFact->SetFactory("Nullspace", M.GetFactory("Ptent"));
 
     RCP<Factory> RebalancedRFact = rcp(new RebalanceTransferFactory());
     RebalancedRFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Restriction")));
     RebalancedRFact->SetFactory("R", Rfact);
     //RebalancedRFact->SetFactory("Coordinates", TransferCoordinatesFact);
-    RebalancedRFact->SetFactory("Nullspace", M.GetFactory("Ptent")); // TODO
 
     // Compute Ac from rebalanced P and R
     RCP<Factory> RebalancedAFact = rcp(new RebalanceAcFactory());
@@ -382,7 +375,7 @@ int main(int argc, char *argv[]) {
     M.SetFactory("A", RebalancedAFact);
     M.SetFactory("P", RebalancedPFact);
     M.SetFactory("R", RebalancedRFact);
-    M.SetFactory("Nullspace",   RebalancedRFact);
+    M.SetFactory("Nullspace",   RebalancedPFact);
     M.SetFactory("Importer",    RepartitionFact);
 #else
     // no re-balancing available
@@ -416,7 +409,7 @@ int main(int argc, char *argv[]) {
     *out << "||x_0|| = " << norms[0] << std::endl;
 
     // apply ten multigrid iterations
-    H->Iterate(*xRhs,10,*xLsg);
+    H->Iterate(*xRhs,*xLsg,10);
 
     // calculate and print residual
     RCP<MultiVector> xTmp = MultiVectorFactory::Build(map,1);

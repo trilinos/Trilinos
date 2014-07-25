@@ -67,7 +67,7 @@ public:
     return m_string.c_str();
   }
   
-  const size_t length() const {
+  size_t length() const {
     return m_string.length();
   }
   

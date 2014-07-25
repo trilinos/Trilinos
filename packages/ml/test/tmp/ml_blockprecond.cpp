@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
 {
   int MyPID = 0;
   Epetra_RowMatrix*  A[2];
-  int *idummy1, *idummy2; 
+  int *idummy1, *idummy2;
   double *ddummy;
 
 #ifdef HAVE_MPI
@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
   ML_Operator *tmp = ML_Operator_BlkMatExtract(BlkMat,0,0);
 
   // CRS or ROW matrix?
-  if (Epetra_ML_GetCrsDataptrs(tmp, &ddummy, &idummy1,&idummy2)) 
+  if (Epetra_ML_GetCrsDataptrs(tmp, &ddummy, &idummy1,&idummy2))
        A[0] = (Epetra_RowMatrix *) tmp->data;
   else A[0] = dynamic_cast<Epetra_RowMatrix*>((Epetra_CrsMatrix *) tmp->data);
 
@@ -101,30 +101,30 @@ int main(int argc, char *argv[])
   ML_Epetra::SetDefaults("SA",MLList[0]);
   ML_Epetra::SetDefaults("SA",MLList[1]);
 
-  MLMainList.set("ML output", 10); 
+  MLMainList.set("ML output", 10);
   MLMainList.set("max levels",3);
-  MLMainList.set("smoother: type","do-nothing"); 
-  MLMainList.set("coarse: type","do-nothing"); 
+  MLMainList.set("smoother: type","do-nothing");
+  MLMainList.set("coarse: type","do-nothing");
 
   MLList[0].set("ML output", 10);
   MLList[0].set("max levels",3);
   MLList[0].set("PDE equations",2);
-  MLList[0].set("smoother: type","do-nothing"); 
+  MLList[0].set("smoother: type","do-nothing");
   MLList[0].set("coarse: type","do-nothing");
 
   MLList[1].set("ML output", 10);
   MLList[1].set("max levels",3);
-  MLList[1].set("coarse: type","do-nothing"); 
-  MLList[1].set("smoother: type","do-nothing"); 
+  MLList[1].set("coarse: type","do-nothing");
+  MLList[1].set("smoother: type","do-nothing");
 
   /*********************************************************/
-  /* Constructor for composite AMG. Does AMG on A[k] using */ 
+  /* Constructor for composite AMG. Does AMG on A[k] using */
   /* corresponding parameter lists. Then, builds a new AMG */
   /* hierarchy with block diagonal grid transfers. The     */
   /* (k,k)th diagonal block is obtained by extracting the  */
   /* grid transfers associated with AMG on A[k].           */
   /*********************************************************/
-  ML_Epetra::MultiLevelPreconditioner* MLPre = 
+  ML_Epetra::MultiLevelPreconditioner* MLPre =
       new ML_Epetra::MultiLevelPreconditioner(BlkMat, MLMainList, A, MLList, 2);
 
   /* old-style way of setting smoothers for now */
@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
 
   /* convert BlkMat to an Epetra BlkMat */
   ML_Epetra::RowMatrix EBlkMat(BlkMat,&Comm);
-  
+
   /* read in rhs */
   Epetra_MultiVector *tRHS;
   EpetraExt::MatrixMarketFileToMultiVector("rhs.mm", EBlkMat.Map(), tRHS);
@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
 
   Epetra_LinearProblem Problem(&EBlkMat, &LHS, RHS);
   AztecOO solver(Problem);
-  
+
   solver.SetPrecOperator(MLPre);
   solver.SetAztecOption(AZ_solver, AZ_gmres);
   solver.SetAztecOption(AZ_output, 1);
@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-  
+
   return(EXIT_SUCCESS);
 }
 
@@ -199,11 +199,11 @@ int main(int argc, char *argv[])
 /* CRS matrices and store the whole thing within a block   */
 /* ML matrix.                                              */
 /***********************************************************/
-ML_Operator *Epetra_BlkMatRead(char prefix,int NBlkRows, int NBlkCols, 
-          ML_Comm *ml_comm, Epetra_MpiComm &Comm, int MyPID, int DiagOnly) 
+ML_Operator *Epetra_BlkMatRead(char prefix,int NBlkRows, int NBlkCols,
+          ML_Comm *ml_comm, Epetra_MpiComm &Comm, int MyPID, int DiagOnly)
 {
   ML_Operator* BlkMat = ML_Operator_Create(ml_comm);
-  ML_Operator_BlkMatInit(BlkMat, ml_comm, NBlkRows, NBlkCols, 
+  ML_Operator_BlkMatInit(BlkMat, ml_comm, NBlkRows, NBlkCols,
                          ML_DESTROY_EVERYTHING);
   ML_Operator *tmp;
   Epetra_RowMatrix *EMat;
@@ -272,7 +272,7 @@ int ML_Smoother_Simple(ML_Smoother *sm,int inlen,double x[],int outlen,
 
    ML_Operator_Apply(ML_Operator_BlkMatExtract(BlkMat,0,1),np,&(x[nv]),nv,temp);
    for (i = 0; i < nv; i++) x[i] -= (temp[i]*iD[i]);
-   
+
    ML_free(r);
    ML_free(temp);
   return 0;
@@ -304,7 +304,7 @@ int ML_Gen_Smoother_Simple(ML *mlptr, int level)
   int    allocated = 100, *bindx, row_length;
   struct ML_Simple *widget;
   ML_Smoother *smooth_ptr;
-   
+
   BlkMat = &(mlptr->Amat[level]);
   Fmat = ML_Operator_BlkMatExtract(BlkMat,0,0);
 
@@ -349,13 +349,13 @@ int ML_Gen_Smoother_Simple(ML *mlptr, int level)
   ML *ml00, *ml11;
   ML_Create(&ml00,1);
   ML_Operator_halfClone_Init( &(ml00->Amat[0]), Fmat);
-  if (mlptr->Rmat[level].to != NULL) 
+  if (mlptr->Rmat[level].to != NULL)
     ML_Gen_Smoother_GaussSeidel(ml00, 0, ML_POSTSMOOTHER,1,  1.);
   else ML_Gen_Smoother_Amesos(  ml00, 0,   ML_AMESOS_KLU,1, 0.0);
 
   ML_Create(&ml11,1);
   ML_Operator_halfClone_Init( &(ml11->Amat[0]), BBt);
-  if (mlptr->Rmat[level].to != NULL) 
+  if (mlptr->Rmat[level].to != NULL)
     ML_Gen_Smoother_GaussSeidel(ml11, 0, ML_POSTSMOOTHER,1, 1.);
   else ML_Gen_Smoother_Amesos(  ml11, 0,   ML_AMESOS_KLU,1, 0.0);
 
@@ -366,12 +366,12 @@ int ML_Gen_Smoother_Simple(ML *mlptr, int level)
   widget->ml11 = ml11;
   widget->BBt  = BBt;
   widget->iD   = Dinv;
-    
-  if (mlptr->Rmat[level].to != NULL) 
-    ML_Smoother_Set(&(mlptr->pre_smoother[level]), (void *) widget, 
+
+  if (mlptr->Rmat[level].to != NULL)
+    ML_Smoother_Set(&(mlptr->pre_smoother[level]), (void *) widget,
                     ML_Smoother_Simple, 1, 1.0, "hi");
 
-  ML_Smoother_Set(&(mlptr->post_smoother[level]), (void *) widget, 
+  ML_Smoother_Set(&(mlptr->post_smoother[level]), (void *) widget,
                   ML_Smoother_Simple, 1, 1.0, "hi");
   mlptr->post_smoother[level].data_destroy = ML_Smoother_Destroy_Simple;
 }

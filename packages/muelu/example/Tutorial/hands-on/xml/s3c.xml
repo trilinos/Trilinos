@@ -2,21 +2,21 @@
 
   <!-- Configuration of the Xpetra operator (fine level) -->
   <ParameterList name="Matrix">
-    <Parameter name="PDE equations"                         type="int" value="1"/> <!-- Number of PDE equations at each grid node.-->
+    <Parameter name="number of equations"                   type="int" value="1"/> <!-- Number of PDE equations at each grid node.-->
   </ParameterList>
 
   <!-- Factory collection -->
   <ParameterList name="Factories">
 
     <!-- Note that ParameterLists must be defined prior to being used -->
-      
+
     <ParameterList name="UncoupledAggregationFact">
       <Parameter name="factory"                             type="string" value="UncoupledAggregationFactory"/>
-      <Parameter name="Ordering"                            type="string" value="Natural"/>
-      <Parameter name="MaxNeighAlreadySelected"             type="int"    value="0"/>
-      <Parameter name="MinNodesPerAggregate"                type="int"    value="4"/>
+      <Parameter name="aggregation: ordering"                            type="string" value="natural"/>
+      <Parameter name="aggregation: max selected neighbors"             type="int"    value="0"/>
+      <Parameter name="aggregation: min agg size"           type="int"    value="4"/>
     </ParameterList>
-    
+
     <ParameterList name="myTentativePFact">
       <Parameter name="factory"                             type="string" value="TentativePFactory"/>
     </ParameterList>
@@ -40,7 +40,7 @@
         <Parameter name="relaxation: damping factor"        type="double" value="1.0"/>
       </ParameterList>
     </ParameterList>
-    
+
     <ParameterList name="SymGaussSeidel">
       <Parameter name="factory"                             type="string" value="TrilinosSmoother"/>
       <Parameter name="type"                                type="string" value="RELAXATION"/>
@@ -56,12 +56,11 @@
   <!-- Definition of the multigrid preconditioner -->
   <ParameterList name="Hierarchy">
 
-    <Parameter name="numDesiredLevel"                       type="int"      value="10"/> <!-- Max number of levels -->
-    <Parameter name="maxCoarseSize"                         type="int"      value="10"/> <!-- Min number of rows on coarsest level -->
+    <Parameter name="max levels"                            type="int"      value="10"/> <!-- Max number of levels -->
+    <Parameter name="coarse: max size"                      type="int"      value="10"/> <!-- Min number of rows on coarsest level -->
     <Parameter name="verbosity"                             type="string"   value="High"/>
 
     <ParameterList name="All">
-      <Parameter name="startLevel"                          type="int"      value="0"/>
       <Parameter name="Smoother"                            type="string"   value="SymGaussSeidel"/>
       <Parameter name="Aggregates"                          type="string"   value="UncoupledAggregationFact"/>
       <Parameter name="Nullspace"                           type="string"   value="myTentativePFact"/>

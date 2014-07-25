@@ -72,10 +72,10 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, cla
 SchurComplementFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~SchurComplementFactory() {}
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-RCP<const ParameterList> SchurComplementFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+RCP<const ParameterList> SchurComplementFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-  validParamList->set< RCP<const FactoryBase> >("A", Teuchos::null, "Generating factory of the matrix A used for building SchurComplement (must be a 2x2 blocked operator)");
+  validParamList->set< RCP<const FactoryBase> >("A", MueLu::NoFactory::getRCP()/*Teuchos::null*/, "Generating factory of the matrix A used for building SchurComplement (must be a 2x2 blocked operator, default = MueLu::NoFactory::getRCP())");
   validParamList->set< Scalar >          ("omega",   Teuchos::ScalarTraits<SC>::one(), "Scaling parameter in S = - 1/omega D diag{F}^{-1} G + Z");
   validParamList->set< bool >            ("lumping", false, "Use lumping, i.e. use the row sum of the absolute values on the diagonal as approximation of A00 (and A00^{-1}). default: false, just use diag(A00).");
 
@@ -125,7 +125,7 @@ void SchurComplementFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatO
   RCP<Matrix> FhatinvG = MatrixFactory::Build(G->getRowMap(), G->getGlobalMaxNumRowEntries());
   RCP<Matrix> emptyMat = MatrixFactory::Build(G->getRowMap(), G->getGlobalMaxNumRowEntries());
   emptyMat->fillComplete(G->getDomainMap(),G->getRowMap());
-  Utils2::TwoMatrixAdd(*G,false,1.0,*emptyMat,false,-1.0/omega,FhatinvG,GetOStream(Statistics2,0));
+  Utils2::TwoMatrixAdd(*G,false,1.0,*emptyMat,false,-1.0/omega,FhatinvG,GetOStream(Statistics2));
   FhatinvG->fillComplete(G->getDomainMap(),G->getRowMap()); // complete the matrix. left scaling does not change the pattern of the operator.
 
   bool lumping = pL.get<bool>("lumping");
@@ -144,12 +144,12 @@ void SchurComplementFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatO
   }
 
   // build D \hat{F}^{-1} G
-  RCP<Matrix> DFhatinvG = Utils::Multiply(*D,false,*FhatinvG,false,GetOStream(Statistics2,0));
+  RCP<Matrix> DFhatinvG = Utils::Multiply(*D,false,*FhatinvG,false,GetOStream(Statistics2));
 
   // build full SchurComplement operator
   // S = - 1/omega D \hat{F}^{-1} G + Z
   RCP<Matrix> S;
-  Utils2::TwoMatrixAdd(*Z,false,1.0,*DFhatinvG,false,-1.0/omega,S,GetOStream(Statistics2,0));
+  Utils2::TwoMatrixAdd(*Z,false,1.0,*DFhatinvG,false,-1.0/omega,S,GetOStream(Statistics2));
   S->fillComplete();
 
   {

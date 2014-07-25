@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -61,7 +61,7 @@ using namespace NOX;
 using namespace NOX::LineSearch;
 
 FullStep::FullStep(const Teuchos::RCP<NOX::GlobalData>& gd,
-		   Teuchos::ParameterList& params) 
+           Teuchos::ParameterList& params)
 {
   Teuchos::ParameterList& p = params.sublist("Full Step");
   stepSize = p.get("Full Step", 1.0);
@@ -73,16 +73,16 @@ FullStep::~FullStep()
 }
 
 bool FullStep::reset(const Teuchos::RCP<NOX::GlobalData>& gd,
-		     Teuchos::ParameterList& params)
+             Teuchos::ParameterList& params)
 {
   Teuchos::ParameterList& p = params.sublist("Full Step");
   stepSize = p.get("Full Step", 1.0);
   return true;
 }
 
-bool FullStep::compute(Abstract::Group& grp, double& step, 
-		       const Abstract::Vector& dir,
-		       const Solver::Generic& s)
+bool FullStep::compute(Abstract::Group& grp, double& step,
+               const Abstract::Vector& dir,
+               const Solver::Generic& s)
 {
   step = stepSize;
   const Abstract::Group& oldGrp = s.getPreviousSolutionGroup();

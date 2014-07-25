@@ -217,7 +217,7 @@ namespace panzer {
 
     physics_block->buildAndRegisterEquationSetEvaluators(fm, user_data);
     physics_block->buildAndRegisterGatherAndOrientationEvaluators(fm, elof, user_data);
-    physics_block->buildAndRegisterDOFProjectionsToIPEvaluators(fm, user_data);
+    physics_block->buildAndRegisterDOFProjectionsToIPEvaluators(fm, Teuchos::null, user_data);
     physics_block->buildAndRegisterScatterEvaluators(fm, elof, user_data);
 
     Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > factory =
@@ -258,8 +258,8 @@ namespace panzer {
     physics_block->buildAndRegisterGatherAndOrientationEvaluatorsForType<panzer::Traits::Residual>(fm, elof, user_data);
     physics_block->buildAndRegisterGatherAndOrientationEvaluatorsForType<panzer::Traits::Jacobian>(fm, elof, user_data);
 
-    physics_block->buildAndRegisterDOFProjectionsToIPEvaluatorsForType<panzer::Traits::Residual>(fm, user_data);
-    physics_block->buildAndRegisterDOFProjectionsToIPEvaluatorsForType<panzer::Traits::Jacobian>(fm, user_data);
+    physics_block->buildAndRegisterDOFProjectionsToIPEvaluatorsForType<panzer::Traits::Residual>(fm, Teuchos::null, user_data);
+    physics_block->buildAndRegisterDOFProjectionsToIPEvaluatorsForType<panzer::Traits::Jacobian>(fm, Teuchos::null, user_data);
 
     physics_block->buildAndRegisterScatterEvaluatorsForType<panzer::Traits::Residual>(fm, elof, user_data);
     physics_block->buildAndRegisterScatterEvaluatorsForType<panzer::Traits::Jacobian>(fm, elof, user_data);

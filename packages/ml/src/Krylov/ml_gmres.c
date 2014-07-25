@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -49,14 +49,14 @@ int ML_GMRES_Solve(ML_Krylov *data, int length, double *rhs, double *sol)
 
    darray = (double*) ML_allocate((mlen+1)*sizeof(double));
    HH = (double**) ML_allocate((mlen+2)*sizeof(double*));
-   for (i=0; i<=mlen+1; i++) 
+   for (i=0; i<=mlen+1; i++)
       HH[i] = (double*) ML_allocate((mlen+2)*sizeof(double));
    RS = (double*) ML_allocate((mlen+2)*sizeof(double));
    S  = (double*) ML_allocate((mlen+2)*sizeof(double));
    C  = (double*) ML_allocate((mlen+2)*sizeof(double));
    indlist  = (int*) ML_allocate((2*mlen+2)*sizeof(int));
    ws = (double**) ML_allocate((mlen+3)*sizeof(double*));
-   for (i=0; i<=mlen+2; i++) 
+   for (i=0; i<=mlen+2; i++)
       ws[i] = (double*) ML_allocate(length*sizeof(double));
 
    /* -----------------------------------------------------------------*/
@@ -69,7 +69,7 @@ int ML_GMRES_Solve(ML_Krylov *data, int length, double *rhs, double *sol)
    init_norm = res_norm;
    if (comm->ML_mypid == 0 && print_freq < 1000 )
        printf("ML_GMRES initial residual norm = %e \n", init_norm);
-   if ( init_norm == 0.0 ) 
+   if ( init_norm == 0.0 )
    {
       for (i=0; i<=mlen+2; i++) ML_free(ws[i]);
       ML_free(ws);
@@ -94,23 +94,23 @@ int ML_GMRES_Solve(ML_Krylov *data, int length, double *rhs, double *sol)
    /* loop until convergence is achieved or maxit has been exceeded*/
    /* -----------------------------------------------------------------*/
 
-   while (res_norm > eps1 && its < maxiter) 
+   while (res_norm > eps1 && its < maxiter)
    {
       ror = 1.0 / res_norm;
       for (i=0; i<length; i++) ws[0][i] *= ror;
       RS[1] = init_norm;
-      icnt = 0; 
+      icnt = 0;
       rnorm2 = res_norm;
-      while (icnt < mlen && (rnorm2/init_norm) > eps1) 
+      while (icnt < mlen && (rnorm2/init_norm) > eps1)
       {
          icnt++;
          its++;
          icnt2 = icnt + 1;
          if (precon != NULL) precfcn(precon,length,ws[icnt+1],length,ws[icnt-1]);
-         else 
+         else
             for (i=0; i<length; i++) ws[icnt+1][i] = ws[icnt-1][i];
          ML_Operator_Apply(matrix, length, ws[icnt+1], length, ws[icnt]);
-         for (j=1; j<=icnt; j++) 
+         for (j=1; j<=icnt; j++)
          {
             darray[j-1] = ML_gdot(length, ws[j-1], ws[icnt2-1], comm);
             t = darray[j-1];
@@ -122,7 +122,7 @@ int ML_GMRES_Solve(ML_Krylov *data, int length, double *rhs, double *sol)
          if (t != 0.0) {
             t = 1.0 / t;
             for (i=0; i<length; i++) ws[icnt2-1][i] *= t;
-         }       
+         }
          if (icnt != 1) {
             for (k=2; k<=icnt; k++) {
                k1 = k - 1;
@@ -138,13 +138,13 @@ int ML_GMRES_Solve(ML_Krylov *data, int length, double *rhs, double *sol)
          S[icnt] = HH[icnt2][icnt] / gam;
          RS[icnt2] = -S[icnt] * RS[icnt];
          RS[icnt]  = C[icnt] * RS[icnt];
-         HH[icnt][icnt] = C[icnt] * HH[icnt][icnt] + 
+         HH[icnt][icnt] = C[icnt] * HH[icnt][icnt] +
                           S[icnt] * HH[icnt2][icnt];
          rnorm2 = ML_dabs(RS[icnt2]);
          if (its % print_freq == 0 && comm->ML_mypid == 0)
             printf("ML_GMRES : iter %4d - res. norm = %e (%e)\n",its,
                     rnorm2, eps1);
-      }  
+      }
       res_norm = rnorm2;
       RS[icnt] = RS[icnt] / HH[icnt][icnt];
       for (i=2; i<=icnt; i++) {
@@ -156,7 +156,7 @@ int ML_GMRES_Solve(ML_Krylov *data, int length, double *rhs, double *sol)
       }
       t = RS[1];
       for (i=0; i<length; i++) ws[0][i] *= t;
-      for (j=2; j<=icnt; j++) 
+      for (j=2; j<=icnt; j++)
       {
          t = RS[j];
          for (i=0; i<length; i++) ws[0][i] += (t * ws[j-1][i]);

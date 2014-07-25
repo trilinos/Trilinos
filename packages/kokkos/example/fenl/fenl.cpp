@@ -39,13 +39,14 @@
 // ************************************************************************
 */
 
-#include <Kokkos_Threads.hpp>
 #include <HexElement.hpp>
 #include <fenl_impl.hpp>
 
 namespace Kokkos {
 namespace Example {
 namespace FENL {
+
+#if defined( KOKKOS_HAVE_PTHREAD )
 
 template
 Perf fenl< Kokkos::Threads , Kokkos::Example::BoxElemPart::ElemLinear >(
@@ -63,6 +64,8 @@ Perf fenl< Kokkos::Threads , Kokkos::Example::BoxElemPart::ElemQuadratic >(
   const int use_trials ,
   const int use_atomic ,
   const int global_elems[] );
+
+#endif
 
 
 #if defined (KOKKOS_HAVE_OPENMP)

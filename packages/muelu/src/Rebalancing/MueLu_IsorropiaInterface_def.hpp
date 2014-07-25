@@ -47,12 +47,11 @@
 namespace MueLu {
 
  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
- RCP<const ParameterList> IsorropiaInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+ RCP<const ParameterList> IsorropiaInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     validParamList->set< RCP<const FactoryBase> >("A",                    Teuchos::null, "Factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo",   Teuchos::null, "Generating factory of UnAmalgamationInfo");
-    validParamList->set< RCP<const FactoryBase> >("number of partitions", Teuchos::null, "(advanced) Factory computing the number of partition.");
 
     return validParamList;
   }
@@ -62,20 +61,19 @@ namespace MueLu {
   void IsorropiaInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level & currentLevel) const {
     Input(currentLevel, "A");
     Input(currentLevel, "UnAmalgamationInfo");
-    Input(currentLevel, "number of partitions");
-  } //DeclareInput()
+  }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void IsorropiaInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &level) const {
+  void IsorropiaInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& level) const {
     FactoryMonitor m(*this, "Build", level);
 
-    RCP<Matrix>      A             = Get< RCP<Matrix> >     (level, "A");
-    GO               numPartitions = Get<GO>                (level, "number of partitions");
+    RCP<Matrix> A        = Get< RCP<Matrix> >(level, "A");
+    GO          numParts = level.Get<GO>("number of partitions");
 
-    RCP<const Map> rowMap        = A->getRowMap();
+    RCP<const Map> rowMap = A->getRowMap();
     RCP<const Map> colMap = A->getColMap();
 
-    if (numPartitions == 1) {
+    if (numParts == 1) {
       // Running on one processor, so decomposition is the trivial one, all zeros.
       RCP<Xpetra::Vector<GO, LO, GO, NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(rowMap, true);
       //Set(level, "Partition", decomposition);
@@ -128,7 +126,6 @@ namespace MueLu {
     // 2) build (un)amalgamation information
     //    prepare generation of nodeRowMap (of amalgamated matrix)
     RCP<AmalgamationInfo> amalInfo = Get< RCP<AmalgamationInfo> >(level, "UnAmalgamationInfo");
-    RCP<std::map<GO,std::vector<GO> > > nodegid2dofgids = amalInfo->GetGlobalAmalgamationParams();
     RCP<std::vector<GO> > gNodeIds = amalInfo->GetNodeGIDVector();
     GO cnt_amalRows = amalInfo->GetNumberOfNodes();
 
@@ -188,9 +185,7 @@ namespace MueLu {
 
     // prepare parameter list for Isorropia
     Teuchos::ParameterList paramlist;
-    std::stringstream ss; ss << numPartitions;
-    paramlist.set("NUM PARTS",ss.str());
-
+    paramlist.set("NUM PARTS", toString(numParts));
 
     /*STRUCTURALLY SYMMETRIC [NO/yes] (is symmetrization required?)
     PARTITIONING METHOD [block/cyclic/random/rcb/rib/hsfc/graph/HYPERGRAPH]

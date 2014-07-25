@@ -33,20 +33,21 @@
  *
  */
 
-#include <exodusII.h>                   // for ex_close, MAX_LINE_LENGTH, etc
-
-#include <stddef.h>                     // for size_t
-#include <stdio.h>                      // for NULL, printf, sprintf, etc
-#include <stdlib.h>                     // for free, malloc, etc
+#include "elb_output.h"
+#include <exodusII.h>                   // for ex_close, ex_opts, etc
+#include <stddef.h>                     // for size_t, NULL
+#include <stdio.h>                      // for printf, sprintf, fprintf, etc
+#include <stdlib.h>                     // for free, malloc, realloc
 #include <string.h>                     // for strcat, strcpy, strlen, etc
 #include <time.h>                       // for asctime, localtime, time, etc
+#include <vector>                       // for vector
+#include "elb.h"                        // for Machine_Description, TOPTR, etc
+#include "elb_allo.h"                   // for array_alloc
+#include "elb_elem.h"                   // for NNODES, get_elem_info
+#include "elb_err.h"                    // for Gen_Error, error_lev
+#include "elb_util.h"                   // for gds_qsort, qsort2, in_list, etc
 
-#include "elb_output.h"
-#include "elb_allo.h"             // for array_alloc
-#include "elb.h"                  // for LB_Description<INT>, etc
-#include "elb_elem.h"             // for get_elem_info, E_Type, etc
-#include "elb_err.h"              // for Gen_Error, error_lev
-#include "elb_util.h"             // for qsort2, in_list, etc
+
 
 namespace {
   const std::string remove_extension(const std::string &filename)
@@ -121,6 +122,10 @@ int write_nemesis(std::string &nemI_out_file,
     ex_opts(EX_VERBOSE | EX_DEBUG);
   else
     ex_opts(EX_VERBOSE);
+
+  /* Enable compression (if netcdf-4) */
+  ex_set_option(exoid, EX_OPT_COMPRESSION_LEVEL, 1);
+  ex_set_option(exoid, EX_OPT_COMPRESSION_SHUFFLE, 1);
 
   /* Create the title */
   if(problem->type == NODAL)
@@ -864,8 +869,10 @@ int write_nemesis(std::string &nemI_out_file,
 	      nsize = el_cnt_blk[ecnt] * node_pel_blk[ecnt] * sizeof(INT);
 	      if(nsize > nsize_old)
 		{
-		  if(nsize_old == 0)
+		  if(nsize_old == 0) {
 		    tmp_connect = (INT*)malloc(nsize);
+		    nsize_old = nsize;
+		  }
 		  else
 		    {
 		      tmp_connect = (INT*)realloc(tmp_connect, nsize);

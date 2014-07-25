@@ -1,7 +1,7 @@
 
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_config.h"
@@ -41,11 +41,11 @@ void Check(const double ActualNorm, const double ExpectedNorm)
 
 int main(int argc, char *argv[])
 {
-  
+
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
 #endif
-      
+
   try
   {
     Init();
@@ -60,8 +60,8 @@ int main(int argc, char *argv[])
     // to another Operator, let the DistributedMatrix disappear, then //
     // work with the other Operator.                                  //
     // ============================================================== //
-    
-    if (true) 
+
+    if (true)
     {
       DistributedMatrix A(S, S);
 
@@ -95,14 +95,14 @@ int main(int argc, char *argv[])
 
     Check(ActualNorm, ExpectedNorm);
   }
-  catch (const int e) 
+  catch (const int e)
   {
     cout << "Caught integer exception, code = " << e << endl;
   }
-  catch (...) 
+  catch (...)
   {
     cout << "problems here..." << endl;
-  } 
+  }
 
 #ifdef HAVE_MPI
   MPI_Finalize();
@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
   MPI_Init(&argc, &argv);
 #endif
   puts("Please configure ML with --enable-epetra --enable-teuchos --enable-triutils");
-  
+
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif

@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -48,31 +48,31 @@
 class Epetra_SerialDenseMatrix;
 
 //! Epetra_SerialDenseOperator: A pure virtual class for using real-valued double-precision operators.
-/*! The Epetra_SerialDenseOperator class is a pure virtual class (specifies interface only) that 
+/*! The Epetra_SerialDenseOperator class is a pure virtual class (specifies interface only) that
     enable the use of real-valued double-precision operators. It is currently implemented by the
     Epetra_SerialDenseMatrix, Epetra_SerialDenseSolver and Epetra_SerialDenseSVD classes.
 
-   
-*/    
+
+*/
 
 class EPETRA_LIB_DLL_EXPORT Epetra_SerialDenseOperator {
-      
+
  public:
 
    //! @name Destructor
-  //@{ 
+  //@{
     //! Destructor
     virtual ~Epetra_SerialDenseOperator() {};
   //@}
-  
+
   //! @name Attribute set methods
-  //@{ 
+  //@{
 
     //! If set true, transpose of this operator will be applied.
     /*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag
-        affects only the Apply() and ApplyInverse() methods.  If the implementation of this interface 
+        affects only the Apply() and ApplyInverse() methods.  If the implementation of this interface
 	does not support transpose use, this method should return a value of -1.
-      
+
     \param In
 	   UseTranspose -If true, multiply by the transpose of operator, otherwise just use operator.
 
@@ -80,12 +80,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialDenseOperator {
   */
     virtual int SetUseTranspose(bool UseTranspose) = 0;
   //@}
-  
+
   //! @name Mathematical functions
-  //@{ 
+  //@{
 
     //! Returns the result of a Epetra_SerialDenseOperator applied to a Epetra_SerialDenseMatrix X in Y.
-    /*! 
+    /*!
     \param In
 	   X - A Epetra_SerialDenseMatrix to multiply with operator.
     \param Out
@@ -96,7 +96,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialDenseOperator {
     virtual int Apply(const Epetra_SerialDenseMatrix& X, Epetra_SerialDenseMatrix& Y) = 0;
 
     //! Returns the result of a Epetra_SerialDenseOperator inverse applied to an Epetra_SerialDenseMatrix X in Y.
-    /*! 
+    /*!
     \param In
 	   X - A Epetra_SerialDenseMatrix to solve for.
     \param Out
@@ -112,12 +112,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialDenseOperator {
        \f[\| A \|_\infty = \max_{1\lei\lem} \sum_{j=1}^n |a_{ij}| \f].
 
        \warning This method must not be called unless HasNormInf() returns true.
-    */ 
+    */
     virtual double NormInf() const = 0;
   //@}
-  
+
   //! @name Attribute access functions
-  //@{ 
+  //@{
 
     //! Returns a character string describing the operator
     virtual const char * Label() const = 0;

@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
@@ -75,25 +75,70 @@
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_Import.hpp>
 
-using Teuchos::RCP;
 using Teuchos::ArrayView;
+using Teuchos::FancyOStream;
+using Teuchos::getFancyOStream;
+using Teuchos::RCP;
+using Teuchos::rcpFromRef;
+using Teuchos::toString;
 using Teuchos::tuple;
 
-/**********************************************************************************/
+
 RCP<Tpetra::Vector<int,int> >
-TestTpetra(const ArrayView<const int> &srcGID, const ArrayView<const int> &destGID) 
+TestTpetra (const ArrayView<const int>& srcGID,
+            const ArrayView<const int>& destGID)
 {
-  RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  using Tpetra::createNonContigMap;
+  using std::endl;
+  typedef Tpetra::Map<int> map_type;
 
-  RCP<const Tpetra::Map<int> >  srcMap = Tpetra::createNonContigMap<int>(srcGID(), comm);
-  RCP<const Tpetra::Map<int> > destMap = Tpetra::createNonContigMap<int>(destGID(), comm);
+  RCP<FancyOStream> perr = getFancyOStream (rcpFromRef (std::cerr));
+  FancyOStream& err = *perr;
+  RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm ();
+  const int myRank = comm->getRank ();
 
-  Tpetra::Vector<int>  srcVector(srcMap);
-  RCP<Tpetra::Vector<int> > destVector = Tpetra::createVector<int>(destMap);
-  destVector->putScalar(-1);
+  {
+    std::ostringstream os;
+    os << "Proc " << myRank << ": {srcGID: " << toString (srcGID)
+       << ", destGID: " << toString (destGID) << "}" << endl;
+    err << os.str ();
+  }
 
-  Tpetra::Import<int> importer(srcMap, destMap);
-  destVector->doImport(srcVector, importer, Tpetra::INSERT);
+  RCP<const map_type> srcMap = createNonContigMap<int> (srcGID (), comm);
+  {
+    std::ostringstream os;
+    os << "Proc " << myRank << ": created srcMap" << endl;
+    err << os.str ();
+  }
+
+  RCP<const map_type> destMap = createNonContigMap<int> (destGID (), comm);
+  {
+    std::ostringstream os;
+    os << "Proc " << myRank << ": created destMap" << endl;
+    err << os.str ();
+  }
+
+  Tpetra::Vector<int> srcVector (srcMap);
+  RCP<Tpetra::Vector<int> > destVector = Tpetra::createVector<int> (destMap);
+  {
+    std::ostringstream os;
+    os << "Proc " << myRank << ": created vectors" << endl;
+    err << os.str ();
+  }
+  destVector->putScalar (-1);
+
+  Tpetra::Import<int> importer (srcMap, destMap);
+  {
+    std::ostringstream os;
+    os << "Proc " << myRank << ": created Import" << endl;
+    err << os.str ();
+  }
+  destVector->doImport (srcVector, importer, Tpetra::INSERT);
+  {
+    std::ostringstream os;
+    os << "Proc " << myRank << ": Finished doImport" << endl;
+    err << os.str ();
+  }
 
   // Teuchos::FancyOStream out(Teuchos::rcp(&std::cout,false));
   // destVector->describe(out, Teuchos::VERB_EXTREME);
@@ -101,7 +146,7 @@ TestTpetra(const ArrayView<const int> &srcGID, const ArrayView<const int> &destG
   return destVector;
 }
 
-////
+
 TEUCHOS_UNIT_TEST( DistObject, SubMapImport1 )
 {
   Teuchos::oblackholestream blackhole;
@@ -110,7 +155,7 @@ TEUCHOS_UNIT_TEST( DistObject, SubMapImport1 )
   /**********************************************************************************/
   // Maps of the import operation:
   // -----------------------------
-  // SRC Map  Processor 0: Global IDs = 0 1 2 3 4 5 6  
+  // SRC Map  Processor 0: Global IDs = 0 1 2 3 4 5 6
   //          Processor 1: Global IDs =                    9 10 11 12 13 14 15
   //
   // DEST Map Processor 0: Global IDs = 0 1 2 3 4 5 6 7 8
@@ -135,6 +180,11 @@ TEUCHOS_UNIT_TEST( DistObject, SubMapImport1 )
     TEST_NOTHROW( destVector = TestTpetra(tuple<int>(9,10,11,12,13,14,15), tuple<int>(7,8,9,10,11,12,13,14,15) ) );
     TEST_COMPARE_ARRAYS( tuple<int>(-1,-1,0,0,0,0,0,0,0), destVector->get1dView() )
   }
+
+  // Process 0 is responsible for printing the "SUCCESS" / "PASSED"
+  // message, so without the barrier, it's possible for the test to be
+  // reported as passing, even if the other processes crashed or hung.
+  comm->barrier ();
 }
 
 ////
@@ -144,11 +194,11 @@ TEUCHOS_UNIT_TEST( DistObject, SubMapImport2 )
   RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
   const int MyPid = comm->getRank();
   /**********************************************************************************/
-  // SRC Map  Processor 0: Global IDs = 
+  // SRC Map  Processor 0: Global IDs =
   //          Processor 1: Global IDs = 0 1
   //
   // DEST Map Processor 0: Global IDs = 0 1 2
-  //          Processor 1: Global IDs =   1 2 
+  //          Processor 1: Global IDs =   1 2
   //
   // Vectors before import operation:
   // --------------------------------
@@ -167,6 +217,11 @@ TEUCHOS_UNIT_TEST( DistObject, SubMapImport2 )
     TEST_NOTHROW( destVector = TestTpetra(tuple<int>(0,1), tuple<int>(1,2) ) )
     TEST_COMPARE_ARRAYS( tuple<int>(0,-1), destVector->get1dView() )
   }
+
+  // Process 0 is responsible for printing the "SUCCESS" / "PASSED"
+  // message, so without the barrier, it's possible for the test to be
+  // reported as passing, even if the other processes crashed or hung.
+  comm->barrier ();
 }
 
 ////
@@ -176,11 +231,11 @@ TEUCHOS_UNIT_TEST( DistObject, SubMapImport3 )
   RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
   const int MyPid = comm->getRank();
   /**********************************************************************************/
-  // SRC Map  Processor 0: Global IDs = 
-  //          Processor 1: Global IDs = 
+  // SRC Map  Processor 0: Global IDs =
+  //          Processor 1: Global IDs =
   //
   // DEST Map Processor 0: Global IDs = 0 1
-  //          Processor 1: Global IDs = 0 1 
+  //          Processor 1: Global IDs = 0 1
   //
   // Vectors before import operation:
   // --------------------------------
@@ -198,6 +253,11 @@ TEUCHOS_UNIT_TEST( DistObject, SubMapImport3 )
     TEST_NOTHROW( destVector = TestTpetra(ArrayView<int>(), tuple<int>(0,1) ) )
   }
   TEST_COMPARE_ARRAYS( tuple<int>(-1,-1), destVector->get1dView() )
+
+  // Process 0 is responsible for printing the "SUCCESS" / "PASSED"
+  // message, so without the barrier, it's possible for the test to be
+  // reported as passing, even if the other processes crashed or hung.
+  comm->barrier ();
 }
 
 #endif  //DO_COMPILATION

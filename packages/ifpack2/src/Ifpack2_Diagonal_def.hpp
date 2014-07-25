@@ -318,15 +318,26 @@ template <class MatrixType>
 std::string Diagonal<MatrixType>::description () const
 {
   std::ostringstream out;
+
+  // Output is a valid YAML dictionary in flow style.  If you don't
+  // like everything on a single line, you should call describe()
+  // instead.
   out << "\"Ifpack2::Diagonal\": "
       << "{";
   if (this->getObjectLabel () != "") {
     out << "Label: \"" << this->getObjectLabel () << "\", ";
   }
-  out << "Number of initialize calls: " << numInitialize_
-      << ", Number of compute calls: " << numCompute_
-      << ", Number of apply calls: " << numApply_
-      << "}";
+  if (matrix_.is_null ()) {
+    out << "Matrix: null";
+  }
+  else {
+    out << "Matrix: not null"
+        << ", Global matrix dimensions: ["
+        << matrix_->getGlobalNumRows () << ", "
+        << matrix_->getGlobalNumCols () << "]";
+  }
+
+  out << "}";
   return out.str ();
 }
 
@@ -355,5 +366,9 @@ describe (Teuchos::FancyOStream &out,
 }
 
 } // namespace Ifpack2
+
+#define IFPACK2_DIAGONAL_INSTANT(S,LO,GO,N)                            \
+  template class Ifpack2::Diagonal< Tpetra::CrsMatrix<S, LO, GO, N> >; \
+  template class Ifpack2::Diagonal< Tpetra::RowMatrix<S, LO, GO, N> >;
 
 #endif

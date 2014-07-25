@@ -118,6 +118,8 @@ APPEND_SET(HEADERS
   Discretization/Integration/Intrepid_CubatureDirect.hpp
   Discretization/Integration/Intrepid_CubatureDirectLineGaussDef.hpp
   Discretization/Integration/Intrepid_CubatureDirectLineGauss.hpp
+  Discretization/Integration/Intrepid_CubatureDirectLineGaussJacobi20.hpp
+  Discretization/Integration/Intrepid_CubatureDirectLineGaussJacobi20Def.hpp
   Discretization/Integration/Intrepid_CubatureDirectTetDefaultDef.hpp
   Discretization/Integration/Intrepid_CubatureDirectTetDefault.hpp
   Discretization/Integration/Intrepid_CubatureDirectTriDefaultDef.hpp
@@ -133,6 +135,8 @@ APPEND_SET(HEADERS
   Discretization/Integration/Intrepid_CubatureSparseHelper.hpp
   Discretization/Integration/Intrepid_CubatureTensorDef.hpp
   Discretization/Integration/Intrepid_CubatureTensor.hpp
+  Discretization/Integration/Intrepid_CubatureTensorPyr.hpp
+  Discretization/Integration/Intrepid_CubatureTensorPyrDef.hpp
   Discretization/Integration/Intrepid_CubatureTensorSortedDef.hpp
   Discretization/Integration/Intrepid_CubatureTensorSorted.hpp
   Discretization/Integration/Intrepid_CubaturePolygonDef.hpp
@@ -151,6 +155,8 @@ APPEND_SET(HEADERS
   Discretization/Basis/Intrepid_HGRAD_HEX_C1_FEMDef.hpp
   Discretization/Basis/Intrepid_HGRAD_HEX_C2_FEM.hpp
   Discretization/Basis/Intrepid_HGRAD_HEX_C2_FEMDef.hpp
+  Discretization/Basis/Intrepid_HGRAD_HEX_I2_FEM.hpp
+  Discretization/Basis/Intrepid_HGRAD_HEX_I2_FEMDef.hpp
   Discretization/Basis/Intrepid_HGRAD_HEX_Cn_FEM.hpp
   Discretization/Basis/Intrepid_HGRAD_HEX_Cn_FEMDef.hpp
   Discretization/Basis/Intrepid_HGRAD_LINE_C1_FEM.hpp
@@ -181,6 +187,12 @@ APPEND_SET(HEADERS
   Discretization/Basis/Intrepid_HGRAD_WEDGE_C1_FEMDef.hpp
   Discretization/Basis/Intrepid_HGRAD_WEDGE_C2_FEM.hpp
   Discretization/Basis/Intrepid_HGRAD_WEDGE_C2_FEMDef.hpp
+  Discretization/Basis/Intrepid_HGRAD_WEDGE_I2_FEM.hpp
+  Discretization/Basis/Intrepid_HGRAD_WEDGE_I2_FEMDef.hpp
+  Discretization/Basis/Intrepid_HGRAD_PYR_C1_FEM.hpp
+  Discretization/Basis/Intrepid_HGRAD_PYR_C1_FEMDef.hpp
+  Discretization/Basis/Intrepid_HGRAD_PYR_I2_FEM.hpp
+  Discretization/Basis/Intrepid_HGRAD_PYR_I2_FEMDef.hpp
   Discretization/Basis/Intrepid_HCURL_HEX_I1_FEM.hpp
   Discretization/Basis/Intrepid_HCURL_HEX_I1_FEMDef.hpp
   Discretization/Basis/Intrepid_HCURL_HEX_In_FEM.hpp

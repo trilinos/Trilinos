@@ -47,7 +47,9 @@
 #define MUELU_TEST_HELPERS_H
 
 #include <string>
+#ifndef _MSC_VER
 #include <dirent.h>
+#endif
 
 // Teuchos
 #include "Teuchos_Comm.hpp"
@@ -200,6 +202,9 @@ namespace MueLuTests {
         currentLevel.SetFactoryManager(factoryHandler);
 
         currentLevel.SetLevelID(0);
+#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
+        currentLevel.SetComm(TestHelpers::Parameters::getDefaultComm());
+#endif
       }
 
       // Needed to initialize correctly levels used for testing TwoLevel factory Build() methods.
@@ -213,6 +218,10 @@ namespace MueLuTests {
 
         fineLevel.SetLevelID(0);
         coarseLevel.SetLevelID(1);
+#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
+        fineLevel.SetComm(TestHelpers::Parameters::getDefaultComm());
+        coarseLevel.SetComm(TestHelpers::Parameters::getDefaultComm());
+#endif
       }
 
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)

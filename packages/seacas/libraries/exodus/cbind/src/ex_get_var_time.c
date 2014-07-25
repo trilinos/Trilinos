@@ -56,9 +56,13 @@
 *
 *****************************************************************************/
 
-#include <stdlib.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <stdlib.h>                     // for free, malloc
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for exerrval, ex_err, etc
+#include "exodusII_int.h"               // for EX_FATAL, ST_ZU, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_inq_varid, etc
 
 /*
  * reads the values of a variable for a single entry of an object (block or set) through a 

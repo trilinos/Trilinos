@@ -104,7 +104,7 @@ namespace MueLu {
     //@{
 
     /*! @brief Define valid parameters for internal factory parameters */
-    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+    RCP<const ParameterList> GetValidParameterList() const;
 
     /*! @brief Specifies the data that this class needs, and the factories that generate that data.
 

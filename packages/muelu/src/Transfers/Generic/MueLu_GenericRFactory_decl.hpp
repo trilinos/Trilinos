@@ -85,7 +85,7 @@ namespace MueLu {
 
     //! Input
     //@{
-    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+    RCP<const ParameterList> GetValidParameterList() const;
 
     void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
 

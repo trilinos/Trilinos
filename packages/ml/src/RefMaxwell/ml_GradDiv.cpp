@@ -1,9 +1,9 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #include "ml_config.h"
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_EPETRAEXT) 
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_EPETRAEXT)
 #include <string.h>
 #include "ml_GradDiv.h"
 #include "ml_epetra.h"
@@ -20,16 +20,16 @@ using Teuchos::rcp;
 using Teuchos::RCP;
 using Teuchos::ArrayRCP;
 
-// ================================================ ====== ==== ==== == = 
+// ================================================ ====== ==== ==== == =
 ML_Epetra::GradDivPreconditioner::GradDivPreconditioner(const Epetra_CrsMatrix & K2_Matrix,
-							const Epetra_CrsMatrix & FaceNode_Matrix,  
-							const Epetra_CrsMatrix & D1_Clean_Matrix,        
-							const Epetra_CrsMatrix & D0_Clean_Matrix,                  
-							const Epetra_CrsMatrix & TMT_Matrix,                 
+							const Epetra_CrsMatrix & FaceNode_Matrix,
+							const Epetra_CrsMatrix & D1_Clean_Matrix,
+							const Epetra_CrsMatrix & D0_Clean_Matrix,
+							const Epetra_CrsMatrix & TMT_Matrix,
 							const Teuchos::ParameterList & List,
 							const bool ComputePrec):
   ML_Preconditioner(),
-  K2_Matrix_(&K2_Matrix), FaceNode_Matrix_(&FaceNode_Matrix), 
+  K2_Matrix_(&K2_Matrix), FaceNode_Matrix_(&FaceNode_Matrix),
   D1_Clean_Matrix_(&D1_Clean_Matrix),D0_Clean_Matrix_(&D0_Clean_Matrix), TMT_Matrix_(&TMT_Matrix),
 #ifdef HAVE_ML_IFPACK
   IfSmoother(0),
@@ -47,7 +47,7 @@ ML_Epetra::GradDivPreconditioner::GradDivPreconditioner(const Epetra_CrsMatrix &
   strcpy(Label_,"ML face-element grad-div preconditioner");
   List_=List;
   SetDefaultsGradDiv(List_,false);
-  
+
 #ifdef ML_TIMING
   /* Internal Timings */
   NumApplications_ = 0;
@@ -62,24 +62,24 @@ ML_Epetra::GradDivPreconditioner::GradDivPreconditioner(const Epetra_CrsMatrix &
 }/*end constructor*/
 
 
-// ================================================ ====== ==== ==== == = 
+// ================================================ ====== ==== ==== == =
 ML_Epetra::GradDivPreconditioner::~GradDivPreconditioner()
 {
-  if (IsComputePreconditionerOK_) 
-    DestroyPreconditioner(); 
+  if (IsComputePreconditionerOK_)
+    DestroyPreconditioner();
 }/*end destructor*/
 
 
-// ================================================ ====== ==== ==== == = 
+// ================================================ ====== ==== ==== == =
 // Print the individual operators in the multigrid hierarchy.
 void ML_Epetra::GradDivPreconditioner::Print(int whichHierarchy){
   //HAQ
   //  if(IsComputePreconditionerOK_ && FacePC && whichHierarchy==11) FacePC->Print(-1);
-  //  if(IsComputePreconditionerOK_ && EdgePC && whichHierarchy==22) EdgePC->Print(-1);  
+  //  if(IsComputePreconditionerOK_ && EdgePC && whichHierarchy==22) EdgePC->Print(-1);
 }/*end Print*/
 
 
-// ================================================ ====== ==== ==== == = 
+// ================================================ ====== ==== ==== == =
 // Computes the preconditioner
 int ML_Epetra::GradDivPreconditioner::ComputePreconditioner(const bool CheckFiltering)
 {
@@ -91,21 +91,21 @@ int ML_Epetra::GradDivPreconditioner::ComputePreconditioner(const bool CheckFilt
 
   int output_level=List_.get("ML output",0);
   output_level=List_.get("output",output_level);
-  
+
   /* Validate List */
   Teuchos::ParameterList newList;
   ML_CreateSublists(List_,newList);
   List_ = newList;
   // TODO: Re-add validation
   //  ValidateGradDivParameters(List_);
-  
+
   /* Pull Solver Mode, verbosity, matrix output */
-  print_hierarchy= List_.get("print hierarchy",-2);  
+  print_hierarchy= List_.get("print hierarchy",-2);
   int vb_level=List_.get("ML output",0);
   if(vb_level >= 15) {very_verbose_=true;verbose_=true;}
   else if (vb_level >= 5) {very_verbose_=false;verbose_=true;}
   else very_verbose_=verbose_=false;
-  
+
   /* Nuke everything if we've done this already */
   if(IsComputePreconditionerOK_) DestroyPreconditioner();
 
@@ -124,11 +124,11 @@ int ML_Epetra::GradDivPreconditioner::ComputePreconditioner(const bool CheckFilt
   ArrayRCP<int> BCfaces_(BCfaces,0,numBCfaces,true);
   //  if(verbose_ && !Comm_->MyPID()) printf("GradDiv: %d dirichlet faces detected\n",numBCfaces);
 
-  /* Do the Nuking for D1_Matrix_ */ 
+  /* Do the Nuking for D1_Matrix_ */
   D1_Matrix_ = rcp(new Epetra_CrsMatrix(*D1_Clean_Matrix_));
   if(numBCfaces>0){
     Apply_BCsToMatrixRows(BCfaces,numBCfaces,*D1_Matrix_);
-    Apply_BCsToMatrixColumns(*BCEdgeList,*D1_Matrix_);   
+    Apply_BCsToMatrixColumns(*BCEdgeList,*D1_Matrix_);
   }
   D1_Matrix_->OptimizeStorage();
 
@@ -146,15 +146,15 @@ int ML_Epetra::GradDivPreconditioner::ComputePreconditioner(const bool CheckFilt
   /* Do the Nuking for the D0 Matrix */
   D0_Matrix_ = rcp(new Epetra_CrsMatrix(*D0_Clean_Matrix_));
   if(numBCedges>0){
-    Epetra_IntVector * BCnodes=FindLocalDirichletColumnsFromRows(BCedges,numBCedges,*D0_Clean_Matrix_);   
+    Epetra_IntVector * BCnodes=FindLocalDirichletColumnsFromRows(BCedges,numBCedges,*D0_Clean_Matrix_);
     int Nn=BCnodes->MyLength();
     int numBCnodes=0;
     for(int i=0;i<Nn;i++){
       if((*BCnodes)[i]) numBCnodes++;
     }
-    
+
     Apply_BCsToMatrixRows(BCedges,numBCedges,*D0_Matrix_);
-    Apply_BCsToMatrixColumns(*BCnodes,*D0_Matrix_);   
+    Apply_BCsToMatrixColumns(*BCnodes,*D0_Matrix_);
     delete BCnodes;
   }
   D0_Matrix_->OptimizeStorage();
@@ -178,12 +178,12 @@ int ML_Epetra::GradDivPreconditioner::ComputePreconditioner(const bool CheckFilt
   if(K1!=&*K1_Matrix_) K1_Matrix_=rcp(K1);
   Epetra_CrsMatrix* D0=dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*D0_Matrix_,D0_Matrix_Trans_,"D0",(verbose_&&!Comm_->MyPID())));
   if(D0!=&*D0_Matrix_) D0_Matrix_=rcp(D0);
-  K2_Matrix_ =dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*K2_Matrix_,K2_Matrix_Trans_,"K2",(verbose_&&!Comm_->MyPID()))); 
+  K2_Matrix_ =dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*K2_Matrix_,K2_Matrix_Trans_,"K2",(verbose_&&!Comm_->MyPID())));
   D0_Clean_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*D0_Clean_Matrix_,D0_Clean_Matrix_Trans_,"D0Clean",(verbose_&&!Comm_->MyPID())));
   TMT_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*TMT_Matrix_,TMT_Matrix_Trans_,"TMT",(verbose_&&!Comm_->MyPID())));
   FaceNode_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*FaceNode_Matrix_,FaceNode_Matrix_Trans_,"FN",(verbose_&&!Comm_->MyPID())));
 #endif
-  
+
 
   /* Make Smoother, if needed */
   int Sweeps=List_.get("smoother: sweeps",0);
@@ -196,7 +196,7 @@ int ML_Epetra::GradDivPreconditioner::ComputePreconditioner(const bool CheckFilt
 #endif
 
 
-  /* Build the (1,1) Block Preconditioner */ 
+  /* Build the (1,1) Block Preconditioner */
   Teuchos::ParameterList & List11=List_.sublist("graddiv: 11list");
   if (List11.name() == "ANONYMOUS") List11.setName("graddiv: 11list");
   FacePC=new FaceMatrixFreePreconditioner(rcp(K2_Matrix_,false),Teuchos::null,rcp(FaceNode_Matrix_,false),rcp(TMT_Matrix_,false),BCfaces_,List11,true);
@@ -205,19 +205,19 @@ int ML_Epetra::GradDivPreconditioner::ComputePreconditioner(const bool CheckFilt
 #endif
   if(print_hierarchy) FacePC->Print();
 
-  /* Build the (2,2) Block Preconditioner */ 
+  /* Build the (2,2) Block Preconditioner */
   Teuchos::ParameterList & List22=List_.sublist("graddiv: 22list");
-  if (List22.name() == "ANONYMOUS") List11.setName("graddiv: 22list");
+  if (List22.name() == "ANONYMOUS") List22.setName("graddiv: 22list");
   EdgePC=new EdgeMatrixFreePreconditioner(K1_Matrix_,Teuchos::null,D0_Matrix_,rcp(D0_Clean_Matrix_,false),rcp(TMT_Matrix_,false),BCedges_,List22,true);
   if(print_hierarchy) EdgePC->Print();
-  
+
 #ifdef ML_TIMING
   StopTimer(&t_time_curr,&(t_diff[4]));
   /* Output */
   ML_Comm *comm_;
   ML_Comm_Create(&comm_);
   int printl=ML_Get_PrintLevel();
-  ML_Set_PrintLevel(output_level);  
+  ML_Set_PrintLevel(output_level);
   ReportTimer(t_diff[0],"ML_RMP::ComputePreconditioner (apply BCs     )",comm_);
   ReportTimer(t_diff[1],"ML_RMP::ComputePreconditioner (form K1       )",comm_);
   ReportTimer(t_diff[2],"ML_RMP::ComputePreconditioner (smoother      )",comm_);
@@ -229,8 +229,8 @@ int ML_Epetra::GradDivPreconditioner::ComputePreconditioner(const bool CheckFilt
 
   NumConstructions_++;
   ConstructionTime_+=t_time_curr-t_time_start;
-#endif  
-  
+#endif
+
   /* Output footer */
   if(verbose_ && !Comm_->MyPID()) {
     printf("------------------------------------------------------------------------------\n");
@@ -242,7 +242,7 @@ int ML_Epetra::GradDivPreconditioner::ComputePreconditioner(const bool CheckFilt
 
 
 
-// ================================================ ====== ==== ==== == = 
+// ================================================ ====== ==== ==== == =
 // Return operator complexity and #nonzeros in fine grid matrix.
 void ML_Epetra::GradDivPreconditioner::Complexities(double &complexity, double &fineNnz) {
   double e_cplex=0.0, e_nnz=0.0, f_cplex=0.0, f_nnz=0.0;
@@ -256,7 +256,7 @@ void ML_Epetra::GradDivPreconditioner::Complexities(double &complexity, double &
 }/*end Complexities*/
 
 
-// ================================================ ====== ==== ==== == = 
+// ================================================ ====== ==== ==== == =
 // Destroys all structures allocated in \c ComputePreconditioner() if the preconditioner has been computed.
 int ML_Epetra::GradDivPreconditioner::DestroyPreconditioner(){
   // NTS: Make sure this gets everything
@@ -267,10 +267,10 @@ int ML_Epetra::GradDivPreconditioner::DestroyPreconditioner(){
   ML_Set_PrintLevel(output_level);
   if(FacePC) {delete FacePC; FacePC=0;}
   if(EdgePC) {delete EdgePC; EdgePC=0;}
-  ML_Set_PrintLevel(printl);  
+  ML_Set_PrintLevel(printl);
   D0_Matrix_=Teuchos::null;
   D1_Matrix_=Teuchos::null;
-  ML_Set_PrintLevel(output_level);  
+  ML_Set_PrintLevel(output_level);
 #ifdef HAVE_ML_IFPACK
   if(IfSmoother) {delete IfSmoother;IfSmoother=0;}
 #endif
@@ -278,13 +278,13 @@ int ML_Epetra::GradDivPreconditioner::DestroyPreconditioner(){
 #ifdef ML_TIMING
   ML_Comm *comm_;
   ML_Comm_Create(&comm_);
-  ReportTimer(ConstructionTime_ ,   "ML_RMP::ComputePreconditioner (construction  )",comm_);  
-  ReportTimer(FirstApplicationTime_,"ML_RMP::ComputePreconditioner (1st iter time )",comm_);  
+  ReportTimer(ConstructionTime_ ,   "ML_RMP::ComputePreconditioner (construction  )",comm_);
+  ReportTimer(FirstApplicationTime_,"ML_RMP::ComputePreconditioner (1st iter time )",comm_);
   ReportTimer(ApplicationTime_ ,    "ML_RMP::ComputePreconditioner (total itr cost)",comm_);
-  ML_Set_PrintLevel(printl);  
+  ML_Set_PrintLevel(printl);
   ML_Comm_Destroy(&comm_);
 #else
-  ML_Set_PrintLevel(printl);  
+  ML_Set_PrintLevel(printl);
 #endif
 
   return 0;
@@ -293,7 +293,7 @@ int ML_Epetra::GradDivPreconditioner::DestroyPreconditioner(){
 
 
 
-// ================================================ ====== ==== ==== == = 
+// ================================================ ====== ==== ==== == =
 // Apply the preconditioner to an Epetra_MultiVector X, puts the result in Y
 int ML_Epetra::GradDivPreconditioner::ApplyInverse(const Epetra_MultiVector& B, Epetra_MultiVector& X_) const
 {
@@ -304,7 +304,7 @@ int ML_Epetra::GradDivPreconditioner::ApplyInverse(const Epetra_MultiVector& B, 
   /* Check for zero RHS */
   int NumVectors=B.NumVectors();
   bool norm0=true;
-  double *norm=new double[NumVectors]; 
+  double *norm=new double[NumVectors];
   B.Norm2(norm);
   for(int i=0;norm0==true && i<NumVectors;i++) norm0=norm0 && (norm[i]==0);
   delete [] norm;
@@ -317,7 +317,7 @@ int ML_Epetra::GradDivPreconditioner::ApplyInverse(const Epetra_MultiVector& B, 
 
   /* Build new work vectors */
   Epetra_MultiVector X(X_.Map(),X_.NumVectors());
-  X.PutScalar(0);  
+  X.PutScalar(0);
   Epetra_MultiVector TempF1(X.Map(),NumVectors,false);
   Epetra_MultiVector TempF2(X.Map(),NumVectors,true);
   Epetra_MultiVector TempE1(*EdgeMap_,NumVectors,false);
@@ -331,14 +331,14 @@ int ML_Epetra::GradDivPreconditioner::ApplyInverse(const Epetra_MultiVector& B, 
 
   /* Build Residual */
   ML_CHK_ERR(K2_Matrix_->Apply(X,TempF1));
-  ML_CHK_ERR(Resid.Update(-1.0,TempF1,1.0,B,0.0));  
+  ML_CHK_ERR(Resid.Update(-1.0,TempF1,1.0,B,0.0));
 
   /* Precondition face block (additive)*/
   ML_CHK_ERR(FacePC->ApplyInverse(Resid,TempF2));
 
   /* Precondition (2,2) block (additive)*/
   D1_Matrix_->Multiply(true,Resid,TempE1);
-  ML_CHK_ERR(EdgePC->ApplyInverse(TempE1,TempE2));             
+  ML_CHK_ERR(EdgePC->ApplyInverse(TempE1,TempE2));
   D1_Matrix_->Multiply(false,TempE2,TempF1);
 
   /* Update X */
@@ -352,7 +352,7 @@ int ML_Epetra::GradDivPreconditioner::ApplyInverse(const Epetra_MultiVector& B, 
 
   /* Copy work vector to output */
   X_=X;
-  
+
   /* Timer Stuff */
 #ifdef ML_TIMING
   if(FirstApplication_){
@@ -366,7 +366,7 @@ int ML_Epetra::GradDivPreconditioner::ApplyInverse(const Epetra_MultiVector& B, 
   /* Output */
   ML_Comm *comm_;
   ML_Comm_Create(&comm_);
-  this->ApplicationTime_+= t_diff;  
+  this->ApplicationTime_+= t_diff;
   ML_Comm_Destroy(&comm_);
 #endif
 
@@ -376,9 +376,9 @@ int ML_Epetra::GradDivPreconditioner::ApplyInverse(const Epetra_MultiVector& B, 
 
 
 
-// ================================================ ====== ==== ==== == = 
+// ================================================ ====== ==== ==== == =
 int ML_Epetra::SetDefaultsGradDiv(Teuchos::ParameterList & inList,bool OverWrite)
-{  
+{
   /* Sublists */
   Teuchos::ParameterList ListGD,List11,List11c,List22,List22c,ListIf;
   Teuchos::ParameterList & List11_=inList.sublist("graddiv: 11list");
@@ -391,17 +391,17 @@ int ML_Epetra::SetDefaultsGradDiv(Teuchos::ParameterList & inList,bool OverWrite
   List11c.set("smoother: type","Chebyshev");
   List11c.set("aggregation: threshold",.01);
   List11c.set("smoother: sweeps",4);
-  List11c.set("coarse: type","Amesos-KLU");  
-  List11c.set("coarse: max size",200);  
+  List11c.set("coarse: type","Amesos-KLU");
+  List11c.set("coarse: max size",200);
   List11c.set("ML label","coarse face block");
-  ML_Epetra::UpdateList(List11c,List11c_,OverWrite); 
+  ML_Epetra::UpdateList(List11c,List11c_,OverWrite);
 
   /* (2,2) coarse */
   ML_Epetra::SetDefaults("SA",List22c);
   List22c.set("smoother: type","Chebyshev");
   List22c.set("aggregation: threshold",.01);
   List22c.set("smoother: sweeps",4);
-  List22c.set("coarse: max size",200);  
+  List22c.set("coarse: max size",200);
   List22c.set("ML label","coarse edge block");
   ML_Epetra::UpdateList(List22c,List22c_,OverWrite);
 
@@ -410,20 +410,20 @@ int ML_Epetra::SetDefaultsGradDiv(Teuchos::ParameterList & inList,bool OverWrite
   List11.set("smoother: type","do-nothing");
   List11.set("aggregation: type","Uncoupled");
   List11.set("smoother: sweeps",0);
-  List11.set("aggregation: threshold",.01);  
+  List11.set("aggregation: threshold",.01);
   List11.set("ML label","face matrix free");
   ML_Epetra::UpdateList(List11,List11_,OverWrite);
-  
+
   /* (2,2) */
   ML_Epetra::SetDefaults("SA",List22);
   List11.set("smoother: type","Chebyshev");
   List22.set("aggregation: type","Uncoupled");
   List22.set("smoother: sweeps",2);
-  List22.set("aggregation: threshold",.01);  
+  List22.set("aggregation: threshold",.01);
   List22.set("ML label","edge matrix free");
   ML_Epetra::UpdateList(List22,List22_,OverWrite);
 
-  /* Build Teuchos List: Overall */  
+  /* Build Teuchos List: Overall */
   SetDefaults("SA",ListGD,0,0,false);
   ListGD.set("smoother: type","Chebyshev");
   ListGD.set("smoother: sweeps",2);

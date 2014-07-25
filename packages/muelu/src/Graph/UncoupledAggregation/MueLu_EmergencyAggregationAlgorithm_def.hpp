@@ -80,12 +80,11 @@ namespace MueLu {
 
     int              aggIndex = -1;
     size_t           aggSize  =  0;
-    const unsigned   magicConstAsDefaultSize = 100;
-    std::vector<int> aggList(magicConstAsDefaultSize);
+    std::vector<int> aggList(graph.getNodeMaxNumRowEntries());
 
     LO nLocalAggregates = aggregates.GetNumAggregates();
     for (LO iNode = 0; iNode < nRows; iNode++) {
-      if (aggStat[iNode] != NodeStats::AGGREGATED) {
+      if (aggStat[iNode] != AGGREGATED && aggStat[iNode] != IGNORED) {
         aggSize = 0;
         aggregates.SetIsRoot(iNode);
 
@@ -94,22 +93,16 @@ namespace MueLu {
 
         ArrayView<const LO> neighOfINode = graph.getNeighborVertices(iNode);
 
-        // TODO: I would like to get rid of this, but that requires something like
-        // graph.getMaxElementsPerRow(), which is trivial in Graph, but requires
-        // computation in LWGraph
-        if (as<size_t>(neighOfINode.size()) > aggList.size())
-          aggList.resize(neighOfINode.size()*2);
-
         for (LO j = 0; j < neighOfINode.size(); j++) {
           LO neigh = neighOfINode[j];
 
-          if (neigh != iNode && graph.isLocalNeighborVertex(neigh) && aggStat[neigh] != NodeStats::AGGREGATED)
+          if (neigh != iNode && graph.isLocalNeighborVertex(neigh) && aggStat[neigh] != AGGREGATED)
             aggList[aggSize++] = neigh;
         }
 
         // finalize aggregate
         for (size_t k = 0; k < aggSize; k++) {
-          aggStat     [aggList[k]] = NodeStats::AGGREGATED;
+          aggStat     [aggList[k]] = AGGREGATED;
           vertex2AggId[aggList[k]] = aggIndex;
           procWinner  [aggList[k]] = myRank;
         }

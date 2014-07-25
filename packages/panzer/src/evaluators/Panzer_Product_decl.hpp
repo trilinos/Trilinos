@@ -51,6 +51,7 @@ namespace panzer {
 //! Products entries on a single data layout
 PHX_EVALUATOR_CLASS(Product)
   
+  double scaling;
   PHX::MDField<ScalarT> product;
   std::vector< PHX::MDField<ScalarT> > values;
 

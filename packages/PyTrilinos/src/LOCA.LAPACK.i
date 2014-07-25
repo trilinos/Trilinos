@@ -21,14 +21,30 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact Bill Spotz (wfspotz@sandia.gov)
 //
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") LAPACK
+%define %loca_lapack_docstring
+"
+PyTrilinos.LOCA.LAPACK is the python interface to namespace LAPACK of
+the Trilinos continuation algorithm package LOCA:
+
+    http://trilinos.sandia.gov/packages/nox
+
+The purpose of LOCA.LAPACK is to provide ***.  The python version of
+LOCA.LAPACK supports the following classes:
+
+    * Interface  - 
+    * Group      - 
+"
+%enddef
+
+%module(package   = "PyTrilinos.LOCA",
+        docstring = %loca_lapack_docstring) LAPACK
 
 %{
 // LOCA includes

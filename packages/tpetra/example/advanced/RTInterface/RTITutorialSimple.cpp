@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
@@ -60,9 +60,11 @@
 // Function object that takes two arguments and returns the second
 template <class S>
 class AssignSecond {
-  public:
-  AssignSecond() {}
-  S operator()(const S &s1, const S &s2) {return s2;}
+public:
+  AssignSecond () {}
+  S operator () (const S &s1, const S &s2) const {
+    return s2;
+  }
 };
 
 // A few examples of RTI capability
@@ -91,7 +93,7 @@ void simple_rti_examples(const Teuchos::RCP<const Teuchos::Comm<int> > &comm, co
   // Via C++11 lambda expression
   binary_transform( *dy, *dx, [](double, double xx){return xx;} );
   // Via convenient macro
-  TPETRA_BINARY_TRANSFORM( dy, dx,   dx ); 
+  TPETRA_BINARY_TRANSFORM( dy, dx,   dx );
 
   // Perform multi-precision inner product...
   // floating point inner product with double precision accumulator
@@ -118,7 +120,7 @@ template <class Node>
 class runTest {
   public:
     // HybridNode requires a method with this signature
-    static void run(Teuchos::ParameterList &myMachPL, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node) 
+    static void run(Teuchos::ParameterList &myMachPL, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node)
     {
       std::cout << "Running test with Node==" << Teuchos::typeName(*node) << " on rank " << comm->getRank() << "/" << comm->getSize() << std::endl;
       simple_rti_examples<Node>(comm,node);
@@ -130,9 +132,9 @@ int main(int argc, char **argv) {
   Teuchos::GlobalMPISession mpisess(&argc,&argv,&std::cout);
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::createMpiComm<int>(Teuchos::opaqueWrapper<MPI_Comm>(MPI_COMM_WORLD));
 
-  // 
+  //
   // read machine file and initialize platform
-  // 
+  //
   std::string machine_list(
     "<ParameterList>                                                               "
     "  <ParameterList name='%1=0'>                                                 "
@@ -161,7 +163,7 @@ int main(int argc, char **argv) {
     "</ParameterList>                                                              "
   );
 
-  // Load the machine ParameterList from the string above; this will typically 
+  // Load the machine ParameterList from the string above; this will typically
   // be loaded from an XML file
   Teuchos::ParameterList machPL;
   Teuchos::updateParametersFromXmlString(machine_list, inOutArg(machPL));

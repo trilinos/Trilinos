@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #include "ml_common.h"
 #ifdef HAVE_ML_MLAPI
@@ -20,14 +20,14 @@
 
 namespace MLAPI {
 
-// ====================================================================== 
-double MaxEigAnorm(const Operator& Op, const bool DiagonalScaling) 
+// ======================================================================
+double MaxEigAnorm(const Operator& Op, const bool DiagonalScaling)
 {
   return(ML_Operator_MaxNorm(Op.GetML_Operator(), DiagonalScaling));
 }
 
-// ====================================================================== 
-double MaxEigCG(const Operator& Op, const bool DiagonalScaling) 
+// ======================================================================
+double MaxEigCG(const Operator& Op, const bool DiagonalScaling)
 {
 
   ML_Krylov *kdata;
@@ -48,8 +48,8 @@ double MaxEigCG(const Operator& Op, const bool DiagonalScaling)
   return(MaxEigen);
 }
 
-// ====================================================================== 
-double MaxEigPowerMethod(const Operator& Op, const bool DiagonalScaling) 
+// ======================================================================
+double MaxEigPowerMethod(const Operator& Op, const bool DiagonalScaling)
 {
 
   ML_Krylov *kdata;
@@ -70,8 +70,8 @@ double MaxEigPowerMethod(const Operator& Op, const bool DiagonalScaling)
   return(MaxEigen);
 }
 
-// ====================================================================== 
-double MaxEigAnasazi(const Operator& Op, const bool DiagonalScaling) 
+// ======================================================================
+double MaxEigAnasazi(const Operator& Op, const bool DiagonalScaling)
 {
 
   double MaxEigen = 0.0;
@@ -92,7 +92,7 @@ double MaxEigAnasazi(const Operator& Op, const bool DiagonalScaling)
   return(MaxEigen);
 }
 
-// ====================================================================== 
+// ======================================================================
 void Eig(const Operator& Op, MultiVector& ER, MultiVector& EI)
 {
   int ierr;
@@ -113,16 +113,16 @@ void Eig(const Operator& Op, MultiVector& ER, MultiVector& EI)
 
   if (ierr)
     ML_THROW("GEEV returned error code = " + GetString(ierr), -1);
-  
+
   for (int i = 0 ; i < ER.GetMyLength() ; ++i) {
     ER(i) = ER_Epetra[i];
     EI(i) = EI_Epetra[i];
   }
 }
 
-// ====================================================================== 
+// ======================================================================
 // FIXME: Add List
-void Eigs(const Operator& A, int NumEigenvalues, 
+void Eigs(const Operator& A, int NumEigenvalues,
           MultiVector& ER, MultiVector& EI)
 {
 

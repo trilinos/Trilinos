@@ -140,9 +140,11 @@ namespace Xpetra {
     //** \warning This is an expert-only routine and should not be called from user code. */
     void allocateAllValues(size_t numNonZeros,ArrayRCP<size_t> & rowptr, ArrayRCP<LocalOrdinal> & colind, ArrayRCP<Scalar> & values);
 
-    //! Sets the matrix's structure from the Crs arrays
-    //** \warning This is an expert-only routine and should not be called from user code. */
+    //! Sets the 1D pointer arrays of the graph.
     void setAllValues(const ArrayRCP<size_t> & rowptr, const ArrayRCP<LocalOrdinal> & colind, const ArrayRCP<Scalar> & values);
+
+    //! Gets the 1D pointer arrays of the graph.
+    void getAllValues(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind, ArrayRCP<const Scalar>& values) const;
 
     //! Expert static fill complete
     //** \warning This is an expert-only routine and should not be called from user code. */
@@ -239,6 +241,9 @@ namespace Xpetra {
     //! Extract a list of entries in a specified local row of the matrix. Put into storage allocated by calling routine.
     void getLocalRowCopy(LocalOrdinal LocalRow, const ArrayView< LocalOrdinal > &Indices, const ArrayView< Scalar > &Values, size_t &NumEntries) const;
 
+    //! Extract a list of entries in a specified global row of this matrix. Put into pre-allocated storage.
+    void getGlobalRowCopy(GlobalOrdinal GlobalRow, const ArrayView< GlobalOrdinal > &Indices, const ArrayView< Scalar > &Values, size_t &NumEntries) const;
+
     //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
     void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView< const GlobalOrdinal > &indices, ArrayView< const Scalar > &values) const;
 
@@ -247,6 +252,16 @@ namespace Xpetra {
 
     //! Get a copy of the diagonal entries owned by this node, with local row indices.
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const { XPETRA_MONITOR("EpetraCrsMatrix::getLocalDiagCopy"); mtx_->ExtractDiagonalCopy(toEpetra(diag)); }
+
+    //! Get offsets of the diagonal entries in the matrix.
+    void getLocalDiagOffsets(Teuchos::ArrayRCP<size_t> &offsets) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraCrsMatrix.getLocalDiagOffsets() is not implemented or supported.");
+    }
+
+    //! Get a copy of the diagonal entries owned by this node, with local row indices, using row offsets.
+    void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraCrsMatrix.getLocalDiagCopy using offsets is not implemented or supported.");
+    }
 
     //@}
 
@@ -275,16 +290,14 @@ namespace Xpetra {
 
     //@}
 
-#ifdef HAVE_XPETRA_EXPERIMENTAL
     //! Deep copy constructor
     EpetraCrsMatrix(const EpetraCrsMatrix& matrix);
-#endif
 
     //! Implements DistObject interface
     //{@
 
     //! Access function for the Tpetra::Map this DistObject was constructed with.
-    const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { XPETRA_MONITOR("EpetraCrsMatrix::getMap"); return toXpetra(mtx_->Map()); }
+    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { XPETRA_MONITOR("EpetraCrsMatrix::getMap"); return toXpetra(mtx_->Map()); }
 
     //! Import.
     void doImport(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &source, const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM);

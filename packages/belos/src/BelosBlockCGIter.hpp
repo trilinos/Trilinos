@@ -422,8 +422,8 @@ class BlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
     }
     // Allocate data needed for LAPACK work.
     int info = 0;
-    char UPLO = 'U';
-    (void) UPLO; // silence "unused variable" compiler warnings
+    //char UPLO = 'U';
+    //(void) UPLO; // silence "unused variable" compiler warnings
     bool uplo = true;
     Teuchos::LAPACK<int,ScalarType> lapack;
 

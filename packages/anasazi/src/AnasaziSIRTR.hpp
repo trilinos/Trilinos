@@ -25,9 +25,9 @@
 
         The solver uses between 6 and 8 blocks of vectors, compared to the
         requirements by IRTR of 10 to 13 blocks of vectors. The base requirement
-        is 6 blocks of vectors, where a block of vectors contains a number of vectors equal to the 
+        is 6 blocks of vectors, where a block of vectors contains a number of vectors equal to the
         block size specified for the solver (see RTRBase::getBlockSize()).
-        Additional blocks are required when solving a generalized eigenvalue problem or when using a preconditioiner. 
+        Additional blocks are required when solving a generalized eigenvalue problem or when using a preconditioiner.
 
         For more information, see RTRBase.
 
@@ -43,12 +43,12 @@
 namespace Anasazi {
 
   template <class ScalarType, class MV, class OP>
-  class SIRTR : public RTRBase<ScalarType,MV,OP> { 
+  class SIRTR : public RTRBase<ScalarType,MV,OP> {
   public:
-    
+
     //! @name Constructor/Destructor
-    //@{ 
-    
+    //@{
+
     /*! \brief %SIRTR constructor with eigenproblem, solver utilities, and parameter list of solver options.
      *
      * This constructor takes pointers required by the eigensolver, in addition
@@ -60,12 +60,12 @@ namespace Anasazi {
      *   - "Kappa Convergence" - a \c MagnitudeType specifing the rate of convergence for the linear convergence regime. Default: 0.1
      *   - "Theta Convergence" - a \c MagnitudeType specifing the order of convergence for the linear convergence regime. theta implies a convergence order of theta+1. Default: 1.0
      */
-    SIRTR( const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> >    &problem, 
+    SIRTR( const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> >    &problem,
            const Teuchos::RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> >           &sorter,
            const Teuchos::RCP<OutputManager<ScalarType> >         &printer,
            const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >      &tester,
            const Teuchos::RCP<GenOrthoManager<ScalarType,MV,OP> > &ortho,
-           Teuchos::ParameterList                                 &params 
+           Teuchos::ParameterList                                 &params
         );
 
     //! %SIRTR destructor
@@ -75,7 +75,7 @@ namespace Anasazi {
 
     //! @name Solver methods
     //@{
-    
+
     //! \brief Impemements Eigensolver. The outer %IRTR iteration. See RTRBase::iterate().
     void iterate();
 
@@ -109,7 +109,7 @@ namespace Anasazi {
     };
     // these correspond to above
     std::vector<std::string> stopReasons_;
-    // 
+    //
     // Consts
     //
     const MagnitudeType ZERO;
@@ -120,15 +120,15 @@ namespace Anasazi {
     //! \brief The inner %IRTR iteration. See RTRBase::solveTRSubproblem().
     void solveTRSubproblem();
     //
-    // rho_prime 
+    // rho_prime
     MagnitudeType rho_prime_;
-    // 
+    //
     // norm of initial gradient: this is used for scaling
     MagnitudeType normgradf0_;
     //
     // tr stopping reason
     trRetType innerStop_;
-    // 
+    //
     // number of inner iterations
     int innerIters_, totalInnerIters_;
   };
@@ -140,18 +140,18 @@ namespace Anasazi {
   // Constructor
   template <class ScalarType, class MV, class OP>
   SIRTR<ScalarType,MV,OP>::SIRTR(
-        const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> >    &problem, 
+        const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> >    &problem,
         const Teuchos::RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> >           &sorter,
         const Teuchos::RCP<OutputManager<ScalarType> >         &printer,
         const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >      &tester,
         const Teuchos::RCP<GenOrthoManager<ScalarType,MV,OP> > &ortho,
         Teuchos::ParameterList                                 &params
-        ) : 
-    RTRBase<ScalarType,MV,OP>(problem,sorter,printer,tester,ortho,params,"SIRTR",true), 
+        ) :
+    RTRBase<ScalarType,MV,OP>(problem,sorter,printer,tester,ortho,params,"SIRTR",true),
     ZERO(MAT::zero()),
     ONE(MAT::one()),
     totalInnerIters_(0)
-  {     
+  {
     // set up array of stop reasons
     stopReasons_.push_back("n/a");
     stopReasons_.push_back("maximum iterations");
@@ -169,10 +169,10 @@ namespace Anasazi {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // TR subproblem solver
   //
-  // FINISH: 
+  // FINISH:
   //   define pre- and post-conditions
   //
-  // POST: 
+  // POST:
   //   delta_,Adelta_,Hdelta_ undefined
   //
   template <class ScalarType, class MV, class OP>
@@ -202,7 +202,7 @@ namespace Anasazi {
     const int d = n*p - (p*p+p)/2;
 
     // We have the following:
-    // 
+    //
     // X'*B*X = I
     // X'*A*X = theta_
     //
@@ -210,7 +210,7 @@ namespace Anasazi {
     // { eta : rho_Y(eta) \geq rho_prime }
     // where
     // rho_Y(eta) = 1/(1+eta'*B*eta)
-    // Therefore, the trust-region is 
+    // Therefore, the trust-region is
     // { eta : eta'*B*eta \leq 1/rho_prime - 1 }
     //
     const double D2 = ONE/rho_prime_ - ONE;
@@ -229,7 +229,7 @@ namespace Anasazi {
     // We will do this in place.
     // For seeking the rightmost, we want to maximize f
     // This is the same as minimizing -f
-    // Substitute all f with -f here. In particular, 
+    // Substitute all f with -f here. In particular,
     //    grad -f(X) = -grad f(X)
     //    Hess -f(X) = -Hess f(X)
     //
@@ -260,18 +260,18 @@ namespace Anasazi {
     // MagnitudeType tconv = r0_norm * MAT::pow(r0_norm/normgradf0_,this->conv_theta_);
     MagnitudeType tconv = MAT::pow(r0_norm,this->conv_theta_+ONE);
     if (this->om_->isVerbosity(Debug)) {
-      this->om_->stream(Debug) 
+      this->om_->stream(Debug)
         << " >> |r0|       : " << r0_norm << endl
         << " >> kappa conv : " << kconv << endl
         << " >> theta conv : " << tconv << endl;
     }
 
-    // 
-    // For Olsen preconditioning, the preconditioner is 
+    //
+    // For Olsen preconditioning, the preconditioner is
     // Z = P_{Prec^-1 BX, BX} Prec^-1 R
     // for efficiency, we compute Prec^-1 BX once here for use later
     // Otherwise, we don't need PBX
-    if (this->hasPrec_ && this->olsenPrec_) 
+    if (this->hasPrec_ && this->olsenPrec_)
     {
       std::vector<int> ind(this->blockSize_);
       for (int i=0; i<this->blockSize_; ++i) ind[i] = this->numAuxVecs_+i;
@@ -290,7 +290,7 @@ namespace Anasazi {
     //    Prec^-1 BV in PBV
     // or
     // Z = P_{BV,BV} Prec^-1 R
-    if (this->hasPrec_) 
+    if (this->hasPrec_)
     {
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
       TimeMonitor prectimer( *this->timerPrec_ );
@@ -395,7 +395,7 @@ namespace Anasazi {
           d_mxe[j] = -this->theta_[j] - 2*eAx[j] - d_eAe[j] + d_eBe[j]*this->theta_[j];
         }
       }
-      this->om_->stream(Debug) 
+      this->om_->stream(Debug)
         << " Debugging checks: SIRTR inner iteration " << innerIters_ << endl
         << " >> m_X(eta) : " << std::accumulate(d_mxe.begin(),d_mxe.end(),0.0) << endl;
       for (int j=0; j<this->blockSize_; ++j) {
@@ -411,7 +411,7 @@ namespace Anasazi {
 
       //
       // [Hdelta,Adelta,Bdelta] = Hess*delta = 2 Proj(A*delta - B*delta*X'*A*X)
-      // X'*A*X = diag(theta), so that 
+      // X'*A*X = diag(theta), so that
       // (B*delta)*diag(theta) can be done on the cheap
       //
       {
@@ -461,25 +461,25 @@ namespace Anasazi {
 
 
       // compute update step
-      for (unsigned int j=0; j<alpha.size(); ++j) 
+      for (unsigned int j=0; j<alpha.size(); ++j)
       {
         alpha[j] = z_r[j]/d_Hd[j];
       }
 
       // compute new B-norms
-      for (unsigned int j=0; j<alpha.size(); ++j) 
+      for (unsigned int j=0; j<alpha.size(); ++j)
       {
         new_eBe[j] = eBe[j] + 2*alpha[j]*eBd[j] + alpha[j]*alpha[j]*dBd[j];
       }
 
       if (this->om_->isVerbosity(Debug)) {
         for (unsigned int j=0; j<alpha.size(); j++) {
-          this->om_->stream(Debug) 
-            << "     >> z_r[" << j << "]  : " << z_r[j] 
+          this->om_->stream(Debug)
+            << "     >> z_r[" << j << "]  : " << z_r[j]
             << "    d_Hd[" << j << "]  : " << d_Hd[j] << endl
-            << "     >> eBe[" << j << "]  : " << eBe[j] 
+            << "     >> eBe[" << j << "]  : " << eBe[j]
             << "    neweBe[" << j << "]  : " << new_eBe[j] << endl
-            << "     >> eBd[" << j << "]  : " << eBd[j] 
+            << "     >> eBd[" << j << "]  : " << eBd[j]
             << "    dBd[" << j << "]  : " << dBd[j] << endl;
         }
       }
@@ -487,7 +487,7 @@ namespace Anasazi {
       // check truncation criteria: negative curvature or exceeded trust-region
       std::vector<int> trncstep;
       trncstep.reserve(p);
-      // trncstep will contain truncated step, due to 
+      // trncstep will contain truncated step, due to
       //   negative curvature or exceeding implicit trust-region
       bool atleastonenegcur = false;
       for (unsigned int j=0; j<d_Hd.size(); ++j) {
@@ -505,7 +505,7 @@ namespace Anasazi {
         // compute step to edge of trust-region, for trncstep vectors
         if (this->om_->isVerbosity(Debug)) {
           for (unsigned int j=0; j<trncstep.size(); ++j) {
-            this->om_->stream(Debug) 
+            this->om_->stream(Debug)
               << " >> alpha[" << trncstep[j] << "]  : " << alpha[trncstep[j]] << endl;
           }
         }
@@ -515,7 +515,7 @@ namespace Anasazi {
         }
         if (this->om_->isVerbosity(Debug)) {
           for (unsigned int j=0; j<trncstep.size(); ++j) {
-            this->om_->stream(Debug) 
+            this->om_->stream(Debug)
               << " >> tau[" << trncstep[j] << "]  : " << alpha[trncstep[j]] << endl;
           }
         }
@@ -541,7 +541,7 @@ namespace Anasazi {
       // store new eBe
       eBe = new_eBe;
 
-      // 
+      //
       // print some debugging info
       if (this->om_->isVerbosity(Debug)) {
         // compute the model at eta
@@ -594,7 +594,7 @@ namespace Anasazi {
             d_mxe[j] = -this->theta_[j] - 2*eAx[j] - d_eAe[j] + d_eBe[j]*this->theta_[j];
           }
         }
-        this->om_->stream(Debug) 
+        this->om_->stream(Debug)
           << " Debugging checks: SIRTR inner iteration " << innerIters_ << endl
           << " >> m_X(eta) : " << std::accumulate(d_mxe.begin(),d_mxe.end(),0.0) << endl;
         for (int j=0; j<this->blockSize_; ++j) {
@@ -631,13 +631,13 @@ namespace Anasazi {
       MagnitudeType r_norm = MAT::squareroot(RTRBase<ScalarType,MV,OP>::ginner(*this->R_,*this->R_));
 
       //
-      // check local convergece 
+      // check local convergece
       //
       // kappa (linear) convergence
       // theta (superlinear) convergence
       //
       if (this->om_->isVerbosity(Debug)) {
-        this->om_->stream(Debug) 
+        this->om_->stream(Debug)
           << " >> |r" << innerIters_ << "|        : " << r_norm << endl;
       }
       if ( r_norm <= ANASAZI_MIN(tconv,kconv) ) {
@@ -695,13 +695,13 @@ namespace Anasazi {
       // below, we need to perform
       //   delta = -Z + delta*diag(beta)
       // however, delta_ currently stores delta*diag(alpha)
-      // therefore, set 
-      //   beta_ to beta/alpha 
-      // so that 
+      // therefore, set
+      //   beta_ to beta/alpha
+      // so that
       //   delta_ = delta_*diag(beta_)
-      // will in fact result in 
+      // will in fact result in
       //   delta_ = delta_*diag(beta_)
-      //          = delta*diag(alpha)*diag(beta/alpha) 
+      //          = delta*diag(alpha)*diag(beta/alpha)
       //          = delta*diag(beta)
       // i hope this is numerically sound...
       for (unsigned int j=0; j<beta.size(); ++j) {
@@ -713,13 +713,13 @@ namespace Anasazi {
       }
       MVT::MvAddMv(-ONE,*this->Z_,ONE,*this->delta_,*this->delta_);
 
-    } 
+    }
     // end of the inner iteration loop
     //////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////
     if (innerIters_ > d) innerIters_ = d;
 
-    this->om_->stream(Debug) 
+    this->om_->stream(Debug)
       << " >> stop reason is " << stopReasons_[innerStop_] << endl
       << endl;
 
@@ -750,8 +750,8 @@ namespace Anasazi {
     using Teuchos::tuple;
     using Teuchos::TimeMonitor;
     using std::endl;
-    typedef Teuchos::RCP<const MV> PCMV;
-    typedef Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > PSDM;
+    // typedef Teuchos::RCP<const MV> PCMV; // unused
+    // typedef Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > PSDM; // unused
 
     //
     // Allocate/initialize data structures
@@ -760,17 +760,17 @@ namespace Anasazi {
       this->initialize();
     }
 
-    Teuchos::SerialDenseMatrix<int,ScalarType> AA(this->blockSize_,this->blockSize_), 
+    Teuchos::SerialDenseMatrix<int,ScalarType> AA(this->blockSize_,this->blockSize_),
                                                BB(this->blockSize_,this->blockSize_),
                                                S(this->blockSize_,this->blockSize_);
 
     // we will often exploit temporarily unused storage for workspace
-    // in order to keep it straight and make for clearer code, 
+    // in order to keep it straight and make for clearer code,
     // we will put pointers to available multivectors into the following vector
     // when we need them, we get them out, using a meaningfully-named pointer
     // when we're done, we put them back
     std::vector< RCP<MV> > workspace;
-    // we only have 7 multivectors, so that is more than the maximum number that 
+    // we only have 7 multivectors, so that is more than the maximum number that
     // we could use for temp storage
     workspace.reserve(7);
 
@@ -800,17 +800,17 @@ namespace Anasazi {
       if (this->om_->isVerbosity( Debug ) ) {
         typename RTRBase<ScalarType,MV,OP>::CheckList chk;
         // this is the residual of the model, should still be in the tangent plane
-        chk.checkBR  = true;   
+        chk.checkBR  = true;
         chk.checkEta = true;
         this->om_->print( Debug, this->accuracyCheck(chk, "in iterate() after solveTRSubproblem()") );
       }
 
 
-      // 
+      //
       // multivectors X, BX (if hasB) and eta contain meaningful information that we need below
       // the others will be sacrificed to temporary storage
       // we are not allowed to reference these anymore, RELEASE_TEMP_MV will clear the pointers
-      // the RCP in workspace will keep the MV alive, we will get the MVs back 
+      // the RCP in workspace will keep the MV alive, we will get the MVs back
       // as we need them using GET_TEMP_MV
       //
       // this strategy doesn't cost us much, and it keeps us honest
@@ -840,7 +840,7 @@ namespace Anasazi {
       MagnitudeType oldfx = this->fx_;
       int rank, ret;
       rank = this->blockSize_;
-      // compute AA = (X+eta)'*A*(X+eta) 
+      // compute AA = (X+eta)'*A*(X+eta)
       // get temporarily storage for A*(X+eta)
       RCP<MV> AXpEta;
       SIRTR_GET_TEMP_MV(AXpEta,workspace);                // workspace size is 2
@@ -858,7 +858,7 @@ namespace Anasazi {
 #endif
         MVT::MvTransMv(ONE,*XpEta,*AXpEta,AA);
       }
-      // compute BB = (X+eta)'*B*(X+eta) 
+      // compute BB = (X+eta)'*B*(X+eta)
       // get temporary storage for B*(X+eta)
       RCP<MV> BXpEta;
       if (this->hasBOp_) {
@@ -924,9 +924,9 @@ namespace Anasazi {
       if (this->om_->isVerbosity( Debug ) ) {
         //
         // compute rho
-        //        f(X) - f(X+eta)         f(X) - f(X+eta)     
+        //        f(X) - f(X+eta)         f(X) - f(X+eta)
         // rho = ----------------- = -------------------------
-        //         m(0) - m(eta)      -<2AX,eta> - .5*<Heta,eta> 
+        //         m(0) - m(eta)      -<2AX,eta> - .5*<Heta,eta>
         MagnitudeType rhonum, rhoden, mxeta;
         //
         // compute rhonum
@@ -985,7 +985,7 @@ namespace Anasazi {
 
         mxeta = oldfx - rhoden;
         this->rho_ = rhonum / rhoden;
-        this->om_->stream(Debug) 
+        this->om_->stream(Debug)
           << " >> old f(x) is : " << oldfx << endl
           << " >> new f(x) is : " << this->fx_ << endl
           << " >> m_x(eta) is : " << mxeta << endl
@@ -994,7 +994,7 @@ namespace Anasazi {
           << " >> rho is      : " << this->rho_ << endl;
         // compute individual rho
         for (int j=0; j<this->blockSize_; ++j) {
-          this->om_->stream(Debug) 
+          this->om_->stream(Debug)
             << " >> rho[" << j << "]     : " << 1.0/(1.0+eBe[j]) << endl;
         }
       }
@@ -1029,7 +1029,7 @@ namespace Anasazi {
         this->X_  = MVT::CloneView(static_cast<const MV&>(*this->V_ ),ind);
         this->BX_ = MVT::CloneView(static_cast<const MV&>(*this->BV_),ind);
       }
-      // 
+      //
       // return XpEta and BXpEta to temp storage
       SIRTR_RELEASE_TEMP_MV(XpEta,workspace);             // workspace size is 1
       SIRTR_RELEASE_TEMP_MV(AXpEta,workspace);            // workspace size is 2
@@ -1059,7 +1059,7 @@ namespace Anasazi {
       this->Rnorms_current_ = false;
       this->R2norms_current_ = false;
 
-      // 
+      //
       // we are done with AX, release it
       SIRTR_RELEASE_TEMP_MV(AX,workspace);                // workspace size is 3
       //
@@ -1093,11 +1093,11 @@ namespace Anasazi {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Print the current status of the solver
   template <class ScalarType, class MV, class OP>
-  void 
-  SIRTR<ScalarType,MV,OP>::currentStatus(std::ostream &os) 
+  void
+  SIRTR<ScalarType,MV,OP>::currentStatus(std::ostream &os)
   {
     using std::endl;
-    os.setf(std::ios::scientific, std::ios::floatfield);  
+    os.setf(std::ios::scientific, std::ios::floatfield);
     os.precision(6);
     os <<endl;
     os <<"================================================================================" << endl;
@@ -1123,7 +1123,7 @@ namespace Anasazi {
     if (this->initialized_) {
       os << endl;
       os <<"CURRENT EIGENVALUE ESTIMATES             "<<endl;
-      os << std::setw(20) << "Eigenvalue" 
+      os << std::setw(20) << "Eigenvalue"
          << std::setw(20) << "Residual(B)"
          << std::setw(20) << "Residual(2)"
          << endl;

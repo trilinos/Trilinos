@@ -28,14 +28,14 @@
 using namespace Teuchos;
 using namespace Galeri;
 
-void PrintLine() 
+void PrintLine()
 {
   cout << endl;
   for( int i=0 ; i<80 ; ++i )
     cout << "=";
   cout << endl;
   cout << endl;
-  
+
   return;
 }
 
@@ -46,77 +46,77 @@ int TestMultiLevelPreconditioner(char ProblemType[],
 				 Epetra_LinearProblem & Problem, double & TotalErrorResidual,
 				 double & TotalErrorExactSol)
 {
-  
+
   Epetra_MultiVector* lhs = Problem.GetLHS();
   Epetra_MultiVector* rhs = Problem.GetRHS();
   Epetra_RowMatrix* A = Problem.GetMatrix();
-  
+
   // ======================================== //
   // create a rhs corresponding to lhs or 1's //
   // ======================================== //
-  
+
   lhs->PutScalar(1.0);
   A->Multiply(false,*lhs,*rhs);
 
   lhs->PutScalar(0.0);
-  
+
   Epetra_Time Time(A->Comm());
 
   Epetra_MultiVector lhs2(*lhs);
   Epetra_MultiVector rhs2(*rhs);
-  
+
   // =================== //
   // call ML and AztecOO //
   // =================== //
 
   AztecOO solver(Problem);
-  
+
   MLList.set("ML output", 0);
   ML_set_random_seed(24601);
   ML_Epetra::MultiLevelPreconditioner * MLPrec = new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
-  
+
   // tell AztecOO to use this preconditioner, then solve
   solver.SetPrecOperator(MLPrec);
-  
+
   solver.SetAztecOption(AZ_solver, AZ_gmres);
   solver.SetAztecOption(AZ_output, 32);
   solver.SetAztecOption(AZ_kspace, 160);
-  
+
   solver.Iterate(1550, 1e-12);
-  
+
   delete MLPrec;
 
 
 
   // ================================= //
   // call ML and AztecOO a second time //
-  // ================================= // 
+  // ================================= //
   Epetra_LinearProblem Problem2(A,&lhs2,&rhs2);
 
   AztecOO solver2(Problem2);
-  ML_set_random_seed(24601);  
+  ML_set_random_seed(24601);
   ML_Epetra::MultiLevelPreconditioner * MLPrec2 = new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
-  
+
   // tell AztecOO to use this preconditioner, then solve
   solver2.SetPrecOperator(MLPrec2);
-  
+
   solver2.SetAztecOption(AZ_solver, AZ_gmres);
   solver2.SetAztecOption(AZ_output, 32);
   solver2.SetAztecOption(AZ_kspace, 160);
-  
+
   solver2.Iterate(1550, 1e-12);
-  
-  
-  
+
+
+
   // ==================================================== //
   // compute difference between the two ML solutions //
   // ==================================================== //
-  
+
   double d = 0.0, d_tot = 0.0;
-  
+
   for( int i=0 ; i<lhs->Map().NumMyElements() ; ++i )
     d += ((*lhs)[0][i] - lhs2[0][i]) * ((*lhs)[0][i] - lhs2[0][i]);
-  
+
   A->Comm().SumAll(&d,&d_tot,1);
   string msg = ProblemType;
   if (A->Comm().MyPID() == 0) {
@@ -124,11 +124,11 @@ int TestMultiLevelPreconditioner(char ProblemType[],
     cout << msg << "......||x_1 - x_2||_2 = " << sqrt(d_tot) << endl;
     cout << msg << "......Total Time = " << Time.ElapsedTime() << endl;
   }
-  
+
   TotalErrorExactSol += sqrt(d_tot);
-  
+
   return( solver.NumIters() );
-  
+
 }
 
 using namespace Galeri;
@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
 
   Epetra_Vector LHS(*Map);
   Epetra_Vector RHS(*Map);
-  
+
   Epetra_LinearProblem Problem(Matrix, &LHS, &RHS);
 
   Teuchos::ParameterList MLList;
@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
   MLList.set("smoother: type", "Gauss-Seidel");
   char mystring[80];
   strcpy(mystring,"SA");
-  TestMultiLevelPreconditioner(mystring, MLList, Problem, 
+  TestMultiLevelPreconditioner(mystring, MLList, Problem,
                                TotalErrorResidual, TotalErrorExactSol);
 
 
@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
   MLList.set("smoother: type", "Gauss-Seidel");
   MLList.set("smoother: Gauss-Seidel efficient symmetric",true);
 
-  TestMultiLevelPreconditioner(mystring, MLList, Problem, 
+  TestMultiLevelPreconditioner(mystring, MLList, Problem,
                                TotalErrorResidual, TotalErrorExactSol);
 
   // ============================== //
@@ -213,7 +213,7 @@ int main(int argc, char *argv[]) {
   ML_Epetra::SetDefaults("SA",MLList);
   MLList.set("smoother: type", "Chebyshev");
 
-  TestMultiLevelPreconditioner(mystring, MLList, Problem, 
+  TestMultiLevelPreconditioner(mystring, MLList, Problem,
                                TotalErrorResidual, TotalErrorExactSol);
 
   // ===================== //
@@ -228,7 +228,7 @@ int main(int argc, char *argv[]) {
 
   delete Matrix;
   delete Map;
-  
+
   if (TotalErrorExactSol != 0 ) {
     cerr << "Error: `MultiLevelPrecoditioner_Restart.exe' failed!" << endl;
     exit(EXIT_FAILURE);

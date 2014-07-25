@@ -71,9 +71,9 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcpFromRef;
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
-Teuchos::RCP<panzer::ConnManager<int,int> > buildQuadMesh(stk::ParallelMachine comm,int xelmts,int yelmts,int xblocks,int yblocks)
+Teuchos::RCP<panzer::ConnManager<int,int> > buildQuadMesh(stk_classic::ParallelMachine comm,int xelmts,int yelmts,int xblocks,int yblocks)
 {
    Teuchos::ParameterList pl;
    pl.set<int>("X Elements",xelmts);
@@ -81,11 +81,11 @@ Teuchos::RCP<panzer::ConnManager<int,int> > buildQuadMesh(stk::ParallelMachine c
    pl.set<int>("X Blocks",xblocks);
    pl.set<int>("Y Blocks",yblocks);
 
-   panzer_stk::SquareQuadMeshFactory meshFact;
+   panzer_stk_classic::SquareQuadMeshFactory meshFact;
    meshFact.setParameterList(Teuchos::rcpFromRef(pl));
    
-   Teuchos::RCP<panzer_stk::STK_Interface> mesh = meshFact.buildMesh(comm);
-   return Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+   Teuchos::RCP<panzer_stk_classic::STK_Interface> mesh = meshFact.buildMesh(comm);
+   return Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
 }
 
 template <typename IntrepidType>
@@ -102,15 +102,15 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad_fei)
 {
    // build global (or serial communicator)
    #ifdef HAVE_MPI
-      stk::ParallelMachine Comm = MPI_COMM_WORLD;
+      stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
    #else
-      stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
+      stk_classic::ParallelMachine Comm = WHAT_TO_DO_COMM;
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
    #endif
 
-   int numProcs = stk::parallel_machine_size(Comm);
-   int myRank = stk::parallel_machine_rank(Comm);
+   int numProcs = stk_classic::parallel_machine_size(Comm);
+   int myRank = stk_classic::parallel_machine_rank(Comm);
 
    TEUCHOS_ASSERT(numProcs<=2);
 
@@ -208,15 +208,15 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad)
 {
    // build global (or serial communicator)
    #ifdef HAVE_MPI
-      stk::ParallelMachine Comm = MPI_COMM_WORLD;
+      stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
    #else
-      stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
+      stk_classic::ParallelMachine Comm = WHAT_TO_DO_COMM;
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
    #endif
 
-   int numProcs = stk::parallel_machine_size(Comm);
-   int myRank = stk::parallel_machine_rank(Comm);
+   int numProcs = stk_classic::parallel_machine_size(Comm);
+   int myRank = stk_classic::parallel_machine_rank(Comm);
 
    TEUCHOS_ASSERT(numProcs<=2);
 

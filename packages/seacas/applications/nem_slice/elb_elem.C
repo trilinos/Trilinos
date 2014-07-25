@@ -33,15 +33,14 @@
  *
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <strings.h>
-
-#include "elb.h"
 #include "elb_elem.h"
-#include "elb_err.h"
-#include "elb_util.h"
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <stdlib.h>                     // for exit
+#include <string.h>                     // for strncasecmp
+#include "elb_err.h"                    // for error_report, Gen_Error
+#include "elb_util.h"                   // for in_list
+
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -65,7 +64,7 @@ namespace {
  *****************************************************************************/
 const char* elem_name_from_enum(const E_Type elem_type) {
   static const char* elem_names[NULL_EL] = {"SPHERE", "BAR2", "BAR3", "QUAD4", "QUAD8", "QUAD9",
-					    "SHELL4", "SHELL8", "TRI3", "TRI6", "TSHELL3", "TSHELL6", "HEX8",
+					    "SHELL4", "SHELL8", "SHELL9", "TRI3", "TRI6", "TSHELL3", "TSHELL6", "HEX8",
 					    "HEX20", "HEX27", "HEXSHELL", "TET4", "TET10", "TET8", "WEDGE6", "WEDGE15",
 					    "WEDGE16", "PYRAMID5", "PYRAMID13", "SHELL2", "SHELL3"};
   return elem_names[elem_type];
@@ -138,6 +137,9 @@ E_Type get_elem_type(const char *elem_name, const int num_nodes,
       break;
     case 8:
       answer = SHELL8;
+      break;
+    case 9:
+      answer = SHELL9;
       break;
     default:
       Gen_Error(0, "fatal: unsupported SHELL element");
@@ -227,11 +229,7 @@ E_Type get_elem_type(const char *elem_name, const int num_nodes,
       break;
     case 9:
       if(num_dim == 2) answer = QUAD9;
-      else {
-        Gen_Error(0, "fatal: unsupported SHELL element");
-        error_report();
-        exit(1);
-      }
+      else             answer = SHELL9;
       break;
     default:
       Gen_Error(0, "fatal: unsupported QUAD element");
@@ -511,6 +509,25 @@ int get_elem_info(const int req, const E_Type etype)
     {
     case NNODES:
       answer = 8;
+      break;
+    case NSIDES:
+      answer = 6;
+      break;
+    case NDIM:		/* number of physical dimensions */
+      answer = 2;
+      break;
+    default:
+      Gen_Error(0, "fatal: unknown quantity");
+      error_report();
+      exit(1);
+    }
+    break;
+
+  case SHELL9:
+    switch(req)
+    {
+    case NNODES:
+      answer = 9;
       break;
     case NSIDES:
       answer = 6;
@@ -1185,6 +1202,7 @@ int get_side_id(const E_Type etype, const INT *connect, const int nsnodes,
 
     case SHELL4:
     case SHELL8:
+    case SHELL9:
 
       /* 2D sides */
       if(nsnodes == 2 || nsnodes == 3) {
@@ -1206,7 +1224,7 @@ int get_side_id(const E_Type etype, const INT *connect, const int nsnodes,
       }
 
       /* 3D faces */
-      else if (nsnodes == 4 || nsnodes == 8) {
+      else if (nsnodes == 4 || nsnodes == 8 || nsnodes == 9) {
 
 	/* SIDE 1 */
 	if((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
@@ -1542,9 +1560,9 @@ int ss_to_node_list(const E_Type  etype,		/* The element type */
   };
 
   /* shell */
-  static int shell_table[2][8] = {
+  static int shell_table[2][9] = {
   /*        1                  2                                      side   */
-    {1,2,3,4,5,6,7,8}, {1,4,3,2,8,7,6,5}                           /* nodes  */
+    {1,2,3,4,5,6,7,8,9}, {1,4,3,2,8,7,6,5,9}                       /* nodes  */
   };
 
   /* tetra */
@@ -1647,6 +1665,25 @@ int ss_to_node_list(const E_Type  etype,		/* The element type */
     case 0:
     case 1:
       for (i = 0; i < 8; i++)
+        ss_node_list[i] = connect[(shell_table[side_num][i] - 1)];
+      break;
+
+    default:
+      /*
+       * sides 3, 4, 5, & 6 correspond to sides 1, 2, 3, & 4
+       * of the quad element.
+       */
+      for (i = 0; i < 3; i++)
+        ss_node_list[i] = connect[(quad_table[(side_num-2)][i] - 1)];
+      break;
+    }
+    break;
+
+  case SHELL9:
+    switch (side_num) {
+    case 0:
+    case 1:
+      for (i = 0; i < 9; i++)
         ss_node_list[i] = connect[(shell_table[side_num][i] - 1)];
       break;
 
@@ -1786,8 +1823,8 @@ int ss_to_node_list(const E_Type  etype,		/* The element type */
 
   case HEXSHELL:
     switch (side_num) {
+    case 4:
     case 5:
-    case 6:
       for (i = 0; i < 4; i++)
         ss_node_list[i] = connect[(hexshell_table[side_num][i] - 1)];
       break;
@@ -1922,6 +1959,21 @@ int get_ss_mirror(const E_Type etype,		/* The element type */
     case 1:
     case 2:
       for (i = 0; i < 8; i++)
+        mirror_node_list[i] = ss_node_list[sqr_table[i]];
+      break;
+
+    default:
+      for (i = 0; i < 3; i++)
+        mirror_node_list[i] = ss_node_list[line_table[i]];
+      break;
+    }
+    break;
+
+  case SHELL9:
+    switch (side_num) {
+    case 1:
+    case 2:
+      for (i = 0; i < 9; i++)
         mirror_node_list[i] = ss_node_list[sqr_table[i]];
       break;
 

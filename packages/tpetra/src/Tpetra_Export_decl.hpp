@@ -42,9 +42,7 @@
 #ifndef TPETRA_EXPORT_DECL_HPP
 #define TPETRA_EXPORT_DECL_HPP
 
-#include <Tpetra_ConfigDefs.hpp>
-#include <Kokkos_DefaultNode.hpp>
-#include <Teuchos_Describable.hpp>
+#include <Tpetra_Details_Transfer.hpp>
 
 namespace Tpetra {
   //
@@ -53,16 +51,11 @@ namespace Tpetra {
   // declarations.
   //
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  class Distributor;
-
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   class ImportExportData;
 
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   class Import;
-
-  template<class LocalOrdinal, class GlobalOrdinal, class Node>
-  class Map;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
   /// \brief Communication plan for data redistribution from a
@@ -121,11 +114,14 @@ namespace Tpetra {
   template <class LocalOrdinal,
             class GlobalOrdinal = LocalOrdinal,
             class Node = KokkosClassic::DefaultNode::DefaultNodeType>
-  class Export: public Teuchos::Describable {
-      friend class Import<LocalOrdinal,GlobalOrdinal,Node>;
+  class Export:
+    public ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>
+  {
+  private:
+    friend class Import<LocalOrdinal,GlobalOrdinal,Node>;
   public:
     //! The specialization of Map used by this class.
-    typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
+    typedef ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
 
     //! @name Constructor/Destructor Methods
     //@{
@@ -205,7 +201,7 @@ namespace Tpetra {
     Export (const Import<LocalOrdinal,GlobalOrdinal,Node> & importer);
 
     //! Destructor.
-    ~Export();
+    virtual ~Export ();
 
     /// \brief Set parameters.
     ///
@@ -256,12 +252,10 @@ namespace Tpetra {
     ArrayView<const int> getExportPIDs() const;
 
     //! The source Map used to construct this Export.
-    Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > 
-    getSourceMap () const;
+    Teuchos::RCP<const map_type> getSourceMap () const;
 
     //! The target Map used to construct this Export.
-    Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > 
-    getTargetMap () const;
+    Teuchos::RCP<const map_type> getTargetMap () const;
 
     //! The Distributor that this Export object uses to move data.
     Distributor & getDistributor() const;
@@ -340,6 +334,7 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
     return Teuchos::rcp (new Export<LocalOrdinal, GlobalOrdinal, Node> (src, tgt));
   }
+
 } // namespace Tpetra
 
 #endif // TPETRA_EXPORT_DECL_HPP

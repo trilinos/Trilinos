@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #include "ml_common.h"
 #if defined(HAVE_ML_MLAPI)
@@ -17,49 +17,49 @@
 
 namespace MLAPI {
 
-// ====================================================================== 
-LinearCombinationMixed operator+(const BaseLinearCombination& left, 
+// ======================================================================
+LinearCombinationMixed operator+(const BaseLinearCombination& left,
                                   const MultiVector& right)
 {
   return(LinearCombinationMixed(left, right, 1.0));
 }
-// ====================================================================== 
-LinearCombinationMixed operator+(const MultiVector& left, 
+// ======================================================================
+LinearCombinationMixed operator+(const MultiVector& left,
                                         const BaseLinearCombination& right)
 {
   std::cout << "HERE" << std::endl;
   return(LinearCombinationMixed(right, left, 1.0));
 }
 
-// ====================================================================== 
-LinearCombinationMixed operator-(const BaseLinearCombination& left, 
+// ======================================================================
+LinearCombinationMixed operator-(const BaseLinearCombination& left,
                                         const MultiVector& right)
 {
   return(LinearCombinationMixed(left, right, -1.0));
 }
-// ====================================================================== 
-LinearCombinationMixed operator-(const MultiVector& left, 
+// ======================================================================
+LinearCombinationMixed operator-(const MultiVector& left,
                                         const BaseLinearCombination& right)
 {
   return(LinearCombinationMixed(right, left, -1.0));
 }
 
-// ====================================================================== 
-LinearCombinationAdd operator+(const BaseLinearCombination& left, 
+// ======================================================================
+LinearCombinationAdd operator+(const BaseLinearCombination& left,
                                        const BaseLinearCombination& right)
 {
   return(LinearCombinationAdd(left, right));
 }
 
-// ====================================================================== 
-LinearCombinationAdd operator-(const BaseLinearCombination& left, 
+// ======================================================================
+LinearCombinationAdd operator-(const BaseLinearCombination& left,
                                        const BaseLinearCombination& right)
 {
   return(LinearCombinationAdd(left, LinearCombinationScaled(right, -1.0)));
 }
 
-// ====================================================================== 
-MultiVectorCombination operator+(const MultiVectorScaled& left, 
+// ======================================================================
+MultiVectorCombination operator+(const MultiVectorScaled& left,
                                  const MultiVectorScaled& right)
 {
   return(MultiVectorCombination(left.GetScalar(),
@@ -68,31 +68,31 @@ MultiVectorCombination operator+(const MultiVectorScaled& left,
                                 right.GetMultiVector()));
 }
 
-// ====================================================================== 
-Residual operator+(const MultiVectorScaled& left, 
+// ======================================================================
+Residual operator+(const MultiVectorScaled& left,
                    const BaseOperatorTimesMultiVector& right)
 {
   return(Residual(left.GetScalar(), left.GetMultiVector(),
                   1.0, right.GetBaseOperator(), right.GetMultiVector()));
 }
 
-// ====================================================================== 
-Residual operator+(const MultiVector& left, 
+// ======================================================================
+Residual operator+(const MultiVector& left,
                    const BaseOperatorTimesMultiVector& right)
 {
   return(Residual(1.0, left,
                   1.0, right.GetBaseOperator(), right.GetMultiVector()));
 }
 
-// ====================================================================== 
-Residual operator-(const MultiVector& left, 
+// ======================================================================
+Residual operator-(const MultiVector& left,
                    const BaseOperatorTimesMultiVector& right)
 {
   return(Residual(1.0, left,
                   -1.0, right.GetBaseOperator(), right.GetMultiVector()));
 }
 
-// ====================================================================== 
+// ======================================================================
 MultiVectorCombination operator+(const MultiVector& x, const MultiVector& y)
 {
   if (x.GetVectorSpace() != y.GetVectorSpace())
@@ -106,7 +106,7 @@ MultiVectorCombination operator+(const MultiVector& x, const MultiVector& y)
   return(MultiVectorCombination(1.0, x, 1.0, y));
 }
 
-// ====================================================================== 
+// ======================================================================
 MultiVectorCombination operator-(const MultiVector& x, const MultiVector& y)
 {
   if (x.GetVectorSpace() != y.GetVectorSpace())
@@ -120,7 +120,7 @@ MultiVectorCombination operator-(const MultiVector& x, const MultiVector& y)
   return(MultiVectorCombination(1.0, x, -1.0, y));
 }
 
-// ====================================================================== 
+// ======================================================================
 MultiVector operator+(const MultiVector& x, const double alpha)
 {
   MultiVector res(x.GetVectorSpace(), x.GetNumVectors());
@@ -129,7 +129,7 @@ MultiVector operator+(const MultiVector& x, const double alpha)
   return(res);
 }
 
-// ====================================================================== 
+// ======================================================================
 MultiVector operator-(const MultiVector& x, const double alpha)
 {
   MultiVector res(x.GetVectorSpace(), x.GetNumVectors());
@@ -138,33 +138,33 @@ MultiVector operator-(const MultiVector& x, const double alpha)
   return(res);
 }
 
-// ====================================================================== 
+// ======================================================================
 MultiVector operator+(const double alpha, const MultiVector& x)
 {
   return(x + alpha);
 }
 
-// ====================================================================== 
+// ======================================================================
 MultiVector operator-(const double alpha, const MultiVector& x)
 {
   return(x - alpha);
 }
 
 #if 0
-// ====================================================================== 
+// ======================================================================
 MultiVector operator+= (const double alpha)
 {
   return(x + alpha);
 }
 
-// ====================================================================== 
+// ======================================================================
 MultiVector operator-= (const double alpha)
 {
   return(x - alpha);
 }
 #endif
 
-// ====================================================================== 
+// ======================================================================
 Operator operator+(const Operator& A, const Operator& B)
 {
   if (A.GetDomainSpace() != B.GetDomainSpace() ||
@@ -178,7 +178,7 @@ Operator operator+(const Operator& A, const Operator& B)
   return(AplusB);
 }
 
-// ====================================================================== 
+// ======================================================================
 Operator operator-(const Operator& A, const Operator& B)
 {
   if (A.GetDomainSpace() != B.GetDomainSpace() ||
@@ -192,34 +192,34 @@ Operator operator-(const Operator& A, const Operator& B)
   return(AplusB);
 }
 
-// ====================================================================== 
+// ======================================================================
 Operator operator*(const Operator& A, const Operator& B)
 {
   if (A.GetDomainSpace() != B.GetRangeSpace())
     ML_THROW("DomainSpace's or RangeSpace's are not compatible",-1);
 
   ML_Operator* ML_AtimesB = ML_Operator_Create(GetML_Comm());
-  ML_2matmult(A.GetML_Operator(), B.GetML_Operator(), ML_AtimesB, 
+  ML_2matmult(A.GetML_Operator(), B.GetML_Operator(), ML_AtimesB,
               GetMatrixType());
   Operator AtimesB(B.GetDomainSpace(),A.GetRangeSpace(), ML_AtimesB,true);
   return(AtimesB);
 }
 
-// ====================================================================== 
-Operator operator*(const Operator& A, const double alpha) 
+// ======================================================================
+Operator operator*(const Operator& A, const double alpha)
 {
   return(GetScaledOperator(A, alpha));
 }
 
-// ====================================================================== 
-Operator operator*(const double alpha, const Operator& A) 
+// ======================================================================
+Operator operator*(const double alpha, const Operator& A)
 {
   return(GetScaledOperator(A, alpha));
 }
 
-// ====================================================================== 
+// ======================================================================
 MultiVector
-operator*(const MultiVector& x, const double alpha) 
+operator*(const MultiVector& x, const double alpha)
 {
   MultiVector y = Duplicate(x);
   for (int v = 0 ; v < x.GetNumVectors() ; ++v)
@@ -228,9 +228,9 @@ operator*(const MultiVector& x, const double alpha)
   return(y);
 }
 
-// ====================================================================== 
+// ======================================================================
 MultiVector
-operator/(const MultiVector& x, const double alpha) 
+operator/(const MultiVector& x, const double alpha)
 {
   if (alpha == 0.0)
     ML_THROW("Division by 0.0", -1);
@@ -241,23 +241,23 @@ operator/(const MultiVector& x, const double alpha)
   return(y);
 }
 
-// ====================================================================== 
+// ======================================================================
 BaseOperatorTimesMultiVector
-operator*(const BaseOperator& A, const MultiVector& x) 
+operator*(const BaseOperator& A, const MultiVector& x)
 {
   return(BaseOperatorTimesMultiVector(A, x));
 }
 
-// ====================================================================== 
+// ======================================================================
 BaseOperatorTimesMultiVector
-operator*(const BaseOperator& A, const BaseLinearCombination& LC) 
+operator*(const BaseOperator& A, const BaseLinearCombination& LC)
 {
   MultiVector v(LC.GetVectorSpace());
   LC.Set(v);
   return(BaseOperatorTimesMultiVector(A, v));
 }
 
-// ====================================================================== 
+// ======================================================================
 double
 operator* (const MultiVector& x, const MultiVector& y)
 {
@@ -267,14 +267,14 @@ operator* (const MultiVector& x, const MultiVector& y)
   return(x.DotProduct(y,0));
 }
 
-// ====================================================================== 
+// ======================================================================
 double
 operator* (const MultiVector& y, const BaseLinearCombination& x)
 {
   return(x * y);
 }
-  
-// ====================================================================== 
+
+// ======================================================================
 double
 operator* (const BaseLinearCombination& x, const MultiVector& y)
 {
@@ -284,7 +284,7 @@ operator* (const BaseLinearCombination& x, const MultiVector& y)
   return(v.DotProduct(y,0));
 }
 
-// ====================================================================== 
+// ======================================================================
 double
 operator* (const BaseLinearCombination& x, const BaseLinearCombination& y)
 {

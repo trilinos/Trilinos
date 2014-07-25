@@ -1,5 +1,5 @@
 /* the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -24,7 +24,7 @@ Modified by:      $Author$
 #include <time.h>
 #include "ml_viz_stats.h"
 #ifdef _MSC_VER
-#pragma comment(lib, "Ws2_32.lib") 
+#pragma comment(lib, "Ws2_32.lib")
 # include <Winsock2.h>
 # include <process.h>
 void sleep(int sec)
@@ -38,18 +38,18 @@ uint32_t ml_unew_val;
 
 
 #ifdef ML_WITH_EPETRA
-extern int ML_Epetra_RowMatrix_getrow(ML_Operator *data, int N_requested_rows, 
-                               int requested_rows[], int allocated_space, 
+extern int ML_Epetra_RowMatrix_getrow(ML_Operator *data, int N_requested_rows,
+                               int requested_rows[], int allocated_space,
                                int columns[], double values[],
                                int row_lengths[]);
-  
+
 extern int ML_Epetra_CrsMatrix_getrow(ML_Operator *data, int N_requested_rows,
-			       int requested_rows[], int allocated_space, 
+			       int requested_rows[], int allocated_space,
 			       int columns[], double values[],
                                int row_lengths[]);
 
 extern int ML_Epetra_VbrMatrix_getrow(ML_Operator *data, int N_requested_rows,
-			       int requested_rows[], int allocated_space, 
+			       int requested_rows[], int allocated_space,
 			       int columns[], double values[],
                                int row_lengths[]);
 
@@ -66,7 +66,7 @@ extern int Epetra_ML_GetCrsDataptrs(ML_Operator *data, double **values, int **co
 #ifdef AZTEC
 
 #ifdef __cplusplus
-extern "C" 
+extern "C"
 {
 #endif
 extern double machine_dependent_second(void);
@@ -109,7 +109,7 @@ static int ml_random_start = 1;
 
 /* ******************************************************************** */
 /* StartTimer                                                           */
-/*   t0   (out) start time                                              */ 
+/*   t0   (out) start time                                              */
 /* ******************************************************************** */
 void StartTimer(double* t0)
 {
@@ -124,7 +124,7 @@ void StartTimer(double* t0)
 /* StopTimer                                                            */
 /*   t0   (in/out) On entry, the start time recorded by a previous call */
 /*                 to either StartTimer() or StopTimer().               */
-/*                 On exit, the stop time.                              */ 
+/*                 On exit, the stop time.                              */
 /*   delta (out)   Difference between current time and that passed      */
 /*                 in via t0.                                           */
 /* ******************************************************************** */
@@ -149,7 +149,7 @@ void StopTimer(double* t0, double *delta)
 /*                                                                      */
 /*   t0        (in) The time to report.  This will be averaged over all */
 /*                  processors.                                         */
-/*   msgString (in) Pointer to message to print with time reported.     */ 
+/*   msgString (in) Pointer to message to print with time reported.     */
 /*   comm      (in) Pointer to an ML communicator.                      */
 /* ******************************************************************** */
 
@@ -165,7 +165,7 @@ void ReportTimer(double t0, const char *msgString, ML_Comm *comm)
   t1 = ML_gsum_double(t0, comm);
   t1 = t1/((double) comm->ML_nprocs);
 # ifdef ML_MPI
-  srct.value = t0; 
+  srct.value = t0;
   srct.rank = comm->ML_mypid;
   MPI_Reduce(&srct,&maxt,1,MPI_DOUBLE_INT,MPI_MAXLOC,0,comm->USR_comm);
   MPI_Reduce(&srct,&mint,1,MPI_DOUBLE_INT,MPI_MINLOC,0,comm->USR_comm);
@@ -185,13 +185,13 @@ void ReportTimer(double t0, const char *msgString, ML_Comm *comm)
 /* is in the list                                                       */
 /* -------------------------------------------------------------------- */
 
-int ML_crude_search(int key, int nlist, int *list) 
+int ML_crude_search(int key, int nlist, int *list)
 {
    int  i, found=0;
 
    for ( i = 0; i < nlist; i++ )
    {
-      if ( list[i] == key ) 
+      if ( list[i] == key )
       {
          found = 1;
          break;
@@ -207,7 +207,7 @@ int ML_crude_search(int key, int nlist, int *list)
 /* corresponding to where it would have been stored.                    */
 /* -------------------------------------------------------------------- */
 
-int ML_fastsorted_search(int key, int nlist, int *list, int init_guess) 
+int ML_fastsorted_search(int key, int nlist, int *list, int init_guess)
 {
    int  nfirst, nlast, nmid, found, index = 0;
 
@@ -251,12 +251,12 @@ int ML_fastsorted_search(int key, int nlist, int *list, int init_guess)
 /* corresponding to where it would have been stored.                    */
 /* -------------------------------------------------------------------- */
 
-int ML_sorted_search(int key, int nlist, int *list) 
+int ML_sorted_search(int key, int nlist, int *list)
 {
    int  nfirst, nlast, nmid, found, index = 0;
 
    if (nlist <= 0) return -1;
-   nfirst = 0;  
+   nfirst = 0;
    nlast  = nlist-1;
    if (key > list[nlast])  return -(nlast+1);
    if (key < list[nfirst]) return -(nfirst+1);
@@ -280,12 +280,12 @@ int ML_sorted_search(int key, int nlist, int *list)
 /* before.                                                              */
 /* -------------------------------------------------------------------- */
 
-int ML_sorted_search2(int key,int nlist,int *list,int cnum,int **map) 
+int ML_sorted_search2(int key,int nlist,int *list,int cnum,int **map)
 {
    int  nfirst, nlast, nmid, found, index = 0, retdata = 0, col, digit, mask;
    int  nbit_int=sizeof(int)*8;
 
-   nfirst = 0;  
+   nfirst = 0;
    nlast  = nlist-1;
    found = 0;
    while ((found == 0) && ((nlast-nfirst)>1)) {
@@ -303,7 +303,7 @@ int ML_sorted_search2(int key,int nlist,int *list,int cnum,int **map)
    if ((map[retdata][col] & mask) == 0) {
       map[retdata][col] = map[retdata][col] | mask;
       return retdata;
-   } else return -1;   
+   } else return -1;
 }
 
 /* ******************************************************************** */
@@ -320,20 +320,20 @@ int ML_search_insert_sort(int key, int *list, int *nlist, int *cnt_list)
    index = ML_sorted_search(key, *nlist, list);
    if (index < 0) {
       index = - (index + 1);
-      if ( n == 0 ) { 
-         index = 0; 
-         list[0] = key; 
+      if ( n == 0 ) {
+         index = 0;
+         list[0] = key;
          if ( cnt_list != 0 ) cnt_list[0] = 1;
       } else {
          for ( i = n-1; i > index; i-- ) list[i+1] = list[i];
-         if ( cnt_list != 0 ) 
+         if ( cnt_list != 0 )
             for ( i = n-1; i > index; i-- ) cnt_list[i+1] = cnt_list[i];
          if (key > list[index]) {
             index++;
             list[index] = key;
-            if ( cnt_list != 0 ) cnt_list[index] = 1; 
+            if ( cnt_list != 0 ) cnt_list[index] = 1;
          } else {
-            list[index+1] = list[index]; 
+            list[index+1] = list[index];
             list[index] = key;
             if ( cnt_list != 0 ) {
                cnt_list[index+1] = cnt_list[index];
@@ -358,7 +358,7 @@ int ML_Check_Context( void *obj )
    ML_Comm *comm;
 
    comm = (ML_Comm *) obj;
-   
+
    id = comm->ML_id;
    switch ( id ) {
       case ML_ID_ML : printf("It is a ML object.\n");
@@ -374,14 +374,14 @@ int ML_Check_Context( void *obj )
 /* sort a given list in increasing order                                */
 /* -------------------------------------------------------------------- */
 
-int ML_sort(int nlist, int *list) 
+int ML_sort(int nlist, int *list)
 {
    int  i, key, *cnt1_array, *cnt2_array, begin, count1, count2;
 
    if ( nlist <= 1 ) return 0;
-   if ( nlist == 2 ) 
+   if ( nlist == 2 )
    {
-      if ( list[0] > list[1] ) 
+      if ( list[0] > list[1] )
       {
          key = list[0];
          list[0] = list[1];
@@ -394,7 +394,7 @@ int ML_sort(int nlist, int *list)
    count2 = 0;
    cnt1_array = (int*) ML_allocate( nlist * sizeof(int) );
    cnt2_array = (int*) ML_allocate( nlist * sizeof(int) );
-   for ( i = 1; i < nlist; i++ ) 
+   for ( i = 1; i < nlist; i++ )
    {
       if ( list[i] <  key ) cnt1_array[count1++] = list[i];
       if ( list[i] >= key ) cnt2_array[count2++] = list[i];
@@ -406,7 +406,7 @@ int ML_sort(int nlist, int *list)
    ML_free( cnt2_array );
    ML_sort( count1, list );
    begin = count1+1;
-   for ( i = count1+1; i < nlist; i++ ) 
+   for ( i = count1+1; i < nlist; i++ )
    {
       if ( list[i] != key ) break;
       else                  { begin++; count2--; }
@@ -419,15 +419,15 @@ int ML_sort(int nlist, int *list)
 /* sort a given list in increasing order                                */
 /* -------------------------------------------------------------------- */
 
-int ML_split_dsort(double *dlist, int nlist, int *ilist, int limit) 
+int ML_split_dsort(double *dlist, int nlist, int *ilist, int limit)
 {
    int    itemp, *iarray1, *iarray2, count1, count2, i;
    double dtemp, *darray1, *darray2;
 
    if ( nlist <= 1 ) return 0;
-   if ( nlist == 2 ) 
+   if ( nlist == 2 )
    {
-      if ( dlist[0] < dlist[1] ) 
+      if ( dlist[0] < dlist[1] )
       {
          dtemp = dlist[0]; dlist[0] = dlist[1]; dlist[1] = dtemp;
          itemp = ilist[0]; ilist[0] = ilist[1]; ilist[1] = itemp;
@@ -448,14 +448,14 @@ int ML_split_dsort(double *dlist, int nlist, int *ilist, int limit)
    }
    dtemp  = dlist[0];
    itemp  = ilist[0];
-   for ( i = 1; i < nlist; i++ ) 
+   for ( i = 1; i < nlist; i++ )
    {
-      if (dlist[i] >= dtemp  ) 
+      if (dlist[i] >= dtemp  )
       {
          darray1[count1] = dlist[i];
          iarray1[count1++] = ilist[i];
-      } 
-      else if (dlist[i] <  dtemp) 
+      }
+      else if (dlist[i] <  dtemp)
       {
          darray2[count2] = dlist[i];
          iarray2[count2++] = ilist[i];
@@ -463,12 +463,12 @@ int ML_split_dsort(double *dlist, int nlist, int *ilist, int limit)
    }
    dlist[count1] = dtemp;
    ilist[count1] = itemp;
-   for ( i = 0; i < count1; i++ ) 
+   for ( i = 0; i < count1; i++ )
    {
       dlist[i] = darray1[i];
       ilist[i] = iarray1[i];
    }
-   for ( i = 0; i < count2; i++ ) 
+   for ( i = 0; i < count2; i++ )
    {
       dlist[count1+1+i] = darray2[i];
       ilist[count1+1+i] = iarray2[i];
@@ -610,7 +610,7 @@ int ML_selection_dsort(double *vals, int length, int *cols, int limit)
 /* randomize an integer array                                           */
 /* -------------------------------------------------------------------- */
 
-int ML_random_init() 
+int ML_random_init()
 {
 /*
    double stime;
@@ -622,7 +622,7 @@ int ML_random_init()
 /* ******************************************************************** */
 /* randomize an integer array                                           */
 /* -------------------------------------------------------------------- */
-int ML_randomize(int nlist, int *list) 
+int ML_randomize(int nlist, int *list)
 {
    int    i, nm1, iran1, iran2, itmp;
 
@@ -737,7 +737,7 @@ void ML_az_dsort(double list[], int N)
 
     list[ 0] = RR;
 
-} 
+}
 
 /* ******************************************************************** */
 /* sort an integer array                                                */
@@ -960,7 +960,7 @@ void ML_az_sort(int list[], int N, int list2[], double list3[])
     list[ 0] = RR;
   }
 
-} 
+}
 
 /* ******************************************************************** */
 /* sort a double array                                                  */
@@ -1220,8 +1220,8 @@ void ML_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
   int     dummy_add;
   int     debug = ML_FALSE;
   unsigned int length, size;
-  
-  
+
+
   USR_REQ     *request;  /* Message handle */
 
   /**************************** execution begins ****************************/
@@ -1235,7 +1235,7 @@ void ML_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
 
   /* Compute the global maximum message buffer size needed */
 
-  
+
   for (n = 0; n < num_neighbors; n++) {
     max_buffer_size += actual_recv_length[n];
   }
@@ -1288,7 +1288,7 @@ void ML_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
     allowed_buff_size  = (int) floor(((double) ML_MAX_MSG_BUFF_SIZE /
                                       (double) (3*element_size)));
 
-    messg_size_doubles = (int) floor((double) allowed_buff_size / 
+    messg_size_doubles = (int) floor((double) allowed_buff_size /
                                       (double) max_neighbors);
 
     number_of_messages = (int) ceil((double) max_messg_size /
@@ -1308,7 +1308,7 @@ void ML_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
 
     if (ibuffer == obuffer) {
        /*
-        * The input and output buffers are the same. Allocate a temporary 
+        * The input and output buffers are the same. Allocate a temporary
         * send buffer that can hold all out going messages.
         * Then copy all info to this buffer.
         */
@@ -1354,9 +1354,9 @@ void ML_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
 
           length = messg_size_doubles*element_size;
 
-          char_ptr = (char *) (&obuffer[start_recv_proc[n]*element_size] + 
+          char_ptr = (char *) (&obuffer[start_recv_proc[n]*element_size] +
                                        doubles_sent*element_size);
-          comm->USR_irecvbytes((void *) char_ptr, length, &messg_from, 
+          comm->USR_irecvbytes((void *) char_ptr, length, &messg_from,
                                &dummy_int,  comm->USR_comm, request+n);
         }
         else if (doubles_sent+messg_size_doubles >= total_doubles_to_recv &&
@@ -1366,9 +1366,9 @@ void ML_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
 
           length = (total_doubles_to_recv - doubles_sent)*element_size;
 
-          char_ptr = (char *) (&obuffer[start_recv_proc[n]*element_size] + 
+          char_ptr = (char *) (&obuffer[start_recv_proc[n]*element_size] +
                                doubles_sent*element_size);
-          comm->USR_irecvbytes((void *) char_ptr, length, &messg_from, 
+          comm->USR_irecvbytes((void *) char_ptr, length, &messg_from,
                                &dummy_int,  comm->USR_comm, request+n);
         }
         else if (finished_recv_messg[n] == ML_TRUE) {
@@ -1376,7 +1376,7 @@ void ML_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
           /* read integer dummy message */
 
           length = sizeof(int);
-          comm->USR_irecvbytes((void *) &dummy_add, length, &messg_from, 
+          comm->USR_irecvbytes((void *) &dummy_add, length, &messg_from,
                                 &dummy_int,  comm->USR_comm, request+n);
         }
       }
@@ -1392,7 +1392,7 @@ void ML_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
           /* send out messg_size_doubles bytes */
 
           length = messg_size_doubles*element_size;
-          char_ptr = (char *) (&send_buffer[element_size*start_send_proc[n]] + 
+          char_ptr = (char *) (&send_buffer[element_size*start_send_proc[n]] +
                                doubles_sent*element_size);
           (void) comm->USR_sendbytes((void *) char_ptr, length, dest, type,
 				     comm->USR_comm);
@@ -1404,9 +1404,9 @@ void ML_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
 
           length = (total_doubles_to_send - doubles_sent)*element_size;
 
-          char_ptr = (char *) (&send_buffer[start_send_proc[n]*element_size] + 
+          char_ptr = (char *) (&send_buffer[start_send_proc[n]*element_size] +
                                doubles_sent*element_size);
-          (void) comm->USR_sendbytes((void *) char_ptr, length, dest, type, 
+          (void) comm->USR_sendbytes((void *) char_ptr, length, dest, type,
 				     comm->USR_comm);
 
           finished_send_messg[n] = ML_TRUE;
@@ -1416,7 +1416,7 @@ void ML_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
           /* send out integer dummy message */
 
           length = sizeof(int);
-          (void) comm->USR_sendbytes((void *) &dummy_add, length, dest, type, 
+          (void) comm->USR_sendbytes((void *) &dummy_add, length, dest, type,
 				     comm->USR_comm);
         }
       }
@@ -1433,13 +1433,13 @@ void ML_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
           /* read messg_size_doubles bytes */
 
           length = messg_size_doubles*element_size;
-          char_ptr = (char *) (&obuffer[start_recv_proc[n]*element_size] + 
+          char_ptr = (char *) (&obuffer[start_recv_proc[n]*element_size] +
                                doubles_sent*element_size);
           size =  comm->USR_waitbytes((void *) char_ptr, length, &messg_from,
-                             &messg_type, comm->USR_comm, request+n); 
+                             &messg_type, comm->USR_comm, request+n);
 
           if (length > size) {
-           (void) fprintf(stderr,"%sE4ROR on node %d\nwait failed, message type = %d    %d %d (%d)\n", yo, comm->ML_mypid, 
+           (void) fprintf(stderr,"%sE4ROR on node %d\nwait failed, message type = %d    %d %d (%d)\n", yo, comm->ML_mypid,
                           messg_type,length,size,messg_from);
            exit(-1);
           }
@@ -1450,13 +1450,13 @@ void ML_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
           /* read actual_recv_length[n] - doubles_sent bytes */
 
           length = (total_doubles_to_recv - doubles_sent)*element_size;
-          char_ptr = (char *) (&obuffer[start_recv_proc[n]*element_size] + 
+          char_ptr = (char *) (&obuffer[start_recv_proc[n]*element_size] +
                                doubles_sent*element_size);
           size =  comm->USR_waitbytes((void *) char_ptr, length, &messg_from,
-                                      &messg_type, comm->USR_comm, request+n); 
+                                      &messg_type, comm->USR_comm, request+n);
 
           if (length > size) {
-           (void) fprintf(stderr,"%sE3ROR on node %d\nwait failed, message type = %d   %d %d  (%d)\n", yo, comm->ML_mypid, 
+           (void) fprintf(stderr,"%sE3ROR on node %d\nwait failed, message type = %d   %d %d  (%d)\n", yo, comm->ML_mypid,
                           messg_type,length,size,messg_from);
            exit(-1);
           }
@@ -1469,10 +1469,10 @@ void ML_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
 
           length = sizeof(int);
           size =  comm->USR_waitbytes((void *) &dummy_add, length, &messg_from,
-                             &messg_type, comm->USR_comm, request+n); 
+                             &messg_type, comm->USR_comm, request+n);
 
           if (length > size) {
-           (void) fprintf(stderr,"%sE2ROR on node %d\nwait failed, message type = %d %d %d (%d)\n", yo, comm->ML_mypid, 
+           (void) fprintf(stderr,"%sE2ROR on node %d\nwait failed, message type = %d %d %d (%d)\n", yo, comm->ML_mypid,
                           messg_type,length,size,messg_from);
            exit(-1);
           }
@@ -1496,7 +1496,7 @@ void ML_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
 
   else {
      type++;
-     
+
      if (ibuffer == obuffer ) {
         /* Allocate a send buffer, if the input */
         /* and output buffers are the same.     */
@@ -1509,21 +1509,21 @@ void ML_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
            (void) fprintf(stderr,"no space ML_splitup_big_msg: send_buffer \n");
            exit(-1);
         }
-   
-        for (n = 0; n < (int) (total_send_size*element_size) ; n++) 
+
+        for (n = 0; n < (int) (total_send_size*element_size) ; n++)
            send_buffer[n] = ibuffer[n];
      }
      else send_buffer = ibuffer;
-     
+
      /* post receives for message */
-     
+
      j = 0;
      for (n = 0; n < num_neighbors; n++) {
         messg_from = proc_num_neighbor[n];
         dummy_int = type;
         size      = actual_recv_length[n]*element_size;
 
-        comm->USR_irecvbytes((void *) &obuffer[j], size, &messg_from, 
+        comm->USR_irecvbytes((void *) &obuffer[j], size, &messg_from,
                              &dummy_int, comm->USR_comm, request+n);
         j += actual_recv_length[n]*element_size;
      }
@@ -1533,9 +1533,9 @@ void ML_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
      for (n = 0; n < num_neighbors; n++) {
         size = actual_send_length[n]*element_size;
         (void) comm->USR_sendbytes((void *) &send_buffer[start_send_proc[n]*
-                             element_size], size, proc_num_neighbor[n], type, 
+                             element_size], size, proc_num_neighbor[n], type,
 			     comm->USR_comm);
-     }             
+     }
 
      /* wait for all messages */
 
@@ -1545,9 +1545,9 @@ void ML_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
         rtype     = type;
         size      = actual_recv_length[n]*element_size;
         length =  comm->USR_waitbytes((void *) &obuffer[j], size, &messg_from,
-                                      &rtype, comm->USR_comm, request+n); 
+                                      &rtype, comm->USR_comm, request+n);
         if ((length != size) && (size !=0) ) {
-           (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message type = %d    %d %d (%d)\n", yo, comm->ML_mypid, 
+           (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message type = %d    %d %d (%d)\n", yo, comm->ML_mypid,
                           rtype,length,size,messg_from);
            exit(-1);
         }
@@ -1777,7 +1777,7 @@ void ML_set_random_seed(int seed){
 
 
 
-void ML_random_vec(double u[], int N, ML_Comm *comm) 
+void ML_random_vec(double u[], int N, ML_Comm *comm)
 
 /*******************************************************************************
 
@@ -1857,7 +1857,7 @@ double ML_srandom1(int *seed)
 
 /* Essentially, like printf , but we exit at the end */
 #include <stdarg.h>
-void pr_error(const char *fmt,  ... ) 
+void pr_error(const char *fmt,  ... )
 {
   char ml_message_string[800];
   va_list ap;
@@ -1908,7 +1908,7 @@ void ML_serial_start(ML_Comm *comm)
                         comm->USR_comm, &request);
    }
 }
-void ML_serial_end(ML_Comm *comm) 
+void ML_serial_end(ML_Comm *comm)
 {
    int data = 0, type = SERIAL_TYPE, neighbor;
 
@@ -1983,13 +1983,13 @@ void ML_BreakForDebugger(ML_Comm *comm)
 }
 
 /* Function to sync up processors and execute one line at a time. */
-                                                                                
+
 void ML_Pause(ML_Comm *comm)
 {
   char go = ' ';
 
   ML_Comm_Barrier(comm);
-                                                                                
+
   if (comm->ML_mypid == 0) {
       printf( "** Press enter to continue > "); fflush(stdout);
       scanf("%c",&go);
@@ -2068,7 +2068,7 @@ double ML_gmin_double(double val, ML_Comm *comm)
 /* Albuquerque, 30-Oct-03                                               */
 /* ******************************************************************** */
 
-int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix, 
+int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
                                            const char label[],
                                            int *global_row_ordering,
                                            int *global_col_ordering)
@@ -2086,7 +2086,7 @@ int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
    int    is_globalCols_allocated = 0;
    int    length=0;
    ML_Comm * comm = matrix->comm;
-   
+
    NglobalRows = matrix->outvec_leng;
    ML_gsum_scalar_int(&NglobalRows,&i, comm);
    NglobalCols = matrix->invec_leng;
@@ -2099,13 +2099,13 @@ int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
 
    if( global_col_ordering == NULL ) {
      if (NglobalRows == NglobalCols)
-       global_col_ordering = global_row_ordering; 
+       global_col_ordering = global_row_ordering;
      else {
        length = ML_build_global_numbering(matrix, &global_col_ordering,"cols");
        is_globalCols_allocated = 1;
      }
    }
- 
+
    if ( matrix->getrow == NULL) return(1);
 
    MyPID = comm->ML_mypid;
@@ -2134,7 +2134,7 @@ int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
        } else {
          fid = stdout;
        }
- 
+
        if( MyPID == 0 ) {
          fprintf(fid,"%%N_global_rows = %d\n", NglobalRows );
          fprintf(fid,"%%N_global_cols = %d\n", NglobalCols );
@@ -2145,7 +2145,7 @@ int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
          fprintf(fid,"%% NOTE: If there are no entries in column %d or row %d,\n",NglobalCols,NglobalRows);
          fprintf(fid,"%% Matlab may get the matrix dimensions wrong.\n");
        }
-       
+
        fprintf( fid,
 		"%%Writing data for processor %d\n%%N_rows = %d\n%%outvec_leng = %d\n%%invec_leng = %d\n",
 		iproc,
@@ -2174,7 +2174,7 @@ int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
    } /*for ( iproc=0 ; iproc<NumProc ; iproc++ ) */
 
    /* free memory and return */
-   
+
    fflush(stdout);
    ML_free(val);
    ML_free(bindx);
@@ -2217,7 +2217,7 @@ int ML_build_global_numbering( ML_Operator *Amat,
   ML_gsum_scalar_int(&NglobalRows,&i, comm);
   NglobalCols = Amat->invec_leng;
   ML_gsum_scalar_int(&NglobalCols,&i, comm);
-  
+
   if (strcmp(rowsOrCols,"cols") == 0 ||  strcmp(rowsOrCols,"columns") == 0) {
     Nloc = Amat->invec_leng;
     findingRows = 0;
@@ -2247,7 +2247,7 @@ int ML_build_global_numbering( ML_Operator *Amat,
       ML_CommInfoOP_Compute_TotalRcvLength(Amat->getrow->pre_comm);
     Nghosts = Amat->getrow->pre_comm->total_rcv_length;
   }
-  
+
   /* allocate +1 because it is possible that some procs will have
      no rows at all (with ParMETIS) */
 
@@ -2273,7 +2273,7 @@ int ML_build_global_numbering( ML_Operator *Amat,
      (ML uses an order which is not the physical one). So, don't
      be surprised that a tridiagonal matrix (before AZ_transform)
      is no longer tridiagonal, for instance... */
-    
+
   for( i=0 ; i<Nloc ; i++ ) dtemp[i] = 1.0*(i+offset);
   for (i=0 ; i<Nghosts; i++) dtemp[i+Nloc] = -1;
 
@@ -2284,9 +2284,9 @@ int ML_build_global_numbering( ML_Operator *Amat,
 		   comm, ML_OVERWRITE,NULL);
 
   /* allocates memory for global_ordering (+1 as before) */
-  
+
   global_numbering = (int *)ML_allocate(sizeof(int)*(Nloc+Nghosts+1));
-       
+
   if( global_numbering == NULL )
     pr_error("*ML*ERR* not enough memory to allocated %d bytes\n*ML*ERR* (file %s, line %d)\n",
 	     (Nloc+Nghosts) * (int)sizeof(int),
@@ -2299,11 +2299,11 @@ int ML_build_global_numbering( ML_Operator *Amat,
     global_numbering[i] = (int)dtemp[i];
 
   *pglobal_numbering = global_numbering;
-  
+
   ML_free( dtemp ); dtemp = NULL;
 
   return Nloc+Nghosts;
-    
+
 } /* ML_build_global_numbering() */
 
 /*******************************************************************************
@@ -2388,7 +2388,7 @@ double ML_Global_Standard_Deviation(double sample, int n,
 
   sample = sample*sample;
   sum = ML_gsum_double(sample, comm);
- 
+
   return sqrt(sum / (n-1));
 }
 
@@ -2402,7 +2402,7 @@ int ML_SetupCoordinates(ML *ml_ptr, int level, int NumPDEEqns,
   double *x_coord, *y_coord, *z_coord, *tmp;
   ML_Operator* AAA;
   ML_Aggregate_Viz_Stats *grid_info;
-  
+
   NumDimensions  = 0;
 
   if (!(in_x_coord == 0 && in_y_coord == 0 && in_z_coord == 0))
@@ -2413,29 +2413,29 @@ int ML_SetupCoordinates(ML *ml_ptr, int level, int NumPDEEqns,
     n = AAA->invec_leng;
     Nghost = 0;
 
-    if (AAA->getrow->pre_comm) 
+    if (AAA->getrow->pre_comm)
     {
       if (AAA->getrow->pre_comm->total_rcv_length <= 0)
         ML_CommInfoOP_Compute_TotalRcvLength(AAA->getrow->pre_comm);
       Nghost = AAA->getrow->pre_comm->total_rcv_length;
     }
 
-    tmp = (double *) ML_allocate(sizeof(double) * (Nghost+n));
+    tmp = (double *) ML_allocate(sizeof(double) * (Nghost+n+1));
     for (i = 0 ; i < Nghost + n ; ++i)
       tmp[i] = 0.0;
 
     n /= NumPDEEqns;
     Nghost /= NumPDEEqns;
 
-    if (in_x_coord) 
+    if (in_x_coord)
     {
       NumDimensions++;
-      x_coord = (double *) ML_allocate(sizeof(double) * (Nghost+n));
+      x_coord = (double *) ML_allocate(sizeof(double) * (Nghost+n+1));
 
       for (i = 0 ; i < n ; ++i)
         tmp[i * NumPDEEqns] = in_x_coord[i];
 
-      ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns * n, 
+      ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns * n,
                        AAA->comm, ML_OVERWRITE,NULL);
 
       for (i = 0 ; i < n + Nghost ; ++i)
@@ -2444,15 +2444,15 @@ int ML_SetupCoordinates(ML *ml_ptr, int level, int NumPDEEqns,
       grid_info->x = x_coord;
     } /* if (in_x_coord) */
 
-    if (in_y_coord) 
+    if (in_y_coord)
     {
       NumDimensions++;
-      y_coord = (double *) ML_allocate(sizeof(double) * (Nghost+n));
+      y_coord = (double *) ML_allocate(sizeof(double) * (Nghost+n+1));
 
       for (i = 0 ; i < n ; ++i)
         tmp[i * NumPDEEqns] = in_y_coord[i];
 
-      ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns * n, 
+      ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns * n,
                        AAA->comm, ML_OVERWRITE,NULL);
 
       for (i = 0 ; i < n + Nghost ; ++i)
@@ -2461,15 +2461,15 @@ int ML_SetupCoordinates(ML *ml_ptr, int level, int NumPDEEqns,
       grid_info->y = y_coord;
     } /* if (in_y_coord) */
 
-    if (in_z_coord) 
+    if (in_z_coord)
     {
       NumDimensions++;
-      z_coord = (double *) ML_allocate(sizeof(double) * (Nghost+n));
+      z_coord = (double *) ML_allocate(sizeof(double) * (Nghost+n+1));
 
       for (i = 0 ; i < n ; ++i)
         tmp[i * NumPDEEqns] = in_z_coord[i];
 
-      ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns * n, 
+      ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns * n,
                        AAA->comm, ML_OVERWRITE,NULL);
 
       for (i = 0 ; i < n + Nghost ; ++i)
@@ -2595,7 +2595,7 @@ static int ML_estimate_avg_nz_per_row_nosubmatrix(ML_Operator * matrix, double *
   else if (matrix->getrow->func_ptr == ML_Epetra_CrsMatrix_getrow) {
     /* Case #3: EpetraCrsMatrix */
     rv=Epetra_ML_GetCrsDataptrs(matrix,&values,&bindx,&rowptr);
-    if(rv == 0) 
+    if(rv == 0)
       (*total_nz) = N + rowptr[N]-rowptr[0];
   }
 #endif
@@ -2626,8 +2626,8 @@ int ML_estimate_avg_nz_per_row(ML_Operator * matrix, double * avg_nz) {
   /* Count the parent matrix */
   rv=ML_estimate_avg_nz_per_row_nosubmatrix(matrix,&sub_nz,&sub_rows);
   total_rows += sub_rows;
-  total_nz   += sub_nz;    
-  
+  total_nz   += sub_nz;
+
   /* Loop through all the submatrices, if any */
   next = matrix->sub_matrix;
   while ( rv==0 && (next != NULL) ) {
@@ -2638,7 +2638,7 @@ int ML_estimate_avg_nz_per_row(ML_Operator * matrix, double * avg_nz) {
 
     /* Running statistics */
     total_rows+= sub_rows;
-    total_nz  += sub_nz;    
+    total_nz  += sub_nz;
     next       = next->sub_matrix;
   }
 
@@ -2648,7 +2648,7 @@ int ML_estimate_avg_nz_per_row(ML_Operator * matrix, double * avg_nz) {
     cols  = (int    *) ML_allocate(allocated * sizeof(int) );
     vals  = (double *) ML_allocate(allocated * sizeof(double));
 
-    row = 0; 
+    row = 0;
     ML_get_matrix_row(matrix,1,&row,&allocated, &cols, &vals, &i, 0);
     row = (matrix->getrow->Nrows-1)/2;
     ML_get_matrix_row(matrix,1,&row,&allocated, &cols, &vals, &j, 0);
@@ -2657,7 +2657,7 @@ int ML_estimate_avg_nz_per_row(ML_Operator * matrix, double * avg_nz) {
     (*avg_nz) = ((double)i+j+k)/3.0;
 
     /* Sanity checking in case one row is really, really different from the other two.
-       This is an attempt to avoid allocated an absurd amount of memory for the MMM if 
+       This is an attempt to avoid allocated an absurd amount of memory for the MMM if
        the problem has one really long row.  Rows of length 1 don't count for this purpose. */
     if(i > 1 && j > 1 && (*avg_nz) > 10*(i+j))  (*avg_nz) = ((double)i+j)/2.0;
     if(j > 1 && k > 1 && (*avg_nz) > 10*(j+k))  (*avg_nz) = ((double)j+k)/2.0;
@@ -2668,7 +2668,7 @@ int ML_estimate_avg_nz_per_row(ML_Operator * matrix, double * avg_nz) {
   }
   else{
     /* All of the parent/submatrix getrows worked, so calculate the nz that way.*/
-    if (total_rows>0) 
+    if (total_rows>0)
       (*avg_nz)= total_nz / total_rows;
   }
   return 0;

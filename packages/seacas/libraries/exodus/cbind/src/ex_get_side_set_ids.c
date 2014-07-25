@@ -48,8 +48,7 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include "exodusII.h"                   // for ex_get_ids, etc
 
 /*!
  *  reads the side set ids from the database

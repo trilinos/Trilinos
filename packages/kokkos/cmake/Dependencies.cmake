@@ -7,9 +7,11 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   Compat                compat            EX       OPTIONAL
   Classic               classic           PS       OPTIONAL
   Containers            containers        EX       OPTIONAL
+  Algorithms            algorithms        EX       OPTIONAL
   LinAlg                linalg            EX       OPTIONAL
   Example               example           EX       OPTIONAL
   MpiComm               mpicomm           EX       OPTIONAL
+  Task                  task              EX       OPTIONAL
   )
 
 SET(LIB_REQUIRED_DEP_PACKAGES )

@@ -401,11 +401,11 @@ applyImpl (const MV& X,
     // with its output.
     RCP<MV> Y_tmp;
     if (beta == STS::zero () && Y.isConstantStride () && alpha == STS::one ()) {
-      Y = X;
+      deep_copy(Y, X);
       Y_tmp = rcpFromRef (Y);
     }
     else {
-      Y_tmp = rcp (new MV (X)); // constructor copies X
+      Y_tmp = rcp (new MV (createCopy(X))); // constructor copies X
       if (alpha != STS::one ()) {
         Y_tmp->scale (alpha);
       }
@@ -428,7 +428,7 @@ applyImpl (const MV& X,
       Y.update (alpha, *Y_tmp, beta);
     }
     else if (! Y.isConstantStride ()) {
-      Y = *Y_tmp;
+      deep_copy(Y, *Y_tmp);
     }
   }
 }
@@ -510,17 +510,30 @@ template<class MatrixType>
 std::string
 DenseSolver<MatrixType, false>::description () const
 {
-  std::ostringstream oss;
-  oss << "Ifpack2::Details::DenseSolver: ";
-  oss << "{";
+  std::ostringstream out;
+
+  // Output is a valid YAML dictionary in flow style.  If you don't
+  // like everything on a single line, you should call describe()
+  // instead.
+  out << "\"Ifpack2::Details::DenseSolver\": ";
+  out << "{";
   if (this->getObjectLabel () != "") {
-    oss << "label: " << this->getObjectLabel () << ", ";
+    out << "Label: \"" << this->getObjectLabel () << "\", ";
   }
-  oss << "initialized: " << (isInitialized_ ? "true" : "false")
-      << ", "
-      << "computed: " << (isComputed_ ? "true" : "false")
-      << "}";
-  return oss.str ();
+  out << "Initialized: " << (isInitialized () ? "true" : "false") << ", "
+      << "Computed: " << (isComputed () ? "true" : "false") << ", ";
+
+  if (A_.is_null ()) {
+    out << "Matrix: null";
+  }
+  else {
+    out << "Matrix: not null"
+        << ", Global matrix dimensions: ["
+        << A_->getGlobalNumRows () << ", " << A_->getGlobalNumCols () << "]";
+  }
+
+  out << "}";
+  return out.str ();
 }
 
 
@@ -854,5 +867,9 @@ describe (Teuchos::FancyOStream& out,
 
 } // namespace Details
 } // namespace Ifpack2
+
+#define IFPACK2_DETAILS_DENSESOLVER_INSTANT(S,LO,GO,N)                  \
+  template class Ifpack2::Details::DenseSolver< Tpetra::CrsMatrix<S, LO, GO, N> >; \
+  template class Ifpack2::Details::DenseSolver< Tpetra::RowMatrix<S, LO, GO, N> >;
 
 #endif // IFPACK2_DETAILS_DENSESOLVER_HPP

@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #include "ml_common.h"
 #ifdef HAVE_ML_MLAPI
@@ -57,8 +57,8 @@ void LoadBalanceInverseOperator::Reshape()
 }
 
 
-void LoadBalanceInverseOperator::Reshape(Ifpack_Preconditioner* prec, 
-                                         const LoadBalanceOperator& Op, 
+void LoadBalanceInverseOperator::Reshape(Ifpack_Preconditioner* prec,
+                                         const LoadBalanceOperator& Op,
                                          const bool ownership)
 {
   ResetTimer();
@@ -108,7 +108,7 @@ const LoadBalanceOperator& LoadBalanceInverseOperator::GetOperator() const
   return(Op_);
 }
 
-Teuchos::RCP<Ifpack_Preconditioner>& LoadBalanceInverseOperator::GetRCPData() 
+Teuchos::RCP<Ifpack_Preconditioner>& LoadBalanceInverseOperator::GetRCPData()
 {
   return(RCPData_);
 }

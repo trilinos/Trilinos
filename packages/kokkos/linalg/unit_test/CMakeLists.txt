@@ -2,16 +2,12 @@ INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../TPL)
 
 IF(Kokkos_ENABLE_Cuda)
-  # mfh 01 Jan 2014: This is magic boilerplate I found in
-  # kokkos/core/unit_test/CMakeLists.txt.  I have no idea
-  # if it works.
-  #
   # Add subpackage include path dependencies for CUDA_COMPILE().
-  CUDA_INCLUDE_DIRECTORIES( "." )
-  CUDA_INCLUDE_DIRECTORIES( "." )
+  CUDA_INCLUDE_DIRECTORIES( ${KokkosLinAlg_INCLUDE_DIRS} )
+  CUDA_INCLUDE_DIRECTORIES( ${KokkosCore_INCLUDE_DIRS} )
+  CUDA_INCLUDE_DIRECTORIES( ${Gtest_INCLUDE_DIRS} )
   CUDA_COMPILE(OBJECTS_CUDA TestArithTraitsCuda.cu)
 ENDIF()
 
@@ -19,7 +15,6 @@ ENDIF()
 SET(SOURCES
   UnitTestMain.cpp 
   TestCrsMatrix.cpp
-  ../../TPL/gtest/gtest-all.cc
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(

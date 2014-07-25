@@ -73,6 +73,10 @@ ENDIF()
 # CUDA library
 IF (KokkosClassic_ENABLE_Thrust OR
     (KokkosClassic_ENABLE_KokkosCompat AND Kokkos_ENABLE_Cuda))
+  # Add MPI include directory to NVCC flags if MPI enabled
+    IF( TPL_ENABLE_MPI )
+      CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
+    ENDIF()
   PACKAGE_ADD_CUDA_LIBRARY(tpetra_cuda SOURCES ${CUDA_SOURCES})
 ENDIF()
 
@@ -81,3 +85,6 @@ TRIBITS_ADD_LIBRARY(
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
+
+# We need to set the linker language explicitly here for CUDA builds.
+SET_PROPERTY(TARGET tpetra APPEND PROPERTY LINKER_LANGUAGE CXX)

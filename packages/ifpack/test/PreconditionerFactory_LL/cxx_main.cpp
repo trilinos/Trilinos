@@ -222,7 +222,7 @@ int main(int argc, char *argv[])
 #endif
 
   if (Comm.MyPID() == 0)
-    cout << "Test `PrecondititonerFactory.exe' passed!" << endl;
+    cout << "Test `PrecondititonerFactory_LL.exe' passed!" << endl;
 
 
 

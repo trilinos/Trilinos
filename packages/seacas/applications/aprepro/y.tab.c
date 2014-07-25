@@ -629,7 +629,7 @@ static const yytype_uint16 yyrline[] =
      252,   255,   257,   260,   263,   266,   269,   275,   276,   277,
      278,   279,   281,   283,   285,   287,   289,   291,   293,   294,
      295,   296,   303,   310,   311,   312,   315,   316,   321,   322,
-     324,   336
+     324,   325
 };
 #endif
 
@@ -2609,29 +2609,24 @@ yyreduce:
   case 120:
 /* Line 1787 of yacc.c  */
 #line 324 "aprepro.y"
-    { array *arr = (yyvsp[(1) - (6)].tptr)->value.avar;
-                                      int cols = arr->cols;
-                                      int rows = arr->rows;
-                                      if ((yyvsp[(3) - (6)].val) < rows && (yyvsp[(5) - (6)].val) < cols) {
-                                        int offset = (yyvsp[(3) - (6)].val)*cols+(yyvsp[(5) - (6)].val);
-                                        (yyval.val) = (yyvsp[(1) - (6)].tptr)->value.avar->data[offset];
-                                      }
-                                      else {
-                                        yyerror("Row or Column index out of range"); 
-                                        yyerrok;
-                                      }
-                                    }
+    { (yyval.val) = array_value((yyvsp[(1) - (6)].tptr)->value.avar, (yyvsp[(3) - (6)].val), (yyvsp[(5) - (6)].val)); }
     break;
 
   case 121:
 /* Line 1787 of yacc.c  */
-#line 337 "aprepro.y"
-    {                               array *arr = (yyvsp[(1) - (8)].tptr)->value.avar;
+#line 326 "aprepro.y"
+    { (yyval.val) = (yyvsp[(8) - (8)].val);
+				    array *arr = (yyvsp[(1) - (8)].tptr)->value.avar;
                                     int cols = arr->cols;
                                     int rows = arr->rows;
-				    (yyval.val) = (yyvsp[(8) - (8)].val);
-				    if ((yyvsp[(3) - (8)].val) < rows && (yyvsp[(5) - (8)].val) < cols) {
-                                      int offset = (yyvsp[(3) - (8)].val)*cols+(yyvsp[(5) - (8)].val);
+				    int row = (yyvsp[(3) - (8)].val);
+				    int col = (yyvsp[(5) - (8)].val);
+				    if (ap_options.one_based_index == True) {
+				      row--;
+				      col--;
+				    }
+				    if (row < rows && col < cols) {
+                                      int offset = row*cols+col;
                                       (yyvsp[(1) - (8)].tptr)->value.avar->data[offset] = (yyvsp[(8) - (8)].val);
                                     }
                                     else {
@@ -2643,7 +2638,7 @@ yyreduce:
 
 
 /* Line 1787 of yacc.c  */
-#line 2647 "y.tab.c"
+#line 2642 "y.tab.c"
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -2875,7 +2870,7 @@ yyreturn:
 
 
 /* Line 2050 of yacc.c  */
-#line 353 "aprepro.y"
+#line 348 "aprepro.y"
 
 # include "lex.yy.c"
 

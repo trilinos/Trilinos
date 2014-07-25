@@ -21,7 +21,7 @@
 //  
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 // (etphipp@sandia.gov).
@@ -34,7 +34,7 @@ template <typename S>
 inline Sacado::Tay::CacheTaylor<T>::CacheTaylor(const Expr<S>& x) : 
   Expr< CacheTaylorImplementation<T> >(x.degree(), T(0.))
 {
-  unsigned int d = this->degree();
+  int d = this->degree();
 
   x.allocateCache(d);
 
@@ -56,7 +56,7 @@ Sacado::Tay::CacheTaylor<T>::operator=(const T& v)
 {
   this->coeff_[0] = v;
 
-  for (unsigned int i=1; i<this->coeff_.size(); i++)
+  for (int i=1; i<this->coeff_size(); i++)
     this->coeff_[i] = T(0.);
 
   return *this;
@@ -66,8 +66,8 @@ template <typename T>
 inline Sacado::Tay::CacheTaylor<T>& 
 Sacado::Tay::CacheTaylor<T>::operator=(const Sacado::Tay::CacheTaylor<T>& x) 
 {
-  if (x.coeff_.size() != this->coeff_.size()) 
-    this->coeff_.resize(x.coeff_.size());
+  if (x.coeff_size() != this->coeff_size()) 
+    this->coeff_.resize(x.coeff_size());
   this->coeff_ = x.coeff_;
   
   return *this;
@@ -78,8 +78,8 @@ template <typename S>
 inline Sacado::Tay::CacheTaylor<T>& 
 Sacado::Tay::CacheTaylor<T>::operator=(const Expr<S>& x) 
 {
-  unsigned int d = this->degree();
-  unsigned int xd = x.degree();
+  int d = this->degree();
+  int xd = x.degree();
 
   // Resize polynomial for "this" if x has greater degree
   if (xd > d) {
@@ -146,8 +146,8 @@ template <typename S>
 inline Sacado::Tay::CacheTaylor<T>& 
 Sacado::Tay::CacheTaylor<T>::operator += (const S& x)
 {
-  unsigned int xd = x.degree();
-  unsigned int d = this->degree();
+  int xd = x.degree();
+  int d = this->degree();
 
    // Resize polynomial for "this" if x has greater degree
   if (xd > d) {
@@ -172,8 +172,8 @@ template <typename S>
 inline Sacado::Tay::CacheTaylor<T>& 
 Sacado::Tay::CacheTaylor<T>::operator -= (const S& x)
 {
-  unsigned int xd = x.degree();
-  unsigned int d = this->degree();
+  int xd = x.degree();
+  int d = this->degree();
 
    // Resize polynomial for "this" if x has greater degree
   if (xd > d) {
@@ -198,9 +198,9 @@ template <typename S>
 inline Sacado::Tay::CacheTaylor<T>& 
 Sacado::Tay::CacheTaylor<T>::operator *= (const S& x)
 {
-  unsigned int xd = x.degree();
-  unsigned int d = this->degree();
-  unsigned int dfinal = d;
+  int xd = x.degree();
+  int d = this->degree();
+  int dfinal = d;
 
    // Resize polynomial for "this" if x has greater degree
   if (xd > d) {
@@ -248,9 +248,9 @@ template <typename S>
 inline Sacado::Tay::CacheTaylor<T>& 
 Sacado::Tay::CacheTaylor<T>::operator /= (const S& x)
 {
-  unsigned int xd = x.degree();
-  unsigned int d = this->degree();
-  unsigned int dfinal = d;
+  int xd = x.degree();
+  int d = this->degree();
+  int dfinal = d;
 
    // Resize polynomial for "this" if x has greater degree
   if (xd > d) {
@@ -263,14 +263,14 @@ Sacado::Tay::CacheTaylor<T>::operator /= (const S& x)
   if (xd) {
     std::valarray<T> tmp(this->coeff_);
     if (x.hasFastAccess(dfinal))
-      for(unsigned int i=0; i<=dfinal; i++) {
-	for (unsigned int k=1; k<=i; k++)
+      for(int i=0; i<=dfinal; i++) {
+	for (int k=1; k<=i; k++)
 	  tmp[i] -= x.fastAccessCoeff(k)*tmp[i-k];
 	tmp[i] /= x.fastAccessCoeff(0);
       }
     else
-      for(unsigned int i=0; i<=dfinal; i++) {
-	for (unsigned int k=1; k<=i; k++)
+      for(int i=0; i<=dfinal; i++) {
+	for (int k=1; k<=i; k++)
 	  tmp[i] -= x.coeff(k)*tmp[i-k];
 	tmp[i] /= x.coeff(0);
       }

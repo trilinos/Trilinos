@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -48,7 +48,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_LineSearch_MoreThuente.H"	// class definition
+#include "NOX_LineSearch_MoreThuente.H"    // class definition
 
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
@@ -59,8 +59,8 @@
 #include "NOX_GlobalData.H"
 
 NOX::LineSearch::MoreThuente::
-MoreThuente(const Teuchos::RCP<NOX::GlobalData>& gd, 
-	    Teuchos::ParameterList& params) :
+MoreThuente(const Teuchos::RCP<NOX::GlobalData>& gd,
+        Teuchos::ParameterList& params) :
   globalDataPtr(gd),
   print(gd->getUtils()),
   slope(gd),
@@ -76,7 +76,7 @@ NOX::LineSearch::MoreThuente::~MoreThuente()
 bool NOX::LineSearch::MoreThuente::
 reset(const Teuchos::RCP<NOX::GlobalData>& gd,
       Teuchos::ParameterList& params)
-{ 
+{
   globalDataPtr = gd;
   meritFuncPtr = gd->getMeritFunction();
   print.reset(gd->getUtils());
@@ -94,13 +94,13 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   recoverystep = p.get("Recovery Step", defaultstep);
 
   // Check the input parameters for errors.
-  if ((ftol < 0.0) || 
-      (gtol < 0.0) || 
-      (xtol < 0.0) || 
-      (stpmin < 0.0) || 
-      (stpmax < stpmin) || 
-      (maxfev <= 0) || 
-      (defaultstep <= 0)) 
+  if ((ftol < 0.0) ||
+      (gtol < 0.0) ||
+      (xtol < 0.0) ||
+      (stpmin < 0.0) ||
+      (stpmax < stpmin) ||
+      (maxfev <= 0) ||
+      (defaultstep <= 0))
   {
     print.out() << "NOX::LineSearch::MoreThuente::reset - Error in Input Parameter!" << std::endl;
     throw "NOX Error";
@@ -109,13 +109,13 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   counter.reset();
 
   std::string choice = p.get("Sufficient Decrease Condition", "Armijo-Goldstein");
-  if (choice == "Ared/Pred") 
+  if (choice == "Ared/Pred")
     suffDecrCond = AredPred;
-  else if (choice == "Armijo-Goldstein") 
+  else if (choice == "Armijo-Goldstein")
     suffDecrCond = ArmijoGoldstein;
   else {
     print.out() << "ERROR: NOX::LineSearch::MoreThuente::reset() - the choice of "
-	 << "\"Sufficient Decrease Condition\" is invalid." << std::endl;
+     << "\"Sufficient Decrease Condition\" is invalid." << std::endl;
     throw "NOX Error";
   }
 
@@ -127,7 +127,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   }
   else {
     print.out() << "NOX::LineSearch::MoreThuente::reset - Invalid "
-	 << "\"Recovery Step Type\"" << std::endl;
+     << "\"Recovery Step Type\"" << std::endl;
     throw "NOX Error";
   }
 
@@ -137,16 +137,16 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 }
 
 
-bool NOX::LineSearch::MoreThuente::compute(Abstract::Group& grp, double& step, 
-			  const Abstract::Vector& dir,
-			  const Solver::Generic& s) 
+bool NOX::LineSearch::MoreThuente::compute(Abstract::Group& grp, double& step,
+              const Abstract::Vector& dir,
+              const Solver::Generic& s)
 {
   counter.incrementNumLineSearches();
   const Abstract::Group& oldGrp = s.getPreviousSolutionGroup();
   int info = cvsrch(grp, step, oldGrp, dir, s);
 
   if (step != 1.0)
-    counter.incrementNumNonTrivialLineSearches();    
+    counter.incrementNumNonTrivialLineSearches();
 
   counter.setValues(*paramsPtr);
 
@@ -154,10 +154,10 @@ bool NOX::LineSearch::MoreThuente::compute(Abstract::Group& grp, double& step,
 }
 
 int NOX::LineSearch::MoreThuente::
-cvsrch(Abstract::Group& newgrp, double& stp, const Abstract::Group& oldgrp, 
+cvsrch(Abstract::Group& newgrp, double& stp, const Abstract::Group& oldgrp,
        const Abstract::Vector& dir, const Solver::Generic& s)
 {
-  if (print.isPrintType(NOX::Utils::InnerIteration)) 
+  if (print.isPrintType(NOX::Utils::InnerIteration))
   {
    print.out() << "\n" << NOX::Utils::fill(72) << "\n" << "-- More'-Thuente Line Search -- \n";
   }
@@ -165,8 +165,8 @@ cvsrch(Abstract::Group& newgrp, double& stp, const Abstract::Group& oldgrp,
   // Set default step
   stp = defaultstep;
 
-  int info = 0;			// return code
-  int infoc = 1;		// return code for subroutine cstep
+  int info = 0;            // return code
+  int infoc = 1;        // return code for subroutine cstep
 
   // Compute the initial gradient in the search direction and check
   // that s is a descent direction.
@@ -175,10 +175,10 @@ cvsrch(Abstract::Group& newgrp, double& stp, const Abstract::Group& oldgrp,
     dginit = slope.computeSlopeWithOutJac(dir, oldgrp);
   else
     dginit = slope.computeSlope(dir, oldgrp);
-  
-  if (dginit >= 0.0) 
+
+  if (dginit >= 0.0)
   {
-    if (print.isPrintType(NOX::Utils::Warning)) 
+    if (print.isPrintType(NOX::Utils::Warning))
     {
       print.out() << "NOX::LineSearch::MoreThuente::cvsrch - Non-descent direction (dginit = " << dginit << ")" << std::endl;
     }
@@ -189,12 +189,12 @@ cvsrch(Abstract::Group& newgrp, double& stp, const Abstract::Group& oldgrp,
 
   // Initialize local variables.
 
-  bool brackt = false;		// has the soln been bracketed?
-  bool stage1 = true;		// are we in stage 1?
-  int nfev = 0;			// number of function evaluations
+  bool brackt = false;        // has the soln been bracketed?
+  bool stage1 = true;        // are we in stage 1?
+  int nfev = 0;            // number of function evaluations
   double dgtest = ftol * dginit; // f for curvature condition
   double width = stpmax - stpmin; // interval width
-  double width1 = 2 * width;	// ???
+  double width1 = 2 * width;    // ???
 
   // initial function value
   double finit = meritFuncPtr->computef(oldgrp);
@@ -221,30 +221,30 @@ cvsrch(Abstract::Group& newgrp, double& stp, const Abstract::Group& oldgrp,
     sublist("Newton").sublist("Linear Solver").
     get(std::string("Tolerance"), -1.0);
   eta = eta_original;
-  
+
 
   // Start of iteration.
 
   double stmin, stmax;
   double fm, fxm, fym, dgm, dgxm, dgym;
 
-  while (1) 
+  while (1)
   {
 
     // Set the minimum and maximum steps to correspond to the present
     // interval of uncertainty.
 
-    if (brackt) 
+    if (brackt)
     {
       stmin = min(stx, sty);
       stmax = max(stx, sty);
     }
-    else 
+    else
     {
       stmin = stx;
       stmax = stp + 4 * (stp - stx);
     }
-    
+
     // Force the step to be within the bounds stpmax and stpmin.
     stp = max(stp, stpmin);
     stp = min(stp, stpmax);
@@ -253,8 +253,8 @@ cvsrch(Abstract::Group& newgrp, double& stp, const Abstract::Group& oldgrp,
     // lowest point obtained so far.
 
     if ((brackt && ((stp <= stmin) || (stp >= stmax))) ||
-	(nfev >= maxfev - 1) || (infoc == 0) ||
-	(brackt && (stmax - stmin <= xtol * stmax))) 
+    (nfev >= maxfev - 1) || (infoc == 0) ||
+    (brackt && (stmax - stmin <= xtol * stmax)))
     {
       stp = stx;
     }
@@ -266,7 +266,7 @@ cvsrch(Abstract::Group& newgrp, double& stp, const Abstract::Group& oldgrp,
 
     NOX::Abstract::Group::ReturnType rtype;
     rtype = newgrp.computeF();
-    if (rtype != NOX::Abstract::Group::Ok) 
+    if (rtype != NOX::Abstract::Group::Ok)
     {
       print.err() << "NOX::LineSearch::MoreThuente::cvrch - Unable to compute F" << std::endl;
       throw "NOX Error";
@@ -277,18 +277,18 @@ cvsrch(Abstract::Group& newgrp, double& stp, const Abstract::Group& oldgrp,
     if (!useOptimizedSlopeCalc) {
 
       rtype = newgrp.computeJacobian();
-      if (rtype != NOX::Abstract::Group::Ok) 
-	{
-	  print.err() << "NOX::LineSearch::MoreThuente::cvrch - Unable to compute Jacobian" << std::endl;
-	  throw "NOX Error";
-	}
+      if (rtype != NOX::Abstract::Group::Ok)
+    {
+      print.err() << "NOX::LineSearch::MoreThuente::cvrch - Unable to compute Jacobian" << std::endl;
+      throw "NOX Error";
+    }
 
       rtype = newgrp.computeGradient();
-      if (rtype != NOX::Abstract::Group::Ok) 
-	{
-	  print.err() << "NOX::LineSearch::MoreThuente::cvrch - Unable to compute Gradient" << std::endl;
-	  throw "NOX Error";
-	}
+      if (rtype != NOX::Abstract::Group::Ok)
+    {
+      print.err() << "NOX::LineSearch::MoreThuente::cvrch - Unable to compute Gradient" << std::endl;
+      throw "NOX Error";
+    }
     }
 
     nfev ++;
@@ -297,7 +297,7 @@ cvsrch(Abstract::Group& newgrp, double& stp, const Abstract::Group& oldgrp,
     double dg = 0.0;
     if (useOptimizedSlopeCalc)
       dg = slope.computeSlopeWithOutJac(dir, newgrp);
-    else 
+    else
       dg = slope.computeSlope(dir, newgrp);
 
     // Armijo-Goldstein sufficient decrease
@@ -309,24 +309,24 @@ cvsrch(Abstract::Group& newgrp, double& stp, const Abstract::Group& oldgrp,
 
     // Test for convergence.
 
-    if ((brackt && ((stp <= stmin) || (stp >= stmax))) || (infoc == 0))	
-      info = 6;			// Rounding errors
+    if ((brackt && ((stp <= stmin) || (stp >= stmax))) || (infoc == 0))
+      info = 6;            // Rounding errors
 
     if ((stp == stpmax) && (f <= ftest1) && (dg <= dgtest))
-      info = 5;			// stp=stpmax
+      info = 5;            // stp=stpmax
 
-    if ((stp == stpmin) && ((f > ftest1) || (dg >= dgtest))) 
-      info = 4;			// stp=stpmin
+    if ((stp == stpmin) && ((f > ftest1) || (dg >= dgtest)))
+      info = 4;            // stp=stpmin
 
-    if (nfev >= maxfev) 
-      info = 3;			// max'd out on fevals
+    if (nfev >= maxfev)
+      info = 3;            // max'd out on fevals
 
-    if (brackt && (stmax-stmin <= xtol*stmax)) 
-      info = 2;			// bracketed soln
+    if (brackt && (stmax-stmin <= xtol*stmax))
+      info = 2;            // bracketed soln
 
 
-    //print.out() << "f=" << f << " ftest1=" << ftest1 << " fabs(dg)=" << fabs(dg) 
-    //	 << " gtol*(-dginit)=" << gtol*(-dginit) << std::endl;
+    //print.out() << "f=" << f << " ftest1=" << ftest1 << " fabs(dg)=" << fabs(dg)
+    //     << " gtol*(-dginit)=" << gtol*(-dginit) << std::endl;
 
     // RPP sufficient decrease test can be different
     bool sufficientDecreaseTest = false;
@@ -339,41 +339,41 @@ cvsrch(Abstract::Group& newgrp, double& stp, const Abstract::Group& oldgrp,
       sufficientDecreaseTest = (ap_normF <= ftest2); // Ared/Pred
     }
 
-    if ((sufficientDecreaseTest) && (fabs(dg) <= gtol*(-dginit))) 
-      info = 1;			// Success!!!!
+    if ((sufficientDecreaseTest) && (fabs(dg) <= gtol*(-dginit)))
+      info = 1;            // Success!!!!
 
-    if (info != 0) 		// Line search is done
+    if (info != 0)         // Line search is done
     {
-      if (info != 1) 		// Line search failed 
+      if (info != 1)         // Line search failed
       {
-	// RPP add
-	counter.incrementNumFailedLineSearches();
-	
-	if (recoveryStepType == Constant)
-	  stp = recoverystep;
+    // RPP add
+    counter.incrementNumFailedLineSearches();
 
-	newgrp.computeX(oldgrp, dir, stp);
-	
-	message = "(USING RECOVERY STEP!)";
-	
-	/*
-	if (print.isPrintType(Utils::Details))
-	  message += "[Failure info flag = " + info + "]";
-	*/
-	    
+    if (recoveryStepType == Constant)
+      stp = recoverystep;
+
+    newgrp.computeX(oldgrp, dir, stp);
+
+    message = "(USING RECOVERY STEP!)";
+
+    /*
+    if (print.isPrintType(Utils::Details))
+      message += "[Failure info flag = " + info + "]";
+    */
+
       }
-      else 			// Line search succeeded
+      else             // Line search succeeded
       {
-	message = "(STEP ACCEPTED!)";
+    message = "(STEP ACCEPTED!)";
       }
-      
+
       print.printStep(nfev, stp, finit, f, message);
 
       // Returning the line search flag
       return info;
 
     } // info != 0
-    
+
     print.printStep(nfev, stp, finit, f, message);
 
     // RPP add
@@ -382,7 +382,7 @@ cvsrch(Abstract::Group& newgrp, double& stp, const Abstract::Group& oldgrp,
     // In the first stage we seek a step for which the modified
     // function has a nonpositive value and nonnegative derivative.
 
-    if (stage1 && (f <= ftest1) && (dg >= min(ftol, gtol) * dginit)) 
+    if (stage1 && (f <= ftest1) && (dg >= min(ftol, gtol) * dginit))
       stage1 = false;
 
     // A modified function is used to predict the step only if we have
@@ -391,7 +391,7 @@ cvsrch(Abstract::Group& newgrp, double& stp, const Abstract::Group& oldgrp,
     // lower function value has been obtained but the decrease is not
     // sufficient.
 
-    if (stage1 && (f <= fx) && (f > ftest1)) 
+    if (stage1 && (f <= fx) && (f > ftest1))
     {
 
       // Define the modified function and derivative values.
@@ -403,11 +403,11 @@ cvsrch(Abstract::Group& newgrp, double& stp, const Abstract::Group& oldgrp,
       dgxm = dgx - dgtest;
       dgym = dgy - dgtest;
 
-      // Call cstep to update the interval of uncertainty 
+      // Call cstep to update the interval of uncertainty
       // and to compute the new step.
 
-      infoc = cstep(stx,fxm,dgxm,sty,fym,dgym,stp,fm,dgm, 
-		    brackt,stmin,stmax);
+      infoc = cstep(stx,fxm,dgxm,sty,fym,dgym,stp,fm,dgm,
+            brackt,stmin,stmax);
 
       // Reset the function and gradient values for f.
 
@@ -418,24 +418,24 @@ cvsrch(Abstract::Group& newgrp, double& stp, const Abstract::Group& oldgrp,
 
     }
 
-    else 
+    else
     {
 
-      // Call cstep to update the interval of uncertainty 
+      // Call cstep to update the interval of uncertainty
       // and to compute the new step.
 
       infoc = cstep(stx,fx,dgx,sty,fy,dgy,stp,f,dg,
-		    brackt,stmin,stmax);
+            brackt,stmin,stmax);
 
     }
 
     // Force a sufficient decrease in the size of the
     // interval of uncertainty.
 
-    if (brackt) 
+    if (brackt)
     {
-      if (fabs(sty - stx) >= 0.66 * width1) 
-	stp = stx + 0.5 * (sty - stx);
+      if (fabs(sty - stx) >= 0.66 * width1)
+    stp = stx + 0.5 * (sty - stx);
       width1 = width;
       width = fabs(sty-stx);
     }
@@ -446,15 +446,15 @@ cvsrch(Abstract::Group& newgrp, double& stp, const Abstract::Group& oldgrp,
 
 
 int NOX::LineSearch::MoreThuente::cstep(double& stx, double& fx, double& dx,
-		       double& sty, double& fy, double& dy,
-		       double& stp, double& fp, double& dp,
-		       bool& brackt, double stmin, double stmax)
+               double& sty, double& fy, double& dy,
+               double& stp, double& fp, double& dp,
+               bool& brackt, double stmin, double stmax)
 {
   int info = 0;
 
   // Check the input parameters for errors.
 
-  if ((brackt && ((stp <= min(stx, sty)) || (stp >= max(stx, sty)))) || 
+  if ((brackt && ((stp <= min(stx, sty)) || (stp >= max(stx, sty)))) ||
       (dx * (stp - stx) >= 0.0) || (stmax < stmin))
     return info;
 
@@ -474,14 +474,14 @@ int NOX::LineSearch::MoreThuente::cstep(double& stx, double& fx, double& dx,
   double p,q,r;
   double stpc, stpq, stpf;
 
-  if (fp > fx) 
+  if (fp > fx)
   {
     info = 1;
     bound = 1;
     theta = 3 * (fx - fp) / (stp - stx) + dx + dp;
     s = absmax(theta, dx, dp);
     gamma = s * sqrt(((theta / s) * (theta / s)) - (dx / s) * (dp / s));
-    if (stp < stx) 
+    if (stp < stx)
       gamma = -gamma;
 
     p = (gamma - dx) + theta;
@@ -489,9 +489,9 @@ int NOX::LineSearch::MoreThuente::cstep(double& stx, double& fx, double& dx,
     r = p / q;
     stpc = stx + r * (stp - stx);
     stpq = stx + ((dx / ((fx - fp) / (stp - stx) + dx)) / 2) * (stp - stx);
-    if (fabs(stpc - stx) < fabs(stpq - stx)) 
+    if (fabs(stpc - stx) < fabs(stpq - stx))
       stpf = stpc;
-    else 
+    else
       stpf = stpc + (stpq - stpc) / 2;
 
     brackt = true;
@@ -502,14 +502,14 @@ int NOX::LineSearch::MoreThuente::cstep(double& stx, double& fx, double& dx,
   // stx than the quadratic (secant) step, the cubic step is taken,
   // else the quadratic step is taken.
 
-  else if (sgnd < 0.0) 
+  else if (sgnd < 0.0)
   {
     info = 2;
     bound = false;
     theta = 3 * (fx - fp) / (stp - stx) + dx + dp;
     s = absmax(theta,dx,dp);
     gamma = s * sqrt(((theta/s) * (theta/s)) - (dx / s) * (dp / s));
-    if (stp > stx) 
+    if (stp > stx)
       gamma = -gamma;
     p = (gamma - dp) + theta;
     q = ((gamma - dp) + gamma) + dx;
@@ -532,7 +532,7 @@ int NOX::LineSearch::MoreThuente::cstep(double& stx, double& fx, double& dx,
   // bracketed then the the step closest to stx is taken, else the
   // step farthest away is taken.
 
-  else if (fabs(dp) < fabs(dx)) 
+  else if (fabs(dp) < fabs(dx))
   {
     info = 3;
     bound = true;
@@ -543,9 +543,9 @@ int NOX::LineSearch::MoreThuente::cstep(double& stx, double& fx, double& dx,
     // to infinity in the direction of the step.
 
     gamma = s * sqrt(max(0,(theta / s) * (theta / s) - (dx / s) * (dp / s)));
-    if (stp > stx) 
+    if (stp > stx)
       gamma = -gamma;
-      
+
     p = (gamma - dp) + theta;
     q = (gamma + (dx - dp)) + gamma;
     r = p / q;
@@ -555,21 +555,21 @@ int NOX::LineSearch::MoreThuente::cstep(double& stx, double& fx, double& dx,
       stpc = stmax;
     else
       stpc = stmin;
-      
+
     stpq = stp + (dp/ (dp - dx)) * (stx - stp);
-    if (brackt) 
+    if (brackt)
     {
-      if (fabs(stp - stpc) < fabs(stp - stpq)) 
-	stpf = stpc;
+      if (fabs(stp - stpc) < fabs(stp - stpq))
+    stpf = stpc;
       else
-	stpf = stpq;
+    stpf = stpq;
     }
-    else 
+    else
     {
-      if (fabs(stp - stpc) > fabs(stp - stpq)) 
-	stpf = stpc;
+      if (fabs(stp - stpc) > fabs(stp - stpq))
+    stpf = stpc;
       else
-	stpf = stpq;
+    stpf = stpq;
     }
   }
 
@@ -581,13 +581,13 @@ int NOX::LineSearch::MoreThuente::cstep(double& stx, double& fx, double& dx,
   else {
     info = 4;
     bound = false;
-    if (brackt) 
+    if (brackt)
     {
       theta = 3 * (fp - fy) / (sty - stp) + dy + dp;
       s = absmax(theta, dy, dp);
       gamma = s * sqrt(((theta/s)*(theta/s)) - (dy / s) * (dp / s));
-      if (stp > sty) 
-	gamma = -gamma;
+      if (stp > sty)
+    gamma = -gamma;
       p = (gamma - dp) + theta;
       q = ((gamma - dp) + gamma) + dy;
       r = p / q;
@@ -603,15 +603,15 @@ int NOX::LineSearch::MoreThuente::cstep(double& stx, double& fx, double& dx,
   // Update the interval of uncertainty. This update does not depend
   // on the new step or the case analysis above.
 
-  if (fp > fx) 
+  if (fp > fx)
   {
     sty = stp;
     fy = fp;
     dy = dp;
   }
-  else 
+  else
   {
-    if (sgnd < 0.0) 
+    if (sgnd < 0.0)
     {
       sty = stx;
       fy = fx;
@@ -627,11 +627,11 @@ int NOX::LineSearch::MoreThuente::cstep(double& stx, double& fx, double& dx,
   stpf = min(stmax, stpf);
   stpf = max(stmin, stpf);
   stp = stpf;
-  if (brackt && bound) 
+  if (brackt && bound)
   {
-    if (sty > stx) 
+    if (sty > stx)
       stp = min(stx + 0.66 * (sty - stx), stp);
-    else 
+    else
       stp = max(stx + 0.66 * (sty - stx), stp);
   }
 

@@ -91,7 +91,7 @@ void OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
   // main loop over all local rows of grpah(A)
   while (iNode1 < nRows) {
 
-    if (aggStat[iNode1] == NodeStats::ONEPT) {
+    if (aggStat[iNode1] == ONEPT) {
 
       aggregates.SetIsRoot(iNode1);    // mark iNode1 as root node for new aggregate 'ag'
       Aggregate ag;
@@ -100,7 +100,7 @@ void OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
 
       // finalize aggregate
       for(size_t k=0; k<ag.list.size(); k++) {
-        aggStat[ag.list[k]] = NodeStats::AGGREGATED;
+        aggStat[ag.list[k]] = AGGREGATED;
         vertex2AggId[ag.list[k]] = ag.index;
         procWinner[ag.list[k]] = myRank;
       }

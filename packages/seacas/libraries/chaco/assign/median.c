@@ -2,9 +2,8 @@
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
-#include	<stdio.h>
-#include	"structs.h"
-#include	"defs.h"
+#include "defs.h"                       // for TRUE, FALSE
+#include "structs.h"                    // for vtx_data
 
 
 void 

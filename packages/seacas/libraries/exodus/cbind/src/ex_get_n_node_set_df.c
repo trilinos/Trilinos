@@ -33,6 +33,7 @@
  * 
  */
 
+#include <sys/types.h>                  // for int64_t
 #include "exodusII.h"
 
 /*!

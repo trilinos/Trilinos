@@ -6,22 +6,21 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <sstream>
-#include <stdexcept>
-#include <iostream>
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian2d, etc
+#include <stk_mesh/base/Field.hpp>      // for Field
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+#include <gtest/gtest.h>
+#include <vector>                       // for operator!=
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/FieldBase.hpp"  // for field_data
+#include "stk_mesh/base/FieldState.hpp"  // for FieldState::StateNew, etc
+#include "stk_mesh/base/Types.hpp"      // for PartVector, EntityId, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+namespace stk { namespace mesh { class Part; } }
 
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
-
-#include <stk_util/parallel/Parallel.hpp>
-
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/FieldData.hpp>
-#include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/EntityComm.hpp>
-
-#include <stk_mesh/fem/FEMMetaData.hpp>
-#include <stk_mesh/fem/CoordinateSystems.hpp>
 
 using stk::mesh::Entity;
 using stk::mesh::EntityRank;
@@ -29,13 +28,13 @@ using stk::mesh::Part;
 using stk::mesh::Field;
 using stk::mesh::BulkData;
 using stk::mesh::EntityId;
-using stk::mesh::fem::FEMMetaData;
+using stk::mesh::MetaData;
 
 namespace {
 
-const EntityRank NODE_RANK = FEMMetaData::NODE_RANK;
+const EntityRank NODE_RANK = stk::topology::NODE_RANK;
 
-STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_scalar_field)
+TEST(UnitTestFieldDataInitVal, test_scalar_field)
 {
   // Test that if an initial-value is set on a scalar field, that value is
   // present the first time field-data is referenced for that field.
@@ -46,18 +45,18 @@ STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_scalar_field)
 
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
-  FEMMetaData meta_data(spatial_dim);
+  MetaData meta_data(spatial_dim);
 
   const unsigned num_states = 1;
-  Field<double>& dfield = meta_data.declare_field<Field<double> >("double_scalar", num_states);
+  Field<double>& dfield = meta_data.declare_field<Field<double> >(stk::topology::NODE_RANK, "double_scalar", num_states);
 
   const double initial_value = 99.9;
 
-  stk::mesh::put_field(dfield, NODE_RANK, meta_data.universal_part(), &initial_value);
+  stk::mesh::put_field(dfield, meta_data.universal_part(), &initial_value);
 
   meta_data.commit();
 
-  BulkData mesh(FEMMetaData::get_meta_data(meta_data), pm);
+  BulkData mesh(meta_data, pm);
   unsigned p_rank = mesh.parallel_rank();
 
   // Begin modification cycle so we can create stuff
@@ -68,7 +67,7 @@ STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_scalar_field)
 
   EntityId node_id = p_rank+1;
   // Create node
-  Entity & node = mesh.declare_entity(NODE_RANK, node_id, empty_parts);
+  Entity node = mesh.declare_entity(NODE_RANK, node_id, empty_parts);
 
   mesh.modification_end();
 
@@ -76,10 +75,10 @@ STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_scalar_field)
 
   double* data_ptr = stk::mesh::field_data( dfield, node);
 
-  STKUNIT_ASSERT_EQUAL( *data_ptr, initial_value );
+  ASSERT_EQ( *data_ptr, initial_value );
 }
 
-STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_vector_field)
+TEST(UnitTestFieldDataInitVal, test_vector_field)
 {
   // Test that if an initial-value is set on a vector field, that value is
   // present the first time field-data is referenced for that field.
@@ -89,21 +88,20 @@ STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_vector_field)
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier( MPI_COMM_WORLD );
-
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
-  FEMMetaData meta_data(spatial_dim);
+  MetaData meta_data(spatial_dim);
 
   const unsigned num_states = 1;
-  VectorField& vfield = meta_data.declare_field<VectorField>("double_vector", num_states);
+  VectorField& vfield = meta_data.declare_field<VectorField>(stk::topology::NODE_RANK, "double_vector", num_states);
 
   const double initial_value[stk::mesh::Cartesian2d::Size] = { 50.0, 99.0 };
 
-  stk::mesh::put_field(vfield, NODE_RANK, meta_data.universal_part(), stk::mesh::Cartesian2d::Size, initial_value);
+  stk::mesh::put_field(vfield, meta_data.universal_part(), stk::mesh::Cartesian2d::Size, initial_value);
 
   meta_data.commit();
 
-  BulkData mesh(FEMMetaData::get_meta_data(meta_data), pm);
+  BulkData mesh(meta_data, pm);
   unsigned p_rank = mesh.parallel_rank();
 
   // Begin modification cycle so we can create stuff
@@ -114,7 +112,7 @@ STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_vector_field)
 
   EntityId node_id = p_rank+1;
   // Create node
-  Entity & node = mesh.declare_entity(NODE_RANK, node_id, empty_parts);
+  Entity node = mesh.declare_entity(NODE_RANK, node_id, empty_parts);
 
   mesh.modification_end();
 
@@ -122,11 +120,11 @@ STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_vector_field)
 
   double* data_ptr = stk::mesh::field_data( vfield, node);
 
-  STKUNIT_ASSERT_EQUAL( data_ptr[0], initial_value[0] );
-  STKUNIT_ASSERT_EQUAL( data_ptr[1], initial_value[1] );
+  ASSERT_EQ( data_ptr[0], initial_value[0] );
+  ASSERT_EQ( data_ptr[1], initial_value[1] );
 }
 
-STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_vector_field_move_bucket)
+TEST(UnitTestFieldDataInitVal, test_vector_field_move_bucket)
 {
   // Test that if an initial-value is set on a vector field, that value is
   // present the first time field-data is referenced for that field, and
@@ -141,20 +139,20 @@ STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_vector_field_move_bucket)
 
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
-  FEMMetaData meta_data(spatial_dim);
+  MetaData meta_data(spatial_dim);
 
   const unsigned num_states = 1;
-  VectorField& vfield = meta_data.declare_field<VectorField>("double_vector", num_states);
+  VectorField& vfield = meta_data.declare_field<VectorField>(stk::topology::NODE_RANK, "double_vector", num_states);
 
   const double initial_value[stk::mesh::Cartesian2d::Size] = { 50.0, 99.0 };
 
-  Part& node_part = meta_data.declare_part<shards::Node>("node_part");
+  Part& node_part = meta_data.declare_part_with_topology("node_part", stk::topology::NODE);
 
-  stk::mesh::put_field(vfield, NODE_RANK, node_part, stk::mesh::Cartesian2d::Size, initial_value);
+  stk::mesh::put_field(vfield, node_part, stk::mesh::Cartesian2d::Size, initial_value);
 
   meta_data.commit();
 
-  BulkData mesh(FEMMetaData::get_meta_data(meta_data), pm);
+  BulkData mesh(meta_data, pm);
   unsigned p_rank = mesh.parallel_rank();
 
   // Begin modification cycle so we can create stuff
@@ -165,9 +163,10 @@ STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_vector_field_move_bucket)
 
   EntityId node_id = p_rank+1;
   // Create node
-  Entity & node = mesh.declare_entity(NODE_RANK, node_id, empty_parts);
+  Entity node = mesh.declare_entity(NODE_RANK, node_id, empty_parts);
 
-  stk::mesh::Bucket& old_bucket = node.bucket();
+  // need to copy since bucket is going to be deleted during mesh modification
+  const stk::mesh::PartVector old_parts = mesh.bucket(node).supersets();
 
   //Now move the node to the "node_part":
   stk::mesh::PartVector node_part_vec;
@@ -176,19 +175,21 @@ STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_vector_field_move_bucket)
 
   mesh.modification_end();
 
+  const stk::mesh::PartVector& new_parts = mesh.bucket(node).supersets();
+
   //Insist that the node is now in a different bucket:
-  stk::mesh::Bucket& new_bucket = node.bucket();
-  STKUNIT_ASSERT_NE(&old_bucket, &new_bucket);
+  bool in_different_bucket = old_parts != new_parts;
+  ASSERT_TRUE(in_different_bucket);
 
   //now insist that data for vfield on node is equal to the initial-value specified above:
 
   double* data_ptr = stk::mesh::field_data( vfield, node);
 
-  STKUNIT_ASSERT_EQUAL( data_ptr[0], initial_value[0] );
-  STKUNIT_ASSERT_EQUAL( data_ptr[1], initial_value[1] );
+  ASSERT_EQ( data_ptr[0], initial_value[0] );
+  ASSERT_EQ( data_ptr[1], initial_value[1] );
 }
 
-STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_multi_state_vector_field)
+TEST(UnitTestFieldDataInitVal, test_multi_state_vector_field)
 {
   // Test that if an initial-value is set on a multi-state vector field, that value is
   // present the first time field-data is referenced for that field.
@@ -201,18 +202,18 @@ STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_multi_state_vector_field)
 
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
-  FEMMetaData meta_data(spatial_dim);
+  MetaData meta_data(spatial_dim);
 
   const unsigned num_states = 2;
-  VectorField& vfield = meta_data.declare_field<VectorField>("double_vector", num_states);
+  VectorField& vfield = meta_data.declare_field<VectorField>(stk::topology::NODE_RANK, "double_vector", num_states);
 
   const double initial_value[stk::mesh::Cartesian2d::Size] = { 50.0, 99.0 };
 
-  stk::mesh::put_field(vfield, NODE_RANK, meta_data.universal_part(), stk::mesh::Cartesian2d::Size, initial_value);
+  stk::mesh::put_field(vfield, meta_data.universal_part(), stk::mesh::Cartesian2d::Size, initial_value);
 
   meta_data.commit();
 
-  BulkData mesh(FEMMetaData::get_meta_data(meta_data), pm);
+  BulkData mesh(meta_data, pm);
   unsigned p_rank = mesh.parallel_rank();
 
   // Begin modification cycle so we can create stuff
@@ -223,25 +224,27 @@ STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_multi_state_vector_field)
 
   EntityId node_id = p_rank+1;
   // Create node
-  Entity & node = mesh.declare_entity(NODE_RANK, node_id, empty_parts);
+  Entity node = mesh.declare_entity(NODE_RANK, node_id, empty_parts);
 
   mesh.modification_end();
 
   //now insist that data for vfield on node is equal to the initial-value specified above:
 
-  STKUNIT_ASSERT_EQUAL( vfield.number_of_states(), num_states);
+  ASSERT_EQ( vfield.number_of_states(), num_states);
 
   VectorField& vfield_new = vfield.field_of_state(stk::mesh::StateNew);
   VectorField& vfield_old = vfield.field_of_state(stk::mesh::StateOld);
 
-  double* data_ptr_new = stk::mesh::field_data( vfield_new, node);
-  double* data_ptr_old = stk::mesh::field_data( vfield_old, node);
+  {
+    double* data_ptr_new = stk::mesh::field_data( vfield_new, node);
+    double* data_ptr_old = stk::mesh::field_data( vfield_old, node);
 
-  STKUNIT_ASSERT_EQUAL( data_ptr_new[0], initial_value[0] );
-  STKUNIT_ASSERT_EQUAL( data_ptr_new[1], initial_value[1] );
+    ASSERT_EQ( data_ptr_new[0], initial_value[0] );
+    ASSERT_EQ( data_ptr_new[1], initial_value[1] );
 
-  STKUNIT_ASSERT_EQUAL( data_ptr_old[0], initial_value[0] );
-  STKUNIT_ASSERT_EQUAL( data_ptr_old[1], initial_value[1] );
+    ASSERT_EQ( data_ptr_old[0], initial_value[0] );
+    ASSERT_EQ( data_ptr_old[1], initial_value[1] );
+  }
 }
 
 }

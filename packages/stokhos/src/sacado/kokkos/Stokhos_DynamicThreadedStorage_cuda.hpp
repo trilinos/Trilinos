@@ -55,9 +55,13 @@ namespace Stokhos {
     typedef value_t value_type;
     typedef Kokkos::Cuda device_type;
     typedef value_type& reference;
+    typedef volatile value_type& volatile_reference;
     typedef const value_type& const_reference;
+    typedef const volatile value_type& const_volatile_reference;
     typedef value_type* pointer;
+    typedef volatile value_type* volatile_pointer;
     typedef const value_type* const_pointer;
+    typedef const volatile value_type* const_volatile_pointer;
     typedef Stokhos::DynArrayTraits<value_type,device_type> ds;
 
     //! Turn DynamicThreadedStorage into a meta-function class usable with mpl::apply
@@ -74,9 +78,24 @@ namespace Stokhos {
       allocate_coeff_array(coeff_, is_owned_, total_sz_, x);
     }
 
+    //! Constructor for creating a view
+    KOKKOS_INLINE_FUNCTION
+    DynamicThreadedStorage(const ordinal_type& sz, pointer v, bool owned) :
+      coeff_(v), sz_(sz), stride_(num_threads()), total_sz_(sz_*stride_),
+      is_owned_(owned) {}
+
     //! Constructor
     __device__
     DynamicThreadedStorage(const DynamicThreadedStorage& s) :
+    sz_(s.sz_), stride_(s.stride_), total_sz_(s.total_sz_) {
+      allocate_coeff_array(coeff_, is_owned_, total_sz_);
+      for (ordinal_type i=0; i<total_sz_; i+=stride_)
+        coeff_[i] = s.coeff_[i];
+    }
+
+    //! Constructor
+    __device__
+    DynamicThreadedStorage(const volatile DynamicThreadedStorage& s) :
     sz_(s.sz_), stride_(s.stride_), total_sz_(s.total_sz_) {
       allocate_coeff_array(coeff_, is_owned_, total_sz_);
       for (ordinal_type i=0; i<total_sz_; i+=stride_)
@@ -110,9 +129,82 @@ namespace Stokhos {
       return *this;
     }
 
+    //! Assignment operator
+    __device__
+    DynamicThreadedStorage&
+    operator=(const volatile DynamicThreadedStorage& s) {
+      if (&s != this) {
+        if (s.sz_ != sz_) {
+          destroy_coeff_array(coeff_, is_owned_, total_sz_);
+          sz_ = s.sz_;
+          stride_ = s.stride_;
+          total_sz_ = sz_*stride_;
+          allocate_coeff_array(coeff_, is_owned_, total_sz_);
+          for (ordinal_type i=0; i<total_sz_; i+=stride_)
+            coeff_[i] = s.coeff_[i];
+        }
+        else {
+          for (ordinal_type i=0; i<total_sz_; i+=stride_)
+            coeff_[i] = s.coeff_[i];
+        }
+      }
+      return *this;
+    }
+
+    //! Assignment operator
+    __device__
+    volatile DynamicThreadedStorage&
+    operator=(const DynamicThreadedStorage& s) volatile {
+      if (&s != this) {
+        if (s.sz_ != sz_) {
+          destroy_coeff_array(coeff_, is_owned_, total_sz_);
+          sz_ = s.sz_;
+          stride_ = s.stride_;
+          total_sz_ = sz_*stride_;
+          allocate_coeff_array(coeff_, is_owned_, total_sz_);
+          for (ordinal_type i=0; i<total_sz_; i+=stride_)
+            coeff_[i] = s.coeff_[i];
+        }
+        else {
+          for (ordinal_type i=0; i<total_sz_; i+=stride_)
+            coeff_[i] = s.coeff_[i];
+        }
+      }
+      return *this;
+    }
+
+    //! Assignment operator
+    __device__
+    volatile DynamicThreadedStorage&
+    operator=(const volatile DynamicThreadedStorage& s) volatile {
+      if (&s != this) {
+        if (s.sz_ != sz_) {
+          destroy_coeff_array(coeff_, is_owned_, total_sz_);
+          sz_ = s.sz_;
+          stride_ = s.stride_;
+          total_sz_ = sz_*stride_;
+          allocate_coeff_array(coeff_, is_owned_, total_sz_);
+          for (ordinal_type i=0; i<total_sz_; i+=stride_)
+            coeff_[i] = s.coeff_[i];
+        }
+        else {
+          for (ordinal_type i=0; i<total_sz_; i+=stride_)
+            coeff_[i] = s.coeff_[i];
+        }
+      }
+      return *this;
+    }
+
     //! Initialize values to a constant value
     __device__
     void init(const_reference v) {
+      for (ordinal_type i=0; i<total_sz_; i+=stride_)
+        coeff_[i] = v;
+    }
+
+    //! Initialize values to a constant value
+    __device__
+    void init(const_reference v) volatile {
       for (ordinal_type i=0; i<total_sz_; i+=stride_)
         coeff_[i] = v;
     }
@@ -127,6 +219,16 @@ namespace Stokhos {
         coeff_[i] = v[i];
     }
 
+    //! Initialize values to an array of values
+    __device__
+    void init(const_pointer v, const ordinal_type& sz = 0) volatile {
+      ordinal_type my_sz = stride_*sz;
+      if (sz == 0)
+        my_sz = total_sz_;
+      for (ordinal_type i=0; i<my_sz; i+=stride_)
+        coeff_[i] = v[i];
+    }
+
     //! Load values to an array of values
     __device__
     void load(pointer v) {
@@ -134,9 +236,37 @@ namespace Stokhos {
         coeff_[i] = v[i];
     }
 
+    //! Load values to an array of values
+    __device__
+    void load(pointer v) volatile {
+      for (ordinal_type i=0; i<total_sz_; i+=stride_)
+        coeff_[i] = v[i];
+    }
+
     //! Resize to new size (values are preserved)
     __device__
     void resize(const ordinal_type& sz) {
+      if (sz != sz_) {
+        value_type *coeff_new;
+        bool owned_new;
+        ordinal_type total_sz_new = sz*stride_;
+        allocate_coeff_array(coeff_new, owned_new, total_sz_new);
+        ordinal_type my_tsz = total_sz_;
+        if (total_sz_ > total_sz_new)
+          my_tsz = total_sz_new;
+        for (ordinal_type i=0; i<my_tsz; i+=stride_)
+          coeff_new[i] = coeff_[i];
+        destroy_coeff_array(coeff_, is_owned_, total_sz_);
+        coeff_ = coeff_new;
+        sz_ = sz;
+        total_sz_ = total_sz_new;
+        is_owned_ = owned_new;
+      }
+    }
+
+    //! Resize to new size (values are preserved)
+    __device__
+    void resize(const ordinal_type& sz) volatile {
       if (sz != sz_) {
         value_type *coeff_new;
         bool owned_new;
@@ -167,36 +297,80 @@ namespace Stokhos {
       is_owned_ = owned;
     }
 
+    //! Reset storage to given array, size, and stride
+    __device__
+    void shallowReset(pointer v, const ordinal_type& sz,
+                      const ordinal_type& stride, bool owned) volatile {
+      destroy_coeff_array(coeff_, is_owned_, total_sz_);
+      coeff_ = v;
+      sz_ = sz;
+      stride_ = stride;
+      total_sz_ = sz_*stride_;
+      is_owned_ = owned;
+    }
+
     //! Return size
     __device__
     ordinal_type size() const { return sz_; }
 
-    //! Coefficient access (avoid if possible)
+    //! Return size
     __device__
+    ordinal_type size() const volatile { return sz_; }
+
+    //! Coefficient access (avoid if possible)
+    KOKKOS_INLINE_FUNCTION
     const_reference operator[] (const ordinal_type& i) const {
       return coeff_[i*stride_];
     }
 
     //! Coefficient access (avoid if possible)
-    __device__
+    KOKKOS_INLINE_FUNCTION
+    const_volatile_reference operator[] (const ordinal_type& i) const volatile {
+      return coeff_[i*stride_];
+    }
+
+    //! Coefficient access (avoid if possible)
+    KOKKOS_INLINE_FUNCTION
     reference operator[] (const ordinal_type& i) {
       return coeff_[i*stride_];
     }
 
-    template <int i>
-    __device__
-    reference getCoeff() { return coeff_[i]; }
+    //! Coefficient access (avoid if possible)
+    KOKKOS_INLINE_FUNCTION
+    volatile_reference operator[] (const ordinal_type& i) volatile {
+      return coeff_[i*stride_];
+    }
 
     template <int i>
-    __device__
-    const_reference getCoeff() const { return coeff_[i]; }
+    KOKKOS_INLINE_FUNCTION
+    reference getCoeff() { return coeff_[i*stride_]; }
+
+    template <int i>
+    KOKKOS_INLINE_FUNCTION
+    volatile_reference getCoeff() volatile { return coeff_[i*stride_]; }
+
+    template <int i>
+    KOKKOS_INLINE_FUNCTION
+    const_reference getCoeff() const { return coeff_[i*stride_]; }
+
+    template <int i>
+    KOKKOS_INLINE_FUNCTION
+    const_volatile_reference getCoeff() const volatile { return coeff_[i*stride_]; }
 
     //! Get coefficients
-    __device__
+    KOKKOS_INLINE_FUNCTION
+    const_volatile_pointer coeff() const volatile { return coeff_; }
+
+    //! Get coefficients
+    KOKKOS_INLINE_FUNCTION
     const_pointer coeff() const { return coeff_; }
 
     //! Get coefficients
-    __device__
+    KOKKOS_INLINE_FUNCTION
+    volatile_pointer coeff() volatile { return coeff_; }
+
+    //! Get coefficients
+    KOKKOS_INLINE_FUNCTION
     pointer coeff() { return coeff_; }
 
   protected:
@@ -207,9 +381,21 @@ namespace Stokhos {
       return blockDim.x*blockDim.y*blockDim.z;
     }
 
+    //! Compute number of threads in each block
+    __device__
+    ordinal_type num_threads() const volatile {
+      return blockDim.x*blockDim.y*blockDim.z;
+    }
+
     //! Compute thread index within a block
     __device__
     ordinal_type thread_index() const {
+      return threadIdx.x + (threadIdx.y + threadIdx.z*blockDim.y)*blockDim.x;
+    }
+
+    //! Compute thread index within a block
+    __device__
+    ordinal_type thread_index() const volatile {
       return threadIdx.x + (threadIdx.y + threadIdx.z*blockDim.y)*blockDim.x;
     }
 
@@ -234,9 +420,38 @@ namespace Stokhos {
       c = ptr + tidx;
     }
 
+    //! Allocate coefficient array
+    __device__
+    void allocate_coeff_array(pointer& c, bool& owned,
+                              ordinal_type total_size,
+                              const value_type& x = value_type(0.0)) volatile {
+
+      // Allocate coefficient array on thread 0
+      __shared__ pointer ptr;
+      ordinal_type tidx = thread_index();
+      if (tidx == 0) {
+        ptr = ds::get_and_fill(total_size,x);
+        owned = true;
+      }
+      else
+        owned = false;
+      __syncthreads();
+
+      // Give each thread its portion of the array
+      c = ptr + tidx;
+    }
+
     //! Destroy coefficient array
     __device__
     void destroy_coeff_array(pointer c, bool owned, ordinal_type total_size) {
+      __syncthreads();
+      if (owned)
+        ds::destroy_and_release(c, total_size);
+    }
+
+    //! Destroy coefficient array
+    __device__
+    void destroy_coeff_array(pointer c, bool owned, ordinal_type total_size) volatile {
       __syncthreads();
       if (owned)
         ds::destroy_and_release(c, total_size);

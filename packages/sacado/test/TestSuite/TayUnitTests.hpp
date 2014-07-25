@@ -21,7 +21,7 @@
 //  
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 // (etphipp@sandia.gov).
@@ -55,7 +55,7 @@ inline adouble min(double v, const adouble& b) { return fmin(v,b); }
 
 #define COMPARE_POLYS(x_dtay, x_adolc)				\
   CPPUNIT_ASSERT(x_dtay.degree() == d);				\
-  for (unsigned int i=0; i<=d; i++) {				\
+  for (int i=0; i<=d; i++) {				\
     COMPARE_DOUBLES(x_dtay.coeff(i), x_adolc[i]);		\
   }								\
   ;
@@ -334,7 +334,7 @@ public:
 
   TaylorOpsUnitTest();
 
-  TaylorOpsUnitTest(unsigned int degree, double absolute_tolerance, 
+  TaylorOpsUnitTest(int degree, double absolute_tolerance, 
 		     double relative_tolerance);
 
   ~TaylorOpsUnitTest();
@@ -425,7 +425,7 @@ protected:
   Sacado::Random<double> urand;
 
   // Degree of polynomials
-  unsigned int d;
+  int d;
 
   // Tolerances to which fad objects should be the same
   double tol_a, tol_r;
@@ -445,7 +445,7 @@ TaylorOpsUnitTest<TaylorType>::TaylorOpsUnitTest() :
 }
 
 template <class TaylorType>
-TaylorOpsUnitTest<TaylorType>::TaylorOpsUnitTest(unsigned int degree, 
+TaylorOpsUnitTest<TaylorType>::TaylorOpsUnitTest(int degree, 
 						 double absolute_tolerance, 
 						 double relative_tolerance) :
   urand(), 
@@ -479,7 +479,7 @@ void TaylorOpsUnitTest<TaylorType>::setUp() {
   a_dtay = TaylorType(d,0.0);
   b_dtay = TaylorType(d,0.0);
   
-  for (unsigned int i=0; i<=d; i++) {
+  for (int i=0; i<=d; i++) {
     val = urand.number();
     a_dtay.fastAccessCoeff(i) = val;
     X[0][i] = val;
@@ -501,7 +501,7 @@ void TaylorOpsUnitTest<TaylorType>::print_poly(double *x) {
   std::cout.width(12);
   std::cout << "[";
       
-  for (unsigned int i=0; i<=d; i++) {
+  for (int i=0; i<=d; i++) {
     std::cout.width(12);
     std::cout << x[i];
   }
@@ -516,7 +516,7 @@ void TaylorOpsUnitTest<TaylorType>::print_diff(const TaylorType& x_dtay,
   //std::cout.width(12);
   std::cout << "[";
       
-  for (unsigned int i=0; i<=d; i++) {
+  for (int i=0; i<=d; i++) {
     //std::cout.width(12);
     std::cout << x_dtay.coeff(i) - x[i] << " ";
   }
@@ -579,7 +579,7 @@ public:
 
   CacheTaylorOpsUnitTest() {}
 
-  CacheTaylorOpsUnitTest(unsigned int degree, double absolute_tolerance, 
+  CacheTaylorOpsUnitTest(int degree, double absolute_tolerance, 
 			 double relative_tolerance) :
     TaylorOpsUnitTest< Sacado::Tay::CacheTaylor<double> >(degree, 
 							  absolute_tolerance, 

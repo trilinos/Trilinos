@@ -56,6 +56,10 @@
 #include <Ifpack2_Factory.hpp>
 #include <Ifpack2_Parameters.hpp>
 
+#include <Xpetra_BlockedCrsMatrix.hpp>
+#include <Xpetra_CrsMatrix.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
+#include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 
 #include "MueLu_Ifpack2Smoother_decl.hpp"
@@ -105,7 +109,7 @@ namespace MueLu {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
 
     if (this->IsSetup() == true)
-      this->GetOStream(Warnings0, 0) << "Warning: MueLu::Ifpack2Smoother::Setup(): Setup() has already been called";
+      this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::Setup(): Setup() has already been called";
 
     A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A");
 
@@ -113,6 +117,64 @@ namespace MueLu {
     SC negone = -STS::one();
 
     SC lambdaMax = negone;
+
+    // If we are doing "user" partitioning, we assume that what the user
+    // really wants to do is make tiny little subdomains with one row
+    // asssigned to each subdomain. The rows used for these little
+    // subdomains correspond to those in the 2nd block row.  Then,
+    // if we overlap these mini-subdomains, we will do something that
+    // looks like Vanka (grabbing all velocities associated with each
+    // each pressure unknown). In addition, we put all Dirichlet points
+    // as a little mini-domain.
+
+    bool isBlockedMatrix = false;
+    RCP<Matrix> merged2Mat;
+    if (type_ == "SCHWARZ") {
+      ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
+
+      std::string sublistName = "subdomain solver parameters";
+      if (paramList.isSublist(sublistName)) {
+        ParameterList& subList = paramList.sublist(sublistName);
+
+        std::string partName  = "partitioner: type";
+        if (subList.isParameter(partName) && subList.get<std::string>(partName) == "user") {
+          isBlockedMatrix = true;
+
+          RCP<BlockedCrsMatrix> bA = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
+          TEUCHOS_TEST_FOR_EXCEPTION(bA.is_null(), Exceptions::BadCast,
+                                     "Matrix A must be of type BlockedCrsMatrix.");
+
+          size_t numVels = bA->getMatrix(0,0)->getNodeNumRows();
+          size_t numPres = bA->getMatrix(1,0)->getNodeNumRows();
+          size_t numRows = A_->getNodeNumRows();
+
+          ArrayRCP<LocalOrdinal> blockSeeds(numRows, Teuchos::OrdinalTraits<LocalOrdinal>::invalid());
+
+          for (size_t rowOfB = numVels; rowOfB < numVels+numPres; ++rowOfB)
+            blockSeeds[rowOfB] = rowOfB - numVels;
+
+          RCP<BlockedCrsMatrix> bA2 = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
+          TEUCHOS_TEST_FOR_EXCEPTION(bA2.is_null(), Exceptions::BadCast,
+                                     "Matrix A must be of type BlockedCrsMatrix.");
+
+          RCP<CrsMatrix> mergedMat = bA2->Merge();
+          merged2Mat = rcp(new CrsMatrixWrap(mergedMat));
+
+          // Add Dirichlet rows to the list of seeds
+          ArrayRCP<const bool> boundaryNodes;
+          boundaryNodes = Utils::DetectDirichletRows(*merged2Mat, 0.0);
+          for (LO i = 0; i < boundaryNodes.size(); i++)
+            if (boundaryNodes[i]) {
+              blockSeeds[i] = numPres;
+              numPres++;
+            }
+
+          subList.set("partitioner: map",         blockSeeds);
+          subList.set("partitioner: local parts", as<int>(numPres));
+        }
+      }
+    } // if (type_ == "SCHWARZ")
+
     if (type_ == "CHEBYSHEV") {
       std::string maxEigString   = "chebyshev: max eigenvalue";
       std::string eigRatioString = "chebyshev: ratio eigenvalue";
@@ -121,13 +183,16 @@ namespace MueLu {
 
       // Get/calculate the maximum eigenvalue
       if (paramList.isParameter(maxEigString)) {
-        lambdaMax = paramList.get<SC>(maxEigString);
-        this->GetOStream(Statistics1, 0) << maxEigString << " (cached with smoother parameter list) = " << lambdaMax << std::endl;
+        if (paramList.isType<double>(maxEigString))
+          lambdaMax = paramList.get<double>(maxEigString);
+        else
+          lambdaMax = paramList.get<SC>(maxEigString);
+        this->GetOStream(Statistics1) << maxEigString << " (cached with smoother parameter list) = " << lambdaMax << std::endl;
 
       } else {
         lambdaMax = A_->GetMaxEigenvalueEstimate();
         if (lambdaMax != negone) {
-          this->GetOStream(Statistics1, 0) << maxEigString << " (cached with matrix) = " << lambdaMax << std::endl;
+          this->GetOStream(Statistics1) << maxEigString << " (cached with matrix) = " << lambdaMax << std::endl;
           paramList.set(maxEigString, lambdaMax);
         }
       }
@@ -135,7 +200,13 @@ namespace MueLu {
       // Calculate the eigenvalue ratio
       const SC defaultEigRatio = 20;
 
-      SC ratio = (paramList.isParameter(eigRatioString) ? paramList.get<SC>(eigRatioString) : defaultEigRatio);
+      SC ratio = defaultEigRatio;
+      if (paramList.isParameter(eigRatioString)) {
+        if (paramList.isType<double>(eigRatioString))
+          ratio = paramList.get<double>(eigRatioString);
+        else
+          ratio = paramList.get<SC>(eigRatioString);
+      }
       if (currentLevel.GetLevelID()) {
         // Update ratio to be
         //   ratio = max(number of fine DOFs / number of coarse DOFs, defaultValue)
@@ -150,11 +221,14 @@ namespace MueLu {
           ratio = levelRatio;
       }
 
-      this->GetOStream(Statistics1, 0) << eigRatioString << " (computed) = " << ratio << std::endl;
+      this->GetOStream(Statistics1) << eigRatioString << " (computed) = " << ratio << std::endl;
       paramList.set(eigRatioString, ratio);
     }
 
-    RCP<const Tpetra::CrsMatrix<SC, LO, GO, NO, LMO> > tpA = Utils::Op2NonConstTpetraCrs(A_);
+    RCP<const Tpetra::CrsMatrix<SC, LO, GO, NO, LMO> > tpA;
+    if (isBlockedMatrix == true) tpA = Utils::Op2NonConstTpetraCrs(merged2Mat);
+    else                         tpA = Utils::Op2NonConstTpetraCrs(A_);
+
     prec_ = Ifpack2::Factory::create(type_, tpA, overlap_);
 
     SetPrecParameters();
@@ -170,12 +244,12 @@ namespace MueLu {
       if (chebyPrec != Teuchos::null) {
         lambdaMax = chebyPrec->getLambdaMaxForApply();
         A_->SetMaxEigenvalueEstimate(lambdaMax);
-        this->GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue (calculated by Ifpack2)" << " = " << lambdaMax << std::endl;
+        this->GetOStream(Statistics1) << "chebyshev: max eigenvalue (calculated by Ifpack2)" << " = " << lambdaMax << std::endl;
       }
       TEUCHOS_TEST_FOR_EXCEPTION(lambdaMax == negone, Exceptions::RuntimeError, "MueLu::IfpackSmoother::Setup(): no maximum eigenvalue estimate");
     }
 
-    this->GetOStream(Statistics0, 0) << description() << std::endl;
+    this->GetOStream(Statistics0) << description() << std::endl;
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -195,39 +269,43 @@ namespace MueLu {
     bool supportInitialGuess = false;
     if (type_ == "CHEBYSHEV") {
       paramList.set("chebyshev: zero starting solution", InitialGuessIsZero);
+      SetPrecParameters(paramList);
       supportInitialGuess = true;
 
     } else if (type_ == "RELAXATION") {
       paramList.set("relaxation: zero starting solution", InitialGuessIsZero);
+      SetPrecParameters(paramList);
       supportInitialGuess = true;
 
     } else if (type_ == "KRYLOV") {
       paramList.set("krylov: zero starting solution", InitialGuessIsZero);
+      SetPrecParameters(paramList);
       supportInitialGuess = true;
 
-    } else if (type_ == "SCHWARZ") {
-      int overlap = 0;
-      Ifpack2::getParameter(paramList, "schwarz: overlap level", overlap);
-      if (InitialGuessIsZero == true)
-        paramList.set("schwarz: zero starting solution", InitialGuessIsZero);
-      supportInitialGuess = true;
     }
-
-    SetPrecParameters(paramList);
+    //TODO JJH 30Apr2014  Calling SetPrecParameters(paramList) when the smoother
+    //is Ifpack2::AdditiveSchwarz::setParameterList() will destroy the subdomain
+    //(aka inner) solver.  This behavior is documented but a departure from what
+    //it previously did, and what other Ifpack2 solvers currently do.  So I have
+    //moved SetPrecParameters(paramList) into the if-else block above.
 
     // Apply
-    if (supportInitialGuess || InitialGuessIsZero) {
-      Tpetra::MultiVector<SC,LO,GO,NO> &tpX = Utils::MV2NonConstTpetraMV(X);
-      Tpetra::MultiVector<SC,LO,GO,NO> const &tpB = Utils::MV2TpetraMV(B);
-      prec_->apply(tpB,tpX);
+    if (InitialGuessIsZero || supportInitialGuess) {
+      Tpetra::MultiVector<SC,LO,GO,NO>&       tpX = Utils::MV2NonConstTpetraMV(X);
+      const Tpetra::MultiVector<SC,LO,GO,NO>& tpB = Utils::MV2TpetraMV(B);
+
+      prec_->apply(tpB, tpX);
 
     } else {
       typedef Teuchos::ScalarTraits<Scalar> TST;
-      RCP<MultiVector> Residual = Utils::Residual(*A_,X,B);
+      RCP<MultiVector> Residual   = Utils::Residual(*A_, X, B);
       RCP<MultiVector> Correction = MultiVectorFactory::Build(A_->getDomainMap(), X.getNumVectors());
-      Tpetra::MultiVector<SC,LO,GO,NO> &tpX = Utils::MV2NonConstTpetraMV(*Correction);
-      Tpetra::MultiVector<SC,LO,GO,NO> const &tpB = Utils::MV2TpetraMV(*Residual);
-      prec_->apply(tpB,tpX);
+
+      Tpetra::MultiVector<SC,LO,GO,NO>&       tpX = Utils::MV2NonConstTpetraMV(*Correction);
+      const Tpetra::MultiVector<SC,LO,GO,NO>& tpB = Utils::MV2TpetraMV(*Residual);
+
+      prec_->apply(tpB, tpX);
+
       X.update(TST::one(), *Correction, TST::one());
     }
   }

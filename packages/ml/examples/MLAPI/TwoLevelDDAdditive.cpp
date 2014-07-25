@@ -1,7 +1,7 @@
 
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_config.h"
@@ -32,18 +32,18 @@ class TwoLevelDDAdditive : public BaseOperator {
 public:
   // Constructor assumes that all operators and inverse operators are already
   // filled.
-  TwoLevelDDAdditive(const Operator FineMatrix, 
-                     const InverseOperator FineSolver, 
-                     const InverseOperator CoarseSolver, 
-                     const Operator R, 
-                     const Operator P) :
+  TwoLevelDDAdditive(const Operator & FineMatrix,
+                     const InverseOperator & FineSolver,
+                     const InverseOperator & CoarseSolver,
+                     const Operator & R,
+                     const Operator & P) :
     FineMatrix_(FineMatrix),
     R_(R),
     P_(P),
     FineSolver_(FineSolver),
     CoarseSolver_(CoarseSolver)
   {}
-      
+
   TwoLevelDDAdditive(const TwoLevelDDAdditive& rhs) :
     FineMatrix_(rhs.GetFineMatrix()),
     R_(rhs.GetR()),
@@ -51,7 +51,7 @@ public:
     FineSolver_(rhs.GetFineSolver()),
     CoarseSolver_(rhs.GetCoarseSolver())
   {}
-      
+
   TwoLevelDDAdditive& operator=(const TwoLevelDDAdditive& rhs)
   {
     if (this != &rhs) {
@@ -63,10 +63,10 @@ public:
     }
     return(*this);
   }
-    
+
   int Apply(const MultiVector& r_f, MultiVector& x_f) const
   {
-    
+
     MultiVector r_c(FineSolver_.GetDomainSpace());
 
     // apply fine level preconditioner
@@ -97,32 +97,32 @@ public:
     return(FineMatrix_.GetRangeSpace());
   }
 
-  const Operator GetFineMatrix() const 
+  const Operator GetFineMatrix() const
   {
     return(FineMatrix_);
   }
 
-  const Operator GetR() const 
+  const Operator GetR() const
   {
     return(R_);
   }
 
-  const Operator GetP() const 
+  const Operator GetP() const
   {
     return(P_);
   }
 
-  const InverseOperator GetFineSolver() const 
+  const InverseOperator GetFineSolver() const
   {
     return(FineSolver_);
   }
 
-  const InverseOperator GetCoarseSolver() const 
+  const InverseOperator GetCoarseSolver() const
   {
     return(CoarseSolver_);
   }
 
-  std::ostream& Print(std::ostream& os, const bool verbose = true) const 
+  std::ostream& Print(std::ostream& os, const bool verbose = true) const
   {
     if (GetMyPID() == 0) {
       os << "*** MLAPI::TwoLevelDDAdditive ***" << std::endl;
@@ -146,7 +146,7 @@ private:
 
 int main(int argc, char *argv[])
 {
-  
+
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
 #endif
@@ -211,7 +211,7 @@ int main(int argc, char *argv[])
     MLList.set("krylov: output", 16);
 
     Krylov(FineMatrix, LHS, RHS, MLAPIPrec, MLList);
-    
+
   }
   catch (const int e) {
     std::cerr << "Caught integer exception, code = " << e << std::endl;
@@ -227,7 +227,7 @@ int main(int argc, char *argv[])
 #endif
 
   return(EXIT_SUCCESS);
-  
+
 }
 
 #else

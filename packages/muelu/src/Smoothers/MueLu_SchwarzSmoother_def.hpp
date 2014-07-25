@@ -75,7 +75,7 @@ namespace MueLu {
     if(type_ == "RELAXATION" || type_ == "ILUT"  || type_ == "SCHWARZ" ||
        type_ == "CHEBYSHEV"  || type_ == "RILUK" || type_ == "KRYLOV"  ) {
 
-      this->GetOStream(Warnings0, 0) << "MueLu::SchwarzSmoother: using \"" << type_ << "\"" << std::endl;
+      this->GetOStream(Warnings0) << "MueLu::SchwarzSmoother: using \"" << type_ << "\"" << std::endl;
 
     }
 
@@ -95,9 +95,9 @@ namespace MueLu {
                                        "a valid Amesos2 solver have to be specified explicitly.");
 #endif
         if (oldtype != "")
-          this->GetOStream(Warnings0, 0) << "Warning: MueLu::SchwarzSmoother: \"" << oldtype << "\" is not available. Using \"" << type_ << "\" instead" << std::endl;
+          this->GetOStream(Warnings0) << "MueLu::SchwarzSmoother: \"" << oldtype << "\" is not available. Using \"" << type_ << "\" instead" << std::endl;
         else
-          this->GetOStream(Warnings0, 0) << "MueLu::SchwarzSmoother: using \"" << type_ << "\"" << std::endl;
+          this->GetOStream(Warnings0) << "MueLu::SchwarzSmoother: using \"" << type_ << "\"" << std::endl;
       }
 
       // Check the validity of the solver type parameter
@@ -121,7 +121,7 @@ namespace MueLu {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
 
     if (SmootherPrototype::IsSetup() == true)
-      this->GetOStream(Warnings0, 0) << "Warning: MueLu::SchwarzSmoother::Setup(): Setup() has already been called" << std::endl;
+      this->GetOStream(Warnings0) << "MueLu::SchwarzSmoother::Setup(): Setup() has already been called" << std::endl;
 
     A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A");
 
@@ -280,7 +280,6 @@ namespace MueLu {
     }
 
     else {
-      typedef Teuchos::ScalarTraits<Scalar> TST;
       RCP<MultiVector> Residual = Utils::Residual(*A_,X,B);
       RCP<MultiVector> Correction = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(A_->getDomainMap(), X.getNumVectors());
       Tpetra::MultiVector<SC,LO,GO,NO> &tX = Utils::MV2NonConstTpetraMV(*Correction);

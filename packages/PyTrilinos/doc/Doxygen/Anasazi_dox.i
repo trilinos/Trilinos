@@ -124,16 +124,13 @@ Anasazi::BasicEigenproblem< ScalarType, MV, OP >::setProblem()
 
 Specify that this eigenproblem is fully defined.
 
-This routine serves multiple purpose: sanity check that the
-eigenproblem has been fully and consistently defined
-
+This routine serves multiple purpose:      - sanity check that the
+eigenproblem has been fully and consistently defined      -
 opportunity for the eigenproblem to allocate internal storage for
-eigenvalues and eigenvectors (to be used by eigensolvers and solver
-managers)
-
-This method reallocates internal storage, so that any previously
-retrieved references to internal storage (eigenvectors or eigenvalues)
-are invalidated.
+eigenvalues   and eigenvectors (to be used by eigensolvers and solver
+managers)   </ul>    This method reallocates internal storage, so that
+any previously retrieved references to    internal storage
+(eigenvectors or eigenvalues) are invalidated.
 
 The user MUST call this routine before they send the eigenproblem to
 any solver or solver manager.
@@ -257,7 +254,8 @@ the individual Q[i], optionally returning the coefficients of X for
 the individual Q[i]. All of this is done with respect to the inner
 product innerProd().
 
-After calling this routine, X will be orthogonal to each of the Q[i].
+After calling this routine, \\\\c X will be orthogonal to each of the
+<tt>Q[i]</tt>.
 
 Parameters:
 -----------
@@ -295,20 +293,18 @@ This method takes a multivector X and attempts to compute an
 orthonormal basis for $colspan(X)$, with respect to innerProd().
 
 The method uses classical Gram-Schmidt with selective
-reorthogonalization. As a result, the coefficient matrix B is upper
-triangular.
-
-This routine returns an integer rank stating the rank of the computed
-basis. If X does not have full rank and the normalize() routine does
-not attempt to augment the subspace, then rank may be smaller than the
-number of columns in X. In this case, only the first rank columns of
-output X and first rank rows of B will be valid.
-
-The method attempts to find a basis with dimension equal to the number
-of columns in X. It does this by augmenting linearly dependent vectors
-in X with random directions. A finite number of these attempts will be
-made; therefore, it is possible that the dimension of the computed
-basis is less than the number of vectors in X.
+reorthogonalization. As a result, the coefficient matrix \\\\c B is
+upper triangular.    This routine returns an integer \\\\c rank
+stating the rank of the computed basis. If \\\\c X does not have full
+rank and the normalize() routine does    not attempt to augment the
+subspace, then \\\\c rank may be smaller than the number of columns in
+\\\\c X. In this case, only the first \\\\c rank columns of    output
+\\\\c X and first \\\\c rank rows of \\\\c B will be valid.    The
+method attempts to find a basis with dimension equal to the number of
+columns in \\\\c X. It does this by augmenting linearly dependent
+vectors in \\\\c X with random directions. A finite number of these
+attempts will be made; therefore, it is possible that the dimension of
+the    computed basis is less than the number of vectors in \\\\c X.
 
 Parameters:
 -----------
@@ -355,19 +351,18 @@ Teuchos::RCP< const MV > > MQ=Teuchos::tuple(Teuchos::RCP< const MV
 Given a set of bases Q[i] and a multivector X, this method computes an
 orthonormal basis for $colspan(X) - \\\\sum_i colspan(Q[i])$.
 
-This routine returns an integer rank stating the rank of the computed
-basis. If the subspace $colspan(X) - \\\\sum_i colspan(Q[i])$ does not
-have dimension as large as the number of columns of X and the
+This routine returns an integer \\\\c rank stating the rank of the
+computed basis. If the subspace \\\\form#15 does not     have
+dimension as large as the number of columns of \\\\c X and the
 orthogonalization manager doe not attempt to augment the subspace,
-then rank may be smaller than the number of columns of X. In this
-case, only the first rank columns of output X and first rank rows of B
-will be valid.
-
-The method attempts to find a basis with dimension the same as the
-number of columns in X. It does this by augmenting linearly dependent
+then \\\\c rank     may be smaller than the number of columns of \\\\c
+X. In this case, only the first \\\\c rank columns of output \\\\c X
+and first \\\\c rank rows of \\\\c B will     be valid.    The method
+attempts to find a basis with dimension the same as the number of
+columns in \\\\c X. It does this by augmenting linearly dependent
 vectors with random directions. A finite number of these attempts will
 be made; therefore, it is possible that the dimension of the computed
-basis is less than the number of vectors in X.
+basis is less than the number of vectors in \\\\c X.
 
 Parameters:
 -----------
@@ -709,21 +704,19 @@ Initialize the solver to an iterate, optionally providing the current
 basis and projected problem matrix, the current Ritz vectors and
 values, and the current residual.
 
-The BlockDavidson eigensolver contains a certain amount of state,
-including the current Krylov basis, the current eigenvectors, the
-current residual, etc. (see getState())
-
-initialize() gives the user the opportunity to manually set these,
-although this must be done with caution, as the validity of the user
-input will not be checked.
-
-Only the first newstate.curDim columns of newstate.V and newstate.KK
-and the first newstate.curDim rows of newstate.KK will be used.
-
-If newstate.V == getState().V, then the data is not copied. The same
-holds for newstate.KK, newstate.X, newstate.KX, newstate.MX, and
-newstate.R Only the upper triangular half of newstate.KK is used to
-initialize the state of the solver.
+The %BlockDavidson eigensolver contains a certain amount of state,
+including the current Krylov basis, the current eigenvectors,    the
+current residual, etc. (see getState())    initialize() gives the user
+the opportunity to manually set these,   although this must be done
+with caution, as the validity of the   user input will not be checked.
+Only the first <tt>newstate.curDim</tt> columns of <tt>newstate.V</tt>
+and <tt>newstate.KK</tt> and the first <tt>newstate.curDim</tt> rows
+of    <tt>newstate.KK</tt> will be used.    If <tt>newstate.V ==
+getState().V</tt>, then the data is not copied. The   same holds for
+<tt>newstate.KK</tt>, <tt>newstate.X</tt>,   <tt>newstate.KX</tt>,
+<tt>newstate.MX</tt>, and <tt>newstate.R</tt> Only the   upper
+triangular half of <tt>newstate.KK</tt> is used to initialize the
+state of the solver.
 
 isInitialized() == true (see post-conditions of isInitialize())  The
 user has the option of specifying any component of the state using
@@ -771,11 +764,10 @@ ScalarType, MV, OP >::getState() const
 
 Get access to the current state of the eigensolver.
 
-The data is only valid if isInitialized() == true.
-
-The data for the preconditioned residual is only meaningful in the
-scenario that the solver throws a ::BlockDavidsonRitzFailure exception
-during iterate().
+The data is only valid if isInitialized() == \\\\c true.     The data
+for the preconditioned residual is only meaningful in the scenario
+that the solver throws a ::BlockDavidsonRitzFailure exception during
+iterate().
 
 A BlockDavidsonState object containing const pointers to the current
 solver state. Note, these are direct pointers to the multivectors;
@@ -818,7 +810,7 @@ Get the index used for extracting individual Ritz vectors from
 getRitzVectors().
 
 Because BlockDavidson is a Hermitian solver, all Ritz values are real
-and all Ritz vectors can be represented in a single column of a
+and all Ritz vectors can be represented in a    single column of a
 multivector. Therefore, getRitzIndex() is not needed when using the
 output from getRitzVectors().
 
@@ -851,8 +843,8 @@ current residuals. ";
 
 Get the 2-norms of the residuals.
 
-The Ritz residuals are not defined for the LOBPCG iteration. Hence,
-this method returns the 2-norms of the direct residuals, and is
+The Ritz residuals are not defined for the %LOBPCG iteration. Hence,
+this method returns the    2-norms of the direct residuals, and is
 equivalent to calling getRes2Norms().
 
 A vector of length getBlockSize() containing the 2-norms of the direct
@@ -1148,24 +1140,20 @@ decided by the solver manager) or the solver manager decides to quit.
 
 This method calls BlockDavidson::iterate(), which will return either
 because a specially constructed status test evaluates to ::Passed or
-an exception is thrown.
-
-A return from BlockDavidson::iterate() signifies one of the following
-scenarios: the maximum number of restarts has been exceeded. In this
-scenario, the solver manager will place  all converged eigenpairs into
-the eigenproblem and return ::Unconverged.
-
-the locking conditions have been met. In this scenario, some of the
-current eigenpairs will be removed  from the eigensolver and placed
-into auxiliary storage. The eigensolver will be restarted with the
-remaining part of the Krylov subspace  and some random information to
-replace the removed subspace.
-
-global convergence has been met. In this case, the most significant
-NEV eigenpairs in the solver and locked storage  have met the
-convergence criterion. (Here, NEV refers to the number of eigenpairs
-requested by the Eigenproblem.)  In this scenario, the solver manager
-will return ::Converged.
+an exception is thrown.  A return from BlockDavidson::iterate()
+signifies one of the following scenarios:    - the maximum number of
+restarts has been exceeded. In this scenario, the solver manager will
+place\\\\n      all converged eigenpairs into the eigenproblem and
+return ::Unconverged.    - the locking conditions have been met. In
+this scenario, some of the current eigenpairs will be removed\\\\n
+from the eigensolver and placed into auxiliary storage. The
+eigensolver will be restarted with the remaining part of the Krylov
+subspace\\\\n      and some random information to replace the removed
+subspace.    - global convergence has been met. In this case, the most
+significant NEV eigenpairs in the solver and locked storage  \\\\n
+have met the convergence criterion. (Here, NEV refers to the number of
+eigenpairs requested by the Eigenproblem.)    \\\\n      In this
+scenario, the solver manager will return ::Converged.
 
 ::ReturnType specifying: ::Converged: the eigenproblem was solved to
 the specification required by the solver manager.
@@ -1328,14 +1316,13 @@ Anasazi::BlockKrylovSchur< ScalarType, MV, OP
 Initialize the solver to an iterate, providing a Krylov basis and
 Hessenberg matrix.
 
-The BlockKrylovSchur eigensolver contains a certain amount of state,
+The %BlockKrylovSchur eigensolver contains a certain amount of state,
 consisting of the current Krylov basis and the associated Hessenberg
-matrix.
-
-initialize() gives the user the opportunity to manually set these,
-although this must be done with caution, abiding by the rules given
-below. All notions of orthogonality and orthonormality are derived
-from the inner product specified by the orthogonalization manager.
+matrix.    initialize() gives the user the opportunity to manually set
+these,   although this must be done with caution, abiding by the rules
+given   below. All notions of orthogonality and orthonormality are
+derived from   the inner product specified by the orthogonalization
+manager.
 
 isInitialized() == true (see post-conditions of isInitialize())  The
 user has the option of specifying any component of the state using
@@ -1370,7 +1357,7 @@ ScalarType, MV, OP >::getState() const
 
 Get the current state of the eigensolver.
 
-The data is only valid if isInitialized() == true.
+The data is only valid if isInitialized() == \\\\c true.
 
 A BlockKrylovSchurState object containing const pointers to the
 current solver state. ";
@@ -1747,17 +1734,15 @@ decided by the solver manager) or the solver manager decides to quit.
 
 This method calls BlockKrylovSchur::iterate(), which will return
 either because a specially constructed status test evaluates to
-::Passed or an exception is thrown.
-
-A return from BlockKrylovSchur::iterate() signifies one of the
-following scenarios: the maximum number of restarts has been exceeded.
-In this scenario, the solver manager will place  all converged
-eigenpairs into the eigenproblem and return ::Unconverged.
-
-global convergence has been met. In this case, the most significant
-NEV eigenpairs in the solver and locked storage  have met the
-convergence criterion. (Here, NEV refers to the number of eigenpairs
-requested by the Eigenproblem.)  In this scenario, the solver manager
+::Passed or an exception is thrown.  A return from
+BlockKrylovSchur::iterate() signifies one of the following scenarios:
+- the maximum number of restarts has been exceeded. In this scenario,
+the solver manager will place\\\\n      all converged eigenpairs into
+the eigenproblem and return ::Unconverged.    - global convergence has
+been met. In this case, the most significant NEV eigenpairs in the
+solver and locked storage  \\\\n      have met the convergence
+criterion. (Here, NEV refers to the number of eigenpairs requested by
+the Eigenproblem.)    \\\\n      In this scenario, the solver manager
 will return ::Converged.
 
 ::ReturnType specifying: ::Converged: the eigenproblem was solved to
@@ -1814,13 +1799,15 @@ Anasazi::BlockKrylovSchurState::BlockKrylovSchurState "Anasazi::BlockKrylovSchur
 >::BlockKrylovSchurState() ";
 
 
-// File: structAnasazi_1_1LOBPCG_1_1CheckList.xml
+// File: structAnasazi_1_1RTRBase_1_1CheckList.xml
 
 
 // File: structAnasazi_1_1BlockKrylovSchur_1_1CheckList.xml
 
 
-// File: structAnasazi_1_1RTRBase_1_1CheckList.xml
+// File: structAnasazi_1_1LOBPCG_1_1CheckList.xml
+
+// File: structAnasazi_1_1BlockDavidson_1_1CheckList.xml
 
 
 // File: structAnasazi_1_1BlockDavidson_1_1CheckList.xml
@@ -2109,12 +2096,11 @@ bool Anasazi::Eigenproblem< ScalarType, MV, OP >::setProblem()=0
 
 Specify that this eigenproblem is fully defined.
 
-This routine serves multiple purpose: sanity check that the
-eigenproblem has been fully and consistently defined
-
+This routine serves multiple purpose:   <ul>   <li> sanity check that
+the eigenproblem has been fully and consistently defined   <li>
 opportunity for the eigenproblem to allocate internal storage for
-eigenvalues and eigenvectors (to be used by eigensolvers and solver
-managers)
+eigenvalues   and eigenvectors (to be used by eigensolvers and solver
+managers)   </ul>
 
 The user MUST call this routine before they send the eigenproblem to
 any solver or solver manager.
@@ -2409,6 +2395,347 @@ This method requests that the solver print out its current status to
 screen. ";
 
 
+// File: classAnasazi_1_1GeneralizedDavidson.xml
+%feature("docstring") Anasazi::GeneralizedDavidson "
+
+Solves eigenvalue problem using generalized Davidson method.
+
+This class searches for a few eigenvalues and corresponding
+eigenvectors for either a standard eigenvalue problem $Ax=\\\\lambda
+x$ or a generalized eigenvalue problem $Ax=\\\\lambda B x$ Note that
+unlike some other solvers, the generalized Davidson method places no
+restrictions on either matrix in a generalized eigenvalue problem.
+
+Tips for preconditioning: A good preconditioner usually approximates
+$(A-\\\\sigma I)^{-1}$ or $(A-\\\\sigma B)^{-1}$, where $\\\\sigma$ is
+close to the target eigenvalue. When searching for largest magnitude
+eigenvalues, selecting a preconditioner $P^{-1} \\\\approx B^{-1}$
+usually works well and when searching for smallest magnitude
+eigenvalues selecting $P^{-1} \\\\approx A^{-1}$ is usually
+appropriate.
+
+This class is currently only implemented for real scalar types (i.e.
+float, double).
+
+C++ includes: AnasaziGeneralizedDavidson.hpp ";
+
+%feature("docstring")
+Anasazi::GeneralizedDavidson::GeneralizedDavidson "Anasazi::GeneralizedDavidson< ScalarType, MV, OP
+>::GeneralizedDavidson(const RCP< Eigenproblem< ScalarType, MV, OP > >
+&problem, const RCP< SortManager< MagnitudeType > > &sortman, const
+RCP< OutputManager< ScalarType > > &outputman, const RCP< StatusTest<
+ScalarType, MV, OP > > &tester, const RCP< OrthoManager< ScalarType,
+MV > > &orthoman, Teuchos::ParameterList &pl)
+
+Constructor.
+
+GeneralizedDavidson constructor with eigenproblem, parameters, and
+solver utilities.
+
+Behavior of the solver is controlled by the following ParameterList
+entries: \"Block Size\" block size used by algorithm. Default: 1.
+
+\"Maximum Subspace Dimension\" maximum number of basis vectors for
+subspace. Two for standard eigenvalue problem) or three (for
+generalized eigenvalue problem) sets of basis vectors of this size
+will be required. Default: 3*problem->getNEV()*\"Block Size\"
+
+\"Initial Guess\" how should initial vector be selected: \"Random\" or
+\"User\". If \"User,\" the value in problem->getInitVec() will be
+used. Default: \"Random\".
+
+\"Print Number of Ritz Values\" an int specifying how many Ritz values
+should be printed at each iteration. Default: \"NEV\".
+
+\"Relative Convergence Tolerance\" should residual be scaled by
+corresponding Ritz value to measure convergence. Default: \"false\" ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::iterate "void
+Anasazi::GeneralizedDavidson< ScalarType, MV, OP >::iterate()
+
+Solves the eigenvalue problem. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::initialize "void
+Anasazi::GeneralizedDavidson< ScalarType, MV, OP >::initialize()
+
+Initialize the eigenvalue problem.
+
+Anything on the state that is not null is assumed to be valid.
+Anything not present on the state will be generated. Very limited
+error checking can be performed to ensure the validity of state
+components (e.g. we cannot verify that  state.AVactually corresponds
+to A*state.V), so this function should be used carefully. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::initialize "void
+Anasazi::GeneralizedDavidson< ScalarType, MV, OP
+>::initialize(GeneralizedDavidsonState< ScalarType, MV > state)
+
+Initialize solver from state. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::getNumIters "int
+Anasazi::GeneralizedDavidson< ScalarType, MV, OP >::getNumIters()
+const
+
+Get number of iterations. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::resetNumIters "void Anasazi::GeneralizedDavidson< ScalarType, MV, OP
+>::resetNumIters()
+
+Reset the number of iterations. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::getRitzVectors "RCP<const MV> Anasazi::GeneralizedDavidson< ScalarType, MV, OP
+>::getRitzVectors()
+
+Get the current Ritz vectors. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::getRitzValues "std::vector< Value< ScalarType > > Anasazi::GeneralizedDavidson<
+ScalarType, MV, OP >::getRitzValues()
+
+Get the current Ritz values. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::getRitzIndex "std::vector<int> Anasazi::GeneralizedDavidson< ScalarType, MV, OP
+>::getRitzIndex()
+
+Get the current Ritz index vector. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::getBlockIndex "std::vector<int> Anasazi::GeneralizedDavidson< ScalarType, MV, OP
+>::getBlockIndex() const
+
+Get indices of current block.
+
+Number of entries is equal to getBlockSize() ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::getResNorms "std::vector< typename Teuchos::ScalarTraits< ScalarType
+>::magnitudeType > Anasazi::GeneralizedDavidson< ScalarType, MV, OP
+>::getResNorms()
+
+Get the current residual norms (w.r.t. norm defined by OrthoManager)
+";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::getResNorms "std::vector< typename Teuchos::ScalarTraits< ScalarType
+>::magnitudeType > Anasazi::GeneralizedDavidson< ScalarType, MV, OP
+>::getResNorms(int numWanted)
+
+Get the current residual norms (w.r.t. norm defined by OrthoManager)
+";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::getRes2Norms "std::vector<MagnitudeType> Anasazi::GeneralizedDavidson< ScalarType,
+MV, OP >::getRes2Norms()
+
+Get the current residual norms (2-norm) ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::getRitzRes2Norms
+"std::vector<MagnitudeType> Anasazi::GeneralizedDavidson< ScalarType,
+MV, OP >::getRitzRes2Norms()
+
+Get the current Ritz residual norms (2-norm)
+
+GeneralizedDavidson doesn't compute Ritz residual norms so this is
+equivalent to calling getRes2Norms() ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::getCurSubspaceDim
+"int Anasazi::GeneralizedDavidson< ScalarType, MV, OP
+>::getCurSubspaceDim() const
+
+Get current subspace dimension. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::getMaxSubspaceDim
+"int Anasazi::GeneralizedDavidson< ScalarType, MV, OP
+>::getMaxSubspaceDim() const
+
+Get maximum subspace dimension. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::setStatusTest "void Anasazi::GeneralizedDavidson< ScalarType, MV, OP
+>::setStatusTest(RCP< StatusTest< ScalarType, MV, OP > > tester)
+
+Set status test. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::getStatusTest "RCP<StatusTest<ScalarType,MV,OP> > Anasazi::GeneralizedDavidson<
+ScalarType, MV, OP >::getStatusTest() const
+
+Get status test. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::getProblem "const Eigenproblem<ScalarType,MV,OP>& Anasazi::GeneralizedDavidson<
+ScalarType, MV, OP >::getProblem() const
+
+Get eigenproblem. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::getBlockSize "int Anasazi::GeneralizedDavidson< ScalarType, MV, OP >::getBlockSize()
+const
+
+Get block size. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::setBlockSize "void Anasazi::GeneralizedDavidson< ScalarType, MV, OP
+>::setBlockSize(int blockSize)
+
+Set block size. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::setSize "void
+Anasazi::GeneralizedDavidson< ScalarType, MV, OP >::setSize(int
+blockSize, int maxSubDim)
+
+Set problem size. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::getAuxVecs "Teuchos::Array< RCP<const MV> > Anasazi::GeneralizedDavidson<
+ScalarType, MV, OP >::getAuxVecs() const
+
+Get the auxilliary vectors. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::setAuxVecs "void
+Anasazi::GeneralizedDavidson< ScalarType, MV, OP >::setAuxVecs(const
+Teuchos::Array< RCP< const MV > > &auxVecs)
+
+Set auxilliary vectors.
+
+Manually setting the auxilliary vectors invalidates the current state
+of the solver. Reuse of any components of the solver requires
+extracting the state, orthogonalizing V against the aux vecs and
+reinitializing. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::isInitialized "bool Anasazi::GeneralizedDavidson< ScalarType, MV, OP
+>::isInitialized() const
+
+Query if the solver is in an initialized state. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::currentStatus "void Anasazi::GeneralizedDavidson< ScalarType, MV, OP
+>::currentStatus(std::ostream &myout)
+
+Print current status of solver. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::getState "GeneralizedDavidsonState< ScalarType, MV >
+Anasazi::GeneralizedDavidson< ScalarType, MV, OP >::getState()
+
+Get the current state of the eigensolver. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::sortProblem "void Anasazi::GeneralizedDavidson< ScalarType, MV, OP
+>::sortProblem(int numWanted)
+
+Reorder Schur form, bringing wanted values to front ";
+
+
+// File: classAnasazi_1_1GeneralizedDavidson_3_01std_1_1complex_3_01MagnitudeType_01_4_00_01MV_00_01OP_01_4.xml
+%feature("docstring") Anasazi::GeneralizedDavidson< std::complex<
+MagnitudeType >, MV, OP > " ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson< std::complex<
+MagnitudeType >, MV, OP >::GeneralizedDavidson "
+Anasazi::GeneralizedDavidson< std::complex< MagnitudeType >, MV, OP
+>::GeneralizedDavidson(const RCP< Eigenproblem< ScalarType, MV, OP > >
+&problem, const RCP< SortManager< MagnitudeType > > &sortman, const
+RCP< OutputManager< ScalarType > > &outputman, const RCP< StatusTest<
+ScalarType, MV, OP > > &tester, const RCP< OrthoManager< ScalarType,
+MV > > &orthoman, Teuchos::ParameterList &pl) ";
+
+
+// File: classAnasazi_1_1GeneralizedDavidsonSolMgr.xml
+%feature("docstring") Anasazi::GeneralizedDavidsonSolMgr "
+
+Solver Manager for GeneralizedDavidson.
+
+This class provides a simple interface to the GeneralizedDavidson
+eigensolver. This manager creates appropriate
+orthogonalization/sort/output managers based on user specified
+ParameterList entries (or selects suitable defaults), provides access
+to solver functionality, and manages the restarting process.
+
+This class is currently only implemented for real scalar types (i.e.
+float, double).
+
+Steven Hamilton
+
+C++ includes: AnasaziGeneralizedDavidsonSolMgr.hpp ";
+
+%feature("docstring")
+Anasazi::GeneralizedDavidsonSolMgr::GeneralizedDavidsonSolMgr "Anasazi::GeneralizedDavidsonSolMgr< ScalarType, MV, OP
+>::GeneralizedDavidsonSolMgr(const RCP< Eigenproblem< ScalarType, MV,
+OP > > &problem, Teuchos::ParameterList &pl)
+
+Basic constructor for GeneralizedDavidsonSolMgr.
+
+This constructor accepts the Eigenproblem to be solved and a parameter
+list of options for the solver. The following options control the
+behavior of the solver: \"Which\" a string specifying the desired
+eigenvalues: SM, LM, SR, LR, SI, or LI. Default: \"LM.\"
+
+\"Block Size\" block size used by algorithm. Default: 1.
+
+\"Maximum Subspace Dimension\" maximum number of basis vectors for
+subspace. Two (for standard eigenvalue problems) or three (for
+generalized eigenvalue problems) sets of basis vectors of this size
+will be required. Default: 3*problem->getNEV()*\"Block Size\"
+
+\"Restart Dimension\" Number of vectors retained after a restart.
+Default: NEV
+
+\"Maximum Restarts\" an int specifying the maximum number of restarts
+the underlying solver is allowed to perform. Default: 20
+
+\"Orthogonalization\" a string specifying the desired
+orthogonalization: DGKS, SVQB, ICGS. Default: \"SVQB\"
+
+\"Verbosity\" a sum of MsgType specifying the verbosity. Default:
+AnasaziErrors
+
+\"Convergence Tolerance\" a MagnitudeType specifying the level that
+residual norms must reach to decide convergence. Default: machine
+precision
+
+\"Relative Convergence Tolerance\" a bool specifying whether residual
+norms should be scaled by the magnitude of the corresponding Ritz
+value. Care should be taken when performing scaling for problems where
+the eigenvalue can be very large or very small. Default: \"false\".
+
+\"Initial Guess\" how should initial vector be selected: \"Random\" or
+\"User\". If \"User,\" the value in problem->getInitVec() will be
+used. Default: \"Random\".
+
+\"Print Number of Ritz Values\" an int specifying how many Ritz values
+should be printed at each iteration. Default: \"NEV\". ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidsonSolMgr::getProblem
+"const Eigenproblem<ScalarType,MV,OP>&
+Anasazi::GeneralizedDavidsonSolMgr< ScalarType, MV, OP >::getProblem()
+const
+
+Return the eigenvalue problem. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidsonSolMgr::getNumIters
+"int Anasazi::GeneralizedDavidsonSolMgr< ScalarType, MV, OP
+>::getNumIters() const
+
+Get the iteration count for the most recent call to solve() ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidsonSolMgr::solve "ReturnType Anasazi::GeneralizedDavidsonSolMgr< ScalarType, MV, OP
+>::solve()
+
+This method performs possibly repeated calls to the underlying
+eigensolver's iterate() routine until the problem has been solved (as
+decided by the StatusTest) or the solver manager decides to quit. ";
+
+
+// File: classAnasazi_1_1GeneralizedDavidsonSolMgr_3_01std_1_1complex_3_01MagnitudeType_01_4_00_01MV_00_01OP_01_4.xml
+%feature("docstring") Anasazi::GeneralizedDavidsonSolMgr<
+std::complex< MagnitudeType >, MV, OP > " ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidsonSolMgr<
+std::complex< MagnitudeType >, MV, OP >::GeneralizedDavidsonSolMgr "
+Anasazi::GeneralizedDavidsonSolMgr< std::complex< MagnitudeType >, MV,
+OP >::GeneralizedDavidsonSolMgr(const RCP< Eigenproblem< ScalarType,
+MV, OP > > &problem, Teuchos::ParameterList &pl) ";
+
+
+// File: structAnasazi_1_1GeneralizedDavidsonState.xml
+%feature("docstring") Anasazi::GeneralizedDavidsonState "
+
+Structure to contain pointers to GeneralizedDavidson state variables.
+
+C++ includes: AnasaziGeneralizedDavidson.hpp ";
+
+%feature("docstring")
+Anasazi::GeneralizedDavidsonState::GeneralizedDavidsonState "Anasazi::GeneralizedDavidsonState< ScalarType, MV
+>::GeneralizedDavidsonState() ";
+
+
 // File: classAnasazi_1_1GenOrthoManager.xml
 %feature("docstring") Anasazi::GenOrthoManager "
 
@@ -2450,27 +2777,25 @@ MY=Teuchos::tuple(Teuchos::RCP< const MV >(Teuchos::null))) const =0
 
 Applies a series of generic projectors.
 
-Given a list of bases X[i] and Y[i] (a projection pair), this method
-takes a multivector S and applies the projectors \\\\[ P_{X[i],Y[i]} S
-= S - X[i] \\\\langle Y[i], X[i] \\\\rangle^{-1} \\\\langle Y[i], S
-\\\\rangle\\\\ . \\\\] This operation projects S onto the space
-orthogonal to the Y[i], along the range of the X[i]. The inner product
-specified by $\\\\langle \\\\cdot, \\\\cdot \\\\rangle$ is given by
-innerProd().
+Given a list of bases <tt>X[i]</tt> and <tt>Y[i]</tt> (a projection
+pair), this method   takes a multivector \\\\c S and applies the
+projectors \\\\[ P_{X[i],Y[i]} S = S - X[i] \\\\langle Y[i], X[i]
+\\\\rangle^{-1} \\\\langle Y[i], S \\\\rangle\\\\ . \\\\] This
+operation projects S onto the space orthogonal to the Y[i], along the
+range of the X[i]. The inner product specified by $\\\\langle
+\\\\cdot, \\\\cdot \\\\rangle$ is given by innerProd().
 
 The call is equivalent to the call  The method also returns the
 coefficients C[i] associated with each projection pair, so that \\\\[
 S_{in} = S_{out} + \\\\sum_i X[i] C[i] \\\\] and therefore \\\\[ C[i]
 = \\\\langle Y[i], X[i] \\\\rangle^{-1} \\\\langle Y[i], S
-\\\\rangle\\\\ . \\\\]
-
-Lastly, for reasons of efficiency, the user must specify whether the
-projection pairs are bi-orthonormal with respect to innerProd(), i.e.,
-whether $\\\\langle Y[i], X[i] \\\\rangle = I$. In the case that the
-bases are specified to be biorthogonal, the inverse $\\\\langle Y, X
-\\\\rangle^{-1}$ will not be computed. Furthermore, the user may
-optionally specifiy the image of S and the projection pairs under the
-inner product operator getOp().
+\\\\rangle\\\\ . \\\\] Lastly, for reasons of efficiency, the user
+must specify whether the projection pairs are bi-orthonormal with
+respect to innerProd(), i.e., whether \\\\form#34. In the case that
+the bases are specified to be biorthogonal, the inverse \\\\form#35
+will not be computed. Furthermore, the user may optionally   specifiy
+the image of \\\\c S and the projection pairs under the inner product
+operator getOp().
 
 Parameters:
 -----------
@@ -2538,13 +2863,13 @@ MY=Teuchos::tuple(Teuchos::RCP< const MV >(Teuchos::null))) const =0
 Applies a series of generic projectors and returns an orthonormal
 basis for the residual data.
 
-Given a list of bases X[i] and Y[i] (a projection pair), this method
-takes a multivector S and applies the projectors \\\\[ P_{X[i],Y[i]} S
-= S - X[i] \\\\langle Y[i], X[i] \\\\rangle^{-1} \\\\langle Y[i], S
-\\\\rangle\\\\ . \\\\] These operation project S onto the space
-orthogonal to the range of the Y[i], along the range of X[i]. The
-inner product specified by $\\\\langle \\\\cdot, \\\\cdot \\\\rangle$
-is given by innerProd().
+Given a list of bases <tt>X[i]</tt> and <tt>Y[i]</tt> (a projection
+pair), this method   takes a multivector \\\\c S and applies the
+projectors \\\\[ P_{X[i],Y[i]} S = S - X[i] \\\\langle Y[i], X[i]
+\\\\rangle^{-1} \\\\langle Y[i], S \\\\rangle\\\\ . \\\\] These
+operation project S onto the space orthogonal to the range of the
+Y[i], along the range of X[i]. The inner product specified by
+$\\\\langle \\\\cdot, \\\\cdot \\\\rangle$ is given by innerProd().
 
 The method returns in S an orthonormal basis for the residual \\\\[
 \\\\left( \\\\prod_{i} P_{X[i],Y[i]} \\\\right) S_{in} = S_{out} B\\\\
@@ -2554,13 +2879,11 @@ of the residual with respect to the new basis.
 The method also returns the coefficients C[i] and B associated with
 each projection pair, so that \\\\[ S_{in} = S_{out} B + \\\\sum_i
 X[i] C[i] \\\\] and \\\\[ C[i] = \\\\langle Y[i], X[i] \\\\rangle^{-1}
-\\\\langle Y[i], S \\\\rangle\\\\ . \\\\]
-
-Lastly, for reasons of efficiency, the user must specify whether the
-projection pairs are bi-orthonormal with respect to innerProd(), i.e.,
-whether $\\\\langle Y[i], X[i] \\\\rangle = I$. Furthermore, the user
-may optionally specifiy the image of S and the projection pairs under
-the inner product operator getOp().
+\\\\langle Y[i], S \\\\rangle\\\\ . \\\\] Lastly, for reasons of
+efficiency, the user must specify whether the projection pairs are bi-
+orthonormal with  respect to innerProd(), i.e., whether \\\\form#34.
+Furthermore, the user may optionally specifiy the image of \\\\c S and
+the projection pairs under the inner product operator getOp().
 
 Parameters:
 -----------
@@ -2683,31 +3006,27 @@ MY=Teuchos::tuple(Teuchos::RCP< const MV >(Teuchos::null))) const
 
 Applies a series of generic projectors.
 
-Given a list of bases X[i] and Y[i] (a projection pair), this method
-takes a multivector S and applies the projectors \\\\[ P_{X[i],Y[i]} S
-= S - X[i] \\\\langle Y[i], X[i] \\\\rangle^{-1} \\\\langle Y[i], S
-\\\\rangle\\\\ . \\\\] This operation projects S onto the space
-orthogonal to the Y[i], along the range of the X[i]. The inner product
-specified by $\\\\langle \\\\cdot, \\\\cdot \\\\rangle$ is given by
-innerProd().
+Given a list of bases <tt>X[i]</tt> and <tt>Y[i]</tt> (a projection
+pair), this method   takes a multivector \\\\c S and applies the
+projectors \\\\[ P_{X[i],Y[i]} S = S - X[i] \\\\langle Y[i], X[i]
+\\\\rangle^{-1} \\\\langle Y[i], S \\\\rangle\\\\ . \\\\] This
+operation projects S onto the space orthogonal to the Y[i], along the
+range of the X[i]. The inner product specified by $\\\\langle
+\\\\cdot, \\\\cdot \\\\rangle$ is given by innerProd().
 
 The call is equivalent to the call  The method also returns the
 coefficients C[i] associated with each projection pair, so that \\\\[
 S_{in} = S_{out} + \\\\sum_i X[i] C[i] \\\\] and therefore \\\\[ C[i]
 = \\\\langle Y[i], X[i] \\\\rangle^{-1} \\\\langle Y[i], S
-\\\\rangle\\\\ . \\\\]
-
-Lastly, for reasons of efficiency, the user must specify whether the
-projection pairs are bi-orthonormal with respect to innerProd(), i.e.,
-whether $\\\\langle Y[i], X[i] \\\\rangle = I$. In the case that the
-bases are specified to be biorthogonal, the inverse $\\\\langle Y, X
-\\\\rangle^{-1}$ will not be computed. Furthermore, the user may
-optionally specifiy the image of S and the projection pairs under the
-inner product operator getOp().
-
-projectGen() is implemented to apply the projectors via an iterated
-Classical Gram-Schmidt, where the iteration is performed getNumIters()
-number of times.
+\\\\rangle\\\\ . \\\\] Lastly, for reasons of efficiency, the user
+must specify whether the projection pairs are bi-orthonormal with
+respect to innerProd(), i.e., whether \\\\form#34. In the case that
+the bases are specified to be biorthogonal, the inverse \\\\form#35
+will not be computed. Furthermore, the user may optionally   specifiy
+the image of \\\\c S and the projection pairs under the inner product
+operator getOp(). projectGen() is implemented to apply the projectors
+via an iterated Classical Gram-Schmidt, where the iteration is
+performed getNumIters() number of times.
 
 Parameters:
 -----------
@@ -2775,13 +3094,13 @@ MY=Teuchos::tuple(Teuchos::RCP< const MV >(Teuchos::null))) const
 Applies a series of generic projectors and returns an orthonormal
 basis for the residual data.
 
-Given a list of bases X[i] and Y[i] (a projection pair), this method
-takes a multivector S and applies the projectors \\\\[ P_{X[i],Y[i]} S
-= S - X[i] \\\\langle Y[i], X[i] \\\\rangle^{-1} \\\\langle Y[i], S
-\\\\rangle\\\\ . \\\\] These operation project S onto the space
-orthogonal to the range of the Y[i], along the range of X[i]. The
-inner product specified by $\\\\langle \\\\cdot, \\\\cdot \\\\rangle$
-is given by innerProd().
+Given a list of bases <tt>X[i]</tt> and <tt>Y[i]</tt> (a projection
+pair), this method   takes a multivector \\\\c S and applies the
+projectors \\\\[ P_{X[i],Y[i]} S = S - X[i] \\\\langle Y[i], X[i]
+\\\\rangle^{-1} \\\\langle Y[i], S \\\\rangle\\\\ . \\\\] These
+operation project S onto the space orthogonal to the range of the
+Y[i], along the range of X[i]. The inner product specified by
+$\\\\langle \\\\cdot, \\\\cdot \\\\rangle$ is given by innerProd().
 
 The method returns in S an orthonormal basis for the residual \\\\[
 \\\\left( \\\\prod_{i} P_{X[i],Y[i]} \\\\right) S_{in} = S_{out} B\\\\
@@ -2791,13 +3110,11 @@ of the residual with respect to the new basis.
 The method also returns the coefficients C[i] and B associated with
 each projection pair, so that \\\\[ S_{in} = S_{out} B + \\\\sum_i
 X[i] C[i] \\\\] and \\\\[ C[i] = \\\\langle Y[i], X[i] \\\\rangle^{-1}
-\\\\langle Y[i], S \\\\rangle\\\\ . \\\\]
-
-Lastly, for reasons of efficiency, the user must specify whether the
-projection pairs are bi-orthonormal with respect to innerProd(), i.e.,
-whether $\\\\langle Y[i], X[i] \\\\rangle = I$. Furthermore, the user
-may optionally specifiy the image of S and the projection pairs under
-the inner product operator getOp().
+\\\\langle Y[i], S \\\\rangle\\\\ . \\\\] Lastly, for reasons of
+efficiency, the user must specify whether the projection pairs are bi-
+orthonormal with  respect to innerProd(), i.e., whether \\\\form#34.
+Furthermore, the user may optionally specifiy the image of \\\\c S and
+the projection pairs under the inner product operator getOp().
 
 Parameters:
 -----------
@@ -3031,8 +3348,8 @@ Gradient (LOBPCG) iteration, a preconditioned iteration for solving
 linear Hermitian eigenproblems.
 
 This implementation is a modification of the one found in A. Knyazev,
-\"Toward the optimal preconditioned eigensolver:         Locally
-optimal block preconditioner conjugate gradient method\", SIAM J. Sci.
+\"Toward the optimal preconditioned eigensolver:    Locally optimal
+block preconditioner conjugate gradient method\", SIAM J. Sci.
 Comput., vol 23, n 2, pp. 517-541.
 
 The modification consists of the orthogonalization steps recommended
@@ -3121,15 +3438,14 @@ Initialize the solver to an iterate, optionally providing the Ritz
 values, residual, and search direction.
 
 LOBPCGState contains fields V, KV and MV: These are ignored by
-initialize()  The LOBPCG eigensolver contains a certain amount of
-state relating to the current iterate, including the current residual,
-the current search direction, and the images of these spaces under the
-eigenproblem operators.
-
-initialize() gives the user the opportunity to manually set these,
-although this must be done with caution, abiding by the rules given
-below. All notions of orthogonality and orthonormality are derived
-from the inner product specified by the orthogonalization manager.
+initialize()  The %LOBPCG eigensolver contains a certain amount of
+state relating to   the current iterate, including the current
+residual, the current search   direction, and the images of these
+spaces under the eigenproblem operators.    initialize() gives the
+user the opportunity to manually set these,   although this must be
+done with caution, abiding by the rules   given below. All notions of
+orthogonality and orthonormality are derived   from the inner product
+specified by the orthogonalization manager.
 
 isInitialized() == true (see post-conditions of isInitialize())
 
@@ -3180,11 +3496,11 @@ const
 
 Get the current state of the eigensolver.
 
-The data is only valid if isInitialized() == true. The data for the
-search directions P is only meaningful if hasP() == true. Finally, the
-data for the preconditioned residual (H) is only meaningful in the
-situation where the solver throws an ::LOBPCGRitzFailure exception
-during iterate().
+The data is only valid if isInitialized() == \\\\c true. The   data
+for the search directions P is only meaningful if hasP() == \\\\c
+true. Finally, the data for the preconditioned residual (H) is only
+meaningful in the situation where   the solver throws an
+::LOBPCGRitzFailure exception during iterate().
 
 An LOBPCGState object containing const views to the current solver
 state. ";
@@ -3226,7 +3542,7 @@ int > Anasazi::LOBPCG< ScalarType, MV, OP >::getRitzIndex()
 Get the index used for extracting Ritz vectors from getRitzVectors().
 
 Because BlockDavidson is a Hermitian solver, all Ritz values are real
-and all Ritz vectors can be represented in a single column of a
+and all Ritz vectors can be represented in a    single column of a
 multivector. Therefore, getRitzIndex() is not needed when using the
 output from getRitzVectors().
 
@@ -3257,8 +3573,8 @@ residuals. ";
 
 Get the 2-norms of the residuals.
 
-The Ritz residuals are not defined for the LOBPCG iteration. Hence,
-this method returns the 2-norms of the direct residuals, and is
+The Ritz residuals are not defined for the %LOBPCG iteration. Hence,
+this method returns the    2-norms of the direct residuals, and is
 equivalent to calling getRes2Norms().
 
 A vector of length getBlockSize() containing the 2-norms of the direct
@@ -3270,9 +3586,9 @@ Anasazi::LOBPCG< ScalarType, MV, OP >::getCurSubspaceDim() const
 Get the dimension of the search subspace used to generate the current
 eigenvectors and eigenvalues.
 
-LOBPCG employs a sequential subspace iteration, maintaining a fixed-
-rank basis, as opposed to an expanding subspace mechanism employed by
-Krylov-subspace solvers like BlockKrylovSchur and BlockDavidson.
+%LOBPCG employs a sequential subspace iteration, maintaining a fixed-
+rank basis, as opposed to an expanding subspace    mechanism employed
+by Krylov-subspace solvers like BlockKrylovSchur and BlockDavidson.
 
 An integer specifying the rank of the subspace generated by the
 eigensolver. If isInitialized() == false, the return is 0. Otherwise,
@@ -3598,35 +3914,29 @@ decided by the solver manager) or the solver manager decides to quit.
 
 This method calls LOBPCG::iterate(), which will return either because
 a specially constructed status test evaluates to ::Passed or an
-exception is thrown.
-
-A return from LOBPCG::iterate() signifies one of the following
-scenarios: the maximum number of iterations has been exceeded. In this
-scenario, the solver manager will place  all converged eigenpairs into
-the eigenproblem and return ::Unconverged.
-
-the locking conditions have been met. In this scenario, some of the
-current eigenpairs will be removed  from the eigensolver and placed
-into auxiliary storage. The eigensolver will be restarted with the
-remaining  eigenpairs and some random information to replace the
-removed eigenpairs.
-
-global convergence has been met. In this case, the most significant
-NEV eigenpairs in the solver and locked storage  have met the
-convergence criterion. (Here, NEV refers to the number of eigenpairs
-requested by the Eigenproblem.)  In this scenario, the solver manager
-will return ::Converged.
-
-an LOBPCGRitzFailure exception has been thrown. If full
-orthogonalization is enabled and recovery from this exception  is
-requested, the solver manager will attempt to recover from this
-exception by gathering the current eigenvectors,  preconditioned
-residual, and search directions from the eigensolver,
-orthogonormalizing the basis composed of these  three, projecting the
-eigenproblem, and restarting the eigensolver with the solution of the
-project eigenproblem. Any  additional failure that occurs during this
-recovery effort will result in the eigensolver returning
-::Unconverged.
+exception is thrown.  A return from LOBPCG::iterate() signifies one of
+the following scenarios:    - the maximum number of iterations has
+been exceeded. In this scenario, the solver manager will place\\\\n
+all converged eigenpairs into the eigenproblem and return
+::Unconverged.    - the locking conditions have been met. In this
+scenario, some of the current eigenpairs will be removed\\\\n from the
+eigensolver and placed into auxiliary storage. The eigensolver will be
+restarted with the remaining\\\\n      eigenpairs and some random
+information to replace the removed eigenpairs.    - global convergence
+has been met. In this case, the most significant NEV eigenpairs in the
+solver and locked storage  \\\\n      have met the convergence
+criterion. (Here, NEV refers to the number of eigenpairs requested by
+the Eigenproblem.)    \\\\n      In this scenario, the solver manager
+will return ::Converged.    - an LOBPCGRitzFailure exception has been
+thrown. If full orthogonalization is enabled and recovery from this
+exception\\\\n      is requested, the solver manager will attempt to
+recover from this exception by gathering the current eigenvectors,
+\\\\n      preconditioned residual, and search directions from the
+eigensolver, orthogonormalizing the basis composed of these  \\\\n
+three, projecting the eigenproblem, and restarting the eigensolver
+with the solution of the project eigenproblem. Any \\\\n
+additional failure that occurs during this recovery effort will result
+in the eigensolver returning ::Unconverged.
 
 ::ReturnType specifying: ::Converged: the eigenproblem was solved to
 the specification required by the solver manager.
@@ -3789,8 +4099,8 @@ MQ=Teuchos::tuple(Teuchos::RCP< const MV >(Teuchos::null))) const =0
 
 Provides matrix-based projection method.
 
-This method optionally allows the provision of $M X$ and/or the $M
-Q[i]$. See OrthoManager::project() for more details.
+This method optionally allows the provision of \\\\form#53 and/or the
+\\\\form#54. See OrthoManager::project() for more details.
 
 Parameters:
 -----------
@@ -3811,7 +4121,7 @@ const =0
 
 Provides matrix-based orthonormalization method.
 
-This method optionally allows the provision of $M X$. See
+This method optionally allows the provision of \\\\form#53. See
 orthoManager::normalize() for more details.
 
 Parameters:
@@ -3841,8 +4151,8 @@ Teuchos::RCP< const MV > > MQ=Teuchos::tuple(Teuchos::RCP< const MV
 
 Provides matrix-based projection/orthonormalization method.
 
-This method optionally allows the provision of $M X$ and/or the $M
-Q[i]$. See orthoManager::projectAndNormalize() for more details.
+This method optionally allows the provision of \\\\form#53 and/or the
+\\\\form#54. See orthoManager::projectAndNormalize() for more details.
 
 Parameters:
 -----------
@@ -4047,6 +4357,12 @@ Anasazi::MultiVec< ScalarType >::GetVecLength() const =0
 
 The number of rows in the multivector. ";
 
+%feature("docstring")  Anasazi::MultiVec::GetGlobalLength "virtual
+ptrdiff_t Anasazi::MultiVec< ScalarType >::GetGlobalLength() const
+
+The number of rows in the multivector. This method supersedes
+GetVecLength, which will be deprecated. ";
+
 %feature("docstring")  Anasazi::MultiVec::GetNumberVecs "virtual int
 Anasazi::MultiVec< ScalarType >::GetNumberVecs() const =0
 
@@ -4215,9 +4531,9 @@ Teuchos::RCP<MV> Anasazi::MultiVecTraits< ScalarType, MV
 Creates a new MV and copies the selected contents of mv into the new
 vector (deep copy).
 
-The copied vectors from mv are indicated by the index.size() indices
-in index. Reference-counted pointer to the new multivector of type MV.
-";
+The copied vectors from \\\\c mv are indicated by the \\\\c
+index.size() indices in \\\\c index. Reference-counted pointer to the
+new multivector of type MV. ";
 
 %feature("docstring")  Anasazi::MultiVecTraits::CloneCopy "static
 Teuchos::RCP<MV> Anasazi::MultiVecTraits< ScalarType, MV
@@ -4301,7 +4617,13 @@ Reference-counted pointer to the const view of specified columns of mv
 int Anasazi::MultiVecTraits< ScalarType, MV >::GetVecLength(const MV
 &mv)
 
-Obtain the vector length of mv. ";
+Return the number of rows in the given multivector mv.
+
+If you are writing a specialization of MultiVecTraits for your own
+multivector type MV, please see the documentation of MultiVecTraitsExt
+in this file. Most Anasazi users will not need to do this, since
+MultiVecTraits already has specializations for Epetra, Tpetra, and
+Thyra objects. ";
 
 %feature("docstring")  Anasazi::MultiVecTraits::GetNumberVecs "static
 int Anasazi::MultiVecTraits< ScalarType, MV >::GetNumberVecs(const MV
@@ -4471,8 +4793,9 @@ Anasazi::MultiVecTraits< ScalarType, MultiVec< ScalarType >
 Creates a new  Anasazi::MultiVec and copies the selected contents of
 mv into the new vector (deep copy).
 
-The copied vectors from mv are indicated by the index.size() indices
-in index. Reference-counted pointer to the new  Anasazi::MultiVec. ";
+The copied vectors from \\\\c mv are indicated by the \\\\c
+index.size() indices in \\\\c index. Reference-counted pointer to the
+new  Anasazi::MultiVec. ";
 
 %feature("docstring")  Anasazi::MultiVecTraits< ScalarType, MultiVec<
 ScalarType > >::CloneViewNonConst " static
@@ -4614,6 +4937,78 @@ ScalarType, MultiVec< ScalarType > >::MvPrint(const MultiVec<
 ScalarType > &mv, std::ostream &os)
 
 Print the mv multi-vector to the os output stream. ";
+
+
+// File: classAnasazi_1_1MultiVecTraitsExt.xml
+%feature("docstring") Anasazi::MultiVecTraitsExt "
+
+An extension of the MultiVecTraits class that adds a new vector length
+method.
+
+This traits class provides a 64-bit compatible method,
+GetGlobalLength(), that returns the number of rows in a multivector.
+GetGlobalLength() will replace the GetVecLength() method in
+MultiVecTraits, which is not 64-bit compatible. GetVecLength() will be
+deprecated, and will be removed in the next major Trilinos release.
+
+For now, GetGlobalLength() will call the GetVecLength() method by
+default for any traits implementation that does not specialize this
+class. If you have written a specialization of MultiVecTraits for your
+own multivector type MV, and if MV does not support returning the
+number of rows as a 64-bit integer, then you don't need to do
+anything. If your MV class does support this, then you should write a
+specialization of MultiVecTraitsExt that reimplements
+GetGlobalLength(). Otherwise, you risk overflowing the int return
+value of GetVecLength().
+
+You do not need to write a specialization of MultiVecTraitsExt if you
+are using Epetra, Tpetra, or Thyra multivectors. Anasazi already
+provides specializations for these types. Just relax and enjoy using
+the solvers!
+
+C++ includes: AnasaziMultiVecTraits.hpp ";
+
+/*  New attribute methods  */
+
+%feature("docstring")  Anasazi::MultiVecTraitsExt::GetGlobalLength "static ptrdiff_t Anasazi::MultiVecTraitsExt< ScalarType, MV
+>::GetGlobalLength(const MV &mv)
+
+Obtain the vector length of mv. This method supersedes GetVecLength,
+which will be deprecated. ";
+
+
+// File: classAnasazi_1_1MultiVecTraitsExt_3_01ScalarType_00_01MultiVec_3_01ScalarType_01_4_01_4.xml
+%feature("docstring") Anasazi::MultiVecTraitsExt< ScalarType,
+MultiVec< ScalarType > > "
+
+An extension of the MultiVecTraits class that adds a new vector length
+method.
+
+This traits class provides an additional method to the multivector
+operations for finding the number of rows that is 64-bit compatible.
+The method in this traits class will replace the GetVecLength()
+method, which will be deprecated, and removed in the next major
+Trilinos release. At this time, this traits class will call the
+GetVecLength() method by default for any traits implementation that
+does not specialize this template. However, for 64-bit support this
+template will need to be specialized.
+
+You do not need to write a specialization of MultiVecTraitsExt if you
+are using Epetra, Tpetra, or Thyra multivectors. Anasazi already
+provides specializations for these types. Just relax and enjoy using
+the solvers!
+
+C++ includes: AnasaziMultiVec.hpp ";
+
+/*  New attribute methods  */
+
+%feature("docstring")  Anasazi::MultiVecTraitsExt< ScalarType,
+MultiVec< ScalarType > >::GetGlobalLength " static ptrdiff_t
+Anasazi::MultiVecTraitsExt< ScalarType, MultiVec< ScalarType >
+>::GetGlobalLength(const MultiVec< ScalarType > &mv)
+
+Obtain the vector length of mv. This method supersedes GetVecLength,
+which will be deprecated. ";
 
 
 // File: classAnasazi_1_1details_1_1MultiVecTsqrAdapter.xml
@@ -4838,7 +5233,8 @@ the individual Q[i], optionally returning the coefficients of X for
 the individual Q[i]. All of this is done with respect to the inner
 product innerProd().
 
-After calling this routine, X will be orthogonal to each of the Q[i].
+After calling this routine, \\\\c X will be orthogonal to each of the
+<tt>Q[i]</tt>.
 
 Parameters:
 -----------
@@ -4871,11 +5267,12 @@ B=Teuchos::null) const =0
 This method takes a multivector X and attempts to compute a basis for
 $colspan(X)$. This basis is orthonormal with respect to innerProd().
 
-This routine returns an integer rank stating the rank of the computed
-basis. If X does not have full rank and the normalize() routine does
-not attempt to augment the subspace, then rank may be smaller than the
-number of columns in X. In this case, only the first rank columns of
-output X and first rank rows of B will be valid.
+This routine returns an integer \\\\c rank stating the rank of the
+computed   basis. If \\\\c X does not have full rank and the
+normalize() routine does   not attempt to augment the subspace, then
+\\\\c rank may be smaller than   the number of columns in \\\\c X. In
+this case, only the first \\\\c rank   columns of output \\\\c X and
+first \\\\c rank rows of \\\\c B will be valid.
 
 Parameters:
 -----------
@@ -4913,13 +5310,13 @@ B=Teuchos::null) const =0
 Given a set of bases Q[i] and a multivector X, this method computes an
 orthonormal basis for $colspan(X) - \\\\sum_i colspan(Q[i])$.
 
-This routine returns an integer rank stating the rank of the computed
-basis. If the subspace $colspan(X) - \\\\sum_i colspan(Q[i])$ does not
-have dimension as large as the number of columns of X and the
+This routine returns an integer \\\\c rank stating the rank of the
+computed basis. If the subspace \\\\form#15    does not have dimension
+as large as the number of columns of \\\\c X and    the
 orthogonalization manager does not attempt to augment the subspace,
-then rank may be smaller than the number of columns of X. In this
-case, only the first rank columns of output X and first rank rows of B
-will be valid.
+then \\\\c rank may be smaller than the number of columns of \\\\c X.
+In this    case, only the first \\\\c rank columns of output \\\\c X
+and first \\\\c rank    rows of \\\\c B will be valid.
 
 This routine guarantees both the orthogonality of the returned basis
 against the Q[i] as well as the orthonormality of the returned basis.
@@ -5009,7 +5406,7 @@ in place. TSQR (the Tall Skinny QR factorization, see
 TsqrOrthoManager.hpp for references) is an orthogonalization method
 which cannot normalize (or projectAndNormalize) in place.
 
-Tsqr(Mat) OrthoManager implements (Mat)OrthoManager's normalize() and
+Tsqr(Mat) OrthoManager implements (Mat) OrthoManager's normalize() and
 projectAndNormalize() methods with scratch space and copying. However,
 if you handle Tsqr(Mat) OrthoManager through this mixin, you can
 exploit TSQR's unique interface to avoid copying back and forth
@@ -5279,13 +5676,12 @@ ScalarType, MV > newstate)
 Initialize the solver to an iterate, optionally providing the Ritz
 values and residual.
 
-The RTR eigensolver contains a certain amount of state relating to the
-current iterate.
-
-initialize() gives the user the opportunity to manually set these,
-although this must be done with caution, abiding by the rules given
-below. All notions of orthogonality and orthonormality are derived
-from the inner product specified by the orthogonalization manager.
+The %RTR eigensolver contains a certain amount of state relating to
+the current iterate.    initialize() gives the user the opportunity to
+manually set these,   although this must be done with caution, abiding
+by the rules   given below. All notions of orthogonality and
+orthonormality are derived   from the inner product specified by the
+orthogonalization manager.
 
 isInitialized() == true (see post-conditions of isInitialize())
 
@@ -5328,7 +5724,7 @@ const
 
 Get the current state of the eigensolver.
 
-The data is only valid if isInitialized() == true.
+The data is only valid if isInitialized() == \\\\c true.
 
 An RTRState object containing const pointers to the current solver
 state. ";
@@ -5370,7 +5766,7 @@ int > Anasazi::RTRBase< ScalarType, MV, OP >::getRitzIndex()
 Get the index used for extracting Ritz vectors from getRitzVectors().
 
 Because BlockDavidson is a Hermitian solver, all Ritz values are real
-and all Ritz vectors can be represented in a single column of a
+and all Ritz vectors can be represented in a    single column of a
 multivector. Therefore, getRitzIndex() is not needed when using the
 output from getRitzVectors().
 
@@ -5410,9 +5806,9 @@ Anasazi::RTRBase< ScalarType, MV, OP >::getCurSubspaceDim() const
 Get the dimension of the search subspace used to generate the current
 eigenvectors and eigenvalues.
 
-RTR employs a sequential subspace iteration, maintaining a fixed-rank
-basis, as opposed to an expanding subspace mechanism employed by
-Krylov-subspace solvers like BlockKrylovSchur and BlockDavidson.
+%RTR employs a sequential subspace iteration, maintaining a fixed-
+rank basis, as opposed to an expanding subspace    mechanism employed
+by Krylov-subspace solvers like BlockKrylovSchur and BlockDavidson.
 
 An integer specifying the rank of the subspace generated by the
 eigensolver. If isInitialized() == false, the return is 0. Otherwise,
@@ -5868,6 +6264,12 @@ int Anasazi::SolverManager< ScalarType, MV, OP >::getNumIters() const
 =0
 
 Get the iteration count for the most recent call to  solve(). ";
+
+%feature("docstring")  Anasazi::SolverManager::getTimers "virtual
+Teuchos::Array<Teuchos::RCP<Teuchos::Time> > Anasazi::SolverManager<
+ScalarType, MV, OP >::getTimers() const
+
+Return the timers for this object. ";
 
 /*  Solver application methods  */
 
@@ -6385,8 +6787,8 @@ C++ includes: AnasaziStatusTest.hpp ";
 A status test for testing the number of iterations.
 
 Anasazi::StatusTestMaxIters will test true when an eigensolver has
-reached some number of iterations. Specifically,
-{ Passed,  if solver->getNumIters() >= maxIter status(solver) = {
+reached some number of iterations. Specifically,                  {
+Passed,  if solver->getNumIters() >= maxIter status(solver) = {
 { Failed,  if solver->getNumIters()  < maxIter where maxIter is the
 parameter given to the status tester.
 
@@ -6522,17 +6924,14 @@ Constructor.
 
 The StatusTestOutput requires an OutputManager for printing the
 underlying StatusTest on calls to checkStatus(), as well as an
-underlying StatusTest.
-
-StatusTestOutput can be initialized with a null pointer for argument
-test. However, calling checkStatus() with a null child pointer will
-result in a StatusTestError exception being thrown. See checkStatus()
-for more information.
-
-The last two parameters, described below, in addition to the verbosity
-level of the OutputManager, control when printing is called. When both
-the mod criterion and the printStates criterion are satisfied, the
-status test will be printed to the OutputManager with ::MsgType of
+underlying StatusTest.  StatusTestOutput can be initialized with a
+null pointer for argument \\\\c test. However, calling checkStatus()
+with a null child pointer  will result in a StatusTestError exception
+being thrown. See checkStatus() for more information.  The last two
+parameters, described below, in addition to the verbosity level of the
+OutputManager, control when printing is  called. When both the \\\\c
+mod criterion and the \\\\c printStates criterion are satisfied, the
+status test will be printed to the  OutputManager with ::MsgType of
 ::StatusTestDetails.
 
 Parameters:
@@ -7068,7 +7467,8 @@ the individual Q[i], optionally returning the coefficients of X for
 the individual Q[i]. All of this is done with respect to the inner
 product innerProd().
 
-After calling this routine, X will be orthogonal to each of the Q[i].
+After calling this routine, \\\\c X will be orthogonal to each of the
+<tt>Q[i]</tt>.
 
 Parameters:
 -----------
@@ -7105,19 +7505,18 @@ B=Teuchos::null, Teuchos::RCP< MV > MX=Teuchos::null) const
 This method takes a multivector X and attempts to compute an
 orthonormal basis for $colspan(X)$, with respect to innerProd().
 
-This method does not compute an upper triangular coefficient matrix B.
-
-This routine returns an integer rank stating the rank of the computed
-basis. If X does not have full rank and the normalize() routine does
-not attempt to augment the subspace, then rank may be smaller than the
-number of columns in X. In this case, only the first rank columns of
-output X and first rank rows of B will be valid.
-
-The method attempts to find a basis with dimension equal to the number
-of columns in X. It does this by augmenting linearly dependent vectors
-in X with random directions. A finite number of these attempts will be
-made; therefore, it is possible that the dimension of the computed
-basis is less than the number of vectors in X.
+This method does not compute an upper triangular coefficient matrix
+\\\\c B.    This routine returns an integer \\\\c rank stating the
+rank of the computed basis. If \\\\c X does not have full rank and the
+normalize() routine does    not attempt to augment the subspace, then
+\\\\c rank may be smaller than the number of columns in \\\\c X. In
+this case, only the first \\\\c rank columns of    output \\\\c X and
+first \\\\c rank rows of \\\\c B will be valid.    The method attempts
+to find a basis with dimension equal to the number of columns in \\\\c
+X. It does this by augmenting linearly dependent    vectors in \\\\c X
+with random directions. A finite number of these attempts will be
+made; therefore, it is possible that the dimension of the    computed
+basis is less than the number of vectors in \\\\c X.
 
 Parameters:
 -----------
@@ -7163,19 +7562,18 @@ Teuchos::RCP< const MV > > MQ=Teuchos::tuple(Teuchos::RCP< const MV
 Given a set of bases Q[i] and a multivector X, this method computes an
 orthonormal basis for $colspan(X) - \\\\sum_i colspan(Q[i])$.
 
-This routine returns an integer rank stating the rank of the computed
-basis. If the subspace $colspan(X) - \\\\sum_i colspan(Q[i])$ does not
-have dimension as large as the number of columns of X and the
+This routine returns an integer \\\\c rank stating the rank of the
+computed basis. If the subspace \\\\form#15 does not     have
+dimension as large as the number of columns of \\\\c X and the
 orthogonalization manager doe not attempt to augment the subspace,
-then rank may be smaller than the number of columns of X. In this
-case, only the first rank columns of output X and first rank rows of B
-will be valid.
-
-The method attempts to find a basis with dimension the same as the
-number of columns in X. It does this by augmenting linearly dependent
+then \\\\c rank     may be smaller than the number of columns of \\\\c
+X. In this case, only the first \\\\c rank columns of output \\\\c X
+and first \\\\c rank rows of \\\\c B will     be valid.    The method
+attempts to find a basis with dimension the same as the number of
+columns in \\\\c X. It does this by augmenting linearly dependent
 vectors with random directions. A finite number of these attempts will
 be made; therefore, it is possible that the dimension of the computed
-basis is less than the number of vectors in X.
+basis is less than the number of vectors in \\\\c X.
 
 Parameters:
 -----------
@@ -7370,8 +7768,8 @@ MQ=Teuchos::tuple(Teuchos::null)) const
 
 Provides matrix-based projection method.
 
-This method optionally allows the provision of $M X$ and/or the $M
-Q[i]$. See OrthoManager::project() for more details.
+This method optionally allows the provision of \\\\form#53 and/or the
+\\\\form#54. See OrthoManager::project() for more details.
 
 Parameters:
 -----------
@@ -7401,8 +7799,8 @@ MQ=Teuchos::tuple(Teuchos::RCP< const MV >(Teuchos::null))) const
 
 Provides matrix-based projection/orthonormalization method.
 
-This method optionally allows the provision of $M X$ and/or the $M
-Q[i]$. See orthoManager::projectAndNormalize() for more details.
+This method optionally allows the provision of \\\\form#53 and/or the
+\\\\form#54. See orthoManager::projectAndNormalize() for more details.
 
 Parameters:
 -----------
@@ -7646,7 +8044,8 @@ the individual Q[i], optionally returning the coefficients of X for
 the individual Q[i]. All of this is done with respect to the inner
 product innerProd().
 
-After calling this routine, X will be orthogonal to each of the Q[i].
+After calling this routine, \\\\c X will be orthogonal to each of the
+<tt>Q[i]</tt>.
 
 Parameters:
 -----------
@@ -7686,13 +8085,13 @@ Scalar > > B=Teuchos::null) const
 Given a set of bases Q[i] and a multivector X, this method computes an
 orthonormal basis for $colspan(X) - \\\\sum_i colspan(Q[i])$.
 
-This routine returns an integer rank stating the rank of the computed
-basis. If the subspace $colspan(X) - \\\\sum_i colspan(Q[i])$ does not
-have dimension as large as the number of columns of X and the
+This routine returns an integer \\\\c rank stating the rank of the
+computed basis. If the subspace \\\\form#15    does not have dimension
+as large as the number of columns of \\\\c X and    the
 orthogonalization manager does not attempt to augment the subspace,
-then rank may be smaller than the number of columns of X. In this
-case, only the first rank columns of output X and first rank rows of B
-will be valid.
+then \\\\c rank may be smaller than the number of columns of \\\\c X.
+In this    case, only the first \\\\c rank columns of output \\\\c X
+and first \\\\c rank    rows of \\\\c B will be valid.
 
 This routine guarantees both the orthogonality of the returned basis
 against the Q[i] as well as the orthonormality of the returned basis.
@@ -7838,7 +8237,7 @@ MV:  The type of (multi)vector inputs and outputs.
 This class uses a combination of Tall Skinny QR (TSQR) and Block Gram-
 Schmidt (BGS) to orthogonalize multivectors. The Block Gram- Schmidt
 procedure used here is inspired by that of G. W. Stewart (\"Block
-Gram-Schmidt Orthogonalization\", SISC vol 31 #1 pp. 761-- 775, 2008).
+Gram-Schmidt Orthogonalization\", SISC vol 31 #1 pp. 761775, 2008).
 The difference is that we use TSQR+SVD instead of Stewart's careful
 Gram-Schmidt with reorthogonalization to handle the current block.
 \"Orthogonalization faults\" (as defined by Stewart) may still happen,
@@ -8262,6 +8661,12 @@ Status of the test: true is successful, false otherwise. ";
 // File: AnasaziEigensolverDecl_8hpp.xml
 
 
+// File: AnasaziGeneralizedDavidson_8hpp.xml
+
+
+// File: AnasaziGeneralizedDavidsonSolMgr_8hpp.xml
+
+
 // File: AnasaziGenOrthoManager_8hpp.xml
 
 
@@ -8367,10 +8772,10 @@ Status of the test: true is successful, false otherwise. ";
 // File: AnasaziVersion_8cpp.xml
 
 
-// File: dir_cfcf785d330e8f6cf9265ee0cf028086.xml
+// File: dir_cb6170a21a23f130acc107876b1eb76c.xml
 
 
-// File: dir_73432c73b202f8663e3fe783990d1240.xml
+// File: dir_362dab574799082b864ce88437753581.xml
 
 
 // File: BlockDavidson_2BlockDavidsonEpetraEx_8cpp-example.xml
@@ -8395,6 +8800,9 @@ Status of the test: true is successful, false otherwise. ";
 
 
 // File: BlockKrylovSchur_2BlockKrylovSchurEpetraExSVD_8cpp-example.xml
+
+
+// File: GeneralizedDavidson_2GeneralizedDavidsonEpetraExFileIfpack_8cpp-example.xml
 
 
 // File: LOBPCG_2LOBPCGEpetraEx_8cpp-example.xml

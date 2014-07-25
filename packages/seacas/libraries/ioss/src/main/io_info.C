@@ -42,6 +42,9 @@
 #include <string>
 #include <utility>
 #include <vector>
+#if !defined(NO_EXODUS_SUPPORT)
+#include <exodusII.h>
+#endif
 
 #include "Ioss_CommSet.h"
 #include "Ioss_CoordinateFrame.h"
@@ -115,8 +118,8 @@ namespace {
   void info_field_data_internal(Ioss::GroupingEntity *ige,
 				const std::string &field_name);
 
-  void file_info(const std::string& inpfile, const std::string& input_type,
-		 Info::Interface& interface);
+  void file_info(Info::Interface& interface);
+  void group_info(Info::Interface& interface);
 
   std::string name(Ioss::GroupingEntity *entity) {
     return entity->type_string() + " '" + entity->name() + "'";
@@ -165,7 +168,12 @@ int main(int argc, char *argv[])
   OUTPUT << "Input:    '" << interface.filename()  << "', Type: " << interface.type()  << '\n';
   OUTPUT << '\n';
 
-  file_info(interface.filename(), interface.type(), interface);
+  if (interface.list_groups()) {
+    group_info(interface);
+  }
+  else {
+    file_info(interface);
+  }
 
   OUTPUT << "\n" << codename << " execution successful.\n";
 #ifdef HAVE_MPI
@@ -191,8 +199,48 @@ namespace {
     }
   }
 
-  void file_info(const std::string& inpfile, const std::string& input_type, Info::Interface& interface)
+  int print_groups(int exoid, std::string prefix)
   {
+#if !defined(NO_EXODUS_SUPPORT)
+    int idum;
+    float rdum;
+    char group_name[33];
+    // Print name of this group...
+    ex_inquire(exoid, EX_INQ_GROUP_NAME, &idum, &rdum, group_name);
+    OUTPUT << prefix << group_name << '\n';
+    
+    int num_children = ex_inquire_int(exoid, EX_INQ_NUM_CHILD_GROUPS);
+    std::vector<int> children(num_children);
+    ex_get_group_ids(exoid, NULL, TOPTR(children));
+    prefix += '\t';
+    for (size_t i=0; i < num_children; i++) {
+      print_groups(children[i], prefix);
+    }
+#endif
+    return 0;
+  }
+
+  void group_info(Info::Interface& interface)
+  {
+#if !defined(NO_EXODUS_SUPPORT)
+    // Assume exodusII...
+    std::string inpfile = interface.filename();
+    float version = 0.0;
+    int CPU_word_size = 0;
+    int IO_word_size = 0;
+
+    int exoid = ex_open (inpfile.c_str(),
+			 EX_READ, &CPU_word_size, &IO_word_size, &version);
+
+    int num_groups = print_groups(exoid,"");
+#endif
+  }
+
+  void file_info(Info::Interface& interface)
+  {
+    std::string inpfile = interface.filename();
+    std::string input_type = interface.type();
+    
     //========================================================================
     // INPUT ...
     // NOTE: The "READ_RESTART" mode ensures that the node and element ids will be mapped.
@@ -212,6 +260,15 @@ namespace {
     if (interface.ints_64_bit())
       dbi->set_int_byte_size_api(Ioss::USE_INT64_API);
     
+    if (!interface.groupname().empty()) {
+      bool success = dbi->open_group(interface.groupname());
+      if (!success) {
+	OUTPUT << "ERROR: Unable to open group '" << interface.groupname()
+	       << "' in file '" << inpfile << "\n";
+	return;
+      }
+    }
+
     // NOTE: 'region' owns 'db' pointer at this time...
     Ioss::Region region(dbi, "region_1");
 

@@ -2,9 +2,8 @@
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
-#include <stdio.h>
-#include "defs.h"
-#include "structs.h"
+#include "defs.h"                       // for FALSE, TRUE
+#include "structs.h"                    // for vtx_data
 
 
 /* Find a maximal matching in a graph using simple greedy algorithm. */

@@ -72,7 +72,7 @@
 #include <Xpetra_MapExtractorFactory.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_StridedMapFactory.hpp>
-#include <Xpetra_StridedEpetraMap.hpp>
+#include <Xpetra_StridedMap.hpp>
 
 // MueLu
 #include "MueLu_ConfigDefs.hpp"
@@ -108,265 +108,7 @@
 #include <Epetra_LinearProblem.h>
 #include <AztecOO.h>
 
-namespace MueLuTests {
-
-#include "MueLu_UseShortNames.hpp"
-
-// helper routines
-bool SplitMatrix2x2(Teuchos::RCP<const Epetra_CrsMatrix> A,
-    const Epetra_Map& A11rowmap,
-    const Epetra_Map& A22rowmap,
-    Teuchos::RCP<Epetra_CrsMatrix>& A11,
-    Teuchos::RCP<Epetra_CrsMatrix>& A12,
-    Teuchos::RCP<Epetra_CrsMatrix>& A21,
-    Teuchos::RCP<Epetra_CrsMatrix>& A22)
-{
-  if (A==Teuchos::null)
-  {
-    cout << "ERROR: SplitMatrix2x2: A==null on entry" << endl;
-    return false;
-  }
-
-  const Epetra_Comm& Comm   = A->Comm();
-  const Epetra_Map&  A22map = A22rowmap;
-  const Epetra_Map&  A11map = A11rowmap;
-
-  //----------------------------- create a parallel redundant map of A22map
-  std::map<int,int> a22gmap;
-  {
-    std::vector<int> a22global(A22map.NumGlobalElements());
-    int count=0;
-    for (int proc=0; proc<Comm.NumProc(); ++proc)
-    {
-      int length = 0;
-      if (proc==Comm.MyPID())
-      {
-        for (int i=0; i<A22map.NumMyElements(); ++i)
-        {
-          a22global[count+length] = A22map.GID(i);
-          ++length;
-        }
-      }
-      Comm.Broadcast(&length,1,proc);
-      Comm.Broadcast(&a22global[count],length,proc);
-      count += length;
-    }
-    if (count != A22map.NumGlobalElements())
-    {
-      cout << "ERROR SplitMatrix2x2: mismatch in dimensions" << endl;
-      return false;
-    }
-
-    // create the map
-    for (int i=0; i<count; ++i)
-      a22gmap[a22global[i]] = 1;
-    a22global.clear();
-  }
-
-  //--------------------------------------------------- create matrix A22
-  A22 = Teuchos::rcp(new Epetra_CrsMatrix(Copy,A22map,100));
-  {
-    std::vector<int>    a22gcindices(100);
-    std::vector<double> a22values(100);
-    for (int i=0; i<A->NumMyRows(); ++i)
-    {
-      const int grid = A->GRID(i);
-      if (A22map.MyGID(grid)==false)
-        continue;
-      int     numentries;
-      double* values;
-      int*    cindices;
-      int err = A->ExtractMyRowView(i,numentries,values,cindices);
-      if (err)
-      {
-        cout << "ERROR: SplitMatrix2x2: A->ExtractMyRowView returned " << err << endl;
-        return false;
-      }
-      if (numentries>(int)a22gcindices.size())
-      {
-        a22gcindices.resize(numentries);
-        a22values.resize(numentries);
-      }
-      int count=0;
-      for (int j=0; j<numentries; ++j)
-      {
-        const int gcid = A->ColMap().GID(cindices[j]);
-        // see whether we have gcid in a22gmap
-        std::map<int,int>::iterator curr = a22gmap.find(gcid);
-        if (curr==a22gmap.end()) continue;
-        //cout << gcid << " ";
-        a22gcindices[count] = gcid;
-        a22values[count]    = values[j];
-        ++count;
-      }
-      //cout << endl; fflush(stdout);
-      // add this filtered row to A22
-      err = A22->InsertGlobalValues(grid,count,&a22values[0],&a22gcindices[0]);
-      if (err<0)
-      {
-        cout << "ERROR: SplitMatrix2x2: A->InsertGlobalValues returned " << err << endl;
-        return false;
-      }
-
-    } //for (int i=0; i<A->NumMyRows(); ++i)
-    a22gcindices.clear();
-    a22values.clear();
-  }
-  A22->FillComplete();
-  A22->OptimizeStorage();
-
-  //----------------------------------------------------- create matrix A11
-  A11 = Teuchos::rcp(new Epetra_CrsMatrix(Copy,A11map,100));
-  {
-    std::vector<int>    a11gcindices(100);
-    std::vector<double> a11values(100);
-    for (int i=0; i<A->NumMyRows(); ++i)
-    {
-      const int grid = A->GRID(i);
-      if (A11map.MyGID(grid)==false) continue;
-      int     numentries;
-      double* values;
-      int*    cindices;
-      int err = A->ExtractMyRowView(i,numentries,values,cindices);
-      if (err)
-      {
-        cout << "ERROR: SplitMatrix2x2: A->ExtractMyRowView returned " << err << endl;
-        return false;
-      }
-      if (numentries>(int)a11gcindices.size())
-      {
-        a11gcindices.resize(numentries);
-        a11values.resize(numentries);
-      }
-      int count=0;
-      for (int j=0; j<numentries; ++j)
-      {
-        const int gcid = A->ColMap().GID(cindices[j]);
-        // see whether we have gcid as part of a22gmap
-        std::map<int,int>::iterator curr = a22gmap.find(gcid);
-        if (curr!=a22gmap.end()) continue;
-        a11gcindices[count] = gcid;
-        a11values[count] = values[j];
-        ++count;
-      }
-      err = A11->InsertGlobalValues(grid,count,&a11values[0],&a11gcindices[0]);
-      if (err<0)
-      {
-        cout << "ERROR: SplitMatrix2x2: A->InsertGlobalValues returned " << err << endl;
-        return false;
-      }
-
-    } // for (int i=0; i<A->NumMyRows(); ++i)
-    a11gcindices.clear();
-    a11values.clear();
-  }
-  A11->FillComplete();
-  A11->OptimizeStorage();
-
-  //---------------------------------------------------- create matrix A12
-  A12 = Teuchos::rcp(new Epetra_CrsMatrix(Copy,A11map,100));
-  {
-    std::vector<int>    a12gcindices(100);
-    std::vector<double> a12values(100);
-    for (int i=0; i<A->NumMyRows(); ++i)
-    {
-      const int grid = A->GRID(i);
-      if (A11map.MyGID(grid)==false) continue;
-      int     numentries;
-      double* values;
-      int*    cindices;
-      int err = A->ExtractMyRowView(i,numentries,values,cindices);
-      if (err)
-      {
-        cout << "ERROR: SplitMatrix2x2: A->ExtractMyRowView returned " << err << endl;
-        return false;
-      }
-
-      if (numentries>(int)a12gcindices.size())
-      {
-        a12gcindices.resize(numentries);
-        a12values.resize(numentries);
-      }
-      int count=0;
-      for (int j=0; j<numentries; ++j)
-      {
-        const int gcid = A->ColMap().GID(cindices[j]);
-        // see whether we have gcid as part of a22gmap
-        std::map<int,int>::iterator curr = a22gmap.find(gcid);
-        if (curr==a22gmap.end()) continue;
-        a12gcindices[count] = gcid;
-        a12values[count] = values[j];
-        ++count;
-      }
-      err = A12->InsertGlobalValues(grid,count,&a12values[0],&a12gcindices[0]);
-      if (err<0)
-      {
-        cout << "ERROR: SplitMatrix2x2: A->InsertGlobalValues returned " << err << endl;
-        return false;
-      }
-
-    } // for (int i=0; i<A->NumMyRows(); ++i)
-    a12values.clear();
-    a12gcindices.clear();
-  }
-  A12->FillComplete(A22map,A11map);
-  A12->OptimizeStorage();
-
-  //----------------------------------------------------------- create A21
-  A21 = Teuchos::rcp(new Epetra_CrsMatrix(Copy,A22map,100));
-  {
-    std::vector<int>    a21gcindices(100);
-    std::vector<double> a21values(100);
-    for (int i=0; i<A->NumMyRows(); ++i)
-    {
-      const int grid = A->GRID(i);
-      if (A22map.MyGID(grid)==false) continue;
-      int     numentries;
-      double* values;
-      int*    cindices;
-      int err = A->ExtractMyRowView(i,numentries,values,cindices);
-      if (err)
-      {
-        cout << "ERROR: SplitMatrix2x2: A->ExtractMyRowView returned " << err << endl;
-        return false;
-      }
-
-      if (numentries>(int)a21gcindices.size())
-      {
-        a21gcindices.resize(numentries);
-        a21values.resize(numentries);
-      }
-      int count=0;
-      for (int j=0; j<numentries; ++j)
-      {
-        const int gcid = A->ColMap().GID(cindices[j]);
-        // see whether we have gcid as part of a22gmap
-        std::map<int,int>::iterator curr = a22gmap.find(gcid);
-        if (curr!=a22gmap.end()) continue;
-        a21gcindices[count] = gcid;
-        a21values[count] = values[j];
-        ++count;
-      }
-      err = A21->InsertGlobalValues(grid,count,&a21values[0],&a21gcindices[0]);
-      if (err<0)
-      {
-        cout << "ERROR: SplitMatrix2x2: A->InsertGlobalValues returned " << err << endl;
-        return false;
-      }
-
-    } // for (int i=0; i<A->NumMyRows(); ++i)
-    a21values.clear();
-    a21gcindices.clear();
-  }
-  A21->FillComplete(A11map,A22map);
-  A21->OptimizeStorage();
-
-  //-------------------------------------------------------------- tidy up
-  a22gmap.clear();
-  return true;
-}
-
-}
+#include "Navier2D_Helpers.h"
 
 /*!
  *  2d Navier Stokes example (for Epetra)
@@ -401,15 +143,15 @@ int main(int argc, char *argv[]) {
   // read in input parameters
 
   // default parameters
-  LO SIMPLE_nSweeps = 100;
+  LO SIMPLE_nSweeps = 600;
   Scalar SIMPLE_omega = 0.5;
-  LO SC_nSweeps = 1;
+  LO SC_nSweeps = 10;
   Scalar SC_omega = 1.0;
   LO PRED_nSweeps = 3;
   Scalar PRED_omega = 1.0;
   LO useSIMPLEC = 0;
 
-  int SC_bUseDirectSolver = 1;
+  int SC_bUseDirectSolver = 0;
 
   // Note: use --help to list available options.
   Teuchos::CommandLineProcessor clp(false);
@@ -419,7 +161,7 @@ int main(int argc, char *argv[]) {
   clp.setOption("Predict_omega", &PRED_omega,  "damping parameter for SIMPLE internal velocity prediction smoother (GaussSeidel)");
   clp.setOption("SchurComp_sweeps",    &SC_nSweeps,"number of sweeps for SIMPLE internal SchurComp solver/smoother (GaussSeidel)");
   clp.setOption("SchurComp_omega",     &SC_omega,  "damping parameter for SIMPLE internal SchurComp solver/smoother (GaussSeidel)");
-  clp.setOption("SchurComp_solver",    &SC_bUseDirectSolver,  "if 1: use direct solver for SchurComp equation, otherwise use GaussSeidel smoother (=default)");
+  clp.setOption("SchurComp_solver",    &SC_bUseDirectSolver,  "if 1: use direct solver for SchurComp equation, otherwise use GaussSeidel smoother");
   clp.setOption("useSIMPLEC",    &useSIMPLEC,  "if 1: use SIMPLEC instead of SIMPLE (default = 0 (SIMPLE))");
 
   switch (clp.parse(argc,argv)) {
@@ -450,9 +192,9 @@ int main(int argc, char *argv[]) {
 
   /////////////////////////////////////// transform Xpetra::Map objects to Epetra
   // this is needed for our splitting routine
-  const RCP<const Epetra_Map> fullmap = rcpFromRef(Xpetra::toEpetra(*xstridedfullmap));
-  RCP<const Epetra_Map>       velmap  = rcpFromRef(Xpetra::toEpetra(*xstridedvelmap));
-  RCP<const Epetra_Map>       premap  = rcpFromRef(Xpetra::toEpetra(*xstridedpremap));
+  const RCP<const Epetra_Map> fullmap = Teuchos::rcpFromRef(Xpetra::toEpetra(*xstridedfullmap));
+  RCP<const Epetra_Map>       velmap  = Teuchos::rcpFromRef(Xpetra::toEpetra(*xstridedvelmap));
+  RCP<const Epetra_Map>       premap  = Teuchos::rcpFromRef(Xpetra::toEpetra(*xstridedpremap));
 
   /////////////////////////////////////// import problem matrix and RHS from files (-> Epetra)
 
@@ -512,6 +254,7 @@ int main(int argc, char *argv[]) {
   bOp->fillComplete();
   //////////////////////////////////////////////////////// finest Level
   RCP<MueLu::Level> Finest = rcp(new Level());
+  Finest->setlib(lib);
   Finest->setDefaultVerbLevel(Teuchos::VERB_NONE);
   Finest->Set("A",Teuchos::rcp_dynamic_cast<Matrix>(bOp));
 
@@ -528,12 +271,19 @@ int main(int argc, char *argv[]) {
 
   // define SIMPLE Smoother with SIMPLE_nSweeps and SIMPLE_omega as scaling factor
   // AFact_ = Teuchos::null (= default) for the 2x2 blocked operator
-  RCP<SimpleSmoother> SimpleSm = rcp( new SimpleSmoother(SIMPLE_nSweeps,SIMPLE_omega,useSIMPLEC) );
+  RCP<SimpleSmoother> SimpleSm = rcp( new SimpleSmoother() );
+  SimpleSm->SetParameter("Sweeps", Teuchos::ParameterEntry(SIMPLE_nSweeps));
+  SimpleSm->SetParameter("Damping factor", Teuchos::ParameterEntry(SIMPLE_omega));
+  if(useSIMPLEC==1) SimpleSm->SetParameter("UseSIMPLEC", Teuchos::ParameterEntry(true));
 
   RCP<SmootherFactory>   smootherFact          = rcp( new SmootherFactory(SimpleSm) );
 
   // define smoother for velocity prediction
-  RCP<SubBlockAFactory> A00Fact = Teuchos::rcp(new SubBlockAFactory(MueLu::NoFactory::getRCP(), 0, 0));
+  //RCP<SubBlockAFactory> A00Fact = Teuchos::rcp(new SubBlockAFactory(MueLu::NoFactory::getRCP(), 0, 0));
+  RCP<SubBlockAFactory> A00Fact = rcp(new SubBlockAFactory());
+  A00Fact->SetFactory("A",MueLu::NoFactory::getRCP());
+  A00Fact->SetParameter("block row",Teuchos::ParameterEntry(0));
+  A00Fact->SetParameter("block col",Teuchos::ParameterEntry(0));
   RCP<SmootherPrototype> smoProtoPredict = Teuchos::null;
   std::string ifpackPredictType;
   Teuchos::ParameterList ifpackPredictList;
@@ -574,7 +324,8 @@ int main(int argc, char *argv[]) {
     ifpackSCList.set("relaxation: damping factor", SC_omega );
     ifpackSCType = "RELAXATION";
     ifpackSCList.set("relaxation: type", "Gauss-Seidel");
-    smoProtoSC     = rcp( new TrilinosSmoother(ifpackSCType, ifpackSCList, 0, SFact) );
+    smoProtoSC     = rcp( new TrilinosSmoother(ifpackSCType, ifpackSCList, 0) );
+    smoProtoSC->SetFactory("A",SFact);
   }
   else {
     Teuchos::ParameterList ifpackDSList;

@@ -46,11 +46,6 @@
 #ifndef MUELU_MULTIVECTORTRANSFER_FACTORY_DEF_HPP
 #define MUELU_MULTIVECTORTRANSFER_FACTORY_DEF_HPP
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 #include "MueLu_MultiVectorTransferFactory_decl.hpp"
 #include "Xpetra_MultiVectorFactory.hpp"
 
@@ -60,7 +55,7 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const ParameterList> MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+  RCP<const ParameterList> MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     validParamList->set< std::string >           ("Vector name",      "undefined", "Name of the vector that will be transfered on the coarse grid (level key)"); // TODO: how to set a validator without default value?
@@ -95,7 +90,7 @@ namespace MueLu {
     RCP<Matrix>      transferOp = Get<RCP<Matrix> >(coarseLevel, "R");
 
     RCP<MultiVector> coarseVector = MultiVectorFactory::Build(transferOp->getRangeMap(), fineVector->getNumVectors());
-    GetOStream(Runtime0, 0) << "Transferring multivector \"" << vectorName << "\"" << std::endl;
+    GetOStream(Runtime0) << "Transferring multivector \"" << vectorName << "\"" << std::endl;
 
     RCP<MultiVector> onesVector = MultiVectorFactory::Build(transferOp->getDomainMap(), 1);
     onesVector->putScalar(Teuchos::ScalarTraits<Scalar>::one());

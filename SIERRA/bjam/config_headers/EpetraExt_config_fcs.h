@@ -51,6 +51,9 @@
 /* Define if want to build with petsc enabled */
 /* #undef HAVE_PETSC */
 
+/* Define if want to build with mmm timings enabled */
+/* #undef ENABLE_MMM_TIMINGS */
+
 /* Define if want to build with hypre enabled */
 /* #undef HAVE_HYPRE */
 
@@ -75,11 +78,4 @@
 /* define if we want to use MPI */
 #define HAVE_MPI
 
-#ifndef EPETRAEXT_DEPRECATED
-#  if (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
-#    define EPETRAEXT_DEPRECATED  __attribute__((__deprecated__))
-#  else
-#    define EPETRAEXT_DEPRECATED
-#  endif
-#endif
-
+#define EPETRAEXT_DEPRECATED

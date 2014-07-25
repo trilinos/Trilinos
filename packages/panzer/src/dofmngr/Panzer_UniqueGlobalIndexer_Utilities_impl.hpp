@@ -321,6 +321,48 @@ void computeCellEdgeOrientations(const std::vector<std::pair<int,int> > & topEdg
    }
 }
 
+template <typename GlobalOrdinalT>
+void computeCellFaceOrientations(const std::vector<std::vector<int> > & topFaceIndices,
+                                 const std::vector<GlobalOrdinalT> & topology,
+                                 const FieldPattern & fieldPattern, 
+                                 std::vector<char> & orientation)
+{
+   // LOCAL element orientations are always set so that they flow in the positive
+   // direction away from the cell. As a result if the GID of
+   // node 0 is larger then node 1 then the GLOBAL orientation is -1 (and positive
+   // otherwise). The local definition of the face direction is defined by 
+   // the shards cell topology.
+
+   TEUCHOS_ASSERT(orientation.size()==std::size_t(fieldPattern.numberIds()));
+
+   int faceDim = fieldPattern.getDimension()==2 ? 1 : 2;
+
+   TEUCHOS_ASSERT(faceDim<2);
+
+   for(std::size_t f=0;f<topFaceIndices.size();f++) {
+      // grab topological nodes
+      const std::vector<int> & nodes = topFaceIndices[f]; 
+
+      // extract global values of topological nodes
+      GlobalOrdinalT v0 = topology[nodes[0]];
+      GlobalOrdinalT v1 = topology[nodes[1]];
+
+      // using simple rule make a decision about orientation
+      char faceOrientation = 1; 
+      if(v1>v0)
+         faceOrientation = 1; 
+      else if(v0>v1)
+         faceOrientation = -1; 
+      else
+      { TEUCHOS_ASSERT(false); }
+      
+      // grab faceIndices to be set to compute orientation
+      const std::vector<int> & faceIndices = fieldPattern.getSubcellIndices(faceDim,f);
+      for(std::size_t s=0;s<faceIndices.size();s++)
+         orientation[faceIndices[s]] = faceOrientation;
+   }
+}
+
 } // end orientation helpers
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>

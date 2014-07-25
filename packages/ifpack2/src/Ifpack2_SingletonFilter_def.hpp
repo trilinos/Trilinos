@@ -600,9 +600,9 @@ TPETRA_DEPRECATED  void SingletonFilter<MatrixType>::getLocalRowView(LocalOrdina
   throw std::runtime_error("Ifpack2::SingletonFilter does not implement getLocalRowView.");
 }
 
-
-
-
 }// namespace Ifpack2
+
+#define IFPACK2_SINGLETONFILTER_INSTANT(S,LO,GO,N)                            \
+  template class Ifpack2::SingletonFilter< Tpetra::CrsMatrix<S, LO, GO, N> >;
 
 #endif

@@ -305,7 +305,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
   ////
   TEUCHOS_UNIT_TEST( CrsMatrix, Convert )
   {
-    typedef KokkosClassic::SerialNode Node;
+    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
     RCP<Node> node = getNode<Node>();
     typedef ScalarTraits<double> ST;
     typedef OrdinalTraits<int> LOT;
@@ -398,7 +398,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     if (ST::isOrdinal) {
       TEST_COMPARE_ARRAYS(normY,normZ);
     } else {
-      TEST_COMPARE_FLOATING_ARRAYS(normY,normZ,testingTol<Mag>());
+      TEST_COMPARE_FLOATING_ARRAYS(normY,normZ,2.0*testingTol<Mag>());
     }
   }
 
@@ -499,13 +499,32 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       matrix.fillComplete(params);
       TEST_EQUALITY_CONST( matrix.isFillActive(),   false );
       TEST_EQUALITY_CONST( matrix.isFillComplete(), true );
+
+      LO numValid = 0;
+
+      // It's forbidden to call any of the *LocalValues methods if the
+      // matrix is fill complete (not fill active).
+
       TEST_THROW( matrix.insertLocalValues ( 0, tuple<LO>(0), tuple<Scalar>(0) ), std::runtime_error );
-      TEST_THROW( matrix.replaceLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) ), std::runtime_error );
-      TEST_THROW( matrix.sumIntoLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) ), std::runtime_error );
-      TEST_THROW( matrix.setAllToScalar(SZERO),                                   std::runtime_error );
-      TEST_THROW( matrix.scale(SZERO),                                            std::runtime_error );
-      TEST_THROW( matrix.globalAssemble(),                                        std::runtime_error );
-      TEST_THROW( matrix.fillComplete(),                                          std::runtime_error );
+      // numValid = matrix.insertLocalValues (0, tuple<LO> (0), tuple<Scalar> (0));
+      // TEST_EQUALITY( numValid, 0 );
+
+      //TEST_THROW( matrix.replaceLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) ), std::runtime_error );
+      numValid = matrix.replaceLocalValues (0, tuple<LO> (0), tuple<Scalar> (0));
+      TEST_EQUALITY( numValid, Teuchos::OrdinalTraits<LO>::invalid () );
+
+      //TEST_THROW( matrix.replaceLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) ), std::runtime_error );
+      numValid = matrix.replaceLocalValues (0, tuple<LO> (0), tuple<Scalar> (0));
+      TEST_EQUALITY( numValid, Teuchos::OrdinalTraits<LO>::invalid () );
+
+      //TEST_THROW( matrix.sumIntoLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) ), std::runtime_error );
+      numValid = matrix.sumIntoLocalValues (0, tuple<LO> (0), tuple<Scalar> (0));
+      TEST_EQUALITY( numValid, Teuchos::OrdinalTraits<LO>::invalid () );
+
+      TEST_THROW( matrix.setAllToScalar(SZERO), std::runtime_error );
+      TEST_THROW( matrix.scale(SZERO),          std::runtime_error );
+      TEST_THROW( matrix.globalAssemble(),      std::runtime_error );
+      TEST_THROW( matrix.fillComplete(),        std::runtime_error );
     }
     {
       MAT matrix(map,map,0,DynamicProfile);
@@ -539,6 +558,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, ThreeArraysESFC, LO, GO, Scalar, Node )
   {
+
     RCP<Node> node = getNode<Node>();
     typedef ScalarTraits<Scalar> ST;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
@@ -556,19 +576,19 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     MV mvrand(map,numVecs,false), mvres(map,numVecs,false);
     mvrand.randomize();
     // create the identity matrix, via three arrays constructor
-    
+
 
     ArrayRCP<size_t> rowptr(numLocal+1);
-    ArrayRCP<LO>     colind(numLocal); // one unknown per row      
-    ArrayRCP<Scalar> values(numLocal); // one unknown per row      
-    
+    ArrayRCP<LO>     colind(numLocal); // one unknown per row
+    ArrayRCP<Scalar> values(numLocal); // one unknown per row
+
     for(size_t i=0; i<numLocal; i++){
       rowptr[i] = i;
       colind[i] = Teuchos::as<LO>(i);
       values[i] = ScalarTraits<Scalar>::one();
     }
     rowptr[numLocal]=numLocal;
-    
+
     RCP<CrsMatrix<Scalar,LO,GO,Node> > eye = rcp(new MAT(map,map,rowptr,colind,values));
     TEST_NOTHROW( eye->expertStaticFillComplete(map,map) );
 
@@ -607,6 +627,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, SetAllValues, LO, GO, Scalar, Node )
   {
+
     RCP<Node> node = getNode<Node>();
     typedef ScalarTraits<Scalar> ST;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
@@ -624,19 +645,19 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     MV mvrand(map,numVecs,false), mvres(map,numVecs,false);
     mvrand.randomize();
     // create the identity matrix, via three arrays constructor
-    
+
 
     ArrayRCP<size_t> rowptr(numLocal+1);
-    ArrayRCP<LO>     colind(numLocal); // one unknown per row      
-    ArrayRCP<Scalar> values(numLocal); // one unknown per row      
-    
+    ArrayRCP<LO>     colind(numLocal); // one unknown per row
+    ArrayRCP<Scalar> values(numLocal); // one unknown per row
+
     for(size_t i=0; i<numLocal; i++){
       rowptr[i] = i;
       colind[i] = Teuchos::as<LO>(i);
       values[i] = ScalarTraits<Scalar>::one();
     }
     rowptr[numLocal]=numLocal;
-    
+
     RCP<CrsMatrix<Scalar,LO,GO,Node> > eye = rcp(new MAT(map,map,0));
     TEST_NOTHROW( eye->setAllValues(rowptr,colind,values) );
     TEST_NOTHROW( eye->expertStaticFillComplete(map,map) );
@@ -672,16 +693,85 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     }
   }
 
+
+  // mfh 17 Mar 2014: In CrsMatrix, in both the classic and Kokkos
+  // refactor versions, the undocumented parameter "Preserve Local
+  // Graph" now defaults to true.  This makes the following scenario
+  // work by default:
+  //
+  //   1. Create a CrsMatrix A that creates and owns its graph (i.e., don't
+  //      use the constructor that takes an RCP<const Tpetra::CrsGraph> or
+  //      a local graph)
+  //   2. Set an entry in the matrix A, and call fillComplete on it
+  //   3. Create a CrsMatrix B using A's graph (obtained via
+  //      A.getCrsGraph()), so that B has a const (a.k.a. "static") graph
+  //   4. Change a value in B (you can't change its structure), and call
+  //      fillComplete on B
+  //
+  // Before this commit, the above scenario didn't work by default.
+  // This is because A's first fillComplete call would call
+  // fillLocalGraphAndMatrix, which by default sets the local graph to
+  // null.  As a result, from that point,
+  // A.getCrsGraph()->getLocalGraph() returns null, which makes B's
+  // fillComplete throw an exception.  The only way to make this
+  // scenario work was to set A's "Preserve Local Graph" parameter to
+  // true.  (It defaulted to false.)
+  //
+  // The idea behind this nonintuitive behavior was for the local
+  // sparse ops object to own all the data.  This might make sense if
+  // it is a third-party library that takes CSR's three arrays and
+  // copies them into its own storage format.  In that case, it might
+  // be a good idea to free the original three CSR arrays, in order to
+  // avoid duplicate storage.  However, resumeFill never had a way to
+  // get that data back out of the local sparse ops object.  Rather
+  // than try to implement that, it's easier just to make "Preserve
+  // Local Graph" default to true.
+  //
+  // The possible data duplication mentioned in the previous paragraph
+  // can never happen with the Kokkos refactor version of CrsMatrix,
+  // since it insists on controlling the matrix representation itself.
+  // This makes the code shorter and easier to read, and also ensures
+  // efficient fill.  That will in turn make the option unnecessary.
+  //
+  // Thanks to Andrey for pointing this out and giving a test case
+  // (given below, with only minor modifications from his patch).
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, GraphOwnedByFirstMatrixSharedBySecond, LO, GO, Scalar, Node )
+  {
+    typedef Tpetra::global_size_t GST;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+
+    // get a Kokkos node and a comm
+    RCP<Node> node = getNode<Node> ();
+    RCP<const Comm<int> > comm = getDefaultComm ();
+
+    // create Map
+    RCP<const Map<LO,GO,Node> > map =
+      createContigMapWithNode<LO,GO> (INVALID, 1, comm, node);
+
+    // construct matrix
+    CrsMatrix<Scalar,LO,GO,Node> A (map, map, 0, DynamicProfile);
+    A.insertLocalValues (0, tuple<LO> (0), tuple<Scalar> (STS::zero ()));
+    A.fillComplete (map, map);
+
+    // construct second matrix using the first matrix's graph
+    CrsMatrix<Scalar,LO,GO,Node> B (A.getCrsGraph ());
+    B.resumeFill ();
+    B.replaceLocalValues (0, tuple<LO> (0), tuple<Scalar> (STS::one ()));
+    B.fillComplete (map, map);
+  }
+
 //
 // INSTANTIATIONS
 //
 
 #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, AlphaBetaMultiply, LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ActiveFill,     LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Typedefs,       LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ThreeArraysESFC,LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, SetAllValues,   LO, GO, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ActiveFill,        LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Typedefs,          LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ThreeArraysESFC,   LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, SetAllValues,      LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, GraphOwnedByFirstMatrixSharedBySecond, LO, GO, SCALAR, NODE )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 

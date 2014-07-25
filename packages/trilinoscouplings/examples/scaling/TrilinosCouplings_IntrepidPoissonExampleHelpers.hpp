@@ -19,7 +19,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact Pavel Bochev  (pbboche@sandia.gov),
 //                    Denis Ridzal  (dridzal@sandia.gov),
@@ -66,6 +66,34 @@ namespace TrilinosCouplings {
 /// specification.
 namespace IntrepidPoissonExample {
 
+/// \brief Get off-diagonal value for material tensor.
+///
+/// You can use this value to control the iteration count.  See the
+/// documentation of setMaterialTensorOffDiagonalValue() below for
+/// examples.
+///
+/// This value has to be a double, because we read it from the command
+/// line; Teuchos' facility for this stores floating-point values as
+/// double.
+double getMaterialTensorOffDiagonalValue ();
+
+/// \brief Set off-diagonal value for material tensor.
+///
+/// You can use this value to control the iteration count.  The
+/// iteration counts below are for Belos' GMRES with no
+/// preconditioning, using the default problem size.
+///
+/// newVal = -5/4: 209 iterations (CG breaks!)
+/// newVal = -1/2: 47 iterations
+/// newVal = 0: 40 iterations (CG works)
+/// newVal = 1/2: 46 iterations
+/// newVal = 3/4: 47 iterations
+/// newVal = 1: 59 iterations
+/// newVal = 5/4: 183 iterations
+/// newVal = 3/2: 491 iterations
+/// newVal = 2: 939 iterations (CG breaks!)
+void setMaterialTensorOffDiagonalValue (const double newVal);
+
 /// \brief Make a Pamgen mesh specification for the Poisson test problem.
 ///
 /// Pamgen accepts mesh descriptions as human-readable strings in a
@@ -90,6 +118,8 @@ makeMeshInput (const int nx, const int ny, const int nz);
 /// \param nz [out] Number of elements along the z dimension.
 /// \param xmlInputParamsFile [out] Name of XML file encoding
 ///   an input ParameterList for the Poisson test problem.
+/// \param solverName [out] Name of Belos solver; anything that
+///   Belos::SolverFactory understands is valid here.
 /// \param verbose [out] Whether to print verbose status output.
 /// \param debug [out] Whether to print debugging output.
 void
@@ -97,6 +127,7 @@ setCommandLineArgumentDefaults (int& nx,
                                 int& ny,
                                 int& nz,
                                 std::string& xmlInputParamsFile,
+                                std::string& solverName,
                                 bool& verbose,
                                 bool& debug);
 
@@ -114,6 +145,9 @@ setUpCommandLineArguments (Teuchos::CommandLineProcessor& cmdp,
                            int& ny,
                            int& nz,
                            std::string& xmlInputParamsFile,
+                           std::string& solverName,
+                           double& tol,
+                           int& maxNumIters,
                            bool& verbose,
                            bool& debug);
 
@@ -135,6 +169,7 @@ parseCommandLineArguments (Teuchos::CommandLineProcessor& cmdp,
                            int& ny,
                            int& nz,
                            std::string& xmlInputParamsFile,
+                           std::string& solverName,
                            bool& verbose,
                            bool& debug);
 

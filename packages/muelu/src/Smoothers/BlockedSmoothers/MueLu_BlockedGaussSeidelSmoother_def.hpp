@@ -72,17 +72,45 @@
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  BlockedGaussSeidelSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BlockedGaussSeidelSmoother(LocalOrdinal sweeps, Scalar omega)
-    : type_("blocked GaussSeidel"), nSweeps_(sweeps), omega_(omega), A_(Teuchos::null)
+  BlockedGaussSeidelSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BlockedGaussSeidelSmoother()
+    : type_("blocked GaussSeidel"), A_(Teuchos::null)
   {
+    FactManager_.reserve(10);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   BlockedGaussSeidelSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~BlockedGaussSeidelSmoother() {}
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  RCP<const ParameterList> BlockedGaussSeidelSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
+    RCP<ParameterList> validParamList = rcp(new ParameterList());
+
+    validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
+    validParamList->set< Scalar >                ("Damping factor",     1.0, "Damping/Scaling factor in BGS");
+    validParamList->set< LocalOrdinal >          ("Sweeps",             1, "Number of BGS sweeps (default = 1)");
+
+    return validParamList;
+  }
+
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void BlockedGaussSeidelSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AddFactoryManager(RCP<const FactoryManagerBase> FactManager) {
-    FactManager_.push_back(FactManager);
+  void BlockedGaussSeidelSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AddFactoryManager(RCP<const FactoryManagerBase> FactManager, int pos) {
+    TEUCHOS_TEST_FOR_EXCEPTION(pos < 0, Exceptions::RuntimeError, "MueLu::BlockedGaussSeidelSmoother::AddFactoryManager: parameter \'pos\' must not be negative! error.");
+
+    size_t myPos = Teuchos::as<size_t>(pos);
+
+    if (myPos < FactManager_.size()) {
+      // replace existing entris in FactManager_ vector
+      FactManager_.at(myPos) = FactManager;
+    } else if( myPos == FactManager_.size()) {
+      // add new Factory manager in the end of the vector
+      FactManager_.push_back(FactManager);
+    } else { // if(myPos > FactManager_.size())
+      RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      *out << "Warning: cannot add new FactoryManager at proper position " << pos << ". The FactoryManager is just appended to the end. Check this!" << std::endl;
+
+      // add new Factory manager in the end of the vector
+      FactManager_.push_back(FactManager);
+    }
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -98,12 +126,9 @@ namespace MueLu {
 
       // request "Smoother" for current subblock row.
       currentLevel.DeclareInput("PreSmoother",(*it)->GetFactory("Smoother").get());
-      // TODO check me: this is not working properly on the coarsest level
-      //currentLevel.DeclareInput("A",(*it)->GetFactory("A").get()); // request A for comparing maps (to setup a map of the real block rows and the ordering of given blocks in Inverse_)
     }
 
     //RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    //currentLevel.print(*out,Teuchos::VERB_EXTREME);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -113,7 +138,7 @@ namespace MueLu {
     RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
     FactoryMonitor m(*this, "Setup blocked Gauss-Seidel Smoother", currentLevel);
-    if (SmootherPrototype::IsSetup() == true) this->GetOStream(Warnings0, 0) << "Warning: MueLu::BlockedGaussSeidelSmoother::Setup(): Setup() has already been called";
+    if (SmootherPrototype::IsSetup() == true) this->GetOStream(Warnings0) << "MueLu::BlockedGaussSeidelSmoother::Setup(): Setup() has already been called";
 
     // extract blocked operator A from current level
     A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A"); // A needed for extracting map extractors
@@ -129,8 +154,6 @@ namespace MueLu {
     domainMapExtractor_ = bA->getDomainMapExtractor();
 
     Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
-
-    // TODO do setup -> called by SmootherFactory::BuildSmoother
 
     // loop over all factory managers for the subblocks of blocked operator A
     size_t bgsOrderingIndex = 0;
@@ -185,20 +208,19 @@ namespace MueLu {
 
     //Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
 
+    // extract parameters from internal parameter list
+    const ParameterList & pL = Factory::GetParameterList();
+    LocalOrdinal nSweeps = pL.get<LocalOrdinal>("Sweeps");
+    Scalar omega = pL.get<Scalar>("Damping factor");
 
     // outer Richardson loop
-    for (LocalOrdinal run = 0; run < nSweeps_; ++run) {
-
+    for (LocalOrdinal run = 0; run < nSweeps; ++run) {
       // one BGS sweep
-
-      //*fos << "BGS sweep: " << run << std::endl;
-
       // loop over all block rows
       for(size_t i = 0; i<Inverse_.size(); i++) {
 
         // calculate block residual r = B-A*X
         // note: A_ is the full blocked operator
-        //*fos << "BGS sweep: " << run << ", r = B - A*X with i=" << i << std::endl;
         residual->update(1.0,B,0.0); // r = B
         A_->apply(X, *residual, Teuchos::NO_TRANS, -1.0, 1.0);
 
@@ -210,15 +232,12 @@ namespace MueLu {
         Teuchos::RCP<MultiVector> tXi = domainMapExtractor_->getVector(blockRowIndex, X.getNumVectors());
 
         // apply solver/smoother
-        //*fos << "BGS sweep: " << run << ", x = A_ii^{-1} r with i = " << i << std::endl;
         Inverse_.at(i)->Apply(*tXi, *ri, false);
 
         // update vector
-        //*fos << "BGS sweep: " << run << ", update x_" << i << std::endl;
-        Xi->update(omega_,*tXi,1.0);  // X_{i+1} = X_i + omega \Delta X_i
+        Xi->update(omega,*tXi,1.0);  // X_{i+1} = X_i + omega \Delta X_i
 
         // update corresponding part of rhs and lhs
-        //*fos << "BGS sweep: " << run << ", finish substep i=" << i << std::endl;
         domainMapExtractor_->InsertVector(Xi, blockRowIndex, rcpX); // TODO wrong! fix me
       }
     }
@@ -242,8 +261,13 @@ namespace MueLu {
   void BlockedGaussSeidelSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
     MUELU_DESCRIBE;
 
+    // extract parameters from internal parameter list
+    const ParameterList & pL = Factory::GetParameterList();
+    LocalOrdinal nSweeps = pL.get<LocalOrdinal>("Sweeps");
+    Scalar omega = pL.get<Scalar>("Damping factor");
+
     if (verbLevel & Parameters0) {
-      out0 << "Prec. type: " << type_ << " Sweeps: " << nSweeps_ << " damping: " << omega_ << std::endl;
+      out0 << "Prec. type: " << type_ << " Sweeps: " << nSweeps << " damping: " << omega << std::endl;
     }
 
     if (verbLevel & Debug) {

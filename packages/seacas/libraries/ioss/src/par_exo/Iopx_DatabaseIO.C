@@ -143,7 +143,7 @@ namespace {
 
   const char *complex_suffix[] = {".re", ".im"};
 
-  const char *Version() {return "Iopx_DatabaseIO.C 2012/04/19 gdsjaar";}
+  const char *Version() {return "Iopx_DatabaseIO.C 2014/05/08";}
 
   bool type_match(const std::string& type, const char *substring);
   int64_t extract_id(const std::string &name_id);
@@ -156,33 +156,7 @@ namespace {
     std::ostringstream errmsg;
     // Create errmsg here so that the exerrval doesn't get cleared by
     // the ex_close call.
-    // Try to interpret exodus error messages...
-    std::string error_type;
-    switch (exerrval) {
-    case -31:
-      error_type = "System Error -- Usually disk full or filesystem issue"; break;
-    case -33:
-      error_type = "Not a netcdf id"; break;
-    case -34:
-      error_type = "Too many files open"; break;
-    case -41:
-    case -44:
-    case -48:
-    case -53:
-    case -62:
-      error_type = "Internal netcdf/exodusII dimension exceeded"; break;
-    case -51:
-      error_type = "Not an exodusII/netcdf file"; break;
-    case -59:
-      error_type = "Attribute of variable name contains illegal characters"; break;
-    case -60:
-      error_type = "Memory allocation (malloc) failure"; break;
-    case -64:
-      error_type = "Filesystem issue; File likely truncated or possibly corrupted"; break;
-    default:
-      ;
-    }
-    errmsg << "ExodusII error (" << exerrval << ")" << error_type << " at line " << lineno
+    errmsg << "Parallel Exodus error (" << exerrval << ")" << nc_strerror(exerrval) << " at line " << lineno
         << " in file '" << Version()
         << "' Please report to gdsjaar@sandia.gov if you need help.";
 
@@ -284,7 +258,8 @@ namespace {
                   const char suffix_separator, int *local_truth,
                   std::vector<Ioss::Field> &fields);
 
-  void add_map_fields(int exoid, Ioss::ElementBlock *block, int64_t my_element_count);
+  void add_map_fields(int exoid, Ioss::ElementBlock *block, int64_t my_element_count,
+		      size_t name_length);
 
   template <typename T>
   bool check_block_order(const std::vector<T*> &blocks);
@@ -584,7 +559,6 @@ namespace Iopx {
 
     if (!is_input() && exodus_file_ptr < 0) {
       // File didn't exist above, but this OK if is an output file. See if we can create it...
-      io_word_size = cpu_word_size;
       int mode = 0;
       if (int_byte_size_api() == 8)
         mode |= EX_ALL_INT64_DB;
@@ -966,7 +940,7 @@ namespace Iopx {
       // See if the "last_written_time" attribute exists and if it
       // does, check that it matches the largest time in 'tsteps'.
       Iopx::Internals data(get_file_pointer(), maximumNameLength, util());
-      exists = data.read_last_time_attribute(&last_time);
+      data.read_last_time_attribute(&last_time);
     }
 
     // Only add states that are less than or equal to the
@@ -1101,7 +1075,6 @@ namespace Iopx {
           // Clear out the vector...
           Ioss::MapContainer().swap(entity_map.map);
           exodus_error(get_file_pointer(), __LINE__, myProcessor);
-          map_read = false;
         }
 
         // Check for sequential node map.
@@ -1327,7 +1300,8 @@ namespace Iopx {
         add_results_fields(entity_type, io_block, iblk);
 
         if (entity_type == EX_ELEM_BLOCK) {
-          add_map_fields(get_file_pointer(), (Ioss::ElementBlock*)io_block, decomp->el_blocks[iblk].ioss_count());
+          add_map_fields(get_file_pointer(), (Ioss::ElementBlock*)io_block,
+			 decomp->el_blocks[iblk].ioss_count(), maximumNameLength);
         }
       }
     }
@@ -1792,7 +1766,7 @@ namespace Iopx {
           // Determine how many side blocks compose this side set.
 
           int64_t number_sides = decomp->side_sets[iss].ioss_count();
-          number_distribution_factors = decomp->side_sets[iss].df_count();
+	  // FIXME: Support-  number_distribution_factors = decomp->side_sets[iss].df_count();
 
           Ioss::Int64Vector element(number_sides);
           Ioss::Int64Vector sides(number_sides);
@@ -2754,6 +2728,8 @@ namespace Iopx {
 
         } else if (field.get_name() == "distribution_factors") {
           ierr = decomp->get_set_mesh_double(get_file_pointer(), EX_NODE_SET, id, field, static_cast<double*>(data));
+          if (ierr < 0)
+            exodus_error(get_file_pointer(), __LINE__, myProcessor);
         }
       } else if (role == Ioss::Field::ATTRIBUTE) {
         num_to_get = read_attribute_field(type, field, ns, data);
@@ -5997,7 +5973,6 @@ namespace Iopx {
               // Next three attributes are offset from node to CG
               block->field_add(Ioss::Field("offset", Ioss::Field::REAL, VECTOR3D(),
                                            Ioss::Field::ATTRIBUTE, my_element_count, offset));
-              offset += 3;
             }
           }
 
@@ -7089,7 +7064,8 @@ namespace Iopx {
       }
     }
 
-    void add_map_fields(int exoid, Ioss::ElementBlock *block, int64_t my_element_count)
+    void add_map_fields(int exoid, Ioss::ElementBlock *block,
+			int64_t my_element_count, size_t name_length)
     {
       // Check for optional element maps...
       int map_count = ex_inquire_int(exoid, EX_INQ_ELEM_MAP);
@@ -7097,8 +7073,7 @@ namespace Iopx {
         return;
 
       // Get the names of the maps...
-      int max_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
-      char **names = get_exodus_names(map_count, max_length);
+      char **names = get_exodus_names(map_count, name_length);
       int ierr = ex_get_names(exoid, EX_ELEM_MAP, names);
       if (ierr < 0)
         exodus_error(exoid, __LINE__, -1);

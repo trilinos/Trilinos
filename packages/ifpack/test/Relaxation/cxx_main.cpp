@@ -48,6 +48,7 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Map.h"
@@ -66,6 +67,50 @@ static bool verbose = false;
 static bool SymmetricGallery = false;
 static bool Solver = AZ_gmres;
 const int NumVectors = 3;
+
+// ====================================================================== 
+int CompareLineSmoother(const Teuchos::RefCountPtr<Epetra_RowMatrix>& A, Teuchos::RCP<Epetra_MultiVector> coord)
+{
+  Epetra_MultiVector LHS(A->RowMatrixRowMap(), NumVectors);
+  Epetra_MultiVector RHS(A->RowMatrixRowMap(), NumVectors);
+  LHS.PutScalar(0.0); RHS.Random();
+
+  Epetra_LinearProblem Problem(&*A, &LHS, &RHS);
+
+  Teuchos::ParameterList List;
+  List.set("relaxation: damping factor", 1.0);
+  List.set("relaxation: type", "symmetric Gauss-Seidel");
+  List.set("relaxation: sweeps",1);
+  List.set("partitioner: overlap",0);
+  List.set("partitioner: type", "line");
+  List.set("partitioner: line detection threshold",0.1);
+  List.set("partitioner: x-coordinates",&(*coord)[0][0]);
+  List.set("partitioner: y-coordinates",&(*coord)[1][0]);
+  List.set("partitioner: z-coordinates",(double*) 0);
+
+  printf("CMS: Compare line smoother\n");//DEBUG
+
+  RHS.PutScalar(1.0);
+  LHS.PutScalar(0.0);
+
+  Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> > Prec(&*A);
+  Prec.SetParameters(List);
+  Prec.Compute();
+
+  // set AztecOO solver object
+  AztecOO AztecOOSolver(Problem);
+  AztecOOSolver.SetAztecOption(AZ_solver,Solver);
+  if (verbose)
+    AztecOOSolver.SetAztecOption(AZ_output,32);
+  else
+    AztecOOSolver.SetAztecOption(AZ_output,AZ_none);
+  AztecOOSolver.SetPrecOperator(&Prec);
+
+  AztecOOSolver.Iterate(1550,1e-5);
+
+  return(AztecOOSolver.NumIters());
+}
+
 
 // ====================================================================== 
 int CompareBlockOverlap(const Teuchos::RefCountPtr<Epetra_RowMatrix>& A, int Overlap)
@@ -431,6 +476,9 @@ int main(int argc, char *argv[])
   else
     A = Teuchos::rcp( Galeri::CreateCrsMatrix("Recirc2D", &*Map, GaleriList) );
 
+  // coordinates
+  Teuchos::RCP<Epetra_MultiVector> coord = Teuchos::rcp( Galeri::CreateCartesianCoordinates("2D",&*Map,GaleriList));
+
   // test the preconditioner
   int TestPassed = true;
 
@@ -549,6 +597,14 @@ int main(int argc, char *argv[])
       TestPassed = TestPassed && false;
     }
   }
+
+  // ================================== //
+  // check if line smoothing works      //
+  // ================================== //
+  {
+    //int Iters1=
+    CompareLineSmoother(A,coord);    
+  }							 
 
   // ============ //
   // final output //

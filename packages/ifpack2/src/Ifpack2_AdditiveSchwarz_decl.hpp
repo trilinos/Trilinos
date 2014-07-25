@@ -257,6 +257,9 @@ subdomain solver at compile time, as the second template parameter
 causes a lot of trouble for explicit template instantiation.  Users
 may perfectly well pick the type of the subdomain solver at run time,
 using either of the above two methods.  This has no performance cost.
+
+Please refer to the documentation of setParameters for a complete
+discussion of subdomain solvers and their parameters.
 */
 template<class MatrixType,
          class LocalInverseType =
@@ -388,37 +391,28 @@ public:
   ///   (if it has one) may be replaced by a matrix specified by the
   ///   outer (this) preconditioner.
   ///
-  /// \warning CIRCULAR DEPENDENCIES ARE FORBIDDEN.  You may NOT give
-  ///   this object (<tt>*this</tt>) to itself as an inner solver.
-  ///   You MAY use an inner solver of the same TYPE as this object
-  ///   (as long as this makes sense mathematically), but it must be a
-  ///   different instance.
+  /// \warning CYCLIC DEPENDENCIES ARE FORBIDDEN.  You may NOT give
+  ///   this object (<tt>*this</tt>) to itself as an inner solver, or
+  ///   otherwise set up a cyclic dependency between preconditioner
+  ///   instances.  You MAY use an inner solver of the same TYPE as
+  ///   this object (as long as this makes sense mathematically), but
+  ///   it must be a different instance of that type.
+  ///
+  /// It does not make sense to nest different instances of
+  /// AdditiveSchwarz, since it currently only sets up one subdomain
+  /// per MPI process in the input matrix's communicator.  Thus, if
+  /// you were to use another AdditiveSchwarz instance as the inner
+  /// preconditioner for AdditiveSchwarz, it would not do anything,
+  /// since the inner preconditioner's input matrix would only have
+  /// one process in its communicator.  (AdditiveSchwarz does nothing
+  /// in that case.)
   ///
   /// \pre <tt>&*innerPrec != this</tt>.
   ///
-  /// We assume that if you created the inner preconditioner yourself,
-  /// then whatever parameters may be in the input ParameterList are
-  /// no longer valid.  In fact, calling this method clears all
-  /// parameters related to the inner preconditioner from this
-  /// instance's current ParameterList.  It also sets the "inner
-  /// preconditioner name" parameter to "CUSTOM", as a helpful
-  /// reminder that you set a custom inner preconditioner.
-  ///
-  /// Calling setInnerPreconditioner() with a null argument marks this
-  /// AdditiveSchwarz instance so that it will not attempt to create a
-  /// default inner preconditioner.  It does so via the "CUSTOM"
-  /// option mentioned above.  If you call setInnerPreconditioner()
-  /// with a null input, and then call initialize(), initialize() will
-  /// notice that the inner preconditioner is null and the "inner
-  /// preconditioner name" parameter's value is "CUSTOM".  In that
-  /// case, initialize() will throw an exception, rather than
-  /// attempting to create a default inner preconditioner.  You may
-  /// clear this mark by calling setParameters() and specifying a
-  /// value other than "CUSTOM" for the "inner preconditioner name"
-  /// parameter.
-  ///
   /// This method has collective semantics, because it may call
-  /// initialize() or compute() on \c innerPrec.
+  /// initialize() or compute() on \c innerPrec, in order to
+  /// synchronize the inner preconditioner's state with that of the
+  /// AdditiveSchwarz instance.
   virtual void
   setInnerPreconditioner (const Teuchos::RCP<Preconditioner<scalar_type,
                                                             local_ordinal_type,
@@ -479,17 +473,13 @@ public:
   ///   - "inner preconditioner name" or "subdomain solver name" or
   ///     "schwarz: subdomain solver name" or "schwarz: inner
   ///     preconditioner name" (\c std::string): the name of the
-  ///     subdomain solver.  See discussion below for what names are
-  ///     valid, and how this class chooses the default subdomain
-  ///     solver name.  Please set at most one of these parameters;
-  ///     results are undefined otherwise.
+  ///     subdomain solver.  See discussion below.
   ///   - "inner preconditioner parameters" or "subdomain solver
   ///     parameters" or "schwarz: subdomain solver parameters" or
   ///     "schwarz: inner preconditioner parameters" (sublist):
   ///     parameters for the subdomain solver.  If not provided, the
   ///     subdomain solver will use its specific default parameters.
-  ///     Please set at most one of these parameters; results are
-  ///     undefined otherwise.
+  ///     See discussion below.
   ///   - "schwarz: compute condest" (\c bool): If true, estimate the
   ///     condition number each time compute() is called.  Default is
   ///     false.
@@ -513,25 +503,40 @@ public:
   ///     rows with just a single entry on the calling process.
   ///     Default is false.
   ///
-  /// \section Ifpack2_AdditiveSchwarz_setParameters_subdomain Subdomain solver parameters
+  /// \section Ifpack2_AS_setParams_subd Subdomain solver parameters
   ///
-  /// \subsection Ifpack2_AdditiveSchwarz_setParameters_subdomain_default Default subdomain solver
+  /// \subsection Ifpack2_AS_setParams_subd_dflt Default subdomain solver
   ///
   /// This class lets users specify any subdomain solver they want, by
   /// calling setInnerPreconditioner().  However, users may instead
   /// specify the subdomain solver by setting the "inner
   /// preconditioner name" parameter (or any of its aliases).  If they
   /// choose to do so, they may only use inner preconditioners
-  /// supported by Ifpack2::Details::OneLevelFactory.  These include:
-  ///   - "AMESOS2": Ifpack2::Details::Amesos2Wrapper (only allowed if
-  ///     Trilinos was built with the Amesos2 package enabled)
-  ///   - "CHEBYSHEV": Ifpack2::Chebyshev
-  ///   - "DENSE" or "LAPACK": Ifpack2::Details::DenseSolver
-  ///   - "DIAGONAL": Ifpack2::Diagonal
-  ///   - "ILUT": Ifpack2::ILUT
-  ///   - "RELAXATION": Ifpack2::Relaxation
-  ///   - "RILUK": Ifpack2::RILUK
-  ///   - "KRYLOV": Ifpack2::Krylov
+  /// supported by Ifpack2::Details::OneLevelFactory.  These include
+  /// but are not necessarily limited to the following:
+  ///
+  ///   - "AMESOS2": Use Amesos2's interface to sparse direct solvers.
+  ///     This is only allowed if Trilinos was built with the Amesos2
+  ///     package enabled.  Otherwise, AdditiveSchwarz will throw an
+  ///     exception with an informative message.
+  ///   - "CHEBYSHEV": Chebyshev iteration, implemented with
+  ///     Ifpack::Chebyshev.  WARNING: This currently only works if
+  ///     the subdomain problem is real and symmetric positive
+  ///     definite.
+  ///   - "DENSE" or "LAPACK": Convert the subdomain matrix to a dense
+  ///     matrix, and use LAPACK's LU factorization with partial
+  ///     pivoting to factor it and solve subdomain problems.
+  ///     WARNING: This will take a lot of memory if the subdomain
+  ///     problem is large!
+  ///   - "DIAGONAL": Diagonal scaling, implemented through
+  ///     Ifpack2::Diagonal
+  ///   - "ILUT": ILUT (incomplete LU with threshold), implemented
+  ///     with Ifpack2::ILUT
+  ///   - "RELAXATION": Point relaxation (Jacobi, Gauss-Seidel, or
+  ///     symmetric Gauss-Seidel), implemented with
+  ///     Ifpack2::Relaxation
+  ///   - "RILUK": ILU(k) (incomplete LU with fill level k),
+  ///     implemented with Ifpack2::RILUK
   ///
   /// This name <i>need not necessarily</i> correspond with
   /// <tt>LocalInverseType</tt>.  If the user does <i>not</i> specify
@@ -545,21 +550,57 @@ public:
   ///      subclass as the subdomain solver. </li>
   /// <li> If <tt>LocalInverseType</tt> is a concrete Preconditioner
   ///      subclass, and if that subclass is <i>not</i> in the above
-  ///      supported list of subdomain solver types, then users must
-  ///      create the subdomain solver themselves and give it to
-  ///      AdditiveSchwarz by calling setInnerPreconditioner(),
-  ///      <i>before</i> calling initialize() on the AdditiveSchwarz
-  ///      instance. </li>
+  ///      supported list of subdomain solver types, then users have
+  ///      one of two options, both of which we discuss below. </li>
   /// </ol>
   ///
-  /// The subdomain solver name "INVALID" is reserved for internal
-  /// use.  The subdomain solver name "CUSTOM" is an optional way for
-  /// users to indicate that they want to set a custom subdomain
-  /// solver by calling setInnerPreconditioner().  The
-  /// setInnerPreconditioner() method may set the subdomain solver
-  /// name to "CUSTOM", in order to indicate this.
+  /// The subdomain solver names "INVALID" and "CUSTOM" are reserved
+  /// for internal use.
   ///
-  /// \subsection Ifpack2_AdditiveSchwarz_setParameters_subdomain_setInner Subdomain solver parameters and setInnerPreconditioner
+  /// \subsection Ifpack2_AS_setParams_subd_arb Arbitrary subdomain solvers
+  ///
+  /// AdditiveSchwarz only knows, on its own, how to create
+  /// "non-nested" preconditioners as inner preconditioners (i.e.,
+  /// subdomain solvers).  It can't create nested preconditioners
+  /// (e.g., AdditiveSchwarz, Krylov, and SupportGraph) on its own as
+  /// inner preconditioners, and it doesn't know how to create
+  /// arbitrary subclasses of Ifpack2::Preconditioner unless
+  /// Details::OneLevelFactory knows how to create them.
+  ///
+  /// This leaves users two options in order to have any
+  /// preconditioner as AdditiveSchwarz's inner preconditioner:
+  /// <ol>
+  /// <li> If Ifpack2::Factory knows how to create a preconditioner
+  ///      whose string name is \c prec, then users who don't want to
+  ///      create the inner preconditioner themselves must create
+  ///      AdditiveSchwarz using Factory, <i>not</i> by invoking
+  ///      AdditiveSchwarz's constructor themselves.  Factory will set
+  ///      up the inner preconditioner for them before it returns the
+  ///      AdditiveSchwarz instance. </li>
+  /// <li> If Ifpack2::Factory does <i>not</i> know how to create a
+  ///      preconditioner \c prec (for example, if it is not even
+  ///      implemented in Ifpack2), then users must create the inner
+  ///      preconditioner instance themselves, and give it to
+  ///      AdditiveSchwarz using setInnerPreconditioner.  In this
+  ///      case, AdditiveSchwarz's ParameterList must not specify the
+  ///      inner preconditioner's name. </li>
+  /// </ol>
+  ///
+  /// \subsection Ifpack2_AS_setParams_subd_inner Subdomain solver parameters and setInnerPreconditioner
+  ///
+  /// Users are responsible for ensuring that the parameters they
+  /// provide to setParameters() are up to date.  For example, if the
+  /// users first set an inner preconditioner using
+  /// setInnerPreconditioner(), and then call setParameters() with the
+  /// "inner preconditioner name" parameter set, AdditiveSchwarz will
+  /// get rid of the users' inner preconditioner and attempt to create
+  /// a new inner preconditioner itself.  Remember that
+  /// AdditiveSchwarz's ParameterList has "delta" (relative)
+  /// semantics!  If you don't specify a parameter, the current state
+  /// is not changed.
+  ///
+
+
   ///
   /// If you specify a sublist of parameters to give to the subdomain
   /// solver, setInnerPreconditioner() does <i>not</i> pass that
@@ -717,6 +758,42 @@ private:
   ///   inner preconditioner's name.
   bool hasInnerPrecName () const;
 
+
+  // mfh 28 Jan 2014: Re-enable in next commit to Ifpack2_AdditiveSchwarz_def.hpp.
+#if 0
+  /// \brief Whether the given inner preconditioner name is "custom,"
+  ///   that is, whether AdditiveSchwarz does <i>not</i> know on its
+  ///   own how to create it.
+  ///
+  /// AdditiveSchwarz only knows, on its own, how to create
+  /// "non-nested" preconditioners as inner preconditioners (i.e.,
+  /// subdomain solvers).  It can't create nested preconditioners
+  /// (e.g., AdditiveSchwarz, Krylov, and SupportGraph) on its own as
+  /// inner preconditioners, and it doesn't know how to create
+  /// arbitrary subclasses of Ifpack2::Preconditioner unless
+  /// Details::OneLevelFactory knows how to create them.
+  ///
+  /// This leaves users two options in order to have any
+  /// preconditioner as AdditiveSchwarz's inner preconditioner:
+  ///
+  /// 1. If Ifpack2::Factory knows how to create a preconditioner
+  ///    whose string name is \c prec, then users who don't want to
+  ///    create the inner preconditioner themselves must create
+  ///    AdditiveSchwarz using Factory, <i>not</i> by invoking
+  ///    AdditiveSchwarz's constructor themselves.  Factory will set
+  ///    up the inner preconditioner for them before it returns the
+  ///    AdditiveSchwarz instance.
+  ///
+  /// 2. If Ifpack2::Factory does <i>not</i> know how to create a
+  ///    preconditioner \c prec (for example, if it is not even
+  ///    implemented in Ifpack2), then users must create the inner
+  ///    preconditioner instance themselves, and give it to
+  ///    AdditiveSchwarz using setInnerPreconditioner.  In this case,
+  ///    AdditiveSchwarz's ParameterList must not specify the inner
+  ///    preconditioner's name.
+  bool isCustomPrecName (const std::string& prec) const;
+#endif // 0
+
   //! The current inner preconditioner name.
   std::string innerPrecName () const;
 
@@ -808,23 +885,8 @@ private:
   mutable double ApplyFlops_;
   //! The inner (that is, per subdomain local) solver.
   Teuchos::RCP<prec_type> Inverse_;
-  //! SerialMap for filtering multivector with no overlap.
-  Teuchos::RCP<const map_type> SerialMap_;
-  //! Distributed map for filtering multivector with no overlap.
-  Teuchos::RCP<const map_type> DistributedMap_;
   //! Local distributed map for filtering multivector with no overlap.
-  Teuchos::RCP<const map_type> LocalDistributedMap_;
-
-  /// \brief Import object used in apply().
-  ///
-  /// If the domain decomposition is <i>not</i> overlapping, then
-  /// apply() needs to redistribute the X input vector from the domain
-  /// Map of this operator to SerialMap_ (see above).  Computing the
-  /// Import is expensive, and the Import does not change as long as
-  /// the overlap level does not change, so it makes sense to keep the
-  /// Import object around.  apply() creates this on demand if
-  /// necessary, which explains why this is marked \c mutable.
-  mutable Teuchos::RCP<const import_type> SerialImporter_;
+  Teuchos::RCP<const map_type> localMap_;
 
   /// \brief Import object used in apply().
   ///

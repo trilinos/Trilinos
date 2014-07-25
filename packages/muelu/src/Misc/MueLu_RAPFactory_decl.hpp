@@ -55,11 +55,12 @@
 #include <Xpetra_VectorFactory_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_TwoLevelFactoryBase.hpp"
 #include "MueLu_RAPFactory_fwd.hpp"
 
-#include "MueLu_Level_fwd.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
+#include "MueLu_Level_fwd.hpp"
+#include "MueLu_PerfUtils_fwd.hpp"
+#include "MueLu_TwoLevelFactoryBase.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
@@ -85,25 +86,15 @@ namespace MueLu {
     //! @name Input
     //@{
 
-    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+    RCP<const ParameterList> GetValidParameterList() const;
 
-    void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
+    void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
 
     //@}
 
     //! @name Build methods.
     //@{
     void Build(Level& fineLevel, Level& coarseLevel) const;
-    //@}
-
-    //! @name Handling of user-defined transfer factories
-    //@{
-
-    //! Indicate that the restriction operator action should be implicitly defined by the transpose of the prolongator.
-    void SetImplicitTranspose(bool const &implicit) {
-      implicitTranspose_ = implicit;
-    }
-
     //@}
 
     //@{
@@ -128,8 +119,6 @@ namespace MueLu {
 
     //@{
 
-    //! If true, the action of the restriction operator action is implicitly defined by the transpose of the prolongator.
-    bool implicitTranspose_;
 
     mutable
     bool hasDeclaredInput_;

@@ -228,7 +228,7 @@ int main(int argc, char *argv[]) {
     norms = Utils::ResidualNorm(*A,*X,*B);
     std::cout << "                iter:    0           residual = " << norms[0] << std::endl;
     for (int i=0; i< maxIts; ++i) {
-      H->Iterate(*B, 1, *X);
+      H->Iterate(*B, *X);
       norms = Utils::ResidualNorm(*A,*X,*B);
       std::cout << "                iter:    " << i+1 << "           residual = " << norms[0] << std::endl;
     }

@@ -270,7 +270,7 @@ int main(int argc, char *argv[])
   // Default values
   double numGlobalCoords = 1000;
   int numTestCuts = 1;
-  int weightDim = 0;
+  int nWeights = 0;
   string timingType("no_timers");
   string debugLevel("basic_status");
   string memoryOn("memoryOn");
@@ -286,7 +286,7 @@ int main(int argc, char *argv[])
     "Number of test cuts to make when looking for bisector.");
   commandLine.setOption("numParts", &numGlobalParts, 
     "Number of parts (default is one per proc).");
-  commandLine.setOption("weightDim", &weightDim, 
+  commandLine.setOption("nWeights", &nWeights, 
     "Number of weights per coordinate, zero implies uniform weights.");
 
   string balanceCount("balance_object_count");
@@ -363,12 +363,12 @@ int main(int argc, char *argv[])
   }
 #endif
 
-  Array<ArrayRCP<scalar_t> > weights(weightDim);
+  Array<ArrayRCP<scalar_t> > weights(nWeights);
 
-  if (weightDim > 0){
+  if (nWeights > 0){
     int wt = 0;
     scalar_t scale = 1.0;
-    for (int i=0; i < weightDim; i++){
+    for (int i=0; i < nWeights; i++){
       weights[i] = 
         makeWeights(comm, numLocalCoords, weightTypes(wt++), scale, rank);
       if (wt == numWeightTypes){
@@ -388,7 +388,7 @@ int main(int argc, char *argv[])
   size_t localCount = coordinates->getLocalLength();
   RCP<inputAdapter_t> ia;
   
-  if (weightDim == 0){
+  if (nWeights == 0){
     ia = rcp(new inputAdapter_t (localCount, globalIds, 
       coordinates->getData(0).getRawPtr(), coordinates->getData(1).getRawPtr(),
       coordinates->getData(2).getRawPtr(), 1,1,1));
@@ -398,8 +398,8 @@ int main(int argc, char *argv[])
     for (int i=0; i < 3; i++)
       values[i] = coordinates->getData(i).getRawPtr();
     vector<int> valueStrides(0);  // implies stride is one
-    vector<const scalar_t *> weightPtrs(weightDim);
-    for (int i=0; i < weightDim; i++)
+    vector<const scalar_t *> weightPtrs(nWeights);
+    for (int i=0; i < nWeights; i++)
       weightPtrs[i] = weights[i].getRawPtr();
     vector<int> weightStrides(0); // implies stride is one
 

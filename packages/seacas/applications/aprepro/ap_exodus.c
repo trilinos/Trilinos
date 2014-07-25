@@ -114,11 +114,12 @@ char *do_exodus_info(char *filename)
       }
       free(info);
     }
+    ex_close(exoid);
     return ret_string;
   } else {
+    ex_close(exoid);
     return "";
   }
-  ex_close(exoid);
 }
 
 char *do_exodus_meta(char *filename)

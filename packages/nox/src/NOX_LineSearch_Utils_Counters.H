@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -69,7 +69,7 @@ namespace LineSearch {
 namespace Utils {
 
 //! Common counters that all line search algorithms should report.
-/*!  
+/*!
 
   <B> Output list keys </B> <br>
 
@@ -115,9 +115,9 @@ public:
   virtual bool setValues(Teuchos::ParameterList& lineSearchParams);
 
   /** @name Increment Methods
-      
 
-  */ 
+
+  */
   //@{
 
   //! Increment the counter for the total number of line search calls by n
@@ -135,19 +135,19 @@ public:
   //@}
 
   /** @name Accessor Methods
-      
-  Returns the current counter value 
 
-  */ 
+  Returns the current counter value
+
+  */
   //@{
 
   //! Return the counter for the total number of line search calls
   virtual int getNumLineSearches() const;
 
-  //! Return the counter for the total number of non-trivial line search calls 
+  //! Return the counter for the total number of non-trivial line search calls
   virtual int getNumNonTrivialLineSearches() const;
 
-  //! Return the counter for the total number of failed line search calls 
+  //! Return the counter for the total number of failed line search calls
   virtual int getNumFailedLineSearches() const;
 
   //! Return the counter for the total number of line search inner iterations
@@ -158,13 +158,13 @@ public:
 
 private:
 
-  /** @name Common Line Search Data Members 
-  
+  /** @name Common Line Search Data Members
+
   All line searches in general should report the following
   information.  We save a pointer to the parameter list associated
   with the line search and set an output sublist with each of the
   following parameters.
-  */ 
+  */
   //@{
 
   //! Counter for the total number of times the compute() method was

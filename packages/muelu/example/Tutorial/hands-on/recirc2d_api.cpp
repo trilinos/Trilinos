@@ -308,7 +308,7 @@ int main(int argc, char *argv[]) {
       tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 5 - Multigrid Solve")));
       mgridLsgVec->update(1.0,*xX,1.0);
       H->IsPreconditioner(false);
-      H->Iterate(*xB, mgridSweeps, *mgridLsgVec);
+      H->Iterate(*xB, *mgridLsgVec, mgridSweeps);
       comm->barrier();
       tm = Teuchos::null;
     }
@@ -316,7 +316,7 @@ int main(int argc, char *argv[]) {
     //////////////////
 
     fancyout << "========================================================\nExport results.\n========================================================" << std::endl;
-    ofstream myfile;
+    std::ofstream myfile;
     std::stringstream ss; ss << "example" << MyPID << ".txt";
     myfile.open (ss.str().c_str());
 

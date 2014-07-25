@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -48,46 +48,46 @@
 
 //! Epetra_SerialSymDenseMatrix: A class for constructing and using symmetric positive definite dense matrices.
 
-/*! The Epetra_SerialSymDenseMatrix class enables the construction and use of 
-    real-valued, symmetric positive definite, 
-    double-precision dense matrices.  It is built on the Epetra_SerialDenseMatrix class which 
-    in turn is built on the 
-    BLAS via the Epetra_BLAS class. 
+/*! The Epetra_SerialSymDenseMatrix class enables the construction and use of
+    real-valued, symmetric positive definite,
+    double-precision dense matrices.  It is built on the Epetra_SerialDenseMatrix class which
+    in turn is built on the
+    BLAS via the Epetra_BLAS class.
 
-The Epetra_SerialSymDenseMatrix class is intended to provide full-featured support for solving 
+The Epetra_SerialSymDenseMatrix class is intended to provide full-featured support for solving
 linear and eigen system
-problems for symmetric positive definite matrices.  It is written on top of BLAS and LAPACK 
+problems for symmetric positive definite matrices.  It is written on top of BLAS and LAPACK
 and thus has excellent
-performance and numerical capabilities.  Using this class, one can either perform simple 
+performance and numerical capabilities.  Using this class, one can either perform simple
 factorizations and solves or
-apply all the tricks available in LAPACK to get the best possible solution for very 
+apply all the tricks available in LAPACK to get the best possible solution for very
 ill-conditioned problems.
 
 <b>Epetra_SerialSymDenseMatrix vs. Epetra_LAPACK</b>
 
-The Epetra_LAPACK class provides access to most of the same functionality as 
+The Epetra_LAPACK class provides access to most of the same functionality as
 Epetra_SerialSymDenseMatrix.
-The primary difference is that Epetra_LAPACK is a "thin" layer on top of 
+The primary difference is that Epetra_LAPACK is a "thin" layer on top of
 LAPACK and Epetra_SerialSymDenseMatrix
-attempts to provide easy access to the more sophisticated aspects of 
+attempts to provide easy access to the more sophisticated aspects of
 solving dense linear and eigensystems.
 <ul>
-<li> When you should use Epetra_LAPACK:  If you are simply looking for a 
+<li> When you should use Epetra_LAPACK:  If you are simply looking for a
      convenient wrapper around the Fortran LAPACK
      routines and you have a well-conditioned problem, you should probably use Epetra_LAPACK directly.
-<li> When you should use Epetra_SerialSymDenseMatrix: If you want to (or potentially want to) 
-     solve ill-conditioned 
-     problems or want to work with a more object-oriented interface, you should 
+<li> When you should use Epetra_SerialSymDenseMatrix: If you want to (or potentially want to)
+     solve ill-conditioned
+     problems or want to work with a more object-oriented interface, you should
      probably use Epetra_SerialSymDenseMatrix.
-     
+
 </ul>
 
 <b>Constructing Epetra_SerialSymDenseMatrix Objects</b>
 
-There are three Epetra_DenseMatrix constructors.  The first constructs a zero-sized object 
+There are three Epetra_DenseMatrix constructors.  The first constructs a zero-sized object
 which should be made
-to appropriate length using the Shape() or Reshape() functions and then filled with 
-the [] or () operators. 
+to appropriate length using the Shape() or Reshape() functions and then filled with
+the [] or () operators.
 The second is a constructor that accepts user
 data as a 2D array, the third is a copy constructor. The second constructor has
 two data access modes (specified by the Epetra_DataAccess argument):
@@ -99,7 +99,7 @@ two data access modes (specified by the Epetra_DataAccess argument):
 </ol>
 
 \warning View mode is \e extremely dangerous from a data hiding perspective.
-Therefore, we strongly encourage users to develop code using Copy mode first and 
+Therefore, we strongly encourage users to develop code using Copy mode first and
 only use the View mode in a secondary optimization phase.
 
 <b>Extracting Data from Epetra_SerialSymDenseMatrix Objects</b>
@@ -119,8 +119,8 @@ the object.  Specifically:
 </ul>
 
 <b>Counting floating point operations </b>
-The Epetra_SerialSymDenseMatrix class has Epetra_CompObject as a base class.  Thus, floating 
-point operations 
+The Epetra_SerialSymDenseMatrix class has Epetra_CompObject as a base class.  Thus, floating
+point operations
 are counted and accumulated in the Epetra_Flop object (if any) that was set using the SetFlopCounter()
 method in the Epetra_CompObject base class.
 
@@ -131,56 +131,56 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialSymDenseMatrix : public Epetra_SerialDe
 
  public:
    //! @name Constructor/Destructor Methods
-  //@{ 
+  //@{
   //! Default constructor; defines a zero size object.
   /*!
-    Epetra_SerialSymDenseMatrix objects defined by the default constructor 
-    should be sized with the Shape() 
-    or Reshape() functions.  
+    Epetra_SerialSymDenseMatrix objects defined by the default constructor
+    should be sized with the Shape()
+    or Reshape() functions.
     Values should be defined by using the [] or ()operators.
 
     Note: By default the active part of the matrix is assumed to be in the lower triangle.
-    To set the upper part as active, call SetUpper(). 
+    To set the upper part as active, call SetUpper().
     See Detailed Description section for further discussion.
    */
   Epetra_SerialSymDenseMatrix(void);
   //! Set object values from two-dimensional array.
   /*!
-    \param In 
+    \param In
            Epetra_DataAccess - Enumerated type set to Copy or View.
     \param In
            A - Pointer to an array of double precision numbers.  The first vector starts at A.
 	   The second vector starts at A+LDA, the third at A+2*LDA, and so on.
     \param In
            LDA - The "Leading Dimension", or stride between vectors in memory.
-    \param In 
+    \param In
            NumRowsCols - Number of rows and columns in object.
 
 	   Note: By default the active part of the matrix is assumed to be in the lower triangle.
-	   To set the upper part as active, call SetUpper(). 
+	   To set the upper part as active, call SetUpper().
 	   See Detailed Description section for further discussion.
   */
   Epetra_SerialSymDenseMatrix(Epetra_DataAccess CV, double *A, int LDA, int NumRowsCols);
-  
+
   //! Epetra_SerialSymDenseMatrix copy constructor.
-  
+
   Epetra_SerialSymDenseMatrix(const Epetra_SerialSymDenseMatrix& Source);
-  
-  
-  //! Epetra_SerialSymDenseMatrix destructor.  
+
+
+  //! Epetra_SerialSymDenseMatrix destructor.
   virtual ~Epetra_SerialSymDenseMatrix ();
   //@}
 
   //! @name Set Methods
-  //@{ 
+  //@{
 
   //let the compiler know we intend to overload the base-class Shape function,
-  //rather than hide it.  
+  //rather than hide it.
   using Epetra_SerialDenseMatrix::Shape;
 
   //! Set dimensions of a Epetra_SerialSymDenseMatrix object; init values to zero.
   /*!
-    \param In 
+    \param In
            NumRowsCols - Number of rows and columns in object.
 
 	   Allows user to define the dimensions of a Epetra_DenseMatrix at any point. This function can
@@ -193,12 +193,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialSymDenseMatrix : public Epetra_SerialDe
 
   //let the compiler know we intend to overload the base-class Reshape function,
   //rather than hide it.
-  
+
   using Epetra_SerialDenseMatrix::Reshape;
 
   //! Reshape a Epetra_SerialSymDenseMatrix object.
   /*!
-    \param In 
+    \param In
            NumRowsCols - Number of rows and columns in object.
 
 	   Allows user to define the dimensions of a Epetra_SerialSymDenseMatrix at any point. This function can
@@ -219,7 +219,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialSymDenseMatrix : public Epetra_SerialDe
   //@}
 
   //! @name Query methods
-  //@{ 
+  //@{
 
   //! Returns true if upper triangle of \e this matrix has and will be used.
   bool Upper() const {return(Upper_);};
@@ -229,17 +229,17 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialSymDenseMatrix : public Epetra_SerialDe
   //@}
 
   //! @name Mathematical Methods
-  //@{ 
+  //@{
 
   //! Inplace scalar-matrix product A = \e a A.
-  /*! Scale a matrix, entry-by-entry using the value ScalarA.  This method is sensitive to 
+  /*! Scale a matrix, entry-by-entry using the value ScalarA.  This method is sensitive to
       the UPLO() parameter.
 
 
   \param ScalarA (In) Scalar to multiply with A.
 
    \return Integer error code, set to 0 if successful.
-	 
+	
   */
   int  Scale ( double ScalarA );
 
@@ -258,7 +258,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialSymDenseMatrix : public Epetra_SerialDe
   void CopyUPLOMat(bool Upper, double * A, int LDA, int NumRows);
 
   //! @name Deprecated methods (will be removed in later versions of this class)
-  //@{ 
+  //@{
 
   //! Computes the 1-Norm of the \e this matrix (identical to NormOne() method).
   /*!

@@ -7,7 +7,6 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../src)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../src/Utils)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../src/Headers)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Maps)
 
 APPEND_SET(HEADERS
   Galeri_XpetraParameters.hpp
@@ -25,14 +24,12 @@ APPEND_SET(HEADERS
   Galeri_MatrixTraits.hpp
   Galeri_MapTraits.hpp
   Galeri_MultiVectorTraits.hpp
-  
+
   Galeri_XpetraUtils.hpp
   Galeri_Problem.hpp
 
   Galeri_XpetraMaps.hpp
-  Maps/Galeri_XpetraCartesian1D.hpp
-  Maps/Galeri_XpetraCartesian2D.hpp
-  Maps/Galeri_XpetraCartesian3D.hpp
+  Galeri_XpetraCartesian.hpp
   )
 
 APPEND_SET(SOURCES

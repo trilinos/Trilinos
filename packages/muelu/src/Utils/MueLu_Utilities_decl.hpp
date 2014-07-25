@@ -53,18 +53,19 @@
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_ParameterList.hpp>
 
-#include <Xpetra_Map_fwd.hpp>
-#include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_MapFactory_fwd.hpp>
-#include <Xpetra_MatrixFactory_fwd.hpp>
-#include <Xpetra_CrsMatrixWrap_fwd.hpp>
-#include <Xpetra_CrsMatrix_fwd.hpp>
 #include <Xpetra_BlockedCrsMatrix_fwd.hpp>
-#include <Xpetra_Vector_fwd.hpp>
-#include <Xpetra_VectorFactory_fwd.hpp>
+#include <Xpetra_CrsMatrix_fwd.hpp>
+#include <Xpetra_CrsMatrixWrap_fwd.hpp>
+#include <Xpetra_ImportFactory_fwd.hpp>
+#include <Xpetra_Map_fwd.hpp>
+#include <Xpetra_MapFactory_fwd.hpp>
+#include <Xpetra_Matrix_fwd.hpp>
+#include <Xpetra_MatrixFactory_fwd.hpp>
 #include <Xpetra_MultiVector_fwd.hpp>
 #include <Xpetra_MultiVectorFactory_fwd.hpp>
-#include <Xpetra_ImportFactory_fwd.hpp>
+#include <Xpetra_Vector_fwd.hpp>
+#include <Xpetra_VectorFactory_fwd.hpp>
+#include <Xpetra_ExportFactory.hpp>
 
 #ifdef HAVE_MUELU_EPETRA
 namespace Xpetra {
@@ -89,6 +90,7 @@ class Epetra_Vector;
 #ifdef HAVE_MUELU_TPETRA
 #include <Xpetra_TpetraMultiVector_fwd.hpp>
 #include <Xpetra_TpetraCrsMatrix_fwd.hpp>
+#include <Tpetra_Map_decl.hpp>
 
 namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>                    class Vector;
@@ -98,15 +100,15 @@ namespace Tpetra {
 
 #endif
 
-// MPI helper
-#define sumAll(rcpComm, in, out)                                        \
-  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out));
-#define minAll(rcpComm, in, out)                                        \
-  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MIN, in, Teuchos::outArg(out));
-#define maxAll(rcpComm, in, out)                                        \
-  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MAX, in, Teuchos::outArg(out));
-
 namespace MueLu {
+
+// MPI helpers
+#define sumAll(rcpComm, in, out)                                        \
+  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out))
+#define minAll(rcpComm, in, out)                                        \
+  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MIN, in, Teuchos::outArg(out))
+#define maxAll(rcpComm, in, out)                                        \
+  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MAX, in, Teuchos::outArg(out))
 
 #ifdef HAVE_MUELU_EPETRA
   //defined after Utils class
@@ -193,11 +195,11 @@ namespace MueLu {
     }
 
     static RCP<Matrix> Jacobi(Scalar omega,
-			      const Vector& D,
-			      const Matrix& A,
-			      const Matrix& B,
-			      RCP<Matrix> C_in,
-			      Teuchos::FancyOStream &fos);
+                              const Vector& D,
+                              const Matrix& A,
+                              const Matrix& B,
+                              RCP<Matrix> C_in,
+                              Teuchos::FancyOStream &fos);
 
 
     /*! @brief Helper function to do matrix-matrix multiply
@@ -331,6 +333,7 @@ namespace MueLu {
                                      const RCP<const Map> domainMap        = Teuchos::null,
                                      const RCP<const Map> rangeMap         = Teuchos::null,
                                      const bool           callFillComplete = true,
+                                     const bool           binary           = false,
                                      const bool           tolerant         = false,
                                      const bool           debug            = false);
     //@}
@@ -378,9 +381,27 @@ namespace MueLu {
     */
     static Teuchos::ArrayRCP<const bool> DetectDirichletRows(const Matrix& A, const Magnitude& tol = Teuchos::ScalarTraits<SC>::zero());
 
-    /*! @brief print matrix info
+    /*! @brief Set seed for random number generator.
+
+      Distribute the seeds evenly in [1,INT_MAX-1].  This guarantees nothing
+      about where random number streams on difference processes will intersect.
+      This does avoid overflow situations in parallel when multiplying by a PID.
+      It also avoids the pathological case of having the *same* random number stream
+      on each process.
     */
-    static std::string PrintMatrixInfo(const Matrix& A, const std::string& msgTag, RCP<const Teuchos::ParameterList> params = Teuchos::null);
+
+    static void SetRandomSeed(const Teuchos::Comm<int> &comm);
+    
+    static void findDirichletRows(Teuchos::RCP<Matrix> A,
+				  std::vector<LO>& dirichletRows);
+    static void findDirichletCols(Teuchos::RCP<Matrix> A,
+				  std::vector<LO>& dirichletRows,
+				  std::vector<LO>& dirichletCols);
+    static void Apply_BCsToMatrixRows(Teuchos::RCP<Matrix>& A,
+				      std::vector<LO>& dirichletRows);
+    static void Apply_BCsToMatrixCols(Teuchos::RCP<Matrix>& A,
+				      std::vector<LO>& dirichletCols);
+    static void Remove_Zeroed_Rows(Teuchos::RCP<Matrix>& A, double tol=1.0e-14);
 
   }; // class Utils
 
@@ -496,6 +517,7 @@ namespace MueLu {
                                                      RCP<Matrix>& C,  Teuchos::FancyOStream & fos, bool AHasFixedNnzPerRow = false);
     static RCP<MultiVector> ReadMultiVector         (const std::string& fileName, const RCP<const Map>& map);
     static RCP<const Map>   ReadMap                 (const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm);
+
   };
 
 

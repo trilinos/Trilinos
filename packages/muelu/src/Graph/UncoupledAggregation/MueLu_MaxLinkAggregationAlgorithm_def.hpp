@@ -74,7 +74,7 @@ namespace MueLu {
   BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
 
-    LO MaxNodesPerAggregate = params.get<LO>("MaxNodesPerAggregate");
+    LO MaxNodesPerAggregate = params.get<LO>("aggregation: max agg size");
 
     // vertex ids for output
     ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
@@ -85,22 +85,15 @@ namespace MueLu {
     const int myRank = graph.GetComm()->getRank();
 
     size_t           aggSize = 0;
-    const unsigned   magicConstAsDefaultSize = 100;
-    std::vector<int> aggList(magicConstAsDefaultSize);
+    std::vector<int> aggList(graph.getNodeMaxNumRowEntries());
 
-    bool recomputeAggregateSizes=false;
+    //bool recomputeAggregateSizes=false; // variable not used TODO remove it
 
     for (LO iNode = 0; iNode < nRows; iNode++) {
-      if (aggStat[iNode] == NodeStats::AGGREGATED)
+      if (aggStat[iNode] == AGGREGATED)
         continue;
 
       ArrayView<const LocalOrdinal> neighOfINode = graph.getNeighborVertices(iNode);
-
-      // TODO: I would like to get rid of this, but that requires something like
-      // graph.getMaxElementsPerRow(), which is trivial in Graph, but requires
-      // computation in LWGraph
-      if (as<size_t>(neighOfINode.size()) >= aggList.size())
-        aggList.resize(neighOfINode.size()*2);
 
       aggSize = 0;
       for (LO j = 0; j < neighOfINode.size(); j++) {
@@ -108,7 +101,7 @@ namespace MueLu {
 
         // NOTE: we don't need the check (neigh != iNode), as we work only
         // if aggStat[neigh] == AGGREGATED, which we know is different from aggStat[iNode]
-        if (graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == NodeStats::AGGREGATED)
+        if (graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == AGGREGATED)
           aggList[aggSize++] = vertex2AggId[neigh];
       }
 
@@ -129,7 +122,7 @@ namespace MueLu {
               aggSizes[aggList[i]] < MaxNodesPerAggregate) {   // and if it is not too big (i.e. can have one more node)
             maxNumConnections = curNumConnections;
             selectedAggregate = aggList[i];
-            recomputeAggregateSizes=true;
+            //recomputeAggregateSizes=true;
           }
           curNumConnections = 0;
         }
@@ -137,7 +130,7 @@ namespace MueLu {
 
       // Add node iNode to aggregate
       if (selectedAggregate != -1) {
-        aggStat[iNode]      = NodeStats::AGGREGATED;
+        aggStat[iNode]      = AGGREGATED;
         vertex2AggId[iNode] = selectedAggregate;
         procWinner[iNode]   = myRank;
 

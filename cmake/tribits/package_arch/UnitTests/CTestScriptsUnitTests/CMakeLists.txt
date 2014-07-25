@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -123,6 +123,7 @@ TRIBITS_ADD_ADVANCED_TEST(
     OUTPUT_FILE cmnd_1_args_1_print_msg_out_file_outputFile.out
     PASS_REGULAR_EXPRESSION "This is a crazy test"
   OVERALL_NUM_MPI_PROCS 1
+  XHOSTTYPE Windows
   )
 
 TRIBITS_ADD_ADVANCED_TEST(
@@ -151,7 +152,7 @@ TRIBITS_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_pass_regular_expression_all
   TEST_0 EXEC GenericDriver
     ARGS "This is a crazy test\n\nThis is not the best test" 5
-    OUTPUT_FILE cmnd_1_args_1_pass_regular_expression_all_outputFile.out
+    #OUTPUT_FILE cmnd_1_args_1_pass_regular_expression_all_outputFile.out
     PASS_REGULAR_EXPRESSION_ALL "This is a crazy test" "This is not the best test"
   OVERALL_NUM_MPI_PROCS 1
   )
@@ -160,7 +161,7 @@ TRIBITS_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_pass_regular_expression_all_compare_1
   TEST_0 EXEC GenericDriver
     ARGS "This is a crazy test\n\nThis is not the best test" 5
-    OUTPUT_FILE cmnd_1_args_1_pass_regular_expression_all_compare_1_outputFile.out
+    #OUTPUT_FILE cmnd_1_args_1_pass_regular_expression_all_compare_1_outputFile.out
     PASS_REGULAR_EXPRESSION_ALL "This is a crazy test" "This is not the best test"
   FINAL_PASS_REGULAR_EXPRESSION "TEST_0: Pass criteria = Match REGEX {This is a crazy test} [^a]PASSED[^a]"
   OVERALL_NUM_MPI_PROCS 1
@@ -170,7 +171,7 @@ TRIBITS_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_pass_regular_expression_all_compare_2
   TEST_0 EXEC GenericDriver
     ARGS "This is a crazy test\n\nThis is not the best test" 5
-    OUTPUT_FILE cmnd_1_args_1_pass_regular_expression_all_compare_2_outputFile.out
+    #OUTPUT_FILE cmnd_1_args_1_pass_regular_expression_all_compare_2_outputFile.out
     PASS_REGULAR_EXPRESSION_ALL "This is a crazy test" "This is not the best test"
   FINAL_PASS_REGULAR_EXPRESSION "TEST_0: Pass criteria = Match REGEX {This is not the best test} [^a]PASSED[^a]"
   OVERALL_NUM_MPI_PROCS 1
@@ -206,6 +207,7 @@ TRIBITS_ADD_ADVANCED_TEST(
     WORKING_DIRECTORY TEST_NAME
     OUTPUT_FILE cmnd_1_args_1_working_directory_console.out
   OVERALL_NUM_MPI_PROCS 1
+  XHOSTTYPE Windows
   )
 
 TRIBITS_ADD_ADVANCED_TEST(
@@ -274,9 +276,15 @@ TRIBITS_ADD_ADVANCED_TEST(
   TEST_0 EXEC GenericDriver
     ARGS "This is a crazy test!" 0
     OUTPUT_FILE cmnd_3_args_1_overall_working_directory_console.out
-  TEST_1 CMND "${CMAKE_COMMAND}" ARGS -E copy cmnd_3_args_1_overall_working_directory_console.out cmnd_3_args_1_overall_working_directory_console.gold.out
-  TEST_2 CMND ${DIFF_COMMAND_STUFF} cmnd_3_args_1_overall_working_directory_console.out cmnd_3_args_1_overall_working_directory_console.gold.out
+  TEST_1 CMND "${CMAKE_COMMAND}"
+    ARGS -E copy
+      cmnd_3_args_1_overall_working_directory_console.out
+      cmnd_3_args_1_overall_working_directory_console.gold.out
+  TEST_2 CMND ${DIFF_COMMAND_STUFF}
+    cmnd_3_args_1_overall_working_directory_console.out
+    cmnd_3_args_1_overall_working_directory_console.gold.out
   OVERALL_NUM_MPI_PROCS 1
+  XHOSTTYPE Windows
   )
 
 TRIBITS_ADD_ADVANCED_TEST(
@@ -286,10 +294,16 @@ TRIBITS_ADD_ADVANCED_TEST(
     ARGS "This is a crazy test!" 0
     OUTPUT_FILE cmnd_3_args_1_overall_working_directory_working_directory_console.out
     WORKING_DIRECTORY GenericDriver
-  TEST_1 CMND "${CMAKE_COMMAND}" ARGS -E copy ../GenericDriver/cmnd_3_args_1_overall_working_directory_working_directory_console.out cmnd_3_args_1_overall_working_directory_working_directory_console.gold.out
+  TEST_1 CMND "${CMAKE_COMMAND}"
+    ARGS -E copy
+      ../GenericDriver/cmnd_3_args_1_overall_working_directory_working_directory_console.out
+      cmnd_3_args_1_overall_working_directory_working_directory_console.gold.out
     WORKING_DIRECTORY Gold
-  TEST_2 CMND ${DIFF_COMMAND_STUFF} GenericDriver/cmnd_3_args_1_overall_working_directory_working_directory_console.out Gold/cmnd_3_args_1_overall_working_directory_working_directory_console.gold.out
+  TEST_2 CMND ${DIFF_COMMAND_STUFF}
+    GenericDriver/cmnd_3_args_1_overall_working_directory_working_directory_console.out
+    Gold/cmnd_3_args_1_overall_working_directory_working_directory_console.gold.out
   OVERALL_NUM_MPI_PROCS 1
+  XHOSTTYPE Windows
   )
 
 # Demonstrate processes never dying
@@ -311,7 +325,7 @@ ENDIF()
 
 # ENVIRONMENT
 
-TRIBITS_ADD_TEST( ${CMAKE_COMMAND} NOEXEPREFIX NOEXESUFFIX
+TRIBITS_ADD_TEST( "${CMAKE_COMMAND}" NOEXEPREFIX NOEXESUFFIX
   NAME CTestScripts_TAT_pass_env
   ARGS "-P ${CMAKE_CURRENT_SOURCE_DIR}/EchoEnvVarForTest.cmake"
   NUM_MPI_PROCS 1

@@ -1,13 +1,16 @@
-aggregation: drop scheme = laplacian
+aggregation: drop scheme = distance laplacian
 aggregation: drop tol = 0.05
 verbosity = test
 coarse: max size = 2000   [default]
 max levels = 10   [default]
 debug: graph level = -1   [default]
 number of equations = 1   [default]
+transpose: use implicit = 0   [default]
 smoother: pre or post = both   [default]
 aggregation: type = uncoupled   [default]
 multigrid algorithm = sa   [default]
+problem: symmetric = 1   [default]
+aggregation: export visualization data = 0   [default]
 repartition: enable = 0   [default]
 
 Level 0
@@ -30,23 +33,27 @@ Level 1
    Build (MueLu::UncoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
     lightweight wrap = 1
-    aggregation threshold = 0.05
-    Dirichlet detection threshold = 0
-    algorithm = laplacian
+    aggregation: drop scheme = distance laplacian
+    aggregation: drop tol = 0.05
+    aggregation: Dirichlet threshold = 0   [default]
     
-   Ordering = 0   [default]
-   MaxNeighAlreadySelected = 0   [default]
-   MinNodesPerAggregate = 2   [default]
-   MaxNodesPerAggregate = 2147483647   [default]
+   aggregation: mode = old   [default]
+   aggregation: max agg size = 2147483647   [default]
+   aggregation: min agg size = 2   [default]
+   aggregation: max selected neighbors = 0   [default]
+   aggregation: ordering = natural   [default]
+   aggregation: enable phase 1 = 1   [default]
+   aggregation: enable phase 2a = 1   [default]
+   aggregation: enable phase 2b = 1   [default]
+   aggregation: enable phase 3 = 1   [default]
+   aggregation: preserve Dirichlet points = 0   [default]
    UseOnePtAggregationAlgorithm = 0   [default]
-   UseSmallAggregatesAggregationAlgorithm = 0   [default]
    UsePreserveDirichletAggregationAlgorithm = 0   [default]
    UseUncoupledAggregationAlgorithm = 1   [default]
    UseMaxLinkAggregationAlgorithm = 1   [default]
    UseIsolatedNodeAggregationAlgorithm = 1   [default]
    UseEmergencyAggregationAlgorithm = 1   [default]
    OnePt aggregate map name =    [default]
-   SmallAgg aggregate map name =    [default]
    
    Build (MueLu::AmalgamationFactory)
    [empty list]
@@ -57,10 +64,11 @@ Level 1
    Build (MueLu::CoarseMapFactory)
    Striding info = {}   [default]
    Strided block id = -1   [default]
+   Domain GID offsets = {0}   [default]
    
   [empty list]
   
- Damping factor = 1.33333
+ sa: damping factor = 1.33333   [default]
  
  Transpose P (MueLu::TransPFactory)
  [empty list]
@@ -70,6 +78,7 @@ Level 1
  write start = -1   [default]
  write end = -1   [default]
  
+ transpose: use implicit = 0
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
  CheckMainDiagonal = 0   [default]
@@ -94,23 +103,27 @@ Level 2
    Build (MueLu::UncoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
     lightweight wrap = 1
-    aggregation threshold = 0.05
-    Dirichlet detection threshold = 0
-    algorithm = laplacian
+    aggregation: drop scheme = distance laplacian
+    aggregation: drop tol = 0.05
+    aggregation: Dirichlet threshold = 0   [default]
     
-   Ordering = 0   [default]
-   MaxNeighAlreadySelected = 0   [default]
-   MinNodesPerAggregate = 2   [default]
-   MaxNodesPerAggregate = 2147483647   [default]
+   aggregation: mode = old   [default]
+   aggregation: max agg size = 2147483647   [default]
+   aggregation: min agg size = 2   [default]
+   aggregation: max selected neighbors = 0   [default]
+   aggregation: ordering = natural   [default]
+   aggregation: enable phase 1 = 1   [default]
+   aggregation: enable phase 2a = 1   [default]
+   aggregation: enable phase 2b = 1   [default]
+   aggregation: enable phase 3 = 1   [default]
+   aggregation: preserve Dirichlet points = 0   [default]
    UseOnePtAggregationAlgorithm = 0   [default]
-   UseSmallAggregatesAggregationAlgorithm = 0   [default]
    UsePreserveDirichletAggregationAlgorithm = 0   [default]
    UseUncoupledAggregationAlgorithm = 1   [default]
    UseMaxLinkAggregationAlgorithm = 1   [default]
    UseIsolatedNodeAggregationAlgorithm = 1   [default]
    UseEmergencyAggregationAlgorithm = 1   [default]
    OnePt aggregate map name =    [default]
-   SmallAgg aggregate map name =    [default]
    
    Build (MueLu::AmalgamationFactory)
    [empty list]
@@ -121,10 +134,11 @@ Level 2
    Build (MueLu::CoarseMapFactory)
    Striding info = {}   [default]
    Strided block id = -1   [default]
+   Domain GID offsets = {0}   [default]
    
   [empty list]
   
- Damping factor = 1.33333
+ sa: damping factor = 1.33333   [default]
  
  Transpose P (MueLu::TransPFactory)
  [empty list]
@@ -134,6 +148,7 @@ Level 2
  write start = -1   [default]
  write end = -1   [default]
  
+ transpose: use implicit = 0
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
  CheckMainDiagonal = 0   [default]
@@ -157,9 +172,9 @@ Level 2
  A 1    3333   9997     3.00  1
  A 2    1111   3331     3.00  1
  
- Smoother (level 0) both : "Ifpack2::Relaxation": { MatrixType: "Tpetra::CrsMatrix<double, int, int, KokkosClassic::SerialNode, KokkosClassic::AltSparseOps<void, int, KokkosClassic::SerialNode, KokkosClassic::details::AltSparseOpsDefaultAllocator<int, KokkosClassic::SerialNode> > >", Status: initialized, computed, "relaxation: type": Symmetric Gauss-Seidel, "relaxation: sweeps": 1, "relaxation: damping factor": 1, "Global number of rows": 9999, "Global number of columns": 9999 }
+ Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
  
- Smoother (level 1) both : "Ifpack2::Relaxation": { MatrixType: "Tpetra::CrsMatrix<double, int, int, KokkosClassic::SerialNode, KokkosClassic::AltSparseOps<void, int, KokkosClassic::SerialNode, KokkosClassic::details::AltSparseOpsDefaultAllocator<int, KokkosClassic::SerialNode> > >", Status: initialized, computed, "relaxation: type": Symmetric Gauss-Seidel, "relaxation: sweeps": 1, "relaxation: damping factor": 1, "Global number of rows": 3333, "Global number of columns": 3333 }
+ Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
  
  Smoother (level 2) pre  : SuperLU solver interface
  Smoother (level 2) post : no smoother

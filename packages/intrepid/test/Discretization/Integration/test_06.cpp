@@ -162,47 +162,52 @@ int main(int argc, char *argv[]) {
   Teuchos::Array< Teuchos::Array<double> > analyticInt;
   Teuchos::Array<double>                   tmparray(1);
   double                                   reltol = 1.0e+04 * INTREPID_TOL;
-  int                                      maxDeg[3];
-  int                                      maxOffset[3];
-  int                                      numPoly[3];
-  int                                      numAnalytic[3];
+  int                                      maxDeg[4];
+  int                                      maxOffset[4];
+  int                                      numPoly[4];
+  int                                      numAnalytic[4];
   // max polynomial degree tested, per cell type:
   maxDeg[0]                              = INTREPID_CUBATURE_TET_DEFAULT_MAX;
   maxDeg[1]                              = 20; // can be as large as INTREPID_CUBATURE_LINE_GAUSS_MAX, but runtime is excessive
-  maxDeg[2]                              = INTREPID_CUBATURE_TRI_DEFAULT_MAX;
+  maxDeg[2]                              = std::min(INTREPID_CUBATURE_LINE_GAUSS_MAX, INTREPID_CUBATURE_TRI_DEFAULT_MAX);
+  maxDeg[3]                              = std::min(INTREPID_CUBATURE_LINE_GAUSS_MAX, INTREPID_CUBATURE_LINE_GAUSSJACOBI20_MAX);
   // max polynomial degree recorded in analytic comparison files, per cell type:
   maxOffset[0]                           = INTREPID_CUBATURE_TET_DEFAULT_MAX;
   maxOffset[1]                           = INTREPID_CUBATURE_LINE_GAUSS_MAX;
-  maxOffset[2]                           = INTREPID_CUBATURE_TRI_DEFAULT_MAX;
-  for (int i=0; i<3; i++) {
+  maxOffset[2]                           = std::min(INTREPID_CUBATURE_LINE_GAUSS_MAX, INTREPID_CUBATURE_TRI_DEFAULT_MAX);
+  maxOffset[3]                           = std::min(INTREPID_CUBATURE_LINE_GAUSS_MAX, INTREPID_CUBATURE_LINE_GAUSSJACOBI20_MAX);
+  for (int i=0; i<4; i++) {
     numPoly[i] = (maxDeg[i]+1)*(maxDeg[i]+2)*(maxDeg[i]+3)/6;
   }
-  for (int i=0; i<3; i++) {
+  for (int i=0; i<4; i++) {
     numAnalytic[i] = (maxOffset[i]+1)*(maxOffset[i]+2)*(maxOffset[i]+3)/6;
   }
 
 
   // get names of files with analytic values
   std::string basedir = "./data";
-  std::stringstream namestream[3];
-  std::string filename[3];
+  std::stringstream namestream[4];
+  std::string filename[4];
   namestream[0] << basedir << "/TET_integrals" << ".dat";
   namestream[0] >> filename[0];
   namestream[1] << basedir << "/HEX_integrals" << ".dat";
   namestream[1] >> filename[1];
   namestream[2] << basedir << "/TRIPRISM_integrals" << ".dat";
   namestream[2] >> filename[2];
+  namestream[3] << basedir << "/PYR_integrals" << ".dat";
+  namestream[3] >> filename[3];
 
   // reference cells tested
   shards::CellTopology cellType[] = {shards::getCellTopologyData< shards::Tetrahedron<> >(),
                                      shards::getCellTopologyData< shards::Hexahedron<> >(),
-                                     shards::getCellTopologyData< shards::Wedge<> >()};
+                                     shards::getCellTopologyData< shards::Wedge<> >(),
+                                     shards::getCellTopologyData< shards::Pyramid<> >() };
   // format of data files with analytic values
-  TypeOfExactData dataFormat[] = {INTREPID_UTILS_SCALAR, INTREPID_UTILS_FRACTION, INTREPID_UTILS_FRACTION};
+  TypeOfExactData dataFormat[] = {INTREPID_UTILS_SCALAR, INTREPID_UTILS_FRACTION, INTREPID_UTILS_FRACTION, INTREPID_UTILS_FRACTION};
 
   // compute and compare integrals
   try {
-    for (int cellCt=0; cellCt < 3; cellCt++) {
+    for (int cellCt=0; cellCt < 4; cellCt++) {
       testInt.assign(numPoly[cellCt], tmparray);
       analyticInt.assign(numAnalytic[cellCt], tmparray);
 

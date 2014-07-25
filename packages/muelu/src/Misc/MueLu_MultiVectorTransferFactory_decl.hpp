@@ -86,7 +86,7 @@ namespace MueLu {
     //! Destructor.
     virtual ~MultiVectorTransferFactory() { }
 
-    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+    RCP<const ParameterList> GetValidParameterList() const;
 
     //@}
 

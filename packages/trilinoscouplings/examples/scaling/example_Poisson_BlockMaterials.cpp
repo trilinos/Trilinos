@@ -19,7 +19,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact Pavel Bochev  (pbboche@sandia.gov),
 //                    Denis Ridzal  (dridzal@sandia.gov),
@@ -1029,6 +1029,10 @@ int main(int argc, char *argv[]) {
  // Run the solver
   Teuchos::ParameterList MLList = inputSolverList;
   ML_Epetra::SetDefaults("SA", MLList, 0, 0, false);
+  MLList.set("x-coordinates",nodeCoordx);
+  MLList.set("y-coordinates",nodeCoordy);
+  MLList.set("z-coordinates",nodeCoordz);
+
   Epetra_FEVector exactNodalVals(globalMapG);
   Epetra_FEVector femCoefficients(globalMapG);
   double TotalErrorResidual = 0.0;

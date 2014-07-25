@@ -45,7 +45,7 @@ int myinterp(ML_Operator *mydata, int leng1, double p[], int leng2, double ap[])
    proc_id     = data->processor_info[PROC_ID];
 
    for (i = 0; i < fine_size; i++) ap[i] = 0.0;
-	 fine_i = 1 - proc_id; 
+	 fine_i = 1 - proc_id;
    for (i = 0; i < coarse_size; i++) {
       ap[fine_i] += p[i];
       ap[fine_i+1] += .5*p[i];
@@ -69,11 +69,11 @@ int my_comm(double *vec, void *idata)
    ghost_value = get_boundary(vec, data->from_size, data->processor_info);
 
    if (proc_id == 0) {
-      if ( data->from_size <=  data->to_size) 
+      if ( data->from_size <=  data->to_size)
          vec[data->from_size] = ghost_value;
    }
    else {
-      if ( data->from_size >=  data->to_size) 
+      if ( data->from_size >=  data->to_size)
          vec[data->from_size] = ghost_value;
    }
 
@@ -131,7 +131,7 @@ int mysmooth(ML_Smoother *mydata, int leng1, double x[], int leng2, double rhs[]
    struct data *data;
    double ghost;
    ML_Smoother *smoo_in;
-   
+
    smoo_in = (ML_Smoother *) mydata;
    data    = (struct data *) ML_Get_MySmootherData(smoo_in);
    size    = data->size;
@@ -201,7 +201,7 @@ int myAgetrow(ML_Operator *data, int N_requested_rows, int requested_rows[],
    struct data *mydata;
    ML_Operator *mat_in;
 
-   mat_in = (ML_Operator *) data; 
+   mat_in = (ML_Operator *) data;
    mydata = (struct data *) ML_Get_MyGetrowData(mat_in);
    Nrow = mydata->to_size;
    proc   = mydata->processor_info[PROC_ID];
@@ -215,7 +215,7 @@ int myAgetrow(ML_Operator *data, int N_requested_rows, int requested_rows[],
       if (row !=  Nrow-1) row_lengths[i]++;
       else if ((Nprocs==2)&&(proc==0)) row_lengths[i]++;
       if (allocated_space < ncount+row_lengths[i]) return(0);
-      
+
       columns[ncount] = row; values[ncount++] = 2.;
       if (row !=      0 ) { columns[ncount] = row-1; values[ncount++] = -1.;}
       else if (proc == 1) { columns[ncount] =  Nrow; values[ncount++] = -1.;}
@@ -234,7 +234,7 @@ int myRgetrow(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int proc;
    ML_Operator *mat_in;
 
-   mat_in = (ML_Operator *) data; 
+   mat_in = (ML_Operator *) data;
    mydata = (struct data *) ML_Get_MyGetrowData(mat_in);
    Nrow = mydata->to_size;
    proc   = mydata->processor_info[PROC_ID];
@@ -272,7 +272,7 @@ int myPgetrow(ML_Operator *data, int N_requested_rows, int requested_rows[],
       oldcount = ncount;
       row = requested_rows[i];
 				col = (row + proc)/2;
-				if ( ((row+proc)%2) == 1) { 
+				if ( ((row+proc)%2) == 1) {
 					if (allocated_space <= ncount) return(0);
 					columns[ncount] = col; values[ncount++] = 1.;
 				}
@@ -286,7 +286,7 @@ int myPgetrow(ML_Operator *data, int N_requested_rows, int requested_rows[],
             columns[ncount] = col; values[ncount++] = .5;
 					}
 				}
-			
+
 
       row_lengths[i] = ncount - oldcount;
    }
@@ -304,7 +304,7 @@ extern void sample3(struct data *Afine_data, struct data *Acoarse_data,
 	     struct data  *Rmat_data, struct data    *Pmat_data,
 	     double *sol, double *rhs );
 
-int main(int argc, char *argv[]) 
+int main(int argc, char *argv[])
 {
    struct data  Rmat_data, Pmat_data, Afine_data, Acoarse_data;
    int          processor_info[2], i;
@@ -317,7 +317,7 @@ int main(int argc, char *argv[])
 #ifdef ML_MPI
    MPI_Init(&argc,&argv);
    MPI_Comm_size(MPI_COMM_WORLD, &(processor_info[NUM_PROCS]) );
-   MPI_Comm_rank(MPI_COMM_WORLD, &(processor_info[PROC_ID  ]) );    
+   MPI_Comm_rank(MPI_COMM_WORLD, &(processor_info[PROC_ID  ]) );
 #else
    processor_info[PROC_ID  ] = 0;
    processor_info[NUM_PROCS] = 1;
@@ -358,7 +358,7 @@ int main(int argc, char *argv[])
    Pmat_data.processor_info    = processor_info;
 	 Pmat_data.start_row         = processor_info[PROC_ID]*start_row;
 
-    sample1(&Afine_data, &Acoarse_data, &Rmat_data, &Pmat_data, sol, rhs);   
+    sample1(&Afine_data, &Acoarse_data, &Rmat_data, &Pmat_data, sol, rhs);
 
    free(sol); free(rhs);
 #ifdef ML_MPI
@@ -408,7 +408,7 @@ void sample3(struct data *Afine_data, struct data *Acoarse_data,
    ML_free(diagonal);
 
    ML_Iterate(my_ml, sol, rhs);
-   
+
 }
 
 void sample1(struct data *Afine_data, struct data *Acoarse_data,
@@ -435,8 +435,8 @@ void sample1(struct data *Afine_data, struct data *Acoarse_data,
    ML_Set_Amatrix_Getrow(my_ml, grid1,  myAgetrow, my_comm, Nfine+1);
    ML_Set_Amatrix_Matvec(my_ml, grid1,  mymatvec);
    ML_Set_Amatrix_Diag  (my_ml, grid1,  Nfine, diagonal);
-   ML_Gen_Smoother_BlockGaussSeidel(my_ml, grid1,  ML_PRESMOOTHER, 2, 
-				    ML_DEFAULT, blocksize); 
+   ML_Gen_Smoother_BlockGaussSeidel(my_ml, grid1,  ML_PRESMOOTHER, 2,
+				    ML_DEFAULT, blocksize);
 	 /*   ML_Gen_SmootherGaussSeidel(my_ml, grid1, ML_PRESMOOTHER, 2);        */
    ML_Init_Prolongator(my_ml, grid0, grid1, Ncoarse,Nfine,(void *)Pmat_data);
    ML_Set_Prolongator_Getrow(my_ml,  grid0, myPgetrow, my_comm, Ncoarse+1);

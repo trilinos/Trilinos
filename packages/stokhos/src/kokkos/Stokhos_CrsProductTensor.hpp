@@ -76,13 +76,17 @@ namespace Stokhos {
  *    }
  *  }
  */
-template< typename ValueType, class DeviceType >
+template< typename ValueType, class DeviceType, class Memory = void >
 class CrsProductTensor {
 public:
 
   typedef DeviceType  device_type;
-  typedef int size_type;
+  typedef int         size_type;
   typedef ValueType   value_type;
+  typedef Memory      memory_type;
+
+  typedef typename device_type::host_mirror_device_type host_mirror_device_type;
+  typedef CrsProductTensor<value_type, host_mirror_device_type> HostMirror;
 
 // Vectorsize used in multiply algorithm
 #if defined(__AVX__)
@@ -97,7 +101,11 @@ public:
 #endif
   static const size_type cuda_vectorsize = 32;
   static const bool is_cuda =
+#if defined( KOKKOS_HAVE_CUDA )
     Kokkos::Impl::is_same<DeviceType,Kokkos::Cuda>::value;
+#else
+    false ;
+#endif
   static const size_type vectorsize = is_cuda ? cuda_vectorsize : host_vectorsize;
 
   // Alignment in terms of number of entries of CRS rows
@@ -105,19 +113,22 @@ public:
 
 private:
 
-  typedef Kokkos::View< value_type[], device_type >  vec_type;
-  typedef Kokkos::View< size_type[], device_type > coord_array_type;
-  typedef Kokkos::View< size_type[][2], Kokkos::LayoutLeft, device_type > coord2_array_type;
-  //typedef Kokkos::View< size_type[][2], device_type > coord2_array_type;
-  typedef Kokkos::View< value_type[], device_type > value_array_type;
-  typedef Kokkos::View< size_type[], device_type > entry_array_type;
-  typedef Kokkos::View< size_type[], device_type > row_map_array_type;
+  template <class, class, class> friend class CrsProductTensor;
+
+  typedef Kokkos::View< value_type[], device_type, memory_type >  vec_type;
+  typedef Kokkos::View< size_type[], device_type, memory_type > coord_array_type;
+  typedef Kokkos::View< size_type[][2], Kokkos::LayoutLeft, device_type, memory_type > coord2_array_type;
+  //typedef Kokkos::View< size_type[][2], device_type, memory_type > coord2_array_type;
+  typedef Kokkos::View< value_type[], device_type, memory_type > value_array_type;
+  typedef Kokkos::View< size_type[], device_type, memory_type > entry_array_type;
+  typedef Kokkos::View< size_type[], device_type, memory_type > row_map_array_type;
 
   coord_array_type   m_coord;
   coord2_array_type  m_coord2;
   value_array_type   m_value;
   entry_array_type   m_num_entry;
   row_map_array_type m_row_map;
+  size_type          m_dim;
   size_type          m_entry_max;
   size_type          m_nnz;
   size_type          m_flops;
@@ -141,41 +152,47 @@ private:
 
 public:
 
-  inline
+  KOKKOS_INLINE_FUNCTION
   ~CrsProductTensor() {}
 
-  inline
+  KOKKOS_INLINE_FUNCTION
   CrsProductTensor() :
     m_coord(),
     m_coord2(),
     m_value(),
     m_num_entry(),
     m_row_map(),
+    m_dim(0),
     m_entry_max(0),
     m_nnz(0),
     m_flops(0),
     m_avg_entries_per_row(0) {}
 
-  inline
-  CrsProductTensor( const CrsProductTensor & rhs ) :
+  template <class M>
+  KOKKOS_INLINE_FUNCTION
+  CrsProductTensor( const CrsProductTensor<value_type,device_type,M> & rhs ) :
     m_coord( rhs.m_coord ),
     m_coord2( rhs.m_coord2 ),
     m_value( rhs.m_value ),
     m_num_entry( rhs.m_num_entry ),
     m_row_map( rhs.m_row_map ),
+    m_dim( rhs.m_dim ),
     m_entry_max( rhs.m_entry_max ),
     m_nnz( rhs.m_nnz ),
     m_flops( rhs.m_flops ),
     m_avg_entries_per_row( rhs.m_avg_entries_per_row ) {}
 
-  inline
-  CrsProductTensor & operator = ( const CrsProductTensor & rhs )
+  template <class M>
+  KOKKOS_INLINE_FUNCTION
+  CrsProductTensor &
+  operator = ( const CrsProductTensor<value_type,device_type,M> & rhs )
   {
     m_coord = rhs.m_coord;
     m_coord2 = rhs.m_coord2;
     m_value = rhs.m_value;
     m_num_entry = rhs.m_num_entry;
     m_row_map = rhs.m_row_map;
+    m_dim = rhs.m_dim;
     m_entry_max = rhs.m_entry_max;
     m_nnz = rhs.m_nnz;
     m_flops = rhs.m_flops;
@@ -185,7 +202,11 @@ public:
 
   /** \brief  Dimension of the tensor. */
   KOKKOS_INLINE_FUNCTION
-  size_type dimension() const { return m_row_map.dimension_0() - 1; }
+  size_type dimension() const { return m_dim; }
+
+  /** \brief  Is the tensor empty. */
+  KOKKOS_INLINE_FUNCTION
+  bool is_empty() const { return m_dim == 0; }
 
   /** \brief  Number of sparse entries. */
   KOKKOS_INLINE_FUNCTION
@@ -313,6 +334,7 @@ public:
     tensor.m_value = value_array_type( Kokkos::allocate_without_initializing, "tensor_value", entry_count );
     tensor.m_num_entry = entry_array_type( Kokkos::allocate_without_initializing, "tensor_num_entry", dimension );
     tensor.m_row_map = row_map_array_type( Kokkos::allocate_without_initializing, "tensor_row_map", dimension+1 );
+    tensor.m_dim = dimension;
     tensor.m_entry_max = 0;
     tensor.m_avg_entries_per_row = avg_entries_per_row;
 
@@ -380,16 +402,77 @@ public:
 
     return tensor;
   }
+
+  static HostMirror
+  create_mirror_view( const CrsProductTensor& tensor ) {
+    HostMirror host_tensor;
+
+    host_tensor.m_coord     = Kokkos::create_mirror_view( tensor.m_coord );
+    host_tensor.m_coord2    = Kokkos::create_mirror_view( tensor.m_coord2 );
+    host_tensor.m_value     = Kokkos::create_mirror_view( tensor.m_value );
+    host_tensor.m_num_entry = Kokkos::create_mirror_view( tensor.m_num_entry );
+    host_tensor.m_row_map   = Kokkos::create_mirror_view( tensor.m_row_map );
+
+    host_tensor.m_dim                 = tensor.m_dim;
+    host_tensor.m_entry_max           = tensor.m_entry_max;
+    host_tensor.m_avg_entries_per_row = tensor.m_avg_entries_per_row;
+    host_tensor.m_nnz                 = tensor.m_nnz;
+    host_tensor.m_flops               = tensor.m_flops;
+
+    return host_tensor;
+  }
+
+  template < class DstDevice, class DstMemory >
+  static void
+  deep_copy( const CrsProductTensor<ValueType,DstDevice,DstMemory>& dst ,
+             const CrsProductTensor& src ) {
+    Kokkos::deep_copy( dst.m_coord,     src.m_coord );
+    Kokkos::deep_copy( dst.m_coord2,    src.m_coord2 );
+    Kokkos::deep_copy( dst.m_value,     src.m_value );
+    Kokkos::deep_copy( dst.m_num_entry, src.m_num_entry );
+    Kokkos::deep_copy( dst.m_row_map,   src.m_row_map );
+  }
+
 };
 
-template< class Device, typename OrdinalType, typename ValueType >
+template< class Device, typename OrdinalType, typename ValueType>
 CrsProductTensor<ValueType, Device>
 create_product_tensor(
   const Stokhos::ProductBasis<OrdinalType,ValueType>& basis,
   const Stokhos::Sparse3Tensor<OrdinalType,ValueType>& Cijk,
   const Teuchos::ParameterList& params = Teuchos::ParameterList())
 {
-  return CrsProductTensor<ValueType, Device>::create( basis, Cijk, params );
+  return CrsProductTensor<ValueType, Device>::create(basis, Cijk, params );
+}
+
+template< class Device, typename OrdinalType, typename ValueType,
+          class Memory >
+CrsProductTensor<ValueType, Device, Memory>
+create_product_tensor(
+  const Stokhos::ProductBasis<OrdinalType,ValueType>& basis,
+  const Stokhos::Sparse3Tensor<OrdinalType,ValueType>& Cijk,
+  const Teuchos::ParameterList& params = Teuchos::ParameterList())
+{
+  return CrsProductTensor<ValueType, Device, Memory>::create(
+    basis, Cijk, params );
+}
+
+template < class ValueType, class Device, class Memory >
+inline
+typename CrsProductTensor<ValueType,Device,Memory>::HostMirror
+create_mirror_view( const CrsProductTensor<ValueType,Device,Memory> & src )
+{
+  return CrsProductTensor<ValueType,Device,Memory>::create_mirror_view( src );
+}
+
+  template < class ValueType,
+             class DstDevice, class DstMemory,
+             class SrcDevice, class SrcMemory >
+void
+deep_copy( const CrsProductTensor<ValueType,DstDevice,DstMemory> & dst ,
+           const CrsProductTensor<ValueType,SrcDevice,SrcMemory> & src )
+{
+  return CrsProductTensor<ValueType,SrcDevice,SrcMemory>::deep_copy( dst, src );
 }
 
 template < typename ValueType, typename Device >
@@ -416,7 +499,8 @@ public:
   static void apply( const tensor_type & tensor ,
                      const MatrixValue * const a ,
                      const VectorValue * const x ,
-                           VectorValue * const y )
+                           VectorValue * const y ,
+                     const VectorValue & alpha = VectorValue(1) )
   {
     // The intel compiler doesn't seem to be able to vectorize through
     // the coord() calls, so extract pointers
@@ -439,7 +523,7 @@ public:
         ytmp += tensor.value(iEntry) * ( a[j] * x[k] + a[k] * x[j] );
       }
 
-      y[iy] += ytmp ;
+      y[iy] += alpha * ytmp ;
     }
   }
 
@@ -451,7 +535,8 @@ public:
   static void apply( const tensor_type & tensor ,
                      const MatrixValue * const a ,
                      const VectorValue * const x ,
-                           VectorValue * const y )
+                           VectorValue * const y ,
+                     const VectorValue & alpha = VectorValue(1) )
   {
     const size_type nDim = tensor.dimension();
     for ( size_type iy = 0 ; iy < nDim ; ++iy ) {
@@ -515,7 +600,7 @@ public:
         iEntry += rem;
       }
 
-      y[iy] += ytmp ;
+      y[iy] += alpha * ytmp ;
     }
   }
 
@@ -527,7 +612,8 @@ public:
   static void apply( const tensor_type & tensor ,
                      const MatrixValue * const a ,
                      const VectorValue * const x ,
-                           VectorValue * const y )
+                           VectorValue * const y ,
+                     const VectorValue & alpha = VectorValue(1) )
   {
     const size_type nDim = tensor.dimension();
     for ( size_type iy = 0 ; iy < nDim ; ++iy ) {
@@ -569,7 +655,7 @@ public:
         ytmp += tensor.value(iEntry) * ( a[j] * x[k] + a[k] * x[j] );
       }
 
-      y[iy] += ytmp ;
+      y[iy] += alpha * ytmp ;
     }
   }
 #endif
@@ -937,7 +1023,6 @@ public:
 
     const size_t row_count = A.graph.row_map.dimension_0() - 1 ;
     if (use_block_algorithm) {
-      typedef typename matrix_type::device_type device_type;
 #ifdef __MIC__
       const size_t team_size = 4;  // 4 hyperthreads for MIC
 #else
@@ -959,5 +1044,13 @@ public:
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
+
+// Inject some functions into the Kokkos namespace
+namespace Kokkos {
+
+  using Stokhos::create_mirror_view;
+  using Stokhos::deep_copy;
+
+} // namespace Kokkos
 
 #endif /* #ifndef STOKHOS_CRSPRODUCTTENSOR_HPP */

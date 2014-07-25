@@ -55,18 +55,13 @@
 #include <Kokkos_DefaultKernels.hpp>
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_DistObject.hpp"
+#include "Xpetra_Exceptions.hpp"
 
 #include "Xpetra_Map.hpp"
 
 using Teuchos::ParameterList;
 
 namespace Xpetra {
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-  // forward declaration
-  template <class S, class LO, class GO, class N, class SpMatOps>
-  class CrsMatrix;
-#endif
 
   struct RowInfo {
     size_t localRow;
@@ -98,11 +93,11 @@ namespace Xpetra {
     //! @name Insertion/Removal Methods
     //@{
 
-    //! Insert graph indices, using global IDs.
+    //! Insert global indices into the graph.
     virtual void insertGlobalIndices(GlobalOrdinal globalRow, const ArrayView< const GlobalOrdinal > &indices)= 0;
 
-    //! Insert graph indices, using local IDs.
-    virtual void insertLocalIndices(LocalOrdinal localRow, const ArrayView< const LocalOrdinal > &indices)= 0;
+    //! Insert local indices into the graph.
+    virtual void insertLocalIndices(const LocalOrdinal localRow, const ArrayView< const LocalOrdinal > &indices)= 0;
 
     //! Remove all graph indices from the specified local row.
     virtual void removeLocalIndices(LocalOrdinal localRow)= 0;
@@ -124,22 +119,25 @@ namespace Xpetra {
     //@{
 
     //! Returns the communicator.
-    virtual const RCP< const Comm< int > >  getComm() const = 0;
+    virtual RCP< const Comm< int > > getComm() const = 0;
 
     //! Returns the Map that describes the row distribution in this graph.
-    virtual const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRowMap() const = 0;
+    virtual RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getRowMap() const = 0;
 
     //! Returns the Map that describes the column distribution in this graph.
-    virtual const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getColMap() const = 0;
+    virtual RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getColMap() const = 0;
 
     //! Returns the Map associated with the domain of this graph.
-    virtual const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getDomainMap() const = 0;
+    virtual RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getDomainMap() const = 0;
 
     //! Returns the Map associated with the domain of this graph.
-    virtual const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRangeMap() const = 0;
+    virtual RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getRangeMap() const = 0;
 
     //! Returns the importer associated with this graph.
     virtual RCP< const Import< LocalOrdinal, GlobalOrdinal, Node > > getImporter() const = 0;
+
+    //! Returns the exporter associated with this graph.
+    virtual RCP< const Export< LocalOrdinal, GlobalOrdinal, Node > > getExporter() const = 0;
 
     //! Returns the number of global rows in the graph.
     virtual global_size_t getGlobalNumRows() const = 0;
@@ -180,37 +178,37 @@ namespace Xpetra {
     //! Returns the number of local diagonal entries, based on global row/column index comparisons.
     virtual size_t getNodeNumDiags() const = 0;
 
-    //! Returns the maximum number of entries across all rows/columns on all nodes.
+    //! Maximum number of entries in all rows over all processes.
     virtual size_t getGlobalMaxNumRowEntries() const = 0;
 
-    //! Returns the maximum number of entries across all rows/columns on this node.
+    //! Maximum number of entries in all rows owned by the calling process.
     virtual size_t getNodeMaxNumRowEntries() const = 0;
 
-    //! Indicates whether the graph has a well-defined column map.
+    //! Whether the graph has a column Map.
     virtual bool hasColMap() const = 0;
 
-    //! Indicates whether the graph is lower triangular.
+    //! Whether the graph is locally lower triangular.
     virtual bool isLowerTriangular() const = 0;
 
-    //! Indicates whether the graph is upper triangular.
+    //! Whether the graph is locally upper triangular.
     virtual bool isUpperTriangular() const = 0;
 
-    //! If graph indices are in the local range, this function returns true. Otherwise, this function returns false. */.
+    //! Whether column indices are stored using local indices on the calling process.
     virtual bool isLocallyIndexed() const = 0;
 
-    //! If graph indices are in the global range, this function returns true. Otherwise, this function returns false. */.
+    //! Whether column indices are stored using global indices on the calling process.
     virtual bool isGloballyIndexed() const = 0;
 
-    //! Returns true if fillComplete() has been called and the graph is in compute mode.
+    //! Whether fillComplete() has been called and the graph is in compute mode.
     virtual bool isFillComplete() const = 0;
 
     //! Returns true if storage has been optimized.
     virtual bool isStorageOptimized() const = 0;
 
-    //! Extract a const, non-persisting view of global indices in a specified row of the graph.
+    //! Return a const, nonpersisting view of global indices in the given row.
     virtual void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView< const GlobalOrdinal > &Indices) const = 0;
 
-    //! Extract a const, non-persisting view of local indices in a specified row of the graph.
+    //! Return a const, nonpersisting view of local indices in the given row.
     virtual void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices) const = 0;
 
     //@}

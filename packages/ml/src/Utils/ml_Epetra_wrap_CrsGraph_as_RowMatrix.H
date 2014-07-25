@@ -37,35 +37,35 @@ class Epetra_Vector;
 class Epetra_MultiVector;
 class Epetra_SrcDistObject;
 
-namespace ML_Epetra 
+namespace ML_Epetra
 {
 
 /*!
- 
+
    \brief ML_Epetra::CrsGraphWrapper: a class to wrap an Epetra_CrsGraph as Epetra_RowMatrix
 
-   Class ML_Epetra::CrsGraphWrapper takes an Epetra_CrsGraph object and wraps it as an 
+   Class ML_Epetra::CrsGraphWrapper takes an Epetra_CrsGraph object and wraps it as an
    Epetra_RowMatrix. It  can then be used as input
    to ML to generate a plain aggegration MG hierarchy. Note that
    the resulting coarse grid operators are rubbish and need to be replaced before
    actually applying this hierarchy to something.
-   This class' destructor does not destoy any of the passed objects, so they need to be 
+   This class' destructor does not destoy any of the passed objects, so they need to be
    destoyed separately.
-   
-  
-    To make use of the full functionality of this class it 
+
+
+    To make use of the full functionality of this class it
     requires ML to be configured with the following options:
     - \c --enable-epetra
-    
+
     \author Michael Gee, SNL 9214
-*/  
-class CrsGraphWrapper: public virtual Epetra_RowMatrix 
+*/
+class CrsGraphWrapper: public virtual Epetra_RowMatrix
 {
-      
+
  public:
   //@{ \name Constructor.
   //! Constructs a CrsGraphWrapper class.
-  /*! 
+  /*!
    Constructs a CrsGraphWrapper class.
    As this wrapper implements an Epetra_RowMatrix, it can then be used as input
    to ML to generate a plain aggegration MG hierarchy. Note that
@@ -76,7 +76,7 @@ class CrsGraphWrapper: public virtual Epetra_RowMatrix
    \param rm        (In) : ref to the RangeMap
    \param comm      (In) : the Epetra_Comm to be used
    */
-    CrsGraphWrapper(const Epetra_CrsGraph& graph, const Epetra_Map& dm,const Epetra_Map& rm,const Epetra_Comm& comm) : 
+    CrsGraphWrapper(const Epetra_CrsGraph& graph, const Epetra_Map& dm,const Epetra_Map& rm,const Epetra_Comm& comm) :
     graph_(graph),
     DomainMap_(dm),
     RangeMap_(rm),
@@ -91,16 +91,16 @@ class CrsGraphWrapper: public virtual Epetra_RowMatrix
     virtual ~CrsGraphWrapper() {};
 
   //@}
-  
+
   //@{ \name Matrix data extraction routines
 
     //! Returns the number of nonzero entries in MyRow.
-    /*! 
+    /*!
     \param In
            MyRow - Local row.
     \param Out
 	   NumEntries - Number of nonzero values present.
-	  
+
     \return Integer error code, set to 0 if successful.
   */
     int NumMyRowEntries(int MyRow, int & NumEntries) const
@@ -129,7 +129,7 @@ class CrsGraphWrapper: public virtual Epetra_RowMatrix
 	   Values - Extracted values for this row.
     \param Out
 	   Indices - Extracted global column indices for the corresponding values.
-	  
+
     \return Integer error code, set to 0 if successful.
   */
     int ExtractMyRowCopy(int MyRow, int Length, int& NumEntries, double *Values, int * Indices) const
@@ -140,7 +140,7 @@ class CrsGraphWrapper: public virtual Epetra_RowMatrix
         int i,min;
         if (NumEntries<Length) min = NumEntries;
         else                   min = Length;
-        for (i=0; i<min; i++) 
+        for (i=0; i<min; i++)
           Values[i] = 1.0;
       }
       return (err);
@@ -154,7 +154,7 @@ class CrsGraphWrapper: public virtual Epetra_RowMatrix
        return(-1);
     }
   //@}
-  
+
   //@{ \name Mathematical functions.
 
     //! not implemented, method will throw error and terminate execution.
@@ -166,7 +166,7 @@ class CrsGraphWrapper: public virtual Epetra_RowMatrix
     }
 
     //! not implemented, method will throw error and terminate execution.
-    int Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_MultiVector& X, 
+    int Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_MultiVector& X,
 	      Epetra_MultiVector& Y) const
     {
        cout << "**ERR** ML_Epetra::CrsGraphWrapper.Solve(...) is not impl!\n";
@@ -183,7 +183,7 @@ class CrsGraphWrapper: public virtual Epetra_RowMatrix
     }
 
     //! not implemented, method will throw error and terminate execution.
-    int LeftScale(const Epetra_Vector& x) 
+    int LeftScale(const Epetra_Vector& x)
     {
        cout << "**ERR** ML_Epetra::CrsGraphWrapper.LeftScale(...) is not impl!\n";
        throw -1;
@@ -199,18 +199,18 @@ class CrsGraphWrapper: public virtual Epetra_RowMatrix
     }
 
     //! not implemented, method will throw error and terminate execution.
-    int RightScale(const Epetra_Vector& x) 
+    int RightScale(const Epetra_Vector& x)
     {
        cout << "**ERR** ML_Epetra::CrsGraphWrapper.RightScale(...) is not impl!\n";
        throw -1;
        return(-1);
     }
   //@}
-  
+
   //@{ \name Attribute access functions
 
     //! If FillComplete() has been called, this query returns true, otherwise it returns false.
-    bool Filled() const 
+    bool Filled() const
     {
        return(graph_.Filled());
     }
@@ -242,7 +242,7 @@ class CrsGraphWrapper: public virtual Epetra_RowMatrix
 
     //! Returns the number of global nonzero diagonal entries, based on global row/column index comparisons.
     long long NumGlobalDiagonals() const {return(graph_.NumGlobalDiagonals()); }
-    
+
     //! Returns the number of nonzero entries in the calling processor's portion of the matrix.
     int NumMyNonzeros() const {return(graph_.NumMyNonzeros()); }
 
@@ -268,37 +268,37 @@ class CrsGraphWrapper: public virtual Epetra_RowMatrix
     }
 
     //! Returns the Epetra_Map object associated with the columns of this matrix.
-    const Epetra_Map & RowMatrixColMap() const 
+    const Epetra_Map & RowMatrixColMap() const
     {
       return(dynamic_cast<const Epetra_Map &>(graph_.ColMap()));
     }
 
     //! Returns the Epetra_Import object that contains the import operations for distributed operations.
-    const Epetra_Import * RowMatrixImporter() const 
+    const Epetra_Import * RowMatrixImporter() const
     {
       return(graph_.Importer());
     }
-    
+
     //! Returns the Epetra_Map object associated with the rows of this matrix, derived from Epetra_Operator
     const Epetra_BlockMap& Map() const
     {
       return(graph_.RowMap());
     }
-    
+
     //! not implemented, method will always return -1
     int SetUseTranspose(bool UseTranspose)
     {
       usetranspose_ = UseTranspose;
       return(-1); //  the implementation does not support use of transpose
     }
-    
+
     //! not implemented, method will throw error and terminate execution.
-    int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const 
-    { 
+    int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+    {
        cout << "ML_Epetra::CrsGraphWrapper::Apply() is not implemented\n"; throw -1;
        return(-1);
     }
-    
+
     //! not implemented, method will throw error and terminate execution.
     int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     {
@@ -324,10 +324,10 @@ class CrsGraphWrapper: public virtual Epetra_RowMatrix
 
     //! returns ref to the OperatorRangeMap associated with this class
     const Epetra_Map & OperatorRangeMap() const  {return(RangeMap_);}
-    
+
   //@}
  private:
-    
+
     const Epetra_CrsGraph& graph_;
     bool                   usetranspose_;
     const char*            name_;

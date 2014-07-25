@@ -2,11 +2,11 @@
 #include <utility>
 #include <iostream>
 
-#include <KokkosCore_config.h>
+#include <Kokkos_Macros.hpp>
+#include <HostExecSpace.hpp>
 
 #include <BoxElemPart.hpp>
 
-#include <Kokkos_Threads.hpp>
 #if defined( KOKKOS_HAVE_CUDA )
 #include <Kokkos_Cuda.hpp>
 #endif
@@ -211,10 +211,10 @@ int main()
 //  test_box();
 //  test_elem();
   {
-    std::cout << "test_fixture< Threads >" << std::endl ;
-    Kokkos::Threads::initialize( 1 );
-    Kokkos::Example::test_fixture< Kokkos::Threads >();
-    Kokkos::Threads::finalize();
+    std::cout << "test_fixture< HostExecSpace >" << std::endl ;
+    HostExecSpace::initialize( 1 );
+    Kokkos::Example::test_fixture< HostExecSpace >();
+    HostExecSpace::finalize();
   }
 #if defined( KOKKOS_HAVE_CUDA )
   {

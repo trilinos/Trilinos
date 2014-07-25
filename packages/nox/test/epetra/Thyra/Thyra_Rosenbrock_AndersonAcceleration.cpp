@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,7 +44,7 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-          
+
 #include <Teuchos_ConfigDefs.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_TimeMonitor.hpp>
@@ -74,6 +74,7 @@
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 #include "Thyra_ScaledModelEvaluator.hpp"
 #include "ModelEvaluatorRosenbrock.hpp"
+#include "Observer_PrintTest.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 
@@ -85,7 +86,7 @@ using namespace std;
 TEUCHOS_UNIT_TEST(AndersonAcceleration, AA_Rosenbrock)
 {
   int status = 0;
-   
+
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
   Epetra_MpiComm Comm( MPI_COMM_WORLD );
@@ -96,8 +97,8 @@ TEUCHOS_UNIT_TEST(AndersonAcceleration, AA_Rosenbrock)
   TEST_ASSERT(Comm.NumProc() == 1);
 
   ::Stratimikos::DefaultLinearSolverBuilder builder;
-  
-  Teuchos::RCP<Teuchos::ParameterList> p = 
+
+  Teuchos::RCP<Teuchos::ParameterList> p =
     Teuchos::rcp(new Teuchos::ParameterList);
   {
     p->set("Linear Solver Type", "AztecOO");
@@ -112,10 +113,10 @@ TEUCHOS_UNIT_TEST(AndersonAcceleration, AA_Rosenbrock)
 
   builder.setParameterList(p);
 
-  Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> > 
+  Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> >
     lowsFactory = builder.createLinearSolveStrategy("");
 
-  Teuchos::RCP<RosenbrockModelEvaluator> thyraModel = 
+  Teuchos::RCP<RosenbrockModelEvaluator> thyraModel =
     Teuchos::rcp(new RosenbrockModelEvaluator(Teuchos::rcp(&Comm,false)));
 
   thyraModel->set_W_factory(lowsFactory);
@@ -131,40 +132,47 @@ TEUCHOS_UNIT_TEST(AndersonAcceleration, AA_Rosenbrock)
   nl_params->sublist("Anderson Parameters").sublist("Preconditioning").set("Precondition", false);
 
   Teuchos::ParameterList& printParams = nl_params->sublist("Printing");
-  printParams.set("Output Information", 
-		  NOX::Utils::OuterIteration + 
-		  NOX::Utils::OuterIterationStatusTest + 
-		  NOX::Utils::InnerIteration +
-		  NOX::Utils::LinearSolverDetails +
-		  NOX::Utils::Parameters + 
-		  NOX::Utils::Details + 
-		  NOX::Utils::Warning +
-		  NOX::Utils::Debug +
-		  NOX::Utils::TestDetails +
-		  NOX::Utils::Error);
+  printParams.set("Output Information",
+          NOX::Utils::OuterIteration +
+          NOX::Utils::OuterIterationStatusTest +
+          NOX::Utils::InnerIteration +
+          NOX::Utils::LinearSolverDetails +
+          NOX::Utils::Parameters +
+          NOX::Utils::Details +
+          NOX::Utils::Warning +
+          NOX::Utils::Debug +
+          NOX::Utils::TestDetails +
+          NOX::Utils::Error);
 
   nl_params->sublist("Solver Options").set("Status Test Check Type", "Complete");
 
   // Enable row sum scaling
   nl_params->sublist("Thyra Group Options").set("Function Scaling", "Row Sum");
-  
+
+  Teuchos::RCP<NOX::Abstract::PrePostOperator> observer;
+  {
+    NOX::Utils utils(printParams);
+    observer = Teuchos::rcp(new ObserverPrintTest(utils));
+    nl_params->sublist("Solver Options").set("User Defined Pre/Post Operator",observer);
+  }
+
   // Create Status Tests
   {
     Teuchos::ParameterList& st = nl_params->sublist("Status Tests");
     st.set("Test Type", "Combo");
     st.set("Combo Type", "OR");
     st.set("Number of Tests", 3);
-    
+
     {
       Teuchos::ParameterList& conv = st.sublist("Test 0");
       conv.set("Test Type", "Combo");
       conv.set("Combo Type", "AND");
       conv.set("Number of Tests", 2);
-      
+
       Teuchos::ParameterList& normF_rel = conv.sublist("Test 0");
       normF_rel.set("Test Type", "NormF");
       normF_rel.set("Tolerance", 1.0e-8);
-      
+
       Teuchos::ParameterList& normWRMS = conv.sublist("Test 1");
       normWRMS.set("Test Type", "NormWRMS");
       normWRMS.set("Absolute Tolerance", 1.0e-8);
@@ -175,7 +183,7 @@ TEUCHOS_UNIT_TEST(AndersonAcceleration, AA_Rosenbrock)
       normWRMS.set("Beta", 0.5);
       normWRMS.set("Disable Implicit Weighting", true);
     }
-    
+
     {
       Teuchos::ParameterList& fv = st.sublist("Test 1");
       fv.set("Test Type", "FiniteValue");
@@ -188,13 +196,13 @@ TEUCHOS_UNIT_TEST(AndersonAcceleration, AA_Rosenbrock)
       maxiters.set("Test Type", "MaxIters");
       maxiters.set("Maximum Iterations", 100);
     }
-    
+
   }
 
   // Create a Thyra nonlinear solver
-  Teuchos::RCP< ::Thyra::NonlinearSolverBase<double> > solver = 
+  Teuchos::RCP< ::Thyra::NonlinearSolverBase<double> > solver =
     Teuchos::rcp(new ::Thyra::NOXNonlinearSolver);
-  
+
   solver->setParameterList(nl_params);
   solver->setModel(thyraModel);
 
@@ -206,8 +214,8 @@ TEUCHOS_UNIT_TEST(AndersonAcceleration, AA_Rosenbrock)
 
   solve_status = solver->solve(initial_guess.get(), &solve_criteria);
 
-  
-  Teuchos::RCP< ::Thyra::NOXNonlinearSolver> thyra_nox_solver = 
+
+  Teuchos::RCP< ::Thyra::NOXNonlinearSolver> thyra_nox_solver =
     Teuchos::rcp_dynamic_cast< ::Thyra::NOXNonlinearSolver>(solver);
   TEST_EQUALITY(thyra_nox_solver->getNOXSolver()->getNumIterations(), 6);
 
@@ -215,7 +223,7 @@ TEUCHOS_UNIT_TEST(AndersonAcceleration, AA_Rosenbrock)
 
   Teuchos::RCP<const NOX::Abstract::Vector> x = thyra_nox_solver->getNOXSolver()->getSolutionGroup().getXPtr();
 
-  Teuchos::RCP<const NOX::Thyra::Vector> nox_thyra_x = 
+  Teuchos::RCP<const NOX::Thyra::Vector> nox_thyra_x =
     Teuchos::rcp_dynamic_cast<const NOX::Thyra::Vector>(x,true);
 
   Teuchos::RCP<const Thyra::SpmdVectorBase<double> > spmd_x =
@@ -227,6 +235,11 @@ TEUCHOS_UNIT_TEST(AndersonAcceleration, AA_Rosenbrock)
   double tol = 1.0e-7;
   TEST_FLOATING_EQUALITY((*x_analytic)[0],local_values[0],tol);
   TEST_FLOATING_EQUALITY((*x_analytic)[1],local_values[1],tol);
+
+  TEST_EQUALITY(Teuchos::rcp_dynamic_cast<ObserverPrintTest>(observer)->getNumPreIterateCalls(),6);
+  TEST_EQUALITY(Teuchos::rcp_dynamic_cast<ObserverPrintTest>(observer)->getNumPostIterateCalls(),6);
+  TEST_EQUALITY(Teuchos::rcp_dynamic_cast<ObserverPrintTest>(observer)->getNumPreSolveCalls(),1);
+  TEST_EQUALITY(Teuchos::rcp_dynamic_cast<ObserverPrintTest>(observer)->getNumPostSolveCalls(),1);
 
   if (solve_status.solveStatus == ::Thyra::SOLVE_STATUS_CONVERGED)
     std::cout << "Test passed!" << std::endl;
@@ -246,7 +259,7 @@ TEUCHOS_UNIT_TEST(AndersonAcceleration, AA_Rosenbrock)
 TEUCHOS_UNIT_TEST(AndersonAcceleration, AA_IllConditionedQRMonitoring)
 {
   int status = 0;
-   
+
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
   Epetra_MpiComm Comm( MPI_COMM_WORLD );
@@ -257,8 +270,8 @@ TEUCHOS_UNIT_TEST(AndersonAcceleration, AA_IllConditionedQRMonitoring)
   TEST_ASSERT(Comm.NumProc() == 1);
 
   ::Stratimikos::DefaultLinearSolverBuilder builder;
-  
-  Teuchos::RCP<Teuchos::ParameterList> p = 
+
+  Teuchos::RCP<Teuchos::ParameterList> p =
     Teuchos::rcp(new Teuchos::ParameterList);
   {
     p->set("Linear Solver Type", "AztecOO");
@@ -273,10 +286,10 @@ TEUCHOS_UNIT_TEST(AndersonAcceleration, AA_IllConditionedQRMonitoring)
 
   builder.setParameterList(p);
 
-  Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> > 
+  Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> >
     lowsFactory = builder.createLinearSolveStrategy("");
 
-  Teuchos::RCP<RosenbrockModelEvaluator> thyraModel = 
+  Teuchos::RCP<RosenbrockModelEvaluator> thyraModel =
     Teuchos::rcp(new RosenbrockModelEvaluator(Teuchos::rcp(&Comm,false)));
 
   thyraModel->set_W_factory(lowsFactory);
@@ -293,40 +306,40 @@ TEUCHOS_UNIT_TEST(AndersonAcceleration, AA_IllConditionedQRMonitoring)
   nl_params->sublist("Anderson Parameters").sublist("Preconditioning").set("Precondition", false);
 
   Teuchos::ParameterList& printParams = nl_params->sublist("Printing");
-  printParams.set("Output Information", 
-		  NOX::Utils::OuterIteration + 
-		  NOX::Utils::OuterIterationStatusTest + 
-		  NOX::Utils::InnerIteration +
-		  NOX::Utils::LinearSolverDetails +
-		  NOX::Utils::Parameters + 
-		  NOX::Utils::Details + 
-		  NOX::Utils::Warning +
-		  NOX::Utils::Debug +
-		  NOX::Utils::TestDetails +
-		  NOX::Utils::Error);
+  printParams.set("Output Information",
+          NOX::Utils::OuterIteration +
+          NOX::Utils::OuterIterationStatusTest +
+          NOX::Utils::InnerIteration +
+          NOX::Utils::LinearSolverDetails +
+          NOX::Utils::Parameters +
+          NOX::Utils::Details +
+          NOX::Utils::Warning +
+          NOX::Utils::Debug +
+          NOX::Utils::TestDetails +
+          NOX::Utils::Error);
 
   nl_params->sublist("Solver Options").set("Status Test Check Type", "Complete");
 
   // Enable row sum scaling
   nl_params->sublist("Thyra Group Options").set("Function Scaling", "Row Sum");
-  
+
   // Create Status Tests
   {
     Teuchos::ParameterList& st = nl_params->sublist("Status Tests");
     st.set("Test Type", "Combo");
     st.set("Combo Type", "OR");
     st.set("Number of Tests", 3);
-    
+
     {
       Teuchos::ParameterList& conv = st.sublist("Test 0");
       conv.set("Test Type", "Combo");
       conv.set("Combo Type", "AND");
       conv.set("Number of Tests", 2);
-      
+
       Teuchos::ParameterList& normF_rel = conv.sublist("Test 0");
       normF_rel.set("Test Type", "NormF");
       normF_rel.set("Tolerance", 1.0e-8);
-      
+
       Teuchos::ParameterList& normWRMS = conv.sublist("Test 1");
       normWRMS.set("Test Type", "NormWRMS");
       normWRMS.set("Absolute Tolerance", 1.0e-8);
@@ -337,7 +350,7 @@ TEUCHOS_UNIT_TEST(AndersonAcceleration, AA_IllConditionedQRMonitoring)
       normWRMS.set("Beta", 0.5);
       normWRMS.set("Disable Implicit Weighting", true);
     }
-    
+
     {
       Teuchos::ParameterList& fv = st.sublist("Test 1");
       fv.set("Test Type", "FiniteValue");
@@ -350,13 +363,13 @@ TEUCHOS_UNIT_TEST(AndersonAcceleration, AA_IllConditionedQRMonitoring)
       maxiters.set("Test Type", "MaxIters");
       maxiters.set("Maximum Iterations", 100);
     }
-    
+
   }
 
   // Create a Thyra nonlinear solver
-  Teuchos::RCP< ::Thyra::NonlinearSolverBase<double> > solver = 
+  Teuchos::RCP< ::Thyra::NonlinearSolverBase<double> > solver =
     Teuchos::rcp(new ::Thyra::NOXNonlinearSolver);
-  
+
   solver->setParameterList(nl_params);
   solver->setModel(thyraModel);
 
@@ -368,8 +381,8 @@ TEUCHOS_UNIT_TEST(AndersonAcceleration, AA_IllConditionedQRMonitoring)
 
   solve_status = solver->solve(initial_guess.get(), &solve_criteria);
 
-  
-  Teuchos::RCP< ::Thyra::NOXNonlinearSolver> thyra_nox_solver = 
+
+  Teuchos::RCP< ::Thyra::NOXNonlinearSolver> thyra_nox_solver =
     Teuchos::rcp_dynamic_cast< ::Thyra::NOXNonlinearSolver>(solver);
   TEST_EQUALITY(thyra_nox_solver->getNOXSolver()->getNumIterations(), 6);
 
@@ -377,7 +390,7 @@ TEUCHOS_UNIT_TEST(AndersonAcceleration, AA_IllConditionedQRMonitoring)
 
   Teuchos::RCP<const NOX::Abstract::Vector> x = thyra_nox_solver->getNOXSolver()->getSolutionGroup().getXPtr();
 
-  Teuchos::RCP<const NOX::Thyra::Vector> nox_thyra_x = 
+  Teuchos::RCP<const NOX::Thyra::Vector> nox_thyra_x =
     Teuchos::rcp_dynamic_cast<const NOX::Thyra::Vector>(x,true);
 
   Teuchos::RCP<const Thyra::SpmdVectorBase<double> > spmd_x =

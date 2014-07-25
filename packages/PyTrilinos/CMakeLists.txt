@@ -21,7 +21,7 @@
 #
 # You should have received a copy of the GNU Lesser General Public
 # License along with this library; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 # USA
 # Questions? Contact Bill Spotz (wfspotz@sandia.gov)
 #
@@ -127,26 +127,45 @@ IF(PyTrilinos_ENABLE_NOX)
   ENDIF(NOX_ENABLE_Epetra)
 ENDIF(PyTrilinos_ENABLE_NOX)
 
-#IF(NOX_ENABLE_LOCA)
-#  APPEND_SET(PyTrilinos_PACKAGES LOCA)
-#  APPEND_SET(PyTrilinos_MODULES  LOCA.__init__         )
-#  APPEND_SET(PyTrilinos_MODULES  LOCA.Abstract         )
-#  APPEND_SET(PyTrilinos_MODULES  LOCA.Extended         )
-#  APPEND_SET(PyTrilinos_MODULES  LOCA.BorderedSystem   )
-#  APPEND_SET(PyTrilinos_MODULES  LOCA.Continuation     )
-#  APPEND_SET(PyTrilinos_MODULES  LOCA.MultiContinuation)
-#  APPEND_SET(PyTrilinos_MODULES  LOCA.Hopf             )
-#  APPEND_SET(PyTrilinos_MODULES  LOCA.TimeDependent    )
-#  APPEND_SET(PyTrilinos_MODULES  LOCA.Pitchfork        )
-#  APPEND_SET(PyTrilinos_MODULES  LOCA.Homotopy         )
-#  APPEND_SET(PyTrilinos_MODULES  LOCA.TurningPoint     )
-#  #APPEND_SET(PyTrilinos_MODULES  LOCA.Bifurcation      )
-#  #APPEND_SET(PyTrilinos_MODULES  LOCA.Chan             )
-#  IF(NOX_ENABLE_Epetra)
-#    APPEND_SET(PyTrilinos_MODULES  LOCA.Epetra.__init__ )
-#    APPEND_SET(PyTrilinos_MODULES  LOCA.Epetra.Interface)
-#  ENDIF(NOX_ENABLE_Epetra)
-#ENDIF(NOX_ENABLE_LOCA)
+IF(NOX_ENABLE_LOCA)
+  APPEND_SET(PyTrilinos_PACKAGES LOCA                                )
+  APPEND_SET(PyTrilinos_MODULES  LOCA.__init__                       )
+  APPEND_SET(PyTrilinos_MODULES  LOCA.Abstract                       )
+  APPEND_SET(PyTrilinos_MODULES  LOCA.AnasaziOperator                )
+  APPEND_SET(PyTrilinos_MODULES  LOCA.Bifurcation                    )
+  APPEND_SET(PyTrilinos_MODULES  LOCA.BorderedSolver                 )
+  APPEND_SET(PyTrilinos_MODULES  LOCA.BorderedSystem                 )
+  APPEND_SET(PyTrilinos_MODULES  LOCA.Eigensolver                    )
+  APPEND_SET(PyTrilinos_MODULES  LOCA.EigenvalueSort                 )
+  APPEND_SET(PyTrilinos_MODULES  LOCA.Extended                       )
+  APPEND_SET(PyTrilinos_MODULES  LOCA.Homotopy                       )
+  APPEND_SET(PyTrilinos_MODULES  LOCA.Hopf.__init__                  )
+  APPEND_SET(PyTrilinos_MODULES  LOCA.Hopf.MinimallyAugmented        )
+  APPEND_SET(PyTrilinos_MODULES  LOCA.Hopf.MooreSpence               )
+  APPEND_SET(PyTrilinos_MODULES  LOCA.MultiContinuation              )
+  APPEND_SET(PyTrilinos_MODULES  LOCA.MultiPredictor                 )
+  APPEND_SET(PyTrilinos_MODULES  LOCA.Parameter                      )
+  APPEND_SET(PyTrilinos_MODULES  LOCA.PhaseTransition                )
+  APPEND_SET(PyTrilinos_MODULES  LOCA.Pitchfork.__init__             )
+  APPEND_SET(PyTrilinos_MODULES  LOCA.Pitchfork.MinimallyAugmented   )
+  APPEND_SET(PyTrilinos_MODULES  LOCA.Pitchfork.MooreSpence          )
+  APPEND_SET(PyTrilinos_MODULES  LOCA.SaveEigenData                  )
+  APPEND_SET(PyTrilinos_MODULES  LOCA.StatusTest                     )
+  APPEND_SET(PyTrilinos_MODULES  LOCA.StepSize                       )
+  APPEND_SET(PyTrilinos_MODULES  LOCA.TimeDependent                  )
+  APPEND_SET(PyTrilinos_MODULES  LOCA.TurningPoint.__init__          )
+  APPEND_SET(PyTrilinos_MODULES  LOCA.TurningPoint.MinimallyAugmented)
+  APPEND_SET(PyTrilinos_MODULES  LOCA.TurningPoint.MooreSpence       )
+  IF(NOX_ENABLE_Epetra)
+    APPEND_SET(PyTrilinos_MODULES  LOCA.NestedEpetra.__init__ )
+    APPEND_SET(PyTrilinos_MODULES  LOCA.NestedEpetra.Interface)
+  ENDIF(NOX_ENABLE_Epetra)
+ENDIF(NOX_ENABLE_LOCA)
+
+# IF(PyTrilinos_ENABLE_Domi)
+#   APPEND_SET(PyTrilinos_PACKAGES Domi)
+#   APPEND_SET(PyTrilinos_MODULES  Domi)
+# ENDIF(PyTrilinos_ENABLE_Domi)
 
 # Python interpreter, library, and header files are required.
 FIND_PACKAGE(PythonInterp 2.2 REQUIRED)
@@ -157,7 +176,21 @@ FIND_PACKAGE(PythonInclude REQUIRED)
 FIND_PACKAGE(NumPy 1.0 REQUIRED)
 
 # Simple wrapper interface generator (SWIG) is required
-FIND_PACKAGE(SWIG 2.0.0 REQUIRED)
+SET(SWIG_VERSION_FLOOR   2.0.0)
+SET(SWIG_VERSION_CEILING 2.0.8)
+FIND_PACKAGE(SWIG REQUIRED)
+IF(${SWIG_VERSION} VERSION_LESS ${SWIG_VERSION_FLOOR})
+  MESSAGE(FATAL_ERROR
+    "SWIG version " ${SWIG_VERSION}
+    " is less than minimum version " ${SWIG_VERSION_FLOOR}
+    )
+ENDIF()
+IF(${SWIG_VERSION} VERSION_GREATER ${SWIG_VERSION_CEILING})
+  MESSAGE(FATAL_ERROR
+    "SWIG version " ${SWIG_VERSION}
+    " is greater than maximum version " ${SWIG_VERSION_CEILING}
+    )
+ENDIF()
 # ${SWIG_USE_FILE} is hard-coded to be the installed UseSWIG.cmake
 # file.  We want to include the local, modified version.
 INCLUDE(UseSWIG)

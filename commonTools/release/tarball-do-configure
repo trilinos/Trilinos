@@ -90,6 +90,7 @@ cmake \
 -DTrilinos_ENABLE_Zoltan2=ON \
 -DTrilinos_ENABLE_Xpetra=ON \
 -DTrilinos_ENABLE_ShyLU=ON \
+-DTrilinos_ENABLE_Gtest=ON \
  \
 -D TPL_ENABLE_MATLAB=OFF \
  \

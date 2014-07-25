@@ -56,10 +56,13 @@
 #include "Xpetra_ImportFactory_fwd.hpp"
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_TwoLevelFactoryBase.hpp"
+
 #include "MueLu_RebalanceTransferFactory_fwd.hpp"
-#include "MueLu_Utilities_fwd.hpp"
+
+#include "MueLu_PerfUtils_fwd.hpp"
+#include "MueLu_TwoLevelFactoryBase.hpp"
 #include "MueLu_Types.hpp"
+#include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
 
@@ -84,7 +87,7 @@ namespace MueLu {
     //! Destructor.
     virtual ~RebalanceTransferFactory() { }
 
-    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+    RCP<const ParameterList> GetValidParameterList() const;
 
     //@}
 

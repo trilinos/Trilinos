@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -58,10 +58,10 @@
 
 NOX::Epetra::LinearSystemAmesos::
 LinearSystemAmesos(
-  Teuchos::ParameterList& printingParams, 
-  Teuchos::ParameterList& linearSolverParams, 
-  const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq, 
-  const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac, 
+  Teuchos::ParameterList& printingParams,
+  Teuchos::ParameterList& linearSolverParams,
+  const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq,
+  const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac,
   const Teuchos::RCP<Epetra_Operator>& J,
   const NOX::Epetra::Vector& cloneVector,
   const Teuchos::RCP<NOX::Epetra::Scaling> s):
@@ -78,13 +78,13 @@ LinearSystemAmesos(
   utils(printingParams)
 {
   amesosProblem = Teuchos::rcp(new Epetra_LinearProblem(
-				      dynamic_cast<Epetra_CrsMatrix *>(jacPtr.get()),
-				      leftHandSide.get(),
-				      rightHandSide.get()));
+                      dynamic_cast<Epetra_CrsMatrix *>(jacPtr.get()),
+                      leftHandSide.get(),
+                      rightHandSide.get()));
 
-  Amesos_BaseSolver * tmp = factory.Create(linearSolverParams.get("Amesos Solver","Amesos_Klu"), 
+  Amesos_BaseSolver * tmp = factory.Create(linearSolverParams.get("Amesos Solver","Amesos_Klu"),
       *amesosProblem);
-  TEUCHOS_TEST_FOR_EXCEPTION ( tmp == 0, Teuchos::Exceptions::InvalidParameterValue, 
+  TEUCHOS_TEST_FOR_EXCEPTION ( tmp == 0, Teuchos::Exceptions::InvalidParameterValue,
       "Invalid Amesos Solver: " << linearSolverParams.get<std::string>("Amesos Solver"));
   amesosSolver = Teuchos::rcp(tmp);
 
@@ -97,45 +97,45 @@ NOX::Epetra::LinearSystemAmesos::
 }
 
 bool NOX::Epetra::LinearSystemAmesos::
-applyJacobian(const NOX::Epetra::Vector& input, 
-      		     NOX::Epetra::Vector& result) const
+applyJacobian(const NOX::Epetra::Vector& input,
+                   NOX::Epetra::Vector& result) const
 {
   jacPtr->SetUseTranspose(false);
-  int status = jacPtr->Apply(input.getEpetraVector(), 
-				  result.getEpetraVector());
+  int status = jacPtr->Apply(input.getEpetraVector(),
+                  result.getEpetraVector());
   return (status == 0);
 }
 
 bool NOX::Epetra::LinearSystemAmesos::
-applyJacobianTranspose(const NOX::Epetra::Vector& input, 
-      			      NOX::Epetra::Vector& result) const
+applyJacobianTranspose(const NOX::Epetra::Vector& input,
+                        NOX::Epetra::Vector& result) const
 {
   jacPtr->SetUseTranspose(true);
-  int status = jacPtr->Apply(input.getEpetraVector(), 
-				  result.getEpetraVector());
+  int status = jacPtr->Apply(input.getEpetraVector(),
+                  result.getEpetraVector());
   jacPtr->SetUseTranspose(false);
 
   return (status == 0);
 }
 
 bool NOX::Epetra::LinearSystemAmesos::
-applyJacobianInverse(Teuchos::ParameterList &params, 
-      			    const NOX::Epetra::Vector &input, 
-      			    NOX::Epetra::Vector &result)
+applyJacobianInverse(Teuchos::ParameterList &params,
+                      const NOX::Epetra::Vector &input,
+                      NOX::Epetra::Vector &result)
 {
   double startTime = timer.WallTime();
 
   *rightHandSide = input.getEpetraVector();
   int err = 0;
   bool status = true;
-  if (!isValidFactorization) 
+  if (!isValidFactorization)
   {
     err = amesosSolver->SymbolicFactorization();
-    if (err > 0) 
+    if (err > 0)
       status = false;
 
     err = amesosSolver->NumericFactorization();
-    if (err > 0) 
+    if (err > 0)
       status = false;
 
     if (status) isValidFactorization = true;
@@ -149,7 +149,7 @@ applyJacobianInverse(Teuchos::ParameterList &params,
 
   double endTime = timer.WallTime();
   if (utils.isPrintType(Utils::LinearSolverDetails))
-    utils.out() << "\n       Time required for one linear solve : " 
+    utils.out() << "\n       Time required for one linear solve : "
          << (endTime - startTime) << " (sec.)" << std::endl;;
 
   return status;
@@ -157,9 +157,9 @@ applyJacobianInverse(Teuchos::ParameterList &params,
 
 bool NOX::Epetra::LinearSystemAmesos::
 applyRightPreconditioning(bool useTranspose,
-      			      Teuchos::ParameterList& params, 
-      			      const NOX::Epetra::Vector& input, 
-      			      NOX::Epetra::Vector& result) const
+                        Teuchos::ParameterList& params,
+                        const NOX::Epetra::Vector& input,
+                        NOX::Epetra::Vector& result) const
 {
   return false;
 }
@@ -180,16 +180,16 @@ resetScaling(const Teuchos::RCP<NOX::Epetra::Scaling>& s)
 bool NOX::Epetra::LinearSystemAmesos::
 computeJacobian(const NOX::Epetra::Vector& x)
 {
-  bool success = jacInterfacePtr->computeJacobian(x.getEpetraVector(), 
-						  *jacPtr);
+  bool success = jacInterfacePtr->computeJacobian(x.getEpetraVector(),
+                          *jacPtr);
   if (success) isValidFactorization = false;
   return success;
 }
 
 bool NOX::Epetra::LinearSystemAmesos::
-createPreconditioner(const NOX::Epetra::Vector& x, 
-      			    Teuchos::ParameterList& p,
-      			    bool recomputeGraph) const
+createPreconditioner(const NOX::Epetra::Vector& x,
+                      Teuchos::ParameterList& p,
+                      bool recomputeGraph) const
 {
   return false;
 }
@@ -201,13 +201,13 @@ destroyPreconditioner() const
 }
 
 bool NOX::Epetra::LinearSystemAmesos::
-recomputePreconditioner(const NOX::Epetra::Vector& x, 
-      		Teuchos::ParameterList& linearSolverParams) const
+recomputePreconditioner(const NOX::Epetra::Vector& x,
+              Teuchos::ParameterList& linearSolverParams) const
 {
   return false;
 }
 
-NOX::Epetra::LinearSystem::PreconditionerReusePolicyType 
+NOX::Epetra::LinearSystem::PreconditionerReusePolicyType
 NOX::Epetra::LinearSystemAmesos::
 getPreconditionerPolicy(bool advanceReuseCounter)
 {
@@ -251,8 +251,8 @@ getGeneratedPrecOperator()
 }
 
 void NOX::Epetra::LinearSystemAmesos::
-setJacobianOperatorForSolve(const 
-      	 Teuchos::RCP<const Epetra_Operator>& solveJacOp)
+setJacobianOperatorForSolve(const
+           Teuchos::RCP<const Epetra_Operator>& solveJacOp)
 {
   jacPtr = Teuchos::rcp_const_cast<Epetra_Operator>(solveJacOp);
   isValidFactorization = false;
@@ -260,8 +260,8 @@ setJacobianOperatorForSolve(const
 }
 
 void NOX::Epetra::LinearSystemAmesos::
-setPrecOperatorForSolve(const 
-      	 Teuchos::RCP<const Epetra_Operator>& solvePrecOp)
+setPrecOperatorForSolve(const
+           Teuchos::RCP<const Epetra_Operator>& solvePrecOp)
 {
   return;
 }

@@ -56,8 +56,8 @@ void createAllParameters(Teuchos::ParameterList &pList);
 void createValidatorList(
    const Teuchos::ParameterList &plIn, Teuchos::ParameterList &plOut);
 
-void printListDocumentation( const Teuchos::ParameterList &pl, ostream &os,
-  string listNames=string(""));
+void printListDocumentation( const Teuchos::ParameterList &pl, std::ostream &os,
+  std::string listNames=std::string(""));
 
 ////////////////////////////////////////////////////////////////////
 // Parameter-related enumerated types.

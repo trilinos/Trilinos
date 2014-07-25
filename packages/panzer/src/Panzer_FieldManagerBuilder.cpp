@@ -82,7 +82,8 @@ void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
 					    const Teuchos::ParameterList& closure_models,
                                             const panzer::LinearObjFactory<panzer::Traits> & lo_factory,
 					    const Teuchos::ParameterList& user_data,
-                                            const GenericEvaluatorFactory & gEvalFact)
+                                            const GenericEvaluatorFactory & gEvalFact,
+                                            bool closureModelByEBlock)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -113,11 +114,16 @@ void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
     
     // use the physics block to register evaluators
     pb->buildAndRegisterEquationSetEvaluators(*fm, user_data);
-    pb->buildAndRegisterGatherAndOrientationEvaluators(*fm,lo_factory,user_data);
-    pb->buildAndRegisterDOFProjectionsToIPEvaluators(*fm,user_data);
+    if(!physicsBlockGatherDisabled())
+      pb->buildAndRegisterGatherAndOrientationEvaluators(*fm,lo_factory,user_data);
+    pb->buildAndRegisterDOFProjectionsToIPEvaluators(*fm,Teuchos::ptrFromRef(lo_factory),user_data);
     if(!physicsBlockScatterDisabled())
       pb->buildAndRegisterScatterEvaluators(*fm,lo_factory,user_data);
-    pb->buildAndRegisterClosureModelEvaluators(*fm,cm_factory,closure_models,user_data);
+
+    if(closureModelByEBlock)
+      pb->buildAndRegisterClosureModelEvaluators(*fm,cm_factory,pb->elementBlockID(),closure_models,user_data);
+    else
+      pb->buildAndRegisterClosureModelEvaluators(*fm,cm_factory,closure_models,user_data);
  
     // register additional model evaluator from the generic evaluator factory
     gEvalFact.registerEvaluators(*fm,wd,*pb);

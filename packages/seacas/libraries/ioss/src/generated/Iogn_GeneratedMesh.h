@@ -33,12 +33,13 @@
 #ifndef IOSS_Iogn_GeneratedMesh_h
 #define IOSS_Iogn_GeneratedMesh_h
 
-#include <string>
-#include <map>
-#include <vector>
-#include <stdint.h>
-#include <iostream>
-#include <Ioss_EntityType.h>
+#include <Ioss_EntityType.h>            // for EntityType
+#include <stddef.h>                     // for size_t
+#include <stdint.h>                     // for int64_t
+#include <map>                          // for map, etc
+#include <string>                       // for string
+#include <utility>                      // for pair
+#include <vector>                       // for vector
 
 namespace Iogn {
   typedef std::vector<int64_t> MapVector;
@@ -96,6 +97,10 @@ namespace Iogn {
        Nodeset Count         = 3
        Sideset Count         = 3
        \endcode
+
+       - tets -- no argument - specifies that each hex should be
+       split into 6 tetrahedral elements.  Cannot currently be used with
+       shells or sidesets.
 
        - shell -- argument = xXyYzZ which specifies whether there is a shell
        block at that location. 'x' is minimum x face, 'X' is maximum x face,
@@ -191,6 +196,12 @@ namespace Iogn {
     GeneratedMesh();
     virtual ~GeneratedMesh();
 
+    /**
+     * Split each hexahedral element into 6 tetrahedral elements.
+     * Cannot currently be used with sidesets or shells.
+     */
+    void create_tets(bool yesno);
+    
     /**
      * Add a shell block along the specified face of the hex mesh.
      * The shell blocks will maintain the order of definition. The
@@ -363,8 +374,8 @@ namespace Iogn {
      * "map[local_position] = global_id" for the nodes on this
      * processor.
      */
-    virtual void node_map(MapVector &map);
-    virtual void node_map(IntVector &map);
+    virtual void node_map(MapVector &map) const;
+    virtual void node_map(IntVector &map) const;
 
     /** 
      * Fill the passed in 'map' argument with the element map
@@ -372,7 +383,7 @@ namespace Iogn {
      * processor in block "block_number".
      */
     virtual void element_map(int64_t block_number, MapVector &map) const;
-    virtual void element_map(int     block_number, IntVector &map) const;
+    virtual void element_map(int64_t block_number, IntVector &map) const;
 
     /** 
      * Fill the passed in 'map' argument with the element map
@@ -466,6 +477,13 @@ namespace Iogn {
 
   private:
     
+    template <typename INT>
+      void raw_element_map(int64_t block_number, std::vector<INT> &map) const;
+    template <typename INT>
+      void raw_element_map(std::vector<INT> &map) const;
+    template <typename INT>
+      void raw_connectivity(int64_t block_number, INT *connect) const;
+
     GeneratedMesh( const GeneratedMesh & );
     GeneratedMesh & operator = ( const GeneratedMesh & );
 
@@ -493,6 +511,7 @@ namespace Iogn {
 			      * position is (sclX*i+offX,
 			      * sclY*i+offY, sclZ*i+offZ) */
     bool doRotation;
+    bool createTets;
   };
 
 

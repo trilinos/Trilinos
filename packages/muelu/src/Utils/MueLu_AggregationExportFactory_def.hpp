@@ -53,11 +53,6 @@
 #ifndef MUELU_AGGREGATIONEXPORTFACTORY_DEF_HPP_
 #define MUELU_AGGREGATIONEXPORTFACTORY_DEF_HPP_
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
 
@@ -73,7 +68,7 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const ParameterList> AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+  RCP<const ParameterList> AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     std::string output_msg = "Output filename template (%TIMESTEP is replaced by \'Output file: time step\' variable,"
@@ -105,7 +100,7 @@ namespace MueLu {
     LocalOrdinal DofsPerNode                 = Get< LocalOrdinal >            (fineLevel,"DofsPerNode");
     Teuchos::RCP<AmalgamationInfo> amalgInfo = Get< RCP<AmalgamationInfo> >   (fineLevel,"UnAmalgamationInfo");
 
-    GetOStream(Runtime0, 0) << "AggregationExportFactory: DofsPerNode: " << DofsPerNode << std::endl;
+    GetOStream(Runtime0) << "AggregationExportFactory: DofsPerNode: " << DofsPerNode << std::endl;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = aggregates->GetMap()->getComm();
     int numProcs = comm->getSize();
@@ -144,7 +139,7 @@ namespace MueLu {
     outFile = replaceAll(outFile, "%TIMESTEP", toString(timeStep));
     outFile = replaceAll(outFile, "%ITER",     toString(iter));
 
-    GetOStream(Runtime0, 0) << "AggregationExportFactory: outputfilel \"" << outFile << "\"" << std::endl;
+    GetOStream(Runtime0) << "AggregationExportFactory: outputfilel \"" << outFile << "\"" << std::endl;
     std::ofstream fout(outFile.c_str());
 
     GO numAggs = aggregates->GetNumAggregates();

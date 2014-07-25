@@ -1,7 +1,6 @@
-#include "util.h"
 
-#include <cstring>
-#include "exodusII.h"
+#include "util.h"
+#include <cstring>                      // for NULL, memset
 
 char **get_name_array(int size, int length) {
   char **names = NULL;

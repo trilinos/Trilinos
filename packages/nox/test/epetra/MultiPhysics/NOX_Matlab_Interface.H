@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,7 +44,7 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                                
+
 #ifndef NOX_MATLAB_INTERFACE_H
 #define NOX_MATLAB_INTERFACE_H
 
@@ -71,7 +71,7 @@
 // This is a new class that may evantually get moved into NOX.  For now,
 // this is simply used as a testbed for driving NOX using Matlab
 
-class Matlab_Interface 
+class Matlab_Interface
 {
 public:
 
@@ -81,27 +81,27 @@ public:
 
    public:
 
-    enum CommandCategory {      
+    enum CommandCategory {
                                 GROUP_GET       ,
                                 GROUP_SET       ,
                                 GROUP_COMPUTE   ,
                                 CALLBACK_FUN    ,
                                 QUERY           ,
                                 INOUT           ,
-                                GENERIC         
+                                GENERIC
                          };
 
     static map< NOX::Abstract::Group::ReturnType, std::string > returnMsg;
 
     static map< CommandCategory, std::string > categoryDescription;
 
-    CommandBase(  EpetraExt::EpetraExt_MatlabEngine & engine_, 
+    CommandBase(  EpetraExt::EpetraExt_MatlabEngine & engine_,
                   NOX::Solver::Manager & solver_               );
 
     virtual ~CommandBase() { };
 
     // methods
-    
+
     virtual bool doCommand( std::string ) = 0 ;
 
     virtual const std::string & getCommand()
@@ -111,13 +111,13 @@ public:
     { return description; }
 
     virtual void describe()
-    { 
+    {
       cout << "\t\t#" << command << "\t" << description << std::endl;
       return;
     }
 
     virtual bool isCategory( CommandCategory category )
-    { 
+    {
       return ( myCategory == category );
     }
 
@@ -127,15 +127,15 @@ public:
 
     virtual void registerDriver( Matlab_Interface * driver_ )
     { driver = driver_; }
-   
+
    protected:
-    
+
     // methods
 
     virtual void initialize();
 
     // data
-   
+
     std::string command     ;
     std::string description ;
 
@@ -164,7 +164,7 @@ public:
    public:
 
     CMD_map( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             NOX::Solver::Manager              & solver_ ) : 
+             NOX::Solver::Manager              & solver_ ) :
       CommandBase( engine_, solver_ )
     {
       command     = "map"              ;
@@ -187,7 +187,7 @@ public:
    public:
 
     CMD_showStack( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             NOX::Solver::Manager              & solver_ ) : 
+             NOX::Solver::Manager              & solver_ ) :
       CommandBase( engine_, solver_ )
     {
       myCategory = QUERY;
@@ -205,7 +205,7 @@ public:
    public:
 
     CMD_clearStack( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             NOX::Solver::Manager              & solver_ ) : 
+             NOX::Solver::Manager              & solver_ ) :
       CommandBase( engine_, solver_ )
     {
       myCategory = QUERY;
@@ -223,7 +223,7 @@ public:
    public:
 
     CMD_isF( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             NOX::Solver::Manager              & solver_ ) : 
+             NOX::Solver::Manager              & solver_ ) :
       CommandBase( engine_, solver_ )
     {
       myCategory = QUERY;
@@ -241,7 +241,7 @@ public:
    public:
 
     CMD_isJacobian( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             NOX::Solver::Manager              & solver_ ) : 
+             NOX::Solver::Manager              & solver_ ) :
       CommandBase( engine_, solver_ )
     {
       myCategory = QUERY;
@@ -259,7 +259,7 @@ public:
    public:
 
     CMD_isGradient( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             NOX::Solver::Manager              & solver_ ) : 
+             NOX::Solver::Manager              & solver_ ) :
       CommandBase( engine_, solver_ )
     {
       myCategory = QUERY;
@@ -277,7 +277,7 @@ public:
    public:
 
     CMD_isNewton( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             NOX::Solver::Manager              & solver_ ) : 
+             NOX::Solver::Manager              & solver_ ) :
       CommandBase( engine_, solver_ )
     {
       myCategory = QUERY;
@@ -295,7 +295,7 @@ public:
    public:
 
     CMD_isNormNewtonSolveResidual( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             NOX::Solver::Manager              & solver_ ) : 
+             NOX::Solver::Manager              & solver_ ) :
       CommandBase( engine_, solver_ )
     {
       myCategory = QUERY;
@@ -313,7 +313,7 @@ public:
    public:
 
     CMD_isPreconditioner( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             NOX::Solver::Manager              & solver_ ) : 
+             NOX::Solver::Manager              & solver_ ) :
       CommandBase( engine_, solver_ )
     {
       myCategory = QUERY;
@@ -331,7 +331,7 @@ public:
    public:
 
     CMD_isConditionNumber( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             NOX::Solver::Manager              & solver_ ) : 
+             NOX::Solver::Manager              & solver_ ) :
       CommandBase( engine_, solver_ )
     {
       myCategory = QUERY;
@@ -349,7 +349,7 @@ public:
    public:
 
     CMD_showValid( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             NOX::Solver::Manager              & solver_ ) : 
+             NOX::Solver::Manager              & solver_ ) :
       CommandBase( engine_, solver_ )
     {
       myCategory = QUERY;
@@ -370,7 +370,7 @@ public:
    public:
 
     CMD_getJacobianConditionNumber( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             NOX::Solver::Manager              & solver_ ) : 
+             NOX::Solver::Manager              & solver_ ) :
       CommandBase( engine_, solver_ )
     {
       myCategory = GROUP_GET;
@@ -388,7 +388,7 @@ public:
    public:
 
     CMD_getNormF( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             NOX::Solver::Manager              & solver_ ) : 
+             NOX::Solver::Manager              & solver_ ) :
       CommandBase( engine_, solver_ )
     {
       myCategory = GROUP_GET;
@@ -406,7 +406,7 @@ public:
    public:
 
     CMD_setX( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             NOX::Solver::Manager              & solver_ ) : 
+             NOX::Solver::Manager              & solver_ ) :
       CommandBase( engine_, solver_ )
     {
       myCategory = GROUP_GET;
@@ -424,7 +424,7 @@ public:
    public:
 
     CMD_computeF( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             NOX::Solver::Manager              & solver_ ) : 
+             NOX::Solver::Manager              & solver_ ) :
       CommandBase( engine_, solver_ )
     {
       myCategory = GROUP_COMPUTE;
@@ -442,7 +442,7 @@ public:
    public:
 
     CMD_computeJacobian( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             NOX::Solver::Manager              & solver_ ) : 
+             NOX::Solver::Manager              & solver_ ) :
       CommandBase( engine_, solver_ )
     {
       myCategory = GROUP_COMPUTE;
@@ -460,7 +460,7 @@ public:
    public:
 
     CMD_computeGradient( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             NOX::Solver::Manager              & solver_ ) : 
+             NOX::Solver::Manager              & solver_ ) :
       CommandBase( engine_, solver_ )
     {
       myCategory = GROUP_COMPUTE;
@@ -478,7 +478,7 @@ public:
    public:
 
     CMD_computeNewton( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             NOX::Solver::Manager              & solver_ ) : 
+             NOX::Solver::Manager              & solver_ ) :
       CommandBase( engine_, solver_ )
     {
       myCategory = GROUP_COMPUTE;
@@ -496,7 +496,7 @@ public:
    public:
 
     CMD_getX( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             NOX::Solver::Manager              & solver_ ) : 
+             NOX::Solver::Manager              & solver_ ) :
       CommandBase( engine_, solver_ )
     {
       myCategory = GROUP_GET;
@@ -514,7 +514,7 @@ public:
    public:
 
     CMD_getF( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             NOX::Solver::Manager              & solver_ ) : 
+             NOX::Solver::Manager              & solver_ ) :
       CommandBase( engine_, solver_ )
     {
       myCategory = GROUP_GET;
@@ -532,7 +532,7 @@ public:
    public:
 
     CMD_getGradient( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             NOX::Solver::Manager              & solver_ ) : 
+             NOX::Solver::Manager              & solver_ ) :
       CommandBase( engine_, solver_ )
     {
       myCategory = GROUP_GET;
@@ -550,7 +550,7 @@ public:
    public:
 
     CMD_getNewton( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             NOX::Solver::Manager              & solver_ ) : 
+             NOX::Solver::Manager              & solver_ ) :
       CommandBase( engine_, solver_ )
     {
       myCategory = GROUP_GET;
@@ -568,7 +568,7 @@ public:
    public:
 
     CMD_getJacobian( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             NOX::Solver::Manager              & solver_ ) : 
+             NOX::Solver::Manager              & solver_ ) :
       CommandBase( engine_, solver_ )
     {
       myCategory = GROUP_GET;
@@ -588,7 +588,7 @@ public:
     static std::istream * is;
 
     CMD_newMacro( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             NOX::Solver::Manager              & solver_ ) : 
+             NOX::Solver::Manager              & solver_ ) :
       CommandBase( engine_, solver_ )
     {
       command     = "newMacro"              ;
@@ -607,7 +607,7 @@ public:
 
     CMD_macro( EpetraExt::EpetraExt_MatlabEngine & engine_,
              NOX::Solver::Manager              & solver_  ,
-             std::string                         name_     ) : 
+             std::string                         name_     ) :
       CommandBase( engine_, solver_ ),
       macroName( name_ )
     {
@@ -632,7 +632,7 @@ public:
     std::string macroName;
 
     std::list< std::string > macroCommands;
-    
+
   };
 
   //-----------------------------------------------------------------------------
@@ -642,7 +642,7 @@ public:
    public:
 
     CMD_read( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             NOX::Solver::Manager              & solver_ ) : 
+             NOX::Solver::Manager              & solver_ ) :
       CommandBase( engine_, solver_ )
     {
       myCategory = INOUT;
@@ -661,7 +661,7 @@ public:
    public:
 
     CMD_write( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             NOX::Solver::Manager              & solver_ ) : 
+             NOX::Solver::Manager              & solver_ ) :
       CommandBase( engine_, solver_ )
     {
       myCategory = INOUT;
@@ -692,7 +692,7 @@ public:
   virtual void removeCommand( CommandBase * com )
   { commands.remove( com ); return; }
 
-  CMD_map * getMapHandler() 
+  CMD_map * getMapHandler()
   { return mapHandler; }
 
   std::list< std::string > & getCommandStack()
@@ -706,7 +706,7 @@ protected:
 
   // Methods
 
-  // Data 
+  // Data
 
   // A needed communicator - can be replaced later by initialization argument
   Epetra_SerialComm comm;

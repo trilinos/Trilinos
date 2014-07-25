@@ -12,7 +12,7 @@
 */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_common.h"
@@ -42,7 +42,7 @@ class Space : public BaseObject {
 public:
 
   //@{ \name Constructors and Destructors
-  
+
   //! Default constructor, defines an empty space.
   Space()
   {
@@ -53,7 +53,7 @@ public:
   }
 
   //! Constructor with specified number of global and local elements.
-  /*! 
+  /*!
     Constructs a space with linear distribution.
 
     \param NumGlobalElements - (In) number of global elements.
@@ -76,7 +76,7 @@ public:
   }
 
   //! Constructor for non-linear distributions
-  /*! 
+  /*!
     \param NumGlobalElements - (In) number of global elements. Set to
                                -1 to compute it automatically.
     \param NumMyElements - (In) number of local elements. Cannot be set
@@ -85,7 +85,7 @@ public:
 
     \note Global ID always starts from 0.
    */
-  Space(const int NumGlobalElements, const int NumMyElements, 
+  Space(const int NumGlobalElements, const int NumMyElements,
         const int* MyGlobalElements)
   {
     Reshape(NumGlobalElements, NumMyElements, MyGlobalElements);
@@ -136,7 +136,7 @@ public:
     NumGlobalElements_ = ML_Comm_GsumInt(GetML_Comm(),NumMyElements_);
 
     if (NumGlobalElements != -1) {
-      if (NumGlobalElements != NumGlobalElements_) 
+      if (NumGlobalElements != NumGlobalElements_)
         ML_THROW("Specified # of global elements the sum of local elements (" +
                  GetString(NumGlobalElements) + " vs. " +
                  GetString(NumGlobalElements_), -1);
@@ -144,11 +144,11 @@ public:
 
     Offset_   = ML_gpartialsum_int(NumMyElements_,GetML_Comm());
     IsLinear_ = true;
-    
+
   }
 
   //! Reset the dimension of the space by specifying the local number of elements and their global numbering (starting from 0).
-  void Reshape(const int NumGlobalElements, const int NumMyElements, 
+  void Reshape(const int NumGlobalElements, const int NumMyElements,
                const int* MyGlobalElements)
   {
     if (NumGlobalElements <= 0 && NumMyElements < 0)
@@ -268,7 +268,7 @@ public:
   }
 
   //! Returns a pointer to the list of global nodes.
-  inline const Teuchos::RefCountPtr<Epetra_IntSerialDenseVector> 
+  inline const Teuchos::RefCountPtr<Epetra_IntSerialDenseVector>
     GetRCPMyGlobalElements() const
   {
     return(RCPMyGlobalElements_);
@@ -333,7 +333,7 @@ public:
   }
 
   // @}
-  
+
 private:
 
   //! Number of elements assigned to the calling processor.

@@ -21,7 +21,7 @@
 //  
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 // (etphipp@sandia.gov).
@@ -75,7 +75,7 @@ namespace Sacado {
       /*!
        * Initializes first coeffienct to \c x and of a polynomial of degree d
        */
-      CacheTaylorImplementation(unsigned int d, const T & x) : 
+      CacheTaylorImplementation(int d, const T & x) : 
 	coeff_(T(0.),d+1) {
 	coeff_[0] = x;
       }
@@ -92,7 +92,7 @@ namespace Sacado {
        * Coefficients are preserved if \c keep_coeffs is \c true, otherwise 
        * all coefficients are reset to zero.
        */
-      void resize(unsigned int d, bool keep_coeffs) {
+      void resize(int d, bool keep_coeffs) {
 	if (keep_coeffs)
 	  resizeCoeffs(d);
 	else
@@ -118,30 +118,30 @@ namespace Sacado {
       //@{
 
       //! Returns degree of polynomial
-      unsigned int degree() const { return coeff_.size()-1;}
+      int degree() const { return coeff_size()-1;}
 
       //! Returns true if polynomial has degree >= d
-      bool hasFastAccess(unsigned int d) const { return coeff_.size()>=d+1;}
+      bool hasFastAccess(int d) const { return coeff_size()>=d+1;}
 
       //! Returns Taylor coefficient array
       const std::valarray<T>& coeff() const { return coeff_;}
 
       //! Returns degree \c i term with bounds checking
-      const T coeff(unsigned int i) const { 
-	T tmp= i<coeff_.size() ? coeff_[i]:T(0.); return tmp;}
+      const T coeff(int i) const { 
+	T tmp= i<coeff_size() ? coeff_[i]:T(0.); return tmp;}
 
       //! Returns degree \c i term with bounds checking
-      T coeff(unsigned int i) { 
-	T tmp= i<coeff_.size() ? coeff_[i]:T(0.); return tmp;}
+      T coeff(int i) { 
+	T tmp= i<coeff_size() ? coeff_[i]:T(0.); return tmp;}
     
       //! Returns degree \c i term without bounds checking
-      T& fastAccessCoeff(unsigned int i) { return coeff_[i];}
+      T& fastAccessCoeff(int i) { return coeff_[i];}
 
       //! Returns degree \c i term without bounds checking
-      const T& fastAccessCoeff(unsigned int i) const { return coeff_[i];}
+      const T& fastAccessCoeff(int i) const { return coeff_[i];}
 
       //! Allocate coefficient cache
-      void allocateCache(unsigned int d) const {}
+      void allocateCache(int d) const {}
 
       //! Returns whether two Taylor objects have the same values
       template <typename S>
@@ -149,7 +149,7 @@ namespace Sacado {
 	typedef IsEqual<value_type> IE;
 	if (x.degree() != this->degree()) return false;
 	bool eq = true;
-	for (unsigned int i=0; i<=this->degree(); i++)
+	for (int i=0; i<=this->degree(); i++)
 	  eq = eq && IE::eval(x.coeff(i), this->coeff(i));
 	return eq;
       }
@@ -159,9 +159,9 @@ namespace Sacado {
     protected:
 
       //! Resize coefficient array to new size
-      void resizeCoeffs(unsigned int dnew) {
+      void resizeCoeffs(int dnew) {
 	std::valarray<T> tmp = coeff_;
-	unsigned int sz = coeff_.size();
+	int sz = coeff_size();
 	coeff_.resize(dnew+1,T(0.));
 	if (sz > dnew+1) {
 	  std::slice s(0,dnew+1,1);
@@ -172,6 +172,8 @@ namespace Sacado {
 	  coeff_[s] = tmp;
 	}
       }
+
+      int coeff_size() const { return coeff_.size(); }
 
     protected:
 
@@ -203,7 +205,7 @@ namespace Sacado {
       /*!
        * Initializes first coeffienct to \c x and of a polynomial of degree d
        */
-      Expr(unsigned int d, const T & x) : CacheTaylorImplementation<T>(d,x) {}
+      Expr(int d, const T & x) : CacheTaylorImplementation<T>(d,x) {}
 
       //! Copy constructor
       Expr(const Expr& x) : CacheTaylorImplementation<T>(x) {}
@@ -258,7 +260,7 @@ namespace Sacado {
       /*!
        * Initializes first coeffienct to \c x and of a polynomial of degree d
        */
-      CacheTaylor(unsigned int d, const T & x) : 
+      CacheTaylor(int d, const T & x) : 
 	Expr< CacheTaylorImplementation<T> >(d,x) {}
 
       //! Copy constructor

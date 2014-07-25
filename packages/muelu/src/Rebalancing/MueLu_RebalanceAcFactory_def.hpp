@@ -46,25 +46,21 @@
 #ifndef MUELU_REBALANCEACFACTORY_DEF_HPP
 #define MUELU_REBALANCEACFACTORY_DEF_HPP
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_MatrixFactory.hpp>
 
 #include "MueLu_RebalanceAcFactory_decl.hpp"
-#include "MueLu_RAPFactory.hpp"
-#include "MueLu_Utilities.hpp"
+
 #include "MueLu_Monitor.hpp"
+#include "MueLu_PerfUtils.hpp"
+#include "MueLu_RAPFactory.hpp"
 
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const ParameterList> RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+  RCP<const ParameterList> RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
     validParamList->set< RCP<const FactoryBase> >("A",         Teuchos::null, "Generating factory of the matrix A for rebalancing");
     validParamList->set< RCP<const FactoryBase> >("Importer",  Teuchos::null, "Generating factory of the importer");
@@ -97,7 +93,7 @@ namespace MueLu {
 
         ParameterList XpetraList;
         if (pL.get<bool>("useSubcomm") == true) {
-          GetOStream(Runtime0,0) << "Replacing maps with a subcommunicator" << std::endl;
+          GetOStream(Runtime0) << "Replacing maps with a subcommunicator" << std::endl;
           XpetraList.set("Restrict Communicator",true);
         }
         // NOTE: If the communicator is restricted away, Build returns Teuchos::null.
@@ -109,15 +105,16 @@ namespace MueLu {
         Set(coarseLevel, "A", rebalancedAc);
       }
 
-      if (!rebalancedAc.is_null()) {
+      if (!rebalancedAc.is_null() && IsPrint(Statistics1)) {
         RCP<ParameterList> params = rcp(new ParameterList());
         params->set("printLoadBalancingInfo", true);
-        GetOStream(Statistics1, 0) << Utils::PrintMatrixInfo(*rebalancedAc, "Ac (rebalanced)", params);
+        params->set("printCommInfo",          true);
+        GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*rebalancedAc, "Ac (rebalanced)", params);
       }
 
     } else {
       // Ac already built by the load balancing process and no load balancing needed
-      GetOStream(Warnings0, 0) << "No rebalancing" << std::endl;
+      GetOStream(Warnings0) << "No rebalancing" << std::endl;
       Set(coarseLevel, "A", originalAc);
     }
 
@@ -126,7 +123,7 @@ namespace MueLu {
 
       // call Build of all user-given transfer factories
       for (std::vector<RCP<const FactoryBase> >::const_iterator it = rebalanceFacts_.begin(); it != rebalanceFacts_.end(); ++it) {
-        GetOStream(Runtime0, 0) << "RebalanceAc: call rebalance factory " << (*it).get() << ": " << (*it)->description() << std::endl;
+        GetOStream(Runtime0) << "RebalanceAc: call rebalance factory " << (*it).get() << ": " << (*it)->description() << std::endl;
         (*it)->CallBuild(coarseLevel);
       }
     }

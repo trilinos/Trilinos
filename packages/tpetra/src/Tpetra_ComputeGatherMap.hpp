@@ -48,6 +48,28 @@
 ///
 #include "Tpetra_Map.hpp"
 
+// Macro that marks a function as "possibly unused," in order to
+// suppress build warnings.
+#if ! defined(TRILINOS_UNUSED_FUNCTION)
+#  if defined(__GNUC__) || defined(__INTEL_COMPILER)
+#    define TRILINOS_UNUSED_FUNCTION __attribute__((__unused__))
+#  elif defined(__clang__)
+#    if __has_attribute(unused)
+#      define TRILINOS_UNUSED_FUNCTION __attribute__((__unused__))
+#    else
+#      define TRILINOS_UNUSED_FUNCTION
+#    endif // Clang has 'unused' attribute
+#  elif defined(__IBMCPP__)
+// IBM's C++ compiler for Blue Gene/Q (V12.1) implements 'used' but not 'unused'.
+//
+// http://pic.dhe.ibm.com/infocenter/compbg/v121v141/index.jsp
+#    define TRILINOS_UNUSED_FUNCTION
+#  else // some other compiler
+#    define TRILINOS_UNUSED_FUNCTION
+#  endif
+#endif // ! defined(TRILINOS_UNUSED_FUNCTION)
+
+
 namespace Tpetra {
   namespace Details {
 
@@ -56,12 +78,20 @@ namespace Tpetra {
       // We're communicating integers of type IntType.  Figure
       // out the right MPI_Datatype for IntType.  Usually it
       // is int or long, so these are good enough for now.
-      template<class IntType> MPI_Datatype getMpiDatatype () {
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented for IntType != int, long, or long long");
+      template<class IntType> TRILINOS_UNUSED_FUNCTION MPI_Datatype
+      getMpiDatatype () {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+          "Not implemented for IntType != int, long, or long long");
       }
-      template<> MPI_Datatype getMpiDatatype<int> () { return MPI_INT; }
-      template<> MPI_Datatype getMpiDatatype<long> () { return MPI_LONG; }
-      template<> MPI_Datatype getMpiDatatype<long long> () { return MPI_LONG_LONG; }
+
+      template<> TRILINOS_UNUSED_FUNCTION MPI_Datatype
+      getMpiDatatype<int> () { return MPI_INT; }
+
+      template<> TRILINOS_UNUSED_FUNCTION MPI_Datatype
+      getMpiDatatype<long> () { return MPI_LONG; }
+
+      template<> TRILINOS_UNUSED_FUNCTION MPI_Datatype
+      getMpiDatatype<long long> () { return MPI_LONG_LONG; }
 #endif // HAVE_MPI
 
       template<class IntType>
@@ -161,7 +191,7 @@ namespace Tpetra {
     Teuchos::RCP<const MapType>
     computeGatherMap (Teuchos::RCP<const MapType> map,
                       const Teuchos::RCP<Teuchos::FancyOStream>& err,
-                      const bool debug=false)
+                      const bool dbg=false)
     {
       using Tpetra::createOneToOne;
       using Tpetra::global_size_t;
@@ -183,7 +213,7 @@ namespace Tpetra {
       if (! err.is_null ()) {
         err->pushTab ();
       }
-      if (debug) {
+      if (dbg) {
         *err << myRank << ": computeGatherMap:" << endl;
       }
       if (! err.is_null ()) {
@@ -194,7 +224,7 @@ namespace Tpetra {
       if (map->isContiguous ()) {
         oneToOneMap = map; // contiguous Maps are always 1-to-1
       } else {
-        if (debug) {
+        if (dbg) {
           *err << myRank << ": computeGatherMap: Calling createOneToOne" << endl;
         }
         // It could be that Map is one-to-one, but the class doesn't
@@ -207,7 +237,7 @@ namespace Tpetra {
       if (numProcs == 1) {
         gatherMap = oneToOneMap;
       } else {
-        if (debug) {
+        if (dbg) {
           *err << myRank << ": computeGatherMap: Gathering Map counts" << endl;
         }
         // Gather each process' count of Map elements to Proc 0,
@@ -242,7 +272,7 @@ namespace Tpetra {
           std::fill (allGlobalElts.begin (), allGlobalElts.end (), 0);
         }
 
-        if (debug) {
+        if (dbg) {
           *err << myRank << ": computeGatherMap: Computing MPI_Gatherv "
             "displacements" << endl;
         }
@@ -253,14 +283,14 @@ namespace Tpetra {
         Array<int> displs (numProcs, 0);
         std::partial_sum (recvCounts.begin (), recvCounts.end () - 1,
                           displs.begin () + 1);
-        if (debug) {
+        if (dbg) {
           *err << myRank << ": computeGatherMap: Calling MPI_Gatherv" << endl;
         }
         gatherv<GO> (myGlobalElts.getRawPtr (), numMyGlobalElts,
                      allGlobalElts.getRawPtr (), recvCounts.getRawPtr (),
                      displs.getRawPtr (), rootProc, comm);
 
-        if (debug) {
+        if (dbg) {
           *err << myRank << ": computeGatherMap: Creating gather Map" << endl;
         }
         // Create a Map with all the GIDs, in the same order as in
@@ -277,7 +307,7 @@ namespace Tpetra {
       if (! err.is_null ()) {
         err->popTab ();
       }
-      if (debug) {
+      if (dbg) {
         *err << myRank << ": computeGatherMap: done" << endl;
       }
       if (! err.is_null ()) {

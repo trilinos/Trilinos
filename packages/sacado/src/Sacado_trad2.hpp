@@ -19,7 +19,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 // (etphipp@sandia.gov).
@@ -1283,7 +1283,7 @@ ADcontext<Double>::Gradcomp(int wantgrad)
 		ADVari::zap_gcgen1 = -1;
 		}
 #endif
-	if ((d = DErp::LastDerp)) {
+	if ((d = DErp::LastDerp) != 0) {
 #ifdef RAD_AUTO_AD_Const
 		 ADVari::adc.rad_need_reinit |= 2;
 #endif /*RAD_AUTO_AD_Const*/
@@ -1353,7 +1353,7 @@ ADcontext<Double>::Weighted_Gradcomp(int n, ADVar **V, Double *w)
 		ADVari::zap_gcgen1 = -1;
 		}
 #endif
-	if ((d = DErp::LastDerp)) {
+	if ((d = DErp::LastDerp) != 0) {
 		for(i = 0; i < n; i++)
 			V[i]->cv->aval = w[i];
 #ifdef RAD_DEBUG
@@ -2121,6 +2121,9 @@ ADcontext<Double>::Hvprod(int n, ADvar<Double> **x, Double *v, Double *hv)
 				for(i = 0; i < m; i++)
 					t += g[i] * d[i].c->dO;
 				a->dO = t;
+                                break;
+                        case Hv_const:
+                          ;
 			 }
 			}
 		}
@@ -2222,6 +2225,8 @@ ADcontext<Double>::Hvprod(int n, ADvar<Double> **x, Double *v, Double *hv)
 					for(k = j; j < m; j++)
 						d[j].c->aO += t * *(h += k++);
 					}
+                        case Hv_const:
+                          ;
 			 }
 			}
 		}

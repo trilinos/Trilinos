@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -43,7 +43,7 @@ INCLUDE(Join)
 
 
 # Define the valid categories that will be recognized in the CATEGORIES keyword
-SET(${PROJECT_NAME}_VALID_CATEGORIES  BASIC  CONTINUOUS NIGHTLY  PERFORMANCE)
+SET(${PROJECT_NAME}_VALID_CATEGORIES  BASIC  CONTINUOUS  NIGHTLY  WEEKLY  PERFORMANCE)
 
 # TODO: ABove, We may want only the final project to define these categories
 # and not just be general categories for all projects based on ProjectArch.

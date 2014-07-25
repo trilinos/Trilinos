@@ -46,11 +46,6 @@
 #ifndef MUELU_COALESCEDROPFACTORY_DEF_HPP
 #define MUELU_COALESCEDROPFACTORY_DEF_HPP
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_VectorFactory.hpp>
@@ -71,6 +66,7 @@
 #include "MueLu_GraphBase.hpp"
 #include "MueLu_Graph.hpp"
 #include "MueLu_LWGraph.hpp"
+#include "MueLu_MasterList.hpp"
 #include "MueLu_PreDropFunctionBaseClass.hpp"
 #include "MueLu_PreDropFunctionConstVal.hpp"
 #include "MueLu_Monitor.hpp"
@@ -80,22 +76,24 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const ParameterList> CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+  RCP<const ParameterList> CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+#define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
+    SET_VALID_ENTRY("aggregation: drop tol");
+    SET_VALID_ENTRY("aggregation: Dirichlet threshold");
+    SET_VALID_ENTRY("aggregation: drop scheme");
+    {
+      typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
+      validParamList->getEntry("aggregation: drop scheme").setValidator(
+        rcp(new validatorType(Teuchos::tuple<std::string>("original", "distance laplacian", "classical"), "aggregation: drop scheme")));
+    }
+#undef  SET_VALID_ENTRY
+    validParamList->set< bool >                  ("lightweight wrap",           false, "Experimental option for lightweight graph access");
 
     validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Generating factory for UnAmalgamationInfo");
     validParamList->set< RCP<const FactoryBase> >("Coordinates",        Teuchos::null, "Generating factory for Coordinates");
-    validParamList->set< bool >                  ("lightweight wrap",           false, "Experimental option for lightweight graph access");
-    validParamList->set< SC >                    ("aggregation threshold",       zero, "Aggregation dropping threshold");
-    validParamList->set< SC >                    ("Dirichlet detection threshold", zero, "Threshold for determining whether entries are zero during Dirichlet row detection");
-    {
-      typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
-      RCP<validatorType> typeValidator = rcp(new validatorType(Teuchos::tuple<std::string>("original", "laplacian", "classical"), "algorithm"));
-      validParamList->set< std::string >         ("algorithm",             "original", "Dropping algorithm", typeValidator);
-    }
 
     return validParamList;
   }
@@ -106,11 +104,16 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
     Input(currentLevel, "A");
-    Input(currentLevel, "UnAmalgamationInfo");
 
-    const ParameterList  & pL = GetParameterList();
-    if (pL.get<bool>("lightweight wrap") == true && pL.get<std::string>("algorithm") == "laplacian")
-      Input(currentLevel, "Coordinates");
+    const ParameterList& pL = GetParameterList();
+    if (pL.get<bool>("lightweight wrap") == true) {
+      if (pL.get<std::string>("aggregation: drop scheme") == "distance laplacian")
+        Input(currentLevel, "Coordinates");
+
+    } else {
+      Input(currentLevel, "UnAmalgamationInfo");
+    }
+
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -120,31 +123,31 @@ namespace MueLu {
     typedef Teuchos::ScalarTraits<SC> STS;
 
     if (predrop_ != Teuchos::null)
-      GetOStream(Parameters0, 0) << predrop_->description();
+      GetOStream(Parameters0) << predrop_->description();
 
     RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
 
     const ParameterList  & pL = GetParameterList();
     bool doExperimentalWrap = pL.get<bool>("lightweight wrap");
 
-    GetOStream(Parameters0, 0) << "lightweight wrap = " << doExperimentalWrap << std::endl;
+    GetOStream(Parameters0) << "lightweight wrap = " << doExperimentalWrap << std::endl;
 
     if (doExperimentalWrap) {
-      std::string algo = pL.get<std::string>("algorithm");
+      std::string algo = pL.get<std::string>("aggregation: drop scheme");
       if (algo == "classical")
         algo = "original";
 
       TEUCHOS_TEST_FOR_EXCEPTION(predrop_ != null   && algo != "original", Exceptions::RuntimeError, "Dropping function must not be provided for \"" << algo << "\" algorithm");
-      TEUCHOS_TEST_FOR_EXCEPTION(algo != "original" && algo != "laplacian", Exceptions::RuntimeError, "\"algorithm\" must be one of (original|laplacian)");
+      TEUCHOS_TEST_FOR_EXCEPTION(algo != "original" && algo != "distance laplacian", Exceptions::RuntimeError, "\"algorithm\" must be one of (original|distance laplacian)");
 
-      SC threshold = Teuchos::as<SC>(pL.get<SC>("aggregation threshold"));
-      GetOStream(Runtime0, 0) << "algorithm = \"" << algo << "\": threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << std::endl;
+      SC threshold = as<SC>(pL.get<double>("aggregation: drop tol"));
+      GetOStream(Runtime0) << "algorithm = \"" << algo << "\": threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << std::endl;
       Set(currentLevel, "Filtering", (threshold != STS::zero()));
 
-      const typename STS::magnitudeType dirichletThreshold = STS::magnitude(pL.get<SC>("Dirichlet detection threshold"));
+      const typename STS::magnitudeType dirichletThreshold = STS::magnitude(as<SC>(pL.get<double>("aggregation: Dirichlet threshold")));
 
       GO numDropped = 0, numTotal = 0;
-      std::string graphType="unamalgamated"; //for description purposes only
+      std::string graphType = "unamalgamated"; //for description purposes only
       if (algo == "original") {
         if (predrop_ == null) {
           // ap: this is a hack: had to declare predrop_ as mutable
@@ -158,7 +161,7 @@ namespace MueLu {
           // If a user provided a predrop function, it overwrites the XML threshold parameter
           SC newt = predropConstVal->GetThreshold();
           if (newt != threshold) {
-            GetOStream(Warnings0,0) << "switching threshold parameter from " << threshold << " (list) to " << newt << " (user function" << std::endl;
+            GetOStream(Warnings0) << "switching threshold parameter from " << threshold << " (list) to " << newt << " (user function" << std::endl;
             threshold = newt;
           }
         }
@@ -185,7 +188,7 @@ namespace MueLu {
                 numLocalBoundaryNodes++;
             RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
             sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
-            GetOStream(Statistics0, 0) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
+            GetOStream(Statistics0) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
           }
 
           Set(currentLevel, "DofsPerNode", 1);
@@ -256,7 +259,7 @@ namespace MueLu {
                 numLocalBoundaryNodes++;
             RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
             sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
-            GetOStream(Statistics0, 0) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
+            GetOStream(Statistics0) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
           }
           Set(currentLevel, "Graph",       graph);
           Set(currentLevel, "DofsPerNode", 1);
@@ -350,7 +353,7 @@ namespace MueLu {
 
             RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
             sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
-            GetOStream(Statistics0, 0) << "Detected " << numGlobalBoundaryNodes
+            GetOStream(Statistics0) << "Detected " << numGlobalBoundaryNodes
                                        << " agglomerated Dirichlet nodes" << std::endl;
           }
 
@@ -364,7 +367,7 @@ namespace MueLu {
           throw Exceptions::NotImplemented("Fast CoalesceDrop with multiple DOFs and dropping is not yet implemented.");
         }
 
-      } else if (algo == "laplacian") {
+      } else if (algo == "distance laplacian") {
         LO blkSize   = A->GetFixedBlockSize();
         GO indexBase = A->getRowMap()->getIndexBase();
 
@@ -396,7 +399,7 @@ namespace MueLu {
                 numLocalBoundaryNodes++;
             RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
             sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
-            GetOStream(Statistics0, 0) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
+            GetOStream(Statistics0) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
           }
 
           Set(currentLevel, "DofsPerNode", blkSize);
@@ -478,7 +481,7 @@ namespace MueLu {
             ghostedLaplDiagData = ghostedLaplDiag->getDataNonConst(0);
 
           } else {
-            GetOStream(Runtime0,0) << "Skipping distance laplacian construction due to 0 threshold" << std::endl;
+            GetOStream(Runtime0) << "Skipping distance laplacian construction due to 0 threshold" << std::endl;
           }
 
           // NOTE: ghostedLaplDiagData might be zero if we don't actually calculate the laplacian
@@ -583,7 +586,7 @@ namespace MueLu {
 
             RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
             sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
-            GetOStream(Statistics0, 0) << "Detected " << numGlobalBoundaryNodes << " agglomerated Dirichlet nodes"
+            GetOStream(Statistics0) << "Detected " << numGlobalBoundaryNodes << " agglomerated Dirichlet nodes"
                                        << " using threshold " << dirichletThreshold << std::endl;
           }
 
@@ -597,10 +600,10 @@ namespace MueLu {
           GO numGlobalTotal, numGlobalDropped;
           sumAll(comm, numTotal,   numGlobalTotal);
           sumAll(comm, numDropped, numGlobalDropped);
-          GetOStream(Statistics0, 0) << "Number of dropped entries in " << graphType << " matrix graph: " << numGlobalDropped << "/" << numGlobalTotal;
+          GetOStream(Statistics0) << "Number of dropped entries in " << graphType << " matrix graph: " << numGlobalDropped << "/" << numGlobalTotal;
           if (numGlobalTotal != 0)
-            GetOStream(Statistics0, 0) << " (" << 100*Teuchos::as<double>(numGlobalDropped)/Teuchos::as<double>(numGlobalTotal) << "%)";
-          GetOStream(Statistics0, 0) << std::endl;
+            GetOStream(Statistics0) << " (" << 100*Teuchos::as<double>(numGlobalDropped)/Teuchos::as<double>(numGlobalTotal) << "%)";
+          GetOStream(Statistics0) << std::endl;
       }
 
     } else {
@@ -624,27 +627,26 @@ namespace MueLu {
         blockdim = strMap->getFixedBlockSize(); // TODO shorten code
         offset   = strMap->getOffset();
         oldView = A->SwitchToView(oldView);
-        GetOStream(Statistics0, -1) << "CoalesceDropFactory::Build():" << " found blockdim=" << blockdim << " from strided maps. offset=" << offset << std::endl;
-      } else GetOStream(Statistics0, -1) << "CoalesceDropFactory::Build(): no striding information available. Use blockdim=1 with offset=0" << std::endl;
+        GetOStream(Statistics0) << "CoalesceDropFactory::Build():" << " found blockdim=" << blockdim << " from strided maps. offset=" << offset << std::endl;
+      } else GetOStream(Statistics0) << "CoalesceDropFactory::Build(): no striding information available. Use blockdim=1 with offset=0" << std::endl;
 
       // 2) build (un)amalgamation information
       //    prepare generation of nodeRowMap (of amalgamated matrix)
       // TODO: special handling for blockdim=1
       RCP<AmalgamationInfo> amalInfo = Get< RCP<AmalgamationInfo> >(currentLevel, "UnAmalgamationInfo");
-      RCP<std::map<GO,std::vector<GO> > > nodegid2dofgids = amalInfo->GetGlobalAmalgamationParams();
       RCP<std::vector<GO> > gNodeIds = amalInfo->GetNodeGIDVector();
       GO cnt_amalRows = amalInfo->GetNumberOfNodes();
 
       // inter processor communication: sum up number of block ids
       GO num_blockids = 0;
       Teuchos::reduceAll<int,GO>(*(A->getRowMap()->getComm()),Teuchos::REDUCE_SUM, cnt_amalRows, Teuchos::ptr(&num_blockids) );
-      GetOStream(Statistics0, -1) << "CoalesceDropFactory::SetupAmalgamationData()" << " # of amalgamated blocks=" << num_blockids << std::endl;
+      GetOStream(Statistics0) << "CoalesceDropFactory::SetupAmalgamationData()" << " # of amalgamated blocks=" << num_blockids << std::endl;
 
       // 3) generate row map for amalgamated matrix (graph of A)
       //    with same distribution over all procs as row map of A
       Teuchos::ArrayRCP<GO> arr_gNodeIds = Teuchos::arcp( gNodeIds );
       Teuchos::RCP<Map> nodeMap = MapFactory::Build(A->getRowMap()->lib(), num_blockids, arr_gNodeIds(), indexBase, A->getRowMap()->getComm()); // note: nodeMap has same indexBase as row map of A (=dof map)
-      GetOStream(Statistics0, -1) << "CoalesceDropFactory: nodeMap " << nodeMap->getNodeNumElements() << "/" << nodeMap->getGlobalNumElements() << " elements" << std::endl;
+      GetOStream(Statistics0) << "CoalesceDropFactory: nodeMap " << nodeMap->getNodeNumElements() << "/" << nodeMap->getGlobalNumElements() << " elements" << std::endl;
 
       /////////////////////// experimental
       // vector of boundary node GIDs on current proc
@@ -718,7 +720,7 @@ namespace MueLu {
       //  }
       //}
       //Teuchos::reduceAll<int,GO>(*(A->getRowMap()->getComm()),Teuchos::REDUCE_SUM, nLocalBdryNodes, Teuchos::ptr(&nGlobalBdryNodes) );
-      //GetOStream(Debug, 0) << "CoalesceDropFactory::SetupAmalgamationData()" << " # detected Dirichlet boundary nodes = " << nGlobalBdryNodes << std::endl;
+      //GetOStream(Debug) << "CoalesceDropFactory::SetupAmalgamationData()" << " # detected Dirichlet boundary nodes = " << nGlobalBdryNodes << std::endl;
 
       //RCP<const Map> gBoundaryNodeMap = MapFactory::Build(nodeMap->lib(),
       //                                                    Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
@@ -740,7 +742,7 @@ namespace MueLu {
             numLocalBoundaryNodes++;
         RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
         sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
-        GetOStream(Statistics0, 0) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
+        GetOStream(Statistics0) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
       }
 
 

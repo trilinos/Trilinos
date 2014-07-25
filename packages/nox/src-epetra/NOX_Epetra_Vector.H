@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -71,8 +71,8 @@ namespace Epetra {
 //! Implementation of NOX::Abstract::Vector for %Epetra vectors.
 class Vector : public virtual NOX::Abstract::Vector {
 
- public:			
-  
+ public:
+
   //! Type of memory management to use when constructing the vector.
   enum MemoryType {
     //! Keeps a pointer to and uses the actual Epetra_Vector passed in.
@@ -82,34 +82,34 @@ class Vector : public virtual NOX::Abstract::Vector {
   };
 
   /*! \brief Constructor that creates a COPY or VIEW of the Epetra_Vector.
- 
+
     NOTE: This ctor should just always create a view.  It should be
     implicit from the fact that a RCP object is being passed
     in that a persisting relationship is present.  However, since this
     could cause confusion, the default is to make a copy and if a user
     wants a view, they must pass in an explicit flag.
 
-    A VIEW of a vector uses the same underlying memory.  
+    A VIEW of a vector uses the same underlying memory.
     WARNING: A View can be dangerous since multiple objects can access
-    the same memory locations.  
+    the same memory locations.
    */
-  Vector(const Teuchos::RCP<Epetra_Vector>& source, 
-	 NOX::Epetra::Vector::MemoryType memoryType = 
-	 NOX::Epetra::Vector::CreateCopy,
-	 NOX::CopyType type = NOX::DeepCopy,
-	 Teuchos::RCP<NOX::Epetra::VectorSpace> vs = 
-	 Teuchos::null);
+  Vector(const Teuchos::RCP<Epetra_Vector>& source,
+     NOX::Epetra::Vector::MemoryType memoryType =
+     NOX::Epetra::Vector::CreateCopy,
+     NOX::CopyType type = NOX::DeepCopy,
+     Teuchos::RCP<NOX::Epetra::VectorSpace> vs =
+     Teuchos::null);
 
   //! Construct by copying map and/or elements of an Epetra_Vector.
   /*! Allocates an entirely new vector. Does NOT allow for a view. */
-  Vector(const Epetra_Vector& source, 
-	 NOX::CopyType type = NOX::DeepCopy,
-	 Teuchos::RCP<NOX::Epetra::VectorSpace> vs = 
-	 Teuchos::null);
+  Vector(const Epetra_Vector& source,
+     NOX::CopyType type = NOX::DeepCopy,
+     Teuchos::RCP<NOX::Epetra::VectorSpace> vs =
+     Teuchos::null);
 
   //! Copy constructor.
-  Vector(const NOX::Epetra::Vector& source, 
-	 NOX::CopyType type = NOX::DeepCopy);
+  Vector(const NOX::Epetra::Vector& source,
+     NOX::CopyType type = NOX::DeepCopy);
 
   //! Destruct Vector.
   ~Vector();
@@ -121,7 +121,7 @@ class Vector : public virtual NOX::Abstract::Vector {
 
   //! Get const reference to underlying Epetra vector.
   virtual const Epetra_Vector& getEpetraVector() const;
- 
+
   //@}
 
   //@{ \name Initialization methods.
@@ -140,7 +140,7 @@ class Vector : public virtual NOX::Abstract::Vector {
   // derived
   virtual NOX::Abstract::Vector& operator=(const NOX::Epetra::Vector& y);
   virtual NOX::Abstract::Vector& operator=(const NOX::Abstract::Vector& y);
-  
+
   // derived
   virtual NOX::Abstract::Vector& abs(const NOX::Epetra::Vector& y);
   virtual NOX::Abstract::Vector& abs(const NOX::Abstract::Vector& y);
@@ -161,30 +161,30 @@ class Vector : public virtual NOX::Abstract::Vector {
   virtual NOX::Abstract::Vector& scale(const NOX::Abstract::Vector& a);
 
   // derived
-  virtual NOX::Abstract::Vector& update(double alpha, const NOX::Epetra::Vector& a, 
-			     double gamma = 0.0);
-  virtual NOX::Abstract::Vector& update(double alpha, const NOX::Abstract::Vector& a, 
-			     double gamma = 0.0);
+  virtual NOX::Abstract::Vector& update(double alpha, const NOX::Epetra::Vector& a,
+                 double gamma = 0.0);
+  virtual NOX::Abstract::Vector& update(double alpha, const NOX::Abstract::Vector& a,
+                 double gamma = 0.0);
 
   // derived
-  virtual NOX::Abstract::Vector& update(double alpha, const NOX::Epetra::Vector& a, 
-			     double beta, const NOX::Epetra::Vector& b,
-			     double gamma = 0.0);
-  virtual NOX::Abstract::Vector& update(double alpha, const NOX::Abstract::Vector& a, 
-			     double beta, const NOX::Abstract::Vector& b,
-			     double gamma = 0.0);
+  virtual NOX::Abstract::Vector& update(double alpha, const NOX::Epetra::Vector& a,
+                 double beta, const NOX::Epetra::Vector& b,
+                 double gamma = 0.0);
+  virtual NOX::Abstract::Vector& update(double alpha, const NOX::Abstract::Vector& a,
+                 double beta, const NOX::Abstract::Vector& b,
+                 double gamma = 0.0);
 
 
   //@}
 
-  //@{ \name Creating new Vectors. 
+  //@{ \name Creating new Vectors.
 
   // derived
-  virtual Teuchos::RCP<NOX::Abstract::Vector> 
+  virtual Teuchos::RCP<NOX::Abstract::Vector>
   clone(CopyType type = DeepCopy) const;
 
-  /*! 
-   * \brief Create a MultiVector with \c numVecs+1 columns out of an array of 
+  /*!
+   * \brief Create a MultiVector with \c numVecs+1 columns out of an array of
    * Vectors.  The vector stored under \c this will be the first column with
    * the remaining \c numVecs columns given by \c vecs.
    *
@@ -193,10 +193,10 @@ class Vector : public virtual NOX::Abstract::Vector {
    */
   virtual Teuchos::RCP<NOX::Abstract::MultiVector>
   createMultiVector(const NOX::Abstract::Vector* const* vecs,
-		    int numVecs, NOX::CopyType type = NOX::DeepCopy) const;
+            int numVecs, NOX::CopyType type = NOX::DeepCopy) const;
 
-  /*! 
-   * \brief Create a MultiVector with \c numVecs columns.  
+  /*!
+   * \brief Create a MultiVector with \c numVecs columns.
    *
    * The implementation here creates a NOX::Epetra::MultiVector with
    * either Shape or Deep copies of the supplied vector.
@@ -226,21 +226,21 @@ class Vector : public virtual NOX::Abstract::Vector {
   //@}
 
   // derived
-  virtual int length() const;
+  virtual NOX::size_type length() const;
 
   // derived
   virtual void print(std::ostream& stream) const;
 
   //! Returns the NOX::Epetra::VectorSpace associated with this vector.
-  virtual Teuchos::RCP<NOX::Epetra::VectorSpace> 
+  virtual Teuchos::RCP<NOX::Epetra::VectorSpace>
   getVectorSpace() const;
 
  protected:
-  
+
   //! Pointer to petra vector owned by this object
   Teuchos::RCP<Epetra_Vector> epetraVec;
 
-  //! Pointer to the vector space. 
+  //! Pointer to the vector space.
   Teuchos::RCP<NOX::Epetra::VectorSpace> vectorSpace;
 
 };

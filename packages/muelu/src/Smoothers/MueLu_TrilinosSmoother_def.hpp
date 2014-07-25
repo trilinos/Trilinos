@@ -92,7 +92,7 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(sEpetra_.is_null(), Exceptions::RuntimeError, "Unable to construct Ifpack smoother");
     } catch (Exceptions::RuntimeError) {
       // IfpackSmoother throws if Scalar != double, LocalOrdinal != int, GlobalOrdinal != int
-      this->GetOStream(Debug,0) << "Skipping IfpackSmoother construction due to incorrect type" << std::endl;
+      this->GetOStream(Debug) << "Skipping IfpackSmoother construction due to incorrect type" << std::endl;
     }
     triedEpetra = true;
 #endif
@@ -129,7 +129,7 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(Level& currentLevel) {
     if (SmootherPrototype::IsSetup() == true)
-      this->GetOStream(Warnings0, 0) << "Warning: MueLu::TrilinosSmoother::Setup(): Setup() has already been called";
+      this->GetOStream(Warnings0) << "MueLu::TrilinosSmoother::Setup(): Setup() has already been called";
 
     s_->Setup(currentLevel);
 
@@ -170,6 +170,7 @@ namespace MueLu {
     if (type == "ILUT")       { return "ILUT";                         }
     if (type == "RILUK")      { return "ILU";                          }
     if (type == "ILU")        { return "ILU";                          }
+    if (type == "Amesos")     { return "Amesos";                       }
 
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Cannot convert Ifpack2 preconditioner name to Ifpack: unknown type: " + type);
   }
@@ -181,8 +182,10 @@ namespace MueLu {
     if (ifpack2List.isParameter("relaxation: type") && ifpack2List.get<std::string>("relaxation: type") == "Symmetric Gauss-Seidel")
       ifpack1List.set("relaxation: type", "symmetric Gauss-Seidel");
 
-    if (ifpack2List.isParameter("fact: iluk level-of-fill"))
-      ifpack1List.remove("fact: level-of-fill", ifpack2List.get<int>("fact: iluk level-of-fill"));
+    if (ifpack2List.isParameter("fact: iluk level-of-fill")) {
+      ifpack1List.remove("fact: iluk level-of-fill");
+      ifpack1List.set("fact: level-of-fill", ifpack2List.get<int>("fact: iluk level-of-fill"));
+    }
 
     return ifpack1List;
   }

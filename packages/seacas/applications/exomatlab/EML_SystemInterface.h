@@ -34,10 +34,11 @@
 #ifndef _SystemInterface_h
 #define _SystemInterface_h
 
-#include <EML_CodeTypes.h>
-#include <GetLongOpt.h>
+#include <EML_CodeTypes.h>              // for StringIdVector
+#include <GetLongOpt.h>                 // for GetLongOption
+#include <iosfwd>                       // for ostream
+#include <string>                       // for string
 
-#include <iosfwd>
 class SystemInterface
 {
  public:

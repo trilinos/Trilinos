@@ -47,11 +47,11 @@
 #include "defines.h"
 #ifdef __cplusplus
 extern "C" {
-#endif 
+#endif
 
 void	permute_mat(DATA_TYPE *,int *);
 
 #ifdef __cplusplus
 }
-#endif 
-#endif 
+#endif
+#endif

@@ -49,11 +49,12 @@
 #include <string>
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_ParameterListAcceptor.hpp"
-#include "MueLu_PFactory.hpp"
 #include "MueLu_SaPFactory_fwd.hpp"
 
 #include "MueLu_Level_fwd.hpp"
+#include "MueLu_ParameterListAcceptor.hpp"
+#include "MueLu_PerfUtils_fwd.hpp"
+#include "MueLu_PFactory.hpp"
 #include "MueLu_SingleLevelFactoryBase_fwd.hpp"
 #include "MueLu_TentativePFactory_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
@@ -84,7 +85,7 @@ namespace MueLu {
     //! Destructor.
     virtual ~SaPFactory() { }
 
-    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+    RCP<const ParameterList> GetValidParameterList() const;
 
     //@}
 

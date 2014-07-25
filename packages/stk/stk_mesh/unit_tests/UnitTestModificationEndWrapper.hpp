@@ -9,7 +9,7 @@
 #ifndef unit_test_UnitTestModificationEndWrapper_hpp
 #define unit_test_UnitTestModificationEndWrapper_hpp
 
-#include <stk_mesh/base/BulkData.hpp>
+namespace stk { namespace mesh { class BulkData; } }
 
 // must be in same namespace as BulkData to make friending w/out exposure possible
 

@@ -56,6 +56,7 @@ int main(int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>    // => typedef MueLu::FooClass<Scalar, LocalOrdinal, ...> Foo
 
   using Teuchos::RCP; // reference count pointers
+  using Teuchos::rcp; // reference count pointers
 
   //
   // MPI initialization using Teuchos
@@ -139,7 +140,7 @@ int main(int argc, char *argv[]) {
   // Use AMG directly as an iterative solver (not as a preconditionner)
   int nIts = 9;
 
-  H.Iterate(*B, nIts, *X);
+  H.Iterate(*B, *X, nIts);
 
   // Print relative residual norm
   Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = Utils::ResidualNorm(*A, *X, *B)[0];

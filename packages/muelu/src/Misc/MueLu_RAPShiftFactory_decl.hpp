@@ -55,11 +55,12 @@
 #include <Xpetra_VectorFactory_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_TwoLevelFactoryBase.hpp"
 #include "MueLu_RAPShiftFactory_fwd.hpp"
 
-#include "MueLu_Level_fwd.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
+#include "MueLu_Level_fwd.hpp"
+#include "MueLu_PerfUtils_fwd.hpp"
+#include "MueLu_TwoLevelFactoryBase.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {

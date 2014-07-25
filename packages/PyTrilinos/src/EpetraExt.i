@@ -21,7 +21,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact Bill Spotz (wfspotz@sandia.gov)
 //
@@ -128,6 +128,7 @@ example subdirectory of the PyTrilinos package:
 #include "Epetra_Export.h"
 #include "Epetra_OffsetIndex.h"
 #include "Epetra_Time.h"
+#include "Epetra_GIDTypeVector.h"
 
 // Epetra python includes
 #define NO_IMPORT_ARRAY
@@ -460,15 +461,57 @@ std::vector<Epetra_IntVector>;
 %template (Xform_CrsGraph_MapColoring)
 EpetraExt::Transform<Epetra_CrsGraph, Epetra_MapColoring>;
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+
+%template (Xform_CrsGraph_vecIntVector)
+EpetraExt::
+Transform< Epetra_CrsGraph,
+           std::vector< Epetra_GIDTypeVector< int >::impl,
+                        std::allocator< Epetra_GIDTypeVector< int >::impl > > >;
+ //Transform<Epetra_CrsGraph, std::vector<Epetra_IntVector,
+ //                                      std::allocator<Epetra_IntVector> > >;
+
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+
+%template (Xform_CrsGraph_vecLongVector)
+EpetraExt::
+Transform< Epetra_CrsGraph,
+           std::vector< Epetra_GIDTypeVector< long long >::impl,
+                        std::allocator< Epetra_GIDTypeVector< long long >::impl > > >;
+
+#endif
+
 %template (Xform_CrsGraph_vecIntVector)
 EpetraExt::Transform<Epetra_CrsGraph, std::vector<Epetra_IntVector,
                                                   std::allocator<Epetra_IntVector> > >;
-
 %template (Xform_CrsMatrix_CrsMatrix)
 EpetraExt::Transform<Epetra_CrsMatrix, Epetra_CrsMatrix >;
 
 %template (SXform_CrsGraph_MapColoring)
 EpetraExt::StructuralTransform<Epetra_CrsGraph, Epetra_MapColoring>;
+
+// %template (SXform_CrsGraph_vecIntVector)
+// EpetraExt::StructuralTransform<Epetra_CrsGraph, std::vector<Epetra_IntVector> >;
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+
+%template (SXform_CrsGraph_vecIntVector)
+EpetraExt::
+StructuralTransform<Epetra_CrsGraph,
+                    std::vector< Epetra_GIDTypeVector< int >::impl > >;
+
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+
+%template (SXform_CrsGraph_vecLongVector)
+EpetraExt::
+StructuralTransform<Epetra_CrsGraph,
+                    std::vector< Epetra_GIDTypeVector<long long>::impl > >;
+
+#endif
 
 %template (SXform_CrsGraph_vecIntVector)
 EpetraExt::StructuralTransform<Epetra_CrsGraph, std::vector<Epetra_IntVector> >;
@@ -480,6 +523,18 @@ EpetraExt::SameTypeTransform<Epetra_CrsMatrix >;
 // EpetraExt_MapColoring support //
 ///////////////////////////////////
 %include "EpetraExt_MapColoring.h"
+
+//////////////////////////////////////////////////
+// EpetraExt_TCrsGraph_MapColoringIndex support //
+//////////////////////////////////////////////////
+%ignore EpetraExt::TCrsGraph_MapColoringIndex::operator();
+%include "EpetraExt_TCrsGraph_MapColoringIndex.h"
+
+%template (TCrsGraph_MapColoringIndex_int)
+EpetraExt::TCrsGraph_MapColoringIndex<int>;
+
+%template (TCrsGraph_MapColoringIndex_long)
+EpetraExt::TCrsGraph_MapColoringIndex<long long>;
 
 ////////////////////////////////////////
 // EpetraExt_MapColoringIndex support //
@@ -968,7 +1023,11 @@ class OutArgs(PropertyBase):
 //
 %feature("director") EpetraExt::ModelEvaluator;
 
-namespace EpetraExt {
+%teuchos_rcp(EpetraExt::ModelEvaluator)
+
+namespace EpetraExt
+{
+
 class ModelEvaluator : virtual public Teuchos::Describable
 {
 public:

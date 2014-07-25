@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -57,8 +57,8 @@
 
 LOCA::Epetra::AugmentedOp::AugmentedOp(
  const Teuchos::RCP<LOCA::GlobalData>& global_data,
- const Teuchos::RCP<Epetra_Operator>& jac, 
- const Teuchos::RCP<const Epetra_MultiVector>& a_, 
+ const Teuchos::RCP<Epetra_Operator>& jac,
+ const Teuchos::RCP<const Epetra_MultiVector>& a_,
  const Teuchos::RCP<const Epetra_MultiVector>& b_,
  const Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix> c_)
   : globalData(global_data),
@@ -87,16 +87,16 @@ LOCA::Epetra::AugmentedOp::AugmentedOp(
   haveParamComponent = (underlyingComm.MyPID() == 0);
 
   // Build extended map
-  buildExtendedMap(underlyingMap, extendedMapPtr, false, 
-		   haveParamComponent);
+  buildExtendedMap(underlyingMap, extendedMapPtr, false,
+           haveParamComponent);
 
   // Build extended importer map
-  buildExtendedMap(underlyingMap, extendedImportMapPtr, true, 
-		   haveParamComponent);
+  buildExtendedMap(underlyingMap, extendedImportMapPtr, true,
+           haveParamComponent);
 
   // Build importer
   extendedImporter = new Epetra_Import(*extendedImportMapPtr,
-				       *extendedMapPtr);
+                       *extendedMapPtr);
 }
 
 LOCA::Epetra::AugmentedOp::~AugmentedOp()
@@ -109,17 +109,17 @@ LOCA::Epetra::AugmentedOp::~AugmentedOp()
   delete tmp;
 }
 
-int 
-LOCA::Epetra::AugmentedOp::SetUseTranspose(bool UseTranspose) 
+int
+LOCA::Epetra::AugmentedOp::SetUseTranspose(bool UseTranspose)
 {
   useTranspose = UseTranspose;
   jacOperator->SetUseTranspose(UseTranspose);
   return 0;
 }
 
-int 
-LOCA::Epetra::AugmentedOp::Apply(const Epetra_MultiVector& Input, 
-				 Epetra_MultiVector& Result) const
+int
+LOCA::Epetra::AugmentedOp::Apply(const Epetra_MultiVector& Input,
+                 Epetra_MultiVector& Result) const
 {
 
   // Get number of vectors
@@ -128,7 +128,7 @@ LOCA::Epetra::AugmentedOp::Apply(const Epetra_MultiVector& Input,
   // Check num vectors is correct
   if (importedInput == NULL || n != importedInput->NumVectors())
     globalData->locaErrorCheck->throwError("LOCA::Epetra::AugmentedOp::Apply()"
-					   "Must call init() before Apply()!");
+                       "Must call init() before Apply()!");
 
   // Import parameter components
   importedInput->Import(Input, *extendedImporter, Insert);
@@ -155,7 +155,7 @@ LOCA::Epetra::AugmentedOp::Apply(const Epetra_MultiVector& Input,
   jacOperator->Apply(input_x, result_x);
 
   if (useTranspose) {
-    
+
     // Compute J^T*input_x + b*input_y
     result_x.Multiply('N', 'N', 1.0, *b, input_y, 1.0);
 
@@ -165,7 +165,7 @@ LOCA::Epetra::AugmentedOp::Apply(const Epetra_MultiVector& Input,
 
   }
   else {
-    
+
     // Compute J*input_x + a*input_y
     result_x.Multiply('N', 'N', 1.0, *a, input_y, 1.0);
 
@@ -179,16 +179,16 @@ LOCA::Epetra::AugmentedOp::Apply(const Epetra_MultiVector& Input,
   if (haveParamComponent)
     for (int j=0; j<n; j++)
       for (int i=0; i<numConstraints; i++)
-	result_view[j][underlyingLength+i] = (*result_y)[j][i];
+    result_view[j][underlyingLength+i] = (*result_y)[j][i];
 
    delete [] input_view_y;
 
   return 0;
 }
 
-int 
-LOCA::Epetra::AugmentedOp::ApplyInverse(const Epetra_MultiVector& Input, 
-					Epetra_MultiVector& Result) const
+int
+LOCA::Epetra::AugmentedOp::ApplyInverse(const Epetra_MultiVector& Input,
+                    Epetra_MultiVector& Result) const
 {
 
   // Get number of vectors
@@ -197,8 +197,8 @@ LOCA::Epetra::AugmentedOp::ApplyInverse(const Epetra_MultiVector& Input,
   // Check num vectors is correct
   if (importedInput == NULL || n != importedInput->NumVectors())
     globalData->locaErrorCheck->throwError(
-				 "LOCA::Epetra::AugmentedOp::ApplyInverse()"
-				 "Must call init() before ApplyInverse()!");
+                 "LOCA::Epetra::AugmentedOp::ApplyInverse()"
+                 "Must call init() before ApplyInverse()!");
 
   // Import parameter components
   importedInput->Import(Input, *extendedImporter, Insert);
@@ -227,8 +227,8 @@ LOCA::Epetra::AugmentedOp::ApplyInverse(const Epetra_MultiVector& Input,
   // Temporary epetra vectors
   Epetra_MultiVector tmp2(c);
   tmp->PutScalar(0.0);
- 
-  // Solve J*result_x = input_x 
+
+  // Solve J*result_x = input_x
   jacOperator->ApplyInverse(input_x, result_x);
 
   if (useTranspose) {
@@ -259,21 +259,21 @@ LOCA::Epetra::AugmentedOp::ApplyInverse(const Epetra_MultiVector& Input,
   // Solve (c - z^T*tmp1)^-1 * (input_y - z^T*result_x)  where z = a or b
   int *ipiv = new int[numConstraints];
   int info;
-  double *result_y_view; 
+  double *result_y_view;
   int result_y_lda;
   result_y->ExtractView(&result_y_view, &result_y_lda);
   double *tmp2_view;
   int tmp2_lda;
   tmp2.ExtractView(&tmp2_view, &tmp2_lda);
-  dlapack.GESV(numConstraints, n, tmp2_view, tmp2_lda, ipiv, result_y_view, 
-	       result_y_lda, &info);
+  dlapack.GESV(numConstraints, n, tmp2_view, tmp2_lda, ipiv, result_y_view,
+           result_y_lda, &info);
   delete [] ipiv;
   if (info != 0) {
     globalData->locaErrorCheck->throwError(
-				 "LOCA::Epetra::AugmentedOp::ApplyInverse()"
-				 "Solve of dense matrix failed!");
+                 "LOCA::Epetra::AugmentedOp::ApplyInverse()"
+                 "Solve of dense matrix failed!");
   }
-  
+
   // Compute result_x = result_x - tmp*result_y
   result_x.Multiply('N', 'N', -1.0, *tmp, *result_y, 1.0);
 
@@ -281,14 +281,14 @@ LOCA::Epetra::AugmentedOp::ApplyInverse(const Epetra_MultiVector& Input,
   if (haveParamComponent)
     for (int j=0; j<n; j++)
       for (int i=0; i<numConstraints; i++)
-	result_view[j][underlyingLength+i] = (*result_y)[j][i];
+    result_view[j][underlyingLength+i] = (*result_y)[j][i];
 
   delete [] input_view_y;
 
   return 0;
 }
 
-double 
+double
 LOCA::Epetra::AugmentedOp::NormInf() const
 {
   double Jn, an, bn;
@@ -314,36 +314,36 @@ LOCA::Epetra::AugmentedOp::NormInf() const
 }
 
 
-const char* 
+const char*
 LOCA::Epetra::AugmentedOp::Label () const
 {
   return const_cast<char*>(label.c_str());
 }
-  
-bool 
+
+bool
 LOCA::Epetra::AugmentedOp::UseTranspose() const
 {
   return useTranspose;
 }
 
-bool 
+bool
 LOCA::Epetra::AugmentedOp::HasNormInf() const
 {
   return jacOperator->HasNormInf();
 }
 
-const Epetra_Comm& 
+const Epetra_Comm&
 LOCA::Epetra::AugmentedOp::Comm() const
 {
   return underlyingComm;
 }
-const Epetra_Map& 
+const Epetra_Map&
 LOCA::Epetra::AugmentedOp::OperatorDomainMap() const
 {
   return *extendedMapPtr;
 }
 
-const Epetra_Map& 
+const Epetra_Map&
 LOCA::Epetra::AugmentedOp::OperatorRangeMap() const
 {
   return *extendedMapPtr;
@@ -358,8 +358,8 @@ LOCA::Epetra::AugmentedOp::init(const Epetra_MultiVector& x)
       delete result_y;
       delete tmp;
     }
-    importedInput = new Epetra_MultiVector(*extendedImportMapPtr, 
-					   x.NumVectors());
+    importedInput = new Epetra_MultiVector(*extendedImportMapPtr,
+                       x.NumVectors());
     result_y = new Epetra_MultiVector(localMap, x.NumVectors());
     tmp = new Epetra_MultiVector(underlyingMap, x.NumVectors());
   }
@@ -367,21 +367,21 @@ LOCA::Epetra::AugmentedOp::init(const Epetra_MultiVector& x)
 
 Teuchos::RCP<Epetra_MultiVector>
 LOCA::Epetra::AugmentedOp::buildEpetraAugmentedMultiVec(
-			     const Epetra_MultiVector& x,
-			     const NOX::Abstract::MultiVector::DenseMatrix *y, 
-			     bool doCopy) const
+                 const Epetra_MultiVector& x,
+                 const NOX::Abstract::MultiVector::DenseMatrix *y,
+                 bool doCopy) const
 {
-  Teuchos::RCP<Epetra_MultiVector> extVec = 
+  Teuchos::RCP<Epetra_MultiVector> extVec =
     Teuchos::rcp(new Epetra_MultiVector(*extendedMapPtr, x.NumVectors()));
 
   if (doCopy) {
     for (int j=0; j<x.NumVectors(); j++) {
       for (int i=0; i<underlyingLength; i++)
-	(*extVec)[j][i] = x[j][i];
+    (*extVec)[j][i] = x[j][i];
 
       if (haveParamComponent && y != NULL)
-	for (int i=0; i<numConstraints; i++) 
-	  (*extVec)[j][underlyingLength+i] = (*y)(i,j);
+    for (int i=0; i<numConstraints; i++)
+      (*extVec)[j][underlyingLength+i] = (*y)(i,j);
     }
   }
   return extVec;
@@ -389,15 +389,15 @@ LOCA::Epetra::AugmentedOp::buildEpetraAugmentedMultiVec(
 
 void
 LOCA::Epetra::AugmentedOp::setEpetraAugmentedMultiVec(
-				 Epetra_MultiVector& x, 
-				 NOX::Abstract::MultiVector::DenseMatrix& y, 
-				 const Epetra_MultiVector& augMultiVec) const
+                 Epetra_MultiVector& x,
+                 NOX::Abstract::MultiVector::DenseMatrix& y,
+                 const Epetra_MultiVector& augMultiVec) const
 {
   // Check num vectors is correct
   if (importedInput == NULL || x.NumVectors() != importedInput->NumVectors())
     globalData->locaErrorCheck->throwError(
-		     "LOCA::Epetra::AugmentedOp::setEpetraAugmentedMultiVec()"
-		     "Must call init() before setEpetraAugmentedMultiVec()!");
+             "LOCA::Epetra::AugmentedOp::setEpetraAugmentedMultiVec()"
+             "Must call init() before setEpetraAugmentedMultiVec()!");
 
   // Import parameter components
   importedInput->Import(augMultiVec, *extendedImporter, Insert);
@@ -412,14 +412,14 @@ LOCA::Epetra::AugmentedOp::setEpetraAugmentedMultiVec(
 
 void
 LOCA::Epetra::AugmentedOp::buildExtendedMap(const Epetra_BlockMap& uMap,
-					    Epetra_Map*& eMapPtr,
-					    bool buildImporter,
-					    bool haveParam)
+                        Epetra_Map*& eMapPtr,
+                        bool buildImporter,
+                        bool haveParam)
 {
   Epetra_BlockMap& nonconstUnderlyingMap = const_cast<Epetra_BlockMap&>(uMap);
 
   // Convert underlying map to point map if necessary
-  Epetra_Map* uPointMapPtr = 
+  Epetra_Map* uPointMapPtr =
     dynamic_cast<Epetra_Map*>(&nonconstUnderlyingMap);
   bool allocatedPointMap = false;
   if (uPointMapPtr == NULL) {
@@ -440,7 +440,7 @@ LOCA::Epetra::AugmentedOp::buildExtendedMap(const Epetra_BlockMap& uMap,
 
   // Compute number of extended global elements
   if (buildImporter)
-    ext_num_global_elements = 
+    ext_num_global_elements =
       num_global_elements + numConstraints*comm.NumProc();
   else
     ext_num_global_elements = num_global_elements + numConstraints;
@@ -464,7 +464,7 @@ LOCA::Epetra::AugmentedOp::buildExtendedMap(const Epetra_BlockMap& uMap,
 
   // Create extended point map
   eMapPtr = new Epetra_Map(ext_num_global_elements, ext_num_my_elements,
-			   ext_global_elements, index_base, comm);
+               ext_global_elements, index_base, comm);
 
   // Free global elements array
   delete [] ext_global_elements;
@@ -474,7 +474,7 @@ LOCA::Epetra::AugmentedOp::buildExtendedMap(const Epetra_BlockMap& uMap,
 
 int
 LOCA::Epetra::AugmentedOp::blockMap2PointMap(const Epetra_BlockMap& BlockMap,
-				    Epetra_Map*& PointMap) const
+                    Epetra_Map*& PointMap) const
 {
   // Generate an Epetra_Map that has the same number and distribution of points
   // as the input Epetra_BlockMap object.  The global IDs for the output PointMap
@@ -483,8 +483,9 @@ LOCA::Epetra::AugmentedOp::blockMap2PointMap(const Epetra_BlockMap& BlockMap,
 
   int MaxElementSize = BlockMap.MaxElementSize();
   int PtNumMyElements = BlockMap.NumMyPoints();
-  int * PtMyGlobalElements = 0;
-  if (PtNumMyElements>0) PtMyGlobalElements = new int[PtNumMyElements];
+
+  TEUCHOS_ASSERT_INEQUALITY(PtNumMyElements, >, 0);
+  int * PtMyGlobalElements = new int[PtNumMyElements];
 
   int NumMyElements = BlockMap.NumMyElements();
 
@@ -500,6 +501,8 @@ LOCA::Epetra::AugmentedOp::blockMap2PointMap(const Epetra_BlockMap& BlockMap,
 
   if (PtNumMyElements>0) delete [] PtMyGlobalElements;
 
-  if (!BlockMap.PointSameAs(*PointMap)) {EPETRA_CHK_ERR(-1);} // Maps not compatible
+  // Maps not compatible?
+  TEUCHOS_TEST_FOR_EXCEPT(!BlockMap.PointSameAs(*PointMap));
+
   return(0);
 }

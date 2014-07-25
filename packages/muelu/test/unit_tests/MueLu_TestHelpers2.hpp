@@ -111,7 +111,7 @@ namespace MueLuTests {
             RCP<CoupledAggregationFactory> aggFact = rcp(new CoupledAggregationFactory());
             aggFact->SetMinNodesPerAggregate(3);
             aggFact->SetMaxNeighAlreadySelected(0);
-            aggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+            aggFact->SetOrdering("natural");
             aggFact->SetPhase3AggCreation(0.5);
 
             Teuchos::ParameterList smootherParamList;

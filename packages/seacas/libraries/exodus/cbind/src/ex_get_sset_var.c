@@ -54,8 +54,8 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_get_var, ex_entity_id, etc
 
 /*!
  * reads the values of a single sideset variable for one sideset at 

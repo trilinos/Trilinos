@@ -9,7 +9,7 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
 )
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
-  MPI_DEBUG_MueLu
+  MPICH2_1.4.1p1_DEBUG_MueLu
   ctest_linux_nightly_mpi_debug_muelu_typhon.cmake
   CTEST_INSTALLER_TYPE release
   RUN_SERIAL
@@ -48,13 +48,13 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
   TIMEOUT_MINUTES 330
 )
 
-TRILINOS_DRIVER_ADD_DASHBOARD(
-  SERIAL_DEBUG_MueLu_ExtraTypes_EI_CLANG
-  ctest_linux_nightly_mpi_debug_muelu_extratypes_ei_typhon_clang.cmake
-  CTEST_INSTALLER_TYPE release
-  RUN_SERIAL
-  TIMEOUT_MINUTES 330
-)
+#TRILINOS_DRIVER_ADD_DASHBOARD(
+#  SERIAL_DEBUG_MueLu_ExtraTypes_EI_CLANG
+#  ctest_linux_nightly_mpi_debug_muelu_extratypes_ei_typhon_clang.cmake
+#  CTEST_INSTALLER_TYPE release
+#  RUN_SERIAL
+#  TIMEOUT_MINUTES 330
+#)
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
   SERIAL_RELEASE_MueLu_Experimental
@@ -65,7 +65,7 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
 )
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
-  MPI_RELEASE_MueLu
+  MPICH2_1.4.1p1_RELEASE_MueLu
   ctest_linux_nightly_mpi_release_muelu_typhon.cmake
   CTEST_INSTALLER_TYPE release
   RUN_SERIAL

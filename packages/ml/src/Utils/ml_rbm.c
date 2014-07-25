@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -30,7 +30,7 @@
                               translations (elasticity)     scalar   | rotations around (elasticity)
                                       x       y       z      eqn#1   |        x        y         z
                               -----------------------------------------------------------------------
-        x-direction (elasticity)      1       0       0        0     |     0      z-zhat    yhat-y 
+        x-direction (elasticity)      1       0       0        0     |     0      z-zhat    yhat-y
         y-direction (elasticity)      0       1       0        0     |  zhat-z      0       x-xhat
         z-direction (elasticity)      0       0       1        0     |  y-yhat    xhat-x        0
         scalar equation #1            0       0       0        1     |    0        0            0
@@ -38,8 +38,8 @@
         y-rot (elasticity)            0       0       0        0     |    0        1            0
         z-rot (elasticity)            0       0       0        0     |    0        0            1
 
-    3D elasticity with bricks would be the same with the last 3 rows removed. 2D elasticity would 
-    also remove the 3rd row and columns 3, 5 and 6. 1D elasticty would remove all but rows 1 and 
+    3D elasticity with bricks would be the same with the last 3 rows removed. 2D elasticity would
+    also remove the 3rd row and columns 3, 5 and 6. 1D elasticty would remove all but rows 1 and
     4 and columns 1 and 4.
 
 ******************************************************************************* */
@@ -57,19 +57,19 @@ int ML_Coord2RBM(int Nnodes, double x[], double y[], double z[], double rbm[], i
       dof = node*Ndof;
       switch( Ndof - NscalarDof )
       {
-         case 6: 
+         case 6:
             for(ii=3;ii<6+NscalarDof;ii++){ /* lower half = [ 0 I ] */
               for(jj=0;jj<6+NscalarDof;jj++){
                 offset = dof+ii+jj*vec_leng;
                 rbm[offset] = (ii==jj) ? 1.0 : 0.0;
               }
             }
-
-         case 3: 
+            break;
+         case 3:
             for(ii=0;ii<3+NscalarDof;ii++){ /* upper left = [ I ] */
               for(jj=0;jj<3+NscalarDof;jj++){
                 offset = dof+ii+jj*vec_leng;
-                rbm[offset] = (ii==jj) ? 1.0 : 0.0;        
+                rbm[offset] = (ii==jj) ? 1.0 : 0.0;
               }
             }
             for(ii=0;ii<3;ii++){ /* upper right = [ Q ] */
@@ -83,25 +83,25 @@ int ML_Coord2RBM(int Nnodes, double x[], double y[], double z[], double rbm[], i
                     else rbm[offset] = 0.0;
                 }
               }
-            } 
+            }
             ii = 0; jj = 5+NscalarDof; offset = dof+ii+jj*vec_leng; rbm[offset] *= -1.0;
             ii = 1; jj = 3+NscalarDof; offset = dof+ii+jj*vec_leng; rbm[offset] *= -1.0;
             ii = 2; jj = 4+NscalarDof; offset = dof+ii+jj*vec_leng; rbm[offset] *= -1.0;
             break;
-         case 2: 
+         case 2:
             for(ii=0;ii<2+NscalarDof;ii++){ /* upper left = [ I ] */
               for(jj=0;jj<2+NscalarDof;jj++){
                 offset = dof+ii+jj*vec_leng;
-                rbm[offset] = (ii==jj) ? 1.0 : 0.0;        
+                rbm[offset] = (ii==jj) ? 1.0 : 0.0;
               }
             }
             for(ii=0;ii<2+NscalarDof;ii++){ /* upper right = [ Q ] */
               for(jj=2+NscalarDof;jj<3+NscalarDof;jj++){
                 offset = dof+ii+jj*vec_leng;
                 if (ii == 0) rbm[offset] = -y[node];
-                else { 
+                else {
                   if (ii == 1){  rbm[offset] =  x[node];}
-                  else rbm[offset] = 0.0; 
+                  else rbm[offset] = 0.0;
                 }
               }
             }
@@ -109,13 +109,13 @@ int ML_Coord2RBM(int Nnodes, double x[], double y[], double z[], double rbm[], i
          case 1:
              for (ii = 0; ii<1+NscalarDof; ii++) {
                for (jj=0; jj<1+NscalarDof; jj++) {
-                  offset = dof+ii+jj*vec_leng;  
-                  rbm[offset] = (ii == jj) ? 1.0 : 0.0; 
+                  offset = dof+ii+jj*vec_leng;
+                  rbm[offset] = (ii == jj) ? 1.0 : 0.0;
                 }
              }
             break;
 
-         default: 
+         default:
             printf("ML_Coord2RBM: Ndof = %d not implemented\n",Ndof);
             exit(1);
       } /*switch*/

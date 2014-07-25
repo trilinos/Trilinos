@@ -89,6 +89,11 @@ namespace Xpetra {
       return rcp( new CrsMatrixWrap(rowMap, NumEntriesPerRowToAlloc, pftype) );
     }
 
+    //! Constructor specifying graph
+    static RCP<Matrix> Build(const RCP<const CrsGraph>& graph, const RCP<ParameterList>& paramList = Teuchos::null) {
+      return rcp(new CrsMatrixWrap(graph, paramList));
+    }
+
     //! Constructor for creating a diagonal Xpetra::Matrix using the entries of a given vector for the diagonal
     static RCP<Matrix> Build(const RCP<const Vector>& diagonal) {
       Teuchos::ArrayRCP<const Scalar>         vals             = diagonal->getData(0);
@@ -132,7 +137,6 @@ namespace Xpetra {
   };
 #define XPETRA_MATRIXFACTORY_SHORT
 
-#ifdef HAVE_XPETRA_EXPERIMENTAL
   template <class Scalar, class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps>
   class MatrixFactory2 {
 #undef XPETRA_MATRIXFACTORY2_SHORT
@@ -165,7 +169,7 @@ namespace Xpetra {
 
         if (oldTCrsOp != Teuchos::null) {
           RCP<TpetraCrsMatrix> newTCrsOp(new TpetraCrsMatrix(*oldTCrsOp));
-          RCP<CrsMatrixWrap>   newOp    (new CrsMatrixWrap(newTCrsOp));
+          RCP<CrsMatrixWrap>   newOp    (new CrsMatrixWrap(Teuchos::as<RCP<CrsMatrix> >(newTCrsOp)));
 
           return newOp;
         } else {
@@ -194,8 +198,6 @@ namespace Xpetra {
   };
 
 #define XPETRA_MATRIXFACTORY2_SHORT
-
-#endif // ifdef HAVE_XPETRA_EXPERIMENTAL
 
 }
 

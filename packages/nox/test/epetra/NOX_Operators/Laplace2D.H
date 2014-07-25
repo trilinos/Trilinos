@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -48,7 +48,7 @@
 // NOX Test Lacplace 2D Problem
 // ----------------------------
 // Simple nonlinear PDE problem.
-// This file provides the problem 
+// This file provides the problem
 //
 // -\Delta u + \lambda e^u = 0  in \Omega = (0,1) \times (0,1)
 //                       u = 0  on \partial \Omega
@@ -75,23 +75,23 @@
 namespace Laplace2D {
 
 // this is required to know the number of lower, upper, left and right
-// node for each node of the Cartesian grid (composed by nx \timex ny 
+// node for each node of the Cartesian grid (composed by nx \timex ny
 // elements)
 
 static void
 get_myNeighbours( const int i, const int nx, const int ny,
-			     int & left, int & right, 
-			     int & lower, int & upper);
+                 int & left, int & right,
+                 int & lower, int & upper);
 
 
 // This function creates a CrsMatrix, whose elements corresponds
 // to the discretization of a Laplacian over a Cartesian grid,
-// with nx grid point along the x-axis and and ny grid points 
+// with nx grid point along the x-axis and and ny grid points
 // along the y-axis. For the sake of simplicity, I suppose that
 // all the nodes in the matrix are internal nodes (Dirichlet
 // boundary nodes are supposed to have been already condensated)
 
-Epetra_CrsMatrix * 
+Epetra_CrsMatrix *
 CreateLaplacian( const int nx, const int ny, const Epetra_Comm * Comm);
 
 // ==========================================================================
@@ -110,7 +110,7 @@ CreateLaplacian( const int nx, const int ny, const Epetra_Comm * Comm);
 } // namespace Laplace2D
 
 
-class PDEProblem 
+class PDEProblem
 {
 
 public:
@@ -119,7 +119,7 @@ public:
   // and y-axis, the value of lambda, and the Epetra_Communicator
   // (to define a Map, which is a linear map in this case)
   PDEProblem(const int nx, const int ny, const double lambda,
-	     const Epetra_Comm * Comm);
+         const Epetra_Comm * Comm);
 
   // destructor
   ~PDEProblem();
@@ -135,16 +135,16 @@ public:
   {
     return Matrix_;
   }
-  
+
 private:
-  
+
   int nx_, ny_;
   double hx_, hy_;
   Epetra_CrsMatrix * Matrix_;
   double lambda_;
 
 }; /* class PDEProblem */
- 
+
 // ==========================================================================
 // This is the main NOX class for this example. Here we define
 // the interface between the nonlinear problem at hand, and NOX.
@@ -160,13 +160,13 @@ class SimpleProblemInterface : public NOX::Epetra::Interface::Required      ,
 {
 
 public:
- 
+
   //! Constructor
   SimpleProblemInterface( PDEProblem * Problem ) :
     Problem_(Problem) {};
 
   //! Destructor
-  ~SimpleProblemInterface() 
+  ~SimpleProblemInterface()
   {
   };
 
@@ -176,7 +176,7 @@ public:
     Problem_->ComputeF(x,f);
     return true;
   };
-  
+
   bool computeJacobian(const Epetra_Vector & x, Epetra_Operator & Jac)
   {
 
@@ -191,16 +191,16 @@ public:
     return true;
   }
 
-  bool computePrecMatrix(const Epetra_Vector & x, Epetra_RowMatrix & M) 
+  bool computePrecMatrix(const Epetra_Vector & x, Epetra_RowMatrix & M)
   {
     std::cout << "*ERR* SimpleProblem::preconditionVector()\n";
     std::cout << "*ERR* don't use explicit preconditioning" << std::endl;
     throw 1;
-  }  
-  
+  }
+
 private:
-  
+
   PDEProblem * Problem_;
-  
+
 }; /* class SimpleProblemInterface */
 

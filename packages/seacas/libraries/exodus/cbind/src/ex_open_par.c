@@ -52,12 +52,14 @@
 *
 *****************************************************************************/
 
-#include <stdio.h>
-#include <mpi.h>
+#include <mpi.h>                        // for MPI_Comm, MPI_Info, etc
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf, fprintf, stderr
+#include "exodusII.h"                   // for exerrval, ex_err, etc
+#include "exodusII_int.h"               // for EX_FATAL, etc
+#include "netcdf.h"                     // for NC_NOERR, NC_GLOBAL, etc
+#include "netcdf_par.h"                 // for nc_open_par
 
-#include "netcdf_par.h"
-#include "exodusII.h"
-#include "exodusII_int.h"
 
 /*!  
 
@@ -101,7 +103,6 @@ The following opens an exodus file named \file{test.exo} for read
 only, using default settings for compute and I/O word sizes:
 
 \code
-#include "exodusII.h"
 int CPU_word_size,IO_word_size, exoid;
 float version;
 

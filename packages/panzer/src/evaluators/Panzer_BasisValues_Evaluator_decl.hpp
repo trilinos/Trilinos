@@ -59,16 +59,25 @@ PHX_EVALUATOR_CLASS(BasisValues_Evaluator)
   Teuchos::RCP<const panzer::PureBasis> basis;
   
   // is anything other than ScalarT really needed here?
-  BasisValues<ScalarT,PHX::MDField<ScalarT> > basisValues;
+  BasisValues<ScalarT,PHX::MDField<ScalarT>, PHX::MDField<ScalarT,panzer::Cell,panzer::BASIS> > basisValues;
   PointValues<ScalarT,PHX::MDField<ScalarT> > pointValues;
+
+  PHX::MDField<ScalarT,panzer::Cell,panzer::BASIS> orientation;
+
+  bool derivativesRequired_;
  
   //! Initialization method to unify the constructors.
   void initialize(const Teuchos::RCP<const panzer::PointRule> & pointRule,
-                  const Teuchos::RCP<const panzer::PureBasis> & basis);
+                  const Teuchos::RCP<const panzer::PureBasis> & basis,
+                  bool derivativesRequired);
 
 public:
   BasisValues_Evaluator(const Teuchos::RCP<const panzer::PointRule> & pointRule,
                         const Teuchos::RCP<const panzer::PureBasis> & basis);
+
+  BasisValues_Evaluator(const Teuchos::RCP<const panzer::PointRule> & pointRule,
+                        const Teuchos::RCP<const panzer::PureBasis> & basis,
+                        bool derivativesRequired);
 
 PHX_EVALUATOR_CLASS_END
 

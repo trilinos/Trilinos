@@ -6,7 +6,7 @@
  */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_common.h"
@@ -31,12 +31,12 @@ using namespace ML_Epetra;
 #endif
 
 // ============================================================================
-int ML_Epetra::MultiLevelPreconditioner::SetFiltering() 
+int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
 {
 
   Epetra_Time Time(Comm());
 
-  if (List_.get("filtering: enable",false) == false) 
+  if (List_.get("filtering: enable",false) == false)
     return(0);
 
   int restarts = List_.get("eigen-analysis: restart", 50);
@@ -45,7 +45,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
   int BlockSize = List_.get("eigen-analysis: block-size", 1);
   double tol = List_.get("eigen-analysis: tolerance", 1e-5);
 
-  if (length <= NumEigenvalues) 
+  if (length <= NumEigenvalues)
     length = NumEigenvalues+1;
 
   if (verbose_) {
@@ -56,7 +56,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
     std::cout << PrintMsg_ << "\t- block size = " << BlockSize << std::endl;
     std::cout << PrintMsg_ << "\t- length     = " << length << std::endl;
     std::cout << PrintMsg_ << "\t  (Note that the resulting precondition is non-symmetric)" << std::endl;
-  }    
+  }
 
   // set parameters for Anasazi
   Teuchos::ParameterList AnasaziList;
@@ -86,7 +86,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
   // FIXME: this is not a genius stroke, I should simply get
   // the Schur decomposition from Anasazi
 #ifdef HAVE_ML_ANASAxI
-  // call Anasazi and store the results in eigenvectors      
+  // call Anasazi and store the results in eigenvectors
   ML_Anasazi::Interface(RowMatrix_,EigenVectors,&RealEigenvalues[0],
                         &ImagEigenvalues[0], AnasaziList, &RealEigenvectors[0],
                         &ImagEigenvectors[0],
@@ -143,11 +143,11 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
 
   int count = 0;
   for (int i = 0 ; i < NumRealEigenvectors ; ++i)
-    for (int j = 0 ; j < NumMyRows() ; ++j) 
+    for (int j = 0 ; j < NumMyRows() ; ++j)
       flt_NullSpace_[count++] = RealEigenvectors[j + i * NumMyRows()];
 
   for (int i = 0 ; i < NumImagEigenvectors ; ++i)
-    for (int j = 0 ; j < NumMyRows() ; ++j) 
+    for (int j = 0 ; j < NumMyRows() ; ++j)
       flt_NullSpace_[count++] = ImagEigenvectors[j + i * NumMyRows()];
 
   int NumAggr = List_.get("filtering: local aggregates",1);
@@ -155,7 +155,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
   // create a new ML hierarchy, whose null space has been computed
   // with the iteration matrix modes
 
-  if (verbose_) 
+  if (verbose_)
     std::cout << std::endl << PrintMsg_
          << "Building ML hierarchy for filtering" << std::endl << std::endl;
 
@@ -172,8 +172,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
   ML_Aggregate_Set_NullSpace(flt_agg_, NumPDEEqns_,
                              NumRealEigenvectors + NumImagEigenvectors,
                              &flt_NullSpace_[0], NumMyRows());
-  int CL = ML_Gen_MultiLevelHierarchy_UsingAggregation(flt_ml_,1, 
-                                                       ML_DECREASING, 
+  int CL = ML_Gen_MultiLevelHierarchy_UsingAggregation(flt_ml_,1,
+                                                       ML_DECREASING,
                                                        flt_agg_);
 
   assert (CL == 2);
@@ -181,11 +181,11 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
   ML_Gen_Smoother_Amesos(flt_ml_, 0, ML_AMESOS_KLU, -1, 0.0);
   ML_Gen_Solver(flt_ml_, ML_MGV, 1, 0);
 
-  if (verbose_) 
+  if (verbose_)
     std::cout << std::endl;
 
-  if (verbose_) 
-    std::cout << PrintMsg_ << "\t- Total Time for filtering setup = " 
+  if (verbose_)
+    std::cout << PrintMsg_ << "\t- Total Time for filtering setup = "
          << Time.ElapsedTime() << " (s)" << std::endl;
 
   return(0);
@@ -194,19 +194,19 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
 
 // ============================================================================
 // FIXME: into another file
-bool ML_Epetra::MultiLevelPreconditioner::CheckPreconditionerKrylov() 
+bool ML_Epetra::MultiLevelPreconditioner::CheckPreconditionerKrylov()
 {
 #ifdef HAVE_ML_AZTECOO
 
   Epetra_Time Time(Comm());
 
-  if (verbose_) 
+  if (verbose_)
     std::cout << PrintMsg_ << std::endl << "\tComputing the rate of convergence..." << std::endl;
 
   int MaxIters = List_.get("reuse: max iters",(int)5);
   double Ratio = List_.get("reuse: ratio",(double)0.5);
   int Output = List_.get("reuse: output",-1);
-  
+
   Epetra_Vector LHS(Map());
   Epetra_Vector RHS(Map());
 
@@ -214,7 +214,7 @@ bool ML_Epetra::MultiLevelPreconditioner::CheckPreconditionerKrylov()
   RHS.Random();
 
   Epetra_LinearProblem Problem(const_cast<Epetra_RowMatrix*>(RowMatrix_),&LHS, &RHS);
-  
+
   AztecOO solver(Problem);
 
   solver.SetAztecOption(AZ_solver, AZ_gmres);
@@ -227,7 +227,7 @@ bool ML_Epetra::MultiLevelPreconditioner::CheckPreconditionerKrylov()
   solver.SetPrecOperator(this);
 
   solver.Iterate(MaxIters, 1e-15);
-  
+
   double status[AZ_STATUS_SIZE];
   solver.GetAllAztecStatus(status);
 
@@ -240,7 +240,7 @@ bool ML_Epetra::MultiLevelPreconditioner::CheckPreconditionerKrylov()
          << ErrorMsg_ << "\tstatus[AZ_why] = " << status[AZ_why] << std::endl;
     std::cerr << std::endl;
   }
-#endif 
+#endif
 
   // print out the computed rate of convergence.
   if (RateOfConvergence_ == -1.0) {
@@ -248,9 +248,9 @@ bool ML_Epetra::MultiLevelPreconditioner::CheckPreconditionerKrylov()
     // This is the first time we are computing this
     RateOfConvergence_ = NewRateOfConvergence;
     if( verbose_ ) {
-      std::cout << PrintMsg_ << "\tRate of convergence : current = " 
+      std::cout << PrintMsg_ << "\tRate of convergence : current = "
 	   << RateOfConvergence_ << std::endl;
-      std::cout << PrintMsg_ << "\tTime to check convergence rate = " 
+      std::cout << PrintMsg_ << "\tTime to check convergence rate = "
 	   << Time.ElapsedTime() << " (s)" << std::endl;
     }
     return(true);
@@ -266,30 +266,30 @@ bool ML_Epetra::MultiLevelPreconditioner::CheckPreconditionerKrylov()
     // one, the already computed preconditioner is good enough, and we return true
     // (that is, keep what we have). Otherwise, return false (that is, recompute
     // all the stuff).
-    
+
     bool rv;
     if (Ratio * NewRateOfConvergence >= RateOfConvergence_) rv = false;
     else                                                    rv = true;
 
-    if (rv == true && verbose_ ) 
+    if (rv == true && verbose_ )
       std::cout << PrintMsg_ << std::endl << "\tTest passed: keep old preconditioner" << std::endl;
-    if (rv == false && verbose_) 
+    if (rv == false && verbose_)
       std::cout << PrintMsg_ << std::endl << "\tTest failed: now recompute the preconditioner" << std::endl;
-    std::cout << PrintMsg_ << "\tTime to check convergence rate = " 
+    std::cout << PrintMsg_ << "\tTime to check convergence rate = "
       << Time.ElapsedTime() << " (s)" << std::endl;
 
     RateOfConvergence_ = NewRateOfConvergence;
     return(rv);
 
   }
-  
+
 #else
   std::cerr << ErrorMsg_ << "reuse preconditioner requires ML to be configured with" << std::endl
        << ErrorMsg_ << "--enable-aztecoo." << std::endl;
   ML_EXIT(EXIT_FAILURE);
   return(false);
 #endif
-  
+
 }
 
 #endif /*ifdef HAVE_ML_EPETRA && HAVE_ML_TEUCHOS*/

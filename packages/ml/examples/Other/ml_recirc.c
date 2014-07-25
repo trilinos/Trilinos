@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /*****************************************************************************/
@@ -41,13 +41,13 @@ extern int AZ_using_fortran;
 extern void add_row_5pt(int, int , double val[], int bindx[], int *n);
 extern void init_options(int options[], double params[]);
 extern void init_guess_and_rhs(int update_index[],int update[], double *x[],
-			       double *b[], int data_org[], double val[], 
-			       int indx[],  int bindx[], int rpntr[], 
+			       double *b[], int data_org[], double val[],
+			       int indx[],  int bindx[], int rpntr[],
 			       int cpntr[], int bpntr[], int proc_config[]);
 
-extern int construct_ml_grids(int, int *, AZ_MATRIX **, int **, int **, 
-			      int **, int **,  int **, int **, int **, 
-			      int **, ML **, int *, double *,  
+extern int construct_ml_grids(int, int *, AZ_MATRIX **, int **, int **,
+			      int **, int **,  int **, int **, int **,
+			      int **, ML **, int *, double *,
 			      int,  double *, ML_Aggregate **);
 extern void create_msr_matrix(int*, double **, int **, int);
 extern void create_rot_msr_matrix(int*, double **, int **, int);
@@ -60,12 +60,12 @@ extern int  ml_send(void*, unsigned int, int, int, USR_COMM );
 extern void Generate_mesh(int, ML_GridAGX **, int *, int **, int *);
 extern void ml_print_global_element(int element,int *update,int *data_org,
 				    int *update_index, int *vector,
-				    int *proc_config, int *external, 
+				    int *proc_config, int *external,
 				    int *extern_index);
-extern int  ml_find_global_row(int i, int proc, int global_nrows, 
+extern int  ml_find_global_row(int i, int proc, int global_nrows,
 			       int **whole_glob_map);
 extern void add_row_rot(int, int , double val[], int bindx[], int *n);
-extern void add_row_7pt(int, int , double val[], int bindx[], int *n, 
+extern void add_row_7pt(int, int , double val[], int bindx[], int *n,
 			double alpha, double beta);
 void AZ_print_out2(int update_index[], int extern_index[], int update[],
 		   int external[], double val[], int indx[],  int
@@ -97,7 +97,7 @@ int global_nrows, global_ncoarse;
 /* Set up and solve a test problem defined in the subroutine                 */
 /* init_matrix_vector_structures().                                          */
 /*****************************************************************************/
-int coarse_iterations = 0, use_cg = 0, num_levels = 2; 
+int coarse_iterations = 0, use_cg = 0, num_levels = 2;
 struct reader_context *context;
 
 int main(int argc, char *argv[])
@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
   use_cg = 1;
   num_levels = 8;
   nsmooth = 1;
-  if (proc_config[AZ_node] == 0) 
+  if (proc_config[AZ_node] == 0)
   {
       ML_Reader_ReadInput("ml_inputfile", &context);
       ifp = fopen("ml_inputfile", "r");
@@ -192,7 +192,7 @@ int main(int argc, char *argv[])
   N_elements_coarse = i * i;
   if (proc_config[AZ_node] == 0) {
      i = i * refine_factor;
-     printf("Fine grid = %d x %d \n", i+1 , i+1 ); 
+     printf("Fine grid = %d x %d \n", i+1 , i+1 );
   }
 
 
@@ -207,27 +207,27 @@ int main(int argc, char *argv[])
 
   /* create coarse grid discretization */
   construct_ml_grids(N_elements_coarse, proc_config,
-                     &Amat, &update, &update_index, 
+                     &Amat, &update, &update_index,
                     &external, &extern_index, &indx,
-                     &bpntr, &rpntr, &cpntr, &ml, options, params, 
+                     &bpntr, &rpntr, &cpntr, &ml, options, params,
                      precon_flag, status, &ml_ag);
   /* set up ML preconditioning */
 
   if ( precon_flag == 1 ) {
      AZ_set_ML_preconditioner(&Pmat, Amat, ml, options);
   }
-  else if ( precon_flag == 2 ) { 
+  else if ( precon_flag == 2 ) {
      options[AZ_precond]         = AZ_dom_decomp;
-     options[AZ_subdomain_solve] = AZ_ilut; 
+     options[AZ_subdomain_solve] = AZ_ilut;
   } else options[AZ_precond] = AZ_none;
 
 
   /* solve the system of equations on the fine grid */
 
-  for ( i = 0; i < 1; i++ ) 
+  for ( i = 0; i < 1; i++ )
   {
-     init_guess_and_rhs(update_index, update, &x, &b, Amat->data_org, 
-                        Amat->val, indx, Amat->bindx, rpntr, cpntr, 
+     init_guess_and_rhs(update_index, update, &x, &b, Amat->data_org,
+                        Amat->val, indx, Amat->bindx, rpntr, cpntr,
                         bpntr, proc_config);
 
 #ifdef MATLAB
@@ -236,18 +236,18 @@ int main(int argc, char *argv[])
 		fprintf(xfile,"%lf\n",x[i]);
 	}
 	fclose(xfile);
-	
+
 #endif
 
       if (use_cg == 0) {
-         ML_Iterate(ml, x, b); 
+         ML_Iterate(ml, x, b);
       }
       else {
-         AZ_iterate(x, b, options, params, status, proc_config, Amat, Pmat, 
+         AZ_iterate(x, b, options, params, status, proc_config, Amat, Pmat,
 #ifdef AZ_ver2_1_0_5
-                    (struct AZ_SCALING *) 
+                    (struct AZ_SCALING *)
 #else
-                    (struct scale*) 
+                    (struct scale*)
 #endif
                                     NULL);
       }
@@ -268,14 +268,14 @@ int main(int argc, char *argv[])
 
 
   }
-  
+
   /*
   for (i=0; i<Amat->data_org[AZ_N_internal]+Amat->data_org[AZ_N_border]; i++) {
      diff = (x[update_index[i]] - (double) update[i]);
      if (x[i] > 1.0E-8) diff = diff / (double) update[i];
      if (diff < 0.0) diff = -diff;
      if ( diff > 1.0E-5)
-        printf("%d : data %d = %e %e \n", proc_config[AZ_node], i, 
+        printf("%d : data %d = %e %e \n", proc_config[AZ_node], i,
                x[update_index[i]], (double) update[i]);
   }
   */
@@ -317,7 +317,7 @@ ML_Aggregate_Destroy(&ml_ag);
 
   free((void *) update);    AZ_free((void *) update_index);
   AZ_free((void *) external);  AZ_free((void *) extern_index);
-  free((void *) x);         free((void *) b);           
+  free((void *) x);         free((void *) b);
 
 #ifdef ML_MPI
   MPI_Finalize();
@@ -437,7 +437,7 @@ void init_guess_and_rhs(int update_index[], int update[], double *x[],double
 
   /*initialize 'x' to a function which will be used in matrix-vector product */
 
-  for (i = 0; i < temp; i++) 
+  for (i = 0; i < temp; i++)
      (*x)[i] = (double) (update[i])/(double)(num_PDE_eqns);
   /* for (i = 0; i < temp; i++) (*x)[i] = (double) 1; */
 
@@ -446,7 +446,7 @@ void init_guess_and_rhs(int update_index[], int update[], double *x[],double
         (*x)[i*num_PDE_eqns+j] = (*x)[i*num_PDE_eqns];
 
   /* Reorder 'x' so that it conforms to the transformed matrix */
- 
+
   AZ_reorder_vec(*x,data_org,update_index,rpntr);
 
   /* take out the constant vector. Used for the */
@@ -473,11 +473,11 @@ void init_guess_and_rhs(int update_index[], int update[], double *x[],double
 /*****************************************************************************/
 /*****************************************************************************/
 
-int construct_ml_grids(int N_elements, int *proc_config, AZ_MATRIX **Amat_f, 
-              int *update_f[], int *update_index_f[], int *external_f[], 
-              int *extern_index_f[], int *indx[], 
-              int *bpntr[], int *rpntr[], int *cpntr[], ML **ml_ptr, 
-              int *options, double *params, int flag, 
+int construct_ml_grids(int N_elements, int *proc_config, AZ_MATRIX **Amat_f,
+              int *update_f[], int *update_index_f[], int *external_f[],
+              int *extern_index_f[], int *indx[],
+              int *bpntr[], int *rpntr[], int *cpntr[], ML **ml_ptr,
+              int *options, double *params, int flag,
               double *status, ML_Aggregate **ml_ag)
 {
   int         MSRorVBR = AZ_MSR_MATRIX, N_update_f;
@@ -518,21 +518,21 @@ int *block_list, nblocks = 3;
    }
 
 /*
-   create_msr_matrix_conv_diff(*update_f, &val, &bindx, N_update_f, 1.0, 1000.0); 
+   create_msr_matrix_conv_diff(*update_f, &val, &bindx, N_update_f, 1.0, 1000.0);
 */
    create_msr_matrix(*update_f, &val, &bindx, N_update_f);
 
-   AZ_transform(proc_config, external_f, bindx, val, *update_f, update_index_f, 
-                extern_index_f, &data_org, N_update_f, *indx, *bpntr, *rpntr, 
+   AZ_transform(proc_config, external_f, bindx, val, *update_f, update_index_f,
+                extern_index_f, &data_org, N_update_f, *indx, *bpntr, *rpntr,
                 cpntr, MSRorVBR);
 
 #ifdef PARTEST
 
    global_mapping=(int **) malloc(global_nrows*sizeof(int *));
-	 
+
    for (i=0; i < global_nrows; i++) {
       global_mapping[i]=(int *)malloc(2*sizeof(int));
-      ml_print_global_element(i,*update_f, data_org, *update_index_f, 
+      ml_print_global_element(i,*update_f, data_org, *update_index_f,
                       global_mapping[i], proc_config, *external_f, *extern_index_f);
    }
 
@@ -542,7 +542,7 @@ int *block_list, nblocks = 3;
 
    (*Amat_f)->matrix_type  = data_org[AZ_matrix_type];
    data_org[AZ_N_rows]  = data_org[AZ_N_internal] + data_org[AZ_N_border];
-   ML_GridAGX_Destroy(&f_mesh); 
+   ML_GridAGX_Destroy(&f_mesh);
 
    if (flag == 1) {
 
@@ -568,7 +568,7 @@ int *block_list, nblocks = 3;
 
       /* set up discretization matrix and matrix vector function */
 
-      leng = (*Amat_f)->data_org[AZ_N_internal] + 
+      leng = (*Amat_f)->data_org[AZ_N_internal] +
              (*Amat_f)->data_org[AZ_N_border];
       AZ_ML_Set_Amat(ml, N_levels-1, leng, leng, *Amat_f, proc_config);
 
@@ -581,9 +581,9 @@ int *block_list, nblocks = 3;
       (*ml_ag)->drop_tol_for_smoothing = 0.08;
 
 
-      ML_Aggregate_Set_NullSpace(*ml_ag, num_PDE_eqns, ndim, null_vect, leng); 
+      ML_Aggregate_Set_NullSpace(*ml_ag, num_PDE_eqns, ndim, null_vect, leng);
       if (null_vect != NULL) free(null_vect);
-      coarsest_level = ML_Gen_MGHierarchy_UsingAggregation(ml, N_levels-1, 
+      coarsest_level = ML_Gen_MGHierarchy_UsingAggregation(ml, N_levels-1,
                                                           ML_DECREASING, *ml_ag);
       coarsest_level = N_levels - coarsest_level;
       if ( proc_config[AZ_node] == 0 )
@@ -650,8 +650,8 @@ int *block_list, nblocks = 3;
 	   options[AZ_precond] = AZ_dom_decomp;
 	   options[AZ_subdomain_solve] = AZ_ilu;
 	   options[AZ_reorder] = 1;
-	   ML_Gen_SmootherAztec(ml, level, options, params, 
-                        proc_config, status, AZ_ONLY_PRECONDITIONER, 
+	   ML_Gen_SmootherAztec(ml, level, options, params,
+                        proc_config, status, AZ_ONLY_PRECONDITIONER,
                         ML_BOTH,NULL);
 	   options[AZ_precond] = save1;
 	   options[AZ_subdomain_solve] = save2;
@@ -710,7 +710,7 @@ int *block_list, nblocks = 3;
         exit(1);
       }
 
-      ML_Gen_Solver(ml, ML_MGV, N_levels-1, coarsest_level); 
+      ML_Gen_Solver(ml, ML_MGV, N_levels-1, coarsest_level);
 
    }
    return 0;
@@ -720,11 +720,11 @@ int *block_list, nblocks = 3;
 /*****************************************************************************/
 /*****************************************************************************/
 
-void Generate_mesh(int N_elements, ML_GridAGX **meshp, int *N_update, 
+void Generate_mesh(int N_elements, ML_GridAGX **meshp, int *N_update,
                    int *update[], int proc_config[])
 {
    int    i, j, k, nprocs, nprocs_1d, mypid, mypid_x, mypid_y;
-   int    icnt, *intlist, offset, nelmnt_1d, nelmnt_part_xy, estart_x; 
+   int    icnt, *intlist, offset, nelmnt_1d, nelmnt_part_xy, estart_x;
    ml_big_int *big_intlist;
    int    estart_y, nelmnt_local, nstart_x, nstart_y, index, eend_x, eend_y;
    int    nnode_1d, nnode_local_x, nnode_local_y, nnode_local;
@@ -739,7 +739,7 @@ void Generate_mesh(int N_elements, ML_GridAGX **meshp, int *N_update,
 
    mypid    = proc_config[AZ_node];
    nprocs   = proc_config[AZ_N_procs];
-   
+
    nprocs_1d = (int) pow( (double) nprocs, 0.50001 );
    if ( nprocs_1d * nprocs_1d != nprocs ) {
       printf("Error: nprocs should be a square (%d).\n",nprocs_1d);
@@ -762,7 +762,7 @@ void Generate_mesh(int N_elements, ML_GridAGX **meshp, int *N_update,
       exit(-1);
    }
    nelmnt_local = nelmnt_part_xy * nelmnt_part_xy;
-  
+
    /* initialize the mesh */
 
    ML_GridAGX_Create( meshp );
@@ -780,8 +780,8 @@ void Generate_mesh(int N_elements, ML_GridAGX **meshp, int *N_update,
    eend_y    = estart_y + nelmnt_part_xy - 1;
    icnt      = 0;
 
-   for (k = estart_y; k <= eend_y; k++) 
-      for (j = estart_x; j <= eend_x; j++) 
+   for (k = estart_y; k <= eend_y; k++)
+      for (j = estart_x; j <= eend_x; j++)
          big_intlist[icnt++] = j + k * nelmnt_1d;
    ML_GridAGX_Load_ElmntGlobalNum(mesh, nelmnt_local, big_intlist);
    ML_memory_free( (void **) &big_intlist);
@@ -808,7 +808,7 @@ void Generate_mesh(int N_elements, ML_GridAGX **meshp, int *N_update,
    if ( y_begin == 1 ) {
       for ( j = 1; j < nnode_x; j++ ) square[j][0] = icnt++;
    }
-   
+
    /* generate the global node IDs */
 
    nnode_local_x = nnode_x - 1;
@@ -823,7 +823,7 @@ void Generate_mesh(int N_elements, ML_GridAGX **meshp, int *N_update,
 
    nstart_x    = mypid_x * nnode_local_x;
    nstart_y    = mypid_y * nnode_local_y;
-   for (k = 0; k < nnode_y; k++) 
+   for (k = 0; k < nnode_y; k++)
       for (j = 0; j < nnode_x; j++) {
             index = square[j][k];
             offset  = j + nstart_x + (k+nstart_y)*nnode_1d;
@@ -836,13 +836,13 @@ void Generate_mesh(int N_elements, ML_GridAGX **meshp, int *N_update,
    /* generate coordinates of local nodes */
 
    ML_memory_alloc((void**) &coord, 2*nnode_expand*sizeof(double),"AP6");
-   for (k = 0; k < nnode_y; k++) 
+   for (k = 0; k < nnode_y; k++)
       for (j = 0; j < nnode_x; j++) {
          index = square[j][k];
          offset  = j + nstart_x + (k+nstart_y)*nnode_1d;
          coord[index*2+0] = (double) (h * (j + nstart_x));
          coord[index*2+1] = (double) (h * (k + nstart_y));
-      } 
+      }
    ML_GridAGX_Load_AllVertCoordinates(mesh, nnode_expand, coord);
 
    /* finally construct the element-to-node lists */
@@ -850,14 +850,14 @@ void Generate_mesh(int N_elements, ML_GridAGX **meshp, int *N_update,
    ML_memory_alloc((void**) &intlist, 4 * sizeof(int), "AP7");
 
    k = (eend_y - estart_y + 1) * (eend_x - estart_x + 1);
-   for (k = estart_y; k <= eend_y; k++) 
+   for (k = estart_y; k <= eend_y; k++)
       for (j = estart_x; j <= eend_x; j++) {
             intlist[0] = square[j-estart_x][k-estart_y];
             intlist[1] = square[j-estart_x+1][k-estart_y];
             intlist[2] = square[j-estart_x][k-estart_y+1];
             intlist[3] = square[j-estart_x+1][k-estart_y+1];
             ML_IntList_Load_Sublist(mesh->ele_nodes, 4, intlist);
-      }  
+      }
    ML_memory_free( (void **) &intlist);
    for ( i = 0; i < nnode_x; i++ )
       ML_memory_free( (void**) &(square[i]) );
@@ -869,16 +869,16 @@ void Generate_mesh(int N_elements, ML_GridAGX **meshp, int *N_update,
 /* communication subroutines                                              */
 /*------------------------------------------------------------------------*/
 #ifndef ML_MPI
-#define MPI_Request int 
+#define MPI_Request int
 #endif
-int ml_recv(void* buf, unsigned int count, int *src, int *mid, 
+int ml_recv(void* buf, unsigned int count, int *src, int *mid,
             USR_COMM comm, USR_REQ *request )
 {
   if (count == -57) ML_avoid_unused_param((void *) comm);
    return(md_wrap_iread( buf, count, src, mid, (MPI_Request *) request));
 }
 
-int ml_wait(void* buf, unsigned int count, int *src, int *mid, 
+int ml_wait(void* buf, unsigned int count, int *src, int *mid,
             USR_COMM comm, USR_REQ *request )
 {
    int status;
@@ -886,7 +886,7 @@ int ml_wait(void* buf, unsigned int count, int *src, int *mid,
    return(md_wrap_wait( buf, count, src, mid, &status, (MPI_Request *) request));
 }
 
-int ml_send(void* buf, unsigned int count, int dest, int mid, 
+int ml_send(void* buf, unsigned int count, int dest, int mid,
             USR_COMM comm )
 {
    int status;
@@ -961,7 +961,7 @@ void create_rot_msr_matrix(int update[], double **val, int **bindx, int N_update
 } /* create_rot_msr_matrix */
 
 
-void create_msr_matrix_conv_diff(int update[], double **val, int **bindx, 
+void create_msr_matrix_conv_diff(int update[], double **val, int **bindx,
                                  int N_update, double alpha, double beta)
 {
   int i,total_nz, n = -1;
@@ -995,7 +995,7 @@ void create_msr_matrix_conv_diff(int update[], double **val, int **bindx,
 /******************************************************************************/
 /******************************************************************************/
 
-void add_row_5pt(int row, int location, double val[], 
+void add_row_5pt(int row, int location, double val[],
 								 int bindx[], int *n)
 
 /*
@@ -1061,7 +1061,7 @@ void add_row_5pt(int row, int location, double val[],
   dy = (((double) ny)+.5)/ ((double) rootN );
 
   /* aa,bb are coefficients in PDE:         */
-  /*        -nabla + aa d/dx + bb d/dy      */   
+  /*        -nabla + aa d/dx + bb d/dy      */
 
   aa = eps*4.*dx*(dx-1.)*(1.-2.*dy) * h;
   bb = -eps*4.*dy*(dy-1.)*(1.-2.*dx) * h;
@@ -1113,7 +1113,7 @@ void add_row_5pt(int row, int location, double val[],
 } /* add_row_5pt */
 
 
-void add_row_rot(int row, int location, double val[], 
+void add_row_rot(int row, int location, double val[],
 								 int bindx[], int *n)
 
 /*
@@ -1162,7 +1162,7 @@ double new_theta = 0.170796;
 
 	if (NP != 2)
 		printf("error in setting A matrix - the rotated version is only implemented for 2 PDEs\n");
-	
+
 	oddeven=row%2;
 
   /*
@@ -1197,12 +1197,12 @@ double new_theta = 0.170796;
 } /* add_row_rot */
 
 
-void add_row_7pt(int row, int location, double val[], int bindx[], int *n, 
+void add_row_7pt(int row, int location, double val[], int bindx[], int *n,
 								 double alpha, double beta)
 
 /*
  * Add one row to an MSR matrix corresponding to a 7pt discrete approximation
- * to the 2D Convection Diffusion operator with diffusion coeffcient alpha and 
+ * to the 2D Convection Diffusion operator with diffusion coeffcient alpha and
  * convection coefficient beta on an n x n square.
  *
  * Author: Dawn Chamberlain
@@ -1241,7 +1241,7 @@ void add_row_7pt(int row, int location, double val[], int bindx[], int *n,
       exit(1);
     }
     if (m == 1) {
-			
+
       /* special case */
 
       val[0] = 1.0;
@@ -1250,39 +1250,39 @@ void add_row_7pt(int row, int location, double val[], int bindx[], int *n,
     }
   }
   *n = m;
-	
+
 	h=1.0/(m-1);  /* grid spacing */
 
   k  = bindx[location];
   NP = num_PDE_eqns;
-	
+
   /*
    * Check neighboring points in each direction and add nonzero entry if
    * neighbor exists.
    */
-		
-  bindx[k] = row + NP;   
-	if ((row/NP)%m !=     m-1) 
+
+  bindx[k] = row + NP;
+	if ((row/NP)%m !=     m-1)
 		val[k++] = -alpha - beta*h/6.0;
-	
-  bindx[k] = row - NP;   
-	if ((row/NP)%m !=       0) 
-		val[k++] = -alpha + beta*h/6.0;
-	
-  bindx[k] = row + m*NP; 
-	if ((row/(NP*m))%m != m-1) 
-		val[k++] = -alpha - beta*h/6.0;
-	
-  bindx[k] = row - m*NP; 
-	if ((row/(NP*m))%m !=   0) 
+
+  bindx[k] = row - NP;
+	if ((row/NP)%m !=       0)
 		val[k++] = -alpha + beta*h/6.0;
 
-  bindx[k] = row - (m+1)*NP; 
-	if ((row/(NP*m))%m >   1) 
+  bindx[k] = row + m*NP;
+	if ((row/(NP*m))%m != m-1)
+		val[k++] = -alpha - beta*h/6.0;
+
+  bindx[k] = row - m*NP;
+	if ((row/(NP*m))%m !=   0)
+		val[k++] = -alpha + beta*h/6.0;
+
+  bindx[k] = row - (m+1)*NP;
+	if ((row/(NP*m))%m >   1)
 		val[k++] = beta*h/3.0;
 
-  bindx[k] = row + (m+1)*NP; 
-	if ((row/(NP*m))%m <   m-2) 
+  bindx[k] = row + (m+1)*NP;
+	if ((row/(NP*m))%m <   m-2)
 		val[k++] = -beta*h/3.0;
 
   bindx[location+1] = k;
@@ -1291,9 +1291,9 @@ void add_row_7pt(int row, int location, double val[], int bindx[], int *n,
 } /* add_row_7pt */
 
 
-void AZ_print_out2(int update_index[], int extern_index[], int update[], 
-	int external[], double val[], int indx[], int bindx[], int rpntr[], 
-	int cpntr[], int bpntr[], int proc_config[], int choice, int matrix, 
+void AZ_print_out2(int update_index[], int extern_index[], int update[],
+	int external[], double val[], int indx[], int bindx[], int rpntr[],
+	int cpntr[], int bpntr[], int proc_config[], int choice, int matrix,
 	int N_update, int N_external, int of)
 {
 /*******************************************************************************
@@ -1305,7 +1305,7 @@ void AZ_print_out2(int update_index[], int extern_index[], int update[],
   =======
 
   Return code:     none.
-  ============ 
+  ============
 
   Parameter list:
   ===============
@@ -1314,7 +1314,7 @@ void AZ_print_out2(int update_index[], int extern_index[], int update[],
   extern_index:    processor. For example  'update_index[i]' gives the index
                    location of the block which has the global index 'update[i]'.
                    (AZ_global_mat only).
- 
+
   update:          On input, blks updated on this node (AZ_global_mat only).
 
   external:        On input, list of external blocks (AZ_global_mat only).
@@ -1328,23 +1328,23 @@ void AZ_print_out2(int update_index[], int extern_index[], int update[],
   proc_config:     On input, processor information corresponding to:
                       proc_config[AZ_node] = name of this processor
                       proc_config[AZ_N_procs] = # of processors used
- 
+
   choice:          On input, 'choice' determines the output to be printed
 		   as described above.
- 
+
   matrix:          On input, type of matrix (AZ_MSR_MATRIX or AZ_VBR_MATRIX).
 
   N_update:        On input, number of points/blks to be updated on this node.
 
   N_external:      On input, number of external points/blks needed by this node.
 
-  of:              On input, an offset used with AZ_global_matrix and 
-		   AZ_explicit. In particular, a(of,of) is printed for 
+  of:              On input, an offset used with AZ_global_matrix and
+		   AZ_explicit. In particular, a(of,of) is printed for
                    the matrix element stored as a(0,0).
 
 *******************************************************************************/
 
-   int type, neighbor, cflag;
+   int type = 0, neighbor, cflag;
    int ii,i = 1,j,tj;
    int iblk, jblk, m1, n1, ival, new_iblk, new_jblk;
    MPI_Request request;  /* Message handle */
@@ -1352,9 +1352,9 @@ void AZ_print_out2(int update_index[], int extern_index[], int update[],
 	 FILE *outfp;
 #endif
 
- 
+
 	 /*   type            = AZ_sys_msg_type;
-   AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE) % 
+   AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE) %
                      AZ_NUM_MSGS +AZ_MSG_TYPE;*/
    /* Synchronize things so that processor 0 prints first and then */
    /* sends a message to processor 1 so that he prints, etc.      */
@@ -1409,7 +1409,7 @@ void AZ_print_out2(int update_index[], int extern_index[], int update[],
           for (j = bindx[ii] ; j < bindx[ii+1] ; j++ ) {
             tj = AZ_find_simple(bindx[j], update_index, N_update, extern_index,
                               N_external,update,external);
-            if (tj != -1) 
+            if (tj != -1)
                printf("   a(%d,%d) = %20.13e;\n",update[i]+of,tj+of,val[j]);
             else (void) fprintf(stderr,"col %d (= bindx[%d]) is undefined\n",
                                 tj, j);
@@ -1421,11 +1421,11 @@ void AZ_print_out2(int update_index[], int extern_index[], int update[],
            new_iblk = update_index[iblk];
 
            m1 = rpntr[new_iblk+1] - rpntr[new_iblk];
- 
+
            /* loop over blocks in the current block-row */
- 
+
            for (ii = bpntr[new_iblk]; ii < bpntr[new_iblk+1]; ii++) {
-              new_jblk = AZ_find_simple(bindx[ii], update_index, N_update, 
+              new_jblk = AZ_find_simple(bindx[ii], update_index, N_update,
 			 extern_index, N_external,update,external);
               if (new_jblk == -1) {
                  printf("local column %d not found\n",new_jblk);
@@ -1439,7 +1439,7 @@ void AZ_print_out2(int update_index[], int extern_index[], int update[],
               for (i = 0; i < m1; i++) {
                  for (j = 0; j < n1; j++)
                     (void) printf("   a(%d(%d),%d(%d)) = %20.13e;\n",
-                                  update[iblk]+ of,i+of, new_jblk+of, j+of, 
+                                  update[iblk]+ of,i+of, new_jblk+of, j+of,
                                   val[ival+j*m1+i]);
               }
            }
@@ -1465,9 +1465,9 @@ void AZ_print_out2(int update_index[], int extern_index[], int update[],
            else tj = update[iblk] + of;
 
            m1 = rpntr[iblk+1] - rpntr[iblk];
- 
+
            /* loop over blocks in the current block-row */
- 
+
            for (ii = bpntr[iblk]; ii < bpntr[iblk+1]; ii++) {
               jblk = bindx[ii];
               ival =  indx[ii];
@@ -1475,10 +1475,10 @@ void AZ_print_out2(int update_index[], int extern_index[], int update[],
 
               for (i = 0; i < m1; i++) {
                  for (j = 0; j < n1; j++)
-                    (void) printf("   a(%d(%d),%d(%d)) = %20.13e;\n", tj, 
+                    (void) printf("   a(%d(%d),%d(%d)) = %20.13e;\n", tj,
 				  i+of, jblk+of, j+of, val[ival+j*m1+i]);
               }
- 
+
            }
         }
      }
@@ -1486,7 +1486,7 @@ void AZ_print_out2(int update_index[], int extern_index[], int update[],
    else (void) fprintf(stderr,"AZ_matrix_out: output choice unknown\n");
 
    neighbor = proc_config[AZ_node] + 1;
-   if ( proc_config[AZ_node] != proc_config[AZ_N_procs] - 1) 
+   if ( proc_config[AZ_node] != proc_config[AZ_N_procs] - 1)
       mdwrap_write((char *) &i, 0, neighbor, type, &cflag);
 
    i = AZ_gsum_int(i,proc_config);
@@ -1522,8 +1522,8 @@ void ml_print_global_element(int element,int update[],int data_org[],
  *                           points need to be communicated. See User's Guide
  *                           for more details.
  *    update_index   ==      On input, ordering of update locally on this
- *                           processor. For example, 'update_index[i]' gives 
- *                           the index location of the block which has the 
+ *                           processor. For example, 'update_index[i]' gives
+ *                           the index location of the block which has the
  *                           global index 'update[i]'.
  *    rpntr          ==      On input, rpntr[i+1]-rpntr[i] gives the block
  *                           size of the ith local block.
@@ -1539,7 +1539,7 @@ void ml_print_global_element(int element,int update[],int data_org[],
 
    i = AZ_gsum_int(1,proc_config);
    N_local = data_org[AZ_N_int_blk]+data_org[AZ_N_bord_blk];
- 
+
 
 
    i = AZ_find_index(element,update, N_local);
@@ -1583,12 +1583,12 @@ int ml_find_global_row(int i, int proc, int global_nrows, int **whole_glob_map)
 	}
 	if (row==global_nrows*num_PDE_eqns)
 		printf("error: didn't find local row (proc=%d, local row=%d) in global mapping\n", proc, i);
-	
+
 	return(row);
 }
 #else
 
-int main(int argc, char *argv[]) 
+int main(int argc, char *argv[])
 {
 #ifdef ML_MPI
   MPI_Init(&argc,&argv);

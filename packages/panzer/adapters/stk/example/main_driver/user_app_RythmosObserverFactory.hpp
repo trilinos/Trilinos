@@ -49,32 +49,67 @@
 #include "Panzer_ResponseLibrary.hpp"
 #include "Panzer_Traits.hpp"
 
+#include "Rythmos_CompositeIntegrationObserver.hpp"
+
 // Individual Observers
 #include "user_app_RythmosObserver_WriteToExodus.hpp"
+#include "user_app_RythmosObserver_CoordinateUpdate.hpp"
 
 namespace user_app {
 
-  class RythmosObserverFactory : public panzer_stk::RythmosObserverFactory {
+  class RythmosObserverFactory : public panzer_stk_classic::RythmosObserverFactory {
 
   public:
-    RythmosObserverFactory(const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & stkIOResponseLibrary)
-       : stkIOResponseLibrary_(stkIOResponseLibrary) {}
+    RythmosObserverFactory(const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & stkIOResponseLibrary,
+                           const Teuchos::RCP<panzer::WorksetContainer> wkstContainer,
+                           bool useCoordinateUpdate)
+       : stkIOResponseLibrary_(stkIOResponseLibrary)
+       , wkstContainer_(wkstContainer)
+       , useCoordinateUpdate_(useCoordinateUpdate) 
+    {}
 
     bool useNOXObserver() const { return false; }
     
     Teuchos::RCP<Rythmos::IntegrationObserverBase<double> >
-    buildRythmosObserver(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
+    buildRythmosObserver(const Teuchos::RCP<panzer_stk_classic::STK_Interface>& mesh,
 			 const Teuchos::RCP<panzer::UniqueGlobalIndexerBase> & dof_manager,
 			 const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> >& lof) const
     {
-      Teuchos::RCP<user_app::RythmosObserver_WriteToExodus> observer = Teuchos::rcp(new user_app::RythmosObserver_WriteToExodus(mesh,dof_manager,lof,stkIOResponseLibrary_));
-      return observer;
+      // all done?
+      if(!useCoordinateUpdate_) {
+        Teuchos::RCP<user_app::RythmosObserver_WriteToExodus> exodus_observer 
+            = Teuchos::rcp(new user_app::RythmosObserver_WriteToExodus(mesh,dof_manager,lof,stkIOResponseLibrary_));
+
+        return exodus_observer;
+      }
+
+      // note: Composite observer loops in the order added
+      Teuchos::RCP<Rythmos::CompositeIntegrationObserver<double> > composite_observer =
+        Rythmos::createCompositeIntegrationObserver<double>();
+
+      {
+        Teuchos::RCP<user_app::RythmosObserver_WriteToExodus> observer 
+            = Teuchos::rcp(new user_app::RythmosObserver_WriteToExodus(mesh,dof_manager,lof,stkIOResponseLibrary_));
+        composite_observer->addObserver(observer);
+      }
+
+      {
+        Teuchos::RCP<user_app::RythmosObserver_CoordinateUpdate> observer 
+            = Teuchos::rcp(new user_app::RythmosObserver_CoordinateUpdate(wkstContainer_));
+        composite_observer->addObserver(observer);
+      }
+
+      return composite_observer;
     }
 
   private:
     //! Store STK IO response library...be careful, it will be modified externally
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > stkIOResponseLibrary_;
 
+    Teuchos::RCP<panzer::WorksetContainer> wkstContainer_;
+
+    //! Use the coordinate update observer?
+    bool useCoordinateUpdate_;
   };
 
 }

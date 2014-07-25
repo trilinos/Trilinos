@@ -324,8 +324,7 @@ std::string MultiVecAdapter<Epetra_MultiVector>::description() const
 
 void MultiVecAdapter<Epetra_MultiVector>::describe(
   Teuchos::FancyOStream& os,
-  const Teuchos::EVerbosityLevel verbLevel=
-  Teuchos::Describable::verbLevel_default) const
+  const Teuchos::EVerbosityLevel verbLevel) const
 {
   // TODO: implement!
 }

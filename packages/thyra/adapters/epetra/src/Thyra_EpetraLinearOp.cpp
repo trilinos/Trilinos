@@ -53,7 +53,7 @@
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Operator.h"
-#include "Epetra_CrsMatrix.h" // Printing only!
+#include "Epetra_CrsMatrix.h" // Printing and absolute row sums only!
 
 
 namespace Thyra {
@@ -562,6 +562,7 @@ bool EpetraLinearOp::rowStatIsSupportedImpl(
   }
   switch (rowStat) {
     case RowStatLinearOpBaseUtils::ROW_STAT_INV_ROW_SUM:
+    case RowStatLinearOpBaseUtils::ROW_STAT_ROW_SUM:
       return true;
     default:
       TEUCHOS_TEST_FOR_EXCEPT(true);
@@ -581,6 +582,10 @@ void EpetraLinearOp::getRowStatImpl(
   switch (rowStat) {
     case RowStatLinearOpBaseUtils::ROW_STAT_INV_ROW_SUM:
       rowMatrix_->InvRowSums(*rowStatVec);
+      break;
+    case RowStatLinearOpBaseUtils::ROW_STAT_ROW_SUM:
+      // compute absolute row sum
+      computeAbsRowSum(*rowStatVec);
       break;
     default:
       TEUCHOS_TEST_FOR_EXCEPT(true);
@@ -616,7 +621,6 @@ EpetraLinearOp::allocateRange(
   // ToDo: What about the transpose argument???, test this!!!
 }
 
-
 // private
 
 
@@ -635,6 +639,59 @@ const Epetra_Map& EpetraLinearOp::getDomainMap() const
   // ToDo: What about the transpose argument???, test this!!!
 }
 
+void EpetraLinearOp::computeAbsRowSum(Epetra_Vector & x) const
+{
+  TEUCHOS_ASSERT(!is_null(rowMatrix_));
+
+  RCP<Epetra_CrsMatrix> crsMatrix 
+    = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(rowMatrix_);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(is_null(crsMatrix),
+    Exceptions::OpNotSupported,
+    "EpetraLinearOp::computeAbsRowSum(...): wrapped matrix must be of type "
+    "Epetra_CrsMatrix for this method. Other operator types are not supported."
+    );
+
+  //
+  // Put inverse of the sum of absolute values of the ith row of A in x[i].
+  // (this is a modified copy of Epetra_CrsMatrix::InvRowSums)
+  //
+
+  if (crsMatrix->Filled()) {
+    TEUCHOS_TEST_FOR_EXCEPTION(is_null(crsMatrix),
+      std::invalid_argument,
+      "EpetraLinearOp::computeAbsRowSum(...): Epetra_CrsMatrix must be filled"
+    );
+  } 
+  int i, j;
+  x.PutScalar(0.0); // Make sure we sum into a vector of zeros.
+  double * xp = (double*)x.Values();
+  if (crsMatrix->Graph().RangeMap().SameAs(x.Map()) && crsMatrix->Exporter() != 0) {
+    Epetra_Vector x_tmp(crsMatrix->RowMap());
+    x_tmp.PutScalar(0.0);
+    double * x_tmp_p = (double*)x_tmp.Values();
+    for (i=0; i < crsMatrix->NumMyRows(); i++) {
+      int      NumEntries = 0;
+      double * RowValues  = 0;
+      crsMatrix->ExtractMyRowView(i,NumEntries,RowValues);
+      for (j=0; j < NumEntries; j++)  x_tmp_p[i] += std::abs(RowValues[j]);
+    }
+    TEUCHOS_TEST_FOR_EXCEPT(0!=x.Export(x_tmp, *crsMatrix->Exporter(), Add)); //Export partial row sums to x.
+  }
+  else if (crsMatrix->Graph().RowMap().SameAs(x.Map())) {
+    for (i=0; i < crsMatrix->NumMyRows(); i++) {
+      int      NumEntries = 0;
+      double * RowValues  = 0;
+      crsMatrix->ExtractMyRowView(i,NumEntries,RowValues);
+      double scale = 0.0;
+      for (j=0; j < NumEntries; j++) scale += std::abs(RowValues[j]);
+      xp[i] = scale;
+    }
+  }
+  else { // x.Map different than both crsMatrix->Graph().RowMap() and crsMatrix->Graph().RangeMap()
+    TEUCHOS_TEST_FOR_EXCEPT(true); // The map of x must be the RowMap or RangeMap of A.
+  }
+}
 
 }	// end namespace Thyra
 

@@ -70,9 +70,9 @@
 #endif
 
 #if defined(sun)
-#define LOG1P(x)	log1p(x)
+#define LOG1P(x)        log1p(x)
 #else
-#define LOG1P(x)	log(1.0 + (x))
+#define LOG1P(x)        log(1.0 + (x))
 #endif
 
 extern aprepro_options ap_options;
@@ -153,7 +153,7 @@ char  *do_extract(char *string, char *begin, char *end);
 double do_Material(double id, char *type, char *name, char *model, char *code, FILE * yyout);
 double do_lgamma(double val);
 double do_juldayhms(double mon, double day, double year,
-			    double h, double mi, double se);
+                            double h, double mi, double se);
 double do_julday(double mon, double day, double year);
 double do_log1p(double mag);
 char  *do_include_path(char *newpath);
@@ -644,7 +644,7 @@ double cof[] =
  -1.231739516, 0.120858003e-2, -0.536382e-5};
 double do_lgamma(double val)
 {
-#define STP	2.50662827465
+#define STP     2.50662827465
   double x, tmp, ser;
   int j;
 
@@ -661,7 +661,7 @@ double do_lgamma(double val)
 }
 
 double do_juldayhms(double mon, double day, double year,
-	      double h, double mi, double se)
+              double h, double mi, double se)
 {
   long m = mon, d = day, y = year;
   long c, ya, j;
@@ -838,7 +838,7 @@ char *do_tolower(char *string)
   while (*p != '\0')
     {
       if (isupper((int)*p))
-	*p = tolower((int)*p);
+        *p = tolower((int)*p);
       p++;
     }
   return (string);
@@ -850,7 +850,7 @@ char *do_toupper(char *string)
   while (*p != '\0')
     {
       if (islower((int)*p))
-	*p = toupper((int)*p);
+        *p = toupper((int)*p);
       p++;
     }
   return (string);
@@ -924,28 +924,32 @@ double do_word_count(char *string, char *delm)
 
 char *do_get_word(double n, char *string, char *delm)
 {
-   char *temp, *token, *word;
-   int i;
+  char *temp = NULL;
+  char *token = NULL;
+  char *word = NULL;
+  int i;
 
-    NEWSTR(string, temp);
-    token = strtok(temp,delm);
+  NEWSTR(string, temp);
+  token = strtok(temp,delm);
+  if (token != NULL) {
     if( n == 1 )
-     {
+    {
       NEWSTR(token,word);
       free(temp);
       return(word);
-     }
+    }
     for(i=1; i<n; i++)
-	{
-        if( (token = strtok(NULL,delm)) == NULL )
-	    {
-	        free(temp);
-            return(NULL);
-            }
-	 }
-     NEWSTR(token,word);
-     free(temp);
-     return(word);
+    {
+      if( (token = strtok(NULL,delm)) == NULL )
+      {
+        free(temp);
+        return(NULL);
+      }
+    }
+    NEWSTR(token,word);
+  }
+  free(temp);
+  return(word);
 }
 
 char *do_file_to_string(char *filename)
@@ -976,6 +980,10 @@ char *do_file_to_string(char *filename)
   size = st.st_size+2;
 
   lines = malloc(size * sizeof(char)+1);
+  if (lines == NULL) {
+    perror("Aprepro: ERR: Out of memory in file_to_string function.\n");
+    exit(EXIT_FAILURE);
+  }
   lines[0] = '\0';
   
   fp = open_file(filename, "r");
@@ -987,6 +995,7 @@ char *do_file_to_string(char *filename)
 
   assert(strlen(lines) <= size);
   NEWSTR(lines, ret_string);
+  fclose(fp);
   if (line) free(line);
   if (lines) free(lines);
   return ret_string;
@@ -1167,10 +1176,10 @@ char *do_get_csv(char *filename, double row, double col)
     rows++;
     if (rows == row) {
       /* Found the correct row, now get the value at the specified
-	 column */
+         column */
       double num_cols = do_word_count(line, delim);
       if (num_cols  > col) {
-	value = do_get_word(col, line, delim);
+        value = do_get_word(col, line, delim);
       }
       break;
     }
@@ -1200,18 +1209,22 @@ char *do_print_array(array *my_array_data)
     
     int size = 32 * rows * cols;
     lines = malloc(size * sizeof(char) + 1);
+    if (lines == NULL) {
+      perror("Aprepro: ERR: Out of memory in print_array function.\n");
+      exit(EXIT_FAILURE);
+    }
     lines[0] = '\0';
     
     for (ir=0; ir < rows; ir++) {
       if (ir > 0)
-	strcat(lines, "\n");
+        strcat(lines, "\n");
       strcat(lines, "\t");
 
       for (ic=0; ic < cols; ic++) {
-	assert(strlen(lines) <= size);
-	sprintf(&lines[strlen(lines)], format->value.svar, my_array_data->data[idx++]);
-	if (ic < cols-1)
-	  strcat(lines, "\t");
+        assert(strlen(lines) <= size);
+        sprintf(&lines[strlen(lines)], format->value.svar, my_array_data->data[idx++]);
+        if (ic < cols-1)
+          strcat(lines, "\t");
       }
     }
     assert(strlen(lines) <= size);
@@ -1226,25 +1239,14 @@ char *do_print_array(array *my_array_data)
 
 array *do_make_array(double rows, double cols)
 {
-  array *array_data = (array*) malloc(sizeof(array));
-  array_data->rows = rows;
-  array_data->cols = cols;
-
-  /* Allocate space to store data... */
-  array_data->data = (double*) calloc(rows*cols,sizeof(double));
-  return array_data;
+  return array_construct(rows, cols);
 }
 
 array *do_identity(double size)
 {
   int i;
   int isize = size;
-  array *array_data = (array*) malloc(sizeof(array));
-  array_data->rows = isize;
-  array_data->cols = isize;
-
-  /* Allocate space to store data... */
-  array_data->data = (double*) calloc(size*size,sizeof(double));
+  array *array_data = array_construct(isize,isize);
 
   for (i=0; i < isize; i++) {
     array_data->data[i*isize+i] = 1.0;
@@ -1255,12 +1257,8 @@ array *do_identity(double size)
 array *do_transpose(array *a)
 {
   int i,j;
-  array *array_data = (array*) malloc(sizeof(array));
-  array_data->rows = a->cols;
-  array_data->cols = a->rows;
+  array *array_data = array_construct(a->cols, a->rows);
 
-  /* Allocate space to store data... */
-  array_data->data = (double*) calloc(a->rows*a->cols,sizeof(double));
   for (i=0; i < a->rows; i++) {
     for (j=0; j < a->cols; j++) {
       array_data->data[j*a->rows+i] = a->data[i*a->cols+j];
@@ -1282,7 +1280,7 @@ array *do_csv_array(char *filename)
   
   FILE *fp = NULL;
   
-  array *array_data = (array*) malloc(sizeof(array));
+  array *array_data = NULL;
 
   fp = open_file(filename, "r");
   while (getline(&line, &len, fp) != -1) {
@@ -1292,11 +1290,8 @@ array *do_csv_array(char *filename)
     }
     rows++;
   }
-  array_data->rows = rows;
-  array_data->cols = cols;
 
-  /* Allocate space to store data... */
-  array_data->data = (double*) malloc( (rows*cols)*sizeof(double));
+  array_data = array_construct(rows, cols);
 
   /* Read file again storing entries in array_data->data */
   rewind(fp);

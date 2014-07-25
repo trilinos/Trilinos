@@ -1,27 +1,10 @@
-
 INCLUDE(TribitsAddExecutableAndTest)
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../stk_util)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../teuchos/src)
+INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_BINARY_DIR}/stk_util/stk_util)
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/)
-
-TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
-
-SET(SOURCES "")
-
-APPEND_SET(SOURCES
-UnitTest_1.cpp
-UnitTestBihTree.cpp
-UnitTestCoarseSearch.cpp
-UnitTestMain.cpp
-UnitTest_4.cpp
-UnitTestBoundingBox.cpp
-UnitTestIdentProc.cpp
-UnitTestRange.cpp
-  )
+FILE(GLOB SOURCES *.cpp)
+#removing due to dependence on geometry toolkit which is not available to Trilinos
+LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/UnitTestCoarseSearch.cpp")
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
     search_unit_tests
@@ -29,6 +12,5 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ARGS ""
     COMM serial mpi
     NUM_MPI_PROCS 1
-    STANDARD_PASS_OUTPUT
     )
 

@@ -84,6 +84,7 @@ typedef int MPI_Comm ;
 
 inline int MPI_Comm_size( MPI_Comm , int * size ) { *size = 1 ; return 0 ; }
 inline int MPI_Comm_rank( MPI_Comm , int * rank ) { *rank = 0 ; return 0 ; }
+inline int MPI_Barrier( MPI_Comm ) { return 0; }
 
 namespace Kokkos {
 namespace Example {

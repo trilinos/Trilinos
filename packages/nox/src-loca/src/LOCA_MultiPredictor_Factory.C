@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -62,7 +62,7 @@
 #include "LOCA_MultiPredictor_Restart.H"
 
 LOCA::MultiPredictor::Factory::Factory(
-	        const Teuchos::RCP<LOCA::GlobalData>& global_data) : 
+            const Teuchos::RCP<LOCA::GlobalData>& global_data) :
   globalData(global_data)
 {
 }
@@ -80,63 +80,63 @@ LOCA::MultiPredictor::Factory::create(
   Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy> strategy;
 
   // Get solver sublist
-  Teuchos::RCP<Teuchos::ParameterList> solverParams = 
+  Teuchos::RCP<Teuchos::ParameterList> solverParams =
     topParams->getSublist("Linear Solver");
 
   // Get name of strategy
   const std::string& name = strategyName(*predictorParams);
 
   if (name == "Constant")
-    strategy = 
+    strategy =
       Teuchos::rcp(new LOCA::MultiPredictor::Constant(globalData,
-						      predictorParams));
+                              predictorParams));
 
   else if (name == "Tangent")
-    strategy = 
+    strategy =
       Teuchos::rcp(new LOCA::MultiPredictor::Tangent(globalData,
-						     predictorParams,
-						     solverParams));
+                             predictorParams,
+                             solverParams));
   else if (name == "Secant")
-    strategy = 
+    strategy =
       Teuchos::rcp(new LOCA::MultiPredictor::Secant(globalData,
-						    topParams,
-						    predictorParams));
+                            topParams,
+                            predictorParams));
   else if (name == "Random")
-    strategy = 
+    strategy =
       Teuchos::rcp(new LOCA::MultiPredictor::Random(globalData,
-						    predictorParams));
+                            predictorParams));
   else if (name == "Restart")
-    strategy = 
+    strategy =
       Teuchos::rcp(new LOCA::MultiPredictor::Restart(globalData,
-						    predictorParams));
+                            predictorParams));
 
   else if (name == "User-Defined") {
 
     // Get name of user-defined strategy
     std::string userDefinedName = predictorParams->get("User-Defined Name",
-							   "???");
+                               "???");
     if ((*predictorParams).INVALID_TEMPLATE_QUALIFIER
-	isType< Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy> >(userDefinedName))
+    isType< Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy> >(userDefinedName))
       strategy = (*predictorParams).INVALID_TEMPLATE_QUALIFIER
-	get< Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy> >(userDefinedName);
+    get< Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy> >(userDefinedName);
     else
        globalData->locaErrorCheck->throwError(
-				       methodName,
-				       "Cannot find user-defined strategy: " + 
-				       userDefinedName);
+                       methodName,
+                       "Cannot find user-defined strategy: " +
+                       userDefinedName);
   }
   else
     globalData->locaErrorCheck->throwError(
-				      methodName,
-				      "Invalid predictor strategy: " + 
-				      name);
+                      methodName,
+                      "Invalid predictor strategy: " +
+                      name);
 
   return strategy;
 }
 
 const std::string&
 LOCA::MultiPredictor::Factory::strategyName(
-				  Teuchos::ParameterList& predictorParams) const
+                  Teuchos::ParameterList& predictorParams) const
 {
   return predictorParams.get("Method", "Secant");
 }

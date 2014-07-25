@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
 
   int numVectors = 2;
 
-  tV = uinput->getTpetraMultiVector(numVectors);
+  tV = uinput->getUITpetraMultiVector(numVectors);
   size_t vlen = tV->getLocalLength();
   Teuchos::ArrayView<const gno_t> rowGids = tV->getMap()->getNodeElementList();
 
@@ -181,15 +181,17 @@ int main(int argc, char *argv[])
   ArrayRCP<const gno_t> gidArray = arcpFromArrayView(rowGids);
   RCP<const idmap_t> idMap = rcp(new idmap_t(env, comm, gidArray));
 
-  int weightDim = 1;
-
-  zoltan2_partId_t *p = new zoltan2_partId_t [vlen];
-  memset(p, 0, sizeof(zoltan2_partId_t) * vlen);
-  ArrayRCP<zoltan2_partId_t> solnParts(p, 0, vlen, true);
+  int nWeights = 1;
 
   typedef Zoltan2::XpetraMultiVectorAdapter<tvector_t> ia_t;
   typedef Zoltan2::PartitioningSolution<ia_t> soln_t;
-  soln_t solution(env, comm, idMap, weightDim);
+  typedef ia_t::part_t part_t;
+
+  part_t *p = new part_t [vlen];
+  memset(p, 0, sizeof(part_t) * vlen);
+  ArrayRCP<part_t> solnParts(p, 0, vlen, true);
+
+  soln_t solution(env, comm, idMap, nWeights);
   solution.setParts(gidArray, solnParts, true);
 
   std::vector<const scalar_t *> emptyWeights;
@@ -261,7 +263,7 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////////
   // User object is Xpetra::MultiVector
   if (!gfail){ 
-    RCP<xvector_t> xV = uinput->getXpetraMultiVector(numVectors);
+    RCP<xvector_t> xV = uinput->getUIXpetraMultiVector(numVectors);
     RCP<const xvector_t> cxV = rcp_const_cast<const xvector_t>(xV);
     RCP<Zoltan2::XpetraMultiVectorAdapter<xvector_t> > xVInput;
   
@@ -325,7 +327,7 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////////
   // User object is Epetra_MultiVector
   if (!gfail){ 
-    RCP<evector_t> eV = uinput->getEpetraMultiVector(numVectors);
+    RCP<evector_t> eV = uinput->getUIEpetraMultiVector(numVectors);
     RCP<const evector_t> ceV = rcp_const_cast<const evector_t>(eV);
     RCP<Zoltan2::XpetraMultiVectorAdapter<evector_t> > eVInput;
   

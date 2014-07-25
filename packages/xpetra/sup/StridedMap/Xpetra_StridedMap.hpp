@@ -63,13 +63,6 @@
 #include "Xpetra_Map.hpp"
 #include "Xpetra_MapFactory.hpp"
 
-// MPI helper
-#define minAll(rcpComm, in, out)                                        \
-  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MIN, in, Teuchos::outArg(out));
-#define sumAll(rcpComm, in, out)                                        \
-  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out));
-
-
 namespace Xpetra {
 
   /*!
@@ -185,7 +178,7 @@ namespace Xpetra {
                                      "StridedTpetraMap::StridedTpetraMap: wrong distribution of dofs among processors.");
 
         } else {
-          int nDofsInStridedBlock = stridingInfo[stridedBlockId];
+          size_t nDofsInStridedBlock = stridingInfo[stridedBlockId];
           TEUCHOS_TEST_FOR_EXCEPTION(getNodeNumElements() != Teuchos::as<size_t>(nodeMap->getNodeNumElements()*nDofsInStridedBlock), Exceptions::RuntimeError,
                                      "StridedTpetraMap::StridedTpetraMap: wrong distribution of dofs among processors.");
           TEUCHOS_TEST_FOR_EXCEPTION(getGlobalNumElements() != Teuchos::as<size_t>(nodeMap->getGlobalNumElements()*nDofsInStridedBlock), Exceptions::RuntimeError,
@@ -233,7 +226,7 @@ namespace Xpetra {
 #ifdef HAVE_TPETRA_DEBUG
         // We have to do this check ourselves, as we don't necessarily construct the full Tpetra map
         global_size_t sumLocalElements;
-        sumAll(comm, Teuchos::as<global_size_t>(numLocalElements), sumLocalElements);
+        Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, Teuchos::as<global_size_t>(numLocalElements), Teuchos::outArg(sumLocalElements));
         TEUCHOS_TEST_FOR_EXCEPTION(sumLocalElements != numGlobalElements, std::invalid_argument,
                                    "StridedMap::StridedMap: sum of numbers of local elements is different from the provided number of global elements.");
 #endif
@@ -326,7 +319,7 @@ namespace Xpetra {
 #ifdef HAVE_TPETRA_DEBUG
         // We have to do this check ourselves, as we don't necessarily construct the full Tpetra map
         global_size_t sumLocalElements, numLocalElements = elementList.size();
-        sumAll(comm, numLocalElements, sumLocalElements);
+        Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, numLocalElements, Teuchos::outArg(sumLocalElements));
         TEUCHOS_TEST_FOR_EXCEPTION(sumLocalElements != numGlobalElements, std::invalid_argument,
                                    "StridedMap::StridedMap: sum of numbers of local elements is different from the provided number of global elements.");
 #endif
@@ -357,7 +350,7 @@ namespace Xpetra {
         if (elementList[k] < minGidOnCurProc)
           minGidOnCurProc = elementList[k];
 
-      minAll(comm, minGidOnCurProc, offset_);
+      Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, minGidOnCurProc, Teuchos::outArg(offset_));
 
       // calculate striding index
       size_t nStridedOffset = 0;
@@ -614,10 +607,10 @@ namespace Xpetra {
     bool isSameAs(const Map& map) const { return map_->isSameAs(map); }
 
     //! Get the Comm object for this Map.
-    const Teuchos::RCP< const Teuchos::Comm< int > > getComm() const { return map_->getComm(); }
+    Teuchos::RCP< const Teuchos::Comm< int > > getComm() const { return map_->getComm(); }
 
     //! Get the Node object for this Map.
-    const Teuchos::RCP<Node>  getNode() const { return map_->getNode(); }
+    Teuchos::RCP<Node>  getNode() const { return map_->getNode(); }
 
     RCP<const Map> removeEmptyProcesses  () const { return map_->removeEmptyProcesses(); }
     RCP<const Map> replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const { return map_->replaceCommWithSubset(newComm); }

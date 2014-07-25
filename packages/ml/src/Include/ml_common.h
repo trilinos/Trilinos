@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -52,7 +52,7 @@
 #undef VERSION
 #endif
 
-#ifndef TRILINOS_NO_CONFIG_H 
+#ifndef TRILINOS_NO_CONFIG_H
 #include "ml_config.h"
 
 /* aztecoo depends on epetra ...*/
@@ -87,7 +87,7 @@
 #ifdef HAVE_ML_SUPERLU_DIST
 #define DSUPERLU
 #endif
- 
+
 #ifdef HAVE_MPI
 #ifndef ML_MPI
 #define ML_MPI

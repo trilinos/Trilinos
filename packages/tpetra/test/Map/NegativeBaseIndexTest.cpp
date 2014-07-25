@@ -101,15 +101,25 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST( Map, Bug5401_NegativeBaseIndex )
   {
+    using std::endl;
+    out << "Bug 5401 (negative index base) test" << endl;
+    Teuchos::OSTab tab0 (out);
+
     // failure reading 1x4 matrix under MPI
     typedef int                          LO;
     typedef int                          GO;
     typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType node_type;
     typedef Tpetra::Map<LO,GO,node_type> map_type;
     typedef Teuchos::Comm<int>           comm_type;
+    typedef Teuchos::Array<GO>::size_type size_type;
+
     // create a comm
     RCP<const comm_type> comm = getDefaultComm();
     const int numImages = comm->getSize();
+    const int myRank = comm->getRank ();
+
+    out << "Comm has " << numImages << " process"
+        << (numImages != 1 ? "es" : "") << endl;
     TEUCHOS_TEST_FOR_EXCEPTION(
       numImages != 2,
       std::logic_error,
@@ -121,10 +131,42 @@ namespace {
     const global_size_t GINV   = Teuchos::OrdinalTraits<global_size_t>::invalid();
     Array<int> elements (numElements);
 
-    // first global element is -1
-    for (int i = 0; i < elements.size(); ++i) elements[i] = i - 1;
+    out << "Create array of global indices.  All processes have the same "
+        << "global index.  The first global index on all processes is "
+        << baseIndexIsNegOne << "." << endl;
 
-    RCP<map_type> map = rcp (new map_type (GINV, elements(), baseIndexIsNegOne, comm));
+    // first global element is -1
+    for (size_type i = 0; i < elements.size (); ++i) {
+      elements[i] = i - 1;
+    }
+
+    //int localMapCtorSuccess = 0;
+    RCP<map_type> map;
+
+    map = Teuchos::rcp (new map_type (GINV, elements(), baseIndexIsNegOne, comm));
+
+    // try {
+    //   map = Teuchos::rcp (new map_type (GINV, elements(), baseIndexIsNegOne, comm));
+    //   int localMapCtorSuccess = 1;
+    // } catch (std::exception& e) {
+    //   out << "Process " << myRank << ": Noncontiguous Map constructor failed "
+    //       << "with the following exception message: " << e.what () << endl;
+    // }
+    // int globalMapCtorSuccess = 0;
+    // Teuchos::reduceAll<int, int> (*comm, Teuchos::REDUCE_MIN,
+    //                               localMapCtorSuccess,
+    //                               outArg (globalMapCtorSuccess));
+    // TEST_EQUALITY_CONST( globalMapCtorSuccess, 1 );
+
+    out << "Process " << myRank << ":";
+    {
+      Teuchos::OSTab tab1 (out);
+      out << "My number of global indices: " << map->getNodeNumElements () << endl
+          << "Global number of global indices: " << map->getGlobalNumElements () << endl
+          << "Index base: " << map->getIndexBase () << endl
+          << "My min global index: " << map->getMinGlobalIndex () << endl
+          << "Global min global index: " << map->getMinAllGlobalIndex () << endl;
+    }
 
     TEST_EQUALITY( map->getNodeNumElements(),   as<size_t> (numElements) );
     TEST_EQUALITY( map->getGlobalNumElements(), as<global_size_t> (numElements*numImages) );
@@ -134,7 +176,7 @@ namespace {
 
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 

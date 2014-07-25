@@ -63,13 +63,18 @@ GatherOrientation(
 
   indexerNames_ = p.get< Teuchos::RCP< std::vector<std::string> > >("Indexer Names");
 
-  Teuchos::RCP<panzer::PureBasis> basis = 
-    p.get< Teuchos::RCP<panzer::PureBasis> >("Basis");
+  // this is beging to fix the issues with incorrect use of const
+  Teuchos::RCP<const panzer::PureBasis> basis;
+  if(p.isType< Teuchos::RCP<panzer::PureBasis> >("Basis"))
+    basis = p.get< Teuchos::RCP<panzer::PureBasis> >("Basis");
+  else
+    basis = p.get< Teuchos::RCP<const panzer::PureBasis> >("Basis");
 
   gatherFieldOrientations_.resize(names.size());
   for (std::size_t fd = 0; fd < names.size(); ++fd) {
     gatherFieldOrientations_[fd] = 
-      PHX::MDField<ScalarT,Cell,NODE>(names[fd]+" Orientation",basis->functional);
+      // PHX::MDField<ScalarT,Cell,NODE>(names[fd]+" Orientation",basis->functional);
+      PHX::MDField<ScalarT,Cell,NODE>(basis->name()+" Orientation",basis->functional);
     this->addEvaluatedField(gatherFieldOrientations_[fd]);
   }
 
@@ -126,7 +131,7 @@ evaluateFields(typename Traits::EvalData workset)
       for (std::size_t fieldIndex=0; fieldIndex<gatherFieldOrientations_.size();fieldIndex++) {
          int fieldNum = fieldIds_[fieldIndex];
          const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
- 
+
          // loop over basis functions and fill the fields
          for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
             int offset = elmtOffset[basis];

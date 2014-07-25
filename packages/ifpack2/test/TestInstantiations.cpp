@@ -72,8 +72,12 @@
 #include <Ifpack2_Chebyshev_decl.hpp>
 #include <Ifpack2_Chebyshev_def.hpp>
 
-/* these examples require some explicit instantiations that is not enabled in the build of the library 
-*/
+// Some Ifpack2 examples require explicit instantiations that are not
+// enabled in the library by default.  When we fix Ifpack2's ETI
+// system to use Tpetra's, then we can get rid of all of these.  For
+// now, this only comes up for Scalar=dd_real, which is not a commonly
+// tested Scalar type in Tpetra or Ifpack2, though it does get some
+// use in applications.
 
 #if defined(HAVE_TPETRA_QD)
 #include <qd/dd_real.h>
@@ -99,9 +103,5 @@
 
 INSTANT_ALL(KokkosClassic::DefaultNode::DefaultNodeType)
 #endif
-
-namespace Ifpack2 {
-  template class Diagonal<Tpetra::CrsMatrix<double,int,int,KokkosClassic::SerialNode> >;
-}
 
 #endif

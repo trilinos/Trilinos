@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -54,11 +54,11 @@
 #include "Teuchos_ParameterList.hpp"
 
 LOCA::AnasaziOperator::JacobianInverse::JacobianInverse(
-	const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RCP<Teuchos::ParameterList>& eigenParams_,
-	const Teuchos::RCP<Teuchos::ParameterList>& solverParams_,
-	const Teuchos::RCP<NOX::Abstract::Group>& grp_)
+    const Teuchos::RCP<LOCA::GlobalData>& global_data,
+    const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+    const Teuchos::RCP<Teuchos::ParameterList>& eigenParams_,
+    const Teuchos::RCP<Teuchos::ParameterList>& solverParams_,
+    const Teuchos::RCP<NOX::Abstract::Group>& grp_)
   : globalData(global_data),
     myLabel("Jacobian Inverse"),
     eigenParams(eigenParams_),
@@ -67,7 +67,7 @@ LOCA::AnasaziOperator::JacobianInverse::JacobianInverse(
     tmp_r(),
     tmp_i()
 {
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::AnasaziOperator::JacobianInverse::JacobianInverse()";
 
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -75,9 +75,9 @@ LOCA::AnasaziOperator::JacobianInverse::JacobianInverse(
 
   // make sure Jacobian is up-to-date
   status = grp->computeJacobian();
-  finalStatus = 
+  finalStatus =
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-							   callingFunction);
+                               callingFunction);
 }
 
 LOCA::AnasaziOperator::JacobianInverse::~JacobianInverse()
@@ -92,13 +92,13 @@ LOCA::AnasaziOperator::JacobianInverse::label() const
 
 void
 LOCA::AnasaziOperator::JacobianInverse::apply(
-				      const NOX::Abstract::MultiVector& input, 
-				      NOX::Abstract::MultiVector& output) const
+                      const NOX::Abstract::MultiVector& input,
+                      NOX::Abstract::MultiVector& output) const
 {
-  NOX::Abstract::Group::ReturnType status = 
+  NOX::Abstract::Group::ReturnType status =
     grp->applyJacobianInverseMultiVector(*solverParams, input, output);
-  globalData->locaErrorCheck->checkReturnType(status, 
-		       "LOCA::AnasaziOperator::JacobianInverse::apply()");
+  globalData->locaErrorCheck->checkReturnType(status,
+               "LOCA::AnasaziOperator::JacobianInverse::apply()");
 }
 
 void
@@ -110,8 +110,8 @@ LOCA::AnasaziOperator::JacobianInverse::beginPostProcessing()
 }
 
 void
-LOCA::AnasaziOperator::JacobianInverse::transformEigenvalue(double& ev_r, 
-							    double& ev_i) const
+LOCA::AnasaziOperator::JacobianInverse::transformEigenvalue(double& ev_r,
+                                double& ev_i) const
 {
   // compute inverse of eigenvalue
   double mag = ev_r*ev_r + ev_i*ev_i;
@@ -119,13 +119,13 @@ LOCA::AnasaziOperator::JacobianInverse::transformEigenvalue(double& ev_r,
   ev_i = -ev_i / mag;
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::AnasaziOperator::JacobianInverse::rayleighQuotient(
-				         NOX::Abstract::Vector& evec_r,
-					 NOX::Abstract::Vector& evec_i,
-					 double& rq_r, double& rq_i) const
+                         NOX::Abstract::Vector& evec_r,
+                     NOX::Abstract::Vector& evec_i,
+                     double& rq_r, double& rq_i) const
 {
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::AnasaziOperator::JacobianInverse::rayleighQuotient()";
 
   // Allocate temporary vectors
@@ -138,14 +138,14 @@ LOCA::AnasaziOperator::JacobianInverse::rayleighQuotient(
   NOX::Abstract::Group::ReturnType status;
 
   status = grp->applyJacobian(evec_r, *tmp_r);
-  finalStatus = 
+  finalStatus =
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-							   callingFunction);
-  
+                               callingFunction);
+
   status = grp->applyJacobian(evec_i, *tmp_i);
-  finalStatus = 
+  finalStatus =
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-							   callingFunction);
+                               callingFunction);
 
   rq_r = evec_r.innerProduct(*tmp_r) + evec_i.innerProduct(*tmp_i);
   rq_i = evec_r.innerProduct(*tmp_i) - evec_i.innerProduct(*tmp_r);

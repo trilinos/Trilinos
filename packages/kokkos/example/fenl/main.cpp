@@ -5,12 +5,17 @@
 
 #include <utility>
 #include <string>
+#include <vector>
 #include <sstream>
 #include <iostream>
+#include <iomanip>
 
-#include <KokkosCore_config.h>
+#include <Kokkos_Macros.hpp>
 #include <Kokkos_hwloc.hpp>
+
+#if defined( KOKKOS_HAVE_PTHREAD )
 #include <Kokkos_Threads.hpp>
+#endif
 
 #if defined( KOKKOS_HAVE_CUDA )
 #include <Kokkos_Cuda.hpp>
@@ -22,6 +27,10 @@
 
 #include <WrapMPI.hpp>
 #include <fenl.hpp>
+
+// For vtune
+#include <sys/types.h>
+#include <unistd.h>
 
 //----------------------------------------------------------------------------
 
@@ -39,6 +48,7 @@ enum { CMD_USE_THREADS = 0
      , CMD_USE_FIXTURE_QUADRATIC
      , CMD_USE_ATOMIC
      , CMD_USE_TRIALS
+     , CMD_VTUNE
      , CMD_PRINT
      , CMD_ECHO
      , CMD_ERROR
@@ -81,41 +91,102 @@ void print_cmdline( std::ostream & s , const int cmd[] )
   if ( cmd[ CMD_USE_TRIALS ] ) {
     s << " TRIALS(" << cmd[ CMD_USE_TRIALS ] << ")" ;
   }
+  if ( cmd[ CMD_VTUNE ] ) {
+    s << " VTUNE" ;
+  }
   if ( cmd[ CMD_PRINT ] ) {
     s << " PRINT" ;
   }
   s << std::endl ;
 }
 
-void print_perf_value( std::ostream & s , const Kokkos::Example::FENL::Perf & perf )
+void print_perf_value( std::ostream & s , const std::vector<size_t> & widths,  const Kokkos::Example::FENL::Perf & perf )
 {
-  s << perf.global_elem_count << " , "
-    << perf.global_node_count << " , "
-    << perf.newton_iter_count << " , "
-    << perf.cg_iter_count << " , "
-    << ( perf.graph_time * 1000.0 ) / perf.global_node_count << " , "
-    << ( perf.fill_time * 1000.0 ) / perf.global_node_count << " , "
-    << ( perf.bc_time * 1000.0 ) / perf.global_node_count << " , "
-    << ( ( perf.cg_time * 1000.0 ) / perf.cg_iter_count ) / perf.global_node_count << " , "
-    << perf.error_max
-    << std::endl ;
+  int i=0;
+  s << std::setw(widths[i++]) << perf.global_elem_count << " ,";
+  s << std::setw(widths[i++]) << perf.global_node_count << " ,";
+  s << std::setw(widths[i++]) << perf.newton_iter_count << " ,";
+  s << std::setw(widths[i++]) << perf.cg_iter_count << " ,";
+  s << std::setw(widths[i++]) << perf.map_ratio << " ,";
+  s << std::setw(widths[i++]) << ( perf.fill_node_set * 1000.0 ) / perf.global_node_count << " ,";
+  s << std::setw(widths[i++]) << ( perf.scan_node_count * 1000.0 ) / perf.global_node_count << " ,";
+  s << std::setw(widths[i++]) << ( perf.fill_graph_entries * 1000.0 ) / perf.global_node_count << " ,";
+  s << std::setw(widths[i++]) << ( perf.sort_graph_entries * 1000.0 ) / perf.global_node_count << " ,";
+  s << std::setw(widths[i++]) << ( perf.fill_element_graph * 1000.0 ) / perf.global_node_count << " ,";
+  s << std::setw(widths[i++]) << ( perf.create_sparse_matrix * 1000.0 ) / perf.global_node_count << " ,";
+  s << std::setw(widths[i++]) << ( perf.fill_time * 1000.0 ) / perf.global_node_count << " ,";
+  s << std::setw(widths[i++]) << ( perf.bc_time * 1000.0 ) / perf.global_node_count << " ,";
+  s << std::setw(widths[i++]) << ( ( perf.matvec_time * 1000.0 ) / perf.cg_iter_count ) / perf.global_node_count << " ,";
+  s << std::setw(widths[i++]) << ( ( perf.cg_time * 1000.0 ) / perf.cg_iter_count ) / perf.global_node_count << " ,";
+  s << std::setw(widths[i])   << perf.error_max;
+  s << std::endl ;
 }
 
 template< class Device , Kokkos::Example::BoxElemPart::ElemOrder ElemOrder >
 void run( MPI_Comm comm , const int cmd[] )
 {
-  if ( cmd[ CMD_USE_THREADS ] ) { std::cout << "THREADS , " << cmd[ CMD_USE_THREADS ] ; }
-  else if ( cmd[ CMD_USE_OPENMP ] ) { std::cout << "OPENMP , " << cmd[ CMD_USE_OPENMP ] ; }
-  else if ( cmd[ CMD_USE_CUDA ] ) { std::cout << "CUDA" ; }
+  int comm_rank = 0 ;
+  int comm_size = 1 ;
 
-  if ( cmd[ CMD_USE_FIXTURE_QUADRATIC ] ) { std::cout << " , QUADRATIC-ELEMENT" ; }
-  else { std::cout << " , LINEAR-ELEMENT" ; }
+#if defined( KOKKOS_HAVE_MPI )
+  MPI_Comm_rank( comm , & comm_rank );
+  MPI_Comm_size( comm , & comm_size );
+#else
+  comm = 0 ;
+  (void)comm_size;
+#endif
 
-  if ( cmd[ CMD_USE_ATOMIC ] ) { std::cout << " , USING ATOMICS" ; }
 
-  std::cout << std::endl ;
-  std::cout << "ELEMS , NODES , NEWTON , CG   , GRAPH/NODE , FILL/NODE , BOUNDARY/NODE , CG/ITER/ROW , ERROR" << std::endl ;
-  std::cout << "count , count , iter   , iter , millisec ,   millisec  , millisec      , millisec    , ratio" << std::endl ;
+  if ( 0 == comm_rank ) {
+    if ( cmd[ CMD_USE_THREADS ] ) { std::cout << "THREADS , " << cmd[ CMD_USE_THREADS ] ; }
+    else if ( cmd[ CMD_USE_OPENMP ] ) { std::cout << "OPENMP , " << cmd[ CMD_USE_OPENMP ] ; }
+    else if ( cmd[ CMD_USE_CUDA ] ) { std::cout << "CUDA" ; }
+
+    if ( cmd[ CMD_USE_FIXTURE_QUADRATIC ] ) { std::cout << " , QUADRATIC-ELEMENT" ; }
+    else { std::cout << " , LINEAR-ELEMENT" ; }
+
+    if ( cmd[ CMD_USE_ATOMIC ] ) { std::cout << " , USING ATOMICS" ; }
+  }
+
+  std::vector< std::pair<std::string,std::string> > headers;
+
+
+  headers.push_back(std::make_pair("ELEMS","count"));
+  headers.push_back(std::make_pair("NODES","count"));
+  headers.push_back(std::make_pair("NEWTON","iter"));
+  headers.push_back(std::make_pair("CG","iter"));
+  headers.push_back(std::make_pair("MAP_RATIO","ratio"));
+  headers.push_back(std::make_pair("SET_FILL/NODE","millisec"));
+  headers.push_back(std::make_pair("SCAN/NODE","millisec"));
+  headers.push_back(std::make_pair("GRAPH_FILL/NODE","millisec"));
+  headers.push_back(std::make_pair("SORT/NODE","millisec"));
+  headers.push_back(std::make_pair("ELEM_GRAPH_FILL/NODE","millisec"));
+  headers.push_back(std::make_pair("MATRIX_CREATE/NODE","millisec"));
+  headers.push_back(std::make_pair("MATRIX_FILL/NODE","millisec"));
+  headers.push_back(std::make_pair("BOUNDARY/NODE","millisec"));
+  headers.push_back(std::make_pair("MAT_VEC/ITER/ROW","millisec"));
+  headers.push_back(std::make_pair("CG/ITER/ROW","millisec"));
+  headers.push_back(std::make_pair("ERROR","ratio"));
+
+  // find print widths
+  size_t min_width = 10;
+  std::vector< size_t > widths(headers.size());
+  for (size_t i=0, ie=headers.size(); i<ie; ++i)
+    widths[i] = std::max(min_width, headers[i].first.size()+1);
+
+  // print column headers
+  if ( 0 == comm_rank ) {
+    std::cout << std::endl ;
+    for (size_t i=0; i<headers.size(); ++i)
+      std::cout << std::setw(widths[i]) << headers[i].first << " ,";
+    std::cout << "\b\b  " << std::endl;
+    for (size_t i=0; i<headers.size(); ++i)
+      std::cout << std::setw(widths[i]) << headers[i].second << " ,";
+    std::cout << "\b\b  " << std::endl;
+
+    std::cout << std::scientific;
+    std::cout.precision(3);
+  }
 
   if ( cmd[ CMD_USE_FIXTURE_BEGIN ] ) {
     for ( int i = cmd[CMD_USE_FIXTURE_BEGIN] ; i < cmd[CMD_USE_FIXTURE_END] * 2 ; i *= 2 ) {
@@ -132,7 +203,7 @@ void run( MPI_Comm comm , const int cmd[] )
             ( comm , cmd[CMD_PRINT], cmd[CMD_USE_TRIALS], cmd[CMD_USE_ATOMIC], nelem )
         ;
 
-      print_perf_value( std::cout , perf );
+      if ( 0 == comm_rank ) print_perf_value( std::cout , widths, perf );
     }
   }
   else {
@@ -148,7 +219,7 @@ void run( MPI_Comm comm , const int cmd[] )
           ( comm , cmd[CMD_PRINT], cmd[CMD_USE_TRIALS], cmd[CMD_USE_ATOMIC], nelem )
       ;
 
-    print_perf_value( std::cout , perf );
+    if ( 0 == comm_rank ) print_perf_value( std::cout , widths, perf );
   }
 }
 
@@ -166,6 +237,7 @@ int main( int argc , char ** argv )
   MPI_Comm_size( comm , & comm_size );
 #else
   MPI_Comm comm = 0 ;
+  (void)comm_size;
 #endif
 
   int cmdline[ CMD_COUNT ] ;
@@ -212,6 +284,9 @@ int main( int argc , char ** argv )
       else if ( 0 == strcasecmp( argv[i] , "trials" ) ) {
         cmdline[ CMD_USE_TRIALS ] = atoi( argv[++i] ) ;
       }
+      else if ( 0 == strcasecmp( argv[i] , "vtune" ) ) {
+        cmdline[ CMD_VTUNE ] = 1 ;
+      }
       else if ( 0 == strcasecmp( argv[i] , "print" ) ) {
         cmdline[ CMD_PRINT ] = 1 ;
       }
@@ -225,12 +300,28 @@ int main( int argc , char ** argv )
       }
     }
 
-    if ( cmdline[ CMD_ECHO ] ) { print_cmdline( std::cout , cmdline ); }
+    if ( cmdline[ CMD_ECHO ] && 0 == comm_rank ) { print_cmdline( std::cout , cmdline ); }
   }
 
 #if defined( KOKKOS_HAVE_MPI )
   MPI_Bcast( cmdline , CMD_COUNT , MPI_INT , 0 , comm );
 #endif
+
+  if ( cmdline[ CMD_VTUNE ] ) {
+    std::stringstream cmd;
+    pid_t my_os_pid=getpid();
+    const std::string vtune_loc =
+      "/usr/local/intel/vtune_amplifier_xe_2013/bin64/amplxe-cl";
+    const std::string output_dir = "./vtune/vtune.";
+    const int p_rank = comm_rank;
+    cmd << vtune_loc
+        << " -collect hotspots -result-dir " << output_dir << p_rank
+        << " -target-pid " << my_os_pid << " &";
+    if (p_rank == 0)
+      std::cout << cmd.str() << std::endl;
+    system(cmd.str().c_str());
+    system("sleep 10");
+  }
 
   if ( ! cmdline[ CMD_ERROR ] && ! cmdline[ CMD_ECHO ] ) {
 
@@ -272,7 +363,7 @@ int main( int argc , char ** argv )
                                      cmdline[ CMD_USE_CORE_PER_NUMA ] );
       }
       else {
-        Kokkos::OpenMP::initialize( cmdline[ CMD_USE_THREADS ] );
+        Kokkos::OpenMP::initialize( cmdline[ CMD_USE_OPENMP ] );
       }
 
       run< Kokkos::OpenMP , Kokkos::Example::BoxElemPart::ElemLinear >( comm , cmdline );

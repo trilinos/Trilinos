@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #ifndef ML_BLAS_LAPACK_WRAPPERS_H
 #define ML_BLAS_LAPACK_WRAPPERS_H
@@ -29,8 +29,8 @@ typedef long ftnlen;
 #include "fortran.h"
 #define ml_fcd fcd
 #define PREFIX
-xxxxx DGTTRF_F77(&length, trid_dl[i], trid_d[i], trid_du[i], trid_du2[i], trid_ipiv[i], &info);
 
+#define DGBSV_F77   F77_BLAS_MANGLE(sgbsv,SGBSV)
 #define DGTTRF_F77  F77_BLAS_MANGLE(sgttrf,SGTTRF)
 #define DGTTS2_F77  F77_BLAS_MANGLE(sgtts2,SGTTS2)
 #define DGETRF_F77  F77_BLAS_MANGLE(sgetrf,SGETRF)
@@ -68,6 +68,7 @@ xxxxx DGTTRF_F77(&length, trid_dl[i], trid_d[i], trid_du[i], trid_du2[i], trid_i
 #define DGEEV_F77   F77_BLAS_MANGLE(dgeev,DGEEV)
 #define DGEHRD_F77  F77_BLAS_MANGLE(dgehrd,DGEHRD)
 #define DGELS_F77   F77_BLAS_MANGLE(dgels,DGELS)
+#define DGBSV_F77   F77_BLAS_MANGLE(dgbsv,DGBSV)
 #define DGTTRF_F77  F77_BLAS_MANGLE(dgttrf,DGTTRF)
 #define DGTTS2_F77  F77_BLAS_MANGLE(dgtts2,DGTTS2)
 #define DGETRF_F77  F77_BLAS_MANGLE(dgetrf,DGETRF)
@@ -99,6 +100,7 @@ xxxxx DGTTRF_F77(&length, trid_dl[i], trid_d[i], trid_du[i], trid_du2[i], trid_i
 #define ml_fcd char *
 #define PREFIX
 
+#define DGBSV_F77   F77_BLAS_MANGLE(dgbsv,DGBSV)
 #define DGTTRF_F77  F77_BLAS_MANGLE(dgttrf,DGTTRF)
 #define DGTTS2_F77  F77_BLAS_MANGLE(dgtts2,DGTTS2)
 #define DGETRF_F77  F77_BLAS_MANGLE(dgetrf,DGETRF)
@@ -140,7 +142,7 @@ xxxxx DGTTRF_F77(&length, trid_dl[i], trid_d[i], trid_du[i], trid_du2[i], trid_i
 #define ml_fcd char *
 #define PREFIX
 
-/* Use autoconf's definition of F77_BLAS_MANGLE 
+/* Use autoconf's definition of F77_BLAS_MANGLE
    unless using old make system */
 
 #ifdef TRILINOS_NO_CONFIG_H
@@ -156,6 +158,7 @@ xxxxx DGTTRF_F77(&length, trid_dl[i], trid_d[i], trid_du[i], trid_du2[i], trid_i
 #endif /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE */
 #endif /* TRILINOS_NO_CONFIG_H */
 
+#define DGBSV_F77   F77_BLAS_MANGLE(dgbsv,DGBSV)
 #define DGTTRF_F77  F77_BLAS_MANGLE(dgttrf,DGTTRF)
 #define DGTTS2_F77  F77_BLAS_MANGLE(dgtts2,DGTTS2)
 #define DGETRF_F77  F77_BLAS_MANGLE(dgetrf,DGETRF)
@@ -200,6 +203,7 @@ xxxxx DGTTRF_F77(&length, trid_dl[i], trid_d[i], trid_du[i], trid_du2[i], trid_i
 #define DORGQR_F77  F77_BLAS_MANGLE(dorgqr,DORGQR)
 #define DSTEQR_F77  F77_BLAS_MANGLE(dsteqr,DSTEQR)
 
+#define SGBSV_F77   F77_BLAS_MANGLE(sgbsv,SGBSV)
 #define SGTTRF_F77  F77_BLAS_MANGLE(sgttrf,SGTTRF)
 #define SGTTS2_F77  F77_BLAS_MANGLE(sgtts2,SGTTS2)
 #define SGETRF_F77  F77_BLAS_MANGLE(sgetrf,SGETRF)
@@ -243,11 +247,12 @@ extern "C" {
 /* Aztec-2.1 already defines these variables in header files */
 
 #ifndef HAVE_ML_AZTEC2_1
-  
+
   /* Double precision LAPACK linear solvers */
-void PREFIX DGETRF_F77(int* m, int* n, double* a, int* lda, int* ipiv, int* info); 
+void PREFIX DGBSV_F77(int *n, int *m, int *i, int *k, double *a, int *j, int *ipiv, double * b, int *nn, int *info);
+void PREFIX DGETRF_F77(int* m, int* n, double* a, int* lda, int* ipiv, int* info);
 void PREFIX DGTTRF_F77(int* leng, double* a, double *b, double *c, double *d, int *e, int *info);
-void PREFIX DGTTS2_F77(ml_fcd, int* n, int* nrhs, double* a, double* b, 
+void PREFIX DGTTS2_F77(ml_fcd, int* n, int* nrhs, double* a, double* b,
                        double* c,double* d,int* e,double* x, int* ldx);
 void PREFIX DGETRS_F77(ml_fcd, int* n, int* nrhs, double* a,
                        int* lda, int* ipiv, double* x , int* ldx, int* info);
@@ -255,53 +260,53 @@ void PREFIX DGESVD_F77(ml_fcd, ml_fcd, int* m, int* n, double* a,
                        int* lda, double* s, double* u, int* ldu, double* vt, int* ldut,
 		       double* work, int* lwork, int* info);
 void PREFIX DGETRI_F77(int* n, double* a, int* lda, int*ipiv, double * work , int* lwork, int* info);
-void PREFIX DGECON_F77(ml_fcd norm, int* n, double* a, int* lda, 
+void PREFIX DGECON_F77(ml_fcd norm, int* n, double* a, int* lda,
                        double *anorm, double * rcond, double * work,
-                       int * iwork, int* info); 
+                       int * iwork, int* info);
 void PREFIX DGESV_F77(int * n, int * nrhs, double* a,
                        int* lda, int*ipiv, double*x , int* ldx, int* info);
-void PREFIX DGEEQU_F77(int* m, int* n, double* a, int* lda, double * r, double * c, 
+void PREFIX DGEEQU_F77(int* m, int* n, double* a, int* lda, double * r, double * c,
 			double * rowcnd, double * colcnd,
-                       double * amax, int* info); 
-void PREFIX DGERFS_F77(ml_fcd, int * n, int * nrhs, double * a, 
-                       int * lda, double * af, int * ldaf, int*ipiv, 
-                       double * b, int * ldb, double * x, int * ldx, 
-                       double * ferr, double * berr, double * work, 
+                       double * amax, int* info);
+void PREFIX DGERFS_F77(ml_fcd, int * n, int * nrhs, double * a,
+                       int * lda, double * af, int * ldaf, int*ipiv,
+                       double * b, int * ldb, double * x, int * ldx,
+                       double * ferr, double * berr, double * work,
                        int * iwork, int * info);
-void PREFIX DGESVX_F77(ml_fcd, ml_fcd, int * n, int * nrhs, double * a, 
-                       int * lda, double * af, int * ldaf, int*ipiv, ml_fcd, 
-                       double * r, double *c, double * b, int * ldb, double * x, int * ldx, 
-                       double * rcond, double * ferr, double * berr, double * work, 
+void PREFIX DGESVX_F77(ml_fcd, ml_fcd, int * n, int * nrhs, double * a,
+                       int * lda, double * af, int * ldaf, int*ipiv, ml_fcd,
+                       double * r, double *c, double * b, int * ldb, double * x, int * ldx,
+                       double * rcond, double * ferr, double * berr, double * work,
                        int * iwork, int * info);
 
-void PREFIX DPOTRF_F77(ml_fcd, int* n, double* a, int* lda, int* info); 
+void PREFIX DPOTRF_F77(ml_fcd, int* n, double* a, int* lda, int* info);
 void PREFIX DPOTRS_F77(ml_fcd, int * n, int * nrhs, double* a,
                        int* lda, double*x , int* ldx, int* info);
-void PREFIX DPOTRI_F77(ml_fcd, int* n, double* a, int* lda, int* info); 
-void PREFIX DPOCON_F77(ml_fcd, int* n, double* a, int* lda, 
+void PREFIX DPOTRI_F77(ml_fcd, int* n, double* a, int* lda, int* info);
+void PREFIX DPOCON_F77(ml_fcd, int* n, double* a, int* lda,
                        double * anorm, double * rcond, double * work,
-                       int * iwork, int* info); 
+                       int * iwork, int* info);
 void PREFIX DPOSV_F77(ml_fcd, int * n, int * nrhs, double* a,
                        int* lda, double*x , int* ldx, int* info);
 void PREFIX DPOEQU_F77(int* n, double* a, int* lda, double * s, double * scond,
-                       double * amax, int* info); 
+                       double * amax, int* info);
 
-void PREFIX DPORFS_F77(ml_fcd, int * n, int * nrhs, double * a, 
-                       int * lda, double * af, int * ldaf, 
-                       double * b, int * ldb, double * x, int * ldx, 
-                       double * ferr, double * berr, double * work, 
+void PREFIX DPORFS_F77(ml_fcd, int * n, int * nrhs, double * a,
+                       int * lda, double * af, int * ldaf,
+                       double * b, int * ldb, double * x, int * ldx,
+                       double * ferr, double * berr, double * work,
                        int * iwork, int * info);
 
-void PREFIX DPOSVX_F77(ml_fcd, ml_fcd, int * n, int * nrhs, double * a, 
-                       int * lda, double * af, int * ldaf, ml_fcd, 
-                       double * s, double * b, int * ldb, double * x, int * ldx, 
-                       double * rcond, double * ferr, double * berr, double * work, 
+void PREFIX DPOSVX_F77(ml_fcd, ml_fcd, int * n, int * nrhs, double * a,
+                       int * lda, double * af, int * ldaf, ml_fcd,
+                       double * s, double * b, int * ldb, double * x, int * ldx,
+                       double * rcond, double * ferr, double * berr, double * work,
                        int * iwork, int * info);
 
-void PREFIX DGELSS_F77(int * m, int * n, int * nrhs, double * a, 
+void PREFIX DGELSS_F77(int * m, int * n, int * nrhs, double * a,
 				   int * lda, double * b, int * ldb, double * s,
 				   double * rcond, int * rank, double * work,
-				   int * lwork, int * info); 
+				   int * lwork, int * info);
 
 void PREFIX DGEQPF_F77(int * m, int * n, double * a,
 				   int * lda, int * jpvt, double * tau,
@@ -310,64 +315,64 @@ void PREFIX DGEQPF_F77(int * m, int * n, double * a,
 #define DGEQRF_F77  F77_BLAS_MANGLE(sgeqrf,SGEQRF)
 #define DORGQR_F77  F77_BLAS_MANGLE(sorgqr,SORGQR)
 */
-void PREFIX DGEQRF_F77(int *, int *, double *, int *, 
+void PREFIX DGEQRF_F77(int *, int *, double *, int *,
                  double *, double *, int *, int *);
 
 void PREFIX DORGQR_F77(int *m, int *n, int *k, double * a,
-                 int *lda, double *tau, double *work, int *lwork, 
+                 int *lda, double *tau, double *work, int *lwork,
                  int *info);
 void PREFIX DSTEQR_F77(ml_fcd, int *, double *, double *, double *, int *,
                  double *, int *);
 
   /* Single precision LAPACK linear solvers*/
-void PREFIX SGETRF_F77(int* m, int* n, float* a, int* lda, int* ipiv, int* info); 
+void PREFIX SGETRF_F77(int* m, int* n, float* a, int* lda, int* ipiv, int* info);
 void PREFIX SGETRS_F77(ml_fcd, int* n, int* nrhs, float* a,
                        int* lda, int* ipiv, float* x , int* ldx, int* info);
 void PREFIX SGESVD_F77(ml_fcd, ml_fcd, int* m, int* n, float* a,
 		       int* lda, float* s, float* u, int* ldu, float* vt, int* ldut,
 		       float* work, int* lwork, int* info);
 void PREFIX SGETRI_F77(int* n, float* a, int* lda, int*ipiv, float * work , int* lwork, int* info);
-void PREFIX SGECON_F77(ml_fcd norm, int* n, float* a, int* lda, 
+void PREFIX SGECON_F77(ml_fcd norm, int* n, float* a, int* lda,
                        float * anorm, float * rcond, float * work,
-                       int * iwork, int* info); 
+                       int * iwork, int* info);
 void PREFIX SGESV_F77(int * n, int * nrhs, float* a,
                        int* lda, int*ipiv, float*x , int* ldx, int* info);
-void PREFIX SGEEQU_F77(int* m, int* n, float* a, int* lda, float * r, float * c, 
+void PREFIX SGEEQU_F77(int* m, int* n, float* a, int* lda, float * r, float * c,
 			float * rowcnd, float * colcnd,
-			float * amax, int* info); 
-void PREFIX SGERFS_F77(ml_fcd, int * n, int * nrhs, float * a, 
-                       int * lda, float * af, int * ldaf, int*ipiv, 
-                       float * b, int * ldb, float * x, int * ldx, 
-                       float * ferr, float * berr, float * work, 
+			float * amax, int* info);
+void PREFIX SGERFS_F77(ml_fcd, int * n, int * nrhs, float * a,
+                       int * lda, float * af, int * ldaf, int*ipiv,
+                       float * b, int * ldb, float * x, int * ldx,
+                       float * ferr, float * berr, float * work,
                        int * iwork, int * info);
-void PREFIX SGESVX_F77(ml_fcd, ml_fcd, int * n, int * nrhs, float * a, 
-                       int * lda, float * af, int * ldaf, int*ipiv, ml_fcd, 
-                       float * r, float *c, float * b, int * ldb, float * x, int * ldx, 
-                       float * rcond, float * ferr, float * berr, float * work, 
+void PREFIX SGESVX_F77(ml_fcd, ml_fcd, int * n, int * nrhs, float * a,
+                       int * lda, float * af, int * ldaf, int*ipiv, ml_fcd,
+                       float * r, float *c, float * b, int * ldb, float * x, int * ldx,
+                       float * rcond, float * ferr, float * berr, float * work,
                        int * iwork, int * info);
 
-void PREFIX SPOTRF_F77(ml_fcd, int* n, float* a, int* lda, int* info); 
+void PREFIX SPOTRF_F77(ml_fcd, int* n, float* a, int* lda, int* info);
 void PREFIX SPOTRS_F77(ml_fcd, int * n, int * nrhs, float* a,
                        int* lda, float*x , int* ldx, int* info);
-void PREFIX SPOTRI_F77(ml_fcd, int* n, float* a, int* lda, int* info); 
-void PREFIX SPOCON_F77(ml_fcd, int* n, float* a, int* lda, 
+void PREFIX SPOTRI_F77(ml_fcd, int* n, float* a, int* lda, int* info);
+void PREFIX SPOCON_F77(ml_fcd, int* n, float* a, int* lda,
                        float * anorm, float * rcond, float * work,
-                       int * iwork, int* info); 
+                       int * iwork, int* info);
 void PREFIX SPOSV_F77(ml_fcd, int * n, int * nrhs, float* a,
                        int* lda, float*x , int* ldx, int* info);
 void PREFIX SPOEQU_F77(int* n, float* a, int* lda, float * s, float * scond,
-                       float * amax, int* info); 
+                       float * amax, int* info);
 
-void PREFIX SPORFS_F77(ml_fcd, int * n, int * nrhs, float * a, 
-                       int * lda, float * af, int * ldaf, 
-                       float * b, int * ldb, float * x, int * ldx, 
-                       float * ferr, float * berr, float * work, 
+void PREFIX SPORFS_F77(ml_fcd, int * n, int * nrhs, float * a,
+                       int * lda, float * af, int * ldaf,
+                       float * b, int * ldb, float * x, int * ldx,
+                       float * ferr, float * berr, float * work,
                        int * iwork, int * info);
 
-void PREFIX SPOSVX_F77(ml_fcd, ml_fcd, int * n, int * nrhs, float * a, 
-                       int * lda, float * af, int * ldaf, ml_fcd, 
-                       float * s, float * b, int * ldb, float * x, int * ldx, 
-                       float * rcond, float * ferr, float * berr, float * work, 
+void PREFIX SPOSVX_F77(ml_fcd, ml_fcd, int * n, int * nrhs, float * a,
+                       int * lda, float * af, int * ldaf, ml_fcd,
+                       float * s, float * b, int * ldb, float * x, int * ldx,
+                       float * rcond, float * ferr, float * berr, float * work,
                        int * iwork, int * info);
 
 void PREFIX SGELSS_F77(int * m, int * n, int * nrhs, float * a,
@@ -386,7 +391,7 @@ void PREFIX DGELS_F77(ml_fcd ch, int*, int*, int*,
 void PREFIX DGEEV_F77(ml_fcd, ml_fcd, int*, double*, int*,
                       double*, double*, double*, int*, double*, int*,
                       double*, int*, int*);
-           
+
 void PREFIX DGEHRD_F77(int * n, int * ilo, int * ihi, double * A,
                         int * lda, double * tau, double * work, int * lwork,
                         int * info);
@@ -397,14 +402,14 @@ void PREFIX DHSEQR_F77(ml_fcd job, ml_fcd, int * n, int * ilo, int * ihi,
 
 void PREFIX DORGHR_F77(int * n, int * ilo, int * ihi, double * a, int * lda, double * tau,
                         double * work, int * lwork, int * info);
-                        
+
 void PREFIX DORMHR_F77(ml_fcd, ml_fcd, int * m, int * n, int * ilo,
                         int * ihi, double * a, int * lda, double * tau, double * c,
                         int * ldc, double * work, int * lwork, int * info);
 
 void PREFIX DTREVC_F77(ml_fcd, ml_fcd, int * select, int * n, double * t,
                         int * ldt, double *vl, int * ldvl, double * vr, int * ldvr,
-                        int * mm, int * m, double * work, int * info); 
+                        int * mm, int * m, double * work, int * info);
 
 void PREFIX DTREXC_F77(ml_fcd, int * n, double * t, int * ldt, double * q,
                         int * ldq, int * ifst, int * ilst, double * work, int * info);
@@ -434,14 +439,14 @@ void PREFIX SHSEQR_F77(ml_fcd job, ml_fcd, int * n, int * ilo, int * ihi,
 
 void PREFIX SORGHR_F77(int * n, int * ilo, int * ihi, float * a, int * lda, float * tau,
                         float * work, int * lwork, int * info);
-                        
+
 void PREFIX SORMHR_F77(ml_fcd, ml_fcd, int * m, int * n, int * ilo,
                         int * ihi, float * a, int * lda, float * tau, float * c,
                         int * ldc, float * work, int * lwork, int * info);
 
 void PREFIX STREVC_F77(ml_fcd, ml_fcd, int * select, int * n, float * t,
                         int * ldt, float *vl, int * ldvl, float * vr, int * ldvr,
-                        int * mm, int * m, float * work, int * info); 
+                        int * mm, int * m, float * work, int * info);
 
 void  PREFIX STREXC_F77(ml_fcd, int * n, float * t, int * ldt, float * q,
                         int * ldq, int * ifst, int * ilst, float * work, int * info);
@@ -527,7 +532,7 @@ float  PREFIX SLAMCH_F77(ml_fcd);
 #define DTRSM_F77   F77_BLAS_MANGLE(dtrsm,DTRSM)
 
 
-#endif 
+#endif
 
 /* All three of these machines use a simple uppercase mangling of Fortran names */
 
@@ -543,9 +548,9 @@ float  PREFIX SLAMCH_F77(ml_fcd);
 #else /* Define ml_fcd for all other machines */
 
 #define PREFIX
-#define ml_fcd char * 
+#define ml_fcd char *
 
-/* Use autoconf's definition of F77_BLAS_MANGLE 
+/* Use autoconf's definition of F77_BLAS_MANGLE
    unless using old make system */
 
 #ifdef TRILINOS_NO_CONFIG_H
@@ -595,7 +600,7 @@ float  PREFIX SLAMCH_F77(ml_fcd);
 #define SSYMM_F77   F77_BLAS_MANGLE(ssymm,SSYMM)
 #define STRMM_F77   F77_BLAS_MANGLE(strmm,STRMM)
 #define STRSM_F77   F77_BLAS_MANGLE(strsm,STRSM)
-    
+
 /* Explicitly define each F77 name for all BLAS kernels */
 
 #ifdef __cplusplus
@@ -625,43 +630,43 @@ int PREFIX ISAMAX_F77(int* n, float *x, int* incx);
 /* Double precision BLAS 2 */
 void PREFIX DGEMV_F77(ml_fcd, int* m, int* n, double* alpha, double A[], int* lda,
 		       double x[], int* incx, double* beta, double y[], int* incy);
-void PREFIX DTRMV_F77(ml_fcd, ml_fcd, ml_fcd, int *n, 
+void PREFIX DTRMV_F77(ml_fcd, ml_fcd, ml_fcd, int *n,
 		      double *a, int *lda, double *x, int *incx);
-void PREFIX DGER_F77(int *m, int *n, double *alpha, double *x, int *incx, double *y, 
+void PREFIX DGER_F77(int *m, int *n, double *alpha, double *x, int *incx, double *y,
 		     int *incy, double *a, int *lda);
 
 
 /* Single precision BLAS 2 */
 void PREFIX SGEMV_F77(ml_fcd, int* m, int* n, float* alpha, float A[], int* lda,
 		       float x[], int* incx, float* beta, float y[], int* incy);
-void PREFIX STRMV_F77(ml_fcd, ml_fcd, ml_fcd, int *n, 
+void PREFIX STRMV_F77(ml_fcd, ml_fcd, ml_fcd, int *n,
 		      float *a, int *lda, float *x, int *incx);
-void PREFIX SGER_F77(int *m, int *n, float *alpha, float *x, int *incx, float *y, 
+void PREFIX SGER_F77(int *m, int *n, float *alpha, float *x, int *incx, float *y,
 		     int *incy, float *a, int *lda);
 
 /* Double precision BLAS 3 */
 void PREFIX DGEMM_F77(ml_fcd, ml_fcd, int *m, int *
-		      n, int *k, double *alpha, double *a, int *lda, 
+		      n, int *k, double *alpha, double *a, int *lda,
 		      double *b, int *ldb, double *beta, double *c, int *ldc);
 void PREFIX DSYMM_F77(ml_fcd, ml_fcd, int *m, int * n,
-		      double *alpha, double *a, int *lda, 
+		      double *alpha, double *a, int *lda,
 		      double *b, int *ldb, double *beta, double *c, int *ldc);
-void PREFIX DTRMM_F77(ml_fcd, ml_fcd, ml_fcd, ml_fcd, 
+void PREFIX DTRMM_F77(ml_fcd, ml_fcd, ml_fcd, ml_fcd,
 		      int *m, int *n, double *alpha, double *a, int * lda, double *b, int *ldb);
-void PREFIX DTRSM_F77(ml_fcd, ml_fcd, ml_fcd, ml_fcd, 
+void PREFIX DTRSM_F77(ml_fcd, ml_fcd, ml_fcd, ml_fcd,
 		      int *m, int *n, double *alpha, double *a, int *
 		      lda, double *b, int *ldb);
 
 /* Single precision BLAS 3 */
 void PREFIX SGEMM_F77(ml_fcd, ml_fcd, int *m, int *
-		      n, int *k, float *alpha, float *a, int *lda, 
+		      n, int *k, float *alpha, float *a, int *lda,
 		      float *b, int *ldb, float *beta, float *c, int *ldc);
 void PREFIX SSYMM_F77(ml_fcd, ml_fcd, int *m, int * n,
-		      float *alpha, float *a, int *lda, 
+		      float *alpha, float *a, int *lda,
 		      float *b, int *ldb, float *beta, float *c, int *ldc);
-void PREFIX STRMM_F77(ml_fcd, ml_fcd, ml_fcd, ml_fcd, 
+void PREFIX STRMM_F77(ml_fcd, ml_fcd, ml_fcd, ml_fcd,
 		      int *m, int *n, float *alpha, float *a, int * lda, float *b, int *ldb);
-void PREFIX STRSM_F77(ml_fcd, ml_fcd, ml_fcd, ml_fcd, 
+void PREFIX STRSM_F77(ml_fcd, ml_fcd, ml_fcd, ml_fcd,
 		      int *m, int *n, float *alpha, float *a, int *
 		      lda, float *b, int *ldb);
 

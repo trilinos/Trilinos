@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
   RCP<Xpetra::Vector<SC, LO, GO, NO> > mueluX = rcp(new Xpetra::TpetraVector<SC, LO, GO, NO>(X));
   RCP<Xpetra::Vector<SC, LO, GO, NO> > mueluB = rcp(new Xpetra::TpetraVector<SC, LO, GO, NO>(B));
 
-  H->Iterate(*mueluB, nIts, *mueluX);
+  H->Iterate(*mueluB, *mueluX, nIts);
 
   // Print relative residual norm
   ST::magnitudeType residualNorms = Utils::ResidualNorm(*mueluA, *mueluX, *mueluB)[0];

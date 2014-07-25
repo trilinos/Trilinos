@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
@@ -115,21 +115,21 @@ namespace {
 
   //
   // UNIT TESTS
-  // 
+  //
 
   // test with a uniform, contiguous map of constant size
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Directory, BadSize, LO, GO )
   {
     typedef Map<LO,GO> M;
     typedef Directory<LO,GO> D;
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a uniform map
     const GO numEntries = 2;
     RCP<M> map = rcp(new M(numEntries,0,comm));
     // create a directory
-    D dir (*map);
-    
+    D dir;
+
     Array<int> imageIDs(2);
     Array<LO> localIDs(2);
     TEST_THROW( dir.getDirectoryEntries(*map, tuple<GO>(0,1), imageIDs(0,1)), std::invalid_argument );
@@ -138,7 +138,7 @@ namespace {
     TEST_THROW( dir.getDirectoryEntries(*map, tuple<GO>(0,1), imageIDs(0,1), localIDs(0,2)), std::invalid_argument );
     // All procs fail if any node fails
     int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
@@ -148,17 +148,17 @@ namespace {
     typedef Map<LO,GO> M;
     typedef Directory<LO,GO> D;
     const LO LINV = OrdinalTraits<LO>::invalid();
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a uniform map
     const GO numEntries = 1;
     RCP<M> map = rcp( new M(numEntries,0,comm) );
     // create a directory
-    D dir (*map);
+    D dir;
     {
       LookupStatus stat;
       Array<int> imageIDs(numEntries);
-      Array<LO>  localIDs(numEntries); 
+      Array<LO>  localIDs(numEntries);
       stat = dir.getDirectoryEntries (*map, tuple<GO>(0), imageIDs);
       TEST_EQUALITY_CONST( stat, AllIDsPresent );
       TEST_COMPARE_ARRAYS( tuple<int>(0), imageIDs );
@@ -181,7 +181,7 @@ namespace {
     }
     // All procs fail if any node fails
     int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
@@ -191,7 +191,7 @@ namespace {
     const LO LINV = OrdinalTraits<LO>::invalid();
     typedef Map<LO,GO> M;
     typedef Directory<LO,GO> D;
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     // create a uniform map
@@ -199,7 +199,7 @@ namespace {
     const GO numEntries = 2*numImages + remainder;
     RCP<M> map = rcp(new M(numEntries,0,comm));
     // create a directory
-    D dir (*map);
+    D dir;
     // all GIDs
     Array<GO> allGIDs(numEntries);
     for (GO gid = 0; gid < numEntries; ++gid) {
@@ -248,7 +248,7 @@ namespace {
     }
     // All procs fail if any node fails
     int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
@@ -259,7 +259,7 @@ namespace {
     const LO LINV = OrdinalTraits<LO>::invalid();
     typedef Map<LO,GO> M;
     typedef Directory<LO,GO> D;
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
@@ -268,11 +268,11 @@ namespace {
     const LO numMyEntries = (myImageID == numImages-1 ? 2 : 1);
     RCP<M> map = rcp(new M(numEntries,numMyEntries,0,comm));
     // create a directory
-    D dir (*map);
+    D dir;
     // all GIDs
     Array<GO> allGIDs;
     allGIDs.reserve(numEntries);
-    for (GO gid = 0; gid < numEntries; ++gid) 
+    for (GO gid = 0; gid < numEntries; ++gid)
     {
       allGIDs.push_back(gid);
     }
@@ -292,7 +292,7 @@ namespace {
     {
       LookupStatus stat;
       Array<int> imageIDs(numEntries);
-      Array<LO> localIDs(numEntries); 
+      Array<LO> localIDs(numEntries);
       stat = dir.getDirectoryEntries (*map, allGIDs, imageIDs);
       TEST_EQUALITY_CONST( stat, AllIDsPresent );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
@@ -304,7 +304,7 @@ namespace {
     {
       LookupStatus stat;
       Array<int> imageIDs(2);
-      Array<LO> localIDs(2); 
+      Array<LO> localIDs(2);
       stat = dir.getDirectoryEntries (*map, tuple<GO> (0, numEntries), imageIDs);
       TEST_EQUALITY_CONST( stat, IDNotPresent );
       TEST_COMPARE_ARRAYS( tuple<int>(0,-1), imageIDs );
@@ -315,7 +315,7 @@ namespace {
     }
     // All procs fail if any node fails
     int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
@@ -326,7 +326,7 @@ namespace {
     const LO LINV = OrdinalTraits<LO>::invalid();
     typedef Map<LO,GO> M;
     typedef Directory<LO,GO> D;
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
@@ -336,7 +336,7 @@ namespace {
     const GO numEntries = as<GO>((numImages*numImages+numImages)/2);
     RCP<M> map = rcp(new M(numEntries,numMyEntries,0,comm));
     // create a directory
-    D dir (*map);
+    D dir;
     // all GIDs
     Array<GO> allGIDs(numEntries);
     for (GO gid = 0; gid < numEntries; ++gid) {
@@ -355,8 +355,8 @@ namespace {
     }
     {
       LookupStatus stat;
-      Array<int> imageIDs(numEntries);                           
-      Array<LO> localIDs(numEntries); 
+      Array<int> imageIDs(numEntries);
+      Array<LO> localIDs(numEntries);
       stat = dir.getDirectoryEntries (*map, allGIDs, imageIDs);
       TEST_EQUALITY_CONST( stat, AllIDsPresent );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
@@ -367,8 +367,8 @@ namespace {
     }
     {
       LookupStatus stat;
-      Array<int> imageIDs(2);                           
-      Array<LO> localIDs(2); 
+      Array<int> imageIDs(2);
+      Array<LO> localIDs(2);
       stat = dir.getDirectoryEntries (*map, tuple<GO> (0, numEntries), imageIDs);
       TEST_EQUALITY_CONST( stat, IDNotPresent );
       TEST_COMPARE_ARRAYS( tuple<int>(0,-1), imageIDs );
@@ -379,7 +379,7 @@ namespace {
     }
     // All procs fail if any node fails
     int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
@@ -387,20 +387,26 @@ namespace {
   // test with a non-contiguous map
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Directory, NonContig, LO, GO )
   {
-    const LO LINV = OrdinalTraits<LO>::invalid();
+    using std::endl;
     typedef Map<LO,GO> M;
     typedef Directory<LO,GO> D;
-    // create a comm  
+
+    const LO LINV = OrdinalTraits<LO>::invalid();
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
     // number of entries is 3*numImages
     // we will stripe the GIDs across images
     const GO numEntries = as<GO>(3*numImages);
-    RCP<M> map = rcp(new M(numEntries, tuple<GO>(myImageID, myImageID+numImages, myImageID+2*numImages) ,0,comm));
-    // create a directory
-    D dir (*map);
-    // all GIDs
+
+    out << "Creating Map" << endl;
+    RCP<M> map = rcp (new M (numEntries, tuple<GO> (myImageID, myImageID+numImages, myImageID+2*numImages), 0, comm));
+
+    out << "Creating Directory" << endl;
+    D dir;
+
+    out << "Create array of GIDs to look up" << endl;
     Array<GO> allGIDs;
     allGIDs.reserve(numEntries);
     for (GO gid = 0; gid < numEntries; ++gid) {
@@ -419,8 +425,8 @@ namespace {
     }
     {
       LookupStatus stat;
-      Array<int> imageIDs(numEntries);                           
-      Array<LO> localIDs(numEntries); 
+      Array<int> imageIDs(numEntries);
+      Array<LO> localIDs(numEntries);
       stat = dir.getDirectoryEntries (*map, allGIDs,imageIDs);
       TEST_EQUALITY_CONST( stat, AllIDsPresent );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
@@ -431,8 +437,8 @@ namespace {
     }
     {
       LookupStatus stat;
-      Array<int> imageIDs(2);                           
-      Array<LO> localIDs(2); 
+      Array<int> imageIDs(2);
+      Array<LO> localIDs(2);
       stat = dir.getDirectoryEntries (*map, tuple<GO> (0, numEntries), imageIDs);
       TEST_EQUALITY_CONST( stat, IDNotPresent );
       TEST_COMPARE_ARRAYS( tuple<int>(0,-1), imageIDs );
@@ -443,7 +449,7 @@ namespace {
     }
     // All procs fail if any node fails
     int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 

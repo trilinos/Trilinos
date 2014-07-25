@@ -707,7 +707,7 @@ const double* ExoII_Read<INT>::Get_Nodal_Results(int t1, int t2, double proporti
     
     // Interpolate the values...
     for (size_t i=0; i < num_nodes; i++) {
-      st_results[i] = proportion * st_results[i] + (1.0 - proportion) * st_results2[i];
+      st_results[i] = (1.0-proportion) * st_results[i] + proportion * st_results2[i];
     }
   }
   return st_results;
@@ -776,7 +776,7 @@ template <typename INT>
 string ExoII_Read<INT>::Load_Global_Results(int t1, int t2, double proportion)
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(t1 > 0 && t2 <= num_times);
+  SMART_ASSERT(t1 > 0 && t1 <= num_times);
   SMART_ASSERT(t2 > 0 && t2 <= num_times);
   
   if (!Open()) return "WARNING:  File not open!";
@@ -815,7 +815,7 @@ string ExoII_Read<INT>::Load_Global_Results(int t1, int t2, double proportion)
 
     // Do the interpolation...
     for (size_t j=0; j < global_vars.size(); j++) {
-      global_vals[j] = proportion * global_vals[j] + (1.0 - proportion) * global_vals2[j];
+      global_vals[j] = (1.0 - proportion) * global_vals[j] + proportion * global_vals2[j];
     }
   }
 
@@ -1300,14 +1300,10 @@ void ExoII_Read<INT>::Get_Init_Data()
   
   char title_buff[MAX_LINE_LENGTH+1];
   
-  INT num_nodes_t = 0;
-  INT num_elmts_t = 0;
-  int err = ex_get_init(file_id, title_buff, &dimension, &num_nodes_t,
-                        &num_elmts_t, &num_elmt_blocks, &num_node_sets,
+  int err = ex_get_init(file_id, title_buff, &dimension, &num_nodes,
+                        &num_elmts, &num_elmt_blocks, &num_node_sets,
                         &num_side_sets);
-  num_nodes = num_nodes_t;
-  num_elmts = num_elmts_t;
-  
+
   if (err < 0) {
     std::cout << "EXODIFF ERROR: Failed to get init data!"
 	      << " Error number = " << err << ".  Aborting..." << std::endl;

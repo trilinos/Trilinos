@@ -18,31 +18,42 @@ Information specifically for developers can be found at \ref z2_developer.
 \section z2_main_intro Introduction to Zoltan2
 
 Zoltan2 is a package for partitioning, load balancing and 
-combinatorial scientific computing. It can be vieweed as
-a complete refactoring of the well known
+combinatorial scientific computing. It can be viewed as
+a complete redesign/refactoring of the well known
 <a href=http://www.cs.sandia.gov/Zoltan > Zoltan </a>
 library into C++ in order to support template programming,
 to scale to larger problems, and to support architecture aware partitioning.
 This library is currently under active development.
+The capabilities in Zoltan2 roughly fall within these areas:
+<ul>
+<li> Partitioning and load-balancing
+<li> Ordering and permutations
+<li> Graph coloring 
+</ul>
 
 Partitioning functionality that is available now is:
-
 <ul>
 <li> \ref blockPage for simple weighted identifiers (really created as a sample algorithm).
-<li> Multi-jagged for weighted geometric coordinates.
+<li> \ref mjPage Multi-jagged for weighted geometric coordinates.
 <li> \ref rcbPage for weighted geometric coordinates.
 <li> \ref scotchPartPage for undirected weighted graphs.
 </ul>
+These algorithms are all parallel.
 
-
-Serial ordering currently available:
-
+Ordering methods currently available:
 <ul>
 <li> \ref amdPage for fill-reducing ordering.
 <li> random ordering
 <li> \ref rcmPage for bandwidth-reducing ordering.
 <li> sorted_degree ordering
 </ul>
+These are all serial.
+
+Graph coloring currently supported:
+<ul>
+<li> Distance-1 vertex coloring
+</ul>
+Currently serial; multithreaded coloring is planned for a future release.
 
 <hr>
 

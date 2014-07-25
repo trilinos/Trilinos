@@ -48,9 +48,11 @@
 #ifndef _ZOLTAN2_PAMGENMESHADAPTER_HPP_
 #define _ZOLTAN2_PAMGENMESHADAPTER_HPP_
 
-#include <Zoltan2_MeshInput.hpp>
+#include <Zoltan2_MeshAdapter.hpp>
 #include <Zoltan2_StrideData.hpp>
 #include <vector>
+
+#include <im_exodusII_l.h
 
 namespace Zoltan2 {
 
@@ -89,6 +91,7 @@ public:
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
+  typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef MeshAdapter<User>       base_adapter_t;
   typedef User user_t;
@@ -109,47 +112,43 @@ public:
 
   size_t getLocalNumOf(MeshEntityType etype) const
   {
-    if (MESH_REGION == etype) {
-      return RnumIds_;
-    }
-
-    if (MESH_FACE == etype) {
-      return FnumIds_;
-    }
-
-    if (MESH_EDGE == etype) {
-      return EnumIds_;
+    if (MESH_REGION == etype && 3 == dimension_ ||
+	MESH_FACE == etype && 2 == dimension_) {
+      return num_elem_;
     }
 
     if (MESH_VERTEX == etype) {
-      return VnumIds_:
+      return num_nodes_:
     }
+
+    return 0;
   }
    
   size_t getIDsViewOf(MeshEntityType etype, const gid_t *&Ids) const
   {
-    if (MESH_REGION == etype) {
-      Ids = RidList_;
-      return RnumIds_;
-    }
-
-    if (MESH_FACE == etype) {
-      Ids = FidList_;
-      return FnumIds_;
-    }
-
-    if (MESH_EDGE == etype) {
-      Ids = EidList_;
-      return EnumIds_;
+    if (MESH_REGION == etype && 3 == dimension_ ||
+	MESH_FACE == etype && 2 == dimension_) {
+      Ids = element_num_map_;
+      return num_elem_;
     }
 
     if (MESH_VERTEX == etype) {
-      Ids = VidList_;
-      return VnumIds_;
+      Ids = node_num_map_;
+      return num_nodes_;
     }
+
+    Ids = NULL;
+    return 0;
   }
 
-  int getDimensionOf(MeshEntityType etype) const { return dimension_; }
+  void getWeigthsViewOf(MeshEntityType etype, const scalar_t *&weights,
+			int &stride, int idx = 0) const
+  {
+    weights = NULL;
+    stride = 0;
+  }
+
+  int getDimensionOf() const { return dimension_; }
 
   void getCoordinatesViewOf(MeshEntityType etype, const scalar_t *&coords,
 			    int &stride, int dim} const {
@@ -158,40 +157,114 @@ public:
       emsg << __FILE__ << ";" <<__LINE__
 	   << "  Invalid dimension " << dim << std::endl;
       throw std::runtime_error(emsg.str());
+    } else if (MESH_REGION == etype && 3 == dimension_ ||
+	       MESH_FACE == etype && 2 == dimension_) {
+      coords = Acoords_;
+      stride = 1;
+    } else if (MESH_REGION == etype && 2 == dimension_) {
+      coords = NULL;
+      stride = 0;
+    } else if (MESH_VERTEX == etype) {
+      coords = coords_;
+      stride = 1;
+    } else {
+      coords = NULL;
+      stride = 0;
+      Z2_THROW_NOT_IMPLEMENTED_ERROR
+    }
+  }
+
+  bool availAdjs(MeshEntityType source, MeshEntityType target) {
+    if (MESH_REGION == source && MESH_VERTEX == target && 3 == dimension_ ||
+	MESH_FACE == source && MESH_VERTEX == target && 2 == dimension_) {
+      return TRUE;
     }
 
-    if (MESH_REGION == etype) {
-      coords = Rcoords_;
-      stride = 1;
+    return FALSE;
+  }
+
+  size_t getLocalNumAdjs(MeshEntityType source, MeshEntityType target) const
+  {
+    if (availAdjs(source, target)) {
+      return tnoct_;
     }
 
-    if (MESH_FACE == etype) {
-      coords = Fcoords_;
-      stride = 1;
+    return 0;
+  }
+
+  void getAdjsView(MeshEntityType source, MeshEntityType target,
+		   const lno_t *&offsets, const gid_t *& adjacencyIds) const
+  {
+    if (MESH_REGION == source && MESH_VERTEX == target && 3 == dimension_ ||
+	MESH_FACE == source && MESH_VERTEX == target && 2 == dimension) {
+      offsets = elemOffsets_;
+      adjacencyIds = elemToNode_;
+    } else if (MESH_REGION == source && 2 == dimension_) {
+      offsets = NULL;
+      adjacencyIds = NULL;
+    } else {
+      offsets = NULL;
+      adjacencyIds = NULL;
+      Z2_THROW_NOT_IMPLEMENTED_ERROR
+    }
+  }
+
+  bool avail2ndAdjs(MeshEntityType sourcetarget, MeshEntityType through)
+  {
+    if (MESH_REGION==sourcetarget && MESH_VERTEX==through && 3==dimension_ ||
+	MESH_FACE==sourcetarget && MESH_VERTEX==through && 2==dimension_) {
+      return TRUE;
     }
 
-    if (MESH_EDGE == etype) {
-      coords = Ecoords_;
-      stride = 1;
+    return FALSE;
+  }
+
+  size_t getLocalNum2ndAdjs(MeshEntityType sourcetarget, 
+			    MeshEntityType through) const
+  {
+    if (avail2ndAdjs(sourcetarget, through)) {
+      return adj_.size();
     }
 
-    if (MESH_VERTEX == etype) {
-      coords = Vcoords_;
-      stride = 1;
+    return 0;
+  }
+
+  void get2ndAdjsView(MeshEntityType sourcetarget, MeshEntityType through, 
+		      const lno_t *&offsets, const gid_t *& adjacencyIds) const
+  {
+    if (MESH_REGION==sourcetarget && MESH_VERTEX==through && 3==dimension_ ||
+	MESH_FACE==sourcetarget && MESH_VERTEX==through && 2==dimension_) {
+      offsets = start_;
+      adjacencyIds = adj_;
+    } else if (MESH_REGION == sourcetarget && 2 == dimension_) {
+      offsets = NULL;
+      adjacencyIds = NULL;
+    } else {
+      offsets = NULL;
+      adjacencyIds = NULL;
+      Z2_THROW_NOT_IMPLEMENTED_ERROR
     }
   }
 
 private:
-  lno_t RnumIds_, FnumIds_, EnumIds_, VnumIds_;
-  const gid_t *RidList_, *FidList_, *EidList_, *VidList_;
-
-  int dimension_;
-  double * Rcoords_, Fcoords_, Ecoords_, Vcoords_, Acoords_;
+  long long dimension_, num_nodes_, num_elem_, *element_num_map_;
+  long long *node_num_map_, *elemToNode_, tnoct_, *elemOffsets_;
+  double *coords_, *Acoords_;
+  std::vector<long long> start_, adj_;
 };
 
 ////////////////////////////////////////////////////////////////
 // Definitions
 ////////////////////////////////////////////////////////////////
+
+  ssize_t in_list(const long long value, size_t count, long long *vector)
+  {
+    for(size_t i=0; i < count; i++) {
+      if(vector[i] == value)
+	return i;
+    }
+    return -1;
+  }
 
 template <typename User>
 PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
@@ -201,125 +274,183 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
 
   int error = 0;
   int exoid = 0;
-  int num_nodes, num_elem, num_elem_blk, num_node_sets, num_side_sets;
-  error += im_ex_get_init ( exoid, "PAMGEN Inline Mesh", &dimension_,
-			    &num_nodes, &num_elem, &num_elem_blk,
-			    &num_node_sets, &num_side_sets);
+  long long num_elem_blk, num_node_sets, num_side_sets;
+  im_ex_get_init_l ( exoid, "PAMGEN Inline Mesh", &dimension_,
+		     &num_nodes_, &num_elem_, &num_elem_blk,
+		     &num_node_sets, &num_side_sets);
 
-  Vcoords_ = (double *)malloc(num_nodes * dimension_ * sizeof(double));
+  coords_ = new double [num_nodes_ * dimension_];
 
-  error += im_ex_get_coord(exoid, Vcoords_, Vcoords_ + num_nodes,
-			   Vcoords_ + 2 * num_nodes);
+  error += im_ex_get_coord_l(exoid, coords_, coords_ + num_nodes_,
+			     coords_ + 2 * num_nodes_);
 
-  if (3 == dimension_ && num_elem) {
-    int * element_num_map = (int *)malloc(num_elem * sizeof(int));
-    error += im_ex_get_elem_num_map(exoid, element_num_map);
+  *element_num_map_ = new long long [num_elem_];
+  error += im_ex_get_elem_num_map_l(exoid, element_num_map_);
 
-    RnumIds_ = num_elem;
-    RidList_ = element_num_map;
-  } else {
-    RnumIds_ = 0;
-    RidList_ = NULL;
+  *node_num_map_ = new long long [num_nodes_];
+  error += im_ex_get_node_num_map_l(exoid, node_num_map_);
+
+  long long *elem_blk_ids       = new long long [num_elem_blk];
+  error += im_ex_get_elem_blk_ids_l(exoid, elem_blk_ids);
+
+  long long *num_nodes_per_elem = new long long [num_elem_blk];
+  long long *num_attr           = new long long [num_elem_blk];
+  long long *num_elem_this_blk  = new long long [num_elem_blk];
+  char **elem_type              = new char * [num_elem_blk];
+  long long **connect           = new long long * [num_elem_blk];
+
+  for(long long i = 0; i < num_elem_blk; i++){
+    elem_type[i] = new char [MAX_STR_LENGTH + 1];
+    error += im_ex_get_elem_block_l(exoid, elem_blk_id[i], elem_type[i],
+				    (long long*)&(num_elem_this_blk[i]),
+				    (long long*)&(num_nodes_per_elem[i]),
+				    (long long*)&(num_attr[i]));
   }
 
-  if (2 == dimension_ && num_elem) {
-    int * element_num_map = (int *)malloc(num_elem * sizeof(int));
-    error += im_ex_get_elem_num_map(exoid, element_num_map);
+  Acoords_ = new double [num_elem_ * dimension_];
+  long long a = 0;
+  std::vector<std::vector<long long> > sur_elem;
+  sur_elem.resize(num_nodes_);
 
-    FnumIds_ = num_elem;
-    FidList_ = element_num_map;
-  } else {
-    FnumIds_ = 0;
-    FidList_ = NULL;
-  }
+  for(long long b = 0; b < num_elem_blk; b++) {
+    connect[b] = new long long [num_nodes_per_elem[b]*num_elem_this_blk[b]];
+    error += im_ex_get_elem_conn_l(exoid, elem_blk_id[b], connect[b]);
 
-  EnumIds_ = 0;
-  EidList_ = NULL;
-
-  if (num_nodes) {
-    int * node_num_map = (int *)malloc(num_nodes * sizeof(int));
-    error += im_ex_get_node_num_map(exoid, node_num_map);
-
-    VnumIds_ = num_nodes;
-    VidList_ = node_num_map;
-  } else {
-    VnumIds_ = 0;
-    VidList_ = NULL;
-  }
-
-  int * elem_blk_ids       = (int *)malloc(num_elem_blk * sizeof(int));
-  int * num_nodes_per_elem = (int *)malloc(num_elem_blk * sizeof(int));
-  int * num_attr           = (int *)malloc(num_elem_blk * sizeof(int));
-  int * num_elem_this_blk  = (int *)malloc(num_elem_blk * sizeof(int));
-  char ** elem_type        = (char **)malloc(num_elem_blk * sizeof(char *));
-  int ** connect           = (int **)malloc(num_elem_blk * sizeof(int *));
-
-  error += im_ex_get_elem_blk_ids(exoid, elem_blk_ids);
-
-  for(int i = 0; i < num_elem_blk; i++){
-    char * elem_type[i] = (char *)malloc((MAX_STR_LENGTH + 1) * sizeof(char));
-    error += im_ex_get_elem_block(exoid, elem_blk_id[i], elem_type[i],
-				  (int *)&(num_elem_this_blk[i]),
-				  (int *)&(num_nodes_per_elem[i]),
-				  (int *)&(num_attr[i]));
-  }
-
-  Acoords_ = (double *)malloc(num_elem * dimension_ * sizeof(double));
-  int a = 0;
-
-  for(int b = 0; b < num_elem_blk; b++){
-    int * connect[b] = (int *)malloc(num_nodes_per_elem[b] *
-				    num_elem_this_blk[b] * sizeof(int));
-    error += im_ex_get_elem_conn(exoid, elem_blk_id[b], connect[b]);
-
-    for(int i = 0; i < num_elem_this_blk[b]; i++){
+    for(long long i = 0; i < num_elem_this_blk[b]; i++) {
       Acoords_[a] = 0;
-      Acoords_[num_nodes + a] = 0;
+      Acoords_[num_nodes_ + a] = 0;
 
       if (3 == dimension_) {
-	Acoords_[2 * num_nodes + a] = 0;
+	Acoords_[2 * num_nodes_ + a] = 0;
       }
 
-      for(int j = 0; j < num_nodes_per_elem[b]; j++){
-	Acoords_[a] +=
-	  Vcoords_[connect[b][i*num_elem_this_blk[b]+num_nodes_per_elem[b]] - 1];
-	Acoords_[num_nodes + a] +=
-	  Vcoords_[connect[b]
-		 [num_nodes+i*num_elem_this_blk[b]+num_nodes_per_elem[b]] - 1];
+      for(long long j = 0; j < num_nodes_per_elem[b]; j++) {
+	long long node = connect[b][i * num_nodes_per_elem[b] + j] - 1;
+	Acoords_[a] += coords_[node];
+	Acoords_[num_nodes_ + a] += coords_[num_nodes_ + node];
 
 	if(3 == dimension_) {
-	  Acoords_[2 * num_nodes + a] +=
-	    Vcoords_[connect[b]
-		   [2*num_nodes+i*num_elem_this_blk[b]+num_nodes_per_elem[b]] -
-		   1];
+	  Acoords_[2 * num_nodes_ + a] += coords_[2 * num_nodes_ + node];
+	}
+
+	/*
+	 * in the case of degenerate elements, where a node can be
+	 * entered into the connect table twice, need to check to
+	 * make sure that this element is not already listed as
+	 * surrounding this node
+	 */
+	if (sur_elem[node].empty() ||
+	    element_num_map_[a] != sur_elem[node][sur_elem[node].size()-1]) {
+	  /* Add the element to the list */
+	  sur_elem[node].push_back(element_num_map_[a]);
 	}
       }
 
       Acoords_[a] /= num_nodes_per_elem[b];
-      Acoords_[num_nodes + a] /= num_nodes_per_elem[b];
+      Acoords_[num_nodes_ + a] /= num_nodes_per_elem[b];
 
       if(3 == dimension_) {
-	Acoords_[2 * num_nodes + a] /= num_nodes_per_elem[b];
+	Acoords_[2 * num_nodes_ + a] /= num_nodes_per_elem[b];
       }
 
       a++;
     }
   }
 
-  if (3 == dimension_) {
-    Rcoords_ = Acoords_;
-  } else {
-    Rcoords_ = NULL;
+  long long nnodes_per_elem = num_nodes_per_elem[0];
+  elemToNode_ = new long long [num_elem_ * nnodes_per_elem];
+  long long telct = 0;
+  elemOffsets_ = new long long [num_elem_];
+  tnoct_ = 0;
+  long long **reconnect = new long long * [num_elem_];
+  size_t max_nsur = 0;
+
+  for (long long b = 0; b < num_elem_blk; b++) {
+    for (long long i = 0; i < num_elem_this_blk[b]; i++) {
+      elemOffsets_[telct] = tnoct_;
+      reconnect[telct] = new long long [num_nodes_per_elem[b]];
+
+      for (long long j = 0; j < num_nodes_per_elem[b]; j++) {
+	elemToNode_[tnoct_] = connect[b][i*num_nodes_per_elem[b] + j]-1;
+	reconnect[telct][j] = connect[b][i*num_nodes_per_elem[b] + j]-1;
+
+	if(sur_elem[tnoct_].empty()) {
+	  printf("WARNING: Node = "ST_ZU" has no elements\n", tnoct_+1);
+	} else {
+	  size_t nsur = sur_elem[tnoct_].size();
+	  if (nsur > max_nsur)
+	    max_nsur = nsur;
+	}
+
+	++tnoct_;
+      }
+
+      ++telct;
+    }
   }
 
-  if (2 == dimension_) {
-    Fcoords_ = Acoords_;
-  } else {
-    Fcoords_ = NULL;
+  long long max_side_nodes = nnodes_per_elem;
+  long long side_nodes[max_side_nodes];
+  long long mirror_nodes[max_side_nodes];
+
+  /* Allocate memory necessary for the adjacency */
+  start_.resize(num_nodes_);
+
+  for (int i=0; i < max_side_nodes; i++) {
+    side_nodes[i]=-999;
+    mirror_nodes[i]=-999;
   }
 
-  Ecoords_ = NULL;
+  /* Find the adjacency for a nodal based decomposition */
+  size_t nadj = 0;
+  for(size_t ncnt=0; ncnt < num_nodes_; ncnt++) {
+    start_[ncnt] = nadj;
+    for(size_t ecnt=0; ecnt < sur_elem[ncnt].size(); ecnt++) {
+      size_t elem = sur_elem[ncnt][ecnt];
+      int nnodes = nnodes_per_elem;
+      for(int i=0; i < nnodes; i++) {
+	long long entry = reconnect[elem][i];
 
+	if(ncnt != (size_t)entry &&
+	   in_list(entry,
+		   adj_.size()-start_[ncnt],
+		   &adj_[start_[ncnt]]) < 0) {
+	  adj_.push_back(entry);
+	}
+      }
+    }
+    nadj++;
+  }
+
+  delete[] elem_blk_ids;
+  elem_blk_ids = NULL;
+  delete[] num_nodes_per_elem;
+  num_nodes_per_elem = NULL;
+  delete[] num_attr;
+  num_attr = NULL;
+  delete[] num_elem_this_blk;
+  num_elem_this_blk = NULL;
+
+  for(long long i = 0; i < num_elem_blk; i++){
+    delete[] elem_type[i];
+  }
+
+  delete[] elem_type;
+  elem_type = NULL;
+
+  for(long long b = 0; b < num_elem_blk; b++) {
+    delete[] connect[b];
+  }
+
+  delete[] connect;
+  connect = NULL;
+
+  for(long long b = 0; b < num_elem_; b++) {
+    delete[] reconnect[b];
+  }
+
+  delete[] reconnect;
+  reconnect = NULL;
 }
 
   

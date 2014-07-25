@@ -8,13 +8,15 @@
 
 //----------------------------------------------------------------------
 
-#include <algorithm>
-#include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/base/Part.hpp>
+#include <stddef.h>                     // for size_t
+#include <algorithm>                    // for sort, unique
+#include <stk_mesh/base/Bucket.hpp>     // for Bucket
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/base/Part.hpp>       // for Part
+#include <stk_mesh/base/Types.hpp>      // for PartVector
+#include <utility>                      // for pair
+#include <vector>                       // for vector, etc
 
 //----------------------------------------------------------------------
 
@@ -22,27 +24,6 @@ namespace stk {
 namespace mesh {
 
 //----------------------------------------------------------------------
-
-AllSelectedBucketsRange get_buckets( const Selector & selector, const BulkData& mesh )
-{
-  AllBucketsRange all_buckets = mesh.get_bucket_range();
-  return get_selected_bucket_range(all_buckets, selector);
-}
-
-AllBucketsRange get_buckets( const BulkData& mesh )
-{
-  return mesh.get_bucket_range();
-}
-
-AllBucketsRange get_buckets( EntityRank entity_rank, const BulkData& mesh )
-{
-  return mesh.get_bucket_range(entity_rank);
-}
-
-AllSelectedBucketsRange get_buckets( const Selector & selector, const AllBucketsRange& range)
-{
-  return get_selected_bucket_range(range, selector);
-}
 
 void copy_ids( std::vector<unsigned> & v , const PartVector & p )
 {
@@ -69,7 +50,7 @@ void get_involved_parts(
     )
 {
   involved_parts.clear();
-  if (union_parts.size() == 0) {
+  if (union_parts.empty()) {
     return;
   }
 

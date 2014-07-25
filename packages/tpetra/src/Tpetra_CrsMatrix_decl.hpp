@@ -42,6 +42,9 @@
 #ifndef TPETRA_CRSMATRIX_DECL_HPP
 #define TPETRA_CRSMATRIX_DECL_HPP
 
+/// \file Tpetra_CrsMatrix_decl.hpp
+/// \brief Declaration of the Tpetra::CrsMatrix class
+
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_DefaultKernels.hpp>
 
@@ -205,24 +208,34 @@ namespace Tpetra {
     //@{
 
     //! This class' first template parameter; the type of entries in the matrix.
-    typedef Scalar                                scalar_type;
+    typedef Scalar scalar_type;
     //! This class' second template parameter; the type of local indices.
-    typedef LocalOrdinal                          local_ordinal_type;
+    typedef LocalOrdinal local_ordinal_type;
     //! This class' third template parameter; the type of global indices.
-    typedef GlobalOrdinal                         global_ordinal_type;
+    typedef GlobalOrdinal global_ordinal_type;
     //! This class' fourth template parameter; the Kokkos Node type.
-    typedef Node                                  node_type;
+    typedef Node node_type;
+
     /// \brief This class' fifth template parameter; the implementation of local sparse kernels.
     ///
     /// We define both this typedef and mat_solve_type for backwards compatibility.
-    typedef LocalMatOps   mat_vec_type;
+    typedef LocalMatOps mat_vec_type;
     /// \brief This class' fifth template parameter; the implementation of local sparse kernels.
     ///
     /// We define both this typedef and mat_vec_type for backwards compatibility.
-    typedef LocalMatOps   mat_solve_type;
+    typedef LocalMatOps mat_solve_type;
 
     //! The Map specialization suitable for this CrsMatrix specialization.
-    typedef Map<LocalOrdinal,GlobalOrdinal,Node>  map_type;
+    typedef Map<LocalOrdinal, GlobalOrdinal, node_type> map_type;
+
+    //! The Import specialization suitable for this CrsMatrix specialization.
+    typedef Import<LocalOrdinal, GlobalOrdinal, node_type> import_type;
+
+    //! The Export specialization suitable for this CrsMatrix specialization.
+    typedef Export<LocalOrdinal, GlobalOrdinal, node_type> export_type;
+
+    //! The CrsGraph specialization suitable for this CrsMatrix specialization.
+    typedef CrsGraph<LocalOrdinal, GlobalOrdinal, node_type, LocalMatOps> crs_graph_type;
 
     //@}
     //! @name Constructors and destructor
@@ -245,7 +258,7 @@ namespace Tpetra {
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
-    CrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
+    CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                size_t maxNumEntriesPerRow,
                ProfileType pftype = DynamicProfile,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
@@ -267,7 +280,7 @@ namespace Tpetra {
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
-    CrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
+    CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const ArrayRCP<const size_t>& NumEntriesPerRowToAlloc,
                ProfileType pftype = DynamicProfile,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
@@ -294,8 +307,8 @@ namespace Tpetra {
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
-    CrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
-               const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
+    CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
+               const Teuchos::RCP<const map_type>& colMap,
                size_t maxNumEntriesPerRow,
                ProfileType pftype = DynamicProfile,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
@@ -322,8 +335,8 @@ namespace Tpetra {
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
-    CrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
-               const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
+    CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
+               const Teuchos::RCP<const map_type>& colMap,
                const ArrayRCP<const size_t>& NumEntriesPerRowToAlloc,
                ProfileType pftype = DynamicProfile,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
@@ -352,7 +365,7 @@ namespace Tpetra {
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
-    explicit CrsMatrix (const Teuchos::RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >& graph,
+    explicit CrsMatrix (const Teuchos::RCP<const crs_graph_type>& graph,
                         const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and arrays containing the matrix in sorted, local ids.
@@ -377,11 +390,11 @@ namespace Tpetra {
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
-    CrsMatrix (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
-               const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
-               const ArrayRCP<size_t> & rowPointers,
-               const ArrayRCP<LocalOrdinal> & columnIndices,
-               const ArrayRCP<Scalar> & values,
+    CrsMatrix (const RCP<const map_type>& rowMap,
+               const RCP<const map_type>& colMap,
+               const ArrayRCP<size_t>& rowPointers,
+               const ArrayRCP<LocalOrdinal>& columnIndices,
+               const ArrayRCP<Scalar>& values,
                const RCP<ParameterList>& params = null);
 
     // This friend declaration makes the clone() method work.
@@ -741,7 +754,7 @@ namespace Tpetra {
                        const ArrayView<const LocalOrdinal> &cols,
                        const ArrayView<const Scalar> &vals);
 
-    /// Replace one or more entries' values, using global indices.
+    /// \brief Replace one or more entries' values, using global indices.
     ///
     /// \param globalRow [in] Global index of the row in which to
     ///   replace the entries.  This row <i>must</i> be owned by the
@@ -759,12 +772,28 @@ namespace Tpetra {
     /// is duplicated in this matrix row (likely because it was
     /// inserted more than once and fillComplete() has not been called
     /// in the interim), the behavior of this method is not defined.
-    void
+    ///
+    /// \return The number of indices for which values were actually
+    ///   replaced; the number of "correct" indices.
+    ///
+    /// If the returned value N satisfies
+    ///
+    /// <tt>0 <= N < cols.size()</tt>,
+    ///
+    /// then <tt>cols.size() - N</tt> of the entries of <tt>cols</tt>
+    /// are not valid global column indices.  If the returned value is
+    /// Teuchos::OrdinalTraits<LocalOrdinal>::invalid(), then at least
+    /// one of the following is true:
+    ///   <ul>
+    ///   <li> <tt>! isFillActive ()</tt> </li>
+    ///   <li> <tt> cols.size () != vals.size ()</tt> </li>
+    ///   </ul>
+    LocalOrdinal
     replaceGlobalValues (GlobalOrdinal globalRow,
                          const ArrayView<const GlobalOrdinal>& cols,
                          const ArrayView<const Scalar>& vals);
 
-    /// Replace one or more entries' values, using global indices.
+    /// \brief Replace one or more entries' values, using local indices.
     ///
     /// \param localRow [in] local index of the row in which to
     ///   replace the entries.  This row <i>must</i> be owned by the
@@ -777,10 +806,27 @@ namespace Tpetra {
     /// at entry <tt>(localRow, cols[k])</tt> of the matrix with
     /// <tt>vals[k]</tt>.  That entry must exist in the matrix
     /// already.
-    void
-    replaceLocalValues (LocalOrdinal localRow,
-                        const ArrayView<const LocalOrdinal> &cols,
-                        const ArrayView<const Scalar>       &vals);
+    ///
+    /// \return The number of indices for which values were actually
+    ///   replaced; the number of "correct" indices.
+    ///
+    /// If the returned value N satisfies
+    ///
+    /// <tt>0 <= N < cols.size()</tt>,
+    ///
+    /// then <tt>cols.size() - N</tt> of the entries of <tt>cols</tt>
+    /// are not valid local column indices.  If the returned value is
+    /// Teuchos::OrdinalTraits<LocalOrdinal>::invalid(), then at least
+    /// one of the following is true:
+    ///   <ul>
+    ///   <li> <tt>! isFillActive ()</tt> </li>
+    ///   <li> <tt>! hasColMap ()</tt> </li>
+    ///   <li> <tt> cols.size () != vals.size ()</tt> </li>
+    ///   </ul>
+    LocalOrdinal
+    replaceLocalValues (const LocalOrdinal localRow,
+                        const ArrayView<const LocalOrdinal>&cols,
+                        const ArrayView<const Scalar>& vals);
 
     /// \brief Sum into one or more sparse matrix entries, using global indices.
     ///
@@ -789,13 +835,13 @@ namespace Tpetra {
     /// process, it may result in future communication in
     /// globalAssemble() (which is called by fillComplete()).
     ///
-    /// If globalRow is owned by the calling process, then this method
-    /// performs the sum-into operation right away.  Otherwise, if the
-    /// row is <i>not</i> owned by the calling process, this method
-    /// defers the sum-into operation until globalAssemble().  That
-    /// method communicates data for nonowned rows to the processes
-    /// that own those rows.  Then, globalAssemble() does one of the
-    /// following:
+    /// If \c globalRow is owned by the calling process, then this
+    /// method performs the sum-into operation right away.  Otherwise,
+    /// if the row is <i>not</i> owned by the calling process, this
+    /// method defers the sum-into operation until globalAssemble().
+    /// That method communicates data for nonowned rows to the
+    /// processes that own those rows.  Then, globalAssemble() does
+    /// one of the following:
     /// - It calls insertGlobalValues() for that data if the matrix
     ///   has a dynamic graph.
     /// - It calls sumIntoGlobalValues() for that data if the matrix
@@ -808,23 +854,35 @@ namespace Tpetra {
     /// \param vals [in] One or more values corresponding to those
     ///   column indices.  <tt>vals[k]</tt> corresponds to
     ///   <tt>cols[k]</tt>.
-    void
+    ///
+    /// \return The number of indices for which values were actually
+    ///   modified; the number of "correct" indices.
+    ///
+    /// This method has the same preconditions and return value
+    /// meaning as replaceGlobalValues() (which see).
+    LocalOrdinal
     sumIntoGlobalValues (const GlobalOrdinal globalRow,
                          const ArrayView<const GlobalOrdinal> &cols,
                          const ArrayView<const Scalar>        &vals);
 
     /// \brief Sum into one or more sparse matrix entries, using local indices.
     ///
-    /// \param localRow [in] Local index of a row.  This row must be
-    ///   owned by the calling process.
+    /// \param localRow [in] Local index of a row.  This row
+    ///   <i>must</i> be owned by the calling process.
     /// \param cols [in] Local indices of the columns whose entries we
     ///   want to modify.
     /// \param vals [in] Values corresponding to the above column
     ///   indices.  <tt>vals[k]</tt> corresponds to <tt>cols[k]</tt>.
-    void
+    ///
+    /// \return The number of indices for which values were actually
+    ///   modified; the number of "correct" indices.
+    ///
+    /// This method has the same preconditions and return value
+    /// meaning as replaceLocalValues() (which see).
+    LocalOrdinal
     sumIntoLocalValues (const LocalOrdinal localRow,
-                        const ArrayView<const LocalOrdinal>  &cols,
-                        const ArrayView<const Scalar>        &vals);
+                        const ArrayView<const LocalOrdinal>& cols,
+                        const ArrayView<const Scalar>& vals);
 
     //! Set all matrix entries equal to \c alpha.
     void setAllToScalar (const Scalar &alpha);
@@ -857,7 +915,6 @@ namespace Tpetra {
     getAllValues (ArrayRCP<const size_t>& rowPointers,
                   ArrayRCP<const LocalOrdinal>& columnIndices,
                   ArrayRCP<const Scalar>& values) const;
-    
 
     //@}
     //! @name Transformational methods
@@ -927,10 +984,24 @@ namespace Tpetra {
         any process did a nonlocal insert.  Nonlocal changes include
         any sumIntoGlobalValues or insertGlobalValues call with a row
         index that is not in the row Map of the calling process.
+
+      - "Sort column Map ghost GIDs" (\c bool): Default is true.
+        makeColMap() (which fillComplete may call) always groups
+        remote GIDs by process rank, so that all remote GIDs with the
+        same owning rank occur contiguously.  By default, it always
+        sorts remote GIDs in increasing order within those groups.
+        This behavior differs from Epetra, which does not sort remote
+        GIDs with the same owning process.  If you don't want to sort
+        (for compatibility with Epetra), set this parameter to \c
+        false.  This parameter only takes effect if the matrix owns
+        the graph.  This is an expert mode parameter ONLY.  We make no
+        promises about backwards compatibility of this parameter.  It
+        may change or disappear at any time.
     */
-    void fillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap,
-                      const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap,
-                      const RCP<ParameterList> &params = null);
+    void
+    fillComplete (const RCP<const map_type>& domainMap,
+                  const RCP<const map_type>& rangeMap,
+                  const RCP<ParameterList>& params = null);
 
     /*! \brief Signal that data entry is complete.
 
@@ -944,7 +1015,7 @@ namespace Tpetra {
       \post <tt>isFillActive() == false<tt>
       \post <tt>isFillComplete() == true<tt>
     */
-    void fillComplete(const RCP<ParameterList> &params = null);
+    void fillComplete (const RCP<ParameterList>& params = null);
 
     /// \brief Perform a fillComplete on a matrix that already has data.
     ///
@@ -958,20 +1029,23 @@ namespace Tpetra {
     /// \warning This method is intended for expert developer use
     ///   only, and should never be called by user code.
     void
-    expertStaticFillComplete (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
-                              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
-                              const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer=Teuchos::null,
-                              const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter=Teuchos::null,
-                              const RCP<ParameterList> &params=Teuchos::null);
+    expertStaticFillComplete (const RCP<const map_type>& domainMap,
+                              const RCP<const map_type>& rangeMap,
+                              const RCP<const import_type>& importer = Teuchos::null,
+                              const RCP<const export_type>& exporter = Teuchos::null,
+                              const RCP<ParameterList>& params = Teuchos::null);
 
-    /// \brief Replace the current colMap with the given object.
+    /// \brief Replace the matrix's column Map with the given Map.
     ///
-    /// \param newColMap [in] New colMap.  Must be nonnull.
+    /// \param newColMap [in] New column Map.  Must be nonnull.
     ///
-    /// \pre The matrix must have no entries inserted yet
+    /// \pre The matrix must have no entries inserted yet, on any
+    ///   process in the row Map's communicator.
+    ///
+    /// \pre The matrix must not have been created with a constant
+    ///   (a.k.a. "static") CrsGraph.
     void
-    replaceColMap (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& newColMap);
-
+    replaceColMap (const Teuchos::RCP<const map_type>& newColMap);
 
     /// \brief Replace the current domain Map and Import with the given objects.
     ///
@@ -986,8 +1060,8 @@ namespace Tpetra {
     /// \pre If the Import is provided, its source Map must be the
     ///   same as the provided new domain Map.
     void
-    replaceDomainMapAndImporter (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& newDomainMap,
-                                 Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> >& newImporter);
+    replaceDomainMapAndImporter (const Teuchos::RCP<const map_type>& newDomainMap,
+                                 Teuchos::RCP<const import_type>& newImporter);
 
     /// \brief Remove processes owning zero rows from the Maps and their communicator.
     ///
@@ -1003,7 +1077,7 @@ namespace Tpetra {
     ///   is not, this method's behavior is undefined.  This pointer
     ///   will be null on excluded processes.
     virtual void
-    removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap);
+    removeEmptyProcessesInPlace (const Teuchos::RCP<const map_type>& newMap);
 
     //@}
     //! @name Methods implementing RowMatrix
@@ -1013,19 +1087,19 @@ namespace Tpetra {
     RCP<const Comm<int> > getComm() const;
 
     //! The Kokkos Node instance.
-    RCP<Node> getNode() const;
+    RCP<node_type> getNode () const;
 
     //! The Map that describes the row distribution in this matrix.
-    RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRowMap() const;
+    RCP<const map_type> getRowMap () const;
 
     //! The Map that describes the column distribution in this matrix.
-    RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getColMap() const;
+    RCP<const map_type> getColMap () const;
 
     //! This matrix's graph, as a RowGraph.
-    RCP<const RowGraph<LocalOrdinal,GlobalOrdinal,Node> > getGraph() const;
+    RCP<const RowGraph<LocalOrdinal,GlobalOrdinal,node_type> > getGraph () const;
 
     //! This matrix's graph, as a CrsGraph.
-    RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > getCrsGraph() const;
+    RCP<const crs_graph_type> getCrsGraph () const;
 
     /// \brief Number of global elements in the row map of this matrix.
     ///
@@ -1223,25 +1297,33 @@ namespace Tpetra {
     //! Indicates that the graph is static, so that new entries cannot be added to this matrix.
     bool isStaticGraph() const;
 
-    //! Returns the Frobenius norm of the matrix.
-    /** Computes and returns the Frobenius norm of the matrix, defined as:
-        \f$ \|A\|_F = \sqrt{\sum_{i,j} \|\a_{ij}\|^2} \f$
-
-        If the matrix is fill-complete, then the computed value is cached; the cache is cleared whenever resumeFill() is called.
-        Otherwise, the value is computed every time the method is called.
-    */
+    /// \brief Compute and return the Frobenius norm of the matrix.
+    ///
+    /// The Frobenius norm of the matrix is defined as
+    /// \f\[
+    ///   \|A\|_F = \sqrt{\sum_{i,j} \|\a_{ij}\|^2}.
+    /// \f\].
+    ///
+    /// If the matrix is fill complete, then the computed value is
+    /// cached; the cache is cleared whenever resumeFill() is called.
+    /// Otherwise, the value is computed every time the method is
+    /// called.
     typename ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const;
 
-
-    //! Returns \c true if getLocalRowView() and getGlobalRowView() are valid for this class
+    /// \brief Whether the matrix implements row views.
+    ///
+    /// If this returns \c true, you may call getLocalRowView() or
+    /// getGlobalRowView() to get views of the matrix's data.
+    /// Otherwise, you must call getLocalRowCopy() or
+    /// getGlobalRowCopy().
     virtual bool supportsRowViews() const;
 
     //! Extract a list of entries in a specified global row of this matrix. Put into pre-allocated storage.
     /*!
-      \param LocalRow - (In) Global row number for which indices are desired.
-      \param Indices - (Out) Global column indices corresponding to values.
-      \param Values - (Out) Matrix values.
-      \param NumEntries - (Out) Number of indices.
+      \param LocalRow [in] Global row number for which indices are desired.
+      \param Indices [out] Global column indices corresponding to values.
+      \param Values [out] Matrix values.
+      \param NumEntries [out] Number of indices.
 
       Note: A std::runtime_error exception is thrown if either \c Indices or \c Values is not large enough to hold the data associated
       with row \c GlobalRow. If \c GlobalRow does not belong to this node, then \c Indices and \c Values are unchanged and \c NumIndices is
@@ -1272,40 +1354,48 @@ namespace Tpetra {
                      const ArrayView<Scalar> &Values,
                      size_t &NumEntries) const;
 
-    //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
-    /*!
-      \param GlobalRow - (In) Global row number for which indices are desired.
-      \param Indices   - (Out) Global column indices corresponding to values.
-      \param Values    - (Out) Row values
-      \pre <tt>isLocallyIndexed() == false</tt>
-      \post <tt>indices.size() == getNumEntriesInGlobalRow(GlobalRow)</tt>
-
-      Note: If \c GlobalRow does not belong to this node, then \c indices is set to null.
-    */
+    /// \brief Get a constant, nonpersisting view of a row of this
+    ///   matrix, using global row and column indices.
+    ///
+    /// \param GlobalRow [in] Global index of the row to view.
+    /// \param indices [out] On output: view of the global column
+    ///   indices in the row.
+    /// \param values [out] On output: view of the values in the row.
+    ///
+    /// \pre <tt>isLocallyIndexed () == false</tt>
+    /// \post <tt>indices.size () == this->getNumEntriesInGlobalRow (GlobalRow)</tt>
+    ///
+    /// If \c GlobalRow is not a valid global row index on the calling
+    /// process, then \c indices is set to null.
     void
     getGlobalRowView (GlobalOrdinal GlobalRow,
                       ArrayView<const GlobalOrdinal> &indices,
                       ArrayView<const Scalar> &values) const;
 
-    //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
-    /*!
-      \param LocalRow - (In) Local row number for which indices are desired.
-      \param Indices  - (Out) Global column indices corresponding to values.
-      \param Values   - (Out) Row values
-      \pre <tt>isGloballyIndexed() == false</tt>
-      \post <tt>indices.size() == getNumEntriesInLocalRow(LocalRow)</tt>
-
-      Note: If \c LocalRow does not belong to this node, then \c indices is set to null.
-    */
+    /// \brief Get a constant, nonpersisting view of a row of this
+    ///   matrix, using local row and column indices.
+    ///
+    /// \param LocalRow [in] Local index of the row to view.
+    /// \param indices [out] On output: view of the local column
+    ///   indices in the row.
+    /// \param values [out] On output: view of the values in the row.
+    ///
+    /// \pre <tt>isGloballyIndexed () == false</tt>
+    /// \post <tt>indices.size () == this->getNumEntriesInLocalRow (LocalRow)</tt>
+    ///
+    /// If \c LocalRow is not a valid local row index on the calling
+    /// process, then \c indices is set to null.
     void
     getLocalRowView (LocalOrdinal LocalRow,
-                     ArrayView<const LocalOrdinal> &indices,
-                     ArrayView<const Scalar> &values) const;
+                     ArrayView<const LocalOrdinal>& indices,
+                     ArrayView<const Scalar>& values) const;
 
-    //! \brief Get a copy of the diagonal entries owned by this node, with local row indices.
-    /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the
-      the zero and non-zero diagonals owned by this node. */
-    void getLocalDiagCopy (Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const;
+    /// \brief Get a copy of the diagonal entries of the matrix.
+    ///
+    /// This method returns a Vector with the same Map as this
+    /// matrix's row Map.  On each process, it contains the diagonal
+    /// entries owned by the calling process.
+    void getLocalDiagCopy (Vector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& diag) const;
 
     /// \brief Get offsets of the diagonal entries in the matrix.
     ///
@@ -1365,14 +1455,14 @@ namespace Tpetra {
     /// is fill complete, then the offsets array remains valid through
     /// calls to fillComplete() and resumeFill().
     void
-    getLocalDiagCopy (Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& diag,
+    getLocalDiagCopy (Vector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& diag,
                       const Teuchos::ArrayView<const size_t>& offsets) const;
 
     /** \brief . */
-    void leftScale(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x);
+    void leftScale(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, node_type>& x);
 
     /** \brief . */
-    void rightScale(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x);
+    void rightScale(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, node_type>& x);
 
     //@}
     //! @name Advanced templated methods
@@ -1428,8 +1518,8 @@ namespace Tpetra {
     /// multiply result will be accumulated into \c Y.
     template <class DomainScalar, class RangeScalar>
     void
-    localMultiply (const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-                   MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+    localMultiply (const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,node_type>& X,
+                   MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,node_type>& Y,
                    Teuchos::ETransp trans,
                    RangeScalar alpha,
                    RangeScalar beta) const;
@@ -1460,9 +1550,9 @@ namespace Tpetra {
     ///   local kernel.)
     template <class DomainScalar, class RangeScalar>
     void
-    localGaussSeidel (const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &B,
-                      MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-                      const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
+    localGaussSeidel (const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,node_type> &B,
+                      MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,node_type> &X,
+                      const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type> &D,
                       const RangeScalar& dampingFactor,
                       const KokkosClassic::ESweepDirection direction) const;
 
@@ -1494,13 +1584,13 @@ namespace Tpetra {
     ///   local kernel.)
     template <class DomainScalar, class RangeScalar>
     void
-    reorderedLocalGaussSeidel (const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &B,
-			       MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-			       const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
-			       const ArrayView<LocalOrdinal> & rowIndices,
-			       const RangeScalar& dampingFactor,
-			       const KokkosClassic::ESweepDirection direction) const;
-    
+    reorderedLocalGaussSeidel (const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,node_type>& B,
+                               MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,node_type>& X,
+                               const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& D,
+                               const ArrayView<LocalOrdinal>& rowIndices,
+                               const RangeScalar& dampingFactor,
+                               const KokkosClassic::ESweepDirection direction) const;
+
     /// \brief Solves a linear system when the underlying matrix is triangular.
     ///
     /// X is required to be post-imported, i.e., described by the
@@ -1519,13 +1609,13 @@ namespace Tpetra {
     /// run-time checking will be performed in a non-debug build.
     template <class DomainScalar, class RangeScalar>
     void
-    localSolve (const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
-                MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+    localSolve (const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,node_type>& Y,
+                MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,node_type>& X,
                 Teuchos::ETransp trans) const;
 
     //! Returns another CrsMatrix with the same entries, but represented as a different scalar type.
     template <class T>
-    RCP<CrsMatrix<T,LocalOrdinal,GlobalOrdinal,Node> > convert() const;
+    RCP<CrsMatrix<T,LocalOrdinal,GlobalOrdinal,node_type> > convert() const;
 
     //@}
     //! @name Methods implementing Operator
@@ -1542,8 +1632,8 @@ namespace Tpetra {
     /// overwritten with the result of the multiplication, even if it
     /// contains <tt>NaN</tt> (not-a-number) floating-point entries.
     void
-    apply (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-           MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&Y,
+    apply (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& X,
+           MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>&Y,
            Teuchos::ETransp mode = Teuchos::NO_TRANS,
            Scalar alpha = ScalarTraits<Scalar>::one(),
            Scalar beta = ScalarTraits<Scalar>::zero()) const;
@@ -1554,12 +1644,12 @@ namespace Tpetra {
     /// \brief The domain Map of this operator.
     ///
     /// This is \c null until fillComplete() has been called.
-    RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const;
+    RCP<const map_type> getDomainMap () const;
 
     /// \brief The range Map of this operator.
     ///
     /// This is \c null until fillComplete() has been called.
-    RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const;
+    RCP<const map_type> getRangeMap () const;
 
     //@}
     //! @name Other "apply"-like methods
@@ -1593,7 +1683,7 @@ namespace Tpetra {
     ///   Symmetric sweep (including both its Forward and its Backward
     ///   sweep) as one.
     ///
-    /// \section Tpetra_CrsMatrix_gaussSeidel_Details Requirements
+    /// \section Tpetra_CrsMatrix_gaussSeidel_req Requirements
     ///
     /// This method has the following requirements:
     ///
@@ -1630,13 +1720,12 @@ namespace Tpetra {
     /// elements.  Shared ownership of off-diagonal elements would
     /// produce different results.
     void
-    gaussSeidel (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B,
-                 MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-                 const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
+    gaussSeidel (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type> &B,
+                 MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type> &X,
+                 const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type> &D,
                  const Scalar& dampingFactor,
                  const ESweepDirection direction,
                  const int numSweeps) const;
-
 
     /// \brief Reordered "Hybrid" Jacobi + (Gauss-Seidel or SOR) on \f$B = A X\f$.
     ///
@@ -1661,14 +1750,14 @@ namespace Tpetra {
     /// \param D [in] Inverse of diagonal entries of the matrix A.
     /// \param rowIndices [in] Ordered list of indices on which to execute GS.
     /// \param dampingFactor [in] SOR damping factor.  A damping
-    ///   factor of one results in Gauss-Seidel.    
+    ///   factor of one results in Gauss-Seidel.
     /// \param direction [in] Sweep direction: Forward, Backward, or
     ///   Symmetric.
     /// \param numSweeps [in] Number of sweeps.  We count each
     ///   Symmetric sweep (including both its Forward and its Backward
     ///   sweep) as one.
     ///
-    /// \section Tpetra_CrsMatrix_gaussSeidel_Details Requirements
+    /// \section Tpetra_CrsMatrix_reorderedGaussSeidel_req Requirements
     ///
     /// This method has the following requirements:
     ///
@@ -1705,13 +1794,13 @@ namespace Tpetra {
     /// elements.  Shared ownership of off-diagonal elements would
     /// produce different results.
     void
-    reorderedGaussSeidel (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B,
-			  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-			  const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
-			  const ArrayView<LocalOrdinal> & rowIndices,
-			  const Scalar& dampingFactor,
-			  const ESweepDirection direction,
-			  const int numSweeps) const;
+    reorderedGaussSeidel (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& B,
+                          MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& X,
+                          const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& D,
+                          const ArrayView<LocalOrdinal>& rowIndices,
+                          const Scalar& dampingFactor,
+                          const ESweepDirection direction,
+                          const int numSweeps) const;
 
     /// \brief Version of gaussSeidel(), with fewer requirements on X.
     ///
@@ -1725,7 +1814,7 @@ namespace Tpetra {
     ///   result multivector(s).
     /// \param B [in] Right-hand side(s), in the range Map.
     /// \param D [in] Inverse of diagonal entries of the matrix,
-    ///   in the row Map.    
+    ///   in the row Map.
     /// \param dampingFactor [in] SOR damping factor.  A damping
     ///   factor of one results in Gauss-Seidel.
     /// \param direction [in] Sweep direction: Forward, Backward, or
@@ -1742,9 +1831,9 @@ namespace Tpetra {
     /// \pre Domain, range, and row Maps of the sparse matrix are all the same.
     /// \pre No other argument aliases X.
     void
-    gaussSeidelCopy (MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-                     const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B,
-                     const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
+    gaussSeidelCopy (MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type> &X,
+                     const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type> &B,
+                     const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type> &D,
                      const Scalar& dampingFactor,
                      const ESweepDirection direction,
                      const int numSweeps,
@@ -1780,14 +1869,14 @@ namespace Tpetra {
     /// \pre Domain, range, and row Maps of the sparse matrix are all the same.
     /// \pre No other argument aliases X.
     void
-    reorderedGaussSeidelCopy (MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-			      const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B,
-			      const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
-			      const ArrayView<LocalOrdinal> & rowIndices,
-			      const Scalar& dampingFactor,
-			      const ESweepDirection direction,
-			      const int numSweeps,
-			      const bool zeroInitialGuess) const;
+    reorderedGaussSeidelCopy (MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& X,
+                              const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& B,
+                              const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& D,
+                              const ArrayView<LocalOrdinal>& rowIndices,
+                              const Scalar& dampingFactor,
+                              const ESweepDirection direction,
+                              const int numSweeps,
+                              const bool zeroInitialGuess) const;
 
     /// \brief Implementation of RowMatrix::add: return <tt>alpha*A + beta*this</tt>.
     ///
@@ -1799,12 +1888,12 @@ namespace Tpetra {
     /// necessarily be a CrsMatrix or a CrsMatrix of the same type as
     /// <tt>*this</tt>, though this method may be able to optimize
     /// further in that case.
-    virtual Teuchos::RCP<RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+    virtual Teuchos::RCP<RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, node_type> >
     add (const Scalar& alpha,
-         const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
+         const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, node_type>& A,
          const Scalar& beta,
-         const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& domainMap,
-         const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& rangeMap,
+         const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, node_type> >& domainMap,
+         const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, node_type> >& rangeMap,
          const Teuchos::RCP<Teuchos::ParameterList>& params) const;
 
     //@}
@@ -1908,51 +1997,86 @@ namespace Tpetra {
                                                                  typename CrsMatrixType::node_type> >& rangeMap,
                                     const Teuchos::RCP<Teuchos::ParameterList>& params);
 
-    /// \brief Import from <tt>this</tt> to the result, and fillComplete the result.
+  public:
+    /// \brief Import from <tt>this</tt> to the given destination
+    ///   matrix, and make the result fill complete.
     ///
-    /// This method implements the nonmember "constructor"
-    /// importAndFillCompleteCrsMatrix.  It's convenient to put that
-    /// function's implementation inside the CrsMatrix class, so that
-    /// we don't have to put much code in the _decl header file.
-    Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >
-    importAndFillComplete (const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
-                           const Teuchos::RCP<const map_type>& domainMap,
-                           const Teuchos::RCP<const map_type>& rangeMap,
-                           const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const;
-
-    /// \brief Export from <tt>this</tt> to the result, and fillComplete the result.
+    /// If destMatrix.is_null(), this creates a new matrix as the
+    /// destination.  (This is why destMatrix is passed in by nonconst
+    /// reference to RCP.)  Otherwise it checks for "pristine" status
+    /// and throws if that is not the case.  "Pristine" means that the
+    /// matrix has no entries and is not fill complete.
     ///
-    /// This method implements the nonmember "constructor"
-    /// exportAndFillCompleteCrsMatrix.  It's convenient to put that
-    /// function's implementation inside the CrsMatrix class, so that
-    /// we don't have to put much code in the _decl header file.
-    Teuchos::RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >
-    exportAndFillComplete (const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
+    /// Use of the "non-member constructor" version of this method,
+    /// exportAndFillCompleteCrsMatrix, is preferred for user
+    /// applications.
+    ///
+    /// \warning This method is intended for expert developer use
+    ///   only, and should never be called by user code.
+    void
+    importAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,node_type,LocalMatOps> > & destMatrix,
+                           const import_type& importer,
                            const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
                            const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
                            const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const;
 
-    /// \brief Transfer (e.g. Import/Export) from <tt>this</tt> to the result, and fillComplete the result.
-    /// This method implements the nonmember "constructors"
-    /// [import|export]AndFillCompleteCrsMatrix.  It's convenient to put that
-    /// function's implementation inside the CrsMatrix class, so that
-    /// we don't have to put much code in the _decl header file.
-    template<class TransferType>
-    Teuchos::RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >
-    transferAndFillComplete (const TransferType& rowTransfer,
-			     const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
-			     const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
-			     const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const;
-
+    /// \brief Export from <tt>this</tt> to the given destination
+    ///   matrix, and make the result fill complete.
+    ///
+    /// If destMatrix.is_null(), this creates a new matrix as the
+    /// destination.  (This is why destMatrix is passed in by nonconst
+    /// reference to RCP.)  Otherwise it checks for "pristine" status
+    /// and throws if that is not the case.  "Pristine" means that the
+    /// matrix has no entries and is not fill complete.
+    ///
+    /// Use of the "non-member constructor" version of this method,
+    /// exportAndFillCompleteCrsMatrix, is preferred for user
+    /// applications.
+    ///
+    /// \warning This method is intended for expert developer use
+    ///   only, and should never be called by user code.
+    void
+    exportAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,node_type,LocalMatOps> > & destMatrix,
+                           const export_type& exporter,
+                           const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
+                           const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
+                           const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const;
+  private:
+    /// \brief Transfer (e.g. Import/Export) from <tt>this</tt> to the
+    ///   given destination matrix, and make the result fill complete.
+    ///
+    /// If destMat.is_null(), this creates a new matrix, otherwise it
+    /// checks for "pristine" status and throws if that is not the
+    /// case.  This method implements importAndFillComplete and
+    /// exportAndFillComplete, which in turn implemment the nonmember
+    /// "constructors" importAndFillCompleteCrsMatrix and
+    /// exportAndFillCompleteCrsMatrix.  It's convenient to put those
+    /// nonmember constructors' implementations inside the CrsMatrix
+    /// class, so that we don't have to put much code in the _decl
+    /// header file.
+    ///
+    /// The point of this method is to fuse three tasks:
+    ///
+    ///   1. Create a destination matrix (CrsMatrix constructor)
+    ///   2. Import or Export this matrix to the destination matrix
+    ///   3. Call fillComplete on the destination matrix
+    ///
+    /// Fusing these tasks can avoid some communication and work.
+    void
+    transferAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > & destMat,
+                             const ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>& rowTransfer, // either Import or Export
+                             const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
+                             const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
+                             const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const;
 
     // We forbid copy construction by declaring this method private
     // and not implementing it.
-    CrsMatrix (const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> &rhs);
+    CrsMatrix (const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,node_type,LocalMatOps> &rhs);
 
     // We forbid assignment (operator=) by declaring this method
     // private and not implementing it.
-    CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>&
-    operator= (const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> &rhs);
+    CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,node_type,LocalMatOps>&
+    operator= (const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,node_type,LocalMatOps> &rhs);
 
     /// \brief Like insertGlobalValues(), but with column filtering.
     ///
@@ -1987,100 +2111,6 @@ namespace Tpetra {
                          const Teuchos::ArrayView<const Scalar> values,
                          const Tpetra::CombineMode combineMode);
 
-    /// \brief Transform CrsMatrix entries, using local indices.
-    ///
-    /// For every entry \f$A(i,j)\f$ to transform, if \f$v_{ij}\f$ is
-    /// the corresponding entry of the \c values array, then we apply
-    /// the binary function f to \f$A(i,j)\f$ as follows:
-    /// \f[
-    ///   A(i,j) := f(A(i,j), v_{ij}).
-    /// \f]
-    /// For example, BinaryFunction = std::plus<Scalar> does the same
-    /// thing as sumIntoLocalValues(), and BinaryFunction =
-    /// project2nd<Scalar,Scalar> does the same thing as
-    /// replaceLocalValues().
-    ///
-    /// \tparam BinaryFunction The type of binary function to apply.
-    ///   std::binary_function is a model for this.
-    ///
-    /// \pre The matrix must have a column Map.
-    ///
-    /// \param localRow [in] (Local) index of the row to modify.
-    ///   This row <i>must</i> be owned by the calling process.
-    ///
-    /// \param indices [in] (Local) indices in the row to modify.
-    ///   Indices not in the column Map and their corresponding values
-    ///   will be ignored.
-    ///
-    /// \param values [in] Values to use for modification.
-    ///
-    /// This method works whether indices are local or global.
-    /// However, it will cost more if indices are global, since it
-    /// will have to convert the local indices to global indices in
-    /// that case.
-    template<class BinaryFunction>
-    void
-    transformLocalValues (LocalOrdinal localRow,
-                          const Teuchos::ArrayView<const LocalOrdinal>& indices,
-                          const Teuchos::ArrayView<const Scalar>        & values,
-                          BinaryFunction f)
-    {
-      typedef LocalOrdinal LO;
-      typedef GlobalOrdinal GO;
-      typedef Node NT;
-      using Teuchos::Array;
-      using Teuchos::ArrayView;
-
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        ! isFillActive (),
-        std::runtime_error,
-        "Tpetra::CrsMatrix::transformLocalValues: Fill must be active in order "
-        "to call this method.  That is, isFillActive() must return true.  If "
-        "you have already called fillComplete(), you need to call resumeFill() "
-        "before you can replace values.");
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        values.size () != indices.size (),
-        std::runtime_error,
-        "Tpetra::CrsMatrix::transformLocalValues: values.size () = "
-        << values.size () << " != indices.size () = " << indices.size ()
-        << ".");
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        ! this->hasColMap (),
-        std::runtime_error,
-        "Tpetra::CrsMatrix::transformLocalValues: We cannot transform local "
-        "indices without a column map.");
-      const bool isLocalRow = getRowMap ()->isNodeLocalElement (localRow);
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        ! isLocalRow,
-        std::runtime_error,
-        "Tpetra::CrsMatrix::transformLocalValues: The specified local row "
-        << localRow << " does not belong to this process "
-        << getRowMap ()->getComm ()->getRank () << ".");
-
-      RowInfo rowInfo = staticGraph_->getRowInfo (localRow);
-      if (indices.size () > 0) {
-        ArrayView<Scalar> curVals = this->getViewNonConst (rowInfo);
-        if (isLocallyIndexed ()) {
-          staticGraph_->template transformLocalValues<Scalar, BinaryFunction> (rowInfo, curVals, indices, values, f);
-        }
-        else if (isGloballyIndexed ()) {
-          // Convert the given local indices to global indices.
-          const Map<LO, GO, NT>& colMap = * (this->getColMap ());
-          Array<GO> gindices (indices.size ());
-          typename ArrayView<const LO>::iterator lindit = indices.begin();
-          typename Array<GO>::iterator           gindit = gindices.begin();
-          while (lindit != indices.end()) {
-            // There is no need to filter out indices not in the column
-            // Map.  Those that aren't will be mapped to invalid(),
-            // which transformGlobalValues() will ignore.
-            *gindit++ = colMap.getGlobalElement (*lindit++);
-          }
-          staticGraph_->template transformGlobalValues<Scalar, BinaryFunction> (rowInfo, curVals, gindices (), values, f);
-        }
-      }
-    }
-
-
     /// \brief Transform CrsMatrix entries, using global indices.
     ///
     /// For every entry \f$A(i,j)\f$ to transform, if \f$v_{ij}\f$ is
@@ -2111,7 +2141,7 @@ namespace Tpetra {
     /// have to convert the local indices to global indices in that
     /// case.
     template<class BinaryFunction>
-    void
+    LocalOrdinal
     transformGlobalValues (GlobalOrdinal globalRow,
                            const Teuchos::ArrayView<const GlobalOrdinal>& indices,
                            const Teuchos::ArrayView<const Scalar>        & values,
@@ -2119,63 +2149,75 @@ namespace Tpetra {
     {
       typedef LocalOrdinal LO;
       typedef GlobalOrdinal GO;
-      typedef Node NT;
       using Teuchos::Array;
       using Teuchos::ArrayView;
+      typedef typename ArrayView<const GO>::size_type size_type;
 
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        ! isFillActive (),
-        std::runtime_error,
-        "Tpetra::CrsMatrix::transformGlobalValues: Fill must be active in order "
-        "to call this method.  That is, isFillActive() must return true.  If "
-        "you have already called fillComplete(), you need to call resumeFill() "
-        "before you can replace values.");
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        values.size () != indices.size (),
-        std::runtime_error,
-        "Tpetra::CrsMatrix::transformGlobalValues: values.size () = "
-        << values.size () << " != indices.size () = " << indices.size ()
-        << ".");
-
-      const LO lrow = this->getRowMap()->getLocalElement(globalRow);
-
-      if (lrow == OTL::invalid()) {
-        // FIXME (mfh 16 May 2013) We're using this exception to do
-        // sumIntoGlobalValues for nonowned rows, so we might want to
-        // avoid the overhead of constructing the fancy exception
-        // message each time if we don't plan to use it.
-
-        // The exception test macro doesn't let you pass an additional
-        // argument to the exception's constructor, so we don't use it.
-        std::ostringstream os;
-        os << "transformGlobalValues: The given global row index "
-           << globalRow << " is not owned by the calling process (rank "
-           << this->getRowMap()->getComm()->getRank() << ").";
-        throw Details::InvalidGlobalRowIndex<GO> (os.str (), globalRow);
+      if (! isFillActive ()) {
+        // Fill must be active in order to call this method.
+        return Teuchos::OrdinalTraits<LO>::invalid ();
+      }
+      else if (values.size () != indices.size ()) {
+        // The sizes of values and indices must match.
+        return Teuchos::OrdinalTraits<LO>::invalid ();
       }
 
-      RowInfo rowInfo = staticGraph_->getRowInfo (lrow);
-      if (indices.size () > 0) {
+      const LO lrow = this->getRowMap()->getLocalElement (globalRow);
+      if (lrow == Teuchos::OrdinalTraits<LO>::invalid ()) {
+        // We don't own the row, so we're not allowed to modify its values.
+        return Teuchos::OrdinalTraits<LO>::invalid ();
+      }
+
+      if (staticGraph_.is_null ()) {
+        return Teuchos::OrdinalTraits<LO>::invalid ();
+      }
+      const crs_graph_type& graph = *staticGraph_;
+      RowInfo rowInfo = graph.getRowInfo (lrow);
+      if (indices.size () == 0) {
+        return static_cast<LO> (0);
+      }
+      else {
         ArrayView<Scalar> curVals = this->getViewNonConst (rowInfo);
         if (isLocallyIndexed ()) {
-          // Convert global indices to local indices.
-          const Map<LO, GO, NT> &colMap = * (this->getColMap ());
-          Array<LO> lindices (indices.size ());
-          typename ArrayView<const GO>::iterator gindit = indices.begin();
-          typename Array<LO>::iterator           lindit = lindices.begin();
-          while (gindit != indices.end()) {
-            // There is no need to filter out indices not in the column
-            // Map.  Those that aren't will be mapped to invalid(),
-            // which transformLocalValues() will ignore.
-            *lindit++ = colMap.getLocalElement (*gindit++);
+          // Convert the given global indices to local indices.
+          //
+          // FIXME (mfh 08 Jul 2014) Why can't we ask the graph to do
+          // that?  It could do the conversions in place, so that we
+          // wouldn't need temporary storage.
+          const map_type& colMap = * (this->getColMap ());
+          const size_type numInds = indices.size ();
+          Array<LO> lclInds (numInds);
+          for (size_type k = 0; k < numInds; ++k) {
+            // There is no need to filter out indices not in the
+            // column Map.  Those that aren't will be mapped to
+            // invalid(), which the graph's transformGlobalValues()
+            // will filter out (but not count in its return value).
+            lclInds[k] = colMap.getLocalElement (indices[k]);
           }
-          staticGraph_->template transformLocalValues<Scalar, BinaryFunction> (rowInfo, curVals, lindices (), values, f);
+          return graph.template transformLocalValues<Scalar, BinaryFunction> (rowInfo, curVals,
+                                                                              lclInds (), values, f);
         }
         else if (isGloballyIndexed ()) {
-          staticGraph_->template transformGlobalValues<Scalar, BinaryFunction> (rowInfo, curVals, indices, values, f);
+          return graph.template transformGlobalValues<Scalar, BinaryFunction> (rowInfo, curVals,
+                                                                               indices, values, f);
+        }
+        else {
+          // If the graph is neither locally nor globally indexed on
+          // the calling process, that means that the calling process
+          // can't possibly have any entries in the owned row.  Thus,
+          // there are no entries to transform, so we return zero.
+          return static_cast<LO> (0);
         }
       }
     }
+
+  private:
+    /// \brief Special case of insertGlobalValues for when globalRow
+    ///   is <i>not<i> owned by the calling process.
+    void
+    insertNonownedGlobalValues (const GlobalOrdinal globalRow,
+                                const Teuchos::ArrayView<const GlobalOrdinal>& indices,
+                                const Teuchos::ArrayView<const Scalar>& values);
 
   protected:
     // useful typedefs
@@ -2183,15 +2225,12 @@ namespace Tpetra {
     typedef ScalarTraits<Scalar>                            STS;
     typedef typename STS::magnitudeType               Magnitude;
     typedef ScalarTraits<Magnitude>                         STM;
-    typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>       MV;
-    typedef Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>             V;
-    typedef CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>  Graph;
+    typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type> MV;
+    typedef Vector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>      V;
+    typedef crs_graph_type Graph;
     typedef typename LocalMatOps::template bind_scalar<Scalar>::other_type                    sparse_ops_type;
-    typedef typename sparse_ops_type::template graph<LocalOrdinal,Node>::graph_type          local_graph_type;
-    typedef typename sparse_ops_type::template matrix<Scalar,LocalOrdinal,Node>::matrix_type local_matrix_type;
-
-    typedef Export<LocalOrdinal, GlobalOrdinal, Node> export_type;
-    typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
+    typedef typename sparse_ops_type::template graph<LocalOrdinal,node_type>::graph_type          local_graph_type;
+    typedef typename sparse_ops_type::template matrix<Scalar,LocalOrdinal,node_type>::matrix_type local_matrix_type;
 
     // Enums
     enum GraphAllocationStatus {
@@ -2415,6 +2454,21 @@ namespace Tpetra {
     /// These data are cleared by globalAssemble(), once it finishes
     /// redistributing them to their owning processes.
     ///
+    /// For a given nonowned global row gRow which was given to
+    /// insertGlobalValues() or sumIntoGlobalValues(),
+    /// <tt>nonlocals_[gRow].first[k]</tt> is the column index of an
+    /// inserted entry, and <tt>nonlocals_[gRow].second[k]</tt> is its
+    /// value.  Duplicate column indices for the same row index are
+    /// allowed and will be summed during globalAssemble().
+    ///
+    /// This used to be a map from GlobalOrdinal to (GlobalOrdinal,
+    /// Scalar) pairs.  This makes gcc issue a "note" about the ABI of
+    /// structs containing std::complex members changing.  CDash
+    /// reports this as a warning, even though it's a "note," not a
+    /// warning.  However, I don't want it to show up, so I rearranged
+    /// the map's value type to a pair of arrays, rather than an array
+    /// of pairs.
+    ///
     /// \note For Epetra developers: Tpetra::CrsMatrix corresponds
     ///   more to Epetra_FECrsMatrix than to Epetra_CrsMatrix.  The
     ///   insertGlobalValues() method in Tpetra::CrsMatrix, unlike
@@ -2422,7 +2476,8 @@ namespace Tpetra {
     ///   insertion into rows which are not owned by the calling
     ///   process.  The globalAssemble() method redistributes these
     ///   to their owning processes.
-    std::map<GlobalOrdinal, Array<std::pair<GlobalOrdinal,Scalar> > > nonlocals_;
+    std::map<GlobalOrdinal, std::pair<Teuchos::Array<GlobalOrdinal>,
+                                      Teuchos::Array<Scalar> > > nonlocals_;
 
     /// \brief Cached Frobenius norm of the (global) matrix.
     ///
@@ -2515,7 +2570,9 @@ namespace Tpetra {
                                                                typename CrsMatrixType::node_type> >& rangeMap = Teuchos::null,
                                   const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
   {
-    return sourceMatrix->importAndFillComplete (importer, domainMap, rangeMap, params);
+    Teuchos::RCP<CrsMatrixType> destMatrix;
+    sourceMatrix->importAndFillComplete (destMatrix,importer, domainMap, rangeMap, params);
+    return destMatrix;
   }
 
   /// \brief Nonmember CrsMatrix constructor that fuses Export and fillComplete().
@@ -2565,7 +2622,9 @@ namespace Tpetra {
                                                                typename CrsMatrixType::node_type> >& rangeMap = Teuchos::null,
                                   const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
   {
-    return sourceMatrix->exportAndFillComplete (exporter, domainMap, rangeMap, params);
+    Teuchos::RCP<CrsMatrixType> destMatrix;
+    sourceMatrix->exportAndFillComplete (destMatrix,exporter, domainMap, rangeMap, params);
+    return destMatrix;
   }
 } // namespace Tpetra
 
@@ -2584,4 +2643,4 @@ namespace Tpetra {
   An example for inserting non-local entries into a Tpetra::CrsMatrix using Tpetra::CrsMatrix::insertGlobalValues(), with multiple calls to Tpetra::CrsMatrix::fillComplete().
  */
 
-#endif
+#endif // TPETRA_CRSMATRIX_DECL_HPP

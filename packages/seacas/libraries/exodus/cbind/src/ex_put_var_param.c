@@ -49,10 +49,8 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include "exodusII.h"                   // for ex_put_variable_param, etc
 
-#include <ctype.h>
 
 /*!
  * writes the number and names of global, nodal, or element variables 

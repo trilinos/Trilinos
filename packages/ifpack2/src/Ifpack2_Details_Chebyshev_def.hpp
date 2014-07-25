@@ -61,7 +61,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
@@ -329,7 +329,10 @@ setParameters (Teuchos::ParameterList& plist)
   // this class uses the existence of those parameters to determine
   // whether it should do eigenanalysis.
   if (plist.isParameter ("chebyshev: max eigenvalue")) {
-    lambdaMax = plist.get<ST> ("chebyshev: max eigenvalue");
+    if (plist.isType<double>("chebyshev: max eigenvalue"))
+      lambdaMax = plist.get<double> ("chebyshev: max eigenvalue");
+    else
+      lambdaMax = plist.get<ST> ("chebyshev: max eigenvalue");
     TEUCHOS_TEST_FOR_EXCEPTION(
       STS::isnaninf (lambdaMax), std::invalid_argument,
       "Ifpack2::Chebyshev::setParameters: \"chebyshev: max eigenvalue\" "
@@ -337,7 +340,10 @@ setParameters (Teuchos::ParameterList& plist)
       "choose to supply it, it must have a finite value.");
   }
   if (plist.isParameter ("chebyshev: min eigenvalue")) {
-    lambdaMin = plist.get<ST> ("chebyshev: min eigenvalue");
+    if (plist.isType<double>("chebyshev: min eigenvalue"))
+      lambdaMin = plist.get<double> ("chebyshev: min eigenvalue");
+    else
+      lambdaMin = plist.get<ST> ("chebyshev: min eigenvalue");
     TEUCHOS_TEST_FOR_EXCEPTION(
       STS::isnaninf (lambdaMin), std::invalid_argument,
       "Ifpack2::Chebyshev::setParameters: \"chebyshev: min eigenvalue\" "
@@ -347,7 +353,10 @@ setParameters (Teuchos::ParameterList& plist)
 
   // Only fill in Ifpack2's name for the default parameter, not ML's.
   if (plist.isParameter ("smoother: Chebyshev alpha")) { // ML compatibility
-    eigRatio = plist.get<ST> ("smoother: Chebyshev alpha");
+    if (plist.isType<double>("smoother: Chebyshev alpha"))
+      eigRatio = plist.get<double> ("smoother: Chebyshev alpha");
+    else
+      eigRatio = plist.get<ST> ("smoother: Chebyshev alpha");
   }
   // Ifpack2's name overrides ML's name.
   eigRatio = plist.get ("chebyshev: ratio eigenvalue", eigRatio);
@@ -717,7 +726,7 @@ Chebyshev<ScalarType, MV>::
 computeResidual (MV& R, const MV& B, const op_type& A, const MV& X,
                  const Teuchos::ETransp mode)
 {
-  R = B;
+  Tpetra::deep_copy(R, B);
   A.apply (X, R, mode, -STS::one(), STS::one());
 }
 
@@ -776,7 +785,7 @@ makeInverseDiagonal (const row_matrix_type& A, const bool useDiagOffsets) const
   // Invert the diagonal entries, replacing entries less (in
   // magnitude) than the user-specified value with that value.
   typedef KokkosClassic::MultiVector<ST, typename MV::node_type> KMV;
-  KMV& localDiag = D_rangeMap->getLocalMVNonConst ();
+  KMV localDiag = D_rangeMap->getLocalMV ();
   typedef KokkosClassic::DefaultArithmetic<KMV> KMVT;
   KMVT::ReciprocalThreshold (localDiag, minDiagVal_);
   return Teuchos::rcp_const_cast<const V> (D_rangeMap);
@@ -903,8 +912,8 @@ textbookApplyImpl (const op_type& A,
 template<class ScalarType, class MV>
 typename Chebyshev<ScalarType, MV>::MT
 Chebyshev<ScalarType, MV>::maxNormInf (const MV& X) {
-  std::vector<MT> norms (X.getNumVectors ());
-  X.normInf (norms);
+  Teuchos::Array<MT> norms (X.getNumVectors ());
+  X.normInf (norms());
   return *std::max_element (norms.begin (), norms.end ());
 }
 
@@ -1004,7 +1013,7 @@ ifpackApplyImpl (const op_type& A,
 #endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
 #endif // HAVE_TEUCHOS_DEBUG
 
-    X = W; // X = 0 + W
+    Tpetra::deep_copy(X, W); // X = 0 + W
   }
 #ifdef HAVE_TEUCHOS_DEBUG
 #ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
@@ -1234,5 +1243,8 @@ describe (Teuchos::FancyOStream& out,
 
 } // namespace Details
 } // namespace Ifpack2
+
+#define IFPACK2_DETAILS_CHEBYSHEV_INSTANT(S,LO,GO,N) \
+  template class Ifpack2::Details::Chebyshev< S, Tpetra::MultiVector<S, LO, GO, N> >;
 
 #endif // IFPACK2_DETAILS_CHEBYSHEV_DEF_HPP

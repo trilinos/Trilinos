@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -47,7 +47,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 // Simple Power method algorithm
-double power_method(const Epetra_CrsMatrix& A) {  
+double power_method(const Epetra_CrsMatrix& A) {
   // variable needed for iteration
   double lambda = 0.0;
   int niters = A.RowMap().NumGlobalElements()*10;
@@ -72,10 +72,10 @@ double power_method(const Epetra_CrsMatrix& A) {
       resid.Update(1.0, z, -lambda, q, 0.0);
       resid.Norm2(&residual);
       if (q.Map().Comm().MyPID()==0)
-	std::cout << "Iter = " << iter << "  Lambda = " << lambda 
-	     << "  Two-norm of A*q - lambda*q = " 
+	std::cout << "Iter = " << iter << "  Lambda = " << lambda
+	     << "  Two-norm of A*q - lambda*q = "
 	     << residual << std::endl;
-    } 
+    }
     iter++;
   }
   return(lambda);

@@ -151,6 +151,7 @@ private:
     // output throws an exception, we can restore the original flags
     // before rethrowing.
     std::ios_base::fmtflags flags = out.flags ();
+    std::streamsize p = out.precision();
     try {
       out << std::scientific;
       out.precision (2); // Low precision, just for error checking
@@ -172,6 +173,7 @@ private:
       throw;
     }
     out << "]";
+    out.precision (p);
   }
 
   void
@@ -1976,10 +1978,6 @@ public:
     using Teuchos::UPPER_TRI;
     using Teuchos::NON_UNIT_DIAG;
     using Teuchos::UNIT_DIAG;
-    typedef Teuchos::ScalarTraits<scalar_type> STS;
-    typedef Teuchos::ScalarTraits<magnitude_type> STM;
-    typedef KokkosClassic::MultiVector<scalar_type, node_type> MV;
-    typedef KokkosClassic::DefaultArithmetic<MV> MVT;
 
     const bool testTriSolve = (numRows == numCols);
 

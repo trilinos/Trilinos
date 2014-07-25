@@ -405,7 +405,7 @@ panzer::ModelEvaluator_Epetra::createOutArgs() const
  
       // class must supoprt a derivative 
       if(resp->supportsDerivative())
-        outArgs.setSupports(OUT_ARG_DgDx,i,DerivativeSupport(DERIV_MV_BY_COL));
+        outArgs.setSupports(OUT_ARG_DgDx,i,DerivativeSupport(DERIV_TRANS_MV_BY_ROW));
         //outArgs.setSupports(OUT_ARG_DgDx,i,DerivativeSupport(DERIV_LINEAR_OP));
     }
   }
@@ -1034,6 +1034,7 @@ void
 panzer::ModelEvaluator_Epetra::
 evalModel_sg_g(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const OutArgs & outArgs) const
 {
+/*
    // build a teuchos comm from an mpi comm
    Teuchos::RCP<Teuchos::Comm<int> > tComm 
       = Teuchos::rcp(new Teuchos::MpiComm<int>(
@@ -1067,6 +1068,8 @@ evalModel_sg_g(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const OutArg
          }
       }
    }
+*/
+  TEUCHOS_ASSERT(false);
 }
 
 #endif

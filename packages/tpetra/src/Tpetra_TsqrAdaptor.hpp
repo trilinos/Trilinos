@@ -42,6 +42,10 @@
 #ifndef __Tpetra_TsqrAdaptor_hpp
 #define __Tpetra_TsqrAdaptor_hpp
 
+/// \file Tpetra_TsqrAdaptor.hpp
+/// \brief Adaptor from Tpetra::MultiVector to TSQR
+/// \author Mark Hoemmen
+
 #include <Tpetra_ConfigDefs.hpp> // HAVE_TPETRA_TSQR, etc.
 
 #ifdef HAVE_TPETRA_TSQR
@@ -122,6 +126,7 @@ namespace Tpetra {
       setParameterList (Teuchos::null);
     }
 
+    //! Get all valid parameters (with default values) that TSQR understands.
     Teuchos::RCP<const Teuchos::ParameterList>
     getValidParameters () const
     {
@@ -139,6 +144,31 @@ namespace Tpetra {
       return defaultParams_;
     }
 
+    /// \brief Set TSQR's parameters.
+    ///
+    /// \param plist [in/out] List of parameters.
+    ///
+    /// This method accepts the following sublists:
+    ///   - "NodeTsqr": Parameters for the intra-process part of TSQR.
+    ///   - "DistTsqr": Parameters for the inter-process part of TSQR.
+    ///
+    /// Only experts should attempt to set these parameters.  The
+    /// default parameters generally perform well.
+    ///
+    /// The exact set of parameters valid for the "NodeTsqr" sublist
+    /// depends on the intra-process TSQR implementation, which in
+    /// turn is a function of the Kokkos Node type.  All
+    /// implementations accept the "Cache Size Hint" parameter, which
+    /// is the cache size in bytes (as a size_t) to use for the
+    /// intra-process part of TSQR.  If zero, TSQR will pick a
+    /// reasonable default.  The size should correspond to that of the
+    /// largest cache that is private to each CPU core, if such a
+    /// private cache exists; otherwise, it should correspond to the
+    /// amount of shared cache, divided by the number of cores sharing
+    /// that cache.  I found through experimentation that TSQR's
+    /// performance is not sensitive to this parameter's value, as
+    /// long as it is not too large or too small.  The default value
+    /// should be fine.
     void
     setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
     {
@@ -332,10 +362,12 @@ namespace Tpetra {
       // have to copy and pack into a matrix with constant stride, and
       // then unpack on exit.  For now we choose just to raise an
       // exception.
-      TEUCHOS_TEST_FOR_EXCEPTION(! A.isConstantStride(), std::invalid_argument,
-                                 "TSQR does not currently support Tpetra::MultiVector "
-                                 "inputs that do not have constant stride.");
-      return A.getLocalMVNonConst();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! A.isConstantStride(), std::invalid_argument,
+        "Tpetra::TsqrAdaptor::getNonConstView: TSQR does not currently "
+        "support Tpetra::MultiVector inputs that do not have constant "
+        "stride.");
+      return A.getLocalMV ();
     }
   };
 

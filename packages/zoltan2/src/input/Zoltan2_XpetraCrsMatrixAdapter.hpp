@@ -81,8 +81,8 @@ namespace Zoltan2 {
 
 */
 
-template <typename User>
-  class XpetraCrsMatrixAdapter : public MatrixAdapter<User> {
+template <typename User, typename UserCoord=User>
+  class XpetraCrsMatrixAdapter : public MatrixAdapter<User,UserCoord> {
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -90,10 +90,12 @@ public:
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
+  typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> xmatrix_t;
-  typedef MatrixAdapter<User> base_adapter_t;
+  typedef MatrixAdapter<User,UserCoord> base_adapter_t;
   typedef User user_t;
+  typedef UserCoord userCoord_t;
 #endif
 
   /*! \brief Destructor
@@ -103,37 +105,31 @@ public:
   /*! \brief Constructor   
    *    \param inmatrix The users Epetra, Tpetra, or Xpetra CrsMatrix object 
    *    \param numWeightsPerRow If row weights will be provided in setRowWeights(),
-   *        the set \c weightDim to the number of weights per row.
-   *    \param coordDim Some algorithms can use row geometric
-   *            information if it is available.  If coordinates will be
-   *            supplied in setRowCoordinates() 
-   *            then provide the dimension of the coordinates here.
+   *        the set \c numWeightsPerRow to the number of weights per row.
    */
   XpetraCrsMatrixAdapter(const RCP<const User> &inmatrix,
-                         int numWeightsPerRow=0, int coordDim=0);
+                         int numWeightsPerRow=0);
 
-  /*! \brief Specify geometric coordinates for matrix rows.
-   *    \param coordVal  A pointer to the coordinates.
+  /*! \brief Specify a weight for each entity of the primaryEntityType.
+   *    \param weightVal A pointer to the weights for this index.
    *    \stride          A stride to be used in reading the values.  The
-   *        dimension \c dim coordinate for row \k should be found at
-   *        <tt>coordVal[k*stride]</tt>.
-   *    \param dim  A value between zero and one less that the \c coordDim
+   *        index \c idx weight for entity \k should be found at
+   *        <tt>weightVal[k*stride]</tt>.
+   *    \param idx  A value between zero and one less that the \c numWeightsPerRow 
    *                  argument to the constructor.
    *
-   * The order of coordinates should correspond to the order of rows
-   * returned by
-   *   \code
-   *       theMatrix->getRowMap()->getNodeElementList();
-   *   \endcode
+   * The order of weights should correspond to the order of the primary 
+   * entity type; see, e.g.,  setRowWeights below.
    */
-  void setRowCoordinates(const scalar_t *coordVal, int stride, int dim);
+
+  void setWeights(const scalar_t *weightVal, int stride, int idx = 0);
 
   /*! \brief Specify a weight for each row.
-   *    \param weightVal A pointer to the weights for this dimension.
+   *    \param weightVal A pointer to the weights for this index.
    *    \stride          A stride to be used in reading the values.  The
-   *        dimension \c dim weight for row \k should be found at
+   *        index \c idx weight for row \k should be found at
    *        <tt>weightVal[k*stride]</tt>.
-   *    \param dim  A value between zero and one less that the \c weightDim 
+   *    \param idx  A value between zero and one less that the \c numWeightsPerRow 
    *                  argument to the constructor.
    *
    * The order of weights should correspond to the order of rows
@@ -145,10 +141,17 @@ public:
 
   void setRowWeights(const scalar_t *weightVal, int stride, int idx = 0);
 
-  /*! \brief Specify whether or not row weights for an index should be
-              the count of row non zeros.
-   *    \param idx If true, Zoltan2 will automatically use the number of
-   *         non zeros in an row as the row's weight for index \c idx.
+  /*! \brief Specify an index for which the weight should be
+              the degree of the entity
+   *    \param idx Zoltan2 will use the entity's 
+   *         degree as the entity weight for index \c idx.
+   */
+  void setWeightIsDegree(int idx);
+
+  /*! \brief Specify an index for which the row weight should be
+              the global number of nonzeros in the row
+   *    \param idx Zoltan2 will use the global number of nonzeros in a row
+   *         as the row weight for index \c idx.
    */
   void setRowWeightIsNumberOfNonZeros(int idx);
 
@@ -191,34 +194,19 @@ public:
   }
 
 
-  int getNumWeightsPerRow() const
-  {
-    return weightDim_;
-  }
+  int getNumWeightsPerRow() const { return numWeightsPerRow_; }
 
   void getRowWeightsView(const scalar_t *&weights, int &stride,
                            int idx = 0) const
   {
     env_->localInputAssertion(__FILE__, __LINE__,
       "invalid weight index",
-      idx >= 0 && idx < weightDim_, BASIC_ASSERTION);
+      idx >= 0 && idx < numWeightsPerRow_, BASIC_ASSERTION);
     size_t length;
     rowWeights_[idx].getStridedList(length, weights, stride);
   }
 
   bool useNumNonzerosAsRowWeight(int idx) const { return numNzWeight_[idx];}
-
-  int getCoordinateDimension() const {return coordinateDim_;}
-
-  void getRowCoordinatesView(const scalar_t *&coords, int &stride,
-                             int dim) const
-  {
-    env_->localInputAssertion(__FILE__, __LINE__,
-      "invalid coordinate dimension",
-      dim >= 0 && dim < coordinateDim_, BASIC_ASSERTION);
-    size_t length;
-    rowCoords_[dim].getStridedList(length, coords, stride);
-  }
 
   template <typename Adapter>
     void applyPartitioningSolution(const User &in, User *&out,
@@ -237,10 +225,7 @@ private:
   ArrayRCP<gno_t> columnIds_;  // TODO:  KDD Is it necessary to copy and store
   ArrayRCP<scalar_t> values_;  // TODO:  the matrix here?  Would prefer views.
 
-  int coordinateDim_;
-  ArrayRCP<StridedData<lno_t, scalar_t> > rowCoords_;
-
-  int weightDim_;
+  int numWeightsPerRow_;
   ArrayRCP<StridedData<lno_t, scalar_t> > rowWeights_;
   ArrayRCP<bool> numNzWeight_;
 
@@ -251,14 +236,13 @@ private:
 // Definitions
 /////////////////////////////////////////////////////////////////
 
-template <typename User>
-  XpetraCrsMatrixAdapter<User>::XpetraCrsMatrixAdapter(
-    const RCP<const User> &inmatrix, int weightDim, int coordDim):
+template <typename User, typename UserCoord>
+  XpetraCrsMatrixAdapter<User,UserCoord>::XpetraCrsMatrixAdapter(
+    const RCP<const User> &inmatrix, int numWeightsPerRow):
       env_(rcp(new Environment)),
       inmatrix_(inmatrix), matrix_(), rowMap_(), colMap_(), base_(),
       offset_(), columnIds_(),
-      coordinateDim_(coordDim), rowCoords_(),
-      weightDim_(weightDim), rowWeights_(), numNzWeight_(),
+      numWeightsPerRow_(numWeightsPerRow), rowWeights_(), numNzWeight_(),
       mayHaveDiagonalEntries(true)
 {
   typedef StridedData<lno_t,scalar_t> input_t;
@@ -291,57 +275,79 @@ template <typename User>
     offset_[i+1] = offset_[i] + nnz;
   } 
 
-  if (coordinateDim_ > 0)
-    rowCoords_ = arcp(new input_t [coordinateDim_], 0, coordinateDim_, true);
-
-  if (weightDim_ > 0){
-    rowWeights_ = arcp(new input_t [weightDim_], 0, weightDim_, true);
-    numNzWeight_ = arcp(new bool [weightDim_], 0, weightDim_, true);
-    for (int i=0; i < weightDim_; i++)
+  if (numWeightsPerRow_ > 0){
+    rowWeights_ = arcp(new input_t [numWeightsPerRow_], 0, numWeightsPerRow_, true);
+    numNzWeight_ = arcp(new bool [numWeightsPerRow_], 0, numWeightsPerRow_, true);
+    for (int i=0; i < numWeightsPerRow_; i++)
       numNzWeight_[i] = false;
   }
 }
 
-// TODO (from 3/21/12 mtg):  Consider changing interface to take an XpetraMultivector
-template <typename User>
-  void XpetraCrsMatrixAdapter<User>::setRowCoordinates(
-    const scalar_t *coordVal, int stride, int dim)
+////////////////////////////////////////////////////////////////////////////
+template <typename User, typename UserCoord>
+  void XpetraCrsMatrixAdapter<User,UserCoord>::setWeights(
+    const scalar_t *weightVal, int stride, int idx)
 {
-  typedef StridedData<lno_t,scalar_t> input_t;
-  env_->localInputAssertion(__FILE__, __LINE__, 
-    "invalid row coordinate dimension",
-    dim >= 0 && dim < coordinateDim_, BASIC_ASSERTION);
-  size_t nvtx = getLocalNumRows();
-  ArrayRCP<const scalar_t> coordV(coordVal, 0, nvtx*stride, false);
-  rowCoords_[dim] = input_t(coordV, stride);
+  if (this->getPrimaryEntityType() == MATRIX_ROW)
+    setRowWeights(weightVal, stride, idx);
+  else {
+    // TODO:  Need to allow weights for columns and/or nonzeros
+    std::ostringstream emsg;
+    emsg << __FILE__ << "," << __LINE__
+         << " error:  setWeights not yet supported for"
+         << " columns or nonzeros."
+         << std::endl;
+    throw std::runtime_error(emsg.str());
+  }
 }
 
-template <typename User>
-  void XpetraCrsMatrixAdapter<User>::setRowWeights(
+////////////////////////////////////////////////////////////////////////////
+template <typename User, typename UserCoord>
+  void XpetraCrsMatrixAdapter<User,UserCoord>::setRowWeights(
     const scalar_t *weightVal, int stride, int idx)
 {
   typedef StridedData<lno_t,scalar_t> input_t;
   env_->localInputAssertion(__FILE__, __LINE__,
     "invalid row weight index",
-    idx >= 0 && idx < weightDim_, BASIC_ASSERTION);
+    idx >= 0 && idx < numWeightsPerRow_, BASIC_ASSERTION);
   size_t nvtx = getLocalNumRows();
   ArrayRCP<const scalar_t> weightV(weightVal, 0, nvtx*stride, false);
   rowWeights_[idx] = input_t(weightV, stride);
 }
 
-template <typename User>
-  void XpetraCrsMatrixAdapter<User>::setRowWeightIsNumberOfNonZeros(int dim)
+////////////////////////////////////////////////////////////////////////////
+template <typename User, typename UserCoord>
+  void XpetraCrsMatrixAdapter<User,UserCoord>::setWeightIsDegree(
+    int idx)
 {
-  env_->localInputAssertion(__FILE__, __LINE__,
-    "invalid row weight dimension",
-    dim >= 0 && dim < weightDim_, BASIC_ASSERTION);
-
-  numNzWeight_[dim] = true;
+  if (this->getPrimaryEntityType() == MATRIX_ROW)
+    setRowWeightIsNumberOfNonZeros(idx);
+  else {
+    // TODO:  Need to allow weights for columns and/or nonzeros
+    std::ostringstream emsg;
+    emsg << __FILE__ << "," << __LINE__
+         << " error:  setWeightIsNumberOfNonZeros not yet supported for"
+         << " columns" << std::endl;
+    throw std::runtime_error(emsg.str());
+  }
 }
 
-template <typename User>
+////////////////////////////////////////////////////////////////////////////
+template <typename User, typename UserCoord>
+  void XpetraCrsMatrixAdapter<User,UserCoord>::setRowWeightIsNumberOfNonZeros(
+    int idx)
+{
+  env_->localInputAssertion(__FILE__, __LINE__,
+    "invalid row weight index",
+    idx >= 0 && idx < numWeightsPerRow_, BASIC_ASSERTION);
+
+  numNzWeight_[idx] = true;
+}
+
+////////////////////////////////////////////////////////////////////////////
+template <typename User, typename UserCoord>
   template <typename Adapter>
-    void XpetraCrsMatrixAdapter<User>::applyPartitioningSolution(
+    void XpetraCrsMatrixAdapter<User,UserCoord>::applyPartitioningSolution(
       const User &in, User *&out, 
       const PartitioningSolution<Adapter> &solution) const
 { 
@@ -349,9 +355,9 @@ template <typename User>
 
   size_t len = solution.getLocalNumberOfIds();
   const gid_t *gids = solution.getIdList();
-  const partId_t *parts = solution.getPartList();
+  const part_t *parts = solution.getPartList();
   ArrayRCP<gid_t> gidList = arcp(const_cast<gid_t *>(gids), 0, len, false); 
-  ArrayRCP<partId_t> partList = arcp(const_cast<partId_t *>(parts), 0, len, 
+  ArrayRCP<part_t> partList = arcp(const_cast<part_t *>(parts), 0, len, 
     false); 
   ArrayRCP<lno_t> dummyIn;
   ArrayRCP<gid_t> importList;

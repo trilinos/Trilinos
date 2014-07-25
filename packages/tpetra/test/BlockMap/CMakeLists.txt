@@ -5,7 +5,7 @@ IF(Kokkos_ENABLE_Cuda)
   #
   # Add subpackage include path dependencies for CUDA_COMPILE().
   CUDA_INCLUDE_DIRECTORIES( "." )
-  CUDA_INCLUDE_DIRECTORIES( "." )
+  CUDA_INCLUDE_DIRECTORIES( ${Tpetra_INCLUDE_DIRS} )
   CUDA_COMPILE(BLOCKMAP_UNIT_TEST_OBJECTS_CUDA BlockMap_UnitTests_CU.cu)
 ENDIF()
 

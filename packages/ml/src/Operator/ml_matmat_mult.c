@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include <stdio.h>
@@ -14,7 +14,7 @@
 #include <limits.h>
 
 /* ******************************************************************** */
-/* matrix matrix multiplication                                         */ 
+/* matrix matrix multiplication                                         */
 /* Cmatrix = Amatrix * Bmatrix                                          */
 /*                                                                      */
 /* Note: Matrices can be stored in chunks. See ml_rap.h for a           */
@@ -49,7 +49,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
     double t1, t6;
   */
   int tcols, hash_used, j, *tptr;
-  int *acc_col_ptr, *Bcol_ptr; 
+  int *acc_col_ptr, *Bcol_ptr;
   double  *acc_val_ptr;
   int     *Bval_ptr;
   int allzeros;
@@ -57,7 +57,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
   double *Bvalues;
   int save_ints[6];
   struct ML_vbrdata *A_VBR, *B_VBR;
-  int NrowsPerBlock, NcolsPerBlock, Nghost = 0, InnerDim,iii,jjj,kkk;
+  int NrowsPerBlock, NcolsPerBlock = 0, Nghost = 0, InnerDim,iii,jjj,kkk;
   int LargestRowsPerBlock = 1, NnzPerBlock, RowOffset, RowOffsetBlocks, next_value;
   double sum, *Cvalues;
   double *tmp_val_ptr;
@@ -94,11 +94,11 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 */
 
   save_ints[0] = Amatrix->getrow->Nrows;
-  save_ints[1] = Amatrix->outvec_leng;  
-  save_ints[2] = Amatrix->invec_leng;   
+  save_ints[1] = Amatrix->outvec_leng;
+  save_ints[2] = Amatrix->invec_leng;
   save_ints[3] = Bmatrix->getrow->Nrows;
-  save_ints[4] = Bmatrix->outvec_leng;  
-  save_ints[5] = Bmatrix->invec_leng;   
+  save_ints[4] = Bmatrix->outvec_leng;
+  save_ints[5] = Bmatrix->invec_leng;
 
   /**************************************************************************/
   /* figure out if a cheaper getrow function (either ML_get_matrow_CSR or   */
@@ -239,7 +239,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 
   Cbpntr     = (int    *) ML_allocate((N+1)* sizeof(int) );
   Cindx = NULL; Cbindx = NULL;
-  while ( ((Cindx == NULL)||(Cbindx==NULL) || (Cvalues == NULL)) && 
+  while ( ((Cindx == NULL)||(Cbindx==NULL) || (Cvalues == NULL)) &&
 	  (Nnz_estimate > Bmatrix->max_nz_per_row) ) {
     if (Cbindx  != NULL) ML_free(Cbindx);
     if (Cindx != NULL) ML_free(Cindx);
@@ -359,7 +359,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
     B_indx    = (int    *) ML_allocate( B_allocated_int * sizeof(int));
     Bvals    = (double *) ML_allocate( B_allocated * sizeof(double));
     B_allocated /= 2;
-    B_allocated_int /=2; 
+    B_allocated_int /=2;
   }
   ML_free(B_indx); ML_free(Bcols);
 
@@ -432,7 +432,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
     for (i = 0; i < index_length; i++) col_inds[i] = -1;
 
     i = 0;
-    if (Bmatrix->getrow->pre_comm != NULL) 
+    if (Bmatrix->getrow->pre_comm != NULL)
       i = Bmatrix->getrow->pre_comm->total_rcv_length;
 
     /* Record a "nearby" index for use as a column index in any empty rows. */
@@ -472,13 +472,13 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
             Bcols[j] = hash_val;
           }
         }
-         
+
         ML_fast_hash(Bcols[i], col_inds, ilm1, &hash_used, &hash_val);
         if (col_inds[hash_val] == -1) tcols++;
         col_inds[hash_val] = Bcols[i];
         Bcols[i] = hash_val;
       } /*for (i = 0; i < subB_Nnz; i++)*/
-    } 
+    }
     else {
       /* hash table size is not 2^k */
       for (i = 0; i < subB_Nnz; i++) {
@@ -502,7 +502,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
             Bcols[j] = hash_val;
           }
         }
-         
+
         ML_hash_it(Bcols[i], col_inds, index_length, &hash_used, &hash_val);
         if (col_inds[hash_val] == -1) tcols++;
         col_inds[hash_val] = Bcols[i];
@@ -514,7 +514,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
     /* columns and change the size of the accumulator if needed */
 
     jj = 0;
-    for (i = 0; i < index_length; i++) { 
+    for (i = 0; i < index_length; i++) {
       if (col_inds[i] == -1) jj++;
     }
     total_cols += (index_length - jj);
@@ -525,7 +525,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
       accum_col = (int *) ML_allocate(accum_size*sizeof(int));
       accum_val= (double *) ML_allocate(accum_size*NcolsPerBlock*sizeof(double));
                                  /* does this need to be this large? */
-      if (accum_val == NULL) 
+      if (accum_val == NULL)
 	    pr_error("ML_matmat_mult: no room for accumulator\n");
     }
 
@@ -569,7 +569,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 	    Bcol_ptr = &(Bcols[jj]);
         /*multiply a block of a row of A times a block row of B*/
 	    while (jj++ < Bptr[A_i_cols[k]+1]) {
-	      StartBblock = &(Bvals[(int) *Bval_ptr]); 
+	      StartBblock = &(Bvals[(int) *Bval_ptr]);
           /*we have a new block*/
 	      if (accum_index[*Bcol_ptr] < 0) {
 	        *acc_col_ptr = *Bcol_ptr; acc_col_ptr++;
@@ -627,18 +627,18 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
     	Cvbr_mat->bindx       = Cbindx;
 	    Cvbr_mat->val         = Cvalues;
     	Cvbr_mat->bpntr       = Cbpntr;
-	    Cvbr_mat->indx        = Cindx; 
-     
+	    Cvbr_mat->indx        = Cindx;
+
         Ccpntr = (int *) ML_allocate(sizeof(int)*hash_used);
         Ccpntr[0] = 0;
-        for (kkk = 1; kkk <= hash_used; kkk++) 
+        for (kkk = 1; kkk <= hash_used; kkk++)
            Ccpntr[kkk] = Ccpntr[kkk-1] + NcolsPerBlock;
     	Cvbr_mat->cpntr       = Ccpntr;
     	Cvbr_mat->rpntr       = Crpntr;
     	current = ML_Operator_Create(Amatrix->comm);
 	    ML_Operator_Set_1Levels(current, Bmatrix->from, Amatrix->to);
 
-                                                                                                                 
+
         if(current->ML_id != ML_ID_OP ) {
           printf("ML_Operator_Set_ApplyFunc error : wrong object.\n");
           exit(-1);
@@ -653,7 +653,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
         current->outvec_leng = save_ints[1];
         current->data = (void*)Cvbr_mat;
         current->getrow->func_ptr = VBR_getrows;
-                                                                                                                 
+
         current->matvec->ML_id = ML_NONEMPTY;
         if(previous_matrix != NULL)
         {
@@ -668,7 +668,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
           current->getrow->N_block_rows = RowOffsetBlocks;
         }
 
-	    /*ML_Operator_Set_Getrow(current, RowOffset, 
+	    /*ML_Operator_Set_Getrow(current, RowOffset,
                                az_vbrgetrow_wrapper);*/
 
 
@@ -676,8 +676,8 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 
         Cbpntr[sub_i+1] = next_nz;
     	Cindx[next_nz] = next_value;
-	    current->max_nz_per_row = max_nz_row_new; 
-    	current->N_nonzeros     = total_nz; 
+	    current->max_nz_per_row = max_nz_row_new;
+    	current->N_nonzeros     = total_nz;
     	current->sub_matrix   = previous_matrix;
         current->getrow->columns_loc_glob = ML_GLOBAL_INDICES;
 
@@ -782,13 +782,13 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
   Cvbr_mat->bindx       = Cbindx;
   Cvbr_mat->val         = Cvalues;
   Cvbr_mat->bpntr       = Cbpntr;
-  Cvbr_mat->indx        =  Cindx; 
-  
+  Cvbr_mat->indx        =  Cindx;
+
 
 
   Ccpntr = (int *) ML_allocate(sizeof(int)*hash_used);
   Ccpntr[0] = 0;
-  for (kkk = 1; kkk <= hash_used; kkk++) 
+  for (kkk = 1; kkk <= hash_used; kkk++)
      Ccpntr[kkk] = Ccpntr[kkk-1] + NcolsPerBlock;
   Cvbr_mat->cpntr       = Ccpntr;
   Cvbr_mat->rpntr       = Crpntr;
@@ -810,7 +810,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    (*Cmatrix)->data = (void*)Cvbr_mat;
    (*Cmatrix)->getrow->func_ptr = VBR_getrows;
    (*Cmatrix)->getrow->columns_loc_glob = ML_GLOBAL_INDICES;
-                                                                                                                 
+
    (*Cmatrix)->matvec->ML_id = ML_NONEMPTY;
    if(previous_matrix != NULL)
    {
@@ -825,23 +825,23 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
      (*Cmatrix)->getrow->N_block_rows = RowOffsetBlocks;
    }
 
-  /*ML_Operator_Set_Getrow((*Cmatrix), RowOffset+NrowsPerBlock, 
+  /*ML_Operator_Set_Getrow((*Cmatrix), RowOffset+NrowsPerBlock,
 			 az_vbrgetrow_wrapper);*/
 
 
   /* (*Cmatrix)->data_destroy = AZ_ML_FullClean; */
 
-        
+
   Cindx[next_nz] = next_value;
-  (*Cmatrix)->max_nz_per_row = max_nz_row_new; 
-  (*Cmatrix)->N_nonzeros     = total_nz; 
+  (*Cmatrix)->max_nz_per_row = max_nz_row_new;
+  (*Cmatrix)->N_nonzeros     = total_nz;
   if(previous_matrix == NULL)
     printf("NULL\n");
 
   (*Cmatrix)->getrow->Nrows = N;
   (*Cmatrix)->sub_matrix     = previous_matrix;
 
-  if (A_i_allocated-1 > Amatrix->max_nz_per_row) 
+  if (A_i_allocated-1 > Amatrix->max_nz_per_row)
     Amatrix->max_nz_per_row = A_i_allocated;
 
   (*Cmatrix)->N_total_cols_est = hash_used;
@@ -853,15 +853,15 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 			Bmatrix->getrow->pre_comm);
   }
 
-  Amatrix->getrow->Nrows = save_ints[0]; 
-  Amatrix->outvec_leng   = save_ints[1];  
-  Amatrix->invec_leng    = save_ints[2];   
+  Amatrix->getrow->Nrows = save_ints[0];
+  Amatrix->outvec_leng   = save_ints[1];
+  Amatrix->invec_leng    = save_ints[2];
   Bmatrix->getrow->Nrows = save_ints[3];
-  Bmatrix->outvec_leng   = save_ints[4];  
-  Bmatrix->invec_leng    = save_ints[5];   
-  (*Cmatrix)->getrow->Nrows = save_ints[0]; 
-  (*Cmatrix)->outvec_leng   = save_ints[1]; 
-  (*Cmatrix)->invec_leng    = save_ints[5];   
+  Bmatrix->outvec_leng   = save_ints[4];
+  Bmatrix->invec_leng    = save_ints[5];
+  (*Cmatrix)->getrow->Nrows = save_ints[0];
+  (*Cmatrix)->outvec_leng   = save_ints[1];
+  (*Cmatrix)->invec_leng    = save_ints[5];
 
 } /* ML_blkmatmat_mult() */
 #endif
@@ -907,7 +907,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
       if (next->getrow->func_ptr != CSR_getrow) flag = 0;
       next = next->sub_matrix;
    }
-   if (flag == 1) { 
+   if (flag == 1) {
       Bgetrow = ML_get_matrow_CSR;
 
       next = Bmatrix;
@@ -1017,7 +1017,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    }
    else B_total_Nnz = Bmatrix->N_nonzeros;
 #else
-   B_total_Nnz = 0; 
+   B_total_Nnz = 0;
    for (i = 0; i < Bmatrix->getrow->Nrows; i++ ) {
      Bgetrow(Bmatrix,1,&i,&accum_size, &accum_col, &accum_val, &row2_N, 0);
      B_total_Nnz += row2_N;
@@ -1117,7 +1117,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
         2^29   =  536870912
 
    ****************************************************************** */
- 
+
    if ( accum_size > 536870912 ) {
      if ( 1.8*accum_size < 1073741824) {
        index_length = 1073741824;
@@ -1223,7 +1223,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    for (i = 0; i < index_length; i++) col_inds[i] = -1;
 
    i = 0;
-   if (Bmatrix->getrow->pre_comm != NULL) 
+   if (Bmatrix->getrow->pre_comm != NULL)
       i = Bmatrix->getrow->pre_comm->total_rcv_length;
 #ifdef charles
    printf("%d: before hashing, hash table size = %d invec and Nghost = (%d %d)\n",
@@ -1313,7 +1313,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
            Bcols[j] = hash_val;
          }
        }
-         
+
        ML_hash_it(Bcols[i], col_inds, index_length, &hash_used, &hash_val);
        if (col_inds[hash_val] == -1) tcols++;
        col_inds[hash_val] = Bcols[i];
@@ -1331,7 +1331,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    /* columns and change the size of the accumulator if needed */
 
    jj = 0;
-   for (i = 0; i < index_length; i++) { 
+   for (i = 0; i < index_length; i++) {
       if (col_inds[i] == -1) jj++;
    }
    total_cols += (index_length - jj);
@@ -1341,7 +1341,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
       accum_size = total_cols + 1;
       accum_col = (int *) ML_allocate(accum_size*sizeof(int));
       accum_val = (double *) ML_allocate(accum_size*sizeof(double));
-      if (accum_val == NULL) 
+      if (accum_val == NULL)
     pr_error("ML_matmat_mult: no room for accumulator\n");
    }
 
@@ -1423,22 +1423,22 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 
          total_nz += next_nz;
 
-         temp = (struct ML_CSR_MSRdata *) 
+         temp = (struct ML_CSR_MSRdata *)
                 ML_allocate(sizeof(struct ML_CSR_MSRdata));
          temp->columns         = Ccol;
          temp->values          = Cval;
          temp->rowptr          = C_ptr;
          current = ML_Operator_Create(Amatrix->comm);
          ML_Operator_Set_1Levels(current, Bmatrix->from, Amatrix->to);
-         ML_Operator_Set_ApplyFuncData(current, Bmatrix->invec_leng, 
+         ML_Operator_Set_ApplyFuncData(current, Bmatrix->invec_leng,
                        Amatrix->outvec_leng, temp,
                        i,NULL,0);
 
          ML_Operator_Set_Getrow(current, i, CSR_getrow);
 
-         current->max_nz_per_row = max_nz_row_new; 
-         current->min_nz_per_row = min_nz_row_new; 
-         current->N_nonzeros     = total_nz; 
+         current->max_nz_per_row = max_nz_row_new;
+         current->min_nz_per_row = min_nz_row_new;
+         current->N_nonzeros     = total_nz;
          current->sub_matrix   = previous_matrix;
 
          /* allocate space for new matrix */
@@ -1521,7 +1521,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    temp->rowptr           = C_ptr;
    *Cmatrix = ML_Operator_Create(Amatrix->comm);
    ML_Operator_Set_1Levels(*Cmatrix, Bmatrix->from, Amatrix->to);
-   ML_Operator_Set_ApplyFuncData(*Cmatrix,Bmatrix->invec_leng, 
+   ML_Operator_Set_ApplyFuncData(*Cmatrix,Bmatrix->invec_leng,
                     Amatrix->outvec_leng,temp,N,NULL,0);
    ML_Operator_Set_Getrow(*Cmatrix, N, CSR_getrow);
    (*Cmatrix)->getrow->Nrows = N;
@@ -1529,7 +1529,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    (*Cmatrix)->min_nz_per_row = min_nz_row_new;
    (*Cmatrix)->N_nonzeros     = total_nz;
    (*Cmatrix)->sub_matrix     = previous_matrix;
-   if (A_i_allocated-1 > Amatrix->max_nz_per_row) 
+   if (A_i_allocated-1 > Amatrix->max_nz_per_row)
       Amatrix->max_nz_per_row = A_i_allocated;
 
    (*Cmatrix)->N_total_cols_est = hash_used;
@@ -1544,7 +1544,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 
 /*********************************************************************************/
 /*Recives an ML_Operator in_matrix in a sparse data structure(csr, msr or vbr and returns  */
-/*the same ML_Operator stored as a vbr matrix. 
+/*the same ML_Operator stored as a vbr matrix.
 
   When submatrix != 0
 
@@ -1583,7 +1583,7 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
    int A_i_allocated;
    int spaceneeded;
    int val_size;
-   int temp_alc; 
+   int temp_alc;
    int spacetight = 0;
    int *A_i_cols; /*columns for the single point row of values*/
    double *accum_val; /*storage of a single point row of values*/
@@ -1608,14 +1608,14 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
    int neighbors;
    int mats = 0;
    ML_CommInfoOP *pre_comm;
-   USR_COMM USR_comm;     
+   USR_COMM USR_comm;
 
    if(submatrix == 1)
    {
      /*We need to free rpntr if it is allocated since we are using it later*/
      if(rpntr != NULL)
        ML_free(rpntr);
-     /*we only need to worry about block column informtion as this is all we will use*/  
+     /*we only need to worry about block column informtion as this is all we will use*/
      if (col_block_size < 0)
      {
        pr_error("In function convert2vbr col_block_size is negative which is undefined.  Please see function header and pass in the appropriate value.\n");
@@ -1770,18 +1770,18 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
          {
            i++; /*blockrow*/
            iminus1 = i - 1;
-           rpntr[i] = rpntr[iminus1] + all_rpntr[k][j]; 
+           rpntr[i] = rpntr[iminus1] + all_rpntr[k][j];
            bpntr[i] = bpntr[iminus1] + (cur_data->rowptr[rpntr[iminus1]+1]-cur_data->rowptr[rpntr[iminus1]])/col_block_size;
            ll = indx[bpntr[iminus1]];
            /*loop over one blockrow*/
            for(kk = bpntr[iminus1]; kk < bpntr[i]; kk++)
-           { 
+           {
              bindx[kk] = cur_data->columns[ll]/col_block_size;
              indx[kk+1] = indx[kk]+col_block_size*(rpntr[i] - rpntr[iminus1]);
              /*loop over a block and store data columns then rows*/
              for(jj = 0; jj < col_block_size; jj++)
              {
-               for(ii = 0; ii < all_rpntr[k][j]; ii++) 
+               for(ii = 0; ii < all_rpntr[k][j]; ii++)
                {
                  vals[indx[kk]+ii+(cur_data->columns[kk*col_block_size+jj+(iminus1)*col_block_size]%col_block_size)*all_rpntr[k][j]] = cur_data->values[ll+jj+ii*(cur_data->rowptr[rpntr[iminus1]+1]-cur_data->rowptr[rpntr[iminus1]])];
                }
@@ -1797,8 +1797,8 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
        bpntr = (int*)realloc((void*)bpntr, iplus1*sizeof(int));
        bindx = (int*)realloc((void*)bindx, bpntr[i]*sizeof(int));
        indx = (int*)realloc((void*)indx, (bpntr[i]+1)*sizeof(int));
-        
-       out_data = (struct ML_vbrdata *)ML_allocate(sizeof(struct ML_vbrdata)); 
+
+       out_data = (struct ML_vbrdata *)ML_allocate(sizeof(struct ML_vbrdata));
        out_data->bindx = bindx;
        out_data->indx = indx;
        out_data->bpntr = bpntr;
@@ -1809,7 +1809,7 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
        cur_matrix->getrow->data = (void *)out_data;
        cur_matrix->data = (void *)out_data;
        cur_matrix->blocks = cur_matrix->sub_matrix->blocks + bpntr[i];
-       cur_matrix->data_destroy = ML_RECUR_VBRdata_Destroy; 
+       cur_matrix->data_destroy = ML_RECUR_VBRdata_Destroy;
        for(j = 0; j < neighbors; j++)
          if (pre_comm->neighbors[j].N_rcv > 0)
            ML_free(all_rpntr[j]);
@@ -1834,7 +1834,7 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
      pr_error("In function convert2vbr row_block_size is negative which is undefined.  Please see function header and pass in the appropriate value.\n");
    }
    if (row_block_size == 0)
-   { 
+   {
      if(rpntr == NULL)
      {
        pr_error("In function convert2vbr rpntr is NULL when expecting row blocking data.\n");
@@ -1861,13 +1861,13 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
      for(i = 1; i <= blockrows; i++)
        rpntr[i] = rpntr[i-1] + row_block_size;
    }
-   
+
    if (col_block_size < 0)
    {
      pr_error("In function convert2vbr col_block_size is negative which is undefined.  Please see function header and pass in the appropriate value.\n");
    }
    if (col_block_size == 0)
-   { 
+   {
      Nghost_nodes = in_matrix->getrow->pre_comm->total_rcv_length;
      total_cols = in_matrix->invec_leng+Nghost_nodes;
      if(cpntr == NULL)
@@ -1883,7 +1883,7 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
      }
    }
    else
-   { 
+   {
      ML_CommInfoOP_Compute_TotalRcvLength(in_matrix->getrow->pre_comm);
      Nghost_nodes = in_matrix->getrow->pre_comm->total_rcv_length;
      total_cols = in_matrix->invec_leng+Nghost_nodes;
@@ -1912,25 +1912,25 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
    bpntr = (int*)ML_allocate((blockrows+1)*sizeof(int));
 
 
-   /*Space for each point row being read in*/ 
+   /*Space for each point row being read in*/
    /*if(in_matrix->max_nz_per_row > 0)
      A_i_allocated = in_matrix->max_nz_per_row + 1; this is exact
    else*/
      A_i_allocated = total_cols; /*This is a very bad but safe estimate.*/
    A_i_cols  = (int    *) ML_allocate(A_i_allocated * sizeof(int) );
    accum_val = (double *) ML_allocate(A_i_allocated * sizeof(double));
-   
+
    if(accum_val == NULL)
-   { 
+   {
      pr_error("Not enough space to allocate %d doubles and ints in convert2vbr.\n", A_i_allocated);
    }
 
 
-/*   if(in_matrix->N_nonzeros <= 0)*/ 
-   /*We don't have a good estimate so lets get one this code is used since 
+/*   if(in_matrix->N_nonzeros <= 0)*/
+   /*We don't have a good estimate so lets get one this code is used since
      N_nonzeros even when set is not always correct*/
    for(i=0; i<in_matrix->outvec_leng;i++)
-   {  
+   {
      in_matrix->getrow->func_ptr(in_matrix, 1, &(i), A_i_allocated, A_i_cols, accum_val, &row_length);
      nnz += row_length;
    }
@@ -1963,10 +1963,10 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
 /*       if(in_matrix->N_nonzeros > 0)
        {
          if(nnz == spaceneeded)
-           spaceneeded /= 
+           spaceneeded /=
          else
            spaceneeded = sqrt(spaceneeded)*10;
-           
+
        }*/
      /*keep making vals smaller till it fits*/
      x = 1.9;
@@ -1986,8 +1986,8 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
        printf("trying to allocate %d ints and %d doubles \n",A_i_allocated+spaceneeded*2+blockrows,in_matrix->N_nonzeros+A_i_allocated);
        printf("Matrix has %d rows \n", in_matrix->getrow->Nrows);
        pr_error("Matrix has %d nz\n", in_matrix->N_nonzeros);
-     } 
-   } 
+     }
+   }
    /*Converting functions start by looping over all block rows*/
    for(i = 0; i < blockrows; i++)
    {
@@ -1998,9 +1998,9 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
      {
        /*get row data*/
        in_matrix->getrow->func_ptr(in_matrix, 1, &(j), A_i_allocated, A_i_cols, accum_val, &row_length);
-     
-       /*loop over row data*/ 
-       blockend = 1; 
+
+       /*loop over row data*/
+       blockend = 1;
        for(k = 0; k < row_length; k++)
        {
          /*loop over block data to find block we're in*/
@@ -2059,13 +2059,13 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
 
    /*we also need to set the block get row structure here*/
    in_matrix->getrow->func_ptr = VBR_getrows;
-   
+
 
    /*We should reallocate to set the arrays to the actual sizes we know they now are*/
-   bindx = (int*)realloc((void*)bindx, bpntr[iplus1]*sizeof(int)); 
+   bindx = (int*)realloc((void*)bindx, bpntr[iplus1]*sizeof(int));
    indx = (int*)realloc((void*)indx, (bpntr[iplus1]+1)*sizeof(int));
    vals = (double*)realloc((void*)vals, jj*sizeof(double));
- 
+
    /*set real values to aliases*/
    out_data = (struct ML_vbrdata *)ML_allocate(sizeof(struct ML_vbrdata));
    out_data->bindx = bindx;
@@ -2086,11 +2086,11 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
 
    in_matrix->data = (void *)out_data;
    in_matrix->getrow->data = (void *)out_data;
-   in_matrix->data_destroy = ML_RECUR_VBRdata_Destroy; 
+   in_matrix->data_destroy = ML_RECUR_VBRdata_Destroy;
    /*memory cleanup*/
    ML_free(A_i_cols);
    ML_free(accum_val);
- 
+
    }
 }
 
@@ -2105,9 +2105,9 @@ void ML_sum_duplicates(int accum_col[], double accum_val[], int *Ncols)
    int i, new_length = 0;
 
    if ( *Ncols != 0) new_length++;
-   
+
    for (i = 1; i < *Ncols ; i++ ) {
-      if (accum_col[i] == accum_col[i-1]) 
+      if (accum_col[i] == accum_col[i-1])
          accum_val[new_length-1] += accum_val[i];
       else {
          accum_val[new_length] = accum_val[i];
@@ -2125,9 +2125,9 @@ void ML_sum_duplicates(int accum_col[], double accum_val[], int *Ncols)
  * ==========
  *   accum_size           On input, size of 'accum_col' and 'accum_val'
  *                        on exit to this routine.
- * 
+ *
  *   accum_col, accum_val On input, arrays contain 'Ncols' data values.
- *                        On output, arrays are expanded to contain 
+ *                        On output, arrays are expanded to contain
  *                        'accum_size' elements preserving the 'Ncols' values.
  *
  *   Ncols                On input, number of data values stored in the
@@ -2219,7 +2219,7 @@ void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
    tpre = GetClock() - tpre;
    tmult = GetClock();
 #  endif
-         
+
    ML_matmat_mult(Mat1, Mat2comm , &Mat1Mat2);
 
 #  ifdef ML_TIMING
@@ -2243,11 +2243,11 @@ void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
       ML_exchange_rows( Mat1Mat2, &Mat1Mat2comm, Mat1->getrow->post_comm);
    }
    else Mat1Mat2comm = Mat1Mat2;
-   
+
    if (matrix_type == ML_CSR_MATRIX)
      ML_back_to_csrlocal(Mat1Mat2comm, Result, max_per_proc);
    else if (matrix_type == ML_MSR_MATRIX) {
-     if (Mat1Mat2->invec_leng != Mat1Mat2->outvec_leng) 
+     if (Mat1Mat2->invec_leng != Mat1Mat2->outvec_leng)
        pr_error("ML_2matmult: MSR format only valid for square matrices.\n");
      ML_back_to_local(Mat1Mat2, Result, max_per_proc);
    }
@@ -2331,7 +2331,7 @@ void ML_2matmult_block(ML_Operator *Mat1, ML_Operator *Mat2,
    else Mat2comm = Mat2;
 
    /*ML_convert2vbr(Mat2comm);*/
-      
+
    ML_matmat_mult(Mat1, Mat2comm , &Mat1Mat2);
 
    ML_free(Mat2->getrow->loc_glob_map); Mat2->getrow->loc_glob_map = NULL;
@@ -2356,11 +2356,11 @@ void ML_2matmult_block(ML_Operator *Mat1, ML_Operator *Mat2,
    Mat1Mat2comm->num_PDEs = Result->num_PDEs = Mat1->num_PDEs;
    Mat1Mat2comm->num_rigid = Result->num_rigid = Mat1->num_rigid;
 
-   
+
    if (matrix_type == ML_CSR_MATRIX)
      ML_back_to_csrlocal(Mat1Mat2comm, Result, max_per_proc);
    else if (matrix_type == ML_MSR_MATRIX) {
-     if (Mat1Mat2->invec_leng != Mat1Mat2->outvec_leng) 
+     if (Mat1Mat2->invec_leng != Mat1Mat2->outvec_leng)
        pr_error("ML_2matmult: MSR format only valid for square matrices.\n");
      ML_back_to_local(Mat1Mat2, Result, max_per_proc);
    }
@@ -2388,11 +2388,11 @@ Memory improvements:
     just divide by the avg_per_row (maybe we can update the avg).
 
 3) scan rows of A and make a list of corresponding rows of B
-   until we hit the number of rows in B that we can hold. 
+   until we hit the number of rows in B that we can hold.
 */
 int ML_determine_Brows(int start, int *end, ML_Operator *Amatrix,
 		       int *irows[], int *irows_length, int *NBrows,
-		       int *rows_that_fit, 
+		       int *rows_that_fit,
                 void   (*Agetrow)(ML_Operator *,int,int *,int *,int **,
                        double **,int *,int))
 {
@@ -2453,7 +2453,7 @@ int ML_determine_Brows(int start, int *end, ML_Operator *Amatrix,
 /* ******************************************************************** */
 int ML_determine_Bblkrows(int start, int *end, ML_Operator *Amatrix,
                int *irows[], int *irows_length, int *NBrows,
-               int *rows_that_fit, 
+               int *rows_that_fit,
                void   (*Agetrow)(ML_Operator *,int,int *,int *,int **,
                        int **,int *,int))
 /* -------------------------------------------------------------------- */

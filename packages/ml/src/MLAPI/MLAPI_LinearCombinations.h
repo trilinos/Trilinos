@@ -12,7 +12,7 @@
 */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "MLAPI_BaseLinearCombination.h"
@@ -22,7 +22,7 @@ namespace MLAPI {
 class BaseOperator;
 class MultiVector;
 
-// ============================================================================ 
+// ============================================================================
 class LinearCombinationAdd : public BaseLinearCombination
 {
 public:
@@ -54,12 +54,12 @@ private:
   const BaseLinearCombination& right_;
 };
 
-// ============================================================================ 
+// ============================================================================
 class LinearCombinationMixed : public BaseLinearCombination
 {
 public:
 
-  LinearCombinationMixed(const BaseLinearCombination& left, 
+  LinearCombinationMixed(const BaseLinearCombination& left,
                          const MultiVector& right, double alpha) :
     left_(left),
     right_(right),
@@ -71,7 +71,7 @@ public:
   void Update(MultiVector& v) const;
 
   void Set(MultiVector& v) const;
-  
+
 private:
   const BaseLinearCombination& left_;
   const MultiVector            right_;
@@ -79,7 +79,7 @@ private:
 };
 
 // ============================================================================
-class LinearCombinationScaled : public BaseLinearCombination 
+class LinearCombinationScaled : public BaseLinearCombination
 {
 public:
   LinearCombinationScaled(const BaseLinearCombination& left, double scalar) :
@@ -98,9 +98,9 @@ private:
   double                       scalar_;
 };
 
-// ============================================================================ 
+// ============================================================================
 // scaled vector, ScaledMultiVector = alpha * MultiVector
-// ============================================================================ 
+// ============================================================================
 class MultiVectorScaled : public BaseLinearCombination
 {
 public:
@@ -130,14 +130,14 @@ private:
   double            alpha_;
 };
 
-// ============================================================================ 
+// ============================================================================
 class MultiVectorCombination : public BaseLinearCombination
 {
 public:
-  MultiVectorCombination(const double alpha, 
-                         const MultiVector x,
+  MultiVectorCombination(const double alpha,
+                         const MultiVector & x,
                          const double beta,
-                         const MultiVector y) :
+                         const MultiVector & y) :
     x_(x),
     y_(y),
     alpha_(alpha),
@@ -176,9 +176,9 @@ private:
   double alpha_, beta_;
 };
 
-// ============================================================================ 
+// ============================================================================
 // v = A * x
-// ============================================================================ 
+// ============================================================================
 class BaseOperatorTimesMultiVector : public BaseLinearCombination
 {
 public:
@@ -204,19 +204,19 @@ public:
 
   void Set(MultiVector& v) const;
 
-private: 
+private:
   const BaseOperator& A_;
   const MultiVector   x_;
 };
 
-// ============================================================================ 
+// ============================================================================
 // v += alpha * b + beta * A * x
-// ============================================================================ 
+// ============================================================================
 class Residual : public BaseLinearCombination
 {
 public:
 
-  Residual(double alpha, const MultiVector& b, double beta, 
+  Residual(double alpha, const MultiVector& b, double beta,
            const BaseOperator& A, const MultiVector& x) :
     A_(A),
     b_(b),
@@ -242,4 +242,4 @@ private:
 
 } // namespace MLAPI
 
-#endif 
+#endif

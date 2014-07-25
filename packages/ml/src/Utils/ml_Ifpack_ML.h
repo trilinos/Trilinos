@@ -12,7 +12,7 @@
  */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #ifndef ML_IFPACK_ML_H
@@ -30,7 +30,7 @@ namespace ML_Epetra {
 
 /*!
  * \class Ifpack_ML
- * 
+ *
  * \brief Wraps an ML preconditioner as an Ifpack_Preconditioner
  *
  * \author Marzio Sala, SNL 9214
@@ -48,9 +48,9 @@ public:
     A_(A),
     MLPrec_(0)
   {};
- 
+
   //! Destructor.
-  virtual ~Ifpack_ML() 
+  virtual ~Ifpack_ML()
   {
     if (MLPrec_)
       delete MLPrec_;
@@ -71,7 +71,7 @@ public:
   }
 
   //! Initialize the preconditioner.
-  virtual int Initialize() 
+  virtual int Initialize()
   {
     return(0);
   };
@@ -226,7 +226,7 @@ public:
   }
 
   //! Returns \c true if the class furnishes an infinite norm.
-  bool HasNormInf() const 
+  bool HasNormInf() const
   {
     return(false);
   }

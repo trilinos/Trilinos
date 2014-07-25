@@ -33,7 +33,8 @@
  * 
  */
 
-#include "exodusII.h"
+#include <stddef.h>                     // for NULL
+#include "exodusII.h"                   // for ex_set_specs, void_int, etc
 
 /*!
 \deprecated Use ex_put_concat_sets()(exoid, EX_NODE_SET, &set_specs)

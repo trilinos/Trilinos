@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    OptiPack: Collection of simple Thyra-based Optimization ANAs
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov)
+//
 // ***********************************************************************
 // @HEADER
 */
@@ -208,7 +208,7 @@ NonlinearCG<Scalar>::getValidParameters() const
   if (is_null(validPL)) {
     RCP<Teuchos::ParameterList>
       pl = Teuchos::rcp(new Teuchos::ParameterList());
-    solverType_validator_ = 
+    solverType_validator_ =
       Teuchos::stringToIntegralParameterEntryValidator<NCGU::ESolverTypes>(
         tuple<std::string>(
           "FR",
@@ -266,7 +266,7 @@ NonlinearCG<Scalar>::doSolve(
 
   typedef ScalarTraits<Scalar> ST;
   typedef ScalarTraits<ScalarMag> SMT;
-  
+
   using Teuchos::null;
   using Teuchos::as;
   using Teuchos::tuple;
@@ -314,7 +314,7 @@ NonlinearCG<Scalar>::doSolve(
   //
   // A) Set up the storage for the algorithm
   //
-  
+
   const RCP<DefaultPolyLineSearchPointEvaluator<Scalar> >
     pointEvaluator = defaultPolyLineSearchPointEvaluator<Scalar>();
 
@@ -330,7 +330,7 @@ NonlinearCG<Scalar>::doSolve(
   RCP<VectorBase<Scalar> >
     p_k = rcpFromPtr(p_inout),        // Current solution for p
     p_kp1 = createMember(p_space),    // Trial point for p (in line search)
-    g_vec = createMember(g_space),    // Vector (size 1) form of objective g(p) 
+    g_vec = createMember(g_space),    // Vector (size 1) form of objective g(p)
     g_grad_k = createMember(p_space), // Gradient of g DgDp^T
     d_k = createMember(p_space),      // Search direction
     g_grad_k_diff_km1 = null;         // g_grad_k - g_grad_km1 (if needed)
@@ -344,12 +344,12 @@ NonlinearCG<Scalar>::doSolve(
     g_km1 = SMT::zero(),
     g_grad_km1_inner_g_grad_km1 = SMT::zero(),
     g_grad_km1_inner_d_km1 = SMT::zero();
-  
+
   if (compute_beta_PR || compute_beta_HS) {
     g_grad_km1 = createMember(p_space);
     g_grad_k_diff_km1 = createMember(p_space);
   }
-  
+
   if (compute_beta_HS) {
     d_km1 = createMember(p_space);
   }
@@ -394,7 +394,7 @@ NonlinearCG<Scalar>::doSolve(
     //
     // B.1) Evaluate the point (on first iteration)
     //
-    
+
     eval_g_DgDp(
       *model_, paramIndex_, *p_k, responseIndex_,
       numIters_ == 0 ? g_vec.ptr() : null, // Only on first iteration
@@ -414,18 +414,18 @@ NonlinearCG<Scalar>::doSolve(
     if (numIters_ > 0) {
 
       const ScalarMag g_reduct = g_k - g_km1;
-      
+
       *out << "\ng_k - g_km1 = "<<g_reduct<<"\n";
-      
+
       const ScalarMag g_reduct_err =
         SMT::magnitude(g_reduct / SMT::magnitude(g_k + g_mag_));
-      
+
       g_reduct_converged = (g_reduct_err <= g_reduct_tol);
-      
+
       *out << "\nCheck convergence: |g_k - g_km1| / |g_k + g_mag| = "<<g_reduct_err
            << (g_reduct_converged ? " <= " : " > ")
            << "g_reduct_tol = "<<g_reduct_tol<<"\n";
-      
+
     }
 
     // B.2.b) ||g_grad_k|| g_mag <= g_grad_tol
@@ -444,7 +444,7 @@ NonlinearCG<Scalar>::doSolve(
          << "g_grad_tol = "<<g_grad_tol<<"\n";
 
     // B.2.c) Convergence status
-    
+
     bool isConverged = false;
     if (and_conv_tests_) {
       isConverged = g_reduct_converged && g_grad_converged;
@@ -466,7 +466,7 @@ NonlinearCG<Scalar>::doSolve(
     else {
       *out << "\nNot converged!\n";
     }
-    
+
     if (foundSolution) {
       break;
     }
@@ -495,7 +495,7 @@ NonlinearCG<Scalar>::doSolve(
 
     }
     else {
-      
+
       // g_grad_k - g_grad_km1
       if (!is_null(g_grad_k_diff_km1)) {
         V_VmV( g_grad_k_diff_km1.ptr(), *g_grad_k, *g_grad_km1 );
@@ -524,7 +524,7 @@ NonlinearCG<Scalar>::doSolve(
           inner(*g_grad_k, *g_grad_k_diff_km1) / inner(*g_grad_k_diff_km1, *d_km1);
         *out << "\nbeta_HS = " << beta_HS << "\n";
       }
-      
+
       Scalar beta_k = ST::zero();
       switch(solverType_) {
         case NCGU::NONLINEAR_CG_FR: {
@@ -546,6 +546,7 @@ NonlinearCG<Scalar>::doSolve(
             beta_k = beta_PR;
           else // beta_PR > beta_FR
             beta_k = beta_FR;
+          break;
         }
         case NCGU::NONLINEAR_CG_HS: {
           beta_k = beta_HS;
@@ -564,7 +565,7 @@ NonlinearCG<Scalar>::doSolve(
       Vp_StV( d_k.ptr(), as<Scalar>(-1.0), *g_grad_k );
 
     }
-    
+
     //
     // B.4) Perform the line search
     //
@@ -635,7 +636,7 @@ NonlinearCG<Scalar>::doSolve(
     //
     // B.5) Transition to the next iteration
     //
-    
+
     alpha_km1 = alpha_k;
     g_km1 = g_k;
     g_grad_km1_inner_g_grad_km1 = g_grad_k_inner_g_grad_k;
@@ -645,7 +646,7 @@ NonlinearCG<Scalar>::doSolve(
       std::swap(g_grad_km1, g_grad_k);
     if (!is_null(d_km1))
       std::swap(d_k, d_km1);
-    
+
 #ifdef TEUCHOS_DEBUG
     // Make sure we compute these correctly before they are used!
     V_S(g_grad_k.ptr(), ST::nan());
@@ -657,7 +658,7 @@ NonlinearCG<Scalar>::doSolve(
   //
   // C) Final clean up
   //
-  
+
   // Get the most current value of g(p)
   *g_opt_out = get_ele(*g_vec, 0);
 
@@ -671,7 +672,7 @@ NonlinearCG<Scalar>::doSolve(
   if (numIters_ == maxIters_) {
     *out << "\nMax nonlinear CG iterations exceeded!\n";
   }
-  
+
   if (foundSolution) {
     return NonlinearCGUtils::SOLVE_SOLUTION_FOUND;
   }

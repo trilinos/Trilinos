@@ -90,7 +90,7 @@ namespace MueLu {
     //! Destructor.
     virtual ~RepartitionFactory() { }
 
-    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+    RCP<const ParameterList> GetValidParameterList() const;
 
     //@}
 

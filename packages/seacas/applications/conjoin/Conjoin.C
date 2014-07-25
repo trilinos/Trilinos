@@ -611,7 +611,7 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
       ex_put_elem_num_map(ExodusFile::output(), &global_map[0]);
     }
 
-    T dummy = 0.0;
+    T dummy = 0;
     put_element_blocks(local_mesh, blocks, glob_blocks, dummy);
     get_put_sidesets(local_mesh, sidesets, glob_ssets);
   }				
@@ -621,7 +621,7 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
     if (debug_level & 1)
       std::cerr << time_stamp(tsFormat);
 
-    error += get_put_coordinates(global, part_count, local_mesh, (T)0.0);
+    error += get_put_coordinates(global, part_count, local_mesh, (T)0);
 
     if (debug_level & 1)
       std::cerr << time_stamp(tsFormat);
@@ -1606,7 +1606,7 @@ namespace {
     // sorted and there are no duplicates, we just need to see if the id
     // at global_node_map.size() == global_node_map.size();
     INT max_id = global_node_map[global->nodeCount-1].id;
-    bool is_contiguous = max_id == (int)global_node_map.size();
+    bool is_contiguous = (int64_t)max_id == (int64_t)global_node_map.size();
     std::cerr  << "Node map " << (is_contiguous ? "is" : "is not") << " contiguous.\n";
 
     // Create the map that maps from a local part node to the
@@ -2165,12 +2165,16 @@ namespace {
 	  sets[p][i].position_ = gi;
 	  
 	  // Get the parameters for this sideset...
-	  ex_get_set_param (id, EX_SIDE_SET, sets[p][i].id,
-			    &sets[p][i].sideCount,
-			    &sets[p][i].dfCount);
+	  ex_set set;
+	  set.type = EX_SIDE_SET;
+	  set.id = sets[p][i].id;
+	  set.entry_list = NULL;
+	  set.extra_list = NULL;
+	  set.distribution_factor_list = NULL;
+	  ex_get_sets(id, 1, &set);
 
-
-
+	  sets[p][i].sideCount = set.num_entry;
+	  sets[p][i].dfCount = set.num_distribution_factor;
 	  glob_ssets[gi].sideCount += sets[p][i].entity_count();
 	  glob_ssets[gi].dfCount   += sets[p][i].dfCount;
 
@@ -2622,7 +2626,7 @@ namespace {
 
       int error = strftime(time_string, length, format.c_str(), local_time);
       if (error != 0) {
-        time_string[length-1] = (char)NULL;
+        time_string[length-1] = '\0';
         return std::string(time_string);
       } else {
         return std::string("[ERROR]");

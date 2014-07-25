@@ -6,16 +6,24 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+/*------------------------------------------------------------------------*/
 /**
  * @author H. Carter Edwards
  */
 
-#ifndef stk_mesh_use_cases_centroid_algorithm_hpp
-#define stk_mesh_use_cases_centroid_algorithm_hpp
+#ifndef centroid_algorithm_hpp
+#define centroid_algorithm_hpp
 
-#include <stk_mesh/fem/FEMMetaData.hpp>
+#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/TopologyDimensions.hpp>
+#include <stk_mesh/base/CoordinateSystems.hpp>
+#include <mesh/UseCase_Common.hpp>
 
-namespace {
+namespace stk {
+namespace mesh {
+namespace use_cases {
+
+enum {SpatialDim = 3};
 
 //----------------------------------------------------------------------
 // An example of a trivial element-block algorithm
@@ -37,7 +45,7 @@ void centroid( unsigned number_elements ,
 
     double ** node_coordinates = elem_node_coordinates + j * nodes_per_element ;
 
-    double tmp[3] = { 0 , 0 , 0 };
+    double tmp[SpatialDim] = { 0 , 0 , 0 };
 
     for ( unsigned i = 0 ; i < vertices_per_element ; ++i ) {
       // Pointer to this node's coordinates,
@@ -59,7 +67,7 @@ void centroid( unsigned number_elements ,
 
     // The centroid field data for this element.
 
-    double * centroid = elem_centroid + j * 3 ;
+    double * centroid = elem_centroid + j * SpatialDim ;
 
     centroid[0] = tmp[0] ;
     centroid[1] = tmp[1] ;
@@ -76,31 +84,27 @@ void centroid( unsigned number_elements ,
 
 template< class ElementTraits >
 void centroid_algorithm(
-  stk::mesh::BulkData & mesh ,
+  const BulkData & bulkData ,
   const VectorFieldType             & elem_centroid ,
-  const ElementNodePointerFieldType & elem_node_coord ,
-  stk::mesh::Part & elem_part )
+  Part & elem_part,
+  EntityRank element_rank )
 {
-  stk::mesh::fem::FEMMetaData &fem = stk::mesh::fem::FEMMetaData::get(mesh);
-  const stk::mesh::EntityRank element_rank = fem.element_rank();
-
-  // The 'stk_mesh' implementation uses the
-  // "homogeneous subset" concept (see the Domain Model document)
+  // Use the "homogeneous subset" concept (see the Domain Model document)
   // for field data storage.  A "homogeneous subset" is called
   // a 'Bucket'.
 
   // Iterate the set of element buckets:
 
-  const std::vector<stk::mesh::Bucket*> & buckets = mesh.buckets(element_rank);
+  const BucketVector & buckets = bulkData.buckets( element_rank );
 
-  for ( std::vector<stk::mesh::Bucket*>::const_iterator
+  for ( BucketVector::const_iterator
         k = buckets.begin() ; k != buckets.end() ; ++k ) {
-    stk::mesh::Bucket & bucket = **k ;
+    Bucket & bucket = **k ;
 
     // If this bucket is a subset of the given elem_part
     // then want to compute on it.
 
-    if ( has_superset( bucket , elem_part ) ) {
+    if ( has_superset( bucket, elem_part ) ) {
 
       // Number of elements in the bucket:
 
@@ -110,12 +114,12 @@ void centroid_algorithm(
       // in the bucket.
       //   double * node_ptr[ nodes_per_element * number_of_elements ]
 
-      double ** node_ptr = stk::mesh::field_data( elem_node_coord , bucket.begin() );
+      double ** node_ptr = stk::mesh::field_data( elem_node_coord , bucket, 0);
 
       // Element centroid field data
-      //   double elem_ptr[ 3 * number_of_elements ]
+      //   double elem_ptr[ SpatialDim * number_of_elements ]
 
-      double *  elem_ptr = stk::mesh::field_data( elem_centroid , bucket.begin() );
+      double *  elem_ptr = stk::mesh::field_data( elem_centroid , bucket, 0 );
 
       // Call an element function to calculate centroid for
       // contiguous arrays of element field data.
@@ -129,55 +133,58 @@ void centroid_algorithm(
 //----------------------------------------------------------------------
 
 template< class ElementTraits >
-void centroid_algorithm_unit_test_dimensions(
-  stk::mesh::BulkData & mesh ,
+bool centroid_algorithm_unit_test_dimensions(
+  const BulkData & bulkData ,
   const VectorFieldType             & elem_centroid ,
-  const ElementNodePointerFieldType & elem_node_coord ,
-  stk::mesh::Part & elem_part )
+  Part & elem_part,
+  EntityRank element_rank )
 {
-  stk::mesh::fem::FEMMetaData &fem = stk::mesh::fem::FEMMetaData::get(mesh);
-  const stk::mesh::EntityRank element_rank = fem.element_rank();
-
+  bool result = true;
   // Use the "homogeneous subset" concept (see the Domain Model document)
   // for field data storage.  A "homogeneous subset" is called
   // a 'Bucket'.
 
   // Iterate the set of element buckets:
 
-  const std::vector<stk::mesh::Bucket*> & buckets = mesh.buckets(element_rank);
+  const BucketVector & buckets = bulkData.buckets( element_rank );
 
-  for ( std::vector<stk::mesh::Bucket*>::const_iterator
+  for ( BucketVector::const_iterator
         k = buckets.begin() ; k != buckets.end() ; ++k ) {
-
-     stk::mesh::Bucket & bucket = **k ;
+     Bucket & bucket = **k ;
 
     // If this bucket is a subset of the given elem_part
     // then want to compute on it.
 
-    if ( has_superset( bucket , elem_part ) ) {
+    if ( has_superset( bucket, elem_part ) ) {
 
       // Number of elements in the bucket:
 
-      const size_t size = bucket.size();
-
-      // Unit testing the dimension feature
-      {
-        stk::mesh::BucketArray< ElementNodePointerFieldType > array( elem_node_coord, bucket);
-        const size_t n1 = array.template dimension<0>();
-        const size_t n2 = array.template dimension<1>();
-      }
+      const unsigned size = bucket.size();
 
       {
-        stk::mesh::BucketArray< VectorFieldType > array( elem_centroid , bucket );
-        const size_t n1 = array.template dimension<0>();
-        const size_t n2 = array.template dimension<1>();
+        BucketArray< VectorFieldType > array(elem_centroid , bucket , bucket.begin(), bucket.end()  );
+        const unsigned n1 = array.template dimension<0>();
+        const unsigned n2 = array.template dimension<1>();
+        if ( n1 != static_cast<unsigned>(SpatialDim) ) {
+          std::cerr << "Error!  n1 == " << n1 << " != " << SpatialDim << " == SpatialDim" << std::endl;
+          result = false;
+        }
+        if ( n2 != size ) {
+          std::cerr << "Error!  n2 == " << n2 << " != " << size << " == size" << std::endl;
+          result = false;
+        }
+        if ( static_cast<unsigned>(array.size()) != n1 * n2 ) {
+          std::cerr << "Error!  array.size() == " << array.size() << " != " << n1*n2 << " == n1*n2" << std::endl;
+          result = false;
+        }
       }
-
     }
   }
+  return result;
 }
 
-}
+} // namespace use_cases
+} // namespace mesh
+} // namespace stk
 
-#endif
-
+#endif // centroid_algorithm_hpp

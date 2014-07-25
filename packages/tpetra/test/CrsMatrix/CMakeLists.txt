@@ -26,7 +26,7 @@ IF(Kokkos_ENABLE_Cuda)
   #
   # Add subpackage include path dependencies for CUDA_COMPILE().
   CUDA_INCLUDE_DIRECTORIES( "." )
-  CUDA_INCLUDE_DIRECTORIES( "." )
+  CUDA_INCLUDE_DIRECTORIES( ${Tpetra_INCLUDE_DIRS} )
   CUDA_COMPILE(CRSMATRIX_UT1_OBJECTS_CUDA CrsMatrix_UnitTests_CU.cu)
   CUDA_COMPILE(CRSMATRIX_UT2_OBJECTS_CUDA CrsMatrix_UnitTests2_CU.cu)
   CUDA_COMPILE(CRSMATRIX_UT3_OBJECTS_CUDA CrsMatrix_UnitTests3_CU.cu)
@@ -42,6 +42,9 @@ IF(Kokkos_ENABLE_Cuda)
   CUDA_COMPILE(CRSMATRIX_NLSII_OBJECTS_CUDA CrsMatrix_NonlocalSumInto_Ignore_CU.cu)
   CUDA_COMPILE(CRSMATRIX_GS_OBJECTS_CUDA CrsMatrix_gaussSeidel_CU.cu)
   CUDA_COMPILE(CRSMATRIX_B5978_OBJECTS_CUDA bug5978_CU.cu)
+  CUDA_COMPILE(CRSMATRIX_B6069_1_OBJECTS_CUDA Bug6069_1_CU.cu)
+  CUDA_COMPILE(CRSMATRIX_B6069_2_OBJECTS_CUDA Bug6069_2_CU.cu)
+  CUDA_COMPILE(CRSMATRIX_B6171_OBJECTS_CUDA Bug6171_CU.cu)
 ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -231,6 +234,45 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     bug5978
     ${CRSMATRIX_B5978_OBJECTS_CUDA}
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS
+  COMM mpi
+  NUM_MPI_PROCS 2
+  STANDARD_PASS_OUTPUT
+  )
+
+# First test for Bug 6069.  This test only makes sense for exactly 3
+# MPI processes.  Run under Valgrind for best results.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_Bug6069_1
+  SOURCES
+    Bug6069_1
+    ${CRSMATRIX_B6069_1_OBJECTS_CUDA}
+  ARGS
+  COMM mpi
+  NUM_MPI_PROCS 3
+  STANDARD_PASS_OUTPUT
+  )
+
+# Second test for Bug 6069.  This test only makes sense for exactly 2
+# MPI processes.  Run under Valgrind for best results.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_Bug6069_2
+  SOURCES
+    Bug6069_2
+    ${CRSMATRIX_B6069_2_OBJECTS_CUDA}
+  ARGS
+  COMM mpi
+  NUM_MPI_PROCS 2
+  STANDARD_PASS_OUTPUT
+  )
+
+# Test for Bug 6171.  This test only makes sense for exactly 2 MPI
+# processes.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_Bug6171
+  SOURCES
+    Bug6171
+    ${CRSMATRIX_B6171_OBJECTS_CUDA}
   ARGS
   COMM mpi
   NUM_MPI_PROCS 2

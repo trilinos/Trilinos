@@ -81,7 +81,7 @@ namespace MueLu {
     coarseSolver_->Setup(currentLevel);
 
     if (SmootherPrototype::IsSetup() == true)
-      this->GetOStream(Warnings0, 0) << "Warning: MueLu::ProjectorSmoother::Setup(): Setup() has already been called" << std::endl;
+      this->GetOStream(Warnings0) << "MueLu::ProjectorSmoother::Setup(): Setup() has already been called" << std::endl;
 
     RCP<Matrix>      A = Factory::Get< RCP<Matrix> >     (currentLevel, "A");
     RCP<MultiVector> B = Factory::Get< RCP<MultiVector> >(currentLevel, "Nullspace");
@@ -102,7 +102,7 @@ namespace MueLu {
       if (Teuchos::ScalarTraits<Scalar>::magnitude(rayleigh) < 1e-12)
         selectedIndices.push_back(i);
     }
-    this->GetOStream(Runtime0, 0) << "Coarse level orth indices: " << selectedIndices << std::endl;
+    this->GetOStream(Runtime0) << "Coarse level orth indices: " << selectedIndices << std::endl;
 
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_XPETRA_TPETRA)
     // Orthonormalize
@@ -147,12 +147,12 @@ namespace MueLu {
       for (int k = 0; k < m; k++) {                                     // orthogonalize
         RCP<const Tpetra::Vector<SC,LO,GO,NO> > Bk = Borth__->getVector(k);
 
-        Xi->dot(*Bk, dot);
+        Xi->dot(*Bk, dot());
         Xi->update(-dot[0], *Bk, Teuchos::ScalarTraits<Scalar>::one());
       }
     }
 #else
-    this->GetOStream(Warnings0, 0) << "Warning: MueLu::ProjectorSmoother::Setup(): disabling as it works only with Tpetra" << std::endl;
+    this->GetOStream(Warnings0) << "MueLu::ProjectorSmoother::Setup(): disabling as it works only with Tpetra" << std::endl;
 #endif
   }
 

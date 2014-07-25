@@ -14,9 +14,9 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/fem/FEMMetaData.hpp>
-#include <stk_mesh/fem/TopologyDimensions.hpp>
-#include <stk_mesh/fem/CoordinateSystems.hpp>
+#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/TopologyDimensions.hpp>
+#include <stk_mesh/base/CoordinateSystems.hpp>
 
 namespace stk {
 namespace mesh {
@@ -38,7 +38,6 @@ struct GearFields {
   CartesianField   & model_coord ;
 
   GearFields( stk::mesh::MetaData & S );
-  GearFields( stk::mesh::fem::FEMMetaData & S );
 
 private:
   GearFields();
@@ -48,7 +47,7 @@ private:
 
 class Gear {
 public:
-  Gear( stk::mesh::fem::FEMMetaData & S ,
+  Gear( stk::mesh::MetaData & S ,
         const std::string & name ,
         const GearFields & gear_fields ,
         const double   center[] ,
@@ -64,7 +63,6 @@ public:
   void mesh( stk::mesh::BulkData &M );
   void turn( double turn_angle ) const ;
 
-  stk::mesh::fem::FEMMetaData *m_mesh_fem_meta_data ;
   stk::mesh::MetaData & m_mesh_meta_data ;
   stk::mesh::BulkData * m_mesh ;
   stk::mesh::Part & m_gear ;
@@ -90,7 +88,7 @@ private:
   size_t m_angle_num ;
   int    m_turn_dir ;
 
-  stk::mesh::Entity &create_node( const std::vector<stk::mesh::Part*> &parts ,
+  stk::mesh::Entity create_node( const std::vector<stk::mesh::Part*> &parts ,
                                   stk::mesh::EntityId node_id_base ,
                                   size_t iz ,
                                   size_t ir ,

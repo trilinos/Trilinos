@@ -2,10 +2,8 @@
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
-#include <stdio.h>
-#include "defs.h"
+#include "smalloc.h"                    // for smalloc, sfree
 #include "structs.h"
-#include "smalloc.h"
 
 
 void 

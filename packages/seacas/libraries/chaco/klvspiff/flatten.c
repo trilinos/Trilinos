@@ -3,10 +3,9 @@
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
 
-#include <stdio.h>
-#include "structs.h"
-#include "defs.h"
-#include "smalloc.h"
+#include "defs.h"                       // for FALSE, TRUE
+#include "smalloc.h"                    // for sfree, smalloc
+#include "structs.h"                    // for vtx_data
 
 
 int 

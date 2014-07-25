@@ -54,13 +54,12 @@
 #include <Xpetra_Matrix.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_HierarchyFactory.hpp"
 
-#include "MueLu_Hierarchy.hpp"
 #include "MueLu_Exceptions.hpp"
-
+#include "MueLu_Hierarchy.hpp"
+#include "MueLu_HierarchyFactory.hpp"
 #include "MueLu_Level.hpp"
-
+#include "MueLu_MasterList.hpp"
 #include "MueLu_Utilities.hpp"
 
 namespace MueLu {
@@ -79,7 +78,13 @@ namespace MueLu {
 
     //!
     // TODO: default values should be query from Hierarchy class to avoid duplication
-    HierarchyManager() : numDesiredLevel_(10), maxCoarseSize_(50), verbosity_(Medium), graphOutputLevel_(-1) { }
+    HierarchyManager() :
+        numDesiredLevel_(MasterList::getDefault<int>("max levels")),
+        maxCoarseSize_(MasterList::getDefault<int>("coarse: max size")),
+        verbosity_(Medium),
+        doPRrebalance_(MasterList::getDefault<bool>("repartition: rebalance P and R")),
+        implicitTranspose_(MasterList::getDefault<bool>("transpose: use implicit")),
+        graphOutputLevel_(-1) { }
 
     //!
     virtual ~HierarchyManager() { }
@@ -121,6 +126,13 @@ namespace MueLu {
     virtual void SetupHierarchy(Hierarchy& H) const {
       TEUCHOS_TEST_FOR_EXCEPTION(!H.GetLevel(0)->IsAvailable("A"), Exceptions::RuntimeError, "No fine level operator");
 
+#ifdef HAVE_MUELU_DEBUG
+      // Reset factories' data used for debugging
+      for (int i = 0; i < levelManagers_.size(); i++)
+        levelManagers_[i]->ResetDebugData();
+
+#endif
+
       // Setup Matrix
       // TODO: I should certainly undo this somewhere...
       RCP<Level>  l  = H.GetLevel(0);
@@ -137,6 +149,9 @@ namespace MueLu {
       H.SetDefaultVerbLevel(verbosity_);
       if (graphOutputLevel_ >= 0)
         H.EnableGraphDumping("dep_graph.dot", graphOutputLevel_);
+
+      H.SetPRrebalance(doPRrebalance_);
+      H.SetImplicitTranspose(implicitTranspose_);
 
       // TODO: coarsestLevelManager
 
@@ -213,6 +228,8 @@ namespace MueLu {
     mutable int           numDesiredLevel_;
     Xpetra::global_size_t maxCoarseSize_;
     MsgType               verbosity_;
+    bool                  doPRrebalance_;
+    bool                  implicitTranspose_;
     int                   graphOutputLevel_;
     Teuchos::Array<int>   matricesToPrint_;
     Teuchos::Array<int>   prolongatorsToPrint_;

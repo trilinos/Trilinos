@@ -122,12 +122,15 @@ namespace Tpetra {
     using Teuchos::TypeNameTraits;
 
     std::ostringstream os;
-    os << "Tpetra::DistObject<"
-       << TypeNameTraits<Packet>::name ()
-       << ", " << TypeNameTraits<LocalOrdinal>::name ()
-       << ", " << TypeNameTraits<GlobalOrdinal>::name ()
-       << ", " << TypeNameTraits<Node>::name ()
-       << ">";
+    os << "\"Tpetra::DistObject\": {"
+       << "Packet: " << TypeNameTraits<Packet>::name ()
+       << ", LocalOrdinal: " << TypeNameTraits<LocalOrdinal>::name ()
+       << ", GlobalOrdinal: " << TypeNameTraits<GlobalOrdinal>::name ()
+       << ", Node: " << TypeNameTraits<Node>::name ();
+    if (this->getObjectLabel () != "") {
+      os << "Label: \"" << this->getObjectLabel () << "\"";
+    }
+    os << "}";
     return os.str ();
   }
 
@@ -138,19 +141,62 @@ namespace Tpetra {
             const Teuchos::EVerbosityLevel verbLevel) const
   {
     using Teuchos::rcpFromRef;
+    using Teuchos::TypeNameTraits;
     using std::endl;
-
     const Teuchos::EVerbosityLevel vl = (verbLevel == Teuchos::VERB_DEFAULT) ?
       Teuchos::VERB_LOW : verbLevel;
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = this->getMap ()->getComm ();
+    const int myRank = comm.is_null () ? 0 : comm->getRank ();
+    const int numProcs = comm.is_null () ? 1 : comm->getSize ();
 
     if (vl != Teuchos::VERB_NONE) {
-      out << this->description () << endl;
-      Teuchos::OSTab tab (rcpFromRef (out));
-      out << "Export buffer size (in packets): " << exports_.size() << endl
-          << "Import buffer size (in packets): " << imports_.size() << endl
-          << "Map over which this object is distributed:" << endl;
-      map_->describe (out, vl);
-    }
+      Teuchos::OSTab tab0 (out);
+      if (myRank == 0) {
+        out << "\"Tpetra::DistObject\":" << endl;
+      }
+      Teuchos::OSTab tab1 (out);
+      if (myRank == 0) {
+        out << "Template parameters:" << endl;
+        {
+          Teuchos::OSTab tab2 (out);
+          out << "Packet: " << TypeNameTraits<Packet>::name () << endl
+              << "LocalOrdinal: " << TypeNameTraits<LocalOrdinal>::name () << endl
+              << "GlobalOrdinal: " << TypeNameTraits<GlobalOrdinal>::name () << endl
+              << "Node: " << TypeNameTraits<Node>::name () << endl;
+        }
+        if (this->getObjectLabel () != "") {
+          out << "Label: \"" << this->getObjectLabel () << "\"" << endl;
+        }
+      } // if myRank == 0
+
+      // Describe the Map.
+      {
+        if (myRank == 0) {
+          out << "Map:" << endl;
+        }
+        Teuchos::OSTab tab2 (out);
+        map_->describe (out, vl);
+      }
+
+      // At verbosity > VERB_LOW, each process prints something.
+      if (vl > Teuchos::VERB_LOW) {
+        for (int p = 0; p < numProcs; ++p) {
+          if (myRank == p) {
+            out << "Process " << myRank << ":" << endl;
+            Teuchos::OSTab tab2 (out);
+            out << "Export buffer size (in packets): " << exports_.size ()
+                << endl
+                << "Import buffer size (in packets): " << imports_.size ()
+                << endl;
+          }
+          if (! comm.is_null ()) {
+            comm->barrier (); // give output time to finish
+            comm->barrier ();
+            comm->barrier ();
+          }
+        } // for each process rank p
+      } // if vl > VERB_LOW
+    } // if vl != VERB_NONE
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
@@ -589,6 +635,20 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
 
     // Convert arguments to Kokkos::View's (involves deep copy to device)
+    //
+    // FIXME (mfh 17 Feb 2014) getKokkosViewDeepCopy _always_ does a
+    // deep copy.  It has to, since it returns a managed Kokkos::View,
+    // but the input Teuchos::ArrayView is unmanaged.  One way to fix
+    // this would be to change the interface by replacing the
+    // Teuchos::ArrayView inputs with Kokkos::View inputs.  This is
+    // the approach taken by Kokkos::DistObjectKA.  Some points:
+    //
+    //   1. It's perfectly OK to change the interface of doTransfer.
+    //      It should take Kokkos::View by default, and convert to
+    //      Teuchos::Array{RCP,View} if needed internally.
+    //   2. Recall that Teuchos::ArrayView is an unmanaged view.
+    //   3. If DistObject ever gets a nonblocking interface, that
+    //      interface should take managed views.
     typedef Kokkos::View<const LocalOrdinal*, device_type> lo_const_view_type;
     lo_const_view_type permuteToLIDs =
       getKokkosViewDeepCopy<device_type> (permuteToLIDs_);
@@ -622,6 +682,11 @@ namespace Tpetra {
         rwo = KokkosClassic::WriteOnly;
       }
     }
+
+    // FIXME (mfh 17 Feb 2014) We're assuming that MPI can read device
+    // memory (that's even pre-UVM), so there is no need to create
+    // host views of the source object's data.
+
     // Tell the source to create a read-only view of its data.  On a
     // discrete accelerator such as a GPU, this brings EVERYTHING from
     // device memory to host memory.
@@ -635,6 +700,10 @@ namespace Tpetra {
     if (srcDistObj != NULL) {
       srcDistObj->createViews ();
     }
+
+    // FIXME (mfh 17 Feb 2014) We're assuming that MPI can read device
+    // memory (that's even pre-UVM), so there is no need to create
+    // host views of the target object's data.
 
     // Tell the target to create a view of its data.  Depending on
     // rwo, this could be a write-only view or a read-and-write view.
@@ -654,6 +723,11 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
       Teuchos::TimeMonitor copyAndPermuteMon (*copyAndPermuteTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
+
+      // FIXME (mfh 17 Feb 2014) Nobody implements DistObject
+      // subclasses but Tpetra developers anyway, so don't bother with
+      // this "new" business.  Just write the interface you want.
+
       // There is at least one GID to copy or permute.
       copyAndPermuteNew (src, numSameIDs, permuteToLIDs, permuteFromLIDs);
     }
@@ -674,6 +748,9 @@ namespace Tpetra {
     // existing values. That means we don't need to communicate.
     if (CM != ZERO) {
       if (constantNumPackets == 0) {
+        // FIXME (mfh 17 Feb 2014) Don't "realloc" unless you really
+        // need to.  That will avoid a bit of time for reinitializing
+        // the Views' data.
         Kokkos::Compat::realloc (numExportPacketsPerLID_, exportLIDs.size ());
         Kokkos::Compat::realloc (numImportPacketsPerLID_, remoteLIDs.size ());
       }
@@ -691,6 +768,9 @@ namespace Tpetra {
                         constantNumPackets, distor);
       }
     }
+
+    // FIXME (mfh 17 Feb 2014) See comments above; there is no need to
+    // create host views of the source object's data.
 
     // We don't need the source's data anymore, so it can let go of
     // its views.  On an accelerator device with a separate memory
@@ -712,6 +792,11 @@ namespace Tpetra {
           Kokkos::Compat::realloc (imports_, rbufLen);
         }
       }
+
+      // FIXME (mfh 17 Feb 2014) Why do we need to create mirror
+      // views?  Furthermore, if we do need to do this, we should only
+      // do it _once_, since the arrays are constant (they come from
+      // the Import / Export object, which is constant).
 
       // Create mirror views of [import|export]PacketsPerLID
       typename Kokkos::View<size_t*,device_type>::HostMirror host_numExportPacketsPerLID = Kokkos::create_mirror_view (numExportPacketsPerLID_);
@@ -737,6 +822,14 @@ namespace Tpetra {
         needCommunication = false;
       }
 
+      // FIXME (mfh 17 Feb 2014) Distributor doesn't actually inspect
+      // the contents of the "exports" or "imports" arrays, other than
+      // to do a deep copy in the (should be technically unnecessary,
+      // but isn't for some odd reason) "self-message" case.
+      // Distributor thus doesn't need host views; it could do just
+      // fine with device views, assuming that MPI knows how to read
+      // device memory (which doesn't even require UVM).
+
       if (needCommunication) {
         if (revOp == DoReverse) {
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
@@ -747,9 +840,14 @@ namespace Tpetra {
                                            1,
                                            host_numImportPacketsPerLID);
             size_t totalImportPackets = 0;
+            // FIXME (mfh 17 Feb 2014) This would be a good place for
+            // a Kokkos reduction.  numImportPacketsPerLID_ has as
+            // many entries as the number of LIDs on the calling
+            // process.
             for (view_size_type i = 0; i < numImportPacketsPerLID_.size(); ++i) {
               totalImportPackets += host_numImportPacketsPerLID[i];
             }
+            // FIXME (mfh 17 Feb 2014) Only realloc if necessary.
             Kokkos::Compat::realloc (imports_, totalImportPackets);
             distor.doReversePostsAndWaits (create_const_view (exports_),
                                            getArrayView (host_numExportPacketsPerLID),
@@ -770,9 +868,14 @@ namespace Tpetra {
             distor.doPostsAndWaits (create_const_view (host_numExportPacketsPerLID), 1,
                                     host_numImportPacketsPerLID);
             size_t totalImportPackets = 0;
+            // FIXME (mfh 17 Feb 2014) This would be a good place for
+            // a Kokkos reduction.  numImportPacketsPerLID_ has as
+            // many entries as the number of LIDs on the calling
+            // process.
             for (view_size_type i = 0; i < numImportPacketsPerLID_.size(); ++i) {
               totalImportPackets += host_numImportPacketsPerLID[i];
             }
+            // FIXME (mfh 17 Feb 2014) Only realloc if necessary.
             Kokkos::Compat::realloc (imports_, totalImportPackets);
             distor.doPostsAndWaits (create_const_view (exports_),
                                     getArrayView (host_numExportPacketsPerLID),
@@ -786,6 +889,11 @@ namespace Tpetra {
           }
         }
 
+        // FIXME (mfh 17 Feb 2014) This array should just live on the
+        // device and stay there.  There is no need for a host view,
+        // as long as unpackAndCombine(new) knows what to do with a
+        // device view.
+        //
         // Copy numImportPacketsPerLID to device
         Kokkos::deep_copy (numImportPacketsPerLID_, host_numImportPacketsPerLID);
 
@@ -798,6 +906,10 @@ namespace Tpetra {
         }
       }
     } // if (CM != ZERO)
+
+    // FIXME (mfh 17 Dec 2014) We don't have to call releaseViews() on
+    // the destination object any more, since MPI knows how to read
+    // device memory.
 
     this->releaseViews ();
   }

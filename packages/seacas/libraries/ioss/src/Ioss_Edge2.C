@@ -31,13 +31,14 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Ioss_Edge2.h>
+#include <Ioss_ElementVariableType.h>   // for ElementVariableType
+#include <assert.h>                     // for assert
+#include <stddef.h>                     // for NULL
+#include "Ioss_CodeTypes.h"             // for IntVector
+#include "Ioss_ElementTopology.h"       // for ElementTopology
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity
-#include <Ioss_ElementVariableType.h>
-#include <assert.h>
-#include <stddef.h>
 
-#include "Ioss_ElementTopology.h"
 
 namespace Ioss {
   class St_Edge2 : public ElementVariableType

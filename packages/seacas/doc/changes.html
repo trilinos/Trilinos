@@ -57,6 +57,13 @@
       <table class="zebra" WIDTH=90% align=center  BGCOLOR=WHITE CELLPADDING=10>
 	<tr align=left><th>Date</th><th>Code</th><th>Version</th><th>Change</tr>
 
+	<tr><td>2014-02-01</td>
+          <td>aprepro</td><td>3.03</td>
+
+	  <td>Aprepro has two-dimensional array variables. Can be created internally or by reading data from csv file.
+	    Bilinear interpolation supported if using non-integer array indices. Documentation coming soon?</td>
+	</tr>
+
 	<tr><td>2013-08-14</td>
           <td>algebra</td><td>3.40</td>
 
@@ -110,8 +117,15 @@
 	  <tr><td>2012-09-14</td>
 	  <td>grepos</td><td>1.64</td>
 
-	  <td>Added <tt>move global|local node {id} to|by {x} {y} {z}</tt> command so user can 
-	    specify exact location of a node in the mesh.
+         <td>Grepos has a node move The syntax is:
+             <tt>move {global|local} node {id} {to|by} {x} {y} {z}</tt>
+           <ul>
+             <li>The <tt>{global|local}</tt> specifies whether the node map is used or not.</li>
+             <li>The <tt>{to|by}</tt> specifies absolute or relative movement.
+               <ul>
+                 <li>to -- move to that position</li>
+                 <li>by -- delta from current position</li></ul></li></ul>
+	  </td>
 	  </tr>
 
 	  <tr><td>2012-09-07</td>
@@ -216,12 +230,12 @@
 
 	  <td>Added "eigen_relative", "eigen_absolute", and
 	  "eigen_combined" diff options which are meant to be used for
-	  diffing varibles that are typically eigenvectors or related
+	  diffing variables that are typically eigenvectors or related
 	  quantities where the vector 'V' should be considered equal
 	  to the vector '-V'.<p>
     
 	  The eigen_ forms of the tolerances simply diff the absolute
-	  values of the varible values instead of diffing the values.
+	  values of the variable values instead of diffing the values.
 	  Eventually there should be some code to determine whether
 	  V_0 == -V_1 or V_0 == V_1 and not simply that V_0 == |V_1|
 	  </td>
@@ -471,7 +485,7 @@
     <address><a href="mailto:gdsjaar@sandia.gov">Gregory D Sjaardema</a></address>
 <!-- Created: Tue Nov 17 07:07:27 MST 2009 -->
 <!-- hhmts start -->
-Last modified: Wed Aug 14 08:14:01 MDT 2013
+Last modified: Wed Feb 26 08:16:30 MST 2014
 <!-- hhmts end -->
   </body>
 </html>

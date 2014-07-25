@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -224,7 +224,7 @@ int matrixCtr(bool verbose, bool debug) {
 			EPETRA_TEST_ERR(!(m1(i,j) == 0), ierr);
 	if(debug) printMat("m1",m1);
 	returnierr += ierr;
-	if(ierr == 0) 
+	if(ierr == 0)
 		 if(verbose) cout << "Checked OK." << endl;
 	ierr = 0;
 	if(verbose) cout << "\nmanually setting values" << endl;
@@ -241,7 +241,7 @@ int matrixCtr(bool verbose, bool debug) {
 	}
 	delete[] m1rand;
 	returnierr += ierr;
-	if(ierr == 0) 
+	if(ierr == 0)
 		 if(verbose) cout << "Checked OK." << endl;
 	ierr = 0;
 	
@@ -253,7 +253,7 @@ int matrixCtr(bool verbose, bool debug) {
 	EPETRA_TEST_ERR(!(m1a.CV() == Copy),ierr);
 	if(debug) printMat("m1a", m1a);
 	returnierr += ierr;
-	if(ierr == 0) 
+	if(ierr == 0)
 		 if(verbose) cout << "Checked OK." << endl;
 	ierr = 0;
 	
@@ -268,7 +268,7 @@ int matrixCtr(bool verbose, bool debug) {
 	EPETRA_TEST_ERR(!(m2.A() == m2rand), ierr);
 	if(debug) printMat("m2",m2);
 	returnierr += ierr;
-	if(ierr == 0) 
+	if(ierr == 0)
 		 if(verbose) cout << "Checked OK." << endl;
 	ierr = 0;
 
@@ -287,7 +287,7 @@ int matrixCtr(bool verbose, bool debug) {
 	delete[] m2rand;
 	delete[] m2randcopy;
 	returnierr += ierr;
-	if(ierr == 0) 
+	if(ierr == 0)
 		 if(verbose) cout << "Checked OK." << endl;
 	ierr = 0;
 
@@ -309,7 +309,7 @@ int matrixCtr(bool verbose, bool debug) {
 		for(int j = 0; j < m3cols; j++)
 			EPETRA_TEST_ERR(!(m3[j][i] == m3rand[j * m3rows + i]), ierr); // data should be identical to user array
 	returnierr += ierr;
-	if(ierr == 0) 
+	if(ierr == 0)
 		 if(verbose) cout << "Checked OK." << endl;
 	ierr = 0;
 
@@ -326,7 +326,7 @@ int matrixCtr(bool verbose, bool debug) {
 		printMat("m3",m3);
 	}
 	returnierr += ierr;
-	if(ierr == 0) 
+	if(ierr == 0)
 		 if(verbose) cout << "Checked OK." << endl;
 	ierr = 0;
 	
@@ -343,7 +343,7 @@ int matrixCtr(bool verbose, bool debug) {
 	delete[] m3rand;
 	delete[] m3randcopy;
 	returnierr += ierr;
-	if(ierr == 0) 
+	if(ierr == 0)
 		 if(verbose) cout << "Checked OK." << endl;
 	ierr = 0;
 	
@@ -366,7 +366,7 @@ int matrixCtr(bool verbose, bool debug) {
 	EPETRA_TEST_ERR(!(after == 0), ierr);
 	if(debug) cout << "After = " << after << endl;
 	returnierr += ierr;
-	if(ierr == 0) 
+	if(ierr == 0)
 		 if(verbose) cout << "Checked OK." << endl;
 	ierr = 0;
 
@@ -618,7 +618,7 @@ int matrixExceptions(bool verbose, bool debug) {
 	EPETRA_TEST_ERR(!caught, returnierr);
 
 	// op[] too high
-	try { 
+	try {
 		caught = false;
 		if(verbose) cout << "\nChecking operator [] - col index too high";
 		ierr = m2[4][2];
@@ -919,7 +919,7 @@ int vectorCtr(bool verbose, bool debug) {
 	}
 	if(debug) printMat("v1",v1);
 	returnierr += ierr;
-	if(ierr == 0) 
+	if(ierr == 0)
 		 if(verbose) cout << "Checked OK." << endl;
 	ierr = 0;
 	if(verbose) cout << "\nmanually setting values" << endl;
@@ -934,7 +934,7 @@ int vectorCtr(bool verbose, bool debug) {
 	}
 	delete[] v1rand;
 	returnierr += ierr;
-	if(ierr == 0) 
+	if(ierr == 0)
 		 if(verbose) cout << "Checked OK." << endl;
 	ierr = 0;
 
@@ -944,7 +944,7 @@ int vectorCtr(bool verbose, bool debug) {
 	EPETRA_TEST_ERR(!(v1a.CV() == Copy),ierr);
 	if(debug) printMat("v1a", v1a);
 	returnierr += ierr;
-	if(ierr == 0) 
+	if(ierr == 0)
 		 if(verbose) cout << "Checked OK." << endl;
 	ierr = 0;
 
@@ -957,7 +957,7 @@ int vectorCtr(bool verbose, bool debug) {
 	EPETRA_TEST_ERR(!(v2.Values() == v2rand), ierr);
 	if(debug) printMat("v2",v2);
 	returnierr += ierr;
-	if(ierr == 0) 
+	if(ierr == 0)
 		 if(verbose) cout << "Checked OK." << endl;
 	ierr = 0;
 
@@ -976,7 +976,7 @@ int vectorCtr(bool verbose, bool debug) {
 	delete[] v2rand;
 	delete[] v2randcopy;
 	returnierr += ierr;
-	if(ierr == 0) 
+	if(ierr == 0)
 		 if(verbose) cout << "Checked OK." << endl;
 	ierr = 0;
 
@@ -995,7 +995,7 @@ int vectorCtr(bool verbose, bool debug) {
 	for(int i = 0; i < v3size; i++)
 		EPETRA_TEST_ERR(!(v3[i] == v3rand[i]), ierr); // data should be identical to user array
 	returnierr += ierr;
-	if(ierr == 0) 
+	if(ierr == 0)
 		 if(verbose) cout << "Checked OK." << endl;
 	ierr = 0;
 
@@ -1011,7 +1011,7 @@ int vectorCtr(bool verbose, bool debug) {
 		printMat("v3",v3);
 	}
 	returnierr += ierr;
-	if(ierr == 0) 
+	if(ierr == 0)
 		 if(verbose) cout << "Checked OK." << endl;
 	ierr = 0;
 
@@ -1024,7 +1024,7 @@ int vectorCtr(bool verbose, bool debug) {
 	delete[] v3rand;
 	delete[] v3randcopy;
 	returnierr += ierr;
-	if(ierr == 0) 
+	if(ierr == 0)
 		 if(verbose) cout << "Checked OK." << endl;
 	ierr = 0;
 
@@ -1047,7 +1047,7 @@ int vectorCtr(bool verbose, bool debug) {
 	EPETRA_TEST_ERR(!(after == 0), ierr);
 	if(debug) cout << "After = " << after << endl;
 	returnierr += ierr;
-	if(ierr == 0) 
+	if(ierr == 0)
 		 if(verbose) cout << "Checked OK." << endl;
 	ierr = 0;
 

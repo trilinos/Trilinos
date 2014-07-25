@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /*****************************************************************************/
@@ -99,34 +99,34 @@ int main(int argc, char *argv[])
   /* initialize the list of global indices. NOTE: the list of global */
   /* indices must be in ascending order so that subsequent calls to  */
   /* AZ_find_index() will function properly. */
-	
+
   AZ_read_update(&N_update, &update, proc_config, N_grid_pts, num_PDE_eqns,
                  AZ_linear);
-	
-	
+
+
 	AZ_read_msr_matrix(update, &val, &bindx, N_update, proc_config);
 
 	AZ_transform( proc_config, &external, bindx,
 								val,  update, &update_index,
 								&extern_index, &data_org, N_update,
 								0, 0, 0, &cpntr, AZ_MSR_MATRIX);
-	
+
 	Amat = AZ_matrix_create( leng );
 	AZ_set_MSR(Amat, bindx, val, data_org, 0, NULL, AZ_LOCAL);
 
 	Amat->matrix_type  = data_org[AZ_matrix_type];
-	
+
 	data_org[AZ_N_rows]  = data_org[AZ_N_internal] + data_org[AZ_N_border];
-			
+
 start_time = AZ_second();
-	
+
 	ML_Create(&ml, N_levels);
-			
-			
+
+
 	/* set up discretization matrix and matrix vector function */
-	
+
 	AZ_ML_Set_Amat(ml, N_levels-1, N_update, N_update, Amat, proc_config);
-	
+
         ML_Aggregate_Create( &ag );
         ML_Aggregate_Set_CoarsenScheme_Uncoupled(ag);
         ML_Aggregate_Set_Threshold(ag,0.0);
@@ -136,11 +136,11 @@ start_time = AZ_second();
 	coarsest_level = N_levels - coarsest_level;
 	if ( proc_config[AZ_node] == 0 )
 		printf("Coarse level = %d \n", coarsest_level);
-	
+
 	/* set up smoothers */
-	
+
 	for (level = N_levels-1; level > coarsest_level; level--) {
-		
+
           /* This is the symmetric Gauss-Seidel smoothing. In parallel,    */
           /* it is not a true Gauss-Seidel in that each processor          */
           /* does a Gauss-Seidel on its local submatrix independent of the */
@@ -153,15 +153,15 @@ start_time = AZ_second();
 	  ML_Gen_Smoother_Jacobi(ml , level, ML_PRESMOOTHER, nsmooth, .67);
 	  ML_Gen_Smoother_Jacobi(ml , level, ML_POSTSMOOTHER, nsmooth, .67 );
           */
-		
+
 	}
-	
+
 	ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
-		
-	
-	ML_Gen_Solver(ml, ML_MGV, N_levels-1, coarsest_level); 
+
+
+	ML_Gen_Solver(ml, ML_MGV, N_levels-1, coarsest_level);
 	AZ_defaults(options, params);
-	
+
         options[AZ_solver]   = AZ_cg;
         options[AZ_scaling]  = AZ_none;
         options[AZ_precond]  = AZ_user_precond;
@@ -171,17 +171,17 @@ start_time = AZ_second();
         options[AZ_poly_ord] = 5;
         options[AZ_kspace]   = 130;
         params[AZ_tol]       = 1.0e-8;
-	
-	AZ_set_ML_preconditioner(&Pmat, Amat, ml, options); 
+
+	AZ_set_ML_preconditioner(&Pmat, Amat, ml, options);
 setup_time = AZ_second() - start_time;
-	
+
 	xxx = (double *) malloc( leng*sizeof(double));
 	rhs=(double *)malloc(leng*sizeof(double));
 
-	for (iii = 0; iii < leng; iii++) xxx[iii] = 0.0; 
-	
+	for (iii = 0; iii < leng; iii++) xxx[iii] = 0.0;
+
         /* Set rhs */
- 
+
         fp = fopen("AZ_capture_rhs.dat","r");
         if (fp == NULL) {
            if (proc_config[AZ_node] == 0) printf("taking random vector for rhs\n");
@@ -194,7 +194,7 @@ setup_time = AZ_second() - start_time;
               while ( (ch = getc(fp)) != '\n') ;
            }
            else ungetc(ch,fp);
-           for (i = 0; i < data_org[AZ_N_internal]+data_org[AZ_N_border]; i++) 
+           for (i = 0; i < data_org[AZ_N_internal]+data_org[AZ_N_border]; i++)
               fscanf(fp,"%lf",&(rhs[i]));
            fclose(fp);
         }
@@ -218,7 +218,7 @@ setup_time = AZ_second() - start_time;
 
         for (i = 0; i < data_org[AZ_N_internal]+data_org[AZ_N_border]; i++) {
            if ( (val[i] > .99999999) && (val[i] < 1.0000001))
-              xxx[i] = rhs[i];      
+              xxx[i] = rhs[i];
         }
 
         fp = fopen("AZ_no_multilevel.dat","r");
@@ -231,36 +231,36 @@ start_time = AZ_second();
            options[AZ_ignore_scaling] = AZ_TRUE;
 
            options[AZ_keep_info] = 1;
-           AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, NULL, scaling); 
+           AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, NULL, scaling);
 
 /*
            options[AZ_pre_calc] = AZ_reuse;
            options[AZ_conv] = AZ_expected_values;
-           if (proc_config[AZ_node] == 0) 
+           if (proc_config[AZ_node] == 0)
               printf("\n-------- Second solve with improved convergence test -----\n");
-           AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, NULL, scaling); 
-           if (proc_config[AZ_node] == 0) 
+           AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, NULL, scaling);
+           if (proc_config[AZ_node] == 0)
               printf("\n-------- Third solve with improved convergence test -----\n");
-           AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, NULL, scaling); 
+           AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, NULL, scaling);
 */
         }
         else {
            options[AZ_keep_info] = 1;
-           AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, Pmat, scaling); 
+           AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, Pmat, scaling);
            options[AZ_pre_calc] = AZ_reuse;
            options[AZ_conv] = AZ_expected_values;
 /*
-           if (proc_config[AZ_node] == 0) 
+           if (proc_config[AZ_node] == 0)
               printf("\n-------- Second solve with improved convergence test -----\n");
-           AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, Pmat, scaling); 
-           if (proc_config[AZ_node] == 0) 
+           AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, Pmat, scaling);
+           if (proc_config[AZ_node] == 0)
               printf("\n-------- Third solve with improved convergence test -----\n");
-           AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, Pmat, scaling); 
+           AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, Pmat, scaling);
 */
         }
    solve_time = AZ_second() - start_time;
 
-   if (proc_config[AZ_node] == 0) 
+   if (proc_config[AZ_node] == 0)
       printf("Solve time = %e, MG Setup time = %e\n", solve_time, setup_time);
 
    ML_Aggregate_Destroy(&ag);
@@ -282,9 +282,9 @@ start_time = AZ_second();
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-	
+
   exit(EXIT_SUCCESS);
-	
+
 }
 
 #else

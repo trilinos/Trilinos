@@ -33,8 +33,13 @@
  * 
  */
 
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <inttypes.h>                   // for PRId64
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_err, ex_name_of_object, etc
+#include "exodusII_int.h"               // for EX_FATAL, ex_comp_ws, etc
+#include "netcdf.h"                     // for NC_NOERR, etc
 
 /*
  * reads the values of a single element variable for one element block at 

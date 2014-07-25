@@ -52,8 +52,13 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <inttypes.h>                   // for PRId64
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf, NULL
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for exerrval, ex_err, etc
+#include "exodusII_int.h"               // for EX_FATAL, ex_comp_ws, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_inq_varid, etc
 
 /*!
  * writes the coordinates of some of the nodes in the model

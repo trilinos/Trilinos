@@ -1,7 +1,7 @@
 INCLUDE(AddSubdirectories)
 
 # for TpetraTestingUtilities.hpp
-INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR})
 
 ADD_SUBDIRECTORIES(
   Platform
@@ -19,11 +19,11 @@ ADD_SUBDIRECTORIES(
   BlockCrsGraph
   BlockMap
   BlockMultiVector
-  VbrMatrix
   RowMatrixTransposer
   MatrixMatrix
   TypeStack
   inout
+  PerformanceCGSolve
   )
 
 ADD_SUBDIRECTORY(BugTests)

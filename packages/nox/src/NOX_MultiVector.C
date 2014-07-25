@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -54,19 +54,19 @@ NOX::MultiVector::MultiVector(int numVecs) :
   vecs(numVecs)
 {
   if (numVecs <= 0) {
-    std::cerr << "NOX::MultiVector:  Error!  Multivector" 
-	 << " must have postive number of columns!" << std::endl;
+    std::cerr << "NOX::MultiVector:  Error!  Multivector"
+     << " must have postive number of columns!" << std::endl;
     throw "NOX Error";
   }
 }
 
 NOX::MultiVector::MultiVector(const NOX::Abstract::Vector& v, int numVecs,
-			      NOX::CopyType type) :
+                  NOX::CopyType type) :
   vecs(numVecs)
 {
   if (numVecs <= 0) {
-    std::cerr << "NOX::MultiVector:  Error!  Multivector" 
-	 << " must have postive number of columns!" << std::endl;
+    std::cerr << "NOX::MultiVector:  Error!  Multivector"
+     << " must have postive number of columns!" << std::endl;
     throw "NOX Error";
   }
 
@@ -76,13 +76,13 @@ NOX::MultiVector::MultiVector(const NOX::Abstract::Vector& v, int numVecs,
 }
 
 NOX::MultiVector::MultiVector(const NOX::Abstract::Vector* const* vs,
-			      int numVecs,
-			      NOX::CopyType type) :
+                  int numVecs,
+                  NOX::CopyType type) :
   vecs(numVecs)
 {
   if (numVecs <= 0) {
-    std::cerr << "NOX::MultiVector:  Error!  Multivector" 
-	 << " must have postive number of columns!" << std::endl;
+    std::cerr << "NOX::MultiVector:  Error!  Multivector"
+     << " must have postive number of columns!" << std::endl;
     throw "NOX Error";
   }
 
@@ -92,7 +92,7 @@ NOX::MultiVector::MultiVector(const NOX::Abstract::Vector* const* vs,
 }
 
 NOX::MultiVector::MultiVector(const NOX::MultiVector& source,
-			      NOX::CopyType type) :
+                  NOX::CopyType type) :
   vecs(source.vecs.size())
 {
   for (unsigned int i=0; i<source.vecs.size(); i++) {
@@ -105,7 +105,7 @@ NOX::MultiVector::~MultiVector()
 
 }
 
-NOX::Abstract::MultiVector& 
+NOX::Abstract::MultiVector&
 NOX::MultiVector::init(double gamma)
 {
   for (unsigned int i=0; i<vecs.size(); i++)
@@ -113,7 +113,7 @@ NOX::MultiVector::init(double gamma)
   return *this;
 }
 
-NOX::Abstract::MultiVector& 
+NOX::Abstract::MultiVector&
 NOX::MultiVector::random(bool useSeed, int seed)
 {
   if (vecs.size() > 0)
@@ -123,13 +123,13 @@ NOX::MultiVector::random(bool useSeed, int seed)
   return *this;
 }
 
-NOX::Abstract::MultiVector& 
+NOX::Abstract::MultiVector&
 NOX::MultiVector::operator=(const NOX::Abstract::MultiVector& source)
 {
   return operator=(dynamic_cast<const NOX::MultiVector&>(source));
 }
 
-NOX::Abstract::MultiVector& 
+NOX::Abstract::MultiVector&
 NOX::MultiVector::operator=(const NOX::MultiVector& source)
 {
   if (this != &source) {
@@ -142,15 +142,15 @@ NOX::MultiVector::operator=(const NOX::MultiVector& source)
 }
 
 NOX::Abstract::MultiVector&
-NOX::MultiVector::setBlock(const NOX::Abstract::MultiVector& source, 
-			   const std::vector<int>& index)
+NOX::MultiVector::setBlock(const NOX::Abstract::MultiVector& source,
+               const std::vector<int>& index)
 {
   return setBlock(dynamic_cast<const NOX::MultiVector&>(source), index);
 }
 
 NOX::Abstract::MultiVector&
-NOX::MultiVector::setBlock(const NOX::MultiVector& source, 
-			   const std::vector<int>& index)
+NOX::MultiVector::setBlock(const NOX::MultiVector& source,
+               const std::vector<int>& index)
 {
   int ind;
 
@@ -198,7 +198,7 @@ NOX::MultiVector::operator [] (int i) const
   return *(vecs[i]);
 }
 
-NOX::Abstract::MultiVector& 
+NOX::Abstract::MultiVector&
 NOX::MultiVector::scale(double gamma)
 {
   for (unsigned int i=0; i<vecs.size(); i++)
@@ -206,59 +206,59 @@ NOX::MultiVector::scale(double gamma)
   return *this;
 }
 
-NOX::Abstract::MultiVector& 
-NOX::MultiVector::update(double alpha, const NOX::Abstract::MultiVector& a, 
-			 double gamma)
+NOX::Abstract::MultiVector&
+NOX::MultiVector::update(double alpha, const NOX::Abstract::MultiVector& a,
+             double gamma)
 {
   return update(alpha, dynamic_cast<const NOX::MultiVector&>(a), gamma);
 }
 
-NOX::Abstract::MultiVector& 
-NOX::MultiVector::update(double alpha, const NOX::MultiVector& a, 
-			 double gamma)
+NOX::Abstract::MultiVector&
+NOX::MultiVector::update(double alpha, const NOX::MultiVector& a,
+             double gamma)
 {
   checkSize(a.vecs.size());
-  for (unsigned int i=0; i<vecs.size(); i++) 
+  for (unsigned int i=0; i<vecs.size(); i++)
     vecs[i]->update(alpha, *(a.vecs[i]), gamma);
   return *this;
 }
 
-NOX::Abstract::MultiVector& 
-NOX::MultiVector::update(double alpha, const NOX::Abstract::MultiVector& a, 
-			 double beta, const NOX::Abstract::MultiVector& b,
-			 double gamma)
+NOX::Abstract::MultiVector&
+NOX::MultiVector::update(double alpha, const NOX::Abstract::MultiVector& a,
+             double beta, const NOX::Abstract::MultiVector& b,
+             double gamma)
 {
   return update(alpha, dynamic_cast<const NOX::MultiVector&>(a),
-		beta, dynamic_cast<const NOX::MultiVector&>(b), gamma);
+        beta, dynamic_cast<const NOX::MultiVector&>(b), gamma);
 }
 
-NOX::Abstract::MultiVector& 
-NOX::MultiVector::update(double alpha, const NOX::MultiVector& a, 
-			 double beta, const NOX::MultiVector& b,
-			 double gamma)
+NOX::Abstract::MultiVector&
+NOX::MultiVector::update(double alpha, const NOX::MultiVector& a,
+             double beta, const NOX::MultiVector& b,
+             double gamma)
 {
   checkSize(a.vecs.size());
   checkSize(b.vecs.size());
-  for (unsigned int i=0; i<vecs.size(); i++) 
+  for (unsigned int i=0; i<vecs.size(); i++)
     vecs[i]->update(alpha, *(a.vecs[i]), beta, *(b.vecs[i]), gamma);
   return *this;
 }
 
-NOX::Abstract::MultiVector& 
-NOX::MultiVector::update(Teuchos::ETransp transb, double alpha, 
-			 const NOX::Abstract::MultiVector& a, 
-			 const NOX::Abstract::MultiVector::DenseMatrix& b, 
-			 double gamma)
+NOX::Abstract::MultiVector&
+NOX::MultiVector::update(Teuchos::ETransp transb, double alpha,
+             const NOX::Abstract::MultiVector& a,
+             const NOX::Abstract::MultiVector::DenseMatrix& b,
+             double gamma)
 {
-  return update(transb, alpha, dynamic_cast<const NOX::MultiVector&>(a), b, 
-		gamma);
+  return update(transb, alpha, dynamic_cast<const NOX::MultiVector&>(a), b,
+        gamma);
 }
 
-NOX::Abstract::MultiVector& 
-NOX::MultiVector::update(Teuchos::ETransp transb, double alpha, 
-			 const NOX::MultiVector& a, 
-			 const NOX::Abstract::MultiVector::DenseMatrix& b, 
-			 double gamma)
+NOX::Abstract::MultiVector&
+NOX::MultiVector::update(Teuchos::ETransp transb, double alpha,
+             const NOX::MultiVector& a,
+             const NOX::Abstract::MultiVector::DenseMatrix& b,
+             double gamma)
 {
   if (transb == Teuchos::NO_TRANS) {
     a.checkSize(b.numRows());
@@ -268,7 +268,7 @@ NOX::MultiVector::update(Teuchos::ETransp transb, double alpha,
     a.checkSize(b.numCols());
     checkSize(b.numRows());
   }
-  
+
   int sz_a = a.vecs.size();
   int p = sz_a / 2;
   int q = sz_a - 2*p;
@@ -277,58 +277,58 @@ NOX::MultiVector::update(Teuchos::ETransp transb, double alpha,
     for (unsigned int i=0; i<vecs.size(); i++) {
 
       if (p == 0)
-	vecs[i]->update(alpha*b(0,i), *(a.vecs[0]), gamma);
+    vecs[i]->update(alpha*b(0,i), *(a.vecs[0]), gamma);
       else {
-	vecs[i]->update(alpha*b(0,i), *(a.vecs[0]), 
-			alpha*b(1,i), *(a.vecs[1]), gamma);
-	
-	for (int j=1; j<p; j++) 
-	  vecs[i]->update(alpha*b(2*j,i), *(a.vecs[2*j]), 
-			  alpha*b(2*j+1,i), *(a.vecs[2*j+1]), 1.0);
-	
-	if (q > 0)
-	  vecs[i]->update(alpha*b(sz_a-1,i), *(a.vecs[sz_a-1]), 1.0);
+    vecs[i]->update(alpha*b(0,i), *(a.vecs[0]),
+            alpha*b(1,i), *(a.vecs[1]), gamma);
+
+    for (int j=1; j<p; j++)
+      vecs[i]->update(alpha*b(2*j,i), *(a.vecs[2*j]),
+              alpha*b(2*j+1,i), *(a.vecs[2*j+1]), 1.0);
+
+    if (q > 0)
+      vecs[i]->update(alpha*b(sz_a-1,i), *(a.vecs[sz_a-1]), 1.0);
       }
-      
+
     }
 
   }
   else {
-    
+
     for (unsigned int i=0; i<vecs.size(); i++) {
 
       if (p == 0)
-	vecs[i]->update(alpha*b(i,0), *(a.vecs[0]), gamma);
+    vecs[i]->update(alpha*b(i,0), *(a.vecs[0]), gamma);
       else {
-	vecs[i]->update(alpha*b(i,0), *(a.vecs[0]), 
-			alpha*b(i,1), *(a.vecs[1]), gamma);
-	
-	for (int j=1; j<p; j++) 
-	  vecs[i]->update(alpha*b(i,2*j), *(a.vecs[2*j]), 
-			  alpha*b(i,2*j+1), *(a.vecs[2*j+1]), 1.0);
-	
-	if (q > 0)
-	  vecs[i]->update(alpha*b(i,sz_a-1), *(a.vecs[sz_a-1]), 1.0);
+    vecs[i]->update(alpha*b(i,0), *(a.vecs[0]),
+            alpha*b(i,1), *(a.vecs[1]), gamma);
+
+    for (int j=1; j<p; j++)
+      vecs[i]->update(alpha*b(i,2*j), *(a.vecs[2*j]),
+              alpha*b(i,2*j+1), *(a.vecs[2*j+1]), 1.0);
+
+    if (q > 0)
+      vecs[i]->update(alpha*b(i,sz_a-1), *(a.vecs[sz_a-1]), 1.0);
       }
-      
+
     }
 
   }
   return *this;
 }
 
-Teuchos::RCP<NOX::Abstract::MultiVector> 
+Teuchos::RCP<NOX::Abstract::MultiVector>
 NOX::MultiVector::clone(NOX::CopyType type) const
 {
-  Teuchos::RCP<NOX::Abstract::MultiVector> tmp = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> tmp =
     Teuchos::rcp(new NOX::MultiVector(*this, type));
   return tmp;
 }
 
-Teuchos::RCP<NOX::Abstract::MultiVector> 
+Teuchos::RCP<NOX::Abstract::MultiVector>
 NOX::MultiVector::clone(int numvecs) const
 {
-  Teuchos::RCP<NOX::MultiVector> tmp = 
+  Teuchos::RCP<NOX::MultiVector> tmp =
     Teuchos::rcp(new NOX::MultiVector(numvecs));
   for (int i=0; i<numvecs; i++) {
     tmp->vecs[i] = vecs[0]->clone(NOX::ShapeCopy);
@@ -339,7 +339,7 @@ NOX::MultiVector::clone(int numvecs) const
 Teuchos::RCP<NOX::Abstract::MultiVector>
 NOX::MultiVector::subCopy(const std::vector<int>& index) const
 {
-  Teuchos::RCP<NOX::MultiVector> tmp = 
+  Teuchos::RCP<NOX::MultiVector> tmp =
     Teuchos::rcp(new NOX::MultiVector(index.size()));
   int ind;
   for (unsigned int i=0; i<index.size(); i++) {
@@ -350,10 +350,10 @@ NOX::MultiVector::subCopy(const std::vector<int>& index) const
   return tmp;
 }
 
-Teuchos::RCP<NOX::Abstract::MultiVector> 
+Teuchos::RCP<NOX::Abstract::MultiVector>
 NOX::MultiVector::subView(const std::vector<int>& index) const
 {
-  Teuchos::RCP<NOX::MultiVector> tmp = 
+  Teuchos::RCP<NOX::MultiVector> tmp =
     Teuchos::rcp(new NOX::MultiVector(index.size()));
   int ind;
   for (unsigned int i=0; i<index.size(); i++) {
@@ -366,7 +366,7 @@ NOX::MultiVector::subView(const std::vector<int>& index) const
 
 void
 NOX::MultiVector::norm(std::vector<double>& result,
-		       NOX::Abstract::Vector::NormType type) const
+               NOX::Abstract::Vector::NormType type) const
 {
   if (result.size() != vecs.size())
     result.resize(vecs.size());
@@ -375,16 +375,16 @@ NOX::MultiVector::norm(std::vector<double>& result,
     result[i] = vecs[i]->norm(type);
 }
 
-void 
+void
 NOX::MultiVector::multiply(double alpha, const NOX::Abstract::MultiVector& y,
-			   NOX::Abstract::MultiVector::DenseMatrix& b) const
+               NOX::Abstract::MultiVector::DenseMatrix& b) const
 {
   multiply(alpha, dynamic_cast<const NOX::MultiVector&>(y), b);
 }
 
-void 
+void
 NOX::MultiVector::multiply(double alpha, const NOX::MultiVector& y,
-			   NOX::Abstract::MultiVector::DenseMatrix& b) const
+               NOX::Abstract::MultiVector::DenseMatrix& b) const
 {
   for (unsigned int i=0; i<y.vecs.size(); i++) {
     for (unsigned int j=0; j<vecs.size(); j++) {
@@ -393,27 +393,27 @@ NOX::MultiVector::multiply(double alpha, const NOX::MultiVector& y,
   }
 }
 
-int 
+NOX::size_type
 NOX::MultiVector::length() const
 {
   return vecs[0]->length();
 }
 
-int 
+int
 NOX::MultiVector::numVectors() const
 {
   return vecs.size();
 }
 
-void 
+void
 NOX::MultiVector::print(std::ostream& stream) const
 {
   for (unsigned int i=0; i<vecs.size(); i++)
     vecs[i]->print(stream);
 }
 
-void 
-NOX::MultiVector::checkIndex(int idx) const 
+void
+NOX::MultiVector::checkIndex(int idx) const
 {
   if ( idx < 0 || idx >= static_cast<int>(vecs.size()) ) {
     std::cerr << "NOX::MultiVector:  Error!  Invalid index " << idx << std::endl;
@@ -426,7 +426,7 @@ NOX::MultiVector::checkSize(int sz) const
 {
   if (static_cast<int>(vecs.size()) != sz) {
     std::cerr << "NOX::MultiVector:  Error!  Size of supplied multivector is"
-	 << " incompatible with this multivector" << std::endl;
+     << " incompatible with this multivector" << std::endl;
     throw "NOX Error";
   }
 }

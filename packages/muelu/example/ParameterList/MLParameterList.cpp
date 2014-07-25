@@ -209,7 +209,7 @@ int main(int argc, char *argv[]) {
 
     // AMG as a standalone solver
     H->IsPreconditioner(false);
-    H->Iterate(*B, nIts, *X);
+    H->Iterate(*B, *X, nIts);
 
     // Print relative residual norm
     Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = Utils::ResidualNorm(*A, *X, *B)[0];

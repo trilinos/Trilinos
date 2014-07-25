@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -42,8 +42,26 @@
 INCLUDE(SetDefault)
 INCLUDE(PrintVar)
 
-
-MACRO(SET_DEFAULT_AND_FROM_ENV VAR DEFAULT_VAL)
+#
+# @MACRO: SET_DEFAULT_AND_FROM_ENV()
+#
+# Set a default value for a local variable and override from an environment
+# variable of the same name if it is set.
+#
+# Usage::
+#
+#   SET_DEFAULT_AND_FROM_ENV(<varName> <defaultVal>)
+#
+# First calls ``SET_DEFAULT(<varName> <defaultVal>)`` and then looks for an
+# environment variable named ``<varName>``, and if non-empty then overrides
+# the value of the local variable ``<varName>``.
+#
+# This macro is primarily used in CTest code to provide a way to pass in the
+# value of CMake variables.  Older versions of ``ctest`` did not support the
+# option ``-D <var>:<type>=<value>`` to allow variables to be set through the
+# command-line like ``cmake`` always allowed.
+#
+MACRO(SET_DEFAULT_AND_FROM_ENV  VAR  DEFAULT_VAL)
 
   SET_DEFAULT(${VAR} "${DEFAULT_VAL}")
   

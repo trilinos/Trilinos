@@ -61,7 +61,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
@@ -221,7 +221,7 @@ private:
     A.getLocalDiagCopy (*D);
 
     typedef KokkosClassic::MultiVector<ST, typename MAT::node_type> KMV;
-    KMV& localDiag = D->getLocalMVNonConst ();
+    KMV localDiag = D->getLocalMV ();
     typedef KokkosClassic::DefaultArithmetic<KMV> KMVT;
     KMVT::ReciprocalThreshold (localDiag, STS::eps ());
 

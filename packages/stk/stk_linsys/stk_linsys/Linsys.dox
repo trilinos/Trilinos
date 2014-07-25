@@ -1,8 +1,0 @@
-
-namespace stk {
-namespace linsys {
-}//namespace linsys
-}//namespace stk
-
-/** \defgroup stk_linsys_module Sierra Toolkit Linear-System Assembly
- */

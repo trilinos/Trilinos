@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,7 +44,7 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                                
+
 // ----------   Includes   ----------
 #include "Problem_Interface.H"
 #include "DennisSchnabel.H"
@@ -57,14 +57,14 @@ Problem_Interface::Problem_Interface(DennisSchnabel& Problem) :
 Problem_Interface::~Problem_Interface()
 { }
 
-bool Problem_Interface::computeF(const Epetra_Vector& x, Epetra_Vector& FVec, 
+bool Problem_Interface::computeF(const Epetra_Vector& x, Epetra_Vector& FVec,
                      NOX::Epetra::Interface::Required::FillType fillType)
 {
   return problem.evaluate(fillType, &x, &FVec);
 }
 
 bool Problem_Interface::computeJacobian(const Epetra_Vector& x,
-					Epetra_Operator& Jac)
+                    Epetra_Operator& Jac)
 {
   return problem.evaluate(NOX::Epetra::Interface::Required::Jac, &x, NULL);
 }

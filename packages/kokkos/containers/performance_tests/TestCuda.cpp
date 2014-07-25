@@ -68,10 +68,22 @@ protected:
 };
 
 extern void cuda_test_global_to_local_ids();
+extern void cuda_unordered_map_performance_near();
+extern void cuda_unordered_map_performance_far();
 
 TEST_F( cuda, global_2_local)
 {
   cuda_test_global_to_local_ids();
+}
+
+TEST_F( cuda, unordered_map_performance_near)
+{
+  cuda_unordered_map_performance_near();
+}
+
+TEST_F( cuda, unordered_map_performance_far)
+{
+  cuda_unordered_map_performance_far();
 }
 
 }

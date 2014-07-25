@@ -131,7 +131,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, nonsymExample)
   RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
   CoupledAggFact->SetMinNodesPerAggregate(3);
   CoupledAggFact->SetMaxNeighAlreadySelected(0);
-  CoupledAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+  CoupledAggFact->SetOrdering("natural");
   CoupledAggFact->SetPhase3AggCreation(0.5);
 
   RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());
@@ -248,7 +248,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, nonsymExample)
   {
     X->putScalar( (SC) 0.0);
 
-    H->Iterate(*RHS,its,*X);
+    H->Iterate(*RHS,*X,its);
 
     X->norm2(norms);
     if (comm->getRank() == 0)
@@ -258,26 +258,9 @@ TEUCHOS_UNIT_TEST(PgPFactory, nonsymExample)
 } //EpetraVsTpetra
 
 
+#if 0
 TEUCHOS_UNIT_TEST(PgPFactory, NonStandardMaps)
 {
-
-  //JG: This test is failing. Last known good version: 6ad0eeba
-  // mpirun -n 2 ./MueLu_UnitTests.exe --linAlgebra=Epetra --test=NonStandardMaps --group=PgPFactory
-  /*
-    Level 2
-    [...]
-    Setup Smoother (MueLu::AmesosSmoother{type = Klu})
-
-    p=0: *** Caught an integer std::exception with value = 1
-    [FAILED]  (0.106 sec) PgPFactory_NonStandardMaps_UnitTest
-    Location: /home/jngaida/dev/MueLu/src/preCopyrightTrilinos/muelu/test/unit_tests/PgPFactory.cpp:216
-  */
-
-#ifdef __GNUC__
-#warning Unit test PgPFactory NonStandardMaps disabled
-#endif
-  return;
-
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
 
@@ -367,7 +350,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, NonStandardMaps)
   RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
   CoupledAggFact->SetMinNodesPerAggregate(3);
   CoupledAggFact->SetMaxNeighAlreadySelected(0);
-  CoupledAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+  CoupledAggFact->SetOrdering("natural");
   CoupledAggFact->SetPhase3AggCreation(0.5);
 
   RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());
@@ -451,6 +434,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, NonStandardMaps)
   TEST_EQUALITY(coarseLevel2->GetKeepFlag("R",Rfact.get()), 0);
 
 }
+#endif
 
 TEUCHOS_UNIT_TEST(PgPFactory, MinimizationModes)
 {
@@ -512,7 +496,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, ColumnBasedOmegas)
   RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
   CoupledAggFact->SetMinNodesPerAggregate(3);
   CoupledAggFact->SetMaxNeighAlreadySelected(0);
-  CoupledAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+  CoupledAggFact->SetOrdering("natural");
   CoupledAggFact->SetPhase3AggCreation(0.5);
 
   RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory(CoupledAggFact));
@@ -567,7 +551,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, ColumnBasedOmegas)
   {
     X->putScalar( (SC) 0.0);
 
-    H->Iterate(*RHS,its,*X);
+    H->Iterate(*RHS,*X,its);
 
     X->norm2(norms);
     if (comm->getRank() == 0)
@@ -672,7 +656,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, ReUseOmegas)
   RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
   CoupledAggFact->SetMinNodesPerAggregate(3);
   CoupledAggFact->SetMaxNeighAlreadySelected(0);
-  CoupledAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+  CoupledAggFact->SetOrdering("natural");
   CoupledAggFact->SetPhase3AggCreation(0.5);
 
   RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());
@@ -733,7 +717,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, ReUseOmegas)
   {
     X->putScalar( (SC) 0.0);
 
-    H->Iterate(*RHS,its,*X);
+    H->Iterate(*RHS,*X,its);
 
     X->norm2(norms);
     if (comm->getRank() == 0)
@@ -840,7 +824,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, ReUseOmegasTransP)
   RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
   CoupledAggFact->SetMinNodesPerAggregate(3);
   CoupledAggFact->SetMaxNeighAlreadySelected(0);
-  CoupledAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+  CoupledAggFact->SetOrdering("natural");
   CoupledAggFact->SetPhase3AggCreation(0.5);
 
   RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());
@@ -901,7 +885,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, ReUseOmegasTransP)
   {
     X->putScalar( (SC) 0.0);
 
-    H->Iterate(*RHS,its,*X);
+    H->Iterate(*RHS,*X,its);
 
     X->norm2(norms);
     if (comm->getRank() == 0)
@@ -1021,7 +1005,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, EpetraVsTpetra)
       RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
       CoupledAggFact->SetMinNodesPerAggregate(3);
       CoupledAggFact->SetMaxNeighAlreadySelected(0);
-      CoupledAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+      CoupledAggFact->SetOrdering("natural");
       CoupledAggFact->SetPhase3AggCreation(0.5);
 
       RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());
@@ -1141,7 +1125,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, EpetraVsTpetra)
       {
         X->putScalar( (SC) 0.0);
 
-        H->Iterate(*RHS,its,*X);
+        H->Iterate(*RHS,*X,its);
 
         X->norm2(norms);
         if (comm->getRank() == 0)

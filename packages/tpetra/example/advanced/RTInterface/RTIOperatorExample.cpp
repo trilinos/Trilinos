@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
@@ -68,7 +68,7 @@ namespace TpetraExamples {
 
   //! Class to demonstrate a simple, finite-different type tridiagonal stencil.
   template <class S>
-  class FDStencil : public Tpetra::RTI::detail::StdOpKernel<S> 
+  class FDStencil : public Tpetra::RTI::detail::StdOpKernel<S>
   {
     protected:
       int _myImageID, _numImages;
@@ -77,7 +77,7 @@ namespace TpetraExamples {
     public:
       FDStencil(int myImageID, int numImages, int n, const S &sub, const S &diag, const S &super) : _myImageID(myImageID), _numImages(numImages), _n(n), _sub(sub), _diag(diag), _super(super) {}
       inline void execute(int i) const
-      { 
+      {
         S res = _diag * this->_vec_in2[i];
         if (i >  0 || _myImageID != 0           ) res +=   _sub * this->_vec_in2[i-1];
         if (i < _n || _myImageID != _numImages-1) res += _super * this->_vec_in2[i+1];
@@ -94,18 +94,27 @@ namespace TpetraExamples {
   template <class S>
   class ScaleKernel : public Tpetra::RTI::detail::StdOpKernel<S>
   {
-    protected:
-      S _gamma;
-    public:
-      ScaleKernel(const S & gamma) : _gamma(gamma) {}
-      inline void execute(int i) { 
-        if (this->_alpha == Teuchos::ScalarTraits<S>::one() && this->_beta == Teuchos::ScalarTraits<S>::zero()) {
-          this->_vec_inout[i] = _gamma * this->_vec_in2[i];
-        }
-        else {
-          this->_vec_inout[i] = this->_alpha * _gamma * this->_vec_in2[i] + this->_beta * this->_vec_inout[i];
-        }
+  protected:
+    S _gamma;
+    const S zero_; // Teuchos::ScalarTraits::{zero,one} are not device...
+    const S one_;  // ...functions, so we construct zero and one on the host.
+
+  public:
+    ScaleKernel (const S & gamma) :
+      _gamma (gamma),
+      zero_ (Teuchos::ScalarTraits<S>::zero ()),
+      one_ (Teuchos::ScalarTraits<S>::one ())
+    {}
+
+    inline void execute (const int i) const {
+      if (this->_alpha == one_ && this->_beta == zero_) {
+        this->_vec_inout[i] = _gamma * this->_vec_in2[i];
       }
+      else {
+        this->_vec_inout[i] = this->_alpha * _gamma * this->_vec_in2[i] +
+          this->_beta * this->_vec_inout[i];
+      }
+    }
   };
 
 }
@@ -119,7 +128,7 @@ int main(int argc, char *argv[])
   using TpetraExamples::FDStencil;
   using TpetraExamples::ScaleKernel;
 
-  // 
+  //
   // Get the default communicator and node
   //
   auto &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
@@ -130,7 +139,7 @@ int main(int argc, char *argv[])
 
   //
   // Get example parameters from command-line processor
-  //  
+  //
   bool verbose = (myImageID==0);
   int numGlobal_user = 100*comm->getSize();
   int numTimeTrials = 3;
@@ -142,7 +151,7 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-  // 
+  //
   // Say hello, print some communicator info
   //
   if (verbose) {
@@ -152,9 +161,9 @@ int main(int argc, char *argv[])
     std::cout << std::endl;
   }
 
-  // 
+  //
   // Create a simple map for domain and range
-  // 
+  //
   Tpetra::global_size_t numGlobalRows = numGlobal_user;
   auto map = Tpetra::createUniformContigMapWithNode<int,int>(numGlobalRows, comm, node);
   // const size_t numLocalRows = map->getNodeNumElements();
@@ -162,7 +171,7 @@ int main(int argc, char *argv[])
        y = Tpetra::createVector<double>(map);
 
   // Create a simple diagonal operator using lambda function
-  auto fTwoOp = Tpetra::RTI::binaryOp<double>( [](double /*y*/, double x) { return 2.0 * x; } , map );
+  auto fTwoOp = Tpetra::RTI::binaryOp<double>( [](double /*y*/, double xx) { return 2.0 * xx; } , map );
   // y = 3*fTwoOp*x + 2*y = 3*2*1 + 2*1 = 8
   x->putScalar(1.0);
   y->putScalar(1.0);
@@ -171,7 +180,7 @@ int main(int argc, char *argv[])
   double norm = y->norm1();
   if (verbose) {
     std::cout << "Tpetra::RTI::binaryOp" << std::endl
-              << "norm(y) result == " << std::setprecision(2) << std::scientific << norm 
+              << "norm(y) result == " << std::setprecision(2) << std::scientific << norm
               << ", expected value is " << numGlobalRows * 8.0 << std::endl;
   }
 
@@ -183,7 +192,7 @@ int main(int argc, char *argv[])
   norm = y->norm1();
   if (verbose) {
     std::cout << "Tpetra::RTI::kernelOp" << std::endl
-              << "norm(y) result == " << std::setprecision(2) << std::scientific << norm 
+              << "norm(y) result == " << std::setprecision(2) << std::scientific << norm
               << ", expected value is " << numGlobalRows * 7.0 << std::endl;
   }
 
@@ -219,14 +228,14 @@ int main(int argc, char *argv[])
   if (verbose) {
     std::cout << std::endl
               << "TpetraExamples::FDStencil" << std::endl
-              << "norm(y) result == " << std::setprecision(2) << std::scientific << norm 
+              << "norm(y) result == " << std::setprecision(2) << std::scientific << norm
               << ", expected value is " << 2.0 << std::endl;
   }
 
   //
   // Create a finite-difference stencil using a CrsMatrix
-  // 
-  auto FDMatrix = Tpetra::createCrsMatrix<double>(map);  
+  //
+  auto FDMatrix = Tpetra::createCrsMatrix<double>(map);
   for (int r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
     if (r == map->getMinAllGlobalIndex()) {
       FDMatrix->insertGlobalValues(r, Teuchos::tuple<int>(r,r+1), Teuchos::tuple<double>(2.0,-1.0));

@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -58,7 +58,7 @@
 #include "LOCA_StepSize_Adaptive.H"
 
 LOCA::StepSize::Factory::Factory(
-	        const Teuchos::RCP<LOCA::GlobalData>& global_data) : 
+            const Teuchos::RCP<LOCA::GlobalData>& global_data) :
   globalData(global_data)
 {
 }
@@ -79,42 +79,42 @@ LOCA::StepSize::Factory::create(
   const std::string& name = strategyName(*stepsizeParams);
 
   if (name == "Constant")
-    strategy = 
+    strategy =
       Teuchos::rcp(new LOCA::StepSize::Constant(globalData,
-						topParams,
-						stepsizeParams));
+                        topParams,
+                        stepsizeParams));
   else if (name == "Adaptive")
-    strategy = 
+    strategy =
       Teuchos::rcp(new LOCA::StepSize::Adaptive(globalData,
-						topParams,
-						stepsizeParams));
+                        topParams,
+                        stepsizeParams));
   else if (name == "User-Defined") {
 
     // Get name of user-defined strategy
     std::string userDefinedName = stepsizeParams->get("User-Defined Name",
-							  "???");
+                              "???");
     if ((*stepsizeParams).INVALID_TEMPLATE_QUALIFIER
-	isType< Teuchos::RCP<LOCA::StepSize::AbstractStrategy> >(userDefinedName))
+    isType< Teuchos::RCP<LOCA::StepSize::AbstractStrategy> >(userDefinedName))
       strategy = (*stepsizeParams).INVALID_TEMPLATE_QUALIFIER
-	get< Teuchos::RCP<LOCA::StepSize::AbstractStrategy> >(userDefinedName);
+    get< Teuchos::RCP<LOCA::StepSize::AbstractStrategy> >(userDefinedName);
     else
        globalData->locaErrorCheck->throwError(
-				       methodName,
-				       "Cannot find user-defined strategy: " + 
-				       userDefinedName);
+                       methodName,
+                       "Cannot find user-defined strategy: " +
+                       userDefinedName);
   }
   else
     globalData->locaErrorCheck->throwError(
-				      methodName,
-				      "Invalid step size control strategy: " + 
-				      name);
+                      methodName,
+                      "Invalid step size control strategy: " +
+                      name);
 
   return strategy;
 }
 
 const std::string&
 LOCA::StepSize::Factory::strategyName(
-				  Teuchos::ParameterList& stepsizeParams) const
+                  Teuchos::ParameterList& stepsizeParams) const
 {
   return stepsizeParams.get("Method", "Adaptive");
 }

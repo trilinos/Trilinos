@@ -45,6 +45,27 @@
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 
+// slowLoop does not reliably make a timer nonzero (RHEL6, gcc 4.4.7, OpenMPI 1.5.4).
+// Thus, I'm introducing headers to make sleep() available.
+#ifndef ICL
+#include <unistd.h>
+#else
+void sleep(int sec)
+{
+  Sleep(sec);
+}
+#endif
+
+#ifdef _MSC_VER
+#pragma comment(lib, "Ws2_32.lib")
+# include <Winsock2.h>
+# include <process.h>
+void sleep(int sec)
+{
+  Sleep(sec * 1000);
+}
+#endif
+
 namespace {
 
   void func_time_monitor1()
@@ -924,5 +945,116 @@ namespace Teuchos {
     TimeMonitor::clearCounters ();
   }
 
+  //
+  // Test option to disregard missing timers from processes in TimeMonitor::summarize().
+  //
+  TEUCHOS_UNIT_TEST( TimeMonitor, IgnoreMissingTimers )
+  {
+    RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm ();
+    const int myRank = comm->getRank ();
+
+#ifdef HAVE_MPI
+    {
+      int mpiHasBeenInitialized = 0;
+      MPI_Initialized (&mpiHasBeenInitialized);
+      if (! mpiHasBeenInitialized) {
+        comm = Teuchos::DefaultComm<int>::getDefaultSerialComm (null);
+      }
+    }
+#endif // HAVE_MPI
+
+    // Store the output of TimeMonitor::summarize() here.
+    std::ostringstream oss;
+
+    std::string timerName="Timer Z";
+    // Timer Z appears on all PIDs except 0.
+    {
+      switch (myRank) {
+        case 1 :
+          break;
+        case 0 :
+          {
+          RCP<Time> timer = TimeMonitor::getNewCounter (timerName);
+          TimeMonitor monitor (*timer);
+          sleep(1);
+          }
+          break;
+        case 2 :
+          {
+          RCP<Time> timer = TimeMonitor::getNewCounter (timerName);
+          TimeMonitor monitor (*timer);
+          sleep(1);
+          }
+          break;
+        default :
+          {
+          RCP<Time> timer = TimeMonitor::getNewCounter (timerName);
+          TimeMonitor monitor (*timer);
+          sleep(1);
+          }
+    }
+    }
+
+    //////////////////////////////////////////////////////////////
+    // test two versions of summarize with default behavior
+    //////////////////////////////////////////////////////////////
+
+    //version 1, comm provided
+    const bool alwaysWriteLocal = false;
+    const bool writeGlobalStats = true;
+    const bool writeZeroTimers = false;
+    bool ignoreMissingTimers = false;        // the default
+    std::string filter = "";
+    TimeMonitor::summarize (comm.ptr(), oss, alwaysWriteLocal, writeGlobalStats,
+                            writeZeroTimers, Union, filter, ignoreMissingTimers);
+
+    // Echo summarize() output to the FancyOStream out (which is a
+    // standard unit test argument).  Output should only appear in
+    // show-all-test-details mode.
+    out << oss.str() << std::endl;
+
+    if (comm->getSize() > 1) {
+      // The min should be 0
+      size_t substr_i = oss.str().find ("0 (0)");
+      TEST_INEQUALITY(substr_i, std::string::npos);
+    }
+
+    //version 2, no comm provided
+    std::ostringstream oss2;
+    TimeMonitor::summarize (oss2, alwaysWriteLocal, writeGlobalStats,
+                            writeZeroTimers, Union, filter, ignoreMissingTimers);
+    out << oss2.str() << std::endl;
+    if (comm->getSize() > 1) {
+      // The min should be 0
+      size_t substr_i = oss2.str().find ("0 (0)");
+      TEST_INEQUALITY(substr_i, std::string::npos);
+    }
+
+    //////////////////////////////////////////////////////////////
+    // test two versions of summarize with *non* default behavior
+    //////////////////////////////////////////////////////////////
+    //version 1, comm provided
+    ignoreMissingTimers = true;              // NOT the default
+    std::ostringstream oss3;
+    TimeMonitor::summarize (comm.ptr(), oss3, alwaysWriteLocal, writeGlobalStats,
+                            writeZeroTimers, Union, filter, ignoreMissingTimers);
+    out << oss3.str() << std::endl;
+
+    // The min should be different from 0
+    size_t substr_i = oss3.str().find ("0 (0)");
+    TEST_EQUALITY(substr_i, std::string::npos);
+
+    //version 2, no comm provided
+    std::ostringstream oss4;
+    TimeMonitor::summarize (oss4, alwaysWriteLocal, writeGlobalStats,
+                            writeZeroTimers, Union, filter, ignoreMissingTimers);
+    out << oss4.str() << std::endl;
+    // The min should be different from 0
+    substr_i = oss4.str().find ("0 (0)");
+    TEST_EQUALITY(substr_i, std::string::npos);
+
+    // This sets up for the next unit test (if there is one).
+    TimeMonitor::clearCounters ();
+  }
 
 } // namespace Teuchos

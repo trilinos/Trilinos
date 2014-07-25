@@ -1,35 +1,33 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Sacado Package
 //                 Copyright (2006) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 // (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 //
 // The forward-mode AD classes in Sacado are a derivative work of the
-// expression template classes in the Fad package by Nicolas Di Cesare.  
+// expression template classes in the Fad package by Nicolas Di Cesare.
 // The following banner is included in the original Fad source code:
 //
 // ************ DO NOT REMOVE THIS BANNER ****************
@@ -37,13 +35,13 @@
 //  Nicolas Di Cesare <Nicolas.Dicesare@ann.jussieu.fr>
 //  http://www.ann.jussieu.fr/~dicesare
 //
-//            CEMRACS 98 : C++ courses, 
-//         templates : new C++ techniques 
-//            for scientific computing 
-// 
+//            CEMRACS 98 : C++ courses,
+//         templates : new C++ techniques
+//            for scientific computing
+//
 //********************************************************
 //
-//  A short implementation ( not all operators and 
+//  A short implementation ( not all operators and
 //  functions are overloaded ) of 1st order Automatic
 //  Differentiation in forward mode (FAD) using
 //  EXPRESSION TEMPLATES.
@@ -55,63 +53,20 @@
 #include "Sacado_mpl_range_c.hpp"
 #include "Sacado_mpl_for_each.hpp"
 
-// template <typename T, typename Storage> 
-// template <typename S> 
-// inline Sacado::ELRCacheFad::GeneralFad<T,Storage>::GeneralFad(const Expr<S>& x) :
-//   Storage(T(0.))
-// {
-//   int sz = x.size();
-
-//   if (sz != this->size()) 
-//     this->resize(sz);
-
-//   if (sz) {
-
-//     // Number of arguments
-//     const int N = Expr<S>::num_args;
-
-//     // Array to store partials
-//     T partials[N];
-
-//     // Array to store tangents
-//     T dots[N];
-
-//     // Compute partials
-//     x.computePartials(T(1.), partials);
-  
-//     // Compute each tangent direction
-//     for(int i=0; i<sz; ++i) {
-//       T t = T(0.);
-//       x.getTangents(i,dots);
-//       for (int j=0; j<N; j++) {
-// 	t += partials[j]*dots[j];
-//       }
-//       this->fastAccessDx(i) = t;
-//     }
-
-//   }
-  
-//   // Compute value
-//   this->val() = x.val();
-// }
-
-template <typename T, typename Storage> 
-template <typename S> 
+template <typename T, typename Storage>
+template <typename S>
 inline Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 GeneralFad(const Expr<S>& x) :
-  Storage(T(0.)),
+  Storage(x.size(), T(0.)),
   update_val_(x.updateValue())
 {
   x.cache();
 
-  int sz = x.size();
+  const int sz = x.size();
 
   // Compute value
   if (update_val_)
     this->val() = x.val();
-
-  if (sz != this->size()) 
-    this->resize(sz);
 
   if (sz) {
 
@@ -129,48 +84,48 @@ GeneralFad(const Expr<S>& x) :
       const int N = Expr<S>::num_args;
 
       if (x.hasFastAccess()) {
-	// Compute partials
-	FastLocalAccumOp< Expr<S> > op(x);
-  
-	// Compute each tangent direction
-	for(op.i=0; op.i<sz; ++op.i) {
-	  op.t = T(0.);
+        // Compute partials
+        FastLocalAccumOp< Expr<S> > op(x);
 
-	  // Automatically unrolled loop that computes
-	  // for (int j=0; j<N; j++)
-	  //   op.t += op.partials[j] * x.getTangent<j>(i);
-	  Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
-	  
-	  this->fastAccessDx(op.i) = op.t;
-	}
+        // Compute each tangent direction
+        for(op.i=0; op.i<sz; ++op.i) {
+          op.t = T(0.);
+
+          // Automatically unrolled loop that computes
+          // for (int j=0; j<N; j++)
+          //   op.t += op.partials[j] * x.getTangent<j>(i);
+          Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+
+          this->fastAccessDx(op.i) = op.t;
+        }
       }
       else {
-	// Compute partials
-	SlowLocalAccumOp< Expr<S> > op(x);
-  
-	// Compute each tangent direction
-	for(op.i=0; op.i<sz; ++op.i) {
-	  op.t = T(0.);
+        // Compute partials
+        SlowLocalAccumOp< Expr<S> > op(x);
 
-	  // Automatically unrolled loop that computes
-	  // for (int j=0; j<N; j++)
-	  //   op.t += op.partials[j] * x.getTangent<j>(i);
-	  Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
-	  
-	  this->fastAccessDx(op.i) = op.t;
-	}
+        // Compute each tangent direction
+        for(op.i=0; op.i<sz; ++op.i) {
+          op.t = T(0.);
+
+          // Automatically unrolled loop that computes
+          // for (int j=0; j<N; j++)
+          //   op.t += op.partials[j] * x.getTangent<j>(i);
+          Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+
+          this->fastAccessDx(op.i) = op.t;
+        }
       }
 
     }
   }
 }
 
-template <typename T, typename Storage> 
-inline void 
+template <typename T, typename Storage>
+inline void
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
-diff(const int ith, const int n) 
-{ 
-  if (this->size() != n) 
+diff(const int ith, const int n)
+{
+  if (this->size() != n)
     this->resize(n);
 
   this->zero();
@@ -178,45 +133,43 @@ diff(const int ith, const int n)
 
 }
 
-template <typename T, typename Storage> 
-inline Sacado::ELRCacheFad::GeneralFad<T,Storage>& 
+template <typename T, typename Storage>
+inline Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
-operator=(const T& v) 
+operator=(const T& v)
 {
   this->val() = v;
 
-  if (this->size()) {
-    this->zero();    // We need to zero out the array for future resizes
+  if (this->size())
     this->resize(0);
-  }
 
   return *this;
 }
 
-template <typename T, typename Storage> 
-inline Sacado::ELRCacheFad::GeneralFad<T,Storage>& 
+template <typename T, typename Storage>
+inline Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
-operator=(const Sacado::ELRCacheFad::GeneralFad<T,Storage>& x) 
+operator=(const Sacado::ELRCacheFad::GeneralFad<T,Storage>& x)
 {
   // Copy value & dx_
   Storage::operator=(x);
   update_val_ = x.update_val_;
-  
+
   return *this;
 }
 
-template <typename T, typename Storage> 
-template <typename S> 
-inline Sacado::ELRCacheFad::GeneralFad<T,Storage>& 
+template <typename T, typename Storage>
+template <typename S>
+inline Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
-operator=(const Expr<S>& x) 
+operator=(const Expr<S>& x)
 {
   x.cache();
 
-  int sz = x.size();
+  const int sz = x.size();
 
-  if (sz != this->size()) 
-    this->resize(sz);
+  if (sz != this->size())
+    this->resizeAndZero(sz);
 
   if (sz) {
 
@@ -234,51 +187,51 @@ operator=(const Expr<S>& x)
       const int N = Expr<S>::num_args;
 
       if (x.hasFastAccess()) {
-	// Compute partials
-	FastLocalAccumOp< Expr<S> > op(x);
-  
-	// Compute each tangent direction
-	for(op.i=0; op.i<sz; ++op.i) {
-	  op.t = T(0.);
+        // Compute partials
+        FastLocalAccumOp< Expr<S> > op(x);
 
-	  // Automatically unrolled loop that computes
-	  // for (int j=0; j<N; j++)
-	  //   op.t += op.partials[j] * x.getTangent<j>(i);
-	  Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
-	  
-	  this->fastAccessDx(op.i) = op.t;
-	}
+        // Compute each tangent direction
+        for(op.i=0; op.i<sz; ++op.i) {
+          op.t = T(0.);
+
+          // Automatically unrolled loop that computes
+          // for (int j=0; j<N; j++)
+          //   op.t += op.partials[j] * x.getTangent<j>(i);
+          Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+
+          this->fastAccessDx(op.i) = op.t;
+        }
       }
       else {
-	// Compute partials
-	SlowLocalAccumOp< Expr<S> > op(x);
-  
-	// Compute each tangent direction
-	for(op.i=0; op.i<sz; ++op.i) {
-	  op.t = T(0.);
+        // Compute partials
+        SlowLocalAccumOp< Expr<S> > op(x);
 
-	  // Automatically unrolled loop that computes
-	  // for (int j=0; j<N; j++)
-	  //   op.t += op.partials[j] * x.getTangent<j>(i);
-	  Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
-	  
-	  this->fastAccessDx(op.i) = op.t;
-	}
+        // Compute each tangent direction
+        for(op.i=0; op.i<sz; ++op.i) {
+          op.t = T(0.);
+
+          // Automatically unrolled loop that computes
+          // for (int j=0; j<N; j++)
+          //   op.t += op.partials[j] * x.getTangent<j>(i);
+          Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+
+          this->fastAccessDx(op.i) = op.t;
+        }
       }
 
     }
 
   }
-  
+
   update_val_ = x.updateValue();
   if (update_val_)
     this->val() = x.val();
-  
+
   return *this;
 }
 
-template <typename T, typename Storage> 
-inline  Sacado::ELRCacheFad::GeneralFad<T,Storage>& 
+template <typename T, typename Storage>
+inline  Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator += (const T& v)
 {
@@ -288,8 +241,8 @@ operator += (const T& v)
   return *this;
 }
 
-template <typename T, typename Storage> 
-inline Sacado::ELRCacheFad::GeneralFad<T,Storage>& 
+template <typename T, typename Storage>
+inline Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator -= (const T& v)
 {
@@ -299,12 +252,12 @@ operator -= (const T& v)
   return *this;
 }
 
-template <typename T, typename Storage> 
-inline Sacado::ELRCacheFad::GeneralFad<T,Storage>& 
+template <typename T, typename Storage>
+inline Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator *= (const T& v)
 {
-  int sz = this->size();
+  const int sz = this->size();
 
   if (update_val_)
     this->val() *= v;
@@ -314,12 +267,12 @@ operator *= (const T& v)
   return *this;
 }
 
-template <typename T, typename Storage> 
-inline Sacado::ELRCacheFad::GeneralFad<T,Storage>& 
+template <typename T, typename Storage>
+inline Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator /= (const T& v)
 {
-  int sz = this->size();
+  const int sz = this->size();
 
   if (update_val_)
     this->val() /= v;
@@ -329,8 +282,8 @@ operator /= (const T& v)
   return *this;
 }
 
-template <typename T, typename Storage> 
-inline  Sacado::ELRCacheFad::GeneralFad<T,Storage>& 
+template <typename T, typename Storage>
+inline  Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator += (const typename Sacado::dummy<value_type,scalar_type>::type& v)
 {
@@ -340,8 +293,8 @@ operator += (const typename Sacado::dummy<value_type,scalar_type>::type& v)
   return *this;
 }
 
-template <typename T, typename Storage> 
-inline Sacado::ELRCacheFad::GeneralFad<T,Storage>& 
+template <typename T, typename Storage>
+inline Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator -= (const typename Sacado::dummy<value_type,scalar_type>::type& v)
 {
@@ -351,12 +304,12 @@ operator -= (const typename Sacado::dummy<value_type,scalar_type>::type& v)
   return *this;
 }
 
-template <typename T, typename Storage> 
-inline Sacado::ELRCacheFad::GeneralFad<T,Storage>& 
+template <typename T, typename Storage>
+inline Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator *= (const typename Sacado::dummy<value_type,scalar_type>::type& v)
 {
-  int sz = this->size();
+  const int sz = this->size();
 
   if (update_val_)
     this->val() *= v;
@@ -366,12 +319,12 @@ operator *= (const typename Sacado::dummy<value_type,scalar_type>::type& v)
   return *this;
 }
 
-template <typename T, typename Storage> 
-inline Sacado::ELRCacheFad::GeneralFad<T,Storage>& 
+template <typename T, typename Storage>
+inline Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator /= (const typename Sacado::dummy<value_type,scalar_type>::type& v)
 {
-  int sz = this->size();
+  const int sz = this->size();
 
   if (update_val_)
     this->val() /= v;
@@ -381,15 +334,15 @@ operator /= (const typename Sacado::dummy<value_type,scalar_type>::type& v)
   return *this;
 }
 
-template <typename T, typename Storage> 
-template <typename S> 
-inline Sacado::ELRCacheFad::GeneralFad<T,Storage>& 
+template <typename T, typename Storage>
+template <typename S>
+inline Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator += (const Sacado::ELRCacheFad::Expr<S>& x)
 {
   x.cache();
 
-  int xsz = x.size(), sz = this->size();
+  const int xsz = x.size(), sz = this->size();
 
 #ifdef SACADO_DEBUG
   if ((xsz != sz) && (xsz != 0) && (sz != 0))
@@ -399,21 +352,21 @@ operator += (const Sacado::ELRCacheFad::Expr<S>& x)
   if (Expr<S>::is_linear) {
     if (xsz) {
       if (sz) {
-	if (x.hasFastAccess())
-	  for (int i=0; i<sz; ++i)
-	    this->fastAccessDx(i) += x.fastAccessDx(i);
-	else
-	  for (int i=0; i<sz; ++i)
-	    this->fastAccessDx(i) += x.dx(i);
+        if (x.hasFastAccess())
+          for (int i=0; i<sz; ++i)
+            this->fastAccessDx(i) += x.fastAccessDx(i);
+        else
+          for (int i=0; i<sz; ++i)
+            this->fastAccessDx(i) += x.dx(i);
       }
       else {
-	this->resize(xsz);
-	if (x.hasFastAccess())
-	  for (int i=0; i<xsz; ++i)
-	    this->fastAccessDx(i) = x.fastAccessDx(i);
-	else
-	  for (int i=0; i<xsz; ++i)
-	    this->fastAccessDx(i) = x.dx(i);
+        this->resizeAndZero(xsz);
+        if (x.hasFastAccess())
+          for (int i=0; i<xsz; ++i)
+            this->fastAccessDx(i) = x.fastAccessDx(i);
+        else
+          for (int i=0; i<xsz; ++i)
+            this->fastAccessDx(i) = x.dx(i);
       }
     }
   }
@@ -424,48 +377,46 @@ operator += (const Sacado::ELRCacheFad::Expr<S>& x)
 
     if (xsz) {
 
-      if (sz != xsz) {
-	this->resize(xsz);
-	this->zero();
-      }
+      if (sz != xsz)
+        this->resizeAndZero(xsz);
 
       if (x.hasFastAccess()) {
-	// Compute partials
-	FastLocalAccumOp< Expr<S> > op(x);
-	
-	// Compute each tangent direction
-	for(op.i=0; op.i<xsz; ++op.i) {
-	  op.t = T(0.);
-	  
-	  // Automatically unrolled loop that computes
-	  // for (int j=0; j<N; j++)
-	  //   op.t += op.partials[j] * x.getTangent<j>(i);
-	  Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
-	  
-	  this->fastAccessDx(op.i) += op.t;
-	}
+        // Compute partials
+        FastLocalAccumOp< Expr<S> > op(x);
+
+        // Compute each tangent direction
+        for(op.i=0; op.i<xsz; ++op.i) {
+          op.t = T(0.);
+
+          // Automatically unrolled loop that computes
+          // for (int j=0; j<N; j++)
+          //   op.t += op.partials[j] * x.getTangent<j>(i);
+          Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+
+          this->fastAccessDx(op.i) += op.t;
+        }
       }
       else {
-	// Compute partials
-	SlowLocalAccumOp< Expr<S> > op(x);
-  
-	// Compute each tangent direction
-	for(op.i=0; op.i<xsz; ++op.i) {
-	  op.t = T(0.);
+        // Compute partials
+        SlowLocalAccumOp< Expr<S> > op(x);
 
-	  // Automatically unrolled loop that computes
-	  // for (int j=0; j<N; j++)
-	  //   op.t += op.partials[j] * x.getTangent<j>(i);
-	  Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
-	  
-	  this->fastAccessDx(op.i) += op.t;
-	}
+        // Compute each tangent direction
+        for(op.i=0; op.i<xsz; ++op.i) {
+          op.t = T(0.);
+
+          // Automatically unrolled loop that computes
+          // for (int j=0; j<N; j++)
+          //   op.t += op.partials[j] * x.getTangent<j>(i);
+          Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+
+          this->fastAccessDx(op.i) += op.t;
+        }
       }
 
     }
 
   }
-  
+
   update_val_ = x.updateValue();
   if (update_val_)
     this->val() += x.val();
@@ -473,15 +424,15 @@ operator += (const Sacado::ELRCacheFad::Expr<S>& x)
   return *this;
 }
 
-template <typename T, typename Storage> 
-template <typename S> 
-inline Sacado::ELRCacheFad::GeneralFad<T,Storage>& 
+template <typename T, typename Storage>
+template <typename S>
+inline Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator -= (const Sacado::ELRCacheFad::Expr<S>& x)
 {
   x.cache();
 
-  int xsz = x.size(), sz = this->size();
+  const int xsz = x.size(), sz = this->size();
 
 #ifdef SACADO_DEBUG
   if ((xsz != sz) && (xsz != 0) && (sz != 0))
@@ -491,21 +442,21 @@ operator -= (const Sacado::ELRCacheFad::Expr<S>& x)
   if (Expr<S>::is_linear) {
     if (xsz) {
       if (sz) {
-	if (x.hasFastAccess())
-	  for(int i=0; i<sz; ++i)
-	    this->fastAccessDx(i) -= x.fastAccessDx(i);
-	else
-	  for (int i=0; i<sz; ++i)
-	    this->fastAccessDx(i) -= x.dx(i);
+        if (x.hasFastAccess())
+          for(int i=0; i<sz; ++i)
+            this->fastAccessDx(i) -= x.fastAccessDx(i);
+        else
+          for (int i=0; i<sz; ++i)
+            this->fastAccessDx(i) -= x.dx(i);
       }
       else {
-	this->resize(xsz);
-	if (x.hasFastAccess())
-	  for(int i=0; i<xsz; ++i)
-	    this->fastAccessDx(i) = -x.fastAccessDx(i);
-	else
-	  for (int i=0; i<xsz; ++i)
-	    this->fastAccessDx(i) = -x.dx(i);
+        this->resizeAndZero(xsz);
+        if (x.hasFastAccess())
+          for(int i=0; i<xsz; ++i)
+            this->fastAccessDx(i) = -x.fastAccessDx(i);
+        else
+          for (int i=0; i<xsz; ++i)
+            this->fastAccessDx(i) = -x.dx(i);
       }
     }
   }
@@ -516,42 +467,40 @@ operator -= (const Sacado::ELRCacheFad::Expr<S>& x)
 
     if (xsz) {
 
-      if (sz != xsz) {
-	this->resize(xsz);
-	this->zero();
-      }
+      if (sz != xsz)
+        this->resizeAndZero(xsz);
 
       if (x.hasFastAccess()) {
-	// Compute partials
-	FastLocalAccumOp< Expr<S> > op(x);
-	
-	// Compute each tangent direction
-	for(op.i=0; op.i<xsz; ++op.i) {
-	  op.t = T(0.);
-	  
-	  // Automatically unrolled loop that computes
-	  // for (int j=0; j<N; j++)
-	  //   op.t += op.partials[j] * x.getTangent<j>(i);
-	  Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
-	  
-	  this->fastAccessDx(op.i) -= op.t;
-	}
+        // Compute partials
+        FastLocalAccumOp< Expr<S> > op(x);
+
+        // Compute each tangent direction
+        for(op.i=0; op.i<xsz; ++op.i) {
+          op.t = T(0.);
+
+          // Automatically unrolled loop that computes
+          // for (int j=0; j<N; j++)
+          //   op.t += op.partials[j] * x.getTangent<j>(i);
+          Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+
+          this->fastAccessDx(op.i) -= op.t;
+        }
       }
       else {
-	// Compute partials
-	SlowLocalAccumOp< Expr<S> > op(x);
-  
-	// Compute each tangent direction
-	for(op.i=0; op.i<xsz; ++op.i) {
-	  op.t = T(0.);
+        // Compute partials
+        SlowLocalAccumOp< Expr<S> > op(x);
 
-	  // Automatically unrolled loop that computes
-	  // for (int j=0; j<N; j++)
-	  //   op.t += op.partials[j] * x.getTangent<j>(i);
-	  Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
-	  
-	  this->fastAccessDx(op.i) -= op.t;
-	}	
+        // Compute each tangent direction
+        for(op.i=0; op.i<xsz; ++op.i) {
+          op.t = T(0.);
+
+          // Automatically unrolled loop that computes
+          // for (int j=0; j<N; j++)
+          //   op.t += op.partials[j] * x.getTangent<j>(i);
+          Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+
+          this->fastAccessDx(op.i) -= op.t;
+        }
       }
 
     }
@@ -565,15 +514,15 @@ operator -= (const Sacado::ELRCacheFad::Expr<S>& x)
   return *this;
 }
 
-template <typename T, typename Storage> 
-template <typename S> 
-inline Sacado::ELRCacheFad::GeneralFad<T,Storage>& 
+template <typename T, typename Storage>
+template <typename S>
+inline Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator *= (const Sacado::ELRCacheFad::Expr<S>& x)
 {
   x.cache();
 
-  int xsz = x.size(), sz = this->size();
+  const int xsz = x.size(), sz = this->size();
   update_val_ = x.updateValue();
   T xval = x.val();
   T v = this->val();
@@ -586,27 +535,27 @@ operator *= (const Sacado::ELRCacheFad::Expr<S>& x)
   if (Expr<S>::is_linear) {
     if (xsz) {
       if (sz) {
-	if (x.hasFastAccess())
-	  for(int i=0; i<sz; ++i)
-	    this->fastAccessDx(i) = v*x.fastAccessDx(i) + this->fastAccessDx(i)*xval;
-	else
-	  for (int i=0; i<sz; ++i)
-	    this->fastAccessDx(i) = v*x.dx(i) + this->fastAccessDx(i)*xval;
+        if (x.hasFastAccess())
+          for(int i=0; i<sz; ++i)
+            this->fastAccessDx(i) = v*x.fastAccessDx(i) + this->fastAccessDx(i)*xval;
+        else
+          for (int i=0; i<sz; ++i)
+            this->fastAccessDx(i) = v*x.dx(i) + this->fastAccessDx(i)*xval;
       }
       else {
-	this->resize(xsz);
-	if (x.hasFastAccess())
-	  for(int i=0; i<xsz; ++i)
-	    this->fastAccessDx(i) = v*x.fastAccessDx(i);
-	else
-	  for (int i=0; i<xsz; ++i)
-	    this->fastAccessDx(i) = v*x.dx(i);
+        this->resizeAndZero(xsz);
+        if (x.hasFastAccess())
+          for(int i=0; i<xsz; ++i)
+            this->fastAccessDx(i) = v*x.fastAccessDx(i);
+        else
+          for (int i=0; i<xsz; ++i)
+            this->fastAccessDx(i) = v*x.dx(i);
       }
     }
     else {
       if (sz) {
-	for (int i=0; i<sz; ++i)
-	  this->fastAccessDx(i) *= xval;
+        for (int i=0; i<sz; ++i)
+          this->fastAccessDx(i) *= xval;
       }
     }
   }
@@ -619,80 +568,80 @@ operator *= (const Sacado::ELRCacheFad::Expr<S>& x)
 
       if (sz) {
 
-	if (x.hasFastAccess()) {
-	  // Compute partials
-	  FastLocalAccumOp< Expr<S> > op(x);
-	  
-	  // Compute each tangent direction
-	  for(op.i=0; op.i<xsz; ++op.i) {
-	    op.t = T(0.);
-	    
-	    // Automatically unrolled loop that computes
-	    // for (int j=0; j<N; j++)
-	    //   op.t += op.partials[j] * x.getTangent<j>(i);
-	    Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
-	  
-	    this->fastAccessDx(op.i) = 
-	      v * op.t + this->fastAccessDx(op.i) * xval;
-	  }
-	}
-	else {
-	  // Compute partials
-	  SlowLocalAccumOp< Expr<S> > op(x);
-	  
-	  // Compute each tangent direction
-	  for(op.i=0; op.i<xsz; ++op.i) {
-	    op.t = T(0.);
-	    
-	    // Automatically unrolled loop that computes
-	    // for (int j=0; j<N; j++)
-	    //   op.t += op.partials[j] * x.getTangent<j>(i);
-	    Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
-	  
-	    this->fastAccessDx(op.i) = 
-	      v * op.t + this->fastAccessDx(op.i) * xval;
-	  }
-	}
+        if (x.hasFastAccess()) {
+          // Compute partials
+          FastLocalAccumOp< Expr<S> > op(x);
+
+          // Compute each tangent direction
+          for(op.i=0; op.i<xsz; ++op.i) {
+            op.t = T(0.);
+
+            // Automatically unrolled loop that computes
+            // for (int j=0; j<N; j++)
+            //   op.t += op.partials[j] * x.getTangent<j>(i);
+            Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+
+            this->fastAccessDx(op.i) =
+              v * op.t + this->fastAccessDx(op.i) * xval;
+          }
+        }
+        else {
+          // Compute partials
+          SlowLocalAccumOp< Expr<S> > op(x);
+
+          // Compute each tangent direction
+          for(op.i=0; op.i<xsz; ++op.i) {
+            op.t = T(0.);
+
+            // Automatically unrolled loop that computes
+            // for (int j=0; j<N; j++)
+            //   op.t += op.partials[j] * x.getTangent<j>(i);
+            Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+
+            this->fastAccessDx(op.i) =
+              v * op.t + this->fastAccessDx(op.i) * xval;
+          }
+        }
 
       }
-      
+
       else {
-	
-	this->resize(xsz);
-	
-	if (x.hasFastAccess()) {
-	  // Compute partials
-	  FastLocalAccumOp< Expr<S> > op(x);
-	  
-	  // Compute each tangent direction
-	  for(op.i=0; op.i<xsz; ++op.i) {
-	    op.t = T(0.);
-	    
-	    // Automatically unrolled loop that computes
-	    // for (int j=0; j<N; j++)
-	    //   op.t += op.partials[j] * x.getTangent<j>(i);
-	    Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
-	  
-	    this->fastAccessDx(op.i) = v * op.t;
-	  }
-	}
-	else {
-	  // Compute partials
-	  SlowLocalAccumOp< Expr<S> > op(x);
-	  
-	  // Compute each tangent direction
-	  for(op.i=0; op.i<xsz; ++op.i) {
-	    op.t = T(0.);
-	    
-	    // Automatically unrolled loop that computes
-	    // for (int j=0; j<N; j++)
-	    //   op.t += op.partials[j] * x.getTangent<j>(i);
-	    Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
-	  
-	    this->fastAccessDx(op.i) = v * op.t;
-	  }
-	}
-	
+
+        this->resizeAndZero(xsz);
+
+        if (x.hasFastAccess()) {
+          // Compute partials
+          FastLocalAccumOp< Expr<S> > op(x);
+
+          // Compute each tangent direction
+          for(op.i=0; op.i<xsz; ++op.i) {
+            op.t = T(0.);
+
+            // Automatically unrolled loop that computes
+            // for (int j=0; j<N; j++)
+            //   op.t += op.partials[j] * x.getTangent<j>(i);
+            Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+
+            this->fastAccessDx(op.i) = v * op.t;
+          }
+        }
+        else {
+          // Compute partials
+          SlowLocalAccumOp< Expr<S> > op(x);
+
+          // Compute each tangent direction
+          for(op.i=0; op.i<xsz; ++op.i) {
+            op.t = T(0.);
+
+            // Automatically unrolled loop that computes
+            // for (int j=0; j<N; j++)
+            //   op.t += op.partials[j] * x.getTangent<j>(i);
+            Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+
+            this->fastAccessDx(op.i) = v * op.t;
+          }
+        }
+
       }
 
     }
@@ -700,8 +649,8 @@ operator *= (const Sacado::ELRCacheFad::Expr<S>& x)
     else {
 
       if (sz) {
-	for (int i=0; i<sz; ++i)
-	  this->fastAccessDx(i) *= xval;
+        for (int i=0; i<sz; ++i)
+          this->fastAccessDx(i) *= xval;
       }
 
     }
@@ -715,14 +664,14 @@ operator *= (const Sacado::ELRCacheFad::Expr<S>& x)
 }
 
 template <typename T, typename Storage>
-template <typename S> 
-inline Sacado::ELRCacheFad::GeneralFad<T,Storage>& 
+template <typename S>
+inline Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator /= (const Sacado::ELRCacheFad::Expr<S>& x)
 {
   x.cache();
 
-  int xsz = x.size(), sz = this->size();
+  const int xsz = x.size(), sz = this->size();
   update_val_ = x.updateValue();
   T xval = x.val();
   T v = this->val();
@@ -735,27 +684,27 @@ operator /= (const Sacado::ELRCacheFad::Expr<S>& x)
   if (Expr<S>::is_linear) {
     if (xsz) {
       if (sz) {
-	if (x.hasFastAccess())
-	  for(int i=0; i<sz; ++i)
-	    this->fastAccessDx(i) = ( this->fastAccessDx(i)*xval - v*x.fastAccessDx(i) )/ (xval*xval);
-	else
-	  for (int i=0; i<sz; ++i)
-	    this->fastAccessDx(i) = ( this->fastAccessDx(i)*xval - v*x.dx(i) )/ (xval*xval);
+        if (x.hasFastAccess())
+          for(int i=0; i<sz; ++i)
+            this->fastAccessDx(i) = ( this->fastAccessDx(i)*xval - v*x.fastAccessDx(i) )/ (xval*xval);
+        else
+          for (int i=0; i<sz; ++i)
+            this->fastAccessDx(i) = ( this->fastAccessDx(i)*xval - v*x.dx(i) )/ (xval*xval);
       }
       else {
-	this->resize(xsz);
-	if (x.hasFastAccess())
-	  for(int i=0; i<xsz; ++i)
-	    this->fastAccessDx(i) = - v*x.fastAccessDx(i) / (xval*xval);
-	else
-	  for (int i=0; i<xsz; ++i)
-	    this->fastAccessDx(i) = -v*x.dx(i) / (xval*xval);
+        this->resizeAndZero(xsz);
+        if (x.hasFastAccess())
+          for(int i=0; i<xsz; ++i)
+            this->fastAccessDx(i) = - v*x.fastAccessDx(i) / (xval*xval);
+        else
+          for (int i=0; i<xsz; ++i)
+            this->fastAccessDx(i) = -v*x.dx(i) / (xval*xval);
       }
     }
     else {
       if (sz) {
-	for (int i=0; i<sz; ++i)
-	  this->fastAccessDx(i) /= xval;
+        for (int i=0; i<sz; ++i)
+          this->fastAccessDx(i) /= xval;
       }
     }
   }
@@ -767,83 +716,83 @@ operator /= (const Sacado::ELRCacheFad::Expr<S>& x)
     if (xsz) {
 
       T xval2 = xval*xval;
-      
+
       if (sz) {
 
-	if (x.hasFastAccess()) {
-	  // Compute partials
-	  FastLocalAccumOp< Expr<S> > op(x);
-	  
-	  // Compute each tangent direction
-	  for(op.i=0; op.i<xsz; ++op.i) {
-	    op.t = T(0.);
-	    
-	    // Automatically unrolled loop that computes
-	    // for (int j=0; j<N; j++)
-	    //   op.t += op.partials[j] * x.getTangent<j>(i);
-	    Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
-	  
-	    this->fastAccessDx(op.i) = 
-	      (this->fastAccessDx(op.i) * xval - v * op.t) / xval2;
-	  }
-	}
-	else {
-	  // Compute partials
-	  SlowLocalAccumOp< Expr<S> > op(x);
-	  
-	  // Compute each tangent direction
-	  for(op.i=0; op.i<xsz; ++op.i) {
-	    op.t = T(0.);
-	    
-	    // Automatically unrolled loop that computes
-	    // for (int j=0; j<N; j++)
-	    //   op.t += op.partials[j] * x.getTangent<j>(i);
-	    Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
-	  
-	    this->fastAccessDx(op.i) = 
-	      (this->fastAccessDx(op.i) * xval - v * op.t) / xval2;
-	  }
-	}
-	
+        if (x.hasFastAccess()) {
+          // Compute partials
+          FastLocalAccumOp< Expr<S> > op(x);
+
+          // Compute each tangent direction
+          for(op.i=0; op.i<xsz; ++op.i) {
+            op.t = T(0.);
+
+            // Automatically unrolled loop that computes
+            // for (int j=0; j<N; j++)
+            //   op.t += op.partials[j] * x.getTangent<j>(i);
+            Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+
+            this->fastAccessDx(op.i) =
+              (this->fastAccessDx(op.i) * xval - v * op.t) / xval2;
+          }
+        }
+        else {
+          // Compute partials
+          SlowLocalAccumOp< Expr<S> > op(x);
+
+          // Compute each tangent direction
+          for(op.i=0; op.i<xsz; ++op.i) {
+            op.t = T(0.);
+
+            // Automatically unrolled loop that computes
+            // for (int j=0; j<N; j++)
+            //   op.t += op.partials[j] * x.getTangent<j>(i);
+            Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+
+            this->fastAccessDx(op.i) =
+              (this->fastAccessDx(op.i) * xval - v * op.t) / xval2;
+          }
+        }
+
       }
-      
+
       else {
-	
-	this->resize(xsz);
-	
-	if (x.hasFastAccess()) {
-	  // Compute partials
-	  FastLocalAccumOp< Expr<S> > op(x);
-	  
-	  // Compute each tangent direction
-	  for(op.i=0; op.i<xsz; ++op.i) {
-	    op.t = T(0.);
-	    
-	    // Automatically unrolled loop that computes
-	    // for (int j=0; j<N; j++)
-	    //   op.t += op.partials[j] * x.getTangent<j>(i);
-	    Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
-	  
-	    this->fastAccessDx(op.i) = (-v * op.t) / xval2;
-	  }
-	}
-	else {
-	  // Compute partials
-	  SlowLocalAccumOp< Expr<S> > op(x);
-	  
-	  // Compute each tangent direction
-	  for(op.i=0; op.i<xsz; ++op.i) {
-	    op.t = T(0.);
-	    
-	    // Automatically unrolled loop that computes
-	    // for (int j=0; j<N; j++)
-	    //   op.t += op.partials[j] * x.getTangent<j>(i);
-	    Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
-	  
-	    this->fastAccessDx(op.i) = (-v * op.t) / xval2;
-	  }
-	}
-	
+
+        this->resizeAndZero(xsz);
+
+        if (x.hasFastAccess()) {
+          // Compute partials
+          FastLocalAccumOp< Expr<S> > op(x);
+
+          // Compute each tangent direction
+          for(op.i=0; op.i<xsz; ++op.i) {
+            op.t = T(0.);
+
+            // Automatically unrolled loop that computes
+            // for (int j=0; j<N; j++)
+            //   op.t += op.partials[j] * x.getTangent<j>(i);
+            Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+
+            this->fastAccessDx(op.i) = (-v * op.t) / xval2;
+          }
+        }
+        else {
+          // Compute partials
+          SlowLocalAccumOp< Expr<S> > op(x);
+
+          // Compute each tangent direction
+          for(op.i=0; op.i<xsz; ++op.i) {
+            op.t = T(0.);
+
+            // Automatically unrolled loop that computes
+            // for (int j=0; j<N; j++)
+            //   op.t += op.partials[j] * x.getTangent<j>(i);
+            Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+
+            this->fastAccessDx(op.i) = (-v * op.t) / xval2;
+          }
+        }
+
       }
 
     }
@@ -851,8 +800,8 @@ operator /= (const Sacado::ELRCacheFad::Expr<S>& x)
     else {
 
       if (sz) {
-	for (int i=0; i<sz; ++i)
-	  this->fastAccessDx(i) /= xval;
+        for (int i=0; i<sz; ++i)
+          this->fastAccessDx(i) /= xval;
       }
 
     }

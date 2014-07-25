@@ -10,7 +10,7 @@
  */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #ifndef ML_LEVELWRAP_H
@@ -32,7 +32,7 @@ namespace ML_Epetra
   //! Sets default parameters for aggregation-based 2-level domain decomposition preconditioners.
   int SetDefaultsLevelWrap(Teuchos::ParameterList & inList,bool OverWrite=true);
 
-  
+
   /*! A general preconditioner wrapper that allows a user to specify prolongators and
     potentially a coarse grid.  This can be used for adding a manual level on top of ML
     or (recursively) for a geometric multigrid algorithm, if you wanted.
@@ -42,7 +42,7 @@ namespace ML_Epetra
   {
   public:
     //@{ \name Constructors.
-    
+
     //! Constructs a Level Wrap (using R=P^T)
     LevelWrap(Teuchos::RCP<Epetra_CrsMatrix> A0,
 	      Teuchos::RCP<Epetra_CrsMatrix> P0,
@@ -56,27 +56,27 @@ namespace ML_Epetra
 	      const Teuchos::ParameterList& List,
 	      const bool ComputePrec = true);
     //@}
-    
+
 
     //! @name Destructor
-    //@{ 
+    //@{
     //! Destructor
     ~LevelWrap();
     //@}
 
-    
+
     //@{ \name Mathematical functions.
-    
+
     //! Apply the inverse of the preconditioner to an Epetra_MultiVector (NOT AVAILABLE)
     int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
       return(-1);}
-    
+
     //! Apply the preconditioner w/ RHS B and get result X
     int ApplyInverse(const Epetra_MultiVector& B, Epetra_MultiVector& X) const;
-    
+
     //@}
 
-    
+
     //@{ \name Attribute access functions
 
     // Manually set the A1 operator
@@ -102,16 +102,16 @@ namespace ML_Epetra
 
     //! Returns the current UseTranspose setting.
     bool UseTranspose() const {return(false);};
-  
+
     //! Returns true if the \e this object can provide an approximate Inf-norm, false otherwise.
     bool HasNormInf() const{return(false);};
 
     //! Returns a pointer to the Epetra_Comm communicator associated with this operator.
     const Epetra_Comm& Comm() const{return(A0_->Comm());};
-  
+
     //! Returns the Epetra_Map object associated with the domain of this operator.
     const Epetra_Map& OperatorDomainMap() const {return(A0_->OperatorDomainMap());};
-  
+
     //! Returns the Epetra_Map object associated with the range of this operator.
     const Epetra_Map& OperatorRangeMap() const {return(A0_->OperatorRangeMap());};
 
@@ -124,8 +124,8 @@ namespace ML_Epetra
 
 
   private:
-    
-    //@{ \name Internal data    
+
+    //@{ \name Internal data
     //!  A0 matrix
     Teuchos::RCP<const Epetra_CrsMatrix> A0_;
 
@@ -146,6 +146,10 @@ namespace ML_Epetra
 
     //! Smoother
     Teuchos::RCP<Epetra_Operator> Smoother_;
+
+    //! use ML's internal block Jacobi
+    bool use_mlsmoother_;
+    ML *ml_subproblem_;
 
     //! Smoother pre or post
     int pre_or_post;
@@ -173,7 +177,7 @@ namespace ML_Epetra
     int NumConstructions_;
     //! CPU time for construction of the preconditioner.
     double ConstructionTime_;
-    //@}        
+    //@}
   };// end LevelWrap
 }//end namespace ML_Epetra
 

@@ -47,12 +47,12 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif 
+#endif
 
 void initcomm(  );
 double max_all(double , int );
 
 #ifdef __cplusplus
 }
-#endif 
-#endif 
+#endif
+#endif

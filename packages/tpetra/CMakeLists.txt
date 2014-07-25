@@ -40,7 +40,7 @@ SET(Tpetra_MACHINE_XML_FILE_DIR
 # B) Set up package-specific options
 #
 
-TRIBITS_SET_SS_FOR_DEV_MODE(SS_FOR_DEV_PS_FOR_RELEASE)
+TRIBITS_SET_ST_FOR_DEV_MODE(ST_FOR_DEV_PT_FOR_RELEASE)
 
 ASSERT_DEFINED(KokkosClassic_DefaultNode)
 ASSERT_DEFINED(KokkosClassic_ENABLED_NODES)
@@ -89,7 +89,7 @@ ELSE()
   MESSAGE(STATUS "Not enabling Tpetra/RTI")
 ENDIF()
 
-IF (SS_FOR_DEV_PS_FOR_RELEASE AND HAVE_TEUCHOS_BLASFLOAT) 
+IF (ST_FOR_DEV_PT_FOR_RELEASE AND HAVE_TEUCHOS_BLASFLOAT) 
   GLOBAL_SET(HAVE_TPETRA_INST_FLOAT_DEFAULT ON)
 ELSE()
   GLOBAL_SET(HAVE_TPETRA_INST_FLOAT_DEFAULT OFF)
@@ -104,7 +104,7 @@ IF(Tpetra_INST_FLOAT)
   LIST(APPEND Tpetra_ETI_SCALARS "float")
 ENDIF()
 
-IF (SS_FOR_DEV_PS_FOR_RELEASE AND HAVE_COMPLEX_BLAS AND HAVE_TEUCHOS_BLASFLOAT)
+IF (ST_FOR_DEV_PT_FOR_RELEASE AND HAVE_COMPLEX_BLAS AND HAVE_TEUCHOS_BLASFLOAT)
   GLOBAL_SET(HAVE_TPETRA_INST_COMPLEX_FLOAT_DEFAULT ON)
 ELSE()
   GLOBAL_SET(HAVE_TPETRA_INST_COMPLEX_FLOAT_DEFAULT OFF)
@@ -119,7 +119,7 @@ IF(Tpetra_INST_COMPLEX_FLOAT)
   LIST(APPEND Tpetra_ETI_SCALARS "std::complex<float>")
 ENDIF()
 
-IF (SS_FOR_DEV_PS_FOR_RELEASE AND HAVE_COMPLEX_BLAS)
+IF (ST_FOR_DEV_PT_FOR_RELEASE AND HAVE_COMPLEX_BLAS)
   GLOBAL_SET(HAVE_TPETRA_INST_COMPLEX_DOUBLE_DEFAULT ON)
 ELSE()
   GLOBAL_SET(HAVE_TPETRA_INST_COMPLEX_DOUBLE_DEFAULT OFF)
@@ -134,7 +134,7 @@ IF(Tpetra_INST_COMPLEX_DOUBLE)
   LIST(APPEND Tpetra_ETI_SCALARS "std::complex<double>")
 ENDIF()
 
-IF (SS_FOR_DEV_PS_FOR_RELEASE AND Tpetra_ENABLE_QD)
+IF (ST_FOR_DEV_PT_FOR_RELEASE AND Tpetra_ENABLE_QD)
   GLOBAL_SET(HAVE_TPETRA_INST_QD_REAL_DEFAULT ON)
 ELSE()
   GLOBAL_SET(HAVE_TPETRA_INST_QD_REAL_DEFAULT OFF)
@@ -149,7 +149,7 @@ IF(Tpetra_INST_QD_REAL)
   LIST(APPEND Tpetra_ETI_SCALARS "qd_real")
 ENDIF()
 
-IF (SS_FOR_DEV_PS_FOR_RELEASE AND Tpetra_ENABLE_QD)
+IF (ST_FOR_DEV_PT_FOR_RELEASE AND Tpetra_ENABLE_QD)
   GLOBAL_SET(HAVE_TPETRA_INST_DD_REAL_DEFAULT ON)
 ELSE()
   GLOBAL_SET(HAVE_TPETRA_INST_DD_REAL_DEFAULT OFF)
@@ -293,18 +293,35 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   OFF
   )
 
-# Determine whether Kokkos refactor code is really supported
+# Make sure all requisite packages are enabled
 IF (Tpetra_ENABLE_Kokkos_Refactor AND
-    Tpetra_ENABLE_KokkosCore AND
-    Tpetra_ENABLE_KokkosCompat AND
-    Tpetra_ENABLE_KokkosLinAlg AND
-    Tpetra_ENABLE_KokkosContainers)
+    (NOT Tpetra_ENABLE_KokkosCore OR
+     NOT Tpetra_ENABLE_KokkosCompat OR
+     NOT Tpetra_ENABLE_KokkosLinAlg OR
+     NOT Tpetra_ENABLE_KokkosContainers OR
+     NOT Tpetra_ENABLE_KokkosMpiComm))
+  MESSAGE(FATAL_ERROR "Tpetra_ENABLE_Kokkos_Refactor is ON but not all required packages are enabled.  Please enable Kokkos subpackages Core, Compat, LinAlg, Containers, and MpiComm.")
+ENDIF()
+
+IF (Tpetra_ENABLE_Kokkos_Refactor)
   SET(Tpetra_Have_Kokkos_Refactor ON CACHE INTERNAL "")
 ELSE()
   SET(Tpetra_Have_Kokkos_Refactor OFF CACHE INTERNAL "")
 ENDIF()
 # Set corresponding value of CPP macro
 GLOBAL_SET(TPETRA_HAVE_KOKKOS_REFACTOR ${Tpetra_Have_Kokkos_Refactor})
+
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_ENABLE_Kokkos_Refactor_Map
+  TPETRA_USE_KOKKOS_REFACTOR_MAP
+  "Enable Tpetra::Map specialization for refactor to new Kokkos interface.  If this option is OFF, you may still use the other Kokkos refactor classes with the old Map implementation."
+  OFF
+  )
+
+IF (Tpetra_ENABLE_Kokkos_Refactor_Map AND NOT Tpetra_Have_Kokkos_Refactor)
+  MESSAGE( FATAL_ERROR "If Tpetra_ENABLE_Kokkos_Refactor_Map is ON, then Tpetra's Kokkos refactor code must be enabled as well.  This requires Tpetra_ENABLE_Kokkos_Refactor to be ON, and the Core, Compat, LinAlg, Containers, and MpiComm subpackages of Kokkos to be enabled." )
+ENDIF ()
 
 #
 # C) Add the libraries, tests, and examples
@@ -318,7 +335,7 @@ IF (Tpetra_ENABLE_RTI)
 ENDIF()
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)
-TRIBITS_ADD_TEST_DIRECTORIES(example)
+TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 
 GLOBAL_SET(Tpetra_ETI_SCALARS ${Tpetra_ETI_SCALARS})
 GLOBAL_SET(Tpetra_ETI_GORDS   ${Tpetra_ETI_GORDS})

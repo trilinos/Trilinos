@@ -12,7 +12,7 @@
 */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "MLAPI_BaseObject.h"
@@ -42,7 +42,7 @@ public:
 
   //! Applies the operator to \c X, using \c Y as starting solution. Returns the solution in \c Y.
   virtual int Apply(const MultiVector& LHS, MultiVector& RHS) const = 0;
- 
+
   //! Returns a copy of the domain space of \c this object.
   virtual const Space GetOperatorDomainSpace() const = 0;
 

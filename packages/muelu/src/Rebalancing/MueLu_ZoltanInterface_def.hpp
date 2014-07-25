@@ -46,11 +46,6 @@
 #ifndef MUELU_ZOLTANINTERFACE_DEF_HPP
 #define MUELU_ZOLTANINTERFACE_DEF_HPP
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 #include "MueLu_ZoltanInterface_decl.hpp"
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
 
@@ -66,36 +61,35 @@
 namespace MueLu {
 
  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
- RCP<const ParameterList> ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+ RCP<const ParameterList> ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set< RCP<const FactoryBase> >("A",                    Teuchos::null, "Factory of the matrix A");
-    validParamList->set< RCP<const FactoryBase> >("Coordinates",          Teuchos::null, "Factory of the coordinates");
-    validParamList->set< RCP<const FactoryBase> >("number of partitions", Teuchos::null, "(advanced) Factory computing the number of partition.");
+    validParamList->set< RCP<const FactoryBase> >("A",           Teuchos::null, "Factory of the matrix A");
+    validParamList->set< RCP<const FactoryBase> >("Coordinates", Teuchos::null, "Factory of the coordinates");
 
     return validParamList;
   }
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level & currentLevel) const {
+  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& currentLevel) const {
     Input(currentLevel, "A");
     Input(currentLevel, "Coordinates");
-    Input(currentLevel, "number of partitions");
-  } //DeclareInput()
+  }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &level) const {
+  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& level) const {
     FactoryMonitor m(*this, "Build", level);
 
-    RCP<Matrix>      A             = Get< RCP<Matrix> >     (level, "A");
-    RCP<MultiVector> Coords        = Get< RCP<MultiVector> >(level, "Coordinates");
-    GO               numPartitions = Get<GO>                (level, "number of partitions");
+    RCP<Matrix>      A        = Get< RCP<Matrix> >     (level, "A");
+    RCP<const Map>   rowMap   = A->getRowMap();
 
-    RCP<const Map> rowMap        = A->getRowMap();
-    size_t problemDimension      = Coords->getNumVectors();
+    RCP<MultiVector> Coords   = Get< RCP<MultiVector> >(level, "Coordinates");
+    size_t           dim      = Coords->getNumVectors();
 
-    if (numPartitions == 1) {
+    GO               numParts = level.Get<GO>("number of partitions");
+
+    if (numParts == 1) {
       // Running on one processor, so decomposition is the trivial one, all zeros.
       RCP<Xpetra::Vector<GO, LO, GO, NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(rowMap, true);
       Set(level, "Partition", decomposition);
@@ -126,13 +120,11 @@ namespace MueLu {
     if (GetVerbLevel() & Statistics1) zoltanObj_->Set_Param("debug_level", "1");
     else                              zoltanObj_->Set_Param("debug_level", "0");
 
-    std::stringstream ss;
-    ss << numPartitions;
-    zoltanObj_->Set_Param("num_global_partitions", ss.str());
+    zoltanObj_->Set_Param("num_global_partitions", toString(numParts));
 
     zoltanObj_->Set_Num_Obj_Fn(GetLocalNumberOfRows,      (void *) &*A);
     zoltanObj_->Set_Obj_List_Fn(GetLocalNumberOfNonzeros, (void *) &*A);
-    zoltanObj_->Set_Num_Geom_Fn(GetProblemDimension,      (void *) &problemDimension);
+    zoltanObj_->Set_Num_Geom_Fn(GetProblemDimension,      (void *) &dim);
     zoltanObj_->Set_Geom_Multi_Fn(GetProblemGeometry,     (void *) Coords.get());
 
     // Data pointers that Zoltan requires.
@@ -202,8 +194,7 @@ namespace MueLu {
     *ierr = ZOLTAN_OK;
 
     LO blockSize = A->GetFixedBlockSize();
-    if (blockSize == 0)
-      throw Exceptions::RuntimeError("MueLu::Zoltan : Matrix has block size 0.");
+    TEUCHOS_TEST_FOR_EXCEPTION(blockSize == 0, Exceptions::RuntimeError, "MueLu::Zoltan : Matrix has block size 0.");
 
     return A->getRowMap()->getNodeNumElements() / blockSize;
   } //GetLocalNumberOfRows()
@@ -215,8 +206,7 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
   GetLocalNumberOfNonzeros(void *data, int NumGidEntries, int NumLidEntries, ZOLTAN_ID_PTR gids,
-                           ZOLTAN_ID_PTR lids, int wgtDim, float *weights, int *ierr)
-  {
+                           ZOLTAN_ID_PTR lids, int wgtDim, float *weights, int *ierr) {
     if (data == NULL || NumGidEntries < 1) {
       *ierr = ZOLTAN_FATAL;
       return;
@@ -228,35 +218,31 @@ namespace MueLu {
     RCP<const Map> map = A->getRowMap();
 
     LO blockSize = A->GetFixedBlockSize();
-    if (blockSize == 0)
-      throw Exceptions::RuntimeError("MueLu::Zoltan : Matrix has block size 0.");
+    TEUCHOS_TEST_FOR_EXCEPTION(blockSize == 0, Exceptions::RuntimeError, "MueLu::Zoltan : Matrix has block size 0.");
 
-    Teuchos::ArrayView<const LO> cols;
-    Teuchos::ArrayView<const SC> vals;
+    size_t              numElements = map->getNodeNumElements();
+    ArrayView<const GO> mapGIDs     = map->getNodeElementList();
 
     if (blockSize == 1) {
-      for (size_t i = 0; i < map->getNodeNumElements(); ++i) {
-        gids[i] = (ZOLTAN_ID_TYPE) map->getGlobalElement(i);
-        A->getLocalRowView(i, cols, vals);
-        weights[i] = cols.size();
+      for (size_t i = 0; i < numElements; i++) {
+        gids[i]    = as<ZOLTAN_ID_TYPE>(mapGIDs[i]);
+        weights[i] = A->getNumEntriesInLocalRow(i);
       }
 
     } else {
-      LO numBlocks = A->getRowMap()->getNodeNumElements() / blockSize;
-      for (LO i = 0; i < numBlocks; ++i) {
+      LO numBlockElements = numElements / blockSize;
+
+      for (LO i = 0; i < numBlockElements; i++) {
         // Assign zoltan GID to the first row GID in the block
         // NOTE: Zoltan GIDs are different from GIDs in the Coordinates vector
-        gids[i] = (ZOLTAN_ID_TYPE) map->getGlobalElement(i*blockSize);
-        LO nnz = 0;
-        for (LO j = i*blockSize; j < (i+1)*blockSize; ++j) {
-          A->getLocalRowView(j, cols, vals);
-          nnz += vals.size();
-        }
-        weights[i] = nnz;
-      } //for (LocalOrdinal i=0; i<numBlocks; ++i)
+        gids[i]    = as<ZOLTAN_ID_TYPE>(mapGIDs[i*blockSize]);
+        weights[i] = 0.0;
+        for (LO j = 0; j < blockSize; j++)
+          weights[i] += A->getNumEntriesInLocalRow(i*blockSize+j);
+      }
     }
 
-  } //GetLocalNumberOfNonzeros()
+  }
 
   //-------------------------------------------------------------------------------------------------------------
   // GetProblemDimension

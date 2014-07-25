@@ -212,6 +212,8 @@ typedef struct portals_transport_global {
 
     portals_request_queue_handle req_queue;
 
+    bool init_called_mpi_init;
+
 } portals_transport_global;
 
 
@@ -219,6 +221,7 @@ typedef struct portals_transport_global {
 static nthread_lock_t nnti_ptl_lock;
 
 
+static void set_req_pid(NNTI_pid *pid);
 static const NNTI_buffer_t *decode_event_buffer(
         const NNTI_buffer_t  *wait_buf,
         const ptl_event_t    *event);
@@ -293,7 +296,7 @@ NNTI_result_t NNTI_ptl_init (
     char *sep;
 
 //    NNTI_nid nid;
-    NNTI_pid pid;
+    NNTI_pid pid=-1;
 
     log_debug(nnti_debug_level, "enter");
 
@@ -319,13 +322,9 @@ NNTI_result_t NNTI_ptl_init (
             sep=strchr(address, ':');
 //            nid=strtol(address, NULL, 0);
             pid=strtol(sep+1, NULL, 0);
-        } else {
-            pid=PTL_PID_ANY;
-#ifdef HAVE_TRIOS_MPI
-            int rank;
-            MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-            pid = 128 + rank;
-#endif
+        }
+        if (pid == -1) {
+        	set_req_pid(&pid);
         }
 
 
@@ -1201,11 +1200,11 @@ NNTI_result_t NNTI_ptl_wait (
 
             memset(&event, 0, sizeof(ptl_event_t));
             log_debug(debug_level, "lock before poll");
-            //        nthread_lock(&nnti_ptl_lock);
             trios_start_timer(call_time);
+            //            nthread_lock(&nnti_ptl_lock);
             rc = PtlEQPoll(&ptls_mem_hdl->eq_h, 1, timeout_per_call, &event, &which_eq);
+            //            nthread_unlock(&nnti_ptl_lock);
             trios_stop_timer("NNTI_ptl_wait - PtlEQPoll", call_time);
-            //        nthread_lock(&nnti_ptl_lock);
             log_debug(debug_level, "polling status is %s", ptl_err_str[rc]);
 
             log_debug(debug_level, "Poll Event= {");
@@ -1445,7 +1444,7 @@ NNTI_result_t NNTI_ptl_waitany (
             log_debug(debug_level, "lock before poll");
             //        nthread_lock(&nnti_ptl_lock);
             rc = PtlEQPoll(&transport_global_data.data_eq_h, 1, timeout_per_call, &event, &which_eq);
-            //        nthread_lock(&nnti_ptl_lock);
+            //        nthread_unlock(&nnti_ptl_lock);
             log_debug(debug_level, "polling status is %s", ptl_err_str[rc]);
 
             log_debug(debug_level, "Poll Event= {");
@@ -1625,7 +1624,7 @@ NNTI_result_t NNTI_ptl_waitall (
             log_debug(debug_level, "lock before poll");
             //        nthread_lock(&nnti_ptl_lock);
             rc = PtlEQPoll(&transport_global_data.data_eq_h, 1, timeout_per_call, &event, &which_eq);
-            //        nthread_lock(&nnti_ptl_lock);
+            //        nthread_unlock(&nnti_ptl_lock);
             log_debug(debug_level, "polling status is %s", ptl_err_str[rc]);
 
             log_debug(debug_level, "Poll Event= {");
@@ -1750,13 +1749,44 @@ NNTI_result_t NNTI_ptl_fini (
 
     ptl_initialized=false;
 
+#if !defined(HAVE_TRIOS_CRAYPORTALS) && defined(HAVE_TRIOS_MPI)
+    if (transport_global_data.init_called_mpi_init) {
+    	MPI_Finalize();
+    }
+#endif
+
     return(NNTI_OK);
 }
 
 
 
 
+static void set_req_pid(NNTI_pid *pid)
+{
+    log_debug(nnti_debug_level, "enter (pid=%d)", *pid);
 
+    transport_global_data.init_called_mpi_init=false;
+
+    *pid=PTL_PID_ANY;
+
+#if !defined(HAVE_TRIOS_CRAYPORTALS) && defined(HAVE_TRIOS_MPI)
+    // Schutt's Portals doesn't properly assign a pid when you pass PTL_PID_ANY.  Fix it here.
+    int initialized=0;
+    int rank;
+    MPI_Initialized(&initialized);
+    if (!initialized) {
+        MPI_Init(NULL, NULL);
+        transport_global_data.init_called_mpi_init=true;
+    }
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    log_debug(nnti_debug_level, "rank=%d", rank);
+
+    *pid = 128 + rank;
+#endif
+
+    log_debug(nnti_debug_level, "exit (pid=%d)", *pid);
+}
 
 
 static portals_work_request *decode_work_request(

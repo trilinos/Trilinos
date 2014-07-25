@@ -21,9 +21,13 @@ namespace SEAMS {
 
   /* Array structure */
   struct array {
-    double *data;
+    std::vector<double> data;
     int rows;
     int cols;
+    
+    array(int r, int c) : rows(r), cols(c) {data.resize(r*c);}
+    array() : rows(0), cols(0) {}
+    ~array() {}
   };
 
   struct symrec
@@ -33,7 +37,7 @@ namespace SEAMS {
     std::string info;
     int   type;
     bool  isInternal;  
-    union {
+    struct value {
       double var;
       double (*fnctptr)();
       double (*fnctptr_d)(double);
@@ -43,7 +47,9 @@ namespace SEAMS {
       double (*fnctptr_cc)(char*,char*);
       double (*fnctptr_dd)(double,double);
       double (*fnctptr_ddd)(double,double,double);
+      double (*fnctptr_ccd)(char*, char*,double);
       double (*fnctptr_dddd)(double,double,double,double);
+      double (*fnctptr_ddddc)(double,double,double,double,char*);
       double (*fnctptr_dddddd)(double,double,double,double,double,double);
       double (*fnctptr_a)(const array*);
       const char *svar;
@@ -51,14 +57,49 @@ namespace SEAMS {
       const char *(*strfnct_c)(char*);
       const char *(*strfnct_d)(double);
       const char *(*strfnct_a)(const array*);
+      const char *(*strfnct_dd)(double,double);
       const char *(*strfnct_ccc)(char*,char*,char*);
       const char *(*strfnct_dcc)(double,char*,char*);
       const char *(*strfnct_dcccc)(double, char*, char*, char*, char*);
       array *avar; /* Array Variable */
       array *(*arrfnct_c)(const char*);
+      array *(*arrfnct_cc)(const char*,const char*);
+      array *(*arrfnct_cd)(const char*,double);
       array *(*arrfnct_dd)(double,double);
       array *(*arrfnct_d)(double);
       array *(*arrfnct_a)(const array*);
+
+      value() :
+	var(0),
+	fnctptr(NULL),
+	fnctptr_d(NULL),
+	fnctptr_c(NULL),
+	fnctptr_dc(NULL),
+	fnctptr_cd(NULL),
+	fnctptr_cc(NULL),
+	fnctptr_dd(NULL),
+	fnctptr_ddd(NULL),
+	fnctptr_ccd(NULL),
+	fnctptr_dddd(NULL),
+	fnctptr_ddddc(NULL),
+	fnctptr_dddddd(NULL),
+	fnctptr_a(NULL),
+	svar(NULL),
+	strfnct(NULL),
+	strfnct_c(NULL),
+	strfnct_d(NULL),
+	strfnct_a(NULL),
+	strfnct_dd(NULL),
+	strfnct_ccc(NULL),
+	strfnct_dcc(NULL),
+	strfnct_dcccc(NULL),
+	avar(NULL),
+	arrfnct_c(NULL),
+	arrfnct_cc(NULL),
+	arrfnct_cd(NULL),
+	arrfnct_dd(NULL),
+	arrfnct_d(NULL),
+	arrfnct_a(NULL) {}
     } value;
     symrec *next;
 
@@ -89,7 +130,7 @@ namespace SEAMS {
     bool interactive;
     bool immutable;
     bool trace_parsing;    // enable debug output in the bison parser
-
+    bool one_based_index;
     aprepro_options() :
       end_on_exit(false),
       warning_msg(true),
@@ -97,7 +138,8 @@ namespace SEAMS {
       debugging(false),
       interactive(false),
       immutable(false),
-      trace_parsing(false)
+      trace_parsing(false),
+      one_based_index(false)
     {}
   };
 
@@ -106,12 +148,13 @@ namespace SEAMS {
   {
     std::string name;
     int	  lineno;
-    bool  tmp_file;
     int	  loop_count;
-    file_rec(const char *my_name, int line_num, bool is_temp, int loop_cnt)
-      : name(my_name), lineno(line_num), tmp_file(is_temp), loop_count(loop_cnt) {}
+    bool  tmp_file;
+
+    file_rec(const std::string &my_name, int line_num, bool is_temp, int loop_cnt)
+      : name(my_name), lineno(line_num), loop_count(loop_cnt), tmp_file(is_temp) {}
     file_rec()
-      : name("UNKNOWN_FILE_NAME"), lineno(0), tmp_file(false), loop_count(0) {}
+      : name("UNKNOWN_FILE_NAME"), lineno(0), loop_count(0), tmp_file(false) {}
   };
 
   /** The Aprepro class brings together all components. It creates an instance of
@@ -145,7 +188,7 @@ namespace SEAMS {
 	the parse_* call (* = stream, file, or string).
     */
     const std::ostringstream &parsing_results() const {return parsingResults;}
-    void clear_results() {parsingResults.str("");}
+    void clear_results();
     
     /** Return string representation of current version of aprepro.  */
     std::string version() const;
@@ -165,6 +208,18 @@ namespace SEAMS {
      */
     bool parse_string(const std::string& input,
 		      const std::string& sname = "string stream");
+
+    /** Invoke the scanner and parser on an input string in an
+     * interactive manner.
+     * @param input input stringInput
+     * @return true if successfully parsed
+     */
+    bool parse_string_interactive(const std::string &input);
+
+    /** Get the string interactive flag, which indicates if we are in
+     * the middle of parsing a string in an interactive manner.
+     */
+    bool string_interactive() {return stringInteractive;}
 
     /** Invoke the scanner and parser on a file. Use parse_stream with a
      * std::ifstream if detection of file reading errors is required.
@@ -186,6 +241,9 @@ namespace SEAMS {
 
     void add_variable(const std::string &sym_name, const std::string &sym_value, bool is_immutable=false);
     void add_variable(const std::string &sym_name, double sym_value, bool is_immutable=false);
+    std::vector<std::string> get_variable_names(bool doInternal = false);
+    void remove_variable(const std::string &sym_name);
+
     bool set_option(const std::string &option);
     
     std::fstream *open_file(const std::string &file, const char *mode);
@@ -196,7 +254,15 @@ namespace SEAMS {
     class Scanner* lexer;
 
     /** Error handling. */
-    void error(const std::string& m) const;
+    void error(const std::string& msg,
+               bool line_info=true, bool prefix=true) const;
+    void warning(const std::string& msg,
+                 bool line_info=true, bool prefix=true) const;
+    void info(const std::string& msg,
+              bool line_info=false, bool prefix=true) const;
+
+    void set_error_streams(std::ostream* error, std::ostream* warning,
+                           std::ostream* info);
 
     void dumpsym (int type, bool doInternal) const;
   private:
@@ -204,8 +270,24 @@ namespace SEAMS {
     void init_table(const char *comment);
     std::vector<symrec*> sym_table;
     std::ostringstream parsingResults;
+
+    // Input stream used with parse_string_interactive
+    std::istringstream stringInput;
+
+    bool stringInteractive;
+    class Scanner* stringScanner;
+
+    // For error handling
+    std::ostream *errorStream;
+    std::ostream *warningStream;
+    std::ostream *infoStream;
+
   public:
     bool stateImmutable;
+
+    // Flag to do Aprepro substitutions within loops. Default value is true. If set to
+    // false, content within the loop will be treated as verbatim text.
+    bool doLoopSubstitution;
   };
 
 } // namespace SEAMS

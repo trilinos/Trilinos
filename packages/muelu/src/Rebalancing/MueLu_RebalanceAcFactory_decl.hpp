@@ -57,14 +57,10 @@
 #include "MueLu_TwoLevelFactoryBase.hpp"
 #include "MueLu_RebalanceAcFactory_fwd.hpp"
 
+#include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_RAPFactory_fwd.hpp"
-#include "MueLu_FactoryBase_fwd.hpp"
-#include "MueLu_Utilities_fwd.hpp"
-
-// MPI helper
-#define sumAll(rcpComm, in, out)                                        \
-  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out));
+#include "MueLu_PerfUtils_fwd.hpp"
 
 namespace MueLu {
   /*!
@@ -84,7 +80,7 @@ namespace MueLu {
 
     virtual ~RebalanceAcFactory() { }
 
-    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+    RCP<const ParameterList> GetValidParameterList() const;
     //@}
 
     //! @name Input

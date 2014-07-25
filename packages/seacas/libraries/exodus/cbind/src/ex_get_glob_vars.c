@@ -50,8 +50,11 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include "exodusII.h"                   // for exerrval, ex_err, etc
+#include "exodusII_int.h"               // for ex_comp_ws, EX_FATAL, etc
+#include "netcdf.h"                     // for NC_NOERR, etc
 
 /*!
 \ingroup ResultsData 

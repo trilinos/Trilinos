@@ -19,9 +19,9 @@
 #
 # You should have received a copy of the GNU Lesser General Public
 # License along with this library; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 # USA
-# Questions? Contact Jonathan Hu (jhu@sandia.gov) or Ray Tuminaro 
+# Questions? Contact Jonathan Hu (jhu@sandia.gov) or Ray Tuminaro
 # (rstumin@sandia.gov).
 #
 # ************************************************************************
@@ -77,7 +77,6 @@
 #include "nlnml_coarselevelnoxinterface.H"
 
 
-using namespace std;
 using namespace Teuchos;
 namespace NLNML
 {
@@ -90,72 +89,72 @@ public:
               RefCountPtr<ML_Epetra::MultiLevelOperator>        ml_operator,
               RefCountPtr<NLNML::NLNML_CoarseLevelNoxInterface> coarseinterface,
               bool applyconstraints);
-  
+
   virtual ~NLNML_ConstrainedMultiLevelOperator() {}
-  
+
   //! Returns the label of this class.
-  /*! 
+  /*!
    Returns the label of this class.
    */
   const char* Label() const {return(&(label_[0]));}
-  
+
   //! get Comm of this class
-  /*! 
-   Derived from Epetra_Operator, returns ref to the Epetra_Comm of this class 
+  /*!
+   Derived from Epetra_Operator, returns ref to the Epetra_Comm of this class
    */
   const Epetra_Comm & Comm() const {return(comm_);}
-  
+
   //! Get fine level OperatorDomainMap.
-  /*! 
+  /*!
    Derived from Epetra_Operator, get fine level OperatorDomainMap.
    */
   const Epetra_Map & OperatorDomainMap() const {return ml_operator_->OperatorDomainMap();}
 
   //! Get fine level OperatorRangeMap.
-  /*! 
+  /*!
    Derived from Epetra_Operator, get fine level OperatorRangeMap.
    */
   const Epetra_Map & OperatorRangeMap() const {return ml_operator_->OperatorRangeMap();}
-  
+
   //! ApplyInverse the preconditioner
-  /*! 
-   ApplyInverse the preconditioner. Method is derived from Epetra_Operator. 
+  /*!
+   ApplyInverse the preconditioner. Method is derived from Epetra_Operator.
    \param X   (In) : Epetra_MultiVector matching the fine level map of this
                      preconditioner
    \param Y (Out)  : Epetra_MultiVector containing the result on output
    */
   int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const ;
-  
+
   //! Apply the preconditioner, not implemented.
-  /*! 
-   Derived from Epetra_Operator, not implemented. 
+  /*!
+   Derived from Epetra_Operator, not implemented.
    */
-  int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const 
-  { cout << "NLNML_ConstrainedMultiLevelOperator::Apply does not make sense for an ML-Multilevel Operator\n"
-         << "Use ApplyInverse\n";throw -1;return(-1);}
-  
+  int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+  { std::cout << "NLNML_ConstrainedMultiLevelOperator::Apply does not make sense for an ML-Multilevel Operator\n"
+              << "Use ApplyInverse\n";throw -1;return(-1);}
+
   //! SetUseTranspose, not implemented.
-  /*! 
-   Derived from Epetra_Operator, not implemented. 
+  /*!
+   Derived from Epetra_Operator, not implemented.
    */
   int SetUseTranspose(bool UseTranspose) { return 0;}
 
   //! NormInf, not implemented.
-  /*! 
-   Derived from Epetra_Operator, not implemented. 
+  /*!
+   Derived from Epetra_Operator, not implemented.
    */
-  double NormInf() const {cout << "NLNML_ConstrainedMultiLevelOperator::NormInf not impl.\n";
+  double NormInf() const {std::cout << "NLNML_ConstrainedMultiLevelOperator::NormInf not impl.\n";
                           return(-1.0);}
-  
+
   //! UseTranspose, not implemented.
-  /*! 
-   Derived from Epetra_Operator, not implemented. 
+  /*!
+   Derived from Epetra_Operator, not implemented.
    */
   bool UseTranspose() const {return false;}
-  
+
   //! HasNormInf, not implemented.
-  /*! 
-   Derived from Epetra_Operator, always returns false. 
+  /*!
+   Derived from Epetra_Operator, always returns false.
    */
   bool HasNormInf() const {return false;}
 
@@ -163,7 +162,7 @@ private:
 
   explicit NLNML_ConstrainedMultiLevelOperator(NLNML::NLNML_ConstrainedMultiLevelOperator& old);
   NLNML_ConstrainedMultiLevelOperator operator = (const NLNML_ConstrainedMultiLevelOperator& old);
-    
+
   const char*                                       label_;
   const Epetra_Comm&                                comm_;
   RefCountPtr<NLNML::NLNML_CoarseLevelNoxInterface> coarseinterface_;

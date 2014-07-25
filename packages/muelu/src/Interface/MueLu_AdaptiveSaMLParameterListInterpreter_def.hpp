@@ -145,14 +145,14 @@ namespace MueLu {
       RCP<UncoupledAggregationFactory> CoupledAggFact2 = rcp(new UncoupledAggregationFactory());
       CoupledAggFact2->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
       CoupledAggFact2->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
-      CoupledAggFact2->SetOrdering(MueLu::AggOptions::NATURAL);
+      CoupledAggFact2->SetOrdering("natural");
       CoupledAggFact = CoupledAggFact2;
     } else {
       // Coupled Aggregation (default)
       RCP<CoupledAggregationFactory> CoupledAggFact2 = rcp(new CoupledAggregationFactory());
       CoupledAggFact2->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
       CoupledAggFact2->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
-      CoupledAggFact2->SetOrdering(MueLu::AggOptions::NATURAL);
+      CoupledAggFact2->SetOrdering("natural");
       CoupledAggFact2->SetPhase3AggCreation(0.5);
       CoupledAggFact = CoupledAggFact2;
     }
@@ -160,7 +160,7 @@ namespace MueLu {
       *out << "========================= Aggregate option summary  =========================" << std::endl;
       *out << "min Nodes per aggregate :               " << minPerAgg << std::endl;
       *out << "min # of root nbrs already aggregated : " << maxNbrAlreadySelected << std::endl;
-      *out << "aggregate ordering :                    NATURAL" << std::endl;
+      *out << "aggregate ordering :                    natural" << std::endl;
       *out << "=============================================================================" << std::endl;
     }
 
@@ -398,7 +398,7 @@ namespace MueLu {
       // do 1 multigrid cycle for improving the null space by "solving"
       //     A B_f = 0
       // where A is the system matrix and B_f the fine level null space vectors
-      H.Iterate(*homogRhsVec, 1, *nspVector2, false);
+      H.Iterate(*homogRhsVec, *nspVector2, 1, false);
 
       // store improved fine level null space
       Finest->Set("Nullspace",nspVector2);

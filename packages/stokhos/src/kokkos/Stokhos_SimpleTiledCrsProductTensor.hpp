@@ -79,7 +79,11 @@ public:
 #endif
   static const size_type cuda_vectorsize = 32;
   static const bool is_cuda =
+#if defined( KOKKOS_HAVE_CUDA )
     Kokkos::Impl::is_same<DeviceType,Kokkos::Cuda>::value;
+#else
+    false ;
+#endif
   static const size_type vectorsize = is_cuda ? cuda_vectorsize : host_vectorsize;
 
   // Alignment in terms of number of entries of CRS rows
@@ -337,7 +341,6 @@ public:
     using Teuchos::Array;
 
     typedef Stokhos::Sparse3Tensor<OrdinalType,ValueType> Cijk_type;
-    typedef Stokhos::CijkData<OrdinalType,ValueType> Cijk_Data_type;
     typedef typename Cijk_type::i_iterator i_iterator;
     typedef typename Cijk_type::ik_iterator ik_iterator;
     typedef typename Cijk_type::ikj_iterator ikj_iterator;

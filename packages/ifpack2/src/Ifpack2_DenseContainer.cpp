@@ -49,15 +49,25 @@
 #include "Ifpack2_ETIHelperMacros.h"
 
 
-#define IFPACK2_INST_DENSE_CONTAINER(S,LO,GO)                           \
-  template class DenseContainer<Tpetra::CrsMatrix< S , LO , GO >, S >;  \
+// Explicit instantiation macro for DenseContainer.
+// Only instantiate in the Ifpack2 namespace.
+#define LCLINST(S, LO, GO) template class DenseContainer<Tpetra::CrsMatrix< S , LO , GO, KokkosClassic::DefaultNode::DefaultNodeType >, S >;
 
 
 namespace Ifpack2 {
 
   IFPACK2_ETI_MANGLING_TYPEDEFS()
 
-  IFPACK2_INSTANTIATE_SLG(IFPACK2_INST_DENSE_CONTAINER)
+  IFPACK2_INSTANTIATE_SLG(LCLINST)
+
+  // FIXME (mfh 24 May 2014) This will result in a duplicate symbol if
+  // the default Node type is TPINode.  See the definition of LCLINST
+  // above.
+#  if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
+
+  template class DenseContainer<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode>, double >;
+
+#  endif // defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
 
 }
 

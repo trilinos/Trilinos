@@ -76,7 +76,6 @@ namespace MueLu {
   template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType,
             class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
   class ZoltanInterface : public SingleLevelFactoryBase {
-
     typedef double Scalar; // FIXME
 #undef MUELU_ZOLTANINTERFACE_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -93,16 +92,16 @@ namespace MueLu {
     virtual ~ZoltanInterface() { }
     //@}
 
-    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+    RCP<const ParameterList> GetValidParameterList() const;
 
     //! @name Input
     //@{
-    void DeclareInput(Level & level) const;
+    void DeclareInput(Level& level) const;
     //@}
 
     //! @name Build methods.
     //@{
-    void Build(Level &level) const;
+    void Build(Level& level) const;
 
     //@}
 

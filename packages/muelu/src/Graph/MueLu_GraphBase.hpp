@@ -87,9 +87,11 @@ namespace MueLu {
     //! Return number of edges owned by the calling node.
     virtual size_t GetNodeNumEdges()    const = 0;
 
-    virtual void SetBoundaryNodeMap(const ArrayRCP<const bool > & boundaryArray) = 0;
+    virtual void   SetBoundaryNodeMap(const ArrayRCP<const bool > & boundaryArray) = 0;
 
-    virtual const ArrayRCP<const bool > GetBoundaryNodeMap() const = 0;
+    virtual size_t getNodeMaxNumRowEntries() const = 0;
+
+    virtual const ArrayRCP<const bool> GetBoundaryNodeMap() const = 0;
 
     //FIXME is this necessary?
     //! Return number of global edges in the graph.

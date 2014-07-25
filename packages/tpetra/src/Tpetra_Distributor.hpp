@@ -64,6 +64,7 @@
 #if TPETRA_USE_KOKKOS_DISTOBJECT || defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 #include "KokkosCompat_View.hpp"
 #include "Kokkos_View.hpp"
+#include "Kokkos_TeuchosCommAdapters.hpp"
 #endif
 
 
@@ -87,6 +88,25 @@ namespace Tpetra {
     /// not rely on this function in your code.
     std::string
     DistributorSendTypeEnumToString (EDistributorSendType sendType);
+
+    /// \brief Enum indicating how and whether a Distributor was initialized.
+    ///
+    /// This is an implementation detail of Distributor.  Please do
+    /// not rely on these values in your code.
+    enum EDistributorHowInitialized {
+      DISTRIBUTOR_NOT_INITIALIZED, // Not initialized yet
+      DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS, // By createFromSends
+      DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_RECVS, // By createFromRecvs
+      DISTRIBUTOR_INITIALIZED_BY_REVERSE, // By createReverseDistributor
+      DISTRIBUTOR_INITIALIZED_BY_COPY // By copy constructor
+    };
+
+    /// \brief Convert an EDistributorHowInitialized enum value to a string.
+    ///
+    /// This is an implementation detail of Distributor.  Please do
+    /// not rely on this function in your code.
+    std::string
+    DistributorHowInitializedEnumToString (EDistributorHowInitialized how);
 
   } // namespace Details
 
@@ -373,6 +393,14 @@ namespace Tpetra {
     /// This is a nonpersisting view.  It will last only as long as
     /// this Distributor instance does.
     ArrayView<const size_t> getLengthsTo() const;
+
+    /// \brief Return an enum indicating whether and how a Distributor was initialized.
+    ///
+    /// This is an implementation detail of Tpetra.  Please do not
+    /// call this method or rely on it existing in your code.
+    Details::EDistributorHowInitialized howInitialized () const {
+      return howInitialized_;
+    }
 
     //@}
     //! @name Reverse communication methods
@@ -714,8 +742,16 @@ namespace Tpetra {
                     const ArrayView<size_t> &numExportPacketsPerLID,
                     const Kokkos::View<Packet*, Layout, Device, Mem> &imports,
                     const ArrayView<size_t> &numImportPacketsPerLID);
-
 #endif
+
+    /// \brief Information on the last call to do/doReverse
+    ///
+    /// Returns the amount of data sent & recv'd on this processor in bytes
+    void getLastDoStatistics(size_t & bytes_sent,  size_t & bytes_recvd) const{
+      bytes_sent  = lastRoundBytesSend_;
+      bytes_recvd = lastRoundBytesRecv_;
+    }
+
 
     //@}
     //! @name Implementation of Teuchos::Describable
@@ -735,6 +771,9 @@ namespace Tpetra {
 
     //! Output stream for debug output.
     Teuchos::RCP<Teuchos::FancyOStream> out_;
+
+    //! How the Distributor was initialized (if it was).
+    Details::EDistributorHowInitialized howInitialized_;
 
     //! @name Parameters read in from the Teuchos::ParameterList
     //@{
@@ -772,7 +811,9 @@ namespace Tpetra {
     /// require a buffer.
     size_t numExports_;
 
-    //! Whether I am supposed to send a message to myself.
+    /// \brief Whether I am supposed to send a message to myself.
+    ///
+    /// This is set in createFromSends or createReverseDistributor.
     bool selfMessage_;
 
     /// \brief The number of sends from this process to other process.
@@ -893,6 +934,13 @@ namespace Tpetra {
     /// later reuse.  This is why it is declared "mutable".
     mutable RCP<Distributor> reverseDistributor_;
 
+
+    /// \brief The number of bytes sent by this proc in the last call to do/doReverse
+    size_t lastRoundBytesSend_;
+
+    /// \brief The number of bytes received by this proc in the last call to do/doReverse
+    size_t lastRoundBytesRecv_;
+
 #ifdef TPETRA_DISTRIBUTOR_TIMERS
     Teuchos::RCP<Teuchos::Time> timer_doPosts3_;
     Teuchos::RCP<Teuchos::Time> timer_doPosts4_;
@@ -986,14 +1034,15 @@ namespace Tpetra {
                    size_t numPackets,
                    const ArrayView<Packet>& imports)
   {
-    using Teuchos::as;
     using Teuchos::arcp;
     using Teuchos::ArrayRCP;
+    typedef typename ArrayRCP<const Packet>::size_type size_type;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
-      Teuchos::typeName(*this) << "::doPostsAndWaits(): There are "
-      << requests_.size() << " outstanding nonblocking messages pending.  It is "
-      "incorrect to call doPostsAndWaits with posts outstanding.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      requests_.size () != 0, std::runtime_error, "Tpetra::Distributor::"
+      "doPostsAndWaits(3 args): There are " << requests_.size () <<
+      " outstanding nonblocking messages pending.  It is incorrect to call "
+      "this method with posts outstanding.");
 
     // doPosts() accepts the exports and imports arrays as ArrayRCPs,
     // requiring that the memory location is persisting (as is
@@ -1002,10 +1051,11 @@ namespace Tpetra {
     // a nonpersisting reference in this case.  The use of a
     // nonpersisting reference is purely a performance optimization.
 
-    typedef typename ArrayRCP<const Packet>::size_type size_type;
     //const Packet* exportsPtr = exports.getRawPtr();
-    //ArrayRCP<const Packet> exportsArcp (exportsPtr, as<size_type> (0), exports.size(), false);
-    ArrayRCP<const Packet> exportsArcp (exports.getRawPtr(), as<size_type> (0),
+    //ArrayRCP<const Packet> exportsArcp (exportsPtr, static_cast<size_type> (0),
+    //                                    exports.size(), false);
+    ArrayRCP<const Packet> exportsArcp (exports.getRawPtr (),
+                                        static_cast<size_type> (0),
                                         exports.size(), false);
 
     // For some reason, neither of the options below (that use arcp)
@@ -1021,8 +1071,11 @@ namespace Tpetra {
     //              arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false));
     doPosts (exportsArcp,
              numPackets,
-             arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false));
-    doWaits();
+             arcp<Packet> (imports.getRawPtr (), 0, imports.size (), false));
+    doWaits ();
+
+    lastRoundBytesSend_ = exports.size () * sizeof (Packet);
+    lastRoundBytesRecv_ = imports.size () * sizeof (Packet);
   }
 
   template <class Packet>
@@ -1034,12 +1087,12 @@ namespace Tpetra {
   {
     using Teuchos::arcp;
     using Teuchos::ArrayRCP;
-    using Teuchos::as;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
-      Teuchos::typeName(*this) << "::doPostsAndWaits(): There are "
-      << requests_.size() << " outstanding nonblocking messages pending.  It is "
-      "incorrect to call doPostsAndWaits with posts outstanding.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      requests_.size () != 0, std::runtime_error, "Tpetra::Distributor::"
+      "doPostsAndWaits: There are " << requests_.size () << " outstanding "
+      "nonblocking messages pending.  It is incorrect to call doPostsAndWaits "
+      "with posts outstanding.");
 
     // doPosts() accepts the exports and imports arrays as ArrayRCPs,
     // requiring that the memory location is persisting (as is
@@ -1053,17 +1106,21 @@ namespace Tpetra {
     // exports array.  This is why we construct a separate nonowning
     // ArrayRCP.
     typedef typename ArrayRCP<const Packet>::size_type size_type;
-    ArrayRCP<const Packet> exportsArcp (exports.getRawPtr(), as<size_type> (0),
-                                        exports.size(), false);
+    ArrayRCP<const Packet> exportsArcp (exports.getRawPtr (),
+                                        static_cast<size_type> (0),
+                                        exports.size (), false);
     // mfh 04 Apr 2012: This is the offending code.  This statement
     // would normally be in place of "exportsArcp" in the
     // doPosts() call below.
     //arcp<const Packet> (exports.getRawPtr(), 0, exports.size(), false),
     doPosts (exportsArcp,
              numExportPacketsPerLID,
-             arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false),
+             arcp<Packet> (imports.getRawPtr (), 0, imports.size (), false),
              numImportPacketsPerLID);
-    doWaits();
+    doWaits ();
+
+    lastRoundBytesSend_ = exports.size () * sizeof (Packet);
+    lastRoundBytesRecv_ = imports.size () * sizeof (Packet);
   }
 
 
@@ -1126,23 +1183,28 @@ namespace Tpetra {
 // #endif // HAVE_TEUCHOS_DEBUG
 
     TEUCHOS_TEST_FOR_EXCEPTION(
-      sendType == Details::DISTRIBUTOR_RSEND && ! doBarrier,
-      std::logic_error, "Ready send implementation requires a barrier between "
-      "posting receives and posting ready sends.  This should have been checked "
-      "before.  Please report this bug to the Tpetra developers.");
+      sendType == Details::DISTRIBUTOR_RSEND && ! doBarrier, std::logic_error,
+      "Tpetra::Distributor::doPosts(3 args): Ready-send version requires a "
+      "barrier between posting receives and posting ready sends.  This should "
+      "have been checked before.  "
+      "Please report this bug to the Tpetra developers.");
 
-    const int myImageID = comm_->getRank();
+    const int myImageID = comm_->getRank ();
     size_t selfReceiveOffset = 0;
 
-#ifdef HAVE_TEUCHOS_DEBUG
     // Each message has the same number of packets.
+    //
+    // FIXME (mfh 18 Jul 2014): Relaxing this test from strict
+    // inequality to a less-than seems to have fixed Bug 6170.  It's
+    // OK for the 'imports' array to be longer than it needs to be;
+    // I'm just curious why it would be.
     const size_t totalNumImportPackets = totalReceiveLength_ * numPackets;
-    TEUCHOS_TEST_FOR_EXCEPTION(as<size_t> (imports.size ()) != totalNumImportPackets,
-      std::runtime_error, typeName (*this) << "::doPosts(): imports must be "
-      "large enough to store the imported data.  imports.size() = "
-      << imports.size() << ", but total number of import packets = "
-      << totalNumImportPackets << ".");
-#endif // HAVE_TEUCHOS_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      static_cast<size_t> (imports.size ()) < totalNumImportPackets,
+      std::invalid_argument, "Tpetra::Distributor::doPosts(3 args): The "
+      "'imports' array must have enough entries to hold the expected number "
+      "of import packets.  imports.size() = " << imports.size () << " < "
+      "totalNumImportPackets = " << totalNumImportPackets << ".");
 
     // MPI tag for nonblocking receives and blocking sends in this
     // method.  Some processes might take the "fast" path
@@ -1154,9 +1216,9 @@ namespace Tpetra {
 
     if (debug_) {
       TEUCHOS_TEST_FOR_EXCEPTION(
-        requests_.size () != 0, std::logic_error, "doPosts(3): Process "
-        << myImageID << ": requests_.size() = " << requests_.size ()
-        << " != 0.");
+        requests_.size () != 0, std::logic_error, "Tpetra::Distributor::"
+        "doPosts(3 args): Process " << myImageID << ": requests_.size() = "
+        << requests_.size () << " != 0.");
       std::ostringstream os;
       os << myImageID << ": doPosts(3,"
          << (indicesTo_.empty () ? "fast" : "slow") << ")" << endl;
@@ -1190,8 +1252,9 @@ namespace Tpetra {
       Teuchos::TimeMonitor timeMonRecvs (*timer_doPosts3_recvs_);
 #endif // TPETRA_DISTRIBUTOR_TIMERS
 
-      size_t curBufferOffset = 0;
+      size_t curBufOffset = 0;
       for (size_type i = 0; i < actualNumReceives; ++i) {
+        const size_t curBufLen = lengthsFrom_[i] * numPackets;
         if (imagesFrom_[i] != myImageID) {
           // If my process is receiving these packet(s) from another
           // process (not a self-receive):
@@ -1200,8 +1263,15 @@ namespace Tpetra {
           //    array, given the offset and size (total number of
           //    packets from process imagesFrom_[i]).
           // 2. Start the Irecv and save the resulting request.
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            curBufOffset + curBufLen > static_cast<size_t> (imports.size ()),
+            std::logic_error, "Tpetra::Distributor::doPosts(3 args): Exceeded "
+            "size of 'imports' array in packing loop on Process " << myImageID
+            << ".  imports.size() = " << imports.size () << " < offset + length"
+            " = " << (curBufOffset + curBufLen) << ".");
+
           ArrayRCP<Packet> recvBuf =
-            imports.persistingView (curBufferOffset, lengthsFrom_[i]*numPackets);
+            imports.persistingView (curBufOffset, curBufLen);
           requests_.push_back (ireceive<int, Packet> (recvBuf, imagesFrom_[i],
                                                       tag, *comm_));
           if (debug_) {
@@ -1214,9 +1284,9 @@ namespace Tpetra {
           }
         }
         else { // Receiving from myself
-          selfReceiveOffset = curBufferOffset; // Remember the self-recv offset
+          selfReceiveOffset = curBufOffset; // Remember the self-recv offset
         }
-        curBufferOffset += lengthsFrom_[i]*numPackets;
+        curBufOffset += curBufLen;
       }
     }
 
@@ -1294,9 +1364,10 @@ namespace Tpetra {
                                 as<int> (tmpSend.size ()),
                                 imagesTo_[p], tag, *comm_);
           } else {
-            TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Tpetra::"
-              "Distributor (3 args): Invalid send type.  We should never get "
-              "here.  Please report this bug to the Tpetra developers.");
+            TEUCHOS_TEST_FOR_EXCEPTION(
+              true, std::logic_error, "Tpetra::Distributor::doPosts(3 args): "
+              "Invalid send type.  We should never get here.  "
+              "Please report this bug to the Tpetra developers.");
           }
 
           if (debug_) {
@@ -1343,9 +1414,8 @@ namespace Tpetra {
 
       TEUCHOS_TEST_FOR_EXCEPTION(
         sendType == Details::DISTRIBUTOR_ISEND, std::logic_error,
-        "Tpetra::Distributor::doPosts<" << TypeNameTraits<Packet>::name()
-        << "> (3-argument version):" << endl
-        << "The \"send buffer\" code path doesn't currently work with nonblocking sends.");
+        "Tpetra::Distributor::doPosts(3 args): The \"send buffer\" code path "
+        << "doesn't currently work with nonblocking sends.");
 
       for (size_t i = 0; i < numBlocks; ++i) {
         size_t p = i + imageIndex;
@@ -1388,9 +1458,10 @@ namespace Tpetra {
                                 imagesTo_[p], tag, *comm_);
           }
           else {
-            TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Tpetra::"
-              "Distributor (3 args): Invalid send type.  We should never get "
-              "here.  Please report this bug to the Tpetra developers.");
+            TEUCHOS_TEST_FOR_EXCEPTION(
+              true, std::logic_error, "Tpetra::Distributor::doPosts(3 args): "
+              "Invalid send type.  We should never get here.  "
+              "Please report this bug to the Tpetra developers.");
           }
 
           if (debug_) {
@@ -1480,12 +1551,14 @@ namespace Tpetra {
 //     }
 // #endif // HAVE_TEUCHOS_DEBUG
 
-    TEUCHOS_TEST_FOR_EXCEPTION(sendType == Details::DISTRIBUTOR_RSEND && ! doBarrier,
-      std::logic_error, "Ready send implementation requires a barrier between "
-      "posting receives and posting ready sends.  This should have been checked "
-      "before.  Please report this bug to the Tpetra developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      sendType == Details::DISTRIBUTOR_RSEND && ! doBarrier, std::logic_error,
+      "Tpetra::Distributor::doPosts(4 args): Ready-send version requires a "
+      "barrier between posting receives and posting ready sends.  This should "
+      "have been checked before.  "
+      "Please report this bug to the Tpetra developers.");
 
-    const int myImageID = comm_->getRank();
+    const int myImageID = comm_->getRank ();
     size_t selfReceiveOffset = 0;
 
 #ifdef HAVE_TEUCHOS_DEBUG
@@ -1494,11 +1567,12 @@ namespace Tpetra {
     for (int ii = 0; ii < numImportPacketsPerLID.size(); ++ii) {
       totalNumImportPackets += numImportPacketsPerLID[ii];
     }
-    TEUCHOS_TEST_FOR_EXCEPTION(as<size_t> (imports.size ()) != totalNumImportPackets,
-      std::runtime_error, Teuchos::typeName (*this) << "::doPosts(): The "
-      "imports array argument must be large enough to store the imported "
-      "data.  imports.size() = " << imports.size() << ", but the total number "
-      "of packets is " << totalNumImportPackets << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      static_cast<size_t> (imports.size ()) < totalNumImportPackets,
+      std::runtime_error, "Tpetra::Distributor::doPosts(4 args): The 'imports' "
+      "array must have enough entries to hold the expected number of import "
+      "packets.  imports.size() = " << imports.size() << " < "
+      "totalNumImportPackets = " << totalNumImportPackets << ".");
 #endif // HAVE_TEUCHOS_DEBUG
 
     // MPI tag for nonblocking receives and blocking sends in this
@@ -1511,9 +1585,9 @@ namespace Tpetra {
 
     if (debug_) {
       TEUCHOS_TEST_FOR_EXCEPTION(
-        requests_.size () != 0, std::logic_error, "doPosts(4): Process "
-        << myImageID << ": requests_.size() = " << requests_.size ()
-        << " != 0.");
+        requests_.size () != 0, std::logic_error, "Tpetra::Distributor::"
+        "doPosts(4 args): Process " << myImageID << ": requests_.size() = "
+        << requests_.size () << " != 0.");
       std::ostringstream os;
       os << myImageID << ": doPosts(4,"
          << (indicesTo_.empty () ? "fast" : "slow") << ")" << endl;
@@ -1663,9 +1737,10 @@ namespace Tpetra {
                                 imagesTo_[p], tag, *comm_);
           }
           else {
-            TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Tpetra::"
-              "Distributor (4 args): Invalid send type.  We should never get "
-              "here.  Please report this bug to the Tpetra developers.");
+            TEUCHOS_TEST_FOR_EXCEPTION(
+              true, std::logic_error, "Tpetra::Distributor::doPosts(4 args): "
+              "Invalid send type.  We should never get here.  Please report "
+              "this bug to the Tpetra developers.");
           }
         }
         else { // "Sending" the message to myself
@@ -1696,9 +1771,8 @@ namespace Tpetra {
 
       TEUCHOS_TEST_FOR_EXCEPTION(
         sendType == Details::DISTRIBUTOR_ISEND, std::logic_error,
-        "Tpetra::Distributor::doPosts<" << TypeNameTraits<Packet>::name()
-        << "> (3-argument version):" << endl
-        << "The \"send buffer\" code path may not necessarily work with nonblocking sends.");
+        "Tpetra::Distributor::doPosts(3 args): The \"send buffer\" "
+        "code path may not necessarily work with nonblocking sends.");
 
       Array<size_t> indicesOffsets (numExportPacketsPerLID.size(), 0);
       size_t ioffset = 0;
@@ -1804,6 +1878,9 @@ namespace Tpetra {
                     numPackets,
                     arcp<Packet> (imports.getRawPtr (), 0, imports.size (), false));
     doReverseWaits ();
+
+    lastRoundBytesSend_ = exports.size() * sizeof(Packet);
+    lastRoundBytesRecv_ = imports.size() * sizeof(Packet);
   }
 
   template <class Packet>
@@ -1817,10 +1894,11 @@ namespace Tpetra {
     using Teuchos::arcp;
     using Teuchos::ArrayRCP;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
-      Teuchos::typeName(*this) << "::doReversePostsAndWaits(): There are "
-      << requests_.size() << " outstanding nonblocking messages pending.  It is "
-      "incorrect to call doReversePostsAndWaits with posts outstanding.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      requests_.size () != 0, std::runtime_error, "Tpetra::Distributor::"
+      "doReversePostsAndWaits(4 args): There are " << requests_.size ()
+      << " outstanding nonblocking messages pending.  It is incorrect to call "
+      "this method with posts outstanding.");
 
     // doReversePosts() accepts the exports and imports arrays as
     // ArrayRCPs, requiring that the memory location is persisting (as
@@ -1841,6 +1919,9 @@ namespace Tpetra {
                     arcp<Packet> (imports.getRawPtr (), 0, imports.size (), false),
                     numImportPacketsPerLID);
     doReverseWaits ();
+
+    lastRoundBytesSend_ = exports.size() * sizeof(Packet);
+    lastRoundBytesRecv_ = imports.size() * sizeof(Packet);
   }
 
   template <class Packet>
@@ -1850,8 +1931,9 @@ namespace Tpetra {
                   const ArrayRCP<Packet>& imports)
   {
     // FIXME (mfh 29 Mar 2012) WHY?
-    TEUCHOS_TEST_FOR_EXCEPTION(! indicesTo_.empty (), std::runtime_error,
-      Teuchos::typeName (*this) << "::doReversePosts(): Can only do reverse "
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! indicesTo_.empty (), std::runtime_error,
+      "Tpetra::Distributor::doReversePosts(3 args): Can only do reverse "
       "communication when original data are blocked by process.");
     if (reverseDistributor_.is_null ()) {
       createReverseDistributor ();
@@ -1867,8 +1949,9 @@ namespace Tpetra {
                   const ArrayView<size_t>& numImportPacketsPerLID)
   {
     // FIXME (mfh 29 Mar 2012) WHY?
-    TEUCHOS_TEST_FOR_EXCEPTION(! indicesTo_.empty (), std::runtime_error,
-      Teuchos::typeName (*this) << "::doReversePosts(): Can only do reverse "
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! indicesTo_.empty (), std::runtime_error,
+      "Tpetra::Distributor::doReversePosts(3 args): Can only do reverse "
       "communication when original data are blocked by process.");
     if (reverseDistributor_.is_null ()) {
       createReverseDistributor ();
@@ -1885,34 +1968,36 @@ namespace Tpetra {
                    size_t numPackets,
                    const Kokkos::View<Packet*, Layout, Device, Mem> &imports)
   {
-    // If MPI library doesn't support RDMA for communication directly
-    // to/from GPU, transfer exports to the host, do the communication, then
-    // transfer imports back to the GPU
+    // If the MPI library doesn't support RDMA for communication
+    // directly to or from the GPU's memory, we must transfer exports
+    // to the host, do the communication, then transfer imports back
+    // to the GPU.
     //
-    // We need to do this here instead of doPosts() because the copy back
-    // to the GPU must occur after the waits.
+    // We need to do this here instead of doPosts() because the copy
+    // back to the GPU must occur after the waits.
     typedef Kokkos::View<const Packet*, Layout, Device, Mem> exports_view;
     typedef Kokkos::View<Packet*, Layout, Device, Mem> imports_view;
-    if (!enable_cuda_rdma_ && !exports_view::is_hostspace) {
+    if (! enable_cuda_rdma_ && ! exports_view::is_hostspace) {
       typename exports_view::HostMirror host_exports =
-        Kokkos::create_mirror_view(exports);
+        Kokkos::create_mirror_view (exports);
       typename imports_view::HostMirror host_imports =
-        Kokkos::create_mirror_view(imports);
+        Kokkos::create_mirror_view (imports);
       Kokkos::deep_copy (host_exports, exports);
-      doPostsAndWaits(Kokkos::Compat::create_const_view(host_exports),
-                      numPackets,
-                      host_imports);
+      doPostsAndWaits (Kokkos::Compat::create_const_view (host_exports),
+                       numPackets,
+                       host_imports);
       Kokkos::deep_copy (imports, host_imports);
       return;
     }
 
-    TEUCHOS_TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
-      Teuchos::typeName(*this) << "::doPostsAndWaits(): There are "
-      << requests_.size() << " outstanding nonblocking messages pending.  It is "
-      "incorrect to call doPostsAndWaits with posts outstanding.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      requests_.size () != 0, std::runtime_error, "Tpetra::Distributor::"
+      "doPostsAndWaits(3 args): There are " << requests_.size () <<
+      " outstanding nonblocking messages pending.  It is incorrect to call "
+      "this method with posts outstanding.");
 
     doPosts (exports, numPackets, imports);
-    doWaits();
+    doWaits ();
   }
 
   template <class Packet, class Layout, class Device, class Mem>
@@ -1944,13 +2029,14 @@ namespace Tpetra {
       return;
     }
 
-    TEUCHOS_TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
-      Teuchos::typeName(*this) << "::doPostsAndWaits(): There are "
-      << requests_.size() << " outstanding nonblocking messages pending.  It is "
-      "incorrect to call doPostsAndWaits with posts outstanding.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      requests_.size () != 0, std::runtime_error,
+      "Tpetra::Distributor::doPostsAndWaits(4 args): There are "
+      << requests_.size () << " outstanding nonblocking messages pending.  "
+      "It is incorrect to call this method with posts outstanding.");
 
     doPosts (exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
-    doWaits();
+    doWaits ();
   }
 
 
@@ -1975,7 +2061,6 @@ namespace Tpetra {
     using std::endl;
     using Kokkos::Compat::create_const_view;
     using Kokkos::Compat::create_view;
-    using Kokkos::Compat::persistingView;
     using Kokkos::Compat::subview_offset;
     using Kokkos::Compat::deep_copy_offset;
     typedef Array<size_t>::size_type size_type;
@@ -2020,23 +2105,23 @@ namespace Tpetra {
 // #endif // HAVE_TEUCHOS_DEBUG
 
     TEUCHOS_TEST_FOR_EXCEPTION(
-      sendType == Details::DISTRIBUTOR_RSEND && ! doBarrier,
-      std::logic_error, "Ready send implementation requires a barrier between "
-      "posting receives and posting ready sends.  This should have been checked "
-      "before.  Please report this bug to the Tpetra developers.");
+      sendType == Details::DISTRIBUTOR_RSEND && ! doBarrier, std::logic_error,
+      "Tpetra::Distributor::doPosts(3 args): Ready-send version requires a "
+      "barrier between posting receives and posting ready sends.  This should "
+      "have been checked before.  "
+      "Please report this bug to the Tpetra developers.");
 
-    const int myImageID = comm_->getRank();
+    const int myImageID = comm_->getRank ();
     size_t selfReceiveOffset = 0;
 
-#ifdef HAVE_TEUCHOS_DEBUG
     // Each message has the same number of packets.
     const size_t totalNumImportPackets = totalReceiveLength_ * numPackets;
-    TEUCHOS_TEST_FOR_EXCEPTION(as<size_t> (imports.size ()) != totalNumImportPackets,
-      std::runtime_error, typeName (*this) << "::doPosts(): imports must be "
-      "large enough to store the imported data.  imports.size() = "
-      << imports.size() << ", but total number of import packets = "
-      << totalNumImportPackets << ".");
-#endif // HAVE_TEUCHOS_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      static_cast<size_t> (imports.dimension_0 ()) < totalNumImportPackets,
+      std::runtime_error, "Tpetra::Distributor::doPosts(3 args): The 'imports' "
+      "array must have enough entries to hold the expected number of import "
+      "packets.  imports.dimension_0() = " << imports.dimension_0 () << " < "
+      "totalNumImportPackets = " << totalNumImportPackets << ".");
 
     // MPI tag for nonblocking receives and blocking sends in this
     // method.  Some processes might take the "fast" path
@@ -2048,9 +2133,9 @@ namespace Tpetra {
 
     if (debug_) {
       TEUCHOS_TEST_FOR_EXCEPTION(
-        requests_.size () != 0, std::logic_error, "doPosts(3): Process "
-        << myImageID << ": requests_.size() = " << requests_.size ()
-        << " != 0.");
+        requests_.size () != 0, std::logic_error, "Tpetra::Distributor::"
+        "doPosts(3 args): Process " << myImageID << ": requests_.size() = "
+        << requests_.size () << " != 0.");
       std::ostringstream os;
       os << myImageID << ": doPosts(3,"
          << (indicesTo_.empty () ? "fast" : "slow") << ")" << endl;
@@ -2094,10 +2179,10 @@ namespace Tpetra {
           //    array, given the offset and size (total number of
           //    packets from process imagesFrom_[i]).
           // 2. Start the Irecv and save the resulting request.
-          ArrayRCP<Packet> recvBuf =
-            persistingView (imports, curBufferOffset, lengthsFrom_[i]*numPackets);
-          requests_.push_back (ireceive<int, Packet> (recvBuf, imagesFrom_[i],
-                                                      tag, *comm_));
+          imports_view_type recvBuf =
+            subview_offset (imports, curBufferOffset, lengthsFrom_[i]*numPackets);
+          requests_.push_back (ireceive<int> (recvBuf, imagesFrom_[i],
+                                              tag, *comm_));
           if (debug_) {
             std::ostringstream os;
             os << myImageID << ": doPosts(3,"
@@ -2167,30 +2252,31 @@ namespace Tpetra {
             exports, startsTo_[p]*numPackets, lengthsTo_[p]*numPackets);
 
           if (sendType == Details::DISTRIBUTOR_SEND) {
-            send<int, Packet> (tmpSend.ptr_on_device (),
-                               as<int> (tmpSend.size ()),
-                               imagesTo_[p], tag, *comm_);
+            send<int> (tmpSend,
+                       as<int> (tmpSend.size ()),
+                       imagesTo_[p], tag, *comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_ISEND) {
-            ArrayRCP<const Packet> tmpSendBuf =
-              persistingView (exports, startsTo_[p] * numPackets,
+            exports_view_type tmpSendBuf =
+              subview_offset (exports, startsTo_[p] * numPackets,
                               lengthsTo_[p] * numPackets);
-            requests_.push_back (isend<int, Packet> (tmpSendBuf, imagesTo_[p],
-                                                     tag, *comm_));
+            requests_.push_back (isend<int> (tmpSendBuf, imagesTo_[p],
+                                             tag, *comm_));
           }
           else if (sendType == Details::DISTRIBUTOR_RSEND) {
-            readySend<int, Packet> (tmpSend.ptr_on_device (),
-                                    as<int> (tmpSend.size ()),
-                                    imagesTo_[p], tag, *comm_);
+            readySend<int> (tmpSend,
+                            as<int> (tmpSend.size ()),
+                            imagesTo_[p], tag, *comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_SSEND) {
-            ssend<int, Packet> (tmpSend.ptr_on_device (),
-                                as<int> (tmpSend.size ()),
-                                imagesTo_[p], tag, *comm_);
+            ssend<int> (tmpSend,
+                        as<int> (tmpSend.size ()),
+                        imagesTo_[p], tag, *comm_);
           } else {
-            TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Tpetra::"
-              "Distributor (3 args): Invalid send type.  We should never get "
-              "here.  Please report this bug to the Tpetra developers.");
+            TEUCHOS_TEST_FOR_EXCEPTION(
+              true, std::logic_error, "Tpetra::Distributor::doPosts(3 args): "
+              "Invalid send type.  We should never get here.  "
+              "Please report this bug to the Tpetra developers.");
           }
 
           if (debug_) {
@@ -2234,13 +2320,13 @@ namespace Tpetra {
       // FIXME (mfh 05 Mar 2013) This is broken for Isend (nonblocking
       // sends), because the buffer is only long enough for one send.
       Kokkos::View<Packet*,Layout,Device,Mem> sendArray =
-        create_view<Packet,Layout,Device,Mem>("sendArray", maxSendLength_ * numPackets); // send buffer
+        create_view<Packet,Layout,Device,Mem> ("sendArray",
+                                               maxSendLength_ * numPackets);
 
       TEUCHOS_TEST_FOR_EXCEPTION(
         sendType == Details::DISTRIBUTOR_ISEND, std::logic_error,
-        "Tpetra::Distributor::doPosts<" << TypeNameTraits<Packet>::name()
-        << "> (3-argument version):" << endl
-        << "The \"send buffer\" code path doesn't currently work with nonblocking sends.");
+        "Tpetra::Distributor::doPosts(3 args): The \"send buffer\" code path "
+        "doesn't currently work with nonblocking sends.");
 
       for (size_t i = 0; i < numBlocks; ++i) {
         size_t p = i + imageIndex;
@@ -2260,30 +2346,31 @@ namespace Tpetra {
             subview_offset(sendArray, size_t(0), lengthsTo_[p]*numPackets);
 
           if (sendType == Details::DISTRIBUTOR_SEND) {
-            send<int, Packet> (tmpSend.ptr_on_device (),
-                               as<int> (tmpSend.size ()),
-                               imagesTo_[p], tag, *comm_);
+            send<int> (tmpSend,
+                       as<int> (tmpSend.size ()),
+                       imagesTo_[p], tag, *comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_ISEND) {
-            ArrayRCP<const Packet> tmpSendBuf =
-              persistingView (sendArray, 0, lengthsTo_[p] * numPackets);
-            requests_.push_back (isend<int, Packet> (tmpSendBuf, imagesTo_[p],
-                                                     tag, *comm_));
+            exports_view_type tmpSendBuf =
+              subview_offset (sendArray, size_t(0), lengthsTo_[p] * numPackets);
+            requests_.push_back (isend<int> (tmpSendBuf, imagesTo_[p],
+                                             tag, *comm_));
           }
           else if (sendType == Details::DISTRIBUTOR_RSEND) {
-            readySend<int, Packet> (tmpSend.ptr_on_device (),
-                                    as<int> (tmpSend.size ()),
-                                    imagesTo_[p], tag, *comm_);
+            readySend<int> (tmpSend,
+                            as<int> (tmpSend.size ()),
+                            imagesTo_[p], tag, *comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_SSEND) {
-            ssend<int, Packet> (tmpSend.ptr_on_device (),
-                                as<int> (tmpSend.size ()),
-                                imagesTo_[p], tag, *comm_);
+            ssend<int> (tmpSend,
+                        as<int> (tmpSend.size ()),
+                        imagesTo_[p], tag, *comm_);
           }
           else {
-            TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Tpetra::"
-              "Distributor (3 args): Invalid send type.  We should never get "
-              "here.  Please report this bug to the Tpetra developers.");
+            TEUCHOS_TEST_FOR_EXCEPTION(
+              true, std::logic_error, "Tpetra::Distributor::doPosts(3 args): "
+              "Invalid send type.  We should never get here.  "
+              "Please report this bug to the Tpetra developers.");
           }
 
           if (debug_) {
@@ -2337,7 +2424,6 @@ namespace Tpetra {
     using std::endl;
     using Kokkos::Compat::create_const_view;
     using Kokkos::Compat::create_view;
-    using Kokkos::Compat::persistingView;
     using Kokkos::Compat::subview_offset;
     using Kokkos::Compat::deep_copy_offset;
     typedef Array<size_t>::size_type size_type;
@@ -2379,25 +2465,28 @@ namespace Tpetra {
 //     }
 // #endif // HAVE_TEUCHOS_DEBUG
 
-    TEUCHOS_TEST_FOR_EXCEPTION(sendType == Details::DISTRIBUTOR_RSEND && ! doBarrier,
-      std::logic_error, "Ready send implementation requires a barrier between "
-      "posting receives and posting ready sends.  This should have been checked "
-      "before.  Please report this bug to the Tpetra developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      sendType == Details::DISTRIBUTOR_RSEND && ! doBarrier,
+      std::logic_error, "Tpetra::Distributor::doPosts(4 args): Ready-send "
+      "version requires a barrier between posting receives and posting ready "
+      "sends.  This should have been checked before.  "
+      "Please report this bug to the Tpetra developers.");
 
-    const int myImageID = comm_->getRank();
+    const int myImageID = comm_->getRank ();
     size_t selfReceiveOffset = 0;
 
 #ifdef HAVE_TEUCHOS_DEBUG
     // Different messages may have different numbers of packets.
     size_t totalNumImportPackets = 0;
-    for (int ii = 0; ii < numImportPacketsPerLID.size(); ++ii) {
+    for (size_type ii = 0; ii < numImportPacketsPerLID.size (); ++ii) {
       totalNumImportPackets += numImportPacketsPerLID[ii];
     }
-    TEUCHOS_TEST_FOR_EXCEPTION(as<size_t> (imports.size ()) != totalNumImportPackets,
-      std::runtime_error, Teuchos::typeName (*this) << "::doPosts(): The "
-      "imports array argument must be large enough to store the imported "
-      "data.  imports.size() = " << imports.size() << ", but the total number "
-      "of packets is " << totalNumImportPackets << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      imports.dimension_0 () < totalNumImportPackets, std::runtime_error,
+      "Tpetra::Distributor::doPosts(4 args): The 'imports' array must have "
+      "enough entries to hold the expected number of import packets.  "
+      "imports.dimension_0() = " << imports.dimension_0 () << " < "
+      "totalNumImportPackets = " << totalNumImportPackets << ".");
 #endif // HAVE_TEUCHOS_DEBUG
 
     // MPI tag for nonblocking receives and blocking sends in this
@@ -2410,9 +2499,9 @@ namespace Tpetra {
 
     if (debug_) {
       TEUCHOS_TEST_FOR_EXCEPTION(
-        requests_.size () != 0, std::logic_error, "doPosts(4): Process "
-        << myImageID << ": requests_.size() = " << requests_.size ()
-        << " != 0.");
+        requests_.size () != 0, std::logic_error, "Tpetra::Distributor::"
+        "doPosts(4 args): Process " << myImageID << ": requests_.size () = "
+        << requests_.size () << " != 0.");
       std::ostringstream os;
       os << myImageID << ": doPosts(4,"
          << (indicesTo_.empty () ? "fast" : "slow") << ")" << endl;
@@ -2463,10 +2552,10 @@ namespace Tpetra {
           //    array, given the offset and size (total number of
           //    packets from process imagesFrom_[i]).
           // 2. Start the Irecv and save the resulting request.
-          ArrayRCP<Packet> recvBuf =
-            persistingView (imports, curBufferOffset, totalPacketsFrom_i);
-          requests_.push_back (ireceive<int, Packet> (recvBuf, imagesFrom_[i],
-                                                      tag, *comm_));
+          imports_view_type recvBuf =
+            subview_offset (imports, curBufferOffset, totalPacketsFrom_i);
+          requests_.push_back (ireceive<int> (recvBuf, imagesFrom_[i],
+                                              tag, *comm_));
         }
         else { // Receiving these packet(s) from myself
           selfReceiveOffset = curBufferOffset; // Remember the offset
@@ -2541,30 +2630,31 @@ namespace Tpetra {
             subview_offset(exports, sendPacketOffsets[p], packetsPerSend[p]);
 
           if (sendType == Details::DISTRIBUTOR_SEND) { // the default, so put it first
-            send<int, Packet> (tmpSend.ptr_on_device (),
-                               as<int> (tmpSend.size ()),
-                               imagesTo_[p], tag, *comm_);
+            send<int> (tmpSend,
+                       as<int> (tmpSend.size ()),
+                       imagesTo_[p], tag, *comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_RSEND) {
-            readySend<int, Packet> (tmpSend.ptr_on_device (),
-                                    as<int> (tmpSend.size ()),
-                                    imagesTo_[p], tag, *comm_);
+            readySend<int> (tmpSend,
+                            as<int> (tmpSend.size ()),
+                            imagesTo_[p], tag, *comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_ISEND) {
-            ArrayRCP<const Packet> tmpSendBuf =
-              persistingView (exports, sendPacketOffsets[p], packetsPerSend[p]);
-            requests_.push_back (isend<int, Packet> (tmpSendBuf, imagesTo_[p],
-                                                     tag, *comm_));
+            exports_view_type tmpSendBuf =
+              subview_offset (exports, sendPacketOffsets[p], packetsPerSend[p]);
+            requests_.push_back (isend<int> (tmpSendBuf, imagesTo_[p],
+                                             tag, *comm_));
           }
           else if (sendType == Details::DISTRIBUTOR_SSEND) {
-            ssend<int, Packet> (tmpSend.ptr_on_device (),
-                                as<int> (tmpSend.size ()),
-                                imagesTo_[p], tag, *comm_);
+            ssend<int> (tmpSend,
+                        as<int> (tmpSend.size ()),
+                        imagesTo_[p], tag, *comm_);
           }
           else {
-            TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Tpetra::"
-              "Distributor (4 args): Invalid send type.  We should never get "
-              "here.  Please report this bug to the Tpetra developers.");
+            TEUCHOS_TEST_FOR_EXCEPTION(
+              true, std::logic_error, "Tpetra::Distributor::doPosts(4 args): "
+              "Invalid send type.  We should never get here.  "
+              "Please report this bug to the Tpetra developers.");
           }
         }
         else { // "Sending" the message to myself
@@ -2595,9 +2685,8 @@ namespace Tpetra {
 
       TEUCHOS_TEST_FOR_EXCEPTION(
         sendType == Details::DISTRIBUTOR_ISEND, std::logic_error,
-        "Tpetra::Distributor::doPosts<" << TypeNameTraits<Packet>::name()
-        << "> (3-argument version):" << endl
-        << "The \"send buffer\" code path may not necessarily work with nonblocking sends.");
+        "Tpetra::Distributor::doPosts(3 args): The \"send buffer\" code path "
+        "may not necessarily work with nonblocking sends.");
 
       Array<size_t> indicesOffsets (numExportPacketsPerLID.size(), 0);
       size_t ioffset = 0;
@@ -2626,25 +2715,25 @@ namespace Tpetra {
               subview_offset(sendArray, size_t(0), numPacketsTo_p);
 
             if (sendType == Details::DISTRIBUTOR_RSEND) {
-              readySend<int, Packet> (tmpSend.ptr_on_device (),
-                                      as<int> (tmpSend.size ()),
-                                      imagesTo_[p], tag, *comm_);
+              readySend<int> (tmpSend,
+                              as<int> (tmpSend.size ()),
+                              imagesTo_[p], tag, *comm_);
             }
             else if (sendType == Details::DISTRIBUTOR_ISEND) {
-              ArrayRCP<const Packet> tmpSendBuf =
-                persistingView (sendArray, 0, numPacketsTo_p);
-              requests_.push_back (isend<int, Packet> (tmpSendBuf, imagesTo_[p],
-                                                       tag, *comm_));
+              exports_view_type tmpSendBuf =
+                subview_offset (sendArray, size_t(0), numPacketsTo_p);
+              requests_.push_back (isend<int> (tmpSendBuf, imagesTo_[p],
+                                               tag, *comm_));
             }
             else if (sendType == Details::DISTRIBUTOR_SSEND) {
-              ssend<int, Packet> (tmpSend.ptr_on_device (),
-                                  as<int> (tmpSend.size ()),
-                                  imagesTo_[p], tag, *comm_);
+              ssend<int> (tmpSend,
+                          as<int> (tmpSend.size ()),
+                          imagesTo_[p], tag, *comm_);
             }
             else { // if (sendType == Details::DISTRIBUTOR_SSEND)
-              send<int, Packet> (tmpSend.ptr_on_device (),
-                                 as<int> (tmpSend.size ()),
-                                 imagesTo_[p], tag, *comm_);
+              send<int> (tmpSend,
+                         as<int> (tmpSend.size ()),
+                         imagesTo_[p], tag, *comm_);
             }
           }
         }
@@ -2732,9 +2821,9 @@ namespace Tpetra {
     }
 
     TEUCHOS_TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
-      Teuchos::typeName(*this) << "::doReversePostsAndWaits(): There are "
-      << requests_.size() << " outstanding nonblocking messages pending.  It is "
-      "incorrect to call doReversePostsAndWaits with posts outstanding.");
+      "Tpetra::Distributor::doReversePostsAndWaits(4 args): There are "
+      << requests_.size() << " outstanding nonblocking messages pending.  It "
+      "is incorrect to call this method with posts outstanding.");
 
     doReversePosts (exports, numExportPacketsPerLID, imports,
                     numImportPacketsPerLID);
@@ -2748,9 +2837,10 @@ namespace Tpetra {
                   const  Kokkos::View<Packet*, Layout, Device, Mem> &imports)
   {
     // FIXME (mfh 29 Mar 2012) WHY?
-    TEUCHOS_TEST_FOR_EXCEPTION(! indicesTo_.empty (), std::runtime_error,
-      Teuchos::typeName (*this) << "::doReversePosts(): Can only do reverse "
-      "communication when original data are blocked by process.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! indicesTo_.empty (), std::runtime_error,
+      "Tpetra::Distributor::doReversePosts(3 args): Can only do "
+      "reverse communication when original data are blocked by process.");
     if (reverseDistributor_.is_null ()) {
       createReverseDistributor ();
     }
@@ -2765,9 +2855,10 @@ namespace Tpetra {
                   const ArrayView<size_t> &numImportPacketsPerLID)
   {
     // FIXME (mfh 29 Mar 2012) WHY?
-    TEUCHOS_TEST_FOR_EXCEPTION(! indicesTo_.empty (), std::runtime_error,
-      Teuchos::typeName (*this) << "::doReversePosts(): Can only do reverse "
-      "communication when original data are blocked by process.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! indicesTo_.empty (), std::runtime_error,
+      "Tpetra::Distributor::doReversePosts(3 args): Can only do "
+      "reverse communication when original data are blocked by process.");
     if (reverseDistributor_.is_null ()) {
       createReverseDistributor ();
     }
@@ -2791,46 +2882,87 @@ namespace Tpetra {
     // OrdinalType elements of importIDs (along with their
     // corresponding process IDs, as int) to size_t, and does a
     // doPostsAndWaits<size_t>() to send the packed data.
-    using Teuchos::as;
     using std::endl;
+    typedef typename ArrayView<const OrdinalType>::size_type size_type;
 
     Teuchos::OSTab tab (out_);
-
-    const int myRank = comm_->getRank();
+    const int myRank = comm_->getRank ();
     if (debug_) {
       std::ostringstream os;
       os << myRank << ": computeSends" << endl;
       *out_ << os.str ();
     }
 
-    const size_t numImports = importNodeIDs.size();
-    TEUCHOS_TEST_FOR_EXCEPTION(as<size_t> (importIDs.size ()) < numImports,
-      std::invalid_argument, "Tpetra::Distributor::computeSends: importNodeIDs."
-      "size() = " << importNodeIDs.size () << " != importIDs.size() = "
-      << importIDs.size () << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      importIDs.size () != importNodeIDs.size (), std::invalid_argument,
+      "Tpetra::Distributor::computeSends: On Process " << myRank << ": "
+      "importNodeIDs.size() = " << importNodeIDs.size ()
+      << " != importIDs.size() = " << importIDs.size () << ".");
 
+    const size_type numImports = importNodeIDs.size ();
     Array<size_t> importObjs (2*numImports);
     // Pack pairs (importIDs[i], my process ID) to send into importObjs.
-    for (size_t i = 0; i < numImports; ++i ) {
-      importObjs[2*i]   = as<size_t> (importIDs[i]);
-      importObjs[2*i+1] = as<size_t> (myRank);
+    for (size_type i = 0; i < numImports; ++i) {
+      importObjs[2*i]   = static_cast<size_t> (importIDs[i]);
+      importObjs[2*i+1] = static_cast<size_t> (myRank);
     }
     //
     // Use a temporary Distributor to send the (importIDs[i], myRank)
     // pairs to importNodeIDs[i].
     //
-    size_t numExports;
     Distributor tempPlan (comm_, out_);
     if (debug_) {
       std::ostringstream os;
       os << myRank << ": computeSends: tempPlan.createFromSends" << endl;
       *out_ << os.str ();
     }
-    numExports = tempPlan.createFromSends (importNodeIDs);
+
+    // mfh 20 Mar 2014: An extra-cautious cast from unsigned to
+    // signed, in order to forestall any possible causes for Bug 6069.
+    const size_t numExportsAsSizeT = tempPlan.createFromSends (importNodeIDs);
+    const size_type numExports = static_cast<size_type> (numExportsAsSizeT);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      numExports < 0, std::logic_error, "Tpetra::Distributor::computeSends: "
+      "tempPlan.createFromSends() returned numExports = " << numExportsAsSizeT
+      << " as a size_t, which overflows to " << numExports << " when cast to "
+      << Teuchos::TypeNameTraits<size_type>::name () << ".  "
+      "Please report this bug to the Tpetra developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      static_cast<size_type> (tempPlan.getTotalReceiveLength ()) != numExports,
+      std::logic_error, "Tpetra::Distributor::computeSends: tempPlan.getTotal"
+      "ReceiveLength() = " << tempPlan.getTotalReceiveLength () << " != num"
+      "Exports = " << numExports  << ".  Please report this bug to the "
+      "Tpetra developers.");
+
     if (numExports > 0) {
-      exportIDs.resize(numExports);
-      exportNodeIDs.resize(numExports);
+      exportIDs.resize (numExports);
+      exportNodeIDs.resize (numExports);
     }
+
+    // exportObjs: Packed receive buffer.  (exportObjs[2*i],
+    // exportObjs[2*i+1]) will give the (GID, PID) pair for export i,
+    // after tempPlan.doPostsAndWaits(...) finishes below.
+    //
+    // FIXME (mfh 19 Mar 2014) This only works if OrdinalType fits in
+    // size_t.  This issue might come up, for example, on a 32-bit
+    // machine using 64-bit global indices.  I will add a check here
+    // for that case.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      sizeof (size_t) < sizeof (OrdinalType), std::logic_error,
+      "Tpetra::Distributor::computeSends: sizeof(size_t) = " << sizeof(size_t)
+      << " < sizeof(" << Teuchos::TypeNameTraits<OrdinalType>::name () << ") = "
+      << sizeof (OrdinalType) << ".  This violates an assumption of the "
+      "method.  It's not hard to work around (just use Array<OrdinalType> as "
+      "the export buffer, not Array<size_t>), but we haven't done that yet.  "
+      "Please report this bug to the Tpetra developers.");
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      tempPlan.getTotalReceiveLength () < static_cast<size_t> (numExports),
+      std::logic_error,
+      "Tpetra::Distributor::computeSends: tempPlan.getTotalReceiveLength() = "
+      << tempPlan.getTotalReceiveLength() << " < numExports = " << numExports
+      << ".  Please report this bug to the Tpetra developers.");
+
     Array<size_t> exportObjs (tempPlan.getTotalReceiveLength () * 2);
     if (debug_) {
       std::ostringstream os;
@@ -2840,9 +2972,9 @@ namespace Tpetra {
     tempPlan.doPostsAndWaits<size_t> (importObjs (), 2, exportObjs ());
 
     // Unpack received (GID, PID) pairs into exportIDs resp. exportNodeIDs.
-    for (size_t i = 0; i < numExports; ++i) {
-      exportIDs[i]     = as<OrdinalType>(exportObjs[2*i]);
-      exportNodeIDs[i] = exportObjs[2*i+1];
+    for (size_type i = 0; i < numExports; ++i) {
+      exportIDs[i] = static_cast<OrdinalType> (exportObjs[2*i]);
+      exportNodeIDs[i] = static_cast<int> (exportObjs[2*i+1]);
     }
 
     if (debug_) {
@@ -2872,6 +3004,8 @@ namespace Tpetra {
     using Teuchos::outArg;
     using Teuchos::reduceAll;
 
+    // In debug mode, first test locally, then do an all-reduce to
+    // make sure that all processes passed.
     const int errProc =
       (remoteIDs.size () != remoteImageIDs.size ()) ? myRank : -1;
     int maxErrProc = -1;
@@ -2880,14 +3014,39 @@ namespace Tpetra {
       Teuchos::typeName (*this) << "::createFromRecvs(): lists of remote IDs "
       "and remote process IDs must have the same size on all participating "
       "processes.  Maximum process ID with error: " << maxErrProc << ".");
+#else // NOT HAVE_TPETRA_DEBUG
+
+    // In non-debug mode, just test locally.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      remoteIDs.size () != remoteImageIDs.size (), std::invalid_argument,
+      Teuchos::typeName (*this) << "::createFromRecvs<" <<
+      Teuchos::TypeNameTraits<OrdinalType>::name () << ">(): On Process " <<
+      myRank << ": remoteIDs.size() = " << remoteIDs.size () << " != "
+      "remoteImageIDs.size() = " << remoteImageIDs.size () << ".");
 #endif // HAVE_TPETRA_DEBUG
 
     computeSends (remoteIDs, remoteImageIDs, exportGIDs, exportNodeIDs);
-    (void) createFromSends (exportNodeIDs ());
+
+    const size_t numProcsSendingToMe = createFromSends (exportNodeIDs ());
+
+    if (debug_) {
+      // NOTE (mfh 20 Mar 2014) If remoteImageIDs could contain
+      // duplicates, then its length might not be the right check here,
+      // even if we account for selfMessage_.  selfMessage_ is set in
+      // createFromSends.
+      std::ostringstream os;
+      os << "Proc " << myRank << ": {numProcsSendingToMe: "
+         << numProcsSendingToMe << ", remoteImageIDs.size(): "
+         << remoteImageIDs.size () << ", selfMessage_: "
+         << (selfMessage_ ? "true" : "false") << "}" << std::endl;
+      std::cerr << os.str ();
+    }
 
     if (debug_) {
       *out_ << myRank << ": createFromRecvs done" << endl;
     }
+
+    howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_RECVS;
   }
 
 } // namespace Tpetra

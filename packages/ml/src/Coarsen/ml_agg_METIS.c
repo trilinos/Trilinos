@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ************************************************************************* */
@@ -43,14 +43,14 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
 /* ********************************************************************** */
 /*! \file ml_agg_METIS.c: functions to decompose a local graph using METIS
 
-   \note metis.h is required to properly define indextype, and to declare the     
-   function `METIS_PartGraphRecursive' or `METIS_PartGraphKway'.          
-   By default, indextype is defined as int, so in principle you can         
-   compile also without including metis.h. However, to be sure            
-   that use has specified include and library, I require ML_METIS         
-   to be defined at compilation time.                                     
+   \note metis.h is required to properly define indextype, and to declare the
+   function `METIS_PartGraphRecursive' or `METIS_PartGraphKway'.
+   By default, indextype is defined as int, so in principle you can
+   compile also without including metis.h. However, to be sure
+   that use has specified include and library, I require ML_METIS
+   to be defined at compilation time.
 
-   \warning without metis this function compiles, but does not do any  job.  
+   \warning without metis this function compiles, but does not do any  job.
  ********************************************************************** */
 
 #ifdef HAVE_ML_METIS
@@ -120,7 +120,7 @@ int ML_Aggregate_Options_Defaults( ML_Aggregate_Options * pointer,
 */
 /* ------------------------------------------------------------------------ */
 
-int ML_Aggregate_Set_NodesPerAggr(ML *ml, ML_Aggregate *ag, 
+int ML_Aggregate_Set_NodesPerAggr(ML *ml, ML_Aggregate *ag,
                                   int level, int Nnodes_per_aggre  )
 {
 
@@ -130,7 +130,7 @@ int ML_Aggregate_Set_NodesPerAggr(ML *ml, ML_Aggregate *ag,
   ML_Aggregate_Options *pointer = NULL;
   int Nlevels;
 
-  /* MS * modified on Nov-06 so that ML* ml can be set to NULL. 
+  /* MS * modified on Nov-06 so that ML* ml can be set to NULL.
    * MS * This happens in src/MatrixFree/ml_MatrixFreePreconditioner.cpp,
    * MS * where I just have one level but no ML* object. In this
    * MS * case level must be 0. */
@@ -204,7 +204,7 @@ int ML_Aggregate_Set_NodesPerAggr(ML *ml, ML_Aggregate *ag,
 
  This function is used to specify the local number of aggregates which
  will be created by \c ML_Aggregate_CoarsenMETIS. The input variable
- \c level should reflect the structure of the multilevel solver. 
+ \c level should reflect the structure of the multilevel solver.
 
  Parameter list:
  - ml : ML object
@@ -216,7 +216,7 @@ int ML_Aggregate_Set_NodesPerAggr(ML *ml, ML_Aggregate *ag,
 */
 /* ------------------------------------------------------------------------ */
 
-int ML_Aggregate_Set_LocalNumber( ML *ml, ML_Aggregate *ag, 
+int ML_Aggregate_Set_LocalNumber( ML *ml, ML_Aggregate *ag,
                                   int level, int Nlocal  )
 {
 
@@ -283,7 +283,7 @@ int ML_Aggregate_Set_LocalNumber( ML *ml, ML_Aggregate *ag,
 
 } /* ML_Aggregate_Set_LocalNumber */
 
-int ML_Aggregate_Set_GlobalNumber( ML *ml, ML_Aggregate *ag, 
+int ML_Aggregate_Set_GlobalNumber( ML *ml, ML_Aggregate *ag,
                                    int level, int Nglobal  )
 {
 
@@ -360,7 +360,7 @@ int ML_Aggregate_Set_GlobalNumber( ML *ml, ML_Aggregate *ag,
 */
 /* ------------------------------------------------------------------------ */
 
-int ML_Aggregate_Set_ReorderingFlag( ML *ml, ML_Aggregate *ag, 
+int ML_Aggregate_Set_ReorderingFlag( ML *ml, ML_Aggregate *ag,
                                      int level, int reordering_flag  )
 {
 
@@ -517,9 +517,9 @@ static int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
   /* will be used to enumerate the local aggregates.                        */
   /* ********************************************************************** */
 
-  for (i = 0 ; i < Nparts + 1 ; i++) 
+  for (i = 0 ; i < Nparts + 1 ; i++)
     xadj2[i] = 0;
-  for (i = 0 ; i < Nparts * MaxNnzRow ; i++) 
+  for (i = 0 ; i < Nparts * MaxNnzRow ; i++)
     adjncy2[i] = -1;
 
   /* cycle over the rows */
@@ -620,13 +620,13 @@ static int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
   /* those are instead possible non-default values. No idea about how
      to pick them up...
   options[0] = 1;
-  options[1] = 2; 
+  options[1] = 2;
   options[2] = 2;
   options[3] = 1;
   options[4] = 0;
   options[5] = 1;
   options[6] = 0;
-  options[7] = 1; 
+  options[7] = 1;
   */
 
   /* ********************************************************************** */
@@ -674,7 +674,7 @@ static int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
            "*ERR*ML* (file %s, line %d)\n",
            __FILE__,
            __LINE__);
-  exit( EXIT_FAILURE );  
+  exit( EXIT_FAILURE );
 #endif
 
   /* ********************************************************************** */
@@ -802,7 +802,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
      Also, define the set of boundary nodes. NOTE: the computation of
      nonzero elements is not really needed (ML_Operator usually have
      this number already compuuted. However, I still need to
-     define the boundary nodes, and to handle epetra matrices.) 
+     define the boundary nodes, and to handle epetra matrices.)
      Finally, I need to compute the number of rows to give in input to
      METIS. Those do not include Dirichlet rows. */
 
@@ -811,7 +811,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   ptrToBdry = ML_Operator_IdentifyDirichletRows(Amatrix);
   /* TODO  Note that N_nonzeros could be greater than what was previously
      calculated in the code that this replaces.  I don't know if this will
-     be a problem.... */ 
+     be a problem.... */
   N_nonzeros = ML_Operator_ComputeNumNzs(Amatrix);
   for (i=0; i<Nrows; i++) {
     bdry_nodes[i] = ptrToBdry[i];
@@ -888,7 +888,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
       }
       count2++;
 
-    }      
+    }
   }
 
   if (count > N_nonzeros || count2 != NrowsMETIS) {
@@ -923,7 +923,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
     for( i=0 ; i<NrowsMETIS ; i++ ) part[i] = 0;
     edgecut = 0;
 
-  } 
+  }
   else if (N_parts == NrowsMETIS) {
 
     fprintf( stderr,
@@ -1023,7 +1023,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
         if( j<0 || j>= N_parts ) {
           ok = 0;
           break;
-        } 
+        }
         else nodes_per_aggre[j]++;
       }
 
@@ -1108,7 +1108,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
 
   for( i=0 ; i<Nrows ; i++ ) {
     j = perm[i];
-    if( j != -1 ) 
+    if( j != -1 )
       graph_decomposition[i] = (int)part[j];
     else
       graph_decomposition[i] = -1;
@@ -1132,7 +1132,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
 
   ML_free(rowi_col); ML_free(rowi_val);
   rowi_col = NULL; rowi_val = NULL;
-  allocated = 0; 
+  allocated = 0;
 
   if( wgtflag != NULL ) ML_free( wgtflag );
   if( adjncy != NULL  ) ML_free( adjncy  );
@@ -1170,13 +1170,14 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
 /* ------------------------------------------------------------------------ */
 
 
-int ML_Aggregate_CoarsenMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix, 
+int ML_Aggregate_CoarsenMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
                                ML_Operator **Pmatrix, ML_Comm *comm)
 {
   unsigned int nbytes, length;
    int     i, j,  k, Nrows, exp_Nrows;
    int     diff_level;
-   int     aggr_count, index, mypid, num_PDE_eqns;
+   int     aggr_count = 0;
+   int     index, mypid, num_PDE_eqns;
    int     *aggr_index = NULL, nullspace_dim;
    int     Ncoarse, count;
    int     *new_ia = NULL, *new_ja = NULL, new_Nrows;
@@ -1256,7 +1257,7 @@ int agg_offset, vertex_offset;
    /* ============================================================= */
 
    diff_level = ml_ag->begin_level - ml_ag->cur_level;
-   if (diff_level == 0) 
+   if (diff_level == 0)
      ml_ag->curr_threshold = ml_ag->threshold;
    epsilon = ml_ag->curr_threshold;
    ml_ag->curr_threshold *= 0.5;
@@ -1382,7 +1383,7 @@ int agg_offset, vertex_offset;
          }
          aggr_count = 1;
 
-       } else { 
+       } else {
 
          mod = aggr_count % Nprocs;
 
@@ -1527,7 +1528,7 @@ int agg_offset, vertex_offset;
      printf("%s %d (block) aggregates (globally)\n",
             str,
             j );
-   }   
+   }
 
    /* ********************************************************************** */
    /* I allocate room to copy aggr_index and pass this value to the user,    */
@@ -1683,7 +1684,7 @@ int agg_offset, vertex_offset;
 #ifdef ALEGRA
       if (level_count == 0) { j = i+Nrows; k =  (int) dtemp[i+Nrows];}
 #else
-      if (level_count == 0) { j = extern_index[i]; k = external[i];} 
+      if (level_count == 0) { j = extern_index[i]; k = external[i];}
 #endif /*ifdef ALEGRA*/
 #else
       if (level_count == 0) { j = reordered_node_externs[i]; k =
@@ -1718,11 +1719,11 @@ int agg_offset, vertex_offset;
    nbytes = (Nrows+1) * sizeof( int );
    ML_memory_alloc((void**) &(ml_ag->aggr_info[level]), nbytes, "AGl");
    count = aggr_count;
-   for ( i = 0; i < Nrows; i+=num_PDE_eqns ) 
+   for ( i = 0; i < Nrows; i+=num_PDE_eqns )
    {
       if ( aggr_index[i] >= 0 )
       {
-         for ( j = 0; j < num_PDE_eqns; j++ ) 
+         for ( j = 0; j < num_PDE_eqns; j++ )
             ml_ag->aggr_info[level][i+j] = aggr_index[i];
          if (aggr_index[i] >= count) count = aggr_index[i] + 1;
       }
@@ -1733,7 +1734,7 @@ int agg_offset, vertex_offset;
        *   exit(1);
        *}*/
    }
-   ml_ag->aggr_count[level] = count; /* for relaxing boundary points */ 
+   ml_ag->aggr_count[level] = count; /* for relaxing boundary points */
 
    /* ============================================================= */
    /* set up the new operator                                       */
@@ -1742,20 +1743,20 @@ int agg_offset, vertex_offset;
    new_Nrows = Nrows;
    exp_Ncoarse = Nrows;
 
-   for ( i = 0; i < new_Nrows; i++ ) 
+   for ( i = 0; i < new_Nrows; i++ )
    {
-      if ( aggr_index[i] >= exp_Ncoarse ) 
+      if ( aggr_index[i] >= exp_Ncoarse )
       {
          printf("*ML*WRN* index out of bound %d = %d(%d)\n",
-                i, aggr_index[i], 
+                i, aggr_index[i],
                 exp_Ncoarse);
       }
    }
-   nbytes = ( new_Nrows+1 ) * sizeof(int); 
+   nbytes = ( new_Nrows+1 ) * sizeof(int);
    ML_memory_alloc((void**)&(new_ia), nbytes, "AIA");
-   nbytes = ( new_Nrows+1)  * nullspace_dim * sizeof(int); 
+   nbytes = ( new_Nrows+1)  * nullspace_dim * sizeof(int);
    ML_memory_alloc((void**)&(new_ja), nbytes, "AJA");
-   nbytes = ( new_Nrows+1)  * nullspace_dim * sizeof(double); 
+   nbytes = ( new_Nrows+1)  * nullspace_dim * sizeof(double);
    ML_memory_alloc((void**)&(new_val), nbytes, "AVA");
    for ( i = 0; i < new_Nrows*nullspace_dim; i++ ) new_val[i] = 0.0;
 
@@ -1776,7 +1777,7 @@ int agg_offset, vertex_offset;
      exit( EXIT_FAILURE );
    }
 
-   for (i = 0; i < Ncoarse*nullspace_dim*nullspace_dim; i++) 
+   for (i = 0; i < Ncoarse*nullspace_dim*nullspace_dim; i++)
       new_null[i] = 0.0;
 
    /* ------------------------------------------------------------- */
@@ -1815,7 +1816,7 @@ int agg_offset, vertex_offset;
       {
          for (j = 0; j < num_PDE_eqns; j++)
          {
-            index = aggr_cnt_array[aggr_index[i]]++; 
+            index = aggr_cnt_array[aggr_index[i]]++;
             rows_in_aggs[aggr_index[i]][index] = i + j;
          }
       }
@@ -1829,7 +1830,7 @@ int agg_offset, vertex_offset;
    /* ------------------------------------------------------------- */
 
    max_agg_size = 0;
-   for (i = 0; i < aggr_count; i++) 
+   for (i = 0; i < aggr_count; i++)
    {
       if (aggr_cnt_array[i] > max_agg_size) max_agg_size = aggr_cnt_array[i];
    }
@@ -1846,14 +1847,14 @@ int agg_offset, vertex_offset;
    /* perform block QR decomposition                                */
    /* ------------------------------------------------------------- */
 
-   for (i = 0; i < aggr_count; i++) 
+   for (i = 0; i < aggr_count; i++)
    {
       /* ---------------------------------------------------------- */
       /* set up the matrix we want to decompose into Q and R:       */
       /* ---------------------------------------------------------- */
 
       length = aggr_cnt_array[i];
-      if (nullspace_vect == NULL) 
+      if (nullspace_vect == NULL)
       {
          for (j = 0; j < (int) length; j++)
          {
@@ -1871,7 +1872,7 @@ int agg_offset, vertex_offset;
             }
          }
       }
-      else 
+      else
       {
          for (k = 0; k < nullspace_dim; k++)
          {
@@ -1903,15 +1904,15 @@ int agg_offset, vertex_offset;
 
       if (aggr_cnt_array[i] >= nullspace_dim) {
 
-        DGEQRF_F77(&(aggr_cnt_array[i]), &nullspace_dim, qr_tmp, 
+        DGEQRF_F77(&(aggr_cnt_array[i]), &nullspace_dim, qr_tmp,
                           &(aggr_cnt_array[i]), tmp_vect, work, &lwork, &info);
         if (info != 0)
           pr_error("ErrOr in CoarsenMIS : dgeqrf returned a non-zero %d %d\n",
                    aggr_cnt_array[i],i);
 
-        if (work[0] > lwork) 
+        if (work[0] > lwork)
           {
-            lwork=(int) work[0]; 
+            lwork=(int) work[0];
             ML_memory_free((void**) &work);
             ML_memory_alloc((void**) &work, sizeof(double)*lwork, "AGx");
           }
@@ -1924,7 +1925,7 @@ int agg_offset, vertex_offset;
 
         for (j = 0; j < nullspace_dim; j++)
           for (k = j; k < nullspace_dim; k++)
-            new_null[i*nullspace_dim+j+k*Ncoarse*nullspace_dim] = 
+            new_null[i*nullspace_dim+j+k*Ncoarse*nullspace_dim] =
               qr_tmp[j+aggr_cnt_array[i]*k];
 
         /* ---------------------------------------------------------- */
@@ -1937,7 +1938,7 @@ int agg_offset, vertex_offset;
                  nullspace_dim);
           printf("ERROR : performing QR on a MxN matrix where M<N.\n");
         }
-        DORGQR_F77(&(aggr_cnt_array[i]), &nullspace_dim, &nullspace_dim, 
+        DORGQR_F77(&(aggr_cnt_array[i]), &nullspace_dim, &nullspace_dim,
                           qr_tmp, &(aggr_cnt_array[i]), tmp_vect, work, &lwork, &info);
         if (info != 0) {
           printf("Error in dorgqr on %d row (dims are %d, %d)\n",i,aggr_cnt_array[i],
@@ -1945,9 +1946,9 @@ int agg_offset, vertex_offset;
           pr_error("Error in CoarsenMIS: dorgqr returned a non-zero\n");
         }
 
-        if (work[0] > lwork) 
+        if (work[0] > lwork)
           {
-            lwork=(int) work[0]; 
+            lwork=(int) work[0];
             ML_memory_free((void**) &work);
             ML_memory_alloc((void**) &work, sizeof(double)*lwork, "AGy");
           }
@@ -1970,13 +1971,13 @@ int agg_offset, vertex_offset;
             if ( index < Nrows )
               {
                 index3 = new_ia[index];
-                for (k = 0; k < nullspace_dim; k++) 
+                for (k = 0; k < nullspace_dim; k++)
                   {
                     new_ja [index3+k] = i * nullspace_dim + k;
                     new_val[index3+k] = qr_tmp[ k*aggr_cnt_array[i]+j];
                   }
               }
-            else 
+            else
               {
                 fprintf( stderr,
                          "*ML*ERR* in QR: index out of bounds (%d - %d)\n",
@@ -1994,7 +1995,7 @@ int agg_offset, vertex_offset;
         /* prolongator????                                                  */
         for (j = 0; j < nullspace_dim; j++)
           for (k = 0; k < nullspace_dim; k++)
-            new_null[i*nullspace_dim+j+k*Ncoarse*nullspace_dim] = 
+            new_null[i*nullspace_dim+j+k*Ncoarse*nullspace_dim] =
               qr_tmp[j+aggr_cnt_array[i]*k];
         for (j = 0; j < aggr_cnt_array[i]; j++) {
           index = rows_in_aggs[i][j];
@@ -2010,7 +2011,7 @@ int agg_offset, vertex_offset;
 
    }
 
-   ML_Aggregate_Set_NullSpace(ml_ag, num_PDE_eqns, nullspace_dim, 
+   ML_Aggregate_Set_NullSpace(ml_ag, num_PDE_eqns, nullspace_dim,
                               new_null, Ncoarse*nullspace_dim);
    ML_memory_free( (void **) &new_null);
 
@@ -2023,7 +2024,7 @@ int agg_offset, vertex_offset;
    csr_data->columns = new_ja;
    csr_data->values  = new_val;
 
-   ML_Operator_Set_ApplyFuncData( *Pmatrix, nullspace_dim*Ncoarse, Nrows, 
+   ML_Operator_Set_ApplyFuncData( *Pmatrix, nullspace_dim*Ncoarse, Nrows,
                                   csr_data, Nrows, NULL, 0);
    (*Pmatrix)->data_destroy = ML_CSR_MSR_ML_memorydata_Destroy;
    (*Pmatrix)->getrow->pre_comm = ML_CommInfoOP_Create();
@@ -2047,7 +2048,7 @@ int agg_offset, vertex_offset;
    ML_memory_free((void**)&work);
 
    aggr_curr = aggr_head;
-   while ( aggr_curr != NULL ) 
+   while ( aggr_curr != NULL )
    {
       supernode = aggr_curr;
       aggr_curr = aggr_curr->next;
@@ -2065,14 +2066,14 @@ int agg_offset, vertex_offset;
 
    sprintf(fname,"PP%d_%d",comm->ML_mypid,level_count);
    fp = fopen(fname,"w");
-   ML_Operator_Apply(*Pmatrix, (*Pmatrix)->invec_leng, dtemp, 
+   ML_Operator_Apply(*Pmatrix, (*Pmatrix)->invec_leng, dtemp,
                      (*Pmatrix)->outvec_leng, d2temp);
    for (i = 0; i < Nrows; i++) {
 #ifndef MAXWELL
 #ifdef ALEGRA
-      if (level_count == 1) { j = i; k = i;} 
+      if (level_count == 1) { j = i; k = i;}
 #else
-      if (level_count == 1) { j = update_index[i]; k = update[i];} 
+      if (level_count == 1) { j = update_index[i]; k = update[i];}
 #endif
 #else
       if (level_count == 1) { j = reordered_glob_nodes[i]; k = global_node_inds[i];}
@@ -2153,7 +2154,7 @@ int ML_DecomposeGraph_BuildOffsets( int N_parts,
 */
 /* ------------------------------------------------------------------------ */
 
-static int find_max(int length, int vector[] ) 
+static int find_max(int length, int vector[] )
 {
   int max = -1;
   int pos = -1, i;
@@ -2255,7 +2256,7 @@ static int ML_Aggregates_CheckAggregates( int Naggregates, int N_rows,
            i, check[i] );
 #endif
 
-  ML_free( check ); check=NULL;  
+  ML_free( check ); check=NULL;
   return 0;
 
 } /* ML_Aggregates_CheckAggregates */

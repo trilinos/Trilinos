@@ -532,7 +532,7 @@ TEUCHOS_UNIT_TEST( RCP, dereferenceOverhead )
   TEST_COMPARE( finalRcpRawRatio, <=, maxRcpRawObjAccessRatio );
   out << "\n";
 
-  // This silly varible must be accumulated or compilers like MSVC++ will
+  // This silly variable must be accumulated or compilers like MSVC++ will
   // optimize away the loops!
   if (overall_dummy_int_out == 0)
     success = false;
@@ -683,7 +683,7 @@ TEUCHOS_UNIT_TEST( RCP, memberAccessOverhead )
   TEST_COMPARE( finalRcpRawRatio, <=, maxRcpRawObjAccessRatio );
   out << "\n";
 
-  // This silly varible must be accumulated or compilers like MSVC++ will
+  // This silly variable must be accumulated or compilers like MSVC++ will
   // optimize away the loops!
   if (overall_dummy_int_out == 0)
     success = false;

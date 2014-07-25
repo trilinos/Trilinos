@@ -51,9 +51,7 @@
 *
 *****************************************************************************/
 
-#include <stdlib.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include "exodusII.h"                   // for ex_put_truth_table, etc
 
 /*!
  * writes the EXODUS II variable truth table to the database; also,

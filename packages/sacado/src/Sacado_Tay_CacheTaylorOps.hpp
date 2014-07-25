@@ -21,7 +21,7 @@
 //  
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 // (etphipp@sandia.gov).
@@ -53,13 +53,13 @@ namespace Sacado {
 
       UnaryPlusOp(const ExprT& expr) {}
 
-      void allocateCache(unsigned int d) const {}
+      void allocateCache(int d) const {}
 
-      value_type computeCoeff(unsigned int i, const ExprT& expr) const {
+      value_type computeCoeff(int i, const ExprT& expr) const {
 	return expr.coeff(i);
       }
 
-      value_type computeFastAccessCoeff(unsigned int i, 
+      value_type computeFastAccessCoeff(int i, 
 					const ExprT& expr) const {
 	return expr.fastAccessCoeff(i);
       }
@@ -76,13 +76,13 @@ namespace Sacado {
 
       UnaryMinusOp(const ExprT& expr) {}
 
-      void allocateCache(unsigned int d) const {}
+      void allocateCache(int d) const {}
 
-      value_type computeCoeff(unsigned int i, const ExprT& expr) const {
+      value_type computeCoeff(int i, const ExprT& expr) const {
 	return -expr.coeff(i);
       }
 
-      value_type computeFastAccessCoeff(unsigned int i, 
+      value_type computeFastAccessCoeff(int i, 
 					const ExprT& expr) const {
 	return -expr.fastAccessCoeff(i);
       }
@@ -101,18 +101,18 @@ namespace Sacado {
 	c(),
 	dc(-1) {}
 
-      void allocateCache(unsigned int d) const { 
+      void allocateCache(int d) const { 
 	c.resize(d+1,value_type(0));
       }
 
-      value_type computeCoeff(unsigned int i, const ExprT& expr) const {
+      value_type computeCoeff(int i, const ExprT& expr) const {
 	if (static_cast<int>(i) > dc) {
 	  if (dc < 0) {
 	    c[0] = std::exp(expr.fastAccessCoeff(0));
 	    dc = 0;
 	  }
-	  for (unsigned int k=dc+1; k<=i; k++) {
-	    for (unsigned int j=1; j<=k; j++)
+	  for (int k=dc+1; k<=i; k++) {
+	    for (int j=1; j<=k; j++)
 	      c[k] += value_type(j)*c[k-j]*expr.coeff(j);
 	    c[k] /= value_type(k);
 	  }
@@ -121,7 +121,7 @@ namespace Sacado {
 	return c[i];
       }
 
-      value_type computeFastAccessCoeff(unsigned int i, 
+      value_type computeFastAccessCoeff(int i, 
 					const ExprT& expr) const
       {
 	if (static_cast<int>(i) > dc) {
@@ -129,8 +129,8 @@ namespace Sacado {
 	    c[0] = std::exp(expr.fastAccessCoeff(0));
 	    dc = 0;
 	  }
-	  for (unsigned int k=dc+1; k<=i; k++) {
-	    for (unsigned int j=1; j<=k; j++)
+	  for (int k=dc+1; k<=i; k++) {
+	    for (int j=1; j<=k; j++)
 	      c[k] += value_type(j)*c[k-j]*expr.fastAccessCoeff(j);
 	    c[k] /= value_type(k);
 	  }
@@ -159,19 +159,19 @@ namespace Sacado {
 	dc(-1) 
       {}
 
-      void allocateCache(unsigned int d) const { 
+      void allocateCache(int d) const { 
 	c.resize(d+1,value_type(0));
       }
 
-      value_type computeCoeff(unsigned int i, const ExprT& expr) const {
+      value_type computeCoeff(int i, const ExprT& expr) const {
 	if (static_cast<int>(i) > dc) {
 	  if (dc < 0) {
 	    c[0] = std::log(expr.fastAccessCoeff(0));
 	    dc = 0;
 	  }
-	  for (unsigned int k=dc+1; k<=i; k++) {
+	  for (int k=dc+1; k<=i; k++) {
 	    c[k] = value_type(k)*expr.coeff(k);
-	    for (unsigned int j=1; j<=k-1; j++)
+	    for (int j=1; j<=k-1; j++)
 	      c[k] -= value_type(j)*expr.coeff(k-j)*c[j];
 	    c[k] /= (value_type(k)*expr.fastAccessCoeff(0));
 	  }
@@ -180,7 +180,7 @@ namespace Sacado {
 	return c[i];
       }
 
-      value_type computeFastAccessCoeff(unsigned int i, 
+      value_type computeFastAccessCoeff(int i, 
 					const ExprT& expr) const
       {
 	if (static_cast<int>(i) > dc) {
@@ -188,9 +188,9 @@ namespace Sacado {
 	    c[0] = std::log(expr.fastAccessCoeff(0));
 	    dc = 0;
 	  }
-	  for (unsigned int k=dc+1; k<=i; k++) {
+	  for (int k=dc+1; k<=i; k++) {
 	    c[k] = value_type(k)*expr.fastAccessCoeff(k);
-	    for (unsigned int j=1; j<=k-1; j++)
+	    for (int j=1; j<=k-1; j++)
 	      c[k] -= value_type(j)*expr.fastAccessCoeff(k-j)*c[j];
 	    c[k] /= (value_type(k)*expr.fastAccessCoeff(0));
 	  }
@@ -218,20 +218,20 @@ namespace Sacado {
 	c(),
 	dc(-1) {}
 
-      void allocateCache(unsigned int d) const { 
+      void allocateCache(int d) const { 
 	c.resize(d+1,value_type(0));
       }
 
-      value_type computeCoeff(unsigned int i, const ExprT& expr) const {
+      value_type computeCoeff(int i, const ExprT& expr) const {
 	if (static_cast<int>(i) > dc) {
 	  if (dc < 0) {
 	    c[0] = std::sqrt(expr.fastAccessCoeff(0));
 	    dc = 0;
 	  }
 	  value_type tmp = value_type(2)*c[0];
-	  for (unsigned int k=dc+1; k<=i; k++) {
+	  for (int k=dc+1; k<=i; k++) {
 	    c[k] = expr.coeff(k);
-	    for (unsigned int j=1; j<=k-1; j++)
+	    for (int j=1; j<=k-1; j++)
 	      c[k] -= c[j]*c[k-j];
 	    c[k] /= tmp;
 	  }
@@ -240,7 +240,7 @@ namespace Sacado {
 	return c[i];
       }
 
-      value_type computeFastAccessCoeff(unsigned int i, 
+      value_type computeFastAccessCoeff(int i, 
 					const ExprT& expr) const
       {
 	if (static_cast<int>(i) > dc) {
@@ -249,9 +249,9 @@ namespace Sacado {
 	    dc = 0;
 	  }
 	  value_type tmp = value_type(2)*c[0];
-	  for (unsigned int k=dc+1; k<=i; k++) {
+	  for (int k=dc+1; k<=i; k++) {
 	    c[k] = expr.fastAccessCoeff(k);
-	    for (unsigned int j=1; j<=k-1; j++)
+	    for (int j=1; j<=k-1; j++)
 	      c[k] -= c[j]*c[k-j];
 	    c[k] /= tmp;
 	  }
@@ -280,20 +280,20 @@ namespace Sacado {
 	s(),
 	dc(-1) {}
 
-      void allocateCache(unsigned int d) const { 
+      void allocateCache(int d) const { 
 	c.resize(d+1,value_type(0));
 	s.resize(d+1,value_type(0));
       }
 
-      value_type computeCoeff(unsigned int i, const ExprT& expr) const {
+      value_type computeCoeff(int i, const ExprT& expr) const {
 	if (static_cast<int>(i) > dc) {
 	  if (dc < 0) {
 	    c[0] = std::cos(expr.fastAccessCoeff(0));
 	    s[0] = std::sin(expr.fastAccessCoeff(0));
 	    dc = 0;
 	  }
-	  for (unsigned int k=dc+1; k<=i; k++) {
-	    for (unsigned int j=1; j<=k; j++) {
+	  for (int k=dc+1; k<=i; k++) {
+	    for (int j=1; j<=k; j++) {
 	      c[k] -= value_type(j)*expr.coeff(j)*s[k-j];
 	      s[k] += value_type(j)*expr.coeff(j)*c[k-j];
 	    }
@@ -305,7 +305,7 @@ namespace Sacado {
 	return c[i];
       }
 
-      value_type computeFastAccessCoeff(unsigned int i, 
+      value_type computeFastAccessCoeff(int i, 
 					const ExprT& expr) const
       {
 	if (static_cast<int>(i) > dc) {
@@ -314,8 +314,8 @@ namespace Sacado {
 	    s[0] = std::sin(expr.fastAccessCoeff(0));
 	    dc = 0;
 	  }
-	  for (unsigned int k=dc+1; k<=i; k++) {
-	    for (unsigned int j=1; j<=k; j++) {
+	  for (int k=dc+1; k<=i; k++) {
+	    for (int j=1; j<=k; j++) {
 	      c[k] -= value_type(j)*expr.fastAccessCoeff(j)*s[k-j];
 	      s[k] += value_type(j)*expr.fastAccessCoeff(j)*c[k-j];
 	    }
@@ -348,20 +348,20 @@ namespace Sacado {
 	s(),
 	dc(-1) {}
 
-      void allocateCache(unsigned int d) const { 
+      void allocateCache(int d) const { 
 	c.resize(d+1,value_type(0));
 	s.resize(d+1,value_type(0));
       }
 
-      value_type computeCoeff(unsigned int i, const ExprT& expr) const {
+      value_type computeCoeff(int i, const ExprT& expr) const {
 	if (static_cast<int>(i) > dc) {
 	  if (dc < 0) {
 	    c[0] = std::cos(expr.fastAccessCoeff(0));
 	    s[0] = std::sin(expr.fastAccessCoeff(0));
 	    dc = 0;
 	  }
-	  for (unsigned int k=dc+1; k<=i; k++) {
-	    for (unsigned int j=1; j<=k; j++) {
+	  for (int k=dc+1; k<=i; k++) {
+	    for (int j=1; j<=k; j++) {
 	      c[k] -= value_type(j)*expr.coeff(j)*s[k-j];
 	      s[k] += value_type(j)*expr.coeff(j)*c[k-j];
 	    }
@@ -373,7 +373,7 @@ namespace Sacado {
 	return s[i];
       }
 
-      value_type computeFastAccessCoeff(unsigned int i, 
+      value_type computeFastAccessCoeff(int i, 
 					const ExprT& expr) const
       {
 	if (static_cast<int>(i) > dc) {
@@ -382,8 +382,8 @@ namespace Sacado {
 	    s[0] = std::sin(expr.fastAccessCoeff(0));
 	    dc = 0;
 	  }
-	  for (unsigned int k=dc+1; k<=i; k++) {
-	    for (unsigned int j=1; j<=k; j++) {
+	  for (int k=dc+1; k<=i; k++) {
+	    for (int j=1; j<=k; j++) {
 	      c[k] -= value_type(j)*expr.fastAccessCoeff(j)*s[k-j];
 	      s[k] += value_type(j)*expr.fastAccessCoeff(j)*c[k-j];
 	    }
@@ -416,20 +416,20 @@ namespace Sacado {
 	s(),
 	dc(-1) {}
 
-      void allocateCache(unsigned int d) const { 
+      void allocateCache(int d) const { 
 	c.resize(d+1,value_type(0));
 	s.resize(d+1,value_type(0));
       }
 
-      value_type computeCoeff(unsigned int i, const ExprT& expr) const {
+      value_type computeCoeff(int i, const ExprT& expr) const {
 	if (static_cast<int>(i) > dc) {
 	  if (dc < 0) {
 	    c[0] = std::cosh(expr.fastAccessCoeff(0));
 	    s[0] = std::sinh(expr.fastAccessCoeff(0));
 	    dc = 0;
 	  }
-	  for (unsigned int k=dc+1; k<=i; k++) {
-	    for (unsigned int j=1; j<=k; j++) {
+	  for (int k=dc+1; k<=i; k++) {
+	    for (int j=1; j<=k; j++) {
 	      c[k] += value_type(j)*expr.coeff(j)*s[k-j];
 	      s[k] += value_type(j)*expr.coeff(j)*c[k-j];
 	    }
@@ -441,7 +441,7 @@ namespace Sacado {
 	return c[i];
       }
 
-      value_type computeFastAccessCoeff(unsigned int i, 
+      value_type computeFastAccessCoeff(int i, 
 					const ExprT& expr) const
       {
 	if (static_cast<int>(i) > dc) {
@@ -450,8 +450,8 @@ namespace Sacado {
 	    s[0] = std::sinh(expr.fastAccessCoeff(0));
 	    dc = 0;
 	  }
-	  for (unsigned int k=dc+1; k<=i; k++) {
-	    for (unsigned int j=1; j<=k; j++) {
+	  for (int k=dc+1; k<=i; k++) {
+	    for (int j=1; j<=k; j++) {
 	      c[k] += value_type(j)*expr.fastAccessCoeff(j)*s[k-j];
 	      s[k] += value_type(j)*expr.fastAccessCoeff(j)*c[k-j];
 	    }
@@ -484,20 +484,20 @@ namespace Sacado {
 	s(),
 	dc(-1) {}
 
-      void allocateCache(unsigned int d) const { 
+      void allocateCache(int d) const { 
 	c.resize(d+1,value_type(0));
 	s.resize(d+1,value_type(0));
       }
 
-      value_type computeCoeff(unsigned int i, const ExprT& expr) const {
+      value_type computeCoeff(int i, const ExprT& expr) const {
 	if (static_cast<int>(i) > dc) {
 	  if (dc < 0) {
 	    c[0] = std::cosh(expr.fastAccessCoeff(0));
 	    s[0] = std::sinh(expr.fastAccessCoeff(0));
 	    dc = 0;
 	  }
-	  for (unsigned int k=dc+1; k<=i; k++) {
-	    for (unsigned int j=1; j<=k; j++) {
+	  for (int k=dc+1; k<=i; k++) {
+	    for (int j=1; j<=k; j++) {
 	      c[k] += value_type(j)*expr.coeff(j)*s[k-j];
 	      s[k] += value_type(j)*expr.coeff(j)*c[k-j];
 	    }
@@ -509,7 +509,7 @@ namespace Sacado {
 	return s[i];
       }
 
-      value_type computeFastAccessCoeff(unsigned int i, 
+      value_type computeFastAccessCoeff(int i, 
 					const ExprT& expr) const
       {
 	if (static_cast<int>(i) > dc) {
@@ -518,8 +518,8 @@ namespace Sacado {
 	    s[0] = std::sinh(expr.fastAccessCoeff(0));
 	    dc = 0;
 	  }
-	  for (unsigned int k=dc+1; k<=i; k++) {
-	    for (unsigned int j=1; j<=k; j++) {
+	  for (int k=dc+1; k<=i; k++) {
+	    for (int j=1; j<=k; j++) {
 	      c[k] += value_type(j)*expr.fastAccessCoeff(j)*s[k-j];
 	      s[k] += value_type(j)*expr.fastAccessCoeff(j)*c[k-j];
 	    }
@@ -549,16 +549,16 @@ namespace Sacado {
 
       FAbsOp(const ExprT& expr) {}
 
-      void allocateCache(unsigned int d) const {}
+      void allocateCache(int d) const {}
 
-      value_type computeCoeff(unsigned int i, const ExprT& expr) const {
+      value_type computeCoeff(int i, const ExprT& expr) const {
 	if (expr.fastAccessCoeff(0) > 0)
 	  return expr.coeff(i);
 	else
 	  return -expr.coeff(i);
       }
 
-      value_type computeFastAccessCoeff(unsigned int i, 
+      value_type computeFastAccessCoeff(int i, 
 					const ExprT& expr) const
       {
 	if (expr.fastAccessCoeff(0) > 0)
@@ -622,16 +622,16 @@ namespace Sacado {
     
       AdditionOp(const ExprT1& expr1, const ExprT2 expr2) {}
 
-      void allocateCache(unsigned int d) const {}
+      void allocateCache(int d) const {}
     
       value_type
-      computeCoeff(unsigned int i, const ExprT1& expr1, 
+      computeCoeff(int i, const ExprT1& expr1, 
 		   const ExprT2& expr2) const {
 	return expr1.coeff(i) + expr2.coeff(i);
       }
       
       value_type
-      computeFastAccessCoeff(unsigned int i, const ExprT1& expr1, 
+      computeFastAccessCoeff(int i, const ExprT1& expr1, 
 			     const ExprT2& expr2) const {
 	return expr1.fastAccessCoeff(i) + expr2.fastAccessCoeff(i);
       }
@@ -647,10 +647,10 @@ namespace Sacado {
 
       AdditionOp(const ExprT1& expr1, const ExprT2 expr2) {}
 
-      void allocateCache(unsigned int d) const {}
+      void allocateCache(int d) const {}
 
       value_type
-      computeCoeff(unsigned int i, const ExprT1& expr1, 
+      computeCoeff(int i, const ExprT1& expr1, 
 		   const ExprT2& expr2) const {
 	if (i == 0)
 	  return expr1.coeff(i) + expr2.coeff(i);
@@ -659,7 +659,7 @@ namespace Sacado {
       }
 
       value_type
-      computeFastAccessCoeff(unsigned int i, const ExprT1& expr1,
+      computeFastAccessCoeff(int i, const ExprT1& expr1,
 			     const ExprT2& expr2) const {
 	if (i == 0)
 	  return expr1.fastAccessCoeff(i) + expr2.fastAccessCoeff(i);
@@ -678,10 +678,10 @@ namespace Sacado {
 
       AdditionOp(const ExprT1& expr1, const ExprT2 expr2) {}
 
-      void allocateCache(unsigned int d) const {}
+      void allocateCache(int d) const {}
 
       value_type
-      computeCoeff(unsigned int i, const ExprT1& expr1, 
+      computeCoeff(int i, const ExprT1& expr1, 
 		   const ExprT2& expr2) const {
 	if (i == 0)
 	  return expr1.coeff(i) + expr2.coeff(i);
@@ -690,7 +690,7 @@ namespace Sacado {
       }
 
       value_type
-      computeFastAccessCoeff(unsigned int i, const ExprT1& expr1,
+      computeFastAccessCoeff(int i, const ExprT1& expr1,
 			     const ExprT2& expr2) const {
 	if (i == 0)
 	  return expr1.fastAccessCoeff(i) + expr2.fastAccessCoeff(i);
@@ -713,16 +713,16 @@ namespace Sacado {
     
       SubtractionOp(const ExprT1& expr1, const ExprT2 expr2) {}
 
-      void allocateCache(unsigned int d) const {}
+      void allocateCache(int d) const {}
     
       value_type
-      computeCoeff(unsigned int i, const ExprT1& expr1, 
+      computeCoeff(int i, const ExprT1& expr1, 
 		   const ExprT2& expr2) const {
 	return expr1.coeff(i) - expr2.coeff(i);
       }
       
       value_type
-      computeFastAccessCoeff(unsigned int i, const ExprT1& expr1, 
+      computeFastAccessCoeff(int i, const ExprT1& expr1, 
 			     const ExprT2& expr2) const {
 	return expr1.fastAccessCoeff(i) - expr2.fastAccessCoeff(i);
       }
@@ -738,10 +738,10 @@ namespace Sacado {
 
       SubtractionOp(const ExprT1& expr1, const ExprT2 expr2) {}
 
-      void allocateCache(unsigned int d) const {}
+      void allocateCache(int d) const {}
 
       value_type
-      computeCoeff(unsigned int i, const ExprT1& expr1, 
+      computeCoeff(int i, const ExprT1& expr1, 
 		   const ExprT2& expr2) const {
 	if (i == 0)
 	  return expr1.coeff(i) - expr2.coeff(i);
@@ -750,7 +750,7 @@ namespace Sacado {
       }
 
       value_type
-      computeFastAccessCoeff(unsigned int i, const ExprT1& expr1,
+      computeFastAccessCoeff(int i, const ExprT1& expr1,
 			     const ExprT2& expr2) const {
 	if (i == 0)
 	  return expr1.fastAccessCoeff(i) - expr2.fastAccessCoeff(i);
@@ -769,10 +769,10 @@ namespace Sacado {
 
       SubtractionOp(const ExprT1& expr1, const ExprT2 expr2) {}
 
-      void allocateCache(unsigned int d) const {}
+      void allocateCache(int d) const {}
 
       value_type
-      computeCoeff(unsigned int i, const ExprT1& expr1, 
+      computeCoeff(int i, const ExprT1& expr1, 
 		   const ExprT2& expr2) const {
 	if (i == 0)
 	  return expr1.coeff(i) - expr2.coeff(i);
@@ -781,7 +781,7 @@ namespace Sacado {
       }
 
       value_type
-      computeFastAccessCoeff(unsigned int i, const ExprT1& expr1,
+      computeFastAccessCoeff(int i, const ExprT1& expr1,
 			     const ExprT2& expr2) const {
 	if (i == 0)
 	  return expr1.fastAccessCoeff(i) - expr2.fastAccessCoeff(i);
@@ -806,16 +806,16 @@ namespace Sacado {
 	c(),
 	dc(-1) {}
 
-      void allocateCache(unsigned int d) const { 
+      void allocateCache(int d) const { 
 	c.resize(d+1,value_type(0));
       }
     
       value_type
-      computeCoeff(unsigned int i, const ExprT1& expr1, 
+      computeCoeff(int i, const ExprT1& expr1, 
 		   const ExprT2& expr2) const {
 	if (static_cast<int>(i) > dc) {
-	  for (unsigned int k=dc+1; k<=i; k++) {
-	    for (unsigned int j=0; j<=k; j++)
+	  for (int k=dc+1; k<=i; k++) {
+	    for (int j=0; j<=k; j++)
 	      c[k] += expr1.coeff(j)*expr2.coeff(k-j);
 	  }
 	  dc = i;
@@ -824,11 +824,11 @@ namespace Sacado {
       }
       
       value_type
-      computeFastAccessCoeff(unsigned int i, const ExprT1& expr1, 
+      computeFastAccessCoeff(int i, const ExprT1& expr1, 
 			     const ExprT2& expr2) const {
 	if (static_cast<int>(i) > dc) {
-	  for (unsigned int k=dc+1; k<=i; k++) {
-	    for (unsigned int j=0; j<=k; j++)
+	  for (int k=dc+1; k<=i; k++) {
+	    for (int j=0; j<=k; j++)
 	      c[k] += expr1.fastAccessCoeff(j)*expr2.fastAccessCoeff(k-j);
 	  }
 	  dc = i;
@@ -852,16 +852,16 @@ namespace Sacado {
 
       MultiplicationOp(const ExprT1& expr1, const ExprT2 expr2) {}
 
-      void allocateCache(unsigned int d) const {}
+      void allocateCache(int d) const {}
 
       value_type
-      computeCoeff(unsigned int i, const ExprT1& expr1, 
+      computeCoeff(int i, const ExprT1& expr1, 
 		   const ExprT2& expr2) const {
 	return expr1.coeff(i)*expr2.value();
       }
 
       value_type
-      computeFastAccessCoeff(unsigned int i, const ExprT1& expr1,
+      computeFastAccessCoeff(int i, const ExprT1& expr1,
 			     const ExprT2& expr2) const {
 	return expr1.fastAccessCoeff(i)*expr2.value();
       }
@@ -877,16 +877,16 @@ namespace Sacado {
 
       MultiplicationOp(const ExprT1& expr1, const ExprT2 expr2) {}
 
-      void allocateCache(unsigned int d) const {}
+      void allocateCache(int d) const {}
 
       value_type
-      computeCoeff(unsigned int i, const ExprT1& expr1, 
+      computeCoeff(int i, const ExprT1& expr1, 
 		   const ExprT2& expr2) const {
 	return expr1.value()*expr2.coeff(i);
       }
 
       value_type
-      computeFastAccessCoeff(unsigned int i, const ExprT1& expr1,
+      computeFastAccessCoeff(int i, const ExprT1& expr1,
 			     const ExprT2& expr2) const {
 	return expr1.value()*expr2.fastAccessCoeff(i);
       }
@@ -908,17 +908,17 @@ namespace Sacado {
 	c(),
 	dc(-1) {}
 
-      void allocateCache(unsigned int d) const { 
+      void allocateCache(int d) const { 
 	c.resize(d+1,value_type(0));
       }
     
       value_type
-      computeCoeff(unsigned int i, const ExprT1& expr1, 
+      computeCoeff(int i, const ExprT1& expr1, 
 		   const ExprT2& expr2) const {
 	if (static_cast<int>(i) > dc) {
-	  for (unsigned int k=dc+1; k<=i; k++) {
+	  for (int k=dc+1; k<=i; k++) {
 	    c[k] = expr1.coeff(k);
-	    for (unsigned int j=1; j<=k; j++)
+	    for (int j=1; j<=k; j++)
 	      c[k] -= expr2.coeff(j)*c[k-j];
 	    c[k] /= expr2.fastAccessCoeff(0);
 	  }
@@ -928,12 +928,12 @@ namespace Sacado {
       }
       
       value_type
-      computeFastAccessCoeff(unsigned int i, const ExprT1& expr1, 
+      computeFastAccessCoeff(int i, const ExprT1& expr1, 
 			     const ExprT2& expr2) const {
 	if (static_cast<int>(i) > dc) {
-	  for (unsigned int k=dc+1; k<=i; k++) {
+	  for (int k=dc+1; k<=i; k++) {
 	    c[k] = expr1.coeff(k);
-	    for (unsigned int j=1; j<=k; j++)
+	    for (int j=1; j<=k; j++)
 	      c[k] -= expr2.fastAccessCoeff(j)*c[k-j];
 	    c[k] /= expr2.fastAccessCoeff(0);
 	  }
@@ -958,16 +958,16 @@ namespace Sacado {
 
       DivisionOp(const ExprT1& expr1, const ExprT2 expr2) {}
 
-      void allocateCache(unsigned int d) const {}
+      void allocateCache(int d) const {}
 
       value_type
-      computeCoeff(unsigned int i, const ExprT1& expr1, 
+      computeCoeff(int i, const ExprT1& expr1, 
 		   const ExprT2& expr2) const {
 	return expr1.coeff(i)/expr2.value();
       }
 
       value_type
-      computeFastAccessCoeff(unsigned int i, const ExprT1& expr1,
+      computeFastAccessCoeff(int i, const ExprT1& expr1,
 			     const ExprT2& expr2) const {
 	return expr1.fastAccessCoeff(i)/expr2.value();
       }
@@ -985,20 +985,20 @@ namespace Sacado {
 	c(),
 	dc(-1) {}
 
-      void allocateCache(unsigned int d) const { 
+      void allocateCache(int d) const { 
 	c.resize(d+1,value_type(0));
       }
 
       value_type
-      computeCoeff(unsigned int i, const ExprT1& expr1, 
+      computeCoeff(int i, const ExprT1& expr1, 
 		   const ExprT2& expr2) const {
 	if (static_cast<int>(i) > dc) {
 	  if (dc < 0) {
 	    c[0] = expr1.fastAccessCoeff(0) / expr2.fastAccessCoeff(0);
 	    dc = 0;
 	  }
-	  for (unsigned int k=dc+1; k<=i; k++) {
-	    for (unsigned int j=1; j<=k; j++)
+	  for (int k=dc+1; k<=i; k++) {
+	    for (int j=1; j<=k; j++)
 	      c[k] -= expr2.coeff(j)*c[k-j];
 	    c[k] /= expr2.fastAccessCoeff(0);
 	  }
@@ -1008,16 +1008,16 @@ namespace Sacado {
       }
 
       value_type
-      computeFastAccessCoeff(unsigned int i, const ExprT1& expr1,
+      computeFastAccessCoeff(int i, const ExprT1& expr1,
 			     const ExprT2& expr2) const {
 	if (static_cast<int>(i) > dc) {
 	  if (dc < 0) {
 	    c[0] = expr1.fastAccessCoeff(0) / expr2.fastAccessCoeff(0);
 	    dc = 0;
 	  }
-	  for (unsigned int k=dc+1; k<=i; k++) {
+	  for (int k=dc+1; k<=i; k++) {
 	    c[k] = expr1.coeff(k);
-	    for (unsigned int j=1; j<=k; j++)
+	    for (int j=1; j<=k; j++)
 	      c[k] -= expr2.fastAccessCoeff(j)*c[k-j];
 	    c[k] /= expr2.fastAccessCoeff(0);
 	  }
@@ -1046,10 +1046,10 @@ namespace Sacado {
     
       MaxOp(const ExprT1& expr1, const ExprT2 expr2) {}
 
-      void allocateCache(unsigned int d) const {}
+      void allocateCache(int d) const {}
     
       value_type
-      computeCoeff(unsigned int i, const ExprT1& expr1, 
+      computeCoeff(int i, const ExprT1& expr1, 
 		   const ExprT2& expr2) const {
 	if (i == 0)
 	  return std::max(expr1.coeff(0), expr2.coeff(0));
@@ -1059,7 +1059,7 @@ namespace Sacado {
       }
       
       value_type
-      computeFastAccessCoeff(unsigned int i, const ExprT1& expr1, 
+      computeFastAccessCoeff(int i, const ExprT1& expr1, 
 			     const ExprT2& expr2) const {
 	if (i == 0)
 	  return std::max(expr1.fastAccessCoeff(0), expr2.fastAccessCoeff(0));
@@ -1079,10 +1079,10 @@ namespace Sacado {
 
       MaxOp(const ExprT1& expr1, const ExprT2 expr2) {}
 
-      void allocateCache(unsigned int d) const {}
+      void allocateCache(int d) const {}
 
       value_type
-      computeCoeff(unsigned int i, const ExprT1& expr1, 
+      computeCoeff(int i, const ExprT1& expr1, 
 		   const ExprT2& expr2) const {
 	if (i == 0)
 	  return std::max(expr1.coeff(0), expr2.value());
@@ -1092,7 +1092,7 @@ namespace Sacado {
       }
 
       value_type
-      computeFastAccessCoeff(unsigned int i, const ExprT1& expr1,
+      computeFastAccessCoeff(int i, const ExprT1& expr1,
 			     const ExprT2& expr2) const {
 	if (i == 0)
 	  return std::max(expr1.fastAccessCoeff(0), expr2.value());
@@ -1112,10 +1112,10 @@ namespace Sacado {
 
       MaxOp(const ExprT1& expr1, const ExprT2 expr2) {}
 
-      void allocateCache(unsigned int d) const {}
+      void allocateCache(int d) const {}
 
       value_type
-      computeCoeff(unsigned int i, const ExprT1& expr1, 
+      computeCoeff(int i, const ExprT1& expr1, 
 		   const ExprT2& expr2) const {
 	if (i == 0)
 	  return std::max(expr1.value(), expr2.coeff(0));
@@ -1125,7 +1125,7 @@ namespace Sacado {
       }
 
       value_type
-      computeFastAccessCoeff(unsigned int i, const ExprT1& expr1,
+      computeFastAccessCoeff(int i, const ExprT1& expr1,
 			     const ExprT2& expr2) const {
 	if (i == 0)
 	  return std::max(expr1.value(), expr2.fastAccessCoeff(0));
@@ -1149,10 +1149,10 @@ namespace Sacado {
     
       MinOp(const ExprT1& expr1, const ExprT2 expr2) {}
 
-      void allocateCache(unsigned int d) const {}
+      void allocateCache(int d) const {}
     
       value_type
-      computeCoeff(unsigned int i, const ExprT1& expr1, 
+      computeCoeff(int i, const ExprT1& expr1, 
 		   const ExprT2& expr2) const {
 	if (i == 0)
 	  return min(expr1.coeff(0), expr2.coeff(0));
@@ -1162,7 +1162,7 @@ namespace Sacado {
       }
       
       value_type
-      computeFastAccessCoeff(unsigned int i, const ExprT1& expr1, 
+      computeFastAccessCoeff(int i, const ExprT1& expr1, 
 			     const ExprT2& expr2) const {
 	if (i == 0)
 	  return min(expr1.fastAccessCoeff(0), expr2.fastAccessCoeff(0));
@@ -1182,10 +1182,10 @@ namespace Sacado {
 
       MinOp(const ExprT1& expr1, const ExprT2 expr2) {}
 
-      void allocateCache(unsigned int d) const {}
+      void allocateCache(int d) const {}
 
       value_type
-      computeCoeff(unsigned int i, const ExprT1& expr1, 
+      computeCoeff(int i, const ExprT1& expr1, 
 		   const ExprT2& expr2) const {
 	if (i == 0)
 	  return std::min(expr1.coeff(0), expr2.value());
@@ -1195,7 +1195,7 @@ namespace Sacado {
       }
 
       value_type
-      computeFastAccessCoeff(unsigned int i, const ExprT1& expr1,
+      computeFastAccessCoeff(int i, const ExprT1& expr1,
 			     const ExprT2& expr2) const {
 	if (i == 0)
 	  return std::min(expr1.fastAccessCoeff(0), expr2.value());
@@ -1215,10 +1215,10 @@ namespace Sacado {
 
       MinOp(const ExprT1& expr1, const ExprT2 expr2) {}
 
-      void allocateCache(unsigned int d) const {}
+      void allocateCache(int d) const {}
 
       value_type
-      computeCoeff(unsigned int i, const ExprT1& expr1, 
+      computeCoeff(int i, const ExprT1& expr1, 
 		   const ExprT2& expr2) const {
 	if (i == 0)
 	  return std::min(expr1.value(), expr2.coeff(0));
@@ -1228,7 +1228,7 @@ namespace Sacado {
       }
 
       value_type
-      computeFastAccessCoeff(unsigned int i, const ExprT1& expr1,
+      computeFastAccessCoeff(int i, const ExprT1& expr1,
 			     const ExprT2& expr2) const {
 	if (i == 0)
 	  return std::min(expr1.value(), expr2.fastAccessCoeff(0));
@@ -1255,19 +1255,19 @@ namespace Sacado {
 	dc(-1)
       {}
 
-      void allocateCache(unsigned int d) const { 
+      void allocateCache(int d) const { 
 	c.resize(d+1,value_type(0));
       }
 
-      value_type computeCoeff(unsigned int i, const ExprT1& expr1,
+      value_type computeCoeff(int i, const ExprT1& expr1,
 			      const ExprT2& expr2) const {
 	if (static_cast<int>(i) > dc) {
 	  if (dc < 0) {
 	    c[0] = std::asin(expr1.fastAccessCoeff(0));
 	    dc = 0;
 	  }
-	  for (unsigned int k=dc+1; k<=i; k++) {
-	    for (unsigned int j=1; j<=k; j++)
+	  for (int k=dc+1; k<=i; k++) {
+	    for (int j=1; j<=k; j++)
 	      c[k] += value_type(j)*expr2.coeff(k-j)*expr1.coeff(j);
 	    c[k] /= value_type(k);
 	  }
@@ -1276,7 +1276,7 @@ namespace Sacado {
 	return c[i];
       }
 
-      value_type computeFastAccessCoeff(unsigned int i, 
+      value_type computeFastAccessCoeff(int i, 
 					const ExprT1& expr1,
 					const ExprT2& expr2) const
       {
@@ -1285,8 +1285,8 @@ namespace Sacado {
 	    c[0] = std::asin(expr1.fastAccessCoeff(0));
 	    dc = 0;
 	  }
-	  for (unsigned int k=dc+1; k<=i; k++) {
-	    for (unsigned int j=1; j<=k; j++)
+	  for (int k=dc+1; k<=i; k++) {
+	    for (int j=1; j<=k; j++)
 	      c[k] += value_type(j)*expr2.fastAccessCoeff(k-j)*
 		expr1.fastAccessCoeff(j);
 	    c[k] /= value_type(k);
@@ -1317,19 +1317,19 @@ namespace Sacado {
 	dc(-1)
       {}
 
-      void allocateCache(unsigned int d) const { 
+      void allocateCache(int d) const { 
 	c.resize(d+1,value_type(0));
       }
 
-      value_type computeCoeff(unsigned int i, const ExprT1& expr1,
+      value_type computeCoeff(int i, const ExprT1& expr1,
 			      const ExprT2& expr2) const {
 	if (static_cast<int>(i) > dc) {
 	  if (dc < 0) {
 	    c[0] = std::acos(expr1.fastAccessCoeff(0));
 	    dc = 0;
 	  }
-	  for (unsigned int k=dc+1; k<=i; k++) {
-	    for (unsigned int j=1; j<=k; j++)
+	  for (int k=dc+1; k<=i; k++) {
+	    for (int j=1; j<=k; j++)
 	      c[k] += value_type(j)*expr2.coeff(k-j)*expr1.coeff(j);
 	    c[k] /= value_type(k);
 	  }
@@ -1338,7 +1338,7 @@ namespace Sacado {
 	return c[i];
       }
 
-      value_type computeFastAccessCoeff(unsigned int i, 
+      value_type computeFastAccessCoeff(int i, 
 					const ExprT1& expr1,
 					const ExprT2& expr2) const
       {
@@ -1347,8 +1347,8 @@ namespace Sacado {
 	    c[0] = std::acos(expr1.fastAccessCoeff(0));
 	    dc = 0;
 	  }
-	  for (unsigned int k=dc+1; k<=i; k++) {
-	    for (unsigned int j=1; j<=k; j++)
+	  for (int k=dc+1; k<=i; k++) {
+	    for (int j=1; j<=k; j++)
 	      c[k] += value_type(j)*expr2.fastAccessCoeff(k-j)*
 		expr1.fastAccessCoeff(j);
 	    c[k] /= value_type(k);
@@ -1379,19 +1379,19 @@ namespace Sacado {
 	dc(-1)
       {}
 
-      void allocateCache(unsigned int d) const { 
+      void allocateCache(int d) const { 
 	c.resize(d+1,value_type(0));
       }
 
-      value_type computeCoeff(unsigned int i, const ExprT1& expr1,
+      value_type computeCoeff(int i, const ExprT1& expr1,
 			      const ExprT2& expr2) const {
 	if (static_cast<int>(i) > dc) {
 	  if (dc < 0) {
 	    c[0] = std::atan(expr1.fastAccessCoeff(0));
 	    dc = 0;
 	  }
-	  for (unsigned int k=dc+1; k<=i; k++) {
-	    for (unsigned int j=1; j<=k; j++)
+	  for (int k=dc+1; k<=i; k++) {
+	    for (int j=1; j<=k; j++)
 	      c[k] += value_type(j)*expr2.coeff(k-j)*expr1.coeff(j);
 	    c[k] /= value_type(k);
 	  }
@@ -1400,7 +1400,7 @@ namespace Sacado {
 	return c[i];
       }
 
-      value_type computeFastAccessCoeff(unsigned int i, 
+      value_type computeFastAccessCoeff(int i, 
 					const ExprT1& expr1,
 					const ExprT2& expr2) const
       {
@@ -1409,8 +1409,8 @@ namespace Sacado {
 	    c[0] = std::atan(expr1.fastAccessCoeff(0));
 	    dc = 0;
 	  }
-	  for (unsigned int k=dc+1; k<=i; k++) {
-	    for (unsigned int j=1; j<=k; j++)
+	  for (int k=dc+1; k<=i; k++) {
+	    for (int j=1; j<=k; j++)
 	      c[k] += value_type(j)*expr2.fastAccessCoeff(k-j)*
 		expr1.fastAccessCoeff(j);
 	    c[k] /= value_type(k);
@@ -1607,8 +1607,6 @@ namespace Sacado {
     inline typename PowExprType< typename Expr<T>::value_type, Expr<T> >::expr_type
     pow (const typename Expr<T>::value_type& c, const Expr<T>& expr)
     {
-      typedef ConstExpr<typename Expr<T>::value_type> ConstT;
-
       // pow(x,y) = exp(y*log(x))
       return exp(expr*std::log(c));
     }
@@ -1617,8 +1615,6 @@ namespace Sacado {
     inline typename PowExprType< Expr<T>, typename Expr<T>::value_type >::expr_type
     pow (const Expr<T>& expr, const typename Expr<T>::value_type& c)
     {
-      typedef ConstExpr<typename Expr<T>::value_type> ConstT;
-
       // pow(x,y) = exp(y*log(x))
       return exp(c*log(expr));
     }
@@ -1813,7 +1809,7 @@ namespace Sacado {
     template <typename ExprT>
     bool toBool2(const Expr<ExprT>& x) {
       bool is_zero = true;
-      for (unsigned int i=0; i<=x.degree(); i++)
+      for (int i=0; i<=x.degree(); i++)
 	is_zero = is_zero && (x.coeff(i) == 0.0);
       return !is_zero;
     }
@@ -1868,7 +1864,7 @@ namespace Sacado {
       os.width(12);
       os << "[";
       
-      for (unsigned int i=0; i<=x.degree(); i++) {
+      for (int i=0; i<=x.degree(); i++) {
         os.width(12);
         os << x.coeff(i);
       }

@@ -45,7 +45,7 @@
 
 // Force OMP atomics for testing only
 
-#define KOKKOS_ATOMICS_USE_OMP31
+//#define KOKKOS_ATOMICS_USE_OMP31
 #include <Kokkos_Atomic.hpp>
 
 #include <Kokkos_OpenMP.hpp>
@@ -65,10 +65,12 @@
 
 #include <TestCrsArray.hpp>
 #include <TestRequest.hpp>
+#include <TestTeam.hpp>
 #include <TestReduce.hpp>
 #include <TestScan.hpp>
-#include <TestMultiReduce.hpp>
 #include <TestAggregate.hpp>
+#include <TestCompilerMacros.hpp>
+#include <TestCXX11.hpp>
 
 namespace Test {
 
@@ -84,7 +86,7 @@ protected:
                                    std::max( 2u , ( cores_per_numa * threads_per_core ) / 2 );
 
     Kokkos::OpenMP::initialize( threads_count );
-    // Kokkos::OpenMP::print_configuration( std::cout );
+    Kokkos::OpenMP::print_configuration( std::cout , true );
   }
 
   static void TearDownTestCase()
@@ -132,15 +134,27 @@ TEST_F( openmp, long_reduce_dynamic_view ) {
 }
 
 TEST_F( openmp, dev_long_reduce) {
-  TestReduceRequest< long ,   Kokkos::OpenMP >( 1000000 );
+  TestReduceRequest< long ,   Kokkos::OpenMP >( 100000 );
 }
 
 TEST_F( openmp, dev_double_reduce) {
-  TestReduceRequest< double ,   Kokkos::OpenMP >( 1000000 );
+  TestReduceRequest< double ,   Kokkos::OpenMP >( 100000 );
 }
 
 TEST_F( openmp, dev_shared_request) {
   TestSharedRequest< Kokkos::OpenMP >();
+}
+
+TEST_F( openmp, team_long_reduce) {
+  TestReduceTeam< long ,   Kokkos::OpenMP >( 100000 );
+}
+
+TEST_F( openmp, team_double_reduce) {
+  TestReduceTeam< double ,   Kokkos::OpenMP >( 100000 );
+}
+
+TEST_F( openmp, team_shared_request) {
+  TestSharedTeam< Kokkos::OpenMP >();
 }
 
 
@@ -243,9 +257,30 @@ TEST_F( openmp , scan )
 TEST_F( openmp , team_scan )
 {
   TestScanRequest< Kokkos::OpenMP >( 10 );
-  TestScanRequest< Kokkos::OpenMP >( 10000 );
+  TestScanTeam< Kokkos::OpenMP >( 10000 );
+  TestScanRequest< Kokkos::OpenMP >( 10 );
+  TestScanTeam< Kokkos::OpenMP >( 10000 );
+}
+
+//----------------------------------------------------------------------------
+
+TEST_F( openmp , compiler_macros )
+{
+  ASSERT_TRUE( ( TestCompilerMacros::Test< Kokkos::OpenMP >() ) );
 }
 
 
+//----------------------------------------------------------------------------
+#if defined( KOKKOS_HAVE_CXX11 ) && defined( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_OPENMP )
+TEST_F( openmp , cxx11 )
+{
+  if ( Kokkos::Impl::is_same< Kokkos::DefaultExecutionSpace , Kokkos::OpenMP >::value ) {
+    ASSERT_TRUE( ( TestCXX11::Test< Kokkos::OpenMP >(1) ) );
+    ASSERT_TRUE( ( TestCXX11::Test< Kokkos::OpenMP >(2) ) );
+    ASSERT_TRUE( ( TestCXX11::Test< Kokkos::OpenMP >(3) ) );
+    ASSERT_TRUE( ( TestCXX11::Test< Kokkos::OpenMP >(4) ) );
+  }
+}
+#endif
 } // namespace test
 

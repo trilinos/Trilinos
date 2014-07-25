@@ -8,23 +8,21 @@
 
   <ParameterList name="Aggregates1">
     <Parameter name="factory"    type="string" value="UncoupledAggregationFactory"/>
-    
-    <Parameter name="MaxNeighAlreadySelected" type="int" value="0"/>
-    <Parameter name="MinNodesPerAggregate" type="int" value="2"/>    
+
+    <Parameter name="aggregation: max selected neighbors" type="int" value="0"/>
+    <Parameter name="aggregation: min agg size" type="int" value="2"/>
   </ParameterList>
 
   <ParameterList name="Aggregates2">
     <Parameter name="factory"    type="string" value="UncoupledAggregationFactory"/>
     <Parameter name="UseOnePtAggregationAlgorithm" type="bool" value="false"/>
-    <Parameter name="UseSmallAggregatesAggregationAlgorithm" type="bool" value="false"/>
     <Parameter name="UsePreserveDirichletAggregationAlgorithm" type="bool" value="false"/>
     <Parameter name="UseUncoupledAggregationAlgorithm" type="bool" value="false"/>
     <Parameter name="UseMaxLinkAggregationAlgorithm" type="bool" value="false"/>
     <Parameter name="UseIsolatedNodeAggregationAlgorithm" type="bool" value="false"/>
     <Parameter name="UseEmergencyAggregationAlgorithm" type="bool" value="false"/>
-    
+
     <Parameter name="OnePt aggregate map name" type="string" value=""/>
-    <Parameter name="SmallAgg aggregate map name" type="string" value=""/>
   </ParameterList>
-  
+
 </ParameterList>

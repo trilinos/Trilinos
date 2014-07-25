@@ -40,7 +40,7 @@
 // ************************************************************************
 //@HEADER
 */
-#ifdef KOKKOS_CRSMATRIX_MKL_HPP
+#ifndef KOKKOS_CRSMATRIX_MKL_HPP
 #define KOKKOS_CRSMATRIX_MKL_HPP
 
 /// \file Kokkos_CrsMatrix_MKL.hpp

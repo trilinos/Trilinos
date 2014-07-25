@@ -19,7 +19,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
@@ -625,7 +625,16 @@ int Amesos_Klu::SymbolicFactorization()
   CreateTimer(Comm(), 2);
   
   ResetTimer(1);
-  
+
+  RowMatrixA_ = Problem_->GetMatrix();
+  if (RowMatrixA_->NumGlobalRows64() == 0 || RowMatrixA_->NumGlobalCols64()
+            == 0)
+  {
+      NumSymbolicFact_++;
+      IsSymbolicFactorizationOK_ = true;
+      return 0;
+  }
+
   // "overhead" time for the following method is considered here
   AMESOS_CHK_ERR( CreateLocalMatrixAndExporters() ) ;
   assert( NumGlobalElements_ == RowMatrixA_->NumGlobalCols64() );
@@ -671,6 +680,15 @@ int Amesos_Klu::SymbolicFactorization()
 //=============================================================================
 int Amesos_Klu::NumericFactorization() 
 {
+  RowMatrixA_ = Problem_->GetMatrix();
+  if (RowMatrixA_->NumGlobalRows64() == 0 || RowMatrixA_->NumGlobalCols64()
+            == 0)
+  {
+      NumNumericFact_++;
+      IsNumericFactorizationOK_ = true;
+      return 0;
+  }
+
   if ( !TrustMe_ ) 
   { 
     IsNumericFactorizationOK_ = false;
@@ -710,6 +728,14 @@ int Amesos_Klu::NumericFactorization()
 //=============================================================================
 int Amesos_Klu::Solve() 
 {
+  RowMatrixA_ = Problem_->GetMatrix();
+  if (RowMatrixA_->NumGlobalRows64() == 0 || RowMatrixA_->NumGlobalCols64()
+            == 0)
+  {
+      ++NumSolve_;
+      return 0;
+  }
+
   Epetra_MultiVector* vecX = 0 ;
   Epetra_MultiVector* vecB = 0 ;
 

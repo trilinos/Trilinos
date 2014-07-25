@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
@@ -69,7 +69,7 @@
 #include "Tpetra_MpiPlatform.hpp"
 #endif
 
-#include <Kokkos_SerialNode.hpp>
+#include <Kokkos_DefaultNode.hpp>
 
 namespace {
 
@@ -80,32 +80,32 @@ namespace {
 #ifdef HAVE_TPETRA_MPI
   using Tpetra::MpiPlatform;
 #endif
-  using KokkosClassic::SerialNode;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
 
   template <class PLAT>
   RCP<PLAT> getPlatform() {
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Platform type " << Teuchos::TypeNameTraits<PLAT>::name() << " not defined.");
   }
 
-  RCP<SerialNode> snode;
+  RCP<node_type> snode;
 
   template <>
-  RCP<SerialPlatform<SerialNode> > getPlatform() {
+  RCP<SerialPlatform<node_type> > getPlatform() {
     if (snode == Teuchos::null) {
       Teuchos::ParameterList pl;
-      snode = rcp(new SerialNode(pl));
+      snode = rcp(new node_type(pl));
     }
-    return rcp(new SerialPlatform<SerialNode>(snode));
+    return rcp(new SerialPlatform<node_type>(snode));
   }
 
 #ifdef HAVE_TPETRA_MPI
   template <>
-  RCP<MpiPlatform<SerialNode> > getPlatform() {
+  RCP<MpiPlatform<node_type> > getPlatform() {
     if (snode == Teuchos::null) {
       Teuchos::ParameterList pl;
-      snode = rcp(new SerialNode(pl));
+      snode = rcp(new node_type(pl));
     }
-    return rcp(new MpiPlatform<SerialNode>(snode));
+    return rcp(new MpiPlatform<node_type>(snode));
   }
 #endif
 
@@ -117,14 +117,14 @@ namespace {
 
   //
   // UNIT TESTS
-  // 
+  //
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Platform, basic, PlatformType )
   {
     out << "Testing " << Teuchos::TypeNameTraits<PlatformType>::name() << std::endl;
     typedef typename PlatformType::NodeType            N;
-    // create a platform  
+    // create a platform
     RCP<PlatformType> platform = getPlatform<PlatformType>();
     platform->setObjectLabel("not the default label");
     // get the comm for this platform
@@ -138,7 +138,7 @@ namespace {
   }
 
 
-  // 
+  //
   // INSTANTIATIONS
   //
 
@@ -146,10 +146,10 @@ namespace {
   // it back again before checking in so that we can test all the types.
   // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
-typedef SerialPlatform<SerialNode> SP;
+typedef SerialPlatform<node_type> SP;
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Platform, basic, SP)
 #ifdef HAVE_TPETRA_MPI
-typedef MpiPlatform<SerialNode> MP;
+typedef MpiPlatform<node_type> MP;
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Platform, basic, MP )
 #endif
 

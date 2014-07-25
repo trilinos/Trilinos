@@ -99,9 +99,9 @@ namespace MueLu {
     //@{
 
     // Options algo1
-    void SetOrdering(Ordering ordering) { algo1_.SetOrdering(ordering); }
+    void SetOrdering(const std::string& ordering) { algo1_.SetOrdering(ordering); }
     void SetMaxNeighAlreadySelected(int maxNeighAlreadySelected) { algo1_.SetMaxNeighAlreadySelected(maxNeighAlreadySelected); }
-    Ordering GetOrdering() const { return algo1_.GetOrdering(); }
+    const std::string& GetOrdering() const { return algo1_.GetOrdering(); }
     int GetMaxNeighAlreadySelected() const { return algo1_.GetMaxNeighAlreadySelected(); }
 
     // Options algo2
@@ -110,7 +110,8 @@ namespace MueLu {
 
     // Options shared algo1 and algo2
     void SetMinNodesPerAggregate(int minNodesPerAggregate) { algo1_.SetMinNodesPerAggregate(minNodesPerAggregate); algo2_.SetMinNodesPerAggregate(minNodesPerAggregate); }
-    int GetMinNodesPerAggregate() const { return algo1_.GetMinNodesPerAggregate(); TEUCHOS_TEST_FOR_EXCEPTION(algo2_.GetMinNodesPerAggregate() != algo1_.GetMinNodesPerAggregate(), Exceptions::RuntimeError, ""); }
+    int GetMinNodesPerAggregate() const { return algo1_.GetMinNodesPerAggregate(); //TEUCHOS_TEST_FOR_EXCEPTION(algo2_.GetMinNodesPerAggregate() != algo1_.GetMinNodesPerAggregate(), Exceptions::RuntimeError, "");
+    }
 
     //@}
 

@@ -1,7 +1,7 @@
 
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_config.h"
@@ -42,9 +42,9 @@ int main(int argc, char *argv[])
     DistributedMatrix A(FineSpace, FineSpace);
 
     // assemble the matrix on processor 0 only
-    if (GetMyPID() == 0) 
+    if (GetMyPID() == 0)
     {
-      for (int i = 0 ; i < NX ; ++i) 
+      for (int i = 0 ; i < NX ; ++i)
       {
         A(2*i, 2*i)     = 2.0;
         A(2*i+1, 2*i+1) = 2.0;
@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
           A(2*i, 2*(i - 1))     = - 1.0;
           A(2*i+1, 2*(i - 1)+1) = - 1.0;
         }
-        if (i != NX - 1) 
+        if (i != NX - 1)
         {
           A(2*i, 2*(i + 1))     = - 1.0;
           A(2*i+1, 2*(i + 1)+1) = - 1.0;
@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
     // - AdditionalCandidates = 2' means to compute two additionals.   //
     // - the final null space dimension is 3.                          //
     // =============================================================== //
-    
+
     bool UseDefaultNullSpace = true;
     int AdditionalCandidates = 1;
     Prec.AdaptCompute(UseDefaultNullSpace, AdditionalCandidates);
@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
 
     Krylov(A, LHS, RHS, Prec, List);
 
-    Finalize(); 
+    Finalize();
 
   }
   catch (const int e) {

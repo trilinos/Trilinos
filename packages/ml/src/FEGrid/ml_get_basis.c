@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -33,13 +33,13 @@ int ML_compute_basis_coefficients3D(void *grid, double *coord,
    double xwidth, ywidth, zwidth, coarse_x, coarse_y, coarse_z, local_coef[8];
 
    /* checking the presence of the set of grid access functions */
- 
+
    if ( gridfcns_basis == NULL )
    {
       printf("Error in compute_basis : no grid functions available. \n");
       exit(0);
    }
- 
+
    /* fetch the vertices (local vertex numbers) for the given coarse  */
    /* element (leng = the number of vertices for the element)         */
 
@@ -85,8 +85,8 @@ int ML_compute_basis_coefficients3D(void *grid, double *coord,
 
       /* fetch the coordinate of the fine vertex */
 
-      x = (double) coord[3*i]; 
-      y = (double) coord[3*i+1]; 
+      x = (double) coord[3*i];
+      y = (double) coord[3*i+1];
       z = (double) coord[3*i+2];
 
       /* for each of the 8 coarse vertices */
@@ -109,7 +109,7 @@ int ML_compute_basis_coefficients3D(void *grid, double *coord,
             ydist    = 1.0 - ML_dabs((y - coarse_y)) * ywidth;
             zdist    = 1.0 - ML_dabs((z - coarse_z)) * zwidth;
             if (xdist > 0.0 && ydist > 0.0 && zdist > 0.0)
-            { 
+            {
                local_coef[j] = xdist * ydist * zdist;
                if (local_coef[j] > 1.0E-6) not_all_zero++;
                else                        local_coef[j] = 0.0;
@@ -120,7 +120,7 @@ int ML_compute_basis_coefficients3D(void *grid, double *coord,
       {
          for ( j = 0; j < 8; j++ ) coefs[ncnt++] = local_coef[j];
          coef_ptr[i] = 8;
-      } 
+      }
       else
       {
          coefs[ncnt++] = -1.0;
@@ -143,13 +143,13 @@ int ML_compute_basis_coefficients2D(void *grid, double *coord,
    double xwidth, ywidth, coarse_x, coarse_y, local_coef[4];
 
    /* checking the presence of the set of grid access functions */
- 
+
    if ( gridfcns_basis == NULL )
    {
       printf("Error in compute_basis : no grid functions available. \n");
       exit(0);
    }
- 
+
    /* fetch the vertices (local vertex numbers) for the given coarse  */
    /* element (leng = the number of vertices for the element)         */
 
@@ -192,8 +192,8 @@ int ML_compute_basis_coefficients2D(void *grid, double *coord,
 
       /* fetch the coordinate of the fine vertex */
 
-      x = (double) coord[2*i]; 
-      y = (double) coord[2*i+1]; 
+      x = (double) coord[2*i];
+      y = (double) coord[2*i+1];
 
       /* for each of the 4 coarse vertices */
 
@@ -213,7 +213,7 @@ int ML_compute_basis_coefficients2D(void *grid, double *coord,
             xdist    = 1.0 - ML_dabs((x - coarse_x)) * xwidth;
             ydist    = 1.0 - ML_dabs((y - coarse_y)) * ywidth;
             if (xdist > 0.0 && ydist > 0.0 )
-            { 
+            {
                local_coef[j] = xdist * ydist;
                if (local_coef[j] > 1.0E-6) not_all_zero++;
                else                        local_coef[j] = 0.0;
@@ -224,7 +224,7 @@ int ML_compute_basis_coefficients2D(void *grid, double *coord,
       {
          for ( j = 0; j < 4; j++ ) coefs[ncnt++] = local_coef[j];
          coef_ptr[i] = 4;
-      } 
+      }
       else
       {
          coefs[ncnt++] = -1.0;

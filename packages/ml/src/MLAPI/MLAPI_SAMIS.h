@@ -11,7 +11,7 @@
 */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_common.h"
@@ -24,18 +24,18 @@ namespace MLAPI {
 class Operator;
 
 
-  // ====================================================================== 
+  // ======================================================================
   //! Reads symmetric matrix from SAMIS binary format.
-  // ====================================================================== 
+  // ======================================================================
 
   void ReadSAMISMatrix(const char *filen, Operator& A, int& NumPDEEqns);
 
 
-  // ====================================================================== 
+  // ======================================================================
   //! Reads null space vectors from SAMIS binary format.
-  // ====================================================================== 
+  // ======================================================================
 
-  void ReadSAMISKernel(const char *myKerFileName, MultiVector& A, 
+  void ReadSAMISKernel(const char *myKerFileName, MultiVector& A,
            const int limKer=-1 /* -in- limit num of kernels used */);
 
 } // namespace MLAPI

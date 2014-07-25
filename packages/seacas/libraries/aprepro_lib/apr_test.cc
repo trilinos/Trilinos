@@ -63,20 +63,30 @@ int main(int argc, char *argv[])
     
   // Read and parse a string's worth of data at a time.
   // Cannot use looping/ifs/... with this method.
-  std::string line;
-  while( std::cout << "\nexpession: " &&
-	 std::getline(std::cin, line) &&
-	 !line.empty() ) {
-    if (line[0] != '{') 
-      line = "{" + line + "}\n";
-    else
+  std::string line, tmp;
+  while( std::cout << "\nexpression: " &&
+   std::getline(std::cin, tmp) &&
+   !tmp.empty() ) {
+
+    line += tmp;
+
+    if(*tmp.rbegin() == '\\')
+    {
+      line.erase(line.length()-1);
+      continue;
+    }
+
       line += "\n";
     
-    bool result = aprepro.parse_string(line, "input");
+    bool result = aprepro.parse_string_interactive(line);
 
     if (result) {
-      std::cout << "         : " << aprepro.parsing_results().str();
-      aprepro.clear_results();
+      std::string res_str = aprepro.parsing_results().str();
+      std::cout << "         : " << res_str;
     }
+
+    aprepro.clear_results();
+
+    line.clear();
   }
 }

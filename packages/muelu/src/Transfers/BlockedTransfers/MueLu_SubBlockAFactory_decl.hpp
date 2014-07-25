@@ -53,9 +53,10 @@
 #ifndef MUELU_SUBBLOCKAFACTORY_DECL_HPP_
 #define MUELU_SUBBLOCKAFACTORY_DECL_HPP_
 
-#include "Xpetra_Map_fwd.hpp"
-#include "Xpetra_StridedMap_fwd.hpp"
-#include "Xpetra_StridedMapFactory_fwd.hpp"
+#include <Xpetra_Map_fwd.hpp>
+#include <Xpetra_MapExtractor_fwd.hpp>
+#include <Xpetra_StridedMap_fwd.hpp>
+#include <Xpetra_StridedMapFactory_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
@@ -103,16 +104,16 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    SubBlockAFactory();
+    SubBlockAFactory() { }
 
     //! Destructor.
-    virtual ~SubBlockAFactory();
+    virtual ~SubBlockAFactory() { }
     //@}
 
     //! Input
     //@{
 
-    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+    RCP<const ParameterList> GetValidParameterList() const;
 
     void DeclareInput(Level &currentLevel) const;
 

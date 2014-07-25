@@ -4,9 +4,12 @@ verbosity = test
 coarse: max size = 2000   [default]
 debug: graph level = -1   [default]
 number of equations = 1   [default]
+transpose: use implicit = 0   [default]
 smoother: pre or post = both   [default]
 aggregation: type = uncoupled   [default]
 multigrid algorithm = sa   [default]
+problem: symmetric = 1   [default]
+aggregation: export visualization data = 0   [default]
 repartition: enable = 0   [default]
 
 Level 0
@@ -35,6 +38,6 @@ Level 0
  matrix rows    nnz  nnz/row procs
  A 0    9999  29995     3.00  1
  
- Smoother (level 0) pre  : "Ifpack2::Relaxation": { MatrixType: "Tpetra::CrsMatrix<double, int, int, KokkosClassic::SerialNode, KokkosClassic::AltSparseOps<void, int, KokkosClassic::SerialNode, KokkosClassic::details::AltSparseOpsDefaultAllocator<int, KokkosClassic::SerialNode> > >", Status: initialized, computed, "relaxation: type": Jacobi, "relaxation: sweeps": 1, "relaxation: damping factor": 1, "Global number of rows": 9999, "Global number of columns": 9999 }
+ Smoother (level 0) pre  : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Jacobi, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
  Smoother (level 0) post : no smoother
  

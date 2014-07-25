@@ -42,19 +42,11 @@
 #ifndef TPETRA_KOKKOS_REFACTOR_MULTIVECTOR_DECL_HPP
 #define TPETRA_KOKKOS_REFACTOR_MULTIVECTOR_DECL_HPP
 
-/*#include <Teuchos_DataAccess.hpp>
-#include <Teuchos_Range1D.hpp>
-#include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_DistObject.hpp"
-#include "Tpetra_ViewAccepter.hpp"
-#include <Kokkos_MultiVector.hpp>
-#include <Teuchos_BLAS_types.hpp>
-*/
 #include <Kokkos_DualView.hpp>
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
-//#include <Tpetra_MultiVector.hpp>
-
-#include "Tpetra_KokkosRefactor_DistObject.hpp"
+#include <Kokkos_InnerProductSpaceTraits.hpp>
+#include <Kokkos_ArithTraits.hpp>
+#include <Tpetra_KokkosRefactor_DistObject.hpp>
 
 namespace KokkosClassic {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -132,7 +124,7 @@ namespace Tpetra {
   ///   If you want to solve larger problems, you must use a 64-bit
   ///   integer type here.
   ///
-  /// \section Kokkos_MV_prereq Prerequisites
+  /// \section Kokkos_KR_MV_prereq Prerequisites
   ///
   /// Before reading the rest of this documentation, it helps to know
   /// something about the Teuchos memory management classes, in
@@ -145,9 +137,9 @@ namespace Tpetra {
   /// the general idea of distributed storage of data over a
   /// communicator.
   ///
-  /// \section Kokkos_MV_layout Data layout and access
+  /// \section Kokkos_KR_MV_layout Data layout and access
   ///
-  /// \subsection Kokkos_MV_noncontig Multivectors which view another multivector
+  /// \subsection Kokkos_KR_MV_noncontig Multivectors which view another multivector
   ///
   /// A multivector could be a <i>view</i> of some subset of another
   /// multivector's columns and rows.  A view is like a pointer; it
@@ -171,7 +163,7 @@ namespace Tpetra {
   /// ability to access the data in certain ways, which we will
   /// explain below.
   ///
-  /// \subsection Kokkos_MV_views Views of a multivector's data
+  /// \subsection Kokkos_KR_MV_views Views of a multivector's data
   ///
   /// We have unfortunately overloaded the term "view."  In the
   /// section above, we explained the idea of a "multivector which is
@@ -234,7 +226,7 @@ namespace Tpetra {
   /// will <i>never</i> be copied back to device memory, and thus the
   /// original data will never be changed.
   ///
-  /// \subsection Kokkos_MV_why_views Why won't you give me a raw pointer?
+  /// \subsection Kokkos_KR_MV_why_views Why won't you give me a raw pointer?
   ///
   /// Tpetra was designed to allow different data representations
   /// underneath the same interface.  This lets Tpetra run correctly
@@ -264,7 +256,7 @@ namespace Tpetra {
   /// memory, and you are working on the host CPU).  This is why we
   /// require accessing the data through views.
   ///
-  /// \subsection Kokkos_MV_why_no_square_brackets Why no operator[]?
+  /// \subsection Kokkos_KR_MV_why_no_square_brackets Why no operator[]?
   ///
   /// The above section also explains why we do not offer a <tt>Scalar&
   /// operator[]</tt> to access each entry of a vector directly.  Direct
@@ -277,7 +269,7 @@ namespace Tpetra {
   /// expose what is expensive, by exposing data views and letting
   /// users control when to copy data between host and device.
   ///
-  /// \subsection Kokkos_MV_device_kernels How do I access the data directly?
+  /// \subsection Kokkos_KR_MV_device_kernels How do I access the data directly?
   ///
   /// "Directly" here means without views, using a device kernel if
   /// the data reside on the GPU.
@@ -302,7 +294,7 @@ namespace Tpetra {
   /// wanting to try this option, please contact the Tpetra developers
   /// for recommendations.  We will be happy to work with you.
   ///
-  /// \section Kokkos_MV_dist Parallel distribution of data
+  /// \section Kokkos_KR_MV_dist Parallel distribution of data
   ///
   /// A MultiVector's rows are distributed over processes in its (row)
   /// Map's communicator.  A MultiVector is a DistObject; the Map of
@@ -329,34 +321,49 @@ namespace Tpetra {
   class MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > :
     public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >
   {
-    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>  Node;
+  private:
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> Node;
+    typedef DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> base_type;
+
   public:
     //! @name Typedefs to facilitate template metaprogramming.
     //@{
 
     //! The type of entries in the vector(s).
-    typedef Scalar        scalar_type;
+    typedef Scalar scalar_type;
     //! The type of local indices.
-    typedef LocalOrdinal  local_ordinal_type;
+    typedef LocalOrdinal local_ordinal_type;
     //! The type of global indices.
     typedef GlobalOrdinal global_ordinal_type;
     //! The Kokkos Node type.
-    typedef Node          node_type;
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
 
-    typedef Kokkos::DualView<scalar_type**,Kokkos::LayoutLeft,typename node_type::device_type> view_type;
+    /// \brief Type of an inner ("dot") product result.
+    ///
+    /// This is usually the same as \c scalar_type, but may differ if
+    /// \c Scalar is e.g., an uncertainty quantification type from the
+    /// Stokhos package.
+    typedef typename Kokkos::Details::InnerProductSpaceTraits<Scalar>::dot_type dot_type;
 
-    typedef DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> DO;
+    //! Type of the magnitude (absolute value) of a \c scalar_type value.
+    typedef typename Kokkos::Details::ArithTraits<Scalar>::mag_type mag_type;
+
+    //! Type of the (new) Kokkos Device which implements parallel operations.
     typedef typename Node::device_type device_type;
 
-    template <class S, class LO, class GO, class D>
-    friend  MultiVector<S,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<D> >
-        createCopy( const MultiVector<S,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<D> >& src);
-    template <class DS, class DL, class DG, class DD, class SS, class SL, class SG, class SD>
-    friend void deep_copy( MultiVector<DS,DL,DG,Kokkos::Compat::KokkosDeviceWrapperNode<DD> >& dst,
-                    const MultiVector<SS,SL,SG,Kokkos::Compat::KokkosDeviceWrapperNode<SD> >& src);
+    //! Type of the (new) Kokkos Host Device which implements parallel operations.
+     typedef typename Node::device_type::host_mirror_device_type host_mirror_device_type;
+
+
+    //! Kokkos::DualView specialization used by this class.
+    typedef Kokkos::DualView<scalar_type**, Kokkos::LayoutLeft, device_type> dual_view_type;
+
     //@}
     //! @name Constructors and destructor
     //@{
+
+    //! Default constructor: makes a MultiVector with no rows or columns.
+    MultiVector ();
 
     /// \brief Basic constuctor.
     ///
@@ -364,12 +371,27 @@ namespace Tpetra {
     /// \param NumVectors [in] Number of vectors (columns).
     /// \param zeroOut [in] Whether to initialize all the entries of
     ///   the MultiVector to zero.
+    ///
+    /// \note The Kokkos refactor version of MultiVector reserves the
+    ///   right to initialize all entries of the MultiVector to zero,
+    ///   regardless of the value of \c zeroOut.
     MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
                  size_t NumVectors,
                  bool zeroOut=true);
 
-    //! Copy constructor (performs a deep copy).
+    //! Copy constructor (shallow copy!).
     MultiVector (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source);
+
+    /// \brief Copy constructor, with option to do deep or shallow copy.
+    ///
+    /// The Kokkos refactor version of Tpetra, unlike the "classic"
+    /// version, always has view semantics.  Thus, copyOrView =
+    /// Teuchos::View has no effect, and copyOrView = Teuchos::Copy
+    /// does not mark this MultiVector as having copy semantics.
+    /// However, copyOrView = Teuchos::Copy will make the resulting
+    /// MultiVector a deep copy of the input MultiVector.
+    MultiVector (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& source,
+                 const Teuchos::DataAccess copyOrView);
 
     /// \brief Create multivector by copying two-dimensional array of local data.
     ///
@@ -408,26 +430,96 @@ namespace Tpetra {
                  const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> >&ArrayOfPtrs,
                  const size_t NumVectors);
 
-    /// \brief Expert mode constructor.
+    /// \brief Expert mode constructor, that takes a Kokkos::DualView
+    ///   of the MultiVector's data, and returns a MultiVector that
+    ///   views those data.
     ///
     /// \warning This constructor is only for expert users.  We make
     ///   no promises about backwards compatibility for this interface.
     ///   It may change or go away at any time.
     ///
     /// \param map [in] Map describing the distribution of rows.
-    /// \param view [in] Device view to the data (shallow copy)
+    /// \param view [in] Device view to the data (shallow copy).
     MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
-                 const view_type view);
+                 const dual_view_type& view);
 
-    //! Advanced constructor for non-contiguous views.
+    /// \brief Expert mode constructor, that takes a Kokkos::DualView
+    ///   of the MultiVector's data and the "original"
+    ///   Kokkos::DualView of the data, and returns a MultiVector that
+    ///   views those data.
+    ///
+    /// \warning This constructor is only for expert users.  We make
+    ///   no promises about backwards compatibility for this interface.
+    ///   It may change or go away at any time.
+    ///
+    /// \param map [in] Map describing the distribution of rows.
+    /// \param view [in] View of the data (shallow copy).
+    /// \param origView [in] The </i>original</i> view of the data.
+    ///
+    /// The original view keeps the "original" dimensions.  Doing so
+    /// lets us safely construct a column Map view of a (domain Map
+    /// view of a (column Map MultiVector)).  The result of a
+    /// Kokkos::subview does not remember the original dimensions of
+    /// the view, and does not allow constructing a view with a
+    /// superset of rows or columns, so we have to keep the original
+    /// view.
     MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
-                 const view_type view,
+                 const dual_view_type& view,
+                 const dual_view_type& origView);
+
+    /// \brief Expert mode constructor for noncontiguous views.
+    ///
+    /// This constructor that takes a Kokkos::DualView of the
+    /// MultiVector's data, and a list of the columns to view, and
+    /// returns a MultiVector that views those data.  The resulting
+    /// MultiVector does <i>not</i> have constant stride, that is,
+    /// isConstantStride() returns false.
+    ///
+    /// \warning This constructor is only for expert users.  We make
+    ///   no promises about backwards compatibility for this interface.
+    ///   It may change or go away at any time.
+    ///
+    /// \param map [in] Map describing the distribution of rows.
+    /// \param view [in] Device view to the data (shallow copy).
+    /// \param whichVectors [in] Which columns (vectors) to view.
+    MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+                 const dual_view_type& view,
                  const Teuchos::ArrayView<const size_t>& whichVectors);
 
-    //! Create a cloned MultiVector for a different node type
+    /// \brief Expert mode constructor for noncontiguous views, with
+    ///   original view.
+    ///
+    /// This constructor that takes a Kokkos::DualView of the
+    /// MultiVector's data, a view of the original data, and a list of
+    /// the columns to view, and returns a MultiVector that views
+    /// those data.  The resulting MultiVector does <i>not</i> have
+    /// constant stride, that is, isConstantStride() returns false.
+    ///
+    /// \warning This constructor is only for expert users.  We make
+    ///   no promises about backwards compatibility for this interface.
+    ///   It may change or go away at any time.
+    ///
+    /// \param map [in] Map describing the distribution of rows.
+    /// \param view [in] View of the data (shallow copy).
+    /// \param origView [in] The </i>original</i> view of the data.
+    /// \param whichVectors [in] Which columns (vectors) to view.
+    ///
+    /// The original view keeps the "original" dimensions.  Doing so
+    /// lets us safely construct a column Map view of a (domain Map
+    /// view of a (column Map MultiVector)).  The result of a
+    /// Kokkos::subview does not remember the original dimensions of
+    /// the view, and does not allow constructing a view with a
+    /// superset of rows or columns, so we have to keep the original
+    /// view.
+    MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+                 const dual_view_type& view,
+                 const dual_view_type& origView,
+                 const Teuchos::ArrayView<const size_t>& whichVectors);
+
+    //! Return a deep copy of <tt>*this</tt>, for a different Kokkos Node type.
     template <class Node2>
     Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
-    clone(const Teuchos::RCP<Node2> &node2) const;
+    clone (const Teuchos::RCP<Node2> &node2) const;
 
     //! Destructor (virtual for memory safety of derived classes).
     virtual ~MultiVector();
@@ -772,13 +864,106 @@ namespace Tpetra {
     //! Return non-const persisting pointers to values.
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > get2dViewNonConst();
 
-    //! Return a const reference to the underlying KokkosClassic::MultiVector object (advanced use only)
-    const KokkosClassic::MultiVector<Scalar,Node> & getLocalMV() const;
+    /// \brief A view of the underlying KokkosClassic::MultiVector object.
+    ///
+    /// \brief This method is for expert users only.
+    ///   It may change or be removed at any time.
+    KokkosClassic::MultiVector<Scalar,Node> getLocalMV() const;
 
-    //! Return a non-const reference to the underlying KokkosClassic::MultiVector object (advanced use only)
-    KokkosClassic::MultiVector<Scalar,Node> & getLocalMVNonConst();
+    /// \brief A nonconst reference to a view of the underlying
+    ///   KokkosClassic::MultiVector object.
+    ///
+    /// \brief This method is for expert users only.
+    ///   It may change or be removed at any time.
+    ///
+    /// \warning This method is DEPRECATED.  It may disappear at any
+    ///   time.  Please call getLocalMV() instead.  There was never
+    ///   actually a need for a getLocalMVNonConst() method, as far as
+    ///   I can tell.
+    TEUCHOS_DEPRECATED KokkosClassic::MultiVector<Scalar,Node> &
+    getLocalMVNonConst ();
 
-    view_type getLocalView() const;
+    /// \brief Get the Kokkos::DualView which implements local storage.
+    ///
+    /// \warning This method is ONLY for expert developers.  Its
+    ///   interface may change or it may disappear at any time.
+    dual_view_type getDualView () const;
+
+    /// \brief Update data on device or host only if data in the other
+    ///   space has been marked as modified.
+    ///
+    /// If \c TargetDeviceType is the same as this MultiVector's
+    /// device type, then copy data from host to device.  Otherwise,
+    /// copy data from device to host.  In either case, only copy if
+    /// the source of the copy has been modified.
+    ///
+    /// This is a one-way synchronization only.  If the target of the
+    /// copy has been modified, this operation will discard those
+    /// modifications.  It will also reset both device and host modified
+    /// flags.
+    ///
+    /// \note This method doesn't know on its own whether you modified
+    ///   the data in either memory space.  You must manually mark the
+    ///   MultiVector as modified in the space in which you modified
+    ///   it, by calling the modify() method with the appropriate
+    ///   template parameter.
+    template<class TargetDeviceType>
+    void sync () {
+      getDualView ().template sync<TargetDeviceType> ();
+    }
+
+    /// \brief Mark data as modified on the given device \c TargetDeviceType.
+    ///
+    /// If \c TargetDeviceType is the same as this MultiVector's
+    /// device type, then mark the device's data as modified.
+    /// Otherwise, mark the host's data as modified.
+    template<class TargetDeviceType>
+    void modify () {
+      getDualView ().template modify<TargetDeviceType> ();
+    }
+
+    /// \brief Return a view of the local data on a specific device.
+    /// \tparam TargetDeviceType The Kokkos Device type whose data to return.
+    ///
+    /// Please don't be afraid of the if_c expression in the return
+    /// value's type.  That just tells the method what the return type
+    /// should be: dual_view_type::t_dev if the \c TargetDeviceType
+    /// template parameter matches this Tpetra object's device type,
+    /// else dual_view_type::t_host.
+    ///
+    /// For example, suppose you create a Tpetra::MultiVector for the
+    /// Kokkos::Cuda device, like this:
+    /// \code
+    /// typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> > node_type;
+    /// typedef Tpetra::Map<int, int, node_type> map_type;
+    /// typedef Tpetra::MultiVector<float, int, int, node_type> mv_type;
+    ///
+    /// RCP<const map_type> map = ...;
+    /// mv_type DV (map, 3);
+    /// \endcode
+    /// If you want to get the CUDA device Kokkos::View, do this:
+    /// \code
+    /// typedef typename mv_type::dual_view_type dual_view_type;
+    /// typedef typename dual_view_type::t_dev device_view_type;
+    /// device_view_type cudaView = DV.getLocalView<Kokkos::Cuda> ();
+    /// \endcode
+    /// and if you want to get the host mirror of that View, do this:
+    /// \code
+    /// typedef typename dual_view_type::host_mirror_device_type host_device_type;
+    /// typedef typename dual_view_type::t_host host_view_type;
+    /// host_view_type hostView = DV.getLocalView<host_device_type> ();
+    /// \endcode
+    template<class TargetDeviceType>
+    typename Kokkos::Impl::if_c<
+      Kokkos::Impl::is_same<
+        typename device_type::memory_space,
+        typename TargetDeviceType::memory_space>::value,
+      typename dual_view_type::t_dev,
+      typename dual_view_type::t_host>::type
+    getLocalView () const {
+      return getDualView ().template view<TargetDeviceType> ();
+    }
+
     //@}
     //! @name Mathematical methods
     //@{
@@ -798,7 +983,80 @@ namespace Tpetra {
     /// \post <tt>dots[j] == (this->getVector[j])->dot (* (A.getVector[j]))</tt>
     void
     dot (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
-         const Teuchos::ArrayView<Scalar>& dots) const;
+         const Teuchos::ArrayView<dot_type>& dots) const;
+
+    /// \brief Compute the dot product of each corresponding pair of
+    ///   vectors (columns) in A and B.
+    /// \tparam T The output type of the dot products.
+    ///
+    /// This method only exists if dot_type and T are different types.
+    /// For example, if Scalar and dot_type differ, then this method
+    /// ensures backwards compatibility with the previous interface
+    /// (that returned dot products as Scalar rather than as
+    /// dot_type).  The complicated \c enable_if expression just
+    /// ensures that the method only exists if dot_type and T are
+    /// different types; the method still returns \c void, as above.
+    template <typename T>
+    typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<dot_type, T>::value), void >::type
+    dot (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+         const Teuchos::ArrayView<T> &dots) const
+    {
+      const size_t sz = dots.size ();
+      Teuchos::Array<dot_type> dts (sz);
+      this->dot (A, dts);
+      for (size_t i = 0; i < sz; ++i) {
+        dots[i] = dts[i];
+      }
+    }
+
+    /// \brief Compute the dot product of each corresponding pair of
+    ///   vectors (columns) in A and B, storing the result in a device
+    ///   View.
+    ///
+    /// The "dot product" is the standard Euclidean inner product.  If
+    /// the type of entries of the vectors (scalar_type) is complex,
+    /// then A is transposed, not <tt>*this</tt>.  For example, if x
+    /// and y each have one column, then <tt>x.dot (y, dots)</tt>
+    /// computes \f$y^* x = \bar{y}^T x = \sum_i \bar{y}_i \cdot x_i\f$.
+    ///
+    /// \param A [in] MultiVector with which to dot \c *this.
+    /// \param dots [out] Device View with getNumVectors() entries.
+    ///
+    /// \pre <tt>this->getNumVectors () == A.getNumVectors ()</tt>
+    /// \pre <tt>dots.dimension_0 () == A.getNumVectors ()</tt>
+    ///
+    /// \post <tt>dots(j) == (this->getVector[j])->dot (* (A.getVector[j]))</tt>
+    void
+    dot (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+         const Kokkos::View<dot_type*, device_type>& dots) const;
+
+    /// \brief Compute the dot product of each corresponding pair of
+    ///   vectors (columns) in A and B, storing the result in a device
+    ///   view.
+    /// \tparam T The output type of the dot products.
+    ///
+    /// This method only exists if dot_type and T are different types.
+    /// For example, if Scalar and dot_type differ, then this method
+    /// ensures backwards compatibility with the previous interface
+    /// (that returned dot products as Scalar rather than as
+    /// dot_type).  The complicated \c enable_if expression just
+    /// ensures that the method only exists if dot_type and T are
+    /// different types; the method still returns \c void, as above.
+    template <typename T>
+    typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<dot_type, T>::value), void >::type
+    dot (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+         const Kokkos::View<T*, device_type>& dots) const
+    {
+      const size_t numDots = dots.dimension_0 ();
+      Kokkos::View<dot_type*, device_type> dts ("MV::dot tmp", numDots);
+      // Call overload that takes a Kokkos::View<dot_type*, device_type>.
+      this->dot (A, dts);
+      // FIXME (mfh 14 Jul 2014) Does this actually work if dot_type
+      // and T differ?  We would need a test for this, but only the
+      // Sacado and Stokhos packages are likely to care about this use
+      // case.
+      Kokkos::deep_copy (dots, dts);
+    }
 
     //! Put element-wise absolute values of input Multi-vector in target: A = abs(this)
     void abs(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A);
@@ -824,6 +1082,16 @@ namespace Tpetra {
     /// if \c *this contains NaN entries before calling this method,
     /// the NaN entries will remain after this method finishes.
     void scale (Teuchos::ArrayView<const Scalar> alpha);
+
+    /// \brief Scale each column in place: <tt>this[j] = alpha[j]*this[j]</tt>.
+    ///
+    /// Replace each column j of this MultiVector with
+    /// <tt>alpha[j]</tt> times the current column j of this
+    /// MultiVector.  This method will always multiply, even if all
+    /// the entries of alpha are zero.  That means, for example, that
+    /// if \c *this contains NaN entries before calling this method,
+    /// the NaN entries will remain after this method finishes.
+    void scale (const Kokkos::View<const Scalar*, device_type> alpha);
 
     /// \brief Scale in place: <tt>this = alpha * A</tt>.
     ///
@@ -861,19 +1129,250 @@ namespace Tpetra {
             const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& B,
             const Scalar& gamma);
 
-    //! Compute 1-norm of each vector in multi-vector.
-    void norm1(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const;
+    /// \brief Compute the one-norm of each vector (column), storing
+    ///   the result in a device view.
+    ///
+    /// The one-norm of a vector is the sum of squares of the
+    /// magnitudes of the vector's entries.  On exit, norms(j) is the
+    /// one-norm of column j of this MultiVector.
+    ///
+    /// \param norms [out] Device View with getNumVectors() entries.
+    ///
+    /// \pre <tt>norms.dimension_0 () == this->getNumVectors ()</tt>
+    /// \post <tt>norms(j) == (this->getVector[j])->norm1 (* (A.getVector[j]))</tt>
+    void norm1 (const Kokkos::View<mag_type*, device_type>& norms) const;
 
-    //! Compute 2-norm of each vector in multi-vector.
-    //! The outcome of this routine is undefined for non-floating point scalar types (e.g., int).
-    void norm2(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const;
+    /// \brief Compute the one-norm of each vector (column), storing
+    ///   the result in a device view.
+    /// \tparam T The output type of the dot products.
+    ///
+    /// This method only exists if mag_type and T are different types.
+    /// For example, if Teuchos::ScalarTraits<Scalar>::magnitudeType
+    /// and mag_type differ, then this method ensures backwards
+    /// compatibility with the previous interface (that returned norms
+    /// products as Teuchos::ScalarTraits<Scalar>::magnitudeType
+    /// rather than as mag_type).  The complicated \c enable_if
+    /// expression just ensures that the method only exists if
+    /// mag_type and T are different types; the method still returns
+    /// \c void, as above.
+    template <typename T>
+    typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type, T>::value), void >::type
+    norm1 (const Kokkos::View<T*, device_type>& norms) const
+    {
+      const size_t numNorms = norms.dimension_0 ();
+      Kokkos::View<mag_type*, device_type> tmpNorms ("MV::norm1 tmp", numNorms);
+      // Call overload that takes a Kokkos::View<mag_type*, device_type>.
+      this->norm1 (tmpNorms);
+      // FIXME (mfh 15 Jul 2014) Does this actually work if mag_type
+      // and T differ?  We would need a test for this, but only the
+      // Sacado and Stokhos packages are likely to care about this use
+      // case.
+      Kokkos::deep_copy (norms, tmpNorms);
+    }
 
-    //! Compute Inf-norm of each vector in multi-vector.
-    void normInf(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const;
+
+    /// \brief Compute the one-norm of each vector (column).
+    ///
+    /// The one-norm of a vector is the sum of squares of the
+    /// magnitudes of the vector's entries.  On exit, norms[j] is the
+    /// one-norm of column j of this MultiVector.
+    void norm1 (const Teuchos::ArrayView<mag_type>& norms) const;
+
+    /// \brief Compute the one-norm of each vector (column).
+    /// \tparam T The output type of the norms.
+    ///
+    /// This method only exists if mag_type and T are different types.
+    /// For example, if Teuchos::ScalarTraits<Scalar>::magnitudeType
+    /// and mag_type differ, then this method ensures backwards
+    /// compatibility with the previous interface (that returned norms
+    /// as Teuchos::ScalarTraits<Scalar>::magnitudeType
+    /// rather than as mag_type).  The complicated \c enable_if
+    /// expression just ensures that the method only exists if
+    /// mag_type and T are different types; the method still returns
+    /// \c void, as above.
+    template <typename T>
+    typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type,T>::value), void >::type
+    norm1 (const Teuchos::ArrayView<T>& norms) const
+    {
+      typedef typename Teuchos::ArrayView<T>::size_type size_type;
+      const size_type sz = norms.size ();
+      Teuchos::Array<mag_type> theNorms (sz);
+      this->norm1 (theNorms);
+      for (size_type i = 0; i < sz; ++i) {
+        norms[i] = theNorms[i];
+      }
+    }
+
+    /// \brief Compute the two-norm of each vector (column), storing
+    ///   the result in a device view.
+    ///
+    /// The two-norm of a vector is the standard Euclidean norm, the
+    /// square root of the sum of squares of the magnitudes of the
+    /// vector's entries.  On exit, norms(k) is the two-norm of column
+    /// k of this MultiVector.
+    ///
+    /// \param norms [out] Device View with getNumVectors() entries.
+    ///
+    /// \pre <tt>norms.dimension_0 () == this->getNumVectors ()</tt>
+    /// \post <tt>norms(j) == (this->getVector[j])->dot (* (A.getVector[j]))</tt>
+    void norm2 (const Kokkos::View<mag_type*, device_type>& norms) const;
+
+    /// \brief Compute the two-norm of each vector (column), storing
+    ///   the result in a device view.
+    ///
+    /// This method only exists if mag_type and T are different types.
+    /// For example, if Teuchos::ScalarTraits<Scalar>::magnitudeType
+    /// and mag_type differ, then this method ensures backwards
+    /// compatibility with the previous interface (that returned norms
+    /// as Teuchos::ScalarTraits<Scalar>::magnitudeType rather than as
+    /// mag_type).  The complicated \c enable_if expression just
+    /// ensures that the method only exists if mag_type and T are
+    /// different types; the method still returns \c void, as above.
+    template<typename T>
+    typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type, T>::value), void >::type
+    norm2 (const Kokkos::View<T*, device_type>& norms) const
+    {
+      const size_t numNorms = norms.dimension_0 ();
+      Kokkos::View<mag_type*, device_type> theNorms ("MV::norm2 tmp", numNorms);
+      // Call overload that takes a Kokkos::View<mag_type*, device_type>.
+      this->norm2 (theNorms);
+      // FIXME (mfh 14 Jul 2014) Does this actually work if mag_type
+      // and T differ?  We would need a test for this, but only the
+      // Sacado and Stokhos packages are likely to care about this use
+      // case.
+      Kokkos::deep_copy (norms, theNorms);
+    }
+
+    /// \brief Compute the two-norm of each vector (column).
+    ///
+    /// The two-norm of a vector is the standard Euclidean norm, the
+    /// square root of the sum of squares of the magnitudes of the
+    /// vector's entries.  On exit, norms[k] is the two-norm of column
+    /// k of this MultiVector.
+    void norm2 (const Teuchos::ArrayView<mag_type>& norms) const;
+
+    /// \brief Compute the two-norm of each vector (column).
+    /// \tparam T The output type of the norms.
+    ///
+    /// This method only exists if mag_type and T are different types.
+    /// For example, if Teuchos::ScalarTraits<Scalar>::magnitudeType
+    /// and mag_type differ, then this method ensures backwards
+    /// compatibility with the previous interface (that returned norms
+    /// products as Teuchos::ScalarTraits<Scalar>::magnitudeType
+    /// rather than as mag_type).  The complicated \c enable_if
+    /// expression just ensures that the method only exists if
+    /// mag_type and T are different types; the method still returns
+    /// \c void, as above.
+    template <typename T>
+    typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type,T>::value), void >::type
+    norm2 (const Teuchos::ArrayView<T>& norms) const
+    {
+      typedef typename Teuchos::ArrayView<T>::size_type size_type;
+      const size_type sz = norms.size ();
+      Teuchos::Array<mag_type> theNorms (sz);
+      this->norm2 (theNorms);
+      for (size_type i = 0; i < sz; ++i) {
+        norms[i] = theNorms[i];
+      }
+    }
+
+    /// \brief Compute the infinity-norm of each vector (column),
+    ///   storing the result in a device view.
+    ///
+    /// The infinity-norm of a vector is the maximum of the magnitudes
+    /// of the vector's entries.  On exit, norms(j) is the
+    /// infinity-norm of column j of this MultiVector.
+    void normInf (const Kokkos::View<mag_type*, device_type>& norms) const;
+
+    /// \brief Compute the two-norm of each vector (column), storing
+    ///   the result in a device view.
+    ///
+    /// This method only exists if mag_type and T are different types.
+    /// For example, if Teuchos::ScalarTraits<Scalar>::magnitudeType
+    /// and mag_type differ, then this method ensures backwards
+    /// compatibility with the previous interface (that returned norms
+    /// as Teuchos::ScalarTraits<Scalar>::magnitudeType rather than as
+    /// mag_type).  The complicated \c enable_if expression just
+    /// ensures that the method only exists if mag_type and T are
+    /// different types; the method still returns \c void, as above.
+    template<typename T>
+    typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type, T>::value), void >::type
+    normInf (const Kokkos::View<T*, device_type>& norms) const
+    {
+      const size_t numNorms = norms.dimension_0 ();
+      Kokkos::View<mag_type*, device_type> theNorms ("MV::normInf tmp", numNorms);
+      // Call overload that takes a Kokkos::View<mag_type*, device_type>.
+      this->normInf (theNorms);
+      // FIXME (mfh 15 Jul 2014) Does this actually work if mag_type
+      // and T differ?  We would need a test for this, but only the
+      // Sacado and Stokhos packages are likely to care about this use
+      // case.
+      Kokkos::deep_copy (norms, theNorms);
+    }
+
+    /// \brief Compute the infinity-norm of each vector (column).
+    ///
+    /// The infinity-norm of a vector is the maximum of the magnitudes
+    /// of the vector's entries.  On exit, norms[j] is the
+    /// infinity-norm of column j of this MultiVector.
+    void normInf (const Teuchos::ArrayView<mag_type>& norms) const;
+
+    /// \brief Compute the infinity-norm of each vector (column).
+    /// \tparam T The output type of the norms.
+    ///
+    /// This method only exists if mag_type and T are different types.
+    /// For example, if Teuchos::ScalarTraits<Scalar>::magnitudeType
+    /// and mag_type differ, then this method ensures backwards
+    /// compatibility with the previous interface (that returned norms
+    /// products as Teuchos::ScalarTraits<Scalar>::magnitudeType
+    /// rather than as mag_type).  The complicated \c enable_if
+    /// expression just ensures that the method only exists if
+    /// mag_type and T are different types; the method still returns
+    /// \c void, as above.
+    template <typename T>
+    typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type,T>::value), void >::type
+    normInf (const Teuchos::ArrayView<T>& norms) const
+    {
+      typedef typename Teuchos::ArrayView<T>::size_type size_type;
+      const size_type sz = norms.size ();
+      Teuchos::Array<mag_type> theNorms (sz);
+      this->norm2 (theNorms);
+      for (size_type i = 0; i < sz; ++i) {
+        norms[i] = theNorms[i];
+      }
+    }
 
     //! Compute Weighted 2-norm (RMS Norm) of each vector in multi-vector.
     //! The outcome of this routine is undefined for non-floating point scalar types (e.g., int).
-    void normWeighted(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &weights, const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const;
+    void
+    normWeighted (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& weights,
+                  const Teuchos::ArrayView<mag_type>& norms) const;
+
+    //! Compute Weighted 2-norm (RMS Norm) of each vector in multi-vector.
+    //! The outcome of this routine is undefined for non-floating point scalar types (e.g., int).
+    ///
+    /// This method only exists if mag_type and T are different types.
+    /// For example, if Teuchos::ScalarTraits<Scalar>::magnitudeType
+    /// and mag_type differ, then this method ensures backwards
+    /// compatibility with the previous interface (that returned norms
+    /// as Teuchos::ScalarTraits<Scalar>::magnitudeType
+    /// rather than as mag_type).  The complicated \c enable_if
+    /// expression just ensures that the method only exists if
+    /// mag_type and T are different types; the method still returns
+    /// \c void, as above.
+    template <typename T>
+    typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type,T>::value), void >::type
+    normWeighted (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& weights,
+                  const Teuchos::ArrayView<T>& norms) const
+    {
+      typedef typename Teuchos::ArrayView<T>::size_type size_type;
+      const size_type sz = norms.size ();
+      Teuchos::Array<mag_type> theNorms (sz);
+      this->normWeighted (weights, theNorms);
+      for (size_type i = 0; i < sz; ++i) {
+        norms[i] = theNorms[i];
+      }
+    }
 
     //! \brief Compute mean (average) value of each vector in multi-vector.
     //! The outcome of this routine is undefined for non-floating point scalar types (e.g., int).
@@ -1000,7 +1499,48 @@ namespace Tpetra {
     virtual void
     removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap);
 
+    /// \brief Set whether this has copy (copyOrView = Teuchos::Copy)
+    ///   or view (copyOrView = Teuchos::View) semantics.
+    ///
+    /// \warning The Kokkos refactor version of MultiVector
+    ///   <i>only</i> implements view semantics.  If you attempt to
+    ///   call this method with copyOrView == Teuchos::Copy, it will
+    ///   throw std::invalid_argument.
+    ///
+    /// \warning This method is only for expert use.  It may change or
+    ///   disappear at any time.
+    void setCopyOrView (const Teuchos::DataAccess copyOrView) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        copyOrView == Teuchos::Copy, std::invalid_argument,
+        "Tpetra::MultiVector::setCopyOrView: The Kokkos refactor version of "
+        "MultiVector _only_ implements view semantics.  You may not call this "
+        "method with copyOrView = Teuchos::Copy.  The only valid argument is "
+        "Teuchos::View.");
+    }
+
+    /// \brief Get whether this has copy (copyOrView = Teuchos::Copy)
+    ///   or view (copyOrView = Teuchos::View) semantics.
+    ///
+    /// \note The Kokkos refactor version of MultiVector <i>only</i>
+    ///   implements view semantics.  This is not currently true for
+    ///   the "classic" version of MultiVector, though that will
+    ///   change in the near future.
+    ///
+    /// \warning This method is only for expert use.  It may change or
+    ///   disappear at any time.
+    Teuchos::DataAccess getCopyOrView () const {
+      return Teuchos::View;
+    }
+
   protected:
+    template <class S, class LO, class GO, class D>
+    friend MultiVector<S,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<D> >
+    createCopy (const MultiVector<S,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<D> >& src);
+
+    template <class DS, class DL, class DG, class DD, class SS, class SL, class SG, class SD>
+    friend void
+    deep_copy (MultiVector<DS,DL,DG,Kokkos::Compat::KokkosDeviceWrapperNode<DD> >& dst,
+               const MultiVector<SS,SL,SG,Kokkos::Compat::KokkosDeviceWrapperNode<SD> >& src);
 
     typedef KokkosClassic::MultiVector<Scalar,Node> KMV;
     typedef KokkosClassic::DefaultArithmetic<KMV>   MVT;
@@ -1011,8 +1551,44 @@ namespace Tpetra {
     /// The latter owns the MultiVector's data.
     KMV lclMV_;
 
-    //! The Kokkos::DualView containing the MultiVector's data.
-    view_type view_;
+    /// \brief The Kokkos::DualView containing the MultiVector's data.
+    ///
+    /// This has to be declared \c mutable, so that get1dView() can
+    /// retain its current \c const marking, even though it has always
+    /// implied a device->host synchronization.  Lesson to the reader:
+    /// Use \c const sparingly!
+    mutable dual_view_type view_;
+
+    /// \brief The "original view" of the MultiVector's data.
+    ///
+    /// Methods like offsetView() return a view of a contiguous subset
+    /// of rows.  At some point, we might like to get all of the rows
+    /// back, by taking another view of a <i>super</i>set of rows.
+    /// For example, we might like to get a column Map view of a
+    /// (domain Map view of a (column Map MultiVector)).  Tpetra's
+    /// implementation of Gauss-Seidel and SOR in CrsMatrix relies on
+    /// this functionality.  However, Kokkos (rightfully) forbids us
+    /// from taking a superset of rows of the current view.
+    ///
+    /// We deal with this at the Tpetra level by keeping around the
+    /// original view of <i>all</i> the rows (and columns), which is
+    /// \c origView_.  Methods like offsetView() then use origView_,
+    /// not view_, to make the subview for the returned MultiVector.
+    /// Furthermore, offsetView() can do error checking by getting the
+    /// original number of rows from origView_.
+    ///
+    /// This may pose some problems for offsetView if it is given an
+    /// offset other than zero, but that case is hardly exercised, so
+    /// I am not going to worry about it for now.
+    ///
+    /// Note that the "original" view isn't always original.  It
+    /// always has the original number of rows.  However, some special
+    /// cases of constructors that take a whichVectors argument, when
+    /// whichVectors.size() is 1, may point origView_ to the column to
+    /// view.  Those constructors do this so that the resulting
+    /// MultiVector has constant stride.  This special case does not
+    /// affect correctness of offsetView and related methods.
+    mutable dual_view_type origView_;
 
     /// \brief Indices of columns this multivector is viewing.
     ///
@@ -1031,13 +1607,12 @@ namespace Tpetra {
     //! @name View constructors, used only by nonmember constructors.
     //@{
 
-    /*template <class S,class LO,class GO,class N>
-    friend RCP<MultiVector<S,LO,GO,N> >
-    createMultiVectorFromView (const Teuchos::RCP<const Map<LO,GO,N> >&, const Teuchos::ArrayRCP<S>&, size_t, size_t);*/
+    template <class S,class LO,class GO,class N>
+    friend Teuchos::RCP<MultiVector<S,LO,GO,N> >
+    createMultiVectorFromView (const Teuchos::RCP<const Map<LO,GO,N> >&, const Teuchos::ArrayRCP<S>&, const size_t, const size_t);
 
-     bool vectorIndexOutOfRange (size_t VectorIndex) const;
+    bool vectorIndexOutOfRange (size_t VectorIndex) const;
 
-    /// \fn getSubArrayRCP
     /// \brief Persisting view of j-th column in the given ArrayRCP.
     ///
     /// This method considers isConstantStride().  The ArrayRCP may
@@ -1045,6 +1620,11 @@ namespace Tpetra {
     template <class T>
     ArrayRCP<T> getSubArrayRCP(ArrayRCP<T> arr, size_t j) const;
 
+    //! "Original" number of rows in the (local) data.
+    size_t getOrigNumLocalRows () const;
+
+    //! "Original" number of columns in the (local) data.
+    size_t getOrigNumLocalCols () const;
 
     //@}
     //! @name Implementation of Tpetra::DistObject
@@ -1067,23 +1647,23 @@ namespace Tpetra {
     copyAndPermuteNew (
       const SrcDistObject& sourceObj,
       size_t numSameIDs,
-      const Kokkos::View<const LocalOrdinal*, device_type> &permuteToLIDs,
-      const Kokkos::View<const LocalOrdinal*, device_type> &permuteFromLIDs);
+      const Kokkos::View<const LocalOrdinal*, device_type>& permuteToLIDs,
+      const Kokkos::View<const LocalOrdinal*, device_type>& permuteFromLIDs);
 
     virtual void
     packAndPrepareNew (
       const SrcDistObject& sourceObj,
-      const Kokkos::View<const LocalOrdinal*, device_type> &exportLIDs,
-      Kokkos::View<Scalar*, device_type> &exports,
-      const Kokkos::View<size_t*, device_type> &numPacketsPerLID,
+      const Kokkos::View<const LocalOrdinal*, device_type>& exportLIDs,
+      Kokkos::View<Scalar*, device_type>& exports,
+      const Kokkos::View<size_t*, device_type>& numPacketsPerLID,
       size_t& constantNumPackets,
       Distributor &distor);
 
     virtual void
     unpackAndCombineNew (
-      const Kokkos::View<const LocalOrdinal*, device_type> &importLIDs,
-      const Kokkos::View<const Scalar*, device_type> &imports,
-      const Kokkos::View<size_t*, device_type> &numPacketsPerLID,
+      const Kokkos::View<const LocalOrdinal*, device_type>& importLIDs,
+      const Kokkos::View<const Scalar*, device_type>& imports,
+      const Kokkos::View<size_t*, device_type>& numPacketsPerLID,
       size_t constantNumPackets,
       Distributor &distor,
       CombineMode CM);
@@ -1091,98 +1671,99 @@ namespace Tpetra {
     void createViews () const;
     void createViewsNonConst (KokkosClassic::ReadWriteOption rwo);
     void releaseViews () const;
-
-    //! Nonconst host view created in createViewsNonConst().
-    mutable ArrayRCP<Scalar> ncview_;
-
-    //! Const host view created in createViews().
-    mutable ArrayRCP<const Scalar> cview_;
-
     //@}
 
-    typename view_type::t_dev getKokkosView() const { return view_.d_view; }
+    typename dual_view_type::t_dev getKokkosView() const { return view_.d_view; }
 
   }; // class MultiVector
 
-  /// \brief Nonmember MultiVector constructor: make a MultiVector from a given Map.
-  /// \relatesalso MultiVector
-  ///
-  /// \param map [in] Map describing the distribution of rows of the
-  ///   resulting MultiVector.
-  /// \param numVectors [in] Number of columns of the resulting
-  ///   MultiVector.
-  /*template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-  createMultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
-                     size_t numVectors)
-  {
-    using Teuchos::rcp;
-    typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
+  namespace Details {
 
-    const bool initToZero = true;
-    return rcp (new MV (map, numVectors, initToZero));
-  }*/
+    // Partial specialization of MultiVectorCloner, for when the
+    // source and destination MultiVector types are both Kokkos
+    // refactor types, and when they both have the same Scalar type,
+    // but all their other template parameters might be different.
+    template<class ScalarType,
+             class DstLocalOrdinalType, class DstGlobalOrdinalType, class DstDeviceType,
+             class SrcLocalOrdinalType, class SrcGlobalOrdinalType, class SrcDeviceType>
+    struct MultiVectorCloner< ::Tpetra::MultiVector<ScalarType,
+                                                    DstLocalOrdinalType,
+                                                    DstGlobalOrdinalType,
+                                                    Kokkos::Compat::KokkosDeviceWrapperNode<DstDeviceType> >,
+                              ::Tpetra::MultiVector<ScalarType,
+                                                    SrcLocalOrdinalType,
+                                                    SrcGlobalOrdinalType,
+                                                    Kokkos::Compat::KokkosDeviceWrapperNode<SrcDeviceType> > >
+    {
+      typedef Kokkos::Compat::KokkosDeviceWrapperNode<DstDeviceType> dst_node_type;
+      typedef Kokkos::Compat::KokkosDeviceWrapperNode<SrcDeviceType> src_node_type;
+      typedef ::Tpetra::MultiVector<ScalarType, DstLocalOrdinalType,
+                                    DstGlobalOrdinalType,
+                                    dst_node_type> dst_mv_type;
+      typedef ::Tpetra::MultiVector<ScalarType, SrcLocalOrdinalType,
+                                    SrcGlobalOrdinalType,
+                                    src_node_type> src_mv_type;
 
-  /// \brief Nonmember MultiVector constructor with view semantics using user-allocated data.
-  /// \relatesalso MultiVector
-  /// \relatesalso Vector
-  ///
-  /// \warning This function is not supported for all Kokkos Node
-  ///   types.  Specifically, it is not typically supported for
-  ///   GPU accelerator-based nodes like KokkosClassic::ThrustGPUNode.
-  ///
-  /// \param map [in] The Map describing the distribution of rows of
-  ///   the multivector.
-  /// \param view [in/out] A pointer to column-major dense matrix
-  ///   data.  This will be the multivector's data on the calling
-  ///   process.  The multivector will use the pointer directly,
-  ///   without copying.
-  /// \param LDA [in] The leading dimension (a.k.a. "stride") of the
-  ///   column-major input data.
-  /// \param numVectors [in] The number of columns in the input data.
-  ///   This will be the number of vectors in the returned
-  ///   multivector.
-  ///
-  /// \node To Kokkos and Tpetra developers: If you add a new Kokkos
-  ///   Node type that is a host Node type (where memory lives in user
-  ///   space, not in a different space as on a GPU), you will need to
-  ///   add a specialization of Tpetra::details::ViewAccepter for your
-  ///   new Node type.
-/*  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-  createMultiVectorFromView (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
-                             const Teuchos::ArrayRCP<Scalar>& view,
-                             size_t LDA,
-                             size_t numVectors)
-  {
-    using Teuchos::rcp;
-    typedef Tpetra::details::ViewAccepter<Node> VAN;
-    typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
+      static Teuchos::RCP<dst_mv_type>
+      clone (const src_mv_type& X, const Teuchos::RCP<dst_node_type>& node2)
+      {
+        typedef typename src_mv_type::map_type src_map_type;
+        typedef typename dst_mv_type::map_type dst_map_type;
+        typedef typename dst_mv_type::node_type dst_node_type;
+        typedef typename src_mv_type::dual_view_type src_dual_view_type;
+        typedef typename dst_mv_type::dual_view_type dst_dual_view_type;
 
-    // This uses a protected MultiVector constructor, but this
-    // nonmember function was declared a friend of MultiVector.
-    //
-    // The ViewAccepter expression will fail to compile for
-    // unsupported Kokkos Node types.
-    return rcp (new MV (map, VAN::template acceptView<Scalar> (view),
-                        LDA, numVectors, HOST_VIEW_CONSTRUCTOR));
-  }*/
+        // Clone X's Map to have the new Node type.
+        RCP<const src_map_type> map1 = X.getMap ();
+        RCP<const dst_map_type> map2 = map1.is_null () ?
+          Teuchos::null : map1->template clone<dst_node_type> (node2);
 
-/*  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  template <class Node2>
-  Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::clone(const RCP<Node2> &node2) const{
-        typedef Map<LocalOrdinal,GlobalOrdinal,Node2> Map2;
-        typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node2> MV2;
-        Teuchos::ArrayRCP< Teuchos::ArrayRCP<const Scalar> > MV_view = this->get2dView();
-        Teuchos::RCP<const Map2> clonedMap = this->getMap()->template clone<Node2> (node2);
-        Teuchos::RCP<MV2> clonedMV = Teuchos::rcp(new MV2(clonedMap, this->getNumVectors()));
-        Teuchos::ArrayRCP< Teuchos::ArrayRCP<Scalar> > clonedMV_view = clonedMV->get2dViewNonConst();
-        for (size_t i = 0; i < this->getNumVectors(); i++)
-                clonedMV_view[i].deepCopy(MV_view[i]());
-        clonedMV_view = Teuchos::null;
-        return clonedMV;
-  }*/
+        const size_t lclNumRows = X.getLocalLength ();
+        const size_t numCols = X.getNumVectors ();
+        src_dual_view_type X_view = X.getDualView ();
+        dst_dual_view_type Y_view ("MV::dual_view", lclNumRows, numCols);
+
+        RCP<dst_mv_type> Y = rcp (new dst_mv_type (map2, Y_view));
+        // Let deep_copy do the work for us, to avoid code duplication.
+        ::Tpetra::deep_copy (Y, X);
+        return Y ;
+      }
+    };
+
+    // Partial specialization for the Kokkos refactor specialization
+    // of Tpetra::MultiVector.
+    template<class S, class LO, class GO, class DeviceType>
+    struct CreateMultiVectorFromView<MultiVector<S, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > {
+      typedef S scalar_type;
+      typedef LO local_ordinal_type;
+      typedef GO global_ordinal_type;
+      typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
+      typedef ::Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+      typedef MultiVector<S, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > MultiVectorType;
+
+      static Teuchos::RCP<MultiVectorType>
+      create (const Teuchos::RCP<const map_type>& map,
+              const Teuchos::ArrayRCP<scalar_type>& view,
+              const size_t LDA,
+              const size_t numVectors)
+      {
+        (void) map;
+        (void) view;
+        (void) LDA;
+        (void) numVectors;
+
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
+      }
+    };
+  } // namespace Details
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+    MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >
+    createCopy (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& src);
+
+  template <class DS, class DL, class DG, class DD, class SS, class SL, class SG, class SD>
+  void deep_copy( MultiVector<DS,DL,DG,Kokkos::Compat::KokkosDeviceWrapperNode<DD> >& dst,
+                  const MultiVector<SS,SL,SG,Kokkos::Compat::KokkosDeviceWrapperNode<SD> >& src);
 
 } // namespace Tpetra
 

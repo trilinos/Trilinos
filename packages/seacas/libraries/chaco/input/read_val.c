@@ -2,11 +2,10 @@
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
-#include <stdio.h>
-#include <ctype.h>
-#include <string.h>
-#include "defs.h"
-#include "params.h"
+#include <ctype.h>                      // for isspace
+#include <stdio.h>                      // for fgets, FILE, NULL, getc
+#include "defs.h"                       // for FALSE, TRUE
+#include "params.h"                     // for LINE_LENGTH
 
 static char line[LINE_LENGTH];	/* space to hold values */
 static int offset = 0;		/* offset into line for next data */

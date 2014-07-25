@@ -7,11 +7,13 @@
 /*------------------------------------------------------------------------*/
 
 #include <stk_util/parallel/ParallelReduce.hpp>
-
-#include <stdlib.h>
-#include <stdexcept>
-#include <sstream>
-#include <vector>
+#include <stk_util/parallel/ParallelComm.hpp>
+#include <boost/static_assert.hpp>      // for BOOST_STATIC_ASSERT
+#include <sstream>                      // for basic_ostream::operator<<, etc
+#include <stdexcept>                    // for runtime_error
+#include <vector>                       // for vector
+#include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine, etc
+#include "stk_util/stk_config.h"        // for STK_HAS_MPI
 
 namespace stk {
 
@@ -28,8 +30,8 @@ void all_write_string( ParallelMachine arg_comm ,
   const int p_root = 0 ;
   const unsigned p_size = parallel_machine_size( arg_comm );
   const unsigned p_rank = parallel_machine_rank( arg_comm );
-  
-  int result ;
+
+  int result = MPI_SUCCESS ;
 
   // Gather the send counts on root processor
 
@@ -39,6 +41,7 @@ void all_write_string( ParallelMachine arg_comm ,
 
   int * const recv_count_ptr = & recv_count[0] ;
 
+  BABBLE_STK_PARALLEL_COMM(arg_comm, "                      calling MPI_Gather from all_write_string");
   result = MPI_Gather( & send_count , 1 , MPI_INT ,
                        recv_count_ptr , 1 , MPI_INT ,
                        p_root , arg_comm );
@@ -57,16 +60,17 @@ void all_write_string( ParallelMachine arg_comm ,
     recv_displ[i+1] = recv_displ[i] + recv_count[i] ;
   }
 
-  const unsigned recv_size = (unsigned) recv_displ[ p_size ] ;
- 
+  const unsigned recv_size = static_cast<unsigned>(recv_displ[ p_size ]);
+
   std::vector<char> buffer( recv_size );
 
   {
     const char * const send_ptr = arg_msg.c_str();
-    char * const recv_ptr = recv_size ? & buffer[0] : (char *) NULL ;
+    char * const recv_ptr = recv_size ? & buffer[0] : NULL ;
     int * const recv_displ_ptr = & recv_displ[0] ;
 
-    result = MPI_Gatherv( (void*) send_ptr, send_count, MPI_CHAR ,
+    BABBLE_STK_PARALLEL_COMM(arg_comm, "                      calling MPI_Gatherv from all_write_string");
+    result = MPI_Gatherv( const_cast<char*>(send_ptr), send_count, MPI_CHAR ,
                           recv_ptr, recv_count_ptr, recv_displ_ptr, MPI_CHAR,
                           p_root, arg_comm );
   }
@@ -77,7 +81,7 @@ void all_write_string( ParallelMachine arg_comm ,
     throw std::runtime_error( msg.str() );
   }
 
-  if ( p_root == (int) p_rank ) {
+  if ( p_root == static_cast<int>(p_rank) ) {
 //    arg_root_os << std::endl ;
     for ( unsigned i = 0 ; i < p_size ; ++i ) {
       if ( recv_count[i] ) {
@@ -107,7 +111,7 @@ void all_reduce( ParallelMachine  arg_comm ,
   // MPI_Allreduce with a user defined operator,
   // use reduce/broadcast instead.
 /*
-  const int result = 
+  const int result =
     MPI_Allreduce(arg_in,arg_out,arg_len,MPI_BYTE,mpi_op,arg_comm);
 */
 
@@ -129,45 +133,27 @@ void all_reduce( ParallelMachine  arg_comm ,
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
-
-void all_reduce_sum( ParallelMachine comm ,
-                     const double * local , double * global , unsigned count )
-{
-  double * tmp = const_cast<double*>( local );
-  MPI_Allreduce( tmp , global , count , MPI_DOUBLE , MPI_SUM , comm );
-}
-
-void all_reduce_sum( ParallelMachine comm ,
-                     const float * local , float * global , unsigned count )
-{
-  float * tmp = const_cast<float*>( local );
-  MPI_Allreduce( tmp , global , count , MPI_FLOAT , MPI_SUM , comm );
-}
-
-void all_reduce_sum( ParallelMachine comm ,
-                     const int * local , int * global , unsigned count )
-{
-  int * tmp = const_cast<int*>( local );
-  MPI_Allreduce( tmp , global , count , MPI_INT , MPI_SUM , comm );
-}
-
-void all_reduce_sum( ParallelMachine comm ,
-                     const size_t * local , size_t * global , unsigned count )
+void all_reduce_impl( ParallelMachine comm ,
+                     const size_t * local , size_t * global , unsigned count, MPI_Op op)
 {
   size_t * tmp = const_cast<size_t*>( local );
 
   if ( sizeof(size_t) == sizeof(unsigned) ) {
-    MPI_Allreduce( tmp , global , count , MPI_UNSIGNED , MPI_SUM , comm );
+    BABBLE_STK_PARALLEL_COMM(comm, "                      calling MPI_Allreduce from all_reduce");
+    MPI_Allreduce( tmp , global , count , MPI_UNSIGNED , op , comm );
+
   }
   else if ( sizeof(size_t) == sizeof(unsigned long) ) {
-    MPI_Allreduce( tmp , global , count , MPI_UNSIGNED_LONG , MPI_SUM , comm );
+    BABBLE_STK_PARALLEL_COMM(comm, "                      calling MPI_Allreduce from all_reduce");
+    MPI_Allreduce( tmp , global , count , MPI_UNSIGNED_LONG , op , comm );
   }
   else {
     unsigned long * const in  = new unsigned long[ count ];
     unsigned long * const out = new unsigned long[ count ];
 
     for ( unsigned i = 0 ; i < count ; ++i ) { in[i] = local[i] ; }
-    MPI_Allreduce( in , out , count , MPI_UNSIGNED_LONG , MPI_SUM , comm );
+    BABBLE_STK_PARALLEL_COMM(comm, "                      calling MPI_Allreduce from all_reduce");
+    MPI_Allreduce( in , out , count , MPI_UNSIGNED_LONG , op , comm );
     for ( unsigned i = 0 ; i < count ; ++i ) { global[i] = out[i] ; }
 
     delete[] in ;
@@ -180,9 +166,9 @@ void all_reduce_bor( ParallelMachine comm ,
                      unsigned * global , unsigned count )
 {
   unsigned * tmp = const_cast<unsigned*>( local );
+  BABBLE_STK_PARALLEL_COMM(comm, "                      calling MPI_Allreduce from all_reduce_bor");
   MPI_Allreduce( tmp , global , count , MPI_UNSIGNED , MPI_BOR , comm );
 }
-
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
@@ -193,30 +179,6 @@ void all_write_string( ParallelMachine ,
                        const std::string & arg_msg )
 {
   arg_root_os << arg_msg ;
-}
-
-void all_reduce_sum( ParallelMachine ,
-                     const double * local , double * global , unsigned count )
-{
-  for ( unsigned i = 0 ; i < count ; ++i ) { global[i] = local[i] ; }
-}
-
-void all_reduce_sum( ParallelMachine ,
-                     const float * local , float * global , unsigned count )
-{
-  for ( unsigned i = 0 ; i < count ; ++i ) { global[i] = local[i] ; }
-}
-
-void all_reduce_sum( ParallelMachine ,
-                     const int * local , int * global , unsigned count )
-{
-  for ( unsigned i = 0 ; i < count ; ++i ) { global[i] = local[i] ; }
-}
-
-void all_reduce_sum( ParallelMachine ,
-                     const size_t * local , size_t * global , unsigned count )
-{
-  for ( unsigned i = 0 ; i < count ; ++i ) { global[i] = local[i] ; }
 }
 
 void all_reduce_bor( ParallelMachine ,

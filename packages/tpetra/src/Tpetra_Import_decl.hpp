@@ -42,9 +42,7 @@
 #ifndef TPETRA_IMPORT_DECL_HPP
 #define TPETRA_IMPORT_DECL_HPP
 
-#include <Tpetra_ConfigDefs.hpp>
-#include <Kokkos_DefaultNode.hpp>
-#include <Teuchos_Describable.hpp>
+#include <Tpetra_Details_Transfer.hpp>
 
 namespace Tpetra {
   //
@@ -53,16 +51,11 @@ namespace Tpetra {
   // declarations.
   //
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  class Distributor;
-
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   class ImportExportData;
 
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   class Export;
-
-  template<class LocalOrdinal, class GlobalOrdinal, class Node>
-  class Map;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
   /// \brief Communication plan for data redistribution from a
@@ -121,11 +114,15 @@ namespace Tpetra {
   template <class LocalOrdinal,
             class GlobalOrdinal = LocalOrdinal,
             class Node = KokkosClassic::DefaultNode::DefaultNodeType>
-  class Import: public Teuchos::Describable {
+  class Import:
+    public ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>
+  {
+  private:
     friend class Export<LocalOrdinal,GlobalOrdinal,Node>;
   public:
     //! The specialization of Map used by this class.
-    typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
+    //typedef typename ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>::map_type map_type;
+    typedef ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
 
     //! @name Constructor/Destructor Methods
     //@{
@@ -199,11 +196,11 @@ namespace Tpetra {
     ///   multiply owned (overlapping) distribution.
     ///
     /// \param remotePIDs [in] Owning PIDs corresponding to the remoteGIDs.
-    /// If this information is available one can reduce the cost of the Import 
+    /// If this information is available one can reduce the cost of the Import
     /// constructor.
     Import (const Teuchos::RCP<const map_type>& source,
             const Teuchos::RCP<const map_type>& target,
-	    Teuchos::Array<int> & remotePIDs);
+            Teuchos::Array<int> & remotePIDs);
 
     /// \brief Copy constructor.
     ///
@@ -220,7 +217,7 @@ namespace Tpetra {
     Import (const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter);
 
     //! Destructor.
-    ~Import();
+    virtual ~Import ();
 
     /// \brief Set parameters.
     ///
@@ -271,12 +268,10 @@ namespace Tpetra {
     ArrayView<const int> getExportPIDs() const;
 
     //! The Source Map used to construct this Import object.
-    Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
-    getSourceMap () const;
+    Teuchos::RCP<const map_type> getSourceMap () const;
 
     //! The Target Map used to construct this Import object.
-    Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
-    getTargetMap () const;
+    Teuchos::RCP<const map_type> getTargetMap () const;
 
     //! The Distributor that this Import object uses to move data.
     Distributor & getDistributor() const;
@@ -320,6 +315,34 @@ namespace Tpetra {
     /// the left-hand side of the + expression be a reference).
     Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
     setUnion (const Import<LocalOrdinal, GlobalOrdinal, Node>& rhs) const;
+
+    /// \brief Return the union of this Import this->getSourceMap()
+    ///
+    /// This special case of setUnion creates a new Import object
+    /// such that the targetMap of the new object contains all local
+    /// unknowns in the sourceMap (plus whatever remotes were contained
+    /// in this->getSourceMap()).
+    ///
+    /// The Map that results from this operation does <i>not</i>
+    /// preserve the input order of global indices.  All local global
+    /// indices are ordered in the order of the sourceMap, all remotes
+    /// are ordered as implied by the Importer for *this.
+    ///
+    /// This primitive is useful for adding or multipyling two sparse matrices
+    /// (CrsMatrix), since its can skip over many of the steps of
+    /// creating the result matrix's column Map from scratch.
+    ///
+    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
+    setUnion () const;
+
+
+    /// \brief Returns an importer that contains only the remote entries of this
+    ///
+    /// Returns an importer that contains only the remote entries of this importer.
+    /// It is expected that remoteTarget represents such a map.
+    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
+    createRemoteOnlyImport (const Teuchos::RCP<const map_type>& remoteTarget) const;
+
 
     //@}
     //! @name I/O Methods
@@ -372,10 +395,10 @@ namespace Tpetra {
     ///   directly to the Distributor that implements communication.
     ///   If this is Teuchos::null, it is not used.
     void
-    init (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
-          const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
-	  bool useRemotePIDs,
-	  Teuchos::Array<int> & remotePIDs,
+    init (const Teuchos::RCP<const map_type>& source,
+          const Teuchos::RCP<const map_type>& target,
+          bool useRemotePIDs,
+          Teuchos::Array<int> & remotePIDs,
           const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
     /// \brief Compute the necessary receives for the Import.
@@ -463,13 +486,7 @@ namespace Tpetra {
             const Teuchos::RCP<Teuchos::FancyOStream>& out = Teuchos::null,
             const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
 
-    //! Naive but correct implementation of setUnion().
-    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
-    setUnionNaiveImpl (const Import<LocalOrdinal, GlobalOrdinal, Node>& rhs) const;
 
-    //! Optimized implementation of setUnion() (NOT IMPLEMENTED YET).
-    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
-    setUnionImpl (const Import<LocalOrdinal, GlobalOrdinal, Node>& rhs) const;
   }; // class Import
 
   /** \brief Nonmember constructor for Import.
@@ -497,7 +514,8 @@ namespace Tpetra {
       << std::endl << "source: " << src << std::endl << "target: " << tgt
       << std::endl);
 #endif // HAVE_TPETRA_DEBUG
-    return Teuchos::rcp (new Import<LocalOrdinal, GlobalOrdinal, Node> (src, tgt));
+    typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
+    return Teuchos::rcp (new import_type (src, tgt));
   }
 
   /** \brief Nonmember constructor for Import that takes a ParameterList.
@@ -530,6 +548,7 @@ namespace Tpetra {
     typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
     return Teuchos::rcp (new import_type (src, tgt, plist));
   }
+
 } // namespace Tpetra
 
 #endif // TPETRA_IMPORT_DECL_HPP

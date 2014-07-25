@@ -46,11 +46,6 @@
 #ifndef MUELU_REBALANCETRANSFERFACTORY_DEF_HPP
 #define MUELU_REBALANCETRANSFERFACTORY_DEF_HPP
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 #include <Teuchos_Tuple.hpp>
 
 #include "Xpetra_Vector.hpp"
@@ -64,16 +59,25 @@
 #include <Xpetra_ImportFactory.hpp>
 
 #include "MueLu_RebalanceTransferFactory_decl.hpp"
-#include "MueLu_Utilities.hpp"
 
 #include "MueLu_Level.hpp"
+#include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
+#include "MueLu_PerfUtils.hpp"
+#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
- RCP<const ParameterList> RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+ RCP<const ParameterList> RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
+
+#define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
+    SET_VALID_ENTRY("repartition: rebalance P and R");
+    SET_VALID_ENTRY("transpose: use implicit");
+#undef  SET_VALID_ENTRY
+    // The value of "useSubcomm" parameter here must be the same as in RebalanceAcFactory
+    validParamList->set< bool >                  ("useSubcomm",          true, "Construct subcommunicators");
 
     {
       typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
@@ -81,15 +85,13 @@ namespace MueLu {
       validParamList->set("type", "Interpolation", "Type of the transfer operator that need to be rebalanced (Interpolation or Restriction)", typeValidator);
     }
 
-    validParamList->set< RCP<const FactoryBase> >("P",              Teuchos::null, "Factory of the prolongation operator that need to be rebalanced (only used if type=Interpolation)");
-    validParamList->set< RCP<const FactoryBase> >("R",              Teuchos::null, "Factory of the restriction operator that need to be rebalanced (only used if type=Restriction)");
-    validParamList->set< RCP<const FactoryBase> >("Nullspace",      Teuchos::null, "Factory of the nullspace that need to be rebalanced (only used if type=Restriction)");
-    validParamList->set< RCP<const FactoryBase> >("Coordinates",    Teuchos::null, "Factory of the coordinates that need to be rebalanced (only used if type=Restriction)");
-    validParamList->set< RCP<const FactoryBase> >("Importer",       Teuchos::null, "Factory of the importer object used for the rebalancing");
-    // The value of "useSubcomm" paramter here must be the same as in RebalanceAcFactory
-    validParamList->set< bool >                  ("useSubcomm",              true, "Construct subcommunicators");
-    validParamList->set< int >                   ("write start",    -1, "first level at which coordinates should be written to file");
-    validParamList->set< int >                   ("write end",      -1, "last level at which coordinates should be written to file");
+    validParamList->set< RCP<const FactoryBase> >("P",                   null, "Factory of the prolongation operator that need to be rebalanced (only used if type=Interpolation)");
+    validParamList->set< RCP<const FactoryBase> >("R",                   null, "Factory of the restriction operator that need to be rebalanced (only used if type=Restriction)");
+    validParamList->set< RCP<const FactoryBase> >("Nullspace",           null, "Factory of the nullspace that need to be rebalanced (only used if type=Restriction)");
+    validParamList->set< RCP<const FactoryBase> >("Coordinates",         null, "Factory of the coordinates that need to be rebalanced (only used if type=Restriction)");
+    validParamList->set< RCP<const FactoryBase> >("Importer",            null, "Factory of the importer object used for the rebalancing");
+    validParamList->set< int >                   ("write start",           -1, "First level at which coordinates should be written to file");
+    validParamList->set< int >                   ("write end",             -1, "Last level at which coordinates should be written to file");
 
     // TODO validation: "P" parameter valid only for type="Interpolation" and "R" valid only for type="Restriction". Like so:
     // if (paramList.isEntry("type") && paramList.get("type) == "Interpolation) {
@@ -99,205 +101,215 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-    const Teuchos::ParameterList & pL = GetParameterList();
+  void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
+    const ParameterList& pL = GetParameterList();
 
     if (pL.get<std::string>("type") == "Interpolation") {
       Input(coarseLevel, "P");
-
-    } else {
-      Input(coarseLevel, "R");
       Input(coarseLevel, "Nullspace");
       if (pL.get< RCP<const FactoryBase> >("Coordinates") != Teuchos::null)
         Input(coarseLevel, "Coordinates");
+
+    } else {
+      if (pL.get<bool>("transpose: use implicit") == false)
+        Input(coarseLevel, "R");
     }
 
     Input(coarseLevel, "Importer");
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const {
+  void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
-    const Teuchos::ParameterList & pL = GetParameterList();
 
-    int writeStart = pL.get< int >("write start");
-    int writeEnd   = pL.get< int >("write end");
+    const ParameterList& pL = GetParameterList();
 
-    if (writeStart == 0 && fineLevel.GetLevelID() == 0 && writeStart <= writeEnd && IsAvailable(fineLevel, "Coordinates"))
-    {
+    int implicit   = !pL.get<bool>("repartition: rebalance P and R");
+    int writeStart = pL.get<int> ("write start");
+    int writeEnd   = pL.get<int> ("write end");
+
+    if (writeStart == 0 && fineLevel.GetLevelID() == 0 && writeStart <= writeEnd && IsAvailable(fineLevel, "Coordinates")) {
       std::string fileName = "coordinates_level_0.m";
       RCP<MultiVector> fineCoords = fineLevel.Get< RCP<MultiVector> >("Coordinates");
       if (fineCoords != Teuchos::null)
-        Utils::Write(fileName,*fineCoords);
+        Utils::Write(fileName, *fineCoords);
     }
 
-
-    RCP<const Import> rebalanceImporter = Get< RCP<const Import> >(coarseLevel, "Importer");
+    RCP<const Import> importer = Get<RCP<const Import> >(coarseLevel, "Importer");
+    if (implicit) {
+      // Save the importer, we'll need it for solve
+      coarseLevel.Set("Importer", importer, NoFactory::get());
+    }
 
     RCP<ParameterList> params = rcp(new ParameterList());;
     params->set("printLoadBalancingInfo", true);
+    params->set("printCommInfo",          true);
 
-    if (pL.get<std::string>("type") == "Interpolation") {
-
+    std::string transferType = pL.get<std::string>("type");
+    if (transferType == "Interpolation") {
       RCP<Matrix> originalP = Get< RCP<Matrix> >(coarseLevel, "P");
 
-      if (rebalanceImporter == Teuchos::null) {
-        Set(coarseLevel, "P", originalP);
-        return;
-      }
-
       {
+        // This line must be after the Get call
         SubFactoryMonitor m1(*this, "Rebalancing prolongator", coarseLevel);
 
-        // P is the transfer operator from the coarse grid to the fine grid.
-        // P must transfer the data from the newly reordered coarse A to the (unchanged) fine A.
-        // This means that the domain map (coarse) of P must be changed according to the new partition. The range map (fine) is kept unchanged.
-        //
-        // The domain map of P must match the range map of R.
-        // See also note below about domain/range map of R and its implications for P.
-        //
-        // To change the domain map of P, P needs to be fillCompleted again with the new domain map.
-        // To achieve this, P is copied into a new matrix that is not fill-completed.
-        // The doImport() operation is just used here to make a copy of P: the importer is trivial and there is no data movement involved.
-        // The reordering actually happens during the fillComplete() with domainMap == rebalanceImporter->getTargetMap().
+        if (implicit || importer.is_null()) {
+          GetOStream(Runtime0) << "Using original prolongator" << std::endl;
+          Set(coarseLevel, "P", originalP);
 
-        RCP<Matrix> rebalancedP = originalP;
-        RCP<const CrsMatrixWrap> crsOp = rcp_dynamic_cast<const CrsMatrixWrap>(originalP);
-        if (crsOp == Teuchos::null)
-          throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
+        } else {
+          // P is the transfer operator from the coarse grid to the fine grid.
+          // P must transfer the data from the newly reordered coarse A to the
+          // (unchanged) fine A.  This means that the domain map (coarse) of P
+          // must be changed according to the new partition. The range map
+          // (fine) is kept unchanged.
+          //
+          // The domain map of P must match the range map of R.  See also note
+          // below about domain/range map of R and its implications for P.
+          //
+          // To change the domain map of P, P needs to be fillCompleted again
+          // with the new domain map.  To achieve this, P is copied into a new
+          // matrix that is not fill-completed.  The doImport() operation is
+          // just used here to make a copy of P: the importer is trivial and
+          // there is no data movement involved.  The reordering actually
+          // happens during the fillComplete() with domainMap == importer->getTargetMap().
+          RCP<Matrix> rebalancedP = originalP;
+          RCP<const CrsMatrixWrap> crsOp = rcp_dynamic_cast<const CrsMatrixWrap>(originalP);
+          TEUCHOS_TEST_FOR_EXCEPTION(crsOp == Teuchos::null, Exceptions::BadCast, "Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
 
-        RCP<CrsMatrix> rebalancedP2 = crsOp->getCrsMatrix();
-        if (rebalancedP2 == Teuchos::null)
-          throw std::runtime_error("Xpetra::CrsMatrixWrap doesn't have a CrsMatrix");
+          RCP<CrsMatrix> rebalancedP2 = crsOp->getCrsMatrix();
+          TEUCHOS_TEST_FOR_EXCEPTION(rebalancedP2 == Teuchos::null, std::runtime_error, "Xpetra::CrsMatrixWrap doesn't have a CrsMatrix");
 
-        RCP<const Import> newImporter;
-        {
-          SubFactoryMonitor subM(*this, "Rebalancing prolongator  -- fast map replacement", coarseLevel);
-          newImporter = ImportFactory::Build(rebalanceImporter->getTargetMap(), rebalancedP->getColMap());
-          rebalancedP2->replaceDomainMapAndImporter(rebalanceImporter->getTargetMap(), newImporter);
+          {
+            SubFactoryMonitor subM(*this, "Rebalancing prolongator -- fast map replacement", coarseLevel);
+
+            RCP<const Import> newImporter = ImportFactory::Build(importer->getTargetMap(), rebalancedP->getColMap());
+            rebalancedP2->replaceDomainMapAndImporter(importer->getTargetMap(), newImporter);
+          }
+
+          ///////////////////////// EXPERIMENTAL
+          // TODO FIXME somehow we have to transfer the striding information of the permuted domain/range maps.
+          // That is probably something for an external permutation factory
+          //   if (originalP->IsView("stridedMaps"))
+          //     rebalancedP->CreateView("stridedMaps", originalP);
+          ///////////////////////// EXPERIMENTAL
+
+          Set(coarseLevel, "P", rebalancedP);
+
+          if (IsPrint(Statistics1))
+            GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*rebalancedP, "P (rebalanced)", params);
         }
-
-        Set(coarseLevel, "P", rebalancedP);
-
-        GetOStream(Statistics1, 0) << Utils::PrintMatrixInfo(*rebalancedP, "P (rebalanced)", params);
-
-        ///////////////////////// EXPERIMENTAL
-        // TODO FIXME somehow we have to transfer the striding information of the permuted domain/range maps.
-        // That is probably something for an external permutation factory
-        //if(originalP->IsView("stridedMaps")) rebalancedP->CreateView("stridedMaps", originalP);
-        ///////////////////////// EXPERIMENTAL
       }
 
-    } else { // Restriction
-      //TODO how do we handle implicitly transposed restriction operators?
-
-      RCP<Matrix> originalR = Get< RCP<Matrix> >(coarseLevel, "R");
-      if (rebalanceImporter == Teuchos::null) {
-        Set(coarseLevel, "R", originalR);
-
+      if (importer.is_null()) {
         if (IsAvailable(coarseLevel, "Nullspace"))
-          Set(coarseLevel, "Nullspace", Get< RCP<MultiVector> >(coarseLevel, "Nullspace"));
+          Set(coarseLevel, "Nullspace", Get<RCP<MultiVector> >(coarseLevel, "Nullspace"));
 
-        //TEUCHOS_TEST_FOR_EXCEPTION(!IsAvailable(coarseLevel, "Coordinates"), Exceptions::RuntimeError, "RebalanceTransferFactory::Build : no coordinates found");
-        //if (IsAvailable(coarseLevel, "Coordinates"))
-        //if (coarseLevel.IsAvailable("Coordinates"))
-        if(pL.isParameter("Coordinates") && pL.get< RCP<const FactoryBase> >("Coordinates") != Teuchos::null) {
+        if (pL.isParameter("Coordinates") && pL.get< RCP<const FactoryBase> >("Coordinates") != Teuchos::null)
           if (IsAvailable(coarseLevel, "Coordinates"))
             Set(coarseLevel, "Coordinates", Get< RCP<MultiVector> >(coarseLevel, "Coordinates"));
-        }
 
         return;
       }
 
-      {
-        SubFactoryMonitor m2(*this, "Rebalancing restriction", coarseLevel);
+      if (pL.isParameter("Coordinates") &&
+          pL.get< RCP<const FactoryBase> >("Coordinates") != Teuchos::null &&
+          IsAvailable(coarseLevel, "Coordinates")) {
+        RCP<MultiVector> coords = Get<RCP<MultiVector> >(coarseLevel, "Coordinates");
 
-        RCP<Matrix> rebalancedR;
-        {
-          SubFactoryMonitor subM(*this, "Rebalancing restriction -- fusedImport", coarseLevel);
-          // Note: The 3rd argument says to use originalR's domain map.
+        // This line must be after the Get call
+        SubFactoryMonitor subM(*this, "Rebalancing coordinates", coarseLevel);
 
-          RCP<Map> dummy;
-          rebalancedR = MatrixFactory::Build(originalR,*rebalanceImporter,dummy,rebalanceImporter->getTargetMap());
-        }
-        Set(coarseLevel, "R", rebalancedR);
+        LO nodeNumElts = coords->getMap()->getNodeNumElements();
 
-        GetOStream(Statistics1, 0) << Utils::PrintMatrixInfo(*rebalancedR, "R (rebalanced)", params);
+        // If a process has no matrix rows, then we can't calculate blocksize using the formula below.
+        LO myBlkSize = 0, blkSize = 0;
+        if (nodeNumElts > 0)
+          myBlkSize = importer->getSourceMap()->getNodeNumElements() / nodeNumElts;
+        maxAll(coords->getMap()->getComm(), myBlkSize, blkSize);
 
-        ///////////////////////// EXPERIMENTAL
-        // TODO FIXME somehow we have to transfer the striding information of the permuted domain/range maps.
-        // That is probably something for an external permutation factory
-        //if(originalR->IsView("stridedMaps")) rebalancedR->CreateView("stridedMaps", originalR);
-        ///////////////////////// EXPERIMENTAL
+        RCP<const Import> coordImporter;
+        if (blkSize == 1) {
+          coordImporter = importer;
 
-        //TEUCHOS_TEST_FOR_EXCEPTION(!IsAvailable(coarseLevel, "Coordinates"), Exceptions::RuntimeError, "RebalanceTransferFactory::Build : no coordinates found");
-        if (pL.isParameter("Coordinates") &&
-            pL.get< RCP<const FactoryBase> >("Coordinates") != Teuchos::null &&
-            IsAvailable(coarseLevel, "Coordinates")) {
-          SubFactoryMonitor subM(*this, "Rebalancing coordinates", coarseLevel);
-
-          RCP<MultiVector> coords = Get< RCP<MultiVector> >(coarseLevel, "Coordinates");
-          LO nodeNumElts = coords->getMap()->getNodeNumElements();
-
-          // If a process has no matrix rows, then we can't calculate blocksize using the formula below.
-          LO myBlkSize = 0, blkSize = 0;
-          if (nodeNumElts > 0)
-            myBlkSize = rebalanceImporter->getSourceMap()->getNodeNumElements() / nodeNumElts;
-          maxAll(coords->getMap()->getComm(), myBlkSize, blkSize);
-
-          RCP<const Import>  coordImporter;
+        } else {
+          // NOTE: there is an implicit assumption here: we assume that dof any node are enumerated consequently
+          // Proper fix would require using decomposition similar to how we construct importer in the
+          // RepartitionFactory
           RCP<const Map> origMap   = coords->getMap();
           GO             indexBase = origMap->getIndexBase();
 
-          if (blkSize == 1) {
-            coordImporter = rebalanceImporter;
+          ArrayView<const GO> OEntries   = importer->getTargetMap()->getNodeElementList();
+          LO                  numEntries = OEntries.size()/blkSize;
+          ArrayRCP<GO> Entries(numEntries);
+          for (LO i = 0; i < numEntries; i++)
+            Entries[i] = (OEntries[i*blkSize]-indexBase)/blkSize + indexBase;
 
-          } else {
-            // NOTE: there is an implicit assumption here: we assume that dof any node are enumerated consequently
-            // Proper fix would require using decomposition similar to how we construct rebalanceImporter in the
-            // RepartitionFactory
-            ArrayView<const GO> OEntries   = rebalanceImporter->getTargetMap()->getNodeElementList();
-            LO                  numEntries = OEntries.size()/blkSize;
-            ArrayRCP<GO> Entries(numEntries);
-            for (LO i = 0; i < numEntries; i++)
-              Entries[i] = (OEntries[i*blkSize]-indexBase)/blkSize + indexBase;
-
-            RCP<const Map> targetMap = MapFactory::Build(origMap->lib(), origMap->getGlobalNumElements(), Entries(), indexBase, origMap->getComm());
-            coordImporter = ImportFactory::Build(origMap, targetMap);
-          }
-
-          RCP<MultiVector> permutedCoords  = MultiVectorFactory::Build(coordImporter->getTargetMap(), coords->getNumVectors());
-          permutedCoords->doImport(*coords, *coordImporter, Xpetra::INSERT);
-
-          if (pL.get<bool>("useSubcomm") == true)
-            permutedCoords->replaceMap(permutedCoords->getMap()->removeEmptyProcesses());
-
-          Set(coarseLevel, "Coordinates", permutedCoords);
-
-          std::string fileName = "rebalanced_coordinates_level_" + toString(coarseLevel.GetLevelID()) + ".m";
-          //if (writeStart <= coarseLevel.GetLevelID() && coarseLevel.GetLevelID() <= writeEnd && permutedCoords != Teuchos::null)
-          if (writeStart <= coarseLevel.GetLevelID() && coarseLevel.GetLevelID() <= writeEnd && permutedCoords->getMap() != Teuchos::null)
-            Utils::Write(fileName, *permutedCoords);
+          RCP<const Map> targetMap = MapFactory::Build(origMap->lib(), origMap->getGlobalNumElements(), Entries(), indexBase, origMap->getComm());
+          coordImporter = ImportFactory::Build(origMap, targetMap);
         }
 
-        if (IsAvailable(coarseLevel, "Nullspace")) {
-          SubFactoryMonitor subM(*this, "Rebalancing nullspace", coarseLevel);
+        RCP<MultiVector> permutedCoords  = MultiVectorFactory::Build(coordImporter->getTargetMap(), coords->getNumVectors());
+        permutedCoords->doImport(*coords, *coordImporter, Xpetra::INSERT);
 
-          RCP<MultiVector>         nullspace = Get< RCP<MultiVector> >(coarseLevel, "Nullspace");
-          RCP<MultiVector> permutedNullspace = MultiVectorFactory::Build(rebalanceImporter->getTargetMap(), nullspace->getNumVectors());
-          permutedNullspace->doImport(*nullspace, *rebalanceImporter, Xpetra::INSERT);
+        if (pL.get<bool>("useSubcomm") == true)
+          permutedCoords->replaceMap(permutedCoords->getMap()->removeEmptyProcesses());
 
-          if (pL.get<bool>("useSubcomm") == true)
-            permutedNullspace->replaceMap(permutedNullspace->getMap()->removeEmptyProcesses());
+        Set(coarseLevel, "Coordinates", permutedCoords);
 
-          Set(coarseLevel, "Nullspace", permutedNullspace);
-        }
+        std::string fileName = "rebalanced_coordinates_level_" + toString(coarseLevel.GetLevelID()) + ".m";
+        if (writeStart <= coarseLevel.GetLevelID() && coarseLevel.GetLevelID() <= writeEnd && permutedCoords->getMap() != Teuchos::null)
+          Utils::Write(fileName, *permutedCoords);
       }
 
+      if (IsAvailable(coarseLevel, "Nullspace")) {
+        RCP<MultiVector> nullspace = Get< RCP<MultiVector> >(coarseLevel, "Nullspace");
 
-    } // Restriction
+        // This line must be after the Get call
+        SubFactoryMonitor subM(*this, "Rebalancing nullspace", coarseLevel);
 
-  } // Build
+        RCP<MultiVector> permutedNullspace = MultiVectorFactory::Build(importer->getTargetMap(), nullspace->getNumVectors());
+        permutedNullspace->doImport(*nullspace, *importer, Xpetra::INSERT);
+
+        if (pL.get<bool>("useSubcomm") == true)
+          permutedNullspace->replaceMap(permutedNullspace->getMap()->removeEmptyProcesses());
+
+        Set(coarseLevel, "Nullspace", permutedNullspace);
+      }
+
+    } else {
+      if (pL.get<bool>("transpose: use implicit") == false) {
+        RCP<Matrix> originalR = Get< RCP<Matrix> >(coarseLevel, "R");
+
+        SubFactoryMonitor m2(*this, "Rebalancing restriction", coarseLevel);
+
+        if (implicit || importer.is_null()) {
+          GetOStream(Runtime0) << "Using original restrictor" << std::endl;
+          Set(coarseLevel, "R", originalR);
+
+        } else {
+          RCP<Matrix> rebalancedR;
+          {
+            SubFactoryMonitor subM(*this, "Rebalancing restriction -- fusedImport", coarseLevel);
+
+            RCP<Map> dummy;         // meaning: use originalR's domain map.
+            rebalancedR = MatrixFactory::Build(originalR, *importer, dummy, importer->getTargetMap());
+          }
+          Set(coarseLevel, "R", rebalancedR);
+
+          ///////////////////////// EXPERIMENTAL
+          // TODO FIXME somehow we have to transfer the striding information of the permuted domain/range maps.
+          // That is probably something for an external permutation factory
+          // if (originalR->IsView("stridedMaps"))
+          //   rebalancedR->CreateView("stridedMaps", originalR);
+          ///////////////////////// EXPERIMENTAL
+
+          if (IsPrint(Statistics1))
+            GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*rebalancedR, "R (rebalanced)", params);
+        }
+      }
+    }
+  }
 
 } // namespace MueLu
 

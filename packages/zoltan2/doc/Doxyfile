@@ -18,7 +18,7 @@ PROJECT_NAME           = "Zoltan2"
 # This could be handy for archiving the generated documentation or 
 # if some version control system is used.
 
-PROJECT_NUMBER         = "Version of the Day"
+#PROJECT_NUMBER         = "Version of the Day"
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute) 
 # base path where the generated documentation will be put. 

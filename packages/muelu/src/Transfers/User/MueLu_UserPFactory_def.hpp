@@ -46,21 +46,18 @@
 #ifndef MUELU_USERPFACTORY_DEF_HPP
 #define MUELU_USERPFACTORY_DEF_HPP
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_Matrix.hpp>
 
-#include "MueLu_Utilities.hpp"
-#include "MueLu_UserPFactory_decl.hpp"
 #include "MueLu_Monitor.hpp"
+#include "MueLu_PerfUtils.hpp"
+#include "MueLu_UserPFactory.hpp"
+#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const ParameterList> UserPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+  RCP<const ParameterList> UserPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A");
@@ -127,9 +124,11 @@ namespace MueLu {
     }
     Set(coarseLevel, "Coordinates", coarseCoords);
 
-    RCP<ParameterList> params = rcp(new ParameterList());
-    params->set("printLoadBalancingInfo", true);
-    GetOStream(Statistics1,0) << Utils::PrintMatrixInfo(*P, "P", params);
+    if (IsPrint(Statistics1)) {
+      RCP<ParameterList> params = rcp(new ParameterList());
+      params->set("printLoadBalancingInfo", true);
+      GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*P, "P", params);
+    }
   }
 
 

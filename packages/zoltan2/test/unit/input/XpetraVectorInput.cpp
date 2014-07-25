@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
   RCP<tvector_t> tV;     // original vector (for checking)
   RCP<tvector_t> newV;   // migrated vector
 
-  tV = uinput->getTpetraVector();
+  tV = uinput->getUITpetraVector();
   size_t vlen = tV->getLocalLength();
   Teuchos::ArrayView<const gno_t> rowGids = tV->getMap()->getNodeElementList();
 
@@ -192,18 +192,20 @@ int main(int argc, char *argv[])
   ArrayRCP<const gno_t> gidArray = arcpFromArrayView(rowGids);
   RCP<const idmap_t> idMap = rcp(new idmap_t(env, comm, gidArray));
 
-  int weightDim = 1;
+  int nWeights = 1;
 
-  zoltan2_partId_t *p = new zoltan2_partId_t [vlen];
-  memset(p, 0, sizeof(zoltan2_partId_t) * vlen);
-  ArrayRCP<zoltan2_partId_t> solnParts(p, 0, vlen, true);
+  typedef Zoltan2::XpetraMultiVectorAdapter<tvector_t> adapter_t;
+  typedef adapter_t::part_t part_t;
+
+  part_t *p = new part_t [vlen];
+  memset(p, 0, sizeof(part_t) * vlen);
+  ArrayRCP<part_t> solnParts(p, 0, vlen, true);
 
   std::vector<const scalar_t *> emptyWeights;
   std::vector<int> emptyStrides;
 
-  typedef Zoltan2::XpetraMultiVectorAdapter<tvector_t> adapter_t;
   Zoltan2::PartitioningSolution<adapter_t> solution(
-    env, comm, idMap, weightDim);
+    env, comm, idMap, nWeights);
   solution.setParts(gidArray, solnParts, true);
 
   /////////////////////////////////////////////////////////////
@@ -272,7 +274,7 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////////
   // User object is Xpetra::Vector
   if (!gfail){ 
-    RCP<xvector_t> xV = uinput->getXpetraVector();
+    RCP<xvector_t> xV = uinput->getUIXpetraVector();
     RCP<const xvector_t> cxV = rcp_const_cast<const xvector_t>(xV);
     RCP<Zoltan2::XpetraMultiVectorAdapter<xvector_t> > xVInput;
   
@@ -336,7 +338,7 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////////
   // User object is Epetra_Vector
   if (!gfail){ 
-    RCP<evector_t> eV = uinput->getEpetraVector();
+    RCP<evector_t> eV = uinput->getUIEpetraVector();
     RCP<const evector_t> ceV = rcp_const_cast<const evector_t>(eV);
     RCP<Zoltan2::XpetraMultiVectorAdapter<evector_t> > eVInput;
   

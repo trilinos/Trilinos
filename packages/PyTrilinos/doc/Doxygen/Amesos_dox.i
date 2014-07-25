@@ -180,8 +180,8 @@ The paremeter \"Reindex\" should not be set to \"true\" except on
 CrsMatrices. (return -4)
 
 The paremeter \"Reindex\" should not be set to \"true\" unless Amesos
-was built with EpetraExt, i.e. with --enable-epetraext on the
-configure line. (return -4)
+was built with EpetraExt, i.e. withenable-epetraext on the configure
+line. (return -4)
 
 Internal errors retur -5.
 
@@ -237,8 +237,7 @@ performed with the new value of UseTranspose.
 Parameters:
 -----------
 
-UseTranspose:  -- (In) If true, solve AT X = B, otherwise solve A X =
-B.
+UseTranspose:   (In) If true, solve AT X = B, otherwise solve A X = B.
 
 Integer error code, set to 0 if successful. Set to -1 if this
 implementation does not support transpose. ";
@@ -254,15 +253,13 @@ Amesos_BaseSolver::SetParameters(Teuchos::ParameterList
 
 Updates internal variables.
 
-<br >Preconditions: None.
-
-<br >Postconditions: Internal variables controlling the factorization
-and solve will be updated and take effect on all subseuent calls to
-NumericFactorization() and Solve().
-
-All parameters whose value are to differ from the default values must
-be included in ParameterList. Parameters not specified in
-ParameterList revert to their default values.
+<br \\\\>Preconditions:<ul>   <li>None.</li>   </ul>    <br
+\\\\>Postconditions:<ul>    <li>Internal variables controlling the
+factorization and solve will   be updated and take effect on all
+subseuent calls to NumericFactorization()    and Solve().</li> <li>All
+parameters whose value are to differ from the default values must be
+included in ParameterList. Parameters not specified in ParameterList
+revert to their default values.
 
 Integer error code, set to 0 if successful. ";
 
@@ -436,11 +433,15 @@ SetUseTranpose(true) causes Solve() To compute A^T X = B.
 
 If SetUseTranspose() is set to true,
 
-AT X = B is computed
+AT X = B
+
+is computed
 
 else
 
-A X = B is computed ";
+A X = B
+
+is computed ";
 
 %feature("docstring")  Amesos_Btf::UseTranspose "bool
 Amesos_Btf::UseTranspose() const
@@ -458,14 +459,12 @@ Amesos_Btf::SetParameters(Teuchos::ParameterList &ParameterList)
 
 Updates internal variables.
 
-<br >Preconditions: None.
-
-<br >Postconditions: Internal variables controlling the factorization
-and solve will be updated and take effect on all subsequent calls to
-NumericFactorization() and Solve().
-
-All parameters whose value are to differ from the default values must
-be included in ParameterList. Parameters not specified in
+<br \\\\>Preconditions:<ul>   <li>None.</li>   </ul>    <br
+\\\\>Postconditions:<ul>    <li>Internal variables controlling the
+factorization and solve will   be updated and take effect on all
+subsequent calls to NumericFactorization()    and Solve().</li>
+<li>All parameters whose value are to differ from the default values
+must be included in ParameterList. Parameters not specified in
 ParameterList revert to their default values.
 
 Integer error code, set to 0 if successful. ";
@@ -504,45 +503,27 @@ Print information about the factorization and solution phases. ";
 Amesos_Component: A pure virtual class for direct solvers to be used
 within Amesos_Merikos to form a parallel direct solver.
 
-The Amesos_Component interface specifies what Amesos_Merikos needs.
+<p>The Amesos_Component interface specifies what Amesos_Merikos needs.
 Any Amesos class that implements Amesos_Component can be used by
-Amesos_Merikos to perform partial solves on subblocks of the matrix.
-
-Member functions added by Amesos_Component.
-
-PartialFactorization() PartialFactorization performs factors at most
-the first SubMatrixSize_ rows and columns.
-
+Amesos_Merikos to perform partial solves on subblocks of the
+matrix.<H1>Member functions added by Amesos_Component.</H1>   <ul>
+<li>PartialFactorization() <ul>    <li>PartialFactorization performs
+factors at most the first SubMatrixSize_ rows and columns.
 PartialFactorization delays the factorization of any columns which
-generate unstable (i.e. too small) pivots.
-
-PartialFactorization computes and returns the schur complement.
-
-PartialFactorization does not need a symbolic factorization phase. It
-uses the permutation given by SetRowPermutation.
-
-Lsolve performs a raw partial solve, treating the unfactored rows and
-columns as the identity without row or column permutation.
-
-Usolve performs a raw partial solve, treating the unfactored rows and
-columns as the identity without row or column permutation.
-
-SetRowPermutation - sets the row permutation
-
-GetRowPermutation - gets the row permutation
-
-SetColumnPermutation - sets the column permutation
-
-GetColumnPermutation - gets the column permutation
-
-SetSubMatrixSize - Sets the maximum number of rows (and columns) to
-factor.
-
-GetSubMatrixSize - Returns the number of rows (and columns) actually
-factored.
-
-SchurComplement - Returns the Schur complement, i.e.
-L21(SubMatrixSize+1:MatrixSize,1:SubMatrixSize) *
+generate unstable (i.e. too small) pivots. PartialFactorization
+computes and returns the schur complement. PartialFactorization does
+not need a symbolic factorization phase. It uses the permutation given
+by SetRowPermutation.  Lsolve performs a raw partial solve, treating
+the unfactored rows and columns as the identity without row or column
+permutation. Usolve performs a raw partial solve, treating the
+unfactored rows and columns as the identity without row or column
+permutation. SetRowPermutation - sets the row permutation
+GetRowPermutation - gets the row permutation SetColumnPermutation -
+sets the column permutation GetColumnPermutation - gets the column
+permutation SetSubMatrixSize - Sets the maximum number of rows (and
+columns) to factor. GetSubMatrixSize - Returns the number of rows (and
+columns) actually factored. SchurComplement - Returns the Schur
+complement, i.e. L21(SubMatrixSize+1:MatrixSize,1:SubMatrixSize) *
 U12(1:SubMatrixSize,SubMatrixSize+1:MatrixSize)
 
 Usage Examples
@@ -553,9 +534,9 @@ Epetra_LinearProblem Problem(A,X,B);     Amesos_SolverName
 Solver(Problem);
 
 Solver.PartialFactorization() ;        ... Ancestor factorization
-Solver.Lsolve() ;        ... Ancestor solves     Solver.Usolve() ;
-
-Preconditions:  An ordering  Postconditions:  Constructor requirements
+Solver.Lsolve() ;        ... Ancestor solves     Solver.Usolve()
+;<H2>Preconditions: An ordering Postconditions:  Constructor
+requirements
 
 Every Amesos_SolverName class should accept an Epetra_LinearProblem
 
@@ -647,46 +628,28 @@ GetSchurComplement. ";
 Amesos_ComponentBaseSolver: A pure virtual class for direct solvers to
 be used within Amesos_Merikos to form a parallel direct solver.
 
-The Amesos_ComponentBaseSolver interface specifies what Amesos_Merikos
-needs. Any Amesos class that implements Amesos_ComponentBaseSolver can
-be used by Amesos_Merikos to perform partial solves on subblocks of
-the matrix.
-
-Member functions added by Amesos_ComponentBaseSolver.
-
-PartialFactorization() PartialFactorization performs factors at most
-the first SubMatrixSize_ rows and columns.
-
-PartialFactorization delays the factorization of any columns which
-generate unstable (i.e. too small) pivots.
-
-PartialFactorization computes and returns the schur complement.
-
-PartialFactorization does not need a symbolic factorization phase. It
-uses the permutation given by SetRowPermutation.
-
-Lsolve performs a raw partial solve, treating the unfactored rows and
-columns as the identity without row or column permutation.
-
-Usolve performs a raw partial solve, treating the unfactored rows and
-columns as the identity without row or column permutation.
-
-SetRowPermutation - sets the row permutation
-
-GetRowPermutation - gets the row permutation
-
-SetColumnPermutation - sets the column permutation
-
-GetColumnPermutation - gets the column permutation
-
-SetSubMatrixSize - Sets the maximum number of rows (and columns) to
-factor.
-
-GetSubMatrixSize - Returns the number of rows (and columns) actually
-factored.
-
-SchurComplement - Returns the Schur complement, i.e.
-L21(SubMatrixSize+1:MatrixSize,1:SubMatrixSize) *
+<p>The Amesos_ComponentBaseSolver interface specifies what
+Amesos_Merikos needs. Any Amesos class that implements
+Amesos_ComponentBaseSolver can be used by Amesos_Merikos to perform
+partial solves on subblocks of the matrix.<H1>Member functions added
+by Amesos_ComponentBaseSolver.</H1>   <ul> <li>PartialFactorization()
+<ul>    <li>PartialFactorization performs factors at most the first
+SubMatrixSize_ rows and columns. PartialFactorization delays the
+factorization of any columns which generate unstable (i.e. too small)
+pivots. PartialFactorization computes and returns the schur
+complement. PartialFactorization does not need a symbolic
+factorization phase. It uses the permutation given by
+SetRowPermutation.  Lsolve performs a raw partial solve, treating the
+unfactored rows and columns as the identity without row or column
+permutation. Usolve performs a raw partial solve, treating the
+unfactored rows and columns as the identity without row or column
+permutation. SetRowPermutation - sets the row permutation
+GetRowPermutation - gets the row permutation SetColumnPermutation -
+sets the column permutation GetColumnPermutation - gets the column
+permutation SetSubMatrixSize - Sets the maximum number of rows (and
+columns) to factor. GetSubMatrixSize - Returns the number of rows (and
+columns) actually factored. SchurComplement - Returns the Schur
+complement, i.e. L21(SubMatrixSize+1:MatrixSize,1:SubMatrixSize) *
 U12(1:SubMatrixSize,SubMatrixSize+1:MatrixSize)
 
 Usage Examples
@@ -697,9 +660,9 @@ Epetra_LinearProblem Problem(A,X,B);     Amesos_SolverName
 Solver(Problem);
 
 Solver.PartialFactorization() ;        ... Ancestor factorization
-Solver.Lsolve() ;        ... Ancestor solves     Solver.Usolve() ;
-
-Preconditions:  An ordering  Postconditions:  Constructor requirements
+Solver.Lsolve() ;        ... Ancestor solves     Solver.Usolve()
+;<H2>Preconditions: An ordering Postconditions:  Constructor
+requirements
 
 Every Amesos_SolverName class should accept an Epetra_LinearProblem
 
@@ -768,7 +731,7 @@ Integer error code, set to 0 if successful, -1 if unimplimented. ";
 
 Solves U X = B (or UT x = B)
 
-Integer error code, set to 0 if successful. SetRowPermutation ";
+Integer error code, set to 0 if successful.SetRowPermutation ";
 
 %feature("docstring")
 Amesos_ComponentBaseSolver::SetColumnPermutation "virtual int
@@ -843,111 +806,6 @@ Default destructor. ";
 %feature("docstring")  Amesos_Control::SetControlParameters "void
 Amesos_Control::SetControlParameters(const Teuchos::ParameterList
 &ParameterList) ";
-
-
-// File: classAmesos__CSparse.xml
-%feature("docstring") Amesos_CSparse "
-
-Amesos_CSparse: Interface to the CSparse package.
-
-Siva Rajamanickam
-
-C++ includes: Amesos_CSparse.h ";
-
-%feature("docstring")  Amesos_CSparse::Amesos_CSparse "Amesos_CSparse::Amesos_CSparse(const Epetra_LinearProblem
-&LinearProblem)
-
-Constructor. ";
-
-%feature("docstring")  Amesos_CSparse::~Amesos_CSparse "Amesos_CSparse::~Amesos_CSparse()
-
-Destructor. ";
-
-%feature("docstring")  Amesos_CSparse::SymbolicFactorization "int
-Amesos_CSparse::SymbolicFactorization()
-
-Performs SymbolicFactorization on the matrix A. ";
-
-%feature("docstring")  Amesos_CSparse::NumericFactorization "int
-Amesos_CSparse::NumericFactorization()
-
-Performs NumericFactorization on the matrix A. ";
-
-%feature("docstring")  Amesos_CSparse::Solve "int
-Amesos_CSparse::Solve()
-
-Solves A X = B (or AT X = B) ";
-
-%feature("docstring")  Amesos_CSparse::GetProblem "const
-Epetra_LinearProblem* Amesos_CSparse::GetProblem() const
-
-Get a pointer to the Problem. ";
-
-%feature("docstring")  Amesos_CSparse::MatrixShapeOK "bool
-Amesos_CSparse::MatrixShapeOK() const
-
-Returns true if CSparse can handle this matrix shape.
-
-Returns true if the matrix shape is one that CSparse can handle.
-CSparse only works with square matrices. ";
-
-%feature("docstring")  Amesos_CSparse::SetUseTranspose "int
-Amesos_CSparse::SetUseTranspose(bool UseTranspose)
-
-SetUseTranpose()
-
-If SetUseTranspose() is set to true, $A^T X = B$ is computed. ";
-
-%feature("docstring")  Amesos_CSparse::UseTranspose "bool
-Amesos_CSparse::UseTranspose() const
-
-Returns the current UseTranspose setting. ";
-
-%feature("docstring")  Amesos_CSparse::Comm "const Epetra_Comm&
-Amesos_CSparse::Comm() const
-
-Returns a pointer to the Epetra_Comm communicator associated with this
-matrix. ";
-
-%feature("docstring")  Amesos_CSparse::SetParameters "int
-Amesos_CSparse::SetParameters(Teuchos::ParameterList &ParameterList)
-
-Set parameters from the input parameters list, returns 0 if
-successful. ";
-
-%feature("docstring")  Amesos_CSparse::NumSymbolicFact "int
-Amesos_CSparse::NumSymbolicFact() const
-
-Returns the number of symbolic factorizations performed by this
-object. ";
-
-%feature("docstring")  Amesos_CSparse::NumNumericFact "int
-Amesos_CSparse::NumNumericFact() const
-
-Returns the number of numeric factorizations performed by this object.
-";
-
-%feature("docstring")  Amesos_CSparse::NumSolve "int
-Amesos_CSparse::NumSolve() const
-
-Returns the number of solves performed by this object. ";
-
-%feature("docstring")  Amesos_CSparse::PrintTiming "void
-Amesos_CSparse::PrintTiming() const
-
-Prints timing information. ";
-
-%feature("docstring")  Amesos_CSparse::PrintStatus "void
-Amesos_CSparse::PrintStatus() const
-
-Prints information about the factorization and solution phases. ";
-
-%feature("docstring")  Amesos_CSparse::GetTiming "void
-Amesos_CSparse::GetTiming(Teuchos::ParameterList &TimingParameterList)
-const
-
-Extracts timing information from the current solver and places it in
-the parameter list. ";
 
 
 // File: classAmesos__Dscpack.xml
@@ -1026,8 +884,8 @@ The paremeter \"Reindex\" should not be set to \"true\" except on
 CrsMatrices. (return -4)
 
 The paremeter \"Reindex\" should not be set to \"true\" unless Amesos
-was built with EpetraExt, i.e. with --enable-epetraext on the
-configure line. (return -4)
+was built with EpetraExt, i.e. withenable-epetraext on the configure
+line. (return -4)
 
 Internal errors retur -5.
 
@@ -1100,8 +958,7 @@ performed with the new value of UseTranspose.
 Parameters:
 -----------
 
-UseTranspose:  -- (In) If true, solve AT X = B, otherwise solve A X =
-B.
+UseTranspose:   (In) If true, solve AT X = B, otherwise solve A X = B.
 
 Integer error code, set to 0 if successful. Set to -1 if this
 implementation does not support transpose. ";
@@ -1122,15 +979,13 @@ Amesos_Dscpack::SetParameters(Teuchos::ParameterList &ParameterList)
 
 Updates internal variables.
 
-<br >Preconditions: None.
-
-<br >Postconditions: Internal variables controlling the factorization
-and solve will be updated and take effect on all subseuent calls to
-NumericFactorization() and Solve().
-
-All parameters whose value are to differ from the default values must
-be included in ParameterList. Parameters not specified in
-ParameterList revert to their default values.
+<br \\\\>Preconditions:<ul>   <li>None.</li>   </ul>    <br
+\\\\>Postconditions:<ul>    <li>Internal variables controlling the
+factorization and solve will   be updated and take effect on all
+subseuent calls to NumericFactorization()    and Solve().</li> <li>All
+parameters whose value are to differ from the default values must be
+included in ParameterList. Parameters not specified in ParameterList
+revert to their default values.
 
 Integer error code, set to 0 if successful. ";
 
@@ -1244,8 +1099,8 @@ The paremeter \"Reindex\" should not be set to \"true\" except on
 CrsMatrices. (return -4)
 
 The paremeter \"Reindex\" should not be set to \"true\" unless Amesos
-was built with EpetraExt, i.e. with --enable-epetraext on the
-configure line. (return -4)
+was built with EpetraExt, i.e. withenable-epetraext on the configure
+line. (return -4)
 
 Internal errors retur -5.
 
@@ -1317,15 +1172,13 @@ Amesos_Klu::SetParameters(Teuchos::ParameterList &ParameterList)
 
 Updates internal variables.
 
-<br >Preconditions: None.
-
-<br >Postconditions: Internal variables controlling the factorization
-and solve will be updated and take effect on all subseuent calls to
-NumericFactorization() and Solve().
-
-All parameters whose value are to differ from the default values must
-be included in ParameterList. Parameters not specified in
-ParameterList revert to their default values.
+<br \\\\>Preconditions:<ul>   <li>None.</li>   </ul>    <br
+\\\\>Postconditions:<ul>    <li>Internal variables controlling the
+factorization and solve will   be updated and take effect on all
+subseuent calls to NumericFactorization()    and Solve().</li> <li>All
+parameters whose value are to differ from the default values must be
+included in ParameterList. Parameters not specified in ParameterList
+revert to their default values.
 
 Integer error code, set to 0 if successful. ";
 
@@ -1449,8 +1302,8 @@ The paremeter \"Reindex\" should not be set to \"true\" except on
 CrsMatrices. (return -4)
 
 The paremeter \"Reindex\" should not be set to \"true\" unless Amesos
-was built with EpetraExt, i.e. with --enable-epetraext on the
-configure line. (return -4)
+was built with EpetraExt, i.e. withenable-epetraext on the configure
+line. (return -4)
 
 Internal errors retur -5.
 
@@ -1526,8 +1379,7 @@ performed with the new value of UseTranspose.
 Parameters:
 -----------
 
-UseTranspose:  -- (In) If true, solve AT X = B, otherwise solve A X =
-B.
+UseTranspose:   (In) If true, solve AT X = B, otherwise solve A X = B.
 
 Integer error code, set to 0 if successful. Set to -1 if this
 implementation does not support transpose. ";
@@ -1948,8 +1800,8 @@ The paremeter \"Reindex\" should not be set to \"true\" except on
 CrsMatrices. (return -4)
 
 The paremeter \"Reindex\" should not be set to \"true\" unless Amesos
-was built with EpetraExt, i.e. with --enable-epetraext on the
-configure line. (return -4)
+was built with EpetraExt, i.e. withenable-epetraext on the configure
+line. (return -4)
 
 Internal errors retur -5.
 
@@ -2009,8 +1861,7 @@ performed with the new value of UseTranspose.
 Parameters:
 -----------
 
-UseTranspose:  -- (In) If true, solve AT X = B, otherwise solve A X =
-B.
+UseTranspose:   (In) If true, solve AT X = B, otherwise solve A X = B.
 
 Integer error code, set to 0 if successful. Set to -1 if this
 implementation does not support transpose. ";
@@ -2025,15 +1876,13 @@ Amesos_Mumps::SetParameters(Teuchos::ParameterList &ParameterList)
 
 Updates internal variables.
 
-<br >Preconditions: None.
-
-<br >Postconditions: Internal variables controlling the factorization
-and solve will be updated and take effect on all subseuent calls to
-NumericFactorization() and Solve().
-
-All parameters whose value are to differ from the default values must
-be included in ParameterList. Parameters not specified in
-ParameterList revert to their default values.
+<br \\\\>Preconditions:<ul>   <li>None.</li>   </ul>    <br
+\\\\>Postconditions:<ul>    <li>Internal variables controlling the
+factorization and solve will   be updated and take effect on all
+subseuent calls to NumericFactorization()    and Solve().</li> <li>All
+parameters whose value are to differ from the default values must be
+included in ParameterList. Parameters not specified in ParameterList
+revert to their default values.
 
 Integer error code, set to 0 if successful. ";
 
@@ -2088,7 +1937,7 @@ matrix) as scaling for columns and rows. ColSca and RowSca must be
 defined on the host only, and allocated by the user, if the user sets
 ICNTL(8) = -1.
 
-Both input vectors are float with --enable-amesos-smumps, double
+Both input vectors are float withenable-amesos-smumps, double
 otherwise. ";
 
 %feature("docstring")  Amesos_Mumps::SetRowScaling "int
@@ -2102,8 +1951,8 @@ matrix) for row scaling.
 Parameters:
 -----------
 
-RowSca:  (In) - float pointer with --enable-amesos-smumps, double
-pointer otherwise. ";
+RowSca:  (In) - float pointer withenable-amesos-smumps, double pointer
+otherwise. ";
 
 %feature("docstring")  Amesos_Mumps::SetColScaling "int
 Amesos_Mumps::SetColScaling(double *ColSca)
@@ -2116,8 +1965,8 @@ matrix) for column scaling.
 Parameters:
 -----------
 
-ColSca:  (In) - float pointer with --enable-amesos-smumps, double
-pointer otherwise. ";
+ColSca:  (In) - float pointer withenable-amesos-smumps, double pointer
+otherwise. ";
 
 %feature("docstring")  Amesos_Mumps::SetOrdering "int
 Amesos_Mumps::SetOrdering(int *PermIn)
@@ -2134,7 +1983,7 @@ Amesos_Mumps::GetRINFO()
 Gets the pointer to the RINFO array (defined on all processes).
 
 Gets the pointer to the internally stored RINFO array, of type float
-if option --enable-amesos-smumps is enabled, double otherwise. ";
+if option enable-amesos-smumps is enabled, double otherwise. ";
 
 %feature("docstring")  Amesos_Mumps::GetINFO "int *
 Amesos_Mumps::GetINFO()
@@ -2149,7 +1998,7 @@ Amesos_Mumps::GetRINFOG()
 Gets the pointer to the RINFOG array (defined on host only).
 
 Gets the pointer to the internally stored RINFOG array (defined on the
-host process only), of type float if option --enable-amesos-smumps is
+host process only), of type float if option enable-amesos-smumps is
 enabled, double otherwise. ";
 
 %feature("docstring")  Amesos_Mumps::GetINFOG "int *
@@ -2285,8 +2134,8 @@ The paremeter \"Reindex\" should not be set to \"true\" except on
 CrsMatrices. (return -4)
 
 The paremeter \"Reindex\" should not be set to \"true\" unless Amesos
-was built with EpetraExt, i.e. with --enable-epetraext on the
-configure line. (return -4)
+was built with EpetraExt, i.e. withenable-epetraext on the configure
+line. (return -4)
 
 Internal errors retur -5.
 
@@ -2359,15 +2208,13 @@ Amesos_Paraklete::SetParameters(Teuchos::ParameterList &ParameterList)
 
 Updates internal variables.
 
-<br >Preconditions: None.
-
-<br >Postconditions: Internal variables controlling the factorization
-and solve will be updated and take effect on all subseuent calls to
-NumericFactorization() and Solve().
-
-All parameters whose value are to differ from the default values must
-be included in ParameterList. Parameters not specified in
-ParameterList revert to their default values.
+<br \\\\>Preconditions:<ul>   <li>None.</li>   </ul>    <br
+\\\\>Postconditions:<ul>    <li>Internal variables controlling the
+factorization and solve will   be updated and take effect on all
+subseuent calls to NumericFactorization()    and Solve().</li> <li>All
+parameters whose value are to differ from the default values must be
+included in ParameterList. Parameters not specified in ParameterList
+revert to their default values.
 
 Integer error code, set to 0 if successful. ";
 
@@ -2738,11 +2585,15 @@ SetUseTranpose(true) is more efficient in Amesos_Scalapack.
 
 If SetUseTranspose() is set to true,
 
-AT X = B is computed
+AT X = B
+
+is computed
 
 else
 
-A X = B is computed ";
+A X = B
+
+is computed ";
 
 %feature("docstring")  Amesos_Scalapack::UseTranspose "bool
 Amesos_Scalapack::UseTranspose() const
@@ -2760,14 +2611,12 @@ Amesos_Scalapack::SetParameters(Teuchos::ParameterList &ParameterList)
 
 Updates internal variables.
 
-<br >Preconditions: None.
-
-<br >Postconditions: Internal variables controlling the factorization
-and solve will be updated and take effect on all subsequent calls to
-NumericFactorization() and Solve().
-
-All parameters whose value are to differ from the default values must
-be included in ParameterList. Parameters not specified in
+<br \\\\>Preconditions:<ul>   <li>None.</li>   </ul>    <br
+\\\\>Postconditions:<ul>    <li>Internal variables controlling the
+factorization and solve will   be updated and take effect on all
+subsequent calls to NumericFactorization()    and Solve().</li>
+<li>All parameters whose value are to differ from the default values
+must be included in ParameterList. Parameters not specified in
 ParameterList revert to their default values.
 
 Integer error code, set to 0 if successful. ";
@@ -2941,8 +2790,8 @@ The paremeter \"Reindex\" should not be set to \"true\" except on
 CrsMatrices. (return -4)
 
 The paremeter \"Reindex\" should not be set to \"true\" unless Amesos
-was built with EpetraExt, i.e. with --enable-epetraext on the
-configure line. (return -4)
+was built with EpetraExt, i.e. withenable-epetraext on the configure
+line. (return -4)
 
 Internal errors retur -5.
 
@@ -3018,8 +2867,7 @@ performed with the new value of UseTranspose.
 Parameters:
 -----------
 
-UseTranspose:  -- (In) If true, solve AT X = B, otherwise solve A X =
-B.
+UseTranspose:   (In) If true, solve AT X = B, otherwise solve A X = B.
 
 Integer error code, set to 0 if successful. Set to -1 if this
 implementation does not support transpose. ";
@@ -3040,15 +2888,13 @@ Amesos_Superlu::SetParameters(Teuchos::ParameterList &ParameterList)
 
 Updates internal variables.
 
-<br >Preconditions: None.
-
-<br >Postconditions: Internal variables controlling the factorization
-and solve will be updated and take effect on all subseuent calls to
-NumericFactorization() and Solve().
-
-All parameters whose value are to differ from the default values must
-be included in ParameterList. Parameters not specified in
-ParameterList revert to their default values.
+<br \\\\>Preconditions:<ul>   <li>None.</li>   </ul>    <br
+\\\\>Postconditions:<ul>    <li>Internal variables controlling the
+factorization and solve will   be updated and take effect on all
+subseuent calls to NumericFactorization()    and Solve().</li> <li>All
+parameters whose value are to differ from the default values must be
+included in ParameterList. Parameters not specified in ParameterList
+revert to their default values.
 
 Integer error code, set to 0 if successful. ";
 
@@ -3167,8 +3013,8 @@ The paremeter \"Reindex\" should not be set to \"true\" except on
 CrsMatrices. (return -4)
 
 The paremeter \"Reindex\" should not be set to \"true\" unless Amesos
-was built with EpetraExt, i.e. with --enable-epetraext on the
-configure line. (return -4)
+was built with EpetraExt, i.e. withenable-epetraext on the configure
+line. (return -4)
 
 Internal errors retur -5.
 
@@ -3240,15 +3086,13 @@ Amesos_Superludist::SetParameters(Teuchos::ParameterList
 
 Updates internal variables.
 
-<br >Preconditions: None.
-
-<br >Postconditions: Internal variables controlling the factorization
-and solve will be updated and take effect on all subseuent calls to
-NumericFactorization() and Solve().
-
-All parameters whose value are to differ from the default values must
-be included in ParameterList. Parameters not specified in
-ParameterList revert to their default values.
+<br \\\\>Preconditions:<ul>   <li>None.</li>   </ul>    <br
+\\\\>Postconditions:<ul>    <li>Internal variables controlling the
+factorization and solve will   be updated and take effect on all
+subseuent calls to NumericFactorization()    and Solve().</li> <li>All
+parameters whose value are to differ from the default values must be
+included in ParameterList. Parameters not specified in ParameterList
+revert to their default values.
 
 Integer error code, set to 0 if successful. ";
 
@@ -3361,8 +3205,8 @@ The paremeter \"Reindex\" should not be set to \"true\" except on
 CrsMatrices. (return -4)
 
 The paremeter \"Reindex\" should not be set to \"true\" unless Amesos
-was built with EpetraExt, i.e. with --enable-epetraext on the
-configure line. (return -4)
+was built with EpetraExt, i.e. withenable-epetraext on the configure
+line. (return -4)
 
 Internal errors retur -5.
 
@@ -3440,15 +3284,13 @@ Amesos_Taucs::SetParameters(Teuchos::ParameterList &ParameterList)
 
 Updates internal variables.
 
-<br >Preconditions: None.
-
-<br >Postconditions: Internal variables controlling the factorization
-and solve will be updated and take effect on all subseuent calls to
-NumericFactorization() and Solve().
-
-All parameters whose value are to differ from the default values must
-be included in ParameterList. Parameters not specified in
-ParameterList revert to their default values.
+<br \\\\>Preconditions:<ul>   <li>None.</li>   </ul>    <br
+\\\\>Postconditions:<ul>    <li>Internal variables controlling the
+factorization and solve will   be updated and take effect on all
+subseuent calls to NumericFactorization()    and Solve().</li> <li>All
+parameters whose value are to differ from the default values must be
+included in ParameterList. Parameters not specified in ParameterList
+revert to their default values.
 
 Integer error code, set to 0 if successful. ";
 
@@ -3926,8 +3768,8 @@ The paremeter \"Reindex\" should not be set to \"true\" except on
 CrsMatrices. (return -4)
 
 The paremeter \"Reindex\" should not be set to \"true\" unless Amesos
-was built with EpetraExt, i.e. with --enable-epetraext on the
-configure line. (return -4)
+was built with EpetraExt, i.e. withenable-epetraext on the configure
+line. (return -4)
 
 Internal errors retur -5.
 
@@ -4000,8 +3842,7 @@ performed with the new value of UseTranspose.
 Parameters:
 -----------
 
-UseTranspose:  -- (In) If true, solve AT X = B, otherwise solve A X =
-B.
+UseTranspose:   (In) If true, solve AT X = B, otherwise solve A X = B.
 
 Integer error code, set to 0 if successful. Set to -1 if this
 implementation does not support transpose. ";
@@ -4027,15 +3868,13 @@ Amesos_Umfpack::SetParameters(Teuchos::ParameterList &ParameterList)
 
 Updates internal variables.
 
-<br >Preconditions: None.
-
-<br >Postconditions: Internal variables controlling the factorization
-and solve will be updated and take effect on all subseuent calls to
-NumericFactorization() and Solve().
-
-All parameters whose value are to differ from the default values must
-be included in ParameterList. Parameters not specified in
-ParameterList revert to their default values.
+<br \\\\>Preconditions:<ul>   <li>None.</li>   </ul>    <br
+\\\\>Postconditions:<ul>    <li>Internal variables controlling the
+factorization and solve will   be updated and take effect on all
+subseuent calls to NumericFactorization()    and Solve().</li> <li>All
+parameters whose value are to differ from the default values must be
+included in ParameterList. Parameters not specified in ParameterList
+revert to their default values.
 
 Integer error code, set to 0 if successful. ";
 
@@ -4114,8 +3953,10 @@ Amesos_Utils::SetMaxProcesses(int &MaxProcesses, const
 Epetra_RowMatrix &A) ";
 
 
-// File: structSLUData.xml
+// File: classSLUData.xml
 %feature("docstring") SLUData "";
+
+%feature("docstring")  SLUData::SLUData "SLUData::SLUData() ";
 
 
 // File: namespace@11.xml
@@ -4208,11 +4049,11 @@ Epetra_RowMatrix &A) ";
 
 // File: Amesos__Pardiso_8cpp.xml
 %feature("docstring")  F77_PARDISOINIT "int F77_PARDISOINIT(void *,
-int *, int *) ";
+int *, int *, int *, double *, int *) ";
 
 %feature("docstring")  F77_PARDISO "int F77_PARDISO(void *, int *,
 int *, int *, int *, int *, double *, int *, int *, int *, int *, int
-*, int *, double *, double *, int *) ";
+*, int *, double *, double *, int *, double *) ";
 
 
 // File: Amesos__Pardiso_8h.xml
@@ -4312,8 +4153,7 @@ taucs_supernodal_factor_free_ptr(taucs_ccs_matrix
 // File: Amesos__Utils_8h.xml
 
 
-// File: dir_25619facb131199a9ac01607470cb94c.xml
+// File: dir_5ad1a371febabe3af0a6b242ac96a6b7.xml
 
 
-// File: dir_0b7ccc221d1448fd2902bb281f2b4eff.xml
-
+// File: dir_76258c978a238349c4118a0fc747e188.xml

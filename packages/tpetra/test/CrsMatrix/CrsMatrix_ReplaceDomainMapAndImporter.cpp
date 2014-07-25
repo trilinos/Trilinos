@@ -184,15 +184,14 @@ namespace {
       MT norm = STM::zero ();
 
       // we know the map is contiguous...
-      size_t NumMyElements = (comm->getRank() == 0) ?
+      const size_t NumMyElements = (comm->getRank () == 0) ?
         A.getDomainMap ()->getGlobalNumElements () : 0;
-      RCP<Map<LO,GO,Node> > NewMap = rcp(new Map<LO,GO,Node>(INVALID,NumMyElements,ZERO,comm,node));
-      Tpetra::Import<LO,GO,Node> NewImport(NewMap,A. getColMap());//(source,target)
+      RCP<const Map<LO,GO,Node> > NewMap =
+        rcp (new Map<LO,GO,Node> (INVALID, NumMyElements, ZERO, comm, node));
+      RCP<const Tpetra::Import<LO,GO,Node> > NewImport =
+        rcp (new Import<LO,GO,Node> (NewMap, A.getColMap ()));
 
-      // Because rcp's are insanely picky about these things...
-      RCP<const Map<LO,GO,Node> > NewMap2 = NewMap;
-      RCP<const Tpetra::Import<LO,GO,Node> > NewImport2 = rcp(&NewImport,false);
-      B.replaceDomainMapAndImporter(NewMap2,NewImport2);
+      B.replaceDomainMapAndImporter (NewMap, NewImport);
 
       // Fill a random vector on the original map
       Vector<Scalar,LO,GO,Node> AVecX(A.getDomainMap());
@@ -212,7 +211,9 @@ namespace {
       BVecY.update (-STS::one (), AVecY, STS::one ());
       norm = BVecY.norm2();
 
-      out << "Residual norm: " << norm << endl;
+      out << "Residual 2-norm: " << norm << endl
+          << "Residual 1-norm: " << BVecY.norm1 () << endl
+          << "Residual Inf-norm: " << BVecY.normInf () << endl;
 
       // Macros don't like spaces, so we put the test outside the
       // macro.  Use <= rather than <, so the test passes even if

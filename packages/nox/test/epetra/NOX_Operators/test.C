@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,7 +44,7 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                                
+
 // NOX headers
 #include "NOX.H"  // Required headers
 #include "NOX_Epetra.H" // Epetra Interface headers
@@ -68,7 +68,7 @@
 #include "Laplace2D.H"
 
 
-int main(int argc, char *argv[]) 
+int main(int argc, char *argv[])
 {
   // Initialize MPI
 #ifdef HAVE_MPI
@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
 #else
   Epetra_SerialComm Comm;
 #endif
- 
+
   bool verbose = false;
 
   if (argc > 1)
@@ -96,11 +96,11 @@ int main(int argc, char *argv[])
 
   // define the parameters of the nonlinear PDE problem
   int nx = 5;
-  int ny = 6;  
+  int ny = 6;
   double lambda = 1.0;
 
   PDEProblem Problem(nx,ny,lambda,&Comm);
- 
+
   // starting solution, here a zero vector
   Epetra_Vector InitialGuess(Problem.GetMatrix()->Map());
   InitialGuess.PutScalar(0.0);
@@ -110,9 +110,9 @@ int main(int argc, char *argv[])
   directionVec.Random();
 
   // Set up the problem interface
-  Teuchos::RCP<SimpleProblemInterface> interface = 
+  Teuchos::RCP<SimpleProblemInterface> interface =
     Teuchos::rcp(new SimpleProblemInterface(&Problem) );
-  
+
   // Set up theolver options parameter list
   Teuchos::RCP<Teuchos::ParameterList> noxParamsPtr = Teuchos::rcp(new Teuchos::ParameterList);
   Teuchos::ParameterList & noxParams = *(noxParamsPtr.get());
@@ -123,21 +123,21 @@ int main(int argc, char *argv[])
   // Set up the printing utilities
   // Only print output if the "-v" flag is set on the command line
   Teuchos::ParameterList& printParams = noxParams.sublist("Printing");
-  printParams.set("MyPID", MyPID); 
+  printParams.set("MyPID", MyPID);
   printParams.set("Output Precision", 5);
   printParams.set("Output Processor", 0);
   if( verbose )
-    printParams.set("Output Information", 
-		NOX::Utils::OuterIteration + 
-		NOX::Utils::OuterIterationStatusTest + 
-		NOX::Utils::InnerIteration +
-		NOX::Utils::Parameters + 
-		NOX::Utils::Details + 
-		NOX::Utils::Warning +
-		NOX::Utils::TestDetails);
+    printParams.set("Output Information",
+        NOX::Utils::OuterIteration +
+        NOX::Utils::OuterIterationStatusTest +
+        NOX::Utils::InnerIteration +
+        NOX::Utils::Parameters +
+        NOX::Utils::Details +
+        NOX::Utils::Warning +
+        NOX::Utils::TestDetails);
   else
     printParams.set("Output Information", NOX::Utils::Error +
-		NOX::Utils::TestDetails);
+        NOX::Utils::TestDetails);
 
   NOX::Utils printing(printParams);
 
@@ -180,7 +180,7 @@ int main(int argc, char *argv[])
   Teuchos::RCP<Epetra_CrsGraph> graph = Teuchos::rcp( const_cast<Epetra_CrsGraph*>(&A->Graph()), false );
   Teuchos::RCP<NOX::Epetra::FiniteDifference> FD = Teuchos::rcp(
     new NOX::Epetra::FiniteDifference(printParams, iReq, noxInitGuess, graph) );
-  
+
   Epetra_Vector FD_resultVec(Problem.GetMatrix()->Map());
   FD->computeJacobian(InitialGuess, *FD);
   FD->Apply( directionVec, FD_resultVec );
@@ -209,10 +209,10 @@ int main(int argc, char *argv[])
   status += tester.testVector( noxMFvec, noxAvec, reltol, abstol,
                               "Matrix-Free Operator Apply Test" );
 
-  // Summarize test results  
+  // Summarize test results
   if( status == 0 )
     printing.out() << "Test passed!" << std::endl;
-  else 
+  else
     printing.out() << "Test failed!" << std::endl;
 
 #ifdef HAVE_MPI

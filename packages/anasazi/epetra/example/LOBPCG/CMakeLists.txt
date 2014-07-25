@@ -1,5 +1,13 @@
 INCLUDE(TribitsAddExecutableAndTest)
 
+IF (${PACKAGE_NAME}_ENABLE_Galeri)
+  TRIBITS_ADD_EXECUTABLE(
+    Epetra_LOBPCG_Galeri_example
+    SOURCES LOBPCGEpetra.cpp
+    COMM serial mpi
+  )
+ENDIF ()
+
 TRIBITS_ADD_EXECUTABLE(
   Epetra_LOBPCG_example
   SOURCES LOBPCGEpetraEx.cpp

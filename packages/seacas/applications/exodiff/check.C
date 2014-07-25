@@ -47,6 +47,16 @@
 #include "stringx.h"
 #include "ED_SystemInterface.h"
 
+#if defined(__STDC_VERSION__)
+#  if (__STDC_VERSION__ >= 199901L)
+#    define ST_ZU   "%zu"
+#  else
+#    define ST_ZU   "%lu"
+#  endif
+#else
+#  define ST_ZU   "%lu"
+#endif
+
 using namespace std;
 
 namespace {
@@ -96,9 +106,9 @@ bool Check_Global(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2)
     }
   }
   if (file1.Num_Times() != file2.Num_Times() && !interface.quiet_flag) {
-    std::cout << "exodiff: WARNING First file has " << file1.Num_Times()
+    std::cout << "exodiff: WARNING .. First file has " << file1.Num_Times()
 	      << " result times while the second file has " << file2.Num_Times()
-	      << ".\n\n";
+	      << ".\n";
   }
   return is_same;
 }
@@ -108,9 +118,7 @@ void Check_Compatible_Meshes(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, boo
 			     const INT *node_map, const INT *elmt_map, const INT *node_id_map)
 {
   bool is_diff = false;
-  if (!Check_Global(file1, file2))
-    is_diff = true;
-  
+  // NOTE: Check_Global is called earlier. Don't repeat call here.
   if (!Check_Nodal(file1, file2, node_map, node_id_map, check_only))
     is_diff = true;
 
@@ -136,12 +144,7 @@ namespace {
   {
     bool is_same = true;
   
-    if (interface.coord_tol.type != IGNORE && check_only) {
-      sprintf(buf, "Coordinates will be compared .. tol: %8g (%s), floor: %8g",
-	      interface.coord_tol.value, interface.coord_tol.typestr(), interface.coord_tol.floor);
-      std::cout << buf << std::endl;
-    } else {
-      std::cout << "Locations of nodes will not be compared." << std::endl;
+    if (interface.coord_tol.type == IGNORE || !check_only) {
       return is_same;
     }
 
@@ -165,7 +168,7 @@ namespace {
 	INT n2 = node_map != 0 ? node_map[n] : n;
 	double dx = interface.coord_tol.Delta(x1[n], x2[n2]);
 	if (dx > interface.coord_tol.value) {
-	  sprintf(buf, "   x coord %s diff: %14.7e ~ %14.7e =%12.5e (node %lu)",
+	  sprintf(buf, "   x coord %s diff: %14.7e ~ %14.7e =%12.5e (node "ST_ZU")",
 		  interface.coord_tol.abrstr(),
 		  x1[n], x2[n2], dx, (size_t)id_map[n]);
 	  std::cout << buf << std::endl;
@@ -173,10 +176,10 @@ namespace {
 	}
 	norm = (x1[n] - x2[n2])*(x1[n] - x2[n2]);
 
-	if (file1.Dimension() > 1) {
+	if (file1.Dimension() > 1 && file2.Dimension() > 1) {
 	  double dy = interface.coord_tol.Delta(y1[n], y2[n2]);
 	  if (dy > interface.coord_tol.value) {
-	    sprintf(buf, "   y coord %s diff: %14.7e ~ %14.7e =%12.5e (node %lu)",
+	    sprintf(buf, "   y coord %s diff: %14.7e ~ %14.7e =%12.5e (node "ST_ZU")",
 		    interface.coord_tol.abrstr(),
 		    y1[n], y2[n2], dy, (size_t)id_map[n]);
 	    std::cout << buf << std::endl;
@@ -185,10 +188,10 @@ namespace {
 	  norm += (y1[n] - y2[n2])*(y1[n] - y2[n2]);
 	}
 	
-	if (file1.Dimension() > 2) {
+	if (file1.Dimension() > 2 && file2.Dimension() > 2) {
 	  double dz = interface.coord_tol.Delta(z1[n], z2[n2]);
 	  if (dz > interface.coord_tol.value) {
-	    sprintf(buf, "   z coord %s diff: %14.7e ~ %14.7e =%12.5e (node %lu)",
+	    sprintf(buf, "   z coord %s diff: %14.7e ~ %14.7e =%12.5e (node "ST_ZU")",
 		    interface.coord_tol.abrstr(),
 		    z1[n], z2[n2], dz, (size_t)id_map[n]);
 	    std::cout << buf << std::endl;
@@ -357,25 +360,27 @@ namespace {
 	if (set1->Size() != set2->Size()) {
 	  std::cout << "exodiff: ERROR .. The node count for nodeset id " << set1->Id()
 		    << " is not the same in the two files ("
-		    << set1->Size() << " != " << set2->Size() << "\n";
+		    << set1->Size() << " != " << set2->Size() << ")\n";
 	  if (interface.pedantic)
 	    is_same = false;
 	}
       }
     }
 
+    // Check that can access all nodesets in file2.
+    // This should never fail if the above tests pass...
     for (int b = 0; b < file2.Num_Node_Sets(); ++b) {
       Node_Set<INT>* set2 = file2.Get_Node_Set_by_Index(b);
       if (set2 == NULL) {
-	std::cout << "exodiff: ERROR .. Nodeset id " << set2->Id()
-		  << " exists in second file but not the first.\n";
+	std::cout << "exodiff: ERROR .. Could not access the Nodeset with index "
+		  << b << " in the second file.\n";
 	if (interface.pedantic)
 	  is_same = false;
       }
     }
 
 
-    // Do the following check(s) only if there are nodeset varibles...
+    // Do the following check(s) only if there are nodeset variables...
     // For each nodeset, check that the order of the nodeset nodes is the same.
     // Eventually need to be able to map the order...
     if (!interface.ns_var_names.empty() || interface.pedantic) {
@@ -441,7 +446,8 @@ namespace {
       } else {
 	if (set1->Size() != set2->Size()) {
 	  std::cout << "exodiff: ERROR .. The side count for sideset id " << set1->Id()
-		    << " is not the same in the two files.\n";
+		    << " is not the same in the two files ("
+		    << set1->Size() << " != " << set2->Size() << ")\n";
 	  if (interface.pedantic)
 	    is_same = false;
 	}
@@ -451,15 +457,15 @@ namespace {
     for (int b = 0; b < file2.Num_Side_Sets(); ++b) {
       Side_Set<INT>* set2 = file2.Get_Side_Set_by_Index(b);
       if (set2 == NULL) {
-	std::cout << "exodiff: ERROR .. Sideset id " << set2->Id()
-		  << " exists in second file but not the first.\n";
+	std::cout << "exodiff: ERROR .. Could not access the Sideset with index "
+		  << b << " in the second file.\n";
 	if (interface.pedantic)
 	  is_same = false;
       }
     }
 
 
-    // Do the following check(s) only if there are sideset varibles... (or -pedantic)
+    // Do the following check(s) only if there are sideset variables... (or -pedantic)
     // For each sideset, check that the order of the sideset sides is the same.
     // Eventually need to be able to map the order...
     if (!interface.ss_var_names.empty() || interface.pedantic) {

@@ -2,8 +2,7 @@
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
-#include <stdio.h>
-#include "defs.h"
+#include <stdio.h>                      // for FILE
 #include "structs.h"
 
 /* Print metrics of partition quality. */

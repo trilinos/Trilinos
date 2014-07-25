@@ -51,6 +51,7 @@
 #define _ZOLTAN2_MATRIXADAPTER_HPP_
 
 #include <Zoltan2_Adapter.hpp>
+#include <Zoltan2_VectorAdapter.hpp>
 
 namespace Zoltan2 {
 
@@ -101,14 +102,16 @@ enum MatrixEntityType {
               matrix?  In particular - we assumed coordinates are for rows.
       \todo  If the user can tell us there are no diagonal entries
         in a square matrix, it can save time if we have to remove
-        them for the algorithm.  Should we have a set method in 
+        them for the algorithm.  Should we have a set method in
         subclasses for setMatrixHasDiagonalEntries yes, no and maybe?
 */
 
-template <typename User>
+template <typename User, typename UserCoord=User>
   class MatrixAdapter : public BaseAdapter<User> {
 private:
-  enum MatrixEntityType primaryEntityType;
+  enum MatrixEntityType primaryEntityType_;
+  VectorAdapter<UserCoord> *coordinateInput_;
+  bool haveCoordinateInput_;
 
 public:
 
@@ -117,14 +120,18 @@ public:
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
+  typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef User user_t;
+  typedef UserCoord userCoord_t;
 #endif
 
   enum BaseAdapterType adapterType() const {return MatrixAdapterType;}
 
   // Constructor; sets default primaryEntityType to MATRIX_ROW.
-  MatrixAdapter() : primaryEntityType(MATRIX_ROW) {}
+  MatrixAdapter() : primaryEntityType_(MATRIX_ROW),
+                    coordinateInput_(),
+                    haveCoordinateInput_(false) {}
 
   /*! \brief Destructor
    */
@@ -144,9 +151,9 @@ public:
 
 
 
-  /*! \brief Indicates whether the MatrixAdapter implements a view of the 
+  /*! \brief Indicates whether the MatrixAdapter implements a view of the
              matrix in compressed sparse row (CRS) format.
-             All matrix adapters must implement either getCRSView or 
+             All matrix adapters must implement either getCRSView or
              getCCSView, but implementation of both is not required.
    */
   virtual bool CRSViewAvailable() const { return false; }
@@ -162,17 +169,17 @@ public:
 
   /*! \brief Sets pointers to this process' matrix entries using
              compressed sparse row (CRS) format.
-             All matrix adapters must implement either getCRSView or 
+             All matrix adapters must implement either getCRSView or
              getCCSView, but implementation of both is not required.
       \param offsets is an array of size numRows + 1.  The column Ids for
-          rowIds[i] (returned by getRowIDsView) 
+          rowIds[i] (returned by getRowIDsView)
           begin at colIds[offsets[i]].  The last element of offsets
           is the size of the colIds array.
       \param colIds on return will point to the global column Ids for
          the non-zeros for each row.
    */
   virtual void getCRSView(const lno_t *&offsets,
-                          const gid_t *&colIds) const 
+                          const gid_t *&colIds) const
   {
     // Default implementation; no CRS view provided.
     offsets = NULL;
@@ -180,23 +187,23 @@ public:
     Z2_THROW_NOT_IMPLEMENTED_ERROR
   }
 
-  /*! \brief Sets pointers to this process' matrix entries 
+  /*! \brief Sets pointers to this process' matrix entries
              and their values using
              compressed sparse row (CRS) format.
-             All matrix adapters must implement either getCRSView or 
+             All matrix adapters must implement either getCRSView or
              getCCSView, but implementation of both is not required.
       \param offsets is an array of size numRows + 1.  The column Ids for
-          rowIds[i] (returned by getRowIDsView) 
+          rowIds[i] (returned by getRowIDsView)
           begin at colIds[offsets[i]].  The last element of offsets
           is the size of the colIds array.
       \param colIds on return will point to the global column Ids for
          the non-zeros for each row.
-      \param values on return will point to the values stored in the 
+      \param values on return will point to the values stored in the
          non-zeros for each row.
    */
   virtual void getCRSView(const lno_t *&offsets,
                           const gid_t *& colIds,
-                          const scalar_t *&values) const 
+                          const scalar_t *&values) const
   {
     // Default implementation; no CRS view provided.
     offsets = NULL;
@@ -212,9 +219,7 @@ public:
 
   /*! \brief  Provide a pointer to the row weights, if any.
       \param weights is the list of weights with a given index for
-           the rows returned in getRowIDsView().  If weights for
-           this index are to be uniform for all rows in the
-           global problem, the \c weights should be a NULL pointer.
+           the rows returned in getRowIDsView().  
       \param stride The k'th weight is located at weights[stride*k]
       \param idx ranges from zero to one less than getNumWeightsPerRow().
    */
@@ -230,13 +235,14 @@ public:
   /*! \brief Indicate whether row weight with index idx should be the
    *         global number of nonzeros in the row.
    */
-  virtual bool useNumNonzerosAsRowWeight(int idx) const { return 0; }
+  virtual bool useNumNonzerosAsRowWeight(int idx) const
+  {
+    Z2_THROW_NOT_IMPLEMENTED_ERROR
+  }
 
-
-
-  /*! \brief Indicates whether the MatrixAdapter implements a view of the 
+  /*! \brief Indicates whether the MatrixAdapter implements a view of the
              matrix in compressed sparse column (CCS) format.
-             All matrix adapters must implement either getCRSView or 
+             All matrix adapters must implement either getCRSView or
              getCCSView, but implementation of both is not required.
    */
   virtual bool CCSViewAvailable() const { return false; }
@@ -252,17 +258,17 @@ public:
 
   /*! \brief Sets pointers to this process' matrix entries using
              compressed sparse column (CCS) format.
-             All matrix adapters must implement either getCRSView or 
+             All matrix adapters must implement either getCRSView or
              getCCSView, but implementation of both is not required.
       \param offsets is an array of size numCols + 1.  The row Ids for
-          colIds[i] (returned by getColumnIDsView) 
+          colIds[i] (returned by getColumnIDsView)
           begin at rowIds[offsets[i]].  The last element of offsets
           is the size of the rowIds array.
       \param rowIds on return will point to the global row Ids for
          the non-zeros for each column.
    */
   virtual void getCCSView(const lno_t *&offsets,
-                          const gid_t *&rowIds) const 
+                          const gid_t *&rowIds) const
   {
     // Default implementation; no CCS view provided.
     offsets = NULL;
@@ -270,13 +276,13 @@ public:
     Z2_THROW_NOT_IMPLEMENTED_ERROR
   }
 
-  /*! \brief Sets pointers to this process' matrix entries 
+  /*! \brief Sets pointers to this process' matrix entries
              and their values using
              compressed sparse column (CCS) format.
-             All matrix adapters must implement either getCRSView or 
+             All matrix adapters must implement either getCRSView or
              getCCSView, but implementation of both is not required.
       \param offsets is an array of size numCols + 1.  The row Ids for
-          colIds[i] (returned by getColumnIDsView) 
+          colIds[i] (returned by getColumnIDsView)
           begin at rowIds[offsets[i]].  The last element of offsets
           is the size of the rowIds array.
       \param rowIds on return will point to the global row Ids for
@@ -302,14 +308,12 @@ public:
 
   /*! \brief  Provide a pointer to the column weights, if any.
       \param weights is the list of weights with a given index for
-           the columns returned in getColumnIDsView().  If weights for
-           this index are to be uniform for all columns in the
-           global problem, the \c weights should be a NULL pointer.
+           the columns returned in getColumnIDsView().
       \param stride The k'th weight is located at weights[stride*k]
       \param idx ranges from zero to one less than getNumWeightsPerColumn().
    */
   virtual void getColumnWeightsView(const scalar_t *&weights, int &stride,
-                                    int idx = 0) const 
+                                    int idx = 0) const
   {
     // Default implementation
     weights = NULL;
@@ -330,64 +334,32 @@ public:
   virtual bool symmetricStorage() const {return false;}
 #endif
 
-  /*! \brief Returns the dimension of the geometry, if any.
+  /*! \brief Allow user to provide additional data that contains coordinate
+   *         info associated with the MatrixAdapter's primaryEntityType.
+   *         Associated data must have the same parallel distribution and
+   *         ordering of entries as the primaryEntityType.
    *
-   *  Some algorithms can use geometric row or column coordinate
-   *    information if it is present.  Given the problem parameters
-   *    supplied by the user, it may make sense to use row coordinates
-   *    or it may make sense to use column coordinates.
+   *  \param coordData is a pointer to a VectorAdapter with the user's
+   *         coordinate data.
    */
-//KDDDEC  Instead of having coordinate-based functions, 
-//KDDDEC  see if can have a method SetCoordinateInput that
-//KDDDEC  allows user to provide a coordinate input adapter,
-//KDDDEC  and just save it.
-
-  virtual int getCoordinateDimension() const { return 0; }
-
-  /*! \brief Provide a pointer to one dimension of row coordinates.
-      \param coords  [output] points to a list of coordinate values for the 
-             dimension.
-             The order of \c coords should correspond to the order of \c rowIds
-             in getRowIDsView().
-      \param stride  [output] describes the layout of the coordinate values in
-              the coords list.  If stride is one, then the ith coordinate
-              value is coords[i], but if stride is two, then the
-              ith coordinate value is coords[2*i].
-      \param dim [input] is a value from 0 to one less than
-         getCoordinateDimension() specifying which dimension is
-         being provided in the coords list.
-   */
-
-  virtual void getRowCoordinatesView(const scalar_t *&coords, int &stride,
-                                     int dim) const 
+  void setCoordinateInput(VectorAdapter<UserCoord> *coordData)
   {
-    coords = NULL;
-    stride = 0;
-    Z2_THROW_NOT_IMPLEMENTED_ERROR
+    coordinateInput_ = coordData;
+    haveCoordinateInput_ = true;
   }
 
-  /*! \brief Provide a pointer to one dimension of column coordinates.
-      \param coords  [output] points to a list of coordinate values for the
-             dimension.
-             The order of \c coords should correspond to the order of \c colIds
-             in getColumnIDsView().
-      \param stride  [output] describes the layout of the coordinate values in
-              the coords list.  If stride is one, then the ith coordinate
-              value is coords[i], but if stride is two, then the
-              ith coordinate value is coords[2*i].
-      \param dim [input] is a value from 0 to one less than
-         getDimension() specifying which dimension is
-         being provided in the coords list.
+  /*! \brief Indicate whether coordinate information has been set for this
+   *         MatrixAdapter
    */
+  bool coordinatesAvailable() const { return haveCoordinateInput_; }
 
-  virtual void getColumnCoordinatesView(const scalar_t *&coords, int &stride,
-                                        int dim) const 
+  /*! \brief Obtain the coordinate data registered by the user.
+   *  \return pointer a VectorAdapter with the user's coordinate data.
+   */
+  VectorAdapter<UserCoord> *getCoordinateInput() const
   {
-    coords = NULL;
-    stride = 0;
-    Z2_THROW_NOT_IMPLEMENTED_ERROR
+    return coordinateInput_;
   }
-
 
   ////////////////////////////////////////////////////////////////////////////
   // Implementations of base-class methods and other methods shared by all
@@ -395,8 +367,9 @@ public:
   /*! \brief Returns the entity to be partitioned, ordered, colored, etc.
    *  Valid values are MATRIX_ROW, MATRIX_COLUMN, MATRIX_NONZERO
    */
-  inline enum MatrixEntityType getPrimaryEntityType() const {
-    return this->primaryEntityType;
+  inline enum MatrixEntityType getPrimaryEntityType() const
+  {
+    return this->primaryEntityType_;
   }
 
   /*! \brief Sets the primary entity type.  Called by algorithm based on
@@ -404,7 +377,8 @@ public:
    *  Also sets to adjacencyEntityType to something reasonable:  opposite of
    *  primaryEntityType.
    */
-  void setPrimaryEntityType(string typestr) {
+  void setPrimaryEntityType(std::string typestr)
+  {
     if (typestr == "row") {
       this->primaryEntityType = MATRIX_ROW;
     }
@@ -424,7 +398,8 @@ public:
   }
 
   // Functions from the BaseAdapter interface
-  size_t getLocalNumIDs() const {
+  size_t getLocalNumIDs() const
+  {
     switch (getPrimaryEntityType()) {
     case MATRIX_ROW:
       return getLocalNumRows();
@@ -437,7 +412,8 @@ public:
     }
   }
 
-  void getIDsView(const gid_t *&Ids) const {
+  void getIDsView(const gid_t *&Ids) const
+  {
     switch (getPrimaryEntityType()) {
     case MATRIX_ROW:
       getRowIDsView(Ids);
@@ -446,11 +422,11 @@ public:
       getColumnIDsView(Ids);
       break;
     case MATRIX_NONZERO: {
-      // TODO:  Need getNonzeroIDsView?  What is a Nonzero ID?  
+      // TODO:  Need getNonzeroIDsView?  What is a Nonzero ID?
       // TODO:  std::pair<gid_t, gid_t>?
       std::ostringstream emsg;
       emsg << __FILE__ << "," << __LINE__
-           << " error:  getIDsView not yet supported for matrix nonzeros." 
+           << " error:  getIDsView not yet supported for matrix nonzeros."
            << std::endl;
       throw std::runtime_error(emsg.str());
       break;
@@ -460,7 +436,8 @@ public:
     }
   }
 
-  int getNumWeightsPerID() const {
+  int getNumWeightsPerID() const
+  {
     switch (getPrimaryEntityType()) {
     case MATRIX_ROW:
       return getNumWeightsPerRow();
@@ -473,7 +450,8 @@ public:
     }
   }
 
-  void getWeightsView(const scalar_t *&wgt, int &stride, int idx = 0) const {
+  void getWeightsView(const scalar_t *&wgt, int &stride, int idx = 0) const
+  {
     switch (getPrimaryEntityType()) {
     case MATRIX_ROW:
       getRowWeightsView(wgt, stride, idx);
@@ -483,11 +461,11 @@ public:
       break;
     case MATRIX_NONZERO:
       {
-      // TODO:  Need getNonzeroWeightsView with Nonzeros as primary object? 
+      // TODO:  Need getNonzeroWeightsView with Nonzeros as primary object?
       // TODO:  That is, get Nonzeros' weights based on some nonzero ID?
       std::ostringstream emsg;
       emsg << __FILE__ << "," << __LINE__
-           << " error:  getWeightsView not yet supported for matrix nonzeros." 
+           << " error:  getWeightsView not yet supported for matrix nonzeros."
            << std::endl;
       throw std::runtime_error(emsg.str());
       break;
@@ -497,31 +475,20 @@ public:
     }
   }
 
-  void getCoordinatesView(const scalar_t *&coords, int &stride, int dim) const
+  bool useDegreeAsWeight(int idx) const
   {
-    switch (getPrimaryEntityType()) {
-    case MATRIX_ROW:
-      getRowCoordinatesView(coords, stride, dim);
-      break;
-    case MATRIX_COLUMN:
-      getColumnCoordinatesView(coords, stride, dim);
-      break;
-    case MATRIX_NONZERO: {
-      // TODO:  Need getCoordinatesView with Nonzeros as primary object? 
-      // TODO:  Could return (i,j), but need an ordering for nonzeros.
+    if (this->getPrimaryEntityType() == MATRIX_ROW)
+      return useNumNonzerosAsRowWeight(idx);
+    else {
       std::ostringstream emsg;
       emsg << __FILE__ << "," << __LINE__
-           << " error:  getCoordinatesView not supported for matrix nonzeros." 
+           << " error:  useDegreeAsWeight is currently supported only for rows"
            << std::endl;
       throw std::runtime_error(emsg.str());
-      break;
-      }
-    default:   // Shouldn't reach default; just making compiler happy
-      break;
     }
   }
 };
-  
+
 }  //namespace Zoltan2
-  
+
 #endif

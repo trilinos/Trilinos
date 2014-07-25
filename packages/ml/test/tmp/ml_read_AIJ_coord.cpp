@@ -1,7 +1,7 @@
 
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_config.h"
@@ -63,7 +63,7 @@ using namespace Trilinos_Util;
 
 int main(int argc, char *argv[])
 {
-  
+
 #ifdef EPETRA_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
   }
   else
     NumRows = 0;
-  
+
   // creates a map with all elements on proc 0
   Epetra_Map* SerialMap = new Epetra_Map(-1,NumRows,0,Comm);
   Epetra_CrsMatrix* SerialMatrix;
@@ -133,14 +133,14 @@ int main(int argc, char *argv[])
 
   Epetra_CrsMatrix DistributedMatrix(Copy, DistributedMap,0);
 
-  // creates the import 
+  // creates the import
   Epetra_Import Importer(DistributedMap,*SerialMap);
 
   ML_CHK_ERR(DistributedMatrix.Import(*SerialMatrix,
 				      Importer, Insert));
-  
+
   ML_CHK_ERR(DistributedMatrix.FillComplete());
-  
+
   // can delete serial objects, no longer needed
   delete SerialMap;
   delete SerialMatrix;
@@ -151,12 +151,12 @@ int main(int argc, char *argv[])
   ParameterList MLList;
 
   ML_Epetra::SetDefaults("SA",MLList);
- 
+
   MLList.set("smoother: type", "symmetric Gauss-Seidel");
 
   vector<double> x_coord(NumRows);
   vector<double> y_coord(NumRows);
-  
+
   char *CoordFileName = argv[2];
   assert (CoordFileName != 0);
 
@@ -179,18 +179,18 @@ int main(int argc, char *argv[])
 
   data_file.close();
 
-  for (int i = 0 ; i < NumRows ; ++i) 
+  for (int i = 0 ; i < NumRows ; ++i)
     cout << i << ": " << x_coord[i] << ", " << y_coord[i] << endl;
 
   vector<double> NullSpace;
-  
+
   char *NullSpaceFileName = argv[3];
   assert (NullSpaceFileName != 0);
 
   data_file.open(NullSpaceFileName);
 
   if (!data_file.good()) {
-	  std::cerr << "Error opening file `" << NullSpaceFileName 
+	  std::cerr << "Error opening file `" << NullSpaceFileName
                     << "'" << endl;
 	  exit(EXIT_FAILURE);
   }
@@ -207,8 +207,8 @@ int main(int argc, char *argv[])
 
   data_file.close();
 
-  for (int i = 0 ; i < NumRows ; ++i) 
-    for (int j = 0 ; j < NullSpaceSize ; ++j) 
+  for (int i = 0 ; i < NumRows ; ++i)
+    for (int j = 0 ; j < NullSpaceSize ; ++j)
 	    cout << NullSpace[i + j * NumRows] << endl;
 
   // set the read null space
@@ -225,11 +225,11 @@ int main(int argc, char *argv[])
   MLList.set("viz: x-coordinates", &x_coord[0]);
   MLList.set("viz: y-coordinates", &y_coord[0]);
 #if 1
-  ML_Epetra::MultiLevelPreconditioner* MLPrec = 
+  ML_Epetra::MultiLevelPreconditioner* MLPrec =
     new ML_Epetra::MultiLevelPreconditioner(DistributedMatrix, MLList, false);
   MLPrec->ComputeAdaptivePreconditioner(NullSpaceSize,&NullSpace[0]);
 #else
-  ML_Epetra::MultiLevelPreconditioner* MLPrec = 
+  ML_Epetra::MultiLevelPreconditioner* MLPrec =
     new ML_Epetra::MultiLevelPreconditioner(DistributedMatrix, MLList);
 #endif
 
@@ -241,7 +241,7 @@ int main(int argc, char *argv[])
   LHS.PutScalar(0.0);                      // zero starting solution
   LHSexact.Random();                       // random exact solution
   DistributedMatrix.Multiply(false,LHSexact,RHS);
-  
+
   Epetra_LinearProblem Problem(&DistributedMatrix,&LHS,&RHS);
   AztecOO solver(Problem);
 
@@ -250,7 +250,7 @@ int main(int argc, char *argv[])
   solver.SetPrecOperator(MLPrec);
 
   // solve with 500 iterations and 1e-12 as tolerance on the
-  // relative residual  
+  // relative residual
   solver.Iterate(500, 1e-12);
 
   // delete the preconditioner. Do it BEFORE MPI_Finalize
@@ -265,13 +265,13 @@ int main(int argc, char *argv[])
     cerr << "TEST FAILED" << endl;
     exit(EXIT_FAILURE);
   }
-  
+
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
 #endif
 
   return(EXIT_SUCCESS);
-  
+
 }
 
 #else
@@ -294,7 +294,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-  
+
   return 0;
 }
 

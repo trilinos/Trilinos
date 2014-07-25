@@ -1,6 +1,8 @@
 #ifndef STK_UTIL_UTIL_Fortran_h
 #define STK_UTIL_UTIL_Fortran_h
 
+#include <stk_util/stk_config.h>
+
 #if ! defined(SIERRA_FORTRAN) && ! defined(SIERRAFORTRAN)
 
 #if defined(FORTRAN_NO_UNDERSCORE)

@@ -46,11 +46,6 @@
 #ifndef MUELU_REPARTITIONFACTORY_DEF_HPP
 #define MUELU_REPARTITIONFACTORY_DEF_HPP
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 #include <algorithm>
 #include <iostream>
 #include <sstream>
@@ -71,42 +66,30 @@
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MatrixFactory.hpp>
 
-#include <MueLu_CoupledAggregationCommHelper.hpp>
-
 #include "MueLu_Utilities.hpp"
 
 #include "MueLu_Level.hpp"
+#include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 
 namespace MueLu {
 
  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
- RCP<const ParameterList> RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+ RCP<const ParameterList> RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set<int>        ("startLevel",                  2, "First level at which repartitioning can possibly occur. Repartitioning at finer levels is suppressed");
-    validParamList->set<LO>         ("minRowsPerProcessor",       800, "Minimum number of rows over all processes. If any process falls below this, repartitioning is initiated");
-    validParamList->set<double>     ("nonzeroImbalance",          1.2, "Imbalance threshold, below which repartitioning is initiated. Imbalance is measured by "
-                                                                       "ratio of maximum nonzeros over all processes to minimum number of nonzeros over all processes");
-
-    validParamList->set<bool>       ("remapPartitions",          true, "Perform partition remapping to minimize data movement");
-    validParamList->set<int>        ("numRemapValues",              4, "Number of maximum components from each processor used to construct partial bipartite graph");
-    validParamList->set<bool>       ("alwaysKeepProc0",          true, "Always keep processor 0 in subcommunicator");
+#define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
+    SET_VALID_ENTRY("repartition: start level");
+    SET_VALID_ENTRY("repartition: min rows per proc");
+    SET_VALID_ENTRY("repartition: max imbalance");
+    SET_VALID_ENTRY("repartition: keep proc 0");
+    SET_VALID_ENTRY("repartition: print partition distribution");
+    SET_VALID_ENTRY("repartition: remap parts");
+    SET_VALID_ENTRY("repartition: remap num values");
+#undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A",         Teuchos::null, "Factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("Partition", Teuchos::null, "Factory of the partition");
-
-    // By default, the generating factory is 'this, not Teuchos::null, which means that neither user defined data nor FactoryManager
-    // are used, which is unusual. That is because this class actually computes the number of partitions internally.
-    //
-    // However, one can specify the number of partitions to override this behaviour. In order to manually set the "number of partitions"
-    // entry in the level by doing one of these alternatives:
-    //    *) level.Set("numbers of partitions");
-    //       myRepartitionFact.set< RCP<FactoryBase> >("number of partitions", Teuchos::null);
-    //    *) level.Set("numbers of partitions", myRepartitionFact)
-    // and doing appropriate requests
-    RCP<const FactoryBase> rcpThis = rcpFromRef(*this);
-    validParamList->set< RCP<const FactoryBase> >("number of partitions", rcpThis, "(advanced) Factory computing the number of partition. By default, an appropriate number of partition is computed internally.");
 
     return validParamList;
   }
@@ -115,7 +98,6 @@ namespace MueLu {
   void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
     Input(currentLevel, "A");
     Input(currentLevel, "Partition");
-    Input(currentLevel, "number of partitions");
   }
 
   template<class T> class MpiTypeTraits            { public: static MPI_Datatype getType(); };
@@ -133,61 +115,62 @@ namespace MueLu {
     const Teuchos::ParameterList & pL = GetParameterList();
     // Access parameters here to make sure that we set the parameter entry flag to "used" even in case of short-circuit evaluation.
     // TODO (JG): I don't really know if we want to do this.
-    const int    startLevel          = pL.get<int>   ("startLevel");
-    const LO     minRowsPerProcessor = pL.get<LO>    ("minRowsPerProcessor");
-    const double nonzeroImbalance    = pL.get<double>("nonzeroImbalance");
-    const bool   remapPartitions     = pL.get<bool>  ("remapPartitions");
-    const bool   keepProc0           = pL.get<bool>  ("alwaysKeepProc0");
+    const int    startLevel          = pL.get<int>   ("repartition: start level");
+    const LO     minRowsPerProcessor = pL.get<LO>    ("repartition: min rows per proc");
+    const double nonzeroImbalance    = pL.get<double>("repartition: max imbalance");
+    const bool   remapPartitions     = pL.get<bool>  ("repartition: remap parts");
+    const bool   keepProc0           = pL.get<bool>  ("repartition: keep proc 0");
 
     // TODO: We only need a CrsGraph. This class does not have to be templated on Scalar types.
-    RCP<Matrix>            A         = Get< RCP<Matrix> >(currentLevel, "A");
-    RCP<const Map>         rowMap    = A->getRowMap();
-    GO                     indexBase = rowMap->getIndexBase();
-    Xpetra::UnderlyingLib  lib       = rowMap->lib();
-
-    RCP<const Teuchos::Comm<int> > origComm = rowMap->getComm();
-    RCP<const Teuchos::Comm<int> > comm = origComm->duplicate();
-    int myRank   = comm->getRank();
-    int numProcs = comm->getSize();
-
-    RCP<const Teuchos::MpiComm<int> > tmpic = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
-    TEUCHOS_TEST_FOR_EXCEPTION(tmpic == Teuchos::null, Exceptions::RuntimeError, "Cannot cast base Teuchos::Comm to Teuchos::MpiComm object.");
-    RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawMpiComm = tmpic->getRawMpiComm();
+    RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
 
     // ======================================================================================================
     // Determine whether partitioning is needed
     // ======================================================================================================
-    // We repartition if the following expression is true: !test1 && !test2 && (test3 || test4)
-    //
     // NOTE: most tests include some global communication, which is why we currently only do tests until we make
     // a decision on whether to repartition. However, there is value in knowing how "close" we are to having to
     // rebalance an operator. So, it would probably be beneficial to do and report *all* tests.
-    bool test1 = false, test2 = false, test3 = false, test4 = false;
-    std::string msg1, msg2, msg3, msg4;
 
     // Test1: skip repartitioning if current level is less than the specified minimum level for repartitioning
     if (currentLevel.GetLevelID() < startLevel) {
-      test1 = true;
+      GetOStream(Statistics0) << "Repartitioning?  NO:" <<
+          "\n  current level = " << toString(currentLevel.GetLevelID()) <<
+          ", first level where repartitioning can happen is " + toString(startLevel) << std::endl;
 
-      msg1 = "\n  current level = " + toString(currentLevel.GetLevelID()) + ", first level where repartitioning can happen is " + toString(startLevel);
+      Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
+      return;
     }
+
+    RCP<const Map> rowMap = A->getRowMap();
+
+    // NOTE: Teuchos::MPIComm::duplicate() calls MPI_Bcast inside, so this is
+    // a synchronization point. However, as we do sumAll afterwards anyway, it
+    // does not matter.
+    RCP<const Teuchos::Comm<int> > origComm = rowMap->getComm();
+    RCP<const Teuchos::Comm<int> > comm     = origComm->duplicate();
 
     // Test 2: check whether A is actually distributed, i.e. more than one processor owns part of A
     // TODO: this global communication can be avoided if we store the information with the matrix (it is known when matrix is created)
     // TODO: further improvements could be achieved when we use subcommunicator for the active set. Then we only need to check its size
-    if (!test1) {
+    {
       int numActiveProcesses = 0;
       sumAll(comm, Teuchos::as<int>((A->getNodeNumRows() > 0) ? 1 : 0), numActiveProcesses);
 
-      if (numActiveProcesses == 1)
-        test2 = true;
+      if (numActiveProcesses == 1) {
+        GetOStream(Statistics0) << "Repartitioning?  NO:" <<
+            "\n  # processes with rows = " << toString(numActiveProcesses) << std::endl;
 
-      msg2 = "\n  # processes with rows = " + toString(numActiveProcesses);
+        Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
+        return;
+      }
     }
+
+    bool test3 = false, test4 = false;
+    std::string msg3, msg4;
 
     // Test3: check whether number of rows on any processor satisfies the minimum number of rows requirement
     // NOTE: Test2 ensures that repartitionning is not done when there is only one processor (it may or may not satisfy Test3)
-    if (!test1 && !test2 && minRowsPerProcessor > 0) {
+    if (minRowsPerProcessor > 0) {
       LO numMyRows = Teuchos::as<LO>(A->getNodeNumRows()), minNumRows, LOMAX = Teuchos::OrdinalTraits<LO>::max();
       LO haveFewRows = (numMyRows < minRowsPerProcessor ? 1 : 0), numWithFewRows = 0;
       sumAll(comm, haveFewRows, numWithFewRows);
@@ -203,7 +186,7 @@ namespace MueLu {
     }
 
     // Test4: check whether the balance in the number of nonzeros per processor is greater than threshold
-    if (!test1 && !test2 && !test3) {
+    if (!test3) {
       GO minNnz, maxNnz, numMyNnz = Teuchos::as<GO>(A->getNodeNumEntries());
       maxAll(comm, numMyNnz,                           maxNnz);
       minAll(comm, (numMyNnz > 0 ? numMyNnz : maxNnz), minNnz); // min nnz over all active processors
@@ -215,17 +198,23 @@ namespace MueLu {
       msg4 = "\n  nonzero imbalance = " + toString(imbalance) + ", max allowable = " + toString(nonzeroImbalance);
     }
 
-    if (test1 || test2 || (!test3 && !test4)) {
-      GetOStream(Statistics0, 0) << "Repartitioning?  NO:";
-      if      (test1) GetOStream(Statistics0,0) << msg1        << std::endl;
-      else if (test2) GetOStream(Statistics0,0) << msg2        << std::endl;
-      else            GetOStream(Statistics0,0) << msg3 + msg4 << std::endl;
+    if (!test3 && !test4) {
+      GetOStream(Statistics0) << "Repartitioning?  NO:" << msg3 + msg4 << std::endl;
 
       Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
       return;
     }
 
-    GetOStream(Statistics0,0) << "Repartitioning? YES:" << msg3 + msg4 << std::endl;
+    GetOStream(Statistics0) << "Repartitioning? YES:" << msg3 + msg4 << std::endl;
+
+    GO                     indexBase = rowMap->getIndexBase();
+    Xpetra::UnderlyingLib  lib       = rowMap->lib();
+    int myRank   = comm->getRank();
+    int numProcs = comm->getSize();
+
+    RCP<const Teuchos::MpiComm<int> > tmpic = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
+    TEUCHOS_TEST_FOR_EXCEPTION(tmpic == Teuchos::null, Exceptions::RuntimeError, "Cannot cast base Teuchos::Comm to Teuchos::MpiComm object.");
+    RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawMpiComm = tmpic->getRawMpiComm();
 
     // ======================================================================================================
     // Calculate number of partitions
@@ -233,9 +222,9 @@ namespace MueLu {
     // FIXME Quick way to figure out how many partitions there should be (same algorithm as ML)
     // FIXME Should take into account nnz? Perhaps only when user is using min #nnz per row threshold.
     GO numPartitions;
-    if (IsAvailable(currentLevel, "number of partitions")) {
-      numPartitions = Get<GO>(currentLevel, "number of partitions");
-      GetOStream(Warnings0, 0) << "Using user-provided \"number of partitions\", the performance is unknown" << std::endl;
+    if (currentLevel.IsAvailable("number of partitions")) {
+      numPartitions = currentLevel.Get<GO>("number of partitions");
+      GetOStream(Warnings0) << "Using user-provided \"number of partitions\", the performance is unknown" << std::endl;
 
     } else {
       if (Teuchos::as<GO>(A->getGlobalNumRows()) < minRowsPerProcessor) {
@@ -248,9 +237,9 @@ namespace MueLu {
       }
       numPartitions = std::min(numPartitions, Teuchos::as<GO>(numProcs));
 
-      Set(currentLevel, "number of partitions", numPartitions);
+      currentLevel.Set("number of partitions", numPartitions, NoFactory::get());
     }
-    GetOStream(Statistics0, 0) << "Number of partitions to use = " << numPartitions << std::endl;
+    GetOStream(Statistics0) << "Number of partitions to use = " << numPartitions << std::endl;
 
     // ======================================================================================================
     // Construct decomposition vector
@@ -261,14 +250,14 @@ namespace MueLu {
       // (this is mostly done to avoid extra output messages, as even if we didn't skip there is a shortcut
       // in Zoltan[12]Interface).
       // TODO: We can probably skip more work in this case (like building all extra data structures)
-      GetOStream(Warnings0, 0) << "Only one partition: Skip call to the repartitioner." << std::endl;
+      GetOStream(Warnings0) << "Only one partition: Skip call to the repartitioner." << std::endl;
       decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(A->getRowMap(), true);
 
     } else {
       decomposition = Get<RCP<GOVector> >(currentLevel, "Partition");
 
       if (decomposition.is_null()) {
-        GetOStream(Warnings0, 0) << "No repartitioning necessary: partitions were left unchanged by the repartitioner" << std::endl;
+        GetOStream(Warnings0) << "No repartitioning necessary: partitions were left unchanged by the repartitioner" << std::endl;
         Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
         return;
       }
@@ -279,7 +268,7 @@ namespace MueLu {
     // ======================================================================================================
     // From a user perspective, we want user to not care about remapping, thinking of it as only a performance feature.
     // There are two problems, however.
-    // (1) Next level aggregation depends on the order of GIDs in the vector, if one uses NATURAL or RANDOM orderings.
+    // (1) Next level aggregation depends on the order of GIDs in the vector, if one uses "natural" or "random" orderings.
     //     This also means that remapping affects next level aggregation, despite the fact that the _set_ of GIDs for
     //     each partition is the same.
     // (2) Even with the fixed order of GIDs, the remapping may influence the aggregation for the next-next level.
@@ -376,7 +365,7 @@ namespace MueLu {
       if (oldPartId == 0) {
         // Somebody owns a part with id 0. That means the processor 0 gets some data, even if it does
         // not have any originally. Our work is done.
-        GetOStream(Statistics0, 0) << "No remapping is necessary despite that \"alwaysKeepProc0\" option is on,"
+        GetOStream(Statistics0) << "No remapping is necessary despite that \"alwaysKeepProc0\" option is on,"
             " as processor 0 already receives some data" << std::endl;
 
       } else if (oldPartId == Teuchos::OrdinalTraits<GO>::max()) {
@@ -421,7 +410,7 @@ namespace MueLu {
           // Something weird is going on. This probably means that everybody does not keep any of its data
         }
 
-        GetOStream(Statistics0, 0) << "Remapping part " << oldPartId << " to processor 0 as \"alwaysKeepProc0\" option is on" << std::endl;
+        GetOStream(Statistics0) << "Remapping part " << oldPartId << " to processor 0 as \"alwaysKeepProc0\" option is on" << std::endl;
 
         // Swap partitions
         // If a processor has a part of partition with id = oldPartId, that means that it sends data to it, unless
@@ -452,7 +441,7 @@ namespace MueLu {
     if (IsPrint(Statistics2)) {
       size_t numLocalKept = myGIDs.size(), numGlobalKept, numGlobalRows = A->getGlobalNumRows();
       sumAll(comm, numLocalKept, numGlobalKept);
-      GetOStream(Statistics2,0) << "Unmoved rows: " << numGlobalKept << " / " << numGlobalRows << " (" << 100*Teuchos::as<double>(numGlobalKept)/numGlobalRows << "%)" << std::endl;
+      GetOStream(Statistics2) << "Unmoved rows: " << numGlobalKept << " / " << numGlobalRows << " (" << 100*Teuchos::as<double>(numGlobalKept)/numGlobalRows << "%)" << std::endl;
     }
 
     int numSend = sendMap.size(), numRecv;
@@ -532,9 +521,9 @@ namespace MueLu {
     // ======================================================================================================
     // Print some data
     // ======================================================================================================
-    if (IsPrint(Statistics2)) {
+    if (pL.get<bool>("repartition: print partition distribution") && IsPrint(Statistics2)) {
       // Print the grid of processors
-      GetOStream(Statistics2, 0) << "Partition distribution over cores (ownership is indicated by '+')" << std::endl;
+      GetOStream(Statistics2) << "Partition distribution over cores (ownership is indicated by '+')" << std::endl;
 
       char amActive = (myGIDs.size() ? 1 : 0);
       std::vector<char> areActive(numProcs, 0);
@@ -544,11 +533,11 @@ namespace MueLu {
       for (int proc = 0; proc < numProcs; proc += rowWidth) {
         for (int j = 0; j < rowWidth; j++)
           if (proc + j < numProcs)
-            GetOStream(Statistics2,0) << (areActive[proc + j] ? "+" : ".");
+            GetOStream(Statistics2) << (areActive[proc + j] ? "+" : ".");
           else
-          GetOStream(Statistics2,0) << " ";
+          GetOStream(Statistics2) << " ";
 
-        GetOStream(Statistics2,0) << "      " << proc << ":" << std::min(proc + rowWidth, numProcs) - 1 << std::endl;
+        GetOStream(Statistics2) << "      " << proc << ":" << std::min(proc + rowWidth, numProcs) - 1 << std::endl;
       }
     }
 
@@ -583,7 +572,7 @@ namespace MueLu {
     // The idea is that we do not want to construct the full bipartite graph, but simply a subset of
     // it, which requires less communication. By selecting largest local edges we hope to achieve
     // similar results but at a lower cost.
-    const int maxLocal = pL.get<int>("numRemapValues");
+    const int maxLocal = pL.get<int>("repartition: remap num values");
     const int dataSize = 2*maxLocal;
 
     ArrayRCP<GO> decompEntries;
@@ -663,20 +652,20 @@ namespace MueLu {
         numMatched++;
       }
     }
-    GetOStream(Statistics0, 0) << "Number of unassigned paritions before cleanup stage: " << (numPartitions - numMatched) << " / " << numPartitions << std::endl;
+    GetOStream(Statistics0) << "Number of unassigned paritions before cleanup stage: " << (numPartitions - numMatched) << " / " << numPartitions << std::endl;
 
     // Step 4 [optional]: Keep processor 0
     if (keepProc0) {
       if (matchedRanks[0] == 0) {
         // Reassign partition to processor 0
         // The hope is that partition which we mapped last has few elements in it
-        GetOStream(Statistics0, 0) << "Remapping part " << lastMatchedPart << " to processor 0 as \"alwaysKeepProc0\" option is on" << std::endl;
+        GetOStream(Statistics0) << "Remapping part " << lastMatchedPart << " to processor 0 as \"alwaysKeepProc0\" option is on" << std::endl;
         matchedRanks[match[lastMatchedPart]] = 0;       // unassign processor which was matched to lastMatchedPart part
         matchedRanks[0] = 1;                            // assign processor 0
         match[lastMatchedPart] = 0;                     // match part to processor 0
 
       } else {
-        GetOStream(Statistics0, 0) << "No remapping is necessary despite that \"alwaysKeepProc0\" option is on,"
+        GetOStream(Statistics0) << "No remapping is necessary despite that \"alwaysKeepProc0\" option is on,"
             " as processor 0 already receives some data" << std::endl;
       }
     }

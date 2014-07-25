@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #ifndef MLMEX_H
 #define MLMEX_H
@@ -52,7 +52,7 @@ public:
   virtual int setup(int N,int* rowind,int* colptr, double* vals)=0;
 
   /* status - reports (to stdout) the status of the object
-     Returns: IS_TRUE 
+     Returns: IS_TRUE
   */
   virtual int status()=0;
 
@@ -66,7 +66,7 @@ public:
      iters   - number of iterations taken [O]
      returns: IS_TRUE if sucessful, IS_FALSE otherwise.
   */
-  virtual int solve(Teuchos::ParameterList* TPL, Epetra_CrsMatrix * A, double*b, double*x, int &iters)=0;  
+  virtual int solve(Teuchos::ParameterList* TPL, Epetra_CrsMatrix * A, double*b, double*x, int &iters)=0;
 
   /* Gets the stored Epetra_CrsMatrix if we're in Epetra mode */
   virtual Epetra_CrsMatrix * GetMatrix()=0;
@@ -79,7 +79,7 @@ public:
 public:
   int id;
   Teuchos::ParameterList *List;
-  double operator_complexity;  
+  double operator_complexity;
   ml_data_pack *next;
 };
 
@@ -99,7 +99,7 @@ public:
   int setup(int N,int* rowind,int* colptr, double* vals);
 
   /* status - reports (to stdout) the status of the object
-     Returns: IS_TRUE 
+     Returns: IS_TRUE
   */
   int status();
 
@@ -114,7 +114,7 @@ public:
      iters   - number of iterations taken [O] (NOT IMPLEMENTED)
      returns: IS_TRUE if sucessful, IS_FALSE otherwise.
   */
-  int solve(Teuchos::ParameterList* TPL, int N, double*b, double*x, int &iters);  
+  int solve(Teuchos::ParameterList* TPL, int N, double*b, double*x, int &iters);
 
   /* Returns the number of rows */
   int NumMyRows(){return A->NumMyRows();}
@@ -148,7 +148,7 @@ public:
   int setup(int N,int* rowind,int* colptr, double* vals);
 
   /* status - reports (to stdout) the status of the object
-     Returns: IS_TRUE 
+     Returns: IS_TRUE
   */
   int status();
 
@@ -162,14 +162,14 @@ public:
      iters   - number of iterations taken [O]
      returns: IS_TRUE if sucessful, IS_FALSE otherwise.
   */
-  int solve(Teuchos::ParameterList* TPL, Epetra_CrsMatrix * Amat, double*b, double*x,int &iters);  
+  int solve(Teuchos::ParameterList* TPL, Epetra_CrsMatrix * Amat, double*b, double*x,int &iters);
 
-  /* GetPreconditioner - returns a pointer to the preconditioner */     
+  /* GetPreconditioner - returns a pointer to the preconditioner */
   ML_Epetra::MultiLevelPreconditioner* GetPreconditioner(){return Prec;}
 
   /*GetMatrix - Returns a pointer to the matrix */
   Epetra_CrsMatrix * GetMatrix(){return A;}
-    
+
   /* Returns the number of rows */
   int NumMyRows(){return A->NumMyRows();}
 
@@ -186,7 +186,7 @@ class ml_maxwell_data_pack:public ml_data_pack{
 public:
   ml_maxwell_data_pack();
   ~ml_maxwell_data_pack();
-  
+
   /* setup - sets up an ml_data_pack object
      Parameters:
      name    - Name of matrix to create [I]
@@ -201,7 +201,7 @@ public:
   int setup_preconditioner();
 
   /* status - reports (to stdout) the status of the object
-     Returns: IS_TRUE 
+     Returns: IS_TRUE
   */
   int status();
 
@@ -215,14 +215,14 @@ public:
      iters   - number of iterations taken [O]
      returns: IS_TRUE if sucessful, IS_FALSE otherwise.
   */
-  int solve(Teuchos::ParameterList* TPL, Epetra_CrsMatrix *Amat, double*b, double*x,int &iters);  
+  int solve(Teuchos::ParameterList* TPL, Epetra_CrsMatrix *Amat, double*b, double*x,int &iters);
 
-  /* GetPreconditioner - returns a pointer to the preconditioner */     
+  /* GetPreconditioner - returns a pointer to the preconditioner */
   ML_Epetra::RefMaxwellPreconditioner* GetPreconditioner(){return Prec;}
 
   /*GetMatrix - Returns a pointer to the matrix */
-  Epetra_CrsMatrix * GetMatrix(){return EdgeMatrix;}  
-  
+  Epetra_CrsMatrix * GetMatrix(){return EdgeMatrix;}
+
   /* Returns the number of rows */
   int NumMyRows(){return EdgeMatrix->NumMyRows();}
 

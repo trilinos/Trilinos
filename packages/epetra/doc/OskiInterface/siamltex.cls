@@ -201,9 +201,9 @@ Vol.\ #3, No.\ #4, pp.\ #5
 %
 \if@translated
 \newcommand\tpa{T{\fiveptsize HEORY}~P{\fiveptsize ROBAB.}~A{\fiveptsize PPL}}% added 1/7/04
-\def\@translation{Translated from Russian Journal}  
+\def\@translation{Translated from Russian Journal}
 \else%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\newcommand\tpa{T{\fiveptsize HEORY}~P{\fiveptsize ROBAB.}~A{\fiveptsize PPL}}% added 1/7/04  
+\newcommand\tpa{T{\fiveptsize HEORY}~P{\fiveptsize ROBAB.}~A{\fiveptsize PPL}}% added 1/7/04
 \fi
 %
 \def\@slugger{}
@@ -261,9 +261,9 @@ Vol.\ #3, No.\ #4, pp.\ #5
 \newcommand\siopt{SIAM J.\ O{\fiveptsize PTIM}}
 \newcommand\sisc{SIAM J.\ S{\fiveptsize CI.} C{\fiveptsize OMPUT}}
 \newcommand\sirev{SIAM R{\fiveptsize EV}}
-\newcommand\mms{M{\fiveptsize ULTISCALE}~M{\fiveptsize ODEL.}~S{\fiveptsize IMUL}} % Added 9/17/02  
-   
-       
+\newcommand\mms{M{\fiveptsize ULTISCALE}~M{\fiveptsize ODEL.}~S{\fiveptsize IMUL}} % Added 9/17/02
+
+
 \setcounter{secnumdepth}{3}
 \newcounter {section}
 \newcounter {subsection}[section]
@@ -302,7 +302,7 @@ Vol.\ #3, No.\ #4, pp.\ #5
    \else \def\@svsechd{#4\hskip #1\relax #5.}\fi
     \@xsect{#3}}
 
-             
+
 \newcommand\section{\@startsection{section}{1}{.25in}%
                                    {1.3ex \@plus .5ex \@minus .2ex}%
                                    {-.5em \@plus -.1em}%
@@ -376,7 +376,7 @@ Vol.\ #3, No.\ #4, pp.\ #5
                {\begin{list}{{\upshape \arabic{muni}.}}{\usecounter{muni}
                 \setlength{\leftmargin}{0pt}
                 \setlength{\itemindent}{38pt}}}{\end{list}}
-                               
+
 \newenvironment{@abssec}[1]{%
      \if@twocolumn
        \section*{#1}%
@@ -458,11 +458,11 @@ Vol.\ #3, No.\ #4, pp.\ #5
 % message to appear.  If this happens it will be necessary to update the
 % definition of  \@tempb below and incorperate the changes into
 % the new definitions of \eqnarray.
- 
- 
+
+
 % This is the current definition of \eqnarray for the fleqn document style
 % latex.ltx
- 
+
 \def\@tempb{%
    \stepcounter{equation}%
    \def\@currentlabel{\p@equation\theequation}%
@@ -499,7 +499,7 @@ Vol.\ #3, No.\ #4, pp.\ #5
 }
 \else    \typeout{Warning: Unable to fix unknown version of \string\eqnarray.}
 \fi
- 
+
 \def\@tempb{}
 
 
@@ -712,7 +712,7 @@ Vol.\ #3, No.\ #4, pp.\ #5
   \if@oneeqnum
   \else
      \@addtoreset{equation}{section}   %  \section resets 'equation' counter
-     \renewcommand{\theequation}{\thesection.\arabic{equation}}  
+     \renewcommand{\theequation}{\thesection.\arabic{equation}}
   \fi
 %
   \if@onefignum

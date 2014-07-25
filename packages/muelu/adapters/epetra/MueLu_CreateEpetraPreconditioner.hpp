@@ -23,7 +23,12 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   EpetraCrs_To_XpetraMatrix(const Teuchos::RCP<Epetra_CrsMatrix>& A) {
-    return rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(rcp(new Xpetra::EpetraCrsMatrix(A))));
+    typedef Xpetra::EpetraCrsMatrix                                            XECrsMatrix;
+    typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>       XCrsMatrix;
+    typedef Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>   XCrsMatrixWrap;
+
+    RCP<XCrsMatrix> Atmp = rcp(new XECrsMatrix(A));
+    return rcp(new XCrsMatrixWrap(Atmp));
   }
 
   /*! \fn EpetraMultiVector_To_XpetraMultiVector
@@ -52,23 +57,23 @@ namespace MueLu {
                              const Teuchos::RCP<Epetra_MultiVector>& inCoords    = Teuchos::null,
                              const Teuchos::RCP<Epetra_MultiVector>& inNullspace = Teuchos::null)
   {
-    typedef double                                                              Scalar;
-    typedef int                                                                 LocalOrdinal;
-    typedef int                                                                 GlobalOrdinal;
-    typedef KokkosClassic::DefaultNode::DefaultNodeType                         Node;
-    typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps  LocalMatOps;
+    typedef double                                                              SC;
+    typedef int                                                                 LO;
+    typedef int                                                                 GO;
+    typedef KokkosClassic::DefaultNode::DefaultNodeType                         NO;
 
-    typedef Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>      MultiVector;
-    typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>           Matrix;
-    typedef Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node>                   Hierarchy;
-    typedef ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node> HierarchyFactory;
+    typedef Xpetra::MultiVector<SC, LO, GO, NO>      MultiVector;
+    typedef Xpetra::Matrix<SC, LO, GO, NO>           Matrix;
+    typedef Hierarchy<SC,LO,GO,NO>                   Hierarchy;
+    typedef HierarchyManager<SC,LO,GO,NO>            HierarchyManager;
 
     bool hasParamList = paramList.numParams();
 
-    RCP<HierarchyFactory> mueLuFactory;
+    RCP<HierarchyManager> mueLuFactory;
     RCP<Hierarchy>        H;
     if (hasParamList) {
-      mueLuFactory = rcp(new HierarchyFactory(paramList));
+      mueLuFactory = rcp(new ParameterListInterpreter<SC,LO,GO,NO>(paramList));
+
       H = mueLuFactory->CreateHierarchy();
 
     } else {
@@ -76,40 +81,46 @@ namespace MueLu {
     }
 
     // Wrap A
-    RCP<Matrix> A = EpetraCrs_To_XpetraMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(inA);
+    RCP<Matrix> A = EpetraCrs_To_XpetraMatrix<SC, LO, GO, NO>(inA);
     H->GetLevel(0)->Set("A", A);
 
     // Wrap coordinates if available
     if (inCoords != Teuchos::null) {
-      RCP<MultiVector> coordinates = EpetraMultiVector_To_XpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(inCoords);
+      RCP<MultiVector> coordinates = EpetraMultiVector_To_XpetraMultiVector<SC,LO,GO,NO>(inCoords);
       H->GetLevel(0)->Set("Coordinates", coordinates);
     }
 
     // Wrap nullspace if available, otherwise use constants
     RCP<MultiVector> nullspace;
     if (inNullspace != Teuchos::null) {
-      nullspace = EpetraMultiVector_To_XpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(inNullspace);
+      nullspace = EpetraMultiVector_To_XpetraMultiVector<SC, LO, GO, NO>(inNullspace);
 
     } else {
       int nPDE = 1;
       if (paramList.isSublist("Matrix")) {
+        // Factory style parameter list
         const Teuchos::ParameterList& operatorList = paramList.sublist("Matrix");
         if (operatorList.isParameter("PDE equations"))
           nPDE = operatorList.get<int>("PDE equations");
+
+      } else if (paramList.isParameter("number of equations")) {
+        // Easy style parameter list
+        nPDE = paramList.get<int>("number of equations");
       }
 
-      nullspace = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A->getDomainMap(), nPDE);
+
+      nullspace = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(A->getDomainMap(), nPDE);
       if (nPDE == 1) {
-        nullspace->putScalar(Teuchos::ScalarTraits<Scalar>::one());
+        nullspace->putScalar(Teuchos::ScalarTraits<SC>::one());
 
       } else {
         for (int i = 0; i < nPDE; i++) {
-          Teuchos::ArrayRCP<Scalar> nsData = nullspace->getDataNonConst(i);
+          Teuchos::ArrayRCP<SC> nsData = nullspace->getDataNonConst(i);
           for (int j = 0; j < nsData.size(); j++) {
-            GlobalOrdinal GID = A->getDomainMap()->getGlobalElement(j) - A->getDomainMap()->getIndexBase();
+            GO GID = A->getDomainMap()->getGlobalElement(j) - A->getDomainMap()->getIndexBase();
 
             if ((GID-i) % nPDE == 0)
-              nsData[j] = Teuchos::ScalarTraits<Scalar>::one();
+              nsData[j] = Teuchos::ScalarTraits<SC>::one();
           }
         }
       }

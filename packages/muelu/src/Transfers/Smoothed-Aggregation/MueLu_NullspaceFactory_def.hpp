@@ -57,7 +57,7 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const ParameterList> NullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+  RCP<const ParameterList> NullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     // validParamList->set< bool >("QR",                                         true, "Use QR factorization"); Not implemented for QR=false
@@ -116,7 +116,7 @@ namespace MueLu {
 
         // When a fine nullspace have already been defined by user using Set("Nullspace", ...), we use it.
         nullspace = currentLevel.Get< RCP<MultiVector> >(nspName, NoFactory::get());
-        GetOStream(Runtime1, 0) << "Use user-given nullspace " << nspName << ": nullspace dimension=" << nullspace->getNumVectors() << " nullspace length=" << nullspace->getGlobalLength() << std::endl;
+        GetOStream(Runtime1) << "Use user-given nullspace " << nspName << ": nullspace dimension=" << nullspace->getNumVectors() << " nullspace length=" << nullspace->getGlobalLength() << std::endl;
 
       } else {
         // "Nullspace" (nspName) is not available
@@ -131,7 +131,7 @@ namespace MueLu {
           oldView = A->SwitchToView(oldView);
         }
 
-        GetOStream(Runtime1, 0) << "Generating canonical nullspace: dimension = " << numPDEs << std::endl;
+        GetOStream(Runtime1) << "Generating canonical nullspace: dimension = " << numPDEs << std::endl;
         nullspace = MultiVectorFactory::Build(A->getDomainMap(), numPDEs);
 
         for (int i=0; i<numPDEs; ++i) {

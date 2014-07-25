@@ -49,7 +49,7 @@
 
 #include "Sacado.hpp"
 #include "Stokhos_Sacado.hpp"
-#include "Stokhos_Sacado_Kokkos.hpp"
+#include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 #include "Sacado_Fad_DFad.hpp"
 #include "Sacado_mpl_apply.hpp"
 #include "Sacado_Random.hpp"
@@ -718,17 +718,6 @@ namespace StaticFixedVecTest {
   typedef Sacado::MP::Vector<storage_type> vec_type;
   UnitTestSetup<vec_type, fad_type> setup;
   VEC_COMM_TESTS(vec_type, fad_type, StaticFixedVector, DFad)
-}
-
-namespace LocalVecTest {
-  Sacado::Random<double> rnd;
-  typedef int Ordinal;
-  typedef Kokkos::Threads device_type;
-  typedef Stokhos::LocalStorage<int,double,8,device_type> storage_type;
-  typedef Sacado::Fad::DFad<double> fad_type;
-  typedef Sacado::MP::Vector<storage_type> vec_type;
-  UnitTestSetup<vec_type, fad_type> setup;
-  VEC_COMM_TESTS(vec_type, fad_type, LocalVector, DFad)
 }
 
 int main( int argc, char* argv[] ) {

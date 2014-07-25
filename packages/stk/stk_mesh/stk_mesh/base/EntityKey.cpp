@@ -7,33 +7,20 @@
 /*------------------------------------------------------------------------*/
 
 
-#include <sstream>
-#include <stdexcept>
-
-#include <stk_util/util/StaticAssert.hpp>
-
-#include <stk_util/environment/ReportHandler.hpp>
-
 #include <stk_mesh/base/EntityKey.hpp>
+#include <ostream>                      // for operator<<, basic_ostream, etc
+#include "stk_topology/topology.hpp"    // for operator<<, topology, etc
 
-namespace stk {
-namespace mesh {
+namespace stk { namespace mesh {
 
-EntityKey::EntityKey( EntityRank entity_rank ,
-                      EntityKey::raw_key_type entity_id )
-  : key( ( raw_key_type(entity_rank) << id_digits ) | entity_id )
+
+std::ostream & operator << ( std::ostream & out, EntityKey key)
 {
-  enum { OK = StaticAssert< sizeof(EntityKey) ==
-                            sizeof(EntityKey::raw_key_type) >::OK };
+  out << "(" << static_cast<stk::topology::rank_t>(key.rank())
+      << "," << key.id() << ")";
 
-  ThrowAssertMsg( rank() == entity_rank,
-                  "entity_rank out of range, entity_rank= " << entity_rank << " rank() = " << rank() << " entity_id= " << entity_id << " id() = " << id() );
-
-  ThrowAssertMsg( id() == entity_id,
-                  "entity_id out of range, entity_rank= " << entity_rank << " rank() = " << rank() << " entity_id= " << entity_id << " id() = " << id() );
+ return out;
 }
 
-
-}
-}
+}} // namespace stk::mesh
 

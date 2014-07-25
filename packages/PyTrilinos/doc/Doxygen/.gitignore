@@ -5,7 +5,9 @@
 .deps/Epetra_dox.Pi
 .deps/Galeri_dox.Pi
 .deps/IFPACK_dox.Pi
+.deps/Isorropia_dox.Pi
 .deps/Komplex_dox.Pi
+.deps/LOCA_dox.Pi
 .deps/ML_dox.Pi
 .deps/NOX_dox.Pi
 .deps/Percept_dox.Pi
@@ -18,7 +20,9 @@ Epetra
 EpetraExt
 Galeri
 IFPACK
+Isorropia
 Komplex
+LOCA
 ML
 NOX
 Percept

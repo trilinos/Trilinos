@@ -100,7 +100,7 @@
     docString='  list of ranks that output debugging/status messages (default \"0\")' \
     /> \
    <Parameter  \
-    id=\"10\" name=\"pqParts\" type=\"string\" validatorId=\"8\" value=\"0\" \
+    id=\"10\" name=\"mj_parts\" type=\"string\" validatorId=\"8\" value=\"0\" \
     docString='  list of parts for multiJagged partitioning algorithm. As many as the dimension count.' \
     /> \
    <Parameter  \
@@ -215,39 +215,27 @@
     an invalid neighbor identifier is considered an error.' \
     /> \
    <Parameter  \
-    id=\"35\" name=\"parallel_part_calculation_count\" type=\"int\" validatorId=\"33\" value=\"1\" \
+    id=\"35\" name=\"mj_concurrent_part_count\" type=\"int\" validatorId=\"33\" value=\"1\" \
     docString=\"The number of parts whose cut coordinates will be calculated concurently.\" \
     /> \
    <Parameter  \
-    id=\"36\" name=\"migration_imbalance_cut_off\" type=\"string\" validatorId=\"19\" value=\"1.1\" \
-    docString='  migration_imbalance_cut_off, the minimum imbalance of the processors to avoid migration (default 1.1)' \
+    id=\"36\" name=\"mj_minimum_migration_imbalance\" type=\"string\" validatorId=\"19\" value=\"1.1\" \
+    docString='  mj_minimum_migration_imbalance, the minimum imbalance of the processors to avoid migration (default 1.1)' \
     /> \
    <Parameter  \
-    id=\"37\" name=\"migration_all_to_all_type\" type=\"int\" validatorId=\"37\" value=\"1\" \
-    docString=\"Migration type, 0 for naive migration, 1 for smarter migration.\" \
-    /> \
-   <Parameter  \
-    id=\"38\" name=\"migration_check_option\" type=\"int\" validatorId=\"38\" value=\"1\" \
+    id=\"38\" name=\"mj_migration_option\" type=\"int\" validatorId=\"38\" value=\"1\" \
     docString=\"Migration option, 0 for decision depending on the imbalance, 1 for forcing migration, 2 for avoiding migration\" \
-    /> \
-   <Parameter  \
-    id=\"39\" name=\"migration_processor_assignment_type\" type=\"int\" validatorId=\"39\" value=\"1\" \
-    docString=\"Migration processor assignment type, 0 for assignning procs with respect to weight, otherwise for assigning procs with respect to closeness\" \
     /> \
    <Parameter  \
     id=\"40\" name=\"remap_parts\" type=\"string\" validatorId=\"40\" value=\"no\" \
     docString='  remap part numbers to minimize migration between old and new partitions' \
     /> \
    <Parameter  \
-    id=\"41\" name=\"migration_doMigration_type\" type=\"int\" validatorId=\"41\" value=\"1\" \
-    docString=\"Migration doMigration type, 0 for using tpetra::multivector doMigration, 1 for Zoltan1_Comm\" \
-    /> \
-   <Parameter  \
     id=\"42\" name=\"mapping_type\" type=\"int\" validatorId=\"42\" value=\"-1\" \
     docString=\"Mapping of solution to the processors. -1 No Mapping, 0 coordinate mapping.\" \
     /> \
    <Parameter  \
-    id=\"43\" name=\"keep_part_boxes\" type=\"int\" validatorId=\"43\" value=\"-1\" \
+    id=\"43\" name=\"mj_keep_part_boxes\" type=\"int\" validatorId=\"43\" value=\"-1\" \
     docString=\"Keep the part boundaries of the geometric partitioning: Truth values - 0 False, Otherwise True.\" \
     /> \
    <Parameter  \
@@ -255,8 +243,8 @@
     docString=\"Use MJ as RCB: Truth values - 0 False, Otherwise True.\" \
     /> \
    <Parameter  \
-    id=\"45\" name=\"recursion_depth\" type=\"int\" validatorId=\"45\" value=\"-1\" \
-    docString=\"Recursuion depth for MJ: Must be greater than 0.\" \
+    id=\"45\" name=\"mj_recursion_depth\" type=\"int\" validatorId=\"45\" value=\"-1\" \
+    docString=\"Recursion depth for MJ: Must be greater than 0.\" \
     /> \
     <Validators> \
       <Validator defaultParameterName=\"error_check_level\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"0\"> \
@@ -406,6 +394,7 @@
         <String value=\"block\"/> \
         <String value=\"cyclic\"/> \
         <String value=\"random\"/> \
+        <String value=\"wolf\"/> \
       </Validator> \
       <Validator defaultParameterName=\"rectilinear_blocks\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"26\"> \
         <String integralValue=\"1\" stringValue=\"true\"/> \
@@ -443,15 +432,12 @@
         <String integralValue=\"0\" stringValue=\"0\"/> \
         <String integralValue=\"0\" stringValue=\"off\"/> \
       </Validator> \
-      <Validator defaultParameterName=\"parallel_part_calculation_count\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"33\"/> \
-      <Validator defaultParameterName=\"migration_all_to_all_type\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"37\"/> \
-      <Validator defaultParameterName=\"migration_check_option\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"38\"/> \
-      <Validator defaultParameterName=\"migration_processor_assignment_type\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"39\"/> \
-      <Validator defaultParameterName=\"migration_doMigration_type\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"41\"/> \
+      <Validator defaultParameterName=\"mj_concurrent_part_count\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"33\"/> \
+      <Validator defaultParameterName=\"mj_migration_option\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"38\"/> \
       <Validator defaultParameterName=\"mapping_type\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"42\"/> \
-      <Validator defaultParameterName=\"keep_part_boxes\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"43\"/> \
+      <Validator defaultParameterName=\"mj_keep_part_boxes\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"43\"/> \
       <Validator defaultParameterName=\"mj_enable_rcb\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"44\"/> \
-      <Validator defaultParameterName=\"recursion_depth\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"45\"/> \
+      <Validator defaultParameterName=\"mj_recursion_depth\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"45\"/> \
       <Validator defaultParameterName=\"remap_parts\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"40\"> \
         <String integralValue=\"1\" stringValue=\"true\"/> \
         <String integralValue=\"1\" stringValue=\"yes\"/> \

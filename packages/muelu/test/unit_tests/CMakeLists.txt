@@ -22,6 +22,7 @@ APPEND_SET(SOURCES
   Aggregates.cpp
   BlockedPFactory.cpp
   CoalesceDropFactory.cpp
+  CoarseMapFactory.cpp
 # CoupledAggregationFactory.cpp
   GenericRFactory.cpp
   Hierarchy.cpp
@@ -92,6 +93,11 @@ IF (${PACKAGE_NAME}_ENABLE_Zoltan AND TPL_ENABLE_MPI)
               Repartition.cpp
               #PermutedTransferFactory.cpp  # TODO CHECK ME!
   )
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(MueLu_Repartition_cp
+    SOURCE_DIR ${MueLu_SOURCE_DIR}/test/unit_tests/
+    SOURCE_FILES testCoordinates.xml
+  )
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
@@ -129,7 +135,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
 
     TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsTpetra_cp
       SOURCE_DIR ${MueLu_SOURCE_DIR}/test/unit_tests/Adapters
-      SOURCE_FILES test.xml testWithRebalance.xml testPDE.xml
+      SOURCE_FILES test.xml testWithRebalance.xml testPDE.xml testPDE1.xml
       )
 
     TRIBITS_ADD_TEST(

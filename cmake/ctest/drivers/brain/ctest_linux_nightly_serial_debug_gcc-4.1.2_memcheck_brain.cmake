@@ -67,10 +67,10 @@ SET(CTEST_TEST_TYPE EXPERIMENTAL)
 #SET(CTEST_TEST_TIMEOUT 900)
 
 # Explicitly enable the packages to be memory tested.
-SET(Trilinos_PACKAGES Teuchos RTOp Epetra GlobiPack Tpetra EpetraExt
-  Sacado Thyra OptiPack AztecOO Ifpack ML Stratimikos Rythmos MOOCHO)
+#SET(Trilinos_PACKAGES Teuchos RTOp Epetra GlobiPack Tpetra EpetraExt
+#  Sacado Thyra OptiPack AztecOO Ifpack ML Stratimikos Rythmos MOOCHO)
 
-SET(EXTRA_EXCLUDE_PACKAGES Panzer)
+SET(EXTRA_EXCLUDE_PACKAGES SEACAS)
 
 SET(CTEST_PARALLEL_LEVEL 12)
 SET(CTEST_DO_TEST TRUE)
@@ -78,6 +78,8 @@ SET(CTEST_DO_MEMORY_TESTING TRUE)
 SET(CTEST_MEMORYCHECK_COMMAND "/usr/bin/valgrind")
 
 SET( EXTRA_CONFIGURE_OPTIONS
+  "-DMueLu_ENABLE_MEMORY_TESTING=ON"
+  "-DTPL_ENABLE_Netcdf:BOOL=OFF"
   )
 
 #

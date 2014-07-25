@@ -61,7 +61,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
@@ -460,6 +460,47 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, LocalSymGaussSeidelZeroRows
 }
 
 
+// Test apply() on a NotCrsMatirx with a partially "null" x and y. In parallel, it is possible that some nodes do not have any local elements.
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, NotCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
+
+  std::string version = Ifpack2::Version();
+  out << "Ifpack2::Version(): " << version << std::endl;
+
+  global_size_t num_rows_per_proc = 0;
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  if(!comm->getRank()) num_rows_per_proc=5;
+
+
+  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+
+  Teuchos::RCP<crs_matrix_type> crsmatrix = Teuchos::rcp_const_cast<crs_matrix_type,const crs_matrix_type>(tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap));
+
+  Teuchos::RCP<tif_utest::NotCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > notcrsmatrix = Teuchos::rcp(new tif_utest::NotCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(crsmatrix));
+
+  Ifpack2::Relaxation<crs_matrix_type > prec(notcrsmatrix);
+
+  Teuchos::ParameterList params;
+  params.set("relaxation: type", "Jacobi");
+  prec.setParameters(params);
+
+  prec.initialize();
+  prec.compute();
+
+  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap,2), y(rowmap,2);
+  x.putScalar(1);
+
+  TEST_EQUALITY(x.getMap()->getNodeNumElements(), num_rows_per_proc);
+  TEST_EQUALITY(y.getMap()->getNodeNumElements(), num_rows_per_proc);
+
+  TEST_NOTHROW(x.getLocalMV().getValues());
+  TEST_NOTHROW(y.getLocalMV().getValues());
+
+  TEST_NOTHROW(prec.apply(x, y));
+}
+
+
 #define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test0, Scalar, LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test1, Scalar, LocalOrdinal,GlobalOrdinal) \
@@ -467,7 +508,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, LocalSymGaussSeidelZeroRows
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test3, Scalar, LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test4, Scalar, LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, SymGaussSeidelZeroRows, Scalar, LocalOrdinal, GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, LocalSymGaussSeidelZeroRows, Scalar, LocalOrdinal, GlobalOrdinal) 
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, LocalSymGaussSeidelZeroRows, Scalar, LocalOrdinal, GlobalOrdinal) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, NotCrsMatrix, Scalar, LocalOrdinal,GlobalOrdinal) \
 
 UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int, int)
 

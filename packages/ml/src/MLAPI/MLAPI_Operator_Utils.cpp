@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #include "ml_common.h"
 #if defined(HAVE_ML_MLAPI)
@@ -32,9 +32,9 @@ namespace Teuchos {
 
 namespace MLAPI {
 
-// ====================================================================== 
+// ======================================================================
 
-Operator GetRAP(const Operator& R, const Operator& A, 
+Operator GetRAP(const Operator& R, const Operator& A,
                 const Operator& P)
 {
   ML_Operator* Rmat = R.GetML_Operator();
@@ -59,8 +59,8 @@ Operator GetRAP(const Operator& R, const Operator& A,
 #include "ml_aggregate.h"
 #include "ml_agg_METIS.h"
 
-// ====================================================================== 
-Operator GetTranspose(const Operator& A, const bool byrow = true) 
+// ======================================================================
+Operator GetTranspose(const Operator& A, const bool byrow = true)
 {
   ML_Operator* ML_transp;
   ML_transp = ML_Operator_Create(GetML_Comm());
@@ -73,7 +73,7 @@ Operator GetTranspose(const Operator& A, const bool byrow = true)
   return(transp);
 }
 
-// ====================================================================== 
+// ======================================================================
 Operator GetIdentity(const Space& DomainSpace, const Space& RangeSpace)
 {
   ML_Operator* ML_eye = ML_Operator_Create(GetML_Comm());
@@ -85,7 +85,7 @@ Operator GetIdentity(const Space& DomainSpace, const Space& RangeSpace)
   return(eye);
 }
 
-// ====================================================================== 
+// ======================================================================
 MultiVector GetDiagonal(const Operator& A)
 {
   // FIXME
@@ -94,7 +94,7 @@ MultiVector GetDiagonal(const Operator& A)
 
   MultiVector D(A.GetDomainSpace());
   D = 0.0;
-  
+
   ML_Operator* matrix = A.GetML_Operator();
 
   if (matrix->getrow == NULL)
@@ -123,7 +123,7 @@ MultiVector GetDiagonal(const Operator& A)
 
 }
 
-// ====================================================================== 
+// ======================================================================
 MultiVector GetDiagonal(const Operator& A, const int offset)
 {
   // FIXME
@@ -132,7 +132,7 @@ MultiVector GetDiagonal(const Operator& A, const int offset)
 
   MultiVector D(A.GetDomainSpace());
   D = 0.0;
-  
+
   ML_Operator* matrix = A.GetML_Operator();
 
   if (matrix->getrow == NULL)
@@ -162,19 +162,19 @@ MultiVector GetDiagonal(const Operator& A, const int offset)
 
 }
 
-// ====================================================================== 
+// ======================================================================
 // DIAGONAL OPERATOR
 // - takes a MultiVector (w/ only one vector) in input
 // - allocates memory to store the diagonal as a double vector
 // - sets the pointers
 // - the destructor deletes the double vector
-// ====================================================================== 
+// ======================================================================
 
-static int diag_matvec(ML_Operator *Amat_in, int ilen, double p[], 
+static int diag_matvec(ML_Operator *Amat_in, int ilen, double p[],
                 int olen, double ap[])
 {
   double* D = (double*)Amat_in->data;
-  
+
   for (int i = 0; i < olen; i++) ap[i] = D[i] * p[i];
 
   return(1);
@@ -205,7 +205,7 @@ static void diag_destroy(void* data)
   delete[] D;
 }
 
-// ====================================================================== 
+// ======================================================================
 Operator GetDiagonal(const MultiVector& D)
 {
   if (D.GetNumVectors() != 1)
@@ -216,7 +216,7 @@ Operator GetDiagonal(const MultiVector& D)
     ML_THROW("empty diagonal vector in input", -1);
 
   double* diag = new double[size];
-  for (int i = 0 ; i < size ; ++i) 
+  for (int i = 0 ; i < size ; ++i)
     diag[i] = D(i);
 
   // creates the ML operator and store the diag pointer,
@@ -243,14 +243,14 @@ Operator GetDiagonal(const MultiVector& D)
   return(Diag);
 }
 
-// ====================================================================== 
+// ======================================================================
 static void widget_destroy(void* data)
 {
   struct ML_AGG_Matrix_Context* widget = (struct ML_AGG_Matrix_Context*)data;
   delete widget;
 }
 
-// ====================================================================== 
+// ======================================================================
 Operator GetJacobiIterationOperator(const Operator& Amat, double Damping)
 {
 
@@ -269,7 +269,7 @@ Operator GetJacobiIterationOperator(const Operator& Amat, double Damping)
 
   tmp_ML->data_destroy = widget_destroy;
 
-  ML_Operator_Set_Getrow(tmp_ML, widget->Amat->getrow->Nrows, 
+  ML_Operator_Set_Getrow(tmp_ML, widget->Amat->getrow->Nrows,
                          ML_AGG_JacobiSmoother_Getrows);
 
   // Creates a new copy of pre_comm, so that the old pre_comm
@@ -283,18 +283,18 @@ Operator GetJacobiIterationOperator(const Operator& Amat, double Damping)
   return(tmp);
 }
 
-// ====================================================================== 
-static int Ptent1D_matvec(ML_Operator *Amat_in, int ilen, double p[], 
+// ======================================================================
+static int Ptent1D_matvec(ML_Operator *Amat_in, int ilen, double p[],
                 int olen, double ap[])
 {
   double* D = (double*)Amat_in->data;
-  
+
   for (int i = 0; i < olen; i++) ap[i] = D[i] * p[i / 3];
 
   return(1);
 }
 
-// ====================================================================== 
+// ======================================================================
 static int Ptent1D_getrows(ML_Operator *data, int N_requested_rows, int requested_rows[],
                  int allocated_space, int columns[], double values[],
                  int row_lengths[])
@@ -320,7 +320,7 @@ static void Ptent1D_destroy(void* data)
   delete[] D;
 }
 
-// ====================================================================== 
+// ======================================================================
 Operator GetPtent1D(const MultiVector& D, const int offset = 0)
 {
   if (D.GetNumVectors() != 1)
@@ -357,8 +357,8 @@ Operator GetPtent1D(const MultiVector& D, const int offset = 0)
   MLDiag->getrow->Nrows = outvec_leng;
 
   // creates the domain space
-  vector<int> MyGlobalElements(invec_leng);
-  for (int i = 0 ; i < invec_leng ; ++i) 
+  std::vector<int> MyGlobalElements(invec_leng);
+  for (int i = 0 ; i < invec_leng ; ++i)
     MyGlobalElements[i] = D.GetVectorSpace()(i * 3) / 3;
   Space DomainSpace(invec_leng, -1, &MyGlobalElements[0]);
   Space RangeSpace = D.GetVectorSpace();
@@ -368,7 +368,7 @@ Operator GetPtent1D(const MultiVector& D, const int offset = 0)
   return(Diag);
 }
 
-// ====================================================================== 
+// ======================================================================
 int ML_Operator_Add2(ML_Operator *A, ML_Operator *B, ML_Operator *C,
 		    int matrix_type, double scalarA, double scalarB)
 {
@@ -386,10 +386,10 @@ int ML_Operator_Add2(ML_Operator *A, ML_Operator *B, ML_Operator *C,
   int count;
 #endif
 
-  if (A->getrow == NULL) 
+  if (A->getrow == NULL)
     pr_error("ML_Operator_Add: A does not have a getrow function.\n");
 
-  if (B->getrow == NULL) 
+  if (B->getrow == NULL)
     pr_error("ML_Operator_Add: B does not have a getrow function.\n");
 
   if (A->getrow->Nrows != B->getrow->Nrows) {
@@ -562,7 +562,7 @@ int ML_Operator_Add2(ML_Operator *A, ML_Operator *B, ML_Operator *C,
     temp->values  = values;
     temp->rowptr   = rowptr;
 
-    ML_Operator_Set_ApplyFuncData(C, B->invec_leng, A->outvec_leng, 
+    ML_Operator_Set_ApplyFuncData(C, B->invec_leng, A->outvec_leng,
 				  temp,A->outvec_leng, NULL,0);
     ML_Operator_Set_Getrow(C, A->outvec_leng, CSR_getrow);
     ML_Operator_Set_ApplyFunc (C, CSR_matvec);
@@ -575,7 +575,7 @@ int ML_Operator_Add2(ML_Operator *A, ML_Operator *B, ML_Operator *C,
   }
 #ifdef ML_WITH_EPETRA
   else {
-    ML_free(rowptr); 
+    ML_free(rowptr);
     ML_free(columns);
     ML_free(values);
   }
@@ -594,13 +594,13 @@ int ML_Operator_Add2(ML_Operator *A, ML_Operator *B, ML_Operator *C,
 
 }
 
-// ====================================================================== 
-void AnalyzeCheap(const Operator& A) 
+// ======================================================================
+void AnalyzeCheap(const Operator& A)
 {
   Ifpack_Analyze(*(A.GetRowMatrix()));
 }
 
-// ====================================================================== 
+// ======================================================================
 void PrintSparsity(const Operator& A, int NumPDEEquations)
 {
   std::string FileName = A.GetLabel() + ".ps";
@@ -608,8 +608,8 @@ void PrintSparsity(const Operator& A, int NumPDEEquations)
                        NumPDEEquations);
 }
 
-// ====================================================================== 
-Operator GetScaledOperator(const Operator& A, const double alpha) 
+// ======================================================================
+Operator GetScaledOperator(const Operator& A, const double alpha)
 {
   ML_Operator* ScaledA = 0;
   ScaledA = ML_Operator_ExplicitlyScale(A.GetML_Operator(),
@@ -621,11 +621,11 @@ Operator GetScaledOperator(const Operator& A, const double alpha)
   Operator res;
   res.Reshape(A.GetDomainSpace(), A.GetRangeSpace(), ScaledA,
               true, A.GetRCPOperatorBox());
-    
+
   return(res);
 }
 
-// ====================================================================== 
+// ======================================================================
 Operator Duplicate(const Operator& A)
 {
   return(GetScaledOperator(A, 1.0));

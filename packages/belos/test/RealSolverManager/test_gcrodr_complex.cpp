@@ -69,6 +69,9 @@
 // This test requires that Trilinos was compiled with complex
 // arithmetic support enabled.
 //
+// Updates
+// 4/15/2014: GCRODR is changed from RealSolverManager to SolverManager,
+//            and the test is changed from THROW to NOTHROW. (phtsuji)
 
 TEUCHOS_UNIT_TEST( GCRODR, RealDoesNotThrow )
 {
@@ -77,25 +80,25 @@ TEUCHOS_UNIT_TEST( GCRODR, RealDoesNotThrow )
   typedef double ST;
   typedef Belos::MultiVec<ST> MV;
   typedef Belos::Operator<ST> OP;
-  typedef Belos::MultiVecTraits<ST, MV> MVT;
-  typedef Belos::OperatorTraits<ST, MV, OP> OPT;
+  //typedef Belos::MultiVecTraits<ST, MV> MVT;
+  //typedef Belos::OperatorTraits<ST, MV, OP> OPT;
   typedef Belos::GCRODRSolMgr<ST, MV, OP> sol_mgr_type;
 
   RCP<sol_mgr_type> solver;
   TEST_NOTHROW( solver = rcp (new sol_mgr_type ()) );
 }
 
-TEUCHOS_UNIT_TEST( GCRODR, ComplexThrows )
+TEUCHOS_UNIT_TEST( GCRODR, ComplexDoesNotThrow )
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
   typedef std::complex<double> ST;
   typedef Belos::MultiVec<ST> MV;
   typedef Belos::Operator<ST> OP;
-  typedef Belos::MultiVecTraits<ST, MV> MVT;
-  typedef Belos::OperatorTraits<ST, MV, OP> OPT;
+  // typedef Belos::MultiVecTraits<ST, MV> MVT;
+  // typedef Belos::OperatorTraits<ST, MV, OP> OPT;
   typedef Belos::GCRODRSolMgr<ST, MV, OP> sol_mgr_type;
 
   RCP<sol_mgr_type> solver;
-  TEST_THROW( solver = rcp (new sol_mgr_type ()), std::logic_error );
+  TEST_NOTHROW( solver = rcp (new sol_mgr_type ()) );
 }

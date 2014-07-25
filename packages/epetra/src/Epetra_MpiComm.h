@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -62,15 +62,15 @@ class Epetra_BlockMap;
 */
 
 class EPETRA_LIB_DLL_EXPORT Epetra_MpiComm: public Epetra_Object, public virtual Epetra_Comm {
-    
+
   public:
 
     //! @name Constructor/Destructor Methods
-  //@{ 
+  //@{
   //! Epetra_MpiComm MPI Constructor.
   /*! Creates a Epetra_MpiComm instance for use with MPI.  If no specialized
     MPI communicator is needed, this constuctor can be called with the
-    argument MPI_COMM_WORLD.  
+    argument MPI_COMM_WORLD.
   */
   Epetra_MpiComm(MPI_Comm comm);
 
@@ -87,7 +87,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MpiComm: public Epetra_Object, public virtual
     };
 
   //! Epetra_MpiComm Destructor.
-  /*! Completely deletes a Epetra_MpiComm object.  
+  /*! Completely deletes a Epetra_MpiComm object.
     \warning Note:  All objects that depend
     on a Epetra_MpiComm instance should be destroyed prior to calling this
     function.
@@ -96,7 +96,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MpiComm: public Epetra_Object, public virtual
   //@}
 
   //! @name Barrier Methods
-  //@{ 
+  //@{
   //! Epetra_MpiComm Barrier function.
   /*!Causes each processor in the communicator to wait until all processors
     have arrived.
@@ -105,7 +105,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MpiComm: public Epetra_Object, public virtual
   //@}
 
   //! @name Broadcast Methods
-  //@{ 
+  //@{
   //! Epetra_MpiComm Broadcast function.
   /*!Takes list of input values from the root processor and sends to all other processors.
     \param Values InOut
@@ -178,7 +178,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MpiComm: public Epetra_Object, public virtual
   //@}
 
   //! @name Gather Methods
-  //@{ 
+  //@{
   //! Epetra_MpiComm All Gather function.
   /*! Take list of input values from all processors in the communicator and creates an ordered contiguous list of
     those values on each processor.
@@ -233,7 +233,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MpiComm: public Epetra_Object, public virtual
   //@}
 
   //! @name Sum Methods
-  //@{ 
+  //@{
   //! Epetra_MpiComm Global Sum function.
   /*! Take list of input values from all processors in the communicator, computes the sum and returns the
     sum to all processors.
@@ -289,7 +289,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MpiComm: public Epetra_Object, public virtual
   //@}
 
   //! @name Max/Min Methods
-  //@{ 
+  //@{
   //! Epetra_MpiComm Global Max function.
   /*! Take list of input values from all processors in the communicator, computes the max and returns the
     max to all processors.
@@ -396,9 +396,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MpiComm: public Epetra_Object, public virtual
   //@}
 
   //! @name Parallel Prefix Methods
-  //@{ 
+  //@{
   //! Epetra_MpiComm Scan Sum function.
-  /*! Take list of input values from all processors in the communicator, computes the scan sum and returns it 
+  /*! Take list of input values from all processors in the communicator, computes the scan sum and returns it
     to all processors such that processor i contains the sum of values from processor 0 up to and including
     processor i.
     \param MyVals In
@@ -411,7 +411,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MpiComm: public Epetra_Object, public virtual
   int ScanSum(double * MyVals, double * ScanSums, int Count) const;
 
   //! Epetra_MpiComm Scan Sum function.
-  /*! Take list of input values from all processors in the communicator, computes the scan sum and returns it 
+  /*! Take list of input values from all processors in the communicator, computes the scan sum and returns it
     to all processors such that processor i contains the sum of values from processor 0 up to and including
     processor i.
     \param MyVals In
@@ -424,7 +424,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MpiComm: public Epetra_Object, public virtual
   int ScanSum(int * MyVals, int * ScanSums, int Count) const;
 
   //! Epetra_MpiComm Scan Sum function.
-  /*! Take list of input values from all processors in the communicator, computes the scan sum and returns it 
+  /*! Take list of input values from all processors in the communicator, computes the scan sum and returns it
     to all processors such that processor i contains the sum of values from processor 0 up to and including
     processor i.
     \param MyVals In
@@ -437,7 +437,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MpiComm: public Epetra_Object, public virtual
   int ScanSum(long * MyVals, long * ScanSums, int Count) const;
 
   //! Epetra_MpiComm Scan Sum function.
-  /*! Take list of input values from all processors in the communicator, computes the scan sum and returns it 
+  /*! Take list of input values from all processors in the communicator, computes the scan sum and returns it
     to all processors such that processor i contains the sum of values from processor 0 up to and including
     processor i.
     \param MyVals In
@@ -451,18 +451,18 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MpiComm: public Epetra_Object, public virtual
   //@}
 
   //! @name Attribute Accessor Methods
-  //@{ 
-  
+  //@{
+
   //! Extract MPI Communicator from a Epetra_MpiComm object.
   MPI_Comm Comm() const {return(MpiCommData_->Comm_);};
 
-  //! Return my process ID. 
+  //! Return my process ID.
   /*! In MPI mode returns the rank of the calling process.  In serial mode
     returns 0.
   */
   int MyPID() const {return(MpiCommData_->rank_);};
-  
-  //! Returns total number of processes. 
+
+  //! Returns total number of processes.
   /*! In MPI mode returns the size of the MPI communicator.  In serial mode
     returns 1.
   */
@@ -470,7 +470,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MpiComm: public Epetra_Object, public virtual
   //@}
 
   //! @name Gather/Scatter and Directory Constructors
-  //@{ 
+  //@{
   //! Create a distributor object.
   Epetra_Distributor * CreateDistributor() const;
   //! Create a directory object for the given Epetra_BlockMap.
@@ -478,19 +478,19 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MpiComm: public Epetra_Object, public virtual
   //@}
 
   //! @name MPI-specific Methods
-  //@{ 
-  //! Acquire an MPI tag from the Epetra range of 24050-24099, increment tag. 
+  //@{
+  //! Acquire an MPI tag from the Epetra range of 24050-24099, increment tag.
   int GetMpiTag() const {int tag = MpiCommData_->curTag_++; if (tag > MpiCommData_->maxTag_) tag = MpiCommData_->minTag_; return(tag);};
 
-  //! Get the MPI Communicator (identical to Comm() method; used when we know we are MPI. 
+  //! Get the MPI Communicator (identical to Comm() method; used when we know we are MPI.
   MPI_Comm GetMpiComm() const {return(MpiCommData_->Comm_);};
   //@}
   //! @name Print object to an output stream
-  //@{ 
+  //@{
   //! Print method that implements Epetra_Object virtual Print method
   inline void Print(std::ostream & os) const {
 #ifdef EPETRA_HAVE_OMP
-#pragma omp parallel 
+#pragma omp parallel
 {
   int numThreads = omp_get_num_threads();
   int threadNum = omp_get_thread_num();
@@ -507,13 +507,13 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MpiComm: public Epetra_Object, public virtual
   //@}
 
   //! @name Expert Users and Developers Only
-  //@{ 
+  //@{
 
 	//! Returns the reference count of MpiCommData.
 	/*! (Intended for testing purposes.) */
 	int ReferenceCount() const {return(MpiCommData_->ReferenceCount());};
 
-	//! Returns a pointer to the MpiCommData instance this MpiComm uses. 
+	//! Returns a pointer to the MpiCommData instance this MpiComm uses.
 	/*! (Intended for developer use only for testing purposes.) */
 	const Epetra_MpiCommData * DataPtr() const {return(MpiCommData_);};
 
@@ -521,9 +521,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MpiComm: public Epetra_Object, public virtual
 
 	//! Assignment Operator
 	Epetra_MpiComm & operator=(const Epetra_MpiComm & Comm);
-  
+
  private:
-  
+
   int CheckInput(double * ptr, int count) const {if ((ptr==0) && (count>0)) return(-1); return(0);};
   int CheckInput(int * ptr, int count) const {if ((ptr==0) && (count>0)) return(-1); return(0);};
   int CheckInput(long * ptr, int count) const {if ((ptr==0) && (count>0)) return(-1); return(0);};

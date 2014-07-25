@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -49,8 +49,8 @@
   information needed getting timing information.  Currently it return
   the elapsed time for each calling processor..
   A Epetra_Comm object is required for building all Epetra_Time objects.
-  
-  Epetra_Time support both serial execution and (via MPI) parallel 
+
+  Epetra_Time support both serial execution and (via MPI) parallel
   distributed memory execution.  It is meant to insulate the user from
   the specifics of timing across a variety of platforms.
 */
@@ -61,7 +61,7 @@
 
 #ifdef EPETRA_MPI
 #include "mpi.h"
-#else 
+#else
 #if ICL || defined(_WIN32)
 #include <time.h>
 #else
@@ -73,7 +73,7 @@
 #endif
 
 class EPETRA_LIB_DLL_EXPORT Epetra_Time: public Epetra_Object {
-    
+
   public:
   //! Epetra_Time Constructor.
   /*! Creates a Epetra_Time instance. This instance can be queried for
@@ -88,7 +88,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Time: public Epetra_Object {
   Epetra_Time(const Epetra_Time& Time);
 
   //! Epetra_Time wall-clock time function.
-  /*! Returns the wall-clock time in seconds.  A code section can be 
+  /*! Returns the wall-clock time in seconds.  A code section can be
       timed by putting it between two calls to WallTime and taking the
       difference of the times.
   */
@@ -96,22 +96,22 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Time: public Epetra_Object {
 
   //! Epetra_Time function to reset the start time for a timer object.
   /*! Resets the start time for the timer object to the current time
-      A code section can be 
+      A code section can be
       timed by putting it between a call to ResetStartTime and ElapsedTime.
   */
   void ResetStartTime(void);
 
   //! Epetra_Time elapsed time function.
   /*! Returns the elapsed time in seconds since the timer object was
-      constructed, or since the ResetStartTime function was called. 
-      A code section can be 
-      timed by putting it between the Epetra_Time constructor and a call to 
+      constructed, or since the ResetStartTime function was called.
+      A code section can be
+      timed by putting it between the Epetra_Time constructor and a call to
       ElapsedTime, or between a call to ResetStartTime and ElapsedTime.
   */
   double ElapsedTime(void) const;
 
   //! Epetra_Time Destructor.
-  /*! Completely deletes a Epetra_Time object.  
+  /*! Completely deletes a Epetra_Time object.
   */
   virtual ~Epetra_Time(void);
 
@@ -126,7 +126,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Time: public Epetra_Object {
 
   double StartTime_;
   const Epetra_Comm * Comm_;
-  
+
 };
 
 #endif /* EPETRA_TIME_H */

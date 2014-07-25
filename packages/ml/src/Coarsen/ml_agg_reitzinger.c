@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #include "ml_agg_reitzinger.h"
 #include "ml_vampir.h"
@@ -24,9 +24,9 @@ struct scaled_nodal {
 extern int ML_ScaledKnApply(ML_Operator *Amat, int inlen, double in[],
                         int outlen, double out[]);
 
-int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes, 
+int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
                     int fine_level, int incr_or_decrease,
-                    ML_Aggregate *ag, 
+                    ML_Aggregate *ag,
                     ML_Operator **CurlCurlMatrix_array,
                     ML_Operator **MassMatrix_array,
                     ML_Operator *Tmat,
@@ -80,7 +80,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   int *encoded_dir_edge;
   double *pos_coarse_dirichlet, *neg_coarse_dirichlet, *edge_type;
 
-  ML_CommInfoOP *getrow_comm; 
+  ML_CommInfoOP *getrow_comm;
   int  N_input_vector;
   int  bail_flag;
 
@@ -93,7 +93,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   double time1=0.0, delta1=0.0;
 
   ML_Aggregate_Viz_Stats * grid_info;
-   
+
   t0 = GetClock();
 
   ml_nodes = *iml_nodes;
@@ -132,7 +132,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   Nnz_allgrids = Nnz_finegrid;
   ml_edges->ML_finest_level = fine_level;
 
-  Nlevels_nodal = ML_Gen_MGHierarchy_UsingAggregation(ml_nodes, fine_level, 
+  Nlevels_nodal = ML_Gen_MGHierarchy_UsingAggregation(ml_nodes, fine_level,
                                                       ML_DECREASING, ag);
   if (ML_Get_PrintLevel() > 10)
     ML_Operator_Profile(ml_edges->Amat+fine_level, "edge");
@@ -150,12 +150,12 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   ML_memory_check("L%d nodal end",fine_level);
   StartTimer(&time1);
 
-  coarsest_level = fine_level - Nlevels_nodal + 1; 
+  coarsest_level = fine_level - Nlevels_nodal + 1;
   i = ml_nodes->Amat[coarsest_level].invec_leng;
   ML_gsum_scalar_int(&i,&j,ml_edges->comm);
   if (i <= 1) {  /* no edges so cut out last level */
     Nlevels_nodal--;
-    coarsest_level = fine_level - Nlevels_nodal + 1; 
+    coarsest_level = fine_level - Nlevels_nodal + 1;
   }
 
   *Tmat_array = (ML_Operator **) ML_allocate(sizeof(ML_Operator *)*
@@ -206,7 +206,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
 #ifdef ML_VAMPIR
   VT_begin(ml_vt_building_coarse_T_state);
 #endif
-   
+
      /* Check that coarsest Ke that exists is larger than 1x1, globally.
         If not, clean up & break from main loop. */
      i = ml_edges->Amat[grid_level+1].outvec_leng;
@@ -239,31 +239,31 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      if (Kn_coarse->getrow->pre_comm != NULL)
         Nghost = Kn_coarse->getrow->pre_comm->total_rcv_length;
      else Nghost = 0;
-   
+
      /* pid_coarse_node = node to processor lookup table
         Main idea:
-        
+
         1) Record the proc. id of all nodes (local + ghost) on the processor.
         2) Exchange boundary information.  Ghost nodes should now have the
            proc.  id of the "owning" processor.
-   
+
         Tcoarse must be constructed in a way that processors do not duplicate
         work.  A processor owns a row if both nodes are local.  If one node
         is a ghost node, than the processor owns row i (edge i with endpoints
         k & j) if proc_id(k) < proc_id(j).  Otherwise, processor proc_id(j)
         will own row i.
      */
-   
+
      pid_coarse_node = (double *) ML_allocate(sizeof(double)*(Nghost+
                             Kn_coarse->invec_leng+1));
      for (i = 0; i < Kn_coarse->invec_leng+Nghost; i++)
         pid_coarse_node[i] = (double) Kn_coarse->comm->ML_mypid + 1;
-   
+
      if (Kn_coarse->getrow->pre_comm != NULL)
      ML_exchange_bdry(pid_coarse_node, Kn_coarse->getrow->pre_comm,
                       Kn_coarse->outvec_leng, Kn_coarse->comm,
                       ML_OVERWRITE,NULL);
-   
+
      /*
        Let's figure out who corresponds to a Dirichlet point.  Step thru
        rows of T, looking for those rows with only one node.  (This indicates
@@ -317,7 +317,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
            encoded_dir_edge[i] = -(1 + temp_bindx[0]);
          }
 	     if (temp_val[0] != -1.0 && temp_val[0] != 1.0)
-           printf("Warning uknown value T(%d,%d) = %e\n", i,temp_bindx[0],temp_val[0]); 
+           printf("Warning uknown value T(%d,%d) = %e\n", i,temp_bindx[0],temp_val[0]);
        }
        else encoded_dir_edge[i] = 0;
      }
@@ -373,7 +373,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
                           &temp_bindx,&temp_val,&row_length, 0);
         ML_az_sort(temp_bindx, row_length, NULL, NULL);
         nzctr += row_length;
-   
+
         /* Step through unknowns bindx[j] connected to unknown i. */
         for (j = 0; j < row_length; j++)
         {
@@ -393,7 +393,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
            /* NOTE: The logic that is used to decide which processor owns */
            /*       or needs an edge must match in two places. Search for */
            /*       this comment to find the other place in this file that*/
-           /*       must have the same logic as is used here.             */ 
+           /*       must have the same logic as is used here.             */
 
 #ifndef ML_NOTALWAYS_LOWEST
            /* If node i is owned by a smaller processor than node bindx[j] ...*/
@@ -464,19 +464,19 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      ML_Operator_Clean(Rn_coarse);
 #endif
 
-     csr_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct 
+     csr_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct
                                  ML_CSR_MSRdata));
      csr_data->columns = Tcoarse_bindx;
      csr_data->values  = Tcoarse_val;
      csr_data->rowptr  = Tcoarse_rowptr;
-   
+
      Tcoarse = ML_Operator_Create(ml_edges->comm);
      Tcoarse->data_destroy = ML_CSR_MSRdata_Destroy;
-     ML_Operator_Set_ApplyFuncData( Tcoarse, Kn_coarse->outvec_leng, counter, 
+     ML_Operator_Set_ApplyFuncData( Tcoarse, Kn_coarse->outvec_leng, counter,
                                     csr_data, counter, NULL, 0);
      ML_Operator_Set_Getrow(Tcoarse, counter, CSR_getrow);
      ML_Operator_Set_ApplyFunc(Tcoarse, CSR_matvec);
-   
+
      ML_CommInfoOP_Clone(&(Tcoarse->getrow->pre_comm),
                          ml_nodes->Amat[grid_level].getrow->pre_comm);
      (*Tmat_array)[grid_level] = Tcoarse;
@@ -490,7 +490,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
 #ifdef ML_MAXWELL_FREE_NODE_HIERARCHY
      ML_Operator_Clean(Kn_coarse);
 #endif
-   
+
      Pn_coarse = &(ml_nodes->Pmat[grid_level]);
 
      /* Test every coarse grid edge to make sure that it is really */
@@ -530,7 +530,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      ML_Operator_Apply(Tcoarse, Tcoarse->invec_leng, vec,
 		       Tcoarse->outvec_leng,Tcoarse_vec);
 
-     for (i1 = 0; i1 < Tcoarse->outvec_leng; i1++) 
+     for (i1 = 0; i1 < Tcoarse->outvec_leng; i1++)
        if (Tcoarse_vec[i1] < 0) Tcoarse_vec[i1] = -Tcoarse_vec[i1];
 
      /* turn off the scaling */
@@ -538,9 +538,9 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
 
      tmp_fun = Pn_coarse->matvec->func_ptr;
      if (tmp_fun == CSR_matvec)
-       Pn_coarse->matvec->func_ptr = CSR_ones_matvec; 
+       Pn_coarse->matvec->func_ptr = CSR_ones_matvec;
      else if (tmp_fun == sCSR_matvec)
-       Pn_coarse->matvec->func_ptr = sCSR_ones_matvec; 
+       Pn_coarse->matvec->func_ptr = sCSR_ones_matvec;
      else {
        printf("ML_Gen_MGHierarchy_UsingReitzinger: Expected CSR_matvec for projection operator and found something else?\n");
        exit(1);
@@ -564,7 +564,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
 		       Tfine->outvec_leng,Tfine_Pn_vec);
      ML_free(Pn_vec);
      Pn_coarse->matvec->func_ptr = tmp_fun;
-     for (i1 = 0; i1 < Tfine->outvec_leng; i1++) 
+     for (i1 = 0; i1 < Tfine->outvec_leng; i1++)
        if (Tfine_Pn_vec[i1] < 0) Tfine_Pn_vec[i1] = -Tfine_Pn_vec[i1];
 
      /* This code is to fix a bug that can occur in parallel   */
@@ -602,9 +602,9 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
 
      tmp_fun = Pn_coarse->matvec->func_ptr;
      if (tmp_fun == CSR_matvec)
-       Pn_coarse->matvec->func_ptr = CSR_ones_matvec; 
+       Pn_coarse->matvec->func_ptr = CSR_ones_matvec;
      else if (tmp_fun == sCSR_matvec)
-       Pn_coarse->matvec->func_ptr = sCSR_ones_matvec; 
+       Pn_coarse->matvec->func_ptr = sCSR_ones_matvec;
      else {
        printf("ML_Gen_MGHierarchy_UsingReitzinger: Expected CSR_matvec for projection operator and found something else?\n");
        exit(1);
@@ -630,13 +630,13 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
        pid_fine_edge[i] = Tfine->comm->ML_nprocs + 10;
        ML_get_matrix_row(Tfine, 1, &i, &allocated, &temp_bindx, &temp_val,
 			 &row_length, 0);
-       if ((row_length > 0) && (pid_fine_node[temp_bindx[0]] != 0.)) 
+       if ((row_length > 0) && (pid_fine_node[temp_bindx[0]] != 0.))
 	 pid_fine_edge[i] = (int) pid_fine_node[temp_bindx[0]];
        if ((row_length > 1) && (pid_fine_node[temp_bindx[1]] != 0.)) {
 	 /* NOTE: The logic that is used to decide which processor owns */
 	 /*       or needs an edge must match in two places. Search for */
 	 /*       this comment to find the other place in this file that*/
-	 /*       must have the same logic as is used here.             */ 
+	 /*       must have the same logic as is used here.             */
 #ifndef ML_NOTALWAYS_LOWEST
 	 if ( pid_fine_node[temp_bindx[1]] < pid_fine_node[temp_bindx[0]])
 	   pid_fine_edge[i] = (int) pid_fine_node[temp_bindx[1]];
@@ -688,7 +688,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      }
      Nneighbors_snd /= 2;
 
-     /* Figure out how many neighbors we will recieve from */     
+     /* Figure out how many neighbors we will recieve from */
      ML_gsum_vec_int(&num_msgs,&tmp_msgs,Tfine->comm->ML_nprocs,Tfine->comm);
      Nneighbors_rcv = num_msgs[Tfine->comm->ML_mypid];
      ML_free(tmp_msgs);
@@ -702,25 +702,25 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      } else request = NULL;
 
 
-     type = 1235; 
+     type = 1235;
      /* post receives */
      for (i = 0 ; i < Nneighbors_rcv ; i++) {
        partner = -1;
        Tfine->comm->USR_irecvbytes((void *) &(Nrcv_info[2*i]), 2*sizeof(int),
                 &partner, &type,Tfine->comm->USR_comm,request+i);
-     }  
+     }
      /* send messages */
      for (i = 0 ; i < Nneighbors_snd ; i++) {
-       partner = Nsnd_info[2*i]; 
+       partner = Nsnd_info[2*i];
        Nsnd_info[2*i] = Tfine->comm->ML_mypid;
-       Tfine->comm->USR_sendbytes((void *) &(Nsnd_info[2*i]), 2*sizeof(int), 
+       Tfine->comm->USR_sendbytes((void *) &(Nsnd_info[2*i]), 2*sizeof(int),
 			   partner, type, Tfine->comm->USR_comm);
        Nsnd_info[2*i] = partner;
      }
      /* wait */
      for (i = 0; i <  Nneighbors_rcv ; i++) {
        partner = -1;
-       Tfine->comm->USR_cheapwaitbytes((void *) &(Nrcv_info[2*i]), 2*sizeof(int), 
+       Tfine->comm->USR_cheapwaitbytes((void *) &(Nrcv_info[2*i]), 2*sizeof(int),
 			   &partner, &type, Tfine->comm->USR_comm, request+i);
      }
 
@@ -744,9 +744,9 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      /* lowest numbered processor to highest numbered processor*/
 
      for (i = 0 ; i < Tfine->getrow->Nrows; i++) {
-       if (pid_fine_edge[i] > Tfine->comm->ML_nprocs) 
+       if (pid_fine_edge[i] > Tfine->comm->ML_nprocs)
 	     pid_fine_edge[i] = -1;
-       if (pid_fine_edge[i] == Tfine->comm->ML_mypid) 
+       if (pid_fine_edge[i] == Tfine->comm->ML_mypid)
 	     pid_fine_edge[i] = -1;
      }
      ML_az_sort(pid_fine_edge, Tfine->outvec_leng, NULL, Tfine_Pn_vec);
@@ -762,20 +762,20 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      ML_free(pid_fine_edge);
 
      i1 = 0;
-     for (i = 0; i <  Nneighbors_rcv ; i++) 
+     for (i = 0; i <  Nneighbors_rcv ; i++)
        i1 += Nrcv_info[2*i+1];
 
      new_Tfine_Pn_vec = (double *) ML_allocate(sizeof(double)*(Nlocal+1+i1));
      for (i = 0; i < Nlocal; i++) new_Tfine_Pn_vec[i] = Tfine_Pn_vec[i];
 
-     
+
      /* pack up data and communicate data */
 
-     type = 1275; 
+     type = 1275;
      /* post receives */
      i1 = Nlocal;
      for (i = 0 ; i < Nneighbors_rcv ; i++) {
-       Tfine->comm->USR_irecvbytes((void *) &(new_Tfine_Pn_vec[i1]), 
+       Tfine->comm->USR_irecvbytes((void *) &(new_Tfine_Pn_vec[i1]),
 				   Nrcv_info[2*i+1]*sizeof(double),
 				   &(Nrcv_info[2*i]), &type,
 				   Tfine->comm->USR_comm, request+i);
@@ -783,15 +783,15 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      }
      i1 = Nlocal;
      for (i = 0 ; i < Nneighbors_snd ; i++) {
-       Tfine->comm->USR_sendbytes((void *) &(Tfine_Pn_vec[i1]), 
-				  Nsnd_info[2*i+1]*sizeof(double), 
+       Tfine->comm->USR_sendbytes((void *) &(Tfine_Pn_vec[i1]),
+				  Nsnd_info[2*i+1]*sizeof(double),
 				  Nsnd_info[2*i],type,Tfine->comm->USR_comm);
        i1 += Nsnd_info[2*i+1];
      }
 
      i1 = Nlocal;
      for (i = 0; i <  Nneighbors_rcv ; i++) {
-       Tfine->comm->USR_cheapwaitbytes((void *) &(new_Tfine_Pn_vec[i1]), 
+       Tfine->comm->USR_cheapwaitbytes((void *) &(new_Tfine_Pn_vec[i1]),
 				  Nrcv_info[2*i+1]*sizeof(double),
 				  &(Nrcv_info[2*i]), &type,
 				  Tfine->comm->USR_comm, request+i);
@@ -835,10 +835,10 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      for (i1 = 0; i1 < Tcoarse->outvec_leng; i1++)
      {
        if (Tcoarse_vec[i1] != 0.) {
-         if (i1 < Nnondirichlet) t1--; 
-         else if (i1 < Nnondirichlet + Npos_dirichlet) 
+         if (i1 < Nnondirichlet) t1--;
+         else if (i1 < Nnondirichlet + Npos_dirichlet)
            t2--;
-         else if (i1 < Nnondirichlet + Npos_dirichlet + Nneg_dirichlet) 
+         else if (i1 < Nnondirichlet + Npos_dirichlet + Nneg_dirichlet)
            t3--;
        }
      }
@@ -860,7 +860,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
          row_length = csr_data->rowptr[i1+1] - old_nzptr;
          csr_data->rowptr[counter+1] = row_length + csr_data->rowptr[counter];
          counter++;
-         for (i3 = 0; i3 < row_length; i3++) { 
+         for (i3 = 0; i3 < row_length; i3++) {
            csr_data->columns[nz_ptr] =  csr_data->columns[old_nzptr];
            csr_data->values[nz_ptr++] =  csr_data->values[old_nzptr++];
          }
@@ -873,9 +873,9 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      csr_data->rowptr = (int *) ML_realloc(csr_data->rowptr,
                     sizeof(int)*(counter+1));
      csr_data->values = (double *) ML_realloc(csr_data->values,
-                       sizeof(double)*nz_ptr); 
+                       sizeof(double)*nz_ptr);
      csr_data->columns = (int *) ML_realloc(csr_data->columns,
-                       sizeof(int)*nz_ptr); 
+                       sizeof(int)*nz_ptr);
      StopTimer(&time1,&delta1);
      sprintf(str,"(level %d) Time to realloc T operator",grid_level);
      ReportTimer(delta1, str, ml_edges->comm);
@@ -890,7 +890,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      /* matrix triple product will yield a matrix with +/- 1 and +/- 2's.*/
      /* If we remove all the 1's and divide the 2's by 2. we arrive at Pe*/
      /*------------------------------------------------------------------*/
-   
+
      /* We want all +1 entries to avoid changing sign of entries in Pe. */
      Pn_coarse = &(ml_nodes->Pmat[grid_level]);
      csr_data = (struct ML_CSR_MSRdata *) Pn_coarse->data;
@@ -907,8 +907,8 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
        printf("ML_Gen_MGHierarchy_UsingReitzinger: Unknown matrix getrow function for nodal interpolation\n");
        exit(1);
      }
-   
-     /* Check that both dimensions of T are strictly greater than 0. 
+
+     /* Check that both dimensions of T are strictly greater than 0.
         If not, clean up & break from main loop. */
      i = Tcoarse->outvec_leng;
      ML_gsum_scalar_int(&i,&j,ml_edges->comm);
@@ -967,7 +967,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
 #ifdef ML_VAMPIR
   VT_begin(ml_vt_build_Pe_state);
 #endif
-   
+
      if (Tfine->invec_leng != ml_nodes->Pmat[grid_level].outvec_leng)
      {
        printf("In ML_Gen_MGHierarchy_UsingReitzinger: Tmat and Pnodal\n");
@@ -989,9 +989,9 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
 
      /* We could try to patch Tcoarse_trans to avoid the error check failing
         in ML_rap.  Right now, we do the check that's done in ML_rap.  If
-        the check fails, the number of AMG levels is reduced by one and we 
+        the check fails, the number of AMG levels is reduced by one and we
         exit the main loop. */
-  
+
      bail_flag = 0;
      N_input_vector = Tcoarse_trans->invec_leng;
      getrow_comm = Tcoarse_trans->getrow->pre_comm;
@@ -1034,7 +1034,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      }
 
      StartTimer(&time1);
-     ML_rap(Tfine, &(ml_nodes->Pmat[grid_level]), Tcoarse_trans, 
+     ML_rap(Tfine, &(ml_nodes->Pmat[grid_level]), Tcoarse_trans,
         &(ml_edges->Pmat[grid_level]),ML_CSR_MATRIX);
      ML_memory_check("L%d Pe RAP",grid_level);
      StopTimer(&time1,&delta1);
@@ -1044,7 +1044,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      Pe = &(ml_edges->Pmat[grid_level]);
 
      csr_data = (struct ML_CSR_MSRdata *) Pe->data;
-   
+
      /********************************************************************/
      /* weed out the 1's and divide the 2's by -2.                       */
      /* Note: my signs seem flipped from what we thought the triple      */
@@ -1055,7 +1055,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      /* MG grid hierarchy.                                               */
      /*------------------------------------------------------------------*/
      StartTimer(&time1);
-   
+
      i = ML_CommInfoOP_Compute_TotalRcvLength(Pe->getrow->pre_comm);
      edge_type = (double *) ML_allocate(sizeof(double)*(1+i+Pe->invec_leng));
      if (edge_type == NULL)
@@ -1108,7 +1108,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      /*******************************************************************/
      /* weed out zeros in Pe.                                           */
      /*-----------------------------------------------------------------*/
-    
+
      lower = csr_data->rowptr[0];
      nz_ptr = 0;
      for (i = 0; i < Pe->outvec_leng; i++) {
@@ -1126,7 +1126,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
          nz_ptr++;
        }
      }
-    
+
      Pe->getrow->func_ptr = CSR_getrow;
      Pe->getrow->ML_id    = ML_NONEMPTY;
      Pe->matvec->func_ptr = CSR_matvec;
@@ -1147,7 +1147,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
 #ifdef ML_VAMPIR
   VT_end(ml_vt_build_Pe_state);
 #endif
-   
+
 #ifdef ML_MAXWELL_FREE_NODE_HIERARCHY
      ML_Operator_Clean(Pn_coarse);
 #endif
@@ -1184,7 +1184,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
            ML_Aggregate_Set_DampingFactor(ag, smooth_factor);
 
         /* If (curl,curl) matrix is available, smooth with it. */
-        if (CurlCurlMatrix_array != NULL && 
+        if (CurlCurlMatrix_array != NULL &&
             CurlCurlMatrix_array[grid_level+1] != NULL) {
 
            SmoothingWithCurlOnly = 1;
@@ -1232,7 +1232,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
            ML_Operator_Move2HierarchyAndDestroy(&tmpmat,
                                                 ml_edges->Amat+grid_level+1 );
         }
-        
+
         /* Weed out small values in Pe. */
         if (droptolPeEntries == ML_DDEFAULT && !SmoothingWithCurlOnly)
           droptol = 1e-4;
@@ -1306,7 +1306,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
          M_ml = ML_Operator_Create(Pe->comm);
             ML_2matmult(ml_edges->Amat+grid_level+1,(*Tmat_array)[grid_level+1],
                         M_ml, ML_CSR_MATRIX );
-         if (M_ml != NULL) 
+         if (M_ml != NULL)
            ML_Operator_Apply(M_ml, Nedge, one_vec, Nedge, Mdiag_est);
          else
            for (i = 0; i < Nedge; i++) Mdiag_est[i] = 1.;
@@ -1322,7 +1322,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
          ML_Operator_Apply(&(ml_edges->Pmat[grid_level+1]), Nedge,
                   one_vec, j, temp);
          for (i = 0; i < j; i++) temp[i] *= Mdiag_est[i];
-           ML_Operator_Apply(&(ml_edges->Rmat[grid_level+2]), j, 
+           ML_Operator_Apply(&(ml_edges->Rmat[grid_level+2]), j,
               temp, Nedge, Mdiag_est);
          ML_free(temp);
        }
@@ -1334,11 +1334,11 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
        }
        fclose(fp);
        */
-     
+
        ML_Operator_Get_Diag(&(ml_nodes->Amat[grid_level+1]), Nnode, &diag);
 
        /* scale Ttrans by inv(diag) and Pe by Mdiag_est */
-       csr_data = (struct ML_CSR_MSRdata *) Pe->data; 
+       csr_data = (struct ML_CSR_MSRdata *) Pe->data;
        for (i = 0; i < Nedge; i++) {
          for (j= csr_data->rowptr[i]; j < csr_data->rowptr[i+1]; j++) {
            if (Mdiag_est[i] != 0.0) csr_data->values[j] *= Mdiag_est[i];
@@ -1352,7 +1352,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
          }
        }
        TTtransPe = ML_Operator_Create(ml_edges->comm);
-       ML_rap((*Tmat_array)[grid_level+1], (*Tmat_trans_array)[grid_level+1], 
+       ML_rap((*Tmat_array)[grid_level+1], (*Tmat_trans_array)[grid_level+1],
           Pe,TTtransPe,ML_CSR_MATRIX);
 
        /*ML_Operator_Print(TTtransPe,"TTtransPe");*/
@@ -1362,7 +1362,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
            if ( diag[i] != 0.0 ) csr_data->values[j] *= diag[i];
          }
        }
-       csr_data = (struct ML_CSR_MSRdata *) Pe->data; 
+       csr_data = (struct ML_CSR_MSRdata *) Pe->data;
        for (i = 0; i < Nedge; i++) {
          for (j= csr_data->rowptr[i]; j < csr_data->rowptr[i+1]; j++) {
            /* FIXME JJH what does it mean if the diagonal is zero? */
@@ -1398,7 +1398,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
        /*       beta = 0.; */
        beta = -2*beta; /* cancel out the divide below */
        ML_Operator_Clean(&(ml_nodes->Amat[grid_level+1]));
- 
+
 
        /* scale TTtransPe by -beta/2*    */
 
@@ -1434,7 +1434,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      ML_memory_check("L%d Pe enriched",grid_level);
 
      ML_Operator_Set_1Levels(&(ml_edges->Pmat[grid_level]),
-                 &(ml_edges->SingleLevel[grid_level]), 
+                 &(ml_edges->SingleLevel[grid_level]),
                  &(ml_edges->SingleLevel[grid_level+1]));
      ML_Operator_ChangeToSinglePrecision(ml_edges->Pmat+grid_level);
      if (ML_Get_PrintLevel() > 10)
@@ -1450,7 +1450,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
          MassMatrix_array[grid_level+1] != NULL) {
        MassMatrix_array[grid_level] = ML_Operator_Create(ml_edges->comm);
        ML_rap(ml_edges->Rmat+grid_level+1,
-              MassMatrix_array[grid_level+1], 
+              MassMatrix_array[grid_level+1],
               ml_edges->Pmat+grid_level,
               MassMatrix_array[grid_level] , ML_MSR_MATRIX);
      }
@@ -1459,7 +1459,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
          CurlCurlMatrix_array[grid_level+1] != NULL) {
        CurlCurlMatrix_array[grid_level] = ML_Operator_Create(ml_edges->comm);
        ML_rap(ml_edges->Rmat+grid_level+1,
-              CurlCurlMatrix_array[grid_level+1], 
+              CurlCurlMatrix_array[grid_level+1],
               ml_edges->Pmat+grid_level,
               CurlCurlMatrix_array[grid_level] , ML_MSR_MATRIX);
      }
@@ -1508,11 +1508,11 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      if (perm != NULL) {
        /* permute T */
        Tnew = ML_Operator_Create(Tcoarse->comm);
-       ML_2matmult(perm[0], Tcoarse, Tnew, ML_CSR_MATRIX); 
+       ML_2matmult(perm[0], Tcoarse, Tnew, ML_CSR_MATRIX);
        ML_Operator_Move2HierarchyAndDestroy(&Tnew, Tcoarse);
        /* permute T trans */
        Tnew = ML_Operator_Create(Tcoarse_trans->comm);
-       ML_2matmult(Tcoarse_trans, perm[1], Tnew, ML_CSR_MATRIX); 
+       ML_2matmult(Tcoarse_trans, perm[1], Tnew, ML_CSR_MATRIX);
        ML_Operator_Move2HierarchyAndDestroy(&Tnew, Tcoarse_trans);
 
        ML_Operator_Destroy(&(perm[0]));
@@ -1576,7 +1576,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
 
     if (Tfine->comm->ML_mypid==0 )
     {
-      if (Nnz_finegrid <= 0) 
+      if (Nnz_finegrid <= 0)
          printf("Number of nonzeros on finest grid not given! Complexity not computed!\n");
       else
          printf("Multilevel complexity is %e\n",
@@ -1665,8 +1665,8 @@ int ML_Gen_SmoothPnodal(ML *ml,int level, int clevel, void *data,
    ML_Krylov_Solve(kdata, Nfine, NULL, NULL);
    max_eigen = ML_Krylov_Get_MaxEigenvalue(kdata);
    max_eigen = 2.;
-   Amat->lambda_max = max_eigen; 
-   Amat->lambda_min = kdata->ML_eigen_min; 
+   Amat->lambda_max = max_eigen;
+   Amat->lambda_min = kdata->ML_eigen_min;
    ML_Krylov_Destroy( &kdata );
    if ( max_eigen <= 0.0 ) {
      printf("Gen_Prolongator warning : max eigen <= 0.0 \n");
@@ -1681,8 +1681,8 @@ int ML_Gen_SmoothPnodal(ML *ml,int level, int clevel, void *data,
    ML_Operator_Set_ApplyFuncData(AGGsmoother, widget.Amat->invec_leng,
 				 widget.Amat->outvec_leng, &widget,
 				 widget.Amat->matvec->Nrows, NULL, 0);
-   ML_Operator_Set_Getrow(AGGsmoother, 
-                          widget.Amat->getrow->Nrows, 
+   ML_Operator_Set_Getrow(AGGsmoother,
+                          widget.Amat->getrow->Nrows,
                           ML_AGG_JacobiSmoother_Getrows);
    ML_CommInfoOP_Clone(&(AGGsmoother->getrow->pre_comm),
 		       widget.Amat->getrow->pre_comm);
@@ -1787,8 +1787,8 @@ int ml_dup_entry(int node1, int node2, struct ml_linked_list **Trecorder,
 
 
 
-int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat, 
-			   ML_Operator *Tfine_mat, ML_Operator *Tcoarse_mat, 
+int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat,
+			   ML_Operator *Tfine_mat, ML_Operator *Tcoarse_mat,
 			   ML_Operator *Pe_mat, int Tcoarse_nz_bound)
 {
   /* Given SPn, Tfine and the nodal aggregates (given by Pn), compute */
@@ -1803,8 +1803,10 @@ int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat,
   struct ML_CSR_MSRdata *Pn, *SPn, *Tfine, *Tcoarse, *Pe;
   double thesign;
   int left,leftagg, right, rightagg;
-  int coef_count, coef_cols[100], jcoef_count, k;
-  double alpha0, beta_m, coef_vals[100];
+  int coef_count, jcoef_count, k;
+  int coef_cols[100] = {0};
+  double alpha0, beta_m;
+  double coef_vals[100] = {0.0};
   int Trowcount = 0, Tnzcount = 0, Pnzcount = 0;
   int *SPn_columns, *SPn_rowptr, *Tfine_columns, *Pn_columns, *Pn_rowptr;
   int *Tfine_rowptr;
@@ -1892,7 +1894,7 @@ int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat,
 
     /* special case when Tfine(i,:) has only one entry */
     if (Trownnz == 1) {
-      if (Tfine_values[Tfine_rowptr[i]] == 0.) 
+      if (Tfine_values[Tfine_rowptr[i]] == 0.)
       {
           Tfine_values[Tfine_rowptr[i]] = Tfine_values[Tfine_rowptr[i+1]];
           Tfine_values[Tfine_rowptr[i+1]] = 0.;
@@ -1909,7 +1911,7 @@ int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat,
          coef_vals[coef_count++] = thesign*SPn_values[j];
       }
       ml_comp_Pe_entries(coef_cols, coef_vals, coef_count, -1, Trecorder,
-             &Trowcount, &Tnzcount, Tcoarse, 
+             &Trowcount, &Tnzcount, Tcoarse,
              &Pnzcount,Pe->columns,Pe->values);
     }
 
@@ -1935,7 +1937,7 @@ int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat,
 
       if (leftagg == rightagg) {
       /* case 1 */
-      
+
       /* copy alpha into coef */
       for (j = SPn_rowptr[left]; j < SPn_rowptr[left+1]; j++) {
 	    if (SPn_columns[j] != leftagg) {
@@ -1962,7 +1964,7 @@ int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat,
         /* else beta0 = SPn_values[j]; */
       }
 
-      ml_comp_Pe_entries(coef_cols, coef_vals, coef_count, leftagg, 
+      ml_comp_Pe_entries(coef_cols, coef_vals, coef_count, leftagg,
 			   Trecorder, &Trowcount, &Tnzcount, Tcoarse,
 			   &Pnzcount,Pe->columns,Pe->values);
 	coef_count = 0;
@@ -1990,7 +1992,7 @@ int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat,
 	  }
 	}
 	ml_comp_Pe_entries(coef_cols, coef_vals, coef_count, leftagg,
-			   Trecorder, &Trowcount, &Tnzcount, Tcoarse, 
+			   Trecorder, &Trowcount, &Tnzcount, Tcoarse,
 			   &Pnzcount,Pe->columns,Pe->values);
 	coef_count = 0;
 
@@ -2009,7 +2011,7 @@ int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat,
 	  }
 	}
 	ml_comp_Pe_entries(coef_cols, coef_vals, coef_count, rightagg,
-			   Trecorder, &Trowcount, &Tnzcount, Tcoarse, 
+			   Trecorder, &Trowcount, &Tnzcount, Tcoarse,
 			   &Pnzcount,Pe->columns,Pe->values);
 	coef_count = 1;
 	coef_cols[0] = leftagg;
@@ -2068,7 +2070,7 @@ int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat,
 int ml_comp_Pe_entries(int coef_cols[], double coef_values[], int coef_count,
 		       int leftagg, struct ml_linked_list **Trecorder,
 		       int *Trowcount, int *Tnzcount,
-		       struct ML_CSR_MSRdata *Tcoarse, 
+		       struct ML_CSR_MSRdata *Tcoarse,
 		       int *Pnzcount, int Pe_columns[], double Pe_values[]) {
 
   /* Add entries in Pe using interpolation coefficients coef_values[j]   */
@@ -2087,7 +2089,7 @@ int ml_comp_Pe_entries(int coef_cols[], double coef_values[], int coef_count,
 
   for (j = 0; j < coef_count; j++) {
     ml_dup_entry(leftagg, coef_cols[j], Trecorder,
-	      Tcoarse_columns, Tcoarse_rowptr,&lower, &upper, 
+	      Tcoarse_columns, Tcoarse_rowptr,&lower, &upper,
 	      &duplicate_row);
     if (duplicate_row == -1) {
 
@@ -2109,7 +2111,7 @@ int ml_comp_Pe_entries(int coef_cols[], double coef_values[], int coef_count,
       edge = duplicate_row;
       k = Tcoarse_rowptr[duplicate_row];
       if (Tcoarse_columns[k] == leftagg) k++;
-      if ( Tcoarse_values[k] == -1.) 
+      if ( Tcoarse_values[k] == -1.)
 	coef_values[j] = -coef_values[j];
     }
     Pe_columns[ (*Pnzcount) ] = edge;
@@ -2125,7 +2127,7 @@ int ml_comp_Pe_entries(int coef_cols[], double coef_values[], int coef_count,
 /* hierarchy stored in 'ml_edges'.                                          */
 /****************************************************************************/
 
-int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges, ML **new_ml , 
+int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges, ML **new_ml ,
 				    ML_Operator *originalM)
 {
 
@@ -2163,7 +2165,7 @@ int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges, ML **new_ml ,
      /* This stuff sets the 'to' and 'from' field in P */
      /* which indicates from what level we interpolate */
      /* and to what level the interpolation goes.      */
-     ML_Operator_Set_1Levels(blockmat, &(block_ml->SingleLevel[mesh_level]), 
+     ML_Operator_Set_1Levels(blockmat, &(block_ml->SingleLevel[mesh_level]),
 			     &(block_ml->SingleLevel[old_mesh_level]));
 
      /* Make 2x2 block diagonal R */
@@ -2175,22 +2177,22 @@ int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges, ML **new_ml ,
      /* which indicates from what level we interpolate */
      /* and to what level the interpolation goes.      */
      ML_Operator_Set_1Levels(blockmat,
-                             &(block_ml->SingleLevel[old_mesh_level]), 
+                             &(block_ml->SingleLevel[old_mesh_level]),
 			     &(block_ml->SingleLevel[mesh_level]));
-				  
+
      /* Make 2x2 block diagonal A */
 
      original = &(ml_edges->Amat[mesh_level]);
      blockmat = &(block_ml->Amat[mesh_level]);
      /*  newM = ML_Operator_Create(ml_edges->comm);
-	 ML_rap(&(ml_edges->Rmat[old_mesh_level]), original, 
+	 ML_rap(&(ml_edges->Rmat[old_mesh_level]), original,
 	 &(ml_edges->Pmat[mesh_level]), newM, ML_CSR_MATRIX);
      */
      newM = ML_Operator_Create(ml_edges->comm);
-     ML_rap(&(ml_edges->Rmat[old_mesh_level]), lastM, 
+     ML_rap(&(ml_edges->Rmat[old_mesh_level]), lastM,
             &(ml_edges->Pmat[mesh_level]), newM, ML_CSR_MATRIX);
      lastM = newM;
- 
+
      /* comment these two out if you want to do rap */
      ML_Operator_Gen_blockmat(blockmat, original, newM);
 
@@ -2269,7 +2271,7 @@ void ML_Reitzinger_CheckCommutingProperty(ML *ml_nodes, ML *ml_edges,
   Tfine_Pn_vec = (double *) ML_allocate(sizeof(double)*(Tfine->outvec_leng+1));
   ML_random_vec(vec, Pn->invec_leng, ml_edges->comm);
   d1 = sqrt(ML_gdot(Pn->invec_leng, vec, vec, ml_edges->comm));
-  for (i = 0; i < Pn->invec_leng; i++) 
+  for (i = 0; i < Pn->invec_leng; i++)
     vec[i] /= d1;
 
   ML_Operator_Apply(Pn, Pn->invec_leng, vec,
@@ -2283,7 +2285,7 @@ void ML_Reitzinger_CheckCommutingProperty(ML *ml_nodes, ML *ml_edges,
   ML_free(Pn_vec);
 
   /*   Pe*Tcoarse*v - Tfine*Pn*v    */
-  for (i = 0; i < Pe->outvec_leng ; i++) 
+  for (i = 0; i < Pe->outvec_leng ; i++)
     vec[i] = vec[i] - Tfine_Pn_vec[i];
 
   if (ML_Get_PrintLevel() > 0)  {
@@ -2303,7 +2305,7 @@ void ML_Reitzinger_CheckCommutingProperty(ML *ml_nodes, ML *ml_edges,
       for (i = 0; i < Pe->outvec_leng; i++) {
         /* change this tolerance if you actually want */
         /* to see the individual components.          */
-        if (fabs(vec[i]) > 1.0) 
+        if (fabs(vec[i]) > 1.0)
           fprintf(stderr,"%d: ===> %d is %20.13e vs %20.13e\n",
              Pe->comm->ML_mypid,i,vec[i] + Tfine_Pn_vec[i],Tfine_Pn_vec[i]);
       }
@@ -2350,17 +2352,17 @@ int ML_ScaledKnApply(ML_Operator *Amat, int inlen, double in[],
   temp  = (double *) ML_allocate(sizeof(double)*(Nedge+1));
   temp2 = (double *) ML_allocate(sizeof(double)*(inlen+1));
 
-  for (i = 0; i < inlen; i++) 
+  for (i = 0; i < inlen; i++)
     temp2[i] = in[i]/sqrt(ML_dabs((widget->diag)[i]));
 
 
   ML_Operator_Apply(widget->T, inlen, temp2, Nedge, temp);
   ML_free(temp2);
-  for (i = 0; i < Nedge; i++) 
+  for (i = 0; i < Nedge; i++)
     temp[i] *= (widget->Mdiag_est)[i];
   ML_Operator_Apply(widget->Ttrans, Nedge, temp, outlen, out);
 
-  for (i = 0; i < outlen; i++) 
+  for (i = 0; i < outlen; i++)
     out[i] /= sqrt(ML_dabs((widget->diag)[i]));
 
   ML_free(temp);

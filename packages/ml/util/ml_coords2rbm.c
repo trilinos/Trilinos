@@ -24,7 +24,7 @@ double x,y,z, *rbm;
       exit(1);
    }
    i = 0;
-  
+
    while ( i < Nrigid) {
       fp_in = fopen(input_file,"r");
       if (fp_in == NULL) {
@@ -56,15 +56,15 @@ double x,y,z, *rbm;
       if (i == 0) fprintf(fp_out,"%d %d\n",6, Nnodes*Ndof);
 
       for (j = 0; j < Nnodes; j++) {
-         if (fscanf(fp_in,"%d",&k) != 1) 
+         if (fscanf(fp_in,"%d",&k) != 1)
             printf("Data missing before %dth x coordinate\n",j);
-         if (fscanf(fp_in,"%d",&k) != 1) 
+         if (fscanf(fp_in,"%d",&k) != 1)
             printf("Data Missing before %dth x coordinate\n",j);
-         if (fscanf(fp_in,"%lf",&x) != 1) 
+         if (fscanf(fp_in,"%lf",&x) != 1)
             printf("Data missing for %dth x coordinate\n",j);
-         if (fscanf(fp_in,"%lf",&y) != 1) 
+         if (fscanf(fp_in,"%lf",&y) != 1)
             printf("Data missing for %dth y coordinate\n",j);
-         if (fscanf(fp_in,"%lf",&z) != 1) 
+         if (fscanf(fp_in,"%lf",&z) != 1)
             printf("Data missing for %dth z coordinate\n",j);
 
          ML_Coord2RBM(1, &x, &y, &z, rbm, Ndof,0);

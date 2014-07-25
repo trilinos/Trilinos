@@ -1,6 +1,6 @@
 # awk script to provide context for MueLu timers
 #
-# Don't run this script directly, instead use compareTE.sh.
+# Don't run this script directly, instead use mueprof.sh.
 #
 # Note: This requires GNU awk and won't run in compatibility mode.
 #
@@ -11,400 +11,259 @@
 ###############################################################################
 #stuff that happens before processing any files
 BEGIN {
-    # regular expression for timing output
-    #regex="[0-9]*[.][0-9e-]*";
-    regex="[0-9]+[.]?[0-9]*[e]?[-]?[0-9]* [(][0-9][)]";
-    startParsingTimers=0;
+    whichBlockToAnalyze=blockNumber; #passed in from shell script
+    foundTimerBlock=0;
+    foundTimersToReport=0;
+    possibleTotalLabels[1] = "ScalingTest: 2 - MueLu Setup";
+    possibleTotalLabels[2] = "MueLu: Hierarchy: Setup [(]total[)]";
+    possibleTotalLabels[3] = "nalu MueLu preconditioner setup";
+    possibleTotalLabels[4] = "nalu MueLu/tpetra preconditioner setup";
+    possibleTotalLabels[5] = "nalu MueLu/epetra preconditioner setup";
+    tt=""
+    cnt=0
+    # variable "etDelta" controls how delta in Epetra and Tpetra times is displayed
+    # set from mueprof.sh, values can be "subtract" or "divide"
+    # default is "subtract"
+    #
+    # variable "agnostic" allows comparison of two Epetra or two Tpetra files
+    # set from mueprof.sh, values can be 0 (false) or 1 (true)
+    # default is 0
 }
 
 ###############################################################################
 #stuff that happens when processing all files
 {
-    #fix minor difference between Epetra and Tpetra smoother tags
-    if (match($0,"Linear algebra library: ")) {
-      after = substr($0,RSTART+RLENGTH);
-      linalg[FILENAME] = after;
+    if (tt != FILENAME) {
+      tt=FILENAME
+      #reset for next file
+      whichBlockToAnalyze=blockNumber;
+      foundTimerBlock=0;
+      foundTimersToReport=0;
+      #hack, since we can't count on having "Linear algebra library: Tpetra" print in nalu
+      linalg[FILENAME] = "Epetra"
+      if (agnostic==1) {
+        if (cnt==1)
+          linalg[FILENAME] = "Tpetra";
+        cnt++;
+      }
     }
 
     #indicates start of MueLu timer output
     if (match($0,"^Timer Name")) {
-      startParsingTimers=1;
+      #logic to ensure only the ith solver block is analyzed
+      whichBlockToAnalyze--;
+      if (whichBlockToAnalyze>0)
+        foundTimerBlock=0;
+      if (whichBlockToAnalyze==0)
+        foundTimerBlock=1;
+      if (whichBlockToAnalyze<0) {
+        nextfile; #we've moved past the solver block of interest,
+                  #stop analyzing this file
+      }
     }
 
-    #indicates start of MueLu parent/child tags
-    #and end of timers
-    if (match($0,"^Parent Child Map")) {
-      startParsingPC=1;
-      startParsingTimers=0;
-    }
-
-    if (startParsingPC) {
-      levelSpecific=0;
-      #try to match mutually exclusive level-specific timer
-      if (match($0,"^Key: ")) {
-        startOfKey = RSTART+RLENGTH;
-        #print "found key line >"$0"<"
-        if (match($0,"[(]level=[0-9]+[)]")) {
-          endOfKey=RSTART+RLENGTH-1;
-          key=substr($0,startOfKey,endOfKey-startOfKey+1);
-          #print "  found key >"key"<"
-          #removing whitespace before and after
-          sub(/^[ ]*/,"",key);
-          sub(/[ ]*$/,"",key);
-          levelSpecific=1;
+    if (foundTimerBlock) {
+      if (match($0,"^MueLu: ")) {
+        # matched a MueLu timer
+        #fix minor difference between Epetra and Tpetra smoother tags
+        sub(/Ifpack2Smoother/,"IfpackSmoother");
+        sub(/Amesos2Smoother/,"AmesosSmoother");
+        if (!match($0," sync ")) {
+          if (match($0,"[(]level=[0-9][)]")) {
+            # timer is level-specific (and by its nature excludes calls to child factories)
+            foundTimersToReport=1;
+            factAndLevel = substr($0,1,RSTART-1+RLENGTH);
+            alltimes = substr($0,RSTART+RLENGTH);
+            cutCmd="cut -f3 -d')' | cut -f1 -d'('"
+            maxtime = ExtractTime(alltimes,cutCmd);
+            if (match(factAndLevel,"MueLu: Hierarchy: Solve")) {
+              #TODO figure out which solve labels to pull out
+              solveLabels[factAndLevel] = factAndLevel;
+              solveTimes[factAndLevel,FILENAME] = maxtime;
+            } else {
+              setupLabels[factAndLevel] = factAndLevel;
+              setupTimes[factAndLevel,FILENAME] = maxtime;
+            }
+          }
         }
       }
-      #get corresponding parent timer 
-      if (match($0,"Value: ") && levelSpecific) {
-        startOfValue = RSTART+RLENGTH;
-        match($0,"$");
-        value=substr($0,startOfValue,RSTART+RLENGTH-1);
-        #print "  found value >"value"<"
-        ParentOf[key] = value;
+
+      if (match($0,"^YY Tpetra Transpose Only")) {
+        linalg[FILENAME] = "Tpetra"
       }
-    } #startParsingPC
 
-    if (startParsingTimers && match($0,"^MueLu: ")) {
-
-        #match time
-        match($0,regex);
-        #RSTART is where the pattern starts
-        #RLENGTH is the length of the pattern
-        before = substr($0,1,RSTART-1);
-        #remove trailing white space in variable "before"
-        sub(/[ ]*$/,"",before);
-        pattern = substr($0,RSTART,RLENGTH);
-        after = substr($0,RSTART+RLENGTH);
-
-        # totals, not level-specific 
-        if (match($0,"[(]total[)]")) {
-          tlabels[before] = before;
-          ttallies[before,linalg[FILENAME]] = pattern;
-        }
-
-        # totals by level
-        if (match($0,"[(]total, level=")) {
-          tllabels[before] = before;
-          tltallies[before,linalg[FILENAME]] = pattern;
-        }
-
-        # no totals, not level-specific
-        if (!match($0,"level") && !match($0,"total")) {
-          ntlabels[before] = before;
-          nttallies[before,linalg[FILENAME]] = pattern;
-        }
-
-        # no totals, level-specific
-        if (match($0,"[(]level=[0-9][)]")) {
-          #print linalg[FILENAME] " | " before " | " pattern " | " after   #debugging
-          factAndLevel = before;
-          ntllabels[factAndLevel] = factAndLevel;
-          ntltallies[factAndLevel,linalg[FILENAME]] = pattern;
+      # Check for any reported total setup time.  This is printed as a sanity check
+      # against the running total.
+      for (i in possibleTotalLabels) {
+        if (match($0,possibleTotalLabels[i])) {
+          pattern = substr($0,RSTART,RLENGTH);
           alltimes = substr($0,RSTART+RLENGTH);
-          #trim off white space before and after
-          sub(/^[ ]*/,"",alltimes);
-          sub(/[ ]*$/,"",alltimes);
-          if (match(alltimes,/[0-9]+\.?[0-9]*[e]?[-]?[0-9]* [(][0-9]*\.?[0-9]*[)]$/)) {
-            #print "  match found!\n"
-            #before = substr(alltimes,1,RSTART-1);
-            #remove trailing white space in variable "before"
-            #sub(/[ ]*$/,"",before);
-            #pattern = substr(alltimes,RSTART,RLENGTH);
-            alltimes = substr(alltimes,1,RSTART-1);
-            #print ">"alltimes"<"
-            #after = substr(alltimes,RSTART+RLENGTH);
-            #print before " | " pattern " | " after   #debugging
-            #print "  " pattern
-          }
-          # get the max time
-          if (match(alltimes,/[0-9]+\.?[0-9]*[e]?[-]?[0-9]* [(][0-9][)][ ]*$/)) {
-            themax = substr(alltimes,RSTART,RLENGTH);
-            sub(/^[ ]*/,"",themax); sub(/[ ]*$/,"",themax);
-            #print "themax = " themax
-            ntltallies[factAndLevel,linalg[FILENAME]] = themax;
-          }
-          ntlenchilada[factAndLevel,linalg[FILENAME]] = alltimes;
-          #print "ntlenchilada[" before "," linalg[FILENAME] "] = " ntlenchilada[before,linalg[FILENAME]]      #debugging
-        }
-
-        #subfactory timings, summed  over all levels
-        if (match($0,"[(]sub, total[)]")) {
-          stlabels[before] = before;
-          sttallies[before,linalg[FILENAME]] = pattern;
-        }
-
-        #subfactory timings, level-specific
-        if (match($0,"[(]sub, total, level")) {
-          stllabels[before] = before;
-          stltallies[before,linalg[FILENAME]] = pattern;
-        }
-
-    }
-
-    # Pull out the reported total setup time.  This is printed as a sanity check.
-    foundTotal=0;
-    if (startParsingTimers && match($0,"^ScalingTest: 2 - MueLu Setup")) {
-      foundTotal=1;
-      #match($0,regex);
-      #TotalSetup[linalg[FILENAME]] = substr($0,RSTART,RLENGTH);
-      alltimes = substr($0,RSTART+RLENGTH);
-      #trim off white space before and after
-      sub(/^[ ]*/,"",alltimes); sub(/[ ]*$/,"",alltimes);
-      #chop off the 4th time
-      if (match(alltimes,/[0-9]+\.?[0-9]*[e]?[-]?[0-9]* [(][0-9]*\.?[0-9]*[)]$/)) {
-        alltimes = substr(alltimes,1,RSTART-1);
-      }
-      #print ">"alltimes"<"
-      # get the max time
-      if (match(alltimes,/[0-9]+\.?[0-9]*[e]?[-]?[0-9]* [(][0-9][)][ ]*$/)) {
-        themax = substr(alltimes,RSTART,RLENGTH);
-        sub(/^[ ]*/,"",themax); sub(/[ ]*$/,"",themax);
-        TotalSetup[linalg[FILENAME]] = themax;
-      }
-    }
-    if (foundTotal==0) {
-      #TODO Code consolidation.
-      #TODO This duplicates the previous if-block.  Only the regex in the "if" is different.
-      if (startParsingTimers && match($0,"^MueLu: Hierarchy: Setup [(]total[)]")) {
-        #match($0,regex);
-        #TotalSetup[linalg[FILENAME]] = substr($0,RSTART,RLENGTH);
-        alltimes = substr($0,RSTART+RLENGTH);
-        #trim off white space before and after
-        sub(/^[ ]*/,"",alltimes); sub(/[ ]*$/,"",alltimes);
-        #chop off the 4th time
-        if (match(alltimes,/[0-9]+\.?[0-9]*[e]?[-]?[0-9]* [(][0-9]*\.?[0-9]*[)]$/)) {
-          alltimes = substr(alltimes,1,RSTART-1);
-        }
-        #print ">"alltimes"<"
-        # get the max time
-        if (match(alltimes,/[0-9]+\.?[0-9]*[e]?[-]?[0-9]* [(][0-9][)][ ]*$/)) {
-          themax = substr(alltimes,RSTART,RLENGTH);
-          sub(/^[ ]*/,"",themax); sub(/[ ]*$/,"",themax);
-          TotalSetup[linalg[FILENAME]] = themax;
+          cutCmd="cut -f3 -d')' | cut -f1 -d'('"
+          TotalSetup[pattern,FILENAME] = ExtractTime(alltimes,cutCmd);
         }
       }
-    }
+    } #if (foundTimerBlock)
+
 }
 
 ###############################################################################
 function PrintHeader(description,linalg)
 {
   space = " ";
-  printf("%80s      ",toupper(description));
+  printf("%60s      ",toupper(description));
+  k=1
   for (j in linalg) {
-    printf("%10s  ",linalg[j]);
+    if (agnostic==1)
+      printf("file%d       ",k++);
+    else
+      printf("%10s  ",linalg[j]);
     printf(" (total)");
   }
-  printf("%10s   ","T/E ratio");
-  printf("\n%80s          ---------------------------------\n",space);
-}
-
-###############################################################################
-# Reorder all the timings by sorting either the Epetra or Tpetra timing values
-# in ascending order.
-function SortAndReportTimings(libToSortOn,mylabels,tallies,linalg)
-{
-  numInds=1;
-  for (i in mylabels) {
-    # the plus 0 is just a trick to make asort treat "talliesToSort" as numeric
-    talliesToSort[numInds] = tallies[i,libToSortOn]+0;
-    newlabels[talliesToSort[numInds]] = mylabels[i];
-    for (j in linalg) {
-      newtallies[talliesToSort[numInds],linalg[j]] = tallies[i,linalg[j]];
+  if (length(linalg)>1)
+    if (etDelta == "ratio") {
+      if (agnostic==1)
+        printf("%13s  ","L/R ratio");
+      else
+        printf("%13s  ","T/E ratio");
     }
-    numInds++;
-  }
-
-  # Sort timings for library "libToSortOn" in ascending order.
-  # These sorted timings are used as the indices into newlabels and newtallies.
-  SortAndPrint(talliesToSort,newlabels,newtallies,linalg);
-
-  #awk has weird scoping rules
-  delete newlabels
-  delete newtallies
-  delete talliesToSort
-}
-
-###############################################################################
-# Reorder all the timings by sorting either the Epetra or Tpetra timer numbers
-# in ascending order.
-function SortByTimerNumber(libToSortOn,mylabels,tallies,timerNumbersToSort,linalg)
-{
-  numInds=1;
-  for (i in mylabels) {
-    if (match(i," [0-9]* :")) {
-      # pull out the timer number
-      #RSTART is where the pattern starts
-      #RLENGTH is the length of the pattern
-      timerNumber = substr(i,RSTART,RLENGTH);
-      sub(/[ ]*/,"",timerNumber); #remove spaces
-      sub(/:/,"",timerNumber); #remove colon
-      # the plus 0 is just a trick to make asort treat "timerNumbersToSort" as numeric
-      timerNumbersToSort[numInds] = timerNumber+0;
-      newlabels[timerNumbersToSort[numInds]] = mylabels[i];
-      for (j in linalg) {
-        newtallies[timerNumbersToSort[numInds],linalg[j]] = tallies[i,linalg[j]];
-      }
-      numInds++;
+    if (etDelta == "diff") {
+      if (agnostic==1)
+        printf("%13s  ","L-R (sec.)");
+      else
+        printf("%13s  ","T-E (sec.)");
     }
-  }
-
-  CopyArray(newlabels,mylabels);
-  CopyArray(newtallies,tallies);
-  delete newlabels
-  delete newtallies
-}
-
-###############################################################################
-# Reorder all the timings by sorting either the Epetra or Tpetra timer numbers
-# in ascending order.
-function SortAndReportByTimerNumber(libToSortOn,mylabels,tallies,linalg)
-{
-  numInds=1;
-  for (i in mylabels) {
-    if (match(i," [0-9]* :")) {
-      # pull out the timer number
-      #RSTART is where the pattern starts
-      #RLENGTH is the length of the pattern
-      timerNumber = substr(i,RSTART,RLENGTH);
-      #print "timerNumber = " timerNumber
-      sub(/[ ]*/,"",timerNumber); #remove spaces
-      sub(/:/,"",timerNumber); #remove colon
-      # the plus 0 is just a trick to make asort treat "timerNumbersToSort" as numeric
-      timerNumbersToSort[numInds] = timerNumber+0;
-      #print "mylabels[" i "] = " mylabels[i];
-      newlabels[timerNumbersToSort[numInds]] = mylabels[i];
-      #print "newlabels[" timerNumbersToSort[numInds] "] = " mylabels[i];
-      for (j in linalg) {
-        newtallies[timerNumbersToSort[numInds],linalg[j]] = tallies[i,linalg[j]];
-      }
-      numInds++;
-    }
-  }
-
-  SortAndPrint(timerNumbersToSort,newlabels,newtallies,linalg);
-
-  #awk has weird scoping rules
-  delete newlabels
-  delete newtallies
-  delete timerNumbersToSort
-}
-###############################################################################
-# helper function
-function SortAndPrint(arrayToSort,labels,tallies,linalg)
-{
-  asort(arrayToSort);
-  for (j in linalg) {
-    runningTotals[j] = 0;
-  }
-  arrayLeng=0
-  for (i in arrayToSort) arrayLeng++; #length(arrayToSort) doesn't work here for some reason
-  for (i=1; i<arrayLeng+1; i++) {
-    ind = arrayToSort[i];
-    printf("%80s  ==> ",labels[ind]);
-    for (j in linalg) {
-      runningTotals[j] += tallies[ind,linalg[j]];
-      printf("%10.4f   (%5.2f)",tallies[ind,linalg[j]],runningTotals[j]);
-    }
-    if (tallies[ind,"Epetra"] != 0) {
-      printf("%8.2f   ",tallies[ind,"Tpetra"] / tallies[ind,"Epetra"]);
-    }
-    printf("\n");
-  }
+  printf("\n%60s          -------------------------------------------------\n",space);
 }
 
 ###############################################################################
 # For sanity purposes, print the total that MueLu prints
 function PrintTotalSetupTime()
 {
-  #printf("%80s          ----------------------------------------------\n%100s"," "," ");
-  printf("%80s          ----------------\n%83s"," "," ");
-  for (i in linalg)
-    printf("Hierarchy Setup: %5.2f seconds       ",TotalSetup[linalg[i]]);
-    #printf("%77s%-17s%-17s%-17s%-11s\n"," "," "," ","MueLu reported",TotalSetup[linalg[j]] " sec.");
+  printf("%60s          ----------------\n"," ");
+  if (etDeltaTotal != 0)
+    printf("%90s          delta total=%5.1f\n"," ",etDeltaTotal);
+  for (i in TotalSetup) {
+    split(i,sep,SUBSEP); #breaks multiarray index i up into its constituent parts.
+                         #we only want the first one, sep[1]
+    printf("%60s  ==>   %6.3f seconds       \n",sep[1],TotalSetup[i]);
+  }
+}
+
+###############################################################################
+function SortAndReportTimings(libToSortOn, timerLabels, timerValues, linalg)
+{
+  if (length(linalg) == 1)
+    for (i in linalg) libToSortOn = linalg[i]
+  len=0
+  for (i in timerLabels) {
+    valuesAndLabels[len] = timerLabels[i];
+    for (j in linalg)
+      valuesAndLabels[len] = valuesAndLabels[len] "@" timerValues[i,j]
+    len++
+  }
+
+  #combine timer label and corresponding values into one array entry
+  sortField=2
+  for (i in linalg) {
+    if (linalg[i] == libToSortOn) break
+    sortField++
+  }
+  #use -g to sort properly numbers in scientific notation
+  sortCmd = "sort -k" sortField" -g -t @"
+  SystemSort(valuesAndLabels,sortedValuesAndLabels,sortCmd);
+
+  jj=2
+  for (i in linalg) {
+    runningTotals[i] = 0
+    if (linalg[i] == "Epetra") epetraInd = jj;
+    if (linalg[i] == "Tpetra") tpetraInd = jj;
+    jj++
+  }
+  etDeltaTotal=0
+  for (j=1; j<=len; j++) {
+    split(sortedValuesAndLabels[j],fields,"@");
+    printf("%3d: %60s  ==> ",len-j+1,fields[1]);
+    offset=2
+    for (i in linalg) {
+      runningTotals[i] += fields[offset]
+      printf("%10.2f   (%5.1f)",fields[offset],runningTotals[i]);
+      offset++
+    }
+    if (fields[epetraInd] != 0 && length(linalg) > 1) {
+      if (etDelta == "ratio")
+        printf("%11.2f   ",fields[tpetraInd] / fields[epetraInd]);
+      if (etDelta == "diff")
+        printf("%11.2f   ",fields[tpetraInd] - fields[epetraInd]);
+        etDeltaTotal+=fields[tpetraInd] - fields[epetraInd];
+    }
+    printf("\n");
+  }
+
 }
 ###############################################################################
-function CopyArray(arrayToCopy, copy_array)
+function DumpLabelsAndTimers(timerLabels, timerValues, linalg)
 {
-  for (word in arrayToCopy) {
-    copy_array[word] = arrayToCopy[word];
+  for (i in timerLabels) {
+    print "timer name: >" timerLabels[i] "<"
+    for (j in linalg)
+      print "    values: >" timerValues[i,j] "<"
   }
+}
+###############################################################################
+
+function SystemSort(arrayToSort, sortedArray, sortCmd)
+{
+  # Write to the coprocess...
+  for(i in arrayToSort) print arrayToSort[i] |& sortCmd
+  close(sortCmd, "to")
+  i=0
+  # ...and read back from it
+  while((sortCmd |& getline sortedArray[++i]) > 0)
+    ;
+  close(sortCmd)
+}
+
+###############################################################################
+
+function ExtractTime(alltimes,cutCmd)
+{
+  alltimes = RemoveWhiteSpace(alltimes);
+  # system call to cutCmd
+  # see GNU Awk manual section 12.3, Two-Way Communications with Another Process
+  print alltimes |& cutCmd
+  close(cutCmd,"to")
+  cutCmd |& getline themax
+  close(cutCmd)
+  themax = RemoveWhiteSpace(themax);
+  return (themax);
+}
+
+###############################################################################
+
+function RemoveWhiteSpace(theString)
+{
+  sub(/^[ ]*/,"",theString); sub(/[ ]*$/,"",theString);
+  return (theString)
 }
 ###############################################################################
 
 ###############################################################################
 #stuff that happens after processing all files
+###############################################################################
 END {
 
-  if (printSummedStats) {
-    PrintHeader("Timings including child calls, summed over all levels",linalg);
-    SortAndReportTimings("Tpetra",tlabels,ttallies,linalg);
-    printf("\n\n");
-  }
-
-  if (printLevelStats) {
-    PrintHeader("Timings including child calls, level specific",linalg);
-    SortAndReportTimings("Tpetra",tllabels,tltallies,linalg);
-    printf("\n\n");
-  }
-
-  if (printSummedStats) {
-    PrintHeader("Timings without child calls, summed over all levels",linalg);
-    SortAndReportTimings("Tpetra",ntlabels,nttallies,linalg);
-    PrintTotalSetupTime();
-    printf("\n\n");
-  }
-
-if (1) {
-  printLevelStats = 1;
-  if (printLevelStats) {
-    PrintHeader("Timings without child calls, level specific",linalg);
-    SortAndReportTimings(linalg[FILENAME],ntllabels,ntltallies,linalg);
-    PrintTotalSetupTime();
-    printf("\n\n");
-  }
-
-  CopyArray(ntllabels,newlabs);
-  CopyArray(ntltallies,newtals);
-  SortByTimerNumber(libToSortOn,newlabs,newtals,timerNumbers,linalg);
-  asort(timerNumbers);
-  arrayLeng=0;
-  for (i in timerNumbers) arrayLeng++;
-  for (i=1; i<arrayLeng+1; i++) {
-    myTN[newlabs[i]] = i;
-  }
-
-  printf("%77s%-17s%-17s%-17s%-11s\n"," ","minimum","average","maximum","running sum");
-  printf("%77s%-17s%-17s%-17s%-11s\n"," ","-------","-------","-------","-----------");
-
-  for (j in linalg) {
-    runningTotals[j] = 0;
-  }
-  for (i=1; i<arrayLeng+1; i++) {
-    tn = timerNumbers[i];
-    for (j in linalg) {
-      me = newlabs[tn];
-      if (i>1) {
-        lastTimer=newlabs[timerNumbers[i-1]];
-        if (ParentOf[me] == "no parent") {tab[me] = "";}
-        else                             {tab[me] = tab[ParentOf[me]] "  ";}
-      }
-      runningTotals[j] += newtals[tn,linalg[j]]
-      printf("%-75s  %-s%-11s\n",tab[me] me,ntlenchilada[me,linalg[j]],runningTotals[j]);
+  if (foundTimersToReport) {
+    if (debug) {
+      print "============================="
+      DumpLabelsAndTimers(setupLabels,setupTimes,linalg);
+      print "============================="
     }
+    PrintHeader("Setup times (level specific) excluding child calls ",linalg);
+    SortAndReportTimings(sortByLib,setupLabels,setupTimes,linalg);
+    PrintTotalSetupTime();
+  } else {
+    printf("\nFound only %d solver blocks, you requested block %d.\n",blockNumber-whichBlockToAnalyze,blockNumber);
   }
-  printf("%77s%-17s%-17s%-17s%-11s\n"," "," "," "," ","-------");
-  printf("%77s%-17s%-17s%-17s%-11s\n"," "," "," ","MueLu reported",TotalSetup[linalg[j]] " sec.");
-}
+  printf("\n");
 
-#  if (printSummedStats) {
-#    PrintHeader("Timings for subfactories, summed over all levels",linalg);
-#    SortAndReportTimings("Tpetra",stlabels,sttallies,linalg);
-#    printf("\n\n");
-#  }
-
-#  if (printLevelStats) {
-#    PrintHeader("Timings for subfactories, level specific",linalg);
-#    SortAndReportTimings("Tpetra",stllabels,stltallies,linalg);
-#  }
 }

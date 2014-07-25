@@ -10,10 +10,10 @@
 #include "ml_utils.h"
 #include "ml_epetra.h"
 #include "ml_epetra_utils.h"
-#include "Epetra_Map.h" 
+#include "Epetra_Map.h"
 #include "Epetra_Vector.h"
-#include "Epetra_CrsMatrix.h" 
-#include "Epetra_VbrMatrix.h" 
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_VbrMatrix.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Time.h"
 #include "ml_ifpack.h"
@@ -33,14 +33,14 @@
 
 using namespace ML_Epetra;
 
-static map<void*, bool> MemoryManager;
+static std::map<void*, bool> MemoryManager;
 
-int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level, 
-                  Teuchos::ParameterList& List, 
-                  const Epetra_Comm& Comm, 
+int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level,
+                  Teuchos::ParameterList& List,
+                  const Epetra_Comm& Comm,
                   Ifpack_Handle_Type ** Ifpack_Handle, int reuseSymbolic);
 
-// ====================================================================== 
+// ======================================================================
 // MS // This does not work yet with ML_ALL_LEVELS
 int ML_Gen_Smoother_Ifpack(ML *ml, const char* Type, int Overlap,
                            int nl, int pre_or_post,
@@ -52,7 +52,7 @@ int ML_Gen_Smoother_Ifpack(ML *ml, const char* Type, int Overlap,
    int status = 1;
    char str[80];
    Ifpack_Handle_Type *Ifpack_Handle;
-   
+
    Teuchos::ParameterList List = *((Teuchos::ParameterList *) iList);
    Epetra_Comm *Comm = (Epetra_Comm *) iComm;
 #ifdef ML_TIMING
@@ -77,8 +77,8 @@ int ML_Gen_Smoother_Ifpack(ML *ml, const char* Type, int Overlap,
      reuseSymbolic = 0;
    } //if (reuseSymbolic)
 
-   status = ML_Ifpack_Gen(ml, Type, Overlap, nl, List, *Comm, &Ifpack_Handle, reuseSymbolic); 
-   assert (status == 0); 
+   status = ML_Ifpack_Gen(ml, Type, Overlap, nl, List, *Comm, &Ifpack_Handle, reuseSymbolic);
+   assert (status == 0);
 
 
    /* This is only used to control the factorization sweeps. I believe */
@@ -101,7 +101,7 @@ int ML_Gen_Smoother_Ifpack(ML *ml, const char* Type, int Overlap,
    }
    else if (pre_or_post == ML_POSTSMOOTHER) {
      sprintf(str,"IFPACK_post%d",nl);
-     status = ML_Smoother_Set(&(ml->post_smoother[nl]), 
+     status = ML_Smoother_Set(&(ml->post_smoother[nl]),
 			      (void*)Ifpack_Handle, fun, sweeps, 0.0, str);
      ml->post_smoother[nl].data_destroy = ML_Smoother_Clean_Ifpack;
 #ifdef ML_TIMING
@@ -123,7 +123,7 @@ int ML_Gen_Smoother_Ifpack(ML *ml, const char* Type, int Overlap,
      ml->timing->total_build_time   += ml->pre_smoother[nl].build_time;
 #endif
    }
-   else 
+   else
      pr_error("ML_Gen_Smoother_Ifpack: unknown pre_or_post choice\n");
 
    return(status);
@@ -131,9 +131,9 @@ int ML_Gen_Smoother_Ifpack(ML *ml, const char* Type, int Overlap,
 }
 // ================================================ ====== ==== ==== == =
 
-int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level, 
-                  Teuchos::ParameterList& List, 
-                  const Epetra_Comm& Comm, 
+int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level,
+                  Teuchos::ParameterList& List,
+                  const Epetra_Comm& Comm,
                   Ifpack_Handle_Type ** Ifpack_Handle,
                   int reuseSymbolic)
 {
@@ -186,7 +186,7 @@ int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level,
       MPI_Comm_split(Ke->comm->USR_comm,hasRows,Ke->comm->ML_mypid,&ifpackComm);
       if (hasRows == 1) (*Ifpack_Handle)->freeMpiComm = 1;
 #     endif //ifdef ML_MPI
-      
+
       // Do I have CRS storage?
       // Note: MSR keeps everything in cols, so if rowptr isn't null, we're in CRS
       struct ML_CSR_MSRdata* M_= (struct ML_CSR_MSRdata*)ML_Get_MyGetrowData(Ke);
@@ -230,16 +230,16 @@ int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level,
       Prec = Factory.Create(Type, Ifpack_Matrix, Overlap);
       Prec->SetParameters(List);
       ML_CHK_ERR(Prec->Compute());
-      
+
       (*Ifpack_Handle)->A_Base = (void *)Prec;
-      
+
       // Grab the lambda's if needed
       if(!strcmp(Type,"Chebyshev")){
         Ifpack_Chebyshev* C=dynamic_cast<Ifpack_Chebyshev*>(Prec);
         assert(C);
         ml->Amat[curr_level].lambda_min=C->GetLambdaMin();
         ml->Amat[curr_level].lambda_max=C->GetLambdaMax();
-      }    
+      }
     } //if (hasRows==1)
     else {
       (*Ifpack_Handle)->A_Base = 0;
@@ -253,9 +253,9 @@ int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level,
 
   } //if (!reuseSymbolic) ... else
 
-  
+
   return 0;
-  
+
 } /* ML_Ifpack_Gen */
 
 #ifdef ML_DUMP_IFPACK_FACTORS
@@ -339,7 +339,7 @@ int ML_Ifpack_Solve(void * data, double * x, double * rhs )
 
   Epetra_Vector Erhs(View, Prec->OperatorRangeMap(), rhs);
   Epetra_Vector Ex(View, Prec->OperatorDomainMap(), x);
-  Prec->ApplyInverse(Erhs,Ex); 
+  Prec->ApplyInverse(Erhs,Ex);
 
   return 0;
 

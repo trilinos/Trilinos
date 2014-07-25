@@ -40,12 +40,7 @@
 // @HEADER
 
 // MP::Vector includes
-#include "Stokhos_Sacado_Kokkos.hpp"
-
-// Kokkos includes
-#include "Kokkos_Serial.hpp"
-
-typedef Kokkos::Serial Kokkos_Serial;
+#include "Stokhos_Tpetra_MP_Vector.hpp"
 
 #define INSTANTIATE_MP_VECTOR_STORAGE(INSTMACRO, STORAGE, LO, GO, N)      \
   INSTMACRO( Sacado::MP::Vector<STORAGE>, LO, GO, N )
@@ -54,20 +49,74 @@ typedef Kokkos::Serial Kokkos_Serial;
   typedef Stokhos::StaticFixedStorage<L,S,NUM,D> SFS_ ## L ## _ ## S ## _ ## NUM ## _ ## D; \
   INSTANTIATE_MP_VECTOR_STORAGE(INSTMACRO, SFS_ ## L ## _ ## S ## _ ## NUM ## _ ## D, LO, GO, N)
 
-#define INSTANTIATE_MP_VECTOR_SFS_SLD(INSTMACRO, S, L, D, LO, GO, N)       \
-  INSTANTIATE_MP_VECTOR_SFS_SLND(INSTMACRO, S, L, 1, D, LO, GO, N)         \
-  INSTANTIATE_MP_VECTOR_SFS_SLND(INSTMACRO, S, L, 2, D, LO, GO, N)         \
-  INSTANTIATE_MP_VECTOR_SFS_SLND(INSTMACRO, S, L, 3, D, LO, GO, N)         \
-  INSTANTIATE_MP_VECTOR_SFS_SLND(INSTMACRO, S, L, 4, D, LO, GO, N)
+#if defined(__MIC__)
+// For MIC (Xeon Phi) -- vector width = 8 (double precision)
+#define INSTANTIATE_MP_VECTOR_SFS_SLD_CPU(INSTMACRO, S, L, D, LO, GO, N) \
+  INSTANTIATE_MP_VECTOR_SFS_SLND(INSTMACRO, S, L, 16, D, LO, GO, N)      \
+  INSTANTIATE_MP_VECTOR_SFS_SLND(INSTMACRO, S, L, 32, D, LO, GO, N)
+#else
+// For CPU with AVX instructions -- vector width = 4 (double precision)
+#define INSTANTIATE_MP_VECTOR_SFS_SLD_CPU(INSTMACRO, S, L, D, LO, GO, N) \
+  INSTANTIATE_MP_VECTOR_SFS_SLND(INSTMACRO, S, L,  4, D, LO, GO, N)      \
+  INSTANTIATE_MP_VECTOR_SFS_SLND(INSTMACRO, S, L, 16, D, LO, GO, N)      \
+  INSTANTIATE_MP_VECTOR_SFS_SLND(INSTMACRO, S, L, 32, D, LO, GO, N)
+#endif
 
-#define INSTANTIATE_MP_VECTOR_SFS_D(INSTMACRO, D, LO, GO, N) \
-  INSTANTIATE_MP_VECTOR_SFS_SLD(INSTMACRO, double, int, D, LO, GO, N)
+// For CUDA GPU -- warp size = 32
+#define INSTANTIATE_MP_VECTOR_SFS_SLD_GPU(INSTMACRO, S, L, D, LO, GO, N) \
+  INSTANTIATE_MP_VECTOR_SFS_SLND(INSTMACRO, S, L, 16, D, LO, GO, N)      \
+  INSTANTIATE_MP_VECTOR_SFS_SLND(INSTMACRO, S, L, 32, D, LO, GO, N)
 
-#define INSTANTIATE_MP_VECTOR_SFS(INSTMACRO, LO, GO, N) \
-  INSTANTIATE_MP_VECTOR_SFS_D(INSTMACRO, Kokkos_Serial, LO, GO, N)
+#define INSTANTIATE_MP_VECTOR_DS_SLD(INSTMACRO, S, L, D, LO, GO, N)       \
+  typedef Stokhos::DynamicStorage<L,S,D> DS_ ## L ## _ ## S ## _ ## _ ## D; \
+  INSTANTIATE_MP_VECTOR_STORAGE(INSTMACRO, DS_ ## L ## _ ## S ## _ ## _ ## D, LO, GO, N)
 
-#define INSTANTIATE_MP_VECTOR(INSTMACRO, LO, GO, N) \
-  INSTANTIATE_MP_VECTOR_SFS(INSTMACRO, LO, GO, N)
+#define INSTANTIATE_MP_VECTOR_S_D_CPU(INSTMACRO, D, LO, GO, N) \
+  INSTANTIATE_MP_VECTOR_SFS_SLD_CPU(INSTMACRO, double, int, D, LO, GO, N)
+#define INSTANTIATE_MP_VECTOR_S_D_GPU(INSTMACRO, D, LO, GO, N) \
+  INSTANTIATE_MP_VECTOR_SFS_SLD_GPU(INSTMACRO, double, int, D, LO, GO, N)
 
-#define INSTANTIATE_TPETRA_MP_VECTOR_N(INSTMACRO, N)  \
-  INSTANTIATE_MP_VECTOR_SFS(INSTMACRO, int, int, N)
+// Disabling dynamic storage ETI -- we don't really need it
+//  INSTANTIATE_MP_VECTOR_DS_SLD(INSTMACRO, double, int, D, LO, GO, N)
+
+#define INSTANTIATE_MP_VECTOR_S_CPU(INSTMACRO, LO, GO, N) \
+  typedef Stokhos::DeviceForNode<N>::type DFN_CPU_ ## LO ## _ ## GO ## _ ## N; \
+  INSTANTIATE_MP_VECTOR_S_D_CPU(INSTMACRO, DFN_CPU_ ## LO ## _ ## GO ## _ ## N, LO, GO, N)
+#define INSTANTIATE_MP_VECTOR_S_GPU(INSTMACRO, LO, GO, N) \
+  typedef Stokhos::DeviceForNode<N>::type DFN_GPU_ ## LO ## _ ## GO ## _ ## N; \
+  INSTANTIATE_MP_VECTOR_S_D_GPU(INSTMACRO, DFN_GPU_ ## LO ## _ ## GO ## _ ## N, LO, GO, N)
+
+#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_PTHREAD)
+#define INSTANTIATE_TPETRA_MP_VECTOR_THREADS(INSTMACRO) \
+  INSTANTIATE_MP_VECTOR_S_CPU(INSTMACRO, int, int, Kokkos_Compat_KokkosThreadsWrapperNode)
+#else
+#define INSTANTIATE_TPETRA_MP_VECTOR_THREADS(INSTMACRO)
+#endif
+
+#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_OPENMP)
+#define INSTANTIATE_TPETRA_MP_VECTOR_OPENMP(INSTMACRO) \
+  INSTANTIATE_MP_VECTOR_S_CPU(INSTMACRO, int, int, Kokkos_Compat_KokkosOpenMPWrapperNode)
+#else
+#define INSTANTIATE_TPETRA_MP_VECTOR_OPENMP(INSTMACRO)
+#endif
+
+#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_CUDA)
+#define INSTANTIATE_TPETRA_MP_VECTOR_CUDA(INSTMACRO) \
+  INSTANTIATE_MP_VECTOR_S_GPU(INSTMACRO, int, int, Kokkos_Compat_KokkosCudaWrapperNode)
+#else
+#define INSTANTIATE_TPETRA_MP_VECTOR_CUDA(INSTMACRO)
+#endif
+
+#define INSTANTIATE_TPETRA_MP_VECTOR_WRAPPER_NODES(INSTMACRO) \
+  INSTANTIATE_TPETRA_MP_VECTOR_THREADS(INSTMACRO)             \
+  INSTANTIATE_TPETRA_MP_VECTOR_OPENMP(INSTMACRO)              \
+  INSTANTIATE_TPETRA_MP_VECTOR_CUDA(INSTMACRO)
+
+#define INSTANTIATE_TPETRA_MP_VECTOR(INSTMACRO)                 \
+  namespace Tpetra {                                            \
+                                                                \
+  TPETRA_ETI_MANGLING_TYPEDEFS()                                \
+                                                                \
+  INSTANTIATE_TPETRA_MP_VECTOR_WRAPPER_NODES(INSTMACRO)         \
+                                                                \
+}

@@ -77,37 +77,24 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   # Only turn on PyTrilinos for shared libraries
   SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES ${EXTRA_EXCLUDE_PACKAGES} TriKota Optika)
   
-  CUDA_NVCC_FLAGS="-gencode;arch=compute_35,code=sm_35;-I/home/crtrott/lib/mpi/include"
-  CUDA_NVCC_FLAGS="${CUDA_NVCC_FLAGS};-Xcompiler;-Wall,-ansi,-fopenmp"
-  CUDA_NVCC_FLAGS="${CUDA_NVCC_FLAGS};-O3;-DKOKKOS_USE_UVM;"
-
   SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
     "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
     "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS:BOOL=OFF"
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
 
-    "-DTPL_ENABLE_SuperLU:BOOL=ON"
-    "-DSuperLU_INCLUDE_DIRS=/usr/local/superlu/SuperLU_4.3/include"
-    "-DSuperLU_LIBRARY_DIRS=/usr/local/superlu/SuperLU_4.3/lib"
-    "-DSuperLU_LIBRARY_NAMES=superlu_4.3"
+    "-DCMAKE_CXX_COMPILER:FILEPATH=/opt/mpi/openmpi-1.7/gcc-4.4.6/cuda609/bin/mpicxx" 
+    "-DCMAKE_C_COMPILER:FILEPATH=/opt/mpi/openmpi-1.7/gcc-4.4.6/cuda609/bin/mpicc" 
+    "-DMPI_CXX_COMPILER:FILEPATH=/opt/mpi/openmpi-1.7/gcc-4.4.6/cuda609/bin/mpicxx" 
+    "-DMPI_C_COMPILER:FILEPATH=/opt/mpi/openmpi-1.7/gcc-4.4.6/cuda609/bin/mpicc" 
+    "-DMPI_EXEC:FILEPATH=/opt/mpi/openmpi-1.7/gcc-4.4.6/cuda609/bin/mpirun"
 
     "-DTPL_ENABLE_BLAS:BOOL=ON"
-    "-DBLAS_LIBRARY_DIRS=/usr/local/lapack/rhel6"
-    "-DBLAS_LIBRARY_NAMES=blas"
     "-DTPL_ENABLE_LAPACK:BOOL=ON"
-    "-DLAPACK_LIBRARY_DIRS=/usr/local/lapack/rhel6"
-    "-DLAPACK_LIBRARY_NAMES=lapack"
+    "-DTPL_SuperLU_LIBRARIES=/home/crtrott/Software/SuperLU_4.3/lib/libsuperlu_4.3.a"
+    "-DTPL_SuperLU_INCLUDE_DIRS=/home/crtrott/Software/SuperLU_4.3/SRC"
  
-    "-DTpetra_ENABLE_Kokkos_Refactor:BOOL=ON"
-    "-DKokkosClassic_DefaultNode:STRING=Kokkos::Compat::KokkosOpenMPWrapperNode"
-    "-DTPL_ENABLE_HWLOC:STRING=ON"
 
-    "-DTPL_ENABLE_CUDA:STRING=ON"
     "-DCUDA_TOOLKIT_ROOT_DIR=/opt/nvidia/cuda/6.0.9"
-    "-DTPL_ENABLE_CUSPARSE:STRING=OFF"
-    "-DTpetra_ENABLE_Thrust:BOOL=OFF"
-    "-DKokkosClassic_ENABLE_Thrust=OFF"
-    "-DCUDA_NVCC_FLAGS:STRING=${CUDA_NVCC_FLAGS}"
     )
 
   SET_DEFAULT(COMPILER_VERSION "GCC-4.4.6")

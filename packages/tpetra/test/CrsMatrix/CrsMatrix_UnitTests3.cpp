@@ -349,7 +349,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     }
     // All procs fail if any node fails
     int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
@@ -434,7 +434,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     }
     // All procs fail if any node fails
     int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
@@ -442,7 +442,12 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, Transpose, LO, GO, Scalar, Node )
   {
+    using std::endl;
+    out << "CrsMatrix Transpose test" << endl;
+    Teuchos::OSTab tab0 (out);
+
     RCP<Node> node = getNode<Node>();
+
     // this is the same matrix as in test NonSquare, but we will apply the transpose
     typedef ScalarTraits<Scalar> ST;
     typedef MultiVector<Scalar,LO,GO,Node> MV;
@@ -450,12 +455,14 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef ScalarTraits<Mag> MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int M = 3;
     const int P = 5;
     const int N = comm->getSize();
     const int myImageID = comm->getRank();
+
     // create Maps
     // matrix is M*N-by-P
     //                  col
@@ -496,52 +503,67 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     // = sum k(i+j)MN + ij(MN)(MN) + k^2 = (i+j)(MN)^2(MN-1)/2 + ij(MN)^3 + (MN)(MN-1)(2MN-1)/6
     //   k=0
     //
-    const int numVecs  = 3;
+
+    out << "Construct Maps" << endl;
+    const int numVecs = 3;
     RCP<const Map<LO,GO,Node> > rowmap = createContigMapWithNode<LO,GO>(INVALID,M,comm,node);
     RCP<const Map<LO,GO,Node> > lclmap = createLocalMapWithNode<LO,GO,Node>(P,comm,node);
+
     // create the matrix
-    MAT A(rowmap,P);
-    for (int i=0; i<M; ++i) {
-      for (int j=0; j<P; ++j) {
-        A.insertGlobalValues( static_cast<GO>(M*myImageID+i), tuple<GO>(j), tuple<Scalar>(M*myImageID+i + j*M*N) );
+    out << "Create matrix" << endl;
+    MAT A (rowmap, P);
+    for (int i = 0; i < M; ++i) {
+      for (int j=0; j < P; ++j) {
+        A.insertGlobalValues (static_cast<GO> (M*myImageID+i), tuple<GO> (j), tuple<Scalar> (M*myImageID+i + j*M*N));
       }
     }
+
     // call fillComplete()
+    out << "Call fillComplete on the matrix" << endl;
     TEST_EQUALITY_CONST( A.getProfileType() == DynamicProfile, true );
-    A.fillComplete(lclmap,rowmap);
-    out << "A: " << endl << A << endl;
-    //A.describe(out, VERB_EXTREME);
+    A.fillComplete (lclmap, rowmap);
+    A.describe (out, Teuchos::VERB_LOW);
+
+    out << "Build input and output multivectors" << endl;
+
     // build the input multivector X
-    MV X(rowmap,numVecs);
-    for (int i=myImageID*M; i<myImageID*M+M; ++i) {
-      for (int j=0; j<numVecs; ++j) {
-        X.replaceGlobalValue(i,j,static_cast<Scalar>( i + j*M*N ) );
+    MV X (rowmap, numVecs);
+    for (int i = myImageID*M; i < myImageID*M+M; ++i) {
+      for (int j = 0; j < numVecs; ++j) {
+        X.replaceGlobalValue (i, j, static_cast<Scalar> (i + j*M*N));
       }
     }
+
     // build the expected output multivector B
-    MV Bexp(lclmap,numVecs), Bout(lclmap,numVecs);
-    for (int i=0; i<P; ++i) {
-      for (int j=0; j<numVecs; ++j) {
-        Bexp.replaceGlobalValue(i,j,static_cast<Scalar>( (i+j)*(M*N)*(M*N)*(M*N-1)/2 + i*j*(M*N)*(M*N)*(M*N) + (M*N)*(M*N-1)*(2*M*N-1)/6 ));
+    MV Bexp (lclmap, numVecs);
+    MV Bout (lclmap, numVecs);
+    for (int i = 0; i < P; ++i) {
+      for (int j = 0; j < numVecs; ++j) {
+        Bexp.replaceGlobalValue (i, j, static_cast<Scalar> ((i+j)*(M*N)*(M*N)*(M*N-1)/2 + i*j*(M*N)*(M*N)*(M*N) + (M*N)*(M*N-1)*(2*M*N-1)/6));
       }
     }
+
     // test the action
-    Bout.randomize();
-    X.setObjectLabel("Input");
+    out << "Test applying the (conjugate) transpose of the matrix" << endl;
+    Bout.randomize ();
+    X.setObjectLabel ("Input");
     //X.describe(out, VERB_EXTREME);
-    A.apply(X,Bout,CONJ_TRANS);
+    A.apply (X, Bout, CONJ_TRANS);
     Bout.setObjectLabel("Actual output");
     Bexp.setObjectLabel("Expected output");
     //Bout.describe(out, VERB_EXTREME);
     //Bexp.describe(out, VERB_EXTREME);
-    Bout.update(-ST::one(),Bexp,ST::one());
-    Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
-    Bout.norm1(norms());
+    Bout.update (-ST::one (), Bexp, ST::one());
+    Array<Mag> norms (numVecs);
+    Array<Mag> zeros (numVecs, MT::zero ());
+    Bout.norm1 (norms ());
     if (ST::isOrdinal) {
       TEST_COMPARE_ARRAYS(norms,zeros);
     } else {
       TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
     }
+
+    out << "Done with test" << endl;
   }
 
 //

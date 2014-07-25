@@ -43,6 +43,8 @@
 
 #include <stdlib.h>
 #include <Kokkos_Serial.hpp>
+#include <impl/Kokkos_Traits.hpp>
+#include <impl/Kokkos_Error.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -52,18 +54,31 @@ namespace {
 struct Sentinel {
 
   void *   m_reduce ;
+  void *   m_shared ;
   unsigned m_reduce_size ;
+  unsigned m_shared_size ;
 
-  Sentinel() : m_reduce(0), m_reduce_size(0) {}
+  Sentinel() : m_reduce(0), m_shared(0), m_reduce_size(0), m_shared_size(0) {}
 
-  ~Sentinel() { if ( m_reduce ) { free( m_reduce ); } }
+  ~Sentinel()
+    {
+      if ( m_reduce ) { free( m_reduce ); }
+      if ( m_shared ) { free( m_shared ); }
+    }
+
+  static Sentinel & singleton();
 };
+
+Sentinel & Sentinel::singleton()
+{
+  static Sentinel s ; return s ;
+}
 
 }
 
 void * Serial::resize_reduce_scratch( unsigned size )
 {
-  static Sentinel s ;
+  static Sentinel & s = Sentinel::singleton();
 
   const unsigned rem = size % Impl::MEMORY_ALIGNMENT ;
 
@@ -79,6 +94,41 @@ void * Serial::resize_reduce_scratch( unsigned size )
   }
 
   return s.m_reduce ;
+}
+
+void * Serial::resize_shared_scratch( unsigned size )
+{
+  static Sentinel & s = Sentinel::singleton();
+
+  const unsigned rem = size % Impl::MEMORY_ALIGNMENT ;
+
+  if ( rem ) size += Impl::MEMORY_ALIGNMENT - rem ;
+
+  if ( ( 0 == size ) || ( s.m_shared_size < size ) ) {
+
+    if ( s.m_shared ) { free( s.m_shared ); }
+  
+    s.m_shared_size = size ;
+
+    s.m_shared = malloc( size );
+  }
+
+  return s.m_shared ;
+}
+
+void * Serial::get_shmem( const int size ) const
+{
+  static Sentinel & s = Sentinel::singleton();
+
+  const int offset = m_shmem_iter >> Impl::power_of_two<sizeof(int)>::value ;
+
+  m_shmem_iter += size ;
+
+  if ( int(s.m_shared_size) < m_shmem_iter ) {
+    Kokkos::Impl::throw_runtime_exception( std::string("Serial::get_shmem FAILED : exceeded shared memory size" ) );
+  }
+
+  return ((int*)s.m_shared) + offset ;
 }
 
 } // namespace Kokkos

@@ -43,12 +43,6 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * MueLu_IsolatedNodeAggregationAlgorithm_decl.hpp
- *
- *  Created on: Mar 4, 2013
- *      Author: wiesner
- */
 
 #ifndef MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_DECL_HPP_
 #define MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_DECL_HPP_
@@ -93,6 +87,8 @@ namespace MueLu {
 
     void BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const;
     //@}
+
+    std::string description() const { return "Phase - (isolated)"; }
 
   }; //class MaxLinkAggregationAlgorithm
 

@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -77,7 +77,7 @@
 /* #undef HAVE_EPETRA_TESTS */
 
 /* Define if want to build with Teuchos enabled */
-/* #undef HAVE_EPETRA_TEUCHOS */
+#define HAVE_EPETRA_TEUCHOS
 
 /* Define if want to build examples */
 /* #undef HAVE_EXAMPLES */
@@ -142,11 +142,4 @@
 /* Define if you want to have int (32 bit) global indices only. */
 /* #undef EPETRA_NO_64BIT_GLOBAL_INDICES */
 
-#ifndef EPETRA_DEPRECATED
-#  if (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
-#    define EPETRA_DEPRECATED  __attribute__((__deprecated__))
-#  else
-#    define EPETRA_DEPRECATED
-#  endif
-#endif
-
+#define EPETRA_DEPRECATED

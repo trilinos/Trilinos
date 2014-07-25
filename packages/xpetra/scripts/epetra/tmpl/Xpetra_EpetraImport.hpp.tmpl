@@ -30,6 +30,9 @@ namespace Xpetra {
 
 $TMPL_PUBLIC_FUNCTIONS
 
+    //! List of entries in the target Map to receive from other processes.
+    ArrayView< const LocalOrdinal > getRemotePIDs() const;
+
     //! @name Xpetra specific
     //@{
 

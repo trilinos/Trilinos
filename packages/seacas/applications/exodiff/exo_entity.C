@@ -31,20 +31,19 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <iostream>
-#include <cstdlib>
-#include <cstring>
-#include <sstream>
-#include <vector>
-#include <string>
-#include <sstream>
-
-#include "stringx.h"
-
-#include "smart_assert.h"
 #include "exo_entity.h"
-#include "exodusII.h"
-#include "util.h"
+#include <sys/types.h>                  // for int64_t
+#include <cstdlib>                      // for exit, NULL
+#include <cstring>                      // for strlen
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <string>                       // for string, char_traits, etc
+#include <vector>                       // for vector
+#include "exodusII.h"                   // for ex_get_var, ex_inquire_int, etc
+#include "smart_assert.h"               // for SMART_ASSERT
+#include "stringx.h"                    // for to_lower
+#include "util.h"                       // for TOPTR, free_name_array, etc
+
+
 
 using namespace std;
 
@@ -253,7 +252,7 @@ string Exo_Entity::Load_Results(int t1, int t2, double proportion, int var_index
 	  
 	  double *results1 = results_[var_index];
 	  for (size_t i=0; i < numEntity; i++) {
-	    results1[i] = proportion * results1[i] + (1.0 - proportion) * results2[i];
+	    results1[i] = (1.0-proportion) * results1[i] + proportion * results2[i];
 	  }
 	}
       }

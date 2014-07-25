@@ -2,7 +2,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -55,12 +55,26 @@ scriptsDir = os.path.dirname(checkinTestFileRealPath)+"/python"
 sys.path.insert(0, scriptsDir)
 
 
+
 #
 # Import and run
 #
 
 import SnapshotDir
-success = SnapshotDir.snapshotDirMainDriver(sys.argv[1:])
-if success: rtnCode = 0
-else: rtnCode = 1
+
+snapshotDirDummyDefaults = os.environ.get("SNAPSHOT_DIR_DUMMY_DEFAULTS","")
+
+defaultOptions = None
+if snapshotDirDummyDefaults:
+  defaultOptions = SnapshotDir.DefaultOptions()
+  defaultOptions.origDir = "<orig-dir>"
+  defaultOptions.destDir = "<dest-dir>"
+
+success = SnapshotDir.snapshotDirMainDriver(sys.argv[1:], defaultOptions)
+
+if success:
+  rtnCode = 0
+else:
+  rtnCode = 1
+
 sys.exit(rtnCode)

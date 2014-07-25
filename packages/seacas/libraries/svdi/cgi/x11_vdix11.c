@@ -1482,7 +1482,7 @@ void vdstls(line_style)
 int *line_style;
 {
    char dlist[4];    /* dash pattern list */
-   int nd;
+   int nd=0;
 
    x11_vflush();     /* flush polyline buffer */
 

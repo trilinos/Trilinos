@@ -49,9 +49,7 @@
 *
 *****************************************************************************/
 
-#include <stdlib.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include "exodusII.h"                   // for ex_get_num_map, etc
 
 /*!
  * reads the node map with specified ID

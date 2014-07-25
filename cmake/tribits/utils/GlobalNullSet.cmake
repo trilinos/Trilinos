@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -37,7 +37,22 @@
 # ************************************************************************
 # @HEADER
 
-
+#
+# @MACRO: GLOBAL_NULL_SET()
+#
+# Set a variable as a null internal global (cache) variable (removes
+# boiler-plate code).
+#
+# Usage::
+#
+#   GLOBAL_NULL_SET(<varName>)
+#
+# This just calls::
+#
+#   SET(<varName> "" CACHE INTERNAL "")
+#
+# This avoid problems with misspelling ``CACHE``.
+#
 MACRO(GLOBAL_NULL_SET VARNAME)
   SET(${VARNAME} "" CACHE INTERNAL "")
 ENDMACRO()

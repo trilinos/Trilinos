@@ -7,18 +7,17 @@
 /*------------------------------------------------------------------------*/
 
 #include <stk_mesh/fixtures/GridFixture.hpp>
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/Entity.hpp>     // for Entity
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+#include <vector>                       // for vector
+#include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank
+#include "stk_topology/topology.hpp"    // for topology, etc
 
-#include <Shards_BasicTopologies.hpp>
 
-#include <stk_util/parallel/Parallel.hpp>
 
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
 
-#include <stk_mesh/fem/FEMMetaData.hpp>
-#include <stk_mesh/fem/FEMHelpers.hpp>
 
 /*
 The following fixture creates the mesh below
@@ -43,9 +42,9 @@ namespace fixtures {
 
 GridFixture::GridFixture(stk::ParallelMachine pm)
   : m_spatial_dimension(2)
-  , m_fem_meta( m_spatial_dimension, fem::entity_rank_names(m_spatial_dimension) )
-  , m_bulk_data( stk::mesh::fem::FEMMetaData::get_meta_data(m_fem_meta) , pm )
-  , m_quad_part( fem::declare_part<shards::Quadrilateral<4> >(m_fem_meta, "quad_part") )
+  , m_fem_meta( m_spatial_dimension )
+  , m_bulk_data( m_fem_meta, pm )
+  , m_quad_part( m_fem_meta.declare_part_with_topology("quad_part", stk::topology::QUAD_4) )
   , m_dead_part( m_fem_meta.declare_part("dead_part"))
 {}
 
@@ -58,8 +57,8 @@ void GridFixture::generate_grid()
   const unsigned num_quad_faces = 16;
   const unsigned p_rank = m_bulk_data.parallel_rank();
   const unsigned p_size = m_bulk_data.parallel_size();
-  const EntityRank element_rank = m_fem_meta.element_rank();
-  std::vector<Entity*> all_entities;
+  const EntityRank element_rank = stk::topology::ELEMENT_RANK;
+  std::vector<Entity> all_entities;
 
   // assign ids, quads, nodes, then shells
   // (we need this order to be this way in order for our connectivity setup to  work)
@@ -95,14 +94,13 @@ void GridFixture::generate_grid()
 
       unsigned face_id = quad_face_ids[i];
       unsigned row = (face_id - 1) / num_nodes_per_quad;
-
-      Entity& face = m_bulk_data.declare_entity(element_rank, face_id, face_parts);
+      Entity face = m_bulk_data.declare_entity(element_rank, face_id, face_parts);
 
       unsigned node_id = num_quad_faces + face_id + row;
 
       for (unsigned chg_itr = 0; chg_itr < num_nodes_per_quad; ++chg_itr) {
         node_id += stencil_for_4x4_quad_mesh[chg_itr];
-        Entity& node = m_bulk_data.declare_entity(fem::FEMMetaData::NODE_RANK, node_id, no_parts);
+        Entity node = m_bulk_data.declare_entity(stk::topology::NODE_RANK, node_id, no_parts);
         m_bulk_data.declare_relation( face , node , chg_itr);
       }
     }

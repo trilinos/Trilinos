@@ -12,7 +12,7 @@
 */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_include.h"
@@ -55,7 +55,7 @@ int GetNumProcs();
 
 //! Retutns the level of output (always 0 if MyPID() != 0).
 int GetPrintLevel();
-  
+
 //! Sets the level of output (from 0 to 10, 0 being verbose).
 void SetPrintLevel(int Level);
 

@@ -57,10 +57,12 @@
 /////   list of default cubature includes   /////
 
 #include "Intrepid_CubatureDirectLineGauss.hpp"
+#include "Intrepid_CubatureDirectLineGaussJacobi20.hpp"
 #include "Intrepid_CubatureDirectTriDefault.hpp"
 #include "Intrepid_CubatureDirectTetDefault.hpp"
 #include "Intrepid_CubatureCompositeTet.hpp"
 #include "Intrepid_CubatureTensor.hpp"
+#include "Intrepid_CubatureTensorPyr.hpp"
 #include "Intrepid_CubaturePolygon.hpp"
 
 ///// end of list of default cubature includes /////

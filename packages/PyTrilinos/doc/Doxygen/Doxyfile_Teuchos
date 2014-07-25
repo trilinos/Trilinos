@@ -459,7 +459,11 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories 
 # with spaces.
 
-INPUT                  = ../../../teuchos/src
+INPUT                  = ../../../teuchos/core/src \
+                         ../../../teuchos/comm/src \
+                         ../../../teuchos/numerics/src \
+                         ../../../teuchos/parameterlist/src \
+                         ../../../teuchos/remainder/src
 
 # If the value of the INPUT tag contains directories, you can use the 
 # FILE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 
@@ -472,7 +476,7 @@ INPUT                  = ../../../teuchos/src
 # symbol names are so long that they confuse the doxy2swig.py script.
 # Therefore, I specify which files to parse here.
 
-FILE_PATTERNS          = Teuchos_Veresion.hpp   \
+FILE_PATTERNS          = Teuchos_Version.hpp    \
 		         Teuchos_ParameterList* \
 			 Teuchos_XML*           \
 			 Teuchos_*Source.*      \

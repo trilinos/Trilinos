@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -51,7 +51,7 @@
 #ifndef NOX_STATUSTEST_NORMF_H
 #define NOX_STATUSTEST_NORMF_H
 
-#include "NOX_StatusTest_Generic.H"	// base class
+#include "NOX_StatusTest_Generic.H"    // base class
 #include "NOX_Abstract_Vector.H"        // for NormType
 #include "NOX_Utils.H"                  // for std::cerr
 
@@ -67,7 +67,7 @@ namespace NOX {
 namespace StatusTest {
 
 //! Various convergence tests based on the norm of the residual.
-/*! 
+/*!
 
   Use the constructor to define the test based on the type
   of scaling (see ScaleType) and the type of Tolerance (see
@@ -123,7 +123,7 @@ public:
   //! Type that determines whether to scale the norm by the problem size.
   enum ScaleType {
     //! No norm scaling
-    Unscaled, 
+    Unscaled,
     //! Scale the norm by the length of the vector
     Scaled
   };
@@ -131,39 +131,39 @@ public:
   //! Type that determines whether the norm is absolute or relative to the intial guess
   enum ToleranceType {
     //! Relative to starting guess
-    Relative, 
+    Relative,
     //! Absolute
     Absolute
   };
 
-  //! Constructor for absolute norm. 
+  //! Constructor for absolute norm.
   /*! This constructor defaults to the \c Absolute tolerance type. */
-  NormF(double tolerance, NOX::Abstract::Vector::NormType ntype, 
-	ScaleType stype = Scaled, const NOX::Utils* u = NULL);
+  NormF(double tolerance, NOX::Abstract::Vector::NormType ntype,
+    ScaleType stype = Scaled, const NOX::Utils* u = NULL);
 
   //! Constructor for absolute norm
   /*! This constructor defaults to the \c Absolute ToleranceType and \c TWO NormType. */
-  NormF(double tolerance, ScaleType stype = Scaled, 
-	const NOX::Utils* u = NULL);
+  NormF(double tolerance, ScaleType stype = Scaled,
+    const NOX::Utils* u = NULL);
 
   //! Constructor with initial guess (for relative norms)
   /*! This constructor defaults to the \c Relative tolerance type. */
-  NormF(NOX::Abstract::Group& initialGuess, double tolerance, 
-	NOX::Abstract::Vector::NormType ntype, ScaleType stype = Scaled, 
-	const NOX::Utils* u = NULL);
+  NormF(NOX::Abstract::Group& initialGuess, double tolerance,
+    NOX::Abstract::Vector::NormType ntype, ScaleType stype = Scaled,
+    const NOX::Utils* u = NULL);
 
   //! Constructor with initial guess (for relative norms)
   /*! This constructor defaults to the \c Relative ToleranceType and \c TWO NormType. */
-  NormF(NOX::Abstract::Group& initialGuess, double tolerance, 
-	ScaleType stype = Scaled, const NOX::Utils* u = NULL);
+  NormF(NOX::Abstract::Group& initialGuess, double tolerance,
+    ScaleType stype = Scaled, const NOX::Utils* u = NULL);
 
   //! Destructor.
   virtual ~NormF();
 
   // derived
-  virtual NOX::StatusTest::StatusType 
+  virtual NOX::StatusTest::StatusType
   checkStatus(const NOX::Solver::Generic& problem,
-	      NOX::StatusTest::CheckType checkType);
+          NOX::StatusTest::CheckType checkType);
 
   // derived
   virtual NOX::StatusTest::StatusType getStatus() const;
@@ -174,8 +174,8 @@ public:
      Used to change the tolerances in the status test after construction.
   */
   //@{
-  
-  //! Resets the user specified absolute or relative tolerance. 
+
+  //! Resets the user specified absolute or relative tolerance.
   virtual void reset(double tolerance);
 
   //! Resets the user specified relative tolerance.
@@ -190,7 +190,7 @@ public:
 
   //! Returns the value of the F-norm computed in the last call to checkStatus.
   virtual double getNormF() const;
-   
+
   //! Returns the true tolerance.
   virtual double getTrueTolerance() const;
 
@@ -206,14 +206,14 @@ public:
 private:
 
   /*! \brief Calculate the norm of F for the given group according to
-    the scaling type, norm type, and tolerance type. 
+    the scaling type, norm type, and tolerance type.
 
     \note Returns -1.0 if F(x) has not been calculated for the given
     grp (i.e., grp.isF() is false).
   */
   double computeNorm(const NOX::Abstract::Group& grp);
 
-  /*! In the case of a relative norm calculation, initializes 
+  /*! In the case of a relative norm calculation, initializes
     \c trueTolerance based on the F-value at the initial guess.*/
   void relativeSetup(NOX::Abstract::Group& initialGuess);
 

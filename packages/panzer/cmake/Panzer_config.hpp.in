@@ -3,6 +3,9 @@
 
 #cmakedefine PANZER_DEBUG
 
+// What AD Type are you going to use?
+#cmakedefine PANZER_FADTYPE @Panzer_ENABLE_FADTYPE@
+
 #cmakedefine PANZER_STK_DEBUG
 #cmakedefine HAVE_IOSS
 #cmakedefine HAVE_TEKO

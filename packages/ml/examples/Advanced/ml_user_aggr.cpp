@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 // \author Marzio Sala, SNL 9214
@@ -76,7 +76,7 @@ char*UserLabel()
 // - epsilon:           dropping parameter
 //                      [input only]
 //
-// - x, y, z            double arrays, containing the coordinates of 
+// - x, y, z            double arrays, containing the coordinates of
 //                      each block node. If the problem is 2D, z is 0.
 //                      If coordinates have not been given to ML,
 //                      x, y and z are all 0.
@@ -105,7 +105,7 @@ int UserPartitions(ML_Operator* Amatrix, char* bdry_nodes,
 
   // get the number of local rows in Amatrix
   int NumLocalRows = Amatrix->invec_leng;
-  
+
   // set the number of local aggregates
   int NumAggregates = NumLocalRows / ChunkSize;
   if (NumLocalRows % ChunkSize)
@@ -117,7 +117,7 @@ int UserPartitions(ML_Operator* Amatrix, char* bdry_nodes,
   }
 
   // detect the boundary nodes (i.e., rows with no off-diagonal elements)
-  // This requires calling ML's getrow(), as detailed in points 
+  // This requires calling ML's getrow(), as detailed in points
   // 1, 2 and 3.
 
   // 1.- get the pointer to the getrow() function from the
@@ -130,16 +130,16 @@ int UserPartitions(ML_Operator* Amatrix, char* bdry_nodes,
   //     Also, allocate space to hold the indices of the nonzeros
   //     in each row, and their values.
   int MaxRowEntries = 128;
-  vector<int> Indices(MaxRowEntries);
-  vector<double> Values(MaxRowEntries);
-  
+  std::vector<int> Indices(MaxRowEntries);
+  std::vector<double> Values(MaxRowEntries);
+
   // 3.- loop over all local rows
   for (int i = 0 ; i < NumLocalRows ; ++i) {
     int RowEntries;
     // if return value is zero, then MaxRowEntries is too small
     // to copy the nonzeros in the provided array. So, we
     // reallocate them, and recall the function
-    while(getrow(Amatrix,1,&i,MaxRowEntries, 
+    while(getrow(Amatrix,1,&i,MaxRowEntries,
                       &Indices[0],&Values[0],&RowEntries) == 0) {
       MaxRowEntries *= 2;
       Indices.resize(MaxRowEntries);
@@ -160,7 +160,7 @@ int UserPartitions(ML_Operator* Amatrix, char* bdry_nodes,
       *Nonzeros += RowEntries;
     }
   }
-  
+
   // return the number of local aggregates
   return(NumAggregates);
 }
@@ -171,7 +171,7 @@ int UserPartitions(ML_Operator* Amatrix, char* bdry_nodes,
 
 int main(int argc, char *argv[])
 {
-  
+
 #ifdef EPETRA_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
@@ -196,7 +196,7 @@ int main(int argc, char *argv[])
   Epetra_CrsMatrix* A = CreateCrsMatrix("Laplace2D", Map, GaleriList);
 
   // use the following Galeri function to get the
-  // coordinates for a Cartesian grid. 
+  // coordinates for a Cartesian grid.
 
   Epetra_MultiVector* Coord = CreateCartesianCoordinates("2D", &(A->Map()),
                                                          GaleriList);
@@ -213,13 +213,13 @@ int main(int argc, char *argv[])
   AztecOO solver(Problem);
 
   // =========================== begin of ML part ===========================
-  
+
   // create a parameter list for ML options
   ParameterList MLList;
 
   // set defaults for classic smoothed aggregation.
   ML_Epetra::SetDefaults("SA",MLList);
-  
+
   // use user's defined aggregation scheme to create the aggregates
   // 1.- set "user" as aggregation scheme (for all levels, or for
   //     a specify level only)
@@ -238,7 +238,7 @@ int main(int argc, char *argv[])
   MLList.set("viz: enable", true);
 
   // now we create the preconditioner
-  ML_Epetra::MultiLevelPreconditioner * MLPrec = 
+  ML_Epetra::MultiLevelPreconditioner * MLPrec =
     new ML_Epetra::MultiLevelPreconditioner(*A, MLList);
 
   MLPrec->VisualizeAggregates();
@@ -247,21 +247,21 @@ int main(int argc, char *argv[])
   solver.SetPrecOperator(MLPrec);
 
   // =========================== end of ML part =============================
-  
+
   solver.SetAztecOption(AZ_solver, AZ_cg_condnum);
   solver.SetAztecOption(AZ_output, 32);
 
-  // solve with 500 iterations and 1e-12 tolerance  
+  // solve with 500 iterations and 1e-12 tolerance
   solver.Iterate(500, 1e-12);
 
   delete MLPrec;
-  
+
   // compute the real residual
 
   double residual;
   LHS.Norm2(&residual);
 
-  if (Comm.MyPID() == 0) 
+  if (Comm.MyPID() == 0)
   {
     cout << "||b-Ax||_2 = " << residual << endl;
   }
@@ -278,7 +278,7 @@ int main(int argc, char *argv[])
 #endif
 
   exit(EXIT_SUCCESS);
- 
+
 }
 
 #else
@@ -301,8 +301,8 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-  
+
   return 0;
 }
 
-#endif 
+#endif

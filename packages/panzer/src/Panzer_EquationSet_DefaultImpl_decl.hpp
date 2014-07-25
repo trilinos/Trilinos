@@ -61,63 +61,66 @@ namespace panzer {
 
   template <typename EvalT>
   class EquationSet_DefaultImpl : public panzer::EquationSet<EvalT>,
-				  public panzer::GlobalDataAcceptorDefaultImpl {
+                                  public panzer::GlobalDataAcceptorDefaultImpl {
     
   public:    
     
     EquationSet_DefaultImpl(const Teuchos::RCP<Teuchos::ParameterList>& params,
-			    const int& default_integration_order,
-			    const panzer::CellData& cell_data,
-			    const Teuchos::RCP<panzer::GlobalData>& global_data,
-			    const bool build_transient_support);
+                            const int& default_integration_order,
+                            const panzer::CellData& cell_data,
+                            const Teuchos::RCP<panzer::GlobalData>& global_data,
+                            const bool build_transient_support);
     
     virtual ~EquationSet_DefaultImpl() {}
     
     virtual void buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-								const panzer::FieldLibrary& fl,
-								const LinearObjFactory<panzer::Traits> & lof,
-								const Teuchos::ParameterList& user_data) const;
+                                                                const panzer::FieldLibrary& fl,
+                                                                const LinearObjFactory<panzer::Traits> & lof,
+                                                                const Teuchos::ParameterList& user_data) const;
     
     virtual void buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-						   const panzer::FieldLibrary& fl,
-						   const LinearObjFactory<panzer::Traits> & lof,
-						   const Teuchos::ParameterList& user_data) const;
+                                                   const panzer::FieldLibrary& fl,
+                                                   const LinearObjFactory<panzer::Traits> & lof,
+                                                   const Teuchos::ParameterList& user_data) const;
 
     virtual void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-						       const panzer::FieldLibrary& fl,
-						       const Teuchos::ParameterList& user_data) const = 0;
+                                                       const panzer::FieldLibrary& fl,
+                                                       const Teuchos::ParameterList& user_data) const = 0;
 
     virtual void buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-							      const panzer::FieldLayoutLibrary& fl,
-							      const Teuchos::RCP<panzer::IntegrationRule>& ir,
-							      const Teuchos::ParameterList& user_data) const;
+                                                              const panzer::FieldLayoutLibrary& fl,
+                                                              const Teuchos::RCP<panzer::IntegrationRule>& ir,
+                                                              const Teuchos::Ptr<const panzer::LinearObjFactory<panzer::Traits> > & lof,
+                                                              const Teuchos::ParameterList& user_data) const;
     
     virtual void buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-							const panzer::FieldLayoutLibrary& fl,
-							const Teuchos::RCP<panzer::IntegrationRule>& ir,
-							const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
-							const Teuchos::ParameterList& models,
-							const Teuchos::ParameterList& user_data) const;
+                                                        const panzer::FieldLayoutLibrary& fl,
+                                                        const Teuchos::RCP<panzer::IntegrationRule>& ir,
+                                                        const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
+                                                        const Teuchos::ParameterList& models,
+                                                        const Teuchos::ParameterList& user_data) const;
 
     virtual void buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-							const panzer::FieldLayoutLibrary& fl,
-							const Teuchos::RCP<panzer::IntegrationRule>& ir,
-							const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
+                                                        const panzer::FieldLayoutLibrary& fl,
+                                                        const Teuchos::RCP<panzer::IntegrationRule>& ir,
+                                                        const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
                                                         const std::string & model_name,
-							const Teuchos::ParameterList& models,
-							const Teuchos::ParameterList& user_data) const;
+                                                        const Teuchos::ParameterList& models,
+                                                        const Teuchos::ParameterList& user_data) const;
 
     virtual void buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-							    const panzer::FieldLibrary& fl,
-							    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
-							    const std::string& model_name,
-							    const Teuchos::ParameterList& models,
-							    const LinearObjFactory<panzer::Traits> & lof,
-							    const Teuchos::ParameterList& user_data) const;
+                                                            const panzer::FieldLibrary& fl,
+                                                            const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
+                                                            const std::string& model_name,
+                                                            const Teuchos::ParameterList& models,
+                                                            const LinearObjFactory<panzer::Traits> & lof,
+                                                            const Teuchos::ParameterList& user_data) const;
 
     virtual const Teuchos::RCP<Teuchos::ParameterList> getEvaluatorParameterList() const;
     
     virtual const std::vector<std::pair<std::string,Teuchos::RCP<panzer::PureBasis> > > & getProvidedDOFs() const;
+
+    virtual const std::vector<std::vector<std::string> > & getCoordinateDOFs() const;
 
     virtual const std::map<int,Teuchos::RCP<panzer::IntegrationRule> > & getIntegrationRules() const;
 
@@ -152,8 +155,8 @@ namespace panzer {
       *                             integration order.
       */
     void updateDOF(const std::string & dofName,
-		   int basisOrder,
-		   int integrationOrder = -1);
+                   int basisOrder,
+                   int integrationOrder = -1);
 
     /** \brief Get the basis order for an existing degree of freedom.
       *
@@ -203,11 +206,11 @@ namespace panzer {
       *                        to the dofName for the scatter field name.
       */
     void addDOF(const std::string & dofName,
-		const std::string & basisType,
-		const int & basisOrder,
-		const int integrationOrder = -1,
-		const std::string residualName = "",
-		const std::string scatterName = "");
+                const std::string & basisType,
+                const int & basisOrder,
+                const int integrationOrder = -1,
+                const std::string residualName = "",
+                const std::string scatterName = "");
 
     /** Alert the panzer library that a gradient of particular a DOF is needed.
       *
@@ -231,6 +234,17 @@ namespace panzer {
     void addDOFCurl(const std::string & dofName,
                     const std::string & curlName = "");
 
+    /** Alert the panzer library that a div of particular a DOF is needed.
+      *
+      * \param[in] dofName (Required) Name of field to lookup in the unique global indexer. 
+      * \param[in] divName (Optional) Name of the div field associated with
+      *                     this DOF.  If not supplied or an empty string used,
+      *                     the default is to add the prefix "DIV__"
+      *                     to the dofName for the naem of the div field.
+      */
+    void addDOFDiv(const std::string & dofName,
+                   const std::string & divName = "");
+
     /** Alert the panzer library that a time derivative of particular a DOF is needed.
       *
       * \param[in] dofName (Required) Name of field to lookup in the unique global indexer. 
@@ -241,6 +255,15 @@ namespace panzer {
       */
     void addDOFTimeDerivative(const std::string & dofName,
                               const std::string & dotName = "");
+
+    /** Alert the panzer to the fact that a set of DOFs coorespond to coordinates.
+      * They may have to be handled differently.
+      *
+      * \param[in] dofNames Name of fields that will represent the coordinates
+      *                     (in order). Must be of dimension equal to the size
+      *                     of the problem. Also DOF must have been already added.
+      */
+    void setCoordinateDOFs(const std::vector<std::string> & dofNames);
 
     /** Alert the equation set default implementation to build the
      * required closure model(s) for this equation set.  You can make
@@ -280,9 +303,9 @@ namespace panzer {
      * \param[in] residualfield_name Name of the evalauted residual field.  This is optional and will use a default value if the string is empty.
      */ 
     void buildAndRegisterResidualSummationEvalautor(PHX::FieldManager<panzer::Traits>& fm,
-						    const std::string dof_name,
-						    const std::vector<std::string>& residual_contributions,
-						    const std::string residual_field_name = "") const;
+                                                    const std::string dof_name,
+                                                    const std::vector<std::string>& residual_contributions,
+                                                    const std::string residual_field_name = "") const;
 
     //! Returns the parameter list used to build this equation set
     //object.  Useful for passing off input parameter sublists
@@ -300,6 +323,7 @@ namespace panzer {
         , residualName(std::make_pair(false,""))
         , grad(std::make_pair(false,""))
         , curl(std::make_pair(false,""))
+        , div(std::make_pair(false,""))
         , timeDerivative(std::make_pair(false,"")) {}
 
       std::string dofName;
@@ -312,6 +336,7 @@ namespace panzer {
       std::string scatterName;
       std::pair<bool,std::string> grad;
       std::pair<bool,std::string> curl;
+      std::pair<bool,std::string> div;
       std::pair<bool,std::string> timeDerivative;
 
       void print(std::ostream & os) const {
@@ -320,6 +345,7 @@ namespace panzer {
            << "Res = (" << residualName.first << ", \"" << residualName.second << "\"), "
            << "Grad = (" << grad.first << ", \"" << grad.second << "\"), "
            << "Curl = (" << curl.first << ", \"" << curl.second << "\"), "
+           << "Div = (" << div.first << ", \"" << div.second << "\"), "
            << "Time = (" << timeDerivative.first << ", \"" << timeDerivative.second << "\")";
       }
     };
@@ -356,6 +382,9 @@ namespace panzer {
     //! Key is the dof name and the value is the corresponding basis
     std::vector<std::pair<std::string,Teuchos::RCP<panzer::PureBasis> > >  m_provided_dofs;
 
+    //! Key is the coordinate prefix name and the value is the corresponding basis
+    std::vector<std::pair<std::string,Teuchos::RCP<panzer::PureBasis> > >  m_provided_coord_prefixes;
+
     //! Key is the integration rule order and the value is the corresponding integration rule
     std::map<int,Teuchos::RCP<panzer::IntegrationRule> > m_int_rules;
 
@@ -367,6 +396,8 @@ namespace panzer {
     std::string m_block_id;
     std::string m_type;
     std::vector<std::string> m_closure_model_ids;
+
+    std::vector<std::vector<std::string> > m_coordinate_dofs;
 
   };
   

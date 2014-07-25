@@ -70,7 +70,7 @@ public:
      case 13 : dx13_ = T(1.);break;
      case 14 : dx14_ = T(1.);break;
      case 15 : dx15_ = T(1.);break;
-     default : cout << "ith = " << ith << "  out of definition set" << endl;exit(1);
+     default : std::cout << "ith = " << ith << "  out of definition set" << std::endl;exit(1);
      }
   }
 
@@ -109,7 +109,7 @@ public:
      case 13 : dx13_ = T(1.);break;
      case 14 : dx14_ = T(1.);break;
      case 15 : dx15_ = T(1.);break;
-     default : cout << "ini = " << ini << "  out of definition set" << endl;exit(1);
+     default : std::cout << "ini = " << ini << "  out of definition set" << std::endl;exit(1);
      }
   }
   TinyFad() : n(0), val_(0.) {
@@ -241,7 +241,7 @@ public:
      case 13 : return dx13_;
      case 14 : return dx14_;
      case 15 : return dx15_;
-     default : cout << "i out of bounds" << endl;exit(1);
+     default : std::cout << "i out of bounds" << std::endl;exit(1);
      }
   }
   const T& dx(int i) const {
@@ -262,7 +262,7 @@ public:
      case 13 : return dx13_;
      case 14 : return dx14_;
      case 15 : return dx15_;
-     default : cout << "i out of bounds" << endl;exit(1);
+     default : std::cout << "i out of bounds" << std::endl;exit(1);
      }
   }
   T& d(int i){
@@ -283,7 +283,7 @@ public:
      case 13 : return dx13_;
      case 14 : return dx14_;
      case 15 : return dx15_;
-     default : cout << "i out of bounds" << endl;exit(1);
+     default : std::cout << "i out of bounds" << std::endl;exit(1);
      }
   }
   const T& d(int i) const {
@@ -304,7 +304,7 @@ public:
      case 13 : return dx13_;
      case 14 : return dx14_;
      case 15 : return dx15_;
-     default : cout << "i out of bounds" << endl;exit(1);
+     default : std::cout << "i out of bounds" << std::endl;exit(1);
      }
   }
 
@@ -1291,9 +1291,9 @@ template <class T> TinyFad<16,T> abs (const TinyFad<16,T>& in)
   else return (-in);
 }
 
-template <class T> ostream& operator << (ostream& os, const TinyFad<16,T>& a)
+template <class T> std::ostream& operator << (std::ostream& os, const TinyFad<16,T>& a)
 {
-  os.setf(ios::fixed,ios::scientific);
+  os.setf(std::ios::fixed,std::ios::scientific);
   os.width(12);
   os << a.val() << "  [";
 

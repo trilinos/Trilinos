@@ -117,7 +117,7 @@ namespace response_bc_adapters {
 						   const LinearObjFactory<panzer::Traits> & lof,
 						   const Teuchos::ParameterList& user_data) const
     { side_pb.buildAndRegisterGatherAndOrientationEvaluators(fm,lof,user_data); 
-      side_pb.buildAndRegisterDOFProjectionsToIPEvaluators(fm,user_data); }
+      side_pb.buildAndRegisterDOFProjectionsToIPEvaluators(fm,Teuchos::ptrFromRef(lof),user_data); }
 
     //@}
 

@@ -74,9 +74,9 @@ double  timing(double secs, int type);
 
 
 void X_FACTOR_ (DATA_TYPE *matrix,int *matrixsize,
-   int *num_procsr, int *permute, double *secs) 
+   int *num_procsr, int *permute, double *secs)
 {
- 
+
   DATA_TYPE *mat;
   int *permutations;
   double run_secs;              /* time (in secs) during which the prog ran */
@@ -113,9 +113,11 @@ void X_FACTOR_ (DATA_TYPE *matrix,int *matrixsize,
     {int checkcol,checkrow;
      MPI_Comm_rank(col_comm, &checkrow) ;
      MPI_Comm_rank(row_comm, &checkcol) ;
-     if (myrow != checkrow)
+     if (myrow != checkrow) {
        printf("Node %d: my row = %d but rank in col = %d\n",me,myrow,checkrow);     if (mycol != checkcol)
-       printf("Node %d: my col = %d but rank in row = %d\n",me,mycol,checkcol);   }
+       printf("Node %d: my col = %d but rank in row = %d\n",me,mycol,checkcol);
+     }
+    }
 
   /* Distribution for the matrix on me */
 
@@ -150,7 +152,7 @@ void X_FACTOR_ (DATA_TYPE *matrix,int *matrixsize,
     fprintf(stderr, "Node %d: Out of memory\n", me);
     exit(-1);
   }
- 
+
 
   row2 = (DATA_TYPE *) malloc((my_cols + blksz+10 + nrhs) * sizeof(DATA_TYPE));
   totmem1 += (my_cols + blksz + 1) * sizeof(DATA_TYPE);

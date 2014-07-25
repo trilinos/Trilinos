@@ -122,7 +122,7 @@ namespace Details {
 /// type T itself is suitable for parallel kernels.  In particular,
 /// specializations for types T that make sense to use on a CUDA
 /// device must mark all class methods as device (and host) functions,
-/// using the KOKKOS_DEVICE_FUNCTION macro.  All class methods must be
+/// using the KOKKOS_FORCEINLINE_FUNCTION macro.  All class methods must be
 /// callable both inside and outside a parallel kernel (for CUDA, this
 /// means they must be marked as both device and host functions).
 ///
@@ -137,7 +137,7 @@ namespace Details {
 /// You must first add a specialization of ArithTraits<T>.  Please
 /// note that if CUDA does not support using T in device functions,
 /// then you must <i>not</t> mark norm() or dot() as device functions
-/// in your specialization.  (Simply omit the KOKKOS_DEVICE_FUNCTION
+/// in your specialization.  (Simply omit the KOKKOS_FORCEINLINE_FUNCTION
 /// macro.)  If CUDA <i>does</i> support using T in device functions,
 /// you <i>must</i> mark norm() and dot() as device functions in order
 /// to use them in device functions.
@@ -154,11 +154,11 @@ public:
   typedef T dot_type;
 
   //! The "norm" (absolute value or magnitude) of a value x of type T.
-  static KOKKOS_DEVICE_FUNCTION mag_type norm (const T& x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type norm (const T& x) {
     return ArithTraits<T>::abs (x);
   }
   //! The "dot product" of two values x and y of type T.
-  static KOKKOS_DEVICE_FUNCTION mag_type dot (const T& x, const T& y) {
+  static KOKKOS_FORCEINLINE_FUNCTION dot_type dot (const T& x, const T& y) {
     return x * y;
   }
 };
@@ -166,16 +166,16 @@ public:
 
 // CUDA does not support long double in device functions.
 template<>
-struct ScalarTraits<long double>
+struct InnerProductSpaceTraits<long double>
 {
   typedef long double val_type;
   typedef ArithTraits<val_type>::mag_type mag_type;
   typedef val_type dot_type;
 
   static mag_type norm (const val_type& x) {
-    return ArithTraits<T>::abs (x);
+    return ArithTraits<val_type>::abs (x);
   }
-  static mag_type dot (const val_type& x, const val_type& y) {
+  static dot_type dot (const val_type& x, const val_type& y) {
     return x * y;
   }
 };
@@ -183,16 +183,16 @@ struct ScalarTraits<long double>
 
 // CUDA does not support std::complex<T> in device functions.
 template<class T>
-struct ScalarTraits<std::complex<T> >
+struct InnerProductSpaceTraits<std::complex<T> >
 {
   typedef std::complex<T> val_type;
-  typedef ArithTraits<val_type>::mag_type mag_type;
+  typedef typename ArithTraits<val_type>::mag_type mag_type;
   typedef val_type dot_type;
 
   static mag_type norm (const val_type& x) {
-    return ArithTraits<T>::abs (x);
+    return ArithTraits<val_type>::abs (x);
   }
-  static mag_type dot (const val_type& x, const val_type& y) {
+  static dot_type dot (const val_type& x, const val_type& y) {
     return x * y;
   }
 };
@@ -214,31 +214,31 @@ struct ScalarTraits<std::complex<T> >
 // dd_real and qd_real are not marked as device functions.
 #ifdef HAVE_KOKKOS_QD
 template<>
-struct ScalarTraits<dd_real>
+struct InnerProductSpaceTraits<dd_real>
 {
   typedef dd_real val_type;
   typedef ArithTraits<val_type>::mag_type mag_type;
   typedef val_type dot_type;
 
   static mag_type norm (const val_type& x) {
-    return ArithTraits<T>::abs (x);
+    return ArithTraits<val_type>::abs (x);
   }
-  static mag_type dot (const val_type& x, const val_type& y) {
+  static dot_type dot (const val_type& x, const val_type& y) {
     return x * y;
   }
 };
 
 template<>
-struct ScalarTraits<qd_real>
+struct InnerProductSpaceTraits<qd_real>
 {
   typedef qd_real val_type;
   typedef ArithTraits<val_type>::mag_type mag_type;
   typedef val_type dot_type;
 
   static mag_type norm (const val_type& x) {
-    return ArithTraits<T>::abs (x);
+    return ArithTraits<val_type>::abs (x);
   }
-  static mag_type dot (const val_type& x, const val_type& y) {
+  static dot_type dot (const val_type& x, const val_type& y) {
     return x * y;
   }
 };

@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -44,7 +44,7 @@
 #ifndef EPETRA_SERIALDENSESOLVER_H
 #define EPETRA_SERIALDENSESOLVER_H
 class Epetra_SerialDenseMatrix;
-#include "Epetra_Object.h" 
+#include "Epetra_Object.h"
 #include "Epetra_CompObject.h"
 #include "Epetra_BLAS.h"
 #include "Epetra_LAPACK.h"
@@ -52,11 +52,11 @@ class Epetra_SerialDenseMatrix;
 
 //! Epetra_SerialDenseSolver: A class for solving dense linear problems.
 
-/*! The Epetra_SerialDenseSolver class enables the definition, in terms of Epetra_SerialDenseMatrix 
+/*! The Epetra_SerialDenseSolver class enables the definition, in terms of Epetra_SerialDenseMatrix
     and Epetra_SerialDenseVector objects, of a dense linear problem, followed by the solution of that problem via the
     most sophisticated techniques available in LAPACK.
 
-The Epetra_SerialDenseSolver class is intended to provide full-featured support for solving linear 
+The Epetra_SerialDenseSolver class is intended to provide full-featured support for solving linear
 problems for general dense rectangular (or square) matrices.  It is written on top of BLAS and LAPACK and thus has excellent
 performance and numerical capabilities.  Using this class, one can either perform simple factorizations and solves or
 apply all the tricks available in LAPACK to get the best possible solution for very ill-conditioned problems.
@@ -69,14 +69,14 @@ attempts to provide easy access to the more sophisticated aspects of solving den
 <ul>
 <li> When you should use Epetra_LAPACK:  If you are simply looking for a convenient wrapper around the Fortran LAPACK
      routines and you have a well-conditioned problem, you should probably use Epetra_LAPACK directly.
-<li> When you should use Epetra_SerialDenseSolver: If you want to (or potentially want to) solve ill-conditioned 
+<li> When you should use Epetra_SerialDenseSolver: If you want to (or potentially want to) solve ill-conditioned
      problems or want to work with a more object-oriented interface, you should probably use Epetra_SerialDenseSolver.
-     
+
 </ul>
 
 <b>Constructing Epetra_SerialDenseSolver Objects</b>
 
-There is a single Epetra_SerialDenseSolver constructor.   However, the matrix, right hand side and solution 
+There is a single Epetra_SerialDenseSolver constructor.   However, the matrix, right hand side and solution
 vectors must be set prior to executing most methods in this class.
 
 <b>Setting vectors used for linear solves</b>
@@ -102,7 +102,7 @@ the object.  Specifically:
 </ul>
 
 <b>Counting floating point operations </b>
-The Epetra_SerialDenseSolver class has Epetra_CompObject as a base class.  Thus, floating point operations 
+The Epetra_SerialDenseSolver class has Epetra_CompObject as a base class.  Thus, floating point operations
 are counted and accumulated in the Epetra_Flop object (if any) that was set using the SetFlopCounter()
 method in the Epetra_CompObject base class.
 
@@ -111,15 +111,15 @@ In many cases, linear systems can be accurately solved by simply computing the L
 of the matrix and then performing a forward back solve with a given set of right hand side vectors.  However,
 in some instances, the factorization may be very poorly conditioned and this simple approach may not work.  In
 these situations, equilibration and iterative refinement may improve the accuracy, or prevent a breakdown in
-the factorization. 
+the factorization.
 
 Epetra_SerialDenseSolver will use equilibration with the factorization if, once the object
-is constructed and \e before it is factored, you call the function FactorWithEquilibration(true) to force 
+is constructed and \e before it is factored, you call the function FactorWithEquilibration(true) to force
 equilibration to be used.  If you are uncertain if equilibration should be used, you may call the function
 ShouldEquilibrate() which will return true if equilibration could possibly help.  ShouldEquilibrate() uses
-guidelines specified in the LAPACK User Guide, namely if SCOND < 0.1 and AMAX < Underflow or AMAX > Overflow, to 
-determine if equilibration \e might be useful. 
- 
+guidelines specified in the LAPACK User Guide, namely if SCOND < 0.1 and AMAX < Underflow or AMAX > Overflow, to
+determine if equilibration \e might be useful.
+
 Epetra_SerialDenseSolver will use iterative refinement after a forward/back solve if you call
 SolveToRefinedSolution(true).  It will also compute forward and backward error estimates if you call
 EstimateSolutionErrors(true).  Access to the forward (back) error estimates is available via FERR() (BERR()).
@@ -129,39 +129,39 @@ Examples using Epetra_SerialDenseSolver can be found in the Epetra test director
 */
 
 //=========================================================================
-class EPETRA_LIB_DLL_EXPORT Epetra_SerialDenseSolver : 
+class EPETRA_LIB_DLL_EXPORT Epetra_SerialDenseSolver :
   public Epetra_CompObject, public Epetra_BLAS,
   public Epetra_LAPACK, public Epetra_Object    {
   public:
-  
+
     //! @name Constructor/Destructor Methods
-  //@{ 
+  //@{
   //! Default constructor; matrix should be set using SetMatrix(), LHS and RHS set with SetVectors().
   Epetra_SerialDenseSolver();
-  
 
-  //! Epetra_SerialDenseSolver destructor.  
+
+  //! Epetra_SerialDenseSolver destructor.
   virtual ~Epetra_SerialDenseSolver();
   //@}
 
   //! @name Set Methods
-  //@{ 
+  //@{
 
   //! Sets the pointers for coefficient matrix
   int SetMatrix(Epetra_SerialDenseMatrix & A);
 
   //! Sets the pointers for left and right hand side vector(s).
-  /*! Row dimension of X must match column dimension of matrix A, row dimension of B 
+  /*! Row dimension of X must match column dimension of matrix A, row dimension of B
       must match row dimension of A.  X and B must have the same dimensions.
   */
   int SetVectors(Epetra_SerialDenseMatrix & X, Epetra_SerialDenseMatrix & B);
   //@}
 
   //! @name Strategy modifying Methods
-  //@{ 
+  //@{
 
   //! Causes equilibration to be called just before the matrix factorization as part of the call to Factor.
-  /*! This function must be called before the factorization is performed. 
+  /*! This function must be called before the factorization is performed.
    */
   void FactorWithEquilibration(bool Flag) {Equilibrate_ = Flag; return;};
 
@@ -171,7 +171,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialDenseSolver :
   //! Causes all solves to compute solution to best ability using iterative refinement.
   void SolveToRefinedSolution(bool Flag) {RefineSolution_ = Flag; return;};
 
-  //! Causes all solves to estimate the forward and backward solution error. 
+  //! Causes all solves to estimate the forward and backward solution error.
   /*! Error estimates will be in the arrays FERR and BERR, resp, after the solve step is complete.
       These arrays are accessible via the FERR() and BERR() access functions.
   */
@@ -179,7 +179,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialDenseSolver :
   //@}
 
   //! @name Factor/Solve/Invert Methods
-  //@{ 
+  //@{
 
   //! Computes the in-place LU factorization of the matrix using the LAPACK routine \e DGETRF.
   /*!
@@ -200,48 +200,48 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialDenseSolver :
   virtual int Invert(void);
 
   //! Computes the scaling vector S(i) = 1/sqrt(A(i,i)) of the \e this matrix.
-  /*! 
+  /*!
     \return Integer error code, set to 0 if successful. Otherwise returns the LAPACK error code INFO.
   */
   virtual int ComputeEquilibrateScaling(void);
 
   //! Equilibrates the \e this matrix.
-  /*! 
+  /*!
     \return Integer error code, set to 0 if successful. Otherwise returns the LAPACK error code INFO.
   */
   virtual int EquilibrateMatrix(void);
 
   //! Equilibrates the current RHS.
-  /*! 
+  /*!
     \return Integer error code, set to 0 if successful. Otherwise returns the LAPACK error code INFO.
   */
   int EquilibrateRHS(void);
 
 
   //! Apply Iterative Refinement.
-  /*! 
+  /*!
     \return Integer error code, set to 0 if successful. Otherwise returns the LAPACK error code INFO.
   */
   virtual int ApplyRefinement(void);
 
   //! Unscales the solution vectors if equilibration was used to solve the system.
-  /*! 
+  /*!
     \return Integer error code, set to 0 if successful. Otherwise returns the LAPACK error code INFO.
   */
   int UnequilibrateLHS(void);
 
   //! Returns the reciprocal of the 1-norm condition number of the \e this matrix.
-  /*! 
+  /*!
     \param Value Out
            On return contains the reciprocal of the 1-norm condition number of the \e this matrix.
-    
+
     \return Integer error code, set to 0 if successful. Otherwise returns the LAPACK error code INFO.
   */
   virtual int ReciprocalConditionEstimate(double & Value);
   //@}
 
   //! @name Query methods
-  //@{ 
+  //@{
 
   //! Returns true if transpose of \e this matrix has and will be used.
   bool Transpose() {return(Transpose_);};
@@ -275,20 +275,20 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialDenseSolver :
   //@}
 
   //! @name Data Accessor methods
-  //@{ 
-    
+  //@{
+
   //! Returns pointer to current matrix.
    Epetra_SerialDenseMatrix * Matrix()  const {return(Matrix_);};
-       
+
   //! Returns pointer to factored matrix (assuming factorization has been performed).
    Epetra_SerialDenseMatrix * FactoredMatrix()  const {return(Factor_);};
 
   //! Returns pointer to current LHS.
   Epetra_SerialDenseMatrix * LHS()  const {return(LHS_);};
-    
+
   //! Returns pointer to current RHS.
   Epetra_SerialDenseMatrix * RHS()  const {return(RHS_);};
-    
+
   //! Returns row dimension of system.
   int M()  const {return(M_);};
 
@@ -358,12 +358,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialDenseSolver :
   //@}
 
   //! @name I/O methods
-  //@{ 
+  //@{
   //! Print service methods; defines behavior of ostream << operator.
   virtual void Print(std::ostream& os) const;
   //@}
  protected:
-  
+
   void AllocateWORK() {if (WORK_==0) {LWORK_ = 4*N_; WORK_ = new double[LWORK_];} return;};
   void AllocateIWORK() {if (IWORK_==0) IWORK_ = new int[N_]; return;};
   void InitPointers();
@@ -412,7 +412,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialDenseSolver :
   Epetra_SerialDenseMatrix * LHS_;
   Epetra_SerialDenseMatrix * RHS_;
   Epetra_SerialDenseMatrix * Factor_;
-  
+
   double * A_;
   double * FERR_;
   double * BERR_;
@@ -427,7 +427,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialDenseSolver :
 
  private:
   // Epetra_SerialDenseSolver copy constructor (put here because we don't want user access)
-  
+
   Epetra_SerialDenseSolver(const Epetra_SerialDenseSolver& Source);
   Epetra_SerialDenseSolver & operator=(const Epetra_SerialDenseSolver& Source);
 };

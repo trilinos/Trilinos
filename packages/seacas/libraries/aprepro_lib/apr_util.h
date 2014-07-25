@@ -5,6 +5,7 @@
 #include "aprepro.h"
 
 namespace SEAMS {
+  bool arg_check(SEAMS::symrec* symbol, bool is_null);
   void conv_string(char *string);
   void new_string(const char *from, char **to);
   void concat_string(const char *from1, const char *from2, char **to);

@@ -195,7 +195,7 @@ exit $exitStatus;
     ############################################################################
     # init()
     #
-    # Prepares varibles.
+    # Prepares variables.
     #
     #   - args:     NONE
     #

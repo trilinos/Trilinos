@@ -143,7 +143,7 @@ namespace MueLuTests {
             RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
             CoupledAggFact->SetMinNodesPerAggregate(3);
             CoupledAggFact->SetMaxNeighAlreadySelected(0);
-            CoupledAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+            CoupledAggFact->SetOrdering("natural");
             CoupledAggFact->SetPhase3AggCreation(0.5);
 
             RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());
@@ -271,7 +271,7 @@ namespace MueLuTests {
             {
               X->putScalar( (SC) 0.0);
 
-              H->Iterate(*RHS,its,*X);
+              H->Iterate(*RHS,*X,its);
 
               X->norm2(norms);
               if (comm->getRank() == 0)

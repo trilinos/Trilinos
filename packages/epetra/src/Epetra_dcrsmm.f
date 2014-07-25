@@ -1,9 +1,9 @@
 C @HEADER
 C ************************************************************************
-C 
-C               Epetra: Linear Algebra Services Package 
+C
+C               Epetra: Linear Algebra Services Package
 C                 Copyright 2011 Sandia Corporation
-C 
+C
 C Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 C the U.S. Government retains certain rights in this software.
 C
@@ -34,8 +34,8 @@ C LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 C NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 C SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C
-C Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-C 
+C Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+C
 C ************************************************************************
 C @HEADER
 
@@ -93,7 +93,7 @@ C @HEADER
 *           The array indx is unchanged on exit.
 *
 *    pntr   Integer array (input)
-*           On entry, pntr(j) contains the offset into val and indx 
+*           On entry, pntr(j) contains the offset into val and indx
 *           for entries in the jth row pntr must have length > = n+1.
 *           pntr is unchanged on exit.
 *
@@ -149,7 +149,7 @@ C @HEADER
 *
 *\Enddoc
 
-      subroutine epetra_dcrsmm( itrans, m, n, val, indx, pntr, 
+      subroutine epetra_dcrsmm( itrans, m, n, val, indx, pntr,
      &                          x, ldx, y, ldy, nrhs)
 
 *     ----------------------------
@@ -187,7 +187,7 @@ C @HEADER
       return
       end
 
-      subroutine epetra_sccsmm5( m, n, val, indx, pntr, 
+      subroutine epetra_sccsmm5( m, n, val, indx, pntr,
      &                           x, ldx, y, ldy, nrhs)
 *
 *     ----------------------------
@@ -235,9 +235,9 @@ c.....do a series of SPAXPYs (sparse saxpys)
                y(indx(i)) = y(indx(i)) + val(i) * xj1
  130        continue
  120     continue
-         
+
       else if (nrhs.eq.2) then
-         
+
       do 220 j = 0, m-1
          jbgn = pntr(j)
          jend = pntr(j+1)
@@ -253,9 +253,9 @@ c.....do a series of SPAXPYs (sparse saxpys)
             y(incy) = y(incy) + vali * xj2
  230     continue
  220  continue
-         
+
       else if (nrhs.eq.3) then
-         
+
       do 320 j = 0, m-1
          jbgn = pntr(j)
          jend = pntr(j+1)
@@ -275,9 +275,9 @@ c.....do a series of SPAXPYs (sparse saxpys)
             y(incy) = y(incy) + vali * xj3
  330     continue
  320  continue
-      
+
       else if (nrhs.eq.4) then
-         
+
       do 420 j = 0, m-1
          jbgn = pntr(j)
          jend = pntr(j+1)
@@ -301,9 +301,9 @@ c.....do a series of SPAXPYs (sparse saxpys)
             y(incy) = y(incy) + vali * xj4
  430     continue
  420  continue
-      
+
       else if (nrhs.eq.5) then
-         
+
       do 520 j = 0, m-1
          jbgn = pntr(j)
          jend = pntr(j+1)
@@ -331,13 +331,13 @@ c.....do a series of SPAXPYs (sparse saxpys)
             y(incy) = y(incy) + vali * xj5
  530     continue
  520  continue
-      
+
       endif
-      
+
       return
       end
 
-      subroutine epetra_scrsmm5( m, n, val, indx, pntr, 
+      subroutine epetra_scrsmm5( m, n, val, indx, pntr,
      &                           x, ldx, y, ldy, nrhs)
 *
 *     ----------------------------
@@ -360,9 +360,9 @@ c.....do a series of SPAXPYs (sparse saxpys)
 *     --------------------------
 *
       if (nrhs.eq.1) then
-!$omp parallel default(private) 
+!$omp parallel default(private)
 !$omp&shared (m, pntr, val, x, indx, y)
-!$omp do 
+!$omp do
          do 110 j = 0, m-1
             jbgn = pntr(j)
             jend = pntr(j+1)
@@ -373,10 +373,10 @@ c.....do a series of SPAXPYs (sparse saxpys)
             y(j) = yj1
  110     continue
 !$omp end parallel
-         
+
 
       else if (nrhs.eq.2) then
-!$omp parallel default(private) 
+!$omp parallel default(private)
 !$omp&shared (m, pntr, val, x, indx, y, ldx, ldy, nrhs)
 !$omp do
          do 210 j = 0, m-1
@@ -397,7 +397,7 @@ c.....do a series of SPAXPYs (sparse saxpys)
             y(incy) = yj2
  210     continue
 !$omp end parallel
-         
+
       else if (nrhs.eq.3) then
 !$omp parallel default(private)
 !$omp&shared (m, pntr, val, x, indx, y, ldx, ldy, nrhs)
