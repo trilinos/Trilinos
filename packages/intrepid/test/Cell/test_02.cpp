@@ -128,10 +128,13 @@ int main(int argc, char *argv[]) {
   supportedTopologies.push_back(shards::getCellTopologyData<Tetrahedron<4> >() );
   supportedTopologies.push_back(shards::getCellTopologyData<Tetrahedron<10> >() );
   supportedTopologies.push_back(shards::getCellTopologyData<Hexahedron<8> >() );
+  supportedTopologies.push_back(shards::getCellTopologyData<Hexahedron<20> >() );
   supportedTopologies.push_back(shards::getCellTopologyData<Hexahedron<27> >() );
   supportedTopologies.push_back(shards::getCellTopologyData<Wedge<6> >() );
+  supportedTopologies.push_back(shards::getCellTopologyData<Wedge<15> >() );
   supportedTopologies.push_back(shards::getCellTopologyData<Wedge<18> >() );
   supportedTopologies.push_back(shards::getCellTopologyData<Pyramid<5> >() );
+  supportedTopologies.push_back(shards::getCellTopologyData<Pyramid<13> >() );
   
   // Declare iterator to loop over the cell topologies
   std::vector<shards::CellTopology>::iterator topo_iterator;
