@@ -191,6 +191,8 @@ APPEND_SET(HEADERS
   Discretization/Basis/Intrepid_HGRAD_WEDGE_I2_FEMDef.hpp
   Discretization/Basis/Intrepid_HGRAD_PYR_C1_FEM.hpp
   Discretization/Basis/Intrepid_HGRAD_PYR_C1_FEMDef.hpp
+  Discretization/Basis/Intrepid_HGRAD_PYR_I2_FEM.hpp
+  Discretization/Basis/Intrepid_HGRAD_PYR_I2_FEMDef.hpp
   Discretization/Basis/Intrepid_HCURL_HEX_I1_FEM.hpp
   Discretization/Basis/Intrepid_HCURL_HEX_I1_FEMDef.hpp
   Discretization/Basis/Intrepid_HCURL_HEX_In_FEM.hpp
