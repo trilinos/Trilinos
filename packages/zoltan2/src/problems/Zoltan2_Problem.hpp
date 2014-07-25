@@ -54,6 +54,7 @@
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_CoordinateModel.hpp>
+#include <Zoltan2_Algorithm.hpp>
 #include <Zoltan2_TimerManager.hpp>
 
 using std::cout;
@@ -138,6 +139,9 @@ protected:
 
   RCP<const Model<base_adapter_t> > baseModel_;  
 
+  // Every problem needs an algorithm, right?
+  RCP<Algorithm<Adapter> > algorithm_;
+
   RCP<ParameterList> params_;
   RCP<const Comm<int> > comm_;
 
@@ -164,10 +168,11 @@ private:
 #ifdef HAVE_ZOLTAN2_MPI
 
 template <typename Adapter>
-  Problem<Adapter>::Problem( Adapter *input, ParameterList *params,
-    MPI_Comm comm) : inputAdapter_(input), baseInputAdapter_(),
-      graphModel_(), identifierModel_(), baseModel_(),
-      params_(), comm_(), env_(), envConst_(), timer_()
+Problem<Adapter>::Problem(Adapter *input, ParameterList *params, MPI_Comm comm):
+        inputAdapter_(input),
+        baseInputAdapter_(dynamic_cast<base_adapter_t *>(input)),
+        graphModel_(), identifierModel_(), baseModel_(), algorithm_(),
+        params_(), comm_(), env_(), envConst_(), timer_()
 {
   HELLO;
   RCP<Teuchos::OpaqueWrapper<MPI_Comm> > wrapper = 
@@ -178,11 +183,11 @@ template <typename Adapter>
 #endif
 
 template <typename Adapter>
-  Problem<Adapter>::Problem( Adapter *input, ParameterList *params):
-    inputAdapter_(input), 
-    baseInputAdapter_(dynamic_cast<base_adapter_t *>(input)),
-    graphModel_(), identifierModel_(), baseModel_(),
-    params_(), comm_(), env_(), envConst_(), timer_()
+Problem<Adapter>::Problem( Adapter *input, ParameterList *params):
+        inputAdapter_(input), 
+        baseInputAdapter_(dynamic_cast<base_adapter_t *>(input)),
+        graphModel_(), identifierModel_(), baseModel_(), algorithm_(),
+        params_(), comm_(), env_(), envConst_(), timer_()
 {
   HELLO;
   comm_ = DefaultComm<int>::getComm();
@@ -192,8 +197,6 @@ template <typename Adapter>
 template <typename Adapter>
   void Problem<Adapter>::setupProblemEnvironment(ParameterList *params)
 {
-  baseInputAdapter_ = dynamic_cast<base_adapter_t *>(inputAdapter_);
-
   try{
     env_ = rcp(new Environment(*params, Teuchos::DefaultComm<int>::getComm()));
   }

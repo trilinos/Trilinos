@@ -75,7 +75,6 @@ enum blockParams{
  *  \param env   library configuration and problem parameters
  *  \param problemComm  the communicator for the problem
  *  \param ids    an Identifier model
- *  \param solution  a Solution object, containing part information
  *
  *  Preconditions: The parameters in the environment have been
  *    processed (committed).  No special requirements on the
@@ -96,7 +95,6 @@ private:
   const RCP<const Environment> env;
   const RCP<Comm<int> > problemComm;
   const RCP<const IdentifierModel<typename Adapter::base_adapter_t> > ids;
-  RCP<PartitioningSolution<Adapter> > solution;
 
 public:
   typedef typename Adapter::lno_t lno_t;     // local ids
@@ -108,15 +106,17 @@ public:
   AlgBlock(
     const RCP<const Environment> &env_,
     const RCP<Comm<int> > &problemComm_,
-    const RCP<const IdentifierModel<typename Adapter::base_adapter_t> > &ids_, 
-    RCP<PartitioningSolution<Adapter> > &solution_
+    const RCP<const IdentifierModel<typename Adapter::base_adapter_t> > &ids_
   ) : 
-    env(env_), problemComm(problemComm_), ids(ids_), solution(solution_)
+    env(env_), problemComm(problemComm_), ids(ids_)
   {}
 
   // Partitioning method
-  void partition()
+  void partition(PartitioningSolution<Adapter> &solution)
   {
+
+HELLO;
+
     using std::string;
     using std::ostringstream;
 
@@ -165,16 +165,16 @@ public:
     // From the Solution we get part information:
     // number of parts and part sizes
 
-    size_t numGlobalParts = solution->getTargetGlobalNumberOfParts();
+    size_t numGlobalParts = solution.getTargetGlobalNumberOfParts();
 
     Array<scalar_t> part_sizes(numGlobalParts);
 
-    if (solution->criteriaHasUniformPartSizes(0))
+    if (solution.criteriaHasUniformPartSizes(0))
       for (unsigned int i=0; i<numGlobalParts; i++)
         part_sizes[i] = 1.0 / numGlobalParts;
     else
       for (unsigned int i=0; i<numGlobalParts; i++)
-        part_sizes[i] = solution->getCriteriaPartSize(0, i);
+        part_sizes[i] = solution.getCriteriaPartSize(0, i);
 
     for (unsigned int i=1; i<numGlobalParts; i++)
       part_sizes[i] += part_sizes[i-1];
@@ -247,7 +247,7 @@ public:
     // Done
 
     ArrayRCP<const gno_t> gnos = arcpFromArrayView(idList);
-    solution->setParts(gnos, gnoPart, true);
+    solution.setParts(gnos, gnoPart, true);
 
     env->debug(DETAILED_STATUS, string("Exiting AlgBlock"));
   }

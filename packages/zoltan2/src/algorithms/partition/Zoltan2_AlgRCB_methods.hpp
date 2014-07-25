@@ -180,7 +180,7 @@ template <typename Adapter>
     const RCP<const Environment> &env,
     typename Adapter::part_t part0,
     typename Adapter::part_t part1,
-    const RCP<PartitioningSolution<Adapter> > &solution,
+    const PartitioningSolution<Adapter> &solution,
     ArrayRCP<double> &fractionLeft,
     typename Adapter::part_t &numPartsLeftHalf)
 {
@@ -197,21 +197,21 @@ template <typename Adapter>
   part_t right0 = left1 + 1;  // First part in right half
   part_t right1 = part1;  // Last part in right half
 
-  int nVecs = solution->getNumberOfCriteria();
+  int nVecs = solution.getNumberOfCriteria();
   fractionLeft = arcp(new double [nVecs], 0, nVecs);
 
   for (int widx=0; widx<nVecs; widx++){
-    if (solution->criteriaHasUniformPartSizes(widx)){
+    if (solution.criteriaHasUniformPartSizes(widx)){
       fractionLeft[widx] = double(numPartsLeftHalf) / double(numParts);
     }
     else{
       fractionLeft[widx] = 0;
       for(int partId=left0; partId <= left1; partId++){
-        fractionLeft[widx] += solution->getCriteriaPartSize(widx, partId);
+        fractionLeft[widx] += solution.getCriteriaPartSize(widx, partId);
       }
       double total = fractionLeft[widx];
       for(int partId=right0; partId <= right1; partId++){
-        total += solution->getCriteriaPartSize(widx, partId);
+        total += solution.getCriteriaPartSize(widx, partId);
       }
       fractionLeft[widx] /= total;
     }
@@ -1222,7 +1222,7 @@ template <typename mvector_t, typename Adapter>
     int nWeightsPerCoord,
     const RCP<mvector_t> &vectors,
     multiCriteriaNorm mcnorm,
-    const RCP<PartitioningSolution<Adapter> > &solution,
+    PartitioningSolution<Adapter> &solution,
     typename Adapter::part_t part0, 
     typename Adapter::part_t part1,
     ArrayView<unsigned char> lrflags,  // output
@@ -1377,7 +1377,7 @@ template <typename mvector_t, typename Adapter>
     int nWeightsPerCoord,
     const RCP<mvector_t> &vectors, 
     ArrayView<typename mvector_t::local_ordinal_type> index,
-    const RCP<PartitioningSolution<Adapter> > &solution,
+    const PartitioningSolution<Adapter> &solution,
     typename Adapter::part_t part0, 
     typename Adapter::part_t part1,
     ArrayView<typename Adapter::part_t> partNum)   // output

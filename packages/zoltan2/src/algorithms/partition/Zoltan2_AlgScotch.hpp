@@ -96,7 +96,6 @@ namespace Zoltan2 {
  *  \param env  parameters for the problem and library configuration
  *  \param problemComm  the communicator for the problem
  *  \param model a graph
- *  \param solution  a Solution object
  *
  *  Preconditions: The parameters in the environment have been
  *    processed (committed).
@@ -195,6 +194,7 @@ class AlgPTScotch : public Algorithm<Adapter>
 {
 public:
 
+  typedef GraphModel<typename Adapter::base_adapter_t> graphModel_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::scalar_t scalar_t;
@@ -204,7 +204,6 @@ public:
    *  \param env  parameters for the problem and library configuration
    *  \param problemComm  the communicator for the problem
    *  \param model a graph
-   *  \param solution  a Solution object
    *
    *  Preconditions: The parameters in the environment have been processed.
    *  TODO:  THIS IS A MINIMAL CONSTRUCTOR FOR NOW.
@@ -216,17 +215,15 @@ public:
 #ifdef HAVE_ZOLTAN2_MPI
               MPI_Comm mpicomm__,
 #endif
-              const RCP<GraphModel<typename Adapter::base_adapter_t> > &model__,
-              RCP<PartitioningSolution<Adapter> > &solution__) :
-     env(env__), problemComm(problemComm__), 
+              const RCP<graphModel_t> &model__) :
+    env(env__), problemComm(problemComm__), 
 #ifdef HAVE_ZOLTAN2_MPI
     mpicomm(mpicomm__),
 #endif
-    model(model__), solution(solution__)
-  {
-  }
+    model(model__)
+  { }
 
-  void partition();
+  void partition(PartitioningSolution<Adapter> &);
 
 private:
 
@@ -236,7 +233,6 @@ private:
   MPI_Comm mpicomm;
 #endif
   const RCP<GraphModel<typename Adapter::base_adapter_t> > model;
-  RCP<PartitioningSolution<Adapter> > solution;
 
   void scale_weights(size_t n, StridedData<lno_t, scalar_t> &fwgts,
                      SCOTCH_Num *iwgts);
@@ -245,11 +241,11 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
-void AlgPTScotch<Adapter>::partition()
+void AlgPTScotch<Adapter>::partition(PartitioningSolution<Adapter> &solution)
 {
   HELLO;
 
-  size_t numGlobalParts = solution->getTargetGlobalNumberOfParts();
+  size_t numGlobalParts = solution.getTargetGlobalNumberOfParts();
 
   SCOTCH_Num partnbr;
   SCOTCH_Num_Traits<size_t>::ASSIGN_TO_SCOTCH_NUM(partnbr, numGlobalParts, env);
@@ -360,9 +356,9 @@ void AlgPTScotch<Adapter>::partition()
 
   // Get target part sizes
   float *partsizes = new float[numGlobalParts];
-  if (!solution->criteriaHasUniformPartSizes(0))
+  if (!solution.criteriaHasUniformPartSizes(0))
     for (size_t i=0; i<numGlobalParts; i++)
-      partsizes[i] = solution->getCriteriaPartSize(0, i);
+      partsizes[i] = solution.getCriteriaPartSize(0, i);
   else
     for (size_t i=0; i<numGlobalParts; i++)
       partsizes[i] = 1.0 / float(numGlobalParts);
@@ -422,7 +418,7 @@ void AlgPTScotch<Adapter>::partition()
 
   ArrayRCP<const gno_t> gnos = arcpFromArrayView(vtxID);
 
-  solution->setParts(gnos, partList, true);
+  solution.setParts(gnos, partList, true);
 
   env->memory("Zoltan2-Scotch: After creating solution");
 
@@ -450,7 +446,7 @@ void AlgPTScotch<Adapter>::partition()
   for (size_t i = 0; i < nVtx; i++) partList[i] = 0;
 
   ArrayRCP<const gno_t> gnos = arcpFromArrayView(vtxID);
-  solution->setParts(gnos, partList, true);
+  solution.setParts(gnos, partList, true);
 
 #endif // DO NOT HAVE_MPI
 }
@@ -529,9 +525,8 @@ class AlgPTScotch : public Algorithm<Adapter>
 #ifdef HAVE_ZOLTAN2_MPI
               MPI_Comm mpicomm,
 #endif
-              const RCP<GraphModel<typename Adapter::base_adapter_t> > &model,
-              RCP<PartitioningSolution<Adapter> > &solution
-             )
+              const RCP<GraphModel<typename Adapter::base_adapter_t> > &model
+  )
   {
     throw std::runtime_error(
           "BUILD ERROR:  Scotch requested but not compiled into Zoltan2.\n"

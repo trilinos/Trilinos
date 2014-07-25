@@ -62,19 +62,20 @@ class AlgRandom : public Algorithm<Adapter>
 {
   public:
 
+  typedef typename Adapter::lno_t lno_t;
+  typedef typename Adapter::gid_t gid_t;
+
   AlgRandom()
   {
   }
 
   int order(
     const RCP<IdentifierModel<Adapter> > &model, 
-    const RCP<OrderingSolution<typename Adapter::gid_t,
-                               typename Adapter::lno_t> > &solution,
+    const RCP<OrderingSolution<gid_t, lno_t> > &solution,
     const RCP<Teuchos::ParameterList> &pl,
     const RCP<Teuchos::Comm<int> > &comm
   ) 
   {
-    typedef typename Adapter::lno_t lno_t;
   
     int ierr= 0;
   

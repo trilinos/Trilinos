@@ -5965,25 +5965,27 @@ class Zoltan2_AlgMJ : public Algorithm<Adapter>
 private:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-	typedef typename Adapter::scalar_t mj_scalar_t;
-	typedef typename Adapter::gno_t mj_gno_t;
-	typedef typename Adapter::lno_t mj_lno_t;
-	typedef typename Adapter::node_t mj_node_t;
-	typedef typename Adapter::part_t mj_part_t;
+
+    typedef CoordinateModel<typename Adapter::base_adapter_t> coordinateModel_t;
+    typedef typename Adapter::scalar_t mj_scalar_t;
+    typedef typename Adapter::gno_t mj_gno_t;
+    typedef typename Adapter::lno_t mj_lno_t;
+    typedef typename Adapter::node_t mj_node_t;
+    typedef typename Adapter::part_t mj_part_t;
 #endif
-	AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t> mj_partitioner;
+    AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t> mj_partitioner;
 
-	RCP<const Environment> mj_env; //the environment object
-	RCP<const CoordinateModel<typename Adapter::base_adapter_t> > mj_coords; //coordinate adapter
-	RCP<PartitioningSolution<Adapter> > mj_solution; //solution object
+    RCP<const Environment> mj_env; //the environment object
+    RCP<Comm<int> > mj_problemComm; //initial comm object
+    RCP<const coordinateModel_t> mj_coords; //coordinate adapter
 
-	//PARAMETERS
-	double imbalance_tolerance; //input imbalance tolerance.
-	size_t num_global_parts; //the targeted number of parts
-	mj_part_t *part_no_array; //input part array specifying num part to divide along each dim.
-	int recursion_depth; //the number of steps that partitioning will be solved in.
+    //PARAMETERS
+    double imbalance_tolerance; //input imbalance tolerance.
+    size_t num_global_parts; //the targeted number of parts
+    mj_part_t *part_no_array; //input part array specifying num part to divide along each dim.
+    int recursion_depth; //the number of steps that partitioning will be solved in.
 
-	int coord_dim; // coordinate dimension.
+    int coord_dim; // coordinate dimension.
     mj_lno_t num_local_coords; //number of local coords.
     mj_gno_t num_global_coords; //number of global coords.
     const mj_gno_t *initial_mj_gnos; //initial global ids of the coordinates.
@@ -6005,38 +6007,46 @@ private:
 
     int mj_run_as_rcb; //if this is set, then recursion depth is adjusted to its maximum value.
 
-	void set_up_partitioning_data();
+    void set_up_partitioning_data(PartitioningSolution<Adapter> &solution);
 
-	void set_input_parameters(const Teuchos::ParameterList &p);
+    void set_input_parameters(const Teuchos::ParameterList &p);
 
-	void free_work_memory();
+    void free_work_memory();
 public:
-	Zoltan2_AlgMJ():mj_partitioner(),mj_env(),
-			mj_coords(), mj_solution(), imbalance_tolerance(0),
-			num_global_parts(1), part_no_array(NULL), recursion_depth(0),
-			coord_dim(0),num_local_coords(0), num_global_coords(0),
-			initial_mj_gnos(NULL), mj_coordinates(NULL), num_weights_per_coord(0),
-			mj_uniform_weights(NULL), mj_weights(NULL), mj_uniform_parts(NULL),
-			mj_part_sizes(NULL), distribute_points_on_cut_lines(true),
-			max_concurrent_part_calculation(1), check_migrate_avoid_migration_option(0),
-			minimum_migration_imbalance(0.30), mj_keep_part_boxes(0), num_threads(1), mj_run_as_rcb(0)
-	{}
-	~Zoltan2_AlgMJ(){}
 
-	/*! \brief Multi Jagged  coordinate partitioning algorithm.
-	 *
-	 *  \param env   library configuration and problem parameters
-	 *  \param problemComm the communicator for the problem
-	 *  \param coords    a CoordinateModel with user data
-	 *  \param solution  a PartitioningSolution, on input it
-	 *      contains part information, on return it also contains
-	 *      the solution and quality metrics.
-	 */
-	void partition(
-			const RCP<const Environment> &env,
-			RCP<Comm<int> > &problemComm,
-			const RCP<const CoordinateModel<typename Adapter::base_adapter_t> > &mj_coords,
-			RCP<PartitioningSolution<Adapter> > &solution);
+    Zoltan2_AlgMJ(const RCP<const Environment> &env,
+                  RCP<Comm<int> > &problemComm,
+                  const RCP<const coordinateModel_t> &coords) :
+                        mj_partitioner(), mj_env(env),
+                        mj_problemComm(problemComm),
+			mj_coords(coords),
+                        imbalance_tolerance(0),
+			num_global_parts(1), part_no_array(NULL),
+                        recursion_depth(0),
+			coord_dim(0),num_local_coords(0), num_global_coords(0),
+			initial_mj_gnos(NULL), mj_coordinates(NULL),
+                        num_weights_per_coord(0),
+			mj_uniform_weights(NULL), mj_weights(NULL),
+                        mj_uniform_parts(NULL),
+			mj_part_sizes(NULL),
+                        distribute_points_on_cut_lines(true),
+			max_concurrent_part_calculation(1),
+                        check_migrate_avoid_migration_option(0),
+			minimum_migration_imbalance(0.30),
+                        mj_keep_part_boxes(0), num_threads(1), mj_run_as_rcb(0)
+    {}
+    ~Zoltan2_AlgMJ(){}
+
+    /*! \brief Multi Jagged  coordinate partitioning algorithm.
+     *
+     *  \param env   library configuration and problem parameters
+     *  \param problemComm the communicator for the problem
+     *  \param coords    a CoordinateModel with user data
+     *  \param solution  a PartitioningSolution, on input it
+     *      contains part information, on return it also contains
+     *      the solution and quality metrics.
+     */
+    void partition(PartitioningSolution<Adapter> &solution);
 };
 
 
@@ -6050,15 +6060,9 @@ public:
  *      the solution and quality metrics.
  */
 template <typename Adapter>
-void Zoltan2_AlgMJ<Adapter>::partition(
-		const RCP<const Environment> &env,
-		RCP<Comm<int> > &problemComm,
-		const RCP<const CoordinateModel<typename Adapter::base_adapter_t> > &coords,
-		RCP<PartitioningSolution<Adapter> > &solution){
-    this->mj_env = env;
-    this->mj_coords = coords;
-    this->mj_solution = solution;
-	this->set_up_partitioning_data();
+void Zoltan2_AlgMJ<Adapter>::partition(PartitioningSolution<Adapter> &solution)
+{
+    this->set_up_partitioning_data(solution);
     this->set_input_parameters(this->mj_env->getParameters());
     if (this->mj_keep_part_boxes){
     	this->mj_partitioner.set_to_keep_part_boxes();
@@ -6072,8 +6076,8 @@ void Zoltan2_AlgMJ<Adapter>::partition(
 	mj_part_t *result_assigned_part_ids = NULL;
 	mj_gno_t *result_mj_gnos = NULL;
     this->mj_partitioner.multi_jagged_part(
-    		env,
-    		problemComm,
+    		this->mj_env,
+    		this->mj_problemComm,
 
     		this->imbalance_tolerance,
     		this->num_global_parts,
@@ -6098,10 +6102,10 @@ void Zoltan2_AlgMJ<Adapter>::partition(
 
     ArrayRCP<const mj_gno_t> gnoList = arcp(result_mj_gnos, 0, this->num_local_coords, true);
     ArrayRCP<mj_part_t> partId = arcp(result_assigned_part_ids, 0, this->num_local_coords, true);
-    this->mj_solution->setParts(gnoList, partId, true);
+    solution.setParts(gnoList, partId, true);
     if (this->mj_keep_part_boxes){
     	RCP < std::vector <coordinateModelPartBox <mj_scalar_t, mj_part_t> > > output_part_boxes = this->mj_partitioner.get_part_boxes();
-        this->mj_solution->setPartBoxes(output_part_boxes);
+        solution.setPartBoxes(output_part_boxes);
     }
     this->free_work_memory();
 }
@@ -6120,8 +6124,10 @@ void Zoltan2_AlgMJ<Adapter>::free_work_memory(){
 /* \brief Sets the partitioning data for multijagged algorithm.
  * */
 template <typename Adapter>
-void Zoltan2_AlgMJ<Adapter>::set_up_partitioning_data(){
-
+void Zoltan2_AlgMJ<Adapter>::set_up_partitioning_data(
+  PartitioningSolution<Adapter> &solution
+)
+{
 	this->coord_dim = this->mj_coords->getCoordinateDim();
 	this->num_weights_per_coord = this->mj_coords->getNumWeightsPerCoordinate();
 	this->num_local_coords = this->mj_coords->getLocalNumCoordinates();
@@ -6131,7 +6137,7 @@ void Zoltan2_AlgMJ<Adapter>::set_up_partitioning_data(){
 	// From the Solution we get part information.
 	// If the part sizes for a given criteria are not uniform,
 	// then they are values that sum to 1.0.
-	this->num_global_parts = this->mj_solution->getTargetGlobalNumberOfParts();
+	this->num_global_parts = solution.getTargetGlobalNumberOfParts();
 	//allocate only two dimensional pointer.
 	//raw pointer addresess will be obtained from multivector.
 	this->mj_coordinates = allocMemory<mj_scalar_t *>(this->coord_dim);
@@ -6179,7 +6185,7 @@ void Zoltan2_AlgMJ<Adapter>::set_up_partitioning_data(){
 	}
 
 	for (int wdim = 0; wdim < criteria_dim; wdim++){
-		if (this->mj_solution->criteriaHasUniformPartSizes(wdim)){
+		if (solution.criteriaHasUniformPartSizes(wdim)){
 			this->mj_uniform_parts[wdim] = true;
 			this->mj_part_sizes[wdim] = NULL;
 		}

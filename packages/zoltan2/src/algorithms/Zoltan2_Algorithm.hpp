@@ -84,16 +84,18 @@ public:
   typedef typename Adapter::part_t part_t;
 
   //! \brief Ordering method
-  void order() { Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM }
+  virtual void order() { Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM }
   
   //! \brief Coloring method
-  void color() { Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM }
+  virtual void color() { Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM }
   
   //! \brief Coloring method
-  void match() { Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM }
+  virtual void match() { Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM }
 
   //! \brief Partitioning method
-  void partition() { Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM }
+  virtual void partition(PartitioningSolution<Adapter> &solution) {
+    Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM
+  }
 
   //! \brief pointAssign method: Available only for some partitioning algorithms
   //          when a point lies on a part boundary, the lowest part
@@ -104,7 +106,7 @@ public:
   //   \param dim : the number of dimensions specified for the point in space
   //   \param point : the coordinates of the point in space; array of size dim
   //   \return the part number of a part overlapping the given point
-  part_t pointAssign(int dim, scalar_t *point) const
+  virtual part_t pointAssign(int dim, scalar_t *point) const
   {
     Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM
   }
@@ -122,8 +124,8 @@ public:
   //                     array of size dim
   //   \param nParts : (out) the number of parts overlapping the box
   //   \param parts :  (out) array of parts overlapping the box
-  void boxAssign(int dim, scalar_t *lower, scalar_t *upper,
-                 size_t &nParts, part_t **partsFound) const
+  virtual void boxAssign(int dim, scalar_t *lower, scalar_t *upper,
+                         size_t &nParts, part_t **partsFound) const
   {
     Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM
   }

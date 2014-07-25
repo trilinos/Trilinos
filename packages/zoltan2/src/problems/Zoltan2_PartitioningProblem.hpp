@@ -121,7 +121,7 @@ public:
 #endif
 
   //! \brief Constructor where communicator is the Teuchos default.
-  PartitioningProblem(Adapter *A, Teuchos::ParameterList *p) ;
+  PartitioningProblem(Adapter *A, Teuchos::ParameterList *p);
 
   //!  \brief Direct the problem to create a solution.
   //
@@ -157,14 +157,15 @@ public:
   //   TODO:  Consider moving the algorithm to the partitioning solution.
   part_t pointAssign(int dim, scalar_t *point) 
   {
-#ifdef KDD_READY
-    part_t pret;
+    part_t p;
     try {
-      pret = alg_->pointAssign(dim, point); 
+      if (this->algorithm_ == Teuchos::null)
+        throw std::logic_error("no partitioning algorithm has been run yet");
+
+      p = this->algorithm_->pointAssign(dim, point); 
     }
-    catch(){// KDD FIGURE THIS OUT}
-    return pret;
-#endif
+    Z2_FORWARD_EXCEPTIONS
+    return p;
   }
 
   //!  \brief Return an array of all parts overlapping a given box in space.
@@ -185,12 +186,13 @@ public:
   void boxAssign(int dim, scalar_t *lower, scalar_t *upper,
                  size_t &nPartsFound, part_t **partsFound) 
   {
-#ifdef KDD_READY
     try {
-      alg_->boxAssign(dim, lower, upper, nParts, parts); 
+      if (this->algorithm_ == Teuchos::null)
+        throw std::logic_error("no partitioning algorithm has been run yet");
+
+      this->algorithm_->boxAssign(dim, lower, upper, nPartsFound, partsFound); 
     }
-    catch(){// KDD FIGURE THIS OUT}
-#endif
+    Z2_FORWARD_EXCEPTIONS
   }
 
   //!  \brief Get the solution to the problem.
@@ -367,7 +369,7 @@ private:
   modelFlag_t graphFlags_;
   modelFlag_t idFlags_;
   modelFlag_t coordFlags_;
-  std::string algorithm_;
+  std::string algName_;
 
   int numberOfWeights_;
 
@@ -407,7 +409,7 @@ template <typename Adapter>
       Problem<Adapter>(A,p,comm), solution_(),
       problemComm_(), problemCommConst_(),
       inputType_(InvalidAdapterType), 
-      graphFlags_(), idFlags_(), coordFlags_(), algorithm_(),
+      graphFlags_(), idFlags_(), coordFlags_(), algName_(),
       numberOfWeights_(), partIds_(), partSizes_(), 
       numberOfCriteria_(), levelNumberParts_(), hierarchical_(false), 
       timer_(), metricsRequested_(false), metrics_()
@@ -434,7 +436,7 @@ template <typename Adapter>
       Problem<Adapter>(A,p), solution_(),
       problemComm_(), problemCommConst_(),
       inputType_(InvalidAdapterType), 
-      graphFlags_(), idFlags_(), coordFlags_(), algorithm_(),
+      graphFlags_(), idFlags_(), coordFlags_(), algName_(),
       numberOfWeights_(), 
       partIds_(), partSizes_(), numberOfCriteria_(), 
       levelNumberParts_(), hierarchical_(false), timer_(),
@@ -596,41 +598,50 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
   // Call the algorithm
 
   try {
-    if (algorithm_ == std::string("scotch")){
-      AlgPTScotch<Adapter> algscotch(this->envConst_, problemComm_,
+    if (algName_ == std::string("scotch")) {
+
+      this->algorithm_ = rcp(new AlgPTScotch<Adapter>(this->envConst_,
+                                            problemComm_,
 #ifdef HAVE_ZOLTAN2_MPI
-        mpiComm_,
+                                            mpiComm_,
 #endif
-        this->graphModel_, solution_);
-      algscotch.partition();
+                                            this->graphModel_));
+      this->algorithm_->partition(*solution_);
     }
-    else if (algorithm_ == std::string("block")){
-      AlgBlock<Adapter> algblock(this->envConst_, problemComm_,
-        this->identifierModel_, solution_);
-      algblock.partition();
+
+    else if (algName_ == std::string("block")) {
+
+      this->algorithm_ = rcp(new AlgBlock<Adapter>(this->envConst_,
+                                         problemComm_, this->identifierModel_));
+      this->algorithm_->partition(*solution_);
     }
-    else if (algorithm_ == std::string("rcb")){
-      AlgRCB<Adapter>(this->envConst_, problemComm_,
-        this->coordinateModel_, solution_);
+
+    else if (algName_ == std::string("rcb")) {
+
+      this->algorithm_ = rcp(new AlgRCB<Adapter>(this->envConst_, problemComm_,
+                                                 this->coordinateModel_));
+      this->algorithm_->partition(*solution_);
     }
-    else if (algorithm_ == std::string("multijagged")){
-      Zoltan2_AlgMJ<Adapter> alg_mj;
-      alg_mj.partition( this->envConst_, problemComm_,
-         this->coordinateModel_, solution_);
+
+    else if (algName_ == std::string("multijagged")) {
+
+      this->algorithm_ = rcp(new Zoltan2_AlgMJ<Adapter>(this->envConst_,
+                                              problemComm_,
+                                              this->coordinateModel_));
+      this->algorithm_->partition(*solution_);
     }
-    else if (algorithm_ == std::string("wolf"))
-    {
-      AlgWolf<Adapter> alg_wolf(this->envConst_, problemComm_,this->graphModel_,
-				this->coordinateModel_);
+
+    else if (algName_ == std::string("wolf")) {
+
+      this->algorithm_ = rcp(new AlgWolf<Adapter>(this->envConst_,
+                                        problemComm_,this->graphModel_,
+                                        this->coordinateModel_));
 
       // need to add coordModel, make sure this is built
-
-      alg_wolf.partition(solution_);
-
+      this->algorithm_->partition(*solution_);
     }
-    else
-    {
-      throw std::logic_error("partitioning algorithm not supported yet");
+    else {
+      throw std::logic_error("partitioning algorithm not supported");
     }
   }
   Z2_FORWARD_EXCEPTIONS;
@@ -803,7 +814,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       //modelType_ = IdentifierModelType;
       modelAvail_[IdentifierModelType] = true;
 
-      algorithm_ = algorithm;
+      algName_ = algorithm;
       needConsecutiveGlobalIds = true;
     }
     else if (algorithm == std::string("rcb") ||
@@ -814,7 +825,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       //modelType_ = CoordinateModelType;
       modelAvail_[CoordinateModelType]=true;
     
-      algorithm_ = algorithm;
+      algName_ = algorithm;
     }
     else if (algorithm == std::string("metis") ||
              algorithm == std::string("parmetis") ||
@@ -825,7 +836,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       //modelType_ = GraphModelType;
       modelAvail_[GraphModelType]=true;
 
-      algorithm_ = algorithm;
+      algName_ = algorithm;
       removeSelfEdges = true;
       needConsecutiveGlobalIds = true;
     }
@@ -840,14 +851,14 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
         //modelType_ = HypergraphModelType;
         modelAvail_[HypergraphModelType]=true;
       }
-      algorithm_ = algorithm;
+      algName_ = algorithm;
       needConsecutiveGlobalIds = true;
     }
     else if (algorithm == std::string("wolf"))
     {
       modelAvail_[GraphModelType]=true;
       modelAvail_[CoordinateModelType]=true;
-      algorithm_ = algorithm;
+      algName_ = algorithm;
     }
     else
     {
@@ -864,9 +875,9 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       modelAvail_[HypergraphModelType]=true;
 
       if (problemComm_->getSize() > 1)
-        algorithm_ = std::string("phg"); 
+        algName_ = std::string("phg"); 
       else
-        algorithm_ = std::string("patoh"); 
+        algName_ = std::string("patoh"); 
       needConsecutiveGlobalIds = true;
     }
     else if (model == std::string("graph"))
@@ -876,24 +887,24 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
 #ifdef HAVE_ZOLTAN2_SCOTCH
       if (problemComm_->getSize() > 1)
-        algorithm_ = std::string("ptscotch"); 
+        algName_ = std::string("ptscotch"); 
       else
-        algorithm_ = std::string("scotch"); 
+        algName_ = std::string("scotch"); 
       removeSelfEdges = true;
       needConsecutiveGlobalIds = true;
 #else
 #ifdef HAVE_ZOLTAN2_PARMETIS
       if (problemComm_->getSize() > 1)
-        algorithm_ = std::string("parmetis"); 
+        algName_ = std::string("parmetis"); 
       else
-        algorithm_ = std::string("metis"); 
+        algName_ = std::string("metis"); 
       removeSelfEdges = true;
       needConsecutiveGlobalIds = true;
 #else
       if (problemComm_->getSize() > 1)
-        algorithm_ = std::string("phg"); 
+        algName_ = std::string("phg"); 
       else
-        algorithm_ = std::string("patoh"); 
+        algName_ = std::string("patoh"); 
       removeSelfEdges = true;
       needConsecutiveGlobalIds = true;
 #endif
@@ -904,14 +915,14 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       //modelType_ = CoordinateModelType;
       modelAvail_[CoordinateModelType]=true;
 
-      algorithm_ = std::string("rcb");
+      algName_ = std::string("rcb");
     }
     else if (model == std::string("ids"))
     {
       //modelType_ = IdentifierModelType;
       modelAvail_[IdentifierModelType]=true;
 
-      algorithm_ = std::string("block");
+      algName_ = std::string("block");
       needConsecutiveGlobalIds = true;
     }
     else
@@ -933,9 +944,9 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       modelAvail_[HypergraphModelType]=true;
       
       if (problemComm_->getSize() > 1)
-        algorithm_ = std::string("phg"); 
+        algName_ = std::string("phg"); 
       else
-        algorithm_ = std::string("patoh"); 
+        algName_ = std::string("patoh"); 
     }
     else if (inputType_ == GraphAdapterType ||
         inputType_ == MeshAdapterType)
@@ -944,17 +955,17 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       modelAvail_[GraphModelType]=true;
 
       if (problemComm_->getSize() > 1)
-        algorithm_ = std::string("phg"); 
+        algName_ = std::string("phg"); 
       else
-        algorithm_ = std::string("patoh"); 
+        algName_ = std::string("patoh"); 
     }
     else if (inputType_ == CoordinateAdapterType)
     {
       //modelType_ = CoordinateModelType;
       modelAvail_[CoordinateModelType]=true;
 
-      if(algorithm_ != std::string("multijagged"))
-      algorithm_ = std::string("rcb");
+      if(algName_ != std::string("multijagged"))
+      algName_ = std::string("rcb");
     }
     else if (inputType_ == VectorAdapterType ||
              inputType_ == IdentifierAdapterType)
@@ -962,7 +973,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       //modelType_ = IdentifierModelType;
       modelAvail_[IdentifierModelType]=true;
 
-      algorithm_ = std::string("block");
+      algName_ = std::string("block");
     }
     else{
       // This should never happen
