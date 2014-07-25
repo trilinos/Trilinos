@@ -44,6 +44,7 @@
 
 #include "Teuchos_ScalarTraitsCUDA.hpp"
 
+#include "Kokkos_Cuda.hpp"
 #include "Kokkos_Threads.hpp"
 #include "impl/Kokkos_Timer.hpp"
 
