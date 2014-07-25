@@ -599,18 +599,41 @@ what_arg:  The error message to be associated with this error. ";
 // File: classTeuchos_1_1ParameterList.xml
 %feature("docstring") Teuchos::ParameterList "
 
-Templated parameter list.
+A list of parameters of arbitrary type.
 
-Parameters can be added and retreived with the templated \"get\" and
-\"set\" functions. These parameters can any data type which uses value
-sementics (e.g. double, float, int, *double, *float, *int, ...) which
-includes other parameter lists, allowing for a hierarchy of parameter
-lists. These parameters can also be pointers to vectors or functions.
+Summary A ParameterList is a map from parameter name (a string) to its
+value. The value may have any type with value semantics (see
+explanation and examples below). This includes another ParameterList,
+which allows a ParameterList to encode a hierarchy of parameters.
+Different entries in the same ParameterList may have values of
+different types.
 
-Use static_cast<T>() when the type is ambiguous.
+Users may add a parameter using one of the get() methods, and retrieve
+its value (given the parameter's name) using one of the set() methods.
+If the compiler gets confused when you use one of the templated
+methods, you might have to help it by specifying the type explicitly,
+or by casting the input object (using e.g., static_cast). There are
+also methods for iterating through all the parameters in a list, and
+for validating parameters using validators that you may define for
+each parameter. Value semantics A type has value semantics when it can
+be passed around as a value. This means that it has an assignment
+operator and a copy constructor, and that the latter creates \"new
+objects\" (rather than references that modify a single object). Types
+with value semantics include double, float, int, std::string, and
+similar types.
 
-Both char* and std::string std::map to are stored as strings
-internally.
+Paradoxically, pointers like double* also have value semantics. While
+the pointer is a reference to an object (e.g., an array of double),
+the pointer itself is a value (an address in memory). The same holds
+for Teuchos' reference-counted pointer and array classes ( RCP resp.
+ArrayRCP). While it is valid to store pointers (\"raw\" or reference-
+counted) in a ParameterList, be aware that this hinders serialization.
+For example, a double* could encode a single double or an array of
+double. The pointer itself does not encode the length of the array. A
+ParameterList serializer has no way to know what the double* means.
+ParameterList does not forbid you from storing objects that cannot be
+correctly serialized, so you have to know whether or not this concerns
+you.
 
 C++ includes: Teuchos_ParameterList.hpp ";
 
@@ -624,15 +647,15 @@ Constructor. ";
 
 %feature("docstring")  Teuchos::ParameterList::ParameterList "Teuchos::ParameterList::ParameterList(const std::string &name)
 
-Constructor. ";
+Constructor that names the entire parameter list. ";
 
 %feature("docstring")  Teuchos::ParameterList::ParameterList "Teuchos::ParameterList::ParameterList(const ParameterList &source)
 
-Copy Constructor. ";
+Copy constructor. ";
 
 %feature("docstring")  Teuchos::ParameterList::~ParameterList "Teuchos::ParameterList::~ParameterList()
 
-Deconstructor. ";
+Destructor. ";
 
 %feature("docstring")  Teuchos::ParameterList::numParams "Ordinal
 Teuchos::ParameterList::numParams() const
@@ -651,10 +674,9 @@ ParameterList &source)
 
 Set the parameters in source.
 
-Note, this function will set the parameters and sublists from source
-into *this but will not result in parameters being removed from *this.
-Parameters in *this with the same names as those in source will be
-overwritten. ";
+This function will set the parameters and sublists from source into
+*this, but will not remove parameters from *this. Parameters in *this
+with the same names as those in source will be overwritten. ";
 
 %feature("docstring")
 Teuchos::ParameterList::setParametersNotAlreadySet "ParameterList &
@@ -685,8 +707,22 @@ Teuchos::ParameterList::set(std::string const &name, T const &value,
 std::string const &docString=\"\", RCP< const ParameterEntryValidator
 > const &validator=null)
 
-Sets different types of parameters. The type depends on the second
-entry.
+Set a parameter whose value has type T.
+
+Parameters:
+-----------
+
+name:  [in] The parameter's name.
+
+value:  [in] The parameter's value. This determines the template
+parameter T. In most cases, you will not need to specify the type T
+explicitly; the compiler will infer it from this argument.
+
+docString:  [in] Documentation string for the parameter.
+
+validator:  [in] Validator for the parameter. If not specified, it
+defaults to null, the trivial validator (every value passes
+validation).
 
 Use static_cast<T>() when the type is ambiguous.
 
@@ -700,23 +736,29 @@ Teuchos::ParameterList::set(std::string const &name, char value[],
 std::string const &docString=\"\", RCP< const ParameterEntryValidator
 > const &validator=null)
 
-Specialization for the case when a user sets the parameter with a
-character std::string in parenthesis. ";
+Specialization of set() for a parameter which is a char[].
+
+This version of set() copies the given character array to an
+std::string and stores it that way in the ParameterList. ";
 
 %feature("docstring")  Teuchos::ParameterList::set "ParameterList&
 Teuchos::ParameterList::set(std::string const &name, const char
 value[], std::string const &docString=\"\", RCP< const
 ParameterEntryValidator > const &validator=null)
 
-Specialization for the case when a user sets the parameter with a
-character std::string in parenthesis. ";
+Specialization of set() for a parameter which is a const char[].
+
+This version of set() copies the given character array to an
+std::string and stores it that way in the ParameterList. ";
 
 %feature("docstring")  Teuchos::ParameterList::set "ParameterList &
 Teuchos::ParameterList::set(std::string const &name, ParameterList
 const &value, std::string const &docString=\"\")
 
-Template specialization for the case when a user sets the parameter
-with a ParameterList. ";
+Specialization of set() for a parameter which is itself a
+ParameterList.
+
+We call the input ParameterList a sublist of *this. ";
 
 %feature("docstring")  Teuchos::ParameterList::setEntry "ParameterList & Teuchos::ParameterList::setEntry(const std::string
 &name, const ParameterEntry &entry)
@@ -731,13 +773,17 @@ from XML. KL 7 August 2004 ";
 %feature("docstring")  Teuchos::ParameterList::get "T &
 Teuchos::ParameterList::get(const std::string &name, T def_value)
 
-Retrieves parameter name of type T from list, if it exists, else the
-def_value is used to enter a new parameter into the list.
+Return the parameter's value, or the default value if it is not there.
+
+If the parameter with the given name exists in this  ParameterList and
+has type T, return the parameter's value.  If  the parameter exists
+but does not have type T, throw an  exception.  Otherwise, if the
+parameter does not exist, add it  to the list with value
+<tt>def_value</tt>, and return  <tt>def_value</tt>.
 
 Use the static_cast<T>() when the type is ambiguous.
 
-Both char* and std::string std::map to are stored as strings
-internally.
+Both char* and std::string are stored as strings internally.
 
 Sets the parameter as \"used\".
 
@@ -746,39 +792,58 @@ Exception is thrown if name exists, but is not of type T. ";
 %feature("docstring")  Teuchos::ParameterList::get "std::string &
 Teuchos::ParameterList::get(const std::string &name, char def_value[])
 
-Specialization of get, where the nominal value is a character
-std::string in parenthesis. Both char* and std::string are stored as
-strings and return std::string values. ";
+Specialization of get(), where the nominal value is a character
+string. Both char* and std::string are stored as strings and return
+std::string values. ";
 
 %feature("docstring")  Teuchos::ParameterList::get "std::string&
 Teuchos::ParameterList::get(const std::string &name, const char
 def_value[])
 
-Specialization of get, where the nominal value is a character
-std::string in parenthesis. Both char* and std::string are stored as
-strings and return std::string values. ";
+Specialization of get(), where the nominal value is a character
+string. Both char* and std::string are stored as strings and return
+std::string values. ";
 
 %feature("docstring")  Teuchos::ParameterList::get "T &
 Teuchos::ParameterList::get(const std::string &name)
 
-Retrieves parameter name of type T from a list, an
-Exceptions::InvalidParameter std::exception is thrown if this
-parameter doesn't exist (  Exceptions::InvalidParameterName) or is the
-wrong type (  Exceptions::InvalidParameterType).
+Get a nonconst reference to the parameter.
 
-The syntax for calling this method is:  list.template get<int>(
-\"Iters\" ) ";
+Parameters:
+-----------
+
+name:  [in] The name of the parameter.
+
+If the given parameter is not in the list at all, this method throws
+Exceptions::InvalidParameter. If the parameter is in the list but does
+not have type T, this method throws Exceptions::InvalidParameterType.
+Both exceptions are subclasses of Exceptions::InvalidParameter.
+
+You may use the returned reference to modify the parameter's value in
+the list directly.
+
+When you call this method, you must specify the type T explicitly. For
+example: If the type T is itself a template parameter in your code,
+you must use the template keyword. For example: ";
 
 %feature("docstring")  Teuchos::ParameterList::get "const T &
 Teuchos::ParameterList::get(const std::string &name) const
 
-Retrieves parameter name of type T from a constant list, an
-Exceptions::InvalidParameter std::exception is thrown if this
-parameter doesn't exist (  Exceptions::InvalidParameterName) or is the
-wrong type (  Exceptions::InvalidParameterType).
+Get a const reference to the parameter.
 
-The syntax for calling this method is:  list.template get<int>(
-\"Iters\" ) ";
+Parameters:
+-----------
+
+name:  [in] The name of the parameter.
+
+If the given parameter is not in the list at all, this method throws
+Exceptions::InvalidParameter. If the parameter is in the list but does
+not have type T, this method throws Exceptions::InvalidParameterType.
+Both exceptions are subclasses of Exceptions::InvalidParameter.
+
+When you call this method, you must specify the type T explicitly. For
+example: If the type T is itself a template parameter in your code,
+you must use the template keyword. For example: ";
 
 %feature("docstring")  Teuchos::ParameterList::getPtr "T *
 Teuchos::ParameterList::getPtr(const std::string &name)
@@ -885,37 +950,31 @@ std::exception is thrown. ";
 %feature("docstring")  Teuchos::ParameterList::name "const
 std::string & Teuchos::ParameterList::name() const
 
-Query the name of this parameter list. ";
+The name of this ParameterList. ";
 
 %feature("docstring")  Teuchos::ParameterList::isParameter "bool
 Teuchos::ParameterList::isParameter(const std::string &name) const
 
-Query the existence of a parameter.
+Whether the given parameter exists in this list.
 
-\"true\" if a parameter with this name exists, else \"false\".
-Warning, this function should almost never be used! Instead, consider
-using getEntryPtr() instead. ";
+Return true if a parameter with name name exists in this list, else
+return false. ";
 
 %feature("docstring")  Teuchos::ParameterList::isSublist "bool
 Teuchos::ParameterList::isSublist(const std::string &name) const
 
-Query the existence of a parameter and whether it is a parameter list.
+Whether the given sublist exists in this list.
 
-\"true\" if a parameter with this name exists and is itself a
-parameter list, else \"false\". Warning, this function should almost
-never be used! Instead, consider using getEntryPtr() instead. ";
+Return true if a parameter with name name exists in this list, and is
+itself a ParameterList. Otherwise, return false. ";
 
 %feature("docstring")  Teuchos::ParameterList::isType "bool
 Teuchos::ParameterList::isType(const std::string &name) const
 
-Query the existence and type of a parameter.
+Whether the given parameter exists in this list and has type T.
 
-\"true\" is a parameter with this name exists and is of type T, else
-\"false\".
-
-The syntax for calling this method is:  list.template isType<int>(
-\"Iters\" ). Warning, this function should almost never be used!
-Instead, consider using getEntryPtr() instead. ";
+Return true if a parameter with name name exists in this list and has
+type T. Otherwise, return false. ";
 
 %feature("docstring")  Teuchos::ParameterList::isType "bool
 Teuchos::ParameterList::isType(const std::string &name, T *ptr) const
@@ -925,9 +984,9 @@ Query the existence and type of a parameter.
 \"true\" is a parameter with this name exists and is of type T, else
 \"false\".
 
-It is not recommended that this method be used directly!  Please use
-either the helper function isParameterType or non-nominal isType
-method. ";
+It is not recommended that this method be used directly!Please use
+either the helper function <b>isParameterType</b> or non- nominal
+<b>isType</b> method. ";
 
 /*  I/O Functions  */
 
@@ -1076,9 +1135,70 @@ in one sublist before moving into nested subslist. ";
 // File: classTeuchos_1_1ParameterListAcceptor.xml
 %feature("docstring") Teuchos::ParameterListAcceptor "
 
-Base class objects that can accept a parameter list.
+Interface for objects that can accept a ParameterList.
 
-ToDo: Finish Documentation!
+Summary for users Most users only need to know about two methods:
+setParameterList()
+
+getValidParameters()
+
+setParameterList() lets users set this object's parameters.
+getValidParameters() returns a default list of parameters, including
+any documentation and/or validators that the subclass may provide. If
+you call setParameterList(), implementations will fill in any missing
+parameters with their default values, and do validation. That's all
+you really need to know! If you want more details about semantics,
+though, please read on. SemanticsComplete state or delta? This
+interface does not define the semantics of calling setParametersList()
+twice with different lists. For example, suppose that the class
+SomeClass takes two parameters: An int parameter \"Integer parameter\"
+
+A bool parameter \"Boolean parameter\"  The default value of the first
+is 0, and the default value of the second is false. In the following
+code sample, what is the final state of x's parameters? The answer is
+that we can't tell without knowing more about SomeClass. There are at
+least two possibilities: \"Integer parameter\" is 0, and \"Boolean
+parameter\" is true \"Integer parameter\" is 42, and \"Boolean
+parameter\" is true
+
+The first possibility says that the input ParameterList expresses the
+complete state of the object. Any missing parameters in subsequent
+calls get filled in with their default values. The second possibility
+says that the input ParameterList expresses a \"delta,\" a difference
+from its current state. You must read the subclass' documentation to
+determine which of these it implements. Notes for developers
+Developers who would like a simpler interface from which to inherit
+may prefer the subclass ParameterListAcceptorDefaultBase. That class
+provides default implementations of all but two of this class'
+methods.
+
+It's tempting to begin setParameterList() as follows: That's correct,
+but be aware that this can only be used to implement \"complete
+state\" semantics, not \"delta\" semantics. This is because
+validateParametersAndSetDefaults() fills in default values, as its
+name suggests.
+
+Before ParameterList had the validation feature, many implementations
+of setParameterList() would use the two-argument version of
+ParameterList::get(), and supply the current value of the parameter as
+the default if that parameter didn't exist in the input list. This
+implemented delta semantics. It is unclear whether implementers knew
+what semantics they were implementing, but that was the effect of
+their code.
+
+If you want to implement delta semantics, and also want to exploit the
+validation feature, you have at least two options. First, you could
+use the validation method that does not set defaults: and then use the
+two-argument version of  ParameterList::get() in the way discussed
+above, so that existing parameter values don't get replaced with
+defaults.
+
+The second option is to keep a copy of the ParameterList from the
+previous call to setParameterList(). This must be a deep copy, because
+users might have changed parameters since then. (It is likely that
+they have just one ParameterList, which they change as necessary.) You
+may then use that list not the result of getValidParameters() as the
+input argument of validateParametersAndSetDefaults().
 
 C++ includes: Teuchos_ParameterListAcceptor.hpp ";
 
@@ -1086,43 +1206,51 @@ C++ includes: Teuchos_ParameterListAcceptor.hpp ";
 
 %feature("docstring")
 Teuchos::ParameterListAcceptor::setParameterList "virtual void
-Teuchos::ParameterListAcceptor::setParameterList(RCP< ParameterList >
-const &paramList)=0
+Teuchos::ParameterListAcceptor::setParameterList(const RCP<
+ParameterList > &paramList)=0
 
 Set parameters from a parameter list and return with default values.
 
 Parameters:
 -----------
 
-paramList:  [in] On input contains the parameters set by the client.
-Note that *paramList may have parameters set to their default values
-added while the list is being parsed either right away or later.
+paramList:  [in/out] On input: contains the parameters set by the
+client. On output: the same list, possibly filled with default values,
+depending on the implementation.
 
-Preconditions:  paramList.get() != NULL
+Implementations of this method generally read parameters out of
+paramList, and use them to modify the state or behavior of this
+object. Implementations may validate input parameters, and throw an
+exception or set an error state if any of them are invalid.
+\"Validation
 
-Postconditions:  this-> getParameterList(). get() == paramList.get()
+! paramList.is_null ()
 
-This is parameter list is \"remembered\" by *this object until it is
-unset using  unsetParameterList().
-
-Note: When this parameter list is passed in it is assumed that the
-client has finished setting all of the values that they want to set so
-that the list is completely ready to read (and be validated) by *this
-object. If the client is to change this parameter list by adding new
-options or changing the value of current options, the behavior of
-*this object is undefined. This is because, the object may read the
-options from *paramList right away or may wait to read some options
-until a later time. There should be no expectation that if an option
-is changed by the client that this will automatically be recognized by
-*this object. To change even one parameter, this function must be
-called again, with the entire sublist. ";
+this-> getParameterList(). get() == paramList.get()  This object
+\"remembers\" paramList until it is \"unset\" using
+unsetParameterList(). When the input ParameterList is passed in, we
+assume that the client has finished setting parameters in the
+ParameterList. If the client changes paramList after calling this
+method, this object's behavior is undefined. This is because the
+object may read the options from paramList at any time. It may either
+do so in this method, or it may wait to read them at some later time.
+Users should not expect that if they change a parameter, that this
+object will automatically recognize the change. To change even one
+parameter, this method must be called again. ";
 
 %feature("docstring")
 Teuchos::ParameterListAcceptor::getNonconstParameterList "virtual
 RCP<ParameterList>
 Teuchos::ParameterListAcceptor::getNonconstParameterList()=0
 
-Get the parameter list that was set using  setParameterList(). ";
+Get a nonconst version of the parameter list that was set using
+setParameterList().
+
+The returned ParameterList should be the same object (pointer
+equality) as the object given to setParameterList(). If
+setParameterList() has not yet been called on this object, the
+returned RCP may be null, but need not necessarily be. If
+unsetParameterList() ";
 
 %feature("docstring")
 Teuchos::ParameterListAcceptor::unsetParameterList "virtual
@@ -1131,11 +1259,13 @@ Teuchos::ParameterListAcceptor::unsetParameterList()=0
 
 Unset the parameter list that was set using  setParameterList().
 
-This just means that the parameter list that was set using
-setParameterList() is detached from this object. This does not mean
-that the effect of the parameters is undone.
+This does not undo the effect of setting the parameters via a call to
+setParameterList(). It merely \"forgets\" the RCP, so that
+getParameterList() and getNonconstParameterList() both return null.
 
-Postconditions:  this-> getParameterList(). get() == NULL ";
+this-> getParameter().is_null ()
+
+this->getNonconstParameter().is_null () ";
 
 /*  Virtual functions with default implementation  */
 
@@ -1154,23 +1284,27 @@ Teuchos::ParameterListAcceptor::getValidParameters "Teuchos::RCP<
 const Teuchos::ParameterList >
 Teuchos::ParameterListAcceptor::getValidParameters() const
 
-Return a const parameter list of all of the valid parameters that
-this->setParameterList(...) will accept.
+Return a ParameterList containing all of the valid parameters that
+this->setParameterList(...) will accept, along with any validators.
 
-The default implementation returns Teuchos::null. ";
+Implementations of setParameterList() may use the list returned by
+getValidParameters() to validate the input ParameterList.
+
+The default implementation returns null. ";
 
 %feature("docstring")  Teuchos::ParameterListAcceptor::getDependencies
 "RCP< const DependencySheet >
 Teuchos::ParameterListAcceptor::getDependencies() const
 
-Rreturn a const Dependency Sheet of all the dependencies that should
-be applied to the parameter list return by this->
-getValidParameters().
+Rreturn a const DependencySheet of all the dependencies that should be
+applied to the ParameterList returned by this-> getValidParameters().
 
 The default implementation returns Teuchos::null. ";
 
 %feature("docstring")
-Teuchos::ParameterListAcceptor::~ParameterListAcceptor "Teuchos::ParameterListAcceptor::~ParameterListAcceptor() ";
+Teuchos::ParameterListAcceptor::~ParameterListAcceptor "Teuchos::ParameterListAcceptor::~ParameterListAcceptor()
+
+Destructor. ";
 
 
 // File: classTeuchos_1_1ParameterListAcceptorDefaultBase.xml
@@ -1275,6 +1409,10 @@ Teuchos::ParameterList::PrintOptions::incrIndent(int indents) ";
 %feature("docstring")  Teuchos::ParameterList::PrintOptions::copy "PrintOptions Teuchos::ParameterList::PrintOptions::copy() const ";
 
 
+// File: classTeuchos_1_1RCP.xml
+%feature("docstring") Teuchos::RCP "";
+
+
 // File: structTeuchos_1_1ScalarTraits_3_01char_01_4.xml
 %feature("docstring") Teuchos::ScalarTraits< char > " ";
 
@@ -1337,68 +1475,108 @@ Create a StringInputStream. ";
 // File: classTeuchos_1_1Time.xml
 %feature("docstring") Teuchos::Time "
 
-Basic wall-clock timer class.
+Wall-clock timer.
 
 To time a section of code, place it in between calls to start() and
-stop().
-
-For std::exception safety and correct behavior in reentrant code, this
-class should generally be used only through the Teuchos::TimeMonitor
-mechanism.
+stop(). It is better to access this class through the TimeMonitor
+class (which see) for exception safety and correct behavior in
+reentrant code.
 
 C++ includes: Teuchos_Time.hpp ";
 
 %feature("docstring")  Teuchos::Time::Time "Teuchos::Time::Time(const
 std::string &name, bool start=false)
 
-Construct with a descriptive name. ";
+Constructor.
+
+Parameters:
+-----------
+
+name:  [in] Name of the timer.
+
+start:  [in] If true, start the timer upon creating it. By default,
+the timer only starts running when you call start(). ";
 
 %feature("docstring")  Teuchos::Time::start "void
 Teuchos::Time::start(bool reset=false)
 
-Starts the timer. ";
+Start the timer, if the timer is enabled (see disable()).
+
+Parameters:
+-----------
+
+reset:  [in] If true, reset the timer's total elapsed time to zero
+before starting the timer. By default, the timer accumulates the total
+elapsed time for all start() ... stop() sequences. ";
 
 %feature("docstring")  Teuchos::Time::stop "double
 Teuchos::Time::stop()
 
-Stops the timer. ";
+Stop the timer, if the timer is enabled (see disable()). ";
+
+%feature("docstring")  Teuchos::Time::disable "void
+Teuchos::Time::disable()
+
+\"Disable\" this timer, so that it ignores calls to start() and
+stop(). ";
+
+%feature("docstring")  Teuchos::Time::enable "void
+Teuchos::Time::enable()
+
+\"Enable\" this timer, so that it (again) respects calls to start()
+and stop(). ";
+
+%feature("docstring")  Teuchos::Time::isEnabled "bool
+Teuchos::Time::isEnabled() const
+
+Whether the timer is enabled (see disable()). ";
 
 %feature("docstring")  Teuchos::Time::totalElapsedTime "double
 Teuchos::Time::totalElapsedTime(bool readCurrentTime=false) const
 
-Returns the total time (in seconds) accumulated by this timer.
+The total time in seconds accumulated by this timer.
 
-This should be called only when the clock is stopped. ";
+Parameters:
+-----------
+
+readCurrentTime:  [in] If true, return the current elapsed time since
+the first call to start() when the timer was enabled, whether or not
+the timer is running or enabled. If false, return the total elapsed
+time as of the last call to stop() when the timer was enabled.
+
+If start() has never been called when the timer was enabled, and if
+readCurrentTime is true, this method will return wallTime(),
+regardless of the actual start time. ";
 
 %feature("docstring")  Teuchos::Time::reset "void
 Teuchos::Time::reset()
 
-Resets the cummulative time and number of times this timer has been
-called. Does not affect any other state. ";
+Reset the cummulative time and call count. ";
 
 %feature("docstring")  Teuchos::Time::isRunning "bool
 Teuchos::Time::isRunning() const
 
-Indicates if this timer is currently running, i.e., if it has been
-started but not yet stopped.
+Whether the timer is currently running.
 
-It is necessary to know if a timer is running to avoid incorrectly
-starting or stopping in reentrant code. ";
+\"Currently running\" means either that start() has been called
+without an intervening stop() call, or that the timer was created
+already running and stop() has not since been called. ";
 
 %feature("docstring")  Teuchos::Time::name "const std::string&
 Teuchos::Time::name() const
 
-Return the name of this timer. ";
+The name of this timer. ";
 
 %feature("docstring")  Teuchos::Time::incrementNumCalls "void
 Teuchos::Time::incrementNumCalls()
 
-Increment the number of times this timer has been called. ";
+Increment the number of times this timer has been called, if the timer
+is enabled (see disable()). ";
 
 %feature("docstring")  Teuchos::Time::numCalls "int
 Teuchos::Time::numCalls() const
 
-Return the number of times this timer has been called. ";
+The number of times this timer has been called while enabled. ";
 
 
 // File: classTeuchos_1_1TooManyDependeesException.xml
@@ -1448,6 +1626,30 @@ Parameters:
 what_arg:  The error message to be associated with this error. ";
 
 
+// File: structTeuchos_1_1ValueTolerance.xml
+%feature("docstring") Teuchos::ValueTolerance "
+
+ValueTolerance is a struct to keep a tuple of value and a tolerance.
+The tolerance can be either expressed as a relative or through an
+upper and lower bound.
+
+C++ includes: Teuchos_XMLPerfTestArchive.hpp ";
+
+%feature("docstring")  Teuchos::ValueTolerance::ValueTolerance "Teuchos::ValueTolerance::ValueTolerance() ";
+
+%feature("docstring")  Teuchos::ValueTolerance::ValueTolerance "Teuchos::ValueTolerance::ValueTolerance(double val, double tol) ";
+
+%feature("docstring")  Teuchos::ValueTolerance::ValueTolerance "Teuchos::ValueTolerance::ValueTolerance(double val, double low, double
+up) ";
+
+%feature("docstring")  Teuchos::ValueTolerance::ValueTolerance "Teuchos::ValueTolerance::ValueTolerance(std::string str) ";
+
+%feature("docstring")  Teuchos::ValueTolerance::as_string "std::string Teuchos::ValueTolerance::as_string() ";
+
+%feature("docstring")  Teuchos::ValueTolerance::from_string "void
+Teuchos::ValueTolerance::from_string(const std::string &valtol_str) ";
+
+
 // File: classTeuchos_1_1XMLInputSource.xml
 %feature("docstring") Teuchos::XMLInputSource "
 
@@ -1461,7 +1663,7 @@ The source gets its data from a XMLInputStream object that is created
 (internally) to work with this source.
 
 getObject() is implemented with EXPAT if Teuchos is configured with
---enable-expat.
+enable-expat.
 
 C++ includes: Teuchos_XMLInputSource.hpp ";
 
@@ -1564,8 +1766,9 @@ std::string & Teuchos::XMLObject::getAttribute(const std::string
 
 Return the value of the attribute with the specified name. ";
 
-%feature("docstring")  Teuchos::XMLObject::getRequired "TEUCHOS_LIB_DLL_EXPORT std::string Teuchos::XMLObject::getRequired<
-std::string >(const std::string &name) const
+%feature("docstring")  Teuchos::XMLObject::getRequired "TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT double
+Teuchos::XMLObject::getRequired< double >(const std::string &name)
+const
 
 Get an attribute, throwing an std::exception if it is not found. ";
 
@@ -1690,8 +1893,12 @@ Teuchos::XMLObject::addContent(const std::string &contentLine)
 
 Add a line of character content. ";
 
-%feature("docstring")  Teuchos::XMLObject::addAttribute "TEUCHOS_LIB_DLL_EXPORT void Teuchos::XMLObject::addAttribute(const
-std::string &name, const std::string &value) ";
+%feature("docstring")  Teuchos::XMLObject::appendContentLine "void
+Teuchos::XMLObject::appendContentLine(const size_t &i, const
+std::string &str) ";
+
+%feature("docstring")  Teuchos::XMLObject::removeContentLine "void
+Teuchos::XMLObject::removeContentLine(const size_t &i) ";
 
 
 // File: classTeuchos_1_1XMLObjectImplem.xml
@@ -1766,6 +1973,15 @@ Get all attributes. ";
 const
 
 Look up a content line by index. ";
+
+%feature("docstring")  Teuchos::XMLObjectImplem::appendContentLine "void Teuchos::XMLObjectImplem::appendContentLine(const size_t &i,
+const std::string &str)
+
+Add string at the the end of a content line. ";
+
+%feature("docstring")  Teuchos::XMLObjectImplem::removeContentLine "void XMLObjectImplem::removeContentLine(const size_t &i)
+
+Remove content line by index. ";
 
 %feature("docstring")  Teuchos::XMLObjectImplem::print "void
 XMLObjectImplem::print(std::ostream &os, int indent) const
@@ -1890,24 +2106,86 @@ XMLParser::parse()
 Consume the XMLInputStream to build an XMLObject. ";
 
 
-// File: namespace@13.xml
+// File: classTeuchos_1_1XMLTestNode.xml
+%feature("docstring") Teuchos::XMLTestNode "
+
+Subclass of XMLObject used by the performance archive.
+
+This subclass of XMLObject generates an XML list in a style more
+suitable for a performance test archive. It also provides a number of
+convenience functions helpful for working with a test archive.
+
+C++ includes: Teuchos_XMLPerfTestArchive.hpp ";
+
+%feature("docstring")  Teuchos::XMLTestNode::XMLTestNode "Teuchos::XMLTestNode::XMLTestNode() ";
+
+%feature("docstring")  Teuchos::XMLTestNode::XMLTestNode "Teuchos::XMLTestNode::XMLTestNode(const std::string &tag) ";
+
+%feature("docstring")  Teuchos::XMLTestNode::XMLTestNode "Teuchos::XMLTestNode::XMLTestNode(XMLObjectImplem *ptr) ";
+
+%feature("docstring")  Teuchos::XMLTestNode::XMLTestNode "Teuchos::XMLTestNode::XMLTestNode(XMLObject obj) ";
+
+%feature("docstring")  Teuchos::XMLTestNode::addDouble "void
+Teuchos::XMLTestNode::addDouble(const std::string &name, double val)
+";
+
+%feature("docstring")  Teuchos::XMLTestNode::addInt "void
+Teuchos::XMLTestNode::addInt(const std::string &name, int val) ";
+
+%feature("docstring")  Teuchos::XMLTestNode::addBool "void
+Teuchos::XMLTestNode::addBool(const std::string &name, bool val) ";
+
+%feature("docstring")  Teuchos::XMLTestNode::addValueTolerance "void
+Teuchos::XMLTestNode::addValueTolerance(const std::string &name,
+ValueTolerance val) ";
+
+%feature("docstring")  Teuchos::XMLTestNode::addString "void
+Teuchos::XMLTestNode::addString(const std::string &name, std::string
+val) ";
+
+%feature("docstring")  Teuchos::XMLTestNode::addAttribute "void
+Teuchos::XMLTestNode::addAttribute(const std::string &name, T val) ";
+
+%feature("docstring")  Teuchos::XMLTestNode::hasChild "bool
+Teuchos::XMLTestNode::hasChild(const std::string &name) const ";
+
+%feature("docstring")  Teuchos::XMLTestNode::appendContentLine "void
+Teuchos::XMLTestNode::appendContentLine(const size_t &i, const
+std::string &str) ";
+
+%feature("docstring")  Teuchos::XMLTestNode::getChild "XMLTestNode
+Teuchos::XMLTestNode::getChild(const std::string &name) const ";
+
+%feature("docstring")  Teuchos::XMLTestNode::getChild "XMLTestNode
+Teuchos::XMLTestNode::getChild(const int &i) const ";
+
+%feature("docstring")  Teuchos::XMLTestNode::xml_object "const
+XMLObject * Teuchos::XMLTestNode::xml_object() const ";
+
+%feature("docstring")  Teuchos::XMLTestNode::hasSameElements "bool
+Teuchos::XMLTestNode::hasSameElements(XMLTestNode const &lhs) const ";
 
 
-// File: namespace@2.xml
+// File: namespace@0.xml
+
+
+// File: namespace@9.xml
 
 
 // File: namespaceTeuchos.xml
-%feature("docstring")  Teuchos::Exceptions::printValidParameters "void Teuchos::printValidParameters(const ParameterListAcceptor
-&paramListAccpetor, std::ostream &out, const bool showDoc=true)
-
-Pretty print the valid parameters from a ParameterListAccpetor object.
-";
-
 %feature("docstring")
 Teuchos::Exceptions::throwScalarTraitsNanInfError "void
 Teuchos::throwScalarTraitsNanInfError(const std::string &errMsg) ";
 
 %feature("docstring")  Teuchos::Exceptions::generic_real_isnaninf "bool Teuchos::generic_real_isnaninf(const Scalar &x) ";
+
+%feature("docstring")  Teuchos::Exceptions::Teuchos_Version "std::string Teuchos::Teuchos_Version() ";
+
+%feature("docstring")  Teuchos::Exceptions::printValidParameters "void Teuchos::printValidParameters(const ParameterListAcceptor
+&paramListAccpetor, std::ostream &out, const bool showDoc=true)
+
+Pretty print the valid parameters from a ParameterListAccpetor object.
+";
 
 %feature("docstring")  Teuchos::Exceptions::XMLObject::getRequired<
 std::string > " std::string Teuchos::XMLObject::getRequired<
@@ -1916,6 +2194,98 @@ std::string >(const std::string &name) const ";
 %feature("docstring")  Teuchos::Exceptions::XMLObject::addAttribute<
 const std::string & > " void Teuchos::XMLObject::addAttribute< const
 std::string & >(const std::string &name, const std::string &value) ";
+
+%feature("docstring")  Teuchos::Exceptions::XMLObject::getRequired<
+std::string > " TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT std::string
+Teuchos::XMLObject::getRequired< std::string >(const std::string
+&name) const ";
+
+%feature("docstring")  Teuchos::Exceptions::XMLObject::addAttribute<
+const std::string & > " TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT void
+Teuchos::XMLObject::addAttribute< const std::string & >(const
+std::string &name, const std::string &value) ";
+
+%feature("docstring")  Teuchos::Exceptions::PerfTest_MachineConfig "XMLTestNode Teuchos::PerfTest_MachineConfig()
+
+PerfTest_MachineConfig generates a basic machine configuration
+XMLTestNode.
+
+The function provides a starting point for a machine configuration.
+Users should add new entries to the returned XMLTestNode to provide
+test relevant machine configuration entries. For example Kokkos users
+might want to provide the name of the user Kokkos NodeType or Kokkos
+DeviceType. The returned config contains information mostly extracted
+from /proc/cpuinfo if possible. On non unix systems most values will
+be unknown. Entries are: Compiler: The compiler name.
+
+Compiler_Version: A compiler version number.
+
+CPU_Name: The CPUs model name.
+
+CPU_Sockets: Number of CPU sockets in the system.
+
+CPU_Cores_Per_Socket: Number of CPU cores per socket.
+
+CPU_Total_HyperThreads: Total number of threads in a node. ";
+
+%feature("docstring")  Teuchos::Exceptions::PerfTest_CheckOrAdd_Test "PerfTestResult Teuchos::PerfTest_CheckOrAdd_Test(XMLTestNode
+machine_config, XMLTestNode new_test, const std::string filename,
+const std::string ext_hostname=std::string())
+
+Check whether a test is present and match an existing test in an
+archive.
+
+This function consumes a machine configuration XMLTestNode and a test
+entry XMLTestNode. It will attempt to read from an existing file
+containing a test archive, or generate a new one. Optionally a
+hostname override can be provided, which is for example useful when
+running on clusters, where the cluster name should be used for the
+test entries instead of the compute node name.
+PerfTest_CheckOrAdd_Test will go through the test archive and search
+for a matching machine name with matching machine configuration and
+matching test configuration. If one is found the result values will be
+compared, if not a new test entry is generated and the result written
+back to the file.
+
+Parameters:
+-----------
+
+machine_config:  [in] An XMLTestNode describing the machine
+configuration.
+
+new_test:  [in] An XMLTestNode describing the test.
+
+filename:  [in] The name of a file containing a performance test
+archive.
+
+ext_hostname:  [in] An optional hostname to be used instead of the one
+provided by the OS.
+
+Whether a matching test is found, or if it was added to an archive.
+Here is the list of valid return values:
+
+PerfTestFailed: Matching configuration found, but results are
+deviating more than the allowed tolerance.
+
+PerfTestPassed: Matching configuration found, and results are within
+tolerances.
+
+PerfTestNewMachine: The test archive didn't contain an entry with the
+same machine name. A new entry was generated.
+
+PerfTestNewConfiguration: No matching machine configuration was found.
+A new entry was generated.
+
+PerfTestNewTest: No matching testname was found. A new entry was
+generated.
+
+PerfTestNewTestConfiguration: A matching testname was found, but
+different parameters were used. A new entry was generated.
+
+PerfTestUpdatedTest: A matching test was found but more result values
+were given then previously found. The entry is updated. This will only
+happen if all the old result values are present in the new ones, and
+are within their respective tolerances. ";
 
 
 // File: namespaceTeuchos_1_1Exceptions.xml
@@ -1978,6 +2348,9 @@ std::string & >(const std::string &name, const std::string &value) ";
 // File: Teuchos__Time_8hpp.xml
 
 
+// File: Teuchos__Version_8hpp.xml
+
+
 // File: Teuchos__XMLConditionExceptions_8hpp.xml
 
 
@@ -2011,6 +2384,12 @@ std::string & >(const std::string &name, const std::string &value) ";
 // File: Teuchos__XMLObjectImplem_8hpp.xml
 
 
+// File: Teuchos__XMLParameterListCoreHelpers_8cpp.xml
+
+
+// File: Teuchos__XMLParameterListCoreHelpers_8hpp.xml
+
+
 // File: Teuchos__XMLParameterListExceptions_8hpp.xml
 
 
@@ -2038,10 +2417,31 @@ std::string & >(const std::string &name, const std::string &value) ";
 // File: Teuchos__XMLParser_8hpp.xml
 
 
-// File: dir_3e7ac0723db077e4460d28d277456290.xml
+// File: Teuchos__XMLPerfTestArchive_8cpp.xml
 
 
-// File: dir_ccb49250c8a2ae42b75bc28c0fcd3e62.xml
+// File: Teuchos__XMLPerfTestArchive_8hpp.xml
+
+
+// File: dir_b7ea85e6c3d27e5deeeee6901a29bd24.xml
+
+
+// File: dir_49ff64965c516aa99922a5aa20113440.xml
+
+
+// File: dir_513142c2f48264d1468451332086eea2.xml
+
+
+// File: dir_b7f21055aeabb7e250f2c346c6754922.xml
+
+
+// File: dir_0cef9139ff14612bb9b6e71b4af5d9bf.xml
+
+
+// File: dir_b00834d4e556d49edabeb719c6083ebf.xml
+
+
+// File: dir_528a8bcff671678206a395c8cd6a32a7.xml
 
 
 // File: ParameterList_2cxx_main_8cpp-example.xml

@@ -2963,8 +2963,8 @@ f(x)^T d + d^T \\\\nabla^2 f(x) d + d^T \\\\mathbf{B} d \\\\]
 where $ B $ is ideally the Hessian of the merit function, $\\\\nabla^2
 f(x)$, but can be approximated with the restriction that it is a
 symmetric and has uniform boundedness in the iterate sequence (see J.
-Nocedal and S. J. Wright, \"Numerical Optimization\", Springer, 1999.
-Chapters 4 and 6).
+Nocedal and S. J. Wright, \"Numerical    Optimization\", Springer,
+1999. Chapters 4 and 6).
 
 The result vector should be computed as: \\\\[ result =
 -\\\\frac{\\\\nabla f^T \\\\nabla f}{\\\\nabla f^T B \\\\nabla f}
@@ -3398,12 +3398,18 @@ Computes \\\\[ v = J^{-1} u, \\\\] where $J$ is the Jacobian, $u$ is
 the input vector, and $v$ is the result vector. The \"Tolerance\"
 parameter specifies that the  solution should be such that \\\\[
 \\\\frac{\\\\| J v - u \\\\|_2}{\\\\max \\\\{ 1, \\\\|u\\\\|_2\\\\} }
-< \\\\mbox{Tolerance} \\\\]\\\\return <ul> <li>
+< \\\\mbox{Tolerance} \\\\]
+
 NOX::Abstract::Group::NotDefined - Returned by default implementation
-in NOX::Abstract::Group NOX::Abstract::Group::BadDependency - If $J$
-has not been computed NOX::Abstract::Group::NotConverged - If the
-linear solve fails to satisfy the \"Tolerance\" specified in params
+in NOX::Abstract::Group
+
+NOX::Abstract::Group::BadDependency - If $J$ has not been computed
+
+NOX::Abstract::Group::NotConverged - If the linear solve fails to
+satisfy the \"Tolerance\" specified in params
+
 NOX::Abstract::Group::Failed - If the computation fails
+
 NOX::Abstract::Group::Ok - Otherwise
 
 The parameter \"Tolerance\" may be added/modified in the list of
@@ -6353,15 +6359,17 @@ NOX::Abstract::MultiVector &y, NOX::Abstract::MultiVector::DenseMatrix
 
 Computes the matrix-matrix product $\\\\alpha * y^T * (*this)$. ";
 
-%feature("docstring")  NOX::MultiVector::multiply "void
-NOX::MultiVector::multiply(double alpha, const NOX::MultiVector &y,
-NOX::Abstract::MultiVector::DenseMatrix &b) const ";
+%feature("docstring")  NOX::Epetra::MultiVector::multiply "void
+NOX::Epetra::MultiVector::multiply(double alpha, const
+NOX::Epetra::MultiVector &y, NOX::Abstract::MultiVector::DenseMatrix
+&b) const ";
 
-%feature("docstring")  NOX::MultiVector::MultiVector "NOX::MultiVector::MultiVector(const NOX::Abstract::Vector &v, int
-numVecs=1, NOX::CopyType type=NOX::DeepCopy)
+%feature("docstring")  NOX::Epetra::MultiVector::MultiVector "NOX::Epetra::MultiVector::MultiVector(const Teuchos::RCP<
+Epetra_MultiVector > &source, NOX::CopyType type=NOX::DeepCopy,
+NOX::Epetra::MultiVector::MemoryType
+memoryType=NOX::Epetra::MultiVector::CreateCopy)
 
-Create MultiVector with numVecs columns out of a single
-NOX::Abstract::Vector. ";
+Constructor that creates a COPY or VIEW of the Epetra_MultiVector.";
 
 %feature("docstring")  NOX::MultiVector::MultiVector "NOX::MultiVector::MultiVector(const NOX::Abstract::Vector *const *vs,
 int numVecs, NOX::CopyType type=NOX::DeepCopy)
@@ -7072,8 +7080,8 @@ Algorithm 5.4).
 Another useful useful reference is:
 
 Jonathan Richard Shewchuk,\"An Introduction to the Conjugate Gradient
-Method Without the Agonizing    Pain</A>,\" 1994. Chapter 14 provides
-a summary of issues in generalizing linear CG to the nonlinear case.
+Method Without the Agonizing   Pain</A>,\" 1994. Chapter 14 provides a
+summary of issues in generalizing linear CG to the nonlinear case.
 Correspondence to NOX notation is made by the equivalence $ r
 \\\\leftrightarrow f' \\\\leftrightarrow F(x) $ (cd Section 14.1).
 
@@ -7814,7 +7822,7 @@ Section 3.4 of Jorge Nocedal and Stephen J. Wright, \"Numerical
 Optimization,\"Springer, 1999.
 
 \"An Inexact Newton Method for Fully Coupled Solution of the Navier-
-Stokes    Equations with Heat and Mass Transfer\", Shadid, J. N.,
+Stokes   Equations with Heat and Mass Transfer\", Shadid, J. N.,
 Tuminaro, R. S., and Walker, H. F., Journal of Computational Physics,
 137, 155-185 (1997)
 
@@ -8132,14 +8140,19 @@ Example of output from the inner iterations of a Polynomial line
 search:
 
 ************************************************************************
--- Polynomial Line Search --    1: step = 1.000e+00 oldf = 2.403e+00
+-- Polynomial Line Search --   1: step = 1.000e+00 oldf = 2.403e+00
 newf = 1.076e+03   2: step = 1.000e-01 oldf = 2.403e+00 newf =
 4.440e+00   3: step = 1.000e-02 oldf = 2.403e+00 newf = 2.394e+00
 (STEP ACCEPTED!)
-************************************************************************\\\\param
-unscaleF - If this is true (the default), than the values printed are
-\\\\form#170 and \\\\form#171@_fakenl. This is to accomodate the
-standard merit function, \\\\form#172@_fakenl. ";
+************************************************************************
+
+Parameters:
+-----------
+
+unscaleF:  - If this is true (the default), than the values printed
+are $ \\\\sqrt{2 * {\\\\rm oldf}} $ and $ \\\\sqrt{2 * {\\\\rm newf}}
+$. This is to accomodate the standard merit function, $ \\\\phi(x) =
+\\\\frac{1}{2} \\\\|F(x)\\\\|^2 $. ";
 
 
 // File: classNOX_1_1Random.xml
@@ -8813,11 +8826,16 @@ NOX::Abstract::Group::applyJacobianInverse(). \"Linear Solver\" is
 itself a sublist of the list specified in \"Method\" above (i.e.,
 \"Tensor\" or \"Newton\"). Below is a partial list of standard
 parameters usually available in common linear solvers. Check with the
-specific linear solver being used for other parameters. <ul>   <li>
+specific linear solver being used for other parameters.
+
 \"Max Iterations\" - Maximum number of Arnoldi iterations (also max
-Krylov space dimension)   <li> \"Tolerance\" - Relative tolerance for
-solving local  model [default = 1e-4]   <li> \"Output Frequency\" -
-Print output at every number of  iterations [default = 20]   </ul>
+Krylov space dimension)
+
+\"Tolerance\" - Relative tolerance for solving local model [default =
+1e-4]
+
+\"Output Frequency\" - Print output at every number of iterations
+[default = 20]
 
 \"Line Search\" - Sublist of the line search parameters. Because the
 tensor step is not guaranteed to be a descent direction on the
@@ -8829,17 +8847,21 @@ methods with its own set of global strategies. The following
 parameters specify the specific options for this line search:
 
 \"Method\" - Name of the line search available to tensor methods Valid
-choices are: <ul>    <li> \"Curvilinear\" - Backtrack along the
+choices are: <ul>   <li> \"Curvilinear\" - Backtrack along the
 \"curvilinear\" path that spans the tensor direction and the Newton
-direction and that maintains monotonicity on the tensor  model.
-Recommended because it tends to be more robust and  efficient than the
-other choices. [Default]   <li> \"Standard\" - Backtrack along tensor
-direction unless  it is not a descent direction, in which case
-backtrack  along Newton direction.   <li> \"Dual\" - Backtrack along
-both the Newton and tensor  directions and choose the better of the
-two.   <li> \"Full Step\" - Only use the full step and do not
-backtrack along both the Newton and tensor directions and  choose the
-better of the two. </ul>
+direction and that maintains monotonicity on the tensor model.
+Recommended because it tends to be more robust and efficient than the
+other choices. [Default]
+
+\"Standard\" - Backtrack along tensor direction unless it is not a
+descent direction, in which case backtrack along Newton direction.
+
+\"Dual\" - Backtrack along both the Newton and tensor directions and
+choose the better of the two.
+
+\"Full Step\" - Only use the full step and do not backtrack along both
+the Newton and tensor directions and choose the better of the
+two.</ul>
 
 \"Lambda selection\" - Flag for how to calculate the next linesearch
 parameter lambda. Valid choices are \"Quadratic\" and \"Halving\"

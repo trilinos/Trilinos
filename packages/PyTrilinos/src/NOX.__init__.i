@@ -68,6 +68,11 @@ script in the example subdirectory of the PyTrilinos package:
 #include "PyTrilinos_config.h"
 
 // Teuchos include
+#include "Teuchos_Comm.hpp"
+#include "Teuchos_DefaultSerialComm.hpp"
+#ifdef HAVE_MPI
+#include "Teuchos_DefaultMpiComm.hpp"
+#endif
 #include "PyTrilinos_Teuchos_Util.h"
 
 // NOX includes

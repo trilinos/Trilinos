@@ -21,59 +21,72 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
 // Questions? Contact Bill Spotz (wfspotz@sandia.gov)
 //
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") Hopf
-
 %{
-// Teuchos include
+// Teuchos includes
+#include "Teuchos_Comm.hpp"
+#include "Teuchos_DefaultSerialComm.hpp"
+#ifdef HAVE_MPI
+#include "Teuchos_DefaultMpiComm.hpp"
+#endif
 #include "PyTrilinos_Teuchos_Util.h"
 
-#include "LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H"
-#include "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
-#include "LOCA_Extended_MultiAbstractGroup.H"
-#include "LOCA_BorderedSystem_AbstractGroup.H"
-#include "LOCA_MultiContinuation_ExtendedGroup.H"
-#include "LOCA_MultiContinuation_NaturalGroup.H"
-#include "LOCA_MultiContinuation_AbstractStrategy.H"
-
-
-#include "LOCA_Hopf_MooreSpence_AbstractGroup.H"
-#include "LOCA_Hopf_MinimallyAugmented_AbstractGroup.H"
-#include "LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H"
-#include "LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.H"
+// LOCA includes
+#include "LOCA.H"
 
 // Local includes
 #define NO_IMPORT_ARRAY
 #include "numpy_include.h"
-
-// Namespace flattening
-using Teuchos::RCP;
 %}
+
+// Configuration and optional includes
+%include "PyTrilinos_config.h"
+#ifdef HAVE_NOX_EPETRA
+%{
+#include "NOX_Epetra_Group.H"
+#include "NOX_Epetra_Vector.H"
+#include "Epetra_NumPyVector.h"
+%}
+#endif
 
 // Standard exception handling
 %include "exception.i"
+
+// Include LOCA documentation
+%feature("autodoc", "1");
+%include "LOCA_dox.i"
 
 // Ignore/renames
 %ignore *::operator=;
 
 // Trilinos module imports
 %import "Teuchos.i"
+%import "NOX.Abstract.i"
 
-%import "LOCA.TimeDependent.i"
-%import "LOCA.TurningPoint.i"
+// Teuchos::RCP support
+%teuchos_rcp(LOCA::Extended::MultiAbstractGroup)
 
-%rename(MooreSpence_AbstractGroup) LOCA::Hopf::MooreSpence::AbstractGroup;
-%rename(MinimallyAugmented_AbstractGroup) LOCA::Hopf::MinimallyAugmented::AbstractGroup;
-%rename(MooreSpence_FiniteDifferenceGroup) LOCA::Hopf::MooreSpence::FiniteDifferenceGroup;
-%rename(MinimallyAugmented_FiniteDifferenceGroup) LOCA::Hopf::MinimallyAugmented::FiniteDifferenceGroup;
+//////////////////////////////////////
+// LOCA::Extended MultiVector class //
+//////////////////////////////////////
+//%feature("director") LOCA::Extended::MultiVector;
+%include "LOCA_Extended_MultiVector.H"
 
-%include "LOCA_Hopf_MooreSpence_AbstractGroup.H"
-%include "LOCA_Hopf_MinimallyAugmented_AbstractGroup.H"
-%include "LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H"
-%include "LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.H"
+/////////////////////////////////
+// LOCA::Extended Vector class //
+/////////////////////////////////
+//%feature("director") LOCA::Extended::Vector;
+%ignore LOCA::Extended::Vector::getScalar(int);
+%include "LOCA_Extended_Vector.H"
+
+/////////////////////////////////////////////
+// LOCA::Extended MultiAbstractGroup class //
+/////////////////////////////////////////////
+//%feature("director") LOCA::Extended::MultiAbstractGroup;
+%include "LOCA_Extended_MultiAbstractGroup.H"

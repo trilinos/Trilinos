@@ -77,9 +77,9 @@ SET_DIRECTORY_PROPERTIES(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${clean_files}"
 
 # The Isorropia module employs namespaces, so include the Isorropia
 # directory
-IF(PyTrilinos_NABLE_Isorropia)
+IF(PyTrilinos_ENABLE_Isorropia)
   ADD_SUBDIRECTORY(Isorropia)
-ENDIF(PyTrilinos_NABLE_Isorropia)
+ENDIF(PyTrilinos_ENABLE_Isorropia)
 
 # The NOX module employs namespaces, so include the NOX directory
 IF(PyTrilinos_ENABLE_NOX)

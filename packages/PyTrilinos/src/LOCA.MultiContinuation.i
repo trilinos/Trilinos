@@ -28,45 +28,43 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") MultiContinuation
+%define %loca_multicontinuation_docstring
+"
+PyTrilinos.LOCA.MultiContinuation is the python interface to namespace
+MultiContinuation of the Trilinos continuation algorithm package LOCA:
 
-%{
-// Teuchos includes
-#include "PyTrilinos_Teuchos_Util.h"
+    http://trilinos.sandia.gov/packages/nox
 
-// LOCA includes
-#include "LOCA_MultiContinuation_AbstractGroup.H"
-#include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
-#include "LOCA_MultiContinuation_AbstractStrategy.H"
-#include "LOCA_MultiContinuation_ExtendedGroup.H"
-#include "LOCA_MultiContinuation_NaturalGroup.H"
+The purpose of LOCA.MultiContinuation is to provide groups and vectors
+for multi-parameter continuation.  The python version of
+LOCA.MultiContinuation supports the following classes:
 
-// Local includes
-#define NO_IMPORT_ARRAY
-#include "numpy_include.h"
+    * AbstractGroup            - LOCA abstract interface for continuation,
+                                 derived from the NOX.Abstract.Group.  This
+                                 abstract class provides the interface
+                                 necessary to perform continuation, i.e.,
+                                 compute families of solutions to F(x,p) = 0
+    * FiniteDifferenceGroup    - Concrete class that provides a concrete
+                                 implementation of the computeDfDp() method of
+                                 the LOCA.Continuation.AbstractGroup using
+                                 first-order finite differencing
+    * ConstraintInterface      - Abstract interface for the constraint portion
+                                 of a constrained nonlinear system
+    * ConstraintInterfaceMVDX  - Abstract interface for the constraint portion
+                                 of a constrained nonlinear system for
+                                 constraints that support computing a solution
+                                 component derivative as a multi-vector
+    * ExtendedMultiVector      - MultiVector class to hold solution vectors,
+                                 Newton vectors, etc. for continuation equations
+    * ExtendedVector           - Vector class to hold solution vectors, Newton
+                                 vectors, etc. for continuation equations
+    * Factory                  - Factory for creating continuation strategy
+                                 objects
+"
+%enddef
 
-// Namespace flattening
-using Teuchos::RCP;
-%}
+%module(package   = "PyTrilinos.LOCA",
+        directors = "1",
+        docstring = %loca_multicontinuation_docstring) MultiContinuation
 
-// Ignore/renames
-%ignore *::operator=;
-
-%import "Teuchos.i"
-
-%teuchos_rcp(LOCA::MultiContinuation::AbstractGroup)
-%teuchos_rcp(LOCA::MultiContinuation::FiniteDifferenceGroup)
-%teuchos_rcp(LOCA::MultiContinuation::NaturalGroup)
-
-// Import base class declarations
-%import "NOX.Abstract.i"
-%import "LOCA.Extended.i"
-%import "LOCA.BorderedSystem.i"
-
-// LOCA interface includes
-%include "LOCA_MultiContinuation_AbstractGroup.H"
-%include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
-%include "LOCA_MultiContinuation_AbstractStrategy.H"
-%include "LOCA_MultiContinuation_ExtendedGroup.H"
-%include "LOCA_MultiContinuation_NaturalGroup.H"
-
+%include "LOCA.MultiContinuation_Content.i"

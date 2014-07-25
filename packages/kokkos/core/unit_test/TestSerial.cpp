@@ -59,6 +59,7 @@
 #include <TestViewAPI.hpp>
 #include <TestAtomic.hpp>
 #include <TestTile.hpp>
+#include <TestTeam.hpp>
 #include <TestCrsArray.hpp>
 #include <TestReduce.hpp>
 #include <TestScan.hpp>
@@ -115,6 +116,24 @@ TEST_F( serial , scan )
 {
   TestScan< Kokkos::Serial >( 10 );
   TestScan< Kokkos::Serial >( 10000 );
+}
+
+TEST_F( serial , team_long_reduce) {
+  TestReduceTeam< long ,   Kokkos::Serial >( 100000 );
+}
+
+TEST_F( serial , team_double_reduce) {
+  TestReduceTeam< double ,   Kokkos::Serial >( 100000 );
+}
+
+TEST_F( serial , team_shared_request) {
+  TestSharedTeam< Kokkos::Serial >();
+}
+
+TEST_F( serial  , team_scan )
+{
+  TestScanTeam< Kokkos::Serial >( 10 );
+  TestScanTeam< Kokkos::Serial >( 10000 );
 }
 
 
@@ -273,13 +292,15 @@ TEST_F( serial , compiler_macros )
 
 
 //----------------------------------------------------------------------------
-#if defined (KOKKOS_HAVE_CXX11) && (defined KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_SERIAL)
+#if defined( KOKKOS_HAVE_CXX11 )
 TEST_F( serial , cxx11 )
 {
-  ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Serial >(1) ) );
-  ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Serial >(2) ) );
-  ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Serial >(3) ) );
-  ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Serial >(4) ) );
+  if ( Kokkos::Impl::is_same< Kokkos::DefaultExecutionSpace , Kokkos::Serial >::value ) {
+    ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Serial >(1) ) );
+    ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Serial >(2) ) );
+    ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Serial >(3) ) );
+    ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Serial >(4) ) );
+  }
 }
 #endif
 

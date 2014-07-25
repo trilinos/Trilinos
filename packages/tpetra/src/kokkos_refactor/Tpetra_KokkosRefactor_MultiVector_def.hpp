@@ -2748,8 +2748,10 @@ namespace { // (anonymous)
     typedef Kokkos::View<Scalar*, Kokkos::LayoutLeft,
       host_mirror_device_type, Kokkos::MemoryUnmanaged> input_col_type;
     typedef typename dual_view_type::t_host host_view_type;
-    typedef Kokkos::View<Scalar*, typename host_view_type::array_layout,
-      device_type> host_col_type;
+    typedef Kokkos::View< Scalar*
+                        , typename host_view_type::array_layout
+                        , typename host_view_type::device_type
+                        , Kokkos::MemoryUnmanaged > host_col_type ;
     const char tfecfFuncName[] = "get1dCopy";
 
     const size_t numRows = this->getLocalLength ();

@@ -636,6 +636,12 @@ namespace Tpetra {
     /// over this Map's communicator.
     bool isSameAs (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const;
 
+    /// \brief Is the given Map locally the same as the input Map?
+    ///
+    /// "Locally the same" means that on the calling process, the two
+    /// Maps' global indices are the same and occur in the same order.
+    bool locallySameAs (const Map<LocalOrdinal, GlobalOrdinal, node_type>& map) const;
+
     //@}
     //! Accessors for the Teuchos::Comm and Kokkos Node objects.
     //@{
@@ -791,12 +797,6 @@ namespace Tpetra {
     /// <tt>lg=GloballyDistributed</tt>, since then checking the
     /// number of processes in the communicator suffices.
     bool checkIsDist() const;
-
-    /// \brief Is the given Map locally the same as the input Map?
-    ///
-    /// "Locally the same" means that on the calling process, the two
-    /// Maps' global indices are the same and occur in the same order.
-    bool locallySameAs (const Map<LocalOrdinal, GlobalOrdinal, node_type>& map) const;
 
     //! The communicator over which this Map is distributed.
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;

@@ -31,10 +31,20 @@
 %define %loca_abstract_docstring
 "
 PyTrilinos.LOCA.Abstract is the python interface to namespace Abstract
-of the Trilinos package LOCA:
+of the Trilinos continuation algorithm package LOCA:
 
     http://trilinos.sandia.gov/packages/nox
 
+The purpose of LOCA.Abstract is to provide abstract continuation
+problem base classes.  The python version of LOCA.Abstract supports
+the following classes:
+
+    * Group                - Compatiblity class for AbstractGroup hierarchy
+    * TransposeSolveGroup  - Abstract group interface class for solving the
+                             transpose of the Jacobian
+    * Iterator             - Abstract interface for implementing iteration
+    * Factory              - Abstract interface for providing a user-defined
+                             factory
 "
 %enddef
 
@@ -45,30 +55,25 @@ of the Trilinos package LOCA:
 	docstring    = %loca_abstract_docstring) Abstract
 
 %{
-// Teuchos includes
+// PyTrilinos includes
+#include "PyTrilinos_PythonException.h"
 #include "PyTrilinos_Teuchos_Util.h"
 
-// NOX includes
-#include "NOX_StatusTest_Generic.H"
-#include "NOX_StatusTest_NormWRMS.H"
-#include "NOX_StatusTest_Stagnation.H"
-#include "NOX_StatusTest_MaxIters.H"
-#include "NOX_StatusTest_Combo.H"
-#include "NOX_StatusTest_FiniteValue.H"
-#include "NOX_StatusTest_NormF.H"
-#include "NOX_StatusTest_NormUpdate.H"
-#include "NOX_Solver_Generic.H"
-#include "NOX_Solver_LineSearchBased.H"
-#include "NOX_Solver_TrustRegionBased.H"
-#include "NOX_Solver_InexactTrustRegionBased.H"
-#include "NOX_Solver_TensorBased.H"
+// Teuchos includes
+#include "Teuchos_Comm.hpp"
+#include "Teuchos_DefaultSerialComm.hpp"
+#ifdef HAVE_MPI
+#include "Teuchos_DefaultMpiComm.hpp"
+#endif
 
 // LOCA includes
-#include "LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H"
-#include "LOCA_Abstract_Group.H"
-#include "LOCA_Abstract_Iterator.H"
-#include "LOCA_Abstract_TransposeSolveGroup.H"
-#include "LOCA_Stepper.H"
+#include "LOCA.H"
+#include "LOCA_Hopf_MooreSpence_ExtendedGroup.H"
+#include "LOCA_Hopf_MooreSpence_ExtendedMultiVector.H"
+#include "LOCA_Hopf_MooreSpence_ExtendedVector.H"
+#include "LOCA_Hopf_MooreSpence_SalingerBordering.H"
+#include "LOCA_Hopf_MinimallyAugmented_ExtendedGroup.H"
+#include "LOCA_Hopf_MinimallyAugmented_Constraint.H"
 
 // Local includes
 #define NO_IMPORT_ARRAY
@@ -77,6 +82,10 @@ of the Trilinos package LOCA:
 
 // Exception handling
 %include "exception.i"
+
+// Include LOCA documentation
+%feature("autodoc", "1");
+%include "LOCA_dox.i"
 
 // Director exception handling
 %feature("director:except")
@@ -99,11 +108,6 @@ of the Trilinos package LOCA:
     e.restore();
     SWIG_fail;
   }
-  catch(int errCode)
-  {
-    PyErr_Format(PyExc_EpetraError, "Error code = %d\nSee stderr for details", errCode);
-    SWIG_fail;
-  }
   SWIG_CATCH_STDEXCEPT
   catch (Swig::DirectorException & e)
   {
@@ -115,9 +119,6 @@ of the Trilinos package LOCA:
   }
 }
 
-// Include NOX documentation
-// %include "LOCA_dox.i"   // TODO: this file will need to be generated
-
 // General ignore directives
 %ignore *::operator=;
 %ignore *::operator[];
@@ -125,17 +126,38 @@ of the Trilinos package LOCA:
 // Trilinos module imports
 %import "Teuchos.i"
 
-// Teuchos::RCPs typemaps
-//%teuchos_rcp(LOCA::GlobalData)
-//%teuchos_rcp(LOCA::DerivUtils)
+// Teuchos::RCP handling
+%teuchos_rcp(LOCA::Abstract::Group)
+%teuchos_rcp(LOCA::Abstract::TransposeSolveGroup)
+%teuchos_rcp(LOCA::Abstract::Iterator)
+%teuchos_rcp(LOCA::Abstract::Factory)
 
+// Import SWIG interface files to provide information about base
+// classes
+%import "LOCA.Homotopy.i"
+%import "LOCA.PhaseTransition.i"
+%import "LOCA.TurningPoint.MinimallyAugmented.i"
+%import "LOCA.Hopf.MinimallyAugmented.i"
+%import "LOCA.Pitchfork.MinimallyAugmented.i"
+
+// LOCA::Abstract Group class
+//%feature("director") LOCA::Abstract::Group;
+// The following #define is to change the name of LOCA method
+// arguments that conflict with a SWIG director method argument
+#define result loca_result
+%include "LOCA_Abstract_Group.H"
+
+// LOCA::Abstract TransposeSolveGroup class
+//%feature("director") LOCA::Abstract::TransposeSolveGroup;
+%include "LOCA_Abstract_TransposeSolveGroup.H"
+
+// LOCA::Abstract Iterator class
+//%feature("director") LOCA::Abstract::Iterator;
 %include "LOCA_Abstract_Iterator.H"
 
-//%import "NOX.Abstract.i"
-//%import "LOCA.Homotopy.i"
-//%import "LOCA.Hopf.i"
-//%import "LOCA.TurningPoint.i"
-//%import "LOCA.Pitchfork.i"
-//
-//%include "LOCA_Abstract_Group.H"
-//%include "LOCA_Abstract_TransposeSolveGroup.H"
+// LOCA::Abstract Factory class
+//%feature("director") LOCA::Abstract::Factory;
+%include "LOCA_Abstract_Factory.H"
+
+// We need to undefine the result macro
+#undef result

@@ -28,27 +28,46 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") Epetra
-
 %{
+// Teuchos includes
+#include "Teuchos_Comm.hpp"
+#include "Teuchos_DefaultSerialComm.hpp"
+#ifdef HAVE_MPI
+#include "Teuchos_DefaultMpiComm.hpp"
+#endif
+
 // LOCA includes
 #include "LOCA.H"
-#include "LOCA_Epetra.H"
+
+// Local includes
+#define NO_IMPORT_ARRAY
+#include "numpy_include.h"
 %}
 
+// Standard exception handling
+%include "exception.i"
+
+// Include LOCA documentation
+%feature("autodoc", "1");
+%include "LOCA_dox.i"
+
 // Ignore/renames
-%rename(Print) *::print() const;
 %ignore *::operator=;
-%ignore operator<<(ostream& stream, const NOX::Epetra::Vector& v);
 
-// Import LOCA interface
-%import "LOCA.__init.i"
-//%import "LOCA.Abstract.i"
+// Trilinos module imports
+%import "Teuchos.i"
 
-// Import NOX_Epetra headers
-%import "NOX.Epetra.__init__.i"
-%import "NOX.Epetra.Interface.i"
+// Teuchos::RCP handling
+%teuchos_rcp(LOCA::TurningPoint::MinimallyAugmented::AbstractGroup)
+%teuchos_rcp(LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup)
 
-// LOCA interface includes
-%include "LOCA_Epetra_Interface_Required.H"
-%include "LOCA_Epetra_Group.H"
+// Base class support
+%import "LOCA.TurningPoint.MooreSpence.i"
+
+// LOCA::TurningPoint::MinimallyAugmented AbtractGroup class
+%feature("director") LOCA::TurningPoint::MinimallyAugmented;
+%include "LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H"
+
+// LOCA::TurningPoint::MinimallyAugmented FinitDifferenceGroup class
+//%feature("director") LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup;
+%include "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"

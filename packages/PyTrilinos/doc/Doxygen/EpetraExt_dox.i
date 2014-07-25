@@ -77,9 +77,6 @@ algo=GREEDY, int reordering=0, bool distance1=false, int verbosity=0)
 
 Constructor ";
 
-%feature("docstring")  EpetraExt::CrsGraph_MapColoring::Toperator "CrsGraph_MapColoring::NewTypeRef
-EpetraExt::CrsGraph_MapColoring::Toperator(OriginalTypeRef orig) ";
-
 
 // File: classEpetraExt_1_1CrsGraph__MapColoringIndex.xml
 %feature("docstring") EpetraExt::CrsGraph_MapColoringIndex "";
@@ -248,6 +245,9 @@ Destructor ";
 
 Constructor ";
 
+%feature("docstring")  EpetraExt::CrsMatrix_Reindex::Toperator "CrsMatrix_Reindex::NewTypeRef
+EpetraExt::CrsMatrix_Reindex::Toperator(OriginalTypeRef orig) ";
+
 
 // File: classEpetraExt_1_1CrsMatrix__SolverMap.xml
 %feature("docstring") EpetraExt::CrsMatrix_SolverMap "
@@ -268,6 +268,9 @@ Destructor ";
 EpetraExt::CrsMatrix_SolverMap::CrsMatrix_SolverMap "EpetraExt::CrsMatrix_SolverMap::CrsMatrix_SolverMap()
 
 Constructor ";
+
+%feature("docstring")  EpetraExt::CrsMatrix_SolverMap::construct "CrsMatrix_SolverMap::NewTypeRef
+EpetraExt::CrsMatrix_SolverMap::construct(OriginalTypeRef orig) ";
 
 
 // File: classEpetraExt_1_1CrsMatrix__SubCopy.xml
@@ -319,6 +322,9 @@ Preconditions:
 Invariants:
 
 Postconditions: ";
+
+%feature("docstring")  EpetraExt::CrsMatrix_SubCopy::transform "CrsMatrix_SubCopy::NewTypeRef
+EpetraExt::CrsMatrix_SubCopy::transform(OriginalTypeRef orig) ";
 
 
 // File: classEpetraExt_1_1CrsMatrix__View.xml
@@ -1174,6 +1180,36 @@ C++ includes: EpetraExt_MatrixMatrix.h ";
 
 destructor ";
 
+%feature("docstring")  EpetraExt::MatrixMatrix::TMultiply "int
+EpetraExt::MatrixMatrix::TMultiply(const Epetra_CrsMatrix &A, bool
+transposeA, const Epetra_CrsMatrix &B, bool transposeB,
+Epetra_CrsMatrix &C, bool call_FillComplete_on_result) ";
+
+%feature("docstring")  EpetraExt::MatrixMatrix::TAdd "int
+EpetraExt::MatrixMatrix::TAdd(const Epetra_CrsMatrix &A, bool
+transposeA, double scalarA, Epetra_CrsMatrix &B, double scalarB) ";
+
+%feature("docstring")  EpetraExt::MatrixMatrix::TAdd "int
+EpetraExt::MatrixMatrix::TAdd(const Epetra_CrsMatrix &A, bool
+transposeA, double scalarA, const Epetra_CrsMatrix &B, bool
+transposeB, double scalarB, Epetra_CrsMatrix *&C) ";
+
+%feature("docstring")  EpetraExt::MatrixMatrix::TJacobi "int
+EpetraExt::MatrixMatrix::TJacobi(double omega, const Epetra_Vector
+&Dinv, const Epetra_CrsMatrix &A, const Epetra_CrsMatrix &B,
+Epetra_CrsMatrix &C, bool call_FillComplete_on_result) ";
+
+%feature("docstring")  EpetraExt::MatrixMatrix::Tmult_A_B "int
+EpetraExt::MatrixMatrix::Tmult_A_B(const Epetra_CrsMatrix &A,
+CrsMatrixStruct &Aview, const Epetra_CrsMatrix &B, CrsMatrixStruct
+&Bview, Epetra_CrsMatrix &C, bool call_FillComplete_on_result) ";
+
+%feature("docstring")  EpetraExt::MatrixMatrix::Tjacobi_A_B "int
+EpetraExt::MatrixMatrix::Tjacobi_A_B(double omega, const Epetra_Vector
+&Dinv, const Epetra_CrsMatrix &A, CrsMatrixStruct &Aview, const
+Epetra_CrsMatrix &B, CrsMatrixStruct &Bview, Epetra_CrsMatrix &C, bool
+call_FillComplete_on_result) ";
+
 
 // File: classEpetraExt_1_1MultiVector__Reindex.xml
 %feature("docstring") EpetraExt::MultiVector_Reindex "
@@ -1727,7 +1763,7 @@ Generates a std::vector of Epetra_IntVector's to be used to map
 perturbation contributions to a CrsGraph/CrsMatrix from a perturbed
 vector.
 
-C++ includes: EpetraExt_MapColoringIndex.h ";
+C++ includes: EpetraExt_TCrsGraph_MapColoringIndex.h ";
 
 
 // File: classEpetraExt_1_1TPermutation.xml
@@ -1739,15 +1775,13 @@ is the identity matrix with its rows re-ordered. The permutation is
 internally stored as an integer vector p, where p[i] is the column-
 index of the \"1\" in P's i-th row. Consider the example of permuting
 a matrix A by applying the permutation matrix P to form the result B.
-i.e., B = PA. If p[i] = j, then row j of A becomes row i of B.
-
-This Permutation class is templated on the type of the object to be
+i.e., B = PA. If p[i] = j, then row j of A becomes row i of B.  This
+Permutation class is templated on the type of the object to be
 permuted. However, not all objects are eligible to be template
 parameters. Currently the following objects may be used:
-Epetra_CrsMatrix, Epetra_CrsGraph and Epetra_MultiVector.
-
-A test program which exercises this Permutation class is located in
-the directory packages/epetraext/test/Permutation.
+Epetra_CrsMatrix, Epetra_CrsGraph and Epetra_MultiVector.  A test
+program which exercises this Permutation class is located in the
+directory packages/epetraext/test/Permutation.
 
 Implementation Notes: Permutation currently inherits
 StructuralSameTypeTransform, which in turn     inherits Transform
@@ -2242,8 +2276,8 @@ Writes a Teuchos::ParameterList using label Label. ";
 EpetraExt::sparsedot(double *u, int_type *u_ind, int u_len, double *v,
 int_type *v_ind, int v_len)
 
-Method for internal use... sparsedot forms a dot-product between two
-sparsely-populated 'vectors'. Important assumption: assumes the
+*Method for internal use... sparsedot forms a dot-product between two
+*sparsely-populated 'vectors'. *Important assumption: assumes the
 indices in u_ind and v_ind are sorted. ";
 
 %feature("docstring")  EpetraExt::mult_A_Btrans "int
@@ -2933,10 +2967,9 @@ with one entry per row.  Each row will have   the row index, column
 index and value listed with space in between each item.  The number of
 lines in the file should  be exactly the number of entries of the
 matrix.  For example, consider the following matrix where only the
-nonzero values are stored:
-
-\\\\[ \\\\left[\\\\begin{array}{cccc} 5 & 7 & 0 & 0 \\\\\\\\ 3 & 2 & 0
-& 1 \\\\\\\\ 0 & 0 & 0 & 4 \\\\\\\\ \\\\end{array}\\\\right]. \\\\]
+nonzero values are stored:  \\\\[ \\\\left[\\\\begin{array}{cccc} 5 &
+7 & 0 & 0 \\\\\\\\ 3 & 2 & 0 & 1 \\\\\\\\ 0 & 0 & 0 & 4 \\\\\\\\
+\\\\end{array}\\\\right]. \\\\]
 
 A Matlab format file for this matrix would be:1 1 5.0 1 2 7.0 2 1 3.0
 2 2 2.0 2 4 1.0 4 4 4.0
@@ -3916,6 +3949,9 @@ EpetraExt::ceil31log2(int n) ";
 // File: EpetraExt__SymmRCM__CrsGraph_8h.xml
 
 
+// File: EpetraExt__TCrsGraph__MapColoringIndex_8h.xml
+
+
 // File: EpetraExt__TimedEpetraOperator_8cpp.xml
 
 
@@ -3991,17 +4027,17 @@ std::string &delimiters=\" \") ";
 // File: EpetraExt__XMLWriter_8h.xml
 
 
-// File: dir_11c281d317fac26a80734cfdf01c3276.xml
+// File: dir_ad6fe4b2a0ceb8ad317c904934c5fce4.xml
 
 
-// File: dir_390ceb73d984add9550a91a5a05c10bc.xml
+// File: dir_5fe3d1bfedd3f77a94acdaff7a1a7c4c.xml
 
 
-// File: dir_df40b4453a44ce93def4751f410362de.xml
+// File: dir_3ba87151384e64c617dbed34cbee6e47.xml
 
 
-// File: dir_1446c85883e8456091748f28f5dc619d.xml
+// File: dir_a84d0104632df023059b54a49f216a7d.xml
 
 
-// File: dir_7af1f200b770e582760f7ec5a7e1d7c3.xml
+// File: dir_c121b4dd90caeb9f7333aa6f09ccef0d.xml
 

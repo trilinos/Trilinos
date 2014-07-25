@@ -46,10 +46,45 @@
 #ifndef KOKKOS_CUDA_HPP
 #define KOKKOS_CUDA_HPP
 
+#include <Kokkos_Macros.hpp>
+
+//----------------------------------------------------------------------------
+// If CUDA execution space is enabled then use this header file.
+
+#if defined( KOKKOS_HAVE_CUDA )
+
+#if defined( __CUDACC__ )
+
+#include <cuda.h>
+
+/*  Compiling with a CUDA compiler.
+ *
+ *  Include <cuda.h> to pick up the CUDA_VERSION macro defined as:
+ *    CUDA_VERSION = ( MAJOR_VERSION * 1000 ) + ( MINOR_VERSION * 10 )
+ *
+ *  When generating device code the __CUDA_ARCH__ macro is defined as:
+ *    __CUDA_ARCH__ = ( MAJOR_CAPABILITY * 100 ) + ( MINOR_CAPABILITY * 10 )
+ */
+#if ! defined( CUDA_VERSION )
+#error "#include <cuda.h> did not define CUDA_VERSION"
+#endif
+
+#if ( CUDA_VERSION < 4010 )
+#error "Cuda version 4.1 or greater required"
+#endif
+
+#if defined( __CUDA_ARCH__ ) && ( __CUDA_ARCH__ < 200 )
+/*  Compiling with CUDA compiler for device code. */
+#error "Cuda device capability >= 2.0 is required"
+#endif
+
+#endif /* #if defined( __CUDACC__ ) */
+
+//----------------------------------------------------------------------------
+
 #include <iosfwd>
 #include <vector>
 
-#include <Kokkos_Macros.hpp>
 #ifdef KOKKOS_HAVE_OPENMP
 #include <Kokkos_OpenMP.hpp>
 #else
@@ -98,6 +133,7 @@ public:
   typedef Cuda                  device_type ;
   //! This device's preferred memory space.
   typedef CudaSpace             memory_space ;
+  typedef Cuda                  scratch_memory_space ;
   //! The size_type typedef best suited for this device.
   typedef CudaSpace::size_type  size_type ;
   //! This device's preferred array layout.
@@ -232,7 +268,7 @@ public:
 
 
   //! Get a pointer to shared memory for this team.
-  __device__ inline void * get_shmem( const int size );
+  __device__ inline void * get_shmem( const int size ) const ;
 
   __device__ inline Cuda( Impl::CudaExec & exec ) : m_exec(exec) {}
   __device__ inline Cuda( const Cuda & rhs ) : m_exec(rhs.m_exec) {}
@@ -262,7 +298,7 @@ private:
   template< typename TypeLocal , typename TypeGlobal >
     inline TypeGlobal team_scan( const TypeLocal & value , TypeGlobal * const global_accum );
 
-  void * get_shmem( const int size );
+  void * get_shmem( const int size ) const ;
 
   Cuda( Impl::CudaExec & );
 
@@ -322,8 +358,10 @@ parallel_reduce( const CudaWorkConfig & work_config ,
 #include <Cuda/Kokkos_Cuda_View.hpp>
 #include <Cuda/Kokkos_Cuda_Parallel.hpp>
 
+//----------------------------------------------------------------------------
+
+#endif /* #if defined( KOKKOS_HAVE_CUDA ) */
 #endif /* #ifndef KOKKOS_CUDA_HPP */
 
-//----------------------------------------------------------------------------
 
 

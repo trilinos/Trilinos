@@ -46,6 +46,7 @@
 #include <iostream>
 #include <Kokkos_OpenMP.hpp>
 #include <Kokkos_hwloc.hpp>
+#include <impl/Kokkos_Error.hpp>
 #include <iostream>
 
 #ifdef KOKKOS_HAVE_OPENMP

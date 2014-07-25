@@ -1,7 +1,7 @@
 #ifndef TEST_TILE_HPP
 #define TEST_TILE_HPP
 
-#include <Kokkos_ParallelReduce.hpp>
+#include <Kokkos_Parallel.hpp>
 #include <Kokkos_View.hpp>
 
 template < typename Device , typename TileLayout>

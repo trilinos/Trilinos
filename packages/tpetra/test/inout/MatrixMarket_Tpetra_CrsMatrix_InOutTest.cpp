@@ -63,6 +63,8 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 
+namespace { // anonymous
+
 using Tpetra::global_size_t;
 using Teuchos::Array;
 using Teuchos::as;
@@ -82,8 +84,6 @@ const bool tolerant = false;
 // Whether to print copious debugging output to stderr when doing
 // Matrix Market input and output.
 const bool debug = false;
-
-namespace {
 
 const char matrix_symRealSmall[] =
 "%%MatrixMarket matrix coordinate real general\n"
@@ -110,7 +110,7 @@ template<class MapType>
 Teuchos::RCP<const MapType>
 computeGatherMap (Teuchos::RCP<const MapType> map,
                   const Teuchos::RCP<Teuchos::FancyOStream>& err=Teuchos::null,
-                  const bool debug=false)
+                  const bool dbg=false)
 {
   using Tpetra::createOneToOne;
   using Tpetra::global_size_t;
@@ -135,7 +135,7 @@ computeGatherMap (Teuchos::RCP<const MapType> map,
   if (! err.is_null ()) {
     err->pushTab ();
   }
-  if (debug) {
+  if (dbg) {
     *err << myRank << ": computeGatherMap:" << endl;
   }
   if (! err.is_null ()) {
@@ -146,7 +146,7 @@ computeGatherMap (Teuchos::RCP<const MapType> map,
   if (map->isContiguous ()) {
     oneToOneMap = map; // contiguous Maps are always 1-to-1
   } else {
-    if (debug) {
+    if (dbg) {
       *err << myRank << ": computeGatherMap: Calling createOneToOne" << endl;
     }
     // It could be that Map is one-to-one, but the class doesn't
@@ -159,7 +159,7 @@ computeGatherMap (Teuchos::RCP<const MapType> map,
   if (numProcs == 1) {
     gatherMap = oneToOneMap;
   } else {
-    if (debug) {
+    if (dbg) {
       *err << myRank << ": computeGatherMap: Gathering Map counts" << endl;
     }
     // Gather each process' count of Map elements to Proc 0,
@@ -167,7 +167,7 @@ computeGatherMap (Teuchos::RCP<const MapType> map,
     // many GIDs to expect from each process when calling
     // MPI_Gatherv.  Counts and offsets are all int, because
     // that's what MPI uses.  Teuchos::as will at least prevent
-    // bad casts to int in a debug build.
+    // bad casts to int in a dbg build.
     const int myEltCount = as<int> (oneToOneMap->getNodeNumElements ());
     Array<int> recvCounts (numProcs);
     const int rootProc = 0;
@@ -183,7 +183,7 @@ computeGatherMap (Teuchos::RCP<const MapType> map,
       std::fill (allGlobalElts.begin (), allGlobalElts.end (), 0);
     }
 
-    if (debug) {
+    if (dbg) {
       *err << myRank << ": computeGatherMap: Computing MPI_Gatherv "
         "displacements" << endl;
     }
@@ -193,13 +193,13 @@ computeGatherMap (Teuchos::RCP<const MapType> map,
     Array<int> displs (numProcs, 0);
     std::partial_sum (recvCounts.begin (), recvCounts.end () - 1,
                       displs.begin () + 1);
-    if (debug) {
+    if (dbg) {
       *err << myRank << ": computeGatherMap: Calling MPI_Gatherv" << endl;
     }
     gatherv<int, GO> (myGlobalElts.getRawPtr (), numMyGlobalElts,
                       allGlobalElts.getRawPtr (), recvCounts.getRawPtr (),
                       displs.getRawPtr (), rootProc, *comm);
-    if (debug) {
+    if (dbg) {
       *err << myRank << ": computeGatherMap: Creating gather Map" << endl;
     }
     // Create a Map with all the GIDs, in the same order as in
@@ -216,7 +216,7 @@ computeGatherMap (Teuchos::RCP<const MapType> map,
   if (! err.is_null ()) {
     err->popTab ();
   }
-  if (debug) {
+  if (dbg) {
     *err << myRank << ": computeGatherMap: done" << endl;
   }
   if (! err.is_null ()) {
@@ -451,7 +451,7 @@ template<class ScalarType, class LocalOrdinalType, class GlobalOrdinalType, clas
 Teuchos::RCP<Tpetra::CrsMatrix<ScalarType, LocalOrdinalType, GlobalOrdinalType, NodeType> >
 createSymRealSmall (const Teuchos::RCP<const Tpetra::Map<LocalOrdinalType, GlobalOrdinalType, NodeType> >& rowMap,
                     Teuchos::FancyOStream& out,
-                    const bool debug)
+                    const bool dbg)
 {
   using Teuchos::Array;
   using Teuchos::ArrayView;
@@ -473,7 +473,7 @@ createSymRealSmall (const Teuchos::RCP<const Tpetra::Map<LocalOrdinalType, Globa
 
   const GST globalNumElts = rowMap->getGlobalNumElements ();
   const size_t myNumElts = (myRank == 0) ? as<size_t> (globalNumElts) : 0;
-  RCP<const map_type> gatherRowMap = computeGatherMap (rowMap, rcpFromRef (out), debug);
+  RCP<const map_type> gatherRowMap = computeGatherMap (rowMap, rcpFromRef (out), dbg);
   matrix_type A_gather (gatherRowMap, as<size_t> (0));
 
   if (myRank == 0) {

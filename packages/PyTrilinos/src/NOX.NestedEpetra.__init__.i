@@ -359,7 +359,7 @@ using namespace NOX::Epetra;
 %{
 import sys, os.path as op
 parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
-if parentDir not in sys.path: sys.path.append(parentDir)
+if not parentDir in sys.path: sys.path.append(parentDir)
 del sys, op
 %}
 %import "NOX.Abstract_RelPath.i"
@@ -453,6 +453,7 @@ namespace Epetra
 // arguments that conflict with a SWIG director method argument
 #define result nox_result
 %include "NOX_Epetra_LinearSystem.H"
+#undef result
 
 ////////////////////////////////////////////
 // NOX.Epetra.LinearSystemAztecOO support //

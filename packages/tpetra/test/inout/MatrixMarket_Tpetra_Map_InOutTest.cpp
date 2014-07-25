@@ -62,6 +62,8 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 
+namespace { // anonymous
+
 using Tpetra::global_size_t;
 using Teuchos::Array;
 using Teuchos::as;
@@ -509,6 +511,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, NoncontigOvrlpngIndBase0, Loc
 
   TEST_EQUALITY(map.isSameAs (*inMap), true);
 }
+
+} // namespace (anonymous)
 
 
 // Unit test macro isn't smart enough to deal with namespace qualifications.

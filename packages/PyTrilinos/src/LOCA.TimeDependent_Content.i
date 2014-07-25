@@ -28,19 +28,42 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") Chan
-
 %{
+// Teuchos includes
+#include "Teuchos_Comm.hpp"
+#include "Teuchos_DefaultSerialComm.hpp"
+#ifdef HAVE_MPI
+#include "Teuchos_DefaultMpiComm.hpp"
+#endif
+#include "PyTrilinos_Teuchos_Util.h"
+
 // LOCA includes
-#include "ChanProblemInterface.H"
+#include "LOCA.H"
+
+// Local includes
+#define NO_IMPORT_ARRAY
+#include "numpy_include.h"
 %}
 
 // Ignore/renames
-%rename(ProblemInterface) ChanProblemInterface;
+%ignore *::operator=;
+
+// Standard exception handling
+%include "exception.i"
+
+// Include LOCA documentation
+%feature("autodoc", "1");
+%include "LOCA_dox.i"
+
+// Teuchos support
+%import "Teuchos.i"
+
+// Teuchos::RCP support
+%teuchos_rcp(LOCA::TimeDependent::AbstractGroup)
 
 // Import base class declarations
-%import "LAPACK.i"
+%import "LOCA.MultiContinuation.i"
 
-// LOCA interface includes
-%include "ChanProblemInterface.H"
-
+// LOCA::TimeDependent AbstractGroup class
+//%feature("director") LOCA::TimeDependent::AbstractGroup;
+%include "LOCA_TimeDependent_AbstractGroup.H"

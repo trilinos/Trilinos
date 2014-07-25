@@ -28,30 +28,33 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") Extended
+%define %loca_extended_docstring
+"
+PyTrilinos.LOCA.Extended is the python interface to namespace Extended
+of the Trilinos continuation algorithm package LOCA:
 
-%{
-// Teuchos include
-#include "PyTrilinos_Teuchos_Util.h"
+    http://trilinos.sandia.gov/packages/nox
 
-#include "LOCA_Extended_MultiAbstractGroup.H"
+The purpose of LOCA.Extended is to provide classes that extend
+NOX.Abstract classes to handle an arbitrary number of multi-vectors
+and scalars.  The python version of LOCA.Extended supports the
+following classes:
 
-// Local includes
-#define NO_IMPORT_ARRAY
-#include "numpy_include.h"
+    * MultiVector         - Implemenatation of the NOX.Abstract.MultiVector
+                            class for extended multi-vectors comprised of an
+                            arbitrary number of multi-vectors and scalars
+    * Vector              - Implemenatation of the NOX.Abstract.Vector class
+                            for extended multi-vectors comprised of an
+                            arbitrary number of multi-vectors and scalars
+    * MultiAbstractGroup  - LOCA abstract interface for extended groups,
+                            derived from the NOX.Abstract.Group, i.e., an
+                            abstract interface for 'super' groups that have an
+                            underlying group component
+"
+%enddef
 
-// Namespace flattening
-using Teuchos::RCP;
-%}
+%module(package   = "PyTrilinos.LOCA",
+        directors = "1",
+        docstring = %loca_extended_docstring) Extended
 
-// Standard exception handling
-%include "exception.i"
-
-// Ignore/renames
-%ignore *::operator=;
-
-// Trilinos module imports
-%import "Teuchos.i"
-%import "NOX.Abstract.i"
-
-%include "LOCA_Extended_MultiAbstractGroup.H"
+%include "LOCA.Extended_Content.i"

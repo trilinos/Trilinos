@@ -58,12 +58,14 @@ using Teuchos::OpaqueWrapper;
 ////////////////////////////////////
 // Teuchos::LabeledObject support //
 ////////////////////////////////////
+%teuchos_rcp(Teuchos::LabeledObject)
 %feature("director") Teuchos::LabeledObject;
 %include "Teuchos_LabeledObject.hpp"
 
 //////////////////////////////////
 // Teuchos::Describable support //
 //////////////////////////////////
+%teuchos_rcp(Teuchos::Describable)
 %feature("director") Teuchos::Describable;
 %include "Teuchos_Describable.hpp"
 
@@ -75,6 +77,7 @@ using Teuchos::OpaqueWrapper;
 ///////////////////////////
 // Teuchos::Comm support //
 ///////////////////////////
+%teuchos_rcp(Teuchos::Comm< int >)
 %feature("autodoc",
 "broadcast(self, int rootRank, numpy.ndarray buffer)
 
@@ -316,24 +319,25 @@ Teuchos::Comm::reduceAll;
 %ignore Teuchos::wait;
 %ignore Teuchos::waitAll;
 %include "Teuchos_Comm.hpp"
-%template(Comm_long) Teuchos::Comm<long>;
+%template(Comm_int) Teuchos::Comm<int>;
 %pythoncode
 %{
-Comm = Comm_long
+Comm = Comm_int
 %}
 
 /////////////////////////////////
 // Teuchos::SerialComm support //
 /////////////////////////////////
+%teuchos_rcp(Teuchos::SerialComm< int >)
 %ignore Teuchos::SerialComm::broadcast;
 %ignore Teuchos::SerialComm::gatherAll;
 %ignore Teuchos::SerialComm::reduceAll;
 %ignore Teuchos::SerialComm::scan;
 %include "Teuchos_DefaultSerialComm.hpp"
-%template(SerialComm_long) Teuchos::SerialComm<long>;
+%template(SerialComm_int) Teuchos::SerialComm<int>;
 %pythoncode
 %{
-SerialComm = SerialComm_long
+SerialComm = SerialComm_int
 %}
 
 //////////////////////////////////
@@ -341,14 +345,14 @@ SerialComm = SerialComm_long
 //////////////////////////////////
 %rename(reductionTypeToString) Teuchos::toString;
 %include "Teuchos_CommHelpers.hpp"
-%template(rank_long   ) Teuchos::rank<long>;
-%template(size_long   ) Teuchos::size<long>;
-%template(barrier_long) Teuchos::barrier<long>;
+%template(rank_int   ) Teuchos::rank<int>;
+%template(size_int   ) Teuchos::size<int>;
+%template(barrier_int) Teuchos::barrier<int>;
 %pythoncode
 %{
-rank    = rank_long
-size    = size_long
-barrier = barrier_long
+rank    = rank_int
+size    = size_int
+barrier = barrier_int
 
 def broadcast(comm, rootRank, buffer):
   """
@@ -501,6 +505,7 @@ if calledMpiInit:
       (Teuchos::opaqueWrapper((MPI_Comm)MPI_COMM_WORLD));
   }
 }
+%teuchos_rcp(Teuchos::MpiComm< int >)
 %ignore Teuchos::MpiComm::MpiComm;
 %ignore Teuchos::MpiComm::getRawMpiComm;
 %ignore Teuchos::MpiComm::broadcast;
@@ -508,10 +513,10 @@ if calledMpiInit:
 %ignore Teuchos::MpiComm::reduceAll;
 %ignore Teuchos::MpiComm::scan;
 %include "Teuchos_DefaultMpiComm.hpp"
-%template(MpiComm_long) Teuchos::MpiComm<long>;
+%template(MpiComm_int) Teuchos::MpiComm<int>;
 %pythoncode
 %{
-MpiComm = MpiComm_long
+MpiComm = MpiComm_int
 %}
 
 ///////////////////////////////////////////

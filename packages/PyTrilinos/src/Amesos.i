@@ -110,6 +110,11 @@ exAmesos_Factory.py.
 // Teuchos includes
 #ifdef HAVE_TEUCHOS
 #include "Teuchos_RefCountPtrDecl.hpp"
+#include "Teuchos_Comm.hpp"
+#include "Teuchos_DefaultSerialComm.hpp"
+#ifdef HAVE_MPI
+#include "Teuchos_DefaultMpiComm.hpp"
+#endif
 #include "PyTrilinos_Teuchos_Util.h"
 #endif
 

@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
@@ -54,16 +54,24 @@
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_MatrixIO.hpp>
 
+namespace { // anonymous
+
 std::string fnMatrix("bcsstk17.rsa");
 bool testPassed;
 double eps = 1e-4;
 int niters = 100;
 
 template <class Node, class Scalar, class Ordinal>
-Scalar power_method(const Teuchos::RCP<const Tpetra::Operator<Scalar,Ordinal,Ordinal,Node> > &A, size_t niters, typename Teuchos::ScalarTraits<Scalar>::magnitudeType tolerance, bool verbose) {
+Scalar
+power_method (const Teuchos::RCP<const Tpetra::Operator<Scalar,Ordinal,Ordinal,Node> >& A,
+              size_t numIters,
+              typename Teuchos::ScalarTraits<Scalar>::magnitudeType tolerance,
+              bool verbose)
+{
   using Teuchos::RCP;
   typedef Tpetra::Vector<Scalar,Ordinal,Ordinal,Node> Vector;
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
+
   // create three vectors
   RCP<Vector> z = Tpetra::createVector<Scalar>(A->getRangeMap()),
               q = Tpetra::createVector<Scalar>(A->getRangeMap()),
@@ -78,20 +86,20 @@ Scalar power_method(const Teuchos::RCP<const Tpetra::Operator<Scalar,Ordinal,Ord
   // power iteration
   RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::getNewTimer("PowerMethod");
   timer->start();
-  for (size_t iter = 0; iter < niters; ++iter) {
+  for (size_t iter = 0; iter < numIters; ++iter) {
     normz = z->norm2();                            // Compute 2-norm of z
     q->scale(ONE/normz, *z);                       // Set q = z / normz
     A->apply(*q, *z);                              // Compute z = A*q
     lambda = q->dot(*z);                           // Approximate maximum eigenvalue: lamba = dot(q,z)
-    if ( iter % 100 == 0 || iter + 1 == niters ) {
+    if ( iter % 100 == 0 || iter + 1 == numIters ) {
       r->update(ONE, *z, -lambda, *q, ZERO);       // Compute A*q - lambda*q
       residual = Teuchos::ScalarTraits<Scalar>::magnitude(r->norm2() / lambda);
       if (verbose) {
-        std::cout << "Iter = " << iter << "  Lambda = " << lambda 
-                  << "  Residual of A*q - lambda*q = " 
+        std::cout << "Iter = " << iter << "  Lambda = " << lambda
+                  << "  Residual of A*q - lambda*q = "
                   << residual << std::endl;
       }
-    } 
+    }
     if (residual < tolerance) {
       break;
     }
@@ -104,7 +112,7 @@ template <class Node>
 class runTest {
   public:
   static void run(Teuchos::ParameterList &myMachPL, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node) {
-    using std::cout; 
+    using std::cout;
     using std::endl;
     cout << "Running test with Node==" << Teuchos::typeName(*node) << " on rank " << comm->getRank() << "/" << comm->getSize() << endl;
     //
@@ -123,7 +131,7 @@ class runTest {
       if (comm->getRank() == 0) {
         cout << "Tpetra::Utils::readHBMatrix() threw exception: " << endl << e.what() << endl;
       }
-      testPassed = false;      
+      testPassed = false;
       return;
     }
     (void)power_method<Node,TestScalar,int>(A,niters,(TestScalar)eps,comm->getRank() == 0);
@@ -131,16 +139,22 @@ class runTest {
   }
 };
 
-int main(int argc, char **argv) {
+} // namespace (anonymous)
+
+
+int
+main (int argc, char **argv)
+{
   using std::cout;
   using std::endl;
 
-  Teuchos::GlobalMPISession mpisess(&argc,&argv,&cout);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::createMpiComm<int>(Teuchos::opaqueWrapper<MPI_Comm>(MPI_COMM_WORLD));
+  Teuchos::GlobalMPISession mpisess (&argc, &argv, &cout);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm =
+    Teuchos::rcp (new Teuchos::MpiComm<int> (MPI_COMM_WORLD));
 
   //
   // Get test parameters from command-line processor
-  //  
+  //
   Teuchos::CommandLineProcessor cmdp(false,true);
   std::string fnMachine("mpionly.xml");
   cmdp.setOption("matrix-file",&fnMatrix,"Filename for Harwell-Boeing test matrix.");
@@ -159,9 +173,9 @@ int main(int argc, char **argv) {
     Teuchos::writeParameterListToXmlOStream(*Tpetra::HybridPlatform::listSupportedNodes(), cout);
   }
 
-  // 
+  //
   // read machine file and initialize platform
-  // 
+  //
   Teuchos::ParameterList machPL;
   Teuchos::updateParametersFromXmlFile(fnMachine, inOutArg(machPL));
   Tpetra::HybridPlatform platform(comm,machPL);

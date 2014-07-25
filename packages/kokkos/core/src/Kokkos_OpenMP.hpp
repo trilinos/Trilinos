@@ -48,9 +48,10 @@
 
 #include <Kokkos_Macros.hpp>
 
-#if defined(KOKKOS_HAVE_OPENMP)
+#if defined( KOKKOS_HAVE_OPENMP ) && defined( _OPENMP )
 
 #include <omp.h>
+
 #include <cstddef>
 #include <iosfwd>
 #include <Kokkos_HostSpace.hpp>
@@ -83,6 +84,7 @@ public:
   typedef OpenMP                device_type ;
   typedef HostSpace::size_type  size_type ;
   typedef HostSpace             memory_space ;
+  typedef OpenMP                scratch_memory_space ;
   typedef LayoutRight           array_layout ;
   typedef OpenMP                host_mirror_device_type ;
 
@@ -160,9 +162,9 @@ public:
   KOKKOS_INLINE_FUNCTION TypeGlobal team_scan( const TypeLocal & value , TypeGlobal * const global_accum );
 
 
-  KOKKOS_INLINE_FUNCTION void * get_shmem( const int size );
+  KOKKOS_INLINE_FUNCTION void * get_shmem( const int size ) const ;
 
-  explicit inline OpenMP( Impl::OpenMPexec & );
+  explicit KOKKOS_INLINE_FUNCTION OpenMP( Impl::OpenMPexec & );
 
   //------------------------------------
 
@@ -181,7 +183,7 @@ private:
 
 /*--------------------------------------------------------------------------*/
 
-#endif /* #if defined(KOKKOS_HAVE_OPENMP) */
+#endif /* #if defined( KOKKOS_HAVE_OPENMP ) && defined( _OPENMP ) */
 #endif /* #ifndef KOKKOS_OPENMP_HPP */
 
 

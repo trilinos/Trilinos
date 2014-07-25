@@ -64,6 +64,8 @@ template< class > struct ThreadsExecAdapter ;
 
 //----------------------------------------------------------------------------
 
+class ThreadsExecTeamIndex ;
+
 class ThreadsExec {
 public:
 
@@ -86,6 +88,7 @@ public:
 
 private:
 
+  friend class ThreadsExecTeamIndex ;
   friend class Kokkos::Threads ;
 
   // Fan-in operations' root is the highest ranking thread
@@ -139,7 +142,13 @@ private:
 
   inline void * reduce_team() const { return m_alloc_reduce ; }
 
+  template < typename T >
+  inline volatile T * team_reduce_value() const
+    { return (volatile T *) m_alloc_reduce ; }
+
 public:
+
+  static int team_alloc( int team_size );
 
   static int get_thread_count();
   static ThreadsExec * get_thread( const int init_thread_rank );
@@ -206,26 +215,29 @@ public:
     {
       typedef ReduceAdapter< Functor > Reduce ;
 
-      const int rank_rev  = m_pool_size - ( m_pool_rank + 1 );
+      const int rev_rank  = m_pool_size - ( m_pool_rank + 1 );
 
       for ( int i = 0 ; i < m_pool_fan_size ; ++i ) {
 
-        ThreadsExec & fan = *m_pool_base[ rank_rev + ( 1 << i ) ] ;
+        ThreadsExec & fan = *m_pool_base[ rev_rank + ( 1 << i ) ] ;
 
         Impl::spinwait( fan.m_pool_state , ThreadsExec::Active );
 
-        f.join( Reduce::reference( reduce_base() ) ,
-                Reduce::reference( fan.reduce_base() ) );
+        Reduce::join( f , reduce_base() , fan.reduce_base() );
+      }
+
+      if ( ! rev_rank ) {
+        Reduce::final( f , reduce_base() );
       }
     }
 
   inline
   void fan_in() const
     {
-      const int rank_rev = m_pool_size - ( m_pool_rank + 1 );
+      const int rev_rank = m_pool_size - ( m_pool_rank + 1 );
 
       for ( int i = 0 ; i < m_pool_fan_size ; ++i ) {
-        Impl::spinwait( m_pool_base[rank_rev+(1<<i)]->m_pool_state , ThreadsExec::Active );
+        Impl::spinwait( m_pool_base[rev_rank+(1<<i)]->m_pool_state , ThreadsExec::Active );
       }
     }
 
@@ -244,7 +256,7 @@ public:
       typedef ReduceAdapter< FunctorType > Reduce ;
       typedef typename Reduce::scalar_type scalar_type ;
 
-      const int      rank_rev = m_pool_size - ( m_pool_rank + 1 );
+      const int      rev_rank = m_pool_size - ( m_pool_rank + 1 );
       const unsigned count    = Reduce::value_count( f );
 
       scalar_type * const work_value = (scalar_type *) reduce_base();
@@ -252,32 +264,31 @@ public:
       //--------------------------------
       // Fan-in reduction with highest ranking thread as the root
       for ( int i = 0 ; i < m_pool_fan_size ; ++i ) {
-        ThreadsExec & fan = *m_pool_base[ rank_rev + (1<<i) ];
+        ThreadsExec & fan = *m_pool_base[ rev_rank + (1<<i) ];
 
         // Wait: Active -> ReductionAvailable (or ScanAvailable)
         Impl::spinwait( fan.m_pool_state , ThreadsExec::Active );
-        f.join( Reduce::reference( work_value ) , Reduce::reference( fan.reduce_base() ) );
+        Reduce::join( f , work_value , fan.reduce_base() );
       }
 
       // Copy reduction value to scan value before releasing from this phase.
       for ( unsigned i = 0 ; i < count ; ++i ) { work_value[i+count] = work_value[i] ; }
 
-      if ( rank_rev ) {
+      if ( rev_rank ) {
 
         // Set: Active -> ReductionAvailable
         m_pool_state = ThreadsExec::ReductionAvailable ;
 
         // Wait for contributing threads' scan value to be available.
         if ( ( 1 << m_pool_fan_size ) < ( m_pool_rank + 1 ) ) {
-          ThreadsExec & th = *m_pool_base[ rank_rev + ( 1 << m_pool_fan_size ) ] ;
+          ThreadsExec & th = *m_pool_base[ rev_rank + ( 1 << m_pool_fan_size ) ] ;
 
           // Wait: Active             -> ReductionAvailable
           // Wait: ReductionAvailable -> ScanAvailable
           Impl::spinwait( th.m_pool_state , ThreadsExec::Active );
           Impl::spinwait( th.m_pool_state , ThreadsExec::ReductionAvailable );
 
-          f.join( Reduce::reference( work_value + count ) ,
-                  Reduce::reference( ((scalar_type *)th.reduce_base()) + count ) );
+          Reduce::join( f , work_value + count , ((scalar_type *)th.reduce_base()) + count );
         }
 
         // This thread has completed inclusive scan
@@ -292,7 +303,7 @@ public:
       //--------------------------------
 
       for ( int i = 0 ; i < m_pool_fan_size ; ++i ) {
-        ThreadsExec & fan = *m_pool_base[ rank_rev + (1<<i) ];
+        ThreadsExec & fan = *m_pool_base[ rev_rank + (1<<i) ];
         // Wait: ReductionAvailable -> ScanAvailable
         Impl::spinwait( fan.m_pool_state , ThreadsExec::ReductionAvailable );
         // Set: ScanAvailable -> Rendezvous
@@ -304,10 +315,10 @@ public:
       // Threads are free to overwrite their reduction value.
       //--------------------------------
 
-      if ( ( rank_rev + 1 ) < m_pool_size ) {
+      if ( ( rev_rank + 1 ) < m_pool_size ) {
         // Exclusive scan: copy the previous thread's inclusive scan value
 
-        ThreadsExec & th = *m_pool_base[ rank_rev + 1 ] ; // Not the root thread
+        ThreadsExec & th = *m_pool_base[ rev_rank + 1 ] ; // Not the root thread
 
         const scalar_type * const src_value = ((scalar_type *)th.reduce_base()) + count ;
 
@@ -321,9 +332,9 @@ public:
       // Wait for all threads to copy previous thread's inclusive scan value
       // Wait for all threads: Rendezvous -> ScanCompleted
       for ( int i = 0 ; i < m_pool_fan_size ; ++i ) {
-        Impl::spinwait( m_pool_base[ rank_rev + (1<<i) ]->m_pool_state , ThreadsExec::Rendezvous );
+        Impl::spinwait( m_pool_base[ rev_rank + (1<<i) ]->m_pool_state , ThreadsExec::Rendezvous );
       }
-      if ( rank_rev ) {
+      if ( rev_rank ) {
         // Set: ScanAvailable -> ScanCompleted
         m_pool_state = ThreadsExec::ScanCompleted ;
         // Wait: ScanCompleted -> Active
@@ -331,7 +342,7 @@ public:
       }
       // Set: ScanCompleted -> Active
       for ( int i = 0 ; i < m_pool_fan_size ; ++i ) {
-        m_pool_base[ rank_rev + (1<<i) ]->m_pool_state = ThreadsExec::Active ;
+        m_pool_base[ rev_rank + (1<<i) ]->m_pool_state = ThreadsExec::Active ;
       }
     }
 
@@ -342,7 +353,7 @@ public:
       typedef ReduceAdapter< FunctorType > Reduce ;
       typedef typename Reduce::scalar_type scalar_type ;
 
-      const int      rank_rev = m_pool_size - ( m_pool_rank + 1 );
+      const int      rev_rank = m_pool_size - ( m_pool_rank + 1 );
       const unsigned count    = Reduce::value_count( f );
 
       scalar_type * const work_value = (scalar_type *) reduce_base();
@@ -351,12 +362,12 @@ public:
       // Fan-in reduction with highest ranking thread as the root
       for ( int i = 0 ; i < m_pool_fan_size ; ++i ) {
         // Wait: Active -> Rendezvous
-        Impl::spinwait( m_pool_base[ rank_rev + (1<<i) ]->m_pool_state , ThreadsExec::Active );
+        Impl::spinwait( m_pool_base[ rev_rank + (1<<i) ]->m_pool_state , ThreadsExec::Active );
       }
 
       for ( unsigned i = 0 ; i < count ; ++i ) { work_value[i+count] = work_value[i]; }
 
-      if ( rank_rev ) {
+      if ( rev_rank ) {
         m_pool_state = ThreadsExec::Rendezvous ;
         // Wait: Rendezvous -> Active
         Impl::spinwait( m_pool_state , ThreadsExec::Rendezvous );
@@ -370,7 +381,7 @@ public:
           scalar_type * const ptr = (scalar_type *) get_thread( rank )->reduce_base();
           if ( rank ) {
             for ( unsigned i = 0 ; i < count ; ++i ) { ptr[i] = ptr_prev[ i + count ]; }
-            f.join( Reduce::reference( ptr + count ), Reduce::reference( ptr ) );
+            Reduce::join( f , ptr + count , ptr );
           }
           else {
             (void) Reduce::init( f , ptr );
@@ -380,7 +391,7 @@ public:
       }
 
       for ( int i = 0 ; i < m_pool_fan_size ; ++i ) {
-        m_pool_base[ rank_rev + (1<<i) ]->m_pool_state = ThreadsExec::Active ;
+        m_pool_base[ rev_rank + (1<<i) ]->m_pool_state = ThreadsExec::Active ;
       }
     }
 
@@ -391,17 +402,17 @@ public:
 
   KOKKOS_INLINE_FUNCTION void team_barrier()
     {
-      const int rank_rev = m_team_size - ( m_team_rank + 1 );
+      const int rev_rank = m_team_size - ( m_team_rank + 1 );
 
       for ( int i = 0 ; i < m_team_fan_size ; ++i ) {
-        Impl::spinwait( m_team_base[ rank_rev + (1<<i) ]->m_pool_state , ThreadsExec::Active );
+        Impl::spinwait( m_team_base[ rev_rank + (1<<i) ]->m_pool_state , ThreadsExec::Active );
       }
-      if ( rank_rev ) {
+      if ( rev_rank ) {
         m_pool_state = Rendezvous ;
         Impl::spinwait( m_pool_state , ThreadsExec::Rendezvous );
       }
       for ( int i = 0 ; i < m_team_fan_size ; ++i ) {
-        m_team_base[ rank_rev + (1<<i) ]->m_pool_state = ThreadsExec::Active ;
+        m_team_base[ rev_rank + (1<<i) ]->m_pool_state = ThreadsExec::Active ;
       }
     }
 
@@ -418,7 +429,7 @@ public:
       // Make sure there is enough scratch space:
       typedef typename if_c< 2 * sizeof(ArgType) < REDUCE_TEAM_BASE , ArgType , void >::type type ;
 
-      const int rank_rev = m_team_size - ( m_team_rank + 1 );
+      const int rev_rank = m_team_size - ( m_team_rank + 1 );
 
       type * const work_value = (type*) reduce_team();
 
@@ -429,7 +440,7 @@ public:
 
       // Fan-in reduction, wait for source thread to complete it's fan-in reduction.
       for ( int i = 0 ; i < m_team_fan_size ; ++i ) {
-        ThreadsExec & th = *m_team_base[ rank_rev + (1<<i) ];
+        ThreadsExec & th = *m_team_base[ rev_rank + (1<<i) ];
 
         // Wait for source thread to exit Inactive state.
         Impl::spinwait( th.m_team_state , ThreadsExec::Inactive );
@@ -441,13 +452,13 @@ public:
       work_value[1] = work_value[0] ;
       memory_fence();
 
-      if ( rank_rev ) {
+      if ( rev_rank ) {
 
         m_team_state = ThreadsExec::ReductionAvailable ; // Reduction value is available.
 
         // Wait for contributing threads' scan value to be available.
         if ( ( 1 << m_team_fan_size ) < ( m_team_rank + 1 ) ) {
-          ThreadsExec & th = *m_team_base[ rank_rev + ( 1 << m_team_fan_size ) ];
+          ThreadsExec & th = *m_team_base[ rev_rank + ( 1 << m_team_fan_size ) ];
 
           // Wait: Inactive -> ReductionAvailable
           Impl::spinwait( th.m_team_state , ThreadsExec::Inactive );
@@ -466,7 +477,7 @@ public:
       }
 
       for ( int i = 0 ; i < m_team_fan_size ; ++i ) {
-        ThreadsExec & th = *m_team_base[ rank_rev + (1<<i) ];
+        ThreadsExec & th = *m_team_base[ rev_rank + (1<<i) ];
         // Wait: ReductionAvailable -> ScanAvailable
         Impl::spinwait( th.m_team_state , ThreadsExec::ReductionAvailable );
         // Wait: ScanAvailable -> Rendezvous
@@ -474,7 +485,7 @@ public:
       }
 
       // All fan-in threads are in the ScanAvailable state
-      if ( rank_rev ) {
+      if ( rev_rank ) {
         m_team_state = ThreadsExec::Rendezvous ;
         Impl::spinwait( m_team_state , ThreadsExec::Rendezvous );
       }
@@ -482,7 +493,7 @@ public:
       // Broadcast global inter-team accumulation value
       volatile type & global_val = work_value[0] ;
       for ( int i = 0 ; i < m_team_fan_size ; ++i ) {
-        ThreadsExec & th = *m_team_base[ rank_rev + (1<<i) ];
+        ThreadsExec & th = *m_team_base[ rev_rank + (1<<i) ];
         ((volatile type*)th.reduce_team())[0] = global_val ;
         memory_fence();
         th.m_team_state = ThreadsExec::Inactive ;
@@ -520,6 +531,70 @@ public:
   static void fence();
   static bool sleep();
   static bool wake();
+};
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+class ThreadsExecTeamIndex {
+private:
+
+  Impl::ThreadsExec & m_exec ;
+  
+  typedef Kokkos::Threads execution_space ;
+
+public:
+
+  KOKKOS_INLINE_FUNCTION
+  execution_space::scratch_memory_space  team_shmem() const
+    { return execution_space::scratch_memory_space( m_exec ); }
+
+  KOKKOS_INLINE_FUNCTION int league_rank() const { return m_exec.m_league_rank ; }
+  KOKKOS_INLINE_FUNCTION int league_size() const { return m_exec.m_league_size ; }
+  KOKKOS_INLINE_FUNCTION int team_rank() const { return m_exec.m_team_rank ; }
+  KOKKOS_INLINE_FUNCTION int team_size() const { return m_exec.m_team_size ; }
+
+  KOKKOS_INLINE_FUNCTION void team_barrier() const
+    { m_exec.team_barrier(); }
+
+  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
+   *          with intra-team non-deterministic ordering accumulation.
+   *
+   *  The global inter-team accumulation value will, at the end of the
+   *  league's parallel execution, be the scan's total.
+   *  Parallel execution ordering of the league's teams is non-deterministic.
+   *  As such the base value for each team's scan operation is similarly
+   *  non-deterministic.
+   */
+  template< typename Type >
+  KOKKOS_INLINE_FUNCTION Type team_scan( const Type & value , Type * const global_accum ) const
+    { return m_exec.template team_scan<Type>( value , global_accum ); }
+
+  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering.
+   *
+   *  The highest rank thread can compute the reduction total as
+   *    reduction_total = dev.team_scan( value ) + value ;
+   */
+  template< typename Type >
+  KOKKOS_INLINE_FUNCTION Type team_scan( const Type & value ) const
+    { return m_exec.template team_scan<Type>( value , 0 ); }
+
+  //----------------------------------------
+  // Private for the driver
+
+  template< class WorkArgTag >
+  ThreadsExecTeamIndex( Impl::ThreadsExec & exec , const TeamPolicy< execution_space , WorkArgTag > & team )
+    : m_exec( exec )
+    {}
+
+  void reset_scratch_space()
+    { m_exec.m_team_shared_iter = 0 ; }
+
+  bool valid_team() const
+    { return m_exec.m_league_rank < m_exec.m_league_end ; }
+
+  void next_team()
+    { if ( ++m_exec.m_league_rank < m_exec.m_league_end ) m_exec.team_barrier(); }
 };
 
 } /* namespace Impl */
@@ -602,9 +677,55 @@ KOKKOS_INLINE_FUNCTION TypeGlobal Threads::team_scan( const TypeLocal & value , 
 { return m_exec.template team_scan< TypeGlobal >( value , global_accum ); }
 
 KOKKOS_INLINE_FUNCTION
-void * Threads::get_shmem( const int size ) { return m_exec.get_shmem( size ); }
+void * Threads::get_shmem( const int size ) const { return m_exec.get_shmem( size ); }
 
 } /* namespace Kokkos */
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+
+template < class WorkArgTag >
+class TeamPolicy< Kokkos::Threads , WorkArgTag > {
+private:
+
+  const int m_league_size ;
+  const int m_team_size ;
+  const int m_team_alloc ;
+
+public:
+
+  typedef Impl::ExecutionPolicyTag   kokkos_tag ;      ///< Concept tag
+  typedef Kokkos::Threads            execution_space ; ///< Execution space
+
+  inline int team_size() const { return m_team_size ; }
+  inline int league_size() const { return m_league_size ; }
+
+  /** \brief  Specify league size, request team size */
+  TeamPolicy( execution_space & , int league_size , int team_size_request )
+    : m_league_size( league_size )
+    , m_team_size( team_size_request < int(execution_space::team_max())
+                 ? team_size_request : int(execution_space::team_max()) )
+    , m_team_alloc( Impl::ThreadsExec::team_alloc( m_team_size ) )
+    { }
+
+  TeamPolicy( int league_size , int team_size_request )
+    : m_league_size( league_size )
+    , m_team_size( team_size_request < int(execution_space::team_max())
+                 ? team_size_request : int(execution_space::team_max()) )
+    , m_team_alloc( Impl::ThreadsExec::team_alloc( m_team_size ) )
+    { }
+
+  typedef Impl::ThreadsExecTeamIndex member_type ;
+
+  friend class Impl::ThreadsExecTeamIndex ;
+};
+
+} /* namespace Kokkos */
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 #endif /* #define KOKKOS_THREADSEXEC_HPP */
 

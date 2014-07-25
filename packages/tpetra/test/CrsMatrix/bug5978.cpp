@@ -23,6 +23,8 @@
 #include <Tpetra_Map.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
+namespace { // anonymous
+
 using Teuchos::RCP;
 using Teuchos::rcp;
 
@@ -103,6 +105,8 @@ TEUCHOS_UNIT_TEST( CrsMatrix, Bug5978 )
   comm->barrier ();
   out << "Proc " << myRank << ": Done with test" << endl;
 }
+
+} // namespace (anonymous)
 
 
 #endif  //DO_COMPILATION

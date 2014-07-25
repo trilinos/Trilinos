@@ -111,8 +111,8 @@ namespace Experimental {
 template<class Scalar, class LO = int,  class GO = LO,
          class Node = KokkosClassic::DefaultNode::DefaultNodeType>
 class BlockCrsMatrix :
-  public Tpetra::Operator<Scalar, LO, GO, Node>,
-  Tpetra::DistObject<char, LO, GO, Node>
+  virtual public Tpetra::Operator<Scalar, LO, GO, Node>,
+  virtual public Tpetra::DistObject<char, LO, GO, Node>
 {
 private:
   typedef Tpetra::DistObject<char, LO, GO, Node> dist_object_type;
@@ -213,6 +213,40 @@ public:
 
   //! Set all matrix entries equal to \c alpha.
   void setAllToScalar (const Scalar &alpha);
+
+  //@}
+  //! \name Implementation of Teuchos::Describable
+  //@{
+
+  //! One-line description of this object.
+  std::string description () const;
+
+  /// \brief Print a description of this object to the given output stream.
+  ///
+  /// \param out [out] Output stream to which to print.  Valid values
+  ///   include Teuchos::VERB_DEFAULT, Teuchos::VERB_NONE,
+  ///   Teuchos::VERB_LOW, Teuchos::VERB_MEDIUM, Teuchos::VERB_HIGH,
+  ///   and Teuchos::VERB_EXTREME.
+  ///
+  /// \param verbLevel [in] Verbosity level at which to print.
+  ///
+  /// \warning If verbLevel is Teuchos::VERB_EXTREME, this method has
+  ///   collective semantics over the matrix's communicator.
+  ///
+  /// The following pseudocode shows how to wrap your std::ostream
+  /// object in a Teuchos::FancyOStream, and pass it into this method:
+  /// \code
+  /// Tpetra::Experimental::BlockCrsMatrix<...> A (...);
+  /// // ...
+  /// std::ostream& yourObject = ...;
+  /// Teuchos::RCP<Teuchos::FancyOStream> wrappedStream =
+  ///   Teuchos::getFancyOStream (Teuchos::rcpFromRef (yourObject));
+  /// const Teuchos::EVerbosityLevel verbLevel = ...;
+  /// A.describe (*wrappedStream, verbLevel);
+  /// \endcode
+  void
+  describe (Teuchos::FancyOStream& out,
+            const Teuchos::EVerbosityLevel verbLevel) const;
 
   //@}
   //! \name Block operations

@@ -751,12 +751,12 @@ public:
   // Assign unmanaged View to portion of Device shared memory
 
   typedef Impl::if_c< ! traits::is_managed ,
-                      typename traits::device_type ,
+                      const typename traits::device_type::scratch_memory_space & ,
                       Impl::ViewError::device_shmem_constructor_requires_unmanaged >
-      if_device_shmem_constructor ;
+      if_scratch_memory_constructor ;
 
   explicit KOKKOS_INLINE_FUNCTION
-  View( typename if_device_shmem_constructor::type & dev ,
+  View( typename if_scratch_memory_constructor::type space ,
         const unsigned n0 = 0 ,
         const unsigned n1 = 0 ,
         const unsigned n2 = 0 ,
@@ -781,7 +781,7 @@ public:
 
       // Select the first argument:
       m_ptr_on_device = if_device_shmem_pointer::select(
-       (value_type_*) dev.get_shmem( unsigned( sizeof(value_type_) * m_offset_map.capacity() + unsigned(mask) ) & ~unsigned(mask) ) );
+       (value_type_*) space.get_shmem( unsigned( sizeof(value_type_) * m_offset_map.capacity() + unsigned(mask) ) & ~unsigned(mask) ) );
     }
 
   static inline

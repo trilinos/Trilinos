@@ -61,6 +61,153 @@
 namespace Kokkos {
 namespace Impl {
 
+template< typename Type >
+struct CudaJoinFunctor {
+  typedef Type value_type ;
+
+  KOKKOS_INLINE_FUNCTION
+  static void join( volatile value_type & update ,
+                    volatile const value_type & input )
+    { update += input ; }
+};
+
+class CudaExecTeamIndex {
+private:
+
+  Impl::CudaExec & m_exec ;
+
+  typedef Kokkos::Cuda execution_space ;
+
+public:
+
+#if defined( __CUDA_ARCH__ )
+
+  __device__ inline
+  execution_space::scratch_memory_space  team_shmem() const
+    { return execution_space::scratch_memory_space( m_exec ); }
+
+  __device__ inline int league_rank() const { return blockIdx.x ; }
+  __device__ inline int league_size() const { return gridDim.x ; }
+  __device__ inline int team_rank() const { return threadIdx.x ; }
+  __device__ inline int team_size() const { return blockDim.x ; }
+
+  __device__ inline void team_barrier() const { __syncthreads(); }
+
+  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
+   *          with intra-team non-deterministic ordering accumulation.
+   *
+   *  The global inter-team accumulation value will, at the end of the
+   *  league's parallel execution, be the scan's total.
+   *  Parallel execution ordering of the league's teams is non-deterministic.
+   *  As such the base value for each team's scan operation is similarly
+   *  non-deterministic.
+   */
+  template< typename Type >
+  __device__ inline Type team_scan( const Type & value , Type * const global_accum ) const
+    {
+      enum { BlockSizeMax = 512 };
+
+      __shared__ Type base_data[ BlockSizeMax + 1 ];
+
+      __syncthreads(); // Don't write in to shared data until all threads have entered this function
+
+      if ( 0 == threadIdx.x ) { base_data[0] = 0 ; }
+
+      base_data[ threadIdx.x + 1 ] = value ;
+
+      Impl::cuda_intra_block_reduce_scan<true>( Impl::CudaJoinFunctor<Type>() , base_data + 1 );
+
+      if ( global_accum ) {
+        if ( blockDim.x == threadIdx.x + 1 ) {
+          base_data[ blockDim.x ] = atomic_fetch_add( global_accum , base_data[ blockDim.x ] );
+        }
+        __syncthreads(); // Wait for atomic
+        base_data[ threadIdx.x ] += base_data[ blockDim.x ] ;
+      }
+
+      return base_data[ threadIdx.x ];
+    }
+
+  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering.
+   *
+   *  The highest rank thread can compute the reduction total as
+   *    reduction_total = dev.team_scan( value ) + value ;
+   */
+  template< typename Type >
+  __device__ inline Type team_scan( const Type & value ) const
+    { return this->template team_scan<Type>( value , 0 ); }
+
+#else
+
+  execution_space::scratch_memory_space  team_shmem() const ;
+
+  int league_rank() const ;
+  int league_size() const ;
+  int team_rank() const ;
+  int team_size() const ;
+
+  void team_barrier() const ;
+
+  template< typename Type >
+  Type team_scan( const Type & value , Type * const global_accum ) const ;
+
+  template< typename Type >
+  Type team_scan( const Type & value ) const ;
+
+#endif /* #if ! defined( __CUDA_ARCH__ ) */
+
+  //----------------------------------------
+  // Private for the driver
+
+  KOKKOS_INLINE_FUNCTION
+  CudaExecTeamIndex( Impl::CudaExec & exec )
+    : m_exec( exec )
+    {}
+};
+
+} // namespace Impl
+} // namespace Kokkos
+
+
+namespace Kokkos {
+
+template< class WorkArgTag >
+class TeamPolicy< Kokkos::Cuda , WorkArgTag > {
+private:
+
+  const int m_league_size ;
+  const int m_team_size ;
+
+public:
+
+  typedef Impl::ExecutionPolicyTag   kokkos_tag ;      ///< Concept tag
+  typedef Kokkos::Cuda               execution_space ; ///< Execution space
+
+  inline int team_size()   const { return m_team_size ; }
+  inline int league_size() const { return m_league_size ; }
+
+  /** \brief  Specify league size, request team size */
+  TeamPolicy( execution_space & , int league_size , int team_size_request )
+    : m_league_size( std::min( league_size , int(Impl::cuda_internal_maximum_grid_count())) )
+    , m_team_size( std::min( team_size_request , int(Impl::CudaTraits::WarpSize * Impl::cuda_internal_maximum_warp_count())) )
+    { }
+
+  TeamPolicy( int league_size , int team_size_request )
+    : m_league_size( std::min( league_size , int(Impl::cuda_internal_maximum_grid_count())) )
+    , m_team_size( std::min( team_size_request , int(Impl::CudaTraits::WarpSize * Impl::cuda_internal_maximum_warp_count())) )
+    { }
+
+  typedef Kokkos::Impl::CudaExecTeamIndex member_type ;
+};
+
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+namespace Impl {
+
 template< class FunctorType , class WorkSpec >
 class ParallelFor< FunctorType , WorkSpec /* size_t */ , Cuda > {
 private:
@@ -129,6 +276,40 @@ public:
     {
       const dim3 grid(  m_work.league_size , 1 , 1 );
       const dim3 block( m_work.team_size , 1, 1 );
+
+      CudaParallelLaunch< ParallelFor >( *this , grid , block , m_shmem );
+    }
+};
+
+template< class FunctorType >
+class ParallelFor< FunctorType , Kokkos::TeamPolicy< Kokkos::Cuda , void > , Kokkos::Cuda > {
+private:
+  typedef Kokkos::TeamPolicy< Kokkos::Cuda , void > Policy ;
+
+  const FunctorType  m_functor ;
+  const int          m_shmem ;
+
+  ParallelFor();
+  ParallelFor & operator = ( const ParallelFor & );
+
+public:
+
+  inline
+  __device__
+  void operator()(void) const
+  {
+    CudaExec exec( 0 , m_shmem );
+    typename Policy::member_type index( exec );
+    m_functor( index );
+  }
+
+  ParallelFor( const FunctorType & functor ,
+               const Policy      & policy )
+    : m_functor( functor )
+    , m_shmem( FunctorShmemSize< FunctorType >::value( functor ) )
+    {
+      const dim3 grid(  policy.league_size() , 1 , 1 );
+      const dim3 block( policy.team_size() , 1, 1 );
 
       CudaParallelLaunch< ParallelFor >( *this , grid , block , m_shmem );
     }
@@ -441,6 +622,114 @@ public:
       }
     }
   }
+};
+
+template< class FunctorType >
+class ParallelReduce< FunctorType , Kokkos::TeamPolicy< Kokkos::Cuda , void > , Kokkos::Cuda >
+{
+public:
+  typedef Kokkos::TeamPolicy< Kokkos::Cuda , void >   Policy ;
+  typedef ReduceAdapter< FunctorType >        Reduce ;
+  typedef typename Reduce::pointer_type       pointer_type ;
+  typedef typename Reduce::reference_type     reference_type ;
+  typedef Cuda::size_type                     size_type ;
+
+  // Algorithmic constraints: blockDim.x is a power of two AND blockDim.y == blockDim.z == 1
+
+  const FunctorType m_functor ;
+  size_type *       m_scratch_space ;
+  size_type *       m_scratch_flags ;
+  size_type *       m_unified_space ;
+  size_type         m_shmem_begin ;
+  size_type         m_shmem_end ;
+
+  // Determine block size constrained by shared memory:
+  static inline
+  unsigned local_block_size( const FunctorType & f )
+    {
+      unsigned n = CudaTraits::WarpSize * 8 ;
+      while ( n && CudaTraits::SharedMemoryCapacity < cuda_single_inter_block_reduce_scan_shmem<false>( f , n ) ) { n >>= 1 ; }
+      return n ;
+    }
+
+  __device__ inline
+  void operator()(void) const
+  {
+    extern __shared__ size_type shared_data[];
+
+    const integral_nonzero_constant< size_type , Reduce::StaticValueSize / sizeof(size_type) >
+      word_count( Reduce::value_size( m_functor ) / sizeof(size_type) );
+
+    {
+      reference_type value = Reduce::init( m_functor , shared_data + threadIdx.x * word_count.value );
+
+      CudaExec exec( m_shmem_begin , m_shmem_end );
+
+      typename Policy::member_type index( exec );
+
+      m_functor( index , value );
+    }
+
+    // Reduce with final value at blockDim.x - 1 location.
+    if ( cuda_single_inter_block_reduce_scan<false>(
+           m_functor , blockIdx.x , gridDim.x ,
+           shared_data , m_scratch_space , m_scratch_flags ) ) {
+
+      // This is the final block with the final result at the final threads' location
+
+      size_type * const shared = shared_data + ( blockDim.x - 1 ) * word_count.value ;
+      size_type * const global = m_unified_space ? m_unified_space : m_scratch_space ;
+
+      if ( threadIdx.x == 0 ) { Reduce::final( m_functor , shared ); }
+
+      if ( CudaTraits::WarpSize < word_count.value ) { __syncthreads(); }
+
+      for ( unsigned i = threadIdx.x ; i < word_count.value ; i += blockDim.x ) { global[i] = shared[i]; }
+    }
+  }
+
+
+  template< class HostViewType >
+  ParallelReduce( const FunctorType  & functor 
+                , const Policy       & policy 
+                , const HostViewType & result
+                )
+  : m_functor( functor )
+  , m_scratch_space( 0 )
+  , m_scratch_flags( 0 )
+  , m_unified_space( 0 )
+  , m_shmem_begin( cuda_single_inter_block_reduce_scan_shmem<false>( functor , local_block_size( functor ) ) )
+  , m_shmem_end(   cuda_single_inter_block_reduce_scan_shmem<false>( functor , local_block_size( functor ) )
+                   + FunctorShmemSize< FunctorType >::value( functor ) )
+  {
+    const int block_size  = local_block_size( functor );
+    const int block_count = std::min( int(block_size) , policy.league_size() );
+
+    m_scratch_space = cuda_internal_scratch_space( Reduce::value_size( functor ) * block_count );
+    m_scratch_flags = cuda_internal_scratch_flags( sizeof(size_type) );
+    m_unified_space = cuda_internal_scratch_unified( Reduce::value_size( functor ) );
+
+    const dim3 grid( block_count , 1 , 1 );
+    const dim3 block( block_size , 1 , 1 );
+
+    CudaParallelLaunch< ParallelReduce >( *this, grid, block, m_shmem_end ); // copy to device and execute
+
+    Cuda::fence();
+
+    if ( result.ptr_on_device() ) {
+      if ( m_unified_space ) {
+        const int count = Reduce::value_count( m_functor );
+        for ( int i = 0 ; i < count ; ++i ) { result.ptr_on_device()[i] = pointer_type(m_unified_space)[i] ; }
+      }
+      else {
+        const int size = Reduce::value_size( m_functor );
+        DeepCopy<HostSpace,CudaSpace>( result.ptr_on_device() , m_scratch_space , size );
+      }
+    }
+  }
+
+  void wait() const
+  { }
 };
 
 } // namespace Impl
@@ -757,22 +1046,6 @@ public:
 //----------------------------------------------------------------------------
 
 #if defined( __CUDA_ARCH__ )
-
-namespace Kokkos {
-namespace Impl {
-
-template< typename Type >
-struct CudaJoinFunctor {
-  typedef Type value_type ;
-
-  KOKKOS_INLINE_FUNCTION
-  static void join( volatile value_type & update ,
-                    volatile const value_type & input )
-    { update += input ; }
-};
-
-} // namespace Impl
-} // namespace Kokkos
 
 namespace Kokkos {
 

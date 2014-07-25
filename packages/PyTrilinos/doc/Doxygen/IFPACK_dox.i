@@ -3168,6 +3168,10 @@ Otherwise, return a newly created preconditioner object. Note that the
 client is responsible for calling delete on the returned object once
 it is finished using it! ";
 
+%feature("docstring")  Ifpack_DynamicFactory::buildPreconditioner "Ifpack_Preconditioner*
+Ifpack_DynamicFactory::buildPreconditioner(Epetra_RowMatrix *Matrix,
+int Overlap, bool Serial, bool OverrideSerialDefault) ";
+
 
 // File: classIfpack__Element.xml
 %feature("docstring") Ifpack_Element "";
@@ -5486,6 +5490,33 @@ Sets all the parameters for the partitioner (none for linear
 partioning). ";
 
 %feature("docstring")  Ifpack_LinearPartitioner::ComputePartitions "int Ifpack_LinearPartitioner::ComputePartitions()
+
+Computes the partitions. Returns 0 if successful. ";
+
+
+// File: classIfpack__LinePartitioner.xml
+%feature("docstring") Ifpack_LinePartitioner "";
+
+%feature("docstring")  Ifpack_LinePartitioner::Ifpack_LinePartitioner
+"Ifpack_LinePartitioner::Ifpack_LinePartitioner(const Ifpack_Graph
+*Graph)
+
+Constructor. ";
+
+%feature("docstring")  Ifpack_LinePartitioner::~Ifpack_LinePartitioner
+"virtual Ifpack_LinePartitioner::~Ifpack_LinePartitioner()
+
+Destructor. ";
+
+%feature("docstring")  Ifpack_LinePartitioner::SetPartitionParameters
+"int
+Ifpack_LinePartitioner::SetPartitionParameters(Teuchos::ParameterList
+&List)
+
+Sets all the parameters for the partitioner. ";
+
+%feature("docstring")  Ifpack_LinePartitioner::ComputePartitions "int
+Ifpack_LinePartitioner::ComputePartitions()
 
 Computes the partitions. Returns 0 if successful. ";
 
@@ -8559,9 +8590,6 @@ TIfpack_HashTable< key_type >::getRecommendedHashSize(int n) ";
 // File: namespace@30.xml
 
 
-// File: namespacestd.xml
-
-
 // File: namespaceTeuchos.xml
 
 
@@ -8984,6 +9012,12 @@ int(*fkeep)(int, int, double, void *), void *other) ";
 // File: Ifpack__LinearPartitioner_8h.xml
 
 
+// File: Ifpack__LinePartitioner_8cpp.xml
+
+
+// File: Ifpack__LinePartitioner_8h.xml
+
+
 // File: Ifpack__LocalFilter_8cpp.xml
 
 
@@ -9358,8 +9392,7 @@ IFPACK. ";
 %feature("docstring")  Ifpack_Version "string Ifpack_Version() ";
 
 
-// File: dir_5838d4552e1cf70d11903e52fb48b52a.xml
+// File: dir_19226bee259e6d11ed09571a00a25f44.xml
 
 
-// File: dir_3a401f9a0f481fd6e189eb671945d208.xml
-
+// File: dir_e40fdf7de3834bd6cd1f0cad8d669ebf.xml

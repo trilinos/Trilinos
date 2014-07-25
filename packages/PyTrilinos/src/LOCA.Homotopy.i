@@ -28,33 +28,84 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") Homotopy
+%define %loca_homotopy_docstring
+"
+PyTrilinos.LOCA.Homotopy is the python interface to namespace Homotopy
+of the Trilinos continuation algorithm package LOCA:
+
+    http://trilinos.sandia.gov/packages/nox
+
+The purpose of LOCA.Homotopy is to provide groups that allow for
+Homotopy to be applied.  The python version of LOCA.Homotopy supports
+the following classes:
+
+    * Group          - LOCA's Homotopy algorithm
+    * AbstractGroup  - Interface to underlying groups for homotopy calculations
+    * DeflatedGroup  - LOCA's deflated Homotopy algorithm
+"
+%enddef
+
+%module(package   = "PyTrilinos.LOCA",
+        directors = "1",
+        docstring = %loca_homotopy_docstring) Homotopy
 
 %{
+// Teuchos includes
+#include "Teuchos_Comm.hpp"
+#include "Teuchos_DefaultSerialComm.hpp"
+#ifdef HAVE_MPI
+#include "Teuchos_DefaultMpiComm.hpp"
+#endif
+#include "PyTrilinos_Teuchos_Util.h"
+
 // LOCA includes
-#include "LOCA_Extended_MultiAbstractGroup.H"
-#include "LOCA_BorderedSystem_AbstractGroup.H"
-#include "LOCA_MultiContinuation_ExtendedGroup.H"
-#include "LOCA_MultiContinuation_NaturalGroup.H"
-#include "LOCA_MultiContinuation_AbstractStrategy.H"
-
-#include "LOCA_Homotopy_AbstractGroup.H"
-
-// Extra includes due to importing Continuation.i below
-#include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
+#include "LOCA.H"
 
 // Local includes
 #define NO_IMPORT_ARRAY
 #include "numpy_include.h"
 %}
 
+// Configuration and optional includes
+%include "PyTrilinos_config.h"
+#ifdef HAVE_NOX_EPETRA
+%{
+#include "NOX_Epetra_Group.H"
+#include "NOX_Epetra_Vector.H"
+#include "Epetra_NumPyVector.h"
+%}
+#endif
+
+// Exception handling
+%include "exception.i"
+
+// Include LOCA documentation
+%feature("autodoc", "1");
+%include "LOCA_dox.i"
+
 // Ignore/renames
 %ignore *::operator=;
 
-// Import base class declarations
-%import "NOX.Abstract.i"
-%import "LOCA.MultiContinuation.i"
+%import "Teuchos.i"
 
-// LOCA interface includes
+// The LOCA::Homotopy classes derive from base classes in other
+// modules, so we import them here.
+%import "LOCA.MultiContinuation.i"
+%import "LOCA.BorderedSystem.i"
+
+// Teuchos::RCP handling
+%teuchos_rcp(LOCA::Homotopy::Group        )
+%teuchos_rcp(LOCA::Homotopy::AbstractGroup)
+%teuchos_rcp(LOCA::Homotopy::DeflatedGroup)
+
+// LOCA::Homotopy Group class
+//%feature("director") LOCA::Homotopy::Group;
+%include "LOCA_Homotopy_Group.H"
+
+// LOCA::Homotopy AbstractGroup class
+//%feature("director") LOCA::Homotopy::AbstractGroup;
 %include "LOCA_Homotopy_AbstractGroup.H"
 
+// LOCA::Homotopy DeflatedGroup class
+//%feature("director") LOCA::Homotopy::DeflatedGroup;
+%include "LOCA_Homotopy_DeflatedGroup.H"

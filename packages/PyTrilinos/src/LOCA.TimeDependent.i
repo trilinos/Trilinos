@@ -28,36 +28,24 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") TimeDependent
+%define %loca_timedependent_docstring
+"
+PyTrilinos.LOCA.TimeDependent is the python interface to namespace
+TimeDependent of the Trilinos continuation algorithm package LOCA:
 
-%{
-// Teuchos includes
-#include "PyTrilinos_Teuchos_Util.h"
+    http://trilinos.sandia.gov/packages/nox
 
-// LOCA includes
-#include "LOCA_Extended_MultiAbstractGroup.H"
-#include "LOCA_BorderedSystem_AbstractGroup.H"
-#include "LOCA_MultiContinuation_ExtendedGroup.H"
-#include "LOCA_MultiContinuation_NaturalGroup.H"
-#include "LOCA_MultiContinuation_AbstractStrategy.H"
+The purpose of LOCA.TimeDependent is to provide an abstract group for
+time dependent problems with a mass matrix.  The python version of
+LOCA.TimeDependent supports the following classes:
 
-#include "LOCA_TimeDependent_AbstractGroup.H"
+    * AbstractGroup  - Interface to underlying groups for time dependent
+                       systems
+"
+%enddef
 
-// Extra includes due to importing Continuation.i below
-#include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
+%module(package   = "PyTrilinos.LOCA",
+        directors = "1",
+        docstring = %loca_timedependent_docstring) TimeDependent
 
-// Local includes
-#define NO_IMPORT_ARRAY
-#include "numpy_include.h"
-%}
-
-// Ignore/renames
-%ignore *::operator=;
-
-// Import base class declarations
-//%import "LOCA.Continuation.i"
-%import "LOCA.MultiContinuation.i"
-
-// LOCA interface includes
-%include "LOCA_TimeDependent_AbstractGroup.H"
-
+%include "LOCA.TimeDependent_Content.i"

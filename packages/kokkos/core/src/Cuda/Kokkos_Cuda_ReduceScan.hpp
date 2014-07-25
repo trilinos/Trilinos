@@ -95,11 +95,13 @@ void cuda_intra_block_reduce_scan( const FunctorType & functor ,
 
 #define BLOCK_REDUCE_STEP( R , TD , S )  \
   if ( ! ( R & ((1<<(S+1))-1) ) ) \
-    { functor.join( Reduce::reference(TD) , Reduce::reference(TD - (value_count<<S))); }
+    { Reduce::join( functor , TD , (TD - (value_count<<S)) ); }
+    // { functor.join( Reduce::reference(TD) , Reduce::reference(TD - (value_count<<S))); }
 
 #define BLOCK_SCAN_STEP( TD , N , S )  \
   if ( N == (1<<S) ) \
-    { functor.join( Reduce::reference(TD) , Reduce::reference(TD - (value_count<<S))); }
+    { Reduce::join( functor , TD , (TD - (value_count<<S))); }
+    // { functor.join( Reduce::reference(TD) , Reduce::reference(TD - (value_count<<S))); }
 
   const unsigned     rtid_intra = threadIdx.x ^ BlockSizeMask ;
   const pointer_type tdata_intra = base_data + value_count * threadIdx.x ;
@@ -219,10 +221,12 @@ bool cuda_single_inter_block_reduce_scan( const FunctorType     & functor ,
     const size_type e = ( long(block_count) * long( threadIdx.x + 1 ) ) >> BlockSizeShift ;
 
     {
-      reference_type shared_value = Reduce::init( functor , shared_data + word_count.value * threadIdx.x );
+      void * const shared_ptr = shared_data + word_count.value * threadIdx.x ;
+      reference_type shared_value = Reduce::init( functor , shared_ptr );
 
       for ( size_type i = b ; i < e ; ++i ) {
-        functor.join( shared_value , Reduce::reference( global_data + word_count.value * i ) );
+        Reduce::join( functor , shared_ptr , global_data + word_count.value * i );
+        // functor.join( shared_value , Reduce::reference( global_data + word_count.value * i ) );
       }
     }
 
@@ -237,7 +241,8 @@ bool cuda_single_inter_block_reduce_scan( const FunctorType     & functor ,
       // Join previous inclusive scan value to each member
       for ( size_type i = b ; i < e ; ++i ) {
         size_type * const global_value = global_data + word_count.value * i ;
-        functor.join( Reduce::reference( shared_value ) , Reduce::reference( global_value ) );
+        Reduce::join( functor , shared_value , global_value );
+        // functor.join( Reduce::reference( shared_value ) , Reduce::reference( global_value ) );
         Reduce::copy( functor , global_value , shared_value );
       }
     }

@@ -28,43 +28,9 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") Pitchfork
+%module(package      = "TurningPoint",
+        directors    = "1",
+        autodoc      = "1",
+        implicitconv = "1") MooreSpence
 
-%{
-#include "LOCA_Extended_MultiAbstractGroup.H"
-#include "LOCA_BorderedSystem_AbstractGroup.H"
-#include "LOCA_MultiContinuation_ExtendedGroup.H"
-#include "LOCA_MultiContinuation_NaturalGroup.H"
-#include "LOCA_MultiContinuation_AbstractStrategy.H"
-
-#include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
-#include "LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H"
-#include "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
-
-#include "LOCA_Pitchfork_MooreSpence_AbstractGroup.H"
-#include "LOCA_Pitchfork_MinimallyAugmented_AbstractGroup.H"
-
-// Local includes
-#define NO_IMPORT_ARRAY
-#include "numpy_include.h"
-
-// Namespace flattening
-using Teuchos::RCP;
-%}
-
-// Standard exception handling
-%include "exception.i"
-
-// Ignore/renames
-%ignore *::operator=;
-
-// Trilinos module imports
-%import "Teuchos.i"
-
-%import "LOCA.TurningPoint.i"
-
-%rename(MooreSpence_AbstractGroup) LOCA::Pitchfork::MooreSpence::AbstractGroup;
-%rename(MinimallyAugmented_AbstractGroup) LOCA::Pitchfork::MinimallyAugmented::AbstractGroup;
-
-%include "LOCA_Pitchfork_MooreSpence_AbstractGroup.H"
-%include "LOCA_Pitchfork_MinimallyAugmented_AbstractGroup.H"
+%include "LOCA.TurningPoint.MooreSpence_Content.i"

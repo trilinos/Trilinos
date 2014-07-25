@@ -47,12 +47,17 @@
 #include <Kokkos_Macros.hpp>
 #include <impl/Kokkos_Tags.hpp>
 
-/*--------------------------------------------------------------------------*/
+//----------------------------------------------------------------------------
 
 namespace Kokkos {
 
-template< class ExecSpace , typename IntType , unsigned GranularityPowerOfTwo = 3 >
-class ExecPolicyRange {
+/** \brief  Execution policy for work over a range of an integral type.
+ */
+template< class ExecSpace  = Kokkos::DefaultExecutionSpace
+        , class WorkArgTag = void
+        , typename IntType = int
+        , unsigned GranularityPowerOfTwo = 3 >
+class RangePolicy {
 private:
 
   enum { Granularity     = IntType(1) << GranularityPowerOfTwo };
@@ -60,26 +65,28 @@ private:
 
 public:
 
-  typedef IntType index_type ;
+  typedef Impl::ExecutionPolicyTag   kokkos_tag ;      ///< Concept tag
+  typedef ExecSpace                  execution_space ; ///< Execution type
+  typedef IntType                    member_type ;
 
-  index_type begin ;
-  index_type end ;
+  member_type begin ;
+  member_type end ;
 
   KOKKOS_INLINE_FUNCTION
-  ExecPolicyRange() : begin(0), end(0) {}
+  RangePolicy() : begin(0), end(0) {}
 
   KOKKOS_INLINE_FUNCTION
-  ExecPolicyRange( const int part_rank
-                 , const int part_size
-                 , const index_type work_begin
-                 , const index_type work_end
-                 )
+  RangePolicy( const int part_rank
+             , const int part_size
+             , const member_type work_begin
+             , const member_type work_end
+             )
     : begin(0), end(0)
     {
       if ( part_size && work_begin < work_end ) {
 
         // Split evenly among partitions, then round up to the granularity.
-        index_type work_part = ( ( work_end - work_begin ) + ( part_size - 1 ) ) / part_size ;
+        member_type work_part = ( ( work_end - work_begin ) + ( part_size - 1 ) ) / part_size ;
 
         if ( GranularityMask ) { work_part = ( work_part + GranularityMask ) & ~GranularityMask ; }
 
@@ -92,14 +99,29 @@ public:
     }
 };
 
-template< class ExecSpace >
-class ExecPolicyTeam {
-public:
-  /**\brief Tag identifying this class' concept */
-  typedef Impl::ExecutionPolicyTag   kokkos_tag ;
-  typedef ExecSpace                  execution_space ;
+} // namespace Kokkos
 
-  struct index_type {
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+
+/** \brief  Execution policy for work over a league of teams of threads.
+ */
+template< class ExecSpace  = DefaultExecutionSpace
+        , class WorkArgTag = void >
+class TeamPolicy {
+public:
+
+  typedef Impl::ExecutionPolicyTag   kokkos_tag ;      ///< Concept tag
+  typedef ExecSpace                  execution_space ; ///< Execution space
+
+  TeamPolicy( int league_size , int team_size );
+  TeamPolicy( execution_space & , int league_size , int team_size );
+
+  struct member_type {
+
+    KOKKOS_INLINE_FUNCTION
+    typename execution_space::scratch_memory_space shmem() const ;
 
     KOKKOS_INLINE_FUNCTION int league_rank() const ;
     KOKKOS_INLINE_FUNCTION int league_size() const ;
@@ -127,8 +149,6 @@ public:
      */
     template< typename Type >
     KOKKOS_INLINE_FUNCTION Type scan( const Type & value , Type * const global_accum );
-
-    KOKKOS_INLINE_FUNCTION void * get_shmem( const int size );
   };
 };
 

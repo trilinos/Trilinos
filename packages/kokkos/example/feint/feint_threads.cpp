@@ -41,18 +41,18 @@
 //@HEADER
 */
 
-#include <Kokkos_Threads.hpp>
+#include <HostExecSpace.hpp>
 #include <feint.hpp>
 
 namespace Kokkos {
 namespace Example {
 
-template void feint<Kokkos::Threads,false>(
+template void feint<HostExecSpace,false>(
   const unsigned global_elem_nx ,
   const unsigned global_elem_ny ,
   const unsigned global_elem_nz );
 
-template void feint<Kokkos::Threads,true>(
+template void feint<HostExecSpace,true>(
   const unsigned global_elem_nx ,
   const unsigned global_elem_ny ,
   const unsigned global_elem_nz );

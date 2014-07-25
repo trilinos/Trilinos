@@ -41,18 +41,42 @@
 //@HEADER
 */
 
+#error "ParallelMachine"
+
 #ifndef PARALLELMACHINE_HPP
 #define PARALLELMACHINE_HPP
 
 //------------------------------------------------------------------------
 
 #include <iosfwd>
-#include <KokkosCore_config.h>
+
+#include <Kokkos_Macros.hpp>
+
+//------------------------------------------------------------------------
 
 #if defined( KOKKOS_HAVE_MPI )
 #include <mpi.h>
 #else
   typedef int MPI_Comm ;
+#endif
+
+//------------------------------------------------------------------------
+
+#if defined( KOKKOS_HAVE_PTHREAD )
+
+typedef Kokkos::Threads HostExecSpace ;
+#include <Kokkos_Threads.hpp>
+
+#elif defined( KOKKOS_HAVE_OPENMP )
+
+typedef Kokkos::OpenMP HostExecSpace ;
+#include <Kokkos_OpenMP.hpp>
+
+#elif defined( KOKKOS_HAVE_OPENMP )
+
+#include <Kokkos_Serial.hpp>
+typedef Kokkos::Serial HostExecSpace ;
+
 #endif
 
 //------------------------------------------------------------------------

@@ -269,6 +269,20 @@ namespace stk {
 			       DatabasePurpose purpose);
 
       
+      // Create Ioss::DatabaseIO associated with the specified
+      // filename using the default filetype (typically "exodus"). If
+      // the filename is prepended with a type followed by a colon
+      // (e.g., "generated:10x10x10"), then use that type.  Valid
+      // input types are: exodus, dof, pamgen, and possibly others.
+      //
+      // \param[in] filename If the mesh type is file based ("exodus"),
+      // then this contains the full pathname to the file containing the
+      // mesh information.  If the mesh type is a generated type, then
+      // this parameter contains data used by the generation routines.
+      // Optionally prepended by a filetype and a colon.
+      size_t add_mesh_database(std::string filename,
+			       DatabasePurpose purpose);
+
       // Set the input Ioss::Region directly instead of letting it be
       // created by StkMeshIoBroker during the create_input_mesh(type,
       // filename) call. After setting the input io region, you would
@@ -287,23 +301,15 @@ namespace stk {
       // times: tart/stop/offset/scale/cycle/periodlength.
       InputFile &get_mesh_database(size_t input_file_index);
 
+      // Remove the specified mesh database from the list of mesh databases.
+      // All files associated with the mesh database will be closed and destructors
+      // run on all classes associated with the database. An exeception will be thrown
+      // if the specified input_file_index does not refer to a valid mesh database.
+      void remove_mesh_database(size_t input_file_index);
+
       size_t set_active_mesh(size_t input_file_index);
       size_t get_active_mesh() const {return m_active_mesh_index;}
       
-      // Create Ioss::DatabaseIO associated with the specified
-      // filename using the default filetype (typically "exodus"). If
-      // the filename is prepended with a type followed by a colon
-      // (e.g., "generated:10x10x10"), then use that type.  Valid
-      // input types are: exodus, dof, pamgen, and possibly others.
-      //
-      // \param[in] filename If the mesh type is file based ("exodus"),
-      // then this contains the full pathname to the file containing the
-      // mesh information.  If the mesh type is a generated type, then
-      // this parameter contains data used by the generation routines.
-      // Optionally prepended by a filetype and a colon.
-      size_t add_mesh_database(std::string filename,
-			       DatabasePurpose purpose);
-
       // Read/Generate the metadata for mesh of the specified type. By
       // default, all entities in the mesh (nodeblocks, element blocks,
       // nodesets, sidesets) will have an associated stk mesh part

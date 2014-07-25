@@ -1726,6 +1726,7 @@ namespace Tpetra {
         RCP<dst_mv_type> Y = rcp (new dst_mv_type (map2, Y_view));
         // Let deep_copy do the work for us, to avoid code duplication.
         ::Tpetra::deep_copy (Y, X);
+        return Y ;
       }
     };
 

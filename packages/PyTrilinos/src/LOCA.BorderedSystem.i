@@ -28,30 +28,23 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") BorderedSystem
+%define %loca_borderedsystem_docstring
+"
+PyTrilinos.LOCA.BorderedSystem is the python interface to namespace
+BorderedSystem of the Trilinos continuation algorithm package LOCA:
 
-%{
-// Teuchos include
-#include "PyTrilinos_Teuchos_Util.h"
+    http://trilinos.sandia.gov/packages/nox
 
-#include "LOCA_BorderedSystem_AbstractGroup.H"
+The purpose of LOCA.BorderedSystem is to provide an interface for
+groups that are bordered systems.  The python version of
+LOCA.BorderedSystem supports the following classes:
 
-// Local includes
-#define NO_IMPORT_ARRAY
-#include "numpy_include.h"
+    * AbstractGroup  - Interface for groups that are bordered systems
+"
+%enddef
 
-// Namespace flattening
-using Teuchos::RCP;
-%}
+%module(package   = "PyTrilinos.LOCA",
+        directors = "1",
+        docstring = %loca_borderedsystem_docstring) BorderedSystem
 
-// Standard exception handling
-%include "exception.i"
-
-// Ignore/renames
-%ignore *::operator=;
-
-// Trilinos module imports
-%import "Teuchos.i"
-%import "NOX.Abstract.i"
-
-%include "LOCA_BorderedSystem_AbstractGroup.H"
+%include "LOCA.BorderedSystem_Content.i"

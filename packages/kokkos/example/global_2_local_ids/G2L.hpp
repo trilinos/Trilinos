@@ -2,7 +2,6 @@
 #define KOKKOS_GLOBAL_TO_LOCAL_IDS_HPP
 
 #include <Kokkos_Parallel.hpp>
-#include <Kokkos_ParallelReduce.hpp>
 #include <Kokkos_View.hpp>
 
 #include <Kokkos_UnorderedMap.hpp>

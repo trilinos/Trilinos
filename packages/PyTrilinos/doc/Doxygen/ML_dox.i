@@ -2005,7 +2005,7 @@ List:  (in): ParameterList containing ML options
 
 thisns:  (in): nullspace in format ML accepts
 
-Ptent(out):  Matrix containing tentative prolongator
+Ptent(out):  ::  Matrix containing tentative prolongator
 
 NextNS:  (out): MultiVector containing next level nullspace.
 
@@ -2032,7 +2032,7 @@ List:  (in): ParameterList containing ML options
 
 thisns:  (in): nullspace in format ML accepts
 
-Ptent(out):  Matrix containing tentative prolongator
+Ptent(out):  ::  Matrix containing tentative prolongator
 
 domainoffset:  (in,optional): give an offset such that the domainmap
 of Ptent starts global numbering from domainoffset instead from zero.
@@ -2048,11 +2048,11 @@ Call ML aggregation on A according to parameters supplied in List.
 Return aggregates in aggrinfo.
 
 On input, map of aggrinfo has to map row map of A. On output,
-aggrinfo[i] contains number of aggregate the row belongs to, where
-aggregates are numbered starting from 0. Return value is the
-processor-local number of aggregates build. If aggrinfo[i] >= return-
-value, then i is a processor local row of a row that ML has detected
-to be on a Dirichlet BC.
+aggrinfo[i]    contains number of aggregate the row belongs to, where
+aggregates are    numbered starting from 0.    Return value is the
+processor-local number of aggregates build.    If aggrinfo[i] >=
+return-value, then i is a processor local row    of a row that ML has
+detected to be on a Dirichlet BC.
 
 Parameters:
 -----------
@@ -2063,7 +2063,7 @@ List:  (in): ParameterList containing ML options
 
 thisns:  (in): nullspace
 
-aggrinfo(out):  vector containing aggregation information
+aggrinfo(out):  ::  vector containing aggregation information
 
 Map of aggrinfo has to match rowmap of A on input.
 
@@ -2079,12 +2079,12 @@ Call ML aggregation on A according to parameters supplied in List.
 Return aggregates in aggrinfo.
 
 On input, map of aggrinfo has to map row map of A. On output,
-aggrinfo[i] contains number of global aggregate the row belongs to,
-where aggregates are numbered starting from 0 globally. Return value
-is the processor-local number of aggregates build. If aggrinfo[i] < 0,
-then i is a processor local row that ML has detected to be on a
-Dirichlet BC. if aggrinfo[i] >= 0, then i is a processor local row and
-aggrinfo[i] is a global aggregate id.
+aggrinfo[i]    contains number of global aggregate the row belongs to,
+where aggregates are    numbered starting from 0 globally.    Return
+value is the processor-local number of aggregates build.    If
+aggrinfo[i] < 0, then i is a processor local row    that ML has
+detected to be on a Dirichlet BC.    if aggrinfo[i] >= 0, then i is a
+processor local row and aggrinfo[i] is    a global aggregate id.
 
 Parameters:
 -----------
@@ -2095,8 +2095,8 @@ List:  (in): ParameterList containing ML options
 
 thisns:  (in): nullspace
 
-aggrinfo(out):  vector containing aggregation information in global
-numbering
+aggrinfo(out):  ::  vector containing aggregation information in
+global numbering
 
 Map of aggrinfo has to match rowmap of A on input.
 
@@ -2479,14 +2479,13 @@ MLAPI::GetMatrixType() ";
 // File: MLAPI__Workspace_8h.xml
 
 
-// File: dir_1c3a59615ddebb5fbf04127ce013cb9e.xml
+// File: dir_248b4317854eb124246da880aeaf9414.xml
 
 
-// File: dir_3439baffccfbe6e95de60f017932fbf9.xml
+// File: dir_b5481c5426a9c498210ee45e22857f3a.xml
 
 
-// File: dir_86f77546058147b605fd3b960a0f1393.xml
+// File: dir_5b8b6ba589c951e8a6121cc0c764102c.xml
 
 
-// File: dir_9012ecf16f901e4bdd6290ad480fb36d.xml
-
+// File: dir_4713ef191f42f35b7f605c89cae5b23f.xml

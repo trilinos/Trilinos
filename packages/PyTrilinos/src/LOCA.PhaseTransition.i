@@ -21,52 +21,69 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
 // Questions? Contact Bill Spotz (wfspotz@sandia.gov)
 //
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") TurningPoint
+%define %loca_phasetransition_docstring
+"
+PyTrilinos.LOCA.PhaseTransition is the python interface to namespace
+PhaseTransition of the Trilinos continuation algorithm package LOCA:
+
+    http://trilinos.sandia.gov/packages/nox
+
+The purpose of LOCA.PhaseTransition is to provide groups and vectors
+for phase transition bifurcations.  The python version of
+LOCA.PhaseTransition supports the following classes:
+
+    * AbstractGroup  - Interface to underlying groups for phase transition
+                       calculations
+"
+%enddef
+
+%module(package   = "PyTrilinos.LOCA",
+        docstring = %loca_phasetransition_docstring) PhaseTransition
 
 %{
-#include "LOCA_Extended_MultiAbstractGroup.H"
-#include "LOCA_BorderedSystem_AbstractGroup.H"
-#include "LOCA_MultiContinuation_ExtendedGroup.H"
-#include "LOCA_MultiContinuation_NaturalGroup.H"
-#include "LOCA_MultiContinuation_AbstractStrategy.H"
+// Teuchos includes
+#include "Teuchos_Comm.hpp"
+#include "Teuchos_DefaultSerialComm.hpp"
+#ifdef HAVE_MPI
+#include "Teuchos_DefaultMpiComm.hpp"
+#endif
+#include "PyTrilinos_Teuchos_Util.h"
 
-#include "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
-#include "LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H"
-#include "LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H"
-#include "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
+// LOCA includes
+#include "LOCA.H"
+#include "LOCA_Extended_MultiAbstractGroup.H"
 
 // Local includes
 #define NO_IMPORT_ARRAY
 #include "numpy_include.h"
-
-// Namespace flattening
-using Teuchos::RCP;
 %}
-
-// Standard exception handling
-%include "exception.i"
 
 // Ignore/renames
 %ignore *::operator=;
 
-// Trilinos module imports
+// Standar exception handling
+%include "exception.i"
+
+// Include LOCA documentation
+%feature("autodoc", "1");
+%include "LOCA_dox.i"
+
+// PyTrilinos module imports
 %import "Teuchos.i"
 
+// Teuchos::RCP handling
+%teuchos_rcp(LOCA::PhaseTransition::AbstractGroup)
+
+// Import base class declarations
 %import "LOCA.MultiContinuation.i"
 
-%rename(MooreSpence_AbstractGroup) LOCA::TurningPoint::MooreSpence::AbstractGroup;
-%rename(MinimallyAugmented_AbstractGroup) LOCA::TurningPoint::MinimallyAugmented::AbstractGroup;
-%rename(MooreSpence_FiniteDifferenceGroup) LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup;
-%rename(MinimallyAugmented_FiniteDifferenceGroup) LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup;
-
-%include "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
-%include "LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H"
-%include "LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H"
-%include "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
+// LOCA::PhasTransition AbstractGroup class
+//%feature("director") LOCA::PhaseTransition::AbstractGroup;
+%include "LOCA_PhaseTransition_AbstractGroup.H"

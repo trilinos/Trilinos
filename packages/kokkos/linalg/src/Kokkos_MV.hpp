@@ -12,7 +12,7 @@
 #ifdef KOKKOS_HAVE_CUDA
 #include <Kokkos_Cuda.hpp>
 #endif
-#include <Kokkos_ParallelReduce.hpp>
+#include <Kokkos_Parallel.hpp>
 #include <Kokkos_InnerProductSpaceTraits.hpp>
 #include <ctime>
 

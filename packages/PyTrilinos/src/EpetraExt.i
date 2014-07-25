@@ -483,6 +483,9 @@ Transform< Epetra_CrsGraph,
 
 #endif
 
+%template (Xform_CrsGraph_vecIntVector)
+EpetraExt::Transform<Epetra_CrsGraph, std::vector<Epetra_IntVector,
+                                                  std::allocator<Epetra_IntVector> > >;
 %template (Xform_CrsMatrix_CrsMatrix)
 EpetraExt::Transform<Epetra_CrsMatrix, Epetra_CrsMatrix >;
 
@@ -509,6 +512,9 @@ StructuralTransform<Epetra_CrsGraph,
                     std::vector< Epetra_GIDTypeVector<long long>::impl > >;
 
 #endif
+
+%template (SXform_CrsGraph_vecIntVector)
+EpetraExt::StructuralTransform<Epetra_CrsGraph, std::vector<Epetra_IntVector> >;
 
 %template (SameXform_CrsMatrix)
 EpetraExt::SameTypeTransform<Epetra_CrsMatrix >;
@@ -1017,7 +1023,11 @@ class OutArgs(PropertyBase):
 //
 %feature("director") EpetraExt::ModelEvaluator;
 
-namespace EpetraExt {
+%teuchos_rcp(EpetraExt::ModelEvaluator)
+
+namespace EpetraExt
+{
+
 class ModelEvaluator : virtual public Teuchos::Describable
 {
 public:

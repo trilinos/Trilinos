@@ -57,7 +57,7 @@ class ReduceTeamFunctor
 {
 public:
   typedef DeviceType device_type ;
-  typedef Kokkos::ExecPolicyTeam< device_type >  policy_type ;
+  typedef Kokkos::TeamPolicy< device_type >  policy_type ;
   typedef typename device_type::size_type        size_type ;
 
   struct value_type {
@@ -89,7 +89,7 @@ public:
   }
 
   KOKKOS_INLINE_FUNCTION
-  void operator()( const typename policy_type::index_type ind , value_type & dst ) const
+  void operator()( const typename policy_type::member_type ind , value_type & dst ) const
   {
     const int thread_rank = ind.team_rank() + ind.team_size() * ind.league_rank();
     const int thread_size = ind.team_size() * ind.league_size();
@@ -115,8 +115,8 @@ class TestReduceTeam
 {
 public:
   typedef DeviceType    device_type ;
-  typedef Kokkos::ExecPolicyTeam< device_type >  policy_type ;
-  typedef typename device_type::size_type        size_type ;
+  typedef Kokkos::TeamPolicy< device_type >  policy_type ;
+  typedef typename device_type::size_type    size_type ;
 
   //------------------------------------
 
@@ -129,6 +129,7 @@ public:
   {
     typedef Test::ReduceTeamFunctor< ScalarType , device_type > functor_type ;
     typedef typename functor_type::value_type value_type ;
+    typedef Kokkos::View< value_type , Kokkos::Serial , Kokkos::MemoryUnmanaged >  result_type ;
 
     enum { Count = 3 };
     enum { Repeat = 100 };
@@ -139,15 +140,14 @@ public:
     const unsigned long nsum = nw % 2 ? nw * (( nw + 1 )/2 )
                                       : (nw/2) * ( nw + 1 );
 
-    enum { TEAM_SIZE = 256 };
+    const unsigned team_size   = device_type::team_max();
+    const unsigned league_size = ( nwork + team_size - 1 ) / team_size ;
 
-    Kokkos::ParallelWorkRequest request ; 
-
-    request.team_size   = TEAM_SIZE ;
-    request.league_size = ( nwork + TEAM_SIZE - 1 ) / TEAM_SIZE ;
+    policy_type team_exec( league_size , team_size );
 
     for ( unsigned i = 0 ; i < Repeat ; ++i ) {
-      Kokkos::parallel_reduce( request , functor_type(nwork) , result[i] );
+      result_type tmp( & result[i] );
+      Kokkos::parallel_reduce( team_exec , functor_type(nwork) , tmp );
     }
 
     device_type::fence();
@@ -172,7 +172,7 @@ class ScanTeamFunctor
 {
 public:
   typedef DeviceType  device_type ;
-  typedef Kokkos::ExecPolicyTeam< device_type >  policy_type ;
+  typedef Kokkos::TeamPolicy< device_type >  policy_type ;
 
   typedef long int    value_type ;
   Kokkos::View< value_type , device_type > accum ;
@@ -189,7 +189,7 @@ public:
     { if ( input ) error = 1 ; }
 
   KOKKOS_INLINE_FUNCTION
-  void operator()( const typename policy_type::index_type ind , value_type & error ) const
+  void operator()( const typename policy_type::member_type ind , value_type & error ) const
   {
     if ( 0 == ind.league_rank() && 0 == ind.team_rank() ) {
       const long int thread_count = ind.league_size() * ind.team_size();
@@ -227,6 +227,7 @@ public:
   typedef DeviceType  device_type ;
   typedef long int    value_type ;
 
+  typedef Kokkos::TeamPolicy< device_type > policy_type ;
   typedef Test::ScanTeamFunctor<DeviceType> functor_type ;
 
   //------------------------------------
@@ -238,13 +239,12 @@ public:
 
   void run_test( const size_t nteam )
   {
+    typedef Kokkos::View< long int , Kokkos::Serial , Kokkos::MemoryUnmanaged >  result_type ;
+
     const unsigned REPEAT = 100000 ;
     const unsigned Repeat = ( REPEAT + nteam - 1 ) / nteam ;
 
-    Kokkos::ParallelWorkRequest request ; 
-
-    request.team_size   = device_type::team_recommended();
-    request.league_size = nteam ;
+    policy_type team_exec( nteam , device_type::team_max() );
 
     functor_type functor ;
 
@@ -253,7 +253,7 @@ public:
       long int total = 0 ;
       long int error = 0 ;
       Kokkos::deep_copy( functor.accum , total );
-      Kokkos::parallel_reduce( request , functor , error );
+      Kokkos::parallel_reduce( team_exec , functor , result_type( & error ) );
       DeviceType::fence();
       Kokkos::deep_copy( accum , functor.accum );
       Kokkos::deep_copy( total , functor.total );
@@ -277,11 +277,11 @@ struct SharedTeamFunctor {
 
   typedef ExecSpace  device_type ;
   typedef int        value_type ;
-  typedef Kokkos::ExecPolicyTeam< device_type >  policy_type ;
+  typedef Kokkos::TeamPolicy< device_type >  policy_type ;
 
   enum { SHARED_COUNT = 1000 };
 
-  typedef typename ExecSpace::shared_memory_space shmem_space ;
+  typedef typename ExecSpace::scratch_memory_space shmem_space ;
 
   // tbd: MemoryUnmanaged should be the default for shared memory space
   typedef Kokkos::View<int*,shmem_space,Kokkos::MemoryUnmanaged> shared_int_array_type ;
@@ -294,10 +294,9 @@ struct SharedTeamFunctor {
   }
 
   KOKKOS_INLINE_FUNCTION
-  void operator()( const typename policy_type::index_type & ind , value_type & update ) const
+  void operator()( const typename policy_type::member_type & ind , value_type & update ) const
   {
-    shmem_space space = ind.space();
-    const shared_int_array_type shared( space , SHARED_COUNT );
+    const shared_int_array_type shared( ind.team_shmem() , SHARED_COUNT );
 
     for ( int i = ind.team_rank() ; i < SHARED_COUNT ; i += ind.team_size() ) {
       shared[i] = i + ind.league_rank();
@@ -328,15 +327,13 @@ struct TestSharedTeam {
   void run()
   {
     typedef Test::SharedTeamFunctor<ExecSpace> Functor ;
+    typedef Kokkos::View< typename Functor::value_type , Kokkos::Serial , Kokkos::MemoryUnmanaged >  result_type ;
 
-    Kokkos::ParallelWorkRequest request ;
+    Kokkos::TeamPolicy< ExecSpace > team_exec( 8192 / ExecSpace::team_max() , ExecSpace::team_max() );
 
-    request.team_size   = ExecSpace::team_recommended();
-    request.league_size = 8192 / ExecSpace::team_recommended();
+    typename Functor::value_type error_count = 0 ;
 
-    int error_count = 0 ;
-
-    Kokkos::parallel_reduce( request , Functor() , error_count );
+    Kokkos::parallel_reduce( team_exec , Functor() , result_type( & error_count ) );
 
     ASSERT_EQ( error_count , 0 );
   }

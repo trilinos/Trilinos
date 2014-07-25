@@ -67,7 +67,7 @@
 #include <TestReduce.hpp>
 #include <TestScan.hpp>
 #include <TestRequest.hpp>
-#include <TestMultiReduce.hpp>
+#include <TestTeam.hpp>
 #include <TestAggregate.hpp>
 #include <TestCompilerMacros.hpp>
 #include <TestCXX11.hpp>
@@ -147,12 +147,20 @@ TEST_F( threads, double_reduce) {
   TestReduce< double ,   Kokkos::Threads >( 1000000 );
 }
 
+TEST_F( threads, team_long_reduce) {
+  TestReduceTeam< long ,   Kokkos::Threads >( 100000 );
+}
+
+TEST_F( threads, team_double_reduce) {
+  TestReduceTeam< double ,   Kokkos::Threads >( 100000 );
+}
+
 TEST_F( threads, dev_long_reduce) {
-  TestReduceRequest< long ,   Kokkos::Threads >( 1000000 );
+  TestReduceRequest< long ,   Kokkos::Threads >( 100000 );
 }
 
 TEST_F( threads, dev_double_reduce) {
-  TestReduceRequest< double ,   Kokkos::Threads >( 1000000 );
+  TestReduceRequest< double ,   Kokkos::Threads >( 100000 );
 }
 
 TEST_F( threads, long_reduce_dynamic ) {
@@ -165,6 +173,10 @@ TEST_F( threads, double_reduce_dynamic ) {
 
 TEST_F( threads, long_reduce_dynamic_view ) {
   TestReduceDynamicView< long ,   Kokkos::Threads >( 1000000 );
+}
+
+TEST_F( threads, team_shared_request) {
+  TestSharedTeam< Kokkos::Threads >();
 }
 
 TEST_F( threads, dev_shared_request) {
@@ -212,86 +224,6 @@ TEST_F( threads , view_remap )
     ASSERT_EQ( value , ((int) output(i0,i1,i2,i3) ) );
   }}}}
 }
-
-TEST_F( threads, long_multi_reduce) {
-  TestReduceMulti< long , Kokkos::Threads >( 1000000 , 7 );
-}
-
-#if 0
-
-//----------------------------------------------------------------------------
-
-struct HostFunctor
-  : public Kokkos::Impl::HostThreadWorker
-{
-  struct Finalize {
-
-    typedef int value_type ;
-
-    volatile int & flag ;
-
-    void operator()( const value_type & value ) const
-      { flag += value + 1 ; }
-
-    Finalize( int & f ) : flag(f) {}
-  };
-
-  struct Reduce {
-
-    typedef int value_type ;
-
-    static void init( int & update ) { update = 0 ; }
-
-    static void join( volatile int & update , const volatile int & input )
-      { update += input ; }
-  };
-
-  typedef Kokkos::Impl::ReduceOperator< Reduce > reduce_type ;
-
-  typedef int value_type ;
-
-  const reduce_type m_reduce ;
-
-  HostFunctor( int & f ) : m_reduce(f)
-    { Kokkos::Impl::HostThreadWorker::execute(); }
-
-  void execute_on_thread( Kokkos::Impl::HostThread & thread ) const
-    {
-      m_reduce.init( thread.reduce_data() );
-
-      thread.barrier();
-      thread.barrier();
-
-      // Reduce to master thread:
-      thread.reduce( m_reduce );
-      if ( 0 == thread.rank() ) m_reduce.finalize( thread.reduce_data() );
-
-      // Reduce to master thread:
-      thread.reduce( m_reduce );
-      if ( 0 == thread.rank() ) m_reduce.finalize( thread.reduce_data() );
-
-      thread.end_barrier();
-    }
-};
-
-TEST_F( threads , host_thread )
-{
-  const int N = 1000 ;
-  int flag = 0 ;
-
-  for ( int i = 0 ; i < N ; ++i ) {
-    HostFunctor tmp( flag );
-  }
-
-  ASSERT_EQ( flag , N * 2 );
-
-  for ( int i = 0 ; i < 10 ; ++i ) {
-    Kokkos::Threads::sleep();
-    Kokkos::Threads::wake();
-  }
-}
-
-#endif
 
 //----------------------------------------------------------------------------
 
@@ -359,7 +291,9 @@ TEST_F( threads , scan )
 TEST_F( threads , team_scan )
 {
   TestScanRequest< Kokkos::Threads >( 10 );
+  TestScanTeam< Kokkos::Threads >( 10 );
   TestScanRequest< Kokkos::Threads >( 10000 );
+  TestScanTeam< Kokkos::Threads >( 10000 );
 }
 
 //----------------------------------------------------------------------------
@@ -371,13 +305,15 @@ TEST_F( threads , compiler_macros )
 
 
 //----------------------------------------------------------------------------
-#if defined (KOKKOS_HAVE_CXX11) && (defined KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_THREADS)
+#if defined( KOKKOS_HAVE_CXX11 )
 TEST_F( threads , cxx11 )
 {
-  ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Threads >(1) ) );
-  ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Threads >(2) ) );
-  ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Threads >(3) ) );
-  ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Threads >(4) ) );
+  if ( Kokkos::Impl::is_same< Kokkos::DefaultExecutionSpace , Kokkos::Threads >::value ) {
+    ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Threads >(1) ) );
+    ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Threads >(2) ) );
+    ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Threads >(3) ) );
+    ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Threads >(4) ) );
+  }
 }
 #endif
 
