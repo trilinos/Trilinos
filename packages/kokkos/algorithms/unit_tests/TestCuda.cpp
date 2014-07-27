@@ -68,8 +68,8 @@ protected:
   }
 };
 
-extern void void cuda_test_random_xorshift64( int num_draws  );
-extern void void cuda_test_random_xorshift1024( int num_draws  );
+extern void cuda_test_random_xorshift64( int num_draws  );
+extern void cuda_test_random_xorshift1024( int num_draws  );
 
 #define CUDA_RANDOM_XORSHIFT64( num_draws )                                \
   TEST_F( cuda, Random_XorShift64 ) {   \
@@ -81,8 +81,8 @@ extern void void cuda_test_random_xorshift1024( int num_draws  );
   cuda_test_random_xorshift1024(num_draws);                                   \
   }
 
-CUDA_RANDOM_XORSHIFT64( 10000000 )
-CUDA_RANDOM_XORSHIFT1024( 10000000 )
+CUDA_RANDOM_XORSHIFT64(  132141141 )
+CUDA_RANDOM_XORSHIFT1024( 52428813 )
 
 #undef CUDA_RANDOM_XORSHIFT64
 #undef CUDA_RANDOM_XORSHIFT1024

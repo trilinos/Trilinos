@@ -172,7 +172,7 @@ namespace Kokkos {
   class Random_XorShift64 {
   private:
     uint64_t state_;
-    const int chunk_num_;
+    const int state_idx_;
     friend class Random_XorShift64_Pool<DeviceType>;
   public:
 
@@ -184,8 +184,8 @@ namespace Kokkos {
     enum {MAX_RAND64 = static_cast<int64_t>(0xffffffffffffffffLL/2-1)};
 
     KOKKOS_INLINE_FUNCTION
-    Random_XorShift64 (uint64_t state, int chunk_num)
-     : state_(state),chunk_num_(chunk_num){}
+    Random_XorShift64 (uint64_t state, int state_idx)
+     : state_(state),state_idx_(state_idx){}
 
     KOKKOS_INLINE_FUNCTION
     uint32_t urand() {
@@ -326,14 +326,10 @@ namespace Kokkos {
   class Random_XorShift64_Pool {
   private:
     typedef View<int*,DeviceType> lock_type;
-    typedef View<int*,DeviceType> pool_chunk_count_type;
     typedef View<uint64_t*,DeviceType> state_data_type;
     lock_type locks_;
-    pool_chunk_count_type chunk_count_;
     state_data_type state_;
     int num_states_;
-    int chunk_size_;
-    int num_chunks_;
 
   public:
     typedef Random_XorShift64<DeviceType> generator_type;
@@ -341,23 +337,17 @@ namespace Kokkos {
 
     Random_XorShift64_Pool(unsigned int seed) {
       num_states_ = 0;
-      chunk_size_ = 0;
-      num_chunks_ = 0;
-      init(seed,DeviceType::max_hardware_threads(),1);
+      init(seed,DeviceType::max_hardware_threads());
     }
 
-    void init(unsigned int seed, int num_states, int chunk_size) {
+    void init(unsigned int seed, int num_states) {
       num_states_ = num_states;
-      chunk_size_ = chunk_size;
-      num_chunks_ = num_states/chunk_size;
 
-      locks_ = lock_type("Kokkos::Random_XorShift64::locks",num_chunks_);
-      chunk_count_ = pool_chunk_count_type("Kokkos::Random_XorShift64::chunk_count",num_chunks_);
+      locks_ = lock_type("Kokkos::Random_XorShift64::locks",num_states_);
       state_ = state_data_type("Kokkos::Random_XorShift64::state",num_states_);
 
       typename state_data_type::HostMirror h_state = create_mirror_view(state_);
       typename lock_type::HostMirror h_lock = create_mirror_view(locks_);
-      typename pool_chunk_count_type::HostMirror h_chunk_count = create_mirror_view(chunk_count_);
       srand(seed);
       for(int i = 0; i < num_states_; i++) {
         int n1 = ::rand();
@@ -368,15 +358,10 @@ namespace Kokkos {
                      (((static_cast<uint64_t>(n2)) & 0xffff)<<16) |
                      (((static_cast<uint64_t>(n3)) & 0xffff)<<32) |
                      (((static_cast<uint64_t>(n4)) & 0xffff)<<48);
+        h_lock(i) = 0;
       }
       deep_copy(state_,h_state);
-
-      for(int i = 0; i < num_chunks_; i++) {
-        h_lock(i) = 0;
-        h_chunk_count(i) = 0;
-      }
       deep_copy(locks_,h_lock);
-      deep_copy(chunk_count_,h_chunk_count);
     }
 
     KOKKOS_INLINE_FUNCTION
@@ -387,7 +372,7 @@ namespace Kokkos {
 
     KOKKOS_INLINE_FUNCTION
     void free_state(const Random_XorShift64<DeviceType>& state) const {
-      state_(state.chunk_num_) = state.state_;
+      state_(state.state_idx_) = state.state_;
     }
   };
 
@@ -399,7 +384,7 @@ namespace Kokkos {
   class Random_XorShift1024 {
   private:
     int p_;
-    const int chunk_num_;
+    const int state_idx_;
     uint64_t state_[16];
     friend class Random_XorShift1024_Pool<DeviceType>;
   public:
@@ -412,8 +397,8 @@ namespace Kokkos {
     enum {MAX_RAND64 = static_cast<int64_t>(0xffffffffffffffffULL/2-1)};
 
     KOKKOS_INLINE_FUNCTION
-    Random_XorShift1024 (uint64_t* state, int p, int chunk_num):
-      p_(p),chunk_num_(chunk_num){
+    Random_XorShift1024 (uint64_t* state, int p, int state_idx):
+      p_(p),state_idx_(state_idx){
       for(int i=0 ; i<16; i++)
         state_[i] = state[i];
     }
@@ -560,7 +545,7 @@ namespace Kokkos {
   class Random_XorShift1024<Kokkos::Cuda> {
   private:
     int p_;
-    const int chunk_num_;
+    const int state_idx_;
     uint64_t* state_;
     friend class Random_XorShift1024_Pool<Kokkos::Cuda>;
   public:
@@ -573,8 +558,8 @@ namespace Kokkos {
     enum {MAX_RAND64 = static_cast<int64_t>(0xffffffffffffffffULL/2-1)};
 
     KOKKOS_INLINE_FUNCTION
-    Random_XorShift1024 (uint64_t* state, int p, int chunk_num):
-      p_(p),chunk_num_(chunk_num),state_(state){
+    Random_XorShift1024 (uint64_t* state, int p, int state_idx):
+      p_(p),state_idx_(state_idx),state_(state){
     }
 
     KOKKOS_INLINE_FUNCTION
@@ -723,12 +708,9 @@ namespace Kokkos {
     typedef View<uint64_t*[16],DeviceType> state_data_type;
 
     int_view_type locks_;
-    int_view_type chunk_count_;
     state_data_type state_;
     int_view_type p_;
     int num_states_;
-    int chunk_size_;
-    int num_chunks_;
 
   public:
     typedef Random_XorShift1024<DeviceType> generator_type;
@@ -737,24 +719,18 @@ namespace Kokkos {
 
     Random_XorShift1024_Pool(unsigned int seed){
       num_states_ = 0;
-      chunk_size_ = 0;
-      num_chunks_ = 0;
-      init(seed,DeviceType::max_hardware_threads(),1);
+      init(seed,DeviceType::max_hardware_threads());
     }
 
-    void init(unsigned int seed, int num_states, int chunk_size) {
+    void init(unsigned int seed, int num_states) {
       num_states_ = num_states;
-      chunk_size_ = chunk_size;
-      num_chunks_ = num_states/chunk_size;
 
-      locks_ = int_view_type("Kokkos::Random_XorShift1024::locks",num_chunks_);
-      chunk_count_ = int_view_type("Kokkos::Random_XorShift1024::chunk_count",num_chunks_);
+      locks_ = int_view_type("Kokkos::Random_XorShift1024::locks",num_states_);
       state_ = state_data_type("Kokkos::Random_XorShift1024::state",num_states_);
       p_ = int_view_type("Kokkos::Random_XorShift1024::p",num_states_);
 
       typename state_data_type::HostMirror h_state = create_mirror_view(state_);
       typename int_view_type::HostMirror h_lock = create_mirror_view(locks_);
-      typename int_view_type::HostMirror h_chunk_count = create_mirror_view(chunk_count_);
       typename int_view_type::HostMirror h_p = create_mirror_view(p_);
       srand(seed);
       for(int i = 0; i < num_states_; i++) {
@@ -769,15 +745,10 @@ namespace Kokkos {
                          (((static_cast<uint64_t>(n4)) & 0xffff)<<48);
         }
         h_p(i) = 0;
+        h_lock(i) = 0;
       }
       deep_copy(state_,h_state);
-
-      for(int i = 0; i < num_chunks_; i++) {
-        h_lock(i) = 0;
-        h_chunk_count(i) = 0;
-      }
       deep_copy(locks_,h_lock);
-      deep_copy(chunk_count_,h_chunk_count);
     }
 
     KOKKOS_INLINE_FUNCTION
@@ -789,41 +760,34 @@ namespace Kokkos {
     KOKKOS_INLINE_FUNCTION
     void free_state(const Random_XorShift1024<DeviceType>& state) const {
       for(int i = 0; i<16; i++)
-        state_(state.chunk_num_,i) = state.state_[i];
-      p_(state.chunk_num_) = state.p_;
+        state_(state.state_idx_,i) = state.state_[i];
+      p_(state.state_idx_) = state.p_;
     }
   };
 
 #ifdef KOKKOS_HAVE_CUDA
-
+#ifdef __CUDACC__
 template<>
 Random_XorShift64_Pool<Kokkos::Cuda>::Random_XorShift64_Pool(unsigned int seed) {
   num_states_ = 0;
-  chunk_size_ = 0;
-  num_chunks_ = 0;
-  init(seed,4*32768,1024);
+  init(seed,4*32768);
 }
 
 template<>
 KOKKOS_INLINE_FUNCTION
 Random_XorShift64<Kokkos::Cuda> Random_XorShift64_Pool<Kokkos::Cuda>::get_state() const {
 #ifdef __CUDA_ARCH__
-  const int chunk_offset = (threadIdx.x*blockDim.y + threadIdx.y)*blockDim.z+threadIdx.z;
-  __shared__ int block_i;
-  if(chunk_offset == 0) {
-    int i = ((blockIdx.x*gridDim.y+blockIdx.y)*blockDim.z+blockIdx.z)%num_chunks_;
-
-    while(Kokkos::atomic_compare_exchange(&locks_(i),0,1)) {
-      i++;
-      if(i==num_chunks_) i = 0;
-    }
-
-    chunk_count_(i) += blockDim.x*blockDim.y*blockDim.z;
-    block_i = i;
+  const int i_offset = (threadIdx.x*blockDim.y + threadIdx.y)*blockDim.z+threadIdx.z;
+  int i = ((blockIdx.x*gridDim.y+blockIdx.y)*gridDim.z + blockIdx.z) *
+           blockDim.x*blockDim.y*blockDim.z + i_offset;
+  while(Kokkos::atomic_compare_exchange(&locks_(i),0,1)) {
+      i+=blockDim.x*blockDim.y*blockDim.z;
+      if(i>=num_states_) {i = i_offset;}
   }
-  __syncthreads();
 
-  return Random_XorShift64<Kokkos::Cuda>(state_(block_i*chunk_size_ + chunk_offset),block_i);
+  return Random_XorShift64<Kokkos::Cuda>(state_(i),i);
+#else
+  return Random_XorShift64<Kokkos::Cuda>(state_(0),0);
 #endif
 }
 
@@ -831,11 +795,8 @@ template<>
 KOKKOS_INLINE_FUNCTION
 void Random_XorShift64_Pool<Kokkos::Cuda>::free_state(const Random_XorShift64<Kokkos::Cuda> &state) const {
 #ifdef __CUDA_ARCH__
-  const int chunk_offset = (threadIdx.x*blockDim.y + threadIdx.y)*blockDim.z+threadIdx.z;
-  state_(state.chunk_num_*chunk_size_ + chunk_offset) = state.state_;
-  int count = Kokkos::atomic_fetch_add(&chunk_count_(state.chunk_num_),-1);
-  if(count == 1)
-    locks_(state.chunk_num_) = 0;
+  state_(state.state_idx_) = state.state_;
+  locks_(state.state_idx_) = 0;
   return;
 #endif
 }
@@ -844,33 +805,24 @@ void Random_XorShift64_Pool<Kokkos::Cuda>::free_state(const Random_XorShift64<Ko
 template<>
 Random_XorShift1024_Pool<Kokkos::Cuda>::Random_XorShift1024_Pool(unsigned int seed) {
   num_states_ = 0;
-  chunk_size_ = 0;
-  num_chunks_ = 0;
-  init(seed,4*32768,1024);
+  init(seed,4*32768);
 }
 
 template<>
 KOKKOS_INLINE_FUNCTION
 Random_XorShift1024<Kokkos::Cuda> Random_XorShift1024_Pool<Kokkos::Cuda>::get_state() const {
 #ifdef __CUDA_ARCH__
-  const int chunk_offset = (threadIdx.x*blockDim.y + threadIdx.y)*blockDim.z+threadIdx.z;
-  __shared__ int block_i;
-  if(chunk_offset == 0) {
-    int i = ((blockIdx.x*gridDim.y+blockIdx.y)*blockDim.z+blockIdx.z)%num_chunks_;
-
-    while(Kokkos::atomic_compare_exchange(&locks_(i),0,1)) {
-      i++;
-      if(i==num_chunks_) i = 0;
-    }
-
-    chunk_count_(i) += blockDim.x*blockDim.y*blockDim.z;
-    block_i = i;
+  const int i_offset = (threadIdx.x*blockDim.y + threadIdx.y)*blockDim.z+threadIdx.z;
+  int i = ((blockIdx.x*gridDim.y+blockIdx.y)*gridDim.z + blockIdx.z) *
+           blockDim.x*blockDim.y*blockDim.z + i_offset;
+  while(Kokkos::atomic_compare_exchange(&locks_(i),0,1)) {
+      i+=blockDim.x*blockDim.y*blockDim.z;
+      if(i>=num_states_) {i = i_offset;}
   }
-  __syncthreads();
 
-  return Random_XorShift1024<Kokkos::Cuda>(&state_(block_i*chunk_size_ + chunk_offset,0),
-                                            p_(block_i*chunk_size_ + chunk_offset),
-                                            block_i);
+  return Random_XorShift1024<Kokkos::Cuda>(&state_(i,0), p_(i), i);
+#else
+  return Random_XorShift1024<Kokkos::Cuda>(&state_(0,0), p_(0), 0);
 #endif
 }
 
@@ -878,15 +830,13 @@ template<>
 KOKKOS_INLINE_FUNCTION
 void Random_XorShift1024_Pool<Kokkos::Cuda>::free_state(const Random_XorShift1024<Kokkos::Cuda> &state) const {
 #ifdef __CUDA_ARCH__
-  const int chunk_offset = (threadIdx.x*blockDim.y + threadIdx.y)*blockDim.z+threadIdx.z;
-  p_(state.chunk_num_*chunk_size_ + chunk_offset) = state.p_;
-  int count = Kokkos::atomic_fetch_add(&chunk_count_(state.chunk_num_),-1);
-  if(count == 1)
-    locks_(state.chunk_num_) = 0;
+  for(int i=0; i<16; i++)
+    state_(state.state_idx_,i) = state.state_[i];
+  locks_(state.state_idx_) = 0;
   return;
 #endif
 }
-
+#endif
 #endif
 }
 

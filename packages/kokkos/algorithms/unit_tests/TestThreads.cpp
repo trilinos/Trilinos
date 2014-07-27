@@ -93,8 +93,8 @@ protected:
       Impl::test_random<Kokkos::Random_XorShift1024_Pool<Kokkos::Threads> >(num_draws);                                   \
   }
 
-THREADS_RANDOM_XORSHIFT64( 10000000 )
-THREADS_RANDOM_XORSHIFT1024( 10000000 )
+THREADS_RANDOM_XORSHIFT64( 10240000 )
+THREADS_RANDOM_XORSHIFT1024( 10130144 )
 
 #undef THREADS_RANDOM_XORSHIFT64
 #undef THREADS_RANDOM_XORSHIFT1024
