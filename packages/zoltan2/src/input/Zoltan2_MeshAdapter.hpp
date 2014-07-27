@@ -50,8 +50,7 @@
 #define _ZOLTAN2_MESHADAPTER_HPP_
 
 #include <Zoltan2_Adapter.hpp>
-
-#include <string>
+#include <Zoltan2_VectorAdapter.hpp>
 
 namespace Zoltan2 {
 
@@ -316,7 +315,7 @@ public:
    *  Also sets to adjacencyEntityType to something reasonable:  opposite of
    *  primaryEntityType.
    */
-  void setPrimaryEntityType(string typestr) {
+  void setPrimaryEntityType(std::string typestr) {
     if (typestr == "region")
       this->primaryEntityType = MESH_REGION;
     else if (typestr == "face")
@@ -350,7 +349,7 @@ public:
    *  adjacencyEntityType.
    *  KDD:  Is Adjacency a poorly chosen name here?  Is it overloaded?
    */
-  void setAdjacencyEntityType(string typestr) {
+  void setAdjacencyEntityType(std::string typestr) {
     if (typestr == "region")
       this->adjacencyEntityType = MESH_REGION;
     else if (typestr == "face")
