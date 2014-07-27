@@ -54,6 +54,10 @@
 
 namespace Zoltan2 {
 
+  /*!  \brief Enumerate entity types for meshes:  Regions, Faces, Edges, or 
+   *          Vertices
+   */
+
 enum MeshEntityType {
   MESH_REGION,
   MESH_FACE,
