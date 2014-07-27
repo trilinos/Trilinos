@@ -55,7 +55,7 @@
 namespace Zoltan2 {
 
   /*!  \brief Enumerate entity types for meshes:  Regions, Faces, Edges, or 
-   *          Vertices
+   *                                              Vertices
    */
 
 enum MeshEntityType {
@@ -100,8 +100,8 @@ enum MeshEntityType {
 
 */
 
-template <typename User>
-  class MeshAdapter : public BaseAdapter {
+template <typename User, typename UserCoord=User>
+  class MeshAdapter : public BaseAdapter<User> {
 private:
   enum MeshEntityType primaryEntityType; // Entity to be partitioned, ordered,
                                          // colored, matched, etc.
@@ -237,7 +237,8 @@ public:
 
   /*! \brief Returns whether a second adjacency combination is available.
    */
-  virtual bool avail2ndAdjs(MeshEntityType sourcetarget, MeshEntityType through);
+  virtual bool avail2ndAdjs(MeshEntityType sourcetarget, 
+			    MeshEntityType through);
 
 
   /*! \brief Returns the number of second adjacencies on this process.
