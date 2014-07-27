@@ -103,10 +103,24 @@ enum MeshEntityType {
 template <typename User, typename UserCoord=User>
   class MeshAdapter : public BaseAdapter<User> {
 private:
-  enum MeshEntityType primaryEntityType; // Entity to be partitioned, ordered,
+  enum MeshEntityType primaryEntityType; // Entity (region, face, edge, or 
+                                         // vertex) to be partitioned, ordered,
                                          // colored, matched, etc.
-  enum MeshEntityType adjacencyEntityType; // Entity describing adjacencies
-  //KDD Do we need a 2nd-adjacency Entity Type to use as "through"?
+  enum MeshEntityType adjacencyEntityType; // Entity (face, edge, or vertex) 
+                                           // describing adjacencies;
+                                           // typically lower dimension than 
+                                           // primaryEntityType.
+  enum MeshEntityType secondAdjacencyEntityType; // Entity (face, edge, or 
+                                                 // vertex) describing second 
+                                                 // adjacencies;
+                                                 // typically lower dimension 
+                                                 // than primaryEntityType.
+  VectorAdapter<UserCoord> *coordinateInput_;    // A VectorAdapter containing
+                                                 // coordinates of the objects
+                                                 // with primaryEntityType.
+  bool haveCoordinateInput_;                     // Flag indicating 
+                                                 // coordinateInput_ is 
+                                                 // provided.
 
 public:
 
@@ -118,18 +132,22 @@ public:
   typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef User user_t;
-  typedef User userCoord_t;
+  typedef UserCoord userCoord_t;
 #endif
 
   enum BaseAdapterType adapterType() const {return MeshAdapterType;}
 
-  // Default MeshEntityType is MESH_REGION with MESH_FACE-based adjacencies
-  MeshAdapter() : primaryEntityType(MESH_REGION),
-                  adjacencyEntityType(MESH_FACE) {};
-
   /*! \brief Destructor
    */
   virtual ~MeshAdapter() {};
+
+  // Default MeshEntityType is MESH_REGION with MESH_FACE-based adjacencies and
+  // second adjacencies and coordinates
+  MeshAdapter() : primaryEntityType(MESH_REGION),
+                  adjacencyEntityType(MESH_FACE),
+		  secondAdjacencyEntityType(MESH_FACE),
+		  coordinateInput_(),
+		  haveCoordinateInput_(true) {};
 
   /*! \brief Returns the number of mesh entities on this process.
    */
