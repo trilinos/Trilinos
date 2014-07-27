@@ -50,10 +50,13 @@
 #define _ZOLTAN2_MESHADAPTER_HPP_
 
 #include <Zoltan2_Adapter.hpp>
-
-#include <string>
+#include <Zoltan2_VectorAdapter.hpp>
 
 namespace Zoltan2 {
+
+  /*!  \brief Enumerate entity types for meshes:  Regions, Faces, Edges, or 
+   *                                              Vertices
+   */
 
 enum MeshEntityType {
   MESH_REGION,
@@ -97,8 +100,8 @@ enum MeshEntityType {
 
 */
 
-template <typename User>
-  class MeshAdapter : public BaseAdapter {
+template <typename User, typename UserCoord=User>
+  class MeshAdapter : public BaseAdapter<User> {
 private:
   enum MeshEntityType primaryEntityType; // Entity to be partitioned, ordered,
                                          // colored, matched, etc.
@@ -234,7 +237,8 @@ public:
 
   /*! \brief Returns whether a second adjacency combination is available.
    */
-  virtual bool avail2ndAdjs(MeshEntityType sourcetarget, MeshEntityType through);
+  virtual bool avail2ndAdjs(MeshEntityType sourcetarget, 
+			    MeshEntityType through);
 
 
   /*! \brief Returns the number of second adjacencies on this process.
@@ -316,7 +320,7 @@ public:
    *  Also sets to adjacencyEntityType to something reasonable:  opposite of
    *  primaryEntityType.
    */
-  void setPrimaryEntityType(string typestr) {
+  void setPrimaryEntityType(std::string typestr) {
     if (typestr == "region")
       this->primaryEntityType = MESH_REGION;
     else if (typestr == "face")
@@ -350,7 +354,7 @@ public:
    *  adjacencyEntityType.
    *  KDD:  Is Adjacency a poorly chosen name here?  Is it overloaded?
    */
-  void setAdjacencyEntityType(string typestr) {
+  void setAdjacencyEntityType(std::string typestr) {
     if (typestr == "region")
       this->adjacencyEntityType = MESH_REGION;
     else if (typestr == "face")
