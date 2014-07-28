@@ -46,6 +46,7 @@
 /// \brief Declaration and definition of LittleBlock and LittleVector
 
 #include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_LAPACK.hpp>
 
 namespace Tpetra {
 
@@ -91,7 +92,8 @@ public:
                const LO strideX,
                const LO strideY) :
     A_ (A), blockSize_ (blockSize), strideX_ (strideX), strideY_ (strideY)
-  {}
+  {
+  }
 
   //! The block size (number of rows, and number of columns).
   LO getBlockSize () const {
@@ -161,11 +163,28 @@ public:
     }
   }
 
+  void factorize()
+  {
+    ipiv_.resize(blockSize_);
+    Teuchos::LAPACK<LO, Scalar> lapack;
+    int info;
+    lapack.GETRF(blockSize_, blockSize_, A_, blockSize_, &ipiv_[0], &info);
+  }
+
+  template<class LittleVectorType>
+  void solve(LittleVectorType & X) const
+  {
+    int info;
+    Teuchos::LAPACK<LO, Scalar> lapack;
+    lapack.GETRS(Teuchos::TRANS, blockSize_, 1, A_, blockSize_, &ipiv_[0], X.getRawPtr(), blockSize_, &info);
+  }
+
 private:
   Scalar* const A_;
   const LO blockSize_;
   const LO strideX_;
   const LO strideY_;
+  std::vector<int> ipiv_;
 };
 
 
