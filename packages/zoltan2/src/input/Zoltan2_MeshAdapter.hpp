@@ -147,7 +147,10 @@ public:
                   adjacencyEntityType(MESH_FACE),
 		  secondAdjacencyEntityType(MESH_FACE),
 		  coordinateInput_(),
-		  haveCoordinateInput_(true) {};
+		  haveCoordinateInput_(false) {};
+
+  ////////////////////////////////////////////////////////////////////////////
+  // Methods to be defined in derived classes.
 
   /*! \brief Returns the number of mesh entities on this process.
    */
@@ -323,6 +326,32 @@ public:
 //KDD What if we wanted to provide weights with respect to first adjacencies?
 //KDD Should we add functions for that?
 
+  /*! \brief Allow user to provide additional data that contains coordinate
+   *         info associated with the MeshAdapter's primaryEntityType.
+   *         Assocated data must have the same parallel distribution and
+   *         ordering of entries as the primaryEntityType.
+   *
+   *  \param coordData is a pointer to a VectorAdapter with the user's
+   *         coordinate data.
+   */
+  void setCoordinateInput(VectoAdapter<UserCoord> *coordData)
+  {
+    coordinateInput_ = coordData;
+    haveCoordinateInput_ = true;
+  }
+
+  /*! \brief Indicate whether coordinate information has been set for this
+   *         MeshAdapter
+   */
+  bool coordinatesAvailable() const { return haveCoordinateInput_; }
+
+  /*! \brief Obtain the coordinate data registered by the user.
+   *  \return pointer a VectorAdapter with the user's coordinate data.
+   */
+  VectorAdapter<UserCoord> *getCoordinateInput() const
+  {
+    return coordinateInput_;
+  }
 
   ////////////////////////////////////////////////////////////////////////////
   // Implementations of base-class methods
