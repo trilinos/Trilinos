@@ -368,6 +368,7 @@ public:
    *  That is, a primaryEntityType that contains an adjacencyEntityType are
    *  adjacent.
    *  KDD:  Is Adjacency a poorly chosen name here?  Is it overloaded?
+   *  VJL:  Maybe
    */
   inline enum MeshEntityType getAdjacencyEntityType() const {
     return this->adjacencyEntityType;
@@ -388,6 +389,7 @@ public:
    *  secondAdjacencyEntityType to something reasonable:  primaryEntityType not
    *  adjacencyEntityType or secondAdjacencyEntityType.
    *  KDD:  Is Adjacency a poorly chosen name here?  Is it overloaded?
+   *  VJL:  Maybe
    */
   void setEntityTypes(std::string ptypestr, std::string atypestr,
 		      std::string satypestr) {
