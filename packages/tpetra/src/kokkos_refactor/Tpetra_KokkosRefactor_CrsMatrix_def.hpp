@@ -4181,7 +4181,16 @@ namespace Tpetra {
         // the same, so X_domainMap _is_ X_colMap.
         X_domainMap = X_colMap;
         if (! zeroInitialGuess) { // Don't copy if zero initial guess
-          deep_copy(*X_domainMap , X); // Copy X into constant stride multivector
+
+          try {
+            deep_copy(*X_domainMap , X); // Copy X into constant stride multivector
+          } catch (std::exception& e) {
+            std::ostringstream os;
+            os << "Tpetra::CrsMatrix::reorderedGaussSeidelCopy: "
+              "deep_copy(*X_domainMap, X) threw an exception: "
+               << e.what () << ".";
+            TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, e.what ());
+          }
         }
         copyBackOutput = true; // Don't forget to copy back at end.
         TPETRA_EFFICIENCY_WARNING(
@@ -4271,7 +4280,16 @@ namespace Tpetra {
       // use the cached row Map multivector to store a constant stride
       // copy of B.
       RCP<MV> B_in_nonconst = getRowMapMultiVector (B, true);
-      deep_copy(*B_in_nonconst, B);
+
+      try {
+        deep_copy(*B_in_nonconst, B);
+      } catch (std::exception& e) {
+        std::ostringstream os;
+        os << "Tpetra::CrsMatrix::reorderedGaussSeidelCopy: "
+          "deep_copy(*B_in_nonconst, B) threw an exception: "
+           << e.what () << ".";
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, e.what ());
+      }
       B_in = rcp_const_cast<const MV> (B_in_nonconst);
 
       TPETRA_EFFICIENCY_WARNING(
@@ -4328,7 +4346,15 @@ namespace Tpetra {
     }
 
     if (copyBackOutput) {
-      deep_copy(X , *X_domainMap); // Copy result back into X.
+      try {
+        deep_copy(X , *X_domainMap); // Copy result back into X.
+      } catch (std::exception& e) {
+        std::ostringstream os;
+        os << "Tpetra::CrsMatrix::reorderedGaussSeidelCopy: "
+          "deep_copy(X, *X_domainMap) threw an exception: "
+           << e.what () << ".";
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, e.what ());
+      }
     }
   }
 
