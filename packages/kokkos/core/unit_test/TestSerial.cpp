@@ -292,7 +292,7 @@ TEST_F( serial , compiler_macros )
 
 
 //----------------------------------------------------------------------------
-#if defined( KOKKOS_HAVE_CXX11 )
+#if defined( KOKKOS_HAVE_CXX11 ) && defined( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_SERIAL )
 TEST_F( serial , cxx11 )
 {
   if ( Kokkos::Impl::is_same< Kokkos::DefaultExecutionSpace , Kokkos::Serial >::value ) {

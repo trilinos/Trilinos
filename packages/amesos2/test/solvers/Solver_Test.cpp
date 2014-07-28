@@ -303,6 +303,7 @@ bool do_mat_test(const ParameterList& parameters)
       complex = parameters.get<bool>("complex");
     }
   }
+  (void) complex; // forestall warning for set but unused variable
 
   ParameterList solve_params("Amesos2");
   if( parameters.isSublist("all_solver_params") ){
@@ -765,9 +766,9 @@ bool do_epetra_test(const string& mm_file,
     // There isn't a really nice way to get a deep copy of an entire
     // CrsMatrix, so we just read the file again.
     MAT* A2_ptr;
-    int ret = EpetraExt::MatrixMarketFileToCrsMatrix(path.c_str(), comm,
-                                                     A2_ptr,
-                                                     false, false);
+    ret = EpetraExt::MatrixMarketFileToCrsMatrix(path.c_str(), comm,
+                                                 A2_ptr,
+                                                 false, false);
     if( ret == -1 ){
       *fos << "error reading file from disk, aborting run." << std::endl;
       return( false );

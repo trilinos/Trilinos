@@ -80,7 +80,6 @@ int main(int argc, char *argv[]) {
   typedef Tpetra::MultiVector<ST,int>      MV;
   typedef Belos::OperatorTraits<ST,MV,OP> OPT;
   typedef Belos::MultiVecTraits<ST,MV>    MVT;
-  typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 
   GlobalMPISession mpisess(&argc,&argv,&cout);
 

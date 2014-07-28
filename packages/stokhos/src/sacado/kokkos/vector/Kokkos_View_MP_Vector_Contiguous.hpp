@@ -1827,6 +1827,7 @@ struct ViewAssignment< ViewDefault , ViewMPVectorContiguous , void >
 };
 
 // Specialization for deep_copy( view, view::value_type ) for Cuda
+#if defined( KOKKOS_HAVE_CUDA )
 template< class T , class L , class M , unsigned Rank >
 struct ViewFill< View<T,L,Cuda,M,ViewMPVectorContiguous> , Rank >
 {
@@ -1896,6 +1897,7 @@ struct ViewFill< View<T,L,Cuda,M,ViewMPVectorContiguous> , Rank >
   }
 
 };
+#endif /* #if defined( KOKKOS_HAVE_CUDA ) */
 
 } // namespace Impl
 

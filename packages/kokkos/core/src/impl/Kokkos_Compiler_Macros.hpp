@@ -78,6 +78,10 @@
   // Device code is compile to 'ptx'.
   #define KOKKOS_COMPILER_NVCC __NVCC__
 
+  #if defined( KOKKOS_HAVE_CXX11 )
+  #error "NVCC does not support C++11"
+  #endif
+
 #endif /* #if defined( __NVCC__ ) */
 
 

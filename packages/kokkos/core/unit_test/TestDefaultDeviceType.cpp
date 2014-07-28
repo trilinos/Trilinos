@@ -79,43 +79,43 @@ protected:
 
 
 TEST_F( defaultdevicetype, view_impl) {
-  test_view_impl< Kokkos::Impl::DefaultDeviceType >();
+  test_view_impl< Kokkos::DefaultExecutionSpace >();
 }
 
 TEST_F( defaultdevicetype, view_api) {
-  TestViewAPI< double , Kokkos::Impl::DefaultDeviceType >();
+  TestViewAPI< double , Kokkos::DefaultExecutionSpace >();
 }
 
 TEST_F( defaultdevicetype, long_reduce) {
-  TestReduce< long ,   Kokkos::Impl::DefaultDeviceType >( 1000000 );
+  TestReduce< long ,   Kokkos::DefaultExecutionSpace >( 100000 );
 }
 
 TEST_F( defaultdevicetype, double_reduce) {
-  TestReduce< double ,   Kokkos::Impl::DefaultDeviceType >( 1000000 );
+  TestReduce< double ,   Kokkos::DefaultExecutionSpace >( 100000 );
 }
 
 TEST_F( defaultdevicetype, long_reduce_dynamic ) {
-  TestReduceDynamic< long ,   Kokkos::Impl::DefaultDeviceType >( 1000000 );
+  TestReduceDynamic< long ,   Kokkos::DefaultExecutionSpace >( 100000 );
 }
 
 TEST_F( defaultdevicetype, double_reduce_dynamic ) {
-  TestReduceDynamic< double ,   Kokkos::Impl::DefaultDeviceType >( 1000000 );
+  TestReduceDynamic< double ,   Kokkos::DefaultExecutionSpace >( 100000 );
 }
 
 TEST_F( defaultdevicetype, long_reduce_dynamic_view ) {
-  TestReduceDynamicView< long ,   Kokkos::Impl::DefaultDeviceType >( 1000000 );
+  TestReduceDynamicView< long ,   Kokkos::DefaultExecutionSpace >( 100000 );
 }
 
 TEST_F( defaultdevicetype, dev_long_reduce) {
-  TestReduceRequest< long ,   Kokkos::Impl::DefaultDeviceType >( 1000000 );
+  TestReduceRequest< long ,   Kokkos::DefaultExecutionSpace >( 100000 );
 }
 
 TEST_F( defaultdevicetype, dev_double_reduce) {
-  TestReduceRequest< double ,   Kokkos::Impl::DefaultDeviceType >( 1000000 );
+  TestReduceRequest< double ,   Kokkos::DefaultExecutionSpace >( 100000 );
 }
 
 TEST_F( defaultdevicetype, dev_shared_request) {
-  TestSharedRequest< Kokkos::Impl::DefaultDeviceType >();
+  TestSharedRequest< Kokkos::DefaultExecutionSpace >();
 }
 
 
@@ -123,33 +123,33 @@ TEST_F( defaultdevicetype , atomics )
 {
   const int loop_count = 1e4 ;
 
-  ASSERT_TRUE( ( TestAtomic::Loop<int,Kokkos::Impl::DefaultDeviceType>(loop_count,1) ) );
-  ASSERT_TRUE( ( TestAtomic::Loop<int,Kokkos::Impl::DefaultDeviceType>(loop_count,2) ) );
-  ASSERT_TRUE( ( TestAtomic::Loop<int,Kokkos::Impl::DefaultDeviceType>(loop_count,3) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<int,Kokkos::DefaultExecutionSpace>(loop_count,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<int,Kokkos::DefaultExecutionSpace>(loop_count,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<int,Kokkos::DefaultExecutionSpace>(loop_count,3) ) );
 
-  ASSERT_TRUE( ( TestAtomic::Loop<unsigned int,Kokkos::Impl::DefaultDeviceType>(loop_count,1) ) );
-  ASSERT_TRUE( ( TestAtomic::Loop<unsigned int,Kokkos::Impl::DefaultDeviceType>(loop_count,2) ) );
-  ASSERT_TRUE( ( TestAtomic::Loop<unsigned int,Kokkos::Impl::DefaultDeviceType>(loop_count,3) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<unsigned int,Kokkos::DefaultExecutionSpace>(loop_count,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<unsigned int,Kokkos::DefaultExecutionSpace>(loop_count,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<unsigned int,Kokkos::DefaultExecutionSpace>(loop_count,3) ) );
 
-  ASSERT_TRUE( ( TestAtomic::Loop<long int,Kokkos::Impl::DefaultDeviceType>(loop_count,1) ) );
-  ASSERT_TRUE( ( TestAtomic::Loop<long int,Kokkos::Impl::DefaultDeviceType>(loop_count,2) ) );
-  ASSERT_TRUE( ( TestAtomic::Loop<long int,Kokkos::Impl::DefaultDeviceType>(loop_count,3) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<long int,Kokkos::DefaultExecutionSpace>(loop_count,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<long int,Kokkos::DefaultExecutionSpace>(loop_count,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<long int,Kokkos::DefaultExecutionSpace>(loop_count,3) ) );
 
-  ASSERT_TRUE( ( TestAtomic::Loop<unsigned long int,Kokkos::Impl::DefaultDeviceType>(loop_count,1) ) );
-  ASSERT_TRUE( ( TestAtomic::Loop<unsigned long int,Kokkos::Impl::DefaultDeviceType>(loop_count,2) ) );
-  ASSERT_TRUE( ( TestAtomic::Loop<unsigned long int,Kokkos::Impl::DefaultDeviceType>(loop_count,3) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<unsigned long int,Kokkos::DefaultExecutionSpace>(loop_count,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<unsigned long int,Kokkos::DefaultExecutionSpace>(loop_count,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<unsigned long int,Kokkos::DefaultExecutionSpace>(loop_count,3) ) );
 
-  ASSERT_TRUE( ( TestAtomic::Loop<long long int,Kokkos::Impl::DefaultDeviceType>(loop_count,1) ) );
-  ASSERT_TRUE( ( TestAtomic::Loop<long long int,Kokkos::Impl::DefaultDeviceType>(loop_count,2) ) );
-  ASSERT_TRUE( ( TestAtomic::Loop<long long int,Kokkos::Impl::DefaultDeviceType>(loop_count,3) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<long long int,Kokkos::DefaultExecutionSpace>(loop_count,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<long long int,Kokkos::DefaultExecutionSpace>(loop_count,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<long long int,Kokkos::DefaultExecutionSpace>(loop_count,3) ) );
 
-  ASSERT_TRUE( ( TestAtomic::Loop<double,Kokkos::Impl::DefaultDeviceType>(loop_count,1) ) );
-  ASSERT_TRUE( ( TestAtomic::Loop<double,Kokkos::Impl::DefaultDeviceType>(loop_count,2) ) );
-  ASSERT_TRUE( ( TestAtomic::Loop<double,Kokkos::Impl::DefaultDeviceType>(loop_count,3) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<double,Kokkos::DefaultExecutionSpace>(loop_count,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<double,Kokkos::DefaultExecutionSpace>(loop_count,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<double,Kokkos::DefaultExecutionSpace>(loop_count,3) ) );
 
-  ASSERT_TRUE( ( TestAtomic::Loop<float,Kokkos::Impl::DefaultDeviceType>(100,1) ) );
-  ASSERT_TRUE( ( TestAtomic::Loop<float,Kokkos::Impl::DefaultDeviceType>(100,2) ) );
-  ASSERT_TRUE( ( TestAtomic::Loop<float,Kokkos::Impl::DefaultDeviceType>(100,3) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<float,Kokkos::DefaultExecutionSpace>(100,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<float,Kokkos::DefaultExecutionSpace>(100,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<float,Kokkos::DefaultExecutionSpace>(100,3) ) );
 }
 
 /*TEST_F( defaultdevicetype , view_remap )
@@ -158,15 +158,15 @@ TEST_F( defaultdevicetype , atomics )
 
   typedef Kokkos::View< double*[N1][N2][N3] ,
                              Kokkos::LayoutRight ,
-                             Kokkos::Impl::DefaultDeviceType > output_type ;
+                             Kokkos::DefaultExecutionSpace > output_type ;
 
   typedef Kokkos::View< int**[N2][N3] ,
                              Kokkos::LayoutLeft ,
-                             Kokkos::Impl::DefaultDeviceType > input_type ;
+                             Kokkos::DefaultExecutionSpace > input_type ;
 
   typedef Kokkos::View< int*[N0][N2][N3] ,
                              Kokkos::LayoutLeft ,
-                             Kokkos::Impl::DefaultDeviceType > diff_type ;
+                             Kokkos::DefaultExecutionSpace > diff_type ;
 
   output_type output( "output" , N0 );
   input_type  input ( "input" , N0 , N1 );
@@ -198,7 +198,7 @@ TEST_F( defaultdevicetype , atomics )
 
 TEST_F( defaultdevicetype , view_aggregate )
 {
-  TestViewAggregate< Kokkos::Impl::DefaultDeviceType >();
+  TestViewAggregate< Kokkos::DefaultExecutionSpace >();
 }
 
 //----------------------------------------------------------------------------
@@ -206,26 +206,26 @@ TEST_F( defaultdevicetype , view_aggregate )
 TEST_F( defaultdevicetype , scan )
 {
   for ( int i = 0 ; i < 1000 ; ++i ) {
-    TestScan< Kokkos::Impl::DefaultDeviceType >( 10 );
-    TestScan< Kokkos::Impl::DefaultDeviceType >( 10000 );
+    TestScan< Kokkos::DefaultExecutionSpace >( 10 );
+    TestScan< Kokkos::DefaultExecutionSpace >( 10000 );
   }
-  TestScan< Kokkos::Impl::DefaultDeviceType >( 1000000 );
-  TestScan< Kokkos::Impl::DefaultDeviceType >( 10000000 );
-  Kokkos::Impl::DefaultDeviceType::fence();
+  TestScan< Kokkos::DefaultExecutionSpace >( 1000000 );
+  TestScan< Kokkos::DefaultExecutionSpace >( 10000000 );
+  Kokkos::DefaultExecutionSpace::fence();
 }
 
 
 TEST_F( defaultdevicetype , team_scan )
 {
-  TestScanRequest< Kokkos::Impl::DefaultDeviceType >( 10 );
-  TestScanRequest< Kokkos::Impl::DefaultDeviceType >( 10000 );
+  TestScanRequest< Kokkos::DefaultExecutionSpace >( 10 );
+  TestScanRequest< Kokkos::DefaultExecutionSpace >( 10000 );
 }
 
 //----------------------------------------------------------------------------
 
 TEST_F( defaultdevicetype , compiler_macros )
 {
-  ASSERT_TRUE( ( TestCompilerMacros::Test< Kokkos::Impl::DefaultDeviceType >() ) );
+  ASSERT_TRUE( ( TestCompilerMacros::Test< Kokkos::DefaultExecutionSpace >() ) );
 }
 
 
@@ -233,10 +233,10 @@ TEST_F( defaultdevicetype , compiler_macros )
 #if defined (KOKKOS_HAVE_CXX11)
 TEST_F( defaultdevicetype , cxx11 )
 {
-  ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Impl::DefaultDeviceType >(1) ) );
-  ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Impl::DefaultDeviceType >(2) ) );
-  ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Impl::DefaultDeviceType >(3) ) );
-  ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Impl::DefaultDeviceType >(4) ) );
+  ASSERT_TRUE( ( TestCXX11::Test< Kokkos::DefaultExecutionSpace >(1) ) );
+  ASSERT_TRUE( ( TestCXX11::Test< Kokkos::DefaultExecutionSpace >(2) ) );
+  ASSERT_TRUE( ( TestCXX11::Test< Kokkos::DefaultExecutionSpace >(3) ) );
+  ASSERT_TRUE( ( TestCXX11::Test< Kokkos::DefaultExecutionSpace >(4) ) );
 }
 #endif
 } // namespace test

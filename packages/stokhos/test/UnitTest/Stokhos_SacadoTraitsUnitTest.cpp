@@ -49,8 +49,18 @@
 #include "Stokhos_Sacado.hpp"
 #ifdef HAVE_STOKHOS_KOKKOSCORE
 #include "Stokhos_Sacado_Kokkos.hpp"
+
+#if defined( KOKKOS_HAVE_OPENMP )
+#include <Kokkos_OpenMP.hpp>
+typedef Kokkos::OpenMP node_type;
+#elif defined( KOKKOS_HAVE_PTHREAD )
 #include <Kokkos_Threads.hpp>
+typedef Kokkos::Threads node_type;
+#else
+typedef Kokkos::Serial node_type;
 #endif
+
+#endif /* #ifdef HAVE_STOKHOS_KOKKOSCORE */
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Traits, ScalarType, ad_type, scalar_type )
 {
@@ -142,7 +152,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Traits, ScalarValue, pce_expr_type, double
 // Sacado::MP::Vector
 //
 #ifdef HAVE_STOKHOS_KOKKOSCORE
-typedef Kokkos::Threads node_type;
 typedef Stokhos::DynamicStorage<int,double,node_type> kokkos_storage_type;
 typedef Sacado::MP::Vector<kokkos_storage_type> mp_type;
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Traits, ScalarType, mp_type, double )

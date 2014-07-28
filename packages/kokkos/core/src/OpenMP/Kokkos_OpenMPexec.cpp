@@ -132,9 +132,17 @@ void OpenMPexec::team_work_init( size_t league_size , size_t team_size )
     if ( s_threads_per_numa < team_size ) { team_size = s_threads_per_numa ; }
 
     // Execution is using device-team interface:
+    const unsigned pool_size = omp_get_num_threads();
 
-    const unsigned pool_size     = omp_get_num_threads();
-    const unsigned team_alloc    = s_threads_per_core * ( ( team_size + s_threads_per_core - 1 ) / s_threads_per_core );
+    // Round up team size to be a multiple of threads per core:
+    const unsigned team_alloc_core = s_threads_per_core * ( ( team_size + s_threads_per_core - 1 ) / s_threads_per_core );
+
+    // Number of teams which can be allocated:
+    const unsigned team_count = pool_size / team_alloc_core ;
+
+    // Number of threads to allocate per team:
+    const unsigned team_alloc = pool_size / team_count ;
+
     const unsigned pool_rank_rev = pool_size - ( m_pool_rank + 1 );
     const unsigned team_rank_rev = pool_rank_rev % team_alloc ;
 
@@ -318,17 +326,21 @@ unsigned OpenMP::team_recommended()
 #endif
 }
 
-KOKKOS_INLINE_FUNCTION
+KOKKOS_FUNCTION
 unsigned OpenMP::hardware_thread_id() {
 #ifndef __CUDA_ARCH__
   return omp_get_thread_num();
+#else
+  return 0;
 #endif
 }
 
-KOKKOS_INLINE_FUNCTION
+KOKKOS_FUNCTION
 unsigned OpenMP::max_hardware_threads() {
 #ifndef __CUDA_ARCH__
   return omp_get_max_threads();
+#else
+  return 1;
 #endif
 }
 

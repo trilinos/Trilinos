@@ -133,7 +133,6 @@ template <typename Scalar, typename Device>
 int mainHost(bool test_flat, bool test_orig, bool test_deg, bool test_lin,
              bool test_block, bool symmetric, bool mkl)
 {
-  Kokkos::Threads::print_configuration( std::cout );
   const size_t team_count =
     Kokkos::hwloc::get_available_numa_count() *
     Kokkos::hwloc::get_available_cores_per_numa();
@@ -144,10 +143,12 @@ int mainHost(bool test_flat, bool test_orig, bool test_deg, bool test_lin,
 
   std::string name = "Host";
 #ifdef KOKKOS_HAVE_PTHREAD
+  Kokkos::Threads::print_configuration( std::cout );
   if (Kokkos::Impl::is_same<Device,Kokkos::Threads>::value)
     name = "Threads";
 #endif
 #ifdef KOKKOS_HAVE_OPENMP
+  Kokkos::OpenMP::print_configuration( std::cout );
   if (Kokkos::Impl::is_same<Device,Kokkos::OpenMP>::value)
     name = "OpenMP";
 #endif

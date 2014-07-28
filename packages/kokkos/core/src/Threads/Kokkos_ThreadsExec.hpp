@@ -703,15 +703,15 @@ public:
   inline int league_size() const { return m_league_size ; }
 
   /** \brief  Specify league size, request team size */
-  TeamPolicy( execution_space & , int league_size , int team_size_request )
-    : m_league_size( league_size )
+  TeamPolicy( execution_space & , int league_size_request , int team_size_request )
+    : m_league_size( league_size_request )
     , m_team_size( team_size_request < int(execution_space::team_max())
                  ? team_size_request : int(execution_space::team_max()) )
     , m_team_alloc( Impl::ThreadsExec::team_alloc( m_team_size ) )
     { }
 
-  TeamPolicy( int league_size , int team_size_request )
-    : m_league_size( league_size )
+  TeamPolicy( int league_size_request , int team_size_request )
+    : m_league_size( league_size_request )
     , m_team_size( team_size_request < int(execution_space::team_max())
                  ? team_size_request : int(execution_space::team_max()) )
     , m_team_alloc( Impl::ThreadsExec::team_alloc( m_team_size ) )

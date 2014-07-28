@@ -107,13 +107,23 @@ struct FunctorPolicyExecutionSpace
 };
 
 //----------------------------------------------------------------------------
+
+template< class FunctorType , class Enable = void >
+struct ReduceAdapterValueType ;
+
+template< class FunctorType >
+struct ReduceAdapterValueType< FunctorType , typename enable_if_type< typename FunctorType::value_type >::type >
+{
+  typedef typename FunctorType::value_type type ;
+};
+
 /// \class ReduceAdapter
 /// \brief Implementation detail of parallel_reduce.
 ///
 /// This is an implementation detail of parallel_reduce.  Users should
 /// skip this and go directly to the nonmember function parallel_reduce.
 template< class FunctorType ,
-          class ValueType = typename FunctorType::value_type >
+          class ValueType = typename ReduceAdapterValueType< FunctorType >::type >
 struct ReduceAdapter ;
 
 //----------------------------------------------------------------------------
@@ -127,7 +137,7 @@ template< class FunctorType
         , class ExecPolicy 
         , class ExecSpace = typename FunctorPolicyExecutionSpace< FunctorType , ExecPolicy >::execution_space
         >
-class ParallelFor {};
+class ParallelFor ;
 
 /// \class ParallelReduce
 /// \brief Implementation detail of parallel_reduce.
@@ -138,7 +148,7 @@ template< class FunctorType
         , class ExecPolicy 
         , class ExecSpace = typename FunctorPolicyExecutionSpace< FunctorType , ExecPolicy >::execution_space
         >
-class ParallelReduce {};
+class ParallelReduce ;
 
 /// \class ParallelScan
 /// \brief Implementation detail of parallel_scan.
@@ -150,7 +160,7 @@ template< class FunctorType
         , class ExecPolicy 
         , class ExecSpace = typename FunctorPolicyExecutionSpace< FunctorType , ExecPolicy >::execution_space
         >
-class ParallelScan {};
+class ParallelScan ;
 
 } // namespace Impl
 } // namespace Kokkos
@@ -601,6 +611,28 @@ struct FunctorShmemSize< FunctorType , typename enable_if< 0 < sizeof( & Functor
 
 namespace Kokkos {
 namespace Impl {
+
+#if defined( KOKKOS_HAVE_CXX11 )
+
+template< class FunctionPtr >
+struct ReduceAdapterFunctorOperatorArgType ;
+
+template< class Functor , class Arg0 , class Arg1 >
+struct ReduceAdapterFunctorOperatorArgType< void ( Functor::*)( Arg0 , Arg1 & ) const > {
+  typedef Arg1 type ;
+};
+
+// Functor does not have a 'typedef ... value_type' and C++11 is enabled.
+// Deduce the value type from the functor's argument list.
+template< class FunctorType , class Enable >
+struct ReduceAdapterValueType {
+private:
+  typedef decltype( & FunctorType::operator() ) function_pointer_type ;
+public:
+  typedef typename ReduceAdapterFunctorOperatorArgType< function_pointer_type >::type type ;
+};
+
+#endif
 
 template< class FunctorType , class ScalarType >
 struct ReduceAdapter

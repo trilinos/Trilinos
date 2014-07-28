@@ -35,7 +35,9 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Vitus Leung (vjleung@sandia.gov)
+// Questions? Contact Karen Devine      (kddevin@sandia.gov)
+//                    Erik Boman        (egboman@sandia.gov)
+//                    Siva Rajamanickam (srajama@sandia.gov)
 //
 // ***********************************************************************
 //
@@ -50,11 +52,14 @@
 #define _ZOLTAN2_MESHADAPTER_HPP_
 
 #include <Zoltan2_Adapter.hpp>
-
-#include <string>
+#include <Zoltan2_VectorAdapter.hpp>
 
 namespace Zoltan2 {
-
+  
+  /*!  \brief Enumerate entity types for meshes:  Regions, Faces, Edges, or 
+   *                                              Vertices
+   */
+  
 enum MeshEntityType {
   MESH_REGION,
   MESH_FACE,
@@ -97,13 +102,26 @@ enum MeshEntityType {
 
 */
 
-template <typename User>
-  class MeshAdapter : public BaseAdapter {
+template <typename User, typename UserCoord=User>
+  class MeshAdapter : public BaseAdapter<User> {
 private:
-  enum MeshEntityType primaryEntityType; // Entity to be partitioned, ordered,
+  enum MeshEntityType primaryEntityType; // Entity (region, face, edge, or 
+                                         // vertex) to be partitioned, ordered,
                                          // colored, matched, etc.
-  enum MeshEntityType adjacencyEntityType; // Entity describing adjacencies
-  //KDD Do we need a 2nd-adjacency Entity Type to use as "through"?
+  enum MeshEntityType adjacencyEntityType; // Entity (face, edge, or vertex) 
+                                           // describing adjacencies;
+                                           // typically not primaryEntityType.
+  enum MeshEntityType secondAdjacencyEntityType; // Entity (face, edge, or 
+                                                 // vertex) describing second 
+                                                 // adjacencies;
+                                                 // typically not
+                                                 // primaryEntityType.
+  VectorAdapter<UserCoord> *coordinateInput_;    // A VectorAdapter containing
+                                                 // coordinates of the objects
+                                                 // with primaryEntityType.
+  bool haveCoordinateInput_;                     // Flag indicating 
+                                                 // coordinateInput_ is 
+                                                 // provided.
 
 public:
 
@@ -115,24 +133,31 @@ public:
   typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef User user_t;
-  typedef User userCoord_t;
+  typedef UserCoord userCoord_t;
 #endif
-
+  
   enum BaseAdapterType adapterType() const {return MeshAdapterType;}
-
-  // Default MeshEntityType is MESH_REGION with MESH_FACE-based adjacencies
-  MeshAdapter() : primaryEntityType(MESH_REGION),
-                  adjacencyEntityType(MESH_FACE) {};
-
+  
   /*! \brief Destructor
    */
   virtual ~MeshAdapter() {};
-
+  
+  // Default MeshEntityType is MESH_REGION with MESH_FACE-based adjacencies and
+  // second adjacencies and coordinates
+  MeshAdapter() : primaryEntityType(MESH_REGION),
+                  adjacencyEntityType(MESH_FACE),
+		  secondAdjacencyEntityType(MESH_FACE),
+		  coordinateInput_(),
+		  haveCoordinateInput_(false) {};
+  
+  ////////////////////////////////////////////////////////////////////////////
+  // Methods to be defined in derived classes.
+  
   /*! \brief Returns the number of mesh entities on this process.
    */
   virtual size_t getLocalNumOf(MeshEntityType etype) const = 0;
-
-
+  
+  
   /*! \brief Provide a pointer to this process' identifiers.
       \param Ids will on return point to the list of the global Ids for this
        process.
@@ -147,7 +172,7 @@ public:
    *   are equally weighted.
    */
   virtual int getNumWeightsPerOf(MeshEntityType etype) const { return 0; }
-
+  
   /*! \brief Provide a pointer to one of the number of this process'
                 optional entity weights.
 
@@ -179,7 +204,7 @@ public:
    *    information if it is present.
    */
   virtual int getDimensionOf() const { return 0; }
-
+  
   /*! \brief Provide a pointer to one dimension of entity coordinates.
       \param coords  points to a list of coordinate values for the dimension.
       \param stride  describes the layout of the coordinate values in
@@ -219,7 +244,7 @@ public:
           is the size of the adjacencyIds array.
       \param adjacencyIds on return will point to the global first adjacency
          Ids for each entity.
-   */
+  */
 //KDD Since the source objects are assumed to be gotten from getIDsViewOf(),
 //KDD is the source MeshEntityType understood here?
 //KDD What about the target?
@@ -234,7 +259,8 @@ public:
 
   /*! \brief Returns whether a second adjacency combination is available.
    */
-  virtual bool avail2ndAdjs(MeshEntityType sourcetarget, MeshEntityType through);
+  virtual bool avail2ndAdjs(MeshEntityType sourcetarget, 
+			    MeshEntityType through);
 
 
   /*! \brief Returns the number of second adjacencies on this process.
@@ -301,6 +327,32 @@ public:
 //KDD What if we wanted to provide weights with respect to first adjacencies?
 //KDD Should we add functions for that?
 
+  /*! \brief Allow user to provide additional data that contains coordinate
+   *         info associated with the MeshAdapter's primaryEntityType.
+   *         Assocated data must have the same parallel distribution and
+   *         ordering of entries as the primaryEntityType.
+   *
+   *  \param coordData is a pointer to a VectorAdapter with the user's
+   *         coordinate data.
+   */
+  void setCoordinateInput(VectoAdapter<UserCoord> *coordData)
+  {
+    coordinateInput_ = coordData;
+    haveCoordinateInput_ = true;
+  }
+
+  /*! \brief Indicate whether coordinate information has been set for this
+   *         MeshAdapter
+   */
+  bool coordinatesAvailable() const { return haveCoordinateInput_; }
+
+  /*! \brief Obtain the coordinate data registered by the user.
+   *  \return pointer a VectorAdapter with the user's coordinate data.
+   */
+  VectorAdapter<UserCoord> *getCoordinateInput() const
+  {
+    return coordinateInput_;
+  }
 
   ////////////////////////////////////////////////////////////////////////////
   // Implementations of base-class methods
@@ -311,82 +363,115 @@ public:
     return this->primaryEntityType;
   }
 
-  /*! \brief Sets the primary entity type.  Called by algorithm based on
-   *  parameter value in parameter list from application.
-   *  Also sets to adjacencyEntityType to something reasonable:  opposite of
-   *  primaryEntityType.
-   */
-  void setPrimaryEntityType(string typestr) {
-    if (typestr == "region")
-      this->primaryEntityType = MESH_REGION;
-    else if (typestr == "face")
-      this->primaryEntityType = MESH_FACE;
-    else if (typestr == "edge")
-      this->primaryEntityType = MESH_EDGE;
-    else if (typestr == "vertex")
-      this->primaryEntityType = MESH_VERTEX;
-    else {
-      std::ostringstream emsg;
-      emsg << __FILE__ << "," << __LINE__
-           << " error:  Invalid MeshEntityType " << typestr << std::endl;
-      emsg << "Valid values: region  face  edge  vertex" << std::endl;
-      throw std::runtime_error(emsg.str());
-    }
-  }
-
   /*! \brief Returns the entity that describes adjacencies between the
    *  entities to be partitioned, ordered, colored, etc.
-   *  That is, two primaryEntityType that share an adjacencyEntityType are
+   *  That is, a primaryEntityType that contains an adjacencyEntityType are
    *  adjacent.
    *  KDD:  Is Adjacency a poorly chosen name here?  Is it overloaded?
+   *  VJL:  Maybe
    */
   inline enum MeshEntityType getAdjacencyEntityType() const {
     return this->adjacencyEntityType;
   }
 
-  /*! \brief Sets the adjacency entity type.  Called by algorithm based on
-   *  parameter value in parameter list from application.
-   *  Also sets to primaryEntityType to something reasonable:  opposite of
-   *  adjacencyEntityType.
-   *  KDD:  Is Adjacency a poorly chosen name here?  Is it overloaded?
+  /*! \brief Returns the entity that describes second adjacencies between the
+   *  entities to be partitioned, ordered, colored, etc.
+   *  That is, two primaryEntityType that share a secondAdjacencyEntityType
+   *  are adjacent.
    */
-  void setAdjacencyEntityType(string typestr) {
-    if (typestr == "region")
-      this->adjacencyEntityType = MESH_REGION;
-    else if (typestr == "face")
-      this->adjacencyEntityType = MESH_FACE;
-    else if (typestr == "edge")
-      this->adjacencyEntityType = MESH_EDGE;
-    else if (typestr == "vertex")
-      this->adjacencyEntityType = MESH_VERTEX;
+  inline enum MeshEntityType getSecondAdjacencyEntityType() const {
+    return this->secondAdjacencyEntityType;
+  }
+  
+  /*! \brief Sets the primary, adjacency, and second adjacency entity types.
+   *  Called by algorithm based on parameter values in parameter list from
+   *  application.  Also sets primaryEntityType, adjacencyEntityType, and
+   *  secondAdjacencyEntityType to something reasonable:  primaryEntityType not
+   *  adjacencyEntityType or secondAdjacencyEntityType.
+   *  KDD:  Is Adjacency a poorly chosen name here?  Is it overloaded?
+   *  VJL:  Maybe
+   */
+  void setEntityTypes(std::string ptypestr, std::string atypestr,
+		      std::string satypestr) {
+
+    if (ptypestr != atypestr && ptypestr != satypestr) {
+      if (ptypestr == "region")
+	this->primaryEntityType = MESH_REGION;
+      else if (ptypestr == "face")
+	this->primaryEntityType = MESH_FACE;
+      else if (ptypestr == "edge")
+	this->primaryEntityType = MESH_EDGE;
+      else if (ptypestr == "vertex")
+	this->primaryEntityType = MESH_VERTEX;
+      else {
+	std::ostringstream emsg;
+	emsg << __FILE__ << "," << __LINE__
+	     << " error:  Invalid MeshEntityType " << ptypestr << std::endl;
+	emsg << "Valid values: region  face  edge  vertex" << std::endl;
+	throw std::runtime_error(emsg.str());
+      }
+      
+      if (atypestr == "region")
+	this->adjacencyEntityType = MESH_REGION;
+      else if (atypestr == "face")
+	this->adjacencyEntityType = MESH_FACE;
+      else if (atypestr == "edge")
+	this->adjacencyEntityType = MESH_EDGE;
+      else if (atypestr == "vertex")
+	this->adjacencyEntityType = MESH_VERTEX;
+      else {
+	std::ostringstream emsg;
+	emsg << __FILE__ << "," << __LINE__
+	     << " error:  Invalid MeshEntityType " << atypestr << std::endl;
+	emsg << "Valid values: region  face  edge  vertex" << std::endl;
+	throw std::runtime_error(emsg.str());
+      }
+      
+      if (satypestr == "region")
+	this->secondAdjacencyEntityType = MESH_REGION;
+      else if (satypestr == "face")
+	this->secondAdjacencyEntityType = MESH_FACE;
+      else if (satypestr == "edge")
+	this->secondAdjacencyEntityType = MESH_EDGE;
+      else if (satypestr == "vertex")
+	this->secondAdjacencyEntityType = MESH_VERTEX;
+      else {
+	std::ostringstream emsg;
+	emsg << __FILE__ << "," << __LINE__
+	     << " error:  Invalid MeshEntityType " << satypestr << std::endl;
+	emsg << "Valid values: region  face  edge  vertex" << std::endl;
+	throw std::runtime_error(emsg.str());
+      }
+    }
     else {
       std::ostringstream emsg;
       emsg << __FILE__ << "," << __LINE__
-           << " error:  Invalid MeshEntityType " << typestr << std::endl;
-      emsg << "Valid values: region  face  edge  vertex" << std::endl;
+	   << " error:  PrimaryEntityType " << ptypestr
+	   << " matches AdjacencyEntityType " << atypestr
+	   << " or SecondAdjacencyEntityType " << satypestr << std::endl;
       throw std::runtime_error(emsg.str());
     }
   }
-
+  
   // Functions from the BaseAdapter interface
   size_t getLocalNumIDs() const {
     return getLocalNumOf(getPrimaryEntityType());
   }
-
+  
   void getIDsView(const gid_t *&Ids) const {
     getIDsViewOf(getPrimaryEntityType(), Ids);
   }
-
+  
   int getNumWeightsPerID() const {
     return getNumWeightsPerOf(getPrimaryEntityType());
   }
-
+  
   void getWeightsView(const scalar_t *&wgt, int &stride, int idx = 0) const {
     getWeightsViewOf(getPrimaryEntityType(), wgt, stride, idx);
   }
-
+  
 };
-
+  
 }  //namespace Zoltan2
 
 #endif
