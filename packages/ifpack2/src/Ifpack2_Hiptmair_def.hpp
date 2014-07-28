@@ -52,8 +52,8 @@ namespace Ifpack2 {
 template <class MatrixType>
 Hiptmair<MatrixType>::
 Hiptmair (const Teuchos::RCP<const row_matrix_type>& A,
-	  const Teuchos::RCP<const row_matrix_type>& PtAP,
-	  const Teuchos::RCP<const row_matrix_type>& P) :
+          const Teuchos::RCP<const row_matrix_type>& PtAP,
+          const Teuchos::RCP<const row_matrix_type>& P) :
   A_ (A),
   PtAP_ (PtAP),
   P_ (P),
@@ -106,7 +106,7 @@ void Hiptmair<MatrixType>::setParameters (const Teuchos::ParameterList& plist)
   precList2 = params.get("hiptmair: smoother list 2", precList2);
   preOrPost = params.get("hiptmair: pre or post",     preOrPost);
   zeroStartingSolution = params.get("hiptmair: zero starting solution",
-				    zeroStartingSolution);
+                                    zeroStartingSolution);
 
   // "Commit" the new values to the instance data.
   precType1_ = precType1;
@@ -229,10 +229,10 @@ void Hiptmair<MatrixType>::initialize ()
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
-  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
-                              global_ordinal_type, node_type> TMV;
-  typedef Tpetra::Operator<scalar_type, local_ordinal_type,
-                           global_ordinal_type, node_type> TOP;
+  // typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
+  //                             global_ordinal_type, node_type> TMV;
+  // typedef Tpetra::Operator<scalar_type, local_ordinal_type,
+  //                          global_ordinal_type, node_type> TOP;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     A_.is_null (), std::runtime_error, "Ifpack2::Hiptmair::initialize: "
@@ -357,20 +357,20 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
 template <class MatrixType>
 void Hiptmair<MatrixType>::
 applyHiptmairSmoother(const Tpetra::MultiVector<typename MatrixType::scalar_type,
-		      typename MatrixType::local_ordinal_type,
-		      typename MatrixType::global_ordinal_type,
-		      typename MatrixType::node_type>& X,
-		      Tpetra::MultiVector<typename MatrixType::scalar_type,
-		      typename MatrixType::local_ordinal_type,
-		      typename MatrixType::global_ordinal_type,
-		      typename MatrixType::node_type>& Y) const {
-  
+                      typename MatrixType::local_ordinal_type,
+                      typename MatrixType::global_ordinal_type,
+                      typename MatrixType::node_type>& X,
+                      Tpetra::MultiVector<typename MatrixType::scalar_type,
+                      typename MatrixType::local_ordinal_type,
+                      typename MatrixType::global_ordinal_type,
+                      typename MatrixType::node_type>& Y) const {
+
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
   typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
     global_ordinal_type, node_type> MV;
-  
+
   RCP<MV> res1 = rcp( new MV(A_->getRowMap(),X.getNumVectors()) );
   RCP<MV> vec1 = rcp( new MV(A_->getRowMap(),X.getNumVectors()) );
   RCP<MV> res2 = rcp( new MV(PtAP_->getRowMap(),X.getNumVectors()) );
