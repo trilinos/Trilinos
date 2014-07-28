@@ -430,6 +430,54 @@ public:
     return (*errs_).is_null () ? std::string ("") : (*errs_)->str ();
   }
 
+  /// \brief Get offsets of the diagonal entries in the matrix.
+  ///
+  /// \warning This method is only for expert users.
+  /// \warning We make no promises about backwards compatibility
+  ///   for this method.  It may disappear or change at any time.
+  /// \warning This method must be called collectively.  We reserve
+  ///   the right to do extra checking in a debug build that will
+  ///   require collectives.
+  ///
+  /// \pre The matrix must be locally indexed (which means that it
+  ///   has a column Map).
+  /// \pre All diagonal entries of the matrix's graph must be
+  ///   populated on this process.  Results are undefined otherwise.
+  /// \post <tt>offsets.size() == getNodeNumRows()</tt>
+  ///
+  /// This method creates an array of offsets of the local diagonal
+  /// entries in the matrix.  This array is suitable for use in the
+  /// two-argument version of getLocalDiagCopy().  However, its
+  /// contents are not defined in any other context.  For example,
+  /// you should not rely on offsets[i] being the index of the
+  /// diagonal entry in the views returned by getLocalRowView().
+  /// This may be the case, but it need not be.  (For example, we
+  /// may choose to optimize the lookups down to the optimized
+  /// storage level, in which case the offsets will be computed with
+  /// respect to the underlying storage format, rather than with
+  /// respect to the views.)
+  ///
+  /// If the matrix has a const ("static") graph, and if that graph
+  /// is fill complete, then the offsets array remains valid through
+  /// calls to fillComplete() and resumeFill().  "Invalidates" means
+  /// that you must call this method again to recompute the offsets.
+  void getLocalDiagOffsets (Teuchos::ArrayRCP<size_t>& offsets) const;
+
+  /// \brief Variant of getLocalDiagCopy() that uses precomputed offsets.
+  ///
+  /// This method uses the offsets of the diagonal entries, as
+  /// precomputed by getLocalDiagOffsets(), to speed up copying the
+  /// diagonal of the matrix.
+  ///
+  /// If the matrix has a const ("static") graph, and if that graph
+  /// is fill complete, then the offsets array remains valid through
+  /// calls to fillComplete() and resumeFill().
+  void
+  getLocalDiagCopy (BlockCrsMatrix<Scalar,LO,GO,Node>& diag,
+                    const Teuchos::ArrayView<const size_t>& offsets) const;
+
+
+
 protected:
   //! Like sumIntoLocalValues, but for the ABSMAX combine mode.
   LO

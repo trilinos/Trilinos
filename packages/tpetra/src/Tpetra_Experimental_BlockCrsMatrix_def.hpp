@@ -319,6 +319,130 @@ namespace Experimental {
     return validCount;
   }
 
+  template <class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar,LO,GO,Node>::
+  getLocalDiagOffsets (Teuchos::ArrayRCP<size_t>& offsets) const
+  {
+    using Teuchos::ArrayRCP;
+    using Teuchos::ArrayView;
+    using Teuchos::as;
+    const char tfecfFuncName[] = "getLocalDiagOffsets";
+
+    const map_type& rowMap = * (graph_.getRowMap());
+    const map_type& colMap = * (graph_.getColumnMap ());
+
+    const size_t myNumRows = rowMeshMap_.getNodeNumElements();
+    if (as<size_t> (offsets.size ()) != myNumRows) {
+      offsets.resize (as<size_t> (myNumRows));
+    }
+
+#ifdef HAVE_TPETRA_DEBUG
+    bool allRowMapDiagEntriesInColMap = true;
+    bool allDiagEntriesFound = true;
+#endif // HAVE_TPETRA_DEBUG
+
+    for (size_t r = 0; r < myNumRows; ++r) {
+      const GO rgid = rowMap.getGlobalElement (r);
+      const LO rlid = colMap.getLocalElement (rgid);
+
+#ifdef HAVE_TPETRA_DEBUG
+      if (rlid == Teuchos::OrdinalTraits<LocalOrdinal>::invalid ()) {
+        allRowMapDiagEntriesInColMap = false;
+      }
+#endif // HAVE_TPETRA_DEBUG
+
+      if (rlid != Teuchos::OrdinalTraits<LO>::invalid ()) {
+        RowInfo rowinfo = graph_->getRowInfo (r);
+        if (rowinfo.numEntries > 0) {
+          offsets[r] = graph_->findLocalIndex (rowinfo, rlid);
+        }
+        else {
+          offsets[r] = Teuchos::OrdinalTraits<size_t>::invalid ();
+#ifdef HAVE_TPETRA_DEBUG
+          allDiagEntriesFound = false;
+#endif // HAVE_TPETRA_DEBUG
+        }
+      }
+    }
+
+#ifdef HAVE_TPETRA_DEBUG
+    using Teuchos::reduceAll;
+    using std::endl;
+
+    const bool localSuccess =
+      allRowMapDiagEntriesInColMap && allDiagEntriesFound;
+    int localResults[3];
+    localResults[0] = allRowMapDiagEntriesInColMap ? 1 : 0;
+    localResults[1] = allDiagEntriesFound ? 1 : 0;
+    // min-all-reduce will compute least rank of all the processes
+    // that didn't succeed.
+    localResults[2] =
+      ! localSuccess ? getComm ()->getRank () : getComm ()->getSize ();
+    int globalResults[3];
+    globalResults[0] = 0;
+    globalResults[1] = 0;
+    globalResults[2] = 0;
+    reduceAll<int, int> (* (getComm ()), Teuchos::REDUCE_MIN,
+                         3, localResults, globalResults);
+    if (globalResults[0] == 0 || globalResults[1] == 0) {
+      std::ostringstream os; // build error message
+      const bool both =
+        globalResults[0] == 0 && globalResults[1] == 0;
+      os << ": At least one process (including Process " << globalResults[2]
+         << ") had the following issue" << (both ? "s" : "") << ":" << endl;
+      if (globalResults[0] == 0) {
+        os << "  - The column Map does not contain at least one diagonal entry "
+          "of the matrix." << endl;
+      }
+      if (globalResults[1] == 0) {
+        os << "  - There is a row on that / those process(es) that does not "
+          "contain a diagonal entry." << endl;
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::runtime_error, os.str());
+    }
+#endif // HAVE_TPETRA_DEBUG
+  }
+
+  template <class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar,LO,GO,Node>::
+  getLocalDiagCopy (BlockCrsMatrix<Scalar,LO,GO,Node>& diag,
+                    const Teuchos::ArrayView<const size_t>& offsets) const
+  {
+    using Teuchos::ArrayRCP;
+    using Teuchos::ArrayView;
+
+#ifdef HAVE_TPETRA_DEBUG
+    const char tfecfFuncName[] = "getLocalDiagCopy";
+    const map_type& rowMap = * (graph_.getRowMap ());
+    // isCompatible() requires an all-reduce, and thus this check
+    // should only be done in debug mode.
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      ! diag->getGraph().isCompatible (rowMap), std::runtime_error,
+      ": The input Vector's Map must be compatible with (in the sense of Map::"
+      "isCompatible) the CrsMatrix's row Map.");
+#endif // HAVE_TPETRA_DEBUG
+
+    const size_t myNumRows = rowMeshMap_.getNodeNumElements();
+    ArrayView<const LO> columnIndices;
+    ArrayView<const Scalar> vals;
+    LO numColumns;
+    std::vector<LO> cols(1);
+
+    std::vector<Scalar> zeroMat(blockSize_*blockSize_,0);
+    for (size_t i = 0; i < myNumRows; ++i) {
+      cols[0] = i;
+      if (offsets[i] == Teuchos::OrdinalTraits<size_t>::invalid ()) {
+        diag.replaceLocalValues (i, &cols[0], &zeroMat[0], 1);
+      }
+      else {
+        getLocalRowView (i, columnIndices, vals, numColumns);
+        diag.replaceLocalValues (i, &cols[0], &vals[offsets[i]*blockSize_*blockSize_], 1);
+      }
+    }
+  }
+
 
   template<class Scalar, class LO, class GO, class Node>
   LO
