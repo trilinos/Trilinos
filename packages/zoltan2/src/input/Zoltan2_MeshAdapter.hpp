@@ -238,6 +238,7 @@ public:
   */
 //KDD Since the source objects are assumed to be gotten from getIDsViewOf(),
 //KDD is the source MeshEntityType understood here?
+//VJL Do we have to "defend" against multiple calls to that function?
 //KDD What about the target?
   virtual void getAdjsView(MeshEntityType source, MeshEntityType target,
      const lno_t *&offsets, const gid_t *& adjacencyIds) const 
@@ -278,6 +279,7 @@ public:
 // TODO:  we compute A^T A, where A is matrix of first adjacencies.
 //KDD Since the source objects are assumed to be gotten from getIDsViewOf(),
 //KDD is the sourcetarget MeshEntityType understood here?
+//VJL Do we have to "defend" against multiple calls to that function?
 //KDD What about the through MeshEntityType?
   virtual void get2ndAdjsView(MeshEntityType sourcetarget,
      MeshEntityType through, const lno_t *&offsets,
@@ -305,6 +307,7 @@ public:
    */
 //KDD Since the source objects are assumed to be gotten from getIDsViewOf(),
 //KDD is the sourcetarget MeshEntityType understood here?
+//VJL Do we have to "defend" against multiple calls to that function?
 //KDD What about the through MeshEntityType?
   virtual void get2ndAdjWeightsView(MeshEntityType sourcetarget,
      MeshEntityType through, const scalar_t *&weights, int &stride,
@@ -317,6 +320,7 @@ public:
 
 //KDD What if we wanted to provide weights with respect to first adjacencies?
 //KDD Should we add functions for that?
+//VJL Yes.
 
   ////////////////////////////////////////////////////////////////////////////
   // Implementations of base-class methods
