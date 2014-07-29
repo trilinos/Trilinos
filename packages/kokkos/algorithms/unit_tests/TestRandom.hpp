@@ -208,19 +208,24 @@ struct test_random_scalar {
       Kokkos::parallel_reduce(HIST_DIM1D,test_histogram1d_functor<typename RandomGenerator::device_type>(density_1d,num_draws),result);
 
       //printf("Result: %lf %lf %lf\n",result.mean/num_draws/3,result.variance/num_draws/3,result.covariance/num_draws/2);
-      double tolerance = 5*sqrt(1.0/HIST_DIM1D);
+      double tolerance = 6*sqrt(1.0/HIST_DIM1D);
       double mean_expect = 1.0*num_draws*3/HIST_DIM1D;
-      double variance_expect = 1.0*mean_expect;
+      double variance_expect = 1.0*num_draws*3/HIST_DIM1D*(1.0-1.0/HIST_DIM1D);
+      double covariance_expect = -1.0*num_draws*3/HIST_DIM1D/HIST_DIM1D;
       double mean_eps = mean_expect/(result.mean/HIST_DIM1D)-1.0;
       double variance_eps = variance_expect/(result.variance/HIST_DIM1D)-1.0;
-      double covariance_eps = result.covariance/HIST_DIM1D/HIST_DIM1D;
+      double covariance_eps = (result.covariance/HIST_DIM1D - covariance_expect)/mean_expect;
       pass_hist1d_mean  = ((-tolerance < mean_eps) &&
                            ( tolerance > mean_eps)) ? 1:0;
       pass_hist1d_var   = ((-tolerance < variance_eps) &&
                            ( tolerance > variance_eps)) ? 1:0;
       pass_hist1d_covar = ((-tolerance < covariance_eps) &&
                            ( tolerance > covariance_eps)) ? 1:0;
-      printf("Density 1D: %e %e %e || %e %e %e\n",mean_eps,variance_eps,result.covariance/HIST_DIM1D/HIST_DIM1D,tolerance,result.min,result.max);
+      printf("Density 1D: %e %e %e || %e %e %e || %e %e || %e %e\n",mean_eps,variance_eps,result.covariance/HIST_DIM1D/HIST_DIM1D,tolerance,
+          result.min,result.max,
+          result.variance/HIST_DIM1D,1.0*num_draws*3/HIST_DIM1D*(1.0-1.0/HIST_DIM1D),
+          result.covariance/HIST_DIM1D,-1.0*num_draws*3/HIST_DIM1D/HIST_DIM1D
+          );
 
     }
     {
@@ -229,12 +234,13 @@ struct test_random_scalar {
       Kokkos::parallel_reduce(HIST_DIM1D,test_histogram3d_functor<typename RandomGenerator::device_type>(density_3d,num_draws),result);
 
       //printf("Result: %lf %lf %lf\n",result.mean/num_draws/3,result.variance/num_draws/3,result.covariance/num_draws/2);
-      double tolerance = 5*sqrt(1.0/HIST_DIM1D);
+      double tolerance = 6*sqrt(1.0/HIST_DIM1D);
       double mean_expect = 1.0*num_draws/HIST_DIM1D;
-      double variance_expect = 1.0*mean_expect;
+      double variance_expect = 1.0*num_draws/HIST_DIM1D*(1.0-1.0/HIST_DIM1D);
+      double covariance_expect = -1.0*num_draws/HIST_DIM1D/HIST_DIM1D;
       double mean_eps = mean_expect/(result.mean/HIST_DIM1D)-1.0;
       double variance_eps = variance_expect/(result.variance/HIST_DIM1D)-1.0;
-      double covariance_eps = result.covariance/HIST_DIM1D/HIST_DIM1D;
+      double covariance_eps = (result.covariance/HIST_DIM1D - covariance_expect)/mean_expect;
       pass_hist3d_mean  = ((-tolerance < mean_eps) &&
                            ( tolerance > mean_eps)) ? 1:0;
       pass_hist3d_var   = ((-tolerance < variance_eps) &&
