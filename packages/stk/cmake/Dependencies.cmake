@@ -8,6 +8,7 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   SearchUtil stk_search_util SS  OPTIONAL
   Transfer   stk_transfer    SS  OPTIONAL
   Unit_tests stk_unit_tests  SS  OPTIONAL
+  Doc_tests  stk_doc_tests   SS  OPTIONAL
 )
 
 SET(LIB_REQUIRED_DEP_PACKAGES)

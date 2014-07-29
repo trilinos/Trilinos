@@ -15,7 +15,7 @@ LIST(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/diag/TimerHowTo.cpp)
 
 APPEND_SET( SOURCES
  UnitTestBoost.cpp
- UnitTestMain.cpp
+ UtilUnitTestMain.cpp
 )
 
 if ( TPL_ENABLE_MPI )
