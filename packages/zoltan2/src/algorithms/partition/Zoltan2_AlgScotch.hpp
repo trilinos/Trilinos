@@ -520,6 +520,7 @@ void AlgPTScotch<Adapter>::scale_weights(
 template <typename Adapter>
 class AlgPTScotch : public Algorithm<Adapter>
 {
+public:
   AlgPTScotch(const RCP<const Environment> &env,
               const RCP<const Comm<int> > &problemComm,
 #ifdef HAVE_ZOLTAN2_MPI
