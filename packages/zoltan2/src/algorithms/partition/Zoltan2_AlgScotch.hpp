@@ -532,7 +532,7 @@ class AlgPTScotch : public Algorithm<Adapter>
           "BUILD ERROR:  Scotch requested but not compiled into Zoltan2.\n"
           "Please set CMake flag Zoltan2_ENABLE_Scotch:BOOL=ON.");
   }
-}
+};
 
 #endif // HAVE_ZOLTAN2_SCOTCH
 
