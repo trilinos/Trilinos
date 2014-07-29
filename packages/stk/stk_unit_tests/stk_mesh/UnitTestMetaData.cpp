@@ -108,7 +108,7 @@ TEST( UnitTestMetaData, testEntityRepository )
 
   meta.commit();
 
-  stk::mesh::BulkData bulk ( meta , MPI_COMM_WORLD , 100 );
+  stk::mesh::BulkData bulk ( meta , MPI_COMM_WORLD );
   std::vector<stk::mesh::Part *>  add_part;
   add_part.push_back ( &part );
 

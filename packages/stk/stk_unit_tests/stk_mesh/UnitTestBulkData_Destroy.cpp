@@ -57,7 +57,7 @@ TEST(UnitTestingOfBulkData, testDestroy_nodes)
 
   meta.commit();
 
-  BulkData bulk( meta , pm , 100 );
+  BulkData bulk( meta , pm );
 
   // Ids for all entities (all entities have type 0):
 

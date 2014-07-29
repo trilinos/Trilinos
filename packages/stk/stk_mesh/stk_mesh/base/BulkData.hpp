@@ -1229,11 +1229,11 @@ private:
   bool                              m_add_fmwk_data; // flag that will add extra data to buckets to support fmwk
   const sierra::Fmwk::MeshBulkData* m_fmwk_bulk_ptr;
 
+#endif
 public:
   mutable bool       m_check_invalid_rels; // TODO REMOVE
 
 private:
-#endif
   int m_num_fields;
   bool m_keep_fields_updated;
 
@@ -2051,21 +2051,17 @@ public:
     bool result = false;
 
     // In Sierra, relations are sorted by RelationType in addition to Rank, Identifier, and target entity key.
-  #ifdef SIERRA_MIGRATION
     if (lhs.entity_rank() != rhs.entity_rank()) {
       result = lhs.entity_rank() < rhs.entity_rank();
     }
+#ifdef SIERRA_MIGRATION
     else if (lhs.getRelationType() != rhs.getRelationType()) {
       result = lhs.getRelationType() < rhs.getRelationType();
     }
+#endif
     else if (lhs.relation_ordinal() != rhs.relation_ordinal()) {
       result = lhs.relation_ordinal() < rhs.relation_ordinal();
     }
-  #else
-    if ( lhs.m_raw_relation.value != rhs.m_raw_relation.value ) {
-      result = lhs.m_raw_relation.value < rhs.m_raw_relation.value ;
-    }
-  #endif
     else {
       Entity lhs_entity = lhs.entity();
       const size_t lhs_offset = m_mesh.is_valid(lhs_entity) ? lhs_entity.local_offset() : Entity::MaxEntity;

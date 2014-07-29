@@ -111,8 +111,7 @@ TEST(UnitTestingOfBulkData, test_other_ghosting_2)
   //Part & part_tmp = meta_data.declare_part( "temp");
 
   meta_data.commit();
-  unsigned max_bucket_size = 1;
-  BulkData mesh(meta_data, pm, max_bucket_size);
+  BulkData mesh(meta_data, pm);
   //BulkData mesh(MetaData::get_meta_data(meta_data), pm);
   int p_rank = mesh.parallel_rank();
   int p_size = mesh.parallel_size();

@@ -162,7 +162,12 @@ TEST( UnitTestNoUpwardConnectivity, simpleTri )
    EXPECT_TRUE(custom_connectivity.valid(stk::topology::EDGE_RANK, stk::topology::NODE_RANK));
 
    bool add_fmwk_data = false;
-   stk::mesh::BulkData mesh(metaData, MPI_COMM_WORLD, add_fmwk_data, &custom_connectivity);
+   stk::mesh::BulkData mesh(metaData, MPI_COMM_WORLD,
+#ifdef SIERRA_MIGRATION
+ add_fmwk_data,
+#endif
+ &custom_connectivity);
+  (void)add_fmwk_data;
    if (mesh.parallel_size() > 1) {
      return;//this test can't run in parallel
    }

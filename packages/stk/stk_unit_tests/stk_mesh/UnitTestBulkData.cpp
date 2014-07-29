@@ -2702,8 +2702,7 @@ public:
 TEST(BulkData, ModificationEnd)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
-    int numProcs = -1;
-    MPI_Comm_size(communicator, &numProcs);
+    int numProcs = stk::parallel_machine_size(communicator);
 
     if(numProcs == 2)
     {

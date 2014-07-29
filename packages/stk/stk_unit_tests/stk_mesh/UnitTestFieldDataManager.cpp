@@ -197,7 +197,11 @@ TEST(DefaultFieldDataManagerTest, AllocateFieldData)
         initializeTestField(meshMetaData);
 
         stk::mesh::DefaultFieldDataManager fieldDataManager(numRanks);
-        stk::mesh::BulkData bulkData(meshMetaData, MPI_COMM_WORLD, false, NULL, &fieldDataManager);
+        stk::mesh::BulkData bulkData(meshMetaData, MPI_COMM_WORLD,
+#ifdef SIERRA_MIGRATION
+ false,
+#endif
+ NULL, &fieldDataManager);
 
         size_t bucketCapacity = 512;
         size_t numNodes = 20;
@@ -218,7 +222,11 @@ TEST(DefaultFieldDataManagerTest, AllocateFieldDataTwoBuckets)
 
         const size_t numRanks = meshMetaData.entity_rank_count();
         stk::mesh::DefaultFieldDataManager fieldDataManager(numRanks);
-        stk::mesh::BulkData bulkData(meshMetaData, MPI_COMM_WORLD, false, NULL, &fieldDataManager);
+        stk::mesh::BulkData bulkData(meshMetaData, MPI_COMM_WORLD,
+#ifdef SIERRA_MIGRATION
+ false,
+#endif
+ NULL, &fieldDataManager);
 
         const size_t bucketCapacity = 512;
         const size_t numNodes = 700;
@@ -242,7 +250,11 @@ TEST(DefaultFieldDataManagerTest, TwoEntitiesTwoBuckets)
 
         const size_t numRanks = meshMetaData.entity_rank_count();
         stk::mesh::DefaultFieldDataManager fieldDataManager(numRanks);
-        stk::mesh::BulkData bulkData(meshMetaData, MPI_COMM_WORLD, false, NULL, &fieldDataManager);
+        stk::mesh::BulkData bulkData(meshMetaData, MPI_COMM_WORLD,
+#ifdef SIERRA_MIGRATION
+ false,
+#endif
+ NULL, &fieldDataManager);
 
         testTwoEntitiesTwoBuckets(bulkData, &fieldDataManager);
     }
@@ -258,7 +270,11 @@ TEST(ContiguousFieldDataManagerTest, AllocateFieldData)
         initializeTestField(meshMetaData);
 
         stk::mesh::ContiguousFieldDataManager fieldDataManager;
-        stk::mesh::BulkData bulkData(meshMetaData, MPI_COMM_WORLD, false, NULL, &fieldDataManager);
+        stk::mesh::BulkData bulkData(meshMetaData, MPI_COMM_WORLD,
+#ifdef SIERRA_MIGRATION
+ false,
+#endif
+ NULL, &fieldDataManager);
         size_t numNodes = 20;
         size_t bucketSize = numNodes;
         const size_t extraCapacity = fieldDataManager.get_extra_capacity();
@@ -277,7 +293,11 @@ TEST(ContiguousFieldDataManagerTest, AllocateFieldDataAndReorderBuckets)
         initializeTestField(meshMetaData);
 
         stk::mesh::ContiguousFieldDataManager fieldDataManager;
-        stk::mesh::BulkData bulkData(meshMetaData, MPI_COMM_WORLD, false, NULL, &fieldDataManager);
+        stk::mesh::BulkData bulkData(meshMetaData, MPI_COMM_WORLD,
+#ifdef SIERRA_MIGRATION
+ false,
+#endif
+ NULL, &fieldDataManager);
         size_t numNodes = 10000;
         size_t sizeOfStuff = numNodes;
         const size_t extraCapacity = fieldDataManager.get_extra_capacity();
@@ -305,7 +325,11 @@ TEST(ContiguousFieldDataManagerTest, TwoEntitiesTwoBuckets)
         initializeTestField(meshMetaData);
 
         stk::mesh::ContiguousFieldDataManager fieldDataManager;
-        stk::mesh::BulkData bulkData(meshMetaData, MPI_COMM_WORLD, false, NULL, &fieldDataManager);
+        stk::mesh::BulkData bulkData(meshMetaData, MPI_COMM_WORLD,
+#ifdef SIERRA_MIGRATION
+ false,
+#endif
+ NULL, &fieldDataManager);
 
         testTwoEntitiesTwoBuckets(bulkData, &fieldDataManager);
     }
@@ -359,7 +383,11 @@ TEST(ContiguousFieldDataManagerTest, nodalFieldNotOnAllNodeBuckets)
         initialize2Parts2Fields(meshMetaData);
 
         stk::mesh::ContiguousFieldDataManager fieldDataManager;
-        stk::mesh::BulkData bulkData(meshMetaData, MPI_COMM_WORLD, false, NULL, &fieldDataManager);
+        stk::mesh::BulkData bulkData(meshMetaData, MPI_COMM_WORLD,
+#ifdef SIERRA_MIGRATION
+ false,
+#endif
+ NULL, &fieldDataManager);
 
         bulkData.deactivate_field_updating();
 

@@ -18,7 +18,7 @@ SET(SOURCES "")
 
 APPEND_SET(SOURCES
 UnitTestGmeshFixture.cpp
-UnitTestMain.cpp
+UnitTestIOMain.cpp
 UnitTestTopologyMap.cpp
 )
 
