@@ -57,6 +57,7 @@
 #endif
 
 #include <Zoltan2_Model.hpp>
+#include <Zoltan2_MeshAdapter.hpp>
 #include <Zoltan2_MatrixAdapter.hpp>
 #include <Zoltan2_GraphAdapter.hpp>
 #include <Zoltan2_IdentifierAdapter.hpp>
