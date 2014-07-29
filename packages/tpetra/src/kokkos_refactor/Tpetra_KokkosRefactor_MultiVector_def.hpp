@@ -177,8 +177,8 @@ namespace { // (anonymous)
     // Get stride of view: if second dimension is 0, the
     // stride might be 0, so take view_dimension instead.
     size_t stride[8];
-    view_.stride (stride);
-    const size_t LDA = (view_.dimension_1 () > 1) ? stride[1] : view_.dimension_0 ();
+    origView_.stride (stride);
+    const size_t LDA = (origView_.dimension_1 () > 1) ? stride[1] : origView_.dimension_0 ();
 
     // This just sets the dimensions, pointer, and stride of lclMV_.
     // This is only a shallow copy.
@@ -215,8 +215,8 @@ namespace { // (anonymous)
       // Get stride of view: if second dimension is 0, the
       // stride might be 0, so take view_dimension instead.
       size_t stride[8];
-      view_.stride (stride);
-      const size_t LDA = (view_.dimension_1 () > 1) ? stride[1] : view_.dimension_0 ();
+      origView_.stride (stride);
+      const size_t LDA = (origView_.dimension_1 () > 1) ? stride[1] : origView_.dimension_0 ();
 
       // This just sets the dimensions, pointer, and stride of lclMV_.
       // This is only a shallow copy.
@@ -247,8 +247,8 @@ namespace { // (anonymous)
     // Get stride of view: if second dimension is 0, the
     // stride might be 0, so take view_dimension instead.
     size_t stride[8];
-    view_.stride (stride);
-    const size_t LDA = (view_.dimension_1 () > 1) ? stride[1] : view_.dimension_0 ();
+    origView_.stride (stride);
+    const size_t LDA = (origView_.dimension_1 () > 1) ? stride[1] : origView_.dimension_0 ();
     const size_t numVecs = view_.dimension_1 ();
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(numVecs < 1, std::invalid_argument,
@@ -281,8 +281,8 @@ namespace { // (anonymous)
     // Get stride of view: if second dimension is 0, the
     // stride might be 0, so take view_dimension instead.
     size_t stride[8];
-    view_.stride (stride);
-    const size_t LDA = (view_.dimension_1 () > 1) ? stride[1] : view_.dimension_0 ();
+    origView_.stride (stride);
+    const size_t LDA = (origView_.dimension_1 () > 1) ? stride[1] : origView_.dimension_0 ();
     const size_t numVecs = view_.dimension_1 ();
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(numVecs < 1, std::invalid_argument,
@@ -321,8 +321,8 @@ namespace { // (anonymous)
     // Get stride of view: if second dimension is 0, the
     // stride might be 0, so take view_dimension instead.
     size_t stride[8];
-    view_.stride (stride);
-    const size_t LDA = (view_.dimension_1 () > 1) ? stride[1] : view_.dimension_0 ();
+    origView_.stride (stride);
+    const size_t LDA = (origView_.dimension_1 () > 1) ? stride[1] : origView_.dimension_0 ();
     size_t numVecs = view_.dimension_1 ();
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(numVecs < 1, std::invalid_argument,
@@ -374,8 +374,8 @@ namespace { // (anonymous)
     // Get stride of view: if second dimension is 0, the
     // stride might be 0, so take view_dimension instead.
     size_t stride[8];
-    view_.stride (stride);
-    const size_t LDA = (view_.dimension_1 () > 1) ? stride[1] : view_.dimension_0 ();
+    origView_.stride (stride);
+    const size_t LDA = (origView_.dimension_1 () > 1) ? stride[1] : origView_.dimension_0 ();
     size_t numVecs = view_.dimension_1 ();
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(numVecs < 1, std::invalid_argument,
@@ -529,8 +529,8 @@ namespace { // (anonymous)
       // Get stride of view: if second dimension is 0, the
       // stride might be 0, so take view_dimension instead.
       size_t stride[8];
-      view_.stride (stride);
-      const size_t LDA = (view_.dimension_1 () > 1) ? stride[1] : view_.dimension_0 ();
+      origView_.stride (stride);
+      const size_t LDA = (origView_.dimension_1 () > 1) ? stride[1] : origView_.dimension_0 ();
       return LDA;
     }
     else {
@@ -3399,8 +3399,8 @@ namespace { // (anonymous)
 
     KMV kmv (this->getMap ()->getNode ());
     size_t stride[8];
-    view_.stride (stride);
-    const size_t LDA = view_.dimension_1 () > 1 ? stride[1] : view_.dimension_0 ();
+    origView_.stride (stride);
+    const size_t LDA = origView_.dimension_1 () > 1 ? stride[1] : origView_.dimension_0 ();
     MVT::initializeValues (kmv, getLocalLength (), getNumVectors (),
                            Kokkos::Compat::persistingView (view_.d_view),
                            LDA,

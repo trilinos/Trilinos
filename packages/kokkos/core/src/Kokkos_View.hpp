@@ -1221,11 +1221,16 @@ void deep_copy( const View<DT,DL,DD,DM,Impl::ViewDefault> & dst ,
   if ( dst.ptr_on_device() != src.ptr_on_device() ) {
 
     Impl::assert_shapes_are_equal( dst.shape() ,    src.shape() );
-    Impl::assert_counts_are_equal( dst.capacity() , src.capacity() );
 
-    const size_t nbytes = sizeof(typename dst_type::value_type) * dst.capacity();
+    if( dst.capacity() == src.capacity() ) {
+      Impl::assert_counts_are_equal( dst.capacity() , src.capacity() );
 
-    Impl::DeepCopy< dst_memory_space , src_memory_space >( dst.ptr_on_device() , src.ptr_on_device() , nbytes );
+      const size_t nbytes = sizeof(typename dst_type::value_type) * dst.capacity();
+
+      Impl::DeepCopy< dst_memory_space , src_memory_space >( dst.ptr_on_device() , src.ptr_on_device() , nbytes );
+    } else {
+      Impl::ViewRemap< dst_type , src_type >( dst , src );
+    }
   }
 }
 

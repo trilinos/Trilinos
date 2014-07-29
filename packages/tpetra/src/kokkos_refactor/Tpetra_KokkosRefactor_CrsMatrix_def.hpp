@@ -4374,7 +4374,8 @@ namespace Tpetra {
       X.isConstantStride() == false || Y.isConstantStride() == false,
       std::runtime_error, ": X and Y must be constant stride.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      lclX.getValues ().getRawPtr () == lclY.getValues ().getRawPtr (),
+      (X.getDualView().d_view.ptr_on_device() == Y.getDualView().d_view.ptr_on_device()) &&
+      (X.getDualView().d_view.ptr_on_device() != NULL),
       std::runtime_error, ": X and Y may not alias one another.");
 #endif
     //
