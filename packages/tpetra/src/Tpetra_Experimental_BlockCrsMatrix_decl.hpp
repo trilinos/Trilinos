@@ -48,6 +48,7 @@
 #include <Tpetra_CrsGraph.hpp>
 #include <Tpetra_Operator.hpp>
 #include <Tpetra_Experimental_BlockMultiVector.hpp>
+#include "Tpetra_ConfigDefs.hpp"
 
 namespace Tpetra {
 namespace Experimental {
@@ -672,6 +673,20 @@ private:
                           BlockMultiVector<Scalar, LO, GO, Node>& Y,
                           const Scalar alpha,
                           const Scalar beta);
+
+  /// \brief Local sparse matrix-vector multiply for the non-transpose case.
+  ///
+  /// This method computes Y := beta*Y + alpha*A*X, where A is *this
+  /// (the block matrix), and X and Y are block multivectors.  The
+  /// special cases alpha = 0 resp. beta = 0 have their usual BLAS
+  /// meaning; this only matters if (A or X) resp. Y contain Inf or
+  /// NaN values.
+  void
+  localGaussSeidel (const BlockMultiVector<Scalar, LO, GO, Node>& B,
+                          BlockMultiVector<Scalar, LO, GO, Node>& X,
+                          BlockCrsMatrix<Scalar, LO, GO, Node> & Diagonal,
+                          const Scalar omega,
+                          const ESweepDirection direction);
 
   /// \brief Get the relative block offset of the given block.
   ///

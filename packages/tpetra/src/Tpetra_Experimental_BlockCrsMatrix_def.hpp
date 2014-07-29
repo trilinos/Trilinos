@@ -407,6 +407,121 @@ namespace Experimental {
   template <class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar,LO,GO,Node>::
+  localGaussSeidel (const BlockMultiVector<Scalar, LO, GO, Node>& B,
+      BlockMultiVector<Scalar, LO, GO, Node>& X,
+      BlockCrsMatrix<Scalar, LO, GO, Node> & factorizedDiagonal,
+      const Scalar omega,
+      const ESweepDirection direction)
+  {
+    const LO numLocalMeshRows =
+      static_cast<LO> (rowMeshMap_.getNodeNumElements ());
+    const LO numVecs = static_cast<LO> (X.getNumVectors ());
+
+    // If using (new) Kokkos, replace localMem with thread-local
+    // memory.  Note that for larger block sizes, this will affect the
+    // two-level parallelization.  Look to Stokhos for best practice
+    // on making this fast for GPUs.
+    const LO blockSize = getBlockSize ();
+    Teuchos::Array<Scalar> localMem (blockSize);
+    Teuchos::Array<Scalar> localMat (blockSize*blockSize);
+    little_vec_type X_lcl (localMem.getRawPtr (), blockSize, 1);
+
+    LO * columnIndices;
+    Scalar * Dmat;
+    LO numIndices;
+
+    LO rowBegin, rowEnd, rowStride;
+    if (direction == Forward)
+    {
+      rowBegin = 0;
+      rowEnd = numLocalMeshRows;
+      rowStride = 1;
+    }
+    else if (direction == Backward)
+    {
+      rowBegin = numLocalMeshRows-1;
+      rowEnd = -1;
+      rowStride = -1;
+    }
+    else if (direction == Symmetric)
+    {
+      this->localGaussSeidel(B,X,factorizedDiagonal,omega,Forward);
+      this->localGaussSeidel(B,X,factorizedDiagonal,omega,Backward);
+      return;
+    }
+
+    if (numVecs == 1) {
+      for (LO lclRow = rowBegin; lclRow != rowEnd; lclRow += rowStride) {
+
+        little_vec_type B_cur = B.getLocalBlock (lclRow, 0);
+        X_lcl.assign(B_cur);
+        X_lcl.scale(omega);
+
+        const size_t meshBeg = ptr_[lclRow];
+        const size_t meshEnd = ptr_[lclRow+1];
+        for (size_t absBlkOff = meshBeg; absBlkOff < meshEnd; ++absBlkOff) {
+          const LO meshCol = ind_[absBlkOff];
+          const_little_block_type A_cur =
+            getConstLocalBlockFromAbsOffset (absBlkOff);
+
+          little_vec_type X_cur = X.getLocalBlock (meshCol, 0);
+
+          // X_lcl += alpha*A_cur*X_cur
+          const double alpha = meshCol == lclRow ? -omega : 1-omega;
+          X_lcl.matvecUpdate (alpha, A_cur, X_cur);
+
+        } // for each entry in the current local row of the matrx
+
+        factorizedDiagonal.getLocalRowView(lclRow, columnIndices, Dmat, &numIndices);
+        const_little_block_type D_lcl = getConstLocalBlockFromInput(Dmat, 0);
+
+        D_lcl.solve(X_lcl);
+
+        little_vec_type X_update = X.getLocalBlock (lclRow, 0);
+        X_update.assign(X_lcl);
+
+      } // for each local row of the matrix
+    }
+    else {
+      for (LO lclRow = rowBegin; lclRow != rowEnd; lclRow += rowStride) {
+        for (LO j = 0; j < numVecs; ++j) {
+
+          little_vec_type B_cur = B.getLocalBlock (lclRow, j);
+          X_lcl.assign(B_cur);
+          X_lcl.scale(omega);
+
+          const size_t meshBeg = ptr_[lclRow];
+          const size_t meshEnd = ptr_[lclRow+1];
+          for (size_t absBlkOff = meshBeg; absBlkOff < meshEnd; ++absBlkOff) {
+            const LO meshCol = ind_[absBlkOff];
+            const_little_block_type A_cur =
+              getConstLocalBlockFromAbsOffset (absBlkOff);
+
+            little_vec_type X_cur = X.getLocalBlock (meshCol, j);
+
+            // X_lcl += alpha*A_cur*X_cur
+            const double alpha = meshCol == lclRow ? -omega : 1-omega;
+            X_lcl.matvecUpdate (alpha, A_cur, X_cur);
+
+          } // for each entry in the current local row of the matrx
+
+          factorizedDiagonal.getLocalRowView(lclRow, columnIndices, Dmat, &numIndices);
+          const_little_block_type D_lcl = getConstLocalBlockFromInput(Dmat, 0);
+
+          D_lcl.solve(X_lcl);
+
+          little_vec_type X_update = X.getLocalBlock (lclRow, j);
+          X_update.assign(X_lcl);
+
+        } // for each entry in the current local row of the matrix
+
+      } // for each local row of the matrix
+    }
+  }
+
+  template <class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar,LO,GO,Node>::
   getLocalDiagCopy (BlockCrsMatrix<Scalar,LO,GO,Node>& diag,
                     const Teuchos::ArrayView<const size_t>& offsets) const
   {
