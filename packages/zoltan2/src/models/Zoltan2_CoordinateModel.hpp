@@ -144,6 +144,8 @@ public:
     }
   }
 
+  // MeshAdapter
+
   // IdentifierAdapter
   CoordinateModel(const IdentifierAdapter<user_t> *ia,
                   const RCP<const Environment> &env,
