@@ -28,7 +28,7 @@
 #include <cusp/detail/device/arch.h>
 
 #include "Stokhos_config.h"
-#ifdef HAVE_STOKHOS_CUSPARSE
+#if 0 && defined(HAVE_STOKHOS_CUSPARSE)
 #define USE_CUSPARSE_ROW 0
 #define USE_CUSPARSE_COL 1
 #else

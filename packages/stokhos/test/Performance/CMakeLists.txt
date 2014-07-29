@@ -22,4 +22,5 @@ IF (Stokhos_ENABLE_Sacado AND
     Stokhos_ENABLE_KokkosCore AND
     Stokhos_ENABLE_KokkosLinAlg)
   ADD_SUBDIRECTORY(MPAssembly)
+  ADD_SUBDIRECTORY(PCEMeanMultiply)
 ENDIF()
