@@ -4208,47 +4208,53 @@ namespace Tpetra {
       X_domainMap = X_colMap->offsetViewNonConst (domainMap, 0);
 
 #ifdef HAVE_TPETRA_DEBUG
+      typename MV::dual_view_type X_colMap_view = X_colMap->getDualView ();
+      typename MV::dual_view_type X_domainMap_view = X_domainMap->getDualView ();
+
+      if (X_colMap->getLocalLength () != 0 && X_domainMap->getLocalLength ()) {
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          X_colMap_view.h_view.ptr_on_device () != X_domainMap_view.h_view.ptr_on_device (),
+          std::logic_error, "Tpetra::CrsMatrix::gaussSeidelCopy: "
+          "Pointer to start of column Map view of X is not equal to pointer to "
+          "start of (domain Map view of) X.  This may mean that "
+          "Tpetra::MultiVector::offsetViewNonConst is broken.  "
+          "Please report this bug to the Tpetra developers.");
+      }
+
       TEUCHOS_TEST_FOR_EXCEPTION(
-        X_colMap->getLocalMV ().getValues ().getRawPtr () !=
-        X_domainMap->getLocalMV ().getValues ().getRawPtr (),
-        std::logic_error,
-        "Tpetra::CrsMatrix::gaussSeidelCopy: "
-        "Start of column Map view of X is not equal to start of (domain Map "
-        "view of) X.  This means that Tpetra::MultiVector::offsetViewNonConst"
+        X_colMap_view.dimension_0 () < X_domainMap_view.dimension_0 () ||
+        X_colMap->getLocalLength () < X_domainMap->getLocalLength (),
+        std::logic_error, "Tpetra::CrsMatrix::gaussSeidelCopy: "
+        "X_colMap has fewer local rows than X_domainMap.  "
+        "X_colMap_view.dimension_0() = " << X_colMap_view.dimension_0 ()
+        << ", X_domainMap_view.dimension_0() = "
+        << X_domainMap_view.dimension_0 ()
+        << ", X_colMap->getLocalLength() = " << X_colMap->getLocalLength ()
+        << ", and X_domainMap->getLocalLength() = "
+        << X_domainMap->getLocalLength ()
+        << ".  This means that Tpetra::MultiVector::offsetViewNonConst "
         "is broken.  Please report this bug to the Tpetra developers.");
 
       TEUCHOS_TEST_FOR_EXCEPTION(
-        X_colMap->getLocalMV ().getNumRows () <
-        X_domainMap->getLocalMV ().getNumRows (),
-        std::logic_error,
-        "Tpetra::CrsMatrix::gaussSeidelCopy: "
-        "X_colMap has " << X_colMap->getLocalMV ().getNumRows ()
-        << " local rows, which is less than the number of local rows "
-        << X_domainMap->getLocalMV ().getNumRows () << " in X_domainMap.  "
-        "This means that Tpetra::MultiVector::offsetViewNonConst "
+        X_colMap->getNumVectors () != X_domainMap->getNumVectors (),
+        std::logic_error, "Tpetra::CrsMatrix::gaussSeidelCopy: "
+        "X_colMap has a different number of columns than X_domainMap.  "
+        "X_colMap->getNumVectors() = " << X_colMap->getNumVectors ()
+        << " != X_domainMap->getNumVectors() = "
+        << X_domainMap->getNumVectors ()
+        << ".  This means that Tpetra::MultiVector::offsetViewNonConst "
         "is broken.  Please report this bug to the Tpetra developers.");
 
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        X_colMap->getLocalMV ().getNumCols () !=
-        X_domainMap->getLocalMV ().getNumCols (),
-        std::logic_error,
-        "Tpetra::CrsMatrix::gaussSeidelCopy: "
-        "X_colMap has " << X_colMap->getLocalMV ().getNumCols ()
-        << " local columns, which does not equal the number of local columns "
-        << X_domainMap->getLocalMV ().getNumCols () << " in X_domainMap.  "
-        "This means that Tpetra::MultiVector::offsetViewNonConst "
-        "is broken.  Please report this bug to the Tpetra developers.");
-
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        X_colMap->getLocalMV ().getStride () !=
-        X_domainMap->getLocalMV ().getStride (),
-        std::logic_error,
-        "Tpetra::CrsMatrix::gaussSeidelCopy: "
-        "X_colMap has local stride " << X_colMap->getLocalMV ().getStride ()
-        << ", which does not equal the local stride "
-        << X_domainMap->getLocalMV ().getStride () << " of X_domainMap.  "
-        "This means that Tpetra::MultiVector::offsetViewNonConst is broken.  "
-        "Please report this bug to the Tpetra developers.");
+      // TEUCHOS_TEST_FOR_EXCEPTION(
+      //   X_colMap->getLocalMV ().getStride () !=
+      //   X_domainMap->getLocalMV ().getStride (),
+      //   std::logic_error,
+      //   "Tpetra::CrsMatrix::gaussSeidelCopy: "
+      //   "X_colMap has local stride " << X_colMap->getLocalMV ().getStride ()
+      //   << ", which does not equal the local stride "
+      //   << X_domainMap->getLocalMV ().getStride () << " of X_domainMap.  "
+      //   "This means that Tpetra::MultiVector::offsetViewNonConst is broken.  "
+      //   "Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
 
       if (zeroInitialGuess) {
@@ -4372,36 +4378,52 @@ namespace Tpetra {
   {
     using Teuchos::NO_TRANS;
 #ifdef HAVE_TPETRA_DEBUG
-    const char tfecfFuncName[] = "localMultiply()";
+    const char tfecfFuncName[] = "localMultiply: ";
 #endif // HAVE_TPETRA_DEBUG
     typedef Teuchos::ScalarTraits<RangeScalar> RST;
 #ifdef HAVE_TPETRA_DEBUG
-    KokkosClassic::MultiVector<DomainScalar,node_type> lclX = X.getLocalMV ();
-    KokkosClassic::MultiVector<RangeScalar,node_type> lclY = Y.getLocalMV ();
+    // KokkosClassic::MultiVector<DomainScalar,node_type> lclX = X.getLocalMV ();
+    // KokkosClassic::MultiVector<RangeScalar,node_type> lclY = Y.getLocalMV ();
+
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      mode == NO_TRANS && X.getMap() != getColMap() && *X.getMap() != *getColMap(),
-      std::runtime_error, " X is not distributed according to the appropriate map.");
+      X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
+      ": X and Y must have the same number of columns (vectors).  ");
+
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      mode != NO_TRANS && X.getMap() != getRowMap() && *X.getMap() != *getRowMap(),
-      std::runtime_error, " X is not distributed according to the appropriate map.");
+      mode == NO_TRANS && X.getLocalLength () != getColMap ()->getNodeNumElements (),
+      std::runtime_error, "NO_TRANS case: X has the wrong number of local rows.  "
+      "X.getLocalLength() = " << X.getLocalLength () << " != getColMap()->"
+      "getNodeNumElements() = " << getColMap ()->getNodeNumElements () << ".");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      mode == NO_TRANS && Y.getMap() != getRowMap() && *Y.getMap() != *getRowMap(),
-      std::runtime_error, " Y is not distributed according to the appropriate map.");
+      mode == NO_TRANS && Y.getLocalLength () != getRowMap ()->getNodeNumElements (),
+      std::runtime_error, "NO_TRANS case: Y has the wrong number of local rows.  "
+      "Y.getLocalLength() = " << Y.getLocalLength () << " != getRowMap()->"
+      "getNodeNumElements() = " << getRowMap ()->getNodeNumElements () << ".");
+
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      mode != NO_TRANS && Y.getMap() != getColMap() && *Y.getMap() != *getColMap(),
-      std::runtime_error, " Y is not distributed according to the appropriate map.");
+      mode != NO_TRANS && X.getLocalLength () != getRowMap ()->getNodeNumElements (),
+      std::runtime_error, "TRANS or CONJ_TRANS case: X has the wrong number of "
+      "local rows.  X.getLocalLength() = " << X.getLocalLength () << " != "
+      "getRowMap()->getNodeNumElements() = "
+      << getRowMap ()->getNodeNumElements () << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      mode != NO_TRANS && Y.getLocalLength () != getColMap ()->getNodeNumElements (),
+      std::runtime_error, "TRANS or CONJ_TRANS case: X has the wrong number of "
+      "local rows.  Y.getLocalLength() = " << Y.getLocalLength () << " != "
+      "getColMap()->getNodeNumElements() = "
+      << getColMap ()->getNodeNumElements () << ".");
+
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       ! isFillComplete (), std::runtime_error, ": It is incorrect to call this "
       "method unless the matrix is fill complete.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
-      ": X and Y must have the same number of vectors.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       X.isConstantStride() == false || Y.isConstantStride() == false,
       std::runtime_error, ": X and Y must be constant stride.");
+    // If the two pointers are NULL, then they don't alias one
+    // another, even though they are equal.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      (X.getDualView().d_view.ptr_on_device() == Y.getDualView().d_view.ptr_on_device()) &&
-      (X.getDualView().d_view.ptr_on_device() != NULL),
+      X.getDualView ().d_view.ptr_on_device () == Y.getDualView ().d_view.ptr_on_device () &&
+      X.getDualView ().d_view.ptr_on_device () != NULL,
       std::runtime_error, ": X and Y may not alias one another.");
 #endif
     //
