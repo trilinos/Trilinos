@@ -145,6 +145,15 @@ public:
   }
 
   // MeshAdapter
+  CoordinateModel(const MeshAdapter<user_t,userCoord_t> *ia,
+		  const RCP<const Environment> &env,
+		  const RCP<const Comm<int> > &comm,
+		  modelFlag_t &flags) :
+    gnosAreGids_(false), numGlobalCoordinates_(), env_(env), comm_(comm),
+    coordinateDim_(), gids_(), xyz_(), userNumWeights_(0), weights_(),
+    gnos_(), gnosConst_()
+  {
+  }
 
   // IdentifierAdapter
   CoordinateModel(const IdentifierAdapter<user_t> *ia,
