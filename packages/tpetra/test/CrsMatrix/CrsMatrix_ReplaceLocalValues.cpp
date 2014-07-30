@@ -195,7 +195,11 @@ namespace { // (anonymous)
     TEST_ASSERT( map->isNodeLocalElement (0) );
     TEST_ASSERT( ! matrix->getColMap ().is_null () );
 
+    LO actualLclNumReplaced = 0;
+    LO expectedLclNumReplaced = 0;
     if (map->isNodeLocalElement (0) && ! matrix->getColMap ().is_null ()) {
+      expectedLclNumReplaced = 1;
+
       bool validLocalColumnIndices = true;
       for (size_type k = 0; k < indout.size (); ++k) {
         if (! matrix->getColMap ()->isNodeLocalElement (indout[k])) {
@@ -214,8 +218,9 @@ namespace { // (anonymous)
         // Replace the local (0,0) entry with valout[0].  We know from
         // the above test that the local (0,0) entry is the first
         // diagonal entry on the calling process.
-        matrix->replaceLocalValues (0, indout.view (0, indout.size ()),
-                                    valout.view (0, valout.size ()));
+        actualLclNumReplaced =
+          matrix->replaceLocalValues (0, indout.view (0, indout.size ()),
+                                      valout.view (0, valout.size ()));
       }
 
       // Make sure that replaceLocalValues worked, by getting the
@@ -236,6 +241,8 @@ namespace { // (anonymous)
         }
       }
     }
+
+    TEST_EQUALITY( actualLclNumReplaced, expectedLclNumReplaced );
 
     // Make sure that all processes got this far.
     lclSuccess = success ? 1 : 0;
