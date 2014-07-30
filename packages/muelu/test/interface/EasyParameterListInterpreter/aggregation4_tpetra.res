@@ -69,6 +69,8 @@ Level 1
   [empty list]
   
  sa: damping factor = 1.33333   [default]
+ sa: calculate eigenvalue estimate = 0   [default]
+ sa: eigenvalue estimate iterations = 10   [default]
  
  Transpose P (MueLu::TransPFactory)
  [empty list]
@@ -139,6 +141,8 @@ Level 2
   [empty list]
   
  sa: damping factor = 1.33333   [default]
+ sa: calculate eigenvalue estimate = 0   [default]
+ sa: eigenvalue estimate iterations = 10   [default]
  
  Transpose P (MueLu::TransPFactory)
  [empty list]

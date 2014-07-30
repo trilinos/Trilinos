@@ -58,6 +58,8 @@ Level 1
   [empty list]
   
  sa: damping factor = 1.33333   [default]
+ sa: calculate eigenvalue estimate = 0   [default]
+ sa: eigenvalue estimate iterations = 10   [default]
  
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 1
@@ -113,6 +115,8 @@ Level 2
   [empty list]
   
  sa: damping factor = 1.33333   [default]
+ sa: calculate eigenvalue estimate = 0   [default]
+ sa: eigenvalue estimate iterations = 10   [default]
  
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 1
