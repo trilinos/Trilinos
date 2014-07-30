@@ -119,6 +119,7 @@ other Trilinos solver technologies.
 #include "Epetra_NumPyVector.h"
 #include "Epetra_NumPyFEVector.h"
 #include "Epetra_NumPyMultiVector.h"
+#include "PyTrilinos_Domi_Util.hpp"
 
 %}
 
@@ -388,24 +389,235 @@ class MDArray(object):
 %teuchos_rcp(Domi::MDComm)
 %ignore Domi::MDComm::operator=;
 %include "Domi_MDComm.hpp"
+%extend Domi::MDComm
+{
+  Domi::MDComm __getitem__(PyObject * indexes)
+  {
+    // If 'indexes' is not a sequence, it might be an integer or
+    // slice.  So wrap it in a tuple, and we'll check its type below.
+    if (!PySequence_Check(indexes))
+    {
+      PyObject * newIndexes = Py_BuildValue("(N)", indexes);
+      indexes = newIndexes;
+    }
+
+    // Get the number of indexes in the sequence.  If this is larger
+    // than the number of dimensions of the MDComm, then cap it at
+    // that value.
+    Py_ssize_t numIndexes = PySequence_Size(indexes);
+    if (numIndexes > self->numDims()) numIndexes = self->numDims();
+
+    // Initialize the new MDComm as a copy of this MDComm
+    Domi::MDComm newMdComm(*self);
+
+    // 'domiAxis' will be the index for the new MDComm as we construct
+    // it.  'axis' will be the index for the sequence of indexes.
+    // These can diverge as the new MDComm is constructed.
+    int domiAxis = 0;
+    for (Py_ssize_t axis = 0; axis < numIndexes; ++axis)
+    {
+      PyObject * index = PySequence_GetItem(indexes, axis);
+      if (PyInt_Check(index))
+      {
+        int axisRank = (int) PyInt_AsLong(index);
+        newMdComm = Domi::MDComm(newMdComm, domiAxis, axisRank);
+        // Do not increment domiAxis, because the new MDComm has one
+        // fewer dimension!
+      }
+      else if (PySlice_Check(index))
+      {
+        PySliceObject * pySlice = (PySliceObject*) index;
+        Py_ssize_t commDim = (Py_ssize_t) newMdComm.getCommDim(domiAxis);
+        Domi::Slice slice = PyTrilinos::convertToDomiSlice(pySlice, commDim);
+        newMdComm = Domi::MDComm(newMdComm, domiAxis, slice);
+        domiAxis++;
+      }
+      else
+      {
+        PyErr_SetString(PyExc_TypeError, "Argument type error for "
+                        "Domi.MDComm __getitem__.  Argument must be a "
+                        "sequence of integers and/or slices");
+        throw PyTrilinos::PythonException();
+      }
+      Py_DECREF(index);
+    }
+    return newMdComm;
+  }
+}
 
 ////////////////////////
 // Domi MDMap support //
 ////////////////////////
-%teuchos_rcp(Domi::MDMap<>)
-%include "Domi_MDMap.hpp"
-%template(MDMap_default) Domi::MDMap< Kokkos::DefaultNode::DefaultNodeType >;
+%ignore Domi::MDMap::getTpetraMap;
+%ignore Domi::MDMap::getTpetraAxisMap;
+%extend Domi::MDMap
+{
+  Domi::MDMap< Node > __getitem__(PyObject * indexes)
+  {
+    // If 'indexes' is not a sequence, it might be an integer or
+    // slice.  So wrap it in a tuple, and we'll check its type below.
+    if (!PySequence_Check(indexes))
+    {
+      PyObject * newIndexes = Py_BuildValue("(N)", indexes);
+      indexes = newIndexes;
+    }
 
-// ///////////////////////////
-// // Domi MDVector support //
-// ///////////////////////////
-// %ignore Domi::MDVector::operator=;
-// %ignore Domi::MDVector::operator[];
-// %include "Domi_MDVector.hpp"
-// %teuchos_rcp(Domi::MDVector_long)
-// %template(MDVector_long  ) Domi::MDVector< long >;
-// %teuchos_rcp(Domi::MDVector_double)
-// //%template(MDVector_double) Domi::MDVector< double >;
+    // Get the number of indexes in the sequence.  If this is larger
+    // than the number of dimensions of the MDMap, then cap it at
+    // that value.
+    Py_ssize_t numIndexes = PySequence_Size(indexes);
+    if (numIndexes > self->numDims()) numIndexes = self->numDims();
+
+    // Initialize the new MDMap as a copy of this MDMap
+    Domi::MDMap< Node > newMdMap(*self);
+
+    // 'domiAxis' will be the index for the new MDMap as we construct
+    // it.  'axis' will be the index for the sequence of indexes.
+    // These can diverge as the new MDMap is constructed.
+    int domiAxis = 0;
+    for (Py_ssize_t axis = 0; axis < numIndexes; ++axis)
+    {
+      PyObject * index = PySequence_GetItem(indexes, axis);
+      if (PyInt_Check(index))
+      {
+        int axisRank = (int) PyInt_AsLong(index);
+        newMdMap = Domi::MDMap< Node >(newMdMap, domiAxis, axisRank);
+        // Do not increment domiAxis, because the new MDMap has one
+        // fewer dimension!
+      }
+      else if (PySlice_Check(index))
+      {
+        PySliceObject * pySlice = (PySliceObject*) index;
+        Py_ssize_t dim = (Py_ssize_t) newMdMap.getGlobalDim(domiAxis);
+        Domi::Slice slice = PyTrilinos::convertToDomiSlice(pySlice, dim);
+        newMdMap = Domi::MDMap< Node >(newMdMap, domiAxis, slice);
+        domiAxis++;
+      }
+      else
+      {
+        PyErr_SetString(PyExc_TypeError, "Argument type error for "
+                        "Domi.MDMap __getitem__.  Argument must be a "
+                        "sequence of integers and/or slices");
+        throw PyTrilinos::PythonException();
+      }
+      Py_DECREF(index);
+    }
+    return newMdMap;
+  }
+}
+%include "Domi_MDMap.hpp"
+%teuchos_rcp(Domi::MDMap< Kokkos::DefaultNode::DefaultNodeType >)
+%template(MDMap_default) Domi::MDMap< Kokkos::DefaultNode::DefaultNodeType >;
+%pythoncode
+{
+MDMap = MDMap_default
+}
+
+///////////////////////////
+// Domi MDVector support //
+///////////////////////////
+%ignore Domi::MDVector::operator=;
+%ignore Domi::MDVector::operator[];
+%ignore Domi::MDVector::getTpetraVectorView;
+%ignore Domi::MDVector::getTpetraMultiVectorView;
+%ignore Domi::MDVector::getTpetraVectorCopy;
+%ignore Domi::MDVector::getTpetraMultiVectorCopy;
+%extend Domi::MDVector
+{
+  Domi::MDVector< Scalar, Node > __getitem__(PyObject * indexes)
+  {
+    // If 'indexes' is not a sequence, it might be an integer or
+    // slice.  So wrap it in a tuple, and we'll check its type below.
+    if (!PySequence_Check(indexes))
+    {
+      PyObject * newIndexes = Py_BuildValue("(N)", indexes);
+      indexes = newIndexes;
+    }
+
+    // Get the number of indexes in the sequence.  If this is larger
+    // than the number of dimensions of the MDVector, then cap it at
+    // that value.
+    Py_ssize_t numIndexes = PySequence_Size(indexes);
+    if (numIndexes > self->numDims()) numIndexes = self->numDims();
+
+    // Initialize the new MDVector as a copy of this MDVector
+    Domi::MDVector< Scalar, Node > newMdVector(*self);
+
+    // 'domiAxis' will be the index for the new MDVector as we construct
+    // it.  'axis' will be the index for the sequence of indexes.
+    // These can diverge as the new MDVector is constructed.
+    int domiAxis = 0;
+    for (Py_ssize_t axis = 0; axis < numIndexes; ++axis)
+    {
+      PyObject * index = PySequence_GetItem(indexes, axis);
+      if (PyInt_Check(index))
+      {
+        int axisRank = (int) PyInt_AsLong(index);
+        newMdVector = Domi::MDVector< Scalar, Node >(newMdVector,
+                                                     domiAxis,
+                                                     axisRank);
+        // Do not increment domiAxis, because the new MDVector has one
+        // fewer dimension!
+      }
+      else if (PySlice_Check(index))
+      {
+        PySliceObject * pySlice = (PySliceObject*) index;
+        Py_ssize_t dim = (Py_ssize_t) newMdVector.getGlobalDim(domiAxis);
+        Domi::Slice slice = PyTrilinos::convertToDomiSlice(pySlice, dim);
+        newMdVector = Domi::MDVector< Scalar, Node >(newMdVector,
+                                                     domiAxis,
+                                                     slice);
+        domiAxis++;
+      }
+      else
+      {
+        PyErr_SetString(PyExc_TypeError, "Argument type error for "
+                        "Domi.MDVector __getitem__.  Argument must be a "
+                        "sequence of integers and/or slices");
+        throw PyTrilinos::PythonException();
+      }
+      Py_DECREF(index);
+    }
+    return newMdVector;
+  }
+}
+%include "Domi_MDVector.hpp"
+%teuchos_rcp(Domi::MDVector< long >)
+%template(MDVector_long  ) Domi::MDVector< long >;
+%teuchos_rcp(Domi::MDVector< double >)
+%template(MDVector_double) Domi::MDVector< double >;
+%pythoncode
+{
+class MDVector(object):
+    def __init__(self, mdMap, **kwargs):
+        dtype       = kwargs.get("dtype"      , "int64")
+        zeroOut     = kwargs.get("zeroOut"    , False  )
+        leadingDim  = kwargs.get("leadingDim" , 0      )
+        trailingDim = kwargs.get("trailingDim", 0      )
+        if type(dtype) == str:
+            dtype = numpy.dtype(dtype)
+        if dtype.type is numpy.int64:
+            self._vector = MDVector_long(mdMap, leadingDim, trailingDim, zeroOut)
+        elif dtype.type is numpy.float64:
+            self._vector = MDVector_double(mdMap, leadingDim, trailingDim, zeroOut)
+        else:
+            raise TypeError("Unsupported or unrecognized dtype = %s" %
+                            str(dtype))
+        self.__dtype = dtype
+
+    def __getattribute__(self, name):
+        if name in ('__class__', '__dir__', '__getitem__', '_vector'):
+            return object.__getattribute__(self, name)
+        return getattr(object.__getattribute__(self, '_vector'), name)
+
+    def __dir__(self):
+        return sorted(set(dir(self._vector) + dir(MDVector)))
+
+    # __getitem__ has to be pulled out specifically, probably because it comes
+    # from %extend, although I do not understand why
+    def __getitem__(self, args):
+        return self._vector.__getitem__(args)
+}
 
 // Turn off the exception handling
 %exception;
