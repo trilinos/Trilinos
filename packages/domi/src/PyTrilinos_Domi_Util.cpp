@@ -152,9 +152,9 @@ convertToDomiSlice(PySliceObject * pySlice,
   Py_ssize_t sliceLen = 0;
   int rcode = PySlice_GetIndicesEx(pySlice, length , &pyStart ,
                                    &pyStop, &pyStep, &sliceLen);
-  Domi::ConcreteSlice domiSlice((Domi::dim_type) pyStart,
-                                (Domi::dim_type) pyStop ,
-                                (Domi::dim_type) pyStep );
+  Domi::Slice domiSlice((Domi::dim_type) pyStart,
+                        (Domi::dim_type) pyStop ,
+                        (Domi::dim_type) pyStep );
   return domiSlice;
 }
 
