@@ -66,13 +66,11 @@ using Teuchos::rcp;
 typedef Domi::Ordinal Ordinal;
 typedef Domi::size_type size_type;
 typedef Domi::dim_type dim_type;
-using Domi::TeuchosCommRCP;
 using Domi::MDArray;
 using Domi::MDArrayView;
 using Domi::Slice;
 const Ordinal & Default = Domi::Slice::Default;
 using Domi::MDComm;
-using Domi::MDCommRCP;
 using Domi::MDMap;
 using Domi::MDVector;
 
@@ -131,9 +129,11 @@ TEUCHOS_STATIC_SETUP()
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, SliceLow, Sca )
 {
   // Initialize the MDComm
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, commDims));
+  Teuchos::RCP< const Domi::MDComm > mdComm =
+    Teuchos::rcp(new MDComm(comm, numDims, commDims));
 
   // Ensure that the commDims are completely specified
   commDims.resize(numDims);
@@ -231,9 +231,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, SliceLow, Sca )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, SliceMid, Sca )
 {
   // Initialize the MDComm
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, commDims));
+  Teuchos::RCP< const Domi::MDComm > mdComm =
+    Teuchos::rcp(new MDComm(comm, numDims, commDims));
 
   // Ensure that the commDims are completely specified
   commDims.resize(numDims);
@@ -350,9 +352,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, SliceMid, Sca )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, SliceHi, Sca )
 {
   // Initialize the MDComm
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, commDims));
+  Teuchos::RCP< const Domi::MDComm > mdComm =
+    Teuchos::rcp(new MDComm(comm, numDims, commDims));
 
   // Ensure that the commDims are completely specified
   commDims.resize(numDims);
@@ -449,9 +453,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, SliceHi, Sca )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, SliceIndex, Sca )
 {
   // Initialize the MDComm
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, commDims));
+  Teuchos::RCP< const Domi::MDComm > mdComm =
+    Teuchos::rcp(new MDComm(comm, numDims, commDims));
 
   // Ensure that the commDims are completely specified
   commDims.resize(numDims);
@@ -524,9 +530,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, SliceIndex, Sca )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, CompoundSlice, Sca )
 {
   // Initialize the MDComm
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, commDims));
+  Teuchos::RCP< const Domi::MDComm > mdComm =
+    Teuchos::rcp(new MDComm(comm, numDims, commDims));
 
   // Ensure that the commDims are completely specified
   commDims.resize(numDims);

@@ -56,9 +56,7 @@ namespace
 
 using std::string;
 using Teuchos::Array;
-using Domi::TeuchosCommRCP;
 using Domi::MDComm;
-using Domi::MDCommRCP;
 using Domi::Slice;
 typedef Domi::Ordinal Ordinal;
 const Ordinal & Default = Domi::Slice::Default;
@@ -80,7 +78,8 @@ TEUCHOS_STATIC_SETUP()
 TEUCHOS_UNIT_TEST( MDComm, regularizeCommDims )
 {
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   Array< int > commDimsActual =
     Domi::regularizeCommDims(comm->getSize(), numDims, commDims);
   
@@ -96,7 +95,8 @@ TEUCHOS_UNIT_TEST( MDComm, regularizeCommDims )
 TEUCHOS_UNIT_TEST( MDComm, commDimsConstructor )
 {
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   // If commDims is shorter than numDims, pad it with -1 values
   // at the end
   for (int axis = commDims.size(); axis < numDims; ++axis)
@@ -125,7 +125,8 @@ TEUCHOS_UNIT_TEST( MDComm, commDimsConstructor )
 TEUCHOS_UNIT_TEST( MDComm, commDimsPeriodicConstructor )
 {
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   // If commDims is shorter than numDims, pad it with -1 values
   // at the end
   for (int axis = commDims.size(); axis < numDims; ++axis)
@@ -155,7 +156,8 @@ TEUCHOS_UNIT_TEST( MDComm, commDimsPeriodicConstructor )
 TEUCHOS_UNIT_TEST( MDComm, pListConstructor )
 {
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   // If commDims is shorter than numDims, pad it with -1 values
   // at the end
   for (int axis = commDims.size(); axis < numDims; ++axis)
@@ -188,7 +190,8 @@ TEUCHOS_UNIT_TEST( MDComm, pListConstructor )
 TEUCHOS_UNIT_TEST( MDComm, pListConstructorPeriodic )
 {
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   // If commDims is shorter than numDims, pad it with -1 values
   // at the end
   for (int axis = commDims.size(); axis < numDims; ++axis)
@@ -220,7 +223,8 @@ TEUCHOS_UNIT_TEST( MDComm, pListConstructorPeriodic )
 
 TEUCHOS_UNIT_TEST( MDComm, pListConstructorBad )
 {
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   Teuchos::ParameterList plist;
 
   // Test for illegal parameter name
@@ -244,7 +248,8 @@ TEUCHOS_UNIT_TEST( MDComm, pListConstructorBad )
 
 TEUCHOS_UNIT_TEST( MDComm, numDimsConstructor )
 {
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   MDComm mdComm(comm, numDims);
 
   TEST_EQUALITY(mdComm.numDims(), numDims);
@@ -261,7 +266,8 @@ TEUCHOS_UNIT_TEST( MDComm, numDimsConstructor )
 TEUCHOS_UNIT_TEST( MDComm, numDimsCommDimsConstructor )
 {
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   MDComm mdComm(comm, numDims, commDims);
 
   TEST_EQUALITY(mdComm.numDims(), numDims);
@@ -279,7 +285,8 @@ TEUCHOS_UNIT_TEST( MDComm, numDimsCommDimsConstructor )
 TEUCHOS_UNIT_TEST( MDComm, numDimsCommDimsPeriodicConstructor )
 {
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   // Construct periodic flags
   Array< int > periodic(numDims, 0);
   periodic[numDims-1] = 1;
@@ -301,9 +308,10 @@ TEUCHOS_UNIT_TEST( MDComm, numDimsCommDimsPeriodicConstructor )
 TEUCHOS_UNIT_TEST( MDComm, getTeuchosComm )
 {
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   MDComm mdComm(comm, numDims, commDims);
-  TeuchosCommRCP newComm = mdComm.getTeuchosComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > newComm = mdComm.getTeuchosComm();
 
   TEST_EQUALITY_CONST(newComm.shares_resource(comm), true);
 
@@ -312,7 +320,8 @@ TEUCHOS_UNIT_TEST( MDComm, getTeuchosComm )
 TEUCHOS_UNIT_TEST( MDComm, getCommIndex )
 {
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   MDComm mdComm(comm, numDims, commDims);
   // Get the final commDims and compute the strides
   commDims.resize(numDims);
@@ -347,7 +356,8 @@ TEUCHOS_UNIT_TEST( MDComm, getCommIndex )
 TEUCHOS_UNIT_TEST( MDComm, getLowerNeighbor )
 {
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   MDComm mdComm(comm, numDims, commDims);
 
   // Get the final commDims, compute the commStrides, commIndex and
@@ -386,7 +396,8 @@ TEUCHOS_UNIT_TEST( MDComm, getLowerNeighbor )
 TEUCHOS_UNIT_TEST( MDComm, getLowerNeighborPeriodic )
 {
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
 
   // Construct periodic flags
   Array< int > periodic(numDims, 0);
@@ -434,7 +445,8 @@ TEUCHOS_UNIT_TEST( MDComm, getLowerNeighborPeriodic )
 TEUCHOS_UNIT_TEST( MDComm, getUpperNeighbor )
 {
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   MDComm mdComm(comm, numDims, commDims);
 
   // Get the final commDims, compute the commStrides, commIndex and
@@ -473,7 +485,8 @@ TEUCHOS_UNIT_TEST( MDComm, getUpperNeighbor )
 TEUCHOS_UNIT_TEST( MDComm, getUpperNeighborPeriodic )
 {
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
 
   // Construct periodic flags
   Array< int > periodic(numDims, 0);
@@ -521,7 +534,8 @@ TEUCHOS_UNIT_TEST( MDComm, getUpperNeighborPeriodic )
 TEUCHOS_UNIT_TEST( MDComm, exceptions )
 {
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   // Construct MDComm
   MDComm mdComm(comm, numDims, commDims);
 
@@ -543,7 +557,8 @@ TEUCHOS_UNIT_TEST( MDComm, exceptions )
 TEUCHOS_UNIT_TEST( MDComm, subCommLowerLeft )
 {
   // Construct the MDComm from command-line arguments
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
   MDComm mdComm(comm, numDims, commDims);
 
@@ -598,7 +613,8 @@ TEUCHOS_UNIT_TEST( MDComm, subCommLowerLeft )
   if (partOfSubComm)
   {
     Teuchos::RCP< const Epetra_Comm > epetraComm = subMDComm.getEpetraComm();
-    TeuchosCommRCP teuchosComm = subMDComm.getTeuchosComm();
+    Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm =
+      subMDComm.getTeuchosComm();
     TEST_EQUALITY(epetraComm->NumProc(), teuchosComm->getSize());
     TEST_EQUALITY(epetraComm->MyPID(), teuchosComm->getRank());
   }
@@ -612,7 +628,8 @@ TEUCHOS_UNIT_TEST( MDComm, subCommLowerLeft )
 TEUCHOS_UNIT_TEST( MDComm, subCommLowerRight )
 {
   // Construct the MDComm from command-line arguments
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
   MDComm mdComm(comm, numDims, commDims);
 
@@ -687,7 +704,8 @@ TEUCHOS_UNIT_TEST( MDComm, subCommLowerRight )
   if (partOfSubComm)
   {
     Teuchos::RCP< const Epetra_Comm > epetraComm = subMDComm.getEpetraComm();
-    TeuchosCommRCP teuchosComm = subMDComm.getTeuchosComm();
+    Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm =
+      subMDComm.getTeuchosComm();
     TEST_EQUALITY(epetraComm->NumProc(), teuchosComm->getSize());
     TEST_EQUALITY(epetraComm->MyPID(), teuchosComm->getRank());
   }
@@ -701,7 +719,8 @@ TEUCHOS_UNIT_TEST( MDComm, subCommLowerRight )
 TEUCHOS_UNIT_TEST( MDComm, subCommUpperLeft )
 {
   // Construct the MDComm from command-line arguments
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
   MDComm mdComm(comm, numDims, commDims);
 
@@ -773,7 +792,8 @@ TEUCHOS_UNIT_TEST( MDComm, subCommUpperLeft )
   if (partOfSubComm)
   {
     Teuchos::RCP< const Epetra_Comm > epetraComm = subMDComm.getEpetraComm();
-    TeuchosCommRCP teuchosComm = subMDComm.getTeuchosComm();
+    Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm =
+      subMDComm.getTeuchosComm();
     TEST_EQUALITY(epetraComm->NumProc(), teuchosComm->getSize());
     TEST_EQUALITY(epetraComm->MyPID(), teuchosComm->getRank());
   }
@@ -787,7 +807,8 @@ TEUCHOS_UNIT_TEST( MDComm, subCommUpperLeft )
 TEUCHOS_UNIT_TEST( MDComm, subCommUpperRight )
 {
   // Construct the MDComm from command-line arguments
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
   MDComm mdComm(comm, numDims, commDims);
 
@@ -860,7 +881,8 @@ TEUCHOS_UNIT_TEST( MDComm, subCommUpperRight )
   if (partOfSubComm)
   {
     Teuchos::RCP< const Epetra_Comm > epetraComm = subMDComm.getEpetraComm();
-    TeuchosCommRCP teuchosComm = subMDComm.getTeuchosComm();
+    Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm =
+      subMDComm.getTeuchosComm();
     TEST_EQUALITY(epetraComm->NumProc(), teuchosComm->getSize());
     TEST_EQUALITY(epetraComm->MyPID(), teuchosComm->getRank());
   }
@@ -874,7 +896,8 @@ TEUCHOS_UNIT_TEST( MDComm, subCommUpperRight )
 TEUCHOS_UNIT_TEST( MDComm, subCommReduce )
 {
   // Construct the MDComm from command-line arguments
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
   MDComm mdComm(comm, numDims, commDims);
 
@@ -1011,7 +1034,8 @@ TEUCHOS_UNIT_TEST( MDComm, subCommReduce )
 TEUCHOS_UNIT_TEST( MDComm, subCommPeriodic )
 {
   // Construct the MDComm from command-line arguments
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
 
   // Construct the periodic flags and the MDComm

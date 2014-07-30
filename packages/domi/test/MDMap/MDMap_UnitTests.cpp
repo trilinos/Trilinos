@@ -61,11 +61,9 @@ using Teuchos::Tuple;
 typedef Domi::Ordinal Ordinal;
 typedef Domi::size_type size_type;
 typedef Domi::dim_type dim_type;
-using Domi::TeuchosCommRCP;
 using Domi::Slice;
 const dim_type & Default = Domi::Slice::Default;
 using Domi::MDComm;
-using Domi::MDCommRCP;
 using Domi::MDMap;
 
 int num_dims = 2;
@@ -87,9 +85,11 @@ TEUCHOS_STATIC_SETUP()
 
 TEUCHOS_UNIT_TEST( MDMap, dimensionsConstructor )
 {
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, num_dims, commDims));
+  Teuchos::RCP< const Domi::MDComm > mdComm =
+    Teuchos::rcp(new MDComm(comm, num_dims, commDims));
 
   // Ensure that the commDims are completely specified
   commDims.resize(num_dims);
@@ -190,7 +190,8 @@ TEUCHOS_UNIT_TEST( MDMap, dimensionsConstructor )
 
 TEUCHOS_UNIT_TEST( MDMap, pListDimensionsConstructor )
 {
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
 
   // Get the actual communicator dimensions
@@ -296,9 +297,11 @@ TEUCHOS_UNIT_TEST( MDMap, pListDimensionsConstructor )
 
 TEUCHOS_UNIT_TEST( MDMap, commPadConstructor )
 {
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, num_dims, commDims));
+  Teuchos::RCP< const Domi::MDComm > mdComm =
+    Teuchos::rcp(new MDComm(comm, num_dims, commDims));
 
   // Ensure that the commDims are completely specified
   commDims.resize(num_dims);
@@ -431,9 +434,11 @@ TEUCHOS_UNIT_TEST( MDMap, commPadConstructor )
 
 TEUCHOS_UNIT_TEST( MDMap, pListCommPadConstructor )
 {
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, num_dims, commDims));
+  Teuchos::RCP< const Domi::MDComm > mdComm =
+    Teuchos::rcp(new MDComm(comm, num_dims, commDims));
 
   // Ensure that the commDims are completely specified
   commDims.resize(num_dims);
@@ -571,9 +576,11 @@ TEUCHOS_UNIT_TEST( MDMap, pListCommPadConstructor )
 
 TEUCHOS_UNIT_TEST( MDMap, bndryPadConstructor )
 {
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, num_dims, commDims));
+  Teuchos::RCP< const Domi::MDComm > mdComm =
+    Teuchos::rcp(new MDComm(comm, num_dims, commDims));
 
   // Ensure that the commDims are completely specified
   commDims.resize(num_dims);
@@ -729,7 +736,8 @@ TEUCHOS_UNIT_TEST( MDMap, bndryPadConstructor )
 
 TEUCHOS_UNIT_TEST( MDMap, pListBndryPadConstructor )
 {
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
 
   // Get the actual communicator dimensions
@@ -888,9 +896,11 @@ TEUCHOS_UNIT_TEST( MDMap, pListBndryPadConstructor )
 
 TEUCHOS_UNIT_TEST( MDMap, paddingConstructor )
 {
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, num_dims, commDims));
+  Teuchos::RCP< const Domi::MDComm > mdComm =
+    Teuchos::rcp(new MDComm(comm, num_dims, commDims));
 
   // Ensure that the commDims are completely specified
   commDims.resize(num_dims);
@@ -1024,9 +1034,11 @@ TEUCHOS_UNIT_TEST( MDMap, paddingConstructor )
 
 TEUCHOS_UNIT_TEST( MDMap, pListPaddingConstructor )
 {
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, num_dims, commDims));
+  Teuchos::RCP< const Domi::MDComm > mdComm =
+    Teuchos::rcp(new MDComm(comm, num_dims, commDims));
 
   // Ensure that the commDims are completely specified
   commDims.resize(num_dims);
@@ -1166,9 +1178,11 @@ TEUCHOS_UNIT_TEST( MDMap, pListPaddingConstructor )
 
 TEUCHOS_UNIT_TEST( MDMap, indexes )
 {
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, num_dims, commDims));
+  Teuchos::RCP< const Domi::MDComm > mdComm =
+    Teuchos::rcp(new MDComm(comm, num_dims, commDims));
 
   // Ensure that the commDims are completely specified
   commDims.resize(num_dims);
@@ -1250,9 +1264,11 @@ TEUCHOS_UNIT_TEST( MDMap, indexes )
 
 TEUCHOS_UNIT_TEST( MDMap, exceptions )
 {
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, num_dims, commDims));
+  Teuchos::RCP< const Domi::MDComm > mdComm =
+    Teuchos::rcp(new MDComm(comm, num_dims, commDims));
 
   // Ensure that the commDims are completely specified
   commDims.resize(num_dims);
@@ -1308,9 +1324,11 @@ TEUCHOS_UNIT_TEST( MDMap, exceptions )
 TEUCHOS_UNIT_TEST( MDMap, subMapLowerLeft )
 {
   // Construct the MDComm from command-line arguments
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, num_dims, commDims));
+  Teuchos::RCP< const Domi::MDComm > mdComm =
+    Teuchos::rcp(new MDComm(comm, num_dims, commDims));
 
   // Ensure that the commDims are completely specified
   commDims.resize(num_dims);
@@ -1386,9 +1404,11 @@ TEUCHOS_UNIT_TEST( MDMap, subMapLowerLeft )
 TEUCHOS_UNIT_TEST( MDMap, subMapLowerLeftWithCommPad )
 {
   // Construct the MDComm from command-line arguments and communication padding
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, num_dims, commDims));
+  Teuchos::RCP< const Domi::MDComm > mdComm =
+    Teuchos::rcp(new MDComm(comm, num_dims, commDims));
 
   // Ensure that the commDims are completely specified
   commDims.resize(num_dims);
@@ -1492,9 +1512,11 @@ TEUCHOS_UNIT_TEST( MDMap, subMapLowerLeftWithCommPad )
 TEUCHOS_UNIT_TEST( MDMap, subMapLowerRight )
 {
   // Construct the MDComm from command-line arguments
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, num_dims, commDims));
+  Teuchos::RCP< const Domi::MDComm > mdComm =
+    Teuchos::rcp(new MDComm(comm, num_dims, commDims));
 
   // Ensure that the commDims are completely specified
   commDims.resize(num_dims);
@@ -1588,9 +1610,11 @@ TEUCHOS_UNIT_TEST( MDMap, subMapLowerRight )
 TEUCHOS_UNIT_TEST( MDMap, subMapLowerRightWithBndryPad )
 {
   // Construct the MDComm from command-line arguments
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, num_dims, commDims));
+  Teuchos::RCP< const Domi::MDComm > mdComm =
+    Teuchos::rcp(new MDComm(comm, num_dims, commDims));
 
   // Ensure that the commDims are completely specified
   commDims.resize(num_dims);
@@ -1692,9 +1716,11 @@ TEUCHOS_UNIT_TEST( MDMap, subMapLowerRightWithBndryPad )
 TEUCHOS_UNIT_TEST( MDMap, subMapUpperLeft )
 {
   // Construct the MDComm from command-line arguments
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, num_dims, commDims));
+  Teuchos::RCP< const Domi::MDComm > mdComm =
+    Teuchos::rcp(new MDComm(comm, num_dims, commDims));
 
   // Ensure that the commDims are completely specified
   commDims.resize(num_dims);
@@ -1788,9 +1814,11 @@ TEUCHOS_UNIT_TEST( MDMap, subMapUpperLeft )
 TEUCHOS_UNIT_TEST( MDMap, subMapUpperLeftPadding )
 {
   // Construct the MDComm from command-line arguments
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, num_dims, commDims));
+  Teuchos::RCP< const Domi::MDComm > mdComm =
+    Teuchos::rcp(new MDComm(comm, num_dims, commDims));
 
   // Ensure that the commDims are completely specified
   commDims.resize(num_dims);
@@ -1918,9 +1946,11 @@ TEUCHOS_UNIT_TEST( MDMap, subMapUpperLeftPadding )
 TEUCHOS_UNIT_TEST( MDMap, subMapUpperRight )
 {
   // Construct the MDComm from command-line arguments
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, num_dims, commDims));
+  Teuchos::RCP< const Domi::MDComm > mdComm =
+    Teuchos::rcp(new MDComm(comm, num_dims, commDims));
 
   // Ensure that the commDims are completely specified
   commDims.resize(num_dims);
@@ -2006,9 +2036,11 @@ TEUCHOS_UNIT_TEST( MDMap, subMapUpperRight )
 TEUCHOS_UNIT_TEST( MDMap, subMapUpperRightNewBndryPad )
 {
   // Construct the MDComm from command-line arguments
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, num_dims, commDims));
+  Teuchos::RCP< const Domi::MDComm > mdComm =
+    Teuchos::rcp(new MDComm(comm, num_dims, commDims));
 
   // Ensure that the commDims are completely specified
   commDims.resize(num_dims);
@@ -2132,9 +2164,11 @@ TEUCHOS_UNIT_TEST( MDMap, subMapUpperRightNewBndryPad )
 TEUCHOS_UNIT_TEST( MDMap, subMapReduce )
 {
   // Construct the MDComm from command-line arguments
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, num_dims, commDims));
+  Teuchos::RCP< const Domi::MDComm > mdComm =
+    Teuchos::rcp(new MDComm(comm, num_dims, commDims));
 
   // Ensure that the commDims are completely specified
   commDims.resize(num_dims);
@@ -2285,12 +2319,13 @@ TEUCHOS_UNIT_TEST( MDMap, subMapReduce )
 TEUCHOS_UNIT_TEST( MDMap, subMapPeriodic )
 {
   // Construct the MDComm from command-line arguments
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
   // Construct the periodic flags
   Array< int > periodic(num_dims, 0);
   periodic[0] = 1;
-  MDCommRCP mdComm =
+  Teuchos::RCP< const Domi::MDComm > mdComm =
     Teuchos::rcp(new MDComm(comm, num_dims, commDims, periodic));
 
   // Ensure that the commDims are completely specified
@@ -2348,9 +2383,10 @@ TEUCHOS_UNIT_TEST( MDMap, subMapPeriodic )
 TEUCHOS_UNIT_TEST( MDMap, isPad )
 {
   // Construct the MDComm from command-line arguments
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  MDCommRCP mdComm =
+  Teuchos::RCP< const Domi::MDComm > mdComm =
     Teuchos::rcp(new MDComm(comm, num_dims, commDims));
 
   // Ensure that the commDims are completely specified
@@ -2427,9 +2463,11 @@ TEUCHOS_UNIT_TEST( MDMap, isPad )
 TEUCHOS_UNIT_TEST( MDMap, augmentedLeading )
 {
   // Construct the MDComm from command-line arguments
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, num_dims, commDims));
+  Teuchos::RCP< const Domi::MDComm > mdComm =
+    Teuchos::rcp(new MDComm(comm, num_dims, commDims));
 
   // Ensure that the commDims are completely specified
   commDims.resize(num_dims);
@@ -2476,9 +2514,11 @@ TEUCHOS_UNIT_TEST( MDMap, augmentedLeading )
 TEUCHOS_UNIT_TEST( MDMap, augmentedTrailing )
 {
   // Construct the MDComm from command-line arguments
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, num_dims, commDims));
+  Teuchos::RCP< const Domi::MDComm > mdComm =
+    Teuchos::rcp(new MDComm(comm, num_dims, commDims));
 
   // Ensure that the commDims are completely specified
   commDims.resize(num_dims);
@@ -2525,9 +2565,11 @@ TEUCHOS_UNIT_TEST( MDMap, augmentedTrailing )
 TEUCHOS_UNIT_TEST( MDMap, augmentedBoth )
 {
   // Construct the MDComm from command-line arguments
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, num_dims, commDims));
+  Teuchos::RCP< const Domi::MDComm > mdComm =
+    Teuchos::rcp(new MDComm(comm, num_dims, commDims));
 
   // Ensure that the commDims are completely specified
   commDims.resize(num_dims);
@@ -2592,9 +2634,11 @@ TEUCHOS_UNIT_TEST( MDMap, augmentedBoth )
 TEUCHOS_UNIT_TEST( MDMap, contiguous )
 {
   // Construct the MDComm from command-line arguments
-  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm =
+    Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, num_dims, commDims));
+  Teuchos::RCP< const Domi::MDComm > mdComm =
+    Teuchos::rcp(new MDComm(comm, num_dims, commDims));
 
   // Ensure that the commDims are completely specified
   commDims.resize(num_dims);
