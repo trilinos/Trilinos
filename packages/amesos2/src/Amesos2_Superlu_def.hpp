@@ -131,7 +131,7 @@ std::string
 Superlu<Matrix,Vector>::description() const
 {
   std::ostringstream oss;
-  oss << "\"SuperLU\"";
+  oss << "SuperLU solver interface";
   if (ILU_Flag_) {
     oss << ", \"ILUTP\" : {";
     oss << "drop tol = " << data_.options.ILU_DropTol;
@@ -164,7 +164,7 @@ Superlu<Matrix,Vector>::description() const
     }
     oss << "}";
   } else {
-    oss << ", Direct Solve";
+    oss << ", direct solve";
   }
   return oss.str();
   /*
