@@ -125,7 +125,18 @@ IF (Domi_ENABLE_PyTrilinos)
     NO_SONAME  1
     )
 
-  SWIG_LINK_LIBRARIES(PyDomi pytrilinos domi)
+  TRIBITS_ADD_LIBRARY(
+    PyDomiLib
+    HEADERS PyTrilinos_Domi_Util.hpp
+    SOURCES PyTrilinos_Domi_Util.cpp
+    )
+
+  SET_TARGET_PROPERTIES(PyDomiLib
+    PROPERTIES
+    LINK_FLAGS ${EXTRA_LINK_ARGS}
+    )
+
+  SWIG_LINK_LIBRARIES(PyDomi pytrilinos domi PyDomiLib)
 
   LIST(APPEND ADDITIONAL_CLEAN_FILES "${MODULE}PYTHON_wrap.h")
 ENDIF (Domi_ENABLE_PyTrilinos)

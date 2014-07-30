@@ -31,12 +31,17 @@
 
 ////////////////////////////////////////////////////////////////////////
 
+namespace PyTrilinos
+{
+
+////////////////////////////////////////////////////////////////////////
+
 Teuchos::RCP< const Domi::MDComm >
-convertToMDComm(const Domi::TeuchosCommRCP teuchosComm,
+convertToMDComm(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
                 const DistArrayProtocol & distarray)
 {
   // Get the number of dimensions and allocate the MDComm arrays
-  int numDim = distarray.num_dims();
+  int numDims = distarray.num_dims();
   Teuchos::Array< int > commDims(numDims);
   Teuchos::Array< int > periodic(numDims);
 
@@ -54,7 +59,7 @@ convertToMDComm(const Domi::TeuchosCommRCP teuchosComm,
 ////////////////////////////////////////////////////////////////////////
 
 Teuchos::RCP< const Domi::MDMap<> >
-convertToMDMap(const Domi::TeuchosCommRCP teuchosComm,
+convertToMDMap(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
                const DistArrayProtocol & distarray)
 {
   // Get the equivalent MDComm.
@@ -63,7 +68,7 @@ convertToMDMap(const Domi::TeuchosCommRCP teuchosComm,
 
   // Get the number of dimensions and check the types of the
   // distributions
-  int numDims = mdComm->distarray.num_dims();
+  int numDims = mdComm->numDims();
   for (int axis = 0; axis < numDims; ++axis)
   {
     DistributionType distType = distarray.dist_type(axis);
@@ -73,43 +78,86 @@ convertToMDMap(const Domi::TeuchosCommRCP teuchosComm,
     {
       PyErr_Format(PyExc_ValueError,
                    "'dist_type' for axis %d = 'NONE' is invalid",
-                   axis, distType);
+                   axis);
       throw PythonException();
     }
     if (distType == CYCLIC)
     {
       PyErr_Format(PyExc_ValueError,
                    "'dist_type' for axis %d = 'CYCLIC' is invalid",
-                   axis, distType);
+                   axis);
       throw PythonException();
     }
     if (distType == UNSTRUCTURED)
     {
       PyErr_Format(PyExc_ValueError,
                    "'dist_type' for axis %d = 'UNSTRUCTURED' is invalid",
-                   axis, distType);
+                   axis);
       throw PythonException();
     }
   }
 
   // Allocate the MDMap constructor arrays
   Teuchos::Array< Domi::Slice > myGlobalBounds(numDims);
-  Teuchos::Array< PaddingType > padding(numDims,0);
+  Teuchos::Array< PaddingType > padding(numDims);
 
   // Fill in the MDMap constructor arrays
   for (int axis = 0; axis < numDims; ++axis)
   {
     int start = distarray.start(axis);
     int stop  = distarray.stop( axis);
-    myGlobalBounds[axis] = ConcreteSlice(start, stop);
+    myGlobalBounds[axis] = Domi::ConcreteSlice(start, stop);
     padding[axis]  = distarray.padding( axis);
   }
 
   // Get the buffer layout
   Domi::Layout layout =
-    PyArray_IS_C_CONTIGUOUS((PyArrayObject*)distarray.buffer) ? Domi::C_ORDER :
-    Domi::FORTRAN_ORDER;
+    PyArray_IS_C_CONTIGUOUS((PyArrayObject*) distarray.buffer()) ?
+      Domi::C_ORDER : Domi::FORTRAN_ORDER;
 
   // Return the result
-  return Teuchos::rcp(new MDMap(mdComm, myGlobalBounds, padding, layout));
+  return Teuchos::rcp(new Domi::MDMap<>(mdComm,
+                                        myGlobalBounds,
+                                        padding,
+                                        layout));
+}
+
+////////////////////////////////////////////////////////////////////////
+
+PyObject *
+convertToPySlice(const Domi::Slice domiSlice)
+{
+  PyObject * pyStart = NULL;
+  PyObject * pyStop  = NULL;
+  PyObject * pyStep  = NULL;
+  PyObject * pySlice;
+  if (domiSlice.start() != Domi::Slice::Default)
+    pyStart = PyInt_FromLong((long)domiSlice.start());
+  if (domiSlice.stop()  != Domi::Slice::Default)
+    pyStop = PyInt_FromLong((long)domiSlice.stop());
+  if (domiSlice.step()  != Domi::Slice::Default)
+    pyStep = PyInt_FromLong((long)domiSlice.step());
+  return PySlice_New(pyStart, pyStop, pyStep);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+Domi::Slice
+convertToDomiSlice(PySliceObject * pySlice,
+                   Py_ssize_t length)
+{
+  Py_ssize_t pyStart  = 0;
+  Py_ssize_t pyStop   = 0;
+  Py_ssize_t pyStep   = 0;
+  Py_ssize_t sliceLen = 0;
+  int rcode = PySlice_GetIndicesEx(pySlice, length , &pyStart ,
+                                   &pyStop, &pyStep, &sliceLen);
+  Domi::ConcreteSlice domiSlice((Domi::dim_type) pyStart,
+                                (Domi::dim_type) pyStop ,
+                                (Domi::dim_type) pyStep );
+  return domiSlice;
+}
+
+////////////////////////////////////////////////////////////////////////
+
 }

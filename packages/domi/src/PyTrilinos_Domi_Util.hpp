@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PYTRILINOS_DOMI_UTIL_H
-#define PYTRILINOS_DOMI_UTIL_H
+#ifndef PYTRILINOS_DOMI_UTIL_HPP
+#define PYTRILINOS_DOMI_UTIL_HPP
 
 // Include the PyTrilinos Distributed Array Protocol header
 #include "PyTrilinos_DAP.hpp"
@@ -43,7 +43,7 @@ namespace PyTrilinos
 // Given a 'distarray' object returned by the DistArray protocol,
 // convert to an RCP of a Domi MDComm.
 Teuchos::RCP< const Domi::MDComm >
-convertToMDComm(const Domi::TeuchosCommRCP teuchosComm,
+convertToMDComm(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
                 const DistArrayProtocol & distarray);
 
 ////////////////////////////////////////////////////////////////////////
@@ -51,9 +51,22 @@ convertToMDComm(const Domi::TeuchosCommRCP teuchosComm,
 // Given a 'distarray' object returned by the DistArray protocol,
 // convert to an RCP of a Domi MDMap.
 Teuchos::RCP< const Domi::MDMap<> >
-convertToMDMap(const Domi::TeuchosCommRCP teuchosComm,
+convertToMDMap(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
                const DistArrayProtocol & distarray);
 
 ////////////////////////////////////////////////////////////////////////
 
+PyObject *
+convertToPySlice(const Domi::Slice domiSlice);
+
+////////////////////////////////////////////////////////////////////////
+
+Domi::Slice
+convertToDomiSlice(PySliceObject * pySlice,
+                   Py_ssize_t length);
+
+////////////////////////////////////////////////////////////////////////
+
 }
+
+#endif
