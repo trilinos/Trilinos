@@ -286,7 +286,6 @@ void gather_shared_nodes(stk::mesh::BulkData & mesh, std::vector<EntityKey> & sh
     for(size_t nodeIndex = 0; nodeIndex < node_buckets.size(); ++nodeIndex)
     {
         const stk::mesh::Bucket & bucket = *node_buckets[nodeIndex];
-        //stk::topology topology = bucket.topology();
         for(size_t entityIndex = 0; entityIndex < bucket.size(); ++entityIndex)
         {
             Entity node = bucket[entityIndex];
