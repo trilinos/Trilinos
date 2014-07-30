@@ -78,6 +78,12 @@ Amesos2Wrapper<MatrixType>::~Amesos2Wrapper()
 template <class MatrixType>
 void Amesos2Wrapper<MatrixType>::setParameters (const Teuchos::ParameterList& params)
 {
+  // If amesos2solver_ hasn't been allocated yet, cache the parameters and set them
+  // once the concrete solver does exist.
+  if (amesos2solver_ == Teuchos::null) {
+    parameterList_ = rcp(new Teuchos::ParameterList(params) );
+    return;
+  }
   Teuchos::ParameterList pl(params);
   Teuchos::RCP<Teuchos::ParameterList> rcppl = Teuchos::rcpFromRef(pl);
   //Amesos2 requires that the ParameterList be called "Amesos2". 
@@ -94,10 +100,6 @@ void Amesos2Wrapper<MatrixType>::setParameters (const Teuchos::ParameterList& pa
     //Amesos2 silently ignores any list not called "Amesos2".  We'll throw an exception.
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "The ParameterList passed to Amesos2 must be called \"Amesos2\".");
   }
-
-  //Teuchos::RCP<const Teuchos::ParameterList> pl = Teuchos::rcpFromRef(params);
-  //Teuchos::RCP<Teuchos::ParameterList> nonConstpl = Teuchos::rcp_const_cast<Teuchos::ParameterList>(pl);
-  //amesos2solver_->setParameters(nonConstpl);
 }
 
 
@@ -369,6 +371,11 @@ void Amesos2Wrapper<MatrixType>::initialize ()
     //*fos << "=========== end of A_local_crs_ (Ifpack2::Details::Amesos2Wrapper::initialize()) ============" << std::endl;
 
     amesos2solver_ = Amesos2::create<MatrixType, MV> (solverType, A_local_crs_);
+    // If parameters have been already been cached via setParameters, set them now.
+    if (parameterList_ != Teuchos::null) {
+      setParameters(*parameterList_);
+      parameterList_ = Teuchos::null;
+    }
     amesos2solver_->preOrdering ();
 
     // The symbolic factorization properly belongs to initialize(),

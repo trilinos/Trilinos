@@ -387,6 +387,10 @@ private:
   // \name Parameters (set by setParameters())
   //@{
 
+  //! Caches parameters passed into setParameters
+  //! if the concrete inner preconditioner doesn't exist yet.
+  Teuchos::RCP<const Teuchos::ParameterList> parameterList_;
+
   //@}
   // \name Other internal data
   //@{

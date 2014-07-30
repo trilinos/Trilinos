@@ -887,6 +887,10 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize ()
 
     setup (); // This does a lot of the initialization work.
 
+    if (! Inverse_.is_null ()) {
+      Inverse_->initialize (); // Initialize subdomain solver.
+    }
+
   } // Stop timing here.
 
   IsInitialized_ = true;
@@ -1362,7 +1366,6 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
 
     Details::OneLevelFactory<MatrixType> factory;
     RCP<prec_type> innerPrec = factory.create (innerName, innerMatrix_);
-    innerPrec->initialize(); //JJH With Amesos2Wrapper (at least), one cannot call innerPrec.setParameters() prior to innerPrec.initialize(), as the latter is what allocates the concrete Amesos solver, and setParameters needs the concrete solver.
     TEUCHOS_TEST_FOR_EXCEPTION(
       innerPrec.is_null (), std::logic_error,
       "Ifpack2::AdditiveSchwarz::setup: Failed to create inner preconditioner "
