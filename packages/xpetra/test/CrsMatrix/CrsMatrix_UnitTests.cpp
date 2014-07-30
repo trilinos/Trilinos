@@ -420,14 +420,14 @@ namespace {
 
       // Create the const view.
       Teuchos::ArrayRCP<const Scalar> outData = vec_sol->getData (0);
-      TEST_ASSERT( outData.size () == rangeMap->getNodeNumElements () );
-      if (outData.size () == rangeMap->getNodeNumElements () &&
+      TEST_ASSERT( outData.size () == static_cast<size_type>(rangeMap->getNodeNumElements()) );
+      if (outData.size () == static_cast<size_type>(rangeMap->getNodeNumElements()) &&
           outData.size () > static_cast<size_type> (0)) {
         TEST_EQUALITY( outData[0], 5.0 );
       }
       if (rangeMap->getNodeNumElements () > static_cast<size_t> (1)) {
         bool allOnes = true;
-        for (size_type k = 1; k < rangeMap->getNodeNumElements (); ++k) {
+        for (size_type k = 1; k < static_cast<size_type>(rangeMap->getNodeNumElements()); ++k) {
           if (! outData[k] == 1.0) {
             allOnes = false;
           }
@@ -439,14 +439,14 @@ namespace {
       outData = Teuchos::null;
       // Create the nonconst view.
       Teuchos::ArrayRCP<Scalar> outDataNonConst = vec_sol->getDataNonConst (0);
-      TEST_ASSERT( outDataNonConst.size () == rangeMap->getNodeNumElements () );
-      if (outDataNonConst.size () == rangeMap->getNodeNumElements () &&
+      TEST_ASSERT( outDataNonConst.size () == static_cast<size_type>(rangeMap->getNodeNumElements()) );
+      if (outDataNonConst.size() == static_cast<size_type>(rangeMap->getNodeNumElements()) &&
           outDataNonConst.size () > static_cast<size_type> (0)) {
         TEST_EQUALITY( outDataNonConst[0], 5.0 );
       }
       if (rangeMap->getNodeNumElements () > static_cast<size_t> (1)) {
         bool allOnes = true;
-        for (size_type k = 1; k < rangeMap->getNodeNumElements (); ++k) {
+        for (size_type k = 1; k < static_cast<size_type>(rangeMap->getNodeNumElements()); ++k) {
           if (! outDataNonConst[k] == 1.0) {
             allOnes = false;
           }
