@@ -166,7 +166,7 @@ namespace Domi
  */
 template< class Scalar,
           class Node = Kokkos::DefaultNode::DefaultNodeType >
-class MDVector : Teuchos::Describable
+class MDVector : public Teuchos::Describable
 {
 public:
 
@@ -243,7 +243,7 @@ public:
    *
    * \param node [in] the Kokkos node of the map
    */
-  MDVector(const TeuchosCommRCP teuchosComm,
+  MDVector(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
            Teuchos::ParameterList & plist,
            const Teuchos::RCP< Node > & node =
              Kokkos::DefaultNode::getDefaultNode());
@@ -261,7 +261,7 @@ public:
    *
    * \param node [in] the Kokkos node of the map
    */
-  MDVector(const MDCommRCP mdComm,
+  MDVector(const Teuchos::RCP< const MDComm > mdComm,
            Teuchos::ParameterList & plist,
            const Teuchos::RCP< Node > & node =
              Kokkos::DefaultNode::getDefaultNode());
@@ -334,7 +334,7 @@ public:
    * sub-communicator, that the underlying Comm pointer may be NULL,
    * depending on this processor's rank.
    */
-  TeuchosCommRCP getTeuchosComm() const;
+  Teuchos::RCP< const Teuchos::Comm< int > > getTeuchosComm() const;
 
   /** \brief Get the number of dimensions
    *
@@ -996,10 +996,10 @@ public:
   /** \name Global communication methods */
   //@{
 
-  /** \brief Sum values of a locally replicated multivector across all
-   *         processes.
-   */
-  void reduce();
+  // /** \brief Sum values of a locally replicated multivector across all
+  //  *         processes.
+  //  */
+  // void reduce();
 
   /** \brief The simplest method for updating the communication padding.
    *
@@ -1104,7 +1104,7 @@ private:
   // The Teuchos communicator.  Note that this is always a reference
   // to the communicator of the _mdMap, and is stored only for
   // convenience
-  TeuchosCommRCP _teuchosComm;
+  Teuchos::RCP< const Teuchos::Comm< int > > _teuchosComm;
 
   // The MDMap that describes the domain decomposition of this
   // MDVector
@@ -1346,7 +1346,7 @@ MDVector(const MDVector< Scalar, Node > & source) :
 template< class Scalar,
           class Node >
 MDVector< Scalar, Node >::
-MDVector(const TeuchosCommRCP teuchosComm,
+MDVector(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
          Teuchos::ParameterList & plist,
          const Teuchos::RCP< Node > & node) :
   _teuchosComm(teuchosComm),
@@ -1388,7 +1388,7 @@ MDVector(const TeuchosCommRCP teuchosComm,
 template< class Scalar,
           class Node >
 MDVector< Scalar, Node >::
-MDVector(const MDCommRCP mdComm,
+MDVector(const Teuchos::RCP< const MDComm > mdComm,
          Teuchos::ParameterList & plist,
          const Teuchos::RCP< Node > & node) :
   _teuchosComm(mdComm->getTeuchosComm()),
@@ -1606,7 +1606,7 @@ onSubcommunicator() const
 
 template< class Scalar,
           class Node >
-TeuchosCommRCP 
+Teuchos::RCP< const Teuchos::Comm< int > > 
 MDVector< Scalar, Node >::
 getTeuchosComm() const
 {
@@ -2741,7 +2741,7 @@ describe(Teuchos::FancyOStream &out,
     (verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
 
   const MDMap< Node > & mdMap = *(getMDMap());
-  TeuchosCommRCP comm = mdMap.getTeuchosComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm = mdMap.getTeuchosComm();
   const int myImageID = comm->getRank();
   const int numImages = comm->getSize();
   Teuchos::OSTab tab0(out);
@@ -2839,6 +2839,16 @@ randomize()
   for (iterator it = _mdArrayView.begin(); it != _mdArrayView.end(); ++it)
     *it = Teuchos::ScalarTraits< Scalar >::random();
 }
+
+////////////////////////////////////////////////////////////////////////
+
+// template< class Scalar,
+//           class Node >
+// void
+// MDVector< Scalar, Node >::
+// reduce()
+// {
+// }
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -3434,7 +3444,7 @@ computeFileInfo(bool includeBndryPad) const
         fileInfo->dataShape[axis] += pad;
         fileInfo->dataStart[axis] -= pad;
       }
-      if (commIndex == _mdMap->getCommSize(axis)-1)
+      if (commIndex == _mdMap->getCommDim(axis)-1)
       {
         fileInfo->dataShape[axis] += getUpperBndryPad(axis);
       }

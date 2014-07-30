@@ -56,6 +56,7 @@
 
 // Teuchos includes
 #include "Teuchos_Comm.hpp"
+#include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_Tuple.hpp"
 
@@ -141,12 +142,6 @@ class MDMap
 {
 public:
 
-  /** \brief Adopt the Domi <tt>size_type</tt> type */
-  //typedef Domi::size_type size_type;
-
-  /** \brief Adopt the Domi <tt>dim_type</tt> type */
-  //typedef Domi::dim_type dim_type;
-
   /** \name Constructors and destructor */
   //@{
 
@@ -173,13 +168,29 @@ public:
    *
    * \param node [in] the Kokkos node of the map
    */
-  MDMap(const MDCommRCP mdComm,
+  MDMap(const Teuchos::RCP< const MDComm > mdComm,
         const Teuchos::ArrayView< dim_type > & dimensions,
         const Teuchos::ArrayView< int > & commPad =
           Teuchos::ArrayView< int >(),
         const Teuchos::ArrayView< int > & bndryPad =
           Teuchos::ArrayView< int >(),
         const Layout layout = DEFAULT_ORDER,
+        const Teuchos::RCP< Node > & node =
+          Kokkos::DefaultNode::getDefaultNode());
+
+  /** \brief Constructor with ParameterList
+   *
+   * \param plist [in] ParameterList with construction information
+   *        \htmlonly
+   *        <iframe src="domi.xml" width="90%"height="400px"></iframe>
+   *        <hr />
+   *        \endhtmlonly
+   *
+   * \param node [in] the Kokkos node of the map
+   *
+   * This constructor uses the Teuchos::DefaultComm
+   */
+  MDMap(Teuchos::ParameterList & plist,
         const Teuchos::RCP< Node > & node =
           Kokkos::DefaultNode::getDefaultNode());
 
@@ -196,7 +207,7 @@ public:
    *
    * \param node [in] the Kokkos node of the map
    */
-  MDMap(const TeuchosCommRCP teuchosComm,
+  MDMap(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
         Teuchos::ParameterList & plist,
         const Teuchos::RCP< Node > & node =
           Kokkos::DefaultNode::getDefaultNode());
@@ -214,7 +225,7 @@ public:
    *
    * \param node [in] the Kokkos node of the map
    */
-  MDMap(const MDCommRCP mdComm,
+  MDMap(const Teuchos::RCP< const MDComm > mdComm,
         Teuchos::ParameterList & plist,
         const Teuchos::RCP< Node > & node =
           Kokkos::DefaultNode::getDefaultNode());
@@ -232,13 +243,19 @@ public:
    *
    * \param node [in] the Kokkos node of the map
    */
-  MDMap(const MDCommRCP mdComm,
+  MDMap(const Teuchos::RCP< const MDComm > mdComm,
         const Teuchos::ArrayView< Slice > & myGlobalBounds,
         const Teuchos::ArrayView< padding_type > & padding =
           Teuchos::ArrayView< padding_type >(),
         const Layout layout = DEFAULT_ORDER,
         const Teuchos::RCP< Node > & node =
           Kokkos::DefaultNode::getDefaultNode());
+
+  /** \brief Copy constructor
+   *
+   * \param source [in] the source MDMap to be copied
+   */
+  MDMap(const MDMap< Node > & source);
 
   /** \brief Parent/single global ordinal sub-map constructor
    *
@@ -307,6 +324,17 @@ public:
 
   //@}
 
+  /** \name MDMap standard operators */
+  //@{
+
+  /** \brief Assignment operator
+   *
+   * \param source [in] source MDComm
+   */
+  MDMap< Node > & operator=(const MDMap< Node > & source);
+
+  //@}
+
   /** \name MDComm pass-through methods */
   //@{
 
@@ -324,7 +352,7 @@ public:
    * sub-communicator, that the underlying Comm pointer may be NULL,
    * depending on this processor's rank.
    */
-  TeuchosCommRCP getTeuchosComm() const;
+  Teuchos::RCP< const Teuchos::Comm< int > > getTeuchosComm() const;
 
   /** \brief Get the number of dimensions
    *
@@ -836,7 +864,7 @@ private:
   void computeBounds();
 
   // The underlying multi-dimensional communicator.
-  MDCommRCP _mdComm;
+  Teuchos::RCP< const MDComm > _mdComm;
 
   // The size of the global dimensions along each axis.  This includes
   // the values of the boundary padding.
@@ -951,7 +979,7 @@ private:
 
 template< class Node >
 MDMap< Node >::
-MDMap(const MDCommRCP mdComm,
+MDMap(const Teuchos::RCP< const MDComm > mdComm,
       const Teuchos::ArrayView< dim_type > & dimensions,
       const Teuchos::ArrayView< int > & commPad,
       const Teuchos::ArrayView< int > & bndryPad,
@@ -1031,7 +1059,122 @@ MDMap(const MDCommRCP mdComm,
 
 template< class Node >
 MDMap< Node>::
-MDMap(TeuchosCommRCP teuchosComm,
+MDMap(Teuchos::ParameterList & plist,
+      const Teuchos::RCP< Node > & node) :
+  _mdComm(Teuchos::rcp(new MDComm(plist))),
+  _globalDims(),
+  _globalBounds(),
+  _globalRankBounds(),
+  _globalStrides(),
+  _globalMin(0),
+  _globalMax(),
+  _localDims(),
+  _localBounds(),
+  _localStrides(),
+  _localMin(0),
+  _localMax(0),
+  _commPadSizes(),
+  _pad(),
+  _bndryPadSizes(),
+  _bndryPad(),
+  _layout(),
+  _node(node)
+{
+  // Note that the call to the MDComm constructor in the constructor
+  // initialization list will validate the ParameterList, so we don't
+  // have to do it again here.
+
+  // Temporarily store the number of dimensions
+  int numDims = _mdComm->numDims();
+
+  // Check the global dimensions
+  Teuchos::Array< dim_type > dimensions =
+    plist.get("dimensions", Teuchos::Array< dim_type >());
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    numDims != dimensions.size(),
+    InvalidArgument,
+    "Size of dimensions does not match MDComm number of dimensions");
+
+  // Copy the boundary padding sizes and compute the global dimensions
+  // and bounds
+  int bndryPad = plist.get("boundary pad size", int(0));
+  Teuchos::Array< int > bndryPads =
+    plist.get("boundary pad sizes", Teuchos::Array< int >());
+  _bndryPadSizes.resize(numDims);
+  _globalDims.resize(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    if (axis < bndryPads.size())
+      _bndryPadSizes[axis] = bndryPads[axis];
+    else
+      _bndryPadSizes[axis] = bndryPad;
+    _bndryPad.push_back(Teuchos::tuple(_bndryPadSizes[axis],
+                                       _bndryPadSizes[axis]));
+    _globalDims[axis] = dimensions[axis] + 2*_bndryPadSizes[axis];
+    _globalBounds.push_back(ConcreteSlice(_globalDims[axis]));
+  }
+
+  // Compute the global size
+  _globalMax = computeSize(_globalDims());
+
+  // Copy the communication padding sizes and set the actual padding
+  int commPad = plist.get("communication pad size", int(0));
+  Teuchos::Array< int > commPads =
+    plist.get("communication pad sizes", Teuchos::Array< int >());
+  _commPadSizes.resize(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    if (axis < commPads.size())
+      _commPadSizes[axis] = commPads[axis];
+    else
+      _commPadSizes[axis] = commPad;
+    int lower, upper;
+    if (getLowerNeighbor(axis) == -1)
+      lower = _bndryPadSizes[axis];
+    else
+      lower = _commPadSizes[axis];
+    if (getUpperNeighbor(axis) == -1)
+      upper = _bndryPadSizes[axis];
+    else
+      upper = _commPadSizes[axis];
+    _pad.push_back(Teuchos::tuple(lower, upper));
+  }
+
+  // Compute _globalRankBounds, _localBounds, and _localDims.
+  // Then compute the local size
+  _globalRankBounds.resize(numDims);
+  _localDims.resize(numDims);
+  computeBounds();
+  _localMax = computeSize(_localDims());
+
+  // Set the layout
+  std::string layout = plist.get("layout", "DEFAULT");
+  std::transform(layout.begin(), layout.end(), layout.begin(), ::toupper);
+  if (layout == "C ORDER")
+    _layout = C_ORDER;
+  else if (layout == "FORTRAN ORDER")
+    _layout = FORTRAN_ORDER;
+  else if (layout == "ROW MAJOR")
+    _layout = ROW_MAJOR;
+  else if (layout == "COLUMN MAJOR")
+    _layout = COLUMN_MAJOR;
+  else if (layout == "LAST INDEX FASTEST")
+    _layout = LAST_INDEX_FASTEST;
+  else if (layout == "FIRST INDEX FASTEST")
+    _layout = FIRST_INDEX_FASTEST;
+  else
+    _layout = DEFAULT_ORDER;
+
+  // Compute the strides
+  _globalStrides = computeStrides< size_type, dim_type >(_globalDims, _layout);
+  _localStrides  = computeStrides< size_type, dim_type >(_localDims , _layout);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Node >
+MDMap< Node>::
+MDMap(Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
       Teuchos::ParameterList & plist,
       const Teuchos::RCP< Node > & node) :
   _mdComm(Teuchos::rcp(new MDComm(teuchosComm, plist))),
@@ -1147,7 +1290,7 @@ MDMap(TeuchosCommRCP teuchosComm,
 
 template< class Node >
 MDMap< Node >::
-MDMap(const MDCommRCP mdComm,
+MDMap(const Teuchos::RCP< const MDComm > mdComm,
       const Teuchos::ArrayView< Slice > & myGlobalBounds,
       const Teuchos::ArrayView< padding_type > & padding,
       const Layout layout,
@@ -1303,7 +1446,7 @@ MDMap(const MDCommRCP mdComm,
 
 template< class Node >
 MDMap< Node>::
-MDMap(MDCommRCP mdComm,
+MDMap(Teuchos::RCP< const MDComm > mdComm,
       Teuchos::ParameterList & plist,
       const Teuchos::RCP< Node > & node) :
   _mdComm(mdComm),
@@ -1407,6 +1550,32 @@ MDMap(MDCommRCP mdComm,
   // Compute the strides
   _globalStrides = computeStrides< size_type, dim_type >(_globalDims, _layout);
   _localStrides  = computeStrides< size_type, dim_type >(_localDims , _layout);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Node >
+MDMap< Node >::
+MDMap(const MDMap< Node > & source) :
+  _mdComm(source._mdComm),
+  _globalDims(source._globalDims),
+  _globalBounds(source._globalBounds),
+  _globalRankBounds(source._globalRankBounds),
+  _globalStrides(source._globalStrides),
+  _globalMin(source._globalMin),
+  _globalMax(source._globalMax),
+  _localDims(source._localDims),
+  _localBounds(source._localBounds),
+  _localStrides(source._localStrides),
+  _localMin(source._localMin),
+  _localMax(source._localMax),
+  _commPadSizes(source._commPadSizes),
+  _pad(source._pad),
+  _bndryPadSizes(source._bndryPadSizes),
+  _bndryPad(source._bndryPad),
+  _layout(source._layout),
+  _node(source._node)
+{
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1750,6 +1919,33 @@ MDMap< Node >::~MDMap()
 ////////////////////////////////////////////////////////////////////////
 
 template< class Node >
+MDMap< Node > &
+MDMap< Node >::operator=(const MDMap< Node > & source)
+{
+  _mdComm           = source._mdComm;
+  _globalDims       = source._globalDims;
+  _globalBounds     = source._globalBounds;
+  _globalRankBounds = source._globalRankBounds;
+  _globalStrides    = source._globalStrides;
+  _globalMin        = source._globalMin;
+  _globalMax        = source._globalMax;
+  _localDims        = source._localDims;
+  _localBounds      = source._localBounds;
+  _localStrides     = source._localStrides;
+  _localMin         = source._localMin;
+  _localMax         = source._localMax;
+  _commPadSizes     = source._commPadSizes;
+  _pad              = source._pad;
+  _bndryPadSizes    = source._bndryPadSizes;
+  _bndryPad         = source._bndryPad;
+  _layout           = source._layout;
+  _node             = source._node;
+  return *this;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Node >
 bool
 MDMap< Node >::onSubcommunicator() const
 {
@@ -1759,7 +1955,7 @@ MDMap< Node >::onSubcommunicator() const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Node >
-TeuchosCommRCP
+Teuchos::RCP< const Teuchos::Comm< int > >
 MDMap< Node >::getTeuchosComm() const
 {
   return _mdComm->getTeuchosComm();
@@ -2273,7 +2469,7 @@ MDMap< Node >::getEpetraMap(bool withCommPad) const
       }
 
       // Construct the Epetra_Map
-      EpetraCommRCP epetraComm = _mdComm->getEpetraComm();
+      Teuchos::RCP< const Epetra_Comm > epetraComm = _mdComm->getEpetraComm();
       _epetraMap = Teuchos::rcp(new Epetra_Map(-1,
                                                myElements.size(),
                                                myElements.getRawPtr(),
@@ -2325,7 +2521,7 @@ MDMap< Node >::getEpetraMap(bool withCommPad) const
       }
 
       // Construct the Epetra_Map
-      EpetraCommRCP epetraComm = _mdComm->getEpetraComm();
+      Teuchos::RCP< const Epetra_Comm > epetraComm = _mdComm->getEpetraComm();
       _epetraOwnMap = Teuchos::rcp(new Epetra_Map(-1,
                                                   myElements.size(),
                                                   myElements.getRawPtr(),
@@ -2359,7 +2555,7 @@ getEpetraAxisMap(int axis,
       (not withCommPad && (_epetraAxisOwnMaps.size() == 0)))
   {
     int num_dims = numDims();
-    EpetraCommRCP epetraComm = _mdComm->getEpetraComm();
+    Teuchos::RCP< const Epetra_Comm > epetraComm = _mdComm->getEpetraComm();
     for (int axis=0; axis < num_dims; ++axis)
     {
       Teuchos::Array<int> elements(getLocalDim(axis, withCommPad));
@@ -2450,8 +2646,10 @@ MDMap< Node >::getTpetraMap(bool withCommPad) const
     }
 
     // Return the Tpetra::Map
-    const Teuchos::Array< GlobalOrdinal > & myElements = elementMDArray.array();
-    TeuchosCommRCP teuchosComm = _mdComm->getTeuchosComm();
+    const Teuchos::Array< GlobalOrdinal > & myElements =
+      elementMDArray.array();
+    Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm =
+      _mdComm->getTeuchosComm();
     return
       Teuchos::rcp(new Tpetra::Map< LocalOrdinal,
                                     GlobalOrdinal,
@@ -2497,8 +2695,10 @@ MDMap< Node >::getTpetraMap(bool withCommPad) const
     }
 
     // Return the Tpetra::Map
-    const Teuchos::Array< GlobalOrdinal> & myElements = elementMDArray.array();
-    TeuchosCommRCP teuchosComm = _mdComm->getTeuchosComm();
+    const Teuchos::Array< GlobalOrdinal> & myElements =
+      elementMDArray.array();
+    Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm =
+      _mdComm->getTeuchosComm();
     return
       Teuchos::rcp(new Tpetra::Map< LocalOrdinal,
                                     GlobalOrdinal,
@@ -2553,7 +2753,8 @@ getTpetraAxisMap(int axis,
     numDims() << ")");
 #endif
   int num_dims = numDims();
-  TeuchosCommRCP teuchosComm = _mdComm->getTeuchosComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm =
+    _mdComm->getTeuchosComm();
   Teuchos::Array< GlobalOrdinal > elements(getLocalDim(axis,withCommPad));
   GlobalOrdinal start = getGlobalRankBounds(axis,true).start();
   if (withCommPad && (getCommIndex(axis) != 0)) start -= _pad[axis][0];
@@ -2816,7 +3017,7 @@ MDMap< Node >::isSameAs(const MDMap< Node > & mdMap,
   // to false.  At the end, we will perform a global reduction to
   // obtain the global result.
   int localResult = 1;
-  TeuchosCommRCP comm = getTeuchosComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm = getTeuchosComm();
   int rank = comm->getRank();
 
   // Check if MDMaps are compatible.

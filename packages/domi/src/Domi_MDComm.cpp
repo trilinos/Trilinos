@@ -47,6 +47,7 @@
 
 // Teuchos includes
 #include "Teuchos_TestForException.hpp"
+#include "Teuchos_DefaultComm.hpp"
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
 #endif
@@ -60,7 +61,23 @@ const Layout MDComm::commLayout = C_ORDER;
 
 ////////////////////////////////////////////////////////////////////////
 
-MDComm::MDComm(const TeuchosCommRCP teuchosComm,
+MDComm::MDComm(const Teuchos::ArrayView< int > & commDims,
+               const Teuchos::ArrayView< int > & periodic) :
+  _teuchosComm(Teuchos::DefaultComm< int >::getComm()),
+  _commDims(regularizeCommDims(_teuchosComm->getSize(),
+                               commDims.size(),
+                               commDims)),
+  _commStrides(computeStrides<int,int>(_commDims,
+                                       commLayout)),
+  _commIndex(computeCommIndexes(_teuchosComm->getRank(),
+                                _commStrides)),
+  _periodic(computePeriodic(commDims.size(), periodic))
+{
+}
+
+////////////////////////////////////////////////////////////////////////
+
+MDComm::MDComm(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
                const Teuchos::ArrayView< int > & commDims,
                const Teuchos::ArrayView< int > & periodic) :
   _teuchosComm(teuchosComm),
@@ -77,7 +94,43 @@ MDComm::MDComm(const TeuchosCommRCP teuchosComm,
 
 ////////////////////////////////////////////////////////////////////////
 
-MDComm::MDComm(const TeuchosCommRCP teuchosComm,
+MDComm::MDComm(Teuchos::ParameterList & plist) :
+  _teuchosComm(Teuchos::DefaultComm< int >::getComm())
+{
+  // Validate the ParameterList
+  plist.validateParameters(*getValidParameters());
+
+  // Determine a first cut at the number of dimensions
+  Teuchos::Array< int > dims =
+    plist.get("dimensions", Teuchos::Array< int >());
+  int numDims = dims.size();
+
+  // Set the communicator sizes along each axis and reset the
+  // dimensions if necessary
+  Teuchos::Array< int > commDims =
+    plist.get("comm dimensions", Teuchos::Array< int >());
+  if (numDims == 0) numDims = commDims.size();
+  _commDims = regularizeCommDims(_teuchosComm->getSize(),
+                                 numDims,
+                                 commDims());
+
+  // Set the periodic flags along each axis
+  Teuchos::Array< int > periodic =
+    plist.get("periodic", Teuchos::Array< int >());
+  _periodic = computePeriodic(numDims, periodic);
+
+  // Set the axis strides
+  _commStrides = computeStrides<int,int>(_commDims,
+                                         commLayout);
+
+  // Set the axis ranks for this processor
+  _commIndex = computeCommIndexes(_teuchosComm->getRank(),
+                                  _commStrides);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+MDComm::MDComm(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
                Teuchos::ParameterList & plist) :
   _teuchosComm(teuchosComm)
 {
@@ -114,7 +167,22 @@ MDComm::MDComm(const TeuchosCommRCP teuchosComm,
 
 ////////////////////////////////////////////////////////////////////////
 
-MDComm::MDComm(const TeuchosCommRCP teuchosComm,
+MDComm::MDComm(int numDims) :
+  _teuchosComm(Teuchos::DefaultComm< int >::getComm()),
+  _commDims(regularizeCommDims(_teuchosComm->getSize(),
+                               numDims,
+                               Teuchos::Array< int >())),
+  _commStrides(computeStrides<int,int>(_commDims,
+                                       commLayout)),
+  _commIndex(computeCommIndexes(_teuchosComm->getRank(),
+                                _commStrides)),
+  _periodic(numDims, 0)
+{
+}
+
+////////////////////////////////////////////////////////////////////////
+
+MDComm::MDComm(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
                int numDims) :
   _teuchosComm(teuchosComm),
   _commDims(regularizeCommDims(teuchosComm->getSize(),
@@ -130,7 +198,24 @@ MDComm::MDComm(const TeuchosCommRCP teuchosComm,
 
 ////////////////////////////////////////////////////////////////////////
 
-MDComm::MDComm(const TeuchosCommRCP teuchosComm,
+MDComm::MDComm(int numDims,
+               const Teuchos::ArrayView< int > & commDims,
+               const Teuchos::ArrayView< int > & periodic) :
+  _teuchosComm(Teuchos::DefaultComm< int >::getComm()),
+  _commDims(regularizeCommDims(_teuchosComm->getSize(),
+                               numDims,
+                               commDims)),
+  _commStrides(computeStrides<int,int>(_commDims,
+                                       commLayout)),
+  _commIndex(computeCommIndexes(_teuchosComm->getRank(),
+                                _commStrides)),
+  _periodic(computePeriodic(numDims, periodic))
+{
+}
+
+////////////////////////////////////////////////////////////////////////
+
+MDComm::MDComm(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
                int numDims,
                const Teuchos::ArrayView< int > & commDims,
                const Teuchos::ArrayView< int > & periodic) :
@@ -409,7 +494,7 @@ MDComm::onSubcommunicator() const
 
 ////////////////////////////////////////////////////////////////////////
 
-TeuchosCommRCP
+Teuchos::RCP< const Teuchos::Comm< int > >
 MDComm::getTeuchosComm() const
 {
   return _teuchosComm;
@@ -418,7 +503,7 @@ MDComm::getTeuchosComm() const
 ////////////////////////////////////////////////////////////////////////
 
 #ifdef HAVE_EPETRA
-EpetraCommRCP
+Teuchos::RCP< const Epetra_Comm >
 MDComm::getEpetraComm() const
 {
   if (_epetraComm.is_null() && not _teuchosComm.is_null())

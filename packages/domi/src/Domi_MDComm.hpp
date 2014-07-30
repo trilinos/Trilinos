@@ -63,22 +63,6 @@
 namespace Domi
 {
 
-/** \brief Provide a simple typedef for the Teuchos communicator
- */
-typedef Teuchos::RCP< const Teuchos::Comm<int> > TeuchosCommRCP;
-
-#ifdef HAVE_EPETRA
-/** \brief Provide a simple typedef for the Epetra communicator
- */
-typedef Teuchos::RCP< const Epetra_Comm > EpetraCommRCP;
-#endif
-
-// Forward declaration
-class MDComm;
-
-/** \brief Provide a simple typedef for an MDComm RCP */
-typedef Teuchos::RCP< const MDComm > MDCommRCP;
-
 /** \brief Multi-dimensional communicator object
  *
  * The <tt>MDComm</tt> is a relatively simple class that contains a
@@ -141,7 +125,27 @@ public:
   /** \name Constructors and Destructor */
   //@{
 
-  /** \brief Constructor with axis sizes
+  /** \brief Constructor with default Teuchos comm and axis sizes
+   *
+   * \param commDims [in] An array containing the sizes of the
+   *        <tt>MDComm</tt> along each axis.  The size of
+   *        <tt>commDims</tt> determines the number of dimensions.
+   *        Negative values will be converted to positive such that
+   *        the product of the resulting axis sizes will equal the
+   *        number of processors in the Teuchos communicator.
+   *
+   * \param periodic [in] An array of ints which are simple flags
+   *        denoting whether each axis is periodic.  If this array is
+   *        shorter than the size of commDims, the unspecified axes
+   *        are assumed to be zero (false).
+   *
+   * This constructor uses the Teuchos::DefaultComm communicator
+   */
+  MDComm(const Teuchos::ArrayView< int > & commDims,
+         const Teuchos::ArrayView< int > & periodic =
+           Teuchos::ArrayView< int >());
+
+  /** \brief Constructor with Teuchos Comm and axis sizes
    *
    * \param teuchosComm [in] The Teuchos Communicator
    *
@@ -157,12 +161,25 @@ public:
    *        shorter than the size of commDims, the unspecified axes
    *        are assumed to be zero (false).
    */
-  MDComm(const TeuchosCommRCP teuchosComm,
+  MDComm(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
          const Teuchos::ArrayView< int > & commDims,
          const Teuchos::ArrayView< int > & periodic =
            Teuchos::ArrayView< int >());
 
   /** \brief Constructor with ParameterList
+   * 
+   * \param plist [in] ParameterList with construction information
+   *        \htmlonly
+   *        <iframe src="domi.xml" width="100%" scrolling="no" frameborder="0">
+   *        </iframe>
+   *        <hr />
+   *        \endhtmlonly
+   *
+   * This constructor uses the Teuchos::DefaultComm
+   */
+  MDComm(Teuchos::ParameterList & plist);
+
+  /** \brief Constructor with Teuchos Comm and ParameterList
    * 
    * \param teuchosComm [in] The Teuchos Communicator
    *
@@ -173,8 +190,19 @@ public:
    *        <hr />
    *        \endhtmlonly
    */
-  MDComm(const TeuchosCommRCP teuchosComm,
+  MDComm(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
          Teuchos::ParameterList & plist);
+
+  /** \brief Constructor with number of dimensions
+   *
+   * \param numDims [in] The number of dimensions in the
+   *        <tt>MDComm</tt>.  Currently, all of the processors are
+   *        allocated to the first axis, and the other axes are
+   *        assigned a size of one.
+   *
+   * This constructor uses the Teuchos::DefaultComm
+   */
+  MDComm(int numDims);
 
   /** \brief Constructor with number of dimensions
    *
@@ -185,10 +213,36 @@ public:
    *        allocated to the first axis, and the other axes are
    *        assigned a size of one.
    */
-  MDComm(const TeuchosCommRCP teuchosComm,
+  MDComm(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
          int numDims);
 
   /** \brief Constructor with number of dimensions and axis sizes
+   *
+   * \param numDims [in] The number of dimensions in the
+   *        <tt>MDComm</tt>.
+   *
+   * \param commDims [in] An array containing the sizes of the
+   *        <tt>MDComm</tt> along each axis.  If the size of
+   *        <tt>commDims</tt> is less than <tt>numDims</tt>, then the
+   *        missing values are treated as unspecified.  Negative
+   *        values will also be treated as unspecified.  Unspecified
+   *        values will be converted to positive such that the product
+   *        of the resulting axis sizes will equal the number of
+   *        processors in the Teuchos communicator.
+   *
+   * \param periodic [in] An array of ints which are simple flags
+   *        denoting whether each axis is periodic.  If this array is
+   *        shorter than numDims, the unspecified axes are assumed to
+   *        be zero (false).
+   *
+   * This constructor uses the Teuchos::DefaultComm
+   */
+  MDComm(int numDims,
+         const Teuchos::ArrayView< int > & commDims,
+         const Teuchos::ArrayView< int > & periodic =
+           Teuchos::ArrayView< int >());
+
+  /** \brief Constructor with Teuchos Comm, number of dimensions and axis sizes
    *
    * \param teuchosComm [in] The Teuchos Communicator
    *
@@ -209,7 +263,7 @@ public:
    *        shorter than numDims, the unspecified axes are assumed to
    *        be zero (false).
    */
-  MDComm(const TeuchosCommRCP teuchosComm,
+  MDComm(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
          int numDims,
          const Teuchos::ArrayView< int > & commDims,
          const Teuchos::ArrayView< int > & periodic =
@@ -292,7 +346,7 @@ public:
    * sub-communicator, that the underlying Comm pointer may be NULL,
    * depending on this processor's rank.
    */
-  TeuchosCommRCP getTeuchosComm() const;
+  Teuchos::RCP< const Teuchos::Comm< int > > getTeuchosComm() const;
 
 #ifdef HAVE_EPETRA
   /** \brief Get an equivalent Epetra communicator
@@ -301,7 +355,7 @@ public:
    * sub-communicator, that the underlying Comm pointer may be NULL,
    * depending on this processor's rank.
    */
-  EpetraCommRCP getEpetraComm() const;
+  Teuchos::RCP< const Epetra_Comm > getEpetraComm() const;
 #endif
 
   /** \brief Get the number of dimensions
@@ -392,12 +446,12 @@ protected:
 private:
 
   // The Teuchos communicator
-  TeuchosCommRCP _teuchosComm;
+  Teuchos::RCP< const Teuchos::Comm< int > > _teuchosComm;
 
 #ifdef HAVE_EPETRA
   // An equivalent Epetra communicator.  This is mutable because we
   // only compute it if requested by a get method that is const.
-  mutable EpetraCommRCP _epetraComm;
+  mutable Teuchos::RCP< const Epetra_Comm > _epetraComm;
 #endif
 
   // An array of the sizes of the communicator along each axis
