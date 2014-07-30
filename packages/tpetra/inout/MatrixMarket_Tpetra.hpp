@@ -6028,7 +6028,7 @@ namespace Tpetra {
                   const Teuchos::RCP<Teuchos::FancyOStream>& err = Teuchos::null,
                   const Teuchos::RCP<Teuchos::FancyOStream>& dbg = Teuchos::null)
       {
-        writeDense (out, *X, "", "", err, dbg);
+        writeDense (out, X, "", "", err, dbg);
       }
 
       /// \brief Print the multivector in Matrix Market format, with
