@@ -104,12 +104,6 @@ public:
   /** \name MDARRAY typedefs */
   //@{
 
-  /** \brief Size type */
-  //typedef typename MDARRAY::size_type  size_type;
-
-  /** \brief Dim type */
-  //typedef typename MDARRAY::dim_type dim_type;
-
   /** \brief Value type */
   typedef typename MDARRAY::value_type value_type;
 

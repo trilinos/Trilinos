@@ -232,7 +232,6 @@ computeStrides(const Teuchos::ArrayView< DIM_TYPE > & dimensions,
 template< class DIM_TYPE >
 size_type computeSize(const Teuchos::ArrayView< DIM_TYPE > & dimensions)
 {
-  //typedef typename Teuchos::ArrayView< dim_type >::size_type size_type;
   size_type result = 1;
   for (int axis = 0; axis < dimensions.size(); ++axis)
     result *= dimensions[axis];
