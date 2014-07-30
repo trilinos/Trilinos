@@ -46,7 +46,8 @@ bool setPythonParameter(Teuchos::ParameterList & plist,
 			const std::string      & name,
 			PyObject               * value)
 {
-  static swig_type_info * swig_TPL_ptr = SWIG_TypeQuery("Teuchos::RCP< Teuchos::ParameterList >*");
+  static swig_type_info * swig_TPL_ptr =
+    SWIG_TypeQuery("Teuchos::RCP< Teuchos::ParameterList >*");
   void * argp;
   int newmem = 0;
 
@@ -81,6 +82,48 @@ bool setPythonParameter(Teuchos::ParameterList & plist,
     plist.set(name,*sublist);
     delete sublist;
   }
+  // NumPy arrays and Python sequences
+  else if (PyArray_Check(value) || PySequence_Check(value))
+  {
+    PyObject * pyArray =
+      PyArray_CheckFromAny(value,
+                           NULL,
+                           1,
+                           1,
+                           NPY_ARRAY_DEFAULT | NPY_ARRAY_NOTSWAPPED,
+                           NULL);
+    if (!pyArray) return false;
+    if (PyArray_TYPE((PyArrayObject*) pyArray) == NPY_INT)
+    {
+      Teuchos::Array< int > tArray;
+      CopyNumPyToTeuchos(pyArray, tArray);
+      plist.set(name, tArray);
+    }
+    else if (PyArray_TYPE((PyArrayObject*) pyArray) == NPY_LONG)
+    {
+      Teuchos::Array< long > tArray;
+      CopyNumPyToTeuchos(pyArray, tArray);
+      plist.set(name, tArray);
+    }
+    else if (PyArray_TYPE((PyArrayObject*) pyArray) == NPY_FLOAT)
+    {
+      Teuchos::Array< float > tArray;
+      CopyNumPyToTeuchos(pyArray, tArray);
+      plist.set(name, tArray);
+    }
+    else if (PyArray_TYPE((PyArrayObject*) pyArray) == NPY_DOUBLE)
+    {
+      Teuchos::Array< double > tArray;
+      CopyNumPyToTeuchos(pyArray, tArray);
+      plist.set(name, tArray);
+    }
+    else
+    {
+      // Unsupported data type
+      if (pyArray != value) Py_DECREF(pyArray);
+      return false;
+    }
+  }
 
   // None object not allowed: this is a python type not usable by
   // Trilinos solver packages, so we reserve it for the
@@ -92,7 +135,11 @@ bool setPythonParameter(Teuchos::ParameterList & plist,
   }
 
   // Teuchos::ParameterList values
-  else if (SWIG_CheckState(SWIG_Python_ConvertPtrAndOwn(value, &argp, swig_TPL_ptr, 0, &newmem)))
+  else if (SWIG_CheckState(SWIG_Python_ConvertPtrAndOwn(value,
+                                                        &argp,
+                                                        swig_TPL_ptr,
+                                                        0,
+                                                        &newmem)))
   {
     if (newmem & SWIG_CAST_NEW_MEMORY)
     { 
@@ -124,30 +171,31 @@ bool setPythonParameter(Teuchos::ParameterList & plist,
 PyObject * getPythonParameter(const Teuchos::ParameterList & plist,
 			      const std::string            & name)
 {
-  static swig_type_info * swig_TPL_ptr = SWIG_TypeQuery("Teuchos::RCP< Teuchos::ParameterList >*");
+  static swig_type_info * swig_TPL_ptr =
+    SWIG_TypeQuery("Teuchos::RCP< Teuchos::ParameterList >*");
 
   // If parameter does not exist, return None
   if (!plist.isParameter(name)) return Py_BuildValue("");
 
   // Get the parameter entry.  I now deal with the Teuchos::ParameterEntry
   // objects so that I can query the Teuchos::ParameterList without setting
-  // the used flag to true.
+  // the "used" flag to true.
   const Teuchos::ParameterEntry * entry = plist.getEntryPtr(name);
 
   // Boolean parameter values
-  if (entry->isType<bool>())
+  if (entry->isType< bool >())
   {
     bool value = Teuchos::any_cast< bool >(entry->getAny(false));
     return PyBool_FromLong((long)value);
   }
   // Integer parameter values
-  else if (entry->isType<int>())
+  else if (entry->isType< int >())
   {
     int value = Teuchos::any_cast< int >(entry->getAny(false));
     return PyInt_FromLong((long)value);
   }
   // Double parameter values
-  else if (entry->isType<double>())
+  else if (entry->isType< double >())
   {
     double value = Teuchos::any_cast< double >(entry->getAny(false));
     return PyFloat_FromDouble(value);
@@ -159,7 +207,7 @@ PyObject * getPythonParameter(const Teuchos::ParameterList & plist,
     return PyString_FromString(value.c_str());
   }
   // Char * parameter values
-  else if (entry->isType<char *>())
+  else if (entry->isType< char * >())
   {
     char * value = Teuchos::any_cast< char * >(entry->getAny(false));
     return PyString_FromString(value);
@@ -172,6 +220,50 @@ PyObject * getPythonParameter(const Teuchos::ParameterList & plist,
       new Teuchos::RCP< Teuchos::ParameterList >(&value,false);
     return SWIG_NewPointerObj((void*)valuercp, swig_TPL_ptr, SWIG_POINTER_OWN);
   }
+  // Teuchos::Array values
+  else if (entry->isArray())
+  {
+    try
+    {
+      Teuchos::Array< int > tArray =
+        Teuchos::any_cast< Teuchos::Array< int > >(entry->getAny(false));
+      return CopyTeuchosToNumPy(tArray, NPY_INT);
+    }
+    catch(Teuchos::bad_any_cast &e)
+    {
+      try
+      {
+        Teuchos::Array< long > tArray =
+          Teuchos::any_cast< Teuchos::Array< long > >(entry->getAny(false));
+        return CopyTeuchosToNumPy(tArray, NPY_LONG);
+      }
+      catch(Teuchos::bad_any_cast &e)
+      {
+        try
+        {
+          Teuchos::Array< float > tArray =
+            Teuchos::any_cast< Teuchos::Array< float > >(entry->getAny(false));
+          return CopyTeuchosToNumPy(tArray, NPY_FLOAT);
+        }
+        catch(Teuchos::bad_any_cast &e)
+        {
+          try
+          {
+            Teuchos::Array< double > tArray =
+              Teuchos::any_cast< Teuchos::Array< double > >(entry->getAny(false));
+            return CopyTeuchosToNumPy(tArray, NPY_DOUBLE);
+          }
+          catch(Teuchos::bad_any_cast &e)
+          {
+            // Teuchos::Arrays of type other than int or double are
+            // currently unsupported
+            return NULL;
+          }
+        }
+      }
+    }
+  }
+
   // All  other types are unsupported
   return NULL;
 }    // getPythonParameter

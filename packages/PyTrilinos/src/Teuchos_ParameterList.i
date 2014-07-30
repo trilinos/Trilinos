@@ -233,6 +233,22 @@ arbitrary type.  The python implementation supports a subset of types
   +-------------------------+-----+-------------------+
   | ``ParameterList``       | <-> | ``ParameterList`` |
   +-------------------------+-----+-------------------+
+  | ``ndarray(dtype='i')``  | <-> | ``Array<int>``    |
+  +-------------------------+-----+-------------------+
+  | ``ndarray(dtype='l')``  | <-> | ``Array<long>``   |
+  +-------------------------+-----+-------------------+
+  | ``ndarray(dtype='f')``  | <-> | ``Array<float>``  |
+  +-------------------------+-----+-------------------+
+  | ``ndarray(dtype='d')``  | <-> | ``Array<double>`` |
+  +-------------------------+-----+-------------------+
+  | ``sequence(int)``       | --> | ``Array<long>``   |
+  +-------------------------+-----+-------------------+
+  | ``sequence(float)``     | --> | ``Array<double>`` |
+  +-------------------------+-----+-------------------+
+
+``ndarray`` refers to the NumPy ndarray class and ``sequence`` refers
+to a Python sequence, either a list or a tuple.  The C++ Array class
+is the ``Teuchos::Array``.
 
 The C++ ``ParameterList`` class supports ``begin()`` and ``end()``
 methods for iterating over the parameters.  These methods are disabled
