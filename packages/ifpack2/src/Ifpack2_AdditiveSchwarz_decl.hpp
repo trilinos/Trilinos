@@ -125,7 +125,16 @@ run-time control of the subdomain solver.
 
 The local matrix \f$A_i\f$ can be filtered, to eliminate singletons,
 and reordered. At the present time, the only available reordering
-algorithm is RCM (reverse Cuthill-Mckee).
+algorithm is RCM (reverse Cuthill-Mckee). Other orderings
+will be supported by the Zoltan2 package in the future.
+
+\section Additive Schwarz algorithms supported
+
+The default is classical Additive Schwarz (AS). The Restricted 
+Additive Schwarz (RAS) method is supported by setting the 
+CombineMode to Zero, see discussion below. Note that RAS
+does not preserve symmetry, so is generally not suitable as
+a preconditioner for CG.
 
 \section Ifpack2_AdditiveSchwarz_CombineMode Combine modes
 
