@@ -48,6 +48,7 @@
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_ImportFactory.hpp>
 
 // Galeri
 #include <Galeri_XpetraParameters.hpp>
@@ -200,6 +201,7 @@ int main(int argc, char *argv[]) {
     }
 
   } else {
+
     if (!mapFile.empty())
       map = Utils2::ReadMap(mapFile, xpetraParameters.GetLib(), comm);
     comm->barrier();
