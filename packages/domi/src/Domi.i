@@ -243,9 +243,12 @@ import numpy
 ////////////////////////
 // Domi Slice support //
 ////////////////////////
-%ignore operator<<(std::ostream & os, const Slice & slice);
-%ignore Domi::Slice::operator=;
-%include "Domi_Slice.hpp"
+// Note that we do not wrap the Domi::Slice class, but rather provide
+// typemaps for conversion to and from Python slice objects.
+%include "Domi_Slice.i"
+// We do, however, need to %import Domi_Slice.hpp, so that SWIG knows
+// that Slice is in the Domi namespace.
+%import "Domi_Slice.hpp"
 
 //////////////////////////////
 // Domi MDArrayView support //
@@ -527,7 +530,7 @@ MDMap = MDMap_default
   Domi::MDVector< Scalar, Node > __getitem__(PyObject * indexes)
   {
     // If 'indexes' is not a sequence, it might be an integer or
-    // slice.  So wrap it in a tuple, and we'll check its type below.
+    // slice.  So wrap it in a tuple, and we will check its type below.
     if (!PySequence_Check(indexes))
     {
       PyObject * newIndexes = Py_BuildValue("(N)", indexes);
@@ -582,8 +585,12 @@ MDMap = MDMap_default
   }
 }
 %include "Domi_MDVector.hpp"
-%teuchos_rcp(Domi::MDVector< long >)
+%teuchos_rcp(Domi::MDVector< int >   )
+%template(MDVector_int   ) Domi::MDVector< int >;
+%teuchos_rcp(Domi::MDVector< long >  )
 %template(MDVector_long  ) Domi::MDVector< long >;
+%teuchos_rcp(Domi::MDVector< float > )
+%template(MDVector_float ) Domi::MDVector< float >;
 %teuchos_rcp(Domi::MDVector< double >)
 %template(MDVector_double) Domi::MDVector< double >;
 %pythoncode
@@ -596,8 +603,12 @@ class MDVector(object):
         trailingDim = kwargs.get("trailingDim", 0      )
         if type(dtype) == str:
             dtype = numpy.dtype(dtype)
-        if dtype.type is numpy.int64:
+        if dtype.type is numpy.int32:
+            self._vector = MDVector_int(mdMap, leadingDim, trailingDim, zeroOut)
+        elif dtype.type is numpy.int64:
             self._vector = MDVector_long(mdMap, leadingDim, trailingDim, zeroOut)
+        elif dtype.type is numpy.float32:
+            self._vector = MDVector_float(mdMap, leadingDim, trailingDim, zeroOut)
         elif dtype.type is numpy.float64:
             self._vector = MDVector_double(mdMap, leadingDim, trailingDim, zeroOut)
         else:
