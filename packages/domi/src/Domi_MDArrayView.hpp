@@ -117,15 +117,6 @@ public:
   /** \name Public types */
   //@{
 
-  /** \brief Size type */
-  //typedef Domi::size_type size_type;
-
-  /** \brief Dim type */
-  //typedef Domi::dim_type dim_type;
-
-  /** \brief Difference type */
-  //typedef Domi::difference_type difference_type;
-
   /** \brief Value type */
   typedef T value_type;
 
