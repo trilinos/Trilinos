@@ -166,6 +166,6 @@ Level 2
  
  Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
  
- Smoother (level 2) pre  : SuperLU solver interface
+ Smoother (level 2) pre  : SuperLU solver interface, direct solve
  Smoother (level 2) post : no smoother
  

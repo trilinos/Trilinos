@@ -142,6 +142,6 @@ Level 2
  Smoother (level 1) pre  : no smoother
  Smoother (level 1) post : no smoother
  
- Smoother (level 2) pre  : SuperLU solver interface
+ Smoother (level 2) pre  : SuperLU solver interface, direct solve
  Smoother (level 2) post : no smoother
  

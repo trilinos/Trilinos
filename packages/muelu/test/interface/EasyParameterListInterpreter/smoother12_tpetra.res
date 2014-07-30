@@ -359,6 +359,6 @@ Level 5
  
  Smoother (level 4) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.939, alpha: 2.99194, lambdaMin: 0.648076}, Global matrix dimensions: [124, 124], Global nnz: 370}
  
- Smoother (level 5) pre  : SuperLU solver interface
+ Smoother (level 5) pre  : SuperLU solver interface, direct solve
  Smoother (level 5) post : no smoother
  
