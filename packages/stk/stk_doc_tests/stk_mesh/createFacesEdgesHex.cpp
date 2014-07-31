@@ -221,7 +221,7 @@ namespace
   {
       Ioss::Init::Initializer io;
 
-      Ioss::DatabaseIO *database = Ioss::IOFactory::create("generated", "2x3x3", Ioss::READ_MODEL, (MPI_Comm) MPI_COMM_WORLD);
+      Ioss::DatabaseIO *database = Ioss::IOFactory::create("generated", "2x3x3", Ioss::READ_MODEL, MPI_COMM_WORLD);
       Iogn::DatabaseIO *iognDatabase = dynamic_cast<Iogn::DatabaseIO *>(database);
       iognDatabase->setGeneratedMesh(generatedMesh);
 

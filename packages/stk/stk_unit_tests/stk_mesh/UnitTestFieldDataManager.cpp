@@ -303,7 +303,7 @@ TEST(ContiguousFieldDataManagerTest, AllocateFieldDataAndReorderBuckets)
         const size_t extraCapacity = fieldDataManager.get_extra_capacity();
         testAllocateFieldData(bulkData, &fieldDataManager, sizeOfStuff, extraCapacity, numNodes);
 
-        const int num_buckets = int(numNodes/512 + 1);
+        const int num_buckets = static_cast<int>(numNodes/512 + 1);
         std::vector<unsigned> reorderedBucketIds(num_buckets,0);
         for (size_t i=0;i<reorderedBucketIds.size();i++)
         {

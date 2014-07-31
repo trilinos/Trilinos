@@ -245,7 +245,7 @@ Relation::raw_relation_id( unsigned rank , unsigned id )
                   "For args rank " << rank << ", id " << id << ": " <<
                   "id " << " > id_mask=" << id_mask );
 
-  return ( raw_relation_id_type(rank) << id_digits ) | id ;
+  return ( static_cast<raw_relation_id_type>(rank) << id_digits ) | id ;
 }
 
 inline
@@ -254,7 +254,7 @@ unsigned Relation::entity_rank() const
 
 inline
 RelationIdentifier Relation::relation_ordinal() const
-{ return unsigned( m_raw_relation.value & id_mask ); }
+{ return static_cast<unsigned>( m_raw_relation.value & id_mask ); }
 
 
 //----------------------------------------------------------------------
