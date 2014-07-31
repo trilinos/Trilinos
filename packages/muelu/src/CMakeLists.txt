@@ -51,13 +51,13 @@ ENDIF()
 #The HEADERS variable is the list of headers that will be copied to the install directory during "make install".
 SET(HEADERS "")
 APPEND_GLOB(HEADERS ${BDIR}/${PACKAGE_NAME}_config.hpp)
-APPEND_GLOB(HEADERS ${DIR}/Headers/${PACKAGE_NAME}_ConfigDefs.hpp)
 APPEND_GLOB(HEADERS */*.hpp)
 APPEND_GLOB(HEADERS */*/*.hpp)
 APPEND_GLOB(HEADERS */*/*/*.hpp)
-if (${PACKAGE_NAME}_ENABLE_Tpetra)
-  APPEND_GLOB(HEADERS ${DIR}/../adapters/tpetra/*.hpp)
-ENDIF()
+# The Tpetra adapter headers are already pulled in by muelu-adapters.
+#if (${PACKAGE_NAME}_ENABLE_Tpetra)
+#  APPEND_GLOB(HEADERS ${DIR}/../adapters/tpetra/*.hpp)
+#ENDIF()
 
 SET(SOURCES "")
 APPEND_GLOB(SOURCES */*.cpp)
