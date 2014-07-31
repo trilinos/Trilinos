@@ -51,7 +51,6 @@
 #include "ROL_Secant.hpp"
 #include "ROL_Krylov.hpp"
 #include "ROL_NonlinearCG.hpp"
-#include "ROL_PrimalDualActiveSet.hpp"
 #include "ROL_LineSearch.hpp"
 
 #include <sstream>
