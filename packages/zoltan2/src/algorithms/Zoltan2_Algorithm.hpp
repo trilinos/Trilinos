@@ -93,7 +93,7 @@ public:
   virtual void match() { Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM }
 
   //! \brief Partitioning method
-  virtual void partition(PartitioningSolution<Adapter> &solution) {
+  virtual void partition(RCP<PartitioningSolution<Adapter> > &solution) {
     Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM
   }
 

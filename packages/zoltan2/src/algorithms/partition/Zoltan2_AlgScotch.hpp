@@ -223,7 +223,7 @@ public:
     model(model__)
   { }
 
-  void partition(PartitioningSolution<Adapter> &);
+  void partition(RCP<PartitioningSolution<Adapter> > &);
 
 private:
 
@@ -241,11 +241,12 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
-void AlgPTScotch<Adapter>::partition(PartitioningSolution<Adapter> &solution)
+void AlgPTScotch<Adapter>::partition(
+  RCP<PartitioningSolution<Adapter> > &solution)
 {
   HELLO;
 
-  size_t numGlobalParts = solution.getTargetGlobalNumberOfParts();
+  size_t numGlobalParts = solution->getTargetGlobalNumberOfParts();
 
   SCOTCH_Num partnbr;
   SCOTCH_Num_Traits<size_t>::ASSIGN_TO_SCOTCH_NUM(partnbr, numGlobalParts, env);
@@ -356,9 +357,9 @@ void AlgPTScotch<Adapter>::partition(PartitioningSolution<Adapter> &solution)
 
   // Get target part sizes
   float *partsizes = new float[numGlobalParts];
-  if (!solution.criteriaHasUniformPartSizes(0))
+  if (!solution->criteriaHasUniformPartSizes(0))
     for (size_t i=0; i<numGlobalParts; i++)
-      partsizes[i] = solution.getCriteriaPartSize(0, i);
+      partsizes[i] = solution->getCriteriaPartSize(0, i);
   else
     for (size_t i=0; i<numGlobalParts; i++)
       partsizes[i] = 1.0 / float(numGlobalParts);
@@ -418,7 +419,7 @@ void AlgPTScotch<Adapter>::partition(PartitioningSolution<Adapter> &solution)
 
   ArrayRCP<const gno_t> gnos = arcpFromArrayView(vtxID);
 
-  solution.setParts(gnos, partList, true);
+  solution->setParts(gnos, partList, true);
 
   env->memory("Zoltan2-Scotch: After creating solution");
 
@@ -446,7 +447,7 @@ void AlgPTScotch<Adapter>::partition(PartitioningSolution<Adapter> &solution)
   for (size_t i = 0; i < nVtx; i++) partList[i] = 0;
 
   ArrayRCP<const gno_t> gnos = arcpFromArrayView(vtxID);
-  solution.setParts(gnos, partList, true);
+  solution->setParts(gnos, partList, true);
 
 #endif // DO NOT HAVE_MPI
 }
