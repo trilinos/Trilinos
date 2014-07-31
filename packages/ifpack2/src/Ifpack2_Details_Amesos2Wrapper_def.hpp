@@ -86,7 +86,7 @@ void Amesos2Wrapper<MatrixType>::setParameters (const Teuchos::ParameterList& pa
   }
   Teuchos::ParameterList pl(params);
   Teuchos::RCP<Teuchos::ParameterList> rcppl = Teuchos::rcpFromRef(pl);
-  //Amesos2 requires that the ParameterList be called "Amesos2". 
+  //Amesos2 requires that the ParameterList be called "Amesos2".
   if ( rcppl->name() == "Amesos2" ) {
     //If the name of params is "Amesos2", pass params directly the Amesos2 concrete solver.
     amesos2solver_->setParameters(rcppl);
@@ -310,7 +310,7 @@ void Amesos2Wrapper<MatrixType>::initialize ()
       // The matrix that Amesos2 will build the preconditioner on must be a Tpetra::Crs matrix.
       // If A_local isn't, then we build one.
       Teuchos::RCP<const MatrixType> A_local_crs = Teuchos::rcp_dynamic_cast<const MatrixType> (A_local);
-    
+
       if (A_local_crs.is_null()) {
         // FIXME (mfh 24 Jan 2014) It would be smarter to count up the
         // number of elements in each row of A_local, so that we can
@@ -503,7 +503,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
       //          << "found multiple procs, creating new view w/ different map" << std::endl;
       X_local = X_temp->offsetView (A_local_crs_->getDomainMap (), 0);
       Y_local = Y_temp->offsetViewNonConst (A_local_crs_->getRangeMap (), 0);
-      if (A_->getRowMap ()->getComm ()->getRank ())  sleep(2);
+      //if (A_->getRowMap ()->getComm ()->getRank ())  sleep(2);
     }
     else { // only one process in A_'s communicator
       // X and Y are already "local"; no need to set up local views.
