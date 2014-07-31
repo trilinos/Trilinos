@@ -130,11 +130,12 @@ will be supported by the Zoltan2 package in the future.
 
 \section Additive Schwarz algorithms supported
 
-The default is classical Additive Schwarz (AS). The Restricted 
-Additive Schwarz (RAS) method is supported by setting the 
-CombineMode to Zero, see discussion below. Note that RAS
+The default is Restricted Additive Schwarz
+(RAS), which uses CombineMode Zero, see discussion below. Note that RAS
 does not preserve symmetry, so is generally not suitable as
-a preconditioner for CG.
+a preconditioner for CG.  
+Classical Additive Schwarz is supported by setting the 
+CombineMode to Add.
 
 \section Ifpack2_AdditiveSchwarz_CombineMode Combine modes
 
