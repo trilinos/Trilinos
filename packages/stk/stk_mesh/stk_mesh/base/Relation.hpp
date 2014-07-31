@@ -112,8 +112,7 @@ private:
     RawRelationType( raw_relation_id_type v ) : value(v) {}
     RawRelationType() : value(0) {}
     RawRelationType( const RawRelationType & rhs ) : value( rhs.value ) {}
-    RawRelationType & operator = ( const RawRelationType & rhs )
-      { value = rhs.value ; return *this ; }
+    RawRelationType & operator = ( const RawRelationType & rhs );
   };
 
   RawRelationType        m_raw_relation ;

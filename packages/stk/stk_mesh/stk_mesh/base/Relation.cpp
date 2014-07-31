@@ -24,6 +24,13 @@
 namespace stk {
 namespace mesh {
 
+
+Relation::RawRelationType & Relation::RawRelationType::operator =(const Relation::RawRelationType & rhs)
+{
+    value = rhs.value;
+    return *this;
+}
+
 //----------------------------------------------------------------------
 
 std::ostream &
