@@ -57,7 +57,6 @@ private:
   ELineSearch         els_;
   ECurvatureCondition econd_;
   EDescent            edesc_;
-  EBoundAlgorithm     eba_;
 
   int maxit_;
   Real c1_;
@@ -76,7 +75,7 @@ private:
                      Constraints<Real> &con ) {
     xnew.set(x); 
     xnew.axpy(alpha,s);
-    if ( con.isActivated() && this->eba_ != BOUNDALGORITHM_PRIMALDUALACTIVESET ) {
+    if ( con.isActivated() ) {
       con.project(xnew);
     }
   }
@@ -89,7 +88,6 @@ public:
   LineSearch( Teuchos::ParameterList &parlist ) {
     // Enumerations
     edesc_ = StringToEDescent(parlist.get("Descent Type","Quasi-Newton Method"));
-    eba_   = StringToEBoundAlgorithm(parlist.get("Bound Algorithm","Projected"));
     els_   = StringToELineSearch(parlist.get("Linesearch Type","Cubic Interpolation"));
     econd_ = StringToECurvatureCondition( parlist.get("Linesearch Curvature Condition","Strong Wolfe Conditions"));
     // Linesearc Parameters
@@ -136,7 +134,7 @@ public:
 
     // Check Armijo Condition
     bool armijo = false;
-    if ( con.isActivated() && this->eba_ != BOUNDALGORITHM_PRIMALDUALACTIVESET ) {
+    if ( con.isActivated() ) {
       Real gs = 0.0;
       Teuchos::RCP<Vector<Real> > d = x.clone();
       if ( this->edesc_ == DESCENT_STEEPEST ) {
@@ -192,7 +190,7 @@ public:
         obj.update(*xnew);
         obj.gradient(*grad,*xnew,tol);
         Real sgnew = 0.0;
-        if ( con.isActivated() && this->eba_ != BOUNDALGORITHM_PRIMALDUALACTIVESET ) {
+        if ( con.isActivated() ) {
           Teuchos::RCP<Vector<Real> > d = x.clone();
           d->set(s);
           d->scale(-alpha);
