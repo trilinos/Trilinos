@@ -486,8 +486,17 @@ ENDIF()
   # directories using the installed config file. This is to deal with
   # installers that allow relocation of the install tree at *install*
   # time.
-  SET(FULL_LIBRARY_DIRS_SET "\${CMAKE_CURRENT_LIST_DIR}/../../../${${PROJECT_NAME}_INSTALL_LIB_DIR}")
-  SET(FULL_INCLUDE_DIRS_SET "\${CMAKE_CURRENT_LIST_DIR}/../../../${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}")
+  # The export files are typically installed in
+  #     <install dir>/<lib path>/cmake/<package name>/.
+  # The relative path to the installation dir is hence k*(../) + ../../, where
+  # k is the number of components in <lib path>. Extract those here.
+  STRING(REPLACE "/" ";" PATH_LIST ${${PROJECT_NAME}_INSTALL_LIB_DIR})
+  SET(RELATIVE_PATH "../..")
+  FOREACH(PATH ${PATH_LIST})
+    SET(RELATIVE_PATH "${RELATIVE_PATH}/..")
+  ENDFOREACH()
+  SET(FULL_LIBRARY_DIRS_SET "\${CMAKE_CURRENT_LIST_DIR}/${RELATIVE_PATH}/${${PROJECT_NAME}_INSTALL_LIB_DIR}")
+  SET(FULL_INCLUDE_DIRS_SET "\${CMAKE_CURRENT_LIST_DIR}/${RELATIVE_PATH}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}")
 
   # Custom code in configuration file.
   SET(PACKAGE_CONFIG_CODE "")
