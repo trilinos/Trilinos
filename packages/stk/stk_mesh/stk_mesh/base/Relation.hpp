@@ -53,7 +53,7 @@ public:
 
   /** \brief  Construct a relation from a referenced entity and local identifier
    */
-  Relation( const BulkData &mesh, Entity entity , RelationIdentifier identifier );
+  Relation( Entity entity, EntityRank entityRank , RelationIdentifier identifier );
   // Defined in BulkData.hpp to break circular dependency.
 
   attribute_type   attribute() const { return m_attribute; }
@@ -326,6 +326,17 @@ Relation::Relation() :
   m_raw_relation(),
   m_attribute(),
   m_target_entity()
+{
+#ifdef SIERRA_MIGRATION
+  setRelationType(RelationType::INVALID);
+#endif
+}
+
+inline
+Relation::Relation( Entity ent, EntityRank entityRank , RelationIdentifier id )
+  : m_raw_relation( Relation::raw_relation_id( entityRank , id ) ),
+    m_attribute(),
+    m_target_entity(ent)
 {
 #ifdef SIERRA_MIGRATION
   setRelationType(RelationType::INVALID);
