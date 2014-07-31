@@ -193,5 +193,7 @@ const char * atomic_query_version()
 
 #include "impl/Kokkos_Volatile_Load.hpp"
 
+#include "impl/Kokkos_Atomic_Generic.hpp"
+
 #endif /* KOKKOS_ATOMIC_HPP */
 
