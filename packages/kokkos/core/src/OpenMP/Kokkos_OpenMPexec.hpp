@@ -401,6 +401,24 @@ KOKKOS_INLINE_FUNCTION
 int OpenMP::team_size() const { return m_exec.m_team_size ; }
 
 KOKKOS_INLINE_FUNCTION
+unsigned OpenMP::hardware_thread_id() {
+#ifndef __CUDA_ARCH__
+  return omp_get_thread_num();
+#else
+  return 0;
+#endif
+}
+
+KOKKOS_INLINE_FUNCTION
+unsigned OpenMP::max_hardware_threads() {
+#ifndef __CUDA_ARCH__
+  return omp_get_max_threads();
+#else
+  return 1;
+#endif
+}
+
+KOKKOS_INLINE_FUNCTION
 void OpenMP::team_barrier() { m_exec.team_barrier() ; }
 
 KOKKOS_INLINE_FUNCTION

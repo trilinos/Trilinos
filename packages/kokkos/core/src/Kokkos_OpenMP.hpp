@@ -127,8 +127,8 @@ public:
 
   KOKKOS_FUNCTION static unsigned team_max();
   KOKKOS_FUNCTION static unsigned team_recommended();
-  KOKKOS_FUNCTION static unsigned hardware_thread_id();
-  KOKKOS_FUNCTION static unsigned max_hardware_threads();
+  KOKKOS_INLINE_FUNCTION static unsigned hardware_thread_id();
+  KOKKOS_INLINE_FUNCTION static unsigned max_hardware_threads();
   //@}
   //------------------------------------
   //! \name Function for the functor device interface */
