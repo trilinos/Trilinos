@@ -115,6 +115,7 @@ namespace {
 // Array Views can coexist in the same program.  This test does not
 // have the Teuchos and Kokkos objects interact with each other.
 TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, NoInteraction ) {
+  TestDevice::initialize();
   typedef Teuchos::Array<double>::size_type size_type;
 
   const size_type numElts = 10;
@@ -131,12 +132,14 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, NoInteraction ) {
   typedef Kokkos::View<double*, TestDevice> ka_view_type;
   ka_view_type y ("y", numElts);
   Kokkos::parallel_for (y.dimension_0 (), FillFunctor<TestDevice> (y));
+  TestDevice::finalize();
 }
 
 
 // Get a Teuchos::ArrayView of a Kokkos::View, and make sure that
 // it points to the same data.
 TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayViewOfView ) {
+  TestDevice::initialize();
   typedef Teuchos::Array<double>::size_type size_type;
   typedef Kokkos::View<double*, Kokkos::LayoutLeft, TestDevice> ka_view_type;
 
@@ -156,6 +159,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayViewOfView ) {
   for (size_type k = 0; k < y_size; ++k) {
     TEST_EQUALITY( y_view[k], y[k] );
   }
+  TestDevice::finalize();
 }
 
 
@@ -168,6 +172,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayViewOfView ) {
 // This example will be useful for implementing the
 // Tpetra::MultiVector methods get1dCopy and get2dCopy.
 TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ViewOfArrayView ) {
+  TestDevice::initialize();
   typedef Teuchos::Array<double>::size_type size_type;
   typedef Kokkos::View<double*, Kokkos::LayoutLeft, TestDevice, Kokkos::MemoryUnmanaged> ka_view_type;
   typedef Kokkos::View<const double*, Kokkos::LayoutLeft, TestDevice, Kokkos::MemoryUnmanaged> ka_const_view_type;
@@ -197,6 +202,8 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ViewOfArrayView ) {
   for (size_type k = 0; k < x.size (); ++k) {
     TEST_EQUALITY( x_view_const[k], x[k] );
   }
+
+  TestDevice::finalize();
 }
 
 
@@ -205,6 +212,8 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ViewOfArrayView ) {
 // will be useful for implementing Tpetra::MultiVector's getData,
 // getDataNonConst, get1dView, and get1dViewNonConst methods.
 TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP1D_of_2DView ) {
+  TestDevice::initialize();
+
   typedef Kokkos::View<double**, Kokkos::LayoutLeft, TestDevice> ka_view_type;
 
   const size_t numRows = 75;
@@ -252,6 +261,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP1D_of_2DView ) {
   TEST_EQUALITY(Y_values.getRawPtr(), X.ptr_on_device());
   TEST_EQUALITY(Y_values.getRawPtr(), X_view.ptr_on_device());
   TEST_EQUALITY(Y_values.size(), stride*numCols);
+  TestDevice::finalize();
 }
 
 
@@ -269,6 +279,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP2D_of_2DView ) {
   // to use the subview() overload that takes two ranges of row and
   // column indices.
   typedef Kokkos::View<double**, Kokkos::LayoutLeft, TestDevice> ka_view_type;
+  TestDevice::initialize();
 
   const size_t numRows = 75;
   const size_t numCols = 5;
@@ -324,6 +335,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP2D_of_2DView ) {
     Teuchos::ArrayRCP<double> Y_j (X_j.ptr_on_device (), 0, numRows, Deallocator<double, ka_view_type> (X_j), true);
     Y_2D[j] = Y_j;
   }
+  TestDevice::finalize();
 }
 
 
@@ -344,6 +356,8 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP2D_of_2DView ) {
 // process will start by changing the internal data storage from
 // KokkosClassic::MultiVector to View.
 TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, KMV_of_2DView ) {
+  TestDevice::initialize();
+
   typedef Kokkos::View<double**, Kokkos::LayoutLeft, TestDevice> ka_view_type;
   typedef KokkosClassic::MultiVector<double, KokkosClassic::SerialNode> KMV;
 
@@ -410,5 +424,6 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, KMV_of_2DView ) {
   TEST_EQUALITY(Y.getStride(), stride);
   TEST_EQUALITY(Y.getValues().getRawPtr(), X.ptr_on_device());
   TEST_EQUALITY(Y.getValues().getRawPtr(), X_view.ptr_on_device());
+  TestDevice::finalize();
 }
 #endif // 0
