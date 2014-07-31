@@ -200,6 +200,10 @@ int main (int argc, char *argv[])
       cerr << "Map::isOneToOne threw an exception of unknown type" << endl;
       success = false;
     }
+    // This is really a bug in the test, not a Tpetra source bug.
+    TEUCHOS_TEST_FOR_EXCEPTION( ! srcIsOneToOne, std::logic_error,
+      "The source Map is not one to one.  Please report this bug to "
+      "the Tpetra developers.");
 
     RCP<const map_type> targetMap =
       rcp (new map_type (INV, myTgtGids, indexBase, comm));
