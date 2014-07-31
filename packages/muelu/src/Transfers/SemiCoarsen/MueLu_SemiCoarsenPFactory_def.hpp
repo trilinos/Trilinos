@@ -401,7 +401,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, cla
   MaxNnz = 2*DofsPerNode*Ndofs;
 
   RCP<const Map> rowMap    = Amat->getRowMap();
-  coarseMap = Xpetra::MapFactory<LO,GO>::createUniformContigMap(rowMap->lib(),NCLayers*NVertLines*DofsPerNode,(rowMap->getComm()));
+  coarseMap = Xpetra::MapFactory<LO,GO,Node,LocalMatOps>::createUniformContigMap(rowMap->lib(),NCLayers*NVertLines*DofsPerNode,(rowMap->getComm()));
   P       = rcp(new CrsMatrixWrap(rowMap, coarseMap , 0, Xpetra::StaticProfile));
 
 
