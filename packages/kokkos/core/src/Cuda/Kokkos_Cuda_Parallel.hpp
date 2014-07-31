@@ -208,12 +208,17 @@ public:
 namespace Kokkos {
 namespace Impl {
 
-template< class FunctorType , class WorkSpec >
-class ParallelFor< FunctorType , WorkSpec /* size_t */ , Cuda > {
+template< class FunctorType , typename IntType , unsigned P >
+class ParallelFor< FunctorType
+                 , Kokkos::RangePolicy< Kokkos::Cuda , void , IntType , P >
+                 , Kokkos::Cuda >
+{
 private:
 
-  const FunctorType     m_functor ;
-  const Cuda::size_type m_work ;  
+  typedef Kokkos::RangePolicy< Kokkos::Cuda , void , IntType , P > Policy ;
+
+  const FunctorType  m_functor ;
+  const Policy       m_policy ;  
 
   ParallelFor();
   ParallelFor & operator = ( const ParallelFor & );
@@ -224,23 +229,26 @@ public:
   __device__
   void operator()(void) const
   {
-    const Cuda::size_type work_stride = blockDim.x * gridDim.x ;
+    const typename Policy::member_type work_stride = blockDim.x * gridDim.x ;
+    const typename Policy::member_type work_end    = m_policy.end();
 
-    for ( Cuda::size_type
-            iwork = threadIdx.x + blockDim.x * blockIdx.x ;
-            iwork < m_work ;
+    for ( typename Policy::member_type
+            iwork =  m_policy.begin() + threadIdx.x + blockDim.x * blockIdx.x ;
+            iwork <  work_end ;
             iwork += work_stride ) {
       m_functor( iwork );
     }
   }
 
   ParallelFor( const FunctorType  & functor ,
-               const size_t         work )
+               const Policy       & policy )
     : m_functor( functor )
-    , m_work(    work )
+    , m_policy(  policy )
     {
       const dim3 block( CudaTraits::WarpSize * cuda_internal_maximum_warp_count(), 1, 1);
-      const dim3 grid( std::min( ( m_work + block.x - 1 ) / block.x , cuda_internal_maximum_grid_count() ) , 1 , 1 );
+      const dim3 grid( std::min( ( int( policy.end() - policy.begin() ) + block.x - 1 ) / block.x
+                               , cuda_internal_maximum_grid_count() )
+                     , 1 , 1 );
 
       CudaParallelLaunch< ParallelFor >( *this , grid , block , 0 );
     }
@@ -369,27 +377,26 @@ public:
 namespace Kokkos {
 namespace Impl {
 
-template< class FunctorType , class WorkSpec >
-class ParallelReduce< FunctorType , WorkSpec , Cuda >
+template< class FunctorType , typename IntType , unsigned P >
+class ParallelReduce< FunctorType 
+                    , Kokkos::RangePolicy< Kokkos::Cuda , void , IntType , P >
+                    , Kokkos::Cuda
+                    >
 {
 public:
   typedef ReduceAdapter< FunctorType >        Reduce ;
   typedef typename Reduce::pointer_type       pointer_type ;
   typedef typename Reduce::reference_type     reference_type ;
+  typedef Kokkos::RangePolicy< Kokkos::Cuda , void , IntType , P > Policy ;
   typedef Cuda::size_type                     size_type ;
 
   // Algorithmic constraints: blockSize is a power of two AND blockDim.y == blockDim.z == 1
 
   const FunctorType m_functor ;
+  const Policy      m_policy ;
   size_type *       m_scratch_space ;
   size_type *       m_scratch_flags ;
   size_type *       m_unified_space ;
-  pointer_type      m_host_pointer ;
-  size_type         m_work ;
-  size_type         m_work_per_block ;
-  size_type         m_local_block_count ;
-  size_type         m_global_block_begin ;
-  size_type         m_global_block_count ;
 
   // Determine block size constrained by shared memory:
   static inline
@@ -416,18 +423,17 @@ public:
       // Accumulate the values for this block.
       // The accumulation ordering does not match the final pass, but is arithmatically equivalent.
 
-      const size_type iwork_beg = blockIdx.x * m_work_per_block ;
-      const size_type iwork_end = iwork_beg + m_work_per_block < m_work
-                                ? iwork_beg + m_work_per_block : m_work ;
+      const Policy range( m_policy , blockIdx.x , gridDim.x );
 
-      for ( size_type iwork = threadIdx.x + iwork_beg ; iwork < iwork_end ; iwork += blockDim.x ) {
+      for ( typename Policy::member_type iwork = range.begin() + threadIdx.x , iwork_end = range.end() ;
+            iwork < iwork_end ; iwork += blockDim.x ) {
         m_functor( iwork , value );
       }
     }
 
     // Reduce with final value at blockDim.x - 1 location.
     if ( cuda_single_inter_block_reduce_scan<false>(
-           m_functor , m_global_block_begin + blockIdx.x , m_global_block_count ,
+           m_functor , blockIdx.x , gridDim.x ,
            shared_data , m_scratch_space , m_scratch_flags ) ) {
 
       // This is the final block with the final result at the final threads' location
@@ -443,67 +449,46 @@ public:
     }
   }
 
-  ParallelReduce( const FunctorType  & functor ,
-                  const size_t         nwork ,
-                  const pointer_type   result = 0 ,
-                  const bool execute_immediately = true )
+  template< class HostViewType >
+  ParallelReduce( const FunctorType  & functor 
+                , const Policy       & policy 
+                , const HostViewType & result
+                )
   : m_functor( functor )
+  , m_policy(  policy )
   , m_scratch_space( 0 )
   , m_scratch_flags( 0 )
   , m_unified_space( 0 )
-  , m_host_pointer( result )
-  , m_work( nwork )
-  , m_work_per_block( 0 )
-  , m_local_block_count( 0 )
-  , m_global_block_begin( 0 )
-  , m_global_block_count( 0 )
   {
-    const int block_size = local_block_size( functor );
+    const int block_size  = local_block_size( functor );
+    const int block_count = std::min( int(block_size)
+                                    , ( int(policy.end() - policy.begin()) + block_size - 1 ) / block_size
+                                    );
 
-    // At most 'block_size' blocks:
-    const int max_grid = std::min( int(block_size) , int(( nwork + block_size - 1 ) / block_size ));
-
-    // How much work per block:
-    m_work_per_block = ( nwork + max_grid - 1 ) / max_grid ;
-
-    // How many block are really needed for this much work:
-    m_local_block_count  = ( nwork + m_work_per_block - 1 ) / m_work_per_block ;
-    m_global_block_count = m_local_block_count ;
-
-    m_scratch_space = cuda_internal_scratch_space( Reduce::value_size( functor ) * m_local_block_count );
+    m_scratch_space = cuda_internal_scratch_space( Reduce::value_size( functor ) * block_count );
     m_scratch_flags = cuda_internal_scratch_flags( sizeof(size_type) );
     m_unified_space = cuda_internal_scratch_unified( Reduce::value_size( functor ) );
 
-    if ( execute_immediately ) { execute(); }
-  }
-
-  inline
-  void execute() const
-  {
-    const dim3 grid( m_local_block_count , 1 , 1 );
-    const dim3 block( local_block_size( m_functor ) , 1 , 1 );
+    const dim3 grid( block_count , 1 , 1 );
+    const dim3 block( block_size , 1 , 1 );
     const int shmem = cuda_single_inter_block_reduce_scan_shmem<false>( m_functor , block.x );
 
     CudaParallelLaunch< ParallelReduce >( *this, grid, block, shmem ); // copy to device and execute
-  }
 
-  void wait() const
-  {
     Cuda::fence();
 
-    if ( m_host_pointer ) {
+    if ( result.ptr_on_device() ) {
       if ( m_unified_space ) {
         const int count = Reduce::value_count( m_functor );
-        for ( int i = 0 ; i < count ; ++i ) { m_host_pointer[i] = pointer_type(m_unified_space)[i] ; }
+        for ( int i = 0 ; i < count ; ++i ) { result.ptr_on_device()[i] = pointer_type(m_unified_space)[i] ; }
       }
       else {
         const int size = Reduce::value_size( m_functor );
-        DeepCopy<HostSpace,CudaSpace>( m_host_pointer , m_scratch_space , size );
+        DeepCopy<HostSpace,CudaSpace>( result.ptr_on_device() , m_scratch_space , size );
       }
     }
   }
 };
-
 
 template< class FunctorType >
 class ParallelReduce< FunctorType , ParallelWorkRequest , Cuda >
@@ -741,132 +726,17 @@ public:
 namespace Kokkos {
 namespace Impl {
 
-template< class Functor >
-class MultiFunctorParallelReduceMember ;
-
-template<>
-class MultiFunctorParallelReduceMember<void>
-{
-private:
-
-  MultiFunctorParallelReduceMember( const MultiFunctorParallelReduceMember & );
-  MultiFunctorParallelReduceMember & operator = ( const MultiFunctorParallelReduceMember & );
-
-protected:
-
-  MultiFunctorParallelReduceMember() {}
-
-public:
-
-  virtual unsigned block_count() const = 0 ;
-
-  virtual ~MultiFunctorParallelReduceMember() {}
-
-  virtual void execute( void * const host_pointer ,
-                        const unsigned global_block_begin ,
-                        const unsigned global_block_count ) = 0 ;
-
-  virtual void wait() const = 0 ;
-};
-
-template< class Functor >
-class MultiFunctorParallelReduceMember : public MultiFunctorParallelReduceMember<void> {
-public:
-  ParallelReduce< Functor , size_t , Cuda >  m_functor ;
-
-  MultiFunctorParallelReduceMember( const Functor & f , size_t nwork )
-    : MultiFunctorParallelReduceMember<void>()
-    , m_functor( f , nwork , 0 , false )
-    {}
-
-  virtual unsigned block_count() const { return m_functor.m_local_block_count ; }
-
-  virtual void execute( void * const host_pointer ,
-                        const unsigned global_block_begin ,
-                        const unsigned global_block_count )
-  {
-    m_functor.m_host_pointer = typename ReduceAdapter< Functor >::pointer_type(host_pointer);
-    m_functor.m_global_block_begin = global_block_begin ;
-    m_functor.m_global_block_count = global_block_count ;
-    m_functor.execute();
-  }
-
-  virtual void wait() const { m_functor.wait(); }
-};
-
-} // namespace Impl
-} // namespace Kokkos
-
-namespace Kokkos {
-
-template<>
-class MultiFunctorParallelReduce< Cuda >
-{
-private:
-
-  typedef std::vector< Impl::MultiFunctorParallelReduceMember<void> * > MemberVector ;
-
-  MemberVector m_functors ;
-
-public:
-
-  MultiFunctorParallelReduce()
-    : m_functors()
-    {}
-
-  ~MultiFunctorParallelReduce()
-  {
-    while ( ! m_functors.empty() ) {
-      delete m_functors.back();
-      m_functors.pop_back();
-    }
-  }
-
-  template< class FunctorType >
-  void push_back( const size_t work_count , const FunctorType & f )
-  {
-    m_functors.push_back( new Impl::MultiFunctorParallelReduceMember<FunctorType>( f , work_count ) );
-  }
-
-  void execute( void * host_pointer )
-  {
-    typename MemberVector::iterator m ;
-
-    Cuda::size_type block_count = 0 ;
-
-    for ( m = m_functors.begin() ; m != m_functors.end() ; ++m ) {
-      block_count += (*m)->block_count();
-    }
-
-    Cuda::size_type block_offset = 0 ;
-
-    for ( m = m_functors.begin() ; m != m_functors.end() ; ++m ) {
-      (*m)->execute( host_pointer , block_offset , block_count );
-      block_offset += (*m)->block_count();
-    }
-  }
-
-  void wait() const
-  {
-    if ( ! m_functors.empty() ) { (m_functors.back())->wait(); }
-  }
-};
-
-} // namespace Kokkos
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-namespace Kokkos {
-namespace Impl {
-
-template< class FunctorType , class WorkSpec >
-class ParallelScan< FunctorType , WorkSpec , Cuda >
+template< class FunctorType , typename IntType , unsigned P >
+class ParallelScan< FunctorType
+                  , Kokkos::RangePolicy< Kokkos::Cuda , void , IntType , P >
+                  , Kokkos::Cuda
+                  >
 {
 public:
   typedef ReduceAdapter< FunctorType >        Reduce ;
   typedef typename Reduce::pointer_type       pointer_type ;
   typedef typename Reduce::reference_type     reference_type ;
+  typedef Kokkos::RangePolicy< Kokkos::Cuda , void , IntType , P > Policy ;
   typedef Cuda::size_type                     size_type ;
 
   // Algorithmic constraints:
@@ -890,10 +760,9 @@ public:
     }
 
   const FunctorType m_functor ;
+  const Policy      m_policy ;
   size_type *       m_scratch_space ;
   size_type *       m_scratch_flags ;
-  const size_type   m_work ;
-        size_type   m_work_per_block ;
         size_type   m_final ;
   
   //----------------------------------------
@@ -915,11 +784,10 @@ public:
     // Accumulate the values for this block.
     // The accumulation ordering does not match the final pass, but is arithmatically equivalent.
 
-    const size_type iwork_beg = blockIdx.x * m_work_per_block ;
-    const size_type iwork_end = iwork_beg + m_work_per_block < m_work 
-                              ? iwork_beg + m_work_per_block : m_work ;
+    const Policy range( m_policy , blockIdx.x , gridDim.x );
 
-    for ( size_type iwork = threadIdx.x + iwork_beg ; iwork < iwork_end ; iwork += blockDim.x ) {
+    for ( typename Policy::member_type iwork = range.begin() + threadIdx.x , iwork_end = range.end() ;
+          iwork < iwork_end ; iwork += blockDim.x ) {
       m_functor( iwork , Reduce::reference( shared_value ) , false );
     }
 
@@ -952,12 +820,11 @@ public:
       Reduce::init( m_functor , shared_accum );
     }
 
-          unsigned iwork_beg = blockIdx.x * m_work_per_block ;
-    const unsigned iwork_end = iwork_beg + m_work_per_block ;
+    const Policy range( m_policy , blockIdx.x , gridDim.x );
 
-    for ( ; iwork_beg < iwork_end ; iwork_beg += blockDim.x ) {
+    for ( typename Policy::member_type iwork_base = range.begin(); iwork_base < range.end() ; iwork_base += blockDim.x ) {
 
-      const unsigned iwork = threadIdx.x + iwork_beg ;
+      const typename Policy::member_type iwork = iwork_base + threadIdx.x ;
 
       __syncthreads(); // Don't overwrite previous iteration values until they are used
 
@@ -971,7 +838,7 @@ public:
       if ( CudaTraits::WarpSize < word_count.value ) { __syncthreads(); } // Protect against large scan values.
 
       // Call functor to accumulate inclusive scan value for this work item
-      if ( iwork < m_work ) { m_functor( iwork , Reduce::reference( shared_prefix + word_count.value ) , false ); }
+      if ( iwork < range.end() ) { m_functor( iwork , Reduce::reference( shared_prefix + word_count.value ) , false ); }
 
       // Scan block values into locations shared_data[1..blockDim.x]
       cuda_intra_block_reduce_scan<true>( m_functor , Reduce::pointer_type(shared_data+word_count.value) );
@@ -982,7 +849,7 @@ public:
       }
 
       // Call functor with exclusive scan value
-      if ( iwork < m_work ) { m_functor( iwork , Reduce::reference( shared_prefix ) , true ); }
+      if ( iwork < range.end() ) { m_functor( iwork , Reduce::reference( shared_prefix ) , true ); }
     }
   }
 
@@ -1000,12 +867,11 @@ public:
   }
 
   ParallelScan( const FunctorType  & functor ,
-                const size_t         nwork )
+                const Policy       & policy )
   : m_functor( functor )
+  , m_policy( policy )
   , m_scratch_space( 0 )
   , m_scratch_flags( 0 )
-  , m_work( nwork )
-  , m_work_per_block( 0 )
   , m_final( false )
   {
     enum { GridMaxComputeCapability_2x = 0x0ffff };
@@ -1016,13 +882,14 @@ public:
                          ( block_size * block_size ) : GridMaxComputeCapability_2x ;
 
     // At most 'max_grid' blocks:
+    const int nwork    = policy.end() - policy.begin();
     const int max_grid = std::min( int(grid_max) , int(( nwork + block_size - 1 ) / block_size ));
 
     // How much work per block:
-    m_work_per_block = ( nwork + max_grid - 1 ) / max_grid ;
+    const int work_per_block = ( nwork + max_grid - 1 ) / max_grid ;
 
     // How many block are really needed for this much work:
-    const dim3 grid( ( nwork + m_work_per_block - 1 ) / m_work_per_block , 1 , 1 );
+    const dim3 grid( ( nwork + work_per_block - 1 ) / work_per_block , 1 , 1 );
     const dim3 block( block_size , 1 , 1 );
     const int shmem = Reduce::value_size( functor ) * ( block_size + 2 );
 

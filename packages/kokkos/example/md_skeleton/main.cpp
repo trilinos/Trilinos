@@ -149,16 +149,14 @@ int main(int argc, char** argv) {
 
   printf("-> Init Device\n");
 
-#ifdef KOKKOS_HAVE_CUDA
+#if defined( KOKKOS_HAVE_CUDA )
   Kokkos::Cuda::host_mirror_device_type::initialize(teams*num_threads);
   Kokkos::Cuda::SelectDevice select_device(device);
   Kokkos::Cuda::initialize(select_device);
-#else
-  #ifdef _OPENMP
+#elif defined( KOKKOS_HAVE_OPENMP )
   Kokkos::OpenMP::initialize(teams*num_threads);
-  #else
+#elif defined( KOKKOS_HAVE_PTHREAD )
   Kokkos::Threads::initialize(teams*num_threads);
-  #endif
 #endif
 
   System system;

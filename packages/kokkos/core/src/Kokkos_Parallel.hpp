@@ -170,74 +170,48 @@ class ParallelScan ;
 
 namespace Kokkos {
 
-template< class ExecPolicy , class FunctorType >
-inline
-void parallel_for( const ExecPolicy  & policy
-                 , const FunctorType & functor
-                 , typename Impl::enable_if< ! Impl::is_integral< ExecPolicy >::value >::type * = 0 )
-{
-  (void) Impl::ParallelFor< FunctorType , ExecPolicy >( functor , policy );
-}
-
-template< class ExecPolicy , class FunctorType >
-inline
-void parallel_reduce( const ExecPolicy  & policy 
-                    , const FunctorType & functor
-                    , typename Impl::enable_if< ! Impl::is_integral< ExecPolicy >::value >::type * = 0 )
-{
-  (void) Impl::ParallelReduce< FunctorType , ExecPolicy >( functor , policy );
-}
-
-template< class ExecPolicy , class FunctorType , class ViewType >
-inline
-void parallel_reduce( const ExecPolicy  & policy 
-                    , const FunctorType & functor 
-                    , const ViewType    & view
-                    , typename Impl::enable_if<
-                      ( is_view<ViewType>::value && ! Impl::is_integral< ExecPolicy >::value
-                      )>::type * = 0 )
-{
-  (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( functor , policy , view );
-}
-
-} // namespace Kokkos
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-namespace Kokkos {
-
-/** \brief Execute \c functor \c work_count times in parallel.
+/** \brief Execute \c functor in parallel according to the execution \c policy.
  *
- * A "functor" is a class containing the function to execute in
- * parallel, any data needed for that execution, and an optional \c device_type
+ * A "functor" is a class containing the function to execute in parallel,
+ * data needed for that execution, and an optional \c device_type
  * typedef.  Here is an example functor for parallel_for:
  *
  * \code
  *  class FunctorType {
  *  public:
  *    typedef  ...  device_type ;
- *    void operator() (IntType iwork) const ;
+ *    void operator() ( WorkType iwork ) const ;
  *  };
  * \endcode
  *
- * In the above example, \c IntType is any integer type for which a
+ * In the above example, \c WorkType is any integer type for which a
  * valid conversion from \c size_t to \c IntType exists.  Its
  * <tt>operator()</tt> method defines the operation to parallelize,
  * over the range of integer indices <tt>iwork=[0,work_count-1]</tt>.
  * This compares to a single iteration \c iwork of a \c for loop.
  * If \c device_type is not defined DefaultDeviceType will be used.
  */
+template< class ExecPolicy , class FunctorType >
+inline
+void parallel_for( const ExecPolicy  & policy
+                 , const FunctorType & functor
+                 , typename Impl::enable_if< ! Impl::is_integral< ExecPolicy >::value >::type * = 0
+                 )
+{
+  (void) Impl::ParallelFor< FunctorType , ExecPolicy >( functor , policy );
+}
+
 template< class FunctorType >
 inline
 void parallel_for( const size_t        work_count ,
                    const FunctorType & functor )
 {
-  Impl::ParallelFor< FunctorType , size_t > tmp( functor , work_count );
+  typedef typename
+    Impl::FunctorPolicyExecutionSpace< FunctorType , void >::execution_space
+      execution_space ;
+  typedef RangePolicy< execution_space > policy ;
+  (void) Impl::ParallelFor< FunctorType , policy >( functor , policy(0,work_count) );
 }
-
-template< class DeviceType >
-class MultiFunctorParallelFor ;
 
 } // namespace Kokkos
 
@@ -280,34 +254,105 @@ namespace Kokkos {
  *  };
  * \endcode
  */
+template< class ExecPolicy , class FunctorType >
+inline
+void parallel_reduce( const ExecPolicy  & policy 
+                    , const FunctorType & functor
+                    , typename Impl::enable_if< ! Impl::is_integral< ExecPolicy >::value >::type * = 0
+                    )
+{
+  (void) Impl::ParallelReduce< FunctorType , ExecPolicy >( functor , policy );
+}
+
+template< class FunctorType >
+inline
+void parallel_reduce( const size_t        work_count
+                    , const FunctorType & functor
+                    )
+{
+  typedef typename
+    Impl::FunctorPolicyExecutionSpace< FunctorType , void >::execution_space
+      execution_space ;
+
+  typedef RangePolicy< execution_space > policy ;
+
+  typedef Kokkos::Impl::ReduceAdapter< FunctorType >  Reduce ;
+
+  typedef typename Kokkos::Impl::if_c< Reduce::StaticValueSize
+                                     , typename Reduce::scalar_type
+                                     , typename Reduce::pointer_type
+                                     >::type value_type ;
+
+  Kokkos::View< value_type
+              , typename execution_space::host_mirror_device_type
+              , Kokkos::MemoryUnmanaged
+              >
+    result_view ;
+
+  (void) Impl::ParallelReduce< FunctorType , policy >( functor , policy(0,work_count) , result_view );
+}
+
+template< class ExecPolicy , class FunctorType , class ViewType >
+inline
+void parallel_reduce( const ExecPolicy  & policy 
+                    , const FunctorType & functor 
+                    , const ViewType    & result_view
+                    , typename Impl::enable_if<
+                      ( is_view<ViewType>::value && ! Impl::is_integral< ExecPolicy >::value
+                      )>::type * = 0 )
+{
+  (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( functor , policy , result_view );
+}
+
+template< class ExecPolicy , class FunctorType , class ViewType >
+inline
+void parallel_reduce( const size_t        work_count
+                    , const FunctorType & functor 
+                    , const ViewType    & result_view
+                    , typename Impl::enable_if<( is_view<ViewType>::value )>::type * = 0 )
+{
+  typedef typename
+    Impl::FunctorPolicyExecutionSpace< FunctorType , void >::execution_space
+      execution_space ;
+
+  typedef RangePolicy< execution_space > policy ;
+
+  (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( functor , policy(0,work_count) , result_view );
+}
+
+/** TODO: Deprecate the following specialization: */
 template< class FunctorType >
 inline
 void parallel_reduce( const size_t        work_count ,
-                      const FunctorType & functor )
-{
-  Impl::ParallelReduce< FunctorType , size_t > reduce( functor , work_count );
-}
-
-/** \brief  Parallel reduction and output to host.
- *
- *  If FunctorType::value_type is
- *    - \c PodType,  then \c reference_type is <tt>PodType & </tt>.
- *    - <tt>PodType[]</tt>, then \c reference_type is <tt>PodType * </tt>.
- */
-template< class FunctorType >
-inline
-void parallel_reduce( const size_t work_count ,
                       const FunctorType & functor ,
                       typename Kokkos::Impl::ReduceAdapter< FunctorType >::reference_type result )
 {
-  Impl::ParallelReduce< FunctorType, size_t >
-    reduce( functor , work_count , Kokkos::Impl::ReduceAdapter< FunctorType >::pointer( result ) );
+  typedef typename
+    Kokkos::Impl::FunctorPolicyExecutionSpace< FunctorType , void >::execution_space
+      execution_space ;
 
-  reduce.wait();
+  typedef Kokkos::RangePolicy< execution_space > policy ;
+
+  typedef Kokkos::Impl::ReduceAdapter< FunctorType >  Reduce ;
+
+  // Wrap the result output request in a view to inform the implementation
+  // of the type and memory space.
+
+  typedef typename Kokkos::Impl::if_c< Reduce::StaticValueSize
+                                     , typename Reduce::scalar_type
+                                     , typename Reduce::pointer_type
+                                     >::type value_type ;
+
+  Kokkos::View< value_type
+              , typename execution_space::host_mirror_device_type
+              , Kokkos::MemoryUnmanaged
+              >
+    result_view( Reduce::pointer( result )
+               , Reduce::value_count( functor )
+               );
+  
+  (void) Impl::ParallelReduce< FunctorType , policy >( functor , policy(0,work_count) , result_view );
 }
-
-template< class DeviceType >
-class MultiFunctorParallelReduce ;
 
 } // namespace Kokkos
 
@@ -317,12 +362,13 @@ class MultiFunctorParallelReduce ;
 namespace Kokkos {
 
 /// \fn parallel_scan
-/// \tparam FunctorType Type of the scan functor.
+/// \tparam ExecutionPolicy The execution policy type.
+/// \tparam FunctorType     The scan functor type.
 ///
-/// \param work_count [in] Number of work items.
+/// \param policy  [in] The execution policy.
 /// \param functor [in] The scan functor.
 ///
-/// This function implements a parallel scan operation.  The scan can
+/// This function implements a parallel scan pattern.  The scan can
 /// be either inclusive or exclusive, depending on how you implement
 /// the scan functor.
 ///
@@ -338,6 +384,7 @@ namespace Kokkos {
 /// to be an array of (same-sized) arrays of PodType, but we do not
 /// show the required interface for that here.
 /// \code
+/// template< class ExecPolicy , class FunctorType >
 /// class ScanFunctor {
 /// public:
 ///   // The Kokkos device type
@@ -346,9 +393,8 @@ namespace Kokkos {
 ///   // also the type of each of the entries combined using
 ///   // operator() or join().
 ///   typedef PodType value_type;
-///   typedef typename DeviceType::size_type size_type;
 ///
-///   void operator () (const size_type i, value_type& update, const bool final_pass) const;
+///   void operator () (const ExecPolicy::member_type & i, value_type& update, const bool final_pass) const;
 ///   void init (value_type& update) const;
 ///   void join (volatile value_type& update, volatile const value_type& input) const
 /// };
@@ -466,12 +512,28 @@ namespace Kokkos {
 /// };
 /// \endcode
 ///
+template< class ExecutionPolicy , class FunctorType >
+inline
+void parallel_scan( const ExecutionPolicy & policy 
+                  , const FunctorType     & functor 
+                  , typename Impl::enable_if< ! Impl::is_integral< ExecutionPolicy >::value >::type * = 0
+                  )
+{
+  Impl::ParallelScan< FunctorType , ExecutionPolicy > scan( functor , policy );
+}
+
 template< class FunctorType >
 inline
 void parallel_scan( const size_t        work_count ,
                     const FunctorType & functor )
 {
-  Impl::ParallelScan< FunctorType , size_t > scan( functor , work_count );
+  typedef typename
+    Kokkos::Impl::FunctorPolicyExecutionSpace< FunctorType , void >::execution_space
+      execution_space ;
+
+  typedef Kokkos::RangePolicy< execution_space > policy ;
+
+  (void) Impl::ParallelScan< FunctorType , policy >( functor , policy(0,work_count) );
 }
 
 } // namespace Kokkos

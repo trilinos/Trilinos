@@ -57,39 +57,6 @@ namespace Impl {
 
 //----------------------------------------------------------------------------
 
-template< class FunctorType , class WorkSpec >
-class ParallelFor< FunctorType , WorkSpec , Kokkos::Threads >
-{
-public:
-
-  const FunctorType  m_func ;
-  const size_t       m_work ;
-
-  static void execute( ThreadsExec & exec , const void * arg )
-  {
-    const ParallelFor & self = * ((const ParallelFor *) arg );
-
-    const std::pair<size_t,size_t> work = exec.work_range( self.m_work );
-
-    for ( size_t iwork = work.first, work_end = work.second ; iwork < work_end ; ++iwork ) {
-      self.m_func( iwork );
-    }
-
-    exec.fan_in();
-  }
-
-  ParallelFor( const FunctorType & functor , const size_t work )
-    : m_func( functor ), m_work( work )
-    {
-      ThreadsExec::start( & ParallelFor::execute , this );
-      ThreadsExec::fence();
-    }
-
-  inline void wait() {}
-
-  inline ~ParallelFor() { wait(); }
-};
-
 template< class FunctorType >
 class ParallelFor< FunctorType , ParallelWorkRequest , Kokkos::Threads >
 {
@@ -123,6 +90,44 @@ public:
 };
 
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+template< class FunctorType , typename IntType , unsigned P >
+class ParallelFor< FunctorType
+                 , Kokkos::RangePolicy< Kokkos::Threads , void , IntType , P >
+                 , Kokkos::Threads
+                 >
+{
+public:
+
+  typedef Kokkos::RangePolicy< Kokkos::Threads , void , IntType , P > Policy ;
+
+  const FunctorType  m_func ;
+  const Policy       m_policy ;
+
+  static void execute( ThreadsExec & exec , const void * arg )
+  {
+    const ParallelFor & self = * ((const ParallelFor *) arg );
+
+    const Policy range( self.m_policy , exec.pool_rank() , exec.pool_size() );
+
+    for ( typename Policy::member_type i = range.begin() , e = range.end() ; i < e ; ++i ) {
+      self.m_func( i );
+    }
+
+    exec.fan_in();
+  }
+
+  ParallelFor( const FunctorType & functor
+             , const Policy      & policy )
+    : m_func( functor )
+    , m_policy( policy )
+    {
+      ThreadsExec::start( & ParallelFor::execute , this );
+
+      ThreadsExec::fence();
+    }
+};
 
 template< class FunctorType >
 class ParallelFor< FunctorType , Kokkos::TeamPolicy< Kokkos::Threads , void > , Kokkos::Threads >
@@ -137,6 +142,9 @@ public:
   static void execute( ThreadsExec & exec , const void * arg )
   {
     const ParallelFor & self = * ((const ParallelFor *) arg );
+
+    // TODO: Add thread pool queries to ThreadExec.
+    // TODO: Move all of the team state out of ThreadsExec and into the Policy.
 
     typename Policy::member_type index( exec , self.m_policy );
 
@@ -167,16 +175,20 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-template< class FunctorType , class WorkSpec >
-class ParallelReduce< FunctorType , WorkSpec , Kokkos::Threads >
+template< class FunctorType , typename IntType , unsigned P >
+class ParallelReduce< FunctorType
+                    , Kokkos::RangePolicy< Kokkos::Threads , void , IntType , P >
+                    , Kokkos::Threads
+                    >
 {
 public:
 
   typedef ReduceAdapter< FunctorType >   Reduce ;
   typedef typename Reduce::pointer_type  pointer_type ;
+  typedef Kokkos::RangePolicy< Kokkos::Threads , void , IntType , P > Policy ;
 
   const FunctorType  m_func ;
-  const size_t       m_work ;
+  const Policy       m_policy ;
 
   static void execute( ThreadsExec & exec , const void * arg )
   {
@@ -185,19 +197,21 @@ public:
     // Initialize thread-local value
     typename Reduce::reference_type update = Reduce::init( self.m_func , exec.reduce_base() );
 
-    const std::pair<size_t,size_t> work = exec.work_range( self.m_work );
+    const Policy range( self.m_policy , exec.pool_rank() , exec.pool_size() );
 
-    for ( size_t iwork = work.first, work_end = work.second ; iwork < work_end ; ++iwork ) {
+    for ( typename Policy::member_type iwork = range.begin(), work_end = range.end() ; iwork < work_end ; ++iwork ) {
       self.m_func( iwork , update );
     }
 
     exec.fan_in_reduce( self.m_func );
   }
 
-  ParallelReduce( const FunctorType & functor ,
-                  const size_t        work ,
-                  const pointer_type  result_ptr = 0 )
-    : m_func( functor ), m_work( work )
+  template< class HostViewType >
+  ParallelReduce( const FunctorType  & functor ,
+                  const Policy       & policy ,
+                  const HostViewType & result_view )
+    : m_func( functor )
+    , m_policy( policy )
     {
       ThreadsExec::resize_reduce_scratch( Reduce::value_size( m_func ) );
 
@@ -207,15 +221,11 @@ public:
 
       ThreadsExec::fence();
 
-      if ( result_ptr ) {
+      if ( result_view.ptr_on_device() ) {
         const unsigned n = Reduce::value_count( m_func );
-        for ( unsigned i = 0 ; i < n ; ++i ) { result_ptr[i] = data[i]; }
+        for ( unsigned i = 0 ; i < n ; ++i ) { result_view.ptr_on_device()[i] = data[i]; }
       }
     }
-
-  inline void wait() {}
-
-  inline ~ParallelReduce() { wait(); }
 };
 
 //----------------------------------------------------------------------------
@@ -342,63 +352,51 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-struct ThreadsExecUseScanSmall {
-  size_t nwork ;
-  operator size_t () const { return nwork ; }
-  ThreadsExecUseScanSmall( size_t n ) : nwork( n ) {}
-};
-
-template< class FunctorType , class WorkSpec >
-class ParallelScan< FunctorType , WorkSpec , Kokkos::Threads >
+template< class FunctorType , typename IntType , unsigned P >
+class ParallelScan< FunctorType
+                  , Kokkos::RangePolicy< Kokkos::Threads , void , IntType , P >
+                  , Kokkos::Threads
+                  >
 {
 public:
 
   typedef ReduceAdapter< FunctorType > Reduce ;
   typedef typename Reduce::pointer_type pointer_type ;
+  typedef Kokkos::RangePolicy< Kokkos::Threads , void , IntType , P > Policy ;
 
   const FunctorType  m_func ;
-  const size_t       m_work ;
+  const Policy       m_policy ;
 
   static void execute( ThreadsExec & exec , const void * arg )
   {
     const ParallelScan & self = * ((const ParallelScan *) arg );
 
-    const std::pair<size_t,size_t> work = exec.work_range( self.m_work );
+    const Policy range( self.m_policy , exec.pool_rank() , exec.pool_size() );
 
     typename Reduce::reference_type update = Reduce::init( self.m_func , exec.reduce_base() );
 
-    for ( size_t iwork = work.first, work_end = work.second ; iwork < work_end ; ++iwork ) {
+    for ( typename Policy::member_type iwork = range.begin(), work_end = range.end() ; iwork < work_end ; ++iwork ) {
       self.m_func( iwork , update , false );
     }
 
-    // Compile time selection of scan algorithm to support unit testing
-    // of both large and small thread count algorithms.
-    if ( ! is_same< WorkSpec , ThreadsExecUseScanSmall >::value ) {
-      exec.scan_large( self.m_func );
-    }
-    else {
-      exec.scan_small( self.m_func );
-    }
+    //  exec.scan_large( self.m_func );
+    exec.scan_small( self.m_func );
 
-    for ( size_t iwork = work.first, work_end = work.second ; iwork < work_end ; ++iwork ) {
+    for ( typename Policy::member_type iwork = range.begin(), work_end = range.end() ; iwork < work_end ; ++iwork ) {
       self.m_func( iwork , update , true );
     }
 
     exec.fan_in();
   }
 
-  ParallelScan( const FunctorType & functor , const size_t nwork )
+  ParallelScan( const FunctorType & functor , const Policy & policy )
     : m_func( functor )
-    , m_work( nwork )
+    , m_policy( policy )
     {
       ThreadsExec::resize_reduce_scratch( 2 * Reduce::value_size( m_func ) );
       ThreadsExec::start( & ParallelScan::execute , this );
       ThreadsExec::fence();
     }
-
-  inline void wait() {}
-
-  inline ~ParallelScan() { wait(); }
 };
 
 } // namespace Impl

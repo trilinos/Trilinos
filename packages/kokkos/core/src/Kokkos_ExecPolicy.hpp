@@ -55,13 +55,17 @@ namespace Kokkos {
  */
 template< class ExecSpace  = Kokkos::DefaultExecutionSpace
         , class WorkArgTag = void
-        , typename IntType = int
-        , unsigned GranularityPowerOfTwo = 3 >
+        , typename IntType = long int
+        , unsigned GranularityPowerOfTwo = 3 /* Chunk size 8 */
+        >
 class RangePolicy {
 private:
 
   enum { Granularity     = IntType(1) << GranularityPowerOfTwo };
   enum { GranularityMask = IntType(Granularity) - 1 };
+
+  IntType m_begin ;
+  IntType m_end ;
 
 public:
 
@@ -69,32 +73,42 @@ public:
   typedef ExecSpace                  execution_space ; ///< Execution type
   typedef IntType                    member_type ;
 
-  member_type begin ;
-  member_type end ;
+  KOKKOS_INLINE_FUNCTION member_type begin() const { return m_begin ; }
+  KOKKOS_INLINE_FUNCTION member_type end()   const { return m_end ; }
 
-  KOKKOS_INLINE_FUNCTION
-  RangePolicy() : begin(0), end(0) {}
+  KOKKOS_INLINE_FUNCTION RangePolicy() : m_begin(0), m_end(0) {}
 
+  /** \brief  Total range */
   KOKKOS_INLINE_FUNCTION
-  RangePolicy( const int part_rank
-             , const int part_size
-             , const member_type work_begin
+  RangePolicy( const member_type work_begin
              , const member_type work_end
              )
-    : begin(0), end(0)
+    : m_begin( work_begin < work_end ? work_begin : 0 )
+    , m_end(   work_begin < work_end ? work_end : 0 )
+    {}
+
+  /** \brief  Subrange for a partition's rank and size.
+   *
+   *  Typically used to partition a range over a group of threads.
+   */
+  KOKKOS_INLINE_FUNCTION
+  RangePolicy( const RangePolicy & range
+             , const int part_rank
+             , const int part_size
+             )
+    : m_begin(0), m_end(0)
     {
-      if ( part_size && work_begin < work_end ) {
+      if ( part_size ) {
 
         // Split evenly among partitions, then round up to the granularity.
-        member_type work_part = ( ( work_end - work_begin ) + ( part_size - 1 ) ) / part_size ;
+        const member_type work_part =
+          ( ( ( ( range.m_end - range.m_begin ) + ( part_size - 1 ) ) / part_size ) + GranularityMask ) & ~member_type(GranularityMask);
 
-        if ( GranularityMask ) { work_part = ( work_part + GranularityMask ) & ~GranularityMask ; }
+        m_begin = range.m_begin + work_part * part_rank ;
+        m_end   = m_begin       + work_part ;
 
-        begin = work_begin + work_part * part_rank ;
-        end   = begin      + work_part ;
-
-        if ( work_end < begin ) begin = work_end ;
-        if ( work_end < end )   end   = work_end ;
+        if ( range.m_end < m_begin ) m_begin = range.m_end ;
+        if ( range.m_end < m_end )   m_end   = range.m_end ;
       }
     }
 };

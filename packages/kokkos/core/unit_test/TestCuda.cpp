@@ -74,7 +74,6 @@ extern void test_device_cuda_reduce_team();
 extern void test_device_cuda_reduce_request();
 extern void test_device_cuda_reduce_dynamic();
 extern void test_device_cuda_reduce_dynamic_view();
-extern void test_device_cuda_multi_reduce();
 extern void test_device_cuda_shared_team();
 extern void test_device_cuda_shared_request();
 extern void test_device_cuda_view_aggregate();
@@ -121,11 +120,6 @@ TEST_F( cuda, reduce_dynamic )
 TEST_F( cuda, reduce_dynamic_view )
 {
   test_device_cuda_reduce_dynamic_view();
-}
-
-TEST_F( cuda, multi_reduce )
-{
-  test_device_cuda_multi_reduce();
 }
 
 TEST_F( cuda, tile )
