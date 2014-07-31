@@ -395,11 +395,28 @@ public:
   }
 };
 
+template<unsigned Size>
+struct Kokkos_Atomic_is_only_allowed_with_32bit_and_64bit_scalars;
+
+template<>
+struct Kokkos_Atomic_is_only_allowed_with_32bit_and_64bit_scalars<4> {
+  typedef int type;
+};
+
+template<>
+struct Kokkos_Atomic_is_only_allowed_with_32bit_and_64bit_scalars<8> {
+  typedef int64_t type;
+};
+
 template<class ViewTraits>
 class ViewDataHandle<ViewTraits,
 typename enable_if<(!is_same<typename ViewTraits::const_value_type,typename ViewTraits::value_type>::value) &&
                    (ViewTraits::memory_traits::Atomic) >::type> {
-
+//  typedef typename if_c<(sizeof(typename ViewTraits::const_value_type)==4) || 
+//                        (sizeof(typename ViewTraits::const_value_type)==8), 
+//                         int, Kokkos_Atomic_is_only_allowed_with_32bit_and_64bit_scalars >::type 
+//                   atomic_view_possible; 
+  typedef typename Kokkos_Atomic_is_only_allowed_with_32bit_and_64bit_scalars<sizeof(typename ViewTraits::const_value_type)>::type enable_atomic_type;
   typedef ViewDataHandle self_type;
 
 public:
