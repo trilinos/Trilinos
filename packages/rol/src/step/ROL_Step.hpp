@@ -60,9 +60,14 @@ namespace ROL {
 template <class Real>
 class Step {
 private:
+  Teuchos::RCP<StepState<Real> > state_;
+
+protected:
+  Teuchos::RCP<StepState<Real> > getState(void) {
+    return this->state_;
+  }
 
 public:
-  Teuchos::RCP<StepState<Real> > state_;
 
   virtual ~Step() {}
 
@@ -70,7 +75,6 @@ public:
     state_ = Teuchos::rcp( new StepState<Real> );
   }
 
-  Teuchos::RCP<StepState<Real> >& get_state() { return this->state_; }
 
   /** \brief Initialize step.
   */
@@ -126,7 +130,7 @@ public:
   */
   virtual std::string print( AlgorithmState<Real> &algo_state, bool printHeader = false ) const = 0;
 
-  /** \brief Print iterate status.
+  /** \brief Get state for step object.
   */
   virtual Teuchos::RCP<const StepState<Real> > getState(void) const {
     return this->state_;

@@ -44,6 +44,7 @@
 #ifndef ROL_ALGORITHM_H
 #define ROL_ALGORITHM_H
 
+#include "ROL_Types.hpp"
 #include "ROL_Step.hpp"
 #include "ROL_StatusTest.hpp"
 

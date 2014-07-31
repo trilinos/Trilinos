@@ -97,7 +97,7 @@ public:
   virtual ~TrustRegion() {}
 
   // Constructor
-  TrustRegion( Teuchos::ParameterList & parlist ) : ftol_old_(1.0), cnt_(0) {
+  TrustRegion( Teuchos::ParameterList & parlist ) : ftol_old_(ROL_OVERFLOW), cnt_(0) {
     // Unravel Parameter List
     // Enumerations
     etr_ = StringToETrustRegion( parlist.get("Trust-Region Subproblem Solver Type",  "Cauchy Point"));
@@ -151,8 +151,9 @@ public:
       if ( !(this->cnt_%this->updateIter_) && (this->cnt_ != 0) ) {
         this->force_ *= this->forceFactor_;
       }
-      Real ftol  = this->scale_*std::pow(std::min(this->eta1_,1.0-this->eta2_)
-                                        *std::min(std::max(this->pRed_,0.0),this->force_),1.0/this->omega_);
+      Real c = this->scale_*std::max(1.e-2,std::min(1.0,1.e4*std::max(this->pRed_,std::sqrt(ROL_EPSILON))));
+      Real ftol = c*std::pow(std::min(this->eta1_,1.0-this->eta2_)
+                   *std::min(std::max(this->pRed_,std::sqrt(ROL_EPSILON)),this->force_),1.0/this->omega_);
       if ( this->ftol_old_ > ftol || this->cnt_ == 0 ) {
         this->ftol_old_ = ftol;
         fold1 = pObj.value(x,this->ftol_old_);

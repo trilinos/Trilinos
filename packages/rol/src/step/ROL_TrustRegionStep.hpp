@@ -89,15 +89,17 @@ private:
 
   void updateGradient( Vector<Real> &x, Objective<Real> &obj, Constraints<Real> &con, 
                        AlgorithmState<Real> &algo_state ) {
-    Teuchos::RCP<StepState<Real> >& state = Step<Real>::get_state();
+    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
     if ( this->useInexact_[1] ) {
-      Real gtol1  = this->scale0_*(state->searchSize);
+      Real c = this->scale0_*std::max(1.e-2,std::min(1.0,1.e4*algo_state.gnorm));
+      Real gtol1  = c*(state->searchSize);
       Real gtol0  = this->scale1_*gtol1 + 1.0;
       while ( gtol0 > gtol1*this->scale1_ ) {
         obj.gradient(*(state->gradientVec),x,gtol1);
         algo_state.gnorm = this->computeCriticalityMeasure(*(state->gradientVec),x,con);
         gtol0 = gtol1;
-        gtol1 = this->scale0_*std::min(algo_state.gnorm,state->searchSize);
+        c = this->scale0_*std::max(1.e-2,std::min(1.0,1.e4*algo_state.gnorm));
+        gtol1 = c*std::min(algo_state.gnorm,state->searchSize);
       }
       algo_state.ngrad++;
     }
@@ -133,15 +135,17 @@ public:
 
   virtual ~TrustRegionStep() {}
 
-  TrustRegionStep( Teuchos::ParameterList & parlist ) {
+  TrustRegionStep( Teuchos::ParameterList & parlist ) : Step<Real>() {
+    Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
+
     // Enumerations
-    etr_   = StringToETrustRegion( parlist.get("Trust-Region Subproblem Solver Type",  "Cauchy Point"));  
-    esec_  = StringToESecant(      parlist.get("Secant Type",                          "Limited-Memory BFGS"));
+    etr_   = StringToETrustRegion(parlist.get("Trust-Region Subproblem Solver Type","Cauchy Point"));  
+    esec_  = StringToESecant(parlist.get("Secant Type","Limited-Memory BFGS"));
     // Secant Information
     useSecantPrecond_ = parlist.get("Use Secant Preconditioning", false);
     useSecantHessVec_ = parlist.get("Use Secant Hessian-Times-A-Vector", false);
     // Trust-Region Parameters
-    Step<Real>::state_->searchSize   = parlist.get("Initial Trust-Region Radius",          -1.0);
+    step_state->searchSize = parlist.get("Initial Trust-Region Radius", -1.0);
     // Inexactness Information
     useInexact_.clear();
     useInexact_.push_back(parlist.get("Use Inexact Objective Function", false));
@@ -166,15 +170,17 @@ public:
   }
 
   TrustRegionStep( Teuchos::RCP<Secant<Real> > &secant, Teuchos::ParameterList &parlist ) 
-    : secant_(secant) {
+    : Step<Real>(), secant_(secant) {
+    Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
+
     // Enumerations
-    etr_   = StringToETrustRegion( parlist.get("Trust-Region Subproblem Solver Type",  "Cauchy Point"));  
-    esec_  = StringToESecant(      parlist.get("Secant Type",                          "Limited-Memory BFGS"));
+    etr_   = StringToETrustRegion(parlist.get("Trust-Region Subproblem Solver Type","Cauchy Point"));  
+    esec_  = StringToESecant(parlist.get("Secant Type","Limited-Memory BFGS"));
     // Secant Information
     useSecantPrecond_ = parlist.get("Use Secant Preconditioning", false);
     useSecantHessVec_ = parlist.get("Use Secant Hessian-Times-A-Vector", false);
     // Trust-Region Parameters
-    Step<Real>::state_->searchSize   = parlist.get("Initial Trust-Region Radius",          -1.0);
+    step_state->searchSize = parlist.get("Initial Trust-Region Radius", -1.0);
     // Inexactness Information
     useInexact_.clear();
     useInexact_.push_back(parlist.get("Use Inexact Objective Function", false));
@@ -194,7 +200,7 @@ public:
   */
   void initialize( Vector<Real> &x, Objective<Real> &obj, Constraints<Real> &con, 
                    AlgorithmState<Real> &algo_state ) {
-    Teuchos::RCP<StepState<Real> >& state = Step<Real>::get_state();
+    Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
 
     algo_state.nfval = 0;
     algo_state.ngrad = 0;
@@ -202,8 +208,8 @@ public:
     Real htol = std::sqrt(ROL_EPSILON);
     Real ftol = ROL_OVERFLOW; 
 
-    state->descentVec  = x.clone();
-    state->gradientVec = x.clone();
+    step_state->descentVec  = x.clone();
+    step_state->gradientVec = x.clone();
 
     if ( con.isActivated() ) {
       con.project(x);
@@ -217,28 +223,56 @@ public:
     algo_state.nfval++;
 
     // Evaluate Objective Function at Cauchy Point
-    if ( state->searchSize <= 0.0 ) {
+    if ( step_state->searchSize <= 0.0 ) {
       Teuchos::RCP<Vector<Real> > Bg = x.clone();
       if ( this->useSecantHessVec_ ) {
-        this->secant_->applyB(*Bg,*(state->gradientVec),x);
+        this->secant_->applyB(*Bg,*(step_state->gradientVec),x);
       }
       else {
-        obj.hessVec(*Bg,*(state->gradientVec),x,htol);
+        obj.hessVec(*Bg,*(step_state->gradientVec),x,htol);
       }
-      Real gBg   = Bg->dot(*(state->gradientVec));
+      Real gBg = Bg->dot(*(step_state->gradientVec));
       Real alpha = 1.0;
       if ( gBg > ROL_EPSILON ) {
         alpha = algo_state.gnorm*algo_state.gnorm/gBg;
       }
+      // Evaluate the objective function at the Cauchy point
       Teuchos::RCP<Vector<Real> > cp = x.clone();
-      cp->set(*(state->gradientVec)); 
+      cp->set(*(step_state->gradientVec)); 
       cp->scale(-alpha);
-      obj.update(*cp);
-      Real fnew = obj.value(*cp,ftol); // MUST DO SOMETHING HERE WITH FTOL
+      Teuchos::RCP<Vector<Real> > xnew = x.clone();
+      xnew->set(x);
+      xnew->plus(*cp);
+      obj.update(*xnew);
+      Real fnew = obj.value(*xnew,ftol); // MUST DO SOMETHING HERE WITH FTOL
       algo_state.nfval++;
-      // Perform Quadratic Interpolation to Determine Initial Trust Region Radius
-      Real gs    = (state->gradientVec)->dot(*cp);
-      state->searchSize = -gs/(fnew - algo_state.value - gs)*alpha*algo_state.gnorm;
+      // Perform cubic interpolation to determine initial trust region radius
+      Real gs = (step_state->gradientVec)->dot(*cp);
+      Real a  = fnew - algo_state.value - gs - 0.5*alpha*alpha*gBg;
+      if ( std::abs(a) < ROL_EPSILON ) { 
+        // a = 0 implies the objective is quadratic in the negative gradient direction
+        step_state->searchSize = alpha*algo_state.gnorm;
+      }
+      else {
+        Real b  = 0.5*alpha*alpha*gBg;
+        Real c  = gs;
+        if ( b*b-3.0*a*c > ROL_EPSILON ) {
+          // There is at least one critical point
+          Real t1 = (-b-std::sqrt(b*b-3.0*a*c))/(3.0*a);
+          Real t2 = (-b+std::sqrt(b*b-3.0*a*c))/(3.0*a);
+          if ( 6.0*a*t1 + 2.0*b > 0.0 ) {
+            // t1 is the minimizer
+            step_state->searchSize = t1*alpha*algo_state.gnorm;          
+          }
+          else {
+            // t2 is the minimizer
+            step_state->searchSize = t2*alpha*algo_state.gnorm;
+          }
+        }
+        else {
+          step_state->searchSize = alpha*algo_state.gnorm;
+        }
+      }
     }
   }
 
@@ -246,7 +280,7 @@ public:
   */
   void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, Constraints<Real> &con, 
                 AlgorithmState<Real> &algo_state ) {
-    Teuchos::RCP<StepState<Real> >& state = Step<Real>::get_state();
+    Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
 
     Real eps = 0.0;
     if ( con.isActivated() ) {
@@ -256,15 +290,15 @@ public:
 
     this->CGflag_ = 0;
     this->CGiter_ = 0;
-    this->trustRegion_->run(s,algo_state.snorm,state->searchSize,this->CGflag_,this->CGiter_,
-                            x,*(state->gradientVec),algo_state.gnorm,pObj);
+    this->trustRegion_->run(s,algo_state.snorm,step_state->searchSize,this->CGflag_,this->CGiter_,
+                            x,*(step_state->gradientVec),algo_state.gnorm,pObj);
   }
 
   /** \brief Update step, if successful.
   */
   void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, Constraints<Real> &con, 
                AlgorithmState<Real> &algo_state ) {
-    Teuchos::RCP<StepState<Real> >& state = Step<Real>::get_state();
+    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
 
     Real tol = std::sqrt(ROL_EPSILON);
 
@@ -404,7 +438,7 @@ public:
   /** \brief Print iterate status.
   */
   std::string print( AlgorithmState<Real> & algo_state, bool printHeader = false ) const  {
-    //Teuchos::RCP<StepState<Real> >& state = Step<Real>::get_state();
+    const Teuchos::RCP<const StepState<Real> >& step_state = Step<Real>::getState();
 
     std::stringstream hist;
     hist << std::scientific << std::setprecision(6);
@@ -420,7 +454,7 @@ public:
       hist << std::setw(15) << std::left << algo_state.value;
       hist << std::setw(15) << std::left << algo_state.gnorm;
       hist << std::setw(15) << std::left << " "; 
-      hist << std::setw(15) << std::left << Step<Real>::state_->searchSize; 
+      hist << std::setw(15) << std::left << step_state->searchSize; 
       hist << "\n";
     }
     else {
@@ -429,7 +463,7 @@ public:
       hist << std::setw(15) << std::left << algo_state.value; 
       hist << std::setw(15) << std::left << algo_state.gnorm; 
       hist << std::setw(15) << std::left << algo_state.snorm; 
-      hist << std::setw(15) << std::left << Step<Real>::state_->searchSize; 
+      hist << std::setw(15) << std::left << step_state->searchSize; 
       hist << std::setw(10) << std::left << algo_state.nfval;              
       hist << std::setw(10) << std::left << algo_state.ngrad;              
       hist << std::setw(10) << std::left << this->TRflag_;              

@@ -51,6 +51,7 @@
 #include "ROL_Secant.hpp"
 #include "ROL_Krylov.hpp"
 #include "ROL_NonlinearCG.hpp"
+#include "ROL_PrimalDualActiveSet.hpp"
 #include "ROL_LineSearch.hpp"
 
 #include <sstream>
@@ -68,10 +69,10 @@ template <class Real>
 class LineSearchStep : public Step<Real> {
 private:
 
-  Teuchos::RCP<Secant<Real> >      secant_;
-  Teuchos::RCP<Krylov<Real> >      krylov_;
-  Teuchos::RCP<NonlinearCG<Real> > nlcg_;
-  Teuchos::RCP<LineSearch<Real> >  lineSearch_;
+  Teuchos::RCP<Secant<Real> >              secant_;
+  Teuchos::RCP<Krylov<Real> >              krylov_;
+  Teuchos::RCP<NonlinearCG<Real> >         nlcg_;
+  Teuchos::RCP<LineSearch<Real> >          lineSearch_;
 
   int iterKrylov_;
   int flagKrylov_;
@@ -97,14 +98,14 @@ public:
 
   virtual ~LineSearchStep() {}
 
-  LineSearchStep( Teuchos::ParameterList &parlist ) {
+  LineSearchStep( Teuchos::ParameterList &parlist ) : Step<Real>() {
     // Enumerations
-    edesc_ = StringToEDescent(            parlist.get("Descent Type",                   "Quasi-Newton Method"));
-    enlcg_ = StringToENonlinearCG(        parlist.get("Nonlinear CG Type",              "Hagar-Zhang"));
-    els_   = StringToELineSearch(         parlist.get("Linesearch Type",                "Cubic Interpolation"));
-    econd_ = StringToECurvatureCondition( parlist.get("Linesearch Curvature Condition", "Strong Wolfe Conditions"));
-    esec_  = StringToESecant(             parlist.get("Secant Type",                    "Limited-Memory BFGS"));
-    ekv_   = StringToEKrylov(             parlist.get("Krylov Type",                    "Conjugate Gradients"));
+    edesc_ = StringToEDescent(parlist.get("Descent Type","Quasi-Newton Method"));
+    enlcg_ = StringToENonlinearCG(parlist.get("Nonlinear CG Type","Hagar-Zhang"));
+    els_   = StringToELineSearch(parlist.get("Linesearch Type","Cubic Interpolation"));
+    econd_ = StringToECurvatureCondition(parlist.get("Linesearch Curvature Condition","Strong Wolfe Conditions"));
+    esec_  = StringToESecant(parlist.get("Secant Type","Limited-Memory BFGS"));
+    ekv_   = StringToEKrylov(parlist.get("Krylov Type","Conjugate Gradients"));
 
     // Inexactness Information
     useInexact_.clear();
@@ -147,15 +148,15 @@ public:
     }
   }
 
-  LineSearchStep( Teuchos::RCP<Secant<Real> > &secant, Teuchos::ParameterList &parlist ) :
-    secant_(secant) {
+  LineSearchStep( Teuchos::RCP<Secant<Real> > &secant, Teuchos::ParameterList &parlist ) 
+    : Step<Real>(), secant_(secant) {
     // Enumerations
-    edesc_ = StringToEDescent(            parlist.get("Descent Type",                   "Quasi-Newton Method"));
-    enlcg_ = StringToENonlinearCG(        parlist.get("Nonlinear CG Type",              "Hagar-Zhang"));
-    els_   = StringToELineSearch(         parlist.get("Linesearch Type",                "Cubic Interpolation"));
-    econd_ = StringToECurvatureCondition( parlist.get("Linesearch Curvature Condition", "Strong Wolfe Conditions"));
-    esec_  = StringToESecant(             parlist.get("Secant Type",                    "Limited-Memory BFGS"));
-    ekv_   = StringToEKrylov(             parlist.get("Krylov Type",                    "Conjugate Gradients"));
+    edesc_ = StringToEDescent(parlist.get("Descent Type","Quasi-Newton Method"));
+    enlcg_ = StringToENonlinearCG(parlist.get("Nonlinear CG Type","Hagar-Zhang"));
+    els_   = StringToELineSearch(parlist.get("Linesearch Type","Cubic Interpolation"));
+    econd_ = StringToECurvatureCondition(parlist.get("Linesearch Curvature Condition","Strong Wolfe Conditions"));
+    esec_  = StringToESecant(parlist.get("Secant Type","Limited-Memory BFGS"));
+    ekv_   = StringToEKrylov(parlist.get("Krylov Type","Conjugate Gradients"));
 
     // Inexactness Information
     useInexact_.clear();
@@ -196,6 +197,9 @@ public:
   */
   void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, Constraints<Real> &con, 
                 AlgorithmState<Real> &algo_state ) {
+    Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
+
+    Real tol = std::sqrt(ROL_EPSILON);
     Real eps = 0.0;
     if ( con.isActivated() ) {
       eps = algo_state.gnorm;
@@ -203,61 +207,68 @@ public:
     ProjectedObjective<Real> pObj(obj,con,this->secant_,this->useSecantPrecond_,this->useSecantHessVec_,eps);
 
     // Compute step s
-    if ( this->edesc_ == DESCENT_NEWTONKRYLOV ) {
-      this->flagKrylov_ = 0;
-      this->krylov_->run(s,this->iterKrylov_,this->flagKrylov_,*(Step<Real>::state_->gradientVec),x,pObj);
-    }
-    else if ( this->edesc_ == DESCENT_NEWTON || this->edesc_ == DESCENT_SECANT ) {
-      Real tol = std::sqrt(ROL_EPSILON);
-      pObj.reducedInvHessVec(s,*(Step<Real>::state_->gradientVec),x,*(Step<Real>::state_->gradientVec),x,tol);
-    }
-    else if ( this->edesc_ == DESCENT_NONLINEARCG ) {
-      this->nlcg_->run(s,*(Step<Real>::state_->gradientVec),x,obj);
+    switch(this->edesc_) {
+      case DESCENT_NEWTONKRYLOV:
+        this->flagKrylov_ = 0;
+        this->krylov_->run(s,this->iterKrylov_,this->flagKrylov_,*(step_state->gradientVec),x,pObj);
+        break;
+      case DESCENT_NEWTON:
+      case DESCENT_SECANT:
+        pObj.reducedInvHessVec(s,*(step_state->gradientVec),x,*(step_state->gradientVec),x,tol);
+        break;
+      case DESCENT_NONLINEARCG:
+        this->nlcg_->run(s,*(step_state->gradientVec),x,obj);
+        break;
+      case DESCENT_STEEPEST:
+        s.set(*(step_state->gradientVec));
+        break;
+      default: break;
     }
 
-    // Check if s is a descent direction i.e., g.dot(s) < 0
+    // Compute g.dot(s)
     Real gs = 0.0;
-    if ( con.isActivated() ) {
+    if ( !con.isActivated() ) {
+      gs = -(step_state->gradientVec)->dot(s);
+    }
+    else {
       Teuchos::RCP<Vector<Real> > d = x.clone();
       if ( this->edesc_ == DESCENT_STEEPEST ) {
         d->set(x);
-        d->axpy(-1.0,*(Step<Real>::state_->gradientVec));
+        d->axpy(-1.0,s);
         con.project(*d);
         d->scale(-1.0);
         d->plus(x);
         //d->set(s);
         //con.pruneActive(*d,s,x,eps);
-        //con.pruneActive(*d,*(Step<Real>::state_->gradientVec),x,eps);
-        gs = -(Step<Real>::state_->gradientVec)->dot(*d);
+        //con.pruneActive(*d,*(step_state->gradientVec),x,eps);
+        gs = -(step_state->gradientVec)->dot(*d);
       }
       else {
         d->set(s);
-        con.pruneActive(*d,*(Step<Real>::state_->gradientVec),x,eps);
-        gs = -(Step<Real>::state_->gradientVec)->dot(*d);
+        con.pruneActive(*d,*(step_state->gradientVec),x,eps);
+        gs = -(step_state->gradientVec)->dot(*d);
         d->set(x);
-        d->axpy(-1.0,*(Step<Real>::state_->gradientVec));
+        d->axpy(-1.0,*(step_state->gradientVec));
         con.project(*d);
         d->scale(-1.0);
         d->plus(x);
-        con.pruneInactive(*d,*(Step<Real>::state_->gradientVec),x,eps);
-        gs -= (Step<Real>::state_->gradientVec)->dot(*d);
-        this->lineSearch_->setData((Step<Real>::state_->gradientVec),eps);
+        con.pruneInactive(*d,*(step_state->gradientVec),x,eps);
+        gs -= (step_state->gradientVec)->dot(*d);
       }
     }
-    else {
-      gs = -(Step<Real>::state_->gradientVec)->dot(s);
-    }
-    if ( gs >= 0.0 || (this->flagKrylov_ == 2 && this->iterKrylov_ <= 1) 
-                   || this->edesc_ == DESCENT_STEEPEST ) {
-      s.set(*(Step<Real>::state_->gradientVec));
+    this->lineSearch_->setData((step_state->gradientVec),eps);
+
+    // Check if s is a descent direction i.e., g.dot(s) < 0
+    if ( gs >= 0.0 || (this->flagKrylov_ == 2 && this->iterKrylov_ <= 1) ) {
+      s.set(*(step_state->gradientVec));
       if ( con.isActivated() ) {
         Teuchos::RCP<Vector<Real> > d = x.clone();
         d->set(s);
         con.pruneActive(*d,s,x);
-        gs = -(Step<Real>::state_->gradientVec)->dot(*d);
+        gs = -(step_state->gradientVec)->dot(*d);
       }
       else {
-        gs = -(Step<Real>::state_->gradientVec)->dot(s);
+        gs = -(step_state->gradientVec)->dot(s);
       }
     }
     s.scale(-1.0);
@@ -266,12 +277,12 @@ public:
     Real fnew  = algo_state.value;
     this->ls_nfval_ = 0;
     this->ls_ngrad_ = 0;
-    this->lineSearch_->run(Step<Real>::state_->searchSize,fnew,this->ls_nfval_,this->ls_ngrad_,gs,s,x,obj,con);
+    this->lineSearch_->run(step_state->searchSize,fnew,this->ls_nfval_,this->ls_ngrad_,gs,s,x,obj,con);
     algo_state.nfval += this->ls_nfval_;
     algo_state.ngrad += this->ls_ngrad_;
 
     // Compute get scaled descent direction
-    s.scale(Step<Real>::state_->searchSize);
+    s.scale(step_state->searchSize);
     if ( con.isActivated() ) {
       s.plus(x);
       con.project(s);
@@ -279,7 +290,7 @@ public:
     }
 
     // Update step state information
-    (Step<Real>::state_->descentVec)->set(s);
+    (step_state->descentVec)->set(s);
 
     // Update algorithm state information
     algo_state.snorm = s.norm();
@@ -291,6 +302,7 @@ public:
   void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, Constraints<Real> &con,
                AlgorithmState<Real> &algo_state ) {
     Real tol = std::sqrt(ROL_EPSILON);
+    Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
 
     // Update iterate
     algo_state.iter++;
@@ -301,14 +313,14 @@ public:
     Teuchos::RCP<Vector<Real> > gp;
     if ( this->edesc_ == DESCENT_SECANT || (this->edesc_ == DESCENT_NEWTONKRYLOV && this->useSecantPrecond_) ) {
       gp = x.clone();
-      gp->set(*(Step<Real>::state_->gradientVec));
+      gp->set(*(step_state->gradientVec));
     }
-    obj.gradient(*(Step<Real>::state_->gradientVec),x,tol);
+    obj.gradient(*(step_state->gradientVec),x,tol);
     algo_state.ngrad++;
 
     // Update Secant Information
     if ( this->edesc_ == DESCENT_SECANT || (this->edesc_ == DESCENT_NEWTONKRYLOV && this->useSecantPrecond_) ) {
-      secant_->update(*(Step<Real>::state_->gradientVec),*gp,s,algo_state.snorm,algo_state.iter+1);
+      secant_->update(*(step_state->gradientVec),*gp,s,algo_state.snorm,algo_state.iter+1);
     }
 
     // Update algorithm state
@@ -316,21 +328,21 @@ public:
     if ( con.isActivated() ) {
       if ( this->useProjectedGrad_ ) {
         Teuchos::RCP<Vector<Real> > pg = x.clone();
-        pg->set(*(Step<Real>::state_->gradientVec));
+        pg->set(*(step_state->gradientVec));
         con.computeProjectedGradient( *pg, x );
         algo_state.gnorm = pg->norm();
       }
       else {
         Teuchos::RCP<Vector<Real> > xnew = x.clone();
         xnew->set(x);
-        xnew->axpy(-1.0,*(Step<Real>::state_->gradientVec));
+        xnew->axpy(-1.0,*(step_state->gradientVec));
         con.project(*xnew);
         xnew->axpy(-1.0,x);
         algo_state.gnorm = xnew->norm();
       }
     }
     else {
-      algo_state.gnorm = (Step<Real>::state_->gradientVec)->norm();
+      algo_state.gnorm = (step_state->gradientVec)->norm();
     }
   }
 
@@ -347,7 +359,7 @@ public:
     hist << std::setw(10) << std::left << "#grad";
     hist << std::setw(10) << std::left << "ls_#fval";
     hist << std::setw(10) << std::left << "ls_#grad";
-    if (    this->edesc_ == DESCENT_NEWTONKRYLOV ) {
+    if ( this->edesc_ == DESCENT_NEWTONKRYLOV ) {
       hist << std::setw(10) << std::left << "iterCG";
       hist << std::setw(10) << std::left << "flagCG";
     }
