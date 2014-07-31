@@ -146,7 +146,7 @@ void get_processor_count(std::vector<int> &procinfo)
   bool have_processor = false;
   bool have_cores     = false;
 
-  int  proc, cores;
+  int  proc=0, cores=0;
 
   while (1)
   {

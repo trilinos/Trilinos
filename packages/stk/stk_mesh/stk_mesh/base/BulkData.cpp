@@ -7252,7 +7252,7 @@ void BulkData::internal_verify_change_parts( const MetaData   & meta ,
     const Part & p = impl::get_part(*i, m_mesh_meta_data);
     const unsigned part_rank = p.primary_entity_rank();
 
-    bool intersection_ok, rel_target_ok, rank_ok;
+    bool intersection_ok=false, rel_target_ok=false, rank_ok=false;
     internal_basic_part_check(&p, erank, undef_rank, intersection_ok, rel_target_ok, rank_ok);
 
     if ( !intersection_ok || !rel_target_ok || !rank_ok ) {

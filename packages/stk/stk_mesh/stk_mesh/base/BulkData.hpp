@@ -2005,7 +2005,7 @@ inline bool BulkData::internal_quick_verify_change_part(const Part* part,
                                                         const unsigned ent_rank,
                                                         const unsigned undef_rank) const
 {
-  bool intersection_ok, rel_target_ok, rank_ok;
+  bool intersection_ok=false, rel_target_ok=false, rank_ok=false;
   internal_basic_part_check(part, ent_rank, undef_rank, intersection_ok, rel_target_ok, rank_ok);
   return intersection_ok && rel_target_ok && rank_ok;
 }
@@ -2092,6 +2092,7 @@ private:
 inline
 Relation::Relation(const BulkData &mesh,  Entity ent , RelationIdentifier id )
   : m_raw_relation( Relation::raw_relation_id( mesh.entity_rank(ent) , id ) ),
+    m_attribute(),
     m_target_entity(ent)
 {
 #ifdef SIERRA_MIGRATION
