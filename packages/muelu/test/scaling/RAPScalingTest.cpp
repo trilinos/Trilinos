@@ -87,7 +87,6 @@ int main(int argc, char *argv[]) {
   // Parameters
   //
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////
   Teuchos::CommandLineProcessor clp(false);
 
   GO nx = 50, ny = 50, nz = 50;
@@ -283,8 +282,6 @@ int main(int argc, char *argv[]) {
 
       out << galeriStream.str();
 
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////
     Level fineLevel, coarseLevel;
     RAPFactory AcFact;
     AcFact.DisableMultipleCallCheck();
