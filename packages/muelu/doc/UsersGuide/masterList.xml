@@ -394,7 +394,7 @@
   </parameter>
 
   <parameter>
-    <name>sa: eigenvalue estimate iterations</name>
+    <name>sa: eigenvalue estimate num iterations</name>
     <type>int</type>
     <default>10</default>
     <description>Number of power iterations to use to estimate max eigenvalue. This has effect only if estimation occurs during prolongator smoothing.</description>

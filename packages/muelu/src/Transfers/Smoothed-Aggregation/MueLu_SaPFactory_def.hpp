@@ -68,7 +68,7 @@ namespace MueLu {
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("sa: damping factor");
     SET_VALID_ENTRY("sa: calculate eigenvalue estimate");
-    SET_VALID_ENTRY("sa: eigenvalue estimate iterations");
+    SET_VALID_ENTRY("sa: eigenvalue estimate num iterations");
 #undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
@@ -119,7 +119,7 @@ namespace MueLu {
 
     const ParameterList & pL = GetParameterList();
     Scalar dampingFactor = as<Scalar>(pL.get<double>("sa: damping factor"));
-    LO maxEigenIterations = pL.get<LO>("sa: eigenvalue estimate iterations");
+    LO maxEigenIterations = as<LO>(pL.get<int>("sa: eigenvalue estimate num iterations"));
     bool estimateMaxEigen = pL.get<bool>("sa: calculate eigenvalue estimate");
     if (dampingFactor != Teuchos::ScalarTraits<Scalar>::zero()) {
 
@@ -127,12 +127,10 @@ namespace MueLu {
       {
         SubFactoryMonitor m2(*this, "Eigenvalue estimate", coarseLevel);
         lambdaMax = A->GetMaxEigenvalueEstimate();
-        //if (lambdaMax == -Teuchos::ScalarTraits<SC>::one())
         if (lambdaMax == -Teuchos::ScalarTraits<SC>::one() || estimateMaxEigen) {
           GetOStream(Statistics1) << "Calculating max eigenvalue estimate now (max iters = "<< maxEigenIterations << ")" << std::endl;
           Magnitude stopTol = 1e-4;
           lambdaMax = Utils::PowerMethod(*A, true, maxEigenIterations, stopTol);
-          //lambdaMax = Utils::PowerMethod(*A, true, 10, stopTol);
           A->SetMaxEigenvalueEstimate(lambdaMax);
         } else {
           GetOStream(Statistics1) << "Using cached max eigenvalue estimate" << std::endl;
