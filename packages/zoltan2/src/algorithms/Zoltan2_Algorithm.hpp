@@ -78,7 +78,7 @@ namespace Zoltan2 {
 //  Default implementations throw a "not implemented" error
 
 template <typename Adapter>
-  class Algorithm {
+class Algorithm {
 
 public:
 
@@ -87,6 +87,9 @@ public:
   typedef typename Adapter::gid_t gid_t;
   typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::part_t part_t;
+
+  // Virtual destructor needed to avoid undefined behavior and compiler warnings
+  virtual ~Algorithm() {}
 
   //! \brief Ordering method
   virtual int order(const RCP<OrderingSolution<gid_t, lno_t> > &solution) 
