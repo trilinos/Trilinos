@@ -103,7 +103,7 @@ public:
 #endif
   }
   
-  void partition(RCP<PartitioningSolution<Adapter> > &solution);
+  void partition(const RCP<PartitioningSolution<Adapter> > &solution);
 
 private:
   const RCP<const Environment> env;
@@ -113,7 +113,9 @@ private:
 };
 
 template <typename Adapter>
-void AlgRCB<Adapter>::partition(RCP<PartitioningSolution<Adapter> > &solution)
+void AlgRCB<Adapter>::partition(
+  const RCP<PartitioningSolution<Adapter> > &solution
+)
 {
 #ifndef INCLUDE_ZOLTAN2_EXPERIMENTAL
 

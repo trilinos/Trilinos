@@ -112,7 +112,7 @@ public:
   {}
 
   // Partitioning method
-  void partition(RCP<PartitioningSolution<Adapter> > &solution)
+  void partition(const RCP<PartitioningSolution<Adapter> > &solution)
   {
     using std::string;
     using std::ostringstream;

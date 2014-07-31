@@ -6007,7 +6007,8 @@ private:
 
     int mj_run_as_rcb; //if this is set, then recursion depth is adjusted to its maximum value.
 
-    void set_up_partitioning_data(RCP<PartitioningSolution<Adapter> >&solution);
+    void set_up_partitioning_data(
+      const RCP<PartitioningSolution<Adapter> >&solution);
 
     void set_input_parameters(const Teuchos::ParameterList &p);
 
@@ -6046,7 +6047,7 @@ public:
      *      contains part information, on return it also contains
      *      the solution and quality metrics.
      */
-    void partition(RCP<PartitioningSolution<Adapter> > &solution);
+    void partition(const RCP<PartitioningSolution<Adapter> > &solution);
 };
 
 
@@ -6061,7 +6062,8 @@ public:
  */
 template <typename Adapter>
 void Zoltan2_AlgMJ<Adapter>::partition(
-  RCP<PartitioningSolution<Adapter> > &solution)
+  const RCP<PartitioningSolution<Adapter> > &solution
+)
 {
     this->set_up_partitioning_data(solution);
     this->set_input_parameters(this->mj_env->getParameters());
@@ -6126,7 +6128,7 @@ void Zoltan2_AlgMJ<Adapter>::free_work_memory(){
  * */
 template <typename Adapter>
 void Zoltan2_AlgMJ<Adapter>::set_up_partitioning_data(
-  RCP<PartitioningSolution<Adapter> > &solution
+  const RCP<PartitioningSolution<Adapter> > &solution
 )
 {
 	this->coord_dim = this->mj_coords->getCoordinateDim();

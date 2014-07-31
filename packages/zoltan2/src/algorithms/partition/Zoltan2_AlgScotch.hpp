@@ -223,7 +223,7 @@ public:
     model(model__)
   { }
 
-  void partition(RCP<PartitioningSolution<Adapter> > &);
+  void partition(const RCP<PartitioningSolution<Adapter> > &solution);
 
 private:
 
@@ -242,7 +242,8 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
 void AlgPTScotch<Adapter>::partition(
-  RCP<PartitioningSolution<Adapter> > &solution)
+  const RCP<PartitioningSolution<Adapter> > &solution
+)
 {
   HELLO;
 

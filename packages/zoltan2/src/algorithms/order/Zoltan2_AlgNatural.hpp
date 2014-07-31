@@ -60,21 +60,26 @@ namespace Zoltan2{
 template <typename Adapter>
 class AlgNatural : public Algorithm<Adapter>
 {
+  private:
+
+  const RCP<IdentifierModel<Adapter> > model;
+  const RCP<Teuchos::ParameterList> &pl;
+  const RCP<Teuchos::Comm<int> > &comm;
+
   public:
 
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gid_t gid_t;
 
-  AlgNatural()
+  AlgNatural(
+    const RCP<IdentifierModel<Adapter> > &model__, 
+    const RCP<Teuchos::ParameterList> &pl__,
+    const RCP<Teuchos::Comm<int> > &comm__
+  ) : model(model__), pl(pl__), comm(comm__)
   {
   }
 
-  int order(
-    const RCP<IdentifierModel<Adapter> > &model, 
-    const RCP<OrderingSolution<gid_t, lno_t> > &solution,
-    const RCP<Teuchos::ParameterList> &pl,
-    const RCP<Teuchos::Comm<int> > &comm
-  ) 
+  int order(const RCP<OrderingSolution<gid_t, lno_t> > &solution) 
   {
 
     int ierr= 0;

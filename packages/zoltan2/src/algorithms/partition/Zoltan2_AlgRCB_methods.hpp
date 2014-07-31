@@ -180,7 +180,7 @@ template <typename Adapter>
     const RCP<const Environment> &env,
     typename Adapter::part_t part0,
     typename Adapter::part_t part1,
-    RCP<PartitioningSolution<Adapter> > &solution,
+    const RCP<PartitioningSolution<Adapter> > &solution,
     ArrayRCP<double> &fractionLeft,
     typename Adapter::part_t &numPartsLeftHalf)
 {
@@ -1222,7 +1222,7 @@ template <typename mvector_t, typename Adapter>
     int nWeightsPerCoord,
     const RCP<mvector_t> &vectors,
     multiCriteriaNorm mcnorm,
-    RCP<PartitioningSolution<Adapter> > &solution,
+    const RCP<PartitioningSolution<Adapter> > &solution,
     typename Adapter::part_t part0, 
     typename Adapter::part_t part1,
     ArrayView<unsigned char> lrflags,  // output
@@ -1377,7 +1377,7 @@ template <typename mvector_t, typename Adapter>
     int nWeightsPerCoord,
     const RCP<mvector_t> &vectors, 
     ArrayView<typename mvector_t::local_ordinal_type> index,
-    RCP<PartitioningSolution<Adapter> > &solution,
+    const RCP<PartitioningSolution<Adapter> > &solution,
     typename Adapter::part_t part0, 
     typename Adapter::part_t part1,
     ArrayView<typename Adapter::part_t> partNum)   // output
