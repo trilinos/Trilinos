@@ -173,7 +173,7 @@ b =
 Suppose that we give the first two rows of A and b to Process 0, and
 the last two rows of A and b to Process 1.
 
-If we use additive Schwarz without overlap, and use the (default) Add
+If we use additive Schwarz without overlap, and use the Add
 combine mode, then each process must solve a linear system with the
 following 2 x 2 matrix:
 \f[
