@@ -331,7 +331,8 @@ private:
 
   void invariant_check_helper(unsigned bucket_ordinal) const
   {
-#ifndef NDEBUG
+
+  #ifdef STK_INVARIANCE_CHECK
     const Entity* keys_begin = begin(bucket_ordinal);
     const Entity* keys_end   = end(bucket_ordinal);
     const ConnectivityOrdinal* ordinals_begin = begin_ordinals(bucket_ordinal);
@@ -378,11 +379,13 @@ private:
       // TODO - Anything else we can check here?
     }
 #endif
+
   }
 
   void invariant_check_helper() const
   {
-#ifndef NDEBUG
+
+  #ifdef STK_INVARIANCE_CHECK
     ThrowAssertMsg(static_cast<unsigned>(m_ordinals.size()) == m_num_connectivity,
                    "Total size of ordinals " << m_ordinals.size() << " does not match num_connectivity " << m_num_connectivity);
 
@@ -393,14 +396,16 @@ private:
     else {
       ThrowAssertMsg(m_permutations.empty(), "Permutations should be empty for nodal connectivity");
     }
-#endif
+  #endif
+
   }
 
   // Call this at the end of modification
   template <typename BulkData>
   void invariant_check_helper(BulkData* mesh = NULL) const
   {
-#ifndef NDEBUG
+
+  #ifdef STK_INVARIANCE_CHECK
     invariant_check_helper();
 
     if (mesh != NULL) {
@@ -416,7 +421,8 @@ private:
         }
       }
     }
-#endif
+  #endif
+
   }
 
   // Illegal
@@ -1153,7 +1159,7 @@ private:
 
   void invariant_check_helper(unsigned bucket_ordinal) const
   {
-#ifndef NDEBUG
+  #ifdef STK_INVARIANCE_CHECK
     const Entity* keys_begin = begin(bucket_ordinal);
     const Entity* keys_end   = end(bucket_ordinal);
     const ConnectivityOrdinal* ordinals_begin = begin_ordinals(bucket_ordinal);
@@ -1223,12 +1229,14 @@ private:
     }
 
     invariant_check_helper();
-#endif
+  #endif
+
   }
 
   void invariant_check_helper() const
   {
-#ifndef NDEBUG
+
+  #ifdef STK_INVARIANCE_CHECK
     if (!m_active) {
       ThrowAssertMsg(m_num_connectivities.size() == 0, "Expect empty data if inactive");
     }
@@ -1269,14 +1277,16 @@ private:
                        "For offset " << o << ", num_connectivity/index mismatch, index_diff is " << index_diff << ", num conn is " << prior_num_conn);
       }
     }
-#endif
+  #endif
+
   }
 
   // Call after modification end
   template <typename BulkData>
   void invariant_check_helper(BulkData* mesh = NULL) const
   {
-#ifndef NDEBUG
+
+  #ifdef STK_INVARIANCE_CHECK
     invariant_check_helper();
 
     ThrowAssert(!m_active || !m_needs_shrink_to_fit);
@@ -1295,7 +1305,8 @@ private:
     // Check that connectivity is in-sync
     ThrowAssertMsg(m_targets.size() == m_ordinals.size(),
                    "Total size of partition indices " << m_targets.size() << " does not match size of ordinals " << m_ordinals.size());
-#endif
+  #endif
+
   }
 
   // Illegal
