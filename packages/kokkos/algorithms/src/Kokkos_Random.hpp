@@ -61,13 +61,213 @@
 
 namespace Kokkos {
 
-  //Template functions to get equidistributed random numbers from a generator
+  /*Template functions to get equidistributed random numbers from a generator for a specific Scalar type
 
-  //Maximum value for the rand() call depending on Scalar type
+       template<class Generator,Scalar>
+       struct rand{
+
+         //Max value returned by draw(Generator& gen)
+         KOKKOS_INLINE_FUNCTION
+         static Scalar max();
+
+         //Returns a value between zero and max()
+         KOKKOS_INLINE_FUNCTION
+         static Scalar draw(Generator& gen);
+
+         //Returns a value between zero and range()
+         //Note: for floating point values range can be larger than max()
+         KOKKOS_INLINE_FUNCTION
+         static Scalar draw(Generator& gen, const Scalar& range){}
+
+         //Return value between start and end
+         KOKKOS_INLINE_FUNCTION
+         static Scalar draw(Generator& gen, const Scalar& start, const Scalar& end);
+      };
+
+    The Random number generators themselves have two components a state-pool and the actual generator
+    A state-pool manages a number of generators, so that each active thread is able to grep its own.
+    This allows the generation of random numbers which are independent between threads. Note that
+    in contrast to CuRand none of the functions of the pool (or the generator) are collectives,
+    i.e. all functions can be called inside conditionals.
+
+    template<class Device>
+    class Pool {
+     public:
+      //The Kokkos device type
+      typedef Device device_type;
+      //The actual generator type
+      typedef Generator<Device> generator_type;
+
+      //Default constructor: does not initialize a pool
+      Pool();
+
+      //Initializing constructor: calls init(seed,Device_Specific_Number);
+      Pool(unsigned int seed);
+
+      //Intialize Pool with seed as a starting seed with a pool_size of num_states
+      //The Random_XorShift64 generator is used in serial to initialize all states,
+      //thus the intialization process is platform independent and deterministic.
+      void init(unsigned int seed, int num_states);
+
+      //Get a generator. This will lock one of the states, guaranteeing that each thread
+      //will have its private generator. Note: on Cuda getting a state involves atomics,
+      //and is thus not deterministic!
+      generator_type get_state();
+
+      //Give a state back to the pool. This unlocks the state, and writes the modified
+      //state of the generator back to the pool.
+      void free_state(generator_type gen);
+
+    }
+
+    template<class Device>
+    class Generator {
+     public:
+     //The Kokkos device type
+    typedef DeviceType device_type;
+
+    //Max return values of respective [X]rand[S]() functions
+    enum {MAX_URAND = 0xffffffffU};
+    enum {MAX_URAND64 = 0xffffffffffffffffULL-1};
+    enum {MAX_RAND = static_cast<int>(0xffffffffU/2)};
+    enum {MAX_RAND64 = static_cast<int64_t>(0xffffffffffffffffULL/2-1)};
+
+
+    //Init with a state and the idx with respect to pool. Note: in serial the
+    //Generator can be used by just giving it the necessary state arguments
+    KOKKOS_INLINE_FUNCTION
+    Generator (STATE_ARGUMENTS, int state_idx = 0);
+
+    //Draw a equidistributed uint32_t in the range (0,MAX_URAND]
+    KOKKOS_INLINE_FUNCTION
+    uint32_t urand();
+
+    //Draw a equidistributed uint64_t in the range (0,MAX_URAND64]
+    KOKKOS_INLINE_FUNCTION
+    uint64_t urand64();
+
+    //Draw a equidistributed uint32_t in the range (0,range]
+    KOKKOS_INLINE_FUNCTION
+    uint32_t urand(const uint32_t& range);
+
+    //Draw a equidistributed uint32_t in the range (start,end]
+    KOKKOS_INLINE_FUNCTION
+    uint32_t urand(const uint32_t& start, const uint32_t& end );
+
+    //Draw a equidistributed uint64_t in the range (0,range]
+    KOKKOS_INLINE_FUNCTION
+    uint64_t urand64(const uint64_t& range);
+
+    //Draw a equidistributed uint64_t in the range (start,end]
+    KOKKOS_INLINE_FUNCTION
+    uint64_t urand64(const uint64_t& start, const uint64_t& end );
+
+    //Draw a equidistributed int in the range (0,MAX_RAND]
+    KOKKOS_INLINE_FUNCTION
+    int rand();
+
+    //Draw a equidistributed int in the range (0,range]
+    KOKKOS_INLINE_FUNCTION
+    int rand(const int& range);
+
+    //Draw a equidistributed int in the range (start,end]
+    KOKKOS_INLINE_FUNCTION
+    int rand(const int& start, const int& end );
+
+    //Draw a equidistributed int64_t in the range (0,MAX_RAND64]
+    KOKKOS_INLINE_FUNCTION
+    int64_t rand64();
+
+    //Draw a equidistributed int64_t in the range (0,range]
+    KOKKOS_INLINE_FUNCTION
+    int64_t rand64(const int64_t& range);
+
+    //Draw a equidistributed int64_t in the range (start,end]
+    KOKKOS_INLINE_FUNCTION
+    int64_t rand64(const int64_t& start, const int64_t& end );
+
+    //Draw a equidistributed float in the range (0,1.0]
+    KOKKOS_INLINE_FUNCTION
+    float frand();
+
+    //Draw a equidistributed float in the range (0,range]
+    KOKKOS_INLINE_FUNCTION
+    float frand(const float& range);
+
+    //Draw a equidistributed float in the range (start,end]
+    KOKKOS_INLINE_FUNCTION
+    float frand(const float& start, const float& end );
+
+    //Draw a equidistributed double in the range (0,1.0]
+    KOKKOS_INLINE_FUNCTION
+    double drand();
+
+    //Draw a equidistributed double in the range (0,range]
+    KOKKOS_INLINE_FUNCTION
+    double drand(const double& range);
+
+    //Draw a equidistributed double in the range (start,end]
+    KOKKOS_INLINE_FUNCTION
+    double drand(const double& start, const double& end );
+
+    //Draw a standard normal distributed double
+    KOKKOS_INLINE_FUNCTION
+    double normal() ;
+
+    //Draw a normal distributed double with given mean and standard deviation
+    KOKKOS_INLINE_FUNCTION
+    double normal(const double& mean, const double& std_dev=1.0);
+    }
+
+    //Additional Functions:
+
+    //Fills view with random numbers in the range (0,range]
+    template<class ViewType, class PoolType>
+    void fill_random(ViewType view, PoolType pool, ViewType::value_type range);
+
+    //Fills view with random numbers in the range (start,end]
+    template<class ViewType, class PoolType>
+    void fill_random(ViewType view, PoolType pool,
+                     ViewType::value_type start, ViewType::value_type end);
+
+*/
 
   template<class Generator, class Scalar>
   struct rand;
 
+
+  template<class Generator>
+  struct rand<Generator,char> {
+
+    KOKKOS_INLINE_FUNCTION
+    static short max(){return 127;}
+    KOKKOS_INLINE_FUNCTION
+    static short draw(Generator& gen)
+                          {return short((gen.rand()&0xff+256)%256);}
+    KOKKOS_INLINE_FUNCTION
+    static short draw(Generator& gen, const char& range)
+                          {return char(gen.rand(range));}
+    KOKKOS_INLINE_FUNCTION
+    static short draw(Generator& gen, const char& start, const char& end)
+                          {return char(gen.rand(start,end));}
+
+  };
+
+  template<class Generator>
+  struct rand<Generator,short> {
+    KOKKOS_INLINE_FUNCTION
+    static short max(){return 32767;}
+    KOKKOS_INLINE_FUNCTION
+    static short draw(Generator& gen)
+                          {return short((gen.rand()&0xffff+65536)%32768);}
+    KOKKOS_INLINE_FUNCTION
+    static short draw(Generator& gen, const short& range)
+                          {return short(gen.rand(range));}
+    KOKKOS_INLINE_FUNCTION
+    static short draw(Generator& gen, const short& start, const short& end)
+                          {return short(gen.rand(start,end));}
+
+  };
 
   template<class Generator>
   struct rand<Generator,int> {
@@ -184,7 +384,7 @@ namespace Kokkos {
     enum {MAX_RAND64 = static_cast<int64_t>(0xffffffffffffffffLL/2-1)};
 
     KOKKOS_INLINE_FUNCTION
-    Random_XorShift64 (uint64_t state, int state_idx)
+    Random_XorShift64 (uint64_t state, int state_idx = 0)
      : state_(state),state_idx_(state_idx){}
 
     KOKKOS_INLINE_FUNCTION
@@ -211,7 +411,7 @@ namespace Kokkos {
       const uint32_t max_val = (MAX_URAND/range)*range;
       uint32_t tmp = urand();
       while(tmp>=max_val)
-        urand();
+        tmp = urand();
       return tmp%range;
     }
 
@@ -225,7 +425,7 @@ namespace Kokkos {
       const uint64_t max_val = (MAX_URAND64/range)*range;
       uint64_t tmp = urand64();
       while(tmp>=max_val)
-        urand64();
+        tmp = urand64();
       return tmp%range;
     }
 
@@ -244,7 +444,7 @@ namespace Kokkos {
       const int max_val = (MAX_RAND/range)*range;
       int tmp = rand();
       while(tmp>=max_val)
-        rand();
+        tmp = rand();
       return tmp%range;
     }
 
@@ -263,7 +463,7 @@ namespace Kokkos {
       const int64_t max_val = (MAX_RAND64/range)*range;
       int64_t tmp = rand64();
       while(tmp>=max_val)
-        rand64();
+        tmp = rand64();
       return tmp%range;
     }
 
@@ -299,7 +499,7 @@ namespace Kokkos {
 
     KOKKOS_INLINE_FUNCTION
     double drand(const double& start, const double& end ) {
-      return frand(end-start)+start;
+      return drand(end-start)+start;
     }
 
     //Marsaglia polar method for drawing a standard normal distributed random number
@@ -335,6 +535,9 @@ namespace Kokkos {
     typedef Random_XorShift64<DeviceType> generator_type;
     typedef DeviceType device_type;
 
+    Random_XorShift64_Pool() {
+      num_states_ = 0;
+    }
     Random_XorShift64_Pool(unsigned int seed) {
       num_states_ = 0;
       init(seed,DeviceType::max_hardware_threads());
@@ -348,12 +551,15 @@ namespace Kokkos {
 
       typename state_data_type::HostMirror h_state = create_mirror_view(state_);
       typename lock_type::HostMirror h_lock = create_mirror_view(locks_);
-      srand(seed);
+
+      Random_XorShift64<Kokkos::Serial> gen(seed,0);
+      for(int i = 0; i < 17; i++)
+        gen.rand();
       for(int i = 0; i < num_states_; i++) {
-        int n1 = ::rand();
-        int n2 = ::rand();
-        int n3 = ::rand();
-        int n4 = ::rand();
+        int n1 = gen.rand();
+        int n2 = gen.rand();
+        int n3 = gen.rand();
+        int n4 = gen.rand();
         h_state(i) = (((static_cast<uint64_t>(n1)) & 0xffff)<<00) |
                      (((static_cast<uint64_t>(n2)) & 0xffff)<<16) |
                      (((static_cast<uint64_t>(n3)) & 0xffff)<<32) |
@@ -397,7 +603,7 @@ namespace Kokkos {
     enum {MAX_RAND64 = static_cast<int64_t>(0xffffffffffffffffULL/2-1)};
 
     KOKKOS_INLINE_FUNCTION
-    Random_XorShift1024 (uint64_t* state, int p, int state_idx):
+    Random_XorShift1024 (uint64_t* state, int p, int state_idx = 0):
       p_(p),state_idx_(state_idx){
       for(int i=0 ; i<16; i++)
         state_[i] = state[i];
@@ -430,7 +636,7 @@ namespace Kokkos {
       const uint32_t max_val = (MAX_URAND/range)*range;
       uint32_t tmp = urand();
       while(tmp>=max_val)
-        urand();
+        tmp = urand();
       return tmp%range;
     }
 
@@ -444,7 +650,7 @@ namespace Kokkos {
       const uint64_t max_val = (MAX_URAND64/range)*range;
       uint64_t tmp = urand64();
       while(tmp>=max_val)
-        urand64();
+        tmp = urand64();
       return tmp%range;
     }
 
@@ -463,7 +669,7 @@ namespace Kokkos {
       const int max_val = (MAX_RAND/range)*range;
       int tmp = rand();
       while(tmp>=max_val)
-        rand();
+        tmp = rand();
       return tmp%range;
     }
 
@@ -482,7 +688,7 @@ namespace Kokkos {
       const int64_t max_val = (MAX_RAND64/range)*range;
       int64_t tmp = rand64();
       while(tmp>=max_val)
-        rand64();
+        tmp = rand64();
       return tmp%range;
     }
 
@@ -540,7 +746,81 @@ namespace Kokkos {
     }
   };
 
-#ifdef KOKKOS_HAVE_CUDA
+
+  template<class DeviceType = Kokkos::Impl::DefaultDeviceType>
+  class Random_XorShift1024_Pool {
+  private:
+    typedef View<int*,DeviceType> int_view_type;
+    typedef View<uint64_t*[16],DeviceType> state_data_type;
+
+    int_view_type locks_;
+    state_data_type state_;
+    int_view_type p_;
+    int num_states_;
+
+  public:
+    typedef Random_XorShift1024<DeviceType> generator_type;
+
+    typedef DeviceType device_type;
+
+    Random_XorShift1024_Pool() {
+      num_states_ = 0;
+    }
+
+    inline
+    Random_XorShift1024_Pool(unsigned int seed){
+      num_states_ = 0;
+      init(seed,DeviceType::max_hardware_threads());
+    }
+
+    inline
+    void init(unsigned int seed, int num_states) {
+      num_states_ = num_states;
+
+      locks_ = int_view_type("Kokkos::Random_XorShift1024::locks",num_states_);
+      state_ = state_data_type("Kokkos::Random_XorShift1024::state",num_states_);
+      p_ = int_view_type("Kokkos::Random_XorShift1024::p",num_states_);
+
+      typename state_data_type::HostMirror h_state = create_mirror_view(state_);
+      typename int_view_type::HostMirror h_lock = create_mirror_view(locks_);
+      typename int_view_type::HostMirror h_p = create_mirror_view(p_);
+      Random_XorShift64<Kokkos::Serial> gen(seed,0);
+      for(int i = 0; i < 17; i++)
+        gen.rand();
+      for(int i = 0; i < num_states_; i++) {
+        for(int j = 0; j < 16 ; j++) {
+          int n1 = gen.rand();
+          int n2 = gen.rand();
+          int n3 = gen.rand();
+          int n4 = gen.rand();
+          h_state(i,j) = (((static_cast<uint64_t>(n1)) & 0xffff)<<00) |
+                         (((static_cast<uint64_t>(n2)) & 0xffff)<<16) |
+                         (((static_cast<uint64_t>(n3)) & 0xffff)<<32) |
+                         (((static_cast<uint64_t>(n4)) & 0xffff)<<48);
+        }
+        h_p(i) = 0;
+        h_lock(i) = 0;
+      }
+      deep_copy(state_,h_state);
+      deep_copy(locks_,h_lock);
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    Random_XorShift1024<DeviceType> get_state() const {
+      const int i = DeviceType::hardware_thread_id();
+      return Random_XorShift1024<DeviceType>(&state_(i,0),p_(i),i);
+    };
+
+    KOKKOS_INLINE_FUNCTION
+    void free_state(const Random_XorShift1024<DeviceType>& state) const {
+      for(int i = 0; i<16; i++)
+        state_(state.state_idx_,i) = state.state_[i];
+      p_(state.state_idx_) = state.p_;
+    }
+  };
+
+#if defined(KOKKOS_HAVE_CUDA) && defined(__CUDACC__)
+
   template<>
   class Random_XorShift1024<Kokkos::Cuda> {
   private:
@@ -558,7 +838,7 @@ namespace Kokkos {
     enum {MAX_RAND64 = static_cast<int64_t>(0xffffffffffffffffULL/2-1)};
 
     KOKKOS_INLINE_FUNCTION
-    Random_XorShift1024 (uint64_t* state, int p, int state_idx):
+    Random_XorShift1024 (uint64_t* state, int p, int state_idx = 0):
       p_(p),state_idx_(state_idx),state_(state){
     }
 
@@ -699,75 +979,8 @@ namespace Kokkos {
     }
   };
 
-#endif
-
-  template<class DeviceType = Kokkos::Impl::DefaultDeviceType>
-  class Random_XorShift1024_Pool {
-  private:
-    typedef View<int*,DeviceType> int_view_type;
-    typedef View<uint64_t*[16],DeviceType> state_data_type;
-
-    int_view_type locks_;
-    state_data_type state_;
-    int_view_type p_;
-    int num_states_;
-
-  public:
-    typedef Random_XorShift1024<DeviceType> generator_type;
-
-    typedef DeviceType device_type;
-
-    Random_XorShift1024_Pool(unsigned int seed){
-      num_states_ = 0;
-      init(seed,DeviceType::max_hardware_threads());
-    }
-
-    void init(unsigned int seed, int num_states) {
-      num_states_ = num_states;
-
-      locks_ = int_view_type("Kokkos::Random_XorShift1024::locks",num_states_);
-      state_ = state_data_type("Kokkos::Random_XorShift1024::state",num_states_);
-      p_ = int_view_type("Kokkos::Random_XorShift1024::p",num_states_);
-
-      typename state_data_type::HostMirror h_state = create_mirror_view(state_);
-      typename int_view_type::HostMirror h_lock = create_mirror_view(locks_);
-      typename int_view_type::HostMirror h_p = create_mirror_view(p_);
-      srand(seed);
-      for(int i = 0; i < num_states_; i++) {
-        for(int j = 0; j < 16 ; j++) {
-          int n1 = ::rand();
-          int n2 = ::rand();
-          int n3 = ::rand();
-          int n4 = ::rand();
-          h_state(i,j) = (((static_cast<uint64_t>(n1)) & 0xffff)<<00) |
-                         (((static_cast<uint64_t>(n2)) & 0xffff)<<16) |
-                         (((static_cast<uint64_t>(n3)) & 0xffff)<<32) |
-                         (((static_cast<uint64_t>(n4)) & 0xffff)<<48);
-        }
-        h_p(i) = 0;
-        h_lock(i) = 0;
-      }
-      deep_copy(state_,h_state);
-      deep_copy(locks_,h_lock);
-    }
-
-    KOKKOS_INLINE_FUNCTION
-    Random_XorShift1024<DeviceType> get_state() const {
-      const int i = DeviceType::hardware_thread_id();
-      return Random_XorShift1024<DeviceType>(&state_(i,0),p_(i),i);
-    };
-
-    KOKKOS_INLINE_FUNCTION
-    void free_state(const Random_XorShift1024<DeviceType>& state) const {
-      for(int i = 0; i<16; i++)
-        state_(state.state_idx_,i) = state.state_[i];
-      p_(state.state_idx_) = state.p_;
-    }
-  };
-
-#ifdef KOKKOS_HAVE_CUDA
-#ifdef __CUDACC__
 template<>
+inline
 Random_XorShift64_Pool<Kokkos::Cuda>::Random_XorShift64_Pool(unsigned int seed) {
   num_states_ = 0;
   init(seed,4*32768);
@@ -803,6 +1016,7 @@ void Random_XorShift64_Pool<Kokkos::Cuda>::free_state(const Random_XorShift64<Ko
 
 
 template<>
+inline
 Random_XorShift1024_Pool<Kokkos::Cuda>::Random_XorShift1024_Pool(unsigned int seed) {
   num_states_ = 0;
   init(seed,4*32768);
@@ -836,9 +1050,502 @@ void Random_XorShift1024_Pool<Kokkos::Cuda>::free_state(const Random_XorShift102
   return;
 #endif
 }
+
+
 #endif
-#endif
+
+
+
+template<class ViewType, class RandomPool, int loops, int rank>
+struct fill_random_functor_range;
+template<class ViewType, class RandomPool, int loops, int rank>
+struct fill_random_functor_begin_end;
+
+template<class ViewType, class RandomPool, int loops>
+struct fill_random_functor_range<ViewType,RandomPool,loops,1>{
+  typedef typename ViewType::device_type device_type;
+  ViewType a;
+  RandomPool rand_pool;
+  typename ViewType::const_value_type range;
+
+  typedef rand<typename RandomPool::generator_type, typename ViewType::non_const_value_type> Rand;
+
+  fill_random_functor_range(ViewType a_, RandomPool rand_pool_,
+      typename ViewType::const_value_type range_):
+    a(a_),rand_pool(rand_pool_),range(range_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (unsigned int i) const {
+    typename RandomPool::generator_type gen = rand_pool.get_state();
+    for(unsigned int j=0;j<loops;j++) {
+      const uint64_t idx = i*loops+j;
+      if(idx<a.dimension_0())
+        a(idx) = Rand::draw(gen,range);
+    }
+    rand_pool.free_state(gen);
+  }
+};
+
+template<class ViewType, class RandomPool, int loops>
+struct fill_random_functor_range<ViewType,RandomPool,loops,2>{
+  typedef typename ViewType::device_type device_type;
+  ViewType a;
+  RandomPool rand_pool;
+  typename ViewType::const_value_type range;
+
+  typedef rand<typename RandomPool::generator_type, typename ViewType::non_const_value_type> Rand;
+
+  fill_random_functor_range(ViewType a_, RandomPool rand_pool_,
+      typename ViewType::const_value_type range_):
+    a(a_),rand_pool(rand_pool_),range(range_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (unsigned int i) const {
+    typename RandomPool::generator_type gen = rand_pool.get_state();
+    for(unsigned int j=0;j<loops;j++) {
+      const uint64_t idx = i*loops+j;
+      if(idx<a.dimension_0()) {
+        for(unsigned int k=0;k<a.dimension_1();k++)
+          a(idx,k) = Rand::draw(gen,range);
+      }
+    }
+    rand_pool.free_state(gen);
+  }
+};
+
+
+template<class ViewType, class RandomPool, int loops>
+struct fill_random_functor_range<ViewType,RandomPool,loops,3>{
+  typedef typename ViewType::device_type device_type;
+  ViewType a;
+  RandomPool rand_pool;
+  typename ViewType::const_value_type range;
+
+  typedef rand<typename RandomPool::generator_type, typename ViewType::non_const_value_type> Rand;
+
+  fill_random_functor_range(ViewType a_, RandomPool rand_pool_,
+      typename ViewType::const_value_type range_):
+    a(a_),rand_pool(rand_pool_),range(range_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (unsigned int i) const {
+    typename RandomPool::generator_type gen = rand_pool.get_state();
+    for(unsigned int j=0;j<loops;j++) {
+      const uint64_t idx = i*loops+j;
+      if(idx<a.dimension_0()) {
+        for(unsigned int k=0;k<a.dimension_1();k++)
+          for(unsigned int l=0;l<a.dimension_2();l++)
+            a(idx,k,l) = Rand::draw(gen,range);
+      }
+    }
+    rand_pool.free_state(gen);
+  }
+};
+
+template<class ViewType, class RandomPool, int loops>
+struct fill_random_functor_range<ViewType,RandomPool,loops,4>{
+  typedef typename ViewType::device_type device_type;
+  ViewType a;
+  RandomPool rand_pool;
+  typename ViewType::const_value_type range;
+
+  typedef rand<typename RandomPool::generator_type, typename ViewType::non_const_value_type> Rand;
+
+  fill_random_functor_range(ViewType a_, RandomPool rand_pool_,
+      typename ViewType::const_value_type range_):
+    a(a_),rand_pool(rand_pool_),range(range_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (unsigned int i) const {
+    typename RandomPool::generator_type gen = rand_pool.get_state();
+    for(unsigned int j=0;j<loops;j++) {
+      const uint64_t idx = i*loops+j;
+      if(idx<a.dimension_0()) {
+        for(unsigned int k=0;k<a.dimension_1();k++)
+          for(unsigned int l=0;l<a.dimension_2();l++)
+            for(unsigned int m=0;m<a.dimension_3();m++)
+              a(idx,k,l,m) = Rand::draw(gen,range);
+      }
+    }
+    rand_pool.free_state(gen);
+  }
+};
+
+template<class ViewType, class RandomPool, int loops>
+struct fill_random_functor_range<ViewType,RandomPool,loops,5>{
+  typedef typename ViewType::device_type device_type;
+  ViewType a;
+  RandomPool rand_pool;
+  typename ViewType::const_value_type range;
+
+  typedef rand<typename RandomPool::generator_type, typename ViewType::non_const_value_type> Rand;
+
+  fill_random_functor_range(ViewType a_, RandomPool rand_pool_,
+      typename ViewType::const_value_type range_):
+    a(a_),rand_pool(rand_pool_),range(range_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (unsigned int i) const {
+    typename RandomPool::generator_type gen = rand_pool.get_state();
+    for(unsigned int j=0;j<loops;j++) {
+      const uint64_t idx = i*loops+j;
+      if(idx<a.dimension_0()) {
+        for(unsigned int k=0;k<a.dimension_1();k++)
+          for(unsigned int l=0;l<a.dimension_2();l++)
+            for(unsigned int m=0;m<a.dimension_3();m++)
+              for(unsigned int n=0;n<a.dimension_4();n++)
+              a(idx,k,l,m,n) = Rand::draw(gen,range);
+      }
+    }
+    rand_pool.free_state(gen);
+  }
+};
+
+template<class ViewType, class RandomPool, int loops>
+struct fill_random_functor_range<ViewType,RandomPool,loops,6>{
+  typedef typename ViewType::device_type device_type;
+  ViewType a;
+  RandomPool rand_pool;
+  typename ViewType::const_value_type range;
+
+  typedef rand<typename RandomPool::generator_type, typename ViewType::non_const_value_type> Rand;
+
+  fill_random_functor_range(ViewType a_, RandomPool rand_pool_,
+      typename ViewType::const_value_type range_):
+    a(a_),rand_pool(rand_pool_),range(range_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (unsigned int i) const {
+    typename RandomPool::generator_type gen = rand_pool.get_state();
+    for(unsigned int j=0;j<loops;j++) {
+      const uint64_t idx = i*loops+j;
+      if(idx<a.dimension_0()) {
+        for(unsigned int k=0;k<a.dimension_1();k++)
+          for(unsigned int l=0;l<a.dimension_2();l++)
+            for(unsigned int m=0;m<a.dimension_3();m++)
+              for(unsigned int n=0;n<a.dimension_4();n++)
+                for(unsigned int o=0;o<a.dimension_5();o++)
+              a(idx,k,l,m,n,o) = Rand::draw(gen,range);
+      }
+    }
+    rand_pool.free_state(gen);
+  }
+};
+
+template<class ViewType, class RandomPool, int loops>
+struct fill_random_functor_range<ViewType,RandomPool,loops,7>{
+  typedef typename ViewType::device_type device_type;
+  ViewType a;
+  RandomPool rand_pool;
+  typename ViewType::const_value_type range;
+
+  typedef rand<typename RandomPool::generator_type, typename ViewType::non_const_value_type> Rand;
+
+  fill_random_functor_range(ViewType a_, RandomPool rand_pool_,
+      typename ViewType::const_value_type range_):
+    a(a_),rand_pool(rand_pool_),range(range_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (unsigned int i) const {
+    typename RandomPool::generator_type gen = rand_pool.get_state();
+    for(unsigned int j=0;j<loops;j++) {
+      const uint64_t idx = i*loops+j;
+      if(idx<a.dimension_0()) {
+        for(unsigned int k=0;k<a.dimension_1();k++)
+          for(unsigned int l=0;l<a.dimension_2();l++)
+            for(unsigned int m=0;m<a.dimension_3();m++)
+              for(unsigned int n=0;n<a.dimension_4();n++)
+                for(unsigned int o=0;o<a.dimension_5();o++)
+                  for(unsigned int p=0;p<a.dimension_6();p++)
+              a(idx,k,l,m,n,o,p) = Rand::draw(gen,range);
+      }
+    }
+    rand_pool.free_state(gen);
+  }
+};
+
+template<class ViewType, class RandomPool, int loops>
+struct fill_random_functor_range<ViewType,RandomPool,loops,8>{
+  typedef typename ViewType::device_type device_type;
+  ViewType a;
+  RandomPool rand_pool;
+  typename ViewType::const_value_type range;
+
+  typedef rand<typename RandomPool::generator_type, typename ViewType::non_const_value_type> Rand;
+
+  fill_random_functor_range(ViewType a_, RandomPool rand_pool_,
+      typename ViewType::const_value_type range_):
+    a(a_),rand_pool(rand_pool_),range(range_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (unsigned int i) const {
+    typename RandomPool::generator_type gen = rand_pool.get_state();
+    for(unsigned int j=0;j<loops;j++) {
+      const uint64_t idx = i*loops+j;
+      if(idx<a.dimension_0()) {
+        for(unsigned int k=0;k<a.dimension_1();k++)
+          for(unsigned int l=0;l<a.dimension_2();l++)
+            for(unsigned int m=0;m<a.dimension_3();m++)
+              for(unsigned int n=0;n<a.dimension_4();n++)
+                for(unsigned int o=0;o<a.dimension_5();o++)
+                  for(unsigned int p=0;p<a.dimension_6();p++)
+                    for(unsigned int q=0;q<a.dimension_7();q++)
+              a(idx,k,l,m,n,o,p,q) = Rand::draw(gen,range);
+      }
+    }
+    rand_pool.free_state(gen);
+  }
+};
+template<class ViewType, class RandomPool, int loops>
+struct fill_random_functor_begin_end<ViewType,RandomPool,loops,1>{
+  typedef typename ViewType::device_type device_type;
+  ViewType a;
+  RandomPool rand_pool;
+  typename ViewType::const_value_type begin,end;
+
+  typedef rand<typename RandomPool::generator_type, typename ViewType::non_const_value_type> Rand;
+
+  fill_random_functor_begin_end(ViewType a_, RandomPool rand_pool_,
+      typename ViewType::const_value_type begin_, typename ViewType::const_value_type end_):
+    a(a_),rand_pool(rand_pool_),begin(begin_),end(end_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (unsigned int i) const {
+    typename RandomPool::generator_type gen = rand_pool.get_state();
+    for(unsigned int j=0;j<loops;j++) {
+      const uint64_t idx = i*loops+j;
+      if(idx<a.dimension_0())
+        a(idx) = Rand::draw(gen,begin,end);
+    }
+    rand_pool.free_state(gen);
+  }
+};
+
+template<class ViewType, class RandomPool, int loops>
+struct fill_random_functor_begin_end<ViewType,RandomPool,loops,2>{
+  typedef typename ViewType::device_type device_type;
+  ViewType a;
+  RandomPool rand_pool;
+  typename ViewType::const_value_type begin,end;
+
+  typedef rand<typename RandomPool::generator_type, typename ViewType::non_const_value_type> Rand;
+
+  fill_random_functor_begin_end(ViewType a_, RandomPool rand_pool_,
+      typename ViewType::const_value_type begin_, typename ViewType::const_value_type end_):
+    a(a_),rand_pool(rand_pool_),begin(begin_),end(end_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (unsigned int i) const {
+    typename RandomPool::generator_type gen = rand_pool.get_state();
+    for(unsigned int j=0;j<loops;j++) {
+      const uint64_t idx = i*loops+j;
+      if(idx<a.dimension_0()) {
+        for(unsigned int k=0;k<a.dimension_1();k++)
+          a(idx,k) = Rand::draw(gen,begin,end);
+      }
+    }
+    rand_pool.free_state(gen);
+  }
+};
+
+
+template<class ViewType, class RandomPool, int loops>
+struct fill_random_functor_begin_end<ViewType,RandomPool,loops,3>{
+  typedef typename ViewType::device_type device_type;
+  ViewType a;
+  RandomPool rand_pool;
+  typename ViewType::const_value_type begin,end;
+
+  typedef rand<typename RandomPool::generator_type, typename ViewType::non_const_value_type> Rand;
+
+  fill_random_functor_begin_end(ViewType a_, RandomPool rand_pool_,
+      typename ViewType::const_value_type begin_, typename ViewType::const_value_type end_):
+    a(a_),rand_pool(rand_pool_),begin(begin_),end(end_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (unsigned int i) const {
+    typename RandomPool::generator_type gen = rand_pool.get_state();
+    for(unsigned int j=0;j<loops;j++) {
+      const uint64_t idx = i*loops+j;
+      if(idx<a.dimension_0()) {
+        for(unsigned int k=0;k<a.dimension_1();k++)
+          for(unsigned int l=0;l<a.dimension_2();l++)
+            a(idx,k,l) = Rand::draw(gen,begin,end);
+      }
+    }
+    rand_pool.free_state(gen);
+  }
+};
+
+template<class ViewType, class RandomPool, int loops>
+struct fill_random_functor_begin_end<ViewType,RandomPool,loops,4>{
+  typedef typename ViewType::device_type device_type;
+  ViewType a;
+  RandomPool rand_pool;
+  typename ViewType::const_value_type begin,end;
+
+  typedef rand<typename RandomPool::generator_type, typename ViewType::non_const_value_type> Rand;
+
+  fill_random_functor_begin_end(ViewType a_, RandomPool rand_pool_,
+      typename ViewType::const_value_type begin_, typename ViewType::const_value_type end_):
+    a(a_),rand_pool(rand_pool_),begin(begin_),end(end_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (unsigned int i) const {
+    typename RandomPool::generator_type gen = rand_pool.get_state();
+    for(unsigned int j=0;j<loops;j++) {
+      const uint64_t idx = i*loops+j;
+      if(idx<a.dimension_0()) {
+        for(unsigned int k=0;k<a.dimension_1();k++)
+          for(unsigned int l=0;l<a.dimension_2();l++)
+            for(unsigned int m=0;m<a.dimension_3();m++)
+              a(idx,k,l,m) = Rand::draw(gen,begin,end);
+      }
+    }
+    rand_pool.free_state(gen);
+  }
+};
+
+template<class ViewType, class RandomPool, int loops>
+struct fill_random_functor_begin_end<ViewType,RandomPool,loops,5>{
+  typedef typename ViewType::device_type device_type;
+  ViewType a;
+  RandomPool rand_pool;
+  typename ViewType::const_value_type begin,end;
+
+  typedef rand<typename RandomPool::generator_type, typename ViewType::non_const_value_type> Rand;
+
+  fill_random_functor_begin_end(ViewType a_, RandomPool rand_pool_,
+      typename ViewType::const_value_type begin_, typename ViewType::const_value_type end_):
+    a(a_),rand_pool(rand_pool_),begin(begin_),end(end_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (unsigned int i) const {
+    typename RandomPool::generator_type gen = rand_pool.get_state();
+    for(unsigned int j=0;j<loops;j++) {
+      const uint64_t idx = i*loops+j;
+      if(idx<a.dimension_0()){
+        for(unsigned int l=0;l<a.dimension_1();l++)
+          for(unsigned int m=0;m<a.dimension_2();m++)
+            for(unsigned int n=0;n<a.dimension_3();n++)
+              for(unsigned int o=0;o<a.dimension_4();o++)
+          a(idx,l,m,n,o) = Rand::draw(gen,begin,end);
+      }
+    }
+    rand_pool.free_state(gen);
+  }
+};
+
+template<class ViewType, class RandomPool, int loops>
+struct fill_random_functor_begin_end<ViewType,RandomPool,loops,6>{
+  typedef typename ViewType::device_type device_type;
+  ViewType a;
+  RandomPool rand_pool;
+  typename ViewType::const_value_type begin,end;
+
+  typedef rand<typename RandomPool::generator_type, typename ViewType::non_const_value_type> Rand;
+
+  fill_random_functor_begin_end(ViewType a_, RandomPool rand_pool_,
+      typename ViewType::const_value_type begin_, typename ViewType::const_value_type end_):
+    a(a_),rand_pool(rand_pool_),begin(begin_),end(end_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (unsigned int i) const {
+    typename RandomPool::generator_type gen = rand_pool.get_state();
+    for(unsigned int j=0;j<loops;j++) {
+      const uint64_t idx = i*loops+j;
+      if(idx<a.dimension_0()) {
+        for(unsigned int k=0;k<a.dimension_1();k++)
+          for(unsigned int l=0;l<a.dimension_2();l++)
+            for(unsigned int m=0;m<a.dimension_3();m++)
+              for(unsigned int n=0;n<a.dimension_4();n++)
+                for(unsigned int o=0;o<a.dimension_5();o++)
+          a(idx,k,l,m,n,o) = Rand::draw(gen,begin,end);
+      }
+    }
+    rand_pool.free_state(gen);
+  }
+};
+
+
+template<class ViewType, class RandomPool, int loops>
+struct fill_random_functor_begin_end<ViewType,RandomPool,loops,7>{
+  typedef typename ViewType::device_type device_type;
+  ViewType a;
+  RandomPool rand_pool;
+  typename ViewType::const_value_type begin,end;
+
+  typedef rand<typename RandomPool::generator_type, typename ViewType::non_const_value_type> Rand;
+
+  fill_random_functor_begin_end(ViewType a_, RandomPool rand_pool_,
+      typename ViewType::const_value_type begin_, typename ViewType::const_value_type end_):
+    a(a_),rand_pool(rand_pool_),begin(begin_),end(end_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (unsigned int i) const {
+    typename RandomPool::generator_type gen = rand_pool.get_state();
+    for(unsigned int j=0;j<loops;j++) {
+      const uint64_t idx = i*loops+j;
+      if(idx<a.dimension_0()) {
+        for(unsigned int k=0;k<a.dimension_1();k++)
+          for(unsigned int l=0;l<a.dimension_2();l++)
+            for(unsigned int m=0;m<a.dimension_3();m++)
+              for(unsigned int n=0;n<a.dimension_4();n++)
+                for(unsigned int o=0;o<a.dimension_5();o++)
+                  for(unsigned int p=0;p<a.dimension_6();p++)
+            a(idx,k,l,m,n,o,p) = Rand::draw(gen,begin,end);
+      }
+    }
+    rand_pool.free_state(gen);
+  }
+};
+
+template<class ViewType, class RandomPool, int loops>
+struct fill_random_functor_begin_end<ViewType,RandomPool,loops,8>{
+  typedef typename ViewType::device_type device_type;
+  ViewType a;
+  RandomPool rand_pool;
+  typename ViewType::const_value_type begin,end;
+
+  typedef rand<typename RandomPool::generator_type, typename ViewType::non_const_value_type> Rand;
+
+  fill_random_functor_begin_end(ViewType a_, RandomPool rand_pool_,
+      typename ViewType::const_value_type begin_, typename ViewType::const_value_type end_):
+    a(a_),rand_pool(rand_pool_),begin(begin_),end(end_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (unsigned int i) const {
+    typename RandomPool::generator_type gen = rand_pool.get_state();
+    for(unsigned int j=0;j<loops;j++) {
+      const uint64_t idx = i*loops+j;
+      if(idx<a.dimension_0()) {
+        for(unsigned int k=0;k<a.dimension_1();k++)
+          for(unsigned int l=0;l<a.dimension_2();l++)
+            for(unsigned int m=0;m<a.dimension_3();m++)
+              for(unsigned int n=0;n<a.dimension_4();n++)
+                for(unsigned int o=0;o<a.dimension_5();o++)
+                  for(unsigned int p=0;p<a.dimension_6();p++)
+                    for(unsigned int q=0;q<a.dimension_7();q++)
+              a(idx,k,l,m,n,o,p,q) = Rand::draw(gen,begin,end);
+      }
+    }
+    rand_pool.free_state(gen);
+  }
+};
+
+template<class ViewType, class RandomPool>
+void fill_random(ViewType a, RandomPool g, typename ViewType::const_value_type range) {
+  int64_t LDA = a.dimension_0();
+  if(LDA>0)
+    parallel_for((LDA+127)/128,fill_random_functor_range<ViewType,RandomPool,128,ViewType::Rank>(a,g,range));
 }
 
+template<class ViewType, class RandomPool>
+void fill_random(ViewType a, RandomPool g, typename ViewType::const_value_type begin,typename ViewType::const_value_type end ) {
+  int64_t LDA = a.dimension_0();
+  if(LDA>0)
+    parallel_for((LDA+127)/128,fill_random_functor_begin_end<ViewType,RandomPool,128,ViewType::Rank>(a,g,begin,end));
+}
+}
 
 #endif

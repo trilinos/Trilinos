@@ -50,6 +50,7 @@
 
 #include <KokkosCompat_View.hpp>
 #include <Kokkos_MV.hpp>
+#include <Kokkos_Random.hpp>
 
 namespace Tpetra {
 
@@ -1779,21 +1780,30 @@ namespace { // (anonymous)
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   randomize ()
   {
-    // KR FIXME *sigh* MVT::Random.  Hack around this for now by
-    // filling on the host.
+    const uint64_t myRank =
+      static_cast<uint64_t> (this->getMap ()->getComm ()->getRank ());
+    uint64_t seed64 = static_cast<uint64_t> (std::rand ()) + myRank + 17311uLL;
+    unsigned int seed = static_cast<unsigned int> (seed64&0xffffffff);
+
+    Kokkos::Random_XorShift64_Pool<DeviceType> rand_pool(seed);
+
+    Scalar max = Kokkos::rand<typename Kokkos::Random_XorShift64_Pool<DeviceType>::generator_type, Scalar>::max();
+    Scalar min = Kokkos::Details::ArithTraits<Scalar>::is_signed ? -max : Kokkos::Details::ArithTraits<Scalar>::zero ();
+
 
     if (isConstantStride ()) {
-      MVT::Random (lclMV_);
+      Kokkos::fill_random(view_.d_view,rand_pool,min,max);
+      view_.modify<DeviceType>();
     }
     else {
-      const size_t numVecs = this->getNumVectors ();
-      KMV v (MVT::getNode (lclMV_));
-      Teuchos::ArrayRCP<Scalar> vj;
-      for (size_t j = 0; j < numVecs; ++j) {
-        vj = MVT::getValuesNonConst (lclMV_, whichVectors_[j]);
-        MVT::initializeValues (v, MVT::getNumRows (lclMV_), 1, vj, MVT::getStride (lclMV_));
-        MVT::Random (v);
+      const size_t numVecs = getNumVectors();
+      view_.sync<DeviceType>();
+      typedef Kokkos::View<Scalar*, DeviceType> view_type;
+      for (size_t k = 0; k < numVecs; ++k) {
+        view_type vector_k = Kokkos::subview<view_type> (view_.d_view, Kokkos::ALL (), whichVectors_[k]);
+        Kokkos::fill_random(vector_k,rand_pool,min,max);
       }
+      view_.modify<DeviceType>();
     }
   }
 
