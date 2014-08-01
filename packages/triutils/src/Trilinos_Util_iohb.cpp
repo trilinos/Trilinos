@@ -214,7 +214,7 @@ Fri Aug 15 16:29:47 EDT 1997
 #endif
 /*---------------------------------------------------------------------*/
 
-#include "iohb.h"
+#include "Trilinos_Util_iohb.h"
 
 #include<cstring>
 #include<cmath>
@@ -310,7 +310,7 @@ int readHB_header(std::FILE* in_file, char* Title, char* Key, char* Type,
       return 0;
     }
     if ( std::sscanf(line,"%*s") < 0 )
-        IOHBTerminate("iohb.c: Null (or blank) first line of HB file.\n");
+        IOHBTerminate("Trilinos_Util_iohb.cpp: Null (or blank) first line of HB file.\n");
     (void) std::sscanf(line, "%72c%8[^\n]", Title, Key);
     *(Key+8) = (char) NULL;
     *(Title+72) = (char) NULL;
@@ -321,7 +321,7 @@ int readHB_header(std::FILE* in_file, char* Title, char* Key, char* Type,
       return 0;
     }
     if ( std::sscanf(line,"%*s") < 0 )
-        IOHBTerminate("iohb.c: Null (or blank) second line of HB file.\n");
+        IOHBTerminate("Trilinos_Util_iohb.cpp: Null (or blank) second line of HB file.\n");
     if ( std::sscanf(line,"%i",&Totcrd) != 1) Totcrd = 0;
     if ( std::sscanf(line,"%*i%i",Ptrcrd) != 1) *Ptrcrd = 0;
     if ( std::sscanf(line,"%*i%*i%i",Indcrd) != 1) *Indcrd = 0;
@@ -334,9 +334,9 @@ int readHB_header(std::FILE* in_file, char* Title, char* Key, char* Type,
       return 0;
     }
     if ( std::sscanf(line,"%*s") < 0 )
-        IOHBTerminate("iohb.c: Null (or blank) third line of HB file.\n");
+        IOHBTerminate("Trilinos_Util_iohb.cpp: Null (or blank) third line of HB file.\n");
     if ( std::sscanf(line, "%3c", Type) != 1)
-        IOHBTerminate("iohb.c: Invalid Type info, line 3 of Harwell-Boeing file.\n");
+        IOHBTerminate("Trilinos_Util_iohb.cpp: Invalid Type info, line 3 of Harwell-Boeing file.\n");
     upcase(Type);
     if ( std::sscanf(line,"%*3c%i",Nrow) != 1) *Nrow = 0 ;
     if ( std::sscanf(line,"%*3c%*i%i",Ncol) != 1) *Ncol = 0 ;
@@ -349,13 +349,13 @@ int readHB_header(std::FILE* in_file, char* Title, char* Key, char* Type,
       return 0;
     }
     if ( std::sscanf(line,"%*s") < 0 )
-        IOHBTerminate("iohb.c: Null (or blank) fourth line of HB file.\n");
+        IOHBTerminate("Trilinos_Util_iohb.cpp: Null (or blank) fourth line of HB file.\n");
     if ( std::sscanf(line, "%16c",Ptrfmt) != 1)
-        IOHBTerminate("iohb.c: Invalid format info, line 4 of Harwell-Boeing file.\n");
+        IOHBTerminate("Trilinos_Util_iohb.cpp: Invalid format info, line 4 of Harwell-Boeing file.\n");
     if ( std::sscanf(line, "%*16c%16c",Indfmt) != 1)
-        IOHBTerminate("iohb.c: Invalid format info, line 4 of Harwell-Boeing file.\n");
+        IOHBTerminate("Trilinos_Util_iohb.cpp: Invalid format info, line 4 of Harwell-Boeing file.\n");
     if ( std::sscanf(line, "%*16c%*16c%20c",Valfmt) != 1)
-        IOHBTerminate("iohb.c: Invalid format info, line 4 of Harwell-Boeing file.\n");
+        IOHBTerminate("Trilinos_Util_iohb.cpp: Invalid format info, line 4 of Harwell-Boeing file.\n");
     std::sscanf(line, "%*16c%*16c%*20c%20c",Rhsfmt);
     *(Ptrfmt+16) = (char) NULL;
     *(Indfmt+16) = (char) NULL;
@@ -370,9 +370,9 @@ int readHB_header(std::FILE* in_file, char* Title, char* Key, char* Type,
          return 0;
        }
        if ( std::sscanf(line,"%*s") < 0 )
-           IOHBTerminate("iohb.c: Null (or blank) fifth line of HB file.\n");
+           IOHBTerminate("Trilinos_Util_iohb.cpp: Null (or blank) fifth line of HB file.\n");
        if ( std::sscanf(line, "%3c", Rhstype) != 1)
-         IOHBTerminate("iohb.c: Invalid RHS type information, line 5 of Harwell-Boeing file.\n");
+         IOHBTerminate("Trilinos_Util_iohb.cpp: Invalid RHS type information, line 5 of Harwell-Boeing file.\n");
        if ( std::sscanf(line, "%*3c%i", Nrhs) != 1) *Nrhs = 0;
        if ( std::sscanf(line, "%*3c%*i%i", &Nrhsix) != 1) Nrhsix = 0;
     }
@@ -445,7 +445,7 @@ int readHB_mat_double(const char* filename, int colptr[], int rowind[],
          return 0;
        }
        if ( std::sscanf(line,"%*s") < 0 )
-         IOHBTerminate("iohb.c: Null (or blank) line in pointer data region of HB file.\n");
+         IOHBTerminate("Trilinos_Util_iohb.cpp: Null (or blank) line in pointer data region of HB file.\n");
        col =  0;
        for (ind = 0;ind<Ptrperline;ind++)
        {
@@ -471,7 +471,7 @@ int readHB_mat_double(const char* filename, int colptr[], int rowind[],
          return 0;
        }
        if ( std::sscanf(line,"%*s") < 0 )
-         IOHBTerminate("iohb.c: Null (or blank) line in index data region of HB file.\n");
+         IOHBTerminate("Trilinos_Util_iohb.cpp: Null (or blank) line in index data region of HB file.\n");
        col =  0;
        for (ind = 0;ind<Indperline;ind++)
        {
@@ -503,7 +503,7 @@ int readHB_mat_double(const char* filename, int colptr[], int rowind[],
          return 0;
        }
        if ( std::sscanf(line,"%*s") < 0 )
-         IOHBTerminate("iohb.c: Null (or blank) line in value data region of HB file.\n");
+         IOHBTerminate("Trilinos_Util_iohb.cpp: Null (or blank) line in value data region of HB file.\n");
        if (Valflag == 'D')  {
           while( std::strchr(line,'D') ) *std::strchr(line,'D') = 'E';
 /*           *std::strchr(Valfmt,'D') = 'E'; */
@@ -1026,7 +1026,7 @@ int readHB_mat_char(const char* filename, int colptr[], int rowind[],
          return 0;
        }
        if ( std::sscanf(line,"%*s") < 0 )
-         IOHBTerminate("iohb.c: Null (or blank) line in pointer data region of HB file.\n");
+         IOHBTerminate("Trilinos_Util_iohb.cpp: Null (or blank) line in pointer data region of HB file.\n");
        col =  0;
        for (ind = 0;ind<Ptrperline;ind++)
        {
@@ -1052,7 +1052,7 @@ int readHB_mat_char(const char* filename, int colptr[], int rowind[],
          return 0;
        }
        if ( std::sscanf(line,"%*s") < 0 )
-         IOHBTerminate("iohb.c: Null (or blank) line in index data region of HB file.\n");
+         IOHBTerminate("Trilinos_Util_iohb.cpp: Null (or blank) line in index data region of HB file.\n");
        col =  0;
        for (ind = 0;ind<Indperline;ind++)
        {
@@ -1083,7 +1083,7 @@ int readHB_mat_char(const char* filename, int colptr[], int rowind[],
          return 0;
        }
        if ( std::sscanf(line,"%*s") < 0 )
-         IOHBTerminate("iohb.c: Null (or blank) line in value data region of HB file.\n");
+         IOHBTerminate("Trilinos_Util_iohb.cpp: Null (or blank) line in value data region of HB file.\n");
        if (Valflag == 'D') {
           while( std::strchr(line,'D') ) *std::strchr(line,'D') = 'E';
        }
@@ -1264,7 +1264,7 @@ int readHB_aux_char(const char* filename, const char AuxType, char b[])
     }
     linel= std::strchr(line,'\n')-line;
     if ( std::sscanf(line,"%*s") < 0 )
-       IOHBTerminate("iohb.c: Null (or blank) line in auxillary vector data region of HB file.\n");
+       IOHBTerminate("Trilinos_Util_iohb.cpp: Null (or blank) line in auxillary vector data region of HB file.\n");
     col = 0;
 /*  Skip to initial offset */
 
@@ -1277,7 +1277,7 @@ int readHB_aux_char(const char* filename, const char AuxType, char b[])
            }
            linel= std::strchr(line,'\n')-line;
        if ( std::sscanf(line,"%*s") < 0 )
-       IOHBTerminate("iohb.c: Null (or blank) line in auxillary vector data region of HB file.\n");
+       IOHBTerminate("Trilinos_Util_iohb.cpp: Null (or blank) line in auxillary vector data region of HB file.\n");
            col = 0;
        }
     }
@@ -1298,7 +1298,7 @@ int readHB_aux_char(const char* filename, const char AuxType, char b[])
            }
            linel= std::strchr(line,'\n')-line;
        if ( std::sscanf(line,"%*s") < 0 )
-       IOHBTerminate("iohb.c: Null (or blank) line in auxillary vector data region of HB file.\n");
+       IOHBTerminate("Trilinos_Util_iohb.cpp: Null (or blank) line in auxillary vector data region of HB file.\n");
            if (Rhsflag == 'D')  {
               while( std::strchr(line,'D') ) *std::strchr(line,'D') = 'E';
            }
@@ -1332,7 +1332,7 @@ int readHB_aux_char(const char* filename, const char AuxType, char b[])
            }
            linel= std::strchr(line,'\n')-line;
        if ( std::sscanf(line,"%*s") < 0 )
-       IOHBTerminate("iohb.c: Null (or blank) line in auxillary vector data region of HB file.\n");
+       IOHBTerminate("Trilinos_Util_iohb.cpp: Null (or blank) line in auxillary vector data region of HB file.\n");
            col = 0;
        }
     }
