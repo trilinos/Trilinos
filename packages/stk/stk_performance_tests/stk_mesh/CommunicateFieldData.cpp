@@ -62,7 +62,7 @@ void createMetaAndBulkData(stk::io::StkMeshIoBroker &exodusFileReader)
 {
     std::string exodusFileName = unitTestUtils::getOption("-i", "NO_FILE_SPECIFIED");
     if (exodusFileName == "NO_FILE_SPECIFIED") {
-      exodusFileName = "generated:5x5x5";
+      exodusFileName = "generated:60x60x60";
     }
 
     exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
