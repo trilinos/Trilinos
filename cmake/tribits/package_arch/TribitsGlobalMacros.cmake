@@ -536,17 +536,19 @@ ENDMACRO()
 
 MACRO(TRIBITS_SETUP_INSTALLATION_OPTIONS)
 
-  ADVANCED_SET(${PROJECT_NAME}_INSTALL_INCLUDE_DIR "include"
+  INCLUDE(GNUInstallDirs)
+
+  ADVANCED_SET(${PROJECT_NAME}_INSTALL_INCLUDE_DIR ${CMAKE_INSTALL_INCLUDEDIR}
     CACHE PATH
     "Location where the headers will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'include'"
     )
 
-  ADVANCED_SET(${PROJECT_NAME}_INSTALL_LIB_DIR "lib"
+  ADVANCED_SET(${PROJECT_NAME}_INSTALL_LIB_DIR ${CMAKE_INSTALL_LIBDIR}
     CACHE PATH
     "Location where the libraries will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'lib'"
     )
 
-  ADVANCED_SET(${PROJECT_NAME}_INSTALL_RUNTIME_DIR "bin"
+  ADVANCED_SET(${PROJECT_NAME}_INSTALL_RUNTIME_DIR ${CMAKE_INSTALL_BINDIR}
     CACHE PATH
     "Location where the runtime DLLs and designated programs will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'bin'"
     )
