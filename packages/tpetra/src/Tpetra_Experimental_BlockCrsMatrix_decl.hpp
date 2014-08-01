@@ -270,6 +270,21 @@ public:
               const Scalar alpha = Teuchos::ScalarTraits<Scalar>::one (),
               const Scalar beta = Teuchos::ScalarTraits<Scalar>::zero ());
 
+  /// \brief Local Gauss-Seidel solve given a factorized diagonal
+  ///
+  /// This method computes the smoothing of A*X = B, where A is *this
+  /// (the block matrix), B is the residual and X is the approximate solution. It
+  /// requires a factorized diagonal and pivots (partial pivoting in LAPACK coming
+  /// from GETRF) to be passed in. It takes an SOR relaxation factor. Valid
+  /// sweep directions are Forward, Backward, or Symmetric.
+  void
+  localGaussSeidel (const BlockMultiVector<Scalar, LO, GO, Node>& Residual,
+                          BlockMultiVector<Scalar, LO, GO, Node>& Solution,
+                          BlockCrsMatrix<Scalar, LO, GO, Node> & factorizedDiagonal,
+                          int * factorizationPivots,
+                          const Scalar omega,
+                          const ESweepDirection direction) const;
+
   /// \brief Replace values at the given column indices, in the given row.
   ///
   /// \param localRowInd [in] Local index of the row in which to replace.
@@ -334,6 +349,8 @@ public:
                    const LO*& colInds,
                    Scalar*& vals,
                    LO& numInds) const;
+
+  little_block_type getLocalBlock (const LO localRowInd, const LO localColInd) const;
 
   /// \brief Get relative offsets corresponding to the given row indices.
   ///
@@ -673,20 +690,6 @@ private:
                           BlockMultiVector<Scalar, LO, GO, Node>& Y,
                           const Scalar alpha,
                           const Scalar beta);
-
-  /// \brief Local sparse matrix-vector multiply for the non-transpose case.
-  ///
-  /// This method computes Y := beta*Y + alpha*A*X, where A is *this
-  /// (the block matrix), and X and Y are block multivectors.  The
-  /// special cases alpha = 0 resp. beta = 0 have their usual BLAS
-  /// meaning; this only matters if (A or X) resp. Y contain Inf or
-  /// NaN values.
-  void
-  localGaussSeidel (const BlockMultiVector<Scalar, LO, GO, Node>& B,
-                          BlockMultiVector<Scalar, LO, GO, Node>& X,
-                          BlockCrsMatrix<Scalar, LO, GO, Node> & Diagonal,
-                          const Scalar omega,
-                          const ESweepDirection direction);
 
   /// \brief Get the relative block offset of the given block.
   ///

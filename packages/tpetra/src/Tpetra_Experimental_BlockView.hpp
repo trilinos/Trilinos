@@ -48,6 +48,10 @@
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_LAPACK.hpp>
 
+
+//#include "Teuchos_LAPACK_wrappers.hpp"
+//extern "C" {int DGETRF_F77(const int *, const int *, double *, const int*, int *, int*);}
+
 namespace Tpetra {
 
 /// \brief Namespace for new Tpetra features that are not ready for
@@ -163,20 +167,32 @@ public:
     }
   }
 
-  void factorize()
+
+
+  void factorize (int* ipiv, int & info)
   {
-    ipiv_.resize(blockSize_);
     Teuchos::LAPACK<LO, Scalar> lapack;
-    int info;
-    lapack.GETRF(blockSize_, blockSize_, A_, blockSize_, &ipiv_[0], &info);
+    lapack.GETRF(blockSize_, blockSize_, A_, blockSize_, ipiv, &info);
+
+//    int ipiv2[3];
+//     double B[9];
+//     for(int i=0;i<9; i++) B[i]=0.0;
+//    B[1]=3.0; B[3] = 3.0; B[8]=3.0;
+//    DGETRF_F77(&blockSize_, &blockSize_, B, &blockSize_, ipiv2, &info);
+//   printf("CMS: info = %d\n",info);
+//   printf("CMS: ipiv2 = ");
+//   for(int i=0; i<3; i++)
+//       printf("%d ",ipiv2[i]);
+//    printf("\n");
   }
 
   template<class LittleVectorType>
-  void solve(LittleVectorType & X) const
+  void solve (LittleVectorType & X, int* ipiv) const
   {
     int info;
     Teuchos::LAPACK<LO, Scalar> lapack;
-    lapack.GETRS(Teuchos::TRANS, blockSize_, 1, A_, blockSize_, &ipiv_[0], X.getRawPtr(), blockSize_, &info);
+    char trans = 'T';
+    lapack.GETRS(trans, blockSize_, 1, A_, blockSize_, ipiv, X.getRawPtr(), blockSize_, &info);
   }
 
 private:

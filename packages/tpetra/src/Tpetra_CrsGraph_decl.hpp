@@ -66,6 +66,11 @@ namespace Tpetra {
   template <class S, class LO, class GO, class N, class SpMatOps>
   class CrsMatrix;
 
+  namespace Experimental {
+    template<class S, class LO, class GO, class N>
+    class BlockCrsMatrix;
+  }
+
   namespace Details {
     template<class OutputCrsGraphType, class InputCrsGraphType>
     class CrsGraphCopier {
@@ -186,6 +191,8 @@ namespace Tpetra {
   {
     template <class S, class LO, class GO, class N, class SpMatOps>
     friend class CrsMatrix;
+    template <class S, class LO, class GO, class N>
+    friend class Experimental::BlockCrsMatrix;
     template <class LO2, class GO2, class N2, class SpMatOps2>
     friend class CrsGraph;
     template<class OutputCrsGraphType, class InputCrsGraphType>

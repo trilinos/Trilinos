@@ -324,17 +324,13 @@ namespace Experimental {
   BlockCrsMatrix<Scalar,LO,GO,Node>::
   getLocalDiagOffsets (Teuchos::ArrayRCP<size_t>& offsets) const
   {
-    using Teuchos::ArrayRCP;
-    using Teuchos::ArrayView;
-    using Teuchos::as;
-    const char tfecfFuncName[] = "getLocalDiagOffsets";
 
     const map_type& rowMap = * (graph_.getRowMap());
-    const map_type& colMap = * (graph_.getColumnMap ());
+    const map_type& colMap = * (graph_.getColMap ());
 
     const size_t myNumRows = rowMeshMap_.getNodeNumElements();
-    if (as<size_t> (offsets.size ()) != myNumRows) {
-      offsets.resize (as<size_t> (myNumRows));
+    if (static_cast<size_t> (offsets.size ()) != myNumRows) {
+      offsets.resize (static_cast<size_t> (myNumRows));
     }
 
 #ifdef HAVE_TPETRA_DEBUG
@@ -353,9 +349,9 @@ namespace Experimental {
 #endif // HAVE_TPETRA_DEBUG
 
       if (rlid != Teuchos::OrdinalTraits<LO>::invalid ()) {
-        RowInfo rowinfo = graph_->getRowInfo (r);
+        RowInfo rowinfo = graph_.getRowInfo (r);
         if (rowinfo.numEntries > 0) {
-          offsets[r] = graph_->findLocalIndex (rowinfo, rlid);
+          offsets[r] = graph_.findLocalIndex (rowinfo, rlid);
         }
         else {
           offsets[r] = Teuchos::OrdinalTraits<size_t>::invalid ();
@@ -369,6 +365,7 @@ namespace Experimental {
 #ifdef HAVE_TPETRA_DEBUG
     using Teuchos::reduceAll;
     using std::endl;
+    const char tfecfFuncName[] = "getLocalDiagOffsets";
 
     const bool localSuccess =
       allRowMapDiagEntriesInColMap && allDiagEntriesFound;
@@ -410,9 +407,11 @@ namespace Experimental {
   localGaussSeidel (const BlockMultiVector<Scalar, LO, GO, Node>& B,
       BlockMultiVector<Scalar, LO, GO, Node>& X,
       BlockCrsMatrix<Scalar, LO, GO, Node> & factorizedDiagonal,
+      int * factorizationPivots,
       const Scalar omega,
-      const ESweepDirection direction)
+      const ESweepDirection direction) const
   {
+    
     const LO numLocalMeshRows =
       static_cast<LO> (rowMeshMap_.getNodeNumElements ());
     const LO numVecs = static_cast<LO> (X.getNumVectors ());
@@ -426,7 +425,7 @@ namespace Experimental {
     Teuchos::Array<Scalar> localMat (blockSize*blockSize);
     little_vec_type X_lcl (localMem.getRawPtr (), blockSize, 1);
 
-    LO * columnIndices;
+    const LO * columnIndices;
     Scalar * Dmat;
     LO numIndices;
 
@@ -439,18 +438,20 @@ namespace Experimental {
     }
     else if (direction == Backward)
     {
+      // FIXME: will not work with LO is unsigned
       rowBegin = numLocalMeshRows-1;
       rowEnd = -1;
       rowStride = -1;
     }
     else if (direction == Symmetric)
     {
-      this->localGaussSeidel(B,X,factorizedDiagonal,omega,Forward);
-      this->localGaussSeidel(B,X,factorizedDiagonal,omega,Backward);
+      this->localGaussSeidel(B, X, factorizedDiagonal, factorizationPivots, omega, Forward);
+      this->localGaussSeidel(B, X, factorizedDiagonal, factorizationPivots, omega, Backward);
       return;
     }
 
     if (numVecs == 1) {
+
       for (LO lclRow = rowBegin; lclRow != rowEnd; lclRow += rowStride) {
 
         little_vec_type B_cur = B.getLocalBlock (lclRow, 0);
@@ -467,15 +468,15 @@ namespace Experimental {
           little_vec_type X_cur = X.getLocalBlock (meshCol, 0);
 
           // X_lcl += alpha*A_cur*X_cur
-          const double alpha = meshCol == lclRow ? -omega : 1-omega;
+          const double alpha = meshCol == lclRow ? 1-omega : -omega;
           X_lcl.matvecUpdate (alpha, A_cur, X_cur);
 
         } // for each entry in the current local row of the matrx
 
-        factorizedDiagonal.getLocalRowView(lclRow, columnIndices, Dmat, &numIndices);
-        const_little_block_type D_lcl = getConstLocalBlockFromInput(Dmat, 0);
+        factorizedDiagonal.getLocalRowView(lclRow, columnIndices, Dmat, numIndices);
+        little_block_type D_lcl = getNonConstLocalBlockFromInput(Dmat, 0);
 
-        D_lcl.solve(X_lcl);
+        D_lcl.solve(X_lcl, &factorizationPivots[lclRow*blockSize_]);
 
         little_vec_type X_update = X.getLocalBlock (lclRow, 0);
         X_update.assign(X_lcl);
@@ -500,15 +501,15 @@ namespace Experimental {
             little_vec_type X_cur = X.getLocalBlock (meshCol, j);
 
             // X_lcl += alpha*A_cur*X_cur
-            const double alpha = meshCol == lclRow ? -omega : 1-omega;
+            const double alpha = meshCol == lclRow ? 1-omega : -omega;
             X_lcl.matvecUpdate (alpha, A_cur, X_cur);
 
           } // for each entry in the current local row of the matrx
 
-          factorizedDiagonal.getLocalRowView(lclRow, columnIndices, Dmat, &numIndices);
-          const_little_block_type D_lcl = getConstLocalBlockFromInput(Dmat, 0);
+          factorizedDiagonal.getLocalRowView(lclRow, columnIndices, Dmat, numIndices);
+          little_block_type D_lcl = getNonConstLocalBlockFromInput(Dmat, 0);
 
-          D_lcl.solve(X_lcl);
+          D_lcl.solve(X_lcl, &factorizationPivots[lclRow*blockSize_]);
 
           little_vec_type X_update = X.getLocalBlock (lclRow, j);
           X_update.assign(X_lcl);
@@ -540,20 +541,20 @@ namespace Experimental {
 #endif // HAVE_TPETRA_DEBUG
 
     const size_t myNumRows = rowMeshMap_.getNodeNumElements();
-    ArrayView<const LO> columnIndices;
-    ArrayView<const Scalar> vals;
+    const LO* columnIndices;
+    Scalar* vals;
     LO numColumns;
-    std::vector<LO> cols(1);
+    Teuchos::Array<LO> cols(1);
 
-    std::vector<Scalar> zeroMat(blockSize_*blockSize_,0);
+    Teuchos::Array<Scalar> zeroMat(blockSize_*blockSize_, Teuchos::ScalarTraits<Scalar>::zero());
     for (size_t i = 0; i < myNumRows; ++i) {
       cols[0] = i;
       if (offsets[i] == Teuchos::OrdinalTraits<size_t>::invalid ()) {
-        diag.replaceLocalValues (i, &cols[0], &zeroMat[0], 1);
+        diag.replaceLocalValues (i, cols.getRawPtr(), zeroMat.getRawPtr(), 1);
       }
       else {
         getLocalRowView (i, columnIndices, vals, numColumns);
-        diag.replaceLocalValues (i, &cols[0], &vals[offsets[i]*blockSize_*blockSize_], 1);
+        diag.replaceLocalValues (i, cols.getRawPtr(), &vals[offsets[i]*blockSize_*blockSize_], 1);
       }
     }
   }
@@ -1150,6 +1151,28 @@ namespace Experimental {
       return getNonConstLocalBlockFromInput (const_cast<Scalar*> (val_),
                                              absPointOffset);
     }
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  typename BlockCrsMatrix<Scalar, LO, GO, Node>::little_block_type
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getLocalBlock (const LO localRowInd, const LO localColInd) const
+  {
+    const size_t absRowBlockOffset = ptr_[localRowInd];
+
+    size_t hint = 0;
+    const size_t relBlockOffset =
+        findRelOffsetOfColumnIndex (localRowInd, localColInd, hint);
+
+    if (relBlockOffset != Teuchos::OrdinalTraits<size_t>::invalid ()) {
+      const size_t absBlockOffset = absRowBlockOffset + relBlockOffset;
+      return getNonConstLocalBlockFromAbsOffset (absBlockOffset);
+    }
+    else
+    {
+      return little_block_type (NULL, 0, 0, 0);
+    }
+
   }
 
 
