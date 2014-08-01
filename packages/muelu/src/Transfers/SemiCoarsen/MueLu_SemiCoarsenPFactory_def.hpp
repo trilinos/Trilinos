@@ -54,7 +54,7 @@
 
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
-#include "MueLu_SemiCoarsenPFactory.hpp"
+#include "MueLu_SemiCoarsenPFactory_decl.hpp"
 #include "MueLu_Utilities.hpp"
 #include <Teuchos_LAPACK.hpp>
 
@@ -401,7 +401,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, cla
   MaxNnz = 2*DofsPerNode*Ndofs;
 
   RCP<const Map> rowMap    = Amat->getRowMap();
-  coarseMap = Xpetra::MapFactory<LO,GO,Node>::createUniformContigMap(rowMap->lib(),NCLayers*NVertLines*DofsPerNode,(rowMap->getComm()));
+  coarseMap = MapFactory::createUniformContigMap(rowMap->lib(),NCLayers*NVertLines*DofsPerNode,(rowMap->getComm()));
   P       = rcp(new CrsMatrixWrap(rowMap, coarseMap , 0, Xpetra::StaticProfile));
 
 
