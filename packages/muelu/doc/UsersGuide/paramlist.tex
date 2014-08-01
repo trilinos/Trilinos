@@ -79,6 +79,8 @@
           
 \cbb{repartition: rebalance P and R}{bool}{true}{Do rebalancing of R and P during the setup. This speeds up the solve, but slows down the setup phases.}
           
+\cbb{semicoarsen: coarsen rate}{int}{3}{Rate at which to coarsen unknowns in the z direction.}
+          
 \cbb{sa: damping factor}{double}{1.33333333}{Damping factor for smoothed aggregation.}
           
 \cbb{sa: use filtered matrix}{bool}{true}{Matrix to use for smoothing the tentative prolongator. The two options are: to use the original matrix, and to use the filtered matrix with filtering based on filtered graph used for aggregation.}

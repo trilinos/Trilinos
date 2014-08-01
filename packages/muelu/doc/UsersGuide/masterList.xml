@@ -365,6 +365,13 @@
   </parameter>
 
   <parameter>
+    <name>semicoarsen: coarsen rate</name>
+    <type>int</type>
+    <default>3</default>
+    <description>Rate at which to coarsen unknowns in the z direction.</description>
+  </parameter>
+
+  <parameter>
     <name>sa: damping factor</name>
     <type>double</type>
     <default>1.33333333</default>

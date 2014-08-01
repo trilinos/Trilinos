@@ -54,8 +54,9 @@
 
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
-#include "MueLu_SemiCoarsenPFactory_decl.hpp"
+#include "MueLu_SemiCoarsenPFactory.hpp"
 #include "MueLu_Utilities.hpp"
+#include "MueLu_MasterList.hpp"
 #include <Teuchos_LAPACK.hpp>
 
 namespace MueLu {
@@ -64,10 +65,14 @@ namespace MueLu {
   RCP<const ParameterList> SemiCoarsenPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
+#define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
+    SET_VALID_ENTRY("semicoarsen: coarsen rate");
+#undef  SET_VALID_ENTRY
     validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("Nullspace",      Teuchos::null, "Generating factory of the nullspace");
-    validParamList->set<ArrayRCP<LO> >("SemiCoarsenInfo",  Teuchos::null, "rst: who knows what this is?");
-    validParamList->set< RCP<const FactoryBase> >("Coordinates",  Teuchos::null, "rst: who knows what this is?");
+    validParamList->set<ArrayRCP<LO> >("SemiCoarsenInfo",  Teuchos::null, "Generating factory of the array SemiCoarsenInfo");
+    validParamList->set< RCP<const FactoryBase> >("Coordinates",  Teuchos::null, "Generating factory for coorindates");
+
 
     return validParamList;
   }
@@ -108,8 +113,11 @@ namespace MueLu {
     GO   Ncoarse;
 
     BlkSize = A->GetFixedBlockSize();    
-    CoarsenRate = 3; // rst: hardwired for now. This doesn't change from level to level ... so it
-                     //      just be set in the factory
+    const ParameterList & pL = GetParameterList();
+    CoarsenRate = pL.get<LO>("semicoarsen: coarsen rate");
+
+//    CoarsenRate = 3; // rst: hardwired for now. This doesn't change from level to level ... so it
+                       //      just be set in the factory
 
     Ndofs   = rowMap->getNodeNumElements();
     Nnodes  = Ndofs/BlkSize;
@@ -401,7 +409,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, cla
   MaxNnz = 2*DofsPerNode*Ndofs;
 
   RCP<const Map> rowMap    = Amat->getRowMap();
-  coarseMap = MapFactory::createUniformContigMap(rowMap->lib(),NCLayers*NVertLines*DofsPerNode,(rowMap->getComm()));
+  coarseMap = Xpetra::MapFactory<LO,GO>::createUniformContigMap(rowMap->lib(),NCLayers*NVertLines*DofsPerNode,(rowMap->getComm()));
   P       = rcp(new CrsMatrixWrap(rowMap, coarseMap , 0, Xpetra::StaticProfile));
 
 
