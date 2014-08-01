@@ -500,7 +500,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, TestGIDs, Scalar, Loca
 
 // ///////////////////////////////////////////////////////////////////// //
 
-#if defined(HAVE_IFPACK2_AMESOS2) and defined(HAVE_IFPACK2_XPETRA)
+#if defined(HAVE_IFPACK2_AMESOS2) and defined(HAVE_IFPACK2_XPETRA) and defined(HAVE_AMESOS2_SUPERLU)
 // Test SuperLU sparse direct solver as subdomain solver for AdditiveSchwarz.
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SuperLU, Scalar, LocalOrdinal, GlobalOrdinal)
 {
@@ -557,9 +557,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SuperLU, Scalar, Local
                   OR
     <Parameter name="inner preconditioner name"  type="string"   value="AMESOS2"/>
     <ParameterList name="subdomain solver parameters">
+      <Parameter name="Amesos2 solver name"   type="string"   value="klu2"/>  //or superlu, superludist, etc.
+                                                                              //if omitted, defaults to superlu
       <ParameterList name="Amesos2">
         <ParameterList name="SuperLU">
-          <Parameter name="ILU_Flag"           type="bool"   value="false"/>  <== set to true to use SuperLU's ILUTP
+          <Parameter name="ILU_Flag"           type="bool"   value="false"/>  //set to true to use SuperLU's ILUTP
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -567,6 +569,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SuperLU, Scalar, Local
   */
 
   ParameterList &subdomainList = params.sublist("subdomain solver parameters");
+  subdomainList.set("Amesos2 solver name","superlu");
   ParameterList &amesos2List = subdomainList.sublist("Amesos2");
   ParameterList &superluList = amesos2List.sublist("SuperLU");
   superluList.set("ILU_Flag",false);
@@ -622,7 +625,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SuperLU, Scalar, Local
 }
 #endif
 
-#if defined(HAVE_IFPACK2_AMESOS2) and defined(HAVE_IFPACK2_XPETRA)
+#if defined(HAVE_IFPACK2_AMESOS2) and defined(HAVE_IFPACK2_XPETRA) and defined(HAVE_AMESOS2_SUPERLU)
 
 #  define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, Test0, Scalar, LocalOrdinal,GlobalOrdinal)  \

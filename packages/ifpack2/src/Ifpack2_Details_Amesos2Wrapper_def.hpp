@@ -68,7 +68,8 @@ Amesos2Wrapper (const Teuchos::RCP<const row_matrix_type>& A) :
   NumCompute_ (0),
   NumApply_ (0),
   IsInitialized_ (false),
-  IsComputed_ (false)
+  IsComputed_ (false),
+  SolverName_ ("")
 {}
 
 template <class MatrixType>
@@ -78,28 +79,30 @@ Amesos2Wrapper<MatrixType>::~Amesos2Wrapper()
 template <class MatrixType>
 void Amesos2Wrapper<MatrixType>::setParameters (const Teuchos::ParameterList& params)
 {
-  // If amesos2solver_ hasn't been allocated yet, cache the parameters and set them
-  // once the concrete solver does exist.
-  if (amesos2solver_ == Teuchos::null) {
-    parameterList_ = rcp(new Teuchos::ParameterList(params) );
-    return;
-  }
-  Teuchos::ParameterList pl(params);
-  Teuchos::RCP<Teuchos::ParameterList> rcppl = Teuchos::rcpFromRef(pl);
-  //Amesos2 requires that the ParameterList be called "Amesos2".
-  if ( rcppl->name() == "Amesos2" ) {
-    //If the name of params is "Amesos2", pass params directly the Amesos2 concrete solver.
-    amesos2solver_->setParameters(rcppl);
-  } else if ( rcppl->isSublist("Amesos2") ) {
-    //next check whether params contains a sublist called "Amesos2".  If so, pass the sublist to
-    //the Amesos2 concrete solver.
-    Teuchos::ParameterList subpl = rcppl->sublist("Amesos2",true);
-    subpl.setName("Amesos2"); //FIXME hack until Teuchos sublist name bug is fixed
-    amesos2solver_->setParameters(Teuchos::rcpFromRef(subpl));
+  using Teuchos::ParameterList;
+  //Extract the list called "Amesos2" that contains the Amesos2 solver's options.
+  Teuchos::RCP<ParameterList> theList;
+  if ( params.name() == "Amesos2" ) {
+    theList = rcp(new ParameterList(params) );
+  } else if ( params.isSublist("Amesos2") ) {
+    ParameterList subpl = params.sublist("Amesos2");
+    theList = rcp(new ParameterList(subpl) );
+    theList->setName("Amesos2"); //FIXME hack until Teuchos sublist name bug is fixed
+    if (params.isParameter("Amesos2 solver name"))
+      SolverName_ = params.get<std::string>("Amesos2 solver name");
   } else {
     //Amesos2 silently ignores any list not called "Amesos2".  We'll throw an exception.
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "The ParameterList passed to Amesos2 must be called \"Amesos2\".");
   }
+
+  // If amesos2solver_ hasn't been allocated yet, cache the parameters and set them
+  // once the concrete solver does exist.
+  if (amesos2solver_ == Teuchos::null) {
+    parameterList_ = theList;
+    return;
+  }
+
+  amesos2solver_->setParameters(theList);
 }
 
 
@@ -334,43 +337,30 @@ void Amesos2Wrapper<MatrixType>::initialize ()
       A_local_crs_ = A_local_crs;
     }
 
-    // FIXME (10 Dec 2013) This (the Amesos2 solver type) should be a
-    // run-time parameter through the input ParameterList.
-    // (9 May 2014) JJH Ifpack2 also shouldn't be checking the availability direct solvers.
+    // (9 May 2014) JJH Ifpack2 shouldn't be checking the availability direct solvers.
     // It's up to Amesos2 to test for this and throw an exception
     // (which it does in Amesos2::Factory::create).
 
-    std::string solverType;
-
-#if defined(HAVE_AMESOS2_SUPERLU)
-    solverType = "superlu";
-#elif defined(HAVE_AMESOS2_KLU2)
-    solverType = "klu";
-#elif defined(HAVE_AMESOS2_SUPERLUDIST)
-    solverType = "superludist";
-#elif defined(HAVE_AMESOS2_CHOLMOD)
-    solverType = "cholmod";
-#elif defined(HAVE_AMESOS2_LAPACK)
-    solverType = "lapack";
-#else
-    // FIXME (9 May 2014) JJH Amesos2 does not yet expose KLU2, its internal direct solver.
-    // This means there's no fallback option, thus we throw an exception here.
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Amesos2 has not been configured with any direct solver support.");
-#endif
+    if (SolverName_ == "") {
+      if (Amesos2::query("klu"))
+        SolverName_ = "klu";
+      else if (Amesos2::query("superlu"))
+        SolverName_ = "superlu";
+      else if (Amesos2::query("superludist"))
+        SolverName_ = "superludist";
+      else if (Amesos2::query("cholmod"))
+        SolverName_ = "cholmod";
+      else
+        // FIXME (9 May 2014) JJH Amesos2 does not yet expose KLU2, its internal direct solver.
+        // This means there's no fallback option, thus we throw an exception here.
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Amesos2 has not been configured with any direct solver support.");
+    }
 
     // FIXME (10 Dec 2013) It shouldn't be necessary to recreate the
     // solver each time, since Amesos2::Solver has a setA() method.
     // See the implementation of setMatrix().
 
-//RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-//fos->setOutputToRootOnly(-1);
-
-
-    //*fos << "=========== A_local_crs_ (Ifpack2::Details::Amesos2Wrapper::initialize()) ============" << std::endl;
-    //A_local_crs_->describe(*fos,Teuchos::VERB_EXTREME);
-    //*fos << "=========== end of A_local_crs_ (Ifpack2::Details::Amesos2Wrapper::initialize()) ============" << std::endl;
-
-    amesos2solver_ = Amesos2::create<MatrixType, MV> (solverType, A_local_crs_);
+    amesos2solver_ = Amesos2::create<MatrixType, MV> (SolverName_, A_local_crs_);
     // If parameters have been already been cached via setParameters, set them now.
     if (parameterList_ != Teuchos::null) {
       setParameters(*parameterList_);

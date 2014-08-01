@@ -70,7 +70,7 @@ namespace Details {
 /// @brief Wrapper class for direct solvers in Amesos2.
 /// \tparam MatrixType A specialization of Tpetra::CrsMatrix.
 ///
-/// This class computes a sparse direct factorization of the input
+/// This class computes a sparse factorization of the input
 /// matrix A using Amesos2.  The apply() method solves linear
 /// system(s) using that factorization.  As with all Ifpack2
 /// preconditioners, initialize() computes the symbolic factorization,
@@ -85,14 +85,13 @@ namespace Details {
 ///   of Tpetra::RowMatrix.  This requirement comes from Amesos2's
 ///   Tpetra adapter.
 ///
-/// \note This class does <i>not</i> apply a LocalFilter to the input
-///   matrix A.  This is unnecessary for subdomain solvers in
-///   AdditiveSchwarz, because AdditiveSchwarz already applies a
-///   LocalFilter to the matrix it passes to its subdomain solver.
-///   Furthermore, some sparse factorizations wrapped by Amesos2, like
-///   SuperLU_DIST, do support MPI parallelism.  Thus, it is
-///   reasonable to leave this option open to users, rather than force
-///   a LocalFilter.
+/// \warning This class creates a local filter.  In particular, if the matrix
+///   is not a true Tpetra::CrsMatrix, this class will perform a deep copy to produce
+///   a CrsMatrix.  This will happen, for example, if you are doing additive Schwarz
+///   with nonzero overlap, and apply Amesos2 as the subdomain solve.  This deep copy
+///   is required by Amesos2, and is in addition to any data copying that Amesos2 may 
+///   do internally to satisfy TPL storage formats.
+///
 template<class MatrixType>
 class Amesos2Wrapper :
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
@@ -413,6 +412,9 @@ private:
   bool IsInitialized_;
   //! \c true if \c this object has been computed
   bool IsComputed_;
+  //! @brief The name of the solver in Amesos2 to use.
+  //! See the Amesos2 documentation for valid names.
+  std::string SolverName_;
   //@}
 }; // class Amesos2Wrapper
 

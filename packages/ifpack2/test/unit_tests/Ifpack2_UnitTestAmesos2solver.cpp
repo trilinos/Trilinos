@@ -118,7 +118,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Amesos2Wrapper, Test0, Scalar, LocalOrd
   Ifpack2::Details::Amesos2Wrapper<crs_matrix_type> prec (crsmatrix);
 
   Teuchos::ParameterList params;
-  params.setName("Amesos2");
+  params.set("Amesos2 solver name","superlu");
+  Teuchos::ParameterList &sublist = params.sublist("Amesos2");
+  (sublist.sublist("SuperLU")).set("ILU_Flag",false); //create SuperLU sublist to get rid of unused variable warnings
   TEST_NOTHROW(prec.setParameters(params));
 
   //trivial tests to insist that the preconditioner's domain/range maps are
@@ -176,7 +178,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Amesos2Wrapper, Test1, Scalar, LocalOrd
 
   Teuchos::ParameterList params;
 
-  params.setName("Amesos2");
+  params.set("Amesos2 solver name","superlu");
+  Teuchos::ParameterList &sublist = params.sublist("Amesos2");
+  (sublist.sublist("SuperLU")).set("ILU_Flag",false); //create SuperLU sublist to get rid of unused variable warnings
   TEST_NOTHROW(prec.setParameters(params));
 
 # if !defined(HAVE_AMESOS2_SUPERLU)
