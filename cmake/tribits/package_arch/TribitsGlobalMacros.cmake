@@ -300,80 +300,8 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
   IF ("${CMAKE_VERSION}" VERSION_GREATER "2.8.4")
     #MESSAGE("This is CMake 2.8.5!")
     ADVANCED_SET(${PROJECT_NAME}_LINK_SEARCH_START_STATIC OFF CACHE BOOL
-      "If on, then the properter LINK_SEARCH_START_STATIC will be added to all executables." )
+      "If on, then the property LINK_SEARCH_START_STATIC will be added to all executables." )
   ENDIF()
-
-  ADVANCED_SET(${PROJECT_NAME}_INSTALL_INCLUDE_DIR "include"
-    CACHE PATH
-    "Location where the headers will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'include'"
-    )
-
-  ADVANCED_SET(${PROJECT_NAME}_INSTALL_LIB_DIR "lib"
-    CACHE PATH
-    "Location where the libraries will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'lib'"
-    )
-
-  ADVANCED_SET(${PROJECT_NAME}_INSTALL_RUNTIME_DIR "bin"
-    CACHE PATH
-    "Location where the runtime DLLs and designated programs will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'bin'"
-    )
-
-  ADVANCED_SET(${PROJECT_NAME}_INSTALL_EXAMPLE_DIR "example"
-    CACHE PATH
-    "Location where assorted examples will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'example'"
-    )
-
-  IF ("${${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT}" STREQUAL "")
-    # Assume the TriBITS project wants to install headers and libraries by default
-    SET(${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT ON)
-  ENDIF()
-
-  ADVANCED_SET(${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS
-    ${${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT}
-    CACHE BOOL
-    "Install libraries and headers (default is ${${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT}).  NOTE: Shared libraries are always installed since they are needed by executables."
-    )
-  
-  IF ("${${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES_DEFAULT}" STREQUAL "")
-    IF(WIN32 AND NOT CYGWIN)
-      SET(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES_DEFAULT OFF)
-    ELSE()
-      SET(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES_DEFAULT ON)
-    ENDIF()
-  ENDIF()
-
-  ADVANCED_SET(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES
-    ${${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES_DEFAULT}
-    CACHE BOOL
-    "Determines if export makefiles will be create and installed."
-    )
-
-  # Creating <Package>Config.cmake files is currently *very* expensive for large
-  # TriBITS projects so we disable this by default for TriBITS.
-  IF ("${${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES_DEFAULT}" STREQUAL "")
-    SET(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES_DEFAULT OFF)
-  ENDIF()
-
-  ADVANCED_SET(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES
-    ${${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES_DEFAULT}
-    CACHE BOOL
-    "Determines if ${PROJECT_NAME}Config.cmake and <PACKAGE>Config.cmake files are created or not."
-    )
-
-  IF (NOT ${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES_DEFAULT)
-    # We need to generate the dependency logic for export dependency files if
-    # asked.
-    IF (${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES OR
-      ${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES
-      )
-      SET(${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES_DEFAULT ON)
-    ELSE()
-      SET(${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES_DEFAULT OFF)
-    ENDIF()
-  ENDIF()
-  ADVANCED_SET(${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES
-     ${${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES_DEFAULT} CACHE BOOL
-    "Generate packages dependency data-structures needed for depenency export files." )
 
   # ${PROJECT_NAME}_ELEVATE_SS_TO_PS is depreciated!
   IF (${PROJECT_NAME}_ELEVATE_SS_TO_PS_DEFAULT)
@@ -604,6 +532,84 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
   MARK_AS_ADVANCED(CMAKE_OSX_SYSROOT)
 
 ENDMACRO()
+
+
+MACRO(TRIBITS_SETUP_INSTALLATION_OPTIONS)
+
+  ADVANCED_SET(${PROJECT_NAME}_INSTALL_INCLUDE_DIR "include"
+    CACHE PATH
+    "Location where the headers will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'include'"
+    )
+
+  ADVANCED_SET(${PROJECT_NAME}_INSTALL_LIB_DIR "lib"
+    CACHE PATH
+    "Location where the libraries will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'lib'"
+    )
+
+  ADVANCED_SET(${PROJECT_NAME}_INSTALL_RUNTIME_DIR "bin"
+    CACHE PATH
+    "Location where the runtime DLLs and designated programs will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'bin'"
+    )
+
+  ADVANCED_SET(${PROJECT_NAME}_INSTALL_EXAMPLE_DIR "example"
+    CACHE PATH
+    "Location where assorted examples will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'example'"
+    )
+
+  IF ("${${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT}" STREQUAL "")
+    # Assume the TriBITS project wants to install headers and libraries by default
+    SET(${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT ON)
+  ENDIF()
+
+  ADVANCED_SET(${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS
+    ${${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT}
+    CACHE BOOL
+    "Install libraries and headers (default is ${${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT}).  NOTE: Shared libraries are always installed since they are needed by executables."
+    )
+
+  IF ("${${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES_DEFAULT}" STREQUAL "")
+    IF(WIN32 AND NOT CYGWIN)
+      SET(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES_DEFAULT OFF)
+    ELSE()
+      SET(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES_DEFAULT ON)
+    ENDIF()
+  ENDIF()
+
+  ADVANCED_SET(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES
+    ${${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES_DEFAULT}
+    CACHE BOOL
+    "Determines if export makefiles will be create and installed."
+    )
+
+  # Creating <Package>Config.cmake files is currently *very* expensive for large
+  # TriBITS projects so we disable this by default for TriBITS.
+  IF ("${${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES_DEFAULT}" STREQUAL "")
+    SET(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES_DEFAULT OFF)
+  ENDIF()
+
+  ADVANCED_SET(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES
+    ${${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES_DEFAULT}
+    CACHE BOOL
+    "Determines if ${PROJECT_NAME}Config.cmake and <PACKAGE>Config.cmake files are created or not."
+    )
+
+  IF (NOT ${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES_DEFAULT)
+    # We need to generate the dependency logic for export dependency files if
+    # asked.
+    IF (${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES OR
+      ${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES
+      )
+      SET(${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES_DEFAULT ON)
+    ELSE()
+      SET(${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES_DEFAULT OFF)
+    ENDIF()
+  ENDIF()
+  ADVANCED_SET(${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES
+     ${${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES_DEFAULT} CACHE BOOL
+    "Generate packages dependency data-structures needed for depenency export files." )
+
+ENDMACRO()
+
 
 
 #
