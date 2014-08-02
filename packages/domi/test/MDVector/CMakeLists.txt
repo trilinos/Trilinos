@@ -347,6 +347,15 @@ TRIBITS_ADD_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+# TRIBITS_ADD_TEST(
+#   MDVector_CommTests
+#   NAME MDVector_CommTests_1D_1_per
+#   COMM mpi
+#   NUM_MPI_PROCS 1
+#   ARGS "--teuchos-suppress-startup-banner --dims=10 --periodic=1"
+#   STANDARD_PASS_OUTPUT
+#   )
+
 TRIBITS_ADD_TEST(
   MDVector_CommTests
   NAME MDVector_CommTests_1D_2
