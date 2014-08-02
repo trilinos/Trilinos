@@ -40,6 +40,7 @@
 */
 
 #include "Stokhos_Tpetra_UQ_PCE.hpp"
+#include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 
 #if defined( HAVE_STOKHOS_BELOS )
 #include "Belos_TpetraAdapter_UQ_PCE.hpp"

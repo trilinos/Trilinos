@@ -1,3 +1,4 @@
+#include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 #include "Stokhos_Sacado_Kokkos_UQ_PCE.hpp"
 #include "Stokhos.hpp"
 
@@ -52,6 +53,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   typedef Stokhos::LexographicLess< Stokhos::MultiIndex<int> > order_type;
   typedef Stokhos::TotalOrderBasis<int,double,order_type> product_basis;
   typedef Stokhos::Sparse3Tensor<int,double> Cijk;
+  typedef Stokhos::Quadrature<int,double> quadrature;
   const int dim = cmd.CMD_USE_UQ_DIM;
   const int order = cmd.CMD_USE_UQ_ORDER ;
   Array< RCP<const one_d_basis> > bases(dim);
@@ -66,12 +68,61 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
     Stokhos::create_product_tensor<Device>(*basis, *cijk);
   Kokkos::setGlobalCijkTensor(kokkos_cijk);
 
-  // typedef Stokhos::TensorProductQuadrature<int,double> quadrature;
-  // RCP<const quadrature> quad     = rcp(new quadrature(basis));
-  // const int num_quad_points                 = quad->size();
-  // const Array<double>& quad_weights         = quad->getQuadWeights();
-  // const Array< Array<double> >& quad_points = quad->getQuadPoints();
-  // const Array< Array<double> >& quad_values = quad->getBasisAtQuadPoints();
+  // Create quadrature data used by assembly
+  RCP<const quadrature> quad;
+  if ( cmd.CMD_USE_SPARSE  ) {
+    Stokhos::TotalOrderIndexSet<int> index_set(dim, order);
+    quad =
+      rcp(new Stokhos::SmolyakSparseGridQuadrature<int,double>(basis,
+                                                                 index_set));
+  }
+  else
+    quad = rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
+  const int num_pce                         = basis->size();
+  const int num_quad_points                 = quad->size();
+  const Array<double>& quad_weights         = quad->getQuadWeights();
+  const Array< Array<double> >& quad_points = quad->getQuadPoints();
+  const Array< Array<double> >& quad_values = quad->getBasisAtQuadPoints();
+
+  // Align number of quadrature points to ensemble size used in assembly
+  const int align = 32;
+  const int mask = align-1;
+  const int num_quad_points_aligned = (num_quad_points + mask) & ~mask;
+
+  // Copy quadrature data to view's for assembly kernels
+  typedef Kokkos::Example::FENL::QuadratureData<Device> QD;
+  typedef typename QD::quad_weights_type quad_weights_type;
+  typedef typename QD::quad_values_type quad_values_type;
+  QD qd;
+  qd.weights_view =
+    quad_weights_type( "quad weights", num_quad_points_aligned );
+  qd.points_view =
+    quad_values_type( "quad points", num_quad_points_aligned, dim );
+  qd.values_view =
+    quad_values_type( "quad values", num_quad_points_aligned, num_pce );
+  typename quad_weights_type::HostMirror host_weights_view =
+    Kokkos::create_mirror_view( qd.weights_view );
+  typename quad_values_type::HostMirror host_points_view =
+    Kokkos::create_mirror_view( qd.points_view );
+  typename quad_values_type::HostMirror host_values_view =
+    Kokkos::create_mirror_view( qd.values_view );
+  for (int qp=0; qp<num_quad_points; ++qp) {
+    host_weights_view(qp) = quad_weights[qp];
+    for (int i=0; i<dim; ++i)
+      host_points_view(qp,i) = quad_points[qp][i];
+    for (int i=0; i<num_pce; ++i)
+      host_values_view(qp,i) = quad_values[qp][i];
+  }
+  for (int qp=num_quad_points; qp<num_quad_points_aligned; ++qp) {
+    host_weights_view(qp) = 0.0;
+    for (int i=0; i<dim; ++i)
+      host_points_view(qp,i) = quad_points[num_quad_points-1][i];
+    for (int i=0; i<num_pce; ++i)
+      host_values_view(qp,i) = quad_values[num_quad_points-1][i];
+  }
+  Kokkos::deep_copy( qd.weights_view, host_weights_view );
+  Kokkos::deep_copy( qd.points_view, host_points_view );
+  Kokkos::deep_copy( qd.values_view, host_values_view );
 
   // Print output headers
   const std::vector< size_t > widths =
@@ -109,7 +160,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   // this by finding the index of the multivariate term that is first order in
   // the ith slot, all other orders 0
   Teuchos::Array<double> point(dim, 1.0);
-  Teuchos::Array<double> basis_vals(basis->size());
+  Teuchos::Array<double> basis_vals(num_pce);
   basis->evaluateBases(point, basis_vals);
   for (int i=0; i<dim; ++i) {
     Stokhos::MultiIndex<int> term(dim, 0);
@@ -129,7 +180,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
         cmd.CMD_USE_MEANBASED ,
         nelem , diffusion_coefficient , manufactured_solution ,
         bc_lower_value , bc_upper_value ,
-        false , response);
+        false , response, qd );
   else
     perf = fenl< Scalar , Device , BoxElemPart::ElemLinear >
       ( comm , node , cmd.CMD_PRINT , cmd.CMD_USE_TRIALS ,
@@ -137,20 +188,19 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
         cmd.CMD_USE_MEANBASED ,
         nelem , diffusion_coefficient , manufactured_solution ,
         bc_lower_value , bc_upper_value ,
-        false , response);
+        false , response , qd );
 
   // std::cout << "newton count = " << perf.newton_iter_count
   //           << " cg count = " << perf.cg_iter_count << std::endl;
-  int pce_size = basis->size();
-  perf.uq_count = pce_size;
-  perf.newton_iter_count *= pce_size;
-  perf.cg_iter_count *= pce_size;
-  perf.map_ratio *= pce_size;
-  perf.fill_node_set *= pce_size;
-  perf.scan_node_count *= pce_size;
-  perf.fill_graph_entries *= pce_size;
-  perf.sort_graph_entries *= pce_size;
-  perf.fill_element_graph *= pce_size;
+  perf.uq_count = num_quad_points;
+  perf.newton_iter_count *= num_quad_points;
+  perf.cg_iter_count *= num_pce;
+  perf.map_ratio *= num_pce;
+  perf.fill_node_set *= num_pce;
+  perf.scan_node_count *= num_pce;
+  perf.fill_graph_entries *= num_pce;
+  perf.sort_graph_entries *= num_pce;
+  perf.fill_element_graph *= num_pce;
 
   // Compute response mean, variance
   perf.response_mean = response.mean();

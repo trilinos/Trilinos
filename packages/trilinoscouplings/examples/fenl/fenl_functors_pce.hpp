@@ -252,6 +252,291 @@ public:
 
 }; /* ResponseComputation */
 
+template< typename DeviceType ,
+          BoxElemPart::ElemOrder Order ,
+          typename CoordinateMap ,
+          typename StorageType ,
+          typename OrdinalType ,
+          typename MemoryTraits ,
+          typename SizeType >
+class ElementComputation<
+  Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap >,
+  Kokkos::CrsMatrix< Sacado::UQ::PCE<StorageType> , OrdinalType , DeviceType , MemoryTraits , SizeType >,
+  ElementComputationKLCoefficient< Sacado::UQ::PCE<StorageType>, typename StorageType::value_type, DeviceType> >
+{
+public:
+
+  typedef Kokkos::Example::BoxElemFixture< DeviceType, Order, CoordinateMap >  mesh_type ;
+  typedef Kokkos::Example::HexElement_Data< mesh_type::ElemNode >              element_data_type ;
+  typedef Sacado::UQ::PCE<StorageType> ScalarType;
+  typedef ElementComputationKLCoefficient< ScalarType, typename StorageType::value_type, DeviceType> CoeffFunctionType;
+
+  //------------------------------------
+
+  typedef DeviceType   device_type ;
+  typedef ScalarType   scalar_type ;
+
+  typedef Kokkos::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType >  sparse_matrix_type ;
+  typedef typename sparse_matrix_type::StaticCrsGraphType sparse_graph_type ;
+  typedef typename sparse_matrix_type::values_type matrix_values_type ;
+  typedef Kokkos::View< scalar_type* , Kokkos::LayoutLeft, device_type > vector_type ;
+
+  //------------------------------------
+
+  typedef typename scalar_type::value_type scalar_value_type;
+  typedef typename scalar_type::ordinal_type ordinal_type;
+  static const int EnsembleSize = 32;
+  typedef Stokhos::StaticFixedStorage<ordinal_type,scalar_value_type,EnsembleSize,DeviceType> ensemble_storage_type;
+  typedef Sacado::MP::Vector<ensemble_storage_type> ensemble_scalar_type;
+  typedef ElementComputationKLCoefficient< ensemble_scalar_type, scalar_value_type, DeviceType > scalar_coeff_function_type;
+  typedef ElementComputation<
+    Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap >,
+    Kokkos::CrsMatrix< ensemble_scalar_type , OrdinalType , DeviceType , MemoryTraits , SizeType >,
+    scalar_coeff_function_type > scalar_element_computation_type;
+  typedef typename scalar_element_computation_type::sparse_matrix_type scalar_sparse_matrix_type ;
+  typedef typename scalar_sparse_matrix_type::values_type scalar_matrix_values_type ;
+  typedef typename scalar_element_computation_type::vector_type scalar_vector_type ;
+  typedef typename scalar_element_computation_type::elem_graph_type elem_graph_type;
+
+  //------------------------------------
+
+  template < typename pce_view_type,
+             typename scalar_view_type,
+             typename quad_values_type >
+  struct EvaluatePCE {
+    typedef typename pce_view_type::device_type device_type;
+    typedef typename pce_view_type::array_type  pce_array_type;
+
+    const pce_array_type   pce_view;
+    const scalar_view_type scalar_view;
+    const quad_values_type quad_values;
+    unsigned               qp;
+    const unsigned         num_pce;
+
+    EvaluatePCE( const pce_view_type&    arg_pce_view,
+                 const scalar_view_type& arg_scalar_view,
+                 const quad_values_type& arg_quad_values) :
+      pce_view( arg_pce_view ),
+      scalar_view( arg_scalar_view ),
+      quad_values( arg_quad_values ),
+      qp( 0 ),
+      num_pce( arg_pce_view.sacado_size() ) {}
+
+    void apply(const unsigned arg_qp) {
+      qp = arg_qp;
+      Kokkos::parallel_for( pce_view.dimension_1(), *this );
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator() ( const unsigned row ) const {
+      ensemble_scalar_type s = 0.0;
+      for (unsigned pce=0; pce<num_pce; ++pce)
+        for (int i=0; i<EnsembleSize; ++i)
+          s.fastAccessCoeff(i) += pce_view(pce,row)*quad_values(qp+i,pce);
+      scalar_view(row) = s;
+    }
+  };
+
+  template < typename pce_view_type,
+             typename scalar_view_type,
+             typename quad_values_type,
+             typename quad_weights_type >
+  struct AssemblePCE {
+    typedef typename pce_view_type::device_type device_type;
+    typedef typename pce_view_type::array_type  pce_array_type;
+
+    const pce_array_type    pce_view;
+    const scalar_view_type  scalar_view;
+    const quad_values_type  quad_values;
+    const quad_weights_type quad_weights;
+    unsigned                qp;
+    const unsigned          num_pce;
+
+    AssemblePCE( const pce_view_type&     arg_pce_view,
+                 const scalar_view_type&  arg_scalar_view,
+                 const quad_values_type&  arg_quad_values,
+                 const quad_weights_type& arg_quad_weights ) :
+      pce_view( arg_pce_view ),
+      scalar_view( arg_scalar_view ),
+      quad_values( arg_quad_values ),
+      quad_weights( arg_quad_weights ),
+      qp( 0 ),
+      num_pce( arg_pce_view.sacado_size() ) {}
+
+    void apply( const unsigned arg_qp ) {
+      qp = arg_qp;
+      Kokkos::parallel_for( pce_view.dimension_1(), *this );
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator() ( const unsigned row ) const {
+      for (unsigned pce=0; pce<num_pce; ++pce) {
+        for (int i=0; i<EnsembleSize; ++i)
+          pce_view(pce,row) +=
+            quad_weights(qp+i)*scalar_view(row).fastAccessCoeff(i)*quad_values(qp+i,pce);
+      }
+    }
+  };
+
+  template < typename pce_view_type,
+             typename scalar_view_type,
+             typename quad_values_type,
+             typename quad_weights_type >
+  struct AssembleRightPCE {
+    typedef typename pce_view_type::device_type device_type;
+    typedef typename pce_view_type::array_type  pce_array_type;
+
+    const pce_array_type    pce_view;
+    const scalar_view_type  scalar_view;
+    const quad_values_type  quad_values;
+    const quad_weights_type quad_weights;
+    unsigned                qp;
+    const unsigned          num_pce;
+
+    AssembleRightPCE( const pce_view_type&     arg_pce_view,
+                      const scalar_view_type&  arg_scalar_view,
+                      const quad_values_type&  arg_quad_values,
+                      const quad_weights_type& arg_quad_weights ) :
+      pce_view( arg_pce_view ),
+      scalar_view( arg_scalar_view ),
+      quad_values( arg_quad_values ),
+      quad_weights( arg_quad_weights ),
+      qp( 0 ),
+      num_pce( arg_pce_view.sacado_size() ) {}
+
+    void apply( const unsigned arg_qp ) {
+      qp = arg_qp;
+      Kokkos::parallel_for( pce_view.dimension_0(), *this );
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator() ( const unsigned row ) const {
+      for (unsigned pce=0; pce<num_pce; ++pce) {
+        for (int i=0; i<EnsembleSize; ++i)
+          pce_view(row,pce) +=
+            quad_weights(qp+i)*scalar_view(row).fastAccessCoeff(i)*quad_values(qp+i,pce);
+      }
+    }
+  };
+
+  //------------------------------------
+  // Computational data:
+
+  const vector_type         solution ;
+  const vector_type         residual ;
+  const sparse_matrix_type  jacobian ;
+
+  const scalar_vector_type              scalar_solution ;
+  const scalar_vector_type              scalar_residual ;
+  const scalar_sparse_matrix_type       scalar_jacobian ;
+  const scalar_coeff_function_type      scalar_diffusion_coefficient;
+  const scalar_element_computation_type scalar_element_computation ;
+
+  typedef QuadratureData<DeviceType> QD;
+  typename QD::quad_weights_type quad_weights;
+  typename QD::quad_values_type quad_points;
+  typename QD::quad_values_type quad_values;
+
+  ElementComputation( const ElementComputation & rhs )
+    : solution( rhs.solution )
+    , residual( rhs.residual )
+    , jacobian( rhs.jacobian )
+    , scalar_solution( rhs.scalar_solution )
+    , scalar_residual( rhs.scalar_residual )
+    , scalar_jacobian( rhs.scalar_jacobian )
+    , scalar_diffusion_coefficient( rhs.scalar_diffusion_coefficient )
+    , scalar_element_computation( rhs.scalar_element_computation )
+    , quad_weights( rhs.quad_weights )
+    , quad_points( rhs.quad_points )
+    , quad_values( rhs.quad_values )
+    {}
+
+  // If the element->sparse_matrix graph is provided then perform atomic updates
+  // Otherwise fill per-element contributions for subequent gather-add into a residual and jacobian.
+  ElementComputation( const mesh_type          & arg_mesh ,
+                      const CoeffFunctionType  & arg_coeff_function ,
+                      const vector_type        & arg_solution ,
+                      const elem_graph_type    & arg_elem_graph ,
+                      const sparse_matrix_type & arg_jacobian ,
+                      const vector_type        & arg_residual ,
+                      const Kokkos::DeviceConfig arg_dev_config ,
+                      const QD& qd )
+    : solution( arg_solution )
+    , residual( arg_residual )
+    , jacobian( arg_jacobian )
+    , scalar_solution( "scalar_solution", solution.dimension_0() )
+    , scalar_residual( "scalar_residual", residual.dimension_0() )
+    , scalar_jacobian( "scalar_jacobian", jacobian.graph )
+    , scalar_diffusion_coefficient( arg_coeff_function.m_mean,
+                                    arg_coeff_function.m_variance,
+                                    arg_coeff_function.m_corr_len,
+                                    arg_coeff_function.m_num_rv )
+    , scalar_element_computation( arg_mesh,
+                                  scalar_diffusion_coefficient,
+                                  scalar_solution,
+                                  arg_elem_graph,
+                                  scalar_jacobian,
+                                  scalar_residual,
+                                  arg_dev_config )
+    , quad_weights( qd.weights_view )
+    , quad_points( qd.points_view )
+    , quad_values( qd.values_view )
+    {
+      // Set global vector size -- this is mandatory
+      Kokkos::global_sacado_mp_vector_size = EnsembleSize;
+    }
+
+  //------------------------------------
+
+  void apply() const
+  {
+    typedef EvaluatePCE< vector_type, scalar_vector_type, typename QD::quad_values_type> evaluate_solution_type;
+    typedef AssemblePCE< vector_type, scalar_vector_type, typename QD::quad_values_type, typename QD::quad_weights_type> assemble_residual_type;
+    typedef AssembleRightPCE< matrix_values_type, scalar_matrix_values_type, typename QD::quad_values_type, typename QD::quad_weights_type> assemble_jacobian_type;
+
+    typedef scalar_coeff_function_type KL;
+    typedef typename KL::RandomVariableView RV;
+    typedef typename RV::HostMirror HRV;
+    RV rv = scalar_diffusion_coefficient.getRandomVariables();
+    HRV hrv = Kokkos::create_mirror_view(rv);
+
+    // Note:  num_quad_points is aligned to the ensemble size to make
+    // things easier
+    const unsigned num_quad_points = quad_points.dimension_0();
+    const unsigned dim = quad_points.dimension_1();
+
+    evaluate_solution_type evaluate_pce(solution, scalar_solution, quad_values);
+    assemble_residual_type assemble_res(residual, scalar_residual,
+                                        quad_values, quad_weights);
+    assemble_jacobian_type assemble_jac(jacobian.values, scalar_jacobian.values,
+                                        quad_values, quad_weights);
+
+    for (unsigned qp=0; qp<num_quad_points; qp+=EnsembleSize) {
+      // Zero out residual, and Jacobian
+      Kokkos::deep_copy( scalar_residual, 0.0 );
+      Kokkos::deep_copy( scalar_jacobian.values, 0.0 );
+
+      // Evaluate PCE solution at quadrature point
+      evaluate_pce.apply(qp);
+
+      // Set quadrature point in diffusion coefficient
+      for (unsigned i=0; i<dim; ++i)
+        for (unsigned j=0; j<EnsembleSize; ++j)
+          hrv(i).fastAccessCoeff(j) = quad_points(qp+j,i);
+      Kokkos::deep_copy( rv, hrv );
+
+      // Compute element residual/Jacobian at quadrature point
+      scalar_element_computation.apply();
+
+      // Assemble element residual/Jacobian into PCE residual/Jacobian
+      assemble_res.apply(qp);
+      assemble_jac.apply(qp);
+    }
+  }
+
+  //------------------------------------
+}; /* ElementComputation */
+
 } /* namespace FENL */
 } /* namespace Example */
 } /* namespace Kokkos  */

@@ -141,6 +141,18 @@ struct Perf {
   }
 };
 
+// Struct for storing UQ quadrature data
+template <typename Device>
+struct QuadratureData {
+  typedef Kokkos::View<double*,  Kokkos::LayoutLeft, Device> quad_weights_type;
+  typedef Kokkos::View<double**, Kokkos::LayoutLeft, Device> quad_values_type;
+  quad_weights_type weights_view;
+  quad_values_type points_view;
+  quad_values_type values_view;
+
+  QuadratureData() {}
+};
+
 //----------------------------------------------------------------------------
 
 // Traits class for creating strided local views for embedded ensemble-based,
@@ -192,7 +204,8 @@ Perf fenl(
   const double bc_lower_value ,
   const double bc_upper_value ,
   const bool check_solution ,
-  Scalar& response );
+  Scalar& response,
+  const QuadratureData<Device>& qd = QuadratureData<Device>() );
 
 //----------------------------------------------------------------------------
 // Manufactured Solutions
@@ -347,8 +360,6 @@ public:
   typedef typename local_rv_view_traits::local_view_type  local_rv_view_type;
   typedef typename local_rv_view_traits::local_value_type local_scalar_type;
 
-private:
-
   const MeshScalar m_mean;        // Mean of random field
   const MeshScalar m_variance;    // Variance of random field
   const MeshScalar m_corr_len;    // Correlation length of random field
@@ -377,7 +388,7 @@ public:
   void setRandomVariables( const RandomVariableView& rv) { m_rv = rv; }
 
   KOKKOS_INLINE_FUNCTION
-  RandomVariableView getRandomVariables() { return m_rv; }
+  RandomVariableView getRandomVariables() const { return m_rv; }
 
   KOKKOS_INLINE_FUNCTION
   local_scalar_type operator() ( const MeshScalar x,
