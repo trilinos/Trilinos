@@ -100,22 +100,19 @@ namespace MueLu {
     //@}
 
   private:
-     LocalOrdinal FindCpts(LocalOrdinal const PtsPerLine, LocalOrdinal const CoarsenRate, LocalOrdinal const Thin, LocalOrdinal **LayerCpts) const;
-     LocalOrdinal MakeSemiCoarsenP(LocalOrdinal const Ntotal, LocalOrdinal const nz, LocalOrdinal const CoarsenRate, LocalOrdinal const LayerId[],
-                     LocalOrdinal const VertLineId[], LocalOrdinal const DofsPerNode, RCP<Matrix>& Amat,
-                     RCP<Matrix>& P, RCP<const Map>& coarseMap) const;
+    LO FindCpts(LO const PtsPerLine, LO const CoarsenRate, LO const Thin, LO **LayerCpts) const;
+    LO MakeSemiCoarsenP(LO const Ntotal, LO const nz, LO const CoarsenRate, LO const LayerId[],
+                                  LO const VertLineId[], LO const DofsPerNode, RCP<Matrix>& Amat,
+                                  RCP<Matrix>& P, RCP<const Map>& coarseMap) const;
 
 
-    LocalOrdinal ML_compute_line_info(LocalOrdinal LayerId[], LocalOrdinal VertLineId[],
-                                    LocalOrdinal Ndof, LocalOrdinal DofsPerNode,
-                                    LocalOrdinal MeshNumbering, LocalOrdinal NumNodesPerVertLine,
-                                    Scalar *xvals, Scalar *yvals, Scalar *zvals, 
-                                    const Teuchos::Comm<int>& comm ) const ;
+    LO ML_compute_line_info(LO LayerId[], LO VertLineId[],
+                                      LO Ndof, LO DofsPerNode,
+                                      LO MeshNumbering, LO NumNodesPerVertLine,
+                                      SC *xvals, SC *yvals, SC *zvals,
+                                      const Teuchos::Comm<int>& comm ) const ;
 
-    void ML_az_dsort2(Scalar dlist[], LocalOrdinal N, LocalOrdinal list2[]) const;
-
-
-
+    void ML_az_dsort2(SC dlist[], LO N, LO list2[]) const;
 
   }; //class SemiCoarsenPFactory
 
