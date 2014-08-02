@@ -36,6 +36,42 @@ namespace PyTrilinos
 
 ////////////////////////////////////////////////////////////////////////
 
+PyObject *
+convertToPySlice(const Domi::Slice & domiSlice)
+{
+  PyObject * pyStart = NULL;
+  PyObject * pyStop  = NULL;
+  PyObject * pyStep  = NULL;
+  PyObject * pySlice;
+  if (domiSlice.start() != Domi::Slice::Default)
+    pyStart = PyInt_FromLong((long)domiSlice.start());
+  if (domiSlice.stop()  != Domi::Slice::Default)
+    pyStop = PyInt_FromLong((long)domiSlice.stop());
+  if (domiSlice.step()  != Domi::Slice::Default)
+    pyStep = PyInt_FromLong((long)domiSlice.step());
+  return PySlice_New(pyStart, pyStop, pyStep);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+Domi::Slice
+convertToDomiSlice(PySliceObject * pySlice,
+                   Py_ssize_t length)
+{
+  Py_ssize_t pyStart  = 0;
+  Py_ssize_t pyStop   = 0;
+  Py_ssize_t pyStep   = 0;
+  Py_ssize_t sliceLen = 0;
+  int rcode = PySlice_GetIndicesEx(pySlice, length , &pyStart ,
+                                   &pyStop, &pyStep, &sliceLen);
+  Domi::Slice domiSlice((Domi::dim_type) pyStart,
+                        (Domi::dim_type) pyStop ,
+                        (Domi::dim_type) pyStep );
+  return domiSlice;
+}
+
+////////////////////////////////////////////////////////////////////////
+
 Teuchos::RCP< const Domi::MDComm >
 convertToMDComm(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
                 const DistArrayProtocol & distarray)
@@ -120,42 +156,6 @@ convertToMDMap(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
                                         myGlobalBounds,
                                         padding,
                                         layout));
-}
-
-////////////////////////////////////////////////////////////////////////
-
-PyObject *
-convertToPySlice(const Domi::Slice domiSlice)
-{
-  PyObject * pyStart = NULL;
-  PyObject * pyStop  = NULL;
-  PyObject * pyStep  = NULL;
-  PyObject * pySlice;
-  if (domiSlice.start() != Domi::Slice::Default)
-    pyStart = PyInt_FromLong((long)domiSlice.start());
-  if (domiSlice.stop()  != Domi::Slice::Default)
-    pyStop = PyInt_FromLong((long)domiSlice.stop());
-  if (domiSlice.step()  != Domi::Slice::Default)
-    pyStep = PyInt_FromLong((long)domiSlice.step());
-  return PySlice_New(pyStart, pyStop, pyStep);
-}
-
-////////////////////////////////////////////////////////////////////////
-
-Domi::Slice
-convertToDomiSlice(PySliceObject * pySlice,
-                   Py_ssize_t length)
-{
-  Py_ssize_t pyStart  = 0;
-  Py_ssize_t pyStop   = 0;
-  Py_ssize_t pyStep   = 0;
-  Py_ssize_t sliceLen = 0;
-  int rcode = PySlice_GetIndicesEx(pySlice, length , &pyStart ,
-                                   &pyStop, &pyStep, &sliceLen);
-  Domi::Slice domiSlice((Domi::dim_type) pyStart,
-                        (Domi::dim_type) pyStop ,
-                        (Domi::dim_type) pyStep );
-  return domiSlice;
 }
 
 ////////////////////////////////////////////////////////////////////////
