@@ -593,27 +593,89 @@ MDMap = MDMap_default
 %template(MDVector_float ) Domi::MDVector< float >;
 %teuchos_rcp(Domi::MDVector< double >)
 %template(MDVector_double) Domi::MDVector< double >;
+
+////////////////////////////
+// from_DistArray support //
+////////////////////////////
+%inline
+{
+template< class Scalar >
+Teuchos::RCP< Domi::MDVector< Scalar > >
+from_DistArray(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
+               PyObject * distArrayObj)
+{
+  if (!PyObject_HasAttrString(distArrayObj, "__distarray__"))
+  {
+    PyErr_SetString(PyExc_ValueError, "Object does not have '__distarray__'"
+                    " method");
+    throw PyTrilinos::PythonException();
+  }
+  PyObject * distarray = PyObject_GetAttrString(distArrayObj, "__distarray__");
+  PyTrilinos::DistArrayProtocol dap(distarray);
+  return PyTrilinos::convertToMDVector< Scalar >(teuchosComm, dap);
+}
+}
+%template(from_DistArray_int   ) from_DistArray< int    >;
+%template(from_DistArray_long  ) from_DistArray< long   >;
+%template(from_DistArray_float ) from_DistArray< float  >;
+%template(from_DistArray_double) from_DistArray< double >;
+%pythoncode
+{
+def from_DistArray(comm, distarray):
+    dtype = distarray.__distarray__["buffer"].dtype
+    if dtype.type is numpy.int32:
+        return from_DistArray_int(comm, distarray)
+    elif dtype.type is numpy.int64:
+        return from_DistArray_long(comm, distarray)
+    elif dtype.type is numpy.float32:
+        return from_DistArray_float(comm, distarray)
+    elif dtype.type is numpy.float64:
+        return from_DistArray_double(comm, distarray)
+    else:
+        raise TypeError("Unsupported or unrecognized dtype = %s" % str(dtype))
+}
+
 %pythoncode
 {
 class MDVector(object):
-    def __init__(self, mdMap, **kwargs):
+    def __init__(self, *args, **kwargs):
         dtype       = kwargs.get("dtype"      , "int64")
         zeroOut     = kwargs.get("zeroOut"    , False  )
         leadingDim  = kwargs.get("leadingDim" , 0      )
         trailingDim = kwargs.get("trailingDim", 0      )
         if type(dtype) == str:
             dtype = numpy.dtype(dtype)
-        if dtype.type is numpy.int32:
-            self._vector = MDVector_int(mdMap, leadingDim, trailingDim, zeroOut)
-        elif dtype.type is numpy.int64:
-            self._vector = MDVector_long(mdMap, leadingDim, trailingDim, zeroOut)
-        elif dtype.type is numpy.float32:
-            self._vector = MDVector_float(mdMap, leadingDim, trailingDim, zeroOut)
-        elif dtype.type is numpy.float64:
-            self._vector = MDVector_double(mdMap, leadingDim, trailingDim, zeroOut)
-        else:
-            raise TypeError("Unsupported or unrecognized dtype = %s" %
+
+        # Factory for arg is MDMap
+        if isinstance(args[0], MDMap):
+            if dtype.type is numpy.int32:
+                self._vector = MDVector_int(args[0],
+                                            leadingDim,
+                                            trailingDim,
+                                            zeroOut)
+            elif dtype.type is numpy.int64:
+                self._vector = MDVector_long(args[0],
+                                             leadingDim,
+                                             trailingDim,
+                                             zeroOut)
+            elif dtype.type is numpy.float32:
+                self._vector = MDVector_float(args[0],
+                                              leadingDim,
+                                              trailingDim,
+                                              zeroOut)
+            elif dtype.type is numpy.float64:
+                self._vector = MDVector_double(args[0],
+                                               leadingDim,
+                                               trailingDim,
+                                               zeroOut)
+            else:
+                raise TypeError("Unsupported or unrecognized dtype = %s" %
                             str(dtype))
+
+        # Factory for arg is DistArray
+        elif hasattr(arg, '__distarray__'):
+            self._vector = from_DistArray(*args,dtype=dtype)
+
         self.__dtype = dtype
 
     def __getattribute__(self, name):
