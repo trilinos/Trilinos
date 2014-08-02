@@ -11515,12 +11515,12 @@ Each repository entry can have a summary message or not (i.e. use two or three
 lines per repo in the file).  A compatible repo version file can be generated
 with this script using, for example, using:
 
-   $ egdist log -1 --pretty=format:&quot;%h [%ad] &lt;%ae&gt;%n%s&quot; \
+   $ egdist --dist-no-color log -1 --pretty=format:&quot;%h [%ad] &lt;%ae&gt;%n%s&quot; \
     | grep -v &quot;^$&quot; &amp;&gt; RepoVersion.txt
 
 using three lines per repo, or just:
 
-   $ egdist log -1 --pretty=format:&quot;%h [%ad] &lt;%ae&gt;&quot; \
+   $ egdist --dist-no-color log -1 --pretty=format:&quot;%h [%ad] &lt;%ae&gt;&quot; \
     | grep -v &quot;^$&quot; &amp;&gt; RepoVersion.txt
 
 using two lines per repo in the output file.
