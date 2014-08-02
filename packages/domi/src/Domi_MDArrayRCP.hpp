@@ -181,7 +181,8 @@ public:
    *
    * \param null_arg [in] Optional null pointer specifier
    */
-  inline MDArrayRCP(Teuchos::ENull null_arg = Teuchos::null);
+  inline
+  MDArrayRCP(Teuchos::ENull null_arg = Teuchos::null);
 
   /** \brief Constructor with <tt>Teuchos::ArrayView</tt> source,
    *  dimensions, and optional storage order flag.
@@ -199,9 +200,10 @@ public:
    * The <tt>MDArrayRCP</tt> does not take ownership of the data
    * buffer.
    */
-  inline MDArrayRCP(const Teuchos::ArrayView< T > & array,
-		    const Teuchos::ArrayView< dim_type > & dims,
-		    Layout layout = DEFAULT_ORDER);
+  inline
+  MDArrayRCP(const Teuchos::ArrayView< T > & array,
+             const Teuchos::ArrayView< dim_type > & dims,
+             Layout layout = DEFAULT_ORDER);
 
   /** \brief Constructor with dimensions, default value and optional
    *  storage order flag.
@@ -218,9 +220,10 @@ public:
    *
    * This constructor allocates new memory and takes ownership of it.
    */
-  inline explicit MDArrayRCP(const Teuchos::ArrayView< dim_type > & dims,
-			     const_reference val = T(),
-			     Layout layout = DEFAULT_ORDER);
+  inline explicit
+  MDArrayRCP(const Teuchos::ArrayView< dim_type > & dims,
+             const_reference val = T(),
+             Layout layout = DEFAULT_ORDER);
 
   /** \brief Constructor with dimensions and storage order flag.
    *
@@ -234,14 +237,42 @@ public:
    *
    * This constructor allocates new memory and takes ownership of it.
    */
-  inline explicit MDArrayRCP(const Teuchos::ArrayView< dim_type > & dims,
-			     Layout layout);
+  inline explicit
+  MDArrayRCP(const Teuchos::ArrayView< dim_type > & dims,
+             Layout layout);
+
+  /** \brief Low-level view constructor
+   *
+   * \param dims [in] An array that defines the lengths of each
+   *        dimension.  The most convenient way to specify dimensions
+   *        is with a Tuple returned by the non-member
+   *        <tt>Teuchos::tuple<T>()</tt> function.
+   *
+   * \param strides [in] An array that defines the data strides of
+   *        each dimension.  The most convenient way to specify
+   *        strides is with a Tuple returned by the non-member
+   *        <tt>Teuchos::tuple<T>()</tt> function.
+   *
+   * \param data [in] a pointer to the data buffer used by the
+   *        MDArrayRCP.  The MDArrayRCP will not take ownership of the
+   *        data.
+   *
+   * \param layout [in] Specifies the order data elements are stored
+   *        in memory
+   *
+   */
+  inline explicit
+  MDArrayRCP(const Teuchos::ArrayView< dim_type > & dims,
+             const Teuchos::ArrayView< size_type > & strides,
+             T * data,
+             Layout layout = DEFAULT_ORDER);
 
   /** \brief Shallow copy constructor
    *
    * \param r_ptr [in] Source reference counted pointer
    */
-  inline MDArrayRCP(const MDArrayRCP< T > & r_ptr);
+  inline
+  MDArrayRCP(const MDArrayRCP< T > & r_ptr);
 
   /** \brief Deep copy constructor
    *
@@ -889,6 +920,21 @@ MDArrayRCP< T >::MDArrayRCP(const Teuchos::ArrayView< dim_type > & dims,
   _array(computeSize(dims)),
   _layout(layout),
   _ptr(_array.getRawPtr())
+{
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+MDArrayRCP< T >::MDArrayRCP(const Teuchos::ArrayView< dim_type > & dims,
+                            const Teuchos::ArrayView< size_type > & strides,
+                            T * data,
+                            Layout layout) :
+  _dimensions(dims),
+  _strides(strides),
+  _array(data, 0, computeSize(dims, strides), false),
+  _layout(layout),
+  _ptr(data)
 {
 }
 

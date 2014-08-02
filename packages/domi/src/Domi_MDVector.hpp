@@ -219,6 +219,16 @@ public:
   MDVector(const Teuchos::RCP< const MDMap< Node > > & mdMap,
            const MDArrayView< Scalar > & source);
 
+  /** \brief Constructor with managed array object (view)
+   *
+   * \param mdMap [in] MDMap that describes the domain decomposition
+   *        of this MDVector
+   *
+   * \param source [in] memory-managed multi-dimensional array
+   */
+  MDVector(const Teuchos::RCP< const MDMap< Node > > & mdMap,
+           const MDArrayRCP< Scalar > & source);
+
   /** \brief Copy constructor
    *
    * \param source [in] source MDVector
@@ -1280,6 +1290,38 @@ MDVector(const Teuchos::RCP< const MDMap< Node > > & mdMap,
          const MDArrayView< Scalar > & source) :
   _mdMap(mdMap),
   _mdArrayRcp(source),
+  _mdArrayView(_mdArrayRcp()),
+  _nextAxis(0),
+  _sendMessages(),
+  _recvMessages(),
+  _requests()
+{
+  setObjectLabel("Domi::MDVector");
+  int numDims = _mdMap->numDims();
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    numDims != _mdArrayRcp.numDims(),
+    InvalidArgument,
+    "MDMap and source array do not have the same number of dimensions");
+
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      _mdMap->getLocalDim(axis) != _mdArrayRcp.dimension(axis),
+      InvalidArgument,
+      "Axis " << axis << ": MDMap dimension = " << _mdMap->getLocalDim(axis)
+      << ", MDArray dimension = " << _mdArrayRcp.dimension(axis));
+  }
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class Node >
+MDVector< Scalar, Node >::
+MDVector(const Teuchos::RCP< const MDMap< Node > > & mdMap,
+         const MDArrayRCP< Scalar > & mdArrayRcp) :
+  _mdMap(mdMap),
+  _mdArrayRcp(mdArrayRcp),
   _mdArrayView(_mdArrayRcp()),
   _nextAxis(0),
   _sendMessages(),
