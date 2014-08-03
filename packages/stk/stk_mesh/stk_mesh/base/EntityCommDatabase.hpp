@@ -72,6 +72,8 @@ public:
   void comm_clear(const EntityKey & key );
   bool change_owner_rank(const EntityKey& key, int owner);
 
+  const EntityComm* entity_comm(const EntityKey& key) const;
+
 private:
   bool cached_find(const EntityKey& key) const;
   void insert(const EntityKey& key);

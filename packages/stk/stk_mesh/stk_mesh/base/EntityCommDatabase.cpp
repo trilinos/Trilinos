@@ -275,6 +275,14 @@ PairIterEntityComm EntityCommDatabase::comm( const EntityKey & key ) const
   return PairIterEntityComm(comm_map);
 }
 
+const EntityComm* EntityCommDatabase::entity_comm( const EntityKey & key ) const
+{
+  if (!cached_find(key)) return NULL;
+
+  const EntityComm& entity_comm = m_last_lookup->second;
+  return &entity_comm;
+}
+
 
 PairIterEntityComm EntityCommDatabase::comm( const EntityKey & key, const Ghosting & sub ) const
 {
