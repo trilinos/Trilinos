@@ -124,6 +124,36 @@ string trim_copy(
     return trim_left_copy( trim_right_copy( s, delimiters ), delimiters );
 }
 
+template <typename Adapter>
+int run_pointAssign_tests(
+  Zoltan2::PartitioningProblem<Adapter> *problem,
+  int coord_dim)
+{
+    // pointAssign tests
+    typename Adapter::scalar_t pointDrop[coord_dim];
+    typename Adapter::part_t part;
+
+    for (int i = 0; i < coord_dim; i++) pointDrop[i] = 0.;
+    try {
+      part = problem->pointAssign(coord_dim, pointDrop);
+    }
+    CATCH_EXCEPTIONS("pointAssign -- Origin");
+
+    for (int i = 0; i < coord_dim; i++) pointDrop[i] = -100.+i;
+    try {
+      part = problem->pointAssign(coord_dim, pointDrop);
+    }
+    CATCH_EXCEPTIONS("pointAssign -- Negative Point");
+    
+    for (int i = 0; i < coord_dim; i++) pointDrop[i] = i*5;
+    try {
+      part = problem->pointAssign(coord_dim, pointDrop);
+    }
+    CATCH_EXCEPTIONS("pointAssign -- i*5");
+
+    return 0;
+}
+
 void readGeoGenParams(string paramFileName, Teuchos::ParameterList &geoparams, const RCP<const Teuchos::Comm<int> > & comm){
     std::string input = "";
     char inp[25000];
@@ -192,31 +222,30 @@ int GeometricGenInterface(const RCP<const Teuchos::Comm<int> > & comm,
         std::string paramFile, std::string pqParts,
         std::string pfname,
         int k,
-
-
         int migration_check_option,
         int migration_all_to_all_type,
         scalar_t migration_imbalance_cut_off,
         int migration_processor_assignment_type,
         int migration_doMigration_type
-
 )
 {
-
     Teuchos::ParameterList geoparams("geo params");
     readGeoGenParams(paramFile, geoparams, comm);
-    GeometricGen::GeometricGenerator<scalar_t, lno_t, gno_t, node_t> *gg = new GeometricGen::GeometricGenerator<scalar_t, lno_t, gno_t, node_t>(geoparams,comm);
+    GeometricGen::GeometricGenerator<scalar_t, lno_t, gno_t, node_t> *gg = 
+    new GeometricGen::GeometricGenerator<scalar_t,lno_t,gno_t,node_t>(geoparams,
+                                                                      comm);
 
     int coord_dim = gg->getCoordinateDimension();
     int numWeightsPerCoord = gg->getNumWeights();
-    lno_t numLocalPoints = gg->getNumLocalCoords(); gno_t numGlobalPoints = gg->getNumGlobalCoords();
+    lno_t numLocalPoints = gg->getNumLocalCoords(); 
+    gno_t numGlobalPoints = gg->getNumGlobalCoords();
     scalar_t **coords = new scalar_t * [coord_dim];
     for(int i = 0; i < coord_dim; ++i){
         coords[i] = new scalar_t[numLocalPoints];
     }
     gg->getLocalCoordinatesCopy(coords);
     scalar_t **weight = NULL;
-    if(numWeightsPerCoord){
+    if (numWeightsPerCoord) {
         weight= new scalar_t * [numWeightsPerCoord];
         for(int i = 0; i < numWeightsPerCoord; ++i){
             weight[i] = new scalar_t[numLocalPoints];
@@ -227,44 +256,47 @@ int GeometricGenInterface(const RCP<const Teuchos::Comm<int> > & comm,
     delete gg;
 
     RCP<Tpetra::Map<lno_t, gno_t, node_t> > mp = rcp(
-            new Tpetra::Map<lno_t, gno_t, node_t> (numGlobalPoints, numLocalPoints, 0, comm));
+                new Tpetra::Map<lno_t, gno_t, node_t>(numGlobalPoints,
+                                                      numLocalPoints, 0, comm));
 
     Teuchos::Array<Teuchos::ArrayView<const scalar_t> > coordView(coord_dim);
     for (int i=0; i < coord_dim; i++){
         if(numLocalPoints > 0){
             Teuchos::ArrayView<const scalar_t> a(coords[i], numLocalPoints);
             coordView[i] = a;
-        } else{
+        }
+        else {
             Teuchos::ArrayView<const scalar_t> a;
             coordView[i] = a;
         }
     }
 
-    RCP< Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >tmVector = RCP< Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >(
-            new Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t>( mp, coordView.view(0, coord_dim), coord_dim));
+    RCP<tMVector_t> tmVector = RCP<tMVector_t>(new 
+                                   tMVector_t(mp, coordView.view(0, coord_dim),
+                                              coord_dim));
 
-
-    RCP<const tMVector_t> coordsConst = Teuchos::rcp_const_cast<const tMVector_t>(tmVector);
+    RCP<const tMVector_t> coordsConst = 
+                          Teuchos::rcp_const_cast<const tMVector_t>(tmVector);
     vector<const scalar_t *> weights;
     if(numWeightsPerCoord){
         for (int i = 0; i < numWeightsPerCoord;++i){
-            weights.push_back(weight[i]);
+          weights.push_back(weight[i]);
         }
     }
     vector <int> stride;
 
-  typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> inputAdapter_t;
-  //inputAdapter_t ia(coordsConst);
-  inputAdapter_t ia(coordsConst,weights, stride);
+    typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> inputAdapter_t;
+    //inputAdapter_t ia(coordsConst);
+    inputAdapter_t ia(coordsConst,weights, stride);
 
-    Teuchos::RCP <Teuchos::ParameterList> params ;
+    Teuchos::RCP<Teuchos::ParameterList> params ;
 
     //Teuchos::ParameterList params("test params");
     if(pfname != ""){
         params = Teuchos::getParametersFromXmlFile(pfname);
     }
     else {
-        params =RCP <Teuchos::ParameterList> (new Teuchos::ParameterList, true);
+        params =RCP<Teuchos::ParameterList>(new Teuchos::ParameterList, true);
     }
 /*
     params->set("memory_output_stream" , "std::cout");
@@ -274,34 +306,32 @@ int GeometricGenInterface(const RCP<const Teuchos::Comm<int> > & comm,
 
     params->set("algorithm", "multijagged");
     params->set("compute_metrics", "true");
+    params->set("keep_cuts", "true");
 
-    if(imbalance > 1){
+    if(imbalance > 1)
         params->set("imbalance_tolerance", double(imbalance));
-    }
 
-    if(pqParts != ""){
+    if(pqParts != "")
         params->set("mj_parts", pqParts);
-    }
-    if(numParts > 0){
+    if(numParts > 0)
         params->set("num_global_parts", numParts);
-    }
-    if (k > 0){
+    if (k > 0)
         params->set("mj_concurrent_part_count", k);
-    }
-    if(migration_check_option >= 0){
+    if(migration_check_option >= 0)
         params->set("mj_migration_option", migration_check_option);
-    }
-    if(migration_imbalance_cut_off >= 0){
-        params->set("mj_minimum_migration_imbalance", double (migration_imbalance_cut_off));
-    }
+    if(migration_imbalance_cut_off >= 0)
+        params->set("mj_minimum_migration_imbalance", 
+                    double(migration_imbalance_cut_off));
 
     Zoltan2::PartitioningProblem<inputAdapter_t> *problem;
     try {
 #ifdef HAVE_ZOLTAN2_MPI
-        problem = new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia, params.getRawPtr(),
-                MPI_COMM_WORLD);
+        problem = new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia,
+                                                   params.getRawPtr(),
+                                                   MPI_COMM_WORLD);
 #else
-        problem = new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia, params.getRawPtr());
+        problem = new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia,
+                                                   params.getRawPtr());
 #endif
     }
     CATCH_EXCEPTIONS("PartitioningProblem()")
@@ -314,6 +344,10 @@ int GeometricGenInterface(const RCP<const Teuchos::Comm<int> > & comm,
         problem->printMetrics(cout);
     }
     problem->printTimers();
+
+    // run pointAssign tests
+    int ierr = run_pointAssign_tests<inputAdapter_t>(problem, coord_dim);
+    
     if(numWeightsPerCoord){
         for(int i = 0; i < numWeightsPerCoord; ++i)
             delete [] weight[i];
@@ -325,7 +359,7 @@ int GeometricGenInterface(const RCP<const Teuchos::Comm<int> > & comm,
         delete [] coords;
     }
     delete problem;
-    return 0;
+    return ierr;
 }
 
 int testFromDataFile(
@@ -366,6 +400,7 @@ int testFromDataFile(
 
     //params->set("timer_output_stream" , "std::cout");
     params->set("compute_metrics", "true");
+    params->set("keep_cuts", "true");
     params->set("algorithm", "multijagged");
     if(imbalance > 1){
         params->set("imbalance_tolerance", double(imbalance));
@@ -390,10 +425,12 @@ int testFromDataFile(
     Zoltan2::PartitioningProblem<inputAdapter_t> *problem;
     try {
 #ifdef HAVE_ZOLTAN2_MPI
-        problem = new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia, params.getRawPtr(),
-                MPI_COMM_WORLD);
+        problem = new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia, 
+                                                   params.getRawPtr(),
+                                                   MPI_COMM_WORLD);
 #else
-        problem = new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia, params.getRawPtr());
+        problem = new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia,
+                                                   params.getRawPtr());
 #endif
     }
     CATCH_EXCEPTIONS("PartitioningProblem()")
@@ -419,8 +456,12 @@ int testFromDataFile(
     }
 
     problem->printTimers();
+
+    // run pointAssign tests
+    int ierr = run_pointAssign_tests<inputAdapter_t>(problem, coords->getNumVectors());
+
     delete problem;
-    return 0;
+    return ierr;
 }
 
 #ifdef hopper_separate_test
@@ -865,4 +906,5 @@ int main(int argc, char *argv[])
             cerr << s << endl;
     }
 
+    
 }

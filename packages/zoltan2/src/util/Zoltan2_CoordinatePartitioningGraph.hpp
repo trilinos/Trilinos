@@ -98,7 +98,8 @@ public:
             _EPSILON(std::numeric_limits<scalar_t>::epsilon()),
             minHashIndices(0),
             maxHashIndices(0),
-            gridIndices(0), neighbors(){
+            gridIndices(0), neighbors()
+        {
             lmins = new scalar_t [dim];
             lmaxs = new scalar_t [dim];
 
@@ -121,7 +122,8 @@ public:
             _EPSILON(std::numeric_limits<scalar_t>::epsilon()),
             minHashIndices(0),
             maxHashIndices(0),
-            gridIndices(0), neighbors(){
+            gridIndices(0), neighbors()
+        {
             lmins = new scalar_t [dim];
             lmaxs = new scalar_t [dim];
             minHashIndices = new part_t [dim];
@@ -145,7 +147,8 @@ public:
             _EPSILON(std::numeric_limits<scalar_t>::epsilon()),
             minHashIndices(0),
             maxHashIndices(0),
-            gridIndices(0), neighbors(){
+            gridIndices(0), neighbors()
+        {
 
             lmins = new scalar_t [dim];
             lmaxs = new scalar_t [dim];
@@ -208,6 +211,18 @@ public:
          */
         std::set<part_t> *getNeighbors(){
             return &(this->neighbors);
+        }
+
+        /*! \brief function to test whether a point is in the box
+         */
+        bool pointInBox(int dim, scalar_t *point) {
+          if (dim != this->dim) 
+            throw std::logic_error("dim of point must match dim of box");
+          for (int i = 0; i < dim; i++) {
+            if (point[i] < this->lmins[i]) return false;
+            if (point[i] > this->lmaxs[i]) return false;
+          }
+          return true;
         }
 
         /*! \brief  function to check if two boxes are neighbors.
@@ -494,7 +509,8 @@ public:
         numSlicePerDim(part_t(pow(double(ntasks_), 1.0 / dim))),
         numGrids(0),
         grids(),
-        comXAdj(), comAdj(){
+        comXAdj(), comAdj()
+    {
 
         minMaxBoundaries = new scalar_t[dim];
         maxMinBoundaries = new scalar_t[dim];
@@ -559,7 +575,6 @@ public:
             //TODO not needed anymore.
             neigbors->clear();
         }
-
     }
 
 
@@ -677,8 +692,6 @@ public:
                     */
         }
     }
-
-
 };
 /*
 template <typename scalar_t,typename part_t>

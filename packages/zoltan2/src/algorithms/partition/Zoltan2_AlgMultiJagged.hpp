@@ -1100,7 +1100,7 @@ public:
      * returns null if boxes are not stored, and prints warning message.
      * User needs to call set_to_keep_part_boxes() before partitioning if part boxes are needed.
      */
-    RCP < std::vector <coordinateModelPartBox <mj_scalar_t, mj_part_t> > > get_part_boxes();
+    RCP <std::vector<coordinateModelPartBox <mj_scalar_t, mj_part_t> > > get_part_boxes() const;
 
     /*! \brief Special function for partitioning for task mapping.
      * Runs sequential, and performs deterministic partitioning for the
@@ -1610,9 +1610,9 @@ AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::AlgMJ():
 	global_rectelinear_cut_weight(NULL),total_part_weight_left_right_closests(NULL),
 	global_total_part_weight_left_right_closests(NULL),kept_boxes(),
 	myRank(0), myActualRank(0)
-	{
-	this->fEpsilon = std::numeric_limits<float>::epsilon();
-	this->sEpsilon = std::numeric_limits<mj_scalar_t>::epsilon() * 100;
+{
+    this->fEpsilon = std::numeric_limits<float>::epsilon();
+    this->sEpsilon = std::numeric_limits<mj_scalar_t>::epsilon() * 100;
 
     this->maxScalar_t = std::numeric_limits<mj_scalar_t>::max();
     this->minScalar_t = -std::numeric_limits<mj_scalar_t>::max();
@@ -1624,15 +1624,15 @@ AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::AlgMJ():
  */
 template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
           typename mj_part_t>
-RCP < std::vector <coordinateModelPartBox <mj_scalar_t, mj_part_t> > > AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::get_part_boxes(){
+RCP < std::vector <coordinateModelPartBox <mj_scalar_t, mj_part_t> > > AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::get_part_boxes() const {
 
 	if (this->mj_keep_part_boxes){
 		return this->kept_boxes;
 	} else {
-		std::cerr << "Warning: part boxes are not stored - "
-				<< "too store part boxes call set_to_keep_part_boxes() before partitioning" << std::endl;
-		RCP < std::vector <coordinateModelPartBox <mj_scalar_t, mj_part_t> > > a;
-		return a;
+                throw std::logic_error("Error: part boxes are not stored; "
+	  		               "to store part boxes call "
+                                       "set_to_keep_part_boxes() "
+                                       "before partitioning");
 	}
 }
 /*! \brief Function call, if the part boxes are intended to be kept.
@@ -1643,8 +1643,6 @@ template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
 void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::set_to_keep_part_boxes(){
 	this->mj_keep_part_boxes = 1;
 }
-
-
 
 
 
@@ -1736,7 +1734,8 @@ template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
           typename mj_part_t>
 inline mj_part_t AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::get_part_count(
 		mj_part_t num_total_future,
-		double root){
+		double root)
+{
 	double fp = pow(num_total_future, root);
 	mj_part_t ip = mj_part_t (fp);
 	if (fp - ip < this->fEpsilon * 100){
@@ -5303,7 +5302,6 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::free_work_memory(){
 	this->mj_env->timerStart(MACRO_TIMERS, "MultiJagged - Problem_Free");
 
 	for (int i=0; i < this->coord_dim; i++){
-
 		freeArray<mj_scalar_t>(this->mj_coordinates[i]);
 	}
 	freeArray<mj_scalar_t *>(this->mj_coordinates);
@@ -5429,7 +5427,7 @@ template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
           typename mj_part_t>
 void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::multi_jagged_part(
 
-		const RCP<const Environment> &env,
+	const RCP<const Environment> &env,
     	RCP<Comm<int> > &problemComm,
 
     	double imbalance_tolerance_,
@@ -5452,7 +5450,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::multi_jagged_part(
     	mj_part_t *&result_assigned_part_ids_,
     	mj_gno_t *&result_mj_gnos_
 
-		){
+		)
+{
 
 #ifndef INCLUDE_ZOLTAN2_EXPERIMENTAL
 
@@ -6039,14 +6038,13 @@ public:
 
     /*! \brief Multi Jagged  coordinate partitioning algorithm.
      *
-     *  \param env   library configuration and problem parameters
-     *  \param problemComm the communicator for the problem
-     *  \param coords    a CoordinateModel with user data
      *  \param solution  a PartitioningSolution, on input it
      *      contains part information, on return it also contains
      *      the solution and quality metrics.
      */
     void partition(PartitioningSolution<Adapter> &solution);
+
+    mj_part_t pointAssign(int dim, mj_scalar_t *point) const;
 };
 
 
@@ -6073,8 +6071,8 @@ void Zoltan2_AlgMJ<Adapter>::partition(PartitioningSolution<Adapter> &solution)
     		this->check_migrate_avoid_migration_option,
     		this->minimum_migration_imbalance);
 
-	mj_part_t *result_assigned_part_ids = NULL;
-	mj_gno_t *result_mj_gnos = NULL;
+    mj_part_t *result_assigned_part_ids = NULL;
+    mj_gno_t *result_mj_gnos = NULL;
     this->mj_partitioner.multi_jagged_part(
     		this->mj_env,
     		this->mj_problemComm,
@@ -6264,6 +6262,13 @@ void Zoltan2_AlgMJ<Adapter>::set_input_parameters(const Teuchos::ParameterList &
 		this->mj_keep_part_boxes = 0; // Set to invalid value
 	}
 
+        // For now, need keep_part_boxes to do pointAssign and boxAssign.
+	pe = pl.getEntryPtr("keep_cuts");
+	if (pe){
+		int tmp = pe->getValue(&tmp);
+		if (tmp) this->mj_keep_part_boxes = 1;
+        }
+
 	//need to keep part boxes if mapping type is geometric.
 	if (this->mj_keep_part_boxes == 0){
 		pe = pl.getEntryPtr("mapping_type");
@@ -6323,6 +6328,60 @@ void Zoltan2_AlgMJ<Adapter>::set_input_parameters(const Teuchos::ParameterList &
 	}
 #endif
 
+}
+
+/////////////////////////////////////////////////////////////////////////////
+template <typename Adapter>
+typename Adapter::part_t Zoltan2_AlgMJ<Adapter>::pointAssign(
+  int dim, 
+  typename Adapter::scalar_t *point) const
+{
+  typedef std::vector<coordinateModelPartBox<typename Adapter::scalar_t,
+                                             typename Adapter::part_t> >
+                      partBoxVector_t;
+
+  if (this->mj_keep_part_boxes) {
+
+    RCP<partBoxVector_t> partBoxes;
+    try {
+      partBoxes = this->mj_partitioner.get_part_boxes();
+    }
+    Z2_FORWARD_EXCEPTIONS;
+
+    size_t nBoxes = (*partBoxes).size();
+    if (nBoxes == 0) {
+      throw std::logic_error("no part boxes exist");
+    }
+
+    typename Adapter::part_t foundPart;
+    size_t i;
+    for (i = 0; i < nBoxes; i++) {
+      try {
+        if ((*partBoxes)[i].pointInBox(dim, point)) {
+          foundPart = (*partBoxes)[i].getpId();
+          std::cout << "Point (";
+          for (int i = 0; i < dim; i++) std::cout << point[i] << " ";
+          std::cout << ") found in box " << i << " part " << foundPart 
+                    << std::endl;
+          (*partBoxes)[i].print();
+          break;
+        }
+      }
+      Z2_FORWARD_EXCEPTIONS;
+    }
+
+    if (i == nBoxes) 
+      throw std::logic_error("Point not found in domain");
+      // TODO:  Ideally, this error would never occur, but I don't know whether
+      // TODO:  MJ handles points outside the original bounding box.  If not,
+      // TODO:  I will have to add code to handle points outside the original
+      // TODO:  bounding box, as in Zoltan's RCB.
+
+    return foundPart;
+  }
+  else {
+    throw std::logic_error("need to use keep_cuts parameter for pointAssign");
+  }
 }
 
 } // namespace Zoltan2
