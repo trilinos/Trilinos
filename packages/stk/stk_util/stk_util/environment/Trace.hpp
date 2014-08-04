@@ -310,18 +310,6 @@ public:
    */
   static std::string printTraceback(const TracebackStack &traceback_stack);
 
-  /**
-   * @brief Member function <b>verbose_print</b> dumps the function specification
-   * stack to the diagnostic writer.
-   *
-   * @param dout		a <b>Writer</b> reference to the diagnostic
-   *				writer to write to.
-   *
-   * @return			a <b>Writer</b> reference to the diagnostic
-   *				writer.
-   */
-  Writer &verbose_print(Writer &dout) const;
-
 private:
   static TracebackState    s_tracebackState;  ///< State of the traceback system
   static int      s_tracebackPreserve;  ///< Preserve traceback stack
