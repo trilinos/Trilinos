@@ -321,12 +321,12 @@ namespace MueLu {
     dtemp->doImport(*localdtemp, *(importer), Xpetra::INSERT);
 
     valptr= dtemp->getDataNonConst(0);
-    for (i = 0; i < Ntotal*DofsPerNode+Nghost; i++) Layerdofs[i]=(LO) valptr[i];
+    for (i = 0; i < Ntotal*DofsPerNode+Nghost; i++) Layerdofs[i]= Teuchos::as<LO>( valptr[i] );
     valptr= localdtemp->getDataNonConst(0);
     for (i = 0; i < Ntotal*DofsPerNode;        i++) valptr[i]= (SC) (i%DofsPerNode);
     dtemp->doImport(*localdtemp, *(importer), Xpetra::INSERT);
     valptr= dtemp->getDataNonConst(0);
-    for (i = 0; i < Ntotal*DofsPerNode+Nghost; i++) Col2Dof[i]=(LO) valptr[i];
+    for (i = 0; i < Ntotal*DofsPerNode+Nghost; i++) Col2Dof[i]= Teuchos::as<LO>( valptr[i] );
 
     if (Ntotal != 0) {
       NLayers   = LayerId[0];
@@ -408,7 +408,7 @@ namespace MueLu {
     MaxNnz = 2*DofsPerNode*Ndofs;
 
     RCP<const Map> rowMap = Amat->getRowMap();
-    coarseMap = MapFactory::createUniformContigMap(rowMap->lib(),NCLayers*NVertLines*DofsPerNode,(rowMap->getComm()));
+    coarseMap = MapFactory::createUniformContigMapWithNode(rowMap->lib(),NCLayers*NVertLines*DofsPerNode,(rowMap->getComm()), rowMap->getNode());
     P       = rcp(new CrsMatrixWrap(rowMap, coarseMap , 0, Xpetra::StaticProfile));
 
 
@@ -509,7 +509,7 @@ namespace MueLu {
               ArrayView<const SC> AAvals;
               Amat->getLocalRowView(j, AAcols, AAvals);
               const int *Acols    = AAcols.getRawPtr();
-              const double *Avals = AAvals.getRawPtr();
+              const SC *Avals = AAvals.getRawPtr();
               RowLeng = AAvals.size();
 
               TEUCHOS_TEST_FOR_EXCEPTION(RowLeng >= MaxNnzPerRow, Exceptions::RuntimeError, "MakeSemiCoarsenP: recompile with larger Max(HorNeighborNodes)\n");
@@ -669,9 +669,9 @@ namespace MueLu {
     LO    *OrigLoc;
     LO    i,j,count;
     LO    RetVal;
-    LO    mypid;
+    //LO    mypid; // Not used
 
-    mypid = comm.getRank();
+    //mypid = comm.getRank();
     RetVal = 0;
     if ((MeshNumbering != VERTICAL) && (MeshNumbering != HORIZONTAL)) {
       if ( (xvals == NULL) || (yvals == NULL) || (zvals == NULL)) RetVal = -1;
