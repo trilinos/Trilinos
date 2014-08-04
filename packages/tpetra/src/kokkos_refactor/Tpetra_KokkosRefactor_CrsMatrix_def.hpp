@@ -3105,51 +3105,71 @@ namespace Tpetra {
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   resumeFill (const RCP<ParameterList> &params)
   {
-#ifdef HAVE_TPETRA_DEBUG
-    const char tfecfFuncName[] = "resumeFill";
-#endif // HAVE_TPETRA_DEBUG
-
-    if (! isStaticGraph()) { // Don't resume fill of a nonowned graph.
+    if (! isStaticGraph ()) { // Don't resume fill of a nonowned graph.
       myGraph_->resumeFill (params);
     }
-    clearGlobalConstants();
+    clearGlobalConstants ();
     lclMatrix_ = null;
     lclMatOps_ = null;
     fillComplete_ = false;
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! isFillActive() || isFillComplete(), std::logic_error,
-      "::resumeFill(): At end of method, either fill is not active or fill is "
-      "complete.  This violates stated post-conditions.  Please report this bug "
-      "to the Tpetra developers.");
-#endif // HAVE_TPETRA_DEBUG
   }
 
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::computeGlobalConstants() {
+  void
+  CrsMatrix<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+    typename KokkosClassic::DefaultKernels<
+      Scalar, LocalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  computeGlobalConstants ()
+  {
+    // This method doesn't do anything.  The analogous method in
+    // CrsGraph does actually compute something.
+    //
+    // Oddly enough, clearGlobalConstants() clears frobNorm_ (by
+    // setting it to -1), but computeGlobalConstants() does _not_
+    // compute the Frobenius norm; this is done on demand in
+    // getFrobeniusNorm(), and the result is cached there.
   }
 
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::clearGlobalConstants() {
-    // We use -1 to indicate that the Frobenius norm need to be recomputed.
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal,
+           class DeviceType>
+  void
+  CrsMatrix<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+    typename KokkosClassic::DefaultKernels<
+      Scalar, LocalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  clearGlobalConstants () {
+    // We use -1 to indicate that the Frobenius norm needs to be
+    // recomputed, since the values might change between now and the
+    // next fillComplete call.
+    //
+    // Oddly enough, clearGlobalConstants() clears frobNorm_, but
+    // computeGlobalConstants() does _not_ compute the Frobenius norm;
+    // this is done on demand in getFrobeniusNorm(), and the result is
+    // cached there.
     frobNorm_ = -STM::one ();
   }
 
-  template <class Scalar,
-            class LocalOrdinal,
-            class GlobalOrdinal, class DeviceType>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
-  fillComplete (const RCP<ParameterList> &params) {
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal,
+           class DeviceType>
+  void
+  CrsMatrix<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+    typename KokkosClassic::DefaultKernels<
+      Scalar, LocalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  fillComplete (const RCP<ParameterList>& params)
+  {
     TEUCHOS_TEST_FOR_EXCEPTION(
       getCrsGraph ().is_null (), std::logic_error, "Tpetra::CrsMatrix::"
-      "fillComplete(0-1 args): getCrsGraph() returns null.  This should not "
-      "happen at this point.  Please report this bug to the Tpetra developers.");
+      "fillComplete(params): getCrsGraph() returns null.  "
+      "This should not happen at this point.  "
+      "Please report this bug to the Tpetra developers.");
 
     if (isStaticGraph () && getCrsGraph ()->isFillComplete ()) {
       fillComplete (getCrsGraph ()->getDomainMap (), getCrsGraph ()->getRangeMap (), params);
@@ -3158,14 +3178,18 @@ namespace Tpetra {
     }
   }
 
-  template<class Scalar,
-           class LocalOrdinal,
-           class GlobalOrdinal, class DeviceType>
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal,
+           class DeviceType>
   void
-  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
-  fillComplete (const RCP<const map_type> &domainMap,
-                const RCP<const map_type> &rangeMap,
-                const RCP<ParameterList> &params)
+  CrsMatrix<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+    typename KokkosClassic::DefaultKernels<
+      Scalar, LocalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  fillComplete (const RCP<const map_type>& domainMap,
+                const RCP<const map_type>& rangeMap,
+                const RCP<ParameterList>& params)
   {
     const char tfecfFuncName[] = "fillComplete";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ! isFillActive() || isFillComplete(),
