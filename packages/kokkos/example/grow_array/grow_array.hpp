@@ -115,11 +115,10 @@ struct GrowArrayFunctor {
 
       Kokkos::deep_copy( m_search_flags , flags );
 
-      Kokkos::ParallelWorkRequest work ;
 
       // Each team works on 'm_search_team_chunk' span of the search_length
-      work.team_size   = Device::team_recommended();
-      work.league_size = ( search_length + m_search_team_chunk - 1 ) / m_search_team_chunk ;
+      Kokkos::TeamPolicy< Device > work( /* #teams */ ( search_length + m_search_team_chunk - 1 ) / m_search_team_chunk
+                                       , /* threads/team */ Device::team_recommended() );
 
       // Fill array:
       Kokkos::parallel_for( work , *this );
@@ -176,8 +175,10 @@ struct GrowArrayFunctor {
       return s ;
     }
 
+  typedef typename Kokkos::TeamPolicy<Device>::member_type team_member ;
+
   KOKKOS_INLINE_FUNCTION
-  void operator()( Device dev ) const
+  void operator()( const team_member & dev ) const
     {
       enum { LOCAL_BUFFER_LENGTH = 16 };
 

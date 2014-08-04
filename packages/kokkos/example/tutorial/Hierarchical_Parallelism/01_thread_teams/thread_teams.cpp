@@ -46,12 +46,14 @@
 #include <Kokkos_Core.hpp>
 #include <cstdio>
 
-typedef Kokkos::Impl::DefaultDeviceType device_type;
+// Using default execution space:
+typedef  Kokkos::TeamPolicy<>              team_policy ;
+typedef typename team_policy::member_type  team_member ;
 
 struct hello_world {
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (device_type dev, int& sum) const {
+  void operator() ( const team_member & dev, int& sum) const {
     sum+=1;
     printf("Hello World: %i %i // %i %i\n",dev.league_rank(),dev.team_rank(),dev.league_size(),dev.team_size());
   }
@@ -59,11 +61,12 @@ struct hello_world {
 
 int main(int narg, char* args[]) {
   Kokkos::initialize(narg,args);
+
+  // 12 teams of the maximum number of threads per team
+  const team_policy policy( 12 , team_policy::execution_space::team_max() );
   
   int sum = 0;
-  Kokkos::parallel_reduce(
-      Kokkos::ParallelWorkRequest(12,device_type::team_max()),
-      hello_world(),sum);
+  Kokkos::parallel_reduce( policy , hello_world() , sum );
   printf("Result %i\n",sum);
 
   Kokkos::finalize();

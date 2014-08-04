@@ -1012,10 +1012,12 @@ template<class RangeVector,
          int dobeta,
          int ExplicitVectorLength = 8>
 struct MV_MultiplyFunctor {
-  typedef typename CrsMatrix::device_type                   device_type ;
-  typedef typename CrsMatrix::ordinal_type                    size_type ;
+  typedef typename CrsMatrix::device_type                  device_type ;
+  typedef typename CrsMatrix::ordinal_type                 size_type ;
   typedef typename CrsMatrix::non_const_value_type         value_type ;
   typedef typename Kokkos::View<value_type*, device_type>  range_values;
+  typedef typename Kokkos::TeamPolicy< device_type >       team_policy ;
+  typedef typename team_policy::member_type                team_member ;
 
   //typedef MV_MultiplyShflThreadsPerRow< device_type , value_type , NNZPerRow > ShflThreadsPerRow ;
   typedef Vectorization<device_type,ExplicitVectorLength> vectorization;
@@ -1192,7 +1194,7 @@ struct MV_MultiplyFunctor {
 
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const device_type& dev) const {
+  void operator()(const team_member & dev) const {
     const size_type iRow = vectorization::global_thread_rank(dev);
     if(iRow>=m_A.numRows()) return;
 
@@ -1304,6 +1306,8 @@ struct MV_MultiplyFunctor {
     typedef typename CrsMatrix::ordinal_type                    size_type ;
     typedef typename CrsMatrix::non_const_value_type         value_type ;
     typedef typename Kokkos::View<value_type*, typename CrsMatrix::device_type> range_values;
+    typedef typename Kokkos::TeamPolicy< device_type >       team_policy ;
+    typedef typename team_policy::member_type                team_member ;
 
     //typedef MV_MultiplyShflThreadsPerRow< device_type , value_type , NNZPerRow > ShflThreadsPerRow ;
     typedef Vectorization<device_type,ExplicitVectorLength> vectorization;
@@ -1315,7 +1319,7 @@ struct MV_MultiplyFunctor {
     RangeVector  m_y ;
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const device_type& dev) const {
+    void operator()(const team_member & dev) const {
       const size_type iRow = vectorization::global_thread_rank(dev);
       if(iRow>=m_A.numRows()) return;
       const SparseRowViewConst<CrsMatrix> row = m_A.rowConst(iRow);
@@ -1829,6 +1833,21 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
   }
 }
 
+template< class DeviceType >
+Kokkos::TeamPolicy< DeviceType >
+inline
+mv_multiply_team_policy( const int nrow , const int increment )
+{
+#ifdef KOKKOS_HAVE_CUDA
+  const int teamsize = Impl::is_same< DeviceType , Kokkos::Cuda>::value ? 256 : 1 ;
+#else
+  const int teamsize = 1;
+#endif
+  const int nteams = (nrow*increment+teamsize-1)/teamsize;
+  return Kokkos::TeamPolicy< DeviceType >( nteams , teamsize );
+}
+
+
   template<class RangeVector,
            class TCrsMatrix,
            class DomainVector,
@@ -1902,13 +1921,9 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
         op.m_y = y;
         op.beta = betav;
         op.alpha = alphav;
-#ifdef KOKKOS_HAVE_CUDA
-        const int teamsize = Impl::is_same<typename RangeVector::device_type, Cuda>::value ? 256 : 1;
-#else
-        const int teamsize = 1;
-#endif
-        const int nteams = (nrow*vec_type::increment+teamsize-1)/teamsize;
-        Kokkos::parallel_for (ParallelWorkRequest(nteams,teamsize), op);
+
+        Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >( nrow , vec_type::increment ) , op );
+
       } else if(NNZPerRow>=48) {
         typedef Vectorization<typename RangeVector::device_type,16> vec_type;
         typedef MV_MultiplySingleFunctor<RangeVectorType, CrsMatrixType, DomainVectorType,
@@ -1921,13 +1936,7 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
         op.m_y = y;
         op.beta = betav;
         op.alpha = alphav;
-#ifdef KOKKOS_HAVE_CUDA
-        const int teamsize = Impl::is_same<typename RangeVector::device_type, Cuda>::value ? 256 : 1;
-#else
-        const int teamsize = 1;
-#endif
-        const int nteams = (nrow*vec_type::increment+teamsize-1)/teamsize;
-        Kokkos::parallel_for (ParallelWorkRequest(nteams,teamsize), op);
+        Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >( nrow , vec_type::increment ) , op );
       } else if(NNZPerRow>=24) {
         typedef Vectorization<typename RangeVector::device_type,8> vec_type;
         typedef MV_MultiplySingleFunctor<RangeVectorType, CrsMatrixType, DomainVectorType,
@@ -1940,13 +1949,7 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
         op.m_y = y;
         op.beta = betav;
         op.alpha = alphav;
-#ifdef KOKKOS_HAVE_CUDA
-        const int teamsize = Impl::is_same<typename RangeVector::device_type, Cuda>::value ? 256 : 1;
-#else
-        const int teamsize = 1;
-#endif
-        const int nteams = (nrow*vec_type::increment+teamsize-1)/teamsize;
-        Kokkos::parallel_for (ParallelWorkRequest(nteams,teamsize), op);
+        Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >( nrow , vec_type::increment ) , op );
       } else if(NNZPerRow>=12) {
         typedef Vectorization<typename RangeVector::device_type,4> vec_type;
         typedef MV_MultiplySingleFunctor<RangeVectorType, CrsMatrixType, DomainVectorType,
@@ -1959,13 +1962,7 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
         op.m_y = y;
         op.beta = betav;
         op.alpha = alphav;
-#ifdef KOKKOS_HAVE_CUDA
-        const int teamsize = Impl::is_same<typename RangeVector::device_type, Cuda>::value ? 256 : 1;
-#else
-        const int teamsize = 1;
-#endif
-        const int nteams = (nrow*vec_type::increment+teamsize-1)/teamsize;
-        Kokkos::parallel_for (ParallelWorkRequest(nteams,teamsize), op);
+        Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >( nrow , vec_type::increment ) , op );
       } else if(NNZPerRow>=4) {
         typedef Vectorization<typename RangeVector::device_type,2> vec_type;
         typedef MV_MultiplySingleFunctor<RangeVectorType, CrsMatrixType, DomainVectorType,
@@ -1978,13 +1975,7 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
         op.m_y = y;
         op.beta = betav;
         op.alpha = alphav;
-#ifdef KOKKOS_HAVE_CUDA
-        const int teamsize = Impl::is_same<typename RangeVector::device_type, Cuda>::value ? 256 : 1;
-#else
-        const int teamsize = 1;
-#endif
-        const int nteams = (nrow*vec_type::increment+teamsize-1)/teamsize;
-        Kokkos::parallel_for (ParallelWorkRequest(nteams,teamsize), op);
+        Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >( nrow , vec_type::increment ) , op );
       } else {
         typedef Vectorization<typename RangeVector::device_type,1> vec_type;
         typedef MV_MultiplySingleFunctor<RangeVectorType, CrsMatrixType, DomainVectorType,
@@ -1997,13 +1988,7 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
         op.m_y = y;
         op.beta = betav;
         op.alpha = alphav;
-#ifdef KOKKOS_HAVE_CUDA
-        const int teamsize = Impl::is_same<typename RangeVector::device_type, Cuda>::value ? 256 : 1;
-#else
-        const int teamsize = 1;
-#endif
-        const int nteams = (nrow*vec_type::increment+teamsize-1)/teamsize;
-        Kokkos::parallel_for (ParallelWorkRequest(nteams,teamsize), op);
+        Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >( nrow , vec_type::increment ) , op );
       }
 #else // NOT KOKKOS_FAST_COMPILE
       typedef Vectorization<typename RangeVector::device_type,8> vec_type;
@@ -2042,13 +2027,7 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
       op.m_y = y ;
       op.beta = beta;
       op.alpha = alpha;
-#ifdef KOKKOS_HAVE_CUDA
-        const int teamsize = Impl::is_same<typename RangeVector::device_type, Cuda>::value ? 256 : 1;
-#else
-        const int teamsize = 1;
-#endif
-      const int nteams = (nrow*vec_type::increment+teamsize-1)/teamsize;
-      Kokkos::parallel_for (ParallelWorkRequest(nteams,teamsize), op);
+      Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >( nrow , vec_type::increment ) , op );
 
 #endif // KOKKOS_FAST_COMPILE
     }
@@ -2139,13 +2118,7 @@ template <class RangeVector,
           op.beta = betav;
           op.alpha = alphav;
           op.n = x.dimension(1);
-#ifdef KOKKOS_HAVE_CUDA
-          const int teamsize = Impl::is_same<typename RangeVector::device_type, Cuda>::value ? 256 : 1;
-#else
-          const int teamsize = 1;
-#endif
-          const int nteams = (nrow*vec_type::increment+teamsize-1)/teamsize;
-          Kokkos::parallel_for (ParallelWorkRequest(nteams,teamsize), op);
+          Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >( nrow , vec_type::increment ) , op );
         } else if(NNZPerRow>=48) {
           typedef Vectorization<typename RangeVector::device_type,8> vec_type;
           typedef MV_MultiplyFunctor<RangeVectorType, CrsMatrixType, DomainVectorType,
@@ -2159,13 +2132,7 @@ template <class RangeVector,
           op.beta = betav;
           op.alpha = alphav;
           op.n = x.dimension(1);
-#ifdef KOKKOS_HAVE_CUDA
-          const int teamsize = Impl::is_same<typename RangeVector::device_type, Cuda>::value ? 256 : 1;
-#else
-          const int teamsize = 1;
-#endif
-          const int nteams = (nrow*vec_type::increment+teamsize-1)/teamsize;
-          Kokkos::parallel_for (ParallelWorkRequest(nteams,teamsize), op);
+          Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >( nrow , vec_type::increment ) , op );
         } else if(NNZPerRow>=16) {
           typedef Vectorization<typename RangeVector::device_type,8> vec_type;
           typedef MV_MultiplyFunctor<RangeVectorType, CrsMatrixType, DomainVectorType,
@@ -2179,13 +2146,7 @@ template <class RangeVector,
           op.beta = betav;
           op.alpha = alphav;
           op.n = x.dimension(1);
-#ifdef KOKKOS_HAVE_CUDA
-          const int teamsize = Impl::is_same<typename RangeVector::device_type, Cuda>::value ? 256 : 1;
-#else
-          const int teamsize = 1;
-#endif
-          const int nteams = (nrow*vec_type::increment+teamsize-1)/teamsize;
-          Kokkos::parallel_for (ParallelWorkRequest(nteams,teamsize), op);
+          Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >( nrow , vec_type::increment ) , op );
         } else if(NNZPerRow>=12) {
           typedef Vectorization<typename RangeVector::device_type,4> vec_type;
           typedef MV_MultiplyFunctor<RangeVectorType, CrsMatrixType, DomainVectorType,
@@ -2199,13 +2160,7 @@ template <class RangeVector,
           op.beta = betav;
           op.alpha = alphav;
           op.n = x.dimension(1);
-#ifdef KOKKOS_HAVE_CUDA
-          const int teamsize = Impl::is_same<typename RangeVector::device_type, Cuda>::value ? 256 : 1;
-#else
-          const int teamsize = 1;
-#endif
-          const int nteams = (nrow*vec_type::increment+teamsize-1)/teamsize;
-          Kokkos::parallel_for (ParallelWorkRequest(nteams,teamsize), op);
+          Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >( nrow , vec_type::increment ) , op );
         } else if(NNZPerRow>=4) {
           typedef Vectorization<typename RangeVector::device_type,2> vec_type;
           typedef MV_MultiplyFunctor<RangeVectorType, CrsMatrixType, DomainVectorType,
@@ -2219,13 +2174,7 @@ template <class RangeVector,
           op.beta = betav;
           op.alpha = alphav;
           op.n = x.dimension(1);
-#ifdef KOKKOS_HAVE_CUDA
-          const int teamsize = Impl::is_same<typename RangeVector::device_type, Cuda>::value ? 256 : 1;
-#else
-          const int teamsize = 1;
-#endif
-          const int nteams = (nrow*vec_type::increment+teamsize-1)/teamsize;
-          Kokkos::parallel_for (ParallelWorkRequest(nteams,teamsize), op);
+          Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >( nrow , vec_type::increment ) , op );
         } else {
           typedef Vectorization<typename RangeVector::device_type,1> vec_type;
           typedef MV_MultiplyFunctor<RangeVectorType, CrsMatrixType, DomainVectorType,
@@ -2239,13 +2188,7 @@ template <class RangeVector,
           op.beta = betav;
           op.alpha = alphav;
           op.n = x.dimension(1);
-#ifdef KOKKOS_HAVE_CUDA
-          const int teamsize = Impl::is_same<typename RangeVector::device_type, Cuda>::value ? 256 : 1;
-#else
-          const int teamsize = 1;
-#endif
-          const int nteams = (nrow*vec_type::increment+teamsize-1)/teamsize;
-          Kokkos::parallel_for (ParallelWorkRequest(nteams,teamsize), op);
+          Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >( nrow , vec_type::increment ) , op );
         }
       }
 
@@ -2291,13 +2234,7 @@ template <class RangeVector,
       op.beta = beta;
       op.alpha = alpha;
       op.n = x.dimension_1();
-#ifdef KOKKOS_HAVE_CUDA
-      const int teamsize = Impl::is_same<typename RangeVector::device_type, Cuda>::value ? 256 : 1;
-#else
-      const int teamsize = 1;
-#endif
-      const int nteams = (nrow*vec_type::increment+teamsize-1)/teamsize;
-      Kokkos::parallel_for (ParallelWorkRequest(nteams,teamsize), op);
+      Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >( nrow , vec_type::increment ) , op );
 
 #endif // KOKKOS_FAST_COMPILE
     }
