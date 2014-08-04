@@ -1033,7 +1033,7 @@ struct MV_MultiplyFunctor {
 
   template<int UNROLL>
   KOKKOS_INLINE_FUNCTION
-  void strip_mine (const device_type& dev, const size_type & iRow, const size_type& kk) const {
+  void strip_mine (const team_member & dev, const size_type & iRow, const size_type& kk) const {
 
     value_type sum[UNROLL];
     // FIXME (mfh 29 Sep 2013) These pragmas ("ivdep", "unroll", and
@@ -1152,7 +1152,7 @@ struct MV_MultiplyFunctor {
   }
 
   KOKKOS_INLINE_FUNCTION
-  void strip_mine_1 (const device_type& dev, const size_type& iRow) const {
+  void strip_mine_1 (const team_member & dev, const size_type& iRow) const {
     value_type sum = 0;
 
       const SparseRowViewConst<CrsMatrix> row = m_A.rowConst(iRow);

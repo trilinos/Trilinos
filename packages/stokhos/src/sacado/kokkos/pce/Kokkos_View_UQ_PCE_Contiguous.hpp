@@ -2174,8 +2174,9 @@ struct ViewFill< View<T,L,Cuda,M,ViewPCEContiguous> , Rank >
     PCEKernel( const OutputView & arg_out , const_value_type & arg_in ) :
       output(arg_out), input(arg_in) {}
 
+    typedef typename Kokkos::TeamPolicy< device_type >::member_type team_member ;
     KOKKOS_INLINE_FUNCTION
-    void operator()( device_type dev ) const
+    void operator()( const team_member & dev ) const
     {
       const size_type tidx = dev.team_rank() % VectorLength;
       const size_type tidy = dev.team_rank() / VectorLength;
@@ -2208,8 +2209,9 @@ struct ViewFill< View<T,L,Cuda,M,ViewPCEContiguous> , Rank >
     ScalarKernel( const OutputView & arg_out , const scalar_type & arg_in ) :
       output(arg_out), input(arg_in) {}
 
+    typedef typename Kokkos::TeamPolicy< device_type >::member_type team_member ;
     KOKKOS_INLINE_FUNCTION
-    void operator()( device_type dev ) const
+    void operator()( const team_member & dev ) const
     {
       const size_type tidx = dev.team_rank() % VectorLength;
       const size_type tidy = dev.team_rank() / VectorLength;
@@ -2247,7 +2249,7 @@ struct ViewFill< View<T,L,Cuda,M,ViewPCEContiguous> , Rank >
     const size_type n = output.dimension_0();
     const size_type league_size = ( n + rows_per_block-1 ) / rows_per_block;
     const size_type team_size = rows_per_block * vector_length;
-    ParallelWorkRequest config( league_size, team_size );
+    Kokkos::TeamPolicy< device_type > config( league_size, team_size );
 
     if (input.size() != output.sacado_size() && input.size() != 1)
       Impl::raise_error("ViewFill:  Invalid input value size");
@@ -2274,7 +2276,7 @@ struct ViewFill< View<T,L,Cuda,M,ViewPCEContiguous> , Rank >
     const size_type n = output.dimension_0();
     const size_type league_size = ( n + rows_per_block-1 ) / rows_per_block;
     const size_type team_size = rows_per_block * vector_length;
-    ParallelWorkRequest config( league_size, team_size );
+    Kokkos::TeamPolicy< device_type > config( league_size, team_size );
 
     parallel_for( config, ScalarKernel<vector_length>(output, input) );
     device_type::fence();
