@@ -438,7 +438,7 @@ public:
   /** \brief Print iterate status.
   */
   std::string print( AlgorithmState<Real> & algo_state, bool printHeader = false ) const  {
-    const Teuchos::RCP<const StepState<Real> >& step_state = Step<Real>::getState();
+    const Teuchos::RCP<const StepState<Real> >& step_state = Step<Real>::getStepState();
 
     std::stringstream hist;
     hist << std::scientific << std::setprecision(6);

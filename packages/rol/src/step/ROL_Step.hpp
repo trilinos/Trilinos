@@ -132,7 +132,7 @@ public:
 
   /** \brief Get state for step object.
   */
-  virtual Teuchos::RCP<const StepState<Real> > getState(void) const {
+  virtual Teuchos::RCP<const StepState<Real> > getStepState(void) const {
     return this->state_;
   }
 
