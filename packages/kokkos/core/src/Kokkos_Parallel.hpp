@@ -304,7 +304,7 @@ void parallel_reduce( const ExecPolicy  & policy
   (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( functor , policy , result_view );
 }
 
-template< class ExecPolicy , class FunctorType , class ViewType >
+template< class FunctorType , class ViewType >
 inline
 void parallel_reduce( const size_t        work_count
                     , const FunctorType & functor 
@@ -315,9 +315,9 @@ void parallel_reduce( const size_t        work_count
     Impl::FunctorPolicyExecutionSpace< FunctorType , void >::execution_space
       execution_space ;
 
-  typedef RangePolicy< execution_space > policy ;
+  typedef RangePolicy< execution_space > ExecPolicy ;
 
-  (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( functor , policy(0,work_count) , result_view );
+  (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( functor , ExecPolicy(0,work_count) , result_view );
 }
 
 /** TODO: Deprecate the following specialization: */

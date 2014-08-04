@@ -989,7 +989,7 @@ public:
   {
     value_type response = 0;
     //Kokkos::parallel_reduce( fixture.elem_count() , *this , response );
-    Kokkos::parallel_reduce( solution.dimension_0() , *this , response );
+    Kokkos::parallel_reduce( solution.dimension_0() , *this , Kokkos::create_unmanaged_view( response ) );
     return response;
   }
 
