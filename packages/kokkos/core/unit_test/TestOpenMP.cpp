@@ -64,7 +64,6 @@
 #include <TestViewAPI.hpp>
 
 #include <TestCrsArray.hpp>
-#include <TestRequest.hpp>
 #include <TestTeam.hpp>
 #include <TestReduce.hpp>
 #include <TestScan.hpp>
@@ -131,18 +130,6 @@ TEST_F( openmp, double_reduce_dynamic ) {
 
 TEST_F( openmp, long_reduce_dynamic_view ) {
   TestReduceDynamicView< long ,   Kokkos::OpenMP >( 1000000 );
-}
-
-TEST_F( openmp, dev_long_reduce) {
-  TestReduceRequest< long ,   Kokkos::OpenMP >( 100000 );
-}
-
-TEST_F( openmp, dev_double_reduce) {
-  TestReduceRequest< double ,   Kokkos::OpenMP >( 100000 );
-}
-
-TEST_F( openmp, dev_shared_request) {
-  TestSharedRequest< Kokkos::OpenMP >();
 }
 
 TEST_F( openmp, team_long_reduce) {
@@ -256,9 +243,7 @@ TEST_F( openmp , scan )
 
 TEST_F( openmp , team_scan )
 {
-  TestScanRequest< Kokkos::OpenMP >( 10 );
   TestScanTeam< Kokkos::OpenMP >( 10000 );
-  TestScanRequest< Kokkos::OpenMP >( 10 );
   TestScanTeam< Kokkos::OpenMP >( 10000 );
 }
 

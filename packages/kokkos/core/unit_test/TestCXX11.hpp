@@ -68,6 +68,9 @@ struct FunctorAddTest{
 
 template<class DeviceType, bool PWRTest>
 double AddTestFunctor() {
+
+  typedef Kokkos::TeamPolicy<DeviceType> policy_type ;
+
   Kokkos::View<double**,DeviceType> a("A",100,5);
   Kokkos::View<double**,DeviceType> b("B",100,5);
   Kokkos::View<double**,typename DeviceType::host_mirror_device_type>
@@ -84,7 +87,7 @@ double AddTestFunctor() {
   if(PWRTest==false)
     Kokkos::parallel_for(100,FunctorAddTest<DeviceType>(a,b));
   else
-    Kokkos::parallel_for(Kokkos::ParallelWorkRequest(25,4),FunctorAddTest<DeviceType>(a,b));
+    Kokkos::parallel_for(policy_type(25,4),FunctorAddTest<DeviceType>(a,b));
   Kokkos::deep_copy(h_b,b);
 
   double result = 0;
@@ -101,6 +104,9 @@ double AddTestFunctor() {
 #if defined (KOKKOS_HAVE_CXX11)
 template<class DeviceType, bool PWRTest>
 double AddTestLambda() {
+
+  typedef Kokkos::TeamPolicy<DeviceType> policy_type ;
+
   Kokkos::View<double**,DeviceType> a("A",100,5);
   Kokkos::View<double**,DeviceType> b("B",100,5);
   Kokkos::View<double**,typename DeviceType::host_mirror_device_type>
@@ -123,7 +129,7 @@ double AddTestLambda() {
       b(i,4) = a(i,3) + a(i,4);
     });
   } else {
-    Kokkos::parallel_for(Kokkos::ParallelWorkRequest(25,4),[=](const DeviceType& dev)  {
+    Kokkos::parallel_for(policy_type(25,4),[=](const DeviceType& dev)  {
       int i = dev.league_rank()*dev.team_size() + dev.team_rank();
       b(i,0) = a(i,1) + a(i,2);
       b(i,1) = a(i,0) - a(i,3);
@@ -185,6 +191,9 @@ struct FunctorReduceTest{
 
 template<class DeviceType, bool PWRTest>
 double ReduceTestFunctor() {
+
+  typedef Kokkos::TeamPolicy<DeviceType> policy_type ;
+
   Kokkos::View<double**,DeviceType> a("A",100,5);
   Kokkos::View<double**,typename DeviceType::host_mirror_device_type>
      h_a = Kokkos::create_mirror_view(a);
@@ -199,7 +208,7 @@ double ReduceTestFunctor() {
   if(PWRTest==false)
     Kokkos::parallel_reduce(100,FunctorReduceTest<DeviceType>(a),result);
   else
-    Kokkos::parallel_reduce(Kokkos::ParallelWorkRequest(25,4),FunctorReduceTest<DeviceType>(a),result);
+    Kokkos::parallel_reduce(policy_type(25,4),FunctorReduceTest<DeviceType>(a),result);
 
   return result;
 }
@@ -207,6 +216,9 @@ double ReduceTestFunctor() {
 #if defined (KOKKOS_HAVE_CXX11)
 template<class DeviceType, bool PWRTest>
 double ReduceTestLambda() {
+
+  typedef Kokkos::TeamPolicy<DeviceType> policy_type ;
+
   Kokkos::View<double**,DeviceType> a("A",100,5);
   Kokkos::View<double**,typename DeviceType::host_mirror_device_type>
      h_a = Kokkos::create_mirror_view(a);
@@ -228,7 +240,7 @@ double ReduceTestLambda() {
       sum += a(i,3) + a(i,4);
     },result);
   } else {
-    Kokkos::parallel_reduce(Kokkos::ParallelWorkRequest(25,4),[=](const DeviceType& dev, double& sum)  {
+    Kokkos::parallel_reduce(policy_type(25,4),[=](const DeviceType& dev, double& sum)  {
       int i = dev.league_rank()*dev.team_size() + dev.team_rank();
       sum += a(i,1) + a(i,2);
       sum += a(i,0) - a(i,3);
@@ -273,12 +285,13 @@ double TestVariantFunctor(int test) {
 
 template<class DeviceType>
 bool Test(int test) {
+
   double res_functor = TestVariantFunctor<DeviceType>(test);
   double res_lambda = TestVariantLambda<DeviceType>(test);
 
   char testnames[5][256] = {" "
-                            ,"AddTest","AddTest ParallelWorkRequest"
-                            ,"ReduceTest","ReduceTest ParallelWorkRequest"
+                            ,"AddTest","AddTest TeamPolicy"
+                            ,"ReduceTest","ReduceTest TeamPolicy"
                            };
   bool passed = true;
 

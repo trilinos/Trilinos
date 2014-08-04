@@ -66,7 +66,6 @@
 #include <TestCrsArray.hpp>
 #include <TestReduce.hpp>
 #include <TestScan.hpp>
-#include <TestRequest.hpp>
 #include <TestTeam.hpp>
 #include <TestAggregate.hpp>
 #include <TestCompilerMacros.hpp>
@@ -155,14 +154,6 @@ TEST_F( threads, team_double_reduce) {
   TestReduceTeam< double ,   Kokkos::Threads >( 100000 );
 }
 
-TEST_F( threads, dev_long_reduce) {
-  TestReduceRequest< long ,   Kokkos::Threads >( 100000 );
-}
-
-TEST_F( threads, dev_double_reduce) {
-  TestReduceRequest< double ,   Kokkos::Threads >( 100000 );
-}
-
 TEST_F( threads, long_reduce_dynamic ) {
   TestReduceDynamic< long ,   Kokkos::Threads >( 1000000 );
 }
@@ -178,11 +169,6 @@ TEST_F( threads, long_reduce_dynamic_view ) {
 TEST_F( threads, team_shared_request) {
   TestSharedTeam< Kokkos::Threads >();
 }
-
-TEST_F( threads, dev_shared_request) {
-  TestSharedRequest< Kokkos::Threads >();
-}
-
 
 TEST_F( threads , view_remap )
 {
@@ -289,12 +275,6 @@ TEST_F( threads , scan )
 }
 
 //----------------------------------------------------------------------------
-
-TEST_F( threads , request_scan )
-{
-  TestScanRequest< Kokkos::Threads >( 10 );
-  TestScanRequest< Kokkos::Threads >( 10000 );
-}
 
 TEST_F( threads , team_scan )
 {
