@@ -606,21 +606,21 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
                                             mpiComm_,
 #endif
                                             this->graphModel_));
-      this->algorithm_->partition(*solution_);
+      this->algorithm_->partition(solution_);
     }
 
     else if (algName_ == std::string("block")) {
 
       this->algorithm_ = rcp(new AlgBlock<Adapter>(this->envConst_,
                                          problemComm_, this->identifierModel_));
-      this->algorithm_->partition(*solution_);
+      this->algorithm_->partition(solution_);
     }
 
     else if (algName_ == std::string("rcb")) {
 
       this->algorithm_ = rcp(new AlgRCB<Adapter>(this->envConst_, problemComm_,
                                                  this->coordinateModel_));
-      this->algorithm_->partition(*solution_);
+      this->algorithm_->partition(solution_);
     }
 
     else if (algName_ == std::string("multijagged")) {
@@ -628,7 +628,7 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
       this->algorithm_ = rcp(new Zoltan2_AlgMJ<Adapter>(this->envConst_,
                                               problemComm_,
                                               this->coordinateModel_));
-      this->algorithm_->partition(*solution_);
+      this->algorithm_->partition(solution_);
     }
 
     else if (algName_ == std::string("wolf")) {
@@ -638,7 +638,7 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
                                         this->coordinateModel_));
 
       // need to add coordModel, make sure this is built
-      this->algorithm_->partition(*solution_);
+      this->algorithm_->partition(solution_);
     }
     else {
       throw std::logic_error("partitioning algorithm not supported");

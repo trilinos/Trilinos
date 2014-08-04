@@ -87,18 +87,6 @@ APPEND_SET(HEADERS
   ../mesh_spec_lt/pamgen_code_types.h
   )
 
-APPEND_SET(PE_HEADERS
-  ../mesh_spec_lt/im_exodusII.h
-  ../mesh_spec_lt/im_exodusII_l.h
-  ../mesh_spec_lt/im_exodusII_ext.h
-  ../mesh_spec_lt/im_ne_nemesisI.h
-  ../mesh_spec_lt/im_ne_nemesisI_l.h
-  ../mesh_spec_lt/pamgen_mesh_specification.h
-  ../mesh_spec_lt/pamgen_fudges.h
-  ../mesh_spec_lt/pamgen_element_dictionary.h
-  ../mesh_spec_lt/pamgen_code_types.h
-  )
-
 APPEND_SET(SOURCES
   ../mesh_spec_lt/im_ex_c_interface.C
   ../mesh_spec_lt/im_ex_c_interface_l.C

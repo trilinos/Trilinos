@@ -58,15 +58,7 @@ public:
 	m_width(cell.m_width)
     {}
 
-    Cell &operator=(const Cell &cell) {
-      m_string = cell.m_string;
-      m_flags = cell.m_flags;
-      m_justification = cell.m_justification;
-      m_indent = cell.m_indent;
-      m_width = cell.m_width;
-
-      return *this;
-    }
+    Cell &operator=(const Cell &cell);
         
     std::string			m_string;
     int				m_flags;

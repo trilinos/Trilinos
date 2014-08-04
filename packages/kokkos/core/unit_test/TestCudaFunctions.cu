@@ -65,7 +65,6 @@
 #include <TestScan.hpp>
 #include <TestRequest.hpp>
 #include <TestTeam.hpp>
-#include <TestMultiReduce.hpp>
 #include <TestAggregate.hpp>
 #include <TestCompilerMacros.hpp>
 
@@ -139,10 +138,6 @@ void test_device_cuda_reduce_dynamic() {
 void test_device_cuda_reduce_dynamic_view() {
   TestReduceDynamicView< long ,   Kokkos::Cuda >( 10000000 );
   TestReduceDynamicView< double , Kokkos::Cuda >( 1000000 );
-}
-
-void test_device_cuda_multi_reduce() {
-  TestReduceMulti< long , Kokkos::Cuda >( 1000000 , 7 );
 }
 
 void test_device_cuda_atomic()

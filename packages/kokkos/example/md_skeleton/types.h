@@ -46,22 +46,20 @@
 
 /* Determine default device type and necessary includes */
 
-#ifdef _OPENMP
-  #include <Kokkos_OpenMP.hpp>
-#else
-  #include <Kokkos_Threads.hpp>
-#endif
+#include <Kokkos_Macros.hpp>
 
-#ifdef KOKKOS_HAVE_CUDA
+#if defined( KOKKOS_HAVE_CUDA )
   #include <Kokkos_Cuda.hpp>
   #include <cuda.h>
   #include <cuda_runtime.h>
   typedef Kokkos::Cuda device_type;
 #else
-  #ifdef _OPENMP
+  #if defined( KOKKOS_HAVE_OPENMP )
     typedef Kokkos::OpenMP device_type;
-  #else
+  #elif defined( KOKKOS_HAVE_PTHREAD )
     typedef Kokkos::Threads device_type;
+  #else
+    typedef Kokkos::Serial device_type;
   #endif
 
   struct double2 {
@@ -69,9 +67,15 @@
   };
 #endif
 
+#if defined( KOKKOS_HAVE_OPENMP )
+  #include <Kokkos_OpenMP.hpp>
+#elif defined( KOKKOS_HAVE_PTHREAD )
+  #include <Kokkos_Threads.hpp>
+#else
+  #include <Kokkos_Serial.hpp>
+#endif
 
 #include <Kokkos_View.hpp>
-#include <Kokkos_Macros.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
 /* Define types used throughout the code */

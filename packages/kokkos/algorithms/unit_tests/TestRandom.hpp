@@ -188,7 +188,7 @@ struct test_random_scalar {
       Kokkos::parallel_reduce(num_draws/1024,test_random_functor<RandomGenerator,Scalar>(pool,density_1d,density_3d),result);
 
       //printf("Result: %lf %lf %lf\n",result.mean/num_draws/3,result.variance/num_draws/3,result.covariance/num_draws/2);
-      double tolerance = 1.6*sqrt(1.0/num_draws);
+      double tolerance = 2.0*sqrt(1.0/num_draws);
       double mean_expect = 0.5*Kokkos::rand<rnd_type,Scalar>::max();
       double variance_expect = 1.0/3.0*mean_expect*mean_expect;
       double mean_eps = mean_expect/(result.mean/num_draws/3)-1.0;

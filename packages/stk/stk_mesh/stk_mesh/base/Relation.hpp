@@ -53,7 +53,7 @@ public:
 
   /** \brief  Construct a relation from a referenced entity and local identifier
    */
-  Relation( const BulkData &mesh, Entity entity , RelationIdentifier identifier );
+  Relation( Entity entity, EntityRank entityRank , RelationIdentifier identifier );
   // Defined in BulkData.hpp to break circular dependency.
 
   attribute_type   attribute() const { return m_attribute; }
@@ -112,8 +112,7 @@ private:
     RawRelationType( raw_relation_id_type v ) : value(v) {}
     RawRelationType() : value(0) {}
     RawRelationType( const RawRelationType & rhs ) : value( rhs.value ) {}
-    RawRelationType & operator = ( const RawRelationType & rhs )
-      { value = rhs.value ; return *this ; }
+    RawRelationType & operator = ( const RawRelationType & rhs );
   };
 
   RawRelationType        m_raw_relation ;
@@ -245,7 +244,7 @@ Relation::raw_relation_id( unsigned rank , unsigned id )
                   "For args rank " << rank << ", id " << id << ": " <<
                   "id " << " > id_mask=" << id_mask );
 
-  return ( raw_relation_id_type(rank) << id_digits ) | id ;
+  return ( static_cast<raw_relation_id_type>(rank) << id_digits ) | id ;
 }
 
 inline
@@ -254,7 +253,7 @@ unsigned Relation::entity_rank() const
 
 inline
 RelationIdentifier Relation::relation_ordinal() const
-{ return unsigned( m_raw_relation.value & id_mask ); }
+{ return static_cast<unsigned>( m_raw_relation.value & id_mask ); }
 
 
 //----------------------------------------------------------------------
@@ -326,6 +325,17 @@ Relation::Relation() :
   m_raw_relation(),
   m_attribute(),
   m_target_entity()
+{
+#ifdef SIERRA_MIGRATION
+  setRelationType(RelationType::INVALID);
+#endif
+}
+
+inline
+Relation::Relation( Entity ent, EntityRank entityRank , RelationIdentifier id )
+  : m_raw_relation( Relation::raw_relation_id( entityRank , id ) ),
+    m_attribute(),
+    m_target_entity(ent)
 {
 #ifdef SIERRA_MIGRATION
   setRelationType(RelationType::INVALID);

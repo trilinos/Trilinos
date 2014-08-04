@@ -1655,7 +1655,7 @@ namespace Experimental {
           // current implementation, we only have one receive in
           // flight at a time.  Leave space for the '\0' at the end,
           // in case the sender doesn't send it.
-          if (recvDataBuf.size () < numCharsToRecv + 1) {
+          if (static_cast<size_t>(recvDataBuf.size()) < numCharsToRecv + 1) {
             recvDataBuf.resize (numCharsToRecv + 1);
           }
           ArrayRCP<char> recvData = recvDataBuf.persistingView (0, numCharsToRecv);

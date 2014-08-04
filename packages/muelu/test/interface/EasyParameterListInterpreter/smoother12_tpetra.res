@@ -73,6 +73,8 @@ Level 1
   [empty list]
   
  sa: damping factor = 1.33333   [default]
+ sa: calculate eigenvalue estimate = 0   [default]
+ sa: eigenvalue estimate num iterations = 10   [default]
  
  Transpose P (MueLu::TransPFactory)
  [empty list]
@@ -134,6 +136,8 @@ Level 2
   [empty list]
   
  sa: damping factor = 1.33333   [default]
+ sa: calculate eigenvalue estimate = 0   [default]
+ sa: eigenvalue estimate num iterations = 10   [default]
  
  Transpose P (MueLu::TransPFactory)
  [empty list]
@@ -195,6 +199,8 @@ Level 3
   [empty list]
   
  sa: damping factor = 1.33333   [default]
+ sa: calculate eigenvalue estimate = 0   [default]
+ sa: eigenvalue estimate num iterations = 10   [default]
  
  Transpose P (MueLu::TransPFactory)
  [empty list]
@@ -256,6 +262,8 @@ Level 4
   [empty list]
   
  sa: damping factor = 1.33333   [default]
+ sa: calculate eigenvalue estimate = 0   [default]
+ sa: eigenvalue estimate num iterations = 10   [default]
  
  Transpose P (MueLu::TransPFactory)
  [empty list]
@@ -317,6 +325,8 @@ Level 5
   [empty list]
   
  sa: damping factor = 1.33333   [default]
+ sa: calculate eigenvalue estimate = 0   [default]
+ sa: eigenvalue estimate num iterations = 10   [default]
  
  Transpose P (MueLu::TransPFactory)
  [empty list]
@@ -359,6 +369,6 @@ Level 5
  
  Smoother (level 4) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.939, alpha: 2.99194, lambdaMin: 0.648076}, Global matrix dimensions: [124, 124], Global nnz: 370}
  
- Smoother (level 5) pre  : SuperLU solver interface
+ Smoother (level 5) pre  : SuperLU solver interface, direct solve
  Smoother (level 5) post : no smoother
  

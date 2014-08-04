@@ -58,6 +58,8 @@ Level 1
   [empty list]
   
  sa: damping factor = 1.33333   [default]
+ sa: calculate eigenvalue estimate = 0   [default]
+ sa: eigenvalue estimate num iterations = 10   [default]
  
  Transpose P (MueLu::TransPFactory)
  [empty list]
@@ -114,6 +116,8 @@ Level 2
   [empty list]
   
  sa: damping factor = 1.33333   [default]
+ sa: calculate eigenvalue estimate = 0   [default]
+ sa: eigenvalue estimate num iterations = 10   [default]
  
  Transpose P (MueLu::TransPFactory)
  [empty list]
@@ -147,6 +151,6 @@ Level 2
  
  Smoother (level 1) both : "Ifpack2::ILUT": {Initialized: true, Computed: true, Level-of-fill: 1, absolute threshold: 0, relative threshold: 1, relaxation value: 0, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
  
- Smoother (level 2) pre  : SuperLU solver interface
+ Smoother (level 2) pre  : SuperLU solver interface, direct solve
  Smoother (level 2) post : no smoother
  

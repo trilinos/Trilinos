@@ -107,7 +107,8 @@ test_mean_multiply(const OrdinalType order,
                    const OrdinalType nGrid,
                    const OrdinalType iterCount,
                    std::vector<double>& scalar_perf,
-                   std::vector<double>& block_perf,
+                   std::vector<double>& block_left_perf,
+                   std::vector<double>& block_right_perf,
                    std::vector<double>& pce_perf,
                    std::vector<double>& block_pce_perf)
 {
@@ -119,7 +120,8 @@ test_mean_multiply(const OrdinalType order,
   typedef Sacado::UQ::PCE<storage_type> pce_type;
 
   typedef Kokkos::View< value_type*, Kokkos::LayoutLeft, device_type > scalar_vector_type;
-  typedef Kokkos::View< value_type**, Kokkos::LayoutLeft, device_type > scalar_multi_vector_type;
+  typedef Kokkos::View< value_type**, Kokkos::LayoutLeft, device_type > scalar_left_multi_vector_type;
+   typedef Kokkos::View< value_type**, Kokkos::LayoutRight, device_type > scalar_right_multi_vector_type;
   typedef Kokkos::View< pce_type*, Kokkos::LayoutLeft, device_type > pce_vector_type;
   typedef Kokkos::View< pce_type**, Kokkos::LayoutLeft, device_type > pce_multi_vector_type;
 
@@ -165,10 +167,14 @@ test_mean_multiply(const OrdinalType order,
   // Generate input vectors:
 
   ordinal_type pce_size = basis->size();
-  scalar_multi_vector_type x(Kokkos::allocate_without_initializing,
-                             "scalar x", fem_length, pce_size);
-  scalar_multi_vector_type y(Kokkos::allocate_without_initializing,
-                             "scalar y", fem_length, pce_size);
+  scalar_left_multi_vector_type xl(Kokkos::allocate_without_initializing,
+                                  "scalar left x", fem_length, pce_size);
+  scalar_left_multi_vector_type yl(Kokkos::allocate_without_initializing,
+                                  "scalar right y", fem_length, pce_size);
+  scalar_right_multi_vector_type xr(Kokkos::allocate_without_initializing,
+                                    "scalar right x", fem_length, pce_size);
+  scalar_right_multi_vector_type yr(Kokkos::allocate_without_initializing,
+                                    "scalar right y", fem_length, pce_size);
   std::vector<scalar_vector_type> x_col(pce_size), y_col(pce_size);
   for (ordinal_type i=0; i<pce_size; ++i) {
     x_col[i] = scalar_vector_type (Kokkos::allocate_without_initializing,
@@ -183,14 +189,16 @@ test_mean_multiply(const OrdinalType order,
   pce_vector_type y_pce(Kokkos::allocate_without_initializing,
                         "pce y", kokkos_cijk, fem_length, pce_size);
   pce_multi_vector_type x_multi_pce(Kokkos::allocate_without_initializing,
-                              "pce multi x", kokkos_cijk, fem_length,
-                              num_pce_col, pce_size);
+                                    "pce multi x", kokkos_cijk, fem_length,
+                                    num_pce_col, pce_size);
   pce_multi_vector_type y_multi_pce(Kokkos::allocate_without_initializing,
-                              "pce multi y", kokkos_cijk, fem_length,
-                              num_pce_col, pce_size);
+                                    "pce multi y", kokkos_cijk, fem_length,
+                                    num_pce_col, pce_size);
 
-  Kokkos::deep_copy( x , value_type(1.0) );
-  Kokkos::deep_copy( y , value_type(0.0) );
+  Kokkos::deep_copy( xl , value_type(1.0) );
+  Kokkos::deep_copy( yl , value_type(0.0) );
+  Kokkos::deep_copy( xr , value_type(1.0) );
+  Kokkos::deep_copy( yr , value_type(0.0) );
   Kokkos::deep_copy( x_pce , value_type(1.0) );
   Kokkos::deep_copy( y_pce , value_type(0.0) );
   Kokkos::deep_copy( x_multi_pce , value_type(1.0) );
@@ -223,10 +231,11 @@ test_mean_multiply(const OrdinalType order,
     // warm up
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
       for (ordinal_type col=0; col<pce_size; ++col) {
-        // scalar_vector_type x_col =
+        // scalar_vector_type xc =
         //   Kokkos::subview<scalar_vector_type>(x, Kokkos::ALL(), col);
-        // scalar_vector_type y_col =
+        // scalar_vector_type yc =
         //   Kokkos::subview<scalar_vector_type>(y, Kokkos::ALL(), col);
+        // Kokkos::MV_Multiply( yc, scalar_matrix, xc );
         Kokkos::MV_Multiply( y_col[col], scalar_matrix, x_col[col] );
       }
     }
@@ -235,10 +244,11 @@ test_mean_multiply(const OrdinalType order,
     Kokkos::Impl::Timer clock ;
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
       for (ordinal_type col=0; col<pce_size; ++col) {
-        // scalar_vector_type x_col =
+        // scalar_vector_type xc =
         //   Kokkos::subview<scalar_vector_type>(x, Kokkos::ALL(), col);
-        // scalar_vector_type y_col =
+        // scalar_vector_type yc =
         //   Kokkos::subview<scalar_vector_type>(y, Kokkos::ALL(), col);
+        // Kokkos::MV_Multiply( yc, scalar_matrix, xc );
         Kokkos::MV_Multiply( y_col[col], scalar_matrix, x_col[col] );
       }
     }
@@ -256,33 +266,58 @@ test_mean_multiply(const OrdinalType order,
   }
 
   //------------------------------
-  // Block multiply
+  // Block-left multiply
 
-  /*
   {
     // warm up
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
-      Kokkos::MV_Multiply( y, scalar_matrix, x );
+      Kokkos::MV_Multiply( yl, scalar_matrix, xl );
     }
 
     device_type::fence();
     Kokkos::Impl::Timer clock ;
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
-      Kokkos::MV_Multiply( y, scalar_matrix, x );
+      Kokkos::MV_Multiply( yl, scalar_matrix, xl );
     }
     device_type::fence();
 
     const double seconds_per_iter = clock.seconds() / ((double) iterCount );
     const double flops = 1.0e-9 * 2.0 * graph_length * pce_size;
 
-    block_perf.resize(5);
-    block_perf[0] = fem_length;
-    block_perf[1] = pce_size;
-    block_perf[2] = graph_length;
-    block_perf[3] = seconds_per_iter;
-    block_perf[4] = flops / seconds_per_iter;
+    block_left_perf.resize(5);
+    block_left_perf[0] = fem_length;
+    block_left_perf[1] = pce_size;
+    block_left_perf[2] = graph_length;
+    block_left_perf[3] = seconds_per_iter;
+    block_left_perf[4] = flops / seconds_per_iter;
   }
-  */
+
+  //------------------------------
+  // Block-right multiply
+
+  {
+    // warm up
+    for (ordinal_type iter = 0; iter < iterCount; ++iter) {
+      Kokkos::MV_Multiply( yr, scalar_matrix, xr );
+    }
+
+    device_type::fence();
+    Kokkos::Impl::Timer clock ;
+    for (ordinal_type iter = 0; iter < iterCount; ++iter) {
+      Kokkos::MV_Multiply( yr, scalar_matrix, xr );
+    }
+    device_type::fence();
+
+    const double seconds_per_iter = clock.seconds() / ((double) iterCount );
+    const double flops = 1.0e-9 * 2.0 * graph_length * pce_size;
+
+    block_right_perf.resize(5);
+    block_right_perf[0] = fem_length;
+    block_right_perf[1] = pce_size;
+    block_right_perf[2] = graph_length;
+    block_right_perf[3] = seconds_per_iter;
+    block_right_perf[4] = flops / seconds_per_iter;
+  }
 
   //------------------------------
   // PCE multiply
@@ -358,20 +393,23 @@ void performance_test_driver( const Ordinal nGrid,
             << "\"Scalar SpMM Time\" , "
             << "\"Scalar SpMM Speedup\" , "
             << "\"Scalar SpMM GFLOPS\" , "
-            // << "\"Block SpMM Speedup\" , "
-            // << "\"Block SpMM GFLOPS\" , "
+            << "\"Block-Left SpMM Speedup\" , "
+            << "\"Block-Left SpMM GFLOPS\" , "
+            << "\"Block-Right SpMM Speedup\" , "
+            << "\"Block-Right SpMM GFLOPS\" , "
             << "\"PCE SpMM Speedup\" , "
             << "\"PCE SpMM GFLOPS\" , "
             << "\"Block PCE SpMM Speedup\" , "
             << "\"Block PCE SpMM GFLOPS\" , "
             << std::endl;
 
-  std::vector<double> perf_scalar, perf_block, perf_pce, perf_block_pce;
+  std::vector<double> perf_scalar, perf_block_left, perf_block_right,
+    perf_pce, perf_block_pce;
   for (Ordinal dim=min_var; dim<=max_var; ++dim) {
 
     test_mean_multiply<Scalar,Ordinal,Device>(
-      order, dim, nGrid, nIter, perf_scalar, perf_block, perf_pce,
-      perf_block_pce );
+      order, dim, nGrid, nIter, perf_scalar, perf_block_left, perf_block_right,
+      perf_pce, perf_block_pce );
 
     std::cout << nGrid << " , "
               << perf_scalar[0] << " , "
@@ -382,8 +420,10 @@ void performance_test_driver( const Ordinal nGrid,
               << perf_scalar[3] << " , "
               << perf_scalar[4] / perf_scalar[4] << " , "
               << perf_scalar[4] << " , "
-              // << perf_block[4]/ perf_scalar[4] << " , "
-              // << perf_block[4] << " , "
+              << perf_block_left[4]/ perf_scalar[4] << " , "
+              << perf_block_left[4] << " , "
+              << perf_block_right[4]/ perf_scalar[4] << " , "
+              << perf_block_right[4] << " , "
               << perf_pce[4]/ perf_scalar[4] << " , "
               << perf_pce[4] << " , "
               << perf_block_pce[4]/ perf_scalar[4] << " , "

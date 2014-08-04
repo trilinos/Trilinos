@@ -64,7 +64,7 @@ namespace stk {
 	  if (l.topology < r.topology)   return true;
 	  if (l.topology > r.topology)   return false;
 
-	  int num_nodes = (int)l.nodes.size();
+	  int num_nodes = static_cast<int>(l.nodes.size());
 	  for (int k = 0; k < num_nodes-1; ++k) {
 	    if (l.nodes[k] < r.nodes[k]) return true;
 	    if (l.nodes[k] > r.nodes[k]) return false;
@@ -76,7 +76,7 @@ namespace stk {
 	friend inline bool operator == (shared_face_type const& l, shared_face_type const& r)
 	{
 	  bool equal = l.topology == r.topology;
-	  int num_nodes = (int)l.nodes.size();
+	  int num_nodes = static_cast<int>(l.nodes.size());
 	  for (int k = 0; k < num_nodes; ++k) {
 	    bool node_found = false;
 	    for (int j = 0; j < num_nodes; ++j) {
@@ -146,7 +146,7 @@ namespace stk {
 	    std::vector<bool> face_exists(Topology::num_faces,false);
 	    {
 	      const int num_existing_faces = m_bucket.num_faces(ielem);
-	      ThrowRequire(num_existing_faces <= (int)Topology::num_faces);
+	      ThrowRequire(num_existing_faces <= static_cast<int>(Topology::num_faces));
       
 	      Entity const *face_entity = m_bucket.begin_faces(ielem);
 	      ConnectivityOrdinal const *face_ords = m_bucket.begin_face_ordinals(ielem);
@@ -237,7 +237,7 @@ namespace stk {
 
 	  EntityCommInfoVector shared_processes(left_shared.first, left_shared.second);
 
-	  for (int i = 1; i < (int)itr->nodes.size(); ++i) {
+	  for (int i = 1; i < static_cast<int>(itr->nodes.size()); ++i) {
 	    PairIterEntityComm right_shared = mesh.entity_comm_map_shared( itr->nodes[i] );
 
 	    std::set_intersection( shared_processes.begin(), shared_processes.end(),
@@ -267,7 +267,7 @@ namespace stk {
 	    for (size_t e=0, num_shared = shared_faces[proc].size(); e < num_shared; ++e) {
 	      shared_face_type const & sface = shared_faces[proc][e];
 	      CommBuffer & commbuff = comm.send_buffer(proc).pack<stk::topology::topology_t>(sface.topology);
-	      for (int i = 0; i < (int)sface.nodes.size(); ++i) {
+	      for (int i = 0; i < static_cast<int>(sface.nodes.size()); ++i) {
 		commbuff.pack<EntityKey>(sface.nodes[i]);
 	      }
 	      commbuff.pack<EntityKey>(sface.local_key);
@@ -284,7 +284,7 @@ namespace stk {
 	    stk::topology::topology_t topology;
 	    buf.unpack<stk::topology::topology_t>(topology);
 	    shared_face_type sface(topology);
-	    for (int i = 0; i < (int)sface.nodes.size(); ++i) {
+	    for (int i = 0; i < static_cast<int>(sface.nodes.size()); ++i) {
 	      buf.unpack<EntityKey>(sface.nodes[i]);
 	    }
 

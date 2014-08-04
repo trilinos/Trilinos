@@ -335,11 +335,11 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    double *dampingFactors; /* coefficients of prolongator smoother */
    ML_Operator *tmpmat1=NULL,*tmpmat2=NULL;
 
+   double t1=0, createPtentTime=0, smooPTime=0, eigenTime=0;
 #ifdef ML_TIMING
    double t0;
    t0 =  GetClock();
 #endif
-   double t1=0, createPtentTime=0, smooPTime=0, eigenTime=0;
    widget.Adiag = NULL;
 
    StartTimer(&t1);
@@ -487,10 +487,14 @@ else ML_DVector_GetDataPtr( Amat->diagonal, &(widget.Adiag) );
      }
 
      if ((max_eigen < -666.) && (max_eigen > -667)) {
+       if ( ml->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 5)
+         printf("Calculating eigenvalue estimate using ");
 
        switch( Amat->spectral_radius_scheme ) {
 
        case ML_USE_CG:  /* compute it using CG */
+         if ( ml->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 5)
+           printf("CG method\n");
 
          kdata = ML_Krylov_Create( ml->comm );
          ML_Krylov_Set_PrintFreq( kdata, 0 );
@@ -519,6 +523,8 @@ else ML_DVector_GetDataPtr( Amat->diagonal, &(widget.Adiag) );
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_ANASAxI) && defined(HAVE_ML_TEUCHOS)
          ML_Anasazi_Get_SpectralNorm_Anasazi(Amat, 0, 10, 1e-5,
                          ML_FALSE, ML_TRUE, &max_eigen);
+         if ( ml->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 5)
+           printf("Anasazi\n");
 #else
          fprintf(stderr,
              "--enable-epetra --enable-anasazi --enable-teuchos required\n"
@@ -537,6 +543,8 @@ else ML_DVector_GetDataPtr( Amat->diagonal, &(widget.Adiag) );
          break;
 
        case ML_USE_POWER: /* use ML's power method */
+         if ( ml->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 5)
+           printf("power method\n");
          kdata = ML_Krylov_Create( ml->comm );
          ML_Krylov_Set_PrintFreq( kdata, 0 );
          ML_Krylov_Set_MaxIterations(kdata, Amat->spectral_radius_max_iters);
@@ -555,11 +563,16 @@ else ML_DVector_GetDataPtr( Amat->diagonal, &(widget.Adiag) );
          break;
 
        default: /* using matrix max norm */
+         if ( ml->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 5)
+           printf("matrix max norm\n");
          max_eigen = ML_Operator_MaxNorm(Amat, ML_TRUE);
          break;
 
        } /* switch( Amat->spectral_radius_scheme ) */
 
+     } else {
+       if ( ml->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 5)
+         printf("Using stashed eigenvalue estimate");
      } /* if ((max_eigen < -666.) && (max_eigen > -667)) */
 
 
@@ -3864,12 +3877,12 @@ int ML_AGG_SemiCoarseP(ML *ml,int level, int clevel, void *data)
 
   ML_Aggregate * ag = (ML_Aggregate *) data;
 
+  ML_Operator* Amat = &(ml->Amat[level]);
 #ifdef ML_TIMING
   double t0;
   t0 =  GetClock();
 #endif
 
-  ML_Operator* Amat = &(ml->Amat[level]);
   Pmatrix = &(ml->Pmat[clevel]);
   Amat->num_PDEs    = ag->num_PDE_eqns;
   widget            = (struct SemiCoarsen_Struct *) ag->field_of_values;

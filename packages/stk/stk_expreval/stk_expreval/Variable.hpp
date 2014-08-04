@@ -122,6 +122,8 @@ public:
    * @return			a <b>Variable</b> reference to the variable.
    */
   Variable &operator=(const double &value) {
+    m_type = this->m_type;
+    m_use = this->m_use;
     if (m_type == INTEGER)
       *m_intPtr = static_cast<int>(value);
     else if (m_type == DOUBLE)
@@ -139,6 +141,8 @@ public:
    * @return			a <b>Variable</b> reference to the variable.
    */
   Variable &operator=(const int &value) {
+    m_type = this->m_type;
+    m_use = this->m_use;
     if (m_type == INTEGER)
       *m_intPtr = value;
     else if (m_type == DOUBLE)

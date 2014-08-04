@@ -314,6 +314,10 @@ typedef MueLu::TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatO
 typedef MueLu::UserPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> UserPFactory;
 #endif
 
+#ifdef MUELU_SEMICOARSENPFACTORY_SHORT
+typedef MueLu::SemiCoarsenPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SemiCoarsenPFactory;
+#endif
+
 #ifdef MUELU_UZAWASMOOTHER_SHORT
 typedef MueLu::UzawaSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> UzawaSmoother;
 #endif

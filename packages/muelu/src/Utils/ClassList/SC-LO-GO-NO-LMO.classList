@@ -76,4 +76,5 @@ TpetraOperator
 TransPFactory
 TrilinosSmoother
 UserPFactory
+SemiCoarsenPFactory
 UzawaSmoother

@@ -64,7 +64,7 @@ template< class > struct ThreadsExecAdapter ;
 
 //----------------------------------------------------------------------------
 
-class ThreadsExecTeamIndex ;
+class ThreadsExecTeamMember ;
 
 class ThreadsExec {
 public:
@@ -88,7 +88,7 @@ public:
 
 private:
 
-  friend class ThreadsExecTeamIndex ;
+  friend class ThreadsExecTeamMember ;
   friend class Kokkos::Threads ;
 
   // Fan-in operations' root is the highest ranking thread
@@ -147,6 +147,9 @@ private:
     { return (volatile T *) m_alloc_reduce ; }
 
 public:
+
+  KOKKOS_INLINE_FUNCTION int pool_size() const { return m_pool_size ; }
+  KOKKOS_INLINE_FUNCTION int pool_rank() const { return m_pool_rank ; }
 
   static int team_alloc( int team_size );
 
@@ -536,12 +539,47 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-class ThreadsExecTeamIndex {
+class ThreadsExecTeamMember {
 private:
 
   Impl::ThreadsExec & m_exec ;
+
+  
   
   typedef Kokkos::Threads execution_space ;
+
+  // Fan-in and wait until the matching fan-out is called.
+  // The root thread which does not wait will return true.
+  // All other threads will return false during the fan-out.
+  KOKKOS_INLINE_FUNCTION bool team_fanin() const
+    {
+      const int rev_rank = m_exec.m_team_size - ( m_exec.m_team_rank + 1 );
+      const bool is_root = ! rev_rank ;
+
+      int n , j ;
+
+      // Wait for fan-in threads
+      for ( n = 1 ; ( ! ( rev_rank & n ) ) && ( ( j = rev_rank + n ) < m_exec.m_team_size ) ; n <<= 1 ) {
+        Impl::spinwait( m_exec.m_team_base[j]->m_pool_state , ThreadsExec::Active );
+      }
+
+      // If not root then wait for release
+      if ( ! is_root ) {
+        m_exec.m_pool_state = ThreadsExec::Rendezvous ;
+        Impl::spinwait( m_exec.m_pool_state , ThreadsExec::Rendezvous );
+      }
+
+      return is_root ;
+    }
+
+  KOKKOS_INLINE_FUNCTION void team_fanout() const
+    {
+      const int rev_rank = m_exec.m_team_size - ( m_exec.m_team_rank + 1 );
+      int n , j ;
+      for ( n = 1 ; ( ! ( rev_rank & n ) ) && ( ( j = rev_rank + n ) < m_exec.m_team_size ) ; n <<= 1 ) {
+        m_exec.m_team_base[j]->m_pool_state = ThreadsExec::Active ;
+      }
+    }
 
 public:
 
@@ -555,7 +593,34 @@ public:
   KOKKOS_INLINE_FUNCTION int team_size() const { return m_exec.m_team_size ; }
 
   KOKKOS_INLINE_FUNCTION void team_barrier() const
-    { m_exec.team_barrier(); }
+    {
+      team_fanin();
+      team_fanout();
+    }
+
+  template< typename Type >
+  KOKKOS_INLINE_FUNCTION Type team_reduce( const Type & value ) const
+    {
+      // Make sure there is enough scratch space:
+      typedef typename if_c< sizeof(Type) < ThreadsExec::REDUCE_TEAM_BASE , Type , void >::type type ;
+
+      *((volatile type*) m_exec.reduce_team() ) = value ;
+
+      memory_fence();
+
+      type & accum = *((type *) m_exec.m_team_base[0]->reduce_team() );
+
+      if ( team_fanin() ) {
+        for ( int i = 1 ; i < m_exec.m_team_size ; ++i ) {
+          accum += *((type *) m_exec.m_team_base[i]->reduce_team() );
+        }
+        memory_fence();
+      }
+
+      team_fanout();
+
+      return accum ;
+    }
 
   /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
    *          with intra-team non-deterministic ordering accumulation.
@@ -568,7 +633,40 @@ public:
    */
   template< typename Type >
   KOKKOS_INLINE_FUNCTION Type team_scan( const Type & value , Type * const global_accum ) const
-    { return m_exec.template team_scan<Type>( value , global_accum ); }
+    {
+      // Make sure there is enough scratch space:
+      typedef typename if_c< sizeof(Type) < ThreadsExec::REDUCE_TEAM_BASE , Type , void >::type type ;
+
+      *((volatile type*) m_exec.reduce_team() ) = value ;
+
+      memory_fence();
+
+      if ( team_fanin() ) {
+        type accum = *((type *) m_exec.m_team_base[0]->reduce_team() );
+
+        // Copy from lower to higher rank team member: { N-1 , N-2 , N-3 , ... , 0 }
+        for ( int i = 1 ; i < m_exec.m_team_size ; ++i ) {
+          accum += ( *((type *) m_exec.m_team_base[i-1]->reduce_team() ) =
+                     *((type *) m_exec.m_team_base[i  ]->reduce_team() ) );
+        }
+
+        *((type *) m_exec.m_team_base[ m_exec.m_team_size - 1 ]->reduce_team() ) =
+          global_accum ? atomic_fetch_add( global_accum , accum ) : 0 ;
+
+        // Join from lower rank to higher rank
+
+        for ( int i = m_exec.m_team_size ; --i ; ) {
+          *((type *) m_exec.m_team_base[i-1]->reduce_team() ) +=
+          *((type *) m_exec.m_team_base[i  ]->reduce_team() );
+        }
+
+        memory_fence();
+      }
+
+      team_fanout();
+
+      return *((volatile type*) m_exec.reduce_team() );
+    }
 
   /** \brief  Intra-team exclusive prefix sum with team_rank() ordering.
    *
@@ -583,7 +681,7 @@ public:
   // Private for the driver
 
   template< class WorkArgTag >
-  ThreadsExecTeamIndex( Impl::ThreadsExec & exec , const TeamPolicy< execution_space , WorkArgTag > & team )
+  ThreadsExecTeamMember( Impl::ThreadsExec & exec , const TeamPolicy< execution_space , WorkArgTag > & team )
     : m_exec( exec )
     {}
 
@@ -717,9 +815,9 @@ public:
     , m_team_alloc( Impl::ThreadsExec::team_alloc( m_team_size ) )
     { }
 
-  typedef Impl::ThreadsExecTeamIndex member_type ;
+  typedef Impl::ThreadsExecTeamMember member_type ;
 
-  friend class Impl::ThreadsExecTeamIndex ;
+  friend class Impl::ThreadsExecTeamMember ;
 };
 
 } /* namespace Kokkos */

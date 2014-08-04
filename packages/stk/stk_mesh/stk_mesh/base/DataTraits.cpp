@@ -308,8 +308,8 @@ public:
     if ( n ) {
       const char * x = reinterpret_cast<const char*>( v );
       const char * const x_end = x + n ;
-      s << int(*x++) ;
-      while ( x_end != x ) { s << " " << int(*x++) ; }
+      s << static_cast<int>(*x++) ;
+      while ( x_end != x ) { s << " " << static_cast<int>(*x++) ; }
     }
   }
 };
@@ -324,8 +324,8 @@ public:
     if ( n ) {
       const unsigned char * x = reinterpret_cast<const unsigned char*>( v );
       const unsigned char * const x_end = x + n ;
-      s << unsigned(*x++) ;
-      while ( x_end != x ) { s << " " << unsigned(*x++) ; }
+      s << static_cast<unsigned>(*x++) ;
+      while ( x_end != x ) { s << " " << static_cast<unsigned>(*x++) ; }
     }
   }
 };

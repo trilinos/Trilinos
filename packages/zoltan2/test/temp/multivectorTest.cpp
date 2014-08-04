@@ -191,7 +191,10 @@ void subGroupGloballyIncreasingIds(T numGlobalCoords,
 }
 
 void timeEpetra(GO numGlobalCoords, const RCP<const MpiComm<int> > &comm, bool);
-void timeTpetra(GO numGlobalCoords, const RCP<const MpiComm<int> > &comm, bool);
+void
+timeTpetra (const GO numGlobalCoords,
+            const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+            const bool doMemory);
 void timeZoltan(ZGO numGlobalCoords, bool);
 
 ///////////////////////////////////////////////
@@ -277,165 +280,164 @@ int main(int argc, char *argv[])
     std::cout << "PASS" << std::endl;
 }
 
-void timeTpetra(GO numGlobalCoords, const RCP<const MpiComm<int> > &comm,
-  bool doMemory)
+void
+timeTpetra (const GO numGlobalCoords,
+            const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+            const bool doMemory)
 {
-  int nprocs = comm->getSize();
-  int rank = comm->getRank();
+  using Teuchos::arcp;
+  using Teuchos::ArrayRCP;
+  using Teuchos::ArrayView;
+  using Teuchos::Comm;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using std::cout;
+  using std::endl;
+  typedef Tpetra::Map<LO, GO> map_type;
+  typedef Tpetra::MultiVector<Scalar, LO, GO> MV;
+  typedef ArrayView<const Scalar> coordList_t;
+
+  const int nprocs = comm->getSize ();
+  const int rank = comm->getRank ();
 
   ///////////// Step 1 //////////////////////////////////
   // Create a MV with contiguous global IDs
 
-  LO numLocalCoords = numSequentialGlobalIds(numGlobalCoords, nprocs, rank);
+  const LO numLocalCoords = numSequentialGlobalIds(numGlobalCoords, nprocs, rank);
 
-  tmvBuild->start();
-  tmvBuild->incrementNumCalls();
+  RCP<const map_type> tmap;
+  RCP<MV> mvector;
+  Scalar* coords = NULL;
+  {
+    Teuchos::TimeMonitor timeMon (*tmvBuild);
 
-  typedef Tpetra::Map<LO, GO> map_t;
-  RCP<const map_t> tmap = rcp(new map_t(numGlobalCoords,
-    numLocalCoords, 0, comm));
+    tmap = rcp (new map_type (numGlobalCoords, numLocalCoords, 0, comm));
 
-  Scalar *coords = new Scalar [COORDDIM * numLocalCoords];
-  memset(coords, 0, sizeof(Scalar) * numLocalCoords * COORDDIM);
+    coords = new Scalar [COORDDIM * numLocalCoords];
+    memset (coords, 0, sizeof(Scalar) * numLocalCoords * COORDDIM);
 
-  typedef ArrayView<const Scalar> coordList_t;
-  coordList_t *avList = new coordList_t [COORDDIM];
-  LO offset = 0;
+    coordList_t *avList = new coordList_t [COORDDIM];
+    LO offset = 0;
 
-  for (int dim=0; dim < COORDDIM; dim++){
-    avList[dim] = coordList_t(coords + offset, numLocalCoords);
-    offset += numLocalCoords;
+    for (int dim = 0; dim < COORDDIM; ++dim) {
+      avList[dim] = coordList_t(coords + offset, numLocalCoords);
+      offset += numLocalCoords;
+    }
+
+    ArrayRCP<const coordList_t> vectors = arcp (avList, 0, COORDDIM);
+    mvector = rcp (new MV (tmap, vectors.view (0, COORDDIM), COORDDIM));
   }
 
-  ArrayRCP<const coordList_t> vectors = arcp(avList, 0, COORDDIM);
-
-  typedef Tpetra::MultiVector<Scalar, LO, GO> mvector_t;
-  RCP<mvector_t> mvector;
-
-  mvector = rcp(new mvector_t(tmap, vectors.view(0, COORDDIM), COORDDIM));
-
-  tmvBuild->stop();
-
-  if (rank==0 && doMemory){
-    long nkb = Zoltan2::getProcessKilobytes();
-    std::cout << "Create mvector 1: " << nkb << std::endl;;
+  if (rank == 0 && doMemory) {
+    const long nkb = Zoltan2::getProcessKilobytes ();
+    cout << "Create mvector 1: " << nkb << endl;
   }
-
 
   ///////////// Step 2 //////////////////////////////////
   // Migrate the MV.
 
-  GO *newGids = NULL;
-  roundRobinGlobalIds<GO>(numGlobalCoords, nprocs, rank, newGids);
+  ArrayRCP<const GO> newGidArray;
+  {
+    GO *newGids = NULL;
+    roundRobinGlobalIds<GO> (numGlobalCoords, nprocs, rank, newGids);
+    newGidArray = arcp<const GO> (newGids, 0, numLocalCoords, true);
+  }
 
-  ArrayRCP<const GO> newGidArray(newGids, 0, numLocalCoords, true);
+  RCP<const map_type> newTmap;
+  RCP<Tpetra::Import<LO, GO> > importer;
+  RCP<MV> newMvector;
+  {
+    Teuchos::TimeMonitor timeMon (*tmvMigrate);
 
-  tmvMigrate->start();
-  tmvMigrate->incrementNumCalls();
+    newTmap = rcp (new map_type (numGlobalCoords, newGidArray.view(0, numLocalCoords), 0, comm));
+    importer = rcp (new Tpetra::Import<LO, GO> (tmap, newTmap));
+    newMvector = rcp (new MV (newTmap, COORDDIM, true));
 
-  RCP<const map_t> newTmap = rcp(
-    new map_t(numGlobalCoords, newGidArray.view(0, numLocalCoords), 0, comm));
-
-  RCP<Tpetra::Import<LO, GO> > importer = rcp(
-    new Tpetra::Import<LO, GO>(tmap, newTmap));
-
-  RCP<mvector_t> newMvector = rcp(new mvector_t(newTmap, COORDDIM, true));
-
-  newMvector->doImport(*mvector, *importer, Tpetra::INSERT);
-
-  mvector = newMvector;
-
-  tmvMigrate->stop();
+    newMvector->doImport (*mvector, *importer, Tpetra::INSERT);
+    mvector = newMvector;
+  }
 
   delete [] coords;
 
-  if (rank==0 && doMemory){
-    long nkb = Zoltan2::getProcessKilobytes();
-    std::cout << "Create mvector 2: " << nkb << std::endl;;
+  if (rank == 0 && doMemory) {
+    const long nkb = Zoltan2::getProcessKilobytes ();
+    cout << "Create mvector 2: " << nkb << endl;
   }
 
   ///////////// Step 3 //////////////////////////////////
   // Divide processes into two halves.
 
-  int groupSize = 0;
-  int leftHalfNumProcs = nprocs / 2;
-  int *myHalfProcs = NULL;
+  RCP<Comm<int> > subComm;
+  {
+    int groupSize = 0;
+    int leftHalfNumProcs = nprocs / 2;
+    int *myHalfProcs = NULL;
 
-  if (rank < leftHalfNumProcs){
-    groupSize = leftHalfNumProcs;
-    myHalfProcs = new int [groupSize];
-    for (int i=0; i < groupSize; i++)
-      myHalfProcs[i] = i;
+    if (rank < leftHalfNumProcs){
+      groupSize = leftHalfNumProcs;
+      myHalfProcs = new int [groupSize];
+      for (int i=0; i < groupSize; i++)
+        myHalfProcs[i] = i;
+    }
+    else {
+      groupSize = nprocs - leftHalfNumProcs;
+      myHalfProcs = new int [groupSize];
+      int firstNum = leftHalfNumProcs;
+      for (int i=0; i < groupSize; i++)
+        myHalfProcs[i] = firstNum++;
+    }
+
+    ArrayView<const int> idView(myHalfProcs, groupSize);
+    subComm = comm->createSubcommunicator (idView);
+    delete [] myHalfProcs;
   }
-  else {
-    groupSize = nprocs - leftHalfNumProcs;
-    myHalfProcs = new int [groupSize];
-    int firstNum = leftHalfNumProcs;
-    for (int i=0; i < groupSize; i++)
-      myHalfProcs[i] = firstNum++;
-  }
-
-  ArrayView<const int> idView(myHalfProcs, groupSize);
-  // TODO - memory leak in createSubcommunicator.
-  RCP<Comm<int> > newComm = comm->createSubcommunicator(idView);
-  RCP<MpiComm<int> > subComm = rcp_dynamic_cast<MpiComm<int> >(newComm);
-
-  delete [] myHalfProcs;
 
   // Divide the multivector into two.  Each process group is creating
   // a multivector with non-contiguous global ids.  For one group,
   // base gid is not 0.
 
-  ArrayView<const GO> gidList = mvector->getMap()->getNodeElementList();
-  size_t localSize = mvector->getLocalLength();
-  size_t globalSize = Teuchos::OrdinalTraits<size_t>::invalid();
+  size_t globalSize = Teuchos::OrdinalTraits<size_t>::invalid ();
+  RCP<map_type> subMap;
+  RCP<MV> subMvector;
+  {
+    Teuchos::TimeMonitor timeMon (*tmvBuildN);
 
-  tmvBuildN->start();
-  tmvBuildN->incrementNumCalls();
+    ArrayView<const GO> gidList = mvector->getMap ()->getNodeElementList ();
+    subMap = rcp (new map_type (globalSize, gidList, 0, subComm));
+    globalSize = subMap->getGlobalNumElements ();
 
-  RCP<map_t> subMap = rcp(new map_t(globalSize, gidList, 0, subComm));
-
-  globalSize = subMap->getGlobalNumElements();
-
-  coordList_t *avSubList = new coordList_t [COORDDIM];
-
-  for (int dim=0; dim < COORDDIM; dim++)
-    avSubList[dim] = mvector->getData(dim).view(0, localSize);
-
-  ArrayRCP<const ArrayView<const Scalar> > subVectors =
-    arcp(avSubList, 0, COORDDIM);
-
-  RCP<mvector_t> subMvector = rcp(new mvector_t(
-      subMap, subVectors.view(0, COORDDIM), COORDDIM));
-
-  tmvBuildN->stop();
+    // Get a view of the block of rows to copy.
+    RCP<MV> tmp = mvector->offsetViewNonConst (subMap, 0);
+    // Create a new multivector to hold the group's rows.
+    subMvector = rcp (new MV (subMap, mvector->getNumVectors ()));
+    // Copy the view into the new multivector.
+    Tpetra::deep_copy (*subMvector, *tmp);
+  }
 
   ///////////// Step 4 //////////////////////////////////
   // Each subgroup migrates the sub-multivector so the
   // global Ids are increasing with process rank.
 
   GO *increasingGids = NULL;
-  subGroupGloballyIncreasingIds<GO>(numGlobalCoords,
-    nprocs, rank, increasingGids);
+  subGroupGloballyIncreasingIds<GO> (numGlobalCoords, nprocs,
+                                     rank, increasingGids);
 
-  ArrayRCP<const GO> incrGidArray(increasingGids, 0, numLocalCoords, true);
+  ArrayRCP<const GO> incrGidArray (increasingGids, 0, numLocalCoords, true);
 
-  tmvMigrateN->start();
-  tmvMigrateN->incrementNumCalls();
+  RCP<const map_type> newSubMap;
+  RCP<Tpetra::Import<LO, GO> > subImporter;
+  RCP<MV> newSubMvector;
+  {
+    Teuchos::TimeMonitor timeMon (*tmvMigrateN);
 
-  RCP<const map_t> newSubMap = rcp(new map_t(
-    globalSize, incrGidArray.view(0, numLocalCoords), 0, subComm));
-
-  RCP<Tpetra::Import<LO, GO> > subImporter = rcp(
-    new Tpetra::Import<LO, GO>(subMap, newSubMap));
-
-  RCP<mvector_t> newSubMvector = rcp(new mvector_t(newSubMap, COORDDIM, true));
-
-  newSubMvector->doImport(*subMvector, *subImporter, Tpetra::INSERT);
-
-  mvector = newSubMvector;
-
-  tmvMigrateN->stop();
+    newSubMap =
+      rcp (new map_type (globalSize, incrGidArray.view (0, numLocalCoords),
+                         0, subComm));
+    subImporter = rcp (new Tpetra::Import<LO, GO> (subMap, newSubMap));
+    newSubMvector = rcp (new MV (newSubMap, COORDDIM, true));
+    newSubMvector->doImport (*subMvector, *subImporter, Tpetra::INSERT);
+    mvector = newSubMvector;
+  }
 }
 
 void timeEpetra(GO numGlobalCoords, const RCP<const MpiComm<int> > &comm,

@@ -92,8 +92,10 @@ template< class FunctorType >
 class ParallelFor< FunctorType , MPVectorWorkConfig , Threads > {
 public:
   ParallelFor( const FunctorType        & functor ,
-               const MPVectorWorkConfig & work_config ) {
-    ParallelFor< FunctorType , size_t, Threads >( functor , work_config.range );
+               const MPVectorWorkConfig & work_config )
+  {
+    typedef Kokkos::RangePolicy< Threads > Policy ;
+    ParallelFor< FunctorType , Policy , Threads >( functor , Policy( 0, work_config.range ) );
   }
 };
 #endif
@@ -111,8 +113,10 @@ template< class FunctorType >
 class ParallelFor< FunctorType , MPVectorWorkConfig , OpenMP > {
 public:
   ParallelFor( const FunctorType        & functor ,
-               const MPVectorWorkConfig & work_config ) {
-    ParallelFor< FunctorType , size_t, OpenMP >( functor , work_config.range );
+               const MPVectorWorkConfig & work_config )
+  {
+    typedef Kokkos::RangePolicy< OpenMP > Policy ;
+    ParallelFor< FunctorType , Policy , OpenMP >( functor , Policy( 0, work_config.range ) );
   }
 };
 #endif
@@ -129,8 +133,10 @@ template< class FunctorType >
 class ParallelFor< FunctorType , MPVectorWorkConfig , Serial > {
 public:
   ParallelFor( const FunctorType        & functor ,
-               const MPVectorWorkConfig & work_config ) {
-    ParallelFor< FunctorType , size_t, Serial >( functor , work_config.range );
+               const MPVectorWorkConfig & work_config )
+  {
+    typedef Kokkos::RangePolicy< Serial > Policy ;
+    ParallelFor< FunctorType , Policy , Serial >( functor , Policy( 0, work_config.range ) );
   }
 };
 

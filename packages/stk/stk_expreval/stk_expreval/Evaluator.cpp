@@ -941,7 +941,7 @@ Eval::evaluate() const
     throw std::runtime_error(std::string("Expression '") + m_expression + "' did not parse successfully");
   }
 
-  double returnValue;
+  double returnValue = 0.0;
   try
   {
     returnValue = m_headNode->eval();

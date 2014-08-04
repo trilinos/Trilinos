@@ -117,7 +117,7 @@ public:
   }
 
   // Partitioning method
-  void partition(PartitioningSolution<Adapter> &solution_);
+  void partition(const RCP<PartitioningSolution<Adapter> > &solution_);
 
 };
 ////////////////////////////////////////////////////////////////////////////////
@@ -125,7 +125,9 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
-void AlgWolf<Adapter>::partition(PartitioningSolution<Adapter> &solution_)
+void AlgWolf<Adapter>::partition(
+  const RCP<PartitioningSolution<Adapter> > &solution_
+)
 {
     // using std::string;
     // using std::ostringstream;

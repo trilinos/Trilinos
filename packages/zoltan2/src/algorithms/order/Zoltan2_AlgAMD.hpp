@@ -101,16 +101,23 @@ namespace Zoltan2{
 template <typename Adapter>
 class AlgAMD : public Algorithm<Adapter>
 {
+    private:
+
+    const RCP<GraphModel<Adapter> > model;
+    const RCP<Teuchos::ParameterList> &pl;
+    const RCP<Teuchos::Comm<int> > &comm;
+      
     public:
 
-    AlgAMD()
-    {
-    }
+    AlgAMD(
+      const RCP<GraphModel<Adapter> > &model__,
+      const RCP<Teuchos::ParameterList> &pl__,
+      const RCP<Teuchos::Comm<int> > &comm__
+    ) : model(model__), pl(pl__), comm(comm__)
+    { }
 
-    int order ( const RCP<GraphModel<Adapter> > &model,
-    const RCP<OrderingSolution<typename Adapter::gid_t,
-    typename Adapter::lno_t> > &solution, const RCP<Teuchos::ParameterList> &pl,
-    const RCP<Teuchos::Comm<int> > &comm )
+    int order(const RCP<OrderingSolution<typename Adapter::gid_t,
+                                         typename Adapter::lno_t> > &solution)
     {
 #ifndef HAVE_ZOLTAN2_AMD
   throw std::runtime_error(

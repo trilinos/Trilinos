@@ -102,6 +102,9 @@ private:
 
 public:
 
+  inline int pool_rank() const { return m_pool_rank ; }
+  inline int pool_size() const { return omp_get_num_threads(); }
+
   void * reduce_team() const { return m_alloc_reduce ; }
   void * reduce_base() const { return ((unsigned char *)m_alloc_reduce) + REDUCE_TEAM_BASE ; }
 
@@ -399,6 +402,24 @@ KOKKOS_INLINE_FUNCTION
 int OpenMP::team_rank() const { return m_exec.m_team_rank ; }
 KOKKOS_INLINE_FUNCTION
 int OpenMP::team_size() const { return m_exec.m_team_size ; }
+
+KOKKOS_INLINE_FUNCTION
+unsigned OpenMP::hardware_thread_id() {
+#ifndef __CUDA_ARCH__
+  return omp_get_thread_num();
+#else
+  return 0;
+#endif
+}
+
+KOKKOS_INLINE_FUNCTION
+unsigned OpenMP::max_hardware_threads() {
+#ifndef __CUDA_ARCH__
+  return omp_get_max_threads();
+#else
+  return 1;
+#endif
+}
 
 KOKKOS_INLINE_FUNCTION
 void OpenMP::team_barrier() { m_exec.team_barrier() ; }

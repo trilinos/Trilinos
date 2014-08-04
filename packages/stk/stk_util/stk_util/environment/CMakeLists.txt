@@ -42,4 +42,4 @@ TRIBITS_ADD_LIBRARY(
   )
 
 INSTALL(FILES ${HEADERS} DESTINATION
-        ${CMAKE_INSTALL_PREFIX}/include/stk_util/environment/)
+        ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_util/environment/)

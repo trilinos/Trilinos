@@ -492,9 +492,9 @@ namespace stk {
 
       size_t step = sti.get_closest_step();
       int current_step = region->get_current_state();
-      if (current_step != -1 && current_step != (int)step)
+      if (current_step != -1 && current_step != static_cast<int>(step))
 	region->end_state(current_step);
-      if (current_step != (int)step) 
+      if (current_step != static_cast<int>(step))
 	region->begin_state(step);
 
       return region->get_state_time(step);

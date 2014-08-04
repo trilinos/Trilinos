@@ -201,32 +201,36 @@ void OrderingProblem<Adapter>::solve(bool newData)
   {
   if (method.compare("rcm") == 0)
   {
-      AlgRCM<base_adapter_t> alg;
-      alg.order(this->graphModel_, this->solution_, this->params_, problemComm_);
+      AlgRCM<base_adapter_t> alg(this->graphModel_,
+                                 this->params_, problemComm_);
+      alg.order(this->solution_);
   }
   else if (method.compare("natural") == 0)
   {
-      AlgNatural<base_adapter_t> alg;
-      alg.order(this->identifierModel_, this->solution_, this->params_, problemComm_);
+      AlgNatural<base_adapter_t> alg(this->identifierModel_,
+                                     this->params_, problemComm_);
+      alg.order(this->solution_);
   }
   else if (method.compare("random") == 0)
   {
-      AlgRandom<base_adapter_t> alg;
-      alg.order(this->identifierModel_, this->solution_, this->params_, problemComm_);
+      AlgRandom<base_adapter_t> alg(this->identifierModel_,
+                                    this->params_, problemComm_);
+      alg.order(this->solution_);
   }
   else if (method.compare("sorted_degree") == 0)
   {
-      AlgSortedDegree<base_adapter_t> alg;
-      alg.order(this->graphModel_, this->solution_, this->params_, problemComm_);
+      AlgSortedDegree<base_adapter_t> alg(this->graphModel_,
+                                          this->params_, problemComm_);
+      alg.order(this->solution_);
   }
   else if (method.compare("minimum_degree") == 0)
   {
       std::string pkg = this->params_->template get<std::string>("order_package", "amd");
       if (pkg.compare("amd") == 0)
       {
-          AlgAMD<base_adapter_t> alg;
-          alg.order (this->graphModel_, this->solution_, this->params_,
-                          problemComm_);
+          AlgAMD<base_adapter_t> alg(this->graphModel_,
+                                     this->params_, problemComm_);
+          alg.order(this->solution_);
       }
   }
   }

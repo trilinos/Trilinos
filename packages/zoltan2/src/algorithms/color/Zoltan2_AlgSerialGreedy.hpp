@@ -64,20 +64,21 @@ class AlgSerialGreedy : public Algorithm<Adapter>
     typedef typename Adapter::scalar_t scalar_t;
     // Class member variables
     RCP<GraphModel<typename Adapter::base_adapter_t> > model_;
+    RCP<Teuchos::ParameterList> pl_;
     RCP<Teuchos::Comm<int> > comm_;
   
   public:
   AlgSerialGreedy(
     const RCP<GraphModel<typename Adapter::base_adapter_t> > &model,
+    const RCP<Teuchos::ParameterList> &pl,
     const RCP<Teuchos::Comm<int> > &comm
-  ) : model_(model), comm_(comm)
+  ) : model_(model), pl_(pl), comm_(comm)
   {
   }
 
   // Main entry point for graph coloring.
   void color(
-    const RCP<ColoringSolution<Adapter> > &solution,
-    const RCP<Teuchos::ParameterList> &pl
+    const RCP<ColoringSolution<Adapter> > &solution
   )
   {
     HELLO;
@@ -107,7 +108,7 @@ class AlgSerialGreedy : public Algorithm<Adapter>
     }
 
     // Let colorCrsGraph do the real work.
-    colorCrsGraph(nVtx, edgeIds, offsets, colors, pl);
+    colorCrsGraph(nVtx, edgeIds, offsets, colors);
     return;
   }
   
@@ -116,8 +117,7 @@ class AlgSerialGreedy : public Algorithm<Adapter>
     const lno_t nVtx,
     ArrayView<const lno_t> edgeIds,
     ArrayView<const lno_t> offsets,
-    ArrayRCP<int> colors,
-    const RCP<Teuchos::ParameterList> &pl
+    ArrayRCP<int> colors
   )
   {
     HELLO;

@@ -103,7 +103,7 @@ public:
 #endif
   }
   
-  void partition(PartitioningSolution<Adapter> &solution);
+  void partition(const RCP<PartitioningSolution<Adapter> > &solution);
 
 private:
   const RCP<const Environment> env;
@@ -113,7 +113,9 @@ private:
 };
 
 template <typename Adapter>
-void AlgRCB<Adapter>::partition(PartitioningSolution<Adapter> &solution)
+void AlgRCB<Adapter>::partition(
+  const RCP<PartitioningSolution<Adapter> > &solution
+)
 {
 #ifndef INCLUDE_ZOLTAN2_EXPERIMENTAL
 
@@ -270,7 +272,7 @@ void AlgRCB<Adapter>::partition(PartitioningSolution<Adapter> &solution)
   // then they are values that sum to 1.0.
   env->debug(DETAILED_STATUS, "Getting part info");
 
-  size_t numGlobalParts = solution.getTargetGlobalNumberOfParts();
+  size_t numGlobalParts = solution->getTargetGlobalNumberOfParts();
 
   int nSizesPerPart = (nWeightsPerCoord ? nWeightsPerCoord : 1);
 
@@ -278,7 +280,7 @@ void AlgRCB<Adapter>::partition(PartitioningSolution<Adapter> &solution)
   Array<ArrayRCP<scalar_t> > partSizes(nSizesPerPart);
 
   for (int widx = 0; widx < nSizesPerPart; widx++){
-    if (solution.criteriaHasUniformPartSizes(widx)){
+    if (solution->criteriaHasUniformPartSizes(widx)){
       uniformParts[widx] = true;
     }
     else{
@@ -286,7 +288,7 @@ void AlgRCB<Adapter>::partition(PartitioningSolution<Adapter> &solution)
       env->localMemoryAssertion(__FILE__, __LINE__, numGlobalParts, tmp) ;
     
       for (size_t i=0; i < numGlobalParts; i++){
-        tmp[i] = solution.getCriteriaPartSize(widx, i);
+        tmp[i] = solution->getCriteriaPartSize(widx, i);
       }
 
       partSizes[widx] = arcp(tmp, 0, numGlobalParts);
@@ -302,7 +304,7 @@ void AlgRCB<Adapter>::partition(PartitioningSolution<Adapter> &solution)
   if (nSizesPerPart > 1){
     for (int widx1 = 0; widx1 < nSizesPerPart; widx1++)
       for (int widx2 = widx1+1; widx2 < nSizesPerPart; widx2++)
-        if (!solution.criteriaHaveSamePartSizes(widx1, widx2)){
+        if (!solution->criteriaHaveSamePartSizes(widx1, widx2)){
           multiplePartSizeSpecs = true;
           break;
         }
@@ -568,7 +570,7 @@ void AlgRCB<Adapter>::partition(PartitioningSolution<Adapter> &solution)
     env->debug(VERBOSE_DETAILED_STATUS, oss.str());
   }
 
-  solution.setParts(gnoList, partId, false);
+  solution->setParts(gnoList, partId, false);
 #endif // INCLUDE_ZOLTAN2_EXPERIMENTAL
 }
 

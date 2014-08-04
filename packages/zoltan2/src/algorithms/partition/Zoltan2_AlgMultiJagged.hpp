@@ -6006,7 +6006,8 @@ private:
 
     int mj_run_as_rcb; //if this is set, then recursion depth is adjusted to its maximum value.
 
-    void set_up_partitioning_data(PartitioningSolution<Adapter> &solution);
+    void set_up_partitioning_data(
+      const RCP<PartitioningSolution<Adapter> >&solution);
 
     void set_input_parameters(const Teuchos::ParameterList &p);
 
@@ -6042,7 +6043,7 @@ public:
      *      contains part information, on return it also contains
      *      the solution and quality metrics.
      */
-    void partition(PartitioningSolution<Adapter> &solution);
+    void partition(const RCP<PartitioningSolution<Adapter> > &solution);
 
     mj_part_t pointAssign(int dim, mj_scalar_t *point) const;
 };
@@ -6058,7 +6059,9 @@ public:
  *      the solution and quality metrics.
  */
 template <typename Adapter>
-void Zoltan2_AlgMJ<Adapter>::partition(PartitioningSolution<Adapter> &solution)
+void Zoltan2_AlgMJ<Adapter>::partition(
+  const RCP<PartitioningSolution<Adapter> > &solution
+)
 {
     this->set_up_partitioning_data(solution);
     this->set_input_parameters(this->mj_env->getParameters());
@@ -6100,10 +6103,10 @@ void Zoltan2_AlgMJ<Adapter>::partition(PartitioningSolution<Adapter> &solution)
 
     ArrayRCP<const mj_gno_t> gnoList = arcp(result_mj_gnos, 0, this->num_local_coords, true);
     ArrayRCP<mj_part_t> partId = arcp(result_assigned_part_ids, 0, this->num_local_coords, true);
-    solution.setParts(gnoList, partId, true);
+    solution->setParts(gnoList, partId, true);
     if (this->mj_keep_part_boxes){
     	RCP < std::vector <coordinateModelPartBox <mj_scalar_t, mj_part_t> > > output_part_boxes = this->mj_partitioner.get_part_boxes();
-        solution.setPartBoxes(output_part_boxes);
+        solution->setPartBoxes(output_part_boxes);
     }
     this->free_work_memory();
 }
@@ -6123,7 +6126,7 @@ void Zoltan2_AlgMJ<Adapter>::free_work_memory(){
  * */
 template <typename Adapter>
 void Zoltan2_AlgMJ<Adapter>::set_up_partitioning_data(
-  PartitioningSolution<Adapter> &solution
+  const RCP<PartitioningSolution<Adapter> > &solution
 )
 {
 	this->coord_dim = this->mj_coords->getCoordinateDim();
@@ -6135,7 +6138,7 @@ void Zoltan2_AlgMJ<Adapter>::set_up_partitioning_data(
 	// From the Solution we get part information.
 	// If the part sizes for a given criteria are not uniform,
 	// then they are values that sum to 1.0.
-	this->num_global_parts = solution.getTargetGlobalNumberOfParts();
+	this->num_global_parts = solution->getTargetGlobalNumberOfParts();
 	//allocate only two dimensional pointer.
 	//raw pointer addresess will be obtained from multivector.
 	this->mj_coordinates = allocMemory<mj_scalar_t *>(this->coord_dim);
@@ -6183,7 +6186,7 @@ void Zoltan2_AlgMJ<Adapter>::set_up_partitioning_data(
 	}
 
 	for (int wdim = 0; wdim < criteria_dim; wdim++){
-		if (solution.criteriaHasUniformPartSizes(wdim)){
+		if (solution->criteriaHasUniformPartSizes(wdim)){
 			this->mj_uniform_parts[wdim] = true;
 			this->mj_part_sizes[wdim] = NULL;
 		}

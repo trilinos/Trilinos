@@ -28,7 +28,7 @@ ENDIF()
 TRIBITS_ADD_OPTION_AND_DEFINE(
   KokkosClassic_ENABLE_KokkosCompat
   HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
-  "Enable use of the KokkosCompat subpackage in the KokkosClassic subpackage.  This option is only for use by expert developers.  I MEAN IT."
+  "Enable use of the KokkosCompat subpackage in the KokkosClassic subpackage.  This option is only for use by expert developers.  You normally do not need to set this option explicitly, even if you are using the Kokkos refactor version of Tpetra."
   "${${PROJECT_NAME}_ENABLE_KokkosCompat}"
   )
 

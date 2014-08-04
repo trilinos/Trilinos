@@ -141,8 +141,8 @@ void get_heap_info(size_t &heap_size, size_t &largest_free);
  *				the heap.
  */
 inline size_t get_heap_usage() {
-  size_t heap_size;
-  size_t largest_free;
+  size_t heap_size = 0;
+  size_t largest_free = 0;
   get_heap_info(heap_size, largest_free);
 
   return heap_size;

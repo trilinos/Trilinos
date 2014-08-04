@@ -605,12 +605,20 @@ IF (Stokhos_ENABLE_Sacado)
           )
       ENDIF()
     ENDIF()
-     IF (Stokhos_ENABLE_KokkosMpiComm)
+    IF (Stokhos_ENABLE_KokkosMpiComm)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/mpicomm)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/mpicomm)
       LIST(APPEND SACADO_HEADERS
         sacado/kokkos/vector/mpicomm/Kokkos_TeuchosCommAdapters_MP_Vector.hpp
         sacado/kokkos/pce/mpicomm/Kokkos_TeuchosCommAdapters_UQ_PCE.hpp
+        )
+    ENDIF()
+    IF (Stokhos_ENABLE_KokkosAlgorithms)
+      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/algorithms)
+      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/algorithms)
+      LIST(APPEND SACADO_HEADERS
+        sacado/kokkos/vector/algorithms/Kokkos_Random_MP_Vector.hpp
+        sacado/kokkos/pce/algorithms/Kokkos_Random_UQ_PCE.hpp
         )
     ENDIF()
 

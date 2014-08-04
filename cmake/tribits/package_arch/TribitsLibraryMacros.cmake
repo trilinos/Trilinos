@@ -382,6 +382,13 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME)
     ${ARGN} # Remaining arguments passed in
     )
 
+  IF(PARSE_HEADERS)
+    LIST(REMOVE_DUPLICATES PARSE_HEADERS)
+  ENDIF()
+  IF(PARSE_SOURCES)
+    LIST(REMOVE_DUPLICATES PARSE_SOURCES)
+  ENDIF()
+
   # ToDo: Deprecate and remove the usage of DEFINES!  People should be putting
   # defines into configured header files, not adding -D<macroName> to the
   # compile lines!

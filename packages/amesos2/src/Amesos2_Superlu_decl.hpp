@@ -120,6 +120,9 @@ public:
 
   //@}
 
+  /// Returns a short description of this Solver
+  std::string description() const;
+
 private:
 
   /**

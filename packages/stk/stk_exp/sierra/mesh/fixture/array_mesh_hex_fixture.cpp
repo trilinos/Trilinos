@@ -107,7 +107,7 @@ void array_mesh_hex_fixture::populate_field_data()
   m_coord_field.resize(m_num_nodes*spatial_dim);
 
   for(size_t i=0; i<m_num_nodes; ++i) {
-    unsigned x, y, z;
+    unsigned x=0, y=0, z=0;
     node_x_y_z(i, x, y, z);
     double* coords = &m_coord_field[i*spatial_dim];
     coords[0] = x;

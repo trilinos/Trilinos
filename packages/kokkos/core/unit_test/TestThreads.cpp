@@ -262,6 +262,7 @@ TEST_F( threads , atomics )
 
 //----------------------------------------------------------------------------
 
+#if 0
 TEST_F( threads , scan_small )
 {
   typedef TestScan< Kokkos::Threads , Kokkos::Impl::ThreadsExecUseScanSmall > TestScanFunctor ;
@@ -274,6 +275,7 @@ TEST_F( threads , scan_small )
 
   Kokkos::Threads::fence();
 }
+#endif
 
 TEST_F( threads , scan )
 {
@@ -288,11 +290,15 @@ TEST_F( threads , scan )
 
 //----------------------------------------------------------------------------
 
-TEST_F( threads , team_scan )
+TEST_F( threads , request_scan )
 {
   TestScanRequest< Kokkos::Threads >( 10 );
-  TestScanTeam< Kokkos::Threads >( 10 );
   TestScanRequest< Kokkos::Threads >( 10000 );
+}
+
+TEST_F( threads , team_scan )
+{
+  TestScanTeam< Kokkos::Threads >( 10 );
   TestScanTeam< Kokkos::Threads >( 10000 );
 }
 

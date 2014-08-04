@@ -51,6 +51,10 @@
 #define _ZOLTAN2_ALGORITHM_HPP_
 
 #include <Zoltan2_Standards.hpp>
+#include <Zoltan2_ColoringSolution.hpp>
+#include <Zoltan2_OrderingSolution.hpp>
+#include <Zoltan2_PartitioningSolution.hpp>
+
 
 #define Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM \
   { \
@@ -74,26 +78,37 @@ namespace Zoltan2 {
 //  Default implementations throw a "not implemented" error
 
 template <typename Adapter>
-  class Algorithm {
+class Algorithm {
 
 public:
 
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
+  typedef typename Adapter::gid_t gid_t;
   typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::part_t part_t;
 
+  // Virtual destructor needed to avoid undefined behavior and compiler warnings
+  virtual ~Algorithm() {}
+
   //! \brief Ordering method
-  virtual void order() { Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM }
+  virtual int order(const RCP<OrderingSolution<gid_t, lno_t> > &solution) 
+  {
+    Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM 
+  }
   
   //! \brief Coloring method
-  virtual void color() { Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM }
+  virtual void color(const RCP<ColoringSolution<Adapter> > &solution) 
+  {
+    Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM
+  }
   
   //! \brief Coloring method
   virtual void match() { Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM }
 
   //! \brief Partitioning method
-  virtual void partition(PartitioningSolution<Adapter> &solution) {
+  virtual void partition(const RCP<PartitioningSolution<Adapter> > &solution) 
+  {
     Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM
   }
 

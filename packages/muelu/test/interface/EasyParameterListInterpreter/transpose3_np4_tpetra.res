@@ -71,6 +71,8 @@ Level 1
      [empty list]
      
     sa: damping factor = 1.33333   [default]
+    sa: calculate eigenvalue estimate = 0   [default]
+    sa: eigenvalue estimate num iterations = 10   [default]
     
    Build (MueLu::CoordinatesTransferFactory)
    write start = -1   [default]
@@ -158,6 +160,8 @@ Level 2
      [empty list]
      
     sa: damping factor = 1.33333   [default]
+    sa: calculate eigenvalue estimate = 0   [default]
+    sa: eigenvalue estimate num iterations = 10   [default]
     
    Build (MueLu::CoordinatesTransferFactory)
    write start = -1   [default]
@@ -209,6 +213,6 @@ Level 2
  
  Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3335, 3335], Global nnz: 10015}
  
- Smoother (level 2) pre  : SuperLU solver interface
+ Smoother (level 2) pre  : SuperLU solver interface, direct solve
  Smoother (level 2) post : no smoother
  

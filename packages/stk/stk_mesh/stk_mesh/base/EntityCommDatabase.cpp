@@ -119,7 +119,7 @@ void unpack_entity_info(
     Entity const entity =
       mesh.get_entity( rel_key.rank(), rel_key.id() );
     if ( mesh.is_valid(entity) ) {
-      Relation rel(mesh, entity, rel_id );
+      Relation rel(entity, mesh.entity_rank(entity), rel_id );
       rel.set_attribute(rel_attr);
       relations.push_back( rel );
     }

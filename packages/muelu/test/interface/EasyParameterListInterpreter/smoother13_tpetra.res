@@ -68,6 +68,8 @@ Level 1
   [empty list]
   
  sa: damping factor = 1.33333   [default]
+ sa: calculate eigenvalue estimate = 0   [default]
+ sa: eigenvalue estimate num iterations = 10   [default]
  
  Transpose P (MueLu::TransPFactory)
  [empty list]
@@ -133,6 +135,8 @@ Level 2
   [empty list]
   
  sa: damping factor = 1.33333   [default]
+ sa: calculate eigenvalue estimate = 0   [default]
+ sa: eigenvalue estimate num iterations = 10   [default]
  
  Transpose P (MueLu::TransPFactory)
  [empty list]
@@ -168,6 +172,6 @@ Level 2
  Smoother (level 1) pre  : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.94974, alpha: 20, lambdaMin: 0.0974869}, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
  Smoother (level 1) post : "Ifpack2::RILUK": {Initialized: true, Computed: true, Level-of-fill: 0, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
  
- Smoother (level 2) pre  : SuperLU solver interface
+ Smoother (level 2) pre  : SuperLU solver interface, direct solve
  Smoother (level 2) post : no smoother
  

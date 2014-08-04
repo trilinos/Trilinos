@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
     int threads = 0;
     CLP.setOption("threads", &threads, "Number of threads for Threads device");
 #endif
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_HAVE_OPENMP
     int openmp = 0;
     CLP.setOption("openmp", &openmp, "Number of threads for OpenMP device");
 #endif

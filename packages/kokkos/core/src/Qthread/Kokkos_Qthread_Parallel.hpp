@@ -59,23 +59,26 @@ namespace Impl {
 
 //----------------------------------------------------------------------------
 
-template< class FunctorType , class WorkSpec >
-class ParallelFor< FunctorType , WorkSpec , Kokkos::Qthread >
+template< class FunctorType , typename IntType , unsigned P >
+class ParallelFor< FunctorType
+                 , Kokkos::RangePolicy< Kokkos::Qthread , void , IntType , P >
+                 , Kokkos::Qthread
+                 >
 {
 public:
+  typedef Kokkos::RangePolicy< Kokkos::Qthread , void , IntType , P >  Policy ;
 
   const FunctorType  m_func ;
-  const size_t       m_work ;
+  const Policy       m_policy ;
 
   // Function is called once by every concurrent thread.
   static void execute( QthreadExec & exec , const void * arg )
   {
-    typedef RangePolicy< Kokkos::Qthread , void , size_t > policy_range ;
 
     const ParallelFor & self = * ((const ParallelFor *) arg );
-    const policy_range range( exec.worker_rank() , exec.worker_size() , 0 , self.m_work );
+    const Policy range( self.m_policy , exec.worker_rank() , exec.worker_size() );
 
-    for ( size_t iwork = range.begin, work_end = range.end ; iwork < work_end ; ++iwork ) {
+    for ( typename Policy::member_type iwork = range.begin(), work_end = range.end() ; iwork < work_end ; ++iwork ) {
       self.m_func( iwork );
     }
 
@@ -83,51 +86,54 @@ public:
     exec.exec_all_barrier();
   }
 
-  ParallelFor( const FunctorType & functor , const size_t work )
-    : m_func( functor ), m_work( work )
+  ParallelFor( const FunctorType & functor
+             , const Policy      & policy
+             )
+    : m_func( functor )
+    , m_policy( policy )
     {
       Impl::QthreadExec::exec_all( Qthread::instance() , & ParallelFor::execute , this );
     }
-
-  inline void wait() {}
-
-  inline ~ParallelFor() { wait(); }
 };
 
 //----------------------------------------------------------------------------
 
-template< class FunctorType , class WorkSpec >
-class ParallelReduce< FunctorType , WorkSpec , Kokkos::Qthread >
+template< class FunctorType , typename IntType , unsigned P >
+class ParallelReduce< FunctorType
+                    , Kokkos::RangePolicy< Kokkos::Qthread , void , IntType , P >
+                    , Kokkos::Qthread
+                    >
 {
 public:
 
   typedef ReduceAdapter< FunctorType >   Reduce ;
   typedef typename Reduce::pointer_type  pointer_type ;
+  typedef Kokkos::RangePolicy< Kokkos::Qthread , void , IntType , P >  Policy ;
 
   const FunctorType  m_func ;
-  const size_t       m_work ;
+  const Policy       m_policy ;
 
   static void execute( QthreadExec & exec , const void * arg )
   {
-    typedef RangePolicy< Kokkos::Qthread , void , size_t > policy_range ;
-
     const ParallelReduce & self = * ((const ParallelReduce *) arg );
-    const policy_range range( exec.worker_rank() , exec.worker_size() , 0 , self.m_work );
+    const Policy range( self.m_policy , exec.worker_rank() , exec.worker_size() );
 
     // Initialize thread-local value
     typename Reduce::reference_type update = Reduce::init( self.m_func , exec.exec_all_reduce_value() );
 
-    for ( size_t iwork = range.begin, work_end = range.end ; iwork < work_end ; ++iwork ) {
+    for ( typename Policy::member_type iwork = range.begin(), work_end = range.end() ; iwork < work_end ; ++iwork ) {
       self.m_func( iwork , update );
     }
 
     exec.exec_all_reduce( self.m_func );
   }
 
-  ParallelReduce( const FunctorType & functor ,
-                  const size_t        work ,
-                  const pointer_type  result_ptr = 0 )
-    : m_func( functor ), m_work( work )
+  template< class HostViewType >
+  ParallelReduce( const FunctorType  & functor
+                , const Policy       & policy
+                , const HostViewType & result_view )
+    : m_func( functor )
+    , m_policy( policy )
     {
       QthreadExec::resize_worker_scratch( Reduce::value_size( m_func ) , 0 );
 
@@ -137,15 +143,11 @@ public:
 
       Reduce::final( m_func , data );
 
-      if ( result_ptr ) {
+      if ( result_view.ptr_on_device() ) {
         const unsigned n = Reduce::value_count( m_func );
-        for ( unsigned i = 0 ; i < n ; ++i ) { result_ptr[i] = data[i]; }
+        for ( unsigned i = 0 ; i < n ; ++i ) { result_view.ptr_on_device()[i] = data[i]; }
       }
     }
-
-  inline void wait() {}
-
-  inline ~ParallelReduce() { wait(); }
 };
 
 //----------------------------------------------------------------------------
@@ -211,52 +213,52 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-template< class FunctorType , class WorkSpec >
-class ParallelScan< FunctorType , WorkSpec , Kokkos::Qthread >
+template< class FunctorType , typename IntType , unsigned P >
+class ParallelScan< FunctorType
+                  , Kokkos::RangePolicy< Kokkos::Qthread , void , IntType , P >
+                  , Kokkos::Qthread
+                  >
 {
 public:
 
   typedef ReduceAdapter< FunctorType >   Reduce ;
   typedef typename Reduce::pointer_type  pointer_type ;
+  typedef Kokkos::RangePolicy< Kokkos::Qthread , void , IntType , P > Policy ;
 
   const FunctorType  m_func ;
-  const size_t       m_work ;
+  const Policy       m_policy ;
 
   static void execute( QthreadExec & exec , const void * arg )
   {
-    typedef RangePolicy< Kokkos::Qthread , void , size_t > policy_range ;
-
     const ParallelScan & self = * ((const ParallelScan *) arg );
-    const policy_range range( exec.worker_rank() , exec.worker_size() , 0 , self.m_work );
+    const Policy range( self.m_policy , exec.worker_rank() , exec.worker_size() );
 
     // Initialize thread-local value
     typename Reduce::reference_type update = Reduce::init( self.m_func , exec.exec_all_reduce_value() );
 
-    for ( size_t iwork = range.begin, work_end = range.end ; iwork < work_end ; ++iwork ) {
+    for ( typename Policy::member_type iwork = range.begin(), work_end = range.end() ; iwork < work_end ; ++iwork ) {
       self.m_func( iwork , update , false );
     }
 
     exec.exec_all_scan( self.m_func );
 
-    for ( size_t iwork = range.begin, work_end = range.end ; iwork < work_end ; ++iwork ) {
+    for ( typename Policy::member_type iwork = range.begin(), work_end = range.end() ; iwork < work_end ; ++iwork ) {
       self.m_func( iwork , update , true );
     }
 
     exec.exec_all_barrier();
   }
 
-  ParallelScan( const FunctorType & functor , const size_t nwork )
+  ParallelScan( const FunctorType & functor
+              , const Policy      & policy
+              )
     : m_func( functor )
-    , m_work( nwork )
+    , m_policy( policy )
     {
       QthreadExec::resize_worker_scratch( Reduce::value_size( m_func ) , 0 );
 
       Impl::QthreadExec::exec_all( Qthread::instance() , & ParallelScan::execute , this );
     }
-
-  inline void wait() {}
-
-  inline ~ParallelScan() { wait(); }
 };
 
 } // namespace Impl

@@ -57,7 +57,6 @@
 #include <TestRequest.hpp>
 #include <TestReduce.hpp>
 #include <TestScan.hpp>
-#include <TestMultiReduce.hpp>
 #include <TestAggregate.hpp>
 #include <TestCompilerMacros.hpp>
 #include <TestCXX11.hpp>
