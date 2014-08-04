@@ -72,12 +72,30 @@ typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType  Node;
 
 int main(int argc, char *argv[]) {
 
+  int numProcs=1;
+  int rank=0;
+
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
+  rank=mpiSession.getRank();
+  numProcs=mpiSession.getNProc();
+
 
   //Get the default communicator and node for Tpetra
   //rewrite using with IFDEF for MPI/no MPI??
   Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
   RCP<const Teuchos::Comm<int> > CommT = platform.getComm();
   int MyPID = CommT->getRank();
+
+
+#ifdef HAVE_MPI
+  if (MyPID == 0) {
+    cout << "PARALLEL executable \n";
+  }
+#else
+  if (MyPID == 0) {
+    cout << "SERIAL executable \n";
+  }
+#endif
 
   /***************************************************************************/
   /*************************** GET XML INPUTS ********************************/
@@ -112,9 +130,21 @@ int main(int argc, char *argv[]) {
   std::string meshInput = Teuchos::getParameter<std::string>(inputMeshList,
 							     "meshInput");
 
+
+  /***************************************************************************/
+  /********************** GET CELL TOPOLOGY **********************************/
+  /***************************************************************************/
+
+  // Get dimensions
+  int dim = 3;
+
   /***************************************************************************/
   /***************************** GENERATE MESH *******************************/
   /***************************************************************************/
+
+  if (MyPID == 0) {
+    cout << "Generating mesh ... \n\n";
+  }
 
   // Generate mesh with Pamgen
   long long maxInt = 9223372036854775807LL;
@@ -124,6 +154,7 @@ int main(int argc, char *argv[]) {
   Delete_Pamgen_Mesh();
 
   return 0;
+
 }
 /*****************************************************************************/
 /********************************* END MAIN **********************************/
