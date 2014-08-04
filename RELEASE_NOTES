@@ -77,20 +77,21 @@ STK
         STKClassic should be used.
 
     If you only want to use the old STK it is advisable to enable only
-    STKClassic and not any part of the new STK when configuring Trilinos. This
-    will ensure that there is no opportunity to inadvertantly link against any
-    part of the new STK.
+    STKClassic with the varibale Trilinos_ENABLE_STKClassic and not any part of
+    the new STK when configuring Trilinos. This will ensure that there is no
+    opportunity to inadvertantly link against any part of the new STK.
 
   - Old STK moved to new namespace stk_classic.
     
     The new STK retains the use of the namespace STK. To avoid potential
     conflicts STKClassic has been moved to the namespace stk_classic. There is a
-    script in packages/stk/stk_classic/conversion_script/stk_to_stk_classic to
-    convert stk namespace to stk_classic. To use the script just cd into a
-    directory containing files you'd like to update and run
-    "stk_to_stk_classic". The script will update any files in the current
-    directory and any subdirectories of the directory you are modifying.
-    
+    script provided to convert stk namespace to stk_classic. To use the script
+    just cd into a directory containing files you'd like to update and run
+    packages/stk/stk_classic/conversion_script/stk_to_stk_classic (do not copy
+    the script to the directory you want to modify). The script will update any
+    files in the current directory and any subdirectories of the directory you
+    are modifying.
+
      * You should not copy the script to the directory you are modifying.
      * There is a possibility that some instances of the old namespace will be
        not be fixed correctly and may need some manual attention. However, the
