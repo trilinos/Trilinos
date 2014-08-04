@@ -140,8 +140,6 @@ void communicate_field_data(
   const int parallel_rank = mesh.parallel_rank();
   const unsigned ghost_id = ghosts.ordinal();
 
-//std::ostringstream oss;
-//oss<<"beginning communicate_field_data(ghosting)"<<std::endl;
   const std::vector<const FieldBase *>::const_iterator fe = fields.end();
   const std::vector<const FieldBase *>::const_iterator fb = fields.begin();
         std::vector<const FieldBase *>::const_iterator fi ;
@@ -173,40 +171,25 @@ void communicate_field_data(
       continue;
     }
 
-//oss<<"proc "<<parallel_rank<<", entity "<<mesh.entity_rank(e)<<":"<<mesh.identifier(e)<<std::endl;
     const EntityCommInfoVector& infovec = i->entity_comm->comm_map;
     PairIterEntityComm ec(infovec.begin(), infovec.end());
     if ( owned ) {
-//oss<<"proc "<<parallel_rank<<" is the owner, ghost_id:proc::"<<std::endl;
       for ( ; ! ec.empty() ; ++ec ) {
         if (ec->ghost_id == ghost_id) {
-//oss<<"    sending: "<<ghost_id<<":"<<ec->proc<<":"<<e_size<<"bytes"<<std::endl;
           send_size[ ec->proc ] += e_size ;
-        }
-        else {
-//oss<<"    skipping ghost_id="<<ec->ghost_id<<", proc="<<ec->proc<<std::endl;
         }
       }
     }
     else {
-//oss<<"proc "<<parallel_rank<<" recving from proc: "<<std::endl;
       for ( ; ! ec.empty() ; ++ec ) {
         if (ec->ghost_id == ghost_id) {
           recv_size[ i->owner ] += e_size ;
-//oss<<"    recv from proc "<<i->owner<<":"<<e_size<<"bytes"<<std::endl;
           break;//jump out since we know we're only recving 1 msg from the 1-and-only owner
-        }
-        else {
-//oss<<"    skipping ghost_id="<<ec->ghost_id<<", proc="<<ec->proc<<std::endl;
         }
       }
     }
   }
 
-//for(int i=0; i<parallel_size; ++i) {
-//oss<<"send to "<<i<<", "<<send_size[i]<<", recv from "<<i<<", "<<recv_size[i]<<std::endl;
-//}
-//std::cerr<<oss.str()<<std::endl;
   // Allocate send and receive buffers:
 
   CommAll sparse ;
