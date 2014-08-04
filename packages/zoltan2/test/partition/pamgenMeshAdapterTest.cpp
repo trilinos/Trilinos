@@ -50,6 +50,21 @@
 
 */
 
+/**************************************************************/
+/*                          Includes                          */
+/**************************************************************/
+
+//Tpetra includes
+#include "Tpetra_DefaultPlatform.hpp"
+
+/*********************************************************/
+/*                     Typedefs                          */
+/*********************************************************/
+//Tpetra typedefs
+typedef Tpetra::DefaultPlatform::DefaultPlatformType            Platform;
+typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType  Node;
+
+
 
 /*****************************************************************************/
 /******************************** MAIN ***************************************/
@@ -57,27 +72,39 @@
 
 int main(int argc, char *argv[]) {
 
-/*****************************************************************************/
-/***************************** GET XML INPUTS ********************************/
-/*****************************************************************************/
+
+  //Get the default communicator and node for Tpetra
+  //rewrite using with IFDEF for MPI/no MPI??
+  Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
+  RCP<const Teuchos::Comm<int> > CommT = platform.getComm();
+  int MyPID = CommT->getRank();
+
+  /***************************************************************************/
+  /*************************** GET XML INPUTS ********************************/
+  /***************************************************************************/
+
+  // Command line for xml file, otherwise use default
+  std::string   xmlMeshInFileName;
+  if(argc>=2) xmlMeshInFileName=string(argv[1]);
+  else xmlMeshInFileName="Poisson.xml";
 
   // Read xml file into parameter list
-  Teuchos::ParameterList inputMeshList;
+  ParameterList inputMeshList;
 
   if(xmlMeshInFileName.length()) {
     if (MyPID == 0) {
       std::cout << "\nReading parameter list from the XML file \""
 		<<xmlMeshInFileName<<"\" ...\n\n";
     }
-    Teuchos::updateParametersFromXmlFile (xmlMeshInFileName, 
-					  Teuchos::ptr (&inputMeshList));
+    Teuchos::updateParametersFromXmlFile(xmlMeshInFileName, 
+					 Teuchos::inoutArg(&inputMeshList));
     if (MyPID == 0) {
-      inputMeshList.print(std::cout,2,true,true);
-      std::cout << "\n";
+      inputMeshList.print(cout,2,true,true);
+      cout << "\n";
     }
   }
   else {
-    std::cout << "Cannot read input file: " << xmlMeshInFileName << "\n";
+    cout << "Cannot read input file: " << xmlMeshInFileName << "\n";
     return 0;
   }
 
@@ -85,9 +112,9 @@ int main(int argc, char *argv[]) {
   std::string meshInput = Teuchos::getParameter<std::string>(inputMeshList,
 							     "meshInput");
 
-/*****************************************************************************/
-/******************************* GENERATE MESH *******************************/
-/*****************************************************************************/
+  /***************************************************************************/
+  /***************************** GENERATE MESH *******************************/
+  /***************************************************************************/
 
   // Generate mesh with Pamgen
   long long maxInt = 9223372036854775807LL;
