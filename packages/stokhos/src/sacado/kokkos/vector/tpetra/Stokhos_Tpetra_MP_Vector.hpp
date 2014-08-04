@@ -72,6 +72,7 @@
 
 #include "Kokkos_TeuchosCommAdapters_MP_Vector.hpp"
 #include "Tpetra_KokkosRefactor_Details_MultiVectorDistObjectKernels_MP_Vector.hpp"
+#include "Kokkos_Random_MP_Vector.hpp"
 #endif
 
 namespace Stokhos {

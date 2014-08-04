@@ -39,52 +39,49 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_TPETRA_UQ_PCE_HPP
-#define STOKHOS_TPETRA_UQ_PCE_HPP
+#ifndef KOKKOS_RANDOM_MP_VECTOR_HPP
+#define KOKKOS_RANDOM_MP_VECTOR_HPP
 
-// This header file should be included whenever compiling any Tpetra
-// code with Stokhos scalar types
+#include "Stokhos_ConfigDefs.h"
+#if defined(HAVE_STOKHOS_KOKKOSALGORITHMS)
 
-// MP includes and specializations
-#include "Stokhos_Sacado_Kokkos_UQ_PCE.hpp"
+#include "Sacado_MP_Vector.hpp"
+#include "Kokkos_View_MP_Vector_Contiguous.hpp"
+#include "Kokkos_Random.hpp"
 
-// Kokkos includes
-#include "KokkosClassic_config.h"
-#include "Kokkos_Serial.hpp"
-#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT)
-#include "Kokkos_BufferMacros.hpp"
-#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
-#include "KokkosCompat_View.hpp"
-#include "KokkosCompat_View_def.hpp"
-#endif
+//----------------------------------------------------------------------------
+// Specializations of Kokkos random functions for Sacado::MP::Vector scalar type
+//----------------------------------------------------------------------------
 
-// Kokkos-Linalg
-#include "Tpetra_config.h"
-#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-#include "Kokkos_ArithTraits_UQ_PCE.hpp"
-#include "Kokkos_InnerProductSpaceTraits_UQ_PCE.hpp"
-#include "Kokkos_MV_UQ_PCE.hpp"
-#include "Kokkos_CrsMatrix_UQ_PCE.hpp"
-#include "Kokkos_CrsMatrix_UQ_PCE_Cuda.hpp"
-#include "Kokkos_TeuchosCommAdapters_UQ_PCE.hpp"
-#include "Kokkos_Random_UQ_PCE.hpp"
-#endif
+namespace Kokkos {
 
-namespace Stokhos {
+  template<class Generator, class Storage>
+  struct rand<Generator,Sacado::MP::Vector<Storage> > {
+    typedef Sacado::MP::Vector<Storage> Scalar;
+    typedef typename Scalar::value_type BaseScalar;
+    typedef rand<Generator,BaseScalar> BaseRand;
 
-// Traits for determining device type from node type
-template <typename Node>
-struct DeviceForNode2 {
-  typedef Kokkos::Serial type;
-};
+    KOKKOS_INLINE_FUNCTION
+    static Scalar max() { return BaseRand::max(); }
 
-#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT)
-template <typename Device>
-struct DeviceForNode2< Kokkos::Compat::KokkosDeviceWrapperNode<Device> > {
-  typedef Device type;
-};
-#endif
+    KOKKOS_INLINE_FUNCTION
+    static Scalar draw(Generator& gen) {
+      return BaseRand::draw(gen);
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    static Scalar draw(Generator& gen, const Scalar& range) {
+      return BaseRand::draw(gen, range.coeff(0));
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    static Scalar draw(Generator& gen, const Scalar& start, const Scalar& end) {
+      return BaseRand::draw(gen, start.coeff(0), end.coeff(0));
+    }
+  };
 
 }
 
-#endif // STOKHOS_TPETRA_UQ_PCE_HPP
+#endif
+
+#endif /* #ifndef KOKKOS_RANDOM_MP_VECTOR_HPP */
