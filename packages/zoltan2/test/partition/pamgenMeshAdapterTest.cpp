@@ -64,6 +64,23 @@ int main(int argc, char *argv[]) {
   // Read xml file into parameter list
   Teuchos::ParameterList inputMeshList;
 
+  if(xmlMeshInFileName.length()) {
+    if (MyPID == 0) {
+      std::cout << "\nReading parameter list from the XML file \""
+		<<xmlMeshInFileName<<"\" ...\n\n";
+    }
+    Teuchos::updateParametersFromXmlFile (xmlMeshInFileName, 
+					  Teuchos::ptr (&inputMeshList));
+    if (MyPID == 0) {
+      inputMeshList.print(std::cout,2,true,true);
+      std::cout << "\n";
+    }
+  }
+  else {
+    std::cout << "Cannot read input file: " << xmlMeshInFileName << "\n";
+    return 0;
+  }
+
   // Get pamgen mesh definition
   std::string meshInput = Teuchos::getParameter<std::string>(inputMeshList,
 							     "meshInput");
