@@ -6266,11 +6266,11 @@ void Zoltan2_AlgMJ<Adapter>::set_input_parameters(const Teuchos::ParameterList &
 	}
 
         // For now, need keep_part_boxes to do pointAssign and boxAssign.
-	pe = pl.getEntryPtr("keep_cuts");
-	if (pe){
-		int tmp = pe->getValue(&tmp);
-		if (tmp) this->mj_keep_part_boxes = 1;
-        }
+	// pe = pl.getEntryPtr("keep_cuts");
+	// if (pe){
+	// 	int tmp = pe->getValue(&tmp);
+	// 	if (tmp) this->mj_keep_part_boxes = 1;
+        // }
 
 	//need to keep part boxes if mapping type is geometric.
 	if (this->mj_keep_part_boxes == 0){
@@ -6362,23 +6362,29 @@ typename Adapter::part_t Zoltan2_AlgMJ<Adapter>::pointAssign(
       try {
         if ((*partBoxes)[i].pointInBox(dim, point)) {
           foundPart = (*partBoxes)[i].getpId();
-          std::cout << "Point (";
-          for (int i = 0; i < dim; i++) std::cout << point[i] << " ";
-          std::cout << ") found in box " << i << " part " << foundPart 
-                    << std::endl;
-          (*partBoxes)[i].print();
+//          std::cout << "Point (";
+//          for (int j = 0; j < dim; j++) std::cout << point[j] << " ";
+//          std::cout << ") found in box " << i << " part " << foundPart 
+//                    << std::endl;
+//          (*partBoxes)[i].print();
           break;
         }
       }
       Z2_FORWARD_EXCEPTIONS;
     }
 
-    if (i == nBoxes) 
-      throw std::logic_error("Point not found in domain");
+    if (i == nBoxes) {
       // TODO:  Ideally, this error would never occur, but I don't know whether
       // TODO:  MJ handles points outside the original bounding box.  If not,
       // TODO:  I will have to add code to handle points outside the original
       // TODO:  bounding box, as in Zoltan's RCB.
+
+      std::ostringstream oss;
+      oss << "Point (";
+      for (int j = 0; j < dim; j++) oss << point[j] << " ";
+      oss << ") not found in domain";
+      throw std::logic_error(oss.str());
+    }
 
     return foundPart;
   }

@@ -215,10 +215,10 @@ public:
 
         /*! \brief function to test whether a point is in the box
          */
-        bool pointInBox(int dim, scalar_t *point) {
-          if (dim != this->dim) 
+        bool pointInBox(int pointdim, scalar_t *point) {
+          if (pointdim != this->dim) 
             throw std::logic_error("dim of point must match dim of box");
-          for (int i = 0; i < dim; i++) {
+          for (int i = 0; i < pointdim; i++) {
             if (point[i] < this->lmins[i]) return false;
             if (point[i] > this->lmaxs[i]) return false;
           }
