@@ -47,6 +47,7 @@
 
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
+#include <Zoltan2_Algorithm.hpp>
 
 #include <sstream>
 #include <string>
@@ -74,7 +75,6 @@ enum blockParams{
  *  \param env   library configuration and problem parameters
  *  \param problemComm  the communicator for the problem
  *  \param ids    an Identifier model
- *  \param solution  a Solution object, containing part information
  *
  *  Preconditions: The parameters in the environment have been
  *    processed (committed).  No special requirements on the
@@ -88,35 +88,34 @@ enum blockParams{
 
 
 template <typename Adapter>
-class AlgBlock {
+class AlgBlock : public Algorithm<Adapter>
+{
 
 private:
   const RCP<const Environment> env;
   const RCP<Comm<int> > problemComm;
   const RCP<const IdentifierModel<typename Adapter::base_adapter_t> > ids;
-  RCP<PartitioningSolution<Adapter> > solution;
 
 public:
+  typedef typename Adapter::lno_t lno_t;     // local ids
+  typedef typename Adapter::gno_t gno_t;     // global ids
+  typedef typename Adapter::scalar_t scalar_t;   // scalars
+  typedef typename Adapter::part_t part_t;   // part numbers
+
   // Constructor
   AlgBlock(
     const RCP<const Environment> &env_,
     const RCP<Comm<int> > &problemComm_,
-    const RCP<const IdentifierModel<typename Adapter::base_adapter_t> > &ids_, 
-    RCP<PartitioningSolution<Adapter> > &solution_
+    const RCP<const IdentifierModel<typename Adapter::base_adapter_t> > &ids_
   ) : 
-    env(env_), problemComm(problemComm_), ids(ids_), solution(solution_)
+    env(env_), problemComm(problemComm_), ids(ids_)
   {}
 
   // Partitioning method
-  void partition()
+  void partition(const RCP<PartitioningSolution<Adapter> > &solution)
   {
     using std::string;
     using std::ostringstream;
-
-    typedef typename Adapter::lno_t lno_t;     // local ids
-    typedef typename Adapter::gno_t gno_t;     // global ids
-    typedef typename Adapter::scalar_t scalar_t;   // scalars
-    typedef typename Adapter::part_t part_t;   // part numbers
 
     env->debug(DETAILED_STATUS, string("Entering AlgBlock"));
 

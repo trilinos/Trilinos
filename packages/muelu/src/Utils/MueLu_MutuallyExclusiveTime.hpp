@@ -49,11 +49,18 @@
 #include <string>
 #include <stack>
 #include <map>
-#include <Teuchos_Time.hpp>
-#include <Teuchos_TimeMonitor.hpp>
+#include <iostream>                     // for basic_ostream, etc
+#include <utility>                      // for pair
+#include "Teuchos_FancyOStream.hpp"     // for basic_FancyOStream, etc
+#include "Teuchos_RCP.hpp"              // for RCP::operator->, etc
+#include "Teuchos_RCPDecl.hpp"          // for RCP
+#include "Teuchos_TestForException.hpp"  // for TEUCHOS_TEST_FOR_EXCEPTION
+#include "Teuchos_Time.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_BaseClass.hpp"
+#include "MueLu_VerbosityLevel.hpp"     // for MsgType::Debug, etc
 
 namespace MueLu {
 

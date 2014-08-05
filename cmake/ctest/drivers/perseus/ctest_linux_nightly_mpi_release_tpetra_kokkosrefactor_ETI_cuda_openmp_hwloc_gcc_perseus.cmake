@@ -79,6 +79,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_KokkosCompat=ON"
   "-DTrilinos_ENABLE_KokkosContainers=ON"
   "-DTrilinos_ENABLE_KokkosLinAlg=ON"
+  "-DTrilinos_ENABLE_KokkosAlgorithms=ON"
   "-DTrilinos_ENABLE_KokkosClassic=ON"
   "-DTrilinos_ENABLE_KokkosMpiComm=ON"
   

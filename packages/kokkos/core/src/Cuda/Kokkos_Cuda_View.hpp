@@ -55,6 +55,7 @@
 #include <Kokkos_CudaSpace.hpp>
 #include <Kokkos_CudaTypes.hpp>
 #include <Cuda/Kokkos_Cuda_abort.hpp>
+#include <Kokkos_Atomic.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

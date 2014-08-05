@@ -12,17 +12,36 @@ IF(Kokkos_ENABLE_Cuda)
   CUDA_INCLUDE_DIRECTORIES( "." )
   CUDA_INCLUDE_DIRECTORIES( ${Tpetra_INCLUDE_DIRS} )
   CUDA_COMPILE(MV_UNIT_TEST_OBJECTS_CUDA MultiVector_UnitTests_CU.cu)
+  CUDA_COMPILE(MV_RCB_OBJECTS_CUDA rcb_CU.cu)
 ENDIF()
 
 IF(Tpetra_ENABLE_Thrust)
   SET(MAXNP NUM_MPI_PROCS 1)
 ENDIF()
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   MultiVector_UnitTests
   SOURCES
     MultiVector_UnitTests ${MV_UNIT_TEST_OBJECTS_CUDA}
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  ${MAXNP}
+  DEPLIBS kokkos kokkoslinalg kokkosnodeapi
+  )
+
+
+# This test comes from zoltan2/test/temp/multivectorTest.cpp.  It
+# mimics the recursive bisection algorithm in Zoltan2, and times data
+# migration.
+#
+# The test itself does not refer to MPI.  Hoewver, it only makes sense
+# to run this test in an MPI build.  Otherwise, no data migration is
+# necessary.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  rcb
+  SOURCES rcb.cpp ${MV_RCB_OBJECTS_CUDA}
+  COMM mpi
   STANDARD_PASS_OUTPUT
   ${MAXNP}
   DEPLIBS kokkos kokkoslinalg kokkosnodeapi

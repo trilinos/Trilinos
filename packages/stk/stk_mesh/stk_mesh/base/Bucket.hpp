@@ -287,8 +287,6 @@ public:
   Entity const* begin_elements(size_type bucket_ordinal) const
   { CONNECTIVITY_TYPE_SWITCH(m_element_kind, m_fixed_element_connectivity.begin(bucket_ordinal), m_dynamic_element_connectivity.begin(bucket_ordinal), true) }
 
-  bool other_entities_have_single_rank(size_type bucket_ordinal, EntityRank rank) const;
-
   ConnectivityOrdinal const* begin_node_ordinals(size_type bucket_ordinal) const
   { CONNECTIVITY_TYPE_SWITCH(m_node_kind, m_fixed_node_connectivity.begin_ordinals(bucket_ordinal), m_dynamic_node_connectivity.begin_ordinals(bucket_ordinal), true) }
   ConnectivityOrdinal const* begin_edge_ordinals(size_type bucket_ordinal) const

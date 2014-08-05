@@ -183,7 +183,7 @@ public:
   {
     weights = NULL;
     stride = 0;
-    Z2_THROW_NOT_IMPLEMENTED_ERROR
+    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
   }
 
 
@@ -192,7 +192,7 @@ public:
    */
   virtual bool useDegreeAsVertexWeight(int idx) const
   { 
-    Z2_THROW_NOT_IMPLEMENTED_ERROR
+    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
   }
 
   /*! \brief Returns the number (0 or greater) of edge weights.
@@ -210,7 +210,7 @@ public:
   {
     weights = NULL;
     stride = 0;
-    Z2_THROW_NOT_IMPLEMENTED_ERROR
+    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
   }
 
 

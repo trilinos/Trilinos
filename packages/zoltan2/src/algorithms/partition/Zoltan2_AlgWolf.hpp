@@ -47,6 +47,7 @@
 
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
+#include <Zoltan2_Algorithm.hpp>
 #include <Zoltan2_AlgRCB.hpp>
 
 #include <sstream>
@@ -77,7 +78,6 @@ namespace Zoltan2
  *  \param env   library configuration and problem parameters
  *  \param problemComm  the communicator for the problem
  *  \param ids    an Identifier model
- *  \param solution  a Solution object, containing part information
  *
  *  Preconditions: The parameters in the environment have been
  *    processed (committed).  No special requirements on the
@@ -86,7 +86,7 @@ namespace Zoltan2
  */
 ////////////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
-class AlgWolf 
+class AlgWolf : public Algorithm<Adapter>
 {
 
 private:
@@ -117,7 +117,7 @@ public:
   }
 
   // Partitioning method
-  void partition(RCP<PartitioningSolution<Adapter> > &solution_);
+  void partition(const RCP<PartitioningSolution<Adapter> > &solution_);
 
 };
 ////////////////////////////////////////////////////////////////////////////////
@@ -125,7 +125,9 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
-void AlgWolf<Adapter>::partition(RCP<PartitioningSolution<Adapter> > &solution_)
+void AlgWolf<Adapter>::partition(
+  const RCP<PartitioningSolution<Adapter> > &solution_
+)
 {
     // using std::string;
     // using std::ostringstream;
@@ -164,8 +166,10 @@ void AlgWolf<Adapter>::partition(RCP<PartitioningSolution<Adapter> > &solution_)
     // Q: can I use solution passed into alg or do I need to create a different one?
     //    For now using the one passed into alg
 
-    AlgRCB<Adapter>(this->mEnv, mProblemComm, this->mIds, solution_);
-
+    {
+    AlgRCB<Adapter> algrcb(this->mEnv, mProblemComm, this->mIds);
+    algrcb.partition(solution_);
+    }
 
 
     // ////////////////////////////////////////////////////////

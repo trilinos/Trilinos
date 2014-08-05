@@ -140,9 +140,8 @@ ENDIF()
 ASSERT_DEFINED(Anasazi_ENABLE_Tpetra)
 IF (Anasazi_ENABLE_Tpetra)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../tpetra/src)
-  APPEND_SET(HEADERS
-    ../tpetra/src/AnasaziTpetraAdapter.hpp
-    )
+  # The AnasaziTpetraAdapter headers are already pulled in by
+  # <./packages/anasazi/tpetra/src/CMakeLists.txt>.
 ENDIF()
 
 IF (TPL_ENABLE_MPI)

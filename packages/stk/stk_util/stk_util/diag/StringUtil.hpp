@@ -615,7 +615,7 @@ struct less_nocase<const char *> : public std::binary_function<const char *, con
    *			<b>rhs</b>
    */
   bool operator()(const char *lhs , const char *rhs) const {
-    bool result ;
+    bool result = false;
     if (NULL == lhs )
       result = NULL != rhs;
     else {

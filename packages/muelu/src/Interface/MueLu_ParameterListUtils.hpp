@@ -49,6 +49,7 @@
 
 #include <string>
 #include <Teuchos_ParameterList.hpp>
+#include <Teuchos_RCPDecl.hpp>
 #include "MueLu_ConfigDefs.hpp"
 
 namespace MueLu {

@@ -349,11 +349,10 @@ namespace Tpetra {
     typedef typename Kokkos::Details::ArithTraits<Scalar>::mag_type mag_type;
 
     //! Type of the (new) Kokkos Device which implements parallel operations.
-    typedef typename Node::device_type device_type;
+    typedef DeviceType device_type;
 
     //! Type of the (new) Kokkos Host Device which implements parallel operations.
-     typedef typename Node::device_type::host_mirror_device_type host_mirror_device_type;
-
+    typedef typename DeviceType::host_mirror_device_type host_mirror_device_type;
 
     //! Kokkos::DualView specialization used by this class.
     typedef Kokkos::DualView<scalar_type**, Kokkos::LayoutLeft, device_type> dual_view_type;

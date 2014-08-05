@@ -47,15 +47,21 @@
 #define MUELU_FACTORY_HPP
 
 #include <string>
-#include <map>
-
+#include <deque>                        // for _Deque_iterator, operator!=
+#include <ostream>                      // for operator<<, etc
+#include "Teuchos_ENull.hpp"            // for ENull::null
+#include "Teuchos_FilteredIterator.hpp"  // for FilteredIterator, etc
+#include "Teuchos_ParameterEntry.hpp"   // for ParameterEntry
+#include "Teuchos_ParameterList.hpp"    // for ParameterList, etc
+#include "Teuchos_RCPDecl.hpp"          // for RCP
+#include "Teuchos_RCPNode.hpp"          // for operator<<
+#include "Teuchos_StringIndexedOrderedValueObjectContainer.hpp"
 #include "Teuchos_RCP.hpp"
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_FactoryBase.hpp"
 #include "MueLu_FactoryAcceptor.hpp"
 #include "MueLu_ParameterListAcceptor.hpp"
-
 #include "MueLu_Level.hpp"
 
 namespace MueLu {

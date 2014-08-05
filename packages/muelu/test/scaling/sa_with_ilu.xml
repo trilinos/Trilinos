@@ -34,6 +34,33 @@
   </ParameterList>
   -->
 
+  <!-- Ifpack2: Additive Schwarz, overlap=1, subdomain solver SuperLU sparse direct solve -->
+  <!--
+  <Parameter name="smoother: type" type="string" value="SCHWARZ"/>
+  <ParameterList    name="smoother: params">
+    <Parameter name="schwarz: overlap level"            type="int"    value="1"/>
+    <Parameter name="schwarz: combine mode"             type="string" value="Zero"/>
+    <Parameter name="subdomain solver name"             type="string" value="AMESOS2"/>
+  </ParameterList>
+  -->
+
+  <!-- Ifpack2: Additive Schwarz, overlap=1, subdomain solver SuperLU ILUTP -->
+  <!--
+  <Parameter name="smoother: type" type="string" value="SCHWARZ"/>
+  <ParameterList    name="smoother: params">
+    <Parameter name="schwarz: overlap level"            type="int"    value="1"/>
+    <Parameter name="schwarz: combine mode"             type="string" value="Zero"/>
+    <Parameter name="subdomain solver name"             type="string" value="AMESOS2"/>
+    <ParameterList name="subdomain solver parameters">
+      <ParameterList name="Amesos2">
+        <ParameterList name="SuperLU">
+          <Parameter name="ILU_Flag"           type="bool"   value="true"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  -->
+
   <!-- Ifpack1: Additive Schwarz, overlap=1, subdomain solver KLU for pre and post -->
   <!--
   <Parameter        name="smoother: type"                       type="string"   value="Amesos"/>

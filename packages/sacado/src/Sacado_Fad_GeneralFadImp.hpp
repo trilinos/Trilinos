@@ -119,10 +119,17 @@ KOKKOS_INLINE_FUNCTION
 Sacado::Fad::GeneralFad<T,Storage>&
 Sacado::Fad::GeneralFad<T,Storage>::operator=(const Expr<S>& x)
 {
-  const int sz = x.size();
+  const int xsz = x.size();
 
-  if (sz != this->size())
-    this->resizeAndZero(sz);
+  if (xsz != this->size())
+    this->resizeAndZero(xsz);
+
+  const int sz = this->size();
+
+  // For ViewStorage, the resize above may not in fact resize the
+  // derivative array, so it is possible that sz != xsz at this point.
+  // The only valid use case here is sz > xsz == 0, so we use sz in the
+  // assignment below
 
   if (sz) {
     if (x.hasFastAccess())

@@ -248,8 +248,8 @@ public:
     // Decompose by node to avoid parallel communication in assembly
     , fixture( BoxElemPart::DecomposeNode
              , use_comm->getSize() , use_comm->getRank()
-             , use_nodes[0] , use_nodes[1] , use_nodes[2] 
-             , grid_bubble[0] , grid_bubble[1] , grid_bubble[2] 
+             , use_nodes[0] , use_nodes[1] , use_nodes[2]
+             , grid_bubble[0] , grid_bubble[1] , grid_bubble[2]
              )
     , graph_times()
     , mesh_to_graph( fixture.elem_node()
@@ -330,12 +330,13 @@ public:
   //----------------------------------------
 
   void solve( const CoeffFunctionType & coeff_function
-            , const double    bc_lower_value 
-            , const double    bc_upper_value 
+            , const double    bc_lower_value
+            , const double    bc_upper_value
             , const unsigned  newton_iteration_limit
             , const Magnitude newton_iteration_tolerance
             , const unsigned  cg_iteration_limit
             , const Magnitude cg_iteration_tolerance
+            , const QuadratureData<Device>& qd
             , const bool   use_atomic
             , const bool   use_belos
             , const bool   use_muelu
@@ -348,9 +349,6 @@ public:
 
       typedef DirichletComputation< FixtureType , LocalMatrixType >
         DirichletComputationType ;
-
-      typedef NodeElemGatherFill< ElementComputationType >
-        NodeElemGatherFillType ;
 
       typedef ResponseComputation< FixtureType , LocalVectorType >
         ResponseComputationType ;
@@ -382,25 +380,11 @@ public:
                                          dev_config_bc );
 
       // Create element computation functor
-      const ElementComputationType elemcomp(
-        use_atomic ? ElementComputationType( fixture , coeff_function ,
+      const ElementComputationType elemcomp( fixture , coeff_function ,
                                              nodal_solution ,
                                              elem_graph ,
                                              jacobian , nodal_residual ,
-                                             dev_config_elem )
-                   : ElementComputationType( fixture , coeff_function ,
-                                             nodal_solution ,
-                                             dev_config_elem ) );
-
-      const NodeElemGatherFillType gatherfill(
-        use_atomic ? NodeElemGatherFillType()
-                   : NodeElemGatherFillType( fixture.elem_node() ,
-                                             elem_graph ,
-                                             nodal_residual ,
-                                             jacobian ,
-                                             elemcomp.elem_residuals ,
-                                             elemcomp.elem_jacobians ,
-                                             dev_config_gath ) );
+                                             dev_config_elem , qd );
 
       // Create boundary condition functor
       const DirichletComputationType dirichlet(
@@ -447,10 +431,6 @@ public:
 
         elemcomp.apply();
 
-        if ( ! use_atomic ) {
-          gatherfill.apply();
-        }
-
         Device::fence();
         perf.fill_time = maximum( comm , wall_clock.seconds() );
 
@@ -484,7 +464,7 @@ public:
                                 rcpFromRef(g_nodal_residual),
                                 rcpFromRef(g_nodal_delta),
                                 use_muelu,
-                                use_mean_based, 
+                                use_mean_based,
                                 cg_iteration_limit ,
                                 cg_iteration_tolerance);
         }
@@ -580,7 +560,8 @@ Perf fenl(
   const double bc_lower_value ,
   const double bc_upper_value ,
   const bool check_solution ,
-  Scalar& response )
+  Scalar& response,
+  const QuadratureData<Device>& qd )
 {
   typedef typename Kokkos::Details::ArithTraits<Scalar>::mag_type  Magnitude;
 
@@ -609,12 +590,13 @@ Perf fenl(
   for ( int itrial = 0 ; itrial < use_trials ; ++itrial ) {
 
     problem.solve( coeff_function
-                 , bc_lower_value 
-                 , bc_upper_value 
+                 , bc_lower_value
+                 , bc_upper_value
                  , newton_iteration_limit
                  , newton_iteration_tolerance
                  , cg_iteration_limit
                  , cg_iteration_tolerance
+                 , qd
                  , use_atomic
                  , use_belos
                  , use_muelu
@@ -697,7 +679,8 @@ Perf fenl(
     const double bc_lower_value ,                                    \
     const double bc_upper_value ,                                    \
     const bool check_solution ,                                      \
-    SCALAR& response);
+    SCALAR& response ,                                               \
+    const QuadratureData<DEVICE>& qd);
 
 //----------------------------------------------------------------------------
 

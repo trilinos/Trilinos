@@ -53,7 +53,8 @@ IF (TrilinosCouplings_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
   IF( TrilinosCouplings_ENABLE_Stokhos AND
       Stokhos_ENABLE_Sacado AND
       Stokhos_ENABLE_KokkosCore AND
-      Stokhos_ENABLE_KokkosLinAlg )
+      Stokhos_ENABLE_KokkosLinAlg AND
+      Stokhos_ENABLE_Tpetra )
 
     SET( SOURCES fenl_ensemble.hpp
                  fenl_ensemble_macros.hpp

@@ -16,6 +16,7 @@
 #include <Kokkos_InnerProductSpaceTraits.hpp>
 #include <ctime>
 
+#include <iostream>
 #include <stdexcept> // For some recently added error handling
 
 #define MAX(a,b) (a<b?b:a)

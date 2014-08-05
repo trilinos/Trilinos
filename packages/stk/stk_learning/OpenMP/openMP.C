@@ -102,7 +102,7 @@ TEST(OpenMp, MatrixVectorMultiplyUsingThreads)
     double endWallTime = stk::wall_time();
 
     std::cerr << "Num threads: " << numThreads << std::endl;
-    std::cerr << "Time: " << (endTime - startTime)/double(numThreads) << std::endl;
+    std::cerr << "Time: " << (endTime - startTime)/static_cast<double>(numThreads) << std::endl;
     std::cerr << "Wall Time: " << (endWallTime - startWallTime) << std::endl;
 
     for(size_t i = 0; i < numRows; i++)
@@ -141,7 +141,7 @@ TEST(OpenMp, SumOverVector)
     double endWallTime = stk::wall_time();
 
     std::cerr << "Num threads: " << numThreads << std::endl;
-    std::cerr << "Time: " << (endTime - startTime)/double(numThreads) << std::endl;
+    std::cerr << "Time: " << (endTime - startTime)/static_cast<double>(numThreads) << std::endl;
     std::cerr << "Wall Time: " << (endWallTime - startWallTime) << std::endl;
 
     double goldAnswer = sizeOfVector*initVal;
@@ -195,7 +195,7 @@ TEST(OpenMp, SumUsingSections)
     double endWallTime = stk::wall_time();
 
     std::cerr << "Num threads: " << numThreads << std::endl;
-    std::cerr << "Time: " << (endTime - startTime)/double(numThreads) << std::endl;
+    std::cerr << "Time: " << (endTime - startTime)/static_cast<double>(numThreads) << std::endl;
     std::cerr << "Wall Time: " << (endWallTime - startWallTime) << std::endl;
 
     double goldAnswer = sizeOfVector*initVal;

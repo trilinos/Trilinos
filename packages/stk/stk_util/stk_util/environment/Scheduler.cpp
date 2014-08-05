@@ -265,10 +265,10 @@ bool Scheduler::internal_is_it_time(Time time)
   }
 
   // Calculate number of intervals needed to reach this time.
-  int intervals = int((delta.max - start) / tdelta);
+  int intervals = static_cast<int>((delta.max - start) / tdelta);
 
   if (lastInterval_ < 0 && lastTime_ > -Real_MAX) {
-    lastInterval_ = int((lastTime_ - start) / tdelta);
+    lastInterval_ = static_cast<int>((lastTime_ - start) / tdelta);
   }
 
   // If the last output time was in the same interval as the current time,
@@ -520,10 +520,10 @@ Time Scheduler::next_implicit_output_time(Time time) const
   }
 
   // Calculate number of intervals needed to reach this time.
-  int intervals = int((delta.max - start) / tdelta);
+  int intervals = static_cast<int>((delta.max - start) / tdelta);
 
   // Perform same calculation for the previous output time...
-  int prev_inter = int((lastTime_ - start + tolerance_) / tdelta);
+  int prev_inter = static_cast<int>((lastTime_ - start + tolerance_) / tdelta);
 
   // If the last output time was in the same interval as the current time,
   // then don't output; otherwise, we want to output....

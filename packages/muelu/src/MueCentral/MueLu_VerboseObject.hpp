@@ -46,12 +46,9 @@
 #ifndef MUELU_VERBOSEOBJECT_HPP
 #define MUELU_VERBOSEOBJECT_HPP
 
-#include "MueLu_ConfigDefs.hpp"
-#ifdef HAVE_MPI
-#include <mpi.h>
-#endif
-
-#include <Teuchos_VerboseObject.hpp>
+#include "Teuchos_FancyOStream.hpp"     // for FancyOStream
+#include "Teuchos_RCPDecl.hpp"          // for RCP
+#include "Teuchos_VerboseObject.hpp"
 
 #include "MueLu_VerbosityLevel.hpp"
 
@@ -113,9 +110,9 @@ namespace MueLu {
 
     Teuchos::FancyOStream & GetBlackHole() const;
 
-    static void SetDefaultOStream(const RCP<Teuchos::FancyOStream> &defaultOStream);
+    static void SetDefaultOStream(const Teuchos::RCP<Teuchos::FancyOStream> &defaultOStream);
 
-    static RCP<Teuchos::FancyOStream> GetDefaultOStream();
+    static Teuchos::RCP<Teuchos::FancyOStream> GetDefaultOStream();
 
     //! @name Public static member functions
     //@{
@@ -133,7 +130,7 @@ namespace MueLu {
     VerbLevel verbLevel_;
     int procRank_;
 
-    static RCP<Teuchos::FancyOStream> blackHole_;
+    static Teuchos::RCP<Teuchos::FancyOStream> blackHole_;
 
     //! Global verbose level. This verbose level is used when the verbose level of the object is not specified (verbLevel_ == NotSpecified)
     static VerbLevel globalVerbLevel_;

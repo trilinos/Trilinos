@@ -78,6 +78,9 @@
 /* Define if KokkosMpiCom is enabled */
 #cmakedefine HAVE_STOKHOS_KOKKOSMPICOMM
 
+/* Define if KokkosAlgorithms is enabled */
+#cmakedefine HAVE_STOKHOS_KOKKOSALGORITHMS
+
 /* Define if MueLu is enabled */
 #cmakedefine HAVE_STOKHOS_MUELU
 

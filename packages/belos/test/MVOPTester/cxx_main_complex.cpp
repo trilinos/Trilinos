@@ -85,7 +85,6 @@ int main(int argc, char *argv[])
 #endif
     (void) MyPID; // forestall "set but not used" warnings
 
-    bool verbose = false;
     std::string filename("mhd1280b.cua");
 
     // number of global elements
@@ -133,7 +132,6 @@ int main(int argc, char *argv[])
     if (verbose) {
       MyOM->setVerbosity( Belos::Warnings );
     }
-
 
 #ifndef HAVE_BELOS_TRIUTILS
     std::cout << "This test requires Triutils. Please configure with --enable-triutils." << std::endl;

@@ -208,7 +208,7 @@ TEST(stk_search_oct_tree, stressTestPartitioningUpToOneMillionProcessors)
         }
         float weightPerNode = 2.0;
 
-        float totalWeight = float(2*tree_size);
+        float totalWeight = static_cast<float>(2*tree_size);
         for (size_t i=0;i<numProcs.size();i++)
         {
             unsigned numProcsLocal = numProcs[i];

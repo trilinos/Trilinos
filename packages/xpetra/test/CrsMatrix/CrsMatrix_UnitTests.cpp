@@ -260,61 +260,227 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, Tpetra_ReplaceLocalValues, Scalar, LO, GO, Node )
   {
 #ifdef HAVE_XPETRA_TPETRA
+    using Teuchos::outArg;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+    using std::endl;
+    typedef Xpetra::Map<LO, GO, Node> map_type;
+    typedef Xpetra::MapFactory<LO, GO, Node> map_factory_type;
+    typedef Xpetra::CrsMatrixFactory<Scalar, LO, GO, Node> crs_matrix_factory_type;
+    typedef Xpetra::CrsMatrix<Scalar, LO, GO, Node> crs_matrix_type;
+    typedef Xpetra::VectorFactory<Scalar, LO, GO, Node> vec_factory_type;
+    typedef Xpetra::Vector<Scalar, LO, GO, Node> vec_type;
+    typedef typename Teuchos::Array<LO>::size_type size_type;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+    typedef typename STS::magnitudeType MT;
+    typedef Teuchos::ScalarTraits<MT> STM;
 
-    typedef Xpetra::Map<LO, GO, Node> MapClass;
-    typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
+    out << "Tpetra replaceLocalValues test" << endl;
 
     // get a comm and node
-    RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<const Comm<int> > comm = getDefaultComm ();
 
     Xpetra::UnderlyingLib lib = Xpetra::UseTpetra;
     //Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
 
+    out << "Create Map and matrix" << endl;
+
     // generate problem
     LO nEle = 63;
-    const RCP<const MapClass> map = MapFactoryClass::Build(lib, nEle, 0, comm);
+    RCP<const map_type> map = map_factory_type::Build(lib, nEle, 0, comm);
 
-    RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > matrix =
-        Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 10);
-
-    LO NumMyElements = map->getNodeNumElements();
+    RCP<crs_matrix_type> matrix = crs_matrix_factory_type::Build (map, 10);
+    const LO NumMyElements = map->getNodeNumElements ();
     Teuchos::ArrayView<const GO> MyGlobalElements = map->getNodeElementList();
 
+    // Make the matrix the identity matrix.
+    out << "Fill matrix by calling insertGlobalValues" << endl;
     for (LO i = 0; i < NumMyElements; ++i) {
-        matrix->insertGlobalValues(MyGlobalElements[i],
-                                Teuchos::tuple<GO>(MyGlobalElements[i]),
-                                Teuchos::tuple<Scalar>(1.0) );
+      matrix->insertGlobalValues (MyGlobalElements[i],
+                                  Teuchos::tuple<GO>(MyGlobalElements[i]),
+                                  Teuchos::tuple<Scalar> (1.0));
     }
 
+    out << "Call fillComplete and resumeFill on matrix" << endl;
     matrix->fillComplete();
     matrix->resumeFill();
 
-    Teuchos::Array<GO> indout(1,0);
-    Teuchos::Array<Scalar> valout(1,5.0);
-    matrix->replaceLocalValues(0, indout.view(0,indout.size()), valout.view(0,valout.size()));
-    matrix->fillComplete();
+    // Change the 0,0 local entry, on each process, to be 5.0.
+    out << "Modify entries of the matrix using replaceLocalValues, "
+      "and test the result before calling fillComplete" << endl;
+    Teuchos::Array<LO> indout (1, 0);
+    Teuchos::Array<Scalar> valout(1, 5.0);
 
-    RCP<Xpetra::Vector<Scalar, LO, GO, Node> > vec =
-        Xpetra::VectorFactory<Scalar, LO, GO, Node>::Build(map);
+    // Every process should have a local row index 0.
+    TEST_ASSERT( map->isNodeLocalElement (0) );
+    TEST_ASSERT( ! matrix->getColMap ().is_null () );
 
-    vec->putScalar(1.0);
+    if (map->isNodeLocalElement (0) && ! matrix->getColMap ().is_null ()) {
+      bool validLocalColumnIndices = true;
+      for (size_type k = 0; k < indout.size (); ++k) {
+        if (! matrix->getColMap ()->isNodeLocalElement (indout[k])) {
+          validLocalColumnIndices = false;
+          break;
+        }
+      }
+      // Every process should have a local column index 0.
+      TEST_ASSERT( validLocalColumnIndices );
+      if (validLocalColumnIndices) {
+        // Make sure that we are changing the first diagonal entry on
+        // this process.  We determine whether a matrix is diagonal
+        // using global indices.
+        TEST_ASSERT( matrix->getColMap ()->getGlobalElement (indout[0]) ==
+                     map->getGlobalElement (0) );
+        // Replace the local (0,0) entry with valout[0].  We know from
+        // the above test that the local (0,0) entry is the first
+        // diagonal entry on the calling process.
+        matrix->replaceLocalValues (0, indout.view (0, indout.size ()),
+                                    valout.view (0, valout.size ()));
+      }
 
-    RCP<Xpetra::Vector<Scalar, LO, GO, Node> > vec_sol =
-        Xpetra::VectorFactory<Scalar, LO, GO, Node>::Build(matrix->getRangeMap());
+      // Make sure that replaceLocalValues worked, by getting the
+      // values in the local row 0.
+      const size_t numEnt = matrix->getNumEntriesInLocalRow (0);
+      TEST_EQUALITY_CONST( numEnt, static_cast<size_t> (1) );
 
-    vec_sol->putScalar(0.0);
+      if (numEnt == static_cast<size_t> (1)) {
+        Teuchos::Array<LO> ind (numEnt);
+        Teuchos::Array<Scalar> val (numEnt);
+        size_t numEntOut = 0;
+        matrix->getLocalRowCopy (0, ind (), val (), numEntOut);
+        TEST_EQUALITY( numEnt, numEntOut );
 
-    matrix->apply(*vec, *vec_sol, Teuchos::NO_TRANS, 1.0, 0.0);
+        if (numEntOut == static_cast<size_t> (1)) {
+          TEST_EQUALITY( ind[0], 0 );
+          TEST_EQUALITY( val[0], 5.0 );
+        }
+      }
+    }
 
-    RCP<Xpetra::Vector<Scalar, LO, GO, Node> > vectest =
-        Xpetra::VectorFactory<Scalar, LO, GO, Node>::Build(map);
-    vectest->putScalar(1.0);
+    // Make sure that all processes got this far.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    success = success && (gblSuccess == 1);
+    TEST_EQUALITY_CONST( gblSuccess, 1 );
+
+    out << "Call fillComplete on matrix for the second time" << endl;
+    matrix->fillComplete ();
+
+    out << "Test the result of replaceLocalValues after fillComplete" << endl;
+    if (map->isNodeLocalElement (0)) {
+      // Make sure that replaceLocalValues worked, by getting the
+      // values in the local row 0.
+      const size_t numEnt = matrix->getNumEntriesInLocalRow (0);
+      TEST_EQUALITY_CONST( numEnt, static_cast<size_t> (1) );
+
+      if (numEnt == static_cast<size_t> (1)) {
+        Teuchos::Array<LO> ind (numEnt);
+        Teuchos::Array<Scalar> val (numEnt);
+        size_t numEntOut = 0;
+        matrix->getLocalRowCopy (0, ind (), val (), numEntOut);
+        TEST_EQUALITY( numEnt, numEntOut );
+
+        if (numEntOut == static_cast<size_t> (1)) {
+          TEST_EQUALITY( ind[0], 0 );
+          TEST_EQUALITY( val[0], 5.0 );
+        }
+      }
+    }
+
+    RCP<vec_type> vec = vec_factory_type::Build (map);
+    vec->putScalar (1.0);
+    out << "Test that vec->putScalar(1.0) filled vec with ones" << endl;
+    {
+      const MT N = static_cast<MT> (vec->getGlobalLength ());
+      const MT expectedNorm2 = STM::squareroot (N);
+      const MT actualNorm2 = vec->norm2 ();
+      TEST_EQUALITY( actualNorm2, expectedNorm2 );
+    }
+
+    RCP<const map_type> rangeMap = matrix->getRangeMap ();
+    TEST_ASSERT( ! rangeMap.is_null () );
+    RCP<vec_type> vec_sol = vec_factory_type::Build (rangeMap);
+    vec_sol->putScalar (0.0);
+    out << "Test that vec_sol->putScalar(0.0) filled vec with zeros" << endl;
+    {
+      const MT expectedNorm2 = STM::zero ();
+      const MT actualNorm2 = vec_sol->norm2 ();
+      TEST_EQUALITY( actualNorm2, expectedNorm2 );
+    }
+
+    // Compute vec_sol := matrix*vec.  The result _should_ be a vector
+    // of ones everywhere, except for the entry at local index zero
+    // (on every process), which should be 5.0.
+    matrix->apply (*vec, *vec_sol, Teuchos::NO_TRANS, 1.0, 0.0);
+    if (rangeMap->getNodeNumElements () > 0) {
+      // Test this both for a const view and for a nonconst view.
+      // This may also be a test for {T,X}petra::MultiVector::getData
+      // and {T,X}petra::MultiVector::getDataNonConst.
+
+      // Create the const view.
+      Teuchos::ArrayRCP<const Scalar> outData = vec_sol->getData (0);
+      TEST_ASSERT( outData.size () == static_cast<size_type>(rangeMap->getNodeNumElements()) );
+      if (outData.size () == static_cast<size_type>(rangeMap->getNodeNumElements()) &&
+          outData.size () > static_cast<size_type> (0)) {
+        TEST_EQUALITY( outData[0], 5.0 );
+      }
+      if (rangeMap->getNodeNumElements () > static_cast<size_t> (1)) {
+        bool allOnes = true;
+        for (size_type k = 1; k < static_cast<size_type>(rangeMap->getNodeNumElements()); ++k) {
+          if (! outData[k] == 1.0) {
+            allOnes = false;
+          }
+        }
+        TEST_ASSERT( allOnes );
+      }
+
+      // Invalidate the const view, before creating a nonconst view.
+      outData = Teuchos::null;
+      // Create the nonconst view.
+      Teuchos::ArrayRCP<Scalar> outDataNonConst = vec_sol->getDataNonConst (0);
+      TEST_ASSERT( outDataNonConst.size () == static_cast<size_type>(rangeMap->getNodeNumElements()) );
+      if (outDataNonConst.size() == static_cast<size_type>(rangeMap->getNodeNumElements()) &&
+          outDataNonConst.size () > static_cast<size_type> (0)) {
+        TEST_EQUALITY( outDataNonConst[0], 5.0 );
+      }
+      if (rangeMap->getNodeNumElements () > static_cast<size_t> (1)) {
+        bool allOnes = true;
+        for (size_type k = 1; k < static_cast<size_type>(rangeMap->getNodeNumElements()); ++k) {
+          if (! outDataNonConst[k] == 1.0) {
+            allOnes = false;
+          }
+        }
+        TEST_ASSERT( allOnes );
+      }
+    }
+
+    lclSuccess = success ? 1 : 0;
+    gblSuccess = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    success = success && (gblSuccess == 1);
+    TEST_EQUALITY_CONST( gblSuccess, 1 );
+
+    if (gblSuccess == 1) {
+      out << "Vector result is correct" << endl;
+    }
+
+
+    RCP<vec_type> vectest = vec_factory_type::Build (map);
+    vectest->putScalar (1.0);
     Teuchos::ArrayRCP<Scalar> vectestData = vectest->getDataNonConst(0);
     vectestData[0] = 5.0;
 
     vec_sol->update(-1.0,*vectest,1.0);
 
     TEUCHOS_TEST_COMPARE(vec_sol->norm2(), <, 1e-16, out, success);
+
+    // Make sure that all processes got this far.
+    lclSuccess = success ? 1 : 0;
+    gblSuccess = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    success = success && (gblSuccess == 1);
+    TEST_EQUALITY_CONST( gblSuccess, 1 );
 #endif
   }
 

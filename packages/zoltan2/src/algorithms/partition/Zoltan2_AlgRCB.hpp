@@ -80,13 +80,42 @@ namespace Zoltan2{
  */
 
 template <typename Adapter>
-void AlgRCB(
-  const RCP<const Environment> &env,
-  const RCP<Comm<int> > &problemComm,
-  const RCP<const CoordinateModel<
-    typename Adapter::base_adapter_t> > &coords, 
-  RCP<PartitioningSolution<Adapter> > &solution
-) 
+class AlgRCB : public Algorithm<Adapter> 
+{
+public:
+  typedef CoordinateModel<typename Adapter::base_adapter_t> coordModel_t;
+  typedef typename Adapter::node_t node_t;
+  typedef typename Adapter::lno_t lno_t;
+  typedef typename Adapter::gno_t gno_t;
+  typedef typename Adapter::part_t part_t;
+  typedef typename Adapter::scalar_t scalar_t;
+
+
+  // TODO Minimal constructor for now; make it smarter later.
+  AlgRCB(const RCP<const Environment> &env__,
+         const RCP<Comm<int> > &problemComm__,
+         const RCP<const coordModel_t> &coords__) :
+         env(env__), problemComm(problemComm__), coords(coords__)
+  {
+#ifndef INCLUDE_ZOLTAN2_EXPERIMENTAL
+    Z2_THROW_EXPERIMENTAL("Zoltan2 RCB is strictly experimental software "
+                          "due to performance problems in its use of Tpetra.")
+#endif
+  }
+  
+  void partition(const RCP<PartitioningSolution<Adapter> > &solution);
+
+private:
+  const RCP<const Environment> env;
+  const RCP<Comm<int> > problemComm;
+  const RCP<const coordModel_t> coords;
+  // TODO  Functions in Zoltan2_AlgRCB_Methods should be here.
+};
+
+template <typename Adapter>
+void AlgRCB<Adapter>::partition(
+  const RCP<PartitioningSolution<Adapter> > &solution
+)
 {
 #ifndef INCLUDE_ZOLTAN2_EXPERIMENTAL
 
@@ -94,12 +123,6 @@ void AlgRCB(
                         "due to performance problems in its use of Tpetra.")
 
 #else  // INCLUDE_ZOLTAN2_EXPERIMENTAL
-
-  typedef typename Adapter::node_t node_t;
-  typedef typename Adapter::lno_t lno_t;
-  typedef typename Adapter::gno_t gno_t;
-  typedef typename Adapter::part_t part_t;
-  typedef typename Adapter::scalar_t scalar_t;
 
   // Make a copy of communicator because
   // we subdivide the communicator during the algorithm.

@@ -25,6 +25,7 @@
 #include <stk_util/environment/FileUtils.hpp>
 #include <stk_util/environment/ReportHandler.hpp>  // for ThrowErrorMsgIf
 #include <utility>                      // for make_pair, pair
+#include "Ioss_CommSet.h"
 #include "Ioss_DBUsage.h"               // for DatabaseUsage, etc
 #include "Ioss_DatabaseIO.h"            // for DatabaseIO
 #include "Ioss_ElementBlock.h"          // for ElementBlock
@@ -618,6 +619,25 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*d
     stk::mesh::Entity node = bulk.declare_entity(stk::topology::NODE_RANK, ids[i], nodePart);
     bulk.set_local_id(node, i);
   }
+
+  // Register node sharing information for all nodes on processor
+  // boundaries.
+  //
+  if (bulk.parallel_size() > 1)
+  {
+    Ioss::CommSet* io_cs = region.get_commset("commset_node");
+    int num_sharings = io_cs->get_field("entity_processor").raw_count();
+
+    std::vector<INT> entity_proc;
+    io_cs->get_field_data("entity_processor", entity_proc);
+
+    for (int i = 0; i < num_sharings; ++i)
+    {
+      stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, entity_proc[i*2]);
+      bulk.add_node_sharing(node, entity_proc[i*2+1]);
+    }
+  }
+
 }
 
 template <typename INT>

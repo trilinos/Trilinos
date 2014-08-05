@@ -60,7 +60,6 @@
 #include <TestTeam.hpp>
 #include <TestReduce.hpp>
 #include <TestScan.hpp>
-#include <TestMultiReduce.hpp>
 #include <TestAggregate.hpp>
 #include <TestCompilerMacros.hpp>
 

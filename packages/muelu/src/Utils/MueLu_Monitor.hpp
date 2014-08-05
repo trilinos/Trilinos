@@ -47,13 +47,16 @@
 #define MUELU_MONITOR_HPP
 
 #include <string>
-#include <Teuchos_Time.hpp>
-#include <Teuchos_TimeMonitor.hpp>
-#include "MueLu_ConfigDefs.hpp"
+#include <algorithm>                    // for swap
+#include <ostream>                      // for basic_ostream, operator<<, etc
+#include "Teuchos_FancyOStream.hpp"     // for OSTab, FancyOStream
+#include "Teuchos_RCPDecl.hpp"          // for RCP
+#include "Teuchos_RCP.hpp"              // for RCP::RCP<T>, RCP::operator=, etc
+#include "Teuchos_Utils.hpp"            // for Utils
+#include "MueLu_VerbosityLevel.hpp"     // for MsgType, MsgType::Runtime0, etc
 #include "MueLu_BaseClass.hpp"
-#include "MueLu_VerboseObject.hpp"
+#include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_Level.hpp"
-#include "MueLu_MutuallyExclusiveTime.hpp"
 #include "MueLu_TimeMonitor.hpp"
 
 namespace MueLu {

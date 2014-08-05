@@ -881,6 +881,20 @@ void deep_copy( const View<DT,DL,DD,DM,Impl::ViewSpecializeSacadoFad> & dst ,
   }
 }
 
+ // Overload of deep_copy for Fad views intializing to a constant scalar
+template< typename T, typename L, typename D, typename M >
+void deep_copy(
+  const View<T,L,D,M,Impl::ViewSpecializeSacadoFad>& view ,
+  const typename View<T,L,D,M,Impl::ViewSpecializeSacadoFad>::fad_value_type& value )
+{
+  typedef View<T,L,D,M,Impl::ViewSpecializeSacadoFad> ViewType;
+  typedef typename ViewType::fad_value_type ScalarType;
+  if (value == ScalarType(0))
+    Impl::ViewFill< typename ViewType::array_type >( view , value );
+  else
+    Impl::ViewFill< ViewType >( view , value );
+}
+
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------

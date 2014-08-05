@@ -448,8 +448,15 @@ int main(int argc, char *argv[]) {
           // Get the number of iterations for this solve.
           out << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
 
-        } catch(...) {
-          out << std::endl << "ERROR:  Belos threw an error! " << std::endl;
+        }
+        catch(const std::exception& ex)
+        {
+          out << std::endl << "ERROR:  Belos threw an error!  The exception message is:" << std::endl;
+          std::cout << ex.what() << std::endl;
+        }
+        
+        catch(...) {
+          out << std::endl << "ERROR:  Belos threw an unknown error! " << std::endl;
         }
 
         // Check convergence
@@ -466,7 +473,7 @@ int main(int argc, char *argv[]) {
       globalTimeMonitor = Teuchos::null;
 
       if (printTimings)
-        TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, false, true, false, Teuchos::Union);
+        TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, false, true, false, Teuchos::Union, "", true);
 
       TimeMonitor::clearCounters();
 

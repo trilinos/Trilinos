@@ -67,6 +67,7 @@
 #include "Kokkos_CrsMatrix_UQ_PCE.hpp"
 #include "Kokkos_CrsMatrix_UQ_PCE_Cuda.hpp"
 #include "Kokkos_TeuchosCommAdapters_UQ_PCE.hpp"
+#include "Kokkos_Random_UQ_PCE.hpp"
 #endif
 
 namespace Stokhos {

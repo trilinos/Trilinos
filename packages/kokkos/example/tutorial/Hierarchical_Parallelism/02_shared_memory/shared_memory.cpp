@@ -49,8 +49,11 @@
 #include <cstdio>
 #include <cstdlib>
 
-typedef Kokkos::Impl::DefaultDeviceType Device;
-typedef Device::host_mirror_device_type Host;
+typedef Kokkos::DefaultExecutionSpace   Device ;
+typedef Device::host_mirror_device_type Host ;
+typedef  Kokkos::TeamPolicy< Device >      team_policy ;
+typedef typename team_policy::member_type  team_member ; 
+
 #define TS 16
 
 struct find_2_tuples {
@@ -67,7 +70,7 @@ struct find_2_tuples {
   }
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (Device dev) const {
+  void operator() ( const team_member & dev) const {
     Kokkos::View<int**,Kokkos::MemoryUnmanaged> l_histogram(dev,TS,TS);
     Kokkos::View<int*,Kokkos::MemoryUnmanaged> l_data(dev,chunk_size+1);
 
@@ -116,9 +119,9 @@ int main(int narg, char* args[]) {
 
 
   Kokkos::Impl::Timer timer;
-  Kokkos::parallel_for(
-      Kokkos::ParallelWorkRequest(nchunks,TS<Device::team_max()?TS:Device::team_max()),
-      find_2_tuples(chunk_size,data,histogram));
+  // Threads/team (TS) is automically limited to the maximum supported by the device.
+  Kokkos::parallel_for( team_policy( nchunks , TS )
+                      , find_2_tuples(chunk_size,data,histogram) );
   Kokkos::fence();
   double time = timer.seconds();
 

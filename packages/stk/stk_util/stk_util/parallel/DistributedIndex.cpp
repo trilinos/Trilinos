@@ -730,7 +730,7 @@ void DistributedIndex::generate_new_keys_local_planning(
         KeyTypeVector  & requested_keys ,
         KeyTypeVector  & contrib_keys ) const
 {
-  new_request.assign( m_span_count , long(0) );
+  new_request.assign( m_span_count , static_cast<long>(0) );
 
   contrib_keys.clear();
 
@@ -809,7 +809,7 @@ void DistributedIndex::generate_new_keys_global_planning(
   const LongVector    & new_request ,
         LongVector    & my_donations ) const
 {
-  my_donations.assign( m_comm_size * m_span_count , long(0) );
+  my_donations.assign( m_comm_size * m_span_count , static_cast<long>(0) );
 
   // Gather the global request plan for receiving and donating keys
   // Positive values for receiving, negative values for donating.

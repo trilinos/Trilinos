@@ -121,7 +121,7 @@ public:
 #endif
 
   //! \brief Constructor where communicator is the Teuchos default.
-  PartitioningProblem(Adapter *A, Teuchos::ParameterList *p) ;
+  PartitioningProblem(Adapter *A, Teuchos::ParameterList *p);
 
   //!  \brief Direct the problem to create a solution.
   //
@@ -142,6 +142,59 @@ public:
 
   void solve(bool updateInputData=true );
  
+  //!  \brief Return the part overlapping a given point in space; 
+  //          when a point lies on a part boundary, the lowest part
+  //          number on that boundary is returned.
+  //          Note that not all partitioning algorithms will support
+  //          this method.
+  //
+  //   \param dim : the number of dimensions specified for the point in space
+  //   \param point : the coordinates of the point in space; array of size dim
+  //   \return the part number of a part overlapping the given point
+  //
+  //   TODO:  This method might be more appropriate in a partitioning solution
+  //   TODO:  But then the solution would need to know about the algorithm.
+  //   TODO:  Consider moving the algorithm to the partitioning solution.
+  part_t pointAssign(int dim, scalar_t *point) 
+  {
+    part_t p;
+    try {
+      if (this->algorithm_ == Teuchos::null)
+        throw std::logic_error("no partitioning algorithm has been run yet");
+
+      p = this->algorithm_->pointAssign(dim, point); 
+    }
+    Z2_FORWARD_EXCEPTIONS
+    return p;
+  }
+
+  //!  \brief Return an array of all parts overlapping a given box in space.
+  //   This method allocates memory for the return argument, but does not
+  //   control that memory.  The user is responsible for freeing the 
+  //   memory.
+  //
+  //   \param dim : (in) the number of dimensions specified for the box
+  //   \param lower : (in) the coordinates of the lower corner of the box; 
+  //                   array of size dim
+  //   \param upper : (in) the coordinates of the upper corner of the box; 
+  //                   array of size dim
+  //   \param nPartsFound : (out) the number of parts overlapping the box
+  //   \param partsFound :  (out) array of parts overlapping the box
+  //   TODO:  This method might be more appropriate in a partitioning solution
+  //   TODO:  But then the solution would need to know about the algorithm.
+  //   TODO:  Consider moving the algorithm to the partitioning solution.
+  void boxAssign(int dim, scalar_t *lower, scalar_t *upper,
+                 size_t &nPartsFound, part_t **partsFound) 
+  {
+    try {
+      if (this->algorithm_ == Teuchos::null)
+        throw std::logic_error("no partitioning algorithm has been run yet");
+
+      this->algorithm_->boxAssign(dim, lower, upper, nPartsFound, partsFound); 
+    }
+    Z2_FORWARD_EXCEPTIONS
+  }
+
   //!  \brief Get the solution to the problem.
   //
   //   \return  a reference to the solution to the most recent solve().
@@ -316,7 +369,7 @@ private:
   modelFlag_t graphFlags_;
   modelFlag_t idFlags_;
   modelFlag_t coordFlags_;
-  std::string algorithm_;
+  std::string algName_;
 
   int numberOfWeights_;
 
@@ -356,7 +409,7 @@ template <typename Adapter>
       Problem<Adapter>(A,p,comm), solution_(),
       problemComm_(), problemCommConst_(),
       inputType_(InvalidAdapterType), 
-      graphFlags_(), idFlags_(), coordFlags_(), algorithm_(),
+      graphFlags_(), idFlags_(), coordFlags_(), algName_(),
       numberOfWeights_(), partIds_(), partSizes_(), 
       numberOfCriteria_(), levelNumberParts_(), hierarchical_(false), 
       timer_(), metricsRequested_(false), metrics_()
@@ -383,7 +436,7 @@ template <typename Adapter>
       Problem<Adapter>(A,p), solution_(),
       problemComm_(), problemCommConst_(),
       inputType_(InvalidAdapterType), 
-      graphFlags_(), idFlags_(), coordFlags_(), algorithm_(),
+      graphFlags_(), idFlags_(), coordFlags_(), algName_(),
       numberOfWeights_(), 
       partIds_(), partSizes_(), numberOfCriteria_(), 
       levelNumberParts_(), hierarchical_(false), timer_(),
@@ -545,40 +598,50 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
   // Call the algorithm
 
   try {
-    if (algorithm_ == std::string("scotch")){
-      AlgPTScotch<Adapter>(this->envConst_, problemComm_,
+    if (algName_ == std::string("scotch")) {
+
+      this->algorithm_ = rcp(new AlgPTScotch<Adapter>(this->envConst_,
+                                            problemComm_,
 #ifdef HAVE_ZOLTAN2_MPI
-        mpiComm_,
+                                            mpiComm_,
 #endif
-        this->graphModel_, solution_);
+                                            this->graphModel_));
+      this->algorithm_->partition(solution_);
     }
-    else if (algorithm_ == std::string("block")){
-      AlgBlock<Adapter> algblock(this->envConst_, problemComm_,
-        this->identifierModel_, solution_);
-      algblock.partition();
+
+    else if (algName_ == std::string("block")) {
+
+      this->algorithm_ = rcp(new AlgBlock<Adapter>(this->envConst_,
+                                         problemComm_, this->identifierModel_));
+      this->algorithm_->partition(solution_);
     }
-    else if (algorithm_ == std::string("rcb")){
-      AlgRCB<Adapter>(this->envConst_, problemComm_,
-        this->coordinateModel_, solution_);
+
+    else if (algName_ == std::string("rcb")) {
+
+      this->algorithm_ = rcp(new AlgRCB<Adapter>(this->envConst_, problemComm_,
+                                                 this->coordinateModel_));
+      this->algorithm_->partition(solution_);
     }
-    else if (algorithm_ == std::string("multijagged")){
-      Zoltan2_AlgMJ<Adapter> alg_mj;
-      alg_mj.partition( this->envConst_, problemComm_,
-         this->coordinateModel_, solution_);
+
+    else if (algName_ == std::string("multijagged")) {
+
+      this->algorithm_ = rcp(new Zoltan2_AlgMJ<Adapter>(this->envConst_,
+                                              problemComm_,
+                                              this->coordinateModel_));
+      this->algorithm_->partition(solution_);
     }
-    else if (algorithm_ == std::string("wolf"))
-    {
-      AlgWolf<Adapter> alg_wolf(this->envConst_, problemComm_,this->graphModel_,
-				this->coordinateModel_);
+
+    else if (algName_ == std::string("wolf")) {
+
+      this->algorithm_ = rcp(new AlgWolf<Adapter>(this->envConst_,
+                                        problemComm_,this->graphModel_,
+                                        this->coordinateModel_));
 
       // need to add coordModel, make sure this is built
-
-      alg_wolf.partition(solution_);
-
+      this->algorithm_->partition(solution_);
     }
-    else
-    {
-      throw std::logic_error("partitioning algorithm not supported yet");
+    else {
+      throw std::logic_error("partitioning algorithm not supported");
     }
   }
   Z2_FORWARD_EXCEPTIONS;
@@ -751,7 +814,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       //modelType_ = IdentifierModelType;
       modelAvail_[IdentifierModelType] = true;
 
-      algorithm_ = algorithm;
+      algName_ = algorithm;
       needConsecutiveGlobalIds = true;
     }
     else if (algorithm == std::string("rcb") ||
@@ -762,7 +825,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       //modelType_ = CoordinateModelType;
       modelAvail_[CoordinateModelType]=true;
     
-      algorithm_ = algorithm;
+      algName_ = algorithm;
     }
     else if (algorithm == std::string("metis") ||
              algorithm == std::string("parmetis") ||
@@ -773,7 +836,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       //modelType_ = GraphModelType;
       modelAvail_[GraphModelType]=true;
 
-      algorithm_ = algorithm;
+      algName_ = algorithm;
       removeSelfEdges = true;
       needConsecutiveGlobalIds = true;
     }
@@ -788,14 +851,14 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
         //modelType_ = HypergraphModelType;
         modelAvail_[HypergraphModelType]=true;
       }
-      algorithm_ = algorithm;
+      algName_ = algorithm;
       needConsecutiveGlobalIds = true;
     }
     else if (algorithm == std::string("wolf"))
     {
       modelAvail_[GraphModelType]=true;
       modelAvail_[CoordinateModelType]=true;
-      algorithm_ = algorithm;
+      algName_ = algorithm;
     }
     else
     {
@@ -812,9 +875,9 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       modelAvail_[HypergraphModelType]=true;
 
       if (problemComm_->getSize() > 1)
-        algorithm_ = std::string("phg"); 
+        algName_ = std::string("phg"); 
       else
-        algorithm_ = std::string("patoh"); 
+        algName_ = std::string("patoh"); 
       needConsecutiveGlobalIds = true;
     }
     else if (model == std::string("graph"))
@@ -824,24 +887,24 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
 #ifdef HAVE_ZOLTAN2_SCOTCH
       if (problemComm_->getSize() > 1)
-        algorithm_ = std::string("ptscotch"); 
+        algName_ = std::string("ptscotch"); 
       else
-        algorithm_ = std::string("scotch"); 
+        algName_ = std::string("scotch"); 
       removeSelfEdges = true;
       needConsecutiveGlobalIds = true;
 #else
 #ifdef HAVE_ZOLTAN2_PARMETIS
       if (problemComm_->getSize() > 1)
-        algorithm_ = std::string("parmetis"); 
+        algName_ = std::string("parmetis"); 
       else
-        algorithm_ = std::string("metis"); 
+        algName_ = std::string("metis"); 
       removeSelfEdges = true;
       needConsecutiveGlobalIds = true;
 #else
       if (problemComm_->getSize() > 1)
-        algorithm_ = std::string("phg"); 
+        algName_ = std::string("phg"); 
       else
-        algorithm_ = std::string("patoh"); 
+        algName_ = std::string("patoh"); 
       removeSelfEdges = true;
       needConsecutiveGlobalIds = true;
 #endif
@@ -852,14 +915,14 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       //modelType_ = CoordinateModelType;
       modelAvail_[CoordinateModelType]=true;
 
-      algorithm_ = std::string("rcb");
+      algName_ = std::string("rcb");
     }
     else if (model == std::string("ids"))
     {
       //modelType_ = IdentifierModelType;
       modelAvail_[IdentifierModelType]=true;
 
-      algorithm_ = std::string("block");
+      algName_ = std::string("block");
       needConsecutiveGlobalIds = true;
     }
     else
@@ -881,9 +944,9 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       modelAvail_[HypergraphModelType]=true;
       
       if (problemComm_->getSize() > 1)
-        algorithm_ = std::string("phg"); 
+        algName_ = std::string("phg"); 
       else
-        algorithm_ = std::string("patoh"); 
+        algName_ = std::string("patoh"); 
     }
     else if (inputType_ == GraphAdapterType ||
         inputType_ == MeshAdapterType)
@@ -892,17 +955,17 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       modelAvail_[GraphModelType]=true;
 
       if (problemComm_->getSize() > 1)
-        algorithm_ = std::string("phg"); 
+        algName_ = std::string("phg"); 
       else
-        algorithm_ = std::string("patoh"); 
+        algName_ = std::string("patoh"); 
     }
     else if (inputType_ == CoordinateAdapterType)
     {
       //modelType_ = CoordinateModelType;
       modelAvail_[CoordinateModelType]=true;
 
-      if(algorithm_ != std::string("multijagged"))
-      algorithm_ = std::string("rcb");
+      if(algName_ != std::string("multijagged"))
+      algName_ = std::string("rcb");
     }
     else if (inputType_ == VectorAdapterType ||
              inputType_ == IdentifierAdapterType)
@@ -910,7 +973,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       //modelType_ = IdentifierModelType;
       modelAvail_[IdentifierModelType]=true;
 
-      algorithm_ = std::string("block");
+      algName_ = std::string("block");
     }
     else{
       // This should never happen

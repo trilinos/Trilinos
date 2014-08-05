@@ -109,6 +109,26 @@ IF (Sacado_ENABLE_KokkosCore)
       )
   ENDIF()
 
+  IF (Kokkos_ENABLE_OpenMP)
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      FadKokkosTests_OpenMP
+      SOURCES Fad_KokkosTests.hpp
+              Fad_KokkosTests_OpenMP.cpp
+      COMM serial mpi
+      STANDARD_PASS_OUTPUT
+      NUM_MPI_PROCS 1
+      )
+
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      FadKokkosTests_NoViewSpec_OpenMP
+      SOURCES Fad_KokkosTests.hpp
+              Fad_KokkosTests_NoViewSpec_OpenMP.cpp
+      COMM serial mpi
+      STANDARD_PASS_OUTPUT
+      NUM_MPI_PROCS 1
+      )
+  ENDIF()
+
   IF (Kokkos_ENABLE_Cuda)
     IF( TPL_ENABLE_MPI )
       CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )

@@ -117,14 +117,18 @@ namespace { // anonymous
   struct TpetraMultiVectorCloneCopier<Tpetra::MultiVector<S, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<Device> > > {
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> node_type;
     typedef Tpetra::MultiVector<S, LO, GO, node_type> MV;
+
     static Teuchos::RCP<MV> cloneCopy (const MV& X) {
-      // mfh 29 Jan 2014: If the specialization of MultiVector for Node
-      // does a deep copy in its copy constructor, then this will
-      // double-copy, since createCopy() returns MV, not RCP<MV>.
-      // However, the Kokkos::Compat wrapper Nodes do NOT do a deep copy
-      // in their copy constructor, so this is fine to use there (and
-      // indeed is the preferred mode).
-      return Teuchos::rcp (new MV (Tpetra::createCopy<S,LO,GO,Device> (X)));
+      // Make a deep copy of X.  The one-argument copy constructor
+      // does a shallow copy by default; the second argument tells it
+      // to do a deep copy.
+      Teuchos::RCP<MV> X_copy (new MV (X, Teuchos::Copy));
+      // Ensure that X_copy has the same copy-or-view semantics as X.
+      // The above copy constructor sets X_copy initially to have
+      // (deep) copy semantics; this ensures that X_copy have the same
+      // semantics as X.
+      X_copy->setCopyOrView (X.getCopyOrView ());
+      return X_copy;
     }
   };
 #endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT

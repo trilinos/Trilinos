@@ -198,71 +198,6 @@ private:
 namespace Kokkos {
 namespace Impl {
 
-//----------------------------------------------------------------------------
-
-template< class FunctorType , class WorkSpec >
-class ParallelFor< FunctorType , WorkSpec , Serial > {
-public:
-
-  ParallelFor( const FunctorType & functor , const size_t work_count )
-    {
-      for ( size_t iwork = 0 ; iwork < work_count ; ++iwork ) {
-        functor( iwork );
-      }
-    }
-};
-
-template< class FunctorType , class WorkSpec >
-class ParallelReduce< FunctorType , WorkSpec , Serial > {
-public:
-
-  typedef ReduceAdapter< FunctorType >  Reduce ;
-  typedef typename Reduce::pointer_type pointer_type ;
-
-  ParallelReduce( const FunctorType  & functor ,
-                  const size_t         work_count ,
-                  pointer_type         result = 0 )
-    {
-      if ( 0 == result ) {
-        result = (pointer_type ) Serial::resize_reduce_scratch( Reduce::value_size( functor ) );
-      }
-
-      Reduce::init( functor , result );
-
-      for ( size_t iwork = 0 ; iwork < work_count ; ++iwork ) {
-        functor( iwork , Reduce::reference( result ) );
-      }
-
-      Reduce::final( functor , result );
-    }
-
-  void wait() {}
-};
-
-template< class FunctorType , class WorkSpec >
-class ParallelScan< FunctorType , WorkSpec , Kokkos::Serial >
-{
-public:
-  typedef ReduceAdapter< FunctorType >   Reduce ;
-  typedef typename Reduce::pointer_type  pointer_type ;
-
-  inline
-  ParallelScan( const FunctorType & functor , const size_t work_count )
-  {
-    pointer_type result = (pointer_type ) Serial::resize_reduce_scratch( Reduce::value_size( functor ) );
-
-    Reduce::init( functor , result );
-
-    for ( size_t iwork = 0 ; iwork < work_count ; ++iwork ) {
-      functor( iwork , Reduce::reference( result ) , true );
-    }
-  }
-
-  void wait() {}
-};
-
-//----------------------------------------------------------------------------
-
 template< class FunctorType >
 class ParallelFor< FunctorType , ParallelWorkRequest , Serial > {
 public:
@@ -393,6 +328,92 @@ public:
 
 namespace Kokkos {
 namespace Impl {
+
+template< class FunctorType , typename IntType , unsigned P >
+class ParallelFor< FunctorType
+                 , Kokkos::RangePolicy< Kokkos::Serial , void , IntType , P >
+                 , Kokkos::Serial
+                 >
+{
+public:
+  typedef Kokkos::RangePolicy< Kokkos::Serial , void , IntType , P > Policy ;
+
+  ParallelFor( const FunctorType & functor
+             , const Policy      & policy )
+    {
+      for ( typename Policy::member_type i = policy.begin() , e = policy.end() ; i < e ; ++i ) {
+        functor( i );
+      }
+    }
+};
+
+template< class FunctorType , typename IntType , unsigned P >
+class ParallelReduce< FunctorType
+                    , Kokkos::RangePolicy< Kokkos::Serial , void , IntType , P >
+                    , Kokkos::Serial
+                    >
+{
+public:
+  typedef Kokkos::RangePolicy< Kokkos::Serial , void , IntType , P > Policy ;
+
+  typedef ReduceAdapter< FunctorType >  Reduce ;
+  typedef typename Reduce::pointer_type pointer_type ;
+
+  template< class ViewType >
+  ParallelReduce( const FunctorType  & functor
+                , const Policy       & policy
+                , const ViewType     & result
+                , const typename enable_if<
+                   ( is_view< ViewType >::value &&
+                     is_same< typename ViewType::memory_space , HostSpace >::value
+                   )>::type * = 0
+                )
+    {
+      pointer_type result_ptr = result.ptr_on_device();
+
+      if ( ! result_ptr ) {
+        result_ptr = (pointer_type) Serial::resize_reduce_scratch( Reduce::value_size( functor ) );
+      }
+
+      typename Reduce::reference_type update = Reduce::init( functor , result_ptr );
+      
+      for ( typename Policy::member_type i = policy.begin() , e = policy.end() ; i < e ; ++i ) {
+        functor( i , update );
+      }
+
+      Reduce::final( functor , result_ptr );
+    }
+};
+
+template< class FunctorType , typename IntType , unsigned P >
+class ParallelScan< FunctorType
+                  , Kokkos::RangePolicy< Kokkos::Serial , void , IntType , P >
+                  , Kokkos::Serial
+                  >
+{
+public:
+  typedef Kokkos::RangePolicy< Kokkos::Serial , void , IntType , P > Policy ;
+
+  typedef ReduceAdapter< FunctorType >  Reduce ;
+  typedef typename Reduce::pointer_type pointer_type ;
+
+  ParallelScan( const FunctorType  & functor
+               , const Policy      & policy
+               )
+    {
+      pointer_type result_ptr = (pointer_type) Serial::resize_reduce_scratch( Reduce::value_size( functor ) );
+
+      typename Reduce::reference_type update = Reduce::init( functor , result_ptr );
+      
+      for ( typename Policy::member_type i = policy.begin() , e = policy.end() ; i < e ; ++i ) {
+        functor( i , update , true );
+      }
+
+      Reduce::final( functor , result_ptr );
+    }
+};
+
+//----------------------------------------------------------------------------
 
 template< class FunctorType >
 class ParallelFor< FunctorType , Kokkos::TeamPolicy< Kokkos::Serial , void > , Kokkos::Serial >

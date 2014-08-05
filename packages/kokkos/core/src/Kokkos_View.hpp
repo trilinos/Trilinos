@@ -1221,11 +1221,16 @@ void deep_copy( const View<DT,DL,DD,DM,Impl::ViewDefault> & dst ,
   if ( dst.ptr_on_device() != src.ptr_on_device() ) {
 
     Impl::assert_shapes_are_equal( dst.shape() ,    src.shape() );
-    Impl::assert_counts_are_equal( dst.capacity() , src.capacity() );
 
-    const size_t nbytes = sizeof(typename dst_type::value_type) * dst.capacity();
+    if( dst.capacity() == src.capacity() ) {
+      Impl::assert_counts_are_equal( dst.capacity() , src.capacity() );
 
-    Impl::DeepCopy< dst_memory_space , src_memory_space >( dst.ptr_on_device() , src.ptr_on_device() , nbytes );
+      const size_t nbytes = sizeof(typename dst_type::value_type) * dst.capacity();
+
+      Impl::DeepCopy< dst_memory_space , src_memory_space >( dst.ptr_on_device() , src.ptr_on_device() , nbytes );
+    } else {
+      Impl::ViewRemap< dst_type , src_type >( dst , src );
+    }
   }
 }
 
@@ -1261,6 +1266,25 @@ void deep_copy( const View< DT, DL, DD, DM, DS > & dst ,
   assert_shapes_equal_dimension( dst.shape() , src.shape() );
 
   Impl::ViewRemap< dst_type , src_type >( dst , src );
+}
+
+//----------------------------------------------------------------------------
+
+/**\brief  Wrap an unmanaged view around a simple value
+ *         residing in the current execution space.
+ */
+template< class T >
+View<T,Kokkos::ExecutionSpace,Kokkos::MemoryUnmanaged>
+inline
+create_unmanaged_view( T & value
+                     , typename Kokkos::Impl::enable_if<(
+                         ( Kokkos::Impl::AnalyzeShape<T>::shape::rank == 0 )
+                         &&
+                         ( ! Kokkos::Impl::is_const<T>::value )
+                       )>::type * = 0
+                     )
+{
+  return View<T,Kokkos::ExecutionSpace,Kokkos::MemoryUnmanaged>( & value );
 }
 
 //----------------------------------------------------------------------------
@@ -1532,6 +1556,7 @@ subview( const View<T,L,D,M,S> & src ,
 //----------------------------------------------------------------------------
 
 #include <impl/Kokkos_ViewDefault.hpp>
+#include <impl/Kokkos_Atomic_View.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

@@ -97,7 +97,7 @@ namespace Tpetra {
 
     //! The Kokkos Device type
     typedef typename Node::device_type device_type;
-    typedef typename device_type::size_type view_size_type;
+    typedef typename Kokkos::View<Packet*, device_type>::size_type view_size_type;
 
     //@}
     //! @name Constructors and destructor

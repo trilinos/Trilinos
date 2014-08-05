@@ -365,6 +365,13 @@
   </parameter>
 
   <parameter>
+    <name>semicoarsen: coarsen rate</name>
+    <type>int</type>
+    <default>3</default>
+    <description>Rate at which to coarsen unknowns in the z direction.</description>
+  </parameter>
+
+  <parameter>
     <name>sa: damping factor</name>
     <type>double</type>
     <default>1.33333333</default>
@@ -376,6 +383,22 @@
     <type>bool</type>
     <default>true</default>
     <description>Matrix to use for smoothing the tentative prolongator. The two options are: to use the original matrix, and to use the filtered matrix with filtering based on filtered graph used for aggregation.</description>
+  </parameter>
+
+  <parameter>
+    <name>sa: calculate eigenvalue estimate</name>
+    <type>bool</type>
+    <default>false</default>
+    <description>Force calculation of eigenvalue estimate during prolongator smoothing.</description>
+    <visible>false</visible>
+  </parameter>
+
+  <parameter>
+    <name>sa: eigenvalue estimate num iterations</name>
+    <type>int</type>
+    <default>10</default>
+    <description>Number of power iterations to use to estimate max eigenvalue. This has effect only if estimation occurs during prolongator smoothing.</description>
+    <visible>false</visible>
   </parameter>
 
   <parameter>

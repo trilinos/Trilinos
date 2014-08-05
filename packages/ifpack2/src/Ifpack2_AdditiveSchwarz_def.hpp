@@ -348,7 +348,7 @@ AdditiveSchwarz (const Teuchos::RCP<const row_matrix_type>& A) :
   IsComputed_ (false),
   IsOverlapping_ (false),
   OverlapLevel_ (0),
-  CombineMode_ (Tpetra::ADD),
+  CombineMode_ (Tpetra::ZERO),
   Condest_ (-Teuchos::ScalarTraits<magnitude_type>::one ()),
   ComputeCondest_ (true),
   UseReordering_ (false),
@@ -375,7 +375,7 @@ AdditiveSchwarz (const Teuchos::RCP<const row_matrix_type>& A,
   IsComputed_ (false),
   IsOverlapping_ (false),
   OverlapLevel_ (overlapLevel),
-  CombineMode_ (Tpetra::ADD),
+  CombineMode_ (Tpetra::ZERO),
   Condest_ (-Teuchos::ScalarTraits<magnitude_type>::one ()),
   ComputeCondest_ (true),
   UseReordering_ (false),
@@ -890,6 +890,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize ()
     if (! Inverse_.is_null ()) {
       Inverse_->initialize (); // Initialize subdomain solver.
     }
+
   } // Stop timing here.
 
   IsInitialized_ = true;

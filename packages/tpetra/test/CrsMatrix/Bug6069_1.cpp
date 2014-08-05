@@ -77,9 +77,6 @@ typedef double scalar_type;
 typedef int local_ordinal_type;
 //typedef long global_ordinal_type;  //<<<<<<<<   valgrind is clean
 typedef int global_ordinal_type;     //<<<<<<<<   valgrind complains
-typedef Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
-typedef Tpetra::Map<local_ordinal_type, global_ordinal_type> map_type;
-typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type> mat_type;
 
 void
 GetNeighboursCartesian2d (const global_ordinal_type i,
@@ -115,6 +112,10 @@ main (int argc, char *argv[])
   using Teuchos::ArrayRCP;
   using Teuchos::RCP;
   using Teuchos::rcp;
+
+  // Put these typedefs here, to avoid global shadowing warnings.
+  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type> map_type;
+  typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type> mat_type;
 
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackhole);

@@ -424,6 +424,15 @@ public:
    */
   Entity declare_entity( EntityRank ent_rank , EntityId ent_id);
 
+  /** \brief Add sharing information about a newly-created node
+   *
+   * All nodes that are shared between processors must have the same
+   * ID across all processors, and they must have this sharing information
+   * explicitly provided in the same modification cycle as it was created,
+   * on all sharing processors. Otherwise, the nodes will remain unique
+   * on different processors.
+   */
+  void add_node_sharing( Entity node, int sharing_proc );
 
   void change_entity_id( EntityId id, Entity entity);
 
@@ -794,16 +803,16 @@ public:
     return m_entity_sync_counts[entity.local_offset()];
   }
 
-  enum edgeSharing { NOT_MARKED=0, POSSIBLY_SHARED=1, IS_SHARED=2 };
+  enum entitySharing { NOT_MARKED=0, POSSIBLY_SHARED=1, IS_SHARED=2 };
 
-  void markEdge(Entity entity, edgeSharing sharedType)
+  void markEntity(Entity entity, entitySharing sharedType)
   {
-      m_mark_edge[entity.local_offset()] = static_cast<int>(sharedType);
+      m_mark_entity[entity.local_offset()] = static_cast<int>(sharedType);
   }
 
-  edgeSharing isEdgeMarked(Entity entity) const
+  entitySharing isEntityMarked(Entity entity) const
   {
-      return static_cast<edgeSharing>(m_mark_edge[entity.local_offset()]);
+      return static_cast<entitySharing>(m_mark_entity[entity.local_offset()]);
   }
 
   Bucket & bucket(Entity entity) const
@@ -927,7 +936,7 @@ public:
     entity_setter_debug_check(entity);
 
     m_entity_states[entity.local_offset()] = static_cast<uint16_t>(entity_state);
-    m_mark_edge[entity.local_offset()] = 0;
+    m_mark_entity[entity.local_offset()] = NOT_MARKED;
   }
 
   bool set_parallel_owner_rank(Entity entity, int in_owner_rank)
@@ -1172,8 +1181,6 @@ public:
   //
   void get_entities(EntityRank rank, Selector const& selector, EntityVector& output_entities) const;
 
-  std::vector<int>& getMarkedEdges() { return m_mark_edge; }
-
 private:
 
   void update_deleted_entities_container();
@@ -1229,11 +1236,11 @@ private:
   bool                              m_add_fmwk_data; // flag that will add extra data to buckets to support fmwk
   const sierra::Fmwk::MeshBulkData* m_fmwk_bulk_ptr;
 
+#endif
 public:
   mutable bool       m_check_invalid_rels; // TODO REMOVE
 
 private:
-#endif
   int m_num_fields;
   bool m_keep_fields_updated;
 
@@ -1243,7 +1250,7 @@ private:
 
   std::vector<EntityKey>   m_entity_keys;
   std::vector<uint16_t>    m_entity_states;
-  std::vector<int>         m_mark_edge;
+  std::vector<int>         m_mark_entity;
 protected:
   std::vector<uint16_t>    m_closure_count;
 private:
@@ -1998,7 +2005,7 @@ inline bool BulkData::internal_quick_verify_change_part(const Part* part,
                                                         const unsigned ent_rank,
                                                         const unsigned undef_rank) const
 {
-  bool intersection_ok, rel_target_ok, rank_ok;
+  bool intersection_ok=false, rel_target_ok=false, rank_ok=false;
   internal_basic_part_check(part, ent_rank, undef_rank, intersection_ok, rel_target_ok, rank_ok);
   return intersection_ok && rel_target_ok && rank_ok;
 }
@@ -2039,75 +2046,6 @@ bool BulkData::in_send_ghost( EntityKey key) const
   return ! ec.empty() && ec.back().ghost_id != 0 &&
     ec.back().proc != owner_rank;
 }
-
-class LessRelation
-{
-public:
-
-  LessRelation(const BulkData &mesh) : m_mesh(mesh) { }
-
-  inline bool operator() ( const Relation & lhs , const Relation & rhs ) const
-  {
-    bool result = false;
-
-    // In Sierra, relations are sorted by RelationType in addition to Rank, Identifier, and target entity key.
-  #ifdef SIERRA_MIGRATION
-    if (lhs.entity_rank() != rhs.entity_rank()) {
-      result = lhs.entity_rank() < rhs.entity_rank();
-    }
-    else if (lhs.getRelationType() != rhs.getRelationType()) {
-      result = lhs.getRelationType() < rhs.getRelationType();
-    }
-    else if (lhs.relation_ordinal() != rhs.relation_ordinal()) {
-      result = lhs.relation_ordinal() < rhs.relation_ordinal();
-    }
-  #else
-    if ( lhs.m_raw_relation.value != rhs.m_raw_relation.value ) {
-      result = lhs.m_raw_relation.value < rhs.m_raw_relation.value ;
-    }
-  #endif
-    else {
-      Entity lhs_entity = lhs.entity();
-      const size_t lhs_offset = m_mesh.is_valid(lhs_entity) ? lhs_entity.local_offset() : Entity::MaxEntity;
-      Entity rhs_entity = rhs.entity();
-      const size_t rhs_offset = m_mesh.is_valid(rhs_entity) ? rhs_entity.local_offset() : Entity::MaxEntity;
-      result = lhs_offset < rhs_offset;
-    }
-    return result ;
-  }
-
-  bool operator() ( const Relation & lhs , Relation::raw_relation_id_type rhs ) const
-    { return lhs.raw_relation_id() < rhs ; }
-
-private:
-
-  const BulkData &m_mesh;
-
-  LessRelation();
-};
-
-inline
-Relation::Relation(const BulkData &mesh,  Entity ent , RelationIdentifier id )
-  : m_raw_relation( Relation::raw_relation_id( mesh.entity_rank(ent) , id ) ),
-    m_target_entity(ent)
-{
-#ifdef SIERRA_MIGRATION
-  setRelationType(RelationType::INVALID);
-#endif
-}
-
-inline
-bool Bucket::other_entities_have_single_rank(size_type bucket_ordinal, EntityRank rank) const
-{
-  Entity const * const other_rels = m_dynamic_other_connectivity.begin(bucket_ordinal);
-  Entity const * const other_rels_end = m_dynamic_other_connectivity.end(bucket_ordinal);;
-
-  if ((other_rels == other_rels_end) && (rank != InvalidEntityRank))
-    return false;
-
-  return (m_mesh.entity_rank(*other_rels) == rank) && (m_mesh.entity_rank(*(other_rels_end - 1)) == rank);
-}
-
 
 inline
 void BulkData::internal_check_unpopulated_relations(Entity entity, EntityRank rank) const
