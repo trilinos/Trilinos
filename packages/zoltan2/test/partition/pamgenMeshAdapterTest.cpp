@@ -187,10 +187,31 @@ int main(int argc, char *argv[]) {
   long long maxInt = 9223372036854775807LL;
   Create_Pamgen_Mesh(meshInput.c_str(), dim, rank, numProcs, maxInt);
 
+  typedef Zoltan2::PamgenMeshAdapter<long long> inputAdapter_t;
+
+  inputAdapter_t ia();
+
+  Teuchos::ParameterList params("test params");
+  params.set("bisection_num_test_cuts", 7);
+  params.set("rectilinear_blocks", "yes");
+
+#ifdef HAVE_ZOLTAN2_MPI
+  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params, MPI_COMM_WORLD);
+#else
+  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params);
+#endif
+
+  problem.solve();
+
+  if (comm->getRank() == 0)
+    problem.printMetrics(cout);
+
+  if (rank == 0)
+    std::cout << "PASS" << std::endl;
+
   // delete mesh
   Delete_Pamgen_Mesh();
   return 0;
-
 }
 /*****************************************************************************/
 /********************************* END MAIN **********************************/
