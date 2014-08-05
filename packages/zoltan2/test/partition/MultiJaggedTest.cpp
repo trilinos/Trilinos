@@ -129,6 +129,7 @@ int run_pointAssign_tests(
   Zoltan2::PartitioningProblem<Adapter> *problem,
   int coord_dim)
 {
+#ifdef POINTASSIGNREADY
     // pointAssign tests
     typename Adapter::scalar_t pointDrop[coord_dim];
     typename Adapter::part_t part;
@@ -150,6 +151,7 @@ int run_pointAssign_tests(
       part = problem->pointAssign(coord_dim, pointDrop);
     }
     CATCH_EXCEPTIONS("pointAssign -- i*5");
+#endif
 
     return 0;
 }
@@ -306,7 +308,7 @@ int GeometricGenInterface(const RCP<const Teuchos::Comm<int> > & comm,
 
     params->set("algorithm", "multijagged");
     params->set("compute_metrics", "true");
-    params->set("keep_cuts", "true");
+    params->set("mj_keep_part_boxes", "true");
 
     if(imbalance > 1)
         params->set("imbalance_tolerance", double(imbalance));
@@ -400,7 +402,7 @@ int testFromDataFile(
 
     //params->set("timer_output_stream" , "std::cout");
     params->set("compute_metrics", "true");
-    params->set("keep_cuts", "true");
+    params->set("mj_keep_part_boxes", "true");
     params->set("algorithm", "multijagged");
     if(imbalance > 1){
         params->set("imbalance_tolerance", double(imbalance));
