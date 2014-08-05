@@ -43,6 +43,8 @@ void communicate_field_data(
   std::vector<unsigned> send_size( parallel_size , zero );
   std::vector<unsigned> recv_size( parallel_size , zero );
 
+  std::vector<int> visited_procs;
+  visited_procs.reserve(128);
   for ( EntityCommListInfoVector::const_iterator
         i =  mesh.comm_list().begin() , iend = mesh.comm_list().end(); i != iend ; ++i ) {
     Entity e = i->entity;
@@ -67,8 +69,12 @@ void communicate_field_data(
     if ( owned ) {
       const EntityCommInfoVector& infovec = i->entity_comm->comm_map;
       PairIterEntityComm ec(infovec.begin(), infovec.end());
+      visited_procs.clear();
       for ( ; ! ec.empty() ; ++ec ) {
-        send_size[ ec->proc ] += e_size ;
+          if (std::find(visited_procs.begin(),visited_procs.end(),ec->proc)==visited_procs.end()) {
+              send_size[ ec->proc ] += e_size ;
+              visited_procs.push_back(ec->proc);
+          }
       }
     }
     else {
@@ -111,9 +117,13 @@ void communicate_field_data(
             if (phase == 0) { // send
               const EntityCommInfoVector& infovec = i->entity_comm->comm_map;
               PairIterEntityComm ec(infovec.begin(), infovec.end());
+              visited_procs.clear();
               for ( ; !ec.empty() ; ++ec ) {
-                CommBuffer & b = sparse.send_buffer( ec->proc );
-                b.pack<unsigned char>( ptr , size );
+                  if (std::find(visited_procs.begin(),visited_procs.end(),ec->proc)==visited_procs.end()) {
+                      CommBuffer & b = sparse.send_buffer( ec->proc );
+                      b.pack<unsigned char>( ptr , size );
+                      visited_procs.push_back(ec->proc);
+                  }
               }
             }
             else { //recv
