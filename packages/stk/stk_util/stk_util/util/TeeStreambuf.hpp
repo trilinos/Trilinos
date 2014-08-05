@@ -17,6 +17,15 @@
 
 namespace stk {
 
+namespace {
+struct OStreamPointerLess
+{
+    inline bool operator()(const std::ostream *lhs, const std::ostream *rhs) const
+    {
+        return lhs < rhs;
+    }
+};
+}
 /**
  * @brief Class <b>basic_tee_streambuf</b> maintains a list of destination output stream buffers to
  * send written characters to.  Many destination output stream buffers may be added.  For each
@@ -27,8 +36,8 @@ namespace stk {
 template<class Ch, class Tr = std::char_traits<Ch> >
 class basic_tee_streambuf : public std::basic_streambuf<Ch, Tr>
 {
-  typedef std::set<std::ostream *> StreamSet;
-  typedef std::map<std::ostream *, int> StreamErrorMap;
+  typedef std::set<std::ostream *, OStreamPointerLess> StreamSet;
+  typedef std::map<std::ostream *, int, OStreamPointerLess> StreamErrorMap;
   
 public:
   /**

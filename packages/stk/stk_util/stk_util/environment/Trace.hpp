@@ -127,7 +127,14 @@ public:
    * let it go.
    *
    */
-  typedef std::map<const char *, int> Coverage;
+  struct StringLiteralLess
+  {
+    inline bool operator()(const char *lhs, const char *rhs) const
+    {
+      return std::strcmp(lhs, rhs) < 0;
+    }
+  };
+  typedef std::map<const char *, int, StringLiteralLess> Coverage;
 
   /**
    * @brief Class <b>Traceback::Preserve</b> serves as a sentry for traceback
