@@ -2363,15 +2363,10 @@ namespace Tpetra {
     /// resumeFill() sets this to null.  fillComplete() initializes
     /// this object using the local graph and matrix.
     RCP<sparse_ops_type>   lclMatOps_;
-    /// The local sparse matrix, before kernel optimizations.
-    ///
-    /// resumeFill() sets this to null.  fillLocalGraphAndMatrix() and
-    /// fillLocalMatrix() initialize this.  Once fillComplete() has
-    /// initialized the sparse kernels object (lclMatOps_ above), this
-    /// object is set to null again.
-    RCP<local_matrix_type> lclMatrix_;
 
+    //! The local sparse matrix.
     k_local_matrix_type k_lclMatrix_;
+
     /// \name Sparse matrix values.
     ///
     /// values1D_ represents the values assuming "1-D" compressed

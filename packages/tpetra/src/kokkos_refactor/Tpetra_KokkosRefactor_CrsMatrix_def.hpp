@@ -249,6 +249,10 @@ namespace Tpetra {
     DistObject<char, LocalOrdinal, GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > (rowMap),
     k_lclMatrix_(lclMatrix)
   {
+    using Teuchos::ArrayRCP;
+    using Teuchos::arcp;
+    using Teuchos::rcp;
+    using Teuchos::RCP;
     const char tfecfFuncName[] = "CrsMatrix(rowMap,colMap,lclMatrix,params)";
 
     try {
@@ -262,33 +266,34 @@ namespace Tpetra {
     staticGraph_ = myGraph_;
     computeGlobalConstants();
 
-    lclMatrix_ = null;
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       staticGraph_->getLocalGraph ().is_null (), std::logic_error,
       ": The local graph ({my,static}Graph_->getLocalGraph()) is null.  "
       "Please report this bug to the Tpetra developers.");
-    lclMatrix_ = rcp (new local_matrix_type (staticGraph_->getLocalGraph (), params));
-    lclMatrix_->setValues (Teuchos::arcp(k_lclMatrix_.values.ptr_on_device(), 0, k_lclMatrix_.values.dimension_0(),
-        Kokkos::Compat::deallocator(k_lclMatrix_.values), false));
 
     k_values1D_ = k_lclMatrix_.values;
+    values1D_ = Kokkos::Compat::persistingView (k_values1D_);
 
-    values1D_ = arcp (k_lclMatrix_.values.ptr_on_device (), 0,
-                      k_lclMatrix_.values.dimension_0 (),
-                      Kokkos::Compat::deallocator (k_lclMatrix_.values), false);
     //
     // Set up the local sparse kernels.
     //
     lclMatOps_ = rcp (new sparse_ops_type (getNode ()));
     // This is where we take the local graph and matrix, and turn them
     // into (possibly optimized) sparse kernels.
-    lclMatOps_->setGraphAndMatrix (staticGraph_->getLocalGraph (), lclMatrix_);
+    {
+      RCP<local_matrix_type> classicLocalMatrix =
+        rcp (new local_matrix_type (staticGraph_->getLocalGraph (), params));
+      ArrayRCP<scalar_type> classicValues =
+        Kokkos::Compat::persistingView (k_lclMatrix_.values);
+      classicLocalMatrix->setValues (classicValues);
+      lclMatOps_->setGraphAndMatrix (staticGraph_->getLocalGraph (),
+                                     classicLocalMatrix);
+    }
 
     // Once we've initialized the sparse kernels, we're done with the
     // local objects.  We may now release them and their memory, since
     // they will persist in the local sparse ops if necessary.  We
     // keep the local graph if the parameters tell us to do so.
-    lclMatrix_ = null;
     if (myGraph_ != null) {
       bool preserveLocalGraph = true;
       if (params != null) {
@@ -571,9 +576,9 @@ namespace Tpetra {
       // values.  ("1-D storage" means the same as that used by the
       // three arrays in the classic compressed sparse row format.)
       //values1D_ = staticGraph_->template allocateValues1D<Scalar>();
-      k_values1D_ = t_ValuesType("Tpetra::CrsMatrix::values1D_",*(staticGraph_->rowPtrs_.end()-1));
-      values1D_ = Teuchos::arcp(k_values1D_.ptr_on_device(), 0, k_values1D_.dimension_0(),
-                                 Kokkos::Compat::deallocator(k_values1D_), false);
+      k_values1D_ = t_ValuesType ("Tpetra::CrsMatrix::values1D_",
+                                  *(staticGraph_->rowPtrs_.end () - 1));
+      values1D_ = Kokkos::Compat::persistingView (k_values1D_);
     }
     else {
       // "Dynamic profile" means the number of matrix entries in each
@@ -615,7 +620,7 @@ namespace Tpetra {
         true, std::runtime_error,
         ": Caught exception while calling getCrsGraph()->getAllIndices().");
     }
-    values = values1D_;
+    values = Kokkos::Compat::persistingView (k_values1D_);
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -627,6 +632,11 @@ namespace Tpetra {
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   fillLocalGraphAndMatrix (const RCP<ParameterList> &params)
   {
+    using Teuchos::arcp;
+    using Teuchos::ArrayRCP;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+
     // Notes on graph views:
     // Creation
     // Tpetra::CrsGraph: lclInds1D_ lclInds2d_ rowPtrs_ lclGraph // k_lclInds1D_ k_rowPtrs k_localGraph
@@ -697,9 +707,9 @@ namespace Tpetra {
       k_inds = typename Graph::t_LocalOrdinal_1D("Tpetra::CrsGraph::lclInds1D_",h_tmpk_ptrs[h_tmpk_ptrs.dimension_0()-1]);
       inds = Teuchos::arcp(k_inds.ptr_on_device(), 0, k_inds.dimension_0(),
                                      Kokkos::Compat::deallocator(k_inds), false);
-      k_vals = t_ValuesType("Tpetra::CrsMatrix::values1D_",h_tmpk_ptrs[h_tmpk_ptrs.dimension_0()-1]);
-      vals = Teuchos::arcp(k_vals.ptr_on_device(), 0, k_vals.dimension_0(),
-                                 Kokkos::Compat::deallocator(k_vals), false);
+      k_vals = t_ValuesType ("Tpetra::CrsMatrix::values1D_",
+                             h_tmpk_ptrs[h_tmpk_ptrs.dimension_0 () - 1]);
+      vals = Kokkos::Compat::persistingView (k_vals);
 
 //      ptrs = sparse_ops_type::allocRowPtrs (node, numRowEntries_ ());
 //      inds = sparse_ops_type::template allocStorage<LO> (node, ptrs ());
@@ -722,16 +732,6 @@ namespace Tpetra {
       }
       Kokkos::deep_copy(k_inds,h_inds);
       Kokkos::deep_copy(k_vals,h_vals);
-      /*for (size_t row = 0; row < numRows; ++row) {
-        const size_t numentrs = numRowEntries_[row];
-        std::copy (lclInds2D_[row].begin(),
-                   lclInds2D_[row].begin() + numentrs,
-                   inds + ptrs[row]);
-        std::copy (values2D_[row].begin(),
-                   values2D_[row].begin() + numentrs,
-                   vals + ptrs[row]);
-      }
-      */
     }
     else if (getProfileType() == StaticProfile) {
       // StaticProfile means that the matrix's column indices and
@@ -752,9 +752,10 @@ namespace Tpetra {
         //FIXME: (CRT 25 Sep 13) allocate a new local graph instead
         //allocate modifiable RowPtrs
         //ptrs = sparse_ops_type::allocRowPtrs (node, numRowEntries_ ());
-        typename Graph::t_RowPtrs tmpk_ptrs = typename Graph::t_RowPtrs("Tpetra::CrsGraph::RowPtrs",numRowEntries_.size()+1);
-        ptrs = Teuchos::arcp(tmpk_ptrs.ptr_on_device(), 0, tmpk_ptrs.dimension_0(),
-                                           Kokkos::Compat::deallocator(tmpk_ptrs), false);
+        typename Graph::t_RowPtrs tmpk_ptrs =
+          typename Graph::t_RowPtrs ("Tpetra::CrsGraph::ptr",
+                                     numRowEntries_.size () + 1);
+        ptrs = Kokkos::Compat::persistingView (tmpk_ptrs);
         k_ptrs = tmpk_ptrs;
         {
           typename Graph::t_RowPtrs::HostMirror h_tmpk_ptrs = Kokkos::create_mirror_view(tmpk_ptrs);
@@ -763,84 +764,78 @@ namespace Tpetra {
           for(int i = 0; i < numRowEntries_.size(); i++) {
             h_tmpk_ptrs(i+1) = h_tmpk_ptrs(i)+numRowEntries_[i];
           }
-          Kokkos::deep_copy(tmpk_ptrs,h_tmpk_ptrs);
+          Kokkos::deep_copy (tmpk_ptrs, h_tmpk_ptrs);
         }
 
-
         //inds = sparse_ops_type::template allocStorage<LO> (node, ptrs ());
-        k_inds = typename  Graph::t_LocalOrdinal_1D("Tpetra::CrsGraph::lclInds1D_",*(ptrs.end()-1));
-        inds = Teuchos::arcp(k_inds.ptr_on_device(), 0, k_inds.dimension_0(),
-                                       Kokkos::Compat::deallocator(k_inds), false);
+        k_inds = typename Graph::t_LocalOrdinal_1D ("Tpetra::CrsGraph::ind",
+                                                    * (ptrs.end () - 1));
+        inds = Kokkos::Compat::persistingView (k_inds);
 
         //vals = sparse_ops_type::template allocStorage<Scalar> (node, ptrs ());
-        k_vals = t_ValuesType("Tpetra::CrsMatrix::values1D_",*(ptrs.end()-1));
-
-        vals = Teuchos::arcp(k_vals.ptr_on_device(), 0, k_vals.dimension_0(),
-                                   Kokkos::Compat::deallocator(k_vals), false);
-
+        k_vals = t_ValuesType ("Tpetra::CrsMatrix::values1D_",
+                               * (ptrs.end () - 1));
+        vals = Kokkos::Compat::persistingView (k_vals);
 
         //If lclGraph of Graph does not yet exist data needs to be copied differently from the old
         //data structure in Graph. This should change when Graph is refactored to not have the old
         //data structures anymore.
         {
           if (k_rowPtrs_.dimension_0()==0) {
-            typename Graph::t_RowPtrs tmp_unpacked_ptrs = typename Graph::t_RowPtrs("Tpetra::CrsGraph::RowPtrs",numRowEntries_.size()+1);
-            for(int i = 0; i < rowPtrs_.size(); i++) {
+            typename Graph::t_RowPtrs tmp_unpacked_ptrs =
+              typename Graph::t_RowPtrs ("Tpetra::CrsGraph::ptr",
+                                         numRowEntries_.size () + 1);
+            for (ArrayRCP<size_t>::size_type i = 0; i < rowPtrs_.size (); ++i) {
               tmp_unpacked_ptrs(i) = rowPtrs_[i];
             }
             k_rowPtrs_ = tmp_unpacked_ptrs;
           }
           typename Graph::t_LocalOrdinal_1D tmp_unpacked_inds;
           if (k_lclInds1D_.dimension_0()==0) {
-            tmp_unpacked_inds = typename Graph::t_LocalOrdinal_1D("Tpetra::CrsGraph::t_LocalOridnal",lclInds1D_.size());
-            for(int i = 0; i < lclInds1D_.size(); i++) {
+            tmp_unpacked_inds =
+              typename Graph::t_LocalOrdinal_1D ("Tpetra::CrsGraph::tmpind",
+                                                 lclInds1D_.size ());
+            for (ArrayRCP<size_t>::size_type i = 0; i < lclInds1D_.size (); ++i) {
               tmp_unpacked_inds(i) = lclInds1D_[i];
             }
-          } else
+          } else {
             tmp_unpacked_inds = k_lclInds1D_;
+          }
+
           {
-            pack_functor<typename  Graph::t_LocalOrdinal_1D, typename Graph::LocalStaticCrsGraphType::row_map_type>
-              f(k_inds,tmp_unpacked_inds,tmpk_ptrs,k_rowPtrs_);
-            Kokkos::parallel_for(numRows,f);
+            pack_functor<typename Graph::t_LocalOrdinal_1D,
+              typename Graph::LocalStaticCrsGraphType::row_map_type>
+              f (k_inds, tmp_unpacked_inds, tmpk_ptrs, k_rowPtrs_);
+            Kokkos::parallel_for (numRows, f);
           }
 
           t_ValuesType tmp_unpacked_vals;
           if (k_values1D_.dimension_0()==0) {
             tmp_unpacked_vals = t_ValuesType("Tpetra::CrsMatrix::t_Values",values1D_.size());
-            for(int i = 0; i < values1D_.size(); i++) {
+            for (ArrayRCP<size_t>::size_type i = 0; i < values1D_.size (); ++i) {
               tmp_unpacked_vals(i) = values1D_[i];
             }
-          } else
+          } else {
             tmp_unpacked_vals = k_values1D_;
+          }
+
           {
-            pack_functor<t_ValuesType, typename Graph::LocalStaticCrsGraphType::row_map_type>
-              f(k_vals,tmp_unpacked_vals,tmpk_ptrs,k_rowPtrs_);
+            pack_functor<t_ValuesType,
+              typename Graph::LocalStaticCrsGraphType::row_map_type>
+              f (k_vals, tmp_unpacked_vals, tmpk_ptrs, k_rowPtrs_);
             Kokkos::parallel_for(numRows,f);
           }
         }
-
-        /*for (size_t row=0; row < numRows; ++row) {
-          // rowPtrs_ contains the unpacked row offsets, so use it to
-          // copy data out of unpacked 1-D storage.
-          const size_t numentrs = numRowEntries_[row];
-          std::copy (lclInds1D_.begin() + rowPtrs_[row],
-                     lclInds1D_.begin() + rowPtrs_[row] + numentrs,
-                     inds + ptrs[row]);
-          std::copy (values1D_.begin() + rowPtrs_[row],
-                     values1D_.begin() + rowPtrs_[row] + numentrs,
-                     vals + ptrs[row]);
-        }*/
       }
       else {
         // The user filled up all requested storage, so we don't have
         // to pack.
         ptrs = rowPtrs_;
         inds = lclInds1D_;
-        vals = values1D_;
+        vals = Kokkos::Compat::persistingView (k_values1D_);
         k_ptrs = k_rowPtrs_;
         k_inds = k_lclInds1D_;
         k_vals = k_values1D_;
-
       }
     }
 
@@ -911,23 +906,15 @@ namespace Tpetra {
     else {
       lclparams = sublist (params, "Local Matrix");
     }
-    // The local matrix should be null, but we delete it first so that
-    // any memory can be freed before we allocate the new one.
-    lclMatrix_ = null;
     TEUCHOS_TEST_FOR_EXCEPTION(
       staticGraph_->getLocalGraph ().is_null (), std::logic_error,
       "Tpetra::CrsMatrix::fillLocalGraphAndMatrix: The local graph "
       "(staticGraph_->getLocalGraph()) is null.  Please report this bug to the "
       "Tpetra developers.");
-    lclMatrix_ = rcp (new local_matrix_type (staticGraph_->getLocalGraph (), lclparams));
-    lclMatrix_->setValues (vals);
+
     k_lclMatrix_ = k_local_matrix_type ("Tpetra::CrsMatrix::k_lclMatrix_",
                                         getNodeNumCols(), k_vals,
                                         staticGraph_->getLocalGraph_Kokkos ());
-
-    // Now the matrix has vals, so we don't need to keep it here.
-    vals = null;
-    k_vals = t_ValuesType();
 
     // Finalize the local graph and matrix together.
     if (params == null) {
@@ -948,9 +935,15 @@ namespace Tpetra {
     else if (isLowerTriangular ()) {
       uplo = Teuchos::LOWER_TRI;
     }
+
+    RCP<local_matrix_type> classicLocalMatrix =
+      rcp (new local_matrix_type (staticGraph_->getLocalGraph (), lclparams));
+    ArrayRCP<scalar_type> classicValues =
+      Kokkos::Compat::persistingView (k_lclMatrix_.values);
+    classicLocalMatrix->setValues (classicValues);
     sparse_ops_type::finalizeGraphAndMatrix (uplo, diag,
                                              *myGraph_->getLocalGraphNonConst (),
-                                             *lclMatrix_,
+                                             *classicLocalMatrix,
                                              lclparams);
   }
 
@@ -964,6 +957,10 @@ namespace Tpetra {
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   fillLocalMatrix (const RCP<ParameterList> &params)
   {
+    using Teuchos::ArrayRCP;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+
     const size_t numRows = getNodeNumRows();
     const map_type& rowMap = * (getRowMap ());
     RCP<node_type> node = rowMap.getNode ();
@@ -1025,22 +1022,21 @@ namespace Tpetra {
       // (The allocStorage() function needs it.)  We'll free ptrs
       // later in this method.
       typename Graph::t_RowPtrs tmpk_ptrs = typename Graph::t_RowPtrs("Tpetra::CrsGraph::RowPtrs",numRowEntries.size()+1);
-      ptrs = Teuchos::arcp(tmpk_ptrs.ptr_on_device(), 0, tmpk_ptrs.dimension_0(),
-                                         Kokkos::Compat::deallocator(tmpk_ptrs), false);
+      ptrs = Kokkos::Compat::persistingView (tmpk_ptrs);
       k_ptrs = tmpk_ptrs;
       // hack until we get parallel_scan in kokkos
 
-      typename Graph::t_RowPtrs::HostMirror h_tmpk_ptrs = Kokkos::create_mirror_view(tmpk_ptrs);
-      Kokkos::deep_copy(h_tmpk_ptrs,tmpk_ptrs);
+      typename Graph::t_RowPtrs::HostMirror h_tmpk_ptrs =
+        Kokkos::create_mirror_view (tmpk_ptrs);
+      Kokkos::deep_copy (h_tmpk_ptrs, tmpk_ptrs);
         // hack until we get parallel_scan in kokkos
       for(int i = 0; i < numRowEntries.size(); i++) {
-        h_tmpk_ptrs(i+1) = h_tmpk_ptrs(i)+numRowEntries[i];
+        h_tmpk_ptrs(i+1) = h_tmpk_ptrs(i) + numRowEntries[i];
       }
-      Kokkos::deep_copy(tmpk_ptrs,h_tmpk_ptrs);
+      Kokkos::deep_copy (tmpk_ptrs, h_tmpk_ptrs);
 
       k_vals = t_ValuesType("Tpetra::CrsMatrix::values1D_",h_tmpk_ptrs[h_tmpk_ptrs.dimension_0()-1]);
-      vals = Teuchos::arcp(k_vals.ptr_on_device(), 0, k_vals.dimension_0(),
-                                 Kokkos::Compat::deallocator(k_vals), false);
+      vals = Kokkos::Compat::persistingView (k_vals);
 
       typename t_ValuesType::HostMirror h_vals = Kokkos::create_mirror_view(k_vals);
 
@@ -1077,25 +1073,22 @@ namespace Tpetra {
         //vals = sparse_ops_type::template allocStorage<Scalar> (node, ptrs ());
 
         typename Graph::t_RowPtrs tmpk_ptrs = typename Graph::t_RowPtrs("Tpetra::CrsGraph::RowPtrs",numRowEntries.size()+1);
-        ptrs = Teuchos::arcp(tmpk_ptrs.ptr_on_device(), 0, tmpk_ptrs.dimension_0(),
-                                           Kokkos::Compat::deallocator(tmpk_ptrs), false);
+        ptrs = Kokkos::Compat::persistingView (tmpk_ptrs);
         k_ptrs = tmpk_ptrs;
         {
-          typename Graph::t_RowPtrs::HostMirror h_tmpk_ptrs = Kokkos::create_mirror_view(tmpk_ptrs);
-          Kokkos::deep_copy(h_tmpk_ptrs,tmpk_ptrs);
+          typename Graph::t_RowPtrs::HostMirror h_tmpk_ptrs =
+            Kokkos::create_mirror_view (tmpk_ptrs);
+          Kokkos::deep_copy (h_tmpk_ptrs, tmpk_ptrs);
           // hack until we get parallel_scan in kokkos
           for(int i = 0; i < numRowEntries.size(); i++) {
-            h_tmpk_ptrs(i+1) = h_tmpk_ptrs(i)+numRowEntries[i];
+            h_tmpk_ptrs(i+1) = h_tmpk_ptrs(i) + numRowEntries[i];
           }
-          Kokkos::deep_copy(tmpk_ptrs,h_tmpk_ptrs);
+          Kokkos::deep_copy (tmpk_ptrs, h_tmpk_ptrs);
         }
-
 
         //vals = sparse_ops_type::template allocStorage<Scalar> (node, ptrs ());
         k_vals = t_ValuesType("Tpetra::CrsMatrix::values1D_",*(ptrs.end()-1));
-
-        vals = Teuchos::arcp(k_vals.ptr_on_device(), 0, k_vals.dimension_0(),
-                                   Kokkos::Compat::deallocator(k_vals), false);
+        vals = Kokkos::Compat::persistingView (k_vals);
 
         t_ValuesType tmp_unpacked_vals;
         if (k_values1D_.dimension_0()==0) {
@@ -1110,24 +1103,12 @@ namespace Tpetra {
             f(k_vals,tmp_unpacked_vals,tmpk_ptrs,k_rowPtrs_);
           Kokkos::parallel_for(numRows,f);
         }
-        // TODO (mfh 05 Dec 2012) We should really parallelize this
-        // copy operation.  This is not currently required in the
-        // sparse_ops_type interface.  Some implementations of that
-        // interface (such as AltSparseOps) do provide a copyStorage()
-        // method, but I have to check whether it requires that the
-        // input have the same packed offsets as the output.
-        /*for (size_t row=0; row < numRows; ++row) {
-          const size_t numentrs = numRowEntries[row];
-          std::copy (values1D_.begin() + rowPtrs[row],
-                     values1D_.begin() + rowPtrs[row]+numentrs,
-                     vals + ptrs[row]);
-        }*/
       }
       else {
         // The user filled up all requested storage, so we don't have
         // to pack.
-        vals = values1D_;
         k_vals = k_values1D_;
+        vals = Kokkos::Compat::persistingView (k_vals);
       }
     }
     // We're done with the packed row offsets array now.
@@ -1160,44 +1141,21 @@ namespace Tpetra {
       "setting the bool parameter \"Preserve Local Graph\" to true when "
       "calling fillComplete on the original CrsMatrix A.");
 
-    // The local matrix should be null at this point.  Just in case it
-    // isn't (future-proofing), delete it first in order to free
-    // memory before we allocate a new one.  Otherwise, we risk
-    // storing two matrices temporarily, since the destructor of the
-    // old matrix won't be called until the new matrix's constructor
-    // finishes.
-    lclMatrix_ = null;
-    lclMatrix_ = rcp (new local_matrix_type (staticGraph_->getLocalGraph (), lclparams));
-    lclMatrix_->setValues (vals);
     k_lclMatrix_ = k_local_matrix_type ("Tpetra::CrsMatrix::k_lclMatrix_",
                                         getDomainMap ()->getNodeNumElements (),
                                         k_vals,
                                         staticGraph_->getLocalGraph_Kokkos ());
-    vals = null;
-    k_vals = t_ValuesType();
     // Finalize the local matrix.
-    if (params == null) {
-      lclparams = parameterList ();
-    }
-    else {
-      lclparams = sublist (params, "Local Sparse Ops");
-    }
+    lclparams = params.is_null () ? parameterList () :
+      sublist (params, "Local Sparse Ops");
 
-    // mfh 05 Dec 2012: This is the place where the matrix's data
-    // might get reorganized into a different data structure, to match
-    // the data structure of the graph.  This is not necessarily the
-    // optimized final data structure (as used by apply() for sparse
-    // matrix-vector multiply).  That happens at the following line in fillComplete():
-    //
-    // lclMatOps_->setGraphAndMatrix (staticGraph_->getLocalGraph (), lclMatrix_);
-    //
-    // The requirement to allow the graph to be stored separately from
-    // the matrix is important for some applications.  It may save
-    // memory if multiple matrices share the same structure, and it
-    // allows the graph (and therefore the storage layout of the
-    // matrix's values) to be precomputed.
+    RCP<local_matrix_type> classicLocalMatrix =
+      rcp (new local_matrix_type (staticGraph_->getLocalGraph (), lclparams));
+    ArrayRCP<scalar_type> classicValues =
+      Kokkos::Compat::persistingView (k_lclMatrix_.values);
+    classicLocalMatrix->setValues (classicValues);
     sparse_ops_type::finalizeMatrix (* (staticGraph_->getLocalGraph ()),
-                                     *lclMatrix_, lclparams);
+                                     *classicLocalMatrix, lclparams);
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -2317,8 +2275,8 @@ namespace Tpetra {
         true, std::runtime_error, ": Caught exception while calling myGraph_->"
         "setAllIndices(): " << e.what ());
     }
-    k_values1D_  = values;
-    values1D_    = Kokkos::Compat::persistingView(k_values1D_);
+    k_values1D_ = values;
+    values1D_ = Kokkos::Compat::persistingView (k_values1D_);
     checkInternalState();
   }
 
@@ -2346,8 +2304,8 @@ namespace Tpetra {
         true, std::runtime_error, ": Caught exception while calling myGraph_->"
         "setAllIndices(): " << e.what ());
     }
-    k_values1D_  = Kokkos::Compat::getKokkosViewDeepCopy<DeviceType>(values());
-    values1D_    = values;
+    k_values1D_ = Kokkos::Compat::getKokkosViewDeepCopy<DeviceType> (values ());
+    values1D_ = Kokkos::Compat::persistingView (k_values1D_);
     checkInternalState();
   }
 
@@ -3109,7 +3067,6 @@ namespace Tpetra {
       myGraph_->resumeFill (params);
     }
     clearGlobalConstants ();
-    lclMatrix_ = null;
     lclMatOps_ = null;
     fillComplete_ = false;
   }
@@ -3329,13 +3286,20 @@ namespace Tpetra {
     lclMatOps_ = rcp (new sparse_ops_type (getNode ()));
     // This is where we take the local graph and matrix, and turn them
     // into (possibly optimized) sparse kernels.
-    lclMatOps_->setGraphAndMatrix (staticGraph_->getLocalGraph (), lclMatrix_);
+    {
+      RCP<local_matrix_type> classicLocalMatrix =
+        rcp (new local_matrix_type (staticGraph_->getLocalGraph (), params));
+      ArrayRCP<scalar_type> classicValues =
+        Kokkos::Compat::persistingView (k_lclMatrix_.values);
+      classicLocalMatrix->setValues (classicValues);
+      lclMatOps_->setGraphAndMatrix (staticGraph_->getLocalGraph (),
+                                     classicLocalMatrix);
+    }
 
     // Once we've initialized the sparse kernels, we're done with the
     // local objects.  We may now release them and their memory, since
     // they will persist in the local sparse ops if necessary.  We
     // keep the local graph if the parameters tell us to do so.
-    lclMatrix_ = null;
     if (myGraph_ != null) {
       bool preserveLocalGraph = true;
       if (params != null) {
@@ -3390,13 +3354,20 @@ namespace Tpetra {
 
     // This is where we take the local graph and matrix, and turn them
     // into (possibly optimized) sparse kernels.
-    lclMatOps_->setGraphAndMatrix (staticGraph_->getLocalGraph (), lclMatrix_);
+    {
+      RCP<local_matrix_type> classicLocalMatrix =
+        rcp (new local_matrix_type (staticGraph_->getLocalGraph (), params));
+      ArrayRCP<scalar_type> classicValues =
+        Kokkos::Compat::persistingView (k_lclMatrix_.values);
+      classicLocalMatrix->setValues (classicValues);
+      lclMatOps_->setGraphAndMatrix (staticGraph_->getLocalGraph (),
+                                     classicLocalMatrix);
+    }
 
     // Once we've initialized the sparse kernels, we're done with the
     // local objects.  We may now release them and their memory, since
     // they will persist in the local sparse ops if necessary.  We
     // keep the local graph if the parameters tell us to do so.
-    lclMatrix_ = null;
     bool preserveLocalGraph = true;
     if (params != null) {
       preserveLocalGraph = params->get ("Preserve Local Graph", true);
@@ -4683,8 +4654,6 @@ namespace Tpetra {
     //
     // a dynamic graph, depending on which constructor was used.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( staticGraph_ == null,                                             std::logic_error, err);
-    // i only ever have a local matrix for a small moment in time
-    TEUCHOS_TEST_FOR_EXCEPTION( lclMatrix_ != null,                                                          std::logic_error, err );
     // if active, i have no local sparse ops
     TEUCHOS_TEST_FOR_EXCEPTION( isFillActive() && lclMatOps_ != null,                                        std::logic_error, err );
     // if filled, i have a local sparse ops
