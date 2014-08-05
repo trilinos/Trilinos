@@ -1275,6 +1275,7 @@ void deep_copy( const View< DT, DL, DD, DM, DS > & dst ,
  */
 template< class T >
 View<T,Kokkos::ExecutionSpace,Kokkos::MemoryUnmanaged>
+inline
 create_unmanaged_view( T & value
                      , typename Kokkos::Impl::enable_if<(
                          ( Kokkos::Impl::AnalyzeShape<T>::shape::rank == 0 )

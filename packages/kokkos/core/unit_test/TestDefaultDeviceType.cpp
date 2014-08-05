@@ -54,9 +54,9 @@
 #include <TestMemoryTracking.hpp>
 #include <TestViewAPI.hpp>
 
-#include <TestRequest.hpp>
 #include <TestReduce.hpp>
 #include <TestScan.hpp>
+#include <TestTeam.hpp>
 #include <TestAggregate.hpp>
 #include <TestCompilerMacros.hpp>
 #include <TestCXX11.hpp>
@@ -103,18 +103,6 @@ TEST_F( defaultdevicetype, double_reduce_dynamic ) {
 
 TEST_F( defaultdevicetype, long_reduce_dynamic_view ) {
   TestReduceDynamicView< long ,   Kokkos::DefaultExecutionSpace >( 100000 );
-}
-
-TEST_F( defaultdevicetype, dev_long_reduce) {
-  TestReduceRequest< long ,   Kokkos::DefaultExecutionSpace >( 100000 );
-}
-
-TEST_F( defaultdevicetype, dev_double_reduce) {
-  TestReduceRequest< double ,   Kokkos::DefaultExecutionSpace >( 100000 );
-}
-
-TEST_F( defaultdevicetype, dev_shared_request) {
-  TestSharedRequest< Kokkos::DefaultExecutionSpace >();
 }
 
 
@@ -216,8 +204,8 @@ TEST_F( defaultdevicetype , scan )
 
 TEST_F( defaultdevicetype , team_scan )
 {
-  TestScanRequest< Kokkos::DefaultExecutionSpace >( 10 );
-  TestScanRequest< Kokkos::DefaultExecutionSpace >( 10000 );
+  TestScanTeam< Kokkos::DefaultExecutionSpace >( 10 );
+  TestScanTeam< Kokkos::DefaultExecutionSpace >( 10000 );
 }
 
 //----------------------------------------------------------------------------

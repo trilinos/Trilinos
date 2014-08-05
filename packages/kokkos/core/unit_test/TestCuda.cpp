@@ -71,11 +71,9 @@ extern void test_device_cuda_view_api();
 extern void test_device_cuda_crsarray();
 extern void test_device_cuda_reduce();
 extern void test_device_cuda_reduce_team();
-extern void test_device_cuda_reduce_request();
 extern void test_device_cuda_reduce_dynamic();
 extern void test_device_cuda_reduce_dynamic_view();
 extern void test_device_cuda_shared_team();
-extern void test_device_cuda_shared_request();
 extern void test_device_cuda_view_aggregate();
 extern void test_device_cuda_atomic();
 extern void test_device_cuda_scan();
@@ -102,14 +100,14 @@ TEST_F( cuda, reduce )
   test_device_cuda_reduce();
 }
 
-TEST_F( cuda, reduce_request )
+TEST_F( cuda, reduce_team )
 {
-  test_device_cuda_reduce_request();
+  test_device_cuda_reduce_team();
 }
 
-TEST_F( cuda, shared_request )
+TEST_F( cuda, shared_team )
 {
-  test_device_cuda_shared_request();
+  test_device_cuda_shared_team();
 }
 
 TEST_F( cuda, reduce_dynamic )

@@ -117,7 +117,7 @@ namespace Galeri {
     RCP< ::Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > CreateMap(::Xpetra::UnderlyingLib lib, const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> > & comm, Teuchos::ParameterList & list) {
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == ::Xpetra::UseTpetra)
-        return CreateMap< ::Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node> >(mapType, comm, list);
+        return CreateMap< LocalOrdinal, GlobalOrdinal, ::Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node> >(mapType, comm, list);
 #endif
       XPETRA_FACTORY_ERROR_IF_EPETRA(lib);
       XPETRA_FACTORY_END;

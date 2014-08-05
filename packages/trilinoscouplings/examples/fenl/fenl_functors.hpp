@@ -498,7 +498,7 @@ public:
       const size_t team_size = dev_config.block_dim.x * dev_config.block_dim.y;
       const size_t league_size =
         (nelem + dev_config.block_dim.y-1) / dev_config.block_dim.y;
-      Kokkos::ParallelWorkRequest config( league_size, team_size );
+      Kokkos::TeamPolicy< device_type > config( league_size, team_size );
       parallel_for( config , *this );
     }
     else {
@@ -645,8 +645,9 @@ public:
     }
   }
 
+  typedef typename Kokkos::TeamPolicy< device_type >::member_type team_member ;
   KOKKOS_INLINE_FUNCTION
-  void operator()( device_type dev ) const
+  void operator()( const team_member & dev ) const
   {
 
     const unsigned num_ensemble_threads = dev_config.block_dim.x ;
@@ -863,7 +864,7 @@ public:
       const size_t team_size = dev_config.block_dim.x * dev_config.block_dim.y;
       const size_t league_size =
         (node_count + dev_config.block_dim.y-1) / dev_config.block_dim.y;
-      Kokkos::ParallelWorkRequest config( league_size, team_size );
+      Kokkos::TeamPolicy< device_type > config( league_size, team_size );
       parallel_for( config , *this );
     }
     else
@@ -872,8 +873,9 @@ public:
 
   //------------------------------------
 
+  typedef typename Kokkos::TeamPolicy< device_type >::member_type team_member ;
   KOKKOS_INLINE_FUNCTION
-  void operator()( device_type dev ) const
+  void operator()( const team_member & dev ) const
   {
 
     const unsigned num_ensemble_threads = dev_config.block_dim.x ;

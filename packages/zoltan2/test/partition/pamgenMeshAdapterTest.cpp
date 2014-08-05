@@ -57,12 +57,22 @@
 //Tpetra includes
 #include "Tpetra_DefaultPlatform.hpp"
 
+// Teuchos includes
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
+
+// Pamgen includes
+#include "create_inline_mesh.h"
+
+using namespace std;
+using Teuchos::ParameterList;
+using Teuchos::RCP;
+
 /*********************************************************/
 /*                     Typedefs                          */
 /*********************************************************/
 //Tpetra typedefs
 typedef Tpetra::DefaultPlatform::DefaultPlatformType            Platform;
-typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType  Node;
 
 
 
@@ -72,12 +82,57 @@ typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType  Node;
 
 int main(int argc, char *argv[]) {
 
+  int numProcs=1;
+  int rank=0;
+
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
+  rank=mpiSession.getRank();
+  numProcs=mpiSession.getNProc();
+
 
   //Get the default communicator and node for Tpetra
   //rewrite using with IFDEF for MPI/no MPI??
   Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
   RCP<const Teuchos::Comm<int> > CommT = platform.getComm();
   int MyPID = CommT->getRank();
+
+
+  //Check number of arguments
+  if (argc > 2) {
+    cout <<"\n>>> ERROR: Invalid number of arguments.\n\n";
+    cout <<"Usage:\n\n";
+    cout <<"  ./pamgenMeshAdapterTest.exe [meshfile.xml]\n\n";
+    cout <<"   meshfile.xml(optional) - xml file with description of Pamgen mesh\n\n";
+    exit(1);
+  }
+
+  if (MyPID == 0){
+  cout \
+    << "=========================================================================\n" \
+    << "|                                                                       |\n" \
+    << "|          Example: Partition Pamgen Hexahedral Mesh                    |\n" \
+    << "|                                                                       |\n" \
+    << "|  Questions? Contact  Karen Devine      (kddevin@sandia.gov),          |\n" \
+    << "|                      Erik Boman        (egboman@sandia.gov),          |\n" \
+    << "|                      Siva Rajamanickam (srajama@sandia.gov).          |\n" \
+    << "|                                                                       |\n" \
+    << "|  Pamgen's website:     http://trilinos.sandia.gov/packages/pamgen     |\n" \
+    << "|  Zoltan2's website:    http://trilinos.sandia.gov/packages/zoltan2    |\n" \
+    << "|  Trilinos website:     http://trilinos.sandia.gov                     |\n" \
+    << "|                                                                       |\n" \
+    << "=========================================================================\n";
+  }
+
+
+#ifdef HAVE_MPI
+  if (MyPID == 0) {
+    cout << "PARALLEL executable \n";
+  }
+#else
+  if (MyPID == 0) {
+    cout << "SERIAL executable \n";
+  }
+#endif
 
   /***************************************************************************/
   /*************************** GET XML INPUTS ********************************/
@@ -93,7 +148,7 @@ int main(int argc, char *argv[]) {
 
   if(xmlMeshInFileName.length()) {
     if (MyPID == 0) {
-      std::cout << "\nReading parameter list from the XML file \""
+      cout << "\nReading parameter list from the XML file \""
 		<<xmlMeshInFileName<<"\" ...\n\n";
     }
     Teuchos::updateParametersFromXmlFile(xmlMeshInFileName, 
@@ -112,9 +167,21 @@ int main(int argc, char *argv[]) {
   std::string meshInput = Teuchos::getParameter<std::string>(inputMeshList,
 							     "meshInput");
 
+
+  /***************************************************************************/
+  /********************** GET CELL TOPOLOGY **********************************/
+  /***************************************************************************/
+
+  // Get dimensions
+  int dim = 3;
+
   /***************************************************************************/
   /***************************** GENERATE MESH *******************************/
   /***************************************************************************/
+
+  if (MyPID == 0) {
+    cout << "Generating mesh ... \n\n";
+  }
 
   // Generate mesh with Pamgen
   long long maxInt = 9223372036854775807LL;
@@ -122,8 +189,8 @@ int main(int argc, char *argv[]) {
 
   // delete mesh
   Delete_Pamgen_Mesh();
-
   return 0;
+
 }
 /*****************************************************************************/
 /********************************* END MAIN **********************************/

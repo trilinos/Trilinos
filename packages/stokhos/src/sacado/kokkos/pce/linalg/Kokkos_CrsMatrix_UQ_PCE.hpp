@@ -188,8 +188,9 @@ public:
   // This is a MIC-specific version of that processes multiple FEM columns
   // at a time to reduce tensor reads
   //
+  typedef typename Kokkos::TeamPolicy< device_type >::member_type team_member ;
   KOKKOS_INLINE_FUNCTION
-  void operator()( device_type device ) const
+  void operator()( const team_member & device ) const
   {
     const size_type iBlockRow = device.league_rank();
 
@@ -336,8 +337,9 @@ public:
   // columns at a time to reduce tensor reads.  Note that auto-vectorization
   // doesn't work here because of the inner-loop over FEM columns.
   //
+  typedef typename Kokkos::TeamPolicy< device_type >::member_type team_member ;
   KOKKOS_INLINE_FUNCTION
-  void operator()( device_type device ) const
+  void operator()( const team_member & device ) const
   {
     const size_type iBlockRow = device.league_rank();
 
@@ -471,7 +473,7 @@ public:
       const size_t team_size = 2;  // 2 for everything else
 #endif
       const size_t league_size = row_count;
-      Kokkos::ParallelWorkRequest config(league_size, team_size);
+      Kokkos::TeamPolicy< device_type > config(league_size, team_size);
       Kokkos::parallel_for( config , Multiply(A,x,y,a,b) );
     }
     else {
@@ -619,8 +621,10 @@ public:
   // This is a MIC-specific version of that processes multiple FEM columns
   // at a time to reduce tensor reads
   //
+  typedef typename Kokkos::TeamPolicy< device_type >::member_type team_member ;
+
   KOKKOS_INLINE_FUNCTION
-  void operator()( device_type device ) const
+  void operator()( const team_member & device ) const
   {
     const size_type iBlockRow = device.league_rank();
 
@@ -775,8 +779,10 @@ public:
   // columns at a time to reduce tensor reads.  Note that auto-vectorization
   // doesn't work here because of the inner-loop over FEM columns.
   //
+  typedef typename Kokkos::TeamPolicy< device_type >::member_type team_member ;
+
   KOKKOS_INLINE_FUNCTION
-  void operator()( device_type device ) const
+  void operator()( const team_member & device ) const
   {
     const size_type iBlockRow = device.league_rank();
 
@@ -917,7 +923,7 @@ public:
       const size_t team_size = 2;  // 2 for everything else
 #endif
       const size_t league_size = row_count;
-      Kokkos::ParallelWorkRequest config(league_size, team_size);
+      Kokkos::TeamPolicy< device_type > config(league_size, team_size);
       Kokkos::parallel_for( config , Multiply(A,x,y,a,b) );
     }
     else {

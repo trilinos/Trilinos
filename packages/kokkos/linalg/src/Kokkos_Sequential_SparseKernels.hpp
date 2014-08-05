@@ -41,10 +41,10 @@
 //@HEADER
 */
 
-#ifdef KOKKOS_DETAILS_SEQUENTIALSPARSEKERNELS_HPP
-#define KOKKOS_DETAILS_SEQUENTIALSPARSEKERNELS_HPP
+#ifdef KOKKOS_SEQUENTIAL_SPARSEKERNELS_HPP
+#define KOKKOS_SEQUENTIAL_SPARSEKERNELS_HPP
 
-/// \file Kokkos_Details_SequentialSparseKernels.hpp
+/// \file Kokkos_Sequential_SparseKernels.hpp
 /// \brief Sequential implementations of (local) sparse kernels.
 ///
 /// This file exists mainly as a temporary porting aid.  Until we can
@@ -66,7 +66,7 @@
 #include <Kokkos_ArithTraits.hpp>
 
 namespace Kokkos {
-namespace Details {
+namespace Sequential {
 
 /// \brief Implementation of local Gauss-Seidel.
 ///
@@ -606,7 +606,7 @@ upperTriSolveCscColMajor (
   const DomainScalar* const Y,
   const OffsetType colStrideY)
 {
-  typedef Teuchos::ScalarTraits<MatrixScalar> STS;
+  typedef Kokkos::Details::ArithTraits<MatrixScalar> STS;
 
   for (LocalOrdinal j = 0; j < numVecs; ++j) {
     for (LocalOrdinal i = 0; i < numRows; ++i) {
@@ -688,7 +688,7 @@ upperTriSolveCscColMajorUnitDiagConj (
   const DomainScalar* const Y,
   const OffsetType colStrideY)
 {
-  typedef Teuchos::ScalarTraits<MatrixScalar> STS;
+  typedef Kokkos::Details::ArithTraits<MatrixScalar> STS;
 
   for (LocalOrdinal j = 0; j < numVecs; ++j) {
     for (LocalOrdinal i = 0; i < numRows; ++i) {
@@ -699,7 +699,7 @@ upperTriSolveCscColMajorUnitDiagConj (
   for (LocalOrdinal c = numCols-1; c >= 0; --c) {
     for (OffsetType k = ptr[c]; k < ptr[c+1]; ++k) {
       const LocalOrdinal r = ind[k];
-      const MatrixScalar A_rc = STS::conjugate (val[k]);
+      const MatrixScalar A_rc = STS::conj (val[k]);
       for (LocalOrdinal j = 0; j < numVecs; ++j) {
         X[r + j*colStrideX] -= A_rc * X[c + j*colStrideX];
       }
@@ -726,7 +726,7 @@ upperTriSolveCscColMajorConj (
   const DomainScalar* const Y,
   const OffsetType colStrideY)
 {
-  typedef Teuchos::ScalarTraits<MatrixScalar> STS;
+  typedef Kokkos::Details::ArithTraits<MatrixScalar> STS;
 
   for (LocalOrdinal j = 0; j < numVecs; ++j) {
     for (LocalOrdinal i = 0; i < numRows; ++i) {
@@ -738,7 +738,7 @@ upperTriSolveCscColMajorConj (
     MatrixScalar A_cc = STS::zero ();
     for (OffsetType k = ptr[c]; k < ptr[c+1]; ++k) {
       const LocalOrdinal r = ind[k];
-      const MatrixScalar A_rc = STS::conjugate (val[k]);
+      const MatrixScalar A_rc = STS::conj (val[k]);
       if (r == c) {
         A_cc += A_rc;
       } else {
@@ -772,7 +772,7 @@ lowerTriSolveCscColMajor (
   const DomainScalar* const Y,
   const OffsetType colStrideY)
 {
-  typedef Teuchos::ScalarTraits<MatrixScalar> STS;
+  typedef Kokkos::Details::ArithTraits<MatrixScalar> STS;
 
   for (LocalOrdinal j = 0; j < numVecs; ++j) {
     for (LocalOrdinal i = 0; i < numRows; ++i) {
@@ -818,7 +818,7 @@ lowerTriSolveCscColMajorUnitDiagConj (
   const DomainScalar* const Y,
   const OffsetType colStrideY)
 {
-  typedef Teuchos::ScalarTraits<MatrixScalar> STS;
+  typedef Kokkos::Details::ArithTraits<MatrixScalar> STS;
 
   for (LocalOrdinal j = 0; j < numVecs; ++j) {
     for (LocalOrdinal i = 0; i < numRows; ++i) {
@@ -829,7 +829,7 @@ lowerTriSolveCscColMajorUnitDiagConj (
   for (LocalOrdinal c = 0; c < numCols; ++c) {
     for (OffsetType k = ptr[c]; k < ptr[c+1]; ++k) {
       const LocalOrdinal r = ind[k];
-      MatrixScalar A_rc = STS::conjugate (val[k]);
+      MatrixScalar A_rc = STS::conj (val[k]);
       for (LocalOrdinal j = 0; j < numVecs; ++j) {
         X[r + j*colStrideX] -= A_rc * X[c + j*colStrideX];
       }
@@ -856,7 +856,7 @@ lowerTriSolveCscColMajorConj (
   const DomainScalar* const Y,
   const OffsetType colStrideY)
 {
-  typedef Teuchos::ScalarTraits<MatrixScalar> STS;
+  typedef Kokkos::Details::ArithTraits<MatrixScalar> STS;
 
   for (LocalOrdinal j = 0; j < numVecs; ++j) {
     for (LocalOrdinal i = 0; i < numRows; ++i) {
@@ -868,7 +868,7 @@ lowerTriSolveCscColMajorConj (
     MatrixScalar A_cc = STS::zero ();
     for (OffsetType k = ptr[c]; k < ptr[c+1]; ++k) {
       const LocalOrdinal r = ind[k];
-      const MatrixScalar A_rc = STS::conjugate (val[k]);
+      const MatrixScalar A_rc = STS::conj (val[k]);
       if (r == c) {
         A_cc += A_rc;
       } else {
@@ -1040,7 +1040,7 @@ triSolve (const LocalOrdinal numRows,
   }
 }
 
-} // namespace Details
+} // namespace Sequential
 } // namespace Kokkos
 
-#endif // KOKKOS_DETAILS_SEQUENTIALSPARSEKERNELS_HPP
+#endif // KOKKOS_SEQUENTIAL_SPARSEKERNELS_HPP

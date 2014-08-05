@@ -760,7 +760,7 @@ public:
   // A MIC-specific version of the block-multiply algorithm, where block here
   // means processing multiple FEM columns at a time
   KOKKOS_INLINE_FUNCTION
-  void operator()( device_type device ) const
+  void operator()( const typename Kokkos::TeamPolicy< device_type >::member_type & device ) const
   {
     const size_type iBlockRow = device.league_rank();
 
@@ -900,7 +900,7 @@ public:
   // auto-vectorization of a block algorithm doesn't work, because the
   // stochastic loop is not the inner-most loop.
   KOKKOS_INLINE_FUNCTION
-  void operator()( device_type device ) const
+  void operator()( const typename Kokkos::TeamPolicy< device_type >::member_type & device ) const
   {
     const size_type iBlockRow = device.league_rank();
 
@@ -1029,7 +1029,7 @@ public:
       const size_t team_size = 2;  // 2 for everything else
 #endif
       const size_t league_size = row_count;
-      Kokkos::ParallelWorkRequest config(league_size, team_size);
+      Kokkos::TeamPolicy< device_type > config(league_size, team_size);
       Kokkos::parallel_for( config , MultiplyImpl(A,x,y) );
     }
     else {

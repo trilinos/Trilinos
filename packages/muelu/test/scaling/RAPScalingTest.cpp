@@ -231,111 +231,105 @@ int main(int argc, char *argv[]) {
 
   galeriStream << "Galeri complete.\n========================================================" << std::endl;
 
-  int numReruns = 1;
-  if (paramList.isParameter("number of reruns"))
-    numReruns = paramList.get<int>("number of reruns");
-
   const bool mustAlreadyExist = true;
-    ParameterList mueluList, runList;
 
-    bool stop = false;
-    if (isDriver) {
-      runList   = paramList.sublist("Run1",  mustAlreadyExist);
-      mueluList = runList  .sublist("MueLu", mustAlreadyExist);
-    } else {
-      mueluList = paramList;
-      stop = true;
+  ParameterList mueluList, runList;
+  if (isDriver) {
+    runList   = paramList.sublist("Run1",  mustAlreadyExist);
+    mueluList = runList  .sublist("MueLu", mustAlreadyExist);
+  } else {
+    mueluList = paramList;
+  }
+
+  if (nullspace.is_null()) {
+    int blkSize = 1;
+    if (mueluList.isSublist("Matrix")) {
+      // Factory style parameter list
+      const Teuchos::ParameterList& operatorList = paramList.sublist("Matrix");
+      if (operatorList.isParameter("PDE equations"))
+        blkSize = operatorList.get<int>("PDE equations");
+
+    } else if (paramList.isParameter("number of equations")) {
+      // Easy style parameter list
+      blkSize = paramList.get<int>("number of equations");
     }
 
-    if (nullspace.is_null()) {
-      int blkSize = 1;
-      if (mueluList.isSublist("Matrix")) {
-        // Factory style parameter list
-        const Teuchos::ParameterList& operatorList = paramList.sublist("Matrix");
-        if (operatorList.isParameter("PDE equations"))
-          blkSize = operatorList.get<int>("PDE equations");
+    nullspace = MultiVectorFactory::Build(map, blkSize);
+    for (int i = 0; i < blkSize; i++) {
+      RCP<const Map> domainMap = A->getDomainMap();
+      GO             indexBase = domainMap->getIndexBase();
 
-      } else if (paramList.isParameter("number of equations")) {
-        // Easy style parameter list
-        blkSize = paramList.get<int>("number of equations");
-      }
+      ArrayRCP<SC> nsData = nullspace->getDataNonConst(i);
+      for (int j = 0; j < nsData.size(); j++) {
+        GO GID = domainMap->getGlobalElement(j) - indexBase;
 
-      nullspace = MultiVectorFactory::Build(map, blkSize);
-      for (int i = 0; i < blkSize; i++) {
-        RCP<const Map> domainMap = A->getDomainMap();
-        GO             indexBase = domainMap->getIndexBase();
-
-        ArrayRCP<SC> nsData = nullspace->getDataNonConst(i);
-        for (int j = 0; j < nsData.size(); j++) {
-          GO GID = domainMap->getGlobalElement(j) - indexBase;
-
-          if ((GID-i) % blkSize == 0)
-            nsData[j] = Teuchos::ScalarTraits<SC>::one();
-        }
+        if ((GID-i) % blkSize == 0)
+          nsData[j] = Teuchos::ScalarTraits<SC>::one();
       }
     }
+  }
 
-      // Instead of checking each time for rank, create a rank 0 stream
-      RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-      Teuchos::FancyOStream& out = *fancy;
-      out.setOutputToRootOnly(0);
+  // Instead of checking each time for rank, create a rank 0 stream
+  RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  Teuchos::FancyOStream& out = *fancy;
+  out.setOutputToRootOnly(0);
 
-      out << galeriStream.str();
+  out << galeriStream.str();
 
-    Level fineLevel, coarseLevel;
-    RAPFactory AcFact;
-    AcFact.DisableMultipleCallCheck();
-    RCP<SaPFactory>    PFact;
-    RCP<TransPFactory> RFact;
+  Level fineLevel, coarseLevel;
+  RAPFactory AcFact;
+  AcFact.DisableMultipleCallCheck();
+  RCP<SaPFactory>    PFact;
+  RCP<TransPFactory> RFact;
+  {
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("RAPScalingTest: 2 - Setup")));
+
+    MueLuTests::TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel); // set a default FactoryManager
+    fineLevel.Set("A", A);
+
+    PFact = rcp(new SaPFactory());
+    coarseLevel.Request("P", PFact.get());
+    PFact->Build(fineLevel, coarseLevel);
+
+    RFact = rcp(new TransPFactory());
+
+    ParameterList Aclist = *(AcFact.GetValidParameterList());
+    Aclist.set("transpose: use implicit", optImplicitTranspose);
+    AcFact.SetParameterList(Aclist);
+
+    AcFact.SetFactory("P", PFact);
+    if (optImplicitTranspose==false)
+      AcFact.SetFactory("R", RFact);
+    tm = Teuchos::null;
+  }
+
+  RCP<Time> RAPKernelTimer = TimeMonitor::getNewTimer("RAPScalingTest: 3 - RAP kernel"); // re-use the same timer in the loop
+
+  for (int i=0; i<optNraps; ++i) {
+    coarseLevel.Request("A", &AcFact);
     {
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("RAPScalingTest: 2 - Setup")));
-
-      MueLuTests::TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel); // set a default FactoryManager
-      fineLevel.Set("A", A);
-
-      PFact = rcp(new SaPFactory());
-      coarseLevel.Request("P", PFact.get());
-      PFact->Build(fineLevel, coarseLevel);
-
-      RFact = rcp(new TransPFactory());
-
-      ParameterList Aclist = *(AcFact.GetValidParameterList());
-      Aclist.set("transpose: use implicit", optImplicitTranspose);
-      AcFact.SetParameterList(Aclist);
-
-      AcFact.SetFactory("P", PFact);
-      if (optImplicitTranspose==false)
-        AcFact.SetFactory("R", RFact);
-      tm = Teuchos::null;
-    }
-
-    RCP<Time> RAPKernelTimer = TimeMonitor::getNewTimer("RAPScalingTest: 3 - RAP kernel"); // re-use the same timer in the loop
-
-    for (int i=0; i<optNraps; ++i) {
-      coarseLevel.Request("A", &AcFact);
-      {
-        TimeMonitor tm2(*RAPKernelTimer);
-        if (optImplicitTranspose==false) {
-          RFact->SetFactory("P", PFact);
-          coarseLevel.Request("R", RFact.get());
-          RFact->Build(fineLevel, coarseLevel);
-        }
-        RCP<Matrix> Ac = coarseLevel.Get< RCP<Matrix> >("A", &AcFact);
+      TimeMonitor tm2(*RAPKernelTimer);
+      if (optImplicitTranspose==false) {
+        RFact->SetFactory("P", PFact);
+        coarseLevel.Request("R", RFact.get());
+        RFact->Build(fineLevel, coarseLevel);
       }
-      coarseLevel.Release("A", &AcFact);
-      if (optImplicitTranspose==false)
-        coarseLevel.Release("R", RFact.get());
+      RCP<Matrix> Ac = coarseLevel.Get< RCP<Matrix> >("A", &AcFact);
     }
+    coarseLevel.Release("A", &AcFact);
+    if (optImplicitTranspose==false)
+      coarseLevel.Release("R", RFact.get());
+  }
 
-    if (optExport) {
-      std::string fileName = "A.m";
-      Utils::Write(fileName,*A);
-    }
+  if (optExport) {
+    std::string fileName = "A.m";
+    Utils::Write(fileName,*A);
+  }
 
-    if (optTimings) {
-      Teuchos::TableFormat &format = TimeMonitor::format();
-      format.setPrecision(25);
-      TimeMonitor::summarize();
-    }
+  if (optTimings) {
+    Teuchos::TableFormat &format = TimeMonitor::format();
+    format.setPrecision(25);
+    TimeMonitor::summarize();
+  }
 
 } //main

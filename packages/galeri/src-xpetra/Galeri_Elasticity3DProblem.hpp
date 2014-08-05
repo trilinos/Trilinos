@@ -471,7 +471,7 @@ namespace Galeri {
       for (int k = 0; k < nz; k++)
         for (int j = 0; j < ny; j++)
           for (int i = 0; i < nx; i++) {
-            std::vector<int>& element = elements_[CELL(i,j,k)];
+            std::vector<LO>& element = elements_[CELL(i,j,k)];
             element.resize(8);
             element[0] = NODE(i,  j,   k  );
             element[1] = NODE(i+1,j,   k  );
