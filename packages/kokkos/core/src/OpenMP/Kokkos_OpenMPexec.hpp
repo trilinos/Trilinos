@@ -111,7 +111,7 @@ public:
   ~OpenMPexec();
 
   explicit
-  OpenMPexec( const unsigned pool_rank );
+  OpenMPexec( const unsigned poolRank );
 
   static void finalize();
 
