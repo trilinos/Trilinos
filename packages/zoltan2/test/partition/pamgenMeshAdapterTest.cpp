@@ -54,6 +54,9 @@
 /*                          Includes                          */
 /**************************************************************/
 
+#include <Zoltan2_PamgenMeshAdapter.hpp
+#include <Zoltan2_PartitioningProblem.hpp>
+
 //Tpetra includes
 #include "Tpetra_DefaultPlatform.hpp"
 
