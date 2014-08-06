@@ -55,7 +55,8 @@
 
 #include "ROL_StdVector.hpp"
 #include "ROL_Objective.hpp"
-#include "ROL_InequalityConstraint.hpp"
+#include "ROL_StdBoundConstraint.hpp"
+#include "ROL_Types.hpp"
 
 namespace ROL {
 
@@ -122,76 +123,7 @@ namespace ROL {
   };
 
   template<class Real>
-  class InequalityConstraint_HS38 : public InequalityConstraint<Real> {
-  private: 
-    std::vector<Real> x_lo_;
-    std::vector<Real> x_up_;
-    Real min_diff_;
-  public:
-    InequalityConstraint_HS38() {
-      x_lo_.resize(4,-10.0);
-      x_up_.resize(4,10.0);
-      for ( unsigned i = 0; i < 3; i++ ) {
-        if ( i== 0 ) {
-          min_diff_ = x_up_[i]-x_lo_[i];
-        }
-        else {
-          min_diff_ = std::min(min_diff_,x_up_[i]-x_lo_[i]);
-        }
-      }
-      min_diff_ *= 0.5;
-    }
-    bool isFeasible( const Vector<Real> &x ) {
-      Teuchos::RCP<const std::vector<Real> > ex =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
-      bool val = true;
-      int  cnt = 1;
-      for ( int i = 0; i < 4; i++ ) {
-        if ( (*ex)[i] >= this->x_lo_[i] && (*ex)[i] <= this->x_up_[i] ) { cnt *= 1; }
-        else                                                            { cnt *= 0; }
-      }
-      if ( cnt == 0 ) { val = false; }
-      return val; 
-    }  
-    void project( Vector<Real> &x ) {
-      Teuchos::RCP<std::vector<Real> > ex =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(x)).getVector());
-      for ( int i = 0; i < 4; i++ ) {
-        (*ex)[i] = std::max(this->x_lo_[i],std::min(this->x_up_[i],(*ex)[i]));
-      }
-    }
-    void pruneActive(Vector<Real> &v, const Vector<Real> &x, Real eps) {
-      Teuchos::RCP<const std::vector<Real> > ex = 
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
-      Teuchos::RCP<std::vector<Real> > ev =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(v)).getVector());
-      Real epsn = std::min(eps,this->min_diff_);
-      for ( int i = 0; i < 4; i++ ) {
-        if ( ((*ex)[i] <= this->x_lo_[i]+epsn) || 
-             ((*ex)[i] >= this->x_up_[i]-epsn) ) {
-          (*ev)[i] = 0.0;
-        }
-      }
-    }           
-    void pruneActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps) {
-      Teuchos::RCP<const std::vector<Real> > ex = 
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
-      Teuchos::RCP<const std::vector<Real> > eg =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(g))).getVector();
-      Teuchos::RCP<std::vector<Real> > ev =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(v)).getVector());
-      Real epsn = std::min(eps,this->min_diff_);
-      for ( int i = 0; i < 4; i++ ) {
-        if ( ((*ex)[i] <= this->x_lo_[i]+epsn && (*eg)[i] > 0.0) || 
-             ((*ex)[i] >= this->x_up_[i]-epsn && (*eg)[i] < 0.0) ) {
-          (*ev)[i] = 0.0;
-        }
-      }
-    }           
-  };  
-
-  template<class Real>
-  void getHS38( Teuchos::RCP<Objective<Real> > &obj, Teuchos::RCP<InequalityConstraint<Real> > &con, 
+  void getHS38( Teuchos::RCP<Objective<Real> > &obj, Teuchos::RCP<BoundConstraint<Real> > &con, 
                 Vector<Real> &x0, Vector<Real> &x ) {
     // Cast Initial Guess and Solution Vectors
     Teuchos::RCP<std::vector<Real> > x0p =
@@ -205,8 +137,10 @@ namespace ROL {
     xp->resize(n);
     // Instantiate Objective Function
     obj = Teuchos::rcp( new Objective_HS38<Real> );
-    // Instantiate InequalityConstraint
-    con = Teuchos::rcp( new InequalityConstraint_HS38<Real> );
+    // Instantiate BoundConstraint
+    std::vector<Real> l(n,-10.0);
+    std::vector<Real> u(n,10.0);
+    con = Teuchos::rcp( new StdBoundConstraint<Real>(l,u) );
     // Get Initial Guess
     (*x0p)[0] =  -3.0;
     (*x0p)[1] =  -1.0;

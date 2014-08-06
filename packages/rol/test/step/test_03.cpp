@@ -103,8 +103,8 @@ int main(int argc, char *argv[]) {
       ROL::StdVector<RealT> z(z_rcp);
 
       // Get Objective Function
-      Teuchos::RCP<ROL::Objective<RealT> >   obj = Teuchos::null;
-      Teuchos::RCP<ROL::Constraints<RealT> > con = Teuchos::null;
+      Teuchos::RCP<ROL::Objective<RealT> >       obj = Teuchos::null;
+      Teuchos::RCP<ROL::BoundConstraint<RealT> > con = Teuchos::null;
       ROL::getTestObjectives<RealT>(obj,con,x0,z,prob);
 
       // Get Dimension of Problem

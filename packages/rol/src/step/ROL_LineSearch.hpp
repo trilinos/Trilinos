@@ -72,7 +72,7 @@ private:
   Real eps_;
 
   void updateIterate(Vector<Real> &xnew, const Vector<Real> &x, const Vector<Real> &s, Real alpha, 
-                     Constraints<Real> &con ) {
+                     BoundConstraint<Real> &con ) {
     xnew.set(x); 
     xnew.axpy(alpha,s);
     if ( con.isActivated() ) {
@@ -129,7 +129,7 @@ public:
   bool status( const ELineSearch type, int &ls_neval, int &ls_ngrad, const Real alpha, 
                const Real fold, const Real sgold, const Real fnew, 
                const Vector<Real> &x, const Vector<Real> &s, 
-               Objective<Real> &obj, Constraints<Real> &con ) { 
+               Objective<Real> &obj, BoundConstraint<Real> &con ) { 
     Real tol = std::sqrt(ROL_EPSILON);
 
     // Check Armijo Condition
@@ -230,7 +230,7 @@ public:
 
   void run( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
             const Real &gs, const Vector<Real> &s, const Vector<Real> &x, 
-            Objective<Real> &obj, Constraints<Real> &con ) {
+            Objective<Real> &obj, BoundConstraint<Real> &con ) {
     Teuchos::RCP<Vector<Real> > xnew = x.clone();
     // Determine Initial Step Length
     if (this->useralpha_ || this->els_ == LINESEARCH_ITERATIONSCALING) {
@@ -281,7 +281,7 @@ public:
 
   void iterationscaling( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
                          const Real &gs, const Vector<Real> &s, const Vector<Real> &x, 
-                         Objective<Real> &obj, Constraints<Real> &con ) {
+                         Objective<Real> &obj, BoundConstraint<Real> &con ) {
     Real tol = std::sqrt(ROL_EPSILON);
 
     this->algo_iter_++;
@@ -297,7 +297,7 @@ public:
 
   void simplebacktracking( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
                            const Real &gs, const Vector<Real> &s, const Vector<Real> &x, 
-                           Objective<Real> &obj, Constraints<Real> &con ) {
+                           Objective<Real> &obj, BoundConstraint<Real> &con ) {
     Real tol = std::sqrt(ROL_EPSILON);
 
     Teuchos::RCP<Vector<Real> > xnew = x.clone();
@@ -319,7 +319,7 @@ public:
 
   void backtracking( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
                      const Real &gs, const Vector<Real> &s, const Vector<Real> &x, 
-                     Objective<Real> &obj, Constraints<Real> &con ) {
+                     Objective<Real> &obj, BoundConstraint<Real> &con ) {
     Real tol = std::sqrt(ROL_EPSILON);
 
     Teuchos::RCP<Vector<Real> > xnew = x.clone();
@@ -383,7 +383,7 @@ public:
 
   void bisection( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
                   const Real &gs, const Vector<Real> &s, const Vector<Real> &x, 
-                  Objective<Real> &obj, Constraints<Real> &con ) {
+                  Objective<Real> &obj, BoundConstraint<Real> &con ) {
     Real tol = std::sqrt(ROL_EPSILON);
 
     // Compute value phi(0)
@@ -499,7 +499,7 @@ public:
 
   void goldensection( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
                       const Real &gs, const Vector<Real> &s, const Vector<Real> &x, 
-                      Objective<Real> &obj, Constraints<Real> &con ) {
+                      Objective<Real> &obj, BoundConstraint<Real> &con ) {
     Real tol = std::sqrt(ROL_EPSILON);
 
     Teuchos::RCP<Vector<Real> > grad = x.clone();
@@ -621,7 +621,7 @@ public:
 
   void brents( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
                const Real &gs, const Vector<Real> &s, const Vector<Real> &x, 
-               Objective<Real> &obj, Constraints<Real> &con ) {
+               Objective<Real> &obj, BoundConstraint<Real> &con ) {
     Real tol = std::sqrt(ROL_EPSILON);
 
     // Compute value phi(0)

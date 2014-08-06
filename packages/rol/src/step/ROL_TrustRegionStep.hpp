@@ -87,7 +87,7 @@ private:
   Real              scale0_;
   Real              scale1_;
 
-  void updateGradient( Vector<Real> &x, Objective<Real> &obj, Constraints<Real> &con, 
+  void updateGradient( Vector<Real> &x, Objective<Real> &obj, BoundConstraint<Real> &con, 
                        AlgorithmState<Real> &algo_state ) {
     Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
     if ( this->useInexact_[1] ) {
@@ -111,7 +111,7 @@ private:
     }
   }
 
-  Real computeCriticalityMeasure( const Vector<Real> &g, const Vector<Real> &x, Constraints<Real> &con ) {
+  Real computeCriticalityMeasure( const Vector<Real> &g, const Vector<Real> &x, BoundConstraint<Real> &con ) {
     if ( con.isActivated() ) {
       Teuchos::RCP<Vector<Real> > xnew = x.clone();
       if ( this->useProjectedGrad_ ) {
@@ -198,7 +198,7 @@ public:
 
   /** \brief Initialize step.
   */
-  void initialize( Vector<Real> &x, Objective<Real> &obj, Constraints<Real> &con, 
+  void initialize( Vector<Real> &x, Objective<Real> &obj, BoundConstraint<Real> &con, 
                    AlgorithmState<Real> &algo_state ) {
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
 
@@ -278,7 +278,7 @@ public:
 
   /** \brief Compute step.
   */
-  void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, Constraints<Real> &con, 
+  void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, BoundConstraint<Real> &con, 
                 AlgorithmState<Real> &algo_state ) {
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
 
@@ -296,7 +296,7 @@ public:
 
   /** \brief Update step, if successful.
   */
-  void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, Constraints<Real> &con, 
+  void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, BoundConstraint<Real> &con, 
                AlgorithmState<Real> &algo_state ) {
     Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
 

@@ -65,8 +65,11 @@ namespace ROL {
   private:
     Real alpha_;
 
+    Real const1_;
+    Real const2_;
+
   public:
-    Objective_Rosenbrock(Real alpha = 100.0) : alpha_(alpha) {}
+    Objective_Rosenbrock(Real alpha = 100.0) : alpha_(alpha), const1_(100.0), const2_(20.0) {}
 
     Real value( const Vector<Real> &x, Real &tol ) {
       StdVector<Real> & ex =
@@ -79,7 +82,11 @@ namespace ROL {
         val += alpha_ * pow(pow((*xp)[2*i],2) - (*xp)[2*i+1], 2);
         val += pow((*xp)[2*i] - 1.0, 2);
       }
-  
+
+      //////  ADD INEXACTNESS
+      //Real error = tol*(2.0*((Real)rand())/((Real)RAND_MAX)-1.0);
+      //val += this->const1_*error; 
+ 
       return val;
     }
 
@@ -93,6 +100,12 @@ namespace ROL {
       for( int i=0; i<n/2; i++ ) {
         (*gp)[2*i]   =  4.0*alpha_*(pow((*xp)[2*i],2) - (*xp)[2*i+1])*(*xp)[2*i] + 2.0*((*xp)[2*i]-1.0);
         (*gp)[2*i+1] = -2.0*alpha_*(pow((*xp)[2*i],2) - (*xp)[2*i+1]);
+
+        //////  ADD INEXACTNESS
+        //Real error0        = tol*(2.0*((Real)rand())/((Real)RAND_MAX)-1.0);
+        //Real error1        = tol*(2.0*((Real)rand())/((Real)RAND_MAX)-1.0);
+        //(*gp)[2*i]   += this->const2_*error0/std::sqrt(n);
+        //(*gp)[2*i+1] += this->const2_*error1/std::sqrt(n);
       }
     }
 #if USE_HESSVEC

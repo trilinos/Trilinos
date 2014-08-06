@@ -58,8 +58,10 @@
 #include <algorithm>
 #include <string>
 #include <limits>
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_TestForException.hpp>
+#include <ROL_Vector.hpp>
 
 /** \def    ROL_NUM_CHECKDERIV_STEPS
     \brief  Number of steps for derivative checks.
@@ -119,6 +121,74 @@ namespace ROL {
     return output;
   }
 
+  /** \enum   ROL::EBoundAlgorithm
+      \brief  Enumeration of algorithms to handle bound constraints.
+
+      \arg    PROJECTED             describe
+      \arg    PRIMALDUALACTIVESET   describe
+      \arg    INTERIORPOINTS        describe
+   */
+  enum EBoundAlgorithm{
+    BOUNDALGORITHM_PROJECTED = 0,
+    BOUNDALGORITHM_PRIMALDUALACTIVESET,
+    BOUNDALGORITHM_INTERIORPOINTS,
+    BOUNDALGORITHM_LAST
+  };
+
+  inline std::string EBoundAlgorithmToString(EBoundAlgorithm tr) {
+    std::string retString;
+    switch(tr) {
+      case BOUNDALGORITHM_PROJECTED:           retString = "Projected";              break;
+      case BOUNDALGORITHM_PRIMALDUALACTIVESET: retString = "Primal Dual Active Set"; break;
+      case BOUNDALGORITHM_INTERIORPOINTS:      retString = "Interior Points";        break;
+      case BOUNDALGORITHM_LAST:                retString = "Last Type (Dummy)";      break;
+      default:                                 retString = "INVALID EBoundAlgorithm";
+    }
+    return retString;
+  }
+
+  /** \brief  Verifies validity of a Bound Algorithm enum.
+    
+      \param  tr  [in]  - enum of the Bound Algorithm
+      \return 1 if the argument is a valid Bound Algorithm; 0 otherwise.
+    */
+  inline int isValidBoundAlgorithm(EBoundAlgorithm d){
+    return( (d == BOUNDALGORITHM_PROJECTED)           ||
+            (d == BOUNDALGORITHM_PRIMALDUALACTIVESET) || 
+            (d == BOUNDALGORITHM_INTERIORPOINTS)  
+          );
+  }
+
+  inline EBoundAlgorithm & operator++(EBoundAlgorithm &type) {
+    return type = static_cast<EBoundAlgorithm>(type+1);
+  }
+
+  inline EBoundAlgorithm operator++(EBoundAlgorithm &type, int) {
+    EBoundAlgorithm oldval = type;
+    ++type;
+    return oldval;
+  }
+
+  inline EBoundAlgorithm & operator--(EBoundAlgorithm &type) {
+    return type = static_cast<EBoundAlgorithm>(type-1);
+  }
+
+  inline EBoundAlgorithm operator--(EBoundAlgorithm &type, int) {
+    EBoundAlgorithm oldval = type;
+    --type;
+    return oldval;
+  }
+
+  inline EBoundAlgorithm StringToEBoundAlgorithm(std::string s) {
+    s = removeStringFormat(s);
+    for ( EBoundAlgorithm des = BOUNDALGORITHM_PROJECTED; des < BOUNDALGORITHM_LAST; des++ ) {
+      if ( !s.compare(removeStringFormat(EBoundAlgorithmToString(des))) ) {
+        return des;
+      }
+    }
+    return BOUNDALGORITHM_PROJECTED;
+  }
+
   /** \enum   ROL::EDescent
       \brief  Enumeration of descent direction types.
 
@@ -141,13 +211,13 @@ namespace ROL {
   inline std::string EDescentToString(EDescent tr) {
     std::string retString;
     switch(tr) {
-      case DESCENT_STEEPEST:      retString = "Steepest Descent";                          break;
-      case DESCENT_NONLINEARCG:   retString = "Nonlinear CG";                              break;
-      case DESCENT_SECANT:        retString = "Quasi-Newton Method";                       break;
-      case DESCENT_NEWTON:        retString = "Newton's Method";                           break;
-      case DESCENT_NEWTONKRYLOV:  retString = "Newton-Krylov";                             break;
-      case DESCENT_LAST:          retString = "Last Type (Dummy)";                         break;
-      default:                    retString = "INVALID ESecant";
+      case DESCENT_STEEPEST:             retString = "Steepest Descent";                          break;
+      case DESCENT_NONLINEARCG:          retString = "Nonlinear CG";                              break;
+      case DESCENT_SECANT:               retString = "Quasi-Newton Method";                       break;
+      case DESCENT_NEWTON:               retString = "Newton's Method";                           break;
+      case DESCENT_NEWTONKRYLOV:         retString = "Newton-Krylov";                             break;
+      case DESCENT_LAST:                 retString = "Last Type (Dummy)";                         break;
+      default:                           retString = "INVALID ESecant";
     }
     return retString;
   }
@@ -162,7 +232,7 @@ namespace ROL {
             (d == DESCENT_NONLINEARCG)   ||
             (d == DESCENT_SECANT)        ||
             (d == DESCENT_NEWTON)        ||
-            (d == DESCENT_NEWTONKRYLOV) 
+            (d == DESCENT_NEWTONKRYLOV)
           );
   }
 

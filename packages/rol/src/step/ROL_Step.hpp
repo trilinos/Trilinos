@@ -46,7 +46,7 @@
 
 #include "ROL_Vector.hpp"
 #include "ROL_Objective.hpp"
-#include "ROL_Constraints.hpp"
+#include "ROL_BoundConstraint.hpp"
 #include "ROL_Types.hpp"
 #include "Teuchos_ParameterList.hpp"
 
@@ -78,7 +78,7 @@ public:
 
   /** \brief Initialize step.
   */
-  virtual void initialize( Vector<Real> &x, Objective<Real> &obj, Constraints<Real> &con, 
+  virtual void initialize( Vector<Real> &x, Objective<Real> &obj, BoundConstraint<Real> &con, 
                            AlgorithmState<Real> &algo_state ) {
     Real tol = std::sqrt(ROL_EPSILON);
     // Initialize state descent direction and gradient storage
@@ -110,12 +110,14 @@ public:
 
   /** \brief Compute step.
   */
-  virtual void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, Constraints<Real> &con, 
+  virtual void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, 
+                        BoundConstraint<Real> &con, 
                         AlgorithmState<Real> &algo_state ) = 0;
 
   /** \brief Update step, if successful.
   */
-  virtual void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, Constraints<Real> &con,
+  virtual void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, 
+                       BoundConstraint<Real> &con,
                        AlgorithmState<Real> &algo_state ) = 0;
 
   /** \brief Print iterate header.

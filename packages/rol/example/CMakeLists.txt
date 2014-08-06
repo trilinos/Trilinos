@@ -1,3 +1,5 @@
 ADD_SUBDIRECTORY(rosenbrock)
 ADD_SUBDIRECTORY(poisson-inversion)
+ADD_SUBDIRECTORY(poisson-control)
+ADD_SUBDIRECTORY(parabolic-control)
 ADD_SUBDIRECTORY(diode-circuit)

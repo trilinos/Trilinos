@@ -47,6 +47,8 @@
 #include "ROL_Types.hpp"
 #include "ROL_Step.hpp"
 #include "ROL_StatusTest.hpp"
+#include "ROL_Objective.hpp"
+#include "ROL_BoundConstraint.hpp"
 
 /** \class ROL::Algorithm
     \brief Provides an interface to run optimization algorithms.
@@ -80,17 +82,17 @@ public:
   virtual std::vector<std::string> run( Vector<Real>      &x,
                                         Objective<Real>   &obj,
                                         bool               print = false ) {
-    Constraints<Real> con;
+    BoundConstraint<Real> con;
     con.deactivate();
     return this->run(x,obj,con,print);
   }
 
   /** \brief Run algorithm.
   */
-  virtual std::vector<std::string> run( Vector<Real>      &x, 
-                                        Objective<Real>   &obj,
-                                        Constraints<Real> &con,
-                                        bool               print = false ) {
+  virtual std::vector<std::string> run( Vector<Real>          &x, 
+                                        Objective<Real>       &obj,
+                                        BoundConstraint<Real> &con,
+                                        bool                   print = false ) {
     std::vector<std::string> output;
 
     // Initialize Current Iterate Container 

@@ -50,7 +50,7 @@
 #include "ROL_Algorithm.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "ROL_Constraints.hpp"
+#include "ROL_BoundConstraint.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "ROL_TrustRegionStep.hpp"
 
@@ -168,8 +168,7 @@ int main(int argc, char *argv[]) {
      *outStream << std::scientific << "Scaling: " << scale << "\n";
 
     /// Define constraints on Is and Rs
-    Teuchos::RCP<ROL::InequalityConstraint<RealT> > con = Teuchos::rcp(new ROL::InequalityConstraint_DiodeCircuit<RealT>(scale,lo_Is,up_Is,lo_Rs,up_Rs));
-    ROL::Constraints<RealT> icon(con);
+    ROL::BoundConstraint_DiodeCircuit<RealT> con(scale,lo_Is,up_Is,lo_Rs,up_Rs);
 
     /*--------------------------------------------------------------------------------------------
     // Gradient and Hessian check
@@ -187,7 +186,7 @@ int main(int argc, char *argv[]) {
     ---------------------------------------------------------------------------------------------*/
 
     // Run Algorithm
-    std::vector<std::string> output = algo.run(x, *obj, icon, false);
+    std::vector<std::string> output = algo.run(x, *obj, con, false);
     for ( unsigned i = 0; i < output.size(); i++ ) {
       std::cout << output[i];
     }

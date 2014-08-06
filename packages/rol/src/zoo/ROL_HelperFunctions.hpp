@@ -51,7 +51,7 @@
 
 #include "ROL_Vector.hpp"
 #include "ROL_Objective.hpp"
-#include "ROL_Constraints.hpp"
+#include "ROL_BoundConstraint.hpp"
 #include "ROL_Secant.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
@@ -219,15 +219,16 @@ namespace ROL {
   template<class Real> 
   class ProjectedObjective : public Objective<Real> {
   private:
-    Teuchos::RCP<Objective<Real> >   obj_;
-    Teuchos::RCP<Constraints<Real> > con_;
-    Teuchos::RCP<Secant<Real> >      secant_;
+    Teuchos::RCP<Objective<Real> >       obj_;
+    Teuchos::RCP<BoundConstraint<Real> > con_;
+    Teuchos::RCP<Secant<Real> >          secant_;
     bool useSecantPrecond_;
     bool useSecantHessVec_;
     Real eps_;
 
   public:
-    ProjectedObjective( Objective<Real> &obj, Constraints<Real> &con, Teuchos::RCP<Secant<Real> > &secant, 
+    ProjectedObjective( Objective<Real> &obj, BoundConstraint<Real> &con, 
+                        Teuchos::RCP<Secant<Real> > &secant, 
                         bool useSecantPrecond = false, bool useSecantHessVec = false, Real eps = 0.0 ) {
       obj_              = Teuchos::rcp(&obj,    false);
       con_              = Teuchos::rcp(&con,    false);

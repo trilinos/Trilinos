@@ -48,8 +48,8 @@ APPEND_SET(HEADERS
   function/ROL_Constraints.hpp
   function/ROL_EqualityConstraint.hpp
   function/ROL_EqualityConstraintDef.hpp
-  function/ROL_InequalityConstraint.hpp
-  function/ROL_InequalityConstraintDef.hpp
+  function/ROL_BoundConstraint.hpp
+  function/ROL_StdBoundConstraint.hpp
 )
 
 #
@@ -59,6 +59,7 @@ APPEND_SET(HEADERS
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/step)
 APPEND_SET(HEADERS
   step/ROL_Step.hpp
+  step/ROL_PrimalDualActiveSetStep.hpp
   step/ROL_TrustRegionStep.hpp
   step/ROL_TrustRegion.hpp
   step/ROL_LineSearchStep.hpp
@@ -116,7 +117,6 @@ APPEND_SET(HEADERS
   zoo/ROL_HS38.hpp
   zoo/ROL_HS45.hpp
   zoo/ROL_BVP.hpp
-  zoo/ROL_DiodeCircuit.hpp
   )
 
 

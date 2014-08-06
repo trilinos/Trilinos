@@ -41,14 +41,14 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_INEQUALITY_CONSTRAINT_H
-#define ROL_INEQUALITY_CONSTRAINT_H
+#ifndef ROL_BOUND_CONSTRAINT_H
+#define ROL_BOUND_CONSTRAINT_H
 
 #include "ROL_Vector.hpp"
 #include "ROL_Types.hpp"
 #include <iostream>
 
-/** \class ROL::InequalityConstraint
+/** \class ROL::BoundConstraint
     \brief Provides the interface to evaluate an inequality constraint function.
 */
 
@@ -56,15 +56,15 @@
 namespace ROL {
 
 template <class Real>
-class InequalityConstraint {
+class BoundConstraint {
 private:
   bool activated_;
 
 public:
 
-  virtual ~InequalityConstraint() {}
+  virtual ~BoundConstraint() {}
 
-  InequalityConstraint(void) : activated_(true) {}
+  BoundConstraint(void) : activated_(true) {}
 
   /** \brief Update constraint functions.  
                 x is the optimization variable, 
@@ -78,41 +78,41 @@ public:
   */
   virtual void project( Vector<Real> &x ) {}
 
+  virtual void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {}
+ 
+  virtual void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {}
+
+  virtual void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {}
+ 
+  virtual void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {}
+ 
+  virtual void setVectorToUpperBound( Vector<Real> &u ) {}
+  virtual void setVectorToLowerBound( Vector<Real> &l ) {}
+
   /** \brief Remove active set variables that are also in the binding set.
                 v is the vector to be pruned 
                 g is the gradient of the objective function at x
                 x is the optimization variable
                 eps is the active set tolerance
   */
-  virtual void pruneActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {}
+  virtual void pruneActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {
+    this->pruneUpperActive(v,g,x,eps);
+    this->pruneLowerActive(v,g,x,eps);
+  }
 
   /** \brief Remove active set variables.
                 v is the vector to be pruned 
                 x is the optimization variable
                 eps is the active set tolerance
   */
-  virtual void pruneActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {}
+  virtual void pruneActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {
+    this->pruneUpperActive(v,x,eps);
+    this->pruneLowerActive(v,x,eps);
+  }
 
   /** \brief Check if the vector, v, is feasible
   */
   virtual bool isFeasible( const Vector<Real> &v ) { return true; }
-
-  /** \brief Evaluate constraint.
-  */
-  virtual void value( Vector<Real> &c, const Vector<Real> &x, Real &tol ) {}
- 
-  /** \brief Apply constraint Jacobian or its adjoint.
-  */
-  virtual void applyJacobian( Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &x, const bool &adj, Real &tol );
-
-  /** \brief Computes the action of the operator W that is onto
-             the null space (kernel) of the contraint Jacobian.
-  */
-  virtual void maptoJacobianKernel( Vector<Real> &wv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {}
-
-  /** \brief Apply constraint Hessian to (v,u): c''(x)(v,u) = (c''(x)u)v.
-  */
-  virtual void applyHessian( Vector<Real> &huv, const Vector<Real> &u, const Vector<Real> &v, const Vector<Real> &x, Real &tol );
 
   /** \brief Turn on constraints 
   */
@@ -126,10 +126,53 @@ public:
   */
   bool isActivated(void) { return this->activated_;  }
 
-}; // class InequalityConstraint
+  /** \brief Remove the inactive set variables that are not in the binding set.
+                v is the vector to be pruned 
+                g is the gradient of the objective function at x
+                x is the optimization variable
+                eps is the active set tolerance
+  */
+  void pruneInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) { 
+    Teuchos::RCP<Vector<Real> > tmp = x.clone(); 
+    tmp->set(v);
+    this->pruneActive(*tmp,g,x,eps);
+    v.axpy(-1.0,*tmp);
+  }
+
+  /** \brief Remove the inactive set variables.
+                v is the vector to be pruned 
+                x is the optimization variable
+                eps is the active set tolerance
+  */
+  void pruneInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) { 
+    Teuchos::RCP<Vector<Real> > tmp = x.clone(); 
+    tmp->set(v);
+    this->pruneActive(*tmp,x,eps);
+    v.axpy(-1.0,*tmp);
+  }
+ 
+  /** \brief Compute projected gradient.
+  *             g is the gradient of the objective function at x
+  *             x is the optimization variable
+  */
+  void computeProjectedGradient( Vector<Real> &g, const Vector<Real> &x ) {
+    Teuchos::RCP<Vector<Real> > tmp = g.clone();
+    tmp->set(g);
+    this->pruneActive(g,*tmp,x);
+  }
+ 
+  /** \brief Compute projected step P(x+v)-x.
+               v is the step vector
+               x is the optimization variables
+  */
+  void computeProjectedStep( Vector<Real> &v, const Vector<Real> &x ) { 
+    v.plus(x);
+    this->project(v);
+    v.axpy(-1.0,x);
+  }
+
+}; // class BoundConstraint
 
 } // namespace ROL
-
-#include "ROL_InequalityConstraintDef.hpp"
 
 #endif

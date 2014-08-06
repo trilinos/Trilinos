@@ -45,7 +45,7 @@
 #define ROL_CONSTRAINTS_H
 
 #include "ROL_Vector.hpp"
-#include "ROL_InequalityConstraint.hpp"
+#include "ROL_BoundConstraint.hpp"
 #include "ROL_EqualityConstraint.hpp"
 #include "ROL_Types.hpp"
 #include <iostream>
@@ -62,7 +62,7 @@ class Constraints {
 private:
   bool activated_;
 
-  std::vector<Teuchos::RCP<InequalityConstraint<Real> > > ic_;
+  std::vector<Teuchos::RCP<BoundConstraint<Real> > > ic_;
   std::vector<Teuchos::RCP<EqualityConstraint<Real> > >   ec_;
 
 public:
@@ -71,9 +71,9 @@ public:
 
   Constraints(void) : activated_(true) {}
 
-  Constraints(std::vector<Teuchos::RCP<InequalityConstraint<Real> > > & ic) : activated_(true), ic_(ic) {}
+  Constraints(std::vector<Teuchos::RCP<BoundConstraint<Real> > > & ic) : activated_(true), ic_(ic) {}
 
-  Constraints(Teuchos::RCP<InequalityConstraint<Real> > & ic) : activated_(true) {
+  Constraints(Teuchos::RCP<BoundConstraint<Real> > & ic) : activated_(true) {
     ic_.clear();
     ic_.push_back(ic);
   }
@@ -85,21 +85,21 @@ public:
     ec_.push_back(ec);
   }
 
-  Constraints(std::vector<Teuchos::RCP<InequalityConstraint<Real> > > & ic, std::vector<Teuchos::RCP<EqualityConstraint<Real> > > & ec) : activated_(true), ic_(ic), ec_(ec) {}
+  Constraints(std::vector<Teuchos::RCP<BoundConstraint<Real> > > & ic, std::vector<Teuchos::RCP<EqualityConstraint<Real> > > & ec) : activated_(true), ic_(ic), ec_(ec) {}
 
-  Constraints(Teuchos::RCP<InequalityConstraint<Real> > &ic, Teuchos::RCP<EqualityConstraint<Real> > & ec) : activated_(true) {
+  Constraints(Teuchos::RCP<BoundConstraint<Real> > &ic, Teuchos::RCP<EqualityConstraint<Real> > & ec) : activated_(true) {
     ic_.clear();
     ic_.push_back(ic);
     ec_.clear();
     ec_.push_back(ec);
   }
 
-  Constraints(Teuchos::RCP<InequalityConstraint<Real> > &ic, std::vector<Teuchos::RCP<EqualityConstraint<Real> > > & ec) : activated_(true), ec_(ec) {
+  Constraints(Teuchos::RCP<BoundConstraint<Real> > &ic, std::vector<Teuchos::RCP<EqualityConstraint<Real> > > & ec) : activated_(true), ec_(ec) {
     ic_.clear();
     ic_.push_back(ic);
   }
 
-  Constraints(std::vector<Teuchos::RCP<InequalityConstraint<Real> > > &ic, Teuchos::RCP<EqualityConstraint<Real> > & ec) : activated_(true), ic_(ic) {
+  Constraints(std::vector<Teuchos::RCP<BoundConstraint<Real> > > &ic, Teuchos::RCP<EqualityConstraint<Real> > & ec) : activated_(true), ic_(ic) {
     ec_.clear();
     ec_.push_back(ec);
   }
@@ -125,6 +125,44 @@ public:
       if (this->ic_[i]->isActivated()) {
         this->ic_[i]->project(x);
       }
+    }
+  }
+  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {
+    for (unsigned i=0; i<this->ic_.size(); i++) {
+      if (this->ic_[i]->isActivated()) {
+        this->ic_[i]->pruneUpperActive(v, g, x, eps);
+      }
+    }
+  }
+  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {
+    for (unsigned i=0; i<this->ic_.size(); i++) {
+      if (this->ic_[i]->isActivated()) {
+        this->ic_[i]->pruneLowerActive(v, g, x, eps);
+      }
+    }
+  }
+  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {
+    for (unsigned i=0; i<this->ic_.size(); i++) {
+      if (this->ic_[i]->isActivated()) {
+        this->ic_[i]->pruneUpperActive(v, x, eps);
+      }
+    }
+  }
+  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {
+    for (unsigned i=0; i<this->ic_.size(); i++) {
+      if (this->ic_[i]->isActivated()) {
+        this->ic_[i]->pruneLowerActive(v, x, eps);
+      }
+    }
+  }
+  void setVectorToUpperBound( Vector<Real> &u ) {
+    if (this->ic_[0]->isActivated()) {
+      this->ic_[0]->setVectorToUpperBound(u);
+    }
+  }
+  void setVectorToLowerBound( Vector<Real> &l ) {
+    if (this->ic_[0]->isActivated()) {
+      this->ic_[0]->setVectorToLowerBound(l);
     }
   }
 
