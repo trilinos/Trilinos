@@ -198,7 +198,7 @@ public:
 		   const lno_t *&offsets, const gid_t *& adjacencyIds) const
   {
     if (MESH_REGION == source && MESH_VERTEX == target && 3 == dimension_ ||
-	MESH_FACE == source && MESH_VERTEX == target && 2 == dimension) {
+	MESH_FACE == source && MESH_VERTEX == target && 2 == dimension_) {
       offsets = elemOffsets_;
       adjacencyIds = elemToNode_;
     } else if (MESH_REGION == source && 2 == dimension_) {
