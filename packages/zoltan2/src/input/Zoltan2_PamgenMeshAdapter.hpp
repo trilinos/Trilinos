@@ -54,7 +54,7 @@
 #include <Zoltan2_StrideData.hpp>
 #include <vector>
 
-#include <im_exodusII_l.h
+#include <im_exodusII_l.h>
 
 namespace Zoltan2 {
 
