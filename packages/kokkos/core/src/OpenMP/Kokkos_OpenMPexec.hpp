@@ -395,15 +395,6 @@ KOKKOS_INLINE_FUNCTION
 OpenMP::OpenMP( Impl::OpenMPexec & e ) : m_exec(e) {}
 
 KOKKOS_INLINE_FUNCTION
-int OpenMP::league_rank() const { return m_exec.m_league_rank ; }
-KOKKOS_INLINE_FUNCTION
-int OpenMP::league_size() const { return m_exec.m_league_size ; }
-KOKKOS_INLINE_FUNCTION
-int OpenMP::team_rank() const { return m_exec.m_team_rank ; }
-KOKKOS_INLINE_FUNCTION
-int OpenMP::team_size() const { return m_exec.m_team_size ; }
-
-KOKKOS_INLINE_FUNCTION
 unsigned OpenMP::hardware_thread_id() {
 #ifndef __CUDA_ARCH__
   return omp_get_thread_num();
@@ -422,20 +413,7 @@ unsigned OpenMP::max_hardware_threads() {
 }
 
 KOKKOS_INLINE_FUNCTION
-void OpenMP::team_barrier() { m_exec.team_barrier() ; }
-
-KOKKOS_INLINE_FUNCTION
 void * OpenMP::get_shmem( const int size ) const { return m_exec.get_shmem(size) ; }
-
-template< typename Type >
-KOKKOS_INLINE_FUNCTION
-Type OpenMP::team_scan( const Type & value )
-{ return m_exec.team_scan( value ); }
-
-template< typename TypeLocal , typename TypeGlobal >
-KOKKOS_INLINE_FUNCTION
-TypeGlobal OpenMP::team_scan( const TypeLocal & value , TypeGlobal * const global_accum )
-{ return m_exec.template team_scan< TypeGlobal >( value , global_accum ); }
 
 } // namespace Kokkos
 

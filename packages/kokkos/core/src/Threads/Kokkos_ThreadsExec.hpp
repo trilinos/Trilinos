@@ -749,30 +749,7 @@ inline bool Threads::wake()
 inline void Threads::fence()
 { Impl::ThreadsExec::fence() ; }
 
-KOKKOS_INLINE_FUNCTION int Threads::league_rank() const
-{ return m_exec.m_league_rank ; }
-
-KOKKOS_INLINE_FUNCTION int Threads::league_size() const
-{ return m_exec.m_league_size ; }
-
-KOKKOS_INLINE_FUNCTION int Threads::team_rank() const
-{ return m_exec.m_team_rank ; }
-
-KOKKOS_INLINE_FUNCTION int Threads::team_size() const
-{ return m_exec.m_team_size ; }
-
-KOKKOS_INLINE_FUNCTION void Threads::team_barrier()
-{ return m_exec.team_barrier(); }
-
 inline Threads::Threads( Impl::ThreadsExec & t ) : m_exec( t ) {}
-
-template< typename Type >
-KOKKOS_INLINE_FUNCTION Type Threads::team_scan( const Type & value )
-{ return m_exec.team_scan( value ); }
-
-template< typename TypeLocal , typename TypeGlobal >
-KOKKOS_INLINE_FUNCTION TypeGlobal Threads::team_scan( const TypeLocal & value , TypeGlobal * const global_accum )
-{ return m_exec.template team_scan< TypeGlobal >( value , global_accum ); }
 
 KOKKOS_INLINE_FUNCTION
 void * Threads::get_shmem( const int size ) const { return m_exec.get_shmem( size ); }

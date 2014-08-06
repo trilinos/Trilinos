@@ -713,58 +713,6 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#if defined( __CUDA_ARCH__ )
-
-namespace Kokkos {
-
-template< typename TypeLocal , typename TypeGlobal >
-__device__ inline TypeGlobal Cuda::team_scan( const TypeLocal & value , TypeGlobal * const global_accum )
-{
-  enum { BlockSizeMax = 512 };
-
-  __shared__ TypeGlobal base_data[ BlockSizeMax + 1 ];
-
-  __syncthreads(); // Don't write in to shared data until all threads have entered this function
-
-  if ( 0 == threadIdx.x ) { base_data[0] = 0 ; }
-
-  base_data[ threadIdx.x + 1 ] = value ;
-
-  Impl::cuda_intra_block_reduce_scan<true>( Impl::CudaJoinFunctor<TypeGlobal>() , base_data + 1 );
-
-  if ( global_accum ) {
-    if ( blockDim.x == threadIdx.x + 1 ) {
-      base_data[ blockDim.x ] = atomic_fetch_add( global_accum , base_data[ blockDim.x ] );
-    }
-    __syncthreads(); // Wait for atomic
-    base_data[ threadIdx.x ] += base_data[ blockDim.x ] ;
-  }
-
-  return base_data[ threadIdx.x ];
-}
-
-template< typename Type >
-__device__ inline Type Cuda::team_scan( const Type & value )
-{ return team_scan( value , (Type*) 0 ); }
-
-} // namespace Kokkos
-
-#else /* ! defined( __CUDA_ARCH__ ) */
-
-namespace Kokkos {
-
-template< typename Type > inline Type Cuda::team_scan( const Type & ) { return 0 ; }
-
-template< typename TypeLocal , typename TypeGlobal >
-inline TypeGlobal Cuda::team_scan( const TypeLocal & , TypeGlobal * const ) { return 0 ; }
-
-} // namespace Kokkos
-
-#endif /* ! defined( __CUDA_ARCH__ ) */
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
 #endif /* defined( __CUDACC__ ) */
 
 #endif /* #ifndef KOKKOS_CUDA_PARALLEL_HPP */

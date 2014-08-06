@@ -151,42 +151,16 @@ public:
   KOKKOS_INLINE_FUNCTION static unsigned hardware_thread_id() { return 0 ; }
   KOKKOS_INLINE_FUNCTION static unsigned max_hardware_threads() { return 1 ; }
 
-
   //--------------------------------------------------------------------------
-
-  inline int league_rank() const { return m_league_rank ; }
-  inline int league_size() const { return m_league_size ; }
-  inline int team_rank() const { return 0 ; }
-  inline int team_size() const { return 1 ; }
-
-  inline void team_barrier() {}
-
-  template< class ArgType >
-  KOKKOS_INLINE_FUNCTION
-  ArgType team_scan( const ArgType & value , ArgType * const global_accum = 0 )
-    {
-      const ArgType tmp = global_accum ? *global_accum : ArgType(0) ;
-      if ( global_accum ) { *global_accum += value ; }
-      return tmp ;
-    }
-
-  inline std::pair<size_t,size_t> work_range( size_t n ) const
-    { return std::pair<size_t,size_t>(0,n); }
 
   void * get_shmem( const int size ) const ;
 
   static void * resize_reduce_scratch( const unsigned );
   static void * resize_shared_scratch( const unsigned );
 
-  Serial( const int rank , const int size )
-    : m_league_rank(rank) , m_league_size(size) , m_shmem_iter(0) {}
-
-  Serial()
-    : m_league_rank(0) , m_league_size(0) , m_shmem_iter(0) {}
+  Serial() : m_shmem_iter(0) {}
 
 private:
-  int m_league_rank ;
-  int m_league_size ;
   mutable int m_shmem_iter ;
 };
 

@@ -236,37 +236,6 @@ public:
   //! \name Functions for the functor device interface
   //@{
 
-  __device__ inline int league_size() const { return gridDim.x ; }
-  __device__ inline int league_rank() const { return blockIdx.x ; }
-
-  __device__ inline int team_size() const { return blockDim.x ; }
-  __device__ inline int team_rank() const { return threadIdx.x ; }
-
-  __device__ inline void team_barrier() const { __syncthreads(); }
-  __device__ inline unsigned int team_barrier_count(bool value) const
-             { return __syncthreads_count(value); }
-
-  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering.
-   *
-   *  The highest rank thread can compute the reduction total as
-   *    reduction_total = dev.team_scan( value ) + value ;
-   */
-  template< typename Type >
-  __device__ inline Type team_scan( const Type & value );
-
-  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
-   *          with intra-team non-deterministic ordering accumulation.
-   *
-   *  The global inter-team accumulation value will, at the end of the
-   *  league's parallel execution, be the scan's total.
-   *  Parallel execution ordering of the league's teams is non-deterministic.
-   *  As such the base value for each team's scan operation is similarly
-   *  non-deterministic.
-   */
-  template< typename TypeLocal , typename TypeGlobal >
-  __device__ inline TypeGlobal team_scan( const TypeLocal & value , TypeGlobal * const global_accum );
-
-
   //! Get a pointer to shared memory for this team.
   __device__ inline void * get_shmem( const int size ) const ;
 
@@ -282,21 +251,6 @@ private:
 
   //--------------------------------------------------------------------------
 #else
-
-  int league_size() const ;
-  int league_rank() const ;
-
-  int team_size() const ;
-  int team_rank() const ;
-
-  void team_barrier() const ;
-  unsigned int team_barrier_count(bool) const ;
-
-  template< typename T >
-    inline T team_scan(const T& value);
-
-  template< typename TypeLocal , typename TypeGlobal >
-    inline TypeGlobal team_scan( const TypeLocal & value , TypeGlobal * const global_accum );
 
   void * get_shmem( const int size ) const ;
 
