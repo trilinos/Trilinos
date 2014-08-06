@@ -384,7 +384,7 @@
         \parbox[b][\paperheight]{\paperwidth}{%
           \vfill
           \centering
-          \includegraphics[width=\paperwidth,height=\paperheight]{SANDbackground}
+          \includegraphics[width=\paperwidth,height=\paperheight]{logos/SANDbackground}
           \vfill
         }}}
 
@@ -518,7 +518,7 @@
 	\setlength{\topleftwidth}{\the\textwidththird}
 	\setlength{\topmiddlewidth}{\the\textwidththird}
 	\setlength{\toprightwidth}{\the\textwidththird}
-	
+
 	% Changed following to -6, +10, and -6 from -3, +4, -3, to get "Official Use Only - Export Controlled Information
 	% to fit on one line on title page - MJK, 1/12/07
 	\addtolength{\topleftwidth}{-6em}
@@ -628,7 +628,7 @@
 	    \CoverFont{b}{24}{28pt}
 	    \parbox[t]{\textwidth}{
 		\raggedright
-		\@title            
+		\@title
 	    }
 
 
@@ -655,7 +655,7 @@
 
 	%\hspace*{-0.5in}
 	\begin{minipage}[b]{6.0in}
-	    \includegraphics{snllineblk}
+	    \includegraphics{logos/snllineblk}
 	\end{minipage}
 
 
@@ -746,7 +746,7 @@
 	    \vspace{\baselineskip}
 	    \vspace{0.125in}
 
-	    \includegraphics[width=0.75in]{DOEbwlogo}
+	    \includegraphics[width=0.75in]{logos/DOEbwlogo}
 	    % Not necessary for SAND reports
 	    % \hfill
 	    % \includegraphics[height=0.5in]{NNSAbwlogo}
@@ -1467,7 +1467,7 @@
     }{
 	% For article.sty
 	% We don't want blank lines between entries and no boldface.
-	% This is the l@section definition from article.sty. We get rid of 
+	% This is the l@section definition from article.sty. We get rid of
 	% \addvspace{1.0em... and \bfseries (if relax is not set in the main doc)
 	\renewcommand*\l@section[2]{
 	    \setlength\parskip{0ex}
@@ -1934,7 +1934,7 @@
 	\vspace*{\fill}		% Move the logo to the bottom of the page
 	\thispagestyle{empty}
 	\begin{center}
-	    \includegraphics{snllineblk}
+	    \includegraphics{logos/snllineblk}
 	\end{center}
 
     } % End of AtEndDocument{}
