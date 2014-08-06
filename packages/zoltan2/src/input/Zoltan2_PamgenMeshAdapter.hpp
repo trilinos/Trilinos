@@ -303,7 +303,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
 
   for(long long i = 0; i < num_elem_blk; i++){
     elem_type[i] = new char [MAX_STR_LENGTH + 1];
-    error += im_ex_get_elem_block_l(exoid, elem_blk_id[i], elem_type[i],
+    error += im_ex_get_elem_block_l(exoid, elem_blk_ids[i], elem_type[i],
 				    (long long*)&(num_elem_this_blk[i]),
 				    (long long*)&(num_nodes_per_elem[i]),
 				    (long long*)&(num_attr[i]));
