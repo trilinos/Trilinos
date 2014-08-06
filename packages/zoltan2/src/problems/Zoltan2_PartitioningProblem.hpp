@@ -106,22 +106,56 @@ public:
 
 #ifdef HAVE_ZOLTAN2_MPI
   typedef Teuchos::OpaqueWrapper<MPI_Comm> mpiWrapper_t;
+  /*! \brief Constructor where MPI communicator can be specified
+   */
+  PartitioningProblem(Adapter *A, ParameterList *p, MPI_Comm comm):
+      Problem<Adapter>(A,p,comm), solution_(),
+      problemComm_(), problemCommConst_(),
+      inputType_(InvalidAdapterType), 
+      graphFlags_(), idFlags_(), coordFlags_(), algName_(),
+      numberOfWeights_(), partIds_(), partSizes_(), 
+      numberOfCriteria_(), levelNumberParts_(), hierarchical_(false), 
+      timer_(), metricsRequested_(false), metrics_()
+  {
+    for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
+    initializeProblem();
+  }
 #endif
+
+  //! \brief Constructor where communicator is the Teuchos default.
+  PartitioningProblem(Adapter *A, ParameterList *p):
+      Problem<Adapter>(A,p), solution_(),
+      problemComm_(), problemCommConst_(),
+      inputType_(InvalidAdapterType), 
+      graphFlags_(), idFlags_(), coordFlags_(), algName_(),
+      numberOfWeights_(), 
+      partIds_(), partSizes_(), numberOfCriteria_(), 
+      levelNumberParts_(), hierarchical_(false), timer_(),
+      metricsRequested_(false), metrics_()
+  {
+    for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
+    initializeProblem();
+  }
+
+  //! \brief Constructor where Teuchos communicator is specified
+  PartitioningProblem(Adapter *A, ParameterList *p,
+                      RCP<const Teuchos::Comm<int> > &comm):
+      Problem<Adapter>(A,p,comm), solution_(),
+      problemComm_(), problemCommConst_(),
+      inputType_(InvalidAdapterType), 
+      graphFlags_(), idFlags_(), coordFlags_(), algName_(),
+      numberOfWeights_(), 
+      partIds_(), partSizes_(), numberOfCriteria_(), 
+      levelNumberParts_(), hierarchical_(false), timer_(),
+      metricsRequested_(false), metrics_()
+  {
+    for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
+    initializeProblem();
+  }
 
   /*! \brief Destructor
    */
   ~PartitioningProblem() {};
-
-#ifdef HAVE_ZOLTAN2_MPI
-
-  /*! \brief Constructor where MPI communicator can be specified
-   */
-  PartitioningProblem(Adapter *A, Teuchos::ParameterList *p, MPI_Comm comm); 
-
-#endif
-
-  //! \brief Constructor where communicator is the Teuchos default.
-  PartitioningProblem(Adapter *A, Teuchos::ParameterList *p);
 
   //!  \brief Direct the problem to create a solution.
   //
@@ -402,53 +436,13 @@ private:
 };
 ////////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_ZOLTAN2_MPI
-template <typename Adapter>
-  PartitioningProblem<Adapter>::PartitioningProblem(Adapter *A, 
-    ParameterList *p, MPI_Comm comm):
-      Problem<Adapter>(A,p,comm), solution_(),
-      problemComm_(), problemCommConst_(),
-      inputType_(InvalidAdapterType), 
-      graphFlags_(), idFlags_(), coordFlags_(), algName_(),
-      numberOfWeights_(), partIds_(), partSizes_(), 
-      numberOfCriteria_(), levelNumberParts_(), hierarchical_(false), 
-      timer_(), metricsRequested_(false), metrics_()
-{
-
-  for(int i=0;i<MAX_NUM_MODEL_TYPES;i++)
-  {
-    modelAvail_[i]=false;
-  }
-
-  initializeProblem();
-
-}
-#endif
 /*
 template <typename Adapter>
 void PartitioningProblem<Adapter>::setMachine(MachineRepresentation<typename Adapter::base_adapter_t::scalar_t> *machine){
   this->machine_ = RCP<MachineRepresentation<typename Adapter::base_adapter_t::scalar_t> > (machine, false);
 }
 */
-template <typename Adapter>
-  PartitioningProblem<Adapter>::PartitioningProblem(Adapter *A, 
-    ParameterList *p):
-      Problem<Adapter>(A,p), solution_(),
-      problemComm_(), problemCommConst_(),
-      inputType_(InvalidAdapterType), 
-      graphFlags_(), idFlags_(), coordFlags_(), algName_(),
-      numberOfWeights_(), 
-      partIds_(), partSizes_(), numberOfCriteria_(), 
-      levelNumberParts_(), hierarchical_(false), timer_(),
-      metricsRequested_(false), metrics_()
-{
-  for(int i=0;i<MAX_NUM_MODEL_TYPES;i++)
-  {
-    modelAvail_[i]=false;
-  }
 
-  initializeProblem();
-}
 
 template <typename Adapter>
   void PartitioningProblem<Adapter>::initializeProblem()

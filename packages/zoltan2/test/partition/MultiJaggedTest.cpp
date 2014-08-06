@@ -71,7 +71,7 @@ using Teuchos::rcp;
 #ifdef hopper_separate_test
 #include "stdio.h"
 #endif
-#define CATCH_EXCEPTIONS(pp) \
+#define CATCH_EXCEPTIONS_AND_RETURN(pp) \
         catch (std::runtime_error &e) { \
             cout << "Runtime exception returned from " << pp << ": " \
             << e.what() << " FAIL" << endl; \
@@ -91,6 +91,28 @@ using Teuchos::rcp;
             cout << "Unknown exception returned from " << pp << ": " \
             << e.what() << " FAIL" << endl; \
             return -1; \
+        }
+
+#define CATCH_EXCEPTIONS_WITH_COUNT(ierr, pp) \
+        catch (std::runtime_error &e) { \
+            cout << "Runtime exception returned from " << pp << ": " \
+            << e.what() << " FAIL" << endl; \
+            (ierr)++; \
+        } \
+        catch (std::logic_error &e) { \
+            cout << "Logic exception returned from " << pp << ": " \
+            << e.what() << " FAIL" << endl; \
+            (ierr)++; \
+        } \
+        catch (std::bad_alloc &e) { \
+            cout << "Bad_alloc exception returned from " << pp << ": " \
+            << e.what() << " FAIL" << endl; \
+            (ierr)++; \
+        } \
+        catch (std::exception &e) { \
+            cout << "Unknown exception returned from " << pp << ": " \
+            << e.what() << " FAIL" << endl; \
+            (ierr)++; \
         }
 
 
@@ -127,33 +149,89 @@ string trim_copy(
 template <typename Adapter>
 int run_pointAssign_tests(
   Zoltan2::PartitioningProblem<Adapter> *problem,
-  int coord_dim)
+  RCP<tMVector_t> &coords)
 {
-#ifdef POINTASSIGNREADY
+    int ierr = 0;
+
     // pointAssign tests
-    typename Adapter::scalar_t pointDrop[coord_dim];
+    int coordDim = coords->getNumVectors();
+    scalar_t *pointDrop = new scalar_t[coordDim];
     typename Adapter::part_t part;
 
-    for (int i = 0; i < coord_dim; i++) pointDrop[i] = 0.;
-    try {
-      part = problem->pointAssign(coord_dim, pointDrop);
-    }
-    CATCH_EXCEPTIONS("pointAssign -- Origin");
+    char mechar[10];
+    sprintf(mechar, "%d", problem->getComm()->getRank());
+    string me(mechar);
 
-    for (int i = 0; i < coord_dim; i++) pointDrop[i] = -100.+i;
-    try {
-      part = problem->pointAssign(coord_dim, pointDrop);
+    // test correctness of pointAssign for owned points
+    {
+      // TODO  KDD:  ONCE CERTAIN THAT MJ RETURNS PARTS IN CORRECT ORDER,
+      // TODO  KDD:  WILL NOT NEED THE zgids ARRAY.
+      const typename Adapter::part_t *solnPartView = 
+                                      problem->getSolution().getPartList();
+      const gno_t *zgids = problem->getSolution().getIdList();
+     
+      size_t numPoints = coords->getLocalLength();
+      for (size_t j = 0; j < numPoints; j++) {
+
+        // size_t localID = j;                              // KDDKDD OLD
+        size_t localID = 
+               coords->getMap()->getLocalElement(zgids[j]); // KDDKDD NEW
+        typename Adapter::part_t solnPart = solnPartView[j];
+
+        for (int i = 0; i < coordDim; i++)
+          pointDrop[i] = coords->getData(i)[localID];
+
+        try {
+          part = problem->pointAssign(coordDim, pointDrop);
+        }
+        CATCH_EXCEPTIONS_WITH_COUNT(ierr, me + ": pointAssign -- OwnedPoints");
+
+        std::cout << me << " Point " << localID << " GID " << zgids[j] 
+                  << " (" << pointDrop[0];
+        if (coordDim > 1) std::cout << " " << pointDrop[1];
+        if (coordDim > 2) std::cout << " " << pointDrop[2];
+        std::cout << ") in boxPart " << part
+                  << "  in solnPart " << solnPart
+                  << std::endl;
+
+        if (part != solnPart) {
+          std::cout << me << " pointAssign:  incorrect part " << part
+                    << " found; should be " << solnPart
+                    << " for point " << j << std::endl;
+          ierr++;
+        }
+      }
     }
-    CATCH_EXCEPTIONS("pointAssign -- Negative Point");
+
+    // test the origin
+    {
+      for (int i = 0; i < coordDim; i++) pointDrop[i] = 0.;
+      try {
+        part = problem->pointAssign(coordDim, pointDrop);
+      }
+      CATCH_EXCEPTIONS_WITH_COUNT(ierr, me + " pointAssign -- Origin");
+    }
+
+    // test point with negative coordinates
+    {
+      for (int i = 0; i < coordDim; i++) pointDrop[i] = -100.+i;
+      try {
+        part = problem->pointAssign(coordDim, pointDrop);
+      }
+      CATCH_EXCEPTIONS_WITH_COUNT(ierr, me + " pointAssign -- Negative Point");
+    }
     
-    for (int i = 0; i < coord_dim; i++) pointDrop[i] = i*5;
-    try {
-      part = problem->pointAssign(coord_dim, pointDrop);
+    // test a point that's way out there
+    {
+      for (int i = 0; i < coordDim; i++) pointDrop[i] = i*5;
+      try {
+        part = problem->pointAssign(coordDim, pointDrop);
+      }
+      CATCH_EXCEPTIONS_WITH_COUNT(ierr, me + " pointAssign -- i*5");
     }
-    CATCH_EXCEPTIONS("pointAssign -- i*5");
-#endif
 
-    return 0;
+    delete [] pointDrop;
+    return ierr;
 }
 
 void readGeoGenParams(string paramFileName, Teuchos::ParameterList &geoparams, const RCP<const Teuchos::Comm<int> > & comm){
@@ -219,7 +297,7 @@ void readGeoGenParams(string paramFileName, Teuchos::ParameterList &geoparams, c
     }
 }
 
-int GeometricGenInterface(const RCP<const Teuchos::Comm<int> > & comm,
+int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
         int numParts, float imbalance,
         std::string paramFile, std::string pqParts,
         std::string pfname,
@@ -228,9 +306,11 @@ int GeometricGenInterface(const RCP<const Teuchos::Comm<int> > & comm,
         int migration_all_to_all_type,
         scalar_t migration_imbalance_cut_off,
         int migration_processor_assignment_type,
-        int migration_doMigration_type
+        int migration_doMigration_type,
+        bool test_boxes
 )
 {
+    int ierr = 0;
     Teuchos::ParameterList geoparams("geo params");
     readGeoGenParams(paramFile, geoparams, comm);
     GeometricGen::GeometricGenerator<scalar_t, lno_t, gno_t, node_t> *gg = 
@@ -308,7 +388,8 @@ int GeometricGenInterface(const RCP<const Teuchos::Comm<int> > & comm,
 
     params->set("algorithm", "multijagged");
     params->set("compute_metrics", "true");
-    params->set("mj_keep_part_boxes", "true");
+    if (test_boxes)
+        params->set("mj_keep_part_boxes", 1);
 
     if(imbalance > 1)
         params->set("imbalance_tolerance", double(imbalance));
@@ -327,29 +408,25 @@ int GeometricGenInterface(const RCP<const Teuchos::Comm<int> > & comm,
 
     Zoltan2::PartitioningProblem<inputAdapter_t> *problem;
     try {
-#ifdef HAVE_ZOLTAN2_MPI
         problem = new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia,
                                                    params.getRawPtr(),
-                                                   MPI_COMM_WORLD);
-#else
-        problem = new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia,
-                                                   params.getRawPtr());
-#endif
+                                                   comm);
     }
-    CATCH_EXCEPTIONS("PartitioningProblem()")
+    CATCH_EXCEPTIONS_AND_RETURN("PartitioningProblem()")
 
     try {
         problem->solve();
     }
-    CATCH_EXCEPTIONS("solve()")
+    CATCH_EXCEPTIONS_AND_RETURN("solve()")
     if (comm->getRank() == 0){
         problem->printMetrics(cout);
     }
     problem->printTimers();
 
     // run pointAssign tests
-    int ierr = run_pointAssign_tests<inputAdapter_t>(problem, coord_dim);
-    
+    if (test_boxes)
+      ierr = run_pointAssign_tests<inputAdapter_t>(problem, tmVector);
+
     if(numWeightsPerCoord){
         for(int i = 0; i < numWeightsPerCoord; ++i)
             delete [] weight[i];
@@ -365,7 +442,7 @@ int GeometricGenInterface(const RCP<const Teuchos::Comm<int> > & comm,
 }
 
 int testFromDataFile(
-        const RCP<const Teuchos::Comm<int> > & comm,
+        RCP<const Teuchos::Comm<int> > &comm,
         int numParts,
         float imbalance,
         std::string fname,
@@ -376,9 +453,11 @@ int testFromDataFile(
         int migration_all_to_all_type,
         scalar_t migration_imbalance_cut_off,
         int migration_processor_assignment_type,
-        int migration_doMigration_type
+        int migration_doMigration_type,
+        bool test_boxes
 )
 {
+    int ierr = 0;
     //std::string fname("simple");
     //cout << "running " << fname << endl;
 
@@ -402,7 +481,8 @@ int testFromDataFile(
 
     //params->set("timer_output_stream" , "std::cout");
     params->set("compute_metrics", "true");
-    params->set("mj_keep_part_boxes", "true");
+    if (test_boxes)
+        params->set("mj_keep_part_boxes", 1);
     params->set("algorithm", "multijagged");
     if(imbalance > 1){
         params->set("imbalance_tolerance", double(imbalance));
@@ -426,21 +506,16 @@ int testFromDataFile(
 
     Zoltan2::PartitioningProblem<inputAdapter_t> *problem;
     try {
-#ifdef HAVE_ZOLTAN2_MPI
         problem = new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia, 
                                                    params.getRawPtr(),
-                                                   MPI_COMM_WORLD);
-#else
-        problem = new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia,
-                                                   params.getRawPtr());
-#endif
+                                                   comm);
     }
-    CATCH_EXCEPTIONS("PartitioningProblem()")
+    CATCH_EXCEPTIONS_AND_RETURN("PartitioningProblem()")
 
     try {
         problem->solve();
     }
-    CATCH_EXCEPTIONS("solve()")
+    CATCH_EXCEPTIONS_AND_RETURN("solve()")
 
     if (coordsConst->getGlobalLength() < 40) {
         int len = coordsConst->getLocalLength();
@@ -460,7 +535,8 @@ int testFromDataFile(
     problem->printTimers();
 
     // run pointAssign tests
-    int ierr = run_pointAssign_tests<inputAdapter_t>(problem, coords->getNumVectors());
+    if (test_boxes)
+      ierr = run_pointAssign_tests<inputAdapter_t>(problem, coords);
 
     delete problem;
     return ierr;
@@ -490,7 +566,7 @@ void getCoords(scalar_t **&coords, lno_t &numLocal, int &dim, string fileName){
 }
 
 int testFromSeparateDataFiles(
-        const RCP<const Teuchos::Comm<int> > & comm,
+        RCP<const Teuchos::Comm<int> > &comm,
         int numParts,
         float imbalance,
         std::string fname,
@@ -501,13 +577,14 @@ int testFromSeparateDataFiles(
         int migration_all_to_all_type,
         scalar_t migration_imbalance_cut_off,
         int migration_processor_assignment_type,
-        int migration_doMigration_type
+        int migration_doMigration_type,
+        int test_boxes
 )
 {
     //std::string fname("simple");
     //cout << "running " << fname << endl;
 
-
+    int ierr = 0;
     int mR = comm->getRank();
     if (mR == 0) cout << "size of scalar_t:" << sizeof(scalar_t) << endl;
     string tFile = fname +"_" + Zoltan2::toString<int>(mR) + ".mtx";
@@ -593,22 +670,22 @@ int testFromSeparateDataFiles(
     if (migration_doMigration_type >= 0){
         params->set("migration_doMigration_type", int (migration_doMigration_type));
     }
+    if (test_boxes)
+        params->set("mj_keep_part_boxes", 1);
 
     Zoltan2::PartitioningProblem<inputAdapter_t> *problem;
     try {
-#ifdef HAVE_ZOLTAN2_MPI
-        problem = new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia, params.getRawPtr(),
-                MPI_COMM_WORLD);
-#else
-        problem = new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia, params.getRawPtr());
-#endif
+        problem = 
+          new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia,
+                                                           params.getRawPtr(),
+                                                           comm);
     }
-    CATCH_EXCEPTIONS("PartitioningProblem()")
+    CATCH_EXCEPTIONS_AND_RETURN("PartitioningProblem()")
 
     try {
         problem->solve();
     }
-    CATCH_EXCEPTIONS("solve()")
+    CATCH_EXCEPTIONS_AND_RETURN("solve()")
 
     if (coordsConst->getGlobalLength() < 40) {
         int len = coordsConst->getLocalLength();
@@ -626,8 +703,13 @@ int testFromSeparateDataFiles(
     }
 
     problem->printTimers();
+
+    // run pointAssign tests
+    if (test_boxes)
+      ierr = run_pointAssign_tests<inputAdapter_t>(problem, coords);
+
     delete problem;
-    return 0;
+    return ierr;
 }
 #endif
 
@@ -664,8 +746,10 @@ void getArgVals(
         int &migration_all_to_all_type,
         scalar_t &migration_imbalance_cut_off,
         int &migration_processor_assignment_type,
-        int &migration_doMigration_type){
-
+        int &migration_doMigration_type,
+        bool &test_boxes
+)
+{
     bool isCset = false;
     bool isPset = false;
     bool isFset = false;
@@ -763,6 +847,13 @@ void getArgVals(
                 throw "Invalid argument at " + tmp;
             }
         }
+        else if(identifier == "TB"){
+            if(value >=0 ){
+                test_boxes = (value == 0 ? false : true);
+            } else {
+                throw "Invalid argument at " + tmp;
+            }
+        }
         else {
             throw "Invalid argument at " + tmp;
         }
@@ -815,6 +906,7 @@ int main(int argc, char *argv[])
     scalar_t migration_imbalance_cut_off = -1.15;
     int migration_processor_assignment_type = -1;
     int migration_doMigration_type = -1;
+    bool test_boxes = false;
 
     try{
         try {
@@ -832,7 +924,8 @@ int main(int argc, char *argv[])
                     migration_all_to_all_type,
                     migration_imbalance_cut_off,
                     migration_processor_assignment_type,
-                    migration_doMigration_type);
+                    migration_doMigration_type,
+                    test_boxes);
         }
         catch(std::string s){
             if(tcomm->getRank() == 0){
@@ -859,30 +952,33 @@ int main(int argc, char *argv[])
         switch (opt){
 
         case 0:
-            ierr = testFromDataFile(tcomm,numParts, imbalance,fname,pqParts, paramFile, k,
+            ierr = testFromDataFile(tcomm,numParts, imbalance,fname,
+                    pqParts, paramFile, k,
                     migration_check_option,
                     migration_all_to_all_type,
                     migration_imbalance_cut_off,
                     migration_processor_assignment_type,
-                    migration_doMigration_type);
+                    migration_doMigration_type, test_boxes);
             break;
 #ifdef hopper_separate_test
         case 1:
-            ierr = testFromSeparateDataFiles(tcomm,numParts, imbalance,fname,pqParts, paramFile, k,
+            ierr = testFromSeparateDataFiles(tcomm,numParts, imbalance,fname,
+                    pqParts, paramFile, k,
                     migration_check_option,
                     migration_all_to_all_type,
                     migration_imbalance_cut_off,
                     migration_processor_assignment_type,
-                    migration_doMigration_type);
+                    migration_doMigration_type, test_boxes);
             break;
 #endif
         default:
-        	GeometricGenInterface(tcomm, numParts, imbalance, fname, pqParts, paramFile, k,
+            ierr = GeometricGenInterface(tcomm, numParts, imbalance, fname, 
+                    pqParts, paramFile, k,
                     migration_check_option,
                     migration_all_to_all_type,
                     migration_imbalance_cut_off,
                     migration_processor_assignment_type,
-                    migration_doMigration_type);
+                    migration_doMigration_type, test_boxes);
             break;
         }
 
@@ -908,5 +1004,5 @@ int main(int argc, char *argv[])
             cerr << s << endl;
     }
 
-    
+    return 0;
 }
