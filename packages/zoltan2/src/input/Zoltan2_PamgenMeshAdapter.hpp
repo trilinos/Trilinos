@@ -105,7 +105,7 @@ public:
    *  lifetime of this InputAdapter.
    */
 
-  PamgenMeshAdapter(std::string typestr = "region");
+  PamgenMeshAdapter(std::string typestr);
 
   ////////////////////////////////////////////////////////////////
   // The MeshAdapter interface.
