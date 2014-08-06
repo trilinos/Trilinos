@@ -8,6 +8,7 @@
 #include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_util/environment/CPUTime.hpp>
 #include <stk_util/environment/WallTime.hpp>
+#include <stk_util/environment/perf_util.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
@@ -58,7 +59,7 @@ size_t setFieldData(stk::mesh::BulkData& mesh, stk::mesh::Selector select)
     return num_nodes;
 }
 
-void createMetaAndBulkData(stk::io::StkMeshIoBroker &exodusFileReader, std::string genMeshSpec = std::string("generated:60x60x60"))
+void createMetaAndBulkData(stk::io::StkMeshIoBroker &exodusFileReader, std::string genMeshSpec = std::string("generated:100x100x100"))
 {
     std::string exodusFileName = unitTestUtils::getOption("-i", "NO_FILE_SPECIFIED");
     if (exodusFileName == "NO_FILE_SPECIFIED") {
@@ -160,6 +161,8 @@ void test_communicate_field_data_all_ghosting(stk::mesh::BulkData& mesh, int num
       std::cerr << "Time to do communicate_field_data with loop: " << max_time_with_loop << std::endl;
       std::cerr << "Time to do communicate_field_data with bulk: " << max_time_bulk << std::endl;
     }
+
+    stk::parallel_print_time_for_performance_compare(mesh.parallel(), stk_comm_time_bulk);
 }
 
 void test_communicate_field_data_ghosting(stk::mesh::BulkData& mesh, const stk::mesh::Ghosting& ghosting, int num_iters)
@@ -190,6 +193,7 @@ void test_communicate_field_data_ghosting(stk::mesh::BulkData& mesh, const stk::
     if ( my_proc == 0 ) {
       std::cerr << "Time to do communicate_field_data: " << max_time << std::endl;
     }
+    stk::parallel_print_time_for_performance_compare(mesh.parallel(), stk_comm_time);
 }
 
 void test_communicate_field_data_shared(stk::mesh::BulkData& mesh, int num_iters)
@@ -221,6 +225,8 @@ void test_communicate_field_data_shared(stk::mesh::BulkData& mesh, int num_iters
     if ( my_proc == 0 ) {
       std::cerr << "Time to do communicate_field_data: " << max_time << std::endl;
     }
+    std::string timer_name = "communicate_field_data_shared";
+    stk::parallel_print_time_for_performance_compare(mesh.parallel(), stk_comm_time);
 }
 
 void addPartToGhosting(stk::mesh::BulkData & bulk, const std::string & partName, stk::mesh::Ghosting& ghost)
@@ -249,8 +255,7 @@ TEST(CommunicateFieldData, copy_to_all)
 
     stk::io::StkMeshIoBroker exodusFileReader(communicator);
 
-    std::string genMeshSpec = "generated:10x10x10000|sideset:xXyY";
-//    std::string genMeshSpec = "generated:1x1x2|sideset:xXyY";
+    std::string genMeshSpec = "generated:100x100x100|sideset:xXyY";
     createMetaAndBulkData(exodusFileReader,genMeshSpec);
     stk::mesh::BulkData &stkMeshBulkData = exodusFileReader.bulk_data();
 
@@ -276,7 +281,7 @@ TEST(CommunicateFieldData, copy_to_all)
 
     std::cerr << oss.str() << std::endl;
 
-    test_communicate_field_data_all_ghosting(stkMeshBulkData, 100);
+    test_communicate_field_data_all_ghosting(stkMeshBulkData, 1000);
 }
 
 
@@ -294,7 +299,7 @@ TEST(CommunicateFieldData, Ghosting)
 
     stk::mesh::BulkData &stkMeshBulkData = exodusFileReader.bulk_data();
     const stk::mesh::Ghosting& aura_ghosting = stkMeshBulkData.aura_ghosting();
-    test_communicate_field_data_ghosting(stkMeshBulkData, aura_ghosting, 100);
+    test_communicate_field_data_ghosting(stkMeshBulkData, aura_ghosting, 1000);
 }
 
 TEST(CommunicateFieldData, Shared)
@@ -311,7 +316,7 @@ TEST(CommunicateFieldData, Shared)
 
     stk::mesh::BulkData &stkMeshBulkData = exodusFileReader.bulk_data();
 
-    test_communicate_field_data_shared(stkMeshBulkData, 100);
+    test_communicate_field_data_shared(stkMeshBulkData, 1000);
 }
 
 }
