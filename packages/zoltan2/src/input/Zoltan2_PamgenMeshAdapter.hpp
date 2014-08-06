@@ -166,8 +166,8 @@ public:
       emsg << __FILE__ << ";" <<__LINE__
 	   << "  Invalid dimension " << dim << std::endl;
       throw std::runtime_error(emsg.str());
-    } else if (MESH_REGION == etype && 3 == dimension_ ||
-	       MESH_FACE == etype && 2 == dimension_) {
+    } else if ((MESH_REGION == etype && 3 == dimension_) ||
+	       (MESH_FACE == etype && 2 == dimension_)) {
       coords = Acoords_;
       stride = 1;
     } else if (MESH_REGION == etype && 2 == dimension_) {
@@ -184,8 +184,8 @@ public:
   }
 
   bool availAdjs(MeshEntityType source, MeshEntityType target) {
-    if (MESH_REGION == source && MESH_VERTEX == target && 3 == dimension_ ||
-	MESH_FACE == source && MESH_VERTEX == target && 2 == dimension_) {
+    if ((MESH_REGION == source && MESH_VERTEX == target && 3 == dimension_) ||
+	(MESH_FACE == source && MESH_VERTEX == target && 2 == dimension_)) {
       return TRUE;
     }
 
@@ -204,8 +204,8 @@ public:
   void getAdjsView(MeshEntityType source, MeshEntityType target,
 		   const lno_t *&offsets, const gid_t *& adjacencyIds) const
   {
-    if (MESH_REGION == source && MESH_VERTEX == target && 3 == dimension_ ||
-	MESH_FACE == source && MESH_VERTEX == target && 2 == dimension_) {
+    if ((MESH_REGION == source && MESH_VERTEX == target && 3 == dimension_) ||
+	(MESH_FACE == source && MESH_VERTEX == target && 2 == dimension_)) {
       offsets = elemOffsets_;
       adjacencyIds = elemToNode_;
     } else if (MESH_REGION == source && 2 == dimension_) {
@@ -220,8 +220,8 @@ public:
 
   bool avail2ndAdjs(MeshEntityType sourcetarget, MeshEntityType through)
   {
-    if (MESH_REGION==sourcetarget && MESH_VERTEX==through && 3==dimension_ ||
-	MESH_FACE==sourcetarget && MESH_VERTEX==through && 2==dimension_) {
+    if ((MESH_REGION==sourcetarget && MESH_VERTEX==through && 3==dimension_) ||
+	(MESH_FACE==sourcetarget && MESH_VERTEX==through && 2==dimension_)) {
       return TRUE;
     }
 
@@ -241,8 +241,8 @@ public:
   void get2ndAdjsView(MeshEntityType sourcetarget, MeshEntityType through, 
 		      const lno_t *&offsets, const gid_t *& adjacencyIds) const
   {
-    if (MESH_REGION==sourcetarget && MESH_VERTEX==through && 3==dimension_ ||
-	MESH_FACE==sourcetarget && MESH_VERTEX==through && 2==dimension_) {
+    if ((MESH_REGION==sourcetarget && MESH_VERTEX==through && 3==dimension_) ||
+	(MESH_FACE==sourcetarget && MESH_VERTEX==through && 2==dimension_)) {
       offsets = start_;
       adjacencyIds = adj_;
     } else if (MESH_REGION == sourcetarget && 2 == dimension_) {
@@ -257,7 +257,7 @@ public:
 
 private:
   long long dimension_, num_nodes_, num_elem_;
-  const long long *element_num_map_;
+  const gid_t *element_num_map_;
   long long *node_num_map_, *elemToNode_, tnoct_, *elemOffsets_;
   double *coords_, *Acoords_;
   std::vector<long long> start_, adj_;
