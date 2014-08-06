@@ -605,8 +605,8 @@ void createAllParameters(Teuchos::ParameterList &pList)
   pList.set<string>(parameterName, "random", docString.str(), 
     strValidatorP);
 
-  ////////// rectilinear_blocks
-  parameterName = string("rectilinear_blocks");
+  ////////// rectilinear
+  parameterName = string("rectilinear");
 
   str2intValidatorP =
     rcp(new str2intValidator(yesNoStrings, yesNoIntegrals, parameterName));

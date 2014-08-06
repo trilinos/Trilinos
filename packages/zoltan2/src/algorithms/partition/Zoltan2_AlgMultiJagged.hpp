@@ -455,8 +455,8 @@ private:
     //to store how many points in each part a thread has.
     mj_lno_t **thread_point_counts;
 
-    mj_scalar_t *process_rectelinear_cut_weight;
-    mj_scalar_t *global_rectelinear_cut_weight;
+    mj_scalar_t *process_rectilinear_cut_weight;
+    mj_scalar_t *global_rectilinear_cut_weight;
 
     //for faster communication, concatanation of
     //totalPartWeights sized 2P-1, since there are P parts and P-1 cut lines
@@ -700,7 +700,7 @@ private:
      * \param new_current_cut_coordinates is the work array, sized P - 1.
      *
      * \param current_part_cut_line_weight_ratio holds how much weight of the coordinates on the cutline should be put on left side.
-     * \param rectelinear_cut_count is the count of cut lines whose balance can be achived via distributing the points in same coordinate to different parts.
+     * \param rectilinear_cut_count is the count of cut lines whose balance can be achived via distributing the points in same coordinate to different parts.
      * \param my_num_incomplete_cut is the number of cutlines whose position has not been determined yet. For K > 1 it is the count in a single part (whose cut lines are determined).
      */
     void mj_get_new_cut_coordinates(
@@ -723,7 +723,7 @@ private:
         mj_scalar_t * current_cut_upper_weights,
         mj_scalar_t *new_current_cut_coordinates,
         mj_scalar_t *current_part_cut_line_weight_to_put_left,
-        mj_part_t *rectelinear_cut_count,
+        mj_part_t *rectilinear_cut_count,
         mj_part_t &my_num_incomplete_cut);
 
     /*! \brief
@@ -1606,8 +1606,8 @@ AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::AlgMJ():
 	is_cut_line_determined(NULL), my_incomplete_cut_count(NULL),
 	thread_part_weights(NULL), thread_part_weight_work(NULL),
 	thread_cut_left_closest_point(NULL), thread_cut_right_closest_point(NULL),
-	thread_point_counts(NULL), process_rectelinear_cut_weight(NULL),
-	global_rectelinear_cut_weight(NULL),total_part_weight_left_right_closests(NULL),
+	thread_point_counts(NULL), process_rectilinear_cut_weight(NULL),
+	global_rectilinear_cut_weight(NULL),total_part_weight_left_right_closests(NULL),
 	global_total_part_weight_left_right_closests(NULL),kept_boxes(),
 	myRank(0), myActualRank(0)
 {
@@ -1937,8 +1937,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::allocate_set_work_memory
 		for(int i = 0; i < this->num_threads; ++i){
 			this->thread_cut_line_weight_to_put_left[i] = allocMemory<mj_scalar_t>(this->max_num_cut_along_dim);
 		}
-	    this->process_rectelinear_cut_weight = allocMemory<mj_scalar_t>(this->max_num_cut_along_dim);
-	    this->global_rectelinear_cut_weight = allocMemory<mj_scalar_t>(this->max_num_cut_along_dim);
+	    this->process_rectilinear_cut_weight = allocMemory<mj_scalar_t>(this->max_num_cut_along_dim);
+	    this->global_rectilinear_cut_weight = allocMemory<mj_scalar_t>(this->max_num_cut_along_dim);
 	}
 
 
@@ -2406,7 +2406,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_1D_part(
 ){
 
 
-    mj_part_t rectelinear_cut_count = 0;
+    mj_part_t rectilinear_cut_count = 0;
     mj_scalar_t *temp_cut_coords = current_cut_coordinates;
 
     Teuchos::MultiJaggedCombinedReductionOp<mj_part_t, mj_scalar_t>
@@ -2419,7 +2419,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_1D_part(
 
     size_t total_reduction_size = 0;
 #ifdef HAVE_ZOLTAN2_OMP
-#pragma omp parallel shared(total_incomplete_cut_count,  rectelinear_cut_count)
+#pragma omp parallel shared(total_incomplete_cut_count,  rectilinear_cut_count)
 #endif
     {
         int me = 0;
@@ -2602,7 +2602,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_1D_part(
             			current_cut_upper_weights,
             			this->cut_coordinates_work_array +cut_shift, //new cut coordinates
             			current_part_cut_line_weight_to_put_left,
-            			&rectelinear_cut_count,
+            			&rectilinear_cut_count,
             			this->my_incomplete_cut_count[kk]);
 
             	cut_shift += num_cuts;
@@ -3085,7 +3085,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_create_new_partitions
 		mj_lno_t *thread_num_points_in_parts = this->thread_point_counts[me];
 		mj_scalar_t *my_local_thread_cut_weights_to_put_left = NULL;
 
-		//now if the rectelinear partitioning is allowed we decide how
+		//now if the rectilinear partitioning is allowed we decide how
 		//much weight each thread should put to left and right.
 		if (this->distribute_points_on_cut_lines){
 			my_local_thread_cut_weights_to_put_left = this->thread_cut_line_weight_to_put_left[me];
@@ -3148,7 +3148,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_create_new_partitions
 				//if it is on the cut.
 				if(this->distribute_points_on_cut_lines
 						&& my_local_thread_cut_weights_to_put_left[coordinate_assigned_part] > this->sEpsilon){
-					//if the rectelinear partitioning is allowed,
+					//if the rectilinear partitioning is allowed,
 					//and the thread has still space to put on the left of the cut
 					//then thread puts the vertex to left.
 					my_local_thread_cut_weights_to_put_left[coordinate_assigned_part] -= coordinate_weight;
@@ -3287,7 +3287,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_create_new_partitions
  * \param new_current_cut_coordinates is the work array, sized P - 1.
  *
  * \param current_part_cut_line_weight_ratio holds how much weight of the coordinates on the cutline should be put on left side.
- * \param rectelinear_cut_count is the count of cut lines whose balance can be achived via distributing the points in same coordinate to different parts.
+ * \param rectilinear_cut_count is the count of cut lines whose balance can be achived via distributing the points in same coordinate to different parts.
  * \param my_num_incomplete_cut is the number of cutlines whose position has not been determined yet. For K > 1 it is the count in a single part (whose cut lines are determined).
  */
 template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
@@ -3312,7 +3312,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_get_new_cut_coordinat
 		mj_scalar_t * current_cut_upper_weights,
 		mj_scalar_t *new_current_cut_coordinates,
 		mj_scalar_t *current_part_cut_line_weight_to_put_left,
-		mj_part_t *rectelinear_cut_count,
+		mj_part_t *rectilinear_cut_count,
 		mj_part_t &my_num_incomplete_cut){
 
 	//seen weight in the part
@@ -3342,8 +3342,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_get_new_cut_coordinat
 
 		if(this->distribute_points_on_cut_lines){
 			//init the weight on the cut.
-			this->global_rectelinear_cut_weight[i] = 0;
-			this->process_rectelinear_cut_weight[i] = 0;
+			this->global_rectilinear_cut_weight[i] = 0;
+			this->process_rectilinear_cut_weight[i] = 0;
 		}
 		//if already determined at previous iterations,
 		//then just write the coordinate to new array, and proceed.
@@ -3413,15 +3413,15 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_get_new_cut_coordinat
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp atomic
 #endif
-					*rectelinear_cut_count += 1;
-					//increase the num cuts to be determined with rectelinear partitioning.
+					*rectilinear_cut_count += 1;
+					//increase the num cuts to be determined with rectilinear partitioning.
 
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp atomic
 #endif
 					my_num_incomplete_cut -= 1;
 					new_current_cut_coordinates [i] = current_cut_coordinates[i];
-					this->process_rectelinear_cut_weight[i] = current_local_part_weights[i * 2 + 1] -
+					this->process_rectilinear_cut_weight[i] = current_local_part_weights[i * 2 + 1] -
 							current_local_part_weights[i * 2];
 					continue;
 				}
@@ -3583,29 +3583,29 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_get_new_cut_coordinat
 #pragma omp single
 #endif
 	{
-		if(*rectelinear_cut_count > 0){
+		if(*rectilinear_cut_count > 0){
 
 			try{
 				Teuchos::scan<int,mj_scalar_t>(
 						*comm, Teuchos::REDUCE_SUM,
 						num_cuts,
-						this->process_rectelinear_cut_weight,
-						this->global_rectelinear_cut_weight
+						this->process_rectilinear_cut_weight,
+						this->global_rectilinear_cut_weight
 				);
 			}
 			Z2_THROW_OUTSIDE_ERROR(*(this->mj_env))
 
 			for (mj_part_t i = 0; i < num_cuts; ++i){
 				//if cut line weight to be distributed.
-				if(this->global_rectelinear_cut_weight[i] > 0) {
+				if(this->global_rectilinear_cut_weight[i] > 0) {
 					//expected weight to go to left of the cut.
 					mj_scalar_t expected_part_weight = current_part_target_weights[i];
 					//the weight that should be put to left of the cut.
 					mj_scalar_t necessary_weight_on_line_for_left = expected_part_weight - current_global_part_weights[i * 2];
 					//the weight of the cut in the process
-					mj_scalar_t my_weight_on_line = this->process_rectelinear_cut_weight[i];
+					mj_scalar_t my_weight_on_line = this->process_rectilinear_cut_weight[i];
 					//the sum of the cut weights upto this process, including the weight of this process.
-					mj_scalar_t weight_on_line_upto_process_inclusive = this->global_rectelinear_cut_weight[i];
+					mj_scalar_t weight_on_line_upto_process_inclusive = this->global_rectilinear_cut_weight[i];
 					//the space on the left side of the cut after all processes before this process (including this process)
 					//puts their weights on cut to left.
 					mj_scalar_t space_to_put_left = necessary_weight_on_line_for_left - weight_on_line_upto_process_inclusive;
@@ -3639,7 +3639,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_get_new_cut_coordinat
 
 				}
 			}
-			*rectelinear_cut_count = 0;
+			*rectilinear_cut_count = 0;
 		}
 	}
 }
@@ -4891,7 +4891,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::create_consistent_chunks
 	mj_scalar_t *my_local_thread_cut_weights_to_put_left = NULL;
 
 
-	//now if the rectelinear partitioning is allowed we decide how
+	//now if the rectilinear partitioning is allowed we decide how
 	//much weight each thread should put to left and right.
 	if (this->distribute_points_on_cut_lines){
 
@@ -5326,8 +5326,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::free_work_memory(){
 			freeArray<mj_scalar_t>(this->thread_cut_line_weight_to_put_left[i]);
 		}
 		freeArray<mj_scalar_t *>(this->thread_cut_line_weight_to_put_left);
-		freeArray<mj_scalar_t>(this->process_rectelinear_cut_weight);
-		freeArray<mj_scalar_t>(this->global_rectelinear_cut_weight);
+		freeArray<mj_scalar_t>(this->process_rectilinear_cut_weight);
+		freeArray<mj_scalar_t>(this->global_rectilinear_cut_weight);
 	}
 
 	freeArray<mj_part_t>(this->my_incomplete_cut_count);
@@ -6300,11 +6300,8 @@ void Zoltan2_AlgMJ<Adapter>::set_input_parameters(const Teuchos::ParameterList &
 	}
 
 	int val = 0;
-	pe = pl.getEntryPtr("rectilinear_blocks");
-	if (pe)
-		val = pe->getValue(&val);
-
-    // TODO: RCB default is false ? Should we change ?
+	pe = pl.getEntryPtr("rectilinear");
+	if (pe) val = pe->getValue(&val);
 	if (val == 1){
 		this->distribute_points_on_cut_lines = false;
 	} else {

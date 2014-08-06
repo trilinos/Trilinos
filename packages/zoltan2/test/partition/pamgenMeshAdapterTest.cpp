@@ -197,7 +197,7 @@ int main(int argc, char *argv[]) {
 
   Teuchos::ParameterList params("test params");
   params.set("bisection_num_test_cuts", 7);
-  params.set("rectilinear_blocks", "yes");
+  params.set("rectilinear", "yes");
 
 #ifdef HAVE_ZOLTAN2_MPI
   Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params, MPI_COMM_WORLD);

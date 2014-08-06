@@ -188,7 +188,7 @@ void AlgRCB<Adapter>::partition(
   ////////////////////////////////////////////////////////
   // Geometric partitioning problem parameters of interest:
   //    average_cuts
-  //    rectilinear_blocks
+  //    rectilinear
   //    bisection_num_test_cuts (experimental)
 
   int val = 0;
@@ -200,12 +200,12 @@ void AlgRCB<Adapter>::partition(
     params.set(rcb_averageCuts);
 
   val = 0;
-  pe = pl.getEntryPtr("rectilinear_blocks");
+  pe = pl.getEntryPtr("rectilinear");
   if (pe)
     val = pe->getValue(&val);
 
   if (val == 1)
-    params.set(rcb_rectilinearBlocks);
+    params.set(rcb_rectilinear);
 
   int numTestCuts = 1;
   pe = pl.getEntryPtr("bisection_num_test_cuts");

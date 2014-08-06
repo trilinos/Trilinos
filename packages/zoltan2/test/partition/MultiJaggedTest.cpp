@@ -307,7 +307,8 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
         scalar_t migration_imbalance_cut_off,
         int migration_processor_assignment_type,
         int migration_doMigration_type,
-        bool test_boxes
+        bool test_boxes,
+        bool rectilinear
 )
 {
     int ierr = 0;
@@ -390,6 +391,8 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
     params->set("compute_metrics", "true");
     if (test_boxes)
         params->set("mj_keep_part_boxes", 1);
+    if (rectilinear)
+        params->set("rectilinear", 1);
 
     if(imbalance > 1)
         params->set("imbalance_tolerance", double(imbalance));
@@ -454,7 +457,8 @@ int testFromDataFile(
         scalar_t migration_imbalance_cut_off,
         int migration_processor_assignment_type,
         int migration_doMigration_type,
-        bool test_boxes
+        bool test_boxes,
+        bool rectilinear
 )
 {
     int ierr = 0;
@@ -483,6 +487,8 @@ int testFromDataFile(
     params->set("compute_metrics", "true");
     if (test_boxes)
         params->set("mj_keep_part_boxes", 1);
+    if (rectilinear)
+        params->set("rectilinear", 1);
     params->set("algorithm", "multijagged");
     if(imbalance > 1){
         params->set("imbalance_tolerance", double(imbalance));
@@ -578,7 +584,8 @@ int testFromSeparateDataFiles(
         scalar_t migration_imbalance_cut_off,
         int migration_processor_assignment_type,
         int migration_doMigration_type,
-        int test_boxes
+        int test_boxes,
+        bool rectilinear
 )
 {
     //std::string fname("simple");
@@ -672,6 +679,8 @@ int testFromSeparateDataFiles(
     }
     if (test_boxes)
         params->set("mj_keep_part_boxes", 1);
+    if (rectilinear)
+        params->set("rectilinear", 1);
 
     Zoltan2::PartitioningProblem<inputAdapter_t> *problem;
     try {
@@ -747,7 +756,8 @@ void getArgVals(
         scalar_t &migration_imbalance_cut_off,
         int &migration_processor_assignment_type,
         int &migration_doMigration_type,
-        bool &test_boxes
+        bool &test_boxes,
+        bool &rectilinear
 )
 {
     bool isCset = false;
@@ -854,6 +864,13 @@ void getArgVals(
                 throw "Invalid argument at " + tmp;
             }
         }
+        else if(identifier == "R"){
+            if(value >=0 ){
+                rectilinear = (value == 0 ? false : true);
+            } else {
+                throw "Invalid argument at " + tmp;
+            }
+        }
         else {
             throw "Invalid argument at " + tmp;
         }
@@ -907,6 +924,7 @@ int main(int argc, char *argv[])
     int migration_processor_assignment_type = -1;
     int migration_doMigration_type = -1;
     bool test_boxes = false;
+    bool rectilinear = false;
 
     try{
         try {
@@ -925,7 +943,8 @@ int main(int argc, char *argv[])
                     migration_imbalance_cut_off,
                     migration_processor_assignment_type,
                     migration_doMigration_type,
-                    test_boxes);
+                    test_boxes,
+                    rectilinear);
         }
         catch(std::string s){
             if(tcomm->getRank() == 0){
@@ -958,7 +977,7 @@ int main(int argc, char *argv[])
                     migration_all_to_all_type,
                     migration_imbalance_cut_off,
                     migration_processor_assignment_type,
-                    migration_doMigration_type, test_boxes);
+                    migration_doMigration_type, test_boxes, rectilinear);
             break;
 #ifdef hopper_separate_test
         case 1:
@@ -968,7 +987,7 @@ int main(int argc, char *argv[])
                     migration_all_to_all_type,
                     migration_imbalance_cut_off,
                     migration_processor_assignment_type,
-                    migration_doMigration_type, test_boxes);
+                    migration_doMigration_type, test_boxes, rectilinear);
             break;
 #endif
         default:
@@ -978,7 +997,7 @@ int main(int argc, char *argv[])
                     migration_all_to_all_type,
                     migration_imbalance_cut_off,
                     migration_processor_assignment_type,
-                    migration_doMigration_type, test_boxes);
+                    migration_doMigration_type, test_boxes, rectilinear);
             break;
         }
 

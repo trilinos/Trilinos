@@ -185,7 +185,7 @@
     docString='  partitioning algorithm' \
     /> \
    <Parameter  \
-    id=\"28\" name=\"rectilinear_blocks\" type=\"string\" validatorId=\"26\" value=\"no\" \
+    id=\"28\" name=\"rectilinear\" type=\"string\" validatorId=\"26\" value=\"no\" \
     docString='  If true, then when a cut is made, all of the dots located on the cut \
     are moved to the same side of the cut. The resulting regions are then \
     rectilinear.  The resulting load balance may not be as good as when \
@@ -396,7 +396,7 @@
         <String value=\"random\"/> \
         <String value=\"wolf\"/> \
       </Validator> \
-      <Validator defaultParameterName=\"rectilinear_blocks\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"26\"> \
+      <Validator defaultParameterName=\"rectilinear\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"26\"> \
         <String integralValue=\"1\" stringValue=\"true\"/> \
         <String integralValue=\"1\" stringValue=\"yes\"/> \
         <String integralValue=\"1\" stringValue=\"1\"/> \

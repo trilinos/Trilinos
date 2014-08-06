@@ -276,7 +276,7 @@ int runRCB(
   params.set("num_global_parts", numGlobalParts);
   params.set("bisection_num_test_cuts", 1);
   params.set("average_cuts", testArgs[testCnt*3+1]);
-  params.set("rectilinear_blocks", testArgs[testCnt*3+2]);
+  params.set("rectilinear", testArgs[testCnt*3+2]);
 
   if (me == 0) {
     std::cout << "Test " << testCnt << " filename            = "
@@ -297,7 +297,7 @@ int runRCB(
               << objectives[(nWeights > 2 ? 2 : nWeights)] << std::endl;
     std::cout << "Test " << testCnt << " average_cuts        = "
               << testArgs[testCnt*3+1] << std::endl;
-    std::cout << "Test " << testCnt << " rectilinear_blocks  = "
+    std::cout << "Test " << testCnt << " rectilinear  = "
               << testArgs[testCnt*3+2] << std::endl;
   }
 
