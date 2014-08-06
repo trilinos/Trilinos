@@ -49,7 +49,7 @@ INCLUDE(ParseVariableArguments)
 #
 #   TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP(
 #     BASE_DIRS <dir0> <dir1> ... 
-#     [EXCLUDE_REGEXS "<re0>" "<re1>" ... 
+#     [EXCLUDE_REGEXES "<re0>" "<re1>" ... 
 #     [MOST_RECENT_TIMESTAMP_OUT  <mostRecentTimestamp>]
 #     [MOST_RECENT_FILEPATH_BASE_DIR_OUT <mostRecentFilepathBaseDir>]
 #     [MOST_RECENT_RELATIVE_FILEPATH_OUT <mostRecentRelativeFilePath>]
@@ -71,7 +71,7 @@ FUNCTION(TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP)
      #prefix
      PARSE
      #lists
-     "BASE_DIRS;EXCLUDE_REGEXS;MOST_RECENT_TIMESTAMP_OUT"
+     "BASE_DIRS;EXCLUDE_REGEXES;MOST_RECENT_TIMESTAMP_OUT"
      #options
      "SHOW_MOST_RECENT_FILES;SHOW_OVERALL_MOST_RECENT_FILES"
      ${ARGN}
@@ -91,15 +91,23 @@ FUNCTION(TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP)
   SET(OVERALL_MOST_RECENT_FILEPATH_TIMESTAMP_HUMAN_READABLE "") 
 
   FOREACH(BASE_DIR ${PARSE_BASE_DIRS})
+
     IF (TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP_DUMP)
       MESSAGE("\nSearching '${BASE_DIR}' ...")
     ENDIF()
+
+    # Build up commands for grep -v
+    SET(GREP_V_COMMANDS)
+    FOREACH(EXCLUDE_REGEX ${PARSE_EXCLUDE_REGEXES})
+      APPEND_SET(GREP_V_COMMANDS COMMAND grep -v "${EXCLUDE_REGEX}")
+    ENDFOREACH()
 
     # Get the time stamp and the file name of the most recently modified file
     # in currnet directory.
     EXECUTE_PROCESS(
       WORKING_DIRECTORY "${BASE_DIR}"
       COMMAND find . -type f -printf "'%T@ %p\n'"
+      ${GREP_V_COMMANDS}
       COMMAND sort -n
       COMMAND tail -1
       OUTPUT_VARIABLE MOST_RECENT_TIMESTAMP_AND_FILE
@@ -181,8 +189,8 @@ ENDFUNCTION()
 #
 # @FUNCTION: TRIBITS_FIND_MOST_RECENT_SOURCE_FILE_TIMESTAMP()
 #
-# Find the most modified file in a set of base directories and return its
-# timestamp.
+# Find the most modified source file in a set of base directories and return
+# its timestamp.
 #
 # Usage::
 #
@@ -217,6 +225,75 @@ FUNCTION(TRIBITS_FIND_MOST_RECENT_SOURCE_FILE_TIMESTAMP)
 
   SET(ARGS)
   APPEND_SET(ARGS BASE_DIRS ${PARSE_SOURCE_BASE_DIRS})
+  APPEND_SET(ARGS MOST_RECENT_TIMESTAMP_OUT MOST_RECENT_TIMESTAMP)
+  IF (PARSE_SHOW_MOST_RECENT_FILES)
+    APPEND_SET(ARGS SHOW_MOST_RECENT_FILES)
+  ENDIF()
+  IF (PARSE_SHOW_OVERALL_MOST_RECENT_FILES)
+    APPEND_SET(ARGS SHOW_OVERALL_MOST_RECENT_FILES)
+  ENDIF()
+
+  #PRINT_VAR(ARGS)
+  TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP(${ARGS})
+  #PRINT_VAR(MOST_RECENT_TIMESTAMP)
+
+  SET(${PARSE_MOST_RECENT_TIMESTAMP_OUT} ${MOST_RECENT_TIMESTAMP}
+    PARENT_SCOPE)
+
+ENDFUNCTION()
+
+
+#
+# @FUNCTION: TRIBITS_FIND_MOST_RECENT_BINARY_FILE_TIMESTAMP()
+#
+# Find the most modified binary file in a set of base directories and return
+# its timestamp.
+#
+# Usage::
+#
+#   TRIBITS_FIND_MOST_RECENT_BINARY_FILE_TIMESTAMP(
+#     BINARY_BASE_DIRS <dir0> <dir1> ... 
+#     [MOST_RECENT_TIMESTAMP_OUT  <mostRecentTimestamp>]
+#     [MOST_RECENT_FILEPATH_BASE_DIR_OUT <mostRecentFilepathBaseDir>]
+#     [MOST_RECENT_RELATIVE_FILEPATH_OUT <mostRecentRelativeFilePath>]
+#     [SHOW_MOST_RECENT_FILES]
+#     [SHOW_OVERALL_MOST_RECENT_FILE]
+#     )
+#
+# This function applies a set of filters to CMake files that are known to not
+# be significant in the rebuild.
+#
+FUNCTION(TRIBITS_FIND_MOST_RECENT_BINARY_FILE_TIMESTAMP)
+   
+  #
+  # A) Parse the input arguments
+  #
+
+  PARSE_ARGUMENTS(
+     #prefix
+     PARSE
+     #lists
+     "BINARY_BASE_DIRS;MOST_RECENT_TIMESTAMP_OUT"
+     #options
+     "SHOW_MOST_RECENT_FILES;SHOW_OVERALL_MOST_RECENT_FILES"
+     ${ARGN}
+     )
+
+  #
+  # B) Define filters for binary files we know are not significant
+  #
+
+  SET(FILTER_OUT_BINARY_FILE_REGEXS
+    "CMakeFiles/" "CTestTestfile.cmake$" "cmake_install.cmake$" "/Makefile$"
+    )
+
+  #
+  # C) Call the function TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP()
+  #
+
+  SET(ARGS)
+  APPEND_SET(ARGS BASE_DIRS ${PARSE_BINARY_BASE_DIRS})
+  APPEND_SET(ARGS EXCLUDE_REGEXES ${FILTER_OUT_BINARY_FILE_REGEXS})
   APPEND_SET(ARGS MOST_RECENT_TIMESTAMP_OUT MOST_RECENT_TIMESTAMP)
   IF (PARSE_SHOW_MOST_RECENT_FILES)
     APPEND_SET(ARGS SHOW_MOST_RECENT_FILES)
