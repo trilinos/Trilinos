@@ -5530,10 +5530,10 @@ void BulkData::update_comm_list(const std::vector<stk::mesh::Entity>& shared_mod
                         m_entity_comm_list.begin() + n_old ,
                         m_entity_comm_list.end() );
 
-    EntityCommListInfoVector::iterator i =
+    EntityCommListInfoVector::iterator iter =
       std::unique( m_entity_comm_list.begin() , m_entity_comm_list.end() );
 
-    m_entity_comm_list.erase( i , m_entity_comm_list.end() );
+    m_entity_comm_list.erase( iter , m_entity_comm_list.end() );
 
     for(size_t i=0; i<m_entity_comm_list.size(); ++i) {
       EntityKey key = m_entity_comm_list[i].key;
