@@ -560,6 +560,24 @@ bool CommAll::allocate_buffers( ParallelMachine comm ,
   return global_flag ;
 }
 
+bool CommAll::allocate_buffers( ParallelMachine comm ,
+                                unsigned const* const send_sizes,
+                                unsigned const* const recv_sizes )
+{
+  CommBuffer::deallocate( m_size , m_send );
+  CommBuffer::deallocate( m_size , m_recv );
+
+  m_comm = comm ;
+  m_size = parallel_machine_size( comm );
+  m_rank = parallel_machine_rank( comm );
+  m_bound = ~0u; // force sparse
+
+  m_send = CommBuffer::allocate( m_size, send_sizes );
+  m_recv = CommBuffer::allocate( m_size, recv_sizes );
+
+  return true;
+}
+
 bool CommAll::allocate_symmetric_buffers( ParallelMachine comm ,
                                           unsigned const* const buf_sizes )
 {

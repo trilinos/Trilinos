@@ -105,8 +105,9 @@ parallel::DistributedIndex::KeySpanVector convert_entity_keys_to_spans( const Me
 struct EntityCommListInfo
 {
   EntityKey key;
-  Entity    entity; // Might be invalid if entity has been deleted
+  Entity    entity; // Might be invalid if entity has been deleted.
   int  owner;
+  const EntityComm* entity_comm; // Might be NULL if entity has been deleted.
 };
 
 typedef TrackedVectorMetaFunc<EntityCommListInfo, EntityCommTag>::type EntityCommListInfoVector;

@@ -341,7 +341,8 @@ public:
   ParallelFor( const FunctorType & functor
              , const Policy      & policy )
     {
-      for ( typename Policy::member_type i = policy.begin() , e = policy.end() ; i < e ; ++i ) {
+      const typename Policy::member_type e = policy.end();
+      for ( typename Policy::member_type i = policy.begin() ; i < e ; ++i ) {
         functor( i );
       }
     }
@@ -377,7 +378,8 @@ public:
 
       typename Reduce::reference_type update = Reduce::init( functor , result_ptr );
       
-      for ( typename Policy::member_type i = policy.begin() , e = policy.end() ; i < e ; ++i ) {
+      const typename Policy::member_type e = policy.end();
+      for ( typename Policy::member_type i = policy.begin() ; i < e ; ++i ) {
         functor( i , update );
       }
 
@@ -405,7 +407,8 @@ public:
 
       typename Reduce::reference_type update = Reduce::init( functor , result_ptr );
       
-      for ( typename Policy::member_type i = policy.begin() , e = policy.end() ; i < e ; ++i ) {
+      const typename Policy::member_type e = policy.end();
+      for ( typename Policy::member_type i = policy.begin() ; i < e ; ++i ) {
         functor( i , update , true );
       }
 

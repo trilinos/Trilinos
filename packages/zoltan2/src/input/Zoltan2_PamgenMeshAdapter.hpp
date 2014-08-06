@@ -50,11 +50,21 @@
 #ifndef _ZOLTAN2_PAMGENMESHADAPTER_HPP_
 #define _ZOLTAN2_PAMGENMESHADAPTER_HPP_
 
+#if defined(__STDC_VERSION__)
+#  if (__STDC_VERSION__ >= 199901L)
+#    define ST_ZU   "%zu"
+#  else
+#    define ST_ZU   "%lu"
+#  endif
+#else
+#  define ST_ZU   "%lu"
+#endif
+
 #include <Zoltan2_MeshAdapter.hpp>
-#include <Zoltan2_StrideData.hpp>
+#include <Zoltan2_StridedData.hpp>
 #include <vector>
 
-#include <im_exodusII_l.h
+#include <im_exodusII_l.h>
 
 namespace Zoltan2 {
 
@@ -105,7 +115,7 @@ public:
    *  lifetime of this InputAdapter.
    */
 
-  PamgenMeshAdapter(string typestr = "region");
+  PamgenMeshAdapter(std::string typestr);
 
   ////////////////////////////////////////////////////////////////
   // The MeshAdapter interface.
@@ -120,7 +130,7 @@ public:
     }
 
     if (MESH_VERTEX == etype) {
-      return num_nodes_:
+      return num_nodes_;
     }
 
     return 0;
@@ -153,7 +163,7 @@ public:
   int getDimensionOf() const { return dimension_; }
 
   void getCoordinatesViewOf(MeshEntityType etype, const scalar_t *&coords,
-			    int &stride, int dim} const {
+			    int &stride, int dim) const {
     if (dim != dimension_) {
       std::ostringstream emsg;
       emsg << __FILE__ << ";" <<__LINE__
@@ -198,7 +208,7 @@ public:
 		   const lno_t *&offsets, const gid_t *& adjacencyIds) const
   {
     if (MESH_REGION == source && MESH_VERTEX == target && 3 == dimension_ ||
-	MESH_FACE == source && MESH_VERTEX == target && 2 == dimension) {
+	MESH_FACE == source && MESH_VERTEX == target && 2 == dimension_) {
       offsets = elemOffsets_;
       adjacencyIds = elemToNode_;
     } else if (MESH_REGION == source && 2 == dimension_) {
@@ -269,10 +279,10 @@ private:
   }
 
 template <typename User>
-PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
+PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
   dimension_(0)
 {
-  setPrimaryEntityType(typestr);
+  //setEntityTypes(typestr, "vertex", "vertex");
 
   int error = 0;
   int exoid = 0;
@@ -303,7 +313,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
 
   for(long long i = 0; i < num_elem_blk; i++){
     elem_type[i] = new char [MAX_STR_LENGTH + 1];
-    error += im_ex_get_elem_block_l(exoid, elem_blk_id[i], elem_type[i],
+    error += im_ex_get_elem_block_l(exoid, elem_blk_ids[i], elem_type[i],
 				    (long long*)&(num_elem_this_blk[i]),
 				    (long long*)&(num_nodes_per_elem[i]),
 				    (long long*)&(num_attr[i]));
@@ -316,7 +326,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
 
   for(long long b = 0; b < num_elem_blk; b++) {
     connect[b] = new long long [num_nodes_per_elem[b]*num_elem_this_blk[b]];
-    error += im_ex_get_elem_conn_l(exoid, elem_blk_id[b], connect[b]);
+    error += im_ex_get_elem_conn_l(exoid, elem_blk_ids[b], connect[b]);
 
     for(long long i = 0; i < num_elem_this_blk[b]; i++) {
       Acoords_[a] = 0;

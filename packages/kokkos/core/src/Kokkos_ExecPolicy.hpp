@@ -55,7 +55,7 @@ namespace Kokkos {
  */
 template< class ExecSpace  = Kokkos::DefaultExecutionSpace
         , class WorkArgTag = void
-        , typename IntType = long int
+        , typename IntType = int
         , unsigned GranularityPowerOfTwo = 3 /* Chunk size 8 */
         >
 class RangePolicy {

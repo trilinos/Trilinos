@@ -264,6 +264,7 @@ void parallel_reduce( const ExecPolicy  & policy
   (void) Impl::ParallelReduce< FunctorType , ExecPolicy >( functor , policy );
 }
 
+// integral range policy
 template< class FunctorType >
 inline
 void parallel_reduce( const size_t        work_count
@@ -292,6 +293,7 @@ void parallel_reduce( const size_t        work_count
   (void) Impl::ParallelReduce< FunctorType , policy >( functor , policy(0,work_count) , result_view );
 }
 
+// general policy and view ouput
 template< class ExecPolicy , class FunctorType , class ViewType >
 inline
 void parallel_reduce( const ExecPolicy  & policy 
@@ -304,6 +306,42 @@ void parallel_reduce( const ExecPolicy  & policy
   (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( functor , policy , result_view );
 }
 
+// general policy and pod or array of pod output
+template< class ExecPolicy , class FunctorType >
+inline
+void parallel_reduce( const ExecPolicy  & policy 
+                    , const FunctorType & functor 
+                    , typename Impl::enable_if<
+                      ( ! Impl::is_integral< ExecPolicy >::value )
+                      , typename Kokkos::Impl::ReduceAdapter< FunctorType >::reference_type
+                      >::type result_ref )
+{
+  typedef typename
+    Kokkos::Impl::FunctorPolicyExecutionSpace< FunctorType , ExecPolicy >::execution_space
+      execution_space ;
+
+  typedef Kokkos::Impl::ReduceAdapter< FunctorType >  Reduce ;
+
+  // Wrap the result output request in a view to inform the implementation
+  // of the type and memory space.
+
+  typedef typename Kokkos::Impl::if_c< Reduce::StaticValueSize
+                                     , typename Reduce::scalar_type
+                                     , typename Reduce::pointer_type
+                                     >::type value_type ;
+
+  Kokkos::View< value_type
+              , typename execution_space::host_mirror_device_type
+              , Kokkos::MemoryUnmanaged
+              >
+    result_view( Reduce::pointer( result_ref )
+               , Reduce::value_count( functor )
+               );
+
+  (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( functor , policy , result_view );
+}
+
+// integral range policy and view ouput
 template< class FunctorType , class ViewType >
 inline
 void parallel_reduce( const size_t        work_count
@@ -320,7 +358,7 @@ void parallel_reduce( const size_t        work_count
   (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( functor , ExecPolicy(0,work_count) , result_view );
 }
 
-/** TODO: Deprecate the following specialization: */
+// integral range policy and pod or array of pod output
 template< class FunctorType >
 inline
 void parallel_reduce( const size_t        work_count ,

@@ -4074,11 +4074,13 @@ void BulkData::destroy_all_ghosting()
         entity_comm_map_clear( i->key );
         internal_destroy_entity( i->entity );
       i->key = EntityKey();
+      i->entity_comm = NULL;
     }
     else {
         entity_comm_map_clear_ghosting(i->key);
       if ( entity_comm_map(i->key).empty() ) {
         i->key = EntityKey();
+        i->entity_comm = NULL;
       }
     }
   }
@@ -4194,8 +4196,9 @@ void BulkData::ghost_entities_and_fields(Ghosting & ghosting, const std::set<Ent
           pack_field_values(*this, buf , entity );
 
           if (phase == 1) {
-              entity_comm_map_insert(entity, EntityCommInfo(ghosting.ordinal(), proc));
-            EntityCommListInfo comm_info = {entity_key(entity), entity, parallel_owner_rank(entity)};
+            entity_comm_map_insert(entity, EntityCommInfo(ghosting.ordinal(), proc));
+            const EntityComm* entity_comm = m_entity_comm_map.entity_comm(entity_key(entity));
+            EntityCommListInfo comm_info = {entity_key(entity), entity, parallel_owner_rank(entity), entity_comm};
             m_entity_comm_list.push_back( comm_info );
           }
         }
@@ -4280,7 +4283,8 @@ void BulkData::ghost_entities_and_fields(Ghosting & ghosting, const std::set<Ent
           const EntityCommInfo tmp( ghosting.ordinal() , owner );
 
           if ( entity_comm_map_insert(entity, tmp) ) {
-            EntityCommListInfo comm_info = {entity_key(entity), entity, parallel_owner_rank(entity)};
+            const EntityComm* entity_comm = m_entity_comm_map.entity_comm(entity_key(entity));
+            EntityCommListInfo comm_info = {entity_key(entity), entity, parallel_owner_rank(entity), entity_comm};
             m_entity_comm_list.push_back( comm_info );
           }
         }
@@ -5518,7 +5522,7 @@ void BulkData::update_comm_list(const std::vector<stk::mesh::Entity>& shared_mod
     m_entity_comm_list.reserve(m_entity_comm_list.size() + shared_modified.size());
     for (size_t i = 0, e = shared_modified.size(); i < e; ++i) {
       Entity entity = shared_modified[i];
-      EntityCommListInfo new_comm = {entity_key(entity), entity, parallel_owner_rank(entity)};
+      EntityCommListInfo new_comm = {entity_key(entity), entity, parallel_owner_rank(entity), NULL};
       m_entity_comm_list.push_back(new_comm);
     }
 
@@ -5526,14 +5530,18 @@ void BulkData::update_comm_list(const std::vector<stk::mesh::Entity>& shared_mod
                         m_entity_comm_list.begin() + n_old ,
                         m_entity_comm_list.end() );
 
-    {
-      EntityCommListInfoVector::iterator i =
-        std::unique( m_entity_comm_list.begin() , m_entity_comm_list.end() );
+    EntityCommListInfoVector::iterator i =
+      std::unique( m_entity_comm_list.begin() , m_entity_comm_list.end() );
 
-      m_entity_comm_list.erase( i , m_entity_comm_list.end() );
+    m_entity_comm_list.erase( i , m_entity_comm_list.end() );
 
-      internal_sync_comm_list_owners();
+    for(size_t i=0; i<m_entity_comm_list.size(); ++i) {
+      EntityKey key = m_entity_comm_list[i].key;
+      const EntityComm* entity_comm = m_entity_comm_map.entity_comm(key);
+      m_entity_comm_list[i].entity_comm = entity_comm;
     }
+
+    internal_sync_comm_list_owners();
 }
 //----------------------------------------------------------------------
 
@@ -5775,10 +5783,12 @@ void BulkData::update_comm_list_based_on_changes_in_comm_map()
   EntityCommListInfoVector::iterator i = m_entity_comm_list.begin();
   bool changed = false ;
   for ( ; i != m_entity_comm_list.end() ; ++i ) {
-    if ( entity_comm_map(i->key).empty() ) {
+    const EntityComm* entity_comm = m_entity_comm_map.entity_comm(i->key);
+    if ( entity_comm == NULL || entity_comm->comm_map.empty() ) {
       i->key = EntityKey();
       changed = true;
     }
+    i->entity_comm = entity_comm;
   }
   if ( changed ) {
     i = std::remove_if( m_entity_comm_list.begin() ,

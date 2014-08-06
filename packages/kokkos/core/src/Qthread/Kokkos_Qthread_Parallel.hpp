@@ -78,7 +78,8 @@ public:
     const ParallelFor & self = * ((const ParallelFor *) arg );
     const Policy range( self.m_policy , exec.worker_rank() , exec.worker_size() );
 
-    for ( typename Policy::member_type iwork = range.begin(), work_end = range.end() ; iwork < work_end ; ++iwork ) {
+    const typename Policy::member_type work_end = range.end();
+    for ( typename Policy::member_type iwork = range.begin() ; iwork < work_end ; ++iwork ) {
       self.m_func( iwork );
     }
 
@@ -121,7 +122,8 @@ public:
     // Initialize thread-local value
     typename Reduce::reference_type update = Reduce::init( self.m_func , exec.exec_all_reduce_value() );
 
-    for ( typename Policy::member_type iwork = range.begin(), work_end = range.end() ; iwork < work_end ; ++iwork ) {
+    const typename Policy::member_type work_end = range.end();
+    for ( typename Policy::member_type iwork = range.begin() ; iwork < work_end ; ++iwork ) {
       self.m_func( iwork , update );
     }
 
@@ -236,13 +238,14 @@ public:
     // Initialize thread-local value
     typename Reduce::reference_type update = Reduce::init( self.m_func , exec.exec_all_reduce_value() );
 
-    for ( typename Policy::member_type iwork = range.begin(), work_end = range.end() ; iwork < work_end ; ++iwork ) {
+    const typename Policy::member_type work_end = range.end();
+    for ( typename Policy::member_type iwork = range.begin() ; iwork < work_end ; ++iwork ) {
       self.m_func( iwork , update , false );
     }
 
     exec.exec_all_scan( self.m_func );
 
-    for ( typename Policy::member_type iwork = range.begin(), work_end = range.end() ; iwork < work_end ; ++iwork ) {
+    for ( typename Policy::member_type iwork = range.begin() ; iwork < work_end ; ++iwork ) {
       self.m_func( iwork , update , true );
     }
 

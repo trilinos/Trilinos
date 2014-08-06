@@ -1138,13 +1138,15 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
                            int NumPermuteIDs,
                            int* PermuteToLIDs,
                            int* PermuteFromLIDs,
-                           const Epetra_OffsetIndex * Indexor);
+                           const Epetra_OffsetIndex * Indexor,
+                           Epetra_CombineMode CombineMode = Zero);
   int CopyAndPermuteRowMatrix(const Epetra_RowMatrix& A,
                                     int NumSameIDs,
                                     int NumPermuteIDs,
                                     int* PermuteToLIDs,
                                     int* PermuteFromLIDs,
-                                    const Epetra_OffsetIndex * Indexor);
+                                    const Epetra_OffsetIndex * Indexor,
+                                    Epetra_CombineMode CombineMode);
 
   template<typename int_type>
   int CopyAndPermuteRowMatrix(const Epetra_RowMatrix& A,
@@ -1152,14 +1154,16 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
                                     int NumPermuteIDs,
                                     int* PermuteToLIDs,
                                     int* PermuteFromLIDs,
-                                    const Epetra_OffsetIndex * Indexor);
+                                    const Epetra_OffsetIndex * Indexor,
+                                    Epetra_CombineMode CombineMode);
 
   int CopyAndPermuteCrsGraph(const Epetra_CrsGraph& A,
                                    int NumSameIDs,
                                    int NumPermuteIDs,
                                    int* PermuteToLIDs,
                                    int* PermuteFromLIDs,
-                                   const Epetra_OffsetIndex * Indexor);
+                                   const Epetra_OffsetIndex * Indexor,
+                                   Epetra_CombineMode CombineMode);
 
   template<typename int_type>
   int CopyAndPermuteCrsGraph(const Epetra_CrsGraph& A,
@@ -1167,7 +1171,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
                                    int NumPermuteIDs,
                                    int* PermuteToLIDs,
                                    int* PermuteFromLIDs,
-                                   const Epetra_OffsetIndex * Indexor);
+                                   const Epetra_OffsetIndex * Indexor,
+                                   Epetra_CombineMode CombineMode);
 
         int PackAndPrepare(const Epetra_SrcDistObject& Source,
                            int NumExportIDs,
