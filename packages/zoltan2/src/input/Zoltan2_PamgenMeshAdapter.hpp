@@ -105,7 +105,7 @@ public:
    *  lifetime of this InputAdapter.
    */
 
-  PamgenMeshAdapter(string typestr = "region");
+  PamgenMeshAdapter(std::string typestr = "region");
 
   ////////////////////////////////////////////////////////////////
   // The MeshAdapter interface.
@@ -120,7 +120,7 @@ public:
     }
 
     if (MESH_VERTEX == etype) {
-      return num_nodes_:
+      return num_nodes_;
     }
 
     return 0;
