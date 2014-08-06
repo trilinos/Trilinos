@@ -124,8 +124,8 @@ public:
 
   size_t getLocalNumOf(MeshEntityType etype) const
   {
-    if (MESH_REGION == etype && 3 == dimension_ ||
-	MESH_FACE == etype && 2 == dimension_) {
+    if ((MESH_REGION == etype && 3 == dimension_) ||
+	(MESH_FACE == etype && 2 == dimension_)) {
       return num_elem_;
     }
 
@@ -138,8 +138,8 @@ public:
    
   void getIDsViewOf(MeshEntityType etype, const gid_t *&Ids) const
   {
-    if (MESH_REGION == etype && 3 == dimension_ ||
-	MESH_FACE == etype && 2 == dimension_) {
+    if ((MESH_REGION == etype && 3 == dimension_) ||
+	(MESH_FACE == etype && 2 == dimension_)) {
       Ids = element_num_map_;
     }
 
@@ -256,7 +256,8 @@ public:
   }
 
 private:
-  long long dimension_, num_nodes_, num_elem_, *element_num_map_;
+  long long dimension_, num_nodes_, num_elem_;
+  const long long *element_num_map_;
   long long *node_num_map_, *elemToNode_, tnoct_, *elemOffsets_;
   double *coords_, *Acoords_;
   std::vector<long long> start_, adj_;
@@ -293,7 +294,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
   error += im_ex_get_coord_l(exoid, coords_, coords_ + num_nodes_,
 			     coords_ + 2 * num_nodes_);
 
-  *element_num_map_ = new long long [num_elem_];
+  element_num_map_ = new long long [num_elem_];
   error += im_ex_get_elem_num_map_l(exoid, element_num_map_);
 
   *node_num_map_ = new long long [num_nodes_];
