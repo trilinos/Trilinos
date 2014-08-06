@@ -125,8 +125,7 @@ namespace { // (anonymous)
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   MultiVector () :
-    base_type (Teuchos::rcp (new Map<LocalOrdinal, GlobalOrdinal, node_type> ())),
-    lclMV_ (this->getMap ()->getNode ())
+    base_type (Teuchos::rcp (new Map<LocalOrdinal, GlobalOrdinal, node_type> ()))
   {}
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -134,8 +133,7 @@ namespace { // (anonymous)
   MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
                size_t NumVectors,
                bool zeroOut) : /* default is true */
-    base_type (map),
-    lclMV_ (map->getNode ())
+    base_type (map)
   {
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
@@ -151,21 +149,12 @@ namespace { // (anonymous)
       // one-argument version of arcp to allocate memory.  This should
       // not fill the memory by default, otherwise we would lose the
       // first-touch allocation optimization.
-      //ArrayRCP<Scalar> data = node->template allocBuffer<Scalar>(myLen*NumVectors);
 
       // Allocate a DualView from new Kokkos, wrap its device data into an ArrayRCP
       view_ = dual_view_type("MV::dual_view",myLen,NumVectors);
-      ArrayRCP<Scalar> data = Kokkos::Compat::persistingView(view_.d_view);
-      // getting stride of view: if second dimension is 0 stride might
-      // be 0, so take view_dimension instead
-      size_t stride[8];
-      view_.stride (stride);
-      const size_t LDA = view_.dimension_1 () > 1 ? stride[1] : view_.dimension_0 ();
-      MVT::initializeValues(lclMV_,myLen,NumVectors,data,LDA);
     }
     else {
       view_ = dual_view_type("MV::dual_view",0,NumVectors);
-      MVT::initializeValues(lclMV_,0,NumVectors,Teuchos::null,0);
     }
 
     origView_ = view_;
@@ -175,29 +164,10 @@ namespace { // (anonymous)
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   MultiVector (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& source) :
     base_type (source),
-    lclMV_ (MVT::getNode (source.lclMV_)),
     view_ (source.view_),
     origView_ (source.origView_),
     whichVectors_ (source.whichVectors_)
-  {
-    using Teuchos::ArrayRCP;
-
-    const LocalOrdinal myLen = source.getLocalLength ();
-    const size_t numVecs = source.getNumVectors ();
-    // FIXME (mfh 28 Jul 2014) Should this be origView_?  Perhaps not.
-    ArrayRCP<Scalar> data = (myLen > 0) ?
-      Kokkos::Compat::persistingView (view_.d_view) :
-      Teuchos::null;
-    // Get stride of view: if second dimension is 0, the
-    // stride might be 0, so take view_dimension instead.
-    size_t stride[8];
-    origView_.stride (stride);
-    const size_t LDA = (origView_.dimension_1 () > 1) ? stride[1] : origView_.dimension_0 ();
-
-    // This just sets the dimensions, pointer, and stride of lclMV_.
-    // This is only a shallow copy.
-    MVT::initializeValues (lclMV_, myLen, numVecs, data, LDA);
-  }
+  {}
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -205,7 +175,6 @@ namespace { // (anonymous)
   MultiVector (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& source,
                const Teuchos::DataAccess copyOrView) :
     base_type (source),
-    lclMV_ (MVT::getNode (source.lclMV_)),
     view_ (source.view_),
     origView_ (source.origView_),
     whichVectors_ (source.whichVectors_)
@@ -215,26 +184,11 @@ namespace { // (anonymous)
       // a deep copy.
       MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type> cpy =
         createCopy (source);
-      this->lclMV_ = cpy.lclMV_;
       this->view_ = cpy.view_;
       this->origView_ = cpy.origView_;
       this->whichVectors_ = cpy.whichVectors_;
     }
     else if (copyOrView == Teuchos::View) {
-      const LocalOrdinal myLen = source.getLocalLength ();
-      const size_t numVecs = source.getNumVectors ();
-      Teuchos::ArrayRCP<Scalar> data = (myLen > 0) ?
-        Kokkos::Compat::persistingView (view_.d_view) :
-        Teuchos::null;
-      // Get stride of view: if second dimension is 0, the
-      // stride might be 0, so take view_dimension instead.
-      size_t stride[8];
-      origView_.stride (stride);
-      const size_t LDA = (origView_.dimension_1 () > 1) ? stride[1] : origView_.dimension_0 ();
-
-      // This just sets the dimensions, pointer, and stride of lclMV_.
-      // This is only a shallow copy.
-      MVT::initializeValues (lclMV_, myLen, numVecs, data, LDA);
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(
@@ -250,7 +204,6 @@ namespace { // (anonymous)
   MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
                const dual_view_type& view) :
     base_type (map),
-    lclMV_ (map->getNode ()),
     view_ (view),
     origView_ (view)
   {
@@ -271,10 +224,6 @@ namespace { // (anonymous)
     const size_t myLen = getLocalLength ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(LDA < myLen, std::invalid_argument,
       ": LDA must be large enough to accomodate the local entries.");
-
-    // This is a shallow copy into the KokkosClassic::MultiVector.
-    MVT::initializeValues (lclMV_, myLen, numVecs,
-                           Kokkos::Compat::persistingView (view_.d_view), LDA);
   }
 
 
@@ -284,7 +233,6 @@ namespace { // (anonymous)
                const dual_view_type& view,
                const dual_view_type& origView) :
     base_type (map),
-    lclMV_ (map->getNode ()),
     view_ (view),
     origView_ (origView)
   {
@@ -305,13 +253,6 @@ namespace { // (anonymous)
     const size_t myLen = getLocalLength ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(LDA < myLen, std::invalid_argument,
       ": LDA must be large enough to accomodate the local entries.");
-
-    const size_t origNumRows = origView.dimension_0 ();
-    const size_t origNumCols = origView.dimension_1 ();
-    // This is a shallow copy into the KokkosClassic::MultiVector.
-    MVT::initializeValues (lclMV_, myLen, numVecs,
-                           Kokkos::Compat::persistingView (view_.d_view), LDA,
-                           origNumRows, origNumCols);
   }
 
 
@@ -321,7 +262,6 @@ namespace { // (anonymous)
                const dual_view_type& view,
                const Teuchos::ArrayView<const size_t>& whichVectors) :
     base_type (map),
-    lclMV_ (map->getNode ()),
     view_ (view),
     origView_ (view),
     whichVectors_ (whichVectors.begin (), whichVectors.end ())
@@ -361,10 +301,6 @@ namespace { // (anonymous)
       // whichVectors_.size() == 0 means "constant stride."
       whichVectors_.clear ();
     }
-    // This is a shallow copy into the KokkosClassic::MultiVector.
-    // KokkosClassic::MultiVector doesn't know about whichVectors_.
-    MVT::initializeValues (lclMV_, myLen, numVecs,
-                           Kokkos::Compat::persistingView (view_.d_view), LDA);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -374,7 +310,6 @@ namespace { // (anonymous)
                const dual_view_type& origView,
                const Teuchos::ArrayView<const size_t>& whichVectors) :
     base_type (map),
-    lclMV_ (map->getNode ()),
     view_ (view),
     origView_ (origView),
     whichVectors_ (whichVectors.begin (), whichVectors.end ())
@@ -414,14 +349,6 @@ namespace { // (anonymous)
       // whichVectors_.size() == 0 means "constant stride."
       whichVectors_.clear ();
     }
-
-    const size_t origNumRows = origView.dimension_0 ();
-    const size_t origNumCols = origView.dimension_1 ();
-    // This is a shallow copy into the KokkosClassic::MultiVector.
-    // KokkosClassic::MultiVector doesn't know about whichVectors_.
-    MVT::initializeValues (lclMV_, myLen, numVecs,
-                           Kokkos::Compat::persistingView (view_.d_view), LDA,
-                           origNumRows, origNumCols);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -430,8 +357,7 @@ namespace { // (anonymous)
                const Teuchos::ArrayView<const Scalar>& data,
                const size_t LDA,
                const size_t numVecs) :
-    base_type (map),
-    lclMV_ (map->getNode ())
+    base_type (map)
   {
     // Deep copy constructor, constant stride (NO whichVectors_).
     // There is no need for a deep copy constructor with nonconstant stride.
@@ -448,16 +374,6 @@ namespace { // (anonymous)
       }
     }
     view_.template modify<typename dual_view_type::host_mirror_device_type> ();
-
-    // Get stride of view: if second dimension is 0, the
-    // stride might be 0, so take view_dimension instead.
-    size_t stride[8];
-    view_.stride (stride);
-    const size_t stride_1 = (view_.dimension_1 () > 1) ?
-      stride[1] : origView_.dimension_0 ();
-    MVT::initializeValues (lclMV_, numRows, numVecs,
-                           Kokkos::Compat::persistingView (view_.d_view),
-                           stride_1);
     origView_ = view_;
   }
 
@@ -466,8 +382,7 @@ namespace { // (anonymous)
   MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
                const Teuchos::ArrayView<const ArrayView<const Scalar> >& ArrayOfPtrs,
                const size_t NumVectors) :
-    base_type (map),
-    lclMV_ (map->getNode ())
+    base_type (map)
   {
     using Teuchos::ArrayRCP;
     using Teuchos::ArrayView;
@@ -483,19 +398,12 @@ namespace { // (anonymous)
 
     // TODO: write a functor and use parallel_for.
 
-    // Get stride of view: if second dimension is 0, the
-    // stride might be 0, so take view_dimension instead.
-    size_t stride[8];
-    view_.stride (stride);
-    const size_t LDA = (view_.dimension_1 () > 1) ? stride[1] : view_.dimension_0 ();
-
     for (size_t i = 0; i < myLen; ++i) {
       for (size_t j = 0; j < NumVectors; ++j) {
         view_.h_view(i,j) = ArrayOfPtrs[j][i];
       }
     }
     view_.template modify<typename dual_view_type::t_host::device_type> ();
-    MVT::initializeValues (lclMV_, myLen, NumVectors, Kokkos::Compat::persistingView (view_.d_view), LDA);
 
     origView_ = view_;
   }
@@ -610,7 +518,6 @@ namespace { // (anonymous)
     const MV& sourceMV = dynamic_cast<const MV&> (sourceObj);
 
     const size_t numCols = this->getNumVectors ();
-    //const size_t stride = MVT::getStride (lclMV_);
 
     // TODO (mfh 15 Sep 2013) When we replace
     // KokkosClassic::MultiVector with a Kokkos::View, there are two
@@ -835,7 +742,6 @@ namespace { // (anonymous)
 #endif // HAVE_TPETRA_DEBUG
 
     if (numVecs > 0 && importLIDs.size () > 0) {
-      //const size_t myStride = MVT::getStride (lclMV_);
 
       // NOTE (mfh 10 Mar 2012, 24 Mar 2014) If you want to implement
       // custom combine modes, start editing here.  Also, if you trust
@@ -1909,13 +1815,6 @@ namespace { // (anonymous)
 
       if (origNumRows != newNumRows || view_.dimension_1 () != numCols) {
         view_ = dual_view_type ("MV::dual_view", newNumRows, numCols);
-
-        // KR FIXME (mfh 10 Jul 2014) Once MultiVector no longer needs
-        // lclMV_, remove the code below.
-        Teuchos::ArrayRCP<Scalar> data =
-          Kokkos::Compat::persistingView (view_.d_view);
-        const size_t stride = newNumRows;
-        MVT::initializeValues (lclMV_, newNumRows, numCols, data, stride);
       }
     }
     else if (newMap.is_null ()) { // Case 2: current Map is nonnull, new Map is null
@@ -1924,13 +1823,6 @@ namespace { // (anonymous)
       const size_t newNumRows = static_cast<size_t> (0);
       const size_t numCols = this->getNumVectors ();
       view_ = dual_view_type ("MV::dual_view", newNumRows, numCols);
-
-      // KR FIXME (mfh 10 Jul 2014) Once MultiVector no longer needs
-      // lclMV_, remove the code below.
-      Teuchos::ArrayRCP<Scalar> data =
-        Kokkos::Compat::persistingView (view_.d_view);
-      const size_t stride = newNumRows;
-      MVT::initializeValues (lclMV_, newNumRows, numCols, data, stride);
     }
 
     this->map_ = newMap;
@@ -2451,17 +2343,6 @@ namespace { // (anonymous)
       // Kokkos::View instead of a Teuchos::Array, all debate will go
       // away and we will unquestionably have view semantics.
       whichVectors_ = source.whichVectors_;
-
-      const LocalOrdinal myLen = source.getLocalLength ();
-      const size_t numVecs = source.getNumVectors ();
-      Teuchos::ArrayRCP<Scalar> data = (myLen > 0) ?
-        Kokkos::Compat::persistingView (view_.d_view) :
-        Teuchos::null;
-      const size_t stride = (myLen > 0) ?
-        static_cast<size_t> (myLen) :
-        static_cast<size_t> (0);
-      // This just sets the dimensions, pointer, and stride of lclMV_.
-      MVT::initializeValues (lclMV_, myLen, numVecs, data, stride);
     }
     return *this;
   }
@@ -3001,11 +2882,6 @@ namespace { // (anonymous)
       Teuchos::ArrayRCP<scalar_type> dataAsArcp =
         Kokkos::Compat::persistingView (view_.template view<host_type> ());
       return Teuchos::arcp_const_cast<const scalar_type> (dataAsArcp);
-
-      // Teuchos::RCP<Node> node = MVT::getNode (lclMV_);
-      // return node->template viewBuffer<Scalar> (getStride () * (getNumVectors () - 1) +
-      //                                           getLocalLength (),
-      //                                           MVT::getValues (lclMV_));
     }
   }
 
@@ -3034,24 +2910,6 @@ namespace { // (anonymous)
       Teuchos::ArrayRCP<scalar_type> dataAsArcp =
         Kokkos::Compat::persistingView (view_.template view<host_type> ());
       return dataAsArcp;
-
-      // FIXME (mfh 10 May 2014) In the classic version of
-      // MultiVector, once the reference count of the returned result
-      // of get1dViewNonConst() reaches zero, any changes in the
-      // result are synchronized to the (GPU) device.  We don't do
-      // that here, but we could, but adding a custom destructor to
-      // the Teuchos::ArrayRCP that synchs to the device.  On the
-      // other hand, that would run counter to the semantics of the
-      // Kokkos refactor version of Tpetra, where every Tpetra object
-      // is supposed to behave like Kokkos::DualView: that is,
-      // requiring the user to request synchronization between host
-      // and device explicitly.
-
-      // Teuchos::RCP<Node> node = MVT::getNode (lclMV_);
-      // return node->template viewBufferNonConst<Scalar> (KokkosClassic::ReadWrite,
-      //                                                   getStride () * (getNumVectors () - 1) +
-      //                                                   getLocalLength (),
-      //                                                   MVT::getValuesNonConst (lclMV_));
     }
   }
 
@@ -3194,17 +3052,6 @@ namespace { // (anonymous)
 #endif
     Kokkos::DeviceGEMM<Scalar,DeviceType>::GEMM(transA,transB,alpha,
        Atmp->getDualView().d_view,Btmp->getDualView().d_view,beta_local,Ctmp->getDualView().d_view);
-
-    /*KMV &C_mv = Ctmp->lclMV_;
-    {
-      // get local multivectors
-      const KMV &A_mv = Atmp->lclMV_;
-      const KMV &B_mv = Btmp->lclMV_;
-      // do the multiply (GEMM)
-      //
-      // KR FIXME Need GEMM wrapper
-      MVT::GEMM(C_mv,transA,transB,alpha,A_mv,B_mv,beta_local);
-    }*/
 
     // Dispose of (possibly) extra copies of A, B
     Atmp = null;
@@ -3500,11 +3347,15 @@ namespace { // (anonymous)
     // OK to leave this in place as backwards compat.
 
     KMV kmv (this->getMap ()->getNode ());
+    ArrayRCP<Scalar> data = (getLocalLength() > 0) ?
+      Kokkos::Compat::persistingView (view_.d_view) :
+      Teuchos::null;
+
     size_t stride[8];
     origView_.stride (stride);
     const size_t LDA = origView_.dimension_1 () > 1 ? stride[1] : origView_.dimension_0 ();
     MVT::initializeValues (kmv, getLocalLength (), getNumVectors (),
-                           Kokkos::Compat::persistingView (view_.d_view),
+                           data,
                            LDA,
                            getOrigNumLocalRows (),
                            getOrigNumLocalCols ());
@@ -3519,9 +3370,23 @@ namespace { // (anonymous)
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   TEUCHOS_DEPRECATED
-  KokkosClassic::MultiVector<Scalar,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >&
+  KokkosClassic::MultiVector<Scalar,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::getLocalMVNonConst() {
-    return lclMV_;
+
+    KMV kmv (this->getMap ()->getNode ());
+    ArrayRCP<Scalar> data = (getLocalLength() > 0) ?
+      Kokkos::Compat::persistingView (view_.d_view) :
+      Teuchos::null;
+
+    size_t stride[8];
+    origView_.stride (stride);
+    const size_t LDA = origView_.dimension_1 () > 1 ? stride[1] : origView_.dimension_0 ();
+    MVT::initializeValues (kmv, getLocalLength (), getNumVectors (),
+                           data,
+                           LDA,
+                           getOrigNumLocalRows (),
+                           getOrigNumLocalCols ());
+    return kmv;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>

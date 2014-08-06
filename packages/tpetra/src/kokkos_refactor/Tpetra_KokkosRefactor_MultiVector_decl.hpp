@@ -879,7 +879,7 @@ namespace Tpetra {
     ///   time.  Please call getLocalMV() instead.  There was never
     ///   actually a need for a getLocalMVNonConst() method, as far as
     ///   I can tell.
-    TEUCHOS_DEPRECATED KokkosClassic::MultiVector<Scalar,Node> &
+    TEUCHOS_DEPRECATED KokkosClassic::MultiVector<Scalar,Node> 
     getLocalMVNonConst ();
 
     /// \brief Get the Kokkos::DualView which implements local storage.
@@ -1548,7 +1548,7 @@ namespace Tpetra {
     ///
     /// This is actually just a view of the Kokkos::DualView \c view_.
     /// The latter owns the MultiVector's data.
-    KMV lclMV_;
+    //KMV lclMV_;
 
     /// \brief The Kokkos::DualView containing the MultiVector's data.
     ///
