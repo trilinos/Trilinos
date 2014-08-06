@@ -61,6 +61,10 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_TestHelpers.hpp"
+#include "MueLu_CoarseMapFactory.hpp"
+#include "MueLu_UncoupledAggregationFactory.hpp"
+#include "MueLu_TentativePFactory.hpp"
+#include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
@@ -102,6 +106,7 @@ int main(int argc, char *argv[]) {
   bool optTimings = true; clp.setOption("timings", "notimings", &optTimings, "print timings to screen");
   bool optImplicitTranspose = true; clp.setOption("implicit", "explicit", &optImplicitTranspose, "whether to form R implicitly");
   bool optExport = false; clp.setOption("export", "noexport", &optExport, "write matrices to file");
+  SC   optThreshold = 0.; clp.setOption("threshold", &optThreshold, "aggregation threshold");
 
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
@@ -279,15 +284,33 @@ int main(int argc, char *argv[]) {
   Level fineLevel, coarseLevel;
   RAPFactory AcFact;
   AcFact.DisableMultipleCallCheck();
+  RCP<UncoupledAggregationFactory> aggfact;
+  RCP<TentativePFactory> ptentfact;
+  RCP<CoalesceDropFactory> cdfact;
   RCP<SaPFactory>    PFact;
   RCP<TransPFactory> RFact;
+  RCP<CoarseMapFactory> mapfact;
+
   {
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("RAPScalingTest: 2 - Setup")));
 
     MueLuTests::TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel); // set a default FactoryManager
     fineLevel.Set("A", A);
 
+    cdfact = rcp(new CoalesceDropFactory());
+    ParameterList cdlist = *(cdfact->GetValidParameterList());
+    cdlist.set("aggregation: drop tol",optThreshold);
+    cdlist.set("lightweight wrap",true);
+    aggfact = rcp(new UncoupledAggregationFactory());
+    aggfact->SetFactory("Graph",cdfact);
+    mapfact = rcp(new CoarseMapFactory() );
+    mapfact->SetFactory("Aggregates",aggfact);
+    ptentfact = rcp(new TentativePFactory());
+    ptentfact->SetFactory("Aggregates",aggfact);
+    ptentfact->SetFactory("CoarseMap",mapfact);
+    cdfact->SetParameterList(cdlist);
     PFact = rcp(new SaPFactory());
+    PFact->SetFactory("P",ptentfact);
     coarseLevel.Request("P", PFact.get());
     PFact->Build(fineLevel, coarseLevel);
 
