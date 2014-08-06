@@ -54,6 +54,7 @@
 /*                          Includes                          */
 /**************************************************************/
 
+#include <Zoltan2_TestHelpers.hpp>
 #include <Zoltan2_PamgenMeshAdapter.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
 
@@ -77,6 +78,7 @@ using Teuchos::RCP;
 /*********************************************************/
 //Tpetra typedefs
 typedef Tpetra::DefaultPlatform::DefaultPlatformType            Platform;
+typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t>     tMVector_t;
 
 
 
@@ -191,7 +193,7 @@ int main(int argc, char *argv[]) {
   long long maxInt = 9223372036854775807LL;
   Create_Pamgen_Mesh(meshInput.c_str(), dim, rank, numProcs, maxInt);
 
-  typedef Zoltan2::PamgenMeshAdapter<long long> inputAdapter_t;
+  typedef Zoltan2::PamgenMeshAdapter<tMVector_t> inputAdapter_t;
 
   inputAdapter_t ia();
 
