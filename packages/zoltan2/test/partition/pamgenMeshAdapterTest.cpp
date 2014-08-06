@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
 		<<xmlMeshInFileName<<"\" ...\n\n";
     }
     Teuchos::updateParametersFromXmlFile(xmlMeshInFileName, 
-					 Teuchos::inoutArg(&inputMeshList));
+					 Teuchos::inoutArg(inputMeshList));
     if (MyPID == 0) {
       inputMeshList.print(cout,2,true,true);
       cout << "\n";
