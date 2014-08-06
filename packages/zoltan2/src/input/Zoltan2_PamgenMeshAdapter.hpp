@@ -272,7 +272,7 @@ template <typename User>
 PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
   dimension_(0)
 {
-  setPrimaryEntityType(typestr);
+  setEntityTypes(typestr, "vertex", "vertex");
 
   int error = 0;
   int exoid = 0;
