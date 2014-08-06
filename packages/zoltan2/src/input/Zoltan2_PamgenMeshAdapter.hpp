@@ -153,7 +153,7 @@ public:
   int getDimensionOf() const { return dimension_; }
 
   void getCoordinatesViewOf(MeshEntityType etype, const scalar_t *&coords,
-			    int &stride, int dim} const {
+			    int &stride, int dim) const {
     if (dim != dimension_) {
       std::ostringstream emsg;
       emsg << __FILE__ << ";" <<__LINE__
