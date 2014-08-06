@@ -17,16 +17,36 @@
 # b) Generate an export makefile for the upstream packages and TPLs
 #
 # c) Call the configure script for the external package passing the compilers,
-# compiler flags, and a pointer to the export makefile (which they just use to
-# grab the include dirs and libs out of).
+# compiler flags, and a pointer to the export makefile (which is justed used
+# to lift the include dirs and libs).
 #
 # d) Define library targets for the external project and define a build rule
 # for generating those libraries given the list of header and source files in
 # the external project.
 
+#
+# A) Determine if any downstream changes require a rebuild
+#
+
+INCLUDE(TribitsGetMostRecentFileTimestamp)
+
+#SET(TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP_DUMP ON)
+
+TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP(
+  BASE_DIRS
+    "${PackageWithSubpackages_SOURCE_DIR}"
+    "${SimpleCxx_SOURCE_DIR}"
+  MOST_RECENT_TIMESTAMP_OUT  MOST_RECENT_SOURCE_TIMESTAMP_OUT
+  SHOW_MOST_RECENT_FILES
+  SHOW_OVERALL_MOST_RECENT_FILES
+  )
+
 TRIBITS_PACKAGE(WrapExternal)
 
-# A) Write the export makefile that will be used by the external project
+#
+# B) Write the export makefile that will be used by the external project
+#
+
 SET(EXPORT_MAKKEFILE "${CMAKE_CURRENT_BINARY_DIR}/Makefile.export.TribExProj")
 TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES(
   PACKAGE_NAME ${PACKAGE_NAME}
@@ -42,7 +62,10 @@ SET(EXTERNAL_FUNC_LIB_FILE ${EXTERNAL_FUNC_BINARY_DIR}/libexternal_func.a)
 
 FILE(MAKE_DIRECTORY ${EXTERNAL_FUNC_BINARY_DIR})
 
-# B) Do configuration of the external project
+#
+# C) Do configuration of the external project
+#
+
 EXECUTE_PROCESS(
   COMMAND ${PYTHON_EXECUTABLE} ${EXTERNAL_FUNC_SOURCE_DIR}/configure.py
     --with-export-makefile=${EXPORT_MAKKEFILE}
@@ -50,7 +73,10 @@ EXECUTE_PROCESS(
     --build-dir=${EXTERNAL_FUNC_BINARY_DIR}
   )
 
-# C) Define a custom build rule and target to create exteranl_func library
+#
+# D) Define a custom build rule and target to create exteranl_func library
+#
+
 ADD_CUSTOM_COMMAND(
   OUTPUT ${EXTERNAL_FUNC_LIB_FILE}
   DEPENDS ${EXTERNAL_FUNC_SOURCE_DIR}/external_func.hpp
@@ -63,11 +89,12 @@ ADD_CUSTOM_TARGET( build_external_func
 # NOTE: You have to create a custom target associated with the generated
 # library.  You can't just use the custom command.
   
-# D) Add the imported library with TRIBITS_ADD_LIBRARY( ... IMPORTED ...)
+#
+# E) Add the imported library with TRIBITS_ADD_LIBRARY( ... IMPORTED ...)
 #
 # Below, I just manuall do what TRIBITS_ADD_LIBRARY() would do automatically.
 
-# D.1) Create an imported library target and set up the depenancies
+# E.1) Create an imported library target and set up the depenancies
 ADD_LIBRARY(exteranl_func STATIC IMPORTED GLBOAL) # GLOBAL
 SET_PROPERTY(TARGET exteranl_func PROPERTY IMPORTED_LOCATION ${EXTERNAL_FUNC_LIB_FILE})
 ADD_DEPENDENCIES(build_external_func pws_c)
@@ -77,7 +104,7 @@ GLOBAL_SET(exteranl_func_IMPORTLIB_TARGET build_external_func)
 # generation command and add it as a dependancy of the imported library
 # target.
 
-# D.2) Update the TriBITS varaibles
+# E.2) Update the TriBITS varaibles
 APPEND_SET(${PACKAGE_NAME}_LIB_TARGETS exteranl_func)
 GLOBAL_SET(${PACKAGE_NAME}_LIBRARIES exteranl_func pws_c)
 GLOBAL_SET(${PACKAGE_NAME}_INCLUDE_DIRS ${EXTERNAL_FUNC_SOURCE_DIR})
@@ -88,7 +115,7 @@ INCLUDE_DIRECTORIES(${EXTERNAL_FUNC_SOURCE_DIR})
 # link_target_libraries() :-(
 
 #
-# E) Add an executable and test to show that it works!
+# F) Add an executable and test to show that it works!
 #
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(run_external_func
