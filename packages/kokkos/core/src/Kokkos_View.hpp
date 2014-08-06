@@ -1270,25 +1270,6 @@ void deep_copy( const View< DT, DL, DD, DM, DS > & dst ,
 
 //----------------------------------------------------------------------------
 
-/**\brief  Wrap an unmanaged view around a simple value
- *         residing in the current execution space.
- */
-template< class T >
-View<T,Kokkos::ExecutionSpace,Kokkos::MemoryUnmanaged>
-inline
-create_unmanaged_view( T & value
-                     , typename Kokkos::Impl::enable_if<(
-                         ( Kokkos::Impl::AnalyzeShape<T>::shape::rank == 0 )
-                         &&
-                         ( ! Kokkos::Impl::is_const<T>::value )
-                       )>::type * = 0
-                     )
-{
-  return View<T,Kokkos::ExecutionSpace,Kokkos::MemoryUnmanaged>( & value );
-}
-
-//----------------------------------------------------------------------------
-
 template< class T , class L , class D , class M , class S >
 typename Impl::enable_if<(
     View<T,L,D,M,S>::is_managed
