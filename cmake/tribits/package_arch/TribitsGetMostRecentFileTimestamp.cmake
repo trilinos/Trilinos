@@ -113,8 +113,10 @@ FUNCTION(TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP)
       OUTPUT_VARIABLE MOST_RECENT_TIMESTAMP_AND_FILE
       OUTPUT_STRIP_TRAILING_WHITESPACE
       )
-     # Here, this will return a string with the date and the file name of the
-     # form:
+     # Here, note that %T@ gives the modification time stamp in seconds since
+     # Jan. 1, 1970, 00:00 GMT.  The -printf argument %p gives the file path.
+     # This results in the return a string with the modification date (in
+     # fractional seconds) and the file name of the form:
      #
      #     1407353359.5651538200 ./<relative-dir>/<some-file-name>
 
