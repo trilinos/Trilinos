@@ -6363,7 +6363,7 @@ typename Adapter::part_t Zoltan2_AlgMJ<Adapter>::pointAssign(
         if ((*partBoxes)[i].pointInBox(dim, point)) {
           foundPart = (*partBoxes)[i].getpId();
           std::cout << "Point (";
-          for (int i = 0; i < dim; i++) std::cout << point[i] << " ";
+          for (int j = 0; j < dim; j++) std::cout << point[j] << " ";
           std::cout << ") found in box " << i << " part " << foundPart 
                     << std::endl;
           (*partBoxes)[i].print();
