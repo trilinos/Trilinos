@@ -136,21 +136,18 @@ public:
     return 0;
   }
    
-  size_t getIDsViewOf(MeshEntityType etype, const gid_t *&Ids) const
+  void getIDsViewOf(MeshEntityType etype, const gid_t *&Ids) const
   {
     if (MESH_REGION == etype && 3 == dimension_ ||
 	MESH_FACE == etype && 2 == dimension_) {
       Ids = element_num_map_;
-      return num_elem_;
     }
 
     if (MESH_VERTEX == etype) {
       Ids = node_num_map_;
-      return num_nodes_;
     }
 
     Ids = NULL;
-    return 0;
   }
 
   void getWeigthsViewOf(MeshEntityType etype, const scalar_t *&weights,
