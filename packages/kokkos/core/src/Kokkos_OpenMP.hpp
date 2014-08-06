@@ -80,8 +80,9 @@ public:
   //@{
 
   //! The tag (what type of kokkos_object is this).
-  typedef Impl::DeviceTag       kokkos_tag ;
+  typedef Impl::ExecutionSpaceTag  kokkos_tag ;
   typedef OpenMP                device_type ;
+  typedef OpenMP                execution_space ;
   typedef HostSpace::size_type  size_type ;
   typedef HostSpace             memory_space ;
   typedef OpenMP                scratch_memory_space ;

@@ -70,7 +70,7 @@ public:
   //! \name Type declarations that all Kokkos devices must provide.
   //@{
   //! The tag (what type of kokkos_object is this).
-  typedef Impl::DeviceTag          kokkos_tag ;
+  typedef Impl::ExecutionSpaceTag  kokkos_tag ;
 
   typedef Qthread                  device_type ;
   typedef Kokkos::HostSpace        memory_space ;

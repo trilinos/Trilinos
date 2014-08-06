@@ -73,9 +73,10 @@ public:
   //! \name Type declarations that all Kokkos devices must provide.
   //@{
   //! The tag (what type of kokkos_object is this).
-  typedef Impl::DeviceTag       kokkos_tag ;
+  typedef Impl::ExecutionSpaceTag  kokkos_tag ;
 
   typedef Threads                  device_type ;
+  typedef Threads                  execution_space ;
   typedef Kokkos::HostSpace        memory_space ;
   typedef Threads                  scratch_memory_space ;
   typedef memory_space::size_type  size_type ;

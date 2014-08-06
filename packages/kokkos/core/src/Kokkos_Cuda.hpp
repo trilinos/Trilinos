@@ -128,9 +128,11 @@ public:
   //@{
 
   //! The tag (what type of kokkos_object is this).
-  typedef Impl::DeviceTag       kokkos_tag ;
+  typedef Impl::ExecutionSpaceTag  kokkos_tag ;
   //! The device type (same as this class).
   typedef Cuda                  device_type ;
+  //! This device's execution space.
+  typedef Cuda                  execution_space ;
   //! This device's preferred memory space.
   typedef CudaSpace             memory_space ;
   typedef Cuda                  scratch_memory_space ;

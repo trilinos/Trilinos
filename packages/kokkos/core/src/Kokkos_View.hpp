@@ -117,25 +117,39 @@ private:
   // can only be Arg1, Device can be Arg1 or Arg2, and
   // MemoryTraits can be Arg1, Arg2 or Arg3
 
-  enum { Arg1IsLayout = is_layout<Arg1>::value };
+  enum { Arg1IsLayout = Impl::is_layout<Arg1>::value };
 
-  enum { Arg1IsDevice = is_device<Arg1>::value };
-  enum { Arg2IsDevice = is_device<Arg2>::value };
+  enum { Arg1IsExecSpace = Impl::is_execution_space<Arg1>::value };
+  enum { Arg2IsExecSpace = Impl::is_execution_space<Arg2>::value };
 
-  enum { Arg1IsMemory = is_memorytraits<Arg1>::value };
-  enum { Arg2IsMemory = is_memorytraits<Arg2>::value };
-  enum { Arg3IsMemory = is_memorytraits<Arg3>::value };
+  enum { Arg1IsMemorySpace = Impl::is_memory_space<Arg1>::value };
+  enum { Arg2IsMemorySpace = Impl::is_memory_space<Arg2>::value };
 
+  enum { Arg1IsMemoryTraits = Impl::is_memorytraits<Arg1>::value };
+  enum { Arg2IsMemoryTraits = Impl::is_memorytraits<Arg2>::value };
+  enum { Arg3IsMemoryTraits = Impl::is_memorytraits<Arg3>::value };
 
-  typedef typename Impl::if_c< Arg1IsDevice , Arg1 ,
-          typename Impl::if_c< Arg2IsDevice , Arg2 , Impl::DefaultDeviceType
-          >::type >::type  DeviceType ;
+  // Arg1 or Arg2 may be either execution space or memory space
 
-  typedef typename Impl::if_c< Arg1IsLayout , Arg1 , typename DeviceType::array_layout >::type ArrayLayout;
+  typedef typename Impl::if_c<( Arg1IsExecSpace || Arg1IsMemorySpace ), Arg1 ,
+          typename Impl::if_c<( Arg2IsExecSpace || Arg2IsMemorySpace ), Arg2 ,
+          Kokkos::DefaultExecutionSpace 
+          >::type >::type::execution_space  ExecutionSpace ;
 
-  typedef typename Impl::if_c< Arg1IsMemory , Arg1 ,
-          typename Impl::if_c< Arg2IsMemory , Arg2 ,
-          typename Impl::if_c< Arg3IsMemory , Arg3 , MemoryManaged
+  typedef typename Impl::if_c<( Arg1IsExecSpace || Arg1IsMemorySpace ), Arg1 ,
+          typename Impl::if_c<( Arg2IsExecSpace || Arg2IsMemorySpace ), Arg2 ,
+          Kokkos::DefaultExecutionSpace 
+          >::type >::type::memory_space  MemorySpace ;
+
+  // Arg1 may be array layout
+  typedef typename Impl::if_c< Arg1IsLayout , Arg1 ,
+          typename ExecutionSpace::array_layout
+          >::type ArrayLayout ;
+
+  // Arg1, Arg2, or Arg3 may be memory traits
+  typedef typename Impl::if_c< Arg1IsMemoryTraits , Arg1 ,
+          typename Impl::if_c< Arg2IsMemoryTraits , Arg2 ,
+          typename Impl::if_c< Arg3IsMemoryTraits , Arg3 , MemoryManaged
           >::type >::type >::type  MemoryTraits ;
 
   typedef Impl::AnalyzeShape<DataType> analysis ;
@@ -166,25 +180,26 @@ public:
   //------------------------------------
   // Layout and shape traits:
 
-  typedef typename Impl::StaticAssertSame< ArrayLayout , typename ArrayLayout ::array_layout >::type  array_layout ;
-
+  typedef ArrayLayout                array_layout ;
   typedef typename analysis::shape   shape_type ;
 
   enum { rank         = shape_type::rank };
   enum { rank_dynamic = shape_type::rank_dynamic };
 
   //------------------------------------
-  // Device and memory space traits:
+  // Execution space, memory space, and memory traits:
 
-  typedef typename Impl::StaticAssertSame< DeviceType   , typename DeviceType  ::device_type   >::type  device_type ;
-  typedef typename Impl::StaticAssertSame< MemoryTraits , typename MemoryTraits::memory_traits >::type  memory_traits ;
+  typedef ExecutionSpace  device_type ; // for backward compatibility
 
-  typedef typename device_type::memory_space  memory_space ;
-  typedef typename device_type::size_type     size_type ;
+  typedef ExecutionSpace  execution_space ;
+  typedef MemorySpace     memory_space ;
+  typedef MemoryTraits    memory_traits ;
 
-  enum { is_hostspace = Impl::is_same< memory_space , HostSpace >::value };
-  enum { is_managed   = memory_traits::Unmanaged == 0 };
-  enum { is_random_access   = memory_traits::RandomAccess == 1 };
+  typedef typename device_type::size_type  size_type ;
+
+  enum { is_hostspace      = Impl::is_same< memory_space , HostSpace >::value };
+  enum { is_managed        = memory_traits::Unmanaged == 0 };
+  enum { is_random_access  = memory_traits::RandomAccess == 1 };
 
   //------------------------------------
   // Specialization tag:
@@ -433,6 +448,16 @@ template< class DataType ,
             typename ViewTraits<DataType,Arg1Type,Arg2Type,Arg3Type>::specialize >
 class View ;
 
+namespace Impl {
+
+template< class C >
+struct is_view : public bool_< false > {};
+
+template< class D , class A1 , class A2 , class A3 , class S >
+struct is_view< View< D , A1 , A2 , A3 , S > > : public bool_< true > {};
+
+}
+
 //----------------------------------------------------------------------------
 
 /*
@@ -457,7 +482,7 @@ class View< DataType , Arg1Type , Arg2Type , Arg3Type , Impl::ViewDefault >
   : public ViewTraits< DataType , Arg1Type , Arg2Type, Arg3Type >
 {
 public:
-  typedef Impl::ViewTag kokkos_tag;
+
   typedef ViewTraits< DataType , Arg1Type , Arg2Type, Arg3Type > traits ;
 
 private:

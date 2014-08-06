@@ -77,9 +77,11 @@ public:
   //@{
 
   //! The tag (what type of kokkos_object is this).
-  typedef Impl::DeviceTag       kokkos_tag ;
+  typedef Impl::ExecutionSpaceTag  kokkos_tag ;
+
   //! The device type (same as this class).
   typedef Serial                device_type ;
+  typedef Serial                execution_space ;
   //! The size_type typedef best suited for this device.
   typedef HostSpace::size_type  size_type ;
   //! This device's preferred memory space.

@@ -65,8 +65,13 @@ namespace Kokkos {
 class CudaSpace {
 public:
 
-  typedef CudaSpace     memory_space ;
-  typedef unsigned int  size_type ;
+  typedef Impl::MemorySpaceTag  kokkos_tag ;
+  typedef CudaSpace             memory_space ;
+  typedef unsigned int          size_type ;
+
+#if defined( KOKKOS_HAVE_CUDA )
+  typedef Kokkos::Cuda  execution_space ;
+#endif
 
   /** \brief  Allocate a contiguous block of memory on the Cuda device
    *          with size = scalar_size * scalar_count.

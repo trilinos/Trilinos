@@ -300,7 +300,7 @@ void parallel_reduce( const ExecPolicy  & policy
                     , const FunctorType & functor 
                     , const ViewType    & result_view
                     , typename Impl::enable_if<
-                      ( is_view<ViewType>::value && ! Impl::is_integral< ExecPolicy >::value
+                      ( Impl::is_view<ViewType>::value && ! Impl::is_integral< ExecPolicy >::value
                       )>::type * = 0 )
 {
   (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( functor , policy , result_view );
@@ -347,7 +347,7 @@ inline
 void parallel_reduce( const size_t        work_count
                     , const FunctorType & functor 
                     , const ViewType    & result_view
-                    , typename Impl::enable_if<( is_view<ViewType>::value )>::type * = 0 )
+                    , typename Impl::enable_if<( Impl::is_view<ViewType>::value )>::type * = 0 )
 {
   typedef typename
     Impl::FunctorPolicyExecutionSpace< FunctorType , void >::execution_space
