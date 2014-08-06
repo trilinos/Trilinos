@@ -621,7 +621,8 @@ int Epetra_MultiVector::CopyAndPermute(const Epetra_SrcDistObject& Source,
                                        int NumPermuteIDs,
                                        int * PermuteToLIDs,
                                        int *PermuteFromLIDs,
-                                       const Epetra_OffsetIndex * Indexor)
+                                       const Epetra_OffsetIndex * Indexor,
+                                       Epetra_CombineMode CombineMode)
 {
   (void)Indexor;
 
@@ -669,9 +670,10 @@ int Epetra_MultiVector::CopyAndPermute(const Epetra_SrcDistObject& Source,
   // Do copy first
   if (NumSameIDs>0)
     if (To!=From) {
-      for (int i=0; i < numVectors; i++)
-  for (int j=0; j<NumSameEntries; j++)
-    To[i][j] = From[i][j];
+      for (int i=0; i < numVectors; i++) {
+        if (CombineMode==Epetra_AddLocalAlso) for (int j=0; j<NumSameEntries; j++) To[i][j] += From[i][j]; // Add to existing value
+        else for (int j=0; j<NumSameEntries; j++) To[i][j] = From[i][j];
+    }
     }
   // Do local permutation next
   if (NumPermuteIDs>0) {
@@ -679,16 +681,16 @@ int Epetra_MultiVector::CopyAndPermute(const Epetra_SrcDistObject& Source,
     // Point entry case
     if (Case1) {
 
-      if (numVectors==1)
-  for (int j=0; j<NumPermuteIDs; j++)
-    To[0][PermuteToLIDs[j]] = From[0][PermuteFromLIDs[j]];
-
+      if (numVectors==1) {
+        if (CombineMode==Epetra_AddLocalAlso) for (int j=0; j<NumPermuteIDs; j++) To[0][PermuteToLIDs[j]] += From[0][PermuteFromLIDs[j]]; // Add to existing value
+        else for (int j=0; j<NumPermuteIDs; j++) To[0][PermuteToLIDs[j]] = From[0][PermuteFromLIDs[j]];
+  }
       else {
   for (int j=0; j<NumPermuteIDs; j++) {
     jj = PermuteToLIDs[j];
     jjj = PermuteFromLIDs[j];
-    for (int i=0; i<numVectors; i++)
-      To[i][jj] = From[i][jjj];
+    if (CombineMode==Epetra_AddLocalAlso) for (int i=0; i<numVectors; i++) To[i][jj] += From[i][jjj]; // Add to existing value
+    else for (int i=0; i<numVectors; i++) To[i][jj] = From[i][jjj];
   }
       }
     }
@@ -698,9 +700,8 @@ int Epetra_MultiVector::CopyAndPermute(const Epetra_SrcDistObject& Source,
       for (int j=0; j<NumPermuteIDs; j++) {
   jj = MaxElementSize*PermuteToLIDs[j];
   jjj = MaxElementSize*PermuteFromLIDs[j];
-  for (int i=0; i<numVectors; i++)
-    for (k=0; k<MaxElementSize; k++)
-      To[i][jj+k] = From[i][jjj+k];
+      if (CombineMode==Epetra_AddLocalAlso) for (int i=0; i<numVectors; i++) for (k=0; k<MaxElementSize; k++) To[i][jj+k] += From[i][jjj+k]; // Add to existing value
+      else for(int i=0; i<numVectors; i++) for (k=0; k<MaxElementSize; k++) To[i][jj+k] = From[i][jjj+k];
       }
     }
 
@@ -711,9 +712,8 @@ int Epetra_MultiVector::CopyAndPermute(const Epetra_SrcDistObject& Source,
   jj = ToFirstPointInElementList[PermuteToLIDs[j]];
   jjj = FromFirstPointInElementList[PermuteFromLIDs[j]];
   int ElementSize = FromElementSizeList[PermuteFromLIDs[j]];
-  for (int i=0; i<numVectors; i++)
-    for (k=0; k<ElementSize; k++)
-      To[i][jj+k] = From[i][jjj+k];
+      if (CombineMode==Epetra_AddLocalAlso) for (int i=0; i<numVectors; i++) for (k=0; k<ElementSize; k++) To[i][jj+k] += From[i][jjj+k]; // Add to existing value
+      else for (int i=0; i<numVectors; i++) for (k=0; k<ElementSize; k++) To[i][jj+k] = From[i][jjj+k];
       }
     }
   }

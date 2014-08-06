@@ -388,7 +388,8 @@ int EpetraExt_BlockDiagMatrix::CopyAndPermute(const Epetra_SrcDistObject& Source
                                            int NumPermuteIDs,
                                            int * PermuteToLIDs,
                                            int * PermuteFromLIDs,
-                                           const Epetra_OffsetIndex * Indexor){
+                                           const Epetra_OffsetIndex * Indexor,
+                                           Epetra_CombineMode CombineMode){
   (void)Indexor;
 
   const EpetraExt_BlockDiagMatrix & A = dynamic_cast<const EpetraExt_BlockDiagMatrix &>(Source);
@@ -434,8 +435,8 @@ int EpetraExt_BlockDiagMatrix::CopyAndPermute(const Epetra_SrcDistObject& Source
   // Do copy first
   if (NumSameIDs>0)
     if (To!=From) {
-	for (j=0; j<NumSameEntries; j++)
-	  To[j] = From[j];
+      if (CombineMode==Epetra_AddLocalAlso) for (int j=0; j<NumSameEntries; j++) To[j] += From[j]; // Add to existing value
+      else for (int j=0; j<NumSameEntries; j++) To[j] = From[j];
     }
   // Do local permutation next
   if (NumPermuteIDs>0) {
@@ -443,8 +444,8 @@ int EpetraExt_BlockDiagMatrix::CopyAndPermute(const Epetra_SrcDistObject& Source
     // Point entry case
     if (Case1) {
       
-      for (j=0; j<NumPermuteIDs; j++) 
-	To[PermuteToLIDs[j]] = From[PermuteFromLIDs[j]];
+      if (CombineMode==Epetra_AddLocalAlso) for (int j=0; j<NumPermuteIDs; j++) To[PermuteToLIDs[j]] += From[PermuteFromLIDs[j]]; // Add to existing value
+      else for (int j=0; j<NumPermuteIDs; j++) To[PermuteToLIDs[j]] = From[PermuteFromLIDs[j]];
     }
     // constant element size case
     else if (Case2) {
@@ -452,8 +453,8 @@ int EpetraExt_BlockDiagMatrix::CopyAndPermute(const Epetra_SrcDistObject& Source
       for (j=0; j<NumPermuteIDs; j++) {
 	jj = MaxElementSize*PermuteToLIDs[j];
 	jjj = MaxElementSize*PermuteFromLIDs[j];
-	  for (k=0; k<MaxElementSize; k++)
-	    To[jj+k] = From[jjj+k];
+      if (CombineMode==Epetra_AddLocalAlso) for (k=0; k<MaxElementSize; k++) To[jj+k] += From[jjj+k]; // Add to existing value
+      else for (k=0; k<MaxElementSize; k++) To[jj+k] = From[jjj+k];
       }
     }
     
@@ -464,8 +465,8 @@ int EpetraExt_BlockDiagMatrix::CopyAndPermute(const Epetra_SrcDistObject& Source
 	jj = ToFirstPointInElementList[PermuteToLIDs[j]];
 	jjj = FromFirstPointInElementList[PermuteFromLIDs[j]];
 	int ElementSize = FromElementSizeList[PermuteFromLIDs[j]];
-	  for (k=0; k<ElementSize; k++)
-	    To[jj+k] = From[jjj+k];
+      if (CombineMode==Epetra_AddLocalAlso) for (k=0; k<ElementSize; k++) To[jj+k] += From[jjj+k]; // Add to existing value
+      else for (k=0; k<ElementSize; k++) To[jj+k] = From[jjj+k];
       }
     }
   }

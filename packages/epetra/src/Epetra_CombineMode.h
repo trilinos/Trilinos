@@ -83,9 +83,10 @@ enum Epetra_CombineMode {Add,    /*!< Components on the receiving processor
                         AbsMax, /*!< Magnitudes of Off-processor components will be
                                      maxed with magnitudes of existing components
                                      on the receiving processor. (V) */
-                        AbsMin  /*!< Magnitudes of Off-processor components will be
+                        AbsMin, /*!< Magnitudes of Off-processor components will be
                                      min'ed with magnitudes of existing components
                                      on the receiving processor. (V) */
+                        Epetra_AddLocalAlso    /*!< Like Add but local components are also added */
                         };
 
 #endif // EPETRA_COMBINEMODE_H
