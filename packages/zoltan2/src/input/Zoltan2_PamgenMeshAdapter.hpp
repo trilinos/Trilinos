@@ -50,6 +50,16 @@
 #ifndef _ZOLTAN2_PAMGENMESHADAPTER_HPP_
 #define _ZOLTAN2_PAMGENMESHADAPTER_HPP_
 
+#if defined(__STDC_VERSION__)
+#  if (__STDC_VERSION__ >= 199901L)
+#    define ST_ZU   "%zu"
+#  else
+#    define ST_ZU   "%lu"
+#  endif
+#else
+#  define ST_ZU   "%lu"
+#endif
+
 #include <Zoltan2_MeshAdapter.hpp>
 #include <Zoltan2_StridedData.hpp>
 #include <vector>
@@ -272,7 +282,7 @@ template <typename User>
 PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
   dimension_(0)
 {
-  setEntityTypes(typestr, "vertex", "vertex");
+  //setEntityTypes(typestr, "vertex", "vertex");
 
   int error = 0;
   int exoid = 0;
