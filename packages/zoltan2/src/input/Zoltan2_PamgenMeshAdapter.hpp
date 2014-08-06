@@ -269,7 +269,7 @@ private:
   }
 
 template <typename User>
-PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
+PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
   dimension_(0)
 {
   setPrimaryEntityType(typestr);
