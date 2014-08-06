@@ -63,6 +63,7 @@
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 
 // Pamgen includes
 #include "create_inline_mesh.h"
