@@ -41,7 +41,6 @@ INCLUDE(TribitsAddTestHelpers)
 
 
 #
-#
 # @FUNCTION: TRIBITS_ADD_TEST()
 #
 # Add a test or a set of tests for a single executable or command using CTest
