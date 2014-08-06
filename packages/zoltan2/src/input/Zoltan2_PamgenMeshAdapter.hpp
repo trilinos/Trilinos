@@ -51,7 +51,7 @@
 #define _ZOLTAN2_PAMGENMESHADAPTER_HPP_
 
 #include <Zoltan2_MeshAdapter.hpp>
-#include <Zoltan2_StrideData.hpp>
+#include <Zoltan2_StridedData.hpp>
 #include <vector>
 
 #include <im_exodusII_l.h>
