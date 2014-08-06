@@ -621,7 +621,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SuperLU, Scalar, Local
   out << "Comparing results of two solves" << std::endl;
   Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
   Teuchos::ArrayRCP<const Scalar> zview = z.get1dView();
-  TEST_COMPARE_FLOATING_ARRAYS(yview, zview, 2e2*Teuchos::ScalarTraits<Scalar>::eps());
+  TEST_COMPARE_FLOATING_ARRAYS(yview, zview, 5e2*Teuchos::ScalarTraits<Scalar>::eps());
 }
 #endif
 
