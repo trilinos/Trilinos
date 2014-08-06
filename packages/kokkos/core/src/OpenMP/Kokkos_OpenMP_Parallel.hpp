@@ -247,34 +247,6 @@ namespace Kokkos {
 namespace Impl {
 
 template< class FunctorType >
-class ParallelFor< FunctorType , ParallelWorkRequest , ::Kokkos::OpenMP >
-{
-public:
-
-  inline
-  ParallelFor( const FunctorType         & functor ,
-               const ParallelWorkRequest & work )
-  {
-    OpenMPexec::verify_is_process("Kokkos::OpenMP parallel_for");
-    OpenMPexec::verify_initialized("Kokkos::OpenMP parallel_for");
-
-    OpenMPexec::resize_shared_scratch( FunctorShmemSize< FunctorType >::value( functor ) );
-
-#pragma omp parallel
-    {
-      OpenMPexec & exec = * OpenMPexec::get_thread_omp();
-
-      for ( exec.team_work_init( work.league_size , work.team_size ) ; exec.team_work_avail() ; exec.team_work_next() ) {
-        functor( OpenMP( exec ) );
-      }
-    }
-/* END #pragma omp parallel */
-  }
-
-  void wait() {}
-};
-
-template< class FunctorType >
 class ParallelFor< FunctorType , Kokkos::TeamPolicy< Kokkos::OpenMP , void > , Kokkos::OpenMP >
 {
 public:
@@ -300,55 +272,6 @@ public:
       }
     }
 /* END #pragma omp parallel */
-  }
-
-  void wait() {}
-};
-
-template< class FunctorType >
-class ParallelReduce< FunctorType , ParallelWorkRequest , ::Kokkos::OpenMP >
-{
-public:
-  typedef ReduceAdapter< FunctorType >   Reduce ;
-  typedef typename Reduce::pointer_type  pointer_type ;
-
-  inline
-  ParallelReduce( const FunctorType         & functor ,
-                  const ParallelWorkRequest & work ,
-                  pointer_type                result = 0 )
-  {
-    OpenMPexec::verify_is_process("Kokkos::OpenMP parallel_reduce");
-
-    OpenMPexec::resize_shared_scratch( FunctorShmemSize< FunctorType >::value( functor ) );
-    OpenMPexec::resize_reduce_scratch( Reduce::value_size( functor ) );
-
-#pragma omp parallel
-    {
-      OpenMPexec & exec = * OpenMPexec::get_thread_omp();
-
-      typename Reduce::reference_type update = Reduce::init( functor , exec.reduce_base() );
-
-      for ( exec.team_work_init( work.league_size , work.team_size ) ; exec.team_work_avail() ; exec.team_work_next() ) {
-        functor( OpenMP( exec ) , update );
-      }
-    }
-/* END #pragma omp parallel */
-
-    {
-      const pointer_type ptr = pointer_type( OpenMPexec::get_thread_rank_rev(0)->reduce_base() );
-
-      for ( int i = 1 ; i < omp_get_max_threads() ; ++i ) {
-        Reduce::join( functor , ptr , OpenMPexec::get_thread_rank_rev(i)->reduce_base() );
-      }
-
-      Reduce::final( functor , ptr );
-
-      if ( result ) {
-        const int n = Reduce::value_count( functor );
-
-        for ( int j = 0 ; j < n ; ++j ) { result[j] = ptr[j] ; }
-      }
-    }
   }
 
   void wait() {}

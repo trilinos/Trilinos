@@ -196,61 +196,6 @@ private:
 /*--------------------------------------------------------------------------*/
 
 namespace Kokkos {
-namespace Impl {
-
-template< class FunctorType >
-class ParallelFor< FunctorType , ParallelWorkRequest , Serial > {
-public:
-
-  ParallelFor( const FunctorType         & functor
-             , const ParallelWorkRequest & work )
-    {
-      Serial::resize_shared_scratch( FunctorShmemSize< FunctorType >::value( functor ) );
-
-      for ( size_t iwork = 0 ; iwork < work.league_size ; ++iwork ) {
-        functor( Serial(iwork,work.league_size) );
-      }
-    }
-};
-
-template< class FunctorType >
-class ParallelReduce< FunctorType , ParallelWorkRequest , Serial > {
-public:
-
-  typedef ReduceAdapter< FunctorType >  Reduce ;
-  typedef typename Reduce::pointer_type pointer_type ;
-
-  ParallelReduce( const FunctorType         & functor
-                , const ParallelWorkRequest & work
-                ,       pointer_type          result_ptr = 0
-                )
-    {
-      Serial::resize_shared_scratch( FunctorShmemSize< FunctorType >::value( functor ) );
-
-      if ( ! result_ptr ) {
-        result_ptr = (pointer_type) Serial::resize_reduce_scratch( Reduce::value_size( functor ) );
-      }
-
-      typename Reduce::reference_type update = Reduce::init( functor , result_ptr );
-      
-      for ( size_t iwork = 0 ; iwork < work.league_size ; ++iwork ) {
-        functor( Serial(iwork,work.league_size) , update );
-      }
-
-      Reduce::final( functor , result_ptr );
-    }
-
-  inline
-  void wait() const {}
-};
-
-} // namespace Impl
-} // namespace Kokkos
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-namespace Kokkos {
 
 template < class WorkArgTag >
 class TeamPolicy< Kokkos::Serial , WorkArgTag > {
