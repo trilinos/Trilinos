@@ -24,6 +24,8 @@
 # for generating those libraries given the list of header and source files in
 # the external project.
 
+TRIBITS_PACKAGE(WrapExternal)
+
 #
 # A) Determine if any downstream changes require a rebuild
 #
@@ -32,16 +34,24 @@ INCLUDE(TribitsGetMostRecentFileTimestamp)
 
 #SET(TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP_DUMP ON)
 
-TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP(
-  BASE_DIRS
+#TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP(
+#  BASE_DIRS
+#    "${PackageWithSubpackages_SOURCE_DIR}"
+#    "${SimpleCxx_SOURCE_DIR}"
+#  MOST_RECENT_TIMESTAMP_OUT  MOST_RECENT_UPSTREAM_SOURCE_TIMESTAMP
+#  SHOW_MOST_RECENT_FILES
+#  SHOW_OVERALL_MOST_RECENT_FILES
+#  )
+
+TRIBITS_FIND_MOST_RECENT_SOURCE_FILE_TIMESTAMP(
+  SOURCE_BASE_DIRS
     "${PackageWithSubpackages_SOURCE_DIR}"
     "${SimpleCxx_SOURCE_DIR}"
-  MOST_RECENT_TIMESTAMP_OUT  MOST_RECENT_SOURCE_TIMESTAMP_OUT
-  SHOW_MOST_RECENT_FILES
+  MOST_RECENT_TIMESTAMP_OUT  MOST_RECENT_UPSTREAM_SOURCE_TIMESTAMP
+  #SHOW_MOST_RECENT_FILES
   SHOW_OVERALL_MOST_RECENT_FILES
   )
-
-TRIBITS_PACKAGE(WrapExternal)
+PRINT_VAR(MOST_RECENT_UPSTREAM_SOURCE_TIMESTAMP)
 
 #
 # B) Write the export makefile that will be used by the external project
