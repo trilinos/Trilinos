@@ -50,6 +50,7 @@
 
 #include <KokkosCompat_View.hpp>
 #include <Kokkos_MV.hpp>
+#include <Kokkos_MV_GEMM.hpp>
 #include <Kokkos_Random.hpp>
 
 namespace Tpetra {
@@ -1793,17 +1794,17 @@ namespace { // (anonymous)
 
     if (isConstantStride ()) {
       Kokkos::fill_random(view_.d_view,rand_pool,min,max);
-      view_.modify<DeviceType>();
+      view_.template modify<DeviceType>();
     }
     else {
       const size_t numVecs = getNumVectors();
-      view_.sync<DeviceType>();
+      view_.template sync<DeviceType>();
       typedef Kokkos::View<Scalar*, DeviceType> view_type;
       for (size_t k = 0; k < numVecs; ++k) {
         view_type vector_k = Kokkos::subview<view_type> (view_.d_view, Kokkos::ALL (), whichVectors_[k]);
         Kokkos::fill_random(vector_k,rand_pool,min,max);
       }
-      view_.modify<DeviceType>();
+      view_.template modify<DeviceType>();
     }
   }
 
@@ -3191,8 +3192,10 @@ namespace { // (anonymous)
     TEUCHOS_TEST_FOR_EXCEPTION(!Ctmp->isConstantStride() || !Btmp->isConstantStride() || !Atmp->isConstantStride(), std::logic_error,
         errPrefix << "failed making temporary strided copies of input multivectors.");
 #endif
+    Kokkos::DeviceGEMM<Scalar,DeviceType>::GEMM(transA,transB,alpha,
+       Atmp->getDualView().d_view,Btmp->getDualView().d_view,beta_local,Ctmp->getDualView().d_view);
 
-    KMV &C_mv = Ctmp->lclMV_;
+    /*KMV &C_mv = Ctmp->lclMV_;
     {
       // get local multivectors
       const KMV &A_mv = Atmp->lclMV_;
@@ -3201,13 +3204,13 @@ namespace { // (anonymous)
       //
       // KR FIXME Need GEMM wrapper
       MVT::GEMM(C_mv,transA,transB,alpha,A_mv,B_mv,beta_local);
-    }
+    }*/
 
     // Dispose of (possibly) extra copies of A, B
     Atmp = null;
     Btmp = null;
 
-    RCP<Node> node = MVT::getNode(lclMV_);
+    /*RCP<Node> node = MVT::getNode(lclMV_);
     // If *this was not strided, copy the data from the strided version and then delete it
     if (! isConstantStride ()) {
       // *this is not strided, we must put data from Ctmp into *this
@@ -3216,7 +3219,7 @@ namespace { // (anonymous)
       for (size_t j=0; j < numVecs; ++j) {
         node->template copyBuffers<Scalar>(getLocalLength(),MVT::getValues(C_mv,j),MVT::getValuesNonConst(lclMV_,whichVectors_[j]));
       }
-    }
+    }*/
 
     // If Case 2 then sum up *this and distribute it to all processors.
     if (Case2) {
