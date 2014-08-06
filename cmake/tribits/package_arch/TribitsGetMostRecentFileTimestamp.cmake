@@ -106,7 +106,7 @@ FUNCTION(TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP)
     # in currnet directory.
     EXECUTE_PROCESS(
       WORKING_DIRECTORY "${BASE_DIR}"
-      COMMAND find . -type f -printf "'%T@ %p\n'"
+      COMMAND find . -type f -printf "%T@ %p\n"
       ${GREP_V_COMMANDS}
       COMMAND sort -n
       COMMAND tail -1
@@ -116,9 +116,7 @@ FUNCTION(TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP)
      # Here, this will return a string with the date and the file name of the
      # form:
      #
-     #     ''1407353359.5651538200 ./<relative-dir>/<some-file-name>
-     #
-     # Note the two chars '' at the beginning.
+     #     1407353359.5651538200 ./<relative-dir>/<some-file-name>
 
     IF (TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP_DUMP)
       PRINT_VAR(MOST_RECENT_TIMESTAMP_AND_FILE)
@@ -127,10 +125,9 @@ FUNCTION(TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP)
     SPLIT("${MOST_RECENT_TIMESTAMP_AND_FILE}" " "
       MOST_RECENT_TIMESTAMP_AND_FILE_SPLIT)
 
-    # Get the time stamp part and remove the initial "''" chars
+    # Get the time stamp part
     LIST(GET MOST_RECENT_TIMESTAMP_AND_FILE_SPLIT 0
       CURRENT_TIMESTAMP)
-    STRING(SUBSTRING "${CURRENT_TIMESTAMP}" 2 -1 CURRENT_TIMESTAMP)
 
     # Get the relative file path
     LIST(GET MOST_RECENT_TIMESTAMP_AND_FILE_SPLIT 1
