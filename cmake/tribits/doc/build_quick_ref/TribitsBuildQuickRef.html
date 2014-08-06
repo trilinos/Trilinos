@@ -1717,32 +1717,57 @@ enabled <tt class="docutils literal">&lt;Project&gt;</tt> packages.  You can als
 <div class="section" id="building-a-single-object-file">
 <h2><a class="toc-backref" href="#id52">5.6&nbsp;&nbsp;&nbsp;Building a single object file</a></h2>
 <p>To build just a single object file (i.e. to debug a compile problem), first,
-look for the name of the object file to build based on the source file, for
-example for the source file <tt class="docutils literal">SomeSourceFile.cpp</tt>, use:</p>
+look for the target name for the object file build based on the source file,
+for example for the source file <tt class="docutils literal">SomeSourceFile.cpp</tt>, use:</p>
 <pre class="literal-block">
 $ make help | grep SomeSourceFile
 </pre>
-<p>Use the returned name (exactly) for the object file and pass it <tt class="docutils literal">make</tt> as:</p>
+<p>The above will return a target name like:</p>
 <pre class="literal-block">
-$ rm &lt;WHATEVER_WAS_RETURNED_ABOVE&gt; ; make &lt;WHATEVER_WAS_RETURNED_ABOVE&gt;
+... SomeSourceFile.o
 </pre>
-<p>For this to work, you must be in the subdirectory where the
+<p>To find the name of the actual object file, do:</p>
+<pre class="literal-block">
+$ find . -name &quot;*SomeSourceFile*.o&quot;
+</pre>
+<p>that will return something like:</p>
+<pre class="literal-block">
+./CMakeFiles/&lt;source-dir-path&gt;.dir/SomeSourceFile.cpp.o
+</pre>
+<p>(but this file location and name depends on the source directory structure,
+the version of CMake, and other factors).  Use the returned name (exactly) for
+the object file returned in the above find operation to remove the object file
+first, for example, as:</p>
+<pre class="literal-block">
+$ rm ./CMakeFiles/&lt;source-dir-path&gt;.dir/SomeSourceFile.cpp.o
+</pre>
+<p>and then build it again, for example, with:</p>
+<pre class="literal-block">
+$ make SomeSourceFile.o
+</pre>
+<p>Again, the names of the target and the object file name an location depend on
+the CMake version, the structure of your source directories and other factors
+but the general process of using <tt class="docutils literal">make help | grep <span class="pre">&lt;some-file-base-name&gt;</span></tt> to
+find the target name and then doing a find <tt class="docutils literal">find . <span class="pre">-name</span>
+<span class="pre">&quot;*&lt;some-file-base-name&gt;*&quot;</span></tt> to find the actual object file path always works.</p>
+<p>For this process to work correctly, you must be in the subdirectory where the
 <tt class="docutils literal">TRIBITS_ADD_LIBRARY()</tt> or <tt class="docutils literal">TRIBITS_ADD_EXECUTABLE()</tt> command is called
-from its CMakeList.txt file, otherwise the object file targets will not be
+from its <tt class="docutils literal">CMakeList.txt</tt> file, otherwise the object file targets will not be
 listed by <tt class="docutils literal">make help</tt>.</p>
-<p>NOTE: CMake does not seem to correctly address dependencies when building just
-object files so you need to always delete the object file first to make sure
-that it gets rebuilt correctly.</p>
+<p>NOTE: CMake does not seem to not check on dependencies when explicitly
+building object files as shown above so you need to always delete the object
+file first to make sure that it gets rebuilt correctly.</p>
 </div>
 <div class="section" id="building-with-verbose-output-without-reconfiguring">
 <h2><a class="toc-backref" href="#id53">5.7&nbsp;&nbsp;&nbsp;Building with verbose output without reconfiguring</a></h2>
 <p>One can get CMake to generate verbose make output at build type by just
 setting the Makefile variable <tt class="docutils literal">VERBOSE=1</tt>, for example, as:</p>
 <pre class="literal-block">
-$ make [&lt;SOME_TARGET&gt;] VERBOSE=1
+$ make  VERBOSE=1 [&lt;SOME_TARGET&gt;]
 </pre>
 <p>Any number of compile or linking problem can be quickly debugged by seeing the
-raw compile and link lines.</p>
+raw compile and link lines.  See <a class="reference internal" href="#building-a-single-object-file">Building a single object file</a> for more
+details.</p>
 </div>
 <div class="section" id="relink-a-target-without-considering-dependencies">
 <h2><a class="toc-backref" href="#id54">5.8&nbsp;&nbsp;&nbsp;Relink a target without considering dependencies</a></h2>

@@ -1426,23 +1426,48 @@ Building a single object file
 -----------------------------
 
 To build just a single object file (i.e. to debug a compile problem), first,
-look for the name of the object file to build based on the source file, for
-example for the source file ``SomeSourceFile.cpp``, use::
+look for the target name for the object file build based on the source file,
+for example for the source file ``SomeSourceFile.cpp``, use::
 
   $ make help | grep SomeSourceFile
 
-Use the returned name (exactly) for the object file and pass it ``make`` as::
+The above will return a target name like::
 
-    $ rm <WHATEVER_WAS_RETURNED_ABOVE> ; make <WHATEVER_WAS_RETURNED_ABOVE>
+  ... SomeSourceFile.o
 
-For this to work, you must be in the subdirectory where the
+To find the name of the actual object file, do::
+
+  $ find . -name "*SomeSourceFile*.o"
+
+that will return something like::
+
+  ./CMakeFiles/<source-dir-path>.dir/SomeSourceFile.cpp.o
+
+(but this file location and name depends on the source directory structure,
+the version of CMake, and other factors).  Use the returned name (exactly) for
+the object file returned in the above find operation to remove the object file
+first, for example, as::
+
+  $ rm ./CMakeFiles/<source-dir-path>.dir/SomeSourceFile.cpp.o
+
+and then build it again, for example, with::
+
+  $ make SomeSourceFile.o
+
+Again, the names of the target and the object file name an location depend on
+the CMake version, the structure of your source directories and other factors
+but the general process of using ``make help | grep <some-file-base-name>`` to
+find the target name and then doing a find ``find . -name
+"*<some-file-base-name>*"`` to find the actual object file path always works.
+
+For this process to work correctly, you must be in the subdirectory where the
 ``TRIBITS_ADD_LIBRARY()`` or ``TRIBITS_ADD_EXECUTABLE()`` command is called
-from its CMakeList.txt file, otherwise the object file targets will not be
+from its ``CMakeList.txt`` file, otherwise the object file targets will not be
 listed by ``make help``.
 
-NOTE: CMake does not seem to correctly address dependencies when building just
-object files so you need to always delete the object file first to make sure
-that it gets rebuilt correctly.
+NOTE: CMake does not seem to not check on dependencies when explicitly
+building object files as shown above so you need to always delete the object
+file first to make sure that it gets rebuilt correctly.
 
 
 Building with verbose output without reconfiguring
@@ -1451,10 +1476,11 @@ Building with verbose output without reconfiguring
 One can get CMake to generate verbose make output at build type by just
 setting the Makefile variable ``VERBOSE=1``, for example, as::
 
-  $ make [<SOME_TARGET>] VERBOSE=1
+  $ make  VERBOSE=1 [<SOME_TARGET>]
 
 Any number of compile or linking problem can be quickly debugged by seeing the
-raw compile and link lines.
+raw compile and link lines.  See `Building a single object file`_ for more
+details.
 
 
 Relink a target without considering dependencies
