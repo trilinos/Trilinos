@@ -316,7 +316,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
 
   for(long long b = 0; b < num_elem_blk; b++) {
     connect[b] = new long long [num_nodes_per_elem[b]*num_elem_this_blk[b]];
-    error += im_ex_get_elem_conn_l(exoid, elem_blk_id[b], connect[b]);
+    error += im_ex_get_elem_conn_l(exoid, elem_blk_ids[b], connect[b]);
 
     for(long long i = 0; i < num_elem_this_blk[b]; i++) {
       Acoords_[a] = 0;
