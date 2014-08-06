@@ -163,3 +163,95 @@ TEST(CommunicateFieldData, communicate)
       }
   }
 }
+
+
+
+TEST(CommunicateFieldData, communicateMultipleGhostings)
+{
+  stk::ParallelMachine communicator = MPI_COMM_WORLD;
+
+  int numProcs = stk::parallel_machine_size(communicator);
+  if (numProcs != 2) {
+    return;
+  }
+  int myProc = stk::parallel_machine_rank(communicator);
+
+  const unsigned spatialDim = 2;
+  stk::mesh::MetaData meta(spatialDim);
+
+  stk::mesh::Field<double>& field = meta.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "field1");
+  stk::mesh::put_field(field, meta.universal_part());
+
+  stk::mesh::BulkData bulk(meta, communicator);
+
+  setupKeyholeMesh2D_case2(bulk);
+
+  bulk.modification_begin();
+  // Create ghosting
+  stk::mesh::Ghosting & ghosting_1 = bulk.create_ghosting( "CUSTOM_1" );
+  stk::mesh::Ghosting & ghosting_2 = bulk.create_ghosting( "CUSTOM_2" );
+  stk::mesh::Ghosting & ghosting_3 = bulk.create_ghosting( "CUSTOM_3" );
+
+  std::vector<stk::mesh::EntityProc> ghosting_1_send;
+  std::vector<stk::mesh::EntityProc> ghosting_2_send;
+  std::vector<stk::mesh::EntityProc> ghosting_3_send;
+  if (myProc == 1)
+  {
+    const int proc_0 = 0;
+    ghosting_1_send.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::NODE_RANK, stk::mesh::EntityId(7)),proc_0));
+    ghosting_2_send.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::NODE_RANK, stk::mesh::EntityId(8)),proc_0));
+    ghosting_3_send.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::NODE_RANK, stk::mesh::EntityId(9)),proc_0));
+  }
+  bulk.change_ghosting( ghosting_1, ghosting_1_send );
+  bulk.change_ghosting( ghosting_2, ghosting_2_send );
+  bulk.change_ghosting( ghosting_3, ghosting_3_send );
+  bulk.modification_end();
+
+  stk::mesh::Part& owned_part = meta.locally_owned_part();
+  const stk::mesh::BucketVector& owned_node_buckets = bulk.get_buckets(stk::topology::NODE_RANK,owned_part);
+
+  for(size_t i=0; i<owned_node_buckets.size(); ++i) {
+    stk::mesh::Bucket& bucket = *owned_node_buckets[i];
+    for(size_t j=0; j<bucket.size(); ++j) {
+        stk::mesh::Entity node = bucket[j];
+        double value = myProc*100 + bulk.identifier(node);
+        double* data = stk::mesh::field_data(field, node);
+        *data = value;
+    }
+  }
+
+  stk::mesh::Selector select_ghosted = !meta.locally_owned_part() & !meta.globally_shared_part();
+  const stk::mesh::BucketVector& ghosted_buckets = bulk.get_buckets(stk::topology::NODE_RANK,select_ghosted);
+
+  int num_ghosted_nodes = 0;
+  for(size_t i=0; i<ghosted_buckets.size(); ++i) {
+    stk::mesh::Bucket& bucket = *ghosted_buckets[i];
+    for(size_t j=0; j<bucket.size(); ++j) {
+        ++num_ghosted_nodes;
+        stk::mesh::Entity node = bucket[j];
+        double garbage = -1.2345;
+        double* data = stk::mesh::field_data(field, node);
+        *data = garbage;
+    }
+  }
+  if (myProc == 0) {
+      ASSERT_EQ(5, num_ghosted_nodes);
+  }
+  else { // myProc == 1
+      ASSERT_EQ(2, num_ghosted_nodes);
+  }
+
+  std::vector<const stk::mesh::FieldBase*> fields(1, &field);
+  stk::mesh::communicate_field_data(bulk, fields);
+
+  for(size_t i=0; i<ghosted_buckets.size(); ++i) {
+      stk::mesh::Bucket& bucket = *ghosted_buckets[i];
+      for(size_t j=0; j<bucket.size(); ++j) {
+          stk::mesh::Entity node = bucket[j];
+          int owner = bulk.parallel_owner_rank(node);
+          double value = owner*100 + bulk.identifier(node);
+          double* data = stk::mesh::field_data(field, node);
+          EXPECT_EQ(value, *data);
+      }
+  }
+}

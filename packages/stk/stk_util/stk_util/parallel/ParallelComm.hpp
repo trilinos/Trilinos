@@ -160,10 +160,22 @@ public:
   int             parallel_rank() const { return m_rank ; }
 
   /** Obtain the message buffer for a given processor */
-  CommBuffer & send_buffer( int ) const ;
+  CommBuffer & send_buffer( int p ) const
+  {
+#ifndef NDEBUG
+    if ( m_size <= p ) { rank_error("send_buffer",p); }
+#endif
+    return m_send[p] ;
+  }
 
   /** Obtain the message buffer for a given processor */
-  CommBuffer & recv_buffer( int ) const ;
+  CommBuffer & recv_buffer( int p ) const
+  {
+#ifndef NDEBUG
+    if ( m_size <= p ) { rank_error("recv_buffer",p); }
+#endif
+    return m_recv[p] ;
+  }
 
   //----------------------------------------
   /** Construct for undefined communication.
@@ -184,6 +196,9 @@ public:
                          const unsigned * const recv_size ,
                          const bool local_flag = false );
 
+  bool allocate_buffers( ParallelMachine comm ,
+                         const unsigned * const send_sizes,
+                         const unsigned * const recv_sizes );
 
   /**
    * Allocate symmetric buffers, no communication required. buf_sizes should
@@ -466,23 +481,6 @@ ptrdiff_t CommBuffer::remaining() const
 inline
 void * CommBuffer::buffer() const
 { return static_cast<void*>( m_beg ); }
-
-//----------------------------------------------------------------------
-// Inline implementations for the CommAll
-
-inline
-CommBuffer & CommAll::send_buffer( int p ) const
-{
-  if ( m_size <= p ) { rank_error("send_buffer",p); }
-  return m_send[p] ;
-}
-
-inline
-CommBuffer & CommAll::recv_buffer( int p ) const
-{
-  if ( m_size <= p ) { rank_error("recv_buffer",p); }
-  return m_recv[p] ;
-}
 
 }
 

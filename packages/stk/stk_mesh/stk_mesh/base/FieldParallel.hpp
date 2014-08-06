@@ -39,6 +39,10 @@ void communicate_field_data(
   const Ghosting                        & ghosts ,
   const std::vector< const FieldBase *> & fields );
 
+void communicate_field_data(
+  const BulkData                        & mesh ,
+  const std::vector< const FieldBase *> & fields );
+
 /** Copy data for the given fields, from owned entities to shared-but-not-owned entities.
  * I.e., shared-but-not-owned entities get an update of the field-data from the owned entity.
 */
