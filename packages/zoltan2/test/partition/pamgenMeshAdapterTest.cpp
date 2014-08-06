@@ -209,7 +209,7 @@ int main(int argc, char *argv[]) {
 
   problem.solve();
 
-  if (comm->getRank() == 0)
+  if (CommT->getRank() == 0)
     problem.printMetrics(cout);
 
   if (rank == 0)
