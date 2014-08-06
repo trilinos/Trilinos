@@ -77,7 +77,8 @@ public:
 
       const Policy range( policy , exec.pool_rank() , exec.pool_size() );
 
-      for ( typename Policy::member_type iwork = range.begin() , work_end = range.end() ; iwork < work_end ; ++iwork ) {
+      const typename Policy::member_type work_end = range.end();
+      for ( typename Policy::member_type iwork = range.begin() ; iwork < work_end ; ++iwork ) {
         functor( iwork );
       }
     }
@@ -123,7 +124,8 @@ public:
 
       const Policy range( policy , exec.pool_rank() , exec.pool_size() );
 
-      for ( typename Policy::member_type iwork = range.begin() , work_end = range.end() ; iwork < work_end ; ++iwork ) {
+      const typename Policy::member_type work_end = range.end();
+      for ( typename Policy::member_type iwork = range.begin() ; iwork < work_end ; ++iwork ) {
         functor( iwork , update );
       }
     }
@@ -187,8 +189,9 @@ public:
         Reduce::init( functor , 
                       pointer_type( exec.reduce_base() ) + Reduce::value_count( functor ) );
 
-      for ( typename Policy::member_type iw = range.begin() , work_end = range.end() ; iw < work_end ; ++iw ) {
-        functor( iw , update , false );
+      const typename Policy::member_type work_end = range.end();
+      for ( typename Policy::member_type iwork = range.begin() ; iwork < work_end ; ++iwork ) {
+        functor( iwork , update , false );
       }
     }
 /* END #pragma omp parallel */
@@ -224,8 +227,9 @@ public:
       typename Reduce::reference_type update =
         Reduce::reference( pointer_type( exec.reduce_base() ) );
 
-      for ( typename Policy::member_type iw = range.begin() , work_end = range.end() ; iw < work_end ; ++iw ) {
-        functor( iw , update , true );
+      const typename Policy::member_type work_end = range.end();
+      for ( typename Policy::member_type iwork = range.begin() ; iwork < work_end ; ++iwork ) {
+        functor( iwork , update , true );
       }
     }
 /* END #pragma omp parallel */

@@ -111,7 +111,8 @@ public:
 
     const Policy range( self.m_policy , exec.pool_rank() , exec.pool_size() );
 
-    for ( typename Policy::member_type i = range.begin() , e = range.end() ; i < e ; ++i ) {
+    const typename Policy::member_type e = range.end();
+    for ( typename Policy::member_type i = range.begin() ; i < e ; ++i ) {
       self.m_func( i );
     }
 
@@ -199,8 +200,9 @@ public:
 
     const Policy range( self.m_policy , exec.pool_rank() , exec.pool_size() );
 
-    for ( typename Policy::member_type iwork = range.begin(), work_end = range.end() ; iwork < work_end ; ++iwork ) {
-      self.m_func( iwork , update );
+    const typename Policy::member_type e = range.end();
+    for ( typename Policy::member_type i = range.begin() ; i < e ; ++i ) {
+      self.m_func( i , update );
     }
 
     exec.fan_in_reduce( self.m_func );
@@ -375,15 +377,16 @@ public:
 
     typename Reduce::reference_type update = Reduce::init( self.m_func , exec.reduce_base() );
 
-    for ( typename Policy::member_type iwork = range.begin(), work_end = range.end() ; iwork < work_end ; ++iwork ) {
-      self.m_func( iwork , update , false );
+    const typename Policy::member_type e = range.end();
+    for ( typename Policy::member_type i = range.begin() ; i < e ; ++i ) {
+      self.m_func( i , update , false );
     }
 
     //  exec.scan_large( self.m_func );
     exec.scan_small( self.m_func );
 
-    for ( typename Policy::member_type iwork = range.begin(), work_end = range.end() ; iwork < work_end ; ++iwork ) {
-      self.m_func( iwork , update , true );
+    for ( typename Policy::member_type i = range.begin() ; i < e ; ++i ) {
+      self.m_func( i , update , true );
     }
 
     exec.fan_in();
