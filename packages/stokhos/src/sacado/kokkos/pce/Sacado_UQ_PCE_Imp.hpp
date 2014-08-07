@@ -168,7 +168,12 @@ operator=(const PCE<Storage>& x)
   if (this != &x) {
     if (!s_.is_view())
       cijk_ = x.cijk_;
-    s_ = x.s_;
+    if (!s_.is_view() && is_constant(x)) {
+      s_.resize(1);
+      s_[0] = x.s_[0];
+    }
+    else
+      s_ = x.s_;
 
     // For DyamicStorage as a view (is_owned=false), we need to set
     // the trailing entries when assigning a constant vector (because
@@ -1076,6 +1081,7 @@ atan(const PCE<Storage>& a)
   return c;
 }
 
+/*
 template <typename Storage>
 KOKKOS_INLINE_FUNCTION
 PCE<Storage>
@@ -1093,7 +1099,6 @@ acosh(const PCE<Storage>& a)
   return c;
 }
 
-/*
 template <typename Storage>
 KOKKOS_INLINE_FUNCTION
 PCE<Storage>
