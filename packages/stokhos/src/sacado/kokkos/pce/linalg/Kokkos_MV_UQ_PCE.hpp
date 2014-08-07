@@ -185,6 +185,281 @@ MV_Dot( const rVector& r,
   MV_Dot( r, x_flat, y_flat, n );
 }
 
+template <typename CT, typename CD, typename CM,
+          typename AT, typename AD, typename AM,
+          typename BT, typename BD, typename BM>
+struct MV_ElementWiseMultiplyFunctor<
+  View< CT,LayoutLeft,CD,CM,Impl::ViewPCEContiguous >,
+  View< AT,LayoutLeft,AD,AM,Impl::ViewPCEContiguous >,
+  View< BT,LayoutLeft,BD,BM,Impl::ViewPCEContiguous > >
+{
+  typedef View< CT,LayoutLeft,CD,CM,Impl::ViewPCEContiguous > CVector;
+  typedef View< AT,LayoutLeft,AD,AM,Impl::ViewPCEContiguous > AVector;
+  typedef View< BT,LayoutLeft,BD,BM,Impl::ViewPCEContiguous > BVector;
+
+  typedef typename CVector::array_type CArray;
+  typedef typename AVector::array_type AArray;
+  typedef typename BVector::array_type BArray;
+
+  typedef typename CArray::device_type        device_type;
+  typedef typename CArray::size_type            size_type;
+
+  typename CArray::const_value_type m_c;
+  CArray m_C;
+  typename AArray::const_value_type m_ab;
+  typename AArray::const_type m_A ;
+  typename BArray::const_type m_B ;
+  const size_type m_n;
+  const size_type m_n_pce;
+
+  MV_ElementWiseMultiplyFunctor(typename CVector::const_value_type c,
+                                CVector C,
+                                typename AVector::const_value_type ab,
+                                typename AVector::const_type A,
+                                typename BVector::const_type B,
+                                const size_type n) :
+    m_c(c.fastAccessCoeff(0)),
+    m_C(C),
+    m_ab(ab.fastAccessCoeff(0)),
+    m_A(A),
+    m_B(B),
+    m_n(n),
+    m_n_pce(C.sacado_size()) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i) const
+  {
+    // Currently specialized for use case where A is degree-0
+    typename AArray::const_value_type Ai = m_A(0,i);
+    for (size_type k=0; k<m_n; ++k) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+      for (size_type l=0; l<m_n_pce; ++l)
+        m_C(l,i,k) = m_c*m_C(l,i,k) + m_ab*Ai*m_B(l,i,k);
+    }
+  }
+};
+
+template <typename CT, typename CD, typename CM,
+          typename AT, typename AD, typename AM,
+          typename BT, typename BD, typename BM>
+struct V_ElementWiseMultiplyFunctor<
+  View< CT,LayoutLeft,CD,CM,Impl::ViewPCEContiguous >,
+  View< AT,LayoutLeft,AD,AM,Impl::ViewPCEContiguous >,
+  View< BT,LayoutLeft,BD,BM,Impl::ViewPCEContiguous > >
+{
+  typedef View< CT,LayoutLeft,CD,CM,Impl::ViewPCEContiguous > CVector;
+  typedef View< AT,LayoutLeft,AD,AM,Impl::ViewPCEContiguous > AVector;
+  typedef View< BT,LayoutLeft,BD,BM,Impl::ViewPCEContiguous > BVector;
+
+  typedef typename CVector::array_type CArray;
+  typedef typename AVector::array_type AArray;
+  typedef typename BVector::array_type BArray;
+
+  typedef typename CArray::device_type        device_type;
+  typedef typename CArray::size_type            size_type;
+
+  typename CArray::const_value_type m_c;
+  CArray m_C;
+  typename AArray::const_value_type m_ab;
+  typename AArray::const_type m_A ;
+  typename BArray::const_type m_B ;
+  const size_type m_n_pce;
+
+  V_ElementWiseMultiplyFunctor(typename CVector::const_value_type c,
+                               CVector C,
+                               typename AVector::const_value_type ab,
+                               typename AVector::const_type A,
+                               typename BVector::const_type B) :
+    m_c(c.fastAccessCoeff(0)),
+    m_C(C),
+    m_ab(ab.fastAccessCoeff(0)),
+    m_A(A),
+    m_B(B),
+    m_n_pce(C.sacado_size()) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i) const
+  {
+    // Currently specialized for use case where A is degree-0
+    typename AArray::const_value_type Ai = m_A(0,i);
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+    for (size_type l=0; l<m_n_pce; ++l)
+      m_C(l,i) = m_c*m_C(l,i) + m_ab*Ai*m_B(l,i);
+  }
+};
+
+// Rank-1 vector multiply with Sacado::UQ::PCE scalar type, constant c, ab
+template <typename CS, typename CL, typename CD, typename CM,
+          typename AS, typename AL, typename AD, typename AM,
+          typename BS, typename BL, typename BD, typename BM>
+Kokkos::View< Sacado::UQ::PCE<CS>*, CL, CD, CM>
+V_ElementWiseMultiply(
+  const typename Sacado::UQ::PCE<CS>::value_type& c,
+  const Kokkos::View< Sacado::UQ::PCE<CS>*, CL, CD, CM >& C,
+  const typename Sacado::UQ::PCE<AS>::value_type& ab,
+  const Kokkos::View< Sacado::UQ::PCE<AS>*, AL, AD, AM >& A,
+  const Kokkos::View< Sacado::UQ::PCE<BS>*, BL, BD, BM >& B )
+{
+  typedef View< Sacado::UQ::PCE<CS>*, CL, CD, CM > CVector;
+  typedef View< Sacado::UQ::PCE<AS>*, AL, AD, AM > AVector;
+  typedef View< Sacado::UQ::PCE<BS>*, BL, BD, BM > BVector;
+
+  typedef View< typename CVector::data_type, typename CVector::array_layout, typename CVector::device_type, typename CVector::memory_traits > CView;
+  typedef View< typename AVector::data_type, typename AVector::array_layout, typename AVector::device_type, typename AVector::memory_traits > AView;
+  typedef View< typename BVector::data_type, typename BVector::array_layout, typename BVector::device_type, typename BVector::memory_traits > BView;
+
+  V_ElementWiseMultiplyFunctor<CView,AView,BView> op(c,C,ab,A,B) ;
+  Kokkos::parallel_for( C.dimension_0() , op );
+  return C;
+}
+
+// Rank-1 vector multiply with Sacado::UQ::PCE scalar type, non-constant c, ab
+template <typename CS, typename CL, typename CD, typename CM,
+          typename AS, typename AL, typename AD, typename AM,
+          typename BS, typename BL, typename BD, typename BM>
+Kokkos::View< Sacado::UQ::PCE<CS>*, CL, CD, CM>
+V_ElementWiseMultiply(
+  const Sacado::UQ::PCE<CS>& c,
+  const Kokkos::View< Sacado::UQ::PCE<CS>*, CL, CD, CM >& C,
+  const Sacado::UQ::PCE<AS>& ab,
+  const Kokkos::View< Sacado::UQ::PCE<AS>*, AL, AD, AM >& A,
+  const Kokkos::View< Sacado::UQ::PCE<BS>*, BL, BD, BM >& B )
+{
+  if (Sacado::is_constant(c) && Sacado::is_constant(ab)) {
+    return V_ElementWiseMultiply( c.fastAccessCoeff(0), C,
+                                  ab.fastAccessCoeff(0), A, B );
+  }
+  else {
+    Impl::raise_error(
+      "V_ElementWiseMultiply not implemented for non-constant c or ab");
+  }
+  return C;
+}
+
+// Rank-2 vector multiply with Sacado::UQ::PCE scalar type, constant c, ab
+template <typename CS, typename CL, typename CD, typename CM,
+          typename AS, typename AL, typename AD, typename AM,
+          typename BS, typename BL, typename BD, typename BM>
+Kokkos::View< Sacado::UQ::PCE<CS>**, CL, CD, CM>
+MV_ElementWiseMultiply(
+  const typename Sacado::UQ::PCE<CS>::value_type& c,
+  const Kokkos::View< Sacado::UQ::PCE<CS>**, CL, CD, CM >& C,
+  const typename Sacado::UQ::PCE<AS>::value_type& ab,
+  const Kokkos::View< Sacado::UQ::PCE<AS>*,  AL, AD, AM >& A,
+  const Kokkos::View< Sacado::UQ::PCE<BS>**, BL, BD, BM >& B )
+{
+  typedef View< Sacado::UQ::PCE<CS>**, CL, CD, CM > CVector;
+  typedef View< Sacado::UQ::PCE<AS>*,  AL, AD, AM > AVector;
+  typedef View< Sacado::UQ::PCE<BS>**, BL, BD, BM > BVector;
+
+  typedef View< typename CVector::data_type, typename CVector::array_layout, typename CVector::device_type, typename CVector::memory_traits > CView;
+  typedef View< typename AVector::data_type, typename AVector::array_layout, typename AVector::device_type, typename AVector::memory_traits > AView;
+  typedef View< typename BVector::data_type, typename BVector::array_layout, typename BVector::device_type, typename BVector::memory_traits > BView;
+
+  MV_ElementWiseMultiplyFunctor<CView,AView,BView> op(c,C,ab,A,B,C.dimension_1()) ;
+  Kokkos::parallel_for( C.dimension_0() , op );
+  return C;
+}
+
+// Rank-2 vector multiply with Sacado::UQ::PCE scalar type, non-constant c, ab
+template <typename CS, typename CL, typename CD, typename CM,
+          typename AS, typename AL, typename AD, typename AM,
+          typename BS, typename BL, typename BD, typename BM>
+Kokkos::View< Sacado::UQ::PCE<CS>**, CL, CD, CM>
+MV_ElementWiseMultiply(
+  const Sacado::UQ::PCE<CS>& c,
+  const Kokkos::View< Sacado::UQ::PCE<CS>**, CL, CD, CM >& C,
+  const Sacado::UQ::PCE<AS>& ab,
+  const Kokkos::View< Sacado::UQ::PCE<AS>*,  AL, AD, AM >& A,
+  const Kokkos::View< Sacado::UQ::PCE<BS>**, BL, BD, BM >& B )
+{
+  if (Sacado::is_constant(c) && Sacado::is_constant(ab)) {
+    return MV_ElementWiseMultiply( c.fastAccessCoeff(0), C,
+                                   ab.fastAccessCoeff(0), A, B );
+  }
+  else {
+    Impl::raise_error(
+      "MV_ElementWiseMultiply not implemented for non-constant c or ab");
+  }
+  return C;
+}
+
+// Rank-1 vector scale with Sacado::UQ::PCE scalar type, constant a, b
+template <typename RS, typename RL, typename RD, typename RM,
+          typename XS, typename XL, typename XD, typename XM>
+Kokkos::View< Sacado::UQ::PCE<RS>*, RL, RD, RM>
+V_MulScalar( const Kokkos::View< Sacado::UQ::PCE<RS>*, RL, RD, RM >& r,
+             const typename Sacado::UQ::PCE<XS>::value_type& a,
+             const Kokkos::View< Sacado::UQ::PCE<XS>*, XL, XD, XM >& x )
+{
+  typedef Kokkos::View< Sacado::UQ::PCE<RS>*, RL, RD, RM > RVector;
+  typedef Kokkos::View< Sacado::UQ::PCE<XS>*, XL, XD, XM > XVector;
+
+  typename RVector::flat_array_type r_flat = r;
+  typename XVector::flat_array_type x_flat = x;
+
+  V_MulScalar( r_flat, a, x_flat );
+
+  return r;
+}
+
+// Rank-1 vector scale with Sacado::UQ::PCE scalar type, non-constant a, b
+template <typename RS, typename RL, typename RD, typename RM,
+          typename XS, typename XL, typename XD, typename XM>
+Kokkos::View< Sacado::UQ::PCE<RS>*, RL, RD, RM>
+V_MulScalar( const Kokkos::View< Sacado::UQ::PCE<RS>*, RL, RD, RM >& r,
+             const Sacado::UQ::PCE<XS>& a,
+             const Kokkos::View< Sacado::UQ::PCE<XS>*, XL, XD, XM >& x )
+{
+  if (Sacado::is_constant(a)) {
+   return V_MulScalar( r, a.fastAccessCoeff(0), x );
+  }
+  else {
+    Impl::raise_error("V_MulScalar not implemented for non-constant a");
+  }
+  return r;
+}
+
+// Rank-2 vector scale with Sacado::UQ::PCE scalar type, constant a, b
+template <typename RS, typename RL, typename RD, typename RM,
+          typename XS, typename XL, typename XD, typename XM>
+Kokkos::View< Sacado::UQ::PCE<RS>**, RL, RD, RM>
+MV_MulScalar( const Kokkos::View< Sacado::UQ::PCE<RS>**, RL, RD, RM >& r,
+              const typename Sacado::UQ::PCE<XS>::value_type& a,
+              const Kokkos::View< Sacado::UQ::PCE<XS>**, XL, XD, XM >& x )
+{
+  typedef Kokkos::View< Sacado::UQ::PCE<RS>**, RL, RD, RM > RVector;
+  typedef Kokkos::View< Sacado::UQ::PCE<XS>**, XL, XD, XM > XVector;
+
+  typename RVector::flat_array_type r_flat = r;
+  typename XVector::flat_array_type x_flat = x;
+
+  MV_MulScalar( r_flat, a, x_flat );
+
+  return r;
+}
+
+// Rank-2 vector scale with Sacado::UQ::PCE scalar type, non-constant a, b
+template <typename RS, typename RL, typename RD, typename RM,
+          typename XS, typename XL, typename XD, typename XM>
+Kokkos::View< Sacado::UQ::PCE<RS>**, RL, RD, RM>
+MV_MulScalar( const Kokkos::View< Sacado::UQ::PCE<RS>**, RL, RD, RM >& r,
+              const Sacado::UQ::PCE<XS>& a,
+              const Kokkos::View< Sacado::UQ::PCE<XS>**, XL, XD, XM >& x )
+{
+  if (Sacado::is_constant(a)) {
+    return MV_MulScalar( r, a.fastAccessCoeff(0), x );
+  }
+  else {
+    Impl::raise_error("MV_MulScalar not implemented for non-constant a or b");
+  }
+  return r;
+}
+
 } // namespace Kokkos
 
 #endif /* #ifndef KOKKOS_MV_UQ_PCE_HPP */
