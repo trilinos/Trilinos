@@ -115,15 +115,14 @@ belos_solve(
   if (use_muelu) {
     Teuchos::TimeMonitor timeMon(*time_prec_setup);
     std::string xmlFileName="muelu.xml";
-    preconditioner = rcp(new MueLuPreconditioner<SM, LO, GO, N>());
-    precOp = preconditioner->setupPreconditioner(A, xmlFileName);
-  }
-
-  if (use_mean_based) {
-    Teuchos::TimeMonitor timeMon(*time_prec_setup);
-    std::string xmlFileName = "muelu.xml";
-    preconditioner = rcp(new MeanBasedPreconditioner<SM, LO, GO, N>());
-    precOp = preconditioner->setupPreconditioner(A, xmlFileName);
+    if (use_mean_based) {
+      preconditioner = rcp(new MeanBasedPreconditioner<SM, LO, GO, N>());
+      precOp = preconditioner->setupPreconditioner(A, xmlFileName);
+    }
+    else {
+      preconditioner = rcp(new MueLuPreconditioner<SM, LO, GO, N>());
+      precOp = preconditioner->setupPreconditioner(A, xmlFileName);
+    }
   }
 
   //--------------------------------
