@@ -6420,12 +6420,12 @@ typename Adapter::part_t Zoltan2_AlgMJ<Adapter>::pointAssign(
       // TODO:  with cuts, would not need this special case
 
       size_t closestBox = 0;
-      scalar_t minDistance = std::numeric_limits<mj_scalar_t>::max();
-      scalar_t *centroid = new scalar_t[dim];
+      mj_scalar_t minDistance = std::numeric_limits<mj_scalar_t>::max();
+      mj_scalar_t *centroid = new mj_scalar_t[dim];
       for (size_t i = 0; i < nBoxes; i++) {
         (*partBoxes)[i].computeCentroid(centroid);
-        scalar_t sum = 0.;
-        scalar_t diff;
+        mj_scalar_t sum = 0.;
+        mj_scalar_t diff;
         for (int j = 0; j < dim; j++) {
           diff = centroid[j] - point[j];
           sum += diff * diff;
