@@ -522,7 +522,7 @@ namespace Kokkos {
 
   };
 
-  template<class DeviceType = Kokkos::Impl::DefaultDeviceType>
+  template<class DeviceType = Kokkos::DefaultExecutionSpace>
   class Random_XorShift64_Pool {
   private:
     typedef View<int*,DeviceType> lock_type;
@@ -747,7 +747,7 @@ namespace Kokkos {
   };
 
 
-  template<class DeviceType = Kokkos::Impl::DefaultDeviceType>
+  template<class DeviceType = Kokkos::ExecutionSpace>
   class Random_XorShift1024_Pool {
   private:
     typedef View<int*,DeviceType> int_view_type;

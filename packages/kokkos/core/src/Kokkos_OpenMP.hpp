@@ -149,6 +149,7 @@ private:
 } // namespace Kokkos
 
 /*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
 
 #include <OpenMP/Kokkos_OpenMPexec.hpp>
 #include <OpenMP/Kokkos_OpenMP_Parallel.hpp>

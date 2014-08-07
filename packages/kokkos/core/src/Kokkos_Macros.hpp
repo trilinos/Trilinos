@@ -187,33 +187,40 @@ namespace Kokkos {
 
 } /* namespace Kokkos */
 
-/// To be removed:
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
 namespace Kokkos {
 namespace Impl {
-  typedef Kokkos::DefaultExecutionSpace DefaultDeviceType ;
-}
-}
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
 
 #if defined( __CUDACC__ ) && defined( __CUDA_ARCH__ )
-
-namespace Kokkos { typedef CudaSpace ExecutionSpace ; }
-
+typedef Kokkos::CudaSpace  ActiveExecutionMemorySpace ;
 #else
-
-namespace Kokkos { typedef HostSpace ExecutionSpace ; }
-
+typedef Kokkos::HostSpace  ActiveExecutionMemorySpace ;
 #endif
 
-#define KOKKOS_RESTRICT_EXECUTION_TO_DATA( DATA_SPACE , DATA_PTR ) \
-  Kokkos::VerifyExecutionSpaceCanAccessDataSpace< \
-    Kokkos::ExecutionSpace , DATA_SPACE >::verify( DATA_PTR )
+template< class ActiveSpace , class MemorySpace >
+struct VerifyExecutionCanAccessMemorySpace {};
 
-#define KOKKOS_RESTRICT_EXECUTION_TO( DATA_SPACE ) \
-  Kokkos::VerifyExecutionSpaceCanAccessDataSpace< \
-    Kokkos::ExecutionSpace , DATA_SPACE >::verify()
+template< class Space >
+struct VerifyExecutionCanAccessMemorySpace< Space , Space >
+{
+  KOKKOS_INLINE_FUNCTION static void verify(void) {}
+  KOKKOS_INLINE_FUNCTION static void verify(const void *) {}
+};
+
+} // namespace Impl
+} // namespace Kokkos
+
+// Currently executing in the CUDA space
+
+#define KOKKOS_RESTRICT_EXECUTION_TO_DATA( DATA_SPACE , DATA_PTR ) \
+  Kokkos::Impl::VerifyExecutionCanAccessMemorySpace< \
+    Kokkos::Impl::ActiveExecutionMemorySpace , DATA_SPACE >::verify( DATA_PTR )
+
+#define KOKKOS_RESTRICT_EXECUTION_TO_( DATA_SPACE ) \
+  Kokkos::Impl::VerifyExecutionCanAccessMemorySpace< \
+    Kokkos::Impl::ActiveExecutionMemorySpace , DATA_SPACE >::verify()
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

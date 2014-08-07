@@ -55,7 +55,7 @@
  */
   namespace Kokkos {
 
-template <typename Scalar, class Device=Impl::DefaultDeviceType>
+template <typename Scalar, class Device = Kokkos::DefaultExecutionSpace >
 class vector : public DualView<Scalar*,LayoutLeft,Device> {
 public:
   typedef Device device_type;

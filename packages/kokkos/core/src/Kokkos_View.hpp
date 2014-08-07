@@ -460,20 +460,6 @@ struct is_view< View< D , A1 , A2 , A3 , S > > : public bool_< true > {};
 
 //----------------------------------------------------------------------------
 
-/*
-template< class V >
-struct is_view : public Impl::false_type {};
-
-template< class DataType ,
-          class Arg1 ,
-          class Arg2 ,
-          class Arg3 ,
-          class Spec >
-struct is_view< View< DataType , Arg1 , Arg2 , Arg3 , Spec > >
-  : public Impl::true_type {};*/
-
-//----------------------------------------------------------------------------
-
 template< class DataType ,
           class Arg1Type ,
           class Arg2Type ,

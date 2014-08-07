@@ -195,6 +195,9 @@ private:
 
 } // namespace Kokkos
 
+/*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
+
 #include <Kokkos_ExecPolicy.hpp>
 #include <Kokkos_Parallel.hpp>
 #include <Threads/Kokkos_ThreadsExec.hpp>

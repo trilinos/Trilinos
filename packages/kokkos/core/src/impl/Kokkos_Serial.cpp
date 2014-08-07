@@ -76,7 +76,7 @@ Sentinel & Sentinel::singleton()
 
 }
 
-void * Serial::resize_reduce_scratch( unsigned size )
+void * Serial::scratch_memory_space::resize_reduce_scratch( unsigned size )
 {
   static Sentinel & s = Sentinel::singleton();
 
@@ -96,7 +96,7 @@ void * Serial::resize_reduce_scratch( unsigned size )
   return s.m_reduce ;
 }
 
-void * Serial::resize_shared_scratch( unsigned size )
+void * Serial::scratch_memory_space::resize_shared_scratch( unsigned size )
 {
   static Sentinel & s = Sentinel::singleton();
 
@@ -116,7 +116,7 @@ void * Serial::resize_shared_scratch( unsigned size )
   return s.m_shared ;
 }
 
-void * Serial::get_shmem( const int size ) const
+void * Serial::scratch_memory_space::get_shmem( const int size ) const
 {
   static Sentinel & s = Sentinel::singleton();
 

@@ -86,7 +86,6 @@ public:
   typedef HostSpace::size_type  size_type ;
   //! This device's preferred memory space.
   typedef HostSpace             memory_space ;
-  typedef Serial                scratch_memory_space ;
   //! This device's preferred array layout.
   typedef LayoutRight           array_layout ;
   /// \brief This device's host mirror type.
@@ -153,19 +152,45 @@ public:
   KOKKOS_INLINE_FUNCTION static unsigned hardware_thread_id() { return 0 ; }
   KOKKOS_INLINE_FUNCTION static unsigned max_hardware_threads() { return 1 ; }
 
+  class scratch_memory_space {
+  private:
+    mutable int m_shmem_iter ;
+  public:
+    typedef Impl::MemorySpaceTag  kokkos_tag ;
+    typedef scratch_memory_space  memory_space ; 
+    typedef Serial                execution_space ;
+    typedef LayoutRight           array_layout ;
+
+    scratch_memory_space() : m_shmem_iter(0) {}
+
+    void * get_shmem( const int size ) const ;
+
+    static void * resize_reduce_scratch( const unsigned );
+    static void * resize_shared_scratch( const unsigned );
+  };
+
   //--------------------------------------------------------------------------
-
-  void * get_shmem( const int size ) const ;
-
-  static void * resize_reduce_scratch( const unsigned );
-  static void * resize_shared_scratch( const unsigned );
-
-  Serial() : m_shmem_iter(0) {}
-
-private:
-  mutable int m_shmem_iter ;
 };
 
+} // namespace Kokkos
+
+/*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
+
+namespace Kokkos {
+namespace Impl {
+
+template<>
+struct VerifyExecutionCanAccessMemorySpace
+  < Kokkos::Serial::memory_space
+  , Kokkos::Serial::scratch_memory_space
+  >
+{
+  inline static void verify( void ) { }
+  inline static void verify( const void * ) { }
+};
+
+} // namespace Impl
 } // namespace Kokkos
 
 /*--------------------------------------------------------------------------*/
@@ -294,7 +319,7 @@ public:
       pointer_type result_ptr = result.ptr_on_device();
 
       if ( ! result_ptr ) {
-        result_ptr = (pointer_type) Serial::resize_reduce_scratch( Reduce::value_size( functor ) );
+        result_ptr = (pointer_type) Kokkos::Serial::scratch_memory_space::resize_reduce_scratch( Reduce::value_size( functor ) );
       }
 
       typename Reduce::reference_type update = Reduce::init( functor , result_ptr );
@@ -324,7 +349,7 @@ public:
                , const Policy      & policy
                )
     {
-      pointer_type result_ptr = (pointer_type) Serial::resize_reduce_scratch( Reduce::value_size( functor ) );
+      pointer_type result_ptr = (pointer_type) Kokkos::Serial::scratch_memory_space::resize_reduce_scratch( Reduce::value_size( functor ) );
 
       typename Reduce::reference_type update = Reduce::init( functor , result_ptr );
       
@@ -348,7 +373,7 @@ public:
   ParallelFor( const FunctorType & functor
              , const Policy      & policy )
     {
-      Serial::resize_shared_scratch( FunctorShmemSize< FunctorType >::value( functor ) );
+      Kokkos::Serial::scratch_memory_space::resize_shared_scratch( FunctorShmemSize< FunctorType >::value( functor ) );
 
       for ( int ileague = 0 ; ileague < policy.league_size() ; ++ileague ) {
         functor( typename Policy::member_type(ileague,policy.league_size()) );
@@ -370,12 +395,12 @@ public:
                 , const ViewType     & result
                 )
     {
-      Serial::resize_shared_scratch( FunctorShmemSize< FunctorType >::value( functor ) );
+      Kokkos::Serial::scratch_memory_space::resize_shared_scratch( FunctorShmemSize< FunctorType >::value( functor ) );
 
       pointer_type result_ptr = result.ptr_on_device();
 
       if ( ! result_ptr ) {
-        result_ptr = (pointer_type) Serial::resize_reduce_scratch( Reduce::value_size( functor ) );
+        result_ptr = (pointer_type) Kokkos::Serial::scratch_memory_space::resize_reduce_scratch( Reduce::value_size( functor ) );
       }
 
       typename Reduce::reference_type update = Reduce::init( functor , result_ptr );
