@@ -103,7 +103,7 @@ INCLUDE(ParseVariableArguments)
 #
 FUNCTION(TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP)
 
-    IF (TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP_DUMP)
+    IF (TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP_DEBUG_DUMP)
       MESSAGE("\nSearching for most modified files in base dirs:")
     ENDIF()
    
@@ -136,83 +136,97 @@ FUNCTION(TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP)
 
   FOREACH(BASE_DIR ${PARSE_BASE_DIRS})
 
-    IF (TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP_DUMP)
+    IF (TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP_DEBUG_DUMP)
       MESSAGE("\nSearching '${BASE_DIR}' ...")
     ENDIF()
 
-    # Build up commands for grep -v
-    SET(GREP_V_COMMANDS)
-    FOREACH(EXCLUDE_REGEX ${PARSE_EXCLUDE_REGEXES})
-      APPEND_SET(GREP_V_COMMANDS COMMAND grep -v "${EXCLUDE_REGEX}")
-    ENDFOREACH()
+    IF (IS_DIRECTORY "${BASE_DIR}")
 
-    # Get the time stamp and the file name of the most recently modified file
-    # in currnet directory.
-    EXECUTE_PROCESS(
-      WORKING_DIRECTORY "${BASE_DIR}"
-      COMMAND find . -type f -printf "%T@ %p\n"
-      ${GREP_V_COMMANDS}
-      COMMAND sort -n
-      COMMAND tail -1
-      OUTPUT_VARIABLE MOST_RECENT_TIMESTAMP_AND_FILE
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-      )
-     # Here, note that %T@ gives the modification time stamp in seconds since
-     # Jan. 1, 1970, 00:00 GMT.  The -printf argument %p gives the file path.
-     # This results in the return a string with the modification date (in
-     # fractional seconds) and the file name of the form:
-     #
-     #     1407353359.5651538200 ./<relative-dir>/<some-file-name>
-
-    IF (TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP_DUMP)
-      PRINT_VAR(MOST_RECENT_TIMESTAMP_AND_FILE)
-    ENDIF()
-
-    SPLIT("${MOST_RECENT_TIMESTAMP_AND_FILE}" " "
-      MOST_RECENT_TIMESTAMP_AND_FILE_SPLIT)
-
-    # Get the time stamp part
-    LIST(GET MOST_RECENT_TIMESTAMP_AND_FILE_SPLIT 0
-      CURRENT_TIMESTAMP)
-
-    # Get the relative file path
-    LIST(GET MOST_RECENT_TIMESTAMP_AND_FILE_SPLIT 1
-      CURRENT_FILEPATH)
-
-    IF (TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP_DUMP)
-      PRINT_VAR(CURRENT_TIMESTAMP)
-      PRINT_VAR(CURRENT_FILEPATH)
-    ENDIF()
+      # Build up commands for grep -v
+      SET(GREP_V_COMMANDS)
+      FOREACH(EXCLUDE_REGEX ${PARSE_EXCLUDE_REGEXES})
+        APPEND_SET(GREP_V_COMMANDS COMMAND grep -v "${EXCLUDE_REGEX}")
+      ENDFOREACH()
   
-    IF (PARSE_SHOW_OVERALL_MOST_RECENT_FILES)
+      # Get the time stamp and the file name of the most recently modified file
+      # in currnet directory.
       EXECUTE_PROCESS(
         WORKING_DIRECTORY "${BASE_DIR}"
-        COMMAND ls --full-time "${CURRENT_FILEPATH}"
-        OUTPUT_VARIABLE HUMAN_READABLE_FILE_AND_TIMESTAMP
+        COMMAND find . -type f -printf "%T@ %p\n"
+        ${GREP_V_COMMANDS}
+        COMMAND sort -n
+        COMMAND tail -1
+        OUTPUT_VARIABLE MOST_RECENT_TIMESTAMP_AND_FILE
         OUTPUT_STRIP_TRAILING_WHITESPACE
         )
-      IF (PARSE_SHOW_MOST_RECENT_FILES)
-        MESSAGE("-- " "Most recent file in '${BASE_DIR}'\n"
-          "       ${HUMAN_READABLE_FILE_AND_TIMESTAMP}")
+       # Here, note that %T@ gives the modification time stamp in seconds since
+       # Jan. 1, 1970, 00:00 GMT.  The -printf argument %p gives the file path.
+       # This results in the return a string with the modification date (in
+       # fractional seconds) and the file name of the form:
+       #
+       #     1407353359.5651538200 ./<relative-dir>/<some-file-name>
+  
+      IF (TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP_DEBUG_DUMP)
+        PRINT_VAR(MOST_RECENT_TIMESTAMP_AND_FILE)
       ENDIF()
-    ENDIF()
 
-    IF ("${CURRENT_TIMESTAMP}" GREATER "${OVERALL_MOST_RECENT_TIMESTAMP}")
-      SET(OVERALL_MOST_RECENT_TIMESTAMP "${CURRENT_TIMESTAMP}")
-      SET(OVERALL_MOST_RECENT_RELATIVE_FILEPATH "${CURRENT_FILEPATH}")
-      IF (TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP_DUMP)
-        MESSAGE("    New most recent file path!")
+      IF (MOST_RECENT_TIMESTAMP_AND_FILE)
+
+        SPLIT("${MOST_RECENT_TIMESTAMP_AND_FILE}" " "
+          MOST_RECENT_TIMESTAMP_AND_FILE_SPLIT)
+    
+        # Get the time stamp part
+        LIST(GET MOST_RECENT_TIMESTAMP_AND_FILE_SPLIT 0
+          CURRENT_TIMESTAMP)
+    
+        # Get the relative file path
+        LIST(GET MOST_RECENT_TIMESTAMP_AND_FILE_SPLIT 1
+          CURRENT_FILEPATH)
+    
+        IF (TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP_DEBUG_DUMP)
+          PRINT_VAR(CURRENT_TIMESTAMP)
+          PRINT_VAR(CURRENT_FILEPATH)
+        ENDIF()
+      
+        IF (PARSE_SHOW_OVERALL_MOST_RECENT_FILES)
+          EXECUTE_PROCESS(
+            WORKING_DIRECTORY "${BASE_DIR}"
+            COMMAND ls --full-time "${CURRENT_FILEPATH}"
+            OUTPUT_VARIABLE HUMAN_READABLE_FILE_AND_TIMESTAMP
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+          IF (PARSE_SHOW_MOST_RECENT_FILES)
+            MESSAGE("-- " "Most recent file in '${BASE_DIR}'\n"
+              "       ${HUMAN_READABLE_FILE_AND_TIMESTAMP}")
+          ENDIF()
+        ENDIF()
+    
+        IF ("${CURRENT_TIMESTAMP}" GREATER "${OVERALL_MOST_RECENT_TIMESTAMP}")
+          SET(OVERALL_MOST_RECENT_TIMESTAMP "${CURRENT_TIMESTAMP}")
+          SET(OVERALL_MOST_RECENT_RELATIVE_FILEPATH "${CURRENT_FILEPATH}")
+          IF (TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP_DEBUG_DUMP)
+            MESSAGE("    New most recent file path!")
+          ENDIF()
+          IF (PARSE_SHOW_OVERALL_MOST_RECENT_FILES)
+            SET(OVERALL_MOST_RECENT_FILEPATH_DIR "${BASE_DIR}") 
+            SET(OVERALL_MOST_RECENT_FILEPATH_TIMESTAMP_HUMAN_READABLE
+              "${HUMAN_READABLE_FILE_AND_TIMESTAMP}") 
+          ENDIF()
+        ENDIF()
+
       ENDIF()
-      IF (PARSE_SHOW_OVERALL_MOST_RECENT_FILES)
-        SET(OVERALL_MOST_RECENT_FILEPATH_DIR "${BASE_DIR}") 
-        SET(OVERALL_MOST_RECENT_FILEPATH_TIMESTAMP_HUMAN_READABLE
-          "${HUMAN_READABLE_FILE_AND_TIMESTAMP}") 
+
+    ELSE()
+
+      IF (TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP_DEBUG_DUMP)
+        MESSAGE("Directory does not exist, skipping ...")
       ENDIF()
+
     ENDIF()
 
   ENDFOREACH()
 
-  IF (TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP_DUMP)
+  IF (TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP_DEBUG_DUMP)
     PRINT_VAR(OVERALL_MOST_RECENT_TIMESTAMP)
     PRINT_VAR(OVERALL_MOST_RECENT_RELATIVE_FILEPATH)
   ENDIF()
@@ -527,7 +541,7 @@ FUNCTION(TRIBITS_DETERMINE_IF_CURRENT_PACKAGE_NEEDS_REBUILT)
     MESSAGE("\nDetermining most recent binary file for current package ${PACKAGE_NAME}:")  
   ENDIF()
   TRIBITS_FIND_MOST_RECENT_BINARY_FILE_TIMESTAMP(
-    BINARY_BASE_DIRS ${${PACKAGE_NAME}_BINARY_DIR}
+    BINARY_BASE_DIRS  ${${PACKAGE_NAME}_BINARY_DIR}
     ${SHOW_MOST_RECENT_FILES_ARGS}
     MOST_RECENT_TIMESTAMP_OUT  MOST_RECENT_THIS_PACKAGE_BINARY_TIMESTAMP
     MOST_RECENT_RELATIVE_FILEPATH_OUT  MOST_RECENT_THIS_BINARY_FILEPATH
