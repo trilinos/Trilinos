@@ -183,7 +183,7 @@ public:
     }
   }
 
-  bool availAdjs(MeshEntityType source, MeshEntityType target) {
+  bool availAdjs(MeshEntityType source, MeshEntityType target) const {
     if ((MESH_REGION == source && MESH_VERTEX == target && 3 == dimension_) ||
 	(MESH_FACE == source && MESH_VERTEX == target && 2 == dimension_)) {
       return TRUE;
@@ -192,7 +192,7 @@ public:
     return FALSE;
   }
 
-  /*size_t getLocalNumAdjs(MeshEntityType source, MeshEntityType target) const
+  size_t getLocalNumAdjs(MeshEntityType source, MeshEntityType target) const
   {
     if (availAdjs(source, target)) {
       return tnoct_;
@@ -200,7 +200,6 @@ public:
     
     return 0;
   }
-  */
 
   void getAdjsView(MeshEntityType source, MeshEntityType target,
 		   const lno_t *&offsets, const gid_t *& adjacencyIds) const
@@ -219,7 +218,7 @@ public:
     }
   }
 
-  bool avail2ndAdjs(MeshEntityType sourcetarget, MeshEntityType through)
+  bool avail2ndAdjs(MeshEntityType sourcetarget, MeshEntityType through) const
   {
     if ((MESH_REGION==sourcetarget && MESH_VERTEX==through && 3==dimension_) ||
 	(MESH_FACE==sourcetarget && MESH_VERTEX==through && 2==dimension_)) {
@@ -229,7 +228,7 @@ public:
     return FALSE;
   }
 
-  /*size_t getLocalNum2ndAdjs(MeshEntityType sourcetarget, 
+  size_t getLocalNum2ndAdjs(MeshEntityType sourcetarget, 
 			    MeshEntityType through) const
   {
     if (avail2ndAdjs(sourcetarget, through)) {
@@ -238,7 +237,6 @@ public:
 
     return 0;
   }
-  */
 
   void get2ndAdjsView(MeshEntityType sourcetarget, MeshEntityType through, 
 		      const lno_t *&offsets, const gid_t *& adjacencyIds) const
@@ -259,11 +257,11 @@ public:
 
 private:
   int dimension_, num_nodes_, num_elem_;
-  const gid_t *element_num_map_, *node_num_map_;
+  gid_t *element_num_map_, *node_num_map_;
   int *elemToNode_, tnoct_, *elemOffsets_;
   double *coords_, *Acoords_;
-  const lno_t *start_;
-  const gid_t *adj_;
+  lno_t *start_;
+  gid_t *adj_;
   size_t nadj_;
 };
 
@@ -404,11 +402,11 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
   }
 
   int max_side_nodes = nnodes_per_elem;
-  int side_nodes[max_side_nodes];
-  int mirror_nodes[max_side_nodes];
+  int *side_nodes = new int [max_side_nodes];
+  int *mirror_nodes = new int [max_side_nodes];
 
   /* Allocate memory necessary for the adjacency */
-  start_ = new const lno_t [num_nodes_];
+  start_ = new lno_t [num_nodes_];
   std::vector<int> adj;
 
   for (int i=0; i < max_side_nodes; i++) {
@@ -437,7 +435,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
     }
   }
 
-  adj_ = new const gid_t [nadj_];
+  adj_ = new gid_t [nadj_];
 
   for (size_t i=0; i < nadj_; i++) {
     adj_[i] = adj[i];
@@ -472,8 +470,8 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
 
   delete[] reconnect;
   reconnect = NULL;
-  delete[] adj;
-  adj = NULL;
+  delete[] side_nodes;
+  delete[] mirror_nodes;
 }
 
   
