@@ -1694,7 +1694,7 @@ namespace { // (anonymous)
 
     Kokkos::Random_XorShift64_Pool<DeviceType> rand_pool(seed);
 
-    Scalar max = Kokkos::rand<typename Kokkos::Random_XorShift64_Pool<DeviceType>::generator_type, Scalar>::max();
+    Scalar max = Kokkos::rand<typename Kokkos::Random_XorShift64_Pool<DeviceType>::generator_type, Scalar>::max ();
     Scalar min = Kokkos::Details::ArithTraits<Scalar>::is_signed ? Scalar(-max) : Kokkos::Details::ArithTraits<Scalar>::zero ();
 
 
