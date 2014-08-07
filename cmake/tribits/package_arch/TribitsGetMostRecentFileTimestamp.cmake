@@ -371,7 +371,7 @@ FUNCTION(TRIBITS_FIND_MOST_RECENT_BINARY_FILE_TIMESTAMP)
   #
 
   SET(FILTER_OUT_BINARY_FILE_REGEXS
-    "CMakeFiles/" "CTestTestfile.cmake$" "cmake_install.cmake$" "/Makefile$"
+    "CMakeFiles/" "[.]cmake$" "/Makefile$"
     )
 
   #
