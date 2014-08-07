@@ -2323,8 +2323,13 @@ namespace Tpetra {
                     Scalar beta) const;
 
     // matrix data accessors
-    ArrayView<const Scalar>    getView(RowInfo rowinfo) const;
-    ArrayView<      Scalar>    getViewNonConst(RowInfo rowinfo);
+
+    //! Constant view of all entries (including extra space) in the given row.
+    Teuchos::ArrayView<const Scalar> getView (RowInfo rowinfo) const;
+
+    //! Nonconst view of all entries (including extra space) in the given row.
+    Teuchos::ArrayView<Scalar> getViewNonConst (RowInfo rowinfo);
+
     // local Kokkos objects
 
     /// \brief Fill data into the local matrix.
@@ -2332,14 +2337,16 @@ namespace Tpetra {
     /// This method is only called in fillComplete(), and it is only
     /// called if the graph's structure is already fixed (that is, if
     /// the matrix does not own the graph).
-    void fillLocalMatrix(const RCP<ParameterList> &params);
+    void fillLocalMatrix (const Teuchos::RCP<Teuchos::ParameterList>& params);
+
     /// \brief Fill data into the local graph and matrix.
     ///
     /// This method is only called in fillComplete(), and it is only
     /// called if the graph's structure is <i>not</i> already fixed
     /// (that is, if the matrix <i>does</i> own the graph).
-    void fillLocalGraphAndMatrix(const RCP<ParameterList> &params);
-    // debugging
+    void fillLocalGraphAndMatrix (const Teuchos::RCP<Teuchos::ParameterList>& params);
+
+    //! Check that this object's state is sane; throw if it's not.
     void checkInternalState() const;
 
     /// \name (Global) graph pointers
@@ -2362,7 +2369,7 @@ namespace Tpetra {
     ///
     /// resumeFill() sets this to null.  fillComplete() initializes
     /// this object using the local graph and matrix.
-    RCP<sparse_ops_type>   lclMatOps_;
+    RCP<sparse_ops_type> lclMatOps_;
 
     //! The local sparse matrix.
     k_local_matrix_type k_lclMatrix_;
@@ -2384,6 +2391,48 @@ namespace Tpetra {
     t_ValuesType k_values1D_;
     ArrayRCP<Array<Scalar> > values2D_;
     //@}
+
+    /// \brief Status of the matrix's storage, when not in a
+    ///   fill-complete state.
+    ///
+    /// When the matrix is <i>not</i> fill complete, its data live in
+    /// one of three storage formats:
+    /// <ol>
+    /// <li> "2-D storage": The matrix must own the graph.  The graph
+    ///   stores column indices as "array of arrays," and the matrix
+    ///   stores values as "array of arrays."  The graph <i>must</i>
+    ///   have k_numRowEntries_ allocated.  This only ever exists if
+    ///   the matrix was created with DynamicProfile. </li>
+    ///
+    /// <li> "Unpacked 1-D storage": The matrix must own the graph.
+    ///   The graph uses a row offsets array, and stores column
+    ///   indices in a single array.  The matrix also stores values in
+    ///   a single array.  "Unpacked" means that there may be extra
+    ///   space in each row: that is, the row offsets array only says
+    ///   how much space there is in each row.  The graph must use
+    ///   k_numRowEntries_ to find out how many entries there actually
+    ///   are in the row. </li>
+    ///
+    /// <li> "Packed 1-D storage": The matrix may or may not own the
+    ///   graph.  "Packed" means that there is no extra space in each
+    ///   row.  Thus, the k_numRowEntries_ array is not necessary and
+    ///   may have been deallocated.  If the matrix was created with a
+    ///   constant ("static") graph, this must be true. </li>
+    /// </ol>
+    ///
+    /// With respect to the Kokkos refactor version of Tpetra, "2-D
+    /// storage" should be considered a legacy option.
+    ///
+    /// The phrase "When not in a fill-complete state" is important.
+    /// When the matrix is fill complete, it <i>always</i> uses 1-D
+    /// "packed" storage.
+    enum ECrsMatrixStorageStatus {
+      CRS_MATRIX_STORAGE_2D, //<! 2-D storage
+      CRS_MATRIX_STORAGE_1D_UNPACKED, //<! 1-D "unpacked" storage
+      CRS_MATRIX_STORAGE_1D_PACKED //<! 1-D "packed" storage
+    };
+
+    ECrsMatrixStorageStatus storageStatus_;
 
     //! Whether the matrix is fill complete.
     bool fillComplete_;
@@ -2426,30 +2475,35 @@ namespace Tpetra {
     /// matrix may have changed and the norm must be recomputed.
     mutable Magnitude frobNorm_;
 
-public:
+  public:
     // FIXME (mfh 24 Feb 2014) Is it _really_ necessary to make this a
     // public inner class of CrsMatrix?  It looks like it doesn't
     // depend on any implementation details of CrsMatrix at all.  It
     // should really be declared and defined outside of CrsMatrix.
-    template<class ViewType, class OffsetViewType >
+    template<class ViewType, class OffsetViewType>
     struct pack_functor {
       typedef typename ViewType::device_type device_type;
-      ViewType src;
-      ViewType dest;
-      OffsetViewType src_offset;
-      OffsetViewType dest_offset;
-      typedef typename OffsetViewType::non_const_value_type ScalarIndx;
+      ViewType src_;
+      ViewType dst_;
+      OffsetViewType src_offset_;
+      OffsetViewType dst_offset_;
+      typedef typename OffsetViewType::non_const_value_type scalar_index_type;
 
-      pack_functor(ViewType dest_, ViewType src_, OffsetViewType dest_offset_, OffsetViewType src_offset_):
-        src(src_),dest(dest_),src_offset(src_offset_),dest_offset(dest_offset_) {};
+      pack_functor (ViewType dst, ViewType src,
+                    OffsetViewType dst_offset, OffsetViewType src_offset) :
+        src_ (src),
+        dst_ (dst),
+        src_offset_ (src_offset),
+        dst_offset_ (dst_offset)
+      {}
 
       KOKKOS_INLINE_FUNCTION
-      void operator() (size_t row) const {
-        ScalarIndx i = src_offset(row);
-        ScalarIndx j = dest_offset(row);
-        const ScalarIndx k = dest_offset(row+1);
-        for(;j<k;j++,i++) {
-          dest(j) = src(i);
+      void operator () (const LocalOrdinal row) const {
+        scalar_index_type srcPos = src_offset_(row);
+        const scalar_index_type dstEnd = dst_offset_(row+1);
+        scalar_index_type dstPos = dst_offset_(row);
+        for ( ; dstPos < dstEnd; ++dstPos, ++srcPos) {
+          dst_(dstPos) = src_(srcPos);
         }
       }
     };

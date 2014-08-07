@@ -94,13 +94,13 @@ namespace Impl {
 OpenMPexec * OpenMPexec::m_thread[ OpenMPexec::MAX_THREAD_COUNT ] = { 0 }; // Indexed by omp_get_thread_num()
 OpenMPexec * OpenMPexec::m_pool[   OpenMPexec::MAX_THREAD_COUNT ] = { 0 }; // Indexed by OpenMPexec::m_pool_rank
 
-OpenMPexec::OpenMPexec( const unsigned pool_rank )
+OpenMPexec::OpenMPexec( const unsigned poolRank )
   : m_team_base(0)
   , m_alloc_reduce(0)
   , m_alloc_shared(0)
   , m_team_shared(0)
   , m_alloc_shared_size(0)
-  , m_pool_rank( pool_rank )
+  , m_pool_rank( poolRank )
   , m_team_shared_end(0)
   , m_team_shared_iter(0)
   , m_team_rank(0)
@@ -481,9 +481,9 @@ void OpenMP::print_configuration( std::ostream & s , const bool detail )
 /* END #pragma omp parallel */
 
       for ( unsigned i = 0 ; i < coord.size() ; ++i ) {
-        s << "  thread omp_rank[" << i << "]" 
+        s << "  thread omp_rank[" << i << "]"
           << " kokkos_rank[" << Impl::OpenMPexec::m_thread[ i ]->m_pool_rank << "]"
-          << " hwloc_coord[" << coord[i].first << "." << coord[i].second << "]" 
+          << " hwloc_coord[" << coord[i].first << "." << coord[i].second << "]"
           << std::endl ;
       }
     }

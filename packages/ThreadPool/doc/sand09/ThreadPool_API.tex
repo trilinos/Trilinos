@@ -18,7 +18,7 @@ Each state transition occurs through application calls to the ThreadPool functio
 \begin{figure}[h]
 \begin{center}
 \fbox{
-\includegraphics[viewport=0.5in 0.5in 2.75in 4.75in,angle=270,scale=1]{StateDiagram.eps}
+\includegraphics[viewport=0.5in 0.5in 2.75in 4.75in,angle=270,scale=1]{figures/StateDiagram}
 }
 \caption{ThreadPool state diagram with state transitions identified by thread pool functions}
 \label{fig:ThreadPoolStates}
@@ -27,10 +27,10 @@ Each state transition occurs through application calls to the ThreadPool functio
 
 The ThreadPool is in the ACTIVE state while running an application's work subprogram.
 %
-A work subprogram may be run in several different thread-parallel modes, 
+A work subprogram may be run in several different thread-parallel modes,
 as described in Sections~\ref{sec:RunWork}-\ref{sec:WorkSubprogramWithReduce}.
 %
-An application selects the thread-parallel mode by calling the associated version of a 
+An application selects the thread-parallel mode by calling the associated version of a
 \texttt{TPI\_Run\_*} function.
 
 
@@ -45,7 +45,7 @@ An application calls the \texttt{TPI\_Init} function to create \texttt{thread\_c
 %
 This \texttt{TPI\_Init} function can only be called when the ThreadPool is in the NULL state.
 %
-These created threads are in addition to the application's \emph{main} thread, for a total of 
+These created threads are in addition to the application's \emph{main} thread, for a total of
 \texttt{thread\_count} available threads of execution.
 %
 While in the READY state the ThreadPool is ready to dispatch work routine to threads.
@@ -62,7 +62,7 @@ This strategy minimizes the time required to dispatch work to threads by maintai
 
 It is recommended that the number of requested threads, \texttt{thread\_count}, be no greater than the number of available processing cores.
 %
-If more threads are requested then the threads will be required to block and unblock 
+If more threads are requested then the threads will be required to block and unblock
 (\emph{i.e.}, context switch) in order for all of the threads to execute.
 %
 This blocking and unblocking introduces overhead which degrades thread-parallel performance.
@@ -105,16 +105,16 @@ This assumed application and algorithm flow is summarized in Figure~\ref{fig:Wor
 
 \begin{figure}[h]
 \center
-\small 
+\small
 \begin{boxedverbatim}
 #include<TPI.h>
 
 int main(...)
 {
   TPI_Init( thread_count );
-  /* 
+  /*
    *  Application's program control flow
-   *  calls application's algorithms. 
+   *  calls application's algorithms.
    */
   TPI_Finalize();
 }
@@ -123,8 +123,8 @@ void an_application_algorithm(...)
 {
   const int was_blocked = TPI_Isblocked();
   if ( was_blocked ) TPI_Unblock();
-  /* 
-   *  Run many thread-parallel computational kernels... 
+  /*
+   *  Run many thread-parallel computational kernels...
    */
   if ( was_blocked ) TPI_Block();
   return ;
@@ -162,7 +162,7 @@ Two pieces of information is required by a call to the work subprogram:
 
 An application's work subprogram is a function conforming to the C language interface defined in Figure~\ref{fig:WorkSubprogram}.
 %
-A work subprogram determines which portion of work that it should perform from members of the input 
+A work subprogram determines which portion of work that it should perform from members of the input
 \texttt{TPI\_Work\_Struct} argument.
 %
 \begin{figure}[h]
@@ -190,8 +190,8 @@ typedef void (*TPI_work_subprogram)( TPI_Work * work );
 %
 \item The \texttt{work->count} member identifies the total number times the work subprogram is being called during a single call to a \texttt{TPI\_Run} function.
 %
-\item The \texttt{work->rank} member is given a unique value for each call of the work subprogram.  These values are in the range \mbox{[0..\texttt{work->count}-1]}.  
-Due to non-determinism of thread-execution there is no guaranteed correlation between the 
+\item The \texttt{work->rank} member is given a unique value for each call of the work subprogram.  These values are in the range \mbox{[0..\texttt{work->count}-1]}.
+Due to non-determinism of thread-execution there is no guaranteed correlation between the
 \texttt{work->rank} value and the calling order of the work subprogram.
 These \texttt{work->rank} and \texttt{work->count} members provide the minimal information required for a call to a work subprogram to determine its portion of the total work to be performed.
 %
@@ -211,7 +211,7 @@ int TPI_Run_threads( TPI_work_subprogram work_subprogram  ,
 \end{boxedverbatim}
 \end{center}
 
-The \texttt{TPI\_Run\_threads} function is used to call an application's work subprogram 
+The \texttt{TPI\_Run\_threads} function is used to call an application's work subprogram
 once on each available thread, both main and created threads.
 %
 A simple use of this function to perform a thread-parallel \mbox{$Y=\alpha*X+Y$} operation is illustrated in Figure~\ref{fig:WorkSubprogramAXPY}.
@@ -237,8 +237,8 @@ void tpi_daxpy( TPI_Work * work )
   const WorkInfo * const info = (const WorkInfo *) work->info ;
   int begin , end , i ;
   compute_span_of_work( work->count , work->rank , info->n , & begin , & end );
-  for ( i = begin ; i < end ; ++i ) { 
-    work->y[i] += work->a * work->x[i] ; 
+  for ( i = begin ; i < end ; ++i ) {
+    work->y[i] += work->a * work->x[i] ;
   }
 }
 \end{boxedverbatim}
@@ -250,7 +250,7 @@ void tpi_daxpy( TPI_Work * work )
 When the application's work subprogram is called by each thread the \texttt{TPI\_Work} argument (see Figure~\ref{fig:WorkSubprogram}) is populated with the following information.
 %
 \begin{blist}
-\item \texttt{work->info} = pointer to \texttt{work\_info} --- the application-supplied \emph{shared} work data, 
+\item \texttt{work->info} = pointer to \texttt{work\_info} --- the application-supplied \emph{shared} work data,
 \item \texttt{work->count} = the total number of threads calling the work subprogram, and
 \item \texttt{work->rank} = the rank of the calling thread.
 \end{blist}
@@ -275,14 +275,14 @@ The ThreadPool threads use an internally-shared work counter to guarantee the co
 In this interface the \texttt{TPI\_Work\_Struct} is populated with the following information.
 %
 \begin{blist}
-\item \texttt{work->info} = pointer to \texttt{work\_info} --- the application's \emph{shared} work data, 
+\item \texttt{work->info} = pointer to \texttt{work\_info} --- the application's \emph{shared} work data,
 \item \texttt{work->count} = \texttt{work\_count} --- the specified number of calls to the work subprogram, and
 \item \texttt{work->rank} = the rank of the call out of the specified number of calls.
 \end{blist}
 
 
 
-This interface is intended for applications that 
+This interface is intended for applications that
 (1) have a large amount of work to perform and
 (2) have units of work with an irregular computational load.
 %
@@ -293,14 +293,14 @@ As each thread completes a call to the application's work subprogram it will cla
 
 This interface provides an application with a means for automatically (but only approximately) balancing computational work among threads.
 %
-The quality of this load balancing is dependent upon the the variability of the work load among the units of work. 
+The quality of this load balancing is dependent upon the the variability of the work load among the units of work.
 
 
 \subsection{Running Work Subprograms with Locks} \label{sec:RunWorkLock}
 
 When a work subprogram updates a shared variable or data structure that update must be thread safe.
 %
-One strategy for thread safe updates is with \emph{mutually exclusive locks} 
+One strategy for thread safe updates is with \emph{mutually exclusive locks}
 (referred to as \emph{mutex} in the \textbf{pthreads} API).
 %
 Locks provide mutually exclusive execution of those portions of a work subprogram that access a shared variable or data structure that is updated by the work subprogram.
@@ -331,8 +331,8 @@ void tpi_ddot( TPI_Work * work )
   double local_result = 0.0 ;
   int begin , end , i ;
   compute_span_of_work( work->count , work->rank , info->n , & begin , & end );
-  for ( i = begin ; i < end ; ++i ) { 
-    local_result += work->y[i] * work->x[i] ; 
+  for ( i = begin ; i < end ; ++i ) {
+    local_result += work->y[i] * work->x[i] ;
   }
   TPI_Lock(0);                              /* probable blocking */
   *(work->result_pointer) += local_result ; /* serialized */
@@ -354,7 +354,7 @@ If a second thread arrives at this function call it will block and wait for the 
 Once the first thread releases the lock the second thread unblocks, acquires the lock, and proceeds with its own contribution to the summation.
 
 
-Using mutually exclusive locks has the performance liabilities of 
+Using mutually exclusive locks has the performance liabilities of
 \begin{blist}
 \item serializing thread execution between \texttt{TPI\_Lock} and \texttt{TPI\_Unlock},
 \item introducing overhead for blocking and unblocking threads, and
@@ -375,7 +375,7 @@ Alternate versions of the \texttt{TPI\_Run} and \texttt{TPI\_Run\_threads} funct
 \texttt{TPI\_Run\_reduce} and \texttt{TPI\_Run\_threads\_reduce} respectively,
 are defined to support efficient reduction operations.
 %
-An example usage of this reduction-supporting interface is given in 
+An example usage of this reduction-supporting interface is given in
 Figure~\ref{fig:WorkSubprogramDDOTreduce}.
 
 \begin{center}
@@ -409,7 +409,7 @@ Each call to the \texttt{work\_subprogram} has exclusive access to the reduction
 %
 Exclusive access is guaranteed by each thread having its own copy of the reduction variable.
 %
-This copy is allocated to be \texttt{reduce\_size} bytes and is initialized by a call to the application-provided \texttt{reduce\_init} function. 
+This copy is allocated to be \texttt{reduce\_size} bytes and is initialized by a call to the application-provided \texttt{reduce\_init} function.
 
 
 \paragraph{\texttt{reduce\_join}:}
@@ -420,7 +420,7 @@ The final result is reduced into the application-provided reduction variable poi
 %
 These join operations occur without additional serialization, without extra runtime overhead, and are deterministic.
 %
-Thus for algorithms with reduction operations, or with updates to shared variables which can be expressed as reduction operations, this interface resolves the performance liabilities of the locking / unlocking approach. 
+Thus for algorithms with reduction operations, or with updates to shared variables which can be expressed as reduction operations, this interface resolves the performance liabilities of the locking / unlocking approach.
 
 
 
@@ -438,7 +438,7 @@ double ddot( int n , const double * x , const double * y )
 {
   double result = 0.0 ;
   WorkInfo work_info = { n , & result , x , y };
-  TPI_Run_threads_reduce( tpi_ddot , & work_info , 
+  TPI_Run_threads_reduce( tpi_ddot , & work_info ,
                           tpi_ddot_join , tpi_ddot_init ,
                           sizeof(result) , & result );
   return result ;
@@ -449,8 +449,8 @@ void tpi_ddot( TPI_Work * work )
   double * const local_result = (double*) work->result ;
   int begin , end , i ;
   compute_span_of_work( work->count , work->rank , info->n , & begin , & end );
-  for ( i = begin ; i < end ; ++i ) { 
-    *local_result += work->y[i] * work->x[i] ; 
+  for ( i = begin ; i < end ; ++i ) {
+    *local_result += work->y[i] * work->x[i] ;
   }
 }
 void tpi_ddot_join( TPI_Work * work , const void * reduce )

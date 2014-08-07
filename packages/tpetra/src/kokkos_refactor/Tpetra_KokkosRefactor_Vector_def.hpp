@@ -310,7 +310,7 @@ namespace Tpetra {
             if (vl != VERB_MEDIUM) {
               // VERB_HIGH and higher prints isConstantStride() and stride()
               if (vl == VERB_EXTREME && this->getLocalLength() > 0) {
-                RCP<Node> node = this->lclMV_.getNode();
+                /*RCP<Node> node = this->lclMV_.getNode();
                 KOKKOS_NODE_TRACE("Vector::describe()")
                 ArrayRCP<const Scalar> myview = node->template viewBuffer<Scalar>(
                                                                this->getLocalLength(),
@@ -321,7 +321,7 @@ namespace Tpetra {
                       << ": "
                       << myview[i] << endl;
                 }
-                myview = Teuchos::null;
+                myview = Teuchos::null;*/
               }
             }
             else {

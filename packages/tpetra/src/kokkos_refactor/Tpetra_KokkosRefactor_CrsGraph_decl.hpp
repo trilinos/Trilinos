@@ -907,32 +907,60 @@ namespace Tpetra {
     void allocateIndices (ELocalGlobal lg);
 
     template <class T>
-    ArrayRCP<T> allocateValues1D () const;
-    template <class T>
-    ArrayRCP<Array<T> > allocateValues2D () const;
+    Teuchos::ArrayRCP<T> allocateValues1D () const {
+      // FIXME (mfh 05 Aug 2014) This method only exists here to
+      // placate the ETI macros for Kokkos classic.
+      return Teuchos::null;
+    }
 
-    template <ELocalGlobal lg, class T>
-    RowInfo updateAllocAndValues (RowInfo rowinfo, size_t newAllocSize, Array<T>& rowVals)
+    template <class T>
+    Teuchos::ArrayRCP<Teuchos::Array<T> > allocateValues2D () const;
+
+    template <class T>
+    RowInfo updateLocalAllocAndValues (const RowInfo rowInfo,
+                                       const size_t newAllocSize,
+                                       Teuchos::Array<T>& rowVals)
     {
 #ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPT( ! rowMap_->isNodeLocalElement(rowinfo.localRow) );
-      TEUCHOS_TEST_FOR_EXCEPT( newAllocSize < rowinfo.allocSize );
-      TEUCHOS_TEST_FOR_EXCEPT( (lg == LocalIndices && ! isLocallyIndexed()) ||
-                               (lg == GlobalIndices && ! isGloballyIndexed()) );
-      TEUCHOS_TEST_FOR_EXCEPT( newAllocSize == 0 );
+      TEUCHOS_TEST_FOR_EXCEPT( ! isLocallyIndexed () );
       TEUCHOS_TEST_FOR_EXCEPT( ! indicesAreAllocated() );
-#endif
+      TEUCHOS_TEST_FOR_EXCEPT( newAllocSize == 0 );
+      TEUCHOS_TEST_FOR_EXCEPT( newAllocSize < rowInfo.allocSize );
+      TEUCHOS_TEST_FOR_EXCEPT( ! rowMap_->isNodeLocalElement (rowInfo.localRow) );
+#endif // HAVE_TPETRA_DEBUG
+
       // ArrayRCP::resize automatically copies over values on reallocation.
-      if (lg == LocalIndices) {
-        lclInds2D_[rowinfo.localRow].resize (newAllocSize);
-      }
-      else { // lg == GlobalIndices
-        gblInds2D_[rowinfo.localRow].resize (newAllocSize);
-      }
+      lclInds2D_[rowInfo.localRow].resize (newAllocSize);
       rowVals.resize (newAllocSize);
-      nodeNumAllocated_ += (newAllocSize - rowinfo.allocSize);
-      rowinfo.allocSize = newAllocSize;
-      return rowinfo;
+      nodeNumAllocated_ += (newAllocSize - rowInfo.allocSize);
+
+      RowInfo rowInfoOut = rowInfo;
+      rowInfoOut.allocSize = newAllocSize;
+      return rowInfoOut;
+    }
+
+    template <class T>
+    RowInfo
+    updateGlobalAllocAndValues (const RowInfo rowInfo,
+                                const size_t newAllocSize,
+                                Teuchos::Array<T>& rowVals)
+    {
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPT( ! isGloballyIndexed () );
+      TEUCHOS_TEST_FOR_EXCEPT( ! indicesAreAllocated () );
+      TEUCHOS_TEST_FOR_EXCEPT( newAllocSize == 0 );
+      TEUCHOS_TEST_FOR_EXCEPT( newAllocSize < rowInfo.allocSize );
+      TEUCHOS_TEST_FOR_EXCEPT( ! rowMap_->isNodeLocalElement (rowInfo.localRow) );
+#endif // HAVE_TPETRA_DEBUG
+
+      // ArrayRCP::resize automatically copies over values on reallocation.
+      gblInds2D_[rowInfo.localRow].resize (newAllocSize);
+      rowVals.resize (newAllocSize);
+      nodeNumAllocated_ += (newAllocSize - rowInfo.allocSize);
+
+      RowInfo rowInfoOut = rowInfo;
+      rowInfoOut.allocSize = newAllocSize;
+      return rowInfoOut;
     }
 
     //! \name Methods governing changes between global and local indices
@@ -1543,11 +1571,13 @@ namespace Tpetra {
     //! <tt>gblInds2D_[r]</tt> are the indices for row \c r.
     ArrayRCP<Array<GlobalOrdinal> > gblInds2D_;
 
+    typedef Kokkos::DualView<size_t*, Kokkos::LayoutLeft,
+                             typename Node::device_type> t_numRowEntries_;
+
     /// \brief The number of local entries in each locally owned row.
     ///
     /// This is deallocated in fillComplete() if fillComplete()'s
     /// "Optimize Storage" parameter is set to \c true.
-    typedef Kokkos::DualView<size_t*, Kokkos::LayoutLeft, typename Node::device_type> t_numRowEntries_;
     t_numRowEntries_ k_numRowEntries_;
     Teuchos::ArrayRCP<size_t> numRowEntries_;
 
