@@ -1178,6 +1178,7 @@ namespace Sacado {
 
   // Utility function to see if a PCE is really a constant
   template <typename Storage>
+  KOKKOS_INLINE_FUNCTION
   bool is_constant(const Sacado::UQ::PCE<Storage>& x)
   {
     typedef typename Storage::ordinal_type ordinal_type;
