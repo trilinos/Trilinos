@@ -27,90 +27,33 @@
 TRIBITS_PACKAGE(WrapExternal)
 
 #
-# A) Determine if any downstream changes require a rebuild
+# A) Determine if any downstream changes require a rebuild and deal with it
 #
 
 INCLUDE(TribitsGetMostRecentFileTimestamp)
 
-#SET(TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP_DUMP ON)
-
-# Find most current upstream source file
-TRIBITS_FIND_MOST_RECENT_SOURCE_FILE_TIMESTAMP(
-  SOURCE_BASE_DIRS
-    "${PackageWithSubpackages_SOURCE_DIR}"
-    "${SimpleCxx_SOURCE_DIR}"
-  MOST_RECENT_TIMESTAMP_OUT  MOST_RECENT_UPSTREAM_SOURCE_TIMESTAMP
+#
+TRIBITS_DETERMINE_IF_CURRENT_PACKAGE_NEEDS_REBUILT(
   #SHOW_MOST_RECENT_FILES
   SHOW_OVERALL_MOST_RECENT_FILES
+  CURRENT_PACKAGE_OUT_OF_DATE_OUT ${PACKAGE_NAME}_BULID_IS_OUT_OF_DATE
   )
-PRINT_VAR(MOST_RECENT_UPSTREAM_SOURCE_TIMESTAMP)
+#PRINT_VAR(${PACKAGE_NAME}_BULID_IS_OUT_OF_DATE)
 
-# Find most current upstream binary file
-TRIBITS_FIND_MOST_RECENT_BINARY_FILE_TIMESTAMP(
-  BINARY_BASE_DIRS
-    "${PackageWithSubpackages_BINARY_DIR}"
-    "${SimpleCxx_BINARY_DIR}"
-  MOST_RECENT_TIMESTAMP_OUT  MOST_RECENT_UPSTREAM_BINARY_TIMESTAMP
-  #SHOW_MOST_RECENT_FILES
-  SHOW_OVERALL_MOST_RECENT_FILES
-  )
-PRINT_VAR(MOST_RECENT_UPSTREAM_BINARY_TIMESTAMP)
-
-# Find most current file in source extenal_func/
-TRIBITS_FIND_MOST_RECENT_SOURCE_FILE_TIMESTAMP(
-  SOURCE_BASE_DIRS ${PACKAGE_SOURCE_DIR}/external_func/
-  MOST_RECENT_TIMESTAMP_OUT  MOST_RECENT_EXTERNAL_FUNC_SOURCE_TIMESTAMP
-  #SHOW_MOST_RECENT_FILES
-  SHOW_OVERALL_MOST_RECENT_FILES
-  )
-PRINT_VAR(MOST_RECENT_EXTERNAL_FUNC_SOURCE_TIMESTAMP)
-
-# Find most current file in binary extenal_func/
-TRIBITS_FIND_MOST_RECENT_BINARY_FILE_TIMESTAMP(
-  BINARY_BASE_DIRS ${PACKAGE_BINARY_DIR}/external_func/
-  MOST_RECENT_TIMESTAMP_OUT  MOST_RECENT_EXTERNAL_FUNC_BINARY_TIMESTAMP
-  SHOW_MOST_RECENT_FILES
-  SHOW_OVERALL_MOST_RECENT_FILES
-  )
-PRINT_VAR(MOST_RECENT_EXTERNAL_FUNC_BINARY_TIMESTAMP)
-
-# Check to see if any are more recent!
-
-SET(BUILD_FROM_SCRACH OFF)
-
-IF (
-  "${MOST_RECENT_UPSTREAM_SOURCE_TIMESTAMP}" GREATER
-    "${MOST_RECENT_EXTERNAL_FUNC_BINARY_TIMESTAMP}"
-  )
-  MESSAGE("Upstream source more recent than binary exteranl_func/")
-  SET(BUILD_FROM_SCRACH ON)
-ENDIF()
-
-IF (
-  "${MOST_RECENT_UPSTREAM_BINARY_TIMESTAMP}" GREATER
-    "${MOST_RECENT_EXTERNAL_FUNC_BINARY_TIMESTAMP}"
-  )
-  MESSAGE("Upstream binary more recent than binary exteranl_func/")
-  SET(BUILD_FROM_SCRACH ON)
-ENDIF()
-
-IF (
-  "${MOST_RECENT_EXTERNAL_FUNC_SOURCE_TIMESTAMP}" GREATER
-    "${MOST_RECENT_EXTERNAL_FUNC_BINARY_TIMESTAMP}"
-  )
-  MESSAGE("exteranl_func/ source more recent than binary exteranl_func/")
-  SET(BUILD_FROM_SCRACH ON)
-ENDIF()
-
-IF (BUILD_FROM_SCRACH)
+# If there is anything out of date, then just blow away the external build
+# dir.
+IF (${PACKAGE_NAME}_BULID_IS_OUT_OF_DATE)
   MESSAGE(
-    "Blowing away build dir exteranl_func/ so it will build from scratch!"
+    "\nBlowing away ${PACKAGE_NAME} build dir exteranl_func/ so it will build from scratch!"
     )
   EXECUTE_PROCESS(
     COMMAND rm -rf "${PACKAGE_BINARY_DIR}/external_func/"
     )
 ENDIF()
-
+# NOTE: There may be other ways to address the out of date build than to blow
+# the whole thing away but some exteranl packages can be pretty complex and
+# the only safe way to ensure that the rebuild is correct is to start from
+# scratch.
 
 #
 # B) Write the export makefile that will be used by the external project
@@ -148,8 +91,8 @@ EXECUTE_PROCESS(
 
 ADD_CUSTOM_COMMAND(
   OUTPUT ${EXTERNAL_FUNC_LIB_FILE}
-  DEPENDS ${EXTERNAL_FUNC_SOURCE_DIR}/external_func.hpp
-    ${EXTERNAL_FUNC_SOURCE_DIR}/external_func.cpp
+#  DEPENDS ${EXTERNAL_FUNC_SOURCE_DIR}/external_func.hpp
+#    ${EXTERNAL_FUNC_SOURCE_DIR}/external_func.cpp
   COMMAND make ${CTEST_BUILD_FLAGS}
   WORKING_DIRECTORY ${EXTERNAL_FUNC_BINARY_DIR}
   )
