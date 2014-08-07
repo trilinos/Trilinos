@@ -3097,7 +3097,7 @@ namespace { // (anonymous)
 
     const size_t numVecs = getNumVectors();
 
-    typedef Kokkos::View<Scalar*, DeviceType> view_type;
+    typedef Kokkos::View<Scalar*, Kokkos::LayoutLeft, DeviceType> view_type;
 
     if (isConstantStride() && A.isConstantStride()) {
       view_.template sync<DeviceType>();
