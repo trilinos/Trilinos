@@ -285,11 +285,12 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
   //setEntityTypes(typestr, "vertex", "vertex");
 
   int error = 0;
+  char title[100];
   int exoid = 0;
   int num_elem_blk, num_node_sets, num_side_sets;
-  im_ex_get_init ( exoid, "PAMGEN Inline Mesh", &dimension_,
-		   &num_nodes_, &num_elem_, &num_elem_blk,
-		   &num_node_sets, &num_side_sets);
+  im_ex_get_init(exoid, title, &dimension_,
+		 &num_nodes_, &num_elem_, &num_elem_blk,
+		 &num_node_sets, &num_side_sets);
 
   coords_ = new double [num_nodes_ * dimension_];
 
