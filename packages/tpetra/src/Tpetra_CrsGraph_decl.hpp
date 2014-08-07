@@ -1417,7 +1417,7 @@ namespace Tpetra {
     ///   values[k].  On output: the same values, but sorted in the
     ///   same order as the (now sorted) column indices in the row.
     template <class Scalar>
-    void sortRowIndicesAndValues (RowInfo rowinfo, ArrayView<Scalar> values);
+    void sortRowIndicesAndValues (const RowInfo rowinfo, const Teuchos::ArrayView<Scalar>& values);
 
     /// \brief Merge duplicate row indices in all of the rows.
     ///

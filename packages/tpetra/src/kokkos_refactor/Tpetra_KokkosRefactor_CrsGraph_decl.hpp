@@ -132,10 +132,10 @@ namespace Tpetra {
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
-    CrsGraph (const RCP<const map_type>& rowMap,
+    CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               size_t maxNumEntriesPerRow,
               ProfileType pftype = DynamicProfile,
-              const RCP<ParameterList>& params = null);
+              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying (possibly different) number of entries in each row.
     ///
@@ -154,10 +154,10 @@ namespace Tpetra {
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
-    CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
-              const ArrayRCP<const size_t>& NumEntriesPerRowToAlloc,
+    CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
+              const Teuchos::ArrayRCP<const size_t>& NumEntriesPerRowToAlloc,
               ProfileType pftype = DynamicProfile,
-              const RCP<ParameterList>& params = null);
+              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and fixed number of entries for each row.
     ///
@@ -178,11 +178,11 @@ namespace Tpetra {
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
-    CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
-              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
+    CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
+              const Teuchos::RCP<const map_type>& colMap,
               size_t maxNumEntriesPerRow,
               ProfileType pftype = DynamicProfile,
-              const RCP<ParameterList>& params = null);
+              const Teuchos::RCP<Teuchos::ParameterList>& params = null);
 
     /// \brief Constructor specifying column Map and number of entries in each row.
     ///
@@ -203,11 +203,11 @@ namespace Tpetra {
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
-    CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
-              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
-              const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc,
+    CrsGraph (const Teuchos::RCP<const map_type >& rowMap,
+              const Teuchos::RCP<const map_type >& colMap,
+              const Teuchos::ArrayRCP<const size_t> &NumEntriesPerRowToAlloc,
               ProfileType pftype = DynamicProfile,
-              const RCP<ParameterList>& params = null);
+              const Teuchos::RCP<Teuchos::ParameterList>& params = null);
 
     /// \brief Constructor specifying column Map and arrays containing the graph in sorted, local ids.
     ///
@@ -228,11 +228,11 @@ namespace Tpetra {
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
-    CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
-              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
+    CrsGraph (const Teuchos::RCP<const map_type >& rowMap,
+              const Teuchos::RCP<const map_type >& colMap,
               const t_RowPtrs & rowPointers,
               const t_LocalOrdinal_1D & columnIndices,
-              const RCP<ParameterList>& params = null);
+              const Teuchos::RCP<Teuchos::ParameterList>& params = null);
 
     /// \brief Constructor specifying column Map and arrays containing the graph in sorted, local ids.
     ///
@@ -253,11 +253,11 @@ namespace Tpetra {
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
-    CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
-              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
-              const ArrayRCP<size_t> & rowPointers,
-              const ArrayRCP<LocalOrdinal> & columnIndices,
-              const RCP<ParameterList>& params = null);
+    CrsGraph (const Teuchos::RCP<const map_type >& rowMap,
+              const Teuchos::RCP<const map_type >& colMap,
+              const Teuchos::ArrayRCP<size_t> & rowPointers,
+              const Teuchos::ArrayRCP<LocalOrdinal> & columnIndices,
+              const Teuchos::RCP<Teuchos::ParameterList>& params = null);
 
     /// \brief Constructor specifying column Map and a local (sorted)
     ///   graph, which the resulting CrsGraph views.
@@ -277,10 +277,10 @@ namespace Tpetra {
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
-    CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &rowMap,
-              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &colMap,
+    CrsGraph (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &rowMap,
+              const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &colMap,
               const LocalStaticCrsGraphType& lclGraph,
-              const RCP<ParameterList>& params);
+              const Teuchos::RCP<Teuchos::ParameterList>& params);
 
     /// \brief Create a cloned CrsGraph for a different Node type.
     ///
@@ -310,7 +310,7 @@ namespace Tpetra {
     ///   and range maps passed to fillComplete() are those of the map
     ///   being cloned, if they exist. Otherwise, the row map is used.
     template<class Node2>
-    RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node2,
+    Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node2,
                  typename KokkosClassic::DefaultKernels<void, LocalOrdinal, Node2>::SparseOps> >
     clone (const Teuchos::RCP<Node2> &node2,
            const Teuchos::RCP<Teuchos::ParameterList> &params = null) const
@@ -330,10 +330,10 @@ namespace Tpetra {
     //@{
 
     //! Set the given list of parameters (must be nonnull).
-    void setParameterList (const RCP<ParameterList>& params);
+    void setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& params);
 
     //! Default parameter list suitable for validation.
-    RCP<const ParameterList> getValidParameters () const;
+    Teuchos::RCP<const ParameterList> getValidParameters () const;
 
     //@}
     //! @name Insertion/Removal Methods
@@ -419,7 +419,7 @@ namespace Tpetra {
       \post  <tt>isFillActive() == true<tt>
       \post  <tt>isFillComplete() == false<tt>
     */
-    void resumeFill (const RCP<ParameterList> &params = null);
+    void resumeFill (const Teuchos::RCP<Teuchos::ParameterList> &params = null);
 
     /*! \brief Signal that data entry is complete, specifying domain and range maps.
 
@@ -439,9 +439,9 @@ namespace Tpetra {
         finishes.  See isStorageOptimized() for consequences.
     */
     void
-    fillComplete (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap,
-                  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap,
-                  const RCP<ParameterList> &params = null);
+    fillComplete (const Teuchos::RCP<const map_type > &domainMap,
+                  const Teuchos::RCP<const map_type > &rangeMap,
+                  const Teuchos::RCP<Teuchos::ParameterList> &params = null);
 
     /*! \brief Signal that data entry is complete.
 
@@ -449,7 +449,7 @@ namespace Tpetra {
 
       \note This method calls fillComplete( getRowMap(), getRowMap(), os ). See parameter options there.
     */
-    void fillComplete (const RCP<ParameterList> &params = null);
+    void fillComplete (const Teuchos::RCP<Teuchos::ParameterList> &params = null);
 
     /// \brief Perform a fillComplete on a graph that already has data, via setAllIndices().
     ///
@@ -462,38 +462,38 @@ namespace Tpetra {
     /// \warning This method is intended for expert developer use
     ///   only, and should never be called by user code.
     void
-    expertStaticFillComplete (const RCP<const map_type> & domainMap,
-                              const RCP<const map_type> & rangeMap,
-                              const RCP<const import_type> &importer=Teuchos::null,
-                              const RCP<const export_type> &exporter=Teuchos::null,
-                              const RCP<ParameterList> &params=Teuchos::null);
+    expertStaticFillComplete (const Teuchos::RCP<const map_type> & domainMap,
+                              const Teuchos::RCP<const map_type> & rangeMap,
+                              const Teuchos::RCP<const import_type> &importer=Teuchos::null,
+                              const Teuchos::RCP<const export_type> &exporter=Teuchos::null,
+                              const Teuchos::RCP<Teuchos::ParameterList> &params=Teuchos::null);
     //@}
     //! @name Methods implementing RowGraph.
     //@{
 
     //! Returns the communicator.
-    RCP<const Comm<int> > getComm() const;
+    Teuchos::RCP<const Comm<int> > getComm() const;
 
     //! Returns the underlying node.
-    RCP<Node> getNode() const;
+    Teuchos::RCP<Node> getNode() const;
 
     //! Returns the Map that describes the row distribution in this graph.
-    RCP<const map_type> getRowMap () const;
+    Teuchos::RCP<const map_type> getRowMap () const;
 
     //! \brief Returns the Map that describes the column distribution in this graph.
-    RCP<const map_type> getColMap () const;
+    Teuchos::RCP<const map_type> getColMap () const;
 
     //! Returns the Map associated with the domain of this graph.
-    RCP<const map_type> getDomainMap () const;
+    Teuchos::RCP<const map_type> getDomainMap () const;
 
     //! Returns the Map associated with the domain of this graph.
-    RCP<const map_type> getRangeMap () const;
+    Teuchos::RCP<const map_type> getRangeMap () const;
 
     //! Returns the importer associated with this graph.
-    RCP<const import_type> getImporter () const;
+    Teuchos::RCP<const import_type> getImporter () const;
 
     //! Returns the exporter associated with this graph.
-    RCP<const export_type> getExporter () const;
+    Teuchos::RCP<const export_type> getExporter () const;
 
     //! Returns the number of global rows in the graph.
     /** Undefined if isFillActive().
@@ -795,19 +795,19 @@ namespace Tpetra {
     /// \warning This method is intended for expert developer use
     ///   only, and should never be called by user code.
     void
-    setAllIndices (const ArrayRCP<size_t> & rowPointers,
-                   const ArrayRCP<LocalOrdinal> & columnIndices);
+    setAllIndices (const Teuchos::ArrayRCP<size_t> & rowPointers,
+                   const Teuchos::ArrayRCP<LocalOrdinal> & columnIndices);
 
-    //! Get an ArrayRCP of the row-offsets.
+    //! Get an Teuchos::ArrayRCP of the row-offsets.
     /*!  The returned buffer exists in host-memory. This method may return Teuchos::null
       if "Delete Row Pointers" was \c true on fillComplete().
     */
-    ArrayRCP<const size_t> getNodeRowPtrs() const;
+    Teuchos::ArrayRCP<const size_t> getNodeRowPtrs() const;
 
-    //! Get an ArrayRCP of the packed column-indices.
+    //! Get an Teuchos::ArrayRCP of the packed column-indices.
     /*!  The returned buffer exists in host-memory.
      */
-    ArrayRCP<const LocalOrdinal> getNodePackedIndices() const;
+    Teuchos::ArrayRCP<const LocalOrdinal> getNodePackedIndices() const;
 
     /// \brief Replace the current colMap with the given object.
     ///
@@ -899,12 +899,9 @@ namespace Tpetra {
       ArrayView<GlobalOrdinal>       ginds;
       ArrayView<LocalOrdinal>        linds;
     };
-    //
-    // Allocation
-    //
-    bool indicesAreAllocated() const;
 
-    void allocateIndices (ELocalGlobal lg);
+    bool indicesAreAllocated () const;
+    void allocateIndices (const ELocalGlobal lg);
 
     template <class T>
     Teuchos::ArrayRCP<T> allocateValues1D () const {
@@ -929,7 +926,7 @@ namespace Tpetra {
       TEUCHOS_TEST_FOR_EXCEPT( ! rowMap_->isNodeLocalElement (rowInfo.localRow) );
 #endif // HAVE_TPETRA_DEBUG
 
-      // ArrayRCP::resize automatically copies over values on reallocation.
+      // Teuchos::ArrayRCP::resize automatically copies over values on reallocation.
       lclInds2D_[rowInfo.localRow].resize (newAllocSize);
       rowVals.resize (newAllocSize);
       nodeNumAllocated_ += (newAllocSize - rowInfo.allocSize);
@@ -953,7 +950,7 @@ namespace Tpetra {
       TEUCHOS_TEST_FOR_EXCEPT( ! rowMap_->isNodeLocalElement (rowInfo.localRow) );
 #endif // HAVE_TPETRA_DEBUG
 
-      // ArrayRCP::resize automatically copies over values on reallocation.
+      // Teuchos::ArrayRCP::resize automatically copies over values on reallocation.
       gblInds2D_[rowInfo.localRow].resize (newAllocSize);
       rowVals.resize (newAllocSize);
       nodeNumAllocated_ += (newAllocSize - rowInfo.allocSize);
@@ -1310,7 +1307,7 @@ namespace Tpetra {
     void sortAllIndices ();
 
     //! Sort the column indices in the given row.
-    void sortRowIndices (RowInfo rowinfo);
+    void sortRowIndices (const RowInfo rowinfo);
 
     /// \brief Sort the column indices and their values in the given row.
     ///
@@ -1327,7 +1324,8 @@ namespace Tpetra {
     ///   values[k].  On output: the same values, but sorted in the
     ///   same order as the (now sorted) column indices in the row.
     template <class Scalar>
-    void sortRowIndicesAndValues (RowInfo rowinfo, ArrayView<Scalar> values);
+    void sortRowIndicesAndValues (const RowInfo rowinfo,
+                                  const Teuchos::ArrayView<Scalar>& values);
 
     /// \brief Merge duplicate row indices in all of the rows.
     ///
@@ -1344,7 +1342,6 @@ namespace Tpetra {
     /// \pre The graph is not already storage optimized:
     ///   <tt>isStorageOptimized() == false</tt>
     void mergeRowIndices (RowInfo rowinfo);
-
 
     /// \brief Merge duplicate row indices in the given row, along
     ///   with their corresponding values.
@@ -1372,19 +1369,36 @@ namespace Tpetra {
     /// \param domainMap [in] The new domain Map
     /// \param rangeMap [in] The new range Map
     void
-    setDomainRangeMaps (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap,
-                        const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap);
+    setDomainRangeMaps (const Teuchos::RCP<const map_type>& domainMap,
+                        const Teuchos::RCP<const map_type>& rangeMap);
 
     void staticAssertions() const;
-    // global consts
     void clearGlobalConstants();
     void computeGlobalConstants();
-    // graph data accessors
-    RowInfo                         getRowInfo(size_t myRow) const;
-    ArrayView<const LocalOrdinal>   getLocalView(RowInfo rowinfo) const;
-    ArrayView<LocalOrdinal>         getLocalViewNonConst(RowInfo rowinfo);
-    ArrayView<const GlobalOrdinal>  getGlobalView(RowInfo rowinfo) const;
-    ArrayView<GlobalOrdinal>        getGlobalViewNonConst(RowInfo rowinfo);
+
+    /// \brief Get information about the locally owned row with local
+    ///   index myRow.
+    RowInfo getRowInfo (const size_t myRow) const;
+
+    /// \brief Get a const, nonowned, locally indexed view of the
+    ///   locally owned row myRow, such that rowinfo =
+    ///   getRowInfo(myRow).
+    ArrayView<const LocalOrdinal> getLocalView (const RowInfo rowinfo) const;
+
+    /// \brief Get a nonconst, nonowned, locally indexed view of the
+    ///   locally owned row myRow, such that rowinfo =
+    ///   getRowInfo(myRow).
+    ArrayView<LocalOrdinal> getLocalViewNonConst (const RowInfo rowinfo);
+
+    /// \brief Get a const, nonowned, globally indexed view of the
+    ///   locally owned row myRow, such that rowinfo =
+    ///   getRowInfo(myRow).
+    ArrayView<const GlobalOrdinal> getGlobalView (const RowInfo rowinfo) const;
+
+    /// \brief Get a nonconst, nonowned, globally indexed view of the
+    ///   locally owned row myRow, such that rowinfo =
+    ///   getRowInfo(myRow).
+    ArrayView<GlobalOrdinal> getGlobalViewNonConst (const RowInfo rowinfo);
 
     /// \brief Find the column offset corresponding to the given
     ///   (local) column index.
@@ -1459,7 +1473,8 @@ namespace Tpetra {
                     ArrayView<const LocalOrdinal> colInds,
                     size_t hint = 0) const;
 
-    /// \brief Find the column offset corresponding to the given (global) column index.
+    /// \brief Find the column offset corresponding to the given
+    ///   (global) column index.
     ///
     /// The name of this method is a bit misleading.  It does not
     /// actually find the column index.  Instead, it takes a global
@@ -1468,24 +1483,27 @@ namespace Tpetra {
     /// 2-D storage).
     size_t findGlobalIndex (RowInfo rowinfo, GlobalOrdinal ind, size_t hint = 0) const;
 
-    // local Kokkos objects
-    void fillLocalGraph(const RCP<ParameterList> &params);
-    const RCP<const local_graph_type> getLocalGraph() const;
+    LocalStaticCrsGraphType getLocalGraph_Kokkos () const;
 
-    Kokkos::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, typename Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>::device_type,size_t>
-    getLocalGraph_Kokkos() const;
-    const RCP<local_graph_type> getLocalGraphNonConst();
-    // debugging
-    void checkInternalState() const;
+    void fillLocalGraph(const Teuchos::RCP<Teuchos::ParameterList> &params);
+    const Teuchos::RCP<const local_graph_type> getLocalGraph () const;
+    const Teuchos::RCP<local_graph_type> getLocalGraphNonConst();
+
+
+    //! Whether it is correct to call getRowInfo().
+    bool hasRowInfo () const;
+
+    //! Throw an exception if the internal state is not consistent.
+    void checkInternalState () const;
 
     //! The Map describing the distribution of rows of the graph.
-    RCP<const map_type> rowMap_;
+    Teuchos::RCP<const map_type> rowMap_;
     //! The Map describing the distribution of columns of the graph.
-    RCP<const map_type> colMap_;
+    Teuchos::RCP<const map_type> colMap_;
     //! The Map describing the range of the (matrix corresponding to the) graph.
-    RCP<const map_type> rangeMap_;
+    Teuchos::RCP<const map_type> rangeMap_;
     //! The Map describing the domain of the (matrix corresponding to the) graph.
-    RCP<const map_type> domainMap_;
+    Teuchos::RCP<const map_type> domainMap_;
 
     /// \brief The Import from the domain Map to the column Map.
     ///
@@ -1493,17 +1511,17 @@ namespace Tpetra {
     /// the domain Map and the column Map are the same, since no
     /// Import is necessary in that case for sparse matrix-vector
     /// multiply.
-    RCP<const import_type> importer_;
+    Teuchos::RCP<const import_type> importer_;
 
     /// \brief The Export from the row Map to the range Map.
     ///
     /// This gets constructed by fillComplete.  It may be null if
     /// the row Map and the range Map are the same, since no Export
     /// is necessary in that case for sparse matrix-vector multiply.
-    RCP<const export_type> exporter_;
+    Teuchos::RCP<const export_type> exporter_;
 
     // local data, stored in a KokkosClassic::CrsGraph. only initialized after fillComplete()
-    RCP<local_graph_type> lclGraph_;
+    Teuchos::RCP<local_graph_type> lclGraph_;
     LocalStaticCrsGraphType k_lclGraph_;
 
     // Local and Global Counts
@@ -1515,7 +1533,8 @@ namespace Tpetra {
     //! Whether the graph was allocated with static or dynamic profile.
     ProfileType pftype_;
 
-    /// \brief The maximum number of entries to allow in each locally owned row, per row.
+    /// \brief The maximum number of entries to allow in each locally
+    ///   owned row, per row.
     ///
     /// This is an argument to some of the graph's constructors.
     /// Either this or numAllocForAllRows_ is used, but not both.
@@ -1524,52 +1543,139 @@ namespace Tpetra {
     /// temporarily, if necessary, in allocateIndices().  In that same
     /// method, it is used to allocate the row offsets array, then
     /// discarded (set to null) unconditionally.
-    ArrayRCP<const size_t> numAllocPerRow_;
+    ///
+    /// FIXME (mfh 07 Aug 2014) We want graph's constructors to
+    /// allocate, rather than doing lazy allocation at first insert.
+    /// This will make both numAllocPerRow_ and numAllocForAllRows_
+    /// obsolete, so we don't have to make a Kokkos refactor version
+    /// of numAllocPerRow_.
+    Teuchos::ArrayRCP<const size_t> numAllocPerRow_;
 
     /// \brief The maximum number of entries to allow in each locally owned row.
     ///
     /// This is an argument to some of the graph's constructors.
     /// Either this or numAllocPerRow_ is used, but not both.
+    ///
+    /// FIXME (mfh 07 Aug 2014) We want graph's constructors to
+    /// allocate, rather than doing lazy allocation at first insert.
+    /// This will make both numAllocPerRow_ and numAllocForAllRows_
+    /// obsolete, so we don't have to make a Kokkos refactor version
+    /// of numAllocPerRow_.
     size_t numAllocForAllRows_;
 
-    // graph indices. before allocation, all are null.
-    // after allocation, except during makeIndicesLocal(), one of local or global is null.
-    // we will never have 1D and 2D structures being non-null
-    // this is host memory
-    // 1D == StaticAllocation, 2D == DynamicAllocation
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    //
-    // 1D/Static structures
-    //
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //! \name 1-D storage (StaticProfile) data structures
+    //@{
 
-    //! lclInds1D_ are the indices for all rows
-    ArrayRCP< LocalOrdinal>                     lclInds1D_;
+    /// \brief Local column indices for all rows.
+    ///
+    /// This is only allocated if
+    ///
+    ///   - The calling process has a nonzero number of entries
+    ///   - The graph has StaticProfile (1-D storage)
+    ///   - The graph is locally indexed
     t_LocalOrdinal_1D k_lclInds1D_;
-    //! gblInds1D_ are the indices for all rows
-    ArrayRCP<GlobalOrdinal>                     gblInds1D_;
+
+    /// \brief Legacy Kokkos classic version of k_lclInds1D_.
+    ///
+    /// This is just a view of k_lclInds1D_.  We create views using
+    /// Kokkos::Compat::persistingView, so the Kokkos::View won't get
+    /// deallocated until the ArrayRCP's reference count goes to zero.
+    Teuchos::ArrayRCP<LocalOrdinal> lclInds1D_;
+
+    //! Type of the k_gblInds1D_ array of global column indices.
     typedef Kokkos::View<GlobalOrdinal*, typename Node::device_type> t_GlobalOrdinal_1D;
+
+    /// \brief Global column indices for all rows.
+    ///
+    /// This is only allocated if
+    ///
+    ///   - The calling process has a nonzero number of entries
+    ///   - The graph has StaticProfile (1-D storage)
+    ///   - The graph is globally indexed
     t_GlobalOrdinal_1D k_gblInds1D_;
-    // offset to the beg entries of each row. only used for 1D (Static) allocation.
-    // i.e., indices for row R are lclInds1D_[i] for i in [b,e) where b = rowPtrs_[R] and e = rowPtrs_[R+1]
-    // only the first numRowEntries_[R] of these are valid
-    // both of these are null for 2D (Dynamic) allocations
-    // rowPtrs_ has length N+1, while numRowEntries_ has length N
-    // we may delete this to save memory on fillComplete, if "Delete Row Pointers" is specified
-    ArrayRCP<size_t> rowPtrs_;
+
+    /// \brief Legacy Kokkos classic version of k_gblInds1D_.
+    ///
+    /// This is just a view of k_gblInds1D_.  We create views using
+    /// Kokkos::Compat::persistingView, so the Kokkos::View won't get
+    /// deallocated until the ArrayRCP's reference count goes to zero.
+    Teuchos::ArrayRCP<GlobalOrdinal> gblInds1D_;
+
+    /// \brief Row offsets for "1-D" storage.
+    ///
+    /// This is only allocated if "1-D" (StaticProfile) storage is
+    /// active.  In that case, if beg = k_rowPtrs_(i_lcl) and end =
+    /// k_rowPtrs_(i_lcl+1) for local row index i_lcl, then
+    ///
+    ///   - if the graph is locally indexed, k_lclInds1D_(beg:end-1)
+    ///     (inclusive range) is the space for any local column
+    ///     indices in local row i_lcl, else
+    ///   - if the graph is globally indexed, k_gblInds1D_(beg:end-1)
+    ///     (inclusive range) is the space for any global column
+    ///     indices in local row i_lcl.
+    ///
+    /// Only the first k_numRowEntries_(i_lcl) of these entries are
+    /// actual valid column indices.  Any remaining entries are "extra
+    /// space."  If the graph's storage is packed, then there is no
+    /// extra space, and the k_numRowEntries_ array is invalid.
+    ///
+    /// Both the k_rowPtrs_ and k_numRowEntries_ arrays are not
+    /// allocated if the graph has 2-D (DynamicProfile) storage.
+    ///
+    /// If it is allocated, k_rowPtrs_ has length getNodeNumRows()+1.
+    /// The k_numRowEntries_ array has has length getNodeNumRows(),
+    /// again if it is allocated.
+    ///
+    /// [we may delete this to save memory on fillComplete, if "Delete
+    /// Row Pointers" is specified.]
     t_RowPtrs k_rowPtrs_;
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    //
-    // 2D/Dynamic structures.
-    //
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /// \brief Legacy Kokkos classic version of k_rowPtrs_.
+    ///
+    /// This is just a view of k_rowPtrs_.  We create views using
+    /// Kokkos::Compat::persistingView, so the Kokkos::View won't get
+    /// deallocated until the ArrayRCP's reference count goes to zero.
+    Teuchos::ArrayRCP<size_t> rowPtrs_;
 
-    //! <tt>lclInds2D_[r]</tt> are the indices for row \c r.
-    ArrayRCP<Array< LocalOrdinal> > lclInds2D_;
+    //@}
+    /// \name 2-D storage (DynamicProfile) data structures
+    ///
+    /// 2-D storage exists only if the graph was allocated with
+    /// DynamicProfile.  All of these data structures exist in host
+    /// memory.  Currently, NONE of them are thread safe, let alone
+    /// thread scalable.  These data structures only exist to support
+    /// legacy use cases.  At some point, we may add a thread-scalable
+    /// intermediate level of "dynamicity" between 2-D storage and 1-D
+    /// storage (StaticProfile), which bounds the <i>total</i> number
+    /// of entries allowed per process, but does <i>not</i> otherwise
+    /// bound the number of entries per row.
+    //@{
 
-    //! <tt>gblInds2D_[r]</tt> are the indices for row \c r.
-    ArrayRCP<Array<GlobalOrdinal> > gblInds2D_;
+    /// \brief Local column indices for all rows.
+    ///
+    /// This is only allocated if
+    ///
+    ///   - The calling process has a nonzero number of entries
+    ///   - The graph has DynamicProfile (2-D storage)
+    ///   - The graph is locally indexed
+    ///
+    /// In that case, if i_lcl is the local index of a locally owned
+    /// row, then lclInds2D_[i_lcl] stores the local column indices
+    /// for that row.
+    Teuchos::ArrayRCP<Teuchos::Array<LocalOrdinal> > lclInds2D_;
+
+    /// \brief Global column indices for all rows.
+    ///
+    /// This is only allocated if
+    ///
+    ///   - The calling process has a nonzero number of entries
+    ///   - The graph has DynamicProfile (2-D storage)
+    ///   - The graph is globally indexed
+    ///
+    /// In that case, if i_gbl is the global index of a globally owned
+    /// row, then gblInds2D_[i_gbl] stores the global column indices
+    /// for that row.
+    Teuchos::ArrayRCP<Teuchos::Array<GlobalOrdinal> > gblInds2D_;
 
     typedef Kokkos::DualView<size_t*, Kokkos::LayoutLeft,
                              typename Node::device_type> t_numRowEntries_;
@@ -1578,13 +1684,27 @@ namespace Tpetra {
     ///
     /// This is deallocated in fillComplete() if fillComplete()'s
     /// "Optimize Storage" parameter is set to \c true.
+    ///
+    /// This may also exist with 1-D storage, if storage is unpacked.
     t_numRowEntries_ k_numRowEntries_;
+
+    /// \brief Legacy Kokkos classic version of k_numRowEntries_.
+    ///
+    /// This is just a view of k_numRowEntries_.  We create views
+    /// using Kokkos::Compat::persistingView, so the Kokkos::DualView
+    /// won't get deallocated until the ArrayRCP's reference count
+    /// goes to zero.
+    ///
+    /// This may also exist with 1-D storage, if storage is unpacked.
     Teuchos::ArrayRCP<size_t> numRowEntries_;
+
+    //@}
 
     bool indicesAreAllocated_;
     bool indicesAreLocal_;
     bool indicesAreGlobal_;
     bool fillComplete_;
+
     //! Whether the graph is locally lower triangular.
     bool lowerTriangular_;
     //! Whether the graph is locally upper triangular.
@@ -1601,10 +1721,6 @@ namespace Tpetra {
 
     //! Nonlocal data given to insertGlobalValues or sumIntoGlobalValues.
     std::map<GlobalOrdinal, std::vector<GlobalOrdinal> > nonlocals_;
-
-    bool haveRowInfo_;
-
-    bool hasRowInfo () const;
 
     /// \brief Whether to require makeColMap() (and therefore
     ///   fillComplete()) to order column Map GIDs associated with
