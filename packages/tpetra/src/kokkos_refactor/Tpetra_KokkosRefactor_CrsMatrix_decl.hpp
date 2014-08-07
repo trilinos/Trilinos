@@ -1040,7 +1040,7 @@ namespace Tpetra {
     RCP<const crs_graph_type> getCrsGraph () const;
 
     //! Return the underlying local kokkos mtx
-    k_local_matrix_type getLocalMatrix () {return k_lclMatrix_; }
+    k_local_matrix_type getLocalMatrix () const {return k_lclMatrix_; }
 
 
     /// \brief Number of global elements in the row map of this matrix.
