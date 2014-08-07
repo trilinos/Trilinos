@@ -594,7 +594,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SuperLU, Scalar, Local
   TEST_EQUALITY( prec_dom_map_ptr, mtx_dom_map_ptr );
   TEST_EQUALITY( prec_rng_map_ptr, mtx_rng_map_ptr );
 
-  out << std::endl << "solve AdditiveSchwarz with sparse direct method as the subdomain solve" << std::endl;
+  out << std::endl << "solve using AdditiveSchwarz with sparse direct method as the subdomain solve" << std::endl;
   out << "Calling AdditiveSchwarz::initialize()" << std::endl;
   prec.initialize();
 
@@ -619,9 +619,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SuperLU, Scalar, Local
   prec.apply (x, z);
 
   out << "Comparing results of two solves" << std::endl;
-  Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
-  Teuchos::ArrayRCP<const Scalar> zview = z.get1dView();
-  TEST_COMPARE_FLOATING_ARRAYS(yview, zview, 5e2*Teuchos::ScalarTraits<Scalar>::eps());
+  Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> ynorms(1),znorms(1);
+  y.norm2(ynorms());
+  z.norm2(znorms());
+  out << "solution norm, sparse direct solve: " << std::setprecision(7) << ynorms[0] << std::endl;
+  out << "solution norm,  dense direct solve: " << std::setprecision(7) << znorms[0] << std::endl;
+  TEST_FLOATING_EQUALITY(ynorms[0], znorms[0], 10*Teuchos::ScalarTraits<Scalar>::eps());
+
 }
 #endif
 
