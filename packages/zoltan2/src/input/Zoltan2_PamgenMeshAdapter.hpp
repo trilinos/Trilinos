@@ -232,7 +232,7 @@ public:
 			    MeshEntityType through) const
   {
     if (avail2ndAdjs(sourcetarget, through)) {
-      return adj_.size();
+      return nadj_;
     }
 
     return 0;
@@ -260,8 +260,9 @@ private:
   const gid_t *element_num_map_, *node_num_map_;
   int *elemToNode_, tnoct_, *elemOffsets_;
   double *coords_, *Acoords_;
-  std::vector<int> start_;
-  std::vector<int> adj_;
+  const lno_t *start_;
+  const gid_t *adj_;
+  size_t nadj_;
 };
 
 ////////////////////////////////////////////////////////////////
@@ -405,7 +406,8 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
   int mirror_nodes[max_side_nodes];
 
   /* Allocate memory necessary for the adjacency */
-  start_.resize(num_nodes_);
+  start_ = new const lno_t [num_nodes_];
+  std::vector<int> adj;
 
   for (int i=0; i < max_side_nodes; i++) {
     side_nodes[i]=-999;
@@ -413,9 +415,9 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
   }
 
   /* Find the adjacency for a nodal based decomposition */
-  size_t nadj = 0;
+  nadj_ = 0;
   for(size_t ncnt=0; ncnt < num_nodes_; ncnt++) {
-    start_[ncnt] = nadj;
+    start_[ncnt] = nadj_;
     for(size_t ecnt=0; ecnt < sur_elem[ncnt].size(); ecnt++) {
       size_t elem = sur_elem[ncnt][ecnt];
       int nnodes = nnodes_per_elem;
@@ -424,13 +426,19 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
 
 	if(ncnt != (size_t)entry &&
 	   in_list(entry,
-		   adj_.size()-start_[ncnt],
-		   &adj_[start_[ncnt]]) < 0) {
-	  adj_.push_back(entry);
+		   adj.size()-start_[ncnt],
+		   &adj[start_[ncnt]]) < 0) {
+	  adj.push_back(entry);
+	  nadj_++;
 	}
       }
     }
-    nadj++;
+  }
+
+  adj_ = new const gid_t [nadj_];
+
+  for (size_t i=0; i < nadj_; i++) {
+    adj_[i] = adj[i];
   }
 
   delete[] elem_blk_ids;
@@ -462,6 +470,8 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
 
   delete[] reconnect;
   reconnect = NULL;
+  delete[] adj;
+  adj = NULL;
 }
 
   
