@@ -199,6 +199,12 @@ public:
         scalar_t * getlmaxs()const{
             return this->lmaxs;
         }
+        /*! \brief  compute the centroid of the box 
+         */
+        void computeCentroid(scalar_t *centroid)const {
+            for (int i = 0; i < this->dim; i++)
+                centroid[i] = 0.5 * (this->lmaxs[i] + this->lmins[i]);
+        }
 
         /*! \brief  function to get the indices of the buckets
          * that the part is inserted to

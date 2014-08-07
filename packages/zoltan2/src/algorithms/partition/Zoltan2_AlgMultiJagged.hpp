@@ -348,6 +348,8 @@ template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
 class AlgMJ
 {
 private:
+    typedef coordinateModelPartBox<mj_scalar_t, mj_part_t> mj_partBox_t;
+    typedef std::vector<mj_partBox_t> mj_partBoxVector_t;
 
     RCP<const Environment> mj_env; //the environment object
     RCP<Comm<int> > mj_problemComm; //initial comm object
@@ -465,7 +467,8 @@ private:
     mj_scalar_t *total_part_weight_left_right_closests ;
     mj_scalar_t *global_total_part_weight_left_right_closests;
 
-    RCP < std::vector <coordinateModelPartBox <mj_scalar_t, mj_part_t> > > kept_boxes;
+    RCP<mj_partBoxVector_t> kept_boxes;
+    RCP<mj_partBox_t> global_box;
     int myRank, myActualRank; //processor rank, and initial rank
 
     /* \brief Either the mj array (part_no_array) or num_global_parts should be provided in
@@ -496,8 +499,10 @@ private:
      * This function initializes a single box with all global min and max coordinates.
      * \param initial_partitioning_boxes the input and output vector for boxes.
      */
-    void init_part_boxes(
-    		RCP < std::vector <coordinateModelPartBox <mj_scalar_t, mj_part_t> > > & outPartBoxes);
+    void init_part_boxes(RCP<mj_partBoxVector_t> & outPartBoxes);
+
+    /* \brief compute global bounding box:  min/max coords of global domain */
+    void compute_global_box();
 
     /* \brief Function returns how many parts that will be obtained after this dimension partitioning.
      * It sets how many parts each current part will be partitioned into in this dimension to num_partitioning_in_current_dim vector,
@@ -514,14 +519,14 @@ private:
      *  \param output_part_boxes: output, if boxes are kept, the initial box boundaries for obtained parts.
      */
     mj_part_t update_part_num_arrays(
-    		std::vector <mj_part_t> &num_partitioning_in_current_dim, //assumes this vector is empty.
+    		std::vector<mj_part_t> &num_partitioning_in_current_dim, //assumes this vector is empty.
     		std::vector<mj_part_t> *future_num_part_in_parts,
     		std::vector<mj_part_t> *next_future_num_parts_in_parts, //assumes this vector is empty.
     		mj_part_t &future_num_parts,
     		mj_part_t current_num_parts,
     		int current_iteration,
-    		RCP < std::vector <coordinateModelPartBox <mj_scalar_t, mj_part_t> > > input_part_boxes,
-    		RCP < std::vector <coordinateModelPartBox <mj_scalar_t, mj_part_t> > > output_part_boxes);
+    		RCP<mj_partBoxVector_t> input_part_boxes,
+    		RCP<mj_partBoxVector_t> output_part_boxes);
 
     /*! \brief Function to determine the local minimum and maximum coordinate, and local total weight
      * in the given set of local points.
@@ -793,8 +798,8 @@ private:
         size_t migration_reduce_all_population,
         mj_lno_t num_coords_for_last_dim_part,
         std::string iteration,
-        RCP < std::vector <coordinateModelPartBox <mj_scalar_t, mj_part_t> > > &input_part_boxes,
-        RCP < std::vector <coordinateModelPartBox <mj_scalar_t, mj_part_t> > > &output_part_boxes);
+        RCP<mj_partBoxVector_t> &input_part_boxes,
+        RCP<mj_partBoxVector_t> &output_part_boxes);
 
     /*! \brief Function fills up the num_points_in_all_processor_parts, so that
      * it has the number of coordinates in each processor of each part.
@@ -997,7 +1002,7 @@ private:
     void set_final_parts(
     		mj_part_t current_num_parts,
     		mj_part_t output_part_begin_index,
-    		RCP < std::vector <coordinateModelPartBox <mj_scalar_t, mj_part_t> > > output_part_boxes,
+    		RCP<mj_partBoxVector_t> output_part_boxes,
     		bool is_data_ever_migrated);
     /*! \brief Function frees all allocated work memory.
      */
@@ -1100,7 +1105,11 @@ public:
      * returns null if boxes are not stored, and prints warning message.
      * User needs to call set_to_keep_part_boxes() before partitioning if part boxes are needed.
      */
-    RCP <std::vector<coordinateModelPartBox <mj_scalar_t, mj_part_t> > > get_part_boxes() const;
+    RCP<mj_partBoxVector_t> get_part_boxes() const;
+
+    /*! \brief Return the global bounding box: min/max coords of global domain
+     */
+    RCP<mj_partBox_t> get_global_box() const;
 
     /*! \brief Special function for partitioning for task mapping.
      * Runs sequential, and performs deterministic partitioning for the
@@ -1242,8 +1251,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
     std::vector<mj_part_t> *future_num_part_in_parts = new std::vector<mj_part_t> ();
     std::vector<mj_part_t> *next_future_num_parts_in_parts = new std::vector<mj_part_t> ();
     next_future_num_parts_in_parts->push_back(this->num_global_parts);
-    RCP < std::vector <coordinateModelPartBox <mj_scalar_t, mj_part_t> > > t1;
-    RCP < std::vector <coordinateModelPartBox <mj_scalar_t, mj_part_t> > > t2;
+    RCP<mj_partBoxVector_t> t1;
+    RCP<mj_partBoxVector_t> t2;
 
     for (int i = 0; i < this->recursion_depth; ++i){
 
@@ -1585,7 +1594,8 @@ template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
 AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::AlgMJ():
 	mj_env(), mj_problemComm(), imbalance_tolerance(0),
 	part_no_array(NULL), recursion_depth(0), coord_dim(0),
-	num_weights_per_coord(0), initial_num_loc_coords(0), initial_num_glob_coords(0),
+	num_weights_per_coord(0), initial_num_loc_coords(0),
+        initial_num_glob_coords(0),
 	num_local_coords(0), num_global_coords(0), mj_coordinates(NULL),
 	mj_weights(NULL), mj_uniform_parts(NULL), mj_part_sizes(NULL),
 	mj_uniform_weights(NULL), mj_gnos(), num_global_parts(1),
@@ -1608,7 +1618,8 @@ AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::AlgMJ():
 	thread_cut_left_closest_point(NULL), thread_cut_right_closest_point(NULL),
 	thread_point_counts(NULL), process_rectilinear_cut_weight(NULL),
 	global_rectilinear_cut_weight(NULL),total_part_weight_left_right_closests(NULL),
-	global_total_part_weight_left_right_closests(NULL),kept_boxes(),
+	global_total_part_weight_left_right_closests(NULL),
+        kept_boxes(),global_box(),
 	myRank(0), myActualRank(0)
 {
     this->fEpsilon = std::numeric_limits<float>::epsilon();
@@ -1624,17 +1635,27 @@ AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::AlgMJ():
  */
 template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
           typename mj_part_t>
-RCP < std::vector <coordinateModelPartBox <mj_scalar_t, mj_part_t> > > AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::get_part_boxes() const {
-
+RCP<typename AlgMJ<mj_scalar_t,mj_lno_t,mj_gno_t,mj_part_t>::mj_partBoxVector_t>
+AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::get_part_boxes() const 
+{
 	if (this->mj_keep_part_boxes){
 		return this->kept_boxes;
 	} else {
-                throw std::logic_error("Error: part boxes are not stored; "
-	  		               "to store part boxes call "
-                                       "set_to_keep_part_boxes() "
-                                       "before partitioning");
+                throw std::logic_error("Error: part boxes are not stored.");
 	}
 }
+
+/*! \brief Function returns the part boxes stored
+ * returns null if boxes are not stored, and prints warning mesage.
+ */
+template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
+          typename mj_part_t>
+RCP<typename AlgMJ<mj_scalar_t,mj_lno_t,mj_gno_t,mj_part_t>::mj_partBox_t>
+AlgMJ<mj_scalar_t,mj_lno_t,mj_gno_t,mj_part_t>::get_global_box() const 
+{
+        return this->global_box;
+}
+
 /*! \brief Function call, if the part boxes are intended to be kept.
  *
  */
@@ -1769,8 +1790,8 @@ mj_part_t AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::update_part_num_arr
     mj_part_t &future_num_parts,
     mj_part_t current_num_parts,
     int current_iteration,
-    RCP < std::vector <coordinateModelPartBox <mj_scalar_t, mj_part_t> > > input_part_boxes,
-    RCP < std::vector <coordinateModelPartBox <mj_scalar_t, mj_part_t> > > output_part_boxes
+    RCP<mj_partBoxVector_t> input_part_boxes,
+    RCP<mj_partBoxVector_t> output_part_boxes
 ){
 	//how many parts that will be obtained after this dimension.
     mj_part_t output_num_parts = 0;
@@ -2041,18 +2062,13 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::allocate_set_work_memory
     	this->owner_of_coordinate[j] = this->myActualRank;
 }
 
-/* \brief for part communication we keep track of the box boundaries.
- * This is performed when either asked specifically, or when geometric mapping is performed afterwards.
- * This function initializes a single box with all global min and max coordinates.
- * \param initial_partitioning_boxes the input and output vector for boxes.
+/* \brief compute the global bounding box
  */
 template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
           typename mj_part_t>
-void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::init_part_boxes(
-		RCP < std::vector <coordinateModelPartBox <mj_scalar_t, mj_part_t> > > & initial_partitioning_boxes
-		){
-
-	//local min coords
+void AlgMJ<mj_scalar_t,mj_lno_t,mj_gno_t,mj_part_t>::compute_global_box()
+{
+    //local min coords
     mj_scalar_t *mins = allocMemory<mj_scalar_t>(this->coord_dim);
     //global min coords
     mj_scalar_t *gmins = allocMemory<mj_scalar_t>(this->coord_dim);
@@ -2086,14 +2102,27 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::init_part_boxes(
     );
 
     //create single box with all areas.
-    coordinateModelPartBox <mj_scalar_t, mj_part_t> tmpBox (0, this->coord_dim,
-                                                        gmins, gmaxs);
+    global_box = rcp(new mj_partBox_t(0,this->coord_dim,gmins,gmaxs));
     //coordinateModelPartBox <mj_scalar_t, mj_part_t> tmpBox (0, coordDim);
     freeArray<mj_scalar_t>(mins);
     freeArray<mj_scalar_t>(gmins);
     freeArray<mj_scalar_t>(maxs);
     freeArray<mj_scalar_t>(gmaxs);
-    initial_partitioning_boxes->push_back(tmpBox);
+}
+
+/* \brief for part communication we keep track of the box boundaries.
+ * This is performed when either asked specifically, or when geometric mapping is performed afterwards.
+ * This function initializes a single box with all global min and max coordinates.
+ * \param initial_partitioning_boxes the input and output vector for boxes.
+ */
+template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
+          typename mj_part_t>
+void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::init_part_boxes(
+		RCP<mj_partBoxVector_t> & initial_partitioning_boxes
+)
+{
+    mj_partBox_t tmp_box(*global_box);
+    initial_partitioning_boxes->push_back(tmp_box);
 }
 
 /*! \brief Function to determine the local minimum and maximum coordinate, and local total weight
@@ -2524,8 +2553,6 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_1D_part(
             {
                 if(this->comm->getSize() > 1){
                     try{
-
-
                         reduceAll<int, mj_scalar_t>( *(this->comm), *reductionOp,
                         		total_reduction_size,
                         		this->total_part_weight_left_right_closests,
@@ -4726,9 +4753,10 @@ bool AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_perform_migration(
     size_t migration_reduce_all_population,
     mj_lno_t num_coords_for_last_dim_part,
     std::string iteration,
-    RCP < std::vector <coordinateModelPartBox <mj_scalar_t, mj_part_t> > > &input_part_boxes,
-    RCP < std::vector <coordinateModelPartBox <mj_scalar_t, mj_part_t> > > &output_part_boxes){
-
+    RCP<mj_partBoxVector_t> &input_part_boxes,
+    RCP<mj_partBoxVector_t> &output_part_boxes
+)
+{
 	mj_part_t num_procs = this->comm->getSize();
 	this->myRank = this->comm->getRank();
 
@@ -4806,7 +4834,7 @@ bool AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_perform_migration(
 	}
 	//swap the input and output part boxes.
 	if (this->mj_keep_part_boxes){
-		RCP < std::vector <coordinateModelPartBox <mj_scalar_t, mj_part_t> > > tmpPartBoxes = input_part_boxes;
+		RCP<mj_partBoxVector_t> tmpPartBoxes = input_part_boxes;
 		input_part_boxes = output_part_boxes;
 		output_part_boxes = tmpPartBoxes;
 	}
@@ -5170,8 +5198,9 @@ template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
 void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::set_final_parts(
 		mj_part_t current_num_parts,
 		mj_part_t output_part_begin_index,
-		RCP < std::vector <coordinateModelPartBox <mj_scalar_t, mj_part_t> > > output_part_boxes,
-		bool is_data_ever_migrated){
+		RCP<mj_partBoxVector_t> output_part_boxes,
+		bool is_data_ever_migrated)
+{
     this->mj_env->timerStart(MACRO_TIMERS, "MultiJagged - Part_Assignment");
 
 #ifdef HAVE_ZOLTAN2_OMP
@@ -5449,15 +5478,12 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::multi_jagged_part(
 
     	mj_part_t *&result_assigned_part_ids_,
     	mj_gno_t *&result_mj_gnos_
-
-		)
+)
 {
 
 #ifndef INCLUDE_ZOLTAN2_EXPERIMENTAL
-
-    Z2_THROW_EXPERIMENTAL("Zoltan2 MultiJagged is strictly experimental software "
-            "while it is being developed and tested.")
-
+    Z2_THROW_EXPERIMENTAL("Zoltan2 MultiJagged is experimental software "
+                          "while it is being developed and tested.")
 #else
 
 #ifdef print_debug
@@ -5468,7 +5494,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::multi_jagged_part(
     }
 #endif
 
-	this->mj_env = env;
+    this->mj_env = env;
     this->mj_problemComm = problemComm;
     this->myActualRank = this->myRank = this->mj_problemComm->getRank();
 
@@ -5525,13 +5551,10 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::multi_jagged_part(
     std::vector<mj_part_t> *next_future_num_parts_in_parts = new std::vector<mj_part_t> ();
     next_future_num_parts_in_parts->push_back(this->num_global_parts);
 
-    RCP < std::vector <coordinateModelPartBox <mj_scalar_t, mj_part_t> > >
-     input_part_boxes(new std::vector <coordinateModelPartBox <mj_scalar_t, mj_part_t> >
-      (), true) ;
-    RCP < std::vector <coordinateModelPartBox <mj_scalar_t, mj_part_t> > >
-     output_part_boxes(new std::vector <coordinateModelPartBox <mj_scalar_t, mj_part_t> >
-      (), true);
+    RCP<mj_partBoxVector_t> input_part_boxes(new mj_partBoxVector_t(), true) ;
+    RCP<mj_partBoxVector_t> output_part_boxes(new mj_partBoxVector_t(), true);
 
+    compute_global_box();
     if(this->mj_keep_part_boxes){
     	this->init_part_boxes(output_part_boxes);
     }
@@ -5563,8 +5586,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::multi_jagged_part(
         next_future_num_parts_in_parts->clear();
 
         if(this->mj_keep_part_boxes){
-            RCP < std::vector <coordinateModelPartBox <mj_scalar_t, mj_part_t> > >
-                                                 tmpPartBoxes = input_part_boxes;
+            RCP<mj_partBoxVector_t> tmpPartBoxes = input_part_boxes;
             input_part_boxes = output_part_boxes;
             output_part_boxes = tmpPartBoxes;
             output_part_boxes->clear();
@@ -5592,8 +5614,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::multi_jagged_part(
             next_future_num_parts_in_parts = tmpPartVect;
 
             if(this->mj_keep_part_boxes){
-                RCP < std::vector <coordinateModelPartBox <mj_scalar_t, mj_part_t> > >
-                                             tmpPartBoxes = input_part_boxes;
+                RCP<mj_partBoxVector_t> tmpPartBoxes = input_part_boxes;
                 input_part_boxes = output_part_boxes;
                 output_part_boxes = tmpPartBoxes;
             }
@@ -5971,6 +5992,8 @@ private:
     typedef typename Adapter::lno_t mj_lno_t;
     typedef typename Adapter::node_t mj_node_t;
     typedef typename Adapter::part_t mj_part_t;
+    typedef coordinateModelPartBox<mj_scalar_t, mj_part_t> mj_partBox_t;
+    typedef std::vector<mj_partBox_t> mj_partBoxVector_t;
 #endif
     AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t> mj_partitioner;
 
@@ -6101,15 +6124,19 @@ void Zoltan2_AlgMJ<Adapter>::partition(
         	result_mj_gnos
     		);
 
-    ArrayRCP<const mj_gno_t> gnoList = arcp(result_mj_gnos, 0, this->num_local_coords, true);
-    ArrayRCP<mj_part_t> partId = arcp(result_assigned_part_ids, 0, this->num_local_coords, true);
+    ArrayRCP<const mj_gno_t> gnoList = arcp(result_mj_gnos, 0,
+                                            this->num_local_coords, true);
+    ArrayRCP<mj_part_t> partId = arcp(result_assigned_part_ids, 0,
+                                      this->num_local_coords, true);
     solution->setParts(gnoList, partId, true);
     if (this->mj_keep_part_boxes){
-    	RCP < std::vector <coordinateModelPartBox <mj_scalar_t, mj_part_t> > > output_part_boxes = this->mj_partitioner.get_part_boxes();
+    	RCP<mj_partBoxVector_t> output_part_boxes = 
+                             this->mj_partitioner.get_part_boxes();
         solution->setPartBoxes(output_part_boxes);
     }
     this->free_work_memory();
 }
+
 /* \brief Freeing the memory allocated.
  * */
 template <typename Adapter>
@@ -6336,13 +6363,15 @@ typename Adapter::part_t Zoltan2_AlgMJ<Adapter>::pointAssign(
   int dim, 
   typename Adapter::scalar_t *point) const
 {
-  typedef std::vector<coordinateModelPartBox<typename Adapter::scalar_t,
-                                             typename Adapter::part_t> >
-                      partBoxVector_t;
+
+  // TODO:  Implement with cuts rather than boxes to reduce algorithmic
+  // TODO:  complexity.
 
   if (this->mj_keep_part_boxes) {
+    typename Adapter::part_t foundPart;
 
-    RCP<partBoxVector_t> partBoxes;
+    // Get vector of part boxes
+    RCP<mj_partBoxVector_t> partBoxes;
     try {
       partBoxes = this->mj_partitioner.get_part_boxes();
     }
@@ -6353,34 +6382,61 @@ typename Adapter::part_t Zoltan2_AlgMJ<Adapter>::pointAssign(
       throw std::logic_error("no part boxes exist");
     }
 
-    typename Adapter::part_t foundPart;
-    size_t i;
-    for (i = 0; i < nBoxes; i++) {
-      try {
-        if ((*partBoxes)[i].pointInBox(dim, point)) {
-          foundPart = (*partBoxes)[i].getpId();
+    // Determine whether the point is within the global domain
+    RCP<mj_partBox_t> globalBox = this->mj_partitioner.get_global_box();
+
+    if (globalBox->pointInBox(dim, point)) {
+
+      // point is in the global domain; determine in which part it is.
+      size_t i;
+      for (i = 0; i < nBoxes; i++) {
+        try {
+          if ((*partBoxes)[i].pointInBox(dim, point)) {
+            foundPart = (*partBoxes)[i].getpId();
 //          std::cout << "Point (";
 //          for (int j = 0; j < dim; j++) std::cout << point[j] << " ";
 //          std::cout << ") found in box " << i << " part " << foundPart 
 //                    << std::endl;
 //          (*partBoxes)[i].print();
-          break;
+            break;
+          }
+        }
+        Z2_FORWARD_EXCEPTIONS;
+      }
+
+      if (i == nBoxes) {
+        // This error should never occur
+        std::ostringstream oss;
+        oss << "Point (";
+        for (int j = 0; j < dim; j++) oss << point[j] << " ";
+        oss << ") not found in domain";
+        throw std::logic_error(oss.str());
+      }
+    }
+    
+    else {
+      // Point is outside the global domain.  
+      // Determine to which part it is closest.
+      // TODO:  with cuts, would not need this special case
+
+      size_t closestBox = 0;
+      scalar_t minDistance = std::numeric_limits<mj_scalar_t>::max();
+      scalar_t *centroid = new scalar_t[dim];
+      for (size_t i = 0; i < nBoxes; i++) {
+        (*partBoxes)[i].computeCentroid(centroid);
+        scalar_t sum = 0.;
+        scalar_t diff;
+        for (int j = 0; j < dim; j++) {
+          diff = centroid[j] - point[j];
+          sum += diff * diff;
+        }
+        if (sum < minDistance) {
+          minDistance = sum;
+          closestBox = i;
         }
       }
-      Z2_FORWARD_EXCEPTIONS;
-    }
-
-    if (i == nBoxes) {
-      // TODO:  Ideally, this error would never occur, but I don't know whether
-      // TODO:  MJ handles points outside the original bounding box.  If not,
-      // TODO:  I will have to add code to handle points outside the original
-      // TODO:  bounding box, as in Zoltan's RCB.
-
-      std::ostringstream oss;
-      oss << "Point (";
-      for (int j = 0; j < dim; j++) oss << point[j] << " ";
-      oss << ") not found in domain";
-      throw std::logic_error(oss.str());
+      foundPart = (*partBoxes)[closestBox].getpId();
+      delete [] centroid;
     }
 
     return foundPart;

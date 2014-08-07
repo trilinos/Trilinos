@@ -194,12 +194,17 @@ int run_pointAssign_tests(
                   << "  in solnPart " << solnPart
                   << std::endl;
 
-        if (part != solnPart) {
-          std::cout << me << " pointAssign:  incorrect part " << part
-                    << " found; should be " << solnPart
-                    << " for point " << j << std::endl;
-          ierr++;
-        }
+// this error test does not work for points that fall on the cuts.
+// like Zoltan's RCB, pointAssign arbitrarily picks a part along the cut.
+// the arbitrarily chosen part will not necessarily be the one to which
+// the coordinate was assigned in partitioning.
+//
+//        if (part != solnPart) {
+//          std::cout << me << " pointAssign:  incorrect part " << part
+//                    << " found; should be " << solnPart
+//                    << " for point " << j << std::endl;
+//          ierr++;
+//        }
       }
     }
 
@@ -210,6 +215,10 @@ int run_pointAssign_tests(
         part = problem->pointAssign(coordDim, pointDrop);
       }
       CATCH_EXCEPTIONS_WITH_COUNT(ierr, me + " pointAssign -- Origin");
+      std::cout << me << " OriginPoint (" << pointDrop[0];
+      if (coordDim > 1) std::cout << " " << pointDrop[1];
+      if (coordDim > 2) std::cout << " " << pointDrop[2];
+      std::cout << ")  part " << part << std::endl;
     }
 
     // test point with negative coordinates
@@ -219,6 +228,10 @@ int run_pointAssign_tests(
         part = problem->pointAssign(coordDim, pointDrop);
       }
       CATCH_EXCEPTIONS_WITH_COUNT(ierr, me + " pointAssign -- Negative Point");
+      std::cout << me << " NegativePoint (" << pointDrop[0];
+      if (coordDim > 1) std::cout << " " << pointDrop[1];
+      if (coordDim > 2) std::cout << " " << pointDrop[2];
+      std::cout << ")  part " << part << std::endl;
     }
     
     // test a point that's way out there
@@ -227,7 +240,24 @@ int run_pointAssign_tests(
       try {
         part = problem->pointAssign(coordDim, pointDrop);
       }
-      CATCH_EXCEPTIONS_WITH_COUNT(ierr, me + " pointAssign -- i*5");
+      CATCH_EXCEPTIONS_WITH_COUNT(ierr, me + " pointAssign -- i*5 Point");
+      std::cout << me << " i*5-Point (" << pointDrop[0];
+      if (coordDim > 1) std::cout << " " << pointDrop[1];
+      if (coordDim > 2) std::cout << " " << pointDrop[2];
+      std::cout << ")  part " << part << std::endl;
+    }
+
+    // test a point that's way out there
+    {
+      for (int i = 0; i < coordDim; i++) pointDrop[i] = 10+i*5;
+      try {
+        part = problem->pointAssign(coordDim, pointDrop);
+      }
+      CATCH_EXCEPTIONS_WITH_COUNT(ierr, me + " pointAssign -- WoopWoop");
+      std::cout << me << " WoopWoop-Point (" << pointDrop[0];
+      if (coordDim > 1) std::cout << " " << pointDrop[1];
+      if (coordDim > 2) std::cout << " " << pointDrop[2];
+      std::cout << ")  part " << part << std::endl;
     }
 
     delete [] pointDrop;
@@ -392,7 +422,7 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
     if (test_boxes)
         params->set("mj_keep_part_boxes", 1);
     if (rectilinear)
-        params->set("rectilinear", 1);
+        params->set("rectilinear", "true");
 
     if(imbalance > 1)
         params->set("imbalance_tolerance", double(imbalance));
@@ -488,7 +518,7 @@ int testFromDataFile(
     if (test_boxes)
         params->set("mj_keep_part_boxes", 1);
     if (rectilinear)
-        params->set("rectilinear", 1);
+        params->set("rectilinear", "true");
     params->set("algorithm", "multijagged");
     if(imbalance > 1){
         params->set("imbalance_tolerance", double(imbalance));
@@ -680,7 +710,7 @@ int testFromSeparateDataFiles(
     if (test_boxes)
         params->set("mj_keep_part_boxes", 1);
     if (rectilinear)
-        params->set("rectilinear", 1);
+        params->set("rectilinear", "true");
 
     Zoltan2::PartitioningProblem<inputAdapter_t> *problem;
     try {
