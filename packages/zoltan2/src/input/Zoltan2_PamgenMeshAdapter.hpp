@@ -288,9 +288,9 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
   char title[100];
   int exoid = 0;
   int num_elem_blk, num_node_sets, num_side_sets;
-  im_ex_get_init(exoid, title, &dimension_,
-		 &num_nodes_, &num_elem_, &num_elem_blk,
-		 &num_node_sets, &num_side_sets);
+  error += im_ex_get_init(exoid, title, &dimension_,
+			  &num_nodes_, &num_elem_, &num_elem_blk,
+			  &num_node_sets, &num_side_sets);
 
   coords_ = new double [num_nodes_ * dimension_];
 
@@ -309,7 +309,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
   int *num_nodes_per_elem = new int [num_elem_blk];
   int *num_attr           = new int [num_elem_blk];
   int *num_elem_this_blk  = new int [num_elem_blk];
-  char **elem_type              = new char * [num_elem_blk];
+  char **elem_type        = new char * [num_elem_blk];
   int **connect           = new int * [num_elem_blk];
 
   for(int i = 0; i < num_elem_blk; i++){
@@ -318,8 +318,13 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
 				  (int*)&(num_elem_this_blk[i]),
 				  (int*)&(num_nodes_per_elem[i]),
 				  (int*)&(num_attr[i]));
+    delete[] elem_type[i];
   }
 
+  delete[] elem_type;
+  elem_type = NULL;
+  delete[] num_attr;
+  num_attr = NULL;
   Acoords_ = new double [num_elem_ * dimension_];
   int a = 0;
   std::vector<std::vector<int> > sur_elem;
@@ -370,6 +375,8 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
     }
   }
 
+  delete[] elem_blk_ids;
+  elem_blk_ids = NULL;
   int nnodes_per_elem = num_nodes_per_elem[0];
   elemToNode_ = new int [num_elem_ * nnodes_per_elem];
   int telct = 0;
@@ -442,21 +449,10 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
     adj_[i] = adj[i];
   }
 
-  delete[] elem_blk_ids;
-  elem_blk_ids = NULL;
   delete[] num_nodes_per_elem;
   num_nodes_per_elem = NULL;
-  delete[] num_attr;
-  num_attr = NULL;
   delete[] num_elem_this_blk;
   num_elem_this_blk = NULL;
-
-  for(int i = 0; i < num_elem_blk; i++){
-    delete[] elem_type[i];
-  }
-
-  delete[] elem_type;
-  elem_type = NULL;
 
   for(int b = 0; b < num_elem_blk; b++) {
     delete[] connect[b];
