@@ -62,14 +62,6 @@
 /*--------------------------------------------------------------------------*/
 
 namespace Kokkos {
-namespace Impl {
-class OpenMPexec ;
-} // namespace Impl
-} // namespace Kokkos
-
-/*--------------------------------------------------------------------------*/
-
-namespace Kokkos {
 
 /// \class OpenMP
 /// \brief Kokkos device for multicore processors in the host memory space.
@@ -85,7 +77,6 @@ public:
   typedef OpenMP                execution_space ;
   typedef HostSpace::size_type  size_type ;
   typedef HostSpace             memory_space ;
-  typedef OpenMP                scratch_memory_space ;
   typedef LayoutRight           array_layout ;
   typedef OpenMP                host_mirror_device_type ;
 
@@ -132,20 +123,53 @@ public:
   KOKKOS_INLINE_FUNCTION static unsigned max_hardware_threads();
   //@}
   //------------------------------------
-  //! \name Function for the functor device interface */
 
-  KOKKOS_INLINE_FUNCTION void * get_shmem( const int size ) const ;
+  class scratch_memory_space {
+  private:
+    mutable char * m_shmem_iter ;
+            char * m_shmem_end ;
+    static void get_shmem_error();
+  public:
+    typedef Impl::MemorySpaceTag  kokkos_tag ;
+    typedef scratch_memory_space  memory_space ;
+    typedef OpenMP                execution_space ;
+    typedef LayoutRight           array_layout ;
 
-  explicit KOKKOS_INLINE_FUNCTION OpenMP( Impl::OpenMPexec & );
+    KOKKOS_INLINE_FUNCTION
+    void * get_shmem( const int size ) const 
+      {
+        enum { ALIGN = 8 , MASK = ALIGN - 1 }; // Alignment used by View::shmem_size
+        void * const tmp = m_shmem_iter ;
+        if ( m_shmem_end < ( m_shmem_iter += ( size + MASK ) & ~MASK ) ) { get_shmem_error(); }
+        return tmp ;
+      }
 
-  //------------------------------------
-
-private:
-
-  Impl::OpenMPexec & m_exec ;
-
+    KOKKOS_INLINE_FUNCTION
+    scratch_memory_space( void * ptr , const int size )
+      : m_shmem_iter( (char *) ptr )
+      , m_shmem_end(  ((char *)ptr) + size )
+      {}
+  };
 };
 
+} // namespace Kokkos
+/*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
+
+namespace Kokkos {
+namespace Impl {
+
+template<>
+struct VerifyExecutionCanAccessMemorySpace
+  < Kokkos::OpenMP::memory_space
+  , Kokkos::OpenMP::scratch_memory_space
+  >
+{
+  inline static void verify( void ) { }
+  inline static void verify( const void * ) { }
+};
+
+} // namespace Impl
 } // namespace Kokkos
 
 /*--------------------------------------------------------------------------*/

@@ -114,13 +114,13 @@ public:
     OpenMPexec::verify_is_process("Kokkos::OpenMP parallel_reduce");
     OpenMPexec::verify_initialized("Kokkos::OpenMP parallel_reduce");
 
-    OpenMPexec::resize_reduce_scratch( Reduce::value_size( functor ) );
+    OpenMPexec::resize_scratch( Reduce::value_size( functor ) , 0 );
 
 #pragma omp parallel
     {
       OpenMPexec & exec = * OpenMPexec::get_thread_omp();
 
-      typename Reduce::reference_type update = Reduce::init( functor , exec.reduce_base() );
+      typename Reduce::reference_type update = Reduce::init( functor , exec.scratch_reduce() );
 
       const Policy range( policy , exec.pool_rank() , exec.pool_size() );
 
@@ -132,10 +132,10 @@ public:
 /* END #pragma omp parallel */
 
     {
-      const pointer_type ptr = pointer_type( OpenMPexec::get_thread_rank_rev(0)->reduce_base() );
+      const pointer_type ptr = pointer_type( OpenMPexec::scratch_reduce(0) );
 
       for ( int i = 1 ; i < omp_get_max_threads() ; ++i ) {
-        Reduce::join( functor , ptr , OpenMPexec::get_thread_rank_rev(i)->reduce_base() );
+        Reduce::join( functor , ptr , OpenMPexec::scratch_reduce(i) );
       }
 
       Reduce::final( functor , ptr );
@@ -177,7 +177,7 @@ public:
     OpenMPexec::verify_is_process("Kokkos::OpenMP parallel_scan");
     OpenMPexec::verify_initialized("Kokkos::OpenMP parallel_scan");
 
-    OpenMPexec::resize_reduce_scratch( 2 * Reduce::value_size( functor ) );
+    OpenMPexec::resize_scratch( 2 * Reduce::value_size( functor ) , 0 );
 
 #pragma omp parallel
     {
@@ -186,8 +186,8 @@ public:
       const Policy range( policy , exec.pool_rank() , exec.pool_size() );
 
       typename Reduce::reference_type update =
-        Reduce::init( functor , 
-                      pointer_type( exec.reduce_base() ) + Reduce::value_count( functor ) );
+        Reduce::init( functor ,
+                      pointer_type( exec.scratch_reduce() ) + Reduce::value_count( functor ) );
 
       const typename Policy::member_type work_end = range.end();
       for ( typename Policy::member_type iwork = range.begin() ; iwork < work_end ; ++iwork ) {
@@ -204,7 +204,7 @@ public:
 
       for ( unsigned rank_rev = thread_count ; rank_rev-- ; ) {
 
-        pointer_type ptr = pointer_type( OpenMPexec::get_thread_rank_rev(rank_rev)->reduce_base() );
+        pointer_type ptr = pointer_type( OpenMPexec::scratch_reduce(rank_rev) );
 
         if ( ptr_prev ) {
           for ( unsigned i = 0 ; i < value_count ; ++i ) { ptr[i] = ptr_prev[ i + value_count ] ; }
@@ -225,7 +225,7 @@ public:
       const Policy range( policy , exec.pool_rank() , exec.pool_size() );
 
       typename Reduce::reference_type update =
-        Reduce::reference( pointer_type( exec.reduce_base() ) );
+        Reduce::reference( pointer_type( exec.scratch_reduce() ) );
 
       const typename Policy::member_type work_end = range.end();
       for ( typename Policy::member_type iwork = range.begin() ; iwork < work_end ; ++iwork ) {
@@ -259,16 +259,17 @@ public:
     OpenMPexec::verify_is_process("Kokkos::OpenMP parallel_for");
     OpenMPexec::verify_initialized("Kokkos::OpenMP parallel_for");
 
-    OpenMPexec::resize_shared_scratch( FunctorShmemSize< FunctorType >::value( functor ) );
+    const size_t team_reduce_size = Policy::member_type::team_reduce_size();
+    const size_t team_shmem_size  = FunctorShmemSize< FunctorType >::value( functor );
+
+    OpenMPexec::resize_scratch( 0 , team_reduce_size + team_shmem_size );
 
 #pragma omp parallel
     {
-      OpenMPexec & exec = * OpenMPexec::get_thread_omp();
+      typename Policy::member_type member( * OpenMPexec::get_thread_omp() , policy , team_shmem_size );;
 
-      typename Policy::member_type index( exec , policy );
-
-      for ( exec.team_work_init( policy.league_size() , policy.team_size() ) ; exec.team_work_avail() ; exec.team_work_next() ) {
-        functor( index );
+      for ( ; member.valid() ; member.next() ) {
+        functor( member );
       }
     }
 /* END #pragma omp parallel */
@@ -291,28 +292,28 @@ public:
   {
     OpenMPexec::verify_is_process("Kokkos::OpenMP parallel_reduce");
 
-    OpenMPexec::resize_shared_scratch( FunctorShmemSize< FunctorType >::value( functor ) );
-    OpenMPexec::resize_reduce_scratch( Reduce::value_size( functor ) );
+    const size_t team_reduce_size = Policy::member_type::team_reduce_size();
+    const size_t team_shmem_size  = FunctorShmemSize< FunctorType >::value( functor );
+
+    OpenMPexec::resize_scratch( Reduce::value_size( functor ) , team_reduce_size + team_shmem_size );
 
 #pragma omp parallel
     {
       OpenMPexec & exec = * OpenMPexec::get_thread_omp();
 
-      typename Reduce::reference_type update = Reduce::init( functor , exec.reduce_base() );
+      typename Reduce::reference_type update = Reduce::init( functor , exec.scratch_reduce() );
 
-      typename Policy::member_type index( exec , policy );
-
-      for ( exec.team_work_init( policy.league_size() , policy.team_size() ) ; exec.team_work_avail() ; exec.team_work_next() ) {
-        functor( index , update );
+      for ( typename Policy::member_type member( exec , policy , team_shmem_size ); member.valid() ; member.next() ) {
+        functor( member , update );
       }
     }
 /* END #pragma omp parallel */
 
     {
-      const pointer_type ptr = pointer_type( OpenMPexec::get_thread_rank_rev(0)->reduce_base() );
+      const pointer_type ptr = pointer_type( OpenMPexec::scratch_reduce(0) );
 
       for ( int i = 1 ; i < omp_get_max_threads() ; ++i ) {
-        Reduce::join( functor , ptr , OpenMPexec::get_thread_rank_rev(i)->reduce_base() );
+        Reduce::join( functor , ptr , OpenMPexec::scratch_reduce(i) );
       }
 
       Reduce::final( functor , ptr );
@@ -327,28 +328,28 @@ public:
   {
     OpenMPexec::verify_is_process("Kokkos::OpenMP parallel_reduce");
 
-    OpenMPexec::resize_shared_scratch( FunctorShmemSize< FunctorType >::value( functor ) );
-    OpenMPexec::resize_reduce_scratch( Reduce::value_size( functor ) );
+    const size_t team_reduce_size = Policy::member_type::team_reduce_size();
+    const size_t team_shmem_size  = FunctorShmemSize< FunctorType >::value( functor );
+
+    OpenMPexec::resize_scratch( Reduce::value_size( functor ) , team_reduce_size + team_shmem_size );
 
 #pragma omp parallel
     {
       OpenMPexec & exec = * OpenMPexec::get_thread_omp();
 
-      typename Reduce::reference_type update = Reduce::init( functor , exec.reduce_base() );
+      typename Reduce::reference_type update = Reduce::init( functor , exec.scratch_reduce() );
 
-      typename Policy::member_type index( exec , policy );
-
-      for ( exec.team_work_init( policy.league_size() , policy.team_size() ) ; exec.team_work_avail() ; exec.team_work_next() ) {
-        functor( index , update );
+      for ( typename Policy::member_type member( exec , policy , team_shmem_size ); member.valid() ; member.next() ) {
+        functor( member , update );
       }
     }
 /* END #pragma omp parallel */
 
     {
-      const pointer_type ptr = pointer_type( OpenMPexec::get_thread_rank_rev(0)->reduce_base() );
+      const pointer_type ptr = pointer_type( OpenMPexec::scratch_reduce(0) );
 
       for ( int i = 1 ; i < omp_get_max_threads() ; ++i ) {
-        Reduce::join( functor , ptr , OpenMPexec::get_thread_rank_rev(i)->reduce_base() );
+        Reduce::join( functor , ptr , OpenMPexec::scratch_reduce(i) );
       }
 
       Reduce::final( functor , ptr );
