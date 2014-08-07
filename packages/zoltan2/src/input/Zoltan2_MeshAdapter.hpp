@@ -217,7 +217,9 @@ public:
 
   /*! \brief Returns whether a first adjacency combination is available.
    */
-  virtual bool availAdjs(MeshEntityType source, MeshEntityType target);
+  virtual bool availAdjs(MeshEntityType source, MeshEntityType target) const {
+    return false;
+  }
 
 
   /*! \brief Returns the number of first adjacencies on this process.
@@ -252,7 +254,7 @@ public:
   /*! \brief Returns whether a second adjacency combination is available.
    */
   virtual bool avail2ndAdjs(MeshEntityType sourcetarget, 
-			    MeshEntityType through);
+			    MeshEntityType through) const { return false;}
 
 
   /*! \brief Returns the number of second adjacencies on this process.
