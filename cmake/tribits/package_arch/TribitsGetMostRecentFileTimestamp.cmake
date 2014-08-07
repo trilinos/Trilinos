@@ -574,7 +574,7 @@ FUNCTION(TRIBITS_DETERMINE_IF_CURRENT_PACKAGE_NEEDS_REBUILT)
     CURRENT_PACKAGE_OUT_OF_DATE_OUT )
 
   IF (NOT CURRENT_PACKAGE_OUT_OF_DATE_OUT)
-    MESSAGE("-- This package's must recent binary file"
+    MESSAGE("-- This package's most recent binary file"
       " ${MOST_RECENT_THIS_BINARY_FILEPATH}"
       " is more recent than its upstream SE package source or binary files"
       " or this package's source files!")
