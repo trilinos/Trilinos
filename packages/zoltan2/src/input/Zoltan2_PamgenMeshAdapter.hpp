@@ -192,14 +192,15 @@ public:
     return FALSE;
   }
 
-  size_t getLocalNumAdjs(MeshEntityType source, MeshEntityType target) const
+  /*size_t getLocalNumAdjs(MeshEntityType source, MeshEntityType target) const
   {
     if (availAdjs(source, target)) {
       return tnoct_;
     }
-
+    
     return 0;
   }
+  */
 
   void getAdjsView(MeshEntityType source, MeshEntityType target,
 		   const lno_t *&offsets, const gid_t *& adjacencyIds) const
@@ -228,7 +229,7 @@ public:
     return FALSE;
   }
 
-  size_t getLocalNum2ndAdjs(MeshEntityType sourcetarget, 
+  /*size_t getLocalNum2ndAdjs(MeshEntityType sourcetarget, 
 			    MeshEntityType through) const
   {
     if (avail2ndAdjs(sourcetarget, through)) {
@@ -237,6 +238,7 @@ public:
 
     return 0;
   }
+  */
 
   void get2ndAdjsView(MeshEntityType sourcetarget, MeshEntityType through, 
 		      const lno_t *&offsets, const gid_t *& adjacencyIds) const
