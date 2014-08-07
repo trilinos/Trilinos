@@ -460,6 +460,8 @@ public:
 
         result_struct cgsolve;
         if (use_belos) {
+          // Don't accumulate Belos times as the internal Teuchos timers
+          // already accumulate
           cgsolve = belos_solve(rcpFromRef(g_jacobian),
                                 rcpFromRef(g_nodal_residual),
                                 rcpFromRef(g_nodal_delta),
@@ -467,6 +469,11 @@ public:
                                 use_mean_based,
                                 cg_iteration_limit ,
                                 cg_iteration_tolerance);
+          perf.mat_vec_time    = cgsolve.matvec_time ;
+          perf.cg_iter_time    = cgsolve.iter_time ;
+          perf.prec_setup_time = cgsolve.prec_setup_time ;
+          perf.prec_apply_time = cgsolve.prec_apply_time ;
+          perf.cg_total_time   = cgsolve.total_time ;
         }
         else {
           cgsolve = cg_solve(rcpFromRef(g_jacobian),
@@ -474,17 +481,17 @@ public:
                              rcpFromRef(g_nodal_delta),
                              cg_iteration_limit,
                              cg_iteration_tolerance);
+          perf.mat_vec_time    += cgsolve.matvec_time ;
+          perf.cg_iter_time    += cgsolve.iter_time ;
+          perf.prec_setup_time += cgsolve.prec_setup_time ;
+          perf.prec_apply_time += cgsolve.prec_apply_time ;
+          perf.cg_total_time   += cgsolve.total_time ;
         }
+        perf.cg_iter_count   += cgsolve.iteration ;
 
         // Update solution vector
 
         g_nodal_solution_no_overlap.update(-1.0,g_nodal_delta,1.0);
-        perf.cg_iter_count   += cgsolve.iteration ;
-        perf.mat_vec_time    += cgsolve.matvec_time ;
-        perf.cg_iter_time    += cgsolve.iter_time ;
-        perf.prec_setup_time += cgsolve.prec_setup_time ;
-        perf.prec_apply_time += cgsolve.prec_apply_time ;
-        perf.cg_total_time   += cgsolve.total_time ;
 
         //--------------------------------
 

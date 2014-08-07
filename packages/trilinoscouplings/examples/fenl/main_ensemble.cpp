@@ -172,7 +172,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
       perf.fill_graph_entries *= VectorSize;
       perf.sort_graph_entries *= VectorSize;
       perf.fill_element_graph *= VectorSize;
-      perf_total.increment(perf);
+      perf_total.increment(perf, !cmd.CMD_USE_BELOS);
 
       // Sum response into integral computing response PCE coefficients
       for (int qp=qp_begin, j=0; qp<qp_end; ++qp, ++j) {
@@ -216,7 +216,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
           bc_lower_value , bc_upper_value ,
           false , response);
 
-      perf_total.increment(perf);
+      perf_total.increment(perf, !cmd.CMD_USE_BELOS);
 
       // Sum response into integral computing response PCE coefficients
       double r = response;
