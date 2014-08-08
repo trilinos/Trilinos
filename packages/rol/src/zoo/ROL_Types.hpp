@@ -1029,6 +1029,107 @@ namespace ROL {
 
   Constrained optimization, optimization under uncertainty, etc.
 */
+
+/** @defgroup interface_group User Interface
+ *  \brief ROL's interface, to be implemented by the user.
+ */
+
+/** @defgroup la_group Linear Algebra Interface
+ *  @ingroup interface_group
+ *  \brief ROL's linear algebra or vector space interface.
+ */
+
+/** @defgroup func_group Functional Interface
+ *  @ingroup interface_group
+ *  \brief ROL's functional interface.
+
+    ROL is used for the numerical solution of smooth optimization problems
+    \f[
+      \begin{array}{rl}
+        \min_{x} & f(x) \\
+        \mbox{subject to} & c(x) = 0 \,, \\
+                          & a \le x \le b \,,
+      \end{array}
+    \f]
+    where:
+      \li \f$f : \mathcal{X} \rightarrow \mathbb{R}\f$ is a Fr&eacute;chet differentiable functional,
+      \li \f$c : \mathcal{X} \rightarrow \mathcal{C}\f$ is a Fr&eacute;chet differentiable operator,
+      \li \f$\mathcal{X}\f$ and \f$\mathcal{C}\f$ are Banach spaces of functions, and
+      \li \f$a \le x \le b\f$ defines pointwise (componentwise) bounds on \f$x\f$.
+
+    This formulation encompasses a variety of useful problem scenarios.
+
+    First, the vector spaces \f$\mathcal{X}\f$ and \f$\mathcal{C}\f$, to be defined by the user
+    through the \ref la_group, can represent real spaces, such as \f$\mathcal{X} = \mathbb{R}^n\f$ and
+    \f$\mathcal{C} = \mathbb{R}^m\f$, and function spaces, such as Hilbert and Banach function spaces.
+    ROL's vector space abstractions enable efficent implementations of general optimization algorithms,
+    spanning traditional nonlinear programming (NLP), optimization with partial differential
+    equation (PDE) or differential algebraic equation (DAE) constraints, and
+    stochastic optimization.
+
+    Second, ROL's core methods can solve four types of smooth optimization problems, depending on the
+    structure of the constraints.
+      \li @b Type-U. No constraints (where \f$c(x) = 0\f$ and \f$a \le x \le b\f$ are absent):
+          \f[
+            \begin{array}{rl}
+              \min_{x} & f(x)
+            \end{array}
+          \f]
+          These problems are known as unconstrained optimization problems.
+          The user implements the methods of the #ROL::Objective interface.
+      \li @b Type-B. Bound constraints (where \f$c(x) = 0\f$ is absent):
+          \f[
+            \begin{array}{rl}
+              \min_{x} & f(x) \\
+              \mbox{subject to} & a \le x \le b \,.
+            \end{array}
+          \f]
+          This problem is typically handled using projections on active sets or primal-dual active-set methods.
+          ROL provides example implementations of the projections for simple box constraints.
+          Other projections are defined by the user.
+          The user implements the methods of the #ROL::BoundConstraint interface.
+      \li @b Type-E. Equality constraints, generally nonlinear and nonconvex (where \f$a \le x \le b\f$ is absent):
+          \f[
+            \begin{array}{rl}
+              \min_{x} & f(x) \\
+              \mbox{subject to} & c(x) = 0 \,.
+            \end{array}
+          \f]
+          Equality constraints are handled in ROL using matrix-free sequential quadratic programming (SQP).
+          The user implements the methods of the #ROL::EqualityConstraint interface.
+      \li @b Type-EB. Equality and bound constraints:
+          \f[
+            \begin{array}{rl}
+              \min_{x} & f(x) \\
+              \mbox{subject to} & c(x) = 0 \\
+                                & a \le x \le b \,.
+            \end{array}
+          \f]
+          This formulation includes general inequality constraints.
+          For example, we can consider the reformulation:
+          \f[
+            \begin{array}{rlcccrl}
+              \min_{x} & f(x) &&&& \min_{x,s} & f(x) \\
+              \mbox{subject to} & c(x) \le 0 & & \quad \longleftrightarrow \quad & & \mbox{subject to} & c(x) + s = 0 \,, \\
+              &&&&&& s \ge 0 \,.
+            \end{array}
+          \f]
+          ROL uses a combination of matrix-free SQP, projection methods and primal-dual active set methods to solve these problems.
+          The user implements the methods of the #ROL::EqualityConstraint and the #ROL::BoundConstraint interfaces.
+
+    Third, ROL's design enables streamlined algorithmic extensions, such as the \ref stochastic_group capability.
+
+    ---
+ */
+
+/** @defgroup extensions_group Algorithmic Extensions
+ *  \brief ROL's algorithmic extensions.
+ */
+  
+/** @defgroup stochastic_group Stochastic Optimization
+ *  @ingroup extensions_group
+ *  \brief ROL's stochastic optimization capability.
+ */
   
 
 #endif

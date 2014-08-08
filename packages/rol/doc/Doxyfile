@@ -26,6 +26,7 @@ DOXYFILE_ENCODING      = UTF-8
 # by quotes) that should identify the project.
 
 PROJECT_NAME           = ROL
+# PROJECT_LOGO           = rol_small.png
 
 # The PROJECT_NUMBER tag can be used to enter a project or revision number. 
 # This could be handy for archiving the generated documentation or 
@@ -338,7 +339,7 @@ INLINE_INFO            = YES
 # alphabetically by member name. If set to NO the members will appear in 
 # declaration order.
 
-SORT_MEMBER_DOCS       = YES
+SORT_MEMBER_DOCS       = NO
 
 # If the SORT_BRIEF_DOCS tag is set to YES then doxygen will sort the 
 # brief documentation of file, namespace and class members alphabetically 
@@ -479,11 +480,15 @@ WARN_LOGFILE           =
 # with spaces.
 
 INPUT                  = \
+../src/vector \
+../src/function/ROL_Objective.hpp \
+../src/function/ROL_EqualityConstraint.hpp \
+../src/function/ROL_InequalityConstraint.hpp \
+../src/function/ROL_Constraints.hpp \
+../src/function/ \
 ../src/algorithm \
-../src/function \
 ../src/status \
 ../src/step \
-../src/vector \
 ../src/zoo \
 ../test/function \
 ../test/step \
@@ -530,7 +535,7 @@ EXCLUDE_SYMLINKS       = NO
 # against the file with absolute path, so to exclude all test directories 
 # for example use the pattern */test/*
 
-EXCLUDE_PATTERNS       = *TET_*7* *TET_*8* *TET_*9* *TET_*10* *TET_*6*
+EXCLUDE_PATTERNS       =
 
 # The EXCLUDE_SYMBOLS tag can be used to specify one or more symbol names 
 # (namespaces, classes, functions, etc.) that should be excluded from the output. 
@@ -731,7 +736,7 @@ GENERATE_HTMLHELP      = NO
 # JavaScript and DHTML is required (for instance Mozilla 1.0+, Firefox 
 # Netscape 6.0+, Internet explorer 5.0+, Konqueror, or Safari).
 
-HTML_DYNAMIC_SECTIONS  = NO
+HTML_DYNAMIC_SECTIONS  = YES
 
 # If the GENERATE_HTMLHELP tag is set to YES, the CHM_FILE tag can 
 # be used to specify the file name of the resulting .chm file. You 
@@ -797,7 +802,7 @@ TREEVIEW_WIDTH         = 250
 # If the GENERATE_LATEX tag is set to YES (the default) Doxygen will 
 # generate Latex output.
 
-GENERATE_LATEX         = YES
+GENERATE_LATEX         = NO
 
 # The LATEX_OUTPUT tag is used to specify where the LaTeX docs will be put. 
 # If a relative path is entered the value of OUTPUT_DIRECTORY will be 
@@ -1297,10 +1302,19 @@ GENERATE_LEGEND        = YES
 DOT_CLEANUP            = YES
 
 #---------------------------------------------------------------------------
-# Configuration::additions related to the search engine   
+# Configuration: additions related to MathJax   
+#---------------------------------------------------------------------------
+
+USE_MATHJAX            = YES
+
+MATHJAX_EXTENSIONS     = TeX/AMSmath TeX/AMSsymbols
+
+#---------------------------------------------------------------------------
+# Configuration: additions related to the search engine   
 #---------------------------------------------------------------------------
 
 # The SEARCHENGINE tag specifies whether or not a search engine should be 
 # used. If set to NO the values of all tags below this one will be ignored.
 
 SEARCHENGINE           = NO
+
