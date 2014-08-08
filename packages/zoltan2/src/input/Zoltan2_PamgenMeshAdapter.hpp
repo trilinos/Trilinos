@@ -394,15 +394,6 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
       for (int j = 0; j < num_nodes_per_elem[b]; j++) {
 	elemToNode_[tnoct_] = connect[b][i*num_nodes_per_elem[b] + j]-1;
 	reconnect[telct][j] = connect[b][i*num_nodes_per_elem[b] + j]-1;
-
-	if(sur_elem[tnoct_].empty()) {
-	  printf("WARNING: Node = "ST_ZU" has no elements\n", tnoct_+1);
-	} else {
-	  size_t nsur = sur_elem[tnoct_].size();
-	  if (nsur > max_nsur)
-	    max_nsur = nsur;
-	}
-
 	++tnoct_;
       }
 
@@ -426,6 +417,14 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
   /* Find the adjacency for a nodal based decomposition */
   nadj_ = 0;
   for(size_t ncnt=0; ncnt < num_nodes_; ncnt++) {
+    if(sur_elem[ncnt].empty()) {
+      printf("WARNING: Node = "ST_ZU" has no elements\n", ncnt+1);
+    } else {
+      size_t nsur = sur_elem[ncnt].size();
+      if (nsur > max_nsur)
+	max_nsur = nsur;
+    }
+
     start_[ncnt] = nadj_;
     for(size_t ecnt=0; ecnt < sur_elem[ncnt].size(); ecnt++) {
       size_t elem = sur_elem[ncnt][ecnt];
