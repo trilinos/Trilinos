@@ -4,7 +4,7 @@
   <Parameter name="Secant Type"                                       type="string" value="Limited-Memory BFGS"     />
   <Parameter name="Linesearch Type"                                   type="string" value="Cubic Interpolation"     />
   <Parameter name="Linesearch Curvature Condition"                    type="string" value="Strong Wolfe Conditions" />
-  <Parameter name="Trust-Region Subproblem Solver Type"               type="string" value="Cauchy Point"            />
+  <Parameter name="Trust-Region Subproblem Solver Type"               type="string" value="Truncated CG"            />
   <Parameter name="Use Secant Preconditioning"                        type="bool"   value="false"                   />
   <Parameter name="Use Secant Hessian-Times-A-Vector"                 type="bool"   value="false"                   />
   <Parameter name="Maximum Secant Storage"                            type="int"    value="10"                      />

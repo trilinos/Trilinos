@@ -125,14 +125,14 @@ private:
 
   Real compute_norm(const std::vector<Real> &r) {
     Real norm = 0.0;
-    for (int i=0; i<r.size(); i++) {
+    for (unsigned i=0; i<r.size(); i++) {
       norm += r[i]*r[i];
     }
     return std::sqrt(norm);
   }
 
   void update(std::vector<Real> &u, const std::vector<Real> &s, const Real alpha=1.0) {
-    for (int i=0; i<u.size(); i++) {
+    for (unsigned i=0; i<u.size(); i++) {
       u[i] += alpha*s[i];
     }
   }

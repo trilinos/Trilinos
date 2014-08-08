@@ -91,8 +91,8 @@ private:
 
   Real dot(const std::vector<Real> &x, const std::vector<Real> &y) {
     Real ip = 0.0;
-    Real c = ((x.size()==this->nx_) ? 4.0 : 2.0);
-    for (int i=0; i<x.size(); i++) {
+    Real c = (((int)x.size()==this->nx_) ? 4.0 : 2.0);
+    for (unsigned i=0; i<x.size(); i++) {
       if ( i == 0 ) {
         ip += this->dx_/6.0*(c*x[i] + x[i+1])*y[i];
       }
@@ -107,21 +107,21 @@ private:
   }
 
   void update(std::vector<Real> &u, const std::vector<Real> &s, const Real alpha=1.0) {
-    for (int i=0; i<u.size(); i++) {
+    for (unsigned i=0; i<u.size(); i++) {
       u[i] += alpha*s[i];
     }
   }
 
   void scale(std::vector<Real> &u, const Real alpha=0.0) {
-    for (int i=0; i<u.size(); i++) {
+    for (unsigned i=0; i<u.size(); i++) {
       u[i] *= alpha;
     }
   }
 
   void apply_mass(std::vector<Real> &Mu, const std::vector<Real> &u ) {
     Mu.resize(u.size(),0.0);
-    Real c = ((u.size()==this->nx_) ? 4.0 : 2.0);
-    for (int i=0; i<u.size(); i++) {
+    Real c = (((int)u.size()==this->nx_) ? 4.0 : 2.0);
+    for (unsigned i=0; i<u.size(); i++) {
       if ( i == 0 ) {
         Mu[i] = this->dx_/6.0*(c*u[i] + u[i+1]);
       }
@@ -605,15 +605,15 @@ int main(int argc, char *argv[]) {
     parlist.set("Relative Krylov Tolerance",              1.e-4);
     parlist.set("Maximum Number of Krylov Iterations",    50);
     // PDAS parameters.
-    parlist.set("PDAS Relative Step Tolerance",           1.e-8);
-    parlist.set("PDAS Relative Gradient Tolerance",       1.e-6);
+    parlist.set("PDAS Relative Step Tolerance",           1.e-10);
+    parlist.set("PDAS Relative Gradient Tolerance",       1.e-8);
     parlist.set("PDAS Maximum Number of Iterations",      10);
     parlist.set("PDAS Dual Scaling",                      (alpha>0.0) ? alpha : 1.e-4 );      
     // Define step.
     ROL::PrimalDualActiveSetStep<RealT> step_pdas(parlist);
     // Define status test.
-    RealT gtol  = 1e-12;  // norm of gradient tolerance
-    RealT stol  = 1e-14;  // norm of step tolerance
+    RealT gtol  = 1e-14;  // norm of gradient tolerance
+    RealT stol  = 1e-16;  // norm of step tolerance
     int   maxit = 100;    // maximum number of iterations
     ROL::StatusTest<RealT> status(gtol, stol, maxit);    
     // Define algorithm.
