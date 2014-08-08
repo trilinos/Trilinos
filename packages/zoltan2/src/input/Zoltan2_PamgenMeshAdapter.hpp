@@ -151,20 +151,27 @@ public:
 
   void getCoordinatesViewOf(MeshEntityType etype, const scalar_t *&coords,
 			    int &stride, int dim) const {
-    if (dim != dimension_) {
-      std::ostringstream emsg;
-      emsg << __FILE__ << ";" <<__LINE__
-	   << "  Invalid dimension " << dim << std::endl;
-      throw std::runtime_error(emsg.str());
-    } else if ((MESH_REGION == etype && 3 == dimension_) ||
+    if ((MESH_REGION == etype && 3 == dimension_) ||
 	       (MESH_FACE == etype && 2 == dimension_)) {
-      coords = Acoords_;
+      if (dim == 0) {
+	coords = Acoords_;
+      } else if (dim == 1) {
+	coords = Acoords_ + num_elem_;
+      } else if (dim == 2) {
+	coords = Acoords_ + 2 * num_elem_;
+      }
       stride = 1;
     } else if (MESH_REGION == etype && 2 == dimension_) {
       coords = NULL;
       stride = 0;
     } else if (MESH_VERTEX == etype) {
-      coords = coords_;
+      if (dim == 0) {
+	coords = coords_;
+      } else if (dim == 1) {
+	coords = coords_ + num_nodes_;
+      } else if (dim == 2) {
+	coords = coords_ + 2 * num_nodes_;
+      }
       stride = 1;
     } else {
       coords = NULL;

@@ -229,10 +229,10 @@ int main(int argc, char*argv[])
   fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   if( !allprint ) fos->setOutputToRootOnly( root );
 
+  Teuchos::oblackholestream blackhole;
   if( verbosity > 3 ){
     compare_fos = fos;
   } else {
-    Teuchos::oblackholestream blackhole;
     compare_fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(blackhole));
   }
 

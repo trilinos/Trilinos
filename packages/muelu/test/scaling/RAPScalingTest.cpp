@@ -62,7 +62,9 @@
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
+#include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
+#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
@@ -106,6 +108,7 @@ int main(int argc, char *argv[]) {
   bool optTimings = true; clp.setOption("timings", "notimings", &optTimings, "print timings to screen");
   bool optImplicitTranspose = true; clp.setOption("implicit", "explicit", &optImplicitTranspose, "whether to form R implicitly");
   bool optExport = false; clp.setOption("export", "noexport", &optExport, "write matrices to file");
+  std::string optAggType="coupled"; clp.setOption("aggregation", &optAggType, "type of aggregation: \"uncoupled\",\"coupled\"");
   SC   optThreshold = 0.; clp.setOption("threshold", &optThreshold, "aggregation threshold");
 
   switch (clp.parse(argc, argv)) {
@@ -146,6 +149,7 @@ int main(int argc, char *argv[]) {
   RCP<Matrix>      A;
   RCP<const Map>   map;
   RCP<MultiVector> nullspace;
+  RCP<MultiVector> coordinates;
   if (matrixFile.empty()) {
     galeriStream << "========================================================\n" << xpetraParameters << galeriParameters;
 
@@ -165,13 +169,16 @@ int main(int argc, char *argv[]) {
     // At the moment, however, things are fragile as we hope that the Problem uses same map inside
     if (matrixType == "Laplace1D") {
       map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian1D", comm, galeriList);
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D", map, galeriList);
 
     } else if (matrixType == "Laplace2D" || matrixType == "Star2D" ||
                matrixType == "BigStar2D" || matrixType == "Elasticity2D") {
       map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, galeriList);
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D", map, galeriList);
 
     } else if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D") {
       map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList);
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("3D", map, galeriList);
     }
 
     // Expand map to do multiple DOF per node for block problems
@@ -284,7 +291,7 @@ int main(int argc, char *argv[]) {
   Level fineLevel, coarseLevel;
   RAPFactory AcFact;
   AcFact.DisableMultipleCallCheck();
-  RCP<UncoupledAggregationFactory> aggfact;
+  RCP<SingleLevelFactoryBase> aggfact;
   RCP<TentativePFactory> ptentfact;
   RCP<CoalesceDropFactory> cdfact;
   RCP<SaPFactory>    PFact;
@@ -296,12 +303,18 @@ int main(int argc, char *argv[]) {
 
     MueLuTests::TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel); // set a default FactoryManager
     fineLevel.Set("A", A);
+    fineLevel.Set("Coordinates", coordinates);
 
     cdfact = rcp(new CoalesceDropFactory());
     ParameterList cdlist = *(cdfact->GetValidParameterList());
     cdlist.set("aggregation: drop tol",optThreshold);
+    cdlist.set("aggregation: drop scheme","distance laplacian");
     cdlist.set("lightweight wrap",true);
-    aggfact = rcp(new UncoupledAggregationFactory());
+    if (optAggType=="uncoupled") {
+      aggfact = rcp(new UncoupledAggregationFactory());
+    } else {
+      aggfact = rcp(new CoupledAggregationFactory());
+    }
     aggfact->SetFactory("Graph",cdfact);
     mapfact = rcp(new CoarseMapFactory() );
     mapfact->SetFactory("Aggregates",aggfact);
