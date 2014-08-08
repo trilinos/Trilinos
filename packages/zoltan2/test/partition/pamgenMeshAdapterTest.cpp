@@ -102,16 +102,6 @@ int main(int argc, char *argv[]) {
   RCP<const Teuchos::Comm<int> > CommT = platform.getComm();
   int MyPID = CommT->getRank();
 
-
-  //Check number of arguments
-  if (argc > 2) {
-    cout <<"\n>>> ERROR: Invalid number of arguments.\n\n";
-    cout <<"Usage:\n\n";
-    cout <<"  ./pamgenMeshAdapterTest.exe [meshfile.xml]\n\n";
-    cout <<"   meshfile.xml(optional) - xml file with description of Pamgen mesh\n\n";
-    exit(1);
-  }
-
   if (MyPID == 0){
   cout \
     << "=========================================================================\n" \
@@ -144,10 +134,17 @@ int main(int argc, char *argv[]) {
   /*************************** GET XML INPUTS ********************************/
   /***************************************************************************/
 
-  // Command line for xml file, otherwise use default
-  std::string   xmlMeshInFileName;
-  if(argc>=2) xmlMeshInFileName=string(argv[1]);
-  else xmlMeshInFileName="Poisson.xml";
+  // default values for command-line arguments
+  std::string xmlMeshInFileName("Poisson.xml");
+  std::string method("rcb");
+
+  // Read run-time options.
+  Teuchos::CommandLineProcessor cmdp (false, false);
+  cmdp.setOption("xmlfile", &xmlMeshInFileName,
+                 "XML file with PamGen specifications");
+  cmdp.setOption("method", &method,
+                 "Partitioning method to use:  rcb or graph");
+  cmdp.parse(narg, arg);
 
   // Read xml file into parameter list
   ParameterList inputMeshList;
@@ -198,14 +195,16 @@ int main(int argc, char *argv[]) {
   inputAdapter_t ia;
 
   Teuchos::ParameterList params("test params");
-  params.set("bisection_num_test_cuts", 7);
-  params.set("rectilinear", "yes");
+  if (method == "rcb") {
+    params.set("algorithm", "rcb");
+    params.set("rectilinear", "yes");
+  }
+  else if (method == "graph") {
+    params.set("partitioning_approach", "partition");
+    params.set("algorithm", "scotch");
+  }
 
-#ifdef HAVE_ZOLTAN2_MPI
-  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params, MPI_COMM_WORLD);
-#else
-  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params);
-#endif
+  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params, CommT);
 
   problem.solve();
 
