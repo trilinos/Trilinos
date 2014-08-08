@@ -1736,9 +1736,9 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef typename Teuchos::ArrayView<const GO>::size_type size_type;
-    const char tfecfFuncName[] = "insertGlobalValues";
 
 #ifdef HAVE_TPETRA_DEBUG
+    const char tfecfFuncName[] = "insertGlobalValues";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       values.size() != indices.size(), std::runtime_error,
       ": values.size() must equal indices.size().  values.size() = "

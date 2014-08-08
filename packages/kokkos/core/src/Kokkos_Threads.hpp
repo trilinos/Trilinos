@@ -136,7 +136,7 @@ public:
 
   KOKKOS_INLINE_FUNCTION void * get_shmem( const int size ) const ;
 
-  explicit inline Threads( Impl::ThreadsExec & );
+  explicit KOKKOS_INLINE_FUNCTION Threads( Impl::ThreadsExec & );
 
   /**@} */
   /*------------------------------------------------------------------------*/

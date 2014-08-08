@@ -418,7 +418,7 @@ namespace Tpetra {
           << ") must be nonnegative.");
 
         TEUCHOS_TEST_FOR_EXCEPTION(
-          globalNumIndices == getInvalidGlobalIndex (), std::invalid_argument,
+          globalNumIndices == static_cast<GO> (getInvalidGlobalIndex ()), std::invalid_argument,
           "Tpetra::Map constructor: You provided globalNumIndices = Teuchos::"
           "OrdinalTraits<GO>::invalid().  This version of the constructor "
           "requires a valid value of globalNumIndices.  You probably mistook "
@@ -587,7 +587,7 @@ namespace Tpetra {
         scan<int, GO> (comm, REDUCE_SUM, myNumIndices, outArg (scanResult));
         const GO myOffset = scanResult - myNumIndices;
 
-        if (globalNumIndices != getInvalidGlobalIndex ()) {
+        if (globalNumIndices != static_cast<GO> (getInvalidGlobalIndex ())) {
           globalNumIndices_ = globalNumIndices; // Use the user's value.
         }
         else {
@@ -680,7 +680,7 @@ namespace Tpetra {
           // By choosing LO so that it can count the local number of
           // elements, the user asserts that it can fit any values in
           // [0, myNumIndices_-1].  Thus, it's OK for i to be LO.
-          LO i = 1;
+          GO i = 1;
           for ( ; i < myNumIndices_; ++i) {
             const GO curGid = lgMap_(i);
             const GO newLastContigGID = lastContiguousGID_ + 1;
@@ -1117,6 +1117,7 @@ namespace Tpetra {
       /// If the given global index is not owned by this process, return
       /// Teuchos::OrdinalTraits<LO>::invalid().
       KOKKOS_INLINE_FUNCTION LO getLocalIndex (const GO globalIndex) const {
+        if (getMyNumIndices() == 0) return getInvalidLocalIndex();
         if (isContiguous ()) {
           if (globalIndex >= getMinGlobalIndex () &&
               globalIndex <= getMaxGlobalIndex ()) {
@@ -1147,6 +1148,7 @@ namespace Tpetra {
       /// If the given local index is not valid on the calling process,
       /// return Teuchos::OrdinalTraits<GO>::invalid().
       KOKKOS_INLINE_FUNCTION GO getGlobalIndex (const LO localIndex) const {
+        if (getMyNumIndices() == 0) return getInvalidLocalIndex();
         if (localIndex < getMinLocalIndex () ||
             localIndex > getMaxLocalIndex ()) {
           // This process will always take this branch if it owns no indices.

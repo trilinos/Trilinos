@@ -151,6 +151,10 @@ KOKKOS_LINK += --relocatable-device-code=true
 endif
 endif
 
+ifeq ($(CXX11), yes)
+KOKKOS_INC += --std=c++11 -DKOKKOS_HAVE_CXX11
+endif
+
 OBJ_KOKKOS_TMP = $(SRC_KOKKOS:.cpp=.o)
 OBJ_KOKKOS = $(OBJ_KOKKOS_TMP:.cu=.o)
 OBJ_KOKKOS_LINK = $(notdir $(OBJ_KOKKOS))
