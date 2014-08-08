@@ -220,11 +220,6 @@ public:
 
   bool avail2ndAdjs(MeshEntityType sourcetarget, MeshEntityType through) const
   {
-    if ((MESH_REGION==sourcetarget && MESH_VERTEX==through && 3==dimension_) ||
-	(MESH_FACE==sourcetarget && MESH_VERTEX==through && 2==dimension_)) {
-      return TRUE;
-    }
-
     return FALSE;
   }
 
@@ -241,13 +236,9 @@ public:
   void get2ndAdjsView(MeshEntityType sourcetarget, MeshEntityType through, 
 		      const lno_t *&offsets, const gid_t *& adjacencyIds) const
   {
-    if ((MESH_REGION==sourcetarget && MESH_VERTEX==through && 3==dimension_) ||
-	(MESH_FACE==sourcetarget && MESH_VERTEX==through && 2==dimension_)) {
+    if (avail2ndAdjs(sourcetarget, through)) {
       offsets = start_;
       adjacencyIds = adj_;
-    } else if (MESH_REGION == sourcetarget && 2 == dimension_) {
-      offsets = NULL;
-      adjacencyIds = NULL;
     } else {
       offsets = NULL;
       adjacencyIds = NULL;
