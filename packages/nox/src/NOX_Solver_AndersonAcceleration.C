@@ -62,8 +62,6 @@
 #include "NOX_Solver_SolverUtils.H"
 #include "NOX_LineSearch_Generic.H"
 #include "NOX_LineSearch_Factory.H"
-#include "NOX_Direction_Generic.H"
-#include "NOX_Direction_Factory.H"
 #include <cmath>
 
 NOX::Solver::AndersonAcceleration::
@@ -136,6 +134,9 @@ void NOX::Solver::AndersonAcceleration::init()
 
   status = NOX::StatusTest::Unconverged;
   checkType = parseStatusTestCheckType(paramsPtr->sublist("Solver Options"));
+
+  lineSearchPtr = NOX::LineSearch::
+    buildLineSearch(globalDataPtr, paramsPtr->sublist("Line Search"));
 
   // Print out parameters
   if (utilsPtr->isPrintType(NOX::Utils::Parameters))
@@ -221,10 +222,25 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
     // Copy initial guess to old soln
     *oldSolnPtr = *solnPtr;
 
-    // Compute first iterate.
-    solnPtr->computeX(*solnPtr, *oldPrecF, mixParam);
+    // Compute step then first iterate with a line search.
+    tempVec->update(mixParam,*oldPrecF);
+    bool ok = lineSearchPtr->compute(*solnPtr, stepSize, *tempVec, *this);
+    if (!ok)
+    {
+      if (stepSize == 0.0)
+      {
+        utilsPtr->out() << "NOX::Solver::AndersonAcceleratino::iterate - line search failed" << std::endl;
+        status = NOX::StatusTest::Failed;
+        prePostOperator.runPostIterate(*this);
+        printUpdate();
+        return status;
+      }
+      else if (utilsPtr->isPrintType(NOX::Utils::Warning))
+        utilsPtr->out() << "NOX::Solver::AndersonAcceleration::iterate - using recovery step for line search" << std::endl;
+    }
+    //solnPtr->computeX(*solnPtr, *oldPrecF, mixParam);
 
-    // Compute F for the first iterate
+    // Compute F for the first iterate in case it isn't in the line search
     rtype = solnPtr->computeF();
     if (rtype != NOX::Abstract::Group::Ok)
     {
@@ -343,14 +359,31 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
   if (nStore > 0)
     Rgamma.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,mixParam,rMat,gamma,0.0);
 
-  // Compute the new solution.
-  solnPtr->computeX(*solnPtr, *precF, mixParam);
+  // Compute the step and new solution using the line search.
+  tempVec->update(mixParam,*precF);
+  for (int ii=0; ii<nStore; ii++)
+    tempVec->update(-gamma(ii,0), *(xMat[ii]), -Rgamma(ii,0),*(qMat[ii]),1.0);
+  bool ok = lineSearchPtr->compute(*solnPtr, stepSize, *tempVec, *this);
+  if (!ok)
+  {
+    if (stepSize == 0.0)
+    {
+      utilsPtr->out() << "NOX::Solver::AndersonAcceleratino::iterate - line search failed" << std::endl;
+      status = NOX::StatusTest::Failed;
+      prePostOperator.runPostIterate(*this);
+      printUpdate();
+      return status;
+    }
+    else if (utilsPtr->isPrintType(NOX::Utils::Warning))
+      utilsPtr->out() << "NOX::Solver::AndersonAcceleration::iterate - using recovery step for line search" << std::endl;
+  }
+  /*solnPtr->computeX(*solnPtr, *precF, mixParam);
   for (int ii=0; ii<nStore; ii++){
     solnPtr->computeX(*solnPtr, *(xMat[ii]), -gamma(ii,0));
     solnPtr->computeX(*solnPtr, *(qMat[ii]), -Rgamma(ii,0));
-  }
+  }*/
 
-  // Compute F for new current solution.
+  // Compute F for new current solution in case the line search didn't .
   NOX::Abstract::Group::ReturnType rtype = solnPtr->computeF();
   if (rtype != NOX::Abstract::Group::Ok)
   {
@@ -524,6 +557,7 @@ void NOX::Solver::AndersonAcceleration::printUpdate()
     utilsPtr->out() << "\n" << NOX::Utils::fill(72) << "\n";
     utilsPtr->out() << "-- Nonlinear Solver Step " << nIter << " -- \n";
     utilsPtr->out() << "||F|| = " << utilsPtr->sciformat(normSoln);
+    utilsPtr->out() << "  step = " << utilsPtr->sciformat(stepSize);
     if (status == NOX::StatusTest::Converged)
       utilsPtr->out() << " (Converged!)";
     if (status == NOX::StatusTest::Failed)

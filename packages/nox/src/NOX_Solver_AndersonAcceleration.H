@@ -65,9 +65,6 @@ namespace NOX {
   namespace LineSearch {
     class Generic;
   }
-  namespace Direction {
-    class Generic;
-  }
 }
 
 namespace NOX {
@@ -105,11 +102,10 @@ namespace Solver {
 
   The following parameter list entries are valid for this solver:
 
-  - "Anderson Parameters" - Sublist of parameters specific to AA, passed to
-    the NOX::LineSearch::Manager constructor.
+  - "Anderson Parameters" - Sublist of parameters specific to AA
 
-  - "Direction" - Sublist of the direction parameters, passed to
-    the NOX::Direction::Manager constructor. Defaults to an empty list.
+  - "Line Search" - Sublist of the line search parameters, passed to
+    the NOX::LineSearch::Manager constructor. Defaults to an empty list.
 
   - "Solver Options" - Sublist of general solver options.
      <ul>
@@ -198,6 +194,9 @@ protected:
 
   //! Input parameters.
   Teuchos::RCP<Teuchos::ParameterList> paramsPtr;
+
+  //! Linesearch.
+  Teuchos::RCP<NOX::LineSearch::Generic> lineSearchPtr;
 
   //! Flag for preconditioning
   bool precond;
