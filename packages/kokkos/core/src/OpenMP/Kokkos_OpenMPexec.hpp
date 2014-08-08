@@ -162,6 +162,7 @@ public:
   KOKKOS_INLINE_FUNCTION
   void team_barrier()
     {
+      #ifndef __CUDA_ARCH__
       if(m_team_size==1) return;
       const int rank_rev = m_team_size - ( m_team_rank + 1 );
 
@@ -175,6 +176,7 @@ public:
       for ( int i = 0 ; i < m_team_fan_size ; ++i ) {
         m_team_base[ rank_rev + (1<<i) ]->m_barrier_state = OpenMPexec::Active ;
       }
+      #endif
     }
 
   template< class ArgType >

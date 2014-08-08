@@ -405,6 +405,7 @@ public:
 
   KOKKOS_INLINE_FUNCTION void team_barrier()
     {
+      #ifndef __CUDA_ARCH__
       const int rev_rank = m_team_size - ( m_team_rank + 1 );
 
       for ( int i = 0 ; i < m_team_fan_size ; ++i ) {
@@ -417,6 +418,7 @@ public:
       for ( int i = 0 ; i < m_team_fan_size ; ++i ) {
         m_team_base[ rev_rank + (1<<i) ]->m_pool_state = ThreadsExec::Active ;
       }
+      #endif
     }
 
   template< class ArgType >
@@ -585,7 +587,10 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   execution_space::scratch_memory_space  team_shmem() const
-    { return execution_space::scratch_memory_space( m_exec ); }
+    {
+
+      return execution_space::scratch_memory_space( m_exec );
+    }
 
   KOKKOS_INLINE_FUNCTION int league_rank() const { return m_exec.m_league_rank ; }
   KOKKOS_INLINE_FUNCTION int league_size() const { return m_exec.m_league_size ; }
@@ -761,7 +766,8 @@ inline bool Threads::wake()
 inline void Threads::fence()
 { Impl::ThreadsExec::fence() ; }
 
-inline Threads::Threads( Impl::ThreadsExec & t ) : m_exec( t ) {}
+KOKKOS_INLINE_FUNCTION
+Threads::Threads( Impl::ThreadsExec & t ) : m_exec( t ) {}
 
 KOKKOS_INLINE_FUNCTION
 void * Threads::get_shmem( const int size ) const { return m_exec.get_shmem( size ); }
