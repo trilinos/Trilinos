@@ -101,7 +101,7 @@ enum MeshEntityType {
 
 */
 
-template <typename User, typename UserCoord=User>
+  template <typename User>
   class MeshAdapter : public BaseAdapter<User> {
 private:
   enum MeshEntityType primaryEntityType; // Entity (region, face, edge, or 
@@ -126,7 +126,7 @@ public:
   typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef User user_t;
-  typedef UserCoord userCoord_t;
+  typedef User userCoord_t;
 #endif
   
   enum BaseAdapterType adapterType() const {return MeshAdapterType;}
