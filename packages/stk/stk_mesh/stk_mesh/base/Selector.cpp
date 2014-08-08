@@ -237,6 +237,37 @@ void Selector::get_parts(PartVector& parts) const
   gather_parts_impl(parts, &m_expr[0]);
 }
 
+BucketVector const& Selector::get_buckets(EntityRank entity_rank) const
+{
+    static BucketVector emptyBucketVector;
+    if (m_expr.empty()) {
+        return emptyBucketVector;
+    }
+
+    BulkData* mesh = NULL;
+    for(size_t i=0; i<m_expr.size(); ++i) {
+        if (m_expr[i].node_type() == SelectorNodeType::PART && m_expr[i].part() != NULL) {
+            mesh = m_expr[i].part()->mesh_bulk_data();
+        }
+    }
+    if (mesh == NULL) {
+        return emptyBucketVector;
+    }
+
+    return mesh->get_buckets(entity_rank, *this);
+}
+
+size_t Selector::size(EntityRank entity_rank) const
+{
+    size_t num_entities = 0;
+    BucketVector const& buckets = get_buckets(entity_rank);
+    for(size_t i=0; i<buckets.size(); ++i) {
+        num_entities += buckets[i]->size();
+    }
+    return num_entities;
+}
+
+
 bool Selector::is_all_unions() const
 {
   return is_all_union_impl(&m_expr[0]);

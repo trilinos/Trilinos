@@ -100,6 +100,11 @@ TEST(Verify, partASelector)
 
   stk::mesh::Selector partASelector(fix.m_partA);
 
+  const size_t numExpectedBuckets = 2;
+  EXPECT_EQ(numExpectedBuckets, partASelector.get_buckets(stk::topology::NODE_RANK).size());
+  const size_t numExpectedSelectedEntities = 2;
+  EXPECT_EQ(numExpectedSelectedEntities, partASelector.size(stk::topology::NODE_RANK));
+
   const int numEntities = 5;
   bool gold_shouldEntityBeInSelector[numEntities] = {true, true, false, false, false};
 
@@ -529,6 +534,11 @@ TEST(Verify, printingOfNothingForComplementOfDefaultSelector)
         std::ostringstream description;
         description << selectAllANDAll;
         EXPECT_EQ( "(!(NOTHING) & !(NOTHING))", description.str());
+//        size_t num_selected_buckets = selectAllANDAll.get_buckets(stk::topology::NODE_RANK).size();
+//        //the get_buckets call on selectAllANDAll will return an empty vector because it doesn't
+//        //have access to a mesh!!!
+//        size_t expected_num_buckets = ??? we don't have access to a mesh!!!
+//        EXPECT_EQ(0u, num_selected_buckets);
     }
     {
         stk::mesh::Selector selectAllORAll = selectAll | anotherSelectAll;

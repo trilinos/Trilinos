@@ -56,6 +56,8 @@ public:
    */
   MetaData & mesh_meta_data() const { return m_partImpl.mesh_meta_data(); }
 
+  BulkData * mesh_bulk_data() const;
+
   /** \brief  The primary entity type for this part.
    *
    *   For example, the primary purpose of an Element part

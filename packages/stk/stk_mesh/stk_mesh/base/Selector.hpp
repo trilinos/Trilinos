@@ -80,6 +80,11 @@ struct SelectorNode
     return m_value.part_ptr;
   }
 
+  SelectorNodeType::node_type node_type() const
+  {
+      return m_type;
+  }
+
   bool operator==(SelectorNode const& arg_rhs) const
   {
     if (m_type != arg_rhs.m_type) {
@@ -190,6 +195,10 @@ public:
   bool is_all_unions() const;
 
   void get_parts(PartVector& parts) const;
+
+  BucketVector const& get_buckets(EntityRank entity_rank) const;
+
+  size_t size(EntityRank entity_rank) const;
 
   /** \brief  Is this part a member of the
    *          set defined by the selector expression.
