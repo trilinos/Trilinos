@@ -735,10 +735,22 @@ KOKKOS_INLINE_FUNCTION unsigned Threads::team_recommended()
 { return Impl::ThreadsExec::team_recommended() ; }
 
 KOKKOS_INLINE_FUNCTION unsigned Threads::hardware_thread_id()
-{ return Impl::ThreadsExec::hardware_thread_id() ; }
+{
+#ifdef __CUDA_ARCH__
+  return 0;
+#else
+  return Impl::ThreadsExec::hardware_thread_id() ;
+#endif
+}
 
 KOKKOS_INLINE_FUNCTION unsigned Threads::max_hardware_threads()
-{ return Impl::ThreadsExec::max_hardware_threads() ; }
+{
+#ifdef __CUDA_ARCH__
+  return 0;
+#else
+  return Impl::ThreadsExec::max_hardware_threads() ;
+#endif
+}
 
 inline bool Threads::sleep()
 { return Impl::ThreadsExec::sleep() ; }
