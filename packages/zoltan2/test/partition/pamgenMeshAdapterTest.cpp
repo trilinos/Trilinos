@@ -198,8 +198,10 @@ int main(int argc, char *argv[]) {
   inputAdapter_t ia;
 
   Teuchos::ParameterList params("test params");
+  params.set("debug_level", "basic_status");
+  params.set("algorithm", "rcb");
+  params.set("imbalance_tolerance", 1.1);
   params.set("bisection_num_test_cuts", 7);
-  params.set("rectilinear", "yes");
 
 #ifdef HAVE_ZOLTAN2_MPI
   Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params, MPI_COMM_WORLD);
