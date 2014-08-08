@@ -418,7 +418,7 @@ void CoordinateModel<Adapter>::meshConstructor(
       Z2_FORWARD_EXCEPTIONS;
 
       ArrayRCP<const scalar_t> cArray(coords, 0, nLocalIds*stride, false);
-      coordArray[ia->getDimensionOf()] = input_t(cArray, stride);
+      coordArray[dim] = input_t(cArray, stride);
     }
 
     for (int idx=0; idx < userNumWeights_; idx++){
