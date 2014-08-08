@@ -1117,6 +1117,7 @@ namespace Tpetra {
       /// If the given global index is not owned by this process, return
       /// Teuchos::OrdinalTraits<LO>::invalid().
       KOKKOS_INLINE_FUNCTION LO getLocalIndex (const GO globalIndex) const {
+        if (getMyNumIndices() == 0) return getInvalidLocalIndex();
         if (isContiguous ()) {
           if (globalIndex >= getMinGlobalIndex () &&
               globalIndex <= getMaxGlobalIndex ()) {
@@ -1147,6 +1148,7 @@ namespace Tpetra {
       /// If the given local index is not valid on the calling process,
       /// return Teuchos::OrdinalTraits<GO>::invalid().
       KOKKOS_INLINE_FUNCTION GO getGlobalIndex (const LO localIndex) const {
+        if (getMyNumIndices() == 0) return getInvalidLocalIndex();
         if (localIndex < getMinLocalIndex () ||
             localIndex > getMaxLocalIndex ()) {
           // This process will always take this branch if it owns no indices.
