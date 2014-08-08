@@ -336,19 +336,19 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
 
     for(int i = 0; i < num_elem_this_blk[b]; i++) {
       Acoords_[a] = 0;
-      Acoords_[num_nodes_ + a] = 0;
+      Acoords_[num_elem_ + a] = 0;
 
       if (3 == dimension_) {
-	Acoords_[2 * num_nodes_ + a] = 0;
+	Acoords_[2 * num_elem_ + a] = 0;
       }
 
       for(int j = 0; j < num_nodes_per_elem[b]; j++) {
 	int node = connect[b][i * num_nodes_per_elem[b] + j] - 1;
 	Acoords_[a] += coords_[node];
-	Acoords_[num_nodes_ + a] += coords_[num_nodes_ + node];
+	Acoords_[num_elem_ + a] += coords_[num_nodes_ + node];
 
 	if(3 == dimension_) {
-	  Acoords_[2 * num_nodes_ + a] += coords_[2 * num_nodes_ + node];
+	  Acoords_[2 * num_elem_ + a] += coords_[2 * num_nodes_ + node];
 	}
 
 	/*
@@ -365,14 +365,15 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
       }
 
       Acoords_[a] /= num_nodes_per_elem[b];
-      Acoords_[num_nodes_ + a] /= num_nodes_per_elem[b];
+      Acoords_[num_elem_ + a] /= num_nodes_per_elem[b];
 
       if(3 == dimension_) {
-	Acoords_[2 * num_nodes_ + a] /= num_nodes_per_elem[b];
+	Acoords_[2 * num_elem_ + a] /= num_nodes_per_elem[b];
       }
 
       a++;
     }
+
   }
 
   delete[] elem_blk_ids;
