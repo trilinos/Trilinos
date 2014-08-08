@@ -452,7 +452,7 @@ public:
 
   GraphModel(const MeshAdapter<user_t> *ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
-    modelFlag_t &flags)
+    modelFlag_t &modelflags)
   {
     throw std::runtime_error("cannot build GraphModel from MeshAdapter yet");
   }
