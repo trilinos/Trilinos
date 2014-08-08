@@ -86,12 +86,12 @@ typedef Tpetra::MultiVector<double, int, int>     tMVector_t;
 /******************************** MAIN ***************************************/
 /*****************************************************************************/
 
-int main(int argc, char *argv[]) {
+int main(int narg, char *arg[]) {
 
   int numProcs=1;
   int rank=0;
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
+  Teuchos::GlobalMPISession mpiSession(&narg, &arg,0);
   rank=mpiSession.getRank();
   numProcs=mpiSession.getNProc();
 
@@ -103,20 +103,20 @@ int main(int argc, char *argv[]) {
   int MyPID = CommT->getRank();
 
   if (MyPID == 0){
-  cout \
-    << "=========================================================================\n" \
-    << "|                                                                       |\n" \
-    << "|          Example: Partition Pamgen Hexahedral Mesh                    |\n" \
-    << "|                                                                       |\n" \
-    << "|  Questions? Contact  Karen Devine      (kddevin@sandia.gov),          |\n" \
-    << "|                      Erik Boman        (egboman@sandia.gov),          |\n" \
-    << "|                      Siva Rajamanickam (srajama@sandia.gov).          |\n" \
-    << "|                                                                       |\n" \
-    << "|  Pamgen's website:     http://trilinos.sandia.gov/packages/pamgen     |\n" \
-    << "|  Zoltan2's website:    http://trilinos.sandia.gov/packages/zoltan2    |\n" \
-    << "|  Trilinos website:     http://trilinos.sandia.gov                     |\n" \
-    << "|                                                                       |\n" \
-    << "=========================================================================\n";
+  cout 
+    << "====================================================================\n" 
+    << "|                                                                  |\n" 
+    << "|          Example: Partition Pamgen Hexahedral Mesh               |\n" 
+    << "|                                                                  |\n"
+    << "|  Questions? Contact  Karen Devine      (kddevin@sandia.gov),     |\n"
+    << "|                      Erik Boman        (egboman@sandia.gov),     |\n"
+    << "|                      Siva Rajamanickam (srajama@sandia.gov).     |\n"
+    << "|                                                                  |\n"
+    << "|  Pamgen's website:   http://trilinos.sandia.gov/packages/pamgen  |\n"
+    << "|  Zoltan2's website:  http://trilinos.sandia.gov/packages/zoltan2 |\n"
+    << "|  Trilinos website:   http://trilinos.sandia.gov                  |\n"
+    << "|                                                                  |\n"
+    << "====================================================================\n";
   }
 
 

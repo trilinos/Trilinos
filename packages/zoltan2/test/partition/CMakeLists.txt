@@ -153,6 +153,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  pamgenMeshAdapterTest
+  SOURCES pamgenMeshAdapterTest.cpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Partitioning1
   SOURCES partitioning1.cpp
   NUM_MPI_PROCS 4
@@ -254,6 +263,13 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_partition_tests
     part.txt
     machine.txt
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../data
+  DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+)
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_more_files_for_partition_tests
+  SOURCE_FILES
+    Poisson.xml
+  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
 )
 
