@@ -6368,7 +6368,7 @@ typename Adapter::part_t Zoltan2_AlgMJ<Adapter>::pointAssign(
   // TODO:  complexity.
 
   if (this->mj_keep_part_boxes) {
-    typename Adapter::part_t foundPart;
+    typename Adapter::part_t foundPart = -1;
 
     // Get vector of part boxes
     RCP<mj_partBoxVector_t> partBoxes;
