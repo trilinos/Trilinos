@@ -171,26 +171,15 @@ public:
 
   void factorize (int* ipiv, int & info)
   {
-    Teuchos::LAPACK<LO, Scalar> lapack;
+    Teuchos::LAPACK<int, Scalar> lapack;
     lapack.GETRF(blockSize_, blockSize_, A_, blockSize_, ipiv, &info);
-
-//    int ipiv2[3];
-//     double B[9];
-//     for(int i=0;i<9; i++) B[i]=0.0;
-//    B[1]=3.0; B[3] = 3.0; B[8]=3.0;
-//    DGETRF_F77(&blockSize_, &blockSize_, B, &blockSize_, ipiv2, &info);
-//   printf("CMS: info = %d\n",info);
-//   printf("CMS: ipiv2 = ");
-//   for(int i=0; i<3; i++)
-//       printf("%d ",ipiv2[i]);
-//    printf("\n");
   }
 
   template<class LittleVectorType>
-  void solve (LittleVectorType & X, int* ipiv) const
+  void solve (LittleVectorType & X, const int* ipiv) const
   {
     int info;
-    Teuchos::LAPACK<LO, Scalar> lapack;
+    Teuchos::LAPACK<int, Scalar> lapack;
     char trans = 'T';
     lapack.GETRS(trans, blockSize_, 1, A_, blockSize_, ipiv, X.getRawPtr(), blockSize_, &info);
   }

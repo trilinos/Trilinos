@@ -48,6 +48,7 @@
 #include <Teuchos_TimeMonitor.hpp>
 #include <Tpetra_ConfigDefs.hpp>
 #include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_Experimental_BlockCrsMatrix.hpp>
 
 // mfh 28 Mar 2013: Uncomment out these three lines to compute
 // statistics on diagonal entries in compute().
@@ -152,6 +153,7 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
     IsComputed_ = false;
     diagOffsets_ = Teuchos::null;
     savedDiagOffsets_ = false;
+    hasBlockCrsMatrix_ = false;
     if (! A.is_null ()) {
       IsParallel_ = (A->getRowMap ()->getComm ()->getSize () > 1);
     }
@@ -193,7 +195,8 @@ Relaxation (const Teuchos::RCP<const row_matrix_type>& A)
   globalNumZeroDiagEntries_ (0),
   globalNumNegDiagEntries_ (0),
   globalDiagNormDiff_(Teuchos::ScalarTraits<magnitude_type>::zero()),
-  savedDiagOffsets_ (false)
+  savedDiagOffsets_ (false),
+  hasBlockCrsMatrix_ (false)
 {
   this->setObjectLabel ("Ifpack2::Relaxation");
 }
@@ -566,10 +569,94 @@ void Relaxation<MatrixType>::initialize () {
 
   // Initialization for Relaxation is trivial, so we say it takes zero time.
   //InitializeTime_ += Time_->totalElapsedTime ();
+
   ++NumInitialize_;
   isInitialized_ = true;
 }
 
+template<class MatrixType>
+void Relaxation<MatrixType>::computeBlockCrs ()
+{
+  using Teuchos::Array;
+  using Teuchos::ArrayRCP;
+  using Teuchos::ArrayView;
+  using Teuchos::as;
+  using Teuchos::Comm;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::REDUCE_MAX;
+  using Teuchos::REDUCE_MIN;
+  using Teuchos::REDUCE_SUM;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::reduceAll;
+  typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> vector_type;
+  const scalar_type zero = STS::zero ();
+  const scalar_type one = STS::one ();
+
+  const block_crs_matrix_type* blockCrsA = dynamic_cast<const block_crs_matrix_type*>(A_.getRawPtr());
+
+  // Reset state.
+  IsComputed_ = false;
+  Condest_ = -STM::one ();
+
+  const local_ordinal_type blockSize = blockCrsA->getBlockSize();
+
+  if (! savedDiagOffsets_)
+  {
+    BlockDiagonal_ = Teuchos::null;
+    BlockDiagonal_ = Teuchos::rcp(new block_crs_matrix_type(*blockCrsA->getDiagonalGraph(), blockSize));
+    blockCrsA->getLocalDiagOffsets(diagOffsets_);
+    savedDiagOffsets_ = true;
+  }
+  blockCrsA->getLocalDiagCopy(*BlockDiagonal_, diagOffsets_());
+
+
+  const size_t numMyRows = A_->getNodeNumRows();
+
+  if (DoL1Method_ && IsParallel_) {
+
+    const scalar_type two = one + one;
+
+    const size_t maxLength = A_->getNodeMaxNumRowEntries();
+    Array<local_ordinal_type> indices (maxLength);
+    Array<scalar_type> values (maxLength*blockSize*blockSize);
+    size_t numEntries;
+
+    for (size_t i = 0; i < numMyRows; ++i) {
+      blockCrsA->getLocalRowCopy (i, indices (), values (), numEntries);
+      scalar_type* diagBlock = BlockDiagonal_->getLocalBlock(i,i).getRawPtr();
+      for (local_ordinal_type subRow = 0; subRow < blockSize; ++subRow)
+      {
+        magnitude_type diagonal_boost = STM::zero ();
+        for (size_t k = 0 ; k < numEntries ; ++k) {
+          if (as<size_t> (indices[k]) > numMyRows) {
+            const size_t offset = blockSize*blockSize*k + subRow*blockSize;
+            for (local_ordinal_type subCol = 0; subCol < blockSize; ++subCol)
+              diagonal_boost += STS::magnitude (values[offset+subCol] / two);
+          }
+        }
+        if (STS::magnitude (diagBlock[subRow*(blockSize+1)]) < L1Eta_ * diagonal_boost) {
+          diagBlock[subRow*(blockSize+1)] += diagonal_boost;
+        }
+      }
+    }
+
+  }
+
+  blockDiagonalFactorizationPivots.resize(numMyRows*blockSize);
+  int info;
+  for (size_t i = 0 ; i < numMyRows; ++i) {
+    typename block_crs_matrix_type::little_block_type diagBlock = BlockDiagonal_->getLocalBlock(i,i);
+    diagBlock.factorize(&blockDiagonalFactorizationPivots[i*blockSize], info);
+  }
+
+  Importer_ = A_->getGraph ()->getImporter ();
+
+  ComputeTime_ += Time_->totalElapsedTime ();
+  ++NumCompute_;
+
+  IsComputed_ = true;
+}
 
 template<class MatrixType>
 void Relaxation<MatrixType>::compute ()
@@ -595,6 +682,14 @@ void Relaxation<MatrixType>::compute ()
     initialize ();
   }
 
+  const block_crs_matrix_type* blockCrsA = dynamic_cast<const block_crs_matrix_type*>(A_.getRawPtr());
+  if (blockCrsA != NULL)
+  {
+    hasBlockCrsMatrix_ = true;
+    computeBlockCrs();
+    return;
+  }
+
   {
     // Reset the timer each time, since Relaxation uses the same Time
     // object to track times for different methods.
@@ -604,6 +699,7 @@ void Relaxation<MatrixType>::compute ()
       A_.is_null (), std::runtime_error, "Ifpack2::Relaxation::compute: "
       "The input matrix A is null.  Please call setMatrix() with a nonnull "
       "input matrix, then call initialize(), before calling this method.");
+
 
     // Reset state.
     IsComputed_ = false;
@@ -719,6 +815,7 @@ void Relaxation<MatrixType>::compute ()
           diag[i] += diagonal_boost;
         }
       }
+
     }
 
     //
@@ -932,6 +1029,12 @@ ApplyInverseJacobi (const Tpetra::MultiVector<scalar_type,local_ordinal_type,glo
   using Teuchos::as;
   typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
 
+  if (hasBlockCrsMatrix_)
+  {
+    ApplyInverseJacobi_BlockCrsMatrix(X, Y);
+    return;
+  }
+
   const double numGlobalRows = as<double> (A_->getGlobalNumRows ());
   const double numVectors = as<double> (X.getNumVectors ());
   if (ZeroStartingSolution_) {
@@ -989,6 +1092,46 @@ ApplyInverseJacobi (const Tpetra::MultiVector<scalar_type,local_ordinal_type,glo
     (2.0 * numGlobalRows + 2.0 * numGlobalNonzeros + dampingFlops);
 }
 
+template<class MatrixType>
+void
+Relaxation<MatrixType>::
+ApplyInverseJacobi_BlockCrsMatrix (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                    Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
+{
+  typedef Tpetra::Experimental::BlockMultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> BMV;
+  typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
+
+  if (ZeroStartingSolution_) {
+    Y.putScalar (STS::zero ());
+  }
+
+  const int numVectors = X.getNumVectors ();
+
+  const block_crs_matrix_type* blockMat = dynamic_cast<const block_crs_matrix_type*>(A_.getRawPtr());
+
+  const local_ordinal_type blockSize = blockMat->getBlockSize();
+  BMV A_times_Y_Block (*blockMat->getRowMap(), *Y.getMap (), blockSize, numVectors);
+  MV A_times_Y = A_times_Y_Block.getMultiVectorView();
+  BMV yBlock(Y, *blockMat->getRowMap(), blockSize);
+  for (int j = 0; j < NumSweeps_; ++j )
+  {
+    blockMat->apply(Y, A_times_Y);
+    A_times_Y.update(STS::one(), X, -STS::one());
+    const size_t numRows = blockMat->getNodeNumRows();
+    for (int i = 0; i < numVectors; ++i)
+    {
+      for (size_t k = 0; k < numRows; ++k)
+      {
+        // Each iteration: Y = Y + \omega D^{-1} (X - A*Y)
+        typename block_crs_matrix_type::little_block_type factorizedBlockDiag = BlockDiagonal_->getLocalBlock(k,k);
+        typename block_crs_matrix_type::little_vec_type xloc = A_times_Y_Block.getLocalBlock(k,i);
+        typename block_crs_matrix_type::little_vec_type yloc = yBlock.getLocalBlock(k,i);
+        factorizedBlockDiag.solve(xloc,&blockDiagonalFactorizationPivots[i*blockSize]);
+        yloc.update(DampingFactor_, xloc);
+      }
+    }
+  }
+}
 
 template<class MatrixType>
 void
@@ -1005,8 +1148,12 @@ ApplyInverseGS (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_
   // declaration in Ifpack2_Relaxation_decl.hpp header file.  The code
   // will still be correct if the cast fails, but it will use an
   // unoptimized kernel.
+  const block_crs_matrix_type* blockCrsMat = dynamic_cast<const block_crs_matrix_type*> (A_.getRawPtr());
   const crs_matrix_type* crsMat = dynamic_cast<const crs_matrix_type*> (&(*A_));
-  if (crsMat != NULL) {
+  if (blockCrsMat != NULL)  {
+    ApplyInverseGS_BlockCrsMatrix(*blockCrsMat, X, Y);
+  }
+  else if (crsMat != NULL) {
     ApplyInverseGS_CrsMatrix (*crsMat, X, Y);
   } else {
     ApplyInverseGS_RowMatrix (X, Y);
@@ -1248,6 +1395,45 @@ ApplyInverseGS_CrsMatrix (const crs_matrix_type& A,
     (2.0 * numGlobalRows + 2.0 * numGlobalNonzeros + dampingFlops);
 }
 
+template<class MatrixType>
+void
+Relaxation<MatrixType>::
+ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
+                          const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                          Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
+{
+
+  typedef Tpetra::Experimental::BlockMultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> BMV;
+
+
+  BMV yBlock(Y, *A.getRowMap(), A.getBlockSize());
+  const BMV xBlock(X, *A.getRowMap(), A.getBlockSize());
+
+  bool performImport = false;
+  Teuchos::RCP<BMV> yBlockCol;
+  if (Importer_.is_null())
+    yBlockCol = Teuchos::rcpFromRef(yBlock);
+  else
+  {
+    yBlockCol = Teuchos::rcp(new BMV(*Importer_->getTargetMap(), *A.getDomainMap(),
+        A.getBlockSize(), Y.getNumVectors()));
+    performImport = true;
+  }
+
+  const Tpetra::ESweepDirection direction =
+    DoBackwardGS_ ? Tpetra::Backward : Tpetra::Forward;
+
+
+
+  for (int sweep = 0; sweep < NumSweeps_; ++sweep)
+  {
+    if (performImport) yBlockCol->doImport(yBlock, *Importer_, Tpetra::INSERT);
+    A.localGaussSeidel(xBlock, *yBlockCol, *BlockDiagonal_, &blockDiagonalFactorizationPivots[0], DampingFactor_, direction);
+    if (performImport) yBlock = *yBlockCol;
+  }
+
+}
+
 
 template<class MatrixType>
 void
@@ -1264,8 +1450,12 @@ ApplyInverseSGS (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global
   // declaration in Ifpack2_Relaxation_decl.hpp header file.  The code
   // will still be correct if the cast fails, but it will use an
   // unoptimized kernel.
+  const block_crs_matrix_type* blockCrsMat = dynamic_cast<const block_crs_matrix_type*> (A_.getRawPtr());
   const crs_matrix_type* crsMat = dynamic_cast<const crs_matrix_type*> (&(*A_));
-  if (crsMat != NULL) {
+  if (blockCrsMat != NULL)  {
+    ApplyInverseSGS_BlockCrsMatrix(*blockCrsMat, X, Y);
+  }
+  else if (crsMat != NULL) {
     ApplyInverseSGS_CrsMatrix (*crsMat, X, Y);
   } else {
     ApplyInverseSGS_RowMatrix (X, Y);
@@ -1512,6 +1702,39 @@ ApplyInverseSGS_CrsMatrix (const crs_matrix_type& A,
   const double numGlobalNonzeros = as<double> (A_->getGlobalNumEntries ());
   ApplyFlops_ += 2.0 * NumSweeps_ * numVectors *
     (2.0 * numGlobalRows + 2.0 * numGlobalNonzeros + dampingFlops);
+}
+
+template<class MatrixType>
+void
+Relaxation<MatrixType>::
+ApplyInverseSGS_BlockCrsMatrix (const block_crs_matrix_type& A,
+                           const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                           Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
+{
+  typedef Tpetra::Experimental::BlockMultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> BMV;
+
+  BMV yBlock(Y, *A.getRowMap(), A.getBlockSize());
+  const BMV xBlock(X, *A.getRowMap(), A.getBlockSize());
+
+  bool performImport = false;
+  Teuchos::RCP<BMV> yBlockCol;
+  if (Importer_.is_null())
+    yBlockCol = Teuchos::rcpFromRef(yBlock);
+  else
+  {
+    yBlockCol = Teuchos::rcp(new BMV(*Importer_->getTargetMap(), *A.getDomainMap(),
+        A.getBlockSize(), Y.getNumVectors()));
+    performImport = true;
+  }
+
+  const Tpetra::ESweepDirection direction = Tpetra::Symmetric;
+
+  for (int sweep = 0; sweep < NumSweeps_; ++sweep)
+  {
+    if (performImport) yBlockCol->doImport(yBlock, *Importer_, Tpetra::INSERT);
+    A.localGaussSeidel(xBlock, *yBlockCol, *BlockDiagonal_, &blockDiagonalFactorizationPivots[0], DampingFactor_, direction);
+    if (performImport) yBlock = *yBlockCol;
+  }
 }
 
 

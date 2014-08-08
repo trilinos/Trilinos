@@ -46,7 +46,7 @@
 /// \brief Declaration of Tpetra::Experimental::BlockCrsMatrix
 
 #include <Tpetra_CrsGraph.hpp>
-#include <Tpetra_Operator.hpp>
+#include <Tpetra_RowMatrix.hpp>
 #include <Tpetra_Experimental_BlockMultiVector.hpp>
 #include "Tpetra_ConfigDefs.hpp"
 
@@ -112,7 +112,7 @@ namespace Experimental {
 template<class Scalar, class LO = int,  class GO = LO,
          class Node = KokkosClassic::DefaultNode::DefaultNodeType>
 class BlockCrsMatrix :
-  virtual public Tpetra::Operator<Scalar, LO, GO, Node>,
+  virtual public Tpetra::RowMatrix<Scalar, LO, GO, Node>,
   virtual public Tpetra::DistObject<char, LO, GO, Node>
 {
 private:
@@ -188,6 +188,20 @@ public:
   //! Get the (point) range Map of this matrix.
   Teuchos::RCP<const map_type> getRangeMap () const;
 
+  //! get the (mesh) map for the rows of this block matrix.
+  Teuchos::RCP<const map_type> getRowMap () const;
+
+  //! get the (mesh) map for the columns of this block matrix.
+  Teuchos::RCP<const map_type> getColMap () const;
+
+  //! get the global number of block rows
+  global_size_t getGlobalNumRows() const;
+
+  //! get the local number of block rows
+  size_t getNodeNumRows() const;
+
+  size_t getNodeMaxNumRowEntries() const;
+
   /// \brief For this matrix A, compute <tt>Y := beta * Y + alpha * Op(A) * X</tt>.
   ///
   /// Op(A) is A if mode is Teuchos::NO_TRANS, the transpose of A if
@@ -257,7 +271,9 @@ public:
   LO getBlockSize () const { return blockSize_; }
 
   //! Get the (mesh) graph.
-  crs_graph_type getGraph () const { return graph_; }
+  virtual Teuchos::RCP<const Tpetra::RowGraph<LO,GO,Node> > getGraph () const;
+
+  crs_graph_type getCrsGraph () const { return graph_; }
 
   /// \brief Version of apply() that takes BlockMultiVector input and output.
   ///
@@ -270,6 +286,32 @@ public:
               const Scalar alpha = Teuchos::ScalarTraits<Scalar>::one (),
               const Scalar beta = Teuchos::ScalarTraits<Scalar>::zero ());
 
+  /// \brief Version of gaussSeidel(), with fewer requirements on X.
+  ///
+  /// Not Implemented
+  void
+  gaussSeidelCopy (MultiVector<Scalar,LO,GO,Node> &X,
+                   const MultiVector<Scalar,LO,GO,Node> &B,
+                   const MultiVector<Scalar,LO,GO,Node> &D,
+                   const Scalar& dampingFactor,
+                   const ESweepDirection direction,
+                   const int numSweeps,
+                   const bool zeroInitialGuess) const;
+
+  /// \brief Version of reorderedGaussSeidel(), with fewer requirements on X.
+  ///
+  /// Not Implemented
+  void
+  reorderedGaussSeidelCopy (MultiVector<Scalar,LO,GO,Node>& X,
+                            const MultiVector<Scalar,LO,GO,Node>& B,
+                            const MultiVector<Scalar,LO,GO,Node>& D,
+                            const ArrayView<LO>& rowIndices,
+                            const Scalar& dampingFactor,
+                            const ESweepDirection direction,
+                            const int numSweeps,
+                            const bool zeroInitialGuess) const;
+
+
   /// \brief Local Gauss-Seidel solve given a factorized diagonal
   ///
   /// This method computes the smoothing of A*X = B, where A is *this
@@ -281,7 +323,7 @@ public:
   localGaussSeidel (const BlockMultiVector<Scalar, LO, GO, Node>& Residual,
                           BlockMultiVector<Scalar, LO, GO, Node>& Solution,
                           BlockCrsMatrix<Scalar, LO, GO, Node> & factorizedDiagonal,
-                          int * factorizationPivots,
+                          const int * factorizationPivots,
                           const Scalar omega,
                           const ESweepDirection direction) const;
 
@@ -342,13 +384,23 @@ public:
   /// <i>not</i> view them as global indices directly, since the
   /// column indices are not stored that way in the graph.
   ///
-  /// \return Zero if successful (if the local row is valid on the
-  ///   calling process), else nonzero.
   LO
   getLocalRowView (const LO localRowInd,
                    const LO*& colInds,
                    Scalar*& vals,
                    LO& numInds) const;
+
+  void
+  getLocalRowView (LO LocalRow,
+                   ArrayView<const LO> &indices,
+                   ArrayView<const Scalar> &values) const;
+
+  void
+  getLocalRowCopy (LO LocalRow,
+                   const ArrayView<LO> &Indices,
+                   const ArrayView<Scalar> &Values,
+                   size_t &NumEntries) const;
+
 
   little_block_type getLocalBlock (const LO localRowInd, const LO localColInd) const;
 
@@ -408,7 +460,7 @@ public:
   /// If the given local row index is invalid, this method (sensibly)
   /// returns zero, since the calling process trivially does not own
   /// any entries in that row.
-  LO getNumEntriesInLocalRow (const LO localRowInd) const;
+  size_t getNumEntriesInLocalRow (const LO localRowInd) const;
 
   /// \brief Whether this object had an error on the calling process.
   ///
@@ -495,6 +547,10 @@ public:
                     const Teuchos::ArrayView<const size_t>& offsets) const;
 
 
+  void computeDiagonalGraph ();
+
+  Teuchos::RCP<crs_graph_type> getDiagonalGraph () const;
+
 
 protected:
   //! Like sumIntoLocalValues, but for the ABSMAX combine mode.
@@ -547,6 +603,7 @@ protected:
 private:
   //! The graph that describes the structure of this matrix.
   crs_graph_type graph_;
+  Teuchos::RCP<crs_graph_type> graphRCP_;
   /// \brief The graph's row Map; the mesh row Map of this matrix.
   ///
   /// We keep this separately, not as an RCP, so that methods like
@@ -691,6 +748,10 @@ private:
                           const Scalar alpha,
                           const Scalar beta);
 
+  Teuchos::RCP<crs_graph_type> diagonalGraph_;
+  bool computedDiagonalGraph_;
+
+
   /// \brief Get the relative block offset of the given block.
   ///
   /// \param localRowIndex [in] Local index of the entry's row.
@@ -743,6 +804,184 @@ private:
 
   little_block_type
   getNonConstLocalBlockFromAbsOffset (const size_t absBlockOffset) const;
+
+public:
+  //! The communicator over which this matrix is distributed.
+  virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
+
+  //! The Kokkos Node instance.
+  virtual Teuchos::RCP<Node> getNode() const;
+
+  //! The global number of columns of this matrix.
+  virtual global_size_t getGlobalNumCols() const;
+
+  virtual size_t getNodeNumCols() const;
+
+  virtual GO getIndexBase() const;
+
+  //! The global number of stored (structurally nonzero) entries.
+  virtual global_size_t getGlobalNumEntries() const;
+
+  //! The local number of stored (structurally nonzero) entries.
+  virtual size_t getNodeNumEntries() const;
+
+  /// \brief The current number of entries on the calling process in the specified global row.
+  ///
+  /// Note that if the row Map is overlapping, then the calling
+  /// process might not necessarily store all the entries in the
+  /// row.  Some other process might have the rest of the entries.
+  ///
+  /// \return <tt>Teuchos::OrdinalTraits<size_t>::invalid()</tt> if
+  ///   the specified global row does not belong to this graph, else
+  ///   the number of entries.
+  virtual size_t getNumEntriesInGlobalRow (GO globalRow) const;
+
+  //! The number of global diagonal entries, based on global row/column index comparisons.
+  virtual global_size_t getGlobalNumDiags() const;
+
+  //! The number of local diagonal entries, based on global row/column index comparisons.
+  virtual size_t getNodeNumDiags() const;
+
+  //! The maximum number of entries across all rows/columns on all nodes.
+  virtual size_t getGlobalMaxNumRowEntries() const;
+
+  //! Whether this matrix has a well-defined column map.
+  virtual bool hasColMap() const;
+
+  //! Whether this matrix is lower triangular.
+  virtual bool isLowerTriangular() const;
+
+  //! Whether this matrix is upper triangular.
+  virtual bool isUpperTriangular() const;
+
+  /// \brief Whether matrix indices are locally indexed.
+  ///
+  /// A RowMatrix may store column indices either as global indices
+  /// (of type <tt>GO</tt>), or as local indices (of type
+  /// <tt>LO</tt>).  In some cases (for example, if the
+  /// column Map has not been computed), it is not possible to
+  /// switch from global to local indices without extra work.
+  /// Furthermore, some operations only work for one or the other
+  /// case.
+  virtual bool isLocallyIndexed() const;
+
+  /// \brief Whether matrix indices are globally indexed.
+  ///
+  /// A RowMatrix may store column indices either as global indices
+  /// (of type <tt>GO</tt>), or as local indices (of type
+  /// <tt>LO</tt>).  In some cases (for example, if the
+  /// column Map has not been computed), it is not possible to
+  /// switch from global to local indices without extra work.
+  /// Furthermore, some operations only work for one or the other
+  /// case.
+  virtual bool isGloballyIndexed() const;
+
+  //! Whether fillComplete() has been called.
+  virtual bool isFillComplete() const;
+
+  //! Whether this object implements getLocalRowView() and getGlobalRowView().
+  virtual bool supportsRowViews() const;
+
+  //@}
+  //! @name Extraction Methods
+  //@{
+
+  /// \brief Get a copy of the given global row's entries.
+  ///
+  /// This method only gets the entries in the given row that are
+  /// stored on the calling process.  Note that if the matrix has an
+  /// overlapping row Map, it is possible that the calling process
+  /// does not store all the entries in that row.
+  ///
+  /// \param GlobalRow [in] Global index of the row.
+  /// \param Indices [out] Global indices of the columns
+  ///   corresponding to values.
+  /// \param Values [out] Matrix values.
+  /// \param NumEntries [out] Number of stored entries on the
+  ///   calling process; length of Indices and Values.
+  ///
+  /// This method throws <tt>std::runtime_error</tt> if either
+  /// Indices or Values is not large enough to hold the data
+  /// associated with row GlobalRow. If GlobalRow does not belong to
+  /// the calling process, then the method sets NumIndices to
+  /// <tt>Teuchos::OrdinalTraits<size_t>::invalid()</tt>, and does
+  /// not modify Indices or Values.
+  virtual void
+  getGlobalRowCopy (GO GlobalRow,
+                    const Teuchos::ArrayView<GO> &Indices,
+                    const Teuchos::ArrayView<Scalar> &Values,
+                    size_t &NumEntries) const;
+
+  /// \brief Get a constant, nonpersisting, globally indexed view of
+  ///   the given row of the matrix.
+  ///
+  /// The returned views of the column indices and values are not
+  /// guaranteed to persist beyond the lifetime of <tt>this</tt>.
+  /// Furthermore, some RowMatrix implementations allow changing the
+  /// values, or the indices and values.  Any such changes
+  /// invalidate the returned views.
+  ///
+  /// This method only gets the entries in the given row that are
+  /// stored on the calling process.  Note that if the matrix has an
+  /// overlapping row Map, it is possible that the calling process
+  /// does not store all the entries in that row.
+  ///
+  /// \pre <tt>isGloballyIndexed () && supportsRowViews ()</tt>
+  /// \post <tt>indices.size () == getNumEntriesInGlobalRow (GlobalRow)</tt>
+  ///
+  /// \param GlobalRow [in] Global index of the row.
+  /// \param Indices [out] Global indices of the columns
+  ///   corresponding to values.
+  /// \param Values [out] Matrix values.
+  ///
+  /// If \c GlobalRow does not belong to this node, then \c indices
+  /// is set to \c null.
+  virtual void
+  getGlobalRowView (GO GlobalRow,
+                    ArrayView<const GO> &indices,
+                    ArrayView<const Scalar> &values) const;
+
+  /// \brief Get a copy of the diagonal entries, distributed by the row Map.
+  ///
+  /// On input, the Vector's Map must be the same as the row Map of the matrix.
+  /// (That is, <tt>this->getRowMap ()->isSameAs (* (diag.getMap ())) == true</tt>.)
+  ///
+  /// On return, the entries of \c diag are filled with the diagonal
+  /// entries of the matrix stored on this process.  Note that if
+  /// the row Map is overlapping, multiple processes may own the
+  /// same diagonal element.  You may combine these overlapping
+  /// diagonal elements by doing an Export from the row Map Vector
+  /// to a range Map Vector.
+  virtual void getLocalDiagCopy (Vector<Scalar,LO,GO,Node> &diag) const;
+
+  //@}
+  //! \name Mathematical methods
+  //@{
+
+  /**
+   * \brief Scale the RowMatrix on the left with the given Vector x.
+   *
+   * On return, for all entries i,j in the matrix, \f$A(i,j) = x(i)*A(i,j)\f$.
+   */
+  virtual void leftScale (const Vector<Scalar, LO, GO, Node>& x);
+
+  /**
+   * \brief Scale the RowMatrix on the right with the given Vector x.
+   *
+   * On return, for all entries i,j in the matrix, \f$A(i,j) = x(j)*A(i,j)\f$.
+   */
+  virtual void rightScale (const Vector<Scalar, LO, GO, Node>& x);
+
+  /// \brief The Frobenius norm of the matrix.
+  ///
+  /// This method computes and returns the Frobenius norm of the
+  /// matrix.  The Frobenius norm \f$\|A\|_F\f$ for the matrix
+  /// \f$A\f$ is defined as
+  /// \f$\|A\|_F = \sqrt{ \sum_{i,j} |\a_{ij}|^2 }\f$.
+  /// It has the same value as the Euclidean norm of a vector made
+  /// by stacking the columns of \f$A\f$.
+  virtual typename ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const;
+
 };
 
 } // namespace Experimental

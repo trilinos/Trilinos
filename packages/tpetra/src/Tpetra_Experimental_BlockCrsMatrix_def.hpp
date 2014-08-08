@@ -65,8 +65,10 @@ namespace Experimental {
     columnPadding_ (0), // no padding by default
     rowMajor_ (true), // row major blocks by default
     localError_ (new bool (false)),
-    errs_ (new Teuchos::RCP<std::ostringstream> ()) // ptr to a null ptr
-  {}
+    errs_ (new Teuchos::RCP<std::ostringstream> ()), // ptr to a null ptr
+    computedDiagonalGraph_(false)
+  {
+  }
 
   template<class Scalar, class LO, class GO, class Node>
   BlockCrsMatrix<Scalar, LO, GO, Node>::
@@ -84,12 +86,15 @@ namespace Experimental {
     columnPadding_ (0), // no padding by default
     rowMajor_ (true), // row major blocks by default
     localError_ (new bool (false)),
-    errs_ (new Teuchos::RCP<std::ostringstream> ()) // ptr to a null ptr
+    errs_ (new Teuchos::RCP<std::ostringstream> ()), // ptr to a null ptr
+    computedDiagonalGraph_(false)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! graph_.isSorted (), std::invalid_argument, "Tpetra::Experimental::"
       "BlockCrsMatrix constructor: The input CrsGraph does not have sorted "
       "rows (isSorted() is false).  This class assumes sorted rows.");
+
+    graphRCP_ = Teuchos::rcpFromRef(graph_);
 
     // Trick to test whether LO is nonpositive, without a compiler
     // warning in case LO is unsigned (which is generally a bad idea
@@ -129,12 +134,15 @@ namespace Experimental {
     columnPadding_ (0), // no padding by default
     rowMajor_ (true), // row major blocks by default
     localError_ (new bool (false)),
-    errs_ (new Teuchos::RCP<std::ostringstream> ()) // ptr to a null ptr
+    errs_ (new Teuchos::RCP<std::ostringstream> ()), // ptr to a null ptr
+    computedDiagonalGraph_(false)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! graph_.isSorted (), std::invalid_argument, "Tpetra::Experimental::"
       "BlockCrsMatrix constructor: The input CrsGraph does not have sorted "
       "rows (isSorted() is false).  This class assumes sorted rows.");
+
+    graphRCP_ = Teuchos::rcpFromRef(graph_);
 
     // Trick to test whether LO is nonpositive, without a compiler
     // warning in case LO is unsigned (which is generally a bad idea
@@ -168,6 +176,46 @@ namespace Experimental {
   { // Copy constructor of map_type does a shallow copy.
     // We're only returning by RCP for backwards compatibility.
     return Teuchos::rcp (new map_type (rangePointMap_));
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  Teuchos::RCP<const typename BlockCrsMatrix<Scalar, LO, GO, Node>::map_type>
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getRowMap () const
+  {
+    return graph_.getRowMap();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  Teuchos::RCP<const typename BlockCrsMatrix<Scalar, LO, GO, Node>::map_type>
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getColMap () const
+  {
+    return graph_.getColMap();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  global_size_t
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getGlobalNumRows() const
+  {
+    return graph_.getGlobalNumRows();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  size_t
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getNodeNumRows() const
+  {
+    return graph_.getNodeNumRows();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  size_t
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getNodeMaxNumRowEntries() const
+  {
+    return graph_.getNodeMaxNumRowEntries();
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -404,10 +452,53 @@ namespace Experimental {
   template <class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar,LO,GO,Node>::
+  computeDiagonalGraph ()
+  {
+    if (computedDiagonalGraph_) return;
+
+    const size_t maxDiagEntPerRow = 1;
+    diagonalGraph_ = Teuchos::rcp(new crs_graph_type(graph_.getRowMap(), maxDiagEntPerRow, Tpetra::StaticProfile));
+    const map_type& meshRowMap = *graph_.getRowMap();
+
+    Teuchos::Array<GO> diagGblColInds (maxDiagEntPerRow);
+
+    for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
+         lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {
+
+      const GO gblRowInd = meshRowMap.getGlobalElement (lclRowInd);
+
+      diagGblColInds[0] = gblRowInd;
+      diagonalGraph_->insertGlobalIndices (gblRowInd, diagGblColInds ());
+
+    }
+
+    diagonalGraph_->fillComplete ();
+
+
+    computedDiagonalGraph_ = true;
+
+  }
+
+  template <class Scalar, class LO, class GO, class Node>
+  Teuchos::RCP<CrsGraph<LO, GO, Node> >
+  BlockCrsMatrix<Scalar,LO,GO,Node>::
+  getDiagonalGraph () const
+  {
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      !computedDiagonalGraph_, std::invalid_argument, "Tpetra::Experimental::"
+      "BlockCrsMatrix getDiagonalGraph: You must call computeDiagionalGraph () "
+      "before calling this method.");
+    return diagonalGraph_;
+  }
+
+  template <class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar,LO,GO,Node>::
   localGaussSeidel (const BlockMultiVector<Scalar, LO, GO, Node>& B,
       BlockMultiVector<Scalar, LO, GO, Node>& X,
       BlockCrsMatrix<Scalar, LO, GO, Node> & factorizedDiagonal,
-      int * factorizationPivots,
+      const int * factorizationPivots,
       const Scalar omega,
       const ESweepDirection direction) const
   {
@@ -518,6 +609,39 @@ namespace Experimental {
 
       } // for each local row of the matrix
     }
+  }
+
+  template <class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar,LO,GO,Node>::
+  gaussSeidelCopy (MultiVector<Scalar,LO,GO,Node> &X,
+                     const MultiVector<Scalar,LO,GO,Node> &B,
+                     const MultiVector<Scalar,LO,GO,Node> &D,
+                     const Scalar& dampingFactor,
+                     const ESweepDirection direction,
+                     const int numSweeps,
+                     const bool zeroInitialGuess) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::gaussSeidelCopy: "
+      "is not implemented.");
+  }
+
+  template <class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar,LO,GO,Node>::
+  reorderedGaussSeidelCopy (MultiVector<Scalar,LO,GO,Node>& X,
+                            const MultiVector<Scalar,LO,GO,Node>& B,
+                            const MultiVector<Scalar,LO,GO,Node>& D,
+                            const ArrayView<LO>& rowIndices,
+                            const Scalar& dampingFactor,
+                            const ESweepDirection direction,
+                            const int numSweeps,
+                            const bool zeroInitialGuess) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::reorderedGaussSeidelCopy: "
+        "is not implemented.");
   }
 
   template <class Scalar, class LO, class GO, class Node>
@@ -662,6 +786,19 @@ namespace Experimental {
       numInds = ptr_[localRowInd + 1] - absBlockOffsetStart;
       return 0; // indicates no error
     }
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getLocalRowCopy (LO LocalRow,
+                   const ArrayView<LO> &Indices,
+                   const ArrayView<Scalar> &Values,
+                   size_t &NumEntries) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::getLocalRowCopy: "
+      "Copying is not implemented. You should use a view.");
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -812,7 +949,7 @@ namespace Experimental {
 
 
   template<class Scalar, class LO, class GO, class Node>
-  LO
+  size_t
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getNumEntriesInLocalRow (const LO localRowInd) const
   {
@@ -1961,6 +2098,246 @@ namespace Experimental {
       } // for each process rank p other than 0
     } // extreme verbosity level (print the whole matrix)
   }
+
+  template<class Scalar, class LO, class GO, class Node>
+  Teuchos::RCP<const Teuchos::Comm<int> >
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getComm() const
+  {
+    return graph_.getComm();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  Teuchos::RCP<Node>
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getNode() const
+  {
+    return graph_.getNode();
+
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  global_size_t
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getGlobalNumCols() const
+  {
+    return graph_.getGlobalNumCols();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  size_t
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getNodeNumCols() const
+  {
+    return graph_.getNodeNumCols();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  GO
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getIndexBase() const
+  {
+    return graph_.getIndexBase();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  global_size_t
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getGlobalNumEntries() const
+  {
+    return graph_.getGlobalNumEntries();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  size_t
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getNodeNumEntries() const
+  {
+    return graph_.getNodeNumEntries();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  size_t
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getNumEntriesInGlobalRow (GO globalRow) const
+  {
+    return graph_.getNumEntriesInGlobalRow(globalRow);
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  global_size_t
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getGlobalNumDiags() const
+  {
+    return getGlobalNumDiags();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  size_t
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getNodeNumDiags() const
+  {
+    return getNodeNumDiags();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  size_t
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getGlobalMaxNumRowEntries() const
+  {
+    return graph_.getGlobalMaxNumRowEntries();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  bool
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  hasColMap() const
+  {
+    return graph_.hasColMap();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  bool
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  isLowerTriangular() const
+  {
+    return graph_.isLowerTriangular();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  bool
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  isUpperTriangular() const
+  {
+    return graph_.isUpperTriangular();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  bool
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  isLocallyIndexed() const
+  {
+    return graph_.isLocallyIndexed();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  bool
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  isGloballyIndexed() const
+  {
+    return graph_.isGloballyIndexed();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  bool
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  isFillComplete() const
+  {
+    return true;
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  bool
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  supportsRowViews() const
+  {
+    return true;
+  }
+
+
+  template<class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getGlobalRowCopy (GO GlobalRow,
+                    const Teuchos::ArrayView<GO> &Indices,
+                    const Teuchos::ArrayView<Scalar> &Values,
+                    size_t &NumEntries) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::getGlobalRowCopy: "
+      "This class doesn't support global matrix indexing.");
+
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getGlobalRowView (GO GlobalRow,
+                    ArrayView<const GO> &indices,
+                    ArrayView<const Scalar> &values) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::getGlobalRowView: "
+      "This class doesn't support global matrix indexing.");
+
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getLocalRowView (LO LocalRow,
+                   ArrayView<const LO> &indices,
+                   ArrayView<const Scalar> &values) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::getGlobalRowView: "
+      "This class doesn't support global matrix indexing.");
+
+  }
+
+
+  template<class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getLocalDiagCopy (Tpetra::Vector<Scalar,LO,GO,Node> &diag) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::getLocalDiagCopy: "
+      "not implemented.");
+
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  leftScale (const Tpetra::Vector<Scalar, LO, GO, Node>& x)
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::leftScale: "
+      "not implemented.");
+
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  rightScale (const Tpetra::Vector<Scalar, LO, GO, Node>& x)
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::rightScale: "
+      "not implemented.");
+
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  Teuchos::RCP<const Tpetra::RowGraph<LO, GO, Node> >
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getGraph() const
+  {
+    return graphRCP_;
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getFrobeniusNorm() const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::getFrobeniusNorm: "
+      "not implemented.");
+    return Teuchos::ScalarTraits<Scalar>::zero();
+  }
+
 
 } // namespace Experimental
 } // namespace Tpetra

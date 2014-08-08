@@ -133,9 +133,9 @@ namespace {
     TEST_ASSERT( ! blockMat.getRangeMap ().is_null () &&
                  pointRangeMap.isSameAs (* (blockMat.getRangeMap ())) );
 
-    // Test that the result of getGraph() has the same Maps.
+    // Test that the result of getCrsGraph() has the same Maps.
     {
-      graph_type graph2 = blockMat.getGraph ();
+      graph_type graph2 = blockMat.getCrsGraph ();
       TEST_ASSERT( ! graph.getDomainMap ().is_null () &&
                    ! graph2.getDomainMap ().is_null () &&
                    graph.getDomainMap ()->isSameAs (* (graph2.getDomainMap ())) );
@@ -252,9 +252,9 @@ namespace {
     TEST_ASSERT( ! blockMat.getRangeMap ().is_null () &&
                  pointRangeMap.isSameAs (* (blockMat.getRangeMap ())) );
 
-    // Test that the result of getGraph() has the same Maps.
+    // Test that the result of getCrsGraph() has the same Maps.
     {
-      graph_type graph2 = blockMat.getGraph ();
+      graph_type graph2 = blockMat.getCrsGraph ();
       TEST_ASSERT( ! graph.getDomainMap ().is_null () &&
                    ! graph2.getDomainMap ().is_null () &&
                    graph.getDomainMap ()->isSameAs (* (graph2.getDomainMap ())) );
@@ -861,7 +861,7 @@ namespace {
 
     // Test that the result of getGraph() has the same Maps.
     {
-      graph_type graph2 = blockMat.getGraph ();
+      graph_type graph2 = blockMat.getCrsGraph ();
       TEST_ASSERT( ! graph.getDomainMap ().is_null () &&
                    ! graph2.getDomainMap ().is_null () &&
                    graph.getDomainMap ()->isSameAs (* (graph2.getDomainMap ())) );
@@ -1500,19 +1500,13 @@ namespace {
 
     const size_t maxNumEntPerRow = 3;
     graph_type graph (meshRowMapPtr, maxNumEntPerRow, Tpetra::StaticProfile);
-    const size_t maxDiagEntPerRow = 1;
-    graph_type diagGraph (meshRowMapPtr, maxDiagEntPerRow, Tpetra::StaticProfile);
 
     Teuchos::Array<GO> gblColInds (maxNumEntPerRow);
-    Teuchos::Array<GO> diagGblColInds (maxDiagEntPerRow);
 
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
          lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {
 
       const GO gblRowInd = meshRowMap.getGlobalElement (lclRowInd);
-
-      diagGblColInds[0] = gblRowInd;
-      diagGraph.insertGlobalIndices (gblRowInd, diagGblColInds ());
 
       for (size_t k = 0; k < maxNumEntPerRow; ++k)
       {
@@ -1524,12 +1518,10 @@ namespace {
 
     }
 
-    diagGraph.fillComplete ();
     graph.fillComplete ();
 
     // Get the graph's column Map (the "mesh column Map").
     TEST_ASSERT( ! graph.getColMap ().is_null () );
-    TEST_ASSERT( ! diagGraph.getColMap ().is_null () );
     map_type meshColMap = * (graph.getColMap ());
 
     out << "Creating BlockCrsMatrix" << endl;
@@ -1541,8 +1533,9 @@ namespace {
     TEST_NOTHROW( residual = BV(meshRowMap, blockSize));
     BV solution;
     TEST_NOTHROW( solution = BV(meshRowMap, blockSize));
+    blockMat.computeDiagonalGraph();
     BCM diagonalMat;
-    TEST_NOTHROW( diagonalMat = BCM (diagGraph, blockSize) );
+    TEST_NOTHROW( diagonalMat = BCM (*blockMat.getDiagonalGraph(), blockSize) );
 
 
     Teuchos::Array<Scalar> basematrix(maxNumEntPerRow*maxNumEntPerRow, STS::zero());
