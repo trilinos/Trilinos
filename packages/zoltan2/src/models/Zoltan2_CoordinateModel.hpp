@@ -409,16 +409,17 @@ void CoordinateModel<Adapter>::meshConstructor(
     ia->getIDsView(gids);
     gids_ = arcp(gids, 0, nLocalIds, false);
 
-    int lstride;
-    const scalar_t *coords=NULL;
-    try{
-      ia->getCoordinatesViewOf(ia->getPrimaryEntityType(), coords, lstride,
-			       ia->getDimensionOf());
-    }
-    Z2_FORWARD_EXCEPTIONS;
+    for (int dim=0; dim < coordinateDim_; dim++){
+      int stride;
+      const scalar_t *coords=NULL;
+      try{
+	ia->getCoordinatesViewOf(ia->getPrimaryEntityType(), coords, stride, dim);
+      }
+      Z2_FORWARD_EXCEPTIONS;
 
-    ArrayRCP<const scalar_t> cArray(coords, 0, nLocalIds*lstride, false);
-    coordArray[ia->getDimensionOf()] = input_t(cArray, lstride);
+      ArrayRCP<const scalar_t> cArray(coords, 0, nLocalIds*stride, false);
+      coordArray[ia->getDimensionOf()] = input_t(cArray, stride);
+    }
 
     for (int idx=0; idx < userNumWeights_; idx++){
       int stride;
