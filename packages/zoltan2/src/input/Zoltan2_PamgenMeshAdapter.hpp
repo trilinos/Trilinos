@@ -415,7 +415,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
   }
 
   /* Find the adjacency for a nodal based decomposition */
-  nadj_ = 0;
+  //nadj_ = 0;
   for(size_t ncnt=0; ncnt < num_nodes_; ncnt++) {
     if(sur_elem[ncnt].empty()) {
       printf("WARNING: Node = "ST_ZU" has no elements\n", ncnt+1);
@@ -425,7 +425,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
 	max_nsur = nsur;
     }
 
-    start_[ncnt] = nadj_;
+    /*start_[ncnt] = nadj_;
     for(size_t ecnt=0; ecnt < sur_elem[ncnt].size(); ecnt++) {
       size_t elem = sur_elem[ncnt][ecnt];
       int nnodes = nnodes_per_elem;
@@ -441,13 +441,15 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
 	}
       }
     }
+    */
   }
 
-  adj_ = new gid_t [nadj_];
+  /*adj_ = new gid_t [nadj_];
 
   for (size_t i=0; i < nadj_; i++) {
     adj_[i] = adj[i];
   }
+  */
 
   delete[] num_nodes_per_elem;
   num_nodes_per_elem = NULL;
