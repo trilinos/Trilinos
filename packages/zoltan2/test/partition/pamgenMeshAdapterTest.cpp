@@ -195,6 +195,9 @@ int main(int argc, char *argv[]) {
   inputAdapter_t ia;
 
   Teuchos::ParameterList params("test params");
+  params.set("debug_level", "basic_status");
+  params.set("imbalance_tolerance", 1.1);
+
   if (method == "rcb") {
     params.set("algorithm", "rcb");
     params.set("rectilinear", "yes");
