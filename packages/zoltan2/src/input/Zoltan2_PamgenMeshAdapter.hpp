@@ -405,9 +405,9 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
   int *side_nodes = new int [max_side_nodes];
   int *mirror_nodes = new int [max_side_nodes];
 
-  /* Allocate memory necessary for the adjacency */
+  /* Allocate memory necessary for the adjacency
   start_ = new lno_t [num_nodes_];
-  std::vector<int> adj;
+  std::vector<int> adj; */
 
   for (int i=0; i < max_side_nodes; i++) {
     side_nodes[i]=-999;
