@@ -127,7 +127,14 @@ public:
    * let it go.
    *
    */
-  typedef std::map<const char *, int> Coverage;
+  struct StringLiteralLess
+  {
+    inline bool operator()(const char *lhs, const char *rhs) const
+    {
+      return std::strcmp(lhs, rhs) < 0;
+    }
+  };
+  typedef std::map<const char *, int, StringLiteralLess> Coverage;
 
   /**
    * @brief Class <b>Traceback::Preserve</b> serves as a sentry for traceback
@@ -309,18 +316,6 @@ public:
    * @return      a <b>std::ostream</b> reference to the output stream.
    */
   static std::string printTraceback(const TracebackStack &traceback_stack);
-
-  /**
-   * @brief Member function <b>verbose_print</b> dumps the function specification
-   * stack to the diagnostic writer.
-   *
-   * @param dout		a <b>Writer</b> reference to the diagnostic
-   *				writer to write to.
-   *
-   * @return			a <b>Writer</b> reference to the diagnostic
-   *				writer.
-   */
-  Writer &verbose_print(Writer &dout) const;
 
 private:
   static TracebackState    s_tracebackState;  ///< State of the traceback system

@@ -245,8 +245,6 @@ template< class DataType , class Arg1Type , class Arg2Type , class Arg3Type >
 class View< DataType , Arg1Type , Arg2Type , Arg3Type , Impl::ViewTileLeftFast >
   : public ViewTraits< DataType , Arg1Type , Arg2Type , Arg3Type >
 {
-public:
-  typedef Impl::ViewTag kokkos_tag;
 private:
   template< class , class , class > friend struct Impl::ViewAssignment ;
 

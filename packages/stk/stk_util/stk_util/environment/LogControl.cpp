@@ -15,7 +15,15 @@ namespace stk {
 
 namespace {
 
-typedef std::map<std::ostream *, LogControl *, std::less<std::ostream*> > OStreamLogControlMap;
+struct OStreamLogControlMapLess
+{
+    inline bool operator()(const std::ostream *lhs, const std::ostream *rhs) const
+    {
+        return lhs < rhs;
+    }
+};
+
+typedef std::map<std::ostream *, LogControl *, OStreamLogControlMapLess > OStreamLogControlMap;
 
 OStreamLogControlMap &
 get_ostream_log_control_map()

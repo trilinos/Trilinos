@@ -829,6 +829,13 @@ namespace Tpetra {
     replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const;
     //@}
 
+
+    /// \brief Is the given Map locally the same as the input Map?
+    ///
+    /// "Locally the same" means that on the calling process, the two
+    /// Maps' global indices are the same and occur in the same order.
+    bool locallySameAs (const Map<LocalOrdinal, GlobalOrdinal, node_type>& map) const;
+
   protected:
     // This lets other specializations of Map access all of this
     // specialization's internal methods and data, so that we can
@@ -847,12 +854,6 @@ namespace Tpetra {
     /// This is declared "const" so that we can call it in
     /// getRemoteIndexList() to create the Directory on demand.
     void setupDirectory () const;
-
-    /// \brief Is the given Map locally the same as the input Map?
-    ///
-    /// "Locally the same" means that on the calling process, the two
-    /// Maps' global indices are the same and occur in the same order.
-    bool locallySameAs (const Map<LocalOrdinal, GlobalOrdinal, node_type>& map) const;
 
     //! The communicator over which this Map is distributed.
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;

@@ -333,7 +333,7 @@ void UnitTestSTKParallelDistributedIndex::test_generate()
 
   PDIndex di( comm , partition_spans );
 
-  std::vector<size_t> requests( partition_spans.size() , size_t(0) );
+  std::vector<size_t> requests( partition_spans.size() , 0u );
   std::vector< PDIndex::KeyTypeVector > generated_keys ;
   PDIndex::KeyProcVector sharing_of_local_keys ;
 
@@ -426,7 +426,7 @@ void UnitTestSTKParallelDistributedIndex::test_update_generate()
 
   PDIndex di( comm , partition_spans );
 
-  std::vector<size_t> requests( partition_spans.size() , size_t(0) );
+  std::vector<size_t> requests( partition_spans.size() , 0u );
   std::vector< PDIndex::KeyTypeVector > generated_keys ;
   PDIndex::KeyProcVector sharing_of_local_keys ;
 
@@ -520,7 +520,7 @@ void UnitTestSTKParallelDistributedIndex::test_generate_bad()
 
   PDIndex di( comm , partition_spans );
 
-  std::vector<size_t> requests( partition_spans.size() , size_t(0) );
+  std::vector<size_t> requests( partition_spans.size() , 0u );
   std::vector< PDIndex::KeyTypeVector > generated_keys ;
   //------------------------------
 
@@ -565,7 +565,7 @@ void UnitTestSTKParallelDistributedIndex::test_generate_big()
 
   PDIndex di( comm , partition_spans );
 
-  std::vector<size_t> requests( partition_spans.size() , size_t(0) );
+  std::vector<size_t> requests( partition_spans.size() , 0u );
 
   std::vector< PDIndex::KeyTypeVector > generated_keys ;
 

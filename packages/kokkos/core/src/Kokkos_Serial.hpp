@@ -77,9 +77,11 @@ public:
   //@{
 
   //! The tag (what type of kokkos_object is this).
-  typedef Impl::DeviceTag       kokkos_tag ;
+  typedef Impl::ExecutionSpaceTag  kokkos_tag ;
+
   //! The device type (same as this class).
   typedef Serial                device_type ;
+  typedef Serial                execution_space ;
   //! The size_type typedef best suited for this device.
   typedef HostSpace::size_type  size_type ;
   //! This device's preferred memory space.
@@ -151,42 +153,16 @@ public:
   KOKKOS_INLINE_FUNCTION static unsigned hardware_thread_id() { return 0 ; }
   KOKKOS_INLINE_FUNCTION static unsigned max_hardware_threads() { return 1 ; }
 
-
   //--------------------------------------------------------------------------
-
-  inline int league_rank() const { return m_league_rank ; }
-  inline int league_size() const { return m_league_size ; }
-  inline int team_rank() const { return 0 ; }
-  inline int team_size() const { return 1 ; }
-
-  inline void team_barrier() {}
-
-  template< class ArgType >
-  KOKKOS_INLINE_FUNCTION
-  ArgType team_scan( const ArgType & value , ArgType * const global_accum = 0 )
-    {
-      const ArgType tmp = global_accum ? *global_accum : ArgType(0) ;
-      if ( global_accum ) { *global_accum += value ; }
-      return tmp ;
-    }
-
-  inline std::pair<size_t,size_t> work_range( size_t n ) const
-    { return std::pair<size_t,size_t>(0,n); }
 
   void * get_shmem( const int size ) const ;
 
   static void * resize_reduce_scratch( const unsigned );
   static void * resize_shared_scratch( const unsigned );
 
-  Serial( const int rank , const int size )
-    : m_league_rank(rank) , m_league_size(size) , m_shmem_iter(0) {}
-
-  Serial()
-    : m_league_rank(0) , m_league_size(0) , m_shmem_iter(0) {}
+  Serial() : m_shmem_iter(0) {}
 
 private:
-  int m_league_rank ;
-  int m_league_size ;
   mutable int m_shmem_iter ;
 };
 
@@ -194,61 +170,6 @@ private:
 
 /*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
-
-namespace Kokkos {
-namespace Impl {
-
-template< class FunctorType >
-class ParallelFor< FunctorType , ParallelWorkRequest , Serial > {
-public:
-
-  ParallelFor( const FunctorType         & functor
-             , const ParallelWorkRequest & work )
-    {
-      Serial::resize_shared_scratch( FunctorShmemSize< FunctorType >::value( functor ) );
-
-      for ( size_t iwork = 0 ; iwork < work.league_size ; ++iwork ) {
-        functor( Serial(iwork,work.league_size) );
-      }
-    }
-};
-
-template< class FunctorType >
-class ParallelReduce< FunctorType , ParallelWorkRequest , Serial > {
-public:
-
-  typedef ReduceAdapter< FunctorType >  Reduce ;
-  typedef typename Reduce::pointer_type pointer_type ;
-
-  ParallelReduce( const FunctorType         & functor
-                , const ParallelWorkRequest & work
-                ,       pointer_type          result_ptr = 0
-                )
-    {
-      Serial::resize_shared_scratch( FunctorShmemSize< FunctorType >::value( functor ) );
-
-      if ( ! result_ptr ) {
-        result_ptr = (pointer_type) Serial::resize_reduce_scratch( Reduce::value_size( functor ) );
-      }
-
-      typename Reduce::reference_type update = Reduce::init( functor , result_ptr );
-      
-      for ( size_t iwork = 0 ; iwork < work.league_size ; ++iwork ) {
-        functor( Serial(iwork,work.league_size) , update );
-      }
-
-      Reduce::final( functor , result_ptr );
-    }
-
-  inline
-  void wait() const {}
-};
-
-} // namespace Impl
-} // namespace Kokkos
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
 
 namespace Kokkos {
 

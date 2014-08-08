@@ -131,7 +131,6 @@ class View< DataType , Arg1Type , Arg2Type , Arg3Type ,
 {
 public:
 
-  typedef Impl::ViewTag kokkos_tag;
   typedef ViewTraits< DataType , Arg1Type , Arg2Type, Arg3Type > traits ;
 
   typedef typename traits::value_type fad_type ;

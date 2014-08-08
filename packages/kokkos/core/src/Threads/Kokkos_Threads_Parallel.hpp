@@ -56,40 +56,6 @@ namespace Kokkos {
 namespace Impl {
 
 //----------------------------------------------------------------------------
-
-template< class FunctorType >
-class ParallelFor< FunctorType , ParallelWorkRequest , Kokkos::Threads >
-{
-public:
-  typedef TeamPolicy< Kokkos::Threads >  policy_team ;
-
-  const FunctorType  m_func ;
-
-  static void execute( ThreadsExec & exec , const void * arg )
-  {
-    const ParallelFor & self = * ((const ParallelFor *) arg );
-
-    for ( ; exec.team_work_avail() ; exec.team_work_next() ) {
-      self.m_func( Threads( exec ) );
-    }
-
-    exec.fan_in();
-  }
-
-  ParallelFor( const FunctorType & functor , const ParallelWorkRequest & work )
-    : m_func( functor )
-    {
-      ThreadsExec::resize_shared_scratch( FunctorShmemSize< FunctorType >::value( functor ) );
-      ThreadsExec::start( & ParallelFor::execute , this , work.league_size , work.team_size );
-      ThreadsExec::fence();
-    }
-
-  inline void wait() {}
-
-  inline ~ParallelFor() { wait(); }
-};
-
-//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 template< class FunctorType , typename IntType , unsigned P >
@@ -228,60 +194,6 @@ public:
         for ( unsigned i = 0 ; i < n ; ++i ) { result_view.ptr_on_device()[i] = data[i]; }
       }
     }
-};
-
-//----------------------------------------------------------------------------
-
-template< class FunctorType >
-class ParallelReduce< FunctorType , ParallelWorkRequest , Kokkos::Threads >
-{
-public:
-
-  typedef TeamPolicy< Kokkos::Threads , void >  Policy ;
-  typedef ReduceAdapter< FunctorType >          Reduce ;
-  typedef typename Reduce::pointer_type         pointer_type ;
-
-  const FunctorType  m_func ;
-  const Policy       m_policy ;
-
-  static void execute( ThreadsExec & exec , const void * arg )
-  {
-    const ParallelReduce & self = * ((const ParallelReduce *) arg );
-
-    // Initialize thread-local value
-    typename Reduce::reference_type update = Reduce::init( self.m_func , exec.reduce_base() );
-
-    for ( ; exec.team_work_avail() ; exec.team_work_next() ) {
-      self.m_func( Threads( exec ) , update );
-    }
-
-    exec.fan_in_reduce( self.m_func );
-  }
-
-  ParallelReduce( const FunctorType & functor ,
-                  const ParallelWorkRequest & work ,
-                  const pointer_type  result_ptr = 0 )
-    : m_func( functor )
-    , m_policy( Kokkos::Threads::instance() , work.league_size , work.team_size )
-    {
-      ThreadsExec::resize_shared_scratch( FunctorShmemSize< FunctorType >::value( functor ) );
-      ThreadsExec::resize_reduce_scratch( Reduce::value_size( m_func ) );
-
-      ThreadsExec::start( & ParallelReduce::execute , this , work.league_size , work.team_size );
-
-      const pointer_type data = (pointer_type) ThreadsExec::root_reduce_scratch();
-
-      ThreadsExec::fence();
-
-      if ( result_ptr ) {
-        const unsigned n = Reduce::value_count( m_func );
-        for ( unsigned i = 0 ; i < n ; ++i ) { result_ptr[i] = data[i]; }
-      }
-    }
-
-  inline void wait() {}
-
-  inline ~ParallelReduce() { wait(); }
 };
 
 //----------------------------------------------------------------------------

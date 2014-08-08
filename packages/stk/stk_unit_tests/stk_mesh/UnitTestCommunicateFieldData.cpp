@@ -201,6 +201,7 @@ TEST(CommunicateFieldData, communicateMultipleGhostings)
     ghosting_1_send.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::NODE_RANK, stk::mesh::EntityId(7)),proc_0));
     ghosting_2_send.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::NODE_RANK, stk::mesh::EntityId(8)),proc_0));
     ghosting_3_send.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::NODE_RANK, stk::mesh::EntityId(9)),proc_0));
+    ghosting_3_send.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::NODE_RANK, stk::mesh::EntityId(7)),proc_0)); // duplicate entity
   }
   bulk.change_ghosting( ghosting_1, ghosting_1_send );
   bulk.change_ghosting( ghosting_2, ghosting_2_send );

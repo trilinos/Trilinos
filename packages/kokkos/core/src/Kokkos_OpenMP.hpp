@@ -80,8 +80,9 @@ public:
   //@{
 
   //! The tag (what type of kokkos_object is this).
-  typedef Impl::DeviceTag       kokkos_tag ;
+  typedef Impl::ExecutionSpaceTag  kokkos_tag ;
   typedef OpenMP                device_type ;
+  typedef OpenMP                execution_space ;
   typedef HostSpace::size_type  size_type ;
   typedef HostSpace             memory_space ;
   typedef OpenMP                scratch_memory_space ;
@@ -132,35 +133,6 @@ public:
   //@}
   //------------------------------------
   //! \name Function for the functor device interface */
-  //@{
-
-  KOKKOS_INLINE_FUNCTION int league_rank() const ;
-  KOKKOS_INLINE_FUNCTION int league_size() const ;
-  KOKKOS_INLINE_FUNCTION int team_rank() const ;
-  KOKKOS_INLINE_FUNCTION int team_size() const ;
-
-  KOKKOS_INLINE_FUNCTION void team_barrier();
-
-  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering.
-   *
-   *  The highest rank thread can compute the reduction total as
-   *    reduction_total = dev.team_scan( value ) + value ;
-   */
-  template< typename Type >
-  KOKKOS_INLINE_FUNCTION Type team_scan( const Type & value );
-
-  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
-   *          with intra-team non-deterministic ordering accumulation.
-   *
-   *  The global inter-team accumulation value will, at the end of the
-   *  league's parallel execution, be the scan's total.
-   *  Parallel execution ordering of the league's teams is non-deterministic.
-   *  As such the base value for each team's scan operation is similarly
-   *  non-deterministic.
-   */
-  template< typename TypeLocal , typename TypeGlobal >
-  KOKKOS_INLINE_FUNCTION TypeGlobal team_scan( const TypeLocal & value , TypeGlobal * const global_accum );
-
 
   KOKKOS_INLINE_FUNCTION void * get_shmem( const int size ) const ;
 

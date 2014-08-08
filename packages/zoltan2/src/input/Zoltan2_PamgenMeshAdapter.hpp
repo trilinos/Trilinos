@@ -183,7 +183,7 @@ public:
     }
   }
 
-  bool availAdjs(MeshEntityType source, MeshEntityType target) {
+  bool availAdjs(MeshEntityType source, MeshEntityType target) const {
     if ((MESH_REGION == source && MESH_VERTEX == target && 3 == dimension_) ||
 	(MESH_FACE == source && MESH_VERTEX == target && 2 == dimension_)) {
       return TRUE;
@@ -197,7 +197,7 @@ public:
     if (availAdjs(source, target)) {
       return tnoct_;
     }
-
+    
     return 0;
   }
 
@@ -218,7 +218,7 @@ public:
     }
   }
 
-  bool avail2ndAdjs(MeshEntityType sourcetarget, MeshEntityType through)
+  bool avail2ndAdjs(MeshEntityType sourcetarget, MeshEntityType through) const
   {
     if ((MESH_REGION==sourcetarget && MESH_VERTEX==through && 3==dimension_) ||
 	(MESH_FACE==sourcetarget && MESH_VERTEX==through && 2==dimension_)) {
@@ -257,11 +257,11 @@ public:
 
 private:
   int dimension_, num_nodes_, num_elem_;
-  const gid_t *element_num_map_, *node_num_map_;
+  gid_t *element_num_map_, *node_num_map_;
   int *elemToNode_, tnoct_, *elemOffsets_;
   double *coords_, *Acoords_;
-  const lno_t *start_;
-  const gid_t *adj_;
+  lno_t *start_;
+  gid_t *adj_;
   size_t nadj_;
 };
 
@@ -285,11 +285,12 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
   //setEntityTypes(typestr, "vertex", "vertex");
 
   int error = 0;
+  char title[100];
   int exoid = 0;
   int num_elem_blk, num_node_sets, num_side_sets;
-  im_ex_get_init ( exoid, "PAMGEN Inline Mesh", &dimension_,
-		   &num_nodes_, &num_elem_, &num_elem_blk,
-		   &num_node_sets, &num_side_sets);
+  error += im_ex_get_init(exoid, title, &dimension_,
+			  &num_nodes_, &num_elem_, &num_elem_blk,
+			  &num_node_sets, &num_side_sets);
 
   coords_ = new double [num_nodes_ * dimension_];
 
@@ -308,7 +309,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
   int *num_nodes_per_elem = new int [num_elem_blk];
   int *num_attr           = new int [num_elem_blk];
   int *num_elem_this_blk  = new int [num_elem_blk];
-  char **elem_type              = new char * [num_elem_blk];
+  char **elem_type        = new char * [num_elem_blk];
   int **connect           = new int * [num_elem_blk];
 
   for(int i = 0; i < num_elem_blk; i++){
@@ -317,8 +318,13 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
 				  (int*)&(num_elem_this_blk[i]),
 				  (int*)&(num_nodes_per_elem[i]),
 				  (int*)&(num_attr[i]));
+    delete[] elem_type[i];
   }
 
+  delete[] elem_type;
+  elem_type = NULL;
+  delete[] num_attr;
+  num_attr = NULL;
   Acoords_ = new double [num_elem_ * dimension_];
   int a = 0;
   std::vector<std::vector<int> > sur_elem;
@@ -330,19 +336,19 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
 
     for(int i = 0; i < num_elem_this_blk[b]; i++) {
       Acoords_[a] = 0;
-      Acoords_[num_nodes_ + a] = 0;
+      Acoords_[num_elem_ + a] = 0;
 
       if (3 == dimension_) {
-	Acoords_[2 * num_nodes_ + a] = 0;
+	Acoords_[2 * num_elem_ + a] = 0;
       }
 
       for(int j = 0; j < num_nodes_per_elem[b]; j++) {
 	int node = connect[b][i * num_nodes_per_elem[b] + j] - 1;
 	Acoords_[a] += coords_[node];
-	Acoords_[num_nodes_ + a] += coords_[num_nodes_ + node];
+	Acoords_[num_elem_ + a] += coords_[num_nodes_ + node];
 
 	if(3 == dimension_) {
-	  Acoords_[2 * num_nodes_ + a] += coords_[2 * num_nodes_ + node];
+	  Acoords_[2 * num_elem_ + a] += coords_[2 * num_nodes_ + node];
 	}
 
 	/*
@@ -359,16 +365,19 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
       }
 
       Acoords_[a] /= num_nodes_per_elem[b];
-      Acoords_[num_nodes_ + a] /= num_nodes_per_elem[b];
+      Acoords_[num_elem_ + a] /= num_nodes_per_elem[b];
 
       if(3 == dimension_) {
-	Acoords_[2 * num_nodes_ + a] /= num_nodes_per_elem[b];
+	Acoords_[2 * num_elem_ + a] /= num_nodes_per_elem[b];
       }
 
       a++;
     }
+
   }
 
+  delete[] elem_blk_ids;
+  elem_blk_ids = NULL;
   int nnodes_per_elem = num_nodes_per_elem[0];
   elemToNode_ = new int [num_elem_ * nnodes_per_elem];
   int telct = 0;
@@ -385,15 +394,6 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
       for (int j = 0; j < num_nodes_per_elem[b]; j++) {
 	elemToNode_[tnoct_] = connect[b][i*num_nodes_per_elem[b] + j]-1;
 	reconnect[telct][j] = connect[b][i*num_nodes_per_elem[b] + j]-1;
-
-	if(sur_elem[tnoct_].empty()) {
-	  printf("WARNING: Node = "ST_ZU" has no elements\n", tnoct_+1);
-	} else {
-	  size_t nsur = sur_elem[tnoct_].size();
-	  if (nsur > max_nsur)
-	    max_nsur = nsur;
-	}
-
 	++tnoct_;
       }
 
@@ -402,12 +402,12 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
   }
 
   int max_side_nodes = nnodes_per_elem;
-  int side_nodes[max_side_nodes];
-  int mirror_nodes[max_side_nodes];
+  int *side_nodes = new int [max_side_nodes];
+  int *mirror_nodes = new int [max_side_nodes];
 
-  /* Allocate memory necessary for the adjacency */
-  start_ = new const lno_t [num_nodes_];
-  std::vector<int> adj;
+  /* Allocate memory necessary for the adjacency
+  start_ = new lno_t [num_nodes_];
+  std::vector<int> adj; */
 
   for (int i=0; i < max_side_nodes; i++) {
     side_nodes[i]=-999;
@@ -415,9 +415,17 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
   }
 
   /* Find the adjacency for a nodal based decomposition */
-  nadj_ = 0;
+  //nadj_ = 0;
   for(size_t ncnt=0; ncnt < num_nodes_; ncnt++) {
-    start_[ncnt] = nadj_;
+    if(sur_elem[ncnt].empty()) {
+      printf("WARNING: Node = "ST_ZU" has no elements\n", ncnt+1);
+    } else {
+      size_t nsur = sur_elem[ncnt].size();
+      if (nsur > max_nsur)
+	max_nsur = nsur;
+    }
+
+    /*start_[ncnt] = nadj_;
     for(size_t ecnt=0; ecnt < sur_elem[ncnt].size(); ecnt++) {
       size_t elem = sur_elem[ncnt][ecnt];
       int nnodes = nnodes_per_elem;
@@ -433,29 +441,20 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
 	}
       }
     }
+    */
   }
 
-  adj_ = new const gid_t [nadj_];
+  /*adj_ = new gid_t [nadj_];
 
   for (size_t i=0; i < nadj_; i++) {
     adj_[i] = adj[i];
   }
+  */
 
-  delete[] elem_blk_ids;
-  elem_blk_ids = NULL;
   delete[] num_nodes_per_elem;
   num_nodes_per_elem = NULL;
-  delete[] num_attr;
-  num_attr = NULL;
   delete[] num_elem_this_blk;
   num_elem_this_blk = NULL;
-
-  for(int i = 0; i < num_elem_blk; i++){
-    delete[] elem_type[i];
-  }
-
-  delete[] elem_type;
-  elem_type = NULL;
 
   for(int b = 0; b < num_elem_blk; b++) {
     delete[] connect[b];
@@ -470,8 +469,8 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
 
   delete[] reconnect;
   reconnect = NULL;
-  delete[] adj;
-  adj = NULL;
+  delete[] side_nodes;
+  delete[] mirror_nodes;
 }
 
   

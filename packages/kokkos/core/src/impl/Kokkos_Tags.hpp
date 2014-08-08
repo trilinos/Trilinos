@@ -55,63 +55,56 @@ namespace Kokkos {
 namespace Impl {
 
 struct LayoutTag {};
-struct DeviceTag {};
+
+struct MemorySpaceTag {};
 struct MemoryTraitsTag {};
-struct ViewTag {};
 
 struct ExecutionPolicyTag {};
 struct ExecutionSpaceTag {};
-struct MemorySpaceTag {};
-
-template< class C , bool b = Impl::is_same< typename C::kokkos_tag , Impl::ExecutionPolicyTag >::value >
-struct is_execution_policy : public bool_< b > {};
-
-template< class C , bool b = Impl::is_same< typename C::kokkos_tag , Impl::ExecutionSpaceTag >::value >
-struct is_execution_space : public bool_< b > {};
 
 
-template< class C , bool b = Impl::is_same< typename C::kokkos_tag , Impl::MemorySpaceTag >::value >
-struct is_memory_space : public bool_< b > {};
+template< class C , class Enable = void >
+struct is_memory_space : public bool_< false > {};
 
-}
+template< class C >
+struct is_memory_space< C , typename Impl::enable_if_type< typename C::kokkos_tag >::type >
+  : public bool_< Impl::is_same< typename C::kokkos_tag , Impl::MemorySpaceTag >::value > {};
 
 
+template< class C , class Enable = void >
+struct is_execution_space : public bool_< false > {};
+
+template< class C >
+struct is_execution_space< C , typename Impl::enable_if_type< typename C::kokkos_tag >::type >
+  : public bool_< Impl::is_same< typename C::kokkos_tag , Impl::ExecutionSpaceTag >::value > {};
 
 
+template< class C , class Enable = void >
+struct is_execution_policy : public bool_< false > {};
+
+template< class C >
+struct is_execution_policy< C , typename Impl::enable_if_type< typename C::kokkos_tag >::type >
+  : public bool_< Impl::is_same< typename C::kokkos_tag , Impl::ExecutionPolicyTag >::value > {};
 
 
 template< class C , class Enable = void >
 struct is_layout : public Impl::false_type {};
 
 template<class C>
-struct is_layout<C,typename Impl::enable_if< ! Impl::is_same<typename C::kokkos_tag,int>::value>::type > {
+struct is_layout<C,typename Impl::enable_if_type< typename C::kokkos_tag >::type > {
   enum {value=bool(Impl::is_same<Impl::LayoutTag,typename C::kokkos_tag>::value)};
 };
 
-template< class C , class Enable = void >
-struct is_device : public Impl::false_type {};
-
-template<class C>
-struct is_device<C,typename Impl::enable_if< ! Impl::is_same<typename C::kokkos_tag,int>::value>::type > {
-  enum {value=bool(Impl::is_same<Impl::DeviceTag,typename C::kokkos_tag>::value)};
-};
 
 template< class C , class Enable = void >
 struct is_memorytraits : public Impl::false_type {};
 
 template<class C>
-struct is_memorytraits<C,typename Impl::enable_if< ! Impl::is_same<typename C::kokkos_tag,int>::value>::type > {
+struct is_memorytraits<C,typename Impl::enable_if_type< typename C::kokkos_tag >::type > {
   enum {value=bool(Impl::is_same<Impl::MemoryTraitsTag,typename C::kokkos_tag>::value)};
 };
 
-template< class C , class Enable = void >
-struct is_view : public Impl::false_type {};
-
-template<class C>
-struct is_view<C,typename Impl::enable_if< ! Impl::is_same<typename C::kokkos_tag,int>::value>::type > {
-  enum {value=bool(Impl::is_same<Impl::ViewTag,typename C::kokkos_tag>::value)};
-};
-
+}
 }
 
 #endif

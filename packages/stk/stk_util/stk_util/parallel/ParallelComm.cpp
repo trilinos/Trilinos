@@ -201,6 +201,76 @@ bool all_to_all_sparse( ParallelMachine p_comm ,
   return MPI_SUCCESS == result ;
 }
 
+void communicate_sparse( ParallelMachine p_comm ,
+                        const CommBuffer * const send ,
+                        const CommBuffer * const recv )
+{
+  static const int mpi_tag = STK_MPI_TAG_DATA ;
+
+  int result = MPI_SUCCESS ;
+
+  const int p_size = parallel_machine_size( p_comm );
+
+  //------------------------------
+  // Receive count
+
+  unsigned num_recv = 0 ;
+
+  for ( int i = 0 ; i < p_size ; ++i ) {
+    if ( recv[i].capacity() ) { ++num_recv ; }
+  }
+
+  //------------------------------
+  // Post receives for specific processors with specific sizes
+
+  MPI_Request request_null = MPI_REQUEST_NULL ;
+  std::vector<MPI_Request> request( num_recv , request_null );
+  std::vector<MPI_Status>  status(  num_recv );
+
+  unsigned count = 0 ;
+
+  for ( int i = 0 ; result == MPI_SUCCESS && i < p_size ; ++i ) {
+    const unsigned recv_size = recv[i].capacity();
+    if ( recv_size ) {
+      void * const   recv_buf  = recv[i].buffer();
+      result = MPI_Irecv( recv_buf , recv_size , MPI_BYTE , i , mpi_tag , p_comm , & request[count] );
+      ++count ;
+    }
+  }
+
+  // This sync is necessary to ensure the IRecvs happen before the Sends.
+  MPI_Barrier( p_comm );
+
+  for ( int i = 0 ; i < p_size ; ++i ) {
+    const unsigned send_size = send[i].capacity();
+    if ( send_size ) {
+      void * const   send_buf  = send[i].buffer();
+      MPI_Send( send_buf , send_size , MPI_BYTE , i , mpi_tag , p_comm );
+    }
+  }
+
+  result = MPI_Waitall( num_recv , &request[0] , &status[0] );
+
+#ifndef NDEBUG
+  const int p_rank = parallel_machine_rank( p_comm );
+  for ( unsigned i = 0 ; i < num_recv ; ++i ) {
+    MPI_Status * const recv_status = & status[i] ;
+    const int recv_proc = recv_status->MPI_SOURCE ;
+    const int recv_tag  = recv_status->MPI_TAG ;
+    const int recv_plan = recv[recv_proc].capacity();
+    int recv_count = 0 ;
+
+    MPI_Get_count( recv_status , MPI_BYTE , & recv_count );
+
+    if ( recv_tag != mpi_tag || recv_count != recv_plan ) {
+      std::cerr << "stk::communicate_sparse LOCAL[" << p_rank << "] ERROR: Recv["
+            << recv_proc << "] Size( "
+            << recv_count << " != expected " << recv_plan << " ) , " ;
+    }
+  }
+#endif
+}
+
 }
 
 #else
@@ -601,28 +671,25 @@ void CommAll::communicate()
 {
   BABBLE_STK_PARALLEL_COMM(m_comm, "              entered CommAll::communicate");
 
-  static const char method[] = "stk::CommAll::communicate" ;
-
-  std::ostringstream msg ;
-
-  // Verify the send buffers have been filled, reset the buffer pointers
-
   for ( int i = 0 ; i < m_size ; ++i ) {
+    // Verify the send buffers have been filled, reset the buffer pointers
 
     if ( m_send[i].remaining() ) {
-      msg << method << " LOCAL[" << m_rank << "] ERROR: Send[" << i
+      std::ostringstream msg ;
+      msg << "stk::CommAll::communicate LOCAL[" << m_rank << "] ERROR: Send[" << i
           << "] Buffer not filled." ;
       throw std::underflow_error( msg.str() );
     }
-/*
-    m_send[i].reset();
-*/
     m_recv[i].reset();
   }
 
   if ( 1 < m_size ) {
+#ifdef NDEBUG
+    // Do the communication to exchange the send/recv buffers
+    communicate_sparse( m_comm , m_send , m_recv );
+#else
     bool ok = false;
-
+    std::ostringstream msg;
     if ( m_bound < m_max ) {
       BABBLE_STK_PARALLEL_COMM(m_comm, "                  calling all_to_all_dense from communicate");
       ok = all_to_all_dense( m_comm , m_send , m_recv , msg );
@@ -633,6 +700,7 @@ void CommAll::communicate()
     }
 
     if ( ! ok ) { throw std::runtime_error( msg.str() ); }
+#endif
   }
 }
 

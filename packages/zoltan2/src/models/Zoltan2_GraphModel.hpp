@@ -57,6 +57,7 @@
 #include <Zoltan2_IdentifierAdapter.hpp>
 #include <Zoltan2_VectorAdapter.hpp>
 #include <Zoltan2_StridedData.hpp>
+#include <Zoltan2_MeshAdapter.hpp>
 
 #include <vector>
 #include <Teuchos_Hashtable.hpp>
@@ -447,6 +448,13 @@ public:
     modelFlag_t &flags)
   {
     throw std::runtime_error("cannot build GraphModel from IdentifierAdapter");
+  }
+
+  GraphModel(const MeshAdapter<user_t> *ia,
+    const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
+    modelFlag_t &modelflags)
+  {
+    throw std::runtime_error("cannot build GraphModel from MeshAdapter yet");
   }
 
   /*! \brief Returns the number vertices on this process.

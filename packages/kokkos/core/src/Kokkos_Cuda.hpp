@@ -128,9 +128,11 @@ public:
   //@{
 
   //! The tag (what type of kokkos_object is this).
-  typedef Impl::DeviceTag       kokkos_tag ;
+  typedef Impl::ExecutionSpaceTag  kokkos_tag ;
   //! The device type (same as this class).
   typedef Cuda                  device_type ;
+  //! This device's execution space.
+  typedef Cuda                  execution_space ;
   //! This device's preferred memory space.
   typedef CudaSpace             memory_space ;
   typedef Cuda                  scratch_memory_space ;
@@ -236,37 +238,6 @@ public:
   //! \name Functions for the functor device interface
   //@{
 
-  __device__ inline int league_size() const { return gridDim.x ; }
-  __device__ inline int league_rank() const { return blockIdx.x ; }
-
-  __device__ inline int team_size() const { return blockDim.x ; }
-  __device__ inline int team_rank() const { return threadIdx.x ; }
-
-  __device__ inline void team_barrier() const { __syncthreads(); }
-  __device__ inline unsigned int team_barrier_count(bool value) const
-             { return __syncthreads_count(value); }
-
-  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering.
-   *
-   *  The highest rank thread can compute the reduction total as
-   *    reduction_total = dev.team_scan( value ) + value ;
-   */
-  template< typename Type >
-  __device__ inline Type team_scan( const Type & value );
-
-  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
-   *          with intra-team non-deterministic ordering accumulation.
-   *
-   *  The global inter-team accumulation value will, at the end of the
-   *  league's parallel execution, be the scan's total.
-   *  Parallel execution ordering of the league's teams is non-deterministic.
-   *  As such the base value for each team's scan operation is similarly
-   *  non-deterministic.
-   */
-  template< typename TypeLocal , typename TypeGlobal >
-  __device__ inline TypeGlobal team_scan( const TypeLocal & value , TypeGlobal * const global_accum );
-
-
   //! Get a pointer to shared memory for this team.
   __device__ inline void * get_shmem( const int size ) const ;
 
@@ -283,21 +254,6 @@ private:
   //--------------------------------------------------------------------------
 #else
 
-  int league_size() const ;
-  int league_rank() const ;
-
-  int team_size() const ;
-  int team_rank() const ;
-
-  void team_barrier() const ;
-  unsigned int team_barrier_count(bool) const ;
-
-  template< typename T >
-    inline T team_scan(const T& value);
-
-  template< typename TypeLocal , typename TypeGlobal >
-    inline TypeGlobal team_scan( const TypeLocal & value , TypeGlobal * const global_accum );
-
   void * get_shmem( const int size ) const ;
 
   Cuda( Impl::CudaExec & );
@@ -305,50 +261,6 @@ private:
 #endif
 
 };
-
-} // namespace Kokkos
-
-/*--------------------------------------------------------------------------*/
-
-namespace Kokkos {
-
-/** \brief Cuda-specific parallel work configuration */
-
-struct CudaWorkConfig {
-  Cuda::size_type  grid[3] ;   //< Grid dimensions
-  Cuda::size_type  block[3] ;  //< Block dimensions
-  Cuda::size_type  shared ;    //< Shared memory size
-
-  CudaWorkConfig()
-  {
-    enum { WarpSize = 32 };
-    grid[0] = grid[1] = grid[2] = 1 ;
-    block[1] = block[2] = 1 ;
-    block[0] = 8 * WarpSize ;
-    shared = 0 ;
-  }
-};
-
-template< class FunctorType >
-inline
-void parallel_for( const CudaWorkConfig & work_config ,
-                   const FunctorType    & functor )
-{
-  Impl::ParallelFor< FunctorType , CudaWorkConfig , Cuda >
-    ( work_config , functor );
-}
-
-template< class FunctorType , class FinalizeType >
-inline
-void parallel_reduce( const CudaWorkConfig & work_config ,
-                      const FunctorType    & functor ,
-                      const FinalizeType   & finalize );
-
-template< class FunctorType >
-inline
-typename FunctorType::value_type
-parallel_reduce( const CudaWorkConfig & work_config ,
-                 const FunctorType    & functor );
 
 } // namespace Kokkos
 
