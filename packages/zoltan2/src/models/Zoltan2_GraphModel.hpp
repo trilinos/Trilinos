@@ -436,6 +436,10 @@ public:
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &modelFlags);
 
+  GraphModel(const MeshAdapter<user_t> *ia,
+    const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
+    modelFlag_t &modelflags);
+
   GraphModel(const VectorAdapter<userCoord_t> *ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &flags)
@@ -448,13 +452,6 @@ public:
     modelFlag_t &flags)
   {
     throw std::runtime_error("cannot build GraphModel from IdentifierAdapter");
-  }
-
-  GraphModel(const MeshAdapter<user_t> *ia,
-    const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
-    modelFlag_t &modelflags)
-  {
-    throw std::runtime_error("cannot build GraphModel from MeshAdapter yet");
   }
 
   /*! \brief Returns the number vertices on this process.
@@ -793,6 +790,108 @@ GraphModel<Adapter>::GraphModel(
 
     ArrayRCP<const scalar_t> wgtArray(ewgts, 0, numLocalEdges_, false);
     eWeights_[w] = input_t(wgtArray, stride);
+  }
+
+  shared_constructor(ia, modelFlags);
+}
+
+////////////////////////////////////////////////////////////////
+template <typename Adapter>
+GraphModel<Adapter>::GraphModel(
+  const MeshAdapter<user_t> *ia,
+  const RCP<const Environment> &env,
+  const RCP<const Comm<int> > &comm,
+  modelFlag_t &modelFlags):
+       env_(env),
+       comm_(comm),
+       gids_(),
+       gnos_(),
+       numWeightsPerVertex_(0),
+       vWeights_(),
+       vCoordDim_(0),
+       vCoords_(),
+       edgeGids_(),
+       edgeGnos_(),
+       procIds_(),
+       offsets_(),
+       nWeightsPerEdge_(0),
+       eWeights_(),
+       gnosConst_(),
+       edgeGnosConst_(),
+       procIdsConst_(),
+       gnosAreGids_(false),
+       localGraphEdgeLnos_(),
+       localGraphEdgeOffsets_(),
+       localGraphEdgeWeights_(),
+       numLocalVertices_(0),
+       numGlobalVertices_(0),
+       numLocalEdges_(0),
+       numGlobalEdges_(0),
+       numLocalGraphEdges_(0)
+{
+
+  // This GraphModel is built with vertices == ia->getPrimaryEntityType()
+  // from MeshAdapter.
+
+  // Get the graph from the input adapter
+
+  Zoltan2::MeshEntityType primaryEType = ia->getPrimaryEntityType();
+  Zoltan2::MeshEntityType secondAdjEType = ia->getSecondAdjacencyEntityType();
+
+  // Get the IDs of the primary entity type; these are graph vertices
+
+  gid_t const *vtxIds=NULL;
+  try {
+    numLocalVertices_ = ia->getLocalNumOf(primaryEType);
+    ia->getIDsViewOf(primaryEType, vtxIds);
+  }
+  Z2_FORWARD_EXCEPTIONS;
+
+  gids_ = arcp<const gid_t>(vtxIds, 0, numLocalVertices_, false);
+
+  // Get the second adjacencies to construct edges of the dual graph.
+  // TODO:  Enable building the graph from 1st adjacencies
+
+  gid_t *nborIds=NULL;
+  lno_t const  *offsets=NULL;
+
+  if (!ia->avail2ndAdjs(primaryEType, secondAdjEType)) {
+
+    throw std::logic_error("MeshAdapter must provide 2nd adjacencies for "
+                           "graph construction");
+
+  }
+  else {  // avail2ndAdjs
+
+    // Get the edges
+    try {
+      ia->get2ndAdjsView(primaryEType, secondAdjEType, offsets, nborIds);
+    }
+    Z2_FORWARD_EXCEPTIONS;
+
+    numLocalEdges_ = offsets[numLocalVertices_];
+
+    edgeGids_ = arcp<const gid_t>(nborIds, 0, numLocalEdges_, false);
+    offsets_ = arcp<const lno_t>(offsets, 0, numLocalVertices_ + 1, false);
+
+    // Get edge weights
+    nWeightsPerEdge_ = ia->getNumWeightsPer2ndAdj();
+
+    if (nWeightsPerEdge_ > 0){
+      input_t *wgts = new input_t [nWeightsPerEdge_];
+      eWeights_ = arcp(wgts, 0, nWeightsPerEdge_, true);
+    }
+
+    for (int w=0; w < nWeightsPerEdge_; w++){
+      const scalar_t *ewgts=NULL;
+      int stride=0;
+
+      ia->get2ndAdjWeightsView(primaryEType, secondAdjEType,
+                               ewgts, stride, w);
+
+      ArrayRCP<const scalar_t> wgtArray(ewgts, 0, numLocalEdges_, false);
+      eWeights_[w] = input_t(wgtArray, stride);
+    }
   }
 
   shared_constructor(ia, modelFlags);

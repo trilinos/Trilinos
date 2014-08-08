@@ -101,7 +101,8 @@ public:
       coordinateDim_(), gids_(), xyz_(), userNumWeights_(0), weights_(),
       gnos_(), gnosConst_()
   {
-    sharedConstructor(ia, env, comm, flags);
+    typedef VectorAdapter<user_t> adapterWithCoords_t;
+    sharedConstructor<adapterWithCoords_t>(ia, env, comm, flags);
   }
 
   // MatrixAdapter
@@ -116,11 +117,11 @@ public:
                   gnos_(), gnosConst_()
   {
     if (!(ia->coordinatesAvailable()))
-      throw std::logic_error("No coordinate info was provided to MatrixAdapter.");
+      throw std::logic_error("No coordinate info provided to MatrixAdapter.");
     else {
-      typedef VectorAdapter<userCoord_t> vectorAdapter_t;
-      vectorAdapter_t *va = ia->getCoordinateInput();
-      sharedConstructor(va, env, comm, flags);
+      typedef VectorAdapter<userCoord_t> adapterWithCoords_t;
+      adapterWithCoords_t *va = ia->getCoordinateInput();
+      sharedConstructor<adapterWithCoords_t>(va, env, comm, flags);
     }
   }
 
@@ -136,11 +137,11 @@ public:
                   gnos_(), gnosConst_()
   {
     if (!(ia->coordinatesAvailable()))
-      throw std::logic_error("No coordinate info was provided to MatrixAdapter.");
+      throw std::logic_error("No coordinate info provided to GraphAdapter.");
     else {
-      typedef VectorAdapter<userCoord_t> vectorAdapter_t;
-      vectorAdapter_t *va = ia->getCoordinateInput();
-      sharedConstructor(va, env, comm, flags);
+      typedef VectorAdapter<userCoord_t> adapterWithCoords_t;
+      adapterWithCoords_t *va = ia->getCoordinateInput();
+      sharedConstructor<adapterWithCoords_t>(va, env, comm, flags);
     }
   }
 
@@ -153,7 +154,8 @@ public:
     coordinateDim_(), gids_(), xyz_(), userNumWeights_(0), weights_(),
     gnos_(), gnosConst_()
   {
-    meshConstructor(ia, env, comm, flags);
+    typedef MeshAdapter<user_t> adapterWithCoords_t;
+    sharedConstructor<adapterWithCoords_t>(ia, env, comm, flags);
   }
 
   // IdentifierAdapter
@@ -256,15 +258,12 @@ private:
   ArrayRCP<gno_t> gnos_;
   ArrayRCP<const gno_t> gnosConst_;
 
-  void sharedConstructor(const VectorAdapter<userCoord_t> *ia,
+  template <typename AdapterWithCoords>
+  void sharedConstructor(const AdapterWithCoords *ia,
                          const RCP<const Environment> &env,
                          const RCP<const Comm<int> > &comm,
                          modelFlag_t &flags);
 
-  void meshConstructor(const MeshAdapter<userCoord_t> *ia,
-		       const RCP<const Environment> &env,
-		       const RCP<const Comm<int> > &comm,
-		       modelFlag_t &flags);
 };
 
 
@@ -272,8 +271,9 @@ private:
 
 // sharedConstructor
 template <typename Adapter>
+template <typename AdapterWithCoords>
 void CoordinateModel<Adapter>::sharedConstructor(
-    const VectorAdapter<typename Adapter::userCoord_t> *ia,
+    const AdapterWithCoords *ia,
     const RCP<const Environment> &env,
     const RCP<const Comm<int> > &comm,
     modelFlag_t &flags)
@@ -285,7 +285,7 @@ void CoordinateModel<Adapter>::sharedConstructor(
   // Get coordinates and weights (if any)
 
   int tmp[2], gtmp[2];
-  tmp[0] = ia->getNumEntriesPerID();
+  tmp[0] = ia->getDimension();
   tmp[1] = ia->getNumWeightsPerID();
   Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_MAX, 2, tmp, gtmp);
   coordinateDim_ = gtmp[0];
@@ -312,7 +312,7 @@ void CoordinateModel<Adapter>::sharedConstructor(
       int stride;
       const scalar_t *coords=NULL;
       try{
-        ia->getEntriesView(coords, stride, dim);
+        ia->getCoordinatesView(coords, stride, dim);
       }
       Z2_FORWARD_EXCEPTIONS;
 
@@ -371,6 +371,7 @@ void CoordinateModel<Adapter>::sharedConstructor(
   env_->memory("After construction of coordinate model");
 }
 
+#ifdef KDDKDD_NO_LONGER_NEED_DUPLICATE_CODE
 // meshConstructor
 template <typename Adapter>
 void CoordinateModel<Adapter>::meshConstructor(
@@ -386,7 +387,7 @@ void CoordinateModel<Adapter>::meshConstructor(
   // Get coordinates and weights (if any)
 
   int tmp[2], gtmp[2];
-  tmp[0] = ia->getDimensionOf();
+  tmp[0] = ia->getDimension();
   tmp[1] = ia->getNumWeightsPerID();
   Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_MAX, 2, tmp, gtmp);
   coordinateDim_ = gtmp[0];
@@ -470,7 +471,8 @@ void CoordinateModel<Adapter>::meshConstructor(
   gnosConst_ = arcp_const_cast<const gno_t>(gnos_);
 
   env_->memory("After construction of coordinate model");
-  }
+}
+#endif
 
 }   // namespace Zoltan2
 
