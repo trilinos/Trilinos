@@ -593,6 +593,9 @@ public:
 private:
   void shared_constructor(const Adapter *ia, modelFlag_t &modelFlags);
 
+  template <typename AdapterWithCoords>
+  void shared_GetVertexCoords(const AdapterWithCoords *ia);
+
   const RCP<const Environment > env_;
   const RCP<const Comm<int> > comm_;
 
@@ -685,7 +688,7 @@ GraphModel<Adapter>::GraphModel(
 
   // Get the matrix from the input adapter
   gid_t const *vtxIds=NULL, *nborIds=NULL;
-  lno_t const  *offsets=NULL;
+  lno_t const *offsets=NULL;
   try{
     numLocalVertices_ = ia->getLocalNumIDs();
     ia->getIDsView(vtxIds);
@@ -713,6 +716,12 @@ GraphModel<Adapter>::GraphModel(
                      // TODO:  use matrix values as edge weights
 
   shared_constructor(ia, modelFlags);
+
+  // Get vertex coordinates, if available
+  if (ia->coordinatesAvailable()) {
+    typedef VectorAdapter<userCoord_t> adapterWithCoords_t;
+    shared_GetVertexCoords<adapterWithCoords_t>(ia->getCoordinateInput());
+  }
 }
 
 
@@ -761,7 +770,7 @@ GraphModel<Adapter>::GraphModel(
   // Get the graph from the input adapter
 
   gid_t const *vtxIds=NULL, *nborIds=NULL;
-  lno_t const  *offsets=NULL;
+  lno_t const *offsets=NULL;
   try{
     numLocalVertices_ = ia->getLocalNumVertices();
     ia->getVertexIDsView(vtxIds);
@@ -793,6 +802,12 @@ GraphModel<Adapter>::GraphModel(
   }
 
   shared_constructor(ia, modelFlags);
+
+  // Get vertex coordinates, if available
+  if (ia->coordinatesAvailable()) {
+    typedef VectorAdapter<userCoord_t> adapterWithCoords_t;
+    shared_GetVertexCoords<adapterWithCoords_t>(ia->getCoordinateInput());
+  }
 }
 
 ////////////////////////////////////////////////////////////////
@@ -852,8 +867,8 @@ GraphModel<Adapter>::GraphModel(
   // Get the second adjacencies to construct edges of the dual graph.
   // TODO:  Enable building the graph from 1st adjacencies
 
-  gid_t *nborIds=NULL;
-  lno_t const  *offsets=NULL;
+  gid_t const *nborIds=NULL;
+  lno_t const *offsets=NULL;
 
   if (!ia->avail2ndAdjs(primaryEType, secondAdjEType)) {
 
@@ -875,7 +890,7 @@ GraphModel<Adapter>::GraphModel(
     offsets_ = arcp<const lno_t>(offsets, 0, numLocalVertices_ + 1, false);
 
     // Get edge weights
-    nWeightsPerEdge_ = ia->getNumWeightsPer2ndAdj();
+    nWeightsPerEdge_ = ia->getNumWeightsPer2ndAdj(primaryEType, secondAdjEType);
 
     if (nWeightsPerEdge_ > 0){
       input_t *wgts = new input_t [nWeightsPerEdge_];
@@ -895,6 +910,9 @@ GraphModel<Adapter>::GraphModel(
   }
 
   shared_constructor(ia, modelFlags);
+
+  typedef MeshAdapter<user_t> adapterWithCoords_t;
+  shared_GetVertexCoords<adapterWithCoords_t>(ia);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -1089,7 +1107,8 @@ void GraphModel<Adapter>::shared_constructor(
 
   if (numWeightsPerVertex_ > 0){
     input_t *weightInfo = new input_t [numWeightsPerVertex_];
-    env_->localMemoryAssertion(__FILE__, __LINE__, numWeightsPerVertex_, weightInfo);
+    env_->localMemoryAssertion(__FILE__, __LINE__, numWeightsPerVertex_,
+                               weightInfo);
 
     for (int idx=0; idx < numWeightsPerVertex_; idx++){
       bool useNumNZ = ia->useDegreeAsWeight(idx); 
@@ -1118,35 +1137,39 @@ void GraphModel<Adapter>::shared_constructor(
   }
 
 
-  // Vertex coordinates
-
-  if (ia->coordinatesAvailable()) {
-    vCoordDim_ = ia->getCoordinateInput()->getNumEntriesPerID();
-
-    if (vCoordDim_ > 0){
-      input_t *coordInfo = new input_t [vCoordDim_];
-      env_->localMemoryAssertion(__FILE__, __LINE__, vCoordDim_, coordInfo);
-
-      for (int dim=0; dim < vCoordDim_; dim++){
-        const scalar_t *coords=NULL;
-        int stride=0;
-        ia->getCoordinateInput()->getEntriesView(coords, stride, dim);
-        ArrayRCP<const scalar_t> coordArray = arcp(coords, 0,
-                                                   stride*numLocalVertices_,
-                                                   false);
-        coordInfo[dim] = input_t(coordArray, stride);
-      }
-
-      vCoords_ = arcp<input_t>(coordInfo, 0, vCoordDim_, true);
-    }
-  }
-
   reduceAll<int, size_t>(*comm_, Teuchos::REDUCE_SUM, 1,
     &numLocalEdges_, &numGlobalEdges_);
 
   env_->memory("After construction of graph model");
 }
 
+//////////////////////////////////////////////////////////////////////////
+
+template <typename Adapter>
+template <typename AdapterWithCoords>
+void GraphModel<Adapter>::shared_GetVertexCoords(const AdapterWithCoords *ia)
+{
+  // get Vertex coordinates from input adapter
+
+  vCoordDim_ = ia->getDimension();
+
+  if (vCoordDim_ > 0){
+    input_t *coordInfo = new input_t [vCoordDim_];
+    env_->localMemoryAssertion(__FILE__, __LINE__, vCoordDim_, coordInfo);
+
+    for (int dim=0; dim < vCoordDim_; dim++){
+      const scalar_t *coords=NULL;
+      int stride=0;
+      ia->getCoordinatesView(coords, stride, dim);
+      ArrayRCP<const scalar_t> coordArray = arcp(coords, 0,
+                                                 stride*numLocalVertices_,
+                                                 false);
+      coordInfo[dim] = input_t(coordArray, stride);
+    }
+
+    vCoords_ = arcp<input_t>(coordInfo, 0, vCoordDim_, true);
+  }
+}
 
 }   // namespace Zoltan2
 
