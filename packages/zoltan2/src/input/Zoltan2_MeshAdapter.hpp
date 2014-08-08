@@ -194,7 +194,7 @@ public:
    *  Some algorithms can use geometric entity coordinate
    *    information if it is present.
    */
-  virtual int getDimensionOf() const { return 0; }
+  virtual int getDimension() const { return 0; }
   
   /*! \brief Provide a pointer to one dimension of entity coordinates.
       \param coords  points to a list of coordinate values for the dimension.
@@ -238,10 +238,6 @@ public:
       \param adjacencyIds on return will point to the global first adjacency
          Ids for each entity.
   */
-//KDD Since the source objects are assumed to be gotten from getIDsViewOf(),
-//KDD is the source MeshEntityType understood here?
-//VJL Do we have to "defend" against multiple calls to that function?
-//KDD What about the target?
   virtual void getAdjsView(MeshEntityType source, MeshEntityType target,
      const lno_t *&offsets, const gid_t *& adjacencyIds) const 
   {
@@ -258,8 +254,6 @@ public:
 
 
   /*! \brief Returns the number of second adjacencies on this process.
-   *
-   *  Some algorithms can partition a graph of mesh entities
    *
    *  Parameters will specify algorithm options:
    *   balance_entity_type==MeshEntityType, adjacency_through==MeshEntityType
@@ -279,10 +273,6 @@ public:
    */
 // TODO:  Later may allow user to not implement second adjacencies and, if we want them,
 // TODO:  we compute A^T A, where A is matrix of first adjacencies.
-//KDD Since the source objects are assumed to be gotten from getIDsViewOf(),
-//KDD is the sourcetarget MeshEntityType understood here?
-//VJL Do we have to "defend" against multiple calls to that function?
-//KDD What about the through MeshEntityType?
   virtual void get2ndAdjsView(MeshEntityType sourcetarget,
      MeshEntityType through, const lno_t *&offsets,
      const gid_t *& adjacencyIds) const
@@ -307,10 +297,6 @@ public:
       \param idx ranges from zero to one less than
                    getNumWeightsPer2ndAdj().
    */
-//KDD Since the source objects are assumed to be gotten from getIDsViewOf(),
-//KDD is the sourcetarget MeshEntityType understood here?
-//VJL Do we have to "defend" against multiple calls to that function?
-//KDD What about the through MeshEntityType?
   virtual void get2ndAdjWeightsView(MeshEntityType sourcetarget,
      MeshEntityType through, const scalar_t *&weights, int &stride,
      int idx) const

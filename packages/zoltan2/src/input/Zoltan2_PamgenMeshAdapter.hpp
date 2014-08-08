@@ -150,14 +150,14 @@ public:
     Ids = NULL;
   }
 
-  void getWeigthsViewOf(MeshEntityType etype, const scalar_t *&weights,
+  void getWeightsViewOf(MeshEntityType etype, const scalar_t *&weights,
 			int &stride, int idx = 0) const
   {
     weights = NULL;
     stride = 0;
   }
 
-  int getDimensionOf() const { return dimension_; }
+  int getDimension() const { return dimension_; }
 
   void getCoordinatesViewOf(MeshEntityType etype, const scalar_t *&coords,
 			    int &stride, int dim) const {
