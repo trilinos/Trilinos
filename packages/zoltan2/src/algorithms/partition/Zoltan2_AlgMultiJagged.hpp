@@ -6381,12 +6381,12 @@ typename Adapter::part_t Zoltan2_AlgMJ<Adapter>::pointAssign(
     if (nBoxes == 0) {
       throw std::logic_error("no part boxes exist");
     }
-{
-int me;
-MPI_Comm_rank(MPI_COMM_WORLD, &me);
-for (size_t i = 0; i < nBoxes; i++)
-  printf("%d KDDKDD BOX %d PART %d (%f %f) x (%f %f)\n", me, i, (*partBoxes)[i].getpId(), (*partBoxes)[i].getlmins()[0], (*partBoxes)[i].getlmins()[1], (*partBoxes)[i].getlmaxs()[0], (*partBoxes)[i].getlmaxs()[1]);
-}
+//{
+//int me;
+//MPI_Comm_rank(MPI_COMM_WORLD, &me);
+//for (size_t i = 0; i < nBoxes; i++)
+//  printf("%d KDDKDD BOX %d PART %d (%f %f) x (%f %f)\n", me, i, (*partBoxes)[i].getpId(), (*partBoxes)[i].getlmins()[0], (*partBoxes)[i].getlmins()[1], (*partBoxes)[i].getlmaxs()[0], (*partBoxes)[i].getlmaxs()[1]);
+//}
 
 
     // Determine whether the point is within the global domain
