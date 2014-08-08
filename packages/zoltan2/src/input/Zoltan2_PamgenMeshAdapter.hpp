@@ -133,11 +133,11 @@ public:
       Ids = element_num_map_;
     }
 
-    if (MESH_VERTEX == etype) {
+    else if (MESH_VERTEX == etype) {
       Ids = node_num_map_;
     }
 
-    Ids = NULL;
+    else Ids = NULL;
   }
 
   void getWeightsViewOf(MeshEntityType etype, const scalar_t *&weights,

@@ -274,8 +274,9 @@ public:
 // TODO:  Later may allow user to not implement second adjacencies and, if we want them,
 // TODO:  we compute A^T A, where A is matrix of first adjacencies.
   virtual void get2ndAdjsView(MeshEntityType sourcetarget,
-     MeshEntityType through, const lno_t *&offsets,
-     const gid_t *& adjacencyIds) const
+                              MeshEntityType through,
+                              const lno_t *&offsets,
+                              const gid_t *&adjacencyIds) const
   {
     offsets = NULL;
     adjacencyIds = NULL;
@@ -298,8 +299,10 @@ public:
                    getNumWeightsPer2ndAdj().
    */
   virtual void get2ndAdjWeightsView(MeshEntityType sourcetarget,
-     MeshEntityType through, const scalar_t *&weights, int &stride,
-     int idx) const
+                                    MeshEntityType through,
+                                    const scalar_t *&weights,
+                                    int &stride,
+                                    int idx) const
   {
     weights = NULL;
     stride = 0;
@@ -409,6 +412,16 @@ public:
     }
   }
   
+  /*! \brief Optional method allowing the idx-th weight of entity type etype
+   *  to be set as the number of neighbors (the degree) of the entity
+   *  Default is false; user can change in his MeshAdapter implementation.
+   */
+  virtual bool useDegreeAsWeightOf(MeshEntityType etype, int idx) const
+  {
+    return false;
+  }
+
+  ///////////////////////////////////////////
   // Functions from the BaseAdapter interface
   size_t getLocalNumIDs() const {
     return getLocalNumOf(getPrimaryEntityType());
@@ -425,7 +438,17 @@ public:
   void getWeightsView(const scalar_t *&wgt, int &stride, int idx = 0) const {
     getWeightsViewOf(getPrimaryEntityType(), wgt, stride, idx);
   }
-  
+
+  void getCoordinatesView(const scalar_t *&coords, int &stride, 
+                          int coordDim) const
+  {
+    getCoordinatesViewOf(getPrimaryEntityType(), coords, stride, coordDim);
+  }
+
+  bool useDegreeAsWeight(int idx) const
+  {
+    return useDegreeAsWeightOf(getPrimaryEntityType(), idx);
+  }
 };
   
 }  //namespace Zoltan2
