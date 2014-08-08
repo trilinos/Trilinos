@@ -145,7 +145,7 @@ public:
   }
 
   // MeshAdapter
-  CoordinateModel(const MeshAdapter<user_t,userCoord_t> *ia,
+  CoordinateModel(const MeshAdapter<user_t> *ia,
 		  const RCP<const Environment> &env,
 		  const RCP<const Comm<int> > &comm,
 		  modelFlag_t &flags) :
