@@ -50,16 +50,6 @@
 #ifndef _ZOLTAN2_PAMGENMESHADAPTER_HPP_
 #define _ZOLTAN2_PAMGENMESHADAPTER_HPP_
 
-#if defined(__STDC_VERSION__)
-#  if (__STDC_VERSION__ >= 199901L)
-#    define ST_ZU   "%zu"
-#  else
-#    define ST_ZU   "%lu"
-#  endif
-#else
-#  define ST_ZU   "%lu"
-#endif
-
 #include <Zoltan2_MeshAdapter.hpp>
 #include <Zoltan2_StridedData.hpp>
 #include <vector>
@@ -407,9 +397,9 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
 
   /* Find the adjacency for a nodal based decomposition */
   //nadj_ = 0;
-  for(size_t ncnt=0; ncnt < num_nodes_; ncnt++) {
+  for(int ncnt=0; ncnt < num_nodes_; ncnt++) {
     if(sur_elem[ncnt].empty()) {
-      printf("WARNING: Node = "ST_ZU" has no elements\n", ncnt+1);
+      printf("WARNING: Node = %d has no elements\n", ncnt+1);
     } else {
       size_t nsur = sur_elem[ncnt].size();
       if (nsur > max_nsur)
