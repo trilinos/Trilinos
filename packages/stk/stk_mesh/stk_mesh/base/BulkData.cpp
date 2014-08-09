@@ -2727,15 +2727,11 @@ bool verify_parallel_attributes_for_bucket( BulkData& M, Bucket const& bucket, s
     // Must be either owned_closure or recv_ghost but not both.
 
     if (   owned_closure &&   recv_ghost ) {
-      error_log << "problem is recv ghost check 1: "
-                << "owned_closure: " << owned_closure << ", "
-                << "recv_ghost: " << recv_ghost << std::endl;
+      error_log << "problem: entity is both recv ghost and in owned_closure;"<<std::endl;
       this_result = false ;
     }
     if ( ! owned_closure && ! recv_ghost ) {
-      error_log << "problem is recv ghost check 2: "
-                << "owned_closure: " << owned_closure << ", "
-                << "recv_ghost: " << recv_ghost << std::endl;
+      error_log << "problem: entity is neither recv_ghost nor in owned_closure;"<<std::endl;
       this_result = false ;
     }
 
@@ -2754,7 +2750,7 @@ bool verify_parallel_attributes_for_bucket( BulkData& M, Bucket const& bucket, s
       PairIterEntityComm ip = M.entity_comm_map_shared(M.entity_key(entity));
       for ( ; ! ip.empty() && p_owner != ip->proc ; ++ip );
       if ( ip.empty() ) {
-        error_log << "problem is shared check 1" << std::endl;
+        error_log << "problem: entity shared-not-owned, but entity_comm_map_shared returns empty;" << std::endl;
         this_result = false ;
       }
     }
@@ -2763,18 +2759,17 @@ bool verify_parallel_attributes_for_bucket( BulkData& M, Bucket const& bucket, s
 
     if ( ! this_result ) {
       result = false ;
-      error_log << "P" << M.parallel_rank() << ": " << " with key " << M.entity_key(entity).m_value << " ";
-      error_log << M.identifier(entity) << " rank " << M.entity_rank(entity);
-      error_log << " ERROR: owner(" << p_owner
-                << ") owns(" << has_owns_part
-                << ") shares(" << has_shares_part
-                << ") owned_closure(" << owned_closure
-                << ") recv_ghost(" << recv_ghost
-                << ") send_ghost(" << send_ghost
-                << ") comm(" ;
+      error_log << "P" << M.parallel_rank() << ": " << " entity " << M.entity_rank(entity)<< ",id="<<M.identifier(entity);
+      error_log << " details: owner(" << p_owner<<"), node-connectivity(";
+      const Entity* nodes = M.begin_nodes(entity);
+      unsigned num_nodes = M.num_nodes(entity);
+      for(unsigned i=0; i<num_nodes; ++i) {
+        error_log<<M.identifier(nodes[i])<<" ";
+      }
+      error_log<<"), comm(";
       PairIterEntityComm ip = M.entity_comm_map(M.entity_key(entity));
       for ( ; ! ip.empty() ; ++ip ) {
-        error_log << " " << ip->ghost_id << ":" << ip->proc ;
+        error_log << " ghost_id=" << ip->ghost_id << ":proc=" << ip->proc ;
       }
       error_log << " )" << std::endl ;
     }
