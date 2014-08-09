@@ -397,9 +397,9 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
   int *side_nodes = new int [max_side_nodes];
   int *mirror_nodes = new int [max_side_nodes];
 
-  /* Allocate memory necessary for the adjacency
-  start_ = new lno_t [num_nodes_];
-  std::vector<int> adj; */
+  /* Allocate memory necessary for the adjacency */
+  start_ = new lno_t [num_elem_];
+  std::vector<int> adj;
 
   for (int i=0; i < max_side_nodes; i++) {
     side_nodes[i]=-999;
@@ -407,7 +407,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
   }
 
   /* Find the adjacency for a nodal based decomposition */
-  //nadj_ = 0;
+  nadj_ = 0;
   for(int ncnt=0; ncnt < num_nodes_; ncnt++) {
     if(sur_elem[ncnt].empty()) {
       printf("WARNING: Node = %d has no elements\n", ncnt+1);
@@ -436,12 +436,11 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
     }
     */
 
-  /*adj_ = new gid_t [nadj_];
+  adj_ = new gid_t [nadj_];
 
   for (size_t i=0; i < nadj_; i++) {
     adj_[i] = adj[i];
   }
-  */
 
   delete[] num_nodes_per_elem;
   num_nodes_per_elem = NULL;
