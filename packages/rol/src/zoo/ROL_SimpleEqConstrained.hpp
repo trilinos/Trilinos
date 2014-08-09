@@ -54,6 +54,8 @@
 #include "ROL_StdVector.hpp"
 #include "ROL_Objective.hpp"
 #include "ROL_EqualityConstraint.hpp"
+#include "Teuchos_SerialDenseVector.hpp"
+#include "Teuchos_SerialDenseSolver.hpp"
 
 namespace ROL {
 
@@ -339,6 +341,62 @@ namespace ROL {
       (*ahuvp)[4] = 2.0*u1*v5 - 5.0*u2*v4;
 
     } //applyAdjointHessian
+
+    void solveAugmentedSystem(Vector<Real> &v1, Vector<Real> &v2, const Vector<Real> &b1, const Vector<Real> &b2, const Vector<Real> &x, Real &tol) {
+      Teuchos::RCP<std::vector<Real> > v1p =
+        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(v1)).getVector());    
+      Teuchos::RCP<std::vector<Real> > v2p =
+        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(v2)).getVector());
+      Teuchos::RCP<const std::vector<Real> > xp =
+        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
+      Teuchos::RCP<const std::vector<Real> > b1p =
+        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(b1))).getVector();
+      Teuchos::RCP<const std::vector<Real> > b2p =
+        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(b2))).getVector();
+
+      Real x1 = (*xp)[0];
+      Real x2 = (*xp)[1];
+      Real x3 = (*xp)[2];
+      Real x4 = (*xp)[3];
+      Real x5 = (*xp)[4];
+
+      int i = 0;
+
+      // Assemble augmented system.
+      Teuchos::SerialDenseMatrix<int, Real> augmat(8,8);
+      for (i=0; i<5; i++) {
+        augmat(i,i) = 1.0;
+      }
+      augmat(5,0) = 2.0*x1;    augmat(5,1) = 2.0*x2;    augmat(5,2) = 2.0*x3; augmat(5,3) = 2.0*x4;  augmat(5,4) = 2.0*x5;
+                               augmat(6,1) = x3;        augmat(6,2) = x2;     augmat(6,3) = -5.0*x5; augmat(6,4) = -5.0*x4;
+      augmat(7,0) = 3.0*x1*x1; augmat(7,1) = 3.0*x2*x2;
+      augmat(0,5) = 2.0*x1;    augmat(1,5) = 2.0*x2;    augmat(2,5) = 2.0*x3; augmat(3,5) = 2.0*x4;  augmat(4,5) = 2.0*x5;
+                               augmat(1,6) = x3;        augmat(2,6) = x2;     augmat(3,6) = -5.0*x5; augmat(4,6) = -5.0*x4;
+      augmat(0,7) = 3.0*x1*x1; augmat(1,7) = 3.0*x2*x2;
+      Teuchos::SerialDenseVector<int, Real> lhs(8);
+      Teuchos::SerialDenseVector<int, Real> rhs(8);
+      for (i=0; i<5; i++) {
+        rhs(i) = (*b1p)[i];
+      }
+      for (i=5; i<8; i++) {
+        rhs(i) = (*b2p)[i];
+      }
+
+      // Solve augmented system.
+      Teuchos::SerialDenseSolver<int, Real> augsolver;
+      augsolver.setMatrix(Teuchos::rcp(&augmat, false));
+      augsolver.setVectors(Teuchos::rcp(&lhs, false), Teuchos::rcp(&rhs, false));
+      augsolver.solve();
+
+      // Retrieve solution.
+      for (i=0; i<5; i++) {
+        (*v1p)[i] = lhs(i);
+      }
+      for (i=5; i<8; i++) {
+        (*v2p)[i] = lhs(i);
+      }
+        
+    } //solveAugmentedSystem
 
   };
 

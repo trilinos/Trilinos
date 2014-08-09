@@ -132,6 +132,13 @@ int main(int argc, char *argv[]) {
     constr->checkApplyJacobian(xtest, v, vc, true);  *outStream << "\n";
     constr->checkApplyAdjointJacobian(xtest, vc, true);  *outStream << "\n";
     constr->checkApplyAdjointHessian(xtest, vc, d, true);  *outStream << "\n";
+
+    Teuchos::RCP<std::vector<RealT> > v1_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+    Teuchos::RCP<std::vector<RealT> > v2_rcp = Teuchos::rcp( new std::vector<RealT> (nc, 0.0) );
+    ROL::StdVector<RealT> v1(v1_rcp);
+    ROL::StdVector<RealT> v2(v2_rcp);
+    RealT augtol = 0.0;
+    constr->solveAugmentedSystem(v1, v2, d, vc, xtest, augtol);
     
     // Define Status Test
     RealT gtol  = 1e-12;  // norm of gradient tolerance
