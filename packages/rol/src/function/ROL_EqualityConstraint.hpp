@@ -148,7 +148,7 @@ public:
 
 
   /** \brief Apply the adjoint of the constraint Hessian at \f$x\f$,
-             \f$c''(x) \in L(L(\mathcal{C}^*, \mathcal{X}^*), \mathcal{X}^*)\f$,
+             \f$c''(x)^* \in L(L(\mathcal{C}^*, \mathcal{X}^*), \mathcal{X}^*)\f$,
              to vector \f$v\f$ in direction \f$u\f$.
 
              @param[out]      ahuv is the result of applying the adjoint of the constraint Hessian to @b v at @b x in direction @b u; a dual optimization-space vector
@@ -157,7 +157,7 @@ public:
              @param[in]       x    is the constraint argument; an optimization-space vector
              @param[in,out]   tol  is a tolerance for inexact evaluations; currently unused
 
-             On return, \f$ \mathsf{ahuv} = c''(x)(u,v) \f$, where
+             On return, \f$ \mathsf{ahuv} = c''(x)^*(u,v) \f$, where
              \f$u \in \mathcal{C}^*\f$, \f$v \in \mathcal{X}^*\f$, and \f$\mathsf{ahuv} \in \mathcal{X}^*\f$. \n\n
              The default implementation is a finite-difference approximation based on the adjoint Jacobian.
 
