@@ -5,6 +5,7 @@
 #include "Pike_StatusTest_Composite.hpp"
 #include "Pike_StatusTest_MaxIterations.hpp"
 #include "Pike_StatusTest_GlobalModelConvergence.hpp"
+#include "Pike_StatusTest_LocalModelConvergence.hpp"
 #include "Pike_StatusTest_LocalModelFailure.hpp"
 #include "Pike_StatusTest_ScalarResponseRelativeTolerance.hpp"
 
@@ -16,6 +17,7 @@ namespace pike {
     myTypes_.push_back("Composite OR");
     myTypes_.push_back("Maximum Iterations");
     myTypes_.push_back("Global Model Convergence");
+    myTypes_.push_back("Local Model Convergence");
     myTypes_.push_back("Local Model Failure");
     myTypes_.push_back("Scalar Response Relative Tolerance");
   }
@@ -47,14 +49,19 @@ namespace pike {
       test = mi;
     }
     else if (testType == "Global Model Convergence") {
-      Teuchos::RCP<pike::GlobalModelConvergence> mc = Teuchos::rcp(new pike::GlobalModelConvergence);
-      mc->setParameterList(p);
-      test = mc;
+      Teuchos::RCP<pike::GlobalModelConvergence> gmc = Teuchos::rcp(new pike::GlobalModelConvergence);
+      gmc->setParameterList(p);
+      test = gmc;
+    }
+    else if (testType == "Local Model Convergence") {
+      Teuchos::RCP<pike::LocalModelConvergence> lmc = Teuchos::rcp(new pike::LocalModelConvergence);
+      lmc->setParameterList(p);
+      test = lmc;
     }
     else if (testType == "Local Model Failure") {
-      Teuchos::RCP<pike::LocalModelFailure> mc = Teuchos::rcp(new pike::LocalModelFailure);
-      mc->setParameterList(p);
-      test = mc;
+      Teuchos::RCP<pike::LocalModelFailure> lmf = Teuchos::rcp(new pike::LocalModelFailure);
+      lmf->setParameterList(p);
+      test = lmf;
     }
     else if (testType == "Scalar Response Relative Tolerance") {
       Teuchos::RCP<pike::ScalarResponseRelativeTolerance> rt = 

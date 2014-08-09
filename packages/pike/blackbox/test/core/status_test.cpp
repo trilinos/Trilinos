@@ -49,6 +49,48 @@ namespace pike {
     TEST_EQUALITY(solver->getNumberOfIterations(),4);
   }
 
+  TEUCHOS_UNIT_TEST(status_test, LocalModelConvergence)
+  {
+
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+    Teuchos::RCP<Teuchos::ParameterList> statusTestParams = Teuchos::parameterList("My Status Tests");
+    {
+      statusTestParams->set("Type","Composite OR");
+      Teuchos::ParameterList& converged = statusTestParams->sublist("CONVERGED AND");
+      converged.set("Type","Composite AND");
+      Teuchos::ParameterList& app1LocalConv = converged.sublist("Local Convergence");      
+      app1LocalConv.set("Type","Local Model Convergence");
+      app1LocalConv.set("Model Name","app1");
+      Teuchos::ParameterList& app2GlobalConv = converged.sublist("Converged");
+      app2GlobalConv.set("Type","Global Model Convergence");
+      app2GlobalConv.set("Model Name","app2");
+      Teuchos::ParameterList& failure = statusTestParams->sublist("Failure 1");
+      failure.set("Type","Maximum Iterations");
+      failure.set("Maximum Iterations",10);
+    }
+
+    pike::StatusTestFactory stFactory;
+    Teuchos::RCP<pike::StatusTest> tests = stFactory.buildStatusTests(statusTestParams);
+
+    Teuchos::RCP<pike_test::MockModelEvaluator> app1 = 
+      pike_test::mockModelEvaluator(comm,"app1",pike_test::MockModelEvaluator::LOCAL_FAILURE,7,-1);
+
+    Teuchos::RCP<pike_test::MockModelEvaluator> app2 = 
+      pike_test::mockModelEvaluator(comm,"app2",pike_test::MockModelEvaluator::GLOBAL_CONVERGENCE,10,-1);
+
+    Teuchos::RCP<pike::BlockGaussSeidel> solver = Teuchos::rcp(new pike::BlockGaussSeidel);
+    app1->setSolver(solver);
+    app2->setSolver(solver);
+    solver->registerModelEvaluator(app1);
+    solver->registerModelEvaluator(app2);
+    solver->completeRegistration();
+    solver->setStatusTests(tests);
+    solver->solve();
+
+    TEST_EQUALITY(solver->getStatus(),pike::CONVERGED);
+    TEST_EQUALITY(solver->getNumberOfIterations(),10);
+  }
+
   TEUCHOS_UNIT_TEST(status_test, LocalModelFailure)
   {
 
