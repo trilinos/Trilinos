@@ -3235,17 +3235,17 @@ void unpack_not_owned_verify_report_errors(const BulkData& mesh,
       Entity const *ir_itr = bucket.begin(bucket_ordinal, irank);
       Entity const *ir_end = bucket.end(bucket_ordinal, irank);
       for ( ; ir_itr != ir_end; ++ir_itr ) {
-        error_log << " " << *ir_itr ;
+        error_log << " " << irank<<":"<<mesh.identifier(*ir_itr) ;
       }
     }
     error_log << " ) != received Relations(" ;
     std::vector<Relation>::const_iterator jr = recv_relations.begin() ;
     for ( ; jr != recv_relations.end() &&
             jr->entity_rank() < erank ; ++jr ) {
-      error_log << " " << *jr ;
+      error_log << " " << jr->entity_rank()<<":"<<mesh.identifier(jr->entity()) ;
       Entity const * nodes_begin = mesh.begin_nodes(jr->entity());
       Entity const * nodes_end   = mesh.end_nodes(jr->entity());
-      error_log << " connectivity (";
+      error_log << " node-connectivity (";
       for (Entity const* nodeId = nodes_begin; nodeId != nodes_end; ++nodeId)
       {
           error_log << mesh.identifier(*nodeId) << ", ";
