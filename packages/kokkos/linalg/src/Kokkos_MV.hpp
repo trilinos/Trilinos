@@ -281,6 +281,50 @@ RVector MV_Reciprocal( const RVector & r, const XVector & x)
 }
 
 /*------------------------------------------------------------------------------------------
+ *------------------- Reciprocal element wise with threshold: x[i] = 1/x[i] ----------------
+ *------------------------------------------------------------------------------------------*/
+template<class XVector>
+struct MV_ReciprocalThresholdSelfFunctor
+{
+  typedef typename XVector::device_type           device_type;
+  typedef typename XVector::size_type               size_type;
+  typedef typename XVector::non_const_value_type   value_type;
+  typedef Kokkos::Details::ArithTraits<value_type>        KAT;
+  typedef typename KAT::mag_type                     mag_type;
+
+  const XVector    m_x;
+  const value_type m_min_val;
+  const value_type m_min_val_mag;
+  const size_type  m_n;
+
+  MV_ReciprocalThresholdSelfFunctor(const XVector& x, const value_type& min_val, const size_type n) :
+    m_x(x), m_min_val(min_val), m_min_val_mag(KAT::abs(min_val)), m_n(n) {}
+  //--------------------------------------------------------------------------
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i) const
+  {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+    for(size_type k=0;k<m_n;k++) {
+      if (KAT::abs(m_x(i,k)) < m_min_val_mag)
+        m_x(i,k) = m_min_val;
+      else
+        m_x(i,k) = KAT::one() / m_x(i,k);
+    }
+  }
+};
+
+template<class XVector>
+XVector MV_ReciprocalThreshold( const XVector & x, const typename XVector::non_const_value_type& min_val )
+{
+  MV_ReciprocalThresholdSelfFunctor<XVector> op(x,min_val,x.dimension_1()) ;
+  Kokkos::parallel_for( x.dimension_0() , op );
+  return x;
+}
+
+/*------------------------------------------------------------------------------------------
  *-------------------------- Abs element wise: y[i] = abs(x[i]) ------------------------
  *------------------------------------------------------------------------------------------*/
 template<class RVector, class XVector>
@@ -3057,6 +3101,44 @@ RVector V_Reciprocal( const RVector & r, const XVector & x)
   V_ReciprocalFunctor<RVector,XVector> op(r,x) ;
   Kokkos::parallel_for( x.dimension_0() , op );
   return r;
+}
+
+/*------------------------------------------------------------------------------------------
+ *------------------- Reciprocal element wise with threshold: x[i] = 1/x[i] ----------------
+ *------------------------------------------------------------------------------------------*/
+template<class XVector>
+struct V_ReciprocalThresholdSelfFunctor
+{
+  typedef typename XVector::device_type           device_type;
+  typedef typename XVector::size_type               size_type;
+  typedef typename XVector::non_const_value_type   value_type;
+  typedef Kokkos::Details::ArithTraits<value_type>        KAT;
+  typedef typename KAT::mag_type                     mag_type;
+
+  const XVector    m_x;
+  const value_type m_min_val;
+  const value_type m_min_val_mag;
+
+  V_ReciprocalThresholdSelfFunctor(const XVector& x, const value_type& min_val) :
+    m_x(x), m_min_val(min_val), m_min_val_mag(KAT::abs(min_val)) {}
+  //--------------------------------------------------------------------------
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i) const
+  {
+    if (KAT::abs(m_x(i)) < m_min_val_mag)
+      m_x(i) = m_min_val;
+    else
+      m_x(i) = KAT::one() / m_x(i);
+  }
+};
+
+template<class XVector>
+XVector V_ReciprocalThreshold( const XVector & x, const typename XVector::non_const_value_type& min_val )
+{
+  V_ReciprocalThresholdSelfFunctor<XVector> op(x,min_val) ;
+  Kokkos::parallel_for( x.dimension_0() , op );
+  return x;
 }
 
 /*------------------------------------------------------------------------------------------

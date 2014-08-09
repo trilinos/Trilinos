@@ -460,6 +460,89 @@ MV_MulScalar( const Kokkos::View< Sacado::UQ::PCE<RS>**, RL, RD, RM >& r,
   return r;
 }
 
+template <typename T, typename D, typename M>
+struct V_ReciprocalThresholdSelfFunctor<
+  View< T,LayoutLeft,D,M,Impl::ViewPCEContiguous > >
+{
+  typedef View< T,LayoutLeft,D,M,Impl::ViewPCEContiguous > XVector;
+  typedef typename XVector::array_type array_type;
+
+  typedef typename array_type::device_type           device_type;
+  typedef typename array_type::size_type               size_type;
+  typedef typename array_type::non_const_value_type   value_type;
+  typedef Kokkos::Details::ArithTraits<value_type>           KAT;
+  typedef typename KAT::mag_type                        mag_type;
+
+  const array_type m_x;
+  const value_type m_min_val;
+  const value_type m_min_val_mag;
+  const size_type  m_n_pce;
+
+  V_ReciprocalThresholdSelfFunctor(
+    const XVector& x,
+    const typename XVector::non_const_value_type& min_val) :
+    m_x(x),
+    m_min_val(min_val.fastAccessCoeff(0)),
+    m_min_val_mag(KAT::abs(m_min_val)),
+    m_n_pce(x.sacado_size()) {}
+  //--------------------------------------------------------------------------
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i) const
+  {
+    if (KAT::abs(m_x(0,i)) < m_min_val_mag)
+      m_x(0,i) = m_min_val;
+    else
+      m_x(0,i) = KAT::one() / m_x(0,i);
+    for (size_type l=1; l<m_n_pce; ++l)
+      m_x(l,i) = KAT::zero();
+  }
+};
+
+template <typename T, typename D, typename M>
+struct MV_ReciprocalThresholdSelfFunctor<
+  View< T,LayoutLeft,D,M,Impl::ViewPCEContiguous > >
+{
+  typedef View< T,LayoutLeft,D,M,Impl::ViewPCEContiguous > XVector;
+  typedef typename XVector::array_type array_type;
+
+  typedef typename array_type::device_type           device_type;
+  typedef typename array_type::size_type               size_type;
+  typedef typename array_type::non_const_value_type   value_type;
+  typedef Kokkos::Details::ArithTraits<value_type>           KAT;
+  typedef typename KAT::mag_type                        mag_type;
+
+  const array_type m_x;
+  const value_type m_min_val;
+  const value_type m_min_val_mag;
+  const size_type  m_n;
+  const size_type  m_n_pce;
+
+  MV_ReciprocalThresholdSelfFunctor(
+    const XVector& x,
+    const typename XVector::non_const_value_type& min_val,
+    const size_type& n) :
+    m_x(x),
+    m_min_val(min_val.fastAccessCoeff(0)),
+    m_min_val_mag(KAT::abs(m_min_val)),
+    m_n(n),
+    m_n_pce(x.sacado_size()) {}
+  //--------------------------------------------------------------------------
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i) const
+  {
+    for (size_type k=0; k<m_n; ++k) {
+      if (KAT::abs(m_x(0,i,k)) < m_min_val_mag)
+        m_x(0,i,k) = m_min_val;
+      else
+        m_x(0,i,k) = KAT::one() / m_x(0,i,k);
+      for (size_type l=1; l<m_n_pce; ++l)
+        m_x(l,i,k) = KAT::zero();
+    }
+  }
+};
+
 } // namespace Kokkos
 
 #endif /* #ifndef KOKKOS_MV_UQ_PCE_HPP */
