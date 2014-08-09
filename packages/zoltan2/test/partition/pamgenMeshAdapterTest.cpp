@@ -46,7 +46,7 @@
 /*! \file pamgenMeshAdapterTest.cpp
     \brief An example of partitioning pamgen coordinates with RCB.
 
-    \author Created by V. Leung.
+    \author Created by V. Leung, K. Devine.
 
 */
 
