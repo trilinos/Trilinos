@@ -281,6 +281,7 @@ Belos::StatusType LSQRStatusTest<ScalarType,MV,OP>::checkStatus( Belos::Iteratio
 
   bool termIterFlag = false;
   LSQRIter<ScalarType,MV,OP>* solver = dynamic_cast< LSQRIter<ScalarType,MV,OP>* > (iSolver);
+  TEUCHOS_ASSERT(solver != NULL);
   LSQRIterationState< ScalarType, MV > state = solver->getState();
   //
   //   LSQR solves a least squares problem.  A converged preconditioned residual norm
