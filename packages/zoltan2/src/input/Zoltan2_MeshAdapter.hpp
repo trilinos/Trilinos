@@ -104,17 +104,15 @@ enum MeshEntityType {
   template <typename User>
   class MeshAdapter : public BaseAdapter<User> {
 private:
-  enum MeshEntityType primaryEntityType; // Entity (region, face, edge, or 
-                                         // vertex) to be partitioned, ordered,
+  enum MeshEntityType primaryEntityType; // Entity type
+                                         // to be partitioned, ordered,
                                          // colored, matched, etc.
-  enum MeshEntityType adjacencyEntityType; // Entity (face, edge, or vertex) 
-                                           // describing adjacencies;
-                                           // typically not primaryEntityType.
-  enum MeshEntityType secondAdjacencyEntityType; // Entity (face, edge, or 
-                                                 // vertex) describing second 
-                                                 // adjacencies;
-                                                 // typically not
-                                                 // primaryEntityType.
+  enum MeshEntityType adjacencyEntityType; // Entity type defining first-order
+                                           // adjacencies; adjacencies are of
+                                           // this type.  
+  enum MeshEntityType secondAdjacencyEntityType; // Bridge entity type
+                                                 // defining second-order
+                                                 // adjacencies.
 
 public:
 

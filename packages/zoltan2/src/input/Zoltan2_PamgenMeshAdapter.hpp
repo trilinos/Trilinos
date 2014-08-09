@@ -186,7 +186,7 @@ public:
       return TRUE;
     }
 
-    return FALSE;
+    return false;
   }
 
   size_t getLocalNumAdjs(MeshEntityType source, MeshEntityType target) const
@@ -217,7 +217,11 @@ public:
 
   bool avail2ndAdjs(MeshEntityType sourcetarget, MeshEntityType through) const
   {
-    return FALSE;
+    if (through == MESH_VERTEX) {
+      if (sourcetarget == MESH_REGION && dimension_ == 3) return true;
+      if (sourcetarget == MESH_FACE && dimension_ == 2) return true;
+    }
+    return false;
   }
 
   size_t getLocalNum2ndAdjs(MeshEntityType sourcetarget, 
@@ -270,7 +274,7 @@ template <typename User>
 PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
   dimension_(0)
 {
-  //setEntityTypes(typestr, "vertex", "vertex");
+  this->setEntityTypes(typestr, "vertex", "vertex");
 
   int error = 0;
   char title[100];
