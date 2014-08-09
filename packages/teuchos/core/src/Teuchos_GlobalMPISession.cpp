@@ -213,27 +213,26 @@ void GlobalMPISession::initialize( std::ostream *out )
   // have been called.  However, if MPI has been called in another way we
   // can still get the state of MPI_COMM_WORLD here.
 
-  int mpiHasBeenStarted = 0, mpierr = 0;
+  int mpiHasBeenStarted = 0;
   MPI_Initialized(&mpiHasBeenStarted);
 
   if(!mpiHasBeenStarted)
     return;  // We have to give up and just leave NProc_ and rank_ at the default values.
 
   // Get the state of MPI
-
+  // Don't throw exceptions here since this part of the code
+  // is used by TEUCHOS_STANDARD_CATCH_STATEMENTS().
+  // See bug #6192 <https://software.sandia.gov/bugzilla/show_bug.cgi?id=6192>.
+  int mpierr = 0;
   mpierr = ::MPI_Comm_rank( MPI_COMM_WORLD, &rank_ );
-  TEUCHOS_TEST_FOR_EXCEPTION_PRINT(
-    mpierr != 0, std::runtime_error
-    ,"Error code=" << mpierr << " detected in MPI_Comm_rank()"
-    ,out
-    );
+  if (mpierr != 0)
+    out << "Error code=" << mpierr << " detected in MPI_Comm_rank()"
+        << std::endl;
 
   mpierr = ::MPI_Comm_size( MPI_COMM_WORLD, &nProc_ );
-  TEUCHOS_TEST_FOR_EXCEPTION_PRINT(
-    mpierr != 0, std::runtime_error
-    ,"Error code=" << mpierr << " detected in MPI_Comm_size()"
-    ,out
-    );
+  if (mpierr != 0)
+    out << "Error code=" << mpierr << " detected in MPI_Comm_size()"
+        << std::endl;
 
   haveMPIState_ = true;
   mpiIsFinalized_ = false;
