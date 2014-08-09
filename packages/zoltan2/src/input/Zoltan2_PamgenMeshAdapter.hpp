@@ -416,6 +416,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
       if (nsur > max_nsur)
 	max_nsur = nsur;
     }
+  }
 
     /*start_[ncnt] = nadj_;
     for(size_t ecnt=0; ecnt < sur_elem[ncnt].size(); ecnt++) {
@@ -434,7 +435,6 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
       }
     }
     */
-  }
 
   /*adj_ = new gid_t [nadj_];
 
