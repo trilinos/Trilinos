@@ -137,6 +137,7 @@ int main(int narg, char *arg[]) {
   // default values for command-line arguments
   std::string xmlMeshInFileName("Poisson.xml");
   std::string method("rcb");
+  int nParts = CommT->getSize();
 
   // Read run-time options.
   Teuchos::CommandLineProcessor cmdp (false, false);
@@ -144,6 +145,8 @@ int main(int narg, char *arg[]) {
                  "XML file with PamGen specifications");
   cmdp.setOption("method", &method,
                  "Partitioning method to use:  rcb or graph");
+  cmdp.setOption("nparts", &nParts,
+                 "Number of parts to create");
   cmdp.parse(narg, arg);
 
   // Read xml file into parameter list
@@ -197,6 +200,7 @@ int main(int narg, char *arg[]) {
   Teuchos::ParameterList params("test params");
   params.set("debug_level", "basic_status");
   params.set("imbalance_tolerance", 1.1);
+  params.set("num_global_parts", nParts);
 
   if (method == "rcb") {
     params.set("algorithm", "rcb");
