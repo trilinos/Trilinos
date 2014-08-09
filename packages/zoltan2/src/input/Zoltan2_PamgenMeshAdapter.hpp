@@ -418,23 +418,24 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
     }
   }
 
-    /*start_[ncnt] = nadj_;
-    for(size_t ecnt=0; ecnt < sur_elem[ncnt].size(); ecnt++) {
-      size_t elem = sur_elem[ncnt][ecnt];
-      int nnodes = nnodes_per_elem;
-      for(int i=0; i < nnodes; i++) {
-	int entry = reconnect[elem][i];
+  for(int ecnt=0; ecnt < num_elem_; ecnt++) {
+    start_[ecnt] = nadj_;
+    int nnodes = nnodes_per_elem;
+    for(int ncnt=0; ncnt < nnodes; ncnt++) {
+      int node = reconnect[ecnt][ncnt];
+      for(size_t i=0; i < sur_elem[node].size(); i++) {
+	int entry = sur_elem[node][i];
 
-	if(ncnt != (size_t)entry &&
+	if(ecnt != entry &&
 	   in_list(entry,
-		   adj.size()-start_[ncnt],
-		   &adj[start_[ncnt]]) < 0) {
+		   adj.size()-start_[ecnt],
+		   &adj[start_[ecnt]]) < 0) {
 	  adj.push_back(entry);
 	  nadj_++;
 	}
       }
     }
-    */
+  }
 
   adj_ = new gid_t [nadj_];
 
