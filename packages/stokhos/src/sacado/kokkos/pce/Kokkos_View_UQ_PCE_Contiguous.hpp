@@ -2282,6 +2282,29 @@ struct ViewFill< View<T,L,Cuda,M,ViewPCEContiguous> , Rank >
   }
 
 };
+
+// Specialization for deep_copy( view, view::value_type ) for Cuda
+template< class T , class L , class M , unsigned Rank >
+struct ViewFill< View<T,Cuda,L,M,ViewPCEContiguous> , Rank >
+{
+  typedef View<T,Cuda,L,M,ViewPCEContiguous>         OutputView ;
+  typedef View<T,
+               typename OutputView::array_layout,
+               typename OutputView::device_type,
+               typename OutputView::memory_traits>   OutputViewFull;
+  typedef typename OutputView::const_value_type      const_value_type ;
+  typedef typename OutputView::intrinsic_scalar_type scalar_type ;
+
+  ViewFill( const OutputView & output , const_value_type & input )
+  {
+    ViewFill< OutputViewFull >( output, input );
+  }
+
+  ViewFill( const OutputView & output , const scalar_type & input )
+  {
+    ViewFill< OutputViewFull >( output, input );
+  }
+};
 #endif /* #if defined( KOKKOS_HAVE_CUDA ) */
 
 } // namespace Impl
