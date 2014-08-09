@@ -194,7 +194,12 @@ operator=(const volatile PCE<Storage>& x)
   if (this != &x) {
     if (!s_.is_view())
       cijk_ = const_cast<const my_cijk_type&>(x.cijk_);
-    s_ = x.s_;
+    if (!s_.is_view() && is_constant(x)) {
+      s_.resize(1);
+      s_[0] = x.s_[0];
+    }
+    else
+      s_ = x.s_;
 
     // For DyamicStorage as a view (is_owned=false), we need to set
     // the trailing entries when assigning a constant vector (because
@@ -215,7 +220,12 @@ operator=(const PCE<Storage>& x) volatile
   if (this != &x) {
     if (!s_.is_view())
       const_cast<my_cijk_type&>(cijk_) = x.cijk_;
-    s_ = x.s_;
+    if (!s_.is_view() && is_constant(x)) {
+      s_.resize(1);
+      s_[0] = x.s_[0];
+    }
+    else
+      s_ = x.s_;
 
     // For DyamicStorage as a view (is_owned=false), we need to set
     // the trailing entries when assigning a constant vector (because
@@ -237,7 +247,12 @@ operator=(const volatile PCE<Storage>& x) volatile
     if (!s_.is_view())
       const_cast<my_cijk_type&>(cijk_) =
         const_cast<const my_cijk_type&>(x.cijk_);
-    s_ = x.s_;
+    if (!s_.is_view() && is_constant(x)) {
+      s_.resize(1);
+      s_[0] = x.s_[0];
+    }
+    else
+      s_ = x.s_;
 
     // For DyamicStorage as a view (is_owned=false), we need to set
     // the trailing entries when assigning a constant vector (because
@@ -758,8 +773,7 @@ TEUCHOS_TEST_FOR_EXCEPTION(
   for (ordinal_type i=0; i<asz; ++i)
     cc[i] = ac[i]/bcz;
 #endif
- 
-  
+
 #if !defined(__CUDA_ARCH__)
   if (bsz == 1) {//constant denom
     const_pointer ac = a.coeff();
@@ -774,7 +788,7 @@ TEUCHOS_TEST_FOR_EXCEPTION(
   }
 #endif
 
-  return c; 
+  return c;
 }
 
 template <typename Storage>
