@@ -226,13 +226,13 @@ void GlobalMPISession::initialize( std::ostream *out )
   int mpierr = 0;
   mpierr = ::MPI_Comm_rank( MPI_COMM_WORLD, &rank_ );
   if (mpierr != 0)
-    out << "Error code=" << mpierr << " detected in MPI_Comm_rank()"
-        << std::endl;
+    *out << "Error code=" << mpierr << " detected in MPI_Comm_rank()"
+         << std::endl;
 
   mpierr = ::MPI_Comm_size( MPI_COMM_WORLD, &nProc_ );
   if (mpierr != 0)
-    out << "Error code=" << mpierr << " detected in MPI_Comm_size()"
-        << std::endl;
+    *out << "Error code=" << mpierr << " detected in MPI_Comm_size()"
+         << std::endl;
 
   haveMPIState_ = true;
   mpiIsFinalized_ = false;
