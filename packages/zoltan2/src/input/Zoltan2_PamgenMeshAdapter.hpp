@@ -481,7 +481,7 @@ void PamgenMeshAdapter<User>::print(int me)
   for (int i = 0; i < num_elem_; i++) {
     std::cout << me << fn << i << " Coords: ";
     for (int j = 0; j < dimension_; j++)
-      std::cout << Acoords_[i + j * dimension_] << " ";
+      std::cout << Acoords_[i + j * num_elem_] << " ";
     std::cout << std::endl;
   }
 
