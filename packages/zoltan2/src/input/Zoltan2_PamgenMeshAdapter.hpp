@@ -384,8 +384,8 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
       reconnect[telct] = new int [num_nodes_per_elem[b]];
 
       for (int j = 0; j < num_nodes_per_elem[b]; j++) {
-	elemToNode_[tnoct_] = connect[b][i*num_nodes_per_elem[b] + j]-1;
-	reconnect[telct][j] = connect[b][i*num_nodes_per_elem[b] + j]-1;
+	elemToNode_[tnoct_] = connect[b][i*num_nodes_per_elem[b] + j];
+	reconnect[telct][j] = connect[b][i*num_nodes_per_elem[b] + j];
 	++tnoct_;
       }
 
@@ -422,11 +422,11 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
     start_[ecnt] = nadj_;
     int nnodes = nnodes_per_elem;
     for(int ncnt=0; ncnt < nnodes; ncnt++) {
-      int node = reconnect[ecnt][ncnt];
+      int node = reconnect[ecnt][ncnt]-1;
       for(size_t i=0; i < sur_elem[node].size(); i++) {
 	int entry = sur_elem[node][i];
 
-	if(ecnt != entry &&
+	if(ecnt != entry-1 &&
 	   in_list(entry,
 		   adj.size()-start_[ecnt],
 		   &adj[start_[ecnt]]) < 0) {
