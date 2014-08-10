@@ -105,7 +105,9 @@ public:
    *  lifetime of this InputAdapter.
    */
 
-  PamgenMeshAdapter(std::string typestr);
+  PamgenMeshAdapter(std::string typestr="region");
+
+  void print(int);
 
   ////////////////////////////////////////////////////////////////
   // The MeshAdapter interface.
@@ -271,7 +273,7 @@ private:
   }
 
 template <typename User>
-PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
+PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr):
   dimension_(0)
 {
   this->setEntityTypes(typestr, "vertex", "vertex");
@@ -398,7 +400,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
   int *mirror_nodes = new int [max_side_nodes];
 
   /* Allocate memory necessary for the adjacency */
-  start_ = new lno_t [num_elem_];
+  start_ = new lno_t [num_elem_+1];
   std::vector<int> adj;
 
   for (int i=0; i < max_side_nodes; i++) {
@@ -436,6 +438,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
       }
     }
   }
+  start_[num_elem_] = nadj_;
 
   adj_ = new gid_t [nadj_];
 
@@ -465,7 +468,30 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr = "region"):
   delete[] mirror_nodes;
 }
 
-  
+template <typename User>
+void PamgenMeshAdapter<User>::print(int me)
+{
+  std::string fn(" PamgenMesh ");
+  std::cout << me << fn
+            << " dim = " << dimension_
+            << " nnodes = " << num_nodes_
+            << " nelems = " << num_elem_
+            << std::endl;
+
+  for (int i = 0; i < num_elem_; i++) {
+    std::cout << me << fn << i << " Coords: ";
+    for (int j = 0; j < dimension_; j++)
+      std::cout << Acoords_[i + j * dimension_] << " ";
+    std::cout << std::endl;
+  }
+
+  for (int i = 0; i < num_elem_; i++) {
+    std::cout << me << fn << i+1 << " Graph: ";
+    for (int j = start_[i]; j < start_[i+1]; j++)
+      std::cout << adj_[j] << " ";
+    std::cout << std::endl;
+  }
+}
   
 }  //namespace Zoltan2
   
