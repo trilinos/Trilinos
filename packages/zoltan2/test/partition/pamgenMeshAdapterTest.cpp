@@ -88,19 +88,12 @@ typedef Tpetra::MultiVector<double, int, int>     tMVector_t;
 
 int main(int narg, char *arg[]) {
 
-  int numProcs=1;
-  int rank=0;
-
   Teuchos::GlobalMPISession mpiSession(&narg, &arg,0);
-  rank=mpiSession.getRank();
-  numProcs=mpiSession.getNProc();
-
-
-  //Get the default communicator and node for Tpetra
-  //rewrite using with IFDEF for MPI/no MPI??
   Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
   RCP<const Teuchos::Comm<int> > CommT = platform.getComm();
+
   int MyPID = CommT->getRank();
+  int numProcs = CommT->getSize();
 
   if (MyPID == 0){
   cout 
@@ -185,17 +178,22 @@ int main(int narg, char *arg[]) {
   /***************************** GENERATE MESH *******************************/
   /***************************************************************************/
 
-  if (MyPID == 0) {
-    cout << "Generating mesh ... \n\n";
-  }
+  if (MyPID == 0) cout << "Generating mesh ... \n\n";
 
   // Generate mesh with Pamgen
   long long maxInt = 9223372036854775807LL;
-  Create_Pamgen_Mesh(meshInput.c_str(), dim, rank, numProcs, maxInt);
+  Create_Pamgen_Mesh(meshInput.c_str(), dim, MyPID, numProcs, maxInt);
+
+  // Creating mesh adapter
+  if (MyPID == 0) cout << "Creating mesh adapter ... \n\n";
 
   typedef Zoltan2::PamgenMeshAdapter<tMVector_t> inputAdapter_t;
 
   inputAdapter_t ia;
+  ia.print(MyPID);
+
+  // Set parameters for partitioning
+  if (MyPID == 0) cout << "Creating parameter list ... \n\n";
 
   Teuchos::ParameterList params("test params");
   params.set("debug_level", "basic_status");
@@ -211,18 +209,27 @@ int main(int narg, char *arg[]) {
     params.set("algorithm", "scotch");
   }
 
+  // create Partitioning problem
+  if (MyPID == 0) cout << "Creating partitioning problem ... \n\n";
+
   Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params, CommT);
+
+  // call the partitioner
+  if (MyPID == 0) cout << "Calling the partitioner ... \n\n";
 
   problem.solve();
 
-  if (CommT->getRank() == 0)
+  if (MyPID)
     problem.printMetrics(cout);
 
-  if (rank == 0)
+  // delete mesh
+  if (MyPID == 0) cout << "Deleting the mesh ... \n\n";
+
+  Delete_Pamgen_Mesh();
+
+  if (MyPID == 0)
     std::cout << "PASS" << std::endl;
 
-  // delete mesh
-  Delete_Pamgen_Mesh();
   return 0;
 }
 /*****************************************************************************/
