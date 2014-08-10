@@ -30,7 +30,7 @@ TRIBITS_PACKAGE(WrapExternal)
 # A) Determine if any downstream changes require a rebuild and deal with it
 #
 
-INCLUDE(TribitsGetMostRecentFileTimestamp)
+INCLUDE(TribitsFindMostRecentFileTimestamp)
 
 TRIBITS_DETERMINE_IF_CURRENT_PACKAGE_NEEDS_REBUILT(
   #SHOW_MOST_RECENT_FILES
