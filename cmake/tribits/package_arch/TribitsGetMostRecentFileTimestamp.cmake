@@ -58,37 +58,50 @@ INCLUDE(ParseVariableArguments)
 #     [MOST_RECENT_RELATIVE_FILEPATH_OUT <mostRecentRelativeFilePath>]
 #     )
 #
-# Arguments:
+# **Arguments:**
 #
-#   `BASE_DIRS <dir0> <dir1> ...`
+#   ``BASE_DIRS <dir0> <dir1> ...``
 #
 #     Gives the absolute base directory paths that will be searched for the
 #     most recently modified files, as described above.
 #
-#   `EXCLUDE_REGEXES "<re0>" "<re1>" ...`
+#   ``EXCLUDE_REGEXES "<re0>" "<re1>" ...``
 #
 #     Gives the regular expressions that are used to exclude files from
 #     consideration.  Each "<rei>" regex is used with a `grep -v "<rei>"`
 #     filter to exclude files before sorting by time stamp.
 #
-#   `MOST_RECENT_TIMESTAMP_OUT <mostRecentTimestamp>`
+#   ``SHOW_MOST_RECENT_FILES``
+#
+#     If specified, then the most recently modified file for each individual
+#     directory ``<dir0>``, ``<dir1``, ... will be printed the STDOUT.
+#     Setting this implies ``SHOW_OVERALL_MOST_RECENT_FILE``.
+#
+#   ``SHOW_OVERALL_MOST_RECENT_FILE``
+#
+#     If specified, then only the most recent modified file over all of the
+#     individual directories is printed to STDOUT.
+#
+#   ``MOST_RECENT_TIMESTAMP_OUT <mostRecentTimestamp>``
 #
 #      On output, the variable `<mostRecentTimestamp>` is set that gives the
 #      timestamp of the most recently modified file over all the directories.
 #      This number is given as the number of seconds since Jan. 1, 1970, 00:00
 #      GMT.
 #
-#   `MOST_RECENT_FILEPATH_BASE_DIR_OUT <mostRecentFilepathBaseDir>`
+#   ``MOST_RECENT_FILEPATH_BASE_DIR_OUT <mostRecentFilepathBaseDir>``
 #
 #     On output, the variable `<mostRecentFilepathBaseDir>` gives absolute base
 #     directory of the file with the most recent timestamp over all
 #     directories.
 #
-#   `MOST_RECENT_RELATIVE_FILEPATH_OUT <mostRecentRelativeFilePath>`
+#   ``MOST_RECENT_RELATIVE_FILEPATH_OUT <mostRecentRelativeFilePath>``
 #
 #     On output, the variable `<mostRecentFilepathBaseDir>` gives the file
 #     name with relative path to the file with the most recent timestamp over
 #     all directories.
+#
+# **Description:**
 #
 # This function uses the Linux/Unix command::
 #     
@@ -274,6 +287,11 @@ ENDFUNCTION()
 #     [MOST_RECENT_RELATIVE_FILEPATH_OUT <mostRecentRelativeFilePath>]
 #     )
 #
+# This function just calls `TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP()`_
+# passing in a set of basic exclude regexes like ``[.]git/``, ``[.]svn/``,
+# etc.  These types of version control files can not possibly directly impact
+# the source code.
+#
 FUNCTION(TRIBITS_FIND_MOST_RECENT_SOURCE_FILE_TIMESTAMP)
    
   #
@@ -350,10 +368,10 @@ ENDFUNCTION()
 #     [SHOW_OVERALL_MOST_RECENT_FILE]
 #     )
 #
-# This function applies a set of filters to CMake files that are known to not
-# be significant in the rebuild.
-#
-# ToDo: Finish documentation!
+# This function just calls `TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP()`_
+# passing in a set of basic exclude regexes like ``CMakeFiles/``,
+# ``[.]cmake$``, and ``/Makefile$``, etc.  These types of files usually don't
+# impact the build of downstream software in CMake projects.
 #
 FUNCTION(TRIBITS_FIND_MOST_RECENT_BINARY_FILE_TIMESTAMP)
    
@@ -431,19 +449,48 @@ ENDFUNCTION()
 #     CURRENT_PACKAGE_OUT_OF_DATE_OUT <currentPackageOutOfDate>
 #     )
 #
-# This function is designed to help take an externally configured and built
-# piece of software (that generates libraries) and wrap it as a TriBITS SE
-# package.  This function uses the lower-level functions
-# `TRIBITS_FIND_MOST_RECENT_SOURCE_FILE_TIMESTAMP()`_ and
-# `TRIBITS_FIND_MOST_RECENT_BINARY_FILE_TIMESTAMP()`_ to determine the most
-# recent modified files in the upstream TriBITS SE packages source and binary
-# directories as well as the most recent source file for the current package,
-# and then compares it to the most recent binary file in this package's binary
-# directory.  If any of these three are more recent than this package's most
-# recent binary file, then the output variable `<currentPackageOutOfDate>` is
-# set to `TRUE`.  Otherwise, it is set to `FALSE`.
+# **Arguments:**
 #
-# ToDo: Finish documentation!
+#   ``SHOW_MOST_RECENT_FILES``
+#
+#     If specified, then the most recently modified file for each individual
+#     base source and binary directory searched will be will be printed the
+#     STDOUT.  Setting this implies ``SHOW_OVERALL_MOST_RECENT_FILE``.
+#
+#   ``SHOW_OVERALL_MOST_RECENT_FILE``
+#
+#     If specified, then only the most recent modified file over all of the
+#     individual directories for each category (i.e. one for upstream SE
+#     package source dirs, one for upstream SE package binary dirs, one for
+#     the package's source dir, and one for the package's own binary dir) is
+#     printed to STDOUT.
+#
+#   ``CURRENT_PACKAGE_OUT_OF_DATE_OUT <currentPackageOutOfDate>``
+#
+#     On output, the local variable ``<currentPackageOutOfDate>`` will be set
+#     to ``TRUE`` if any of the upstream most modified files are more recent
+#     than the most modified file in the package's binary directory.
+#     Otherwise, this variable is set to ``FALSE``.
+#
+# **Description:**
+#
+# This function is designed to help take an externally configured and built
+# piece of software (that generates libraries) and wrap it as a TriBITS
+# package or subpackage.  This function uses the lower-level functions:
+#
+# * `TRIBITS_FIND_MOST_RECENT_SOURCE_FILE_TIMESTAMP()`_ 
+# * `TRIBITS_FIND_MOST_RECENT_BINARY_FILE_TIMESTAMP()`_
+#
+# to determine the most recent modified files in the upstream TriBITS SE
+# packages' source and binary directories as well as the most recent source
+# file for the current package.  It then compares these timestamps to the most
+# recent binary file timestamp in this package's binary directory.  If any of
+# these three files are more recent than this package's most recent binary
+# file, then the output variable ``<currentPackageOutOfDate>`` is set to
+# ``TRUE``.  Otherwise, it is set to ``FALSE``. 
+#
+# See the demonstration of the usage of this function in the ``WrapExternal``
+# package in `TribitsExampleProject`_.
 #
 FUNCTION(TRIBITS_DETERMINE_IF_CURRENT_PACKAGE_NEEDS_REBUILT)
 
@@ -627,4 +674,4 @@ FUNCTION(TRIBITS_UPDATE_PACKAGE_OUT_OF_DATE
 ENDFUNCTION()
 
 
-# LocalWords:  ENDFOREACH subpackage subpackages
+# LocalWords:  ENDFOREACH subpackage subpackages TriBITS timestamp

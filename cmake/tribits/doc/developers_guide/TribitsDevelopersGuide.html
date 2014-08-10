@@ -484,78 +484,82 @@ ul.auto-toc {
 <li><a class="reference internal" href="#tribits-configure-file" id="id111">TRIBITS_CONFIGURE_FILE()</a></li>
 <li><a class="reference internal" href="#tribits-copy-files-to-binary-dir" id="id112">TRIBITS_COPY_FILES_TO_BINARY_DIR()</a></li>
 <li><a class="reference internal" href="#tribits-ctest-driver" id="id113">TRIBITS_CTEST_DRIVER()</a></li>
-<li><a class="reference internal" href="#tribits-disable-package-on-platforms" id="id114">TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()</a></li>
-<li><a class="reference internal" href="#tribits-exclude-files" id="id115">TRIBITS_EXCLUDE_FILES()</a></li>
-<li><a class="reference internal" href="#tribits-include-directories" id="id116">TRIBITS_INCLUDE_DIRECTORIES()</a></li>
-<li><a class="reference internal" href="#id1" id="id117">TRIBITS_PACKAGE()</a></li>
-<li><a class="reference internal" href="#tribits-package-decl" id="id118">TRIBITS_PACKAGE_DECL()</a></li>
-<li><a class="reference internal" href="#tribits-package-def" id="id119">TRIBITS_PACKAGE_DEF()</a></li>
-<li><a class="reference internal" href="#tribits-package-define-dependencies" id="id120">TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()</a></li>
-<li><a class="reference internal" href="#tribits-package-postprocess" id="id121">TRIBITS_PACKAGE_POSTPROCESS()</a></li>
-<li><a class="reference internal" href="#tribits-process-subpackages" id="id122">TRIBITS_PROCESS_SUBPACKAGES()</a></li>
-<li><a class="reference internal" href="#id2" id="id123">TRIBITS_PROJECT()</a></li>
-<li><a class="reference internal" href="#tribits-project-define-extra-repositories" id="id124">TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES()</a></li>
-<li><a class="reference internal" href="#tribits-repository-define-packages" id="id125">TRIBITS_REPOSITORY_DEFINE_PACKAGES()</a></li>
-<li><a class="reference internal" href="#tribits-repository-define-tpls" id="id126">TRIBITS_REPOSITORY_DEFINE_TPLS()</a></li>
-<li><a class="reference internal" href="#tribits-set-st-for-dev-mode" id="id127">TRIBITS_SET_ST_FOR_DEV_MODE()</a></li>
-<li><a class="reference internal" href="#id3" id="id128">TRIBITS_SUBPACKAGE()</a></li>
-<li><a class="reference internal" href="#tribits-subpackage-postprocess" id="id129">TRIBITS_SUBPACKAGE_POSTPROCESS()</a></li>
-<li><a class="reference internal" href="#tribits-tpl-declare-libraries" id="id130">TRIBITS_TPL_DECLARE_LIBRARIES()</a></li>
-<li><a class="reference internal" href="#tribits-write-flexible-package-client-export-files" id="id131">TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES()</a></li>
+<li><a class="reference internal" href="#tribits-determine-if-current-package-needs-rebuilt" id="id114">TRIBITS_DETERMINE_IF_CURRENT_PACKAGE_NEEDS_REBUILT()</a></li>
+<li><a class="reference internal" href="#tribits-disable-package-on-platforms" id="id115">TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()</a></li>
+<li><a class="reference internal" href="#tribits-exclude-files" id="id116">TRIBITS_EXCLUDE_FILES()</a></li>
+<li><a class="reference internal" href="#tribits-find-most-recent-binary-file-timestamp" id="id117">TRIBITS_FIND_MOST_RECENT_BINARY_FILE_TIMESTAMP()</a></li>
+<li><a class="reference internal" href="#tribits-find-most-recent-file-timestamp" id="id118">TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP()</a></li>
+<li><a class="reference internal" href="#tribits-find-most-recent-source-file-timestamp" id="id119">TRIBITS_FIND_MOST_RECENT_SOURCE_FILE_TIMESTAMP()</a></li>
+<li><a class="reference internal" href="#tribits-include-directories" id="id120">TRIBITS_INCLUDE_DIRECTORIES()</a></li>
+<li><a class="reference internal" href="#id1" id="id121">TRIBITS_PACKAGE()</a></li>
+<li><a class="reference internal" href="#tribits-package-decl" id="id122">TRIBITS_PACKAGE_DECL()</a></li>
+<li><a class="reference internal" href="#tribits-package-def" id="id123">TRIBITS_PACKAGE_DEF()</a></li>
+<li><a class="reference internal" href="#tribits-package-define-dependencies" id="id124">TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()</a></li>
+<li><a class="reference internal" href="#tribits-package-postprocess" id="id125">TRIBITS_PACKAGE_POSTPROCESS()</a></li>
+<li><a class="reference internal" href="#tribits-process-subpackages" id="id126">TRIBITS_PROCESS_SUBPACKAGES()</a></li>
+<li><a class="reference internal" href="#id2" id="id127">TRIBITS_PROJECT()</a></li>
+<li><a class="reference internal" href="#tribits-project-define-extra-repositories" id="id128">TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES()</a></li>
+<li><a class="reference internal" href="#tribits-repository-define-packages" id="id129">TRIBITS_REPOSITORY_DEFINE_PACKAGES()</a></li>
+<li><a class="reference internal" href="#tribits-repository-define-tpls" id="id130">TRIBITS_REPOSITORY_DEFINE_TPLS()</a></li>
+<li><a class="reference internal" href="#tribits-set-st-for-dev-mode" id="id131">TRIBITS_SET_ST_FOR_DEV_MODE()</a></li>
+<li><a class="reference internal" href="#id3" id="id132">TRIBITS_SUBPACKAGE()</a></li>
+<li><a class="reference internal" href="#tribits-subpackage-postprocess" id="id133">TRIBITS_SUBPACKAGE_POSTPROCESS()</a></li>
+<li><a class="reference internal" href="#tribits-tpl-declare-libraries" id="id134">TRIBITS_TPL_DECLARE_LIBRARIES()</a></li>
+<li><a class="reference internal" href="#tribits-write-flexible-package-client-export-files" id="id135">TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES()</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#general-utility-macros-and-functions" id="id132">12.3&nbsp;&nbsp;&nbsp;General Utility Macros and Functions</a><ul>
-<li><a class="reference internal" href="#add-subdirectories" id="id133">ADD_SUBDIRECTORIES()</a></li>
-<li><a class="reference internal" href="#advanced-option" id="id134">ADVANCED_OPTION()</a></li>
-<li><a class="reference internal" href="#advanced-set" id="id135">ADVANCED_SET()</a></li>
-<li><a class="reference internal" href="#append-cmndline-args" id="id136">APPEND_CMNDLINE_ARGS()</a></li>
-<li><a class="reference internal" href="#append-glob" id="id137">APPEND_GLOB()</a></li>
-<li><a class="reference internal" href="#append-global-set" id="id138">APPEND_GLOBAL_SET()</a></li>
-<li><a class="reference internal" href="#append-set" id="id139">APPEND_SET()</a></li>
-<li><a class="reference internal" href="#append-string-var" id="id140">APPEND_STRING_VAR()</a></li>
-<li><a class="reference internal" href="#append-string-var-ext" id="id141">APPEND_STRING_VAR_EXT()</a></li>
-<li><a class="reference internal" href="#append-string-var-with-sep" id="id142">APPEND_STRING_VAR_WITH_SEP()</a></li>
-<li><a class="reference internal" href="#assert-defined" id="id143">ASSERT_DEFINED()</a></li>
-<li><a class="reference internal" href="#combined-option" id="id144">COMBINED_OPTION()</a></li>
-<li><a class="reference internal" href="#concat-strings" id="id145">CONCAT_STRINGS()</a></li>
-<li><a class="reference internal" href="#dual-scope-append-cmndline-args" id="id146">DUAL_SCOPE_APPEND_CMNDLINE_ARGS()</a></li>
-<li><a class="reference internal" href="#dual-scope-prepend-cmndline-args" id="id147">DUAL_SCOPE_PREPEND_CMNDLINE_ARGS()</a></li>
-<li><a class="reference internal" href="#dual-scope-set" id="id148">DUAL_SCOPE_SET()</a></li>
-<li><a class="reference internal" href="#global-null-set" id="id149">GLOBAL_NULL_SET()</a></li>
-<li><a class="reference internal" href="#global-set" id="id150">GLOBAL_SET()</a></li>
-<li><a class="reference internal" href="#join" id="id151">JOIN()</a></li>
-<li><a class="reference internal" href="#message-wrapper" id="id152">MESSAGE_WRAPPER()</a></li>
-<li><a class="reference internal" href="#multiline-set" id="id153">MULTILINE_SET()</a></li>
-<li><a class="reference internal" href="#parse-arguments" id="id154">PARSE_ARGUMENTS()</a></li>
-<li><a class="reference internal" href="#prepend-cmndline-args" id="id155">PREPEND_CMNDLINE_ARGS()</a></li>
-<li><a class="reference internal" href="#prepend-global-set" id="id156">PREPEND_GLOBAL_SET()</a></li>
-<li><a class="reference internal" href="#print-nonempty-var" id="id157">PRINT_NONEMPTY_VAR()</a></li>
-<li><a class="reference internal" href="#print-nonempty-var-with-spaces" id="id158">PRINT_NONEMPTY_VAR_WITH_SPACES()</a></li>
-<li><a class="reference internal" href="#print-var" id="id159">PRINT_VAR()</a></li>
-<li><a class="reference internal" href="#remove-global-duplicates" id="id160">REMOVE_GLOBAL_DUPLICATES()</a></li>
-<li><a class="reference internal" href="#set-and-inc-dirs" id="id161">SET_AND_INC_DIRS()</a></li>
-<li><a class="reference internal" href="#set-cache-on-off-empty" id="id162">SET_CACHE_ON_OFF_EMPTY()</a></li>
-<li><a class="reference internal" href="#set-default" id="id163">SET_DEFAULT()</a></li>
-<li><a class="reference internal" href="#set-default-and-from-env" id="id164">SET_DEFAULT_AND_FROM_ENV()</a></li>
-<li><a class="reference internal" href="#split" id="id165">SPLIT()</a></li>
-<li><a class="reference internal" href="#timer-get-raw-seconds" id="id166">TIMER_GET_RAW_SECONDS()</a></li>
-<li><a class="reference internal" href="#timer-get-rel-seconds" id="id167">TIMER_GET_REL_SECONDS()</a></li>
-<li><a class="reference internal" href="#timer-print-rel-time" id="id168">TIMER_PRINT_REL_TIME()</a></li>
-<li><a class="reference internal" href="#unittest-compare-const" id="id169">UNITTEST_COMPARE_CONST()</a></li>
-<li><a class="reference internal" href="#unittest-string-regex" id="id170">UNITTEST_STRING_REGEX()</a></li>
-<li><a class="reference internal" href="#unittest-file-regex" id="id171">UNITTEST_FILE_REGEX()</a></li>
-<li><a class="reference internal" href="#unittest-final-result" id="id172">UNITTEST_FINAL_RESULT()</a></li>
+<li><a class="reference internal" href="#general-utility-macros-and-functions" id="id136">12.3&nbsp;&nbsp;&nbsp;General Utility Macros and Functions</a><ul>
+<li><a class="reference internal" href="#add-subdirectories" id="id137">ADD_SUBDIRECTORIES()</a></li>
+<li><a class="reference internal" href="#advanced-option" id="id138">ADVANCED_OPTION()</a></li>
+<li><a class="reference internal" href="#advanced-set" id="id139">ADVANCED_SET()</a></li>
+<li><a class="reference internal" href="#append-cmndline-args" id="id140">APPEND_CMNDLINE_ARGS()</a></li>
+<li><a class="reference internal" href="#append-glob" id="id141">APPEND_GLOB()</a></li>
+<li><a class="reference internal" href="#append-global-set" id="id142">APPEND_GLOBAL_SET()</a></li>
+<li><a class="reference internal" href="#append-set" id="id143">APPEND_SET()</a></li>
+<li><a class="reference internal" href="#append-string-var" id="id144">APPEND_STRING_VAR()</a></li>
+<li><a class="reference internal" href="#append-string-var-ext" id="id145">APPEND_STRING_VAR_EXT()</a></li>
+<li><a class="reference internal" href="#append-string-var-with-sep" id="id146">APPEND_STRING_VAR_WITH_SEP()</a></li>
+<li><a class="reference internal" href="#assert-defined" id="id147">ASSERT_DEFINED()</a></li>
+<li><a class="reference internal" href="#combined-option" id="id148">COMBINED_OPTION()</a></li>
+<li><a class="reference internal" href="#concat-strings" id="id149">CONCAT_STRINGS()</a></li>
+<li><a class="reference internal" href="#dual-scope-append-cmndline-args" id="id150">DUAL_SCOPE_APPEND_CMNDLINE_ARGS()</a></li>
+<li><a class="reference internal" href="#dual-scope-prepend-cmndline-args" id="id151">DUAL_SCOPE_PREPEND_CMNDLINE_ARGS()</a></li>
+<li><a class="reference internal" href="#dual-scope-set" id="id152">DUAL_SCOPE_SET()</a></li>
+<li><a class="reference internal" href="#global-null-set" id="id153">GLOBAL_NULL_SET()</a></li>
+<li><a class="reference internal" href="#global-set" id="id154">GLOBAL_SET()</a></li>
+<li><a class="reference internal" href="#join" id="id155">JOIN()</a></li>
+<li><a class="reference internal" href="#message-wrapper" id="id156">MESSAGE_WRAPPER()</a></li>
+<li><a class="reference internal" href="#multiline-set" id="id157">MULTILINE_SET()</a></li>
+<li><a class="reference internal" href="#parse-arguments" id="id158">PARSE_ARGUMENTS()</a></li>
+<li><a class="reference internal" href="#prepend-cmndline-args" id="id159">PREPEND_CMNDLINE_ARGS()</a></li>
+<li><a class="reference internal" href="#prepend-global-set" id="id160">PREPEND_GLOBAL_SET()</a></li>
+<li><a class="reference internal" href="#print-nonempty-var" id="id161">PRINT_NONEMPTY_VAR()</a></li>
+<li><a class="reference internal" href="#print-nonempty-var-with-spaces" id="id162">PRINT_NONEMPTY_VAR_WITH_SPACES()</a></li>
+<li><a class="reference internal" href="#print-var" id="id163">PRINT_VAR()</a></li>
+<li><a class="reference internal" href="#remove-global-duplicates" id="id164">REMOVE_GLOBAL_DUPLICATES()</a></li>
+<li><a class="reference internal" href="#set-and-inc-dirs" id="id165">SET_AND_INC_DIRS()</a></li>
+<li><a class="reference internal" href="#set-cache-on-off-empty" id="id166">SET_CACHE_ON_OFF_EMPTY()</a></li>
+<li><a class="reference internal" href="#set-default" id="id167">SET_DEFAULT()</a></li>
+<li><a class="reference internal" href="#set-default-and-from-env" id="id168">SET_DEFAULT_AND_FROM_ENV()</a></li>
+<li><a class="reference internal" href="#split" id="id169">SPLIT()</a></li>
+<li><a class="reference internal" href="#timer-get-raw-seconds" id="id170">TIMER_GET_RAW_SECONDS()</a></li>
+<li><a class="reference internal" href="#timer-get-rel-seconds" id="id171">TIMER_GET_REL_SECONDS()</a></li>
+<li><a class="reference internal" href="#timer-print-rel-time" id="id172">TIMER_PRINT_REL_TIME()</a></li>
+<li><a class="reference internal" href="#unittest-compare-const" id="id173">UNITTEST_COMPARE_CONST()</a></li>
+<li><a class="reference internal" href="#unittest-string-regex" id="id174">UNITTEST_STRING_REGEX()</a></li>
+<li><a class="reference internal" href="#unittest-file-regex" id="id175">UNITTEST_FILE_REGEX()</a></li>
+<li><a class="reference internal" href="#unittest-final-result" id="id176">UNITTEST_FINAL_RESULT()</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a class="reference internal" href="#appendix" id="id173">13&nbsp;&nbsp;&nbsp;Appendix</a><ul class="auto-toc">
-<li><a class="reference internal" href="#history-of-tribits" id="id174">13.1&nbsp;&nbsp;&nbsp;History of TriBITS</a></li>
-<li><a class="reference internal" href="#why-a-tribits-package-is-not-a-cmake-package" id="id175">13.2&nbsp;&nbsp;&nbsp;Why a TriBITS Package is not a CMake Package</a></li>
-<li><a class="reference internal" href="#design-considerations-for-tribits" id="id176">13.3&nbsp;&nbsp;&nbsp;Design Considerations for TriBITS</a></li>
-<li><a class="reference internal" href="#checkin-test-py-help" id="id177">13.4&nbsp;&nbsp;&nbsp;checkin-test.py --help</a></li>
-<li><a class="reference internal" href="#egdist-help" id="id178">13.5&nbsp;&nbsp;&nbsp;egdist --help</a></li>
-<li><a class="reference internal" href="#snapshot-dir-py-help" id="id179">13.6&nbsp;&nbsp;&nbsp;snapshot-dir.py --help</a></li>
+<li><a class="reference internal" href="#appendix" id="id177">13&nbsp;&nbsp;&nbsp;Appendix</a><ul class="auto-toc">
+<li><a class="reference internal" href="#history-of-tribits" id="id178">13.1&nbsp;&nbsp;&nbsp;History of TriBITS</a></li>
+<li><a class="reference internal" href="#why-a-tribits-package-is-not-a-cmake-package" id="id179">13.2&nbsp;&nbsp;&nbsp;Why a TriBITS Package is not a CMake Package</a></li>
+<li><a class="reference internal" href="#design-considerations-for-tribits" id="id180">13.3&nbsp;&nbsp;&nbsp;Design Considerations for TriBITS</a></li>
+<li><a class="reference internal" href="#checkin-test-py-help" id="id181">13.4&nbsp;&nbsp;&nbsp;checkin-test.py --help</a></li>
+<li><a class="reference internal" href="#egdist-help" id="id182">13.5&nbsp;&nbsp;&nbsp;egdist --help</a></li>
+<li><a class="reference internal" href="#snapshot-dir-py-help" id="id183">13.6&nbsp;&nbsp;&nbsp;snapshot-dir.py --help</a></li>
 </ul>
 </li>
 </ul>
@@ -6921,17 +6925,27 @@ process works with some examples.</p>
 <p>It is possible to take an external piece of software that uses any arbitrary
 build system and wrap it as a TriBITS package and have it integrate in with
 the package dependency infrastructure.  The <a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a> package
-<tt class="docutils literal">WrapExternal</tt> shows how this can be done.</p>
-<!-- ToDo: Show this this is done in detail once TriBITS has nice support for -->
-<!-- this and this example looks cleaner. -->
-<p>While it is possible to wrap an externally configured and built piece of
-software as a TriBITS package, is is usually must better to just go ahead and
+<tt class="docutils literal">WrapExternal</tt> shows how this can be done.  Support for this in TriBITS is
+slowly evolving but some key TriBITS features that have been added to support
+the arbitrary case include:</p>
+<ul class="simple">
+<li><a class="reference internal" href="#tribits-determine-if-current-package-needs-rebuilt">TRIBITS_DETERMINE_IF_CURRENT_PACKAGE_NEEDS_REBUILT()</a>: Uses brute-force
+searches for recently modified files in upstream SE packages to determine if
+the external piece of software needs to be rebuilt.</li>
+<li><a class="reference internal" href="#tribits-write-flexible-package-client-export-files">TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES()</a>: Write an export
+makefile or a <tt class="docutils literal">XXXConfig.cmake</tt> file for usage by the wrapped externally
+configured and built software.</li>
+</ul>
+<!-- ToDo: Show how this is done in detail once TriBITS has nice support for -->
+<!-- external software and the WrapExternal example looks cleaner. -->
+<p>While it is possible to wrap nearly any externally configured and built piece
+of software as a TriBITS package, in most cases, it is usually better to just
 create a TriBITS build system for the software.  For projects that use a raw
-CMake build system, a TriBITS build can be created side-by-side with the
-existing CMake raw build using a number of approaches. The common approach
+CMake build system, a TriBITS build system can be created side-by-side with
+the existing raw CMake build using a number of approaches. The common approach
 that is not too invasive is to create a <tt class="docutils literal">CMakeLists.tribits.txt</tt> file along
-side every native <tt class="docutils literal">CMakeLists.txt</tt> file and have the native
-<tt class="docutils literal">CMakeLists.txt</tt> file defined like:</p>
+side every native <tt class="docutils literal">CMakeLists.txt</tt> file in the external software project and
+have the native <tt class="docutils literal">CMakeLists.txt</tt> file defined like:</p>
 <pre class="literal-block">
 IF (DOING_A_TRIBITS_BUILD)
   INCLUDE(&quot;${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.tribits.txt&quot;)
@@ -6940,9 +6954,18 @@ ENDIF()
 
 # Rest of native CMakeLists.txt file ...
 </pre>
-<p>Experience from the CASL VERA project showed that, overall, there is less
-hassle and less work and better portability when creating a native TriBITS
+<p>Experience from the CASL VERA project has shown that, overall, there is less
+hassle, less work, and better portability when creating a native TriBITS
 build, even if it is a secondary build system for a given piece of software.</p>
+<p>The decision whether to just wrap the build system for the existing software
+or to create a (secondary) TriBITS build system for it depends on a number of
+factors.</p>
+<p>Note that while it is generally recommended to create a TriBITS build for an
+existing piece of software, it is generally not recommended with switch over
+all of the tests to use CTest (unless the existing software is going to ditch
+their current test driver and reporting system).  Instead, the external
+software's native test system can just be called by the wrapped TriBITS
+package in one or more CTest tests.</p>
 </div>
 <div class="section" id="tribits-directory-snapshotting">
 <h2><a class="toc-backref" href="#id94">10.13&nbsp;&nbsp;&nbsp;TriBITS directory snapshotting</a></h2>
@@ -8893,8 +8916,59 @@ hard-coded internally to <tt class="docutils literal"><span class="pre">${CTEST_
 be overridden from the env.</p>
 <p>ToDo: Finish Documentation!</p>
 </div>
+<div class="section" id="tribits-determine-if-current-package-needs-rebuilt">
+<h3><a class="toc-backref" href="#id114">TRIBITS_DETERMINE_IF_CURRENT_PACKAGE_NEEDS_REBUILT()</a></h3>
+<p>Determine at configure time if any of the upstream dependencies for a
+package require the current package to be rebuilt.</p>
+<p>Usage:</p>
+<pre class="literal-block">
+TRIBITS_DETERMINE_IF_CURRENT_PACKAGE_NEEDS_REBUILT(
+  [SHOW_MOST_RECENT_FILES]
+  [SHOW_OVERALL_MOST_RECENT_FILES]
+  CURRENT_PACKAGE_OUT_OF_DATE_OUT &lt;currentPackageOutOfDate&gt;
+  )
+</pre>
+<p><strong>Arguments:</strong></p>
+<blockquote>
+<p><tt class="docutils literal">SHOW_MOST_RECENT_FILES</tt></p>
+<blockquote>
+If specified, then the most recently modified file for each individual
+base source and binary directory searched will be will be printed the
+STDOUT.  Setting this implies <tt class="docutils literal">SHOW_OVERALL_MOST_RECENT_FILE</tt>.</blockquote>
+<p><tt class="docutils literal">SHOW_OVERALL_MOST_RECENT_FILE</tt></p>
+<blockquote>
+If specified, then only the most recent modified file over all of the
+individual directories for each category (i.e. one for upstream SE
+package source dirs, one for upstream SE package binary dirs, one for
+the package's source dir, and one for the package's own binary dir) is
+printed to STDOUT.</blockquote>
+<p><tt class="docutils literal">CURRENT_PACKAGE_OUT_OF_DATE_OUT &lt;currentPackageOutOfDate&gt;</tt></p>
+<blockquote>
+On output, the local variable <tt class="docutils literal">&lt;currentPackageOutOfDate&gt;</tt> will be set
+to <tt class="docutils literal">TRUE</tt> if any of the upstream most modified files are more recent
+than the most modified file in the package's binary directory.
+Otherwise, this variable is set to <tt class="docutils literal">FALSE</tt>.</blockquote>
+</blockquote>
+<p><strong>Description:</strong></p>
+<p>This function is designed to help take an externally configured and built
+piece of software (that generates libraries) and wrap it as a TriBITS
+package or subpackage.  This function uses the lower-level functions:</p>
+<ul class="simple">
+<li><a class="reference internal" href="#tribits-find-most-recent-source-file-timestamp">TRIBITS_FIND_MOST_RECENT_SOURCE_FILE_TIMESTAMP()</a></li>
+<li><a class="reference internal" href="#tribits-find-most-recent-binary-file-timestamp">TRIBITS_FIND_MOST_RECENT_BINARY_FILE_TIMESTAMP()</a></li>
+</ul>
+<p>to determine the most recent modified files in the upstream TriBITS SE
+packages' source and binary directories as well as the most recent source
+file for the current package.  It then compares these timestamps to the most
+recent binary file timestamp in this package's binary directory.  If any of
+these three files are more recent than this package's most recent binary
+file, then the output variable <tt class="docutils literal">&lt;currentPackageOutOfDate&gt;</tt> is set to
+<tt class="docutils literal">TRUE</tt>.  Otherwise, it is set to <tt class="docutils literal">FALSE</tt>.</p>
+<p>See the demonstration of the usage of this function in the <tt class="docutils literal">WrapExternal</tt>
+package in <a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>.</p>
+</div>
 <div class="section" id="tribits-disable-package-on-platforms">
-<h3><a class="toc-backref" href="#id114">TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()</a></h3>
+<h3><a class="toc-backref" href="#id115">TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()</a></h3>
 <p>Disable a package automatically for a list of platforms.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -8909,7 +8983,7 @@ disabled by default (see <a class="reference internal" href="#ex-se-packages-dis
 an explicit enable can still enable the package.</p>
 </div>
 <div class="section" id="tribits-exclude-files">
-<h3><a class="toc-backref" href="#id115">TRIBITS_EXCLUDE_FILES()</a></h3>
+<h3><a class="toc-backref" href="#id116">TRIBITS_EXCLUDE_FILES()</a></h3>
 <p>Exclude package files/dirs from the source distribution by appending
 <tt class="docutils literal">CPACK_SOURCE_IGNORE_FILES</tt>.</p>
 <p>Usage:</p>
@@ -8934,8 +9008,113 @@ and one must be very careful not understand how CPack will use these regexes
 to match files that get excluded from the tarball.  For more details, see
 <a class="reference internal" href="#creating-source-distributions">Creating Source Distributions</a>.</p>
 </div>
+<div class="section" id="tribits-find-most-recent-binary-file-timestamp">
+<h3><a class="toc-backref" href="#id117">TRIBITS_FIND_MOST_RECENT_BINARY_FILE_TIMESTAMP()</a></h3>
+<p>Find the most modified binary file in a set of base directories and return
+its timestamp.</p>
+<p>Usage:</p>
+<pre class="literal-block">
+TRIBITS_FIND_MOST_RECENT_BINARY_FILE_TIMESTAMP(
+  BINARY_BASE_DIRS &lt;dir0&gt; &lt;dir1&gt; ...
+  [MOST_RECENT_TIMESTAMP_OUT  &lt;mostRecentTimestamp&gt;]
+  [MOST_RECENT_FILEPATH_BASE_DIR_OUT &lt;mostRecentFilepathBaseDir&gt;]
+  [MOST_RECENT_RELATIVE_FILEPATH_OUT &lt;mostRecentRelativeFilePath&gt;]
+  [SHOW_MOST_RECENT_FILES]
+  [SHOW_OVERALL_MOST_RECENT_FILE]
+  )
+</pre>
+<p>This function just calls <a class="reference internal" href="#tribits-find-most-recent-file-timestamp">TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP()</a>
+passing in a set of basic exclude regexes like <tt class="docutils literal">CMakeFiles/</tt>,
+<tt class="docutils literal"><span class="pre">[.]cmake$</span></tt>, and <tt class="docutils literal">/Makefile$</tt>, etc.  These types of files usually don't
+impact the build of downstream software in CMake projects.</p>
+</div>
+<div class="section" id="tribits-find-most-recent-file-timestamp">
+<h3><a class="toc-backref" href="#id118">TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP()</a></h3>
+<p>Find the most modified file in a set of base directories and return its
+timestamp.</p>
+<p>Usage:</p>
+<pre class="literal-block">
+TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP(
+  BASE_DIRS &lt;dir0&gt; &lt;dir1&gt; ...
+  [EXCLUDE_REGEXES &quot;&lt;re0&gt;&quot; &quot;&lt;re1&gt;&quot; ...
+  [SHOW_MOST_RECENT_FILES]
+  [SHOW_OVERALL_MOST_RECENT_FILE]
+  [MOST_RECENT_TIMESTAMP_OUT  &lt;mostRecentTimestamp&gt;]
+  [MOST_RECENT_FILEPATH_BASE_DIR_OUT &lt;mostRecentFilepathBaseDir&gt;]
+  [MOST_RECENT_RELATIVE_FILEPATH_OUT &lt;mostRecentRelativeFilePath&gt;]
+  )
+</pre>
+<p><strong>Arguments:</strong></p>
+<blockquote>
+<p><tt class="docutils literal">BASE_DIRS &lt;dir0&gt; &lt;dir1&gt; ...</tt></p>
+<blockquote>
+Gives the absolute base directory paths that will be searched for the
+most recently modified files, as described above.</blockquote>
+<p><tt class="docutils literal">EXCLUDE_REGEXES &quot;&lt;re0&gt;&quot; &quot;&lt;re1&gt;&quot; ...</tt></p>
+<blockquote>
+Gives the regular expressions that are used to exclude files from
+consideration.  Each &quot;&lt;rei&gt;&quot; regex is used with a <cite>grep -v &quot;&lt;rei&gt;&quot;</cite>
+filter to exclude files before sorting by time stamp.</blockquote>
+<p><tt class="docutils literal">SHOW_MOST_RECENT_FILES</tt></p>
+<blockquote>
+If specified, then the most recently modified file for each individual
+directory <tt class="docutils literal">&lt;dir0&gt;</tt>, <tt class="docutils literal">&lt;dir1</tt>, ... will be printed the STDOUT.
+Setting this implies <tt class="docutils literal">SHOW_OVERALL_MOST_RECENT_FILE</tt>.</blockquote>
+<p><tt class="docutils literal">SHOW_OVERALL_MOST_RECENT_FILE</tt></p>
+<blockquote>
+If specified, then only the most recent modified file over all of the
+individual directories is printed to STDOUT.</blockquote>
+<p><tt class="docutils literal">MOST_RECENT_TIMESTAMP_OUT &lt;mostRecentTimestamp&gt;</tt></p>
+<blockquote>
+On output, the variable <cite>&lt;mostRecentTimestamp&gt;</cite> is set that gives the
+timestamp of the most recently modified file over all the directories.
+This number is given as the number of seconds since Jan. 1, 1970, 00:00
+GMT.</blockquote>
+<p><tt class="docutils literal">MOST_RECENT_FILEPATH_BASE_DIR_OUT &lt;mostRecentFilepathBaseDir&gt;</tt></p>
+<blockquote>
+On output, the variable <cite>&lt;mostRecentFilepathBaseDir&gt;</cite> gives absolute base
+directory of the file with the most recent timestamp over all
+directories.</blockquote>
+<p><tt class="docutils literal">MOST_RECENT_RELATIVE_FILEPATH_OUT &lt;mostRecentRelativeFilePath&gt;</tt></p>
+<blockquote>
+On output, the variable <cite>&lt;mostRecentFilepathBaseDir&gt;</cite> gives the file
+name with relative path to the file with the most recent timestamp over
+all directories.</blockquote>
+</blockquote>
+<p><strong>Description:</strong></p>
+<p>This function uses the Linux/Unix command:</p>
+<pre class="literal-block">
+$ find . -type f -printf '%T&#64; %p\n'
+    | grep -v &quot;&lt;re0&gt;&quot; | grep -v &quot;&lt;re1&gt;&quot; | ... \
+    | sort -n | tail -1
+</pre>
+<p>to return the most recent file in each listed directory &lt;dir0&gt;, &lt;dir1&gt;, etc.
+It then determines the most recently modified file over all of the
+directories and prints and returns in the variables <cite>&lt;mostRecentTimestamp&gt;</cite>,
+<cite>&lt;mostRecentFilepathBaseDir&gt;</cite>, and <cite>&lt;mostRecentRelativeFilePath&gt;</cite>.</p>
+</div>
+<div class="section" id="tribits-find-most-recent-source-file-timestamp">
+<h3><a class="toc-backref" href="#id119">TRIBITS_FIND_MOST_RECENT_SOURCE_FILE_TIMESTAMP()</a></h3>
+<p>Find the most modified source file in a set of base directories and return
+its timestamp.</p>
+<p>Usage:</p>
+<pre class="literal-block">
+TRIBITS_FIND_MOST_RECENT_SOURCE_FILE_TIMESTAMP(
+  SOURCE_BASE_DIRS &lt;dir0&gt; &lt;dir1&gt; ...
+  [SHOW_MOST_RECENT_FILES]
+  [SHOW_OVERALL_MOST_RECENT_FILE]
+  [MOST_RECENT_TIMESTAMP_OUT  &lt;mostRecentTimestamp&gt;]
+  [MOST_RECENT_FILEPATH_BASE_DIR_OUT &lt;mostRecentFilepathBaseDir&gt;]
+  [MOST_RECENT_RELATIVE_FILEPATH_OUT &lt;mostRecentRelativeFilePath&gt;]
+  )
+</pre>
+<p>This function just calls <a class="reference internal" href="#tribits-find-most-recent-file-timestamp">TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP()</a>
+passing in a set of basic exclude regexes like <tt class="docutils literal"><span class="pre">[.]git/</span></tt>, <tt class="docutils literal"><span class="pre">[.]svn/</span></tt>,
+etc.  These types of version control files can not possibly directly impact
+the source code.</p>
+</div>
 <div class="section" id="tribits-include-directories">
-<h3><a class="toc-backref" href="#id116">TRIBITS_INCLUDE_DIRECTORIES()</a></h3>
+<h3><a class="toc-backref" href="#id120">TRIBITS_INCLUDE_DIRECTORIES()</a></h3>
 <p>This function is to override the standard behavior of the built-in CMake
 <tt class="docutils literal">INCLUDE_DIRECTORIES()</tt> command.</p>
 <p>Usage:</p>
@@ -8959,7 +9138,7 @@ needed.  For that case <tt class="docutils literal">REQUIRED_DURING_INSTALLATION
 passed in to ensure the include paths are added for installation testing.</p>
 </div>
 <div class="section" id="id1">
-<h3><a class="toc-backref" href="#id117">TRIBITS_PACKAGE()</a></h3>
+<h3><a class="toc-backref" href="#id121">TRIBITS_PACKAGE()</a></h3>
 <p>Macro called at the very beginning of a package's top-level
 <a class="reference internal" href="#packagedir-cmakelists-txt">&lt;packageDir&gt;/CMakeLists.txt</a> file.</p>
 <p>Usage:</p>
@@ -8977,7 +9156,7 @@ TRIBITS_PACKAGE(
 side-effects (and variables set) after calling this macro.</p>
 </div>
 <div class="section" id="tribits-package-decl">
-<h3><a class="toc-backref" href="#id118">TRIBITS_PACKAGE_DECL()</a></h3>
+<h3><a class="toc-backref" href="#id122">TRIBITS_PACKAGE_DECL()</a></h3>
 <p>Macro called at the very beginning of a package's top-level
 <a class="reference internal" href="#packagedir-cmakelists-txt">&lt;packageDir&gt;/CMakeLists.txt</a> file when a package has subpackages.</p>
 <p>Usage:</p>
@@ -9040,7 +9219,7 @@ the <tt class="docutils literal">*.cmake</tt> extension.</li>
 which calls this macro.</p>
 </div>
 <div class="section" id="tribits-package-def">
-<h3><a class="toc-backref" href="#id119">TRIBITS_PACKAGE_DEF()</a></h3>
+<h3><a class="toc-backref" href="#id123">TRIBITS_PACKAGE_DEF()</a></h3>
 <p>Macro called in <a class="reference internal" href="#packagedir-cmakelists-txt">&lt;packageDir&gt;/CMakeLists.txt</a> after subpackages are
 processed in order to handle the libraries, tests, and examples of the
 parent package.</p>
@@ -9059,7 +9238,7 @@ list of libraries, etc.) are initialized to empty.</li>
 </ul>
 </div>
 <div class="section" id="tribits-package-define-dependencies">
-<h3><a class="toc-backref" href="#id120">TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()</a></h3>
+<h3><a class="toc-backref" href="#id124">TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()</a></h3>
 <p>Define the dependencies for a given <a class="reference internal" href="#tribits-se-package">TriBITS SE Package</a> (i.e. a top-level
 <a class="reference internal" href="#tribits-package">TriBITS Package</a> or a <a class="reference internal" href="#tribits-subpackage">TriBITS Subpackage</a>) in the package's
 <a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a> file.</p>
@@ -9222,7 +9401,7 @@ This is a error checking property of the TriBITS system to avoid misspelling
 the names of these variables.</p>
 </div>
 <div class="section" id="tribits-package-postprocess">
-<h3><a class="toc-backref" href="#id121">TRIBITS_PACKAGE_POSTPROCESS()</a></h3>
+<h3><a class="toc-backref" href="#id125">TRIBITS_PACKAGE_POSTPROCESS()</a></h3>
 <p>Macro called at the very end of a package's top-level
 <a class="reference internal" href="#packagedir-cmakelists-txt">&lt;packageDir&gt;/CMakeLists.txt</a> file that performs some critical
 post-processing activities.</p>
@@ -9235,7 +9414,7 @@ top-level <tt class="docutils literal">CMakeLists.txt</tt> file but limitations 
 it necessary to do so.</p>
 </div>
 <div class="section" id="tribits-process-subpackages">
-<h3><a class="toc-backref" href="#id122">TRIBITS_PROCESS_SUBPACKAGES()</a></h3>
+<h3><a class="toc-backref" href="#id126">TRIBITS_PROCESS_SUBPACKAGES()</a></h3>
 <p>Macro that processes the <a class="reference internal" href="#tribits-subpackages">TriBITS Subpackages</a> for a parent <a class="reference internal" href="#tribits-package">TriBITS
 package</a> for packages that are broken down into subpackages.  This is
 called in the parent packages top-level <a class="reference internal" href="#packagedir-cmakelists-txt">&lt;packageDir&gt;/CMakeLists.txt</a> file.</p>
@@ -9247,7 +9426,7 @@ TRIBITS_PROCESS_SUBPACKAGES()
 <a class="reference internal" href="#tribits-package-def">TRIBITS_PACKAGE_DEF()</a>.</p>
 </div>
 <div class="section" id="id2">
-<h3><a class="toc-backref" href="#id123">TRIBITS_PROJECT()</a></h3>
+<h3><a class="toc-backref" href="#id127">TRIBITS_PROJECT()</a></h3>
 <p>Processes a <a class="reference internal" href="#tribits-project">TriBITS Project</a>'s files and configures its software which is
 called from the project's top-level <a class="reference internal" href="#projectdir-cmakelists-txt">&lt;projectDir&gt;/CMakeLists.txt</a> file.</p>
 <p>Usage:</p>
@@ -9263,7 +9442,7 @@ then performs all processing of the TriBITS project files (see <a class="referen
 Project Configuration</a>).</p>
 </div>
 <div class="section" id="tribits-project-define-extra-repositories">
-<h3><a class="toc-backref" href="#id124">TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES()</a></h3>
+<h3><a class="toc-backref" href="#id128">TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES()</a></h3>
 <p>Declare a set of extra repositories for the <a class="reference internal" href="#tribits-project">TriBITS Project</a> (i.e. in the
 project's <a class="reference internal" href="#projectdir-cmake-extrarepositorieslist-cmake">&lt;projectDir&gt;/cmake/ExtraRepositoriesList.cmake</a> file).</p>
 <p>Usage:</p>
@@ -9343,7 +9522,7 @@ misspelled set variable is just ignored.</li>
 </ul>
 </div>
 <div class="section" id="tribits-repository-define-packages">
-<h3><a class="toc-backref" href="#id125">TRIBITS_REPOSITORY_DEFINE_PACKAGES()</a></h3>
+<h3><a class="toc-backref" href="#id129">TRIBITS_REPOSITORY_DEFINE_PACKAGES()</a></h3>
 <p>Define the set of packages for a given <a class="reference internal" href="#tribits-repository">TriBITS Repository</a>.  This macro is
 typically called from inside of a <a class="reference internal" href="#repodir-packageslist-cmake">&lt;repoDir&gt;/PackagesList.cmake</a> file for a
 given TriBITS repo.</p>
@@ -9413,7 +9592,7 @@ misspells the name of the macro, it is an immediate error in CMake.</li>
 </ul>
 </div>
 <div class="section" id="tribits-repository-define-tpls">
-<h3><a class="toc-backref" href="#id126">TRIBITS_REPOSITORY_DEFINE_TPLS()</a></h3>
+<h3><a class="toc-backref" href="#id130">TRIBITS_REPOSITORY_DEFINE_TPLS()</a></h3>
 <p>Define the list of <a class="reference internal" href="#tribits-tpls">TriBITS TPLs</a> for a given <a class="reference internal" href="#tribits-repository">TriBITS Repository</a> which
 includes the TPL name, find module, and classification .  This macro is
 typically called from inside of the repository's <a class="reference internal" href="#repodir-tplslist-cmake">&lt;repoDir&gt;/TPLsList.cmake</a>
@@ -9478,7 +9657,7 @@ the name of a macro, it is an immediate error in CMake.</li>
 </ul>
 </div>
 <div class="section" id="tribits-set-st-for-dev-mode">
-<h3><a class="toc-backref" href="#id127">TRIBITS_SET_ST_FOR_DEV_MODE()</a></h3>
+<h3><a class="toc-backref" href="#id131">TRIBITS_SET_ST_FOR_DEV_MODE()</a></h3>
 <p>Function that allows packages to easily make a feature <tt class="docutils literal">ST</tt> for
 development builds and <tt class="docutils literal">PT</tt> for release builds by default.</p>
 <p>Usage:</p>
@@ -9500,7 +9679,7 @@ enabling the dependent features/tests), while still having important
 functionality available to users by default in a release of the package.</p>
 </div>
 <div class="section" id="id3">
-<h3><a class="toc-backref" href="#id128">TRIBITS_SUBPACKAGE()</a></h3>
+<h3><a class="toc-backref" href="#id132">TRIBITS_SUBPACKAGE()</a></h3>
 <p>Forward declare a <a class="reference internal" href="#tribits-subpackage">TriBITS Subpackage</a> called at the top of the
 subpackage's <a class="reference internal" href="#packagedir-spkgdir-cmakelists-txt">&lt;packageDir&gt;/&lt;spkgDir&gt;/CMakeLists.txt</a> file.</p>
 <p>Usage:</p>
@@ -9527,7 +9706,7 @@ Inside the subpackage, the same as <tt class="docutils literal">SUBPACKAGE_FULLN
 </blockquote>
 </div>
 <div class="section" id="tribits-subpackage-postprocess">
-<h3><a class="toc-backref" href="#id129">TRIBITS_SUBPACKAGE_POSTPROCESS()</a></h3>
+<h3><a class="toc-backref" href="#id133">TRIBITS_SUBPACKAGE_POSTPROCESS()</a></h3>
 <p>Macro that performs standard post-processing after defining a <a class="reference internal" href="#tribits-subpackage">TriBITS
 Subpackage</a> which is called at the bottom of a subpackage's
 <a class="reference internal" href="#packagedir-spkgdir-cmakelists-txt">&lt;packageDir&gt;/&lt;spkgDir&gt;/CMakeLists.txt</a> file.</p>
@@ -9539,7 +9718,7 @@ TRIBITS_SUBPACKAGE_POSTPROCESS()
 this macro but limitations of the CMake language make it necessary to do so.</p>
 </div>
 <div class="section" id="tribits-tpl-declare-libraries">
-<h3><a class="toc-backref" href="#id130">TRIBITS_TPL_DECLARE_LIBRARIES()</a></h3>
+<h3><a class="toc-backref" href="#id134">TRIBITS_TPL_DECLARE_LIBRARIES()</a></h3>
 <p>Function that sets up cache variables for users to specify where to find a
 <a class="reference internal" href="#tribits-tpl">TriBITS TPL</a>'s headers and libraries.  This function is typically called
 inside of a <tt class="docutils literal"><span class="pre">FindTPL&lt;tplName&gt;.cmake</span></tt> file (see <a class="reference internal" href="#tpl-name-findmod">${TPL_NAME}_FINDMOD</a>).</p>
@@ -9623,7 +9802,7 @@ of libraries to link to.</blockquote>
 </blockquote>
 </div>
 <div class="section" id="tribits-write-flexible-package-client-export-files">
-<h3><a class="toc-backref" href="#id131">TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES()</a></h3>
+<h3><a class="toc-backref" href="#id135">TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES()</a></h3>
 <p>Utility function for writing <tt class="docutils literal">${PACKAGE_NAME}Config.cmake</tt> and/or the
 <tt class="docutils literal"><span class="pre">Makefile.export.${PACKAGE_NAME}</span></tt> files for package <tt class="docutils literal">${PACKAGE_NAME}</tt>
 with some greater flexibility than what is provided by the function
@@ -9688,7 +9867,7 @@ generated in the build tree and the install targets are added else where.</p>
 </div>
 </div>
 <div class="section" id="general-utility-macros-and-functions">
-<h2><a class="toc-backref" href="#id132">12.3&nbsp;&nbsp;&nbsp;General Utility Macros and Functions</a></h2>
+<h2><a class="toc-backref" href="#id136">12.3&nbsp;&nbsp;&nbsp;General Utility Macros and Functions</a></h2>
 <p>The following subsections give detailed documentation for some CMake macros
 and functions which are <em>not</em> a core part of the TriBITS system but are
 included in the TriBITS source tree, are used inside of the TriBITS system,
@@ -9709,7 +9888,7 @@ command as <tt class="docutils literal">_some_builtin_command()</tt>.</p>
 <!-- generate-dev-guide.sh.  Only the file UtilsMacroFunctionDoc.rst -->
 <!-- should be directly modified! -->
 <div class="section" id="add-subdirectories">
-<h3><a class="toc-backref" href="#id133">ADD_SUBDIRECTORIES()</a></h3>
+<h3><a class="toc-backref" href="#id137">ADD_SUBDIRECTORIES()</a></h3>
 <p>Macro that adds a list of subdirectories all at once (removes boiler-place
 code).</p>
 <p>Usage:</p>
@@ -9724,7 +9903,7 @@ ADD_SUBDIRECTORY(&lt;dir2&gt;)
 </pre>
 </div>
 <div class="section" id="advanced-option">
-<h3><a class="toc-backref" href="#id134">ADVANCED_OPTION()</a></h3>
+<h3><a class="toc-backref" href="#id138">ADVANCED_OPTION()</a></h3>
 <p>Macro that sets an option and marks it as advanced (removes boiler-plate and
 duplication).</p>
 <p>Usage:</p>
@@ -9738,7 +9917,7 @@ MARK_AS_ADVANCED(&lt;varName&gt;)
 </pre>
 </div>
 <div class="section" id="advanced-set">
-<h3><a class="toc-backref" href="#id135">ADVANCED_SET()</a></h3>
+<h3><a class="toc-backref" href="#id139">ADVANCED_SET()</a></h3>
 <p>Macro that sets a variable and marks it as advanced (removes boiler-plate
 and duplication).</p>
 <p>Usage:</p>
@@ -9752,7 +9931,7 @@ MARK_AS_ADVANCED(&lt;varName&gt;)
 </pre>
 </div>
 <div class="section" id="append-cmndline-args">
-<h3><a class="toc-backref" href="#id136">APPEND_CMNDLINE_ARGS()</a></h3>
+<h3><a class="toc-backref" href="#id140">APPEND_CMNDLINE_ARGS()</a></h3>
 <p>Utility function that appends command-line arguments to a variable of
 command-line arguments.</p>
 <p>Usage:</p>
@@ -9764,7 +9943,7 @@ APPEND_CMNDLINE_ARGS(&lt;var&gt; &quot;&lt;extraArgs&gt;&quot;)
 input.  This just makes the formatting of command-line arguments easier.</p>
 </div>
 <div class="section" id="append-glob">
-<h3><a class="toc-backref" href="#id137">APPEND_GLOB()</a></h3>
+<h3><a class="toc-backref" href="#id141">APPEND_GLOB()</a></h3>
 <p>Utility macro that does a <tt class="docutils literal">FILE(GLOB <span class="pre">...)</span></tt> and appends to an existing list
 (removes boiler-plate code).</p>
 <p>Usage:</p>
@@ -9774,7 +9953,7 @@ APPEND_GLOB(&lt;fileListVar&gt; &lt;glob0&gt; &lt;glob1&gt; ...)
 <p>On output, <tt class="docutils literal">&lt;fileListVar&gt;</tt> will have the list of glob files appended.</p>
 </div>
 <div class="section" id="append-global-set">
-<h3><a class="toc-backref" href="#id138">APPEND_GLOBAL_SET()</a></h3>
+<h3><a class="toc-backref" href="#id142">APPEND_GLOBAL_SET()</a></h3>
 <p>Utility macro that appends arguments to a global variable (reduces
 boiler-plate code and mistakes).</p>
 <p>Usage:</p>
@@ -9785,7 +9964,7 @@ APPEND_GLOBAL_SET(&lt;varName&gt; &lt;arg0&gt; &lt;arg1&gt; ...)
 To set it empty initially use <a class="reference internal" href="#global-null-set">GLOBAL_NULL_SET()</a>.</p>
 </div>
 <div class="section" id="append-set">
-<h3><a class="toc-backref" href="#id139">APPEND_SET()</a></h3>
+<h3><a class="toc-backref" href="#id143">APPEND_SET()</a></h3>
 <p>Utility function to append elements to a variable (reduces boiler-plate
 code).</p>
 <p>Usage:</p>
@@ -9800,7 +9979,7 @@ LIST(APPEND &lt;varName&gt; &lt;arg0&gt; &lt;arg1&gt; ...)
 misspells <tt class="docutils literal">APPEND</tt>.</p>
 </div>
 <div class="section" id="append-string-var">
-<h3><a class="toc-backref" href="#id140">APPEND_STRING_VAR()</a></h3>
+<h3><a class="toc-backref" href="#id144">APPEND_STRING_VAR()</a></h3>
 <p>Append strings to an existing string variable (reduces boiler-place code and
 reduces mistakes).</p>
 <p>Usage:</p>
@@ -9813,7 +9992,7 @@ If one wants to ignore the meaning of these special characters and are okay
 with just adding one string at a time, then use <a class="reference internal" href="#append-string-var-ext">APPEND_STRING_VAR_EXT()</a>.</p>
 </div>
 <div class="section" id="append-string-var-ext">
-<h3><a class="toc-backref" href="#id141">APPEND_STRING_VAR_EXT()</a></h3>
+<h3><a class="toc-backref" href="#id145">APPEND_STRING_VAR_EXT()</a></h3>
 <p>Append a single string to an existing string variable, ignoring ';' (reduces
 boiler-place code and reduces mistakes).</p>
 <p>Usage:</p>
@@ -9824,7 +10003,7 @@ APPEND_STRING_VAR_EXT(&lt;stringVar&gt; &quot;&lt;string&gt;&quot;)
 without creating new array elements.</p>
 </div>
 <div class="section" id="append-string-var-with-sep">
-<h3><a class="toc-backref" href="#id142">APPEND_STRING_VAR_WITH_SEP()</a></h3>
+<h3><a class="toc-backref" href="#id146">APPEND_STRING_VAR_WITH_SEP()</a></h3>
 <p>Append strings to a given string variable, joining them using a separator
 string.</p>
 <p>Usage:</p>
@@ -9835,7 +10014,7 @@ APPEND_STRING_VAR_WITH_SEP(&lt;stringVar&gt; &quot;&lt;sepStr&gt;&quot; &quot;&l
 separation string <tt class="docutils literal">&lt;sepStr&gt;</tt>.</p>
 </div>
 <div class="section" id="assert-defined">
-<h3><a class="toc-backref" href="#id143">ASSERT_DEFINED()</a></h3>
+<h3><a class="toc-backref" href="#id147">ASSERT_DEFINED()</a></h3>
 <p>Assert that a variable is defined and if not call <tt class="docutils literal">MESSAGE(SEND_ERROR
 <span class="pre">...)</span></tt>.</p>
 <p>Usage:</p>
@@ -9870,7 +10049,7 @@ same.  This is the best that can be done in CMake unfortunately to catch
 usage of misspelled undefined variables.</p>
 </div>
 <div class="section" id="combined-option">
-<h3><a class="toc-backref" href="#id144">COMBINED_OPTION()</a></h3>
+<h3><a class="toc-backref" href="#id148">COMBINED_OPTION()</a></h3>
 <p>Set up a <tt class="docutils literal">BOOL</tt> cache variable (i.e. an option) based on a set of
 dependent options.</p>
 <p>Usage:</p>
@@ -9891,7 +10070,7 @@ requires a set of other features (when they are all enabled) but allows a
 user to disable the feature if desired.</p>
 </div>
 <div class="section" id="concat-strings">
-<h3><a class="toc-backref" href="#id145">CONCAT_STRINGS()</a></h3>
+<h3><a class="toc-backref" href="#id149">CONCAT_STRINGS()</a></h3>
 <p>Concatenate a set of string arguments.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -9901,7 +10080,7 @@ CONCAT_STRINGS(&lt;outputVar&gt; &quot;&lt;str0&gt;&quot; &quot;&lt;str1&gt;&quo
 easier to format a long string over multiple CMake source code lines.</p>
 </div>
 <div class="section" id="dual-scope-append-cmndline-args">
-<h3><a class="toc-backref" href="#id146">DUAL_SCOPE_APPEND_CMNDLINE_ARGS()</a></h3>
+<h3><a class="toc-backref" href="#id150">DUAL_SCOPE_APPEND_CMNDLINE_ARGS()</a></h3>
 <p>Utility function that appends command-line arguments to a variable of
 command-line options and sets the result in current scope and parent scope.</p>
 <p>Usage:</p>
@@ -9911,7 +10090,7 @@ DUAL_SCOPE_APPEND_CMNDLINE_ARGS(&lt;var&gt; &quot;&lt;extraArgs&gt;&quot;)
 <p>Just calls <a class="reference internal" href="#append-cmndline-args">APPEND_CMNDLINE_ARGS()</a> and then <tt class="docutils literal"><span class="pre">SET(&lt;var&gt;</span> <span class="pre">${&lt;var&gt;}</span> PARENT_SCOPE)</tt>.</p>
 </div>
 <div class="section" id="dual-scope-prepend-cmndline-args">
-<h3><a class="toc-backref" href="#id147">DUAL_SCOPE_PREPEND_CMNDLINE_ARGS()</a></h3>
+<h3><a class="toc-backref" href="#id151">DUAL_SCOPE_PREPEND_CMNDLINE_ARGS()</a></h3>
 <p>Utility function that prepends command-line arguments to a variable of
 command-line arguments and sets the result in current scope and parent
 scope.</p>
@@ -9922,7 +10101,7 @@ DUAL_SCOPE_PREPEND_CMNDLINE_ARGS(&lt;var&gt; &quot;&lt;extraArgs&gt;&quot;)
 <p>Just calls <a class="reference internal" href="#prepend-cmndline-args">PREPEND_CMNDLINE_ARGS()</a> and then <tt class="docutils literal"><span class="pre">SET(&lt;var&gt;</span> <span class="pre">${&lt;var&gt;}</span> PARENT_SCOPE)</tt>.</p>
 </div>
 <div class="section" id="dual-scope-set">
-<h3><a class="toc-backref" href="#id148">DUAL_SCOPE_SET()</a></h3>
+<h3><a class="toc-backref" href="#id152">DUAL_SCOPE_SET()</a></h3>
 <p>Macro that sets a variable name both in the current scope and the
 parent scope.</p>
 <p>Usage:</p>
@@ -9946,7 +10125,7 @@ changed in the current subordinate scope and in all parent scopes all in one
 shot!</p>
 </div>
 <div class="section" id="global-null-set">
-<h3><a class="toc-backref" href="#id149">GLOBAL_NULL_SET()</a></h3>
+<h3><a class="toc-backref" href="#id153">GLOBAL_NULL_SET()</a></h3>
 <p>Set a variable as a null internal global (cache) variable (removes
 boiler-plate code).</p>
 <p>Usage:</p>
@@ -9960,7 +10139,7 @@ SET(&lt;varName&gt; &quot;&quot; CACHE INTERNAL &quot;&quot;)
 <p>This avoid problems with misspelling <tt class="docutils literal">CACHE</tt>.</p>
 </div>
 <div class="section" id="global-set">
-<h3><a class="toc-backref" href="#id150">GLOBAL_SET()</a></h3>
+<h3><a class="toc-backref" href="#id154">GLOBAL_SET()</a></h3>
 <p>Set a variable as an internal global (cache) variable (removes boiler-plate
 code).</p>
 <p>Usage:</p>
@@ -9974,7 +10153,7 @@ SET(&lt;varName&gt; [other args] CACHE INTERNAL &quot;&quot;)
 <p>This avoid misspelling <tt class="docutils literal">CACHE</tt>.</p>
 </div>
 <div class="section" id="join">
-<h3><a class="toc-backref" href="#id151">JOIN()</a></h3>
+<h3><a class="toc-backref" href="#id155">JOIN()</a></h3>
 <p>Join a set of strings into a single string using a join string.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -10017,7 +10196,7 @@ JOIN(CMND_LINE_ARGS &quot; &quot; TRUE ${CMND_LINE_ARRAY})
 interprets those as array boundaries.</p>
 </div>
 <div class="section" id="message-wrapper">
-<h3><a class="toc-backref" href="#id152">MESSAGE_WRAPPER()</a></h3>
+<h3><a class="toc-backref" href="#id156">MESSAGE_WRAPPER()</a></h3>
 <p>Function that wraps the standard CMake/CTest <tt class="docutils literal">MESSAGE()</tt> function call in
 order to allow unit testing to intercept the output.</p>
 <p>Usage:</p>
@@ -10041,7 +10220,7 @@ the CMake program.  Otherwise, this is used to capture print messages to
 verify that they say the right thing.</p>
 </div>
 <div class="section" id="multiline-set">
-<h3><a class="toc-backref" href="#id153">MULTILINE_SET()</a></h3>
+<h3><a class="toc-backref" href="#id157">MULTILINE_SET()</a></h3>
 <p>Function to set a single string by concatenating a list of separate strings</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -10061,7 +10240,7 @@ multiple lines.</p>
 exist :-(</p>
 </div>
 <div class="section" id="parse-arguments">
-<h3><a class="toc-backref" href="#id154">PARSE_ARGUMENTS()</a></h3>
+<h3><a class="toc-backref" href="#id158">PARSE_ARGUMENTS()</a></h3>
 <p>Parse a set of macro/function input arguments into different lists.  This
 allows the easy implementation of keyword-based user-defined macros and
 functions.</p>
@@ -10194,7 +10373,7 @@ O( (len(&lt;argNamesList&gt;) * len(&lt;optionNamesList&gt;)) * len(&lt;inputArg
 names and input argument list names.</p>
 </div>
 <div class="section" id="prepend-cmndline-args">
-<h3><a class="toc-backref" href="#id155">PREPEND_CMNDLINE_ARGS()</a></h3>
+<h3><a class="toc-backref" href="#id159">PREPEND_CMNDLINE_ARGS()</a></h3>
 <p>Utility function that prepends command-line arguments to a variable of
 command-line arguments.</p>
 <p>Usage:</p>
@@ -10206,7 +10385,7 @@ PREPEND_CMNDLINE_ARGS(&lt;var&gt; &quot;&lt;extraArgs&gt;&quot;)
 input.</p>
 </div>
 <div class="section" id="prepend-global-set">
-<h3><a class="toc-backref" href="#id156">PREPEND_GLOBAL_SET()</a></h3>
+<h3><a class="toc-backref" href="#id160">PREPEND_GLOBAL_SET()</a></h3>
 <p>Utility macro that prepends arguments to a global variable (reduces
 boiler-plate code and mistakes).</p>
 <p>Usage:</p>
@@ -10217,7 +10396,7 @@ PREPEND_GLOBAL_SET(&lt;varName&gt; &lt;arg0&gt; &lt;arg1&gt; ...)
 it empty initially use <a class="reference internal" href="#global-null-set">GLOBAL_NULL_SET()</a>.</p>
 </div>
 <div class="section" id="print-nonempty-var">
-<h3><a class="toc-backref" href="#id157">PRINT_NONEMPTY_VAR()</a></h3>
+<h3><a class="toc-backref" href="#id161">PRINT_NONEMPTY_VAR()</a></h3>
 <p>Print a defined variable giving its name then value only if it is not empty.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -10226,7 +10405,7 @@ PRINT_NONEMPTY_VAR(&lt;varName&gt;)
 <p>Calls <tt class="docutils literal"><span class="pre">PRINT_VAR(&lt;varName&gt;)</span></tt> if <tt class="docutils literal"><span class="pre">${&lt;varName&gt;}</span></tt> is not empty.</p>
 </div>
 <div class="section" id="print-nonempty-var-with-spaces">
-<h3><a class="toc-backref" href="#id158">PRINT_NONEMPTY_VAR_WITH_SPACES()</a></h3>
+<h3><a class="toc-backref" href="#id162">PRINT_NONEMPTY_VAR_WITH_SPACES()</a></h3>
 <p>Print a defined variable giving its name then value printed with spaces
 instead of <tt class="docutils literal">';'</tt> but only if it is not empty.</p>
 <p>Usage:</p>
@@ -10239,7 +10418,7 @@ PRINT_NONEMPTY_VAR_WITH_SPACES(&lt;varName&gt;)
 </pre>
 </div>
 <div class="section" id="print-var">
-<h3><a class="toc-backref" href="#id159">PRINT_VAR()</a></h3>
+<h3><a class="toc-backref" href="#id163">PRINT_VAR()</a></h3>
 <p>Unconditionally print a variable giving its name then value.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -10253,7 +10432,7 @@ MESSAGE(&quot;-- &quot; &quot;${VARIBLE_NAME}='${${VARIBLE_NAME}}'&quot;)
 an explicit &quot;-- &quot; line prefix so that it prints nice even on Windows CMake.</p>
 </div>
 <div class="section" id="remove-global-duplicates">
-<h3><a class="toc-backref" href="#id160">REMOVE_GLOBAL_DUPLICATES()</a></h3>
+<h3><a class="toc-backref" href="#id164">REMOVE_GLOBAL_DUPLICATES()</a></h3>
 <p>Remove duplicate elements from a global list variable (removes boiler-plate
 code and errors).</p>
 <p>Usage:</p>
@@ -10269,7 +10448,7 @@ variable!  That is a fun bug to track down!  The variable
 function is called it will be after it completes.</p>
 </div>
 <div class="section" id="set-and-inc-dirs">
-<h3><a class="toc-backref" href="#id161">SET_AND_INC_DIRS()</a></h3>
+<h3><a class="toc-backref" href="#id165">SET_AND_INC_DIRS()</a></h3>
 <p>Set a variable to an include directory and call <tt class="docutils literal">INCLUDE_DIRECTORIES()</tt>
 (removes boiler-plate code).</p>
 <p>Usage:</p>
@@ -10279,7 +10458,7 @@ SET_AND_INC_DIRS(&lt;dirVarName&gt; &lt;includeDir&gt;)</blockquote>
 and calls <tt class="docutils literal"><span class="pre">INCLUDE_DIRECTORIES(&lt;includeDir&gt;)</span></tt>.</p>
 </div>
 <div class="section" id="set-cache-on-off-empty">
-<h3><a class="toc-backref" href="#id162">SET_CACHE_ON_OFF_EMPTY()</a></h3>
+<h3><a class="toc-backref" href="#id166">SET_CACHE_ON_OFF_EMPTY()</a></h3>
 <p>Usage:</p>
 <pre class="literal-block">
 SET_CACHE_ON_OFF_EMPTY(&lt;varName&gt; &lt;initialVal&gt; &quot;&lt;docString&gt;&quot; [FORCE])
@@ -10289,7 +10468,7 @@ SET_CACHE_ON_OFF_EMPTY(&lt;varName&gt; &lt;initialVal&gt; &quot;&lt;docString&gt
 GUIs.</p>
 </div>
 <div class="section" id="set-default">
-<h3><a class="toc-backref" href="#id163">SET_DEFAULT()</a></h3>
+<h3><a class="toc-backref" href="#id167">SET_DEFAULT()</a></h3>
 <p>Give a local variable a default value if a non-empty value is not already
 set.</p>
 <p>Usage:</p>
@@ -10301,7 +10480,7 @@ default <tt class="docutils literal">&lt;arg0&gt; &lt;arg1&gt; ...</tt>.  Otherw
 preserved.</p>
 </div>
 <div class="section" id="set-default-and-from-env">
-<h3><a class="toc-backref" href="#id164">SET_DEFAULT_AND_FROM_ENV()</a></h3>
+<h3><a class="toc-backref" href="#id168">SET_DEFAULT_AND_FROM_ENV()</a></h3>
 <p>Set a default value for a local variable and override from an environment
 variable of the same name if it is set.</p>
 <p>Usage:</p>
@@ -10317,7 +10496,7 @@ option <tt class="docutils literal"><span class="pre">-D</span> <span class="pre
 command-line like <tt class="docutils literal">cmake</tt> always allowed.</p>
 </div>
 <div class="section" id="split">
-<h3><a class="toc-backref" href="#id165">SPLIT()</a></h3>
+<h3><a class="toc-backref" href="#id169">SPLIT()</a></h3>
 <p>Split a string variable into a string array/list variable.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -10331,7 +10510,7 @@ that in mind when considering special regex chars like <tt class="docutils liter
 etc!</p>
 </div>
 <div class="section" id="timer-get-raw-seconds">
-<h3><a class="toc-backref" href="#id166">TIMER_GET_RAW_SECONDS()</a></h3>
+<h3><a class="toc-backref" href="#id170">TIMER_GET_RAW_SECONDS()</a></h3>
 <p>Return the raw time in seconds since epoch, i.e., since 1970-01-01 00:00:00
 UTC.</p>
 <p>Usage:</p>
@@ -10349,7 +10528,7 @@ function should only be used to time very course-grained operations
 (i.e. that take longer than a second).</p>
 </div>
 <div class="section" id="timer-get-rel-seconds">
-<h3><a class="toc-backref" href="#id167">TIMER_GET_REL_SECONDS()</a></h3>
+<h3><a class="toc-backref" href="#id171">TIMER_GET_REL_SECONDS()</a></h3>
 <p>Return the relative time between start and stop seconds.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -10361,7 +10540,7 @@ TIMER_GET_REL_SECONDS(&lt;startSeconds&gt; &lt;endSeconds&gt; &lt;relSecondsOutV
 <tt class="docutils literal">&lt;relSecondsOutVar&gt;</tt>.</p>
 </div>
 <div class="section" id="timer-print-rel-time">
-<h3><a class="toc-backref" href="#id168">TIMER_PRINT_REL_TIME()</a></h3>
+<h3><a class="toc-backref" href="#id172">TIMER_PRINT_REL_TIME()</a></h3>
 <p>Print the relative time between start and stop timers in <tt class="docutils literal">&lt;min&gt;m&lt;sec&gt;s</tt>
 format.</p>
 <p>Usage:</p>
@@ -10393,7 +10572,7 @@ REAL_EXPENSIVE() time: 0m5s
 be recorded as <tt class="docutils literal">0m0s</tt>.</p>
 </div>
 <div class="section" id="unittest-compare-const">
-<h3><a class="toc-backref" href="#id169">UNITTEST_COMPARE_CONST()</a></h3>
+<h3><a class="toc-backref" href="#id173">UNITTEST_COMPARE_CONST()</a></h3>
 <p>Perform a single unit test equality check and update overall test statistics</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -10406,7 +10585,7 @@ fails.  This prints the variable name and values and shows the test result.</p>
 by the unit test harness system to assess overall pass/fail.</p>
 </div>
 <div class="section" id="unittest-string-regex">
-<h3><a class="toc-backref" href="#id170">UNITTEST_STRING_REGEX()</a></h3>
+<h3><a class="toc-backref" href="#id174">UNITTEST_STRING_REGEX()</a></h3>
 <p>Perform a series regexes of given strings and update overall test statistics.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -10422,7 +10601,7 @@ UNITTEST_STRING_REGEX(
 by the unit test harness system to assess overall pass/fail.</p>
 </div>
 <div class="section" id="unittest-file-regex">
-<h3><a class="toc-backref" href="#id171">UNITTEST_FILE_REGEX()</a></h3>
+<h3><a class="toc-backref" href="#id175">UNITTEST_FILE_REGEX()</a></h3>
 <p>Perform a series regexes of given strings and update overall test statistics.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -10435,7 +10614,7 @@ UNITTEST_FILE_REGEX(
 to <a class="reference internal" href="#unittest-string-regex">UNITTEST_STRING_REGEX()</a> to assess pass/fail.</p>
 </div>
 <div class="section" id="unittest-final-result">
-<h3><a class="toc-backref" href="#id172">UNITTEST_FINAL_RESULT()</a></h3>
+<h3><a class="toc-backref" href="#id176">UNITTEST_FINAL_RESULT()</a></h3>
 <p>Print final statistics from all tests and assert final pass/fail</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -10462,9 +10641,9 @@ paranoid.</p>
 </div>
 </div>
 <div class="section" id="appendix">
-<h1><a class="toc-backref" href="#id173">13&nbsp;&nbsp;&nbsp;Appendix</a></h1>
+<h1><a class="toc-backref" href="#id177">13&nbsp;&nbsp;&nbsp;Appendix</a></h1>
 <div class="section" id="history-of-tribits">
-<h2><a class="toc-backref" href="#id174">13.1&nbsp;&nbsp;&nbsp;History of TriBITS</a></h2>
+<h2><a class="toc-backref" href="#id178">13.1&nbsp;&nbsp;&nbsp;History of TriBITS</a></h2>
 <p>TriBITS started development in November 2007 as a set of helper macros to
 provide a CMake build system for a small subset of packages in Trilinos.  The
 initial goal was to just to support a native Windows build (using Visual C++)
@@ -10508,7 +10687,7 @@ projectfootnote{<a class="reference external" href="https://github.com/lifev/cma
 independently.</p>
 </div>
 <div class="section" id="why-a-tribits-package-is-not-a-cmake-package">
-<h2><a class="toc-backref" href="#id175">13.2&nbsp;&nbsp;&nbsp;Why a TriBITS Package is not a CMake Package</a></h2>
+<h2><a class="toc-backref" href="#id179">13.2&nbsp;&nbsp;&nbsp;Why a TriBITS Package is not a CMake Package</a></h2>
 <p>Note that a <a class="reference internal" href="#tribits-package">TriBITS Package</a> is not the same thing as a &quot;Package&quot; in raw
 CMake terminology.  In raw CMake, a &quot;Package&quot; is some externally provided bit
 of software or other utility for which the current CMake project has an
@@ -10529,7 +10708,7 @@ definition of a &quot;Package&quot; according to <a class="reference internal" h
 Principles</a>.</p>
 </div>
 <div class="section" id="design-considerations-for-tribits">
-<h2><a class="toc-backref" href="#id176">13.3&nbsp;&nbsp;&nbsp;Design Considerations for TriBITS</a></h2>
+<h2><a class="toc-backref" href="#id180">13.3&nbsp;&nbsp;&nbsp;Design Considerations for TriBITS</a></h2>
 <p>Some of the basic requirements and design goals for TriBITS are outlined in the <a class="reference external" href="../overview/TribitsOverview.pdf">TriBITS Overview</a> document.</p>
 <!-- ToDo: Discuss design requirements for TriBITS in more detail. -->
 <p>As stated in <a class="reference internal" href="#tribits-dependency-handling-behaviors">TriBITS Dependency Handling Behaviors</a>, <a class="reference internal" href="#no-circular-dependencies-of-any-kind-are-allowed">No circular
@@ -10552,7 +10731,7 @@ Software Development, 2003</a>]).</p>
 <!-- dependencies! -->
 </div>
 <div class="section" id="checkin-test-py-help">
-<h2><a class="toc-backref" href="#id177">13.4&nbsp;&nbsp;&nbsp;checkin-test.py --help</a></h2>
+<h2><a class="toc-backref" href="#id181">13.4&nbsp;&nbsp;&nbsp;checkin-test.py --help</a></h2>
 <p>Below is a snapshot of the output from <tt class="docutils literal"><span class="pre">checkin-test.py</span> <span class="pre">--help</span></tt>.  This
 <tt class="docutils literal"><span class="pre">--help</span></tt> output contains a lot of information about the recommended
 development workflow (mostly related to pushing commits) and outlines a number
@@ -11428,7 +11607,7 @@ Options:
 </pre>
 </div>
 <div class="section" id="egdist-help">
-<h2><a class="toc-backref" href="#id178">13.5&nbsp;&nbsp;&nbsp;egdist --help</a></h2>
+<h2><a class="toc-backref" href="#id182">13.5&nbsp;&nbsp;&nbsp;egdist --help</a></h2>
 <p>Below is a snapshot of the output from <tt class="docutils literal">egdist <span class="pre">--help</span></tt>.  For more details on
 the usage of <tt class="docutils literal">egdist</tt>, see <a class="reference internal" href="#multi-repository-support">Multi-Repository Support</a> and <a class="reference internal" href="#multi-repository-development-workflow">Multi-Repository
 Development Workflow</a>.</p>
@@ -11591,7 +11770,7 @@ Options:
 </pre>
 </div>
 <div class="section" id="snapshot-dir-py-help">
-<span id="snapshot-dir-py"></span><h2><a class="toc-backref" href="#id179">13.6&nbsp;&nbsp;&nbsp;snapshot-dir.py --help</a></h2>
+<span id="snapshot-dir-py"></span><h2><a class="toc-backref" href="#id183">13.6&nbsp;&nbsp;&nbsp;snapshot-dir.py --help</a></h2>
 <p>Below is a snapshot of the output from <tt class="docutils literal"><span class="pre">snapshot-dir.py</span> <span class="pre">--help</span></tt>.  For more
 details on the usage of <tt class="docutils literal"><span class="pre">snapshot-dir.py</span></tt>, specifically for snapshotting the
 <a class="reference internal" href="#projectdir-cmake-tribits">&lt;projectDir&gt;/cmake/tribits/</a> directory, see <a class="reference internal" href="#tribits-directory-snapshotting">TriBITS directory

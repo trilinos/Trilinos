@@ -6226,19 +6226,29 @@ Wrapping Externally Configured/Built Software
 It is possible to take an external piece of software that uses any arbitrary
 build system and wrap it as a TriBITS package and have it integrate in with
 the package dependency infrastructure.  The `TribitsExampleProject`_ package
-``WrapExternal`` shows how this can be done.
+``WrapExternal`` shows how this can be done.  Support for this in TriBITS is
+slowly evolving but some key TriBITS features that have been added to support
+the arbitrary case include:
 
-.. ToDo: Show this this is done in detail once TriBITS has nice support for
-.. this and this example looks cleaner.
+* `TRIBITS_DETERMINE_IF_CURRENT_PACKAGE_NEEDS_REBUILT()`_: Uses brute-force
+  searches for recently modified files in upstream SE packages to determine if
+  the external piece of software needs to be rebuilt.
 
-While it is possible to wrap an externally configured and built piece of
-software as a TriBITS package, is is usually must better to just go ahead and
+* `TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES()`_: Write an export
+  makefile or a ``XXXConfig.cmake`` file for usage by the wrapped externally
+  configured and built software.
+
+.. ToDo: Show how this is done in detail once TriBITS has nice support for
+.. external software and the WrapExternal example looks cleaner.
+
+While it is possible to wrap nearly any externally configured and built piece
+of software as a TriBITS package, in most cases, it is usually better to just
 create a TriBITS build system for the software.  For projects that use a raw
-CMake build system, a TriBITS build can be created side-by-side with the
-existing CMake raw build using a number of approaches. The common approach
+CMake build system, a TriBITS build system can be created side-by-side with
+the existing raw CMake build using a number of approaches. The common approach
 that is not too invasive is to create a ``CMakeLists.tribits.txt`` file along
-side every native ``CMakeLists.txt`` file and have the native
-``CMakeLists.txt`` file defined like::
+side every native ``CMakeLists.txt`` file in the external software project and
+have the native ``CMakeLists.txt`` file defined like::
 
   IF (DOING_A_TRIBITS_BUILD)
     INCLUDE("${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.tribits.txt")
@@ -6247,9 +6257,20 @@ side every native ``CMakeLists.txt`` file and have the native
 
   # Rest of native CMakeLists.txt file ...
 
-Experience from the CASL VERA project showed that, overall, there is less
-hassle and less work and better portability when creating a native TriBITS
+Experience from the CASL VERA project has shown that, overall, there is less
+hassle, less work, and better portability when creating a native TriBITS
 build, even if it is a secondary build system for a given piece of software.
+
+The decision whether to just wrap the build system for the existing software
+or to create a (secondary) TriBITS build system for it depends on a number of
+factors.
+
+Note that while it is generally recommended to create a TriBITS build for an
+existing piece of software, it is generally not recommended with switch over
+all of the tests to use CTest (unless the existing software is going to ditch
+their current test driver and reporting system).  Instead, the external
+software's native test system can just be called by the wrapped TriBITS
+package in one or more CTest tests.
 
 
 TriBITS directory snapshotting
