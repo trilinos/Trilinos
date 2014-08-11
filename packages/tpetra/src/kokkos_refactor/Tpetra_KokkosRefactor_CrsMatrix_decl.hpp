@@ -80,6 +80,9 @@ namespace Tpetra {
     typedef LocalOrdinal local_ordinal_type;
     //! This class' third template parameter; the type of global indices.
     typedef GlobalOrdinal global_ordinal_type;
+    //! This class' fourth template parameter; the Kokkos device type.
+    typedef DeviceType device_type;
+
     //! The Kokkos Node type; derived from this class' fourth template parameter.
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
 
@@ -108,8 +111,8 @@ namespace Tpetra {
 
     typedef typename crs_graph_type::t_RowPtrs t_RowPtrs;
     typedef typename crs_graph_type::t_LocalOrdinal_1D t_LocalOrdinal_1D;
-    typedef Kokkos::View<Scalar*, typename node_type::device_type> t_ValuesType;
-    typedef Kokkos::CrsMatrix<Scalar,LocalOrdinal,typename node_type::device_type,void,size_t> k_local_matrix_type;
+    typedef Kokkos::View<Scalar*, device_type> t_ValuesType;
+    typedef Kokkos::CrsMatrix<Scalar, LocalOrdinal, device_type, void, size_t> k_local_matrix_type;
 
     //@}
     //! @name Constructors and destructor
@@ -355,9 +358,23 @@ namespace Tpetra {
     ///   those of the map being cloned, if they exist. Otherwise, the
     ///   row Map is used.
     template <class Node2>
-    RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps> >
-    clone (const RCP<Node2>& node2, const RCP<ParameterList>& params = null) const
+    Teuchos::RCP<
+      CrsMatrix<
+        Scalar, LocalOrdinal, GlobalOrdinal, Node2,
+        typename KokkosClassic::DefaultKernels<
+          void, LocalOrdinal, Node2>::SparseOps> >
+    clone (const Teuchos::RCP<Node2>& node2,
+           const Teuchos::RCP<Teuchos::ParameterList>& params = null) const
     {
+      using Teuchos::ArrayRCP;
+      using Teuchos::null;
+      using Teuchos::ParameterList;
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+      using Teuchos::sublist;
+      typedef typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps LocalMatOps2;
+      typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> CrsMatrix2;
+      typedef Map<LocalOrdinal, GlobalOrdinal, Node2> Map2;
       const char tfecfFuncName[] = "clone";
 
       // Get parameter values.  Set them initially to their default values.
@@ -378,75 +395,67 @@ namespace Tpetra {
         ": You requested that the returned clone have local indices, but the "
         "the source matrix does not have a column Map yet.");
 
-      typedef typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps LocalMatOps2;
-      typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> CrsMatrix2;
-      typedef Map<LocalOrdinal, GlobalOrdinal, Node2> Map2;
       RCP<const Map2> clonedRowMap = this->getRowMap ()->template clone<Node2> (node2);
 
+      // Get an upper bound on the number of entries per row.
       RCP<CrsMatrix2> clonedMatrix;
-      ArrayRCP<const size_t> numEntries;
+      ArrayRCP<const size_t> numEntriesPerRow;
       size_t numEntriesForAll = 0;
-      if (! staticGraph_->indicesAreAllocated ()) {
-        if (! staticGraph_->numAllocPerRow_.is_null ()) {
-          numEntries = staticGraph_->numAllocPerRow_;
-        }
-        else {
-          numEntriesForAll = staticGraph_->numAllocForAllRows_;
-        }
-      }
-      else if (! staticGraph_->numRowEntries_.is_null ()) {
-        numEntries = staticGraph_->numRowEntries_;
-      }
-      else if (staticGraph_->nodeNumAllocated_ == 0) {
-        numEntriesForAll = 0;
-      }
-      else {
-        // We're left with the case that we have optimized storage.
-        // In this case, we have to construct a list of row sizes.
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          getProfileType() != StaticProfile, std::logic_error,
-          "Internal logic error. Please report this to Tpetra team." )
+      bool boundSameForAllLocalRows = false;
+      staticGraph_->getNumEntriesPerLocalRowUpperBound (numEntriesPerRow,
+                                                        numEntriesForAll,
+                                                        boundSameForAllLocalRows);
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        numEntriesForAll != 0 &&
+        static_cast<size_t> (numEntriesPerRow.size ()) != 0,
+        std::logic_error, ": getNumEntriesPerLocalRowUpperBound returned a "
+        "nonzero numEntriesForAll = " << numEntriesForAll << " , as well as a "
+        "numEntriesPerRow array of nonzero length " << numEntriesPerRow.size ()
+        << ".  This should never happen.  Please report this bug to the Tpetra "
+        "developers.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        numEntriesForAll != 0 && ! boundSameForAllLocalRows,
+        std::logic_error, ": getNumEntriesPerLocalRowUpperBound returned a "
+        "nonzero numEntriesForAll = " << numEntriesForAll << " , but claims "
+        "(via its third output value) that the upper bound is not the same for "
+        "all rows.  This should never happen.  Please report this bug to the "
+        "Tpetra developers.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        numEntriesPerRow.size () != 0 && boundSameForAllLocalRows,
+        std::logic_error, ": getNumEntriesPerLocalRowUpperBound returned a "
+        "numEntriesPerRow array of nonzero length " << numEntriesPerRow.size ()
+        << ", but claims (via its third output value) that the upper bound is "
+        "not the same for all rows.  This should never happen.  Please report "
+        "this bug to the Tpetra developers.");
 
-        const size_t numRows = this->getNodeNumRows ();
-        numEntriesForAll = 0;
-        ArrayRCP<size_t> numEnt;
-        if (numRows != 0) {
-          numEnt = arcp<size_t> (numRows);
-        }
-        for (size_t i = 0; i < numRows; ++i) {
-          numEnt[i] = staticGraph_->rowPtrs_[i+1] - staticGraph_->rowPtrs_[i];
-        }
-        numEntries = numEnt;
-      }
-
-      RCP<ParameterList> matrixparams =
+      RCP<ParameterList> matParams =
         params.is_null () ? null : sublist (params,"CrsMatrix");
       if (useLocalIndices) {
         RCP<const Map2> clonedColMap =
           this->getColMap ()->template clone<Node2> (node2);
-        if (numEntries.is_null ()) {
+        if (numEntriesPerRow.is_null ()) {
           clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap, clonedColMap,
                                               numEntriesForAll, pftype,
-                                              matrixparams));
+                                              matParams));
         }
         else {
           clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap, clonedColMap,
-                                              numEntries, pftype,
-                                              matrixparams));
+                                              numEntriesPerRow, pftype,
+                                              matParams));
         }
       }
       else {
-        if (numEntries.is_null ()) {
+        if (numEntriesPerRow.is_null ()) {
           clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap, numEntriesForAll,
-                                              pftype, matrixparams));
+                                              pftype, matParams));
         }
         else {
-          clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap, numEntries, pftype,
-                                              matrixparams));
+          clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap, numEntriesPerRow,
+                                              pftype, matParams));
         }
       }
       // done with these
-      numEntries = null;
+      numEntriesPerRow = Teuchos::null;
       numEntriesForAll = 0;
 
       if (useLocalIndices) {

@@ -63,186 +63,364 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
-  CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &rowMap,
+  CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
             size_t maxNumEntriesPerRow,
             ProfileType pftype,
-            const RCP<ParameterList>& params)
-  : DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >(rowMap)
-  , rowMap_(rowMap)
-  , nodeNumEntries_(0)
-  , nodeNumAllocated_(OrdinalTraits<size_t>::invalid())
-  , pftype_(pftype)
-  , numAllocForAllRows_(maxNumEntriesPerRow)
-  , indicesAreAllocated_(false)
-  , indicesAreLocal_(false)
-  , indicesAreGlobal_(false)
-  , fillComplete_(false)
-  , indicesAreSorted_ (true)
-  , noRedundancies_ (true)
-  , haveLocalConstants_ (false)
-  , haveGlobalConstants_ (false)
-  , sortGhostsAssociatedWithEachProcessor_(true)
+            const Teuchos::RCP<Teuchos::ParameterList>& params) :
+    dist_object_type (rowMap)
+    , rowMap_(rowMap)
+    , nodeNumEntries_(0)
+    , nodeNumAllocated_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , pftype_(pftype)
+    , numAllocForAllRows_(maxNumEntriesPerRow)
+    , indicesAreAllocated_(false)
+    , indicesAreLocal_(false)
+    , indicesAreGlobal_(false)
+    , fillComplete_(false)
+    , indicesAreSorted_ (true)
+    , noRedundancies_ (true)
+    , haveLocalConstants_ (false)
+    , haveGlobalConstants_ (false)
+    , sortGhostsAssociatedWithEachProcessor_(true)
   {
-    typedef Teuchos::OrdinalTraits<size_t> OTST;
-    staticAssertions();
-    TEUCHOS_TEST_FOR_EXCEPTION(maxNumEntriesPerRow == OTST::invalid(),
-      std::invalid_argument, "The allocation hint must be a valid size_t value, "
-      "which in this case means it must not be Teuchos::OrdinalTraits<size_t>::"
-      "invalid().");
-    resumeFill(params);
-    checkInternalState();
+    const char tfecfFuncName[] = "CrsGraph(rowMap,maxNumEntriesPerRow,"
+      "profileType,params): ";
+    staticAssertions ();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      maxNumEntriesPerRow == Teuchos::OrdinalTraits<size_t>::invalid (),
+      std::invalid_argument, "The allocation hint maxNumEntriesPerRow must be "
+      "a valid size_t value, which in this case means it must not be "
+      "Teuchos::OrdinalTraits<size_t>::invalid().");
+    resumeFill (params);
+    checkInternalState ();
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
-  CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &rowMap,
-            const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &colMap,
-            size_t maxNumEntriesPerRow,
-            ProfileType pftype,
-            const RCP<ParameterList>& params)
-  : DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >(rowMap)
-  , rowMap_(rowMap)
-  , colMap_(colMap)
-  , nodeNumEntries_(0)
-  , nodeNumAllocated_(OrdinalTraits<size_t>::invalid())
-  , pftype_(pftype)
-  , numAllocForAllRows_(maxNumEntriesPerRow)
-  , indicesAreAllocated_(false)
-  , indicesAreLocal_(false)
-  , indicesAreGlobal_(false)
-  , fillComplete_(false)
-  , indicesAreSorted_(true)
-  , noRedundancies_(true)
-  , haveLocalConstants_ (false)
-  , haveGlobalConstants_ (false)
-  , sortGhostsAssociatedWithEachProcessor_(true)
+  CrsGraph<
+    LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+    typename KokkosClassic::DefaultKernels<
+      void, LocalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
+            const Teuchos::RCP<const map_type>& colMap,
+            const size_t maxNumEntriesPerRow,
+            const ProfileType pftype,
+            const Teuchos::RCP<Teuchos::ParameterList>& params) :
+    dist_object_type (rowMap)
+    , rowMap_ (rowMap)
+    , colMap_ (colMap)
+    , nodeNumEntries_ (0)
+    , nodeNumAllocated_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , pftype_ (pftype)
+    , numAllocForAllRows_ (maxNumEntriesPerRow)
+    , indicesAreAllocated_ (false)
+    , indicesAreLocal_ (false)
+    , indicesAreGlobal_ (false)
+    , fillComplete_ (false)
+    , indicesAreSorted_ (true)
+    , noRedundancies_ (true)
+    , haveLocalConstants_ (false)
+    , haveGlobalConstants_ (false)
+    , sortGhostsAssociatedWithEachProcessor_ (true)
   {
-    typedef Teuchos::OrdinalTraits<size_t> OTST;
-    staticAssertions();
-    TEUCHOS_TEST_FOR_EXCEPTION(maxNumEntriesPerRow == OTST::invalid(),
-      std::invalid_argument, "The allocation hint must be a valid size_t value, "
-      "which in this case means it must not be Teuchos::OrdinalTraits<size_t>::"
-      "invalid().");
-    resumeFill(params);
-    checkInternalState();
+    const char tfecfFuncName[] = "CrsGraph(rowMap,colMap,maxNumEntriesPerRow,"
+      "profileType,params): ";
+    staticAssertions ();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      maxNumEntriesPerRow == Teuchos::OrdinalTraits<size_t>::invalid (),
+      std::invalid_argument, "The allocation hint maxNumEntriesPerRow must be "
+      "a valid size_t value, which in this case means it must not be "
+      "Teuchos::OrdinalTraits<size_t>::invalid().");
+    resumeFill (params);
+    checkInternalState ();
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
-  CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &rowMap,
-            const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc,
-            ProfileType pftype,
-            const RCP<ParameterList>& params)
-  : DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >(rowMap)
-  , rowMap_(rowMap)
-  , nodeNumEntries_(0)
-  , nodeNumAllocated_(OrdinalTraits<size_t>::invalid())
-  , pftype_(pftype)
-  , numAllocPerRow_(NumEntriesPerRowToAlloc)
-  , numAllocForAllRows_(0)
-  , indicesAreAllocated_(false)
-  , indicesAreLocal_(false)
-  , indicesAreGlobal_(false)
-  , fillComplete_(false)
-  , indicesAreSorted_(true)
-  , noRedundancies_(true)
-  , haveLocalConstants_ (false)
-  , haveGlobalConstants_ (false)
-  , sortGhostsAssociatedWithEachProcessor_(true)
+  CrsGraph<
+    LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+    typename KokkosClassic::DefaultKernels<
+      void, LocalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
+            const Teuchos::ArrayRCP<const size_t>& numEntPerRow,
+            const ProfileType pftype,
+            const Teuchos::RCP<Teuchos::ParameterList>& params) :
+    dist_object_type (rowMap)
+    , rowMap_ (rowMap)
+    , nodeNumEntries_ (0)
+    , nodeNumAllocated_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , pftype_ (pftype)
+    , numAllocForAllRows_ (0)
+    , indicesAreAllocated_ (false)
+    , indicesAreLocal_ (false)
+    , indicesAreGlobal_ (false)
+    , fillComplete_ (false)
+    , indicesAreSorted_ (true)
+    , noRedundancies_ (true)
+    , haveLocalConstants_ (false)
+    , haveGlobalConstants_ (false)
+    , sortGhostsAssociatedWithEachProcessor_ (true)
   {
-    typedef Teuchos::OrdinalTraits<size_t> OTST;
-    const char tfecfFuncName[] = "CrsGraph(rowMap,NumEntriesPerRowToAlloc)";
-    staticAssertions();
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC((size_t)NumEntriesPerRowToAlloc.size() != getNodeNumRows(), std::invalid_argument,
-        ": NumEntriesPerRowToAlloc must have as many entries as specified by rowMap for this node.");
-    for (size_t r=0; r < getNodeNumRows(); ++r) {
-      const size_t curRowCount = NumEntriesPerRowToAlloc[r];
-      TEUCHOS_TEST_FOR_EXCEPTION(curRowCount == OTST::invalid(),
-        std::invalid_argument, "NumEntriesPerRowToAlloc[" << r << "] specifies "
-        "an invalid number of entries (Teuchos::OrdinalTraits<size_t>::"
-        "invalid()).");
+    const char tfecfFuncName[] = "CrsGraph(rowMap,numEntPerRow,profileType,params): ";
+    staticAssertions ();
+
+    const size_t lclNumRows = rowMap.is_null () ?
+      static_cast<size_t> (0) : rowMap->getNodeNumElements ();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      static_cast<size_t> (numEntPerRow.size ()) != lclNumRows,
+      std::invalid_argument, "numEntPerRow has length " << numEntPerRow.size ()
+      << " != the local number of rows " << lclNumRows << " as specified by "
+      "the input row Map.");
+
+#ifdef HAVE_TPETRA_DEBUG
+    for (size_t r = 0; r < lclNumRows; ++r) {
+      const size_t curRowCount = numEntPerRow[r];
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        curRowCount == Teuchos::OrdinalTraits<size_t>::invalid (),
+        std::invalid_argument, "numEntPerRow(" << r << ") specifies an invalid "
+        "number of entries (Teuchos::OrdinalTraits<size_t>::invalid()).");
     }
-    resumeFill(params);
-    checkInternalState();
+#endif // HAVE_TPETRA_DEBUG
+
+    // Allocate k_numAllocPerRow_ (upper bound on number of entries
+    // per row).  We get a host view of the data, as an ArrayRCP.
+    // Create a nonowning Kokkos::View of it, copy into
+    // k_numAllocPerRow, and sync.  Then assign to k_numAllocPerRow_
+    // (which is a const view, so we can't copy into it directly).
+    typedef typename device_type::host_mirror_device_type host_type;
+    typedef Kokkos::View<const size_t*, host_type, Kokkos::MemoryUnmanaged>
+      in_view_type;
+    in_view_type numAllocPerRowIn (numEntPerRow.getRawPtr (), lclNumRows);
+    typedef Kokkos::DualView<size_t*, device_type> dual_view_type;
+    dual_view_type k_numAllocPerRow ("Tpetra::CrsGraph::numAllocPerRow",
+                                     lclNumRows);
+    k_numAllocPerRow.template modify<host_type> ();
+    Kokkos::deep_copy (k_numAllocPerRow.h_view, numAllocPerRowIn);
+    k_numAllocPerRow.template sync<device_type> ();
+    k_numAllocPerRow_ = k_numAllocPerRow;
+    numAllocPerRow_ = Kokkos::Compat::persistingView (k_numAllocPerRow_.h_view);
+
+    resumeFill (params);
+    checkInternalState ();
   }
 
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
-  CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &rowMap,
-            const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &colMap,
-            const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc,
-            ProfileType pftype,
-            const RCP<ParameterList>& params)
-  : DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >(rowMap)
-  , rowMap_(rowMap)
-  , colMap_(colMap)
-  , nodeNumEntries_(0)
-  , nodeNumAllocated_(OrdinalTraits<size_t>::invalid())
-  , pftype_(pftype)
-  , numAllocPerRow_(NumEntriesPerRowToAlloc)
-  , numAllocForAllRows_(0)
-  , indicesAreAllocated_(false)
-  , indicesAreLocal_(false)
-  , indicesAreGlobal_(false)
-  , fillComplete_(false)
-  , indicesAreSorted_(true)
-  , noRedundancies_(true)
-  , haveLocalConstants_ (false)
-  , haveGlobalConstants_ (false)
-  , sortGhostsAssociatedWithEachProcessor_(true)
+  CrsGraph<
+    LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+    typename KokkosClassic::DefaultKernels<
+      void, LocalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
+            const Kokkos::DualView<const size_t*, device_type>& numEntPerRow,
+            const ProfileType pftype,
+            const Teuchos::RCP<Teuchos::ParameterList>& params) :
+    dist_object_type (rowMap)
+    , rowMap_ (rowMap)
+    , nodeNumEntries_ (0)
+    , nodeNumAllocated_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , pftype_ (pftype)
+    , k_numAllocPerRow_ (numEntPerRow)
+    , numAllocPerRow_ (Kokkos::Compat::persistingView (numEntPerRow.h_view))
+    , numAllocForAllRows_ (0)
+    , indicesAreAllocated_ (false)
+    , indicesAreLocal_ (false)
+    , indicesAreGlobal_ (false)
+    , fillComplete_ (false)
+    , indicesAreSorted_ (true)
+    , noRedundancies_ (true)
+    , haveLocalConstants_ (false)
+    , haveGlobalConstants_ (false)
+    , sortGhostsAssociatedWithEachProcessor_ (true)
   {
-    typedef Teuchos::OrdinalTraits<size_t> OTST;
-    const char tfecfFuncName[] = "CrsGraph(rowMap,colMap,NumEntriesPerRowToAlloc)";
-    staticAssertions();
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC((size_t)NumEntriesPerRowToAlloc.size() != getNodeNumRows(), std::invalid_argument,
-        ": NumEntriesPerRowToAlloc must have as many entries as specified by rowMap for this node.");
-    for (size_t r=0; r < getNodeNumRows(); ++r) {
-      const size_t curRowCount = NumEntriesPerRowToAlloc[r];
-      TEUCHOS_TEST_FOR_EXCEPTION(curRowCount == OTST::invalid(),
-        std::invalid_argument, "NumEntriesPerRowToAlloc[" << r << "] specifies "
-        "an invalid number of entries (Teuchos::OrdinalTraits<size_t>::"
-        "invalid()).");
+    const char tfecfFuncName[] = "CrsGraph(rowMap,numEntPerRow,profileType,params): ";
+    staticAssertions ();
+
+    const size_t lclNumRows = rowMap.is_null () ?
+      static_cast<size_t> (0) : rowMap->getNodeNumElements ();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      static_cast<size_t> (numEntPerRow.dimension_0 ()) != lclNumRows,
+      std::invalid_argument, "numEntPerRow has length " <<
+      numEntPerRow.dimension_0 () << " != the local number of rows " <<
+      lclNumRows << " as specified by " "the input row Map.");
+
+#ifdef HAVE_TPETRA_DEBUG
+    for (size_t r = 0; r < lclNumRows; ++r) {
+      const size_t curRowCount = numEntPerRow.h_view(r);
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        curRowCount == Teuchos::OrdinalTraits<size_t>::invalid (),
+        std::invalid_argument, "numEntPerRow(" << r << ") specifies an invalid "
+        "number of entries (Teuchos::OrdinalTraits<size_t>::invalid()).");
     }
-    resumeFill(params);
-    checkInternalState();
+#endif // HAVE_TPETRA_DEBUG
+
+    resumeFill (params);
+    checkInternalState ();
   }
 
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
-  CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &rowMap,
-            const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &colMap,
-            const t_RowPtrs & rowPointers,
-            const t_LocalOrdinal_1D & columnIndices,
-            const RCP<ParameterList>& params)
-  : DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >(rowMap)
-  , rowMap_(rowMap)
-  , colMap_(colMap)
-  , nodeNumEntries_(0)
-  , nodeNumAllocated_(OrdinalTraits<size_t>::invalid())
-  , pftype_(StaticProfile)
-  , numAllocForAllRows_(0)
-  , indicesAreAllocated_(true)
-  , indicesAreLocal_(true)
-  , indicesAreGlobal_(false)
-  , fillComplete_(false)
-  , indicesAreSorted_(true)
-  , noRedundancies_(true)
-  , haveLocalConstants_ (false)
-  , haveGlobalConstants_ (false)
-  , sortGhostsAssociatedWithEachProcessor_(true)
+  CrsGraph<
+    LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+    typename KokkosClassic::DefaultKernels<
+      void, LocalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
+            const Teuchos::RCP<const map_type>& colMap,
+            const Kokkos::DualView<const size_t*, device_type>& numEntPerRow,
+            const ProfileType pftype,
+            const Teuchos::RCP<Teuchos::ParameterList>& params) :
+    dist_object_type (rowMap)
+    , rowMap_ (rowMap)
+    , colMap_ (colMap)
+    , nodeNumEntries_ (0)
+    , nodeNumAllocated_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , pftype_ (pftype)
+    , k_numAllocPerRow_ (numEntPerRow)
+    , numAllocPerRow_ (Kokkos::Compat::persistingView (numEntPerRow.h_view))
+    , numAllocForAllRows_ (0)
+    , indicesAreAllocated_ (false)
+    , indicesAreLocal_ (false)
+    , indicesAreGlobal_ (false)
+    , fillComplete_ (false)
+    , indicesAreSorted_ (true)
+    , noRedundancies_ (true)
+    , haveLocalConstants_ (false)
+    , haveGlobalConstants_ (false)
+    , sortGhostsAssociatedWithEachProcessor_ (true)
+  {
+    const char tfecfFuncName[] = "CrsGraph(rowMap,colMap,numEntPerRow,profileType,params): ";
+    staticAssertions ();
+
+    const size_t lclNumRows = rowMap.is_null () ?
+      static_cast<size_t> (0) : rowMap->getNodeNumElements ();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      static_cast<size_t> (numEntPerRow.dimension_0 ()) != lclNumRows,
+      std::invalid_argument, "numEntPerRow has length " <<
+      numEntPerRow.dimension_0 () << " != the local number of rows " <<
+      lclNumRows << " as specified by " "the input row Map.");
+
+#ifdef HAVE_TPETRA_DEBUG
+    for (size_t r = 0; r < lclNumRows; ++r) {
+      const size_t curRowCount = numEntPerRow.h_view(r);
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        curRowCount == Teuchos::OrdinalTraits<size_t>::invalid (),
+        std::invalid_argument, "numEntPerRow(" << r << ") specifies an invalid "
+        "number of entries (Teuchos::OrdinalTraits<size_t>::invalid()).");
+    }
+#endif // HAVE_TPETRA_DEBUG
+
+    resumeFill (params);
+    checkInternalState ();
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  CrsGraph<
+    LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+    typename KokkosClassic::DefaultKernels<
+      void, LocalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
+            const Teuchos::RCP<const map_type>& colMap,
+            const Teuchos::ArrayRCP<const size_t>& numEntPerRow,
+            ProfileType pftype,
+            const Teuchos::RCP<Teuchos::ParameterList>& params) :
+    dist_object_type (rowMap)
+    , rowMap_ (rowMap)
+    , colMap_ (colMap)
+    , nodeNumEntries_ (0)
+    , nodeNumAllocated_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , pftype_ (pftype)
+    , numAllocForAllRows_ (0)
+    , indicesAreAllocated_ (false)
+    , indicesAreLocal_ (false)
+    , indicesAreGlobal_ (false)
+    , fillComplete_ (false)
+    , indicesAreSorted_ (true)
+    , noRedundancies_ (true)
+    , haveLocalConstants_ (false)
+    , haveGlobalConstants_ (false)
+    , sortGhostsAssociatedWithEachProcessor_ (true)
+  {
+    const char tfecfFuncName[] = "CrsGraph(rowMap,colMap,numEntPerRow,profileType,params): ";
+    staticAssertions ();
+
+    const size_t lclNumRows = rowMap.is_null () ?
+      static_cast<size_t> (0) : rowMap->getNodeNumElements ();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      static_cast<size_t> (numEntPerRow.size ()) != lclNumRows,
+      std::invalid_argument, "numEntPerRow has length " << numEntPerRow.size ()
+      << " != the local number of rows " << lclNumRows << " as specified by "
+      "the input row Map.");
+
+#ifdef HAVE_TPETRA_DEBUG
+    for (size_t r = 0; r < lclNumRows; ++r) {
+      const size_t curRowCount = numEntPerRow[r];
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        curRowCount == Teuchos::OrdinalTraits<size_t>::invalid (),
+        std::invalid_argument, "numEntPerRow(" << r << ") specifies an invalid "
+        "number of entries (Teuchos::OrdinalTraits<size_t>::invalid()).");
+    }
+#endif // HAVE_TPETRA_DEBUG
+
+    // Allocate k_numAllocPerRow_ (upper bound on number of entries
+    // per row).  We get a host view of the data, as an ArrayRCP.
+    // Create a nonowning Kokkos::View of it, copy into
+    // k_numAllocPerRow, and sync.  Then assign to k_numAllocPerRow_
+    // (which is a const view, so we can't copy into it directly).
+    typedef typename device_type::host_mirror_device_type host_type;
+    typedef Kokkos::View<const size_t*, host_type, Kokkos::MemoryUnmanaged>
+      in_view_type;
+    in_view_type numAllocPerRowIn (numEntPerRow.getRawPtr (), lclNumRows);
+    typedef Kokkos::DualView<size_t*, device_type> dual_view_type;
+    dual_view_type k_numAllocPerRow ("Tpetra::CrsGraph::numAllocPerRow",
+                                     lclNumRows);
+    k_numAllocPerRow.template modify<host_type> ();
+    Kokkos::deep_copy (k_numAllocPerRow.h_view, numAllocPerRowIn);
+    k_numAllocPerRow.template sync<device_type> ();
+    k_numAllocPerRow_ = k_numAllocPerRow;
+    numAllocPerRow_ = Kokkos::Compat::persistingView (k_numAllocPerRow_.h_view);
+
+    resumeFill (params);
+    checkInternalState ();
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  CrsGraph<
+    LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+    typename KokkosClassic::DefaultKernels<
+      void, LocalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
+            const Teuchos::RCP<const map_type>& colMap,
+            const t_RowPtrs& rowPointers,
+            const t_LocalOrdinal_1D& columnIndices,
+            const Teuchos::RCP<Teuchos::ParameterList>& params) :
+    dist_object_type (rowMap)
+    , rowMap_(rowMap)
+    , colMap_(colMap)
+    , globalNumEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
+    , globalNumDiags_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
+    , globalMaxNumRowEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
+    , nodeNumEntries_(0)
+    , nodeNumAllocated_(OrdinalTraits<size_t>::invalid())
+    , pftype_(StaticProfile)
+    , numAllocForAllRows_(0)
+    , indicesAreAllocated_(true)
+    , indicesAreLocal_(true)
+    , indicesAreGlobal_(false)
+    , fillComplete_(false)
+    , indicesAreSorted_(true)
+    , noRedundancies_(true)
+    , haveLocalConstants_ (false)
+    , haveGlobalConstants_ (false)
+    , sortGhostsAssociatedWithEachProcessor_(true)
   {
     staticAssertions();
-    globalNumEntries_ = globalNumDiags_ = globalMaxNumRowEntries_ = OrdinalTraits<global_size_t>::invalid();
     setAllIndices(rowPointers,columnIndices);
     checkInternalState();
   }
@@ -251,27 +429,30 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
-  CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &rowMap,
-            const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &colMap,
-            const ArrayRCP<size_t> & rowPointers,
-            const ArrayRCP<LocalOrdinal> & columnIndices,
-            const RCP<ParameterList>& params)
-  : DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >(rowMap)
-  , rowMap_(rowMap)
-  , colMap_(colMap)
-  , nodeNumEntries_(0)
-  , nodeNumAllocated_(OrdinalTraits<size_t>::invalid())
-  , pftype_(StaticProfile)
-  , numAllocForAllRows_(0)
-  , indicesAreAllocated_(true)
-  , indicesAreLocal_(true)
-  , indicesAreGlobal_(false)
-  , fillComplete_(false)
-  , indicesAreSorted_(true)
-  , noRedundancies_(true)
-  , haveLocalConstants_ (false)
-  , haveGlobalConstants_ (false)
-  , sortGhostsAssociatedWithEachProcessor_(true)
+  CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
+            const Teuchos::RCP<const map_type>& colMap,
+            const Teuchos::ArrayRCP<size_t>& rowPointers,
+            const Teuchos::ArrayRCP<LocalOrdinal> & columnIndices,
+            const Teuchos::RCP<Teuchos::ParameterList>& params) :
+    dist_object_type (rowMap)
+    , rowMap_ (rowMap)
+    , colMap_ (colMap)
+    , globalNumEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
+    , globalNumDiags_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
+    , globalMaxNumRowEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
+    , nodeNumEntries_ (0)
+    , nodeNumAllocated_ (OrdinalTraits<size_t>::invalid())
+    , pftype_ (StaticProfile)
+    , numAllocForAllRows_ (0)
+    , indicesAreAllocated_ (true)
+    , indicesAreLocal_ (true)
+    , indicesAreGlobal_ (false)
+    , fillComplete_ (false)
+    , indicesAreSorted_ (true)
+    , noRedundancies_ (true)
+    , haveLocalConstants_ (false)
+    , haveGlobalConstants_ (false)
+    , sortGhostsAssociatedWithEachProcessor_ (true)
   {
     staticAssertions();
     globalNumEntries_ = globalNumDiags_ = globalMaxNumRowEntries_ = OrdinalTraits<global_size_t>::invalid();
@@ -316,6 +497,8 @@ namespace Tpetra {
     using Teuchos::arcp;
     using Teuchos::ArrayRCP;
     using Teuchos::as;
+    using Teuchos::ParameterList;
+    using Teuchos::parameterList;
     using Teuchos::rcp;
     typedef GlobalOrdinal GO;
     typedef LocalOrdinal LO;
@@ -358,7 +541,7 @@ namespace Tpetra {
     makeImportExport ();
 
     RCP<ParameterList> lclparams;
-    if (params == null) {
+    if (params.is_null ()) {
       lclparams = parameterList ();
     } else {
       lclparams = sublist (params, "Local Graph");
@@ -782,6 +965,9 @@ namespace Tpetra {
       Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   allocateIndices (const ELocalGlobal lg)
   {
+    using Teuchos::arcp;
+    using Teuchos::Array;
+    using Teuchos::ArrayRCP;
     typedef Teuchos::ArrayRCP<size_t>::size_type size_type;
 
     // This is a protected function, only callable by us.  If it was
@@ -801,28 +987,43 @@ namespace Tpetra {
       "already allocated, but Tpetra code is calling allocateIndices() again.  "
       "Please report this bug to the Tpetra developers.");
 
-    const size_t numRows = getNodeNumRows();
+    const size_t numRows = getNodeNumRows ();
     indicesAreLocal_  = (lg == LocalIndices);
     indicesAreGlobal_ = (lg == GlobalIndices);
     nodeNumAllocated_ = 0;
-    if (numAllocPerRow_ == null && getNodeNumRows() > 0) {
-      // this wastes memory, temporarily, but it simplifies the code
-      // and interfaces to follow
-      ArrayRCP<size_t> tmpnumallocperrow = arcp<size_t>(numRows);
-      std::fill(tmpnumallocperrow.begin(), tmpnumallocperrow.end(), numAllocForAllRows_);
-      numAllocPerRow_ = tmpnumallocperrow;
-    }
-    //
-    if (getProfileType() == StaticProfile) {
+
+    if (getProfileType () == StaticProfile) {
       //
       //  STATIC ALLOCATION PROFILE
       //
-      k_rowPtrs_ = t_RowPtrs ("Tpetra::CrsGraph::ptr", numAllocPerRow_.size () + 1);
+      k_rowPtrs_ = t_RowPtrs ("Tpetra::CrsGraph::ptr", numRows + 1);
       rowPtrs_ = Kokkos::Compat::persistingView (k_rowPtrs_);
 
-      // hack until we get parallel_scan in kokkos
-      for (size_type i = 0; i < numAllocPerRow_.size (); ++i) {
-        k_rowPtrs_(i+1) = k_rowPtrs_(i) + numAllocPerRow_[i];
+      if (k_numAllocPerRow_.dimension_0 () != 0) {
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+          k_numAllocPerRow_.dimension_0 () != numRows, std::logic_error, ": "
+          "k_numAllocPerRow_ is allocated (has nonzero length), but its length="
+          << k_numAllocPerRow_.dimension_0 () << " != numRows=" << numRows
+          << ".");
+        //
+        // FIXME hack until we get parallel_scan in kokkos
+        //
+        // FIXME (mfh 11 Aug 2014) This assumes UVM.  Should use a
+        // DualView for k_rowPtrs_.
+        typename Kokkos::DualView<const size_t*, device_type>::t_host h_numAllocPerRow =
+          k_numAllocPerRow_.h_view; // use a host view for now, since we compute on host
+        for (size_type i = 0; i < numRows; ++i) {
+          k_rowPtrs_(i+1) = k_rowPtrs_(i) + h_numAllocPerRow(i);
+        }
+      }
+      else {
+        // FIXME hack until we get parallel_scan in kokkos
+        //
+        // FIXME (mfh 11 Aug 2014) This assumes UVM.  Should use a
+        // DualView for k_rowPtrs_.
+        for (size_type i = 0; i < numRows; ++i) {
+          k_rowPtrs_(i+1) = k_rowPtrs_(i) + numAllocForAllRows_;
+        }
       }
 
       const size_type numRowPtrs =
@@ -845,18 +1046,22 @@ namespace Tpetra {
       //
       //  DYNAMIC ALLOCATION PROFILE
       //
-      typename ArrayRCP<const size_t>::iterator numalloc = numAllocPerRow_.begin();
-      size_t howmany = numAllocForAllRows_;
+
+      // Use the host view of k_numAllocPerRow_, since we have to
+      // allocate 2-D storage on the host.
+      typename Kokkos::DualView<const size_t*, device_type>::t_host h_numAllocPerRow =
+        k_numAllocPerRow_.h_view;
+      const bool useNumAllocPerRow = (k_numAllocPerRow_.dimension_0 () != 0);
+
       if (lg == LocalIndices) {
         lclInds2D_ = arcp<Array<LocalOrdinal> > (numRows);
         nodeNumAllocated_ = 0;
         for (size_t i = 0; i < numRows; ++i) {
-          if (numAllocPerRow_ != null) {
-            howmany = *numalloc++;
-          }
-          nodeNumAllocated_ += howmany;
-          if (howmany > 0) {
-            lclInds2D_[i].resize (howmany);
+          const size_t howMany = useNumAllocPerRow ?
+            h_numAllocPerRow(i) : numAllocForAllRows_;
+          nodeNumAllocated_ += howMany;
+          if (howMany > 0) {
+            lclInds2D_[i].resize (howMany);
           }
         }
       }
@@ -864,12 +1069,11 @@ namespace Tpetra {
         gblInds2D_ = arcp<Array<GlobalOrdinal> > (numRows);
         nodeNumAllocated_ = 0;
         for (size_t i = 0; i < numRows; ++i) {
-          if (numAllocPerRow_ != null) {
-            howmany = *numalloc++;
-          }
-          nodeNumAllocated_ += howmany;
-          if (howmany > 0) {
-            gblInds2D_[i].resize (howmany);
+          const size_t howMany = useNumAllocPerRow ?
+            h_numAllocPerRow(i) : numAllocForAllRows_;
+          nodeNumAllocated_ += howMany;
+          if (howMany > 0) {
+            gblInds2D_[i].resize (howMany);
           }
         }
       }
@@ -894,6 +1098,7 @@ namespace Tpetra {
 
     // done with these
     numAllocForAllRows_ = 0;
+    k_numAllocPerRow_ = Kokkos::DualView<const size_t*, device_type> ();
     numAllocPerRow_ = Teuchos::null;
     indicesAreAllocated_ = true;
     checkInternalState ();
@@ -1074,18 +1279,17 @@ namespace Tpetra {
       ret.numEntries = 0;
       ret.offset1D = STINV;
     }
-    else if (indicesAreAllocated () == false) {
+    else if (! indicesAreAllocated ()) {
       // haven't performed allocation yet; probably won't hit this code
       //
       // FIXME (mfh 07 Aug 2014) We want graph's constructors to
       // allocate, rather than doing lazy allocation at first insert.
-      // This will make numAllocPerRow_ obsolete, so we don't have to
-      // make a Kokkos refactor version of it.
-      if (numAllocPerRow_ == null) {
+      // This will make k_numAllocPerRow_ obsolete.
+      const bool useNumAllocPerRow = (k_numAllocPerRow_.dimension_0 () != 0);
+      if (useNumAllocPerRow) {
+        ret.allocSize = k_numAllocPerRow_.h_view(myRow);
+      } else {
         ret.allocSize = numAllocForAllRows_;
-      }
-      else {
-        ret.allocSize = numAllocPerRow_[myRow];
       }
       ret.numEntries = 0;
       ret.offset1D = STINV;
@@ -1597,25 +1801,22 @@ namespace Tpetra {
     bool found = true;
 
     if (isSorted ()) {
-      // binary search
-      std::pair<IT,IT> p = std::equal_range (beg, end, ind);
+      std::pair<IT,IT> p = std::equal_range (beg, end, ind); // binary search
       if (p.first == p.second) {
         found = false;
-      }
-      else {
+      } else {
         ptr = p.first;
       }
     }
     else {
-      // direct search
-      ptr = std::find (beg, end, ind);
+      ptr = std::find (beg, end, ind); // direct search
       if (ptr == end) {
         found = false;
       }
     }
 
     if (found) {
-      return Teuchos::as<size_t> (ptr - beg);
+      return static_cast<size_t> (ptr - beg);
     }
     else {
       return Teuchos::OrdinalTraits<size_t>::invalid ();
@@ -1710,9 +1911,15 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION( haveGlobalConstants_ == true && ( globalNumEntries_ < nodeNumEntries_ || globalNumDiags_ < nodeNumDiags_ || globalMaxNumRowEntries_ < nodeMaxNumRowEntries_ ),
                         std::logic_error, err );
     // if indices are allocated, then the allocation specifications should have been released
-    TEUCHOS_TEST_FOR_EXCEPTION( indicesAreAllocated() == true  && (numAllocForAllRows_ != 0 || numAllocPerRow_ != null),                        std::logic_error, err );
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      indicesAreAllocated () && (numAllocForAllRows_ != 0 ||
+                                 k_numAllocPerRow_.dimension_0 () != 0),
+      std::logic_error, err );
     // if indices are not allocated, then information dictating allocation quantities should be present
-    TEUCHOS_TEST_FOR_EXCEPTION( indicesAreAllocated() == false && (nodeNumAllocated_ != STI || nodeNumEntries_ != 0),                           std::logic_error, err );
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! indicesAreAllocated () && (nodeNumAllocated_ != STI ||
+                                   nodeNumEntries_ != 0),
+      std::logic_error, err );
     // if storage is optimized, then profile should be static
     TEUCHOS_TEST_FOR_EXCEPTION( isStorageOptimized() && pftype_ != StaticProfile,                                                               std::logic_error, err );
 
@@ -2486,6 +2693,7 @@ namespace Tpetra {
     // It makes sense to clear them out here, because at the end of
     // this method, the graph is allocated on the calling process.
     numAllocForAllRows_ = 0;
+    k_numAllocPerRow_ = Kokkos::DualView<const size_t*, device_type> ();
     numAllocPerRow_ = Teuchos::null;
 
     checkInternalState ();
@@ -2538,12 +2746,12 @@ namespace Tpetra {
     const ptrdiff_t numRows = static_cast<ptrdiff_t> (this->getNodeNumRows ());
 
     if (! this->indicesAreAllocated ()) {
-      if (! this->numAllocPerRow_.is_null ()) {
-        numEntriesPerRow = this->numAllocPerRow_;
+      if (k_numAllocPerRow_.dimension_0 () != 0) {
+        numEntriesPerRow = Kokkos::Compat::persistingView (k_numAllocPerRow_.h_view);
         allRowsSame = false; // conservatively; we don't check the array
       }
       else {
-        numEntriesForAll = this->numAllocForAllRows_;
+        numEntriesForAll = numAllocForAllRows_;
         allRowsSame = true;
       }
     }
@@ -2602,8 +2810,20 @@ namespace Tpetra {
       numEntriesForAll != 0 && numEntriesPerRow.size () != 0, std::logic_error,
       "Tpetra::CrsGraph::getNumEntriesPerLocalRowUpperBound: "
       "numEntriesForAll and numEntriesPerRow are not consistent.  The former "
-      "is " << numEntriesForAll << ", but the latter has nonzero size "
-      << numEntriesPerRow.size () << ".  "
+      "is nonzero (" << numEntriesForAll << "), but the latter has nonzero "
+      "size " << numEntriesPerRow.size () << ".  "
+      "Please report this bug to the Tpetra developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      numEntriesForAll != 0 && ! allRowsSame, std::logic_error,
+      "Tpetra::CrsGraph::getNumEntriesPerLocalRowUpperBound: "
+      "numEntriesForAll and allRowsSame are not consistent.  The former "
+      "is nonzero (" << numEntriesForAll << "), but the latter is false.  "
+      "Please report this bug to the Tpetra developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      numEntriesPerRow.size () != 0 && allRowsSame, std::logic_error,
+      "Tpetra::CrsGraph::getNumEntriesPerLocalRowUpperBound: "
+      "numEntriesPerRow and allRowsSame are not consistent.  The former has "
+      "nonzero length " << numEntriesForAll << ", but the latter is true.  "
       "Please report this bug to the Tpetra developers.");
 
     boundPerLocalRow = numEntriesPerRow;
@@ -3117,16 +3337,17 @@ namespace Tpetra {
 
     // Constants from allocateIndices
     //
-    // mfh 08 Aug 2014: numAllocForAllRows_ and numAllocPerRow_ go
+    // mfh 08 Aug 2014: numAllocForAllRows_ and k_numAllocPerRow_ go
     // away once the graph is allocated.  expertStaticFillComplete
     // either presumes that the graph is allocated, or "allocates" it.
     //
     // FIXME (mfh 08 Aug 2014) The goal for the Kokkos refactor
     // version of CrsGraph is to allocate in the constructor, not
     // lazily on first insert.  That will make both
-    // numAllocForAllRows_ and numAllocPerRow_ obsolete.
+    // numAllocForAllRows_ and k_numAllocPerRow_ obsolete.
     numAllocForAllRows_  = 0;
-    numAllocPerRow_      = null;
+    k_numAllocPerRow_    = Kokkos::DualView<const size_t*, device_type> ();
+    numAllocPerRow_      = Teuchos::null;
     indicesAreAllocated_ = true;
 
     // Constants from makeIndicesLocal
