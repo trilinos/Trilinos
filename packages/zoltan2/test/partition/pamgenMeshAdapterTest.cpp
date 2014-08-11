@@ -57,6 +57,7 @@
 //#include <Zoltan2_TestHelpers.hpp>
 #include <Zoltan2_PamgenMeshAdapter.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
+#include <Zoltan2_ColoringProblem.hpp>
 
 //Tpetra includes
 #include "Tpetra_DefaultPlatform.hpp"
@@ -129,15 +130,15 @@ int main(int narg, char *arg[]) {
 
   // default values for command-line arguments
   std::string xmlMeshInFileName("Poisson.xml");
-  std::string method("rcb");
+  std::string action("rcb");
   int nParts = CommT->getSize();
 
   // Read run-time options.
   Teuchos::CommandLineProcessor cmdp (false, false);
   cmdp.setOption("xmlfile", &xmlMeshInFileName,
                  "XML file with PamGen specifications");
-  cmdp.setOption("method", &method,
-                 "Partitioning method to use:  rcb or graph");
+  cmdp.setOption("action", &action,
+                 "Method to use:  rcb or scotch or color");
   cmdp.setOption("nparts", &nParts,
                  "Number of parts to create");
   cmdp.parse(narg, arg);
@@ -165,7 +166,6 @@ int main(int narg, char *arg[]) {
   // Get pamgen mesh definition
   std::string meshInput = Teuchos::getParameter<std::string>(inputMeshList,
 							     "meshInput");
-
 
   /***************************************************************************/
   /********************** GET CELL TOPOLOGY **********************************/
@@ -197,30 +197,49 @@ int main(int narg, char *arg[]) {
 
   Teuchos::ParameterList params("test params");
   params.set("debug_level", "basic_status");
-  params.set("imbalance_tolerance", 1.1);
-  params.set("num_global_parts", nParts);
 
-  if (method == "rcb") {
+  bool do_partitioning = false;
+  if (action == "rcb") {
+    do_partitioning = true;
+    params.set("imbalance_tolerance", 1.1);
+    params.set("num_global_parts", nParts);
     params.set("algorithm", "rcb");
     params.set("rectilinear", "yes");
   }
-  else if (method == "graph") {
+  else if (action == "scotch") {
+    do_partitioning = true;
+    params.set("imbalance_tolerance", 1.1);
+    params.set("num_global_parts", nParts);
     params.set("partitioning_approach", "partition");
     params.set("algorithm", "scotch");
   }
+  else if (action == "color") {
+  }
 
   // create Partitioning problem
-  if (MyPID == 0) cout << "Creating partitioning problem ... \n\n";
+  if (do_partitioning) {
+    if (MyPID == 0) cout << "Creating partitioning problem ... \n\n";
 
-  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params, CommT);
+    Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params, CommT);
 
-  // call the partitioner
-  if (MyPID == 0) cout << "Calling the partitioner ... \n\n";
+    // call the partitioner
+    if (MyPID == 0) cout << "Calling the partitioner ... \n\n";
 
-  problem.solve();
+    problem.solve();
 
-  if (MyPID)
-    problem.printMetrics(cout);
+    if (MyPID) problem.printMetrics(cout);
+  }
+  else {
+    if (MyPID == 0) cout << "Creating coloring problem ... \n\n";
+
+    Zoltan2::ColoringProblem<inputAdapter_t> problem(&ia, &params);
+
+    // call the partitioner
+    if (MyPID == 0) cout << "Calling the coloring algorithm ... \n\n";
+
+    problem.solve();
+
+  }
 
   // delete mesh
   if (MyPID == 0) cout << "Deleting the mesh ... \n\n";
