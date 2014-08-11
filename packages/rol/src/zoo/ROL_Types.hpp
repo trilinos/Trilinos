@@ -76,14 +76,19 @@ namespace ROL {
   struct AlgorithmState {
     int  iter;
     int  nfval;
+    int  ncval;
     int  ngrad;
     Real value;              
     Real gnorm;
+    Real cnorm;
     Real snorm;
     Teuchos::RCP<Vector<Real> > iterateVec;
+    Teuchos::RCP<Vector<Real> > lagmultVec;
     AlgorithmState(void) : iter(0), nfval(0), ngrad(0), value(0), 
-      gnorm(std::numeric_limits<Real>::max()), snorm(std::numeric_limits<Real>::max()), 
-      iterateVec(Teuchos::null) {}
+      gnorm(std::numeric_limits<Real>::max()),
+      cnorm(std::numeric_limits<Real>::max()),
+      snorm(std::numeric_limits<Real>::max()), 
+      iterateVec(Teuchos::null), lagmultVec(Teuchos::null) {}
   };  
   
   /** \brief  State for step class.  Will be used for restarts.

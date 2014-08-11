@@ -392,8 +392,8 @@ namespace ROL {
       for (i=0; i<5; i++) {
         (*v1p)[i] = lhs(i);
       }
-      for (i=5; i<8; i++) {
-        (*v2p)[i] = lhs(i);
+      for (i=0; i<3; i++) {
+        (*v2p)[i] = lhs(i+5);
       }
         
     } //solveAugmentedSystem

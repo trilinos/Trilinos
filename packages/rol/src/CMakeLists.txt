@@ -71,6 +71,7 @@ APPEND_SET(HEADERS
   step/ROL_BarzilaiBorwein.hpp
   step/ROL_Krylov.hpp
   step/ROL_NonlinearCG.hpp
+  step/ROL_CompositeStepSQP.hpp
   )
 
 #

@@ -47,7 +47,7 @@
 */
 
 #include "ROL_SimpleEqConstrained.hpp"
-#include "ROL_LineSearchStep.hpp"
+#include "ROL_CompositeStepSQP.hpp"
 #include "ROL_Algorithm.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -102,7 +102,8 @@ int main(int argc, char *argv[]) {
     parlist.set("Relative Krylov Tolerance",              1.e-2);
     parlist.set("Maximum Number of Krylov Iterations",    10);
     // Define Step
-    ROL::LineSearchStep<RealT> step(parlist);
+    parlist.set("Nominal SQP Optimality Solver Tolerance", 1.e-2);
+    ROL::CompositeStepSQP<RealT> step(parlist);
 
     // Run derivative checks, etc.
     int dim = 5;
@@ -142,15 +143,17 @@ int main(int argc, char *argv[]) {
     
     // Define Status Test
     RealT gtol  = 1e-12;  // norm of gradient tolerance
+    RealT ctol  = 1e-12;  // norm of constraint tolerance
     RealT stol  = 1e-14;  // norm of step tolerance
     int   maxit = 100;    // maximum number of iterations
-    ROL::StatusTest<RealT> status(gtol, stol, maxit);    
+    ROL::StatusTestSQP<RealT> status(gtol, ctol, stol, maxit);    
 
     // Define Algorithm
     ROL::DefaultAlgorithm<RealT> algo(step,status,false);
 
     // Run Algorithm
-    std::vector<std::string> output = algo.run(x, *obj, false);
+    vc.zero();
+    std::vector<std::string> output = algo.run(x, vc, *obj, *constr, false);
     for ( unsigned i = 0; i < output.size(); i++ ) {
       std::cout << output[i];
     }

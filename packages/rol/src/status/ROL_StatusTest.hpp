@@ -84,6 +84,39 @@ public:
 
 }; // class StatusTest
 
+
+template <class Real>
+class StatusTestSQP : public StatusTest<Real> {
+private:
+
+  Real gtol_;
+  Real ctol_;
+  Real stol_;
+  int  max_iter_;
+
+public:
+
+  virtual ~StatusTestSQP() {}
+
+  StatusTestSQP( Real gtol = 1e-6, Real ctol = 1e-6, Real stol = 1e-12, int max_iter = 100 ) :  
+    gtol_(gtol), ctol_(ctol), stol_(stol), max_iter_(max_iter) {}
+
+  /** \brief Check algorithm status.
+  */
+  virtual bool check( AlgorithmState<Real> &state ) {
+     if ( (state.gnorm > this->gtol_) && 
+          (state.cnorm > this->ctol_) && 
+          (state.snorm > this->stol_) && 
+          (state.iter  < this->max_iter_) ) {
+       return true;
+     }
+     else {
+       return false;
+     }
+  }
+
+}; // class StatusTestSQP
+
 } // namespace ROL
 
 #endif

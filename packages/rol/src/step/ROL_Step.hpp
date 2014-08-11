@@ -47,6 +47,7 @@
 #include "ROL_Vector.hpp"
 #include "ROL_Objective.hpp"
 #include "ROL_BoundConstraint.hpp"
+#include "ROL_EqualityConstraint.hpp"
 #include "ROL_Types.hpp"
 #include "Teuchos_ParameterList.hpp"
 
@@ -76,7 +77,7 @@ public:
   }
 
 
-  /** \brief Initialize step.
+  /** \brief Initialize step with bound constraint.
   */
   virtual void initialize( Vector<Real> &x, Objective<Real> &obj, BoundConstraint<Real> &con, 
                            AlgorithmState<Real> &algo_state ) {
@@ -108,6 +109,12 @@ public:
     algo_state.ngrad++;
   }
 
+  /** \brief Initialize step with equality constraint.
+  */
+  virtual void initialize( Vector<Real> &x, Vector<Real> &l, Objective<Real> &obj, EqualityConstraint<Real> &con, 
+                           AlgorithmState<Real> &algo_state ) {
+  }
+
   /** \brief Compute step.
   */
   virtual void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, 
@@ -119,6 +126,18 @@ public:
   virtual void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, 
                        BoundConstraint<Real> &con,
                        AlgorithmState<Real> &algo_state ) = 0;
+
+  /** \brief Compute step (equality constraints).
+  */
+  virtual void compute( Vector<Real> &s, const Vector<Real> &x, const Vector<Real> &l,
+                        Objective<Real> &obj, EqualityConstraint<Real> &con, 
+                        AlgorithmState<Real> &algo_state ) {}
+
+  /** \brief Update step, if successful (equality constraints).
+  */
+  virtual void update( Vector<Real> &x, Vector<Real> &l, const Vector<Real> &s,
+                       Objective<Real> &obj, EqualityConstraint<Real> &con,
+                       AlgorithmState<Real> &algo_state ) {}
 
   /** \brief Print iterate header.
   */
