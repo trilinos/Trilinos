@@ -747,7 +747,7 @@ namespace Kokkos {
   };
 
 
-  template<class DeviceType = Kokkos::ExecutionSpace>
+  template<class DeviceType = Kokkos::Impl::ActiveExecutionMemorySpace::execution_space >
   class Random_XorShift1024_Pool {
   private:
     typedef View<int*,DeviceType> int_view_type;
