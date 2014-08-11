@@ -103,7 +103,7 @@ enum TranslationType {
 ////////////////////////////////////////////////////////////////////
 
 template<typename User>
-    class IdentifierMap{
+class IdentifierMap{
 
 public:
 
@@ -1088,7 +1088,7 @@ template< typename User>
       maxgid = tmpDist[1];
     }
     else{
-      // A gno_t is large enough to hold gid_ts, but may be a different type.
+      // A gno_t is large enough to hold a gid_t, but may be a different type.
       if (sizeof(gid_t) == sizeof(gno_t)) {
         gnoDist_ = arcp_reinterpret_cast<gno_t>(tmpDist);
       }
@@ -1159,6 +1159,7 @@ template< typename User>
     for (int i=2; i <= numProcs_; i++){
       gnoDist_[i] += gnoDist_[i-1];
     }
+    gnoDist_[0] = 0;
 
     minGlobalGno_ = gnoDist_[0];
     maxGlobalGno_ = gnoDist_[numProcs_]-1;
