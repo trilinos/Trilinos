@@ -260,6 +260,7 @@ size_t computeLocalEdgeList(
   size_t numLocalGraphEdges,      // edges in "local" graph
   RCP<const IdentifierMap<User> > &idMap,
   ArrayRCP<const typename InputTraits<User>::gid_t> &allEdgeIds, // in
+  ArrayRCP<const typename InputTraits<User>::gno_t> &allEdgeGnos, // in
   ArrayRCP<int> &allProcs,                                 // in
   ArrayRCP<const typename InputTraits<User>::lno_t> &allOffs,    // in
   ArrayRCP<StridedData<typename InputTraits<User>::lno_t,
@@ -297,8 +298,14 @@ size_t computeLocalEdgeList(
 
     lno_t *lnos = new lno_t [numLocalEdges];
     env->localMemoryAssertion(__FILE__, __LINE__,numLocalEdges, lnos);
-    for (size_t i=0; i < numLocalEdges; i++)
-      lnos[i] = allEdgeIds[i];
+    if (gnosAreGids) {
+      for (size_t i=0; i < numLocalEdges; i++)
+        lnos[i] = allEdgeIds[i];
+    }
+    else {
+      for (size_t i=0; i < numLocalEdges; i++)
+        lnos[i] = allEdgeGnos[i];
+    }
     edgeLocalIds = arcp(lnos, 0, numLocalEdges, true);
     offsets = allOffs;
     eWeights = allWeights;
@@ -573,7 +580,7 @@ public:
       RCP<const IdentifierMap<user_t> > idmap = this->getIdentifierMap();
       computeLocalEdgeList(env_, comm_->getRank(),
         numLocalEdges_, numLocalGraphEdges_,
-        idmap, edgeGids_, procIds_, offsets_, eWeights_,
+        idmap, edgeGids_, edgeGnosConst_, procIds_, offsets_, eWeights_,
         localGraphEdgeLnos_, localGraphEdgeOffsets_, localGraphEdgeWeights_);
     }
     edgeIds = localGraphEdgeLnos_();
@@ -725,6 +732,7 @@ GraphModel<Adapter>::GraphModel(
     typedef VectorAdapter<userCoord_t> adapterWithCoords_t;
     shared_GetVertexCoords<adapterWithCoords_t>(ia->getCoordinateInput());
   }
+  //print();
 }
 
 
@@ -811,6 +819,7 @@ GraphModel<Adapter>::GraphModel(
     typedef VectorAdapter<userCoord_t> adapterWithCoords_t;
     shared_GetVertexCoords<adapterWithCoords_t>(ia->getCoordinateInput());
   }
+  //print();
 }
 
 ////////////////////////////////////////////////////////////////
@@ -916,6 +925,8 @@ GraphModel<Adapter>::GraphModel(
 
   typedef MeshAdapter<user_t> adapterWithCoords_t;
   shared_GetVertexCoords<adapterWithCoords_t>(ia);
+
+  print();
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -1186,14 +1197,25 @@ void GraphModel<Adapter>::print()
             << " Nedge " << edgeGids_.size()
             << " NVWgt " << numWeightsPerVertex_
             << " NEWgt " << nWeightsPerEdge_
-            << " CDim  " << vCoordDim_ << std::endl;
+            << " CDim  " << vCoordDim_ 
+            << " GnosAreGids " << gnosAreGids_ << std::endl;
 
   for (lno_t i = 0; i < gids_.size(); i++) {
-    std::cout << me << fn << i << " " << gids_[i] << ": ";
+    std::cout << me << fn << i << " GID " << gids_[i] << ": ";
     for (lno_t j = offsets_[i]; j < offsets_[i+1]; j++)
-      std::cout << edgeGids_[j] << " ";//<< "(" << procIds_[j] << ") ";
+      std::cout << edgeGids_[j] << " " << "(" << procIds_[j] << ") ";
     std::cout << std::endl;
   }
+
+  if (gnos_.size())
+    for (lno_t i = 0; i < gnos_.size(); i++) {
+      std::cout << me << fn << i << " GNO " << gnos_[i] << ": ";
+      for (lno_t j = offsets_[i]; j < offsets_[i+1]; j++)
+        std::cout << edgeGnos_[j] << " ";//<< "(" << procIds_[j] << ") ";
+      std::cout << std::endl;
+    }
+  else
+    std::cout << me << fn << " GNOS NOT AVAILABLE " << std::endl;
 
   if (vCoordDim_) {
     for (lno_t i = 0; i < gids_.size(); i++) {
