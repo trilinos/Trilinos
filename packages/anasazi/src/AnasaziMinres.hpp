@@ -106,7 +106,7 @@ template <class Scalar, class MV, class OP>
 void MyMinresSolver<Scalar,MV,OP>::solve()
 {
 	#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
-		Teuchos::TimeMonitor outertimer( *TotalTime_ );
+		Teuchos::TimeMonitor lcltimer( *TotalTime_ );
 	#endif
 
 	// Get number of vectors
@@ -174,9 +174,7 @@ void MyMinresSolver<Scalar,MV,OP>::solve()
 			Teuchos::TimeMonitor lcltimer( *ApplyPrecTime_ );
 		#endif
 
-    std::cout << "applying prec\n";
 		OPT::Apply(*Prec_,*R1,*Y);
-    std::cout << "finished applying prec\n";
 	}
 	else
 	{
@@ -191,15 +189,9 @@ void MyMinresSolver<Scalar,MV,OP>::solve()
 		#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
 			Teuchos::TimeMonitor lcltimer( *DotTime_ );
 		#endif
-    std::cout << "calling dot\n";
-    std::cout << "number of vectors in Y: " << MVT::GetNumberVecs(*Y) << std::endl;
-    std::cout << "number of vectors in R1: " << MVT::GetNumberVecs(*R1) << std::endl;
 		MVT::MvDot(*Y,*R1, beta1);
 
-		for(size_t i=0; i<beta1.size(); i++)
-			std::cout << "beta1[i]: " << beta1[i] << std::endl;
-
-		for(size_t i=0; i<beta1.size(); i++)
+		for(int i=0; i<beta1.size(); i++)
 			beta1[i] = sqrt(beta1[i]);
 	}
 
@@ -241,10 +233,9 @@ void MyMinresSolver<Scalar,MV,OP>::solve()
 			for(int i=0; i<newNumConverged; i++)
 				newlyConverged[i] = unconvergedIndices[indicesToRemove[i]];
 
-			Teuchos::RCP<MV> helperX = MVT::CloneViewNonConst(*X_,newlyConverged);
-			Teuchos::RCP<const MV> helperLocX = MVT::CloneView(*locX,indicesToRemove);
+			Teuchos::RCP<MV> helperLocX = MVT::CloneCopy(*locX,indicesToRemove);
 
-			MVT::Assign(*helperLocX,*helperX);
+			MVT::SetBlock(*helperLocX,newlyConverged,*X_);
 
 			// If everything has converged, we are done
 			if(newNumConverged == ncols)
@@ -536,7 +527,6 @@ void MyMinresSolver<Scalar,MV,OP>::solve()
 	}
 
 	// Stick unconverged vectors in X
-	//	std::cout << "Sticking unconverged vectors in X\n";
 	{
 		#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
 			Teuchos::TimeMonitor lcltimer( *AssignTime_ );

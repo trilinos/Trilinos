@@ -88,9 +88,10 @@ SaddleOperator<ScalarType, MV, OP>::SaddleOperator( const Teuchos::RCP<OP> A, co
 		int nvecs = MVT::GetNumberVecs(*B);
 		Teuchos::RCP<MV> AinvB = MVT::Clone(*B,nvecs);
 		Schur_ = rcp(new Teuchos::SerialDenseMatrix<int,ScalarType>(nvecs,nvecs));
-	 
+
 		A_->Apply(*B_,*AinvB);
-		MVT::MvTransMv(1., *B_, *AinvB, *Schur_);	
+
+		MVT::MvTransMv(1., *B_, *AinvB, *Schur_);
 	}
 }
 
@@ -100,71 +101,28 @@ void SaddleOperator<ScalarType, MV, OP>::Apply(const SaddleContainer<ScalarType,
 {
 	if(pt_ == NO_PREC)
 	{
-		Teuchos::SerialDenseMatrix<int,ScalarType> xBottom(X.nyrows,X.nycols), yBottom(X.nyrows,X.nycols);
-	
-		// copy data from pointers to serialdensematrices
-		for(int c=0; c<X.nycols; c++)
-		{
-			for(int r=0; r<X.nyrows; r++)
-				xBottom(r,c) = X.Y_[c][r];
-		}
-
 		// trans does literally nothing, because the operator is symmetric
 		// Y.bottom = B'X.top
-		MVT::MvTransMv(1., *B_, *(X.X_), yBottom);
+		MVT::MvTransMv(1., *B_, *(X.X_), *Y.Y_);
 	
 		// Y.top = A*X.top+B*X.bottom
 		A_->Apply(*(X.X_), *(Y.X_));
-		MVT::MvTimesMatAddMv(1., *B_, xBottom, 1., *(Y.X_));
-	
-		// copy data from serialdensematrices back to pointers
-		for(int c=0; c<X.nycols; c++)
-		{
-			for(int r=0; r<X.nyrows; r++)
-				Y.Y_[c][r] = yBottom(r,c);
-		}
+		MVT::MvTimesMatAddMv(1., *B_, *X.Y_, 1., *(Y.X_));
 	}
 	else if(pt_ == BD_PREC)
 	{
 		Teuchos::SerialDenseSolver<int,ScalarType> MySolver;
-		Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > localSchur;
 
 		// Solve A Y.X = X.X
 		A_->Apply(*(X.X_),*(Y.X_));
-		//Y.X_ = X.X_;
-
-		// copy the data from my containers to serial dense matrices
-		Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > Xbottom, Ybottom;
-		Xbottom = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(X.nyrows,X.nycols) );
-		Ybottom = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Y.nyrows,Y.nycols) );
-
-		for(int c=0; c < X.nycols; c++)
-		{
-			for(int r=0; r < X.nyrows; r++)
-				(*Xbottom)(r,c) = (X.Y_)[c][r];
-		}
-
-		for(int c=0; c < Y.nycols; c++)
-		{
-			for(int r=0; r < Y.nyrows; r++)
-				(*Ybottom)(r,c) = (Y.Y_)[c][r];
-		}
 
 		// So, let me tell you a funny story about how the SerialDenseSolver destroys the original matrix...
-		localSchur = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(X.nyrows,X.nyrows) );
-		*localSchur = *Schur_;
+		Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > localSchur = Teuchos::rcp(new Teuchos::SerialDenseMatrix<int,ScalarType>(*Schur_));
 
 		// Solve the small system
 		MySolver.setMatrix(localSchur);
-		MySolver.setVectors(Ybottom, Xbottom);
+		MySolver.setVectors(Y.Y_, X.Y_);
 		MySolver.solve();
-
-		// put. the data.  BACK!
-		for(int c=0; c < Y.nycols; c++)
-		{
-			for(int r=0; r < Y.nyrows; r++)
-				(Y.Y_)[c][r] = (*Ybottom)(r,c);
-		}	
 	}
 	else if(pt_ == UT_PREC)
 	{
