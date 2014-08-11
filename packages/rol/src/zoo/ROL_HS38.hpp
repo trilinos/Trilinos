@@ -142,10 +142,10 @@ namespace ROL {
     std::vector<Real> u(n,10.0);
     con = Teuchos::rcp( new StdBoundConstraint<Real>(l,u) );
     // Get Initial Guess
-    (*x0p)[0] =  -3.0;
-    (*x0p)[1] =  -1.0;
-    (*x0p)[2] =  -3.0;
-    (*x0p)[3] =  -1.0;
+    (*x0p)[0] = -3.0;
+    (*x0p)[1] = -1.0;
+    (*x0p)[2] = -3.0;
+    (*x0p)[3] = -1.0;
     // Get Solution
     (*xp)[0] = 1.0;
     (*xp)[1] = 1.0;

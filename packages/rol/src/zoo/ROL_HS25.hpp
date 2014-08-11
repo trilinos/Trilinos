@@ -154,9 +154,9 @@ namespace ROL {
     u.push_back(5.0);
     con = Teuchos::rcp( new StdBoundConstraint<Real>(l,u) );
     // Get Initial Guess
-    (*x0p)[0] =  100.0;
-    (*x0p)[1] =  12.5;
-    (*x0p)[2] =  3.0;
+    (*x0p)[0] = 100.0;
+    (*x0p)[1] = 12.5;
+    (*x0p)[2] = 3.0;
     // Get Solution
     (*xp)[0] = 50.0;
     (*xp)[1] = 25.0;
