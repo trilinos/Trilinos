@@ -52,8 +52,77 @@
 #include "ROL_Secant.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-/** \class ROL::Step
-    \brief Provides the interface to compute optimization steps.
+/** \class ROL::PrimalDualActiveSetStep
+    \brief Implements the computation of optimization steps 
+           with the Newton primal-dual active set method.
+
+    To describe primal-dual active set (PDAS), we consider the following 
+    abstract setting.  Suppose \f$\mathcal{X}\f$ is a Hilbert space of 
+    functions mapping \f$\Xi\f$ to \f$\mathbb{R}\f$.  For example, 
+    \f$\Xi\subset\mathbb{R}^n\f$ and \f$\mathcal{X}=L^2(\Xi)\f$ or 
+    \f$\Xi = \{1,\ldots,n\}\f$ and \f$\mathcal{X}=\mathbb{R}^n\f$. We 
+    assume \f$ f:\mathcal{X}\to\mathbb{R}\f$ is twice-continuously Fr&eacute;chet 
+    differentiable and \f$a,\,b\in\mathcal{X}\f$ with \f$a\le b\f$ almost 
+    everywhere in \f$\Xi\f$.  Note that the PDAS algorithm will also work 
+    with secant approximations of the Hessian. 
+
+    Traditionally, PDAS is an algorithm for the minimizing quadratic objective 
+    functions subject to bound constraints.  ROL implements a Newton PDAS which 
+    extends PDAS to general bound-constrained nonlinear programs, i.e., 
+    \f[
+        \min_x \quad f(x) \quad \text{s.t.} \quad a \le x \le b.
+    \f] 
+    Given the \f$k\f$-th iterate \f$x_k\f$, the Newton PDAS algorithm computes 
+    steps by applying PDAS to the quadratic subproblem 
+    \f[
+        \min_s \quad \langle \nabla^2 f(x_k)s + \nabla f(x_k),s \rangle_{\mathcal{X}}
+        \quad \text{s.t.} \quad a \le x_k + s \le b.
+    \f]
+    For the \f$k\f$-th quadratic subproblem, PDAS builds an approximation of the 
+    active set \f$\mathcal{A}_k\f$ using the dual variable \f$\lambda_k\f$ as 
+    \f[
+       \mathcal{A}^+_k = \{\,\xi\in\Xi\,:\,(\lambda_k + c(x_k-b))(\xi) > 0\,\}, \quad
+       \mathcal{A}^-_k = \{\,\xi\in\Xi\,:\,(\lambda_k + c(x_k-a))(\xi) < 0\,\}, \quad\text{and}\quad
+       \mathcal{A}_k = \mathcal{A}^-_k\cup\mathcal{A}^+_k.
+    \f] 
+    We define the inactive set \f$\mathcal{I}_k=\Xi\setminus\mathcal{A}_k\f$.
+    The solution to the quadratic subproblem is then computed iteratively by solving 
+    \f[
+       \nabla^2 f(x_k) s_k + \lambda_{k+1} = -\nabla f(x_k), \quad
+       x_k+s_k = a \;\text{on}\;\mathcal{A}^-_k,\quad x_k+s_k = b\;\text{on}\;\mathcal{A}^+_k,
+       \quad\text{and}\quad
+       \lambda_{k+1} = 0\;\text{on}\;\mathcal{I}_k
+    \f]
+    and updating the active and inactive sets. 
+ 
+    One can rewrite this system by consolidating active and inactive parts, i.e., 
+    \f[
+       \begin{pmatrix}
+           \nabla^2 f(x_k)_{\mathcal{A}_k,\mathcal{A}_k}  & \nabla^2 f(x_k)_{\mathcal{A}_k,\mathcal{I}_k} \\
+           \nabla^2 f(x_k)_{\mathcal{I}_k,\mathcal{A}_k}  & \nabla^2 f(x_k)_{\mathcal{I}_k,\mathcal{I}_k} 
+       \end{pmatrix}
+       \begin{pmatrix}
+         (s_k)_{\mathcal{A}_k} \\
+         (s_k)_{\mathcal{I}_k}
+       \end{pmatrix}
+       +
+       \begin{pmatrix}
+         (\lambda_{k+1})_{\mathcal{A}_k} \\
+         0
+       \end{pmatrix}
+       = - 
+       \begin{pmatrix}
+         \nabla f(x_k)_{\mathcal{A}_k}\\
+         \nabla f(x_k)_{\mathcal{I}_k}
+       \end{pmatrix}.
+    \f]
+    Here the subscripts \f$\mathcal{A}_k\f$ and \f$\mathcal{I}_k\f$ denote the active and inactive 
+    components, respectively.  Moreover, the active components of \f$s_k\f$ are 
+    \f$s_k(\xi) = a(\xi)-x_k(\xi)\f$ if \f$\xi\in\mathcal{A}^-_k\f$ and \f$s_k(\xi) = b(\xi)-x_k(\xi)\f$
+    if \f$\xi\in\mathcal{A}^+_k\f$.  Since \f$(s_k)_{\mathcal{A}_k}\f$ is fixed, we only need to solve 
+    for the inactive components of \f$s_k\f$ which we can do this using conjugate residuals (CR) (i.e., the 
+    Hessian operator corresponding to the inactive indices may not be positive definite).  Once 
+    \f$(s_k)_{\mathcal{I}_k}\f$ is computed, it is straight forward to update the dual variables.
 */
 
 namespace ROL {
@@ -62,31 +131,42 @@ template <class Real>
 class PrimalDualActiveSetStep : public Step<Real> {
 private:
   // Krylov Parameters
-  int maxitCG_;
-  int iterCG_;
-  int flagCG_;
-  Real tol1_;
-  Real tol2_;
-  Real itol_;
+  int maxitCR_; ///< Maximum number of CR iterations to solve quadratic subproblem
+  int iterCR_;  ///< CR iteration counter
+  int flagCR_;  ///< CR termination flag
+  Real tol1_;   ///< CR absolute tolerance
+  Real tol2_;   ///< CR relative tolerance
+  Real itol_;   ///< Inexact CR tolerance
 
   // PDAS Parameters
-  int maxit_;
-  int iter_;
-  int flag_;
-  Real stol_;
-  Real gtol_;
-  Real scale_;
-  Real neps_;
-  bool feasible_;
+  int maxit_;      ///< Maximum number of PDAS iterations 
+  int iter_;       ///< PDAS iteration counter
+  int flag_;       ///< PDAS termination flag
+  Real stol_;      ///< PDAS minimum step size stopping tolerance
+  Real gtol_;      ///< PDAS gradient stopping tolerance
+  Real scale_;     ///< Scale for dual variables in the active set, \f$c\f$
+  Real neps_;      ///< \f$\epsilon\f$-active set parameter 
+  bool feasible_;  ///< Flag whether the current iterate is feasible or not
 
   // Dual Variable
-  Teuchos::RCP<Vector<Real> > lambda_;
+  Teuchos::RCP<Vector<Real> > lambda_; ///< Container for dual variables
 
   // Secant Information
-  ESecant esec_;
-  Teuchos::RCP<Secant<Real> > secant_;
+  ESecant esec_;                       ///< Enum for secant type
+  Teuchos::RCP<Secant<Real> > secant_; ///< Secant object
 
-  // Compute the criticality measure
+  /** \brief Compute the gradient-based criticality measure.
+
+             The criticality measure is 
+             \f$\|x_k - P_{[a,b]}(x_k-\nabla f(x_k))\|_{\mathcal{X}}\f$.
+             Here, \f$P_{[a,b]}\f$ denotes the projection onto the
+             bound constraints.
+ 
+             @param[in]    x     is the current iteration
+             @param[in]    obj   is the objective function
+             @param[in]    con   are the bound constraints
+             @param[in]    tol   is a tolerance for inexact evaluations of the objective function
+  */ 
   Real computeCriticalityMeasure(Vector<Real> &x, Objective<Real> &obj, BoundConstraint<Real> &con, Real tol) {
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
     obj.gradient(*(step_state->gradientVec),x,tol);
@@ -98,7 +178,18 @@ private:
     return xnew->norm();
   }
 
-  // Apply the inactive component of the Hessian
+  /** \brief Apply the inactive components of the Hessian operator.
+ 
+             I.e., the components corresponding to \f$\mathcal{I}_k\f$.
+
+             @param[out]       hv     is the result of applying the Hessian at @b x to 
+                                      @b v
+             @param[in]        v      is the direction in which we apply the Hessian
+             @param[in]        x      is the current iteration vector \f$x_k\f$
+             @param[in]        xlam   is the vector \f$x_k + c\lambda_k\f$
+             @param[in]        obj    is the objective function
+             @param[in]        con    are the bound constraints
+  */
   void applyInactiveHessian(Vector<Real> &hv, Vector<Real> &v, const Vector<Real> &x, 
                       const Vector<Real> &xlam, Objective<Real> &obj, BoundConstraint<Real> &con) {
     con.pruneActive(v,xlam,this->neps_);
@@ -111,7 +202,18 @@ private:
     con.pruneActive(hv,xlam,this->neps_);
   }
 
-  // Apply the inactive component of the preconditioner
+  /** \brief Apply the inactive components of the preconditioner operator.
+
+             I.e., the components corresponding to \f$\mathcal{I}_k\f$.
+
+             @param[out]       hv     is the result of applying the preconditioner at @b x to 
+                                      @b v
+             @param[in]        v      is the direction in which we apply the preconditioner
+             @param[in]        x      is the current iteration vector \f$x_k\f$
+             @param[in]        xlam   is the vector \f$x_k + c\lambda_k\f$
+             @param[in]        obj    is the objective function
+             @param[in]        con    are the bound constraints
+  */
   void applyInactivePrecond(Vector<Real> &pv, Vector<Real> &v, const Vector<Real> &x,
                       const Vector<Real> &xlam, Objective<Real> &obj, BoundConstraint<Real> &con) {
     con.pruneActive(v,xlam,this->neps_);
@@ -119,6 +221,24 @@ private:
     con.pruneActive(pv,xlam,this->neps_);
   }
 
+  /** \brief Solve the inactive part of the PDAS optimality system.  
+
+             The inactive PDAS optimality system is 
+             \f[
+                 \nabla^2 f(x_k)_{\mathcal{I}_k,\mathcal{I}_k}s  = 
+                     -\nabla f(x_k)_{\mathcal{I}_k}
+                     -\nabla^2 f(x_k)_{\mathcal{I}_k,\mathcal{A}_k} (s_k)_{\mathcal{A}_k}.
+             \f]
+             Since the inactive part of the Hessian may not be positive definite, we solve 
+             using CR.
+   
+             @param[out]       sol    is the vector containing the solution
+             @param[in]        rhs    is the right-hand side vector
+             @param[in]        xlam   is the vector \f$x_k + c\lambda_k\f$
+             @param[in]        x      is the current iteration vector \f$x_k\f$
+             @param[in]        obj    is the objective function
+             @param[in]        con    are the bound constraints
+  */
   // Solve the inactive part of the optimality system using conjugate residuals
   void solve(Vector<Real> &sol, const Vector<Real> &rhs, const Vector<Real> &xlam, const Vector<Real> &x, 
              Objective<Real> &obj, BoundConstraint<Real> &con) {
@@ -127,7 +247,7 @@ private:
     res->set(rhs);
     Real rnorm  = res->norm(); 
     Real rtol   = std::min(this->tol1_,this->tol2_*rnorm);
-    if ( false ) { this->itol_ = rtol/(this->maxitCG_*rnorm); }
+    if ( false ) { this->itol_ = rtol/(this->maxitCR_*rnorm); }
     sol.zero();
 
     // Apply preconditioner to residual r = Mres
@@ -147,12 +267,12 @@ private:
     Teuchos::RCP<Vector<Real> > MHp = x.clone();
     Hp->set(*Hr);
 
-    this->iterCG_ = 0;
-    this->flagCG_ = 0;
+    this->iterCR_ = 0;
+    this->flagCR_ = 0;
 
     Real kappa = 0.0, beta  = 0.0, alpha = 0.0, tmp = 0.0, rHr = Hr->dot(*r);
 
-    for (this->iterCG_ = 0; this->iterCG_ < this->maxitCG_; this->iterCG_++) {
+    for (this->iterCR_ = 0; this->iterCR_ < this->maxitCR_; this->iterCR_++) {
       // Precondition Hp
       this->applyInactivePrecond(*MHp,*Hp,x,xlam,obj,con);
 
@@ -167,7 +287,7 @@ private:
       if ( rnorm < rtol ) { break; }
 
       // Apply Hessian to v
-      this->itol_ = rtol/(this->maxitCG_*rnorm);
+      this->itol_ = rtol/(this->maxitCR_*rnorm);
       this->applyInactiveHessian(*Hr,*r,x,xlam,obj,con);
 
       tmp  = rHr;
@@ -178,18 +298,24 @@ private:
       Hp->scale(beta);
       Hp->axpy(1.0,*Hr);
     }
-    if ( this->iterCG_ == this->maxitCG_ ) {
-      this->flagCG_ = 1;
+    if ( this->iterCR_ == this->maxitCR_ ) {
+      this->flagCR_ = 1;
     }
     else {
-      this->iterCG_++;
+      this->iterCR_++;
     }
   }
 
 public:
+  /** \brief Constructor.
+     
+             @param[in]     parlist   is a parameter list containing relevent algorithmic information
+             @param[in]     useSecant is a bool which determines whether or not the algorithm uses 
+                                      a secant approximation of the Hessian
+  */
   PrimalDualActiveSetStep( Teuchos::ParameterList &parlist, bool useSecant = false ) 
-    : Step<Real>::Step(), iterCG_(0), flagCG_(0), iter_(0), flag_(0), neps_(-ROL_EPSILON), feasible_(false) {
-    maxitCG_ = parlist.get("Maximum Number of Krylov Iterations", 50);
+    : Step<Real>::Step(), iterCR_(0), flagCR_(0), iter_(0), flag_(0), neps_(-ROL_EPSILON), feasible_(false) {
+    maxitCR_ = parlist.get("Maximum Number of Krylov Iterations", 50);
     tol1_    = parlist.get("Absolute Krylov Tolerance", 1.e-4);
     tol2_    = parlist.get("Relative Krylov Tolerance", 1.e-2);
     esec_    = StringToESecant(parlist.get("Secant Type","Limited-Memory BFGS"));
@@ -207,7 +333,16 @@ public:
     }
   }
 
-  /** \brief Initialize step.
+  /** \brief Initialize step.  
+
+             This includes projecting the initial guess onto the constraints, 
+             computing the initial objective function value and gradient, 
+             and initializing the dual variables.
+
+             @param[in,out]    x           is the initial guess 
+             @param[in]        obj         is the objective function
+             @param[in]        con         are the bound constraints
+             @param[in]        algo_state  is the current state of the algorithm
   */
   void initialize( Vector<Real> &x, Objective<Real> &obj, BoundConstraint<Real> &con, 
                    AlgorithmState<Real> &algo_state ) {
@@ -233,6 +368,29 @@ public:
   }
 
   /** \brief Compute step.
+
+             Given \f$x_k\f$, this function first builds the 
+             primal-dual active sets
+             \f$\mathcal{A}_k^-\f$ and \f$\mathcal{A}_k^+\f$.  
+             Next, it uses CR to compute the inactive 
+             components of the step by solving 
+             \f[
+                 \nabla^2 f(x_k)_{\mathcal{I}_k,\mathcal{I}_k}(s_k)_{\mathcal{I}_k}  = 
+                     -\nabla f(x_k)_{\mathcal{I}_k}
+                     -\nabla^2 f(x_k)_{\mathcal{I}_k,\mathcal{A}_k} (s_k)_{\mathcal{A}_k}.
+             \f]
+             Finally, it updates the active components of the 
+             dual variables as 
+             \f[
+                \lambda_{k+1} = -\nabla f(x_k)_{\mathcal{A}_k} 
+                                -(\nabla^2 f(x_k) s_k)_{\mathcal{A}_k}.
+             \f]
+
+             @param[out]       s           is the step computed via PDAS
+             @param[in]        x           is the current iterate
+             @param[in]        obj         is the objective function
+             @param[in]        con         are the bound constraints
+             @param[in]        algo_state  is the current state of the algorithm
   */
   void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, BoundConstraint<Real> &con, 
                 AlgorithmState<Real> &algo_state ) {
@@ -338,8 +496,8 @@ public:
 //                << tmp->norm()           << "  " 
 //                << res->norm()           << "  " 
 //                << this->lambda_->norm() << "  " 
-//                << this->flagCG_         << "  " 
-//                << this->iterCG_         << "\n";
+//                << this->flagCR_         << "  " 
+//                << this->iterCR_         << "\n";
       if ( tmp->norm() < this->gtol_*algo_state.gnorm ) {
         this->flag_ = 0;
         break;
@@ -358,6 +516,15 @@ public:
   }
 
   /** \brief Update step, if successful.
+
+             This function returns \f$x_{k+1} = x_k + s_k\f$.
+             It also updates secant information if being used.
+
+             @param[in]        x           is the new iterate
+             @param[out]       s           is the step computed via PDAS
+             @param[in]        obj         is the objective function
+             @param[in]        con         are the bound constraints
+             @param[in]        algo_state  is the current state of the algorithm
   */
   void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, BoundConstraint<Real> &con,
                AlgorithmState<Real> &algo_state ) {
@@ -386,6 +553,9 @@ public:
   }
 
   /** \brief Print iterate header.
+
+             This function produces a string containing 
+             header information.  
   */
   std::string printHeader( void ) const {
     std::stringstream hist;
@@ -401,8 +571,8 @@ public:
       hist << std::setw(10) << std::left << "flagPDAS";
     }
     else {
-      hist << std::setw(10) << std::left << "iterCG";
-      hist << std::setw(10) << std::left << "flagCG";
+      hist << std::setw(10) << std::left << "iterCR";
+      hist << std::setw(10) << std::left << "flagCR";
     }
     hist << std::setw(10) << std::left << "feasible";
     hist << "\n";
@@ -410,6 +580,9 @@ public:
   }
 
   /** \brief Print step name.
+
+             This function produces a string containing 
+             the algorithmic step information.  
   */
   std::string printName( void ) const {
     std::stringstream hist;
@@ -418,6 +591,11 @@ public:
   }
 
   /** \brief Print iterate status.
+    
+             This function prints the iteration status.
+
+             @param[in]        algo_state  is the current state of the algorithm
+             @param[in]        printHeader if set to true will print the header at each iteration
   */
   virtual std::string print( AlgorithmState<Real> &algo_state, bool printHeader = false ) const {
     std::stringstream hist;
@@ -448,8 +626,8 @@ public:
         hist << std::setw(10) << std::left << this->flag_;
       }
       else {
-        hist << std::setw(10) << std::left << this->iterCG_;
-        hist << std::setw(10) << std::left << this->flagCG_;
+        hist << std::setw(10) << std::left << this->iterCR_;
+        hist << std::setw(10) << std::left << this->flagCR_;
       }
       if ( this->feasible_ ) {
         hist << std::setw(10) << std::left << "YES";
@@ -488,14 +666,14 @@ public:
 //
 //    Teuchos::RCP<Vector<Real> > Hp = x.clone();
 //
-//    this->iterCG_ = 0;
-//    this->flagCG_ = 0;
+//    this->iterCR_ = 0;
+//    this->flagCR_ = 0;
 //
 //    Real kappa = 0.0, beta  = 0.0, alpha = 0.0, tmp = 0.0, rv = v->dot(*res);
 //
-//    for (this->iterCG_ = 0; this->iterCG_ < this->maxitCG_; this->iterCG_++) {
+//    for (this->iterCR_ = 0; this->iterCR_ < this->maxitCR_; this->iterCR_++) {
 //      if ( false ) {
-//        this->itol_ = rtol/(this->maxitCG_*rnorm);
+//        this->itol_ = rtol/(this->maxitCR_*rnorm);
 //      }
 //      con.pruneActive(*p,xlam,this->neps_);
 //      if ( this->secant_ == Teuchos::null ) {
@@ -507,7 +685,7 @@ public:
 //      con.pruneActive(*Hp,xlam,this->neps_);
 //
 //      kappa = p->dot(*Hp);
-//      if ( kappa <= 0.0 ) { this->flagCG_ = 2; break; }
+//      if ( kappa <= 0.0 ) { this->flagCR_ = 2; break; }
 //      alpha = rv/kappa;
 //      sol.axpy(alpha,*p);
 //
@@ -525,10 +703,10 @@ public:
 //      p->scale(beta);
 //      p->axpy(1.0,*v);
 //    }
-//    if ( this->iterCG_ == this->maxitCG_ ) {
-//      this->flagCG_ = 1;
+//    if ( this->iterCR_ == this->maxitCR_ ) {
+//      this->flagCR_ = 1;
 //    }
 //    else {
-//      this->iterCG_++;
+//      this->iterCR_++;
 //    }
 //  }
