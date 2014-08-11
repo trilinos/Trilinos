@@ -1392,8 +1392,6 @@ namespace {
     blockMat.getLocalDiagOffsets(diagonalOffsets);
     blockMat.getLocalDiagCopy(diagonalMat, diagonalOffsets());
 
-
-    // Travis should work his magic here
     Scalar* blockVals;
     Scalar* diagVals;
     const LO* blkColInds;
@@ -1624,7 +1622,6 @@ namespace {
 
       typename BV::little_vec_type xlcl = solution.getLocalBlock(lclRowInd);
       Scalar * x = xlcl.getRawPtr();
-      out << "row = " << lclRowInd << endl;
       for (int k = 0; k < blockSize; ++k)
       {
         TEST_FLOATING_EQUALITY(x[k],exactSolution[rowOffset],1e-12);
@@ -1688,7 +1685,6 @@ namespace {
 
       typename BV::little_vec_type xlcl = solution.getLocalBlock(lclRowInd);
       Scalar * x = xlcl.getRawPtr();
-      out << "row = " << lclRowInd << endl;
       for (int k = 0; k < blockSize; ++k)
       {
         TEST_FLOATING_EQUALITY(x[k],exactSolution[rowOffset],1e-12);

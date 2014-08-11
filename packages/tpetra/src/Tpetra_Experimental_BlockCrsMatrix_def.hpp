@@ -391,7 +391,7 @@ namespace Experimental {
       const LO rlid = colMap.getLocalElement (rgid);
 
 #ifdef HAVE_TPETRA_DEBUG
-      if (rlid == Teuchos::OrdinalTraits<LocalOrdinal>::invalid ()) {
+      if (rlid == Teuchos::OrdinalTraits<LO>::invalid ()) {
         allRowMapDiagEntriesInColMap = false;
       }
 #endif // HAVE_TPETRA_DEBUG
@@ -520,18 +520,17 @@ namespace Experimental {
     Scalar * Dmat;
     LO numIndices;
 
-    LO rowBegin, rowEnd, rowStride;
+    LO rowBegin = 0, rowEnd = 0, rowStride = 0;
     if (direction == Forward)
     {
-      rowBegin = 0;
-      rowEnd = numLocalMeshRows;
+      rowBegin = 1;
+      rowEnd = numLocalMeshRows+1;
       rowStride = 1;
     }
     else if (direction == Backward)
     {
-      // FIXME: will not work with LO is unsigned
-      rowBegin = numLocalMeshRows-1;
-      rowEnd = -1;
+      rowBegin = numLocalMeshRows;
+      rowEnd = 0;
       rowStride = -1;
     }
     else if (direction == Symmetric)
@@ -544,13 +543,14 @@ namespace Experimental {
     if (numVecs == 1) {
 
       for (LO lclRow = rowBegin; lclRow != rowEnd; lclRow += rowStride) {
+        LO actlRow = lclRow-1;
 
-        little_vec_type B_cur = B.getLocalBlock (lclRow, 0);
+        little_vec_type B_cur = B.getLocalBlock (actlRow, 0);
         X_lcl.assign(B_cur);
         X_lcl.scale(omega);
 
-        const size_t meshBeg = ptr_[lclRow];
-        const size_t meshEnd = ptr_[lclRow+1];
+        const size_t meshBeg = ptr_[actlRow];
+        const size_t meshEnd = ptr_[actlRow+1];
         for (size_t absBlkOff = meshBeg; absBlkOff < meshEnd; ++absBlkOff) {
           const LO meshCol = ind_[absBlkOff];
           const_little_block_type A_cur =
@@ -559,17 +559,17 @@ namespace Experimental {
           little_vec_type X_cur = X.getLocalBlock (meshCol, 0);
 
           // X_lcl += alpha*A_cur*X_cur
-          const double alpha = meshCol == lclRow ? 1-omega : -omega;
+          const double alpha = meshCol == actlRow ? 1-omega : -omega;
           X_lcl.matvecUpdate (alpha, A_cur, X_cur);
 
         } // for each entry in the current local row of the matrx
 
-        factorizedDiagonal.getLocalRowView(lclRow, columnIndices, Dmat, numIndices);
+        factorizedDiagonal.getLocalRowView(actlRow, columnIndices, Dmat, numIndices);
         little_block_type D_lcl = getNonConstLocalBlockFromInput(Dmat, 0);
 
-        D_lcl.solve(X_lcl, &factorizationPivots[lclRow*blockSize_]);
+        D_lcl.solve(X_lcl, &factorizationPivots[actlRow*blockSize_]);
 
-        little_vec_type X_update = X.getLocalBlock (lclRow, 0);
+        little_vec_type X_update = X.getLocalBlock (actlRow, 0);
         X_update.assign(X_lcl);
 
       } // for each local row of the matrix
@@ -577,13 +577,14 @@ namespace Experimental {
     else {
       for (LO lclRow = rowBegin; lclRow != rowEnd; lclRow += rowStride) {
         for (LO j = 0; j < numVecs; ++j) {
+          LO actlRow = lclRow-1;
 
-          little_vec_type B_cur = B.getLocalBlock (lclRow, j);
+          little_vec_type B_cur = B.getLocalBlock (actlRow, j);
           X_lcl.assign(B_cur);
           X_lcl.scale(omega);
 
-          const size_t meshBeg = ptr_[lclRow];
-          const size_t meshEnd = ptr_[lclRow+1];
+          const size_t meshBeg = ptr_[actlRow];
+          const size_t meshEnd = ptr_[actlRow+1];
           for (size_t absBlkOff = meshBeg; absBlkOff < meshEnd; ++absBlkOff) {
             const LO meshCol = ind_[absBlkOff];
             const_little_block_type A_cur =
@@ -592,17 +593,17 @@ namespace Experimental {
             little_vec_type X_cur = X.getLocalBlock (meshCol, j);
 
             // X_lcl += alpha*A_cur*X_cur
-            const double alpha = meshCol == lclRow ? 1-omega : -omega;
+            const double alpha = meshCol == actlRow ? 1-omega : -omega;
             X_lcl.matvecUpdate (alpha, A_cur, X_cur);
 
           } // for each entry in the current local row of the matrx
 
-          factorizedDiagonal.getLocalRowView(lclRow, columnIndices, Dmat, numIndices);
+          factorizedDiagonal.getLocalRowView(actlRow, columnIndices, Dmat, numIndices);
           little_block_type D_lcl = getNonConstLocalBlockFromInput(Dmat, 0);
 
-          D_lcl.solve(X_lcl, &factorizationPivots[lclRow*blockSize_]);
+          D_lcl.solve(X_lcl, &factorizationPivots[actlRow*blockSize_]);
 
-          little_vec_type X_update = X.getLocalBlock (lclRow, j);
+          little_vec_type X_update = X.getLocalBlock (actlRow, j);
           X_update.assign(X_lcl);
 
         } // for each entry in the current local row of the matrix
@@ -652,17 +653,6 @@ namespace Experimental {
   {
     using Teuchos::ArrayRCP;
     using Teuchos::ArrayView;
-
-#ifdef HAVE_TPETRA_DEBUG
-    const char tfecfFuncName[] = "getLocalDiagCopy";
-    const map_type& rowMap = * (graph_.getRowMap ());
-    // isCompatible() requires an all-reduce, and thus this check
-    // should only be done in debug mode.
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! diag->getGraph().isCompatible (rowMap), std::runtime_error,
-      ": The input Vector's Map must be compatible with (in the sense of Map::"
-      "isCompatible) the CrsMatrix's row Map.");
-#endif // HAVE_TPETRA_DEBUG
 
     const size_t myNumRows = rowMeshMap_.getNodeNumElements();
     const LO* columnIndices;
