@@ -290,7 +290,6 @@ public:
    */
   bool modification_end( modification_optimization opt = MOD_END_SORT );
   bool modification_end_for_edge_creation( modification_optimization opt = MOD_END_SORT);
-  bool modification_end_for_edge_creation_exp( modification_optimization opt = MOD_END_SORT);
 
 
   /** If field-data was set to not stay in sync with buckets as the mesh was populated,
@@ -1402,7 +1401,6 @@ private:
 
   bool internal_modification_end( bool regenerate_aura, modification_optimization opt );
   bool internal_modification_end_for_edge_creation( bool regenerate_aura, modification_optimization opt );
-  bool internal_modification_end_for_edge_creation_exp( bool regenerate_aura, modification_optimization opt );
 
 protected:
   void internal_resolve_shared_modify_delete();

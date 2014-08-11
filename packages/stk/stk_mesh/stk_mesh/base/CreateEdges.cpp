@@ -446,8 +446,7 @@ void create_edges( BulkData & mesh, const Selector & element_selector, Part * pa
     }
   }
 
-//  mesh.modification_end_for_edge_creation_exp( BulkData::MOD_END_COMPRESS_AND_SORT );
-  mesh.modification_end( BulkData::MOD_END_COMPRESS_AND_SORT );
+  mesh.modification_end_for_edge_creation( BulkData::MOD_END_COMPRESS_AND_SORT );
 }
 
 }

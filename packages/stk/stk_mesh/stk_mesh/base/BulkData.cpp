@@ -5653,28 +5653,7 @@ bool BulkData::modification_end_for_edge_creation( modification_optimization opt
 {
   Trace_("stk::mesh::BulkData::modification_end");
 
-//  bool return_value = internal_modification_end( true, opt );
   bool return_value = internal_modification_end_for_edge_creation( true, opt );
-
-#ifdef GATHER_GET_BUCKETS_METRICS
-  ++m_num_modifications;
-#endif
-
-#ifdef STK_VERBOSE_OUTPUT
-  print_bucket_data(*this);
-#endif
-
-  write_modification_counts();
-
-  return return_value;
-}
-
-bool BulkData::modification_end_for_edge_creation_exp( modification_optimization opt)
-{
-  Trace_("stk::mesh::BulkData::modification_end");
-
-//  bool return_value = internal_modification_end( true, opt );
-  bool return_value = internal_modification_end_for_edge_creation_exp( true, opt );
 
 #ifdef GATHER_GET_BUCKETS_METRICS
   ++m_num_modifications;
@@ -5839,116 +5818,6 @@ bool BulkData::internal_modification_end( bool regenerate_aura, modification_opt
   else {
       std::vector<Entity> shared_modified ;
       internal_update_distributed_index( shared_modified );
-  }
-
-  // ------------------------------
-  // Now sort the bucket entities.
-  // This does not change the entities, relations, or field data.
-  // However, it insures that the ordering of entities and buckets
-  // is independent of the order in which a set of changes were
-  // performed.
-  //
-  //optimize_buckets combines multiple buckets in a bucket-family into
-  //a single larger bucket, and also does a sort.
-  //If optimize_buckets has not been requested, still do the sort.
-
-  if ( opt == MOD_END_COMPRESS_AND_SORT ) {
-    m_bucket_repository.optimize_buckets();
-  }
-  else {
-    m_bucket_repository.internal_sort_bucket_entities();
-  }
-
-  // ------------------------------
-
-  m_bucket_repository.internal_modification_end();
-
-  internal_update_fast_comm_maps();
-
-  m_sync_state = SYNCHRONIZED ;
-
-  update_deleted_entities_container();
-
-  return true ;
-}
-
-
-bool BulkData::internal_modification_end_for_edge_creation( bool regenerate_aura, modification_optimization opt )
-{
-  Trace_("stk::mesh::BulkData::internal_modification_end");
-
-  // The two states are MODIFIABLE and SYNCHRONiZED
-  if ( m_sync_state == SYNCHRONIZED ) { return false ; }
-
-  ThrowAssertMsg(check_for_connected_nodes(*this)==0, "BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
-
-  if (parallel_size() > 1) {
-    // Resolve modification or deletion of shared entities
-    // which can cause deletion of ghost entities.
-
-    // internal_resolve_shared_modify_delete();
-
-    // Resolve modification or deletion of ghost entities
-    // by destroying ghost entities that have been touched.
-
-    internal_resolve_ghosted_modify_delete();
-
-    // Resolution of shared and ghost modifications can empty
-    // the communication information for entities.
-    // If there is no communication information then the
-    // entity must be removed from the communication list.
-
-    update_comm_list_based_on_changes_in_comm_map();
-
-    {
-        std::vector<Entity> shared_modified ;
-
-         // Update the parallel index and
-         // output shared and modified entities.
-         internal_update_distributed_index( stk::topology::EDGE_RANK, shared_modified );
-
-         // ------------------------------------------------------------
-         // Claim ownership on all shared_modified entities that I own
-         // and which were not created in this modification cycle. All
-         // sharing procs will need to be informed of this claim.
-
-         resolve_ownership_of_modified_entities( shared_modified );
-
-         // ------------------------------------------------------------
-         // Update shared created entities.
-         // - Revise ownership to selected processor
-         // - Update sharing.
-         // - Work backward so the 'in_owned_closure' function
-         //   can evaluate related higher ranking entities.
-
-         move_entities_to_proper_part_ownership( shared_modified );
-
-         update_comm_list( shared_modified );
-    }
-
-    // Resolve part membership for shared entities.
-    // This occurs after resolving creation so created and shared
-    // entities are resolved along with previously existing shared entities.
-
-    internal_resolve_shared_membership();
-
-    // Regenerate the ghosting aura around all shared mesh entities.
-    if ( regenerate_aura ) { internal_regenerate_aura(); }
-
-    // ------------------------------
-    // Verify parallel consistency of mesh entities.
-    // Unique ownership, communication lists, sharing part membership,
-    // application part membership consistency.
-#ifndef NDEBUG
-    std::ostringstream msg ;
-    bool is_consistent = true;
-    is_consistent = comm_mesh_verify_parallel_consistency( *this , msg );
-    ThrowErrorMsgIf( !is_consistent, msg.str() );
-#endif
-  }
-  else {
-      std::vector<Entity> shared_modified ;
-      internal_update_distributed_index( stk::topology::EDGE_RANK, shared_modified );
   }
 
   // ------------------------------
@@ -6248,9 +6117,9 @@ void connect_ghosted_edges_received_to_ghosted_faces_and_elements(stk::mesh::Bul
     }
 }
 
-bool BulkData::internal_modification_end_for_edge_creation_exp( bool regenerate_aura, modification_optimization opt )
+bool BulkData::internal_modification_end_for_edge_creation( bool regenerate_aura, modification_optimization opt )
 {
-  Trace_("stk::mesh::BulkData::internal_modification_end");
+  Trace_("stk::mesh::BulkData::internal_modification_end_for_edge_creation");
 
   // The two states are MODIFIABLE and SYNCHRONiZED
   if ( m_sync_state == SYNCHRONIZED ) { return false ; }
