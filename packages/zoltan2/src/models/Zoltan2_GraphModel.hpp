@@ -639,6 +639,9 @@ private:
   size_t numLocalEdges_;
   size_t numGlobalEdges_;
   size_t numLocalGraphEdges_;
+
+  // For debugging
+  void print();
 };
 
 
@@ -1171,7 +1174,41 @@ void GraphModel<Adapter>::shared_GetVertexCoords(const AdapterWithCoords *ia)
   }
 }
 
+//////////////////////////////////////////////////////////////////////////
+  template <typename Adapter>
+void GraphModel<Adapter>::print()
+{
+  int me = comm_->getRank();
+  std::string fn(" GRAPHMODEL ");
+
+  std::cout << me << fn
+            << " Nvtx  " << gids_.size()
+            << " Nedge " << edgeGids_.size()
+            << " NVWgt " << numWeightsPerVertex_
+            << " NEWgt " << nWeightsPerEdge_
+            << " CDim  " << vCoordDim_ << std::endl;
+
+  for (lno_t i = 0; i < gids_.size(); i++) {
+    std::cout << me << fn << i << " " << gids_[i] << ": ";
+    for (lno_t j = offsets_[i]; j < offsets_[i+1]; j++)
+      std::cout << edgeGids_[j] << " ";//<< "(" << procIds_[j] << ") ";
+    std::cout << std::endl;
+  }
+
+  if (vCoordDim_) {
+    for (lno_t i = 0; i < gids_.size(); i++) {
+      std::cout << me << fn << "COORDS " << i << " " << gids_[i] << ": ";
+      for (int j = 0; j < vCoordDim_; j++)
+         std::cout << vCoords_[j][i] << " ";
+      std::cout << std::endl;
+    }
+  }
+  else
+    std::cout << me << fn << "NO COORDINATES AVAIL " << std::endl;
+}
+
 }   // namespace Zoltan2
+
 
 #endif
 
