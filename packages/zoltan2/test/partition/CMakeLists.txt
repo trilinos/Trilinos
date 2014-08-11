@@ -159,7 +159,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 4
   COMM serial mpi
   ARGS
-    "--method=rcb --nparts=6"
+    "--action=rcb --nparts=6"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
 )
@@ -170,7 +170,7 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 4
   COMM serial mpi
   ARGS
-    "--method=scotch --nparts=6"
+    "--action=scotch --nparts=6"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
 )
@@ -181,7 +181,7 @@ TRIBITS_ADD_TEST(
 #  NUM_MPI_PROCS 4
 #  COMM serial mpi
 #  ARGS
-#    "--method=color"
+#    "--action=color"
 #  PASS_REGULAR_EXPRESSION "PASS"
 #  FAIL_REGULAR_EXPRESSION "FAIL"
 #)
