@@ -118,7 +118,7 @@ namespace Tpetra {
   ///   the Import (i.e., when calling DistObject's doImport()
   ///   (forward mode) or doExport() (reverse mode)).
   ///
-  template <class LocalOrdinal,
+  template <class LocalOrdinal = int,
             class GlobalOrdinal = LocalOrdinal,
             class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class Import:

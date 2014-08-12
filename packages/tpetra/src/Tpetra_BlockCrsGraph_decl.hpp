@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
@@ -61,7 +61,7 @@ namespace Tpetra {
 
   BlockCrsGraph is used by Tpetra::VbrMatrix (variable block row matrix).
 */
-template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
 class BlockCrsGraph : public Teuchos::Describable {
  public:
   typedef LocalOrdinal  local_ordinal_type;
@@ -103,13 +103,13 @@ class BlockCrsGraph : public Teuchos::Describable {
   //! \brief Communicate non-local contributions to other nodes.
   void globalAssemble();
 
-  /*! \brief Signal that data entry is complete, specifying domain and range maps. 
+  /*! \brief Signal that data entry is complete, specifying domain and range maps.
       Off-node entries are distributed, repeated entries are summed, and global indices are transformed to local indices.
       If \c OptimizeStorage is true, then optimizeStorage() is called as well.
    */
   void fillComplete(const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > &blkDomainMap, const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > &blkRangeMap, OptimizeOption os = DoOptimizeStorage);
 
-  /*! \brief Signal that data entry is complete. 
+  /*! \brief Signal that data entry is complete.
       Off-node entries are distributed, repeated entries are summed, and global indices are transformed to local indices.
       If \c OptimizeStorage is true, then optimizeStorage() is called as well.
       \note This method calls fillComplete( getRowMap(), getRowMap(), OptimizeStorage ).

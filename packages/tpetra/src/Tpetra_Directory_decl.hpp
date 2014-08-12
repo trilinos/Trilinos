@@ -121,7 +121,7 @@ namespace Tpetra {
   ///   already exists.  Epetra_Directory is an abstract interface
   ///   with one implementation (Epetra_BasicDirectory);
   ///   Tpetra::Directory is a concrete implementation.
-  template<class LocalOrdinal,
+  template<class LocalOrdinal = int,
            class GlobalOrdinal = LocalOrdinal,
            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class Directory : public Teuchos::Describable {

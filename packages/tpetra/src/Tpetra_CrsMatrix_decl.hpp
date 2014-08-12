@@ -173,7 +173,7 @@ namespace Tpetra {
   /// object, that keeps the same source and target Map objects but
   /// has a different communication plan.  We have not yet implemented
   /// this optimization.
-  template <class Scalar,
+  template <class Scalar        = double,
             class LocalOrdinal  = int,
             class GlobalOrdinal = LocalOrdinal,
             class Node          = KokkosClassic::DefaultNode::DefaultNodeType,
