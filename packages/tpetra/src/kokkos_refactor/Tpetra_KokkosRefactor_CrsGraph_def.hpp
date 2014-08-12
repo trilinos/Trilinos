@@ -198,11 +198,11 @@ namespace Tpetra {
     // Create a nonowning Kokkos::View of it, copy into
     // k_numAllocPerRow, and sync.  Then assign to k_numAllocPerRow_
     // (which is a const view, so we can't copy into it directly).
+    typedef Kokkos::DualView<size_t*, Kokkos::LayoutLeft, device_type> dual_view_type;
     typedef typename device_type::host_mirror_device_type host_type;
-    typedef Kokkos::View<const size_t*, host_type, Kokkos::MemoryUnmanaged>
+    typedef Kokkos::View<const size_t*, Kokkos::LayoutLeft, host_type, Kokkos::MemoryUnmanaged>
       in_view_type;
     in_view_type numAllocPerRowIn (numEntPerRow.getRawPtr (), lclNumRows);
-    typedef Kokkos::DualView<size_t*, device_type> dual_view_type;
     dual_view_type k_numAllocPerRow ("Tpetra::CrsGraph::numAllocPerRow",
                                      lclNumRows);
     k_numAllocPerRow.template modify<host_type> ();
@@ -389,11 +389,11 @@ namespace Tpetra {
     // Create a nonowning Kokkos::View of it, copy into
     // k_numAllocPerRow, and sync.  Then assign to k_numAllocPerRow_
     // (which is a const view, so we can't copy into it directly).
+    typedef Kokkos::DualView<size_t*, Kokkos::LayoutLeft, device_type> dual_view_type;
     typedef typename device_type::host_mirror_device_type host_type;
-    typedef Kokkos::View<const size_t*, host_type, Kokkos::MemoryUnmanaged>
+    typedef Kokkos::View<const size_t*, Kokkos::LayoutLeft, host_type, Kokkos::MemoryUnmanaged>
       in_view_type;
     in_view_type numAllocPerRowIn (numEntPerRow.getRawPtr (), lclNumRows);
-    typedef Kokkos::DualView<size_t*, device_type> dual_view_type;
     dual_view_type k_numAllocPerRow ("Tpetra::CrsGraph::numAllocPerRow",
                                      lclNumRows);
     k_numAllocPerRow.template modify<host_type> ();
@@ -1051,7 +1051,7 @@ namespace Tpetra {
         // is currently a device View.  Should instead use a DualView.
         typename Kokkos::DualView<const size_t*, device_type>::t_host h_numAllocPerRow =
           k_numAllocPerRow_.h_view; // use a host view for now, since we compute on host
-        for (size_type i = 0; i < numRows; ++i) {
+        for (size_t i = 0; i < numRows; ++i) {
           k_rowPtrs_(i+1) = k_rowPtrs_(i) + h_numAllocPerRow(i);
         }
       }
@@ -1060,7 +1060,7 @@ namespace Tpetra {
         //
         // FIXME (mfh 11 Aug 2014) This assumes UVM, since k_rowPtrs_
         // is currently a device View.  Should instead use a DualView.
-        for (size_type i = 0; i < numRows; ++i) {
+        for (size_t i = 0; i < numRows; ++i) {
           k_rowPtrs_(i+1) = k_rowPtrs_(i) + numAllocForAllRows_;
         }
       }
@@ -3636,7 +3636,7 @@ namespace Tpetra {
           typename row_offsets_type::HostMirror h_k_ptrs =
             create_mirror_view (k_ptrs);
           h_k_ptrs(0) = 0;
-          for (size_type i = 0; i < lclNumRows; ++i) {
+          for (size_t i = 0; i < lclNumRows; ++i) {
             const size_t numEnt = h_numRowEnt(i);
             lclTotalNumEntries += numEnt;
             h_k_ptrs(i+1) = h_k_ptrs(i) + numEnt;

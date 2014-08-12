@@ -1662,7 +1662,7 @@ namespace Tpetra {
     /// This will make both numAllocPerRow_ and numAllocForAllRows_
     /// obsolete, so we don't have to make a Kokkos refactor version
     /// of numAllocPerRow_.
-    Kokkos::DualView<const size_t*, device_type> k_numAllocPerRow_;
+    Kokkos::DualView<const size_t*, Kokkos::LayoutLeft, device_type> k_numAllocPerRow_;
 
     /// \brief Legacy Kokkos classic version of k_numAllocPerRow_.
     ///
