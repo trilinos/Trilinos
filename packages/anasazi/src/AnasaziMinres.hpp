@@ -40,7 +40,7 @@ namespace Anasazi {
 namespace Experimental {
 
 template <class Scalar, class MV, class OP>
-class MyMinresSolver
+class PseudoBlockMinres
 {
 	typedef Anasazi::MultiVecTraits<Scalar,MV>         MVT;
 	typedef Anasazi::OperatorTraits<Scalar,MV,OP>      OPT;
@@ -49,7 +49,7 @@ class MyMinresSolver
 
 public:
 	// Constructor
-	MyMinresSolver(Teuchos::RCP<OP> A, Teuchos::RCP<OP> Prec = Teuchos::null);
+	PseudoBlockMinres(Teuchos::RCP<OP> A, Teuchos::RCP<OP> Prec = Teuchos::null);
 
 	// Set tolerance and maximum iterations
 	void setTol(const std::vector<Scalar>& tolerances) { tolerances_ = tolerances; };
@@ -80,20 +80,20 @@ private:
 
 
 template <class Scalar, class MV, class OP>
-MyMinresSolver<Scalar,MV,OP>::MyMinresSolver(Teuchos::RCP<OP> A, Teuchos::RCP<OP> Prec) : 
+PseudoBlockMinres<Scalar,MV,OP>::PseudoBlockMinres(Teuchos::RCP<OP> A, Teuchos::RCP<OP> Prec) : 
 	ONE(Teuchos::ScalarTraits<Scalar>::one()), 
 	ZERO(Teuchos::ScalarTraits<Scalar>::zero()) 
 {
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
-	AddTime_ = Teuchos::TimeMonitor::getNewTimer("Anasazi: MyMinres::Add Multivectors"); 
-	ApplyOpTime_ = Teuchos::TimeMonitor::getNewTimer("Anasazi: MyMinres::Apply Operator");
-	ApplyPrecTime_ = Teuchos::TimeMonitor::getNewTimer("Anasazi: MyMinres::Apply Preconditioner");
-	AssignTime_ = Teuchos::TimeMonitor::getNewTimer("Anasazi: MyMinres::Assignment (no locking)");
-	DotTime_ = Teuchos::TimeMonitor::getNewTimer("Anasazi: MyMinres::Compute Dot Product");
-	LockTime_ = Teuchos::TimeMonitor::getNewTimer("Anasazi: MyMinres::Lock Converged Vectors");
-	NormTime_ = Teuchos::TimeMonitor::getNewTimer("Anasazi: MyMinres::Compute Norm");
-	ScaleTime_ = Teuchos::TimeMonitor::getNewTimer("Anasazi: MyMinres::Scale Multivector");
-	TotalTime_ = Teuchos::TimeMonitor::getNewTimer("Anasazi: MyMinres::Total Time");
+	AddTime_ = Teuchos::TimeMonitor::getNewTimer("Anasazi: PseudoBlockMinres::Add Multivectors"); 
+	ApplyOpTime_ = Teuchos::TimeMonitor::getNewTimer("Anasazi: PseudoBlockMinres::Apply Operator");
+	ApplyPrecTime_ = Teuchos::TimeMonitor::getNewTimer("Anasazi: PseudoBlockMinres::Apply Preconditioner");
+	AssignTime_ = Teuchos::TimeMonitor::getNewTimer("Anasazi: PseudoBlockMinres::Assignment (no locking)");
+	DotTime_ = Teuchos::TimeMonitor::getNewTimer("Anasazi: PseudoBlockMinres::Compute Dot Product");
+	LockTime_ = Teuchos::TimeMonitor::getNewTimer("Anasazi: PseudoBlockMinres::Lock Converged Vectors");
+	NormTime_ = Teuchos::TimeMonitor::getNewTimer("Anasazi: PseudoBlockMinres::Compute Norm");
+	ScaleTime_ = Teuchos::TimeMonitor::getNewTimer("Anasazi: PseudoBlockMinres::Scale Multivector");
+	TotalTime_ = Teuchos::TimeMonitor::getNewTimer("Anasazi: PseudoBlockMinres::Total Time");
 #endif
 
 	A_ = A;
@@ -103,7 +103,7 @@ MyMinresSolver<Scalar,MV,OP>::MyMinresSolver(Teuchos::RCP<OP> A, Teuchos::RCP<OP
 
 
 template <class Scalar, class MV, class OP>
-void MyMinresSolver<Scalar,MV,OP>::solve()
+void PseudoBlockMinres<Scalar,MV,OP>::solve()
 {
 	#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
 		Teuchos::TimeMonitor lcltimer( *TotalTime_ );
@@ -536,7 +536,7 @@ void MyMinresSolver<Scalar,MV,OP>::solve()
 }
 
 template <class Scalar, class MV, class OP>
-void MyMinresSolver<Scalar,MV,OP>::symOrtho(Scalar a, Scalar b, Scalar *c, Scalar *s, Scalar *r)
+void PseudoBlockMinres<Scalar,MV,OP>::symOrtho(Scalar a, Scalar b, Scalar *c, Scalar *s, Scalar *r)
 {
 	const Scalar absA = std::abs(a);
 	const Scalar absB = std::abs(b);

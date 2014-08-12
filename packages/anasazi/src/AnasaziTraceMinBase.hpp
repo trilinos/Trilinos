@@ -53,6 +53,16 @@
 
 
 namespace Anasazi {
+/**
+ * @namespace Experimental
+ * Namespace for new Anasazi features that are not ready for public release,
+ * but are ready for evaluation by friendly expert users.
+ *
+ * \warning Expect header files, classes, functions, and other interfaces to change or disappear. 
+ * Anything in this namespace is under active development and evaluation. Documentation may be 
+ * sparse or not exist yet. If you understand these caveats and accept them, please feel free to 
+ * take a look inside and try things out. 
+ */
 namespace Experimental {
 
   //! @name TraceMinBase Structures 
@@ -138,7 +148,7 @@ namespace Experimental {
   
   //@}
 
-  /*! \class Anasazi::TraceMinBase
+  /*! \class TraceMinBase
   
       \brief This is an abstract base class for the trace minimization eigensolvers.
 
@@ -2515,14 +2525,14 @@ namespace Experimental {
     Teuchos::RCP< SaddleContainer<ScalarType, MV> > sadSol = Teuchos::rcp(new SaddleContainer<ScalarType,MV>(Delta));
 
     // Create a minres solver
-    Teuchos::RCP<MyMinresSolver<ScalarType,SaddleContainer<ScalarType, MV>,SaddleOperator<ScalarType, MV, TraceMinRitzOp<ScalarType,MV,OP> > > > sadSolver;
+    Teuchos::RCP<PseudoBlockMinres<ScalarType,SaddleContainer<ScalarType, MV>,SaddleOperator<ScalarType, MV, TraceMinRitzOp<ScalarType,MV,OP> > > > sadSolver;
     if(Prec_ != Teuchos::null)
     {
       Teuchos::RCP< SaddleOperator<ScalarType, MV, TraceMinRitzOp<ScalarType,MV,OP> > > sadPrec = Teuchos::rcp(new SaddleOperator<ScalarType, MV, TraceMinRitzOp<ScalarType,MV,OP> >(ritzOp_,locMX,BD_PREC));
-      sadSolver = Teuchos::rcp(new MyMinresSolver<ScalarType,SaddleContainer<ScalarType, MV>,SaddleOperator<ScalarType, MV, TraceMinRitzOp<ScalarType,MV,OP> > >(sadOp, sadPrec));
+      sadSolver = Teuchos::rcp(new PseudoBlockMinres<ScalarType,SaddleContainer<ScalarType, MV>,SaddleOperator<ScalarType, MV, TraceMinRitzOp<ScalarType,MV,OP> > >(sadOp, sadPrec));
     }
     else {
-      sadSolver = Teuchos::rcp(new MyMinresSolver<ScalarType,SaddleContainer<ScalarType, MV>,SaddleOperator<ScalarType, MV, TraceMinRitzOp<ScalarType,MV,OP> > >(sadOp));
+      sadSolver = Teuchos::rcp(new PseudoBlockMinres<ScalarType,SaddleContainer<ScalarType, MV>,SaddleOperator<ScalarType, MV, TraceMinRitzOp<ScalarType,MV,OP> > >(sadOp));
     }
 
     // Set the tolerance for the minres solver
