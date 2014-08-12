@@ -364,7 +364,7 @@ void create_faces( BulkData & mesh, const Selector & element_selector )
   update_shared_faces_global_ids( mesh, shared_face_map );
 
   if (i_started) {
-    mesh.modification_end( BulkData::MOD_END_COMPRESS_AND_SORT );
+    mesh.modification_end_for_entity_creation( stk::topology::FACE_RANK, BulkData::MOD_END_COMPRESS_AND_SORT );
   }
 }
 

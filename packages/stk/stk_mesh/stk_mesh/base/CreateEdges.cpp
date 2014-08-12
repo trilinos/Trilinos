@@ -446,7 +446,7 @@ void create_edges( BulkData & mesh, const Selector & element_selector, Part * pa
     }
   }
 
-  mesh.modification_end_for_edge_creation( BulkData::MOD_END_COMPRESS_AND_SORT );
+  mesh.modification_end_for_entity_creation( stk::topology::EDGE_RANK, BulkData::MOD_END_COMPRESS_AND_SORT );
 }
 
 }

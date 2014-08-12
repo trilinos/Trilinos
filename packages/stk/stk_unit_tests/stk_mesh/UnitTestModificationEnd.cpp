@@ -853,7 +853,7 @@ TEST(BulkDataModificationEnd, create_a_ghosted_edge_using_only_needed_pieces)
         size_t numEdgesTotal = 2;
         EXPECT_EQ(numEdgesTotal, globalCounts[stk::topology::EDGE_RANK]);
 
-        stkMeshBulkData.modification_end_for_edge_creation();
+        stkMeshBulkData.modification_end_for_entity_creation(stk::topology::EDGE_RANK);
 
         checkItAllForThisGhostedCase(stkMeshBulkData);
     }
