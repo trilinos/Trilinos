@@ -263,14 +263,15 @@ private:
 // Definitions
 ////////////////////////////////////////////////////////////////
 
-  ssize_t in_list(const int value, size_t count, int *vector)
-  {
-    for(size_t i=0; i < count; i++) {
-      if(vector[i] == value)
-	return i;
-    }
-    return -1;
+static
+ssize_t in_list(const int value, size_t count, int *vector)
+{
+  for(size_t i=0; i < count; i++) {
+    if(vector[i] == value)
+      return i;
   }
+  return -1;
+}
 
 template <typename User>
 PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr):
@@ -479,14 +480,18 @@ void PamgenMeshAdapter<User>::print(int me)
             << std::endl;
 
   for (int i = 0; i < num_elem_; i++) {
-    std::cout << me << fn << i << " Coords: ";
+    std::cout << me << fn << i 
+              << " Elem " << element_num_map_[i]
+              << " Coords: ";
     for (int j = 0; j < dimension_; j++)
       std::cout << Acoords_[i + j * num_elem_] << " ";
     std::cout << std::endl;
   }
 
   for (int i = 0; i < num_elem_; i++) {
-    std::cout << me << fn << i+1 << " Graph: ";
+    std::cout << me << fn << i 
+              << " Elem " << element_num_map_[i]
+              << " Graph: ";
     for (int j = start_[i]; j < start_[i+1]; j++)
       std::cout << adj_[j] << " ";
     std::cout << std::endl;

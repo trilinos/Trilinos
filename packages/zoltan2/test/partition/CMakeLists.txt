@@ -175,16 +175,16 @@ TRIBITS_ADD_TEST(
   FAIL_REGULAR_EXPRESSION "FAIL"
 )
 
-#TRIBITS_ADD_TEST(
-#  pamgenMeshAdapterTest_color
-#  NAME pamgenMeshAdapterTest_color
-#  NUM_MPI_PROCS 4
-#  COMM serial mpi
-#  ARGS
-#    "--action=color"
-#  PASS_REGULAR_EXPRESSION "PASS"
-#  FAIL_REGULAR_EXPRESSION "FAIL"
-#)
+TRIBITS_ADD_TEST(
+  pamgenMeshAdapterTest
+  NAME pamgenMeshAdapterTest_color
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS
+    "--action=color"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Partitioning1
