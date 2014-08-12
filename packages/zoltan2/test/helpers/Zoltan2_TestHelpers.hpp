@@ -109,6 +109,12 @@ typedef int gno_t;
 typedef double scalar_t;
 #define HAVE_EPETRA_DATA_TYPES
 
+#elif defined TEST_STK_DATA_TYPES
+
+typedef ssize_t lno_t;
+typedef ssize_t gno_t;
+typedef double scalar_t;
+
 #else
 
 typedef int lno_t;
