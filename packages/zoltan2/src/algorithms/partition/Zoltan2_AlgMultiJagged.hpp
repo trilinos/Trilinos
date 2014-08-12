@@ -835,7 +835,7 @@ private:
     		mj_gno_t *num_points_in_all_processor_parts);
 
 
-    /*! \brief Function fills up coordinate_destionations is the output array
+    /*! \brief Function fills up coordinate_destinations is the output array
      * that holds which part each coordinate should be sent. In addition it calculates
      * the shift amount (output_part_numbering_begin_index) to be done when
      * final numberings of the parts are performed.
@@ -850,7 +850,7 @@ private:
      * \param out_num_part is the number of parts assigned to the process.
      * \param out_part_indices is the indices of the part to which the processor is assigned.
      * \param output_part_numbering_begin_index is how much the numbers should be shifted when numbering the result parts.
-     * \param coordinate_destionations is the output array that holds which part each coordinate should be sent.
+     * \param coordinate_destinations is the output array that holds which part each coordinate should be sent.
      */
     void mj_migration_part_proc_assignment(
     		mj_gno_t * num_points_in_all_processor_parts,
@@ -862,10 +862,10 @@ private:
     		mj_part_t &out_num_part,
     		std::vector<mj_part_t> &out_part_indices,
     		mj_part_t &output_part_numbering_begin_index,
-    		int *coordinate_destionations);
+    		int *coordinate_destinations);
 
     /*! \brief Function that assigned the processors to parts, when there are more processors then parts.
-     *	sets the destination of each coordinate in coordinate_destionations, also edits output_part_numbering_begin_index,
+     *	sets the destination of each coordinate in coordinate_destinations, also edits output_part_numbering_begin_index,
      *	and out_part_index, and returns the processor_ranks_for_subcomm which represents the ranks of the processors
      *	that will be used for creating the subcommunicator.
      *
@@ -878,7 +878,7 @@ private:
      * \param next_future_num_parts_in_parts is the vector, how many more parts each part will be divided into in the future.
      * \param out_part_index is the index of the part to which the processor is assigned.
      * \param output_part_numbering_begin_index is how much the numbers should be shifted when numbering the result parts.
-     * \param coordinate_destionations is the output array that holds which part each coordinate should be sent.
+     * \param coordinate_destinations is the output array that holds which part each coordinate should be sent.
      */
     void mj_assign_proc_to_parts(
     		mj_gno_t * num_points_in_all_processor_parts,
@@ -889,9 +889,9 @@ private:
     		std::vector<mj_part_t> *next_future_num_parts_in_parts,
     		mj_part_t &out_part_index,
     		mj_part_t &output_part_numbering_begin_index,
-    		int *coordinate_destionations);
+    		int *coordinate_destinations);
 
-    /*! \brief Function fills up coordinate_destionations is the output array
+    /*! \brief Function fills up coordinate_destinations is the output array
      * that holds which part each coordinate should be sent.
      *
      * \param num_parts is the number of parts that exist in the current partitioning.
@@ -899,35 +899,35 @@ private:
      * \param part_assignment_proc_begin_indices ([i]) points to the first processor index that part i will be sent to.
      * \param processor_chains_in_parts the array that holds the linked list structure, started from part_assignment_proc_begin_indices ([i]).
      * \param send_count_to_each_proc array array storing the number of points to be sent to each part.
-     * \param coordinate_destionations is the output array that holds which part each coordinate should be sent.
+     * \param coordinate_destinations is the output array that holds which part each coordinate should be sent.
      */
     void assign_send_destinations(
     		mj_part_t num_parts,
     		mj_part_t *part_assignment_proc_begin_indices,
     		mj_part_t *processor_chains_in_parts,
     		mj_lno_t *send_count_to_each_proc,
-    		int *coordinate_destionations);
+    		int *coordinate_destinations);
 
-    /*! \brief Function fills up coordinate_destionations is the output array
+    /*! \brief Function fills up coordinate_destinations is the output array
      * that holds which part each coordinate should be sent. In addition it calculates
      * the shift amount (output_part_numbering_begin_index) to be done when
      * final numberings of the parts are performed.
      *
      * \param num_parts is the number of parts that exist in the current partitioning.
      * \param sort_item_part_to_proc_assignment is the sorted parts with respect to the assigned processors.
-     * \param coordinate_destionations is the output array that holds which part each coordinate should be sent.
+     * \param coordinate_destinations is the output array that holds which part each coordinate should be sent.
      * \param output_part_numbering_begin_index is how much the numbers should be shifted when numbering the result parts.
      * \param next_future_num_parts_in_parts is the vector, how many more parts each part will be divided into in the future.
      *
      */
-    void assign_send_destionations2(
+    void assign_send_destinations2(
         mj_part_t num_parts,
         uSortItem<mj_part_t, mj_part_t> * sort_item_part_to_proc_assignment, //input sorted wrt processors
-        int *coordinate_destionations,
+        int *coordinate_destinations,
         mj_part_t &output_part_numbering_begin_index,
         std::vector<mj_part_t> *next_future_num_parts_in_parts);
 
-    /*! \brief Function fills up coordinate_destionations is the output array
+    /*! \brief Function fills up coordinate_destinations is the output array
      * that holds which part each coordinate should be sent. In addition it calculates
      * the shift amount (output_part_numbering_begin_index) to be done when
      * final numberings of the parts are performed.
@@ -941,7 +941,7 @@ private:
      * \param out_num_part is the number of parts assigned to the process.
      * \param out_part_indices is the indices of the part to which the processor is assigned.
      * \param output_part_numbering_begin_index is how much the numbers should be shifted when numbering the result parts.
-     * \param coordinate_destionations is the output array that holds which part each coordinate should be sent.
+     * \param coordinate_destinations is the output array that holds which part each coordinate should be sent.
      */
     void mj_assign_parts_to_procs(
         mj_gno_t * num_points_in_all_processor_parts,
@@ -952,9 +952,9 @@ private:
         mj_part_t &out_num_part, //output, how many parts the processor will have. this is always 1 for this function.
         std::vector<mj_part_t> &out_part_indices, //output: the part indices which the processor is assigned to.
         mj_part_t &output_part_numbering_begin_index, //output: how much the part number should be shifted when setting the solution
-        int *coordinate_destionations);
+        int *coordinate_destinations);
 
-    /*! \brief Function fills up coordinate_destionations is the output array
+    /*! \brief Function fills up coordinate_destinations is the output array
      * that holds which part each coordinate should be sent. In addition it calculates
      * the shift amount (output_part_numbering_begin_index) to be done when
      * final numberings of the parts are performed.
@@ -963,14 +963,14 @@ private:
      * \param num_procs is the number of processor attending to migration operation.
      * \param num_new_local_points is the output to represent the new number of local points.
      * \param iteration is the string for the current iteration.
-     * \param coordinate_destionations is the output array that holds which part each coordinate should be sent.
+     * \param coordinate_destinations is the output array that holds which part each coordinate should be sent.
      * \param num_parts is the number of parts that exist in the current partitioning.
      */
     void mj_migrate_coords(
         mj_part_t num_procs,
         mj_gno_t &num_new_local_points,
         std::string iteration,
-        int *coordinate_destionations,
+        int *coordinate_destinations,
         mj_part_t num_parts);
 
     /*! \brief Function creates the new subcomminicator for the processors
@@ -3807,14 +3807,14 @@ bool AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_check_to_migrate(
 }
 
 
-/*! \brief Function fills up coordinate_destionations is the output array
+/*! \brief Function fills up coordinate_destinations is the output array
  * that holds which part each coordinate should be sent.
  *
  * \param num_parts is the number of parts that exist in the current partitioning.
  * \param part_assignment_proc_begin_indices ([i]) points to the first processor index that part i will be sent to.
  * \param processor_chains_in_parts the array that holds the linked list structure, started from part_assignment_proc_begin_indices ([i]).
  * \param send_count_to_each_proc array array storing the number of points to be sent to each part.
- * \param coordinate_destionations is the output array that holds which part each coordinate should be sent.
+ * \param coordinate_destinations is the output array that holds which part each coordinate should be sent.
  */
 template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
           typename mj_part_t>
@@ -3823,7 +3823,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::assign_send_destinations
     mj_part_t *part_assignment_proc_begin_indices,
     mj_part_t *processor_chains_in_parts,
     mj_lno_t *send_count_to_each_proc,
-    int *coordinate_destionations){
+    int *coordinate_destinations){
 
     for (mj_part_t p = 0; p < num_parts; ++p){
         mj_lno_t part_begin = 0;
@@ -3847,13 +3847,13 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::assign_send_destinations
                 proc_to_sent = part_assignment_proc_begin_indices[p];
             }
             //write the gno index to corresponding position in sendBuf.
-            coordinate_destionations[local_ind] = proc_to_sent;
+            coordinate_destinations[local_ind] = proc_to_sent;
             ++num_total_send;
         }
     }
 }
 
-/*! \brief Function fills up coordinate_destionations is the output array
+/*! \brief Function fills up coordinate_destinations is the output array
  * that holds which part each coordinate should be sent.
  *
  * \param num_points_in_all_processor_parts is the array holding the num points in each part in each proc.
@@ -3865,7 +3865,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::assign_send_destinations
  * \param next_future_num_parts_in_parts is the vector, how many more parts each part will be divided into in the future.
  * \param out_part_index is the index of the part to which the processor is assigned.
  * \param output_part_numbering_begin_index is how much the numbers should be shifted when numbering the result parts.
- * \param coordinate_destionations is the output array that holds which part each coordinate should be sent.
+ * \param coordinate_destinations is the output array that holds which part each coordinate should be sent.
  */
 template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
           typename mj_part_t>
@@ -3878,7 +3878,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_assign_proc_to_parts(
 		std::vector<mj_part_t> *next_future_num_parts_in_parts,
 		mj_part_t &out_part_index,
 		mj_part_t &output_part_numbering_begin_index,
-		int *coordinate_destionations){
+		int *coordinate_destinations){
 
 
     mj_gno_t *global_num_points_in_parts = num_points_in_all_processor_parts + num_procs * num_parts;
@@ -4129,7 +4129,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_assign_proc_to_parts(
             part_assignment_proc_begin_indices,
             processor_chains_in_parts,
             send_count_to_each_proc,
-            coordinate_destionations);
+            coordinate_destinations);
 
     freeArray<mj_part_t>(part_assignment_proc_begin_indices);
     freeArray<mj_part_t>(processor_chains_in_parts);
@@ -4140,24 +4140,24 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_assign_proc_to_parts(
 }
 
 
-/*! \brief Function fills up coordinate_destionations is the output array
+/*! \brief Function fills up coordinate_destinations is the output array
  * that holds which part each coordinate should be sent. In addition it calculates
  * the shift amount (output_part_numbering_begin_index) to be done when
  * final numberings of the parts are performed.
  *
  * \param num_parts is the number of parts that exist in the current partitioning.
  * \param sort_item_part_to_proc_assignment is the sorted parts with respect to the assigned processors.
- * \param coordinate_destionations is the output array that holds which part each coordinate should be sent.
+ * \param coordinate_destinations is the output array that holds which part each coordinate should be sent.
  * \param output_part_numbering_begin_index is how much the numbers should be shifted when numbering the result parts.
  * \param next_future_num_parts_in_parts is the vector, how many more parts each part will be divided into in the future.
  *
  */
 template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
           typename mj_part_t>
-void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::assign_send_destionations2(
+void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::assign_send_destinations2(
     mj_part_t num_parts,
     uSortItem<mj_part_t, mj_part_t> * sort_item_part_to_proc_assignment, //input sorted wrt processors
-    int *coordinate_destionations,
+    int *coordinate_destinations,
     mj_part_t &output_part_numbering_begin_index,
     std::vector<mj_part_t> *next_future_num_parts_in_parts){
 
@@ -4179,13 +4179,13 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::assign_send_destionation
 
         for (mj_lno_t j=part_begin_index; j < part_end_index; j++){
             mj_lno_t localInd = this->new_coordinate_permutations[j];
-            coordinate_destionations[localInd] = assigned_proc;
+            coordinate_destinations[localInd] = assigned_proc;
         }
     }
 }
 
 
-/*! \brief Function fills up coordinate_destionations is the output array
+/*! \brief Function fills up coordinate_destinations is the output array
  * that holds which part each coordinate should be sent. In addition it calculates
  * the shift amount (output_part_numbering_begin_index) to be done when
  * final numberings of the parts are performed.
@@ -4199,7 +4199,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::assign_send_destionation
  * \param out_num_part is the number of parts assigned to the process.
  * \param out_part_indices is the indices of the part to which the processor is assigned.
  * \param output_part_numbering_begin_index is how much the numbers should be shifted when numbering the result parts.
- * \param coordinate_destionations is the output array that holds which part each coordinate should be sent.
+ * \param coordinate_destinations is the output array that holds which part each coordinate should be sent.
  */
 template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
           typename mj_part_t>
@@ -4212,7 +4212,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_assign_parts_to_procs
     mj_part_t &out_num_part, //output, how many parts the processor will have. this is always 1 for this function.
     std::vector<mj_part_t> &out_part_indices, //output: the part indices which the processor is assigned to.
     mj_part_t &output_part_numbering_begin_index, //output: how much the part number should be shifted when setting the solution
-    int *coordinate_destionations){
+    int *coordinate_destinations){
     out_num_part = 0;
 
     mj_gno_t *global_num_points_in_parts = num_points_in_all_processor_parts + num_procs * num_parts;
@@ -4336,10 +4336,10 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_assign_parts_to_procs
     //fill sendBuf.
 
 
-    this->assign_send_destionations2(
+    this->assign_send_destinations2(
             num_parts,
             sort_item_part_to_proc_assignment,
-            coordinate_destionations,
+            coordinate_destinations,
             output_part_numbering_begin_index,
             next_future_num_parts_in_parts);
 
@@ -4347,7 +4347,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_assign_parts_to_procs
 }
 
 
-/*! \brief Function fills up coordinate_destionations is the output array
+/*! \brief Function fills up coordinate_destinations is the output array
  * that holds which part each coordinate should be sent. In addition it calculates
  * the shift amount (output_part_numbering_begin_index) to be done when
  * final numberings of the parts are performed.
@@ -4362,7 +4362,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_assign_parts_to_procs
  * \param out_num_part is the number of parts assigned to the process.
  * \param out_part_indices is the indices of the part to which the processor is assigned.
  * \param output_part_numbering_begin_index is how much the numbers should be shifted when numbering the result parts.
- * \param coordinate_destionations is the output array that holds which part each coordinate should be sent.
+ * \param coordinate_destinations is the output array that holds which part each coordinate should be sent.
  */
 template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
           typename mj_part_t>
@@ -4376,7 +4376,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_migration_part_proc_a
     mj_part_t &out_num_part,
     std::vector<mj_part_t> &out_part_indices,
     mj_part_t &output_part_numbering_begin_index,
-    int *coordinate_destionations){
+    int *coordinate_destinations){
 
 
 
@@ -4397,7 +4397,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_migration_part_proc_a
 				next_future_num_parts_in_parts,
 				out_part_index,
 				output_part_numbering_begin_index,
-				coordinate_destionations
+				coordinate_destinations
 		);
 
 		out_num_part = 1;
@@ -4422,11 +4422,11 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_migration_part_proc_a
 				out_num_part,
 				out_part_indices,
 				output_part_numbering_begin_index,
-				coordinate_destionations);
+				coordinate_destinations);
 	}
 }
 
-/*! \brief Function fills up coordinate_destionations is the output array
+/*! \brief Function fills up coordinate_destinations is the output array
  * that holds which part each coordinate should be sent. In addition it calculates
  * the shift amount (output_part_numbering_begin_index) to be done when
  * final numberings of the parts are performed.
@@ -4435,7 +4435,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_migration_part_proc_a
  * \param num_procs is the number of processor attending to migration operation.
  * \param num_new_local_points is the output to represent the new number of local points.
  * \param iteration is the string for the current iteration.
- * \param coordinate_destionations is the output array that holds which part each coordinate should be sent.
+ * \param coordinate_destinations is the output array that holds which part each coordinate should be sent.
  * \param num_parts is the number of parts that exist in the current partitioning.
  */
 template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
@@ -4444,19 +4444,26 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_migrate_coords(
     mj_part_t num_procs,
     mj_gno_t &num_new_local_points,
     std::string iteration,
-    int *coordinate_destionations,
-    mj_part_t num_parts){
+    int *coordinate_destinations,
+    mj_part_t num_parts)
+{
 #ifdef ENABLE_ZOLTAN_MIGRATION
+    if (sizeof(mj_lno_t) <= sizeof(int)) {
+
+        // Cannot use Zoltan_Comm with local ordinals larger than ints.
+        // In Zoltan_Comm_Create, the cast int(this->num_local_coords) 
+        // may overflow.
+
 	ZOLTAN_COMM_OBJ *plan = NULL;
 	MPI_Comm mpi_comm = Teuchos2MPI (this->comm);
-	mj_lno_t num_incoming_gnos = 0;
+	int num_incoming_gnos = 0;
 	int message_tag = 7859;
 
 	this->mj_env->timerStart(MACRO_TIMERS, "MultiJagged - Migration Z1PlanCreating-" + iteration);
 	int ierr = Zoltan_Comm_Create(
 			&plan,
-			this->num_local_coords,
-			coordinate_destionations,
+			int(this->num_local_coords),
+			coordinate_destinations,
 			mpi_comm,
 			message_tag,
 			&num_incoming_gnos);
@@ -4547,11 +4554,15 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_migrate_coords(
 	Z2_ASSERT_VALUE(ierr, ZOLTAN_OK);
 	num_new_local_points = num_incoming_gnos;
 	this->mj_env->timerStop(MACRO_TIMERS, "MultiJagged - Migration Z1Migration-" + iteration);
-#else
+    }
 
+    else
+
+#endif  // ENABLE_ZOLTAN_MIGRATION
+    {
 	this->mj_env->timerStart(MACRO_TIMERS, "MultiJagged - Migration DistributorPlanCreating-" + iteration);
 	Tpetra::Distributor distributor(this->comm);
-	ArrayView<const mj_part_t> destinations( coordinate_destionations, this->num_local_coords);
+	ArrayView<const mj_part_t> destinations( coordinate_destinations, this->num_local_coords);
 	mj_lno_t num_incoming_gnos = distributor.createFromSends(destinations);
 	this->mj_env->timerStop(MACRO_TIMERS, "MultiJagged - Migration DistributorPlanCreating-" + iteration);
 
@@ -4631,7 +4642,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_migrate_coords(
 	this->mj_env->timerStop(MACRO_TIMERS, "MultiJagged - Migration DistributorMigration-" + iteration);
 	num_new_local_points = num_incoming_gnos;
 
-#endif
+    }
 }
 
 /*! \brief Function creates the new subcomminicator for the processors
@@ -4786,7 +4797,7 @@ bool AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_perform_migration(
 
 
 	mj_lno_t *send_count_to_each_proc = NULL;
-	int *coordinate_destionations = allocMemory<int>(this->num_local_coords);
+	int *coordinate_destinations = allocMemory<int>(this->num_local_coords);
 	send_count_to_each_proc = allocMemory<mj_lno_t>(num_procs);
 	for (int i = 0; i < num_procs; ++i) send_count_to_each_proc[i] = 0;
 
@@ -4804,7 +4815,7 @@ bool AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_perform_migration(
 			output_num_parts,
 			out_part_indices,
 			output_part_begin_index,
-			coordinate_destionations);
+			coordinate_destinations);
 
 
 
@@ -4854,11 +4865,11 @@ bool AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_perform_migration(
 			num_procs,
 			num_new_local_points,
 			iteration,
-			coordinate_destionations,
+			coordinate_destinations,
 			input_num_parts);
 
 
-	freeArray<int>(coordinate_destionations);
+	freeArray<int>(coordinate_destinations);
 
 	if(this->num_local_coords != num_new_local_points){
 		freeArray<mj_lno_t>(this->new_coordinate_permutations);
@@ -5231,15 +5242,21 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::set_final_parts(
     }
     else {
 #ifdef ENABLE_ZOLTAN_MIGRATION
+      if (sizeof(mj_lno_t) <=  sizeof(int)) {
+
+        // Cannot use Zoltan_Comm with local ordinals larger than ints.
+        // In Zoltan_Comm_Create, the cast int(this->num_local_coords) 
+        // may overflow.
+
     	//if data is migrated, then send part numbers to the original owners.
     	ZOLTAN_COMM_OBJ *plan = NULL;
     	MPI_Comm mpi_comm = Teuchos2MPI (this->mj_problemComm);
 
-    	mj_lno_t incoming = 0;
+    	int incoming = 0;
     	int message_tag = 7856;
 
     	this->mj_env->timerStart(MACRO_TIMERS, "MultiJagged - Final Z1PlanCreating");
-    	int ierr = Zoltan_Comm_Create( &plan, this->num_local_coords,
+    	int ierr = Zoltan_Comm_Create( &plan, int(this->num_local_coords),
     			this->owner_of_coordinate, mpi_comm, message_tag,
     			&incoming);
     	Z2_ASSERT_VALUE(ierr, ZOLTAN_OK);
@@ -5271,8 +5288,11 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::set_final_parts(
 
     	this->num_local_coords = incoming;
     	//gnoList = arcp(this->current_mj_gnos, 0, this->num_local_coords, true);
-#else
+      }
+      else
 
+#endif  // !ENABLE_ZOLTAN_MIGRATION
+      {
     	//if data is migrated, then send part numbers to the original owners.
     	this->mj_env->timerStart(MACRO_TIMERS, "MultiJagged - Final DistributorPlanCreating");
     	Tpetra::Distributor distributor(this->mj_problemComm);
@@ -5306,7 +5326,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::set_final_parts(
     	this->num_local_coords = incoming;
     	this->mj_env->timerStop(MACRO_TIMERS, "MultiJagged - Final DistributorPlanComm");
 
-#endif
+      }
     }
 
     this->mj_env->timerStop(MACRO_TIMERS, "MultiJagged - Part_Assignment");
