@@ -428,7 +428,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr):
       for(size_t i=0; i < sur_elem[node].size(); i++) {
 	int entry = sur_elem[node][i];
 
-	if(ecnt != entry-1 &&
+	if(element_num_map_[ecnt] != entry &&
 	   in_list(entry,
 		   adj.size()-start_[ecnt],
 		   &adj[start_[ecnt]]) < 0) {
