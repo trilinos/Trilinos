@@ -354,7 +354,8 @@ Selector operator ! ( const Part & A )
 /** \brief .
  * \relates Selector
  * */
-Selector selectUnion( const PartVector& union_part_vector );
+template <typename PartVectorType>
+Selector selectUnion( const PartVectorType & union_part_vector );
 
 /** \brief .
  * \relates Selector
