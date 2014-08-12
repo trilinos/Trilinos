@@ -62,8 +62,11 @@ namespace Iovs {
   DatabaseIO::DatabaseIO(Ioss::Region *region, const std::string& filename,
                          Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
                          const Ioss::PropertyManager &props) :
-                         Ioss::DatabaseIO (region, filename, db_usage, communicator, props)
-
+                         Ioss::DatabaseIO (region, filename, db_usage, communicator, props),
+                         isInput(false), singleProcOnly(false), doLogging(false),
+                         enableLogging(0), debugLevel(0), underscoreVectors(0),
+                         applyDisplacements(0), createSideSets(0), createNodeSets(0),
+                         nodeCount(0), elementCount(0), nodeBlockCount(0), elementBlockCount(0)
   {
 
     std::ostringstream errmsg;

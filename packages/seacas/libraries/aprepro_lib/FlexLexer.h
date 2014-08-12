@@ -60,6 +60,7 @@ typedef int yy_state_type;
 
 class FlexLexer {
 public:
+        FlexLexer() : yytext(0), yyleng(0), yylineno(0), yy_flex_debug(0) { }
 	virtual ~FlexLexer()	{ }
 
 	const char* YYText() const	{ return yytext; }
