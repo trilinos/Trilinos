@@ -31,7 +31,6 @@ APPEND_GLOB(CGI_SOURCES
 TRIBITS_ADD_LIBRARY(
 	svdi_cgi
 	SOURCES ${CGI_SOURCES}
-	DEPLIBS svdi_cdr
 )
 
 SET(CDR_SOURCES "")
@@ -44,32 +43,26 @@ TRIBITS_ADD_LIBRARY(
 
 TRIBITS_ADD_LIBRARY(svdi_cgi_x11
 	SOURCES ${DIR}/cgi/x11_cgisx11.c
-	DEPLIBS svdi_cgi
 )
 
 TRIBITS_ADD_LIBRARY(svdi_cgi_pst
 	SOURCES ${DIR}/cgi/pst_cgispst.c
-	DEPLIBS svdi_cgi
 )
 
 TRIBITS_ADD_LIBRARY(svdi_cgi_met
 	SOURCES ${DIR}/cgi/met_cgismet.c
-	DEPLIBS svdi_cgi
 )
 
 TRIBITS_ADD_LIBRARY(vdx11cps
 	SOURCES ${DIR}/vdi_drivers/vdx11cps.F
-	DEPLIBS vdicps_dual svdi_cgi
 )
 
 TRIBITS_ADD_LIBRARY(vdicps_dual
 	SOURCES ${DIR}/vdi_drivers/vdicps_dual.f
-	DEPLIBS svdi_cgi
 )
 
 TRIBITS_ADD_LIBRARY(svdi_cgi_cps
 	SOURCES ${DIR}/vdi_drivers/vdicps.f
-	DEPLIBS svdi_cgi
 )
 
 TRIBITS_SUBPACKAGE_POSTPROCESS()
