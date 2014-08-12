@@ -81,7 +81,7 @@ struct contraction {
 struct dot {
   view_type a;
   dot(view_type a_):a(a_) {};
-
+  typedef double value_type; //Specify type for reduction target, lsum
   KOKKOS_INLINE_FUNCTION
   void operator() (int i, double &lsum) const {
     lsum+= a(i)*a(i);
