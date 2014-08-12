@@ -263,14 +263,15 @@ private:
 // Definitions
 ////////////////////////////////////////////////////////////////
 
-  ssize_t in_list(const int value, size_t count, int *vector)
-  {
-    for(size_t i=0; i < count; i++) {
-      if(vector[i] == value)
-	return i;
-    }
-    return -1;
+static
+ssize_t in_list(const int value, size_t count, int *vector)
+{
+  for(size_t i=0; i < count; i++) {
+    if(vector[i] == value)
+      return i;
   }
+  return -1;
+}
 
 template <typename User>
 PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr):
