@@ -176,7 +176,7 @@ TRIBITS_ADD_TEST(
 )
 
 TRIBITS_ADD_TEST(
-  pamgenMeshAdapterTest_color
+  pamgenMeshAdapterTest
   NAME pamgenMeshAdapterTest_color
   NUM_MPI_PROCS 4
   COMM serial mpi
