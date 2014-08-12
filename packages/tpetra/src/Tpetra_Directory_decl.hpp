@@ -60,15 +60,12 @@ namespace Tpetra {
   /// of Directory should always be the same as the template
   /// parameters of Map.
   ///
-  /// \tparam LocalOrdinal Same as Map's \c LocalOrdinal template
-  ///   parameter.  The type of local IDs.
-  ///
-  /// \tparam GlobalOrdinal Same as Map's \c GlobalOrdinal template
-  ///   parameter.  The type of global IDs.  Defaults to the same type
-  ///   as LocalOrdinal.
-  ///
-  /// \tparam Node Same as Map's \c Node template parameter.  Defaults
-  ///   to the default Kokkos Node type.
+  /// \tparam LocalOrdinal The type of local indices.  See the
+  ///   documentation of Map for requirements.
+  /// \tparam GlobalOrdinal The type of global indices.  See the
+  ///   documentation of Map for requirements.
+  /// \tparam Node The Kokkos Node type.  See the documentation of Map
+  ///   for requirements.
   ///
   /// Directory implements looking up the process IDs and local IDs
   /// corresponding to a given list of global IDs.  Each Map owns a

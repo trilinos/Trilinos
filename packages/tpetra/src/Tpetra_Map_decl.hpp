@@ -98,19 +98,35 @@ namespace Tpetra {
   /// \class Map
   /// \brief Describes a parallel distribution of objects over processes.
   ///
-  /// \tparam LocalOrdinal The type of local indices.  Should be an
-  ///   integer, and generally should be signed.  A good model of
-  ///   <tt>LocalOrdinal</tt> is \c int, which is also the default.
-  ///   (In Epetra, this is always just \c int.)
+  /// \tparam LocalOrdinal The type of local indices.  This
+  ///   <i>must</i> be a built-in integer type, and <i>must</i> be
+  ///   signed.  A good model of <tt>LocalOrdinal</tt> is
+  ///   <tt>int</tt>, which is also the default.  (In Epetra, this is
+  ///   always just <tt>int</tt>.)
   ///
-  /// \tparam GlobalOrdinal The type of global indices.  Should be an
-  ///   integer, and generally should be signed.  Also, we require
-  ///   <tt>sizeof(GlobalOrdinal) >= sizeof(LocalOrdinal)</tt>.  If
-  ///   <tt>LocalOrdinal</tt> is \c int, good models of
-  ///   <tt>GlobalOrdinal</tt> are \c int, \c long, <tt>long long</tt>
-  ///   (if the configure-time option
-  ///   <tt>Teuchos_ENABLE_LONG_LONG_INT</tt> was set), or
-  ///   <tt>ptrdiff_t</tt>.
+  /// \tparam GlobalOrdinal The type of global indices.  This
+  ///   <i>must</i> be a built-in integer type.  We allow either
+  ///   signed or unsigned types here, but prefer signed types.  Also,
+  ///   we require that <tt>GlobalOrdinal</tt> be no smaller than
+  ///   <tt>LocalOrdinal</tt>, that is:
+  ///   \code
+  ///   sizeof(GlobalOrdinal) >= sizeof(LocalOrdinal);
+  ///   \endcode
+  ///   If <tt>LocalOrdinal</tt> is <tt>int</tt>, good models of
+  ///   <tt>GlobalOrdinal</tt> are
+  ///   <ul>
+  ///   <li> \c int </li>
+  ///   <li> \c long </li>
+  ///   <li> <tt>long long</tt> (if the configure-time option
+  ///        <tt>Teuchos_ENABLE_LONG_LONG_INT</tt> was set) </li>
+  ///   <li> \c ptrdiff_t </li>
+  ///   </ul>
+  ///   If you use the default <tt>GlobalOrdinal</tt> type, which
+  ///   is <tt>int</tt>, then the <i>global</i> number of rows or
+  ///   columns in the matrix may be no more than \c INT_MAX, which
+  ///   for typical 32-bit \c int is \f$2^{31} - 1\f$ (about two
+  ///   billion).  If you want to solve larger problems, you must use
+  ///   a 64-bit integer type here.
   ///
   /// \tparam Node A class implementing on-node shared-memory parallel
   ///   operations.  It must implement the

@@ -71,7 +71,8 @@ namespace Tpetra {
   ///   might choose any of various types to represent packed data.
   /// \tparam LocalOrdinal The type of local indices in the object.
   ///   This is a template parameter because the pack() method
-  ///   includes as input a list of local indices to pack.
+  ///   includes as input a list of local indices to pack.  See the
+  ///   documentation of Map for requirements.
   ///
   /// If an object implements Packable, then that object acknowledges
   /// that it knows how to pack its data as the source object of an
@@ -118,12 +119,12 @@ namespace Tpetra {
     /// \param distor [in] The Distributor object we are using.
     ///   Implementations may ignore this object.  We provide it for
     ///   consistency with DistObject's packAndPrepare method.
-    virtual void 
+    virtual void
     pack (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
-	  Teuchos::Array<Packet>& exports,
-	  const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-	  size_t& constantNumPackets,
-	  Distributor &distor) const = 0;
+          Teuchos::Array<Packet>& exports,
+          const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+          size_t& constantNumPackets,
+          Distributor &distor) const = 0;
 
     //! Destructor (declared virtual for memory safety of derived classes).
     virtual ~Packable () {}
