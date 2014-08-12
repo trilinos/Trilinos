@@ -113,10 +113,10 @@ size_t removeUndesiredEdges(
   ArrayView<const typename InputTraits<User>::gid_t> &gidNbors,
   ArrayView<const int> &procIds,
   ArrayView<StridedData<typename InputTraits<User>::lno_t,
-    typename InputTraits<User>::scalar_t> > &edgeWeights,
+                        typename InputTraits<User>::scalar_t> > &edgeWeights,
   ArrayView<const typename InputTraits<User>::lno_t> &offsets,
   ArrayRCP<const typename InputTraits<User>::gid_t> &newGidNbors, // out
-  typename InputTraits<User>::scalar_t **&newWeights,       // out
+  typename InputTraits<User>::scalar_t **&newWeights,             // out
   ArrayRCP<const typename InputTraits<User>::lno_t> &newOffsets)  // out
 {
   typedef typename InputTraits<User>::gid_t gid_t;
@@ -255,7 +255,7 @@ size_t removeUndesiredEdges(
 
 template <typename User>
 size_t computeLocalEdgeList(
-  const RCP<const Environment> &env, int rank,
+  const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
   size_t numLocalEdges,           // local edges
   size_t numLocalGraphEdges,      // edges in "local" graph
   RCP<const IdentifierMap<User> > &idMap,
@@ -264,7 +264,7 @@ size_t computeLocalEdgeList(
   ArrayRCP<int> &allProcs,                                 // in
   ArrayRCP<const typename InputTraits<User>::lno_t> &allOffs,    // in
   ArrayRCP<StridedData<typename InputTraits<User>::lno_t,
-    typename InputTraits<User>::scalar_t> > &allWeights,         // in
+                       typename InputTraits<User>::scalar_t> > &allWeights,// in
   ArrayRCP<const typename InputTraits<User>::lno_t> &edgeLocalIds, //
   ArrayRCP<const typename InputTraits<User>::lno_t> &offsets,      // out
   ArrayRCP<StridedData<typename InputTraits<User>::lno_t,
@@ -275,6 +275,7 @@ size_t computeLocalEdgeList(
   typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t lno_t;
   typedef StridedData<lno_t, scalar_t> input_t;
+  int rank = comm->getRank();
 
   bool gnosAreGids = idMap->gnosAreGids();
 
@@ -296,19 +297,40 @@ size_t computeLocalEdgeList(
 
     // Entire graph is local.
 
-    lno_t *lnos = new lno_t [numLocalEdges];
-    env->localMemoryAssertion(__FILE__, __LINE__,numLocalEdges, lnos);
-    if (gnosAreGids) {
-      for (size_t i=0; i < numLocalEdges; i++)
-        lnos[i] = allEdgeIds[i];
+    lno_t *lnos = new lno_t [numLocalGraphEdges];
+    env->localMemoryAssertion(__FILE__, __LINE__, numLocalGraphEdges, lnos);
+    if (comm->getSize() == 1) {
+      // With one rank, Can use gnos as local index.
+      if (gnosAreGids)
+        for (size_t i=0; i < numLocalEdges; i++) lnos[i] = allEdgeIds[i];
+      else
+        for (size_t i=0; i < numLocalEdges; i++) lnos[i] = allEdgeGnos[i];
     }
     else {
-      for (size_t i=0; i < numLocalEdges; i++)
-        lnos[i] = allEdgeGnos[i];
+      ArrayRCP<gno_t> gnoArray;
+
+      if (gnosAreGids){
+        ArrayRCP<const gno_t> gnosConst =
+                 arcp_reinterpret_cast<const gno_t>(allEdgeIds);
+        gnoArray = arcp_const_cast<gno_t>(gnosConst);
+      }
+      else {
+        gnoArray = arcp_const_cast<gno_t>(allEdgeGnos);
+      }
+
+      // Need to translate to gnos to local indexing
+      ArrayView<lno_t> lnoView(lnos, numLocalGraphEdges);
+      try {
+        idMap->lnoTranslate(lnoView,
+                            gnoArray.view(0,numLocalGraphEdges),
+                            TRANSLATE_LIB_TO_APP);
+      }
+      Z2_FORWARD_EXCEPTIONS;
     }
-    edgeLocalIds = arcp(lnos, 0, numLocalEdges, true);
+    edgeLocalIds = arcp(lnos, 0, numLocalGraphEdges, true);
     offsets = allOffs;
     eWeights = allWeights;
+
   }
   else{
 
@@ -349,7 +371,6 @@ size_t computeLocalEdgeList(
     }
 
     // Create local ID array.  First translate gid to gno.
-
     ArrayRCP<gno_t> gnoArray;
 
     if (gnosAreGids){
@@ -508,7 +529,7 @@ public:
   size_t getVertexList(
     ArrayView<const gno_t> &Ids,
     ArrayView<input_t> &xyz,
-    ArrayView<input_t> &wgts) const 
+    ArrayView<input_t> &wgts) const
   {
     size_t nv = gids_.size();
     if (gnosAreGids_) Ids = gids_.view(0, nv);
@@ -518,7 +539,7 @@ public:
     return nv;
   }
 
-  /*! \brief Sets pointers to this process' edge (neighbor) global Ids, 
+  /*! \brief Sets pointers to this process' edge (neighbor) global Ids,
       including off-process edges.
 
       \param edgeIds This is the list of global neighbor Ids corresponding
@@ -578,13 +599,14 @@ public:
     if (localGraphEdgeOffsets_.size() == 0) {
       // Local graph not created yet
       RCP<const IdentifierMap<user_t> > idmap = this->getIdentifierMap();
-      computeLocalEdgeList(env_, comm_->getRank(),
+      computeLocalEdgeList(env_, comm_,
         numLocalEdges_, numLocalGraphEdges_,
         idmap, edgeGids_, edgeGnosConst_, procIds_, offsets_, eWeights_,
         localGraphEdgeLnos_, localGraphEdgeOffsets_, localGraphEdgeWeights_);
     }
     edgeIds = localGraphEdgeLnos_();
     offsets = localGraphEdgeOffsets_();
+
     wgts = localGraphEdgeWeights_();
     return numLocalGraphEdges_;
   }
@@ -1125,7 +1147,7 @@ void GraphModel<Adapter>::shared_constructor(
                                weightInfo);
 
     for (int idx=0; idx < numWeightsPerVertex_; idx++){
-      bool useNumNZ = ia->useDegreeAsWeight(idx); 
+      bool useNumNZ = ia->useDegreeAsWeight(idx);
       if (useNumNZ){
         scalar_t *wgts = new scalar_t [numLocalVertices_];
         env_->localMemoryAssertion(__FILE__, __LINE__, numLocalVertices_, wgts);
@@ -1197,7 +1219,7 @@ void GraphModel<Adapter>::print()
             << " Nedge " << edgeGids_.size()
             << " NVWgt " << numWeightsPerVertex_
             << " NEWgt " << nWeightsPerEdge_
-            << " CDim  " << vCoordDim_ 
+            << " CDim  " << vCoordDim_
             << " GnosAreGids " << gnosAreGids_ << std::endl;
 
   for (lno_t i = 0; i < gids_.size(); i++) {
