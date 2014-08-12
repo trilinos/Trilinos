@@ -62,8 +62,8 @@ namespace Tpetra {
              const RCP<Teuchos::ParameterList>& params) :
     DistObject<char, LocalOrdinal, GlobalOrdinal, node_type> (rowMap),
     storageStatus_ (pftype == StaticProfile ?
-                    CRS_MATRIX_STORAGE_1D_UNPACKED :
-                    CRS_MATRIX_STORAGE_2D),
+                    Details::STORAGE_1D_UNPACKED :
+                    Details::STORAGE_2D),
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
@@ -90,8 +90,8 @@ namespace Tpetra {
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
     DistObject<char, LocalOrdinal, GlobalOrdinal, node_type> (rowMap),
     storageStatus_ (pftype == StaticProfile ?
-                    CRS_MATRIX_STORAGE_1D_UNPACKED :
-                    CRS_MATRIX_STORAGE_2D),
+                    Details::STORAGE_1D_UNPACKED :
+                    Details::STORAGE_2D),
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
@@ -119,8 +119,8 @@ namespace Tpetra {
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
     DistObject<char, LocalOrdinal, GlobalOrdinal, node_type> (rowMap),
     storageStatus_ (pftype == StaticProfile ?
-                    CRS_MATRIX_STORAGE_1D_UNPACKED :
-                    CRS_MATRIX_STORAGE_2D),
+                    Details::STORAGE_1D_UNPACKED :
+                    Details::STORAGE_2D),
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
@@ -151,19 +151,18 @@ namespace Tpetra {
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
              const Teuchos::RCP<const map_type>& colMap,
-             const Teuchos::ArrayRCP<const size_t>& NumEntriesPerRowToAlloc,
+             const Teuchos::ArrayRCP<const size_t>& numEntPerRow,
              ProfileType pftype,
              const RCP<Teuchos::ParameterList>& params) :
     DistObject<char, LocalOrdinal, GlobalOrdinal, node_type> (rowMap),
     storageStatus_ (pftype == StaticProfile ?
-                    CRS_MATRIX_STORAGE_1D_UNPACKED :
-                    CRS_MATRIX_STORAGE_2D),
+                    Details::STORAGE_1D_UNPACKED :
+                    Details::STORAGE_2D),
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
     try {
-      myGraph_ = rcp (new Graph (rowMap, colMap, NumEntriesPerRowToAlloc,
-                                 pftype, params));
+      myGraph_ = rcp (new Graph (rowMap, colMap, numEntPerRow, pftype, params));
     }
     catch (std::exception &e) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
@@ -184,7 +183,7 @@ namespace Tpetra {
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
     DistObject<char, LocalOrdinal,GlobalOrdinal, node_type> (graph->getRowMap ()),
     staticGraph_ (graph),
-    storageStatus_ (CRS_MATRIX_STORAGE_1D_PACKED),
+    storageStatus_ (Details::STORAGE_1D_PACKED),
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
@@ -218,7 +217,7 @@ namespace Tpetra {
              const t_ValuesType & values,
              const RCP<Teuchos::ParameterList>& params) :
     DistObject<char, LocalOrdinal, GlobalOrdinal, node_type> (rowMap),
-    storageStatus_ (CRS_MATRIX_STORAGE_1D_PACKED),
+    storageStatus_ (Details::STORAGE_1D_PACKED),
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
@@ -248,7 +247,7 @@ namespace Tpetra {
              const ArrayRCP<Scalar> & values,
              const RCP<Teuchos::ParameterList>& params) :
     DistObject<char, LocalOrdinal, GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > (rowMap),
-    storageStatus_ (CRS_MATRIX_STORAGE_1D_PACKED),
+    storageStatus_ (Details::STORAGE_1D_PACKED),
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
@@ -280,7 +279,7 @@ namespace Tpetra {
              const RCP<Teuchos::ParameterList>& params) :
     DistObject<char, LocalOrdinal, GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > (rowMap),
     k_lclMatrix_ (lclMatrix),
-    storageStatus_ (CRS_MATRIX_STORAGE_1D_PACKED),
+    storageStatus_ (Details::STORAGE_1D_PACKED),
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
@@ -1148,6 +1147,8 @@ namespace Tpetra {
       // The graph is definitely StaticProfile now, whether or not it
       // was before.
       myGraph_->pftype_ = StaticProfile;
+      myGraph_->storageStatus_ = Details::STORAGE_1D_PACKED;
+      this->storageStatus_ = Details::STORAGE_1D_PACKED;
     }
 
     RCP<Teuchos::ParameterList> lclparams;
@@ -1485,6 +1486,7 @@ namespace Tpetra {
       // unpacked 2-D and 1-D storage, and keep the packed storage.
       values2D_ = null;
       k_values1D_ = k_vals;
+      this->storageStatus_ = Details::STORAGE_1D_PACKED;
     }
 
     // build the matrix, hand over the values
@@ -2915,15 +2917,24 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
   }
 
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &dvec) const
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal,
+           class DeviceType>
+  void
+  CrsMatrix<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+    typename KokkosClassic::DefaultKernels<
+      Scalar, LocalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  getLocalDiagCopy (Vector<Scalar, LocalOrdinal, GlobalOrdinal, node_type>& dvec) const
   {
     using Teuchos::ArrayRCP;
     using Teuchos::ArrayView;
     const char tfecfFuncName[] = "getLocalDiagCopy";
+    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> vec_type;
+    typedef typename vec_type::dual_view_type dual_view_type;
+    typedef typename device_type::host_mirror_device_type host_device_type;
+
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       ! hasColMap (), std::runtime_error,
       ": This method requires that the matrix have a column Map.");
@@ -2939,15 +2950,33 @@ namespace Tpetra {
     // should only be done in debug mode.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       ! dvec.getMap ()->isCompatible (rowMap), std::runtime_error,
-      ": The input Vector's Map must be compatible with (in the sense of Map::"
-      "isCompatible) the CrsMatrix's row Map.");
+      ": The input Vector's Map must be compatible with the CrsMatrix's row "
+      "Map.  You may check this by using Map's isCompatible method: "
+      "dvec.getMap ()->isCompatible (A.getRowMap ());");
 #endif // HAVE_TPETRA_DEBUG
 
-    const size_t myNumRows = getNodeNumRows ();
-    ArrayRCP<Scalar> vecView = dvec.get1dViewNonConst ();
+    // For now, we fill the Vector on the host and sync to device.
+    // Later, we may write a parallel kernel that works entirely on
+    // device.
+    dual_view_type lclVec = dvec.getDualView ();
+    typedef typename dual_view_type::t_host host_view_type;
+    host_view_type lclVecHost = lclVec.h_view;
+    lclVec.template modify<host_device_type> ();
 
+    // 1-D subview of lclVecHost.  All the "typename" stuff ensures
+    // that we get the same layout and memory traits as the original
+    // 2-D view.
+    typedef typename Kokkos::View<scalar_type*,
+      typename host_view_type::array_layout, device_type,
+      typename host_view_type::memory_traits>::HostMirror
+      host_view_1d_type;
+    host_view_1d_type lclVecHost1d =
+      Kokkos::subview<host_view_1d_type> (lclVecHost, Kokkos::ALL (), 0);
+
+    // Find the diagonal entries and put them in lclVecHost1d.
+    const size_t myNumRows = getNodeNumRows ();
     for (size_t r = 0; r < myNumRows; ++r) {
-      vecView[r] = STS::zero ();
+      lclVecHost1d(r) = STS::zero (); // default value if no diag entry
       const GlobalOrdinal rgid = rowMap.getGlobalElement (r);
       const LocalOrdinal rlid = colMap.getLocalElement (rgid);
 
@@ -2957,11 +2986,12 @@ namespace Tpetra {
           const size_t j = staticGraph_->findLocalIndex (rowinfo, rlid);
           if (j != Teuchos::OrdinalTraits<size_t>::invalid ()) {
             ArrayView<const Scalar> view = this->getView (rowinfo);
-            vecView[r] = view[j];
+            lclVecHost1d(r) = view[j];
           }
         }
       }
     }
+    lclVec.template sync<device_type> (); // sync changes back to device
   }
 
 
@@ -2969,12 +2999,20 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
-  getLocalDiagCopy (Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& diag,
+  CrsMatrix<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+    typename KokkosClassic::DefaultKernels<
+      Scalar, LocalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  getLocalDiagCopy (Vector<Scalar, LocalOrdinal, GlobalOrdinal, node_type>& diag,
                     const Teuchos::ArrayView<const size_t>& offsets) const
   {
     using Teuchos::ArrayRCP;
     using Teuchos::ArrayView;
+    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> vec_type;
+    typedef typename vec_type::dual_view_type dual_view_type;
+    typedef typename device_type::host_mirror_device_type host_device_type;
 
 #ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "getLocalDiagCopy";
@@ -2987,19 +3025,36 @@ namespace Tpetra {
       "isCompatible) the CrsMatrix's row Map.");
 #endif // HAVE_TPETRA_DEBUG
 
+    // For now, we fill the Vector on the host and sync to device.
+    // Later, we may write a parallel kernel that works entirely on
+    // device.
+    dual_view_type lclVec = diag.getDualView ();
+    typedef typename dual_view_type::t_host host_view_type;
+    host_view_type lclVecHost = lclVec.h_view;
+    lclVec.template modify<host_device_type> ();
+
+    // 1-D subview of lclVecHost.  All the "typename" stuff ensures
+    // that we get the same layout and memory traits as the original
+    // 2-D view.
+    typedef typename Kokkos::View<scalar_type*,
+      typename host_view_type::array_layout, device_type,
+      typename host_view_type::memory_traits>::HostMirror
+      host_view_1d_type;
+    host_view_1d_type lclVecHost1d =
+      Kokkos::subview<host_view_1d_type> (lclVecHost, Kokkos::ALL (), 0);
+
+    // Find the diagonal entries and put them in lclVecHost1d.
     const size_t myNumRows = getNodeNumRows ();
-    ArrayRCP<Scalar> d = diag.get1dViewNonConst ();
     for (size_t i = 0; i < myNumRows; ++i) {
-      if (offsets[i] == Teuchos::OrdinalTraits<size_t>::invalid ()) {
-        d[i] = STS::zero ();
-      }
-      else {
+      lclVecHost1d(i) = STS::zero (); // default value if no diag entry
+      if (offsets[i] != Teuchos::OrdinalTraits<size_t>::invalid ()) {
         ArrayView<const LocalOrdinal> ind;
         ArrayView<const Scalar> val;
         this->getLocalRowView (i, ind, val);
-        d[i] = val[offsets[i]];
+        lclVecHost1d(i) = val[offsets[i]];
       }
     }
+    lclVec.template sync<device_type> (); // sync changes back to device
   }
 
 

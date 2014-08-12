@@ -54,6 +54,54 @@ namespace Tpetra {
   class CrsMatrix;
 #endif
 
+  namespace Details {
+    /// \brief Status of the graph's or matrix's storage, when not in
+    ///   a fill-complete state.
+    ///
+    /// When a CrsGraph or CrsMatrix is <i>not</i> fill complete, its
+    /// data live in one of three storage formats:
+    ///
+    /// <ol>
+    /// <li> "2-D storage": The graph stores column indices as "array
+    ///   of arrays," and the matrix stores values as "array of
+    ///   arrays."  The graph <i>must</i> have k_numRowEntries_
+    ///   allocated.  This only ever exists if the graph was created
+    ///   with DynamicProfile.  A matrix with 2-D storage must own its
+    ///   graph, and the graph must have 2-D storage. </li>
+    ///
+    /// <li> "Unpacked 1-D storage": The graph uses a row offsets
+    ///   array, and stores column indices in a single array.  The
+    ///   matrix also stores values in a single array.  "Unpacked"
+    ///   means that there may be extra space in each row: that is,
+    ///   the row offsets array only says how much space there is in
+    ///   each row.  The graph must use k_numRowEntries_ to find out
+    ///   how many entries there actually are in the row.  A matrix
+    ///   with unpacked 1-D storage must own its graph, and the graph
+    ///   must have unpacked 1-D storage. </li>
+    ///
+    /// <li> "Packed 1-D storage": The matrix may or may not own the
+    ///   graph.  "Packed" means that there is no extra space in each
+    ///   row.  Thus, the k_numRowEntries_ array is not necessary and
+    ///   may have been deallocated.  If the matrix was created with a
+    ///   constant ("static") graph, this must be true. </li>
+    /// </ol>
+    ///
+    /// With respect to the Kokkos refactor version of Tpetra, "2-D
+    /// storage" should be considered a legacy option.
+    ///
+    /// The phrase "When not in a fill-complete state" is important.
+    /// When the graph is fill complete, it <i>always</i> uses 1-D
+    /// "packed" storage.  However, if storage is "not optimized," we
+    /// retain the 1-D unpacked or 2-D format, and thus retain this
+    /// enum value.
+    enum EStorageStatus {
+      STORAGE_2D, //<! 2-D storage
+      STORAGE_1D_UNPACKED, //<! 1-D "unpacked" storage
+      STORAGE_1D_PACKED, //<! 1-D "packed" storage
+      STORAGE_UB //<! Invalid value; upper bound on enum values
+    };
+  } // namespace Details
+
   /// \brief Partial specialization of CrsGraph for the new Kokkos Node types.
   ///
   /// This implements the "Kokkos refactor" version of CrsGraph.
@@ -85,6 +133,10 @@ namespace Tpetra {
     template <class LO2, class GO2, class N2, class SpMatOps2>
     friend class CrsGraph;
 
+    //! The specialization of DistObject that is this class' parent class.
+    typedef DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > dist_object_type;
+
   public:
     //! This class' first template parameter; the type of local indices.
     typedef LocalOrdinal local_ordinal_type;
@@ -115,7 +167,8 @@ namespace Tpetra {
     //! @name Constructor/Destructor Methods
     //@{
 
-    /// \brief Constructor specifying fixed number of entries for each row.
+    /// \brief Constructor specifying a single upper bound for the
+    ///   number of entries in all rows on the calling process.
     ///
     /// \param rowMap [in] Distribution of rows of the graph.
     ///
@@ -137,16 +190,16 @@ namespace Tpetra {
               ProfileType pftype = DynamicProfile,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-    /// \brief Constructor specifying (possibly different) number of entries in each row.
+    /// \brief Constructor specifying a (possibly different) upper
+    ///   bound for the number of entries in each row.
     ///
     /// \param rowMap [in] Distribution of rows of the graph.
     ///
-    /// \param NumEntriesPerRowToAlloc [in] Maximum number of graph
-    ///   entries to allocate for each row.  If
-    ///   pftype==DynamicProfile, this is only a hint.  If
-    ///   pftype==StaticProfile, this sets the amount of storage
-    ///   allocated, and you cannot exceed the allocated number of
-    ///   entries for any row.
+    /// \param numEntPerRow [in] Maximum number of graph entries to
+    ///   allocate for each row.  If pftype==DynamicProfile, this is
+    ///   only a hint.  If pftype==StaticProfile, this sets the amount
+    ///   of storage allocated, and you cannot exceed the allocated
+    ///   number of entries for any row.
     ///
     /// \param pftype [in] Whether to allocate storage dynamically
     ///   (DynamicProfile) or statically (StaticProfile).
@@ -155,11 +208,36 @@ namespace Tpetra {
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
-              const Teuchos::ArrayRCP<const size_t>& NumEntriesPerRowToAlloc,
-              ProfileType pftype = DynamicProfile,
+              const Kokkos::DualView<const size_t*, device_type>& numEntPerRow,
+              const ProfileType pftype = DynamicProfile,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-    /// \brief Constructor specifying column Map and fixed number of entries for each row.
+    /// \brief Constructor specifying a (possibly different) upper
+    ///   bound for the number of entries in each row (legacy
+    ///   KokkosClassic version).
+    ///
+    /// \param rowMap [in] Distribution of rows of the graph.
+    ///
+    /// \param numEntPerRow [in] Maximum number of graph entries to
+    ///   allocate for each row.  If pftype==DynamicProfile, this is
+    ///   only a hint.  If pftype==StaticProfile, this sets the amount
+    ///   of storage allocated, and you cannot exceed the allocated
+    ///   number of entries for any row.
+    ///
+    /// \param pftype [in] Whether to allocate storage dynamically
+    ///   (DynamicProfile) or statically (StaticProfile).
+    ///
+    /// \param params [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
+              const Teuchos::ArrayRCP<const size_t>& numEntPerRow,
+              const ProfileType pftype = DynamicProfile,
+              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
+    /// \brief Constructor specifying column Map and a single upper
+    ///   bound for the number of entries in all rows on the calling
+    ///   process.
     ///
     /// \param rowMap [in] Distribution of rows of the graph.
     ///
@@ -180,8 +258,8 @@ namespace Tpetra {
     ///   default values.
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
-              size_t maxNumEntriesPerRow,
-              ProfileType pftype = DynamicProfile,
+              const size_t maxNumEntriesPerRow,
+              const ProfileType pftype = DynamicProfile,
               const Teuchos::RCP<Teuchos::ParameterList>& params = null);
 
     /// \brief Constructor specifying column Map and number of entries in each row.
@@ -190,12 +268,11 @@ namespace Tpetra {
     ///
     /// \param colMap [in] Distribution of columns of the graph.
     ///
-    /// \param NumEntriesPerRowToAlloc [in] Maximum number of graph
-    ///   entries to allocate for each row.  If
-    ///   pftype==DynamicProfile, this is only a hint.  If
-    ///   pftype==StaticProfile, this sets the amount of storage
-    ///   allocated, and you cannot exceed the allocated number of
-    ///   entries for any row.
+    /// \param numEntPerRow [in] Maximum number of graph entries to
+    ///   allocate for each row.  If pftype==DynamicProfile, this is
+    ///   only a hint.  If pftype==StaticProfile, this sets the amount
+    ///   of storage allocated, and you cannot exceed the allocated
+    ///   number of entries for any row.
     ///
     /// \param pftype [in] Whether to allocate storage dynamically
     ///   (DynamicProfile) or statically (StaticProfile).
@@ -205,7 +282,32 @@ namespace Tpetra {
     ///   default values.
     CrsGraph (const Teuchos::RCP<const map_type >& rowMap,
               const Teuchos::RCP<const map_type >& colMap,
-              const Teuchos::ArrayRCP<const size_t> &NumEntriesPerRowToAlloc,
+              const Kokkos::DualView<const size_t*, device_type>& numEntPerRow,
+              ProfileType pftype = DynamicProfile,
+              const Teuchos::RCP<Teuchos::ParameterList>& params = null);
+
+    /// \brief Constructor specifying column Map and number of entries
+    ///   in each row (legacy KokkosClassic version).
+    ///
+    /// \param rowMap [in] Distribution of rows of the graph.
+    ///
+    /// \param colMap [in] Distribution of columns of the graph.
+    ///
+    /// \param numEntPerRow [in] Maximum number of graph entries to
+    ///   allocate for each row.  If pftype==DynamicProfile, this is
+    ///   only a hint.  If pftype==StaticProfile, this sets the amount
+    ///   of storage allocated, and you cannot exceed the allocated
+    ///   number of entries for any row.
+    ///
+    /// \param pftype [in] Whether to allocate storage dynamically
+    ///   (DynamicProfile) or statically (StaticProfile).
+    ///
+    /// \param params [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    CrsGraph (const Teuchos::RCP<const map_type >& rowMap,
+              const Teuchos::RCP<const map_type >& colMap,
+              const Teuchos::ArrayRCP<const size_t>& numEntPerRow,
               ProfileType pftype = DynamicProfile,
               const Teuchos::RCP<Teuchos::ParameterList>& params = null);
 
@@ -1538,17 +1640,28 @@ namespace Tpetra {
     ///
     /// This is an argument to some of the graph's constructors.
     /// Either this or numAllocForAllRows_ is used, but not both.
+    /// allocateIndices, setAllIndices, and expertStaticFillComplete
+    /// all deallocate this array (and the legacy view
+    /// numAllocPerRow_) once they are done with it.
     ///
-    /// If this is not set in the constructor, it is allocated
-    /// temporarily, if necessary, in allocateIndices().  In that same
-    /// method, it is used to allocate the row offsets array, then
-    /// discarded (set to null) unconditionally.
+    /// This array <i>only</i> exists on a process before the graph's
+    /// indices are allocated on that process.  After that point, it
+    /// is discarded, since the graph's allocation implicitly or
+    /// explicitly represents the same information.
     ///
     /// FIXME (mfh 07 Aug 2014) We want graph's constructors to
     /// allocate, rather than doing lazy allocation at first insert.
     /// This will make both numAllocPerRow_ and numAllocForAllRows_
     /// obsolete, so we don't have to make a Kokkos refactor version
     /// of numAllocPerRow_.
+    Kokkos::DualView<const size_t*, device_type> k_numAllocPerRow_;
+
+    /// \brief Legacy Kokkos classic version of k_numAllocPerRow_.
+    ///
+    /// This is just a view of k_numAllocPerRow_.  We create views
+    /// using Kokkos::Compat::persistingView, so the Kokkos::View
+    /// won't get deallocated until the ArrayRCP's reference count
+    /// goes to zero.
     Teuchos::ArrayRCP<const size_t> numAllocPerRow_;
 
     /// \brief The maximum number of entries to allow in each locally owned row.
@@ -1699,6 +1812,17 @@ namespace Tpetra {
     Teuchos::ArrayRCP<size_t> numRowEntries_;
 
     //@}
+
+    /// \brief Status of the graph's storage, when not in a
+    ///   fill-complete state.
+    ///
+    /// The phrase "When not in a fill-complete state" is important.
+    /// When the graph is fill complete, it <i>always</i> uses 1-D
+    /// "packed" storage.  However, if the "Optimize Storage"
+    /// parameter to fillComplete was false, the graph may keep
+    /// unpacked 1-D or 2-D storage around and resume it on the next
+    /// resumeFill call.
+    Details::EStorageStatus storageStatus_;
 
     bool indicesAreAllocated_;
     bool indicesAreLocal_;
