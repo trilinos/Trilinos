@@ -59,6 +59,68 @@
 /** \class ROL::LineSearchStep
     \brief Provides the interface to compute optimization steps
            with line search.
+
+    Suppose \f$\mathcal{X}\f$ is a Hilbert space of 
+    functions mapping \f$\Xi\f$ to \f$\mathbb{R}\f$.  For example, 
+    \f$\Xi\subset\mathbb{R}^n\f$ and \f$\mathcal{X}=L^2(\Xi)\f$ or 
+    \f$\Xi = \{1,\ldots,n\}\f$ and \f$\mathcal{X}=\mathbb{R}^n\f$. We 
+    assume \f$f:\mathcal{X}\to\mathbb{R}\f$ is twice-continuously Fr&eacute;chet 
+    differentiable and \f$a,\,b\in\mathcal{X}\f$ with \f$a\le b\f$ almost 
+    everywhere in \f$\Xi\f$.  Note that these line-search algorithms will also work 
+    with secant approximations of the Hessian. 
+    This step applies to unconstrained and bound constrained optimization problems,
+    \f[
+        \min_x\quad f(x) \qquad\text{and}\qquad \min_x\quad f(x)\quad\text{s.t.}\quad a\le x\le b,
+    \f]
+    respectively.  
+
+    For unconstrained problems, given the \f$k\f$-th iterate \f$x_k\f$ and a descent direction
+    \f$s_k\f$, the line search approximately minimizes the 1D objective function 
+    \f$\phi_k(t) = f(x_k + t s_k)\f$.  The approximate minimizer \f$t\f$ must satisfy 
+    sufficient decrease and curvature conditions into guarantee global convergence.  The 
+    sufficient decrease condition (often called the Armijo condition) is 
+    \f[
+       \phi_k(t) \le \phi_k(0) + c_1 t \phi_k'(0) \qquad\iff\qquad
+       f(x_k+ts_k) \le f(x_k) + c_1 t \langle \nabla f(x_k),s_k\rangle_{\mathcal{X}}
+    \f]
+    where \f$0 < c_1 < 1\f$.  The curvature conditions implemented in ROL include:
+
+    <CENTER>
+    | Name              | Condition                                                     | Parameters |
+    | :---------------- | :-----------------------------------------------------------: | :---------------------: |
+    | Wolfe             | \f$\phi_k'(t) \ge c_2\phi_k'(0)\f$                            | \f$c_1<c_2<1\f$         |
+    | Strong Wolfe      | \f$\left|\phi_k'(t)\right| \le c_2 \left|\phi_k'(0)\right|\f$ | \f$c_1<c_2<1\f$         |
+    | Generalized Wolfe | \f$c_2\phi_k'(0)\le \phi_k'(t)\le-c_3\phi_k'(0)\f$            | \f$0<c_3<1\f$           |
+    | Approximate Wolfe | \f$c_2\phi_k'(0)\le \phi_k'(t)\le(2c_1-1)\phi_k'(0)\f$        | \f$c_1<c_2<1\f$         |
+    | Goldstein         | \f$\phi_k(0)+(1-c_1)t\phi_k'(0)\le \phi_k(t)\f$               | \f$0<c_1<\frac{1}{2}\f$ |
+    </CENTER>
+    
+    Note that \f$\phi_k'(t) = \langle \nabla f(x_k+ts_k),s_k\rangle_{\mathcal{X}}\f$.
+
+    For bound constrained problems, the line-search step performs a projected search.  That is, 
+    the line search approximately minimizes the 1D objective function 
+    \f$\phi_k(t) = f(P_{[a,b]}(x_k+ts_k))\f$ where \f$P_{[a,b]}\f$ denotes the projection onto 
+    the upper and lower bounds.  Such line-search algorithms correspond to projected gradient 
+    and projected Newton-type algorithms.  
+
+    For projected methods, we require the notion of an active set of an iterate \f$x_k\f$, 
+    \f[
+       \mathcal{A}_k = \{\, \xi\in\Xi\,:\,x_k(\xi) = a(\xi)\,\}\cap
+                       \{\, \xi\in\Xi\,:\,x_k(\xi) = b(\xi)\,\}.
+    \f]
+    Given \f$\mathcal{A}_k\f$ and a search direction \f$s_k\f$, we define the binding set as
+    \f[
+       \mathcal{B}_k = \{\, \xi\in\Xi\,:\,x_k(\xi) = a(\xi) \;\text{and}\; s_k(\xi) < 0 \,\}\cap
+                       \{\, \xi\in\Xi\,:\,x_k(\xi) = b(\xi) \;\text{and}\; s_k(\xi) > 0 \,\}.
+    \f]
+    The binding set contains the values of \f$\xi\in\Xi\f$ such that if \f$x_k(\xi)\f$ is on a 
+    bound, then \f$(x_k+s_k)(\xi)\f$ will violate bound.  Using these definitions, we can 
+    redefine the sufficient decrease and curvature conditions from the unconstrained case to 
+    the case of bound constraints.
+
+    LineSearchStep implements a number of algorithms for both bound constrained and unconstrained 
+    optimization.  These algorithms are: Steepest descent; Nonlinear CG; Quasi-Newton methods;
+    Inexact Newton methods; Newton's method. These methods are chosen through the EDescent enum.
 */
 
 
@@ -68,35 +130,42 @@ template <class Real>
 class LineSearchStep : public Step<Real> {
 private:
 
-  Teuchos::RCP<Secant<Real> >              secant_;
-  Teuchos::RCP<Krylov<Real> >              krylov_;
-  Teuchos::RCP<NonlinearCG<Real> >         nlcg_;
-  Teuchos::RCP<LineSearch<Real> >          lineSearch_;
+  Teuchos::RCP<Secant<Real> >              secant_;      ///< Secant object (used for quasi-Newton)
+  Teuchos::RCP<Krylov<Real> >              krylov_;      ///< Krylov solver object (used for inexact Newton)
+  Teuchos::RCP<NonlinearCG<Real> >         nlcg_;        ///< Nonlinear CG object (used for nonlinear CG)
+  Teuchos::RCP<LineSearch<Real> >          lineSearch_;  ///< Line-search object
 
-  int iterKrylov_;
-  int flagKrylov_;
+  int iterKrylov_; ///< Number of Krylov iterations (used for inexact Newton)
+  int flagKrylov_; ///< Termination flag for Krylov method (used for inexact Newton)
 
-  ELineSearch         els_;
-  ENonlinearCG        enlcg_; 
-  ECurvatureCondition econd_;
-  EDescent            edesc_;
-  ESecant             esec_;
-  EKrylov             ekv_;
+  ELineSearch         els_;   ///< enum determines type of line search
+  ENonlinearCG        enlcg_; ///< enum determines type of nonlinear CG
+  ECurvatureCondition econd_; ///< enum determines type of curvature condition
+  EDescent            edesc_; ///< enum determines type of descent step
+  ESecant             esec_;  ///< enum determines type of secant approximation
+  EKrylov             ekv_;   ///< enum determines type of Krylov solver
  
-  int ls_nfval_;
-  int ls_ngrad_;
+  int ls_nfval_; ///< Number of function evaluations during line search
+  int ls_ngrad_; ///< Number of gradient evaluations during line search
+ 
+  bool useSecantHessVec_; ///< Whether or not a secant approximation is used for Hessian-times-a-vector
+  bool useSecantPrecond_; ///< Whether or not a secant approximation is used for preconditioning inexact Newton
 
-  bool useSecantHessVec_;
-  bool useSecantPrecond_;
+  bool useProjectedGrad_; ///< Whether or not to use to the projected gradient criticality measure
 
-  bool useProjectedGrad_;
-
-  std::vector<bool> useInexact_;
+  std::vector<bool> useInexact_; ///< Flags for inexact objective function, gradient, and Hessian evaluation
 
 public:
 
   virtual ~LineSearchStep() {}
 
+  /** \brief Constructor.
+
+      Standard constructor to build a LineSearchStep object.  Algorithmic 
+      specifications are passed in through a Teuchos::ParameterList.
+
+      @param[in]     parlist    is a parameter list containing algorithmic specifications
+  */
   LineSearchStep( Teuchos::ParameterList &parlist ) : Step<Real>() {
     // Enumerations
     edesc_ = StringToEDescent(parlist.get("Descent Type","Quasi-Newton Method"));
@@ -147,6 +216,15 @@ public:
     }
   }
 
+  /** \brief Constructor.
+
+      Constructor to build a LineSearchStep object with a user-defined 
+      secant object.  Algorithmic specifications are passed in through 
+      a Teuchos::ParameterList.
+
+      @param[in]     secant     is a user-defined secant object
+      @param[in]     parlist    is a parameter list containing algorithmic specifications
+  */
   LineSearchStep( Teuchos::RCP<Secant<Real> > &secant, Teuchos::ParameterList &parlist ) 
     : Step<Real>(), secant_(secant) {
     // Enumerations
@@ -193,6 +271,17 @@ public:
   }
 
   /** \brief Compute step.
+
+      Computes a trial step, \f$s_k\f$ as defined by the enum EDescent.  Once the 
+      trial step is determined, this function determines an approximate minimizer 
+      of the 1D function \f$\phi_k(t) = f(x_k+ts_k)\f$.  This approximate 
+      minimizer must satisfy sufficient decrease and curvature conditions.
+
+      @param[out]      s          is the computed trial step
+      @param[in]       x          is the current iterate
+      @param[in]       obj        is the objective function
+      @param[in]       con        are the bound constraints
+      @param[in]       algo_state contains the current state of the algorithm
   */
   void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, BoundConstraint<Real> &con, 
                 AlgorithmState<Real> &algo_state ) {
@@ -297,6 +386,15 @@ public:
   }
 
   /** \brief Update step, if successful.
+
+      Given a trial step, \f$s_k\f$, this function updates \f$x_{k+1}=x_k+s_k\f$. 
+      This function also updates the secant approximation.
+
+      @param[in,out]   x          is the updated iterate
+      @param[in]       s          is the computed trial step
+      @param[in]       obj        is the objective function
+      @param[in]       con        are the bound constraints
+      @param[in]       algo_state contains the current state of the algorithm
   */
   void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, BoundConstraint<Real> &con,
                AlgorithmState<Real> &algo_state ) {
@@ -346,6 +444,8 @@ public:
   }
 
   /** \brief Print iterate header.
+
+      This function produces a string containing header information.
   */
   std::string printHeader( void ) const  {
     std::stringstream hist;
@@ -365,7 +465,11 @@ public:
     hist << "\n";
     return hist.str();
   }
+  
+  /** \brief Print step name.
 
+      This function produces a string containing the algorithmic step information.
+  */
   std::string printName( void ) const {
     std::stringstream hist;
     hist << "\n" << EDescentToString(this->edesc_) 
@@ -386,6 +490,11 @@ public:
   }
 
   /** \brief Print iterate status.
+
+      This function prints the iteration status.
+
+      @param[in]     algo_state    is the current state of the algorithm
+      @param[in]     printHeader   if ste to true will print the header at each iteration
   */
   std::string print( AlgorithmState<Real> & algo_state, bool printHeader = false ) const  {
     std::stringstream hist;
