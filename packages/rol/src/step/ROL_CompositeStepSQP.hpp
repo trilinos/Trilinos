@@ -65,6 +65,9 @@ private:
   int CGflag_;
   int CGiter_;
 
+  int maxiterCG_;
+  Real tolCG_;
+
   Real lmhtol_;
   Real qntol_;
   Real pgtol_;
@@ -76,6 +79,7 @@ private:
   Real Delta_;
 
   bool debugQN_;
+  bool debugTANGSUB_;
 
 public:
 
@@ -86,6 +90,10 @@ public:
     TRflag_ = 0;
     CGflag_ = 0;
     CGiter_ = 0;
+
+    maxiterCG_ = 20;
+    tolCG_ = 1e-4;
+
     Real nominal_tol = parlist.get("Nominal SQP Optimality Solver Tolerance", 1e-3);
     lmhtol_  = nominal_tol;
     qntol_   = nominal_tol;
@@ -97,6 +105,7 @@ public:
     Delta_ = 1e2;
 
     debugQN_ = true;
+    debugTANGSUB_ = true;
   }
 
   /** \brief Initialize step.
@@ -385,8 +394,122 @@ public:
         std::cout << "  taking dogleg step\n";
       }
     }
-    
+
   } // computeQuasinormalStep
+
+
+  /** \brief Solve tangential subproblem.
+
+             @param[out]      t     is the solution of the tangential subproblem; an optimization-space vector
+             @param[out]      tCP   is the Cauchy point for the tangential subproblem; an optimization-space vector
+             @param[out]      Wg    is the projected gradient of the Lagrangian; a dual optimization-space vector
+             @param[in]       x     is the current iterate; an optimization-space vector
+             @param[in]       g     is the gradient of the Lagrangian; a dual optimization-space vector
+             @param[in]       n     is the quasi-normal step; an optimization-space vector
+             @param[in]       l     is the Lagrange multiplier; a dual constraint-space vector
+             @param[in]       delta is the trust-region radius for the tangential subproblem
+             @param[in]       con   is the equality constraint object
+
+  */
+  void solveTangentialSubproblem(Vector<Real> &t, Vector<Real> &tCP, Vector<Real> Wg,
+                                 const Vector<Real> &x, const Vector<Real> &g, const Vector<Real> &n, const Vector<Real> &l,
+                                 Real delta, Objective<Real> &obj, EqualityConstraint<Real> &con) {
+
+    /* Initialization of the CG step. */
+    Real zero = 0.0;
+    Real zerotol = 0.0;
+    int iter = 1;
+    int flag = 0;
+    t.zero();
+    tCP.zero();
+    Teuchos::RCP<Vector<Real> > r = g.clone();
+    Teuchos::RCP<Vector<Real> > Wr = g.clone();
+    Teuchos::RCP<Vector<Real> > vtemp = g.clone();
+    Teuchos::RCP<Vector<Real> > ltemp = l.clone();
+    Teuchos::RCP<Vector<Real> > czero = l.clone();
+    czero->zero();
+    obj.hessVec(*r, n, x, zerotol);
+    con.applyAdjointHessian(*vtemp, l, n, x, zerotol);
+    r->plus(*vtemp);
+    Real normg = r->norm();
+    Real normWg = zero;
+    Real normWr = zero;
+
+    std::vector<Teuchos::RCP<Vector<Real > > >  p;   // stores search directions
+    std::vector<Teuchos::RCP<Vector<Real > > >  Hp;  // stores hessvec's applied to p's
+    std::vector<Teuchos::RCP<Vector<Real > > >  rs;  // stores residuals
+    std::vector<Teuchos::RCP<Vector<Real > > >  Wrs; // stores projected residuals
+
+    Real rptol = 1e-12;
+
+    if (debugTANGSUB_) {
+      std::cout << "\n  SQP_tangential_subproblem\n";
+      std::cout << "  iter    ||W*r||/||W*r0||     ||D*s||        delta       ||Jac*s||\n";
+    }
+
+    if (normg == 0) {
+      if (debugTANGSUB_) {
+        std::cout << "    >>> Tangential subproblem: Initial gradient is zero! \n";
+      }
+      iter = 0; Wg.zero(); flag = 0;
+      return;
+    }
+
+    /* Start CG loop. */
+    while (iter < maxiterCG_)
+
+      // Store tangential Cauchy point (which is the current iterate in the second iteration).
+      if (iter == 2) {
+        tCP.set(t);
+      }
+
+      // Compute (inexact) projection W*r.
+      if (iter == 1) {
+        // Solve augmented system.
+        Real tol = pgtol_;
+        con.solveAugmentedSystem(*Wr, *ltemp, *r, *czero, x, tol);
+        Wg.set(*Wr);
+        Real normWg = Wg.norm();
+        // Check if done (small initial projected residual).
+        if (normWg < 1e-14) {
+          flag = 0;
+          iter = iter-1;
+          if (debugTANGSUB_) {
+            std::cout << "  Initial projected residual is close to zero! \n";
+          }
+          return;
+        }
+        // Set first residual to projected gradient.
+        r->set(Wg);
+      }
+      else {
+        // Solve augmented system.
+        Real tol = projtol_;
+        con.solveAugmentedSystem(*Wr, *ltemp, *r, *czero, x, tol);
+      }
+      normWr = Wr->norm();
+
+      if (debugTANGSUB_) {
+         Teuchos::RCP<Vector<Real> > ct = l.clone();
+         con.applyJacobian(*ct, t, x, zerotol);
+         Real linc = ct->norm();
+         printf("%5d     %12.5e     %12.5e  %12.5e  %12.5e \n", iter-1, normWr/normWg, t->norm(), delta, linc);
+      }
+
+      // Check if done (small relative residual).
+      if (normWr/normWg < tolCG_) {
+        flag = 0;
+        iter = iter-1;
+        if (debugTANGSUB_) {
+          std::cout << "  || W(g + H*(n+s)) || <= cgtol*|| W(g + H*n)|| \n";
+        }
+        return;
+      }
+
+
+  } // solveTangentialSubproblem
+
+
 
 }; // class CompositeStepSQP
 
