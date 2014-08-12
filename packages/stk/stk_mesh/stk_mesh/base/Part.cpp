@@ -225,7 +225,7 @@ bool intersect( const Part & a , const Part & b )
          intersect( b_sub , a_sub );
 }
 
-BulkData * Part::mesh_bulk_data() const
+BulkData & Part::mesh_bulk_data() const
 {
     return mesh_meta_data().get_mesh();
 }

@@ -198,7 +198,7 @@ public:
 
   BucketVector const& get_buckets(EntityRank entity_rank) const;
 
-  size_t size(EntityRank entity_rank) const;
+  bool empty(EntityRank entity_rank) const;
 
   /** \brief  Is this part a member of the
    *          set defined by the selector expression.
@@ -226,6 +226,8 @@ public:
   friend std::ostream & operator << ( std::ostream & out, const Selector & selector);
 
 private:
+
+  BulkData* find_mesh() const;
 
   bool is_null() const {
     return m_expr.size() == 1 && m_expr[0].m_type == SelectorNodeType::PART && m_expr[0].m_value.part_ptr == NULL;

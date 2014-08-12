@@ -154,8 +154,18 @@ public:
       m_bulk_data = bulk;
   }
 
-  BulkData* get_mesh() {
-    return m_bulk_data;
+  BulkData& get_mesh() {
+      ThrowRequireMsg(m_bulk_data != NULL, "MetaData::get_mesh() ERROR, mesh not set yet.");
+    return *m_bulk_data;
+  }
+
+  const BulkData& get_mesh() const {
+      ThrowRequireMsg(m_bulk_data != NULL, "MetaData::get_mesh() ERROR, mesh not set yet.");
+    return *m_bulk_data;
+  }
+
+  bool has_mesh() const {
+      return m_bulk_data != NULL;
   }
 
   //------------------------------------

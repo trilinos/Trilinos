@@ -237,6 +237,17 @@ void Selector::get_parts(PartVector& parts) const
   gather_parts_impl(parts, &m_expr[0]);
 }
 
+BulkData* Selector::find_mesh() const
+{
+    BulkData* mesh = NULL;
+    for(size_t i=0; i<m_expr.size(); ++i) {
+        if (m_expr[i].node_type() == SelectorNodeType::PART && m_expr[i].part() != NULL) {
+            mesh = &m_expr[i].part()->mesh_bulk_data();
+        }
+    }
+    return mesh;
+}
+
 BucketVector const& Selector::get_buckets(EntityRank entity_rank) const
 {
     static BucketVector emptyBucketVector;
@@ -244,27 +255,32 @@ BucketVector const& Selector::get_buckets(EntityRank entity_rank) const
         return emptyBucketVector;
     }
 
-    BulkData* mesh = NULL;
-    for(size_t i=0; i<m_expr.size(); ++i) {
-        if (m_expr[i].node_type() == SelectorNodeType::PART && m_expr[i].part() != NULL) {
-            mesh = m_expr[i].part()->mesh_bulk_data();
-        }
-    }
-    if (mesh == NULL) {
-        return emptyBucketVector;
-    }
+    BulkData* mesh = find_mesh();
+    ThrowRequireMsg(mesh != NULL,
+        "ERROR, Selector::get_buckets not available if selector expression does not involve any mesh Parts.");
 
     return mesh->get_buckets(entity_rank, *this);
 }
 
-size_t Selector::size(EntityRank entity_rank) const
+bool Selector::empty(EntityRank entity_rank) const
 {
-    size_t num_entities = 0;
-    BucketVector const& buckets = get_buckets(entity_rank);
-    for(size_t i=0; i<buckets.size(); ++i) {
-        num_entities += buckets[i]->size();
+    if (m_expr.empty()) {
+        return true;
     }
-    return num_entities;
+
+    BulkData * mesh = this->find_mesh();
+    ThrowRequireMsg(mesh != NULL,
+                    "ERROR, Selector::empty not available if selector expression does not involve any mesh Parts.");
+    if (mesh->synchronized_state() == BulkData::MODIFIABLE) {
+      BucketVector const& buckets = this->get_buckets(entity_rank);
+      for(size_t i=0; i<buckets.size(); ++i) {
+          if (buckets[i]->size() >0) {
+              return false;
+          }
+      }
+      return true;
+    }
+    return get_buckets(entity_rank).empty();
 }
 
 
