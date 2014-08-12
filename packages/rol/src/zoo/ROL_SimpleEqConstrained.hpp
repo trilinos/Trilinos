@@ -379,7 +379,7 @@ namespace ROL {
         rhs(i) = (*b1p)[i];
       }
       for (i=5; i<8; i++) {
-        rhs(i) = (*b2p)[i];
+        rhs(i) = (*b2p)[i-5];
       }
 
       // Solve augmented system.
