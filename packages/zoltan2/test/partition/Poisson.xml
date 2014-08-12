@@ -2,14 +2,14 @@
    <Parameter name="meshInput" type="string" value = "
      mesh
        rectilinear
-          nx = 20
-          ny = 20
-          nz = 20
+          nx = 5
+          ny = 5
+          nz = 1
           bx = 1
           by = 1
           bz = 1
           gmin = 0 0 0 
-          gmax = 1 1 1
+          gmax = 10 10 1
        end
        set assign
           sideset, ilo, 1
