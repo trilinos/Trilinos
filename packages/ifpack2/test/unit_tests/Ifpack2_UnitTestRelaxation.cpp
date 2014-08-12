@@ -87,6 +87,8 @@ HEADER
 #include <Ifpack2_UnitTestHelpers.hpp>
 #include <Ifpack2_Relaxation.hpp>
 
+#include <Tpetra_Experimental_BlockMultiVector.hpp>
+
 namespace {
 using Tpetra::global_size_t;
 typedef tif_utest::Node Node;
