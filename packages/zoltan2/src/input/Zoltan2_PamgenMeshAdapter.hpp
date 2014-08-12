@@ -387,7 +387,8 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr):
       reconnect[telct] = new int [num_nodes_per_elem[b]];
 
       for (int j = 0; j < num_nodes_per_elem[b]; j++) {
-	elemToNode_[tnoct_] = connect[b][i*num_nodes_per_elem[b] + j];
+	elemToNode_[tnoct_]=
+	  node_num_map_[connect[b][i*num_nodes_per_elem[b] + j]-1];
 	reconnect[telct][j] = connect[b][i*num_nodes_per_elem[b] + j];
 	++tnoct_;
       }
