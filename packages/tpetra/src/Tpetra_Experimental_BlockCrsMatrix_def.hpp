@@ -454,29 +454,39 @@ namespace Experimental {
   BlockCrsMatrix<Scalar,LO,GO,Node>::
   computeDiagonalGraph ()
   {
-    if (computedDiagonalGraph_) return;
+    using Teuchos::rcp;
+
+    if (computedDiagonalGraph_) {
+      // FIXME (mfh 12 Aug 2014) Consider storing the "diagonal graph"
+      // separately from the matrix.  It should really go in the
+      // preconditioner, not here.  We could do this by adding a
+      // method that accepts a nonconst diagonal graph, and updates
+      // it.  btw it would probably be a better idea to use a
+      // BlockMultiVector to store the diagonal, not a graph.
+      return;
+    }
 
     const size_t maxDiagEntPerRow = 1;
-    diagonalGraph_ = Teuchos::rcp(new crs_graph_type(graph_.getRowMap(), maxDiagEntPerRow, Tpetra::StaticProfile));
-    const map_type& meshRowMap = *graph_.getRowMap();
+    // NOTE (mfh 12 Aug 2014) We could also pass in the column Map
+    // here.  However, we still would have to do LID->GID lookups to
+    // make sure that we are using the correct diagonal column
+    // indices, so it probably wouldn't help much.
+    diagonalGraph_ =
+      rcp (new crs_graph_type (graph_.getRowMap (), maxDiagEntPerRow,
+                               Tpetra::StaticProfile));
+    const map_type& meshRowMap = * (graph_.getRowMap ());
 
     Teuchos::Array<GO> diagGblColInds (maxDiagEntPerRow);
 
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
          lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {
-
       const GO gblRowInd = meshRowMap.getGlobalElement (lclRowInd);
-
       diagGblColInds[0] = gblRowInd;
       diagonalGraph_->insertGlobalIndices (gblRowInd, diagGblColInds ());
-
     }
-
-    diagonalGraph_->fillComplete ();
-
-
+    diagonalGraph_->fillComplete (graph_.getDomainMap (),
+                                  graph_.getRangeMap ());
     computedDiagonalGraph_ = true;
-
   }
 
   template <class Scalar, class LO, class GO, class Node>
@@ -484,10 +494,9 @@ namespace Experimental {
   BlockCrsMatrix<Scalar,LO,GO,Node>::
   getDiagonalGraph () const
   {
-
     TEUCHOS_TEST_FOR_EXCEPTION(
-      !computedDiagonalGraph_, std::invalid_argument, "Tpetra::Experimental::"
-      "BlockCrsMatrix getDiagonalGraph: You must call computeDiagionalGraph () "
+      ! computedDiagonalGraph_, std::runtime_error, "Tpetra::Experimental::"
+      "BlockCrsMatrix::getDiagonalGraph: You must call computeDiagionalGraph() "
       "before calling this method.");
     return diagonalGraph_;
   }
@@ -496,13 +505,12 @@ namespace Experimental {
   void
   BlockCrsMatrix<Scalar,LO,GO,Node>::
   localGaussSeidel (const BlockMultiVector<Scalar, LO, GO, Node>& B,
-      BlockMultiVector<Scalar, LO, GO, Node>& X,
-      BlockCrsMatrix<Scalar, LO, GO, Node> & factorizedDiagonal,
-      const int * factorizationPivots,
-      const Scalar omega,
-      const ESweepDirection direction) const
+                    BlockMultiVector<Scalar, LO, GO, Node>& X,
+                    BlockCrsMatrix<Scalar, LO, GO, Node> & factorizedDiagonal,
+                    const int * factorizationPivots,
+                    const Scalar omega,
+                    const ESweepDirection direction) const
   {
-    
     const LO numLocalMeshRows =
       static_cast<LO> (rowMeshMap_.getNodeNumElements ());
     const LO numVecs = static_cast<LO> (X.getNumVectors ());
@@ -520,34 +528,31 @@ namespace Experimental {
     Scalar * Dmat;
     LO numIndices;
 
+    // FIXME (mfh 12 Aug 2014) This probably won't work if LO is unsigned.
     LO rowBegin = 0, rowEnd = 0, rowStride = 0;
-    if (direction == Forward)
-    {
+    if (direction == Forward) {
       rowBegin = 1;
       rowEnd = numLocalMeshRows+1;
       rowStride = 1;
     }
-    else if (direction == Backward)
-    {
+    else if (direction == Backward) {
       rowBegin = numLocalMeshRows;
       rowEnd = 0;
       rowStride = -1;
     }
-    else if (direction == Symmetric)
-    {
-      this->localGaussSeidel(B, X, factorizedDiagonal, factorizationPivots, omega, Forward);
-      this->localGaussSeidel(B, X, factorizedDiagonal, factorizationPivots, omega, Backward);
+    else if (direction == Symmetric) {
+      this->localGaussSeidel (B, X, factorizedDiagonal, factorizationPivots, omega, Forward);
+      this->localGaussSeidel (B, X, factorizedDiagonal, factorizationPivots, omega, Backward);
       return;
     }
 
     if (numVecs == 1) {
-
       for (LO lclRow = rowBegin; lclRow != rowEnd; lclRow += rowStride) {
-        LO actlRow = lclRow-1;
+        const LO actlRow = lclRow - 1;
 
         little_vec_type B_cur = B.getLocalBlock (actlRow, 0);
-        X_lcl.assign(B_cur);
-        X_lcl.scale(omega);
+        X_lcl.assign (B_cur);
+        X_lcl.scale (omega);
 
         const size_t meshBeg = ptr_[actlRow];
         const size_t meshEnd = ptr_[actlRow+1];
@@ -559,19 +564,17 @@ namespace Experimental {
           little_vec_type X_cur = X.getLocalBlock (meshCol, 0);
 
           // X_lcl += alpha*A_cur*X_cur
-          const double alpha = meshCol == actlRow ? 1-omega : -omega;
+          const double alpha = (meshCol == actlRow) ? (1 - omega) : -omega;
           X_lcl.matvecUpdate (alpha, A_cur, X_cur);
-
         } // for each entry in the current local row of the matrx
 
-        factorizedDiagonal.getLocalRowView(actlRow, columnIndices, Dmat, numIndices);
-        little_block_type D_lcl = getNonConstLocalBlockFromInput(Dmat, 0);
+        factorizedDiagonal.getLocalRowView (actlRow, columnIndices,
+                                            Dmat, numIndices);
+        little_block_type D_lcl = getNonConstLocalBlockFromInput (Dmat, 0);
 
-        D_lcl.solve(X_lcl, &factorizationPivots[actlRow*blockSize_]);
-
+        D_lcl.solve (X_lcl, &factorizationPivots[actlRow*blockSize_]);
         little_vec_type X_update = X.getLocalBlock (actlRow, 0);
         X_update.assign(X_lcl);
-
       } // for each local row of the matrix
     }
     else {
@@ -580,8 +583,8 @@ namespace Experimental {
           LO actlRow = lclRow-1;
 
           little_vec_type B_cur = B.getLocalBlock (actlRow, j);
-          X_lcl.assign(B_cur);
-          X_lcl.scale(omega);
+          X_lcl.assign (B_cur);
+          X_lcl.scale (omega);
 
           const size_t meshBeg = ptr_[actlRow];
           const size_t meshEnd = ptr_[actlRow+1];
@@ -593,21 +596,19 @@ namespace Experimental {
             little_vec_type X_cur = X.getLocalBlock (meshCol, j);
 
             // X_lcl += alpha*A_cur*X_cur
-            const double alpha = meshCol == actlRow ? 1-omega : -omega;
+            const double alpha = (meshCol == actlRow) ? (1 - omega) : -omega;
             X_lcl.matvecUpdate (alpha, A_cur, X_cur);
-
           } // for each entry in the current local row of the matrx
 
-          factorizedDiagonal.getLocalRowView(actlRow, columnIndices, Dmat, numIndices);
+          factorizedDiagonal.getLocalRowView (actlRow, columnIndices,
+                                              Dmat, numIndices);
           little_block_type D_lcl = getNonConstLocalBlockFromInput(Dmat, 0);
 
-          D_lcl.solve(X_lcl, &factorizationPivots[actlRow*blockSize_]);
+          D_lcl.solve (X_lcl, &factorizationPivots[actlRow*blockSize_]);
 
           little_vec_type X_update = X.getLocalBlock (actlRow, j);
           X_update.assign(X_lcl);
-
         } // for each entry in the current local row of the matrix
-
       } // for each local row of the matrix
     }
   }
@@ -616,16 +617,18 @@ namespace Experimental {
   void
   BlockCrsMatrix<Scalar,LO,GO,Node>::
   gaussSeidelCopy (MultiVector<Scalar,LO,GO,Node> &X,
-                     const MultiVector<Scalar,LO,GO,Node> &B,
-                     const MultiVector<Scalar,LO,GO,Node> &D,
-                     const Scalar& dampingFactor,
-                     const ESweepDirection direction,
-                     const int numSweeps,
-                     const bool zeroInitialGuess) const
+                   const MultiVector<Scalar,LO,GO,Node> &B,
+                   const MultiVector<Scalar,LO,GO,Node> &D,
+                   const Scalar& dampingFactor,
+                   const ESweepDirection direction,
+                   const int numSweeps,
+                   const bool zeroInitialGuess) const
   {
+    // FIXME (mfh 12 Aug 2014) This method has entirely the wrong
+    // interface for block Gauss-Seidel.
     TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::gaussSeidelCopy: "
-      "is not implemented.");
+      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::"
+      "gaussSeidelCopy: Not implemented.");
   }
 
   template <class Scalar, class LO, class GO, class Node>
@@ -640,9 +643,11 @@ namespace Experimental {
                             const int numSweeps,
                             const bool zeroInitialGuess) const
   {
+    // FIXME (mfh 12 Aug 2014) This method has entirely the wrong
+    // interface for block Gauss-Seidel.
     TEUCHOS_TEST_FOR_EXCEPTION(
-        true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::reorderedGaussSeidelCopy: "
-        "is not implemented.");
+      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::"
+      "reorderedGaussSeidelCopy: Not implemented.");
   }
 
   template <class Scalar, class LO, class GO, class Node>
@@ -653,6 +658,7 @@ namespace Experimental {
   {
     using Teuchos::ArrayRCP;
     using Teuchos::ArrayView;
+    const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero ();
 
     const size_t myNumRows = rowMeshMap_.getNodeNumElements();
     const LO* columnIndices;
@@ -660,11 +666,12 @@ namespace Experimental {
     LO numColumns;
     Teuchos::Array<LO> cols(1);
 
-    Teuchos::Array<Scalar> zeroMat(blockSize_*blockSize_, Teuchos::ScalarTraits<Scalar>::zero());
+    // FIXME (mfh 12 Aug 2014) Should use a "little block" for this instead.
+    Teuchos::Array<Scalar> zeroMat (blockSize_*blockSize_, ZERO);
     for (size_t i = 0; i < myNumRows; ++i) {
       cols[0] = i;
       if (offsets[i] == Teuchos::OrdinalTraits<size_t>::invalid ()) {
-        diag.replaceLocalValues (i, cols.getRawPtr(), zeroMat.getRawPtr(), 1);
+        diag.replaceLocalValues (i, cols.getRawPtr (), zeroMat.getRawPtr (), 1);
       }
       else {
         getLocalRowView (i, columnIndices, vals, numColumns);
@@ -787,8 +794,8 @@ namespace Experimental {
                    size_t &NumEntries) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::getLocalRowCopy: "
-      "Copying is not implemented. You should use a view.");
+      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::"
+      "getLocalRowCopy: Copying is not implemented. You should use a view.");
   }
 
   template<class Scalar, class LO, class GO, class Node>

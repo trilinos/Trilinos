@@ -1442,7 +1442,6 @@ namespace Tpetra {
     ///   <tt>isStorageOptimized() == false</tt>
     void mergeRowIndices (RowInfo rowinfo);
 
-
     /// \brief Merge duplicate row indices in the given row, along
     ///   with their corresponding values.
     ///

@@ -49,10 +49,16 @@
 namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  // forward declaration
+  // forward declaration (needed for "friend" inside CrsGraph)
   template <class S, class LO, class GO, class N, class SpMatOps>
   class CrsMatrix;
-#endif
+
+  namespace Experimental {
+    // forward declaration (needed for "friend" inside CrsGraph)
+    template <class S, class LO, class GO, class N>
+    class BlockCrsMatrix;
+  } // namespace Experimental
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
   namespace Details {
     /// \brief Status of the graph's or matrix's storage, when not in
@@ -132,6 +138,8 @@ namespace Tpetra {
     friend class CrsMatrix;
     template <class LO2, class GO2, class N2, class SpMatOps2>
     friend class CrsGraph;
+    template <class S, class LO, class GO, class N>
+    friend class ::Tpetra::Experimental::BlockCrsMatrix;
 
     //! The specialization of DistObject that is this class' parent class.
     typedef DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal,
