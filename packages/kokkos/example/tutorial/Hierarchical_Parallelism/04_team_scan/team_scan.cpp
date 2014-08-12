@@ -52,9 +52,8 @@
 typedef Kokkos::DefaultExecutionSpace   Device ;
 typedef Device::host_mirror_device_type Host ;
 
-typedef  Kokkos::TeamPolicy< Device >      team_policy ;
-typedef typename team_policy::member_type  team_member ;
-
+typedef Kokkos::TeamPolicy< Device >      team_policy ;
+typedef team_policy::member_type team_member ;
 #define TS 16
 
 struct find_2_tuples {
@@ -72,8 +71,8 @@ struct find_2_tuples {
 
   KOKKOS_INLINE_FUNCTION
   void operator() ( const team_member & dev) const {
-    Kokkos::View<int**,Kokkos::MemoryUnmanaged> l_histogram(dev,TS,TS);
-    Kokkos::View<int*,Kokkos::MemoryUnmanaged> l_data(dev,chunk_size+1);
+    Kokkos::View<int**,Kokkos::MemoryUnmanaged> l_histogram(dev.team_shmem(),TS,TS);
+    Kokkos::View<int*,Kokkos::MemoryUnmanaged> l_data(dev.team_shmem(),chunk_size+1);
 
     const int i = dev.league_rank() * chunk_size;
     for(int j = dev.team_rank(); j<chunk_size+1; j+=dev.team_size())

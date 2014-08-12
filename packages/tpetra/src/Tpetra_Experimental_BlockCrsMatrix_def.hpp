@@ -564,7 +564,7 @@ namespace Experimental {
           little_vec_type X_cur = X.getLocalBlock (meshCol, 0);
 
           // X_lcl += alpha*A_cur*X_cur
-          const double alpha = (meshCol == actlRow) ? (1 - omega) : -omega;
+          const Scalar alpha = meshCol == actlRow ? Teuchos::ScalarTraits<Scalar>::one()-omega : -omega;
           X_lcl.matvecUpdate (alpha, A_cur, X_cur);
         } // for each entry in the current local row of the matrx
 
@@ -596,7 +596,7 @@ namespace Experimental {
             little_vec_type X_cur = X.getLocalBlock (meshCol, j);
 
             // X_lcl += alpha*A_cur*X_cur
-            const double alpha = (meshCol == actlRow) ? (1 - omega) : -omega;
+            const Scalar alpha = meshCol == actlRow ? Teuchos::ScalarTraits<Scalar>::one()-omega : -omega;
             X_lcl.matvecUpdate (alpha, A_cur, X_cur);
           } // for each entry in the current local row of the matrx
 
@@ -2329,10 +2329,11 @@ namespace Experimental {
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getFrobeniusNorm() const
   {
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::getFrobeniusNorm: "
       "not implemented.");
-    return Teuchos::ScalarTraits<Scalar>::zero();
+    return Teuchos::ScalarTraits<Mag>::zero();
   }
 
 

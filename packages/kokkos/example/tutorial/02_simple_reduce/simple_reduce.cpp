@@ -47,6 +47,7 @@
 #include <cstdio>
 
 struct squaresum {
+  typedef int value_type; //Specify type for reduction target, lsum
   KOKKOS_INLINE_FUNCTION
   void operator() (int i, int &lsum) const {
     lsum+= i*i;
