@@ -146,7 +146,6 @@ void ThreadsExec::set_team_relations()
   m_team_shared_end  = 0 ;
   m_team_size        = 0 ;
   m_team_rank        = 0 ;
-  m_team_fan_size    = 0 ;
   m_league_size      = 0 ;
   m_league_rank      = 0 ;
   m_league_end       = 0 ;
@@ -174,7 +173,6 @@ void ThreadsExec::set_team_relations()
       m_team_shared_end  = s_current_shared_size ;
       m_team_size        = team_size ;
       m_team_rank        = team_size - ( team_rank_rev + 1 );
-      m_team_fan_size    = fan_size( m_team_rank , team_size );
       m_league_size      = league_size ;
       m_league_rank      = ( league_size *  pool_league_rank    ) / pool_league_size ;
       m_league_end       = ( league_size * (pool_league_rank+1) ) / pool_league_size ;
@@ -197,7 +195,6 @@ ThreadsExec::ThreadsExec()
 
   , m_team_rank(0)
   , m_team_size(0)
-  , m_team_fan_size(0)
 
   , m_league_rank(0)
   , m_league_end(0)
@@ -263,7 +260,6 @@ ThreadsExec::~ThreadsExec()
   m_pool_fan_size = 0 ;
   m_team_rank     = 0 ;
   m_team_size     = 0 ;
-  m_team_fan_size = 0 ;
   m_league_rank   = 0 ;
   m_league_end    = 0 ;
   m_league_size   = 0 ;

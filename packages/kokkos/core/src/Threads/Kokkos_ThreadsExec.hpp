@@ -117,7 +117,6 @@ private:
 
   int           m_team_rank ;
   int           m_team_size ;
-  int           m_team_fan_size ;
 
   int           m_league_rank ;
   int           m_league_end ;
@@ -195,23 +194,6 @@ public:
   //------------------------------------
   // All-thread functions:
 
-  inline
-  std::pair< size_t , size_t >
-  work_range( const size_t work_count ) const
-  {
-    typedef integral_constant< size_t , VECTOR_LENGTH - 1 > work_mask ;
-
-    // work per thread rounded up and aligned to vector length:
-
-    const size_t work_per_thread =
-      ( ( ( work_count + m_pool_size - 1 ) / m_pool_size ) + work_mask::value ) & ~(work_mask::value);
-
-    const size_t work_begin = std::min( work_count , work_per_thread * m_pool_rank );
-    const size_t work_end   = std::min( work_count , work_per_thread + work_begin );
-
-    return std::pair< size_t , size_t >( work_begin , work_end );
-  }
-
   template< class Functor >
   inline
   void fan_in_reduce( const Functor & f ) const
@@ -247,7 +229,6 @@ public:
   template< class FunctorType >
   inline
   void scan_large( const FunctorType & f )
-
     {
       // Sequence of states:
       //  0) Active             : entry and exit state
@@ -403,121 +384,6 @@ public:
 
   void * get_shmem( const int size );
 
-  KOKKOS_INLINE_FUNCTION void team_barrier()
-    {
-      #ifndef __CUDA_ARCH__
-      const int rev_rank = m_team_size - ( m_team_rank + 1 );
-
-      for ( int i = 0 ; i < m_team_fan_size ; ++i ) {
-        Impl::spinwait( m_team_base[ rev_rank + (1<<i) ]->m_pool_state , ThreadsExec::Active );
-      }
-      if ( rev_rank ) {
-        m_pool_state = Rendezvous ;
-        Impl::spinwait( m_pool_state , ThreadsExec::Rendezvous );
-      }
-      for ( int i = 0 ; i < m_team_fan_size ; ++i ) {
-        m_team_base[ rev_rank + (1<<i) ]->m_pool_state = ThreadsExec::Active ;
-      }
-      #endif
-    }
-
-  template< class ArgType >
-  KOKKOS_INLINE_FUNCTION
-  ArgType team_scan( const ArgType & value , ArgType * const global_accum = 0 )
-    {
-      // Sequence of m_team_state states:
-      //  0) Inactive            : entry and exit state
-      //  1) ReductionAvailable  : reduction value available, waiting for scan value
-      //  2) ScanAvailable       : reduction value available, scan value available
-      //  3) Rendezvous          : broadcasting global inter-team accumulation value
-
-      // Make sure there is enough scratch space:
-      typedef typename if_c< 2 * sizeof(ArgType) < REDUCE_TEAM_BASE , ArgType , void >::type type ;
-
-      const int rev_rank = m_team_size - ( m_team_rank + 1 );
-
-      type * const work_value = (type*) reduce_team();
-
-      // ThreadsExec::Inactive == m_team_state
-
-      work_value[0] = value ;
-      memory_fence();
-
-      // Fan-in reduction, wait for source thread to complete it's fan-in reduction.
-      for ( int i = 0 ; i < m_team_fan_size ; ++i ) {
-        ThreadsExec & th = *m_team_base[ rev_rank + (1<<i) ];
-
-        // Wait for source thread to exit Inactive state.
-        Impl::spinwait( th.m_team_state , ThreadsExec::Inactive );
-        // Source thread is 'ReductionAvailable' or 'ScanAvailable'
-        work_value[0] += ((volatile type*)th.reduce_team())[0];
-        memory_fence();
-      }
-
-      work_value[1] = work_value[0] ;
-      memory_fence();
-
-      if ( rev_rank ) {
-
-        m_team_state = ThreadsExec::ReductionAvailable ; // Reduction value is available.
-
-        // Wait for contributing threads' scan value to be available.
-        if ( ( 1 << m_team_fan_size ) < ( m_team_rank + 1 ) ) {
-          ThreadsExec & th = *m_team_base[ rev_rank + ( 1 << m_team_fan_size ) ];
-
-          // Wait: Inactive -> ReductionAvailable
-          Impl::spinwait( th.m_team_state , ThreadsExec::Inactive );
-          // Wait: ReductionAvailable -> ScanAvailable:
-          Impl::spinwait( th.m_team_state , ThreadsExec::ReductionAvailable );
-
-          work_value[1] += ((volatile type*)th.reduce_team())[1] ;
-          memory_fence();
-        }
-
-        m_team_state = ThreadsExec::ScanAvailable ; // Scan value is available.
-      }
-      else {
-         // Root thread add team's total to global inter-team accumulation
-        work_value[0] = global_accum ? atomic_fetch_add( global_accum , work_value[0] ) : 0 ;
-      }
-
-      for ( int i = 0 ; i < m_team_fan_size ; ++i ) {
-        ThreadsExec & th = *m_team_base[ rev_rank + (1<<i) ];
-        // Wait: ReductionAvailable -> ScanAvailable
-        Impl::spinwait( th.m_team_state , ThreadsExec::ReductionAvailable );
-        // Wait: ScanAvailable -> Rendezvous
-        Impl::spinwait( th.m_team_state , ThreadsExec::ScanAvailable );
-      }
-
-      // All fan-in threads are in the ScanAvailable state
-      if ( rev_rank ) {
-        m_team_state = ThreadsExec::Rendezvous ;
-        Impl::spinwait( m_team_state , ThreadsExec::Rendezvous );
-      }
-
-      // Broadcast global inter-team accumulation value
-      volatile type & global_val = work_value[0] ;
-      for ( int i = 0 ; i < m_team_fan_size ; ++i ) {
-        ThreadsExec & th = *m_team_base[ rev_rank + (1<<i) ];
-        ((volatile type*)th.reduce_team())[0] = global_val ;
-        memory_fence();
-        th.m_team_state = ThreadsExec::Inactive ;
-      }
-      // Exclusive scan, subtract contributed value
-      return global_val + work_value[1] - value ;
-    }
-
-  /*  When a functor using the 'device' interface requests
-   *  more teams than are initialized the parallel operation
-   *  must loop over a range of league ranks with a team_barrier
-   *  between each iteration.
-   */
-  bool team_work_avail()
-    { m_team_shared_iter = 0 ; return m_league_rank < m_league_end ; }
-
-  void team_work_next()
-    { if ( ++m_league_rank < m_league_end ) team_barrier(); }
-
   //------------------------------------
   /** \brief  Wait for previous asynchronous functor to
    *          complete and release the Threads device.
@@ -553,7 +419,7 @@ private:
   // Fan-in and wait until the matching fan-out is called.
   // The root thread which does not wait will return true.
   // All other threads will return false during the fan-out.
-  KOKKOS_INLINE_FUNCTION bool team_fanin() const
+  KOKKOS_INLINE_FUNCTION bool team_fan_in() const
     {
       const int rev_rank = m_exec.m_team_size - ( m_exec.m_team_rank + 1 );
       const bool is_root = ! rev_rank ;
@@ -574,7 +440,7 @@ private:
       return is_root ;
     }
 
-  KOKKOS_INLINE_FUNCTION void team_fanout() const
+  KOKKOS_INLINE_FUNCTION void team_fan_out() const
     {
       const int rev_rank = m_exec.m_team_size - ( m_exec.m_team_rank + 1 );
       int n , j ;
@@ -599,8 +465,8 @@ public:
 
   KOKKOS_INLINE_FUNCTION void team_barrier() const
     {
-      team_fanin();
-      team_fanout();
+      team_fan_in();
+      team_fan_out();
     }
 
   template< typename Type >
@@ -615,14 +481,14 @@ public:
 
       type & accum = *((type *) m_exec.m_team_base[0]->reduce_team() );
 
-      if ( team_fanin() ) {
+      if ( team_fan_in() ) {
         for ( int i = 1 ; i < m_exec.m_team_size ; ++i ) {
           accum += *((type *) m_exec.m_team_base[i]->reduce_team() );
         }
         memory_fence();
       }
 
-      team_fanout();
+      team_fan_out();
 
       return accum ;
     }
@@ -636,41 +502,49 @@ public:
    *  As such the base value for each team's scan operation is similarly
    *  non-deterministic.
    */
-  template< typename Type >
-  KOKKOS_INLINE_FUNCTION Type team_scan( const Type & value , Type * const global_accum ) const
+  template< typename ArgType >
+  KOKKOS_INLINE_FUNCTION ArgType team_scan( const ArgType & value , ArgType * const global_accum ) const
     {
       // Make sure there is enough scratch space:
-      typedef typename if_c< sizeof(Type) < ThreadsExec::REDUCE_TEAM_BASE , Type , void >::type type ;
+      typedef typename if_c< sizeof(ArgType) < ThreadsExec::REDUCE_TEAM_BASE , ArgType , void >::type type ;
 
-      *((volatile type*) m_exec.reduce_team() ) = value ;
+      volatile type * const work_value  = ((type*) m_exec.reduce_team());
+
+      *work_value = value ;
 
       memory_fence();
 
-      if ( team_fanin() ) {
-        type accum = *((type *) m_exec.m_team_base[0]->reduce_team() );
+      if ( team_fan_in() ) {
+        // The last thread to synchronize returns true, all other threads wait for team_fan_out()
+        // m_team_base[0]                 == highest ranking team member
+        // m_team_base[ m_team_size - 1 ] == lowest ranking team member
+        //
+        // 1) copy from lower to higher rank, initialize lowest rank to zero
+        // 2) prefix sum from lowest to highest rank, skipping lowest rank
 
-        // Copy from lower to higher rank team member: { N-1 , N-2 , N-3 , ... , 0 }
-        for ( int i = 1 ; i < m_exec.m_team_size ; ++i ) {
-          accum += ( *((type *) m_exec.m_team_base[i-1]->reduce_team() ) =
-                     *((type *) m_exec.m_team_base[i  ]->reduce_team() ) );
+        type accum = 0 ;
+
+        if ( global_accum ) {
+          for ( int i = m_exec.m_team_size ; i-- ; ) {
+            type & val = *((type*) m_exec.m_team_base[i]->reduce_team());
+            accum += val ;
+          }
+          accum = atomic_fetch_add( global_accum , accum );
         }
 
-        *((type *) m_exec.m_team_base[ m_exec.m_team_size - 1 ]->reduce_team() ) =
-          global_accum ? atomic_fetch_add( global_accum , accum ) : 0 ;
-
-        // Join from lower rank to higher rank
-
-        for ( int i = m_exec.m_team_size ; --i ; ) {
-          *((type *) m_exec.m_team_base[i-1]->reduce_team() ) +=
-          *((type *) m_exec.m_team_base[i  ]->reduce_team() );
+        for ( int i = m_exec.m_team_size ; i-- ; ) {
+          type & val = *((type*) m_exec.m_team_base[i]->reduce_team());
+          const type offset = accum ;
+          accum += val ;
+          val = offset ;
         }
 
         memory_fence();
       }
 
-      team_fanout();
+      team_fan_out();
 
-      return *((volatile type*) m_exec.reduce_team() );
+      return *work_value ;
     }
 
   /** \brief  Intra-team exclusive prefix sum with team_rank() ordering.
@@ -678,9 +552,9 @@ public:
    *  The highest rank thread can compute the reduction total as
    *    reduction_total = dev.team_scan( value ) + value ;
    */
-  template< typename Type >
-  KOKKOS_INLINE_FUNCTION Type team_scan( const Type & value ) const
-    { return m_exec.template team_scan<Type>( value , 0 ); }
+  template< typename ArgType >
+  KOKKOS_INLINE_FUNCTION ArgType team_scan( const ArgType & value ) const
+    { return this-> template team_scan<ArgType>( value , 0 ); }
 
   //----------------------------------------
   // Private for the driver
@@ -690,14 +564,16 @@ public:
     : m_exec( exec )
     {}
 
-  void reset_scratch_space()
-    { m_exec.m_team_shared_iter = 0 ; }
-
-  bool valid_team() const
+  bool valid() const
     { return m_exec.m_league_rank < m_exec.m_league_end ; }
 
-  void next_team()
-    { if ( ++m_exec.m_league_rank < m_exec.m_league_end ) m_exec.team_barrier(); }
+  void next()
+    {
+      if ( ++m_exec.m_league_rank < m_exec.m_league_end ) {
+        team_barrier();
+        m_exec.m_team_shared_iter = 0 ;
+      }
+    }
 };
 
 } /* namespace Impl */

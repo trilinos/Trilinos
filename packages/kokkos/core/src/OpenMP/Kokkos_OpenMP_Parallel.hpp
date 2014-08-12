@@ -132,10 +132,10 @@ public:
 /* END #pragma omp parallel */
 
     {
-      const pointer_type ptr = pointer_type( OpenMPexec::scratch_reduce(0) );
+      const pointer_type ptr = pointer_type( OpenMPexec::pool_rev(0)->scratch_reduce() );
 
-      for ( int i = 1 ; i < omp_get_max_threads() ; ++i ) {
-        Reduce::join( functor , ptr , OpenMPexec::scratch_reduce(i) );
+      for ( int i = 1 ; i < OpenMPexec::pool_size() ; ++i ) {
+        Reduce::join( functor , ptr , OpenMPexec::pool_rev(i)->scratch_reduce() );
       }
 
       Reduce::final( functor , ptr );
@@ -197,14 +197,14 @@ public:
 /* END #pragma omp parallel */
 
     {
-      const unsigned thread_count = omp_get_max_threads();
+      const unsigned thread_count = OpenMPexec::pool_size();
       const unsigned value_count  = Reduce::value_count( functor );
 
       pointer_type ptr_prev = 0 ;
 
       for ( unsigned rank_rev = thread_count ; rank_rev-- ; ) {
 
-        pointer_type ptr = pointer_type( OpenMPexec::scratch_reduce(rank_rev) );
+        pointer_type ptr = pointer_type( OpenMPexec::pool_rev(rank_rev)->scratch_reduce() );
 
         if ( ptr_prev ) {
           for ( unsigned i = 0 ; i < value_count ; ++i ) { ptr[i] = ptr_prev[ i + value_count ] ; }
@@ -310,10 +310,10 @@ public:
 /* END #pragma omp parallel */
 
     {
-      const pointer_type ptr = pointer_type( OpenMPexec::scratch_reduce(0) );
+      const pointer_type ptr = pointer_type( OpenMPexec::pool_rev(0)->scratch_reduce() );
 
-      for ( int i = 1 ; i < omp_get_max_threads() ; ++i ) {
-        Reduce::join( functor , ptr , OpenMPexec::scratch_reduce(i) );
+      for ( int i = 1 ; i < OpenMPexec::pool_size() ; ++i ) {
+        Reduce::join( functor , ptr , OpenMPexec::pool_rev(i)->scratch_reduce() );
       }
 
       Reduce::final( functor , ptr );
@@ -346,10 +346,10 @@ public:
 /* END #pragma omp parallel */
 
     {
-      const pointer_type ptr = pointer_type( OpenMPexec::scratch_reduce(0) );
+      const pointer_type ptr = pointer_type( OpenMPexec::pool_rev(0)->scratch_reduce() );
 
-      for ( int i = 1 ; i < omp_get_max_threads() ; ++i ) {
-        Reduce::join( functor , ptr , OpenMPexec::scratch_reduce(i) );
+      for ( int i = 1 ; i < OpenMPexec::pool_size() ; ++i ) {
+        Reduce::join( functor , ptr , OpenMPexec::pool_rev(i)->scratch_reduce() );
       }
 
       Reduce::final( functor , ptr );
