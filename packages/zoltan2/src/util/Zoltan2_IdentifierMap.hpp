@@ -1037,7 +1037,7 @@ template< typename User>
   Z2_FORWARD_EXCEPTIONS;
 
   ArrayRCP<gid_t> gidInBuf;
-  Array<lno_t> newCountInBuf(numProcs_, 0);
+  Array<int> newCountInBuf(numProcs_, 0);
 
   try{
     AlltoAllv<gid_t>(*comm_, *env_,
