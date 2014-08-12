@@ -154,11 +154,11 @@ public:
     if ( print ) {
       std::cout << this->step_->print(*this->state_,true);
     }
-    return output;
 
     // Run Algorithm
     while (this->status_->check(*this->state_)) {
       this->step_->compute(*s, x, l, obj, con, *this->state_);
+return output;
       this->step_->update(x, l, *s, obj, con, *this->state_);
       output.push_back(this->step_->print(*this->state_,this->printHeader_));
       if ( print ) {

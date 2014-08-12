@@ -72,6 +72,11 @@ private:
   Real tangtol_;
   Real tntmax_;
 
+  Real zeta_;
+  Real Delta_;
+
+  bool debugQN_;
+
 public:
 
   virtual ~CompositeStepSQP() {}
@@ -87,6 +92,11 @@ public:
     pgtol_   = nominal_tol;       
     projtol_ = nominal_tol;     
     tangtol_ = nominal_tol;     
+    
+    zeta_  = 0.9;
+    Delta_ = 1e2;
+
+    debugQN_ = true;
   }
 
   /** \brief Initialize step.
@@ -130,6 +140,11 @@ public:
                 Objective<Real> &obj, EqualityConstraint<Real> &con, 
                 AlgorithmState<Real> &algo_state ) {
     //Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
+    Real zerotol = 0.0;
+    Teuchos::RCP<Vector<Real> > n = s.clone();
+    Teuchos::RCP<Vector<Real> > c = l.clone();
+    con.value(*c, x, zerotol);
+    computeQuasinormalStep(*n, *c, x, zeta_*Delta_, con);
   }
 
   /** \brief Update step, if successful.
@@ -267,7 +282,9 @@ public:
     /* Return updated Lagrange multiplier. */
     // v2 is the multiplier update
     l.plus(*v2);
-  }
+
+  }  // computeLagrangeMultiplier
+ 
 
   /** \brief Compute quasi-normal step by minimizing the norm of
              the linearized constraint.
@@ -279,9 +296,9 @@ public:
                  \mbox{subject to} & \|n\|_{\mathcal{X}} \le \delta
                \end{array}
              \f]
-             The approximate solution is computed using the Powell dogleg
+             The approximate solution is computed using Powell's dogleg
              method. The dogleg path is computed using the Cauchy point and
-             a full Newton step.  Its intersection with the trust-region
+             a full Newton step.  The path's intersection with the trust-region
              constraint gives the quasi-normal step.
 
              @param[out]      n     is the quasi-normal step; an optimization-space vector
@@ -292,8 +309,84 @@ public:
 
   */
   void computeQuasinormalStep(Vector<Real> &n, const Vector<Real> &c, const Vector<Real> &x, Real delta, EqualityConstraint<Real> &con) {
+
+    if (debugQN_) {
+      std::cout << "\n  SQP_quasi-normal_step\n";
+    }
+
+    Real zero      = 0.0;
+    Real zerotol   = 0.0;
+    Real negative1 = -1.0;
+
+    /* Compute Cauchy step nCP. */
+    Teuchos::RCP<Vector<Real> > nCP     = n.clone();
+    Teuchos::RCP<Vector<Real> > nCPtemp = n.clone();
+    Teuchos::RCP<Vector<Real> > nN      = n.clone();
+    Teuchos::RCP<Vector<Real> > ctemp   = c.clone();
+    con.applyAdjointJacobian(*nCP, c, x, zerotol);
+    con.applyJacobian(*ctemp, *nCP, x, zerotol);
+
+    Real normsquare_ctemp = ctemp->dot(*ctemp);
+    if (normsquare_ctemp != zero) {
+      nCP->scale( -(nCP->dot(*nCP))/normsquare_ctemp );
+    }
     
-  }
+    /* If the  Cauchy step nCP is outside the trust region,
+       return the scaled Cauchy step. */
+    Real norm_nCP = nCP->norm();
+    if (norm_nCP >= delta) {
+      n.set(*nCP);
+      n.scale( delta/norm_nCP );
+      if (debugQN_) {
+        std::cout << "  taking partial Cauchy step\n";
+      }
+      return;
+    }
+
+    /* Compute 'Newton' step, for example, by solving a problem
+       related to finding the minimum norm solution of min || c(x_k)*s + c ||^2. */
+    // Compute tolerance for linear solver.
+    con.applyJacobian(*ctemp, *nCP, x, zerotol);
+    ctemp->plus(c);
+    Real tol = qntol_*ctemp->norm();
+    // Form right-hand side.
+    ctemp->scale(negative1);
+    nCPtemp->set(*nCP);
+    nCPtemp->scale(negative1);
+    // Declare left-hand side of augmented system.
+    Teuchos::RCP<Vector<Real> > dn = n.clone();
+    Teuchos::RCP<Vector<Real> > y  = c.clone();
+    // Solve augmented system.
+    con.solveAugmentedSystem(*dn, *y, *nCPtemp, *ctemp, x, tol);
+    nN->set(*dn);
+    nN->plus(*nCP);
+
+    /* Either take full or partial Newton step, depending on
+       the trust-region constraint. */
+    Real norm_nN = nN->norm();
+    if (norm_nN <= delta) {
+      // Take full feasibility step.
+      n.set(*nN);
+      if (debugQN_) {
+        std::cout << "  taking full Newton step\n";
+      }
+    }
+    else {
+      // Take convex combination n = nCP+tau*(nN-nCP),
+      // so that ||n|| = delta.  In other words, solve
+      // scalar quadratic equation: ||nCP+tau*(nN-nCP)||^2 = delta^2.
+      Real aa  = dn->dot(*dn);
+      Real bb  = dn->dot(*nCP);
+      Real cc  = norm_nCP*norm_nCP - delta*delta;
+      Real tau = (-bb+sqrt(bb*bb-aa*cc))/aa;
+      n.set(*dn);
+      n.axpy(tau, *nCP);
+      if (debugQN_) {
+        std::cout << "  taking dogleg step\n";
+      }
+    }
+    
+  } // computeQuasinormalStep
 
 }; // class CompositeStepSQP
 
