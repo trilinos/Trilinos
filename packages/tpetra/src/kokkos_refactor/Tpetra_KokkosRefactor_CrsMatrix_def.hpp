@@ -62,8 +62,8 @@ namespace Tpetra {
              const RCP<Teuchos::ParameterList>& params) :
     DistObject<char, LocalOrdinal, GlobalOrdinal, node_type> (rowMap),
     storageStatus_ (pftype == StaticProfile ?
-                    CRS_MATRIX_STORAGE_1D_UNPACKED :
-                    CRS_MATRIX_STORAGE_2D),
+                    Details::STORAGE_1D_UNPACKED :
+                    Details::STORAGE_2D),
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
@@ -90,8 +90,8 @@ namespace Tpetra {
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
     DistObject<char, LocalOrdinal, GlobalOrdinal, node_type> (rowMap),
     storageStatus_ (pftype == StaticProfile ?
-                    CRS_MATRIX_STORAGE_1D_UNPACKED :
-                    CRS_MATRIX_STORAGE_2D),
+                    Details::STORAGE_1D_UNPACKED :
+                    Details::STORAGE_2D),
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
@@ -119,8 +119,8 @@ namespace Tpetra {
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
     DistObject<char, LocalOrdinal, GlobalOrdinal, node_type> (rowMap),
     storageStatus_ (pftype == StaticProfile ?
-                    CRS_MATRIX_STORAGE_1D_UNPACKED :
-                    CRS_MATRIX_STORAGE_2D),
+                    Details::STORAGE_1D_UNPACKED :
+                    Details::STORAGE_2D),
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
@@ -156,8 +156,8 @@ namespace Tpetra {
              const RCP<Teuchos::ParameterList>& params) :
     DistObject<char, LocalOrdinal, GlobalOrdinal, node_type> (rowMap),
     storageStatus_ (pftype == StaticProfile ?
-                    CRS_MATRIX_STORAGE_1D_UNPACKED :
-                    CRS_MATRIX_STORAGE_2D),
+                    Details::STORAGE_1D_UNPACKED :
+                    Details::STORAGE_2D),
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
@@ -183,7 +183,7 @@ namespace Tpetra {
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
     DistObject<char, LocalOrdinal,GlobalOrdinal, node_type> (graph->getRowMap ()),
     staticGraph_ (graph),
-    storageStatus_ (CRS_MATRIX_STORAGE_1D_PACKED),
+    storageStatus_ (Details::STORAGE_1D_PACKED),
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
@@ -217,7 +217,7 @@ namespace Tpetra {
              const t_ValuesType & values,
              const RCP<Teuchos::ParameterList>& params) :
     DistObject<char, LocalOrdinal, GlobalOrdinal, node_type> (rowMap),
-    storageStatus_ (CRS_MATRIX_STORAGE_1D_PACKED),
+    storageStatus_ (Details::STORAGE_1D_PACKED),
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
@@ -247,7 +247,7 @@ namespace Tpetra {
              const ArrayRCP<Scalar> & values,
              const RCP<Teuchos::ParameterList>& params) :
     DistObject<char, LocalOrdinal, GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > (rowMap),
-    storageStatus_ (CRS_MATRIX_STORAGE_1D_PACKED),
+    storageStatus_ (Details::STORAGE_1D_PACKED),
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
@@ -279,7 +279,7 @@ namespace Tpetra {
              const RCP<Teuchos::ParameterList>& params) :
     DistObject<char, LocalOrdinal, GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > (rowMap),
     k_lclMatrix_ (lclMatrix),
-    storageStatus_ (CRS_MATRIX_STORAGE_1D_PACKED),
+    storageStatus_ (Details::STORAGE_1D_PACKED),
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
@@ -1147,6 +1147,8 @@ namespace Tpetra {
       // The graph is definitely StaticProfile now, whether or not it
       // was before.
       myGraph_->pftype_ = StaticProfile;
+      myGraph_->storageStatus_ = Details::STORAGE_1D_PACKED;
+      this->storageStatus_ = Details::STORAGE_1D_PACKED;
     }
 
     RCP<Teuchos::ParameterList> lclparams;
@@ -1484,6 +1486,7 @@ namespace Tpetra {
       // unpacked 2-D and 1-D storage, and keep the packed storage.
       values2D_ = null;
       k_values1D_ = k_vals;
+      this->storageStatus_ = Details::STORAGE_1D_PACKED;
     }
 
     // build the matrix, hand over the values

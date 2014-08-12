@@ -2404,44 +2404,13 @@ namespace Tpetra {
     /// \brief Status of the matrix's storage, when not in a
     ///   fill-complete state.
     ///
-    /// When the matrix is <i>not</i> fill complete, its data live in
-    /// one of three storage formats:
-    /// <ol>
-    /// <li> "2-D storage": The matrix must own the graph.  The graph
-    ///   stores column indices as "array of arrays," and the matrix
-    ///   stores values as "array of arrays."  The graph <i>must</i>
-    ///   have k_numRowEntries_ allocated.  This only ever exists if
-    ///   the matrix was created with DynamicProfile. </li>
-    ///
-    /// <li> "Unpacked 1-D storage": The matrix must own the graph.
-    ///   The graph uses a row offsets array, and stores column
-    ///   indices in a single array.  The matrix also stores values in
-    ///   a single array.  "Unpacked" means that there may be extra
-    ///   space in each row: that is, the row offsets array only says
-    ///   how much space there is in each row.  The graph must use
-    ///   k_numRowEntries_ to find out how many entries there actually
-    ///   are in the row. </li>
-    ///
-    /// <li> "Packed 1-D storage": The matrix may or may not own the
-    ///   graph.  "Packed" means that there is no extra space in each
-    ///   row.  Thus, the k_numRowEntries_ array is not necessary and
-    ///   may have been deallocated.  If the matrix was created with a
-    ///   constant ("static") graph, this must be true. </li>
-    /// </ol>
-    ///
-    /// With respect to the Kokkos refactor version of Tpetra, "2-D
-    /// storage" should be considered a legacy option.
-    ///
     /// The phrase "When not in a fill-complete state" is important.
     /// When the matrix is fill complete, it <i>always</i> uses 1-D
-    /// "packed" storage.
-    enum ECrsMatrixStorageStatus {
-      CRS_MATRIX_STORAGE_2D, //<! 2-D storage
-      CRS_MATRIX_STORAGE_1D_UNPACKED, //<! 1-D "unpacked" storage
-      CRS_MATRIX_STORAGE_1D_PACKED //<! 1-D "packed" storage
-    };
-
-    ECrsMatrixStorageStatus storageStatus_;
+    /// "packed" storage.  However, if the "Optimize Storage"
+    /// parameter to fillComplete was false, the matrix may keep
+    /// unpacked 1-D or 2-D storage around and resume it on the next
+    /// resumeFill call.
+    Details::EStorageStatus storageStatus_;
 
     //! Whether the matrix is fill complete.
     bool fillComplete_;
