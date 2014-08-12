@@ -63,68 +63,8 @@ void parallel_min(const BulkData& mesh, const std::vector<FieldBase*>& fields);
 
 
 //
-//  Parallel_Data_Exchange: General object exchange template with unknown comm plan
-//
-std::vector<int> compute_receive_list(std::vector<int>& sendSizeArray, MPI_Comm &mpi_communicator);
-
-//
 //  Generalized comm plans
 //
-
-template<typename T>
-void parallel_data_exchange_t(std::vector< std::vector<T> > &send_lists,
-                              std::vector< std::vector<T> > &recv_lists,
-                              MPI_Comm &mpi_communicator )
-{
-  //
-  //  Determine the number of processors involved in this communication
-  //
-#if defined( STK_HAS_MPI)
-  const int msg_tag = 10242;
-  int num_procs = stk::parallel_machine_size(mpi_communicator);
-
-  //PRECONDITION((unsigned int) num_procs == send_lists.size() && (unsigned int) num_procs == recv_lists.size());
-  int class_size = sizeof(T);
-
-  //
-  //  Determine number of items each other processor will send to the current processor
-  //
-  std::vector<int> global_number_to_send(num_procs);
-  for(int iproc=0; iproc<num_procs; ++iproc) {
-    global_number_to_send[iproc] = send_lists[iproc].size();
-  }
-  std::vector<int> numToRecvFrom = compute_receive_list(global_number_to_send, mpi_communicator);
-
-  //
-  //  Send the actual messages as raw byte streams.
-  //
-  std::vector<MPI_Request> recv_handles(num_procs);
-  for(int iproc = 0; iproc < num_procs; ++iproc) {
-    recv_lists[iproc].resize(numToRecvFrom[iproc]);
-    if(recv_lists[iproc].size() > 0) {
-      char* recv_buffer = (char*)&recv_lists[iproc][0];
-      int recv_size = recv_lists[iproc].size()*class_size;
-      MPI_Irecv(recv_buffer, recv_size, MPI_CHAR,
-                iproc, msg_tag, mpi_communicator, &recv_handles[iproc]);
-    }
-  }
-  MPI_Barrier(mpi_communicator);
-  for(int iproc = 0; iproc < num_procs; ++iproc) {
-    if(send_lists[iproc].size() > 0) {
-      char* send_buffer = (char*)&send_lists[iproc][0];
-      int send_size = send_lists[iproc].size()*class_size;
-      MPI_Send(send_buffer, send_size, MPI_CHAR,
-               iproc, msg_tag, mpi_communicator);
-    }
-  }
-  for(int iproc = 0; iproc < num_procs; ++iproc) {
-    if(recv_lists[iproc].size() > 0) {
-      MPI_Status status;
-      MPI_Wait( &recv_handles[iproc], &status );
-    }
-  }
-#endif
-}
 
 template<typename T>
 void parallel_data_exchange_sym_t(std::vector< std::vector<T> > &send_lists,
