@@ -83,6 +83,22 @@ typedef KokkosClassic::DefaultNode::DefaultNodeType znode_t;
 // cases of Epetra user input.
 //
 
+// TODO:  KDD 8/13/14
+// Global definitions of types gno_t, lno_t, gid_t and 
+// scalar_t can cause bugs in the code.  If a class fails to define these 
+// types, but this file is included before the class file, the types
+// from Zoltan2_TestHelpers.hpp will be used in the class.  Compilation in
+// user programs (without Zoltan2_TestHelpers.hpp) would then fail.  An
+// example of this bug was in the GeometricGenerator class, which used
+// scalar_t without defining it.
+// In this "fix," I changed gno_t, lno_t, gid_t, scalar_t, and node_t to zgno_t,
+// zlno_t, zgid_t, zscalar_t and znode_t in Zoltan2_TestHelpers.hpp.  This
+// change is not the best fix; a better fix would remove the global
+// definitions, but that would require more work.  (An even better change
+// would use the Teuchos test framework to cycle through various options,
+// but that would require even more work and should be delayed until we
+// revamp the testing.)
+
 
 #if defined HAVE_ZOLTAN2_INST_FLOAT_INT_LONG
 
