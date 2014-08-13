@@ -1277,7 +1277,6 @@ namespace Tpetra {
     typedef typename Graph::t_numRowEntries_ row_entries_type;
     typedef typename Graph::LocalStaticCrsGraphType::row_map_type row_map_type;
     typedef typename Graph::t_RowPtrs row_offsets_type;
-    typedef ArrayRCP<size_t>::size_type size_type;
 
     const size_t lclNumRows = getNodeNumRows();
     const map_type& rowMap = * (getRowMap ());
