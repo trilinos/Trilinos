@@ -294,6 +294,14 @@ string toString(const long long& x)
 }
 
 // ============================================================================
+string toString(const size_t& x)
+{
+  char s[100];
+  sprintf(s, "%lu", x);
+  return string(s);
+}
+
+// ============================================================================
 void GetNeighboursCartesian2d(const int i, const int nx, const int ny,
                               int & left, int & right,
                               int & lower, int & upper)

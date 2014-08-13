@@ -82,6 +82,8 @@ string toString(const double& x);
 
 string toString(const long long& x);
 
+string toString(const size_t & x);
+
 void 
 GetNeighboursCartesian2d(const int i, const int nx, const int ny,
                          int & left, int & right, int & lower, int & upper);
