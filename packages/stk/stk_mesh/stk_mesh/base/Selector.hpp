@@ -198,7 +198,7 @@ public:
 
   BucketVector const& get_buckets(EntityRank entity_rank) const;
 
-  bool empty(EntityRank entity_rank) const;
+  bool is_empty(EntityRank entity_rank) const;
 
   /** \brief  Is this part a member of the
    *          set defined by the selector expression.

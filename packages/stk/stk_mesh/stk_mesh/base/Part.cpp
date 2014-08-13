@@ -227,7 +227,7 @@ bool intersect( const Part & a , const Part & b )
 
 BulkData & Part::mesh_bulk_data() const
 {
-    return mesh_meta_data().get_mesh();
+    return mesh_meta_data().mesh_bulk_data();
 }
 
 bool Part::contains(const Part& part) const
