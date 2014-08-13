@@ -1028,22 +1028,22 @@ namespace Tpetra {
       "Please report this bug to the Tpetra developers.");
 
     const size_t numRows = getNodeNumRows ();
-    indicesAreLocal_  = (lg == LocalIndices);
-    indicesAreGlobal_ = (lg == GlobalIndices);
-    nodeNumAllocated_ = 0;
 
     if (getProfileType () == StaticProfile) {
       //
       //  STATIC ALLOCATION PROFILE
       //
-      k_rowPtrs_ = t_RowPtrs ("Tpetra::CrsGraph::ptr", numRows + 1);
-      rowPtrs_ = Kokkos::Compat::persistingView (k_rowPtrs_);
+      t_RowPtrs k_rowPtrs ("Tpetra::CrsGraph::ptr", numRows + 1);
 
       if (k_numAllocPerRow_.dimension_0 () != 0) {
+        // It's OK to throw std::invalid_argument here, because we
+        // haven't incurred any side effects yet.  Throwing that
+        // exception (and not, say, std::logic_error) implies that the
+        // instance can recover.
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          k_numAllocPerRow_.dimension_0 () != numRows, std::logic_error, ": "
-          "k_numAllocPerRow_ is allocated (has nonzero length), but its length="
-          << k_numAllocPerRow_.dimension_0 () << " != numRows=" << numRows
+          k_numAllocPerRow_.dimension_0 () != numRows, std::invalid_argument,
+          "k_numAllocPerRow_ is allocated (has length != 0), but its length = "
+          << k_numAllocPerRow_.dimension_0 () << " != numRows = " << numRows
           << ".");
         // FIXME hack until we get parallel_scan in kokkos
         //
@@ -1051,19 +1051,46 @@ namespace Tpetra {
         // is currently a device View.  Should instead use a DualView.
         typename Kokkos::DualView<const size_t*, device_type>::t_host h_numAllocPerRow =
           k_numAllocPerRow_.h_view; // use a host view for now, since we compute on host
+        bool anyInvalidAllocSizes = false;
         for (size_t i = 0; i < numRows; ++i) {
-          k_rowPtrs_(i+1) = k_rowPtrs_(i) + h_numAllocPerRow(i);
+          size_t allocSize = h_numAllocPerRow(i);
+          if (allocSize == Teuchos::OrdinalTraits<size_t>::invalid ()) {
+            anyInvalidAllocSizes = true;
+            allocSize = 0;
+          }
+          k_rowPtrs(i+1) = k_rowPtrs(i) + allocSize;
         }
+        // It's OK to throw std::invalid_argument here, because we
+        // haven't incurred any side effects yet.  Throwing that
+        // exception (and not, say, std::logic_error) implies that the
+        // instance can recover.
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+          anyInvalidAllocSizes, std::invalid_argument, "The input array of "
+          "allocation sizes per row had at least one invalid (== "
+          "Teuchos::OrdinalTraits<size_t>::invalid()) entry.");
       }
       else {
+        // It's OK to throw std::invalid_argument here, because we
+        // haven't incurred any side effects yet.  Throwing that
+        // exception (and not, say, std::logic_error) implies that the
+        // instance can recover.
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+          numAllocForAllRows_ == Teuchos::OrdinalTraits<size_t>::invalid (),
+          std::invalid_argument, "numAllocForAllRows_ has an invalid value, "
+          "namely Teuchos::OrdinalTraits<size_t>::invalid() = " <<
+          Teuchos::OrdinalTraits<size_t>::invalid () << ".");
         // FIXME hack until we get parallel_scan in kokkos
         //
         // FIXME (mfh 11 Aug 2014) This assumes UVM, since k_rowPtrs_
         // is currently a device View.  Should instead use a DualView.
         for (size_t i = 0; i < numRows; ++i) {
-          k_rowPtrs_(i+1) = k_rowPtrs_(i) + numAllocForAllRows_;
+          k_rowPtrs(i+1) = k_rowPtrs(i) + numAllocForAllRows_;
         }
       }
+
+      // "Commit" the resulting row offsets.
+      k_rowPtrs_ = k_rowPtrs;
+      rowPtrs_ = Kokkos::Compat::persistingView (k_rowPtrs_);
 
       // FIXME (mfh 05,11 Aug 2014) This assumes UVM, since k_rowPtrs_
       // is currently a device View.  Should instead use a DualView.
@@ -1116,6 +1143,9 @@ namespace Tpetra {
       }
       storageStatus_ = Details::STORAGE_2D;
     }
+
+    indicesAreLocal_  = (lg == LocalIndices);
+    indicesAreGlobal_ = (lg == GlobalIndices);
 
     if (numRows > 0) {
       k_numRowEntries_ =
@@ -2473,8 +2503,8 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       ! hasRowInfo (), std::runtime_error,
       ": graph row information was deleted at fillComplete().");
-    if (indicesAreAllocated() == false) {
-      allocateIndices(LocalIndices);
+    if (! indicesAreAllocated ()) {
+      allocateIndices (LocalIndices);
     }
 
      // If we have a column map, use it to filter the entries.
@@ -2610,7 +2640,7 @@ namespace Tpetra {
       ": You are not allowed to call this method if fill is not active.  "
       "If fillComplete has been called, you must first call resumeFill "
       "before you may insert indices.");
-    if (indicesAreAllocated() == false) {
+    if (! indicesAreAllocated ()) {
       allocateIndices (GlobalIndices);
     }
     const LO myRow = rowMap_->getLocalElement (grow);
@@ -2645,24 +2675,37 @@ namespace Tpetra {
 #endif
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::removeLocalIndices(LocalOrdinal lrow)
+  void
+  CrsGraph<
+    LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+    typename KokkosClassic::DefaultKernels<
+      void, LocalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  removeLocalIndices (LocalOrdinal lrow)
   {
     const char tfecfFuncName[] = "removeLocalIndices()";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( isFillActive() == false,                    std::runtime_error, ": requires that fill is active.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( isStorageOptimized() == true,               std::runtime_error, ": cannot remove indices after optimizeStorage() has been called.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( isGloballyIndexed() == true,                std::runtime_error, ": graph indices are global.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( rowMap_->isNodeLocalElement(lrow) == false, std::runtime_error, ": row does not belong to this node.");
-    if (indicesAreAllocated() == false) {
-      allocateIndices(LocalIndices);
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      ! isFillActive (), std::runtime_error, ": requires that fill is active.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      isStorageOptimized (), std::runtime_error,
+      ": cannot remove indices after optimizeStorage() has been called.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      isGloballyIndexed (), std::runtime_error, ": graph indices are global.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      ! rowMap_->isNodeLocalElement (lrow), std::runtime_error,
+      ": Local row " << lrow << " is not in the row Map on the calling process.");
+    if (! indicesAreAllocated ()) {
+      allocateIndices (LocalIndices);
     }
-    //
-    clearGlobalConstants();
-    //
+
+    // FIXME (mfh 13 Aug 2014) What if they haven't been cleared on
+    // all processes?
+    clearGlobalConstants ();
+
     if (k_numRowEntries_.dimension_0 () != 0) {
-      const size_t oldNumEntries = k_numRowEntries_.h_view(lrow);
+      const size_t oldNumEntries = k_numRowEntries_.h_view (lrow);
       nodeNumEntries_ -= oldNumEntries;
 
       // FIXME (mfh 07 Aug 2014) We should just sync at fillComplete,
@@ -2674,9 +2717,12 @@ namespace Tpetra {
       k_numRowEntries_.template sync<device_type> ();
     }
 #ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(getNumEntriesInLocalRow(lrow) != 0 || indicesAreAllocated() == false || isLocallyIndexed() == false, std::logic_error,
-        ": Violated stated post-conditions. Please contact Tpetra team.");
-#endif
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      getNumEntriesInLocalRow (lrow) != 0 ||
+      ! indicesAreAllocated () ||
+      ! isLocallyIndexed (), std::logic_error,
+      ": Violated stated post-conditions. Please contact Tpetra team.");
+#endif // HAVE_TPETRA_DEBUG
   }
 
   /////////////////////////////////////////////////////////////////////////////
