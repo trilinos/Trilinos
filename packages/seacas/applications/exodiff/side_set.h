@@ -46,7 +46,7 @@ class Side_Set: public Exo_Entity {
   
   Side_Set();
   Side_Set(int file_id, size_t exo_set_id);
-  Side_Set(int file_id, size_t exo_set_id, size_t num_sides, size_t num_dist_factors = 0);
+  Side_Set(int file_id, size_t exo_set_id, size_t num_sides, size_t num_dist_factors_x = 0);
   ~Side_Set();
   
   void apply_map(const INT *node_map);
