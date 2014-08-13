@@ -1487,7 +1487,7 @@ template <typename Adapter>
         env_->localMemoryAssertion(__FILE__, __LINE__, newLen, tmpPart);
 
         size_t next = 0;
-        for (lno_t i=0; i < newLen; i++){
+        for (gno_t i=0; i < newLen; i++){
           tmpGno[i] = inBuf[next++];
           tmpPart[i] = inBuf[next++];
         }

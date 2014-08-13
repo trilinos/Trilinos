@@ -968,7 +968,7 @@ private:
      */
     void mj_migrate_coords(
         mj_part_t num_procs,
-        mj_gno_t &num_new_local_points,
+        mj_lno_t &num_new_local_points,
         std::string iteration,
         int *coordinate_destinations,
         mj_part_t num_parts);
@@ -4002,6 +4002,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_assign_proc_to_parts(
         bool did_change_sign = false;
         //if processor has a minus count, reverse it.
         for(mj_part_t ii = 0; ii < num_procs; ++ii){
+            // TODO:  THE LINE BELOW PRODUCES A WARNING IF gno_t IS UNSIGNED
+            // TODO:  SEE BUG 6194
             if (sort_item_num_part_points_in_procs[ii].val < 0){
                 did_change_sign = true;
                 sort_item_num_part_points_in_procs[ii].val = -sort_item_num_part_points_in_procs[ii].val - 1;
@@ -4442,7 +4444,7 @@ template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
           typename mj_part_t>
 void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_migrate_coords(
     mj_part_t num_procs,
-    mj_gno_t &num_new_local_points,
+    mj_lno_t &num_new_local_points,
     std::string iteration,
     int *coordinate_destinations,
     mj_part_t num_parts)
@@ -4569,27 +4571,27 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_migrate_coords(
 	this->mj_env->timerStart(MACRO_TIMERS, "MultiJagged - Migration DistributorMigration-" + iteration);
 	{
 		//migrate gnos.
-		ArrayRCP<mj_gno_t> recieved_gnos(num_incoming_gnos);
+		ArrayRCP<mj_gno_t> received_gnos(num_incoming_gnos);
 		ArrayView<mj_gno_t> sent_gnos(this->current_mj_gnos, this->num_local_coords);
-		distributor.doPostsAndWaits<mj_gno_t>(sent_gnos, 1, recieved_gnos());
+		distributor.doPostsAndWaits<mj_gno_t>(sent_gnos, 1, received_gnos());
 		freeArray<mj_gno_t>(this->current_mj_gnos);
 		this->current_mj_gnos = allocMemory<mj_gno_t>(num_incoming_gnos);
 		memcpy(
 				this->current_mj_gnos,
-				recieved_gnos.getRawPtr(),
+				received_gnos.getRawPtr(),
 				num_incoming_gnos * sizeof(mj_gno_t));
 	}
 	//migrate coordinates
 	for (int i = 0; i < this->coord_dim; ++i){
 
 		ArrayView<mj_scalar_t> sent_coord(this->mj_coordinates[i], this->num_local_coords);
-		ArrayRCP<mj_scalar_t> recieved_coord(num_incoming_gnos);
-		distributor.doPostsAndWaits<mj_scalar_t>(sent_coord, 1, recieved_coord());
+		ArrayRCP<mj_scalar_t> received_coord(num_incoming_gnos);
+		distributor.doPostsAndWaits<mj_scalar_t>(sent_coord, 1, received_coord());
 		freeArray<mj_scalar_t>(this->mj_coordinates[i]);
 		this->mj_coordinates[i] = allocMemory<mj_scalar_t>(num_incoming_gnos);
 		memcpy(
 				this->mj_coordinates[i],
-				recieved_coord.getRawPtr(),
+				received_coord.getRawPtr(),
 				num_incoming_gnos * sizeof(mj_scalar_t));
 	}
 
@@ -4597,26 +4599,26 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_migrate_coords(
 	for (int i = 0; i < this->num_weights_per_coord; ++i){
 
 		ArrayView<mj_scalar_t> sent_weight(this->mj_weights[i], this->num_local_coords);
-		ArrayRCP<mj_scalar_t> recieved_weight(num_incoming_gnos);
-		distributor.doPostsAndWaits<mj_scalar_t>(sent_weight, 1, recieved_weight());
+		ArrayRCP<mj_scalar_t> received_weight(num_incoming_gnos);
+		distributor.doPostsAndWaits<mj_scalar_t>(sent_weight, 1, received_weight());
 		freeArray<mj_scalar_t>(this->mj_weights[i]);
 		this->mj_weights[i] = allocMemory<mj_scalar_t>(num_incoming_gnos);
 		memcpy(
 				this->mj_weights[i],
-				recieved_weight.getRawPtr(),
+				received_weight.getRawPtr(),
 				num_incoming_gnos * sizeof(mj_scalar_t));
 	}
 
 	{
 		//migrate the owners of the coordinates
 		ArrayView<int> sent_owners(this->owner_of_coordinate, this->num_local_coords);
-		ArrayRCP<int> recieved_owners(num_incoming_gnos);
-		distributor.doPostsAndWaits<int>(sent_owners, 1, recieved_owners());
+		ArrayRCP<int> received_owners(num_incoming_gnos);
+		distributor.doPostsAndWaits<int>(sent_owners, 1, received_owners());
 		freeArray<int>(this->owner_of_coordinate);
 		this->owner_of_coordinate = allocMemory<int>(num_incoming_gnos);
 		memcpy(
 						this->owner_of_coordinate,
-						recieved_owners.getRawPtr(),
+						received_owners.getRawPtr(),
 						num_incoming_gnos * sizeof(int));
 	}
 
@@ -4625,13 +4627,13 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_migrate_coords(
 	//there will be multiple parts in processor.
 	if(num_procs < num_parts){
 		ArrayView<mj_part_t> sent_partids(this->assigned_part_ids, this->num_local_coords);
-		ArrayRCP<mj_part_t> recieved_partids(num_incoming_gnos);
-		distributor.doPostsAndWaits<mj_part_t>(sent_partids, 1, recieved_partids());
+		ArrayRCP<mj_part_t> received_partids(num_incoming_gnos);
+		distributor.doPostsAndWaits<mj_part_t>(sent_partids, 1, received_partids());
 		freeArray<mj_part_t>(this->assigned_part_ids);
 		this->assigned_part_ids = allocMemory<mj_part_t>(num_incoming_gnos);
 		memcpy(
 				this->assigned_part_ids,
-				recieved_partids.getRawPtr(),
+				received_partids.getRawPtr(),
 				num_incoming_gnos * sizeof(mj_part_t));
 	}
 	else {
@@ -4857,7 +4859,7 @@ bool AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_perform_migration(
 
 	freeArray<mj_gno_t>(num_points_in_all_processor_parts);
 
-	mj_gno_t num_new_local_points = 0;
+	mj_lno_t num_new_local_points = 0;
 
 
 	//perform the actual migration operation here.
@@ -5302,25 +5304,25 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::set_final_parts(
 
     	this->mj_env->timerStart(MACRO_TIMERS, "MultiJagged - Final DistributorPlanComm");
 		//migrate gnos to actual owners.
-		ArrayRCP<mj_gno_t> recieved_gnos(incoming);
+		ArrayRCP<mj_gno_t> received_gnos(incoming);
 		ArrayView<mj_gno_t> sent_gnos(this->current_mj_gnos, this->num_local_coords);
-		distributor.doPostsAndWaits<mj_gno_t>(sent_gnos, 1, recieved_gnos());
+		distributor.doPostsAndWaits<mj_gno_t>(sent_gnos, 1, received_gnos());
 		freeArray<mj_gno_t>(this->current_mj_gnos);
 		this->current_mj_gnos = allocMemory<mj_gno_t>(incoming);
 		memcpy(
 				this->current_mj_gnos,
-				recieved_gnos.getRawPtr(),
+				received_gnos.getRawPtr(),
 				incoming * sizeof(mj_gno_t));
 
 		//migrate part ids to actual owners.
 		ArrayView<mj_part_t> sent_partids(this->assigned_part_ids, this->num_local_coords);
-		ArrayRCP<mj_part_t> recieved_partids(incoming);
-		distributor.doPostsAndWaits<mj_part_t>(sent_partids, 1, recieved_partids());
+		ArrayRCP<mj_part_t> received_partids(incoming);
+		distributor.doPostsAndWaits<mj_part_t>(sent_partids, 1, received_partids());
 		freeArray<mj_part_t>(this->assigned_part_ids);
 		this->assigned_part_ids = allocMemory<mj_part_t>(incoming);
 		memcpy(
 				this->assigned_part_ids,
-				recieved_partids.getRawPtr(),
+				received_partids.getRawPtr(),
 				incoming * sizeof(mj_part_t));
 
     	this->num_local_coords = incoming;

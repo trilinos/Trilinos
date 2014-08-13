@@ -132,8 +132,8 @@ typedef double zscalar_t;
 #elif defined TEST_STK_DATA_TYPES
 
 typedef ssize_t zlno_t;
-typedef ssize_t  zgno_t;
-typedef ssize_t  zgid_t;
+typedef size_t  zgno_t;
+typedef size_t  zgid_t;
 typedef double  zscalar_t;
 
 #else

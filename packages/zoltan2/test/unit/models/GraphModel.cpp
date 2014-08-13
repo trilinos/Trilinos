@@ -347,7 +347,7 @@ void testAdapter(
 
   // We know model stores things in same order we gave it.
   if (idsAreConsecutive){
-    int minLocalGID = rowMap->getMinGlobalIndex();
+    zgno_t minLocalGID = rowMap->getMinGlobalIndex();
     for (zlno_t i=0; i < nLocalRows; i++){
       if (vertexGids[i] != minLocalGID + i) {
         fail = 1;

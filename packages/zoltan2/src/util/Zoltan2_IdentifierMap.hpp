@@ -796,7 +796,7 @@ template< typename User>
         }
 
         env_->localBugAssertion(__FILE__, __LINE__, "gidToIndex table",
-          badGid || ((index >= 0)&&(index<=indexTotal)), BASIC_ASSERTION);
+          badGid||((index >= 0)&&(gno_t(index)<=indexTotal)), BASIC_ASSERTION);
 
         if (!badGid){
 

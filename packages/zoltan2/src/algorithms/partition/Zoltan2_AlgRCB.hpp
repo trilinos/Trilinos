@@ -564,7 +564,7 @@ void AlgRCB<Adapter>::partition(
      (numGlobalCoords < 500)){
     std::ostringstream oss;
     oss << "Solution: ";
-    for (gno_t i=0; i < gnoList.size(); i++)
+    for (typename ArrayRCP<const gno_t>::size_type i=0; i < gnoList.size(); i++)
       oss << gnoList[i] << " (" << partId[i] << ") ";
     
     env->debug(VERBOSE_DETAILED_STATUS, oss.str());

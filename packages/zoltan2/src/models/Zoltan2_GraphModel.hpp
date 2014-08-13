@@ -167,7 +167,7 @@ size_t removeUndesiredEdges(
   offs[0] = 0;
   for (size_t i=0; i < numVtx; i++){
     offs[i+1] = 0;
-    int vid = vtx ? vtx[i] : 0;
+    gid_t vid = vtx ? vtx[i] : gid_t(0);
     for (lno_t j=allOffs[i]; j < allOffs[i+1]; j++){
       int owner = proc ? proc[j] : 0;
       bool keep = (!removeSelfEdges || vid != allIds[j]) &&
@@ -225,7 +225,7 @@ size_t removeUndesiredEdges(
 
   size_t next = 0;
   for (size_t i=0; i < numVtx && next < numKeep; i++){
-    int vid = vtx ? vtx[i] : 0;
+    gid_t vid = vtx ? vtx[i] : gid_t(0);
     for (lno_t j=allOffs[i]; j < allOffs[i+1]; j++){
       int owner = proc ? proc[j] : 0;
       bool keep = (!removeSelfEdges || vid != allIds[j]) &&
