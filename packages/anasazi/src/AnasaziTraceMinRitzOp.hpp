@@ -168,7 +168,7 @@ private:
 	std::vector<Scalar> ritzShifts_;
 	std::vector<Scalar> tolerances_;
 
-	Teuchos::RCP< MyMinresSolver< Scalar,MV,TraceMinRitzOp<Scalar,MV,OP> > > solver_;
+	Teuchos::RCP< PseudoBlockMinres< Scalar,MV,TraceMinRitzOp<Scalar,MV,OP> > > solver_;
 
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
 	RCP<Teuchos::Time> PetraMultTime_, AopMultTime_;
@@ -207,7 +207,7 @@ private:
   Teuchos::RCP< TraceMinRitzOp<Scalar,MV,OP> > Op_;
 	Teuchos::RCP< TraceMinProjOp<Scalar,MV,OP> > projector_;
 
-  Teuchos::RCP< MyMinresSolver< Scalar,MV,TraceMinProjRitzOp<Scalar,MV,OP> > > solver_;
+  Teuchos::RCP< PseudoBlockMinres< Scalar,MV,TraceMinProjRitzOp<Scalar,MV,OP> > > solver_;
 };
 
 
@@ -552,7 +552,7 @@ ZERO(Teuchos::ScalarTraits<Scalar>::zero())
 		Prec_ = Teuchos::rcp( new TraceMinRitzOp<Scalar,MV,OP>(Prec) );
 	
 	// create my minres solver
-	solver_ = Teuchos::rcp( new MyMinresSolver< Scalar,MV,TraceMinRitzOp<Scalar,MV,OP> >(linSolOp,Prec_) );
+	solver_ = Teuchos::rcp( new PseudoBlockMinres< Scalar,MV,TraceMinRitzOp<Scalar,MV,OP> >(linSolOp,Prec_) );
 }
 
 
@@ -688,7 +688,7 @@ TraceMinProjRitzOp<Scalar,MV,OP>::TraceMinProjRitzOp(const Teuchos::RCP<TraceMin
 	linSolOp.release();
 
 	// create my minres solver
-	solver_ = Teuchos::rcp( new MyMinresSolver< Scalar,MV,TraceMinProjRitzOp<Scalar,MV,OP> >(linSolOp) );
+	solver_ = Teuchos::rcp( new PseudoBlockMinres< Scalar,MV,TraceMinProjRitzOp<Scalar,MV,OP> >(linSolOp) );
 }
 
 
@@ -705,7 +705,7 @@ TraceMinProjRitzOp<Scalar,MV,OP>::TraceMinProjRitzOp(const Teuchos::RCP<TraceMin
 	linSolOp.release();
 
 	// create my minres solver
-	solver_ = Teuchos::rcp( new MyMinresSolver< Scalar,MV,TraceMinProjRitzOp<Scalar,MV,OP> >(linSolOp) );
+	solver_ = Teuchos::rcp( new PseudoBlockMinres< Scalar,MV,TraceMinProjRitzOp<Scalar,MV,OP> >(linSolOp) );
 }
 
 

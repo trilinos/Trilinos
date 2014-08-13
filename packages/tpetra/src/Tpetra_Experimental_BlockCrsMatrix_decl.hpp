@@ -57,6 +57,16 @@ namespace Experimental {
 /// \author Mark Hoemmen
 /// \date 13 Feb 2014, 24 Feb 2014
 ///
+/// \tparam Scalar The type of the numerical entries of the matrix.
+///   (You can use real-valued or complex-valued types here, unlike in
+///   Epetra, where the scalar type is always \c double.)
+/// \tparam LO The type of local indices.  See the documentation of
+///   the first template parameter of Map for requirements.
+/// \tparam GO The type of global indices.  See the documentation of
+///   the second template parameter of Map for requirements.
+/// \tparam Node The Kokkos Node type.  See the documentation of the
+///   third template parameter of Map for requirements.
+///
 /// Please read the documentation of BlockMultiVector first.
 ///
 /// This class stores values associated with the degrees of freedom of
@@ -109,7 +119,9 @@ namespace Experimental {
 /// }
 /// \endcode
 ///
-template<class Scalar, class LO = int,  class GO = LO,
+template<class Scalar = double,
+         class LO = int,
+         class GO = LO,
          class Node = KokkosClassic::DefaultNode::DefaultNodeType>
 class BlockCrsMatrix :
   virtual public Tpetra::RowMatrix<Scalar, LO, GO, Node>,

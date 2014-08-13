@@ -1366,7 +1366,7 @@ namespace Tpetra {
         //
         h_ptrs = create_mirror_view (packedRowOffsets);
         h_ptrs(0) = 0;
-        for (size_type i = 0; i < static_cast<size_t> (lclNumRows); ++i) {
+        for (size_t i = 0; i < lclNumRows; ++i) {
           const size_t numEnt = h_numRowEnt(i);
           lclTotalNumEntries += numEnt;
           h_ptrs(i+1) = h_ptrs(i) + numEnt;
@@ -1456,7 +1456,7 @@ namespace Tpetra {
           typename row_offsets_type::HostMirror h_ptrs =
             create_mirror_view (tmpk_ptrs);
           h_ptrs(0) = 0;
-          for (size_type i = 0; i < static_cast<size_t> (lclNumRows); ++i) {
+          for (size_t i = 0; i < lclNumRows; ++i) {
             const size_t numEnt = h_numRowEnt(i);
             lclTotalNumEntries += numEnt;
             h_ptrs(i+1) = h_ptrs(i) + numEnt;
@@ -2967,8 +2967,8 @@ namespace Tpetra {
     // that we get the same layout and memory traits as the original
     // 2-D view.
     typedef typename Kokkos::View<scalar_type*,
-      typename host_view_type::array_layout, device_type,
-      typename host_view_type::memory_traits>::HostMirror
+      typename host_view_type::array_layout, typename host_view_type::device_type,
+      typename host_view_type::memory_traits>
       host_view_1d_type;
     host_view_1d_type lclVecHost1d =
       Kokkos::subview<host_view_1d_type> (lclVecHost, Kokkos::ALL (), 0);
@@ -3037,8 +3037,8 @@ namespace Tpetra {
     // that we get the same layout and memory traits as the original
     // 2-D view.
     typedef typename Kokkos::View<scalar_type*,
-      typename host_view_type::array_layout, device_type,
-      typename host_view_type::memory_traits>::HostMirror
+      typename host_view_type::array_layout, typename host_view_type::device_type,
+      typename host_view_type::memory_traits>
       host_view_1d_type;
     host_view_1d_type lclVecHost1d =
       Kokkos::subview<host_view_1d_type> (lclVecHost, Kokkos::ALL (), 0);

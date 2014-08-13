@@ -54,7 +54,11 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
-/*! \class Anasazi::TraceMin
+	enum SaddleSolType {SCHUR, PROJ};
+
+namespace Anasazi {
+namespace Experimental {
+/*! \class TraceMin
   
     \brief This class implements a TraceMIN iteration, a preconditioned iteration 
     for solving linear symmetric positive definite eigenproblems.  
@@ -105,12 +109,6 @@
 
     \author Alicia Klinvex
 */
-
-	enum SaddleSolType {SCHUR, PROJ};
-
-namespace Anasazi {
-namespace Experimental {
-
   template <class ScalarType, class MV, class OP>
   class TraceMin : public TraceMinBase<ScalarType,MV,OP> { 
   public:

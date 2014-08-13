@@ -70,7 +70,8 @@ namespace Experimental {
 /// \class LittleBlock
 /// \brief Nonowning view of a square dense block in a block matrix.
 /// \tparam Scalar The type of entries in the block.
-/// \tparam LO The local ordinal type: a signed integer type.
+/// \tparam LO The type of local indices.  See the documentation of
+///   the first template parameter of Map for requirements.
 ///
 /// "Little" means local (not distributed over multiple MPI processes;
 /// stored to maximize locality) and small (think 3x3, not 1000x1000).
@@ -197,7 +198,8 @@ private:
 /// \brief Nonowning view of a set of degrees of freedom corresponding
 ///   to a mesh point in a block vector or multivector.
 /// \tparam Scalar The type of entries.
-/// \tparam LO The local ordinal type: a signed integer type.
+/// \tparam LO The type of local indices.  See the documentation of
+///   the first template parameter of Map for requirements.
 ///
 /// "Little" means local (not distributed over multiple MPI processes;
 /// stored to maximize locality) and small (think length 3, not length
