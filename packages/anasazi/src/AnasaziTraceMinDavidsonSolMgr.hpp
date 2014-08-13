@@ -39,6 +39,22 @@
 #include "AnasaziTraceMinBaseSolMgr.hpp"
 #include "AnasaziTraceMinDavidson.hpp"
 
+/** \example TraceMinDavidson/TraceMinDavidsonGeneralizedEx.cpp
+    This is an example of how to use the TraceMinDavidsonSolMgr solver manager to solve a generalized eigenvalue problem, using Tpetra data stuctures.
+*/
+
+/** \example TraceMinDavidson/TraceMinDavidsonLaplacianEx.cpp
+    This is an example of how to use the TraceMinDavidsonSolMgr solver manager to compute the Fiedler vector, using Tpetra data stuctures and an Ifpack2 preconditioner.
+*/
+
+/** \example TraceMinDavidson/TraceMinDavidsonSpecTransEx.cpp
+    This is an example of how to use the TraceMinDavidsonSolMgr solver manager to compute the largest eigenpairs of a matrix via an invisible spectral transformation, using Tpetra data stuctures.
+*/
+
+/** \example TraceMinDavidson/TraceMinDavidsonUserOpEx.cpp
+    This is an example of how to use the TraceMinDavidsonSolMgr solver manager to solve a standard eigenvalue problem where the matrix is not explicitly available, using Tpetra data stuctures.
+*/
+
 
 
 namespace Anasazi {

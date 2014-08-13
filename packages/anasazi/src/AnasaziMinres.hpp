@@ -106,7 +106,7 @@ template <class Scalar, class MV, class OP>
 void PseudoBlockMinres<Scalar,MV,OP>::solve()
 {
 	#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
-		Teuchos::TimeMonitor lcltimer( *TotalTime_ );
+		Teuchos::TimeMonitor outertimer( *TotalTime_ );
 	#endif
 
 	// Get number of vectors
@@ -191,7 +191,7 @@ void PseudoBlockMinres<Scalar,MV,OP>::solve()
 		#endif
 		MVT::MvDot(*Y,*R1, beta1);
 
-		for(int i=0; i<beta1.size(); i++)
+		for(size_t i=0; i<beta1.size(); i++)
 			beta1[i] = sqrt(beta1[i]);
 	}
 
@@ -210,7 +210,7 @@ void PseudoBlockMinres<Scalar,MV,OP>::solve()
 		for(int i=0; i<ncols; i++)
 		{
 			Scalar relres = phibar[i]/beta1[i];
-			std::cout << "relative residual[" << unconvergedIndices[i] << "] at iteration " << iter << " = " << relres << std::endl;
+//			std::cout << "relative residual[" << unconvergedIndices[i] << "] at iteration " << iter << " = " << relres << std::endl;
 
 			// If the vector converged, mark it for termination
 			// Make sure to add it to 
