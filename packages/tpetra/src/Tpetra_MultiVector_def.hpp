@@ -2089,33 +2089,55 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-  subCopy (const Teuchos::ArrayView<const size_t> &cols) const
+  subCopy (const Teuchos::ArrayView<const size_t>& cols) const
   {
     using Teuchos::RCP;
     using Teuchos::rcp;
+    typedef Teuchos::ArrayView<const size_t>::size_type size_type;
+    typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
 
     TEUCHOS_TEST_FOR_EXCEPTION(cols.size() < 1, std::runtime_error,
         "Tpetra::MultiVector::subCopy(cols): cols must contain at least one column.");
-    size_t numCopyVecs = cols.size();
-    const bool zeroData = false;
-    RCP<Node> node = MVT::getNode(lclMV_);
-    RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > mv;
-    // mv is allocated with constant stride
-    mv = rcp (new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> (this->getMap (), numCopyVecs, zeroData));
-    // copy data from *this into mv
-    for (size_t j=0; j<numCopyVecs; ++j) {
-      node->template copyBuffers<Scalar> (getLocalLength (),
-                                          getSubArrayRCP (MVT::getValues (lclMV_), cols[j]),
-                                          MVT::getValuesNonConst (mv->lclMV_, j));
+
+    // Check whether the index set in cols is contiguous.  If it is,
+    // use the more efficient Range1D version of subCopy.
+    bool contiguous = true;
+
+    const size_t numCopyVecs = cols.size ();
+    for (size_type j = 1; j < numCopyVecs; ++j) {
+      if (cols[j] != cols[j-1] + static_cast<size_t> (1)) {
+        contiguous = false;
+        break;
+      }
     }
-    return mv;
+
+    const bool zeroData = false;
+    if (contiguous) {
+      if (numCopyVecs == 0) {
+        // The output MV has no columns, so there is nothing to copy.
+        return rcp (new MV (this->getMap (), numCopyVecs, zeroData));
+      } else {
+        // Use the more efficient contiguous-index-range version.
+        return this->subCopy (Teuchos::Range1D (cols[0], cols[numCopyVecs-1]));
+      }
+    }
+    else { // Copy data one column at a time.
+      RCP<MV> mv = rcp (new MV (this->getMap (), numCopyVecs, zeroData));
+      RCP<Node> node = this->getMap ()->getNode ();
+      for (size_t j = 0; j < numCopyVecs; ++j) {
+        node->template copyBuffers<Scalar> (getLocalLength (),
+                                            getSubArrayRCP (MVT::getValues (lclMV_), cols[j]),
+                                            MVT::getValuesNonConst (mv->lclMV_, j));
+      }
+      return mv;
+    }
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-  subCopy (const Teuchos::Range1D &colRng) const
+  subCopy (const Teuchos::Range1D& colRng) const
   {
     using Teuchos::RCP;
     using Teuchos::rcp;

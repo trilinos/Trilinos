@@ -2351,7 +2351,7 @@ namespace { // (anonymous)
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
-  subCopy (const Teuchos::ArrayView<const size_t> &cols) const
+  subCopy (const Teuchos::ArrayView<const size_t>& cols) const
   {
     using Teuchos::RCP;
     using Teuchos::rcp;
@@ -2359,6 +2359,22 @@ namespace { // (anonymous)
       host_mirror_device_type;
     typedef typename dual_view_type::t_host host_view_type;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> MV;
+
+    // Check whether the index set in cols is contiguous.  If it is,
+    // use the more efficient Range1D version of subCopy.
+    {
+      bool contiguous = true;
+      const size_t numCopyVecs = static_cast<size_t> (cols.size ());
+      for (size_t j = 1; j < numCopyVecs; ++j) {
+        if (cols[j] != cols[j-1] + static_cast<size_t> (1)) {
+          contiguous = false;
+          break;
+        }
+      }
+      if (contiguous && numCopyVecs > 0) {
+        return this->subCopy (Teuchos::Range1D (cols[0], cols[numCopyVecs-1]));
+      }
+    }
 
     // Sync the source MultiVector (*this) to host first.  Copy it to
     // the output View on host, then sync the output View (only) to
