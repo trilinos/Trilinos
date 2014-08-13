@@ -394,8 +394,9 @@ tMVector_t* makeMeshCoordinates(
   if (!ids)
     throw bad_alloc();
   ArrayView<gno_t> idArray(ids, numLocalCoords);
+  gno_t *idptr = ids;
 
-  for (ssize_t i=gid0, *idptr=ids; i < gid1; i++)
+  for (ssize_t i=gid0; i < gid1; i++)
     *idptr++ = gno_t(i);
 
   RCP<const tMap_t> idMap = rcp(new tMap_t(num, idArray, 0, comm));

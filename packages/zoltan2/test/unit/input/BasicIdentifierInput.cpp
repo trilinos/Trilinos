@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
   gno_t base = rank * numLocalIds * numLocalIds;
 
   for (lno_t i=0; i < numLocalIds; i++){
-    myIds[i] = base+i;
+    myIds[i] = gid_t(base+i);
     weights[i*nWeights] = 1.0;
     weights[i*nWeights + 1] = (nprocs-rank) / (i+1);
   }
@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
 
   for (lno_t i=0; !fail && i < numLocalIds; i++){
 
-    if (globalIdsIn[i] != base+i)
+    if (globalIdsIn[i] != gid_t(base+i))
       fail = 8;
     
     if (!fail && w1[i*incr1] != 1.0)
