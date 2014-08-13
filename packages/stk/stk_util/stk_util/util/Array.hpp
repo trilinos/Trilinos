@@ -172,13 +172,31 @@ public:
 		 TypeListEnd> Trunc;
 
   //----------------------------------------
-  /** Dimensions defined at construction */
+  /** Dimensions defined at contruction */
+
+  const unsigned * dimension() const {
+    return BaseType::dimension();
+  }
+
+  const unsigned * stride() const {
+    return BaseType::stride();
+  }
 
   template<unsigned I>
   unsigned dimension() const {
     enum { ok = stk::StaticAssert< I < NumDim >::OK };
 
     return BaseType::m_dim[I];
+  }
+
+  unsigned dimension( const unsigned i ) const {
+    this->array_dimension_verify(0, i, NumDim );
+    return BaseType::m_dim[i];
+  }
+
+  unsigned stride( const unsigned i ) const {
+    this->array_dimension_verify(0, i, NumDim );
+    return BaseType::m_stride[i];
   }
 
   template<unsigned I>
@@ -369,6 +387,22 @@ public:
   void set( element_type * const in_ptr,
 	    const unsigned n[NumDim] ) {
     BaseType::set(in_ptr, n);
+  }
+
+  Trunc dive(int i) {
+    this->array_dimension_verify(0, i, BaseType::m_dim[NumDim - 1] );
+
+    element_type *calc_ptr = BaseType::m_ptr + i*BaseType::m_stride[NumDim - 1];
+
+    return Trunc(calc_ptr, BaseType::m_dim);
+  }
+
+  const Trunc dive(int i) const {
+    this->array_dimension_verify(0, i, BaseType::m_dim[NumDim - 1] );
+
+    element_type *calc_ptr = BaseType::m_ptr + i*BaseType::m_stride[NumDim - 1];
+
+    return Trunc(calc_ptr, BaseType::m_dim);
   }
 
   template<typename T>
