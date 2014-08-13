@@ -548,20 +548,21 @@ ul.auto-toc {
 <li><a class="reference internal" href="#timer-get-rel-seconds" id="id173">TIMER_GET_REL_SECONDS()</a></li>
 <li><a class="reference internal" href="#timer-print-rel-time" id="id174">TIMER_PRINT_REL_TIME()</a></li>
 <li><a class="reference internal" href="#unittest-compare-const" id="id175">UNITTEST_COMPARE_CONST()</a></li>
-<li><a class="reference internal" href="#unittest-string-regex" id="id176">UNITTEST_STRING_REGEX()</a></li>
-<li><a class="reference internal" href="#unittest-file-regex" id="id177">UNITTEST_FILE_REGEX()</a></li>
-<li><a class="reference internal" href="#unittest-final-result" id="id178">UNITTEST_FINAL_RESULT()</a></li>
+<li><a class="reference internal" href="#unittest-has-substr-const" id="id176">UNITTEST_HAS_SUBSTR_CONST()</a></li>
+<li><a class="reference internal" href="#unittest-string-regex" id="id177">UNITTEST_STRING_REGEX()</a></li>
+<li><a class="reference internal" href="#unittest-file-regex" id="id178">UNITTEST_FILE_REGEX()</a></li>
+<li><a class="reference internal" href="#unittest-final-result" id="id179">UNITTEST_FINAL_RESULT()</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a class="reference internal" href="#appendix" id="id179">13&nbsp;&nbsp;&nbsp;Appendix</a><ul class="auto-toc">
-<li><a class="reference internal" href="#history-of-tribits" id="id180">13.1&nbsp;&nbsp;&nbsp;History of TriBITS</a></li>
-<li><a class="reference internal" href="#why-a-tribits-package-is-not-a-cmake-package" id="id181">13.2&nbsp;&nbsp;&nbsp;Why a TriBITS Package is not a CMake Package</a></li>
-<li><a class="reference internal" href="#design-considerations-for-tribits" id="id182">13.3&nbsp;&nbsp;&nbsp;Design Considerations for TriBITS</a></li>
-<li><a class="reference internal" href="#checkin-test-py-help" id="id183">13.4&nbsp;&nbsp;&nbsp;checkin-test.py --help</a></li>
-<li><a class="reference internal" href="#egdist-help" id="id184">13.5&nbsp;&nbsp;&nbsp;egdist --help</a></li>
-<li><a class="reference internal" href="#snapshot-dir-py-help" id="id185">13.6&nbsp;&nbsp;&nbsp;snapshot-dir.py --help</a></li>
+<li><a class="reference internal" href="#appendix" id="id180">13&nbsp;&nbsp;&nbsp;Appendix</a><ul class="auto-toc">
+<li><a class="reference internal" href="#history-of-tribits" id="id181">13.1&nbsp;&nbsp;&nbsp;History of TriBITS</a></li>
+<li><a class="reference internal" href="#why-a-tribits-package-is-not-a-cmake-package" id="id182">13.2&nbsp;&nbsp;&nbsp;Why a TriBITS Package is not a CMake Package</a></li>
+<li><a class="reference internal" href="#design-considerations-for-tribits" id="id183">13.3&nbsp;&nbsp;&nbsp;Design Considerations for TriBITS</a></li>
+<li><a class="reference internal" href="#checkin-test-py-help" id="id184">13.4&nbsp;&nbsp;&nbsp;checkin-test.py --help</a></li>
+<li><a class="reference internal" href="#egdist-help" id="id185">13.5&nbsp;&nbsp;&nbsp;egdist --help</a></li>
+<li><a class="reference internal" href="#snapshot-dir-py-help" id="id186">13.6&nbsp;&nbsp;&nbsp;snapshot-dir.py --help</a></li>
 </ul>
 </li>
 </ul>
@@ -7910,7 +7911,7 @@ functionality described above.</p>
 <p id="setting-additional-test-properties-tribits-add-advanced-test"><strong>Setting Additional Test Properties (TRIBITS_ADD_ADVANCED_TEST())</strong></p>
 <p>After this function returns, if the test gets added using <tt class="docutils literal">ADD_TEST()</tt>,
 then additional properties can be set and changed using
-<tt class="docutils literal"><span class="pre">SET_TEST_PROPERTIES(${PACKAGE_NAME}_&lt;testName&gt;</span> <span class="pre">...)</span></tt>.  Therefore, any
+<tt class="docutils literal"><span class="pre">SET_TESTS_PROPERTIES(${PACKAGE_NAME}_&lt;testName&gt;</span> <span class="pre">...)</span></tt>.  Therefore, any
 tests properties that are not directly supported by this function and passed
 through the argument list to this wrapper function can be set in the outer
 <tt class="docutils literal">CMakeLists.txt</tt> file after the call to <tt class="docutils literal">TRIBITS_ADD_ADVANCED_TEST()</tt>.</p>
@@ -8761,7 +8762,7 @@ test.</p>
 <p id="setting-additional-test-properties-tribits-add-test"><strong>Setting additional test properties (TRIBITS_ADD_TEST())</strong></p>
 <p>After this function returns, any tests that get added using <tt class="docutils literal">ADD_TEST()</tt>
 can have additional properties set and changed using
-<tt class="docutils literal">SET_TEST_PROPERTIES()</tt>.  Therefore, any tests properties that are not
+<tt class="docutils literal">SET_TESTS_PROPERTIES()</tt>.  Therefore, any tests properties that are not
 directly supported and passed through this wrapper function can be set in
 the outer <tt class="docutils literal">CMakeLists.txt</tt> file after the call to <tt class="docutils literal">TRIBITS_ADD_TEST()</tt>.</p>
 <p>ToDo: Describe how to use new variable <tt class="docutils literal">ADDED_TESTS_OUT</tt> to get the list
@@ -8835,7 +8836,7 @@ directory which contains all of the added tests and test properties that are
 set.  This is the file that is read by <tt class="docutils literal">ctest</tt> when it runs to determine
 what tests to run, determine pass/fail and adjust other behavior using test
 properties.  In this file, one can see the exact <tt class="docutils literal">ADD_TEST()</tt> and
-<tt class="docutils literal">SET_TEST_PROPERTIES()</tt> commands.  The is the ultimate way to debug
+<tt class="docutils literal">SET_TESTS_PROPERTIES()</tt> commands.  The is the ultimate way to debug
 exactly what tests are getting added by this function (or if the test is
 even being added at all).</p>
 <p id="disabling-tests-externally-tribits-add-test"><strong>Disabling Tests Externally (TRIBITS_ADD_TEST())</strong></p>
@@ -10801,8 +10802,23 @@ fails.  This prints the variable name and values and shows the test result.</p>
 <tt class="docutils literal">UNITTEST_OVERALL_NUMPASSED</tt>, and <tt class="docutils literal">UNITTEST_OVERALL_PASS</tt> which are used
 by the unit test harness system to assess overall pass/fail.</p>
 </div>
+<div class="section" id="unittest-has-substr-const">
+<h3><a class="toc-backref" href="#id176">UNITTEST_HAS_SUBSTR_CONST()</a></h3>
+<p>Check that a given string var contains the given substring and update
+overall test statistics</p>
+<p>Usage:</p>
+<pre class="literal-block">
+UNITTEST_HAS_SUBSTR_CONST(&lt;varName&gt; &lt;substr&gt;)
+</pre>
+<p>If <tt class="docutils literal"><span class="pre">${&lt;varName&gt;}</span></tt> contains the substring <tt class="docutils literal">&lt;substr&gt;</tt>, then the check
+passes, otherwise it fails.  This prints the variable name and values and
+shows the test result.</p>
+<p>This updates the global variables <tt class="docutils literal">UNITTEST_OVERALL_NUMRUN</tt>,
+<tt class="docutils literal">UNITTEST_OVERALL_NUMPASSED</tt>, and <tt class="docutils literal">UNITTEST_OVERALL_PASS</tt> which are used
+by the unit test harness system to assess overall pass/fail.</p>
+</div>
 <div class="section" id="unittest-string-regex">
-<h3><a class="toc-backref" href="#id176">UNITTEST_STRING_REGEX()</a></h3>
+<h3><a class="toc-backref" href="#id177">UNITTEST_STRING_REGEX()</a></h3>
 <p>Perform a series regexes of given strings and update overall test statistics.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -10818,7 +10834,7 @@ UNITTEST_STRING_REGEX(
 by the unit test harness system to assess overall pass/fail.</p>
 </div>
 <div class="section" id="unittest-file-regex">
-<h3><a class="toc-backref" href="#id177">UNITTEST_FILE_REGEX()</a></h3>
+<h3><a class="toc-backref" href="#id178">UNITTEST_FILE_REGEX()</a></h3>
 <p>Perform a series regexes of given strings and update overall test statistics.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -10831,7 +10847,7 @@ UNITTEST_FILE_REGEX(
 to <a class="reference internal" href="#unittest-string-regex">UNITTEST_STRING_REGEX()</a> to assess pass/fail.</p>
 </div>
 <div class="section" id="unittest-final-result">
-<h3><a class="toc-backref" href="#id178">UNITTEST_FINAL_RESULT()</a></h3>
+<h3><a class="toc-backref" href="#id179">UNITTEST_FINAL_RESULT()</a></h3>
 <p>Print final statistics from all tests and assert final pass/fail</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -10858,9 +10874,9 @@ paranoid.</p>
 </div>
 </div>
 <div class="section" id="appendix">
-<h1><a class="toc-backref" href="#id179">13&nbsp;&nbsp;&nbsp;Appendix</a></h1>
+<h1><a class="toc-backref" href="#id180">13&nbsp;&nbsp;&nbsp;Appendix</a></h1>
 <div class="section" id="history-of-tribits">
-<h2><a class="toc-backref" href="#id180">13.1&nbsp;&nbsp;&nbsp;History of TriBITS</a></h2>
+<h2><a class="toc-backref" href="#id181">13.1&nbsp;&nbsp;&nbsp;History of TriBITS</a></h2>
 <p>TriBITS started development in November 2007 as a set of helper macros to
 provide a CMake build system for a small subset of packages in Trilinos.  The
 initial goal was to just to support a native Windows build (using Visual C++)
@@ -10904,7 +10920,7 @@ projectfootnote{<a class="reference external" href="https://github.com/lifev/cma
 independently.</p>
 </div>
 <div class="section" id="why-a-tribits-package-is-not-a-cmake-package">
-<h2><a class="toc-backref" href="#id181">13.2&nbsp;&nbsp;&nbsp;Why a TriBITS Package is not a CMake Package</a></h2>
+<h2><a class="toc-backref" href="#id182">13.2&nbsp;&nbsp;&nbsp;Why a TriBITS Package is not a CMake Package</a></h2>
 <p>Note that a <a class="reference internal" href="#tribits-package">TriBITS Package</a> is not the same thing as a &quot;Package&quot; in raw
 CMake terminology.  In raw CMake, a &quot;Package&quot; is some externally provided bit
 of software or other utility for which the current CMake project has an
@@ -10925,7 +10941,7 @@ definition of a &quot;Package&quot; according to <a class="reference internal" h
 Principles</a>.</p>
 </div>
 <div class="section" id="design-considerations-for-tribits">
-<h2><a class="toc-backref" href="#id182">13.3&nbsp;&nbsp;&nbsp;Design Considerations for TriBITS</a></h2>
+<h2><a class="toc-backref" href="#id183">13.3&nbsp;&nbsp;&nbsp;Design Considerations for TriBITS</a></h2>
 <p>Some of the basic requirements and design goals for TriBITS are outlined in the <a class="reference external" href="../overview/TribitsOverview.pdf">TriBITS Overview</a> document.</p>
 <!-- ToDo: Discuss design requirements for TriBITS in more detail. -->
 <p>As stated in <a class="reference internal" href="#tribits-dependency-handling-behaviors">TriBITS Dependency Handling Behaviors</a>, <a class="reference internal" href="#no-circular-dependencies-of-any-kind-are-allowed">No circular
@@ -10948,7 +10964,7 @@ Software Development, 2003</a>]).</p>
 <!-- dependencies! -->
 </div>
 <div class="section" id="checkin-test-py-help">
-<h2><a class="toc-backref" href="#id183">13.4&nbsp;&nbsp;&nbsp;checkin-test.py --help</a></h2>
+<h2><a class="toc-backref" href="#id184">13.4&nbsp;&nbsp;&nbsp;checkin-test.py --help</a></h2>
 <p>Below is a snapshot of the output from <tt class="docutils literal"><span class="pre">checkin-test.py</span> <span class="pre">--help</span></tt>.  This
 <tt class="docutils literal"><span class="pre">--help</span></tt> output contains a lot of information about the recommended
 development workflow (mostly related to pushing commits) and outlines a number
@@ -11824,7 +11840,7 @@ Options:
 </pre>
 </div>
 <div class="section" id="egdist-help">
-<h2><a class="toc-backref" href="#id184">13.5&nbsp;&nbsp;&nbsp;egdist --help</a></h2>
+<h2><a class="toc-backref" href="#id185">13.5&nbsp;&nbsp;&nbsp;egdist --help</a></h2>
 <p>Below is a snapshot of the output from <tt class="docutils literal">egdist <span class="pre">--help</span></tt>.  For more details on
 the usage of <tt class="docutils literal">egdist</tt>, see <a class="reference internal" href="#multi-repository-support">Multi-Repository Support</a> and <a class="reference internal" href="#multi-repository-development-workflow">Multi-Repository
 Development Workflow</a>.</p>
@@ -11987,7 +12003,7 @@ Options:
 </pre>
 </div>
 <div class="section" id="snapshot-dir-py-help">
-<span id="snapshot-dir-py"></span><h2><a class="toc-backref" href="#id185">13.6&nbsp;&nbsp;&nbsp;snapshot-dir.py --help</a></h2>
+<span id="snapshot-dir-py"></span><h2><a class="toc-backref" href="#id186">13.6&nbsp;&nbsp;&nbsp;snapshot-dir.py --help</a></h2>
 <p>Below is a snapshot of the output from <tt class="docutils literal"><span class="pre">snapshot-dir.py</span> <span class="pre">--help</span></tt>.  For more
 details on the usage of <tt class="docutils literal"><span class="pre">snapshot-dir.py</span></tt>, specifically for snapshotting the
 <a class="reference internal" href="#projectdir-cmake-tribits">&lt;projectDir&gt;/cmake/tribits/</a> directory, see <a class="reference internal" href="#tribits-directory-snapshotting">TriBITS directory

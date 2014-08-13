@@ -786,6 +786,24 @@ This updates the global variables ``UNITTEST_OVERALL_NUMRUN``,
 ``UNITTEST_OVERALL_NUMPASSED``, and ``UNITTEST_OVERALL_PASS`` which are used
 by the unit test harness system to assess overall pass/fail.
 
+UNITTEST_HAS_SUBSTR_CONST()
++++++++++++++++++++++++++++
+
+Check that a given string var contains the given substring and update
+overall test statistics
+
+Usage::
+
+  UNITTEST_HAS_SUBSTR_CONST(<varName> <substr>)
+
+If ``${<varName>}`` contains the substring ``<substr>``, then the check
+passes, otherwise it fails.  This prints the variable name and values and
+shows the test result.
+
+This updates the global variables ``UNITTEST_OVERALL_NUMRUN``,
+``UNITTEST_OVERALL_NUMPASSED``, and ``UNITTEST_OVERALL_PASS`` which are used
+by the unit test harness system to assess overall pass/fail.
+
 UNITTEST_STRING_REGEX()
 +++++++++++++++++++++++
 

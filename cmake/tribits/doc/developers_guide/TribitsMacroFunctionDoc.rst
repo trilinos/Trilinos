@@ -389,7 +389,7 @@ functionality described above.
 
 After this function returns, if the test gets added using ``ADD_TEST()``,
 then additional properties can be set and changed using
-``SET_TEST_PROPERTIES(${PACKAGE_NAME}_<testName> ...)``.  Therefore, any
+``SET_TESTS_PROPERTIES(${PACKAGE_NAME}_<testName> ...)``.  Therefore, any
 tests properties that are not directly supported by this function and passed
 through the argument list to this wrapper function can be set in the outer
 ``CMakeLists.txt`` file after the call to ``TRIBITS_ADD_ADVANCED_TEST()``.
@@ -1380,7 +1380,7 @@ test.
 
 After this function returns, any tests that get added using ``ADD_TEST()``
 can have additional properties set and changed using
-``SET_TEST_PROPERTIES()``.  Therefore, any tests properties that are not
+``SET_TESTS_PROPERTIES()``.  Therefore, any tests properties that are not
 directly supported and passed through this wrapper function can be set in
 the outer ``CMakeLists.txt`` file after the call to ``TRIBITS_ADD_TEST()``.
 
@@ -1467,7 +1467,7 @@ directory which contains all of the added tests and test properties that are
 set.  This is the file that is read by ``ctest`` when it runs to determine
 what tests to run, determine pass/fail and adjust other behavior using test
 properties.  In this file, one can see the exact ``ADD_TEST()`` and
-``SET_TEST_PROPERTIES()`` commands.  The is the ultimate way to debug
+``SET_TESTS_PROPERTIES()`` commands.  The is the ultimate way to debug
 exactly what tests are getting added by this function (or if the test is
 even being added at all).
 

@@ -469,7 +469,7 @@ INCLUDE(TribitsAddTestHelpers)
 #
 # After this function returns, any tests that get added using ``ADD_TEST()``
 # can have additional properties set and changed using
-# ``SET_TEST_PROPERTIES()``.  Therefore, any tests properties that are not
+# ``SET_TESTS_PROPERTIES()``.  Therefore, any tests properties that are not
 # directly supported and passed through this wrapper function can be set in
 # the outer ``CMakeLists.txt`` file after the call to ``TRIBITS_ADD_TEST()``.
 #
@@ -556,7 +556,7 @@ INCLUDE(TribitsAddTestHelpers)
 # set.  This is the file that is read by ``ctest`` when it runs to determine
 # what tests to run, determine pass/fail and adjust other behavior using test
 # properties.  In this file, one can see the exact ``ADD_TEST()`` and
-# ``SET_TEST_PROPERTIES()`` commands.  The is the ultimate way to debug
+# ``SET_TESTS_PROPERTIES()`` commands.  The is the ultimate way to debug
 # exactly what tests are getting added by this function (or if the test is
 # even being added at all).
 #
@@ -583,6 +583,7 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
   ENDIF()
 
   GLOBAL_SET(TRIBITS_ADD_TEST_ADD_TEST_INPUT "")
+  GLOBAL_SET(TRIBITS_SET_TEST_PROPERTIES_INPUT)
    
   #
   # A) Parse the input arguments
