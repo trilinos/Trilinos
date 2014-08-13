@@ -152,28 +152,32 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  pamgenMeshAdapterTest
-  NAME pamgenMeshAdapterTest_rcb
-  SOURCES pamgenMeshAdapterTest.cpp
-  NUM_MPI_PROCS 4
-  COMM serial mpi
-  ARGS
-    "--action=rcb --nparts=6"
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"
-)
+IF (${PACKAGE_NAME}_ENABLE_Experimental)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    pamgenMeshAdapterTest
+    NAME pamgenMeshAdapterTest_mj
+    SOURCES pamgenMeshAdapterTest.cpp
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+      "--action=mj --nparts=6"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+ENDIF()
 
-TRIBITS_ADD_TEST(
-  pamgenMeshAdapterTest
-  NAME pamgenMeshAdapterTest_scotch
-  NUM_MPI_PROCS 4
-  COMM serial mpi
-  ARGS
-    "--action=scotch --nparts=6"
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"
-)
+IF (${PACKAGE_NAME}_ENABLE_Scotch)
+  TRIBITS_ADD_TEST(
+    pamgenMeshAdapterTest
+    NAME pamgenMeshAdapterTest_scotch
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+      "--action=scotch --nparts=6"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+ENDIF()
 
 TRIBITS_ADD_TEST(
   pamgenMeshAdapterTest

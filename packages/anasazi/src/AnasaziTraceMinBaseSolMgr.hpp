@@ -548,13 +548,10 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::TraceMinBaseSolMgr(
   // Handle the spectral transformation if necessary
   if(which_ == "LM")
   {
-    std::cout << "SWAPPING STIFFNESS AND MASS MATRICES\n";
     Teuchos::RCP<const OP> swapHelper = problem_->getOperator();
     problem_->setOperator(problem_->getM());
     problem_->setM(swapHelper);
     problem_->setProblem();
-
-    std::cout << "problem_->isProblemSet(): " << problem_->isProblemSet() << std::endl;
   } 
 
   // Test whether we are shifting without an operator K
@@ -754,7 +751,6 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::solve()
     // tell tm_solver to iterate
     while (1) {
       try {
-        std::cout << "Calling iterate\n";
         tm_solver->iterate();
 
         ////////////////////////////////////////////////////////////////////////////////////

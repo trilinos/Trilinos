@@ -130,7 +130,7 @@ int main(int narg, char *arg[]) {
 
   // default values for command-line arguments
   std::string xmlMeshInFileName("Poisson.xml");
-  std::string action("rcb");
+  std::string action("mj");
   int nParts = CommT->getSize();
 
   // Read run-time options.
@@ -138,7 +138,7 @@ int main(int narg, char *arg[]) {
   cmdp.setOption("xmlfile", &xmlMeshInFileName,
                  "XML file with PamGen specifications");
   cmdp.setOption("action", &action,
-                 "Method to use:  rcb or scotch or color");
+                 "Method to use:  mj or scotch or color");
   cmdp.setOption("nparts", &nParts,
                  "Number of parts to create");
   cmdp.parse(narg, arg);
@@ -199,11 +199,11 @@ int main(int narg, char *arg[]) {
   params.set("debug_level", "basic_status");
 
   bool do_partitioning = false;
-  if (action == "rcb") {
+  if (action == "mj") {
     do_partitioning = true;
     params.set("imbalance_tolerance", 1.1);
     params.set("num_global_parts", nParts);
-    params.set("algorithm", "rcb");
+    params.set("algorithm", "multijagged");
     params.set("rectilinear", "yes");
   }
   else if (action == "scotch") {

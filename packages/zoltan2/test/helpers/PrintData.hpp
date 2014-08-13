@@ -55,17 +55,17 @@
 using std::string;
 using std::endl;
 
-template <typename zlno_t, typename gno_t>
- void printTpetraGraph(const Tpetra::CrsGraph<zlno_t, gno_t> &graph, 
+template <typename lno_t, typename gno_t>
+ void printTpetraGraph(const Tpetra::CrsGraph<lno_t, gno_t> &graph, 
    ostream &os, size_t maxSize, string info)
 {
   size_t nrows = graph.getNodeNumRows();
   if (nrows > maxSize)
     return;
 
-  const RCP<const typename Tpetra::Map<zlno_t, gno_t> > &rowMap= 
+  const RCP<const typename Tpetra::Map<lno_t, gno_t> > &rowMap= 
     graph.getRowMap();
-  const RCP<const typename Tpetra::Map<zlno_t, gno_t> > &colMap= 
+  const RCP<const typename Tpetra::Map<lno_t, gno_t> > &colMap= 
     graph.getColMap();
 
   if (info.size() > 0)
@@ -77,19 +77,19 @@ template <typename zlno_t, typename gno_t>
       gno_t gid = rowMap->getGlobalElement(i);
       graph.getGlobalRowView(gid, indices);
       os << "Row " << gid << ": ";
-      for (gno_t j=0; j < indices.size(); j++){
+      for (typename ArrayView<const gno_t>::size_type j=0; j < indices.size(); j++){
         os << indices[j] << " ";
       }
       os << endl;
     }
   }
   else{
-    ArrayView<const zlno_t> indices;
+    ArrayView<const lno_t> indices;
     for (size_t i=0; i < nrows; i++){
       gno_t gid = rowMap->getGlobalElement(i);
       graph.getLocalRowView(i, indices);
       os << "Row " << gid << ": ";
-      for (zlno_t j=0; j < indices.size(); j++){
+      for (typename ArrayView<const lno_t>::size_type j=0; j < indices.size(); j++){
         os << colMap->getGlobalElement(indices[j]) << " ";
       }
       os << endl;
@@ -97,9 +97,9 @@ template <typename zlno_t, typename gno_t>
   }
 }
 
-template <typename zlno_t, typename gno_t>
+template <typename lno_t, typename gno_t>
   void printTpetraGraph(const RCP<const Comm<int> > &comm,
-  const Tpetra::CrsGraph<zlno_t, gno_t> &graph, ostream &os, 
+  const Tpetra::CrsGraph<lno_t, gno_t> &graph, ostream &os, 
   size_t maxSize, string info)
 {
   int rank = comm->getRank();
@@ -113,7 +113,7 @@ template <typename zlno_t, typename gno_t>
 
   for (int p=0; p < comm->getSize(); p++){
     if (p == rank)
-      printTpetraGraph<zlno_t, gno_t>(graph, os, maxSize, oss.str());
+      printTpetraGraph<lno_t, gno_t>(graph, os, maxSize, oss.str());
     comm->barrier();
   }
 }

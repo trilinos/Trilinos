@@ -249,7 +249,7 @@ int main(int argc, char *argv[])
   if (!fail){
     const part_t *parts = solution->getPartList();
     for (int i=0; !fail && i < numIdsPerProc; i++){
-      if (parts[i] != myGids[i] % numGlobalParts)
+      if (parts[i] != part_t(myGids[i] % numGlobalParts))
         fail = 13;
     }
   }
