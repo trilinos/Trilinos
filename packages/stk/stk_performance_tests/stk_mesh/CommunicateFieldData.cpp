@@ -196,39 +196,6 @@ void test_communicate_field_data_ghosting(stk::mesh::BulkData& mesh, const stk::
     stk::parallel_print_time_for_performance_compare(mesh.parallel(), stk_comm_time);
 }
 
-void test_communicate_field_data_shared(stk::mesh::BulkData& mesh, int num_iters)
-{
-    const int my_proc = mesh.parallel_rank();
-    if (my_proc == 0) {
-        std::cerr << "Calling communicate_field_data " << num_iters << " times"<<std::endl;
-    }
-
-    const stk::mesh::MetaData& meta = mesh.mesh_meta_data();
-    const stk::mesh::FieldVector& fields = meta.get_fields();
-    std::vector<const stk::mesh::FieldBase*> const_fields(fields.size());
-    for(size_t i=0; i<fields.size(); ++i) {
-        const_fields[i] = fields[i];
-    }
-
-    double start_time = stk::cpu_time();
-
-    for(int iter=0; iter<num_iters; ++iter) {
-        stk::CommAll commall;
-        stk::mesh::communicate_field_data(mesh, const_fields.size(), &const_fields[0], commall);
-    }
-
-    double stk_comm_time = stk::cpu_time() - start_time;
-
-    double max_time;
-    MPI_Reduce(static_cast<void*>(&stk_comm_time), static_cast<void*>(&max_time), 1, MPI_DOUBLE, MPI_MAX, 0 /*root*/, MPI_COMM_WORLD);
-
-    if ( my_proc == 0 ) {
-      std::cerr << "Time to do communicate_field_data: " << max_time << std::endl;
-    }
-    std::string timer_name = "communicate_field_data_shared";
-    stk::parallel_print_time_for_performance_compare(mesh.parallel(), stk_comm_time);
-}
-
 void addPartToGhosting(stk::mesh::BulkData & bulk, const std::string & partName, stk::mesh::Ghosting& ghost)
 {
     const int numProcs = bulk.parallel_size();
@@ -300,23 +267,6 @@ TEST(CommunicateFieldData, Ghosting)
     stk::mesh::BulkData &stkMeshBulkData = exodusFileReader.bulk_data();
     const stk::mesh::Ghosting& aura_ghosting = stkMeshBulkData.aura_ghosting();
     test_communicate_field_data_ghosting(stkMeshBulkData, aura_ghosting, 1000);
-}
-
-TEST(CommunicateFieldData, Shared)
-{
-    stk::ParallelMachine communicator = MPI_COMM_WORLD;
-    int numProcs = stk::parallel_machine_size(communicator);
-    if (numProcs < 2) {
-      return;
-    }
-
-    stk::io::StkMeshIoBroker exodusFileReader(communicator);
-
-    createMetaAndBulkData(exodusFileReader);
-
-    stk::mesh::BulkData &stkMeshBulkData = exodusFileReader.bulk_data();
-
-    test_communicate_field_data_shared(stkMeshBulkData, 1000);
 }
 
 }

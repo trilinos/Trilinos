@@ -116,12 +116,30 @@ public:
                           unsigned use_cores_per_numa = 0 );
 
   static int is_initialized();
-
-  KOKKOS_FUNCTION static unsigned team_max();
-  KOKKOS_FUNCTION static unsigned team_recommended();
-  KOKKOS_INLINE_FUNCTION static unsigned hardware_thread_id();
-  KOKKOS_INLINE_FUNCTION static unsigned max_hardware_threads();
   //@}
+  //------------------------------------
+  /** \brief  This execution space has a topological thread pool which can be queried.
+   *
+   *  All threads within a pool have a common memory space for which they are cache coherent.
+   *    depth = 0  gives the number of threads in the whole pool.
+   *    depth = 1  gives the number of threads in a NUMA region, typically sharing L3 cache.
+   *    depth = 2  gives the number of threads at the finest granularity, typically sharing L1 cache.
+   */
+  inline static
+  int thread_pool_size( int depth = 0 );
+
+  /** \brief  The rank of the executing thread in this thread pool */
+  KOKKOS_INLINE_FUNCTION static
+  int thread_pool_rank();
+
+
+  inline static unsigned max_hardware_threads() { return thread_pool_size(0); }
+  inline static unsigned team_max()             { return thread_pool_size(1); }
+  inline static unsigned team_recommended()     { return thread_pool_size(2); }
+
+  KOKKOS_INLINE_FUNCTION static
+  unsigned hardware_thread_id() { return thread_pool_rank(); }
+
   //------------------------------------
 
   class scratch_memory_space {
@@ -130,12 +148,12 @@ public:
             char * m_shmem_end ;
     static void get_shmem_error();
   public:
-    typedef Impl::MemorySpaceTag  kokkos_tag ;
-    typedef scratch_memory_space  memory_space ;
-    typedef OpenMP                execution_space ;
-    typedef LayoutRight           array_layout ;
+    typedef Impl::MemorySpaceTag           kokkos_tag ;
+    typedef scratch_memory_space           memory_space ;
+    typedef OpenMP                         execution_space ;
+    typedef execution_space::array_layout  array_layout ;
 
-    KOKKOS_INLINE_FUNCTION
+    inline
     void * get_shmem( const int size ) const 
       {
         enum { ALIGN = 8 , MASK = ALIGN - 1 }; // Alignment used by View::shmem_size
@@ -144,7 +162,7 @@ public:
         return tmp ;
       }
 
-    KOKKOS_INLINE_FUNCTION
+    inline
     scratch_memory_space( void * ptr , const int size )
       : m_shmem_iter( (char *) ptr )
       , m_shmem_end(  ((char *)ptr) + size )

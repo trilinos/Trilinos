@@ -1214,12 +1214,15 @@ inline
 void deep_copy( const View<DT,DL,DD,DM,Impl::ViewDefault> & dst ,
                 const View<ST,SL,SD,SM,Impl::ViewDefault> & src ,
                 typename Impl::enable_if<(
+                  // Destination is not constant:
                   Impl::is_same< typename View<DT,DL,DD,DM,Impl::ViewDefault>::value_type ,
                                  typename View<ST,SL,SD,SM,Impl::ViewDefault>::non_const_value_type >::value
                   &&
+                  // Same layout:
                   Impl::is_same< typename View<DT,DL,DD,DM,Impl::ViewDefault>::array_layout ,
                                  typename View<ST,SL,SD,SM,Impl::ViewDefault>::array_layout >::value
                   &&
+                  // Same rank:
                   ( unsigned(View<DT,DL,DD,DM,Impl::ViewDefault>::rank) == unsigned(View<ST,SL,SD,SM,Impl::ViewDefault>::rank) )
                 )>::type * = 0 )
 {
@@ -1231,48 +1234,66 @@ void deep_copy( const View<DT,DL,DD,DM,Impl::ViewDefault> & dst ,
 
   if ( dst.ptr_on_device() != src.ptr_on_device() ) {
 
-    Impl::assert_shapes_are_equal( dst.shape() ,    src.shape() );
+    // Same shape (dimensions)
+    Impl::assert_shapes_are_equal( dst.shape() , src.shape() );
 
-    if( dst.capacity() == src.capacity() ) {
-      Impl::assert_counts_are_equal( dst.capacity() , src.capacity() );
+    if ( dst.capacity() == src.capacity() ) {
+
+      // Views span equal length contiguous range.
+      // Assuming can perform a straight memory copy over this range.
+      //
+      // TODO: Problem if these are subviews spanning equal length
+      //       contiguous range have non-padding gaps then those
+      //       gaps will be erroneously copied.
+      //       Need to detect if gaps are mere padding or valid subranges.
+      //       If subranges then cannot do a straight memory copy.
 
       const size_t nbytes = sizeof(typename dst_type::value_type) * dst.capacity();
 
       Impl::DeepCopy< dst_memory_space , src_memory_space >( dst.ptr_on_device() , src.ptr_on_device() , nbytes );
-    } else {
+    }
+    else {
+      // Destination view's execution space must be able to directly access source memory space
+      // in order for the ViewRemap functor run in the destination memory space's execution space.
+      Kokkos::Impl::VerifyExecutionCanAccessMemorySpace< dst_memory_space , src_memory_space >::verify();
+
       Impl::ViewRemap< dst_type , src_type >( dst , src );
     }
   }
 }
 
 
-/** \brief Deep copy equal dimension arrays in the host space which
+/** \brief Deep copy equal dimension arrays in the same space which
  *         have different layouts or specializations.
  */
 template< class DT , class DL , class DD , class DM , class DS ,
-          class ST , class SL ,            class SM , class SS >
+          class ST , class SL , class SD , class SM , class SS >
 inline
 void deep_copy( const View< DT, DL, DD, DM, DS > & dst ,
-                const View< ST, SL, DD, SM, SS > & src ,
+                const View< ST, SL, SD, SM, SS > & src ,
                 const typename Impl::enable_if<(
                   // Destination is not constant:
                   Impl::is_same< typename View<DT,DL,DD,DM,DS>::value_type ,
                                  typename View<DT,DL,DD,DM,DS>::non_const_value_type >::value
                   &&
+                  // Same space
+                  Impl::is_same< typename View<DT,DL,DD,DM,DS>::memory_space ,
+                                 typename View<ST,SL,SD,SM,SS>::memory_space >::value
+                  &&
                   // Same rank
                   ( unsigned( View<DT,DL,DD,DM,DS>::rank ) ==
-                    unsigned( View<ST,SL,DD,SM,SS>::rank ) )
+                    unsigned( View<ST,SL,SD,SM,SS>::rank ) )
                   &&
                   // Different layout or different specialization:
                   ( ( ! Impl::is_same< typename View<DT,DL,DD,DM,DS>::array_layout ,
-                                       typename View<ST,SL,DD,SM,SS>::array_layout >::value )
+                                       typename View<ST,SL,SD,SM,SS>::array_layout >::value )
                     ||
                     ( ! Impl::is_same< DS , SS >::value )
                   )
                 )>::type * = 0 )
 {
   typedef View< DT, DL, DD, DM, DS > dst_type ;
-  typedef View< ST, SL, DD, SM, SS > src_type ;
+  typedef View< ST, SL, SD, SM, SS > src_type ;
 
   assert_shapes_equal_dimension( dst.shape() , src.shape() );
 

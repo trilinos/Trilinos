@@ -52,8 +52,6 @@
 namespace Kokkos {
 namespace Impl {
 
-class OpenMPexecTeamMember ;
-
 //----------------------------------------------------------------------------
 /** \brief  Data for OpenMP thread execution */
 
@@ -64,10 +62,10 @@ public:
 
 private:
 
+  static int          m_pool_topo[ 4 ];
   static int          m_map_rank[ MAX_THREAD_COUNT ];
   static OpenMPexec * m_pool[ MAX_THREAD_COUNT ]; // Indexed by: m_pool_rank_rev
 
-  friend class Kokkos::Impl::OpenMPexecTeamMember ;
   friend class Kokkos::OpenMP ;
 
   int const  m_pool_rank ;
@@ -86,18 +84,31 @@ private:
 
 public:
 
-  static inline int pool_size() { return omp_get_max_threads(); }
+  // Topology of a cache coherent thread pool:
+  //   TOTAL = NUMA x GRAIN
+  //   pool_size( depth = 0 )
+  //   pool_size(0) = total number of threads
+  //   pool_size(1) = number of threads per NUMA
+  //   pool_size(2) = number of threads sharing finest grain memory hierarchy
+
+  inline static
+  int pool_size( int depth = 0 ) { return m_pool_topo[ depth ]; }
+
+  inline static
+  OpenMPexec * pool_rev( int pool_rank_rev ) { return m_pool[ pool_rank_rev ]; }
+
   inline int pool_rank() const { return m_pool_rank ; }
   inline int pool_rank_rev() const { return m_pool_rank_rev ; }
 
-  void * scratch_reduce() const { return ((char *) this) + m_scratch_exec_end ; }
-  void * scratch_thread() const { return ((char *) this) + m_scratch_reduce_end ; }
+  inline void * scratch_reduce() const { return ((char *) this) + m_scratch_exec_end ; }
+  inline void * scratch_thread() const { return ((char *) this) + m_scratch_reduce_end ; }
 
-  static void resize_scratch( size_t reduce_size , size_t thread_size );
+  inline
+  void state_wait( int state )
+    { Impl::spinwait( m_barrier_state , state ); }
 
-  static inline
-  void * scratch_reduce( const int pool_rank_rev )
-    { return m_pool[ pool_rank_rev ]->scratch_reduce(); }
+  inline
+  void state_set( int state ) { m_barrier_state = state ; }
 
   ~OpenMPexec() {}
 
@@ -122,6 +133,8 @@ public:
 
   static void verify_is_process( const char * const );
   static void verify_initialized( const char * const );
+
+  static void resize_scratch( size_t reduce_size , size_t thread_size );
 
   inline static
   OpenMPexec * get_thread_omp() { return m_pool[ m_map_rank[ omp_get_thread_num() ] ]; }
@@ -148,9 +161,9 @@ private:
   typedef execution_space::scratch_memory_space  scratch_memory_space ;
 
   Impl::OpenMPexec    & m_exec ;
-  OpenMPexec * const *  m_team_base ;
   scratch_memory_space  m_team_shared ;
   int                   m_team_shmem ;
+  int                   m_team_base_rev ;
   int                   m_team_rank_rev ;
   int                   m_team_rank ;
   int                   m_team_size ;
@@ -159,36 +172,32 @@ private:
   int                   m_league_size ;
 
   // Fan-in team threads, root of the fan-in which does not block returns true
-  KOKKOS_INLINE_FUNCTION
+  inline
   bool team_fan_in() const
     {
-      const int rank_rev = m_team_size - ( m_team_rank + 1 );
-
-      for ( int n = 1 , j ; ( ( j = rank_rev + n ) < m_team_size ) && ! ( rank_rev & n ) ; n <<= 1 ) {
-        Impl::spinwait( m_team_base[j]->m_barrier_state , Active );
+      for ( int n = 1 , j ; ( ( j = m_team_rank_rev + n ) < m_team_size ) && ! ( m_team_rank_rev & n ) ; n <<= 1 ) {
+        m_exec.pool_rev( m_team_base_rev + j )->state_wait( Active );
       }
 
-      if ( rank_rev ) {
-        m_exec.m_barrier_state = Rendezvous ;
-        Impl::spinwait( m_exec.m_barrier_state , Rendezvous );
+      if ( m_team_rank_rev ) {
+        m_exec.state_set( Rendezvous );
+        m_exec.state_wait( Rendezvous );
       }
 
-      return 0 == rank_rev ;
+      return 0 == m_team_rank_rev ;
     }
 
-  KOKKOS_INLINE_FUNCTION
+  inline
   void team_fan_out() const
     {
-      const int rank_rev = m_team_size - ( m_team_rank + 1 );
-
-      for ( int n = 1 , j ; ( ( j = rank_rev + n ) < m_team_size ) && ! ( rank_rev & n ) ; n <<= 1 ) {
-        m_team_base[j]->m_barrier_state = Active ;
+      for ( int n = 1 , j ; ( ( j = m_team_rank_rev + n ) < m_team_size ) && ! ( m_team_rank_rev & n ) ; n <<= 1 ) {
+        m_exec.pool_rev( m_team_base_rev + j )->state_set( Active );
       }
     }
 
 public:
 
-  KOKKOS_INLINE_FUNCTION
+  inline
   const execution_space::scratch_memory_space & team_shmem() const
     { return m_team_shared ; }
 
@@ -197,7 +206,7 @@ public:
   KOKKOS_INLINE_FUNCTION int team_rank() const { return m_team_rank ; }
   KOKKOS_INLINE_FUNCTION int team_size() const { return m_team_size ; }
 
-  KOKKOS_INLINE_FUNCTION void team_barrier() const
+  inline void team_barrier() const
     {
       if ( 1 < m_team_size ) {
         team_fan_in();
@@ -215,7 +224,7 @@ public:
    *  non-deterministic.
    */
   template< typename ArgType >
-  KOKKOS_INLINE_FUNCTION ArgType team_scan( const ArgType & value , ArgType * const global_accum ) const
+  inline ArgType team_scan( const ArgType & value , ArgType * const global_accum ) const
     {
       // Make sure there is enough scratch space:
       typedef typename if_c< sizeof(ArgType) < TEAM_REDUCE_SIZE , ArgType , void >::type type ;
@@ -238,14 +247,14 @@ public:
 
         if ( global_accum ) {
           for ( int i = m_team_size ; i-- ; ) {
-            type & val = *((type*) m_team_base[i]->scratch_thread());
+            type & val = *((type*) m_exec.pool_rev( m_team_base_rev + i )->scratch_thread());
             accum += val ;
           }
           accum = atomic_fetch_add( global_accum , accum );
         }
 
         for ( int i = m_team_size ; i-- ; ) {
-          type & val = *((type*) m_team_base[i]->scratch_thread());
+          type & val = *((type*) m_exec.pool_rev( m_team_base_rev + i )->scratch_thread());
           const type offset = accum ;  
           accum += val ;
           val = offset ;
@@ -265,15 +274,13 @@ public:
    *    reduction_total = dev.team_scan( value ) + value ;
    */
   template< typename Type >
-  KOKKOS_INLINE_FUNCTION Type team_scan( const Type & value ) const
+  inline Type team_scan( const Type & value ) const
     { return this-> template team_scan<Type>( value , 0 ); }
 
   //----------------------------------------
   // Private for the driver
 
 private:
-
-  void init( const int league_size , const int team_size );
 
   typedef execution_space::scratch_memory_space space ;
 
@@ -286,9 +293,9 @@ public:
                       , const int shmem_size
                       )
     : m_exec( exec )
-    , m_team_base(0)
     , m_team_shared(0,0)
     , m_team_shmem( shmem_size )
+    , m_team_base_rev(0)
     , m_team_rank_rev(0)
     , m_team_rank(0)
     , m_team_size( team.team_size() )
@@ -296,18 +303,18 @@ public:
     , m_league_end(0)
     , m_league_size( team.league_size() )
     {
-      const int pool_rank_rev        = exec.pool_rank_rev();
+      const int pool_rank_rev        = m_exec.pool_rank_rev();
       const int pool_team_rank_rev   = pool_rank_rev % team.team_alloc();
       const int pool_league_rank_rev = pool_rank_rev / team.team_alloc();
       const int league_iter_end      = team.league_size() - pool_league_rank_rev * team.team_iter();
 
       if ( pool_team_rank_rev < m_team_size && 0 < league_iter_end ) {
-        m_team_base     = exec.m_pool + team.team_alloc() * pool_league_rank_rev ;
-        m_team_rank_rev = pool_team_rank_rev ;
-        m_team_rank     = m_team_size - ( m_team_rank_rev + 1 );
-        m_league_end    = league_iter_end ;
-        m_league_rank   = league_iter_end > team.team_iter() ? league_iter_end - team.team_iter() : 0 ;
-        m_team_shared   = space( ( (char*) (*m_team_base)->scratch_thread() ) + TEAM_REDUCE_SIZE , m_team_shmem );
+        m_team_base_rev  = team.team_alloc() * pool_league_rank_rev ;
+        m_team_rank_rev  = pool_team_rank_rev ;
+        m_team_rank      = m_team_size - ( m_team_rank_rev + 1 );
+        m_league_end     = league_iter_end ;
+        m_league_rank    = league_iter_end > team.team_iter() ? league_iter_end - team.team_iter() : 0 ;
+        m_team_shared    = space( ( (char*) m_exec.pool_rev(m_team_base_rev)->scratch_thread() ) + TEAM_REDUCE_SIZE , m_team_shmem );
       }
     }
 
@@ -318,7 +325,7 @@ public:
     {
       if ( ++m_league_rank < m_league_end ) {
         team_barrier();
-        m_team_shared = space( ( (char*) (*m_team_base)->scratch_thread() ) + TEAM_REDUCE_SIZE , m_team_shmem );
+        m_team_shared = space( ( (char*) m_exec.pool_rev(m_team_base_rev)->scratch_thread() ) + TEAM_REDUCE_SIZE , m_team_shmem );
       }
     }
 
@@ -332,6 +339,11 @@ namespace Kokkos {
 
 template < class WorkArgTag >
 class TeamPolicy< Kokkos::OpenMP , WorkArgTag > {
+public:
+
+  typedef Impl::ExecutionPolicyTag   kokkos_tag ;      ///< Concept tag
+  typedef Kokkos::OpenMP             execution_space ; ///< Execution space
+
 private:
 
   int m_league_size ;
@@ -342,9 +354,9 @@ private:
   inline void init( const int league_size_request
                   , const int team_size_request )
     {
-      const int team_max   = Kokkos::OpenMP::team_max();
-      const int team_grain = Kokkos::OpenMP::team_recommended();
-      const int pool_size  = omp_get_max_threads();
+      const int pool_size  = execution_space::thread_pool_size(0);
+      const int team_max   = execution_space::thread_pool_size(1);
+      const int team_grain = execution_space::thread_pool_size(2);
 
       m_league_size = league_size_request ;
 
@@ -363,9 +375,6 @@ private:
     }
 
 public:
-
-  typedef Impl::ExecutionPolicyTag   kokkos_tag ;      ///< Concept tag
-  typedef Kokkos::OpenMP             execution_space ; ///< Execution space
 
   inline int team_size()   const { return m_team_size ; }
   inline int league_size() const { return m_league_size ; }
@@ -390,21 +399,19 @@ public:
 
 namespace Kokkos {
 
-KOKKOS_INLINE_FUNCTION
-unsigned OpenMP::hardware_thread_id() {
-#ifndef __CUDA_ARCH__
-  return omp_get_thread_num();
-#else
-  return 0;
-#endif
+inline
+int OpenMP::thread_pool_size( int depth )
+{
+  return Impl::OpenMPexec::pool_size(depth);
 }
 
 KOKKOS_INLINE_FUNCTION
-unsigned OpenMP::max_hardware_threads() {
-#ifndef __CUDA_ARCH__
-  return omp_get_max_threads();
+int OpenMP::thread_pool_rank()
+{
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+  return Impl::OpenMPexec::m_map_rank[ omp_get_thread_num() ];
 #else
-  return 1;
+  return -1 ;
 #endif
 }
 

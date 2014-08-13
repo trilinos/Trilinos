@@ -197,7 +197,8 @@ void MetaData::require_not_relation_target( const Part * const part ) const
 //----------------------------------------------------------------------
 
 MetaData::MetaData(size_t spatial_dimension, const std::vector<std::string>& entity_rank_names)
-  : m_commit( false ),
+  : m_bulk_data(NULL),
+    m_commit( false ),
     m_part_repo( this ),
     m_attributes(),
     m_universal_part( NULL ),
@@ -223,7 +224,8 @@ MetaData::MetaData(size_t spatial_dimension, const std::vector<std::string>& ent
 }
 
 MetaData::MetaData()
-  : m_commit( false ),
+  : m_bulk_data(NULL),
+    m_commit( false ),
     m_part_repo( this ),
     m_attributes(),
     m_universal_part( NULL ),
@@ -492,6 +494,8 @@ void MetaData::commit()
   m_commit = true ; // Cannot add or change parts or fields now
 
   synchronize_part_fields_with_parts();
+
+  set_mesh_on_fields(m_bulk_data);
 
 #ifdef STK_VERBOSE_OUTPUT
   dump_all_meta_info(std::cout);

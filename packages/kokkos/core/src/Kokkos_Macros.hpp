@@ -195,8 +195,10 @@ namespace Impl {
 
 #if defined( __CUDACC__ ) && defined( __CUDA_ARCH__ )
 typedef Kokkos::CudaSpace  ActiveExecutionMemorySpace ;
+#define KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA
 #else
 typedef Kokkos::HostSpace  ActiveExecutionMemorySpace ;
+#define KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
 #endif
 
 template< class ActiveSpace , class MemorySpace >
