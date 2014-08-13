@@ -71,10 +71,10 @@ int main(int narg, char **arg)
   if (rank < numGlobalIdentifiers % nprocs)
     numMyIdentifiers += 1;
 
-  gno_t myBaseId = gno_t(numGlobalIdentifiers * rank);
+  zgno_t myBaseId = zgno_t(numGlobalIdentifiers * rank);
 
-  gid_t *myIds = new gid_t[numMyIdentifiers];
-  scalar_t *myWeights = new scalar_t[numMyIdentifiers];
+  zgid_t *myIds = new zgid_t[numMyIdentifiers];
+  zscalar_t *myWeights = new zscalar_t[numMyIdentifiers];
 
   if (!myIds || !myWeights){
     fail = 1;
@@ -90,7 +90,7 @@ int main(int narg, char **arg)
     return 1;
   }
 
-  scalar_t origsumwgts = 0;
+  zscalar_t origsumwgts = 0;
   for (int i=0; i < numMyIdentifiers; i++){
     myIds[i] = myBaseId+i;
     myWeights[i] = rank%3 + 1;
@@ -99,9 +99,9 @@ int main(int narg, char **arg)
 
   // Some output
   int *origcnt = new int[nprocs];
-  scalar_t *origwgts = new scalar_t[nprocs];
+  zscalar_t *origwgts = new zscalar_t[nprocs];
   Teuchos::gather<int, int>(&numMyIdentifiers, 1, origcnt, 1, 0, *comm);
-  Teuchos::gather<int, scalar_t>(&origsumwgts, 1, origwgts, 1, 0, *comm);
+  Teuchos::gather<int, zscalar_t>(&origsumwgts, 1, origwgts, 1, 0, *comm);
   if (rank == 0) {
     cout << "BEFORE PART CNTS: ";
     for (int i = 0; i < nprocs; i++)
@@ -116,15 +116,15 @@ int main(int narg, char **arg)
   delete [] origwgts;
 
   // Building Zoltan2 adapters
-  std::vector<const scalar_t *> weightValues;
+  std::vector<const zscalar_t *> weightValues;
   std::vector<int> weightStrides;   // default is one
-  weightValues.push_back(const_cast<const scalar_t *>(myWeights));
+  weightValues.push_back(const_cast<const zscalar_t *>(myWeights));
 
-  typedef Zoltan2::BasicUserTypes<scalar_t, gid_t, lno_t, gno_t> mydata_t;
+  typedef Zoltan2::BasicUserTypes<zscalar_t, zgid_t, zlno_t, zgno_t> mydata_t;
   typedef Zoltan2::BasicIdentifierAdapter<mydata_t> adapter_t;
   typedef adapter_t::part_t part_t;
 
-  adapter_t adapter(lno_t(numMyIdentifiers),myIds,weightValues,weightStrides);
+  adapter_t adapter(zlno_t(numMyIdentifiers),myIds,weightValues,weightStrides);
 
   // Set up the parameters and problem
   bool useWeights = true;
@@ -147,16 +147,16 @@ int main(int narg, char **arg)
   Zoltan2::PartitioningSolution<adapter_t> solution = problem.getSolution();
 
   // Some output 
-  scalar_t *totalWeight = new scalar_t [nprocs];
-  scalar_t *sumWeight = new scalar_t [nprocs];
-  memset(totalWeight, 0, nprocs * sizeof(scalar_t));
+  zscalar_t *totalWeight = new zscalar_t [nprocs];
+  zscalar_t *sumWeight = new zscalar_t [nprocs];
+  memset(totalWeight, 0, nprocs * sizeof(zscalar_t));
   int *totalCnt = new int [nprocs];
   int *sumCnt = new int [nprocs];
   memset(totalCnt, 0, nprocs * sizeof(int));
 
-  const gid_t *idList = solution.getIdList();
+  const zgid_t *idList = solution.getIdList();
   const part_t *partList = solution.getPartList();
-  const scalar_t libImbalance = problem.getWeightImbalance();
+  const zscalar_t libImbalance = problem.getWeightImbalance();
 
   for (int i=0; !fail && i < numMyIdentifiers; i++){
     if (idList[i] != myIds[i])
@@ -180,7 +180,7 @@ int main(int narg, char **arg)
 
   Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_SUM, nprocs, 
                                totalCnt, sumCnt);
-  Teuchos::reduceAll<int, scalar_t>(*comm, Teuchos::REDUCE_SUM, nprocs, 
+  Teuchos::reduceAll<int, zscalar_t>(*comm, Teuchos::REDUCE_SUM, nprocs, 
                                     totalWeight, sumWeight);
 
   double epsilon = 10e-6;
@@ -191,7 +191,7 @@ int main(int narg, char **arg)
       std::cout << sumCnt[i] << " ";
     std::cout << std::endl;
 
-    scalar_t total = 0;
+    zscalar_t total = 0;
     std::cout << "AFTER PART WGTS: ";
     for (int i=0; i < nprocs; i++){
       std::cout << sumWeight[i] << " ";
@@ -199,12 +199,12 @@ int main(int narg, char **arg)
     }
     std::cout << std::endl;
 
-    scalar_t avg = total / scalar_t(nprocs);
+    zscalar_t avg = total / zscalar_t(nprocs);
 
-    scalar_t imbalance = -1.0;
+    zscalar_t imbalance = -1.0;
 
     for (int i=0; i < nprocs; i++){
-      scalar_t imb = 0;
+      zscalar_t imb = 0;
       if (sumWeight[i] > avg)
         imb = (sumWeight[i] - avg) / avg;
       else

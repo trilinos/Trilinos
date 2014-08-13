@@ -68,8 +68,8 @@ void StridedDataTest(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
 {
   // StridedData template arguments
 
-  typedef lno_t     index_t;
-  typedef scalar_t  value_t;
+  typedef zlno_t     index_t;
+  typedef zscalar_t  value_t;
 
   typedef StridedData<index_t, value_t> stridedInput_t;
 

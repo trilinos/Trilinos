@@ -52,7 +52,7 @@
 #include <Zoltan2_Util.hpp>
 #include <iostream>
 
-typedef KokkosClassic::DefaultNode::DefaultNodeType node_t;
+typedef KokkosClassic::DefaultNode::DefaultNodeType znode_t;
 
 // The path to the directory of test data
 
@@ -86,41 +86,46 @@ typedef KokkosClassic::DefaultNode::DefaultNodeType node_t;
 
 #if defined HAVE_ZOLTAN2_INST_FLOAT_INT_LONG
 
-typedef int lno_t;
-typedef long gno_t;
-typedef float scalar_t;
+typedef int zlno_t;
+typedef long zgno_t;
+typedef unsigned long zgid_t;
+typedef float zscalar_t;
 
 #elif defined HAVE_ZOLTAN2_INST_DOUBLE_INT_LONG
 
-typedef int lno_t;
-typedef long gno_t;
-typedef double scalar_t;
+typedef int zlno_t;
+typedef long zgno_t;
+typedef unsigned long zgid_t;
+typedef double zscalar_t;
 
 #elif defined HAVE_ZOLTAN2_INST_FLOAT_INT_INT
 
-typedef int lno_t;
-typedef int gno_t;
-typedef float scalar_t;
+typedef int zlno_t;
+typedef int zgno_t;
+typedef unsigned int zgid_t;
+typedef float zscalar_t;
 
 #elif defined HAVE_ZOLTAN2_INST_DOUBLE_INT_INT
 
-typedef int lno_t;
-typedef int gno_t;
-typedef double scalar_t;
+typedef int zlno_t;
+typedef int zgno_t;
+typedef unsigned int zgid_t;
+typedef double zscalar_t;
 #define HAVE_EPETRA_DATA_TYPES
 
 #elif defined TEST_STK_DATA_TYPES
 
-typedef ssize_t lno_t;
-typedef ssize_t gno_t;
-typedef unsigned int gid_t;
-typedef double scalar_t;
+typedef ssize_t zlno_t;
+typedef ssize_t  zgno_t;
+typedef ssize_t  zgid_t;
+typedef double  zscalar_t;
 
 #else
 
-typedef int lno_t;
-typedef int gno_t;
-typedef double scalar_t;
+typedef int zlno_t;
+typedef int zgno_t;
+typedef unsigned int zgid_t;
+typedef double zscalar_t;
 #define HAVE_EPETRA_DATA_TYPES
 
 #endif
