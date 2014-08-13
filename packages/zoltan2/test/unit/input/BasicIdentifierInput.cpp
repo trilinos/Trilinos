@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
   lno_t numLocalIds = 10;
   int nWeights = 2;
 
-  gno_t *myIds = new gno_t [numLocalIds];
+  gid_t *myIds = new gid_t [numLocalIds];
   scalar_t *weights = new scalar_t [numLocalIds*nWeights];
   gno_t base = rank * numLocalIds * numLocalIds;
 
@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
   // Create a Zoltan2::BasicIdentifierAdapter object
   // and verify that it is correct
 
-  typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> userTypes_t;
+  typedef Zoltan2::BasicUserTypes<scalar_t, gid_t, lno_t, gno_t> userTypes_t;
   std::vector<const scalar_t *> weightValues;
   std::vector<int> strides;
 
@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
   if (!fail && ia.getNumWeightsPerID() != nWeights)
     fail = 5;
 
-  const gno_t *globalIdsIn;
+  const gid_t *globalIdsIn;
   scalar_t const *weightsIn[2];
   int weightStridesIn[2];
 

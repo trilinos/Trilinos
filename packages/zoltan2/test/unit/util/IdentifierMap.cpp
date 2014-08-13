@@ -279,13 +279,13 @@ int main(int argc, char *argv[])
   // 3. GIDs are consecutive ordinals
   // 4. GIDs are not Teuchos Ordinals
 
-  ArrayRCP<gno_t> gids(new gno_t [numLocalObjects], 0, numLocalObjects, true);
-  ArrayRCP<gno_t> remoteGids(new gno_t [numRemoteObjects], 0, 
+  ArrayRCP<gid_t> gids(new gid_t [numLocalObjects], 0, numLocalObjects, true);
+  ArrayRCP<gid_t> remoteGids(new gid_t [numRemoteObjects], 0, 
     numRemoteObjects, true);
 
   using Zoltan2::IdentifierMap;
 
-  typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> UserTypes;
+  typedef Zoltan2::BasicUserTypes<scalar_t, gid_t, lno_t, gno_t> UserTypes;
 
   //////////////////////////////////////////////////////////
   //  Ids are non-consecutive ordinals.

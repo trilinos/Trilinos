@@ -871,7 +871,7 @@ template< typename User>
     // Easy case - use gidGlobalTranslate.
 
     const gno_t *gnos = in_gno.getRawPtr();
-    ArrayView<const gid_t> gids(static_cast<const gid_t *>(gnos), inLen);
+    ArrayView<const gid_t> gids(reinterpret_cast<const gid_t *>(gnos), inLen);
     ArrayView<gno_t> noGnos;
 
     try{
@@ -1094,7 +1094,7 @@ template< typename User>
       }
       else{
         gnoDist_.resize(numProcs_ + 1);
-        for (lno_t i=0; i <= numProcs_; i++){
+        for (int i=0; i <= numProcs_; i++){
           gnoDist_[i] = static_cast<gno_t>(tmpDist[i]);
         }
       }

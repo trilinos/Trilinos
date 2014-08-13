@@ -954,7 +954,7 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, string fname,
     graphCounts[1] = nedges;
     graphCounts[2] = nVwgts;
     graphCounts[3] = nEwgts;
-    graphCounts[4] = maxRowLen;  // size_t maxRowLen will fit; it is <= (int-int)
+    graphCounts[4] = maxRowLen; // size_t maxRowLen will fit; it is <= (int-int)
   }
   
   Teuchos::broadcast<int, int>(*tcomm_, 0, 5, graphCounts);
@@ -989,7 +989,7 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, string fname,
       gno_t *nextId = edgeIds;
       Array<scalar_t> values(maxRowLen, 1.0);
   
-      for (gno_t i=0; i < nvtxs; i++){
+      for (int i=0; i < nvtxs; i++){
         if (nzPerRow[i] > 0){
           ArrayView<const gno_t> rowNz(nextId, nzPerRow[i]);
           fromMatrix->insertGlobalValues(i, rowNz, values.view(0,nzPerRow[i]));

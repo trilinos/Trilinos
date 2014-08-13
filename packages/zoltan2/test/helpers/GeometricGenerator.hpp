@@ -574,7 +574,7 @@ public:
     for (int i = 0; i < myRank; ++i){
       //cout << "me:" << myRank << " i:" << i << " s:" << sharedRatios_[i]<< endl;
       this->assignedPrevious += lno_t(sharedRatios_[i] * this->numPoints);
-      if (i < this->numPoints % this->worldSize){
+      if (gno_t(i) < this->numPoints % this->worldSize){
         this->assignedPrevious += 1;
       }
     }
@@ -1669,7 +1669,7 @@ public:
     for(int i = 0; i < this->distributionCount; ++i){
       for(int ii = 0; ii < this->worldSize; ++ii){
         lno_t increment  = lno_t (this->coordinateDistributions[i]->numPoints * this->loadDistributions[ii]);
-        if (ii < this->coordinateDistributions[i]->numPoints % this->worldSize){
+        if (gno_t(ii) < this->coordinateDistributions[i]->numPoints % this->worldSize){
           increment += 1;
         }
         this->numGlobalCoords += increment;
@@ -1678,7 +1678,7 @@ public:
         }
       }
       myPointCount += lno_t(this->coordinateDistributions[i]->numPoints * this->loadDistributions[myRank]);
-      if (myRank < this->coordinateDistributions[i]->numPoints % this->worldSize){
+      if (gno_t(myRank) < this->coordinateDistributions[i]->numPoints % this->worldSize){
         myPointCount += 1;
       }
     }
@@ -1692,7 +1692,7 @@ public:
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel for
 #endif
-      for(int i = 0; i < myPointCount; ++i){
+      for(lno_t i = 0; i < myPointCount; ++i){
         this->coords[ii][i] = 0;
       }
     }
@@ -1702,7 +1702,7 @@ public:
     for (int i = 0; i < distributionCount; ++i){
 
       lno_t requestedPointCount = lno_t(this->coordinateDistributions[i]->numPoints *  this->loadDistributions[myRank]);
-      if (myRank < this->coordinateDistributions[i]->numPoints % this->worldSize){
+      if (gno_t(myRank) < this->coordinateDistributions[i]->numPoints % this->worldSize){
         requestedPointCount += 1;
       }
       //cout << "req:" << requestedPointCount << endl;
@@ -1875,7 +1875,7 @@ public:
 	  //cout << "numLocalToPerturb :" << numLocalToPerturb  << endl;
 	  for (int dim = 0; dim < this->coordinate_dimension; ++dim){
 		  T range = maxCoords[dim] - minCoords[dim];
-		  for (int i = 0; i < numLocalToPerturb; ++i){
+		  for (gno_t i = 0; i < numLocalToPerturb; ++i){
 			  this->coords[dim][i] = (rand() / double (RAND_MAX)) * (range) +  minCoords[dim];
 
 		  }
@@ -2014,7 +2014,7 @@ public:
 	  gno_t *partNext = new gno_t[this->numLocalCoords];
 
 
-	  for (int i = 0; i < this->numLocalCoords; ++i){
+	  for (lno_t i = 0; i < this->numLocalCoords; ++i){
 		  partNext[i] = -1;
 	  }
 	  for (int i = 0; i < this->worldSize; ++i) {
@@ -2024,7 +2024,7 @@ public:
 	  for (int i = 0; i < this->worldSize; ++i)
 		  numPointsInParts[i] = 0;
 
-	  for (int i = 0; i < this->numLocalCoords; ++i){
+	  for (lno_t i = 0; i < this->numLocalCoords; ++i){
 		  int partIndex = 0;
 		  for (int dim = 0; dim < coord_dim; ++dim){
 			  int shift = int ((this->coords[dim][i] - minCoords[dim]) / dim_slices[dim]);
@@ -2086,9 +2086,9 @@ public:
 		  cout << "optimal_num:" << optimal_num << endl;
 	  }
 #endif
-	  gno_t *extraInPart = new gno_t [this->worldSize];
+	  ssize_t *extraInPart = new ssize_t [this->worldSize];
 
-	  gno_t extraExchange = 0;
+	  ssize_t extraExchange = 0;
 	  for (int i = 0; i < this->worldSize; ++i){
 		  extraInPart[i] = numGlobalPointsInParts[i] - optimal_num;
 		  extraExchange += extraInPart[i];
@@ -2096,7 +2096,7 @@ public:
 	  if (extraExchange != 0){
 		  int addition = -1;
 		  if (extraExchange < 0) addition = 1;
-		  for (int i = 0; i < extraExchange; ++i){
+		  for (ssize_t i = 0; i < extraExchange; ++i){
 			  extraInPart[i % this->worldSize] += addition;
 		  }
 	  }
@@ -2163,8 +2163,8 @@ public:
     		  //then consume underloaded parts.
     		  while (overload > 0){
     			  int nextUnderLoadedPart = underloadedPartIndices[underloadpartindex];
-    			  gno_t underload = extraInPart[nextUnderLoadedPart];
-    			  gno_t left = overload + underload;
+    			  ssize_t underload = extraInPart[nextUnderLoadedPart];
+    			  ssize_t left = overload + underload;
 
     			  if(left >= 0){
     				  extraInPart[nextUnderLoadedPart] = 0;
@@ -2198,8 +2198,8 @@ public:
     	      //first consume underloaded parts for the previous processors.
     		  while (exclusiveLoadUptoMe > 0){
     			  int nextUnderLoadedPart = underloadedPartIndices[underloadpartindex];
-    			  gno_t underload = extraInPart[nextUnderLoadedPart];
-    			  gno_t left = exclusiveLoadUptoMe + underload;
+    			  ssize_t underload = extraInPart[nextUnderLoadedPart];
+    			  ssize_t left = exclusiveLoadUptoMe + underload;
 
     			  if(left >= 0){
     				  extraInPart[nextUnderLoadedPart] = 0;
@@ -2214,8 +2214,8 @@ public:
     		  //consume underloaded parts for my load.
     		  while (mySendCount > 0){
     			  int nextUnderLoadedPart = underloadedPartIndices[underloadpartindex];
-    			  gno_t underload = extraInPart[nextUnderLoadedPart];
-    			  gno_t left = mySendCount + underload;
+    			  ssize_t underload = extraInPart[nextUnderLoadedPart];
+    			  ssize_t left = mySendCount + underload;
 
     			  if(left >= 0){
     				  mySendParts[numPartsISendTo] = nextUnderLoadedPart;
@@ -2236,8 +2236,8 @@ public:
     		  //consume underloaded parts for the load of the processors after my index.
     		  while (sendAfterMe > 0){
     			  int nextUnderLoadedPart = underloadedPartIndices[underloadpartindex];
-    			  gno_t underload = extraInPart[nextUnderLoadedPart];
-    			  gno_t left = sendAfterMe + underload;
+    			  ssize_t underload = extraInPart[nextUnderLoadedPart];
+    			  ssize_t left = sendAfterMe + underload;
 
     			  if(left >= 0){
     				  extraInPart[nextUnderLoadedPart] = 0;
@@ -2259,7 +2259,7 @@ public:
 
     	  //get the part from which the elements will be converted.
     	  int sendFromPart = mySendFromParts[i];
-    	  gno_t sendCount = mySendFromPartsCounts[i];
+    	  ssize_t sendCount = mySendFromPartsCounts[i];
     	  while(sendCount > 0){
     		  int partToSendIndex = numPartsISendTo - 1;
     		  int partToSend = mySendParts[partToSendIndex];
@@ -2368,7 +2368,7 @@ public:
 	      distributor.doPostsAndWaits<T>(s, 1, recvBuf2());
 		  delete [] this->coords[i];
 		  this->coords[i] = new T[this->numLocalCoords];
-	      for (int j = 0; j < this->numLocalCoords; ++j){
+	      for (lno_t j = 0; j < this->numLocalCoords; ++j){
 	    	  this->coords[i][j] = recvBuf2[j];
 	      }
 
@@ -2447,7 +2447,7 @@ public:
 
 	  const typename inputAdapter_t::part_t *partIds = problem->getSolution().getPartList();
 
-	  for (int i = 0; i < this->numLocalCoords;++i){
+	  for (lno_t i = 0; i < this->numLocalCoords;++i){
 		  coordinate_grid_parts[i] = partIds[i];
 		  //cout << "me:" << this->myRank << " i:" << i << " goes to:" << partIds[i] << endl;
 	  }

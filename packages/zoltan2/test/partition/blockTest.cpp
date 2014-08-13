@@ -66,14 +66,14 @@ int main(int narg, char **arg)
   int nprocs = comm->getSize();
 
   // Construct the user input
-  gno_t numGlobalIdentifiers = 100;
-  lno_t numMyIdentifiers = numGlobalIdentifiers / nprocs;
+  int numGlobalIdentifiers = 100;
+  int numMyIdentifiers = numGlobalIdentifiers / nprocs;
   if (rank < numGlobalIdentifiers % nprocs)
     numMyIdentifiers += 1;
 
-  gno_t myBaseId = numGlobalIdentifiers * rank;
+  gno_t myBaseId = gno_t(numGlobalIdentifiers * rank);
 
-  gno_t *myIds = new gno_t[numMyIdentifiers];
+  gid_t *myIds = new gid_t[numMyIdentifiers];
   scalar_t *myWeights = new scalar_t[numMyIdentifiers];
 
   if (!myIds || !myWeights){
@@ -91,16 +91,16 @@ int main(int narg, char **arg)
   }
 
   scalar_t origsumwgts = 0;
-  for (lno_t i=0; i < numMyIdentifiers; i++){
+  for (int i=0; i < numMyIdentifiers; i++){
     myIds[i] = myBaseId+i;
     myWeights[i] = rank%3 + 1;
     origsumwgts += myWeights[i];
   }
 
   // Some output
-  lno_t *origcnt = new lno_t[nprocs];
+  int *origcnt = new int[nprocs];
   scalar_t *origwgts = new scalar_t[nprocs];
-  Teuchos::gather<int, lno_t>(&numMyIdentifiers, 1, origcnt, 1, 0, *comm);
+  Teuchos::gather<int, int>(&numMyIdentifiers, 1, origcnt, 1, 0, *comm);
   Teuchos::gather<int, scalar_t>(&origsumwgts, 1, origwgts, 1, 0, *comm);
   if (rank == 0) {
     cout << "BEFORE PART CNTS: ";
@@ -120,11 +120,11 @@ int main(int narg, char **arg)
   std::vector<int> weightStrides;   // default is one
   weightValues.push_back(const_cast<const scalar_t *>(myWeights));
 
-  typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> mydata_t;
+  typedef Zoltan2::BasicUserTypes<scalar_t, gid_t, lno_t, gno_t> mydata_t;
   typedef Zoltan2::BasicIdentifierAdapter<mydata_t> adapter_t;
   typedef adapter_t::part_t part_t;
 
-  adapter_t adapter(numMyIdentifiers, myIds, weightValues, weightStrides);
+  adapter_t adapter(lno_t(numMyIdentifiers),myIds,weightValues,weightStrides);
 
   // Set up the parameters and problem
   bool useWeights = true;
@@ -150,15 +150,15 @@ int main(int narg, char **arg)
   scalar_t *totalWeight = new scalar_t [nprocs];
   scalar_t *sumWeight = new scalar_t [nprocs];
   memset(totalWeight, 0, nprocs * sizeof(scalar_t));
-  lno_t *totalCnt = new lno_t [nprocs];
-  lno_t *sumCnt = new lno_t [nprocs];
-  memset(totalCnt, 0, nprocs * sizeof(lno_t));
+  int *totalCnt = new int [nprocs];
+  int *sumCnt = new int [nprocs];
+  memset(totalCnt, 0, nprocs * sizeof(int));
 
-  const gno_t *idList = solution.getIdList();
+  const gid_t *idList = solution.getIdList();
   const part_t *partList = solution.getPartList();
   const scalar_t libImbalance = problem.getWeightImbalance();
 
-  for (lno_t i=0; !fail && i < numMyIdentifiers; i++){
+  for (int i=0; !fail && i < numMyIdentifiers; i++){
     if (idList[i] != myIds[i])
       fail = 1;
 
@@ -178,8 +178,8 @@ int main(int narg, char **arg)
     return 1;
   }
 
-  Teuchos::reduceAll<int, lno_t>(*comm, Teuchos::REDUCE_SUM, nprocs, 
-                                 totalCnt, sumCnt);
+  Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_SUM, nprocs, 
+                               totalCnt, sumCnt);
   Teuchos::reduceAll<int, scalar_t>(*comm, Teuchos::REDUCE_SUM, nprocs, 
                                     totalWeight, sumWeight);
 

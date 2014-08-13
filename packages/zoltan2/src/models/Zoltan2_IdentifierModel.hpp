@@ -115,8 +115,11 @@ public:
     wgts = weights_.view(0, nUserWeights_);
     size_t n = getLocalNumIdentifiers();
     if (n){
-      if (gnosAreGids_) Ids = gids_(0, n);
-      else              Ids = gnosConst_(0, n);
+      if (gnosAreGids_) 
+        Ids = ArrayView<const gno_t>(
+                        reinterpret_cast<const gno_t*>(gids_.getRawPtr()), n);
+      else              
+        Ids = gnosConst_(0, n);
     }
     return n;
   }

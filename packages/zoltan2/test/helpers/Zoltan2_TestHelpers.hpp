@@ -113,6 +113,7 @@ typedef double scalar_t;
 
 typedef ssize_t lno_t;
 typedef ssize_t gno_t;
+typedef unsigned int gid_t;
 typedef double scalar_t;
 
 #else

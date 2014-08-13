@@ -59,7 +59,7 @@ using Zoltan2::MACRO_TIMERS;
 using Zoltan2::MICRO_TIMERS;
 using Zoltan2::BOTH_TIMERS;
 
-typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> myTypes_t;
+typedef Zoltan2::BasicUserTypes<scalar_t, gid_t, lno_t, gno_t> myTypes_t;
 typedef Zoltan2::BasicIdentifierAdapter<myTypes_t> inputAdapter_t;
 
 void goToSleep(const RCP<const Zoltan2::Environment> &env)
@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
   pl.set("timer_type" , "both_timers");
   std::vector<const scalar_t * >weights;
   std::vector<int> strides;
-  Array<gno_t> someIds(10,1);
+  Array<gid_t> someIds(10,1);
   inputAdapter_t ia(10, someIds.getRawPtr(), weights, strides);
 
 #ifdef HAVE_ZOLTAN2_MPI

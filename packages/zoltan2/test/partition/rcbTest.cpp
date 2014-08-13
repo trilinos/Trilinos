@@ -61,6 +61,7 @@ using Teuchos::rcp;
 
 typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
 typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> myTypes_t;
+// Need to use gno_t as gid_t in basic types, since gid_t=gno_t in MultiVector
 
 
 /*! \test rcbTest.cpp
@@ -141,7 +142,7 @@ void serialTest(int numParts, bool doRemap)
   gno_t *ids = new gno_t [numCoords];
   if (!ids)
     throw std::bad_alloc();
-  for (lno_t i=0; i < numCoords; i++)
+  for (int i=0; i < numCoords; i++)
     ids[i] = i;
   ArrayRCP<gno_t> globalIds(ids, 0, numCoords, true);
 

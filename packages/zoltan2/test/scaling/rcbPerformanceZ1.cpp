@@ -301,7 +301,7 @@ void makeWeights(
   else if (how == roundRobin){
     for (int i=0; i < 10; i++){
       float val = (i + 10)*scale;
-      for (int j=i; j < len; j += 10)
+      for (lno_t j=i; j < len; j += 10)
          wgts[j] = val;
     }
   }
@@ -326,12 +326,12 @@ tMVector_t* makeMeshCoordinates(
 
   double k = log(numGlobalCoords) / 3;
   double xdimf = exp(k) + 0.5;
-  gno_t xdim = static_cast<gno_t>(floor(xdimf));
-  gno_t ydim = xdim;
-  gno_t zdim = numGlobalCoords / (xdim*ydim);
-  gno_t num=xdim*ydim*zdim;
-  gno_t diff = numGlobalCoords - num;
-  gno_t newdiff = 0;
+  ssize_t xdim = static_cast<ssize_t>(floor(xdimf));
+  ssize_t ydim = xdim;
+  ssize_t zdim = numGlobalCoords / (xdim*ydim);
+  ssize_t num=xdim*ydim*zdim;
+  ssize_t diff = numGlobalCoords - num;
+  ssize_t newdiff = 0;
 
   while (diff > 0){
     if (zdim > xdim && zdim > ydim){
@@ -375,28 +375,28 @@ tMVector_t* makeMeshCoordinates(
 
   // Divide coordinates.
 
-  gno_t numLocalCoords = num / nprocs;
-  gno_t leftOver = num % nprocs;
-  gno_t gid0 = 0;
+  ssize_t numLocalCoords = num / nprocs;
+  ssize_t leftOver = num % nprocs;
+  ssize_t gid0 = 0;
 
   if (rank <= leftOver)
-    gid0 = gno_t(rank) * (numLocalCoords+1);
+    gid0 = rank * (numLocalCoords+1);
   else
     gid0 = (leftOver * (numLocalCoords+1)) +
-           ((gno_t(rank) - leftOver) * numLocalCoords);
+           ((rank - leftOver) * numLocalCoords);
 
   if (rank < leftOver)
     numLocalCoords++;
 
-  gno_t gid1 = gid0 + numLocalCoords;
+  ssize_t gid1 = gid0 + numLocalCoords;
 
   gno_t *ids = new gno_t[numLocalCoords];
   if (!ids)
     throw bad_alloc();
   ArrayView<gno_t> idArray(ids, numLocalCoords);
 
-  for (gno_t i=gid0, *idptr=ids; i < gid1; i++)
-    *idptr++ = i;
+  for (ssize_t i=gid0, *idptr=ids; i < gid1; i++)
+    *idptr++ = gno_t(i);
 
   RCP<const tMap_t> idMap = rcp(new tMap_t(num, idArray, 0, comm));
 

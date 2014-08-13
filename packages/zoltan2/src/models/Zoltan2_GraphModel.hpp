@@ -531,9 +531,16 @@ public:
     ArrayView<input_t> &xyz,
     ArrayView<input_t> &wgts) const
   {
+    Ids = ArrayView<const gno_t>();
     size_t nv = gids_.size();
-    if (gnosAreGids_) Ids = gids_.view(0, nv);
-    else              Ids = gnosConst_.view(0, nv);
+    if (nv){
+      if (gnosAreGids_)
+        Ids = ArrayView<const gno_t>(
+                        reinterpret_cast<const gno_t*>(gids_.getRawPtr()), nv);
+      else
+        Ids = gnosConst_(0, nv);
+    }
+
     xyz = vCoords_.view(0, vCoordDim_);
     wgts = vWeights_.view(0, numWeightsPerVertex_);
     return nv;
@@ -560,8 +567,16 @@ public:
     ArrayView<const int> &procIds, ArrayView<const lno_t> &offsets,
     ArrayView<input_t> &wgts) const
   {
-    if (gnosAreGids_) edgeIds = edgeGids_.view(0, numLocalEdges_);
-    else              edgeIds = edgeGnosConst_.view(0, numLocalEdges_);
+    edgeIds = ArrayView<const gno_t>();
+    if (numLocalEdges_) {
+      if (gnosAreGids_)
+        edgeIds = ArrayView<const gno_t>(
+                        reinterpret_cast<const gno_t*>(edgeGids_.getRawPtr()),
+                                                       numLocalEdges_);
+      else
+        edgeIds = edgeGnosConst_(0, numLocalEdges_);
+    }
+
     procIds = procIdsConst_.view(0, numLocalEdges_);
     offsets = offsets_.view(0, numLocalVertices_+1);
     wgts = eWeights_.view(0, nWeightsPerEdge_);
