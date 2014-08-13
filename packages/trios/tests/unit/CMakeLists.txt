@@ -71,17 +71,33 @@ INCLUDE(TribitsAddTest)
 #  ADD_SUBDIRECTORY(ch_brack2_3)
 #ENDIF()
 
+IF (TPL_ENABLE_MPI)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    FullQueueTest
+    SOURCES FullQueueTest.cpp
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    NOEXEPREFIX
+  )
+ENDIF (TPL_ENABLE_MPI)
+
+
+IF (TPL_ENABLE_Pthread)
+  IF (CMAKE_HAVE_PTHREAD_H)
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      InterruptTest
+      SOURCES InterruptTest.c
+      COMM serial mpi
+      NUM_MPI_PROCS 1
+      NOEXEPREFIX
+    )
+  ENDIF (CMAKE_HAVE_PTHREAD_H)
+ENDIF (TPL_ENABLE_Pthread)
+
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   LoggerTest
   SOURCES LoggerTest.cpp
-  COMM serial mpi
-  NOEXEPREFIX
-)
-
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  TimerTest
-  SOURCES TimerTest.c
   COMM serial mpi
   NOEXEPREFIX
 )
@@ -92,35 +108,56 @@ TRIBITS_ADD_EXECUTABLE(
   NOEXEPREFIX
 )
 
-#TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#  NntiSelfSendTest
-#  SOURCES NntiSelfSendTest.cpp
-#  COMM serial mpi
-#  NOEXEPREFIX
-#)
-#
-#TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#  NssiSelfSendTest
-#  SOURCES NssiSelfSendTest.cpp
-#  COMM serial mpi
-#  NOEXEPREFIX
-#)
-
-TRIBITS_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NntiSelfSendTest
   SOURCES NntiSelfSendTest.cpp
+  COMM serial mpi
   NOEXEPREFIX
 )
 
-TRIBITS_ADD_EXECUTABLE(
+
+IF (TPL_ENABLE_MPI)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    NonContigTest
+    SOURCES NonContigTest.cpp
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    NOEXEPREFIX
+  )
+ENDIF (TPL_ENABLE_MPI)
+
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NssiSelfSendTest
   SOURCES NssiSelfSendTest.cpp
+  COMM serial mpi
   NOEXEPREFIX
 )
+
+
+IF (TPL_ENABLE_Pthread)
+  IF (CMAKE_HAVE_PTHREAD_H)
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      ProgressTimeoutTest
+      SOURCES ProgressTimeoutTest.cpp
+      COMM serial mpi
+      NOEXEPREFIX
+    )
+  ENDIF (CMAKE_HAVE_PTHREAD_H)
+ENDIF (TPL_ENABLE_Pthread)
+
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SignalTest
   SOURCES SignalTest.c
+  COMM serial mpi
+  NOEXEPREFIX
+)
+
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TimerTest
+  SOURCES TimerTest.c
   COMM serial mpi
   NOEXEPREFIX
 )

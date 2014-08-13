@@ -102,7 +102,7 @@ int opreg_request_processor(
         const NNTI_buffer_t       *data_addr,
         const NNTI_buffer_t       *res_addr)
 {
-    int rc=NNTI_OK;
+    int rc = NNTI_OK;
     log_level debug_level = opreg_debug_level;
 
     /* process array (nothing to do) */
@@ -140,10 +140,9 @@ int opreg_c_server_main(nssi_rpc_transport transport, MPI_Comm server_comm)
     nssi_service opreg_svc;
     int server_rank;
 
-    MPI_Comm_rank(server_comm, &server_rank);
+    char url[NSSI_URL_LEN];
 
-    /* options that can be overriden by the command-line */
-    char server_url[NSSI_URL_LEN];          /* NNTI-style url of the server */
+    MPI_Comm_rank(server_comm, &server_rank);
 
 
     memset(&opreg_svc, 0, sizeof(nssi_service));
@@ -162,7 +161,6 @@ int opreg_c_server_main(nssi_rpc_transport transport, MPI_Comm server_comm)
 
 
     /* Get the Server URL */
-    char url[NSSI_URL_LEN];
     nssi_get_url(transport, &url[0], NSSI_URL_LEN);
 
 
@@ -170,9 +168,6 @@ int opreg_c_server_main(nssi_rpc_transport transport, MPI_Comm server_comm)
     opreg_svc.max_reqs = -1;
 
     log_debug(opreg_debug_level, "Starting Server: url = %s", url);
-
-    /* Tell the NSSI server to output log data */
-    /* rpc_debug_level = opreg_debug_level; */
 
     /* start processing requests, the client will send a request to exit when done */
     rc = nssi_service_start(&opreg_svc);

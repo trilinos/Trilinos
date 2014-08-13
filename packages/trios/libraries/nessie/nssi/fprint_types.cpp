@@ -281,6 +281,7 @@ void fprint_nssi_result_header(
     out << subprefix << " fetch_result = " << hdr->fetch_result << std::endl;
     out << subprefix << " result_size = " << hdr->result_size << std::endl;
     fprint_NNTI_buffer(out, "res_addr", subprefix.c_str(), &hdr->result_addr);
+    fprint_NNTI_buffer(out, "res_ack_addr", subprefix.c_str(), &hdr->result_ack_addr);
     out << subprefix << " rc = " << hdr->rc << std::endl;
 
     /* footer */
