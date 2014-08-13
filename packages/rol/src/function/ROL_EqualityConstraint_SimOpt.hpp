@@ -45,7 +45,7 @@
 #define ROL_EQUALITY_CONSTRAINT_SIMOPT_H
 
 #include "ROL_EqualityConstraint.hpp"
-#include "ROL_Vector.hpp"
+#include "ROL_Vector_SimOpt.hpp"
 #include "ROL_Types.hpp"
 #include <iostream>
 
@@ -94,117 +94,77 @@ namespace ROL {
 template <class Real>
 class EqualityConstraint_SimOpt : public EqualityConstraint<Real> {
 public:
+  /** \brief Evaluate the constraint operator \f$c:\mathcal{U}\times\mathcal{Z} \rightarrow \mathcal{C}\f$
+             at \f$(u,z)\f$.
 
-  /** \brief Evaluate the constraint operator \f$c:\mathcal{X} \rightarrow \mathcal{C}\f$
-             at \f$x\f$.
-
-             @param[out]      c   is the result of evaluating the constraint operator at @b x; a constraint-space vector
-             @param[in]       x   is the constraint argument; an optimization-space vector
+             @param[out]      c   is the result of evaluating the constraint operator at @b \f$(u,z)\f$; a constraint-space vector
+             @param[in]       u   is the constraint argument; an optimization-space vector
+             @param[in]       z   is the constraint argument; an optimization-space vector
              @param[in,out]   tol is a tolerance for inexact evaluations; currently unused
 
-             On return, \f$\mathsf{c} = c(x)\f$,
-             where \f$\mathsf{c} \in \mathcal{C}\f$, \f$\mathsf{x} \in \mathcal{X}\f$.
+             On return, \f$\mathsf{c} = c(u,z)\f$,
+             where \f$\mathsf{c} \in \mathcal{C}\f$, \f$\mathsf{u} \in \mathcal{U}\f$, and $\f$\mathsf{z} \in\mathcal{Z}\f$.
 
              ---
   */
   virtual void value(Vector<Real> &c,
-                     const Vector<Real> &x,
+                     const Vector<Real> &u,
+                     const Vector<Real> &z,
                      Real &tol) = 0;
 
- 
-  /** \brief Apply the constraint Jacobian at \f$x\f$, \f$c'(x) \in L(\mathcal{X}, \mathcal{C})\f$,
-             to vector \f$v\f$.
 
-             @param[out]      jv  is the result of applying the constraint Jacobian to @b v at @b x; a constraint-space vector
+  /** \brief Apply the partial constraint Jacobian at \f$(u,z)\f$, 
+             \f$c_u(u,z) \in L(\mathcal{U}, \mathcal{C})\f$,
+             to the vector \f$v\f$.
+
+             @param[out]      jv  is the result of applying the constraint Jacobian to @b v at @b \f$(u,z)\f$; a constraint-space vector
              @param[in]       v   is an optimization-space vector
-             @param[in]       x   is the constraint argument; an optimization-space vector
+             @param[in]       u   is the constraint argument; an optimization-space vector
+             @param[in]       z   is the constraint argument; an optimization-space vector
              @param[in,out]   tol is a tolerance for inexact evaluations; currently unused
 
-             On return, \f$\mathsf{jv} = c'(x)v\f$, where
-             \f$v \in \mathcal{X}\f$, \f$\mathsf{jv} \in \mathcal{C}\f$. 
-
-             ---
-  */
-  virtual void applyJacobian(Vector<Real> &jv,
-                             const Vector<Real> &v,
-                             const Vector<Real> &x,
-                             Real &tol) { 
-    this->applyJacobian_1(jv,v,x,tol);
-    Teuchos::RCP<Vector<Real> > jv2 = jv.clone();
-    this->applyJacobian_2(*jv2,v,x,tol);
-    jv.plus(*jv2);
-  }
-
-
-  /** \brief Apply the partial constraint Jacobian at \f$x=(u,z)\f$, \f$c_u(u,z) \in L(\mathcal{U}, \mathcal{C})\f$,
-             to the \f$u\f$-component of the vector \f$v\f$.
-
-             @param[out]      jv  is the result of applying the constraint Jacobian to @b v at @b x; a constraint-space vector
-             @param[in]       v   is an optimization-space vector
-             @param[in]       x   is the constraint argument; an optimization-space vector
-             @param[in,out]   tol is a tolerance for inexact evaluations; currently unused
-
-             On return, \f$\mathsf{jv} = c_u(u,z)v_u\f$, where
-             \f$v \in \mathcal{X}\f$, \f$\mathsf{jv} \in \mathcal{C}\f$.
+             On return, \f$\mathsf{jv} = c_u(u,z)v\f$, where
+             \f$v \in \mathcal{U}\f$, \f$\mathsf{jv} \in \mathcal{C}\f$.
 
              ---
   */
   virtual void applyJacobian_1(Vector<Real> &jv,
                                const Vector<Real> &v,
-                               const Vector<Real> &x,
+                               const Vector<Real> &u,
+                               const Vector<Real> &z,
                                Real &tol) = 0;
 
 
-  /** \brief Apply the partial constraint Jacobian at \f$x=(u,z)\f$, \f$c_z(u,z) \in L(\mathcal{Z}, \mathcal{C})\f$,
-             to the \f$z\f$-component of the vector \f$v\f$.
+  /** \brief Apply the partial constraint Jacobian at \f$(u,z)\f$, 
+             \f$c_z(u,z) \in L(\mathcal{Z}, \mathcal{C})\f$,
+             to the vector \f$v\f$.
 
-             @param[out]      jv  is the result of applying the constraint Jacobian to @b v at @b x; a constraint-space vector
+             @param[out]      jv  is the result of applying the constraint Jacobian to @b v at @b \f$(u,z)\f$; a constraint-space vector
              @param[in]       v   is an optimization-space vector
-             @param[in]       x   is the constraint argument; an optimization-space vector
+             @param[in]       u   is the constraint argument; an optimization-space vector
+             @param[in]       z   is the constraint argument; an optimization-space vector
              @param[in,out]   tol is a tolerance for inexact evaluations; currently unused
 
-             On return, \f$\mathsf{jv} = c_z(u,z)v_z\f$, where
-             \f$v \in \mathcal{X}\f$, \f$\mathsf{jv} \in \mathcal{C}\f$. 
+             On return, \f$\mathsf{jv} = c_z(u,z)v\f$, where
+             \f$v \in \mathcal{Z}\f$, \f$\mathsf{jv} \in \mathcal{C}\f$. 
 
              ---
   */
   virtual void applyJacobian_2(Vector<Real> &jv,
                                const Vector<Real> &v,
-                               const Vector<Real> &x,
+                               const Vector<Real> &u,
+                               const Vector<Real> &z,
                                Real &tol) = 0; 
 
 
-  /** \brief Apply the adjoint of the the constraint Jacobian at \f$x\f$, \f$c'(x)^* \in L(\mathcal{C}^*, \mathcal{X}^*)\f$,
-             to vector \f$v\f$.
-
-             @param[out]      ajv is the result of applying the adjoint of the constraint Jacobian to @b v at @b x; a dual optimization-space vector
-             @param[in]       v   is a dual constraint-space vector
-             @param[in]       x   is the constraint argument; an optimization-space vector
-             @param[in,out]   tol is a tolerance for inexact evaluations; currently unused
-
-             On return, \f$\mathsf{ajv} = c'(x)^*v\f$, where
-             \f$v \in \mathcal{C}^*\f$, \f$\mathsf{ajv} \in \mathcal{X}^*\f$. \n\n
-             The default implementation is a finite-difference approximation.
-
-             ---
-  */
-  virtual void applyAdjointJacobian(Vector<Real> &ajv,
-                                    const Vector<Real> &v,
-                                    const Vector<Real> &x,
-                                    Real &tol) { 
-    this->applyAdjointJacobian_1(ajv,v,x,tol);
-    Teuchos::RCP<Vector<Real> > ajv2 = ajv.clone();
-    this->applyAdjointJacobian_2(*ajv2,v,x,tol);
-    ajv.plus(*ajv2);
-  }
-
-
-  /** \brief Apply the adjoint of the partial constraint Jacobian at \f$x=(u,z)\f$, \f$c_u(u,z)^* \in L(\mathcal{C}^*, \mathcal{U}^*)\f$,
+  /** \brief Apply the adjoint of the partial constraint Jacobian at \f$(u,z)\f$, 
+             \f$c_u(u,z)^* \in L(\mathcal{C}^*, \mathcal{U}^*)\f$,
              to the vector \f$v\f$.
 
-             @param[out]      ajv is the result of applying the adjoint of the constraint Jacobian to @b v at @b x; a dual optimization-space vector
+             @param[out]      ajv is the result of applying the adjoint of the constraint Jacobian to @b v at @b (u,z); a dual optimization-space vector
              @param[in]       v   is a dual constraint-space vector
-             @param[in]       x   is the constraint argument; an optimization-space vector
+             @param[in]       u   is the constraint argument; an optimization-space vector
+             @param[in]       z   is the constraint argument; an optimization-space vector
              @param[in,out]   tol is a tolerance for inexact evaluations; currently unused
 
              On return, \f$\mathsf{ajv} = c_u(u,z)^*v\f$, where
@@ -214,19 +174,22 @@ public:
   */
   virtual void applyAdjointJacobian_1(Vector<Real> &ajv,
                                       const Vector<Real> &v,
-                                      const Vector<Real> &x,
+                                      const Vector<Real> &u,
+                                      const Vector<Real> &z,
                                       Real &tol) = 0;
 
 
-  /** \brief Apply the adjoint of the partial constraint Jacobian at \f$x=(u,z)\f$, \f$c_z(u,z)^* \in L(\mathcal{C}^*, \mathcal{Z}^*)\f$,
+  /** \brief Apply the adjoint of the partial constraint Jacobian at \f$(u,z)\f$, 
+             \f$c_z(u,z)^* \in L(\mathcal{C}^*, \mathcal{Z}^*)\f$,
              to vector \f$v\f$.
 
-             @param[out]      ajv is the result of applying the adjoint of the constraint Jacobian to @b v at @b x; a dual optimization-space vector
+             @param[out]      ajv is the result of applying the adjoint of the constraint Jacobian to @b v at @b \f$(u,z)\f$; a dual optimization-space vector
              @param[in]       v   is a dual constraint-space vector
-             @param[in]       x   is the constraint argument; an optimization-space vector
+             @param[in]       u   is the constraint argument; an optimization-space vector
+             @param[in]       z   is the constraint argument; an optimization-space vector
              @param[in,out]   tol is a tolerance for inexact evaluations; currently unused
 
-             On return, \f$\mathsf{ajv} = c'(u,z)^*v\f$, where
+             On return, \f$\mathsf{ajv} = c_z(u,z)^*v\f$, where
              \f$v \in \mathcal{C}^*\f$, \f$\mathsf{ajv} \in \mathcal{Z}^*\f$.
 
              ---
@@ -237,50 +200,15 @@ public:
                                       Real &tol) = 0;
 
 
-  /** \brief Apply the adjoint of the constraint Hessian at \f$x\f$,
-             \f$c''(x)^* \in L(L(\mathcal{C}^*, \mathcal{X}^*), \mathcal{X}^*)\f$,
-             to vector \f$v\f$ in direction \f$w\f$.
-
-             @param[out]      ahwv is the result of applying the adjoint of the constraint Hessian to @b v at @b x in direction @b w; a dual optimization-space vector
-             @param[in]       w    is the direction vector; a dual constraint-space vector
-             @param[in]       v    is a dual optimization-space vector
-             @param[in]       x    is the constraint argument; an optimization-space vector
-             @param[in,out]   tol  is a tolerance for inexact evaluations; currently unused
-
-             On return, \f$ \mathsf{ahuv} = c''(x)^*(w,v) \f$, where
-             \f$w \in \mathcal{C}^*\f$, \f$v \in \mathcal{X}^*\f$, and \f$\mathsf{ahuv} \in \mathcal{X}^*\f$. 
-
-             ---
-  */
-  virtual void applyAdjointHessian(Vector<Real> &ahwv,
-                                   const Vector<Real> &w,
-                                   const Vector<Real> &v,
-                                   const Vector<Real> &x,
-                                   Real &tol) {
-    Teuchos::RCP<Vector<Real> > C11 = ahwv.clone();
-    Teuchos::RCP<Vector<Real> > C12 = ahwv.clone();
-    Teuchos::RCP<Vector<Real> > C21 = ahwv.clone();
-    Teuchos::RCP<Vector<Real> > C22 = ahwv.clone();
-    this->applyAdjointHessian_11(*C11,w,v,x,tol);
-    this->applyAdjointHessian_12(*C12,w,v,x,tol);
-    this->applyAdjointHessian_21(*C21,w,v,x,tol);
-    this->applyAdjointHessian_22(*C22,w,v,x,tol);
-    ahwv.zero();
-    ahwv.plus(*C11); 
-    ahwv.plus(*C21); 
-    ahwv.plus(*C12); 
-    ahwv.plus(*C22); 
-  }
-
-
-  /** \brief Apply the adjoint of the partial constraint Hessian at \f$x=(u,z)\f$,
+  /** \brief Apply the adjoint of the partial constraint Hessian at \f$(u,z)\f$,
              \f$c_{uu}(u,z)^* \in L(L(\mathcal{C}^*, \mathcal{U}^*), \mathcal{U}^*)\f$,
              to vector \f$v\f$ in direction \f$w\f$.
 
-             @param[out]      ahwv is the result of applying the adjoint of the constraint Hessian to @b v at @b x in direction @b w; a dual optimization-space vector
+             @param[out]      ahwv is the result of applying the adjoint of the constraint Hessian to @b v at @b \f$(u,z)\f$ in direction @b w; a dual optimization-space vector
              @param[in]       w    is the direction vector; a dual constraint-space vector
              @param[in]       v    is a dual optimization-space vector
-             @param[in]       x    is the constraint argument; an optimization-space vector
+             @param[in]       u    is the constraint argument; an optimization-space vector
+             @param[in]       z    is the constraint argument; an optimization-space vector
              @param[in,out]   tol  is a tolerance for inexact evaluations; currently unused
 
              On return, \f$ \mathsf{ahwv} = c_{uu}(u,z)^*(w,v) \f$, where
@@ -291,18 +219,20 @@ public:
   virtual void applyAdjointHessian_11(Vector<Real> &ahwv,
                                       const Vector<Real> &w,
                                       const Vector<Real> &v,
-                                      const Vector<Real> &x,
+                                      const Vector<Real> &u,
+                                      const Vector<Real> &z,
                                       Real &tol) = 0;
 
 
-  /** \brief Apply the adjoint of the partial constraint Hessian at \f$x=(u,z)\f$,
+  /** \brief Apply the adjoint of the partial constraint Hessian at \f$(u,z)\f$,
              \f$c_{uz}(u,z)^* \in L(L(\mathcal{C}^*, \mathcal{U}^*), \mathcal{Z}^*)\f$,
              to vector \f$v\f$ in direction \f$w\f$.
 
-             @param[out]      ahwv is the result of applying the adjoint of the constraint Hessian to @b v at @b x in direction @b w; a dual optimization-space vector
+             @param[out]      ahwv is the result of applying the adjoint of the constraint Hessian to @b v at @b \f$(u,z)\f$ in direction @b w; a dual optimization-space vector
              @param[in]       w    is the direction vector; a dual constraint-space vector
              @param[in]       v    is a dual optimization-space vector
-             @param[in]       x    is the constraint argument; an optimization-space vector
+             @param[in]       u    is the constraint argument; an optimization-space vector
+             @param[in]       z    is the constraint argument; an optimization-space vector
              @param[in,out]   tol  is a tolerance for inexact evaluations; currently unused
 
              On return, \f$ \mathsf{ahwv} = c_{uz}(u,z)^*(w,v) \f$, where
@@ -313,18 +243,20 @@ public:
   virtual void applyAdjointHessian_12(Vector<Real> &ahwv,
                                       const Vector<Real> &w,
                                       const Vector<Real> &v,
-                                      const Vector<Real> &x,
+                                      const Vector<Real> &u,
+                                      const Vector<Real> &z,
                                       Real &tol) = 0;
 
 
-  /** \brief Apply the adjoint of the partial constraint Hessian at \f$x=(u,z)\f$,
-             \f$c_{zu}(x)^* \in L(L(\mathcal{C}^*, \mathcal{Z}^*), \mathcal{U}^*)\f$,
+  /** \brief Apply the adjoint of the partial constraint Hessian at \f$(u,z)\f$,
+             \f$c_{zu}(u,z)^* \in L(L(\mathcal{C}^*, \mathcal{Z}^*), \mathcal{U}^*)\f$,
              to vector \f$v\f$ in direction \f$w\f$.
 
-             @param[out]      ahwv is the result of applying the adjoint of the constraint Hessian to @b v at @b x in direction @b w; a dual optimization-space vector
+             @param[out]      ahwv is the result of applying the adjoint of the constraint Hessian to @b v at @b \f$(u,z)\f$ in direction @b w; a dual optimization-space vector
              @param[in]       w    is the direction vector; a dual constraint-space vector
              @param[in]       v    is a dual optimization-space vector
-             @param[in]       x    is the constraint argument; an optimization-space vector
+             @param[in]       u    is the constraint argument; an optimization-space vector
+             @param[in]       z    is the constraint argument; an optimization-space vector
              @param[in,out]   tol  is a tolerance for inexact evaluations; currently unused
 
              On return, \f$ \mathsf{ahwv} = c_{zu}(u,z)^*(w,v) \f$, where
@@ -335,18 +267,20 @@ public:
   virtual void applyAdjointHessian_21(Vector<Real> &ahwv,
                                       const Vector<Real> &w,
                                       const Vector<Real> &v,
-                                      const Vector<Real> &x,
+                                      const Vector<Real> &u,
+                                      const Vector<Real> &z,
                                       Real &tol) = 0;
 
 
-  /** \brief Apply the adjoint of the partial constraint Hessian at \f$x=(u,z)\f$,
+  /** \brief Apply the adjoint of the partial constraint Hessian at \f$(u,z)\f$,
              \f$c_{zz}(u,z)^* \in L(L(\mathcal{C}^*, \mathcal{Z}^*), \mathcal{Z}^*)\f$,
              to vector \f$v\f$ in direction \f$w\f$.
 
-             @param[out]      ahwv is the result of applying the adjoint of the constraint Hessian to @b v at @b x in direction @b w; a dual optimization-space vector
+             @param[out]      ahwv is the result of applying the adjoint of the constraint Hessian to @b v at @b \f$(u,z)\f$ in direction @b w; a dual optimization-space vector
              @param[in]       w    is the direction vector; a dual constraint-space vector
              @param[in]       v    is a dual optimization-space vector
-             @param[in]       x    is the constraint argument; an optimization-space vector
+             @param[in]       u    is the constraint argument; an optimization-space vector
+             @param[in]       z    is the constraint argument; an optimization-space vector
              @param[in,out]   tol  is a tolerance for inexact evaluations; currently unused
 
              On return, \f$ \mathsf{ahwv} = c_{zz}(u,z)^*(w,v) \f$, where
@@ -357,7 +291,8 @@ public:
   virtual void applyAdjointHessian_22(Vector<Real> &ahwv,
                                       const Vector<Real> &w,
                                       const Vector<Real> &v,
-                                      const Vector<Real> &x,
+                                      const Vector<Real> &u,
+                                      const Vector<Real> &z,
                                       Real &tol) = 0;
 
 
@@ -443,6 +378,75 @@ public:
   /** \brief Check if the vector, v, is feasible
   */
   virtual bool isFeasible( const Vector<Real> &v ) { return true; }
+
+  virtual void value(Vector<Real> &c,
+                     const Vector<Real> &x,
+                     Real &tol) {
+    const Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const Vector_SimOpt<Real> >(
+      Teuchos::dyn_cast<const Vector<Real> >(x));
+    this->value(c,*(xs.get_1()),*(xs.get_2()),tol);
+  }
+
+
+  virtual void applyJacobian(Vector<Real> &jv,
+                             const Vector<Real> &v,
+                             const Vector<Real> &x,
+                             Real &tol) { 
+    const Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const Vector_SimOpt<Real> >(
+      Teuchos::dyn_cast<const Vector<Real> >(x));
+    const Vector_SimOpt<Real> &vs = Teuchos::dyn_cast<const Vector_SimOpt<Real> >(
+      Teuchos::dyn_cast<const Vector<Real> >(v));
+    this->applyJacobian_1(jv,*(vs.get_1()),*(xs.get_1()),*(xs.get_2()),tol);
+    Teuchos::RCP<Vector<Real> > jv2 = jv.clone();
+    this->applyJacobian_2(*jv2,*(vs.get_2()),*(xs.get_1()),*(xs.get_2())tol);
+    jv.plus(*jv2);
+  }
+
+
+  virtual void applyAdjointJacobian(Vector<Real> &ajv,
+                                    const Vector<Real> &v,
+                                    const Vector<Real> &x,
+                                    Real &tol) { 
+    Vector_SimOpt<Real> &ajvs = Teuchos::dyn_cast<Vector_SimOpt<Real> >(
+      Teuchos::dyn_cast<Vector<Real> >(ajv));
+    const Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const Vector_SimOpt<Real> >(
+      Teuchos::dyn_cast<const Vector<Real> >(x));
+    Teuchos::RCP<Vector<Real> > ajv1 = (ajvs.get_1())->clone();
+    this->applyAdjointJacobian_1(*ajv1,v,*(xs.get_1()),*(xs.get_2()),tol);
+    ajvs.set_1(*ajv1);
+    Teuchos::RCP<Vector<Real> > ajv2 = (ajvs.get_2())->clone();
+    this->applyAdjointJacobian_2(*ajv2,v,*(xs.get_1()),*(xs.get_2()),tol);
+    ajvs.set_2(*ajv2);
+  }
+
+
+  virtual void applyAdjointHessian(Vector<Real> &ahwv,
+                                   const Vector<Real> &w,
+                                   const Vector<Real> &v,
+                                   const Vector<Real> &x,
+                                   Real &tol) {
+    Vector_SimOpt<Real> &ahwvs = Teuchos::dyn_cast<Vector_SimOpt<Real> >(
+      Teuchos::dyn_cast<Vector<Real> >(ahwv));
+    const Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const Vector_SimOpt<Real> >(
+      Teuchos::dyn_cast<const Vector<Real> >(x));
+    const Vector_SimOpt<Real> &vs = Teuchos::dyn_cast<const Vector_SimOpt<Real> >(
+      Teuchos::dyn_cast<const Vector<Real> >(v));
+    // Block-row 1
+    Teuchos::RCP<Vector<Real> > C11 = (ahwvs.get_1())->clone();
+    Teuchos::RCP<Vector<Real> > C21 = (ahwvs.get_1())->clone();
+    this->applyAdjointHessian_11(*C11,w,*(vs.get_1()),*(xs.get_1()),*(xs.get_2()),tol);
+    this->applyAdjointHessian_21(*C21,w,*(vs.get_2()),*(xs.get_1()),*(xs.get_2()),tol);
+    C11->plus(*C21);
+    ahwvs.set_1(*C11); 
+    // Block-row 2
+    Teuchos::RCP<Vector<Real> > C12 = (ahwvs.get_2())->clone();
+    Teuchos::RCP<Vector<Real> > C22 = (ahwvs.get_2())->clone();
+    this->applyAdjointHessian_12(*C12,w,*(vs.get_1()),*(xs.get_1()),*(xs.get_2()),tol);
+    this->applyAdjointHessian_22(*C22,w,*(vs.get_2()),*(xs.get_1()),*(xs.get_2()),tol);
+    C22->plus(*C12);
+    ahwvs.set_2(*C22); 
+  }
+
 
 }; // class EqualityConstraint_SimOpt
 
