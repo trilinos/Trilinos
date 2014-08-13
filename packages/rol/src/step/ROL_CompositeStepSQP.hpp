@@ -79,7 +79,8 @@ private:
   Real Delta_;
 
   bool debugQN_;
-  bool debugTANGSUB_;
+  bool debugLM_;
+  bool debugTS_;
 
 public:
 
@@ -105,7 +106,8 @@ public:
     Delta_ = 1e2;
 
     debugQN_ = true;
-    debugTANGSUB_ = true;
+    debugLM_ = true;
+    debugTS_ = true;
   }
 
   /** \brief Initialize step.
@@ -150,10 +152,19 @@ public:
                 AlgorithmState<Real> &algo_state ) {
     //Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
     Real zerotol = 0.0;
-    Teuchos::RCP<Vector<Real> > n = s.clone();
-    Teuchos::RCP<Vector<Real> > c = l.clone();
+    Teuchos::RCP<Vector<Real> > n   = s.clone();
+    Teuchos::RCP<Vector<Real> > c   = l.clone();
+    Teuchos::RCP<Vector<Real> > t   = s.clone();
+    Teuchos::RCP<Vector<Real> > tCP = s.clone();
+    Teuchos::RCP<Vector<Real> > g   = x.clone();
+    Teuchos::RCP<Vector<Real> > Wg  = x.clone();
+    Teuchos::RCP<Vector<Real> > ajl = x.clone();
     con.value(*c, x, zerotol);
     computeQuasinormalStep(*n, *c, x, zeta_*Delta_, con);
+    obj.gradient(*g, x, zerotol);
+    con.applyAdjointJacobian(*ajl, l, x, zerotol);
+    g->plus(*ajl);
+    solveTangentialSubproblem(*t, *tCP, *Wg, x, *g, *n, l, Delta_, obj, con);
   }
 
   /** \brief Update step, if successful.
@@ -265,6 +276,12 @@ public:
 
     Real zerotol = 0.0;
 
+    if (debugLM_) {
+      std::stringstream hist;
+      hist << "\n  SQP_lagrange_multiplier\n";
+      std::cout << hist.str();
+    }
+
     /* Apply adjoint of constraint Jacobian to current multiplier. */
     Teuchos::RCP<Vector<Real> > ajl = x.clone();
     con.applyAdjointJacobian(*ajl, l, x, zerotol);
@@ -320,7 +337,9 @@ public:
   void computeQuasinormalStep(Vector<Real> &n, const Vector<Real> &c, const Vector<Real> &x, Real delta, EqualityConstraint<Real> &con) {
 
     if (debugQN_) {
-      std::cout << "\n  SQP_quasi-normal_step\n";
+      std::stringstream hist;
+      hist << "\n  SQP_quasi-normal_step\n";
+      std::cout << hist.str();
     }
 
     Real zero      = 0.0;
@@ -411,13 +430,14 @@ public:
              @param[in]       con   is the equality constraint object
 
   */
-  void solveTangentialSubproblem(Vector<Real> &t, Vector<Real> &tCP, Vector<Real> Wg,
+  void solveTangentialSubproblem(Vector<Real> &t, Vector<Real> &tCP, Vector<Real> &Wg,
                                  const Vector<Real> &x, const Vector<Real> &g, const Vector<Real> &n, const Vector<Real> &l,
                                  Real delta, Objective<Real> &obj, EqualityConstraint<Real> &con) {
 
     /* Initialization of the CG step. */
-    Real zero = 0.0;
-    Real zerotol = 0.0;
+    Real zero      =  0.0;
+    Real zerotol   =  0.0;
+    Real negative1 = -1.0;
     int iter = 1;
     int flag = 0;
     t.zero();
@@ -431,9 +451,11 @@ public:
     obj.hessVec(*r, n, x, zerotol);
     con.applyAdjointHessian(*vtemp, l, n, x, zerotol);
     r->plus(*vtemp);
-    Real normg = r->norm();
+    Real normg  = r->norm();
     Real normWg = zero;
     Real normWr = zero;
+    Real pHp    = zero;
+    Real rp     = zero;
 
     std::vector<Teuchos::RCP<Vector<Real > > >  p;   // stores search directions
     std::vector<Teuchos::RCP<Vector<Real > > >  Hp;  // stores hessvec's applied to p's
@@ -442,21 +464,26 @@ public:
 
     Real rptol = 1e-12;
 
-    if (debugTANGSUB_) {
-      std::cout << "\n  SQP_tangential_subproblem\n";
-      std::cout << "  iter    ||W*r||/||W*r0||     ||D*s||        delta       ||Jac*s||\n";
+    if (debugTS_) {
+      std::stringstream hist;
+      hist << "\n  SQP_tangential_subproblem\n";
+      hist << std::setw(6)  << std::right << "iter" << std::setw(18) << "||Wr||/||Wr0||" << std::setw(15) << "||s||";
+      hist << std::setw(15) << "delta" << std::setw(15) << "||c'(x)s||" << "\n";
+      std::cout << hist.str();
     }
 
     if (normg == 0) {
-      if (debugTANGSUB_) {
-        std::cout << "    >>> Tangential subproblem: Initial gradient is zero! \n";
+      if (debugTS_) {
+        std::stringstream hist;
+        hist << "    >>> Tangential subproblem: Initial gradient is zero! \n";
+        std::cout << hist;
       }
       iter = 0; Wg.zero(); flag = 0;
       return;
     }
 
     /* Start CG loop. */
-    while (iter < maxiterCG_)
+    while (iter < maxiterCG_) {
 
       // Store tangential Cauchy point (which is the current iterate in the second iteration).
       if (iter == 2) {
@@ -469,13 +496,15 @@ public:
         Real tol = pgtol_;
         con.solveAugmentedSystem(*Wr, *ltemp, *r, *czero, x, tol);
         Wg.set(*Wr);
-        Real normWg = Wg.norm();
+        normWg = Wg.norm();
         // Check if done (small initial projected residual).
         if (normWg < 1e-14) {
           flag = 0;
           iter = iter-1;
-          if (debugTANGSUB_) {
-            std::cout << "  Initial projected residual is close to zero! \n";
+          if (debugTS_) {
+            std::stringstream hist;
+            hist << "  Initial projected residual is close to zero! \n";
+            std::cout << hist;
           }
           return;
         }
@@ -489,22 +518,48 @@ public:
       }
       normWr = Wr->norm();
 
-      if (debugTANGSUB_) {
-         Teuchos::RCP<Vector<Real> > ct = l.clone();
-         con.applyJacobian(*ct, t, x, zerotol);
-         Real linc = ct->norm();
-         printf("%5d     %12.5e     %12.5e  %12.5e  %12.5e \n", iter-1, normWr/normWg, t->norm(), delta, linc);
+      if (debugTS_) {
+        Teuchos::RCP<Vector<Real> > ct = l.clone();
+        con.applyJacobian(*ct, t, x, zerotol);
+        Real linc = ct->norm();
+        std::stringstream hist;
+        hist << std::scientific << std::setprecision(6);
+        hist << std::setw(6)  << std::right << iter-1 << std::setw(18) << normWr/normWg << std::setw(15) << t.norm();
+        hist << std::setw(15) << delta << std::setw(15) << linc << "\n";
+        std::cout << hist.str();
       }
 
       // Check if done (small relative residual).
       if (normWr/normWg < tolCG_) {
         flag = 0;
         iter = iter-1;
-        if (debugTANGSUB_) {
+        if (debugTS_) {
           std::cout << "  || W(g + H*(n+s)) || <= cgtol*|| W(g + H*n)|| \n";
         }
         return;
       }
+
+      // Full orthogonalization.
+      p.push_back(Wr->clone());
+      (p[iter-1])->set(*Wr);
+      (p[iter-1])->scale(negative1);
+      for (int j=1; j<iter; j++) {
+        Real scal = (p[iter-1])->dot(*(Hp[j-1])) / (p[j-1])->dot(*(Hp[j-1]));
+        Teuchos::RCP<Vector<Real> > pj = (p[j-1])->clone();
+        pj->set(*p[j-1]); pj->scale(-scal);
+        (p[iter-1])->plus(*pj);
+      }
+
+      Hp.push_back(x.clone());
+      obj.hessVec(*(Hp[iter-1]), *(p[iter-1]), x, zerotol);
+      con.applyAdjointHessian(*vtemp, l, *(p[iter-1]), x, zerotol);
+      (Hp[iter-1])->plus(*vtemp);
+      pHp = (p[iter-1])->dot(*(Hp[iter-1]));
+      rp  = (p[iter-1])->dot(*r);
+
+      iter++;
+
+    } // end while (iter < maxiterCG_)
 
 
   } // solveTangentialSubproblem
