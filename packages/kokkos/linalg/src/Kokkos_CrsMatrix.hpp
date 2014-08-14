@@ -53,18 +53,9 @@
 #include <assert.h>
 #include <algorithm>
 
-#include <Kokkos_View.hpp>
-#include <Kokkos_Atomic.hpp>
-#ifdef KOKKOS_HAVE_CUDA
-#include <Kokkos_Cuda.hpp>
-#endif
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core.hpp>
 #include <Kokkos_StaticCrsGraph.hpp>
 #include <Kokkos_MV.hpp>
-
-#ifndef _OPENMP
-#include <Kokkos_Threads.hpp>
-#endif // ! _OPENMP
 
 #ifdef KOKKOS_USE_CUSPARSE
 #  include <cusparse.h>
@@ -77,7 +68,7 @@
 #  include <Kokkos_CrsMatrix_MKL.hpp>
 #endif // KOKKOS_USE_MKL
 
-#include <Kokkos_Vectorization.hpp>
+//#include <Kokkos_Vectorization.hpp>
 #include <impl/Kokkos_Error.hpp>
 
 namespace Kokkos {
@@ -409,6 +400,18 @@ public:
   CrsMatrix()
     : graph(), values(), _numRows (0), _numCols (0), _nnz (0)
     {}
+
+  //------------------------------------
+  /// \brief  Copy Constructor
+  ///
+  template<class SrcType>
+  CrsMatrix(const SrcType & B) {
+    graph = B.graph;
+    values = B.values;
+    _numRows = B.numRows();
+    _numCols = B.numCols();
+    _nnz = B.nnz();
+  }
 
   //------------------------------------
   /// \brief  Construct with a graph that will be shared.
@@ -950,7 +953,20 @@ generateHostGraph ( OrdinalType nrows,
 
 }
 
-
+template<class DeviceType>
+int RowsPerThread(const int NNZPerRow) {
+  int result = 2;
+  while(result*NNZPerRow <= 2048) {
+    result*=2;
+  }
+  return result/2;
+}
+#ifdef KOKKOS_HAVE_CUDA
+template<>
+int RowsPerThread<Kokkos::Cuda>(const int NNZPerRow) {
+  return 1;
+}
+#endif
 
 //----------------------------------------------------------------------------
 
@@ -1028,6 +1044,16 @@ struct MV_MultiplyFunctor {
   DomainVector  m_x ;
   RangeVector  m_y ;
   size_type n;
+  int rows_per_thread;
+
+  MV_MultiplyFunctor(const  CoeffVector1 beta_,
+      const CoeffVector2 alpha_,
+      const CrsMatrix  m_A_,
+      const DomainVector  m_x_,
+      const RangeVector  m_y_,
+      const size_type n_,
+      const int rows_per_thread_):
+      beta(beta_), alpha(alpha_), m_A(m_A_), m_x(m_x_), m_y(m_y_), n(n_), rows_per_thread(rows_per_thread_) {}
 
   //--------------------------------------------------------------------------
 
@@ -1036,12 +1062,7 @@ struct MV_MultiplyFunctor {
   void strip_mine (const team_member & dev, const size_type & iRow, const size_type& kk) const {
 
     value_type sum[UNROLL];
-    // FIXME (mfh 29 Sep 2013) These pragmas ("ivdep", "unroll", and
-    // "loop count") should be protected by macros that identify the
-    // compilers which support them.
-    //
-    // FIXME (mfh 29 Sep 2013) Is a "loop count" of "24" a good idea
-    // when the matrix has many fewer entries per row than that?
+
 #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
@@ -1195,7 +1216,8 @@ struct MV_MultiplyFunctor {
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const team_member & dev) const {
-    const size_type iRow = vectorization::global_thread_rank(dev);
+    for(int loop = 0; loop < rows_per_thread; loop++) {
+      const size_type iRow = vectorization::global_thread_rank(dev) * rows_per_thread + loop;
     if(iRow>=m_A.numRows()) return;
 
     size_type kk = 0;
@@ -1291,6 +1313,7 @@ struct MV_MultiplyFunctor {
           }
 #endif // KOKKOS_FAST_COMPILE
       }
+    }
   };
 
   template<class RangeVector,
@@ -1317,45 +1340,60 @@ struct MV_MultiplyFunctor {
     CrsMatrix  m_A ;
     DomainVector  m_x ;
     RangeVector  m_y ;
+    int rows_per_thread;
+
+    MV_MultiplySingleFunctor(
+        const  CoeffVector1 beta_,
+        const CoeffVector2 alpha_,
+        const CrsMatrix  m_A_,
+        const DomainVector  m_x_,
+        const RangeVector  m_y_,
+        const int rows_per_thread_):
+        beta(beta_), alpha(alpha_),
+        m_A(m_A_), m_x(m_x_), m_y(m_y_),
+        rows_per_thread(rows_per_thread_) {}
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const team_member & dev) const {
-      const size_type iRow = vectorization::global_thread_rank(dev);
-      if(iRow>=m_A.numRows()) return;
-      const SparseRowViewConst<CrsMatrix> row = m_A.rowConst(iRow);
-      const size_type row_length = row.length ;
-      value_type sum = 0;
 
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
-#pragma unroll
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_LOOPCOUNT
-#pragma loop count (15)
-#endif
-      for (size_type iEntry = vectorization::begin(); iEntry < row_length; iEntry += vectorization::increment) {
-        sum += row.value(iEntry) * m_x(row.colidx(iEntry));
-      }
+      for(int loop = 0; loop < rows_per_thread; loop++) {
+        const size_type iRow = vectorization::global_thread_rank(dev)*rows_per_thread + loop;
+        if(iRow>=m_A.numRows()) return;
+        const SparseRowViewConst<CrsMatrix> row = m_A.rowConst(iRow);
+        const size_type row_length = row.length ;
+        value_type sum = 0;
 
-      sum = vectorization::reduce(sum);
-
-
-      if (vectorization::is_lane_0(dev)) {
-        if (doalpha == -1) sum *= value_type(-1);
-        else if (doalpha * doalpha != 1) {
-          sum *= alpha(0);
+        #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+        #pragma ivdep
+        #endif
+        #ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+        #pragma unroll
+        #endif
+        #ifdef KOKKOS_HAVE_PRAGMA_LOOPCOUNT
+        #pragma loop count (15)
+        #endif
+        for (size_type iEntry = vectorization::begin(); iEntry < row_length; iEntry += vectorization::increment) {
+          sum += row.value(iEntry) * m_x(row.colidx(iEntry));
         }
 
-        if (dobeta == 0) {
-          m_y(iRow) = sum ;
-        } else if (dobeta == 1) {
-          m_y(iRow) += sum ;
-        } else if (dobeta == -1) {
-          m_y(iRow) = -m_y(iRow) +  sum;
-        } else {
-          m_y(iRow) = beta(0) * m_y(iRow) + sum;
+        sum = vectorization::reduce(sum);
+
+
+        if (vectorization::is_lane_0(dev)) {
+          if (doalpha == -1) sum *= value_type(-1);
+          else if (doalpha * doalpha != 1) {
+            sum *= alpha(0);
+          }
+
+          if (dobeta == 0) {
+            m_y(iRow) = sum ;
+          } else if (dobeta == 1) {
+            m_y(iRow) += sum ;
+          } else if (dobeta == -1) {
+            m_y(iRow) = -m_y(iRow) +  sum;
+          } else {
+            m_y(iRow) = beta(0) * m_y(iRow) + sum;
+          }
         }
       }
     }
@@ -1836,14 +1874,15 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
 template< class DeviceType >
 Kokkos::TeamPolicy< DeviceType >
 inline
-mv_multiply_team_policy( const int nrow , const int increment )
+mv_multiply_team_policy( const int nrow , const int rows_per_thread, const int increment )
 {
 #ifdef KOKKOS_HAVE_CUDA
-  const int teamsize = Impl::is_same< DeviceType , Kokkos::Cuda>::value ? 256 : 1 ;
+  const int teamsize = Impl::is_same< DeviceType , Kokkos::Cuda>::value ? 256 : hwloc::get_available_threads_per_core() ;
 #else
-  const int teamsize = 1;
+  const int teamsize = hwloc::get_available_threads_per_core();
 #endif
-  const int nteams = (nrow*increment+teamsize-1)/teamsize;
+  const int nteams = (((nrow+rows_per_thread-1)/rows_per_thread)
+                      *increment+teamsize-1)/teamsize;
   return Kokkos::TeamPolicy< DeviceType >( nteams , teamsize );
 }
 
@@ -1914,90 +1953,74 @@ mv_multiply_team_policy( const int nrow , const int increment )
         typedef MV_MultiplySingleFunctor<RangeVectorType, CrsMatrixType, DomainVectorType,
                                  CoeffVector1Type, CoeffVector2Type, doalpha, dobeta,vec_type::increment > OpType ;
 
-        OpType op ;
         const typename CrsMatrixType::ordinal_type nrow = A.numRows();
-        op.m_A = A ;
-        op.m_x = x;
-        op.m_y = y;
-        op.beta = betav;
-        op.alpha = alphav;
 
-        Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >( nrow , vec_type::increment ) , op );
+        OpType op(betav,alphav,A,x,y,RowsPerThread<typename RangeVector::device_type >(NNZPerRow)) ;
+        Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >
+             ( nrow ,RowsPerThread<typename RangeVector::device_type >(NNZPerRow), vec_type::increment ) , op );
 
       } else if(NNZPerRow>=48) {
         typedef Vectorization<typename RangeVector::device_type,16> vec_type;
         typedef MV_MultiplySingleFunctor<RangeVectorType, CrsMatrixType, DomainVectorType,
                                  CoeffVector1Type, CoeffVector2Type, doalpha, dobeta,vec_type::increment > OpType ;
 
-        OpType op ;
         const typename CrsMatrixType::ordinal_type nrow = A.numRows();
-        op.m_A = A ;
-        op.m_x = x;
-        op.m_y = y;
-        op.beta = betav;
-        op.alpha = alphav;
-        Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >( nrow , vec_type::increment ) , op );
+
+        OpType op(betav,alphav,A,x,y,RowsPerThread<typename RangeVector::device_type >(NNZPerRow)) ;
+        Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >
+             ( nrow ,RowsPerThread<typename RangeVector::device_type >(NNZPerRow), vec_type::increment ) , op );
+
       } else if(NNZPerRow>=24) {
         typedef Vectorization<typename RangeVector::device_type,8> vec_type;
         typedef MV_MultiplySingleFunctor<RangeVectorType, CrsMatrixType, DomainVectorType,
                                  CoeffVector1Type, CoeffVector2Type, doalpha, dobeta,vec_type::increment > OpType ;
 
-        OpType op ;
         const typename CrsMatrixType::ordinal_type nrow = A.numRows();
-        op.m_A = A ;
-        op.m_x = x;
-        op.m_y = y;
-        op.beta = betav;
-        op.alpha = alphav;
-        Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >( nrow , vec_type::increment ) , op );
+
+        OpType op(betav,alphav,A,x,y,RowsPerThread<typename RangeVector::device_type >(NNZPerRow)) ;
+        Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >
+             ( nrow ,RowsPerThread<typename RangeVector::device_type >(NNZPerRow), vec_type::increment ) , op );
+
       } else if(NNZPerRow>=12) {
         typedef Vectorization<typename RangeVector::device_type,4> vec_type;
         typedef MV_MultiplySingleFunctor<RangeVectorType, CrsMatrixType, DomainVectorType,
                                  CoeffVector1Type, CoeffVector2Type, doalpha, dobeta,vec_type::increment > OpType ;
 
-        OpType op ;
         const typename CrsMatrixType::ordinal_type nrow = A.numRows();
-        op.m_A = A ;
-        op.m_x = x;
-        op.m_y = y;
-        op.beta = betav;
-        op.alpha = alphav;
-        Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >( nrow , vec_type::increment ) , op );
+
+        OpType op(betav,alphav,A,x,y,RowsPerThread<typename RangeVector::device_type >(NNZPerRow)) ;
+        Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >
+             ( nrow ,RowsPerThread<typename RangeVector::device_type >(NNZPerRow), vec_type::increment ) , op );
+
       } else if(NNZPerRow>=4) {
         typedef Vectorization<typename RangeVector::device_type,2> vec_type;
         typedef MV_MultiplySingleFunctor<RangeVectorType, CrsMatrixType, DomainVectorType,
                                  CoeffVector1Type, CoeffVector2Type, doalpha, dobeta,vec_type::increment > OpType ;
 
-        OpType op ;
         const typename CrsMatrixType::ordinal_type nrow = A.numRows();
-        op.m_A = A ;
-        op.m_x = x;
-        op.m_y = y;
-        op.beta = betav;
-        op.alpha = alphav;
-        Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >( nrow , vec_type::increment ) , op );
+
+        OpType op(betav,alphav,A,x,y,RowsPerThread<typename RangeVector::device_type >(NNZPerRow)) ;
+        Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >
+             ( nrow ,RowsPerThread<typename RangeVector::device_type >(NNZPerRow), vec_type::increment ) , op );
+
       } else {
         typedef Vectorization<typename RangeVector::device_type,1> vec_type;
         typedef MV_MultiplySingleFunctor<RangeVectorType, CrsMatrixType, DomainVectorType,
                                  CoeffVector1Type, CoeffVector2Type, doalpha, dobeta,vec_type::increment > OpType ;
 
-        OpType op ;
         const typename CrsMatrixType::ordinal_type nrow = A.numRows();
-        op.m_A = A ;
-        op.m_x = x;
-        op.m_y = y;
-        op.beta = betav;
-        op.alpha = alphav;
-        Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >( nrow , vec_type::increment ) , op );
+
+        OpType op(betav,alphav,A,x,y,RowsPerThread<typename RangeVector::device_type >(NNZPerRow)) ;
+        Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >
+             ( nrow ,RowsPerThread<typename RangeVector::device_type >(NNZPerRow), vec_type::increment ) , op );
+
       }
 #else // NOT KOKKOS_FAST_COMPILE
       typedef Vectorization<typename RangeVector::device_type,8> vec_type;
       typedef MV_MultiplySingleFunctor<RangeVectorType, CrsMatrixType, DomainVectorType,
                                CoeffVector1Type, CoeffVector2Type, 2, 2, vec_type::increment > OpType ;
 
-      OpType op ;
-
-      int numVecs = x.dimension_1();
+      int numVecs = x.dimension_1(); // == 1
       CoeffVector1 beta = betav;
       CoeffVector2 alpha = alphav;
 
@@ -2021,13 +2044,13 @@ mv_multiply_team_policy( const int nrow , const int increment )
 
               Kokkos::deep_copy(beta, h_b);
       }
+
       const typename CrsMatrixType::ordinal_type nrow = A.numRows();
-      op.m_A = A ;
-      op.m_x = x ;
-      op.m_y = y ;
-      op.beta = beta;
-      op.alpha = alpha;
-      Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >( nrow , vec_type::increment ) , op );
+
+      OpType op(beta,alpha,A,x,y,RowsPerThread<typename RangeVector::device_type >(NNZPerRow)) ;
+      Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >
+           ( nrow ,RowsPerThread<typename RangeVector::device_type >(NNZPerRow), vec_type::increment ) , op );
+
 
 #endif // KOKKOS_FAST_COMPILE
     }
@@ -2110,85 +2133,67 @@ template <class RangeVector,
           typedef MV_MultiplyFunctor<RangeVectorType, CrsMatrixType, DomainVectorType,
                                    CoeffVector1Type, CoeffVector2Type, doalpha, dobeta,vec_type::increment> OpType ;
 
-          OpType op ;
           const typename CrsMatrixType::ordinal_type nrow = A.numRows();
-          op.m_A = A ;
-          op.m_x = x;
-          op.m_y = y;
-          op.beta = betav;
-          op.alpha = alphav;
-          op.n = x.dimension(1);
-          Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >( nrow , vec_type::increment ) , op );
+
+          OpType op(betav,alphav,A,x,y,x.dimension_1(),RowsPerThread<typename RangeVector::device_type >(NNZPerRow)) ;
+          Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >
+               ( nrow ,RowsPerThread<typename RangeVector::device_type >(NNZPerRow), vec_type::increment ) , op );
+
         } else if(NNZPerRow>=48) {
           typedef Vectorization<typename RangeVector::device_type,8> vec_type;
           typedef MV_MultiplyFunctor<RangeVectorType, CrsMatrixType, DomainVectorType,
                                    CoeffVector1Type, CoeffVector2Type, doalpha, dobeta,vec_type::increment> OpType ;
 
-          OpType op ;
           const typename CrsMatrixType::ordinal_type nrow = A.numRows();
-          op.m_A = A ;
-          op.m_x = x;
-          op.m_y = y;
-          op.beta = betav;
-          op.alpha = alphav;
-          op.n = x.dimension(1);
-          Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >( nrow , vec_type::increment ) , op );
+
+          OpType op(betav,alphav,A,x,y,x.dimension_1(),RowsPerThread<typename RangeVector::device_type >(NNZPerRow)) ;
+          Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >
+               ( nrow ,RowsPerThread<typename RangeVector::device_type >(NNZPerRow), vec_type::increment ) , op );
+
         } else if(NNZPerRow>=16) {
           typedef Vectorization<typename RangeVector::device_type,8> vec_type;
           typedef MV_MultiplyFunctor<RangeVectorType, CrsMatrixType, DomainVectorType,
                                    CoeffVector1Type, CoeffVector2Type, doalpha, dobeta,vec_type::increment> OpType ;
 
-          OpType op ;
           const typename CrsMatrixType::ordinal_type nrow = A.numRows();
-          op.m_A = A ;
-          op.m_x = x;
-          op.m_y = y;
-          op.beta = betav;
-          op.alpha = alphav;
-          op.n = x.dimension(1);
-          Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >( nrow , vec_type::increment ) , op );
+
+          OpType op(betav,alphav,A,x,y,x.dimension_1(),RowsPerThread<typename RangeVector::device_type >(NNZPerRow)) ;
+          Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >
+               ( nrow ,RowsPerThread<typename RangeVector::device_type >(NNZPerRow), vec_type::increment ) , op );
+
         } else if(NNZPerRow>=12) {
           typedef Vectorization<typename RangeVector::device_type,4> vec_type;
           typedef MV_MultiplyFunctor<RangeVectorType, CrsMatrixType, DomainVectorType,
                                    CoeffVector1Type, CoeffVector2Type, doalpha, dobeta,vec_type::increment> OpType ;
 
-          OpType op ;
           const typename CrsMatrixType::ordinal_type nrow = A.numRows();
-          op.m_A = A ;
-          op.m_x = x;
-          op.m_y = y;
-          op.beta = betav;
-          op.alpha = alphav;
-          op.n = x.dimension(1);
-          Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >( nrow , vec_type::increment ) , op );
+
+          OpType op(betav,alphav,A,x,y,x.dimension_1(),RowsPerThread<typename RangeVector::device_type >(NNZPerRow)) ;
+          Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >
+               ( nrow ,RowsPerThread<typename RangeVector::device_type >(NNZPerRow), vec_type::increment ) , op );
+
         } else if(NNZPerRow>=4) {
           typedef Vectorization<typename RangeVector::device_type,2> vec_type;
           typedef MV_MultiplyFunctor<RangeVectorType, CrsMatrixType, DomainVectorType,
                                    CoeffVector1Type, CoeffVector2Type, doalpha, dobeta,vec_type::increment> OpType ;
 
-          OpType op ;
           const typename CrsMatrixType::ordinal_type nrow = A.numRows();
-          op.m_A = A ;
-          op.m_x = x;
-          op.m_y = y;
-          op.beta = betav;
-          op.alpha = alphav;
-          op.n = x.dimension(1);
-          Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >( nrow , vec_type::increment ) , op );
+
+          OpType op(betav,alphav,A,x,y,x.dimension_1(),RowsPerThread<typename RangeVector::device_type >(NNZPerRow)) ;
+          Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >
+               ( nrow ,RowsPerThread<typename RangeVector::device_type >(NNZPerRow), vec_type::increment ) , op );
+
         } else {
           typedef Vectorization<typename RangeVector::device_type,1> vec_type;
           typedef MV_MultiplyFunctor<RangeVectorType, CrsMatrixType, DomainVectorType,
                                    CoeffVector1Type, CoeffVector2Type, doalpha, dobeta,vec_type::increment> OpType ;
 
-          OpType op ;
           const typename CrsMatrixType::ordinal_type nrow = A.numRows();
-          op.m_A = A ;
-          op.m_x = x;
-          op.m_y = y;
-          op.beta = betav;
-          op.alpha = alphav;
-          op.n = x.dimension(1);
-          Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >( nrow , vec_type::increment ) , op );
+
+          OpType op(betav,alphav,A,x,y,x.dimension_1(),RowsPerThread<typename RangeVector::device_type >(NNZPerRow)) ;
+          Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >
+               ( nrow ,RowsPerThread<typename RangeVector::device_type >(NNZPerRow), vec_type::increment ) , op );
+
         }
       }
 
@@ -2228,13 +2233,11 @@ template <class RangeVector,
       }
 
       const typename CrsMatrixType::ordinal_type nrow = A.numRows();
-      op.m_A = A;
-      op.m_x = x;
-      op.m_y = y;
-      op.beta = beta;
-      op.alpha = alpha;
-      op.n = x.dimension_1();
-      Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >( nrow , vec_type::increment ) , op );
+
+      OpType op(beta,alpha,A,x,y,x.dimension_1(),RowsPerThread<typename RangeVector::device_type >(NNZPerRow)) ;
+      Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >
+           ( nrow ,RowsPerThread<typename RangeVector::device_type >(NNZPerRow), vec_type::increment ) , op );
+
 
 #endif // KOKKOS_FAST_COMPILE
     }
