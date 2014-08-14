@@ -75,6 +75,61 @@ ENDFUNCTION()
 
 
 #
+# Scale a timeout by ${PROJECT_NAME}_SCALE_TEST_TIMEOUT
+#
+# This function will truncate input TIMEOUT_IN but will allow for a simple
+# fractional scale factor.  It will also truncate the scale factor to just one
+# decimal place.  CMake MATH(EXPR ...) does not support floating point so I
+# have to use just manual integer arithmetic.
+#
+FUNCTION(TRIBITS_SCALE_TIMEOUT  TIMEOUT_IN  SCALED_TIMEOUT_OUT)
+
+  IF (${PROJECT_NAME}_SCALE_TEST_TIMEOUT
+    AND NOT "${${PROJECT_NAME}_SCALE_TEST_TIMEOUT}" EQUAL "1.0"
+    )
+
+    # Strip of any fractional part of the timeout
+    SPLIT("${TIMEOUT_IN}" "[.]" TIMEOUT_IN_ARRAY)
+    #PRINT_VAR(TIMEOUT_IN_ARRAY)
+    LIST(GET TIMEOUT_IN_ARRAY 0 TIMEOUT_IN_TRUNCATED)
+    #PRINT_VAR(TIMEOUT_IN_TRUNCATED)
+
+    # Split the factional part of the scaling factor into SCALE_TEST_INT and
+    # SCALE_TEST_INT_FRAC and do the math ourself with integer floating pint
+    SPLIT("${${PROJECT_NAME}_SCALE_TEST_TIMEOUT}" "[.]" SCALE_TEST_ARRAY)
+    LIST(LENGTH SCALE_TEST_ARRAY SCALE_TEST_ARRAY_LEN)
+    #PRINT_VAR(SCALE_TEST_ARRAY_LEN)
+
+    LIST(GET SCALE_TEST_ARRAY 0 SCALE_TEST_INT)
+    #PRINT_VAR(SCALE_TEST_INT)
+
+    MATH(EXPR TIMEOUT_USED
+      "${TIMEOUT_IN_TRUNCATED} * ${SCALE_TEST_INT}")
+    #PRINT_VAR(TIMEOUT_USED)
+
+    IF ("${SCALE_TEST_ARRAY_LEN}" GREATER 1)
+      # Handle the factional part (only take the first digit)
+      LIST(GET SCALE_TEST_ARRAY 1 SCALE_TEST_INT_FRAC_FULL) # Could be more than 1 digit
+      #PRINT_VAR(SCALE_TEST_INT_FRAC_FULL)
+      STRING(SUBSTRING "${SCALE_TEST_INT_FRAC_FULL}" 0 1 SCALE_TEST_INT_FRAC)
+      #PRINT_VAR(SCALE_TEST_INT_FRAC)
+      MATH(EXPR TIMEOUT_USED
+        "${TIMEOUT_USED} + (${SCALE_TEST_INT_FRAC} * ${TIMEOUT_IN_TRUNCATED}) / 10")
+      #PRINT_VAR(TIMEOUT_USED)
+    ENDIF()
+
+  ELSE()
+
+    SET(TIMEOUT_USED "${TIMEOUT_IN}")
+
+  ENDIF()
+
+  SET(${SCALED_TIMEOUT_OUT} ${TIMEOUT_USED} PARENT_SCOPE)
+
+ENDFUNCTION()
+
+
+#
 # Function that converts a complete string of command-line arguments
 # into a form that ADD_TEST(...) can correctly deal with.
 #
@@ -478,7 +533,8 @@ MACRO(TRIBITS_PRIVATE_ADD_TEST_SET_PASS_PROPERTY TEST_NAME_IN)
   ENDIF()
 
   IF (PARSE_TIMEOUT)
-    TRIBITS_SET_TESTS_PROPERTIES(${TEST_NAME_IN} PROPERTIES TIMEOUT ${PARSE_TIMEOUT})
+    TRIBITS_SCALE_TIMEOUT("${PARSE_TIMEOUT}" TIMEOUT_USED)
+    TRIBITS_SET_TESTS_PROPERTIES(${TEST_NAME_IN} PROPERTIES TIMEOUT ${TIMEOUT_USED})
   ENDIF()
 
   IF (PARSE_ENVIRONMENT)

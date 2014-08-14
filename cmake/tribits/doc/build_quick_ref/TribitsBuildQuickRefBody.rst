@@ -1088,8 +1088,8 @@ where ``<fulltestName>`` must exactly match the test listed out by ``ctest
 Setting test timeouts at configure time
 ---------------------------------------
 
-A maximum time limit for any single test can be set at configure time by
-setting::
+A maximum default time limit for any single test can be set at configure time
+by setting::
 
   -D DART_TESTING_TIMEOUT:STRING=<maxSeconds>
 
@@ -1105,9 +1105,43 @@ NOTES:
   tests can take longer to run and may result in timeouts that would not
   otherwise occur.
 * Individual tests can have there timeout limit increased on a test-by-test
-  basis internally in the project's CMakeLists.txt files.
+  basis internally in the project's CMakeLists.txt files (see the ``TIMEOUT``
+  argument for ``TRIBITS_ADD_TEST()`` and ``TRIBITS_ADD_ADVANCED_TEST()``).
 * To set or override the test timeout limit at runtime, see `Overridding test
   timeouts`_.
+
+
+Scaling test timeouts at configure time
+---------------------------------------
+
+The global default test timeout ``DART_TESTING_TIMEOUT`` as well as all of the
+timeouts for the individual tests that have their own timeout set (through the
+``TIMEOUT`` argument for each individual test) can be scaled by a constant
+factor ``<testTimeoutScaleFactor>`` by configuring with::
+
+  -D <Project>_SCALE_TEST_TIMEOUT_TESTING_TIMEOUT:STRING=<testTimeoutScaleFactor>
+
+Here, ``<testTimeoutScaleFactor>`` can be an integral number like ``5`` or can
+be fractional number like ``1.5``.
+
+This feature is generally used to compensate for slower machines or overloaded
+test machines and therefore only scaling factors greater than 1 are to be
+used.  The primary use case for this feature is to add large scale factors
+(e.g. ``40`` to ``100``) to compensate for running test using valgrind (see
+`Running memory checking`_).
+
+NOTES:
+
+* When scaling the timeouts, the timeout is first truncated to integral
+  seconds so an original timeout like ``200.5`` will be truncated to ``200``
+  before it gets scaled.
+
+* Only the first fractional digit is used so ``1.57`` is truncated to ``1.5``
+  before scaling the test timeouts.
+
+* The cache value of the variable ``DART_TESTING_TIMEOUT`` is not changed in
+  the CMake cache file.  Only the value of the timeout written into the
+  DartConfiguration.tcl file will be scaled.
 
 
 Enabling support for coverage testing

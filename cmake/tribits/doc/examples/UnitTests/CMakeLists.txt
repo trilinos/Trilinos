@@ -111,6 +111,57 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsHelloWorld
   )
 
 
+
+TRIBITS_ADD_ADVANCED_TEST( TribitsHelloWorld_ScaleTimeout
+  OVERALL_WORKING_DIRECTORY TEST_NAME
+  OVERALL_NUM_MPI_PROCS 1
+  CATEGORIES CONTINUOUS
+
+  TEST_0 CMND ${CMAKE_COMMAND}
+    ARGS
+      ${COMMON_ENV_ARGS_PASSTHROUGH}
+      -DDART_TESTING_TIMEOUT=200.0
+      ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsHelloWorld
+    PASS_REGULAR_EXPRESSION_ALL "Generating done"
+    MESSAGE "Configure with default 1.0 scaling"
+  TEST_1 CMND grep ARGS "^TimeOut: " DartConfiguration.tcl
+    PASS_REGULAR_EXPRESSION "TimeOut: 200.0"
+  TEST_2 CMND grep ARGS "^DART_TESTING_TIMEOUT:" CMakeCache.txt
+    MESSAGE "DART_TESTING_TIMEOUT in cache does not change!"
+    PASS_REGULAR_EXPRESSION "DART_TESTING_TIMEOUT:STRING=200.0"
+
+  TEST_3 CMND ${CMAKE_COMMAND}
+    ARGS
+      -DTribitsHelloWorld_SCALE_TEST_TIMEOUT=1.5
+      ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsHelloWorld
+    MESSAGE "Configure with 1.5 scaling"
+    PASS_REGULAR_EXPRESSION_ALL
+      "DART_TESTING_TIMEOUT=200.0 being scaled by TribitsHelloWorld_SCALE_TEST_TIMEOUT=1.5 to 300"
+      "Generating done"
+
+  TEST_4 CMND grep ARGS "^TimeOut: " DartConfiguration.tcl
+    PASS_REGULAR_EXPRESSION "TimeOut: 300"
+  TEST_5 CMND grep ARGS "^DART_TESTING_TIMEOUT:" CMakeCache.txt
+    MESSAGE "DART_TESTING_TIMEOUT in cache does not change!"
+    PASS_REGULAR_EXPRESSION "DART_TESTING_TIMEOUT:STRING=200.0"
+
+  TEST_6 CMND ${CMAKE_COMMAND}
+    ARGS
+      -DTribitsHelloWorld_SCALE_TEST_TIMEOUT=2.0
+      ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsHelloWorld
+    MESSAGE "Configure with 2.0 scaling"
+    PASS_REGULAR_EXPRESSION_ALL
+      "DART_TESTING_TIMEOUT=200.0 being scaled by TribitsHelloWorld_SCALE_TEST_TIMEOUT=2.0 to 400"
+      "Generating done"
+  TEST_7 CMND grep ARGS "^TimeOut: " DartConfiguration.tcl
+    PASS_REGULAR_EXPRESSION "TimeOut: 400"
+  TEST_8 CMND grep ARGS "^DART_TESTING_TIMEOUT:" CMakeCache.txt
+    MESSAGE "DART_TESTING_TIMEOUT in cache does not change!"
+    PASS_REGULAR_EXPRESSION "DART_TESTING_TIMEOUT:STRING=200.0"
+
+  )
+
+
 ASSERT_DEFINED(TPL_ENABLE_MPI)
 IF (TPL_ENABLE_MPI)
   SET(TPL_MPI_FILE_TRACE
