@@ -33,6 +33,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/vector)
 APPEND_SET(HEADERS
   vector/ROL_Vector.hpp
+  vector/ROL_Vector_SimOpt.hpp
   vector/ROL_StdVector.hpp
   vector/ROL_EpetraMultiVector.hpp
   )
@@ -45,9 +46,11 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/function)
 APPEND_SET(HEADERS
   function/ROL_Objective.hpp
   function/ROL_ObjectiveDef.hpp
+  function/ROL_Objective_SimOpt.hpp
   function/ROL_Constraints.hpp
   function/ROL_EqualityConstraint.hpp
   function/ROL_EqualityConstraintDef.hpp
+  function/ROL_EqualityConstraint_SimOpt.hpp
   function/ROL_BoundConstraint.hpp
   function/ROL_StdBoundConstraint.hpp
 )
