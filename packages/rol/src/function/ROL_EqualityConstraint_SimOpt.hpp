@@ -112,6 +112,20 @@ public:
                      const Vector<Real> &z,
                      Real &tol) = 0;
 
+  /** \brief Given \f$z\f$, solve \f$c(u,z)=0\f$ for \f$u\f$.
+
+             @param[out]      u   is the solution vector
+             @param[in]       z   is the constraint argument; an optimization-space vector
+             @param[in,out]   tol is a tolerance for inexact evaluations; currently unused
+
+             ---
+  */
+  virtual void solve(Vector<Real> &u, 
+                     const Vector<Real> &z,
+                     Real &tol) {
+    u.zero();
+  }
+
 
   /** \brief Apply the partial constraint Jacobian at \f$(u,z)\f$, 
              \f$c_u(u,z) \in L(\mathcal{U}, \mathcal{C})\f$,
@@ -157,6 +171,28 @@ public:
                                Real &tol) = 0; 
 
 
+  /** \brief Apply the inverse partial constraint Jacobian at \f$(u,z)\f$, 
+             \f$c_u(u,z)^{-1} \in L(\mathcal{C}, \mathcal{U})\f$,
+             to the vector \f$v\f$.
+
+             @param[out]      ijv is the result of applying the inverse constraint Jacobian to @b v at @b \f$(u,z)\f$; an optimization-space vector
+             @param[in]       v   is a constraint-space vector
+             @param[in]       u   is the constraint argument; an optimization-space vector
+             @param[in]       z   is the constraint argument; an optimization-space vector
+             @param[in,out]   tol is a tolerance for inexact evaluations; currently unused
+
+             On return, \f$\mathsf{ijv} = c_u(u,z)^{-1}v\f$, where
+             \f$v \in \mathcal{C}\f$, \f$\mathsf{ijv} \in \mathcal{U}\f$.
+
+             ---
+  */
+  virtual void applyInverseJacobian_1(Vector<Real> &ijv,
+                                      const Vector<Real> &v,
+                                      const Vector<Real> &u,
+                                      const Vector<Real> &z,
+                                      Real &tol) = 0;
+
+
   /** \brief Apply the adjoint of the partial constraint Jacobian at \f$(u,z)\f$, 
              \f$c_u(u,z)^* \in L(\mathcal{C}^*, \mathcal{U}^*)\f$,
              to the vector \f$v\f$.
@@ -199,6 +235,30 @@ public:
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
                                       Real &tol) = 0;
+
+
+  /** \brief Apply the inverse of the adjoint of the partial constraint Jacobian at \f$(u,z)\f$, 
+             \f$c_u(u,z)^{-*} \in L(\mathcal{U}^*, \mathcal{C}^*)\f$,
+             to the vector \f$v\f$.
+
+             @param[out]      iajv is the result of applying the inverse adjoint of the constraint Jacobian to @b v at @b (u,z); a dual constraint-space vector
+             @param[in]       v   is a dual optimization-space vector
+             @param[in]       u   is the constraint argument; an optimization-space vector
+             @param[in]       z   is the constraint argument; an optimization-space vector
+             @param[in,out]   tol is a tolerance for inexact evaluations; currently unused
+
+             On return, \f$\mathsf{iajv} = c_u(u,z)^{-*}v\f$, where
+             \f$v \in \mathcal{U}^*\f$, \f$\mathsf{iajv} \in \mathcal{C}^*\f$.
+
+             ---
+  */
+  virtual void applyInverseAdjointJacobian_1(Vector<Real> &iajv,
+                                             const Vector<Real> &v,
+                                             const Vector<Real> &u,
+                                             const Vector<Real> &z,
+                                             Real &tol) {
+    iajv.zero();
+  };
 
 
   /** \brief Apply the adjoint of the partial constraint Hessian at \f$(u,z)\f$,
