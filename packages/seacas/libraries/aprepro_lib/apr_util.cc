@@ -32,13 +32,10 @@ namespace SEAMS {
 
   bool arg_check(SEAMS::symrec *symbol, bool is_null) {
     if (is_null) {
-      std::cerr << "Aprepro: ERROR:  "
-		<< "Incorrect argument count/type for function '" 
-		<< symbol->name << "'.\n"
-		<< "                 "
-		<< "The correct syntax is " << symbol->syntax << " ("
-		<< aprepro->ap_file_list.top().name<< ", line "
-		<< aprepro->ap_file_list.top().lineno + 1 << ")\n";
+      std::string err_msg = "Incorrect argument count/type for function '" + symbol->name;
+      err_msg += "'.\n                 ";
+      err_msg += "The correct syntax is " + symbol->syntax;
+      aprepro->error(err_msg);
       return false;
     }
     return true;

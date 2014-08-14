@@ -900,7 +900,8 @@ double do_option(char *option, double value)
   }
 
   else {
-    fprintf(stderr, "Valid arguments to option are: 'warning', 'info', 'debugging', and 'statistics'\n");
+    aprepro->error("Valid arguments to option are: 'warning', 'info', 'debugging', and 'statistics'\n",
+                   false);
   }
   return current;
 }
