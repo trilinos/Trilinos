@@ -431,10 +431,30 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr):
 				   &num_internal_elems, &num_border_elems,
 				   &num_node_cmaps, &num_elem_cmaps, proc);
 
+  int *elem_mapi = new int [num_internal_elems];
+  int *elem_mapb = new int [num_border_elems];
+  error += im_ne_get_elem_map(neid, elem_mapi, elem_mapb, proc);
+
   int *node_mapi = new int [num_internal_nodes];
   int *node_mapb = new int [num_border_nodes];
   int *node_mape = new int [num_external_nodes];
   error += im_ne_get_node_map(neid, node_mapi, node_mapb, node_mape, proc);
+
+  int *node_cmap_ids = new int [num_node_cmaps];
+  int *node_cmap_cnts = new int [num_node_cmaps];
+  int *elem_cmap_ids = new int [num_elem_cmaps];
+  int *elem_cmap_elem_cnts = new int [num_elem_cmaps];
+  error += im_ne_get_cmap_params(neid, node_cmap_ids, node_cmap_cnts,
+				 elem_cmap_ids, elem_cmap_elem_cnts, proc);
+
+  int **node_ids = new int * [num_node_cmaps];
+  int **proc_ids = new int * [num_node_cmaps];
+  for(int j = 0; j < num_node_cmaps; j++) {
+    node_ids[j] = new int [node_cmap_cnts[j]];
+    proc_ids[j] = new int [node_cmap_cnts[j]];
+    error += im_ne_get_node_cmap(neid, node_cmap_ids[j], node_ids[j],
+				 proc_ids[j], proc);
+  }
 
   for(int ecnt=0; ecnt < num_elem_; ecnt++) {
     start_[ecnt] = nadj_;
