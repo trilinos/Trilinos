@@ -156,7 +156,6 @@ int main(int argc, char *argv[])
             "read-encode-sync", "read-encode-async",
             "read-rdma-sync", "read-rdma-async"};
 
-    const int num_nssi_transports = 6;
     const int nssi_transport_list[] = {
             NSSI_RPC_PTL,
             NSSI_RPC_PTL,
