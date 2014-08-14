@@ -222,6 +222,8 @@ typedef struct mpi_transport_global {
 
     mpi_request_queue_handle req_queue;
 
+    bool init_called_mpi_init;
+
 } mpi_transport_global;
 
 
@@ -396,7 +398,7 @@ NNTI_result_t NNTI_mpi_init (
             log_error(nnti_debug_level,"The MPI transport does not accept a URL at init.  Ignoring URL.");
         }
 
-        log_debug(nnti_debug_level, "initializing MPI");
+        log_debug(nnti_debug_level, "initializing MPI transport");
 
         memset(&transport_global_data, 0, sizeof(mpi_transport_global));
 
@@ -418,6 +420,8 @@ NNTI_result_t NNTI_mpi_init (
                 log_fatal(nnti_debug_level,"MPI_Init_thread() failed, %d", rc);
                 abort();
             }
+
+            transport_global_data.init_called_mpi_init=true;
         }
 
 //        MPI_Errhandler_set(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
@@ -2005,6 +2009,10 @@ NNTI_result_t NNTI_mpi_fini (
     nthread_lock_fini(&nnti_buf_bufhash_lock);
     nthread_lock_fini(&nnti_wr_wrhash_lock);
     nthread_lock_fini(&nnti_target_buffer_queue_lock);
+
+    if (transport_global_data.init_called_mpi_init) {
+    	MPI_Finalize();
+    }
 
     return(NNTI_OK);
 }
