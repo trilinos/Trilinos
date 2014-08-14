@@ -196,7 +196,8 @@ public:
   */
   virtual void applyAdjointJacobian_2(Vector<Real> &ajv,
                                       const Vector<Real> &v,
-                                      const Vector<Real> &x,
+                                      const Vector<Real> &u,
+                                      const Vector<Real> &z,
                                       Real &tol) = 0;
 
 
