@@ -340,7 +340,9 @@ public:
                                     const Vector<Real> &b1,
                                     const Vector<Real> &b2,
                                     const Vector<Real> &x,
-                                    Real &tol);
+                                    Real &tol) {
+    EqualityConstraint<Real>::solveAugmentedSystem(v1,v2,b1,b2,x,tol);
+  }
 
 
   /** \brief Apply a constraint preconditioner at \f$x\f$, \f$P(x) \in L(\mathcal{C}, \mathcal{C})\f$,

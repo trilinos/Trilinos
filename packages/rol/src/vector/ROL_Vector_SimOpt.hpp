@@ -102,6 +102,26 @@ public:
     return Teuchos::rcp( new Vector_SimOpt( vec1, vec2 ) );  
   }
 
+  Teuchos::RCP<Vector<Real> > basis( const int i )  const {
+    int n1 = (this->vec1_)->dimension();
+    if ( i < n1 ) {
+      Teuchos::RCP<Vector<Real> > e1 = (this->vec1_)->basis(i);
+      Teuchos::RCP<Vector<Real> > e2 = (this->vec2_)->clone(); e2->zero();
+      Teuchos::RCP<Vector<Real> > e  = Teuchos::rcp(new Vector_SimOpt<Real>(e1,e2));
+      return e;
+    }
+    else {
+      Teuchos::RCP<Vector<Real> > e1 = (this->vec1_)->clone(); e1->zero();
+      Teuchos::RCP<Vector<Real> > e2 = (this->vec2_)->basis(i-n1);
+      Teuchos::RCP<Vector<Real> > e  = Teuchos::rcp(new Vector_SimOpt<Real>(e1,e2));
+      return e;
+    }
+  }
+
+  int dimension() const {
+    return (this->vec1_)->dimension() + (this->vec2_)->dimension();
+  }
+
   Teuchos::RCP<const Vector<Real> > get_1() const { 
     return this->vec1_; 
   }
