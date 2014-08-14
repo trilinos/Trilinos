@@ -61,9 +61,9 @@
 
 #include "ROL_StdVector.hpp"
 #include "ROL_Vector_SimOpt.hpp"
-#include "ROL_Objective.hpp"
 #include "ROL_EqualityConstraint_SimOpt.hpp"
 #include "ROL_Objective_SimOpt.hpp"
+#include "ROL_Reduced_Objective_SimOpt.hpp"
 
 template<class Real>
 class EqualityConstraint_BurgersControl : public ROL::EqualityConstraint_SimOpt<Real> {
@@ -431,7 +431,7 @@ public:
 };
 
 template<class Real>
-class Objective_BurgersControl : public ROL::Objective<Real> {
+class Objective_BurgersControl : public ROL::Objective_SimOpt<Real> {
 private:
   Real alpha_; // Penalty Parameter
 
@@ -495,13 +495,11 @@ public:
     dx_ = 1.0/((Real)nx+1.0);
   }
 
-  Real value( const ROL::Vector<Real> &x, Real &tol ) {
-    const ROL::Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const ROL::Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<const ROL::Vector<Real> >(x));
+  Real value( const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
     Teuchos::RCP<const std::vector<Real> > up =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(*(xs.get_1())))).getVector();
+      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
     Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(*(xs.get_2())))).getVector();
+      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
     // COMPUTE RESIDUAL
     Real res1 = 0.0, res2 = 0.0, res3 = 0.0;
     Real valu = 0.0, valz = this->dot(*zp,*zp);
@@ -526,27 +524,32 @@ public:
     return 0.5*(valu + this->alpha_*valz);
   }
 
-  void gradient( ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real &tol ) {
+  void gradient_1( ROL::Vector<Real> &g, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
     // Unwrap g
-    ROL::Vector_SimOpt<Real> &gs = Teuchos::dyn_cast<ROL::Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<ROL::Vector<Real> >(g));
     Teuchos::RCP<std::vector<Real> > gup = Teuchos::rcp_const_cast<std::vector<Real> >(
-      (Teuchos::dyn_cast<const ROL::StdVector<Real> >(*(gs.get_1()))).getVector());
-    Teuchos::RCP<std::vector<Real> > gzp = Teuchos::rcp_const_cast<std::vector<Real> >(
-      (Teuchos::dyn_cast<const ROL::StdVector<Real> >(*(gs.get_2()))).getVector());
+      (Teuchos::dyn_cast<const ROL::StdVector<Real> >(g)).getVector());
     // Unwrap x
-    const ROL::Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const ROL::Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<const ROL::Vector<Real> >(x));
     Teuchos::RCP<const std::vector<Real> > up =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(*(xs.get_1())))).getVector();
+      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
     Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(*(xs.get_2())))).getVector();
+      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
     // COMPUTE GRADIENT WRT U
     std::vector<Real> diff(this->nx_,0.0);
     for (int i=0; i<this->nx_; i++) {
       diff[i] = ((*up)[i]-this->evaluate_target((Real)(i+1)*this->dx_));
     }
     this->apply_mass(*gup,diff);
+  }
+
+  void gradient_2( ROL::Vector<Real> &g, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
+    // Unwrap g
+    Teuchos::RCP<std::vector<Real> > gzp = Teuchos::rcp_const_cast<std::vector<Real> >(
+      (Teuchos::dyn_cast<const ROL::StdVector<Real> >(g)).getVector());
+    // Unwrap x
+    Teuchos::RCP<const std::vector<Real> > up =
+      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
+    Teuchos::RCP<const std::vector<Real> > zp =
+      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
     // COMPUTE GRADIENT WRT Z
     for (int i=0; i<this->nx_+2; i++) {
       if (i==0) {
@@ -561,30 +564,34 @@ public:
     }
   }
 
-  void hessVec( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real &tol ) {
-    // Unwrap hv 
-    ROL::Vector_SimOpt<Real> &hvs = Teuchos::dyn_cast<ROL::Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<ROL::Vector<Real> >(hv));
+  void hessVec_11( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
+                   const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
     Teuchos::RCP<std::vector<Real> > hvup = Teuchos::rcp_const_cast<std::vector<Real> >(
-      (Teuchos::dyn_cast<const ROL::StdVector<Real> >(*(hvs.get_1()))).getVector());
-    Teuchos::RCP<std::vector<Real> > hvzp = Teuchos::rcp_const_cast<std::vector<Real> >(
-      (Teuchos::dyn_cast<const ROL::StdVector<Real> >(*(hvs.get_2()))).getVector());
+      (Teuchos::dyn_cast<const ROL::StdVector<Real> >(hv)).getVector());
     // Unwrap v
-    const ROL::Vector_SimOpt<Real> &vs = Teuchos::dyn_cast<const ROL::Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<const ROL::Vector<Real> >(v));
     Teuchos::RCP<const std::vector<Real> > vup =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(*(vs.get_1())))).getVector();
-    Teuchos::RCP<const std::vector<Real> > vzp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(*(vs.get_2())))).getVector();
-    // Unwrap x
-    const ROL::Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const ROL::Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<const ROL::Vector<Real> >(x));
-    Teuchos::RCP<const std::vector<Real> > up =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(*(xs.get_1())))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(*(xs.get_2())))).getVector();
+      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
     // COMPUTE GRADIENT WRT U
     this->apply_mass(*hvup,*vup);
+  }
+
+  void hessVec_12( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
+                   const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
+    hv.zero();
+  }
+
+  void hessVec_21( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
+                   const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
+    hv.zero();
+  }
+
+  void hessVec_22( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
+                   const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
+    Teuchos::RCP<std::vector<Real> > hvzp = Teuchos::rcp_const_cast<std::vector<Real> >(
+      (Teuchos::dyn_cast<const ROL::StdVector<Real> >(hv)).getVector());
+    // Unwrap v
+    Teuchos::RCP<const std::vector<Real> > vzp =
+      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
     // COMPUTE GRADIENT WRT Z
     for (int i=0; i<this->nx_+2; i++) {
       if (i==0) {
@@ -666,9 +673,9 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<std::vector<RealT> > p_rcp  = Teuchos::rcp( new std::vector<RealT> (nx, 1.0) );
     ROL::StdVector<RealT> p(p_rcp);
     Teuchos::RCP<ROL::Vector<RealT> > pp  = Teuchos::rcp(&p,false);
-    Teuchos::RCP<ROL::Objective<RealT> >                 pobj = Teuchos::rcp(&obj,false);
+    Teuchos::RCP<ROL::Objective_SimOpt<RealT> > pobj = Teuchos::rcp(&obj,false);
     Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > pcon = Teuchos::rcp(&con,false);
-    ROL::Objective_SimOpt<RealT> robj(pobj,pcon,up,pp);
+    ROL::Reduced_Objective_SimOpt<RealT> robj(pobj,pcon,up,pp);
     // Check derivatives.
     robj.checkGradient(z,yz,true);
     robj.checkHessVec(z,yz,true);

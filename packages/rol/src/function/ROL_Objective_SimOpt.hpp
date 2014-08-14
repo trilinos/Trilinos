@@ -45,11 +45,9 @@
 #define ROL_OBJECTIVE_SIMOPT_H
 
 #include "ROL_Objective.hpp"
-#include "ROL_EqualityConstraint_SimOpt.hpp"
-#include "ROL_Vector_SimOpt.hpp"
 
 /** \class ROL::Objective_SimOpt
-    \brief Provides the interface to evaluate simulation-based reduced objective functions.
+    \brief Provides the interface to evaluate simulation-based objective functions.
 */
 
 
@@ -57,125 +55,78 @@ namespace ROL {
 
 template <class Real>
 class Objective_SimOpt : public Objective<Real> {
-private:
-  Teuchos::RCP<Objective<Real> > obj_;
-  Teuchos::RCP<EqualityConstraint_SimOpt<Real> > con_;
-  Teuchos::RCP<Vector<Real> > state_;
-  Teuchos::RCP<Vector<Real> > adjoint_;
-
-  bool is_state_computed_;
-  bool is_adjoint_computed_;
-
 public:
-  Objective_SimOpt(Teuchos::RCP<Objective<Real> > &obj, Teuchos::RCP<EqualityConstraint_SimOpt<Real> > &con, 
-                   Teuchos::RCP<Vector<Real> > &state, Teuchos::RCP<Vector<Real> > &adjoint) 
-    : obj_(obj), con_(con), state_(state), adjoint_(adjoint) {
-    is_state_computed_   = false;
-    is_adjoint_computed_ = false;
-  }
 
+  /** \brief Update objective function.  
+                u is an iterate, 
+                z is an iterate, 
+                flag = true if the iterate has changed,
+                iter is the outer algorithm iterations count.
+  */
+  virtual void update( const Vector<Real> &u, const Vector<Real> &z, bool flag = true, int iter = -1 ) {}
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    // Solve state equation at new iterate
-    Real tol = std::sqrt(ROL_EPSILON);
-    Teuchos::RCP<Vector<Real> > z = x.clone(); z->set(x);
-    (this->con_)->solve(*(this->state_),*z,tol);
-    Vector_SimOpt<Real> xs(this->state_,z);
-    // Update full objective function
-    (this->obj_)->update(xs,flag,iter);
-    // Update equality constraint
-    (this->con_)->update(xs,flag,iter);
-    // Reset storage flags
-    this->is_state_computed_ = true;
-    this->is_adjoint_computed_ = false;
+    const ROL::Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const ROL::Vector_SimOpt<Real> >(
+      Teuchos::dyn_cast<const ROL::Vector<Real> >(x));
+    this->update(*(xs.get_1()),*(xs.get_2()),flag,iter);
   }
 
+  /** \brief Compute value.
+  */
+  virtual Real value( const Vector<Real> &u, const Vector<Real> &z, Real &tol ) = 0;
   Real value( const Vector<Real> &x, Real &tol ) {
-    // Solve state equation if not done already
-    Teuchos::RCP<Vector<Real> > z = x.clone(); z->set(x);
-    if (!this->is_state_computed_) {
-      (this->con_)->solve(*(this->state_),*z,tol);
-    }
-    // Build a state/control vector
-    Vector_SimOpt<Real> xs(this->state_,z);
-    // Get objective function value
-    return (this->obj_)->value(xs,tol);
+    const ROL::Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const ROL::Vector_SimOpt<Real> >(
+      Teuchos::dyn_cast<const ROL::Vector<Real> >(x));
+    return this->value(*(xs.get_1()),*(xs.get_2()),tol);
   }
 
+  /** \brief Compute gradient with respect to first component.
+  */
+  virtual void gradient_1( Vector<Real> &g, const Vector<Real> &u, const Vector<Real> &z, Real &tol ) = 0;
+  /** \brief Compute gradient with respect to second component.
+  */
+  virtual void gradient_2( Vector<Real> &g, const Vector<Real> &u, const Vector<Real> &z, Real &tol ) = 0;
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-    // Solve state equation if not done already
-    Teuchos::RCP<Vector<Real> > z = x.clone(); z->set(x);
-    if(!this->is_state_computed_) {
-      (this->con_)->solve(*(this->state_),*z,tol);
-    }
-    // Build a state/control vector
-    Vector_SimOpt<Real> xs(this->state_,z);
-    // Evaluate the full gradient
-    Teuchos::RCP<Vector<Real> > gu = (this->state_)->clone();
-    Teuchos::RCP<Vector<Real> > gz = x.clone();
-    Vector_SimOpt<Real> gs(gu,gz);
-    (this->obj_)->gradient(gs,xs,tol);
-    // Solve adjoint equation if not done already
-    if(!this->is_adjoint_computed_) {
-      (this->con_)->applyInverseAdjointJacobian_1(*(this->adjoint_),*(gs.get_1()),*(this->state_),*z,tol);
-      (this->adjoint_)->scale(-1.0);
-    }
-    // Build gradient
-    (this->con_)->applyAdjointJacobian_2(g,*(this->adjoint_),*(this->state_),*z,tol);
-    g.plus(*(gs.get_2()));
+    ROL::Vector_SimOpt<Real> &gs = Teuchos::dyn_cast<ROL::Vector_SimOpt<Real> >(
+      Teuchos::dyn_cast<ROL::Vector<Real> >(g));
+    const ROL::Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const ROL::Vector_SimOpt<Real> >(
+      Teuchos::dyn_cast<const ROL::Vector<Real> >(x));
+    Teuchos::RCP<Vector<Real> > g1 = gs.get_1()->clone();
+    Teuchos::RCP<Vector<Real> > g2 = gs.get_2()->clone();
+    this->gradient_1(*g1,*(xs.get_1()),*(xs.get_2()),tol);
+    this->gradient_2(*g2,*(xs.get_1()),*(xs.get_2()),tol);
+    gs.set_1(*g1);
+    gs.set_2(*g2);
   }
 
+  /** \brief Apply Hessian approximation to vector.
+  */
+  virtual void hessVec_11( Vector<Real> &hv, const Vector<Real> &v, 
+                           const Vector<Real> &u, const Vector<Real> &z, Real &tol ) = 0;
+  virtual void hessVec_12( Vector<Real> &hv, const Vector<Real> &v, 
+                           const Vector<Real> &u, const Vector<Real> &z, Real &tol ) = 0;
+  virtual void hessVec_21( Vector<Real> &hv, const Vector<Real> &v, 
+                           const Vector<Real> &u, const Vector<Real> &z, Real &tol ) = 0;
+  virtual void hessVec_22( Vector<Real> &hv, const Vector<Real> &v, 
+                           const Vector<Real> &u, const Vector<Real> &z, Real &tol ) = 0;
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    // Solve state equation if not done already
-    Teuchos::RCP<Vector<Real> > z = x.clone(); z->set(x);
-    if(!this->is_state_computed_) {
-      (this->con_)->solve(*(this->state_),*z,tol);
-    }
-    // Build a state/control vector
-    Vector_SimOpt<Real> xs(this->state_,z);
-    // Solve adjoint equation if not done already
-    if(!this->is_adjoint_computed_) {
-      // Evaluate the full gradient
-      Teuchos::RCP<Vector<Real> > gu = (this->state_)->clone();
-      Teuchos::RCP<Vector<Real> > gz = x.clone();
-      Vector_SimOpt<Real> gs(gu,gz);
-      (this->obj_)->gradient(gs,xs,tol);
-      // Solve adjoint equation
-      (this->con_)->applyInverseAdjointJacobian_1(*(this->adjoint_),*(gs.get_1()),*(this->state_),*z,tol);
-      (this->adjoint_)->scale(-1.0);
-    }
-    // Solve state sensitivity equation
-    Teuchos::RCP<Vector<Real> > Bv = (this->state_)->clone();
-    (this->con_)->applyJacobian_2(*Bv,v,*(this->state_),*z,tol);
-    Bv->scale(-1.0);
-    Teuchos::RCP<Vector<Real> > s = (this->state_)->clone();
-    (this->con_)->applyInverseJacobian_1(*s,*Bv,*(this->state_),*z,tol);
-    // Evaluate full hessVec in the direction (s,v)
-    Teuchos::RCP<Vector<Real> > vp = v.clone(); vp->set(v);
-    Vector_SimOpt<Real> vs(s,vp);
-    Teuchos::RCP<Vector<Real> > hvu = (this->state_)->clone();
-    Teuchos::RCP<Vector<Real> > hvz = x.clone();
-    Vector_SimOpt<Real> hvs(hvu,hvz);
-    (this->obj_)->hessVec(hvs,vs,xs,tol);
-    // Apply adjoint Hessian of constraint
-    Teuchos::RCP<Vector<Real> > hcu = (this->state_)->clone();
-    Teuchos::RCP<Vector<Real> > hcz = x.clone();
-    Vector_SimOpt<Real> hcs(hcu,hcz);
-    (this->con_)->applyAdjointHessian(hcs,*(this->adjoint_),vs,xs,tol);
-    // Solve adjoint sensitivity equation
-    Teuchos::RCP<Vector<Real> > r = (this->state_)->clone();
-    r->set(*(hvs.get_1()));
-    r->plus(*(hcs.get_1())); 
-    r->scale(-1.0);
-    Teuchos::RCP<Vector<Real> > p = (this->adjoint_)->clone();
-    (this->con_)->applyInverseAdjointJacobian_1(*p,*r,*(this->state_),*z,tol);
-    // Build hessVec
-    (this->con_)->applyAdjointJacobian_2(hv,*p,*(this->state_),*z,tol);
-    hv.plus(*(hcs.get_2()));
-    hv.plus(*(hvs.get_2()));
-  }
-
-  virtual void precond( Vector<Real> &Pv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    Pv.set(v);
+    ROL::Vector_SimOpt<Real> &hvs = Teuchos::dyn_cast<ROL::Vector_SimOpt<Real> >(
+      Teuchos::dyn_cast<ROL::Vector<Real> >(hv));
+    const ROL::Vector_SimOpt<Real> &vs = Teuchos::dyn_cast<const ROL::Vector_SimOpt<Real> >(
+      Teuchos::dyn_cast<const ROL::Vector<Real> >(v));
+    const ROL::Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const ROL::Vector_SimOpt<Real> >(
+      Teuchos::dyn_cast<const ROL::Vector<Real> >(x));
+    Teuchos::RCP<Vector<Real> > h11 = (xs.get_1())->clone();
+    this->hessVec_11(*h11,*(vs.get_1()),*(xs.get_1()),*(xs.get_2()),tol);
+    Teuchos::RCP<Vector<Real> > h12 = (xs.get_1())->clone();
+    this->hessVec_12(*h12,*(vs.get_2()),*(xs.get_1()),*(xs.get_2()),tol);
+    Teuchos::RCP<Vector<Real> > h21 = (xs.get_2())->clone();
+    this->hessVec_21(*h21,*(vs.get_1()),*(xs.get_1()),*(xs.get_2()),tol);
+    Teuchos::RCP<Vector<Real> > h22 = (xs.get_2())->clone();
+    this->hessVec_22(*h22,*(vs.get_2()),*(xs.get_1()),*(xs.get_2()),tol);
+    h11->plus(*h12);
+    hvs.set_1(*h11);
+    h22->plus(*h21);
+    hvs.set_2(*h22);
   }
 
 }; // class Step

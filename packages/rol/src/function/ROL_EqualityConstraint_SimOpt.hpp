@@ -94,6 +94,14 @@ namespace ROL {
 template <class Real>
 class EqualityConstraint_SimOpt : public EqualityConstraint<Real> {
 public:
+  /** \brief Update constraint functions.  
+                x is the optimization variable, 
+                flag = true if optimization variable is changed,
+                iter is the outer algorithm iterations count.
+  */
+  virtual void update( const Vector<Real> &u, const Vector<Real> &z, bool flag = true, int iter = -1 ) {}
+
+
   /** \brief Evaluate the constraint operator \f$c:\mathcal{U}\times\mathcal{Z} \rightarrow \mathcal{C}\f$
              at \f$(u,z)\f$.
 
@@ -436,7 +444,11 @@ public:
                 flag = true if optimization variable is changed,
                 iter is the outer algorithm iterations count.
   */
-  virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {}
+  virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
+    const Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const Vector_SimOpt<Real> >(
+      Teuchos::dyn_cast<const Vector<Real> >(x));
+    this->update(*(xs.get_1()),*(xs.get_2()),flag,iter);
+  }
 
   /** \brief Check if the vector, v, is feasible
   */
