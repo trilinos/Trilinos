@@ -453,6 +453,4 @@ public:
 
 } // namespace ROL
 
-#include "ROL_EqualityConstraint_SimOptDef.hpp"
-
 #endif
