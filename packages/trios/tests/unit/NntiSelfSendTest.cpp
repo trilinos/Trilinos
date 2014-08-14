@@ -199,6 +199,8 @@ int main(int argc, char *argv[])
 
     join_wait_thread();
 
+    NNTI_fini(&trans_hdl);
+
     if (success)
         std::cout << "\nEnd Result: TEST PASSED" << std::endl;
     else
