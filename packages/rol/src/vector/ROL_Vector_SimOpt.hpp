@@ -95,10 +95,11 @@ public:
   } 
 
   Teuchos::RCP<Vector<Real> > clone() const {
-    Real var = 0.0;
-    Teuchos::RCP<Vector<Real> > vec = Teuchos::rcp_dynamic_cast<Vector<Real> >(
-      Teuchos::rcp_const_cast<Vector<Real> >(this->vec_->clone()));
-    return Teuchos::rcp( new Vector_SimOpt( var, vec ) );  
+    Teuchos::RCP<Vector<Real> > vec1 = Teuchos::rcp_dynamic_cast<Vector<Real> >(
+      Teuchos::rcp_const_cast<Vector<Real> >(this->vec1_->clone()));
+    Teuchos::RCP<Vector<Real> > vec2 = Teuchos::rcp_dynamic_cast<Vector<Real> >(
+      Teuchos::rcp_const_cast<Vector<Real> >(this->vec2_->clone()));
+    return Teuchos::rcp( new Vector_SimOpt( vec1, vec2 ) );  
   }
 
   Teuchos::RCP<const Vector<Real> > get_1() const { 

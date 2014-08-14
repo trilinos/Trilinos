@@ -367,7 +367,7 @@ public:
                                    Real &tol) {}
 
 
-  EqualityConstraint_SimOpt(void) : EqualityConstraint() {}
+  EqualityConstraint_SimOpt(void) : EqualityConstraint<Real>() {}
 
   /** \brief Update constraint functions.  
                 x is the optimization variable, 
@@ -399,7 +399,7 @@ public:
       Teuchos::dyn_cast<const Vector<Real> >(v));
     this->applyJacobian_1(jv,*(vs.get_1()),*(xs.get_1()),*(xs.get_2()),tol);
     Teuchos::RCP<Vector<Real> > jv2 = jv.clone();
-    this->applyJacobian_2(*jv2,*(vs.get_2()),*(xs.get_1()),*(xs.get_2())tol);
+    this->applyJacobian_2(*jv2,*(vs.get_2()),*(xs.get_1()),*(xs.get_2()),tol);
     jv.plus(*jv2);
   }
 
