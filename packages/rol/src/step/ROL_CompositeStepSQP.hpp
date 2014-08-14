@@ -78,9 +78,9 @@ private:
   Real zeta_;
   Real Delta_;
 
-  bool debugQN_;
-  bool debugLM_;
-  bool debugTS_;
+  bool infoQN_;
+  bool infoLM_;
+  bool infoTS_;
 
 public:
 
@@ -105,9 +105,9 @@ public:
     zeta_  = 0.9;
     Delta_ = 1e2;
 
-    debugQN_ = true;
-    debugLM_ = true;
-    debugTS_ = true;
+    infoQN_ = true;
+    infoLM_ = true;
+    infoTS_ = true;
   }
 
   /** \brief Initialize step.
@@ -165,6 +165,8 @@ public:
     con.applyAdjointJacobian(*ajl, l, x, zerotol);
     g->plus(*ajl);
     solveTangentialSubproblem(*t, *tCP, *Wg, x, *g, *n, l, Delta_, obj, con);
+    s.set(*n);
+    s.plus(*t);
   }
 
   /** \brief Update step, if successful.
@@ -173,6 +175,27 @@ public:
                Objective<Real> &obj, EqualityConstraint<Real> &con, 
                AlgorithmState<Real> &algo_state ) {
     //Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
+
+    Real zerotol = 0.0;
+
+    Teuchos::RCP<Vector<Real> > g   = x.clone();
+    Teuchos::RCP<Vector<Real> > ajl = x.clone();
+    Teuchos::RCP<Vector<Real> > gl = x.clone();
+    Teuchos::RCP<Vector<Real> > c = l.clone();
+
+    x.plus(s);
+
+    Real val = obj.value(x, zerotol);
+    obj.gradient(*g, x, zerotol);
+    computeLagrangeMultiplier(l, x, *g, con);
+    con.applyAdjointJacobian(*ajl, l, x, zerotol);
+    gl->set(*g); gl->plus(*ajl);
+    con.value(*c, x, zerotol);
+
+    algo_state.value = val;
+    algo_state.gnorm = gl->norm();
+    algo_state.cnorm = c->norm();
+    algo_state.iter++;
 
     //Real tol = std::sqrt(ROL_EPSILON);
 
@@ -276,7 +299,7 @@ public:
 
     Real zerotol = 0.0;
 
-    if (debugLM_) {
+    if (infoLM_) {
       std::stringstream hist;
       hist << "\n  SQP_lagrange_multiplier\n";
       std::cout << hist.str();
@@ -336,7 +359,7 @@ public:
   */
   void computeQuasinormalStep(Vector<Real> &n, const Vector<Real> &c, const Vector<Real> &x, Real delta, EqualityConstraint<Real> &con) {
 
-    if (debugQN_) {
+    if (infoQN_) {
       std::stringstream hist;
       hist << "\n  SQP_quasi-normal_step\n";
       std::cout << hist.str();
@@ -365,7 +388,7 @@ public:
     if (norm_nCP >= delta) {
       n.set(*nCP);
       n.scale( delta/norm_nCP );
-      if (debugQN_) {
+      if (infoQN_) {
         std::cout << "  taking partial Cauchy step\n";
       }
       return;
@@ -395,7 +418,7 @@ public:
     if (norm_nN <= delta) {
       // Take full feasibility step.
       n.set(*nN);
-      if (debugQN_) {
+      if (infoQN_) {
         std::cout << "  taking full Newton step\n";
       }
     }
@@ -409,7 +432,7 @@ public:
       Real tau = (-bb+sqrt(bb*bb-aa*cc))/aa;
       n.set(*dn);
       n.axpy(tau, *nCP);
-      if (debugQN_) {
+      if (infoQN_) {
         std::cout << "  taking dogleg step\n";
       }
     }
@@ -448,7 +471,9 @@ public:
     Teuchos::RCP<Vector<Real> > ltemp = l.clone();
     Teuchos::RCP<Vector<Real> > czero = l.clone();
     czero->zero();
-    obj.hessVec(*r, n, x, zerotol);
+    r->set(g);
+    obj.hessVec(*vtemp, n, x, zerotol);
+    r->plus(*vtemp);
     con.applyAdjointHessian(*vtemp, l, n, x, zerotol);
     r->plus(*vtemp);
     Real normg  = r->norm();
@@ -456,6 +481,7 @@ public:
     Real normWr = zero;
     Real pHp    = zero;
     Real rp     = zero;
+    Real alpha  = zero;
 
     std::vector<Teuchos::RCP<Vector<Real > > >  p;   // stores search directions
     std::vector<Teuchos::RCP<Vector<Real > > >  Hp;  // stores hessvec's applied to p's
@@ -464,7 +490,7 @@ public:
 
     Real rptol = 1e-12;
 
-    if (debugTS_) {
+    if (infoTS_) {
       std::stringstream hist;
       hist << "\n  SQP_tangential_subproblem\n";
       hist << std::setw(6)  << std::right << "iter" << std::setw(18) << "||Wr||/||Wr0||" << std::setw(15) << "||s||";
@@ -473,7 +499,7 @@ public:
     }
 
     if (normg == 0) {
-      if (debugTS_) {
+      if (infoTS_) {
         std::stringstream hist;
         hist << "    >>> Tangential subproblem: Initial gradient is zero! \n";
         std::cout << hist;
@@ -501,7 +527,7 @@ public:
         if (normWg < 1e-14) {
           flag = 0;
           iter = iter-1;
-          if (debugTS_) {
+          if (infoTS_) {
             std::stringstream hist;
             hist << "  Initial projected residual is close to zero! \n";
             std::cout << hist;
@@ -518,7 +544,7 @@ public:
       }
       normWr = Wr->norm();
 
-      if (debugTS_) {
+      if (infoTS_) {
         Teuchos::RCP<Vector<Real> > ct = l.clone();
         con.applyJacobian(*ct, t, x, zerotol);
         Real linc = ct->norm();
@@ -533,7 +559,7 @@ public:
       if (normWr/normWg < tolCG_) {
         flag = 0;
         iter = iter-1;
-        if (debugTS_) {
+        if (infoTS_) {
           std::cout << "  || W(g + H*(n+s)) || <= cgtol*|| W(g + H*n)|| \n";
         }
         return;
@@ -546,7 +572,8 @@ public:
       for (int j=1; j<iter; j++) {
         Real scal = (p[iter-1])->dot(*(Hp[j-1])) / (p[j-1])->dot(*(Hp[j-1]));
         Teuchos::RCP<Vector<Real> > pj = (p[j-1])->clone();
-        pj->set(*p[j-1]); pj->scale(-scal);
+        pj->set(*p[j-1]);
+        pj->scale(-scal);
         (p[iter-1])->plus(*pj);
       }
 
@@ -556,6 +583,19 @@ public:
       (Hp[iter-1])->plus(*vtemp);
       pHp = (p[iter-1])->dot(*(Hp[iter-1]));
       rp  = (p[iter-1])->dot(*r);
+
+      alpha = - rp/pHp;
+
+      // Iterate update.
+      //s_prev = s;
+      vtemp->set(*(p[iter-1]));
+      vtemp->scale(alpha);
+      t.plus(*vtemp);
+
+      // Residual update.
+      vtemp->set(*(Hp[iter-1]));
+      vtemp->scale(alpha);
+      r->plus(*vtemp);
 
       iter++;
 
