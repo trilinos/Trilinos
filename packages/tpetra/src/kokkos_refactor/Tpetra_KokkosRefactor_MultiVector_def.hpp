@@ -2613,20 +2613,40 @@ namespace { // (anonymous)
   {
     using Teuchos::Array;
     using Teuchos::rcp;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal,
-      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > MV;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> MV;
 
+    const size_t numViewCols = static_cast<size_t> (cols.size ());
     TEUCHOS_TEST_FOR_EXCEPTION(
-      cols.size () == 0, std::runtime_error,
-      "Tpetra::MultiVector::subView(ArrayView): "
-      "range must include at least one vector.");
+      numViewCols < 1, std::runtime_error, "Tpetra::MultiVector::subView"
+      "(const Teuchos::ArrayView<const size_t>&): The input array cols must "
+      "contain at least one entry, but cols.size() = " << cols.size ()
+      << " == 0.");
+
+    // Check whether the index set in cols is contiguous.  If it is,
+    // use the more efficient Range1D version of subView.
+    bool contiguous = true;
+    for (size_t j = 1; j < numViewCols; ++j) {
+      if (cols[j] != cols[j-1] + static_cast<size_t> (1)) {
+        contiguous = false;
+        break;
+      }
+    }
+    if (contiguous) {
+      if (numViewCols == 0) {
+        // The output MV has no columns, so there is nothing to view.
+        return rcp (new MV (this->getMap (), numViewCols));
+      } else {
+        // Use the more efficient contiguous-index-range version.
+        return this->subView (Teuchos::Range1D (cols[0], cols[numViewCols-1]));
+      }
+    }
 
     if (isConstantStride ()) {
       return rcp (new MV (this->getMap (), view_, origView_, cols));
     }
     else {
       Array<size_t> newcols (cols.size ());
-      for (size_t j = 0; j < static_cast<size_t> (cols.size ()); ++j) {
+      for (size_t j = 0; j < numViewCols; ++j) {
         newcols[j] = whichVectors_[cols[j]];
       }
       return rcp (new MV (this->getMap (), view_, origView_, newcols ()));
@@ -2643,8 +2663,7 @@ namespace { // (anonymous)
     using Kokkos::subview;
     using Teuchos::Array;
     using Teuchos::rcp;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal,
-      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > MV;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> MV;
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       colRng.size() == 0, std::runtime_error,

@@ -2096,14 +2096,16 @@ namespace Tpetra {
     typedef Teuchos::ArrayView<const size_t>::size_type size_type;
     typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(cols.size() < 1, std::runtime_error,
-        "Tpetra::MultiVector::subCopy(cols): cols must contain at least one column.");
+    const size_t numCopyVecs = cols.size ();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      numCopyVecs < 1, std::runtime_error, "Tpetra::MultiVector::subCopy"
+      "(const Teuchos::ArrayView<const size_t>&): The input array cols must "
+      "contain at least one entry, but cols.size() = " << cols.size ()
+      << " == 0.");
 
     // Check whether the index set in cols is contiguous.  If it is,
     // use the more efficient Range1D version of subCopy.
     bool contiguous = true;
-
-    const size_t numCopyVecs = cols.size ();
     for (size_type j = 1; j < numCopyVecs; ++j) {
       if (cols[j] != cols[j-1] + static_cast<size_t> (1)) {
         contiguous = false;
@@ -2241,7 +2243,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-  subView (const ArrayView<const size_t> &cols) const
+  subView (const ArrayView<const size_t>& cols) const
   {
     using Teuchos::arcp_const_cast;
     using Teuchos::Array;
@@ -2251,18 +2253,44 @@ namespace Tpetra {
     using Teuchos::rcp_const_cast;
     typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(cols.size() == 0, std::runtime_error,
-      "Tpetra::MultiVector::subView(ArrayView): range must include at least one vector.");
+    const size_t numViewCols = static_cast<size_t> (cols.size ());
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      numViewCols < 1, std::runtime_error, "Tpetra::MultiVector::subView"
+      "(const Teuchos::ArrayView<const size_t>&): The input array 'cols' "
+      "must contain at least one entry, but cols.size() = " << cols.size ()
+      << " == 0.");
+
+    // Check whether the index set in cols is contiguous.  If it is,
+    // use the more efficient Range1D version of subView.
+    bool contiguous = true;
+    for (size_t j = 1; j < numViewCols; ++j) {
+      if (cols[j] != cols[j-1] + static_cast<size_t> (1)) {
+        contiguous = false;
+        break;
+      }
+    }
+    if (contiguous) {
+      if (numViewCols == 0) {
+        // The output MV has no columns, so there is nothing to view.
+        return rcp (new MV (this->getMap (), numViewCols));
+      } else {
+        // Use the more efficient contiguous-index-range version.
+        return this->subView (Teuchos::Range1D (cols[0], cols[numViewCols-1]));
+      }
+    }
+
     // this is const, so the lclMV_ is const, so that we can only get const buffers
     // we will cast away the const; this is okay, because
     //   a) the constructor doesn't modify the data, and
     //   b) we are encapsulating in a const MV before returning
-    const size_t myStride = MVT::getStride(lclMV_),
-                 myLen    = MVT::getNumRows(lclMV_),
-              numViewCols = cols.size();
-    // use the smallest view possible of the buffer: from the first element of the minInd vector to the last element of the maxInd vector
-    // this minimizes overlap between views, and keeps view of the minimum amount necessary, in order to allow node to achieve maximum efficiency.
-    // adjust the indices appropriately; shift so that smallest index is 0
+    const size_t myStride = MVT::getStride (lclMV_);
+    const size_t myLen = MVT::getNumRows (lclMV_);
+    // use the smallest view possible of the buffer: from the first
+    // element of the minInd vector to the last element of the maxInd
+    // vector.  this minimizes overlap between views, and keeps view
+    // of the minimum amount necessary, in order to allow node to
+    // achieve maximum efficiency.  adjust the indices appropriately;
+    // shift so that smallest index is 0
     ArrayRCP<const Scalar> cbuf = MVT::getValues(lclMV_);
     ArrayRCP<Scalar>      ncbuf = arcp_const_cast<Scalar> (cbuf);
     Array<size_t> newCols (numViewCols);
@@ -2333,21 +2361,50 @@ namespace Tpetra {
     using Teuchos::arcp_const_cast;
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
+    using Teuchos::Range1D;
     using Teuchos::RCP;
     using Teuchos::rcp;
     typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(cols.size() == 0, std::runtime_error,
-      "Tpetra::MultiVector::subViewNonConst(ArrayView): range must include at least one vector.");
-    if (isConstantStride()) {
-      return rcp (new MV (this->getMap (), MVT::getValuesNonConst (lclMV_), MVT::getStride (lclMV_), cols, COMPUTE_VIEW_CONSTRUCTOR));
+    const size_t numViewCols = static_cast<size_t> (cols.size ());
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      numViewCols < 1, std::runtime_error, "Tpetra::MultiVector::"
+      "subViewNonConst(const Teuchos::ArrayView<const size_t>&): The input "
+      "array 'cols' must contain at least one entry, but cols.size() = "
+      << cols.size () << " == 0.");
+
+    // Check whether the index set in cols is contiguous.  If it is,
+    // use the more efficient Range1D version of subViewNonConst.
+    bool contiguous = true;
+    for (size_t j = 1; j < numViewCols; ++j) {
+      if (cols[j] != cols[j-1] + static_cast<size_t> (1)) {
+        contiguous = false;
+        break;
+      }
+    }
+    if (contiguous) {
+      if (numViewCols == 0) {
+        // The output MV has no columns, so there is nothing to view.
+        return rcp (new MV (this->getMap (), numViewCols));
+      } else {
+        // Use the more efficient contiguous-index-range version.
+        return this->subViewNonConst (Range1D (cols[0], cols[numViewCols-1]));
+      }
+    }
+
+    if (isConstantStride ()) {
+      return rcp (new MV (this->getMap (), MVT::getValuesNonConst (lclMV_),
+                          MVT::getStride (lclMV_), cols,
+                          COMPUTE_VIEW_CONSTRUCTOR));
     }
     // else, lookup current whichVectors_ using cols
-    Array<size_t> newcols(cols.size());
-    for (size_t j = 0; j < static_cast<size_t> (cols.size ()); ++j) {
+    Array<size_t> newcols (numViewCols);
+    for (size_t j = 0; j < numViewCols; ++j) {
       newcols[j] = whichVectors_[cols[j]];
     }
-    return rcp (new MV (this->getMap (), MVT::getValuesNonConst (lclMV_), MVT::getStride (lclMV_), newcols (), COMPUTE_VIEW_CONSTRUCTOR));
+    return rcp (new MV (this->getMap (), MVT::getValuesNonConst (lclMV_),
+                        MVT::getStride (lclMV_), newcols (),
+                        COMPUTE_VIEW_CONSTRUCTOR));
   }
 
 
