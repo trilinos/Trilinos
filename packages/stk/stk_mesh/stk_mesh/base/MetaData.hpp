@@ -532,6 +532,7 @@ public:
    * cell topology part.
    */
   CellTopology get_cell_topology( const Part & part) const;
+  stk::topology get_topology(const Part & part) const;
 
   CellTopology get_cell_topology( const std::string & topology_name) const;
 

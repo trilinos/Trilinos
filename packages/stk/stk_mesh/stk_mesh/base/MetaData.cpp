@@ -110,7 +110,7 @@ void MetaData::assign_cell_topology(
 
   m_partCellTopologyVector[part_ordinal] = cell_topology;
 
-  stk::topology topo = get_topology(cell_topology, m_spatial_dimension);
+  stk::topology topo = stk::mesh::get_topology(cell_topology, m_spatial_dimension);
 
   m_part_repo.get_all_parts()[part_ordinal]->m_partImpl.set_topology(topo);
 
@@ -702,6 +702,10 @@ CellTopology MetaData::get_cell_topology( const Part & part) const
   return cell_topology;
 }
 
+stk::topology MetaData::get_topology(const Part & part) const
+{
+    return stk::mesh::get_topology(get_cell_topology(part), spatial_dimension());
+}
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 // Verify parallel consistency of fields and parts
