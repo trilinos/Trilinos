@@ -3,10 +3,14 @@
 
 #include <mpi.h>
 #include <vector>
+#if !defined(NO_PARMETIS_SUPPORT)
 #include <parmetis.h>
+#endif
 
 #undef MPICPP
+#if !defined(NO_ZOLTAN_SUPPORT)
 #include <zoltan_cpp.h>
+#endif
 #include <exodusII_par.h>
 #include <Ioss_PropertyManager.h>
 #include <Ioss_Map.h>
@@ -287,8 +291,11 @@ namespace Iopx {
        */
       Ioss::PropertyManager properties;
 
+#if !defined(NO_ZOLTAN_SUPPORT)
       void zoltan_decompose(const std::string &method);
-
+#endif
+      
+#if !defined(NO_PARMETIS_SUPPORT)
       void metis_decompose(const std::string &method,
                            const std::vector<INT> &element_dist,
                            const std::vector<INT> &pointer,
@@ -299,6 +306,7 @@ namespace Iopx {
                                     idx_t *pointer,
                                     idx_t *adjacency,
                                     idx_t *elem_partition);
+#endif
 
       void simple_decompose(const std::string &method,
                             const std::vector<INT> &element_dist);
@@ -348,7 +356,9 @@ namespace Iopx {
                                        const std::vector<INT> &pointer,
                                        const std::vector<INT> &adjacency,
                                        const std::vector<INT> &node_dist);
+#if !defined(NO_ZOLTAN_SUPPORT)
       void get_local_element_list(const ZOLTAN_ID_PTR &export_global_ids, size_t export_count);
+#endif
 
       void get_shared_node_list();
 
