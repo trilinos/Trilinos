@@ -156,7 +156,7 @@ int run_pointAssign_tests(
     // pointAssign tests
     int coordDim = coords->getNumVectors();
     zscalar_t *pointDrop = new zscalar_t[coordDim];
-    typename Adapter::part_t part;
+    typename Adapter::part_t part = -1;
 
     char mechar[10];
     sprintf(mechar, "%d", problem->getComm()->getRank());
