@@ -197,6 +197,8 @@ INCLUDE(UseSWIG)
 
 # Python module mpi4py is optional
 FIND_PACKAGE(Mpi4Py)
+SET(PyTrilinos_MPI4PY
+  "${Mpi4Py_FOUND}" CACHE BOOL "Mpi4Py support in PyTrilinos")
 
 # Print the enabled PyTrilinos packages
 MESSAGE(STATUS "Enabled PyTrilinos modules:")
