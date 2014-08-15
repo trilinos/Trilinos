@@ -71,10 +71,92 @@ INCLUDE(TribitsAddTest)
 #  ADD_SUBDIRECTORY(ch_brack2_3)
 #ENDIF()
 
+IF (TPL_ENABLE_MPI)
+  TRIBITS_ADD_EXECUTABLE(
+    FullQueueTest
+    SOURCES FullQueueTest.cpp
+    COMM serial mpi
+#    NUM_MPI_PROCS 2
+    NOEXEPREFIX
+  )
+ENDIF (TPL_ENABLE_MPI)
+
+
+IF (TPL_ENABLE_Pthread)
+  IF (CMAKE_HAVE_PTHREAD_H)
+    TRIBITS_ADD_EXECUTABLE(
+      InterruptTest
+      SOURCES InterruptTest.c
+      COMM serial mpi
+#      NUM_MPI_PROCS 1
+      NOEXEPREFIX
+    )
+  ENDIF (CMAKE_HAVE_PTHREAD_H)
+ENDIF (TPL_ENABLE_Pthread)
+
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   LoggerTest
   SOURCES LoggerTest.cpp
   COMM serial mpi
+  NUM_MPI_PROCS 1
+  NOEXEPREFIX
+)
+
+TRIBITS_ADD_EXECUTABLE(
+  NntiPerfTest
+  SOURCES NntiPerfTest.cpp
+#  NUM_MPI_PROCS 2
+  NOEXEPREFIX
+)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  NntiSelfSendTest
+  SOURCES NntiSelfSendTest.cpp
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  NOEXEPREFIX
+)
+
+
+IF (TPL_ENABLE_MPI)
+  TRIBITS_ADD_EXECUTABLE(
+    NonContigTest
+    SOURCES NonContigTest.cpp
+    COMM serial mpi
+#    NUM_MPI_PROCS 2
+    NOEXEPREFIX
+  )
+ENDIF (TPL_ENABLE_MPI)
+
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  NssiSelfSendTest
+  SOURCES NssiSelfSendTest.cpp
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  NOEXEPREFIX
+)
+
+
+IF (TPL_ENABLE_Pthread)
+  IF (CMAKE_HAVE_PTHREAD_H)
+    TRIBITS_ADD_EXECUTABLE(
+      ProgressTimeoutTest
+      SOURCES ProgressTimeoutTest.cpp
+      COMM serial mpi
+#      NUM_MPI_PROCS 1
+      NOEXEPREFIX
+    )
+  ENDIF (CMAKE_HAVE_PTHREAD_H)
+ENDIF (TPL_ENABLE_Pthread)
+
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  SignalTest
+  SOURCES SignalTest.c
+  COMM serial mpi
+  NUM_MPI_PROCS 1
   NOEXEPREFIX
 )
 
@@ -83,45 +165,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   TimerTest
   SOURCES TimerTest.c
   COMM serial mpi
-  NOEXEPREFIX
-)
-
-TRIBITS_ADD_EXECUTABLE(
-  NntiPerfTest
-  SOURCES NntiPerfTest.cpp
-  NOEXEPREFIX
-)
-
-#TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#  NntiSelfSendTest
-#  SOURCES NntiSelfSendTest.cpp
-#  COMM serial mpi
-#  NOEXEPREFIX
-#)
-#
-#TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#  NssiSelfSendTest
-#  SOURCES NssiSelfSendTest.cpp
-#  COMM serial mpi
-#  NOEXEPREFIX
-#)
-
-TRIBITS_ADD_EXECUTABLE(
-  NntiSelfSendTest
-  SOURCES NntiSelfSendTest.cpp
-  NOEXEPREFIX
-)
-
-TRIBITS_ADD_EXECUTABLE(
-  NssiSelfSendTest
-  SOURCES NssiSelfSendTest.cpp
-  NOEXEPREFIX
-)
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  SignalTest
-  SOURCES SignalTest.c
-  COMM serial mpi
+  NUM_MPI_PROCS 1
   NOEXEPREFIX
 )
 
@@ -131,6 +175,7 @@ IF (TRIOS_ENABLE_TRACING)
     TraceTest
     SOURCES TraceTest.c
     COMM serial mpi
+    NUM_MPI_PROCS 1
     NOEXEPREFIX
   )
 ENDIF (TRIOS_ENABLE_TRACING)

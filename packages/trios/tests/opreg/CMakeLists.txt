@@ -86,6 +86,7 @@ SET(TESTNAMES
    c-stub
    cpp-obj)
 
+
 foreach (testname ${TESTNAMES})
 
   SET(DEFAULT_ARGS "--opreg-type=${testname} ")

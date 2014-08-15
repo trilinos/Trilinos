@@ -72,6 +72,21 @@ int nthread_unlock(
 int nthread_lock_fini(
         nthread_lock_t *lock);
 
+int nthread_cond_init(
+        nthread_cond_t *condvar);
+int nthread_wait(
+        nthread_cond_t *condvar,
+        nthread_lock_t *lock);
+int nthread_timedwait(
+        nthread_cond_t *condvar,
+        nthread_lock_t *lock,
+        uint64_t        timeout);
+int nthread_signal(
+        nthread_cond_t *condvar);
+int nthread_broadcast(
+        nthread_cond_t *condvar);
+int nthread_cond_fini(
+        nthread_cond_t *condvar);
 
 int     nthread_counter_init(
         nthread_counter_t *c);

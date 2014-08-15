@@ -57,11 +57,15 @@
 #include <unistd.h>
 #include <pthread.h>
 
+#include <iostream>
+
 log_level selfsend_debug_level = LOG_UNDEFINED;
 
 std::string  my_url(NSSI_URL_LEN, '\0');
 
 pthread_barrier_t barrier;
+
+bool success=true;
 
 static void *do_wait(void *args)
 {
@@ -120,7 +124,7 @@ int main(int argc, char *argv[])
     int rc;
     nssi_service svc;
 
-    logger_init(LOG_ERROR, "nssiselfsend.log");
+    logger_init(LOG_ERROR, NULL);
 
     pthread_barrier_init(&barrier, NULL, 2);
 
@@ -151,6 +155,11 @@ int main(int argc, char *argv[])
 
     // shutdown the service
     rc = nssi_kill(&svc, 0, 5000);
+    if (rc != NSSI_OK) {
+        log_error(selfsend_debug_level, "Error in nssi_kill");
+        goto err;
+    }
+
     // finalize the client
     nssi_fini(NSSI_DEFAULT_TRANSPORT);
 
@@ -158,10 +167,19 @@ int main(int argc, char *argv[])
 
     // finalize the NSSI library
     rc = nssi_rpc_fini(NSSI_DEFAULT_TRANSPORT);
-    if (rc != NSSI_OK)
+    if (rc != NSSI_OK) {
         log_error(selfsend_debug_level, "Error in nssi_rpc_fini");
+        goto err;
+    }
 
     logger_fini();
 
+    std::cout << "\nEnd Result: TEST PASSED" << std::endl;
+
     return 0;
+
+err:
+    std::cout << "\nEnd Result: TEST FAILED" << std::endl;
+
+    return 1;
 }
