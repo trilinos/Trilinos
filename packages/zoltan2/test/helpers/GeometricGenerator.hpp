@@ -1875,7 +1875,7 @@ public:
 
 	  }
 
-	  gno_t numLocalToPerturb = this->numLocalCoords * used_perturbation_ratio;
+	  gno_t numLocalToPerturb = gno_t(this->numLocalCoords*used_perturbation_ratio);
 	  //cout << "numLocalToPerturb :" << numLocalToPerturb  << endl;
 	  for (int dim = 0; dim < this->coordinate_dimension; ++dim){
 		  scalar_t range = maxCoords[dim] - minCoords[dim];
@@ -2078,7 +2078,7 @@ public:
 
       //cout << "me:" << this->myRank << " ilk print" << endl;
 
-	  gno_t optimal_num = this->numGlobalCoords / double (this->worldSize) + 0.5;
+	  gno_t optimal_num = gno_t(this->numGlobalCoords/double(this->worldSize)+0.5);
 #ifdef printparts
 	  if (this->myRank == 0){
 		  gno_t totalSize = 0;
