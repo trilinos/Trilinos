@@ -102,7 +102,7 @@ namespace {
     "unless the matrix has changed or you have changed parameters\n"
     "(by calling setParameters()).";
 
-  // Utility function for inverting diagional
+  // Utility function for inverting diagonal
   template <typename S, typename L, typename G, typename N>
   void reciprocal_threshold( const Tpetra::Vector<S,L,G,N>& v,
                              const S& min_val ) {
