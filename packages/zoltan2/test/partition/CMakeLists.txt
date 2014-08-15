@@ -152,11 +152,22 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  pamgenMeshAdapterTest
+  NAME pamgenMeshAdapterTest_color
+  SOURCES pamgenMeshAdapterTest.cpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS
+    "--action=color"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_TEST(
     pamgenMeshAdapterTest
     NAME pamgenMeshAdapterTest_mj
-    SOURCES pamgenMeshAdapterTest.cpp
     NUM_MPI_PROCS 4
     COMM serial mpi
     ARGS
@@ -178,17 +189,6 @@ IF (${PACKAGE_NAME}_ENABLE_Scotch)
     FAIL_REGULAR_EXPRESSION "FAIL"
   )
 ENDIF()
-
-TRIBITS_ADD_TEST(
-  pamgenMeshAdapterTest
-  NAME pamgenMeshAdapterTest_color
-  NUM_MPI_PROCS 4
-  COMM serial mpi
-  ARGS
-    "--action=color"
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"
-)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Partitioning1
