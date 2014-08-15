@@ -1136,6 +1136,12 @@ private:
   // *** Communication Support *** //
   ///////////////////////////////////
 
+#ifdef HAVE_MPI
+  // An array of MPI_Request objects for supporting non-blocking sends
+  // and receives
+  Teuchos::Array< MPI_Request > _requests;
+#endif
+
   // Define a struct for storing all the information needed for a
   // single message: a pointer to the buffer, a reference to the
   // message's MPI data type, the rank of the communication partner,
@@ -1163,12 +1169,6 @@ private:
   // buffers.  The outer array represents the axis and the inner
   // 2-Tuple represents the lower and upper boundaries.
   Teuchos::Array< Teuchos::Tuple< MessageInfo, 2 > > _recvMessages;
-
-#ifdef HAVE_MPI
-  // An array of MPI_Request objects for supporting non-blocking sends
-  // and receives
-  Teuchos::Array< MPI_Request > _requests;
-#endif
 
   // A private method to initialize the _sendMessages and
   // _recvMessages arrays.
@@ -1233,9 +1233,11 @@ MDVector(const Teuchos::RCP< const MDMap< Node > > & mdMap,
   _mdArrayRcp(),
   _mdArrayView(),
   _nextAxis(0),
+#ifdef HAVE_MPI
+  _requests(),
+#endif
   _sendMessages(),
-  _recvMessages(),
-  _requests()
+  _recvMessages()
 {
   setObjectLabel("Domi::MDVector");
 
@@ -1264,9 +1266,11 @@ MDVector(const Teuchos::RCP< const MDMap< Node > > & mdMap,
   _mdArrayRcp(),
   _mdArrayView(),
   _nextAxis(0),
+#ifdef HAVE_MPI
+  _requests(),
+#endif
   _sendMessages(),
-  _recvMessages(),
-  _requests()
+  _recvMessages()
 {
   setObjectLabel("Domi::MDVector");
 
@@ -1292,9 +1296,11 @@ MDVector(const Teuchos::RCP< const MDMap< Node > > & mdMap,
   _mdArrayRcp(source),
   _mdArrayView(_mdArrayRcp()),
   _nextAxis(0),
+#ifdef HAVE_MPI
+  _requests(),
+#endif
   _sendMessages(),
-  _recvMessages(),
-  _requests()
+  _recvMessages()
 {
   setObjectLabel("Domi::MDVector");
   int numDims = _mdMap->numDims();
@@ -1324,9 +1330,11 @@ MDVector(const Teuchos::RCP< const MDMap< Node > > & mdMap,
   _mdArrayRcp(mdArrayRcp),
   _mdArrayView(_mdArrayRcp()),
   _nextAxis(0),
+#ifdef HAVE_MPI
+  _requests(),
+#endif
   _sendMessages(),
-  _recvMessages(),
-  _requests()
+  _recvMessages()
 {
   setObjectLabel("Domi::MDVector");
   int numDims = _mdMap->numDims();
@@ -1356,9 +1364,11 @@ MDVector(const MDVector< Scalar, Node > & source) :
   _mdArrayRcp(),
   _mdArrayView(),
   _nextAxis(0),
+#ifdef HAVE_MPI
+  _requests(),
+#endif
   _sendMessages(),
-  _recvMessages(),
-  _requests()
+  _recvMessages()
 {
   setObjectLabel("Domi::MDVector");
 
@@ -1396,9 +1406,11 @@ MDVector(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
   _mdArrayRcp(),
   _mdArrayView(),
   _nextAxis(0),
+#ifdef HAVE_MPI
+  _requests(),
+#endif
   _sendMessages(),
-  _recvMessages(),
-  _requests()
+  _recvMessages()
 {
   setObjectLabel("Domi::MDVector");
   
@@ -1438,9 +1450,11 @@ MDVector(const Teuchos::RCP< const MDComm > mdComm,
   _mdArrayRcp(),
   _mdArrayView(),
   _nextAxis(0),
+#ifdef HAVE_MPI
+  _requests(),
+#endif
   _sendMessages(),
-  _recvMessages(),
-  _requests()
+  _recvMessages()
 {
   setObjectLabel("Domi::MDVector");
   
@@ -1480,9 +1494,11 @@ MDVector(const MDVector< Scalar, Node > & parent,
   _mdArrayRcp(parent._mdArrayRcp),
   _mdArrayView(parent._mdArrayView),
   _nextAxis(0),
+#ifdef HAVE_MPI
+  _requests(),
+#endif
   _sendMessages(),
-  _recvMessages(),
-  _requests()
+  _recvMessages()
 {
   setObjectLabel("Domi::MDVector");
 
@@ -1537,9 +1553,11 @@ MDVector(const MDVector< Scalar, Node > & parent,
   _mdArrayRcp(parent._mdArrayRcp),
   _mdArrayView(parent._mdArrayView),
   _nextAxis(0),
+#ifdef HAVE_MPI
+  _requests(),
+#endif
   _sendMessages(),
-  _recvMessages(),
-  _requests()
+  _recvMessages()
 {
   setObjectLabel("Domi::MDVector");
 
@@ -1608,9 +1626,11 @@ operator=(const MDVector< Scalar, Node > & source)
   _mdArrayRcp   = source._mdArrayRcp;
   _mdArrayView  = source._mdArrayView;
   _nextAxis     = source._nextAxis;
+#ifdef HAVE_MPI
+  _requests     = source._requests;
+#endif
   _sendMessages = source._sendMessages;
   _recvMessages = source._recvMessages;
-  _requests     = source._requests;
   return *this;
 }
 
@@ -3347,7 +3367,7 @@ writeBinary(const std::string & filename,
   typedef typename MDArrayView< Scalar >::const_iterator const_iterator;
   for (const_iterator it = mdArrayView.begin(); it != mdArrayView.end(); ++it)
   {
-    fwrite(*it, sizeof(Scalar), 1, datafile);
+    fwrite((const void *) &(*it), sizeof(Scalar), 1, datafile);
   }
 
   // Close the data file
