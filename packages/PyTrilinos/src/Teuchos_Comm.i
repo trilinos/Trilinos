@@ -51,7 +51,7 @@ using Teuchos::OpaqueWrapper;
 
 // Handle Mpi4Py, if we have it
 #ifdef HAVE_MPI4PY
-{%
+%{
 #include "mpi4py/mpi4py.h"
 %}
 %include "mpi4py/mpi4py.i"
@@ -534,15 +534,14 @@ else:
 #ifdef HAVE_MPI4PY
   MpiComm(MPI_Comm mpiComm = MPI_COMM_WORLD)
   {
-    Teuchos::MpiComm< Ordinal > * result = new
-      Teuchos::MpiComm<Ordinal>(Teuchos::opaqueWrapper(mpiComm));
-    return result;
+    return new Teuchos::MpiComm< Ordinal >
+      (Teuchos::opaqueWrapper(mpiComm));
   }
 #else
   MpiComm(PyObject * dummy = NULL)
   {
-    return new Teuchos::MpiComm<Ordinal>
-      (Teuchos::opaqueWrapper((MPI_Comm)MPI_COMM_WORLD));
+    return new Teuchos::MpiComm< Ordinal >
+      (Teuchos::opaqueWrapper(MPI_COMM_WORLD));
   }
 #endif
 }
