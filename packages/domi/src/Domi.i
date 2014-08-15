@@ -674,7 +674,7 @@ class MDVector(object):
 
         # Factory for arg is DistArray
         elif hasattr(arg, '__distarray__'):
-            self._vector = from_DistArray(*args,dtype=dtype)
+            self._vector = from_DistArray(*args)
 
         self.__dtype = dtype
 
