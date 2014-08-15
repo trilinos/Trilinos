@@ -101,20 +101,18 @@ enum MeshEntityType {
 
 */
 
-template <typename User, typename UserCoord=User>
+  template <typename User>
   class MeshAdapter : public BaseAdapter<User> {
 private:
-  enum MeshEntityType primaryEntityType; // Entity (region, face, edge, or 
-                                         // vertex) to be partitioned, ordered,
+  enum MeshEntityType primaryEntityType; // Entity type
+                                         // to be partitioned, ordered,
                                          // colored, matched, etc.
-  enum MeshEntityType adjacencyEntityType; // Entity (face, edge, or vertex) 
-                                           // describing adjacencies;
-                                           // typically not primaryEntityType.
-  enum MeshEntityType secondAdjacencyEntityType; // Entity (face, edge, or 
-                                                 // vertex) describing second 
-                                                 // adjacencies;
-                                                 // typically not
-                                                 // primaryEntityType.
+  enum MeshEntityType adjacencyEntityType; // Entity type defining first-order
+                                           // adjacencies; adjacencies are of
+                                           // this type.  
+  enum MeshEntityType secondAdjacencyEntityType; // Bridge entity type
+                                                 // defining second-order
+                                                 // adjacencies.
 
 public:
 
@@ -126,7 +124,7 @@ public:
   typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef User user_t;
-  typedef UserCoord userCoord_t;
+  typedef User userCoord_t;
 #endif
   
   enum BaseAdapterType adapterType() const {return MeshAdapterType;}
@@ -194,7 +192,7 @@ public:
    *  Some algorithms can use geometric entity coordinate
    *    information if it is present.
    */
-  virtual int getDimensionOf() const { return 0; }
+  virtual int getDimension() const { return 0; }
   
   /*! \brief Provide a pointer to one dimension of entity coordinates.
       \param coords  points to a list of coordinate values for the dimension.
@@ -238,10 +236,6 @@ public:
       \param adjacencyIds on return will point to the global first adjacency
          Ids for each entity.
   */
-//KDD Since the source objects are assumed to be gotten from getIDsViewOf(),
-//KDD is the source MeshEntityType understood here?
-//VJL Do we have to "defend" against multiple calls to that function?
-//KDD What about the target?
   virtual void getAdjsView(MeshEntityType source, MeshEntityType target,
      const lno_t *&offsets, const gid_t *& adjacencyIds) const 
   {
@@ -258,8 +252,6 @@ public:
 
 
   /*! \brief Returns the number of second adjacencies on this process.
-   *
-   *  Some algorithms can partition a graph of mesh entities
    *
    *  Parameters will specify algorithm options:
    *   balance_entity_type==MeshEntityType, adjacency_through==MeshEntityType
@@ -279,13 +271,10 @@ public:
    */
 // TODO:  Later may allow user to not implement second adjacencies and, if we want them,
 // TODO:  we compute A^T A, where A is matrix of first adjacencies.
-//KDD Since the source objects are assumed to be gotten from getIDsViewOf(),
-//KDD is the sourcetarget MeshEntityType understood here?
-//VJL Do we have to "defend" against multiple calls to that function?
-//KDD What about the through MeshEntityType?
   virtual void get2ndAdjsView(MeshEntityType sourcetarget,
-     MeshEntityType through, const lno_t *&offsets,
-     const gid_t *& adjacencyIds) const
+                              MeshEntityType through,
+                              const lno_t *&offsets,
+                              const gid_t *&adjacencyIds) const
   {
     offsets = NULL;
     adjacencyIds = NULL;
@@ -307,13 +296,11 @@ public:
       \param idx ranges from zero to one less than
                    getNumWeightsPer2ndAdj().
    */
-//KDD Since the source objects are assumed to be gotten from getIDsViewOf(),
-//KDD is the sourcetarget MeshEntityType understood here?
-//VJL Do we have to "defend" against multiple calls to that function?
-//KDD What about the through MeshEntityType?
   virtual void get2ndAdjWeightsView(MeshEntityType sourcetarget,
-     MeshEntityType through, const scalar_t *&weights, int &stride,
-     int idx) const
+                                    MeshEntityType through,
+                                    const scalar_t *&weights,
+                                    int &stride,
+                                    int idx) const
   {
     weights = NULL;
     stride = 0;
@@ -423,6 +410,16 @@ public:
     }
   }
   
+  /*! \brief Optional method allowing the idx-th weight of entity type etype
+   *  to be set as the number of neighbors (the degree) of the entity
+   *  Default is false; user can change in his MeshAdapter implementation.
+   */
+  virtual bool useDegreeAsWeightOf(MeshEntityType etype, int idx) const
+  {
+    return false;
+  }
+
+  ///////////////////////////////////////////
   // Functions from the BaseAdapter interface
   size_t getLocalNumIDs() const {
     return getLocalNumOf(getPrimaryEntityType());
@@ -439,7 +436,17 @@ public:
   void getWeightsView(const scalar_t *&wgt, int &stride, int idx = 0) const {
     getWeightsViewOf(getPrimaryEntityType(), wgt, stride, idx);
   }
-  
+
+  void getCoordinatesView(const scalar_t *&coords, int &stride, 
+                          int coordDim) const
+  {
+    getCoordinatesViewOf(getPrimaryEntityType(), coords, stride, coordDim);
+  }
+
+  bool useDegreeAsWeight(int idx) const
+  {
+    return useDegreeAsWeightOf(getPrimaryEntityType(), idx);
+  }
 };
   
 }  //namespace Zoltan2

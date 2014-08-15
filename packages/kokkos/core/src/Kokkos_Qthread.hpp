@@ -143,6 +143,9 @@ private:
 
 } // namespace Kokkos
 
+/*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
+
 #include <Kokkos_Parallel.hpp>
 #include <Qthread/Kokkos_QthreadExec.hpp>
 #include <Qthread/Kokkos_Qthread_Parallel.hpp>

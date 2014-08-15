@@ -59,7 +59,8 @@
 
 
 std::queue <nssi_svc_rpc_request *> pending_reqs;
-pthread_cond_t pending_cond;
+pthread_cond_t pending_not_empty;
+pthread_cond_t pending_not_full;
 pthread_mutex_t pending_mutex;
 
 static volatile bool time_to_exit=false;
@@ -91,8 +92,8 @@ void *process_pending_reqs(void *arg)
             req = pending_reqs.front();
             pending_reqs.pop();
 
-            // signal threads that the state of the queue has changed
-            pthread_cond_signal(&pending_cond);
+            // signal the producer thread that the the queue is not "full"
+            pthread_cond_signal(&pending_not_full);
 
             // unlock the mutex while we process the request
             pthread_mutex_unlock(&pending_mutex);
@@ -107,8 +108,8 @@ void *process_pending_reqs(void *arg)
             pthread_mutex_lock(&pending_mutex);
         }
         else {
-            // this will block this thread until someone sends us a signal
-            pthread_cond_wait(&pending_cond, &pending_mutex);
+            // block this thread until the producer thread signals that the queue is not "empty"
+            pthread_cond_wait(&pending_not_empty, &pending_mutex);
         }
     }
 
@@ -123,7 +124,8 @@ void *process_pending_reqs(void *arg)
 void xfer_start_server_threads(const int num_threads, const int max_reqs)
 {
     // initialize the condition and mutex variables for the pending queue
-    pthread_cond_init(&pending_cond, NULL);  // default attributes
+    pthread_cond_init(&pending_not_empty, NULL);  // default attributes
+    pthread_cond_init(&pending_not_full, NULL);  // default attributes
     pthread_mutex_init(&pending_mutex, NULL); // default attributes
 
     max_num_reqs = max_reqs;
@@ -137,16 +139,17 @@ void xfer_start_server_threads(const int num_threads, const int max_reqs)
 }
 
 
-/** All this function does is take the request and add it to the
- * pending request queue.  This is a replacement for process_rpc_request
+/** This is the producer thread code.
+ *  All this function does is take the request and add it to the
+ *  pending request queue.  This is a replacement for process_rpc_request
  *  in the call to function nssi_server_start().
  */
 int xfer_enqueue_rpc_request(nssi_svc_rpc_request *req)
 {
-    // We wait if the numbe of pending requests is too large
+    // We wait if the queue of pending requests is "full"
     pthread_mutex_lock(&pending_mutex);
     while (pending_reqs.size() >= max_num_reqs) {
-        pthread_cond_wait(&pending_cond, &pending_mutex);
+        pthread_cond_wait(&pending_not_full, &pending_mutex);
     }
 
     log_debug(xfer_debug_level, "Adding request %d to the pending queue", req->id);
@@ -154,8 +157,8 @@ int xfer_enqueue_rpc_request(nssi_svc_rpc_request *req)
     // ok to add the request
     pending_reqs.push(req);
 
-    // tell the processing threads the queue has changed
-    pthread_cond_signal(&pending_cond);
+    // tell the consumer threads the queue has new data
+    pthread_cond_signal(&pending_not_empty);
 
     pthread_mutex_unlock(&pending_mutex);
 
@@ -168,7 +171,7 @@ void xfer_cancel_server_threads()
 
     pthread_mutex_lock(&pending_mutex);
     time_to_exit = true;
-    pthread_cond_broadcast(&pending_cond);
+    pthread_cond_broadcast(&pending_not_empty);
     pthread_mutex_unlock(&pending_mutex);
 
     while (!consumer_threads.empty()) {

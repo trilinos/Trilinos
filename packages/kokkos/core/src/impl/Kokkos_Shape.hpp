@@ -221,7 +221,7 @@ struct assert_shape_is_rank_one< Shape<Size,1,s0> >
 /** \brief  Array bounds assertion templated on the execution space
  *          to allow device-specific abort code.
  */
-template< class ExecutionSpace >
+template< class Space >
 struct AssertShapeBoundsAbort ;
 
 template<>
@@ -286,7 +286,7 @@ void assert_shape_bounds( const ShapeType & shape ,
                   i7 < shape.N7 ;
 
   if ( ! ok ) {
-    AssertShapeBoundsAbort< ExecutionSpace >
+    AssertShapeBoundsAbort< Kokkos::Impl::ActiveExecutionMemorySpace >
       ::apply( ShapeType::rank ,
                shape.N0 , shape.N1 , shape.N2 , shape.N3 ,
                shape.N4 , shape.N5 , shape.N6 , shape.N7 ,

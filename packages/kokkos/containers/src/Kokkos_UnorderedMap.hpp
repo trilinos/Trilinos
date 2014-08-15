@@ -211,7 +211,7 @@ private:
 ///
 template <   typename Key
            , typename Value
-           , typename Device = Impl::DefaultDeviceType
+           , typename Device = Kokkos::DefaultExecutionSpace
            , typename Hasher = pod_hash<typename Impl::remove_const<Key>::type>
            , typename EqualTo = pod_equal_to<typename Impl::remove_const<Key>::type>
         >

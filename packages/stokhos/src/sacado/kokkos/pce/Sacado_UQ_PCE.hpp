@@ -59,6 +59,11 @@
 
 namespace Sacado {
 
+  // Forward declaration
+  template <typename Storage>
+  KOKKOS_INLINE_FUNCTION
+  bool is_constant(const Sacado::UQ::PCE<Storage>& x);
+
   //! Namespace for UQ classes classes
   namespace UQ {
 
@@ -150,12 +155,19 @@ namespace Sacado {
 
       //! Copy constructor
       KOKKOS_INLINE_FUNCTION
-      PCE(const PCE& x) : cijk_(x.cijk_), s_(x.s_) {}
+      PCE(const PCE& x) : cijk_(x.cijk_), s_(1,x.fastAccessCoeff(0)) {
+        if (x.size() > 1 && !is_constant(x))
+          s_ = x.s_;
+      }
 
       //! Copy constructor
       KOKKOS_INLINE_FUNCTION
       PCE(const volatile PCE& x) :
-        cijk_(const_cast<const my_cijk_type&>(x.cijk_)), s_(x.s_) {}
+        cijk_(const_cast<const my_cijk_type&>(x.cijk_)),
+        s_(1,x.fastAccessCoeff(0)) {
+        if (x.size() > 1 && !is_constant(x))
+          s_ = x.s_;
+      }
 
       //! Destructor
       KOKKOS_INLINE_FUNCTION
@@ -1178,6 +1190,7 @@ namespace Sacado {
 
   // Utility function to see if a PCE is really a constant
   template <typename Storage>
+  KOKKOS_INLINE_FUNCTION
   bool is_constant(const Sacado::UQ::PCE<Storage>& x)
   {
     typedef typename Storage::ordinal_type ordinal_type;

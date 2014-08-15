@@ -277,6 +277,7 @@ void ColoringProblem<Adapter>::createColoringProblem()
 
   case GraphModelType:
     graphFlags.set(SELF_EDGES_MUST_BE_REMOVED);
+    graphFlags.set(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
     this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
       this->baseInputAdapter_, this->envConst_, problemCommConst_, graphFlags));
 

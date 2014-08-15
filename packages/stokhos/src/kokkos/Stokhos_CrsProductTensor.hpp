@@ -403,6 +403,62 @@ public:
     return tensor;
   }
 
+  static CrsProductTensor createMeanBased()
+  {
+    const size_type dimension = 1;
+    const size_type entry_count = 1;
+
+    // Allocate tensor data
+    // coord and coord2 are initialized to zero because otherwise we get
+    // seg faults in the MIC algorithm when processing the tail of each
+    // tensor row.  Not quite sure why as the coord loads are padded to
+    // length 16 and are masked for the remainder (unless it does load x[j]
+    // anyway and masks off the result, so j needs to be valid).
+    CrsProductTensor tensor;
+    tensor.m_coord = coord_array_type("tensor_coord", entry_count );
+    tensor.m_coord2 = coord2_array_type( "tensor_coord2", entry_count );
+    tensor.m_value = value_array_type( Kokkos::allocate_without_initializing, "tensor_value", entry_count );
+    tensor.m_num_entry = entry_array_type( Kokkos::allocate_without_initializing, "tensor_num_entry", dimension );
+    tensor.m_row_map = row_map_array_type( Kokkos::allocate_without_initializing, "tensor_row_map", dimension+1 );
+    tensor.m_dim = dimension;
+    tensor.m_entry_max = 1;
+    tensor.m_avg_entries_per_row = 1;
+    tensor.m_nnz = 1;
+    tensor.m_flops = 5*tensor.m_nnz + dimension;
+
+    // Create mirror, is a view if is host memory
+    typename coord_array_type::HostMirror
+      host_coord = Kokkos::create_mirror_view( tensor.m_coord );
+    typename coord2_array_type::HostMirror
+      host_coord2 = Kokkos::create_mirror_view( tensor.m_coord2 );
+    typename value_array_type::HostMirror
+      host_value = Kokkos::create_mirror_view( tensor.m_value );
+    typename entry_array_type::HostMirror
+      host_num_entry = Kokkos::create_mirror_view( tensor.m_num_entry );
+    typename entry_array_type::HostMirror
+      host_row_map = Kokkos::create_mirror_view( tensor.m_row_map );
+
+    // Compute row map
+    host_row_map(0) = 0;
+    host_row_map(1) = 1;
+    host_num_entry(0) = 1;
+
+    // Compute tensor values
+    host_value(0) = 0.5;
+    host_coord2(0,0) = 0;
+    host_coord2(0,1) = 0;
+    host_coord(0) = 0;
+
+    // Copy data to device if necessary
+    Kokkos::deep_copy( tensor.m_coord, host_coord );
+    Kokkos::deep_copy( tensor.m_coord2, host_coord2 );
+    Kokkos::deep_copy( tensor.m_value, host_value );
+    Kokkos::deep_copy( tensor.m_num_entry, host_num_entry );
+    Kokkos::deep_copy( tensor.m_row_map, host_row_map );
+
+    return tensor;
+  }
+
   static HostMirror
   create_mirror_view( const CrsProductTensor& tensor ) {
     HostMirror host_tensor;
@@ -455,6 +511,21 @@ create_product_tensor(
 {
   return CrsProductTensor<ValueType, Device, Memory>::create(
     basis, Cijk, params );
+}
+
+template< class Device, typename OrdinalType, typename ValueType>
+CrsProductTensor<ValueType, Device>
+create_mean_based_product_tensor()
+{
+  return CrsProductTensor<ValueType, Device>::createMeanBased();
+}
+
+template< class Device, typename OrdinalType, typename ValueType,
+          class Memory >
+CrsProductTensor<ValueType, Device, Memory>
+create_mean_based_product_tensor()
+{
+  return CrsProductTensor<ValueType, Device, Memory>::createMeanBased();
 }
 
 template < class ValueType, class Device, class Memory >

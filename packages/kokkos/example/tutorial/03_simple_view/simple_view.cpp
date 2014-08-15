@@ -51,7 +51,7 @@ typedef Kokkos::View<double*[3]> view_type;
 struct init_view {
   view_type a;
   init_view(view_type a_):a(a_) {};
-
+ 
   KOKKOS_INLINE_FUNCTION
   void operator() (int i) const {
     a(i,0) = 1.0*i;
@@ -63,7 +63,7 @@ struct init_view {
 struct squaresum {
   view_type a;
   squaresum(view_type a_):a(a_) {};
-
+  typedef double  value_type; //Specify value type of reduction target, lsum
   KOKKOS_INLINE_FUNCTION
   void operator() (int i, double &lsum) const {
     lsum+= a(i,0)*a(i,1)/(a(i,2)+0.1);

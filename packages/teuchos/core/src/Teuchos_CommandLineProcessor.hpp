@@ -216,6 +216,22 @@ public:
     ,const bool    required        = false
     );
 
+  /** \brief Set a size_t option.
+   *
+   * \param  option_name    [in] (null terminated std::string) The name of the option
+   *                        (without the leading '--' or trailing '=').
+   * \param  option_val     [in/out] On input, <tt>*option_val</tt> gives the default value
+   *                        of the option (used for printing in --help).  On output,
+   *                        will be set according to <tt>(argc,argv[])</tt>.
+   * \param  documentation  [in] If <tt>!=NULL</tt>, then this null terminated std::string
+   *                        gives the documentation for the option.
+   */
+  void setOption(
+    const char     option_name[]
+    ,size_t        *option_val
+    ,const char    documentation[] = NULL
+    ,const bool    required        = false
+    );
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
   /** \brief Set a long long integer option.
    *
@@ -404,7 +420,7 @@ public:
 
 public:
   //
-  enum EOptType { OPT_NONE, OPT_BOOL_TRUE, OPT_BOOL_FALSE, OPT_INT, OPT_LONG_INT, 
+  enum EOptType { OPT_NONE, OPT_BOOL_TRUE, OPT_BOOL_FALSE, OPT_INT, OPT_LONG_INT, OPT_SIZE_T,
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
   OPT_LONG_LONG_INT,
 #endif
@@ -734,6 +750,8 @@ std::string CommandLineProcessor::opt_type_str( EOptType opt_type ) const
     case OPT_LONG_INT:
       str = "long int";
       break;
+    case OPT_SIZE_T:
+      str = "size_t";
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
     case OPT_LONG_LONG_INT:
       str = "long long int";

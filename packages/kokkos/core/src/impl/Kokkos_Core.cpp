@@ -51,14 +51,20 @@
 #include <cstdlib>
 
 namespace Kokkos {
+
+  typedef Kokkos::DefaultExecutionSpace::host_mirror_device_type  DefaultHostMirrorDeviceType ;
+
+  enum { DefaultIsNotHostSpace = ! Impl::is_same< Kokkos::DefaultExecutionSpace , DefaultHostMirrorDeviceType >::value };
+
   void initialize() {
-    if(!Impl::is_same<Impl::DefaultDeviceType, Impl::DefaultDeviceType::host_mirror_device_type>::value){
-      Impl::DefaultDeviceType::host_mirror_device_type::initialize();
+    if ( DefaultIsNotHostSpace ) {
+      Kokkos::DefaultExecutionSpace::host_mirror_device_type::initialize();
     }
-    Impl::DefaultDeviceType::initialize();
+    Kokkos::DefaultExecutionSpace::initialize();
   }
 
   void initialize(int narg, char* arg[]) {
+
     int nthreads = -1;
     int numa = -1;
     int device = -1;
@@ -138,18 +144,18 @@ namespace Kokkos {
     }
 
 
-    if(!Impl::is_same<Impl::DefaultDeviceType, Impl::DefaultDeviceType::host_mirror_device_type>::value) {
+    if(DefaultIsNotHostSpace) {
       if(nthreads>0) {
         if(numa>0)
-          Impl::DefaultDeviceType::host_mirror_device_type::initialize(nthreads,numa);
+          DefaultHostMirrorDeviceType::initialize(nthreads,numa);
         else
-          Impl::DefaultDeviceType::host_mirror_device_type::initialize(nthreads);
+          DefaultHostMirrorDeviceType::initialize(nthreads);
       } else
-        Impl::DefaultDeviceType::host_mirror_device_type::initialize();
+        DefaultHostMirrorDeviceType::initialize();
     }
 
     #ifdef KOKKOS_HAVE_CUDA
-    if(Impl::is_same<Impl::DefaultDeviceType, Kokkos::Cuda>::value) {
+    if(Impl::is_same<Kokkos::DefaultExecutionSpace, Kokkos::Cuda>::value) {
       if(device>-1)
         Kokkos::Cuda::initialize(device);
       else
@@ -159,25 +165,25 @@ namespace Kokkos {
     {
       if(nthreads>0) {
         if(numa>0)
-          Impl::DefaultDeviceType::initialize(nthreads,numa);
+          Kokkos::DefaultExecutionSpace::initialize(nthreads,numa);
         else
-          Impl::DefaultDeviceType::initialize(nthreads);
+          Kokkos::DefaultExecutionSpace::initialize(nthreads);
       } else
-        Impl::DefaultDeviceType::initialize();
+        Kokkos::DefaultExecutionSpace::initialize();
     }
   }
 
   void finalize() {
-    if(!Impl::is_same<Impl::DefaultDeviceType, Impl::DefaultDeviceType::host_mirror_device_type>::value) {
-      Impl::DefaultDeviceType::host_mirror_device_type::finalize();
+    if(DefaultIsNotHostSpace) {
+      DefaultHostMirrorDeviceType::finalize();
     }
-    Impl::DefaultDeviceType::finalize();
+    Kokkos::DefaultExecutionSpace::finalize();
   }
 
   void fence() {
-    if(!Impl::is_same<Impl::DefaultDeviceType, Impl::DefaultDeviceType::host_mirror_device_type>::value) {
-      Impl::DefaultDeviceType::host_mirror_device_type::fence();
+    if(DefaultIsNotHostSpace) {
+      DefaultHostMirrorDeviceType::fence();
     }
-    Impl::DefaultDeviceType::fence();
+    Kokkos::DefaultExecutionSpace::fence();
   }
 }

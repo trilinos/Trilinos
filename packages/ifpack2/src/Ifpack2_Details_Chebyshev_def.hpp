@@ -101,6 +101,26 @@ namespace {
     "After calling compute() once, you do not need to call it again,\n"
     "unless the matrix has changed or you have changed parameters\n"
     "(by calling setParameters()).";
+
+  // Utility function for inverting diagional
+  template <typename S, typename L, typename G, typename N>
+  void reciprocal_threshold( const Tpetra::Vector<S,L,G,N>& v,
+                             const S& min_val ) {
+    typedef KokkosClassic::MultiVector<S,N> KMV;
+    typedef KokkosClassic::DefaultArithmetic<KMV> KMVT;
+    KMV local_v = v.getLocalMV ();
+    KMVT::ReciprocalThreshold (local_v, min_val);
+  }
+
+#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  template <typename S, typename L, typename G, typename D>
+  void reciprocal_threshold(
+    const Tpetra::Vector<S,L,G,Kokkos::Compat::KokkosDeviceWrapperNode<D> >& v,
+    const S& min_val ) {
+    Kokkos::MV_ReciprocalThreshold( v.template getLocalView<D>(),
+                                    min_val );
+  }
+#endif
 }
 
 template<class ScalarType, class MV>
@@ -784,10 +804,7 @@ makeInverseDiagonal (const row_matrix_type& A, const bool useDiagOffsets) const
 
   // Invert the diagonal entries, replacing entries less (in
   // magnitude) than the user-specified value with that value.
-  typedef KokkosClassic::MultiVector<ST, typename MV::node_type> KMV;
-  KMV localDiag = D_rangeMap->getLocalMV ();
-  typedef KokkosClassic::DefaultArithmetic<KMV> KMVT;
-  KMVT::ReciprocalThreshold (localDiag, minDiagVal_);
+  reciprocal_threshold (*D_rangeMap, minDiagVal_);
   return Teuchos::rcp_const_cast<const V> (D_rangeMap);
 }
 

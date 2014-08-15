@@ -71,6 +71,10 @@ public:
   typedef Kokkos::OpenMP   execution_space ;
 #elif defined( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_THREADS )
   typedef Kokkos::Threads  execution_space ;
+#elif defined( KOKKOS_HAVE_OPENMP )
+  typedef Kokkos::OpenMP   execution_space ;
+#elif defined( KOKKOS_HAVE_PTHREAD )
+  typedef Kokkos::Threads  execution_space ;
 #else
   typedef Kokkos::Serial   execution_space ;
 #endif

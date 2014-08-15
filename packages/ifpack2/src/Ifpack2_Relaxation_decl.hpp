@@ -428,6 +428,7 @@ public:
   /// initialize() for you.
   void compute ();
 
+
   //! Return true if compute() has been called.
   inline bool isComputed() const {
     return(IsComputed_);
@@ -640,6 +641,8 @@ private:
   ///   the fifth template parameter.
   typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
                             global_ordinal_type, node_type> crs_matrix_type;
+  typedef Tpetra::Experimental::BlockCrsMatrix<scalar_type, local_ordinal_type,
+                            global_ordinal_type, node_type> block_crs_matrix_type;
   //@}
   //! \name Unimplemented methods that you are syntactically forbidden to call.
   //@{
@@ -665,6 +668,11 @@ private:
         const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
               Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
+  //! Apply Jacobi to X, returning the result in Y.
+  void ApplyInverseJacobi_BlockCrsMatrix(
+        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
+
   //! Apply Gauss-Seidel to X, returning the result in Y.
   void ApplyInverseGS(
         const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
@@ -678,6 +686,12 @@ private:
   //! Apply Gauss-Seidel for a Tpetra::CrsMatrix specialization.
   void
   ApplyInverseGS_CrsMatrix (const crs_matrix_type& A,
+                            const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
+
+  //! Apply Gauss-Seidel for a Tpetra::Experimental::BlockCrsMatrix specialization.
+  void
+  ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
                             const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
                             Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
@@ -696,6 +710,15 @@ private:
   ApplyInverseSGS_CrsMatrix (const crs_matrix_type& A,
                              const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
                              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
+
+  //! Apply symmetric Gauss-Seidel for a Tpetra::ExperimentalBlockCrsMatrix specialization.
+  void
+  ApplyInverseSGS_BlockCrsMatrix (const block_crs_matrix_type& A,
+                             const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                             Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
+
+  void computeBlockCrs ();
+
 
   //@}
   //! @name Internal data and parameters
@@ -717,6 +740,10 @@ private:
   Teuchos::RCP<const Tpetra::Import<local_ordinal_type,global_ordinal_type,node_type> > Importer_;
   //! Contains the diagonal elements of \c A_.
   mutable Teuchos::RCP<Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Diagonal_;
+
+  Teuchos::RCP<block_crs_matrix_type> BlockDiagonal_;
+  Teuchos::Array<int> blockDiagonalFactorizationPivots;
+
 
   //! How many times to apply the relaxation per apply() call.
   int NumSweeps_;
@@ -792,6 +819,8 @@ private:
   /// diagOffsets_ has size zero.  It is perfectly legitimate for the
   /// matrix to have zero rows on the calling process.
   bool savedDiagOffsets_;
+
+  bool hasBlockCrsMatrix_;
 
   /// \brief In case of local/reordered smoothing, the unknowns to use
   Teuchos::ArrayRCP<local_ordinal_type> localSmoothingIndices_;

@@ -62,14 +62,6 @@
 /*--------------------------------------------------------------------------*/
 
 namespace Kokkos {
-namespace Impl {
-class OpenMPexec ;
-} // namespace Impl
-} // namespace Kokkos
-
-/*--------------------------------------------------------------------------*/
-
-namespace Kokkos {
 
 /// \class OpenMP
 /// \brief Kokkos device for multicore processors in the host memory space.
@@ -85,7 +77,6 @@ public:
   typedef OpenMP                execution_space ;
   typedef HostSpace::size_type  size_type ;
   typedef HostSpace             memory_space ;
-  typedef OpenMP                scratch_memory_space ;
   typedef LayoutRight           array_layout ;
   typedef OpenMP                host_mirror_device_type ;
 
@@ -125,29 +116,81 @@ public:
                           unsigned use_cores_per_numa = 0 );
 
   static int is_initialized();
-
-  KOKKOS_FUNCTION static unsigned team_max();
-  KOKKOS_FUNCTION static unsigned team_recommended();
-  KOKKOS_INLINE_FUNCTION static unsigned hardware_thread_id();
-  KOKKOS_INLINE_FUNCTION static unsigned max_hardware_threads();
   //@}
   //------------------------------------
-  //! \name Function for the functor device interface */
+  /** \brief  This execution space has a topological thread pool which can be queried.
+   *
+   *  All threads within a pool have a common memory space for which they are cache coherent.
+   *    depth = 0  gives the number of threads in the whole pool.
+   *    depth = 1  gives the number of threads in a NUMA region, typically sharing L3 cache.
+   *    depth = 2  gives the number of threads at the finest granularity, typically sharing L1 cache.
+   */
+  inline static
+  int thread_pool_size( int depth = 0 );
 
-  KOKKOS_INLINE_FUNCTION void * get_shmem( const int size ) const ;
+  /** \brief  The rank of the executing thread in this thread pool */
+  KOKKOS_INLINE_FUNCTION static
+  int thread_pool_rank();
 
-  explicit KOKKOS_INLINE_FUNCTION OpenMP( Impl::OpenMPexec & );
+
+  inline static unsigned max_hardware_threads() { return thread_pool_size(0); }
+  inline static unsigned team_max()             { return thread_pool_size(1); }
+  inline static unsigned team_recommended()     { return thread_pool_size(2); }
+
+  KOKKOS_INLINE_FUNCTION static
+  unsigned hardware_thread_id() { return thread_pool_rank(); }
 
   //------------------------------------
 
-private:
+  class scratch_memory_space {
+  private:
+    mutable char * m_shmem_iter ;
+            char * m_shmem_end ;
+    static void get_shmem_error();
+  public:
+    typedef Impl::MemorySpaceTag           kokkos_tag ;
+    typedef scratch_memory_space           memory_space ;
+    typedef OpenMP                         execution_space ;
+    typedef execution_space::array_layout  array_layout ;
 
-  Impl::OpenMPexec & m_exec ;
+    inline
+    void * get_shmem( const int size ) const 
+      {
+        enum { ALIGN = 8 , MASK = ALIGN - 1 }; // Alignment used by View::shmem_size
+        void * const tmp = m_shmem_iter ;
+        if ( m_shmem_end < ( m_shmem_iter += ( size + MASK ) & ~MASK ) ) { get_shmem_error(); }
+        return tmp ;
+      }
 
+    inline
+    scratch_memory_space( void * ptr , const int size )
+      : m_shmem_iter( (char *) ptr )
+      , m_shmem_end(  ((char *)ptr) + size )
+      {}
+  };
 };
 
 } // namespace Kokkos
+/*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
 
+namespace Kokkos {
+namespace Impl {
+
+template<>
+struct VerifyExecutionCanAccessMemorySpace
+  < Kokkos::OpenMP::memory_space
+  , Kokkos::OpenMP::scratch_memory_space
+  >
+{
+  inline static void verify( void ) { }
+  inline static void verify( const void * ) { }
+};
+
+} // namespace Impl
+} // namespace Kokkos
+
+/*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
 
 #include <OpenMP/Kokkos_OpenMPexec.hpp>

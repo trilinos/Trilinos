@@ -136,7 +136,7 @@ void subGroupGloballyIncreasingIds(T numGlobalCoords,
   }
 
   endIdx = firstIdx + share;
-  if (rank < static_cast<T> (extra))
+  if (rank < int(extra))
     endIdx++;
 
   if (rank >= numProcsLeftHalf){

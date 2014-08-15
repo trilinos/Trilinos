@@ -61,6 +61,13 @@ namespace Tpetra {
   /// \brief Communication plan for data redistribution from a
   ///   uniquely-owned to a (possibly) multiply-owned distribution.
   ///
+  /// \tparam LocalOrdinal The type of local indices.  See the
+  ///   documentation of Map for requirements.
+  /// \tparam GlobalOrdinal The type of global indices.  See the
+  ///   documentation of Map for requirements.
+  /// \tparam Node The Kokkos Node type.  See the documentation of Map
+  ///   for requirements.
+  ///
   /// Tpetra users should use this class to construct a communication
   /// plan between two data distributions (i.e., two Map objects).
   /// The plan can be called repeatedly by computational classes to
@@ -111,7 +118,7 @@ namespace Tpetra {
   ///   the Import (i.e., when calling DistObject's doImport()
   ///   (forward mode) or doExport() (reverse mode)).
   ///
-  template <class LocalOrdinal,
+  template <class LocalOrdinal = int,
             class GlobalOrdinal = LocalOrdinal,
             class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class Import:

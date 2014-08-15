@@ -180,6 +180,23 @@ void CommandLineProcessor::setOption(
 }
 
 
+void CommandLineProcessor::setOption(
+  const char     option_name[]
+  ,size_t        *option_val
+  ,const char    documentation[]
+  ,const bool    required
+  )
+{
+  add_extra_output_setup_options();
+  TEUCHOS_TEST_FOR_EXCEPT(!(option_val!=NULL));
+  options_list_[std::string(option_name)]
+    = opt_val_val_t(OPT_SIZE_T,any(option_val),required);
+  options_documentation_list_.push_back(
+    opt_doc_t(OPT_SIZE_T, option_name, "", std::string(documentation?documentation:""),
+      any(option_val))
+    );
+}
+
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
 void CommandLineProcessor::setOption(
   const char     option_name[]
@@ -312,6 +329,9 @@ CommandLineProcessor::parse(
         break;
       case OPT_LONG_INT:
         *(any_cast<long int*>(opt_val_val.opt_val)) = asSafe<long int> (opt_val_str);
+        break;
+      case OPT_SIZE_T:
+        *(any_cast<size_t *>(opt_val_val.opt_val)) = asSafe<size_t> (opt_val_str);
         break;
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
       case OPT_LONG_LONG_INT:
@@ -492,6 +512,7 @@ void CommandLineProcessor::printHelpMessage( const char program_name[],
           break;
         case OPT_INT:
         case OPT_LONG_INT:
+        case OPT_SIZE_T:
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
         case OPT_LONG_LONG_INT:
 #endif
@@ -511,6 +532,9 @@ void CommandLineProcessor::printHelpMessage( const char program_name[],
           break;
         case OPT_LONG_INT:
           out << "=" << (*(any_cast<long int*>(itr->default_val)));
+          break;
+        case OPT_SIZE_T:
+          out << "=" << (*(any_cast<size_t*>(itr->default_val)));
           break;
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
         case OPT_LONG_LONG_INT:

@@ -1,5 +1,6 @@
 #include <stddef.h>                     // for size_t
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/GetEntities.hpp>       // for comm_mesh_counts, count_entities
 #include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
 #include <stk_mesh/base/CreateEdges.hpp>  // for create_edges
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
@@ -12,6 +13,7 @@
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, EntityRank
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include <exampleMeshes/StkMeshFromGeneratedMesh.h>
+#include "unit_tests/Setup2Block2HexMesh.hpp"
 
 using stk::mesh::MetaData;
 
@@ -248,6 +250,30 @@ TEST( UnitTestCreateEdges , testCreateEdges3x3x3 )
       EXPECT_EQ( 2u, b.num_nodes(edge_ordinal) );
     }
   }
+}
+
+TEST( UnitTestCreateEdges , TwoBlockTwoHexTwoProc )
+{
+  stk::ParallelMachine communicator = MPI_COMM_WORLD;
+  int numProcs = stk::parallel_machine_size(communicator);
+  if (numProcs > 2) {
+    return;
+  }
+
+  const unsigned spatialDim = 3;
+  stk::mesh::MetaData meta(spatialDim);
+  stk::mesh::BulkData bulk(meta, communicator);
+
+  setup2Block2HexMesh(bulk);
+
+  stk::mesh::create_edges(bulk, *meta.get_part("block_1"));
+
+  unsigned num_elems = stk::mesh::count_selected_entities(meta.universal_part(), bulk.buckets(stk::topology::ELEM_RANK));
+  unsigned num_edges = stk::mesh::count_selected_entities(meta.universal_part(), bulk.buckets(stk::topology::EDGE_RANK));
+  unsigned expected_num_elems = 2;//1 owned, 1 ghost on each proc
+  unsigned expected_num_edges = 12;//edges only on the block_1 elem
+  EXPECT_EQ(expected_num_elems, num_elems);
+  EXPECT_EQ(expected_num_edges, num_edges);
 }
 
 TEST( UnitTestCreateEdges , testSkinAndCreateEdges3x3x3 )

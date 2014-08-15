@@ -201,6 +201,7 @@ bool all_to_all_sparse( ParallelMachine p_comm ,
   return MPI_SUCCESS == result ;
 }
 
+#ifdef NDEBUG
 void communicate_sparse( ParallelMachine p_comm ,
                         const CommBuffer * const send ,
                         const CommBuffer * const recv )
@@ -270,6 +271,7 @@ void communicate_sparse( ParallelMachine p_comm ,
   }
 #endif
 }
+#endif
 
 }
 

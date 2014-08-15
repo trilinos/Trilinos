@@ -9,3 +9,5 @@
 #cmakedefine FORTRAN_ONE_UNDERSCORE
 
 #cmakedefine FORTRAN_TWO_UNDERSCORES
+
+#define SIERRA_MIGRATION

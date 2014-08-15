@@ -103,7 +103,7 @@ enum TranslationType {
 ////////////////////////////////////////////////////////////////////
 
 template<typename User>
-    class IdentifierMap{
+class IdentifierMap{
 
 public:
 
@@ -796,7 +796,7 @@ template< typename User>
         }
 
         env_->localBugAssertion(__FILE__, __LINE__, "gidToIndex table",
-          badGid || ((index >= 0)&&(index<=indexTotal)), BASIC_ASSERTION);
+          badGid||((index >= 0)&&(gno_t(index)<=indexTotal)), BASIC_ASSERTION);
 
         if (!badGid){
 
@@ -871,7 +871,7 @@ template< typename User>
     // Easy case - use gidGlobalTranslate.
 
     const gno_t *gnos = in_gno.getRawPtr();
-    ArrayView<const gid_t> gids(static_cast<const gid_t *>(gnos), inLen);
+    ArrayView<const gid_t> gids(reinterpret_cast<const gid_t *>(gnos), inLen);
     ArrayView<gno_t> noGnos;
 
     try{
@@ -1037,7 +1037,7 @@ template< typename User>
   Z2_FORWARD_EXCEPTIONS;
 
   ArrayRCP<gid_t> gidInBuf;
-  Array<lno_t> newCountInBuf(numProcs_, 0);
+  Array<int> newCountInBuf(numProcs_, 0);
 
   try{
     AlltoAllv<gid_t>(*comm_, *env_,
@@ -1088,13 +1088,13 @@ template< typename User>
       maxgid = tmpDist[1];
     }
     else{
-      // A gno_t is large enough to hold gid_ts, but may be a different type.
+      // A gno_t is large enough to hold a gid_t, but may be a different type.
       if (sizeof(gid_t) == sizeof(gno_t)) {
         gnoDist_ = arcp_reinterpret_cast<gno_t>(tmpDist);
       }
       else{
         gnoDist_.resize(numProcs_ + 1);
-        for (lno_t i=0; i <= numProcs_; i++){
+        for (int i=0; i <= numProcs_; i++){
           gnoDist_[i] = static_cast<gno_t>(tmpDist[i]);
         }
       }
@@ -1159,6 +1159,7 @@ template< typename User>
     for (int i=2; i <= numProcs_; i++){
       gnoDist_[i] += gnoDist_[i-1];
     }
+    gnoDist_[0] = 0;
 
     minGlobalGno_ = gnoDist_[0];
     maxGlobalGno_ = gnoDist_[numProcs_]-1;

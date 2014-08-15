@@ -236,6 +236,15 @@ int main( int argc , char ** argv )
   //--------------------------------------------------------------------------
   CMD cmdline;
   clp_return_type rv = parse_cmdline( argc, argv, cmdline, *comm, true );
+
+  // Print a warning if we are using the non-mean-based preconditioner
+  if (cmdline.CMD_USE_MUELU && !cmdline.CMD_USE_MEANBASED &&
+      comm->getRank() == 0) {
+    std::cout << "Warning:  The non-mean-based preconditioner for PCE is "
+              << "not correctly applying the inverse diagonal in the smoother."
+              << std::endl;
+  }
+
   if (rv==CLP_HELP)
     return(EXIT_SUCCESS);
   else if (rv==CLP_ERROR)

@@ -115,7 +115,7 @@ struct Perf {
            response_mean(0) ,
            response_std_dev(0) {}
 
-  void increment(const Perf& p) {
+  void increment(const Perf& p, const bool accumulate_solve_times) {
     global_elem_count     = p.global_elem_count;
     global_node_count     = p.global_node_count;
 
@@ -131,13 +131,23 @@ struct Perf {
     fill_time            += p.fill_time;
     import_time          += p.import_time;
     bc_time              += p.bc_time ;
-    mat_vec_time         += p.mat_vec_time;
-    cg_iter_time         += p.cg_iter_time;
-    prec_setup_time      += p.prec_setup_time;
-    prec_apply_time      += p.prec_apply_time;
-    cg_total_time        += p.cg_total_time;
     newton_residual      += p.newton_residual ;
     error_max            += p.error_max;
+
+    if (accumulate_solve_times) {
+      mat_vec_time       += p.mat_vec_time;
+      cg_iter_time       += p.cg_iter_time;
+      prec_setup_time    += p.prec_setup_time;
+      prec_apply_time    += p.prec_apply_time;
+      cg_total_time      += p.cg_total_time;
+    }
+    else {
+      mat_vec_time        = p.mat_vec_time;
+      cg_iter_time        = p.cg_iter_time;
+      prec_setup_time     = p.prec_setup_time;
+      prec_apply_time     = p.prec_apply_time;
+      cg_total_time       = p.cg_total_time;
+    }
   }
 };
 

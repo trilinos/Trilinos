@@ -168,6 +168,8 @@ void fprint_NNTI_remote_addr(
         return;
     }
 
+    log_debug(LOG_ALL, "remote_addr=%p", addr);
+
     /* header */
     out << prefix << " " << name << " = {" << std::endl;
 
@@ -229,6 +231,62 @@ void fprint_NNTI_remote_addr(
     std::stringstream out(std::stringstream::out);
 
     fprint_NNTI_remote_addr(out, name, prefix, addr);
+
+    fprintf(fp, "%s", out.str().c_str());
+}
+
+
+/**
+ * @brief Output the contents of a Portals remote memory descriptor.
+ *
+ * @param fp      File pointer (where to send output)
+ * @param prefix  Text to put on every line before the output.
+ * @param addr    The remote memory address.
+ */
+void fprint_NNTI_remote_addr_array(
+        std::ostream &out,
+        const char *name,
+        const char *prefix,
+        const NNTI_remote_addr_array_t *addr_array)
+{
+    char subprefix[100];
+
+    snprintf(subprefix, 100, "%s   ", prefix);
+
+    if (addr_array == NULL) {
+        out << prefix << " " << name << "= NULL" << std::endl;
+        return;
+    }
+
+    log_debug(LOG_ALL, "addr_array->NNTI_remote_addr_array_t_len=%d", addr_array->NNTI_remote_addr_array_t_len);
+
+    /* header */
+    out << prefix << " " << name << " = {" << std::endl;
+
+    for (int i=0;i<addr_array->NNTI_remote_addr_array_t_len;i++) {
+        fprint_NNTI_remote_addr(out, "buffer_addr", subprefix, &addr_array->NNTI_remote_addr_array_t_val[i]);
+    }
+
+    /* footer */
+    out << subprefix << " }" << std::endl;
+}
+
+/**
+ * @brief Output the contents of a Portals remote memory descriptor.
+ *
+ * @param fp      File pointer (where to send output)
+ * @param prefix  Text to put on every line before the output.
+ * @param addr    The remote memory address.
+ */
+void fprint_NNTI_remote_addr_array(
+        FILE *fp,
+        const char *name,
+        const char *prefix,
+        const NNTI_remote_addr_array_t *addr_array)
+{
+    std::stringstream out(std::stringstream::out);
+
+    fprint_NNTI_remote_addr_array(out, name, prefix, addr_array);
 
     fprintf(fp, "%s", out.str().c_str());
 }
@@ -334,7 +392,7 @@ void fprint_NNTI_buffer(
     /* contents */
     out << subprefix << " transport_id      = " << addr->transport_id << std::endl;
     fprint_NNTI_peer(out, "buffer_owner", subprefix.c_str(), &addr->buffer_owner);
-    fprint_NNTI_remote_addr(out, "buffer_addr", subprefix.c_str(), &addr->buffer_addr);
+    fprint_NNTI_remote_addr_array(out, "buffer_segments", subprefix.c_str(), &addr->buffer_segments);
     out << subprefix << " ops               = " << addr->ops << std::endl;
     out << subprefix << " payload_size      = " << addr->payload_size << std::endl;
     out << subprefix << " payload           = " << addr->payload << std::endl;

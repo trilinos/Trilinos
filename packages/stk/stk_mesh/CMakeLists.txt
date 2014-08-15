@@ -2,8 +2,6 @@ INCLUDE(TribitsSubPackageMacros)
 
 TRIBITS_SUBPACKAGE(Mesh)
 
-ADD_DEFINITIONS(-DSIERRA_MIGRATION)
-
 ADD_SUBDIRECTORY(stk_mesh)
 
 # The use cases and unit test currently depend on boost::program_options through 

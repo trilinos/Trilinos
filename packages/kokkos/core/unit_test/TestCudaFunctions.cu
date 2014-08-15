@@ -72,7 +72,7 @@ namespace Test {
 __global__
 void test_abort()
 {
-  Kokkos::VerifyExecutionSpaceCanAccessDataSpace<
+  Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<
     Kokkos::CudaSpace ,
     Kokkos::HostSpace >::verify();
 }

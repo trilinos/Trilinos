@@ -58,145 +58,122 @@
 
 namespace Tpetra {
 
-  //! \brief Sparse matrix that presents a compressed sparse row interface.
-  /*!
-   \tparam Scalar The type of the numerical entries of the matrix.
-     (You can use real-valued or complex-valued types here, unlike in
-     Epetra, where the scalar type is always \c double.)
-
-   \tparam LocalOrdinal The type of local indices.  Same as the
-     <tt>LocalOrdinal</tt> template parameter of Map objects used by
-     this matrix.  (In Epetra, this is just \c int.)  The default type
-     is \c int, which should suffice for most users.  This type must
-     be big enough to store the local (per process) number of rows or
-     columns.
-
-   \tparam GlobalOrdinal The type of global indices.  Same as the
-     <tt>GlobalOrdinal</tt> template parameter of Map objects used by
-     this matrix.  (In Epetra, this is just \c int.  One advantage of
-     Tpetra over Epetra is that you can use a 64-bit integer type here
-     if you want to solve big problems.)  The default type is
-     <tt>LocalOrdinal</tt>.  This type must be big enough to store the
-     global (over all processes in the communicator) number of rows or
-     columns.
-
-   \tparam Node A class implementing on-node shared-memory parallel
-     operations.  It must implement the
-     \ref kokkos_node_api "Kokkos Node API."
-     The default \c Node type should suffice for most users.
-     The actual default type depends on your Trilinos build options.
-
-   \tparam LocalMatOps Type implementing local sparse
-     matrix-(multi)vector multiply and local sparse triangular solve.
-     It must implement the \ref kokkos_crs_ops "Kokkos CRS Ops API."
-     The default \c LocalMatOps type should suffice for most users.
-     The actual default type depends on your Trilinos build options.
-
-   \note If you use the default \c GlobalOrdinal type, which is
-     <tt>int</tt>, then the <i>global</i> number of rows or columns in
-     the matrix may be no more than \c INT_MAX, which for typical
-     32-bit \c int is \f$2^{31} - 1\f$ (about two billion).  If you
-     want to solve larger problems, you must use a 64-bit integer type
-     here.
-
-   This class implements a distributed-memory parallel sparse matrix,
-   and provides sparse matrix-vector multiply (including transpose)
-   and sparse triangular solve operations.  It provides access by rows
-   to the elements of the matrix, as if the local data were stored in
-   compressed sparse row format.  (Implementations are <i>not</i>
-   required to store the data in this way internally.)  This class has
-   an interface like that of Epetra_CrsMatrix, but also allows
-   insertion of data into nonowned rows, much like Epetra_FECrsMatrix.
-
-   \section Tpetra_CrsMatrix_prereq Prerequisites
-
-   Before reading the rest of this documentation, it helps to know
-   something about the Teuchos memory management classes, in
-   particular Teuchos::RCP, Teuchos::ArrayRCP, and Teuchos::ArrayView.
-   You should also know a little bit about MPI (the Message Passing
-   Interface for distributed-memory programming).  You won't have to
-   use MPI directly to use CrsMatrix, but it helps to be familiar with
-   the general idea of distributed storage of data over a
-   communicator.  Finally, you should read the documentation of Map
-   and MultiVector.
-
-   \section Tpetra_CrsMatrix_local_vs_global Local and global indices
-
-   The distinction between local and global indices might confuse new
-   Tpetra users.  Please refer to the documentation of Map for a
-   detailed explanation.  This is important because many of
-   CrsMatrix's methods for adding, modifying, or accessing entries
-   come in versions that take either local or global indices.  The
-   matrix itself may store indices either as local or global, and the
-   same matrix may use global indices or local indices at different
-   points in its life.  You should only use the method version
-   corresponding to the current state of the matrix.  For example,
-   getGlobalRowView() returns a view to the indices represented as
-   global; it is incorrect to call this method if the matrix is
-   storing indices as local.  Call isGloballyIndexed() or
-   isLocallyIndexed() to find out whether the matrix currently stores
-   indices as local or global.
-
-   \section Tpetra_CrsMatrix_insertion_into_nonowned_rows Insertion into nonowned rows
-
-   All methods (except for insertGlobalValues() and
-   sumIntoGlobalValues(); see below) that work with global indices
-   only allow operations on indices owned by the calling process.  For
-   example, methods that take a global row index expect that row to be
-   owned by the calling process.  Access to <i>nonowned rows</i>, that
-   is, rows <i>not</i> owned by the calling process, requires
-   performing an explicit communication via the Import / Export
-   capabilities of the CrsMatrix object.  See the documentation of
-   DistObject for more details.
-
-   The methods insertGlobalValues() and sumIntoGlobalValues() are
-   exceptions to this rule.  They both allows you to add data to
-   nonowned rows.  These data are stored locally and communicated to
-   the appropriate process on the next call to globalAssemble() or
-   fillComplete().  This means that CrsMatrix provides the same
-   nonowned insertion functionality that Epetra provides via
-   Epetra_FECrsMatrix.
-
-   \section Tpetra_DistObject_MultDist Note for developers on DistObject
-
-   DistObject only takes a single Map as input to its constructor.
-   MultiVector is an example of a subclass for which a single Map
-   suffices to describe its data distribution.  In that case,
-   DistObject's getMap() method obviously must return that Map.
-   CrsMatrix is an example of a subclass that requires two Map
-   objects: a row Map and a column Map.  For CrsMatrix, getMap()
-   returns the row Map.  This means that doTransfer() (which CrsMatrix
-   does not override) uses the row Map objects of the source and
-   target CrsMatrix objects.  CrsMatrix in turn uses its column Map
-   (if it has one) to "filter" incoming sparse matrix entries whose
-   column indices are not in that process' column Map.  This means
-   that CrsMatrix may perform extra communication, though the Import
-   and Export operations are still correct.
-
-   This is necessary if the CrsMatrix does not yet have a column Map.
-   Other processes might have added new entries to the matrix; the
-   calling process has to see them in order to accept them.  However,
-   the CrsMatrix may already have a column Map, for example, if it was
-   created with the constructor that takes both a row and a column
-   Map, or if it is fill complete (which creates the column Map if the
-   matrix does not yet have one).  In this case, it could be possible
-   to "filter" on the sender (instead of on the receiver, as CrsMatrix
-   currently does) and avoid sending data corresponding to columns
-   that the receiver does not own.  Doing this would require revising
-   the Import or Export object (instead of the incoming data) using
-   the column Map, to remove global indices and their target process
-   ranks from the send lists if the target process does not own those
-   columns, and to remove global indices and their source process
-   ranks from the receive lists if the calling process does not own
-   those columns.  (Abstractly, this is a kind of set difference
-   between an Import or Export object for the row Maps, and the Import
-   resp. Export object for the column Maps.)  This could be done
-   separate from DistObject, by creating a new "filtered" Import or
-   Export object, that keeps the same source and target Map objects
-   but has a different communication plan.  We have not yet
-   implemented this optimization.
-  */
-  template <class Scalar,
+  /// \class CrsMatrix
+  /// \brief Sparse matrix that presents a compressed sparse row interface.
+  ///
+  /// \tparam Scalar The type of the numerical entries of the matrix.
+  ///   (You can use real-valued or complex-valued types here, unlike
+  ///   in Epetra, where the scalar type is always \c double.)
+  /// \tparam LocalOrdinal The type of local indices.  See the
+  ///   documentation of Map for requirements.
+  /// \tparam GlobalOrdinal The type of global indices.  See the
+  ///   documentation of Map for requirements.
+  /// \tparam Node The Kokkos Node type.  See the documentation of Map
+  ///   for requirements.
+  /// \tparam LocalMatOps Type implementing local sparse
+  ///   matrix-(multi)vector multiply and local sparse triangular solve.
+  ///   It must implement the \ref kokkos_crs_ops "Kokkos CRS Ops API."
+  ///   The default \c LocalMatOps type should suffice for most users.
+  ///   The actual default type depends on your Trilinos build options.
+  ///
+  /// This class implements a distributed-memory parallel sparse matrix,
+  /// and provides sparse matrix-vector multiply (including transpose)
+  /// and sparse triangular solve operations.  It provides access by rows
+  /// to the elements of the matrix, as if the local data were stored in
+  /// compressed sparse row format.  (Implementations are <i>not</i>
+  /// required to store the data in this way internally.)  This class has
+  /// an interface like that of Epetra_CrsMatrix, but also allows
+  /// insertion of data into nonowned rows, much like Epetra_FECrsMatrix.
+  ///
+  /// \section Tpetra_CrsMatrix_prereq Prerequisites
+  ///
+  /// Before reading the rest of this documentation, it helps to know
+  /// something about the Teuchos memory management classes, in
+  /// particular Teuchos::RCP, Teuchos::ArrayRCP, and Teuchos::ArrayView.
+  /// You should also know a little bit about MPI (the Message Passing
+  /// Interface for distributed-memory programming).  You won't have to
+  /// use MPI directly to use CrsMatrix, but it helps to be familiar with
+  /// the general idea of distributed storage of data over a
+  /// communicator.  Finally, you should read the documentation of Map
+  /// and MultiVector.
+  ///
+  /// \section Tpetra_CrsMatrix_local_vs_global Local and global indices
+  ///
+  /// The distinction between local and global indices might confuse new
+  /// Tpetra users.  Please refer to the documentation of Map for a
+  /// detailed explanation.  This is important because many of
+  /// CrsMatrix's methods for adding, modifying, or accessing entries
+  /// come in versions that take either local or global indices.  The
+  /// matrix itself may store indices either as local or global, and the
+  /// same matrix may use global indices or local indices at different
+  /// points in its life.  You should only use the method version
+  /// corresponding to the current state of the matrix.  For example,
+  /// getGlobalRowView() returns a view to the indices represented as
+  /// global; it is incorrect to call this method if the matrix is
+  /// storing indices as local.  Call isGloballyIndexed() or
+  /// isLocallyIndexed() to find out whether the matrix currently stores
+  /// indices as local or global.
+  ///
+  /// \section Tpetra_CrsMatrix_insertion_into_nonowned_rows Insertion into nonowned rows
+  ///
+  /// All methods (except for insertGlobalValues() and
+  /// sumIntoGlobalValues(); see below) that work with global indices
+  /// only allow operations on indices owned by the calling process.  For
+  /// example, methods that take a global row index expect that row to be
+  /// owned by the calling process.  Access to <i>nonowned rows</i>, that
+  /// is, rows <i>not</i> owned by the calling process, requires
+  /// performing an explicit communication via the Import / Export
+  /// capabilities of the CrsMatrix object.  See the documentation of
+  /// DistObject for more details.
+  ///
+  /// The methods insertGlobalValues() and sumIntoGlobalValues() are
+  /// exceptions to this rule.  They both allows you to add data to
+  /// nonowned rows.  These data are stored locally and communicated to
+  /// the appropriate process on the next call to globalAssemble() or
+  /// fillComplete().  This means that CrsMatrix provides the same
+  /// nonowned insertion functionality that Epetra provides via
+  /// Epetra_FECrsMatrix.
+  ///
+  /// \section Tpetra_DistObject_MultDist Note for developers on DistObject
+  ///
+  /// DistObject only takes a single Map as input to its constructor.
+  /// MultiVector is an example of a subclass for which a single Map
+  /// suffices to describe its data distribution.  In that case,
+  /// DistObject's getMap() method obviously must return that Map.
+  /// CrsMatrix is an example of a subclass that requires two Map
+  /// objects: a row Map and a column Map.  For CrsMatrix, getMap()
+  /// returns the row Map.  This means that doTransfer() (which
+  /// CrsMatrix does not override) uses the row Map objects of the
+  /// source and target CrsMatrix objects.  CrsMatrix in turn uses its
+  /// column Map (if it has one) to "filter" incoming sparse matrix
+  /// entries whose column indices are not in that process' column
+  /// Map.  This means that CrsMatrix may perform extra communication,
+  /// though the Import and Export operations are still correct.
+  ///
+  /// This is necessary if the CrsMatrix does not yet have a column
+  /// Map.  Other processes might have added new entries to the
+  /// matrix; the calling process has to see them in order to accept
+  /// them.  However, the CrsMatrix may already have a column Map, for
+  /// example, if it was created with the constructor that takes both
+  /// a row and a column Map, or if it is fill complete (which creates
+  /// the column Map if the matrix does not yet have one).  In this
+  /// case, it could be possible to "filter" on the sender (instead of
+  /// on the receiver, as CrsMatrix currently does) and avoid sending
+  /// data corresponding to columns that the receiver does not own.
+  /// Doing this would require revising the Import or Export object
+  /// (instead of the incoming data) using the column Map, to remove
+  /// global indices and their target process ranks from the send
+  /// lists if the target process does not own those columns, and to
+  /// remove global indices and their source process ranks from the
+  /// receive lists if the calling process does not own those columns.
+  /// (Abstractly, this is a kind of set difference between an Import
+  /// or Export object for the row Maps, and the Import resp. Export
+  /// object for the column Maps.)  This could be done separate from
+  /// DistObject, by creating a new "filtered" Import or Export
+  /// object, that keeps the same source and target Map objects but
+  /// has a different communication plan.  We have not yet implemented
+  /// this optimization.
+  template <class Scalar        = double,
             class LocalOrdinal  = int,
             class GlobalOrdinal = LocalOrdinal,
             class Node          = KokkosClassic::DefaultNode::DefaultNodeType,

@@ -56,32 +56,77 @@
 #include <string.h>
 #include <pthread.h>
 
+#include <iostream>
+
 NNTI_transport_t     trans_hdl;
 NNTI_peer_t          server_hdl;
 NNTI_buffer_t        queue_mr, send_mr; /* registered memory regions */
+NNTI_work_request_t  queue_wr, send_wr; /* registered memory regions */
 NNTI_result_t        err;
 NNTI_status_t        queue_status, send_status;
 
 pthread_barrier_t barrier;
 
+bool success=true;
+
+typedef struct {
+    /** An integer value. */
+    uint32_t int_val;
+    /** A floating point value. */
+    float float_val;
+    /** A double value. */
+    double double_val;
+} data_t;
+
+typedef struct {
+    /* test data */
+    data_t data;
+    /** 32-bit checksum of the test data */
+    uint64_t chksum;
+} selfsend_args;
+
+static uint64_t calc_checksum (const char * buf, const uint64_t size)
+{
+    unsigned long hash = 5381;
+    const char* p = buf;
+    uint64_t i = 0;
+
+    for (i=0; i<size; i++) {
+        hash = ((hash << 5) + hash) + *p; /* hash * 33 + c */
+        p++;
+    }
+
+    i = (uint64_t) hash;
+    return i;
+}
+
 static void *do_wait(void *args)
 {
     NNTI_result_t rc;
-    NNTI_status_t wait_status1;
+    selfsend_args *ssa;
 
     double wait_time=0.0;
 
-    char *queue_buf=(char *)malloc(10*NNTI_REQUEST_BUFFER_SIZE);
-    memset(queue_buf, 0, 10*NNTI_REQUEST_BUFFER_SIZE);
-    NNTI_register_memory(&trans_hdl, queue_buf, NNTI_REQUEST_BUFFER_SIZE, 10, NNTI_RECV_QUEUE, NULL, &queue_mr);
+    NNTI_alloc(&trans_hdl, NNTI_REQUEST_BUFFER_SIZE, 10, NNTI_RECV_QUEUE, &queue_mr);
+
+    NNTI_create_work_request(&queue_mr, &queue_wr);
 
     /* client is waiting for us to initialize */
     pthread_barrier_wait(&barrier);
 
     /* the client sends a message here */
-    NNTI_wait(&queue_mr, NNTI_RECV_QUEUE, -1, &queue_status);
+    NNTI_wait(&queue_wr, -1, &queue_status);
+
+    ssa=(selfsend_args *)queue_status.start;
+    if (ssa->chksum != calc_checksum((const char *)&ssa->data, sizeof(data_t))) {
+        success=false;
+    }
 
     pthread_barrier_wait(&barrier);
+
+    NNTI_destroy_work_request(&queue_wr);
+
+    NNTI_free(&queue_mr);
 
     return(NULL);
 }
@@ -117,9 +162,10 @@ static void join_wait_thread()
 int main(int argc, char *argv[])
 {
     NNTI_result_t rc;
+    selfsend_args *ssa;
     char server_url[NNTI_URL_LEN];
 
-    logger_init(LOG_ERROR, "nntiselfsend.log");
+    logger_init(LOG_ERROR, NULL);
 
     pthread_barrier_init(&barrier, NULL, 2);
 
@@ -136,21 +182,29 @@ int main(int argc, char *argv[])
             5000,
             &server_hdl);
 
-    char *send_buf=(char *)malloc(NNTI_REQUEST_BUFFER_SIZE);
-    memset(send_buf, 0, NNTI_REQUEST_BUFFER_SIZE);
-    rc=NNTI_register_memory(&trans_hdl, send_buf, NNTI_REQUEST_BUFFER_SIZE, 1, NNTI_SEND_SRC, NULL, &send_mr);
+    rc=NNTI_alloc(&trans_hdl, NNTI_REQUEST_BUFFER_SIZE, 1, NNTI_SEND_SRC, &send_mr);
 
-    rc=NNTI_send(&server_hdl, &send_mr, NULL);
-    rc=NNTI_wait(&send_mr, NNTI_SEND_SRC, 5000, &send_status);
+    ssa=(selfsend_args *)NNTI_BUFFER_C_POINTER(&send_mr);
+    ssa->data.int_val   =10;
+    ssa->data.float_val =10.0;
+    ssa->data.double_val=10.0;
+    ssa->chksum=calc_checksum((const char *)&ssa->data, sizeof(data_t));
+
+    rc=NNTI_send(&server_hdl, &send_mr, NULL, &send_wr);
+    rc=NNTI_wait(&send_wr, 5000, &send_status);
 
     pthread_barrier_wait(&barrier);
 
-    NNTI_unregister_memory(&send_mr);
-    free(send_buf);
+    NNTI_free(&send_mr);
 
     join_wait_thread();
 
     NNTI_fini(&trans_hdl);
 
-    return 0;
+    if (success)
+        std::cout << "\nEnd Result: TEST PASSED" << std::endl;
+    else
+        std::cout << "\nEnd Result: TEST FAILED" << std::endl;
+
+    return (success ? 0 : 1 );
 }

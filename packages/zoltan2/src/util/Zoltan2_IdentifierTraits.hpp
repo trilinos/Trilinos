@@ -153,7 +153,7 @@ template <typename T>
     return false;
 
   T nextval = val[0]+1;
-  for (size_t i=1; i < n-1; i++){
+  for (size_t i=1; i < n; i++){
     if (val[i] != nextval)
       return false;
     nextval++;

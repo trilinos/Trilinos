@@ -195,6 +195,9 @@ ENDIF()
 # file.  We want to include the local, modified version.
 INCLUDE(UseSWIG)
 
+# Python module mpi4py is optional
+FIND_PACKAGE(Mpi4Py)
+
 # Print the enabled PyTrilinos packages
 MESSAGE(STATUS "Enabled PyTrilinos modules:")
 MESSAGE(STATUS "    ${PyTrilinos_PACKAGES}")

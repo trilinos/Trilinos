@@ -53,6 +53,9 @@
 /* define if we want to use MPI */
 #cmakedefine HAVE_MPI
 
+/* define if we want to use Mpi4Py */
+#cmakedefine HAVE_MPI4PY
+
 /* Define if want to build pytrilinos */
 #cmakedefine HAVE_PYTRILINOS
 

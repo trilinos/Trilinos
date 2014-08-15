@@ -228,8 +228,6 @@ opreg_client_main (struct opreg_cmdline_args &args, nssi_service &opreg_svc, MPI
     using namespace std;
 
     int rc;
-    int i,j;
-    log_level debug_level = LOG_WARN;
     int client_rank, client_size;
 
 

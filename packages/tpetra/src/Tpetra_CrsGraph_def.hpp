@@ -1274,11 +1274,14 @@ namespace Tpetra {
   // in the future, perhaps this could use std::sort with a boost::zip_iterator
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   template <class Scalar>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::sortRowIndicesAndValues(RowInfo rowinfo, ArrayView<Scalar> values)
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  sortRowIndicesAndValues (const RowInfo rowinfo, const Teuchos::ArrayView<Scalar>& values)
   {
     if (rowinfo.numEntries > 0) {
-      ArrayView<LocalOrdinal> inds_view = getLocalViewNonConst(rowinfo);
-      sort2(inds_view.begin(), inds_view.begin()+rowinfo.numEntries, values.begin());
+      Teuchos::ArrayView<LocalOrdinal> inds_view =
+        this->getLocalViewNonConst (rowinfo);
+      sort2 (inds_view.begin (), inds_view.begin () + rowinfo.numEntries,
+             values.begin ());
     }
   }
 
@@ -4074,7 +4077,7 @@ namespace Tpetra {
 // Must be expanded from within the Tpetra namespace!
 //
 #define TPETRA_CRSGRAPH_GRAPH_INSTANT(LO,GO,NODE) template class CrsGraph< LO , GO , NODE >;
-#define TPETRA_CRSGRAPH_SORTROWINDICESANDVALUES_INSTANT(S,LO,GO,NODE) template void CrsGraph< LO , GO , NODE >::sortRowIndicesAndValues< S >(RowInfo, ArrayView< S > );
+#define TPETRA_CRSGRAPH_SORTROWINDICESANDVALUES_INSTANT(S,LO,GO,NODE) template void CrsGraph< LO , GO , NODE >::sortRowIndicesAndValues< S >(const RowInfo, const Teuchos::ArrayView< S >& );
 #define TPETRA_CRSGRAPH_MERGEROWINDICESANDVALUES_INSTANT(S,LO,GO,NODE) template void CrsGraph< LO , GO , NODE >::mergeRowIndicesAndValues< S >(RowInfo, const ArrayView< S >& );
 #define TPETRA_CRSGRAPH_ALLOCATEVALUES1D_INSTANT(S,LO,GO,NODE) template ArrayRCP< S > CrsGraph< LO , GO , NODE >::allocateValues1D< S >() const;
 #define TPETRA_CRSGRAPH_ALLOCATEVALUES2D_INSTANT(S,LO,GO,NODE) template ArrayRCP< Array< S > > CrsGraph< LO , GO , NODE >::allocateValues2D< S >() const;

@@ -48,10 +48,10 @@
 
 // Using default execution space:
 typedef  Kokkos::TeamPolicy<>              team_policy ;
-typedef typename team_policy::member_type  team_member ;
+typedef team_policy::member_type team_member ;
 
 struct hello_world {
-
+  typedef int value_type; //Specify value type for reduction target, sum
   KOKKOS_INLINE_FUNCTION
   void operator() ( const team_member & dev, int& sum) const {
     sum+=1;

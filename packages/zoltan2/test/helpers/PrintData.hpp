@@ -77,7 +77,7 @@ template <typename lno_t, typename gno_t>
       gno_t gid = rowMap->getGlobalElement(i);
       graph.getGlobalRowView(gid, indices);
       os << "Row " << gid << ": ";
-      for (gno_t j=0; j < indices.size(); j++){
+      for (typename ArrayView<const gno_t>::size_type j=0; j < indices.size(); j++){
         os << indices[j] << " ";
       }
       os << endl;
@@ -89,7 +89,7 @@ template <typename lno_t, typename gno_t>
       gno_t gid = rowMap->getGlobalElement(i);
       graph.getLocalRowView(i, indices);
       os << "Row " << gid << ": ";
-      for (lno_t j=0; j < indices.size(); j++){
+      for (typename ArrayView<const lno_t>::size_type j=0; j < indices.size(); j++){
         os << colMap->getGlobalElement(indices[j]) << " ";
       }
       os << endl;

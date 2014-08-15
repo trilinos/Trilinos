@@ -67,7 +67,9 @@ namespace Tpetra {
   Thus for a mesh with N nodes, the point-entry map will have N*3 entries,
   whereas the block-map will have N blocks, each of size 3.
 */
-template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+template <class LocalOrdinal = int,
+          class GlobalOrdinal = LocalOrdinal,
+          class Node = KokkosClassic::DefaultNode::DefaultNodeType>
 class BlockMap : public Teuchos::Describable {
  public:
   typedef LocalOrdinal  local_ordinal_type;

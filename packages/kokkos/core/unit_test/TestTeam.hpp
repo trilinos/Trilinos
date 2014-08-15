@@ -207,7 +207,7 @@ public:
       ind.team_scan( ind.league_rank() + 1 + ind.team_rank() + 1 );
 
     if ( answer != result || answer != result2 ) {
-      printf("ScanTeamFunctor[%d.%d of %d.%d] %ld != %ld or %ld\n",
+      printf("ScanTeamFunctor[%d.%d of %d.%d] answer(%ld) != scan_first(%ld) or scan_second(%ld)\n",
              ind.league_rank(), ind.team_rank(),
              ind.league_size(), ind.team_size(),
              answer,result,result2);
@@ -290,23 +290,29 @@ struct SharedTeamFunctor {
   inline
   unsigned shmem_size() const
   {
-    return shared_int_array_type::shmem_size( SHARED_COUNT );
+    return shared_int_array_type::shmem_size( SHARED_COUNT ) +
+           shared_int_array_type::shmem_size( SHARED_COUNT );
   }
 
   KOKKOS_INLINE_FUNCTION
   void operator()( const typename policy_type::member_type & ind , value_type & update ) const
   {
-    const shared_int_array_type shared( ind.team_shmem() , SHARED_COUNT );
+    const shared_int_array_type shared_A( ind.team_shmem() , SHARED_COUNT );
+    const shared_int_array_type shared_B( ind.team_shmem() , SHARED_COUNT );
 
     for ( int i = ind.team_rank() ; i < SHARED_COUNT ; i += ind.team_size() ) {
-      shared[i] = i + ind.league_rank();
+      shared_A[i] = i + ind.league_rank();
+      shared_B[i] = 2 * i + ind.league_rank();
     }
 
     ind.team_barrier();
 
     if ( ind.team_rank() + 1 == ind.team_size() ) {
       for ( int i = 0 ; i < SHARED_COUNT ; ++i ) {
-        if ( shared[i] != i + ind.league_rank() ) {
+        if ( shared_A[i] != i + ind.league_rank() ) {
+          ++update ;
+        }
+        if ( shared_B[i] != 2 * i + ind.league_rank() ) {
           ++update ;
         }
       }

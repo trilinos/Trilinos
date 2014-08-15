@@ -113,10 +113,10 @@ public:
     // TODO: Add thread pool queries to ThreadExec.
     // TODO: Move all of the team state out of ThreadsExec and into the Policy.
 
-    typename Policy::member_type index( exec , self.m_policy );
+    typename Policy::member_type member( exec , self.m_policy );
 
-    for ( ; exec.team_work_avail() ; exec.team_work_next() ) {
-      self.m_func( index );
+    for ( ; member.valid() ; member.next() ) {
+      self.m_func( member );
     }
 
     exec.fan_in();
@@ -217,9 +217,9 @@ public:
     // Initialize thread-local value
     typename Reduce::reference_type update = Reduce::init( self.m_func , exec.reduce_base() );
 
-    typename Policy::member_type index( exec , self.m_policy );
-    for ( ; exec.team_work_avail() ; exec.team_work_next() ) {
-      self.m_func( index , update );
+    typename Policy::member_type member( exec , self.m_policy );
+    for ( ; member.valid() ; member.next() ) {
+      self.m_func( member , update );
     }
 
     exec.fan_in_reduce( self.m_func );

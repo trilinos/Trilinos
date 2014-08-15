@@ -52,10 +52,15 @@ namespace Experimental {
 /// \brief Vector for multiple degrees of freedom per mesh point
 /// \author Mark Hoemmen
 ///
-/// \tparam Scalar The type of each entry of the vector
-/// \tparam LO The local ordinal type
-/// \tparam GO The global ordinal type
-/// \tparam Node The Kokkos Node type
+/// \tparam Scalar The type of each entry of the block vector.  (You
+///   can use real-valued or complex-valued types here, unlike in
+///   Epetra, where the scalar type is always \c double.)
+/// \tparam LO The type of local indices.  See the documentation of
+///   the first template parameter of Map for requirements.
+/// \tparam GO The type of global indices.  See the documentation of
+///   the second template parameter of Map for requirements.
+/// \tparam Node The Kokkos Node type.  See the documentation of the
+///   third template parameter of Map for requirements.
 ///
 /// BlockVector is like ::Tpetra::MultiVector, but its interface
 /// supports multiple degrees of freedom per mesh point.  You can
@@ -68,7 +73,7 @@ namespace Experimental {
 /// "multivectors" that are not "multi."  That is, a BlockVector has a
 /// single vector (column).  Please refer to the documentation of
 /// BlockMultiVector for details.
-template<class Scalar,
+template<class Scalar = double,
          class LO = int,
          class GO = LO,
          class Node = KokkosClassic::DefaultNode::DefaultNodeType>

@@ -189,7 +189,7 @@ namespace Kokkos {
  * <tt>operator()</tt> method defines the operation to parallelize,
  * over the range of integer indices <tt>iwork=[0,work_count-1]</tt>.
  * This compares to a single iteration \c iwork of a \c for loop.
- * If \c device_type is not defined DefaultDeviceType will be used.
+ * If \c device_type is not defined DefaultExecutionSpace will be used.
  */
 template< class ExecPolicy , class FunctorType >
 inline

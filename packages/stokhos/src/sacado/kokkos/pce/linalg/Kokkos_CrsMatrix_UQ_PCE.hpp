@@ -990,7 +990,7 @@ public:
   typedef typename OutputVectorValue::value_type output_scalar;
 
   template <int BlockSize>
-  struct Kernel {
+  struct BlockKernel {
     typedef Device device_type;
     typedef typename matrix_values_type::flat_array_type matrix_array_type;
     typedef typename input_vector_type::array_type input_array_type;
@@ -1007,11 +1007,11 @@ public:
     const size_type           rem ;
     const size_type           dim_block ;
 
-    Kernel( const matrix_type &        A ,
-            const input_vector_type &  x ,
-            const output_vector_type & y ,
-            const input_scalar & a ,
-            const output_scalar & b )
+    BlockKernel( const matrix_type &        A ,
+                 const input_vector_type &  x ,
+                 const output_vector_type & y ,
+                 const input_scalar & a ,
+                 const output_scalar & b )
       : m_A_values( A.values )
       , m_A_graph( A.graph )
       , v_y( y )
@@ -1027,48 +1027,151 @@ public:
     KOKKOS_INLINE_FUNCTION
     void operator()( const size_type iBlockRow ) const
     {
+#if defined(__INTEL_COMPILER)&& ! defined(__CUDA_ARCH__)
+      output_scalar s[BlockSize] __attribute__((aligned(64))) = {};
+#else
       output_scalar s[BlockSize] = {};
+#endif
 
       const size_type iEntryBegin = m_A_graph.row_map[ iBlockRow ];
       const size_type iEntryEnd   = m_A_graph.row_map[ iBlockRow + 1 ];
       size_type pce_block = 0;
       for (; pce_block < dim_block; pce_block+=BlockSize) {
+        output_scalar * const y = &v_y(pce_block, iBlockRow);
         if (m_b == output_scalar(0))
+#if defined(__INTEL_COMPILER) && ! defined(__CUDA_ARCH__)
+#pragma ivdep
+//#pragma vector aligned
+#endif
           for (size_type k = 0; k < BlockSize; ++k)
             s[k] = 0.0;
         else
+#if defined(__INTEL_COMPILER) && ! defined(__CUDA_ARCH__)
+#pragma ivdep
+//#pragma vector aligned
+#endif
           for (size_type k = 0; k < BlockSize; ++k)
-            s[k] = m_b*v_y(pce_block+k, iBlockRow);
+            s[k] = m_b*y[k];
         for (size_type iEntry = iEntryBegin; iEntry < iEntryEnd; ++iEntry) {
           const matrix_scalar aA = m_a*m_A_values(iEntry);
           const size_type col = m_A_graph.entries(iEntry);
+          const input_scalar * const x = &v_x(pce_block, col);
+#if defined(__INTEL_COMPILER) && ! defined(__CUDA_ARCH__)
+#pragma ivdep
+//#pragma vector aligned
+#endif
           for (size_type k = 0; k < BlockSize; ++k)
-            s[k] += aA*v_x(pce_block+k,col);
+            s[k] += aA*x[k];
         }
+#if defined(__INTEL_COMPILER) && ! defined(__CUDA_ARCH__)
+#pragma ivdep
+//#pragma vector aligned
+#endif
         for (size_type k = 0; k < BlockSize; ++k) {
-          v_y(pce_block+k,iBlockRow) = s[k];
+          y[k] = s[k];
         }
       }
 
       // Remaining coeffs
       if (rem > 0) {
+        output_scalar * const y = &v_y(pce_block, iBlockRow);
         if (m_b == output_scalar(0))
+#if defined(__INTEL_COMPILER) && ! defined(__CUDA_ARCH__)
+#pragma ivdep
+//#pragma vector aligned
+#endif
           for (size_type k = 0; k < rem; ++k)
             s[k] = 0.0;
         else
+#if defined(__INTEL_COMPILER) && ! defined(__CUDA_ARCH__)
+#pragma ivdep
+//#pragma vector aligned
+#endif
           for (size_type k = 0; k < rem; ++k)
-            s[k] = m_b*v_y(pce_block+k, iBlockRow);
+            s[k] = m_b*y[k];
         for (size_type iEntry = iEntryBegin; iEntry < iEntryEnd; ++iEntry) {
           const matrix_scalar aA = m_a*m_A_values(iEntry);
           const size_type col = m_A_graph.entries(iEntry);
+          const input_scalar * const x = &v_x(pce_block, col);
+#if defined(__INTEL_COMPILER) && ! defined(__CUDA_ARCH__)
+#pragma ivdep
+//#pragma vector aligned
+#endif
           for (size_type k = 0; k < rem; ++k)
-            s[k] += aA*v_x(pce_block+k,col);
+            s[k] += aA*x[k];
         }
+#if defined(__INTEL_COMPILER) && ! defined(__CUDA_ARCH__)
+#pragma ivdep
+//#pragma vector aligned
+#endif
         for (size_type k = 0; k < rem; ++k) {
-          v_y(pce_block+k,iBlockRow) = s[k];
+          y[k] = s[k];
         }
       }
 
+    }
+
+  };
+
+  struct Kernel {
+    typedef Device device_type;
+    typedef typename matrix_values_type::flat_array_type matrix_array_type;
+    typedef typename input_vector_type::array_type input_array_type;
+    typedef typename output_vector_type::array_type output_array_type;
+
+    const matrix_array_type   m_A_values ;
+    const matrix_graph_type   m_A_graph ;
+    const output_array_type   v_y ;
+    const input_array_type    v_x ;
+    const input_scalar        m_a ;
+    const output_scalar       m_b ;
+    const size_type           dim ;
+
+    Kernel( const matrix_type &        A ,
+            const input_vector_type &  x ,
+            const output_vector_type & y ,
+            const input_scalar & a ,
+            const output_scalar & b )
+      : m_A_values( A.values )
+      , m_A_graph( A.graph )
+      , v_y( y )
+      , v_x( x )
+      , m_a( a )
+      , m_b( b )
+      , dim( x.sacado_size() )
+      {}
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()( const size_type iBlockRow ) const
+    {
+      const size_type iEntryBegin = m_A_graph.row_map[ iBlockRow ];
+      const size_type iEntryEnd   = m_A_graph.row_map[ iBlockRow + 1 ];
+      output_scalar * const y = &v_y(0, iBlockRow);
+      if (m_b == output_scalar(0))
+#if defined(__INTEL_COMPILER) && ! defined(__CUDA_ARCH__)
+#pragma ivdep
+//#pragma vector aligned
+#endif
+        for (size_type k = 0; k < dim; ++k)
+          y[k] = 0.0;
+      else
+#if defined(__INTEL_COMPILER) && ! defined(__CUDA_ARCH__)
+#pragma ivdep
+//#pragma vector aligned
+#endif
+        for (size_type k = 0; k < dim; ++k)
+          y[k] = m_b*y[k];
+      for (size_type iEntry = iEntryBegin; iEntry < iEntryEnd; ++iEntry) {
+        const matrix_scalar aA = m_a*m_A_values(iEntry);
+        const size_type col = m_A_graph.entries(iEntry);
+        const input_scalar * const x = &v_x(0, col);
+#if defined(__INTEL_COMPILER) && ! defined(__CUDA_ARCH__)
+#pragma ivdep
+//#pragma vector aligned
+#endif
+        for (size_type k = 0; k < dim; ++k)
+          y[k] += aA*x[k];
+      }
     }
 
   };
@@ -1082,15 +1185,30 @@ public:
     const size_t row_count = A.graph.row_map.dimension_0() - 1 ;
     const size_type dim = x.sacado_size();
 
-    // Choose block size in range [1,32] appropriately for PCE dimension
-    if (dim >= 32)
-      Kokkos::parallel_for( row_count , Kernel<32>(A,x,y,a,b) );
+    // Choose block size appropriately for PCE dimension
+#if defined (__MIC__)
+    if (dim >= 128)
+      Kokkos::parallel_for( row_count , Kernel(A,x,y,a,b) );
+    else if (dim >= 64)
+      Kokkos::parallel_for( row_count , BlockKernel<64>(A,x,y,a,b) );
+    else if (dim >= 32)
+      Kokkos::parallel_for( row_count , BlockKernel<32>(A,x,y,a,b) );
     else if (dim >= 16)
-      Kokkos::parallel_for( row_count , Kernel<16>(A,x,y,a,b) );
+      Kokkos::parallel_for( row_count , BlockKernel<16>(A,x,y,a,b) );
     else if (dim >= 8)
-      Kokkos::parallel_for( row_count , Kernel<8>(A,x,y,a,b) );
+      Kokkos::parallel_for( row_count , BlockKernel<8>(A,x,y,a,b) );
     else
-      Kokkos::parallel_for( row_count , Kernel<4>(A,x,y,a,b) );
+      Kokkos::parallel_for( row_count , BlockKernel<4>(A,x,y,a,b) );
+#else
+    if (dim >= 32)
+      Kokkos::parallel_for( row_count , BlockKernel<32>(A,x,y,a,b) );
+    else if (dim >= 16)
+      Kokkos::parallel_for( row_count , BlockKernel<16>(A,x,y,a,b) );
+    else if (dim >= 8)
+      Kokkos::parallel_for( row_count , BlockKernel<8>(A,x,y,a,b) );
+    else
+      Kokkos::parallel_for( row_count , BlockKernel<4>(A,x,y,a,b) );
+#endif
   }
 };
 

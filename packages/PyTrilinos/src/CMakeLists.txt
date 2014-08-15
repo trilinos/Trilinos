@@ -55,6 +55,10 @@ IF(TPL_ENABLE_MPI)
   SET(HAVE_MPI ON)
 ENDIF(TPL_ENABLE_MPI)
 
+IF(Mpi4Py_FOUND)
+  SET(HAVE_MPI4PY ON)
+ENDIF(Mpi4Py_FOUND)
+
 TRIBITS_CONFIGURE_FILE(PyTrilinos_config.h)
 
 #
@@ -62,18 +66,23 @@ TRIBITS_CONFIGURE_FILE(PyTrilinos_config.h)
 # to the pytrilinos library and PyTrilinos extension modules
 SET(EXTRA_LINK_ARGS "${CMAKE_SHARED_LINKER_FLAGS}")
 IF(APPLE)
-  IF((CMAKE_CXX_COMPILER_ID MATCHES "GNU") OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
+  IF((CMAKE_CXX_COMPILER_ID MATCHES "GNU"  ) OR
+     (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
     SET(EXTRA_LINK_ARGS "${EXTRA_LINK_ARGS} -undefined dynamic_lookup")
   ENDIF()
 ENDIF(APPLE)
 
 #
 # Add the current binary and source directories, the python include
-# path, and the NumPy include path to the include directories
+# path, the NumPy include path, and the Mpi4Py include path to the
+# include directories
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_PATH})
 INCLUDE_DIRECTORIES(${NumPy_INCLUDE_DIR})
+IF(Mpi4Py_FOUND)
+  INCLUDE_DIRECTORIES(${Mpi4Py_INCLUDE_DIR})
+ENDIF(Mpi4Py_FOUND)
 
 #
 # Copy the pyfragments.swg file to the build directory

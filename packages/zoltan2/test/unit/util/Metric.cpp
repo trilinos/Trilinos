@@ -55,7 +55,7 @@
 #include <stdlib.h>
 #include <vector>
 
-typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> user_t;
+typedef Zoltan2::BasicUserTypes<zscalar_t, zgno_t, zlno_t, zgno_t> user_t;
 typedef Zoltan2::BasicIdentifierAdapter<user_t> idInput_t;
 typedef Zoltan2::PartitioningSolutionQuality<idInput_t> quality_t;
 typedef idInput_t::part_t part_t;
@@ -144,12 +144,12 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
 
   // A simple identifier map.  Usually created by the model.
 
-  gno_t *myGids = new gno_t [numLocalObj];
+  zgno_t *myGids = new zgno_t [numLocalObj];
   for (int i=0, x=rank*numLocalObj; i < numLocalObj; i++, x++){
     myGids[i] = x;
   }
 
-  ArrayRCP<const gno_t> gidArray(myGids, 0, numLocalObj, true);
+  ArrayRCP<const zgno_t> gidArray(myGids, 0, numLocalObj, true);
 
   RCP<const Zoltan2::IdentifierMap<user_t> > idMap = 
     rcp(new Zoltan2::IdentifierMap<user_t>(env, comm, gidArray)); 
@@ -159,7 +159,7 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
 
   int partSizeDim = (givePartSizes ? (nWeights ? nWeights : 1) : 0);
   ArrayRCP<ArrayRCP<part_t> > ids(partSizeDim);
-  ArrayRCP<ArrayRCP<scalar_t> > sizes(partSizeDim);
+  ArrayRCP<ArrayRCP<zscalar_t> > sizes(partSizeDim);
 
   if (givePartSizes && numLocalParts > 0){
     part_t *myParts = new part_t [numLocalParts];
@@ -168,12 +168,12 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
       myParts[i] = myParts[i-1] + 1;
     ArrayRCP<part_t> partNums(myParts, 0, numLocalParts, true);
 
-    scalar_t sizeFactor = nprocs/2 - rank;
+    zscalar_t sizeFactor = nprocs/2 - rank;
     if (sizeFactor < 0) sizeFactor *= -1;
     sizeFactor += 1;
 
     for (int dim=0; dim < partSizeDim; dim++){
-      scalar_t *psizes = new scalar_t [numLocalParts];
+      zscalar_t *psizes = new zscalar_t [numLocalParts];
       for (int i=0; i < numLocalParts; i++)
         psizes[i] = sizeFactor;
       sizes[dim] = arcp(psizes, 0, numLocalParts, true);
@@ -184,18 +184,18 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
 
   // An input adapter with random weights.  Created by the user.
 
-  std::vector<const scalar_t *> weights;
+  std::vector<const zscalar_t *> weights;
   std::vector<int> strides;   // default to 1
 
   int len = numLocalObj*nWeights;
-  ArrayRCP<scalar_t> wgtBuf;
-  scalar_t *wgts = NULL;
+  ArrayRCP<zscalar_t> wgtBuf;
+  zscalar_t *wgts = NULL;
 
   if (len > 0){
-    wgts = new scalar_t [len];
+    wgts = new zscalar_t [len];
     wgtBuf = arcp(wgts, 0, len, true);
     for (int i=0; i < len; i++)
-      wgts[i] = (scalar_t(rand()) / scalar_t(RAND_MAX)) + 1.0;
+      wgts[i] = (zscalar_t(rand()) / zscalar_t(RAND_MAX)) + 1.0;
   }
 
   for (int i=0; i < nWeights; i++, wgts+=numLocalObj)
@@ -258,7 +258,7 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
 
 
   if (rank==0){
-    scalar_t imb;
+    zscalar_t imb;
     try{
       metricObject->getObjectCountImbalance(imb); 
       cout << "Object imbalance: " << imb << endl;
@@ -271,7 +271,7 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   TEST_FAIL_AND_EXIT(*comm, fail==0, "getObjectCountImbalance", 1);
 
   if (rank==0 && nWeights > 0){
-    scalar_t imb;
+    zscalar_t imb;
     try{
       for (int i=0; i < nWeights; i++){
         metricObject->getWeightImbalance(imb, i);

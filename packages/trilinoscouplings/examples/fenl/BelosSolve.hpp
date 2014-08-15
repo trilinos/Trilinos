@@ -100,13 +100,6 @@ belos_solve(
   Teuchos::RCP<Teuchos::Time> time_prec_setup =
     Teuchos::TimeMonitor::getNewTimer("Total MueLu setup time");
 
-  // FENL accumulates the times itself, so reset them here so they don't
-  // accumulate across solves
-  time_mat_vec->reset();
-  time_prec_apply->reset();
-  time_total->reset();
-  time_prec_setup->reset();
-
   //--------------------------------
   // Create preconditioner
   RCP<PreconditionerType> preconditioner;
@@ -115,15 +108,14 @@ belos_solve(
   if (use_muelu) {
     Teuchos::TimeMonitor timeMon(*time_prec_setup);
     std::string xmlFileName="muelu.xml";
-    preconditioner = rcp(new MueLuPreconditioner<SM, LO, GO, N>());
-    precOp = preconditioner->setupPreconditioner(A, xmlFileName);
-  }
-
-  if (use_mean_based) {
-    Teuchos::TimeMonitor timeMon(*time_prec_setup);
-    std::string xmlFileName = "muelu.xml";
-    preconditioner = rcp(new MeanBasedPreconditioner<SM, LO, GO, N>());
-    precOp = preconditioner->setupPreconditioner(A, xmlFileName);
+    if (use_mean_based) {
+      preconditioner = rcp(new MeanBasedPreconditioner<SM, LO, GO, N>());
+      precOp = preconditioner->setupPreconditioner(A, xmlFileName);
+    }
+    else {
+      preconditioner = rcp(new MueLuPreconditioner<SM, LO, GO, N>());
+      precOp = preconditioner->setupPreconditioner(A, xmlFileName);
+    }
   }
 
   //--------------------------------

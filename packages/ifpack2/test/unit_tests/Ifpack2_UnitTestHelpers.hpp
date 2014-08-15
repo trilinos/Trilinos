@@ -145,6 +145,64 @@ Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > create_test_gra
   return crsgraph;
 }
 
+template<class LocalOrdinal,class GlobalOrdinal,class Node>
+Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > create_diagonal_graph(LocalOrdinal num_rows_per_proc)
+{
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+  const global_size_t INVALID = Teuchos::OrdinalTraits<global_size_t>::invalid();
+  const LocalOrdinal indexBase = 0;
+
+  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = Teuchos::rcp(new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>(INVALID, num_rows_per_proc, indexBase, comm));
+
+  const size_t maxNumEntPerRow = 1;
+  Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > crsgraph = Teuchos::rcp(new Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node>(rowmap, maxNumEntPerRow, Tpetra::StaticProfile));
+
+  // Fill the graph with only diagonal entries
+  Teuchos::Array<GlobalOrdinal> gblColInds (maxNumEntPerRow);
+  for (LocalOrdinal lclRowInd = rowmap->getMinLocalIndex ();
+       lclRowInd <= rowmap->getMaxLocalIndex (); ++lclRowInd) {
+    const GlobalOrdinal gblRowInd = rowmap->getGlobalElement (lclRowInd);
+    gblColInds[0] = gblRowInd;
+    crsgraph->insertGlobalIndices (gblRowInd, gblColInds ());
+  }
+  crsgraph->fillComplete ();
+
+  return crsgraph;
+}
+
+template<class LocalOrdinal,class GlobalOrdinal,class Node>
+Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > create_dense_local_graph(LocalOrdinal num_rows_per_proc)
+{
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+  const global_size_t INVALID = Teuchos::OrdinalTraits<global_size_t>::invalid();
+  const LocalOrdinal indexBase = 0;
+
+  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = Teuchos::rcp(new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>(INVALID, num_rows_per_proc, indexBase, comm));
+
+  const size_t maxNumEntPerRow = num_rows_per_proc;
+  Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > crsgraph = Teuchos::rcp(new Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node>(rowmap, maxNumEntPerRow, Tpetra::StaticProfile));
+
+  // Fill the graph with only diagonal entries
+  Teuchos::Array<GlobalOrdinal> gblColInds (maxNumEntPerRow);
+  for (LocalOrdinal lclRowInd = rowmap->getMinLocalIndex ();
+       lclRowInd <= rowmap->getMaxLocalIndex (); ++lclRowInd) {
+    const GlobalOrdinal gblRowInd = rowmap->getGlobalElement (lclRowInd);
+    for (size_t k = 0; k < maxNumEntPerRow; ++k)
+    {
+      LocalOrdinal lclColInd = rowmap->getMinLocalIndex() + k;
+      const GlobalOrdinal gblColInd = rowmap->getGlobalElement(lclColInd);
+      gblColInds[k] = gblColInd;
+    }
+    crsgraph->insertGlobalIndices(gblRowInd,gblColInds());
+  }
+  crsgraph->fillComplete ();
+
+  return crsgraph;
+}
+
+
 // ///////////////////////////////////////////////////////////////////////
 
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
@@ -387,6 +445,98 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
   return crsmatrix;
 } //create_banded_matrix
 
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
+Teuchos::RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  create_block_diagonal_matrix(const Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& graph, const int blockSize)
+{
+
+  Teuchos::RCP<Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > bcrsmatrix =
+      Teuchos::rcp(new Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(*graph, blockSize));
+
+  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>& meshRowMap = *bcrsmatrix->getRowMap();
+
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude;
+  const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+  const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+  const Scalar two = one+one;
+  const Scalar three = two+one;
+
+  Teuchos::Array<Scalar> basematrix(blockSize*blockSize, zero);
+  basematrix[0] = two;
+  basematrix[2] = three;
+  basematrix[3] = three;
+  basematrix[4] = two;
+  basematrix[7] = three;
+  basematrix[8] = two;
+
+  Teuchos::Array<LocalOrdinal> lclColInds(1);
+  for (LocalOrdinal lclRowInd = meshRowMap.getMinLocalIndex (); lclRowInd <= meshRowMap.getMaxLocalIndex(); ++lclRowInd)
+  {
+    lclColInds[0] = lclRowInd;
+    bcrsmatrix->replaceLocalValues(lclRowInd, lclColInds.getRawPtr(), &basematrix[0], 1);
+  }
+
+  return bcrsmatrix;
+}
+
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,bool LowerTriangular>
+Teuchos::RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  create_triangular_matrix(const Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& graph, const int blockSize)
+{
+
+  Teuchos::RCP<Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > bcrsmatrix =
+      Teuchos::rcp(new Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(*graph, blockSize));
+
+  const LocalOrdinal numLocalRows = bcrsmatrix->getNodeNumRows();
+  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>& meshRowMap = *bcrsmatrix->getRowMap();
+
+  Teuchos::Array<GlobalOrdinal> col(1);
+  Teuchos::Array<Scalar> coef(1);
+
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude;
+  const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+  const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+  const Scalar two = one+one;
+  const Scalar three = one+one+one;
+
+  Teuchos::Array<Scalar> basematrix(numLocalRows*numLocalRows, zero);
+  basematrix[0] = two;
+  basematrix[3] = three;
+  basematrix[4] = two;
+  basematrix[6] = one;
+  basematrix[7] = three;
+  basematrix[8] = two;
+
+  Teuchos::Array<Scalar> assembleMatrix(blockSize*blockSize, zero);
+
+  Teuchos::Array<LocalOrdinal> lclColInds(1);
+
+  for (LocalOrdinal lclRowInd = meshRowMap.getMinLocalIndex (); lclRowInd <= meshRowMap.getMaxLocalIndex(); ++lclRowInd)
+  {
+    const LocalOrdinal rowOffset = lclRowInd-meshRowMap.getMinLocalIndex();
+
+    for (size_t i = 0; i < numLocalRows; ++i)
+    {
+
+      for (int j = 0; j < blockSize*blockSize; ++j)
+        assembleMatrix[j] = zero;
+      size_t indexBaseMatrix = 0;
+      if (LowerTriangular)
+        indexBaseMatrix = numLocalRows*rowOffset+i;
+      else
+        indexBaseMatrix = i*numLocalRows+rowOffset;
+
+      for (int j = 0; j < blockSize; ++j)
+        assembleMatrix[(blockSize+1)*j] = basematrix[indexBaseMatrix];
+
+      lclColInds[0] = meshRowMap.getMinLocalIndex () + i;
+      bcrsmatrix->replaceLocalValues(lclRowInd, lclColInds.getRawPtr(), &assembleMatrix[0], 1);
+
+    }
+  }
+
+  return bcrsmatrix;
+}
 
 
   template <class Scalar,

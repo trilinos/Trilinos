@@ -46,7 +46,7 @@
 /*! \file pamgenMeshAdapterTest.cpp
     \brief An example of partitioning pamgen coordinates with RCB.
 
-    \author Created by V. Leung.
+    \author Created by V. Leung, K. Devine.
 
 */
 
@@ -57,6 +57,7 @@
 //#include <Zoltan2_TestHelpers.hpp>
 #include <Zoltan2_PamgenMeshAdapter.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
+#include <Zoltan2_ColoringProblem.hpp>
 
 //Tpetra includes
 #include "Tpetra_DefaultPlatform.hpp"
@@ -86,47 +87,30 @@ typedef Tpetra::MultiVector<double, int, int>     tMVector_t;
 /******************************** MAIN ***************************************/
 /*****************************************************************************/
 
-int main(int argc, char *argv[]) {
+int main(int narg, char *arg[]) {
 
-  int numProcs=1;
-  int rank=0;
-
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
-  rank=mpiSession.getRank();
-  numProcs=mpiSession.getNProc();
-
-
-  //Get the default communicator and node for Tpetra
-  //rewrite using with IFDEF for MPI/no MPI??
+  Teuchos::GlobalMPISession mpiSession(&narg, &arg,0);
   Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
   RCP<const Teuchos::Comm<int> > CommT = platform.getComm();
+
   int MyPID = CommT->getRank();
-
-
-  //Check number of arguments
-  if (argc > 2) {
-    cout <<"\n>>> ERROR: Invalid number of arguments.\n\n";
-    cout <<"Usage:\n\n";
-    cout <<"  ./pamgenMeshAdapterTest.exe [meshfile.xml]\n\n";
-    cout <<"   meshfile.xml(optional) - xml file with description of Pamgen mesh\n\n";
-    exit(1);
-  }
+  int numProcs = CommT->getSize();
 
   if (MyPID == 0){
-  cout \
-    << "=========================================================================\n" \
-    << "|                                                                       |\n" \
-    << "|          Example: Partition Pamgen Hexahedral Mesh                    |\n" \
-    << "|                                                                       |\n" \
-    << "|  Questions? Contact  Karen Devine      (kddevin@sandia.gov),          |\n" \
-    << "|                      Erik Boman        (egboman@sandia.gov),          |\n" \
-    << "|                      Siva Rajamanickam (srajama@sandia.gov).          |\n" \
-    << "|                                                                       |\n" \
-    << "|  Pamgen's website:     http://trilinos.sandia.gov/packages/pamgen     |\n" \
-    << "|  Zoltan2's website:    http://trilinos.sandia.gov/packages/zoltan2    |\n" \
-    << "|  Trilinos website:     http://trilinos.sandia.gov                     |\n" \
-    << "|                                                                       |\n" \
-    << "=========================================================================\n";
+  cout 
+    << "====================================================================\n" 
+    << "|                                                                  |\n" 
+    << "|          Example: Partition Pamgen Hexahedral Mesh               |\n" 
+    << "|                                                                  |\n"
+    << "|  Questions? Contact  Karen Devine      (kddevin@sandia.gov),     |\n"
+    << "|                      Erik Boman        (egboman@sandia.gov),     |\n"
+    << "|                      Siva Rajamanickam (srajama@sandia.gov).     |\n"
+    << "|                                                                  |\n"
+    << "|  Pamgen's website:   http://trilinos.sandia.gov/packages/pamgen  |\n"
+    << "|  Zoltan2's website:  http://trilinos.sandia.gov/packages/zoltan2 |\n"
+    << "|  Trilinos website:   http://trilinos.sandia.gov                  |\n"
+    << "|                                                                  |\n"
+    << "====================================================================\n";
   }
 
 
@@ -144,10 +128,20 @@ int main(int argc, char *argv[]) {
   /*************************** GET XML INPUTS ********************************/
   /***************************************************************************/
 
-  // Command line for xml file, otherwise use default
-  std::string   xmlMeshInFileName;
-  if(argc>=2) xmlMeshInFileName=string(argv[1]);
-  else xmlMeshInFileName="Poisson.xml";
+  // default values for command-line arguments
+  std::string xmlMeshInFileName("Poisson.xml");
+  std::string action("mj");
+  int nParts = CommT->getSize();
+
+  // Read run-time options.
+  Teuchos::CommandLineProcessor cmdp (false, false);
+  cmdp.setOption("xmlfile", &xmlMeshInFileName,
+                 "XML file with PamGen specifications");
+  cmdp.setOption("action", &action,
+                 "Method to use:  mj or scotch or color");
+  cmdp.setOption("nparts", &nParts,
+                 "Number of parts to create");
+  cmdp.parse(narg, arg);
 
   // Read xml file into parameter list
   ParameterList inputMeshList;
@@ -173,7 +167,6 @@ int main(int argc, char *argv[]) {
   std::string meshInput = Teuchos::getParameter<std::string>(inputMeshList,
 							     "meshInput");
 
-
   /***************************************************************************/
   /********************** GET CELL TOPOLOGY **********************************/
   /***************************************************************************/
@@ -185,38 +178,77 @@ int main(int argc, char *argv[]) {
   /***************************** GENERATE MESH *******************************/
   /***************************************************************************/
 
-  if (MyPID == 0) {
-    cout << "Generating mesh ... \n\n";
-  }
+  if (MyPID == 0) cout << "Generating mesh ... \n\n";
 
   // Generate mesh with Pamgen
   long long maxInt = 9223372036854775807LL;
-  Create_Pamgen_Mesh(meshInput.c_str(), dim, rank, numProcs, maxInt);
+  Create_Pamgen_Mesh(meshInput.c_str(), dim, MyPID, numProcs, maxInt);
+
+  // Creating mesh adapter
+  if (MyPID == 0) cout << "Creating mesh adapter ... \n\n";
 
   typedef Zoltan2::PamgenMeshAdapter<tMVector_t> inputAdapter_t;
 
   inputAdapter_t ia;
+  ia.print(MyPID);
+
+  // Set parameters for partitioning
+  if (MyPID == 0) cout << "Creating parameter list ... \n\n";
 
   Teuchos::ParameterList params("test params");
-  params.set("bisection_num_test_cuts", 7);
-  params.set("rectilinear", "yes");
+  params.set("debug_level", "basic_status");
 
-#ifdef HAVE_ZOLTAN2_MPI
-  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params, MPI_COMM_WORLD);
-#else
-  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params);
-#endif
+  bool do_partitioning = false;
+  if (action == "mj") {
+    do_partitioning = true;
+    params.set("imbalance_tolerance", 1.1);
+    params.set("num_global_parts", nParts);
+    params.set("algorithm", "multijagged");
+    params.set("rectilinear", "yes");
+  }
+  else if (action == "scotch") {
+    do_partitioning = true;
+    params.set("imbalance_tolerance", 1.1);
+    params.set("num_global_parts", nParts);
+    params.set("partitioning_approach", "partition");
+    params.set("algorithm", "scotch");
+  }
+  else if (action == "color") {
+  }
 
-  problem.solve();
+  // create Partitioning problem
+  if (do_partitioning) {
+    if (MyPID == 0) cout << "Creating partitioning problem ... \n\n";
 
-  if (CommT->getRank() == 0)
-    problem.printMetrics(cout);
+    Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params, CommT);
 
-  if (rank == 0)
-    std::cout << "PASS" << std::endl;
+    // call the partitioner
+    if (MyPID == 0) cout << "Calling the partitioner ... \n\n";
+
+    problem.solve();
+
+    if (MyPID) problem.printMetrics(cout);
+  }
+  else {
+    if (MyPID == 0) cout << "Creating coloring problem ... \n\n";
+
+    Zoltan2::ColoringProblem<inputAdapter_t> problem(&ia, &params);
+
+    // call the partitioner
+    if (MyPID == 0) cout << "Calling the coloring algorithm ... \n\n";
+
+    problem.solve();
+
+  }
 
   // delete mesh
+  if (MyPID == 0) cout << "Deleting the mesh ... \n\n";
+
   Delete_Pamgen_Mesh();
+
+  if (MyPID == 0)
+    std::cout << "PASS" << std::endl;
+
   return 0;
 }
 /*****************************************************************************/

@@ -166,6 +166,32 @@ namespace Tpetra {
                                               Teuchos::Array<int> &remotePids,
                                               Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & colMap);
 
+    template <typename Matrix>
+    struct MatrixSerializationTraits {
+      typedef typename Matrix::scalar_type Scalar;
+
+      static inline
+      size_t scalarSize( const Matrix& mat ) { return sizeof(Scalar); }
+
+      static inline
+      void packBuffer( const Matrix& mat,
+                       const size_t numEntries,
+                       const Teuchos::ArrayView<const Scalar>& vals,
+                       const Teuchos::ArrayView<char> packed_vals ) {
+        Teuchos::ArrayView<Scalar> packed_vals_scalar =
+          Teuchos::av_reinterpret_cast<Scalar>(packed_vals);
+        std::copy( vals.begin(), vals.begin()+numEntries,
+                   packed_vals_scalar.begin());
+      }
+
+      static inline
+      void unpackScalar( const Matrix& mat,
+                         const char * val_char,
+                         Scalar& val ) {
+        val = *( reinterpret_cast<const Scalar*>(val_char) );
+      }
+    };
+
 
   }// end Import_Util
 }//end Tpetra
@@ -196,6 +222,8 @@ void Tpetra::Import_Util::packAndPrepareWithOwningPIDs(const CrsMatrix<Scalar, L
   typedef GlobalOrdinal GO;
   typedef Map<LocalOrdinal,GlobalOrdinal,Node>  map_type;
   typedef typename ArrayView<const LO>::size_type size_type;
+  typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> matrix_type;
+  typedef MatrixSerializationTraits<matrix_type> serialization_type;
 
   TEUCHOS_TEST_FOR_EXCEPTION(!SourceMatrix.isLocallyIndexed(),std::invalid_argument, "packAndPrepareWithOwningPIDs: SourceMatrix must be locally indexed.");
   TEUCHOS_TEST_FOR_EXCEPTION(exportLIDs.size() != numPacketsPerLID.size(),
@@ -218,7 +246,8 @@ void Tpetra::Import_Util::packAndPrepareWithOwningPIDs(const CrsMatrix<Scalar, L
 
 
   // Record initial sizing
-  const size_t sizeOfPacket = sizeof(GO) + sizeof(Scalar) + sizeof(int);
+  const size_t scalar_size = serialization_type::scalarSize( SourceMatrix );
+  const size_t sizeOfPacket = sizeof(GO) + scalar_size + sizeof(int);
   size_t totalNumEntries = 0;
   size_t maxRowLength = 0;
   for (size_type i = 0; i < exportGIDs.size(); ++i) {
@@ -269,16 +298,15 @@ void Tpetra::Import_Util::packAndPrepareWithOwningPIDs(const CrsMatrix<Scalar, L
       // Views of the right places in each array so everthing looks like the right data type
       ArrayView<char> gidsViewOutChar = exports(curOffsetInBytes, curNumEntriesST*sizeof(GO));
       ArrayView<char> pidsViewOutChar = exports(curOffsetInBytes+curNumEntriesST*sizeof(GO), curNumEntriesST*sizeof(int));
-      ArrayView<char> valsViewOutChar = exports(curOffsetInBytes+curNumEntriesST*(sizeof(GO)+sizeof(int)), curNumEntriesST*sizeof(Scalar));
+      ArrayView<char> valsViewOutChar = exports(curOffsetInBytes+curNumEntriesST*(sizeof(GO)+sizeof(int)), curNumEntriesST*scalar_size);
 
       ArrayView<GO> gidsViewOut     = av_reinterpret_cast<GO>(gidsViewOutChar);
       ArrayView<int> pidsViewOut    = av_reinterpret_cast<int>(pidsViewOutChar);
-      ArrayView<Scalar> valsViewOut = av_reinterpret_cast<Scalar>(valsViewOutChar);
 
       // Copy the row's data into the views of the exports array.
       std::copy(gidsView.begin(), gidsView.begin() + curNumEntriesST, gidsViewOut.begin());
       std::copy(pidsView.begin(), pidsView.begin() + curNumEntriesST, pidsViewOut.begin());
-      std::copy(valsView.begin(), valsView.begin() + curNumEntriesST, valsViewOut.begin());
+      serialization_type::packBuffer( SourceMatrix, curNumEntriesST, valsView, valsViewOutChar );
 
       // Keep track of how many bytes we packed.
       curOffsetInBytes += sizeOfPacket * curNumEntries;
@@ -311,6 +339,8 @@ size_t Tpetra::Import_Util::unpackAndCombineWithOwningPIDsCount(const CrsMatrix<
                                                                 const ArrayView<const LocalOrdinal> &permuteFromLIDs) {
   typedef LocalOrdinal LO;
   typedef typename ArrayView<const LO>::size_type size_type;
+  typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> matrix_type;
+  typedef MatrixSerializationTraits<matrix_type> serialization_type;
   size_t nnz = 0;
 
   // CopyAndPermuteSection
@@ -335,7 +365,8 @@ size_t Tpetra::Import_Util::unpackAndCombineWithOwningPIDsCount(const CrsMatrix<
                              std::invalid_argument, "unpackAndCombineWithOwningPIDsCount: importLIDs.size() = " << importLIDs.size()
                              << "!= numPacketsPerLID.size() = " << numPacketsPerLID.size() << ".");
 
-  const size_t sizeOfPacket    = sizeof(GlobalOrdinal)  + sizeof(int) + sizeof(Scalar);
+  const size_t scalar_size = serialization_type::scalarSize( SourceMatrix );
+  const size_t sizeOfPacket    = sizeof(GlobalOrdinal)  + sizeof(int) + scalar_size;
 
   size_t curOffsetInBytes = 0;
   for (size_type i = 0; i < importLIDs.size(); ++i) {
@@ -375,6 +406,8 @@ void Tpetra::Import_Util::unpackAndCombineIntoCrsArrays(const CrsMatrix<Scalar, 
   typedef GlobalOrdinal GO;
   typedef Map<LocalOrdinal,GlobalOrdinal,Node>  map_type;
   typedef typename ArrayView<const LO>::size_type size_type;
+  typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> matrix_type;
+  typedef MatrixSerializationTraits<matrix_type> serialization_type;
 
   size_t i,j;
   size_t N=TargetNumRows;
@@ -408,7 +441,8 @@ void Tpetra::Import_Util::unpackAndCombineIntoCrsArrays(const CrsMatrix<Scalar, 
                              std::invalid_argument, "unpackAndCombineIntoCrsArrays: importLIDs.size() = " << importLIDs.size()
                              << "!= numPacketsPerLID.size() = " << numPacketsPerLID.size() << ".");
 
-  const size_t sizeOfPacket     = sizeof(GlobalOrdinal)  + sizeof(int) + sizeof(Scalar);
+  const size_t scalar_size = serialization_type::scalarSize( SourceMatrix );
+  const size_t sizeOfPacket     = sizeof(GlobalOrdinal)  + sizeof(int) + scalar_size;
   const size_t totalNumBytes    = imports.size();
   const size_t RemoteNumEntries = totalNumBytes / sizeOfPacket;
   for (size_type k = 0; k < importLIDs.size(); ++k) {
@@ -484,7 +518,6 @@ void Tpetra::Import_Util::unpackAndCombineIntoCrsArrays(const CrsMatrix<Scalar, 
     ArrayView<const char>   avIndsC, avPidsC, avValsC;
     ArrayView<const GO>     avInds;
     ArrayView<const int>    avPids;
-    ArrayView<const Scalar> avVals;
 
     size_t curOffsetInBytes = 0;
     for (i = 0; i < Teuchos::as<size_t>(importLIDs.size()); ++i) {
@@ -497,16 +530,18 @@ void Tpetra::Import_Util::unpackAndCombineIntoCrsArrays(const CrsMatrix<Scalar, 
       // Get views of the import (incoming data) buffers.
       avIndsC = imports(curOffsetInBytes, rowSize*sizeof(GO));
       avPidsC = imports(curOffsetInBytes+rowSize*sizeof(GO), rowSize*sizeof(int));
-      avValsC = imports(curOffsetInBytes+rowSize*(sizeof(GO)+sizeof(int)), rowSize*sizeof(Scalar));
+      avValsC = imports(curOffsetInBytes+rowSize*(sizeof(GO)+sizeof(int)), rowSize*scalar_size);
 
       avInds = av_reinterpret_cast<const GO>(avIndsC);
       avPids = av_reinterpret_cast<const int>(avPidsC);
-      avVals = av_reinterpret_cast<const Scalar>(avValsC);
+
+      const char * avValsC_ptr = avValsC.getRawPtr();
 
       for(j=0; j<rowSize; j++){
-        CSR_vals[StartRow + j]   = avVals[j];
+        serialization_type::unpackScalar( SourceMatrix, avValsC_ptr, CSR_vals[StartRow+j] );
         CSR_colind[StartRow + j] = avInds[j];
         TargetPids[StartRow + j] = (avPids[j] != MyPID) ? avPids[j] : -1;
+        avValsC_ptr += scalar_size;
       }
       curOffsetInBytes += rowSize * sizeOfPacket;
     }

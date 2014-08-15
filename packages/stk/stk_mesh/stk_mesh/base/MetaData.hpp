@@ -148,7 +148,25 @@ public:
    */
   ~MetaData();
 
-  void set_mesh_on_fields(BulkData* bulk);
+  void set_mesh(BulkData* bulk)
+  {
+      ThrowRequireMsg(m_bulk_data == NULL || m_bulk_data == bulk, "MetaData::set_mesh ERROR, trying to set mesh when it's already set.");
+      m_bulk_data = bulk;
+  }
+
+  BulkData& get_mesh() {
+      ThrowRequireMsg(m_bulk_data != NULL, "MetaData::get_mesh() ERROR, mesh not set yet.");
+    return *m_bulk_data;
+  }
+
+  const BulkData& get_mesh() const {
+      ThrowRequireMsg(m_bulk_data != NULL, "MetaData::get_mesh() ERROR, mesh not set yet.");
+    return *m_bulk_data;
+  }
+
+  bool has_mesh() const {
+      return m_bulk_data != NULL;
+  }
 
   //------------------------------------
   /** \name Predefined Parts
@@ -519,6 +537,8 @@ public:
 
   void dump_all_meta_info(std::ostream& out = std::cout) const;
 
+  void set_mesh_on_fields(BulkData* bulk);
+
   /** \} */
 private:
   // Functions
@@ -541,6 +561,7 @@ private:
 
   // Members
 
+  BulkData* m_bulk_data;
   bool   m_commit ;
   impl::PartRepository m_part_repo ;
   CSet   m_attributes ;
@@ -855,6 +876,8 @@ field_type & MetaData::declare_field( stk::topology::rank_t arg_entity_rank,
       f[i]->m_impl.set_field_states( f );
     }
   }
+
+  f[0]->set_mesh(m_bulk_data);
 
   return *f[0] ;
 }

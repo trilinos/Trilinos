@@ -55,7 +55,7 @@ typedef Kokkos::View<int**> idx_type;
 
 template<class Device>
 struct localsum {
-  // Define the execution space for the functor (overrides the DefaultDeviceType)
+  // Define the execution space for the functor (overrides the DefaultExecutionSpace)
   typedef Device device_type;
 
   // Get the view types on the particular device the functor is instantiated for

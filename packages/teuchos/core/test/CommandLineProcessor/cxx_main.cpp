@@ -64,6 +64,9 @@ int main( int argc, char* argv[] )
     int size = 1;
     clp.setOption( "size", &size, "Size of memory blocks created." );
 
+    size_t sizetOption = 10;
+    clp.setOption( "sizeTOption", &sizetOption, "An option of type size_t.");
+
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
     long long longLongOption = 42;
     clp.setOption( "longLongOption", &longLongOption, "An option of type long long." );

@@ -192,7 +192,7 @@ public:
    */
   virtual bool useDegreeAsVertexWeight(int idx) const
   { 
-    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+    return false;
   }
 
   /*! \brief Returns the number (0 or greater) of edge weights.

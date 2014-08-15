@@ -57,22 +57,38 @@ bool setPythonParameter(Teuchos::ParameterList & plist,
     if (value == Py_True) plist.set(name,true );
     else                  plist.set(name,false);
   }
+
   // Integer values
   else if (PyInt_Check(value))
   {
     plist.set(name, (int)PyInt_AsLong(value));
   }
+
   // Floating point values
   else if (PyFloat_Check(value))
   {
     plist.set(name, PyFloat_AsDouble(value));
   }
+
   // String values
   else if (PyString_Check(value))
   {
     plist.set(name, std::string(PyString_AsString(value)));
   }
-  // Dictionary values
+
+  // None object not allowed: this is a python type not usable by
+  // Trilinos solver packages, so we reserve it for the
+  // getPythonParameter() function to indicate that the requested
+  // parameter does not exist in the given Teuchos::ParameterList.
+  // For logic reasons, this check must come before the check for
+  // Teuchos::ParameterList
+  else if (value == Py_None)
+  {
+    return false;
+  }
+
+  // Dictionary values.  This must come before the check for Python
+  // sequences, because the Python ditionary is a sequence.
   else if (PyDict_Check(value))
   {  
     // Convert the python dictionary to a Teuchos::ParameterList
@@ -82,7 +98,30 @@ bool setPythonParameter(Teuchos::ParameterList & plist,
     plist.set(name,*sublist);
     delete sublist;
   }
-  // NumPy arrays and Python sequences
+
+  // Teuchos::ParameterList values
+  else if (SWIG_CheckState(SWIG_Python_ConvertPtrAndOwn(value,
+                                                        &argp,
+                                                        swig_TPL_ptr,
+                                                        0,
+                                                        &newmem)))
+  {
+    if (newmem & SWIG_CAST_NEW_MEMORY)
+    { 
+      Teuchos::RCP< Teuchos::ParameterList > tempshared =
+	*reinterpret_cast< Teuchos::RCP< Teuchos::ParameterList > * >(argp);
+      delete reinterpret_cast< Teuchos::RCP< Teuchos::ParameterList > * >(argp);
+      plist.set(name, *(tempshared.get()));
+    }
+    else
+    {
+      Teuchos::RCP< Teuchos::ParameterList > * smartarg =
+	reinterpret_cast< Teuchos::RCP< Teuchos::ParameterList > * >(argp);
+      if (smartarg) plist.set(name, *(smartarg->get()));
+    }
+  }
+
+  // NumPy arrays and non-dictionary Python sequences
   else if (PyArray_Check(value) || PySequence_Check(value))
   {
     PyObject * pyArray =
@@ -122,37 +161,6 @@ bool setPythonParameter(Teuchos::ParameterList & plist,
       // Unsupported data type
       if (pyArray != value) Py_DECREF(pyArray);
       return false;
-    }
-  }
-
-  // None object not allowed: this is a python type not usable by
-  // Trilinos solver packages, so we reserve it for the
-  // getPythonParameter() function to indicate that the requested
-  // parameter does not exist in the given Teuchos::ParameterList
-  else if (value == Py_None)
-  {
-    return false;
-  }
-
-  // Teuchos::ParameterList values
-  else if (SWIG_CheckState(SWIG_Python_ConvertPtrAndOwn(value,
-                                                        &argp,
-                                                        swig_TPL_ptr,
-                                                        0,
-                                                        &newmem)))
-  {
-    if (newmem & SWIG_CAST_NEW_MEMORY)
-    { 
-      Teuchos::RCP< Teuchos::ParameterList > tempshared =
-	*reinterpret_cast< Teuchos::RCP< Teuchos::ParameterList > * >(argp);
-      delete reinterpret_cast< Teuchos::RCP< Teuchos::ParameterList > * >(argp);
-      plist.set(name, *(tempshared.get()));
-    }
-    else
-    {
-      Teuchos::RCP< Teuchos::ParameterList > * smartarg =
-	reinterpret_cast< Teuchos::RCP< Teuchos::ParameterList > * >(argp);
-      if (smartarg) plist.set(name, *(smartarg->get()));
     }
   }
 

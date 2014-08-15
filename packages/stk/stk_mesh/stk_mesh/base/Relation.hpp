@@ -60,13 +60,13 @@ public:
   void set_attribute(attribute_type attr) const  { m_attribute = attr; }
 
   /** \brief  The encoded relation raw_relation_id */
-  inline static raw_relation_id_type raw_relation_id( unsigned rank , unsigned id );
+  inline static raw_relation_id_type raw_relation_id( EntityRank rank , unsigned id );
 
   /** \brief  The encoded relation raw_relation_id */
   raw_relation_id_type raw_relation_id() const { return m_raw_relation.value ; }
 
   /** \brief  The rank of the referenced entity */
-  inline unsigned entity_rank() const ;
+  inline EntityRank entity_rank() const ;
 
   /** \brief  The local relation identifier */
   inline RelationIdentifier relation_ordinal() const ;
@@ -238,7 +238,7 @@ private:
 
 inline
 Relation::raw_relation_id_type
-Relation::raw_relation_id( unsigned rank , unsigned id )
+Relation::raw_relation_id( EntityRank rank , unsigned id )
 {
   ThrowAssertMsg( id <= id_mask,
                   "For args rank " << rank << ", id " << id << ": " <<
@@ -248,8 +248,8 @@ Relation::raw_relation_id( unsigned rank , unsigned id )
 }
 
 inline
-unsigned Relation::entity_rank() const
-{ return m_raw_relation.value >> id_digits; }
+EntityRank Relation::entity_rank() const
+{ return static_cast<EntityRank>(m_raw_relation.value >> id_digits); }
 
 inline
 RelationIdentifier Relation::relation_ordinal() const
