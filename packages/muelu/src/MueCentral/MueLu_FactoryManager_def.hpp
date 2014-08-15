@@ -55,7 +55,6 @@
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_ConstraintFactory.hpp"
-#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_MultiVectorTransferFactory.hpp"
 #include "MueLu_NoFactory.hpp"
@@ -68,6 +67,7 @@
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
+#include "MueLu_UncoupledAggregationFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
 
 namespace MueLu {
@@ -131,7 +131,7 @@ namespace MueLu {
 
       if (varName == "Graph")                           return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
       if (varName == "UnAmalgamationInfo")              return SetAndReturnDefaultFactory(varName, rcp(new AmalgamationFactory())); //GetFactory("Graph"));
-      if (varName == "Aggregates")                      return SetAndReturnDefaultFactory(varName, rcp(new CoupledAggregationFactory()));
+      if (varName == "Aggregates")                      return SetAndReturnDefaultFactory(varName, rcp(new UncoupledAggregationFactory()));
       if (varName == "CoarseMap")                       return SetAndReturnDefaultFactory(varName, rcp(new CoarseMapFactory()));
       if (varName == "DofsPerNode")                     return GetFactory("Graph");
       if (varName == "Filtering")                       return GetFactory("Graph");
