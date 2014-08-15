@@ -1689,13 +1689,6 @@ namespace Tpetra {
     ///   - The graph is locally indexed
     t_LocalOrdinal_1D k_lclInds1D_;
 
-    /// \brief Legacy Kokkos classic version of k_lclInds1D_.
-    ///
-    /// This is just a view of k_lclInds1D_.  We create views using
-    /// Kokkos::Compat::persistingView, so the Kokkos::View won't get
-    /// deallocated until the ArrayRCP's reference count goes to zero.
-    Teuchos::ArrayRCP<LocalOrdinal> lclInds1D_;
-
     //! Type of the k_gblInds1D_ array of global column indices.
     typedef Kokkos::View<GlobalOrdinal*, typename Node::device_type> t_GlobalOrdinal_1D;
 

@@ -1135,8 +1135,7 @@ namespace Tpetra {
       myGraph_->k_lclInds1D_ = k_inds;
       this->k_values1D_ = k_vals;
 
-      // Set Kokkos classic pointers for backwards compatibility.
-      myGraph_->lclInds1D_ = Kokkos::Compat::persistingView (k_inds);
+      // Set Kokkos classic pointer for backwards compatibility.
       this->values1D_ = Kokkos::Compat::persistingView (k_vals);
 
       // Storage is packed now, so the number of allocated entries is
@@ -1271,7 +1270,6 @@ namespace Tpetra {
     // fill both the graph and the matrix at the same time).
 
     // get data from staticGraph_
-    ArrayRCP<LO> lclInds1D         = staticGraph_->lclInds1D_;
     ArrayRCP<Array<LO> > lclInds2D = staticGraph_->lclInds2D_;
     ArrayRCP<size_t> numRowEntries = staticGraph_->numRowEntries_;
     size_t nodeNumEntries   = staticGraph_->nodeNumEntries_;
