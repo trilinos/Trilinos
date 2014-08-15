@@ -45,7 +45,7 @@
 
 // Handle Mpi4Py, if we have it
 #ifdef HAVE_MPI4PY
-{%
+%{
 #include "mpi4py/mpi4py.h"
 %}
 %include "mpi4py/mpi4py.i"
