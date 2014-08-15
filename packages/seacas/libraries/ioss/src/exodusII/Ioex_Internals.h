@@ -351,7 +351,7 @@ namespace Ioex {
   class Mesh
   {
   public:
-    Mesh() : title({0}), dimensionality(0)
+    Mesh() :   dimensionality(0)
       {}
 
       Mesh(int dim, char* the_title)
