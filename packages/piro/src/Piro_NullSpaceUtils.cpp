@@ -52,7 +52,8 @@ namespace Piro {
     nullSpaceDim(0),
     numSpaceDim(0),
     numScalar(0),
-    mlUsed(false)
+    mlUsed(false),
+    mueLuUsed(false)
   {
   }
 
@@ -67,6 +68,12 @@ namespace Piro {
           mlList =
             sublist(sublist(sublist(stratList, "Preconditioner Types"), "ML"), "ML Settings");
           mlUsed = true;
+        }
+        else if ("MueLu" == stratList->get<std::string>("Preconditioner Type")) {
+          // MueLu preconditioner is used, get nodal coordinates from application
+          mueLuList =
+            sublist(sublist(stratList, "Preconditioner Types"), "MueLu");
+          mueLuUsed = true;
         }
       }
 
@@ -92,6 +99,10 @@ namespace Piro {
       else y.resize(numNodes);
       if ( (numNodes == 0) && (numSpaceDim_ > 2) ) z.resize(1);
       else z.resize(numNodes);
+      
+      //For MueLu: allocate vector holding the x, y and z coordinates concatenated
+      if ( (numNodes == 0)) xyz.resize(1);
+      else xyz.resize((numSpaceDim+1)*numNodes);
 
       if(nullSpaceDim > 0) rr.resize((nullSpaceDim + numScalar) * numPDEs * numNodes + 1);
 
@@ -105,6 +116,17 @@ namespace Piro {
       *zz = &z[0];
 
     }
+  
+  void
+    MLRigidBodyModes::getCoordArraysMueLu(double **xxyyzz){
+
+      std::cout << "in getCoordArraysMueLu!" << std::endl; 
+#ifdef PIRO_HAS_TPETRA
+      std::cout << "Piro has tpetra!" << std::endl;
+#endif
+      *xxyyzz = &xyz[0];
+
+    }
 
   void
     MLRigidBodyModes::setParameters(const int numPDEs_, const int numElasticityDim_,
@@ -116,6 +138,19 @@ namespace Piro {
       nullSpaceDim = nullSpaceDim_;
 
     }
+
+
+#ifdef PIRO_HAS_TPETRA
+  void
+    MLRigidBodyModes::informMueLu(Teuchos::RCP<MultiVector> Coordinates) { 
+      
+      std::cout << "in informMueLu!" << std::endl; 
+      //numPDEs = # PDEs
+      mueLuList->set("Coordinates", Coordinates);
+      mueLuList->set("number of equations", numPDEs);
+      //TO DO: give MueLu rigid body modes! 
+  }
+#endif
 
   void
     MLRigidBodyModes::informML(){

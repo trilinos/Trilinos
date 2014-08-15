@@ -123,6 +123,10 @@ IF (Piro_ENABLE_TriKota)
   ADD_DEFINITIONS(${TRIKOTA_DAKOTA_DEFINITIONS})
 ENDIF() 
 
+IF (Trilinos_ENABLE_Tpetra)
+  ADD_DEFINITIONS(-DPIRO_HAS_TPETRA)
+ENDIF()
+
 APPEND_SET(HEADERS Piro_PerformSolve.hpp
                    Piro_PerformSolve_Def.hpp)
 APPEND_SET(SOURCES Piro_PerformSolve.cpp)

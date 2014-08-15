@@ -47,6 +47,21 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_RCP.hpp"
 
+#ifdef PIRO_HAS_TPETRA
+#include "Tpetra_MultiVector.hpp"
+#include "Kokkos_SerialNode.hpp"
+//Tpetra typedefs
+//TO DO: this needs to be passed from Albany -- templating? 
+typedef double                                      scalar;
+typedef int                                         globalOrdinal;
+typedef int                                         localOrdinal;
+typedef KokkosClassic::SerialNode                   node;
+typedef Tpetra::MultiVector<scalar,localOrdinal,globalOrdinal,node> MultiVector;
+#else
+#include "Epetra_MultiVector.h"
+typedef Epetra_MultiVector MultiVector;
+#endif
+
 namespace Piro {
 
 class MLRigidBodyModes {
@@ -60,7 +75,7 @@ public:
    void setNumPDEs(int numPDEs_){ numPDEs = numPDEs_; }
 
    //! Resize object as mesh changes
-   void resize(const int numSpaceDim, const int numNodes);
+   void resize(const int numSpaceDim, const int numnodes);
 
    //! Set sizes of nullspace etc
    void setParameters(const int numPDEs, const int numElasticityDim, 
@@ -74,12 +89,21 @@ public:
 
    //! Access the arrays to store the coordinates
    void getCoordArrays(double **x, double **y, double **z);
+   
+   //! Access the arrays to store the coordinates -- same as x, y and z but concatenated
+   void getCoordArraysMueLu(double **xxyyzz);
 
    //! Is ML used on this problem?
    bool isMLUsed(){ return mlUsed; }
+   
+   //! Is MueLu used on this problem?
+   bool isMueLuUsed(){ return mueLuUsed; }
 
    //! Pass coordinate arrays to ML
    void informML();
+   
+   //! Pass coordinate arrays to MueLu
+   void informMueLu(Teuchos::RCP<MultiVector> Coordinates); 
 
 private:
 
@@ -91,11 +115,14 @@ private:
     int nullSpaceDim;
     int numSpaceDim;
     bool mlUsed;
+    bool mueLuUsed; 
     Teuchos::RCP<Teuchos::ParameterList> mlList;
+    Teuchos::RCP<Teuchos::ParameterList> mueLuList;
 
     std::vector<double> x;
     std::vector<double> y;
     std::vector<double> z;
+    std::vector<double> xyz;
     std::vector<double> rr;
 
 };
