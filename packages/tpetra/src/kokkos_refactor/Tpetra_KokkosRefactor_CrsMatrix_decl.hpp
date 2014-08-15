@@ -967,11 +967,11 @@ namespace Tpetra {
     /// \brief Perform a fillComplete on a matrix that already has data.
     ///
     /// The matrix must already have filled local 1-D storage
-    /// (lclInds1D_ and rowPtrs_ for the graph, and values1D_ in the
-    /// matrix).  If the matrix has been constructed in any other way,
-    /// this method will throw an exception.  This routine is needed
-    /// to support other Trilinos packages and should not be called by
-    /// ordinary users.
+    /// (k_lclInds1D_ and k_rowPtrs_ for the graph, and k_values1D_ in
+    /// the matrix).  If the matrix has been constructed in any other
+    /// way, this method will throw an exception.  This routine is
+    /// needed to support other Trilinos packages and should not be
+    /// called by ordinary users.
     ///
     /// \warning This method is intended for expert developer use
     ///   only, and should never be called by user code.
