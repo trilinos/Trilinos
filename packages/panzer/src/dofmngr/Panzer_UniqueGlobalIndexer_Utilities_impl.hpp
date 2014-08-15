@@ -89,6 +89,42 @@ printUGILoadBalancingInformation(const UniqueGlobalIndexer<LocalOrdinalT,GlobalO
   return ss.str();
 }
 
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+void
+printMeshTopology(std::ostream & os,const panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi)
+{
+  std::vector<std::string> block_ids;
+
+  ugi.getElementBlockIds(block_ids);
+  for(std::size_t b=0;b<block_ids.size();b++) {
+    // extract the elemnts in each element block
+    const std::vector<LocalOrdinalT> & elements = ugi.getElementBlock(block_ids[b]);
+
+    os << "Element Block: \"" << block_ids[b] << "\"" << std::endl;
+ 
+    // loop over element in this element block, write out to 
+    for(std::size_t e=0;e<elements.size();e++) {
+      // extract LIDs, this is returned by reference nominally for performance
+      const std::vector<LocalOrdinalT> & lids = ugi.getElementLIDs(e);
+
+      // extract GIDs, this array is filled
+      std::vector<GlobalOrdinalT> gids;
+      ugi.getElementGIDs(e,gids);
+
+      os << "   local element id = " << e << ", ";
+
+      os << "  gids =";
+      for(std::size_t i=0;i<gids.size();i++)
+        os << " " << gids[i];
+
+      os << ",  lids =";
+      for(std::size_t i=0;i<gids.size();i++)
+        os << " " << lids[i];
+      os << std::endl;
+    }
+  }
+}
+
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 Teuchos::RCP<Tpetra::Vector<int,int,GlobalOrdinalT,Node> >
 buildGhostedFieldReducedVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi)

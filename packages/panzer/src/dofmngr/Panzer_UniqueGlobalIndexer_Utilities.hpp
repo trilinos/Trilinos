@@ -64,6 +64,13 @@ namespace panzer {
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 std::string printUGILoadBalancingInformation(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi);
 
+/** Print all GIDs and their associated elements to the screen. Note if a FancyOStream is used
+  * the correct prefixes this method will label the processors as well. This can print out an 
+  * extreme amount of information so it is only useful for debugging.
+  */
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+void printMeshTopology(std::ostream & os,const panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi);
+
 /** Construct a vector that contains a reduced set of field numbers.
   * The ordering is based on the ordering from <code>ugi.getOwnedAndSharedIndices()</code>.
   * The term "reduced" means that this processor must be able to fully determine the
