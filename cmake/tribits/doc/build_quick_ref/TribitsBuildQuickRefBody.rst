@@ -1110,6 +1110,7 @@ NOTES:
 * To set or override the test timeout limit at runtime, see `Overridding test
   timeouts`_.
 
+.. _<Project>_SCALE_TEST_TIMEOUT_TESTING_TIMEOUT:
 
 Scaling test timeouts at configure time
 ---------------------------------------
