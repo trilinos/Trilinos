@@ -7157,6 +7157,8 @@ snapshotting`_.
 
 .. _${PROJECT_NAME}_TRACE_FILE_PROCESSING: ../build_quick_ref/TribitsBuildQuickRef.html#project-trace-file-processing
 
+.. _${PROJECT_NAME}_SCALE_TEST_TIMEOUT: ../build_quick_ref/TribitsBuildQuickRef.html#project-scale-test-timeout-testing-timeout
+
 .. _make dashboard: ../build_quick_ref/TribitsBuildQuickRef.html#dashboard-submissions
 
 .. _Setting the install prefix at configure time: ../build_quick_ref/TribitsBuildQuickRef.html#setting-the-install-prefix-at-configure-time

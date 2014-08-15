@@ -1213,12 +1213,14 @@ Usage::
 
     If passed in, gives maximum number of seconds the test will be allowed
     to run before being timed-out.  This sets the CTest property
-    ``TIMEOUT``.  **WARNING:** Rather than just increasing the timeout for
-    an expensive test, please try to either make the test run faster or
-    relegate the test to being run less often (i.e. set ``CATEGORIES
-    NIGHTLY`` or even ``WEEKLY`` for extremely expensive tests).  Expensive
-    tests are one of the worse forms of technical debt that a project can
-    have!
+    ``TIMEOUT``.  The value ``<maxSeconds>`` will be scaled by the value of
+    `${PROJECT_NAME}_SCALE_TEST_TIMEOUT`_.
+
+    **WARNING:** Rather than just increasing the timeout for an expensive
+    test, please try to either make the test run faster or relegate the test
+    to being run less often (i.e. set ``CATEGORIES NIGHTLY`` or even
+    ``WEEKLY`` for extremely expensive tests).  Expensive tests are one of
+    the worse forms of technical debt that a project can have!
 
 In the end, this function just calls the built-in CMake commands
 ``ADD_TEST(${TEST_NAME} ...)`` and ``SET_TESTS_PROPERTIES(${TEST_NAME}

@@ -8623,14 +8623,16 @@ calling the test.  This is set using the built-in CTest property
 <tt class="docutils literal">ENVIRONMENT</tt>.</blockquote>
 <p><tt class="docutils literal">TIMEOUT &lt;maxSeconds&gt;</tt></p>
 <blockquote>
-If passed in, gives maximum number of seconds the test will be allowed
+<p>If passed in, gives maximum number of seconds the test will be allowed
 to run before being timed-out.  This sets the CTest property
-<tt class="docutils literal">TIMEOUT</tt>.  <strong>WARNING:</strong> Rather than just increasing the timeout for
-an expensive test, please try to either make the test run faster or
-relegate the test to being run less often (i.e. set <tt class="docutils literal">CATEGORIES
-NIGHTLY</tt> or even <tt class="docutils literal">WEEKLY</tt> for extremely expensive tests).  Expensive
-tests are one of the worse forms of technical debt that a project can
-have!</blockquote>
+<tt class="docutils literal">TIMEOUT</tt>.  The value <tt class="docutils literal">&lt;maxSeconds&gt;</tt> will be scaled by the value of
+<a class="reference external" href="../build_quick_ref/TribitsBuildQuickRef.html#project-scale-test-timeout-testing-timeout">${PROJECT_NAME}_SCALE_TEST_TIMEOUT</a>.</p>
+<p><strong>WARNING:</strong> Rather than just increasing the timeout for an expensive
+test, please try to either make the test run faster or relegate the test
+to being run less often (i.e. set <tt class="docutils literal">CATEGORIES NIGHTLY</tt> or even
+<tt class="docutils literal">WEEKLY</tt> for extremely expensive tests).  Expensive tests are one of
+the worse forms of technical debt that a project can have!</p>
+</blockquote>
 </blockquote>
 <p>In the end, this function just calls the built-in CMake commands
 <tt class="docutils literal"><span class="pre">ADD_TEST(${TEST_NAME}</span> <span class="pre">...)</span></tt> and <tt class="docutils literal"><span class="pre">SET_TESTS_PROPERTIES(${TEST_NAME}</span>
