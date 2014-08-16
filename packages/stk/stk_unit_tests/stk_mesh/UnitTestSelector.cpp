@@ -174,7 +174,8 @@ TEST(Verify, selectorEmptyDuringMeshMod)
         EXPECT_FALSE(block1Selector.is_empty(stk::topology::ELEM_RANK));
     }
 
-    bulk.modification_end();
+    //cannot call modification_end which requires all elements, faces, edges to have connected nodes - which we have not defined
+    //bulk.modification_end();
 
     if (bulk.parallel_rank()==0) {
         EXPECT_FALSE(block1Selector.is_empty(stk::topology::ELEM_RANK));

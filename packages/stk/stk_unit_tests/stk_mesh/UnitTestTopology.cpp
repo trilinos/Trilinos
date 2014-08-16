@@ -128,7 +128,7 @@ TEST( testTopologyHelpers, declare_element_side_no_topology )
     stk::mesh::declare_element_side( fix.bulk, fix.element_rank, elem4, fix.nextEntityId(), &fix.element_wedge_part ),
     std::runtime_error
       );
-  fix.bulk.modification_end();
+  //fix.bulk.modification_end();
 
 
   {
@@ -137,7 +137,7 @@ TEST( testTopologyHelpers, declare_element_side_no_topology )
     elem_node[1] = 2;
     elem_node[2] = 3;
     elem_node[3] = 4;
-    fix.bulk.modification_begin();
+    //fix.bulk.modification_begin();
     // Cannot declare an element without a topology defined
     ASSERT_THROW(
       stk::mesh::declare_element(fix.bulk, fix.generic_element_part, fix.nextEntityId(), elem_node),
@@ -273,16 +273,20 @@ TEST( testTopologyHelpers, element_side_polarity_invalid_2 )
 
   const EntityId zero_side_count = 0;
   Entity face_with_top = stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element_with_top, zero_side_count);
-
-  fix.bulk.modification_end();
-
   const int valid_local_side_id = 0;
-  // Hits "Element has no defined topology" error condition:
-  ASSERT_TRUE( stk::mesh::get_cell_topology( fix.bulk.bucket(element) ).getCellTopologyData() == NULL );
   ASSERT_THROW(
       fix.bulk.element_side_polarity( element, face_with_top, valid_local_side_id),
       std::runtime_error
       );
+
+  //modification_end is not called due to difference in expected behavior for release and debug builds - debug should throw, release should not
+  //difference occurs within check_for_connected_nodes method
+  //ASSERT_THROW(fix.bulk.modification_end(), std::logic_error);
+
+  // Hits "Element has no defined topology" error condition:
+  //ASSERT_TRUE( stk::mesh::get_cell_topology( fix.bulk.bucket(element) ).getCellTopologyData() == NULL );
+
+
 
 }
 

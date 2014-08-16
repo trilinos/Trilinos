@@ -47,6 +47,7 @@ TEST( UnitTestGridFixture, test_gridfixture )
   stk::mesh::BulkData& bulk_data = grid_mesh.bulk_data();
   stk::mesh::MetaData& fem_meta = grid_mesh.fem_meta();
   const stk::mesh::EntityRank elem_rank = stk::topology::ELEMENT_RANK;
+  const stk::mesh::EntityRank node_rank = stk::topology::NODE_RANK;
 
   int rank = stk::parallel_machine_rank( MPI_COMM_WORLD );
   int size = stk::parallel_machine_size( MPI_COMM_WORLD );
@@ -82,6 +83,11 @@ TEST( UnitTestGridFixture, test_gridfixture )
     stk::mesh::Entity new_shell = bulk_data.declare_entity(elem_rank,
                                                             id_offset + new_id,
                                                             shell_parts);
+    for(unsigned node_id = 0 ; node_id < 2; ++node_id)
+    {
+      stk::mesh::Entity new_node = bulk_data.declare_entity(node_rank, (node_id+10)*(id_offset + new_id));
+      bulk_data.declare_relation( new_shell , new_node , node_id);
+    }
     shell_faces.push_back(new_shell);
   }
 

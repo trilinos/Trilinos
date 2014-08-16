@@ -695,6 +695,7 @@ TEST ( UnitTestBulkData_new , verifyBoxGhosting )
 
 TEST ( UnitTestBulkData_new , testEntityComm )
 {
+  //08-18-14 Patrick Xavier, Flint Pierce - This test needs to be rewritten as it tests nothing after comm
   //Test on unpack_field_values in EntityComm.cpp
   //code based on ../base/BulkDataGhosting.cpp
   //Create a simple mesh. Add nodes one element and some parts.
@@ -902,7 +903,7 @@ TEST ( UnitTestBulkData_new , testEntityComm )
     }
   }//end of CommAll section
 
-  bulk.modification_end ();
+  //bulk.modification_end ();
 }
 
 TEST ( UnitTestBulkData_new , testUninitializedMetaData )

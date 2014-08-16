@@ -5753,7 +5753,7 @@ int check_for_connected_nodes(const BulkData& mesh)
   //and -1 if an error is found.
   //
   //All EDGE_RANK and FACE_RANK entities must have at least 1 connected node.
-  for(stk::mesh::EntityRank rank=stk::topology::EDGE_RANK; rank<=stk::topology::FACE_RANK; ++rank) {
+  for(stk::mesh::EntityRank rank=stk::topology::EDGE_RANK; rank<=stk::topology::ELEMENT_RANK; ++rank) {
     const stk::mesh::BucketVector& buckets = mesh.buckets(rank);
     for(size_t i=0; i<buckets.size(); ++i) {
       const stk::mesh::Bucket& bucket = *buckets[i];
