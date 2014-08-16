@@ -50,16 +50,8 @@
 #ifdef PIRO_HAS_TPETRA
 #include "Tpetra_MultiVector.hpp"
 #include "Kokkos_SerialNode.hpp"
-//Tpetra typedefs
-//TO DO: this needs to be passed from Albany -- templating? 
-typedef double                                      scalar;
-typedef int                                         globalOrdinal;
-typedef int                                         localOrdinal;
-typedef KokkosClassic::SerialNode                   node;
-typedef Tpetra::MultiVector<scalar,localOrdinal,globalOrdinal,node> MultiVector;
 #else
 #include "Epetra_MultiVector.h"
-typedef Epetra_MultiVector MultiVector;
 #endif
 
 namespace Piro {
@@ -103,7 +95,12 @@ public:
    void informML();
    
    //! Pass coordinate arrays to MueLu
-   void informMueLu(Teuchos::RCP<MultiVector> Coordinates); 
+#ifdef PIRO_HAS_TPETRA
+   template<class ST, class LO, class GO, class Node>
+   void informMueLu(Teuchos::RCP<Tpetra::MultiVector<ST,LO,GO,Node> > Coordinates); 
+#else
+   void informMueLu(Teuchos::RCP<Epetra_MultiVector> Coordinates); 
+#endif
 
 private:
 
@@ -126,6 +123,19 @@ private:
     std::vector<double> rr;
 
 };
+
+#ifdef PIRO_HAS_TPETRA
+  template<class ST, class LO, class GO, class Node>
+  void
+    MLRigidBodyModes::informMueLu(Teuchos::RCP<Tpetra::MultiVector<ST,LO,GO,Node> > Coordinates) {
+
+      std::cout << "in informMueLu!" << std::endl;
+      //numPDEs = # PDEs
+      mueLuList->set("Coordinates", Coordinates);
+      mueLuList->set("number of equations", numPDEs);
+      //TO DO: give MueLu rigid body modes!
+  }
+#endif
 
 } // namespace Piro
 

@@ -139,19 +139,6 @@ namespace Piro {
 
     }
 
-
-#ifdef PIRO_HAS_TPETRA
-  void
-    MLRigidBodyModes::informMueLu(Teuchos::RCP<MultiVector> Coordinates) { 
-      
-      std::cout << "in informMueLu!" << std::endl; 
-      //numPDEs = # PDEs
-      mueLuList->set("Coordinates", Coordinates);
-      mueLuList->set("number of equations", numPDEs);
-      //TO DO: give MueLu rigid body modes! 
-  }
-#endif
-
   void
     MLRigidBodyModes::informML(){
 
