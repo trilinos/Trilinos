@@ -5762,6 +5762,15 @@ int check_for_connected_nodes(const BulkData& mesh)
           std::cerr << "Entity with rank="<<rank<<", identifier="<<mesh.identifier(bucket[j])<<" has no connected nodes."<<std::endl;
           return -1;
         }
+        // NEED TO CHECK FOR EACH BUCKET INHABITANT THAT ALL ITS NODES ARE VALID.
+        unsigned num_nodes = bucket.num_nodes(j);
+        Entity const* nodes = bucket.begin_nodes(j);
+        for (unsigned k = 0; k < num_nodes; ++k) {
+          if (!mesh.is_valid(nodes[k])) {
+            std::cerr << "Entity with rank="<<rank<<", identifier="<<mesh.identifier(bucket[j])<<" is connected to an invalid node."<<std::endl;
+            return -1;
+          }
+        }
       }
     }
   }

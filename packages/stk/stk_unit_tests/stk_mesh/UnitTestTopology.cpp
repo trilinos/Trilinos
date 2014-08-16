@@ -97,6 +97,12 @@ TEST( testTopologyHelpers, get_cell_topology_based_on_part)
   fix.bulk.modification_begin();
   Entity elem1  = fix.create_entity( fix.side_rank, fix.generic_face_part );
 
+  std::vector<Entity> elem_node(4);
+  for (int i = 0; i < 4; ++i) {
+    elem_node[i] = fix.bulk.declare_entity(stk::topology::NODE_RANK, 100 + i);
+    fix.bulk.declare_relation(elem1, elem_node[i], i);
+  }
+
   PartVector tmp(1);
   tmp[0] = & fix.face_quad_part;
   fix.bulk.change_entity_parts ( elem1 , tmp );
