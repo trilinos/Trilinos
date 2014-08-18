@@ -188,9 +188,8 @@ int main(int narg, char *arg[]) {
   if (me == 0) cout << "Creating mesh adapter ... \n\n";
 
   typedef Zoltan2::PamgenMeshAdapter<tMVector_t> inputAdapter_t;
-  const Zoltan2::Environment env;
 
-  inputAdapter_t ia(*CommT, env);
+  inputAdapter_t ia(*CommT);
   ia.print(me);
 
   // Set parameters for partitioning
