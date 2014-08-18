@@ -54,8 +54,8 @@
 /*                          Includes                          */
 /**************************************************************/
 
-//#include <Zoltan2_TestHelpers.hpp>
 #include <Zoltan2_PamgenMeshAdapter.hpp>
+#include <Zoltan2_Environment.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
 #include <Zoltan2_ColoringProblem.hpp>
 
@@ -188,8 +188,9 @@ int main(int narg, char *arg[]) {
   if (MyPID == 0) cout << "Creating mesh adapter ... \n\n";
 
   typedef Zoltan2::PamgenMeshAdapter<tMVector_t> inputAdapter_t;
+  const Zoltan2::Environment env;
 
-  inputAdapter_t ia;
+  inputAdapter_t ia(*CommT, env);
   ia.print(MyPID);
 
   // Set parameters for partitioning
