@@ -404,8 +404,12 @@ public:
   //------------------------------------
   /// \brief  Copy Constructor
   ///
-  template<class SrcType>
-  CrsMatrix(const SrcType & B) {
+  template<typename SType,
+           typename OType,
+           class DType,
+           class MTType,
+           typename IType>
+  CrsMatrix(const CrsMatrix<SType,OType,DType,MTType,IType> & B) {
     graph = B.graph;
     values = B.values;
     _numRows = B.numRows();
@@ -954,7 +958,8 @@ generateHostGraph ( OrdinalType nrows,
 }
 
 template<class DeviceType>
-int RowsPerThread(const int NNZPerRow) {
+inline int RowsPerThread(const int NNZPerRow) {
+  if(NNZPerRow == 0) return 1;
   int result = 2;
   while(result*NNZPerRow <= 2048) {
     result*=2;
@@ -963,7 +968,7 @@ int RowsPerThread(const int NNZPerRow) {
 }
 #ifdef KOKKOS_HAVE_CUDA
 template<>
-int RowsPerThread<Kokkos::Cuda>(const int NNZPerRow) {
+inline int RowsPerThread<Kokkos::Cuda>(const int NNZPerRow) {
   return 1;
 }
 #endif
@@ -1035,7 +1040,6 @@ struct MV_MultiplyFunctor {
   typedef typename Kokkos::TeamPolicy< device_type >       team_policy ;
   typedef typename team_policy::member_type                team_member ;
 
-  //typedef MV_MultiplyShflThreadsPerRow< device_type , value_type , NNZPerRow > ShflThreadsPerRow ;
   typedef Vectorization<device_type,ExplicitVectorLength> vectorization;
 
   CoeffVector1 beta;
