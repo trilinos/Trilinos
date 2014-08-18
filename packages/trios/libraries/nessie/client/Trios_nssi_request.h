@@ -86,6 +86,9 @@ extern "C" {
                 /** @brief The client is processing the result. */
                 NSSI_PROCESSING_RESULT,
 
+                /** @brief The last wait operation timed out. */
+                NSSI_REQUEST_TIMEDOUT,
+
                 /** @brief The request is complete. */
                 NSSI_REQUEST_COMPLETE
         };
