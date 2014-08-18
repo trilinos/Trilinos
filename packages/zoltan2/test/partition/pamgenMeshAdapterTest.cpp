@@ -196,6 +196,7 @@ int main(int narg, char *arg[]) {
   if (me == 0) cout << "Creating parameter list ... \n\n";
 
   Teuchos::ParameterList params("test params");
+  params.set("timer_output_stream" , "std::cout");
 
   bool do_partitioning = false;
   if (action == "mj") {
@@ -243,6 +244,7 @@ int main(int narg, char *arg[]) {
 
     problem.solve();
 
+    problem.printTimers();
   }
 
   // delete mesh

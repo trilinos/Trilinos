@@ -611,6 +611,8 @@ public:
     ArrayView<const lno_t> &offsets,
     ArrayView<input_t> &wgts)
   {
+    env_->timerStart(MACRO_TIMERS, "GraphModel::getLocalEdgeList");
+
     if (localGraphEdgeOffsets_.size() == 0) {
       // Local graph not created yet
       RCP<const IdentifierMap<user_t> > idmap = this->getIdentifierMap();
@@ -621,8 +623,10 @@ public:
     }
     edgeIds = localGraphEdgeLnos_();
     offsets = localGraphEdgeOffsets_();
-
     wgts = localGraphEdgeWeights_();
+
+    env_->timerStop(MACRO_TIMERS, "GraphModel::getLocalEdgeList");
+
     return numLocalGraphEdges_;
   }
 
@@ -893,6 +897,7 @@ GraphModel<Adapter>::GraphModel(
        numGlobalEdges_(0),
        numLocalGraphEdges_(0)
 {
+  env_->timerStart(MACRO_TIMERS, "GraphModel constructed from MeshAdapter");
 
   // This GraphModel is built with vertices == ia->getPrimaryEntityType()
   // from MeshAdapter.
@@ -963,6 +968,7 @@ GraphModel<Adapter>::GraphModel(
   typedef MeshAdapter<user_t> adapterWithCoords_t;
   shared_GetVertexCoords<adapterWithCoords_t>(ia);
 
+  env_->timerStop(MACRO_TIMERS, "GraphModel constructed from MeshAdapter");
   print();
 }
 
