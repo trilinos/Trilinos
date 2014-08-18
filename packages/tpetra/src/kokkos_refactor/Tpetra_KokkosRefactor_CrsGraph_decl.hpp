@@ -925,6 +925,18 @@ namespace Tpetra {
     /// \param newColMap [in] New column Map.  Must be nonnull.
     void replaceColMap (const Teuchos::RCP<const map_type>& newColMap);
 
+    /// \brief Reindex the column indices in place, and replace the
+    ///   column Map.  Optionally, replace the Import object as well.
+    ///
+    /// \param newColMap [in] New column Map.  Must be nonnull.
+    ///
+    /// \param newImport [in] New Import object.  Optional; computed
+    ///   if not provided or if null.  Computing an Import is
+    ///   expensive, so it is worth providing this if you can.
+    void
+    reindexColumns (const Teuchos::RCP<const map_type>& newColMap,
+                    const Teuchos::RCP<const import_type>& newImport = Teuchos::null);
+
     /// \brief Replace the current domain Map and Import with the given parameters.
     ///
     /// \warning This method is ONLY for use by experts.

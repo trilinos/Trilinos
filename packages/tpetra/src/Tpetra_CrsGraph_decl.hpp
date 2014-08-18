@@ -995,6 +995,18 @@ namespace Tpetra {
     /// \param newColMap [in] New column Map.  Must be nonnull.
     void replaceColMap (const Teuchos::RCP<const map_type>& newColMap);
 
+    /// \brief Reindex the column indices in place, and replace the
+    ///   column Map.  Optionally, replace the Import object as well.
+    ///
+    /// \param newColMap [in] New column Map.  Must be nonnull.
+    ///
+    /// \param newImport [in] New Import object.  Optional; computed
+    ///   if not provided or if null.  Computing an Import is
+    ///   expensive, so it is worth providing this if you can.
+    void
+    reindexColumns (const Teuchos::RCP<const map_type>& newColMap,
+                    const Teuchos::RCP<const import_type>& newImport = Teuchos::null);
+
     /// \brief Replace the current domain Map and Import with the given parameters.
     ///
     /// \warning This method is ONLY for use by experts.
@@ -1813,6 +1825,7 @@ public:
     using Teuchos::null;
     using Teuchos::outArg;
     using Teuchos::ParameterList;
+    using Teuchos::parameterList;
     using Teuchos::RCP;
     using Teuchos::rcp;
     using Teuchos::REDUCE_MIN;
@@ -1826,17 +1839,20 @@ public:
     typedef ::Tpetra::Map<LO, GO, InputNodeType> input_map_type;
     typedef ::Tpetra::Map<LO, GO, OutputNodeType> output_map_type;
     const char prefix[] = "Tpetra::Details::CrsGraphCopier::clone: ";
-    const bool debug = false;
 
-    bool fillCompleteClone  = true;
-    bool useLocalIndices    = graphIn.hasColMap ();
+    // Set parameters' default values.
+    bool debug = false;
+    bool fillCompleteClone = true;
+    bool useLocalIndices = graphIn.hasColMap ();
     ProfileType pftype = StaticProfile;
+    // If the user provided a ParameterList, get values from there.
     if (! params.is_null ()) {
       fillCompleteClone = params->get ("fillComplete clone", fillCompleteClone);
       useLocalIndices = params->get ("Locally indexed clone", useLocalIndices);
       if (params->get ("Static profile clone", true) == false) {
         pftype = DynamicProfile;
       }
+      debug = params->get ("Debug", debug);
     }
 
     const Teuchos::Comm<int>& comm = * (graphIn.getRowMap ()->getComm ());
@@ -1887,7 +1903,12 @@ public:
         cerr << os.str ();
       }
 
-      RCP<ParameterList> graphparams = sublist (params, "CrsGraph");
+      RCP<ParameterList> graphparams;
+      if (params.is_null ()) {
+        graphparams = parameterList ("CrsGraph");
+      } else {
+        graphparams = sublist (params, "CrsGraph");
+      }
       if (useLocalIndices) {
         RCP<const output_map_type> clonedColMap =
           graphIn.getColMap ()->template clone<OutputNodeType> (nodeOut);
@@ -2124,7 +2145,9 @@ public:
     }
 
     if (fillCompleteClone) {
-      RCP<ParameterList> fillparams = sublist (params, "fillComplete");
+      RCP<ParameterList> fillparams = params.is_null () ?
+        parameterList ("fillComplete") :
+        sublist (params, "fillComplete");
       try {
         RCP<const output_map_type> clonedRangeMap;
         RCP<const output_map_type> clonedDomainMap;
@@ -2144,6 +2167,13 @@ public:
         else {
           clonedDomainMap = clonedRowMap;
         }
+
+        if (debug) {
+          std::ostringstream os;
+          os << "Process " << myRank << ": About to call fillComplete on "
+            "cloned graph" << endl;
+          cerr << os.str ();
+        }
         clonedGraph->fillComplete (clonedDomainMap, clonedRangeMap, fillparams);
       }
       catch (std::exception &e) {
@@ -2162,6 +2192,11 @@ public:
       gblSuccess != 1, std::logic_error, prefix <<
       "Clone failed on at least one process.");
 
+    if (debug) {
+      std::ostringstream os;
+      os << "Process " << myRank << ": Done with CrsGraph::clone" << endl;
+      cerr << os.str ();
+    }
     return clonedGraph;
   }
 };

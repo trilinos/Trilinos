@@ -3864,9 +3864,6 @@ namespace Tpetra {
     LocalMatOps::finalizeGraph (uplo, diag, *lclGraph_, params);
   }
 
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
   CrsGraph<
@@ -3880,11 +3877,35 @@ namespace Tpetra {
   replaceColMap (const Teuchos::RCP<const map_type>& newColMap)
   {
     // NOTE: This safety check matches the code, but not the documentation of Crsgraph
-    const char tfecfFuncName[] = "replaceColMap";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isLocallyIndexed() || isGloballyIndexed(),  std::runtime_error, " requires matching maps and non-static graph.");
+    //
+    // FIXME (mfh 18 Aug 2014) This will break if the calling process
+    // has no entries, because in that case, currently it is neither
+    // locally nor globally indexed.  This will change once we get rid
+    // of lazy allocation (so that the constructor allocates indices
+    // and therefore commits to local vs. global).
+    const char tfecfFuncName[] = "replaceColMap: ";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      isLocallyIndexed () || isGloballyIndexed (), std::runtime_error,
+      "Requires matching maps and non-static graph.");
     colMap_ = newColMap;
   }
 
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void
+  CrsGraph<
+    LocalOrdinal,
+    GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+    typename KokkosClassic::DefaultKernels<
+      void,
+      LocalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  reindexColumns (const Teuchos::RCP<const map_type>& newColMap,
+                  const Teuchos::RCP<const import_type>& newImport)
+  {
+    const char tfecfFuncName[] = "reindexColumns: ";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::logic_error, "Not implemented");
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
