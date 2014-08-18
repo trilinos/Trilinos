@@ -913,13 +913,17 @@ namespace Tpetra {
      */
     Teuchos::ArrayRCP<const LocalOrdinal> getNodePackedIndices() const;
 
-    /// \brief Replace the current colMap with the given object.
+    /// \brief Replace the graph's current column Map with the given Map.
     ///
-    /// \param newColMap [in] New colMap.  Must be nonnull.
+    /// This <i>only</i> replaces the column Map.  It does <i>not</i>
+    /// change the graph's current column indices, or otherwise apply
+    /// a permutation.  For example, suppose that before calling this
+    /// method, the calling process owns a row containing local column
+    /// indices [0, 2, 4].  These indices do <i>not</i> change, nor
+    /// does their order change, as a result of calling this method.
     ///
-    /// \pre The matrix must have no entries inserted yet
-    void
-    replaceColMap (const Teuchos::RCP<const map_type>& newColMap);
+    /// \param newColMap [in] New column Map.  Must be nonnull.
+    void replaceColMap (const Teuchos::RCP<const map_type>& newColMap);
 
     /// \brief Replace the current domain Map and Import with the given parameters.
     ///
