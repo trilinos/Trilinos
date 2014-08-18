@@ -398,6 +398,18 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr):
     }
   }
 
+  delete[] num_nodes_per_elem;
+  num_nodes_per_elem = NULL;
+  delete[] num_elem_this_blk;
+  num_elem_this_blk = NULL;
+
+  for(int b = 0; b < num_elem_blk; b++) {
+    delete[] connect[b];
+  }
+
+  delete[] connect;
+  connect = NULL;
+
   int max_side_nodes = nnodes_per_elem;
   int *side_nodes = new int [max_side_nodes];
   int *mirror_nodes = new int [max_side_nodes];
@@ -460,6 +472,19 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr):
     }
   }
 
+  delete[] node_cmap_node_cnts;
+  node_cmap_node_cnts = NULL;
+
+  for(int j = 0; j < num_node_cmaps; j++) {
+    delete[] node_ids[j];
+    delete[] node_proc_ids[j];
+  }
+
+  delete[] node_ids;
+  node_ids = NULL;
+  delete[] node_proc_ids;
+  node_proc_ids = NULL;
+
   for(int ecnt=0; ecnt < num_elem_; ecnt++) {
     start_[ecnt] = nadj_;
     int nnodes = nnodes_per_elem;
@@ -478,6 +503,13 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr):
       }
     }
   }
+
+  for(int b = 0; b < num_elem_; b++) {
+    delete[] reconnect[b];
+  }
+
+  delete[] reconnect;
+  reconnect = NULL;
   start_[num_elem_] = nadj_;
 
   adj_ = new gid_t [nadj_];
@@ -486,40 +518,10 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr):
     adj_[i] = adj[i];
   }
 
-  delete[] num_nodes_per_elem;
-  num_nodes_per_elem = NULL;
-  delete[] num_elem_this_blk;
-  num_elem_this_blk = NULL;
-
-  for(int b = 0; b < num_elem_blk; b++) {
-    delete[] connect[b];
-  }
-
-  delete[] connect;
-  connect = NULL;
-
-  for(int b = 0; b < num_elem_; b++) {
-    delete[] reconnect[b];
-  }
-
-  delete[] reconnect;
-  reconnect = NULL;
   delete[] side_nodes;
   side_nodes = NULL;
   delete[] mirror_nodes;
   mirror_nodes = NULL;
-  delete[] node_cmap_node_cnts;
-  node_cmap_node_cnts = NULL;
-
-  for(int j = 0; j < num_node_cmaps; j++) {
-    delete[] node_ids[j];
-    delete[] node_proc_ids[j];
-  }
-
-  delete[] node_ids;
-  node_ids = NULL;
-  delete[] node_proc_ids;
-  node_proc_ids = NULL;
 }
 
 template <typename User>
