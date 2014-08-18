@@ -106,7 +106,8 @@ public:
    *  lifetime of this InputAdapter.
    */
 
-  PamgenMeshAdapter(std::string typestr="region");
+  PamgenMeshAdapter(const Comm<int> &comm, const Environment &env,
+		    std::string typestr="region");
 
   void print(int);
 
@@ -275,7 +276,9 @@ ssize_t in_list(const int value, size_t count, int *vector)
 }
 
 template <typename User>
-PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr):
+PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
+					   const Environment &env,
+					   std::string typestr):
   dimension_(0)
 {
   this->setEntityTypes(typestr, "vertex", "vertex");
