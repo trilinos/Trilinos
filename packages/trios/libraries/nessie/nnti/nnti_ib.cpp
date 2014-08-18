@@ -2404,7 +2404,7 @@ NNTI_result_t NNTI_ib_destroy_work_request (
 	assert(ib_wr);
 
     if (ib_mem_hdl->type == REQUEST_BUFFER) {
-    	if (ib_wr->state != NNTI_IB_WR_STATE_POSTED) {
+    	if (ib_wr->state == NNTI_IB_WR_STATE_WAIT_COMPLETE) {
     		repost_recv_work_request(wr, ib_wr);
 
     		nthread_lock(&ib_mem_hdl->wr_queue_lock);
@@ -2422,7 +2422,7 @@ NNTI_result_t NNTI_ib_destroy_work_request (
         ib_wr->nnti_wr=NULL;
 
     } else if (ib_mem_hdl->type == RECEIVE_BUFFER) {
-    	if (ib_wr->state != NNTI_IB_WR_STATE_POSTED) {
+    	if (ib_wr->state == NNTI_IB_WR_STATE_WAIT_COMPLETE) {
     		repost_recv_work_request(wr, ib_wr);
 
     		nthread_lock(&ib_mem_hdl->wr_queue_lock);
@@ -2590,6 +2590,7 @@ NNTI_result_t NNTI_ib_wait (
     	cancel_wr(ib_wr);
     } else if (is_wr_complete(ib_wr) == TRUE) {
         log_debug(debug_level, "wr already complete (wr=%p ; ib_wr=%p)", wr, IB_WORK_REQUEST(wr));
+        ib_wr->state=NNTI_IB_WR_STATE_WAIT_COMPLETE;
         nnti_rc = NNTI_OK;
     } else {
         log_debug(debug_level, "wr NOT complete (wr=%p ; ib_wr=%p)", wr, IB_WORK_REQUEST(wr));
@@ -2778,6 +2779,7 @@ NNTI_result_t NNTI_ib_waitany (
 
     if (is_any_wr_complete(wr_list, wr_count, which) == TRUE) {
         log_debug(debug_level, "wr already complete (which=%u, wr_list[%d]=%p, ib_wr=%p)", *which, *which, wr_list[*which], IB_WORK_REQUEST(wr_list[*which]));
+        IB_WORK_REQUEST(wr_list[*which])->state=NNTI_IB_WR_STATE_WAIT_COMPLETE;
         nnti_rc = NNTI_OK;
     } else {
         log_debug(debug_level, "wr NOT complete (wr_list=%p)", wr_list);
@@ -2815,6 +2817,7 @@ NNTI_result_t NNTI_ib_waitany (
 
             if (is_any_wr_complete(wr_list, wr_count, which) == TRUE) {
                 log_debug(debug_level, "wr completed (which=%u, wr_list[%d]=%p, ib_wr=%p)", *which, *which, wr_list[*which], IB_WORK_REQUEST(wr_list[*which]));
+                IB_WORK_REQUEST(wr_list[*which])->state=NNTI_IB_WR_STATE_WAIT_COMPLETE;
                 nnti_rc = NNTI_OK;
                 break;
             }
@@ -2959,10 +2962,13 @@ NNTI_result_t NNTI_ib_waitall (
     }
 
     if (is_all_wr_complete(wr_list, wr_count) == TRUE) {
-        log_debug(debug_level, "all buffer ops already complete (wr_list=%p)", wr_list);
+        log_debug(debug_level, "all wr already complete (wr_list=%p)", wr_list);
+        for (uint32_t i=0;i<wr_count;i++) {
+        	IB_WORK_REQUEST(wr_list[i])->state=NNTI_IB_WR_STATE_WAIT_COMPLETE;
+        }
         nnti_rc = NNTI_OK;
     } else {
-        log_debug(debug_level, "all buffer ops NOT complete (wr_list=%p)", wr_list);
+        log_debug(debug_level, "all wr NOT complete (wr_list=%p)", wr_list);
 
         while (1) {
             rc=progress(timeout-elapsed_time);
@@ -2996,7 +3002,10 @@ NNTI_result_t NNTI_ib_waitall (
             }
 
             if (is_all_wr_complete(wr_list, wr_count) == TRUE) {
-                log_debug(debug_level, "wr completed (wr_list=%p)", wr_list);
+                log_debug(debug_level, "all wr completed (wr_list=%p)", wr_list);
+                for (uint32_t i=0;i<wr_count;i++) {
+                	IB_WORK_REQUEST(wr_list[i])->state=NNTI_IB_WR_STATE_WAIT_COMPLETE;
+                }
                 nnti_rc = NNTI_OK;
                 break;
             }
@@ -4161,7 +4170,8 @@ static int8_t is_wr_complete(
 {
     int8_t rc=FALSE;
 
-    if (ib_wr->state==NNTI_IB_WR_STATE_RDMA_COMPLETE) {
+    if ((ib_wr->state==NNTI_IB_WR_STATE_RDMA_COMPLETE) ||
+    	(ib_wr->state==NNTI_IB_WR_STATE_WAIT_COMPLETE)) {
         rc=TRUE;
     }
 
