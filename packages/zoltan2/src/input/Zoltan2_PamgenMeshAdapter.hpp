@@ -106,8 +106,7 @@ public:
    *  lifetime of this InputAdapter.
    */
 
-  PamgenMeshAdapter(const Comm<int> &comm, const Environment &env,
-		    std::string typestr="region");
+  PamgenMeshAdapter(const Comm<int> &comm, std::string typestr="region");
 
   void print(int);
 
@@ -277,7 +276,6 @@ ssize_t in_list(const int value, size_t count, int *vector)
 
 template <typename User>
 PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
-					   const Environment &env,
 					   std::string typestr):
   dimension_(0)
 {
