@@ -834,13 +834,6 @@ int nssi_test(nssi_request *req, int *rc) {
     return (int)NSSI_ENOTSUP;
 }
 
-int nssi_wait(nssi_request *req, int *rc)
-{
-    log_debug(rpc_debug_level, "calling nssi_timedwait(timeout=-1)");
-    return nssi_timedwait(req, -1, rc);
-}
-
-
 /**
  * @brief Wait for the server to fetch the long args.
  *
@@ -868,40 +861,6 @@ static int cleanup_long_args(
 
     return rc;
 }
-
-/**
- * @brief Wait for all requests to complete.
- *
- * A request is not complete unless we receive the short
- * result.
- *
- * @param req_array  @input_type  The array of pending requests.
- * @param size       @input_type  The number of pending requests.
- * @param timeout    @input_type  The time to wait for any one request.
- *
- */
-int nssi_waitall(
-        nssi_request *req_array,
-        nssi_size size,
-        int timeout)
-{
-    int rc = NSSI_OK;  /* return code */
-    int rc2;
-    int i;
-
-    /* wait for each request to complete */
-    for (i=0; i<(int)size; i++) {
-        rc = nssi_timedwait(&req_array[i], timeout, &rc2);
-        if (rc != NSSI_OK) {
-            goto complete;
-        }
-    }
-
-complete:
-
-    return rc;
-}
-
 
 /**
  * @brief Wait for a request to complete.
@@ -947,8 +906,6 @@ int nssi_timedwait(nssi_request *req, int timeout, int *remote_rc)
         		&req->short_result_wr,
                 timeout,
                 &status);
-        NNTI_destroy_work_request(
-        		&req->short_result_wr);
         trios_stop_timer("NNTI_wait - short result", call_time);
         if (status.result == NNTI_ETIMEDOUT) {
             log_info(debug_level, "NNTI_wait for result timed out");
@@ -972,6 +929,10 @@ int nssi_timedwait(nssi_request *req, int timeout, int *remote_rc)
             fprint_NNTI_status(logger_get_file(), "status", "FATAL", &status);
             return rc;
         }
+
+        NNTI_destroy_work_request(
+        		&req->short_result_wr);
+
         break;
     }
 
@@ -1058,7 +1019,347 @@ cleanup:
     return NSSI_EBADRPC;
 }
 
+int nssi_wait(nssi_request *req, int *rc)
+{
+    log_debug(rpc_debug_level, "calling nssi_timedwait(timeout=-1)");
+    return nssi_timedwait(req, -1, rc);
+}
 
+/**
+ * @brief Wait for any request to complete.
+ *
+ * A request is not complete unless we receive the short
+ * result.
+ *
+ * @param req_array  @input_type  The array of pending requests.
+ * @param size       @input_type  The number of pending requests.
+ * @param timeout    @input_type  The time to wait for any one request.
+ *
+ */
+int nssi_waitany(
+        nssi_request *req_array,
+        nssi_size     req_count,
+        int           timeout,
+        int          *which,
+        int          *remote_rc)
+{
+	NNTI_result_t nnti_rc=NNTI_OK; /* result of NNTI functions */
+
+    int rc = NSSI_OK;  /* return code */
+    int rc2;
+    int i;
+
+	int errors  =0;
+	int timeouts=0;
+
+    NNTI_work_request_t **work_requests=new NNTI_work_request_t*[req_count];
+    uint32_t              nnti_which=0;
+    NNTI_status_t         status;
+
+    log_level debug_level = rpc_debug_level;
+
+
+    for (i=0;i<req_count;i++) {
+        switch (req_array[i].status) {
+			case NSSI_REQUEST_NULL:
+			case NSSI_REQUEST_ERROR:
+			case NSSI_REQUEST_COMPLETE:
+				work_requests[i]=NULL;
+				break;
+			default:
+    	        nnti_rc = NNTI_create_work_request(
+    	        		req_array[i].short_result_hdl,
+    	        		&req_array[i].short_result_wr);
+				work_requests[i]=&req_array[i].short_result_wr;
+
+				break;
+        }
+    }
+
+    nnti_rc=NNTI_waitany(
+    		work_requests,
+    		req_count,
+    		timeout,
+    		&nnti_which,
+    		&status);
+
+    *which=nnti_which;
+
+    if (status.result == NNTI_ETIMEDOUT) {
+        log_info(debug_level, "NNTI_wait for result timed out");
+        rc = status.result;
+        return rc;
+    }
+    if (status.result != NNTI_OK) {
+        log_info(debug_level, "NNTI_wait for result failed");
+        rc = status.result;
+        req_array[*which].status = NSSI_REQUEST_ERROR;
+    }
+
+    log_debug(debug_level, "Processing result status.offset=%d", status.offset);
+
+    /* we are now ready to process the result */
+    req_array[*which].status = NSSI_PROCESSING_RESULT;
+    rc = process_result((char *)status.start+status.offset, &req_array[*which]);
+    if (rc != NSSI_OK) {
+        log_fatal(debug_level,"unable to process result");
+        fprint_NNTI_status(logger_get_file(), "status", "FATAL", &status);
+        return rc;
+    }
+
+    if (req_array[*which].use_long_args) {
+    	log_debug(debug_level, "Cleanup long args");
+    	/* Now we need to clean up the long arguments (if they were used) */
+    	rc = cleanup_long_args(&req_array[*which], timeout);
+    	if (rc != NSSI_OK) {
+    		log_error(debug_level, "failed to cleanup long args");
+    		return NSSI_EBADRPC;
+    	}
+    }
+
+cleanup:
+
+	for (i=0;i<req_count;i++) {
+		if (work_requests[i]) {
+			NNTI_destroy_work_request(work_requests[i]);
+		}
+	}
+
+	delete(work_requests);
+
+	/* Did we get here because of an error in this code? */
+	if (rc != NSSI_OK) {
+		return rc;
+	}
+
+	/* call the callback function associated with the request */
+	log_debug(debug_level, "calling callback for wait(): op=%d", req_array[*which].opcode);
+	if (req_array[*which].callback) {
+		req_array[*which].callback(&req_array[*which]);
+	}
+
+	if (nssi_config.use_buffer_queue) {
+		trios_buffer_queue_push(&recv_bq, req_array[*which].short_result_hdl);
+		req_array[*which].short_result_hdl=NULL;
+	} else {
+		/* Free data allocated for the short result */
+		log_debug(debug_level, "Unregister memory for short_result");
+		/* TODO: Fix this so an error or timeout cleans up data structures */
+		rc=NNTI_free(req_array[*which].short_result_hdl);
+		if (rc != NNTI_OK) {
+			log_error(rpc_debug_level, "failed unregistering short result: %s",
+					nnti_err_str(rc));
+		}
+		req_array[*which].short_result_hdl=NULL;
+	}
+
+	/* If the request has data associated with it, the data should
+	 * be transferred by now (server would not have sent result).
+	 * We need to unlink the MD and free the event queue.
+	 */
+	if (req_array[*which].data != NULL) {
+		if ((nssi_config.use_buffer_queue) &&
+			(nssi_config.rdma_buffer_queue_buffer_size >= req_array[*which].data_size)) {
+			/* copy the RDMA buffer contents into the user buffer.
+			 * we can't tell if the server op was get or put.
+			 * if it was get, then this is a waste of time.
+			 * if it was put, then this is required.
+			 */
+			memcpy(req_array[*which].data, NNTI_BUFFER_C_POINTER(req_array[*which].bulk_data_hdl), req_array[*which].data_size);
+			trios_buffer_queue_push(&rdma_target_bq, req_array[*which].bulk_data_hdl);
+		} else {
+			log_debug(debug_level, "Unregister memory for data");
+			rc=NNTI_unregister_memory(req_array[*which].bulk_data_hdl);
+			if (rc != NNTI_OK) {
+				log_error(rpc_debug_level, "failed unregistering data: %s",
+						nnti_err_str(rc));
+			}
+		}
+	}
+
+
+	/* check for an error */
+	if (req_array[*which].status == NSSI_REQUEST_ERROR) {
+		*remote_rc = req_array[*which].error_code;
+		return rc;
+	}
+
+	/* check for completion */
+	if (req_array[*which].status == NSSI_REQUEST_COMPLETE) {
+		log_debug(debug_level,"timedwait finished");
+		*remote_rc = NSSI_OK;
+		return rc;
+	}
+
+	/* this should only execute if something went wrong */
+	log_fatal(debug_level,"invalid request status %d",req_array[*which].status);
+	return NSSI_EBADRPC;
+
+}
+
+/**
+ * @brief Wait for all requests to complete.
+ *
+ * A request is not complete unless we receive the short
+ * result.
+ *
+ * @param req_array  @input_type  The array of pending requests.
+ * @param size       @input_type  The number of pending requests.
+ * @param timeout    @input_type  The time to wait for any one request.
+ *
+ */
+int nssi_waitall(
+        nssi_request *req_array,
+        nssi_size     req_count,
+        int           timeout)
+{
+	NNTI_result_t nnti_rc=NNTI_OK; /* result of NNTI functions */
+
+    int rc = NSSI_OK;  /* return code */
+    int rc2;
+    int i;
+
+	int errors  =0;
+	int timeouts=0;
+
+    NNTI_work_request_t **work_requests=new NNTI_work_request_t*[req_count];
+//    NNTI_status_t        *statuses;
+//    NNTI_status_t       **status_list;
+    NNTI_status_t         status;
+
+    uint32_t which=0;
+
+    log_level debug_level = rpc_debug_level;
+
+
+    for (i=0;i<req_count;i++) {
+        switch (req_array[i].status) {
+			case NSSI_REQUEST_NULL:
+			case NSSI_REQUEST_ERROR:
+			case NSSI_REQUEST_COMPLETE:
+				work_requests[i]=NULL;
+				break;
+			default:
+    	        nnti_rc = NNTI_create_work_request(
+    	        		req_array[i].short_result_hdl,
+    	        		&req_array[i].short_result_wr);
+				work_requests[i]=&req_array[i].short_result_wr;
+
+				break;
+        }
+    }
+//    statuses   =(NNTI_status_t  *)malloc(req_count*sizeof(NNTI_status_t));
+//    status_list=(NNTI_status_t **)malloc(req_count*sizeof(NNTI_status_t *));
+//    for (i=0;i<req_count;i++) {
+//        status_list[i]=&statuses[i];
+//    }
+
+    for (i=0;i<req_count;i++) {
+    	nnti_rc=NNTI_waitany(
+    			work_requests,
+    			req_count,
+    			timeout,
+    			&which,
+    			&status);
+
+        if (status.result == NNTI_ETIMEDOUT) {
+            log_info(debug_level, "work_request[%d] timed out", which);
+            req_array[which].status = NSSI_REQUEST_TIMEDOUT;
+            timeouts++;
+            continue;
+        }
+        if (status.result != NNTI_OK) {
+            log_info(debug_level, "work_request[%d] failed", which);
+            req_array[which].status = NSSI_REQUEST_ERROR;
+            errors++;
+            continue;
+        }
+
+        log_debug(debug_level, "Processing result status.offset=%d", status.offset);
+
+        /* we are now ready to process the result */
+        req_array[which].status = NSSI_PROCESSING_RESULT;
+        rc = process_result((char *)status.start+status.offset, &req_array[which]);
+        if (rc != NSSI_OK) {
+            log_fatal(debug_level,"unable to process result");
+            fprint_NNTI_status(logger_get_file(), "status", "FATAL", &status);
+            req_array[which].status = NSSI_REQUEST_ERROR;
+            errors++;
+        }
+
+        if (req_array[which].use_long_args) {
+            log_debug(debug_level, "Cleanup long args");
+            /* Now we need to clean up the long arguments (if they were used) */
+            rc = cleanup_long_args(&req_array[which], timeout);
+            if (rc != NSSI_OK) {
+                log_error(debug_level, "failed to cleanup long args");
+                req_array[which].status = NSSI_REQUEST_ERROR;
+                errors++;
+            }
+        }
+
+        NNTI_destroy_work_request(work_requests[which]);
+
+        /* call the callback function associated with the request */
+        log_debug(debug_level, "calling req_array[%d] callback: op=%d", which, req_array[which].opcode);
+        if (req_array[which].callback) {
+            req_array[which].callback(&req_array[which]);
+        }
+
+        if (nssi_config.use_buffer_queue) {
+            trios_buffer_queue_push(&recv_bq, req_array[which].short_result_hdl);
+            req_array[which].short_result_hdl=NULL;
+        } else {
+            /* Free data allocated for the short result */
+            log_debug(debug_level, "Unregister memory for short_result");
+            /* TODO: Fix this so an error or timeout cleans up data structures */
+            nnti_rc=NNTI_free(req_array[which].short_result_hdl);
+            if (nnti_rc != NNTI_OK) {
+                log_error(rpc_debug_level, "failed unregistering short result: %s",
+                        nnti_err_str(nnti_rc));
+            }
+            req_array[which].short_result_hdl=NULL;
+        }
+
+        /* If the request has data associated with it, the data should
+         * be transferred by now (server would not have sent result).
+         * We need to unlink the MD and free the event queue.
+         */
+        if (req_array[which].data != NULL) {
+            if ((nssi_config.use_buffer_queue) &&
+                (nssi_config.rdma_buffer_queue_buffer_size >= req_array[which].data_size)) {
+                /* copy the RDMA buffer contents into the user buffer.
+                 * we can't tell if the server op was get or put.
+                 * if it was get, then this is a waste of time.
+                 * if it was put, then this is required.
+                 */
+                memcpy(req_array[which].data, NNTI_BUFFER_C_POINTER(req_array[which].bulk_data_hdl), req_array[which].data_size);
+                trios_buffer_queue_push(&rdma_target_bq, req_array[which].bulk_data_hdl);
+            } else {
+                log_debug(debug_level, "Unregister memory for data");
+                nnti_rc=NNTI_unregister_memory(req_array[which].bulk_data_hdl);
+                if (nnti_rc != NNTI_OK) {
+                    log_error(rpc_debug_level, "failed unregistering data: %s",
+                            nnti_err_str(nnti_rc));
+                }
+            }
+        }
+
+        work_requests[which] = NULL;
+    }
+
+	delete(work_requests);
+
+    if (errors > 0) {
+        return NSSI_EBADRPC;
+    }
+
+    if (timeouts > 0) {
+        return NSSI_ETIMEDOUT;
+    }
+
+    return rc;
+}
 
 /**
  * @brief Initialize portals data structures associated with an
