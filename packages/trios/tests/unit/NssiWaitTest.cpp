@@ -168,7 +168,7 @@ int waitany_test(const nssi_service *svc)
 		rc2 = nssi_waitany(&req[0], REQ_COUNT, timeout, &which, &rc);
 		if (rc2 != NSSI_OK) {
 			log_error(nssiwait_debug_level, "failed waiting for request %lu: %s",
-					req[i].id,
+					req[which].id,
 					nssi_err_str(rc2));
 			return rc2;
 		}
@@ -194,7 +194,6 @@ int waitall_test(const nssi_service *svc)
     static const char *empty="";
 
     int rc  = NSSI_OK;
-    int rc2 = NSSI_OK;
 
     int timeout=5000;
     nssi_request req[REQ_COUNT];
@@ -223,14 +222,9 @@ int waitall_test(const nssi_service *svc)
 
     /* wait for completion */
 	log_debug(nssiwait_debug_level, "calling nssi_waitall()");
-	rc2 = nssi_waitall(&req[0], REQ_COUNT, timeout);
-	if (rc2 != NSSI_OK) {
-		log_error(nssiwait_debug_level, "failed waiting for all requests: %s",
-				nssi_err_str(rc2));
-		return rc2;
-	}
+	rc = nssi_waitall(&req[0], REQ_COUNT, timeout);
 	if (rc != NSSI_OK) {
-		log_error(nssiwait_debug_level, "remote method failed: %s",
+		log_error(nssiwait_debug_level, "failed waiting for all requests: %s",
 				nssi_err_str(rc));
 		return rc;
 	}
@@ -260,6 +254,7 @@ int main(int argc, char *argv[])
 
 //    struct sigaction sigact;
 //    sigact.sa_handler=SIG_DFL;
+//    sigaction ( 6, &sigact, NULL);
 //    sigaction (11, &sigact, NULL);
 
     sprintf(logname, "nssiwait.%03d.log", rank);
