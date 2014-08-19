@@ -988,11 +988,10 @@ int main(int argc, char *argv[]) {
           }
           // Run line-search Newton-Krylov step.
           parlist->set("Descent Type","Newton-Krylov");
-          maxit  = 500;
           gtol   = 1.e-4;
           stol   = 1.e-8;
           step   = Teuchos::rcp(new ROL::LineSearchStep<RealT>(*parlist));
-          status = Teuchos::rcp(new ROL::StatusTest<RealT>(gtol,stol,maxit));
+          status = Teuchos::rcp(new ROL::StatusTest<RealT>(gtol,stol,500));
           algo   = Teuchos::rcp(new ROL::DefaultAlgorithm<RealT>(*step,*status,false));
           algo->run(z,*robj,bound,true);
         }
