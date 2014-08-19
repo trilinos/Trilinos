@@ -71,7 +71,7 @@ namespace ROL {
 template <class Real>
 class BoundConstraint {
 private:
-  bool activated_; ///< Flag which determines whether or not the constraints are being used.
+  bool activated_; ///< Flag that determines whether or not the constraints are being used.
 
 public:
 
