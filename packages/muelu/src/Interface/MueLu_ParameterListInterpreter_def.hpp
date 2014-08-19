@@ -833,6 +833,7 @@ namespace MueLu {
       verbMap["TimingsByLevel"] = TimingsByLevel;
       verbMap["External"]       = External;
       verbMap["Debug"]          = Debug;
+      verbMap["Test"]           = Test;
       //for users and developers
       verbMap["None"]           = None;
       verbMap["Low"]            = Low;

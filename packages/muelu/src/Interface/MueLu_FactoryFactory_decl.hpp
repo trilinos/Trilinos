@@ -279,30 +279,34 @@ namespace MueLu {
     RCP<T> Build2(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
       RCP<T> factory = rcp(new T());
 
-      ParameterList paramListWithFactories(paramList); // copy  (*might* also avoid indicating that parameter entry is used)
-      paramListWithFactories.remove("factory", false);
+      ParameterList paramListWithFactories;
 
       // Read the RCP<Factory> parameters of the class T
       RCP<const ParameterList> validParamList = factory->GetValidParameterList();
       for (ParameterList::ConstIterator param = validParamList->begin(); param != validParamList->end(); ++param) {
-        const std::string & pName = validParamList->name(param);
+        const std::string& pName = validParamList->name(param);
 
-        if (validParamList->isType< RCP<const FactoryBase> >(pName) && paramList.isParameter(pName)) {
-          // Generate or get factory described by param
-          RCP<const FactoryBase> generatingFact = BuildFactory(paramList.getEntry(pName), factoryMapIn, factoryManagersIn);
-
-          // Replace <std::string> or sub-list entry by an RCP<Factory> in paramListWithFactories
-          paramListWithFactories.remove(pName);
-          paramListWithFactories.set(pName, generatingFact);
+        if (!paramList.isParameter(pName)) {
+          // Ignore unknown parameters
+          continue;
         }
 
-        if (pName == "ParameterList" && validParamList->isType<RCP<const ParameterList> >(pName) && paramList.isParameter(pName)) {
-          // NOTE: we cannot use
-          //     subList = sublist(rcpFromRef(paramList), pName)
-          // here as that would result in sublist also being a reference to a temporary object.
-          // The resulting dereferencing in the corresponding factory would then segfault
-          RCP<const ParameterList> subList = Teuchos::sublist(rcp(new ParameterList(paramList)), pName);
-          paramListWithFactories.set(pName, subList);
+        if (validParamList->isType< RCP<const FactoryBase> >(pName)) {
+          // Generate or get factory described by param
+          RCP<const FactoryBase> generatingFact = BuildFactory(paramList.getEntry(pName), factoryMapIn, factoryManagersIn);
+          paramListWithFactories.set(pName, generatingFact);
+
+        } else if (validParamList->isType<RCP<const ParameterList> >(pName)) {
+          if (pName == "ParameterList") {
+            // NOTE: we cannot use
+            //     subList = sublist(rcpFromRef(paramList), pName)
+            // here as that would result in sublist also being a reference to a temporary object.
+            // The resulting dereferencing in the corresponding factory would then segfault
+            RCP<const ParameterList> subList = Teuchos::sublist(rcp(new ParameterList(paramList)), pName);
+            paramListWithFactories.set(pName, subList);
+          }
+        } else {
+          paramListWithFactories.setEntry(pName, paramList.getEntry(pName));
         }
       }
 
