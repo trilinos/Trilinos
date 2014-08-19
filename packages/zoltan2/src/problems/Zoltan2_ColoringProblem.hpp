@@ -192,7 +192,7 @@ void ColoringProblem<Adapter>::solve(bool newData)
   if (method.compare("SerialGreedy") == 0)
   {
       AlgSerialGreedy<Adapter> alg(this->graphModel_, this->params_,
-                                   problemComm_);
+                                   this->env_, problemComm_);
       alg.color(this->solution_);
   }
 #if 0 // TODO later

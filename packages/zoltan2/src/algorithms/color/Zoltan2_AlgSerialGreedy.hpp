@@ -65,14 +65,16 @@ class AlgSerialGreedy : public Algorithm<Adapter>
     // Class member variables
     RCP<GraphModel<typename Adapter::base_adapter_t> > model_;
     RCP<Teuchos::ParameterList> pl_;
+    RCP<Environment> env_;
     RCP<Teuchos::Comm<int> > comm_;
   
   public:
   AlgSerialGreedy(
     const RCP<GraphModel<typename Adapter::base_adapter_t> > &model,
     const RCP<Teuchos::ParameterList> &pl,
+    const RCP<Environment> &env,
     const RCP<Teuchos::Comm<int> > &comm
-  ) : model_(model), pl_(pl), comm_(comm)
+  ) : model_(model), pl_(pl), env_(env), comm_(comm)
   {
   }
 
@@ -89,7 +91,7 @@ class AlgSerialGreedy : public Algorithm<Adapter>
     ArrayView<const lno_t> offsets;
     ArrayView<StridedData<lno_t, scalar_t> > wgts; // Not used; needed by getLocalEdgeList
   
-    const lno_t nVtx = model_->getLocalNumVertices();
+    const lno_t nVtx = model_->getLocalNumVertices(); // Assume (0,nvtx-1)
     model_->getLocalEdgeList(edgeIds, offsets, wgts); // Don't need wgts
   
 #if 0
@@ -108,7 +110,9 @@ class AlgSerialGreedy : public Algorithm<Adapter>
     }
 
     // Let colorCrsGraph do the real work.
+    env_->timerStart(MACRO_TIMERS, "Coloring algorithm");
     colorCrsGraph(nVtx, edgeIds, offsets, colors);
+    env_->timerStop(MACRO_TIMERS, "Coloring algorithm");
     return;
   }
   

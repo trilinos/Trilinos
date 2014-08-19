@@ -611,6 +611,8 @@ public:
     ArrayView<const lno_t> &offsets,
     ArrayView<input_t> &wgts)
   {
+    env_->timerStart(MACRO_TIMERS, "GraphModel::getLocalEdgeList");
+
     if (localGraphEdgeOffsets_.size() == 0) {
       // Local graph not created yet
       RCP<const IdentifierMap<user_t> > idmap = this->getIdentifierMap();
@@ -621,8 +623,10 @@ public:
     }
     edgeIds = localGraphEdgeLnos_();
     offsets = localGraphEdgeOffsets_();
-
     wgts = localGraphEdgeWeights_();
+
+    env_->timerStop(MACRO_TIMERS, "GraphModel::getLocalEdgeList");
+
     return numLocalGraphEdges_;
   }
 
@@ -893,6 +897,7 @@ GraphModel<Adapter>::GraphModel(
        numGlobalEdges_(0),
        numLocalGraphEdges_(0)
 {
+  env_->timerStart(MACRO_TIMERS, "GraphModel constructed from MeshAdapter");
 
   // This GraphModel is built with vertices == ia->getPrimaryEntityType()
   // from MeshAdapter.
@@ -963,6 +968,7 @@ GraphModel<Adapter>::GraphModel(
   typedef MeshAdapter<user_t> adapterWithCoords_t;
   shared_GetVertexCoords<adapterWithCoords_t>(ia);
 
+  env_->timerStop(MACRO_TIMERS, "GraphModel constructed from MeshAdapter");
   print();
 }
 
@@ -1226,44 +1232,68 @@ void GraphModel<Adapter>::shared_GetVertexCoords(const AdapterWithCoords *ia)
   template <typename Adapter>
 void GraphModel<Adapter>::print()
 {
-  int me = comm_->getRank();
-  std::string fn(" GRAPHMODEL ");
+  if (env_->getDebugLevel() < VERBOSE_DETAILED_STATUS)
+    return;
 
-  std::cout << me << fn
-            << " Nvtx  " << gids_.size()
-            << " Nedge " << edgeGids_.size()
-            << " NVWgt " << numWeightsPerVertex_
-            << " NEWgt " << nWeightsPerEdge_
-            << " CDim  " << vCoordDim_
-            << " GnosAreGids " << gnosAreGids_ << std::endl;
+  std::ostream *os = env_->getDebugOStream();
+  
+  int me = comm_->getRank();
+  std::string fn(" ");
+
+  *os << me << fn
+      << " Nvtx  " << gids_.size()
+      << " Nedge " << edgeGids_.size()
+      << " NLocalEdge " << numLocalGraphEdges_
+      << " NVWgt " << numWeightsPerVertex_
+      << " NEWgt " << nWeightsPerEdge_
+      << " CDim  " << vCoordDim_
+      << " GnosAreGids " << gnosAreGids_ << std::endl;
 
   for (lno_t i = 0; i < gids_.size(); i++) {
-    std::cout << me << fn << i << " GID " << gids_[i] << ": ";
+    *os << me << fn << i << " GID " << gids_[i] << ": ";
     for (lno_t j = offsets_[i]; j < offsets_[i+1]; j++)
-      std::cout << edgeGids_[j] << " " << "(" << procIds_[j] << ") ";
-    std::cout << std::endl;
+      *os << edgeGids_[j] << " " << "(" << procIds_[j] << ") ";
+    *os << std::endl;
   }
 
   if (gnos_.size())
     for (lno_t i = 0; i < gnos_.size(); i++) {
-      std::cout << me << fn << i << " GNO " << gnos_[i] << ": ";
+      *os << me << fn << i << " GNO " << gnos_[i] << ": ";
       for (lno_t j = offsets_[i]; j < offsets_[i+1]; j++)
-        std::cout << edgeGnos_[j] << " ";//<< "(" << procIds_[j] << ") ";
-      std::cout << std::endl;
+        *os << edgeGnos_[j] << " ";//<< "(" << procIds_[j] << ") ";
+      *os << std::endl;
     }
   else
-    std::cout << me << fn << " GNOS NOT AVAILABLE " << std::endl;
+    *os << me << fn << " GNOS NOT AVAILABLE " << std::endl;
 
-  if (vCoordDim_) {
+  if (comm_->getSize() > 1) {
+    // Print local graph, with no off-process edges.
+    ArrayView<const lno_t> localEdgeIds;
+    ArrayView<const lno_t> localOffsets;
+    ArrayView<input_t> localWgts;
+    this->getLocalEdgeList(localEdgeIds, localOffsets, localWgts);
+
     for (lno_t i = 0; i < gids_.size(); i++) {
-      std::cout << me << fn << "COORDS " << i << " " << gids_[i] << ": ";
-      for (int j = 0; j < vCoordDim_; j++)
-         std::cout << vCoords_[j][i] << " ";
-      std::cout << std::endl;
+      *os << me << fn << i << " LGNO " << gids_[i] << ": ";
+      for (lno_t j = localOffsets[i]; j < localOffsets[i+1]; j++) 
+        *os << localEdgeIds[j] << " ";
+      *os << std::endl;
     }
   }
   else
-    std::cout << me << fn << "NO COORDINATES AVAIL " << std::endl;
+    *os << me << fn 
+       << " LOCAL GRAPH IS SAME AS GLOBAL GRAPH ON ONE RANK " << std::endl;
+
+  if (vCoordDim_) {
+    for (lno_t i = 0; i < gids_.size(); i++) {
+      *os << me << fn << i << " COORDS " << gids_[i] << ": ";
+      for (int j = 0; j < vCoordDim_; j++)
+         *os << vCoords_[j][i] << " ";
+      *os << std::endl;
+    }
+  }
+  else
+    *os << me << fn << "NO COORDINATES AVAIL " << std::endl;
 }
 
 }   // namespace Zoltan2

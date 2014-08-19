@@ -262,7 +262,7 @@ BucketVector const& Selector::get_buckets(EntityRank entity_rank) const
     return mesh->get_buckets(entity_rank, *this);
 }
 
-bool Selector::empty(EntityRank entity_rank) const
+bool Selector::is_empty(EntityRank entity_rank) const
 {
     if (m_expr.empty()) {
         return true;
@@ -289,7 +289,8 @@ bool Selector::is_all_unions() const
   return is_all_union_impl(&m_expr[0]);
 }
 
-Selector selectUnion( const PartVector& union_part_vector )
+template <typename PartVectorType>
+Selector selectUnion( const PartVectorType & union_part_vector )
 {
   Selector selector;
   if (union_part_vector.size() > 0) {
@@ -300,6 +301,8 @@ Selector selectUnion( const PartVector& union_part_vector )
   }
   return selector;
 }
+template Selector selectUnion( const PartVector& union_part_vector);
+template Selector selectUnion( const ConstPartVector& union_part_vector);
 
 Selector selectIntersection( const PartVector& intersection_part_vector )
 {

@@ -1135,10 +1135,7 @@ namespace Tpetra {
       myGraph_->k_lclInds1D_ = k_inds;
       this->k_values1D_ = k_vals;
 
-      // Set Kokkos classic pointers for backwards compatibility.
-      myGraph_->rowPtrs_ =
-        arcp_const_cast<size_t> (Kokkos::Compat::persistingView (k_ptrs));
-      myGraph_->lclInds1D_ = Kokkos::Compat::persistingView (k_inds);
+      // Set Kokkos classic pointer for backwards compatibility.
       this->values1D_ = Kokkos::Compat::persistingView (k_vals);
 
       // Storage is packed now, so the number of allocated entries is
@@ -1165,11 +1162,6 @@ namespace Tpetra {
     myGraph_->k_lclGraph_ =
       typename Graph::LocalStaticCrsGraphType (k_inds, k_ptrs);
 
-    // DEBUG ONLY
-    // comm.barrier ();
-    // cerr << myRank << ": MADE k_lclGraph_" << endl;
-    // comm.barrier ();
-
     // Set up Kokkos classic "local graph" object.
     //
     // FIXME (mfh 06 Aug 2014) It would make more sense for
@@ -1186,11 +1178,6 @@ namespace Tpetra {
     }
     myGraph_->lclGraph_->setStructure (Kokkos::Compat::persistingView (k_ptrs),
                                        Kokkos::Compat::persistingView (k_inds));
-
-    // DEBUG ONLY
-    // comm.barrier ();
-    // cerr << myRank << ": MADE lclGraph_" << endl;
-    // comm.barrier ();
 
     // Make the local matrix, using the local graph and vals array.
     if (params.is_null ()) {
@@ -1210,10 +1197,6 @@ namespace Tpetra {
     k_lclMatrix_ = k_local_matrix_type ("Tpetra::CrsMatrix::k_lclMatrix_",
                                         getNodeNumCols (), k_vals,
                                         myGraph_->k_lclGraph_);
-    // DEBUG ONLY
-    // comm.barrier ();
-    // cerr << myRank << ": MADE k_lclMatrix_" << endl;
-    // comm.barrier ();
 
     // Finalize the local graph and matrix together.
     if (params.is_null ()) {
@@ -1247,10 +1230,6 @@ namespace Tpetra {
                                              *myGraph_->getLocalGraphNonConst (),
                                              *classicLocalMatrix,
                                              lclparams);
-    // DEBUG ONLY
-    // comm.barrier ();
-    // cerr << myRank << ": OMG WOAH DONE" << endl;
-    // comm.barrier ();
   }
 
 
@@ -1291,7 +1270,6 @@ namespace Tpetra {
     // fill both the graph and the matrix at the same time).
 
     // get data from staticGraph_
-    ArrayRCP<LO> lclInds1D         = staticGraph_->lclInds1D_;
     ArrayRCP<Array<LO> > lclInds2D = staticGraph_->lclInds2D_;
     ArrayRCP<size_t> numRowEntries = staticGraph_->numRowEntries_;
     size_t nodeNumEntries   = staticGraph_->nodeNumEntries_;

@@ -533,12 +533,19 @@ public:
    *     this process is not printing out debug messages.
    */
 #ifdef Z2_OMIT_ALL_STATUS_MESSAGES
-  bool doStatus() const { return false;}
-  MessageOutputLevel getDebugLevel() const {return NO_STATUS;}
+  inline bool doStatus() const { return false;}
+  inline MessageOutputLevel getDebugLevel() const {return NO_STATUS;}
+  inline std::ostream *getDebugOStream() const {return std::cout;}
 #else
-  bool doStatus() const { return debugOut_->getDebugLevel() > NO_STATUS;}
-
-  MessageOutputLevel getDebugLevel() const {return debugOut_->getDebugLevel(); }
+  inline bool doStatus() const {
+     return (debugOut_->getDebugLevel() > NO_STATUS);
+  }
+  inline MessageOutputLevel getDebugLevel() const {
+    return debugOut_->getDebugLevel();
+  }
+  inline std::ostream *getDebugOStream() const {
+    return debugOut_->getOStream();
+  }
 #endif
 
   /*! \brief Return true if memory usage output was requested, even if

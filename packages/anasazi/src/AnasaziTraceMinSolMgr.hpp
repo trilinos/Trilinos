@@ -61,6 +61,7 @@
 
 
 namespace Anasazi {
+namespace Experimental {
 
 template<class ScalarType, class MV, class OP>
 
@@ -192,6 +193,6 @@ Teuchos::RCP< TraceMinBase<ScalarType,MV,OP> > TraceMinSolMgr<ScalarType,MV,OP>:
 }
 
 
-} // end Anasazi namespace
+}} // end Anasazi namespace
 
 #endif /* ANASAZI_TRACEMIN_SOLMGR_HPP */

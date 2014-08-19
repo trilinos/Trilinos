@@ -51,7 +51,7 @@ public:
   Exo_Block(int exo_file_id, size_t block_id,
             const char* type,
             size_t num_elmts,
-            size_t num_nodes_per_elmt);
+            size_t num_nodes_per_elmt_x);
  ~Exo_Block();
   
   std::string Load_Connectivity();

@@ -3005,16 +3005,14 @@ NNTI_result_t NNTI_gni_wait (
     }
 
     if (wr->result == NNTI_EDROPPED) {
-        log_debug(nnti_debug_level, "send was dropped (wr=%p ; gni_wr=%p)", wr, GNI_WORK_REQUEST(wr));
-        gni_wr->state=NNTI_GNI_WR_STATE_WAIT_COMPLETE;
-        nnti_rc      =NNTI_EDROPPED;
+    	log_debug(nnti_debug_level, "send was dropped (wr=%p ; gni_wr=%p)", wr, GNI_WORK_REQUEST(wr));
+    	nnti_rc = NNTI_EDROPPED;
     } else if (is_wr_canceling(gni_wr)) {
-        log_debug(nnti_debug_level, "wr canceling (wr=%p ; gni_wr=%p)", wr, GNI_WORK_REQUEST(wr));
-       cancel_wr(gni_wr);
+    	log_debug(nnti_debug_level, "wr canceling (wr=%p ; gni_wr=%p)", wr, GNI_WORK_REQUEST(wr));
+    	cancel_wr(gni_wr);
     } else if (is_wr_complete(gni_wr) == TRUE) {
-        log_debug(nnti_debug_level, "wr already complete (wr=%p ; gni_wr=%p)", wr, GNI_WORK_REQUEST(wr));
-        gni_wr->state=NNTI_GNI_WR_STATE_WAIT_COMPLETE;
-        nnti_rc      =NNTI_OK;
+    	log_debug(nnti_debug_level, "wr already complete (wr=%p ; gni_wr=%p)", wr, GNI_WORK_REQUEST(wr));
+    	nnti_rc = NNTI_OK;
     } else {
         log_debug(nnti_debug_level, "wr NOT complete (wr=%p ; gni_wr=%p)", wr, GNI_WORK_REQUEST(wr));
 
@@ -3051,8 +3049,7 @@ NNTI_result_t NNTI_gni_wait (
 
             if (is_wr_complete(gni_wr) == TRUE) {
                 log_debug(nnti_debug_level, "wr completed (wr=%p ; gni_wr=%p)", wr, GNI_WORK_REQUEST(wr));
-                gni_wr->state=NNTI_GNI_WR_STATE_WAIT_COMPLETE;
-                nnti_rc      =NNTI_OK;
+                nnti_rc = NNTI_OK;
                 break;
             }
 
@@ -3064,7 +3061,7 @@ NNTI_result_t NNTI_gni_wait (
 
             if (trios_exit_now()) {
                 log_debug(nnti_debug_level, "caught abort signal");
-                nnti_rc=NNTI_ECANCELED;
+                nnti_rc = NNTI_ECANCELED;
                 break;
             }
         }
@@ -3082,7 +3079,10 @@ NNTI_result_t NNTI_gni_wait (
                 "end of NNTI_wait", status);
     }
 
-    if (nnti_rc==NNTI_OK) {
+    if (is_wr_complete(gni_wr)) {
+
+        gni_wr->state=NNTI_GNI_WR_STATE_WAIT_COMPLETE;
+
         switch (gni_mem_hdl->type) {
             case REQUEST_BUFFER:
             case RECEIVE_BUFFER:
@@ -3271,7 +3271,7 @@ NNTI_result_t NNTI_gni_waitany (
 
             if (trios_exit_now()) {
                 log_debug(nnti_debug_level, "caught abort signal");
-                nnti_rc=NNTI_ECANCELED;
+                nnti_rc = NNTI_ECANCELED;
                 break;
             }
         }
@@ -3284,7 +3284,10 @@ NNTI_result_t NNTI_gni_waitany (
                 "end of NNTI_waitany", status);
     }
 
-    if (nnti_rc==NNTI_OK) {
+    if (is_wr_complete(GNI_WORK_REQUEST(wr_list[*which]))) {
+
+        GNI_WORK_REQUEST(wr_list[*which])->state=NNTI_GNI_WR_STATE_WAIT_COMPLETE;
+
         gni_mem_hdl=GNI_MEM_HDL(wr_list[*which]->reg_buf);
         assert(gni_mem_hdl);
         switch (gni_mem_hdl->type) {
@@ -3472,7 +3475,7 @@ NNTI_result_t NNTI_gni_waitall (
 
             if (trios_exit_now()) {
                 log_debug(nnti_debug_level, "caught abort signal");
-                nnti_rc=NNTI_ECANCELED;
+                nnti_rc = NNTI_ECANCELED;
                 break;
             }
         }
@@ -3491,7 +3494,10 @@ NNTI_result_t NNTI_gni_waitall (
                     "end of NNTI_waitall", status[i]);
         }
 
-        if (nnti_rc==NNTI_OK) {
+        if (is_wr_complete(GNI_WORK_REQUEST(wr_list[i]))) {
+
+        	GNI_WORK_REQUEST(wr_list[i])->state=NNTI_GNI_WR_STATE_WAIT_COMPLETE;
+
             gni_mem_hdl=GNI_MEM_HDL(wr_list[i]->reg_buf);
             assert(gni_mem_hdl);
             switch (gni_mem_hdl->type) {
@@ -3548,6 +3554,7 @@ NNTI_result_t NNTI_gni_waitall (
             }
         }
     }
+
 
 cleanup:
     log_debug(nnti_ee_debug_level, "exit");
@@ -4467,7 +4474,8 @@ static int8_t is_wr_complete(
 {
     int8_t rc=FALSE;
 
-    if (gni_wr->state==NNTI_GNI_WR_STATE_RDMA_COMPLETE) {
+    if ((gni_wr->state==NNTI_GNI_WR_STATE_RDMA_COMPLETE) ||
+    	(gni_wr->state==NNTI_GNI_WR_STATE_WAIT_COMPLETE)) {
     	rc=TRUE;
     } else {
     	rc=TRUE;  /* assume complete.  flip to incomplete if any SGE is not complete. */

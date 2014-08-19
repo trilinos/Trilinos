@@ -149,6 +149,14 @@ const char *nssi_err_str(int rc)
     case NSSI_EENCODE:
         return "NSSI_EENCODE";
 
+        /** @brief An operation would have blocked. */
+    case NSSI_EWOULDBLOCK:
+        return "NSSI_EWOULDBLOCK";
+
+        /** @brief Operation was interupted, but possibly recoverable. */
+    case NSSI_EAGAIN:
+        return "NSSI_EAGAIN";
+
     default:
         return myitoa(rc);
     }

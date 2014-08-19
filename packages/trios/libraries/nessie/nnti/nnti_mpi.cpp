@@ -1401,7 +1401,7 @@ NNTI_result_t NNTI_mpi_wait (
         nthread_lock(&mpi_mem_hdl->wr_queue_lock);
         mpi_wr=mpi_mem_hdl->wr_queue.front();
         nthread_unlock(&mpi_mem_hdl->wr_queue_lock);
-        wr->transport_private=NULL;
+        wr->transport_private=(uint64_t)mpi_wr;
     }
     assert(mpi_wr);
 
@@ -1593,6 +1593,21 @@ NNTI_result_t NNTI_mpi_waitany (
         nnti_rc=NNTI_mpi_wait(wr_list[0], timeout, status);
         *which=0;
         goto cleanup;
+    }
+
+    for (uint32_t i=0;i<wr_count;i++) {
+        if (wr_list[i] != NULL) {
+        	mpi_mem_hdl=MPI_MEM_HDL(wr_list[i]->reg_buf);
+        	assert(mpi_mem_hdl);
+        	mpi_wr=MPI_WORK_REQUEST(wr_list[i]);
+        	if (mpi_wr==NULL) {
+        		nthread_lock(&mpi_mem_hdl->wr_queue_lock);
+        		mpi_wr=mpi_mem_hdl->wr_queue.front();
+        		nthread_unlock(&mpi_mem_hdl->wr_queue_lock);
+        		wr_list[i]->transport_private=(uint64_t)mpi_wr;
+        	}
+        	assert(mpi_wr);
+        }
     }
 
     if (is_any_wr_complete(wr_list, wr_count, which) == TRUE) {
@@ -1818,6 +1833,21 @@ NNTI_result_t NNTI_mpi_waitall (
     if (wr_count == 1) {
         nnti_rc=NNTI_mpi_wait(wr_list[0], timeout, status[0]);
         goto cleanup;
+    }
+
+    for (uint32_t i=0;i<wr_count;i++) {
+        if (wr_list[i] != NULL) {
+        	mpi_mem_hdl=MPI_MEM_HDL(wr_list[i]->reg_buf);
+        	assert(mpi_mem_hdl);
+        	mpi_wr=MPI_WORK_REQUEST(wr_list[i]);
+        	if (mpi_wr==NULL) {
+        		nthread_lock(&mpi_mem_hdl->wr_queue_lock);
+        		mpi_wr=mpi_mem_hdl->wr_queue.front();
+        		nthread_unlock(&mpi_mem_hdl->wr_queue_lock);
+        		wr_list[i]->transport_private=(uint64_t)mpi_wr;
+        	}
+        	assert(mpi_wr);
+        }
     }
 
     if (is_all_wr_complete(wr_list, wr_count) == TRUE) {

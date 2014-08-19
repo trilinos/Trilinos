@@ -66,13 +66,14 @@
 
 namespace Kokkos {
 namespace Impl {
-
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
 void spinwait( volatile int & flag , const int value )
 {
   while ( value == flag ) {
     YIELD ;
   }
 }
+#endif
 
 } /* namespace Impl */
 } /* namespace Kokkos */
