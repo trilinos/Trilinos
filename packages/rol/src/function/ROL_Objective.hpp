@@ -48,8 +48,26 @@
 #include "ROL_Types.hpp"
 #include <iostream>
 
-/** \class ROL::Objective
+/** @ingroup func_group
+    \class ROL::Objective
     \brief Provides the interface to evaluate objective functions.
+
+    ROL's objective function interface is designed for Fr$eacute;chet differentiable 
+    functionals \f$f:\mathcal{X}\to\mathbb{R}\f$, where \f$\mathcal{X}\f$ is a Banach
+    space.  The basic operator interace, to be implemented by the user, requires:
+    \li #value -- objective function evaluation.
+
+    It is strongly recommended that the user additionally overload:
+    \li #gradient -- the objective function gradient -- the default is a finite-difference approximation;
+    \li #hessVec  -- the action of the Hessian -- the default is a finite-difference approximation.
+
+    The user may also overload:
+    \li #update     -- update the objective function at each new iteration;
+    \li #dirDeriv   -- compute the directional derivative -- the default is a finite-difference approximation;
+    \li #invHessVec -- the action of the inverse Hessian;
+    \li #precond    -- the action of a preconditioner for the Hessian.
+
+    ---
 */
 
 
@@ -61,40 +79,85 @@ public:
 
   virtual ~Objective() {}
 
-  /** \brief Update objective function.  
-                x is an iterate, 
-                flag = true if the iterate has changed,
-                iter is the outer algorithm iterations count.
+  /** \brief Update objective function. 
+
+      This function updates the objective function at new iterations. 
+      @param[in]          x      is the new iterate. 
+      @param[in]          flag   is true if the iterate has changed.
+      @param[in]          iter   is the outer algorithm iterations count.
   */
   virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {}
 
   /** \brief Compute value.
+
+      This function returns the objective function value.
+      @param[in]          x   is the current iterate.
+      @param[in]          tol is a tolerance for inexact objective function computation.
   */
   virtual Real value( const Vector<Real> &x, Real &tol ) = 0;
 
   /** \brief Compute gradient.
+
+      This function returns the objective function gradient.
+      @param[out]         g   is the gradient.
+      @param[in]          x   is the current iterate.
+      @param[in]          tol is a tolerance for inexact objective function computation.
   */
   virtual void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) ;
 
   /** \brief Compute directional derivative.
+
+      This function returns the directional derivative of the objective function in the \f$d\f$ direction.
+      @param[in]          x   is the current iterate.
+      @param[in]          d   is the direction.
+      @param[in]          tol is a tolerance for inexact objective function computation.
   */
   virtual Real dirDeriv( const Vector<Real> &x, const Vector<Real> &d, Real &tol ) ;
 
   /** \brief Apply Hessian approximation to vector.
+
+      This function applies the Hessian of the objective function to the vector \f$v\f$.
+      @param[out]         hv  is the the action of the Hessian on \f$v\f$.
+      @param[in]          v   is the direction vector.
+      @param[in]          x   is the current iterate.
+      @param[in]          tol is a tolerance for inexact objective function computation.
   */
   virtual void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol );
 
   /** \brief Apply inverse Hessian approximation to vector.
+
+      This function applies the inverse Hessian of the objective function to the vector \f$v\f$.
+      @param[out]         hv  is the action of the inverse Hessian on \f$v\f$.
+      @param[in]          v   is the direction vector.
+      @param[in]          x   is the current iterate.
+      @param[in]          tol is a tolerance for inexact objective function computation.
   */
   virtual void invHessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {}
 
   /** \brief Apply preconditioner to vector.
+
+      This function applies a preconditioner for the Hessian of the objective function to the vector \f$v\f$.
+      @param[out]         Pv  is the action of the Hessian preconditioner on \f$v\f$.
+      @param[in]          v   is the direction vector.
+      @param[in]          x   is the current iterate.
+      @param[in]          tol is a tolerance for inexact objective function computation.
   */
   virtual void precond( Vector<Real> &Pv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
     Pv.set(v);
   }
 
   /** \brief Finite-difference gradient check.
+
+      This function computes a sequence of one-sided finite-difference checks for the gradient.  
+      At each step of the sequence, the finite difference step size is decreased.  The output 
+      compares the error 
+      \f[
+          \left| \frac{f(x+td) - f(x)}{t} - \langle \nabla f(x),d\rangle_{\mathcal{X}^*,\mathcal{X}}\right|.
+      \f]
+      @param[in]      x             is an optimization variable.
+      @param[in]      d             is a direction vector.
+      @param[in]      printToScreen is a flag which determines if the output is printed to the screen.
+      @param[in]      numSteps      is a parameter which dictates the number of finite difference steps.
   */
   virtual std::vector<std::vector<Real> > checkGradient( const Vector<Real> &x,
                                                          const Vector<Real> &d,
@@ -102,6 +165,17 @@ public:
                                                          const int numSteps = ROL_NUM_CHECKDERIV_STEPS ) ;
 
   /** \brief Finite-difference Hessian-applied-to-vector check.
+
+      This function computes a sequence of one-sided finite-difference checks for the Hessian.  
+      At each step of the sequence, the finite difference step size is decreased.  The output 
+      compares the error 
+      \f[
+          \left\| \frac{\nabla f(x+td) - \nabla f(x)}{t} - \nabla^2 f(x)d\right\|_{\mathcal{X}^*}.
+      \f]
+      @param[in]      x             is an optimization variable.
+      @param[in]      d             is a direction vector.
+      @param[in]      printToScreen is a flag which determines if the output is printed to the screen.
+      @param[in]      numSteps      is a parameter which dictates the number of finite difference steps.
   */
   virtual std::vector<std::vector<Real> > checkHessVec( const Vector<Real> &x,
                                                         const Vector<Real> &v,
@@ -109,6 +183,17 @@ public:
                                                         const int numSteps = ROL_NUM_CHECKDERIV_STEPS ) ;
 
   /** \brief Hessian symmetry check.
+
+      This function checks the symmetry of the Hessian by comparing 
+      \f[
+         \langle \nabla^2f(x)v,w\rangle_{\mathcal{X}^*,\mathcal{X}}
+         \quad\text{and}\quad
+         \langle \nabla^2f(x)w,v\rangle_{\mathcal{X}^*,\mathcal{X}}.
+      \f]
+      @param[in]      x             is an optimization variable.
+      @param[in]      v             is a direction vector.
+      @param[in]      w             is a direction vector.
+      @param[in]      printToScreen is a flag which determines if the output is printed to the screen.
   */
   virtual std::vector<Real> checkHessSym( const Vector<Real> &x,
                                           const Vector<Real> &v,
