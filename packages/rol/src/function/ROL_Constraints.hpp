@@ -50,7 +50,8 @@
 #include "ROL_Types.hpp"
 #include <iostream>
 
-/** \class ROL::Constraints
+/** @ingroup func_group
+    \class ROL::Constraints
     \brief Provides the interface to evaluate constraint functions.
 */
 

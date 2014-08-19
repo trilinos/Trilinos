@@ -46,7 +46,8 @@
 
 #include "ROL_Objective.hpp"
 
-/** \class ROL::Objective_SimOpt
+/** @ingroup func_group
+    \class ROL::Objective_SimOpt
     \brief Provides the interface to evaluate simulation-based objective functions.
 */
 
