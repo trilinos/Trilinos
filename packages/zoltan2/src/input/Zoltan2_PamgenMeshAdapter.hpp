@@ -436,56 +436,60 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
     }
   }
 
-  int neid = 0, num_internal_nodes, num_border_nodes, num_external_nodes;
-  int num_internal_elems, num_border_elems, num_node_cmaps, num_elem_cmaps;
-  int proc = 0;
-  error += im_ne_get_loadbal_param(neid, &num_internal_nodes,
-				   &num_border_nodes, &num_external_nodes,
-				   &num_internal_elems, &num_border_elems,
-				   &num_node_cmaps, &num_elem_cmaps, proc);
+  int nprocs = comm.getSize();
 
-  int *node_cmap_ids = new int [num_node_cmaps];
-  int *node_cmap_node_cnts = new int [num_node_cmaps];
-  int *elem_cmap_ids = new int [num_elem_cmaps];
-  int *elem_cmap_elem_cnts = new int [num_elem_cmaps];
-  error += im_ne_get_cmap_params(neid, node_cmap_ids, node_cmap_node_cnts,
-				 elem_cmap_ids, elem_cmap_elem_cnts, proc);
-  delete[] elem_cmap_ids;
-  elem_cmap_ids = NULL;
-  delete[] elem_cmap_elem_cnts;
-  elem_cmap_elem_cnts = NULL;
+  if (nprocs > 1) {
+    int neid = 0, num_internal_nodes, num_border_nodes, num_external_nodes;
+    int num_internal_elems, num_border_elems, num_node_cmaps, num_elem_cmaps;
+    int proc = 0;
+    error += im_ne_get_loadbal_param(neid, &num_internal_nodes,
+				     &num_border_nodes, &num_external_nodes,
+				     &num_internal_elems, &num_border_elems,
+				     &num_node_cmaps, &num_elem_cmaps, proc);
 
-  int **node_ids = new int * [num_node_cmaps];
-  int **node_proc_ids = new int * [num_node_cmaps];
-  for(int j = 0; j < num_node_cmaps; j++) {
-    node_ids[j] = new int [node_cmap_node_cnts[j]];
-    node_proc_ids[j] = new int [node_cmap_node_cnts[j]];
-    error += im_ne_get_node_cmap(neid, node_cmap_ids[j], node_ids[j],
-				 node_proc_ids[j], proc);
-  }
-  delete[] node_cmap_ids;
-  node_cmap_ids = NULL;
+    int *node_cmap_ids = new int [num_node_cmaps];
+    int *node_cmap_node_cnts = new int [num_node_cmaps];
+    int *elem_cmap_ids = new int [num_elem_cmaps];
+    int *elem_cmap_elem_cnts = new int [num_elem_cmaps];
+    error += im_ne_get_cmap_params(neid, node_cmap_ids, node_cmap_node_cnts,
+				   elem_cmap_ids, elem_cmap_elem_cnts, proc);
+    delete[] elem_cmap_ids;
+    elem_cmap_ids = NULL;
+    delete[] elem_cmap_elem_cnts;
+    elem_cmap_elem_cnts = NULL;
 
-  for(int j = 0; j < num_node_cmaps; j++) {
-    int sendCount = 1;
-    for(int i = 0; i < node_cmap_node_cnts[j]; i++) {
-      sendCount += sur_elem[node_ids[j][i] - 1].size() + 1;
+    int **node_ids = new int * [num_node_cmaps];
+    int **node_proc_ids = new int * [num_node_cmaps];
+    for(int j = 0; j < num_node_cmaps; j++) {
+      node_ids[j] = new int [node_cmap_node_cnts[j]];
+      node_proc_ids[j] = new int [node_cmap_node_cnts[j]];
+      error += im_ne_get_node_cmap(neid, node_cmap_ids[j], node_ids[j],
+				   node_proc_ids[j], proc);
     }
-    node_proc_ids[j][0];
+    delete[] node_cmap_ids;
+    node_cmap_ids = NULL;
+    int *sendCount = new int [nprocs];
+
+    for(int j = 0; j < num_node_cmaps; j++) {
+      sendCount[node_proc_ids[j][0]] = 1;
+      for(int i = 0; i < node_cmap_node_cnts[j]; i++) {
+	sendCount[node_proc_ids[j][i]] += sur_elem[node_ids[j][i]-1].size()+1;
+      }
+    }
+
+    delete[] node_cmap_node_cnts;
+    node_cmap_node_cnts = NULL;
+
+    for(int j = 0; j < num_node_cmaps; j++) {
+      delete[] node_ids[j];
+      delete[] node_proc_ids[j];
+    }
+
+    delete[] node_ids;
+    node_ids = NULL;
+    delete[] node_proc_ids;
+    node_proc_ids = NULL;
   }
-
-  delete[] node_cmap_node_cnts;
-  node_cmap_node_cnts = NULL;
-
-  for(int j = 0; j < num_node_cmaps; j++) {
-    delete[] node_ids[j];
-    delete[] node_proc_ids[j];
-  }
-
-  delete[] node_ids;
-  node_ids = NULL;
-  delete[] node_proc_ids;
-  node_proc_ids = NULL;
 
   for(int ecnt=0; ecnt < num_elem_; ecnt++) {
     start_[ecnt] = nadj_;
