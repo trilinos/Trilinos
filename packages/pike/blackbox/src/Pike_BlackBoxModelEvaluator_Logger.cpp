@@ -93,7 +93,54 @@ namespace pike {
 
   void ModelEvaluatorLogger::setParameter(const int l, const Teuchos::ArrayView<const double>& p)
   {
+    log_->push_back(this->name()+": setParameter(l,p)");
     return model_->setParameter(l,p);
+  }
+
+  bool ModelEvaluatorLogger::isTransient() const
+  {
+    return model_->isTransient();
+  }
+
+  double ModelEvaluatorLogger::getCurrentTime() const
+  {
+    return model_->getCurrentTime();
+  }
+
+  double ModelEvaluatorLogger::getTentativeTime() const
+  {
+    return model_->getTentativeTime();
+  }
+
+  bool ModelEvaluatorLogger::solvedTentativeStep() const
+  {
+    return model_->solvedTentativeStep();
+  }
+
+  double ModelEvaluatorLogger::getCurrentTimeStepSize() const
+  {
+    return model_->getCurrentTimeStepSize();
+  }
+
+  double ModelEvaluatorLogger::getDesiredTimeStepSize() const
+  {
+    return model_->getDesiredTimeStepSize();
+  }
+
+  double ModelEvaluatorLogger::getMaxTimeStepSize() const
+  {
+    return model_->getMaxTimeStepSize();
+  }
+
+  void ModelEvaluatorLogger::setNextTimeStepSize(const double& dt)
+  {
+    return model_->setNextTimeStepSize(dt);
+  }
+
+  void ModelEvaluatorLogger::acceptTimeStep()
+  {
+    log_->push_back(this->name()+": acceptTimeStep()");
+    return model_->acceptTimeStep();
   }
 
   //! Non-member ctor

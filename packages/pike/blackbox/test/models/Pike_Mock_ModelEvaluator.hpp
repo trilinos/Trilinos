@@ -1,7 +1,7 @@
 #ifndef PIKE_MOCK_MODEL_EVALUATOR_HPP
 #define PIKE_MOCK_MODEL_EVALUATOR_HPP
 
-#include "Pike_BlackBoxModelEvaluator_DefaultBase.hpp"
+#include "Pike_BlackBoxModelEvaluator.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_RCP.hpp"
 #include <string>
@@ -16,7 +16,7 @@ namespace pike_test {
       (and can choose whether it is a local or global convergence
       failure).
    */
-  class MockModelEvaluator : public pike::BlackBoxModelEvaluatorDefaultBase {
+  class MockModelEvaluator : public pike::BlackBoxModelEvaluator {
 
   public:
 

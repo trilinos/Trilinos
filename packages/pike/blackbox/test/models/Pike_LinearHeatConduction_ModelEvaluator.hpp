@@ -1,7 +1,7 @@
 #ifndef PIKE_LINEAR_HEAT_CONDUCTION_MODEL_EVALUATOR_HPP
 #define PIKE_LINEAR_HEAT_CONDUCTION_MODEL_EVALUATOR_HPP
 
-#include "Pike_BlackBoxModelEvaluator_DefaultBase.hpp"
+#include "Pike_BlackBoxModelEvaluator.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_RCP.hpp"
 #include <string>
@@ -31,7 +31,7 @@ namespace pike_test {
       Phenomena" by Bird, Stewart and Lightfoot, 2nd edition, section
       10.6 "Heat Conduction Through Composite Walls", pages 303-305.
    */
-  class LinearHeatConductionModelEvaluator : public pike::BlackBoxModelEvaluatorDefaultBase {
+  class LinearHeatConductionModelEvaluator : public pike::BlackBoxModelEvaluator {
 
   public:
 

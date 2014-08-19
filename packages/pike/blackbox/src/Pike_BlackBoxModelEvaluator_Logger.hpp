@@ -24,12 +24,10 @@ namespace pike {
 
     Teuchos::RCP<std::vector<std::string> > getNonConstLog() const;
 
+    // Base methods
     std::string name() const;
-
     void solve();
-
     bool isLocallyConverged() const;
-
     bool isGloballyConverged() const;
 
     // Response support
@@ -45,6 +43,17 @@ namespace pike {
     std::string getParameterName(const int l) const;
     int getParameterIndex(const std::string& pName) const;
     void setParameter(const int l, const Teuchos::ArrayView<const double>& p);
+
+    // Transient support
+    bool isTransient() const;
+    double getCurrentTime() const;
+    double getTentativeTime() const;
+    bool solvedTentativeStep() const;
+    double getCurrentTimeStepSize() const;
+    double getDesiredTimeStepSize() const;
+    double getMaxTimeStepSize() const;
+    void setNextTimeStepSize(const double& dt);
+    void acceptTimeStep();
 
   private:
     
