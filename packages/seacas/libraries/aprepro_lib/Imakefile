@@ -34,6 +34,7 @@ InstallLibrary(aprepro,$(LIBDIR))
 test: apr_test
 
 NormalCCTarget(apr_test,apr_test.o,$(LIBRARY),NullParameter,-laprepro)
+NormalCCTarget(strings,strings.o,$(LIBRARY),NullParameter,-laprepro)
 
 InstallIncludeList(makeincludes,$(INCLIST),$(INCDIR))
 InstallIncludeList(install,$(INCLIST),$(INCDIR))

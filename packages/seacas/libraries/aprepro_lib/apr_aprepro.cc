@@ -16,7 +16,7 @@
 
 namespace {
   const unsigned int HASHSIZE = 5939;
-  const char* version_string = "4.15 (2014/08/14)";
+  const char* version_string = "4.16 (2014/08/18)";
   
   unsigned hash_symbol (const char *symbol)
   {
@@ -104,6 +104,15 @@ namespace SEAMS {
   bool Aprepro::parse_string(const std::string &input, const std::string& sname)
   {
     std::istringstream iss(input);
+    return parse_stream(iss, sname);
+  }
+
+  bool Aprepro::parse_strings(const std::vector<std::string> &input, const std::string& sname)
+  {
+    std::stringstream iss;
+    for (size_t i=0; i < input.size(); i++) {
+      iss << input[i] << '\n';
+    }
     return parse_stream(iss, sname);
   }
 

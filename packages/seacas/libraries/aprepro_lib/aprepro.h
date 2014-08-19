@@ -219,6 +219,13 @@ namespace SEAMS {
     bool parse_string(const std::string& input,
 		      const std::string& sname = "string stream");
 
+    /** Invoke the scanner and parser on a vector of strings.
+     * @param input	vector of input strings
+     * @param sname	stream name for error messages
+     * @return		true if successfully parsed
+     */
+    bool parse_strings(const std::vector<std::string> &input, const std::string& sname);
+
     /** Invoke the scanner and parser on an input string in an
      * interactive manner.
      * @param input input stringInput
