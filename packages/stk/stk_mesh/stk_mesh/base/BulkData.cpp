@@ -266,7 +266,7 @@ void markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::BulkData &mesh, st
                     for(size_t n = 0; n < num_nodes_on_entity; ++n)
                     {
                         Entity node = entity_nodes[n];
-                        shared_entity = shared_entity && mesh.bucket(node).shared();
+                        shared_entity = shared_entity && (mesh.bucket(node).shared() || (mesh.isEntityMarked(node) == BulkData::IS_SHARED));
                     }
 
                     if(shared_entity)

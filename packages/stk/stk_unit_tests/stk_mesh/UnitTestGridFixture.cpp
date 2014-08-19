@@ -83,10 +83,10 @@ TEST( UnitTestGridFixture, test_gridfixture )
     stk::mesh::Entity new_shell = bulk_data.declare_entity(elem_rank,
                                                             id_offset + new_id,
                                                             shell_parts);
-    for(unsigned node_id = 0 ; node_id < 2; ++node_id)
+    for(unsigned node_ord = 0 ; node_ord < 2; ++node_ord)
     {
-      stk::mesh::Entity new_node = bulk_data.declare_entity(node_rank, (node_id+10)*(id_offset + new_id));
-      bulk_data.declare_relation( new_shell , new_node , node_id);
+      stk::mesh::Entity new_node = bulk_data.declare_entity(node_rank, (node_ord+10)*(id_offset + new_id));
+      bulk_data.declare_relation( new_shell , new_node , node_ord);
     }
     shell_faces.push_back(new_shell);
   }
