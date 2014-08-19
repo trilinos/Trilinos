@@ -48,6 +48,8 @@
 #include "ROL_Step.hpp"
 #include <sstream>
 #include <iomanip>
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_LAPACK.hpp"
 
 /** \class ROL::CompositeStepSQP
     \brief Implements the computation of optimization steps
@@ -61,9 +63,9 @@ template <class Real>
 class CompositeStepSQP : public Step<Real> {
 private:
 
-  int TRflag_;
-  int CGflag_;
-  int CGiter_;
+  int flagTR_;
+  int flagCG_;
+  int iterCG_;
 
   int maxiterCG_;
   Real tolCG_;
@@ -81,6 +83,11 @@ private:
   bool infoQN_;
   bool infoLM_;
   bool infoTS_;
+  bool infoALL_;
+
+  template <typename T> int sgn(T val) {
+    return (T(0) < val) - (val < T(0));
+  }
 
 public:
 
@@ -88,9 +95,9 @@ public:
 
   CompositeStepSQP( Teuchos::ParameterList & parlist ) : Step<Real>() {
     //Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
-    TRflag_ = 0;
-    CGflag_ = 0;
-    CGiter_ = 0;
+    flagTR_ = 0;
+    flagCG_ = 0;
+    iterCG_ = 0;
 
     maxiterCG_ = 20;
     tolCG_ = 1e-4;
@@ -105,9 +112,13 @@ public:
     zeta_  = 0.9;
     Delta_ = 1e2;
 
-    infoQN_ = true;
-    infoLM_ = true;
-    infoTS_ = true;
+    infoQN_  = false;
+    infoLM_  = false;
+    infoTS_  = false;
+    infoALL_ = true;
+    infoQN_  = infoQN_ || infoALL_;
+    infoLM_  = infoLM_ || infoALL_;
+    infoTS_  = infoTS_ || infoALL_;
   }
 
   /** \brief Initialize step.
@@ -164,6 +175,7 @@ public:
     obj.gradient(*g, x, zerotol);
     con.applyAdjointJacobian(*ajl, l, x, zerotol);
     g->plus(*ajl);
+    algo_state.ngrad++;
     solveTangentialSubproblem(*t, *tCP, *Wg, x, *g, *n, l, Delta_, obj, con);
     s.set(*n);
     s.plus(*t);
@@ -186,16 +198,19 @@ public:
     x.plus(s);
 
     Real val = obj.value(x, zerotol);
+    algo_state.nfval++;
     obj.gradient(*g, x, zerotol);
     computeLagrangeMultiplier(l, x, *g, con);
     con.applyAdjointJacobian(*ajl, l, x, zerotol);
     gl->set(*g); gl->plus(*ajl);
+    algo_state.ngrad++;
     con.value(*c, x, zerotol);
 
     algo_state.value = val;
     algo_state.gnorm = gl->norm();
     algo_state.cnorm = c->norm();
     algo_state.iter++;
+    algo_state.snorm = s.norm();
 
     //Real tol = std::sqrt(ROL_EPSILON);
 
@@ -274,11 +289,12 @@ public:
       hist << std::setw(15) << std::left << algo_state.cnorm; 
       hist << std::setw(15) << std::left << algo_state.gnorm; 
       hist << std::setw(15) << std::left << algo_state.snorm; 
+      hist << std::setw(15) << std::left << Delta_; 
       hist << std::setw(10) << std::left << algo_state.nfval;              
       hist << std::setw(10) << std::left << algo_state.ngrad;              
-      hist << std::setw(10) << std::left << TRflag_;              
-      hist << std::setw(10) << std::left << CGiter_;
-      hist << std::setw(10) << std::left << CGflag_;
+      hist << std::setw(10) << std::left << flagTR_;              
+      hist << std::setw(10) << std::left << iterCG_;
+      hist << std::setw(10) << std::left << flagCG_;
       hist << "\n";
     }
     return hist.str();
@@ -458,14 +474,23 @@ public:
                                  Real delta, Objective<Real> &obj, EqualityConstraint<Real> &con) {
 
     /* Initialization of the CG step. */
+    bool orthocheck = true;  // set to true if want to check orthogonality
+                             // of Wr and r, otherwise set to false
+    Real tol_ortho  = 0.5;   // orthogonality measure; represets a bound on norm( \hat{S}, 2), where
+                             // \hat{S} is defined in Heinkenschloss/Ridzal., "A Matrix-Free Trust-Region SQP Method"
+    Real S_max      = 1.0;   // another orthogonality measure; norm(S) needs to be bounded by
+                             // a modest constant; norm(S) is small if the approximation of
+                             // the null space projector is good
     Real zero      =  0.0;
     Real zerotol   =  0.0;
     Real negative1 = -1.0;
-    int iter = 1;
-    int flag = 0;
+    iterCG_ = 1;
+    flagCG_ = 0;
     t.zero();
     tCP.zero();
     Teuchos::RCP<Vector<Real> > r = g.clone();
+    Teuchos::RCP<Vector<Real> > pdesc = g.clone();
+    Teuchos::RCP<Vector<Real> > tprev = t.clone();
     Teuchos::RCP<Vector<Real> > Wr = g.clone();
     Teuchos::RCP<Vector<Real> > vtemp = g.clone();
     Teuchos::RCP<Vector<Real> > ltemp = l.clone();
@@ -478,10 +503,13 @@ public:
     r->plus(*vtemp);
     Real normg  = r->norm();
     Real normWg = zero;
-    Real normWr = zero;
     Real pHp    = zero;
     Real rp     = zero;
     Real alpha  = zero;
+    Real normp  = zero;
+    Real normr  = zero;
+    Real normt  = zero;
+    std::vector<Real> normWr(maxiterCG_+1, zero);
 
     std::vector<Teuchos::RCP<Vector<Real > > >  p;   // stores search directions
     std::vector<Teuchos::RCP<Vector<Real > > >  Hp;  // stores hessvec's applied to p's
@@ -504,29 +532,33 @@ public:
         hist << "    >>> Tangential subproblem: Initial gradient is zero! \n";
         std::cout << hist;
       }
-      iter = 0; Wg.zero(); flag = 0;
+      iterCG_ = 0; Wg.zero(); flagCG_ = 0;
       return;
     }
 
     /* Start CG loop. */
-    while (iter < maxiterCG_) {
+    while (iterCG_ < maxiterCG_) {
 
       // Store tangential Cauchy point (which is the current iterate in the second iteration).
-      if (iter == 2) {
+      if (iterCG_ == 2) {
         tCP.set(t);
       }
 
       // Compute (inexact) projection W*r.
-      if (iter == 1) {
+      if (iterCG_ == 1) {
         // Solve augmented system.
         Real tol = pgtol_;
         con.solveAugmentedSystem(*Wr, *ltemp, *r, *czero, x, tol);
         Wg.set(*Wr);
         normWg = Wg.norm();
+        if (orthocheck) {
+          Wrs.push_back(Wr->clone());
+          (Wrs[iterCG_-1])->set(*Wr);
+        }
         // Check if done (small initial projected residual).
         if (normWg < 1e-14) {
-          flag = 0;
-          iter = iter-1;
+          flagCG_ = 0;
+          iterCG_ = iterCG_-1;
           if (infoTS_) {
             std::stringstream hist;
             hist << "  Initial projected residual is close to zero! \n";
@@ -536,13 +568,22 @@ public:
         }
         // Set first residual to projected gradient.
         r->set(Wg);
+        if (orthocheck) {
+          rs.push_back(r->clone());
+          (rs[0])->set(*r);
+        }
       }
       else {
         // Solve augmented system.
         Real tol = projtol_;
         con.solveAugmentedSystem(*Wr, *ltemp, *r, *czero, x, tol);
+        if (orthocheck) {
+          Wrs.push_back(Wr->clone());
+          (Wrs[iterCG_-1])->set(*Wr);
+        }
       }
-      normWr = Wr->norm();
+
+      normWr[iterCG_-1] = Wr->norm();
 
       if (infoTS_) {
         Teuchos::RCP<Vector<Real> > ct = l.clone();
@@ -550,60 +591,168 @@ public:
         Real linc = ct->norm();
         std::stringstream hist;
         hist << std::scientific << std::setprecision(6);
-        hist << std::setw(6)  << std::right << iter-1 << std::setw(18) << normWr/normWg << std::setw(15) << t.norm();
+        hist << std::setw(6)  << std::right << iterCG_-1 << std::setw(18) << normWr[iterCG_-1]/normWg << std::setw(15) << t.norm();
         hist << std::setw(15) << delta << std::setw(15) << linc << "\n";
         std::cout << hist.str();
       }
 
       // Check if done (small relative residual).
-      if (normWr/normWg < tolCG_) {
-        flag = 0;
-        iter = iter-1;
+      if (normWr[iterCG_-1]/normWg < tolCG_) {
+        flagCG_ = 0;
+        iterCG_ = iterCG_-1;
         if (infoTS_) {
           std::cout << "  || W(g + H*(n+s)) || <= cgtol*|| W(g + H*n)|| \n";
         }
         return;
       }
 
+      // Check nonorthogonality, one-norm of (WR*R/diag^2 - I)
+      if (orthocheck) {
+        Teuchos::SerialDenseMatrix<int,Real> Wrr(iterCG_,iterCG_);  // holds matrix Wrs'*rs
+        Teuchos::SerialDenseMatrix<int,Real> T(iterCG_,iterCG_);    // holds matrix T=(1/diag)*Wrs'*rs*(1/diag)
+        Teuchos::SerialDenseMatrix<int,Real> Tm1(iterCG_,iterCG_);  // holds matrix Tm1=T-I
+        for (int i=0; i<iterCG_; i++) {
+          for (int j=0; j<iterCG_; j++) {
+            Wrr(i,j)  = (Wrs[i])->dot(*rs[j]);
+            T(i,j)    = Wrr(i,j)/(normWr[i]*normWr[j]);
+            Tm1(i,j)  = T(i,j);
+            if (i==j) {
+              Tm1(i,j) = Tm1(i,j) - 1.0;
+            }
+          }
+        }
+        if (Tm1.normOne() >= 0.5) {
+          Teuchos::LAPACK<int,Real> lapack;
+          std::vector<int>          ipiv(iterCG_);
+          int                       info;
+          std::vector<Real>         work(3*iterCG_);
+          // compute inverse of T
+          lapack.GETRF(iterCG_, iterCG_, T.values(), T.stride(), &ipiv[0], &info);
+          lapack.GETRI(iterCG_, T.values(), T.stride(), &ipiv[0], &work[0], 3*iterCG_, &info);
+          Tm1 = T;
+          for (int i=0; i<iterCG_; i++) {
+            Tm1(i,i) = Tm1(i,i) - 1.0;
+          }
+          if (Tm1.normOne() > S_max) {
+            if (infoTS_) {
+              std::cout << "  large nonorthogonality in W(R)'*R detected \n";
+            }
+            return;
+          }
+        }
+      }
+
       // Full orthogonalization.
       p.push_back(Wr->clone());
-      (p[iter-1])->set(*Wr);
-      (p[iter-1])->scale(negative1);
-      for (int j=1; j<iter; j++) {
-        Real scal = (p[iter-1])->dot(*(Hp[j-1])) / (p[j-1])->dot(*(Hp[j-1]));
+      (p[iterCG_-1])->set(*Wr);
+      (p[iterCG_-1])->scale(negative1);
+      for (int j=1; j<iterCG_; j++) {
+        Real scal = (p[iterCG_-1])->dot(*(Hp[j-1])) / (p[j-1])->dot(*(Hp[j-1]));
         Teuchos::RCP<Vector<Real> > pj = (p[j-1])->clone();
         pj->set(*p[j-1]);
         pj->scale(-scal);
-        (p[iter-1])->plus(*pj);
+        (p[iterCG_-1])->plus(*pj);
       }
 
       Hp.push_back(x.clone());
-      obj.hessVec(*(Hp[iter-1]), *(p[iter-1]), x, zerotol);
-      con.applyAdjointHessian(*vtemp, l, *(p[iter-1]), x, zerotol);
-      (Hp[iter-1])->plus(*vtemp);
-      pHp = (p[iter-1])->dot(*(Hp[iter-1]));
-      rp  = (p[iter-1])->dot(*r);
+      obj.hessVec(*(Hp[iterCG_-1]), *(p[iterCG_-1]), x, zerotol);
+      con.applyAdjointHessian(*vtemp, l, *(p[iterCG_-1]), x, zerotol);
+      (Hp[iterCG_-1])->plus(*vtemp);
+      pHp = (p[iterCG_-1])->dot(*(Hp[iterCG_-1]));
+      rp  = (p[iterCG_-1])->dot(*r);
+
+      normp = (p[iterCG_-1])->norm();
+      normr = r->norm();
+
+      // Negative curvature stopping condition.
+      if (pHp <= 0) {
+        pdesc->set(*(p[iterCG_-1])); // p is the descent direction
+        if ((std::abs(rp) >= rptol*normp*normr) && (sgn(rp) == 1)) {
+          pdesc->scale(negative1); // -p is the descent direction
+        }
+	flagCG_ = 1;
+        Real a = pdesc->dot(*pdesc);
+        Real b = pdesc->dot(t);
+        Real c = t.dot(t) - delta*delta;
+        // Positive root of a*theta^2 + 2*b*theta + c = 0.
+        Real theta = (-b + std::sqrt(b*b - a*c)) / a;
+        vtemp->set(*(p[iterCG_-1]));
+        vtemp->scale(theta);
+        t.plus(*vtemp);
+        // Store as tangential Cauchy point if terminating in first iteration.
+        if (iterCG_ == 1) {
+          tCP.set(t);
+        }
+	if (infoTS_) {
+           std::cout << "  negative curvature detected \n";
+        }
+	return;
+      }
+
+      // Want to enforce nonzero alpha's.
+      if (std::abs(rp) < rptol*normp*normr) {
+        flagCG_ = 4;
+        if (infoTS_) {
+          std::cout << "  Zero alpha due to inexactness. \n";
+        }
+	return;
+      }
 
       alpha = - rp/pHp;
 
       // Iterate update.
-      //s_prev = s;
-      vtemp->set(*(p[iter-1]));
+      tprev->set(t);
+      vtemp->set(*(p[iterCG_-1]));
       vtemp->scale(alpha);
       t.plus(*vtemp);
 
+      // Trust-region stopping condition.
+      normt = t.norm();
+      if (normt >= delta) {
+        pdesc->set(*(p[iterCG_-1])); // p is the descent direction
+        if (sgn(rp) == 1) {
+          pdesc->scale(negative1); // -p is the descent direction
+        }
+	flagCG_ = 1;
+        Real a = pdesc->dot(*pdesc);
+        Real b = pdesc->dot(t);
+        Real c = t.dot(t) - delta*delta;
+        // Positive root of a*theta^2 + 2*b*theta + c = 0.
+        Real theta = (-b + std::sqrt(b*b - a*c)) / a;
+        vtemp->set(*(p[iterCG_-1]));
+        vtemp->scale(theta);
+        t.set(*tprev);
+        t.plus(*vtemp);
+        flagCG_ = 2;
+        // Store as tangential Cauchy point if terminating in first iteration.
+        if (iterCG_ == 1) {
+          tCP.set(t);
+        }
+	if (infoTS_) {
+           std::cout << "  trust-region condition active \n";
+        }
+	return;
+      }
+
       // Residual update.
-      vtemp->set(*(Hp[iter-1]));
+      vtemp->set(*(Hp[iterCG_-1]));
       vtemp->scale(alpha);
       r->plus(*vtemp);
+      if (orthocheck) {
+        rs.push_back(r->clone());
+        (rs[iterCG_])->set(*r);
+      }
 
-      iter++;
+      iterCG_++;
 
-    } // end while (iter < maxiterCG_)
+    } // while (iterCG_ < maxiterCG_)
 
+    flagCG_ = 3;
+    if (infoTS_) {
+      std::cout << "  maximum number of iterations reached \n";
+    }
 
   } // solveTangentialSubproblem
-
 
 
 }; // class CompositeStepSQP

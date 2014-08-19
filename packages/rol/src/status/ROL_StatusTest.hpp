@@ -104,8 +104,7 @@ public:
   /** \brief Check algorithm status.
   */
   virtual bool check( AlgorithmState<Real> &state ) {
-     if ( (state.gnorm > this->gtol_) && 
-          (state.cnorm > this->ctol_) && 
+     if ( ((state.gnorm > this->gtol_) || (state.cnorm > this->ctol_)) && 
           (state.snorm > this->stol_) && 
           (state.iter  < this->max_iter_) ) {
        return true;
