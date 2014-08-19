@@ -78,6 +78,10 @@ namespace {
   using Teuchos::rcp;
   using Teuchos::REDUCE_MIN;
   using Teuchos::reduceAll;
+  using std::cerr;
+  using std::endl;
+  typedef Tpetra::global_size_t GST;
+  typedef Teuchos::Array<size_t>::size_type size_type;
 
   //
   // UNIT TESTS
@@ -92,11 +96,9 @@ namespace {
   // a "global" test, that requires a remote index lookup.
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, ReindexColumns_Local, LO, GO, Node )
   {
-    typedef Tpetra::global_size_t GST;
     typedef Tpetra::CrsGraph<LO, GO, Node> graph_type;
-    // typedef Tpetra::Import<LO, GO, Node> import_type;
+    typedef Tpetra::Import<LO, GO, Node> import_type;
     typedef Tpetra::Map<LO, GO, Node> map_type;
-    typedef typename Array<GO>::size_type size_type;
 
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     int gblSuccess = 0;
@@ -104,7 +106,12 @@ namespace {
 
     RCP<const Comm<int> > comm = getDefaultComm ();
     RCP<Node> node = getNode<Node> ();
+    const int myRank = comm->getRank ();
     const int numProcs = comm->getSize ();
+
+    // Collect all the debug output on each process here, so we can
+    // print it coherently across processes at the end.
+    std::ostringstream os;
 
     // Create the graph's row Map.
     // const size_t numLocalIndices = 5;
@@ -118,7 +125,6 @@ namespace {
       "to be contiguous, but is not.");
 
     const size_t maxNumEntPerRow = 3;
-
     graph_type graph (rowMap, maxNumEntPerRow, Tpetra::StaticProfile);
 
     // Make the usual tridiagonal graph.  Let the graph create its own
@@ -175,8 +181,9 @@ namespace {
     // conversion was correct.
     RCP<graph_type> graph2;
     {
+      const bool cloneDebug = false;
       RCP<ParameterList> clonePlist = parameterList ("Tpetra::CrsGraph::clone");
-      clonePlist->set ("Debug", true);
+      clonePlist->set ("Debug", cloneDebug);
       graph2 = graph.clone (node, clonePlist);
     }
 
@@ -189,22 +196,26 @@ namespace {
     // each process (_locally_) in reverse order of the graph's
     // current column Map.
 
-    const map_type& curColMap = * (graph.getColMap ());
-    Array<GO> newGblInds (curColMap.getNodeNumElements ());
-    if (curColMap.isContiguous ()) {
-      // const GO myMinGblInd = curColMap.getMinGlobalIndex ();
-      const GO myMaxGblInd = curColMap.getMaxGlobalIndex ();
+    // NOTE (mfh 21 Aug 2014) Don't get this as a reference!  Get it
+    // as an RCP!  Remember that the reference comes from the result
+    // of getColMap(), and the call to reindexColumns() will
+    // invalidate the graph's current column Map.
+    RCP<const map_type> curColMap = graph.getColMap ();
+    Array<GO> newGblInds (curColMap->getNodeNumElements ());
+    if (curColMap->isContiguous ()) {
+      // const GO myMinGblInd = curColMap->getMinGlobalIndex ();
+      const GO myMaxGblInd = curColMap->getMaxGlobalIndex ();
 
       const size_type myNumInds =
-        static_cast<size_type> (curColMap.getNodeNumElements ());
+        static_cast<size_type> (curColMap->getNodeNumElements ());
       if (myNumInds > 0) {
         GO curGblInd = myMaxGblInd;
         for (size_type k = 0; k < myNumInds; ++k, --curGblInd) {
           newGblInds[k] = curGblInd;
         }
       }
-    } else {
-      ArrayView<const GO> curGblInds = curColMap.getNodeElementList ();
+    } else { // original column Map is not contiguous
+      ArrayView<const GO> curGblInds = curColMap->getNodeElementList ();
       for (size_type k = 0; k < curGblInds.size (); ++k) {
         const size_type k_opposite = (newGblInds.size () - 1) - k;
         newGblInds[k] = curGblInds[k_opposite];
@@ -214,13 +225,108 @@ namespace {
     RCP<const map_type> newColMap =
       rcp (new map_type (INVALID, newGblInds (), indexBase, comm, node));
 
+    // Print both old and new column Maps.
+    {
+      comm->barrier ();
+      RCP<Teuchos::FancyOStream> errStream =
+        Teuchos::getFancyOStream (Teuchos::rcpFromRef (os));
+
+      if (myRank == 0) {
+        cerr << "Original column Map:" << endl;
+      }
+      curColMap->describe (*errStream, Teuchos::VERB_EXTREME);
+
+      if (myRank == 0) {
+        cerr << endl << "New column Map:" << endl;
+      }
+      newColMap->describe (*errStream, Teuchos::VERB_EXTREME);
+      comm->barrier ();
+    }
+
+    comm->barrier ();
+    if (myRank == 2) {
+      os << "Proc 2: checking global indices [10, 11, 12] "
+        "(should be owned on this process)" << endl;
+      const LO testGids[] = {10, 11, 12};
+      const LO numTestGids = 3;
+      for (LO k = 0; k < numTestGids; ++k) {
+        const GO gid = testGids[k];
+        const GO lid_old = curColMap->getLocalElement (gid);
+        const GO lid_new = newColMap->getLocalElement (gid);
+
+        os << "  gbl: " << gid
+           << ", gbl->lcl_old: " << lid_old
+           << ", gbl->lcl_new: " << lid_new
+           << ", gbl->lcl_old->gbl: " << curColMap->getGlobalElement (lid_old)
+           << ", gbl->lcl_new->gbl: " << newColMap->getGlobalElement (lid_new)
+           << ", gbl->lcl_old->gbl->lcl_new: "
+           << newColMap->getLocalElement (curColMap->getGlobalElement (lid_old))
+           << ", gbl->lcl_new->gbl->lcl_old: "
+           << curColMap->getLocalElement (newColMap->getGlobalElement (lid_new))
+           << endl;
+      }
+    }
+    else if (myRank == 3) {
+      os << "Proc 3: checking global indices [15, 16, 14] "
+        "(should be owned on this process)" << endl;
+      const LO testGids[] = {15, 16, 14};
+      const LO numTestGids = 3;
+      for (LO k = 0; k < numTestGids; ++k) {
+        const GO gid = testGids[k];
+        const GO lid_old = curColMap->getLocalElement (gid);
+        const GO lid_new = newColMap->getLocalElement (gid);
+
+        os << "  gbl: " << gid
+           << ", gbl->lcl_old: " << lid_old
+           << ", gbl->lcl_new: " << lid_new
+           << ", gbl->lcl_old->gbl: " << curColMap->getGlobalElement (lid_old)
+           << ", gbl->lcl_new->gbl: " << newColMap->getGlobalElement (lid_new)
+           << ", gbl->lcl_old->gbl->lcl_new: "
+           << newColMap->getLocalElement (curColMap->getGlobalElement (lid_old))
+           << ", gbl->lcl_new->gbl->lcl_old: "
+           << curColMap->getLocalElement (newColMap->getGlobalElement (lid_new))
+           << endl;
+      }
+    }
+    comm->barrier ();
+
+    TEST_ASSERT( graph.isFillComplete () );
+    TEST_ASSERT( graph.isLocallyIndexed () );
+    TEST_ASSERT( graph.hasColMap () );
+
+    // reindexColumns() changes the graph, so we have to resume fill.
+    graph.resumeFill ();
+
+    TEST_ASSERT( ! graph.isFillComplete () );
+    TEST_ASSERT( graph.isLocallyIndexed () );
+    TEST_ASSERT( graph.hasColMap () );
+
     gblSuccess = 0;
     lclSuccess = success ? 1 : 0;
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
     TEST_EQUALITY_CONST( gblSuccess, 1 );
 
     // Call the reindexColumns() method: the moment of truth!
-    TEST_NOTHROW( graph.reindexColumns (newColMap) );
+    try {
+      graph.reindexColumns (newColMap);
+    } catch (std::exception& e) {
+      success = false;
+      os << "Proc " << myRank << ": reindexColumns() threw an exception: "
+         << e.what () << endl;
+    }
+
+    gblSuccess = 0;
+    lclSuccess = success ? 1 : 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY_CONST( gblSuccess, 1 );
+
+    // Now call fillComplete to compute the new Import, if necessary.
+    graph.fillComplete ();
+
+    gblSuccess = 0;
+    lclSuccess = success ? 1 : 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY_CONST( gblSuccess, 1 );
 
     // Does the graph now have the right column Map?
     TEST_ASSERT( ! graph.getColMap ().is_null () );
@@ -230,14 +336,25 @@ namespace {
       TEST_ASSERT( graph.getColMap ()->isSameAs (*newColMap) );
     }
 
-    TEST_ASSERT( ! graph.getImporter ().is_null () );
+    RCP<const import_type> theImport = graph.getImporter ();
+
+    // If there's only one process in the communicator, the graph
+    // won't have an Import object.  But if there's more than one
+    // process, this particular graph should have one.
+    TEST_ASSERT( comm->getSize () == 1 || ! theImport.is_null () );
     // FIXME (mfh 18 Aug 2014) Some of these tests may hang if the
     // graph's Import object is null on some, but not all processes.
-    if (! graph.getImporter ().is_null ()) {
-      TEST_ASSERT( ! graph.getImporter ()->getSourceMap ().is_null () &&
-                   graph.getImporter ()->getSourceMap ()->isSameAs (* (graph.getDomainMap ())) );
-      TEST_ASSERT( ! graph.getImporter ()->getTargetMap ().is_null () &&
-                   graph.getImporter ()->getTargetMap ()->isSameAs (* newColMap) );
+    if (! theImport.is_null ()) {
+      TEST_ASSERT( ! theImport->getSourceMap ().is_null () );
+      TEST_ASSERT( ! theImport->getTargetMap ().is_null () );
+      if (! theImport->getSourceMap ().is_null ()) {
+        if (! graph.getDomainMap ().is_null ()) {
+          TEST_ASSERT( theImport->getSourceMap ()->isSameAs (* (graph.getDomainMap ())) );
+        }
+      }
+      if (! theImport->getTargetMap ().is_null ()) {
+        TEST_ASSERT( theImport->getTargetMap ()->isSameAs (* newColMap) );
+      }
     }
 
     gblSuccess = 0;
@@ -253,23 +370,179 @@ namespace {
     // graph.
     const LO myNumRows = static_cast<LO> (rowMap->getNodeNumElements ());
     if (myNumRows > 0) {
-      Array<LO> lclColIndsTmp (graph.getNodeMaxNumRowEntries ());
       for (LO lclRowInd = 0; lclRowInd < myNumRows; ++lclRowInd) {
-        ArrayView<const LO> lclColInds;
-        graph.getLocalRowView (lclRowInd, lclColInds);
+        os << "Proc " << myRank << ": Row: " << lclRowInd;
 
-        for (size_type k = 0; k < lclColInds.size (); ++k) {
-          const GO gblColInd = newColMap->getGlobalElement (lclColInds[k]);
-          lclColIndsTmp[k] = curColMap.getLocalElement (gblColInd);
+        if (graph.getNumEntriesInLocalRow (lclRowInd) !=
+            graph2->getNumEntriesInLocalRow (lclRowInd)) {
+          success = false;
+          os << ": # entries differ: "
+             << graph.getNumEntriesInLocalRow (lclRowInd) << " != "
+             << graph2->getNumEntriesInLocalRow (lclRowInd) << endl;
+          continue; // don't even bother with the rest
         }
-        ArrayView<const LO> newLclColInds = lclColIndsTmp (0, lclColInds.size ());
+        const size_type numEnt =
+          static_cast<size_type> (graph.getNumEntriesInLocalRow (lclRowInd));
 
-        ArrayView<const LO> oldLclColInds;
-        graph2->getLocalRowView (lclRowInd, oldLclColInds);
+        // Get the "new" local column indices that resulted from the
+        // call to reindexColumns.  Get by copy, not by view, so we
+        // can sort it.
+        Array<LO> newLclColInds (numEnt);
+        {
+          size_t actualNumEnt = 0;
+          graph.getLocalRowCopy (lclRowInd, newLclColInds (), actualNumEnt);
+          if (numEnt != actualNumEnt) {
+            os << "graph.getLocalRowCopy(...) reported different # entries"
+               << endl;
+            success = false;
+            continue; // don't even bother with the rest
+          }
+        }
+        os << ", newLclInds: " << Teuchos::toString (newLclColInds);
 
-        TEST_EQUALITY( newLclColInds.size (), oldLclColInds.size () );
-        TEST_COMPARE_ARRAYS( newLclColInds, oldLclColInds );
+        // Use the new column Map to convert them to global indices.
+        Array<GO> gblColInds (numEnt);
+        for (size_type k = 0; k < numEnt; ++k) {
+          if (newLclColInds[k] == Teuchos::OrdinalTraits<LO>::invalid ()) {
+            success = false;
+          }
+          gblColInds[k] = newColMap->getGlobalElement (newLclColInds[k]);
+          if (gblColInds[k] == Teuchos::OrdinalTraits<GO>::invalid ()) {
+            success = false;
+          }
+        }
+        os << ", gblInds: " << Teuchos::toString (gblColInds ());
+
+        // Convert those global indices to the original column Map's
+        // local indices.  Those should match the original local
+        // indices in the (cloned) original graph.
+        Array<LO> oldLclColInds (numEnt);
+        for (size_type k = 0; k < numEnt; ++k) {
+          const GO gblColInd = gblColInds[k];
+          if (! curColMap->isNodeGlobalElement (gblColInd)) {
+            os << ", " << gblColInd << " NOT in curColMap!";
+            success = false;
+          }
+          if (! newColMap->isNodeGlobalElement (gblColInd)) {
+            os << ", " << gblColInd << " NOT in newColMap!";
+            success = false;
+          }
+          oldLclColInds[k] = curColMap->getLocalElement (gblColInd);
+          if (oldLclColInds[k] == Teuchos::OrdinalTraits<LO>::invalid ()) {
+            success = false;
+          }
+        }
+        os << ", oldLclInds: " << Teuchos::toString (oldLclColInds);
+
+        // Get the original local indices from the original graph.
+        Array<LO> origLclColInds (numEnt);
+        {
+          size_t actualNumEnt = 0;
+          graph2->getLocalRowCopy (lclRowInd, origLclColInds (), actualNumEnt);
+          if (numEnt != actualNumEnt) {
+            os << "graph2.getLocalRowCopy(...) reported different # entries"
+               << endl;
+            success = false;
+            continue; // don't even bother with the rest
+          }
+        }
+        os << ", origLclInds: " << Teuchos::toString (origLclColInds);
+        os << endl;
+
+        // The indices in both graphs don't need to be in the same
+        // order; they just need to be the same indices.
+        std::sort (origLclColInds.begin (), origLclColInds.end ());
+        std::sort (newLclColInds.begin (), newLclColInds.end ());
+
+        // Compare the two sets of indices.
+        bool arraysSame = true;
+        if (oldLclColInds.size () != origLclColInds.size ()) {
+          arraysSame = false;
+        } else {
+          for (size_type k = 0; k < oldLclColInds.size (); ++k) {
+            if (oldLclColInds[k] != origLclColInds[k]) {
+              arraysSame = false;
+            }
+          }
+        }
+        if (! arraysSame) {
+          success = false;
+        }
       }
+    }
+
+    comm->barrier ();
+    os << endl;
+    if (myRank == 2) {
+      os << "Proc 2: checking global indices [10, 11, 12] "
+        "(should be owned on this process)" << endl;
+      const LO testGids[] = {10, 11, 12};
+      const LO numTestGids = 3;
+      for (LO k = 0; k < numTestGids; ++k) {
+        const GO gid = testGids[k];
+        const GO lid_old = curColMap->getLocalElement (gid);
+        const GO lid_new = newColMap->getLocalElement (gid);
+
+        os << "  gbl: " << gid
+           << ", gbl->lcl_old: " << lid_old
+           << ", gbl->lcl_new: " << lid_new
+           << ", gbl->lcl_old->gbl: " << curColMap->getGlobalElement (lid_old)
+           << ", gbl->lcl_new->gbl: " << newColMap->getGlobalElement (lid_new)
+           << ", gbl->lcl_old->gbl->lcl_new: "
+           << newColMap->getLocalElement (curColMap->getGlobalElement (lid_old))
+           << ", gbl->lcl_new->gbl->lcl_old: "
+           << curColMap->getLocalElement (newColMap->getGlobalElement (lid_new))
+           << endl;
+      }
+    }
+    else if (myRank == 3) {
+      os << "Proc 3: checking global indices [15, 16, 14] "
+        "(should be owned on this process)" << endl;
+      const LO testGids[] = {15, 16, 14};
+      const LO numTestGids = 3;
+      for (LO k = 0; k < numTestGids; ++k) {
+        const GO gid = testGids[k];
+        const GO lid_old = curColMap->getLocalElement (gid);
+        const GO lid_new = newColMap->getLocalElement (gid);
+
+        os << "  gbl: " << gid
+           << ", gbl->lcl_old: " << lid_old
+           << ", gbl->lcl_new: " << lid_new
+           << ", gbl->lcl_old->gbl: " << curColMap->getGlobalElement (lid_old)
+           << ", gbl->lcl_new->gbl: " << newColMap->getGlobalElement (lid_new)
+           << ", gbl->lcl_old->gbl->lcl_new: "
+           << newColMap->getLocalElement (curColMap->getGlobalElement (lid_old))
+           << ", gbl->lcl_new->gbl->lcl_old: "
+           << curColMap->getLocalElement (newColMap->getGlobalElement (lid_new))
+           << endl;
+      }
+    }
+    comm->barrier ();
+
+    if (false) {
+      comm->barrier ();
+      RCP<Teuchos::FancyOStream> errStream =
+        Teuchos::getFancyOStream (Teuchos::rcpFromRef (os));
+
+      if (myRank == 0) {
+        cerr << "Original column Map:" << endl;
+      }
+      curColMap->describe (*errStream, Teuchos::VERB_EXTREME);
+
+      if (myRank == 0) {
+        cerr << endl << "New column Map:" << endl;
+      }
+      newColMap->describe (*errStream, Teuchos::VERB_EXTREME);
+      comm->barrier ();
+    }
+
+    for (int p = 0; p < numProcs; ++p) {
+      if (myRank == p) {
+        cerr << os.str ();
+      }
+      comm->barrier (); // let output complete
+      comm->barrier ();
+      comm->barrier ();
     }
 
     gblSuccess = 0;
