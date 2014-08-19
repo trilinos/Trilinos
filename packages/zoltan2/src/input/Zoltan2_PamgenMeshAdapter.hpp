@@ -470,8 +470,8 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
     int sendCount = 2;
     for(int i = 0; i < node_cmap_node_cnts[j]; i++) {
       sendCount += sur_elem[node_ids[j][i] - 1].size() + 1;
-      node_proc_ids[j][i];
     }
+    node_proc_ids[j][0];
   }
 
   delete[] node_cmap_node_cnts;
