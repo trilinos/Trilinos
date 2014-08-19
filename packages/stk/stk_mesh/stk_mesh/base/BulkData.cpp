@@ -147,7 +147,7 @@ void communicateSharedEntityInfo(stk::mesh::BulkData &mesh, CommAll &comm, std::
                     shared_entity_type const & sentity = shared_entities[proc][e];
                     size_t num_nodes_on_entity = sentity.nodes.size();
                     comm.send_buffer(proc).pack<stk::topology::topology_t>(sentity.topology);
-                    comm.send_buffer(proc).pack<size_t>(num_nodes_on_entity);  // TEMPORARY HACK: DO NOT PUSH
+                    //comm.send_buffer(proc).pack<size_t>(num_nodes_on_entity);  // TEMPORARY HACK: DO NOT PUSH
                     for (size_t i = 0; i < num_nodes_on_entity; ++i )
                     {
                         comm.send_buffer(proc).pack(sentity.nodes[i]);
@@ -177,10 +177,10 @@ void unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackProcessorsTh
                 shared_entity_type sentity;
 
                 buf.unpack<stk::topology::topology_t>(sentity.topology);
-                //stk::topology entity_topology(sentity.topology);
-                //size_t num_nodes_on_entity = entity_topology.num_nodes();
-                size_t num_nodes_on_entity = 0;            // TEMPORARY HACK:
-                buf.unpack<size_t>(num_nodes_on_entity);   // DO NOT PUSH
+                stk::topology entity_topology(sentity.topology);
+                size_t num_nodes_on_entity = entity_topology.num_nodes();
+                //size_t num_nodes_on_entity = 0;            // TEMPORARY HACK:
+                //buf.unpack<size_t>(num_nodes_on_entity);   // DO NOT PUSH
                 sentity.nodes.resize(num_nodes_on_entity);
                 for (size_t i = 0; i < num_nodes_on_entity; ++i )
                 {
