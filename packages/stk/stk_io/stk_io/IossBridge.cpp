@@ -126,9 +126,14 @@ const stk::mesh::FieldBase *declare_ioss_field_internal(stk::mesh::MetaData &met
                                                         const Ioss::Field &io_field,
                                                         bool use_cartesian_for_scalar, T /*dummy*/)
 {
-  stk::mesh::FieldBase *field_ptr = NULL;
-  std::string field_type = io_field.transformed_storage()->name();
   std::string name = io_field.get_name();
+  stk::mesh::FieldBase *field_ptr = meta.get_field(type, name);
+  // If the field has already been declared, don't redeclare it.
+  if (field_ptr != NULL) {
+    return field_ptr
+  }
+  
+  std::string field_type = io_field.transformed_storage()->name();
   size_t num_components = io_field.transformed_storage()->component_count();
   stk::topology::rank_t entity_rank = static_cast<stk::topology::rank_t>(type);
 
