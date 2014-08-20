@@ -1519,6 +1519,51 @@ NNTI_result_t NNTI_ptl_gather (
 }
 
 
+NNTI_result_t NNTI_ptl_atomic_set_callback (
+		const NNTI_transport_t *trans_hdl,
+		const uint64_t          local_atomic,
+		NNTI_callback_fn_t      cbfunc,
+		void                   *context)
+{
+    return NNTI_ENOTSUP;
+}
+
+
+NNTI_result_t NNTI_ptl_atomic_read (
+		const NNTI_transport_t *trans_hdl,
+		const uint64_t          local_atomic,
+		int64_t                *value)
+{
+    return NNTI_ENOTSUP;
+}
+
+
+NNTI_result_t NNTI_ptl_atomic_fop (
+		const NNTI_transport_t *trans_hdl,
+		const NNTI_peer_t      *peer_hdl,
+		const uint64_t          target_atomic,
+		const uint64_t          result_atomic,
+		const int64_t           operand,
+		const NNTI_atomic_op_t  op,
+		NNTI_work_request_t    *wr)
+{
+    return NNTI_ENOTSUP;
+}
+
+
+NNTI_result_t NNTI_ptl_atomic_cswap (
+		const NNTI_transport_t *trans_hdl,
+		const NNTI_peer_t      *peer_hdl,
+		const uint64_t          target_atomic,
+		const uint64_t          result_atomic,
+		const int64_t           compare_operand,
+		const int64_t           swap_operand,
+		NNTI_work_request_t    *wr)
+{
+    return NNTI_ENOTSUP;
+}
+
+
 /**
  * @brief Create a receive work request that can be used to wait for buffer
  * operations to complete.
