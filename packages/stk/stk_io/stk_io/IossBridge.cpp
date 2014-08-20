@@ -51,6 +51,14 @@
 #include "stk_util/util/PairIter.hpp"   // for PairIter
 
 
+namespace stk {
+  namespace io {
+    bool is_field_on_part(const stk::mesh::FieldBase *field,
+			  const stk::mesh::EntityRank part_type,
+			  const stk::mesh::Part &part);
+      }
+}
+
 void STKIORequire(bool cond)
 {
   if (!cond) throw std::runtime_error("");
@@ -129,8 +137,8 @@ const stk::mesh::FieldBase *declare_ioss_field_internal(stk::mesh::MetaData &met
   std::string name = io_field.get_name();
   stk::mesh::FieldBase *field_ptr = meta.get_field(type, name);
   // If the field has already been declared, don't redeclare it.
-  if (field_ptr != NULL) {
-    return field_ptr
+  if (field_ptr != NULL && stk::io::is_field_on_part(field_ptr, type, part)) {
+    return field_ptr;
   }
   
   std::string field_type = io_field.transformed_storage()->name();
