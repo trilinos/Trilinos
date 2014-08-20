@@ -169,6 +169,8 @@ public:
     KE_(7,7) = E_/(1.0-nu_*nu_)*k[0];
   }
 
+  int numX(void) { return this->nx_; }
+  int numY(void) { return this->ny_; }
   int numZ(void) { return this->nx_*this->ny_; }
   int numU(void) { return 2*(this->nx_+1)*(this->ny_+1); }
   int power(void) { return this->p_; }
@@ -661,11 +663,15 @@ private:
   Real frac_; 
   Real reg_; 
   Real pen_;
+  Real rmin_;
+
+  bool useLC_; // Use linear form of compliance.  Otherwise use quadratic form.
 
 public:
 
-  Objective_TopOpt(Teuchos::RCP<FEM<Real> > FEM, Real frac = 0.5, Real reg = 1.0, Real pen = 1.0 )
-    : FEM_(FEM), frac_(frac), reg_(reg), pen_(pen) {}
+  Objective_TopOpt(Teuchos::RCP<FEM<Real> > FEM, 
+    Real frac = 0.5, Real reg = 1.0, Real pen = 1.0, Real rmin = -1.0 )
+    : FEM_(FEM), frac_(frac), reg_(reg), pen_(pen), rmin_(rmin) {}
 
   Real value( const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
     Teuchos::RCP<const std::vector<Real> > up =
@@ -674,11 +680,15 @@ public:
       (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
     // Apply Jacobian
     std::vector<Real> KU(up->size(),0.0);
-    //std::vector<Real> U;
-    //U.assign(up->begin(),up->end());
-    //this->FEM_->set_boundary_conditions(U);
-    //this->FEM_->apply_jacobian(KU,U,*zp);
-    this->FEM_->build_force(KU);
+    if ( this->useLC_ ) {
+      this->FEM_->build_force(KU);
+    }
+    else {
+      std::vector<Real> U;
+      U.assign(up->begin(),up->end());
+      this->FEM_->set_boundary_conditions(U);
+      this->FEM_->apply_jacobian(KU,U,*zp);
+    }
     // Compliance
     Real c = 0.0;
     for (int i=0; i<up->size(); i++) {
@@ -693,10 +703,32 @@ public:
     r = (this->reg_)*std::pow(vol,3.0);
     // Compute 0-1 penalty
     Real val = 0.0, p = 0.0;
-    for (int i=0; i<zp->size(); i++) {
-      val += (*zp)[i]*(1.0-(*zp)[i]);
+    if ( this->rmin_ <= 0.0 ) {
+      for (int i=0; i<zp->size(); i++) {
+        val += (*zp)[i]*(1.0-(*zp)[i]);
+      }
     }
-    p = (this->pen_)/(this->FEM_->numZ())*val;
+    else {
+      Real sum = 0.0, area = 0.0;
+      int i1 = 0, i2 = 0, j1 = 0, j2 = 0;
+      for (int i=0; i<this->FEM_->numX(); i++) {
+        for (int j=0; j<this->FEM_->numY(); j++) {
+          sum = 0.0;
+          i1 = std::max(i-(int)floor(this->rmin_),1)-1;
+          i2 = std::min(i+(int)floor(this->rmin_),this->FEM_->numX());
+          j1 = std::max(j-(int)floor(this->rmin_),1)-1;
+          j2 = std::min(j+(int)floor(this->rmin_),this->FEM_->numY());
+          area = (Real)(i2-i1)*(j2-j1); 
+          for (int ii=i1; ii<i2; ii++) {
+            for (int jj=j1; jj<j2; jj++) {
+              sum += (*zp)[ii+this->FEM_->numX()*jj]/area;
+            }
+          }
+          val += sum*(1.0-sum);
+        }
+      }
+    }
+    p = (this->pen_)*val;
     return c + r + p;
   }
 
@@ -711,15 +743,22 @@ public:
       (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
     // Apply Jacobian
     std::vector<Real> KU(up->size(),0.0);
-    //std::vector<Real> U;
-    //U.assign(up->begin(),up->end());
-    //this->FEM_->set_boundary_conditions(U);
-    //this->FEM_->apply_jacobian(KU,U,*zp);
-    this->FEM_->build_force(KU);
-    // Apply jacobian to u
-    for (int i=0; i<up->size(); i++) {
-      //(*gp)[i] = 2.0*KU[i];
-      (*gp)[i] = KU[i];
+    if ( this->useLC_ ) {
+      this->FEM_->build_force(KU);
+      // Apply jacobian to u
+      for (int i=0; i<up->size(); i++) {
+        (*gp)[i] = KU[i];
+      }
+    }
+    else {
+      std::vector<Real> U;
+      U.assign(up->begin(),up->end());
+      this->FEM_->set_boundary_conditions(U);
+      this->FEM_->apply_jacobian(KU,U,*zp);
+      // Apply jacobian to u
+      for (int i=0; i<up->size(); i++) {
+        (*gp)[i] = 2.0*KU[i];
+      }
     }
   }
 
@@ -733,10 +772,13 @@ public:
     Teuchos::RCP<const std::vector<Real> > zp =
       (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
     // Apply Jacobian
-    //std::vector<Real> U;
-    //U.assign(up->begin(),up->end());
-    //this->FEM_->set_boundary_conditions(U);
-    //this->FEM_->apply_adjoint_jacobian(*gp,U,*zp,U);
+    g.zero();
+    if ( !this->useLC_ ) {
+      std::vector<Real> U;
+      U.assign(up->begin(),up->end());
+      this->FEM_->set_boundary_conditions(U);
+      this->FEM_->apply_adjoint_jacobian(*gp,U,*zp,U);
+    }
     // Compute Moreau-Yoshida term
     Real vol = 0.0;
     for (int i=0; i<zp->size(); i++) {
@@ -746,7 +788,43 @@ public:
     for (int i=0; i<zp->size(); i++) {
       (*gp)[i] += (this->reg_)*3.0*std::pow(vol,2.0);
       // Compute 0-1 penalty
-      (*gp)[i] += (this->pen_)/(this->FEM_->numZ())*(1.0-2.0*(*zp)[i]);
+      if ( this->rmin_ <= 0.0 ) {
+        (*gp)[i] += (this->pen_)*(1.0-2.0*(*zp)[i]);
+      }
+    }
+    // Compute 0-1 penalty
+    std::vector<Real> Tz(zp->size(),0.0);
+    Real area = 0.0;
+    int i1 = 0, i2 = 0, j1 = 0, j2 = 0;
+    if (this->rmin_ > 0.0) {
+      for (int i=0; i<this->FEM_->numX(); i++) {
+        for (int j=0; j<this->FEM_->numY(); j++) {
+          i1 = std::max(i-(int)floor(this->rmin_),1)-1;
+          i2 = std::min(i+(int)floor(this->rmin_),this->FEM_->numX());
+          j1 = std::max(j-(int)floor(this->rmin_),1)-1;
+          j2 = std::min(j+(int)floor(this->rmin_),this->FEM_->numY());
+          area = (Real)(i2-i1)*(j2-j1);
+          for (int ii=i1; ii<i2; ii++) {
+            for (int jj=j1; jj<j2; jj++) {
+              Tz[i+j*this->FEM_->numX()] += (*zp)[ii+this->FEM_->numX()*jj]/area;
+            }
+          }
+        }
+      }
+      for (int i=0; i<this->FEM_->numX(); i++) {
+        for (int j=0; j<this->FEM_->numY(); j++) {
+          i1 = std::max(i-(int)floor(this->rmin_),1)-1;
+          i2 = std::min(i+(int)floor(this->rmin_),this->FEM_->numX());
+          j1 = std::max(j-(int)floor(this->rmin_),1)-1;
+          j2 = std::min(j+(int)floor(this->rmin_),this->FEM_->numY());
+          area = (Real)(i2-i1)*(j2-j1);
+          for (int ii=i1; ii<i2; ii++) {
+            for (int jj=j1; jj<j2; jj++) {
+              (*gp)[ii+jj*this->FEM_->numX()] += (this->pen_)*(1.0-2.0*Tz[i+this->FEM_->numX()*j])/area;
+            }
+          }
+        }
+      }
     }
   }
 
@@ -763,15 +841,17 @@ public:
     Teuchos::RCP<const std::vector<Real> > zp =
       (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
     // Apply Jacobian
-    //std::vector<Real> KV(vp->size(),0.0);
-    //std::vector<Real> V;
-    //V.assign(vp->begin(),vp->end());
-    //this->FEM_->set_boundary_conditions(V);
-    //this->FEM_->apply_jacobian(KV,V,*zp);
-    //for (int i=0; i<vp->size(); i++) {
-    //  (*hvp)[i] = 2.0*KV[i];
-    //}
     hv.zero();
+    if ( !this->useLC_ ) {
+      std::vector<Real> KV(vp->size(),0.0);
+      std::vector<Real> V;
+      V.assign(vp->begin(),vp->end());
+      this->FEM_->set_boundary_conditions(V);
+      this->FEM_->apply_jacobian(KV,V,*zp);
+      for (int i=0; i<vp->size(); i++) {
+        (*hvp)[i] = 2.0*KV[i];
+      }
+    }
   }
 
   void hessVec_12( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
@@ -788,15 +868,17 @@ public:
     Teuchos::RCP<const std::vector<Real> > zp =
       (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
     // Apply Jacobian
-    //std::vector<Real> KU(up->size(),0.0);
-    //std::vector<Real> U;
-    //U.assign(up->begin(),up->end());
-    //this->FEM_->set_boundary_conditions(U);
-    //this->FEM_->apply_jacobian(KU,U,*zp,*vp);
-    //for (int i=0; i<up->size(); i++) {
-    //  (*hvp)[i] = 2.0*KU[i];
-    //}
     hv.zero();
+    if ( !this->useLC_ ) {
+      std::vector<Real> KU(up->size(),0.0);
+      std::vector<Real> U;
+      U.assign(up->begin(),up->end());
+      this->FEM_->set_boundary_conditions(U);
+      this->FEM_->apply_jacobian(KU,U,*zp,*vp);
+      for (int i=0; i<up->size(); i++) {
+        (*hvp)[i] = 2.0*KU[i];
+      }
+    }
   }
 
   void hessVec_21( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
@@ -813,17 +895,19 @@ public:
     Teuchos::RCP<const std::vector<Real> > zp =
       (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
     // Apply Jacobian
-    //std::vector<Real> U;
-    //U.assign(up->begin(),up->end());
-    //this->FEM_->set_boundary_conditions(U);
-    //std::vector<Real> V;
-    //V.assign(vp->begin(),vp->end());
-    //this->FEM_->set_boundary_conditions(V);
-    //this->FEM_->apply_adjoint_jacobian(*hvp,U,*zp,V);
-    //for (int i=0; i<hvp->size(); i++) {
-    //  (*hvp)[i] *= 2.0;
-    //}
     hv.zero();
+    if ( !this->useLC_ ) {
+      std::vector<Real> U;
+      U.assign(up->begin(),up->end());
+      this->FEM_->set_boundary_conditions(U);
+      std::vector<Real> V;
+      V.assign(vp->begin(),vp->end());
+      this->FEM_->set_boundary_conditions(V);
+      this->FEM_->apply_adjoint_jacobian(*hvp,U,*zp,V);
+      for (int i=0; i<hvp->size(); i++) {
+        (*hvp)[i] *= 2.0;
+      }
+    }
   }
 
   void hessVec_22( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
@@ -839,13 +923,16 @@ public:
     Teuchos::RCP<const std::vector<Real> > zp =
       (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
     // Apply Jacobian
-    //std::vector<Real> U;
-    //U.assign(up->begin(),up->end());
-    //this->FEM_->set_boundary_conditions(U);
-    //std::vector<Real> V;
-    //V.assign(vp->begin(),vp->end());
-    //this->FEM_->set_boundary_conditions(V);
-    //this->FEM_->apply_adjoint_jacobian(*hvp,U,*zp,*vp,U);
+    hv.zero();
+    if ( !this->useLC_ ) {
+      std::vector<Real> U;
+      U.assign(up->begin(),up->end());
+      this->FEM_->set_boundary_conditions(U);
+      std::vector<Real> V;
+      V.assign(vp->begin(),vp->end());
+      this->FEM_->set_boundary_conditions(V);
+      this->FEM_->apply_adjoint_jacobian(*hvp,U,*zp,*vp,U);
+    }
     // Compute Moreau-Yoshida term
     Real vol = 0.0, vvol = 0.0;
     for (int i=0; i<zp->size(); i++) {
@@ -856,7 +943,43 @@ public:
     for (int i=0; i<zp->size(); i++) {
       (*hvp)[i] += (this->reg_)*6.0*vol*vvol; //(*vzp)[i];
       // Compute 0-1 penalty
-      (*hvp)[i] -= (this->pen_)/(this->FEM_->numZ())*2.0*(*vp)[i];
+      if ( this->rmin_ <= 0.0 ) {
+        (*hvp)[i] -= (this->pen_)*2.0*(*vp)[i];
+      }
+    }
+    // Compute 0-1 penalty
+    std::vector<Real> Tv(zp->size(),0.0);
+    int i1 = 0, i2 = 0, j1 = 0, j2 = 0;
+    Real area = 0.0;
+    if (this->rmin_ > 0.0) {
+      for (int i=0; i<this->FEM_->numX(); i++) {
+        for (int j=0; j<this->FEM_->numY(); j++) {
+          i1 = std::max(i-(int)floor(this->rmin_),1)-1;
+          i2 = std::min(i+(int)floor(this->rmin_),this->FEM_->numX());
+          j1 = std::max(j-(int)floor(this->rmin_),1)-1;
+          j2 = std::min(j+(int)floor(this->rmin_),this->FEM_->numY());
+          area = (Real)(i2-i1)*(j2-j1);
+          for (int ii=i1; ii<i2; ii++) {
+            for (int jj=j1; jj<j2; jj++) {
+              Tv[i+j*this->FEM_->numX()] += (*vp)[ii+this->FEM_->numX()*jj]/area;
+            }
+          }
+        }
+      }
+      for (int i=0; i<this->FEM_->numX(); i++) {
+        for (int j=0; j<this->FEM_->numY(); j++) {
+          i1 = std::max(i-(int)floor(this->rmin_),1)-1;
+          i2 = std::min(i+(int)floor(this->rmin_),this->FEM_->numX());
+          j1 = std::max(j-(int)floor(this->rmin_),1)-1;
+          j2 = std::min(j+(int)floor(this->rmin_),this->FEM_->numY());
+          area = (Real)(i2-i1)*(j2-j1);
+          for (int ii=i1; ii<i2; ii++) {
+            for (int jj=j1; jj<j2; jj++) {
+              (*hvp)[ii+jj*this->FEM_->numX()] -= (this->pen_)*2.0*Tv[i+this->FEM_->numX()*j]/area;
+            }
+          }
+        }
+      }
     }
   }
 };
@@ -887,15 +1010,16 @@ int main(int argc, char *argv[]) {
     int P    = 1;  // SIMP penalization power.
     Teuchos::RCP<FEM<RealT> > pFEM = Teuchos::rcp(new FEM<RealT>(nx,ny,P,prob));
     // Objective function description.
-    int   nreg = 10;       // # of Moreau-Yoshida parameter updates.
-    int   npen = 3;        // # of penalty parameter updates.
+    int   nreg = 21;       // # of Moreau-Yoshida parameter updates.
+    int   npen = 10;       // # of penalty parameter updates.
     RealT frac = 0.4;      // Volume fraction.
     RealT reg  = 1.0;      // Moreau-Yoshida regularization parameter.
-    RealT pen  = 1.0;      // 0-1 penalty parameter. 
+    RealT pen  = 1.e-4;    // 0-1 penalty parameter. 
+    RealT rmin = 1.2;      // Radius for spatial average.
     // Optimization parameters.
-    bool derivCheck = false; // Derivative check flag.
+    bool derivCheck = true;  // Derivative check flag.
     bool useTR      = false; // Use trust-region or line-search.
-    RealT gtol      = 1e-4;  // Norm of gradient tolerance.
+    RealT gtol      = 1e-5;  // Norm of gradient tolerance.
     RealT stol      = 1e-8;  // Norm of step tolerance.
     int   maxit     = 500;   // Maximum number of iterations.
     // Read optimization input parameter list.
@@ -956,7 +1080,7 @@ int main(int argc, char *argv[]) {
       pcon->checkApplyAdjointJacobian(x,yu,true);
       pcon->checkApplyAdjointHessian(x,yu,y,true);
       // Test full objective function.
-      pobj = Teuchos::rcp(new Objective_TopOpt<RealT>(pFEM,frac,reg));
+      pobj = Teuchos::rcp(new Objective_TopOpt<RealT>(pFEM,frac,reg,pen,rmin));
       pobj->checkGradient(x,y,true);
       pobj->checkHessVec(x,y,true);
       // Test reduced objective function.
@@ -970,7 +1094,7 @@ int main(int argc, char *argv[]) {
       for ( int i=0; i<nreg; i++ ) {
         std::cout << "\nMoreau-Yoshida regularization parameter: " << reg << "\n";
         // Initialize full objective function.
-        pobj = Teuchos::rcp(new Objective_TopOpt<RealT>(pFEM,frac,reg,pen));
+        pobj = Teuchos::rcp(new Objective_TopOpt<RealT>(pFEM,frac,reg,pen,rmin));
         // Initialize reduced objective function.
         robj = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(pobj,pcon,up,pp));
         if ( !useTR ) {
@@ -979,8 +1103,6 @@ int main(int argc, char *argv[]) {
           parlist->set("Secant Type","Limited Memory SR1");
           maxit  = std::max(maxit-100,0);
           if ( maxit > 0 ) {
-            gtol   = 1.e-4;
-            stol   = 1.e-8;
             step   = Teuchos::rcp(new ROL::LineSearchStep<RealT>(*parlist));
             status = Teuchos::rcp(new ROL::StatusTest<RealT>(gtol,stol,maxit));
             algo   = Teuchos::rcp(new ROL::DefaultAlgorithm<RealT>(*step,*status,false));
@@ -988,8 +1110,6 @@ int main(int argc, char *argv[]) {
           }
           // Run line-search Newton-Krylov step.
           parlist->set("Descent Type","Newton-Krylov");
-          gtol   = 1.e-4;
-          stol   = 1.e-8;
           step   = Teuchos::rcp(new ROL::LineSearchStep<RealT>(*parlist));
           status = Teuchos::rcp(new ROL::StatusTest<RealT>(gtol,stol,500));
           algo   = Teuchos::rcp(new ROL::DefaultAlgorithm<RealT>(*step,*status,false));
@@ -1013,23 +1133,23 @@ int main(int argc, char *argv[]) {
         // Increase Moreau-Yoshida regularization parameter.
         reg *= 2.0;
       }
+      // Print to file.
+      std::stringstream name;
+      name << "density" << j << ".txt";
+      std::ofstream file;
+      file.open(name.str().c_str());
+      RealT val = 0.0;
+      for (int i=0; i<nx; i++) {
+        for (int j=0; j<ny; j++) {
+          val = (*z_rcp)[i+j*nx];
+          file << i << "  " << j << "  " << val << "\n"; 
+        }
+      }
+      file.close();
+      // Increase parameters.
       reg   = 1.0;
-      nreg += 5;
       pen  *= 10.0;
     }
-    // Print to file.
-    std::ofstream file;
-    file.open("density.txt");
-    RealT val = 0.0, vol = 0.0;
-    for (int i=0; i<nx; i++) {
-      for (int j=0; j<ny; j++) {
-        val = (*z_rcp)[i+j*nx];
-        file << i << "  " << j << "  " << val << "\n"; 
-        vol += val;
-      }
-    }
-    std::cout << "The volume fraction is " << vol/pFEM->numZ() << "\n";
-    file.close();
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";
