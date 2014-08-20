@@ -73,10 +73,10 @@ enum GraphEntityType {
     \li \c scalar_t vertex and edge weights 
     \li \c lno_t    local indices and local counts
     \li \c gno_t    global indices and global counts
-    \li \c gid_t    application global Ids
+    \li \c zgid_t    application global Ids
     \li \c node_t is a sub class of KokkosClassic::StandardNodeMemoryModel
 
-    See IdentifierTraits to understand why the user's global ID type (\c gid_t)
+    See IdentifierTraits to understand why the user's global ID type (\c zgid_t)
     may differ from that used by Zoltan2 (\c gno_t).
 
     The Kokkos node type can be safely ignored.
@@ -122,7 +122,7 @@ public:
   typedef typename InputTraits<User>::scalar_t    scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
-  typedef typename InputTraits<User>::gid_t    gid_t;
+  typedef typename InputTraits<User>::zgid_t    zgid_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef User user_t;
   typedef UserCoord userCoord_t;
@@ -154,7 +154,7 @@ public:
   /*! \brief Sets pointers to this process' graph entries.
       \param vertexIds will on return a pointer to vertex global Ids
    */
-  virtual void getVertexIDsView(const gid_t *&vertexIds) const = 0; 
+  virtual void getVertexIDsView(const zgid_t *&vertexIds) const = 0; 
 
   /*! \brief Gets adjacency lists for all vertices in a compressed
              sparse row (CSR) format.
@@ -166,7 +166,7 @@ public:
          for each vertex.
    */
   virtual void getEdgesView(const lno_t *&offsets,
-                            const gid_t *&adjIds) const = 0;
+                            const zgid_t *&adjIds) const = 0;
        
   /*! \brief Returns the number (0 or greater) of weights per vertex
    */
@@ -313,12 +313,12 @@ public:
       return getLocalNumEdges();
    }
 
-  void getIDsView(const gid_t *&Ids) const {
+  void getIDsView(const zgid_t *&Ids) const {
     if (getPrimaryEntityType() == GRAPH_VERTEX)
       getVertexIDsView(Ids);
     else {
       // TODO:  Need getEdgeIDsView?  What is an Edge ID?  
-      // TODO:  std::pair<gid_t, gid_t>?
+      // TODO:  std::pair<zgid_t, zgid_t>?
       std::ostringstream emsg;
       emsg << __FILE__ << "," << __LINE__
            << " error:  getIDsView not yet supported for graph edges." 

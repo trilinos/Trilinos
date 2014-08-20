@@ -73,7 +73,7 @@ int main(int narg, char **arg)
 
   zgno_t myBaseId = zgno_t(numGlobalIdentifiers * rank);
 
-  zgid_t *myIds = new zgid_t[numMyIdentifiers];
+  zzgid_t *myIds = new zzgid_t[numMyIdentifiers];
   zscalar_t *myWeights = new zscalar_t[numMyIdentifiers];
 
   if (!myIds || !myWeights){
@@ -120,7 +120,7 @@ int main(int narg, char **arg)
   std::vector<int> weightStrides;   // default is one
   weightValues.push_back(const_cast<const zscalar_t *>(myWeights));
 
-  typedef Zoltan2::BasicUserTypes<zscalar_t, zgid_t, zlno_t, zgno_t> mydata_t;
+  typedef Zoltan2::BasicUserTypes<zscalar_t, zzgid_t, zlno_t, zgno_t> mydata_t;
   typedef Zoltan2::BasicIdentifierAdapter<mydata_t> adapter_t;
   typedef adapter_t::part_t part_t;
 
@@ -154,7 +154,7 @@ int main(int narg, char **arg)
   int *sumCnt = new int [nprocs];
   memset(totalCnt, 0, nprocs * sizeof(int));
 
-  const zgid_t *idList = solution.getIdList();
+  const zzgid_t *idList = solution.getIdList();
   const part_t *partList = solution.getPartList();
   const zscalar_t libImbalance = problem.getWeightImbalance();
 

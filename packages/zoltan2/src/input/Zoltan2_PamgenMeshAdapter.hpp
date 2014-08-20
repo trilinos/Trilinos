@@ -93,7 +93,7 @@ public:
   typedef typename InputTraits<User>::scalar_t    scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
-  typedef typename InputTraits<User>::gid_t    gid_t;
+  typedef typename InputTraits<User>::zgid_t    zgid_t;
   typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef MeshAdapter<User>       base_adapter_t;
@@ -129,7 +129,7 @@ public:
     return 0;
   }
    
-  void getIDsViewOf(MeshEntityType etype, const gid_t *&Ids) const
+  void getIDsViewOf(MeshEntityType etype, const zgid_t *&Ids) const
   {
     if ((MESH_REGION == etype && 3 == dimension_) ||
 	(MESH_FACE == etype && 2 == dimension_)) {
@@ -202,7 +202,7 @@ public:
   }
 
   void getAdjsView(MeshEntityType source, MeshEntityType target,
-		   const lno_t *&offsets, const gid_t *& adjacencyIds) const
+		   const lno_t *&offsets, const zgid_t *& adjacencyIds) const
   {
     if ((MESH_REGION == source && MESH_VERTEX == target && 3 == dimension_) ||
 	(MESH_FACE == source && MESH_VERTEX == target && 2 == dimension_)) {
@@ -238,7 +238,7 @@ public:
   }
 
   void get2ndAdjsView(MeshEntityType sourcetarget, MeshEntityType through, 
-		      const lno_t *&offsets, const gid_t *& adjacencyIds) const
+		      const lno_t *&offsets, const zgid_t *& adjacencyIds) const
   {
     if (avail2ndAdjs(sourcetarget, through)) {
       offsets = start_;
@@ -252,11 +252,11 @@ public:
 
 private:
   int dimension_, num_nodes_, num_elem_;
-  gid_t *element_num_map_, *node_num_map_;
+  zgid_t *element_num_map_, *node_num_map_;
   int *elemToNode_, tnoct_, *elemOffsets_;
   double *coords_, *Acoords_;
   lno_t *start_;
-  gid_t *adj_;
+  zgid_t *adj_;
   size_t nadj_;
 };
 
@@ -545,7 +545,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   reconnect = NULL;
   start_[num_elem_] = nadj_;
 
-  adj_ = new gid_t [nadj_];
+  adj_ = new zgid_t [nadj_];
 
   for (size_t i=0; i < nadj_; i++) {
     adj_[i] = adj[i];

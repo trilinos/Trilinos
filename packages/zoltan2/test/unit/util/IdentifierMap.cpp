@@ -109,13 +109,13 @@ struct UserIdTraits<int>{
 template <typename IDMAP>
   void testIdMap( RCP<const Comm<int> > &comm,
     IDMAP *map, bool gnosAreGids, bool gnosAreConsecutive,
-    ArrayRCP<typename IDMAP::gid_t> &gids, 
-    ArrayRCP<typename IDMAP::gid_t> &remoteGids,
+    ArrayRCP<typename IDMAP::zgid_t> &gids, 
+    ArrayRCP<typename IDMAP::zgid_t> &remoteGids,
     bool verbose)
 {
   typedef typename IDMAP::lno_t LNO;
   typedef typename IDMAP::gno_t GNO;
-  typedef typename IDMAP::gid_t GID;
+  typedef typename IDMAP::zgid_t GID;
 
   int rank = comm->getRank();
   int nprocs = comm->getSize();
@@ -279,13 +279,13 @@ int main(int argc, char *argv[])
   // 3. GIDs are consecutive ordinals
   // 4. GIDs are not Teuchos Ordinals
 
-  ArrayRCP<zgid_t> gids(new zgid_t [numLocalObjects], 0, numLocalObjects, true);
-  ArrayRCP<zgid_t> remoteGids(new zgid_t [numRemoteObjects], 0, 
+  ArrayRCP<zzgid_t> gids(new zzgid_t [numLocalObjects], 0, numLocalObjects, true);
+  ArrayRCP<zzgid_t> remoteGids(new zzgid_t [numRemoteObjects], 0, 
     numRemoteObjects, true);
 
   using Zoltan2::IdentifierMap;
 
-  typedef Zoltan2::BasicUserTypes<zscalar_t, zgid_t, zlno_t, zgno_t> UserTypes;
+  typedef Zoltan2::BasicUserTypes<zscalar_t, zzgid_t, zlno_t, zgno_t> UserTypes;
 
   //////////////////////////////////////////////////////////
   //  Ids are non-consecutive ordinals.
