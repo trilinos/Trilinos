@@ -51,9 +51,75 @@
 #include <sstream>
 #include <iomanip>
 
-/** \class ROL::TrustRegionStep
+/** @ingroup step_group
+    \class ROL::TrustRegionStep
     \brief Provides the interface to compute optimization steps
            with trust regions.
+
+    Suppose \f$\mathcal{X}\f$ is a Hilbert space of 
+    functions mapping \f$\Xi\f$ to \f$\mathbb{R}\f$.  For example, 
+    \f$\Xi\subset\mathbb{R}^n\f$ and \f$\mathcal{X}=L^2(\Xi)\f$ or 
+    \f$\Xi = \{1,\ldots,n\}\f$ and \f$\mathcal{X}=\mathbb{R}^n\f$. We 
+    assume \f$f:\mathcal{X}\to\mathbb{R}\f$ is twice-continuously Fr&eacute;chet 
+    differentiable and \f$a,\,b\in\mathcal{X}\f$ with \f$a\le b\f$ almost 
+    everywhere in \f$\Xi\f$.  Note that these trust-region algorithms will also work 
+    with secant approximations of the Hessian. 
+    This step applies to unconstrained and bound constrained optimization problems,
+    \f[
+        \min_x\quad f(x) \qquad\text{and}\qquad \min_x\quad f(x)\quad\text{s.t.}\quad a\le x\le b,
+    \f]
+    respectively.  
+
+    For unconstrained problems, given the \f$k\f$-th iterate \f$x_k\f$ the trial step
+    \f$s_k\f$ is computed by approximately solving the trust-region subproblem 
+    \f[
+       \min_{s} \frac{1}{2}\langle B_k s, s\rangle_{\mathcal{X}} + \langle g_k,s\rangle_{\mathcal{X}}
+           \quad\text{s.t.}\quad \|s\|_{\mathcal{X}} \le \Delta_k
+    \f]
+    where \f$B_k\in L(\mathcal{X},\mathcal{X})\f$, \f$g_k\approx\nabla f(x_k)\f$, and \f$\Delta_k > 0\f$.
+    The approximate minimizer \f$s_k\f$ must satisfy the fraction of Cauchy decrease condition
+    \f[
+       -\frac{1}{2}\langle B_k s, s\rangle_{\mathcal{X}} - \langle g_k,s\rangle_{\mathcal{X}}
+          \ge \kappa_0 \|g_k\|_{\mathcal{X}}
+          \min\left\{\,\Delta_k,\,
+          \frac{\|g_k\|_{\mathcal{X}}}{1+\|B_k\|_{L(\mathcal{X},\mathcal{X}})}\,\right\}
+    \f]
+    for some \f$\kappa_0>0\f$ independent of \f$k\f$.
+    ROL's trust-region algorithm allows for both inexact objective function and gradient evaluation.  
+    The user must ensure that the inexact objective function, \f$f_k\f$ satisfies
+    \f[
+       |(f(x_k+s_k)-f_k(x_k+s_k)) - (f(x_k)-f_k(x_k))| \le 
+        \eta_1 \min\{\,-\frac{1}{2}\langle B_k s, s\rangle_{\mathcal{X}} - \langle g_k,s\rangle_{\mathcal{X}},
+                       \,r_k\,\}
+    \f]
+    where \f$\eta_1\f$ is the step acceptance threshold and \f$r_k\f$ is a user-defined forcing sequence of 
+    positive numbers converging to zero.  The inexact gradient, \f$g_k\f$, must satisfy
+    \f[
+       \|g_k-\nabla J(x_k)\|_{\mathcal{X}} \le \kappa_1\min\{\,\|g_k\|_{\mathcal{X}},\,\Delta_k\,\}
+    \f]
+    where \f$\kappa_1 > 0\f$ is independent of \f$k\f$.
+
+    For bound constrained problems, ROL employs projected Newton-type methods.  
+    For these methods, ROL requires the notion of an active set of an iterate \f$x_k\f$, 
+    \f[
+       \mathcal{A}_k = \{\, \xi\in\Xi\,:\,x_k(\xi) = a(\xi)\,\}\cap
+                       \{\, \xi\in\Xi\,:\,x_k(\xi) = b(\xi)\,\}.
+    \f]
+    Given \f$\mathcal{A}_k\f$ and a gradient approximation \f$g_k\f$, we define the binding set as
+    \f[
+       \mathcal{B}_k = \{\, \xi\in\Xi\,:\,x_k(\xi) = a(\xi) \;\text{and}\; -g_k(\xi) < 0 \,\}\cap
+                       \{\, \xi\in\Xi\,:\,x_k(\xi) = b(\xi) \;\text{and}\; -g_k(\xi) > 0 \,\}.
+    \f]
+    The binding set contains the values of \f$\xi\in\Xi\f$ such that if \f$x_k(\xi)\f$ is on a 
+    bound, then \f$(x_k+s_k)(\xi)\f$ will violate bound.  Using these definitions, ROL 
+    prunes the variables in the binding set and runs a standard trust-region subproblem solver on the 
+    free variables.  ROL then must perform a projected search to ensure the fraction of Cauchy decrease 
+    condition is satisfied.
+
+    TrustRegionStep implements a number of algorithms for both bound constrained and unconstrained 
+    optimization.  These algorithms are: Cauchy Point, Dogleg, Double Dogleg, and Truncated CG.  
+    Each of these methods can be run using a secant approximation of the Hessian. 
+    These methods are chosen through the ETrustRegion enum.
 */
 
 
@@ -63,30 +129,44 @@ template <class Real>
 class TrustRegionStep : public Step<Real> {
 private:
 
-  Teuchos::RCP<Secant<Real> >       secant_;
-  Teuchos::RCP<TrustRegion<Real> >  trustRegion_;
+  Teuchos::RCP<Secant<Real> >       secant_;      ///< Container for secant approximation.
+  Teuchos::RCP<TrustRegion<Real> >  trustRegion_; ///< Container for trust-region object.
 
-  ETrustRegion      etr_;        // Trust-Region Subproblem Solver Type
-  ESecant           esec_;       // Secant Type
+  ETrustRegion      etr_;        ///< Trust-region subproblem solver type.
+  ESecant           esec_;       ///< Secant type.
 
-  bool useSecantHessVec_;
-  bool useSecantPrecond_;
+  bool useSecantHessVec_;        ///< Flag whether to use a secant Hessian.
+  bool useSecantPrecond_;        ///< Flag whether to use a secant preconditioner. 
 
-  bool useProjectedGrad_;
+  bool useProjectedGrad_;        ///< Flag whether to use the projected gradient criticality measure.
 
-  std::vector<bool> useInexact_; // Inexactness Information
-  int               TRflag_  ;   // Trust-Region Exit Flag
-  int               TR_nfval_;   // Trust-Region Function Evaluation Number
-  int               TR_ngrad_;   // Trust-Region Gradient Evaluation Number
-  int               CGflag_;     // CG Termination Flag
-  int               CGiter_;     // CG Iteration Count
+  std::vector<bool> useInexact_; ///< Contains flags for inexact (0) objective function, (1) gradient, (2) Hessian.
+  int               TRflag_  ;   ///< Trust-region exit flag.
+  int               TR_nfval_;   ///< Trust-region function evaluation counter.
+  int               TR_ngrad_;   ///< Trust-region gradient evaluation counter.
+  int               CGflag_;     ///< Truncated CG termination flag.
+  int               CGiter_;     ///< Truncated CG iteration count.
 
-  Real              alpha_init_; // Initial Line Search Parameter for Projected Methods
-  int               max_fval_;   // Maximum Function Evaluations for Line Search              
+  Real              alpha_init_; ///< Initial line-search parameter for projected methods.
+  int               max_fval_;   ///< Maximum function evaluations in line-search for projected methods.
 
-  Real              scale0_;
-  Real              scale1_;
+  Real              scale0_; ///< Scale for inexact gradient computation.
+  Real              scale1_; ///< Scale for inexact gradient computation.
 
+  /** \brief Update gradient to iteratively satisfy inexactness condition.
+
+      This function attempts to ensure that the inexact gradient condition,
+      \f[
+         \|g_k-\nabla J(x_k)\|_{\mathcal{X}} \le \kappa_1\min\{\,\|g_k\|_{\mathcal{X}},\,\Delta_k\,\},
+      \f]
+      is satisfied.  This function works under the assumption that the gradient function returns 
+      a gradient approximation which satisfies the error tolerance prescribed by the tol input 
+      parameter.  
+      @param[in]      x          is the current optimization variable.
+      @param[in]      obj        is the objective function.
+      @param[in]      con        is the bound constraint.
+      @param[in,out]  algo_state is the algorithm state.
+  */
   void updateGradient( Vector<Real> &x, Objective<Real> &obj, BoundConstraint<Real> &con, 
                        AlgorithmState<Real> &algo_state ) {
     Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
@@ -111,6 +191,14 @@ private:
     }
   }
 
+  /** \brief Compute the criticality measure.
+
+      This function computes either the norm of the gradient projected onto the tangent cone or 
+      the norm of \f$x_k - P_{[a,b]}(x_k-g_k)\f$.
+       @param[in]       g     is the current gradient.
+       @param[in]       x     is the current iterate.
+       @param[in]       con   is the bound constraint.
+  */
   Real computeCriticalityMeasure( const Vector<Real> &g, const Vector<Real> &x, BoundConstraint<Real> &con ) {
     if ( con.isActivated() ) {
       Teuchos::RCP<Vector<Real> > xnew = x.clone();
@@ -135,6 +223,13 @@ public:
 
   virtual ~TrustRegionStep() {}
 
+  /** \brief Constructor.
+
+      Standard constructor to build a TrustRegionStep object.  Algorithmic 
+      specifications are passed in through a Teuchos::ParameterList.
+
+      @param[in]     parlist    is a parameter list containing algorithmic specifications
+  */
   TrustRegionStep( Teuchos::ParameterList & parlist ) : Step<Real>() {
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
 
@@ -169,6 +264,15 @@ public:
     }
   }
 
+  /** \brief Constructor.
+
+      Constructor to build a TrustRegionStep object with a user-defined 
+      secant object.  Algorithmic specifications are passed in through 
+      a Teuchos::ParameterList.
+
+      @param[in]     secant     is a user-defined secant object
+      @param[in]     parlist    is a parameter list containing algorithmic specifications
+  */
   TrustRegionStep( Teuchos::RCP<Secant<Real> > &secant, Teuchos::ParameterList &parlist ) 
     : Step<Real>(), secant_(secant) {
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
@@ -197,6 +301,12 @@ public:
   }
 
   /** \brief Initialize step.
+
+      This function initializes the information necessary to run the trust-region algorithm.
+      @param[in]     x           is the initial guess for the optimization vector.
+      @param[in]     obj         is the objective function.
+      @param[in]     con         is the bound constraint.
+      @param[in]     algo_state  is the algorithm state.
   */
   void initialize( Vector<Real> &x, Objective<Real> &obj, BoundConstraint<Real> &con, 
                    AlgorithmState<Real> &algo_state ) {
@@ -277,6 +387,14 @@ public:
   }
 
   /** \brief Compute step.
+
+      Computes a trial step, \f$s_k\f$ by solving the trust-region subproblem.  
+      The trust-region subproblem solver is defined by the enum ETrustRegion.  
+      @param[out]      s          is the computed trial step
+      @param[in]       x          is the current iterate
+      @param[in]       obj        is the objective function
+      @param[in]       con        are the bound constraints
+      @param[in]       algo_state contains the current state of the algorithm
   */
   void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, BoundConstraint<Real> &con, 
                 AlgorithmState<Real> &algo_state ) {
@@ -295,6 +413,15 @@ public:
   }
 
   /** \brief Update step, if successful.
+
+      Given a trial step, \f$s_k\f$, this function updates \f$x_{k+1}=x_k+s_k\f$. 
+      This function also updates the secant approximation.
+
+      @param[in,out]   x          is the updated iterate
+      @param[in]       s          is the computed trial step
+      @param[in]       obj        is the objective function
+      @param[in]       con        are the bound constraints
+      @param[in]       algo_state contains the current state of the algorithm
   */
   void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, BoundConstraint<Real> &con, 
                AlgorithmState<Real> &algo_state ) {
@@ -395,6 +522,8 @@ public:
   }
 
   /** \brief Print iterate header.
+
+      This function produces a string containing header information.
   */
   std::string printHeader( void ) const  {
     std::stringstream hist;
@@ -415,6 +544,10 @@ public:
     return hist.str();
   }
 
+  /** \brief Print step name.
+
+      This function produces a string containing the algorithmic step information.
+  */
   std::string printName( void ) const {
     std::stringstream hist;
     hist << "\n" << ETrustRegionToString(this->etr_) << " Trust-Region solver";
@@ -436,6 +569,11 @@ public:
   }
 
   /** \brief Print iterate status.
+
+      This function prints the iteration status.
+
+      @param[in]     algo_state    is the current state of the algorithm
+      @param[in]     printHeader   if ste to true will print the header at each iteration
   */
   std::string print( AlgorithmState<Real> & algo_state, bool printHeader = false ) const  {
     const Teuchos::RCP<const StepState<Real> >& step_state = Step<Real>::getStepState();
