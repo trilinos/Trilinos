@@ -801,7 +801,7 @@ NNTI_result_t NNTI_mpi_register_segments (
         const NNTI_buf_ops_t    ops,
         NNTI_buffer_t          *reg_buf)
 {
-    return NNTI_OK;
+    return NNTI_ENOTSUP;
 }
 
 
@@ -1224,7 +1224,7 @@ NNTI_result_t NNTI_mpi_scatter (
         const uint64_t        dest_count,
         NNTI_work_request_t  *wr)
 {
-    return NNTI_OK;
+    return NNTI_ENOTSUP;
 }
 
 
@@ -1244,7 +1244,52 @@ NNTI_result_t NNTI_mpi_gather (
         const NNTI_buffer_t  *dest_buffer_hdl,
         NNTI_work_request_t  *wr)
 {
-    return NNTI_OK;
+    return NNTI_ENOTSUP;
+}
+
+
+NNTI_result_t NNTI_mpi_atomic_set_callback (
+		const NNTI_transport_t *trans_hdl,
+		const uint64_t          local_atomic,
+		NNTI_callback_fn_t      cbfunc,
+		void                   *context)
+{
+    return NNTI_ENOTSUP;
+}
+
+
+NNTI_result_t NNTI_mpi_atomic_read (
+		const NNTI_transport_t *trans_hdl,
+		const uint64_t          local_atomic,
+		int64_t                *value)
+{
+    return NNTI_ENOTSUP;
+}
+
+
+NNTI_result_t NNTI_mpi_atomic_fop (
+		const NNTI_transport_t *trans_hdl,
+		const NNTI_peer_t      *peer_hdl,
+		const uint64_t          target_atomic,
+		const uint64_t          result_atomic,
+		const int64_t           operand,
+		const NNTI_atomic_op_t  op,
+		NNTI_work_request_t    *wr)
+{
+    return NNTI_ENOTSUP;
+}
+
+
+NNTI_result_t NNTI_mpi_atomic_cswap (
+		const NNTI_transport_t *trans_hdl,
+		const NNTI_peer_t      *peer_hdl,
+		const uint64_t          target_atomic,
+		const uint64_t          result_atomic,
+		const int64_t           compare_operand,
+		const int64_t           swap_operand,
+		NNTI_work_request_t    *wr)
+{
+    return NNTI_ENOTSUP;
 }
 
 
@@ -1323,7 +1368,7 @@ NNTI_result_t NNTI_mpi_destroy_work_request (
 NNTI_result_t NNTI_mpi_cancel (
         NNTI_work_request_t *wr)
 {
-    return NNTI_OK;
+    return NNTI_ENOTSUP;
 }
 
 
@@ -1335,7 +1380,7 @@ NNTI_result_t NNTI_mpi_cancelall (
         NNTI_work_request_t **wr_list,
         const uint32_t        wr_count)
 {
-    return NNTI_OK;
+    return NNTI_ENOTSUP;
 }
 
 
@@ -1352,7 +1397,7 @@ NNTI_result_t NNTI_mpi_interrupt (
 
     log_debug(nnti_debug_level, "exit");
 
-    return NNTI_OK;
+    return NNTI_ENOTSUP;
 }
 
 

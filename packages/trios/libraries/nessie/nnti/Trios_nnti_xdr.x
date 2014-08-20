@@ -194,6 +194,15 @@ enum NNTI_result_t {
 };
 
 
+/**
+  * atomic operations that may be implemented by a transport
+  */
+enum NNTI_atomic_op_t {
+  NNTI_ATOMIC_FADD
+};
+
+
+
 /***********  TCP/IP address types  ***********/
 
 /**
@@ -691,7 +700,9 @@ enum NNTI_buf_ops_t {
     /** @brief this buffer can be received into */
     NNTI_RECV_DST=32,
     /** @brief this buffer has multiple receive slots */
-    NNTI_RECV_QUEUE=64
+    NNTI_RECV_QUEUE=64,
+    /** @brief this buffer allows atomic operations */
+    NNTI_ATOMICS=128
 };
 
 

@@ -128,6 +128,10 @@ NNTI_result_t NNTI_init (
         available_transports[trans_id].ops.nnti_get_fn                  = NNTI_ptl_get;
         available_transports[trans_id].ops.nnti_scatter_fn              = NNTI_ptl_scatter;
         available_transports[trans_id].ops.nnti_gather_fn               = NNTI_ptl_gather;
+        available_transports[trans_id].ops.nnti_atomic_set_callback_fn  = NNTI_ptl_atomic_set_callback;
+        available_transports[trans_id].ops.nnti_atomic_read_fn          = NNTI_ptl_atomic_read;
+        available_transports[trans_id].ops.nnti_atomic_fop_fn           = NNTI_ptl_atomic_fop;
+        available_transports[trans_id].ops.nnti_atomic_cswap_fn         = NNTI_ptl_atomic_cswap;
         available_transports[trans_id].ops.nnti_create_work_request_fn  = NNTI_ptl_create_work_request;
         available_transports[trans_id].ops.nnti_clear_work_request_fn   = NNTI_ptl_clear_work_request;
         available_transports[trans_id].ops.nnti_destroy_work_request_fn = NNTI_ptl_destroy_work_request;
@@ -157,6 +161,10 @@ NNTI_result_t NNTI_init (
         available_transports[trans_id].ops.nnti_get_fn                  = NNTI_ib_get;
         available_transports[trans_id].ops.nnti_scatter_fn              = NNTI_ib_scatter;
         available_transports[trans_id].ops.nnti_gather_fn               = NNTI_ib_gather;
+        available_transports[trans_id].ops.nnti_atomic_set_callback_fn  = NNTI_ib_atomic_set_callback;
+        available_transports[trans_id].ops.nnti_atomic_read_fn          = NNTI_ib_atomic_read;
+        available_transports[trans_id].ops.nnti_atomic_fop_fn           = NNTI_ib_atomic_fop;
+        available_transports[trans_id].ops.nnti_atomic_cswap_fn         = NNTI_ib_atomic_cswap;
         available_transports[trans_id].ops.nnti_create_work_request_fn  = NNTI_ib_create_work_request;
         available_transports[trans_id].ops.nnti_clear_work_request_fn   = NNTI_ib_clear_work_request;
         available_transports[trans_id].ops.nnti_destroy_work_request_fn = NNTI_ib_destroy_work_request;
@@ -186,6 +194,10 @@ NNTI_result_t NNTI_init (
         available_transports[trans_id].ops.nnti_get_fn                  = NNTI_gni_get;
         available_transports[trans_id].ops.nnti_scatter_fn              = NNTI_gni_scatter;
         available_transports[trans_id].ops.nnti_gather_fn               = NNTI_gni_gather;
+        available_transports[trans_id].ops.nnti_atomic_set_callback_fn  = NNTI_gni_atomic_set_callback;
+        available_transports[trans_id].ops.nnti_atomic_read_fn          = NNTI_gni_atomic_read;
+        available_transports[trans_id].ops.nnti_atomic_fop_fn           = NNTI_gni_atomic_fop;
+        available_transports[trans_id].ops.nnti_atomic_cswap_fn         = NNTI_gni_atomic_cswap;
         available_transports[trans_id].ops.nnti_create_work_request_fn  = NNTI_gni_create_work_request;
         available_transports[trans_id].ops.nnti_clear_work_request_fn   = NNTI_gni_clear_work_request;
         available_transports[trans_id].ops.nnti_destroy_work_request_fn = NNTI_gni_destroy_work_request;
@@ -215,6 +227,10 @@ NNTI_result_t NNTI_init (
         available_transports[trans_id].ops.nnti_get_fn                  = NNTI_bgpdcmf_get;
         available_transports[trans_id].ops.nnti_scatter_fn              = NNTI_bgpdcmf_scatter;
         available_transports[trans_id].ops.nnti_gather_fn               = NNTI_bgpdcmf_gather;
+        available_transports[trans_id].ops.nnti_atomic_set_callback_fn  = NNTI_bgpdcmf_atomic_set_callback;
+        available_transports[trans_id].ops.nnti_atomic_read_fn          = NNTI_bgpdcmf_atomic_read;
+        available_transports[trans_id].ops.nnti_atomic_fop_fn           = NNTI_bgpdcmf_atomic_fop;
+        available_transports[trans_id].ops.nnti_atomic_cswap_fn         = NNTI_bgpdcmf_atomic_cswap;
         available_transports[trans_id].ops.nnti_create_work_request_fn  = NNTI_bgpdcmf_create_work_request;
         available_transports[trans_id].ops.nnti_clear_work_request_fn   = NNTI_bgpdcmf_clear_work_request;
         available_transports[trans_id].ops.nnti_destroy_work_request_fn = NNTI_bgpdcmf_destroy_work_request;
@@ -244,6 +260,10 @@ NNTI_result_t NNTI_init (
         available_transports[trans_id].ops.nnti_get_fn                  = NNTI_bgqpami_get;
         available_transports[trans_id].ops.nnti_scatter_fn              = NNTI_bgqpami_scatter;
         available_transports[trans_id].ops.nnti_gather_fn               = NNTI_bgqpami_gather;
+        available_transports[trans_id].ops.nnti_atomic_set_callback_fn  = NNTI_bgqpami_atomic_set_callback;
+        available_transports[trans_id].ops.nnti_atomic_read_fn          = NNTI_bgqpami_atomic_read;
+        available_transports[trans_id].ops.nnti_atomic_fop_fn           = NNTI_bgqpami_atomic_fop;
+        available_transports[trans_id].ops.nnti_atomic_cswap_fn         = NNTI_bgqpami_atomic_cswap;
         available_transports[trans_id].ops.nnti_create_work_request_fn  = NNTI_bgqpami_create_work_request;
         available_transports[trans_id].ops.nnti_clear_work_request_fn   = NNTI_bgqpami_clear_work_request;
         available_transports[trans_id].ops.nnti_destroy_work_request_fn = NNTI_bgqpami_destroy_work_request;
@@ -273,6 +293,10 @@ NNTI_result_t NNTI_init (
         available_transports[trans_id].ops.nnti_get_fn                  = NNTI_mpi_get;
         available_transports[trans_id].ops.nnti_scatter_fn              = NNTI_mpi_scatter;
         available_transports[trans_id].ops.nnti_gather_fn               = NNTI_mpi_gather;
+        available_transports[trans_id].ops.nnti_atomic_set_callback_fn  = NNTI_mpi_atomic_set_callback;
+        available_transports[trans_id].ops.nnti_atomic_read_fn          = NNTI_mpi_atomic_read;
+        available_transports[trans_id].ops.nnti_atomic_fop_fn           = NNTI_mpi_atomic_fop;
+        available_transports[trans_id].ops.nnti_atomic_cswap_fn         = NNTI_mpi_atomic_cswap;
         available_transports[trans_id].ops.nnti_create_work_request_fn  = NNTI_mpi_create_work_request;
         available_transports[trans_id].ops.nnti_clear_work_request_fn   = NNTI_mpi_clear_work_request;
         available_transports[trans_id].ops.nnti_destroy_work_request_fn = NNTI_mpi_destroy_work_request;
@@ -686,6 +710,104 @@ NNTI_result_t NNTI_gather (
                 src_length,
                 src_count,
                 dest_buffer_hdl,
+                wr);
+    }
+
+    return(rc);
+}
+
+
+NNTI_result_t NNTI_atomic_set_callback (
+		const NNTI_transport_t *trans_hdl,
+		const uint64_t          local_atomic,
+		NNTI_callback_fn_t      cbfunc,
+		void                   *context)
+{
+    NNTI_result_t rc=NNTI_OK;
+
+    if (available_transports[trans_hdl->id].initialized==0) {
+        rc=NNTI_ENOTINIT;
+    } else {
+        rc = available_transports[trans_hdl->id].ops.nnti_atomic_set_callback_fn(
+                trans_hdl,
+                local_atomic,
+                cbfunc,
+                context);
+    }
+
+    return(rc);
+}
+
+
+NNTI_result_t NNTI_atomic_read (
+		const NNTI_transport_t *trans_hdl,
+		const uint64_t          local_atomic,
+		int64_t                *value)
+{
+    NNTI_result_t rc=NNTI_OK;
+
+    if (available_transports[trans_hdl->id].initialized==0) {
+        rc=NNTI_ENOTINIT;
+    } else {
+        rc = available_transports[trans_hdl->id].ops.nnti_atomic_read_fn(
+                trans_hdl,
+                local_atomic,
+                value);
+    }
+
+    return(rc);
+}
+
+
+NNTI_result_t NNTI_atomic_fop (
+		const NNTI_transport_t *trans_hdl,
+		const NNTI_peer_t      *peer_hdl,
+		const uint64_t          target_atomic,
+		const uint64_t          result_atomic,
+		const int64_t           operand,
+		const NNTI_atomic_op_t  op,
+		NNTI_work_request_t    *wr)
+{
+    NNTI_result_t rc=NNTI_OK;
+
+    if (available_transports[trans_hdl->id].initialized==0) {
+        rc=NNTI_ENOTINIT;
+    } else {
+        rc = available_transports[trans_hdl->id].ops.nnti_atomic_fop_fn(
+                trans_hdl,
+                peer_hdl,
+                target_atomic,
+                result_atomic,
+                operand,
+                op,
+                wr);
+    }
+
+    return(rc);
+}
+
+
+NNTI_result_t NNTI_atomic_cswap (
+		const NNTI_transport_t *trans_hdl,
+		const NNTI_peer_t      *peer_hdl,
+		const uint64_t          target_atomic,
+		const uint64_t          result_atomic,
+		const int64_t           compare_operand,
+		const int64_t           swap_operand,
+		NNTI_work_request_t    *wr)
+{
+    NNTI_result_t rc=NNTI_OK;
+
+    if (available_transports[trans_hdl->id].initialized==0) {
+        rc=NNTI_ENOTINIT;
+    } else {
+        rc = available_transports[trans_hdl->id].ops.nnti_atomic_cswap_fn(
+                trans_hdl,
+                peer_hdl,
+                target_atomic,
+                result_atomic,
+                compare_operand,
+                swap_operand,
                 wr);
     }
 

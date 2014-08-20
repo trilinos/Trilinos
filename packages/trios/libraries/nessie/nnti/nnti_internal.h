@@ -52,6 +52,7 @@
 
 #include "Trios_logger.h"
 
+#include "Trios_nnti.h"
 #include <Trios_nnti_xdr.h>
 
 typedef NNTI_result_t (*NNTI_INIT_FN) (
@@ -139,6 +140,35 @@ typedef NNTI_result_t (*NNTI_GATHER_FN) (
         const NNTI_buffer_t  *dest_buffer_hdl,
         NNTI_work_request_t  *wr);
 
+typedef NNTI_result_t (*NNTI_ATOMIC_SET_CALLBACK_FN) (
+		const NNTI_transport_t *trans_hdl,
+		const uint64_t          local_atomic,
+		NNTI_callback_fn_t      cbfunc,
+		void                   *context);
+
+typedef NNTI_result_t (*NNTI_ATOMIC_READ_FN) (
+		const NNTI_transport_t *trans_hdl,
+		const uint64_t          local_atomic,
+		int64_t                *value);
+
+typedef NNTI_result_t (*NNTI_ATOMIC_FOP_FN) (
+		const NNTI_transport_t *trans_hdl,
+		const NNTI_peer_t      *peer_hdl,
+		const uint64_t          target_atomic,
+		const uint64_t          result_atomic,
+		const int64_t           operand,
+		const NNTI_atomic_op_t  op,
+		NNTI_work_request_t    *wr);
+
+typedef NNTI_result_t (*NNTI_ATOMIC_CSWAP_FN) (
+		const NNTI_transport_t *trans_hdl,
+		const NNTI_peer_t      *peer_hdl,
+		const uint64_t          target_atomic,
+		const uint64_t          result_atomic,
+		const int64_t           compare_operand,
+		const int64_t           swap_operand,
+		NNTI_work_request_t    *wr);
+
 typedef NNTI_result_t (*NNTI_CREATE_WORK_REQUEST_FN) (
         NNTI_buffer_t        *reg_buf,
         NNTI_work_request_t  *wr);
@@ -196,6 +226,10 @@ typedef struct NNTI_transport_ops_t
     NNTI_GET_FN                  nnti_get_fn;
     NNTI_SCATTER_FN              nnti_scatter_fn;
     NNTI_GATHER_FN               nnti_gather_fn;
+    NNTI_ATOMIC_SET_CALLBACK_FN  nnti_atomic_set_callback_fn;
+    NNTI_ATOMIC_READ_FN          nnti_atomic_read_fn;
+    NNTI_ATOMIC_FOP_FN           nnti_atomic_fop_fn;
+    NNTI_ATOMIC_CSWAP_FN         nnti_atomic_cswap_fn;
     NNTI_CREATE_WORK_REQUEST_FN  nnti_create_work_request_fn;
     NNTI_CLEAR_WORK_REQUEST_FN   nnti_clear_work_request_fn;
     NNTI_DESTROY_WORK_REQUEST_FN nnti_destroy_work_request_fn;
