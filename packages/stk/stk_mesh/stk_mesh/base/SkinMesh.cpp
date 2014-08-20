@@ -68,9 +68,9 @@ size_t skin_mesh_find_elements_with_external_sides(BulkData & mesh,
     // skip over elements which do not have sides
     if (num_sides == 0u) continue;
 
-    // TODO: skip shells for now
-    if (element_topology.is_shell()) {
-      std::cerr << "Skinnig shells is currently not supported!";
+    // TODO: skip shells and particles for now
+    if (element_topology.is_shell() || (element_topology == stk::topology::PARTICLE) ) {
+      std::cerr << "Skinning shells and particlesis currently not supported!";
       //ThrowErrorMsgIf(element_topology.is_shell(), "Skinnig meshes with shells is currently unsupported");
       continue;
     }

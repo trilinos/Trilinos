@@ -179,7 +179,6 @@ void unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackProcessorsTh
                 buf.unpack<stk::topology::topology_t>(sentity.topology);
                 stk::topology entity_topology(sentity.topology);
                 size_t num_nodes_on_entity = entity_topology.num_nodes();
-                std::cout << "num_nodes_on_entity = " << num_nodes_on_entity << std::endl;
                 //size_t num_nodes_on_entity = 0;            // TEMPORARY HACK:
                 //buf.unpack<size_t>(num_nodes_on_entity);   // DO NOT PUSH
                 sentity.nodes.resize(num_nodes_on_entity);
@@ -5760,7 +5759,7 @@ int check_for_connected_nodes(const BulkData& mesh)
       const stk::mesh::Bucket& bucket = *buckets[i];
       if (bucket.topology() == stk::topology::INVALID_TOPOLOGY)
       {
-        std::cerr << "Checking for connected nodes on entity that has no topology defined" << std::endl;
+        std::cerr << "Entities on rank " << rank << " bucket " << i << " have no topology defined" << std::endl;
         return -1;
       }
       for(size_t j=0; j<bucket.size(); ++j) {
@@ -5773,7 +5772,8 @@ int check_for_connected_nodes(const BulkData& mesh)
         Entity const* nodes = bucket.begin_nodes(j);
         for (unsigned k = 0; k < num_nodes; ++k) {
           if (!mesh.is_valid(nodes[k])) {
-            std::cerr << "Entity with rank="<<rank<<", identifier="<<mesh.identifier(bucket[j])<<" is connected to an invalid node."<<std::endl;
+            std::cerr << "Entity with rank="<<rank<<", identifier="<<mesh.identifier(bucket[j])<<" is connected to an invalid node."
+                      << " via node relation " << k << std::endl;
             return -1;
           }
         }

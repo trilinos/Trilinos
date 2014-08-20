@@ -50,6 +50,7 @@ class TopologyHelpersTestingFixture
   Part & element_wedge_part;
   Part & generic_face_part;
   Part & another_generic_face_part;
+  Part & face_tri_part;
   Part & face_quad_part;
   Part & another_generic_element_part;
 
@@ -80,6 +81,7 @@ TopologyHelpersTestingFixture::TopologyHelpersTestingFixture(ParallelMachine pm)
   , element_wedge_part( meta.declare_part_with_topology( "block_left_2", stk::topology::WEDGE_15 ) )
   , generic_face_part( meta.declare_part_with_topology( "A_1", stk::topology::QUAD_4 ) )
   , another_generic_face_part( meta.declare_part("A_2", side_rank ) )
+  , face_tri_part( meta.declare_part_with_topology("A_3_0", stk::topology::TRI_3))
   , face_quad_part( meta.declare_part("A_3", side_rank ) )
   , another_generic_element_part( meta.declare_part("B_3", element_rank ) )
   , entity_id(0u)
@@ -195,7 +197,8 @@ TEST( testTopologyHelpers, declare_element_side_full )
   Entity element = stk::mesh::declare_element(fix.bulk, fix.element_tet_part, fix.nextEntityId(), elem_node );
 
   const EntityId zero_side_count = 0;
-  Entity face2 = stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element, zero_side_count);
+  Entity face2 = stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element, zero_side_count,
+                                                  &fix.face_tri_part);
   fix.bulk.modification_end();
 
   stk::mesh::Entity const *rel2_nodes = fix.bulk.begin_nodes(face2);
@@ -217,7 +220,8 @@ TEST( testTopologyHelpers, element_side_polarity_valid )
   fix.bulk.modification_begin();
   Entity element = stk::mesh::declare_element(fix.bulk, fix.element_tet_part, fix.nextEntityId(), elem_node );
   const EntityId zero_side_count = 0;
-  Entity face2 = stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element, zero_side_count);
+  Entity face2 = stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element, zero_side_count,
+                                                  &fix.face_tri_part);
   fix.bulk.modification_end();
 
   const int local_side_id = 0;
@@ -239,7 +243,8 @@ TEST( testTopologyHelpers, element_side_polarity_invalid_1 )
     fix.bulk.modification_begin();
     Entity element = stk::mesh::declare_element(fix.bulk, fix.element_tet_part, fix.nextEntityId(), elem_node );
     const EntityId zero_side_count = 0;
-    Entity face = stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element, zero_side_count);
+    Entity face = stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element, zero_side_count,
+                                                   &fix.face_tri_part);
     fix.bulk.modification_end();
 
     const unsigned invalid_local_side_id = static_cast<unsigned>(-1);
@@ -272,7 +277,8 @@ TEST( testTopologyHelpers, element_side_polarity_invalid_2 )
   ASSERT_TRUE( stk::mesh::get_cell_topology( fix.bulk.bucket(element_with_top) ).getCellTopologyData() != NULL );
 
   const EntityId zero_side_count = 0;
-  Entity face_with_top = stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element_with_top, zero_side_count);
+  Entity face_with_top = stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element_with_top, zero_side_count,
+                                                          &fix.face_tri_part);
   const int valid_local_side_id = 0;
   ASSERT_THROW(
       fix.bulk.element_side_polarity( element, face_with_top, valid_local_side_id),

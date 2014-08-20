@@ -54,12 +54,22 @@ void destroy_entity_and_create_particles(
 
     std::vector<stk::mesh::Part*> add_parts;
     add_parts.push_back(&skin_part);
+    stk::mesh::Part & particle_part =
+        fixture.m_bulk_data.mesh_meta_data().get_topology_root_part(stk::topology::PARTICLE);
+    add_parts.push_back(&particle_part);
 
     // iterate over the new particles
     for (unsigned i = 0; i != 8; ++i) {
       // add the particles to the skin_part
       fixture.m_bulk_data.change_entity_parts( new_particles[i],
                                                add_parts );
+
+      unsigned dummy_entity_id = 10000 + (1000 * fixture.m_bulk_data.parallel_rank()) + i;
+      stk::mesh::Entity dummy_node =
+          fixture.m_bulk_data.declare_entity(stk::topology::NODE_RANK, dummy_entity_id);
+
+      fixture.m_bulk_data.declare_relation(new_particles[i], dummy_node, 0);
+
       // copy fields from nodes to particles
       fixture.m_bulk_data.copy_entity_fields( (relations[i]),
                                               new_particles[i] );

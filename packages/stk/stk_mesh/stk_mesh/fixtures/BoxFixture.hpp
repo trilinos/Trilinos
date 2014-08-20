@@ -41,6 +41,10 @@ public:
   int  comm_size() const { return m_comm_size; }
   int  comm_rank() const { return m_comm_rank; }
 
+  Part &get_elem_part() const { return m_elem_part; }
+
+  stk::topology get_elem_topology() const { return m_elem_topology; }
+
   typedef int BOX[3][2];
 
   /**
@@ -64,6 +68,9 @@ protected:
 
   int m_comm_rank;
   int m_comm_size;
+
+  Part &m_elem_part;
+  stk::topology m_elem_topology;
 
   BulkData::BulkDataSyncState m_previous_state;
 

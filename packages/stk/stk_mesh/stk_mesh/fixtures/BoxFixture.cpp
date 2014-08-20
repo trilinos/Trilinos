@@ -27,12 +27,23 @@ BoxFixture::BoxFixture( stk::ParallelMachine pm ,
     m_bulk_data ( m_fem_meta , pm , block_size ),
     m_comm_rank( stk::parallel_machine_rank( pm ) ),
     m_comm_size( stk::parallel_machine_size( pm ) ),
+    m_elem_part( m_fem_meta.declare_part_with_topology("elem_part", stk::topology::HEX_8) ),
+    m_elem_topology( stk::topology::HEX_8 ),
     m_previous_state ( stk::mesh::BulkData::MODIFIABLE )
 {}
 
 Entity BoxFixture::get_new_entity ( EntityRank rank , EntityId parallel_dependent_id )
 {
-  return m_bulk_data.declare_entity ( rank , parallel_dependent_id*m_comm_size + m_comm_rank + 1 , std::vector<Part *> () );
+  if (rank == spatial_dimension)
+  {
+    PartVector elem_part;
+    elem_part.push_back(&m_elem_part);
+    return m_bulk_data.declare_entity ( rank , parallel_dependent_id*m_comm_size + m_comm_rank + 1 , elem_part);
+  }
+  else
+  {
+    return m_bulk_data.declare_entity ( rank , parallel_dependent_id*m_comm_size + m_comm_rank + 1);
+  }
 }
 
 void BoxFixture::generate_boxes( const BOX   root_box,
@@ -59,6 +70,8 @@ void BoxFixture::generate_boxes( const BOX   root_box,
   std::vector<unsigned> local_count ;
 
   const stk::mesh::PartVector no_parts ;
+  stk::mesh::PartVector elem_parts;
+  elem_parts.push_back(&m_elem_part);
 
   for ( int k = local_box[2][0] ; k < local_box[2][1] ; ++k ) {
   for ( int j = local_box[1][0] ; j < local_box[1][1] ; ++j ) {
@@ -82,7 +95,7 @@ void BoxFixture::generate_boxes( const BOX   root_box,
     Entity node5 = m_bulk_data.declare_entity( stk::topology::NODE_RANK , n5 , no_parts );
     Entity node6 = m_bulk_data.declare_entity( stk::topology::NODE_RANK , n6 , no_parts );
     Entity node7 = m_bulk_data.declare_entity( stk::topology::NODE_RANK , n7 , no_parts );
-    Entity elem  = m_bulk_data.declare_entity( stk::topology::ELEMENT_RANK , elem_id , no_parts );
+    Entity elem  = m_bulk_data.declare_entity( stk::topology::ELEMENT_RANK , elem_id , elem_parts );
 
     m_bulk_data.declare_relation( elem , node0 , 0 );
     m_bulk_data.declare_relation( elem , node1 , 1 );

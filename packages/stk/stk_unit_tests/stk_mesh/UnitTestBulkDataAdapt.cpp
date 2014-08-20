@@ -102,17 +102,18 @@ TEST(UnitTestingOfBulkData, test_other_ghosting_2)
   stk::ParallelMachine pm = MPI_COMM_WORLD;
 
   // Set up meta and bulk data
-  const unsigned spatial_dim = 2;
+  const unsigned spatial_dim = 1;
 
   std::vector<std::string> entity_rank_names = stk::mesh::entity_rank_names();
   entity_rank_names.push_back("FAMILY_TREE");
 
   MetaData meta_data(spatial_dim, entity_rank_names);
-  //Part & part_tmp = meta_data.declare_part( "temp");
+ Part & elem_part = meta_data.declare_part_with_topology("elem_part", stk::topology::LINE_2_1D);
+ Part & node_part = meta_data.declare_part_with_topology("node_part", stk::topology::NODE);
+
 
   meta_data.commit();
   BulkData mesh(meta_data, pm);
-  //BulkData mesh(MetaData::get_meta_data(meta_data), pm);
   int p_rank = mesh.parallel_rank();
   int p_size = mesh.parallel_size();
 
@@ -121,9 +122,6 @@ TEST(UnitTestingOfBulkData, test_other_ghosting_2)
   //
   // Begin modification cycle so we can create the entities and relations
   //
-
-  // We're just going to add everything to the universal part
-  stk::mesh::PartVector empty_parts;
 
   // Create elements
   const EntityRank elem_rank = stk::topology::ELEMENT_RANK;
@@ -135,12 +133,12 @@ TEST(UnitTestingOfBulkData, test_other_ghosting_2)
     {
       if (static_cast<int>(elems_0[ielem][3]) == p_rank)
         {
-          elem = mesh.declare_entity(elem_rank, elems_0[ielem][0], empty_parts);
+          elem = mesh.declare_entity(elem_rank, elems_0[ielem][0], elem_part);
 
           EntityVector nodes;
           // Create node on all procs
-          nodes.push_back( mesh.declare_entity(NODE_RANK, elems_0[ielem][2], empty_parts) );
-          nodes.push_back( mesh.declare_entity(NODE_RANK, elems_0[ielem][1], empty_parts) );
+          nodes.push_back( mesh.declare_entity(NODE_RANK, elems_0[ielem][2], node_part) );
+          nodes.push_back( mesh.declare_entity(NODE_RANK, elems_0[ielem][1], node_part) );
 
           // Add relations to nodes
           mesh.declare_relation( elem, nodes[0], 0 );

@@ -13,6 +13,8 @@ TEST(stkMeshHowTo, useConnectivityMap)
 {
     const unsigned spatialDimension = 2;
     stk::mesh::MetaData metaData(spatialDimension, stk::mesh::entity_rank_names());
+    stk::mesh::Part &tri_part = metaData.declare_part_with_topology("tri_part", stk::topology::TRIANGLE_3_2D);
+    stk::mesh::Part &edge_part = metaData.declare_part_with_topology("edge_part", stk::topology::LINE_2);
     metaData.commit();
 
     const stk::mesh::ConnectivityMap& minimal_connectivity = stk::mesh::ConnectivityMap::minimal_upward_connectivity_map();
@@ -34,14 +36,14 @@ TEST(stkMeshHowTo, useConnectivityMap)
     stk::mesh::EntityId elemEdgeIds[] = {6, 7, 8};
     stk::mesh::Entity elemNodes[3];
     stk::mesh::Entity elemEdges[3];
-    stk::mesh::Entity elem = mesh.declare_entity(stk::topology::ELEM_RANK, elemId);
+    stk::mesh::Entity elem = mesh.declare_entity(stk::topology::ELEM_RANK, elemId, tri_part);
     elemNodes[0] = mesh.declare_entity(stk::topology::NODE_RANK, elemNodeIds[0]);
     elemNodes[1] = mesh.declare_entity(stk::topology::NODE_RANK, elemNodeIds[1]);
     elemNodes[2] = mesh.declare_entity(stk::topology::NODE_RANK, elemNodeIds[2]);
 
-    elemEdges[0] = mesh.declare_entity(stk::topology::EDGE_RANK, elemEdgeIds[0]);
-    elemEdges[1] = mesh.declare_entity(stk::topology::EDGE_RANK, elemEdgeIds[1]);
-    elemEdges[2] = mesh.declare_entity(stk::topology::EDGE_RANK, elemEdgeIds[2]);
+    elemEdges[0] = mesh.declare_entity(stk::topology::EDGE_RANK, elemEdgeIds[0], edge_part);
+    elemEdges[1] = mesh.declare_entity(stk::topology::EDGE_RANK, elemEdgeIds[1], edge_part);
+    elemEdges[2] = mesh.declare_entity(stk::topology::EDGE_RANK, elemEdgeIds[2], edge_part);
 
     //downward element -> node connectivity
     mesh.declare_relation(elem, elemNodes[0], 0);

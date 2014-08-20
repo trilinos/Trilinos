@@ -243,8 +243,12 @@ TEST ( UnitTestBulkData_new , verifyDefaultPartAddition )
 
   bulk.modification_begin();
   Entity new_cell = fixture.get_new_entity ( stk::topology::ELEM_RANK , 1 );
-  Entity new_node = fixture.get_new_entity ( stk::topology::NODE_RANK , 1 );
-  bulk.declare_relation(new_cell, new_node, 0);
+  unsigned cell_num_nodes = fixture.get_elem_topology().num_nodes();
+  for (unsigned i = 0; i < cell_num_nodes; ++i)
+  {
+    Entity new_node = fixture.get_new_entity ( stk::topology::NODE_RANK , i+1 );
+    bulk.declare_relation(new_cell, new_node, i);
+  }
   bulk.modification_end();
 
   ASSERT_TRUE ( bulk.bucket(new_cell).member ( fixture.fem_meta().universal_part() ) );
@@ -265,8 +269,14 @@ TEST ( UnitTestBulkData_new , verifyChangePartsSerial )
 
   bulk.modification_begin();
   Entity new_cell = fixture.get_new_entity ( stk::topology::ELEM_RANK , 1 );
-  Entity new_node = fixture.get_new_entity ( stk::topology::NODE_RANK , 1 );
-  bulk.declare_relation(new_cell, new_node, 0);
+  unsigned cell_num_nodes = fixture.get_elem_topology().num_nodes();
+  for (unsigned i = 0; i < cell_num_nodes; ++i)
+  {
+    Entity new_node = fixture.get_new_entity ( stk::topology::NODE_RANK , i+1 );
+    bulk.declare_relation(new_cell, new_node, i);
+  }
+  // Entity new_node = fixture.get_new_entity ( stk::topology::NODE_RANK , 1 );
+  // bulk.declare_relation(new_cell, new_node, 0);
   bulk.change_entity_parts ( new_cell , create_parts , empty_parts );
   bulk.modification_end();
   ASSERT_TRUE ( bulk.bucket(new_cell).member ( fixture.m_test_part ) );
@@ -350,7 +360,6 @@ TEST ( UnitTestBulkData_new , verifyInducedMembership )
   Entity node0 = fixture.get_new_entity ( stk::topology::NODE_RANK , 2 );
   Entity node = fixture.get_new_entity ( stk::topology::NODE_RANK , 1 );
   Entity cell = fixture.get_new_entity ( stk::topology::ELEM_RANK , 1 );
-
   bulk.change_entity_parts ( node , create_node_parts , PartVector () );
   bulk.change_entity_parts ( cell , create_cell_parts , PartVector () );
   // Add node to cell part
@@ -358,12 +367,22 @@ TEST ( UnitTestBulkData_new , verifyInducedMembership )
   bulk.declare_relation ( cell , node0 , cell_node_rel_id );
   cell_node_rel_id = 1;
   bulk.declare_relation ( cell , node , cell_node_rel_id );
+
+  unsigned cell_num_nodes = fixture.get_elem_topology().num_nodes();
+  for (unsigned i = 2; i < cell_num_nodes; ++i)
+  {
+    Entity another_node = fixture.get_new_entity ( stk::topology::NODE_RANK , i+1 );
+    bulk.declare_relation(cell, another_node, i);
+  }
+
   bulk.modification_end();
 
   ASSERT_TRUE ( bulk.bucket(node).member ( fixture.m_cell_part ) );
 
   bulk.modification_begin();
   bulk.destroy_relation ( cell , node, cell_node_rel_id );
+  Entity another_node = fixture.get_new_entity ( stk::topology::NODE_RANK , cell_num_nodes );
+  bulk.declare_relation(cell, another_node, cell_node_rel_id);
   bulk.modification_end();
 
   ASSERT_TRUE ( !bulk.bucket(node).member ( fixture.m_cell_part ) );
@@ -373,18 +392,27 @@ TEST ( UnitTestBulkData_new , verifyCanRemoveFromSetWithDifferentRankSubset )
 {
   TestBoxFixture fixture;
   BulkData           &bulk = fixture.bulk_data ();
-  PartVector          add_parts , remove_parts, empty_parts;
+  PartVector          add_parts , add_elem_parts, remove_parts, empty_parts;
 
   add_parts.push_back ( &fixture.m_part_B_3 );
   add_parts.push_back ( &fixture.m_part_A_superset );
+  add_elem_parts = add_parts;
+  Part &elem_part = fixture.get_elem_part();;
+  add_elem_parts.push_back(&elem_part);
 
   remove_parts.push_back ( &fixture.m_part_A_superset );
 
   bulk.modification_begin();
 
-  Entity e = bulk.declare_entity ( stk::topology::ELEMENT_RANK , fixture.comm_rank()+1 , add_parts );
+  Entity e = bulk.declare_entity ( stk::topology::ELEMENT_RANK , fixture.comm_rank()+1 , add_elem_parts );
   Entity n = bulk.declare_entity ( stk::topology::NODE_RANK , fixture.comm_rank()+1 , add_parts );
   bulk.declare_relation(e, n, 0);
+  unsigned elem_num_nodes = fixture.get_elem_topology().num_nodes();
+  for (unsigned i = 1; i < elem_num_nodes; ++i)
+  {
+    Entity another_node = fixture.get_new_entity ( stk::topology::NODE_RANK , i+1 );
+    bulk.declare_relation(e, another_node, i);
+  }
   bulk.modification_end();
 
   bulk.modification_begin();
@@ -1111,18 +1139,21 @@ TEST ( UnitTestBulkData_new , testGhostHandleRemainsValidAfterRefresh )
   stk::ParallelMachine pm = MPI_COMM_WORLD;
 
   // Set up meta and bulk data
-  const unsigned spatial_dim = 2;
+  const unsigned spatial_dim = 1;
 
-  std::vector<std::string> entity_rank_names = stk::mesh::entity_rank_names();
+  std::vector<std::string> entity_rank_names;
+  entity_rank_names.push_back("NODE_RANK");
+  entity_rank_names.push_back("EDGE_RANK");
+  entity_rank_names.push_back("FACE_RANK");
+  entity_rank_names.push_back("ELEM_RANK");
   entity_rank_names.push_back("FAMILY_TREE");
 
   MetaData meta_data(spatial_dim, entity_rank_names);
-  //Part & part_tmp = meta_data.declare_part( "temp");
+  Part & elem_part = meta_data.declare_part_with_topology("elem_part", stk::topology::LINE_2_1D);
+  Part & node_part = meta_data.declare_part_with_topology("node_part", stk::topology::NODE);
 
   meta_data.commit();
-  unsigned max_bucket_size = 1;
-  BulkData mesh(meta_data, pm, max_bucket_size);
-  //BulkData mesh(MetaData::get_meta_data(meta_data), pm);
+  BulkData mesh(meta_data, pm);
   int p_rank = mesh.parallel_rank();
   int p_size = mesh.parallel_size();
 
@@ -1132,9 +1163,6 @@ TEST ( UnitTestBulkData_new , testGhostHandleRemainsValidAfterRefresh )
   // Begin modification cycle so we can create the entities and relations
   //
   {
-    // We're just going to add everything to the universal part
-    PartVector empty_parts;
-
     // Create elements
     const EntityRank elem_rank = stk::topology::ELEMENT_RANK;
     Entity elem = Entity();
@@ -1142,13 +1170,14 @@ TEST ( UnitTestBulkData_new , testGhostHandleRemainsValidAfterRefresh )
     mesh.modification_begin();
 
     for (unsigned ielem=0; ielem < nelems; ielem++) {
-      if (static_cast<int>(elems_0[ielem][3]) == p_rank) {
-        elem = mesh.declare_entity(elem_rank, elems_0[ielem][0], empty_parts);
+      int owner = static_cast<int>(elems_0[ielem][3]);
+      if (owner == p_rank) {
+        elem = mesh.declare_entity(elem_rank, elems_0[ielem][0], elem_part);
 
         EntityVector nodes;
         // Create node on all procs
-        nodes.push_back( mesh.declare_entity(stk::topology::NODE_RANK, elems_0[ielem][2], empty_parts) );
-        nodes.push_back( mesh.declare_entity(stk::topology::NODE_RANK, elems_0[ielem][1], empty_parts) );
+        nodes.push_back( mesh.declare_entity(stk::topology::NODE_RANK, elems_0[ielem][2], node_part) );
+        nodes.push_back( mesh.declare_entity(stk::topology::NODE_RANK, elems_0[ielem][1], node_part) );
 
         // Add relations to nodes
         mesh.declare_relation( elem, nodes[0], 0 );

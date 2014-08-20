@@ -93,7 +93,7 @@ TEST(UnitTestingOfBucket, testBucket)
   //  First, test for streaming IO;
   {
     std::string gold1;
-    gold1 = "Bucket( EntityRank0 : {UNIVERSAL} {OWNS} )";
+    gold1 = "Bucket( EntityRank0 : {UNIVERSAL} {OWNS} {FEM_ROOT_CELL_TOPOLOGY_PART_Hexahedron_8} elem_part )";
     Bucket *b1 = bulk.buckets(stk::topology::NODE_RANK)[0];
     std::stringstream  out1_str;
     out1_str << (*b1);

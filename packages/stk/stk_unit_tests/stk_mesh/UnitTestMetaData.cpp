@@ -105,12 +105,16 @@ TEST( UnitTestMetaData, testEntityRepository )
   //Test Entity repository - covering EntityRepository.cpp/hpp
   stk::mesh::MetaData meta ( spatial_dimension );
   stk::mesh::Part & part = meta.declare_part("another part");
+  stk::mesh::Part & hex_part = meta.declare_part_with_topology("elem_part", stk::topology::HEX_8);
 
   meta.commit();
 
   stk::mesh::BulkData bulk ( meta , MPI_COMM_WORLD );
   std::vector<stk::mesh::Part *>  add_part;
   add_part.push_back ( &part );
+  std::vector<stk::mesh::Part *> elem_parts;
+  elem_parts.push_back( &part );
+  elem_parts.push_back( &hex_part );
 
   int rank = stk::parallel_machine_rank( MPI_COMM_WORLD );
   int size = stk::parallel_machine_size( MPI_COMM_WORLD );
@@ -118,17 +122,23 @@ TEST( UnitTestMetaData, testEntityRepository )
 
   bulk.modification_begin();
 
+  std::vector<stk::mesh::Entity> nodes;
   stk::mesh::Entity node = stk::mesh::Entity();
   int id_base = 0;
   for ( id_base = 0 ; id_base < 97 ; ++id_base )
   {
     int new_id = size * id_base + rank;
     node = bulk.declare_entity( stk::topology::NODE_RANK , new_id+1 , add_part );
+    nodes.push_back(node);
   }
 
   int new_id = size * (++id_base) + rank;
-  stk::mesh::Entity elem  = bulk.declare_entity( stk::topology::ELEMENT_RANK , new_id+1 , add_part );
-  bulk.declare_relation(elem, node, 0);
+  stk::mesh::Entity elem  = bulk.declare_entity( stk::topology::ELEMENT_RANK , new_id+1 , elem_parts );
+
+  for (unsigned ord = 0; ord < 8; ++ord)
+  {
+    bulk.declare_relation(elem, nodes[ord], ord);
+  }
 
   bulk.entity_comm_map_clear(bulk.entity_key(elem));
 
