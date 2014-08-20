@@ -148,6 +148,7 @@ namespace Tpetra {
                        const size_t numEntries,
                        const Teuchos::ArrayView<const Scalar>& vals,
                        const Teuchos::ArrayView<char> packed_vals ) {
+        if (numEntries == 0) return;
         const size_t pce_size = mat.getLocalMatrix().values.sacado_size();
         const scalar_value* pce_vals_beg = vals[0].coeff();
         const scalar_value* pce_vals_end = vals[numEntries-1].coeff()+pce_size;
