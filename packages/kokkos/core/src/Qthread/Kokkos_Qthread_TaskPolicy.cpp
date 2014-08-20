@@ -43,6 +43,10 @@
 
 // Experimental unified task-data parallel manycore LDRD
 
+#include <Kokkos_Macros.hpp>
+
+#if defined( KOKKOS_HAVE_QTHREAD )
+
 #include <stdio.h>
 
 #include <stdlib.h>
@@ -225,4 +229,6 @@ TaskPolicy< Kokkos::Qthread >::TaskPolicy()
 {}
 
 } // namespace Kokkos
+
+#endif /* #if defined( KOKKOS_HAVE_QTHREAD ) */
 
