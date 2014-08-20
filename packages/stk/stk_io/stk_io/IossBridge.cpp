@@ -214,6 +214,9 @@ const stk::mesh::FieldBase *declare_ioss_field(stk::mesh::MetaData &meta,
   if (io_field.get_type() == Ioss::Field::INTEGER) {
     int dummy = 1;
     field_ptr = declare_ioss_field_internal(meta, type, part, io_field, use_cartesian_for_scalar, dummy);
+  } else if (io_field.get_type() == Ioss::Field::INT64) {
+    int64_t dummy = 1;
+    field_ptr = declare_ioss_field_internal(meta, type, part, io_field, use_cartesian_for_scalar, dummy);
   } else if (io_field.get_type() == Ioss::Field::REAL) {
     double dummy = 1.0;
     field_ptr = declare_ioss_field_internal(meta, type, part, io_field, use_cartesian_for_scalar, dummy);
