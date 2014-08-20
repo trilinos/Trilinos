@@ -4,6 +4,7 @@
 // Pike solvers
 #include "Pike_Solver_BlockGaussSeidel.hpp"
 #include "Pike_Solver_BlockJacobi.hpp"
+#include "Pike_Solver_TransientStepper.hpp"
 #include <algorithm>
 
 namespace pike {
@@ -55,6 +56,18 @@ namespace pike {
       Teuchos::RCP<pike::BlockJacobi> jacobi = Teuchos::rcp(new pike::BlockJacobi);
       jacobi->setParameterList(solverSublist);
       solver = jacobi;
+    }
+    else if (type == "Transient Stepper") {
+      Teuchos::RCP<pike::TransientStepper> trans = Teuchos::rcp(new pike::TransientStepper);
+      trans->setParameterList(solverSublist);
+      
+      Teuchos::RCP<Teuchos::ParameterList> internalSolverSublist = 
+	Teuchos::sublist(p,solverSublist->get<std::string>("Internal Solver Sublist"),true);
+
+      Teuchos::RCP<pike::Solver> internalSolver = this->buildSolver(internalSolverSublist);
+      trans->setSolver(internalSolver);
+
+      solver = trans;
     }
     else {
       for (std::vector<Teuchos::RCP<pike::SolverAbstractFactory> >::const_iterator i=userFactories_.begin();
