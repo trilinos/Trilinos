@@ -71,6 +71,14 @@ INCLUDE(TribitsAddTest)
 #  ADD_SUBDIRECTORY(ch_brack2_3)
 #ENDIF()
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  AtomicsTest
+  SOURCES AtomicsTest.cpp
+  COMM serial mpi
+  NUM_MPI_PROCS 2
+  NOEXEPREFIX
+)
+
 IF (TPL_ENABLE_MPI)
   TRIBITS_ADD_EXECUTABLE(
     FullQueueTest
