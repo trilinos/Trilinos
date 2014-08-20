@@ -315,6 +315,8 @@ TEST(UnitTestingOfBulkData, testChangeOwner_nodes)
 
 TEST(UnitTestingOfBulkData, testCreateMore)
 {
+  std::cout << "testCreateMore needs to be replaced with corresponding test that makes use of node sharing API enforcement" << std::endl;
+  /*
   stk::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier( pm );
 
@@ -399,6 +401,7 @@ TEST(UnitTestingOfBulkData, testCreateMore)
 
     ASSERT_THROW( bulk.modification_end() , std::runtime_error );
   }
+  */
 }
 
 //----------------------------------------------------------------------
@@ -1447,6 +1450,9 @@ TEST(UnitTestingOfBulkData, testParallelSideCreation)
   const EntityRank elem_rank = stk::topology::ELEMENT_RANK;
   const EntityRank side_rank = stk::topology::EDGE_RANK;
 
+  stk::mesh::Part& side_part = meta_data.declare_part_with_topology("side_part", stk::topology::LINE_2);
+  stk::mesh::Part& elem_part = meta_data.declare_part_with_topology("elem_part", stk::topology::QUAD_4);
+
   meta_data.commit();
 
   BulkData mesh(meta_data, pm);
@@ -1477,11 +1483,13 @@ TEST(UnitTestingOfBulkData, testParallelSideCreation)
 
     // Create element
     const EntityId elem_id = p_rank+1;
-    Entity elem = mesh.declare_entity(elem_rank, elem_id, empty_parts);
+    //Entity elem = mesh.declare_entity(elem_rank, elem_id, empty_parts);
+    Entity elem = mesh.declare_entity(elem_rank, elem_id, elem_part);
 
     // Create local version of side (with different, artificial id on each processor)
     const EntityId tmp_side_id = p_rank+51;
-    Entity side = mesh.declare_entity(side_rank, tmp_side_id, empty_parts);
+    //Entity side = mesh.declare_entity(side_rank, tmp_side_id, empty_parts);
+    Entity side = mesh.declare_entity(side_rank, tmp_side_id, side_part);
 
     // Add element relations to nodes
     unsigned elem_rel_id = 0;
@@ -1519,7 +1527,7 @@ TEST(UnitTestingOfBulkData, testParallelSideCreation)
     EXPECT_TRUE(successfully_destroyed);
 
     const EntityId side_id = 1;
-    side = mesh.declare_entity(side_rank, side_id, empty_parts);
+    side = mesh.declare_entity(side_rank, side_id, side_part);
 
     // Add side relations to nodes and element
     side_rel_id = 0;

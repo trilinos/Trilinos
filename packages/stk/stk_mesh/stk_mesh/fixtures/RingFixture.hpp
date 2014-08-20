@@ -38,6 +38,7 @@ class RingFixture {
   Part &                m_element_part_extra ;
   const size_t          m_num_element_per_proc ;
   std::vector<EntityId> m_node_ids , m_element_ids ;
+  Part &                m_beam_2_part;
 
   RingFixture( stk::ParallelMachine pm ,
                unsigned num_element_per_proc = 10 ,
