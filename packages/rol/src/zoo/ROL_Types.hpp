@@ -1127,6 +1127,10 @@ namespace ROL {
     ---
  */
 
+/** @defgroup step_group Optimization Steps
+ *  \brief ROL's optimization steps.
+ */
+
 /** @defgroup extensions_group Algorithmic Extensions
  *  \brief ROL's algorithmic extensions.
  */
@@ -1135,6 +1139,9 @@ namespace ROL {
  *  @ingroup extensions_group
  *  \brief ROL's stochastic optimization capability.
  */
-  
+
+/** @defgroup examples_group Examples
+ *  \brief ROL's examples.
+*/  
 
 #endif
