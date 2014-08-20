@@ -41,83 +41,70 @@
 //@HEADER
 */
 
-#include <stdlib.h>
-#include <sstream>
-#include <Kokkos_Serial.hpp>
-#include <impl/Kokkos_Traits.hpp>
-#include <impl/Kokkos_Error.hpp>
+#ifndef KOKKOS_SCRATCHSPACE_HPP
+#define KOKKOS_SCRATCHSPACE_HPP
+
+#include <Kokkos_Macros.hpp>
+#include <impl/Kokkos_Tags.hpp>
 
 /*--------------------------------------------------------------------------*/
 
 namespace Kokkos {
-namespace Impl {
-namespace {
 
-struct Sentinel {
+/** \brief  Scratch memory space associated with an execution space.
+ *
+ */
+template< class ExecSpace >
+class ScratchMemorySpace {
+public:
 
-  void *   m_scratch ;
-  unsigned m_reduce_end ;
-  unsigned m_shared_end ;
+  // Alignment of memory chunks returned by 'get'
+  // must be a power of two
+  enum { ALIGN = 8 };
 
-  Sentinel() : m_scratch(0), m_reduce_end(0), m_shared_end(0) {}
+private:
 
-  ~Sentinel()
+  mutable char * m_iter ;
+  char *         m_end ;
+
+  ScratchMemorySpace();
+  ScratchMemorySpace & operator = ( const ScratchMemorySpace & );
+
+  enum { MASK = ALIGN - 1 }; // Alignment used by View::shmem_size
+
+public:
+
+  typedef Impl::MemorySpaceTag              kokkos_tag ;
+  typedef ScratchMemorySpace                memory_space ;
+  typedef ExecSpace                         execution_space ;
+  typedef typename ExecSpace::array_layout  array_layout ;
+
+  template< typename IntType >
+  KOKKOS_INLINE_FUNCTION static
+  IntType align( const IntType & size )
+    { return ( size + MASK ) & ~MASK ; }
+
+  template< typename IntType >
+  KOKKOS_INLINE_FUNCTION
+  void * get_shmem( const IntType & size ) const
     {
-      if ( m_scratch ) { free( m_scratch ); }
-      m_scratch = 0 ;
-      m_reduce_end = 0 ;
-      m_shared_end = 0 ;
+      void * tmp = m_iter ;
+      if ( m_end < ( m_iter += align( size ) ) ) { tmp = 0 ; }
+      return tmp ;
     }
 
-  static Sentinel & singleton();
+  template< typename IntType >
+  KOKKOS_INLINE_FUNCTION
+  ScratchMemorySpace( void * ptr , const IntType & size )
+    : m_iter( (char *) ptr )
+    , m_end(  m_iter + size )
+    {}
 };
 
-Sentinel & Sentinel::singleton()
-{
-  static Sentinel s ; return s ;
-}
-
-inline
-unsigned align( unsigned n )
-{
-  enum { ALIGN = 0x0100 /* 256 */ , MASK = ALIGN - 1 };
-  return ( n + MASK ) & ~MASK ;
-}
-
-} // namespace
-
-SerialTeamMember::SerialTeamMember( int arg_league_rank
-                                  , int arg_league_size
-                                  , int arg_shared_size
-                                  )
-  : m_space( ((char *) Sentinel::singleton().m_scratch) + Sentinel::singleton().m_reduce_end
-           , arg_shared_size )
-  , m_league_rank( arg_league_rank )
-  , m_league_size( arg_league_size )
-{}
-
-} // namespace Impl
-
-void * Serial::scratch_memory_resize( unsigned reduce_size , unsigned shared_size )
-{
-  static Impl::Sentinel & s = Impl::Sentinel::singleton();
-
-  reduce_size = Impl::align( reduce_size );
-  shared_size = Impl::align( shared_size );
-
-  if ( ( s.m_reduce_end < reduce_size ) ||
-       ( s.m_shared_end < s.m_reduce_end + shared_size ) ) {
-
-    if ( s.m_scratch ) { free( s.m_scratch ); }
-  
-    if ( s.m_reduce_end < reduce_size ) s.m_reduce_end = reduce_size ;
-    if ( s.m_shared_end < s.m_reduce_end + shared_size ) s.m_shared_end = s.m_reduce_end + shared_size ;
-
-    s.m_scratch = malloc( s.m_shared_end );
-  }
-
-  return s.m_scratch ;
-}
-
 } // namespace Kokkos
+
+#endif /* #ifndef KOKKOS_SCRATCHSPACE_HPP */
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 

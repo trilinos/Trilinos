@@ -52,6 +52,7 @@
 #include <Kokkos_Parallel.hpp>
 #include <Kokkos_Layout.hpp>
 #include <Kokkos_HostSpace.hpp>
+#include <Kokkos_ScratchSpace.hpp>
 #include <Kokkos_MemoryTraits.hpp>
 #include <impl/Kokkos_Tags.hpp>
 
@@ -152,6 +153,7 @@ public:
   KOKKOS_INLINE_FUNCTION static unsigned hardware_thread_id() { return 0 ; }
   KOKKOS_INLINE_FUNCTION static unsigned max_hardware_threads() { return 1 ; }
 
+#if 0
   class scratch_memory_space {
   private:
     mutable char * m_shmem_iter ;
@@ -178,6 +180,11 @@ public:
     // Resize scratch memory for reduction and shared space
     static void * resize( unsigned reduce_size , unsigned shared_size );
   };
+#else
+  typedef ScratchMemorySpace< Kokkos::Serial >  scratch_memory_space ;
+#endif
+
+  static void * scratch_memory_resize( unsigned reduce_size , unsigned shared_size );
 
   //--------------------------------------------------------------------------
 };
@@ -198,6 +205,71 @@ struct VerifyExecutionCanAccessMemorySpace
 {
   inline static void verify( void ) { }
   inline static void verify( const void * ) { }
+};
+
+} // namespace Impl
+} // namespace Kokkos
+
+/*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
+
+namespace Kokkos {
+namespace Impl {
+
+class SerialTeamMember {
+private:
+  typedef Kokkos::ScratchMemorySpace< Kokkos::Serial > scratch_memory_space ;
+  const scratch_memory_space  m_space ;
+  const int                   m_league_rank ;
+  const int                   m_league_size ;
+
+  SerialTeamMember & operator = ( const SerialTeamMember & );
+
+public:
+
+  KOKKOS_INLINE_FUNCTION
+  const scratch_memory_space & team_shmem() const { return m_space ; }
+
+  KOKKOS_INLINE_FUNCTION int league_rank() const { return m_league_rank ; }
+  KOKKOS_INLINE_FUNCTION int league_size() const { return m_league_size ; }
+  KOKKOS_INLINE_FUNCTION int team_rank() const { return 0 ; }
+  KOKKOS_INLINE_FUNCTION int team_size() const { return 1 ; }
+
+  KOKKOS_INLINE_FUNCTION void team_barrier() const {}
+
+  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
+   *          with intra-team non-deterministic ordering accumulation.
+   *
+   *  The global inter-team accumulation value will, at the end of the
+   *  league's parallel execution, be the scan's total.
+   *  Parallel execution ordering of the league's teams is non-deterministic.
+   *  As such the base value for each team's scan operation is similarly
+   *  non-deterministic.
+   */
+  template< typename Type >
+  KOKKOS_INLINE_FUNCTION Type team_scan( const Type & value , Type * const global_accum ) const
+    {
+      const Type tmp = global_accum ? *global_accum : Type(0) ;
+      if ( global_accum ) { *global_accum += value ; }
+      return tmp ;
+    }
+
+  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering.
+   *
+   *  The highest rank thread can compute the reduction total as
+   *    reduction_total = dev.team_scan( value ) + value ;
+   */
+  template< typename Type >
+  KOKKOS_INLINE_FUNCTION Type team_scan( const Type & ) const
+    { return Type(0); }
+
+  //----------------------------------------
+  // Execution space specific:
+
+  SerialTeamMember( int arg_league_rank
+                  , int arg_league_size 
+                  , int arg_shared_size
+                  );
 };
 
 } // namespace Impl
@@ -231,56 +303,10 @@ public:
     : m_league_size( league_size_request )
     { }
 
-  class member_type {
-  private:
-    const execution_space::scratch_memory_space m_space ;
-    const int m_league_rank ;
-    const int m_league_size ;
-  public:
-
-    KOKKOS_INLINE_FUNCTION
-    const execution_space::scratch_memory_space & team_shmem() const { return m_space ; }
-
-    KOKKOS_INLINE_FUNCTION int league_rank() const { return m_league_rank ; }
-    KOKKOS_INLINE_FUNCTION int league_size() const { return m_league_size ; }
-    KOKKOS_INLINE_FUNCTION int team_rank() const { return 0 ; }
-    KOKKOS_INLINE_FUNCTION int team_size() const { return 1 ; }
-
-    KOKKOS_INLINE_FUNCTION void team_barrier() const {}
-
-    /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
-     *          with intra-team non-deterministic ordering accumulation.
-     *
-     *  The global inter-team accumulation value will, at the end of the
-     *  league's parallel execution, be the scan's total.
-     *  Parallel execution ordering of the league's teams is non-deterministic.
-     *  As such the base value for each team's scan operation is similarly
-     *  non-deterministic.
-     */
-    template< typename Type >
-    KOKKOS_INLINE_FUNCTION Type team_scan( const Type & value , Type * const global_accum ) const
-      {
-        const Type tmp = global_accum ? *global_accum : Type(0) ;
-        if ( global_accum ) { *global_accum += value ; }
-        return tmp ;
-      }
-
-    /** \brief  Intra-team exclusive prefix sum with team_rank() ordering.
-     *
-     *  The highest rank thread can compute the reduction total as
-     *    reduction_total = dev.team_scan( value ) + value ;
-     */
-    template< typename Type >
-    KOKKOS_INLINE_FUNCTION Type team_scan( const Type & ) const
-      { return Type(0); }
-
-    //----------------------------------------
-
-    member_type( int rank , int size ) : m_space(), m_league_rank(rank), m_league_size(size) {}
-  };
+  typedef Impl::SerialTeamMember  member_type ;
 };
 
-}
+} /* namespace Kokkos */
 
 namespace Kokkos {
 namespace Impl {
@@ -330,7 +356,7 @@ public:
 
       if ( ! result_ptr ) {
         result_ptr = (pointer_type)
-          Kokkos::Serial::scratch_memory_space::resize( Reduce::value_size( functor ) , 0 );
+          Kokkos::Serial::scratch_memory_resize( Reduce::value_size( functor ) , 0 );
       }
 
       typename Reduce::reference_type update = Reduce::init( functor , result_ptr );
@@ -361,7 +387,7 @@ public:
                )
     {
       pointer_type result_ptr = (pointer_type)
-        Kokkos::Serial::scratch_memory_space::resize( Reduce::value_size( functor ) , 0 );
+        Kokkos::Serial::scratch_memory_resize( Reduce::value_size( functor ) , 0 );
 
       typename Reduce::reference_type update = Reduce::init( functor , result_ptr );
       
@@ -385,10 +411,12 @@ public:
   ParallelFor( const FunctorType & functor
              , const Policy      & policy )
     {
-      Kokkos::Serial::scratch_memory_space::resize( 0 , FunctorShmemSize< FunctorType >::value( functor ) );
+      const int shared_size = FunctorShmemSize< FunctorType >::value( functor );
+
+      Kokkos::Serial::scratch_memory_resize( 0 , shared_size );
 
       for ( int ileague = 0 ; ileague < policy.league_size() ; ++ileague ) {
-        functor( typename Policy::member_type(ileague,policy.league_size()) );
+        functor( typename Policy::member_type(ileague,policy.league_size(),shared_size) );
       }
     }
 };
@@ -407,18 +435,18 @@ public:
                 , const ViewType     & result
                 )
     {
-      void * const scratch =
-        Kokkos::Serial::scratch_memory_space::resize( Reduce::value_size( functor )
-                                                    , FunctorShmemSize< FunctorType >::value( functor ) );
+      const int reduce_size = Reduce::value_size( functor );
+      const int shared_size = FunctorShmemSize< FunctorType >::value( functor );
+      void * const scratch_reduce = Kokkos::Serial::scratch_memory_resize( reduce_size , shared_size );
 
-      pointer_type result_ptr = result.ptr_on_device();
-
-      if ( ! result_ptr ) { result_ptr = (pointer_type) scratch ; }
+      const pointer_type result_ptr =
+        result.ptr_on_device() ? result.ptr_on_device() 
+                               : (pointer_type) scratch_reduce ;
 
       typename Reduce::reference_type update = Reduce::init( functor , result_ptr );
       
       for ( int ileague = 0 ; ileague < policy.league_size() ; ++ileague ) {
-        functor( typename Policy::member_type(ileague,policy.league_size()) , update );
+        functor( typename Policy::member_type(ileague,policy.league_size(),shared_size) , update );
       }
 
       Reduce::final( functor , result_ptr );
