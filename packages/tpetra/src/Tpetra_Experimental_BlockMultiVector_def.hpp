@@ -564,9 +564,9 @@ scale (const Scalar& val)
 //
 // Explicit instantiation macro
 //
-// Must be expanded from within the Tpetra::Experimental namespace!
+// Must be expanded from within the Tpetra namespace!
 //
 #define TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_INSTANT(S,LO,GO,NODE) \
-  template class BlockMultiVector< S, LO, GO, NODE >;
+  template class Experimental::BlockMultiVector< S, LO, GO, NODE >;
 
 #endif // TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_DEF_HPP
