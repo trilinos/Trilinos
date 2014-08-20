@@ -52,7 +52,8 @@
 #include "ROL_Secant.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-/** \class ROL::PrimalDualActiveSetStep
+/** @ingroup step_group
+    \class ROL::PrimalDualActiveSetStep
     \brief Implements the computation of optimization steps 
            with the Newton primal-dual active set method.
 

@@ -51,7 +51,8 @@
 #include "ROL_Types.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-/** \class ROL::Step
+/** @ingroup step_group
+    \class ROL::Step
     \brief Provides the interface to compute optimization steps.
 */
 

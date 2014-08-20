@@ -56,7 +56,8 @@
 #include <sstream>
 #include <iomanip>
 
-/** \class ROL::LineSearchStep
+/** @ingroup step_group
+    \class ROL::LineSearchStep
     \brief Provides the interface to compute optimization steps
            with line search.
 
