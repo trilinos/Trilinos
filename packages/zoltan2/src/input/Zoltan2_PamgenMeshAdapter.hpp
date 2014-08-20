@@ -473,6 +473,19 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
     int rank = comm.getRank();
     recvCount[rank] = sendCount[rank] = 0;
 
+    // Post receives
+    RCP<CommRequest<int> > *requests = new RCP<CommRequest<int> > [nprocs];
+    for (int cnt = 0, i = 0; i < nprocs; i++) {
+      if (i != rank) {
+	requests[cnt++] = Teuchos::ireceive<int,int>(comm,
+						     rcp(&(recvCount[i]),
+							 false),
+						     i);
+      }
+    }
+
+    Teuchos::barrier<int>(comm);
+
     for(int j = 0; j < num_node_cmaps; j++) {
       sendCount[node_proc_ids[j][0]] = 1;
       for(int i = 0; i < node_cmap_node_cnts[j]; i++) {
@@ -480,6 +493,17 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
       }
     }
 
+    // Send data; can use readySend since receives are posted.
+    for (int i = 0; i < nprocs; i++) {
+      if (i != rank) {
+	Teuchos::readySend<int,int>(comm, sendCount[i], i);
+      }
+    }
+
+    // Wait for messages to return.
+    Teuchos::waitAll<int>(comm, arrayView(requests, nprocs-1));
+
+    delete [] requests;
     delete[] node_cmap_node_cnts;
     node_cmap_node_cnts = NULL;
 
