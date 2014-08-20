@@ -43,14 +43,16 @@
 
 // Experimental unified task-data parallel manycore LDRD
 
-#ifndef KOKKOS_SERIAL_TASKPOLICY_HPP
-#define KOKKOS_SERIAL_TASKPOLICY_HPP
+#ifndef KOKKOS_QTHREAD_TASKPOLICY_HPP
+#define KOKKOS_QTHREAD_TASKPOLICY_HPP
 
 #include <string>
 #include <typeinfo>
 #include <stdexcept>
 
-#include <Kokkos_Serial.hpp>
+#include <qthread.h>
+
+#include <Kokkos_Qthread.hpp>
 #include <Kokkos_TaskPolicy.hpp>
 #include <Kokkos_View.hpp>
 
@@ -60,11 +62,11 @@ namespace Kokkos {
 namespace Impl {
 
 template<>
-class TaskMember< Kokkos::Serial , void , void >
+class TaskMember< Kokkos::Qthread , void , void >
 {
 public:
 
-  friend class TaskManager< Kokkos::Serial > ;
+  friend class TaskManager< Kokkos::Qthread > ;
 
   enum { MAX_DEPENDENCE = 13 };
 
@@ -79,43 +81,29 @@ public:
   typedef void (* function_type)( TaskMember * );
 
   const std::type_info & m_typeid ;
-  const function_type    m_dealloc ;
+  const function_type    m_destroy ;
   const function_type    m_apply ;
 
 private:
 
   int            m_state ;
   int            m_ref_count ; ///< Reference count
-  TaskMember   * m_wait ;      ///< Linked list of tasks waiting on this task.
-  TaskMember   * m_next ;      ///< This task is a member of a linked list of
-                               ///< tasks waiting on another task.
+  aligned_t      m_qfeb ;
   TaskMember   * m_dep[ MAX_DEPENDENCE ]; ///< Dependences of this task
 
   TaskMember( const TaskMember & );
   TaskMember & operator = ( const TaskMember & );
 
+  static aligned_t qthread_func( void * );
+
 protected :
 
-  inline
-  TaskMember( const function_type    arg_dealloc
+  TaskMember( const function_type    arg_destroy
             , const function_type    arg_apply
             , const std::type_info & arg_type
-            )
-    : m_typeid(  arg_type )
-    , m_dealloc( arg_dealloc )
-    , m_apply(   arg_apply )
-    , m_state( STATE_CONSTRUCTING )
-    , m_ref_count(0)
-    , m_wait(0)
-    , m_next(0)
-    { for ( int i = 0 ; i < MAX_DEPENDENCE ; ++i ) m_dep[i] = 0 ; }
+            );
 
 public:
-
-  template < class DerivedTaskMember >
-  static
-  void deallocate( TaskMember * t )
-    { delete static_cast< DerivedTaskMember * >( t ); }
 
   inline static
   TaskMember * verify_type( TaskMember * t ) { return t ; }
@@ -140,49 +128,56 @@ public:
 //----------------------------------------------------------------------------
 
 template<>
-class TaskManager< Kokkos::Serial >
+class TaskManager< Kokkos::Qthread >
 {
 public:
 
-  typedef TaskMember< Kokkos::Serial > task_root_type ;
+  typedef TaskMember< Kokkos::Qthread > task_root_type ;
 
   enum { MAX_DEPENDENCE = task_root_type::MAX_DEPENDENCE };
 
-  void schedule( task_root_type * );
-
   static void verify_set_dependence( task_root_type * , int );
 
-  static void assign( task_root_type ** const , task_root_type * );
+  static void assign( task_root_type ** const , task_root_type * const );
 
-  void wait( task_root_type * );
+  static void wait( task_root_type * );
+
+  static void * memory_allocate( size_t );
+  static void   memory_deallocate( void * );
+
+  static void schedule( task_root_type * );
+
+  template < class DerivedTaskMember >
+  static
+  void destroy( task_root_type * t )
+    { static_cast< DerivedTaskMember * >( t )->~DerivedTaskMember(); }
+
+  template< class A1 , class A2 >
+  static
+  void schedule( task_root_type * t
+               , const Future<A1,A2> * const dep
+               , typename Impl::enable_if
+                  < Impl::is_same< typename Future<A1,A2>::execution_space , Kokkos::Qthread >::value
+                  , const int >::type n
+                )
+    {
+      verify_set_dependence( t , n );
+      int i = 0 ;
+      for ( ; i < n ; ++i )              assign( & t->m_dep[i] , dep[i].m_task );
+      for ( ; i < MAX_DEPENDENCE ; ++i ) assign( & t->m_dep[i] , 0 );
+      schedule( t );
+    }
+
+  template< class A1 , class A2 >
+  void wait( const Future<A1,A2> & f ) { wait( f.m_task ); }
 
   TaskManager();
   TaskManager( const TaskManager & );
   TaskManager & operator = ( const TaskManager & );
 
-
-  template< class A1 , class A2 >
-  void wait( const Future<A1,A2> & future ) { wait( future.m_task ); }
-
-  template< class A1 , class A2 >
-  void set_dependence( task_root_type * t
-                     , const Future<A1,A2> * const dep
-                     , typename Impl::enable_if
-                        < Impl::is_same< typename Future<A1,A2>::execution_space , Kokkos::Serial >::value
-                        , const int >::type n
-                      )
-    {
-      verify_set_dependence( t , n );
-      int i = 0 ;
-      for ( ; i < n ; ++i ) assign( & t->m_dep[i] , dep[i].m_task );
-      for ( ; i < MAX_DEPENDENCE ; ++i ) assign( & t->m_dep[i] , 0 );
-    }
-
 private:
 
-  task_root_type * m_ready ;
-  task_root_type * const m_denied ;
-
+  static aligned_t qthread_func( void * arg );
 };
 
 } /* namespace Impl */
@@ -194,19 +189,19 @@ namespace Kokkos {
 namespace Impl {
 
 template < class ResultType >
-class TaskMember< Kokkos::Serial , ResultType , void > : public TaskMember< Kokkos::Serial >
+class TaskMember< Kokkos::Qthread , ResultType , void > : public TaskMember< Kokkos::Qthread >
 {
 private:
 
 protected:
 
-  typedef TaskMember< Kokkos::Serial >::function_type  function_type ;
+  typedef TaskMember< Kokkos::Qthread >::function_type  function_type ;
 
   inline
-  TaskMember( const function_type    arg_dealloc
+  TaskMember( const function_type    arg_destroy
             , const function_type    arg_apply
             )
-    : TaskMember< Kokkos::Serial >( arg_dealloc , arg_apply , typeid(ResultType) )
+    : TaskMember< Kokkos::Qthread >( arg_destroy , arg_apply , typeid(ResultType) )
     , m_result()
     {}
 
@@ -216,7 +211,7 @@ public:
 
   inline static
   TaskMember *
-  verify_type( TaskMember< Kokkos::Serial > * t )
+  verify_type( TaskMember< Kokkos::Qthread > * t )
     {
       if ( t != 0 && t->m_typeid != typeid(ResultType) ) {
         throw std::runtime_error( std::string("Kokkos::Future bad cast for result type"));
@@ -233,14 +228,15 @@ public:
 //----------------------------------------------------------------------------
 
 template< class ResultType , class FunctorType >
-class TaskMember< Kokkos::Serial , ResultType , FunctorType >
-  : public TaskMember< Kokkos::Serial , ResultType >
+class TaskMember< Kokkos::Qthread , ResultType , FunctorType >
+  : public TaskMember< Kokkos::Qthread , ResultType >
   , public FunctorType
 {
 private:
 
-  typedef TaskMember< Kokkos::Serial >              member_root_type ;
-  typedef TaskMember< Kokkos::Serial , ResultType > member_base_type ;
+  typedef TaskManager< Kokkos::Qthread >             task_manager ;
+  typedef TaskMember< Kokkos::Qthread >              member_root_type ;
+  typedef TaskMember< Kokkos::Qthread , ResultType > member_base_type ;
 
   static
   void apply( member_root_type * t )
@@ -252,11 +248,11 @@ private:
 protected:
 
   inline 
-  TaskMember( const typename member_root_type::function_type  arg_dealloc
+  TaskMember( const typename member_root_type::function_type  arg_destroy
             , const typename member_root_type::function_type  arg_apply
             , const FunctorType &  arg_functor
             )
-    : member_base_type( arg_dealloc , arg_apply )
+    : member_base_type( arg_destroy , arg_apply )
     , FunctorType( arg_functor )
     {}
 
@@ -264,7 +260,7 @@ public:
 
   inline 
   TaskMember( const FunctorType &  arg_functor )
-    : member_base_type( & member_root_type::template deallocate< TaskMember >
+    : member_base_type( & task_manager::template destroy< TaskMember >
                       , & TaskMember::apply )
     , FunctorType( arg_functor )
     {}
@@ -273,13 +269,14 @@ public:
 //----------------------------------------------------------------------------
 
 template< class FunctorType >
-class TaskMember< Kokkos::Serial , void , FunctorType >
-  : public TaskMember< Kokkos::Serial >
+class TaskMember< Kokkos::Qthread , void , FunctorType >
+  : public TaskMember< Kokkos::Qthread >
   , public FunctorType
 {
 private:
 
-  typedef TaskMember< Kokkos::Serial > member_root_type ;
+  typedef TaskManager< Kokkos::Qthread >  task_manager ;
+  typedef TaskMember< Kokkos::Qthread >   member_root_type ;
 
   static
   void apply( member_root_type * t )
@@ -288,11 +285,11 @@ private:
 protected:
 
   inline 
-  TaskMember( const typename member_root_type::function_type  arg_dealloc
+  TaskMember( const typename member_root_type::function_type  arg_destroy
             , const typename member_root_type::function_type  arg_apply
             , const FunctorType &  arg_functor
             )
-    : member_root_type( arg_dealloc , arg_apply )
+    : member_root_type( arg_destroy , arg_apply )
     , FunctorType( arg_functor )
     {}
 
@@ -300,7 +297,7 @@ public:
 
   inline 
   TaskMember( const FunctorType &  arg_functor )
-    : member_root_type( & member_root_type::template deallocate< TaskMember >
+    : member_root_type( & task_manager::template destroy< TaskMember >
                       , & TaskMember::apply )
     , FunctorType( arg_functor )
     {}
@@ -317,11 +314,11 @@ namespace Kokkos {
 //----------------------------------------------------------------------------
 
 template<>
-class TaskPolicy< Impl::TaskDepends< Kokkos::Serial > >
+class TaskPolicy< Impl::TaskDepends< Kokkos::Qthread > >
 {
 public:
 
-  typedef Kokkos::Serial execution_space ;
+  typedef Kokkos::Qthread execution_space ;
 
 private:
 
@@ -353,9 +350,8 @@ public:
     {
       // Allocate a copy functor and insert into queue
       typedef Impl::TaskMember< execution_space , typename FunctorType::value_type , FunctorType > member_type ;
-      member_type * m = new member_type( functor );
-      m_task_manager.set_dependence( m , m_depends );
-      m_task_manager.schedule( m );
+      member_type * m = new( m_task_manager.memory_allocate( sizeof(member_type) ) ) member_type( functor );
+      m_task_manager.schedule( m , m_depends , MAX_DEPENDENCE );
       return Future< ValueType , execution_space >( m );
     }
 
@@ -377,11 +373,11 @@ public:
 //----------------------------------------------------------------------------
 
 template<>
-class TaskPolicy< Kokkos::Serial >
+class TaskPolicy< Kokkos::Qthread >
 {
 public:
 
-  typedef Kokkos::Serial execution_space ;
+  typedef Kokkos::Qthread execution_space ;
 
 private:
 
@@ -423,7 +419,7 @@ public:
     }
 
   template< class A1 , class A2 >
-  void wait( const Future<A1,A2> & future ) const { m_task_manager.wait( future ); }
+  void wait( const Future<A1,A2> & f ) const { m_task_manager.wait( f ); }
 
   template< class FunctorType , class A1 , class A2 >
   void respawn( FunctorType * task_functor
@@ -435,8 +431,7 @@ public:
               ) const
     {
       typedef Impl::TaskMember< execution_space , typename FunctorType::value_type , FunctorType >  member_type ;
-      m_task_manager.set_dependence( static_cast< member_type * >( task_functor ) , dep , n );
-      m_task_manager.schedule( static_cast< member_type * >( task_functor ) );
+      m_task_manager.schedule( static_cast< member_type * >( task_functor ) , dep , n );
     }
 
   // Allocate a copy functor and insert into queue
@@ -446,7 +441,7 @@ public:
     {
       typedef typename FunctorType::value_type value_type ;
       typedef Impl::TaskMember< execution_space , value_type , FunctorType >  member_type ;
-      member_type * m = new member_type( functor );
+      member_type * m = new( m_task_manager.memory_allocate( sizeof(member_type) ) ) member_type( functor );
       m_task_manager.schedule( m );
       return Future< value_type , execution_space >( m );
     }
@@ -480,11 +475,11 @@ public:
 //----------------------------------------------------------------------------
 
 template< typename IntType , unsigned P >
-class TaskPolicy< Impl::TaskForEach< Kokkos::RangePolicy< Kokkos::Serial , void , IntType , P >  >  >
+class TaskPolicy< Impl::TaskForEach< Kokkos::RangePolicy< Kokkos::Qthread , void , IntType , P >  >  >
 {
 public:
 
-  typedef Kokkos::Serial execution_space ;
+  typedef Kokkos::Qthread execution_space ;
 
 private:
 
@@ -497,11 +492,11 @@ private:
 
   // ForEach task
   template< class FunctorType >
-  class member_type : public Impl::TaskMember< Kokkos::Serial , void , FunctorType >
+  class member_type : public Impl::TaskMember< Kokkos::Qthread , void , FunctorType >
   {
   private:
 
-    typedef Impl::TaskMember< Kokkos::Serial , void , FunctorType >    task_base_type ;
+    typedef Impl::TaskMember< Kokkos::Qthread , void , FunctorType >    task_base_type ;
 
     range_policy  m_policy ;
 
@@ -522,7 +517,7 @@ private:
     member_type( const FunctorType  & arg_func 
                , const range_policy & arg_policy
                )
-      : task_base_type( & task_base_type::template deallocate< member_type >
+      : task_base_type( & task_manager::template destroy< member_type >
                       , & member_type::apply
                       , arg_func
                       )
@@ -549,7 +544,7 @@ public:
 
       // Allocate a copy functor and insert into queue
 
-      task_root_type * const t = new member_type< FunctorType >( functor , m_range_policy );
+      task_root_type * const t = new( m_task_manager.memory_allocate( sizeof(member_type<FunctorType>) ) ) member_type<FunctorType>( functor , m_range_policy );
 
       m_task_manager.schedule( t );
 
@@ -560,11 +555,11 @@ public:
 //----------------------------------------------------------------------------
 
 template< typename IntType , unsigned P >
-class TaskPolicy< Impl::TaskReduce< Kokkos::RangePolicy< Kokkos::Serial , void , IntType , P >  >  >
+class TaskPolicy< Impl::TaskReduce< Kokkos::RangePolicy< Kokkos::Qthread , void , IntType , P >  >  >
 {
 public:
 
-  typedef Kokkos::Serial execution_space ;
+  typedef Kokkos::Qthread execution_space ;
 
 private:
 
@@ -577,13 +572,13 @@ private:
 
   // ForEach task
   template< class FunctorType >
-  class member_type : public Impl::TaskMember< Kokkos::Serial , typename FunctorType::value_type , FunctorType >
+  class member_type : public Impl::TaskMember< Kokkos::Qthread , typename FunctorType::value_type , FunctorType >
   {
   private:
     typedef typename FunctorType::value_type value_type ;
 
-    typedef Impl::TaskMember< Kokkos::Serial , value_type , FunctorType >    task_base_type ;
-    typedef Impl::TaskMember< Kokkos::Serial , value_type >    task_value_type ;
+    typedef Impl::TaskMember< Kokkos::Qthread , value_type , FunctorType >    task_base_type ;
+    typedef Impl::TaskMember< Kokkos::Qthread , value_type >    task_value_type ;
 
     range_policy  m_policy ;
 
@@ -606,7 +601,7 @@ private:
     member_type( const FunctorType  & arg_func 
                , const range_policy & arg_policy
                )
-      : task_base_type( & task_base_type::template deallocate< member_type >
+      : task_base_type( & task_manager::template destroy< member_type >
                       , & member_type::apply
                       , arg_func
                       )
@@ -632,7 +627,7 @@ public:
 
       // Allocate a copy functor and insert into queue
 
-      task_root_type * const t = new member_type<FunctorType>( functor , m_range_policy );
+      task_root_type * const t = new( m_task_manager.memory_allocate( sizeof(member_type<FunctorType>) ) ) member_type<FunctorType>( functor , m_range_policy );
 
       m_task_manager.schedule( t );
 
@@ -644,5 +639,5 @@ public:
 
 //----------------------------------------------------------------------------
 
-#endif /* #define KOKKOS_SERIAL_TASK_HPP */
+#endif /* #define KOKKOS_QTHREAD_TASK_HPP */
 

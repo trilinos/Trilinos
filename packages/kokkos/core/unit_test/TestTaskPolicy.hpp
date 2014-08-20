@@ -45,8 +45,9 @@
 #ifndef KOKKOS_UNITTEST_TASKPOLICY_HPP
 #define KOKKOS_UNITTEST_TASKPOLICY_HPP
 
-#include <cmath>
+#include <stdio.h>
 #include <iostream>
+#include <cmath>
 #include <Kokkos_TaskPolicy.hpp>
 
 namespace TestTaskPolicy {
@@ -144,9 +145,13 @@ struct FibChild2 {
     }
 };
 
+namespace {
+
 long eval_fib( long n )
 {
   return n < 2 ? n : eval_fib(n-2) + eval_fib(n-1);
+}
+
 }
 
 template< class ExecSpace >
@@ -156,7 +161,7 @@ void test_fib( long n )
 
   Kokkos::Future<long,ExecSpace> f = Kokkos::spawn( policy , FibChild<ExecSpace>(policy,n) );
 
-  Kokkos::wait( policy );
+  Kokkos::wait( policy , f );
 
   if ( f.get() != eval_fib(n) ) {
     std::cout << "Fib(" << n << ") = " << f.get();
@@ -172,7 +177,7 @@ void test_fib2( long n )
 
   Kokkos::Future<long,ExecSpace> f = Kokkos::spawn( policy , FibChild2<ExecSpace>(policy,n) );
 
-  Kokkos::wait( policy );
+  Kokkos::wait( policy , f );
 
   if ( f.get() != eval_fib(n) ) {
     std::cout << "Fib2(" << n << ") = " << f.get();
@@ -214,7 +219,7 @@ void test_norm2( const int n )
 
   Kokkos::Future<double,ExecSpace> f = Kokkos::spawn( policy.reduce(r) , Norm2<ExecSpace>(x) );
 
-  Kokkos::wait( policy );
+  Kokkos::wait( policy , f );
 
 #if defined(PRINT)
   std::cout << "Norm2: " << f.get() << std::endl ;

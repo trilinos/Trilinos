@@ -122,10 +122,11 @@ private:
     >::type >::type >::type
       ExecutionSpace ;
 
-  typedef Impl::TaskManager< ExecutionSpace >                     TaskManager ;
-  typedef Impl::TaskMember<  ExecutionSpace , ValueType , void >  TaskMember ;
+  typedef Impl::TaskManager< ExecutionSpace >              TaskManager ;
+  typedef Impl::TaskMember<  ExecutionSpace >              TaskRoot ;
+  typedef Impl::TaskMember<  ExecutionSpace , ValueType >  TaskValue ;
 
-  TaskMember * m_task ;
+  TaskRoot * m_task ;
 
 public:
 
@@ -135,14 +136,14 @@ public:
   //----------------------------------------
 
   explicit
-  Future( Impl::TaskMember< ExecutionSpace > * task )
-    : m_task( TaskMember::verify_type( task ) )
-    { TaskManager::increment( m_task ); }
+  Future( TaskRoot * task )
+    : m_task(0)
+    { TaskManager::assign( & m_task , TaskValue::verify_type( task ) ); }
 
   //----------------------------------------
 
   KOKKOS_INLINE_FUNCTION
-  ~Future() { TaskManager::decrement( m_task ); }
+  ~Future() { TaskManager::assign( & m_task , 0 ); }
 
   //----------------------------------------
 
@@ -151,43 +152,33 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   Future( const Future & rhs )
-    : m_task( rhs.m_task )
-    { TaskManager::increment( m_task ); }
+    : m_task(0)
+    { TaskManager::assign( & m_task , rhs.m_task ); }
 
   KOKKOS_INLINE_FUNCTION
   Future & operator = ( const Future & rhs )
-    {
-      TaskManager::decrement( m_task );
-      m_task = rhs.m_task ;
-      TaskManager::increment( m_task );
-      return *this ;
-    }
+    { TaskManager::assign( & m_task , rhs.m_task ); return *this ; }
 
   //----------------------------------------
 
   template< class A1 , class A2 >
   KOKKOS_INLINE_FUNCTION
   Future( const Future<A1,A2> & rhs )
-    : m_task( TaskMember::verify_type( rhs.m_task ) )
-    { TaskManager::increment( m_task ); }
+    : m_task(0)
+    { TaskManager::assign( & m_task , TaskValue::verify_type( rhs.m_task ) ); }
 
   template< class A1 , class A2 >
   KOKKOS_INLINE_FUNCTION
   Future & operator = ( const Future<A1,A2> & rhs )
-    {
-      TaskManager::decrement( m_task );
-      m_task = TaskMember::verify_type( rhs.m_task );
-      TaskManager::increment( m_task );
-      return *this ;
-    }
+    { TaskManager::assign( & m_task , TaskValue::verify_type( rhs.m_task ) ); return *this ; }
 
   //----------------------------------------
 
-  typedef typename TaskMember::get_result_type get_result_type ;
+  typedef typename TaskValue::get_result_type get_result_type ;
 
   KOKKOS_INLINE_FUNCTION
-  typename TaskMember::get_result_type get() const
-    { return m_task->get(); }
+  typename TaskValue::get_result_type get() const
+    { return static_cast<TaskValue*>( m_task )->get(); }
 };
 
 } /* namespace Kokkos */
@@ -202,7 +193,8 @@ public:
 
   typedef typename Policy::execution_space  execution_space ;
 
-  void wait() const ;
+  template< class A1 , class A2 >
+  void wait( const Future<A1,A2> & ) const ;
 
   template< class FunctorType >
   Future< typename FunctorType::value_type , execution_space >
@@ -240,9 +232,14 @@ spawn( const TaskPolicy< PolicyType > & policy
      , const FunctorType              & functor )
 { return policy.spawn( functor ); }
 
-template< class PolicyType >
-void wait( const TaskPolicy< PolicyType > & policy )
-{ policy.wait(); }
+template< class PolicyType , class A1 , class A2 >
+void wait( const TaskPolicy< PolicyType > & policy 
+         , const Future<A1,A2>            & future
+         , typename Impl::enable_if<
+             Impl::is_same< typename PolicyType::execution_space
+                          , typename Future<A1,A2>::execution_space >::value
+          >::type * = 0 )
+{ policy.wait( future ); }
 
 } /* namespace Kokkos */
 

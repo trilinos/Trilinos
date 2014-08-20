@@ -48,6 +48,8 @@
 #include <Kokkos_View.hpp>
 #include <Kokkos_CrsArray.hpp>
 
+#include <Qthread/Kokkos_Qthread_TaskPolicy.hpp>
+
 //----------------------------------------------------------------------------
 
 #include <TestViewImpl.hpp>
@@ -62,6 +64,7 @@
 #include <TestScan.hpp>
 #include <TestAggregate.hpp>
 #include <TestCompilerMacros.hpp>
+#include <TestTaskPolicy.hpp>
 
 namespace Test {
 
@@ -203,7 +206,6 @@ TEST_F( qthread , view_remap )
 
 //----------------------------------------------------------------------------
 
-
 TEST_F( qthread , view_aggregate )
 {
   TestViewAggregate< Kokkos::Qthread >();
@@ -229,7 +231,16 @@ TEST_F( qthread, team_shared ) {
 TEST_F( qthread , team_scan )
 {
   TestScanTeam< Kokkos::Qthread >( 10 );
-//  TestScanTeam< Kokkos::Qthread >( 10000 );
+  TestScanTeam< Kokkos::Qthread >( 10000 );
+}
+
+//----------------------------------------------------------------------------
+
+TEST_F( qthread , task_policy )
+{
+  // TestTaskPolicy::test_norm2< Kokkos::Qthread >( 1000 );
+  for ( long i = 0 ; i < 30 ; ++i ) TestTaskPolicy::test_fib< Kokkos::Qthread >(i);
+  for ( long i = 0 ; i < 40 ; ++i ) TestTaskPolicy::test_fib2< Kokkos::Qthread >(i);
 }
 
 //----------------------------------------------------------------------------
