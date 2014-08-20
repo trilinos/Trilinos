@@ -477,10 +477,13 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
     RCP<CommRequest<int> > *requests = new RCP<CommRequest<int> > [nprocs];
     for (int cnt = 0, i = 0; i < nprocs; i++) {
       if (i != rank) {
-	requests[cnt++] = Teuchos::ireceive<int,int>(comm,
-						     rcp(&(recvCount[i]),
-							 false),
-						     i);
+	try {
+	  requests[cnt++] = Teuchos::ireceive<int,int>(comm,
+						       rcp(&(recvCount[i]),
+							   false),
+						       i);
+	}
+	Z2_FORWARD_EXCEPTIONS;
       }
     }
 
@@ -496,12 +499,18 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
     // Send data; can use readySend since receives are posted.
     for (int i = 0; i < nprocs; i++) {
       if (i != rank) {
-	Teuchos::readySend<int,int>(comm, sendCount[i], i);
+	try {
+	  Teuchos::readySend<int,int>(comm, sendCount[i], i);
+	}
+	Z2_FORWARD_EXCEPTIONS;
       }
     }
 
     // Wait for messages to return.
-    Teuchos::waitAll<int>(comm, arrayView(requests, nprocs-1));
+    try {
+      Teuchos::waitAll<int>(comm, arrayView(requests, nprocs-1));
+    }
+    Z2_FORWARD_EXCEPTIONS;
 
     delete [] requests;
     delete[] node_cmap_node_cnts;
