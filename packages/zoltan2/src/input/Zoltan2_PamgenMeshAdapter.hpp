@@ -469,6 +469,9 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
     delete[] node_cmap_ids;
     node_cmap_ids = NULL;
     int *sendCount = new int [nprocs];
+    int *recvCount = new int [nprocs];
+    int rank = comm.getRank();
+    recvCount[rank] = sendCount[rank] = 0;
 
     for(int j = 0; j < num_node_cmaps; j++) {
       sendCount[node_proc_ids[j][0]] = 1;
