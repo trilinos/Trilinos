@@ -1949,8 +1949,9 @@ mv_multiply_team_policy( const int nrow , const int rows_per_thread, const int i
 
       Impl::MV_Multiply_Check_Compatibility(betav,y,alphav,A,x,doalpha,dobeta);
 
+      const int NNZPerRow = A.nnz()/A.numRows();
+
 #ifndef KOKKOS_FAST_COMPILE
-      int NNZPerRow = A.nnz()/A.numRows();
 
       if(NNZPerRow>=96) {
         typedef Vectorization<typename RangeVector::device_type,32> vec_type;
@@ -2117,6 +2118,8 @@ template <class RangeVector,
 
       Impl::MV_Multiply_Check_Compatibility(betav,y,alphav,A,x,doalpha,dobeta);
 
+      const int NNZPerRow = A.nnz()/A.numRows();
+
 #ifndef KOKKOS_FAST_COMPILE
 
       if(x.dimension_1()==1) {
@@ -2129,7 +2132,6 @@ template <class RangeVector,
           (betav,y_sub,alphav,A,x_sub);
 
       } else {
-        int NNZPerRow = A.nnz()/A.numRows();
 
         //Currently for multiple right hand sides its not worth it to use more than 8 threads per row on GPUs
         if(NNZPerRow>=96) {
@@ -2208,8 +2210,6 @@ template <class RangeVector,
                                  CoeffVector1Type, CoeffVector2Type, 2, 2, vec_type::increment >
         OpType ;
 
-      OpType op ;
-
       int numVecs = x.dimension_1();
       CoeffVector1 beta = betav;
       CoeffVector2 alpha = alphav;
@@ -2239,6 +2239,7 @@ template <class RangeVector,
       const typename CrsMatrixType::ordinal_type nrow = A.numRows();
 
       OpType op(beta,alpha,A,x,y,x.dimension_1(),RowsPerThread<typename RangeVector::device_type >(NNZPerRow)) ;
+
       Kokkos::parallel_for( mv_multiply_team_policy< typename RangeVector::device_type >
            ( nrow ,RowsPerThread<typename RangeVector::device_type >(NNZPerRow), vec_type::increment ) , op );
 
