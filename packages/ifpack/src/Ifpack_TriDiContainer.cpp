@@ -234,22 +234,23 @@ int Ifpack_TriDiContainer::Compute(const Epetra_RowMatrix& Matrix_in)
 }
 
 //==============================================================================
-// int Ifpack_TriDiContainer::Apply()
-// {
-//   if (IsComputed() == false)
-//     IFPACK_CHK_ERR(-3);
+ int Ifpack_TriDiContainer::Apply()
+ {
+   IFPACK_CHK_ERR(-300);
+   //   if (IsComputed() == false)
+   //     IFPACK_CHK_ERR(-3);
 
-//   if (KeepNonFactoredMatrix_) {
-//     IFPACK_CHK_ERR(RHS_.Multiply('N','N', 1.0,NonFactoredMatrix_,LHS_,0.0));
-//   }
-//   else
-//     IFPACK_CHK_ERR(RHS_.Multiply('N','N', 1.0,Matrix_,LHS_,0.0));
+   //   if (KeepNonFactoredMatrix_) {
+   //     IFPACK_CHK_ERR(RHS_.Multiply('N','N', 1.0,NonFactoredMatrix_,LHS_,0.0));
+   //   }
+   //   else
+   //     IFPACK_CHK_ERR(RHS_.Multiply('N','N', 1.0,Matrix_,LHS_,0.0));
 
-// #ifdef IFPACK_FLOPCOUNTERS
-//   ApplyFlops_ += 2 * NumRows_ * NumRows_;
-// #endif
-//   return(0);
-// }
+   // #ifdef IFPACK_FLOPCOUNTERS
+   //   ApplyFlops_ += 2 * NumRows_ * NumRows_;
+   // #endif
+   return(0);
+ }
 
 //==============================================================================
 ostream& Ifpack_TriDiContainer::Print(ostream & os) const

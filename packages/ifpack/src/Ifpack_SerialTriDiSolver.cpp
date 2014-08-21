@@ -162,6 +162,8 @@ int Ifpack_SerialTriDiSolver::SetMatrix(Ifpack_SerialTriDiMatrix & A_in) {
   Factor_ = &A_in;
   N_ = A_in.N();
   A_ = A_in.A();
+  LDA_ = A_in.LDA();
+  LDAF_ = LDA_;
   AF_ = A_in.A();
   return(0);
 }
@@ -214,59 +216,22 @@ int Ifpack_SerialTriDiSolver::Factor(void) {
   // If we want to refine the solution, then the factor must
   // be stored separatedly from the original matrix
 
+  Ifpack_SerialTriDiMatrix * F = Matrix_;
+
   if (A_ == AF_)
     if (RefineSolution_ ) {
       Factor_ = new Ifpack_SerialTriDiMatrix(*Matrix_);
+      F = Factor_;
       AF_ = Factor_->A();
+      LDAF_ = Factor_->LDA();
     }
-
-  // if (Equilibrate_) ierr = EquilibrateMatrix();
-
-  //  if (ierr!=0) EPETRA_CHK_ERR(ierr-2);
 
   if (IPIV_==0) IPIV_ = new int[N_]; // Allocated Pivot vector if not already done.
   
-  double * DL_  = Matrix_->DL();
-  double * D_   = Matrix_->D();
-  double * DU_  = Matrix_->DU();
-  double * DU2_ = Matrix_->DU2();
-
-  for(int i=0;i<N_;++i) {
-	if (i==0) std::cout << "DL  - ";
-	else std::cout <<DL_[i-1]<<" ";
-    }
-    std::cout<<std::endl;
-
-    std::cout <<" D ";
-    for(int i=0;i<N_;++i) {
-      std::cout << D_[i]<<" ";
-    }
-    std::cout<<std::endl;
-
-    std::cout <<" DU ";
-    for(int i=0;i<N_;++i) {
-      if (i==0) std::cout << " - ";
-      else std::cout << DU_[i-1]<<" ";
-    }
-    std::cout<<std::endl;
-    
-    std::cout <<" DU2 ";
-    for(int i=0;i<N_;++i) {
-      if (i<2) std::cout << " - ";
-      else std::cout << DU2_[i-2]<<" ";
-    }
-    std::cout<<std::endl;
-    
-    std::cout <<" IPIV ";
-    for(int i=0;i<N_;++i) {
-      std::cout << IPIV_[i]<<" ";
-    }
-    std::cout<<"********************** " <<std::endl;
-    
-
-
-
-
+  double * DL_  = F->DL();
+  double * D_   = F->D();
+  double * DU_  = F->DU();
+  double * DU2_ = F->DU2();
 
   lapack.GTTRF(N_, DL_, D_, DU_, DU2_, IPIV_, &INFO_);
 
@@ -292,19 +257,8 @@ int Ifpack_SerialTriDiSolver::Solve(void) {
   // Otherwise, if the matrix is already factored we will call the TRS interface.
   // Otherwise, if the matrix is unfactored we will call the SV interface.
 
-
-
-  // if (Equilibrate_) {
-  //   ierr = EquilibrateRHS();
-  //   B_Equilibrated_ = true;
-  // }
-  // EPETRA_CHK_ERR(ierr);
-  // if (A_Equilibrated_ && !B_Equilibrated_) EPETRA_CHK_ERR(-1); // Matrix and vectors must be similarly scaled
-  // if (!A_Equilibrated_ && B_Equilibrated_) EPETRA_CHK_ERR(-2);
   if (B_==0) EPETRA_CHK_ERR(-3); // No B
   if (X_==0) EPETRA_CHK_ERR(-4); // No X
-
-  // if (ShouldEquilibrate() && !A_Equilibrated_) ierr = 1; // Warn that the system should be equilibrated.
 
   double DN = N_;
   double DNRHS = NRHS_;
@@ -322,47 +276,17 @@ int Ifpack_SerialTriDiSolver::Solve(void) {
        X_ = LHS_->A(); 
     }
 
-    double * DL_  = Matrix_->DL();
-    double * D_   = Matrix_->D();
-    double * DU_  = Matrix_->DU();
-    double * DU2_ = Matrix_->DU2();
+    Ifpack_SerialTriDiMatrix * F;
+    if(A_ == AF_)
+      F = Matrix_;
+    else
+      F = Factor_;
 
+    double * DL_  = F->DL();
+    double * D_   = F->D();
+    double * DU_  = F->DU();
+    double * DU2_ = F->DU2();
 
-    std::cout << " I_STDS:: gttrs calling parameters "<<std::endl;
-    std::cout << " TRANS "<<TRANS_<<" , N "<<N_<<" ,NRHS  "<<NRHS_<<" , IPIV "<<IPIV_<<std::endl;
-
-    for(int i=0;i<N_;++i) {
-	if (i==0) std::cout << "DL  - ";
-	else std::cout <<DL_[i-1]<<" ";
-    }
-    std::cout<<std::endl;
-
-    std::cout <<" D ";
-    for(int i=0;i<N_;++i) {
-      std::cout << D_[i]<<" ";
-    }
-    std::cout<<std::endl;
-
-    std::cout <<" DU ";
-    for(int i=0;i<N_;++i) {
-      if (i==0) std::cout << " - ";
-      else std::cout << DU_[i-1]<<" ";
-    }
-    std::cout<<std::endl;
-    
-    std::cout <<" DU2 ";
-    for(int i=0;i<N_;++i) {
-      if (i<2) std::cout << " - ";
-      else std::cout << DU2_[i-2]<<" ";
-    }
-    std::cout<<std::endl;
-    
-    std::cout <<" IPIV ";
-    for(int i=0;i<N_;++i) {
-      std::cout << IPIV_[i]<<" ";
-    }
-    std::cout<<std::endl;
-    
     lapack.GTTRS(TRANS_,N_,NRHS_,DL_,D_,DU_,DU2_,IPIV_,X_,N_,&INFO_);
 
     if (INFO_!=0) EPETRA_CHK_ERR(INFO_);
@@ -381,155 +305,41 @@ int Ifpack_SerialTriDiSolver::Solve(void) {
   return(0);
 }
 //=============================================================================
-int Ifpack_SerialTriDiSolver::ApplyRefinement(void)
-{
-  double DN = N_;
-  double DNRHS = NRHS_;
-  if (!Solved()) EPETRA_CHK_ERR(-100); // Must have an existing solution
-  if (A_==AF_) EPETRA_CHK_ERR(-101); // Cannot apply refine if no original copy of A.
-
-  if (FERR_ != 0) delete [] FERR_; // Always start with a fresh copy of FERR_, since NRHS_ may change
-  FERR_ = new double[NRHS_];
-  if (BERR_ != 0) delete [] BERR_; // Always start with a fresh copy of BERR_, since NRHS_ may change
-  BERR_ = new double[NRHS_];
-  AllocateWORK();
-  AllocateIWORK();
-
-  lapack.GERFS(TRANS_, N_, NRHS_, A_, LDA_, AF_, LDAF_, IPIV_,
-	       B_, 1, X_, LDX_, FERR_, BERR_,
-	       WORK_, IWORK_, &INFO_);
-
-  SolutionErrorsEstimated_ = true;
-  ReciprocalConditionEstimated_ = true;
-  SolutionRefined_ = true;
-
-  UpdateFlops(2.0*DN*DN*DNRHS); // Not sure of count
-
-  EPETRA_CHK_ERR(INFO_);
-  return(0);
-
-}
-
-//=============================================================================
-// int Ifpack_SerialTriDiSolver::ComputeEquilibrateScaling(void) {
-//   if (R_!=0) return(0); // Already computed
-
-//   double DM = N_;
-//   double DN = N_;
-//   R_ = new double[N_];
-//   C_ = new double[N_];
-//   // Use the general equilibrate, as Teuchos doesn't have a specific one for Tridiagonal
-
-//   lapack.GEEQU (N_, N_, AF_, LDAF_, R_, C_, &ROWCND_, &COLCND_, &AMAX_, &INFO_);
-
-//   if (INFO_ != 0) EPETRA_CHK_ERR(INFO_);
-
-//   if (COLCND_<0.1 || ROWCND_<0.1 || AMAX_ < Epetra_Underflow || AMAX_ > Epetra_Overflow) ShouldEquilibrate_ = true;
-
-//   UpdateFlops(4.0*DM*DN);
-
-//   return(0);
-// }
-
-// //=============================================================================
-// int Ifpack_SerialTriDiSolver::EquilibrateMatrix(void)
-// {
-//   int i, j;
-//   int ierr = 0;
+ int Ifpack_SerialTriDiSolver::ApplyRefinement(void)
+ {
+   std::cout<<" SerialTriDiSolver::ApplyRefinement this function is not supported"<<std::endl;
+   EPETRA_CHK_ERR(-102);
 
 //   double DN = N_;
-//   double DM = N_;
+//   double DNRHS = NRHS_;
+//   if (!Solved()) EPETRA_CHK_ERR(-100); // Must have an existing solution
+//   if (A_==AF_) EPETRA_CHK_ERR(-101); // Cannot apply refine if no original copy of A.
 
-//   if (A_Equilibrated_) return(0); // Already done
-//   if (R_==0) ierr = ComputeEquilibrateScaling(); // Compute R and C if needed
-//   if (ierr!=0) EPETRA_CHK_ERR(ierr);
-//   if (A_==AF_) {
-//     double * ptr;
-//     for (j=0; j<N_; j++) {
-//       ptr = A_ + j*LDA_;
-//       double s1 = C_[j];
-//       for (i=0; i<M=N_; i++) {
-// 	*ptr = *ptr*s1*R_[i];
-// 	ptr++;
-//       }
-//     }
-//     UpdateFlops(2.0*4*(DN-1));
-//   }
-//   else {
-//     double * ptr;
-//     double * ptr1;
-//     for (j=0; j<N_; j++) {
-//       ptr = A_ + j*LDA_;
-//       ptr1 = AF_ + j*LDAF_;
-//       double s1 = C_[j];
-//       for (i=0; i<N_; i++) {
-// 	*ptr = *ptr*s1*R_[i];
-// 	ptr++;
-// 	*ptr1 = *ptr1*s1*R_[i];
-// 	ptr1++;
-//       }
-//     }
-//     UpdateFlops(4.0*DM*DN);
-//   }
+//   if (FERR_ != 0) delete [] FERR_; // Always start with a fresh copy of FERR_, since NRHS_ may change
+//   FERR_ = new double[NRHS_];
+//   if (BERR_ != 0) delete [] BERR_; // Always start with a fresh copy of BERR_, since NRHS_ may change
+//   BERR_ = new double[NRHS_];
+//   AllocateWORK();
+//   AllocateIWORK();
 
-//   A_Equilibrated_ = true;
+//   LDB_ = LDX_ = N_;
 
+//   std::cout << " ldb ldx "<<LDB_<<" "<<LDX_<<std::endl;
+
+//   lapack.GERFS(TRANS_, N_, NRHS_, A_, LDA_, AF_, LDAF_, IPIV_,
+// 	       B_, LDB_, X_, LDX_, FERR_, BERR_,
+// 	       WORK_, IWORK_, &INFO_);
+
+//   SolutionErrorsEstimated_ = true;
+//   ReciprocalConditionEstimated_ = true;
+//   SolutionRefined_ = true;
+
+//   UpdateFlops(2.0*DN*DN*DNRHS); // Not sure of count
+
+//   EPETRA_CHK_ERR(INFO_);
 //   return(0);
-// }
 
-//=============================================================================
-// int Ifpack_SerialTriDiSolver::EquilibrateRHS(void)
-// {
-//   int i, j;
-//   int ierr = 0;
-
-//   if (B_Equilibrated_) return(0); // Already done
-//   if (R_==0) ierr = ComputeEquilibrateScaling(); // Compute R and C if needed
-//   if (ierr!=0) EPETRA_CHK_ERR(ierr);
-
-//   double * R_tmp = R_;
-//   if (Transpose_) R_tmp = C_;
-
-//   double * ptr;
-//   for (j=0; j<NRHS_; j++) {
-//     ptr = B_ + j*LDB_;
-//     for (i=0; i<N_; i++) {
-//       *ptr = *ptr*R_tmp[i];
-//       ptr++;
-//     }
-//   }
-
-
-//   B_Equilibrated_ = true;
-//   UpdateFlops((double) N_*(double) NRHS_);
-
-//   return(0);
-// }
-
-//=============================================================================
-// int Ifpack_SerialTriDiSolver::UnequilibrateLHS(void)
-// {
-//   int i, j;
-
-//   if (!B_Equilibrated_) return(0); // Nothing to do
-
-//   double * C_tmp = C_;
-//   if (Transpose_) C_tmp = R_;
-
-//   double * ptr;
-//   for (j=0; j<NRHS_; j++) {
-//     ptr = X_ + j*LDX_;
-//     for (i=0; i<N_; i++) {
-//       *ptr = *ptr*C_tmp[i];
-//       ptr++;
-//     }
-//   }
-
-
-//   UpdateFlops((double) N_ *(double) NRHS_);
-
-//   return(0);
-// }
+ }
 
 //=============================================================================
 int Ifpack_SerialTriDiSolver::Invert(void)

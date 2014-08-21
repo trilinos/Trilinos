@@ -344,6 +344,8 @@ This function performs a variety of matrix-matrix multiply operations.
   //! Returns column dimension of system.
   int N() const {return(N_);};
 
+  int LDA() const {return(LDA_);};
+
   //! Returns pointer to the \e this matrix.
   double* A() const {return(A_);};
 
@@ -435,6 +437,7 @@ This function performs a variety of matrix-matrix multiply operations.
   void CleanupData();
 
   int N_;
+  int LDA_;
   bool A_Copied_;
   Epetra_DataAccess CV_;
 
@@ -534,24 +537,6 @@ inline const double& Ifpack_SerialTriDiMatrix::operator () (int RowIndex, int Co
  }
  return D_[0]; // Crime against humanity, should never get here. 
 }
-//=========================================================================
-/* inline double* Ifpack_SerialTriDiMatrix::operator [] (int Index) { */
-/* #ifdef HAVE_EPETRA_ARRAY_BOUNDS_CHECK */
-/*   if (Index >= 4*(N_-1) || Index < 0) */
-/*     throw ReportError("index = " +toString(Index) + */
-/* 		      " Out of Range 0 - " + toString(4*(N_-1)-1),-2); */
-/* #endif */
-/*   return(A_ + Index); */
-/* } */
-/* //========================================================================= */
-/* inline const double* Ifpack_SerialTriDiMatrix::operator [] (int Index) const { */
-/* #ifdef HAVE_EPETRA_ARRAY_BOUNDS_CHECK */
-/*   if (Index >= 4*(N_-1) || Index < 0) */
-/*     throw ReportError("Index = " +toString(Index) + */
-/* 		      " Out of Range 0 - " + toString(4*(N_-1)-1,-2); */
-/* #endif */
-/*   return(A_+ Index); */
-/* } */
-//=========================================================================
+
 
 #endif /* EPETRA_SERIALTRIDIMATRIX_H */

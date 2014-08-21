@@ -116,23 +116,27 @@ Ifpack_SerialTriDiMatrix::Ifpack_SerialTriDiMatrix(Epetra_DataAccess CV_in, doub
 Ifpack_SerialTriDiMatrix::Ifpack_SerialTriDiMatrix(const Ifpack_SerialTriDiMatrix& Source)
   : Epetra_CompObject(Source),
     N_(Source.N_),
+    LDA_(Source.LDA_),
     A_Copied_(false),
     CV_(Source.CV_),
-    A_(Source.A_),
     UseTranspose_(false)
 {
-	SetLabel(Source.Label());
-	if(CV_ == Copy) {
-	  const int newsize = 4* (N_-1);
-		if(newsize > 0) {
-			A_ = new double[newsize];
-			CopyMat(Source.A_, Source.N() , A_, N_);
-			A_Copied_ = true;
-		}
-		else {
-			A_ = 0;
-		}
-	}
+  SetLabel(Source.Label());
+  if(CV_ == Copy) {
+    const int newsize = 4* (N_-1);
+    if(newsize > 0) {
+      A_ = new double[newsize];
+      CopyMat(Source.A_, Source.N() , A_, N_);
+      A_Copied_ = true;
+      DL_ = A_;
+      D_  = DL_+(N_-1);
+      DU_ = D_ + N_;
+      DU2_ = DU_ + (N_-1);
+    }
+    else {
+      A_ = 0;
+    }
+  }
 }
 
 //=============================================================================
@@ -170,6 +174,7 @@ int Ifpack_SerialTriDiMatrix::Shape(int NumRowCol) {
 
   CleanupData(); // Get rid of anything that might be already allocated
   N_ = NumRowCol;
+  LDA_ = N_;
   const int newsize = 4*(N_-1);
   if(newsize > 0) {
     A_ = new double[newsize];
@@ -303,18 +308,22 @@ void Ifpack_SerialTriDiMatrix::CopyMat(const double* Source,
   if (add) {
     // do this in 4 passes
     for(int j=0; j<lmax; ++j) {      
-      if(j<nrowcol-1) Target[j] += Source[j];  // DU
-      Target[tN+j] += Source[nrowcol+j];  //D
-      if(j<nrowcol-1) Target[(2*tN)+j] += Source[(2*nrowcol)+j]; // DU
-      if(j<nrowcol-2) Target[(3*tN)+j] += Source[(3*nrowcol)+j]; // DU2
+      Target[(tN-1)+j] += Source[(nrowcol-1)+j];  //D      
+      if(j<tN-1) {
+	Target[j] += Source[j];  // DL
+	Target[(tN-1)+tN + j] += Source[(nrowcol-1)+ nrowcol + j]; // DU
       }
+      if(j<tN-2) Target[(tN-1)*2 + tN + j] += Source[ (nrowcol-1)*2 +nrowcol  + j]; // DU2
+    }
   }
-  else {
-    for(int j=0; j<lmax; ++j) {      
-      if(j<nrowcol-1) Target[j] = Source[j];  // DU
-      Target[tN+j]              = Source[nrowcol+j];  //D
-      if(j<nrowcol-1) Target[(2*tN)+j] = Source[(2*nrowcol)+j]; // DU
-      if(j<nrowcol-2) Target[(3*tN)+j] = Source[(3*nrowcol)+j]; // DU2
+  else {  
+    for(int j=0; j<lmax; ++j) {
+      Target[(tN-1)+j] = Source[(nrowcol-1)+j];  //D      
+      if(j<tN-1) {
+	Target[j] = Source[j];  // DL
+	Target[(tN-1)+tN + j] = Source[(nrowcol-1)+ nrowcol + j]; // DU
+      }
+      if(j<tN-2) Target[(tN-1)*2 + tN + j] = Source[ (nrowcol-1)*2 +nrowcol  + j]; // DU2
     }
   }
   return;
@@ -336,24 +345,6 @@ double Ifpack_SerialTriDiMatrix::NormOne() const {
 double Ifpack_SerialTriDiMatrix::NormInf() const {
   return NormOne();
 
-  // int i, j;
-
-  //   double anorm = 0.0;
-  //   double * ptr;
-
-  //   // Loop across columns in inner loop.  Most expensive memory access, but
-  //   // requires no extra storage.
-  //   for (i=0; i<M_; i++) {
-  //     double sum=0.0;
-  //     ptr = A_ + i;
-  //     for (j=0; j<N_; j++) {
-  // 	sum += std::abs(*ptr);
-  // 	ptr += LDA_;
-  //     }
-  //     anorm = EPETRA_MAX(anorm, sum);
-  //   }
-  // UpdateFlops((double)N_*(double)N_);
-  // return(anorm);
 }
 //=============================================================================
 int Ifpack_SerialTriDiMatrix::Scale(double ScalarA) {

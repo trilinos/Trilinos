@@ -14,6 +14,7 @@ ADD_SUBDIRECTORIES(
   PreconditionerFactory
   Relaxation
   SetParameters
+  TriDi
   TestAll
   BlockCheby
   #UseTranspose

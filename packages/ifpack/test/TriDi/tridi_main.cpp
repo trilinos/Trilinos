@@ -78,7 +78,6 @@ void printArray(double* array, int length);
 int main(int argc, char *argv[])
 {
   int ierr = 0;
-  bool debug = true;
 
 // #ifdef EPETRA_MPI
 //   MPI_Init(&argc,&argv);
@@ -114,11 +113,9 @@ int main(int argc, char *argv[])
   double * X = new double[NRHS];
   double * ed_X = new double[NRHS];
 
-  int LDX = 1;
   double * B = new double[NRHS];
   double * ed_B = new double[NRHS];
 
-  bool Transpose = false;
 
   Ifpack_SerialTriDiSolver solver;
   Ifpack_SerialTriDiMatrix * Matrix;
@@ -127,12 +124,14 @@ int main(int argc, char *argv[])
   Epetra_SerialDenseMatrix * ed_Matrix;
 
   //  solver.FactorWithEquilibration(false);
-  Transpose = false;
+
+  bool Transpose = false;
+  bool Refine = false;
   solver.SolveWithTranspose(Transpose);
-  solver.SolveToRefinedSolution(false);
+  solver.SolveToRefinedSolution(Refine);
 
   ed_solver.SolveWithTranspose(Transpose);
-  ed_solver.SolveToRefinedSolution(false);
+  ed_solver.SolveToRefinedSolution(Refine);
 
   Matrix = new Ifpack_SerialTriDiMatrix(4,true);
   ed_Matrix = new Epetra_SerialDenseMatrix(4,4);
@@ -174,9 +173,6 @@ int main(int argc, char *argv[])
     }
     std::cout<<std::endl;
     
- 
-
-
   double * ed_a = ed_Matrix->A();
   for(int i=0;i<N;++i)
     for(int j=0;j<N;++j) {

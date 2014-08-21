@@ -310,7 +310,7 @@ public:
   virtual int Compute(const Epetra_RowMatrix& Matrix_in);
 
   //! Apply the matrix to RHS, results are stored in LHS.
-  //  virtual int Apply();
+  virtual int Apply();
 
   //! Apply the inverse of the matrix to RHS, results are stored in LHS.
   virtual int ApplyInverse();

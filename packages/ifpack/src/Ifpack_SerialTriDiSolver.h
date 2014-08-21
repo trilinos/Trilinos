@@ -198,25 +198,6 @@ class EPETRA_LIB_DLL_EXPORT Ifpack_SerialTriDiSolver :
   */
   virtual int Invert(void);
 
-  //! Computes the scaling vector S(i) = 1/sqrt(A(i,i)) of the \e this matrix.
-  /*!
-    \return Integer error code, set to 0 if successful. Otherwise returns the LAPACK error code INFO.
-  */
-  //  virtual int ComputeEquilibrateScaling(void);
-
-  //! Equilibrates the \e this matrix.
-  /*!
-    \return Integer error code, set to 0 if successful. Otherwise returns the LAPACK error code INFO.
-  */
-  //  virtual int EquilibrateMatrix(void);
-
-  //! Equilibrates the current RHS.
-  /*!
-    \return Integer error code, set to 0 if successful. Otherwise returns the LAPACK error code INFO.
-  */
-  //  int EquilibrateRHS(void);
-
-
   //! Apply Iterative Refinement.
   /*!
     \return Integer error code, set to 0 if successful. Otherwise returns the LAPACK error code INFO.
@@ -346,11 +327,6 @@ class EPETRA_LIB_DLL_EXPORT Ifpack_SerialTriDiSolver :
   //! Returns a pointer to the backward error estimates computed by LAPACK.
   double * BERR()  const {return(BERR_);};
 
-  //! Returns a pointer to the row scaling vector used for equilibration.
-  //  double * R()  const {return(R_);};
-
-  //! Returns a pointer to the column scale vector used for equilibration.
-  //  double * C()  const {return(C_);};
   //@}
 
   //! @name I/O methods
@@ -413,8 +389,6 @@ class EPETRA_LIB_DLL_EXPORT Ifpack_SerialTriDiSolver :
   double * BERR_;
   double * AF_;
   double * WORK_;
-  /* double * R_; */
-  /* double * C_; */
 
   double * B_;
   double * X_;
