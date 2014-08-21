@@ -1744,14 +1744,9 @@ NNTI_result_t NNTI_ib_unregister_memory (
         reg_buf->transport_id      = NNTI_TRANSPORT_NULL;
         IB_SET_MATCH_ANY(&reg_buf->buffer_owner);
         reg_buf->ops               = (NNTI_buf_ops_t)0;
-        //    IB_SET_MATCH_ANY(&reg_buf->peer);
         reg_buf->payload_size      = 0;
         reg_buf->payload           = 0;
         reg_buf->transport_private = 0;
-    } else {
-        if (reg_buf->buffer_segments.NNTI_remote_addr_array_t_val != NULL) {
-            free(reg_buf->buffer_segments.NNTI_remote_addr_array_t_val);
-        }
     }
 
     log_debug(nnti_debug_level, "exit");
@@ -3641,10 +3636,10 @@ static struct ibv_mr *register_memory_segment(
 
     log_debug(nnti_debug_level, "enter buffer(%p) len(%d)", buf, len);
 
-    trios_start_timer(callTime);
-    mlock(buf, len);
-    munlock(buf, len);
-    trios_stop_timer("mlock", callTime);
+//    trios_start_timer(callTime);
+//    mlock(buf, len);
+//    munlock(buf, len);
+//    trios_stop_timer("mlock", callTime);
 
     trios_start_timer(callTime);
     mr = ibv_reg_mr_wrapper(transport_global_data.pd, buf, len, access);
@@ -3682,10 +3677,10 @@ static int register_ack(ib_work_request *ib_wr)
 
     len = sizeof(ib_wr->ack);
 
-    trios_start_timer(callTime);
-    mlock(&ib_wr->ack, len);
-    munlock(&ib_wr->ack, len);
-    trios_stop_timer("mlock", callTime);
+//    trios_start_timer(callTime);
+//    mlock(&ib_wr->ack, len);
+//    munlock(&ib_wr->ack, len);
+//    trios_stop_timer("mlock", callTime);
 
     trios_start_timer(callTime);
     mr = ibv_reg_mr_wrapper(transport_global_data.pd, &ib_wr->ack, len, (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
