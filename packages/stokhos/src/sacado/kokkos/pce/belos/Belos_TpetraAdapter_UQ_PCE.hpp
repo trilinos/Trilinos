@@ -586,39 +586,16 @@ namespace Belos {
         << " < mv.getNumVectors() = " << mv.getNumVectors () << ".");
 #endif
 
-      const size_t num_mv = mv.getNumVectors();
-      Teuchos::Array<Scalar> mp_norms(num_mv);
-      Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> av(mp_norms);
-      Teuchos::ArrayView<mag_type> av2(normvec);
+      Teuchos::ArrayView<mag_type> av(normvec);
       switch (type) {
       case OneNorm:
         mv.norm1(av(0,mv.getNumVectors()));
-
-        for (size_t col=0; col<num_mv; ++col) {
-          BaseScalar v = 0.0;
-          const s_ordinal sz = mp_norms[col].size();
-          for (s_ordinal i=0; i<sz; ++i) {
-            const BaseScalar a = mp_norms[col].fastAccessCoeff(i);
-            v += a;
-          }
-          normvec[col] = v;
-        }
         break;
       case TwoNorm:
-        mv.norm2(av2(0,mv.getNumVectors()));
+        mv.norm2(av(0,mv.getNumVectors()));
         break;
       case InfNorm:
         mv.normInf(av(0,mv.getNumVectors()));
-
-        for (size_t col=0; col<num_mv; ++col) {
-          BaseScalar v = 0.0;
-          const s_ordinal sz = mp_norms[col].size();
-          for (s_ordinal i=0; i<sz; ++i) {
-            const BaseScalar a = mp_norms[col].fastAccessCoeff(i);
-            if (a > v) v = a;
-          }
-          normvec[col] = v;
-        }
         break;
       default:
         // Throw logic_error rather than invalid_argument, because if
