@@ -99,7 +99,7 @@ protected :
   inline
   TaskMember( const function_type    arg_dealloc
             , const function_type    arg_apply
-            , const std::type_info & arg_type
+            , const std::type_info & arg_type = typeid(void)
             )
     : m_typeid(  arg_type )
     , m_dealloc( arg_dealloc )

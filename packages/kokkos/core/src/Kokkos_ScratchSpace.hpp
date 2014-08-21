@@ -44,6 +44,7 @@
 #ifndef KOKKOS_SCRATCHSPACE_HPP
 #define KOKKOS_SCRATCHSPACE_HPP
 
+#include <stdio.h>
 #include <Kokkos_Macros.hpp>
 #include <impl/Kokkos_Tags.hpp>
 
@@ -89,7 +90,10 @@ public:
   void * get_shmem( const IntType & size ) const
     {
       void * tmp = m_iter ;
-      if ( m_end < ( m_iter += align( size ) ) ) { tmp = 0 ; }
+      if ( m_end < ( m_iter += align( size ) ) ) {
+        printf("ScratchMemorySpace<...>::get_shmem overflow %ld\n",long(m_end-m_iter));
+        tmp = 0 ;
+      }
       return tmp ;
     }
 

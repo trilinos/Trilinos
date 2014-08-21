@@ -50,9 +50,10 @@
 
 #include <cstddef>
 #include <iosfwd>
+#include <Kokkos_HostSpace.hpp>
+#include <Kokkos_ScratchSpace.hpp>
 #include <Kokkos_Layout.hpp>
 #include <Kokkos_MemoryTraits.hpp>
-#include <Kokkos_HostSpace.hpp>
 #include <impl/Kokkos_Tags.hpp>
 
 /*--------------------------------------------------------------------------*/
@@ -78,11 +79,11 @@ public:
   typedef Threads                  device_type ;
   typedef Threads                  execution_space ;
   typedef Kokkos::HostSpace        memory_space ;
-  typedef Threads                  scratch_memory_space ;
   typedef memory_space::size_type  size_type ;
   typedef Kokkos::LayoutRight      array_layout ;
   typedef Kokkos::Threads          host_mirror_device_type ;
 
+  typedef ScratchMemorySpace< Threads >  scratch_memory_space ;
   //@}
   /*------------------------------------------------------------------------*/
   //! \name Static functions that all Kokkos devices must implement.
@@ -129,16 +130,6 @@ public:
   static void print_configuration( std::ostream & , const bool detail = false );
 
   //@}
-  //--------------------------------------------------------------------------
-  //--------------------------------------------------------------------------
-  //! \name Function for the functor device interface */
-  //@{
-
-  KOKKOS_INLINE_FUNCTION void * get_shmem( const int size ) const ;
-
-  explicit KOKKOS_INLINE_FUNCTION Threads( Impl::ThreadsExec & );
-
-  /**@} */
   /*------------------------------------------------------------------------*/
   /*------------------------------------------------------------------------*/
   //! \name Device-specific functions
@@ -170,32 +161,47 @@ public:
 
   static Threads & instance( int = 0 );
 
+  //----------------------------------------
   /** \brief  Maximum size of a single thread team.
    *
    *  If a parallel_{for,reduce,scan} operation requests a team_size that
    *  does not satisfy the condition: 0 == team_max() % team_size
    *  then some threads will idle.
    */
-  KOKKOS_INLINE_FUNCTION static unsigned team_max();
-  KOKKOS_INLINE_FUNCTION static unsigned team_recommended();
-  KOKKOS_INLINE_FUNCTION static unsigned hardware_thread_id();
-  KOKKOS_INLINE_FUNCTION static unsigned max_hardware_threads();
+
+                  static int thread_pool_size( int depth = 0 );
+  KOKKOS_FUNCTION static int thread_pool_rank();
+
+  inline static unsigned team_recommended() { return thread_pool_size(2); }
+  inline static unsigned team_max()         { return thread_pool_size(1); }
+
+  inline static unsigned max_hardware_threads() { return thread_pool_size(0); }
+  KOKKOS_INLINE_FUNCTION static unsigned hardware_thread_id() { return thread_pool_rank(); }
 
   //@}
-  /*------------------------------------------------------------------------*/
-
-private:
-
-  friend class Impl::ThreadsExec ;
-
-  Impl::ThreadsExec & m_exec ;
+  //----------------------------------------
 };
-
-/*--------------------------------------------------------------------------*/
 
 } // namespace Kokkos
 
 /*--------------------------------------------------------------------------*/
+
+namespace Kokkos {
+namespace Impl {
+
+template<>
+struct VerifyExecutionCanAccessMemorySpace
+  < Kokkos::Threads::memory_space
+  , Kokkos::Threads::scratch_memory_space
+  >
+{
+  inline static void verify( void ) { }
+  inline static void verify( const void * ) { }
+};
+
+} // namespace Impl
+} // namespace Kokkos
+
 /*--------------------------------------------------------------------------*/
 
 #include <Kokkos_ExecPolicy.hpp>

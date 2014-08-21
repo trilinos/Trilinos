@@ -95,6 +95,9 @@ public:
   /// the device type itself.
   typedef Serial                host_mirror_device_type ;
 
+  /// \brief  Scratch memory space
+  typedef ScratchMemorySpace< Kokkos::Serial >  scratch_memory_space ;
+
   //@}
 
   /// \brief True if and only if this method is being called in a
@@ -148,41 +151,18 @@ public:
 
   //--------------------------------------------------------------------------
 
-  static inline int team_max() { return 1 ; }
-  static inline int team_recommended() { return 1 ; }
-  KOKKOS_INLINE_FUNCTION static unsigned hardware_thread_id() { return 0 ; }
-  KOKKOS_INLINE_FUNCTION static unsigned max_hardware_threads() { return 1 ; }
+  inline static int thread_pool_size( int = 0 ) { return 1 ; }
+  KOKKOS_INLINE_FUNCTION static int thread_pool_rank() { return 0 ; }
 
-#if 0
-  class scratch_memory_space {
-  private:
-    mutable char * m_shmem_iter ;
-    char *         m_shmem_end ;
-    scratch_memory_space & operator = ( const scratch_memory_space & );
-    static void get_shmem_error();
-  public:
-    typedef Impl::MemorySpaceTag  kokkos_tag ;
-    typedef scratch_memory_space  memory_space ; 
-    typedef Serial                execution_space ;
-    typedef LayoutRight           array_layout ;
+  //--------------------------------------------------------------------------
 
-    scratch_memory_space();
+  inline static unsigned hardware_thread_id() { return thread_pool_rank(); }
+  inline static unsigned max_hardware_threads() { return thread_pool_size(0); }
 
-    inline
-    void * get_shmem( const int size ) const
-      {
-        enum { ALIGN = 8 , MASK = ALIGN - 1 }; // Alignment used by View::shmem_size
-        void * const tmp = m_shmem_iter ;
-        if ( m_shmem_end < ( m_shmem_iter += ( size + MASK ) & ~MASK ) ) { get_shmem_error(); }
-        return tmp ;
-      }
+  static inline int team_max()         { return thread_pool_size(1) ; }
+  static inline int team_recommended() { return thread_pool_size(2); }
 
-    // Resize scratch memory for reduction and shared space
-    static void * resize( unsigned reduce_size , unsigned shared_size );
-  };
-#else
-  typedef ScratchMemorySpace< Kokkos::Serial >  scratch_memory_space ;
-#endif
+  //--------------------------------------------------------------------------
 
   static void * scratch_memory_resize( unsigned reduce_size , unsigned shared_size );
 

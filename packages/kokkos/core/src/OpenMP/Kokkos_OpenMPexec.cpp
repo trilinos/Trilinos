@@ -182,11 +182,6 @@ void OpenMPexec::resize_scratch( size_t reduce_size , size_t thread_size )
 
 namespace Kokkos {
 
-void OpenMP::scratch_memory_space::get_shmem_error()
-{
-  Kokkos::Impl::throw_runtime_exception( std::string("OpenMPexec::get_shmem FAILED : exceeded shared memory size" ) );
-}
-
 //----------------------------------------------------------------------------
 
 int OpenMP::is_initialized()
