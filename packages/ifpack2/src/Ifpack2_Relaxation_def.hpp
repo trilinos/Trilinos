@@ -1426,10 +1426,15 @@ ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
 {
 
   typedef Tpetra::Experimental::BlockMultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> BMV;
+  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
 
+  if (ZeroStartingSolution_) {
+    Y.putScalar (STS::zero ());
+  }
 
-  BMV yBlock(Y, *A.getRowMap(), A.getBlockSize());
-  const BMV xBlock(X, *A.getRowMap(), A.getBlockSize());
+  //FIXME: (tcf) 8/21/2014 -- may be problematic for multiple right hand sides
+  BMV yBlock(Y, *A.getGraph()->getDomainMap(), A.getBlockSize());
+  const BMV xBlock(X, *A.getColMap(), A.getBlockSize());
 
   bool performImport = false;
   Teuchos::RCP<BMV> yBlockCol;
@@ -1442,7 +1447,7 @@ ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
         yBlockColumnPointMap_->getBlockSize () != yBlock.getBlockSize ())
     {
       yBlockColumnPointMap_ = Teuchos::rcp (new BMV (*A.getColMap(), A.getBlockSize (),
-                                 static_cast<local_ordinal_type> (yBlock.getNumVectors ())));
+          static_cast<local_ordinal_type> (yBlock.getNumVectors ())));
     }
     yBlockCol = yBlockColumnPointMap_;
     performImport = true;
@@ -1455,7 +1460,12 @@ ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
   {
     if (performImport) yBlockCol->doImport(yBlock, *Importer_, Tpetra::INSERT);
     A.localGaussSeidel(xBlock, *yBlockCol, *BlockDiagonal_, &blockDiagonalFactorizationPivots[0], DampingFactor_, direction);
-    if (performImport) yBlock.getMultiVectorView() = yBlockCol->getMultiVectorView();
+  }
+
+  if (performImport)
+  {
+    Teuchos::RCP<const MV> yBlockColPointDomain = yBlockCol->getMultiVectorView().offsetView(A.getDomainMap(), 0);
+    Tpetra::deep_copy(Y, *yBlockColPointDomain);
   }
 
 }
@@ -1739,9 +1749,15 @@ ApplyInverseSGS_BlockCrsMatrix (const block_crs_matrix_type& A,
                            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y)
 {
   typedef Tpetra::Experimental::BlockMultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> BMV;
+  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
 
-  BMV yBlock(Y, *A.getRowMap(), A.getBlockSize());
-  const BMV xBlock(X, *A.getRowMap(), A.getBlockSize());
+  if (ZeroStartingSolution_) {
+    Y.putScalar (STS::zero ());
+  }
+
+  //FIXME: (tcf) 8/21/2014 -- may be problematic for multiple right hand sides
+  BMV yBlock(Y, *A.getGraph()->getDomainMap(), A.getBlockSize());
+  const BMV xBlock(X, *A.getColMap(), A.getBlockSize());
 
   bool performImport = false;
   Teuchos::RCP<BMV> yBlockCol;
@@ -1766,8 +1782,15 @@ ApplyInverseSGS_BlockCrsMatrix (const block_crs_matrix_type& A,
   {
     if (performImport) yBlockCol->doImport(yBlock, *Importer_, Tpetra::INSERT);
     A.localGaussSeidel(xBlock, *yBlockCol, *BlockDiagonal_, &blockDiagonalFactorizationPivots[0], DampingFactor_, direction);
-    if (performImport) yBlock.getMultiVectorView() = yBlockCol->getMultiVectorView();
   }
+
+  if (performImport)
+  {
+    Teuchos::RCP<const MV> yBlockColPointDomain = yBlockCol->getMultiVectorView().offsetView(A.getDomainMap(), 0);
+    MV yBlockView = yBlock.getMultiVectorView();
+    Tpetra::deep_copy(yBlockView, *yBlockColPointDomain);
+  }
+
 }
 
 
