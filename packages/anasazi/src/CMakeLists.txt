@@ -106,7 +106,7 @@ APPEND_SET(HEADERS
   AnasaziSaddleOperator.hpp
   AnasaziTraceMinRitzOp.hpp
   AnasaziTraceMinTypes.hpp
-  AnasaziSpecTransStatusTest.hpp
+  AnasaziStatusTestSpecTrans.hpp
   )
 
 APPEND_SET(SOURCES
