@@ -725,18 +725,15 @@ int Threads::thread_pool_size( int depth )
   return Impl::s_thread_pool_size[depth];
 }
 
-KOKKOS_FUNCTION
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
 int Threads::thread_pool_rank()
 {
-#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
   const pthread_t pid = pthread_self();
   int i = 0;
   while ( ( i < Impl::s_thread_pool_size[0] ) && ( pid != Impl::s_threads_pid[i] ) ) { ++i ; }
   return i ;
-#else
-  return 0 ;
-#endif
 }
+#endif
 
 } /* namespace Kokkos */
 
