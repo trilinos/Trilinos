@@ -852,10 +852,9 @@ void DOFManager<LO,GO>::buildUnknownsOrientation()
       std::vector<char> & eOrientation = orientation_[elmts[e]];
 
       //This resize seems to be the same as fieldPattern.numberIDs(). 
-      //When computer ede orientations is called, that is the assert.
+      //When computer edge orientations is called, that is the assert.
       //There should be no reason to make it anymore complicated.
       eOrientation.resize(fieldPattern.numberIds());
-      //eOrientation.resize(8);
       for(std::size_t s=0;s<eOrientation.size();s++)
         eOrientation[s] = 1; // put in 1 by default 
 
