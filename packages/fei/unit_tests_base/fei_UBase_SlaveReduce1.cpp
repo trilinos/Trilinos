@@ -23,13 +23,14 @@ TEUCHOS_UNIT_TEST(SlaveReduce1, Rijk_de_Rooij )
 #ifndef FEI_SER
   int numProcs = 1;
   MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+  MPI_Comm_rank(MPI_COMM_WORLD, &localProc);
   if (numProcs != 1) {
     return;
   }
 #endif
 
-	MPI_Comm comm = MPI_COMM_WORLD;
-	bool verbose = (localProc==0);
+  MPI_Comm comm = MPI_COMM_WORLD;
+  bool verbose = (localProc==0);
 
 	// ======================================================== //
 	// 			  	C R E A T E  F A C T O R Y 					//
@@ -38,6 +39,7 @@ TEUCHOS_UNIT_TEST(SlaveReduce1, Rijk_de_Rooij )
 
 	fei::SharedPtr<fei::Factory> factory(new Factory_Trilinos(comm));
 	fei::ParameterSet paramset;
+	paramset.add(fei::Param("Trilinos_Solver", "Amesos_Klu"));
 	paramset.add(fei::Param("FEI_OUTPUT_PATH", "."));
 	paramset.add(fei::Param("FEI_OUTPUT_LEVEL","ALL"));
 	factory->parameters(paramset);
@@ -99,7 +101,7 @@ TEUCHOS_UNIT_TEST(SlaveReduce1, Rijk_de_Rooij )
 	int offsetIntoSlaveField = 0;
 
 	// Introduce the weights, such that u_1=2*u_2 + rhsValue
-	double weights[2] = {1.0, 2.0};
+	double weights[2] = {-1.0, 2.0};
 
 	double rhsValue = 2.0;
 
@@ -197,8 +199,22 @@ TEUCHOS_UNIT_TEST(SlaveReduce1, Rijk_de_Rooij )
 	// Complete loading the LinSys
 	LinSys->loadComplete();
 
-  StiffnessMatrix->writeToFile("StiffnessMatrix.mtx");
-  ForceVector->writeToFile("ForceVector.vec");
+  fei::SharedPtr<fei::Solver> solver = factory->createSolver(NULL);
+
+  int solverStatus = -1;
+  int itersTaken = -1;
+  solver->solve(LinSys.get(), NULL, paramset, itersTaken, solverStatus);
+
+  DisplacementVector->scatterToOverlap();
+
+  const int slaveNodeID = 2;
+  double slaveSolnValue = 0;
+  DisplacementVector->copyOutFieldData(fieldIDs[0], nodeTypes[0], 1, &slaveNodeID, &slaveSolnValue);
+  double expectedSolnValue = 50.0;
+  double tol = 1.e-6;
+  TEUCHOS_TEST_FLOATING_EQUALITY(slaveSolnValue, expectedSolnValue, tol, out, success);
+//  StiffnessMatrix->writeToFile("StiffnessMatrix.mtx");
+//  ForceVector->writeToFile("ForceVector.vec");
 }
 
 }
