@@ -1,6 +1,8 @@
 //  This example demonstrates TraceMin-Davidson's ability to converge
 //  without the matrix being explicitly stored
 
+// TODO: Fix the maximum number of iterations
+
 // Include autoconfigured header
 #include "AnasaziConfigDefs.hpp"
 

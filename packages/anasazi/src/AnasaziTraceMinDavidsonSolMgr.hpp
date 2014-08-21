@@ -222,7 +222,7 @@ bool TraceMinDavidsonSolMgr<ScalarType,MV,OP>::performRestart(int &numRestarts, 
 
   // Copy the relevant parts of the old state to the new one
   // This may involve computing parts of X
-  copyPartOfState(oldstate, newstate, indToCopy);
+  this->copyPartOfState (oldstate, newstate, indToCopy);
 
   // send the new state to the solver
   newstate.NEV = oldstate.NEV;
