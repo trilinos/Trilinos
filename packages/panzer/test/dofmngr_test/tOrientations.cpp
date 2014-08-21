@@ -566,13 +566,13 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_tet)
 
    // Topologically the first elements look like (shown by looking at each face), note
    // that the expected orientation is included as a +/- sign in the element
-   // 
-   //      7          7          7          2
-   //     / \        / \        / \        / \
-   //    / - \      / - \      / + \      / + \
-   //   /     \    /     \    /     \    /     \
-   //  6 ----- 2  2 ----- 9  9 ----- 6  6 ----- 9 
-   //
+   //                                              //
+   //      7          7          7          2      //
+   //     / \        / \        / \        / \     //
+   //    / - \      / - \      / + \      / + \    //
+   //   /     \    /     \    /     \    /     \   //
+   //  6 ----- 2  2 ----- 9  9 ----- 6  6 ----- 9  //
+   //                                              //
    // all that matters is the global
    // node numbering and the local ordering
 

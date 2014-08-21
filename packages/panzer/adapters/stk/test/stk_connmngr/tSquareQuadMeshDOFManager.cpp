@@ -710,6 +710,11 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad_edge_orientations2)
 }
 
 // quad tests
+
+// This test verifies that the DOFManager can determine when you can't compute
+// orientations because the field pattern is not correct (it must include nodes
+// to work correctly). Thus its the ability of the DOFManager to protect itself
+// from the insane.
 TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad_edge_orientations_fail)
 {
    // build global (or serial communicator)
