@@ -572,6 +572,11 @@ void Relaxation<MatrixType>::initialize () {
 
   ++NumInitialize_;
   isInitialized_ = true;
+
+  const block_crs_matrix_type* blockCrsA = dynamic_cast<const block_crs_matrix_type*>(A_.getRawPtr());
+  if (blockCrsA != NULL)
+    hasBlockCrsMatrix_ = true;
+
 }
 
 template<class MatrixType>
@@ -695,10 +700,8 @@ void Relaxation<MatrixType>::compute ()
     initialize ();
   }
 
-  const block_crs_matrix_type* blockCrsA = dynamic_cast<const block_crs_matrix_type*>(A_.getRawPtr());
-  if (blockCrsA != NULL)
+  if (hasBlockCrsMatrix_)
   {
-    hasBlockCrsMatrix_ = true;
     computeBlockCrs();
     return;
   }
@@ -1156,6 +1159,7 @@ Relaxation<MatrixType>::
 ApplyInverseGS (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
                 Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
+  typedef Relaxation<MatrixType> this_type;
   // The CrsMatrix version is faster, because it can access the sparse
   // matrix data directly, rather than by copying out each row's data
   // in turn.  Thus, we check whether the RowMatrix is really a
@@ -1170,7 +1174,7 @@ ApplyInverseGS (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_
   const crs_matrix_type* crsMat =
     dynamic_cast<const crs_matrix_type*> (A_.getRawPtr ());
   if (blockCrsMat != NULL)  {
-    ApplyInverseGS_BlockCrsMatrix (*blockCrsMat, X, Y);
+    const_cast<this_type*> (this)->ApplyInverseGS_BlockCrsMatrix (*blockCrsMat, X, Y);
   } else if (crsMat != NULL) {
     ApplyInverseGS_CrsMatrix (*crsMat, X, Y);
   } else {
@@ -1418,7 +1422,7 @@ void
 Relaxation<MatrixType>::
 ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
                           const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-                          Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
+                          Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y)
 {
 
   typedef Tpetra::Experimental::BlockMultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> BMV;
@@ -1433,21 +1437,25 @@ ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
     yBlockCol = Teuchos::rcpFromRef(yBlock);
   else
   {
-    yBlockCol = Teuchos::rcp(new BMV(*Importer_->getTargetMap(), *A.getDomainMap(),
-        A.getBlockSize(), Y.getNumVectors()));
+    if (yBlockColumnPointMap_.is_null () ||
+        yBlockColumnPointMap_->getNumVectors () != yBlock.getNumVectors () ||
+        yBlockColumnPointMap_->getBlockSize () != yBlock.getBlockSize ())
+    {
+      yBlockColumnPointMap_ = Teuchos::rcp (new BMV (*A.getColMap(), A.getBlockSize (),
+                                 static_cast<local_ordinal_type> (yBlock.getNumVectors ())));
+    }
+    yBlockCol = yBlockColumnPointMap_;
     performImport = true;
   }
 
   const Tpetra::ESweepDirection direction =
     DoBackwardGS_ ? Tpetra::Backward : Tpetra::Forward;
 
-
-
   for (int sweep = 0; sweep < NumSweeps_; ++sweep)
   {
     if (performImport) yBlockCol->doImport(yBlock, *Importer_, Tpetra::INSERT);
     A.localGaussSeidel(xBlock, *yBlockCol, *BlockDiagonal_, &blockDiagonalFactorizationPivots[0], DampingFactor_, direction);
-    if (performImport) yBlock = *yBlockCol;
+    if (performImport) yBlock.getMultiVectorView() = yBlockCol->getMultiVectorView();
   }
 
 }
@@ -1459,6 +1467,7 @@ Relaxation<MatrixType>::
 ApplyInverseSGS (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
                  Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
+  typedef Relaxation<MatrixType> this_type;
   // The CrsMatrix version is faster, because it can access the sparse
   // matrix data directly, rather than by copying out each row's data
   // in turn.  Thus, we check whether the RowMatrix is really a
@@ -1471,7 +1480,7 @@ ApplyInverseSGS (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global
   const block_crs_matrix_type* blockCrsMat = dynamic_cast<const block_crs_matrix_type*> (A_.getRawPtr());
   const crs_matrix_type* crsMat = dynamic_cast<const crs_matrix_type*> (&(*A_));
   if (blockCrsMat != NULL)  {
-    ApplyInverseSGS_BlockCrsMatrix(*blockCrsMat, X, Y);
+    const_cast<this_type*> (this)->ApplyInverseSGS_BlockCrsMatrix(*blockCrsMat, X, Y);
   }
   else if (crsMat != NULL) {
     ApplyInverseSGS_CrsMatrix (*crsMat, X, Y);
@@ -1727,7 +1736,7 @@ void
 Relaxation<MatrixType>::
 ApplyInverseSGS_BlockCrsMatrix (const block_crs_matrix_type& A,
                            const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-                           Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
+                           Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y)
 {
   typedef Tpetra::Experimental::BlockMultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> BMV;
 
@@ -1740,8 +1749,14 @@ ApplyInverseSGS_BlockCrsMatrix (const block_crs_matrix_type& A,
     yBlockCol = Teuchos::rcpFromRef(yBlock);
   else
   {
-    yBlockCol = Teuchos::rcp(new BMV(*Importer_->getTargetMap(), *A.getDomainMap(),
-        A.getBlockSize(), Y.getNumVectors()));
+    if (yBlockColumnPointMap_.is_null () ||
+        yBlockColumnPointMap_->getNumVectors () != yBlock.getNumVectors () ||
+        yBlockColumnPointMap_->getBlockSize () != yBlock.getBlockSize ())
+    {
+      yBlockColumnPointMap_ = Teuchos::rcp (new BMV (*A.getColMap(), A.getBlockSize (),
+          static_cast<local_ordinal_type> (yBlock.getNumVectors ())));
+    }
+    yBlockCol = yBlockColumnPointMap_;
     performImport = true;
   }
 
@@ -1751,7 +1766,7 @@ ApplyInverseSGS_BlockCrsMatrix (const block_crs_matrix_type& A,
   {
     if (performImport) yBlockCol->doImport(yBlock, *Importer_, Tpetra::INSERT);
     A.localGaussSeidel(xBlock, *yBlockCol, *BlockDiagonal_, &blockDiagonalFactorizationPivots[0], DampingFactor_, direction);
-    if (performImport) yBlock = *yBlockCol;
+    if (performImport) yBlock.getMultiVectorView() = yBlockCol->getMultiVectorView();
   }
 }
 
