@@ -3607,7 +3607,7 @@ static NNTI_result_t setup_atomics(void)
     	return(NNTI_ENOMEM);
     }
     memset(transport_global_data.atomics, 0, atomics_bytes);
-    trios_stop_timer("mlock", callTime);
+    trios_stop_timer("malloc and memset", callTime);
 
     trios_start_timer(callTime);
     mr = ibv_reg_mr_wrapper(transport_global_data.pd, transport_global_data.atomics, atomics_bytes, flags);
@@ -6405,8 +6405,9 @@ static void print_ib_conn(ib_connection *c)
 
 static void config_init(nnti_ib_config *c)
 {
-    c->use_wr_pool        =false;
-    c->use_rdma_target_ack=false;
+    c->min_atomics_vars    = 512;
+    c->use_wr_pool         = false;
+    c->use_rdma_target_ack = false;
 }
 
 static void config_get_from_env(nnti_ib_config *c)
@@ -6454,8 +6455,6 @@ static void config_get_from_env(nnti_ib_config *c)
     } else {
         log_debug(nnti_debug_level, "TRIOS_NNTI_USE_RDMA_TARGET_ACK is undefined.  using c->use_rdma_target_ack default");
     }
-
-
 }
 
 //static void print_wr(ib_work_request *ib_wr)
