@@ -3862,7 +3862,7 @@ static int process_event(
 
     log_debug(nnti_debug_level, "enter (ib_wr=%p)", ib_wr);
 
-    if (ib_wr->nnti_wr->ops == NNTI_ATOMICS) {
+    if ((ib_wr->nnti_wr) && (ib_wr->nnti_wr->ops == NNTI_ATOMICS)) {
         ib_wr->state=NNTI_IB_WR_STATE_RDMA_COMPLETE;
         ib_wr->nnti_wr->result=NNTI_OK;
         return NNTI_OK;
