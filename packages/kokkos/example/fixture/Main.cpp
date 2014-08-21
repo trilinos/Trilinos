@@ -19,8 +19,8 @@ template< class > void test_fixture();
 
 void test_box()
 {
-  const unsigned global_size = 2500 ;
-  const unsigned global_box[3][2] = { { 0 , 1000 } , { 0 , 1100 } , { 0 , 1200 } };
+  const size_t global_size = 2500 ;
+  const size_t global_box[3][2] = { { 0 , 1000 } , { 0 , 1100 } , { 0 , 1200 } };
 
   size_t global_count = 0 ;
   size_t global_max = 0 ;
@@ -28,9 +28,9 @@ void test_box()
   size_t intersect_error = 0 ;
   size_t neighbor_max = 0 ;
 
-  for ( unsigned global_rank = 0 ; global_rank < global_size ; ++global_rank ) {
-    unsigned box[3][2] = { { 0 , global_box[0][1] } , { 0 , global_box[1][1] } , { 0 , global_box[2][1] } };
-    unsigned ghost_box[3][2] ;
+  for ( size_t global_rank = 0 ; global_rank < global_size ; ++global_rank ) {
+    size_t box[3][2] = { { 0 , global_box[0][1] } , { 0 , global_box[1][1] } , { 0 , global_box[2][1] } };
+    size_t ghost_box[3][2] ;
     size_t neighbor_count = 0 ;
 
     Kokkos::Example::box_partition( global_size , global_rank , global_box , box );
@@ -45,12 +45,12 @@ void test_box()
       global_count += n ;
     }
 
-    for ( unsigned other_rank = 0 ; other_rank  < global_size ; ++other_rank ) {
+    for ( size_t other_rank = 0 ; other_rank  < global_size ; ++other_rank ) {
 
       if ( other_rank == global_rank ) continue ;
 
-      unsigned other_box[3][2] = { { 0 , global_box[0][1] } , { 0 , global_box[1][1] } , { 0 , global_box[2][1] } };
-      unsigned intersect_box[3][2] ;
+      size_t other_box[3][2] = { { 0 , global_box[0][1] } , { 0 , global_box[1][1] } , { 0 , global_box[2][1] } };
+      size_t intersect_box[3][2] ;
 
       Kokkos::Example::box_partition( global_size , other_rank , global_box , other_box );
 
@@ -95,10 +95,10 @@ void test_elem()
 {
   const Kokkos::Example::BoxElemPart::Decompose
     decompose = Kokkos::Example::BoxElemPart:: DecomposeElem ; // DecomposeElem | DecomposeNode ;
-  const unsigned global_size = 256 ;
-  const unsigned global_nx = 100 ;
-  const unsigned global_ny = 120 ;
-  const unsigned global_nz = 140 ;
+  const size_t global_size = 256 ;
+  const size_t global_nx = 100 ;
+  const size_t global_ny = 120 ;
+  const size_t global_nz = 140 ;
 
   double node_count_avg = 0 ;
   size_t node_count_max = 0 ;
@@ -113,7 +113,7 @@ void test_elem()
   size_t send_count_max = 0 ;
   size_t send_count_min = global_size ;
 
-  for ( unsigned r = 0 ; r < global_size ; ++r ) {
+  for ( size_t r = 0 ; r < global_size ; ++r ) {
     const Kokkos::Example::BoxElemPart
        fixture( Kokkos::Example::BoxElemPart::ElemLinear ,
                 decompose , global_size , r , global_nx , global_ny , global_nz );
@@ -125,19 +125,19 @@ void test_elem()
     // Verify recv/send alignment:
 
     {
-      unsigned recv_lid = fixture.owns_node_count();
+      size_t recv_lid = fixture.owns_node_count();
 
-      for ( unsigned i = 0 ; i < fixture.recv_node_msg_count() ; ++i ) {
-        const unsigned recv_rank  = fixture.recv_node_rank( i );
-        const unsigned recv_count = fixture.recv_node_count( i );
+      for ( size_t i = 0 ; i < fixture.recv_node_msg_count() ; ++i ) {
+        const size_t recv_rank  = fixture.recv_node_rank( i );
+        const size_t recv_count = fixture.recv_node_count( i );
 
         const Kokkos::Example::BoxElemPart other_fixture(
            Kokkos::Example::BoxElemPart::ElemLinear ,
            decompose , global_size , recv_rank , global_nx , global_ny , global_nz );
 
-        unsigned send_item = 0 ;
+        size_t send_item = 0 ;
 
-        unsigned j = 0 ;
+        size_t j = 0 ;
         while ( j < other_fixture.send_node_msg_count() && other_fixture.send_node_rank(j) != r ) {
           send_item += other_fixture.send_node_count( j );
            ++j ;
@@ -150,11 +150,11 @@ void test_elem()
         }
         else {
 
-          for ( unsigned k = 0 ; k < recv_count ; ++k , ++send_item , ++recv_lid ) {
+          for ( size_t k = 0 ; k < recv_count ; ++k , ++send_item , ++recv_lid ) {
 
-            const unsigned send_lid = other_fixture.send_node_id( send_item );
+            const size_t send_lid = other_fixture.send_node_id( send_item );
 
-            unsigned recv_coord[3] , send_coord[3] ;
+            size_t recv_coord[3] , send_coord[3] ;
 
             fixture.local_node_coord( recv_lid , recv_coord );
 
