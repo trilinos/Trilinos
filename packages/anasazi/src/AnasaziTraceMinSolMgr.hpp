@@ -61,6 +61,7 @@
 
 
 namespace Anasazi {
+namespace Experimental {
 
 template<class ScalarType, class MV, class OP>
 
@@ -100,7 +101,7 @@ class TraceMinSolMgr : public TraceMinBaseSolMgr<ScalarType,MV,OP> {
 
   private:
     typedef MultiVecTraits<ScalarType,MV> MVT;
-		typedef MultiVecTraitsExt<ScalarType,MV> MVText;
+    typedef MultiVecTraitsExt<ScalarType,MV> MVText;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
@@ -126,21 +127,21 @@ class TraceMinSolMgr : public TraceMinBaseSolMgr<ScalarType,MV,OP> {
   //@}
 
   private:
-	
-	int maxits_;
+  
+  int maxits_;
 
-	// Test whether we have exceeded the maximum number of iterations
-	bool exceededMaxIter() { return (this->iter_ >= maxits_); };
+  // Test whether we have exceeded the maximum number of iterations
+  bool exceededMaxIter() { return (this->iter_ >= maxits_); };
 
-	// TraceMin does not restart, so this will always return false
-	bool needToRestart(const Teuchos::RCP< TraceMinBase<ScalarType,MV,OP> > solver) { return false; };
+  // TraceMin does not restart, so this will always return false
+  bool needToRestart(const Teuchos::RCP< TraceMinBase<ScalarType,MV,OP> > solver) { return false; };
 
-	// TraceMin does not restart, so this will throw an exception
-	bool performRestart(int &numRestarts, Teuchos::RCP< TraceMinBase<ScalarType,MV,OP> > solver)
-	{ TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Anasazi::TraceMinSolMgr::performRestart(): TraceMin does not perform restarts!"); };
+  // TraceMin does not restart, so this will throw an exception
+  bool performRestart(int &numRestarts, Teuchos::RCP< TraceMinBase<ScalarType,MV,OP> > solver)
+  { TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Anasazi::TraceMinSolMgr::performRestart(): TraceMin does not perform restarts!"); };
 
-	// Returns a new TraceMin solver object
-	Teuchos::RCP< TraceMinBase<ScalarType,MV,OP> > createSolver( 
+  // Returns a new TraceMin solver object
+  Teuchos::RCP< TraceMinBase<ScalarType,MV,OP> > createSolver( 
             const Teuchos::RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > &sorter,
             const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >      &outputtest,
             const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
@@ -153,21 +154,21 @@ class TraceMinSolMgr : public TraceMinBaseSolMgr<ScalarType,MV,OP> {
 // Constructor - accepts maximum iterations in addition to the other parameters of the abstract base class
 template<class ScalarType, class MV, class OP>
 TraceMinSolMgr<ScalarType,MV,OP>::TraceMinSolMgr( const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem, Teuchos::ParameterList &pl ) :
-			TraceMinBaseSolMgr<ScalarType,MV,OP>(problem,pl)
+      TraceMinBaseSolMgr<ScalarType,MV,OP>(problem,pl)
 {
-	// Get the maximum number of iterations
-	maxits_ = pl.get("Maximum Iterations", 100);
-	TEUCHOS_TEST_FOR_EXCEPTION(maxits_ < 1, std::invalid_argument, "Anasazi::TraceMinSolMgr::constructor(): \"Maximum Iterations\" must be strictly positive.");
+  // Get the maximum number of iterations
+  maxits_ = pl.get("Maximum Iterations", 100);
+  TEUCHOS_TEST_FOR_EXCEPTION(maxits_ < 1, std::invalid_argument, "Anasazi::TraceMinSolMgr::constructor(): \"Maximum Iterations\" must be strictly positive.");
 
   // block size: default is 2* nev()
-	// TODO: Find out minimum value
+  // TODO: Find out minimum value
   this->blockSize_ = pl.get("Block Size",2*this->problem_->getNEV());
-  TEUCHOS_TEST_FOR_EXCEPTION(this->blockSize_ <= 0, std::invalid_argument,
-         "Anasazi::TraceMinSolMgr::constructor(): \"Block Size\" must be strictly positive.");
+  TEUCHOS_TEST_FOR_EXCEPTION(this->blockSize_ < this->problem_->getNEV(), std::invalid_argument,
+         "Anasazi::TraceMinSolMgr::constructor(): \"Block Size\" must be greater than or equal to the number of desired eigenpairs.");
 
-	// TraceMin does not restart, so the number of blocks and number of restart blocks will always be 1
-	this->numBlocks_ = 1;
-	this->numRestartBlocks_ = 1;
+  // TraceMin does not restart, so the number of blocks and number of restart blocks will always be 1
+  this->numBlocks_ = 1;
+  this->numRestartBlocks_ = 1;
 
   TEUCHOS_TEST_FOR_EXCEPTION(static_cast<ptrdiff_t>(this->numBlocks_)*this->blockSize_ + this->maxLocked_ > MVText::GetGlobalLength(*this->problem_->getInitVec()),
          std::invalid_argument,
@@ -188,10 +189,10 @@ Teuchos::RCP< TraceMinBase<ScalarType,MV,OP> > TraceMinSolMgr<ScalarType,MV,OP>:
             Teuchos::ParameterList &plist
           )
 {
-	return Teuchos::rcp( new TraceMin<ScalarType,MV,OP>(this->problem_,sorter,this->printer_,outputtest,ortho,plist) );
+  return Teuchos::rcp( new TraceMin<ScalarType,MV,OP>(this->problem_,sorter,this->printer_,outputtest,ortho,plist) );
 }
 
 
-} // end Anasazi namespace
+}} // end Anasazi namespace
 
 #endif /* ANASAZI_TRACEMIN_SOLMGR_HPP */

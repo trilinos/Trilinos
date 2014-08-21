@@ -54,7 +54,8 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
-	enum SaddleSolType {SCHUR, PROJ};
+// TODO: TraceMin performs some unnecessary computations upon restarting.  Fix it!
+  enum SaddleSolType {SCHUR, PROJ};
 
 namespace Anasazi {
 namespace Experimental {
@@ -116,44 +117,44 @@ namespace Experimental {
     //@{ 
     
     /*! \brief %TraceMin constructor with eigenproblem, solver utilities, and 
-		 *  parameter list of solver options.
+     *  parameter list of solver options.
      *
      * This constructor takes pointers required by the eigensolver, in addition
      * to a parameter list of options for the eigensolver. These options include 
-		 * the following:
+     * the following:
      *   - \c "Block Size" - an \c int specifying the subspace dimension used 
-		 *     by the algorithm. This can also be specified using the setBlockSize() 
-		 *     method.
-		 *   - \c "Maximum Iterations" - an \c int specifying the maximum number of 
-		 *     %TraceMin iterations.
-		 *   - \c "Saddle Solver Type" - a \c string specifying the algorithm to use 
-		 *     in solving the saddle point problem: "Schur Complement" or "Projected 
-		 *     Krylov". Default: "Projected Krylov"
-	   *      - \c "Schur Complement": We explicitly form the Schur complement and 
-		 *        use it to solve the linear system.  This option may be faster, but 
-		 *        it is less numerically stable and does not ensure orthogonality 
-		 *        between the current iterate and the update.
-		 *      - \c "Projected Krylov": Use a projected iterative method to solve
-	   *        the linear system. If %TraceMin was not given a preconditioner, it 
-		 *        will use MINRES.  Otherwise, it will use GMRES.
-		 *   - \c "Shift Type" - a \c string specifying how to choose Ritz shifts: 
-		 *        "No Shift", "Locked Shift", "Trace Leveled Shift", or "Original Shift". 
-		 *        Default: "Trace Leveled Shift"
-		 *      - \c "No Shift": Do not perform Ritz shifts.  This option produces 
-		 *        guaranteed convergence but converges linearly.  Not recommended.
-		 *      - \c "Locked Shift": Do not perform Ritz shifts until an eigenpair is 
-		 *        locked.  Then, shift based on the largest converged eigenvalue.  
-		 *        This option is roughly as safe as "No Shift" but may be faster.
-		 *      - \c "Trace Leveled Shift": Do not perform Ritz shifts until the trace 
-		 *        of \f$X^TKX\f$ (i.e. the quantity being minimized has stagnated.  
+     *     by the algorithm. This can also be specified using the setBlockSize() 
+     *     method.
+     *   - \c "Maximum Iterations" - an \c int specifying the maximum number of 
+     *     %TraceMin iterations.
+     *   - \c "Saddle Solver Type" - a \c string specifying the algorithm to use 
+     *     in solving the saddle point problem: "Schur Complement" or "Projected 
+     *     Krylov". Default: "Projected Krylov"
+     *      - \c "Schur Complement": We explicitly form the Schur complement and 
+     *        use it to solve the linear system.  This option may be faster, but 
+     *        it is less numerically stable and does not ensure orthogonality 
+     *        between the current iterate and the update.
+     *      - \c "Projected Krylov": Use a projected iterative method to solve
+     *        the linear system. If %TraceMin was not given a preconditioner, it 
+     *        will use MINRES.  Otherwise, it will use GMRES.
+     *   - \c "Shift Type" - a \c string specifying how to choose Ritz shifts: 
+     *        "No Shift", "Locked Shift", "Trace Leveled Shift", or "Original Shift". 
+     *        Default: "Trace Leveled Shift"
+     *      - \c "No Shift": Do not perform Ritz shifts.  This option produces 
+     *        guaranteed convergence but converges linearly.  Not recommended.
+     *      - \c "Locked Shift": Do not perform Ritz shifts until an eigenpair is 
+     *        locked.  Then, shift based on the largest converged eigenvalue.  
+     *        This option is roughly as safe as "No Shift" but may be faster.
+     *      - \c "Trace Leveled Shift": Do not perform Ritz shifts until the trace 
+     *        of \f$X^TKX\f$ (i.e. the quantity being minimized has stagnated.  
      *        Then, shift based on the strategy proposed in <em>The trace 
      *        minimization method for the symmetric generalized eigenvalue problem.</em>  
      *        Highly recommended.
-		 *      - \c "Original Shift": The original shifting strategy proposed in 
-		 *        "The trace minimization method for the symmetric generalized 
-		 *        eigenvalue problem."  Compute shifts based on the Ritz values, 
-		 *        residuals, and clustering of the eigenvalues.  May produce incorrect 
-		 *        results for indefinite matrices or small subspace dimensions.
+     *      - \c "Original Shift": The original shifting strategy proposed in 
+     *        "The trace minimization method for the symmetric generalized 
+     *        eigenvalue problem."  Compute shifts based on the Ritz values, 
+     *        residuals, and clustering of the eigenvalues.  May produce incorrect 
+     *        results for indefinite matrices or small subspace dimensions.
      */
     TraceMin( const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> >    &problem, 
                    const Teuchos::RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > &sorter,
@@ -176,8 +177,8 @@ namespace Experimental {
     const MagnitudeType ZERO; 
     const MagnitudeType NANVAL;
 
-		// TraceMin specific methods
-		void addToBasis(const Teuchos::RCP<const MV> Delta);
+    // TraceMin specific methods
+    void addToBasis(const Teuchos::RCP<const MV> Delta);
   };
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -200,7 +201,7 @@ namespace Experimental {
         const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
         Teuchos::ParameterList &params
         ) :
-		TraceMinBase<ScalarType,MV,OP>(problem,sorter,printer,tester,ortho,params),
+    TraceMinBase<ScalarType,MV,OP>(problem,sorter,printer,tester,ortho,params),
     ONE(Teuchos::ScalarTraits<MagnitudeType>::one()),
     ZERO(Teuchos::ScalarTraits<MagnitudeType>::zero()),
     NANVAL(Teuchos::ScalarTraits<MagnitudeType>::nan())
@@ -208,48 +209,48 @@ namespace Experimental {
   }
 
 
-	template <class ScalarType, class MV, class OP>
-	void TraceMin<ScalarType,MV,OP>::addToBasis(const Teuchos::RCP<const MV> Delta)
-	{
-		MVT::MvAddMv(ONE,*this->X_,-ONE,*Delta,*this->V_);
+  template <class ScalarType, class MV, class OP>
+  void TraceMin<ScalarType,MV,OP>::addToBasis(const Teuchos::RCP<const MV> Delta)
+  {
+    MVT::MvAddMv(ONE,*this->X_,-ONE,*Delta,*this->V_);
 
-		if(this->hasM_)
+    if(this->hasM_)
     {
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
-			Teuchos::TimeMonitor lcltimer( *this->timerMOp_ );
+      Teuchos::TimeMonitor lcltimer( *this->timerMOp_ );
 #endif
       this->count_ApplyM_+= this->blockSize_;
 
-			OPT::Apply(*this->MOp_,*this->V_,*this->MV_);
+      OPT::Apply(*this->MOp_,*this->V_,*this->MV_);
     }
 
-		int rank;
+    int rank;
     {
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
-			Teuchos::TimeMonitor lcltimer( *this->timerOrtho_ );
+      Teuchos::TimeMonitor lcltimer( *this->timerOrtho_ );
 #endif
 
-			if(this->numAuxVecs_ > 0)
-			{
-				rank = this->orthman_->projectAndNormalizeMat(*this->V_,this->auxVecs_,
-					     Teuchos::tuple(Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > >(Teuchos::null)),
-					     Teuchos::null,this->MV_,this->MauxVecs_);
-			}
-			else
-			{
-				rank = this->orthman_->normalizeMat(*this->V_,Teuchos::null,this->MV_);
-			}
+      if(this->numAuxVecs_ > 0)
+      {
+        rank = this->orthman_->projectAndNormalizeMat(*this->V_,this->auxVecs_,
+               Teuchos::tuple(Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > >(Teuchos::null)),
+               Teuchos::null,this->MV_,this->MauxVecs_);
+      }
+      else
+      {
+        rank = this->orthman_->normalizeMat(*this->V_,Teuchos::null,this->MV_);
+      }
     }
 
     if(this->Op_ != Teuchos::null)
     {
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
-			Teuchos::TimeMonitor lcltimer( *this->timerOp_ );
+      Teuchos::TimeMonitor lcltimer( *this->timerOp_ );
 #endif
       this->count_ApplyOp_+= this->blockSize_;
-		  OPT::Apply(*this->Op_,*this->V_,*this->KV_);
+      OPT::Apply(*this->Op_,*this->V_,*this->KV_);
     }
-	}
+  }
   
 }} // End of namespace Anasazi
 

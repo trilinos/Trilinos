@@ -71,8 +71,10 @@ ELSE(NOT PYTHON_EXECUTABLE)
     # Handle the QUIETLY and REQUIRED arguments and set Mpi4Py_FOUND to
     # TRUE if all listed variables are TRUE
     INCLUDE(FindPackageHandleStandardArgs)
-    FIND_PACKAGE_HANDLE_STANDARD_ARGS(Mpi4Py DEFAULT_MSG
-      Mpi4Py_VERSION Mpi4Py_INCLUDE_DIR)
+    FIND_PACKAGE_HANDLE_STANDARD_ARGS(Mpi4Py
+      FOUND_VAR     Mpi4Py_FOUND
+      REQUIRED_VARS Mpi4Py_VERSION Mpi4Py_INCLUDE_DIR
+      VERSION_VAR   Mpi4Py_VERSION)
 
     # Version checking: If a version check is requested, compare
     # Mpi4Py_VERSION to the requested version

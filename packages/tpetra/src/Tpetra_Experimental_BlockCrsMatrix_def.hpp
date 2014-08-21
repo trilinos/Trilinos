@@ -546,6 +546,9 @@ namespace Experimental {
       return;
     }
 
+    const Scalar one_minus_omega = Teuchos::ScalarTraits<Scalar>::one()-omega;
+    const Scalar     minus_omega = -omega;
+
     if (numVecs == 1) {
       for (LO lclRow = rowBegin; lclRow != rowEnd; lclRow += rowStride) {
         const LO actlRow = lclRow - 1;
@@ -564,7 +567,7 @@ namespace Experimental {
           little_vec_type X_cur = X.getLocalBlock (meshCol, 0);
 
           // X_lcl += alpha*A_cur*X_cur
-          const Scalar alpha = meshCol == actlRow ? Teuchos::ScalarTraits<Scalar>::one()-omega : -omega;
+          const Scalar alpha = meshCol == actlRow ? one_minus_omega : minus_omega;
           X_lcl.matvecUpdate (alpha, A_cur, X_cur);
         } // for each entry in the current local row of the matrx
 
@@ -596,7 +599,7 @@ namespace Experimental {
             little_vec_type X_cur = X.getLocalBlock (meshCol, j);
 
             // X_lcl += alpha*A_cur*X_cur
-            const Scalar alpha = meshCol == actlRow ? Teuchos::ScalarTraits<Scalar>::one()-omega : -omega;
+            const Scalar alpha = meshCol == actlRow ? one_minus_omega : minus_omega;
             X_lcl.matvecUpdate (alpha, A_cur, X_cur);
           } // for each entry in the current local row of the matrx
 
@@ -2343,9 +2346,9 @@ namespace Experimental {
 //
 // Explicit instantiation macro
 //
-// Must be expanded from within the Tpetra::Experimental namespace!
+// Must be expanded from within the Tpetra namespace!
 //
 #define TPETRA_EXPERIMENTAL_BLOCKCRSMATRIX_INSTANT(S,LO,GO,NODE) \
-  template class BlockCrsMatrix< S, LO, GO, NODE >;
+  template class Experimental::BlockCrsMatrix< S, LO, GO, NODE >;
 
 #endif // TPETRA_EXPERIMENTAL_BLOCKCRSMATRIX_DEF_HPP

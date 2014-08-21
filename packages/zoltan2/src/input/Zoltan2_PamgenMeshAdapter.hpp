@@ -93,7 +93,7 @@ public:
   typedef typename InputTraits<User>::scalar_t    scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
-  typedef typename InputTraits<User>::gid_t    gid_t;
+  typedef typename InputTraits<User>::zgid_t    zgid_t;
   typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef MeshAdapter<User>       base_adapter_t;
@@ -106,7 +106,7 @@ public:
    *  lifetime of this InputAdapter.
    */
 
-  PamgenMeshAdapter(std::string typestr="region");
+  PamgenMeshAdapter(const Comm<int> &comm, std::string typestr="region");
 
   void print(int);
 
@@ -129,7 +129,7 @@ public:
     return 0;
   }
    
-  void getIDsViewOf(MeshEntityType etype, const gid_t *&Ids) const
+  void getIDsViewOf(MeshEntityType etype, const zgid_t *&Ids) const
   {
     if ((MESH_REGION == etype && 3 == dimension_) ||
 	(MESH_FACE == etype && 2 == dimension_)) {
@@ -202,7 +202,7 @@ public:
   }
 
   void getAdjsView(MeshEntityType source, MeshEntityType target,
-		   const lno_t *&offsets, const gid_t *& adjacencyIds) const
+		   const lno_t *&offsets, const zgid_t *& adjacencyIds) const
   {
     if ((MESH_REGION == source && MESH_VERTEX == target && 3 == dimension_) ||
 	(MESH_FACE == source && MESH_VERTEX == target && 2 == dimension_)) {
@@ -238,7 +238,7 @@ public:
   }
 
   void get2ndAdjsView(MeshEntityType sourcetarget, MeshEntityType through, 
-		      const lno_t *&offsets, const gid_t *& adjacencyIds) const
+		      const lno_t *&offsets, const zgid_t *& adjacencyIds) const
   {
     if (avail2ndAdjs(sourcetarget, through)) {
       offsets = start_;
@@ -252,11 +252,11 @@ public:
 
 private:
   int dimension_, num_nodes_, num_elem_;
-  gid_t *element_num_map_, *node_num_map_;
+  zgid_t *element_num_map_, *node_num_map_;
   int *elemToNode_, tnoct_, *elemOffsets_;
   double *coords_, *Acoords_;
   lno_t *start_;
-  gid_t *adj_;
+  zgid_t *adj_;
   size_t nadj_;
 };
 
@@ -275,7 +275,8 @@ ssize_t in_list(const int value, size_t count, int *vector)
 }
 
 template <typename User>
-PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr):
+PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
+					   std::string typestr):
   dimension_(0)
 {
   this->setEntityTypes(typestr, "vertex", "vertex");
@@ -398,6 +399,18 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr):
     }
   }
 
+  delete[] num_nodes_per_elem;
+  num_nodes_per_elem = NULL;
+  delete[] num_elem_this_blk;
+  num_elem_this_blk = NULL;
+
+  for(int b = 0; b < num_elem_blk; b++) {
+    delete[] connect[b];
+  }
+
+  delete[] connect;
+  connect = NULL;
+
   int max_side_nodes = nnodes_per_elem;
   int *side_nodes = new int [max_side_nodes];
   int *mirror_nodes = new int [max_side_nodes];
@@ -423,51 +436,96 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr):
     }
   }
 
-  int neid = 0, num_internal_nodes, num_border_nodes, num_external_nodes;
-  int num_internal_elems, num_border_elems, num_node_cmaps, num_elem_cmaps;
-  int proc = 0;
-  error += im_ne_get_loadbal_param(neid, &num_internal_nodes,
-				   &num_border_nodes, &num_external_nodes,
-				   &num_internal_elems, &num_border_elems,
-				   &num_node_cmaps, &num_elem_cmaps, proc);
+  int nprocs = comm.getSize();
 
-  /*int *elem_mapi = new int [num_internal_elems];
-  int *elem_mapb = new int [num_border_elems];
-  error += im_ne_get_elem_map(neid, elem_mapi, elem_mapb, proc);*/
+  if (nprocs > 1) {
+    int neid = 0, num_internal_nodes, num_border_nodes, num_external_nodes;
+    int num_internal_elems, num_border_elems, num_node_cmaps, num_elem_cmaps;
+    int proc = 0;
+    error += im_ne_get_loadbal_param(neid, &num_internal_nodes,
+				     &num_border_nodes, &num_external_nodes,
+				     &num_internal_elems, &num_border_elems,
+				     &num_node_cmaps, &num_elem_cmaps, proc);
 
-  int *node_mapi = new int [num_internal_nodes];
-  int *node_mapb = new int [num_border_nodes];
-  int *node_mape = new int [num_external_nodes];
-  error += im_ne_get_node_map(neid, node_mapi, node_mapb, node_mape, proc);
+    int *node_cmap_ids = new int [num_node_cmaps];
+    int *node_cmap_node_cnts = new int [num_node_cmaps];
+    int *elem_cmap_ids = new int [num_elem_cmaps];
+    int *elem_cmap_elem_cnts = new int [num_elem_cmaps];
+    error += im_ne_get_cmap_params(neid, node_cmap_ids, node_cmap_node_cnts,
+				   elem_cmap_ids, elem_cmap_elem_cnts, proc);
+    delete[] elem_cmap_ids;
+    elem_cmap_ids = NULL;
+    delete[] elem_cmap_elem_cnts;
+    elem_cmap_elem_cnts = NULL;
 
-  int *node_cmap_ids = new int [num_node_cmaps];
-  int *node_cmap_node_cnts = new int [num_node_cmaps];
-  int *elem_cmap_ids = new int [num_elem_cmaps];
-  int *elem_cmap_elem_cnts = new int [num_elem_cmaps];
-  error += im_ne_get_cmap_params(neid, node_cmap_ids, node_cmap_node_cnts,
-				 elem_cmap_ids, elem_cmap_elem_cnts, proc);
+    int **node_ids = new int * [num_node_cmaps];
+    int **node_proc_ids = new int * [num_node_cmaps];
+    for(int j = 0; j < num_node_cmaps; j++) {
+      node_ids[j] = new int [node_cmap_node_cnts[j]];
+      node_proc_ids[j] = new int [node_cmap_node_cnts[j]];
+      error += im_ne_get_node_cmap(neid, node_cmap_ids[j], node_ids[j],
+				   node_proc_ids[j], proc);
+    }
+    delete[] node_cmap_ids;
+    node_cmap_ids = NULL;
+    int *sendCount = new int [nprocs];
+    int *recvCount = new int [nprocs];
+    int rank = comm.getRank();
+    recvCount[rank] = sendCount[rank] = 0;
 
+    // Post receives
+    RCP<CommRequest<int> > *requests = new RCP<CommRequest<int> > [nprocs];
+    for (int cnt = 0, i = 0; i < nprocs; i++) {
+      if (i != rank) {
+	try {
+	  requests[cnt++] = Teuchos::ireceive<int,int>(comm,
+						       rcp(&(recvCount[i]),
+							   false),
+						       i);
+	}
+	Z2_FORWARD_EXCEPTIONS;
+      }
+    }
 
-  int **node_ids = new int * [num_node_cmaps];
-  int **node_proc_ids = new int * [num_node_cmaps];
-  for(int j = 0; j < num_node_cmaps; j++) {
-    node_ids[j] = new int [node_cmap_node_cnts[j]];
-    node_proc_ids[j] = new int [node_cmap_node_cnts[j]];
-    error += im_ne_get_node_cmap(neid, node_cmap_ids[j], node_ids[j],
-				 node_proc_ids[j], proc);
+    Teuchos::barrier<int>(comm);
+
+    for(int j = 0; j < num_node_cmaps; j++) {
+      sendCount[node_proc_ids[j][0]] = 1;
+      for(int i = 0; i < node_cmap_node_cnts[j]; i++) {
+	sendCount[node_proc_ids[j][i]] += sur_elem[node_ids[j][i]-1].size()+2;
+      }
+    }
+
+    // Send data; can use readySend since receives are posted.
+    for (int i = 0; i < nprocs; i++) {
+      if (i != rank) {
+	try {
+	  Teuchos::readySend<int,int>(comm, sendCount[i], i);
+	}
+	Z2_FORWARD_EXCEPTIONS;
+      }
+    }
+
+    // Wait for messages to return.
+    try {
+      Teuchos::waitAll<int>(comm, arrayView(requests, nprocs-1));
+    }
+    Z2_FORWARD_EXCEPTIONS;
+
+    delete [] requests;
+    delete[] node_cmap_node_cnts;
+    node_cmap_node_cnts = NULL;
+
+    for(int j = 0; j < num_node_cmaps; j++) {
+      delete[] node_ids[j];
+      delete[] node_proc_ids[j];
+    }
+
+    delete[] node_ids;
+    node_ids = NULL;
+    delete[] node_proc_ids;
+    node_proc_ids = NULL;
   }
-
-  /*int **elem_ids = new int * [num_elem_cmaps];
-  int **side_ids = new int * [num_elem_cmaps];
-  int **elem_proc_ids = new int * [num_elem_cmaps];
-  for(int j = 0; j < num_elem_cmaps; j++) {
-    elem_ids[j] = new int [elem_cmap_elem_cnts[j]];
-    side_ids[j] = new int [elem_cmap_elem_cnts[j]];
-    elem_proc_ids[j] = new int [elem_cmap_elem_cnts[j]];
-    error += im_ne_get_elem_cmap(neid, elem_cmap_ids[j], elem_ids[j],
-				 side_ids[j], elem_proc_ids[j], proc);
-  }
-  */
 
   for(int ecnt=0; ecnt < num_elem_; ecnt++) {
     start_[ecnt] = nadj_;
@@ -487,25 +545,6 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr):
       }
     }
   }
-  start_[num_elem_] = nadj_;
-
-  adj_ = new gid_t [nadj_];
-
-  for (size_t i=0; i < nadj_; i++) {
-    adj_[i] = adj[i];
-  }
-
-  delete[] num_nodes_per_elem;
-  num_nodes_per_elem = NULL;
-  delete[] num_elem_this_blk;
-  num_elem_this_blk = NULL;
-
-  for(int b = 0; b < num_elem_blk; b++) {
-    delete[] connect[b];
-  }
-
-  delete[] connect;
-  connect = NULL;
 
   for(int b = 0; b < num_elem_; b++) {
     delete[] reconnect[b];
@@ -513,8 +552,18 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr):
 
   delete[] reconnect;
   reconnect = NULL;
+  start_[num_elem_] = nadj_;
+
+  adj_ = new zgid_t [nadj_];
+
+  for (size_t i=0; i < nadj_; i++) {
+    adj_[i] = adj[i];
+  }
+
   delete[] side_nodes;
+  side_nodes = NULL;
   delete[] mirror_nodes;
+  mirror_nodes = NULL;
 }
 
 template <typename User>

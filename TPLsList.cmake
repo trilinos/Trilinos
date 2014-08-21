@@ -142,13 +142,14 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   ExodusII        "cmake/TPLs/"    SS
   Nemesis         "cmake/TPLs/"    SS
   XDMF            "cmake/TPLs/"    TS
+  Zlib            "cmake/TPLs/"    SS
+  HDF5            "cmake/TPLs/"    EX
   Netcdf          "cmake/TPLs/"    SS
   y12m            "cmake/TPLs/"    SS
   SuperLUDist     "cmake/TPLs/"    SS
   SuperLUMT	  "cmake/TPLs/"	   SS
   SuperLU         "cmake/TPLs/"    SS
   Cholmod	  "cmake/TPLs/"	   EX
-  Zlib            "cmake/TPLs/"    SS
   UMFPACK         "cmake/TPLs/"    SS
   MA28            "cmake/TPLs/"    TS
   AMD             "cmake/TPLs/"    TS
@@ -165,7 +166,6 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   ForUQTK         "cmake/TPLs/"    EX
   Dakota          "cmake/TPLs/"    EX
   HIPS            "cmake/TPLs/"    EX
-  HDF5            "cmake/TPLs/"    EX
   MATLAB          "cmake/TPLs/"    EX
   CASK            "cmake/TPLs/"    EX
   SPARSKIT        "cmake/TPLs/"    SS

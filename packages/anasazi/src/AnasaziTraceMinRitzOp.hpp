@@ -741,7 +741,6 @@ void TraceMinProjRitzOp<Scalar,MV,OP>::ApplyInverse(const MV& X, MV& Y)
 
   Teuchos::RCP<MV> rcpY = MVT::CloneViewNonConst(Y,indices);
   Teuchos::RCP<MV> PX = MVT::Clone(X,nvecs);
-
   projector_->Apply(X,*PX);
 
   // Solve the linear system A*Y = X

@@ -428,7 +428,7 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
   reset_modification_counters();
 #endif
 
-  mesh_meta_data.set_mesh(this);
+  mesh_meta_data.set_mesh_bulk_data(this);
 
   if (m_field_data_manager == NULL)
   {

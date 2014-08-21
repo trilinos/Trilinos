@@ -78,7 +78,7 @@ using Teuchos::Comm;
 using Teuchos::DefaultComm;
 using Teuchos::ArrayView;
 
-typedef Zoltan2::BasicUserTypes<zscalar_t, zgid_t, zlno_t, zgno_t> simpleUser_t;
+typedef Zoltan2::BasicUserTypes<zscalar_t, zzgid_t, zlno_t, zgno_t> simpleUser_t;
 
 typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t>      tcrsMatrix_t;
 typedef Tpetra::CrsGraph<zlno_t, zgno_t, znode_t>                 tcrsGraph_t;
@@ -217,12 +217,12 @@ void testAdapter(
       tmi.setWeights(rowWeights[i], 1, i);
   }
 
-  zgid_t *gids = NULL;
+  zzgid_t *gids = NULL;
 
   simpleVAdapter_t *via = NULL;
 
   if (coordDim > 0) {
-    gids = new zgid_t[nLocalRows];
+    gids = new zzgid_t[nLocalRows];
     for (zlno_t i = 0; i < nLocalRows; i++)
       gids[i] = M->getRowMap()->getGlobalElement(i);
     via = new simpleVAdapter_t(nLocalRows, gids, coords[0],

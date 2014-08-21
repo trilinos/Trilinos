@@ -51,6 +51,7 @@
 #include <Tpetra_Vector.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Tpetra_CrsMatrix_decl.hpp> // Don't need the definition here
+#include <Tpetra_Experimental_BlockCrsMatrix_decl.hpp>
 
 namespace Teuchos {
   // forward declarations
@@ -643,6 +644,8 @@ private:
                             global_ordinal_type, node_type> crs_matrix_type;
   typedef Tpetra::Experimental::BlockCrsMatrix<scalar_type, local_ordinal_type,
                             global_ordinal_type, node_type> block_crs_matrix_type;
+  typedef Tpetra::Experimental::BlockMultiVector<scalar_type, local_ordinal_type,
+                            global_ordinal_type, node_type> block_multivector_type;
   //@}
   //! \name Unimplemented methods that you are syntactically forbidden to call.
   //@{
@@ -693,7 +696,7 @@ private:
   void
   ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
                             const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-                            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
+                            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y);
 
   //! Apply symmetric Gauss-Seidel to X, returning the result in Y.
   void ApplyInverseSGS(
@@ -715,7 +718,7 @@ private:
   void
   ApplyInverseSGS_BlockCrsMatrix (const block_crs_matrix_type& A,
                              const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-                             Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
+                             Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y);
 
   void computeBlockCrs ();
 
@@ -743,6 +746,7 @@ private:
 
   Teuchos::RCP<block_crs_matrix_type> BlockDiagonal_;
   Teuchos::Array<int> blockDiagonalFactorizationPivots;
+  Teuchos::RCP<block_multivector_type> yBlockColumnPointMap_;
 
 
   //! How many times to apply the relaxation per apply() call.

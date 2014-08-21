@@ -54,8 +54,8 @@
 /*                          Includes                          */
 /**************************************************************/
 
-//#include <Zoltan2_TestHelpers.hpp>
 #include <Zoltan2_PamgenMeshAdapter.hpp>
+#include <Zoltan2_Environment.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
 #include <Zoltan2_ColoringProblem.hpp>
 
@@ -93,10 +93,10 @@ int main(int narg, char *arg[]) {
   Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
   RCP<const Teuchos::Comm<int> > CommT = platform.getComm();
 
-  int MyPID = CommT->getRank();
+  int me = CommT->getRank();
   int numProcs = CommT->getSize();
 
-  if (MyPID == 0){
+  if (me == 0){
   cout 
     << "====================================================================\n" 
     << "|                                                                  |\n" 
@@ -115,11 +115,11 @@ int main(int narg, char *arg[]) {
 
 
 #ifdef HAVE_MPI
-  if (MyPID == 0) {
+  if (me == 0) {
     cout << "PARALLEL executable \n";
   }
 #else
-  if (MyPID == 0) {
+  if (me == 0) {
     cout << "SERIAL executable \n";
   }
 #endif
@@ -147,13 +147,13 @@ int main(int narg, char *arg[]) {
   ParameterList inputMeshList;
 
   if(xmlMeshInFileName.length()) {
-    if (MyPID == 0) {
+    if (me == 0) {
       cout << "\nReading parameter list from the XML file \""
 		<<xmlMeshInFileName<<"\" ...\n\n";
     }
     Teuchos::updateParametersFromXmlFile(xmlMeshInFileName, 
 					 Teuchos::inoutArg(inputMeshList));
-    if (MyPID == 0) {
+    if (me == 0) {
       inputMeshList.print(cout,2,true,true);
       cout << "\n";
     }
@@ -178,29 +178,30 @@ int main(int narg, char *arg[]) {
   /***************************** GENERATE MESH *******************************/
   /***************************************************************************/
 
-  if (MyPID == 0) cout << "Generating mesh ... \n\n";
+  if (me == 0) cout << "Generating mesh ... \n\n";
 
   // Generate mesh with Pamgen
   long long maxInt = 9223372036854775807LL;
-  Create_Pamgen_Mesh(meshInput.c_str(), dim, MyPID, numProcs, maxInt);
+  Create_Pamgen_Mesh(meshInput.c_str(), dim, me, numProcs, maxInt);
 
   // Creating mesh adapter
-  if (MyPID == 0) cout << "Creating mesh adapter ... \n\n";
+  if (me == 0) cout << "Creating mesh adapter ... \n\n";
 
   typedef Zoltan2::PamgenMeshAdapter<tMVector_t> inputAdapter_t;
 
-  inputAdapter_t ia;
-  ia.print(MyPID);
+  inputAdapter_t ia(*CommT);
+  ia.print(me);
 
   // Set parameters for partitioning
-  if (MyPID == 0) cout << "Creating parameter list ... \n\n";
+  if (me == 0) cout << "Creating parameter list ... \n\n";
 
   Teuchos::ParameterList params("test params");
-  params.set("debug_level", "basic_status");
+  params.set("timer_output_stream" , "std::cout");
 
   bool do_partitioning = false;
   if (action == "mj") {
     do_partitioning = true;
+    params.set("debug_level", "basic_status");
     params.set("imbalance_tolerance", 1.1);
     params.set("num_global_parts", nParts);
     params.set("algorithm", "multijagged");
@@ -208,45 +209,50 @@ int main(int narg, char *arg[]) {
   }
   else if (action == "scotch") {
     do_partitioning = true;
+    params.set("debug_level", "basic_status");
     params.set("imbalance_tolerance", 1.1);
     params.set("num_global_parts", nParts);
     params.set("partitioning_approach", "partition");
     params.set("algorithm", "scotch");
   }
   else if (action == "color") {
+    params.set("debug_level", "verbose_detailed_status");
+    params.set("debug_output_file", "kdd");
+    params.set("debug_procs", "all");
   }
 
   // create Partitioning problem
   if (do_partitioning) {
-    if (MyPID == 0) cout << "Creating partitioning problem ... \n\n";
+    if (me == 0) cout << "Creating partitioning problem ... \n\n";
 
     Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params, CommT);
 
     // call the partitioner
-    if (MyPID == 0) cout << "Calling the partitioner ... \n\n";
+    if (me == 0) cout << "Calling the partitioner ... \n\n";
 
     problem.solve();
 
-    if (MyPID) problem.printMetrics(cout);
+    if (me) problem.printMetrics(cout);
   }
   else {
-    if (MyPID == 0) cout << "Creating coloring problem ... \n\n";
+    if (me == 0) cout << "Creating coloring problem ... \n\n";
 
     Zoltan2::ColoringProblem<inputAdapter_t> problem(&ia, &params);
 
     // call the partitioner
-    if (MyPID == 0) cout << "Calling the coloring algorithm ... \n\n";
+    if (me == 0) cout << "Calling the coloring algorithm ... \n\n";
 
     problem.solve();
 
+    problem.printTimers();
   }
 
   // delete mesh
-  if (MyPID == 0) cout << "Deleting the mesh ... \n\n";
+  if (me == 0) cout << "Deleting the mesh ... \n\n";
 
   Delete_Pamgen_Mesh();
 
-  if (MyPID == 0)
+  if (me == 0)
     std::cout << "PASS" << std::endl;
 
   return 0;

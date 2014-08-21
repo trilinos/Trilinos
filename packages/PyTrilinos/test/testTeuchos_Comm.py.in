@@ -62,11 +62,11 @@ class TeuchosDefaultCommTestCase(unittest.TestCase):
         self.comm  = Teuchos.DefaultComm.getComm()
         if ('MpiComm' in dir(Teuchos)):
             self.commType = "MPI"
-            self.output   = "Teuchos::MpiComm<long>{size=%d,rank=%d" % \
+            self.output   = "Teuchos::MpiComm<int>{size=%d,rank=%d" % \
                             (self.comm.getSize(), self.comm.getRank())
         else:
             self.commType = "Serial"
-            self.output   = "Teuchos::SerialComm<long int>"
+            self.output   = "Teuchos::SerialComm<int>"
         self.comm.barrier()
 
     def tearDown(self):
@@ -91,8 +91,6 @@ class TeuchosDefaultCommTestCase(unittest.TestCase):
 
     def testStr(self):
         "Test Teuchos.DefaultComm __str__ method"
-        # This does not work under MPI on my MacBook Pro yet...
-        if self.commType == "MPI": return
         n = len(self.output)
         self.assertEqual(str(self.comm)[:n], self.output)
 

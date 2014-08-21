@@ -83,6 +83,22 @@ int main(int argc, char *argv[])
     if (result) {
       std::string res_str = aprepro.parsing_results().str();
       std::cout << "         : " << res_str;
+
+
+      // Example showing how to get the substitution history for the current line.
+      if(aprepro.ap_options.keep_history)
+      {
+        std::vector<SEAMS::history_data> hist = aprepro.get_history();
+        for(size_t i = 0; i < hist.size(); i++)
+        {
+          SEAMS::history_data curr_history = hist[i];
+          std::cout << curr_history.original << " was substituted with " <<
+                       curr_history.substitution << " at index " <<
+                       curr_history.index << std::endl;
+        }
+
+        aprepro.clear_history();
+      }
     }
 
     aprepro.clear_results();

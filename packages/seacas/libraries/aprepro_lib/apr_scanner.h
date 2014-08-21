@@ -53,8 +53,6 @@ public:
 	Parser::semantic_type* yylval
 	);
 
-    void add_input_stream(std::istream &in, const std::string &name);
-    void add_input_file(const std::string &filename);
     char *rescan(char *string);
     char *execute(char *string);
     char *if_handler(double x);
@@ -67,6 +65,9 @@ public:
 
     /* User arguments.  */
     class Aprepro& aprepro;
+
+    /* save the original string for substitution history */
+    void save_history_string();
 };
 
 } // namespace SEAMS

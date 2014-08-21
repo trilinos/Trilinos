@@ -68,6 +68,100 @@ static bool SymmetricGallery = false;
 static bool Solver = AZ_gmres;
 const int NumVectors = 3;
 
+
+// ====================================================================== 
+bool TestVariableBlocking(const Epetra_Comm & Comm) {
+  // Basically each processor gets this 5x5 block lower-triangular matrix:
+  //
+  // [ 2 -1  0  0  0 ;...
+  // [-1  2  0  0  0 ;...
+  // [-1 -1  5 -1 -1 ;...
+  // [-1 -1 -1  5 -1 ;...
+  // [-1 -1 -1 -1  5  ];
+  //
+  // The nice thing about this matrix is that if the RHS is a constant,the solution is the same constant...
+
+  Epetra_Map RowMap(-1,5,0,Comm); // 5 rows per proc
+
+  Epetra_CrsMatrix A(Copy,RowMap,0);
+  
+  int num_entries;
+  int indices[5];
+  double values[5];
+  int rb = RowMap.GID(0);
+
+  /*** Fill RHS / LHS ***/
+  Epetra_Vector rhs(RowMap), lhs(RowMap), exact_soln(RowMap);
+  rhs.PutScalar(2.0);
+  lhs.PutScalar(0.0);
+  exact_soln.PutScalar(2.0);
+
+  /*** Fill Matrix ****/
+  // Row 0 
+  num_entries=2;
+  indices[0]=rb; indices[1]=rb+1;
+  values[0] =2; values[1] =-1;
+  A.InsertGlobalValues(rb,num_entries,&values[0],&indices[0]);
+
+  // Row 1
+  num_entries=2;
+  indices[0]=rb; indices[1]=rb+1;
+  values[0] =-1; values[1] =2;
+  A.InsertGlobalValues(rb+1,num_entries,&values[0],&indices[0]);
+
+  // Row 2
+  num_entries=5;
+  indices[0]=rb; indices[1]=rb+1; indices[2]=rb+2; indices[3]=rb+3; indices[4]=rb+4;
+  values[0] =-1; values[1] =-1;   values[2] = 5;   values[3] =-1;   values[4] =-1;
+  A.InsertGlobalValues(rb+2,num_entries,&values[0],&indices[0]);
+
+  // Row 3
+  num_entries=5;
+  indices[0]=rb; indices[1]=rb+1; indices[2]=rb+2; indices[3]=rb+3; indices[4]=rb+4;
+  values[0] =-1; values[1] =-1;   values[2] =-1;   values[3] = 5;   values[4] =-1;
+  A.InsertGlobalValues(rb+3,num_entries,&values[0],&indices[0]);
+
+  // Row 4
+  num_entries=5;
+  indices[0]=rb; indices[1]=rb+1; indices[2]=rb+2; indices[3]=rb+3; indices[4]=rb+4;
+  values[0] =-1; values[1] =-1;   values[2] =-1;   values[3] =-1;   values[4] = 5;
+  A.InsertGlobalValues(rb+4,num_entries,&values[0],&indices[0]); 
+  A.FillComplete();
+
+
+  /* Setup Block Relaxation */
+  int PartMap[5]={0,0,1,1,1};
+
+  Teuchos::ParameterList ilist;
+  ilist.set("partitioner: type","user");
+  ilist.set("partitioner: map",&PartMap[0]);
+  ilist.set("partitioner: local parts",2);
+  ilist.set("relaxation: sweeps",1);
+  ilist.set("relaxation: type","Gauss-Seidel");
+  Ifpack_BlockRelaxation<Ifpack_DenseContainer> Relax(&A);
+  Relax.SetParameters(ilist);
+  Relax.Initialize();
+  Relax.Compute();
+
+  Relax.ApplyInverse(rhs,lhs);
+
+  
+  double norm;
+  lhs.Update(1.0,exact_soln,-1.0);
+  lhs.Norm2(&norm);
+
+  if(verbose) cout<<"Variable Block Partitioning Test"<<endl;
+
+  if(norm < 1e-14) {
+    if(verbose) cout << "Test passed" << endl;
+     return true;
+  }
+  else {
+    if(verbose) cout << "Test failed" << endl;
+    return false;
+  }
+}
+
 // ====================================================================== 
 int CompareLineSmoother(const Teuchos::RefCountPtr<Epetra_RowMatrix>& A, Teuchos::RCP<Epetra_MultiVector> coord)
 {
@@ -87,8 +181,6 @@ int CompareLineSmoother(const Teuchos::RefCountPtr<Epetra_RowMatrix>& A, Teuchos
   List.set("partitioner: x-coordinates",&(*coord)[0][0]);
   List.set("partitioner: y-coordinates",&(*coord)[1][0]);
   List.set("partitioner: z-coordinates",(double*) 0);
-
-  printf("CMS: Compare line smoother\n");//DEBUG
 
   RHS.PutScalar(1.0);
   LHS.PutScalar(0.0);
@@ -606,6 +698,15 @@ int main(int argc, char *argv[])
     CompareLineSmoother(A,coord);    
   }							 
 
+  // ================================== //
+  // test variable blocking             //
+  // ================================== //
+  {
+    TestPassed = TestPassed && TestVariableBlocking(A->Comm());
+  }
+
+
+
   // ============ //
   // final output //
   // ============ //
@@ -618,7 +719,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Finalize(); 
 #endif
-  
+
   cout << endl;
   cout << "Test `TestRelaxation.exe' passed!" << endl;
   cout << endl;

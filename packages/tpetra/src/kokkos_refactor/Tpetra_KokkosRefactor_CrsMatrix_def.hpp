@@ -738,7 +738,7 @@ namespace Tpetra {
     using Teuchos::rcp;
     typedef ArrayRCP<size_t>::size_type size_type;
     typedef typename Graph::t_numRowEntries_ row_entries_type;
-    typedef typename Graph::t_RowPtrs row_offsets_type;
+    typedef typename Graph::t_RowPtrsNC row_offsets_type;
     typedef typename Graph::t_LocalOrdinal_1D lclinds_1d_type;
     typedef t_ValuesType values_type;
 
@@ -763,6 +763,7 @@ namespace Tpetra {
     // Graph::LocalStaticCrsGraphType::row_map_type for k_ptrs,
     // because the latter is const and we need to modify k_ptrs here.
     row_offsets_type k_ptrs;
+    t_RowPtrs k_ptrs_const;
     lclinds_1d_type k_inds;
     values_type k_vals;
 
@@ -825,6 +826,7 @@ namespace Tpetra {
         // packedRowOffsets is modifiable; k_ptrs isn't, so we have to
         // use packedRowOffsets in the loop above and assign here.
         k_ptrs = packedRowOffsets;
+        k_ptrs_const = k_ptrs;
       }
 
       TEUCHOS_TEST_FOR_EXCEPTION(
@@ -987,6 +989,7 @@ namespace Tpetra {
           // packedRowOffsets is modifiable; k_ptrs isn't, so we have
           // to use packedRowOffsets in the loop above and assign here.
           k_ptrs = packedRowOffsets;
+          k_ptrs_const = k_ptrs;
         }
 
         TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1055,28 +1058,28 @@ namespace Tpetra {
         }
       }
       else { // We don't have to pack, so just set the pointers.
-        k_ptrs = myGraph_->k_rowPtrs_;
+        k_ptrs_const = myGraph_->k_rowPtrs_;
         k_inds = myGraph_->k_lclInds1D_;
         k_vals = this->k_values1D_;
 
         TEUCHOS_TEST_FOR_EXCEPTION(
-          k_ptrs.dimension_0 () == 0, std::logic_error, "Tpetra::CrsMatrix::"
+          k_ptrs_const.dimension_0 () == 0, std::logic_error, "Tpetra::CrsMatrix::"
           "fillLocalGraphAndMatrix: In StaticProfile \"Optimize Storage\" = "
-          "false branch, k_ptrs.dimension_0() = 0.  This probably means that "
+          "false branch, k_ptrs_const.dimension_0() = 0.  This probably means that "
           "k_rowPtrs_ was never allocated.");
-        if (k_ptrs.dimension_0 () != 0) {
-          const size_t numOffsets = static_cast<size_t> (k_ptrs.dimension_0 ());
+        if (k_ptrs_const.dimension_0 () != 0) {
+          const size_t numOffsets = static_cast<size_t> (k_ptrs_const.dimension_0 ());
           TEUCHOS_TEST_FOR_EXCEPTION(
-            static_cast<size_t> (k_ptrs(numOffsets - 1)) != k_vals.dimension_0 (),
+            static_cast<size_t> (k_ptrs_const(numOffsets - 1)) != k_vals.dimension_0 (),
             std::logic_error, "Tpetra::CrsMatrix::fillLocalGraphAndMatrix: "
             "In StaticProfile \"Optimize Storage\" = false branch, "
-            "k_ptrs(" << (numOffsets-1) << ") = " << k_ptrs(numOffsets - 1)
+            "k_ptrs_const(" << (numOffsets-1) << ") = " << k_ptrs_const(numOffsets - 1)
             << " != k_vals.dimension_0() = " << k_vals.dimension_0 () << ".");
           TEUCHOS_TEST_FOR_EXCEPTION(
-            static_cast<size_t> (k_ptrs(numOffsets - 1)) != k_inds.dimension_0 (),
+            static_cast<size_t> (k_ptrs_const(numOffsets - 1)) != k_inds.dimension_0 (),
             std::logic_error, "Tpetra::CrsMatrix::fillLocalGraphAndMatrix: "
             "In StaticProfile \"Optimize Storage\" = false branch, "
-            "k_ptrs(" << (numOffsets-1) << ") = " << k_ptrs(numOffsets - 1)
+            "k_ptrs_const(" << (numOffsets-1) << ") = " << k_ptrs_const(numOffsets - 1)
             << " != k_inds.dimension_0() = " << k_inds.dimension_0 () << ".");
         }
       }
@@ -1084,21 +1087,21 @@ namespace Tpetra {
 
     // Extra sanity checks.
     TEUCHOS_TEST_FOR_EXCEPTION(
-      static_cast<size_t> (k_ptrs.dimension_0 ()) != lclNumRows + 1,
+      static_cast<size_t> (k_ptrs_const.dimension_0 ()) != lclNumRows + 1,
       std::logic_error, "Tpetra::CrsMatrix::fillLocalGraphAndMatrix: After "
-      "packing, k_ptrs.dimension_0() = " << k_ptrs.dimension_0 ()
+      "packing, k_ptrs_const.dimension_0() = " << k_ptrs_const.dimension_0 ()
       << " != lclNumRows+1 = " << (lclNumRows+1) << ".");
-    if (k_ptrs.dimension_0 () != 0) {
-      const size_t numOffsets = static_cast<size_t> (k_ptrs.dimension_0 ());
+    if (k_ptrs_const.dimension_0 () != 0) {
+      const size_t numOffsets = static_cast<size_t> (k_ptrs_const.dimension_0 ());
       TEUCHOS_TEST_FOR_EXCEPTION(
-        static_cast<size_t> (k_ptrs(numOffsets - 1)) != k_vals.dimension_0 (),
+        static_cast<size_t> (k_ptrs_const(numOffsets - 1)) != k_vals.dimension_0 (),
         std::logic_error, "Tpetra::CrsMatrix::fillLocalGraphAndMatrix: After "
-        "packing, k_ptrs(" << (numOffsets-1) << ") = " << k_ptrs(numOffsets-1)
+        "packing, k_ptrs_const(" << (numOffsets-1) << ") = " << k_ptrs_const(numOffsets-1)
         << " != k_vals.dimension_0() = " << k_vals.dimension_0 () << ".");
       TEUCHOS_TEST_FOR_EXCEPTION(
-        static_cast<size_t> (k_ptrs(numOffsets - 1)) != k_inds.dimension_0 (),
+        static_cast<size_t> (k_ptrs_const(numOffsets - 1)) != k_inds.dimension_0 (),
         std::logic_error, "Tpetra::CrsMatrix::fillLocalGraphAndMatrix: After "
-        "packing, k_ptrs(" << (numOffsets-1) << ") = " << k_ptrs(numOffsets-1)
+        "packing, k_ptrs_const(" << (numOffsets-1) << ") = " << k_ptrs_const(numOffsets-1)
         << " != k_inds.dimension_0() = " << k_inds.dimension_0 () << ".");
     }
 
@@ -1131,14 +1134,11 @@ namespace Tpetra {
       this->values2D_ = null;
 
       // Keep the new 1-D packed allocations.
-      myGraph_->k_rowPtrs_ = k_ptrs;
+      myGraph_->k_rowPtrs_ = k_ptrs_const;
       myGraph_->k_lclInds1D_ = k_inds;
       this->k_values1D_ = k_vals;
 
-      // Set Kokkos classic pointers for backwards compatibility.
-      myGraph_->rowPtrs_ =
-        arcp_const_cast<size_t> (Kokkos::Compat::persistingView (k_ptrs));
-      myGraph_->lclInds1D_ = Kokkos::Compat::persistingView (k_inds);
+      // Set Kokkos classic pointer for backwards compatibility.
       this->values1D_ = Kokkos::Compat::persistingView (k_vals);
 
       // Storage is packed now, so the number of allocated entries is
@@ -1163,12 +1163,7 @@ namespace Tpetra {
     // null, but we delete it first so that any memory can be freed
     // before we allocate the new one.
     myGraph_->k_lclGraph_ =
-      typename Graph::LocalStaticCrsGraphType (k_inds, k_ptrs);
-
-    // DEBUG ONLY
-    // comm.barrier ();
-    // cerr << myRank << ": MADE k_lclGraph_" << endl;
-    // comm.barrier ();
+      typename Graph::LocalStaticCrsGraphType (k_inds, k_ptrs_const);
 
     // Set up Kokkos classic "local graph" object.
     //
@@ -1184,13 +1179,8 @@ namespace Tpetra {
                                    getColMap ()->getNodeNumElements (),
                                    rowMap.getNode (), lclparams));
     }
-    myGraph_->lclGraph_->setStructure (Kokkos::Compat::persistingView (k_ptrs),
+    myGraph_->lclGraph_->setStructure (Kokkos::Compat::persistingView (k_ptrs_const),
                                        Kokkos::Compat::persistingView (k_inds));
-
-    // DEBUG ONLY
-    // comm.barrier ();
-    // cerr << myRank << ": MADE lclGraph_" << endl;
-    // comm.barrier ();
 
     // Make the local matrix, using the local graph and vals array.
     if (params.is_null ()) {
@@ -1210,10 +1200,6 @@ namespace Tpetra {
     k_lclMatrix_ = k_local_matrix_type ("Tpetra::CrsMatrix::k_lclMatrix_",
                                         getNodeNumCols (), k_vals,
                                         myGraph_->k_lclGraph_);
-    // DEBUG ONLY
-    // comm.barrier ();
-    // cerr << myRank << ": MADE k_lclMatrix_" << endl;
-    // comm.barrier ();
 
     // Finalize the local graph and matrix together.
     if (params.is_null ()) {
@@ -1247,10 +1233,6 @@ namespace Tpetra {
                                              *myGraph_->getLocalGraphNonConst (),
                                              *classicLocalMatrix,
                                              lclparams);
-    // DEBUG ONLY
-    // comm.barrier ();
-    // cerr << myRank << ": OMG WOAH DONE" << endl;
-    // comm.barrier ();
   }
 
 
@@ -1276,7 +1258,7 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef typename Graph::t_numRowEntries_ row_entries_type;
     typedef typename Graph::LocalStaticCrsGraphType::row_map_type row_map_type;
-    typedef typename Graph::t_RowPtrs row_offsets_type;
+    typedef typename Graph::t_RowPtrsNC row_offsets_type;
 
     const size_t lclNumRows = getNodeNumRows();
     const map_type& rowMap = * (getRowMap ());
@@ -1291,7 +1273,6 @@ namespace Tpetra {
     // fill both the graph and the matrix at the same time).
 
     // get data from staticGraph_
-    ArrayRCP<LO> lclInds1D         = staticGraph_->lclInds1D_;
     ArrayRCP<Array<LO> > lclInds2D = staticGraph_->lclInds2D_;
     ArrayRCP<size_t> numRowEntries = staticGraph_->numRowEntries_;
     size_t nodeNumEntries   = staticGraph_->nodeNumEntries_;
@@ -1441,8 +1422,8 @@ namespace Tpetra {
       if (nodeNumEntries != nodeNumAllocated) {
         // We have to pack the 1-D storage, since the user didn't fill
         // up all requested storage.
-        typename Graph::t_RowPtrs tmpk_ptrs ("Tpetra::CrsGraph::ptr",
-                                             lclNumRows+1);
+        typename Graph::t_RowPtrsNC tmpk_ptrs ("Tpetra::CrsGraph::ptr",
+                                               lclNumRows+1);
         // Total number of entries in the matrix on the calling
         // process.  We will compute this in the loop below.  It's
         // cheap to compute and useful as a sanity check.

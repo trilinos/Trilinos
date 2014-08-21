@@ -84,15 +84,15 @@ typedef KokkosClassic::DefaultNode::DefaultNodeType znode_t;
 //
 
 // TODO:  KDD 8/13/14
-// Global definitions of types gno_t, lno_t, gid_t and 
+// Global definitions of types gno_t, lno_t, zgid_t and 
 // scalar_t can cause bugs in the code.  If a class fails to define these 
 // types, but this file is included before the class file, the types
 // from Zoltan2_TestHelpers.hpp will be used in the class.  Compilation in
 // user programs (without Zoltan2_TestHelpers.hpp) would then fail.  An
 // example of this bug was in the GeometricGenerator class, which used
 // scalar_t without defining it.
-// In this "fix," I changed gno_t, lno_t, gid_t, scalar_t, and node_t to zgno_t,
-// zlno_t, zgid_t, zscalar_t and znode_t in Zoltan2_TestHelpers.hpp.  This
+// In this "fix," I changed gno_t, lno_t, zgid_t, scalar_t, and node_t to zgno_t,
+// zlno_t, zzgid_t, zscalar_t and znode_t in Zoltan2_TestHelpers.hpp.  This
 // change is not the best fix; a better fix would remove the global
 // definitions, but that would require more work.  (An even better change
 // would use the Teuchos test framework to cycle through various options,
@@ -104,28 +104,28 @@ typedef KokkosClassic::DefaultNode::DefaultNodeType znode_t;
 
 typedef int zlno_t;
 typedef long zgno_t;
-typedef unsigned long zgid_t;
+typedef unsigned long zzgid_t;
 typedef float zscalar_t;
 
 #elif defined HAVE_ZOLTAN2_INST_DOUBLE_INT_LONG
 
 typedef int zlno_t;
 typedef long zgno_t;
-typedef unsigned long zgid_t;
+typedef unsigned long zzgid_t;
 typedef double zscalar_t;
 
 #elif defined HAVE_ZOLTAN2_INST_FLOAT_INT_INT
 
 typedef int zlno_t;
 typedef int zgno_t;
-typedef unsigned int zgid_t;
+typedef unsigned int zzgid_t;
 typedef float zscalar_t;
 
 #elif defined HAVE_ZOLTAN2_INST_DOUBLE_INT_INT
 
 typedef int zlno_t;
 typedef int zgno_t;
-typedef unsigned int zgid_t;
+typedef unsigned int zzgid_t;
 typedef double zscalar_t;
 #define HAVE_EPETRA_DATA_TYPES
 
@@ -133,14 +133,14 @@ typedef double zscalar_t;
 
 typedef ssize_t zlno_t;
 typedef size_t  zgno_t;
-typedef size_t  zgid_t;
+typedef size_t  zzgid_t;
 typedef double  zscalar_t;
 
 #else
 
 typedef int zlno_t;
 typedef int zgno_t;
-typedef unsigned int zgid_t;
+typedef unsigned int zzgid_t;
 typedef double zscalar_t;
 #define HAVE_EPETRA_DATA_TYPES
 

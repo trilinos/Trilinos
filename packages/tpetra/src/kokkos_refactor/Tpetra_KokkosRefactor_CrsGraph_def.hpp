@@ -588,17 +588,7 @@ namespace Tpetra {
     }
 
     k_lclInds1D_ = k_lclGraph_.entries;
-    lclInds1D_ = Kokkos::Compat::persistingView (k_lclGraph_.entries);
-
-    //FIXME: This doesn't work because of const/non const issues
-    /*k_rowPtrs_ = k_lclGraph_.row_map;*/
-
-    // FIXME:  ETP 05/19/2014:  Add const_cast to prevent getRowInfo() from
-    // throwing an exception.
-    rowPtrs_ =
-      arcp (const_cast<size_t*>(k_lclGraph_.row_map.ptr_on_device ()), 0,
-            k_lclGraph_.row_map.dimension_0 (),
-            Kokkos::Compat::deallocator (k_lclGraph_.row_map), false);
+    k_rowPtrs_ = k_lclGraph_.row_map;
 
     typename LocalStaticCrsGraphType::row_map_type d_ptrs = k_lclGraph_.row_map;
     typename LocalStaticCrsGraphType::entries_type d_inds = k_lclGraph_.entries;
@@ -1033,7 +1023,7 @@ namespace Tpetra {
       //
       //  STATIC ALLOCATION PROFILE
       //
-      t_RowPtrs k_rowPtrs ("Tpetra::CrsGraph::ptr", numRows + 1);
+      t_RowPtrsNC k_rowPtrs ("Tpetra::CrsGraph::ptr", numRows + 1);
 
       if (k_numAllocPerRow_.dimension_0 () != 0) {
         // It's OK to throw std::invalid_argument here, because we
@@ -1090,14 +1080,12 @@ namespace Tpetra {
 
       // "Commit" the resulting row offsets.
       k_rowPtrs_ = k_rowPtrs;
-      rowPtrs_ = Kokkos::Compat::persistingView (k_rowPtrs_);
 
       // FIXME (mfh 05,11 Aug 2014) This assumes UVM, since k_rowPtrs_
       // is currently a device View.  Should instead use a DualView.
       const size_type numInds = static_cast<size_type> (k_rowPtrs_(numRows));
       if (lg == LocalIndices) {
         k_lclInds1D_ = t_LocalOrdinal_1D ("Tpetra::CrsGraph::ind", numInds);
-        lclInds1D_ = Kokkos::Compat::persistingView (k_lclInds1D_);
       }
       else {
         k_gblInds1D_ = t_GlobalOrdinal_1D ("Tpetra::CrsGraph::ind", numInds);
@@ -1206,44 +1194,74 @@ namespace Tpetra {
     return values2D;
   }
 
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  ArrayView<const LocalOrdinal>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  Teuchos::ArrayView<const LocalOrdinal>
+  CrsGraph<
+    LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+    typename KokkosClassic::DefaultKernels<
+      void, LocalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   getLocalView (const RowInfo rowinfo) const
   {
-    Teuchos::ArrayView<const LocalOrdinal> view;
-    if (rowinfo.allocSize > 0) {
-      if (lclInds1D_ != null) {
-        view = lclInds1D_ (rowinfo.offset1D, rowinfo.allocSize);
+    using Kokkos::subview;
+    using Kokkos::View;
+    typedef LocalOrdinal LO;
+    typedef View<const LO*, device_type, Kokkos::MemoryUnmanaged> row_view_type;
+
+    if (rowinfo.allocSize == 0) {
+      return Teuchos::ArrayView<const LO> ();
+    }
+    else { // nothing in the row to view
+      if (k_lclInds1D_.dimension_0 () != 0) { // 1-D storage
+        const size_t start = rowinfo.offset1D;
+        const size_t len = rowinfo.allocSize;
+        const std::pair<size_t, size_t> rng (start, start + len);
+        row_view_type rowView = subview<row_view_type> (k_lclInds1D_, rng);
+        return Teuchos::ArrayView<const LO> (rowView.ptr_on_device (), len);
       }
-      else if (! lclInds2D_[rowinfo.localRow].empty ()) {
-        view = lclInds2D_[rowinfo.localRow] ();
+      else if (! lclInds2D_[rowinfo.localRow].empty ()) { // 2-D storage
+        return lclInds2D_[rowinfo.localRow] ();
+      }
+      else {
+        return Teuchos::ArrayView<const LO> (); // nothing in the row to view
       }
     }
-    return view;
   }
 
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   ArrayView<LocalOrdinal>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  CrsGraph<
+    LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+    typename KokkosClassic::DefaultKernels<
+      void, LocalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   getLocalViewNonConst (const RowInfo rowinfo)
   {
-    Teuchos::ArrayView<LocalOrdinal> view;
-    if (rowinfo.allocSize > 0) {
-      if (lclInds1D_ != null) {
-        view = lclInds1D_ (rowinfo.offset1D, rowinfo.allocSize);
+    using Kokkos::subview;
+    using Kokkos::View;
+    typedef LocalOrdinal LO;
+    typedef View<LO*, device_type, Kokkos::MemoryUnmanaged> row_view_type;
+
+    if (rowinfo.allocSize == 0) { // nothing in the row to view
+      return Teuchos::ArrayView<LO> ();
+    }
+    else {
+      if (k_lclInds1D_.dimension_0 () != 0) { // 1-D storage
+        const size_t start = rowinfo.offset1D;
+        const size_t len = rowinfo.allocSize;
+        const std::pair<size_t, size_t> rng (start, start + len);
+        row_view_type rowView = subview<row_view_type> (k_lclInds1D_, rng);
+        return Teuchos::ArrayView<LO> (rowView.ptr_on_device (), len);
       }
-      else if (! lclInds2D_[rowinfo.localRow].empty()) {
-        view = lclInds2D_[rowinfo.localRow] ();
+      else if (! lclInds2D_[rowinfo.localRow].empty ()) { // 2-D storage
+        return lclInds2D_[rowinfo.localRow] ();
+      }
+      else {
+        return Teuchos::ArrayView<LO> (); // nothing in the row to view
       }
     }
-    return view;
   }
 
 
@@ -1547,8 +1565,12 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   insertLocalIndicesImpl (const LocalOrdinal myRow,
-                          const ArrayView<const LocalOrdinal> &indices)
+                          const Teuchos::ArrayView<const LocalOrdinal>& indices)
   {
+    using Kokkos::MemoryUnmanaged;
+    using Kokkos::subview;
+    using Kokkos::View;
+    typedef LocalOrdinal LO;
     const char* tfecfFuncName ("insertLocallIndicesImpl");
 
     RowInfo rowInfo = getRowInfo(myRow);
@@ -1567,13 +1589,21 @@ namespace Tpetra {
       nodeNumAllocated_ += (newAllocSize - rowInfo.allocSize);
     }
 
-    // Insert new indices at end of lclInds array
-    if (lclInds1D_ != null)
-      std::copy(indices.begin(), indices.end(),
-                lclInds1D_.begin()+rowInfo.offset1D+rowInfo.numEntries);
-    else
-      std::copy(indices.begin(), indices.end(),
-                lclInds2D_[myRow].begin()+rowInfo.numEntries);
+    // Store the new indices at the end of row myRow.
+    if (k_lclInds1D_.dimension_0 () != 0) {
+      typedef View<const LO*, device_type, MemoryUnmanaged> input_view_type;
+      typedef View<LO*, device_type> row_view_type;
+
+      input_view_type inputInds (indices.getRawPtr (), indices.size ());
+      const size_t start = rowInfo.offset1D + rowInfo.numEntries; // end of row
+      const std::pair<size_t, size_t> rng (start, start + newNumEntries);
+      row_view_type myInds = subview<row_view_type> (k_lclInds1D_, rng);
+      Kokkos::deep_copy (myInds, inputInds);
+    }
+    else {
+      std::copy (indices.begin (), indices.end (),
+                 lclInds2D_[myRow].begin () + rowInfo.numEntries);
+    }
 
     // FIXME (mfh 07 Aug 2014) We should just sync at fillComplete,
     // but for now, for correctness, do the modify-sync cycle here.
@@ -1991,8 +2021,8 @@ namespace Tpetra {
     // if storage is optimized, then profile should be static
     TEUCHOS_TEST_FOR_EXCEPTION( isStorageOptimized() && pftype_ != StaticProfile,                                                               std::logic_error, err );
 
-    // If rowPtrs_ exists (has nonzero size), it must have N+1 rows,
-    // and rowPtrs_[N] must equal k_gblInds1D_.dimension_0() (if
+    // If k_rowPtrs_ exists (has nonzero size), it must have N+1 rows,
+    // and k_rowPtrs_(N) must equal k_gblInds1D_.dimension_0() (if
     // globally indexed) or k_lclInds1D_.dimension_0() (if locally
     // indexed).
 
@@ -2197,9 +2227,6 @@ namespace Tpetra {
     }
   }
 
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   size_t
   CrsGraph<
@@ -2218,27 +2245,32 @@ namespace Tpetra {
     }
   }
 
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  ArrayRCP<const size_t> CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getNodeRowPtrs() const
+  Teuchos::ArrayRCP<const size_t>
+  CrsGraph<
+    LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+    typename KokkosClassic::DefaultKernels<
+      void, LocalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  getNodeRowPtrs () const
   {
-    return rowPtrs_;
+    return Kokkos::Compat::persistingView (k_rowPtrs_);
   }
 
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  ArrayRCP<const LocalOrdinal> CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getNodePackedIndices() const
+  Teuchos::ArrayRCP<const LocalOrdinal>
+  CrsGraph<
+    LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+    typename KokkosClassic::DefaultKernels<
+      void, LocalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  getNodePackedIndices () const
   {
     return Kokkos::Compat::persistingView (k_lclInds1D_);
   }
 
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
   CrsGraph<
@@ -2767,9 +2799,7 @@ namespace Tpetra {
     indicesAreLocal_     = true;
     pftype_              = StaticProfile; // if the profile wasn't static before, it sure is now.
     k_lclInds1D_         = columnIndices;
-    lclInds1D_           = Kokkos::Compat::persistingView (columnIndices);
     k_rowPtrs_           = rowPointers;
-    rowPtrs_             = Kokkos::Compat::persistingView (rowPointers);
     nodeNumAllocated_    = localNumEntries;
     nodeNumEntries_      = localNumEntries;
 
@@ -2856,7 +2886,7 @@ namespace Tpetra {
         "The graph is not StaticProfile, but storage appears to be optimized.  "
         "Please report this bug to the Tpetra developers.");
       TEUCHOS_TEST_FOR_EXCEPTION(
-        numRows != 0 && this->k_rowPtrs_.dimension_0 () == 0, std::logic_error,
+        numRows != 0 && k_rowPtrs_.dimension_0 () == 0, std::logic_error,
         "Tpetra::CrsGraph::getNumEntriesPerRowUpperBound: "
         "The graph has " << numRows << " (> 0) row" << (numRows != 1 ? "s" : "")
         << " on the calling process, but the k_rowPtrs_ array has zero entries.  "
@@ -3498,7 +3528,7 @@ namespace Tpetra {
     using Teuchos::rcp;
     typedef ArrayRCP<size_t>::size_type size_type;
     typedef t_numRowEntries_ row_entries_type;
-    typedef t_RowPtrs row_offsets_type;
+    typedef t_RowPtrsNC row_offsets_type;
     typedef t_LocalOrdinal_1D lclinds_1d_type;
 
     const size_t lclNumRows = this->getNodeNumRows ();
@@ -3510,6 +3540,7 @@ namespace Tpetra {
     // k_ptrs, because the latter is const and we need to modify
     // k_ptrs here.
     row_offsets_type k_ptrs;
+    t_RowPtrs k_ptrs_const;
     lclinds_1d_type k_inds;
 
     // The number of entries in each locally owned row.  This is a
@@ -3551,6 +3582,7 @@ namespace Tpetra {
       {
         // Allocate the packed row offsets array.
         k_ptrs = row_offsets_type ("Tpetra::CrsGraph::ptr", lclNumRows+1);
+        k_ptrs_const = k_ptrs;
         //
         // FIXME hack until we get parallel_scan in kokkos
         //
@@ -3673,6 +3705,7 @@ namespace Tpetra {
         {
           // Allocate the packed row offsets array.
           k_ptrs = row_offsets_type ("Tpetra::CrsGraph::ptr", lclNumRows + 1);
+          k_ptrs_const = k_ptrs;
           //
           // FIXME hack until we get parallel_scan in kokkos
           //
@@ -3737,21 +3770,21 @@ namespace Tpetra {
         }
       }
       else { // We don't have to pack, so just set the pointers.
-        k_ptrs = k_rowPtrs_;
+        k_ptrs_const = k_rowPtrs_;
         k_inds = k_lclInds1D_;
 
         TEUCHOS_TEST_FOR_EXCEPTION(
-          k_ptrs.dimension_0 () == 0, std::logic_error, "Tpetra::CrsGraph::"
+          k_ptrs_const.dimension_0 () == 0, std::logic_error, "Tpetra::CrsGraph::"
           "fillLocalGraph: In StaticProfile \"Optimize Storage\" = "
-          "false branch, k_ptrs.dimension_0() = 0.  This probably means that "
+          "false branch, k_ptrs_const.dimension_0() = 0.  This probably means that "
           "k_rowPtrs_ was never allocated.");
-        if (k_ptrs.dimension_0 () != 0) {
-          const size_t numOffsets = static_cast<size_t> (k_ptrs.dimension_0 ());
+        if (k_ptrs_const.dimension_0 () != 0) {
+          const size_t numOffsets = static_cast<size_t> (k_ptrs_const.dimension_0 ());
           TEUCHOS_TEST_FOR_EXCEPTION(
-            static_cast<size_t> (k_ptrs(numOffsets - 1)) != k_inds.dimension_0 (),
+            static_cast<size_t> (k_ptrs_const(numOffsets - 1)) != k_inds.dimension_0 (),
             std::logic_error, "Tpetra::CrsGraph::fillLocalGraph: "
             "In StaticProfile \"Optimize Storage\" = false branch, "
-            "k_ptrs(" << (numOffsets-1) << ") = " << k_ptrs(numOffsets - 1)
+            "k_ptrs_const(" << (numOffsets-1) << ") = " << k_ptrs_const(numOffsets - 1)
             << " != k_inds.dimension_0() = " << k_inds.dimension_0 () << ".");
         }
       }
@@ -3759,16 +3792,16 @@ namespace Tpetra {
 
     // Extra sanity checks.
     TEUCHOS_TEST_FOR_EXCEPTION(
-      static_cast<size_t> (k_ptrs.dimension_0 ()) != lclNumRows + 1,
+      static_cast<size_t> (k_ptrs_const.dimension_0 ()) != lclNumRows + 1,
       std::logic_error, "Tpetra::CrsGraph::fillLocalGraph: After packing, "
-      "k_ptrs.dimension_0() = " << k_ptrs.dimension_0 ()
+      "k_ptrs_const.dimension_0() = " << k_ptrs_const.dimension_0 ()
       << " != lclNumRows+1 = " << (lclNumRows+1) << ".");
-    if (k_ptrs.dimension_0 () != 0) {
-      const size_t numOffsets = static_cast<size_t> (k_ptrs.dimension_0 ());
+    if (k_ptrs_const.dimension_0 () != 0) {
+      const size_t numOffsets = static_cast<size_t> (k_ptrs_const.dimension_0 ());
       TEUCHOS_TEST_FOR_EXCEPTION(
-        static_cast<size_t> (k_ptrs(numOffsets - 1)) != k_inds.dimension_0 (),
+        static_cast<size_t> (k_ptrs_const(numOffsets - 1)) != k_inds.dimension_0 (),
         std::logic_error, "Tpetra::CrsGraph::fillLocalGraph: After packing, "
-        "k_ptrs(" << (numOffsets-1) << ") = " << k_ptrs(numOffsets-1)
+        "k_ptrs_const(" << (numOffsets-1) << ") = " << k_ptrs_const(numOffsets-1)
         << " != k_inds.dimension_0() = " << k_inds.dimension_0 () << ".");
     }
 
@@ -3783,12 +3816,8 @@ namespace Tpetra {
       numRowEntries_ = null; // legacy KokkosClassic view of above
 
       // Keep the new 1-D packed allocations.
-      k_rowPtrs_   = k_ptrs;
+      k_rowPtrs_   = k_ptrs_const;
       k_lclInds1D_ = k_inds;
-
-      // Set Kokkos classic pointers for backwards compatibility.
-      rowPtrs_ = Kokkos::Compat::persistingView (k_ptrs);
-      lclInds1D_ = Kokkos::Compat::persistingView (k_inds);
 
       // Storage is packed now, so the number of allocated entries is
       // the same as the actual number of entries.
@@ -3806,14 +3835,14 @@ namespace Tpetra {
       lclparams = sublist (params, "Local Graph");
     }
 
-    k_lclGraph_ = LocalStaticCrsGraphType (k_inds, k_ptrs);
+    k_lclGraph_ = LocalStaticCrsGraphType (k_inds, k_ptrs_const);
 
     // Allocate legacy Kokkos classic "graph."
 
     lclGraph_ = rcp (new local_graph_type (getRowMap ()->getNodeNumElements (),
                                            getColMap ()->getNodeNumElements (),
                                            getRowMap ()->getNode (), lclparams));
-    lclGraph_->setStructure (Kokkos::Compat::persistingView (k_ptrs),
+    lclGraph_->setStructure (Kokkos::Compat::persistingView (k_ptrs_const),
                              Kokkos::Compat::persistingView (k_inds));
 
     // finalize local graph
@@ -4114,7 +4143,6 @@ namespace Tpetra {
           k_lclInds1D_ = Kokkos::Impl::if_c<Kokkos::Impl::is_same<LO,GO>::value,
             t_GlobalOrdinal_1D,
             t_LocalOrdinal_1D >::select (k_gblInds1D_, k_lclInds1D_);
-          lclInds1D_ = Kokkos::Compat::persistingView (k_lclInds1D_);
         }
         else {
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -4124,7 +4152,6 @@ namespace Tpetra {
           const size_t numEnt = k_rowPtrs_[lclNumRows];
 
           k_lclInds1D_ = t_LocalOrdinal_1D ("Tpetra::CrsGraph::lclind", numEnt);
-          lclInds1D_ = Kokkos::Compat::persistingView (k_lclInds1D_);
         }
 
         for (size_t r = 0; r < lclNumRows; ++r) {

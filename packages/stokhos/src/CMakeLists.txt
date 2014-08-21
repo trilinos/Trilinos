@@ -652,6 +652,9 @@ IF (Stokhos_ENABLE_Sacado)
           DistObject
           CrsMatrix
           CrsGraph
+          Experimental::BlockVector
+          Experimental::BlockMultiVector
+          Experimental::BlockCrsMatrix
           )
         SET(TPETRAEXT_ETI_CLASSES
           MatrixMatrix

@@ -198,7 +198,7 @@ public:
 
   BucketVector const& get_buckets(EntityRank entity_rank) const;
 
-  bool empty(EntityRank entity_rank) const;
+  bool is_empty(EntityRank entity_rank) const;
 
   /** \brief  Is this part a member of the
    *          set defined by the selector expression.
@@ -354,7 +354,8 @@ Selector operator ! ( const Part & A )
 /** \brief .
  * \relates Selector
  * */
-Selector selectUnion( const PartVector& union_part_vector );
+template <typename PartVectorType>
+Selector selectUnion( const PartVectorType & union_part_vector );
 
 /** \brief .
  * \relates Selector

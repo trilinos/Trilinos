@@ -103,7 +103,7 @@ TEST(Verify, partASelector)
   const size_t numExpectedBuckets = 2;
   EXPECT_EQ(numExpectedBuckets, partASelector.get_buckets(stk::topology::NODE_RANK).size());
 
-  EXPECT_FALSE(partASelector.empty(stk::topology::NODE_RANK));
+  EXPECT_FALSE(partASelector.is_empty(stk::topology::NODE_RANK));
 
   const int numEntities = 5;
   bool gold_shouldEntityBeInSelector[numEntities] = {true, true, false, false, false};
@@ -131,7 +131,7 @@ TEST(Verify, emptyPartSelector)
 
   stk::mesh::Selector selector( fix.m_partD );
 
-  EXPECT_TRUE(selector.empty(stk::topology::NODE_RANK));
+  EXPECT_TRUE(selector.is_empty(stk::topology::NODE_RANK));
 
   const int numEntities = 5;
   bool gold_shouldEntityBeInSelector[numEntities] = {false, false, false, false, false};
@@ -148,8 +148,8 @@ TEST(Verify, selectorEmptyDuringMeshMod)
     stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
 
     stk::mesh::Selector block1Selector = block1;
-    EXPECT_TRUE(block1Selector.empty(stk::topology::NODE_RANK));
-    EXPECT_TRUE(block1Selector.empty(stk::topology::ELEM_RANK));
+    EXPECT_TRUE(block1Selector.is_empty(stk::topology::NODE_RANK));
+    EXPECT_TRUE(block1Selector.is_empty(stk::topology::ELEM_RANK));
 
     bulk.modification_begin();
 
@@ -158,29 +158,29 @@ TEST(Verify, selectorEmptyDuringMeshMod)
         stk::mesh::EntityId elem1Id = 1;
         stk::mesh::Entity elem1 = bulk.declare_entity(stk::topology::ELEM_RANK, elem1Id, block1);
 
-        EXPECT_FALSE(block1Selector.empty(stk::topology::ELEM_RANK));
+        EXPECT_FALSE(block1Selector.is_empty(stk::topology::ELEM_RANK));
 
         stk::mesh::PartVector addParts;
         stk::mesh::PartVector removeParts(1, &block1);
         bulk.change_entity_parts(elem1, addParts, removeParts);
 
-        EXPECT_TRUE(block1Selector.empty(stk::topology::ELEM_RANK));
+        EXPECT_TRUE(block1Selector.is_empty(stk::topology::ELEM_RANK));
 
         addParts.push_back(&block1);
         removeParts.clear();
 
         bulk.change_entity_parts(elem1, addParts, removeParts);
 
-        EXPECT_FALSE(block1Selector.empty(stk::topology::ELEM_RANK));
+        EXPECT_FALSE(block1Selector.is_empty(stk::topology::ELEM_RANK));
     }
 
     bulk.modification_end();
 
     if (bulk.parallel_rank()==0) {
-        EXPECT_FALSE(block1Selector.empty(stk::topology::ELEM_RANK));
+        EXPECT_FALSE(block1Selector.is_empty(stk::topology::ELEM_RANK));
     }
     else {
-        EXPECT_TRUE(block1Selector.empty(stk::topology::ELEM_RANK));
+        EXPECT_TRUE(block1Selector.is_empty(stk::topology::ELEM_RANK));
     }
 }
 
@@ -194,8 +194,8 @@ TEST(Verify, complementOfPartASelector)
 
   size_t expected_num_buckets = 2;
   EXPECT_EQ(expected_num_buckets, partASelector.get_buckets(stk::topology::NODE_RANK).size());
-  EXPECT_FALSE(partASelector.empty(stk::topology::NODE_RANK));
-  EXPECT_TRUE(partASelector.empty(stk::topology::FACE_RANK));
+  EXPECT_FALSE(partASelector.is_empty(stk::topology::NODE_RANK));
+  EXPECT_TRUE(partASelector.is_empty(stk::topology::FACE_RANK));
 
   stk::mesh::Selector partAComplementSelector = partASelector.complement();
 

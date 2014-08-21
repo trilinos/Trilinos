@@ -73,6 +73,7 @@ public:
   typedef Impl::ExecutionSpaceTag  kokkos_tag ;
 
   typedef Qthread                  device_type ;
+  typedef Qthread                  execution_space ;
   typedef Kokkos::HostSpace        memory_space ;
   typedef Qthread                  scratch_memory_space ;
   typedef memory_space::size_type  size_type ;

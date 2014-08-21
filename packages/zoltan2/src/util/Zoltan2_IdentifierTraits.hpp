@@ -228,8 +228,8 @@ static inline T invalid() {
   \todo write an example where user's global ID is a C-struct containing
         \c i and \c j indices.
 
-  \todo fix this note regarding gid_t
-  Developer note: By convention we use \c gid_t as the users global ID
+  \todo fix this note regarding zgid_t
+  Developer note: By convention we use \c zgid_t as the users global ID
   data type and \c gno_t as the data type used internally by Zoltan2.
 
   Each data type which is not defined in Teuchos::DirectSerializationTraits

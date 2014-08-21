@@ -261,7 +261,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::buildProlon
   size_t numLocalRows = SM_Matrix_->getNodeNumRows();
   Teuchos::RCP<XMap> BlockColMap
     = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(Ptent->getColMap(),dim);
-  P11_ = Xpetra::MatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Build(Ptent->getRowMap(),BlockColMap,0);
+  P11_ = Teuchos::rcp(new XCrsWrap(Ptent->getRowMap(),BlockColMap,0,Xpetra::StaticProfile));
 
   std::vector< Teuchos::ArrayRCP<const Scalar> > nullspace(dim);
   for(size_t i=0; i<dim; i++) {
@@ -269,28 +269,44 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::buildProlon
     nullspace[i]=datavec;
   }
 
+  size_t nnz=0;
+  std::vector<size_t>       rowPtrs;
+  std::vector<LocalOrdinal> blockCols;
+  std::vector<Scalar>       blockVals;
   for(size_t i=0; i<numLocalRows; i++) {
+    rowPtrs.push_back(nnz);
     Teuchos::ArrayView<const LocalOrdinal> localCols;
     Teuchos::ArrayView<const Scalar>       localVals;
     Ptent->getLocalRowView(i,localCols,localVals);
     size_t numCols = localCols.size();
-    std::vector<LocalOrdinal> blockLocalCols(dim*numCols);
-    std::vector<Scalar>       blockLocalVals(dim*numCols);
     for(size_t j=0; j<numCols; j++) {
       for(size_t k=0; k<dim; k++) {
-	blockLocalCols[j*dim+k] = localCols[j]*dim+k;
-	blockLocalVals[j*dim+k] = localVals[j]*nullspace[k][i];
+	blockCols.push_back(localCols[j]*dim+k);
+	blockVals.push_back(localVals[j]*nullspace[k][i]);
+	nnz++;
       }
     }
-    P11_ -> insertLocalValues(i,
-			      Teuchos::ArrayView<LocalOrdinal>(blockLocalCols),
-			      Teuchos::ArrayView<Scalar>(blockLocalVals));
   }
+  rowPtrs.push_back(nnz);
+
+  ArrayRCP<size_t>       rcpRowPtr;
+  ArrayRCP<LocalOrdinal> rcpColumns;
+  ArrayRCP<Scalar>       rcpValues;
+  
+  RCP<XCRS> TP11 = rcp_dynamic_cast<XCrsWrap>(P11_)->getCrsMatrix();
+  TP11->allocateAllValues(nnz, rcpRowPtr, rcpColumns, rcpValues);
+  
+  ArrayView<size_t>       rows    = rcpRowPtr();
+  ArrayView<LocalOrdinal> columns = rcpColumns();
+  ArrayView<Scalar>       values  = rcpValues();
+
+  for (size_t ii = 0; ii < rowPtrs.size();   ii++) rows[ii]    = rowPtrs[ii];
+  for (size_t ii = 0; ii < blockCols.size(); ii++) columns[ii] = blockCols[ii];
+  for (size_t ii = 0; ii < blockVals.size(); ii++) values[ii]  = blockVals[ii];
+  TP11->setAllValues(rcpRowPtr, rcpColumns, rcpValues);
   Teuchos::RCP<XMap> blockCoarseMap
     = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(Ptent->getDomainMap(),dim);
-  Utils::Apply_BCsToMatrixRows(P11_,BCrows_);
-  P11_->fillComplete(blockCoarseMap,SM_Matrix_->getDomainMap());
-  //P11_->describe(out,Teuchos::VERB_EXTREME);
+  TP11->expertStaticFillComplete(blockCoarseMap,SM_Matrix_->getDomainMap());
 
 }
 

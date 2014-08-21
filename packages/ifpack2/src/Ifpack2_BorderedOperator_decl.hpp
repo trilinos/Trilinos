@@ -68,7 +68,7 @@ extending Tpetra::Operator and defining an interface.
 
   This class extends Tpetra::Operator, providing the additional methods:
   - compute() computes everything required to apply the
-    bordered operator, using matrix values  (and assuming that the
+    bordered operator, using matrix values (and assuming that the
     sparsity of the matrix has not been changed);
   - isComputed() should return true if the bordered operator
     has been successfully computed, false otherwise.
@@ -76,16 +76,19 @@ extending Tpetra::Operator and defining an interface.
   - getLHS() returns a reference to the matrix to be preconditioned.
 
 The bordered operator is applied by apply()
-(which returns if isComputed() is false). 
+(which returns if isComputed() is false).
 Each time compute() is called, the object re-computes the actual values of
 the bordered operator.
 
 <b>Title of Method Description</b>
 */
 
-template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType >
-class BorderedOperator : 
-    virtual public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node > {
+template<class Scalar,
+         class LocalOrdinal = typename Tpetra::Operator<Scalar>::local_ordinal_type,
+         class GlobalOrdinal = typename Tpetra::Operator<Scalar, LocalOrdinal>::global_ordinal_type,
+         class Node = typename Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+class BorderedOperator :
+    virtual public Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node > {
 public:
   //! Constructor with Tpetra::Operator input.
   BorderedOperator (const Teuchos::RCP<const Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& A);
@@ -107,11 +110,11 @@ public:
 
   //! Apply the bordered operator.
   void
-  apply (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
-	 Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
-	 Teuchos::ETransp mode = Teuchos::NO_TRANS,
-	 Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-	 Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
+  apply (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+         Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
+         Teuchos::ETransp mode = Teuchos::NO_TRANS,
+         Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+         Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
   //@}
 
 private:

@@ -2096,7 +2096,7 @@ namespace Tpetra {
     typedef Teuchos::ArrayView<const size_t>::size_type size_type;
     typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
 
-    const size_t numCopyVecs = cols.size ();
+    const size_type numCopyVecs = static_cast<size_type> (cols.size ());
     TEUCHOS_TEST_FOR_EXCEPTION(
       numCopyVecs < 1, std::runtime_error, "Tpetra::MultiVector::subCopy"
       "(const Teuchos::ArrayView<const size_t>&): The input array cols must "
@@ -2126,7 +2126,7 @@ namespace Tpetra {
     else { // Copy data one column at a time.
       RCP<MV> mv = rcp (new MV (this->getMap (), numCopyVecs, zeroData));
       RCP<Node> node = this->getMap ()->getNode ();
-      for (size_t j = 0; j < numCopyVecs; ++j) {
+      for (size_type j = 0; j < numCopyVecs; ++j) {
         node->template copyBuffers<Scalar> (getLocalLength (),
                                             getSubArrayRCP (MVT::getValues (lclMV_), cols[j]),
                                             MVT::getValuesNonConst (mv->lclMV_, j));
@@ -2143,17 +2143,20 @@ namespace Tpetra {
   {
     using Teuchos::RCP;
     using Teuchos::rcp;
+    typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(colRng.size() == 0, std::runtime_error,
-        "Tpetra::MultiVector::subCopy(Range1D): range must include at least one vector.");
-    size_t numCopyVecs = colRng.size();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      colRng.size () == 0, std::runtime_error, "Tpetra::MultiVector::"
+      "subCopy(Range1D): Range must include at least one vector.");
+
+    const size_t numCopyVecs = colRng.size ();
     const bool zeroData = false;
-    RCP<Node> node = MVT::getNode(lclMV_);
-    RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > mv;
+    RCP<Node> node = MVT::getNode (lclMV_);
+    RCP<MV> mv;
     // mv is allocated with constant stride
-    mv = rcp (new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> (this->getMap (), numCopyVecs, zeroData));
+    mv = rcp (new MV (this->getMap (), numCopyVecs, zeroData));
     // copy data from *this into mv
-    for (size_t js=colRng.lbound(), jd=0; jd<numCopyVecs; ++jd, ++js) {
+    for (size_t js = colRng.lbound (), jd = 0; jd < numCopyVecs; ++jd, ++js) {
       node->template copyBuffers<Scalar> (getLocalLength (),
                                           getSubArrayRCP (MVT::getValues (lclMV_), js),
                                           MVT::getValuesNonConst (mv->lclMV_, jd));
@@ -2211,7 +2214,7 @@ namespace Tpetra {
     using Teuchos::rcp;
     typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
 
-    const size_t newNumRows = subMap->getNodeNumElements();
+    const size_t newNumRows = subMap->getNodeNumElements ();
     const bool tooManyElts = newNumRows + offset > lclMV_.getOrigNumRows ();
     if (tooManyElts) {
       const int myRank = this->getMap ()->getComm ()->getRank ();
@@ -2252,8 +2255,9 @@ namespace Tpetra {
     using Teuchos::rcp;
     using Teuchos::rcp_const_cast;
     typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
+    typedef Teuchos::ArrayView<size_t>::size_type size_type;
 
-    const size_t numViewCols = static_cast<size_t> (cols.size ());
+    const size_type numViewCols = static_cast<size_type> (cols.size ());
     TEUCHOS_TEST_FOR_EXCEPTION(
       numViewCols < 1, std::runtime_error, "Tpetra::MultiVector::subView"
       "(const Teuchos::ArrayView<const size_t>&): The input array 'cols' "
@@ -2263,7 +2267,7 @@ namespace Tpetra {
     // Check whether the index set in cols is contiguous.  If it is,
     // use the more efficient Range1D version of subView.
     bool contiguous = true;
-    for (size_t j = 1; j < numViewCols; ++j) {
+    for (size_type j = 1; j < numViewCols; ++j) {
       if (cols[j] != cols[j-1] + static_cast<size_t> (1)) {
         contiguous = false;
         break;
@@ -2297,25 +2301,29 @@ namespace Tpetra {
     size_t minInd = Teuchos::OrdinalTraits<size_t>::max();
     size_t maxInd = Teuchos::OrdinalTraits<size_t>::zero();
     if (isConstantStride()) {
-      for (size_t j=0; j < numViewCols; ++j) {
+      for (size_type j = 0; j < numViewCols; ++j) {
         newCols[j] = cols[j];
         if (newCols[j] < minInd) minInd = newCols[j];
         if (maxInd < newCols[j]) maxInd = newCols[j];
       }
     }
     else {
-      for (size_t j=0; j < numViewCols; ++j) {
+      for (size_type j = 0; j < numViewCols; ++j) {
         newCols[j] = whichVectors_[cols[j]];
         if (newCols[j] < minInd) minInd = newCols[j];
         if (maxInd < newCols[j]) maxInd = newCols[j];
       }
     }
-    ArrayRCP<Scalar> minbuf = ncbuf.persistingView(minInd * myStride, myStride * (maxInd - minInd) + myLen);
-    for (size_t j=0; j < numViewCols; ++j) {
+    ArrayRCP<Scalar> minbuf =
+      ncbuf.persistingView (minInd * myStride,
+                            myStride * (maxInd - minInd) + myLen);
+    for (size_type j = 0; j < numViewCols; ++j) {
       newCols[j] -= minInd;
     }
     RCP<const MV> constViewMV;
-    return rcp_const_cast<const MV> (rcp (new MV (this->getMap (), minbuf, myStride, newCols (), COMPUTE_VIEW_CONSTRUCTOR)));
+    return rcp_const_cast<const MV> (rcp (new MV (this->getMap (), minbuf,
+                                                  myStride, newCols (),
+                                                  COMPUTE_VIEW_CONSTRUCTOR)));
   }
 
 

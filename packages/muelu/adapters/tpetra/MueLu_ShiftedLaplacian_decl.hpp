@@ -63,6 +63,7 @@
 #include <MueLu_PgPFactory.hpp>
 #include <MueLu_GenericRFactory.hpp>
 #include <MueLu_SchwarzSmoother.hpp>
+#include <MueLu_CoupledAggregationFactory.hpp>
 #include <MueLu_UncoupledAggregationFactory.hpp>
 #include <MueLu_ShiftedLaplacian_fwd.hpp>
 #include <MueLu_ShiftedLaplacianOperator.hpp>

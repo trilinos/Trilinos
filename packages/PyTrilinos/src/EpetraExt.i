@@ -228,10 +228,10 @@ example subdirectory of the PyTrilinos package:
 // Macros //
 ////////////
 
-// The overloaded HDF5 and XMLReader Read() methods cannot be
-// type-disambiguated in python.  We therefore replace selected
-// overloaded Read() methods with a python version that has the type
-// in the method name.  For example,
+// The overloaded HDF5 and XMLReader Read() and Read64() methods
+// cannot be type-disambiguated in python.  We therefore replace
+// selected overloaded Read() and Read64() methods with a python
+// version that has the type in the method name.  For example,
 //
 //   void HDF5::Read(const std::string &, Epetra_Map *&)
 //
@@ -248,11 +248,27 @@ readtype Read ## TypeName(const std::string & group, const std::string & name)
   return obj;
 }
 %enddef
+%define %epetraext_primitive_read64_method(readtype,TypeName,initVal)
+readtype Read64 ## TypeName(const std::string & group, const std::string & name)
+{
+  readtype obj = initVal;
+  self->Read64(group, name, obj);
+  return obj;
+}
+%enddef
 %define %epetraext_epetra_read_method(ClassName)
 Epetra_ ## ClassName * Read ## ClassName(const std::string & name)
 {
   Epetra_ ## ClassName * obj = NULL;
   self->Read(name, obj);
+  return obj;
+}
+%enddef
+%define %epetraext_epetra_read64_method(ClassName)
+Epetra_ ## ClassName * Read64 ## ClassName(const std::string & name)
+{
+  Epetra_ ## ClassName * obj = NULL;
+  self->Read64(name, obj);
   return obj;
 }
 %enddef
@@ -429,15 +445,20 @@ EpetraExt::XMLReader::ReadCrsMatrix
 Return a CrsMatrix read from an XML file specified by filename 'name'.
 "
 %ignore EpetraExt::XMLReader::Read;
+%ignore EpetraExt::XMLReader::Read64;
 %include "EpetraExt_XMLReader.h"
 namespace EpetraExt
 {
   %extend XMLReader
   {
-    %epetraext_epetra_read_method(Map        )
-    %epetraext_epetra_read_method(MultiVector)
-    %epetraext_epetra_read_method(CrsGraph   )
-    %epetraext_epetra_read_method(CrsMatrix  )
+    %epetraext_epetra_read_method(  Map        )
+    %epetraext_epetra_read64_method(Map        )
+    %epetraext_epetra_read_method(  MultiVector)
+    %epetraext_epetra_read64_method(MultiVector)
+    %epetraext_epetra_read_method(  CrsGraph   )
+    %epetraext_epetra_read64_method(CrsGraph   )
+    %epetraext_epetra_read_method(  CrsMatrix  )
+    %epetraext_epetra_read64_method(CrsMatrix  )
   } // XMLReader
 }
 
@@ -483,9 +504,9 @@ Transform< Epetra_CrsGraph,
 
 #endif
 
-%template (Xform_CrsGraph_vecIntVector)
-EpetraExt::Transform<Epetra_CrsGraph, std::vector<Epetra_IntVector,
-                                                  std::allocator<Epetra_IntVector> > >;
+//%template (Xform_CrsGraph_vecIntVector)
+//EpetraExt::Transform<Epetra_CrsGraph, std::vector<Epetra_IntVector,
+//                                                  std::allocator<Epetra_IntVector> > >;
 %template (Xform_CrsMatrix_CrsMatrix)
 EpetraExt::Transform<Epetra_CrsMatrix, Epetra_CrsMatrix >;
 
@@ -513,8 +534,8 @@ StructuralTransform<Epetra_CrsGraph,
 
 #endif
 
-%template (SXform_CrsGraph_vecIntVector)
-EpetraExt::StructuralTransform<Epetra_CrsGraph, std::vector<Epetra_IntVector> >;
+//%template (SXform_CrsGraph_vecIntVector)
+//EpetraExt::StructuralTransform<Epetra_CrsGraph, std::vector<Epetra_IntVector> >;
 
 %template (SameXform_CrsMatrix)
 EpetraExt::SameTypeTransform<Epetra_CrsMatrix >;

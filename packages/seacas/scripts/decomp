@@ -275,6 +275,8 @@ LAUNCH=`command -v launch`
 if [ ! -z "$LAUNCH" ]
 then
     LAUNCH="$LAUNCH -n 1"
+    # If the launch script doesn't work to run something simple, don't use it.
+    $LAUNCH >/dev/null 2>&1 true || LAUNCH=
 fi
 
 ########################################################################

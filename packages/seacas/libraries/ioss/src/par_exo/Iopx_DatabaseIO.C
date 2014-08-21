@@ -170,8 +170,8 @@ namespace {
   {
     static int par_mode = 0;
     static int par_mode_default = EX_PNETCDF;  // Default...
-    // static int par_mode_default = EX_MPIIO; 
-    // static int par_mode_default = EX_MPIPOSIX;
+    //    static int par_mode_default = EX_MPIIO; 
+    //    static int par_mode_default = EX_MPIPOSIX;
 
     if (par_mode == 0) {
       if (properties.exists("PARALLEL_IO_MODE")) {

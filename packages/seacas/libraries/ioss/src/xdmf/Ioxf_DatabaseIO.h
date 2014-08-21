@@ -94,7 +94,7 @@ namespace Ioxf {
   public:
     DatabaseIO(Ioss::Region *region, const std::string& filename,
 	       Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
-	       const Ioss::PropertyManager &properties);
+	       const Ioss::PropertyManager &properties_x);
     ~DatabaseIO();
     static void finalize();
 

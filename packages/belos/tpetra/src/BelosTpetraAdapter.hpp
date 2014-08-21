@@ -172,20 +172,15 @@ namespace { // anonymous
         "columns " << mv.getNumVectors () << " of the input multivector mv.");
 #endif // HAVE_TPETRA_DEBUG
 
-      // Detect whether the index range is contiguous.
-      // If it is, use the more efficient Range1D version of CloneCopy.
-      Teuchos::RCP<MV> X_copy;
-      for (std::vector<int>::size_type j = 1; j < index.size (); ++j) {
-        if (index[j] != index[j-1] + 1) {
-          // not contiguous; short circuit
-          Array<size_t> stinds (index.begin (), index.end ());
-          X_copy = mv.subCopy (stinds);
-          X_copy->setCopyOrView (Teuchos::View);
-          return X_copy;
-        }
+      // Tpetra wants an array of size_t, not of int.
+      Teuchos::Array<size_t> columns (index.size ());
+      for (std::vector<int>::size_type j = 0; j < index.size (); ++j) {
+        columns[j] = index[j];
       }
-      // contiguous
-      X_copy = mv.subCopy (Range1D (index.front (),index.back ()));
+      // mfh 14 Aug 2014: Tpetra already detects and optimizes for a
+      // continuous column index range in MultiVector::subCopy, so we
+      // don't have to check here.
+      Teuchos::RCP<MV> X_copy = mv.subCopy (columns ());
       X_copy->setCopyOrView (Teuchos::View);
       return X_copy;
     }

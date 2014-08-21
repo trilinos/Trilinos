@@ -7,30 +7,11 @@
 #include <limits.h>
 #include <cmath>
 
-#ifdef _OPENMP
-#include <Kokkos_OpenMP.hpp>
-#else
-#include <Kokkos_Threads.hpp>
-#endif
-#include <Kokkos_Cuda.hpp>
+#include <Kokkos_Core.hpp>
 #include <Kokkos_MV.hpp>
 #include <Kokkos_CrsMatrix.hpp>
-#ifndef DEVICE
-#define DEVICE 1
-#endif
-#if DEVICE==1
-#ifdef _OPENMP
-typedef Kokkos::OpenMP device_type;
-#else
-typedef Kokkos::Threads device_type;
-#endif
-#define KokkosHost(a) a
-#define KokkosCUDA(a)
-#else
-typedef Kokkos::Cuda device_type;
-#define KokkosHost(a)
-#define KokkosCUDA(a) a
-#endif
+
+typedef Kokkos::DefaultExecutionSpace device_type;
 
 #ifdef INT64
 typedef long long int LocalOrdinalType;
@@ -444,9 +425,6 @@ int main(int argc, char **argv)
 {
  long long int size = 110503; // a prime number
  int numVecs = 4;
- int threads_per_numa=1;
- int device = 0;
- int numa=1;
  int test=-1;
  int type=-1;
  char* filename = NULL;
@@ -454,11 +432,8 @@ int main(int argc, char **argv)
 
  for(int i=0;i<argc;i++)
  {
-  if((strcmp(argv[i],"-d")==0)) {device=atoi(argv[++i]); continue;}
   if((strcmp(argv[i],"-s")==0)) {size=atoi(argv[++i]); continue;}
   if((strcmp(argv[i],"-v")==0)) {numVecs=atoi(argv[++i]); continue;}
-  if((strcmp(argv[i],"--threads")==0)) {threads_per_numa=atoi(argv[++i]); continue;}
-  if((strcmp(argv[i],"--numa")==0)) {numa=atoi(argv[++i]); continue;}
   if((strcmp(argv[i],"--test")==0)) {test=atoi(argv[++i]); continue;}
   if((strcmp(argv[i],"--type")==0)) {type=atoi(argv[++i]); continue;}
   if((strcmp(argv[i],"-f")==0)) {filename = argv[++i]; continue;}
@@ -467,18 +442,7 @@ int main(int argc, char **argv)
 
 
 
-#ifdef _OPENMP
-   omp_set_num_threads(numa*threads_per_numa);
-   Kokkos::OpenMP::initialize( numa*threads_per_numa , numa );
-#pragma message "Compile OpenMP"
-#else
-   Kokkos::Threads::initialize( numa*threads_per_numa , numa );
-#pragma message "Compile PThreads"
-#endif
- KokkosCUDA(
-   Kokkos::Cuda::SelectDevice select_device(device);
-   Kokkos::Cuda::initialize( select_device );
- )
+ Kokkos::initialize(argc,argv);
 
  int numVecsList[10] = {1, 2, 3, 4, 5, 8, 11, 15, 16, 17};
  int maxNumVecs = numVecs==-1?17:numVecs;
@@ -498,12 +462,5 @@ int main(int argc, char **argv)
    printf("Kokkos::MultiVector Test: Failed\n");
 
 
- KokkosCUDA(
-#ifdef _OPENMP
- Kokkos::OpenMP::finalize();
-#else
- Kokkos::Threads::finalize();
-#endif
- )
- device_type::finalize();
+  Kokkos::finalize();
 }

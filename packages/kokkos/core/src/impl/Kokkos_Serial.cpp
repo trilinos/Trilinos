@@ -60,7 +60,13 @@ struct Sentinel {
 
   Sentinel() : m_scratch(0), m_reduce_end(0), m_shared_end(0) {}
 
-  ~Sentinel() { if ( m_scratch ) { free( m_scratch ); } }
+  ~Sentinel()
+    {
+      if ( m_scratch ) { free( m_scratch ); }
+      m_scratch = 0 ;
+      m_reduce_end = 0 ;
+      m_shared_end = 0 ;
+    }
 
   static Sentinel & singleton();
 };
@@ -86,15 +92,10 @@ void * Serial::scratch_memory_space::resize( unsigned reduce_size , unsigned sha
   reduce_size = align( reduce_size );
   shared_size = align( shared_size );
 
-  if ( ( 0 == reduce_size + shared_size ) ||
-       ( s.m_reduce_end < reduce_size ) ||
+  if ( ( s.m_reduce_end < reduce_size ) ||
        ( s.m_shared_end < s.m_reduce_end + shared_size ) ) {
 
     if ( s.m_scratch ) { free( s.m_scratch ); }
-  }
-
-  if ( ( s.m_reduce_end < reduce_size ) ||
-       ( s.m_shared_end < s.m_reduce_end + shared_size ) ) {
   
     if ( s.m_reduce_end < reduce_size ) s.m_reduce_end = reduce_size ;
     if ( s.m_shared_end < s.m_reduce_end + shared_size ) s.m_shared_end = s.m_reduce_end + shared_size ;
