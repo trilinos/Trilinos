@@ -231,7 +231,7 @@ SET_TARGET_PROPERTIES(pytrilinos
 # Define the PyTrilinos swig setup
 SET(CMAKE_SWIG_FLAGS "")
 GET_FILENAME_COMPONENT(PYTRILINOS_DOXDIR
-  ${CMAKE_CURRENT_SOURCE_DIR}/../doc/Doxygen ABSOLUTE
+  ${CMAKE_CURRENT_BINARY_DIR}/../doc/Doxygen ABSOLUTE
   )
 LIST(APPEND CMAKE_SWIG_FLAGS -I${PYTRILINOS_DOXDIR})
 LIST(APPEND CMAKE_SWIG_FLAGS -noproxydel)
@@ -280,8 +280,11 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
   SET_SOURCE_FILES_PROPERTIES(${MODULE}.i PROPERTIES
     CPLUSPLUS ON
     )
+
   # Determine the swig module output directory, name and unique target name
   SWIG_MODULE_GET_OUTDIR_AND_MODULE(${MODULE}.i MODULE_OUTDIR MODULE_NAME)
+
+  # Define the target for this module
   SET(PyTrilinos_TARGET_NAME ${MODULE_NODOT})
   SWIG_ADD_MODULE(${PyTrilinos_TARGET_NAME}
     python
@@ -290,8 +293,10 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
     "${MODULE_NAME}")
   SET_PROPERTY(TARGET ${PyTrilinos_TARGET_NAME} PROPERTY NO_SONAME 1)
   SWIG_LINK_LIBRARIES(${PyTrilinos_TARGET_NAME} pytrilinos)
+
   # Add the header file to the list of additional "make clean" files
   LIST(APPEND ADDITIONAL_CLEAN_FILES "${MODULE}PYTHON_wrap.h")
+
   #
   # Choosing the Trilinos libraries to link against, the python module
   # to byte-compile and the installation rules requires a little bit
@@ -437,7 +442,7 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
   SET_TARGET_PROPERTIES(${PyTrilinos_TARGET_NAME} PROPERTIES
     LINK_FLAGS "${EXTRA_LINK_ARGS}"
     )
-ENDFOREACH(MODULE ${PyTrilinos_MODULES})
+ENDFOREACH(MODULE)
 
 #
 # Add the additional "make clean" files
