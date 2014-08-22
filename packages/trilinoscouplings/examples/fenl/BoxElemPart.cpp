@@ -227,7 +227,13 @@ BoxElemPart::BoxElemPart(
     m_owns_node[ m_owns_node_count ][1] = Kokkos::Example::box_count( m_owns_node_box[ m_owns_node_count ] );
 
     if ( m_owns_node[ m_owns_node_count ][1] ) {
+
+      if ( PROC_NEIGH_MAX <= m_owns_node_count ) {
+        throw std::runtime_error("BoxElemPart exceeded maximum neighbor count");
+      }
+
       m_owns_node[ m_owns_node_count ][0] = rank ;
+
       ++m_owns_node_count ;
     }
 
@@ -237,6 +243,11 @@ BoxElemPart::BoxElemPart(
     m_send_node[ m_send_node_count ][1] = Kokkos::Example::box_count( m_send_node_box[ m_send_node_count ] );
 
     if ( m_send_node[ m_send_node_count ][1] ) {
+
+      if ( PROC_NEIGH_MAX <= m_send_node_count ) {
+        throw std::runtime_error("BoxElemPart exceeded maximum neighbor count");
+      }
+
       m_send_node[ m_send_node_count ][0] = rank ;
       ++m_send_node_count ;
     }
