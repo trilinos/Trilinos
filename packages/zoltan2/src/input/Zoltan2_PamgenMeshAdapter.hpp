@@ -513,6 +513,23 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
     Z2_FORWARD_EXCEPTIONS;
 
     delete [] requests;
+    requests = NULL;
+
+    // Allocate the receive buffer.
+    size_t totalrecv = 0;
+    int maxMsg = 0;
+    int nrecvranks = 0;
+    for(int i = 0; i < nprocs; i++) {
+      if (recvCount[i] > 0) {
+	totalrecv += recvCount[i];
+	nrecvranks++;
+	if (recvCount[i] > maxMsg) maxMsg = recvCount[i];
+      }
+    }
+
+    int *rbuf = NULL;
+    if (totalrecv) rbuf = new int[totalrecv];
+
     delete[] node_cmap_node_cnts;
     node_cmap_node_cnts = NULL;
 
