@@ -225,6 +225,9 @@ SET(PyTrilinos_INSTALL_PREFIX ${PyTrilinos_DEFAULT_INSTALL_PREFIX}
 # Add the util directory
 ADD_SUBDIRECTORY(util)
 
+# Add the doc directory, which builds the python documentation strings
+ADD_SUBDIRECTORY(doc)
+
 # Add the src directory, which builds the pytrilinos library,
 # generates the wrapper code, builds the PyTrilinos python package and
 # compiles the PyTrilinos extension modules
