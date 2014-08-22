@@ -133,7 +133,7 @@ class AlgSerialGreedy : public Algorithm<Adapter>
         maxDegree = offsets[i+1]-offsets[i];
     }
 
-    // First-fit greedy coloring.
+    // Greedy coloring.
     // Use natural order for now. 
     // TODO: Support better orderings (e.g., Smallest-Last)
     int maxColor = 0;
@@ -152,14 +152,46 @@ class AlgSerialGreedy : public Algorithm<Adapter>
           forbidden[colors[nbor]] = v;
         }
       }
-      // Pick first (smallest) available color > 0
-      for (int c=1; c < forbidden.length(); c++){
-        if (forbidden[c] != v){ 
-          colors[v] = c;
-          break;
+
+      // Pick color for v
+      std::string colorSelection = "FirstFit"; // TODO make parameter!
+      if (colorSelection.compare("FirstFit")){
+        // Pick first (smallest) available color > 0
+        for (int c=1; c <= maxColor+1; c++){
+          if (forbidden[c] != v){ 
+            colors[v] = c;
+            break;
+          }
         }
       }
+      else if (colorSelection.compare("Random")){
+        // Pick random available color.
+        // This is slow, please consider RandomFast instead.
+        int numAvail = 0;
+        Teuchos::Array<int> avail(maxColor+1);
+        for (int c=1; c < maxColor+1; c++){
+          if (forbidden[c] != v){ 
+            avail[numAvail++] = c;
+          }
+        }
+        if (numAvail==0)
+          colors[v] = maxColor+1;
+        else
+          colors[v] = avail[rand()%numAvail];
+      }
+      else if (colorSelection.compare("RandomFast")){
+        // Pick random color, then find first available color after that.
+        int r = (rand() % maxColor) +1;
+        for (int c=r; c <= maxColor+1; c++){
+          if (forbidden[c] != v){ 
+            colors[v] = c;
+            break;
+          }
+        }
+      }
+
       if (colors[v]==0) colors[v]=1; // Corner case for first vertex
+
       //std::cout << "Debug: colors[i]= " << colors[v] << std::endl;
       if (colors[v] > maxColor){
         maxColor = colors[v];
