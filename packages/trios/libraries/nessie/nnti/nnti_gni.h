@@ -151,6 +151,35 @@ NNTI_result_t NNTI_gni_gather (
         const NNTI_buffer_t  *dest_buffer_hdl,
         NNTI_work_request_t  *wr);
 
+NNTI_result_t NNTI_gni_atomic_set_callback (
+		const NNTI_transport_t *trans_hdl,
+		const uint64_t          local_atomic,
+		NNTI_callback_fn_t      cbfunc,
+		void                   *context);
+
+NNTI_result_t NNTI_gni_atomic_read (
+		const NNTI_transport_t *trans_hdl,
+		const uint64_t          local_atomic,
+		int64_t                *value);
+
+NNTI_result_t NNTI_gni_atomic_fop (
+		const NNTI_transport_t *trans_hdl,
+		const NNTI_peer_t      *peer_hdl,
+		const uint64_t          target_atomic,
+		const uint64_t          result_atomic,
+		const int64_t           operand,
+		const NNTI_atomic_op_t  op,
+		NNTI_work_request_t    *wr);
+
+NNTI_result_t NNTI_gni_atomic_cswap (
+		const NNTI_transport_t *trans_hdl,
+		const NNTI_peer_t      *peer_hdl,
+		const uint64_t          target_atomic,
+		const uint64_t          result_atomic,
+		const int64_t           compare_operand,
+		const int64_t           swap_operand,
+		NNTI_work_request_t    *wr);
+
 NNTI_result_t NNTI_gni_create_work_request (
         NNTI_buffer_t        *reg_buf,
         NNTI_work_request_t  *wr);

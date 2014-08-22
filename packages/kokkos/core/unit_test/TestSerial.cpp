@@ -48,6 +48,7 @@
 
 #include <Kokkos_View.hpp>
 #include <impl/Kokkos_ViewTileLeft.hpp>
+#include <impl/Kokkos_Serial_TaskPolicy.hpp>
 
 #include <Kokkos_CrsArray.hpp>
 
@@ -65,6 +66,7 @@
 #include <TestScan.hpp>
 #include <TestAggregate.hpp>
 #include <TestCompilerMacros.hpp>
+#include <TestTaskPolicy.hpp>
 #include <TestCXX11.hpp>
 
 namespace Test {
@@ -289,7 +291,14 @@ TEST_F( serial , compiler_macros )
   ASSERT_TRUE( ( TestCompilerMacros::Test< Kokkos::Serial >() ) );
 }
 
+//----------------------------------------------------------------------------
 
+TEST_F( serial , task_policy )
+{
+  TestTaskPolicy::test_norm2< Kokkos::Serial >( 1000 );
+  for ( long i = 0 ; i < 30 ; ++i ) TestTaskPolicy::test_fib< Kokkos::Serial >(i);
+  for ( long i = 0 ; i < 40 ; ++i ) TestTaskPolicy::test_fib2< Kokkos::Serial >(i);
+}
 
 //----------------------------------------------------------------------------
 #if defined( KOKKOS_HAVE_CXX11 ) && defined( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_SERIAL )

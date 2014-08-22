@@ -58,7 +58,7 @@ namespace Zoltan2 {
 /*! \brief The class containing ordering solutions.
 
     Template parameters:
-    \li \c gid_t    data type for application global Ids
+    \li \c zgid_t    data type for application global Ids
     \li \c lno_t    data type for local indices and local counts
 
 The ordering solution always contains the permutation and the inverse permutation. These should be accessed through the accessor methods defined in this class, such as getPermutation(). Some ordering algorithms may compute and store other information. Currently, only serial ordering of the local data is supported.
@@ -67,7 +67,7 @@ In Zoltan2, perm[i]=j means index i in the reordered vector/matrix corresponds t
 
 */
 
-template <typename gid_t, typename lno_t>
+template <typename zgid_t, typename lno_t>
   class OrderingSolution : public Solution
 {
 public:
@@ -80,7 +80,7 @@ public:
   {
     HELLO;
     perm_size_ = perm_size;
-    gids_   = ArrayRCP<gid_t>(perm_size_);
+    gids_   = ArrayRCP<zgid_t>(perm_size_);
     perm_  = ArrayRCP<lno_t>(perm_size_);
     invperm_  = ArrayRCP<lno_t>(perm_size_);
     havePerm_ = false;
@@ -160,7 +160,7 @@ public:
 
   /*! \brief Get (local) permuted GIDs by RCP.
    */
-  inline ArrayRCP<gid_t>  &getGidsRCP()  {return gids_;}
+  inline ArrayRCP<zgid_t>  &getGidsRCP()  {return gids_;}
 
   /*! \brief Get (local) permutation by RCP.
    *  If inverse = true, return inverse permutation.
@@ -177,9 +177,9 @@ public:
 
   /*! \brief Get (local) permuted GIDs by const RCP.
    */
-  inline ArrayRCP<gid_t>  &getGidsRCPConst()  const
+  inline ArrayRCP<zgid_t>  &getGidsRCPConst()  const
   {
-    return const_cast<ArrayRCP<gid_t>& > (gids_);
+    return const_cast<ArrayRCP<zgid_t>& > (gids_);
   }
 
   /*! \brief Get (local) permutation by const RCP.
@@ -197,7 +197,7 @@ public:
 
   /*! \brief Get pointer to (local) GIDs.
    */
-  inline gid_t  *getGids()
+  inline zgid_t  *getGids()
   {
     return gids_.getRawPtr();
   }
@@ -219,7 +219,7 @@ protected:
   // Ordering solution consists of permutation vector(s).
   // Either perm or invperm should be computed by the algorithm.
   size_t perm_size_;
-  ArrayRCP<gid_t>  gids_; // TODO: Remove?
+  ArrayRCP<zgid_t>  gids_; // TODO: Remove?
   // For now, assume permutations are local. Revisit later (e.g., for Scotch)
   bool havePerm_;    // has perm_ been computed yet?
   bool haveInverse_; // has invperm_ been computed yet?

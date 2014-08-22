@@ -557,17 +557,17 @@ namespace Tpetra {
     // This is a protected function, only callable by us.  If it was
     // called incorrectly, it is our fault.  That's why the tests
     // below throw std::logic_error instead of std::invalid_argument.
-    const char tfecfFuncName[] = "allocateIndices()";
+    const char tfecfFuncName[] = "allocateIndices: ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isLocallyIndexed() && lg==GlobalIndices, std::logic_error,
-      ": The graph is locally indexed, but Tpetra code is calling this method "
+      isLocallyIndexed () && lg == GlobalIndices, std::logic_error,
+      "The graph is locally indexed, but Tpetra code is calling this method "
       "with lg=GlobalIndices.  Please report this bug to the Tpetra developers.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isGloballyIndexed() && lg==LocalIndices, std::logic_error,
-      ": The graph is globally indexed, but Tpetra code is calling this method "
+      isGloballyIndexed () && lg == LocalIndices, std::logic_error,
+      "The graph is globally indexed, but Tpetra code is calling this method "
       "with lg=LocalIndices.  Please report this bug to the Tpetra developers.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      indicesAreAllocated(), std::logic_error, ": The graph's indices are "
+      indicesAreAllocated (), std::logic_error, "The graph's indices are "
       "already allocated, but Tpetra code is calling allocateIndices() again.  "
       "Please report this bug to the Tpetra developers.");
 
@@ -2638,8 +2638,12 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillComplete(const RCP<ParameterList> &params)
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  fillComplete (const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
+    // FIXME (mfh 19 Aug 2014) If fillComplete has already been called
+    // with nondefault domain and range Maps, then this will clobber
+    // them.
     fillComplete(rowMap_,rowMap_,params);
   }
 
@@ -2649,9 +2653,9 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  fillComplete (const RCP<const map_type>& domainMap,
-                const RCP<const map_type>& rangeMap,
-                const RCP<ParameterList> & params)
+  fillComplete (const Teuchos::RCP<const map_type>& domainMap,
+                const Teuchos::RCP<const map_type>& rangeMap,
+                const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
     const char tfecfFuncName[] = "fillComplete";
 
@@ -2846,37 +2850,53 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillLocalGraph(const RCP<ParameterList> &params)
   {
-    const size_t numRows = getNodeNumRows();
+    using Teuchos::ArrayRCP;
+    using Teuchos::null;
+    using Teuchos::ParameterList;
+    using Teuchos::parameterList;
+    using Teuchos::RCP;
+    using Teuchos::sublist;
+
+    const size_t numRows = getNodeNumRows ();
     ArrayRCP<size_t> ptrs;
     ArrayRCP<LocalOrdinal> inds;
     bool requestOptimizedStorage = true;
-    if (params != null && params->get("Optimize Storage",true) == false) requestOptimizedStorage = false;
-    if (getProfileType() == DynamicProfile) {
-      // 2d -> 1d packed
-      ptrs = LocalMatOps::allocRowPtrs( getRowMap()->getNode(), numRowEntries_() );
-      inds = LocalMatOps::template allocStorage<LocalOrdinal>( getRowMap()->getNode(), ptrs() );
-      for (size_t row=0; row < numRows; ++row) {
+    if (params != null && params->get ("Optimize Storage", true) == false) {
+      requestOptimizedStorage = false;
+    }
+
+    RCP<Node> node = getRowMap ()->getNode ();
+    if (getProfileType () == DynamicProfile) {
+      // Storage is currently in 2-D ("array of arrays") format.
+      // Pack into 1-D packed storage.
+      ptrs = LocalMatOps::allocRowPtrs (node, numRowEntries_ ());
+      inds = LocalMatOps::template allocStorage<LocalOrdinal> (node, ptrs ());
+      for (size_t row = 0; row < numRows; ++row) {
         const size_t numentrs = numRowEntries_[row];
-        std::copy( lclInds2D_[row].begin(), lclInds2D_[row].begin()+numentrs, inds+ptrs[row] );
+        std::copy (lclInds2D_[row].begin (),
+                   lclInds2D_[row].begin () + numentrs,
+                   inds + ptrs[row]);
       }
     }
-    else if (getProfileType() == StaticProfile) {
-      // 1d non-packed -> 1d packed
-      if (nodeNumEntries_ != nodeNumAllocated_) {
-        ptrs = LocalMatOps::allocRowPtrs( getRowMap()->getNode(), numRowEntries_() );
-        inds = LocalMatOps::template allocStorage<LocalOrdinal>( getRowMap()->getNode(), ptrs() );
-        for (size_t row=0; row < numRows; ++row) {
+    else if (getProfileType () == StaticProfile) {
+      // We already have 1-D storage, but it might not yet be packed.
+      if (nodeNumEntries_ != nodeNumAllocated_) { // need to pack storage
+        ptrs = LocalMatOps::allocRowPtrs (node, numRowEntries_ ());
+        inds = LocalMatOps::template allocStorage<LocalOrdinal> (node, ptrs ());
+        for (size_t row = 0; row < numRows; ++row) {
           const size_t numentrs = numRowEntries_[row];
-          std::copy( lclInds1D_+rowPtrs_[row], lclInds1D_+rowPtrs_[row]+numentrs, inds+ptrs[row] );
+          std::copy (lclInds1D_ + rowPtrs_[row],
+                     lclInds1D_ + rowPtrs_[row] + numentrs,
+                     inds + ptrs[row]);
         }
       }
-      else {
+      else { // don't need to pack storage
         inds = lclInds1D_;
         ptrs = rowPtrs_;
       }
     }
     // can we ditch the old allocations for the packed one?
-    if ( requestOptimizedStorage ) {
+    if (requestOptimizedStorage) {
       lclInds2D_ = null;
       numRowEntries_ = null;
       // keep the new stuff
@@ -2886,33 +2906,294 @@ namespace Tpetra {
       pftype_ = StaticProfile;
     }
     // build the local graph, hand over the indices
-    RCP<ParameterList> lclparams;
-    if (params == null) lclparams = parameterList();
-    else                lclparams = sublist(params,"Local Graph");
-    lclGraph_ = rcp( new local_graph_type( getRowMap()->getNodeNumElements(), getColMap()->getNodeNumElements(), getRowMap()->getNode(), lclparams ) );
-    lclGraph_->setStructure(ptrs,inds);
+    RCP<ParameterList> lclparams = params.is_null () ?
+      parameterList () :
+      sublist (params, "Local Graph");
+    lclGraph_ =
+      rcp (new local_graph_type (getRowMap ()->getNodeNumElements (),
+                                 getColMap ()->getNodeNumElements (),
+                                 getRowMap ()->getNode (), lclparams));
+    lclGraph_->setStructure (ptrs, inds);
     ptrs = null;
     inds = null;
     // finalize local graph
-    Teuchos::EDiag diag = ( getNodeNumDiags() < getNodeNumRows() ? Teuchos::UNIT_DIAG : Teuchos::NON_UNIT_DIAG );
+    const Teuchos::EDiag diag = getNodeNumDiags () < getNodeNumRows () ?
+      Teuchos::UNIT_DIAG : Teuchos::NON_UNIT_DIAG;
     Teuchos::EUplo uplo = Teuchos::UNDEF_TRI;
-    if      (isUpperTriangular()) uplo = Teuchos::UPPER_TRI;
-    else if (isLowerTriangular()) uplo = Teuchos::LOWER_TRI;
-    LocalMatOps::finalizeGraph(uplo,diag,*lclGraph_,params);
+    if (isUpperTriangular ()) {
+      uplo = Teuchos::UPPER_TRI;
+    }
+    else if (isLowerTriangular ()) {
+      uplo = Teuchos::LOWER_TRI;
+    }
+    LocalMatOps::finalizeGraph (uplo, diag, *lclGraph_, params);
   }
 
 
- /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   replaceColMap (const Teuchos::RCP<const map_type>& newColMap)
   {
     // NOTE: This safety check matches the code, but not the documentation of Crsgraph
-    const char tfecfFuncName[] = "replaceColMap";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isLocallyIndexed() || isGloballyIndexed(),  std::runtime_error, " requires matching maps and non-static graph.");
+    //
+    // FIXME (mfh 18 Aug 2014) This will break if the calling process
+    // has no entries, because in that case, it is neither locally nor
+    // globally indexed.
+    const char tfecfFuncName[] = "replaceColMap: ";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      isLocallyIndexed () || isGloballyIndexed (), std::runtime_error,
+      "Requires matching maps and non-static graph.");
     colMap_ = newColMap;
+  }
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  reindexColumns (const Teuchos::RCP<const map_type>& newColMap,
+                  const Teuchos::RCP<const import_type>& newImport)
+  {
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+    using Teuchos::RCP;
+    typedef GlobalOrdinal GO;
+    typedef LocalOrdinal LO;
+    const char tfecfFuncName[] = "reindexColumns: ";
+    // TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+    //   true, std::logic_error, "Not implemented");
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      isFillComplete (), std::runtime_error, "The graph is fill complete "
+      "(isFillComplete() returns true).  You must call resumeFill() before "
+      "you may call this method.");
+
+    // mfh 19 Aug 2014: This method does NOT redistribute data; it
+    // doesn't claim to do the work of an Import or Export.  This
+    // means that for all processes, the calling process MUST own all
+    // column indices, in both the old column Map (if it exists) and
+    // the new column Map.  We check this via an all-reduce.
+    //
+    // Some processes may be globally indexed, others may be locally
+    // indexed, and others (that have no graph entries) may be
+    // neither.  This method will NOT change the graph's current
+    // state.  If it's locally indexed, it will stay that way, and
+    // vice versa.  It would easy to add an option to convert indices
+    // from global to local, so as to save a global-to-local
+    // conversion pass.  However, we don't do this here.  The intended
+    // typical use case is that the graph already has a column Map and
+    // is locally indexed, and this is the case for which we optimize.
+
+    const size_t lclNumRows = getNodeNumRows ();
+
+    // Attempt to convert indices to the new column Map's version of
+    // local.  This will fail if on the calling process, the graph has
+    // indices that are not on that process in the new column Map.
+    // After the local conversion attempt, we will do an all-reduce to
+    // see if any processes failed.
+
+    // If this is false, then either the graph contains a column index
+    // which is invalid in the CURRENT column Map, or the graph is
+    // locally indexed but currently has no column Map.  In either
+    // case, there is no way to convert the current local indices into
+    // global indices, so that we can convert them into the new column
+    // Map's local indices.  It's possible for this to be true on some
+    // processes but not others, due to replaceColMap.
+    bool allCurColIndsValid = true;
+    // On the calling process, are all valid current column indices
+    // also in the new column Map on the calling process?  In other
+    // words, does local reindexing suffice, or should the user have
+    // done an Import or Export instead?
+    bool localSuffices = true;
+
+    // Final arrays for the local indices.  We will allocate exactly
+    // one of these ONLY if the graph is locally indexed on the
+    // calling process, and ONLY if the graph has one or more entries
+    // (is not empty) on the calling process.  In that case, we
+    // allocate the first (1-D storage) if the graph has a static
+    // profile, else we allocate the second (2-D storage).
+    Teuchos::ArrayRCP<LO> newLclInds1D;
+    Teuchos::ArrayRCP<Teuchos::Array<LO> > newLclInds2D;
+
+    // If indices aren't allocated, that means the calling process
+    // owns no entries in the graph.  Thus, there is nothing to
+    // convert, and it trivially succeeds locally.
+    if (indicesAreAllocated ()) {
+      if (isLocallyIndexed ()) {
+        if (hasColMap ()) { // locally indexed, and currently has a column Map
+          const map_type& oldColMap = * (getColMap ());
+          if (pftype_ == StaticProfile) {
+            // Allocate storage for the new local indices.
+            RCP<Node> node = getRowMap ()->getNode ();
+            newLclInds1D =
+              LocalMatOps::template allocStorage<LO> (node, rowPtrs_ ());
+
+            // Attempt to convert the new indices locally.
+            for (size_t lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+              const RowInfo rowInfo = getRowInfo (lclRow);
+              const size_t beg = rowInfo.offset1D;
+              const size_t end = beg + rowInfo.numEntries;
+              for (size_t k = beg; k < end; ++k) {
+                const LO oldLclCol = lclInds1D_[k];
+                if (oldLclCol == Teuchos::OrdinalTraits<LO>::invalid ()) {
+                  allCurColIndsValid = false;
+                  break; // Stop at the first invalid index
+                }
+                const GO gblCol = oldColMap.getGlobalElement (oldLclCol);
+
+                // The above conversion MUST succeed.  Otherwise, the
+                // current local index is invalid, which means that
+                // the graph was constructed incorrectly.
+                if (gblCol == Teuchos::OrdinalTraits<GO>::invalid ()) {
+                  allCurColIndsValid = false;
+                  break; // Stop at the first invalid index
+                }
+                else {
+                  const LO newLclCol = newColMap->getLocalElement (gblCol);
+                  if (newLclCol == Teuchos::OrdinalTraits<LO>::invalid ()) {
+                    localSuffices = false;
+                    break; // Stop at the first invalid index
+                  }
+                  newLclInds1D[k] = newLclCol;
+                }
+              } // for each entry in the current row
+            } // for each locally owned row
+          }
+          else { // pftype_ == DynamicProfile
+            // Allocate storage for the new local indices.  We only
+            // allocate the outer array here; we will allocate the
+            // inner arrays below.
+            newLclInds2D = Teuchos::arcp<Teuchos::Array<LO> > (lclNumRows);
+
+            // Attempt to convert the new indices locally.
+            for (size_t lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+              const RowInfo rowInfo = getRowInfo (lclRow);
+              newLclInds2D.resize (rowInfo.allocSize);
+
+              Teuchos::ArrayView<const LO> oldLclRowView = getLocalView (rowInfo);
+              Teuchos::ArrayView<LO> newLclRowView = (newLclInds2D[lclRow]) ();
+
+              for (size_t k = 0; k < rowInfo.numEntries; ++k) {
+                const LO oldLclCol = oldLclRowView[k];
+                if (oldLclCol == Teuchos::OrdinalTraits<LO>::invalid ()) {
+                  allCurColIndsValid = false;
+                  break; // Stop at the first invalid index
+                }
+                const GO gblCol = oldColMap.getGlobalElement (oldLclCol);
+
+                // The above conversion MUST succeed.  Otherwise, the
+                // local index is invalid and the graph is wrong.
+                if (gblCol == Teuchos::OrdinalTraits<GO>::invalid ()) {
+                  allCurColIndsValid = false;
+                  break; // Stop at the first invalid index
+                }
+                else {
+                  const LO newLclCol = newColMap->getLocalElement (gblCol);
+                  if (newLclCol == Teuchos::OrdinalTraits<LO>::invalid ()) {
+                    localSuffices = false;
+                    break; // Stop at the first invalid index.
+                  }
+                  newLclRowView[k] = newLclCol;
+                }
+              } // for each entry in the current row
+            } // for each locally owned row
+          } // pftype_
+        }
+        else { // locally indexed, but no column Map
+          // This case is only possible if replaceColMap() was called
+          // with a null argument on the calling process.  It's
+          // possible, but it means that this method can't possibly
+          // succeed, since we have no way of knowing how to convert
+          // the current local indices to global indices.
+          allCurColIndsValid = false;
+        }
+      }
+      else { // globally indexed
+        // If the graph is globally indexed, we don't need to save
+        // local indices, but we _do_ need to know whether the current
+        // global indices are valid in the new column Map.  We may
+        // need to do a getRemoteIndexList call to find this out.
+        //
+        // In this case, it doesn't matter whether the graph currently
+        // has a column Map.  We don't need the old column Map to
+        // convert from global indices to the _new_ column Map's local
+        // indices.  Furthermore, we can use the same code, whether
+        // the graph is static or dynamic profile.
+
+        // Test whether the current global indices are in the new
+        // column Map on the calling process.
+        for (size_t lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+          const RowInfo rowInfo = getRowInfo (lclRow);
+          Teuchos::ArrayView<const GO> oldGblRowView = getGlobalView (rowInfo);
+          for (size_t k = 0; k < rowInfo.numEntries; ++k) {
+            const GO gblCol = oldGblRowView[k];
+            if (! newColMap->isNodeGlobalElement (gblCol)) {
+              localSuffices = false;
+              break; // Stop at the first invalid index
+            }
+          } // for each entry in the current row
+        } // for each locally owned row
+      } // locally or globally indexed
+    } // whether indices are allocated
+
+    // Do an all-reduce to check both possible error conditions.
+    int lclSuccess[2];
+    lclSuccess[0] = allCurColIndsValid ? 1 : 0;
+    lclSuccess[1] = localSuffices ? 1 : 0;
+    int gblSuccess[2];
+    gblSuccess[0] = 0;
+    gblSuccess[1] = 0;
+    RCP<const Teuchos::Comm<int> > comm =
+      getRowMap ().is_null () ? Teuchos::null : getRowMap ()->getComm ();
+    if (! comm.is_null ()) {
+      reduceAll<int, int> (*comm, REDUCE_MIN, 2, lclSuccess, gblSuccess);
+    }
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      gblSuccess[0] == 0, std::runtime_error, "It is not possible to continue."
+      "  The most likely reason is that the graph is locally indexed, but the "
+      "column Map is missing (null) on some processes, due to a previous call "
+      "to replaceColMap().");
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      gblSuccess[1] == 0, std::runtime_error, "On some process, the graph "
+      "contains column indices that are in the old column Map, but not in the "
+      "new column Map (on that process).  This method does NOT redistribute "
+      "data; it does not claim to do the work of an Import or Export operation."
+      "  This means that for all processess, the calling process MUST own all "
+      "column indices, in both the old column Map and the new column Map.  In "
+      "this case, you will need to do an Import or Export operation to "
+      "redistribute data.");
+
+    // Commit the results.
+    if (isLocallyIndexed ()) {
+      if (pftype_ == StaticProfile) {
+        lclInds1D_ = newLclInds1D;
+      } else { // dynamic profile
+        lclInds2D_ = newLclInds2D;
+      }
+    }
+    colMap_ = newColMap;
+
+    if (newImport.is_null ()) {
+      // FIXME (mfh 19 Aug 2014) Should use the above all-reduce to
+      // check whether the input Import is null on any process.
+      //
+      // If the domain Map hasn't been set yet, we can't compute a new
+      // Import object.  Leave it what it is; it should be null, but
+      // it doesn't matter.  If the domain Map _has_ been set, then
+      // compute a new Import object if necessary.
+      if (! domainMap_.is_null ()) {
+        if (! domainMap_->isSameAs (* newColMap)) {
+          importer_ = Teuchos::rcp (new import_type (domainMap_, newColMap));
+        } else {
+          importer_ = Teuchos::null; // don't need an Import
+        }
+      }
+    } else {
+      // The caller gave us an Import object.  Assume that it's valid.
+      importer_ = newImport;
+    }
   }
 
 

@@ -93,7 +93,7 @@ public:
   typedef typename InputTraits<User>::scalar_t    scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
-  typedef typename InputTraits<User>::gid_t    gid_t;
+  typedef typename InputTraits<User>::zgid_t    zgid_t;
   typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef MeshAdapter<User>       base_adapter_t;
@@ -129,7 +129,7 @@ public:
     return 0;
   }
    
-  void getIDsViewOf(MeshEntityType etype, const gid_t *&Ids) const
+  void getIDsViewOf(MeshEntityType etype, const zgid_t *&Ids) const
   {
     if ((MESH_REGION == etype && 3 == dimension_) ||
 	(MESH_FACE == etype && 2 == dimension_)) {
@@ -202,7 +202,7 @@ public:
   }
 
   void getAdjsView(MeshEntityType source, MeshEntityType target,
-		   const lno_t *&offsets, const gid_t *& adjacencyIds) const
+		   const lno_t *&offsets, const zgid_t *& adjacencyIds) const
   {
     if ((MESH_REGION == source && MESH_VERTEX == target && 3 == dimension_) ||
 	(MESH_FACE == source && MESH_VERTEX == target && 2 == dimension_)) {
@@ -238,7 +238,7 @@ public:
   }
 
   void get2ndAdjsView(MeshEntityType sourcetarget, MeshEntityType through, 
-		      const lno_t *&offsets, const gid_t *& adjacencyIds) const
+		      const lno_t *&offsets, const zgid_t *& adjacencyIds) const
   {
     if (avail2ndAdjs(sourcetarget, through)) {
       offsets = start_;
@@ -252,11 +252,11 @@ public:
 
 private:
   int dimension_, num_nodes_, num_elem_;
-  gid_t *element_num_map_, *node_num_map_;
+  zgid_t *element_num_map_, *node_num_map_;
   int *elemToNode_, tnoct_, *elemOffsets_;
   double *coords_, *Acoords_;
   lno_t *start_;
-  gid_t *adj_;
+  zgid_t *adj_;
   size_t nadj_;
 };
 
@@ -473,12 +473,62 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
     int rank = comm.getRank();
     recvCount[rank] = sendCount[rank] = 0;
 
+    // Post receives
+    RCP<CommRequest<int> > *requests = new RCP<CommRequest<int> > [nprocs];
+    for (int cnt = 0, i = 0; i < nprocs; i++) {
+      if (i != rank) {
+	try {
+	  requests[cnt++] = Teuchos::ireceive<int,int>(comm,
+						       rcp(&(recvCount[i]),
+							   false),
+						       i);
+	}
+	Z2_FORWARD_EXCEPTIONS;
+      }
+    }
+
+    Teuchos::barrier<int>(comm);
+
     for(int j = 0; j < num_node_cmaps; j++) {
       sendCount[node_proc_ids[j][0]] = 1;
       for(int i = 0; i < node_cmap_node_cnts[j]; i++) {
 	sendCount[node_proc_ids[j][i]] += sur_elem[node_ids[j][i]-1].size()+2;
       }
     }
+
+    // Send data; can use readySend since receives are posted.
+    for (int i = 0; i < nprocs; i++) {
+      if (i != rank) {
+	try {
+	  Teuchos::readySend<int,int>(comm, sendCount[i], i);
+	}
+	Z2_FORWARD_EXCEPTIONS;
+      }
+    }
+
+    // Wait for messages to return.
+    try {
+      Teuchos::waitAll<int>(comm, arrayView(requests, nprocs-1));
+    }
+    Z2_FORWARD_EXCEPTIONS;
+
+    delete [] requests;
+    requests = NULL;
+
+    // Allocate the receive buffer.
+    size_t totalrecv = 0;
+    int maxMsg = 0;
+    int nrecvranks = 0;
+    for(int i = 0; i < nprocs; i++) {
+      if (recvCount[i] > 0) {
+	totalrecv += recvCount[i];
+	nrecvranks++;
+	if (recvCount[i] > maxMsg) maxMsg = recvCount[i];
+      }
+    }
+
+    int *rbuf = NULL;
+    if (totalrecv) rbuf = new int[totalrecv];
 
     delete[] node_cmap_node_cnts;
     node_cmap_node_cnts = NULL;
@@ -521,7 +571,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   reconnect = NULL;
   start_[num_elem_] = nadj_;
 
-  adj_ = new gid_t [nadj_];
+  adj_ = new zgid_t [nadj_];
 
   for (size_t i=0; i < nadj_; i++) {
     adj_[i] = adj[i];

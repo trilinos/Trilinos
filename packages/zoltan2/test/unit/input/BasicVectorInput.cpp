@@ -57,11 +57,11 @@ using Teuchos::RCP;
 using Teuchos::Comm;
 using Teuchos::DefaultComm;
 
-typedef Zoltan2::BasicUserTypes<zscalar_t, zgid_t, zlno_t, zgno_t> userTypes_t;
+typedef Zoltan2::BasicUserTypes<zscalar_t, zzgid_t, zlno_t, zgno_t> userTypes_t;
 
 int checkBasicVector(
   Zoltan2::BasicVectorAdapter<userTypes_t> *ia, int len, int glen,
-  zgid_t *ids, int mvdim, const zscalar_t **values, int *valueStrides,
+  zzgid_t *ids, int mvdim, const zscalar_t **values, int *valueStrides,
   int wdim, const zscalar_t **weights, int *weightStrides)
 {
   int fail = 0;
@@ -78,7 +78,7 @@ int checkBasicVector(
   if (!fail && ia->getLocalNumIDs() != size_t(len))
     fail = 102;
 
-  const zgid_t *idList;
+  const zzgid_t *idList;
   ia->getIDsView(idList);
   for (int i=0; !fail && i < len; i++)
     if (!fail && idList[i] != ids[i])
@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
   // strided multi-weights.
 
   zlno_t numLocalIds = 10;
-  zgid_t *myIds = new zgid_t [numLocalIds];
+  zzgid_t *myIds = new zzgid_t [numLocalIds];
   zgno_t base = rank * numLocalIds;
   
   int wdim = 2;

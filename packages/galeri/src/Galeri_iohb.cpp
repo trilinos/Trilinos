@@ -46,7 +46,7 @@ Fri Aug 15 16:29:47 EDT 1997
 
   FUNCTION:
 
-  int  readHB_header(std::FILE* in_file, char* Title, char* Key, char* Type,
+  int  readHB_header(FILE* in_file, char* Title, char* Key, char* Type,
                     int* Nrow, int* Ncol, int* Nnzero, int* Nrhs,
                     char* Ptrfmt, char* Indfmt, char* Valfmt, char* Rhsfmt,
                     int* Ptrcrd, int* Indcrd, int* Valcrd, int* Rhscrd,
@@ -214,14 +214,10 @@ Fri Aug 15 16:29:47 EDT 1997
 #endif
 /*---------------------------------------------------------------------*/
 
-#include "iohb.h"
+#include "Galeri_iohb.h"
 
-#include<cstring>
-#include<cmath>
-#include <cstdlib>
-using std::malloc;
-using std::free;
-using std::size_t;
+#include<string.h>
+#include<math.h>
 
 char* substr(const char* S, const int pos, const int len);
 void upcase(char* S);
@@ -247,7 +243,7 @@ int readHB_info(const char* filename, int* M, int* N, int* nz, char** Type,
 /*  **             results will be unpredictable.                 **        */
 /*                                                                          */
 /****************************************************************************/
-    std::FILE *in_file;
+    FILE *in_file;
     int Ptrcrd, Indcrd, Valcrd, Rhscrd;
     int Nrow, Ncol, Nnzero;
     char *mat_type;
@@ -255,17 +251,17 @@ int readHB_info(const char* filename, int* M, int* N, int* nz, char** Type,
     char Ptrfmt[17], Indfmt[17], Valfmt[21], Rhsfmt[21];
 
     mat_type = (char *) malloc(4);
-    if ( mat_type == NULL ) IOHBTerminate("Insufficient memory for mat_type\n");
+    if ( mat_type == NULL ) IOHBTerminate("Insufficient memory for mat_typen");
 
-    if ( (in_file = std::fopen( filename, "r")) == NULL ) {
-       std::fprintf(stderr,"Error: Cannot open file: %s\n",filename);
+    if ( (in_file = fopen( filename, "r")) == NULL ) {
+       fprintf(stderr,"Error: Cannot open file: %s\n",filename);
        return 0;
     }
 
     readHB_header(in_file, Title, Key, mat_type, &Nrow, &Ncol, &Nnzero, Nrhs,
                   Ptrfmt, Indfmt, Valfmt, Rhsfmt,
                   &Ptrcrd, &Indcrd, &Valcrd, &Rhscrd, Rhstype);
-    std::fclose(in_file);
+    fclose(in_file);
     *Type = mat_type;
     *(*Type+3) = (char) NULL;
     *M    = Nrow;
@@ -292,7 +288,7 @@ int readHB_info(const char* filename, int* M, int* N, int* nz, char** Type,
 
 
 
-int readHB_header(std::FILE* in_file, char* Title, char* Key, char* Type,
+int readHB_header(FILE* in_file, char* Title, char* Key, char* Type,
                     int* Nrow, int* Ncol, int* Nnzero, int* Nrhs,
                     char* Ptrfmt, char* Indfmt, char* Valfmt, char* Rhsfmt,
                     int* Ptrcrd, int* Indcrd, int* Valcrd, int* Rhscrd,
@@ -305,58 +301,46 @@ int readHB_header(std::FILE* in_file, char* Title, char* Key, char* Type,
     char line[BUFSIZ];
 
 /*  First line:   */
-    if (std::fgets(line, BUFSIZ, in_file) == NULL) {
-      std::fprintf(stderr,"Error: Failed to read from file.\n");
-      return 0;
-    }
-    if ( std::sscanf(line,"%*s") < 0 )
-        IOHBTerminate("iohb.c: Null (or blank) first line of HB file.\n");
-    (void) std::sscanf(line, "%72c%8[^\n]", Title, Key);
+    fgets(line, BUFSIZ, in_file);
+    if ( sscanf(line,"%*s") < 0 )
+        IOHBTerminate("Galeri_iohb.cpp: Null (or blank) first line of HB file.\n");
+    (void) sscanf(line, "%72c%8[^\n]", Title, Key);
     *(Key+8) = (char) NULL;
     *(Title+72) = (char) NULL;
 
 /*  Second line:  */
-    if (std::fgets(line, BUFSIZ, in_file) == NULL) {
-      std::fprintf(stderr,"Error: Failed to read from file.\n");
-      return 0;
-    }
-    if ( std::sscanf(line,"%*s") < 0 )
-        IOHBTerminate("iohb.c: Null (or blank) second line of HB file.\n");
-    if ( std::sscanf(line,"%i",&Totcrd) != 1) Totcrd = 0;
-    if ( std::sscanf(line,"%*i%i",Ptrcrd) != 1) *Ptrcrd = 0;
-    if ( std::sscanf(line,"%*i%*i%i",Indcrd) != 1) *Indcrd = 0;
-    if ( std::sscanf(line,"%*i%*i%*i%i",Valcrd) != 1) *Valcrd = 0;
-    if ( std::sscanf(line,"%*i%*i%*i%*i%i",Rhscrd) != 1) *Rhscrd = 0;
+    fgets(line, BUFSIZ, in_file);
+    if ( sscanf(line,"%*s") < 0 )
+        IOHBTerminate("Galeri_iohb.cpp: Null (or blank) second line of HB file.\n");
+    if ( sscanf(line,"%i",&Totcrd) != 1) Totcrd = 0;
+    if ( sscanf(line,"%*i%i",Ptrcrd) != 1) *Ptrcrd = 0;
+    if ( sscanf(line,"%*i%*i%i",Indcrd) != 1) *Indcrd = 0;
+    if ( sscanf(line,"%*i%*i%*i%i",Valcrd) != 1) *Valcrd = 0;
+    if ( sscanf(line,"%*i%*i%*i%*i%i",Rhscrd) != 1) *Rhscrd = 0;
 
 /*  Third line:   */
-    if (std::fgets(line, BUFSIZ, in_file) == NULL) {
-      std::fprintf(stderr,"Error: Failed to read from file.\n");
-      return 0;
-    }
-    if ( std::sscanf(line,"%*s") < 0 )
-        IOHBTerminate("iohb.c: Null (or blank) third line of HB file.\n");
-    if ( std::sscanf(line, "%3c", Type) != 1)
-        IOHBTerminate("iohb.c: Invalid Type info, line 3 of Harwell-Boeing file.\n");
+    fgets(line, BUFSIZ, in_file);
+    if ( sscanf(line,"%*s") < 0 )
+        IOHBTerminate("Galeri_iohb.cpp: Null (or blank) third line of HB file.\n");
+    if ( sscanf(line, "%3c", Type) != 1)
+        IOHBTerminate("Galeri_iohb.cpp: Invalid Type info, line 3 of Harwell-Boeing file.\n");
     upcase(Type);
-    if ( std::sscanf(line,"%*3c%i",Nrow) != 1) *Nrow = 0 ;
-    if ( std::sscanf(line,"%*3c%*i%i",Ncol) != 1) *Ncol = 0 ;
-    if ( std::sscanf(line,"%*3c%*i%*i%i",Nnzero) != 1) *Nnzero = 0 ;
-    if ( std::sscanf(line,"%*3c%*i%*i%*i%i",&Neltvl) != 1) Neltvl = 0 ;
+    if ( sscanf(line,"%*3c%i",Nrow) != 1) *Nrow = 0 ;
+    if ( sscanf(line,"%*3c%*i%i",Ncol) != 1) *Ncol = 0 ;
+    if ( sscanf(line,"%*3c%*i%*i%i",Nnzero) != 1) *Nnzero = 0 ;
+    if ( sscanf(line,"%*3c%*i%*i%*i%i",&Neltvl) != 1) Neltvl = 0 ;
 
 /*  Fourth line:  */
-    if (std::fgets(line, BUFSIZ, in_file) == NULL) {
-      std::fprintf(stderr,"Error: Failed to read from file.\n");
-      return 0;
-    }
-    if ( std::sscanf(line,"%*s") < 0 )
-        IOHBTerminate("iohb.c: Null (or blank) fourth line of HB file.\n");
-    if ( std::sscanf(line, "%16c",Ptrfmt) != 1)
-        IOHBTerminate("iohb.c: Invalid format info, line 4 of Harwell-Boeing file.\n");
-    if ( std::sscanf(line, "%*16c%16c",Indfmt) != 1)
-        IOHBTerminate("iohb.c: Invalid format info, line 4 of Harwell-Boeing file.\n");
-    if ( std::sscanf(line, "%*16c%*16c%20c",Valfmt) != 1)
-        IOHBTerminate("iohb.c: Invalid format info, line 4 of Harwell-Boeing file.\n");
-    std::sscanf(line, "%*16c%*16c%*20c%20c",Rhsfmt);
+    fgets(line, BUFSIZ, in_file);
+    if ( sscanf(line,"%*s") < 0 )
+        IOHBTerminate("Galeri_iohb.cpp: Null (or blank) fourth line of HB file.\n");
+    if ( sscanf(line, "%16c",Ptrfmt) != 1)
+        IOHBTerminate("Galeri_iohb.cpp: Invalid format info, line 4 of Harwell-Boeing file.\n");
+    if ( sscanf(line, "%*16c%16c",Indfmt) != 1)
+        IOHBTerminate("Galeri_iohb.cpp: Invalid format info, line 4 of Harwell-Boeing file.\n");
+    if ( sscanf(line, "%*16c%*16c%20c",Valfmt) != 1)
+        IOHBTerminate("Galeri_iohb.cpp: Invalid format info, line 4 of Harwell-Boeing file.\n");
+    sscanf(line, "%*16c%*16c%*20c%20c",Rhsfmt);
     *(Ptrfmt+16) = (char) NULL;
     *(Indfmt+16) = (char) NULL;
     *(Valfmt+20) = (char) NULL;
@@ -365,16 +349,13 @@ int readHB_header(std::FILE* in_file, char* Title, char* Key, char* Type,
 /*  (Optional) Fifth line: */
     if (*Rhscrd != 0 )
     {
-       if (std::fgets(line, BUFSIZ, in_file) == NULL) {
-         std::fprintf(stderr,"Error: Failed to read from file.\n");
-         return 0;
-       }
-       if ( std::sscanf(line,"%*s") < 0 )
-           IOHBTerminate("iohb.c: Null (or blank) fifth line of HB file.\n");
-       if ( std::sscanf(line, "%3c", Rhstype) != 1)
-         IOHBTerminate("iohb.c: Invalid RHS type information, line 5 of Harwell-Boeing file.\n");
-       if ( std::sscanf(line, "%*3c%i", Nrhs) != 1) *Nrhs = 0;
-       if ( std::sscanf(line, "%*3c%*i%i", &Nrhsix) != 1) Nrhsix = 0;
+       fgets(line, BUFSIZ, in_file);
+       if ( sscanf(line,"%*s") < 0 )
+           IOHBTerminate("Galeri_iohb.cpp: Null (or blank) fifth line of HB file.\n");
+       if ( sscanf(line, "%3c", Rhstype) != 1)
+         IOHBTerminate("Galeri_iohb.cpp: Invalid RHS type information, line 5 of Harwell-Boeing file.\n");
+       if ( sscanf(line, "%*3c%i", Nrhs) != 1) *Nrhs = 0;
+       if ( sscanf(line, "%*3c%*i%i", &Nrhsix) != 1) Nrhsix = 0;
     }
     return 1;
 }
@@ -401,7 +382,7 @@ int readHB_mat_double(const char* filename, int colptr[], int rowind[],
 /*  **             results will be unpredictable.                 **        */
 /*                                                                          */
 /****************************************************************************/
-    std::FILE *in_file;
+    FILE *in_file;
     int i,j,ind,col,offset,count,last,Nrhs;
     int Ptrcrd, Indcrd, Valcrd, Rhscrd;
     int Nrow, Ncol, Nnzero, Nentries;
@@ -413,8 +394,8 @@ int readHB_mat_double(const char* filename, int colptr[], int rowind[],
     char Ptrfmt[17], Indfmt[17], Valfmt[21], Rhsfmt[21];
     char line[BUFSIZ];
 
-    if ( (in_file = std::fopen( filename, "r")) == NULL ) {
-       std::fprintf(stderr,"Error: Cannot open file: %s\n",filename);
+    if ( (in_file = fopen( filename, "r")) == NULL ) {
+       fprintf(stderr,"Error: Cannot open file: %s\n",filename);
        return 0;
     }
 
@@ -440,19 +421,16 @@ int readHB_mat_double(const char* filename, int colptr[], int rowind[],
     count=0;
     for (i=0;i<Ptrcrd;i++)
     {
-       if (std::fgets(line, BUFSIZ, in_file) == NULL) {
-         std::fprintf(stderr,"Error: Failed to read from file.\n");
-         return 0;
-       }
-       if ( std::sscanf(line,"%*s") < 0 )
-         IOHBTerminate("iohb.c: Null (or blank) line in pointer data region of HB file.\n");
+       fgets(line, BUFSIZ, in_file);
+       if ( sscanf(line,"%*s") < 0 )
+         IOHBTerminate("Galeri_iohb.cpp: Null (or blank) line in pointer data region of HB file.\n");
        col =  0;
        for (ind = 0;ind<Ptrperline;ind++)
        {
           if (count > Ncol) break;
-          std::strncpy(ThisElement,line+col,Ptrwidth);
+          strncpy(ThisElement,line+col,Ptrwidth);
   /* ThisElement = substr(line,col,Ptrwidth); */
-          colptr[count] = std::atoi(ThisElement)-offset;
+          colptr[count] = atoi(ThisElement)-offset;
           count++; col += Ptrwidth;
        }
     }
@@ -466,19 +444,16 @@ int readHB_mat_double(const char* filename, int colptr[], int rowind[],
     count = 0;
     for (i=0;i<Indcrd;i++)
     {
-       if (std::fgets(line, BUFSIZ, in_file) == NULL) {
-         std::fprintf(stderr,"Error: Failed to read from file.\n");
-         return 0;
-       }
-       if ( std::sscanf(line,"%*s") < 0 )
-         IOHBTerminate("iohb.c: Null (or blank) line in index data region of HB file.\n");
+       fgets(line, BUFSIZ, in_file);
+       if ( sscanf(line,"%*s") < 0 )
+         IOHBTerminate("Galeri_iohb.cpp: Null (or blank) line in index data region of HB file.\n");
        col =  0;
        for (ind = 0;ind<Indperline;ind++)
        {
           if (count == Nnzero) break;
-          std::strncpy(ThisElement,line+col,Indwidth);
+          strncpy(ThisElement,line+col,Indwidth);
 /*        ThisElement = substr(line,col,Indwidth); */
-          rowind[count] = std::atoi(ThisElement)-offset;
+          rowind[count] = atoi(ThisElement)-offset;
           count++; col += Indwidth;
        }
     }
@@ -498,25 +473,22 @@ int readHB_mat_double(const char* filename, int colptr[], int rowind[],
     count = 0;
     for (i=0;i<Valcrd;i++)
     {
-       if (std::fgets(line, BUFSIZ, in_file) == NULL) {
-         std::fprintf(stderr,"Error: Failed to read from file.\n");
-         return 0;
-       }
-       if ( std::sscanf(line,"%*s") < 0 )
-         IOHBTerminate("iohb.c: Null (or blank) line in value data region of HB file.\n");
+       fgets(line, BUFSIZ, in_file);
+       if ( sscanf(line,"%*s") < 0 )
+         IOHBTerminate("Galeri_iohb.cpp: Null (or blank) line in value data region of HB file.\n");
        if (Valflag == 'D')  {
-          while( std::strchr(line,'D') ) *std::strchr(line,'D') = 'E';
-/*           *std::strchr(Valfmt,'D') = 'E'; */
+          while( strchr(line,'D') ) *strchr(line,'D') = 'E';
+/*           *strchr(Valfmt,'D') = 'E'; */
        }
        col =  0;
        for (ind = 0;ind<Valperline;ind++)
        {
           if (count == Nentries) break;
-          std::strncpy(ThisElement,line+col,Valwidth);
+          strncpy(ThisElement,line+col,Valwidth);
           /*ThisElement = substr(line,col,Valwidth);*/
-          if ( Valflag != 'F' && std::strchr(ThisElement,'E') == NULL ) {
+          if ( Valflag != 'F' && strchr(ThisElement,'E') == NULL ) {
              /* insert a char prefix for exp */
-             last = std::strlen(ThisElement);
+             last = strlen(ThisElement);
              for (j=last+1;j>=0;j--) {
                 ThisElement[j] = ThisElement[j-1];
                 if ( ThisElement[j] == '+' || ThisElement[j] == '-' ) {
@@ -525,7 +497,7 @@ int readHB_mat_double(const char* filename, int colptr[], int rowind[],
                 }
              }
           }
-          val[count] = std::atof(ThisElement);
+          val[count] = atof(ThisElement);
           count++; col += Valwidth;
 	  *(ThisElement+Valwidth) = (char) NULL;
 	  *(ThisElement+Valwidth+1) = (char) NULL;
@@ -534,40 +506,38 @@ int readHB_mat_double(const char* filename, int colptr[], int rowind[],
     free(ThisElement);
     }
 
-    std::fclose(in_file);
+    fclose(in_file);
     return 1;
 }
 
 int readHB_newmat_double(const char* filename, int* M, int* N, int* nonzeros,
                          int** colptr, int** rowind, double** val)
 {
-  int Nrhs;
-  char *Type;
+	int Nrhs;
+        char *Type;
 
-  if (readHB_info(filename, M, N, nonzeros, &Type, &Nrhs) == 0) {
-    return 0;
-  }
+	readHB_info(filename, M, N, nonzeros, &Type, &Nrhs);
 
-  *colptr = (int *)malloc((*N+1)*sizeof(int));
-  if ( *colptr == NULL ) IOHBTerminate("Insufficient memory for colptr.\n");
-  *rowind = (int *)malloc(*nonzeros*sizeof(int));
-  if ( *rowind == NULL ) IOHBTerminate("Insufficient memory for rowind.\n");
-  if ( Type[0] == 'C' ) {
+        *colptr = (int *)malloc((*N+1)*sizeof(int));
+        if ( *colptr == NULL ) IOHBTerminate("Insufficient memory for colptr.\n");
+        *rowind = (int *)malloc(*nonzeros*sizeof(int));
+        if ( *rowind == NULL ) IOHBTerminate("Insufficient memory for rowind.\n");
+        if ( Type[0] == 'C' ) {
 /*
-   std::fprintf(stderr, "Warning: Reading complex data from HB file %s.\n",filename);
-   std::fprintf(stderr, "         Real and imaginary parts will be interlaced in val[].\n");
+   fprintf(stderr, "Warning: Reading complex data from HB file %s.\n",filename);
+   fprintf(stderr, "         Real and imaginary parts will be interlaced in val[].\n");
 */
            /* Malloc enough space for real AND imaginary parts of val[] */
-  *val = (double *)malloc(*nonzeros*sizeof(double)*2);
-  if ( *val == NULL ) IOHBTerminate("Insufficient memory for val.\n");
-  } else {
-    if ( Type[0] != 'P' ) {
-      /* Malloc enough space for real array val[] */
-      *val = (double *)malloc(*nonzeros*sizeof(double));
-      if ( *val == NULL ) IOHBTerminate("Insufficient memory for val.\n");
-    }
-  }  /* No val[] space needed if pattern only */
-  return readHB_mat_double(filename, *colptr, *rowind, *val);
+           *val = (double *)malloc(*nonzeros*sizeof(double)*2);
+           if ( *val == NULL ) IOHBTerminate("Insufficient memory for val.\n");
+        } else {
+           if ( Type[0] != 'P' ) {
+             /* Malloc enough space for real array val[] */
+             *val = (double *)malloc(*nonzeros*sizeof(double));
+             if ( *val == NULL ) IOHBTerminate("Insufficient memory for val.\n");
+           }
+        }  /* No val[] space needed if pattern only */
+	return readHB_mat_double(filename, *colptr, *rowind, *val);
 
 }
 
@@ -594,7 +564,7 @@ int readHB_aux_double(const char* filename, const char AuxType, double b[])
 /*  **             results will be unpredictable.                 **        */
 /*                                                                          */
 /****************************************************************************/
-    std::FILE *in_file;
+    FILE *in_file;
     int i,j,n,maxcol,start,stride,col,last,linel;
     int Ptrcrd, Indcrd, Valcrd, Rhscrd;
     int Nrow, Ncol, Nnzero, Nentries;
@@ -606,8 +576,8 @@ int readHB_aux_double(const char* filename, const char AuxType, double b[])
     char Ptrfmt[17], Indfmt[17], Valfmt[21], Rhsfmt[21];
     char line[BUFSIZ];
 
-    if ((in_file = std::fopen( filename, "r")) == NULL) {
-      std::fprintf(stderr,"Error: Cannot open file: %s\n",filename);
+    if ((in_file = fopen( filename, "r")) == NULL) {
+      fprintf(stderr,"Error: Cannot open file: %s\n",filename);
       return 0;
      }
 
@@ -617,13 +587,13 @@ int readHB_aux_double(const char* filename, const char AuxType, double b[])
 
     if (Nrhs <= 0)
     {
-      std::fprintf(stderr, "Warn: Attempt to read auxillary vector(s) when none are present.\n");
+      fprintf(stderr, "Warn: Attempt to read auxillary vector(s) when none are present.\n");
       return 0;
     }
     if (Rhstype[0] != 'F' )
     {
-      std::fprintf(stderr,"Warn: Attempt to read auxillary vector(s) which are not stored in Full form.\n");
-      std::fprintf(stderr,"       Rhs must be specified as full. \n");
+      fprintf(stderr,"Warn: Attempt to read auxillary vector(s) which are not stored in Full form.\n");
+      fprintf(stderr,"       Rhs must be specified as full. \n");
       return 0;
     }
 
@@ -640,11 +610,11 @@ int readHB_aux_double(const char* filename, const char AuxType, double b[])
     if ( Rhstype[2] == 'X' ) nvecs++;
 
     if ( AuxType == 'G' && Rhstype[1] != 'G' ) {
-      std::fprintf(stderr, "Warn: Attempt to read auxillary Guess vector(s) when none are present.\n");
+      fprintf(stderr, "Warn: Attempt to read auxillary Guess vector(s) when none are present.\n");
       return 0;
     }
     if ( AuxType == 'X' && Rhstype[2] != 'X' ) {
-      std::fprintf(stderr, "Warn: Attempt to read auxillary eXact solution vector(s) when none are present.\n");
+      fprintf(stderr, "Warn: Attempt to read auxillary eXact solution vector(s) when none are present.\n");
       return 0;
     }
 
@@ -654,12 +624,8 @@ int readHB_aux_double(const char* filename, const char AuxType, double b[])
 /*  Lines to skip before starting to read RHS values... */
     n = Ptrcrd + Indcrd + Valcrd;
 
-    for (i = 0; i < n; i++) {
-      if (std::fgets(line, BUFSIZ, in_file) == NULL) {
-        std::fprintf(stderr,"Error: Failed to read from file.\n");
-        return 0;
-      }
-    }
+    for (i = 0; i < n; i++)
+      fgets(line, BUFSIZ, in_file);
 
 /*  start  - number of initial aux vector entries to skip   */
 /*           to reach first  vector requested               */
@@ -670,27 +636,21 @@ int readHB_aux_double(const char* filename, const char AuxType, double b[])
     else start = (nvecs-1)*Nentries;
     stride = (nvecs-1)*Nentries;
 
-    if (std::fgets(line, BUFSIZ, in_file) == NULL) {
-      std::fprintf(stderr,"Error: Failed to read from file.\n");
-      return 0;
-    }
-    linel= std::strchr(line,'\n')-line;
+    fgets(line, BUFSIZ, in_file);
+    linel= strchr(line,'\n')-line;
     col = 0;
 /*  Skip to initial offset */
 
     for (i=0;i<start;i++) {
        if ( col >=  ( maxcol<linel?maxcol:linel ) ) {
-           if (std::fgets(line, BUFSIZ, in_file) == NULL) {
-             std::fprintf(stderr,"Error: Failed to read from file.\n");
-             return 0;
-           }
-           linel= std::strchr(line,'\n')-line;
+           fgets(line, BUFSIZ, in_file);
+           linel= strchr(line,'\n')-line;
            col = 0;
        }
        col += Rhswidth;
     }
     if (Rhsflag == 'D')  {
-       while( std::strchr(line,'D') ) *std::strchr(line,'D') = 'E';
+       while( strchr(line,'D') ) *strchr(line,'D') = 'E';
     }
 
 /*  Read a vector of desired type, then skip to next */
@@ -703,21 +663,18 @@ int readHB_aux_double(const char* filename, const char AuxType, double b[])
 
     for (i=0;i<Nentries;i++) {
        if ( col >= ( maxcol<linel?maxcol:linel ) ) {
-           if (std::fgets(line, BUFSIZ, in_file) == NULL) {
-             std::fprintf(stderr,"Error: Failed to read from file.\n");
-             return 0;
-           }
-           linel= std::strchr(line,'\n')-line;
+           fgets(line, BUFSIZ, in_file);
+           linel= strchr(line,'\n')-line;
            if (Rhsflag == 'D')  {
-              while( std::strchr(line,'D') ) *std::strchr(line,'D') = 'E';
+              while( strchr(line,'D') ) *strchr(line,'D') = 'E';
            }
            col = 0;
        }
-       std::strncpy(ThisElement,line+col,Rhswidth);
+       strncpy(ThisElement,line+col,Rhswidth);
        /*ThisElement = substr(line, col, Rhswidth);*/
-          if ( Rhsflag != 'F' && std::strchr(ThisElement,'E') == NULL ) {
+          if ( Rhsflag != 'F' && strchr(ThisElement,'E') == NULL ) {
              /* insert a char prefix for exp */
-             last = std::strlen(ThisElement);
+             last = strlen(ThisElement);
              for (j=last+1;j>=0;j--) {
                 ThisElement[j] = ThisElement[j-1];
                 if ( ThisElement[j] == '+' || ThisElement[j] == '-' ) {
@@ -726,7 +683,7 @@ int readHB_aux_double(const char* filename, const char AuxType, double b[])
                 }
              }
           }
-       b[i] = std::atof(ThisElement);
+       b[i] = atof(ThisElement);
        col += Rhswidth;
     }
 
@@ -734,11 +691,8 @@ int readHB_aux_double(const char* filename, const char AuxType, double b[])
 
     for (i=0;i<stride;i++) {
        if ( col >= ( maxcol<linel?maxcol:linel ) ) {
-           if (std::fgets(line, BUFSIZ, in_file) == NULL) {
-             std::fprintf(stderr,"Error: Failed to read from file.\n");
-             return 0;
-           }
-           linel= std::strchr(line,'\n')-line;
+           fgets(line, BUFSIZ, in_file);
+           linel= strchr(line,'\n')-line;
            col = 0;
        }
        col += Rhswidth;
@@ -748,7 +702,7 @@ int readHB_aux_double(const char* filename, const char AuxType, double b[])
   free(ThisElement);
 
 
-    std::fclose(in_file);
+    fclose(in_file);
     return Nrhs;
 }
 
@@ -759,12 +713,12 @@ int readHB_newaux_double(const char* filename, const char AuxType, double** b)
 
 	readHB_info(filename, &M, &N, &nonzeros, &Type, &Nrhs);
         if ( Nrhs <= 0 ) {
-          std::fprintf(stderr,"Warn: Requested read of aux vector(s) when none are present.\n");
+          fprintf(stderr,"Warn: Requested read of aux vector(s) when none are present.\n");
           return 0;
         } else {
           if ( Type[0] == 'C' ) {
-            std::fprintf(stderr, "Warning: Reading complex aux vector(s) from HB file %s.",filename);
-            std::fprintf(stderr, "         Real and imaginary parts will be interlaced in b[].");
+            fprintf(stderr, "Warning: Reading complex aux vector(s) from HB file %s.",filename);
+            fprintf(stderr, "         Real and imaginary parts will be interlaced in b[].");
             *b = (double *)malloc(M*Nrhs*sizeof(double)*2);
             if ( *b == NULL ) IOHBTerminate("Insufficient memory for rhs.\n");
             return readHB_aux_double(filename, AuxType, *b);
@@ -793,7 +747,7 @@ int writeHB_mat_double(const char* filename, int M, int N,
 /*            Duff, et al.,  ACM TOMS Vol.15, No.1, March 1989              */
 /*                                                                          */
 /****************************************************************************/
-    std::FILE *out_file;
+    FILE *out_file;
     int i,j,entry,offset,acount,linemod;
     int totcrd, ptrcrd, indcrd, valcrd, rhscrd;
     int nvalentries, nrhsentries;
@@ -813,32 +767,32 @@ int writeHB_mat_double(const char* filename, int M, int N,
     }
 
     if ( filename != NULL ) {
-       if ( (out_file = std::fopen( filename, "w")) == NULL ) {
-         std::fprintf(stderr,"Error: Cannot open file: %s\n",filename);
+       if ( (out_file = fopen( filename, "w")) == NULL ) {
+         fprintf(stderr,"Error: Cannot open file: %s\n",filename);
          return 0;
        }
     } else out_file = stdout;
 
     if ( Ptrfmt == NULL ) strcpy(Ptrfmt, "(8I10)");
     ParseIfmt(Ptrfmt,&Ptrperline,&Ptrwidth);
-    std::sprintf(pformat,"%%%dd",Ptrwidth);
+    sprintf(pformat,"%%%dd",Ptrwidth);
     ptrcrd = (N+1)/Ptrperline;
     if ( (N+1)%Ptrperline != 0) ptrcrd++;
 
     if ( Indfmt == NULL ) Indfmt =  Ptrfmt;
     ParseIfmt(Indfmt,&Indperline,&Indwidth);
-    std::sprintf(iformat,"%%%dd",Indwidth);
+    sprintf(iformat,"%%%dd",Indwidth);
     indcrd = nz/Indperline;
     if ( nz%Indperline != 0) indcrd++;
 
     if ( Type[0] != 'P' ) {          /* Skip if pattern only  */
       if ( Valfmt == NULL ) strcpy(Valfmt, "(4E20.13)");
       ParseRfmt(Valfmt,&Valperline,&Valwidth,&Valprec,&Valflag);
-      if (Valflag == 'D') *std::strchr(Valfmt,'D') = 'E';
+      if (Valflag == 'D') *strchr(Valfmt,'D') = 'E';
       if (Valflag == 'F')
-         std::sprintf(vformat,"%% %d.%df",Valwidth,Valprec);
+         sprintf(vformat,"%% %d.%df",Valwidth,Valprec);
       else
-         std::sprintf(vformat,"%% %d.%dE",Valwidth,Valprec);
+         sprintf(vformat,"%% %d.%dE",Valwidth,Valprec);
       valcrd = nvalentries/Valperline;
       if ( nvalentries%Valperline != 0) valcrd++;
     } else valcrd = 0;
@@ -847,10 +801,10 @@ int writeHB_mat_double(const char* filename, int M, int N,
        if ( Rhsfmt == NULL ) Rhsfmt = Valfmt;
        ParseRfmt(Rhsfmt,&Rhsperline,&Rhswidth,&Rhsprec, &Rhsflag);
        if (Rhsflag == 'F')
-          std::sprintf(rformat,"%% %d.%df",Rhswidth,Rhsprec);
+          sprintf(rformat,"%% %d.%df",Rhswidth,Rhsprec);
        else
-          std::sprintf(rformat,"%% %d.%dE",Rhswidth,Rhsprec);
-       if (Rhsflag == 'D') *std::strchr(Rhsfmt,'D') = 'E';
+          sprintf(rformat,"%% %d.%dE",Rhswidth,Rhsprec);
+       if (Rhsflag == 'D') *strchr(Rhsfmt,'D') = 'E';
        rhscrd = nrhsentries/Rhsperline;
        if ( nrhsentries%Rhsperline != 0) rhscrd++;
        if ( Rhstype[1] == 'G' ) rhscrd+=rhscrd;
@@ -863,15 +817,15 @@ int writeHB_mat_double(const char* filename, int M, int N,
 
 /*  Print header information:  */
 
-    std::fprintf(out_file,"%-72s%-8s\n%14d%14d%14d%14d%14d\n",Title, Key, totcrd,
+    fprintf(out_file,"%-72s%-8s\n%14d%14d%14d%14d%14d\n",Title, Key, totcrd,
             ptrcrd, indcrd, valcrd, rhscrd);
-    std::fprintf(out_file,"%3s%11s%14d%14d%14d\n",Type,"          ", M, N, nz);
-    std::fprintf(out_file,"%-16s%-16s%-20s", Ptrfmt, Indfmt, Valfmt);
+    fprintf(out_file,"%3s%11s%14d%14d%14d\n",Type,"          ", M, N, nz);
+    fprintf(out_file,"%-16s%-16s%-20s", Ptrfmt, Indfmt, Valfmt);
     if ( Nrhs != 0 ) {
 /*     Print Rhsfmt on fourth line and                                    */
 /*           optional fifth header line for auxillary vector information: */
-       std::fprintf(out_file,"%-20s\n%-14s%d\n",Rhsfmt,Rhstype,Nrhs);
-    } else std::fprintf(out_file,"\n");
+       fprintf(out_file,"%-20s\n%-14s%d\n",Rhsfmt,Rhstype,Nrhs);
+    } else fprintf(out_file,"\n");
 
     offset = 1-_SP_base;  /* if base 0 storage is declared (via macro definition), */
                           /* then storage entries are offset by 1                  */
@@ -880,21 +834,21 @@ int writeHB_mat_double(const char* filename, int M, int N,
     for (i=0;i<N+1;i++)
     {
        entry = colptr[i]+offset;
-       std::fprintf(out_file,pformat,entry);
-       if ( (i+1)%Ptrperline == 0 ) std::fprintf(out_file,"\n");
+       fprintf(out_file,pformat,entry);
+       if ( (i+1)%Ptrperline == 0 ) fprintf(out_file,"\n");
     }
 
-   if ( (N+1) % Ptrperline != 0 ) std::fprintf(out_file,"\n");
+   if ( (N+1) % Ptrperline != 0 ) fprintf(out_file,"\n");
 
 /*  Print row indices:       */
     for (i=0;i<nz;i++)
     {
        entry = rowind[i]+offset;
-       std::fprintf(out_file,iformat,entry);
-       if ( (i+1)%Indperline == 0 ) std::fprintf(out_file,"\n");
+       fprintf(out_file,iformat,entry);
+       if ( (i+1)%Indperline == 0 ) fprintf(out_file,"\n");
     }
 
-   if ( nz % Indperline != 0 ) std::fprintf(out_file,"\n");
+   if ( nz % Indperline != 0 ) fprintf(out_file,"\n");
 
 /*  Print values:            */
 
@@ -902,11 +856,11 @@ int writeHB_mat_double(const char* filename, int M, int N,
 
     for (i=0;i<nvalentries;i++)
     {
-       std::fprintf(out_file,vformat,val[i]);
-       if ( (i+1)%Valperline == 0 ) std::fprintf(out_file,"\n");
+       fprintf(out_file,vformat,val[i]);
+       if ( (i+1)%Valperline == 0 ) fprintf(out_file,"\n");
     }
 
-    if ( nvalentries % Valperline != 0 ) std::fprintf(out_file,"\n");
+    if ( nvalentries % Valperline != 0 ) fprintf(out_file,"\n");
 
 /*  If available,  print right hand sides,
            guess vectors and exact solution vectors:  */
@@ -916,32 +870,32 @@ int writeHB_mat_double(const char* filename, int M, int N,
        for (i=0;i<Nrhs;i++)
        {
           for ( j=0;j<nrhsentries;j++ ) {
-            std::fprintf(out_file,rformat,rhs[j]);
-            if ( acount++%Rhsperline == linemod ) std::fprintf(out_file,"\n");
+            fprintf(out_file,rformat,rhs[j]);
+            if ( acount++%Rhsperline == linemod ) fprintf(out_file,"\n");
           }
           if ( (acount-1)%Rhsperline != linemod ) {
-            std::fprintf(out_file,"\n");
+            fprintf(out_file,"\n");
             linemod = (acount-1)%Rhsperline;
           }
           rhs += nrhsentries;
           if ( Rhstype[1] == 'G' ) {
             for ( j=0;j<nrhsentries;j++ ) {
-              std::fprintf(out_file,rformat,guess[j]);
-              if ( acount++%Rhsperline == linemod ) std::fprintf(out_file,"\n");
+              fprintf(out_file,rformat,guess[j]);
+              if ( acount++%Rhsperline == linemod ) fprintf(out_file,"\n");
             }
             if ( (acount-1)%Rhsperline != linemod ) {
-              std::fprintf(out_file,"\n");
+              fprintf(out_file,"\n");
               linemod = (acount-1)%Rhsperline;
             }
             guess += nrhsentries;
           }
           if ( Rhstype[2] == 'X' ) {
             for ( j=0;j<nrhsentries;j++ ) {
-              std::fprintf(out_file,rformat,exact[j]);
-              if ( acount++%Rhsperline == linemod ) std::fprintf(out_file,"\n");
+              fprintf(out_file,rformat,exact[j]);
+              if ( acount++%Rhsperline == linemod ) fprintf(out_file,"\n");
             }
             if ( (acount-1)%Rhsperline != linemod ) {
-              std::fprintf(out_file,"\n");
+              fprintf(out_file,"\n");
               linemod = (acount-1)%Rhsperline;
             }
             exact += nrhsentries;
@@ -951,8 +905,8 @@ int writeHB_mat_double(const char* filename, int M, int N,
 
     }
 
-    if ( std::fclose(out_file) != 0){
-      std::fprintf(stderr,"Error closing file in writeHB_mat_double().\n");
+    if ( fclose(out_file) != 0){
+      fprintf(stderr,"Error closing file in writeHB_mat_double().\n");
       return 0;
     } else return 1;
 
@@ -979,7 +933,7 @@ int readHB_mat_char(const char* filename, int colptr[], int rowind[],
 /*  **             results will be unpredictable.                 **        */
 /*                                                                          */
 /****************************************************************************/
-    std::FILE *in_file;
+    FILE *in_file;
     int i,j,ind,col,offset,count,last;
     int Nrow,Ncol,Nnzero,Nentries,Nrhs;
     int Ptrcrd, Indcrd, Valcrd, Rhscrd;
@@ -991,8 +945,8 @@ int readHB_mat_char(const char* filename, int colptr[], int rowind[],
     char Title[73], Key[9], Type[4] = "XXX", Rhstype[4];
     char Ptrfmt[17], Indfmt[17], Rhsfmt[21];
 
-    if ( (in_file = std::fopen( filename, "r")) == NULL ) {
-       std::fprintf(stderr,"Error: Cannot open file: %s\n",filename);
+    if ( (in_file = fopen( filename, "r")) == NULL ) {
+       fprintf(stderr,"Error: Cannot open file: %s\n",filename);
        return 0;
     }
 
@@ -1006,7 +960,7 @@ int readHB_mat_char(const char* filename, int colptr[], int rowind[],
     if ( Type[0] != 'P' ) {          /* Skip if pattern only  */
        ParseRfmt(Valfmt,&Valperline,&Valwidth,&Valprec,&Valflag);
        if (Valflag == 'D') {
-          *std::strchr(Valfmt,'D') = 'E';
+          *strchr(Valfmt,'D') = 'E';
        }
     }
 
@@ -1021,19 +975,16 @@ int readHB_mat_char(const char* filename, int colptr[], int rowind[],
     count=0;
     for (i=0;i<Ptrcrd;i++)
     {
-       if (std::fgets(line, BUFSIZ, in_file) == NULL) {
-         std::fprintf(stderr,"Error: Failed to read from file.\n");
-         return 0;
-       }
-       if ( std::sscanf(line,"%*s") < 0 )
-         IOHBTerminate("iohb.c: Null (or blank) line in pointer data region of HB file.\n");
+       fgets(line, BUFSIZ, in_file);
+       if ( sscanf(line,"%*s") < 0 )
+         IOHBTerminate("Galeri_iohb.cpp: Null (or blank) line in pointer data region of HB file.\n");
        col =  0;
        for (ind = 0;ind<Ptrperline;ind++)
        {
           if (count > Ncol) break;
-          std::strncpy(ThisElement,line+col,Ptrwidth);
+          strncpy(ThisElement,line+col,Ptrwidth);
           /*ThisElement = substr(line,col,Ptrwidth);*/
-          colptr[count] = std::atoi(ThisElement)-offset;
+          colptr[count] = atoi(ThisElement)-offset;
           count++; col += Ptrwidth;
        }
     }
@@ -1047,19 +998,16 @@ int readHB_mat_char(const char* filename, int colptr[], int rowind[],
     count = 0;
     for (i=0;i<Indcrd;i++)
     {
-       if (std::fgets(line, BUFSIZ, in_file) == NULL) {
-         std::fprintf(stderr,"Error: Failed to read from file.\n");
-         return 0;
-       }
-       if ( std::sscanf(line,"%*s") < 0 )
-         IOHBTerminate("iohb.c: Null (or blank) line in index data region of HB file.\n");
+       fgets(line, BUFSIZ, in_file);
+       if ( sscanf(line,"%*s") < 0 )
+         IOHBTerminate("Galeri_iohb.cpp: Null (or blank) line in index data region of HB file.\n");
        col =  0;
        for (ind = 0;ind<Indperline;ind++)
        {
           if (count == Nnzero) break;
-          std::strncpy(ThisElement,line+col,Indwidth);
+          strncpy(ThisElement,line+col,Indwidth);
           /*ThisElement = substr(line,col,Indwidth);*/
-          rowind[count] = std::atoi(ThisElement)-offset;
+          rowind[count] = atoi(ThisElement)-offset;
           count++; col += Indwidth;
        }
     }
@@ -1078,25 +1026,22 @@ int readHB_mat_char(const char* filename, int colptr[], int rowind[],
     count = 0;
     for (i=0;i<Valcrd;i++)
     {
-       if (std::fgets(line, BUFSIZ, in_file) == NULL) {
-         std::fprintf(stderr,"Error: Failed to read from file.\n");
-         return 0;
-       }
-       if ( std::sscanf(line,"%*s") < 0 )
-         IOHBTerminate("iohb.c: Null (or blank) line in value data region of HB file.\n");
+       fgets(line, BUFSIZ, in_file);
+       if ( sscanf(line,"%*s") < 0 )
+         IOHBTerminate("Galeri_iohb.cpp: Null (or blank) line in value data region of HB file.\n");
        if (Valflag == 'D') {
-          while( std::strchr(line,'D') ) *std::strchr(line,'D') = 'E';
+          while( strchr(line,'D') ) *strchr(line,'D') = 'E';
        }
        col =  0;
        for (ind = 0;ind<Valperline;ind++)
        {
           if (count == Nentries) break;
           ThisElement = &val[count*Valwidth];
-          std::strncpy(ThisElement,line+col,Valwidth);
-          /*std::strncpy(ThisElement,substr(line,col,Valwidth),Valwidth);*/
-          if ( Valflag != 'F' && std::strchr(ThisElement,'E') == NULL ) {
+          strncpy(ThisElement,line+col,Valwidth);
+          /*strncpy(ThisElement,substr(line,col,Valwidth),Valwidth);*/
+          if ( Valflag != 'F' && strchr(ThisElement,'E') == NULL ) {
              /* insert a char prefix for exp */
-             last = std::strlen(ThisElement);
+             last = strlen(ThisElement);
              for (j=last+1;j>=0;j--) {
                 ThisElement[j] = ThisElement[j-1];
                 if ( ThisElement[j] == '+' || ThisElement[j] == '-' ) {
@@ -1116,7 +1061,7 @@ int readHB_mat_char(const char* filename, int colptr[], int rowind[],
 int readHB_newmat_char(const char* filename, int* M, int* N, int* nonzeros, int** colptr,
                           int** rowind, char** val, char** Valfmt)
 {
-    std::FILE *in_file;
+    FILE *in_file;
     int Nrhs;
     int Ptrcrd, Indcrd, Valcrd, Rhscrd;
     int Valperline, Valwidth, Valprec;
@@ -1124,8 +1069,8 @@ int readHB_newmat_char(const char* filename, int* M, int* N, int* nonzeros, int*
     char Title[73], Key[9], Type[4] = "XXX", Rhstype[4];
     char Ptrfmt[17], Indfmt[17], Rhsfmt[21];
 
-    if ((in_file = std::fopen( filename, "r")) == NULL) {
-      std::fprintf(stderr,"Error: Cannot open file: %s\n",filename);
+    if ((in_file = fopen( filename, "r")) == NULL) {
+      fprintf(stderr,"Error: Cannot open file: %s\n",filename);
       return 0;
      }
 
@@ -1134,7 +1079,7 @@ int readHB_newmat_char(const char* filename, int* M, int* N, int* nonzeros, int*
     readHB_header(in_file, Title, Key, Type, M, N, nonzeros, &Nrhs,
                   Ptrfmt, Indfmt, (*Valfmt), Rhsfmt,
                   &Ptrcrd, &Indcrd, &Valcrd, &Rhscrd, Rhstype);
-    std::fclose(in_file);
+    fclose(in_file);
     ParseRfmt(*Valfmt,&Valperline,&Valwidth,&Valprec,&Valflag);
 
         *colptr = (int *)malloc((*N+1)*sizeof(int));
@@ -1143,8 +1088,8 @@ int readHB_newmat_char(const char* filename, int* M, int* N, int* nonzeros, int*
         if ( *rowind == NULL ) IOHBTerminate("Insufficient memory for rowind.\n");
         if ( Type[0] == 'C' ) {
 /*
-   std::fprintf(stderr, "Warning: Reading complex data from HB file %s.\n",filename);
-   std::fprintf(stderr, "         Real and imaginary parts will be interlaced in val[].\n");
+   fprintf(stderr, "Warning: Reading complex data from HB file %s.\n",filename);
+   fprintf(stderr, "         Real and imaginary parts will be interlaced in val[].\n");
 */
            /* Malloc enough space for real AND imaginary parts of val[] */
            *val = (char *)malloc(*nonzeros*Valwidth*sizeof(char)*2);
@@ -1183,7 +1128,7 @@ int readHB_aux_char(const char* filename, const char AuxType, char b[])
 /*  **             results will be unpredictable.                 **        */
 /*                                                                          */
 /****************************************************************************/
-    std::FILE *in_file;
+    FILE *in_file;
     int i,j,n,maxcol,start,stride,col,last,linel,nvecs,rhsi;
     int Nrow, Ncol, Nnzero, Nentries,Nrhs;
     int Ptrcrd, Indcrd, Valcrd, Rhscrd;
@@ -1194,8 +1139,8 @@ int readHB_aux_char(const char* filename, const char AuxType, char b[])
     char line[BUFSIZ];
     char *ThisElement;
 
-    if ((in_file = std::fopen( filename, "r")) == NULL) {
-      std::fprintf(stderr,"Error: Cannot open file: %s\n",filename);
+    if ((in_file = fopen( filename, "r")) == NULL) {
+      fprintf(stderr,"Error: Cannot open file: %s\n",filename);
       return 0;
      }
 
@@ -1205,13 +1150,13 @@ int readHB_aux_char(const char* filename, const char AuxType, char b[])
 
     if (Nrhs <= 0)
     {
-      std::fprintf(stderr, "Warn: Attempt to read auxillary vector(s) when none are present.\n");
+      fprintf(stderr, "Warn: Attempt to read auxillary vector(s) when none are present.\n");
       return 0;
     }
     if (Rhstype[0] != 'F' )
     {
-      std::fprintf(stderr,"Warn: Attempt to read auxillary vector(s) which are not stored in Full form.\n");
-      std::fprintf(stderr,"       Rhs must be specified as full. \n");
+      fprintf(stderr,"Warn: Attempt to read auxillary vector(s) which are not stored in Full form.\n");
+      fprintf(stderr,"       Rhs must be specified as full. \n");
       return 0;
     }
 
@@ -1228,11 +1173,11 @@ int readHB_aux_char(const char* filename, const char AuxType, char b[])
     if ( Rhstype[2] == 'X' ) nvecs++;
 
     if ( AuxType == 'G' && Rhstype[1] != 'G' ) {
-      std::fprintf(stderr, "Warn: Attempt to read auxillary Guess vector(s) when none are present.\n");
+      fprintf(stderr, "Warn: Attempt to read auxillary Guess vector(s) when none are present.\n");
       return 0;
     }
     if ( AuxType == 'X' && Rhstype[2] != 'X' ) {
-      std::fprintf(stderr, "Warn: Attempt to read auxillary eXact solution vector(s) when none are present.\n");
+      fprintf(stderr, "Warn: Attempt to read auxillary eXact solution vector(s) when none are present.\n");
       return 0;
     }
 
@@ -1242,12 +1187,8 @@ int readHB_aux_char(const char* filename, const char AuxType, char b[])
 /*  Lines to skip before starting to read RHS values... */
     n = Ptrcrd + Indcrd + Valcrd;
 
-    for (i = 0; i < n; i++) {
-      if (std::fgets(line, BUFSIZ, in_file) == NULL) {
-        std::fprintf(stderr,"Error: Failed to read from file.\n");
-        return 0;
-      }
-    }
+    for (i = 0; i < n; i++)
+      fgets(line, BUFSIZ, in_file);
 
 /*  start  - number of initial aux vector entries to skip   */
 /*           to reach first  vector requested               */
@@ -1258,32 +1199,26 @@ int readHB_aux_char(const char* filename, const char AuxType, char b[])
     else start = (nvecs-1)*Nentries;
     stride = (nvecs-1)*Nentries;
 
-    if (std::fgets(line, BUFSIZ, in_file) == NULL) {
-      std::fprintf(stderr,"Error: Failed to read from file.\n");
-      return 0;
-    }
-    linel= std::strchr(line,'\n')-line;
-    if ( std::sscanf(line,"%*s") < 0 )
-       IOHBTerminate("iohb.c: Null (or blank) line in auxillary vector data region of HB file.\n");
+    fgets(line, BUFSIZ, in_file);
+    linel= strchr(line,'\n')-line;
+    if ( sscanf(line,"%*s") < 0 )
+       IOHBTerminate("Galeri_iohb.cpp: Null (or blank) line in auxillary vector data region of HB file.\n");
     col = 0;
 /*  Skip to initial offset */
 
     for (i=0;i<start;i++) {
        col += Rhswidth;
        if ( col >= ( maxcol<linel?maxcol:linel ) ) {
-           if (std::fgets(line, BUFSIZ, in_file) == NULL) {
-             std::fprintf(stderr,"Error: Failed to read from file.\n");
-             return 0;
-           }
-           linel= std::strchr(line,'\n')-line;
-       if ( std::sscanf(line,"%*s") < 0 )
-       IOHBTerminate("iohb.c: Null (or blank) line in auxillary vector data region of HB file.\n");
+           fgets(line, BUFSIZ, in_file);
+           linel= strchr(line,'\n')-line;
+       if ( sscanf(line,"%*s") < 0 )
+       IOHBTerminate("Galeri_iohb.cpp: Null (or blank) line in auxillary vector data region of HB file.\n");
            col = 0;
        }
     }
 
     if (Rhsflag == 'D')  {
-      while( std::strchr(line,'D') ) *std::strchr(line,'D') = 'E';
+      while( strchr(line,'D') ) *strchr(line,'D') = 'E';
     }
 /*  Read a vector of desired type, then skip to next */
 /*  repeating to fill Nrhs vectors                   */
@@ -1292,23 +1227,20 @@ int readHB_aux_char(const char* filename, const char AuxType, char b[])
 
     for (i=0;i<Nentries;i++) {
        if ( col >= ( maxcol<linel?maxcol:linel ) ) {
-           if (std::fgets(line, BUFSIZ, in_file) == NULL) {
-             std::fprintf(stderr,"Error: Failed to read from file.\n");
-             return 0;
-           }
-           linel= std::strchr(line,'\n')-line;
-       if ( std::sscanf(line,"%*s") < 0 )
-       IOHBTerminate("iohb.c: Null (or blank) line in auxillary vector data region of HB file.\n");
+           fgets(line, BUFSIZ, in_file);
+           linel= strchr(line,'\n')-line;
+       if ( sscanf(line,"%*s") < 0 )
+       IOHBTerminate("Galeri_iohb.cpp: Null (or blank) line in auxillary vector data region of HB file.\n");
            if (Rhsflag == 'D')  {
-              while( std::strchr(line,'D') ) *std::strchr(line,'D') = 'E';
+              while( strchr(line,'D') ) *strchr(line,'D') = 'E';
            }
            col = 0;
        }
        ThisElement = &b[i*Rhswidth];
-       std::strncpy(ThisElement,line+col,Rhswidth);
-          if ( Rhsflag != 'F' && std::strchr(ThisElement,'E') == NULL ) {
+       strncpy(ThisElement,line+col,Rhswidth);
+          if ( Rhsflag != 'F' && strchr(ThisElement,'E') == NULL ) {
              /* insert a char prefix for exp */
-             last = std::strlen(ThisElement);
+             last = strlen(ThisElement);
              for (j=last+1;j>=0;j--) {
                 ThisElement[j] = ThisElement[j-1];
                 if ( ThisElement[j] == '+' || ThisElement[j] == '-' ) {
@@ -1326,13 +1258,10 @@ int readHB_aux_char(const char* filename, const char AuxType, char b[])
     for (i=0;i<stride;i++) {
        col += Rhswidth;
        if ( col >= ( maxcol<linel?maxcol:linel ) ) {
-           if (std::fgets(line, BUFSIZ, in_file) == NULL) {
-             std::fprintf(stderr,"Error: Failed to read from file.\n");
-             return 0;
-           }
-           linel= std::strchr(line,'\n')-line;
-       if ( std::sscanf(line,"%*s") < 0 )
-       IOHBTerminate("iohb.c: Null (or blank) line in auxillary vector data region of HB file.\n");
+           fgets(line, BUFSIZ, in_file);
+           linel= strchr(line,'\n')-line;
+       if ( sscanf(line,"%*s") < 0 )
+       IOHBTerminate("Galeri_iohb.cpp: Null (or blank) line in auxillary vector data region of HB file.\n");
            col = 0;
        }
     }
@@ -1340,13 +1269,13 @@ int readHB_aux_char(const char* filename, const char AuxType, char b[])
   }
 
 
-    std::fclose(in_file);
+    fclose(in_file);
     return Nrhs;
 }
 
 int readHB_newaux_char(const char* filename, const char AuxType, char** b, char** Rhsfmt)
 {
-    std::FILE *in_file;
+    FILE *in_file;
     int Ptrcrd, Indcrd, Valcrd, Rhscrd;
     int Nrow,Ncol,Nnzero,Nrhs;
     int Rhsperline, Rhswidth, Rhsprec;
@@ -1354,8 +1283,8 @@ int readHB_newaux_char(const char* filename, const char AuxType, char** b, char*
     char Title[73], Key[9], Type[4] = "XXX", Rhstype[4];
     char Ptrfmt[17], Indfmt[17], Valfmt[21];
 
-    if ((in_file = std::fopen( filename, "r")) == NULL) {
-      std::fprintf(stderr,"Error: Cannot open file: %s\n",filename);
+    if ((in_file = fopen( filename, "r")) == NULL) {
+      fprintf(stderr,"Error: Cannot open file: %s\n",filename);
       return 0;
      }
 
@@ -1364,15 +1293,15 @@ int readHB_newaux_char(const char* filename, const char AuxType, char** b, char*
     readHB_header(in_file, Title, Key, Type, &Nrow, &Ncol, &Nnzero, &Nrhs,
                   Ptrfmt, Indfmt, Valfmt, (*Rhsfmt),
                   &Ptrcrd, &Indcrd, &Valcrd, &Rhscrd, Rhstype);
-     std::fclose(in_file);
+     fclose(in_file);
         if ( Nrhs == 0 ) {
-          std::fprintf(stderr,"Warn: Requested read of aux vector(s) when none are present.\n");
+          fprintf(stderr,"Warn: Requested read of aux vector(s) when none are present.\n");
           return 0;
         } else {
           ParseRfmt(*Rhsfmt,&Rhsperline,&Rhswidth,&Rhsprec,&Rhsflag);
           if ( Type[0] == 'C' ) {
-            std::fprintf(stderr, "Warning: Reading complex aux vector(s) from HB file %s.",filename);
-            std::fprintf(stderr, "         Real and imaginary parts will be interlaced in b[].");
+            fprintf(stderr, "Warning: Reading complex aux vector(s) from HB file %s.",filename);
+            fprintf(stderr, "         Real and imaginary parts will be interlaced in b[].");
             *b = (char *)malloc(Nrow*Nrhs*Rhswidth*sizeof(char)*2);
             if ( *b == NULL ) IOHBTerminate("Insufficient memory for rhs.\n");
 	    return readHB_aux_char(filename, AuxType, *b);
@@ -1401,7 +1330,7 @@ int writeHB_mat_char(const char* filename, int M, int N,
 /*            Duff, et al.,  ACM TOMS Vol.15, No.1, March 1989              */
 /*                                                                          */
 /****************************************************************************/
-    std::FILE *out_file;
+    FILE *out_file;
     int i,j,acount,linemod,entry,offset;
     int totcrd, ptrcrd, indcrd, valcrd, rhscrd;
     int nvalentries, nrhsentries;
@@ -1421,24 +1350,24 @@ int writeHB_mat_char(const char* filename, int M, int N,
     }
 
     if ( filename != NULL ) {
-       if ( (out_file = std::fopen( filename, "w")) == NULL ) {
-         std::fprintf(stderr,"Error: Cannot open file: %s\n",filename);
+       if ( (out_file = fopen( filename, "w")) == NULL ) {
+         fprintf(stderr,"Error: Cannot open file: %s\n",filename);
          return 0;
        }
     } else out_file = stdout;
 
     if ( Ptrfmt == NULL ) strcpy(Ptrfmt, "(8I10)");
     ParseIfmt(Ptrfmt,&Ptrperline,&Ptrwidth);
-    std::sprintf(pformat,"%%%dd",Ptrwidth);
+    sprintf(pformat,"%%%dd",Ptrwidth);
 
     if ( Indfmt == NULL ) Indfmt =  Ptrfmt;
     ParseIfmt(Indfmt,&Indperline,&Indwidth);
-    std::sprintf(iformat,"%%%dd",Indwidth);
+    sprintf(iformat,"%%%dd",Indwidth);
 
     if ( Type[0] != 'P' ) {          /* Skip if pattern only  */
       if ( Valfmt == NULL ) strcpy(Valfmt, "(4E20.13)");
       ParseRfmt(Valfmt,&Valperline,&Valwidth,&Valprec,&Valflag);
-      std::sprintf(vformat,"%%%ds",Valwidth);
+      sprintf(vformat,"%%%ds",Valwidth);
     }
 
     ptrcrd = (N+1)/Ptrperline;
@@ -1453,7 +1382,7 @@ int writeHB_mat_char(const char* filename, int M, int N,
     if ( Nrhs > 0 ) {
        if ( Rhsfmt == NULL ) Rhsfmt = Valfmt;
        ParseRfmt(Rhsfmt,&Rhsperline,&Rhswidth,&Rhsprec, &Rhsflag);
-       std::sprintf(rformat,"%%%ds",Rhswidth);
+       sprintf(rformat,"%%%ds",Rhswidth);
        rhscrd = nrhsentries/Rhsperline;
        if ( nrhsentries%Rhsperline != 0) rhscrd++;
        if ( Rhstype[1] == 'G' ) rhscrd+=rhscrd;
@@ -1466,15 +1395,15 @@ int writeHB_mat_char(const char* filename, int M, int N,
 
 /*  Print header information:  */
 
-    std::fprintf(out_file,"%-72s%-8s\n%14d%14d%14d%14d%14d\n",Title, Key, totcrd,
+    fprintf(out_file,"%-72s%-8s\n%14d%14d%14d%14d%14d\n",Title, Key, totcrd,
             ptrcrd, indcrd, valcrd, rhscrd);
-    std::fprintf(out_file,"%3s%11s%14d%14d%14d\n",Type,"          ", M, N, nz);
-    std::fprintf(out_file,"%-16s%-16s%-20s", Ptrfmt, Indfmt, Valfmt);
+    fprintf(out_file,"%3s%11s%14d%14d%14d\n",Type,"          ", M, N, nz);
+    fprintf(out_file,"%-16s%-16s%-20s", Ptrfmt, Indfmt, Valfmt);
     if ( Nrhs != 0 ) {
 /*     Print Rhsfmt on fourth line and                                    */
 /*           optional fifth header line for auxillary vector information: */
-       std::fprintf(out_file,"%-20s\n%-14s%d\n",Rhsfmt,Rhstype,Nrhs);
-    } else std::fprintf(out_file,"\n");
+       fprintf(out_file,"%-20s\n%-14s%d\n",Rhsfmt,Rhstype,Nrhs);
+    } else fprintf(out_file,"\n");
 
     offset = 1-_SP_base;  /* if base 0 storage is declared (via macro definition), */
                           /* then storage entries are offset by 1                  */
@@ -1483,32 +1412,32 @@ int writeHB_mat_char(const char* filename, int M, int N,
     for (i=0;i<N+1;i++)
     {
        entry = colptr[i]+offset;
-       std::fprintf(out_file,pformat,entry);
-       if ( (i+1)%Ptrperline == 0 ) std::fprintf(out_file,"\n");
+       fprintf(out_file,pformat,entry);
+       if ( (i+1)%Ptrperline == 0 ) fprintf(out_file,"\n");
     }
 
-   if ( (N+1) % Ptrperline != 0 ) std::fprintf(out_file,"\n");
+   if ( (N+1) % Ptrperline != 0 ) fprintf(out_file,"\n");
 
 /*  Print row indices:       */
     for (i=0;i<nz;i++)
     {
        entry = rowind[i]+offset;
-       std::fprintf(out_file,iformat,entry);
-       if ( (i+1)%Indperline == 0 ) std::fprintf(out_file,"\n");
+       fprintf(out_file,iformat,entry);
+       if ( (i+1)%Indperline == 0 ) fprintf(out_file,"\n");
     }
 
-   if ( nz % Indperline != 0 ) std::fprintf(out_file,"\n");
+   if ( nz % Indperline != 0 ) fprintf(out_file,"\n");
 
 /*  Print values:            */
 
     if ( Type[0] != 'P' ) {          /* Skip if pattern only  */
     for (i=0;i<nvalentries;i++)
     {
-       std::fprintf(out_file,vformat,val+i*Valwidth);
-       if ( (i+1)%Valperline == 0 ) std::fprintf(out_file,"\n");
+       fprintf(out_file,vformat,val+i*Valwidth);
+       if ( (i+1)%Valperline == 0 ) fprintf(out_file,"\n");
     }
 
-    if ( nvalentries % Valperline != 0 ) std::fprintf(out_file,"\n");
+    if ( nvalentries % Valperline != 0 ) fprintf(out_file,"\n");
 
 /*  Print right hand sides:  */
     acount = 1;
@@ -1517,32 +1446,32 @@ int writeHB_mat_char(const char* filename, int M, int N,
       for (j=0;j<Nrhs;j++) {
        for (i=0;i<nrhsentries;i++)
        {
-          std::fprintf(out_file,rformat,rhs+i*Rhswidth);
-          if ( acount++%Rhsperline == linemod ) std::fprintf(out_file,"\n");
+          fprintf(out_file,rformat,rhs+i*Rhswidth);
+          if ( acount++%Rhsperline == linemod ) fprintf(out_file,"\n");
        }
        if ( acount%Rhsperline != linemod ) {
-          std::fprintf(out_file,"\n");
+          fprintf(out_file,"\n");
           linemod = (acount-1)%Rhsperline;
        }
        if ( Rhstype[1] == 'G' ) {
          for (i=0;i<nrhsentries;i++)
          {
-           std::fprintf(out_file,rformat,guess+i*Rhswidth);
-           if ( acount++%Rhsperline == linemod ) std::fprintf(out_file,"\n");
+           fprintf(out_file,rformat,guess+i*Rhswidth);
+           if ( acount++%Rhsperline == linemod ) fprintf(out_file,"\n");
          }
          if ( acount%Rhsperline != linemod ) {
-            std::fprintf(out_file,"\n");
+            fprintf(out_file,"\n");
             linemod = (acount-1)%Rhsperline;
          }
        }
        if ( Rhstype[2] == 'X' ) {
          for (i=0;i<nrhsentries;i++)
          {
-           std::fprintf(out_file,rformat,exact+i*Rhswidth);
-           if ( acount++%Rhsperline == linemod ) std::fprintf(out_file,"\n");
+           fprintf(out_file,rformat,exact+i*Rhswidth);
+           if ( acount++%Rhsperline == linemod ) fprintf(out_file,"\n");
          }
          if ( acount%Rhsperline != linemod ) {
-            std::fprintf(out_file,"\n");
+            fprintf(out_file,"\n");
             linemod = (acount-1)%Rhsperline;
          }
        }
@@ -1551,8 +1480,8 @@ int writeHB_mat_char(const char* filename, int M, int N,
 
     }
 
-    if ( std::fclose(out_file) != 0){
-      std::fprintf(stderr,"Error closing file in writeHB_mat_char().\n");
+    if ( fclose(out_file) != 0){
+      fprintf(stderr,"Error closing file in writeHB_mat_char().\n");
       return 0;
     } else return 1;
 
@@ -1569,14 +1498,14 @@ int ParseIfmt(char* fmt, int* perline, int* width)
       *perline = 0; *width = 0; return 0;
     }
     upcase(fmt);
-    tmp = std::strchr(fmt,'(');
-    tmp = substr(fmt,tmp - fmt + 1, std::strchr(fmt,'I') - tmp - 1);
-    *perline = std::atoi(tmp);
+    tmp = strchr(fmt,'(');
+    tmp = substr(fmt,tmp - fmt + 1, strchr(fmt,'I') - tmp - 1);
+    *perline = atoi(tmp);
     if (*perline == 0 ) *perline = 1 ;
     if (tmp!=NULL) free ((void *) tmp);
-    tmp = std::strchr(fmt,'I');
-    tmp = substr(fmt,tmp - fmt + 1, std::strchr(fmt,')') - tmp - 1);
-    *width = std::atoi(tmp);
+    tmp = strchr(fmt,'I');
+    tmp = substr(fmt,tmp - fmt + 1, strchr(fmt,')') - tmp - 1);
+    *width = atoi(tmp);
     if (tmp!=NULL) free ((void *) tmp);
     return *width;
 }
@@ -1603,54 +1532,54 @@ int ParseRfmt(char* fmt, int* perline, int* width, int* prec, int* flag)
     }
 
     upcase(fmt);
-    if (std::strchr(fmt,'(') != NULL)  fmt = std::strchr(fmt,'(');
-    if (std::strchr(fmt,')') != NULL)  {
-       tmp2 = std::strchr(fmt,')');
-       while ( std::strchr(tmp2+1,')') != NULL ) {
-          tmp2 = std::strchr(tmp2+1,')');
+    if (strchr(fmt,'(') != NULL)  fmt = strchr(fmt,'(');
+    if (strchr(fmt,')') != NULL)  {
+       tmp2 = strchr(fmt,')');
+       while ( strchr(tmp2+1,')') != NULL ) {
+          tmp2 = strchr(tmp2+1,')');
        }
-       *(tmp2+1) = (char) NULL;
+       *(tmp2+1) = (int) NULL;
     }
-    if (std::strchr(fmt,'P') != NULL)  /* Remove any scaling factor, which */
+    if (strchr(fmt,'P') != NULL)  /* Remove any scaling factor, which */
     {                             /* affects output only, not input */
-      if (std::strchr(fmt,'(') != NULL) {
-        tmp = std::strchr(fmt,'P');
+      if (strchr(fmt,'(') != NULL) {
+        tmp = strchr(fmt,'P');
         if ( *(++tmp) == ',' ) tmp++;
-        tmp3 = std::strchr(fmt,'(')+1;
+        tmp3 = strchr(fmt,'(')+1;
         len = tmp-tmp3;
         tmp2 = tmp3;
-        while ( *(tmp2+len) != (char) NULL ) {
+        while ( *(tmp2+len) != (int) NULL ) {
            *tmp2=*(tmp2+len);
            tmp2++;
         }
-        *(std::strchr(fmt,')')+1) = (char) NULL;
+        *(strchr(fmt,')')+1) = (int) NULL;
       }
     }
-    if (std::strchr(fmt,'E') != NULL) {
+    if (strchr(fmt,'E') != NULL) {
        *flag = 'E';
-    } else if (std::strchr(fmt,'D') != NULL) {
+    } else if (strchr(fmt,'D') != NULL) {
        *flag = 'D';
-    } else if (std::strchr(fmt,'F') != NULL) {
+    } else if (strchr(fmt,'F') != NULL) {
        *flag = 'F';
     } else {
-      std::fprintf(stderr,"Real format %s in H/B file not supported.\n",fmt);
+      fprintf(stderr,"Real format %s in H/B file not supported.\n",fmt);
       return 0;
     }
-    tmp = std::strchr(fmt,'(');
-    tmp = substr(fmt,tmp - fmt + 1, std::strchr(fmt,*flag) - tmp - 1);
-    *perline = std::atoi(tmp);
+    tmp = strchr(fmt,'(');
+    tmp = substr(fmt,tmp - fmt + 1, strchr(fmt,*flag) - tmp - 1);
+    *perline = atoi(tmp);
     if (*perline == 0 ) *perline = 1 ;
     if (tmp!=NULL) free ((void *) tmp);
-    tmp = std::strchr(fmt,*flag);
-    if ( std::strchr(fmt,'.') ) {
-      tmp1 = substr( fmt, std::strchr(fmt,'.') - fmt + 1, std::strchr(fmt,')') - std::strchr(fmt,'.')-1);
-      *prec = std::atoi( tmp1 );
+    tmp = strchr(fmt,*flag);
+    if ( strchr(fmt,'.') ) {
+      tmp1 = substr( fmt, strchr(fmt,'.') - fmt + 1, strchr(fmt,')') - strchr(fmt,'.')-1);
+      *prec = atoi( tmp1 );
       if (tmp1!=NULL) free ((void *) tmp1);
-      tmp1 = substr(fmt,tmp - fmt + 1, std::strchr(fmt,'.') - tmp - 1);
+      tmp1 = substr(fmt,tmp - fmt + 1, strchr(fmt,'.') - tmp - 1);
     } else {
-      tmp1 = substr(fmt,tmp - fmt + 1, std::strchr(fmt,')') - tmp - 1);
+      tmp1 = substr(fmt,tmp - fmt + 1, strchr(fmt,')') - tmp - 1);
     }
-    *width = std::atoi(tmp1);
+    *width = atoi(tmp1);
     if (tmp1!=NULL) free ((void *) tmp1);
     return *width;
 }
@@ -1659,7 +1588,7 @@ char* substr(const char* S, const int pos, const int len)
 {
     int i;
     char *SubS;
-    if ( (size_t)pos+len <= std::strlen(S)) {
+    if ( pos+len <= strlen(S)) {
     SubS = (char *)malloc(len+1);
     if ( SubS == NULL ) IOHBTerminate("Insufficient memory for SubS.");
     for (i=0;i<len;i++) SubS[i] = S[pos+i];
@@ -1670,19 +1599,19 @@ char* substr(const char* S, const int pos, const int len)
     return SubS;
 }
 
-#include<cctype>
+#include<ctype.h>
 void upcase(char* S)
 {
 /*  Convert S to uppercase     */
     int i,len;
-    len = std::strlen(S);
+    len = strlen(S);
     for (i=0;i< len;i++)
-       S[i] = std::toupper(S[i]);
+       S[i] = toupper(S[i]);
 }
 
 void IOHBTerminate(const char* message)
 {
-   std::fprintf(stderr,"%s",message);
-   std::exit(1);
+   fprintf(stderr,"%s",message);
+   exit(1);
 }
 

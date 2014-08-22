@@ -50,6 +50,7 @@
 /*--------------------------------------------------------------------------*/
 
 namespace Kokkos {
+namespace Impl {
 namespace {
 
 struct Sentinel {
@@ -60,7 +61,13 @@ struct Sentinel {
 
   Sentinel() : m_scratch(0), m_reduce_end(0), m_shared_end(0) {}
 
-  ~Sentinel() { if ( m_scratch ) { free( m_scratch ); } }
+  ~Sentinel()
+    {
+      if ( m_scratch ) { free( m_scratch ); }
+      m_scratch = 0 ;
+      m_reduce_end = 0 ;
+      m_shared_end = 0 ;
+    }
 
   static Sentinel & singleton();
 };
@@ -77,24 +84,31 @@ unsigned align( unsigned n )
   return ( n + MASK ) & ~MASK ;
 }
 
-}
+} // namespace
 
-void * Serial::scratch_memory_space::resize( unsigned reduce_size , unsigned shared_size )
+SerialTeamMember::SerialTeamMember( int arg_league_rank
+                                  , int arg_league_size
+                                  , int arg_shared_size
+                                  )
+  : m_space( ((char *) Sentinel::singleton().m_scratch) + Sentinel::singleton().m_reduce_end
+           , arg_shared_size )
+  , m_league_rank( arg_league_rank )
+  , m_league_size( arg_league_size )
+{}
+
+} // namespace Impl
+
+void * Serial::scratch_memory_resize( unsigned reduce_size , unsigned shared_size )
 {
-  static Sentinel & s = Sentinel::singleton();
+  static Impl::Sentinel & s = Impl::Sentinel::singleton();
 
-  reduce_size = align( reduce_size );
-  shared_size = align( shared_size );
-
-  if ( ( 0 == reduce_size + shared_size ) ||
-       ( s.m_reduce_end < reduce_size ) ||
-       ( s.m_shared_end < s.m_reduce_end + shared_size ) ) {
-
-    if ( s.m_scratch ) { free( s.m_scratch ); }
-  }
+  reduce_size = Impl::align( reduce_size );
+  shared_size = Impl::align( shared_size );
 
   if ( ( s.m_reduce_end < reduce_size ) ||
        ( s.m_shared_end < s.m_reduce_end + shared_size ) ) {
+
+    if ( s.m_scratch ) { free( s.m_scratch ); }
   
     if ( s.m_reduce_end < reduce_size ) s.m_reduce_end = reduce_size ;
     if ( s.m_shared_end < s.m_reduce_end + shared_size ) s.m_shared_end = s.m_reduce_end + shared_size ;
@@ -103,18 +117,6 @@ void * Serial::scratch_memory_space::resize( unsigned reduce_size , unsigned sha
   }
 
   return s.m_scratch ;
-}
-
-Serial::scratch_memory_space::scratch_memory_space()
-{
-  Sentinel & s = Sentinel::singleton();
-  m_shmem_iter = ((char *) s.m_scratch ) + s.m_reduce_end ;
-  m_shmem_end  = ((char *) s.m_scratch ) + s.m_shared_end ;
-}
-
-void Serial::scratch_memory_space::get_shmem_error()
-{
-  Kokkos::Impl::throw_runtime_exception( std::string("Serial::get_shmem FAILED : out of memory") );
 }
 
 } // namespace Kokkos

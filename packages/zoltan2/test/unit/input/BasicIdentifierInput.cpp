@@ -70,12 +70,12 @@ int main(int argc, char *argv[])
   zlno_t numLocalIds = 10;
   int nWeights = 2;
 
-  zgid_t *myIds = new zgid_t [numLocalIds];
+  zzgid_t *myIds = new zzgid_t [numLocalIds];
   zscalar_t *weights = new zscalar_t [numLocalIds*nWeights];
   zgno_t base = rank * numLocalIds * numLocalIds;
 
   for (zlno_t i=0; i < numLocalIds; i++){
-    myIds[i] = zgid_t(base+i);
+    myIds[i] = zzgid_t(base+i);
     weights[i*nWeights] = 1.0;
     weights[i*nWeights + 1] = (nprocs-rank) / (i+1);
   }
@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
   // Create a Zoltan2::BasicIdentifierAdapter object
   // and verify that it is correct
 
-  typedef Zoltan2::BasicUserTypes<zscalar_t, zgid_t, zlno_t, zgno_t> userTypes_t;
+  typedef Zoltan2::BasicUserTypes<zscalar_t, zzgid_t, zlno_t, zgno_t> userTypes_t;
   std::vector<const zscalar_t *> weightValues;
   std::vector<int> strides;
 
@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
   if (!fail && ia.getNumWeightsPerID() != nWeights)
     fail = 5;
 
-  const zgid_t *globalIdsIn;
+  const zzgid_t *globalIdsIn;
   zscalar_t const *weightsIn[2];
   int weightStridesIn[2];
 
@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
 
   for (zlno_t i=0; !fail && i < numLocalIds; i++){
 
-    if (globalIdsIn[i] != zgid_t(base+i))
+    if (globalIdsIn[i] != zzgid_t(base+i))
       fail = 8;
     
     if (!fail && w1[i*incr1] != 1.0)

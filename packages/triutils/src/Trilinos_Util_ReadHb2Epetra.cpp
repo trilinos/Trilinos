@@ -40,7 +40,7 @@
 // @HEADER
 
 #include "Trilinos_Util.h"
-#include "iohb.h"
+#include "Trilinos_Util_iohb.h"
 #include "Epetra_ConfigDefs.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"

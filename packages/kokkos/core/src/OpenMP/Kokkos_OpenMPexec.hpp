@@ -314,7 +314,7 @@ public:
         m_team_rank      = m_team_size - ( m_team_rank_rev + 1 );
         m_league_end     = league_iter_end ;
         m_league_rank    = league_iter_end > team.team_iter() ? league_iter_end - team.team_iter() : 0 ;
-        m_team_shared    = space( ( (char*) m_exec.pool_rev(m_team_base_rev)->scratch_thread() ) + TEAM_REDUCE_SIZE , m_team_shmem );
+        new( (void*) &m_team_shared ) space( ( (char*) m_exec.pool_rev(m_team_base_rev)->scratch_thread() ) + TEAM_REDUCE_SIZE , m_team_shmem );
       }
     }
 
@@ -325,7 +325,7 @@ public:
     {
       if ( ++m_league_rank < m_league_end ) {
         team_barrier();
-        m_team_shared = space( ( (char*) m_exec.pool_rev(m_team_base_rev)->scratch_thread() ) + TEAM_REDUCE_SIZE , m_team_shmem );
+        new( (void*) &m_team_shared ) space( ( (char*) m_exec.pool_rev(m_team_base_rev)->scratch_thread() ) + TEAM_REDUCE_SIZE , m_team_shmem );
       }
     }
 

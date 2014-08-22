@@ -61,11 +61,11 @@ using Teuchos::Array;
 
 typedef Teuchos::SerialDenseVector<zlno_t, zscalar_t> tvec_t;
 
-typedef Zoltan2::BasicUserTypes<zscalar_t, zgid_t, zlno_t, zgno_t> userTypes_t;
+typedef Zoltan2::BasicUserTypes<zscalar_t, zzgid_t, zlno_t, zgno_t> userTypes_t;
 
 int checkBasicCoordinate(
   Zoltan2::BasicVectorAdapter<userTypes_t> *ia, 
-  int len, int glen, zgid_t *ids,
+  int len, int glen, zzgid_t *ids,
   zscalar_t *xyz,
   zscalar_t *weights,
   int nCoords, int nWeights)
@@ -82,7 +82,7 @@ int checkBasicCoordinate(
     fail = 102;
 
   for (int x=0; !fail && x < nCoords; x++){
-    const zgid_t *idList;
+    const zzgid_t *idList;
     const zscalar_t *vals;
     int stride;
 
@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
 
   // Create global Ids, x-, y- and z-coordinates, and also arrays of weights.
 
-  Array<zgid_t> myIds(numLocalIds);
+  Array<zzgid_t> myIds(numLocalIds);
   zgno_t base = rank * numLocalIds;
   
   int wdim = 2;

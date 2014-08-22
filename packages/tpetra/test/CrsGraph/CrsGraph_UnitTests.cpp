@@ -1369,24 +1369,24 @@ namespace {
 // instantiate them over all enabled local ordinal (LO), global
 // ordinal (GO), and Kokkos Node (NODE) types.
 #define UNIT_TEST_GROUP_DEBUG_AND_RELEASE( LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyGraphAlloc0, LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyGraphAlloc1, LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, ExcessAllocation, LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, BadConst  , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, insert_remove_LIDs   , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, NonLocals , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, DottedDiag , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, WithStaticProfile , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, CopiesAndViews, LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, WithColMap,     LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Describable   , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyGraphAlloc0,  LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyGraphAlloc1,  LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, ExcessAllocation,  LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, BadConst,          LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, insert_remove_LIDs, LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, NonLocals,         LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, DottedDiag,        LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, WithStaticProfile, LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, CopiesAndViews,    LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, WithColMap,        LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Describable,       LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyFillComplete, LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Typedefs      , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Bug20100622K  , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, ActiveFill    , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SortingTests  , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, TwoArraysESFC , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SetAllIndices , LO, GO, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Typedefs,          LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Bug20100622K,      LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, ActiveFill,        LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SortingTests,      LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, TwoArraysESFC,     LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SetAllIndices,     LO, GO, NODE )
 
 // Test(s) for "Node conversion" (i.e., the clone() template method of
 // CrsGraph).  We will instantiate them over all enabled Kokkos Node

@@ -143,7 +143,7 @@ int getDim(void *data, int *ierr)
 }
 
 void getObjList(void *data, int numGid, int numLid,
-  zgid_t * gids, zgid_t * lids, 
+  zzgid_t * gids, zzgid_t * lids, 
   int num_wgts, float *obj_wgts, int *ierr)
 {
   *ierr = 0;
@@ -151,12 +151,12 @@ void getObjList(void *data, int numGid, int numLid,
   const zgno_t *ids = coordinates->getMap()->getNodeElementList().getRawPtr();
   zgno_t *idsNonConst = const_cast<zgno_t *>(ids);
 
-  if (sizeof(zgid_t) == sizeof(zgno_t)){
-    memcpy(gids, idsNonConst, sizeof(zgid_t) * localLen);
+  if (sizeof(zzgid_t) == sizeof(zgno_t)){
+    memcpy(gids, idsNonConst, sizeof(zzgid_t) * localLen);
   }
   else{
     for (size_t i=0; i < localLen; i++)
-      gids[i] = static_cast<zgid_t>(idsNonConst[i]);
+      gids[i] = static_cast<zzgid_t>(idsNonConst[i]);
   }
 
   if (num_wgts > 0){
@@ -168,7 +168,7 @@ void getObjList(void *data, int numGid, int numLid,
 }
 
 void getCoords(void *data, int numGid, int numLid,
-  int numObj, zgid_t * gids, zgid_t * lids,
+  int numObj, zzgid_t * gids, zzgid_t * lids,
   int dim, double *coords, int *ierr)
 {
   // I know that Zoltan asks for coordinates in gid order.
@@ -674,8 +674,8 @@ int main(int argc, char *argv[])
   Zoltan_Set_Geom_Multi_Fn(zz, getCoords, NULL);
 
   int changes, numGidEntries, numLidEntries, numImport, numExport;
-  zgid_t * importGlobalGids, * importLocalGids;
-  zgid_t * exportGlobalGids, * exportLocalGids;
+  zzgid_t * importGlobalGids, * importLocalGids;
+  zzgid_t * exportGlobalGids, * exportLocalGids;
   int *importProcs, *importToPart, *exportProcs, *exportToPart;
 
   MEMORY_CHECK(doMemory && rank==0, "Before Zoltan_LB_Partition");

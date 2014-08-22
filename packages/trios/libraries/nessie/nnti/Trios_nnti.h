@@ -63,6 +63,12 @@ extern "C" {
  *  @{
  */
 
+typedef NNTI_result_t (*NNTI_callback_fn_t) (
+        const NNTI_transport_t *trans_hdl,
+        const uint64_t          local_atomic,
+        void                   *context);
+
+
 /**
  * @brief Initialize NNTI to use a specific transport.
  *
@@ -270,6 +276,88 @@ NNTI_result_t NNTI_gather (
         const uint64_t        src_count,
         const NNTI_buffer_t  *dest_buffer_hdl,
         NNTI_work_request_t  *wr);
+
+
+/**
+ * assign a callback to an atomic variable
+ *
+ * \param[in]  trans_hdl     A handle to the configured transport.
+ * \param[in]  local_atomic  index of the local result variable
+ * \param[in]  cbfunc        callback function invoked when the atomic variable is modified
+ * \param[in]  context       data passed to cbfunc() at every invocation
+ *
+ * This function assigns a callback to the atomic variable {local_atomic}.
+ * {cbfunc} will be invoked after every successful atomic operation on
+ * {local_atomic}.  Reads are not considered an atomic operation.
+ */
+NNTI_result_t NNTI_atomic_set_callback (
+		const NNTI_transport_t *trans_hdl,
+		const uint64_t          local_atomic,
+		NNTI_callback_fn_t      cbfunc,
+		void                   *context);
+
+/**
+ * read a 64-bit value from an local atomic variable
+ *
+ * \param[in]  trans_hdl     A handle to the configured transport.
+ * \param[in]  local_atomic  index of the local atomic variable
+ * \param[out] value         current value of the atomic variable
+ *
+ *
+ */
+NNTI_result_t NNTI_atomic_read (
+		const NNTI_transport_t *trans_hdl,
+		const uint64_t          local_atomic,
+		int64_t                *value);
+
+
+/**
+ * perform a 64-bit atomic operation with get semantics
+ *
+ * \param[in]  trans_hdl     A handle to the configured transport.
+ * \param[in]  peer          NNTI process that hosts the target atomic variable
+ * \param[in]  target_atomic index of the target atomic variable
+ * \param[in]  result_atomic index of the local result atomic variable
+ * \param[in]  operand       64-bit operand to the atomic operation
+ * \param[in]  op            atomic operation to execute
+ * \param[out] wr            work request to wait on
+ *
+ * This function executes an atomic operation with get semantics. When the operation
+ * is complete the result of the operation is visible in {target_atomic} and the
+ * previous value is visible in {result_atomic}.
+ */
+NNTI_result_t NNTI_atomic_fop (
+		const NNTI_transport_t *trans_hdl,
+		const NNTI_peer_t      *peer_hdl,
+		const uint64_t          target_atomic,
+		const uint64_t          result_atomic,
+		const int64_t           operand,
+		const NNTI_atomic_op_t  op,
+		NNTI_work_request_t    *wr);
+
+/**
+ * perform a 64-bit compare-and-swap operation
+ *
+ * \param[in]  trans_hdl       A handle to the configured transport.
+ * \param[in]  peer            NNTI process that hosts the target atomic variable
+ * \param[in]  target_atomic   index of the target atomic variable
+ * \param[in]  result_atomic   index of the local result atomic variable
+ * \param[in]  compare_operand 64-bit operand to compare with
+ * \param[in]  swap_operand    64-bit operand to swap in
+ * \param[out] wr              work request to wait on
+ *
+ * This function executes an atomic operation with get semantics. When the operation
+ * is complete the result of the operation is visible in (target_atomic} and the
+ * previous value is visible in {result_atomic}.
+ */
+NNTI_result_t NNTI_atomic_cswap (
+		const NNTI_transport_t *trans_hdl,
+		const NNTI_peer_t      *peer_hdl,
+		const uint64_t          target_atomic,
+		const uint64_t          result_atomic,
+		const int64_t           compare_operand,
+		const int64_t           swap_operand,
+		NNTI_work_request_t    *wr);
 
 
 /**

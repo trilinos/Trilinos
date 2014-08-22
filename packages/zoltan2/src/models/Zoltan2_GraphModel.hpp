@@ -109,17 +109,17 @@ size_t removeUndesiredEdges(
   bool removeSelfEdges,
   bool removeOffProcessEdges,
   bool removeOffGroupEdges,
-  ArrayView<const typename InputTraits<User>::gid_t> &gids,
-  ArrayView<const typename InputTraits<User>::gid_t> &gidNbors,
+  ArrayView<const typename InputTraits<User>::zgid_t> &gids,
+  ArrayView<const typename InputTraits<User>::zgid_t> &gidNbors,
   ArrayView<const int> &procIds,
   ArrayView<StridedData<typename InputTraits<User>::lno_t,
                         typename InputTraits<User>::scalar_t> > &edgeWeights,
   ArrayView<const typename InputTraits<User>::lno_t> &offsets,
-  ArrayRCP<const typename InputTraits<User>::gid_t> &newGidNbors, // out
+  ArrayRCP<const typename InputTraits<User>::zgid_t> &newGidNbors, // out
   typename InputTraits<User>::scalar_t **&newWeights,             // out
   ArrayRCP<const typename InputTraits<User>::lno_t> &newOffsets)  // out
 {
-  typedef typename InputTraits<User>::gid_t gid_t;
+  typedef typename InputTraits<User>::zgid_t zgid_t;
   typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t lno_t;
   size_t numKeep = 0;
@@ -130,7 +130,7 @@ size_t removeUndesiredEdges(
   env->localInputAssertion(__FILE__, __LINE__, "need more input",
     (!removeSelfEdges ||
       gids.size() >=
-       static_cast<typename ArrayView<const gid_t>::size_type>(numVtx))
+       static_cast<typename ArrayView<const zgid_t>::size_type>(numVtx))
       &&
     (!removeOffProcessEdges ||
       procIds.size() >=
@@ -153,9 +153,9 @@ size_t removeUndesiredEdges(
   ArrayRCP<const lno_t> offArray = arcp(offs, 0, numVtx+1, true);
 
   const lno_t *allOffs = offsets.getRawPtr();
-  const gid_t *allIds = gidNbors.getRawPtr();
+  const zgid_t *allIds = gidNbors.getRawPtr();
 
-  const gid_t *vtx = NULL;
+  const zgid_t *vtx = NULL;
   const int *proc = NULL;
 
   if (gids.size() > 0)
@@ -167,7 +167,7 @@ size_t removeUndesiredEdges(
   offs[0] = 0;
   for (size_t i=0; i < numVtx; i++){
     offs[i+1] = 0;
-    gid_t vid = vtx ? vtx[i] : gid_t(0);
+    zgid_t vid = vtx ? vtx[i] : zgid_t(0);
     for (lno_t j=allOffs[i]; j < allOffs[i+1]; j++){
       int owner = proc ? proc[j] : 0;
       bool keep = (!removeSelfEdges || vid != allIds[j]) &&
@@ -194,14 +194,14 @@ size_t removeUndesiredEdges(
     return numNbors;
   }
   else if (numKeep == 0){
-    newGidNbors = ArrayRCP<const gid_t>(Teuchos::null);
+    newGidNbors = ArrayRCP<const zgid_t>(Teuchos::null);
     newOffsets = offArray;
     return 0;
   }
 
   // Build the subset neighbor lists (id, weight, and offset).
 
-  gid_t *newGids = new gid_t [numKeep];
+  zgid_t *newGids = new zgid_t [numKeep];
   env->localMemoryAssertion(__FILE__, __LINE__, numKeep, newGids);
 
   newGidNbors = arcp(newGids, 0, numKeep, true);
@@ -225,7 +225,7 @@ size_t removeUndesiredEdges(
 
   size_t next = 0;
   for (size_t i=0; i < numVtx && next < numKeep; i++){
-    gid_t vid = vtx ? vtx[i] : gid_t(0);
+    zgid_t vid = vtx ? vtx[i] : zgid_t(0);
     for (lno_t j=allOffs[i]; j < allOffs[i+1]; j++){
       int owner = proc ? proc[j] : 0;
       bool keep = (!removeSelfEdges || vid != allIds[j]) &&
@@ -259,7 +259,7 @@ size_t computeLocalEdgeList(
   size_t numLocalEdges,           // local edges
   size_t numLocalGraphEdges,      // edges in "local" graph
   RCP<const IdentifierMap<User> > &idMap,
-  ArrayRCP<const typename InputTraits<User>::gid_t> &allEdgeIds, // in
+  ArrayRCP<const typename InputTraits<User>::zgid_t> &allEdgeIds, // in
   ArrayRCP<const typename InputTraits<User>::gno_t> &allEdgeGnos, // in
   ArrayRCP<int> &allProcs,                                 // in
   ArrayRCP<const typename InputTraits<User>::lno_t> &allOffs,    // in
@@ -270,7 +270,7 @@ size_t computeLocalEdgeList(
   ArrayRCP<StridedData<typename InputTraits<User>::lno_t,
     typename InputTraits<User>::scalar_t> > &eWeights)             // out
 {
-  typedef typename InputTraits<User>::gid_t gid_t;
+  typedef typename InputTraits<User>::zgid_t zgid_t;
   typedef typename InputTraits<User>::gno_t gno_t;
   typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t lno_t;
@@ -338,11 +338,11 @@ size_t computeLocalEdgeList(
 
     int nWeightsPerEdge = allWeights.size();
 
-    ArrayRCP<const gid_t> newEgids;
+    ArrayRCP<const zgid_t> newEgids;
     scalar_t **newWeights = NULL;
 
-    ArrayView<const gid_t> dummyVtx;
-    ArrayView<const gid_t> nborView= allEdgeIds.view(0, numLocalEdges);
+    ArrayView<const zgid_t> dummyVtx;
+    ArrayView<const zgid_t> nborView= allEdgeIds.view(0, numLocalEdges);
     ArrayView<const int> nborOwner = allProcs.view(0, numLocalEdges);
     ArrayView<input_t> eWgts = allWeights.view(0, nWeightsPerEdge);
     ArrayView<const lno_t> offView = allOffs.view(0, allOffs.size());
@@ -380,7 +380,7 @@ size_t computeLocalEdgeList(
     }
     else{
 
-      ArrayRCP<gid_t> gidArray = arcp_const_cast<gid_t>(newEgids);
+      ArrayRCP<zgid_t> gidArray = arcp_const_cast<zgid_t>(newEgids);
       gno_t *gnoList= new gno_t [numLocalGraphEdges];
       env->localMemoryAssertion(__FILE__, __LINE__, numLocalGraphEdges,
         gnoList);
@@ -434,7 +434,7 @@ public:
   typedef typename Adapter::scalar_t    scalar_t;
   typedef typename Adapter::gno_t       gno_t;
   typedef typename Adapter::lno_t       lno_t;
-  typedef typename Adapter::gid_t       gid_t;
+  typedef typename Adapter::zgid_t       zgid_t;
   typedef typename Adapter::node_t      node_t;
   typedef typename Adapter::user_t      user_t;
   typedef typename Adapter::userCoord_t userCoord_t;
@@ -647,7 +647,7 @@ private:
   const RCP<const Environment > env_;
   const RCP<const Comm<int> > comm_;
 
-  ArrayRCP<const gid_t> gids_;        // vertices of input graph
+  ArrayRCP<const zgid_t> gids_;        // vertices of input graph
   ArrayRCP<gno_t> gnos_;
 
   int numWeightsPerVertex_;
@@ -659,7 +659,7 @@ private:
   // Note: in case of graph subsetting, size of these arrays
   // may be larger than numLocalEdges_.  So do not use .size().
 
-  ArrayRCP<const gid_t> edgeGids_;
+  ArrayRCP<const zgid_t> edgeGids_;
   ArrayRCP<gno_t> edgeGnos_;
   ArrayRCP<int> procIds_;
   ArrayRCP<const lno_t> offsets_;
@@ -738,7 +738,7 @@ GraphModel<Adapter>::GraphModel(
   }
 
   // Get the matrix from the input adapter
-  gid_t const *vtxIds=NULL, *nborIds=NULL;
+  zgid_t const *vtxIds=NULL, *nborIds=NULL;
   lno_t const *offsets=NULL;
   try{
     numLocalVertices_ = ia->getLocalNumIDs();
@@ -759,8 +759,8 @@ GraphModel<Adapter>::GraphModel(
 
   numLocalEdges_ = offsets[numLocalVertices_];
 
-  gids_ = arcp<const gid_t>(vtxIds, 0, numLocalVertices_, false);
-  edgeGids_ = arcp<const gid_t>(nborIds, 0, numLocalEdges_, false);
+  gids_ = arcp<const zgid_t>(vtxIds, 0, numLocalVertices_, false);
+  edgeGids_ = arcp<const zgid_t>(nborIds, 0, numLocalEdges_, false);
   offsets_ = arcp<const lno_t>(offsets, 0, numLocalVertices_ + 1, false);
 
   nWeightsPerEdge_ = 0;   // no edge weights from a matrix yet.
@@ -821,7 +821,7 @@ GraphModel<Adapter>::GraphModel(
 
   // Get the graph from the input adapter
 
-  gid_t const *vtxIds=NULL, *nborIds=NULL;
+  zgid_t const *vtxIds=NULL, *nborIds=NULL;
   lno_t const *offsets=NULL;
   try{
     numLocalVertices_ = ia->getLocalNumVertices();
@@ -832,8 +832,8 @@ GraphModel<Adapter>::GraphModel(
 
   numLocalEdges_ = offsets[numLocalVertices_];
 
-  gids_ = arcp<const gid_t>(vtxIds, 0, numLocalVertices_, false);
-  edgeGids_ = arcp<const gid_t>(nborIds, 0, numLocalEdges_, false);
+  gids_ = arcp<const zgid_t>(vtxIds, 0, numLocalVertices_, false);
+  edgeGids_ = arcp<const zgid_t>(nborIds, 0, numLocalEdges_, false);
   offsets_ = arcp<const lno_t>(offsets, 0, numLocalVertices_ + 1, false);
 
   nWeightsPerEdge_ = ia->getNumWeightsPerEdge();
@@ -909,19 +909,19 @@ GraphModel<Adapter>::GraphModel(
 
   // Get the IDs of the primary entity type; these are graph vertices
 
-  gid_t const *vtxIds=NULL;
+  zgid_t const *vtxIds=NULL;
   try {
     numLocalVertices_ = ia->getLocalNumOf(primaryEType);
     ia->getIDsViewOf(primaryEType, vtxIds);
   }
   Z2_FORWARD_EXCEPTIONS;
 
-  gids_ = arcp<const gid_t>(vtxIds, 0, numLocalVertices_, false);
+  gids_ = arcp<const zgid_t>(vtxIds, 0, numLocalVertices_, false);
 
   // Get the second adjacencies to construct edges of the dual graph.
   // TODO:  Enable building the graph from 1st adjacencies
 
-  gid_t const *nborIds=NULL;
+  zgid_t const *nborIds=NULL;
   lno_t const *offsets=NULL;
 
   if (!ia->avail2ndAdjs(primaryEType, secondAdjEType)) {
@@ -940,7 +940,7 @@ GraphModel<Adapter>::GraphModel(
 
     numLocalEdges_ = offsets[numLocalVertices_];
 
-    edgeGids_ = arcp<const gid_t>(nborIds, 0, numLocalEdges_, false);
+    edgeGids_ = arcp<const zgid_t>(nborIds, 0, numLocalEdges_, false);
     offsets_ = arcp<const lno_t>(offsets, 0, numLocalVertices_ + 1, false);
 
     // Get edge weights
@@ -1037,13 +1037,13 @@ void GraphModel<Adapter>::shared_constructor(
 
   if (subsetGraph || removeSelfEdges){
 
-    ArrayRCP<const gid_t> newEdges;
+    ArrayRCP<const zgid_t> newEdges;
     ArrayRCP<const lno_t> newOffs;
     scalar_t **newWeights = NULL;
     size_t numNewEdges = 0;
 
-    ArrayView<const gid_t> vtxView = gids_.view(0, numLocalVertices_);
-    ArrayView<const gid_t> nborView= edgeGids_.view(0, numLocalEdges_);
+    ArrayView<const zgid_t> vtxView = gids_.view(0, numLocalVertices_);
+    ArrayView<const zgid_t> nborView= edgeGids_.view(0, numLocalEdges_);
     ArrayView<const int> nborOwner = nborProcs.view(0, nborProcs.size());
     ArrayView<input_t> eWgts = eWeights_.view(0, nWeightsPerEdge_);
     ArrayView<const lno_t> offView = offsets_.view(0, numLocalVertices_ + 1);
@@ -1101,7 +1101,7 @@ void GraphModel<Adapter>::shared_constructor(
   // user's global Ids.  Also find the process owning each
   // neighboring vertex.
 
-  ArrayView<const gid_t> gidArray(Teuchos::null);  // edge gid
+  ArrayView<const zgid_t> gidArray(Teuchos::null);  // edge gid
   ArrayView<gno_t> gnoArray(Teuchos::null);        // edge gno
   ArrayView<int> procArray(Teuchos::null);         // edge owner
 
@@ -1113,7 +1113,7 @@ void GraphModel<Adapter>::shared_constructor(
       gnos_ = arcp(tmp, 0, numLocalVertices_);
 
       try{
-        ArrayRCP<gid_t> tmpGids = arcp_const_cast<gid_t>(gids_);
+        ArrayRCP<zgid_t> tmpGids = arcp_const_cast<zgid_t>(gids_);
 
         idMap->gidTranslate(tmpGids(0,numLocalVertices_),
           gnos_(0,numLocalVertices_), TRANSLATE_APP_TO_LIB);

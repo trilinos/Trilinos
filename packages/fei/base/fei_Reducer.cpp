@@ -919,13 +919,14 @@ Reducer::copyOutVectorValues(int numValues,
 
   if (tmpVec1_.size() > 0) {
     fei::multiply_trans_CSRMat_CSVec(csrD_, tmpVec1_, tmpVec2_);
-    int* tmpVec2Indices = &(tmpVec2_.indices()[0]);
+    int* tmpVec2Indices = tmpVec2_.indices().empty() ? NULL : &(tmpVec2_.indices()[0]);
+    double* tmpVec2Coefs = tmpVec2_.coefs().empty() ? NULL : &(tmpVec2_.coefs()[0]);
     for(size_t i=0; i<tmpVec2_.size(); ++i) {
       reduced_indices.push_back(translateToReducedEqn(tmpVec2Indices[i]));
     }
 
-    feivec.copyOut(tmpVec2_.size(), &reduced_indices[0],
-                   &(tmpVec2_.coefs()[0]), vectorIndex);
+    int* reduced_indices_ptr = reduced_indices.empty() ? NULL : &reduced_indices[0];
+    feivec.copyOut(tmpVec2_.size(), reduced_indices_ptr, tmpVec2Coefs, vectorIndex);
 
     fei::multiply_CSRMat_CSVec(csrD_, tmpVec2_, tmpVec1_);
 
@@ -933,7 +934,7 @@ Reducer::copyOutVectorValues(int numValues,
       int* ginds = &(csg_.indices()[0]);
       double* gcoefs = &(csg_.coefs()[0]);
       for(size_t ii=0; ii<csg_.size(); ++ii) {
-        fei::add_entry(tmpVec1_, ginds[ii], -gcoefs[ii]);
+        fei::add_entry(tmpVec1_, ginds[ii], gcoefs[ii]);
       }
     }
 

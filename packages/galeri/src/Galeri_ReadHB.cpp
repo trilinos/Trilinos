@@ -41,7 +41,7 @@
 
 #include "Galeri_ConfigDefs.h"
 #include "Galeri_ReadHB.h"
-#include "iohb.h"
+#include "Galeri_iohb.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"

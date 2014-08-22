@@ -67,7 +67,7 @@ namespace Zoltan2 {
     \li \c scalar_t is the data type for weights and vector entry values.
     \li \c lno_t is the integral data type used by Zoltan2 for local indices and local counts.
     \li \c gno_t is the integral data type used by Zoltan2 to represent global indices and global counts.
-    \li \c gid_t is the data type used by the application for global Ids.  If the application's global Id data type is a Teuchos Ordinal, then \c gid_t and \c gno_t are the same.  Otherwise, the application global Ids will be mapped to Teuchos Ordinals for use by Zoltan2 internally.  (Teuchos Ordinals are those data types for which traits are defined in Trilinos/packages/teuchos/src/Teuchos_OrdinalTraits.hpp.)
+    \li \c zgid_t is the data type used by the application for global Ids.  If the application's global Id data type is a Teuchos Ordinal, then \c zgid_t and \c gno_t are the same.  Otherwise, the application global Ids will be mapped to Teuchos Ordinals for use by Zoltan2 internally.  (Teuchos Ordinals are those data types for which traits are defined in Trilinos/packages/teuchos/src/Teuchos_OrdinalTraits.hpp.)
     \li \c node_t is a sub class of KokkosClassic::StandardNodeMemoryModel, which is used to optimize performance on many-core and multi-core architectures.  If you don't use Kokkos, you can ignore this data type.
 
     The template parameter (\c User) is a C++ class type which provides the
@@ -88,7 +88,7 @@ public:
   typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t lno_t;
   typedef typename InputTraits<User>::gno_t gno_t;
-  typedef typename InputTraits<User>::gid_t gid_t;
+  typedef typename InputTraits<User>::zgid_t zgid_t;
   typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t node_t;
   typedef VectorAdapter<User> base_adapter_t;
@@ -111,7 +111,7 @@ public:
    *  lifetime of this Adapter.
    */
 
-  BasicVectorAdapter(lno_t numIds, const gid_t *ids,
+  BasicVectorAdapter(lno_t numIds, const zgid_t *ids,
                      const scalar_t *entries, int entryStride=1,
                      bool usewgts=false,
                      const scalar_t *wgts=NULL, int wgtStride=1):
@@ -159,7 +159,7 @@ public:
    *  lifetime of this Adapter.
    */
 
-  BasicVectorAdapter(lno_t numIds, const gid_t *ids,
+  BasicVectorAdapter(lno_t numIds, const zgid_t *ids,
     std::vector<const scalar_t *> &entries,  std::vector<int> &entryStride,
     std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides):
       numIds_(numIds), idList_(ids),
@@ -195,7 +195,7 @@ public:
    *  lifetime of this Adapter.
    */
 
-  BasicVectorAdapter(lno_t numIds, const gid_t *ids,
+  BasicVectorAdapter(lno_t numIds, const zgid_t *ids,
                      const scalar_t *x, const scalar_t *y,
                      const scalar_t *z,
                      int xStride=1, int yStride=1, int zStride=1,
@@ -238,7 +238,7 @@ public:
 
   size_t getLocalNumIDs() const { return numIds_;}
 
-  void getIDsView(const gid_t *&ids) const {ids = idList_;}
+  void getIDsView(const zgid_t *&ids) const {ids = idList_;}
 
   int getNumWeightsPerID() const { return numWeights_;}
 
@@ -275,7 +275,7 @@ public:
 private:
 
   lno_t numIds_;
-  const gid_t *idList_;
+  const zgid_t *idList_;
 
   int numEntriesPerID_;
   ArrayRCP<StridedData<lno_t, scalar_t> > entries_ ;

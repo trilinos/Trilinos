@@ -3817,7 +3817,7 @@ namespace Tpetra {
     }
 
     if (copiedInput) {
-      X = *X_domainMap; // Copy back from X_domainMap to X.
+      deep_copy (X, *X_domainMap); // Copy back from X_domainMap to X.
     }
   }
 

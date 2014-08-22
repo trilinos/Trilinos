@@ -115,13 +115,13 @@ private:
 
   template <class, class, class> friend class CrsProductTensor;
 
-  typedef Kokkos::View< value_type[], device_type, memory_type >  vec_type;
-  typedef Kokkos::View< size_type[], device_type, memory_type > coord_array_type;
-  typedef Kokkos::View< size_type[][2], Kokkos::LayoutLeft, device_type, memory_type > coord2_array_type;
-  //typedef Kokkos::View< size_type[][2], device_type, memory_type > coord2_array_type;
-  typedef Kokkos::View< value_type[], device_type, memory_type > value_array_type;
-  typedef Kokkos::View< size_type[], device_type, memory_type > entry_array_type;
-  typedef Kokkos::View< size_type[], device_type, memory_type > row_map_array_type;
+  typedef Kokkos::View< value_type*, Kokkos::LayoutLeft, device_type, memory_type >  vec_type;
+  typedef Kokkos::View< size_type*, Kokkos::LayoutLeft, device_type, memory_type > coord_array_type;
+  typedef Kokkos::View< size_type*[2], Kokkos::LayoutLeft, device_type, memory_type > coord2_array_type;
+  //typedef Kokkos::View< size_type*[2], Kokkos::LayoutLeft, device_type, memory_type > coord2_array_type;
+  typedef Kokkos::View< value_type*, Kokkos::LayoutLeft, device_type, memory_type > value_array_type;
+  typedef Kokkos::View< size_type*, Kokkos::LayoutLeft, device_type, memory_type > entry_array_type;
+  typedef Kokkos::View< size_type*, Kokkos::LayoutLeft, device_type, memory_type > row_map_array_type;
 
   coord_array_type   m_coord;
   coord2_array_type  m_coord2;

@@ -137,8 +137,8 @@ BlockMultiVector (const mv_type& X_mv,
     if (numCols == 0) {
       Teuchos::Array<size_t> cols (0); // view will have zero columns
       X_view_const = X_mv.subView (cols ());
-    } else {
-      X_view_const = X_mv.subView (Teuchos::Range1D (0, numCols));
+    } else { // Range1D is an inclusive range
+      X_view_const = X_mv.subView (Teuchos::Range1D (0, numCols-1));
     }
     TEUCHOS_TEST_FOR_EXCEPTION(
       X_view_const.is_null (), std::logic_error, "Tpetra::Experimental::"
@@ -209,7 +209,7 @@ makePointMap (const map_type& meshMap, const LO blockSize)
     Teuchos::Array<GO> lclPointGblInds (lclNumPointMapInds);
     for (size_type g = 0; g < lclNumMeshGblInds; ++g) {
       const GO meshGid = lclMeshGblInds[g];
-      const GO pointGidStart = meshGid * static_cast<GO> (blockSize);
+      const GO pointGidStart = indexBase + (meshGid - indexBase) * static_cast<GO> (blockSize);
       const size_type offset = g * static_cast<size_type> (blockSize);
       for (LO k = 0; k < blockSize; ++k) {
         const GO pointGid = pointGidStart + static_cast<GO> (k);
@@ -564,9 +564,9 @@ scale (const Scalar& val)
 //
 // Explicit instantiation macro
 //
-// Must be expanded from within the Tpetra::Experimental namespace!
+// Must be expanded from within the Tpetra namespace!
 //
 #define TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_INSTANT(S,LO,GO,NODE) \
-  template class BlockMultiVector< S, LO, GO, NODE >;
+  template class Experimental::BlockMultiVector< S, LO, GO, NODE >;
 
 #endif // TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_DEF_HPP
