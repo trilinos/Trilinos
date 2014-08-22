@@ -52,7 +52,7 @@
 #include "BelosBlockGmresSolMgr.hpp"
 
 // I/O for Harwell-Boeing files
-#include <iohb.h>
+#include <Galeri_iohb.h>
 
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_GlobalMPISession.hpp>

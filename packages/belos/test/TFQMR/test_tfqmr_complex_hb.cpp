@@ -58,7 +58,7 @@
 
 // I/O for Harwell-Boeing files
 #ifdef HAVE_BELOS_TRIUTILS
-#include "iohb.h"
+#include "Galeri_iohb.h"
 #endif
 
 #include "MyMultiVec.hpp"
