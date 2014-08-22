@@ -73,6 +73,8 @@ public:
   /// the number or sizes of buckets.
   void sort(bool force = false);
 
+  void set_flag_needs_to_be_sorted(bool flag) { m_updated_since_sort = flag; }
+
   size_t field_data_footprint(const FieldBase &f) const;
 
   ////

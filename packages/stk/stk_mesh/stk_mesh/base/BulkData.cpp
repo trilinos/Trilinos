@@ -1296,6 +1296,7 @@ void BulkData::internal_change_entity_key( EntityKey old_key, EntityKey new_key,
 
   m_entity_repo.update_entity_key(new_key, old_key, entity);
   set_entity_key(entity, new_key);
+  this->bucket(entity).getPartition()->set_flag_needs_to_be_sorted(true);
 }
 
 //----------------------------------------------------------------------
