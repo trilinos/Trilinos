@@ -97,6 +97,7 @@
 #include <Kokkos_Parallel.hpp>
 #include <Kokkos_Layout.hpp>
 #include <Kokkos_CudaSpace.hpp>
+#include <Kokkos_ScratchSpace.hpp>
 #include <Kokkos_MemoryTraits.hpp>
 #include <impl/Kokkos_Tags.hpp>
 
@@ -135,11 +136,12 @@ public:
   typedef Cuda                  execution_space ;
   //! This device's preferred memory space.
   typedef CudaSpace             memory_space ;
-  typedef Cuda                  scratch_memory_space ;
   //! The size_type typedef best suited for this device.
   typedef CudaSpace::size_type  size_type ;
   //! This device's preferred array layout.
   typedef LayoutLeft            array_layout ;
+
+  typedef ScratchMemorySpace< Cuda >  scratch_memory_space ;
 
   //! This device's host mirror type.
 #if defined( KOKKOS_HAVE_OPENMP )
@@ -234,34 +236,37 @@ public:
 
   //@}
   //--------------------------------------------------------------------------
-#if defined( __CUDA_ARCH__ )
-  //! \name Functions for the functor device interface
-  //@{
-
-  //! Get a pointer to shared memory for this team.
-  __device__ inline void * get_shmem( const int size ) const ;
-
-  __device__ inline Cuda( Impl::CudaExec & exec ) : m_exec(exec) {}
-  __device__ inline Cuda( const Cuda & rhs ) : m_exec(rhs.m_exec) {}
-
-  //@}
-  //--------------------------------------------------------------------------
-
-private:
-
-  Impl::CudaExec & m_exec ;
-
-  //--------------------------------------------------------------------------
-#else
-
-  void * get_shmem( const int size ) const ;
-
-  Cuda( Impl::CudaExec & );
-
-#endif
-
 };
 
+} // namespace Kokkos
+
+/*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
+
+namespace Kokkos {
+namespace Impl {
+
+template<>
+struct VerifyExecutionCanAccessMemorySpace
+  < Kokkos::Cuda::memory_space
+  , Kokkos::Cuda::scratch_memory_space
+  >
+{
+  KOKKOS_INLINE_FUNCTION static void verify( void ) { }
+  KOKKOS_INLINE_FUNCTION static void verify( const void * ) { }
+};
+
+template<>
+struct VerifyExecutionCanAccessMemorySpace
+  < Kokkos::HostSpace
+  , Kokkos::Cuda::scratch_memory_space
+  >
+{
+  inline static void verify( void ) { CudaSpace::access_error(); }
+  inline static void verify( const void * p ) { CudaSpace::access_error(p); }
+};
+
+} // namespace Impl
 } // namespace Kokkos
 
 /*--------------------------------------------------------------------------*/

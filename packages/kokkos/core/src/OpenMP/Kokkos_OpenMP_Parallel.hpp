@@ -260,7 +260,7 @@ public:
     OpenMPexec::verify_initialized("Kokkos::OpenMP parallel_for");
 
     const size_t team_reduce_size = Policy::member_type::team_reduce_size();
-    const size_t team_shmem_size  = FunctorShmemSize< FunctorType >::value( functor );
+    const size_t team_shmem_size  = FunctorTeamShmemSize< FunctorType >::value( functor , policy.team_size() );
 
     OpenMPexec::resize_scratch( 0 , team_reduce_size + team_shmem_size );
 
@@ -293,7 +293,7 @@ public:
     OpenMPexec::verify_is_process("Kokkos::OpenMP parallel_reduce");
 
     const size_t team_reduce_size = Policy::member_type::team_reduce_size();
-    const size_t team_shmem_size  = FunctorShmemSize< FunctorType >::value( functor );
+    const size_t team_shmem_size  = FunctorTeamShmemSize< FunctorType >::value( functor , policy.team_size() );
 
     OpenMPexec::resize_scratch( Reduce::value_size( functor ) , team_reduce_size + team_shmem_size );
 
@@ -329,7 +329,7 @@ public:
     OpenMPexec::verify_is_process("Kokkos::OpenMP parallel_reduce");
 
     const size_t team_reduce_size = Policy::member_type::team_reduce_size();
-    const size_t team_shmem_size  = FunctorShmemSize< FunctorType >::value( functor );
+    const size_t team_shmem_size  = FunctorTeamShmemSize< FunctorType >::value( functor , policy.team_size() );
 
     OpenMPexec::resize_scratch( Reduce::value_size( functor ) , team_reduce_size + team_shmem_size );
 

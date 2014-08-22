@@ -195,7 +195,7 @@ public:
     {
       QthreadExec::resize_worker_scratch
         ( /* reduction   memory */ Reduce::value_size( functor )
-        , /* team shared memory */ FunctorShmemSize< FunctorType >::value( functor ) );
+        , /* team shared memory */ FunctorTeamShmemSize< FunctorType >::value( functor ) , policy.team_size() );
 
       Impl::QthreadExec::exec_all( Qthread::instance() , & ParallelReduce::execute , this );
 

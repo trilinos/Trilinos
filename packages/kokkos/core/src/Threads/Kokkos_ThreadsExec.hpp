@@ -690,6 +690,11 @@ public:
     , m_team_alloc(0)
     { init(league_size_request,team_size_request); }
 
+  template< class FunctorType >
+  inline static
+  int team_size_max( const FunctorType & )
+    { return execution_space::thread_pool_size(1); }
+
   typedef Impl::ThreadsExecTeamMember member_type ;
 
   friend class Impl::ThreadsExecTeamMember ;
