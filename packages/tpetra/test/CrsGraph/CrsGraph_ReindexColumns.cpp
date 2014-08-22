@@ -184,8 +184,16 @@ namespace {
       const bool cloneDebug = false;
       RCP<ParameterList> clonePlist = parameterList ("Tpetra::CrsGraph::clone");
       clonePlist->set ("Debug", cloneDebug);
-      graph2 = graph.clone (node, clonePlist);
+      try {
+        graph2 = graph.clone (node, clonePlist);
+      } catch (std::exception& e) {
+        std::ostringstream err2;
+        err2 << "Proc " << myRank << ": CrsGraph::clone threw an exception: "
+             << e.what () << endl;
+        cerr << err2.str ();
+      }
     }
+    TEST_ASSERT( ! graph2.is_null () );
 
     gblSuccess = 0;
     lclSuccess = success ? 1 : 0;
