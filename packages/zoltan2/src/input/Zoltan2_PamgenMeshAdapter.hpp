@@ -488,12 +488,14 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
     }
 
     Teuchos::barrier<int>(comm);
+    size_t totalsend = 0;
 
     for(int j = 0; j < num_node_cmaps; j++) {
       sendCount[node_proc_ids[j][0]] = 1;
       for(int i = 0; i < node_cmap_node_cnts[j]; i++) {
 	sendCount[node_proc_ids[j][i]] += sur_elem[node_ids[j][i]-1].size()+2;
       }
+      totalsend += sendCount[node_proc_ids[j][0]];
     }
 
     // Send data; can use readySend since receives are posted.
