@@ -592,6 +592,13 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
 
     delete[] node_cmap_node_cnts;
     node_cmap_node_cnts = NULL;
+
+    for(int j = 0; j < num_node_cmaps; j++) {
+      delete[] node_ids[j];
+    }
+
+    delete[] node_ids;
+    node_ids = NULL;
     ArrayRCP<int> sendBuf;
 
     if (totalsend)
@@ -614,6 +621,13 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
       }
       offset += sendCount[node_proc_ids[i][0]];
     }
+
+    for(int j = 0; j < num_node_cmaps; j++) {
+      delete[] node_proc_ids[j];
+    }
+
+    delete[] node_proc_ids;
+    node_proc_ids = NULL;
 
     // Wait for messages to return.
     try{
@@ -640,16 +654,6 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
 	}
       }
     }
-
-    for(int j = 0; j < num_node_cmaps; j++) {
-      delete[] node_ids[j];
-      delete[] node_proc_ids[j];
-    }
-
-    delete[] node_ids;
-    node_ids = NULL;
-    delete[] node_proc_ids;
-    node_proc_ids = NULL;
   }
 
   for(int ecnt=0; ecnt < num_elem_; ecnt++) {
