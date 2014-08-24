@@ -590,6 +590,8 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
       }
     }
 
+    delete[] node_cmap_node_cnts;
+    node_cmap_node_cnts = NULL;
     ArrayRCP<int> sendBuf;
 
     if (totalsend)
@@ -620,8 +622,24 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
     Z2_FORWARD_EXCEPTIONS;
 
     delete[] requests;
-    delete[] node_cmap_node_cnts;
-    node_cmap_node_cnts = NULL;
+    a = 0;
+
+    for (int i = 0; i < num_node_cmaps; i++) {
+      int num_nodes_this_processor = rbuf[a++];
+
+      for (int j = 0; j < num_nodes_this_processor; j++) {
+	int this_node = rbuf[a++];
+	int num_elem_this_node = rbuf[a++];
+
+	for (int ncnt = 0; ncnt < num_nodes_; ncnt++) {
+	  if (node_num_map_[ncnt] == this_node) {
+	    for (int ecnt = 0; ecnt < num_elem_this_node; ecnt++) {
+	      sur_elem[ncnt].push_back(rbuf[a++]);
+	    }
+	  }
+	}
+      }
+    }
 
     for(int j = 0; j < num_node_cmaps; j++) {
       delete[] node_ids[j];
