@@ -470,11 +470,9 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
     node_cmap_ids = NULL;
     int *sendCount = new int [nprocs];
     int *recvCount = new int [nprocs];
-    int rank = comm.getRank();
-    recvCount[rank] = sendCount[rank] = 0;
 
     // Post receives
-    RCP<CommRequest<int> > *requests = new RCP<CommRequest<int> > [nprocs];
+    RCP<CommRequest<int> >*requests=new RCP<CommRequest<int> >[num_node_cmaps];
     for (int cnt = 0, i = 0; i < num_node_cmaps; i++) {
       try {
 	requests[cnt++] =
@@ -622,6 +620,9 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
     Z2_FORWARD_EXCEPTIONS;
 
     delete[] requests;
+
+    for(size_t i=0;i<totalrecv;i++)std::cout<<rbuf[i]<<" ";std:
+
     delete[] node_cmap_node_cnts;
     node_cmap_node_cnts = NULL;
 
