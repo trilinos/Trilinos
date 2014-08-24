@@ -620,9 +620,6 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
     Z2_FORWARD_EXCEPTIONS;
 
     delete[] requests;
-
-    for(size_t i=0;i<totalrecv;i++)std::cout<<rbuf[i]<<" ";std:
-
     delete[] node_cmap_node_cnts;
     node_cmap_node_cnts = NULL;
 
