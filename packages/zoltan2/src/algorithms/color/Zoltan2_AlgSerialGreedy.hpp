@@ -154,47 +154,64 @@ class AlgSerialGreedy : public Algorithm<Adapter>
       }
 
       // Pick color for v
-      std::string colorSelection = "FirstFit"; // TODO make parameter!
-      if (colorSelection.compare("FirstFit")){
-        // Pick first (smallest) available color > 0
-        for (int c=1; c <= maxColor+1; c++){
-          if (forbidden[c] != v){ 
-            colors[v] = c;
-            break;
-          }
-        }
-      }
-      else if (colorSelection.compare("Random")){
-        // Pick random available color.
-        // This is slow, please consider RandomFast instead.
-        int numAvail = 0;
-        Teuchos::Array<int> avail(maxColor+1);
-        for (int c=1; c < maxColor+1; c++){
-          if (forbidden[c] != v){ 
-            avail[numAvail++] = c;
-          }
-        }
-        if (numAvail==0)
-          colors[v] = maxColor+1;
-        else
-          colors[v] = avail[rand()%numAvail];
-      }
-      else if (colorSelection.compare("RandomFast")){
-        // Pick random color, then find first available color after that.
-        int r = (rand() % maxColor) +1;
-        for (int c=r; c <= maxColor+1; c++){
-          if (forbidden[c] != v){ 
-            colors[v] = c;
-            break;
-          }
-        }
-      }
+      std::string colorChoice = "FirstFit"; // TODO make parameter!
 
-      if (colors[v]==0) colors[v]=1; // Corner case for first vertex
+      // Keep colors[v] if possible, otherwise find valid color.
+      if ((colors[v]==0) || ((colors[v]>0) && forbidden[colors[v]] == v)){
 
-      //std::cout << "Debug: colors[i]= " << colors[v] << std::endl;
-      if (colors[v] > maxColor){
-        maxColor = colors[v];
+        if (colorChoice.compare("FirstFit")){
+          // Pick first (smallest) available color > 0
+          for (int c=1; c <= maxColor+1; c++){
+            if (forbidden[c] != v){ 
+              colors[v] = c;
+              break;
+            }
+          }
+        }
+        else if (colorChoice.compare("Random")){
+          // Pick random available color.
+          // This is slow, please consider RandomFast instead.
+          int numAvail = 0;
+          Teuchos::Array<int> avail(maxColor+1);
+          for (int c=1; c < maxColor+1; c++){
+            if (forbidden[c] != v){ 
+              avail[numAvail++] = c;
+            }
+          }
+          if (numAvail==0)
+            colors[v] = maxColor+1;
+          else
+            colors[v] = avail[rand()%numAvail];
+        }
+        else if (colorChoice.compare("RandomFast")){
+          // Pick random color, then find first available color after that.
+          bool foundColor = false;
+          int r = (rand() % maxColor) +1;
+          for (int c=r; c <= maxColor; c++){
+            if (forbidden[c] != v){ 
+              colors[v] = c;
+              foundColor = true;
+              break;
+            }
+          }
+          if (!foundColor){ // Look for colors in [1, r)
+            for (int c=1; c < r; c++){
+              if (forbidden[c] != v){ 
+                colors[v] = c;
+                foundColor = true;
+                break;
+              }
+            }
+          }
+          if (!foundColor) colors[v] = maxColor+1;
+        }
+  
+        if ((v==0) && colors[v]==0) colors[v]=1; // Corner case for first vertex
+  
+        //std::cout << "Debug: colors[i]= " << colors[v] << std::endl;
+        if (colors[v] > maxColor){
+          maxColor = colors[v];
+        }
       }
     }
   
