@@ -46,6 +46,12 @@
 #ifndef _ZOLTAN2_TPLTRAITS_HPP_
 #define _ZOLTAN2_TPLTRAITS_HPP_
 
+#include <Teuchos_RCP.hpp>
+#include <Teuchos_ArrayView.hpp>
+#include <Teuchos_as.hpp>
+#include <Zoltan2_Standards.hpp>
+#include <Zoltan2_Environment.hpp>
+
 ////////////////////////////////////////////////////////////////////////
 //! \file Zoltan2_TPLTraits.hpp
 //! \brief Traits class to handle conversions between gno_t/lno_t 
@@ -64,13 +70,15 @@ struct TPL_Traits {
                                   const RCP<const Environment> &env)
   {
     // Assign a = b; make sure tpl_t is large enough to accept zno_t.
-    if (b <= std::numeric_limits<tpl_t>::max())
-      a = b;
-    else 
+    try {
+      a = Teuchos::asSafe<tpl_t, zno_t>(b);
+    }
+    catch (std::exception &e) {
       env->localInputAssertion(__FILE__, __LINE__, 
        "Value too large for TPL index type. "
        "Rebuild TPL with larger index type or rebuild without the TPL.",
        false, BASIC_ASSERTION);
+    }
   }
 
   static inline void ASSIGN_TPL_T_ARRAY(tpl_t **a, ArrayView<const zno_t> &b,
