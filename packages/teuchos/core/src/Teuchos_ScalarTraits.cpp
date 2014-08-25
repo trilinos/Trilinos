@@ -84,6 +84,8 @@ bool Teuchos::operator&&(const qd_real &a, const qd_real &b) {
 
 #ifndef __sun
 // This is an intentional computation of NaN.
-const float  Teuchos::flt_nan = +returnFloatZero()/returnFloatZero();
-const double Teuchos::dbl_nan = +returnDoubleZero()/returnDoubleZero();
+namespace Teuchos {
+const float  flt_nan = +returnFloatZero()/returnFloatZero();
+const double dbl_nan = +returnDoubleZero()/returnDoubleZero();
+}
 #endif
