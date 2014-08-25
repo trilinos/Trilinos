@@ -185,12 +185,12 @@ IF(${SWIG_VERSION} VERSION_LESS ${SWIG_VERSION_FLOOR})
     " is less than minimum version " ${SWIG_VERSION_FLOOR}
     )
 ENDIF()
-IF(${SWIG_VERSION} VERSION_GREATER ${SWIG_VERSION_CEILING})
-  MESSAGE(FATAL_ERROR
-    "SWIG version " ${SWIG_VERSION}
-    " is greater than maximum version " ${SWIG_VERSION_CEILING}
-    )
-ENDIF()
+# IF(${SWIG_VERSION} VERSION_GREATER ${SWIG_VERSION_CEILING})
+#   MESSAGE(FATAL_ERROR
+#     "SWIG version " ${SWIG_VERSION}
+#     " is greater than maximum version " ${SWIG_VERSION_CEILING}
+#     )
+# ENDIF()
 # ${SWIG_USE_FILE} is hard-coded to be the installed UseSWIG.cmake
 # file.  We want to include the local, modified version.
 INCLUDE(UseSWIG)
