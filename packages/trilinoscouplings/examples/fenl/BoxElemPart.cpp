@@ -182,6 +182,8 @@ BoxElemPart::BoxElemPart(
   m_owns_node_count = 0 ;
   m_send_node_count = 0 ;
 
+  m_ok = true ;
+
   //----------------------------------------
 
   if ( ElemLinear == elem_order ) {
@@ -212,7 +214,7 @@ BoxElemPart::BoxElemPart(
   m_owns_node_count = 1 ;
   m_send_node_count = 0 ;
 
-  for ( size_t rr = 1 ; rr < m_global_size ; ++rr ) {
+  for ( size_t rr = 1 ; rr < m_global_size && m_ok ; ++rr ) {
 
     const size_t rank = ( m_global_rank + rr ) % m_global_size ;
 
@@ -228,8 +230,10 @@ BoxElemPart::BoxElemPart(
 
     if ( m_owns_node[ m_owns_node_count ][1] ) {
 
-      if ( PROC_NEIGH_MAX <= m_owns_node_count ) {
-        throw std::runtime_error("BoxElemPart exceeded maximum neighbor count");
+      if ( ( PROC_NEIGH_MAX - 1 ) <= m_owns_node_count ) {
+        std::cout << "BoxElemPart exceeded maximum neighbor count" << std::endl ;
+        m_ok = false ;
+        break ;
       }
 
       m_owns_node[ m_owns_node_count ][0] = rank ;
@@ -244,8 +248,10 @@ BoxElemPart::BoxElemPart(
 
     if ( m_send_node[ m_send_node_count ][1] ) {
 
-      if ( PROC_NEIGH_MAX <= m_send_node_count ) {
-        throw std::runtime_error("BoxElemPart exceeded maximum neighbor count");
+      if ( ( PROC_NEIGH_MAX - 1 ) <= m_send_node_count ) {
+        std::cout << "BoxElemPart exceeded maximum neighbor count" << std::endl ;
+        m_ok = false ;
+        break ;
       }
 
       m_send_node[ m_send_node_count ][0] = rank ;
@@ -263,6 +269,7 @@ BoxElemPart::BoxElemPart(
       Kokkos::Example::box_intersect( test_box , m_owns_node_box[0] , o_node_box );
 
       if ( Kokkos::Example::box_count( test_box ) ) {
+        std::cout << "Box partitioning error" << std::endl ;
         std::cout << "owns_node[" << m_global_rank << "]{"
                   << " [" << m_owns_node_box[0][0][0] << "," << m_owns_node_box[0][0][1] << ")"
                   << " [" << m_owns_node_box[0][1][0] << "," << m_owns_node_box[0][1][1] << ")"
@@ -273,6 +280,8 @@ BoxElemPart::BoxElemPart(
                   << " [" << o_node_box[1][0] << "," << o_node_box[1][1] << ")"
                   << " [" << o_node_box[2][0] << "," << o_node_box[2][1] << ")"
                   << "}" << std::endl ;
+        m_ok = false ;
+        break ;
       }
     }
 
@@ -281,7 +290,7 @@ BoxElemPart::BoxElemPart(
       Kokkos::Example::box_intersect( test_box , m_uses_elem_box , elem_box );
 
       if ( Kokkos::Example::box_count( test_box ) ) {
-
+        std::cout << "Box partitioning error" << std::endl ;
         std::cout << "ElemBox[" << m_global_rank << "]{"
                   << " [" << m_uses_elem_box[0][0] << "," << m_uses_elem_box[0][1] << ")"
                   << " [" << m_uses_elem_box[1][0] << "," << m_uses_elem_box[1][1] << ")"
@@ -292,6 +301,8 @@ BoxElemPart::BoxElemPart(
                   << " [" << elem_box[1][0] << "," << elem_box[1][1] << ")"
                   << " [" << elem_box[2][0] << "," << elem_box[2][1] << ")"
                   << "}" << std::endl ;
+        m_ok = false ;
+        break ;
       }
     }
   }
@@ -318,15 +329,29 @@ BoxElemPart::BoxElemPart(
     if ( count != Kokkos::Example::box_count( m_uses_node_box ) ) {
       std::cout << "Node uses count = " << Kokkos::Example::box_count( m_uses_node_box )
                 << " error count = " << count << std::endl ;
+      m_ok = false ;
     }
   }
 
   if ( global_node_count != node_count ) {
     std::cout << "Node count = " << global_node_count << " overlap error count = " << node_count << std::endl ;
+    m_ok = false ;
   }
 
   if ( DecomposeElem == decompose && global_elem_count != elem_count ) {
     std::cout << "Elem count = " << global_elem_count << " overlap error count = " << elem_count << std::endl ;
+    m_ok = false ;
+  }
+
+  if ( ! m_ok ) {
+    for ( int i = 0 ; i < 3 ; ++i ) { for ( int j = 0 ; j < 2 ; ++j ) {
+      m_global_elem_box[i][j] = 0 ;
+      m_global_node_box[i][j] = 0 ;
+      m_uses_elem_box[i][j] = 0 ;
+      m_uses_node_box[i][j] = 0 ;
+    }}
+    m_owns_node_count = 0 ;
+    m_send_node_count = 0 ;
   }
 }
 

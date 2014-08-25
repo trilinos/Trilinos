@@ -155,6 +155,8 @@ public:
   typedef Kokkos::View< const size_t  * [2] , Device > comm_list_type ;
   typedef Kokkos::View< const size_t  *     , Device > send_nodeid_type ;
 
+  inline bool ok() const { return m_box_part.ok(); }
+
   KOKKOS_INLINE_FUNCTION
   size_t node_count() const { return m_node_grid.dimension_0(); }
 
