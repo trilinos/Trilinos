@@ -29,30 +29,55 @@
 #ifndef ANASAZI_TPETRA_ADAPTER_HPP
 #define ANASAZI_TPETRA_ADAPTER_HPP
 
-#include <Kokkos_NodeTrace.hpp>
-
 /// \file AnasaziTpetraAdapter.hpp
-/// \brief Adaptor between Anasazi and Tpetra::{MultiVector,Operator}
+/// \brief Partial specialization of Anasazi::MultiVecTraits and
+///   Anasazi::OperatorTraits for Tpetra objects.
 ///
-/// Specializations of Anasazi multi-vector and operator traits
-/// classes for the Tpetra MultiVector and Operator classes.
+/// \section Anasazi_TpetraAdapter_sum Summary
 ///
-/// \note TODO: Here, we assume the solver, multivector and operator
-/// are all templated on the same scalar.  This assumption should be
-/// relaxed, e.g., for implementing multiprecision solvers.
+/// If you want to use Anasazi solvers with Tpetra objects, include this
+/// header file, along with the header file(s) for the solver(s) you
+/// want to use.  "Tpetra objects" means the following:
+///   - Tpetra::MultiVector for the multivector type (MV)
+///   - Tpetra::Operator for the operator type (OP)
+///
+/// You may use any subclass of Tpetra::Operator here, as long as its
+/// template parameters match those of the Tpetra::MultiVector type.
+/// Many different Trilinos packages implement Tpetra::Operator
+/// subclasses.  For example, when solving a linear system Ax=b, you
+/// could use a Tpetra::CrsMatrix or Tpetra::RowMatrix for the matrix
+/// A, and a preconditioner from Ifpack2, Amesos2, or MueLu.
+///
+/// \section Anasazi_TpetraAdapter_dev Note to Anasazi developers
+///
+/// This partial specialization assumes that the first (Scalar)
+/// template parameter of Anasazi::MultiVecTraits and
+/// Anasazi::OperatorTraits matches the first template parameters of
+/// Tpetra::MultiVector and Tpetra::Operator.  In terms of Anasazi
+/// solvers, this means that the specialization assumes that the
+/// result of an inner product has the same type as any entry of the
+/// multivector or matrix.  This is true for most Scalar types of
+/// interest, but may not necessarily be true for certain Scalar types
+/// implemented in the Stokhos package, or when implementing
+/// mixed-precision solvers in certain ways.  If you don't know what
+/// this means, don't worry about it.  If you <i>do</i> know what this
+/// means, you might need to write your own partial specialization of
+/// Anasazi::MultiVecTraits and Anasazi::OperatorTraits, for a Scalar
+/// type different than that of the Tpetra::MultiVector or
+/// Tpetra::Operator.
 
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_Operator.hpp>
-#include <Teuchos_Assert.hpp>
-#include <Teuchos_ScalarTraits.hpp>
+
 #include <Teuchos_Array.hpp>
+#include <Teuchos_Assert.hpp>
 #include <Teuchos_DefaultSerialComm.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 
 #include <AnasaziConfigDefs.hpp>
 #include <AnasaziTypes.hpp>
 #include <AnasaziMultiVecTraits.hpp>
 #include <AnasaziOperatorTraits.hpp>
-#include <Kokkos_NodeAPIConfigDefs.hpp>
 
 #ifdef HAVE_ANASAZI_TSQR
 #  include <Tpetra_TsqrAdaptor.hpp>
@@ -61,29 +86,31 @@
 
 namespace Anasazi {
 
-  ////////////////////////////////////////////////////////////////////
-  //
-  // Implementation of the Anasazi::MultiVecTraits for Tpetra::MultiVector.
-  //
-  ////////////////////////////////////////////////////////////////////
-
-  /*!  \brief Template specialization of Anasazi::MultiVecTraits class using the Tpetra::MultiVector class.
-
-    This interface will ensure that any Tpetra::MultiVector will be accepted by the Anasazi
-    templated solvers.  */
+  /// \brief Specialization of MultiVecTraits for MV = Tpetra::MultiVector.
+  ///
+  /// This interface lets Anasazi' solvers work directly with
+  /// Tpetra::MultiVector objects as the MultiVector type.  That type
+  /// corresponds to the MV template parameter, which is the second
+  /// template parameter (after Scalar) of most Anasazi classes.
+  ///
+  /// The four template parameters of this partial specialization
+  /// correspond exactly to the four template parameters of
+  /// Tpetra::MultiVector.  See the Tpetra::MultiVector documentation
+  /// for more information.
   template<class Scalar, class LO, class GO, class Node>
   class MultiVecTraits<Scalar, Tpetra::MultiVector<Scalar,LO,GO,Node> > {
     typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
   public:
-    /// \brief Create a new multivector with \c numvecs columns.
+    /// \brief Create a new MultiVector with \c numVecs columns.
     ///
     /// The returned Tpetra::MultiVector has the same Tpetra::Map
     /// (distribution over one or more parallel processes) as \c X.
     /// Its entries are not initialized and have undefined values.
-    static Teuchos::RCP<MV> Clone (const MV& X, const int numvecs) {
-      return Teuchos::rcp (new MV (X.getMap (), numvecs, false));
+    static Teuchos::RCP<MV> Clone (const MV& X, const int numVecs) {
+      return Teuchos::rcp (new MV (X.getMap (), numVecs, false));
     }
 
+    //! Create and return a deep copy of X.
     static Teuchos::RCP<MV> CloneCopy (const MV& X)
     {
       // Make a deep copy of X.  The one-argument copy constructor
@@ -100,11 +127,23 @@ namespace Anasazi {
       return X_copy;
     }
 
+    /// \brief Create and return a deep copy of the given columns of mv.
+    ///
+    /// \pre \code mv.getNumVectors() != 0 || index.size() == 0 \endcode
+    /// \pre For all k such that <tt>0 <= k < index.size()</tt>,
+    ///   \code
+    ///   0 <= index[k] < mv.getNumVectors();
+    ///   \endcode
+    /// \post If this method returns Y:
+    ///   \code
+    ///   Y->isConstantStride() && Y->getNumVectors() == index.size();
+    ///   \endcode
     static Teuchos::RCP<MV>
     CloneCopy (const MV& mv, const std::vector<int>& index)
     {
 #ifdef HAVE_TPETRA_DEBUG
       const char fnName[] = "Anasazi::MultiVecTraits::CloneCopy(mv,index)";
+      const size_t inNumVecs = mv.getNumVectors ();
       TEUCHOS_TEST_FOR_EXCEPTION(
         index.size () > 0 && *std::min_element (index.begin (), index.end ()) < 0,
         std::runtime_error, fnName << ": All indices must be nonnegative.");
@@ -129,6 +168,12 @@ namespace Anasazi {
       return X_copy;
     }
 
+    /// \brief Create and return a deep copy of the given columns of mv.
+    ///
+    /// \post If this method returns Y:
+    ///   \code
+    ///   Y->isConstantStride() && Y->getNumVectors() == index.size();
+    ///   \endcode
     static Teuchos::RCP<MV>
     CloneCopy (const MV& mv, const Teuchos::Range1D& index)
     {
@@ -200,9 +245,8 @@ namespace Anasazi {
       return X_view;
     }
 
-    static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> >
-    CloneViewNonConst (Tpetra::MultiVector<Scalar,LO,GO,Node>& mv,
-                       const Teuchos::Range1D& index)
+    static Teuchos::RCP<MV>
+    CloneViewNonConst (MV& mv, const Teuchos::Range1D& index)
     {
       // NOTE (mfh 11 Jan 2011) We really should check for possible
       // overflow of int here.  However, the number of columns in a
@@ -332,8 +376,9 @@ namespace Anasazi {
       return static_cast<int> (mv.getGlobalLength ());
     }
 
-    static int GetNumberVecs( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )
-    { return mv.getNumVectors(); }
+    static int GetNumberVecs (const MV& mv) {
+      return static_cast<int> (mv.getNumVectors ());
+    }
 
     static void
     MvTimesMatAddMv (Scalar alpha,
@@ -529,12 +574,18 @@ namespace Anasazi {
     MvNorm (const MV& mv,
             std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &normvec)
     {
+      typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
 #ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION(normvec.size() < (typename std::vector<int>::size_type)mv.getNumVectors(),std::invalid_argument,
-          "Anasazi::MultiVecTraits<Scalar,Tpetra::MultiVector>::MvNorm(mv,normvec): normvec must have room for all norms.");
-#endif
-      Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> av(normvec);
-      mv.norm2(av(0,mv.getNumVectors()));
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        normvec.size () < static_cast<std::vector<int>::size_type> (mv.getNumVectors ()),
+        std::invalid_argument,
+        "Anasazi::MultiVecTraits::MvNorm(mv,normvec): The normvec output "
+        "argument must have at least as many entries as the number of vectors "
+        "(columns) in the MultiVector mv.  normvec.size() = " << normvec.size ()
+        << " < mv.getNumVectors() = " << mv.getNumVectors () << ".");
+#endif // HAVE_TPETRA_DEBUG
+      Teuchos::ArrayView<magnitude_type> av (normvec);
+      mv.norm2 (av (0, mv.getNumVectors ()));
     }
 
     static void
@@ -636,9 +687,7 @@ namespace Anasazi {
       Tpetra::deep_copy (*mv_view, *A_view);
     }
 
-    static void
-    Assign (const Tpetra::MultiVector<Scalar,LO,GO,Node>& A,
-            Tpetra::MultiVector<Scalar,LO,GO,Node>& mv)
+    static void Assign (const MV& A, MV& mv)
     {
       const char errPrefix[] = "Anasazi::MultiVecTraits::Assign(A, mv): ";
 

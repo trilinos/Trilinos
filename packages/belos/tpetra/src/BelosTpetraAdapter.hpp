@@ -71,25 +71,26 @@
 /// result of an inner product has the same type as any entry of the
 /// multivector or matrix.  This is true for most Scalar types of
 /// interest, but may not necessarily be true for certain Scalar types
-/// implemented in the Stokhos package.  If you don't know what this
-/// means, don't worry about it.
+/// implemented in the Stokhos package, or when implementing
+/// mixed-precision solvers in certain ways.  If you don't know what
+/// this means, don't worry about it.  If you <i>do</i> know what this
+/// means, you might need to write your own partial specialization of
+/// Belos::MultiVecTraits and Belos::OperatorTraits, for a Scalar type
+/// different than that of the Tpetra::MultiVector or
+/// Tpetra::Operator.
 
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_Operator.hpp>
-#include <Kokkos_DefaultNode.hpp>
 
-#include <Teuchos_Assert.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
 #include <Teuchos_Array.hpp>
+#include <Teuchos_Assert.hpp>
 #include <Teuchos_DefaultSerialComm.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 
 #include <BelosConfigDefs.hpp>
 #include <BelosTypes.hpp>
 #include <BelosMultiVecTraits.hpp>
 #include <BelosOperatorTraits.hpp>
-
-
 
 #ifdef HAVE_BELOS_TSQR
 #  include <Tpetra_TsqrAdaptor.hpp>
@@ -101,8 +102,9 @@ namespace Belos {
   /// \brief Specialization of MultiVecTraits for MV = Tpetra::MultiVector.
   ///
   /// This interface lets Belos' solvers work directly with
-  /// Tpetra::MultiVector objects as the multivector type
-  /// (corresponding to the MV template parameter).
+  /// Tpetra::MultiVector objects as the MultiVector type.  That type
+  /// corresponds to the MV template parameter, which is the second
+  /// template parameter (after Scalar) of most Belos classes.
   ///
   /// The four template parameters of this partial specialization
   /// correspond exactly to the four template parameters of
@@ -112,15 +114,16 @@ namespace Belos {
   class MultiVecTraits<Scalar, Tpetra::MultiVector<Scalar,LO,GO,Node> > {
     typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
   public:
-    /// \brief Create a new multivector with \c numvecs columns.
+    /// \brief Create a new MultiVector with \c numVecs columns.
     ///
     /// The returned Tpetra::MultiVector has the same Tpetra::Map
     /// (distribution over one or more parallel processes) as \c X.
     /// Its entries are not initialized and have undefined values.
-    static Teuchos::RCP<MV> Clone (const MV& X, const int numvecs) {
-      return Teuchos::rcp (new MV (X.getMap (), numvecs, false));
+    static Teuchos::RCP<MV> Clone (const MV& X, const int numVecs) {
+      return Teuchos::rcp (new MV (X.getMap (), numVecs, false));
     }
 
+    //! Create and return a deep copy of X.
     static Teuchos::RCP<MV> CloneCopy (const MV& X)
     {
       // Make a deep copy of X.  The one-argument copy constructor
@@ -137,20 +140,32 @@ namespace Belos {
       return X_copy;
     }
 
+    /// \brief Create and return a deep copy of the given columns of mv.
+    ///
+    /// \pre \code mv.getNumVectors() != 0 || index.size() == 0 \endcode
+    /// \pre For all k such that <tt>0 <= k < index.size()</tt>,
+    ///   \code
+    ///   0 <= index[k] < mv.getNumVectors();
+    ///   \endcode
+    /// \post If this method returns Y:
+    ///   \code
+    ///   Y->isConstantStride() && Y->getNumVectors() == index.size();
+    ///   \endcode
     static Teuchos::RCP<MV>
     CloneCopy (const MV& mv, const std::vector<int>& index)
     {
 #ifdef HAVE_TPETRA_DEBUG
       const char fnName[] = "Belos::MultiVecTraits::CloneCopy(mv,index)";
+      const size_t inNumVecs = mv.getNumVectors ();
       TEUCHOS_TEST_FOR_EXCEPTION(
         index.size () > 0 && *std::min_element (index.begin (), index.end ()) < 0,
         std::runtime_error, fnName << ": All indices must be nonnegative.");
       TEUCHOS_TEST_FOR_EXCEPTION(
         index.size () > 0 &&
-        static_cast<size_t> (*std::max_element (index.begin (), index.end ())) >= mv.getNumVectors (),
+        static_cast<size_t> (*std::max_element (index.begin (), index.end ())) >= inNumVecs,
         std::runtime_error,
         fnName << ": All indices must be strictly less than the number of "
-        "columns " << mv.getNumVectors () << " of the input multivector mv.");
+        "columns " << inNumVecs << " of the input multivector mv.");
 #endif // HAVE_TPETRA_DEBUG
 
       // Tpetra wants an array of size_t, not of int.
@@ -166,6 +181,12 @@ namespace Belos {
       return X_copy;
     }
 
+    /// \brief Create and return a deep copy of the given columns of mv.
+    ///
+    /// \post If this method returns Y:
+    ///   \code
+    ///   Y->isConstantStride() && Y->getNumVectors() == index.size();
+    ///   \endcode
     static Teuchos::RCP<MV>
     CloneCopy (const MV& mv, const Teuchos::Range1D& index)
     {
@@ -281,10 +302,8 @@ namespace Belos {
       return X_view;
     }
 
-
-    static Teuchos::RCP<const Tpetra::MultiVector<Scalar,LO,GO,Node> >
-    CloneView (const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv,
-               const std::vector<int>& index)
+    static Teuchos::RCP<const MV>
+    CloneView (const MV& mv, const std::vector<int>& index)
     {
 #ifdef HAVE_TPETRA_DEBUG
       const char fnName[] = "Belos::MultiVecTraits<Scalar, "
@@ -434,10 +453,10 @@ namespace Belos {
     /// (Remember that NaN*0 = NaN.)
     static void
     MvAddMv (Scalar alpha,
-             const Tpetra::MultiVector<Scalar,LO,GO,Node>& A,
+             const MV& A,
              Scalar beta,
-             const Tpetra::MultiVector<Scalar,LO,GO,Node>& B,
-             Tpetra::MultiVector<Scalar,LO,GO,Node>& mv)
+             const MV& B,
+             MV& mv)
     {
       mv.update (alpha, A, beta, B, Teuchos::ScalarTraits<Scalar>::zero ());
     }
@@ -569,10 +588,11 @@ namespace Belos {
 
     //! For all columns j of mv, set <tt>normvec[j] = norm(mv[j])</tt>.
     static void
-    MvNorm (const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv,
+    MvNorm (const MV& mv,
             std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& normvec,
             NormType type=TwoNorm)
     {
+      typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
 #ifdef HAVE_TPETRA_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION(
         normvec.size () < static_cast<std::vector<int>::size_type> (mv.getNumVectors ()),
@@ -581,8 +601,8 @@ namespace Belos {
         "argument must have at least as many entries as the number of vectors "
         "(columns) in the MultiVector mv.  normvec.size() = " << normvec.size ()
         << " < mv.getNumVectors() = " << mv.getNumVectors () << ".");
-#endif
-      Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> av (normvec);
+#endif // HAVE_TPETRA_DEBUG
+      Teuchos::ArrayView<magnitude_type> av (normvec);
       switch (type) {
       case OneNorm:
         mv.norm1 (av (0, mv.getNumVectors ()));
@@ -707,9 +727,7 @@ namespace Belos {
       Tpetra::deep_copy (*mv_view, *A_view);
     }
 
-    static void
-    Assign (const Tpetra::MultiVector<Scalar,LO,GO,Node>& A,
-            Tpetra::MultiVector<Scalar,LO,GO,Node>& mv)
+    static void Assign (const MV& A, MV& mv)
     {
       const char errPrefix[] = "Belos::MultiVecTraits::Assign(A, mv): ";
 
