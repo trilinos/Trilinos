@@ -140,6 +140,9 @@ class AlgSerialGreedy : public Algorithm<Adapter>
  
     // array of size #colors: forbidden[i]=v means color[v]=i so i is forbidden
     Teuchos::Array<int> forbidden(maxDegree+2, 0);
+      
+    // LeastUsed: need array of size #colors
+    Teuchos::Array<lno_t> numVerticesWithColor(maxDegree+2, 0);
 
     for (lno_t i=0; i<nVtx; i++){
       //std::cout << "Debug: i= " << i << std::endl;
@@ -205,10 +208,28 @@ class AlgSerialGreedy : public Algorithm<Adapter>
           }
           if (!foundColor) colors[v] = maxColor+1;
         }
+        else if (colorChoice.compare("LeastUsed")){
+          // Pick least used available color.
+          // Simple linear algorithm; could maintain a priority queue but not sure any faster?
+          int leastUsedColor = 1;
+          lno_t leastUsedNumber = numVerticesWithColor[1];
+          for (int c=1; c <= maxColor; c++){
+            if (forbidden[c] != v){
+              if (numVerticesWithColor[c] < leastUsedColor){
+                leastUsedColor = c;
+                leastUsedNumber = numVerticesWithColor[c];
+              }
+            }
+          }
+          colors[v] = leastUsedColor;
+
+          // Update color counts
+          numVerticesWithColor[colors[v]]++;
+        }
   
         if ((v==0) && colors[v]==0) colors[v]=1; // Corner case for first vertex
-  
-        //std::cout << "Debug: colors[i]= " << colors[v] << std::endl;
+        
+        // If we used a new color, increase maxColor.
         if (colors[v] > maxColor){
           maxColor = colors[v];
         }
