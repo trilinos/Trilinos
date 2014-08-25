@@ -107,7 +107,7 @@ public:
   typedef typename traits::device_type::host_mirror_device_type host_mirror_device_type;
 
   //! The type of a Kokkos::View on the device.
-  typedef View< typename traits::array_type ,
+  typedef View< typename traits::data_type ,
                 typename traits::array_layout ,
                 typename traits::device_type ,
                 typename traits::memory_traits > t_dev ;
@@ -139,7 +139,7 @@ public:
   typedef View< typename traits::const_data_type ,
                 typename traits::array_layout ,
                 typename traits::device_type ,
-                MemoryRandomAccess > t_dev_const_randomread ;
+                MemoryTraits<RandomAccess> > t_dev_const_randomread ;
 
   /// \typedef t_host_const_randomread
   /// \brief The type of a const, random-access View host mirror of
@@ -151,13 +151,13 @@ public:
 #endif
 
   //! The type of an unmanaged View on the device.
-  typedef View< typename traits::array_type ,
+  typedef View< typename traits::data_type ,
                 typename traits::array_layout ,
                 typename traits::device_type ,
                 MemoryUnmanaged> t_dev_um;
 
   //! The type of an unmanaged View host mirror of \c t_dev_um.
-  typedef View< typename t_host::array_type ,
+  typedef View< typename t_host::data_type ,
                 typename t_host::array_layout ,
                 typename t_host::device_type ,
                 MemoryUnmanaged> t_host_um;
@@ -170,9 +170,9 @@ public:
 
   //! The type of a const unmanaged View host mirror of \c t_dev_const_um.
   typedef View<typename t_host::const_data_type,
-                       typename t_host::array_layout,
-                       typename t_host::device_type,
-                       MemoryUnmanaged> t_host_const_um;
+               typename t_host::array_layout,
+               typename t_host::device_type,
+               MemoryUnmanaged> t_host_const_um;
 
   //@}
   //! \name The two View instances.
