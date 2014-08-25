@@ -564,6 +564,8 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
       }
     }
 
+    delete[] recvCount;
+
     // Use barrier for error checking
     Teuchos::reduceAll<int>(comm, Teuchos::REDUCE_MIN, 2, OK, gOK);
     if (!gOK[0] || !gOK[1]) {
@@ -628,6 +630,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
 
     delete[] node_proc_ids;
     node_proc_ids = NULL;
+    delete[] sendCount;
 
     // Wait for messages to return.
     try{
@@ -654,6 +657,8 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
 	}
       }
     }
+
+    delete[] rbuf;
   }
 
   for(int ecnt=0; ecnt < num_elem_; ecnt++) {
