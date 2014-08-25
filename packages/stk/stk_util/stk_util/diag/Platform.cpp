@@ -436,18 +436,33 @@ domainname()
 #endif
 }
 
+namespace {
+
+std::string get_env_user()
+{
+  char* env_user = std::getenv("USER");
+  if (env_user) {
+    std::string str_env_user(env_user);
+    if (!str_env_user.empty()) {
+      return str_env_user;
+    }
+  }
+
+  std::string unknown("unknown");
+  return unknown;
+}
+
+}
 
 std::string
 username()
 {
-  char* env_user = std::getenv("USER");
+  std::string env_user_name = get_env_user();
 #if defined(REDS) || defined(__CRAYXT_COMPUTE_LINUX_TARGET)
   std::string user_name(get_param("username"));
 
   if (user_name.empty()) {
-    if (env_user) {
-      user_name = env_user;
-    }
+    return env_user_name;
   }
 
   return user_name;
@@ -455,8 +470,8 @@ username()
   struct passwd *user_info = ::getpwuid(::geteuid());
   std::string user_name = (user_info ? user_info->pw_name : "unknown");
 
-  if (user_name.empty() || user_name == "unknown" && env_user) {
-    user_name = env_user;
+  if (user_name == "unknown") {
+    return env_user_name;
   }
 
   return user_name;
