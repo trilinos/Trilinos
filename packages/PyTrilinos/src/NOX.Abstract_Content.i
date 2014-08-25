@@ -32,7 +32,7 @@
 // the NOX.Abstract module.  However, it intentionally lacks a %module
 // directive because it is supposed to be %include-d from a SWIG
 // interface file that does.  There are two such interface files:
-// NOX.Abstarct.i and NOX.Abstract_RelPath.i.  The first is the actual
+// NOX.Abstract.i and NOX.Abstract_RelPath.i.  The first is the actual
 // interface file that generates a wrapper file that gets compiled.
 // Its %module directive includes the full package name.  The second
 // is a special interface file that gets %import-ed from the

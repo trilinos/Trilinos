@@ -136,7 +136,7 @@ __version__ = Isorropia_Version().split()[3]
 //////////////////////////////////////
 // Isorropia::Redistributor support //
 //////////////////////////////////////
-//%teuchos_rcp(Isorropia::Redistributor)
+%teuchos_rcp(Isorropia::Redistributor)
 %include "Isorropia_Redistributor.hpp"
 
 //////////////////////////////////////

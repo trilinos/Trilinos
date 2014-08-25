@@ -79,11 +79,12 @@ LOCA.PhaseTransition supports the following classes:
 %import "Teuchos.i"
 
 // Teuchos::RCP handling
+%teuchos_rcp(LOCA::MultiContinuation::AbstractGroup)
 %teuchos_rcp(LOCA::PhaseTransition::AbstractGroup)
 
 // Import base class declarations
-%import "LOCA.MultiContinuation.i"
+%import "NOX.Abstract.i"
+%import(module="MultiContinuation") "LOCA_MultiContinuation_AbstractGroup.H"
 
 // LOCA::PhasTransition AbstractGroup class
-//%feature("director") LOCA::PhaseTransition::AbstractGroup;
 %include "LOCA_PhaseTransition_AbstractGroup.H"

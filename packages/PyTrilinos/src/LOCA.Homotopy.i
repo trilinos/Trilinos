@@ -88,24 +88,26 @@ the following classes:
 
 %import "Teuchos.i"
 
-// The LOCA::Homotopy classes derive from base classes in other
-// modules, so we import them here.
-%import "LOCA.MultiContinuation.i"
-%import "LOCA.BorderedSystem.i"
-
 // Teuchos::RCP handling
-%teuchos_rcp(LOCA::Homotopy::Group        )
+%teuchos_rcp(LOCA::MultiContinuation::AbstractGroup)
+%teuchos_rcp(LOCA::Extended::MultiAbstractGroup)
+%teuchos_rcp(LOCA::BorderedSystem::AbstractGroup)
+%teuchos_rcp(LOCA::Homotopy::Group)
 %teuchos_rcp(LOCA::Homotopy::AbstractGroup)
 %teuchos_rcp(LOCA::Homotopy::DeflatedGroup)
 
+// The LOCA::Homotopy classes derive from base classes in other
+// modules, so we import those headers here.
+%import "NOX.Abstract.i"
+%import(module="MultiContinuation") "LOCA_MultiContinuation_AbstractGroup.H"
+%import(module="Extended")          "LOCA_Extended_MultiAbstractGroup.H"
+%import(module="BorderedSystem")    "LOCA_BorderedSystem_AbstractGroup.H"
+
 // LOCA::Homotopy Group class
-//%feature("director") LOCA::Homotopy::Group;
 %include "LOCA_Homotopy_Group.H"
 
 // LOCA::Homotopy AbstractGroup class
-//%feature("director") LOCA::Homotopy::AbstractGroup;
 %include "LOCA_Homotopy_AbstractGroup.H"
 
 // LOCA::Homotopy DeflatedGroup class
-//%feature("director") LOCA::Homotopy::DeflatedGroup;
 %include "LOCA_Homotopy_DeflatedGroup.H"

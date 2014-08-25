@@ -53,21 +53,29 @@
 
 // Ignore/renames
 %ignore *::operator=;
+%ignore operator=;
 
 // Trilinos module imports
 %import "Teuchos.i"
 
 // Teuchos::RCP handling
+%teuchos_rcp(LOCA::MultiContinuation::AbstractGroup)
+%teuchos_rcp(LOCA::MultiContinuation::FiniteDifferenceGroup)
+%teuchos_rcp(LOCA::TurningPoint::MooreSpence::AbstractGroup)
+%teuchos_rcp(LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup)
 %teuchos_rcp(LOCA::TurningPoint::MinimallyAugmented::AbstractGroup)
 %teuchos_rcp(LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup)
 
 // Base class support
-%import "LOCA.TurningPoint.MooreSpence.i"
+%import "NOX.Abstract.i"
+%import(module="MultiContinuation") "LOCA_MultiContinuation_AbstractGroup.H"
+%import(module="MultiContinuation") "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
+%import(module="MooreSpence") "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
+%import(module="MooreSpence") "LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H"
 
 // LOCA::TurningPoint::MinimallyAugmented AbtractGroup class
 %feature("director") LOCA::TurningPoint::MinimallyAugmented;
 %include "LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H"
 
 // LOCA::TurningPoint::MinimallyAugmented FinitDifferenceGroup class
-//%feature("director") LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup;
 %include "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
