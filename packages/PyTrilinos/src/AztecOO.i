@@ -59,6 +59,9 @@ example subdirectory of the PyTrilinos package:
 	autodoc   = "1",
 	docstring = %aztecoo_docstring) AztecOO
 
+#if SWIG_VERSION >= 0x030000
+%feature("flatnested");
+#else
 // Handle the AztecOO::MatrixData and AztecOO::OperatorData nested
 // structs by defining them exclusively for SWIG as though they were
 // not nested
@@ -86,6 +89,7 @@ struct OperatorData
   ~OperatorData();
 };
 %nestedworkaround AztecOO::OperatorData;
+#endif
 
 %{
 // System includes

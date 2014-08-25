@@ -612,7 +612,6 @@ void Relaxation<MatrixType>::computeBlockCrs ()
       "computeBlockCrs: A_ is not a BlockCrsMatrix, but it should be if we "
       "got this far.  Please report this bug to the Ifpack2 developers.");
 
-    const scalar_type zero = STS::zero ();
     const scalar_type one = STS::one ();
 
     // Reset state.

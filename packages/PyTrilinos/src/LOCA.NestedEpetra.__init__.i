@@ -139,21 +139,89 @@ using Teuchos::rcp;
 
 %include "Epetra_DLLExportMacro.h"
 
-// Trilinos interface support
+// Teuchos and Epetra interface support
 %import "Teuchos.i"
-%include "Epetra_Base.i"   // For PyExc_EpetraError
+%include "Epetra_Base.i"    // For PyExc_EpetraError
 %import "Epetra.i"
+
+// Teuchos RCP support
+%teuchos_rcp(LOCA::Extended::MultiAbstractGroup)
+%teuchos_rcp(LOCA::MultiContinuation::AbstractGroup)
+%teuchos_rcp(LOCA::MultiContinuation::FiniteDifferenceGroup)
+%teuchos_rcp(LOCA::MultiContinuation::ConstraintInterface)
+%teuchos_rcp(LOCA::MultiContinuation::ConstraintInterfaceMVDX)
+%teuchos_rcp(LOCA::PhaseTransition::AbstractGroup)
+%teuchos_rcp(LOCA::TimeDependent::AbstractGroup)
+%teuchos_rcp(LOCA::BorderedSystem::AbstractGroup)
+%teuchos_rcp(LOCA::Homotopy::AbstractGroup)
+%teuchos_rcp(LOCA::Homotopy::Group)
+%teuchos_rcp(LOCA::Homotopy::DeflatedGroup)
+%teuchos_rcp(LOCA::TurningPoint::MooreSpence::AbstractGroup)
+%teuchos_rcp(LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup)
+%teuchos_rcp(LOCA::TurningPoint::MinimallyAugmented::AbstractGroup)
+%teuchos_rcp(LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup)
+%teuchos_rcp(LOCA::Hopf::MooreSpence::AbstractGroup)
+%teuchos_rcp(LOCA::Hopf::MooreSpence::FiniteDifferenceGroup)
+%teuchos_rcp(LOCA::Hopf::MinimallyAugmented::AbstractGroup)
+%teuchos_rcp(LOCA::Hopf::MinimallyAugmented::FiniteDifferenceGroup)
+%teuchos_rcp(LOCA::Hopf::MinimallyAugmented::ExtendedGroup)
+%teuchos_rcp(LOCA::Hopf::MinimallyAugmented::Constraint)
+%teuchos_rcp(LOCA::Pitchfork::MooreSpence::AbstractGroup)
+%teuchos_rcp(LOCA::Pitchfork::MinimallyAugmented::AbstractGroup)
+%teuchos_rcp(LOCA::Abstract::Group)
+%teuchos_rcp(LOCA::Abstract::TransposeSolveGroup)
+
+// NOX interface support
 %import "NOX.Abstract.i"
 %import "NOX.NestedEpetra.__init__.i"
 %import "NOX.NestedEpetra.Interface.i"
-%import "LOCA.__init__.i"
-%import "LOCA.MultiContinuation.i"
-%import "LOCA.Homotopy.i"
-%import "LOCA.Hopf.MinimallyAugmented.i"
-%import "LOCA.Pitchfork.MinimallyAugmented.i"
-%import "LOCA.TurningPoint.MinimallyAugmented.i"
-%import "LOCA.Abstract.i"
-%import "LOCA.NestedEpetra.Interface.i"
+
+// Allow import from the parent directory
+%pythoncode
+%{
+import sys, os.path as op
+parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
+if not parentDir in sys.path: sys.path.append(parentDir)
+del sys, op
+from .. import Abstract
+%}
+
+// LOCA base classes
+//%import "LOCA.__init__.i"
+//%import "LOCA.MultiContinuation.i"
+//%import "LOCA.Homotopy.i"
+//%import "LOCA.Pitchfork.MinimallyAugmented.i"
+//%import "LOCA.TurningPoint.MinimallyAugmented.i"
+//%import "LOCA.Abstract.i"
+//%import "LOCA.NestedEpetra.Interface.i"
+//%import "LOCA.Hopf.MinimallyAugmented.i"
+%import(module="Extended") "LOCA_Extended_MultiAbstractGroup.H"
+%import(module="Extended") "LOCA_Extended_MultiVector.H"
+%import(module="Extended") "LOCA_Extended_Vector.H"
+%import(module="MultiContinuation") "LOCA_MultiContinuation_AbstractGroup.H"
+%import(module="MultiContinuation") "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
+%import(module="MultiContinuation") "LOCA_MultiContinuation_ConstraintInterface.H"
+%import(module="MultiContinuation") "LOCA_MultiContinuation_ConstraintInterfaceMVDX.H"
+%import(module="PhaseTransition") "LOCA_PhaseTransition_AbstractGroup.H"
+%import(module="TimeDependent") "LOCA_TimeDependent_AbstractGroup.H"
+%import(module="BorderedSystem") "LOCA_BorderedSystem_AbstractGroup.H"
+%import(module="Homotopy") "LOCA_Homotopy_AbstractGroup.H"
+%import(module="Homotopy") "LOCA_Homotopy_Group.H"
+%import(module="Homotopy") "LOCA_Homotopy_DeflatedGroup.H"
+%import(module="TurningPoint.MooreSpence") "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
+%import(module="TurningPoint.MooreSpence") "LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H"
+%import(module="TurningPoint.MinimallyAugmented") "LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H"
+%import(module="TurningPoint.MinimallyAugmented") "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
+%import(module="Hopf.MooreSpence") "LOCA_Hopf_MooreSpence_AbstractGroup.H"
+%import(module="Hopf.MooreSpence") "LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H"
+%import(module="Hopf.MinimallyAugmented") "LOCA_Hopf_MinimallyAugmented_AbstractGroup.H"
+%import(module="Hopf.MinimallyAugmented") "LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.H"
+%import(module="Hopf.MinimallyAugmented") "LOCA_Hopf_MinimallyAugmented_ExtendedGroup.H"
+%import(module="Hopf.MinimallyAugmented") "LOCA_Hopf_MinimallyAugmented_Constraint.H"
+%import(module="Pitchfork.MooreSpence") "LOCA_Pitchfork_MooreSpence_AbstractGroup.H"
+%import(module="Pitchfork.MinimallyAugmented") "LOCA_Pitchfork_MinimallyAugmented_AbstractGroup.H"
+%import(module="Abstract") "LOCA_Abstract_Group.H"
+%import(module="Abstract") "LOCA_Abstract_TransposeSolveGroup.H"
 
 // Director exception handling
 %feature("director:except")

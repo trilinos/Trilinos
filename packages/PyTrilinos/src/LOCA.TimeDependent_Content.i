@@ -62,8 +62,10 @@
 %teuchos_rcp(LOCA::TimeDependent::AbstractGroup)
 
 // Import base class declarations
-%import "LOCA.MultiContinuation.i"
+%import "NOX.Abstract.i"
+%teuchos_rcp(LOCA::MultiContinuation::AbstractGroup)
+%import(module="MultiContinuation") "LOCA_MultiContinuation_AbstractGroup.H"
 
 // LOCA::TimeDependent AbstractGroup class
-//%feature("director") LOCA::TimeDependent::AbstractGroup;
+%teuchos_rcp(LOCA::TimeDependent::AbstractGroup)
 %include "LOCA_TimeDependent_AbstractGroup.H"

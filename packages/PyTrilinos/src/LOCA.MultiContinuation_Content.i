@@ -68,6 +68,7 @@
 %import "Teuchos.i"
 
 // Teucho::RCP support
+%teuchos_rcp(LOCA::Extended::MultiAbstractGroup)
 %teuchos_rcp(LOCA::MultiContinuation::AbstractGroup)
 %teuchos_rcp(LOCA::MultiContinuation::FiniteDifferenceGroup)
 %teuchos_rcp(LOCA::MultiContinuation::ConstraintInterface)
@@ -76,14 +77,14 @@
 
 // Import base class declarations
 %import "NOX.Abstract.i"
-%import "LOCA.Extended.i"
+%import(module="Extended") "LOCA_Extended_MultiAbstractGroup.H"
+%import(module="Extended") "LOCA_Extended_MultiVector.H"
+%import(module="Extended") "LOCA_Extended_Vector.H"
 
 // LOCA::MultiContinuation AbstractGroup class
-//%feature("director") LOCA::MultiContinuation::AbstractGroup;
 %include "LOCA_MultiContinuation_AbstractGroup.H"
 
 // LOCA::MultiContinuation FiniteDifferenceGroup class
-//%feature("director") LOCA::MultiContinuation::FiniteDifferenceGroup;
 %include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
 
 // LOCA::MultiContinuation ConstraintInterface class
@@ -96,11 +97,9 @@
 %include "LOCA_MultiContinuation_ConstraintInterfaceMVDX.H"
 
 // LOCA::MultiContinuation ExtendedMultiVector class
-//%feature("director") LOCA::MultiContinuation::ExtendedMultiVector;
 %include "LOCA_MultiContinuation_ExtendedMultiVector.H"
 
 // LOCA::MultiContinuation ExtendedVector class
-//%feature("director") LOCA::MultiContinuation::ExtendedVector;
 %include "LOCA_MultiContinuation_ExtendedVector.H"
 
 // LOCA::MultiContinuation Factory class

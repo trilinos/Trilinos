@@ -182,6 +182,12 @@ example subdirectory of the PyTrilinos package:
 %include "Epetra_RowMatrix_Utils.i"
 %ignore Epetra_Version;
 %import  "Epetra.i"
+#if SWIG_VERSION >= 0x030000
+%pythoncode
+%{
+import Epetra
+%}
+#endif
 #ifdef HAVE_IFPACK
 %ignore Ifpack_Version;
 %import  "IFPACK.i"
