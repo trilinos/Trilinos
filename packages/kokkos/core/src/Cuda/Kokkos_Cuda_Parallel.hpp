@@ -513,7 +513,7 @@ public:
       Reduce::init( m_functor , kokkos_impl_cuda_shared_memory<size_type>() + threadIdx.x * word_count.value );
 
     // Iterate this block through the league
-    for ( int league_rank = blockIdx.x ; league_rank < m_league_size ; league_rank += blockDim.x ) {
+    for ( int league_rank = blockIdx.x ; league_rank < m_league_size ; league_rank += gridDim.x ) {
 
       const team_member member( kokkos_impl_cuda_shared_memory<char>() + m_team_begin
                               , m_shmem_begin
