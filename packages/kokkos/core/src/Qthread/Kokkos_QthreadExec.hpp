@@ -351,6 +351,11 @@ public:
     {
     }
 
+  template< class FunctorType >
+  inline static
+  int team_size_max( const FunctorType & )
+    { return q.shepherd_worker_size(); }
+
   class member_type {
   private:
           Impl::QthreadExec   & m_exec ;

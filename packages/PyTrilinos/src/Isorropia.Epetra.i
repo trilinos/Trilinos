@@ -42,7 +42,7 @@ The purpose of Isorropia.Epetra is to ....
 %module(package      = "PyTrilinos.Isorropia",
 	autodoc      = "1",
 	implicitconv = "1",
-	docstring    = %isorropia_epetra_docstring) NestedEpetra
+	docstring    = %isorropia_epetra_docstring) IsorropiaEpetra
 
 %{
 // Configuration
@@ -152,6 +152,7 @@ The purpose of Isorropia.Epetra is to ....
 // General ignore directives
 %ignore *::operator=;
 %ignore *::operator<<;
+%ignore operator<<;
 
 // Teuchos interface import
 %import "Teuchos.i"
@@ -165,7 +166,20 @@ The purpose of Isorropia.Epetra is to ....
 
 // Isorropia import (let SWIG know about the base classes that will be
 // needed for the derived classes below)
-%import "Isorropia.__init__.i"
+%teuchos_rcp(Isorropia::Operator)
+%import(module="__init__") "Isorropia_Operator.hpp"
+%teuchos_rcp(Isorropia::Colorer)
+%import(module="__init__") "Isorropia_Colorer.hpp"
+%teuchos_rcp(Isorropia::Partitioner)
+%import(module="__init__") "Isorropia_Partitioner.hpp"
+%teuchos_rcp(Isorropia::Redistributor)
+%import(module="__init__") "Isorropia_Redistributor.hpp"
+%teuchos_rcp(Isorropia::CostDescriber)
+%import(module="__init__") "Isorropia_CostDescriber.hpp"
+%teuchos_rcp(Isorropia::Orderer)
+%import(module="__init__") "Isorropia_Orderer.hpp"
+%teuchos_rcp(Isorropia::LevelScheduler)
+%import(module="__init__") "Isorropia_LevelScheduler.hpp"
 
 /////////////////////////////////////////
 // Isorropia::Epetra::Operator support //
@@ -199,7 +213,7 @@ The purpose of Isorropia.Epetra is to ....
 //////////////////////////////////////////////
 // Isorropia::Epetra::Redistributor support //
 //////////////////////////////////////////////
-//%teuchos_rcp(Isorropia::Epetra::Redistributor)
+%teuchos_rcp(Isorropia::Epetra::Redistributor)
 %ignore Isorropia::Epetra::Redistributor::redistribute(Epetra_CrsMatrix const &, Epetra_CrsMatrix *&, bool);
 %ignore Isorropia::Epetra::Redistributor::redistribute(Epetra_RowMatrix const &, Epetra_CrsMatrix *&, bool);
 %ignore Isorropia::Epetra::Redistributor::redistribute(Epetra_Vector const &, Epetra_Vector *&);

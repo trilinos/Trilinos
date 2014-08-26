@@ -211,6 +211,21 @@ Perf fenl(
                              use_elems[0] , use_elems[1] , use_elems[2] ,
                              bubble_x , bubble_y , bubble_z );
 
+
+  {
+    int global_error = ! fixture.ok();
+
+#if defined( KOKKOS_HAVE_MPI )
+    int local_error = global_error ;
+    global_error = 0 ;
+    MPI_Allreduce( & local_error , & global_error , 1 , MPI_INT , MPI_SUM , comm );
+#endif
+
+    if ( global_error ) {
+      throw std::runtime_error(std::string("Error generating finite element fixture"));
+    }
+  }
+
   //------------------------------------
 
   const ImportType comm_nodal_import(

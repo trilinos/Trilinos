@@ -144,7 +144,7 @@ MACRO(SWIG_GET_DEPENDENCIES name)
   # This execute_process has three phases: (1) run swig -MM to obtain
   # the dependencies, (2) pipe the results to sed to delete the first
   # line (which is the wrapper file name), and (3) pipe those results
-  # to sed again to convert the contination character to a semicolon.
+  # to sed again to convert the continuation character to a semicolon.
   EXECUTE_PROCESS(COMMAND ${SWIG_EXECUTABLE} -MM ${swig_special_flags}
     -${SWIG_MODULE_${name}_SWIG_LANGUAGE_FLAG} ${swig_source_file_flags} ${CMAKE_SWIG_FLAGS}
     ${swig_extra_flags} ${swig_include_dirs} ${swig_source_file_fullname}

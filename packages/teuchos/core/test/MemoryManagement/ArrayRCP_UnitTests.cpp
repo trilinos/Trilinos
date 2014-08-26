@@ -139,6 +139,19 @@ TEUCHOS_UNIT_TEST( ArrayRCP, null_zero_ArrayView_persistingView )
 }
 
 
+TEUCHOS_UNIT_TEST( ArrayRCP, raw_ptr_nonowning_self_view )
+{
+  A *data = new A[10];
+  ArrayRCP<A> arcp_view(data, 0, 10, false);
+  ArrayView<A> view = arcp_view(0, 5);
+  arcp_view = null;
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  TEST_THROW(view.size(), DanglingReferenceError);
+#endif
+  delete [] data;
+}
+
+
 TEUCHOS_UNIT_TEST( ArrayRCP, implicit_ArrayRCP_const )
 {
   const ArrayRCP<A> a_arcp;

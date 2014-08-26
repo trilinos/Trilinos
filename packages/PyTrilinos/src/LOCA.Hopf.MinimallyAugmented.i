@@ -108,11 +108,25 @@ supports the following classes:
 // Trilinos module imports
 %import "Teuchos.i"
 
+// The following #define is to change the name of LOCA method
+// arguments that conflict with a SWIG director method argument
+#define result loca_result
+
 // Teuchos::RCP handling
+%teuchos_rcp(LOCA::Extended::MultiAbstractGroup)
+%teuchos_rcp(LOCA::MultiContinuation::AbstractGroup)
+%teuchos_rcp(LOCA::MultiContinuation::FiniteDifferenceGroup)
+%teuchos_rcp(LOCA::MultiContinuation::ConstraintInterface)
+%teuchos_rcp(LOCA::MultiContinuation::ConstraintInterfaceMVDX)
+%teuchos_rcp(LOCA::TimeDependent::AbstractGroup)
+%teuchos_rcp(LOCA::TurningPoint::MooreSpence::AbstractGroup)
+%teuchos_rcp(LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup)
 %teuchos_rcp(LOCA::Hopf::MinimallyAugmented::Constraint)
 %teuchos_rcp(LOCA::Hopf::MinimallyAugmented::AbstractGroup)
 %teuchos_rcp(LOCA::Hopf::MinimallyAugmented::FiniteDifferenceGroup)
 %teuchos_rcp(LOCA::Hopf::MinimallyAugmented::ExtendedGroup)
+%teuchos_rcp(LOCA::Hopf::MooreSpence::AbstractGroup)
+%teuchos_rcp(LOCA::Hopf::MooreSpence::FiniteDifferenceGroup)
 
 // Base class support
 %pythoncode
@@ -123,7 +137,18 @@ if not parentDir in sys.path: sys.path.append(parentDir)
 del sys, op
 %}
 %import "LOCA.BorderedSystem_RelPath.i"
-%import "LOCA.Hopf.MooreSpence.i"
+%warnfilter(473) LOCA::MultiContinuation::AbstractGroup;
+%warnfilter(473) LOCA::MultiContinuation::ConstraintInterfaceMVDX;
+%import(module="Extended") "LOCA_Extended_MultiAbstractGroup.H"
+%import(module="MultiContinuation") "LOCA_MultiContinuation_AbstractGroup.H"
+%import(module="MultiContinuation") "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
+%import(module="MultiContinuation") "LOCA_MultiContinuation_ConstraintInterface.H"
+%import(module="MultiContinuation") "LOCA_MultiContinuation_ConstraintInterfaceMVDX.H"
+%import(module="TimeDependent") "LOCA_TimeDependent_AbstractGroup.H"
+%import(module="TurningPoint.MooreSpence") "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
+%import(module="TurningPoint.MooreSpence") "LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H"
+%import(module="MooreSpence") "LOCA_Hopf_MooreSpence_AbstractGroup.H"
+%import(module="MooreSpence") "LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H"
 
 // LOCA::Hopf::MinimallyAugmented Constraint class
 %warnfilter(473) LOCA::Hopf::MinimallyAugmented::Constraint;
@@ -131,13 +156,16 @@ del sys, op
 %include "LOCA_Hopf_MinimallyAugmented_Constraint.H"
 
 // LOCA::Hopf::MinimallyAugmented AbstractGroup class
-%feature("director") LOCA::MinimallyAugmented::AbstractGroup;
+%feature("director") LOCA::Hopf::MinimallyAugmented::AbstractGroup;
 %include "LOCA_Hopf_MinimallyAugmented_AbstractGroup.H"
 
 // LOCA::Hopf::MinimallyAugmented FiniteDifferenceGroup class
-%feature("director") LOCA::MinimallyAugmented::FiniteDifferenceGroup;
+%feature("director") LOCA::Hopf::MinimallyAugmented::FiniteDifferenceGroup;
 %include "LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.H"
 
 // LOCA::Hopf::MinimallyAugmented ExtendedGroup class
 %feature("director") LOCA::MinimallyAugmented::ExtendedGroup;
 %include "LOCA_Hopf_MinimallyAugmented_ExtendedGroup.H"
+
+// We need to clear this
+#undef loca_result

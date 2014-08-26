@@ -71,6 +71,10 @@
 %import "Teuchos.i"
 
 // Teuchos::RCP support
+%teuchos_rcp(LOCA::MultiContinuation::AbstractGroup)
+%teuchos_rcp(LOCA::MultiContinuation::FiniteDifferenceGroup)
+%teuchos_rcp(LOCA::TurningPoint::MooreSpence::AbstractGroup)
+%teuchos_rcp(LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup)
 %teuchos_rcp(LOCA::Hopf::MooreSpence::AbstractGroup)
 %teuchos_rcp(LOCA::Hopf::MooreSpence::ExtendedGroup)
 %teuchos_rcp(LOCA::Hopf::MooreSpence::FiniteDifferenceGroup)
@@ -86,40 +90,38 @@ parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
 if not parentDir in sys.path: sys.path.append(parentDir)
 del sys, op
 %}
+//%import "LOCA.TurningPoint.MooreSpence.i"
+%import "NOX.Abstract.i"
+%import(module="MultiContinuation") "LOCA_MultiContinuation_AbstractGroup.H"
+%import(module="MultiContinuation") "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
+%import(module="TurningPoint.MooreSpence") "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
+%import(module="TurningPoint.MooreSpence") "LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H"
+%import "LOCA.TimeDependent_RelPath.i"
 %import "LOCA.Extended_RelPath.i"
 %import "LOCA.MultiContinuation_RelPath.i"
-%import "LOCA.TimeDependent_RelPath.i"
-%import "LOCA.TurningPoint.MooreSpence_RelPath.i"
 
 // LOCA::Hopf::MooreSpence AbstractGroup class
-//%feature("director") LOCA::Hopf::MooreSpence::AbstractGroup;
 %include "LOCA_Hopf_MooreSpence_AbstractGroup.H"
 
 // LOCA::Hopf::MooreSpence ExtendedGroup class
-//%feature("director") LOCA::Hopf::MooreSpence::ExtendedGroup;
 %include "LOCA_Hopf_MooreSpence_ExtendedGroup.H"
 
 // LOCA::Hopf::MooreSpence ExtendedMultiVector class
-//%feature("director") LOCA::Hopf::MooreSpence::ExtendedMultiVector;
 %include "LOCA_Hopf_MooreSpence_ExtendedMultiVector.H"
 
 // LOCA::Hopf::MooreSpence ExtendedVector class
 %ignore LOCA::Hopf::MooreSpence::ExtendedVector::getFrequency;
 %ignore LOCA::Hopf::MooreSpence::ExtendedVector::getBifParam;
-//%feature("director") LOCA::Hopf::MooreSpence::ExtendedVector;
 %include "LOCA_Hopf_MooreSpence_ExtendedVector.H"
 
 // LOCA::Hopf::MooreSpence FiniteDifferenceGroup class
-//%feature("director") LOCA::Hopf::MooreSpence::FiniteDifferenceGroup;
 %include "LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H"
 
 // LOCA::Hopf::MooreSpence SolverFactory class
 %include "LOCA_Hopf_MooreSpence_SolverFactory.H"
 
 // LOCA::Hopf::MooreSpence SolverStrategy class
-//%feature("director") LOCA::Hopf::MooreSpence::SolverStrategy;
 %include "LOCA_Hopf_MooreSpence_SolverStrategy.H"
 
 // LOCA::Hopf::MooreSpence SalingerBordering class
-//%feature("director") LOCA::Hopf::MooreSpence::SalingerBordering;
 %include "LOCA_Hopf_MooreSpence_SalingerBordering.H"

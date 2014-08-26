@@ -723,8 +723,8 @@ namespace Experimental {
 
     projectAllVecs_ = params.get("Project All Vectors", true);
     projectLockedVecs_ = params.get("Project Locked Vectors", true);
-    computeAllRes_ = params.get("Compute All Residuals", true);
     useRHSR_ = params.get("Use Residual as RHS", true);
+    computeAllRes_ = params.get("Compute All Residuals", true);
 
     // set the block size and allocate data
     int bs = params.get("Block Size", problem_->getNEV());
@@ -2081,7 +2081,7 @@ namespace Experimental {
             om_->stream(Debug) << "\nSeeking a shift for theta[" << i << "]=" << thetaMag[i] << std::endl;
 
             // If the previous shift was aggressive and we are not in a cluster, do an aggressive shift
-            if(ritzShifts_[i-1] == thetaMag[i-1] && i < blockSize_-1 && thetaMag[i] < thetaMag[i+1] - R2norms_[i+1])
+            if(ritzShifts_[i-1] == thetaMag[i-1] && i < blockSize_-1 && thetaMag[i] < thetaMag[i+1] - clusterResids[i+1])
             {
               ritzShifts_[i] = thetaMag[i];
               om_->stream(Debug) << "Using an aggressive shift: ritzShifts_[" << i << "]=" << ritzShifts_[i] << std::endl;
@@ -2100,12 +2100,12 @@ namespace Experimental {
                 om_->stream(Debug) << "It was unsafe to use the aggressive shift.  We will use the shift from the previous iteration: " << ritzShifts_[i] << std::endl;                
 
               om_->stream(Debug) << "Check whether any less conservative shifts would work (such as the biggest eigenvalue outside of the cluster, namely theta[ell] < " 
-                                 << thetaMag[i] << "-" << R2norms_[i] << " (" << thetaMag[i] - R2norms_[i] << ")\n";
+                                 << thetaMag[i] << "-" << clusterResids[i] << " (" << thetaMag[i] - clusterResids[i] << ")\n";
 
               // If possible, choose a less conservative shift, that of the biggest eigenvalue outside of the cluster
               for(int ell=0; ell < i; ell++)
               {
-                if(thetaMag[ell] < thetaMag[i] - R2norms_[i])
+                if(thetaMag[ell] < thetaMag[i] - clusterResids[i])
                 {
                   ritzShifts_[i] = thetaMag[ell];
                   om_->stream(Debug) << "ritzShifts_[" << i << "]=" << ritzShifts_[i] << " is valid\n";
@@ -2272,6 +2272,7 @@ namespace Experimental {
       // Solve the saddle point problem
       if(saddleSolType_ == PROJECTED_KRYLOV_SOLVER)
       {
+        std::cout << "Projected Krylov solver\n";
         if(Prec_ != Teuchos::null)
           solveSaddleProjPrec(Delta);
         else
@@ -2279,6 +2280,7 @@ namespace Experimental {
       }
       else if(saddleSolType_ == SCHUR_COMPLEMENT_SOLVER)
       {
+        std::cout << "Schur complement solver\n";
         if(Z_ == Teuchos::null || MVT::GetNumberVecs(*Z_) != blockSize_)
         {
           // We do NOT want Z to be 0, because that could result in stagnation
@@ -2289,6 +2291,7 @@ namespace Experimental {
       }
       else if(saddleSolType_ == BD_PREC_MINRES)
       {
+        std::cout << "block minres solver\n";
         solveSaddleBDPrec(Delta);
 //        Delta->describe(*(Teuchos::VerboseObjectBase::getDefaultOStream()),Teuchos::VERB_EXTREME);
       }
@@ -2333,7 +2336,6 @@ namespace Experimental {
       {
         RCP<const MV> locR = MVT::CloneView(*R_, curind);
         projOp->ApplyInverse(*locR, *Delta);
-        MVT::MvScale(*Delta,-ONE);
       }
       else
       {
@@ -2358,13 +2360,12 @@ namespace Experimental {
       // This ensures B-orthogonality between Delta and X
       MVT::MvInit(*Delta);
 
-      if(useRHSR_)
-      {
+      if(useRHSR_) {
         projOp->ApplyInverse(*R_, *Delta);
-        MVT::MvScale(*Delta,-ONE);
       }
-      else
+      else {
         projOp->ApplyInverse(*KX_, *Delta);
+      }
     }
   }
 
@@ -2463,6 +2464,7 @@ namespace Experimental {
         curind[i] = i;
 
       // Z = K \ MX
+      MVT::SetBlock(*X_,curind,*Z_);
       RCP<const MV> lclMX = MVT::CloneView(*MX_, curind);
       ritzOp_->ApplyInverse(*lclMX,*Z_);
 

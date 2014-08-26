@@ -121,4 +121,46 @@ TEST(UnitTestingOfBucket, testBucket)
   }
 }
 
+TEST(UnitTestingOfBucket, bucketSortChangeEntityId)
+{
+  const unsigned spatialDim=3;
+  stk::mesh::MetaData meta(spatialDim);
+  stk::mesh::Part& part = meta.declare_part_with_topology("node_part", stk::topology::NODE);
+  meta.commit();
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  if (bulk.parallel_size() > 1) {
+    return;
+  }
+  stk::mesh::EntityId nodeID=1;
+  bulk.modification_begin();
+  bulk.declare_entity(stk::topology::NODE_RANK, nodeID, part);
+  nodeID=3;
+  bulk.declare_entity(stk::topology::NODE_RANK, nodeID, part);
+  nodeID=5;
+  bulk.declare_entity(stk::topology::NODE_RANK, nodeID, part);
+  bulk.modification_end();
+
+  const stk::mesh::BucketVector& node_buckets_1 = bulk.get_buckets(stk::topology::NODE_RANK, meta.universal_part());
+  size_t expected_num_buckets = 1;
+  EXPECT_EQ(expected_num_buckets, node_buckets_1.size());
+  size_t expected_bucket_size = 3;
+  EXPECT_EQ(expected_bucket_size, node_buckets_1[0]->size());
+
+  stk::mesh::Entity node3 = (*node_buckets_1[0])[1];
+  stk::mesh::EntityId node3ID = 3;
+  EXPECT_EQ(node3ID, bulk.identifier(node3));
+
+  stk::mesh::Entity node5 = (*node_buckets_1[0])[2];
+
+  bulk.modification_begin();
+  stk::mesh::EntityId node2ID = 2;
+  bulk.change_entity_id(node2ID, node5);
+  bulk.modification_end();
+
+  const stk::mesh::BucketVector& node_buckets_2 = bulk.get_buckets(stk::topology::NODE_RANK, meta.universal_part());
+
+  stk::mesh::Entity node2 = (*node_buckets_2[0])[1];
+  EXPECT_EQ(node2ID, bulk.identifier(node2));
+}
+
 }

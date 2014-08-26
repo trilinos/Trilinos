@@ -110,9 +110,11 @@
 
 typedef struct {
 
-    bool use_wr_pool;
+	uint32_t min_atomics_vars;
 
-    bool use_rdma_target_ack;
+    bool     use_wr_pool;
+
+    bool     use_rdma_target_ack;
 
 } nnti_ib_config;
 
@@ -154,6 +156,8 @@ typedef enum {
 #define IB_OP_SEND_BUFFER    6
 #define IB_OP_NEW_REQUEST    7
 #define IB_OP_RECEIVE        8
+#define IB_OP_FETCH_ADD      9
+#define IB_OP_COMPARE_SWAP  10
 
 typedef enum {
 	NNTI_IB_WR_STATE_RESET,         // this work request is idle
@@ -185,6 +189,9 @@ typedef struct {
 
     conn_qp       req_qp;
     conn_qp       data_qp;
+
+    uint32_t      atomics_rkey;
+    uint64_t      atomics_addr;
 
     ib_connection_state state;
 
@@ -290,6 +297,10 @@ typedef struct {
 
     int interrupt_pipe[2];
 
+    int64_t        *atomics;
+    struct ibv_mr  *atomics_mr;
+    nthread_lock_t  atomics_lock;
+
     ib_request_queue_handle req_queue;
 } ib_transport_global;
 
@@ -316,6 +327,7 @@ static void send_ack (
 static NNTI_result_t setup_data_channel(void);
 static NNTI_result_t setup_request_channel(void);
 static NNTI_result_t setup_interrupt_pipe(void);
+static NNTI_result_t setup_atomics(void);
 static ib_work_request *decode_work_request(
         const struct ibv_wc *wc);
 static int cancel_wr(
@@ -920,6 +932,8 @@ NNTI_result_t NNTI_ib_init (
         nthread_lock_init(&nnti_wrmap_lock);
         nthread_counter_init(&nnti_wrmap_counter);
 
+        nthread_lock_init(&transport_global_data.atomics_lock);
+
         nthread_lock_init(&nnti_wr_pool_lock);
 
         config_init(&config);
@@ -1032,6 +1046,8 @@ NNTI_result_t NNTI_ib_init (
         }
 
         setup_interrupt_pipe();
+
+        setup_atomics();
 
         init_server_listen_socket();
 
@@ -1728,14 +1744,9 @@ NNTI_result_t NNTI_ib_unregister_memory (
         reg_buf->transport_id      = NNTI_TRANSPORT_NULL;
         IB_SET_MATCH_ANY(&reg_buf->buffer_owner);
         reg_buf->ops               = (NNTI_buf_ops_t)0;
-        //    IB_SET_MATCH_ANY(&reg_buf->peer);
         reg_buf->payload_size      = 0;
         reg_buf->payload           = 0;
         reg_buf->transport_private = 0;
-    } else {
-        if (reg_buf->buffer_segments.NNTI_remote_addr_array_t_val != NULL) {
-            free(reg_buf->buffer_segments.NNTI_remote_addr_array_t_val);
-        }
     }
 
     log_debug(nnti_debug_level, "exit");
@@ -2288,7 +2299,7 @@ NNTI_result_t NNTI_ib_scatter (
 
     log_debug(nnti_debug_level, "exit");
 
-    return NNTI_OK;
+    return NNTI_ENOTSUP;
 }
 
 
@@ -2312,7 +2323,237 @@ NNTI_result_t NNTI_ib_gather (
 
     log_debug(nnti_debug_level, "exit");
 
+    return NNTI_ENOTSUP;
+}
+
+
+NNTI_result_t NNTI_ib_atomic_set_callback (
+		const NNTI_transport_t *trans_hdl,
+		const uint64_t          local_atomic,
+		NNTI_callback_fn_t      cbfunc,
+		void                   *context)
+{
+    return NNTI_ENOTSUP;
+}
+
+
+NNTI_result_t NNTI_ib_atomic_read (
+		const NNTI_transport_t *trans_hdl,
+		const uint64_t          local_atomic,
+		int64_t                *value)
+{
+	nthread_lock(&transport_global_data.atomics_lock);
+	*value = transport_global_data.atomics[local_atomic];
+	nthread_unlock(&transport_global_data.atomics_lock);
+
     return NNTI_OK;
+}
+
+
+NNTI_result_t NNTI_ib_atomic_fop (
+		const NNTI_transport_t *trans_hdl,
+		const NNTI_peer_t      *peer_hdl,
+		const uint64_t          target_atomic,
+		const uint64_t          result_atomic,
+		const int64_t           operand,
+		const NNTI_atomic_op_t  op,
+		NNTI_work_request_t    *wr)
+{
+    NNTI_result_t rc=NNTI_OK;
+
+    trios_declare_timer(call_time);
+
+    struct ibv_send_wr *bad_wr;
+
+    ib_work_request  *ib_wr=NULL;
+
+    log_debug(nnti_debug_level, "enter");
+
+    assert(peer_hdl);
+
+    log_level debug_level=nnti_debug_level;
+
+    if (config.use_wr_pool) {
+        ib_wr=wr_pool_sendrecv_pop();
+    } else {
+        ib_wr=(ib_work_request *)calloc(1, sizeof(ib_work_request));
+        log_debug(nnti_debug_level, "allocated ib_wr (wr=%p ; ib_wr=%p)", wr, ib_wr);
+        nthread_lock_init(&ib_wr->lock);
+    }
+    assert(ib_wr);
+
+    ib_wr->conn = get_conn_peer(peer_hdl);
+    assert(ib_wr->conn);
+
+    ib_wr->nnti_wr = wr;
+
+    ib_wr->key = nthread_counter_increment(&nnti_wrmap_counter);
+
+    ib_wr->state=NNTI_IB_WR_STATE_STARTED;
+
+    ib_wr->comp_channel=transport_global_data.data_comp_channel;
+    ib_wr->cq          =transport_global_data.data_cq;
+    ib_wr->qp          =ib_wr->conn->data_qp.qp;
+    ib_wr->qpn         =(uint64_t)ib_wr->conn->data_qp.qpn;
+    ib_wr->peer_qpn    =(uint64_t)ib_wr->conn->data_qp.peer_qpn;
+
+    ib_wr->last_op=IB_OP_FETCH_ADD;
+
+    ib_wr->sq_wr.wr.atomic.rkey       =ib_wr->conn->atomics_rkey;
+    ib_wr->sq_wr.wr.atomic.remote_addr=ib_wr->conn->atomics_addr+(target_atomic*sizeof(int64_t));
+    ib_wr->sq_wr.wr.atomic.compare_add=operand;
+
+    ib_wr->sq_wr.opcode    =IBV_WR_ATOMIC_FETCH_AND_ADD;
+    ib_wr->sq_wr.send_flags=IBV_SEND_SIGNALED;
+
+    ib_wr->sge_count=1;
+    ib_wr->sge_list=&ib_wr->sge;
+    ib_wr->sge_list[0].addr  =(uint64_t)&transport_global_data.atomics[result_atomic];
+    ib_wr->sge_list[0].length=sizeof(int64_t);
+    ib_wr->sge_list[0].lkey  =transport_global_data.atomics_mr->lkey;
+
+    ib_wr->sq_wr.wr_id   = (uint64_t)ib_wr->key;
+    ib_wr->sq_wr.next    = NULL;
+    ib_wr->sq_wr.sg_list = ib_wr->sge_list;
+    ib_wr->sq_wr.num_sge = ib_wr->sge_count;
+
+
+    log_debug(nnti_debug_level, "sending to (%s, qp=%p, qpn=%d, sge.addr=%p, sge.length=%llu, sq_wr.ib_wr.rdma.rkey=0x%x, sq_wr.ib_wr.rdma.remote_addr=%p)",
+            peer_hdl->url,
+            ib_wr->qp,
+            ib_wr->qpn,
+            (void *)  ib_wr->sge.addr,
+            (uint64_t)ib_wr->sge.length,
+                      ib_wr->sq_wr.wr.atomic.rkey,
+            (void *)  ib_wr->sq_wr.wr.atomic.remote_addr);
+
+    log_debug(nnti_debug_level, "pushing ib_wr=%p", ib_wr);
+
+    nthread_lock(&nnti_wrmap_lock);
+    assert(wrmap.find(ib_wr->key) == wrmap.end());
+    wrmap[ib_wr->key] = ib_wr;
+    nthread_unlock(&nnti_wrmap_lock);
+
+    wr->transport_id     =trans_hdl->id;
+    wr->reg_buf          =(NNTI_buffer_t*)NULL;
+    wr->ops              =NNTI_ATOMICS;
+    wr->result           =NNTI_OK;
+    wr->transport_private=(uint64_t)ib_wr;
+
+    trios_start_timer(call_time);
+    if (ibv_post_send_wrapper(ib_wr->qp, &ib_wr->sq_wr, &bad_wr)) {
+        log_error(nnti_debug_level, "failed to post send: %s", strerror(errno));
+        rc=NNTI_EIO;
+    }
+    trios_stop_timer("NNTI_ib_send - ibv_post_send", call_time);
+
+    log_debug(nnti_debug_level, "exit");
+
+    return(rc);
+}
+
+
+NNTI_result_t NNTI_ib_atomic_cswap (
+		const NNTI_transport_t *trans_hdl,
+		const NNTI_peer_t      *peer_hdl,
+		const uint64_t          target_atomic,
+		const uint64_t          result_atomic,
+		const int64_t           compare_operand,
+		const int64_t           swap_operand,
+		NNTI_work_request_t    *wr)
+{
+    NNTI_result_t rc=NNTI_OK;
+
+    trios_declare_timer(call_time);
+
+    struct ibv_send_wr *bad_wr;
+
+    ib_work_request  *ib_wr=NULL;
+
+    log_debug(nnti_debug_level, "enter");
+
+    assert(peer_hdl);
+
+    log_level debug_level=nnti_debug_level;
+
+    if (config.use_wr_pool) {
+        ib_wr=wr_pool_sendrecv_pop();
+    } else {
+        ib_wr=(ib_work_request *)calloc(1, sizeof(ib_work_request));
+        log_debug(nnti_debug_level, "allocated ib_wr (wr=%p ; ib_wr=%p)", wr, ib_wr);
+        nthread_lock_init(&ib_wr->lock);
+    }
+    assert(ib_wr);
+
+    ib_wr->conn = get_conn_peer(peer_hdl);
+    assert(ib_wr->conn);
+
+    ib_wr->nnti_wr = wr;
+
+    ib_wr->key = nthread_counter_increment(&nnti_wrmap_counter);
+
+    ib_wr->state=NNTI_IB_WR_STATE_STARTED;
+
+    ib_wr->comp_channel=transport_global_data.data_comp_channel;
+    ib_wr->cq          =transport_global_data.data_cq;
+    ib_wr->qp          =ib_wr->conn->data_qp.qp;
+    ib_wr->qpn         =(uint64_t)ib_wr->conn->data_qp.qpn;
+    ib_wr->peer_qpn    =(uint64_t)ib_wr->conn->data_qp.peer_qpn;
+
+    ib_wr->last_op=IB_OP_COMPARE_SWAP;
+
+    ib_wr->sq_wr.wr.atomic.rkey       =ib_wr->conn->atomics_rkey;
+    ib_wr->sq_wr.wr.atomic.remote_addr=ib_wr->conn->atomics_addr+(target_atomic*sizeof(int64_t));
+    ib_wr->sq_wr.wr.atomic.compare_add=compare_operand;
+    ib_wr->sq_wr.wr.atomic.swap       =swap_operand;
+
+    ib_wr->sq_wr.opcode    =IBV_WR_ATOMIC_CMP_AND_SWP;
+    ib_wr->sq_wr.send_flags=IBV_SEND_SIGNALED;
+
+    ib_wr->sge_count=1;
+    ib_wr->sge_list=&ib_wr->sge;
+    ib_wr->sge_list[0].addr  =(uint64_t)&transport_global_data.atomics[result_atomic];
+    ib_wr->sge_list[0].length=sizeof(int64_t);
+    ib_wr->sge_list[0].lkey  =transport_global_data.atomics_mr->lkey;
+
+    ib_wr->sq_wr.wr_id   = (uint64_t)ib_wr->key;
+    ib_wr->sq_wr.next    = NULL;
+    ib_wr->sq_wr.sg_list = ib_wr->sge_list;
+    ib_wr->sq_wr.num_sge = ib_wr->sge_count;
+
+
+    log_debug(nnti_debug_level, "sending to (%s, qp=%p, qpn=%d, sge.addr=%p, sge.length=%llu, sq_wr.ib_wr.rdma.rkey=0x%x, sq_wr.ib_wr.rdma.remote_addr=%p)",
+            peer_hdl->url,
+            ib_wr->qp,
+            ib_wr->qpn,
+            (void *)  ib_wr->sge.addr,
+            (uint64_t)ib_wr->sge.length,
+                      ib_wr->sq_wr.wr.atomic.rkey,
+            (void *)  ib_wr->sq_wr.wr.atomic.remote_addr);
+
+    log_debug(nnti_debug_level, "pushing ib_wr=%p", ib_wr);
+
+    nthread_lock(&nnti_wrmap_lock);
+    assert(wrmap.find(ib_wr->key) == wrmap.end());
+    wrmap[ib_wr->key] = ib_wr;
+    nthread_unlock(&nnti_wrmap_lock);
+
+    wr->transport_id     =trans_hdl->id;
+    wr->reg_buf          =(NNTI_buffer_t*)NULL;
+    wr->ops              =NNTI_ATOMICS;
+    wr->result           =NNTI_OK;
+    wr->transport_private=(uint64_t)ib_wr;
+
+    trios_start_timer(call_time);
+    if (ibv_post_send_wrapper(ib_wr->qp, &ib_wr->sq_wr, &bad_wr)) {
+        log_error(nnti_debug_level, "failed to post send: %s", strerror(errno));
+        rc=NNTI_EIO;
+    }
+    trios_stop_timer("NNTI_ib_send - ibv_post_send", call_time);
+
+    log_debug(nnti_debug_level, "exit");
+
+    return(rc);
 }
 
 
@@ -2581,8 +2822,6 @@ NNTI_result_t NNTI_ib_wait (
                 "start of NNTI_ib_wait", wr->reg_buf);
     }
 
-    ib_mem_hdl=IB_MEM_HDL(wr->reg_buf);
-    assert(ib_mem_hdl);
     ib_wr=IB_WORK_REQUEST(wr);
     assert(ib_wr);
 
@@ -2659,50 +2898,75 @@ NNTI_result_t NNTI_ib_wait (
 
     	ib_wr->state=NNTI_IB_WR_STATE_WAIT_COMPLETE;
 
-        ib_mem_hdl=IB_MEM_HDL(wr->reg_buf);
-        assert(ib_mem_hdl);
+    	if (ib_wr->nnti_wr->ops == NNTI_ATOMICS) {
+			nthread_lock(&nnti_wrmap_lock);
+			wrmap_iter_t m_victim=wrmap.find(ib_wr->key);
+			if (m_victim != wrmap.end()) {
+				log_debug(nnti_debug_level, "erasing ib_wr=%p (key=%lu) from the wrmap", ib_wr, ib_wr->key);
+				wrmap.erase(m_victim);
+			}
+			nthread_unlock(&nnti_wrmap_lock);
 
-        if ((ib_mem_hdl->type == REQUEST_BUFFER) || (ib_mem_hdl->type == RECEIVE_BUFFER)) {
-        	// defer cleanup to NNTI_ib_destroy_work_request()
-        }
-        else if ((ib_mem_hdl->type == RDMA_TARGET_BUFFER) ||
-                (ib_mem_hdl->type == GET_SRC_BUFFER)      ||
-                (ib_mem_hdl->type == PUT_DST_BUFFER))     {
-            if (config.use_rdma_target_ack) {
-                repost_ack_recv_work_request(wr, ib_wr);
-            }
-        }
-        else {
-            nthread_lock(&ib_mem_hdl->wr_queue_lock);
-            wr_queue_iter_t q_victim=find(ib_mem_hdl->wr_queue.begin(), ib_mem_hdl->wr_queue.end(), ib_wr);
-            if (q_victim != ib_mem_hdl->wr_queue.end()) {
-                log_debug(nnti_debug_level, "erasing ib_wr=%p from the wr_queue", ib_wr);
-                ib_mem_hdl->wr_queue.erase(q_victim);
-            }
-            nthread_unlock(&ib_mem_hdl->wr_queue_lock);
+			if (config.use_wr_pool) {
+				wr_pool_sendrecv_push(ib_wr);
+			} else {
+				if (config.use_rdma_target_ack) {
+					unregister_ack(ib_wr);
+				}
+				log_debug(nnti_debug_level, "freeing ib_wr=%p", ib_wr);
+				free(ib_wr);
+			}
+			/*
+			 * This work request (wr) has reached a completed (final) state.  wr is reset here.
+			 */
+			wr->transport_private=(uint64_t)NULL;
 
-            nthread_lock(&nnti_wrmap_lock);
-            wrmap_iter_t m_victim=wrmap.find(ib_wr->key);
-            if (m_victim != wrmap.end()) {
-                log_debug(nnti_debug_level, "erasing ib_wr=%p (key=%lu) from the wrmap", ib_wr, ib_wr->key);
-                wrmap.erase(m_victim);
-            }
-            nthread_unlock(&nnti_wrmap_lock);
+    	} else {
+    		ib_mem_hdl=IB_MEM_HDL(wr->reg_buf);
+    		assert(ib_mem_hdl);
 
-            if (config.use_wr_pool) {
-                wr_pool_sendrecv_push(ib_wr);
-            } else {
-                if (config.use_rdma_target_ack) {
-                    unregister_ack(ib_wr);
-                }
-                log_debug(nnti_debug_level, "freeing ib_wr=%p", ib_wr);
-                free(ib_wr);
-            }
-            /*
-             * This work request (wr) has reached a completed (final) state.  wr is reset here.
-             */
-            wr->transport_private=(uint64_t)NULL;
-        }
+    		if ((ib_mem_hdl->type == REQUEST_BUFFER) || (ib_mem_hdl->type == RECEIVE_BUFFER)) {
+    			// defer cleanup to NNTI_ib_destroy_work_request()
+    		}
+    		else if ((ib_mem_hdl->type == RDMA_TARGET_BUFFER) ||
+    				(ib_mem_hdl->type == GET_SRC_BUFFER)      ||
+    				(ib_mem_hdl->type == PUT_DST_BUFFER))     {
+    			if (config.use_rdma_target_ack) {
+    				repost_ack_recv_work_request(wr, ib_wr);
+    			}
+    		}
+    		else {
+    			nthread_lock(&ib_mem_hdl->wr_queue_lock);
+    			wr_queue_iter_t q_victim=find(ib_mem_hdl->wr_queue.begin(), ib_mem_hdl->wr_queue.end(), ib_wr);
+    			if (q_victim != ib_mem_hdl->wr_queue.end()) {
+    				log_debug(nnti_debug_level, "erasing ib_wr=%p from the wr_queue", ib_wr);
+    				ib_mem_hdl->wr_queue.erase(q_victim);
+    			}
+    			nthread_unlock(&ib_mem_hdl->wr_queue_lock);
+
+    			nthread_lock(&nnti_wrmap_lock);
+    			wrmap_iter_t m_victim=wrmap.find(ib_wr->key);
+    			if (m_victim != wrmap.end()) {
+    				log_debug(nnti_debug_level, "erasing ib_wr=%p (key=%lu) from the wrmap", ib_wr, ib_wr->key);
+    				wrmap.erase(m_victim);
+    			}
+    			nthread_unlock(&nnti_wrmap_lock);
+
+    			if (config.use_wr_pool) {
+    				wr_pool_sendrecv_push(ib_wr);
+    			} else {
+    				if (config.use_rdma_target_ack) {
+    					unregister_ack(ib_wr);
+    				}
+    				log_debug(nnti_debug_level, "freeing ib_wr=%p", ib_wr);
+    				free(ib_wr);
+    			}
+    			/*
+    			 * This work request (wr) has reached a completed (final) state.  wr is reset here.
+    			 */
+    			wr->transport_private=(uint64_t)NULL;
+    		}
+    	}
     }
 
     trios_stop_timer("NNTI_ib_wait", total_time);
@@ -3141,6 +3405,7 @@ NNTI_result_t NNTI_ib_fini (
     nthread_lock_fini(&nnti_conn_peer_lock);
     nthread_lock_fini(&nnti_conn_qpn_lock);
     nthread_lock_fini(&nnti_buf_bufhash_lock);
+    nthread_lock_fini(&transport_global_data.atomics_lock);
     nthread_lock_fini(&nnti_wr_pool_lock);
 
     ib_initialized=false;
@@ -3316,6 +3581,48 @@ static NNTI_result_t setup_interrupt_pipe(void)
     return(NNTI_OK);
 }
 
+static NNTI_result_t setup_atomics(void)
+{
+    NNTI_result_t rc=NNTI_OK; /* return code */
+
+    trios_declare_timer(callTime);
+
+    struct ibv_mr *mr=NULL;
+
+    uint32_t atomics_bytes;
+
+    int flags = IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_REMOTE_ATOMIC;
+
+    log_debug(nnti_debug_level, "enter");
+
+    atomics_bytes=config.min_atomics_vars * sizeof(int64_t);
+    trios_start_timer(callTime);
+    transport_global_data.atomics=(int64_t*)malloc(atomics_bytes);
+    if (transport_global_data.atomics == NULL) {
+    	return(NNTI_ENOMEM);
+    }
+    memset(transport_global_data.atomics, 0, atomics_bytes);
+    trios_stop_timer("malloc and memset", callTime);
+
+    trios_start_timer(callTime);
+    mr = ibv_reg_mr_wrapper(transport_global_data.pd, transport_global_data.atomics, atomics_bytes, flags);
+    if (!mr) {
+    	log_error(
+    			nnti_debug_level,
+    			"failed to register memory region (IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ "
+    			"| IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_REMOTE_ATOMIC): %s",
+    			strerror(errno));
+    	return(NNTI_ENOMEM);
+    }
+    trios_stop_timer("register", callTime);
+
+    transport_global_data.atomics_mr=mr;
+
+    log_debug(nnti_debug_level, "exit (buf==%p, mr==%p, lkey %x, rkey %x)...", transport_global_data.atomics, mr, mr->lkey, mr->rkey);
+
+    return(NNTI_OK);
+}
+
 static struct ibv_mr *register_memory_segment(
         void *buf,
         uint64_t len,
@@ -3329,10 +3636,10 @@ static struct ibv_mr *register_memory_segment(
 
     log_debug(nnti_debug_level, "enter buffer(%p) len(%d)", buf, len);
 
-    trios_start_timer(callTime);
-    mlock(buf, len);
-    munlock(buf, len);
-    trios_stop_timer("mlock", callTime);
+//    trios_start_timer(callTime);
+//    mlock(buf, len);
+//    munlock(buf, len);
+//    trios_stop_timer("mlock", callTime);
 
     trios_start_timer(callTime);
     mr = ibv_reg_mr_wrapper(transport_global_data.pd, buf, len, access);
@@ -3370,10 +3677,10 @@ static int register_ack(ib_work_request *ib_wr)
 
     len = sizeof(ib_wr->ack);
 
-    trios_start_timer(callTime);
-    mlock(&ib_wr->ack, len);
-    munlock(&ib_wr->ack, len);
-    trios_stop_timer("mlock", callTime);
+//    trios_start_timer(callTime);
+//    mlock(&ib_wr->ack, len);
+//    munlock(&ib_wr->ack, len);
+//    trios_stop_timer("mlock", callTime);
 
     trios_start_timer(callTime);
     mr = ibv_reg_mr_wrapper(transport_global_data.pd, &ib_wr->ack, len, (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
@@ -3549,6 +3856,12 @@ static int process_event(
     log_level debug_level=nnti_debug_level;
 
     log_debug(nnti_debug_level, "enter (ib_wr=%p)", ib_wr);
+
+    if ((ib_wr->nnti_wr) && (ib_wr->nnti_wr->ops == NNTI_ATOMICS)) {
+        ib_wr->state=NNTI_IB_WR_STATE_RDMA_COMPLETE;
+        ib_wr->nnti_wr->result=NNTI_OK;
+        return NNTI_OK;
+    }
 
     if (wc->status == IBV_WC_RNR_RETRY_EXC_ERR) {
         ib_wr->state =NNTI_IB_WR_STATE_WAIT_COMPLETE;
@@ -4289,7 +4602,6 @@ static void create_status(
         NNTI_status_t       *status)
 {
     ib_connection    *conn      =NULL;
-    ib_memory_handle *ib_mem_hdl=NULL;
 
     NNTI_buffer_t *reg_buf;
 
@@ -4305,15 +4617,15 @@ static void create_status(
         status->result = nnti_rc;
     }
     if (status->result==NNTI_OK) {
-        ib_mem_hdl=IB_MEM_HDL(ib_wr->reg_buf);
-        assert(ib_mem_hdl);
 
 //        print_ack_buf(&ib_wr->ack);
 //        print_wr(ib_wr);
 
         conn = get_conn_qpn(ib_wr->last_wc.qp_num);
 
-        status->start  = (uint64_t)ib_wr->reg_buf->payload;
+        if (ib_wr->nnti_wr->ops != NNTI_ATOMICS) {
+        	status->start  = (uint64_t)ib_wr->reg_buf->payload;
+        }
         switch (ib_wr->last_op) {
             case IB_OP_PUT_INITIATOR:
             case IB_OP_SEND_REQUEST:
@@ -4505,7 +4817,8 @@ static void transition_qp_from_reset_to_ready(
     memset(&attr, 0, sizeof(attr));
     attr.qp_state = IBV_QPS_INIT;
     attr.qp_access_flags = IBV_ACCESS_LOCAL_WRITE |
-            IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_REMOTE_READ;
+            IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_REMOTE_READ |
+            IBV_ACCESS_REMOTE_ATOMIC;
     attr.pkey_index = 0;
     attr.port_num = transport_global_data.nic_port;
     if (ibv_modify_qp_wrapper(qp, &attr, mask)) {
@@ -4742,6 +5055,8 @@ static int new_client_connection(
         uint32_t req_qpn;
         uint32_t my_qpn;
         uint32_t peer_qpn;
+        uint32_t atomics_rkey;
+        uint64_t atomics_addr;
     } param_in, param_out;
 
     trios_declare_timer(callTime);
@@ -4795,8 +5110,12 @@ static int new_client_connection(
     if (ibv_req_notify_cq_wrapper(transport_global_data.data_cq, 0)) {
         log_error(nnti_debug_level, "Couldn't request CQ notification: %s", strerror(errno));
     }
+
     c->data_qp.qpn     = c->data_qp.qp->qp_num;
     param_out.my_qpn = htonl(c->data_qp.qpn);
+
+    param_out.atomics_rkey=transport_global_data.atomics_mr->rkey;
+    param_out.atomics_addr=(uint64_t)transport_global_data.atomics_mr->addr;
 
     trios_start_timer(callTime);
     rc = tcp_exchange(sock, 0, &param_in, &param_out, sizeof(param_in));
@@ -4810,6 +5129,8 @@ static int new_client_connection(
     c->peer_lid     = ntohl(param_in.lid);
     c->peer_req_qpn = ntohl(param_in.req_qpn);
     c->data_qp.peer_qpn = ntohl(param_in.my_qpn);
+    c->atomics_rkey = param_in.atomics_rkey;
+    c->atomics_addr = param_in.atomics_addr;
 
 out:
     return rc;
@@ -4834,6 +5155,8 @@ static int new_server_connection(
         uint32_t req_qpn;
         uint32_t my_qpn;
         uint32_t peer_qpn;
+        uint32_t atomics_rkey;
+        uint64_t atomics_addr;
     } param_in, param_out;
 
     // initialize structs to avoid valgrind warnings
@@ -4891,6 +5214,9 @@ static int new_server_connection(
     c->data_qp.qpn   = c->data_qp.qp->qp_num;
     param_out.my_qpn = htonl(c->data_qp.qpn);
 
+    param_out.atomics_rkey=transport_global_data.atomics_mr->rkey;
+    param_out.atomics_addr=(uint64_t)transport_global_data.atomics_mr->addr;
+
     trios_start_timer(callTime);
     rc = tcp_exchange(sock, 1, &param_in, &param_out, sizeof(param_in));
     trios_stop_timer("exch data", callTime);
@@ -4903,6 +5229,8 @@ static int new_server_connection(
     c->peer_lid     = ntohl(param_in.lid);
     c->peer_req_qpn = ntohl(param_in.req_qpn);
     c->data_qp.peer_qpn = ntohl(param_in.my_qpn);
+    c->atomics_rkey = param_in.atomics_rkey;
+    c->atomics_addr = param_in.atomics_addr;
 
 out:
     return rc;
@@ -6072,8 +6400,9 @@ static void print_ib_conn(ib_connection *c)
 
 static void config_init(nnti_ib_config *c)
 {
-    c->use_wr_pool        =false;
-    c->use_rdma_target_ack=false;
+    c->min_atomics_vars    = 512;
+    c->use_wr_pool         = false;
+    c->use_rdma_target_ack = false;
 }
 
 static void config_get_from_env(nnti_ib_config *c)
@@ -6081,9 +6410,22 @@ static void config_get_from_env(nnti_ib_config *c)
     char *env_str=NULL;
 
     // defaults
-    c->use_wr_pool = false;
-    c->use_rdma_target_ack=false;
+    c->min_atomics_vars    = 512;
+    c->use_wr_pool         = false;
+    c->use_rdma_target_ack = false;
 
+    if ((env_str=getenv("TRIOS_NNTI_MIN_ATOMIC_VARS")) != NULL) {
+        errno=0;
+        uint32_t min_vars=strtoul(env_str, NULL, 0);
+        if (errno == 0) {
+            log_debug(nnti_debug_level, "setting c->min_atomics_vars to %lu", min_vars);
+            c->min_atomics_vars=min_vars;
+        } else {
+            log_debug(nnti_debug_level, "TRIOS_NNTI_MIN_ATOMIC_VARS value conversion failed (%s).  using c->min_atomics_vars default.", strerror(errno));
+        }
+    } else {
+        log_debug(nnti_debug_level, "TRIOS_NNTI_MIN_ATOMIC_VARS is undefined.  using c->min_atomics_vars default");
+    }
     if ((env_str=getenv("TRIOS_NNTI_USE_WR_POOL")) != NULL) {
         if ((!strcasecmp(env_str, "TRUE")) ||
             (!strcmp(env_str, "1"))) {

@@ -65,12 +65,12 @@ SET(SOURCES ${SOURCES}
   )
 
 SET(HEADERS ${HEADERS}
-  iohb.h
+  Trilinos_Util_iohb.h
   Trilinos_Util_Version.h
   )
 
 SET(SOURCES ${SOURCES}
-  iohb.cpp
+  Trilinos_Util_iohb.cpp
   )
 
 #

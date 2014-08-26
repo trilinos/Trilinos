@@ -677,6 +677,10 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
 
     ae_tm_.getAsObject<panzer::Traits::Jacobian>()->evaluate(ae_inargs);
   }
+  // HACK: set A to null before calling responses to avoid touching the
+  // the Jacobian after it has been properly assembled.  Should be fixed
+  // by using a modified version of ae_inargs instead.
+  epGlobalContainer->set_A(Teuchos::null);
 
   // evaluate responses...uses the stored assembly arguments and containers
   if(requiredResponses) {

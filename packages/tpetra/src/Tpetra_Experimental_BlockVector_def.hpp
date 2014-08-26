@@ -159,9 +159,9 @@ namespace Experimental {
 //
 // Explicit instantiation macro
 //
-// Must be expanded from within the Tpetra::Experimental namespace!
+// Must be expanded from within the Tpetra namespace!
 //
 #define TPETRA_EXPERIMENTAL_BLOCKVECTOR_INSTANT(S,LO,GO,NODE) \
-  template class BlockVector< S, LO, GO, NODE >;
+  template class Experimental::BlockVector< S, LO, GO, NODE >;
 
 #endif // TPETRA_EXPERIMENTAL_BLOCKVECTOR_DEF_HPP

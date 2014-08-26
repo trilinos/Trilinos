@@ -99,7 +99,7 @@ protected :
   inline
   TaskMember( const function_type    arg_dealloc
             , const function_type    arg_apply
-            , const std::type_info & arg_type
+            , const std::type_info & arg_type = typeid(void)
             )
     : m_typeid(  arg_type )
     , m_dealloc( arg_dealloc )
@@ -508,8 +508,8 @@ private:
     static
     void apply( task_root_type * t )
       {
-        range_policy const & r  = * static_cast< member_type * >( static_cast< task_base_type * >( t ) ).m_policy ;
-        FunctorType        & f  = * static_cast< FunctorType * >( static_cast< task_base_type * >( t ) );
+        range_policy const & r  = ( * static_cast< member_type * >( static_cast< task_base_type * >( t ) ) ).m_policy ;
+        FunctorType        & f  = ( * static_cast< FunctorType * >( static_cast< task_base_type * >( t ) ) );
         FunctorType  const & cf = f ;
 
         const IntType e = r.end();

@@ -227,9 +227,13 @@ dot( const stk_classic::AlgorithmRunnerInterface & alg_runner ,
 
   // Global sum
 
+#if defined( STK_HAS_MPI )
   MPI_Comm comm = bulk.parallel();
 
   MPI_Allreduce(& local_dot , & global_dot, 1, MPI_DOUBLE, MPI_SUM, comm);
+#else
+  global_dot = local_dot;
+#endif
 
   return global_dot ;
 }
@@ -305,9 +309,13 @@ norm2( const stk_classic::AlgorithmRunnerInterface & alg_runner ,
 
   // Global sum
 
+#if defined( STK_HAS_MPI )
   MPI_Comm comm = bulk.parallel();
 
   MPI_Allreduce(& local_dot , & global_dot, 1, MPI_DOUBLE, MPI_SUM, comm);
+#else
+  global_dot = local_dot;
+#endif
 
   return std::sqrt( global_dot ) ;
 }

@@ -188,9 +188,10 @@ TraceMinDavidsonSolMgr<ScalarType,MV,OP>::TraceMinDavidsonSolMgr( const Teuchos:
   TEUCHOS_TEST_FOR_EXCEPTION(this->numRestartBlocks_ >= this->numBlocks_, std::invalid_argument,
          "Anasazi::TraceMinDavidsonSolMgr::constructor(): \"Num Blocks\" must be strictly greater than \"Num Restart Blocks\".");
 
+  std::stringstream ss;
+  ss << "Anasazi::TraceMinDavidsonSolMgr::constructor(): Potentially impossible orthogonality requests. Reduce basis size (" << static_cast<ptrdiff_t>(this->numBlocks_)*this->blockSize_ << ") or locking size (" << this->maxLocked_ << ") because " << static_cast<ptrdiff_t>(this->numBlocks_) << "*" << this->blockSize_ << " + " << this->maxLocked_ << " > " << MVText::GetGlobalLength(*this->problem_->getInitVec()) << ".";
   TEUCHOS_TEST_FOR_EXCEPTION(static_cast<ptrdiff_t>(this->numBlocks_)*this->blockSize_ + this->maxLocked_ > MVText::GetGlobalLength(*this->problem_->getInitVec()),
-         std::invalid_argument,
-         "Anasazi::TraceMinDavidsonSolMgr::constructor(): Potentially impossible orthogonality requests. Reduce basis size or locking size.");
+         std::invalid_argument, ss.str());
 
   TEUCHOS_TEST_FOR_EXCEPTION(this->maxLocked_ + this->blockSize_ < this->problem_->getNEV(), std::invalid_argument,
          "Anasazi::TraceMinDavidsonSolMgr: Not enough storage space for requested number of eigenpairs.");
@@ -221,7 +222,7 @@ bool TraceMinDavidsonSolMgr<ScalarType,MV,OP>::performRestart(int &numRestarts, 
 
   // Copy the relevant parts of the old state to the new one
   // This may involve computing parts of X
-  copyPartOfState(oldstate, newstate, indToCopy);
+  this->copyPartOfState (oldstate, newstate, indToCopy);
 
   // send the new state to the solver
   newstate.NEV = oldstate.NEV;

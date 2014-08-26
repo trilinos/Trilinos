@@ -51,7 +51,7 @@
 #include <Tpetra_CrsMatrix.hpp>
 
 // I/O for Harwell-Boeing files
-#include <iohb.h>
+#include <Galeri_iohb.h>
 
 #include <complex>
 

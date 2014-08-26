@@ -40,7 +40,7 @@
 // @HEADER
 
 #include "Trilinos_Util.h"
-#include "iohb.h"
+#include "Trilinos_Util_iohb.h"
 
 void Trilinos_Util_read_hb(char *data_file, int MyPID,
 	      int *N_global, int *n_nonzeros, 

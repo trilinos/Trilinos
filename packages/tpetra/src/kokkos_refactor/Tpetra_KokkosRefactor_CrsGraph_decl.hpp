@@ -162,8 +162,9 @@ namespace Tpetra {
     typedef Kokkos::StaticCrsGraph<LocalOrdinal,
                                    Kokkos::LayoutLeft,
                                    device_type, size_t> LocalStaticCrsGraphType;
-    typedef Kokkos::View<size_t*, typename Node::device_type> t_RowPtrs;
-    typedef Kokkos::View<LocalOrdinal*, typename Node::device_type> t_LocalOrdinal_1D;
+    typedef Kokkos::View<const size_t*, device_type> t_RowPtrs;
+    typedef Kokkos::View<      size_t*, device_type> t_RowPtrsNC;
+    typedef Kokkos::View<LocalOrdinal*, device_type> t_LocalOrdinal_1D;
 
     //! The Map specialization used by this class.
     typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, node_type> map_type;
@@ -912,13 +913,29 @@ namespace Tpetra {
      */
     Teuchos::ArrayRCP<const LocalOrdinal> getNodePackedIndices() const;
 
-    /// \brief Replace the current colMap with the given object.
+    /// \brief Replace the graph's current column Map with the given Map.
     ///
-    /// \param newColMap [in] New colMap.  Must be nonnull.
+    /// This <i>only</i> replaces the column Map.  It does <i>not</i>
+    /// change the graph's current column indices, or otherwise apply
+    /// a permutation.  For example, suppose that before calling this
+    /// method, the calling process owns a row containing local column
+    /// indices [0, 2, 4].  These indices do <i>not</i> change, nor
+    /// does their order change, as a result of calling this method.
     ///
-    /// \pre The matrix must have no entries inserted yet
+    /// \param newColMap [in] New column Map.  Must be nonnull.
+    void replaceColMap (const Teuchos::RCP<const map_type>& newColMap);
+
+    /// \brief Reindex the column indices in place, and replace the
+    ///   column Map.  Optionally, replace the Import object as well.
+    ///
+    /// \param newColMap [in] New column Map.  Must be nonnull.
+    ///
+    /// \param newImport [in] New Import object.  Optional; computed
+    ///   if not provided or if null.  Computing an Import is
+    ///   expensive, so it is worth providing this if you can.
     void
-    replaceColMap (const Teuchos::RCP<const map_type>& newColMap);
+    reindexColumns (const Teuchos::RCP<const map_type>& newColMap,
+                    const Teuchos::RCP<const import_type>& newImport = Teuchos::null);
 
     /// \brief Replace the current domain Map and Import with the given parameters.
     ///

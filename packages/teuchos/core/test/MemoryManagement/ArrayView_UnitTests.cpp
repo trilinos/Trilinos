@@ -188,6 +188,71 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayView, null_zero_ArrayView_func, T )
 }
 
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayView, raw_ptr_self_view, T )
+{
+  T *data = new T[10];
+  ArrayView<T> view(data, 10);
+  view = view(0, 5);
+  TEST_EQUALITY(view.getRawPtr(), data);
+  TEST_EQUALITY_CONST(view.size(), 5);
+  ArrayView<const T> cview = view.getConst();
+  TEST_EQUALITY(cview.getRawPtr(), const_cast<const T*>(data));
+  TEST_EQUALITY_CONST(cview.size(), 5);
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  ArrayRCP<const T> cview_arcp = cview.access_private_arcp();
+  TEST_EQUALITY(cview_arcp.getRawPtr(), const_cast<const T*>(data));
+  TEST_EQUALITY_CONST(cview_arcp.size(), 5);
+#endif
+  delete [] data;
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayView, raw_ptr_self_view_const, T )
+{
+  T const * data = new T[10];
+  ArrayView<const T> view(data, 10);
+  view = view(0, 5);
+  TEST_EQUALITY(view.getRawPtr(), data);
+  TEST_EQUALITY_CONST(view.size(), 5);
+  ArrayView<const T> cview = view.getConst();
+  TEST_EQUALITY(cview.getRawPtr(), data);
+  TEST_EQUALITY_CONST(cview.size(), 5);
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  ArrayRCP<const T> cview_arcp = cview.access_private_arcp();
+  TEST_EQUALITY(cview_arcp.getRawPtr(), data);
+  TEST_EQUALITY_CONST(cview_arcp.size(), 5);
+#endif
+  delete [] data;
+}
+
+
+template<typename T>
+void resizeRawView(
+  Teuchos::ArrayView<T> &view_inout, Teuchos::Ordinal offset, Teuchos::Ordinal size
+  )
+{
+  if (view_inout.size() == 0 && size == 0) { return; }
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  const T &next_to_last = view_inout[offset+size-1];
+  (void)next_to_last;
+#endif
+  view_inout = arrayView<T>(&view_inout[offset], size);
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayView, resize_raw_ptr_self_view, T )
+{
+  T *data = new T[10];
+  ArrayView<T> view(data, 10);
+  resizeRawView(view, 0, 5);
+  TEST_EQUALITY(view.getRawPtr(), data);
+  TEST_EQUALITY_CONST(view.size(), 5);
+  delete [] data;
+  // NOTE: The above works because we are creating a completely new ArrayView
+  // object and are not viewing the original array object which is going away.
+}
+
+
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayView, assignmentOperator, T )
 {
   Array<T> a = generateArray<T>(n);
@@ -289,6 +354,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayView, danglingView_rcp_std_vector, T )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, arrayView, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, null_zero_ArrayView_operator, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, null_zero_ArrayView_func, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, raw_ptr_self_view, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, raw_ptr_self_view_const, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, resize_raw_ptr_self_view, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, assignmentOperator, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, iterators, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, danglingView_std_vector, T ) \

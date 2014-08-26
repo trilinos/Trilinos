@@ -105,6 +105,7 @@ public:
 
   const FunctorType  m_func ;
   const Policy       m_policy ;
+  const int          m_shared ;
 
   static void execute( ThreadsExec & exec , const void * arg )
   {
@@ -113,7 +114,7 @@ public:
     // TODO: Add thread pool queries to ThreadExec.
     // TODO: Move all of the team state out of ThreadsExec and into the Policy.
 
-    typename Policy::member_type member( exec , self.m_policy );
+    typename Policy::member_type member( exec , self.m_policy , self.m_shared );
 
     for ( ; member.valid() ; member.next() ) {
       self.m_func( member );
@@ -126,10 +127,11 @@ public:
               , const Policy      & policy )
     : m_func( functor )
     , m_policy( policy )
+    , m_shared( FunctorTeamShmemSize< FunctorType >::value( functor , policy.team_size() ) )
     {
-      ThreadsExec::resize_shared_scratch( FunctorShmemSize< FunctorType >::value( functor ) );
+      ThreadsExec::resize_scratch( 0 , Policy::member_type::team_reduce_size() + m_shared );
 
-      ThreadsExec::start( & ParallelFor::execute , this , policy.league_size() , policy.team_size() );
+      ThreadsExec::start( & ParallelFor::execute , this );
 
       ThreadsExec::fence();
     }
@@ -162,7 +164,7 @@ public:
     const ParallelReduce & self = * ((const ParallelReduce *) arg );
 
     // Initialize thread-local value
-    typename Reduce::reference_type update = Reduce::init( self.m_func , exec.reduce_base() );
+    typename Reduce::reference_type update = Reduce::init( self.m_func , exec.reduce_memory() );
 
     const Policy range( self.m_policy , exec.pool_rank() , exec.pool_size() );
 
@@ -181,7 +183,7 @@ public:
     : m_func( functor )
     , m_policy( policy )
     {
-      ThreadsExec::resize_reduce_scratch( Reduce::value_size( m_func ) );
+      ThreadsExec::resize_scratch( Reduce::value_size( m_func ) , 0 );
 
       ThreadsExec::start( & ParallelReduce::execute , this );
 
@@ -209,15 +211,16 @@ public:
 
   const FunctorType  m_func ;
   const Policy       m_policy ;
+  const int          m_shared ;
 
   static void execute( ThreadsExec & exec , const void * arg )
   {
     const ParallelReduce & self = * ((const ParallelReduce *) arg );
 
     // Initialize thread-local value
-    typename Reduce::reference_type update = Reduce::init( self.m_func , exec.reduce_base() );
+    typename Reduce::reference_type update = Reduce::init( self.m_func , exec.reduce_memory() );
 
-    typename Policy::member_type member( exec , self.m_policy );
+    typename Policy::member_type member( exec , self.m_policy , self.m_shared );
     for ( ; member.valid() ; member.next() ) {
       self.m_func( member , update );
     }
@@ -229,11 +232,11 @@ public:
                 , const Policy      & policy )
     : m_func( functor )
     , m_policy( policy )
+    , m_shared( FunctorTeamShmemSize< FunctorType >::value( functor , policy.team_size() ) )
     {
-      ThreadsExec::resize_shared_scratch( FunctorShmemSize< FunctorType >::value( functor ) );
-      ThreadsExec::resize_reduce_scratch( Reduce::value_size( m_func ) );
+      ThreadsExec::resize_scratch( Reduce::value_size( m_func ) , Policy::member_type::team_reduce_size() + m_shared );
 
-      ThreadsExec::start( & ParallelReduce::execute , this , policy.league_size() , policy.team_size() );
+      ThreadsExec::start( & ParallelReduce::execute , this );
 
       ThreadsExec::fence();
     }
@@ -244,11 +247,11 @@ public:
                 , const ViewType    & result )
     : m_func( functor )
     , m_policy( policy )
+    , m_shared( FunctorTeamShmemSize< FunctorType >::value( functor , policy.team_size() ) )
     {
-      ThreadsExec::resize_shared_scratch( FunctorShmemSize< FunctorType >::value( functor ) );
-      ThreadsExec::resize_reduce_scratch( Reduce::value_size( m_func ) );
+      ThreadsExec::resize_scratch( Reduce::value_size( m_func ) , Policy::member_type::team_reduce_size() + m_shared );
 
-      ThreadsExec::start( & ParallelReduce::execute , this , policy.league_size() , policy.team_size() );
+      ThreadsExec::start( & ParallelReduce::execute , this );
 
       const pointer_type data = (pointer_type) ThreadsExec::root_reduce_scratch();
 
@@ -287,7 +290,7 @@ public:
 
     const Policy range( self.m_policy , exec.pool_rank() , exec.pool_size() );
 
-    typename Reduce::reference_type update = Reduce::init( self.m_func , exec.reduce_base() );
+    typename Reduce::reference_type update = Reduce::init( self.m_func , exec.reduce_memory() );
 
     const typename Policy::member_type e = range.end();
     for ( typename Policy::member_type i = range.begin() ; i < e ; ++i ) {
@@ -308,7 +311,7 @@ public:
     : m_func( functor )
     , m_policy( policy )
     {
-      ThreadsExec::resize_reduce_scratch( 2 * Reduce::value_size( m_func ) );
+      ThreadsExec::resize_scratch( 2 * Reduce::value_size( m_func ) , 0 );
       ThreadsExec::start( & ParallelScan::execute , this );
       ThreadsExec::fence();
     }

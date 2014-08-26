@@ -45,6 +45,30 @@ public:
   }
 };
 
+/**
+ * Fixed Cartesian X-Y-Z coordinate mapping.  Coordinates are set by number of points
+ * and maximum coordinate in each direction.
+ */
+class FixedCartesianCoordinateMapping : public stk::mesh::fixtures::CoordinateMapping
+{
+public:
+  FixedCartesianCoordinateMapping(const size_t nx, const size_t ny, const size_t nz,
+      double maxx, double maxy, double maxz)
+  : stk::mesh::fixtures::CoordinateMapping(),
+    m_nx(nx), m_ny(ny), m_nz(nz),
+    m_maxx(maxx), m_maxy(maxy), m_maxz(maxz)
+     {}
+  virtual void getNodeCoordinates(Scalar * field, const size_t ix, const size_t iy, const size_t iz) const
+  {
+    field[0] = (double)ix/(m_nx-1)*m_maxx;
+    field[1] = (double)iy/(m_ny-1)*m_maxy;
+    field[2] = (double)iz/(m_nz-1)*m_maxz;
+  }
+private:
+  const size_t m_nx, m_ny, m_nz;
+  const double m_maxx, m_maxy, m_maxz;
+};
+
 
 /**
  * Cylindrical coordinate mapping where the standard X-Y-Z coordinates

@@ -873,7 +873,10 @@ int nssi_timedwait(nssi_request *req, int timeout, int *remote_rc)
     log_level debug_level = rpc_debug_level;
     NNTI_status_t status;
 
+    trios_declare_timer(total_time);
     trios_declare_timer(call_time);
+
+    trios_start_timer(total_time);
 
     switch (req->status) {
 
@@ -1000,6 +1003,7 @@ cleanup:
         }
     }
 
+    trios_stop_timer("nssi_timedwait - total", total_time);
 
     /* check for an error */
     if (req->status == NSSI_REQUEST_ERROR) {
@@ -1641,9 +1645,12 @@ int nssi_call_rpc(
 
     int retries=0;
 
+    trios_declare_timer(total_time);
     trios_declare_timer(call_time);
 
     unsigned long len=0;
+
+    trios_start_timer(total_time);
 
     log_debug(rpc_debug_level, "entered nssi_call_rpc");
 
@@ -1855,6 +1862,8 @@ cleanup:
             request->short_result_hdl=NULL;
         }
     }
+
+    trios_stop_timer("nssi_call_rpc - total", total_time);
 
     return rc;
 }

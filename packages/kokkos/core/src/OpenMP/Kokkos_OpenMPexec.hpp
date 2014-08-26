@@ -314,7 +314,7 @@ public:
         m_team_rank      = m_team_size - ( m_team_rank_rev + 1 );
         m_league_end     = league_iter_end ;
         m_league_rank    = league_iter_end > team.team_iter() ? league_iter_end - team.team_iter() : 0 ;
-        m_team_shared    = space( ( (char*) m_exec.pool_rev(m_team_base_rev)->scratch_thread() ) + TEAM_REDUCE_SIZE , m_team_shmem );
+        new( (void*) &m_team_shared ) space( ( (char*) m_exec.pool_rev(m_team_base_rev)->scratch_thread() ) + TEAM_REDUCE_SIZE , m_team_shmem );
       }
     }
 
@@ -325,7 +325,7 @@ public:
     {
       if ( ++m_league_rank < m_league_end ) {
         team_barrier();
-        m_team_shared = space( ( (char*) m_exec.pool_rev(m_team_base_rev)->scratch_thread() ) + TEAM_REDUCE_SIZE , m_team_shmem );
+        new( (void*) &m_team_shared ) space( ( (char*) m_exec.pool_rev(m_team_base_rev)->scratch_thread() ) + TEAM_REDUCE_SIZE , m_team_shmem );
       }
     }
 
@@ -385,6 +385,11 @@ public:
 
   TeamPolicy( int league_size_request , int team_size_request )
     { init( league_size_request , team_size_request ); }
+
+  template< class FunctorType >
+  inline static
+  int team_size_max( const FunctorType & )
+    { return execution_space::thread_pool_size(1); }
 
   inline int team_alloc() const { return m_team_alloc ; }
   inline int team_iter()  const { return m_team_iter ; }

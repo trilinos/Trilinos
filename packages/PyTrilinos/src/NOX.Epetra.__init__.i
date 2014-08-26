@@ -51,7 +51,7 @@ NOX.Epetra provides the following user-level classes:
 "
 %enddef
 
-%module(package      = "PyTrilinos.NOX.NestedEpetra",
+%module(package      = "PyTrilinos.NOX.Epetra",
 	directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
@@ -72,6 +72,10 @@ NOX.Epetra provides the following user-level classes:
 #undef HAVE_STDINT_H
 #endif
 #include "Teuchos_RCPDecl.hpp"
+#include "Teuchos_DefaultSerialComm.hpp"
+#ifdef HAVE_MPI
+#include "Teuchos_DefaultMpiComm.hpp"
+#endif
 #include "PyTrilinos_Teuchos_Util.h"
 
 // Epetra includes
@@ -80,6 +84,9 @@ NOX.Epetra provides the following user-level classes:
 #include "Epetra_CompObject.h"
 #include "Epetra_SrcDistObject.h"
 #include "Epetra_DistObject.h"
+#include "Epetra_LocalMap.h"
+#include "Epetra_Export.h"
+#include "Epetra_OffsetIndex.h"
 #include "Epetra_IntVector.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
@@ -87,12 +94,16 @@ NOX.Epetra provides the following user-level classes:
 #include "Epetra_Operator.h"
 #include "Epetra_InvOperator.h"
 #include "Epetra_RowMatrix.h"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_FECrsMatrix.h"
+#include "Epetra_FEVbrMatrix.h"
 #include "Epetra_CrsGraph.h"
 #include "Epetra_MapColoring.h"
 #include "Epetra_JadMatrix.h"
 #include "Epetra_SerialDenseSVD.h"
 #include "Epetra_SerialDistributor.h"
 #include "Epetra_DLLExportMacro.h"
+#include "PyTrilinos_Epetra_Util.h"
 
 // EpetraExt includes
 #ifdef HAVE_NOX_EPETRAEXT
@@ -282,13 +293,6 @@ using namespace NOX::Epetra;
   }
 }
 
-// Convert Epetra_Vector return arguments to Epetra.Vectors (now provided by Epetra_Base.i)
-// %typemap(out) Epetra_Vector & (PyTrilinos::Epetra_NumPyVector* enpvResult = NULL)
-// {
-//   enpvResult = new PyTrilinos::Epetra_NumPyVector(View, *$1, 0);
-//   $result = SWIG_NewPointerObj((void*)enpvResult, $descriptor(PyTrilinos::Epetra_NumPyVector*), 1);
-// }
-
 // Convert NOX::Epetra::LinearSystem objects to
 // NOX::Epetra::LinearSystemAztecOO
 %typemap(out) Teuchos::RCP< NOX::Epetra::LinearSystem >
@@ -365,7 +369,12 @@ del sys, op
 %import "NOX.Abstract_RelPath.i"
 
 // NOX::Epetra::Interface imports
-%import "NOX.NestedEpetra.Interface.i"
+%teuchos_rcp(NOX::Epetra::Interface::Required)
+%import(module="Interface") "NOX_Epetra_Interface_Required.H"
+%teuchos_rcp(NOX::Epetra::Interface::Jacobian)
+%import(module="Interface") "NOX_Epetra_Interface_Jacobian.H"
+%teuchos_rcp(NOX::Epetra::Interface::Preconditioner)
+%import(module="Interface") "NOX_Epetra_Interface_Preconditioner.H"
 
 //////////////////////////////
 // NOX.Epetra.Group support //
