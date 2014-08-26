@@ -252,6 +252,7 @@ int main(int narg, char** arg)
           ewgts[cnt] = (gid < egids[k] ? gid : egids[k]);
           if (nEwgts > 1) ewgts[cnt+nnz] = (gid < egids[k] ? egids[k] : gid);
           for (int j = 2; j < nEwgts; j++) ewgts[cnt+nnz*j] = 1.;
+          cnt++;
         }
       }
       for (int j = 0; j < nEwgts; j++) {

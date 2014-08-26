@@ -192,7 +192,7 @@ void AlgParMETIS<Adapter>::partition(
   // Build vtxdist
   pm_idx_t *pm_vtxdist = new pm_idx_t[np+1];
   pm_vtxdist[0] = 0;
-  Teuchos::gatherAll(*problemComm, 1, &pm_nVtx, 1, &(pm_vtxdist[1]));
+  Teuchos::gatherAll(*problemComm, 1, &pm_nVtx, np, &(pm_vtxdist[1]));
   for (int i = 2; i <= np; i++)
     pm_vtxdist[i] += pm_vtxdist[i-1];
 
@@ -204,7 +204,7 @@ void AlgParMETIS<Adapter>::partition(
 
   // Get target part sizes and imbalance tolerances
 
-  pm_idx_t pm_nCon = (nVwgt > 0 ? 1 : pm_idx_t(nVwgt));
+  pm_idx_t pm_nCon = (nVwgt == 0 ? 1 : pm_idx_t(nVwgt));
   pm_real_t *pm_partsizes = new pm_real_t[numGlobalParts*pm_nCon];
   for (pm_idx_t dim = 0; dim < pm_nCon; dim++) {
     if (!solution->criteriaHasUniformPartSizes(dim))
