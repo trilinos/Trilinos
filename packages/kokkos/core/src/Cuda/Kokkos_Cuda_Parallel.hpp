@@ -346,7 +346,7 @@ public:
       Kokkos::Impl::throw_runtime_exception(std::string("Kokkos::Impl::ParallelFor< Cuda > insufficient shared memory"));
     }
 
-    const dim3 grid( std::min( policy.league_size() , policy.team_size() ) , 1 , 1 );
+    const dim3 grid( std::min( int(policy.league_size()) , int(cuda_internal_maximum_grid_count()) ) , 1 , 1 );
     const dim3 block( policy.team_size() , 1 , 1 );
 
     CudaParallelLaunch< ParallelFor >( *this, grid, block, shmem_size_total ); // copy to device and execute
