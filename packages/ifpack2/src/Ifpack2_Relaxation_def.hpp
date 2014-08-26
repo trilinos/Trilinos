@@ -1427,10 +1427,6 @@ ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
   typedef Tpetra::Experimental::BlockMultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> BMV;
   typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
 
-  if (ZeroStartingSolution_) {
-    Y.putScalar (STS::zero ());
-  }
-
   //FIXME: (tcf) 8/21/2014 -- may be problematic for multiple right hand sides
   BMV yBlock(Y, *A.getGraph()->getDomainMap(), A.getBlockSize());
   const BMV xBlock(X, *A.getColMap(), A.getBlockSize());
@@ -1452,20 +1448,28 @@ ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
     performImport = true;
   }
 
+  if (ZeroStartingSolution_) {
+    yBlockCol->putScalar (STS::zero ());
+  }
+  else
+  {
+    yBlockCol->doImport(yBlock, *Importer_, Tpetra::INSERT);
+  }
+
   const Tpetra::ESweepDirection direction =
     DoBackwardGS_ ? Tpetra::Backward : Tpetra::Forward;
 
   for (int sweep = 0; sweep < NumSweeps_; ++sweep)
   {
-    if (performImport) yBlockCol->doImport(yBlock, *Importer_, Tpetra::INSERT);
+    if (performImport && sweep > 0) yBlockCol->doImport(yBlock, *Importer_, Tpetra::INSERT);
     A.localGaussSeidel(xBlock, *yBlockCol, *BlockDiagonal_, &blockDiagonalFactorizationPivots[0], DampingFactor_, direction);
+    if (performImport)
+    {
+      Teuchos::RCP<const MV> yBlockColPointDomain = yBlockCol->getMultiVectorView().offsetView(A.getDomainMap(), 0);
+      Tpetra::deep_copy(Y, *yBlockColPointDomain);
+    }
   }
 
-  if (performImport)
-  {
-    Teuchos::RCP<const MV> yBlockColPointDomain = yBlockCol->getMultiVectorView().offsetView(A.getDomainMap(), 0);
-    Tpetra::deep_copy(Y, *yBlockColPointDomain);
-  }
 
 }
 
@@ -1750,10 +1754,6 @@ ApplyInverseSGS_BlockCrsMatrix (const block_crs_matrix_type& A,
   typedef Tpetra::Experimental::BlockMultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> BMV;
   typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
 
-  if (ZeroStartingSolution_) {
-    Y.putScalar (STS::zero ());
-  }
-
   //FIXME: (tcf) 8/21/2014 -- may be problematic for multiple right hand sides
   BMV yBlock(Y, *A.getGraph()->getDomainMap(), A.getBlockSize());
   const BMV xBlock(X, *A.getColMap(), A.getBlockSize());
@@ -1775,20 +1775,29 @@ ApplyInverseSGS_BlockCrsMatrix (const block_crs_matrix_type& A,
     performImport = true;
   }
 
+  if (ZeroStartingSolution_) {
+    yBlockCol->putScalar (STS::zero ());
+  }
+  else
+  {
+    yBlockCol->doImport(yBlock, *Importer_, Tpetra::INSERT);
+  }
+
+
   const Tpetra::ESweepDirection direction = Tpetra::Symmetric;
 
   for (int sweep = 0; sweep < NumSweeps_; ++sweep)
   {
-    if (performImport) yBlockCol->doImport(yBlock, *Importer_, Tpetra::INSERT);
+    if (performImport && sweep > 0) yBlockCol->doImport(yBlock, *Importer_, Tpetra::INSERT);
     A.localGaussSeidel(xBlock, *yBlockCol, *BlockDiagonal_, &blockDiagonalFactorizationPivots[0], DampingFactor_, direction);
+    if (performImport)
+    {
+      Teuchos::RCP<const MV> yBlockColPointDomain = yBlockCol->getMultiVectorView().offsetView(A.getDomainMap(), 0);
+      MV yBlockView = yBlock.getMultiVectorView();
+      Tpetra::deep_copy(yBlockView, *yBlockColPointDomain);
+    }
   }
 
-  if (performImport)
-  {
-    Teuchos::RCP<const MV> yBlockColPointDomain = yBlockCol->getMultiVectorView().offsetView(A.getDomainMap(), 0);
-    MV yBlockView = yBlock.getMultiVectorView();
-    Tpetra::deep_copy(yBlockView, *yBlockColPointDomain);
-  }
 
 }
 
